@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.49 2001-06-14 09:07:14 shirok Exp $
+ *  $Id: class.c,v 1.50 2001-06-22 07:32:29 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1569,7 +1569,8 @@ void bootstrap_class(ScmClass *k,
     k->directSlots = k->slots = slots;
 }
 
-void Scm_InitBuiltinClass(ScmClass *klass, const char *name, ScmModule *mod)
+void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
+                          ScmClassStaticSlotSpec *slots, ScmModule *mod)
 {
     ScmObj h = SCM_NIL, t;
     ScmObj s = SCM_INTERN(name);
@@ -1586,6 +1587,9 @@ void Scm_InitBuiltinClass(ScmClass *klass, const char *name, ScmModule *mod)
         klass->directSupers = SCM_NIL;
     }
     Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(klass));
+    if (slots) {
+        bootstrap_class(klass, slots);
+    }
 }
 
 void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod)
@@ -1630,16 +1634,9 @@ void Scm__InitClass(void)
 
     /* booting class metaobject */
     Scm_TopClass.cpa = nullcpa;
-    bootstrap_class(&Scm_ClassClass, class_slots);
-    bootstrap_class(&Scm_GenericClass, generic_slots);
-    Scm_GenericClass.flags |= SCM_CLASS_APPLICABLE;
-    bootstrap_class(&Scm_MethodClass, method_slots);
-    Scm_MethodClass.flags |= SCM_CLASS_APPLICABLE;
-    Scm_NextMethodClass.flags |= SCM_CLASS_APPLICABLE;
-    bootstrap_class(&Scm_SlotAccessorClass, slot_accessor_slots);
 
 #define CINIT(cl, nam) \
-    Scm_InitBuiltinClass(cl, nam, mod)
+    Scm_InitBuiltinClass(cl, nam, NULL, mod)
     
     /* class.c */
     CINIT(SCM_CLASS_TOP,              "<top>");
@@ -1648,12 +1645,22 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_UNKNOWN,          "<unknown>");
     CINIT(SCM_CLASS_OBJECT,           "<object>");
     CINIT(SCM_CLASS_CLASS,            "<class>");
+    bootstrap_class(&Scm_ClassClass, class_slots);
     CINIT(SCM_CLASS_GENERIC,          "<generic>");
+    bootstrap_class(&Scm_GenericClass, generic_slots);
+    Scm_GenericClass.flags |= SCM_CLASS_APPLICABLE;
     CINIT(SCM_CLASS_METHOD,           "<method>");
+    bootstrap_class(&Scm_MethodClass, method_slots);
+    Scm_MethodClass.flags |= SCM_CLASS_APPLICABLE;
     CINIT(SCM_CLASS_NEXT_METHOD,      "<next-method>");
+    Scm_NextMethodClass.flags |= SCM_CLASS_APPLICABLE;
     CINIT(SCM_CLASS_SLOT_ACCESSOR,    "<slot-accessor>");
+    bootstrap_class(&Scm_SlotAccessorClass, slot_accessor_slots);
     CINIT(SCM_CLASS_COLLECTION,       "<collection>");
     CINIT(SCM_CLASS_SEQUENCE,         "<sequence>");
+
+    /* char.c */
+    CINIT(SCM_CLASS_CHARSET,          "<char-set>");
 
     /* compile.c */
     CINIT(SCM_CLASS_IDENTIFIER,       "<identifier>");
@@ -1695,6 +1702,10 @@ void Scm__InitClass(void)
 
     /* promise.c */
     CINIT(SCM_CLASS_PROMISE,          "<promise>");
+
+    /* regexp.c */
+    CINIT(SCM_CLASS_REGEXP,           "<regexp>");
+    CINIT(SCM_CLASS_REGMATCH,         "<regmatch>");
 
     /* string.c */
     CINIT(SCM_CLASS_STRING,           "<string>");

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.15 2001-06-07 07:09:12 shirok Exp $
+ *  $Id: regexp.c,v 1.16 2001-06-22 07:32:29 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -1042,9 +1042,6 @@ void Scm_RegMatchDump(ScmRegMatch *rm)
 
 void Scm__InitRegexp(void)
 {
-    Scm_InitBuiltinClass(SCM_CLASS_REGEXP, "<regexp>", Scm_GaucheModule());
-    Scm_InitBuiltinClass(SCM_CLASS_REGMATCH, "<regmatch>", Scm_GaucheModule());
-
     sym_alt = SCM_INTERN("alt");
     sym_rep = SCM_INTERN("rep");
     sym_any = SCM_INTERN("any");

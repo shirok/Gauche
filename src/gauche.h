@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.159 2001-06-20 10:44:01 shirok Exp $
+ *  $Id: gauche.h,v 1.160 2001-06-22 07:32:29 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -339,6 +339,8 @@ struct ScmClassRec {
                                    otherwise #f */
 };
 
+typedef struct ScmClassStaticSlotSpecRec ScmClassStaticSlotSpec;
+
 #define SCM_CLASS(obj)        ((ScmClass*)(obj))
 #define SCM_CLASSP(obj)       SCM_XTYPEP(obj, SCM_CLASS_CLASS)
 
@@ -356,7 +358,8 @@ enum {
 #define SCM_CLASS_FINAL_P(obj)   (SCM_CLASS_FLAGS(obj)&SCM_CLASS_FINAL)
 #define SCM_CLASS_APPLICABLE_P(obj) (SCM_CLASS_FLAGS(obj)&SCM_CLASS_APPLICABLE)
 
-extern void Scm_InitBuiltinClass(ScmClass *c, const char *name, ScmModule *m);
+extern void Scm_InitBuiltinClass(ScmClass *c, const char *name,
+                                 ScmClassStaticSlotSpec *slots, ScmModule *m);
 
 extern ScmClass *Scm_ClassOf(ScmObj obj);
 extern int Scm_SubtypeP(ScmClass *sub, ScmClass *type);

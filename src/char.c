@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.18 2001-06-14 09:07:14 shirok Exp $
+ *  $Id: char.c,v 1.19 2001-06-22 07:32:29 shirok Exp $
  */
 
 #include <ctype.h>
@@ -598,12 +598,3 @@ ScmObj Scm_GetStandardCharSet(int id)
     }
     return SCM_OBJ(predef_charsets[id]);
 }
-
-/*-----------------------------------------------------------------
- * Initialization
- */
-void Scm__InitChar(void)
-{
-    Scm_InitBuiltinClass(SCM_CLASS_CHARSET, "<char-set>", Scm_GaucheModule());
-}
-
