@@ -1,8 +1,8 @@
 ;;;
-;;; simple stub generator
+;;; Simple stub generator
 ;;;
 
-;;; $Id: genstub,v 1.24 2001-03-11 10:14:32 shiro Exp $
+;;; $Id: genstub,v 1.25 2001-03-12 07:55:42 shiro Exp $
 
 (add-load-path "../lib")
 
@@ -11,6 +11,8 @@
 ;;   body)
 ;;
 ;; (define-symbol scheme-name c-name [value])
+;;
+;; (define-type name assert-predicate c-type c-predicate unboxer)
 
 (define *file-prefix* "")
 (define *cprocs* '())
@@ -180,11 +182,6 @@
 (make-type "hash table" 'hash-table? "ScmHashTable*" "SCM_HASHTABLEP" "SCM_HASHTABLE")
 (make-type "class"     'class?     "ScmClass*"     "SCM_CLASSP" "SCM_CLASS")
 (make-type "module"    'module?    "ScmModule*"    "SCM_MODULEP" "SCM_MODULE")
-(make-type "sys-stat"  'sys-stat?  "ScmSysStat*"   "SCM_SYS_STAT_P" "SCM_SYS_STAT")
-(make-type "sys-time"  'sys-time?  "ScmSysTime*"   "SCM_SYS_TIME_P" "SCM_SYS_TIME")
-(make-type "sys-tm"    'sys-tm?    "ScmSysTm*"     "SCM_SYS_TM_P" "SCM_SYS_TM")
-(make-type "sys-group" 'sys-group? "ScmSysGroup*"  "SCM_SYS_GROUP_P" "SCM_SYS_GROUP")
-(make-type "sys-passwd" 'sys-passwd? "ScmSysPasswd*"  "SCM_SYS_PASSWD_P" "SCM_SYS_PASSWD")
 
 ;; default
 (define *scm-type*
@@ -195,6 +192,12 @@
     (cond ((null? types) (error "unknown predicate to assert: ~s" pred))
           ((eq? (predicate-of (car types)) pred) (car types))
           (else (loop (cdr types))))))
+
+;; process type definition in stub file
+(define (process-define-type form)
+  (unless (= (length form) 6)
+    (error "malformed define-type: ~s" form))
+  (apply make-type (cdr form)))
 
 ;;--------------------------------------------------------------------
 ;; C structure
@@ -604,6 +607,8 @@
                      (process-define-cproc form))
                     ((eq? (car form) 'define-symbol)
                      (process-define-symbol form))
+                    ((eq? (car form) 'define-type)
+                     (process-define-type form))
                     (else (error "bad form: ~s" form)))
               (loop (read))))))
       (emit-initializer (get-c-name "" prefix))
