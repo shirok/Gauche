@@ -1,3 +1,17 @@
+2002-01-24  Shiro Kawai  <shiro@acm.org>
+
+	* configure.in, gc/include/private/gc_priv.h : applied patch from
+	  ABE Hiroshi to fix configuration under FreeBSD 2.x and HP-UX.
+	* src/signal.c, src/syslib.stub : fix signal masking (temporary).
+	  added sys-signal-name.
+
+2002-01-23  Shiro Kawai  <shiro@acm.org>
+
+	* configure.in, src/gauche-config.in : experimentally added
+	  --reconfigure option to gauche-config script.
+	* src/syslib.stub : added sys-alarm
+	* src/*.c : added checks for interrupted system calls.
+
 2002-01-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/signal.c : added default signal handler, and make signal queue
