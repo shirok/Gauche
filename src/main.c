@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.55 2002-07-10 22:00:18 shirok Exp $
+ *  $Id: main.c,v 1.56 2002-07-12 06:43:25 shirok Exp $
  */
 
 #include <unistd.h>
@@ -138,8 +138,12 @@ static void sig_setup(void)
     sigdelset(&set, SIGCONT);
     sigdelset(&set, SIGSTOP);
     sigdelset(&set, SIGSEGV);
+#ifdef SIGPWR
     sigdelset(&set, SIGPWR);  /* for now; this signal is used in gc */
+#endif /*SIGPWR*/
+#ifdef SIGXCPU
     sigdelset(&set, SIGXCPU); /* for now; this signal is used in gc */
+#endif /*SIGXCPU*/
     Scm_SetMasterSigmask(&set);
 }
 
