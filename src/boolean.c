@@ -12,15 +12,10 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: boolean.c,v 1.2 2001-01-31 07:29:13 shiro Exp $
+ *  $Id: boolean.c,v 1.3 2001-02-05 10:04:17 shiro Exp $
  */
 
 #include "gauche.h"
-
-ScmObj Scm_Not(ScmObj obj)
-{
-    return SCM_FALSEP(obj)? SCM_TRUE : SCM_FALSE;
-}
 
 ScmObj Scm_EqP(ScmObj x, ScmObj y)
 {
