@@ -76,6 +76,8 @@ syslib.c : syslib.stub genstub
 moplib.c : moplib.stub genstub
 thrlib.c : thrlib.stub genstub
 
+port.o : port.c portapi.c
+
 libgauche.a : $(OBJS) GCOBJS
 	gcobjs=`cat GCOBJS`; $(AR) cr libgauche.a $(OBJS) `for f in $$gcobjs; do echo ../gc/$$f; done`
 	$(RANLIB) libgauche.a

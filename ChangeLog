@@ -1,3 +1,9 @@
+2002-07-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c: added mutex protection to getc, getz and readline.
+	  separated duplicated code of 'safe' and 'unsafe' version of
+	  generic interface into portapi.c, and include it twice.
+
 2002-07-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/repl.c : rewrote to use trampoline instead of C-level loop.
