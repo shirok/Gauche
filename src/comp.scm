@@ -1,6 +1,6 @@
 ;;
 ;; A compiler.
-;;  $Id: comp.scm,v 1.1.2.16 2005-01-10 00:22:39 shirok Exp $
+;;  $Id: comp.scm,v 1.1.2.17 2005-01-10 08:46:02 shirok Exp $
 
 (define-module gauche.internal
   (use util.match)
@@ -120,6 +120,7 @@
 ;;   the compile-time environment and the input S-expr.
 
 (define (make-sc form cenv) (vector 'sc form cenv))
+(define (sc? sc)        (and (vector? sc) (eq? (vector-ref sc 0) 'sc)))
 
 (define (sc-form sc)    (vector-ref sc 1))
 (define (sc-cenv sc)    (vector-ref sc 2))

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.121.2.10 2005-01-06 11:26:28 shirok Exp $
+ *  $Id: compile.c,v 1.121.2.11 2005-01-10 08:46:02 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -526,6 +526,50 @@ ScmObj Scm_CompileLookupEnv(ScmObj sym, ScmObj env, int op)
 {
     return lookup_env(sym, env, op);
 }
+
+/*-------------------------------------------------------------
+ * Syntactic closure object
+ */
+
+static void synclo_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+{
+    Scm_Printf(port, "#<syntactic-closure %S>",
+               SCM_SYNTACTIC_CLOSURE(obj)->expr);
+}
+
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SyntacticClosureClass, synclo_print);
+
+ScmObj Scm_MakeSyntacticClosure(ScmObj env, ScmObj literals, ScmObj expr)
+{
+    ScmSyntacticClosure *s = SCM_NEW(ScmSyntacticClosure);
+    SCM_SET_CLASS(s, SCM_CLASS_SYNTACTIC_CLOSURE);
+    s->env = env;
+    s->literals = literals;
+    s->expr = expr;
+    return SCM_OBJ(s);
+}
+
+static ScmObj synclo_env_get(ScmObj obj)
+{
+    return SCM_SYNTACTIC_CLOSURE(obj)->env;
+}
+
+static ScmObj synclo_literals_get(ScmObj obj)
+{
+    return SCM_SYNTACTIC_CLOSURE(obj)->literals;
+}
+
+static ScmObj synclo_expr_get(ScmObj obj)
+{
+    return SCM_SYNTACTIC_CLOSURE(obj)->expr;
+}
+
+static ScmClassStaticSlotSpec synclo_slots[] = {
+    SCM_CLASS_SLOT_SPEC("env", synclo_env_get, NULL),
+    SCM_CLASS_SLOT_SPEC("literals", synclo_literals_get, NULL),
+    SCM_CLASS_SLOT_SPEC("expr", synclo_expr_get, NULL),
+    SCM_CLASS_SLOT_SPEC_END()
+};
 
 /*-------------------------------------------------------------
  * Identifier object
@@ -2336,6 +2380,8 @@ void Scm__InitCompiler(void)
     DEFSYN_G(SCM_SYM_EXPORT,       syntax_export);
     DEFSYN_G(SCM_SYM_ASM,          syntax_asm);
 
+    Scm_InitStaticClass(SCM_CLASS_SYNTACTIC_CLOSURE, "<syntactic-closure>", g,
+                        synclo_slots, 0);
     Scm_InitStaticClass(SCM_CLASS_IDENTIFIER, "<identifier>", g,
                         identifier_slots, 0);
 

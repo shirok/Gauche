@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.1.2.5 2005-01-03 01:08:34 shirok Exp $
+;;; $Id: intlib.stub,v 1.1.2.6 2005-01-10 08:46:02 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -63,6 +63,13 @@
 
 (define-cproc extended-list (elt &rest more)
   "SCM_RETURN(Scm_ExtendedCons(elt, more));")
+
+;;
+;; Syntactic closure
+;;
+
+(define-cproc make-syntactic-closure (env literals expr)
+  (return "Scm_MakeSyntacticClosure"))
 
 ;;
 ;; Identifiers

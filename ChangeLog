@@ -1,3 +1,10 @@
+2005-01-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/gauche/vm.h (ScmSyntacticClosure): Added syntactic
+	  closure object.  Although most functionalities that deal with
+	  syntactic closures will be written in Scheme, we need a disjoint
+	  type for this, and we need it without bootstrapping.
+
 2005-01-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/list.c (Scm_Length): changed API to return distinct values for

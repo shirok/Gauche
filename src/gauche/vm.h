@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.98.2.13 2005-01-03 01:09:18 shirok Exp $
+ *  $Id: vm.h,v 1.98.2.14 2005-01-10 08:46:03 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -138,6 +138,30 @@ typedef struct ScmContFrameRec {
 #define CONT_FRAME_SIZE  (sizeof(ScmContFrame)/sizeof(ScmObj))
 
 SCM_EXTERN void Scm_CallCC(ScmObj body);
+
+/*
+ * Syntactic closure
+ *
+ *   Syntactic closure encapsulates compile-time environment for
+ *   hygienic macro expansion.
+ *   See Bawden & Rees, Syntactic Closures, MIT AI Memo 1049, June 1988.
+ */
+
+typedef struct ScmSyntacticClosureRec {
+    ScmObj env;                 /* compile-time environment */
+    ScmObj literals;            /* literal symbols */
+    ScmObj expr;                /* expression */
+} ScmSyntacticClosure;
+
+SCM_CLASS_DECL(Scm_SyntacticClosureClass);
+#define SCM_CLASS_SYNTACTIC_CLOSURE   (&Scm_SyntacticClosureClass)
+
+#define SCM_SYNTACTIC_CLOSURE(obj)   ((ScmSyntacticClosure*)(obj))
+#define SCM_SYNTACTIC_CLOSURE_P(obj) SCM_XTYPEP(obj, SCM_CLASS_SYNTACTIC_CLOSURE)
+
+SCM_EXTERN ScmObj Scm_MakeSyntacticClosure(ScmObj env,
+                                           ScmObj literals,
+                                           ScmObj expr);
 
 /*
  * Identifier
