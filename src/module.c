@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.9 2001-03-05 05:24:49 shiro Exp $
+ *  $Id: module.c,v 1.10 2001-03-05 06:31:02 shiro Exp $
  */
 
 #include "gauche.h"
@@ -177,6 +177,12 @@ ScmObj Scm_AllModules(void)
         SCM_APPEND1(h, t, e->value);
     }
     return h;
+}
+
+void Scm_SelectModule(ScmModule *mod)
+{
+    SCM_ASSERT(SCM_MODULEP(mod));
+    Scm_VM()->module = mod;
 }
 
 /*----------------------------------------------------------------------
