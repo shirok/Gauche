@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char_sjis.h,v 1.3 2001-05-28 11:55:20 shirok Exp $
+ *  $Id: char_sjis.h,v 1.4 2001-12-23 01:37:01 shirok Exp $
  */
 
 #ifndef SCM_CHAR_ENCODING_BODY
@@ -31,10 +31,10 @@
  * two-byte character, it returns 1.   It may return -1 if
  * the given byte can't be a valid first byte of multibyte characters.
  */
-#define SCM_CHAR_NFOLLOWS(byte)                 \
-    ((byte) < 0x80? 0 :                         \
-     ((byte) < 0xa0? 1 :                        \
-      ((byte) < 0xe0? 0 : 1)))
+#define SCM_CHAR_NFOLLOWS(byte)                   \
+    (((unsigned char)(byte)) < 0x81? 0 :          \
+     (((unsigned char)(byte)) < 0xa0? 1 :         \
+      (((unsigned char)(byte)) < 0xe0? 0 : 1)))
 
 /* Given wide character CH, returns # of bytes used when CH is
  * encoded in multibyte string.
@@ -50,10 +50,11 @@
  */
 #define SCM_CHAR_GET(cp, ch)                                                \
     do {                                                                    \
-        (ch) = *(cp);                                                       \
+        (ch) = (unsigned char)*(cp);                                        \
         if ((unsigned char)(ch) >= 0x80) {                                  \
-           if ((unsigned char)(ch) < 0xa0 || (unsigned char)(ch) >= 0xe0) { \
-               (ch) = ((ch) << 8) + (unsigned char)*(cp+1);                 \
+          if ((unsigned char)(ch) < 0xa0 || (unsigned char)(ch) >= 0xe0) {  \
+             (ch) = (((unsigned char)(ch)) << 8) + (unsigned char)*(cp+1);  \
+          }                                                                 \
         }                                                                   \
     } while (0)
 
@@ -63,7 +64,7 @@
  */
 #define SCM_CHAR_PUT(cp, ch)                    \
     do {                                        \
-        if (ch > 0xff) {                        \
+        if ((ch) > 0xff) {                      \
             (cp)[0] = (ch >> 8) & 0xff;         \
             (cp)[1] = ch & 0xff;                \
         } else {                                \
@@ -77,16 +78,16 @@
  * result is set to NULL if there's no valid multibyte char found
  * just before cp.   cp and start is not modified.
  */
-#define SCM_CHAR_BACKWARD(cp, start, result)                                \
-    do {                                                                    \
-        (result) = (cp);                                                    \
-        while ((result) >= (start) && (cp)-(result)<= SCM_CHAR_MAX_BYTES) { \
-            if ((result) + SCM_CHAR_NFOLLOWS(*(result)) + 1 == (cp)) {      \
-                break;                                                      \
-            }                                                               \
-            (result)--;                                                     \
-        }                                                                   \
-        if ((result) < (start)) (result) = NULL;                            \
+#define SCM_CHAR_BACKWARD(cp, start, result)                    \
+    do {                                                        \
+        (result) = (cp);                                        \
+        if ((result) == (start)) (result) = NULL;               \
+        else if ((result) == (start) + 1) (result) = (start);   \
+        else if (SCM_CHAR_NFOLLOWS(*((result)-2)) == 1) {       \
+             (result) -= 2;                                     \
+        } else {                                                \
+             (result) -= 1;                                     \
+        }                                                       \
     } while (0)
 
 #else  /* !SCM_CHAR_ENCODING_BODY */
