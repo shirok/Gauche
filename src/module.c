@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.37 2002-08-30 00:46:36 shirok Exp $
+ *  $Id: module.c,v 1.38 2002-08-30 02:51:11 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -109,21 +109,7 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
         /* Next, search from imported modules */
         SCM_FOR_EACH(p, module->imported) {
             SCM_ASSERT(SCM_MODULEP(SCM_CAR(p)));
-            if (!SCM_FALSEP(Scm_Memq(SCM_CAR(p), searched))) continue;
-
-            m = SCM_MODULE(SCM_CAR(p));
-            (void)SCM_INTERNAL_MUTEX_LOCK(m->mutex);
-            e = Scm_HashTableGet(m->table, SCM_OBJ(symbol));
-            (void)SCM_INTERNAL_MUTEX_UNLOCK(m->mutex);
-            if (e &&
-                (SCM_TRUEP(m->exported)
-                 || !SCM_FALSEP(Scm_Memq(SCM_OBJ(symbol), m->exported)))) {
-                return SCM_GLOC(e->value);
-            }
-            searched = Scm_Cons(SCM_OBJ(m), searched);
-            
-            SCM_ASSERT(m->mpl);
-            SCM_FOR_EACH(mp, SCM_CDR(m->mpl)) {
+            SCM_FOR_EACH(mp, SCM_MODULE(SCM_CAR(p))->mpl) {
                 SCM_ASSERT(SCM_MODULEP(SCM_CAR(mp)));
                 if (!SCM_FALSEP(Scm_Memq(SCM_CAR(mp), searched))) break;
                 
