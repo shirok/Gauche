@@ -8504,6 +8504,44 @@ A slot an application can keep arbitrary data.
 アプリケーションが任意のデータを保持できるスロット。
 @c COMMON
 @end defivar
+
+@c EN
+Note that SRFI-18 doesn't have a routine equivalent to pthreads'
+@code{pthread_cont_wait}.  If you want to wait on condition variable,
+you can pass a condition variable to @code{mutex-unlock!} as an
+optional argument (see above), then acquire mutex again by
+@code{mutex-lock!}.  This design is for flexibility; see 
+SRFI-18 document for the details.
+@c JP
+SRFI-18は、pthreadの@code{pthread_cond_wait}に相当する手続きを
+持たないことに注意してください。条件変数を待つのは、
+@code{mutex-unlock!}の省略可能引数に条件変数を渡し、
+その後mutexを再び@code{mutex-lock!}で得ることで行います。
+この設計は柔軟性のためです。詳しくはSRFI-18を参照して下さい。
+@c COMMON
+
+@c EN
+This is the common usage of pthreads' condition variable:
+@c JP
+このような、pthreadで条件変数を使う定石は：
+@c COMMON
+@example
+while (some_condition != TRUE) {
+  pthread_cond_wait(condition_variable, mutex);
+}
+@end example
+@c EN
+And it can be translated to SRFI-18 as follows:
+@c JP
+SRFI-18では次のようなコードになります。
+@c COMMON
+@example
+(let loop ()
+  (unless some-condition
+    (mutex-unlock! mutex condition-variable)
+    (mutex-lock! mutex)
+    (loop)))
+@end example
 @end deftp
 
 @defun condition-variable? obj
