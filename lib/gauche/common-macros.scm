@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: common-macros.scm,v 1.1 2001-10-03 09:18:27 shirok Exp $
+;;;  $Id: common-macros.scm,v 1.2 2001-10-03 09:52:43 shirok Exp $
 ;;;
 
 ;;; Defines number of useful macros.  This file is loaded by
@@ -57,6 +57,25 @@
      (set! loc (cons val loc)))
     ((_ . other)
      (syntax-error "malformed push!" (push! . other)))))
+
+(define-syntax pop!
+  (syntax-rules ()
+    ((_ "vars" ((var arg) ...) () proc)
+     (let ((getter proc)
+           (var arg) ...)
+       (let ((val (getter var ...)))
+         ((setter getter) var ... (cdr val))
+         (car val))))
+    ((_ "vars" ((var arg) ...) (arg0 arg1 ...) proc)
+     (pop! "vars" ((var arg) ... (newvar arg0)) (arg1 ...) proc))
+    ((_ (proc arg ...))
+     (pop! "vars" () (arg ...) proc))
+    ((_ loc)
+     (let ((val loc))
+       (set! loc (cdr val))
+       (car val)))
+    ((_ . other)
+     (syntax-error "malformed pop!" (pop! . other)))))
 
 ;;;-------------------------------------------------------------
 ;;; repeat construct
