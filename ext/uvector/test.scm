@@ -1952,6 +1952,79 @@
 (test* "array-any-5" #f
   (array-any even? #,(<array> (0 2 0 2) 1 3 5 7)))
 
+(test-section "matrices")
+
+;; zero-base the shape
+(define (array-normalize a)
+  (define (every-other pred ls)
+    (if (null? ls) #t (and (pred (car ls)) (every-other pred (cddr ls)))))
+  (if (every-other zero? (array->list (array-shape a)))
+    a
+    (subarray a (array-shape a))))
+
+(define (approx-equal? x y . opt)
+  (< (abs (- x y)) (get-optional opt 0.0000001)))
+
+(define (array-approx-equal? a b)
+  (or (eq? a b) (array-equal? a b approx-equal?)))
+
+(let ((i 0))
+  (for-each
+   (lambda (t)
+     (let-optionals* t (ar (inv #f) (det 0))
+       (test* (format "array-inverse-~D" (inc! i)) inv
+         (array-inverse ar)
+         array-approx-equal?)
+       (when inv
+         (test* (format "array-inverse-~D" (inc! i)) (array-normalize ar)
+           (array-inverse inv)
+           array-approx-equal?))
+       (test* (format "determinant-~D" (inc! i)) det
+         (determinant ar)
+         approx-equal?)))
+   '((#,(<array> (0 2 0 2) 1 2 3 4)
+      #,(<array> (0 2 0 2) -2.0 1.0 1.5 -0.5)
+      -2)
+     (#,(<array> (1 3 1 3) 1 2 3 4)
+      #,(<array> (0 2 0 2) -2.0 1.0 1.5 -0.5)
+      -2)
+     (#,(<array> (3 5 7 9) 1 2 3 4)
+      #,(<array> (0 2 0 2) -2.0 1.0 1.5 -0.5)
+      -2)
+     (#,(<array> (0 3 0 3) 1 5 2 1 1 7 0 -3 4)
+      #,(<array> (0 3 0 3) -25 26 -33 4 -4 5 3 -3 4)
+      -1)
+     (#,(<array> (0 3 0 3) 2 0 1 1 1 0 3 2 1)
+      #,(<array> (0 3 0 3) 1 2 -1 -1 -1 1 -1 -4 2)
+      1)
+     (#,(<array> (0 3 0 3) 1 -1 3 2 1 2 -2 -2 1)
+      #,(<array> (0 3 0 3) 1 -1 -1 -1.2 1.4 0.8 -0.4 0.8 0.6)
+      5)
+     (#,(<array> (0 2 0 2) 1 2 3 6))
+     )))
+
+(let ((i 0))
+  (for-each
+   (lambda (t)
+     (let-optionals* t (a b c)
+       (test* (format "array-mul-~D" (inc! i)) c
+         (array-mul a b)
+         array-approx-equal?)))
+   '((#,(<array> (0 2 0 2) 1 2 3 4)
+      #,(<array> (0 2 0 2) 4 3 2 1)
+      #,(<array> (0 2 0 2) 8 5 20 13))
+     (#,(<array> (1 3 1 3) 1 1 1 1)
+      #,(<array> (2 4 2 4) 2 2 2 2)
+      #,(<array> (0 2 0 2) 4 4 4 4))
+     (#,(<u8array> (3 5 7 9) 3 1 4 1)
+      #,(<u8array> (55 57 17 19) 2 7 8 1)
+      #,(<u8array> (0 2 0 2) 14 22 16 29))
+     (#,(<s16array> (3 4 1 9) 1 -2 3 -4 5 -6 7 -8)
+      #,(<s16array> (3 11 5 6) 1 -2 3 -4 5 -6 7 -8)
+      #,(<s16array> (0 1 0 1) 204))
+     )))
+
+
 ;;-------------------------------------------------------------------
 ;; NB: copy-port uses read-block! and write-block for block copy,
 ;;     so we test it here.
