@@ -1,7 +1,7 @@
 #
 # Makefile.in for Gauche/lib
 #
-#  $Id: Makefile.in,v 1.58 2002-05-24 21:39:01 shirok Exp $
+#  $Id: Makefile.in,v 1.59 2002-05-25 09:37:27 shirok Exp $
 #
 
 prefix = @prefix@
@@ -21,7 +21,7 @@ SCMS = srfi-0.scm \
        srfi-13/pred.scm srfi-13/prefix.scm srfi-13/revapp.scm \
        srfi-13/rotator.scm srfi-13/searcher.scm srfi-13/selector.scm \
        srfi-14.scm srfi-14/query.scm srfi-14/set.scm \
-       srfi-19.scm srfi-19/format.scm srfi-19.read-tai.scm \
+       srfi-19.scm srfi-19/format.scm srfi-19/read-tai.scm \
        slib.scm japanize-euc.scm \
        gauche/object.scm gauche/test.scm gauche/macroutil.scm \
        gauche/regexp.scm gauche/process.scm gauche/with.scm gauche/signal.scm \
@@ -51,7 +51,9 @@ INSTALL=@INSTALL@
 all : $(SCMS)
 
 clean :
-	rm -f core *~ gauche/*~ gauche/vm/*~ gauche/serializer/*~ port/*~ rfc/*~ srfi-1/*~
+	rm -f core *~ gauche/*~ gauche/vm/*~ gauche/serializer/*~ \
+	file/*~ math/*~ port/*~ rfc/*~ srfi-1/*~ srfi-13/*~ srfi-14/*~ \
+	srfi-19/*~ util/*~ text/*~ www/*~
 
 distclean : clean
 	rm -f Makefile slib.scm
