@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.326 2002-12-13 11:41:33 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.327 2002-12-13 13:06:50 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -9356,7 +9356,7 @@ For input file port and input string port, you can't seek after the data.
 @c COMMON
 
 @c EN
-The @var{whence} argument must be a small integer represents
+The @var{whence} argument must be a small integer that represents
 from where @var{offset} should be counted.   The following constant
 values are defined.
 @c JP
@@ -12864,7 +12864,7 @@ they are installed in serial.  If a signal is delivered before
 all the handlers are installed, the signal handler state may be
 left inconsistent.  Also note that the handler setting is a global state;
 you can't set "thread local" handler by @code{with-signal-handlers},
-although the form may mislead such misunderstanding.
+although the form may be misleading.
 @c JP
 @emph{注意：} このフォームで一つ以上のシグナルハンドラを設定する場合、
 それらは順にシステムに設定されます。全てのハンドラの設定が終る前に
@@ -12915,7 +12915,7 @@ handler is called, then @code{sys-sigsuspend} returns.
 @subsubsection Signals and threads
 @c NODE シグナルとスレッド
 
-The semantics of signals looks a bit compilated in the multithread
+The semantics of signals looks a bit complicated in the multithread
 environment.   Nevertheless, it is pretty comprehensible once
 you remember a small number of rules.  Besides,
 Gauche sets up the default behavior easy to use,
@@ -16024,7 +16024,7 @@ called at certain time.
 
 This API of hooks are upper-compatible of Guile's, with the
 following extensions.
-@itemize
+@itemize @bullet
 @item
 Based on Gauche's object system.  Most APIs are methods
 so you can extend the hook features.
@@ -19450,7 +19450,7 @@ Preemptive threads have other difficulties
 and sometimes the alternatives may be a better fit
 than the native preemptive threads.
 
-@itemize
+@itemize @bullet
 @item
 If what you need is just a concurrent calculation, you
 might be able to use cooperative thread technique built
@@ -20145,7 +20145,7 @@ SRFI-4(@ref{srfi-4,,SRFI-4})に定義されている、
 要素が同一の数値型であるようなベクタを提供します。
 
 Gaucheの実装は、SRFI-4の仕様を次のように拡張しています。
-@itemize
+@itemize @bullet
 @item
 いくつかの手続きはSRFI-4に無い省略可能な引数を取ります。
 @code{@var{TAG}vector->list}は省略可能なstartとendのインデックスを取り、
@@ -27763,7 +27763,7 @@ Gauche's @code{flush}.   @xref{Output}.
 @item fgetc
 Use @code{read-char} or @code{read-byte}.  @xref{Input}.
 @item fgetpos
-Not supported yet.
+Use Gauche's @code{port-tell} (@xref{Common port operations})
 @item fgets
 Use @code{read-line} or @code{read-block}.    @xref{Input}.
 @item fileno
@@ -27806,13 +27806,13 @@ If the syntax is very simple, you may be able to utilize
 and/or regular expression stuff (@ref{Regular expression},
 also @ref{gauche.regexp - Regular expression utilities}.
 @item fseek
-Not implemented yet.
+Use Gauche's @code{port-seek} (@xref{Common port operations})
 @item fsetpos
-Not implemented yet.
+Use Gauche's @code{port-seek} (@xref{Common port operations})
 @item fstat
 Gauche's @code{sys-stat}.  @xref{File stats}.
 @item ftell
-Not implemented yet.
+Use Gauche's @code{port-tell} (@xref{Common port operations})
 @item fwrite
 Not directly supported.  If you want to write a chunk of bytes,
 you can simply use @code{display}.  @xref{Output}.
@@ -27924,7 +27924,7 @@ Not directly supported.  @code{log10(z)} @equiv{} @code{(/ (log z) (log 10))}.
 R5RS @code{call/cc} provides similar (superior) mechanism.
 @xref{Continuation}.
 @item lseek
-Not supported yet.
+Use Gauche's @code{port-seek} (@xref{Common port operations})
 @item malloc
 Not necessary in Scheme.
 @item mblen
@@ -28043,7 +28043,7 @@ Gauche's @code{sys-setuid}.  @xref{System Inquiry}.
 @item setvbuf
 Not necessary.
 @item sigaction
-You can use @code{with-signal-handlers} to install signal handlers.
+You can use @code{set-signal-handler!} to install signal handlers.
 @xref{Handling signals}.
 @item sigaddset
 @itemx sigdelset
@@ -28062,12 +28062,12 @@ You can use @code{with-signal-handlers} to install signal handlers.
 @item sigpending
 Not supported yet.
 @item sigprocmask
-Signal mask is handled internally.  See @xref{Handling signals}.
+Signal mask is handled internally.  @xref{Handling signals}.
 @item sigsetjmp
 R5RS @code{call/cc} provides similar (superior) mechanism.
 @xref{Continuation}.
 @item sigsuspend
-Not supported yet.
+Gauche's @code{sys-sigsuspend}.  @xref{Masking and waiting signals}.
 @item sin
 @itemx sinh
 Use @code{sin} and @code{sinh}.   @xref{Arithmetics}.
@@ -28203,7 +28203,7 @@ one character ahead, instead of pushing back.
 @item unlink
 Gauche's @code{sys-unlink}.  @xref{Directory manipulation}.
 @item utime
-Not supported yet.
+Gauche's @code{sys-utime}.  @xref{File stats}.
 @item va_arg
 @itemx va_end
 @itemx va_start
