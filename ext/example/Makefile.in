@@ -1,0 +1,42 @@
+CC = @CC@
+CFLAGS = @CFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+GOSH = @GOSH@
+
+TARGET = example.so
+OBJS = example.o
+CONFIG_GENERATED = Makefile config.cache config.log config.status
+
+INSTALL_TYPE = @INSTALL_TYPE@
+INST_INC_DIR = @INST_INC_DIR@
+INST_SCM_DIR = @INST_SCM_DIR@
+INST_ARCH_DIR = @INST_ARCH_DIR@
+INST_SITE_INC_DIR = @INST_SITE_INC_DIR@
+INST_SITE_SCM_DIR = @INST_SITE_SCM_DIR@
+INST_SITE_ARCH_DIR = @INST_SITE_ARCH_DIR@
+
+
+all : $(TARGET)
+
+example.so : $(OBJS)
+	$(CC) $(LDFLAGS) example.so $(OBJS) $(LIBS)
+
+test : all
+	@rm -f test.log
+	@$(GOSH) test.scm > test.log
+
+install : all
+
+clean :
+	rm -rf core $(TARGET) $(OBJS) *~ test.log so_locations
+
+distclean : clean
+	rm -rf $(CONFIG_GENERATED)
+
+realclean : clean
+	rm -rf $(CONFIG_GENERATED) configure
+
+
+
+

@@ -305,8 +305,8 @@
        (println "    SCM_OPTARGS = SCM_CDR(SCM_OPTARGS);")
        (println "  }"))
       ((:keyword)
-       (println "  ~a = Scm_GetKeyword(SCM_MAKE_KEYWORD(~s), SCM_OPTARGS, ~a);"
-                sname cname
+       (println "  ~a = Scm_GetKeyword(SCM_MAKE_KEYWORD(\"~a\"), SCM_OPTARGS, ~a);"
+                sname (car arg)
                 (scheme-constant->c-constant
                  (get-keyword :default attrs))))
       ((:rest)

@@ -1,0 +1,5 @@
+This directory contains a minimal set of files to create dynamic loadable
+Gauche extension.   I hope this serves as a template.
+
+configure.in shows how to obtain some parameters consistent to the ones
+Gauche has been compiled with.

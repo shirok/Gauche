@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.15 2001-03-08 19:12:20 shiro Exp $
+;;; $Id: syslib.stub,v 1.16 2001-03-10 05:36:54 shiro Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -526,7 +526,7 @@
   (assert (string? key))
   (assert (string? salt))
   "
-#ifdef HAVE_LIBCRYPT
+#ifdef HAVE_CRYPT
   SCM_RETURN(Scm_MakeString((const char *)crypt(Scm_GetStringConst(key),
                                           Scm_GetStringConst(salt)), -1, -1));
 #else

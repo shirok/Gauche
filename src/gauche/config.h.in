@@ -2,7 +2,7 @@
  *
  * Configuration parmateres
  *  
- * $Id: config.h.in,v 1.5 2001-03-08 10:21:10 shiro Exp $
+ * $Id: config.h.in,v 1.6 2001-03-10 05:36:54 shiro Exp $
  */
 
 #undef STDC_HEADERS
@@ -37,11 +37,14 @@
 /* Define if the system has pw_class defined in struct passwd */
 #undef HAVE_PW_CLASS
 
-/* Define if the system needs -ldl for dynamic loading */
-#undef HAVE_LIBDL
+/* Define if the system has dlopen() */
+#undef HAVE_DLOPEN
 
-/* Define if the system have -lcrypt */
-#undef HAVE_LIBCRYPT
+/* Define to the suffix of dynamic loadable object */
+#define SHLIB_SO_SUFFIX  "so"
+
+/* Define if the system has crypt() */
+#undef HAVE_CRYPT
 
 /* set sizeof(long) */
 #define SIZEOF_LONG  4
