@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: debugger.scm,v 1.12 2002-09-20 11:59:56 shirok Exp $
+;;;  $Id: debugger.scm,v 1.13 2002-09-20 12:04:34 shirok Exp $
 ;;;
 
 ;; NB: this is still a working version.  
@@ -112,13 +112,13 @@
       (let* ((up   (vector-ref env 0))
              (vals (vector-ref env 1)))
         (cond ((not (list? vals))
-               (when up (show-env up)))
+               (when (vector? up) (show-env up)))
               ((not (= (length vals) (- (vector-length env) 2)))
                (format outp "[Unrecognized env; compiler error?]\n" env))
               (else
                (do ((i 2 (+ i 1))
                     (vals vals (cdr vals)))
-                   ((null? vals) (when up (show-env up)))
+                   ((null? vals) (when (vector? up) (show-env up)))
                  (format outp " ~10@s = ~,,,,v:s\n" (car vals)
                          *expr-show-length*  (vector-ref env i))))
               )))
@@ -131,7 +131,8 @@
                    ((pair? info))
                    ((pair? (cdr info))))
           (format outp "       At line ~a of ~s\n" (cadr info) (car info)))
-        (show-env (cdr s))))
+        (when (vector? (cdr s)) 
+          (show-env (cdr s)))))
     
     (define (loop level)
       (format outp "debug$ ")
