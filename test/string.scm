@@ -252,4 +252,27 @@
       (lambda () (list (string-pointer-substring sp)
                        (string-pointer-substring sp :after #t))))
 
+;;-------------------------------------------------------------------
+(test-section "string interpolation")
+
+(test "string interpolation" "string interpolation"
+      (lambda ()
+        (let ((x "inter") (y "polation"))
+          #`"string ,{x},{y}")))
+(test "string interpolation" "string interpolation"
+      (lambda ()
+        (define (x) "inter")
+        (define (y) "polation")
+        #`"string ,(x),(y)"))
+(test "string interpolation" "string interpolation"
+      (lambda ()
+        (define (x) "inter")
+        (define (y) "polation")
+        #`"string ,{(x)},{(y)}"))
+(test "string interpolation" "string interpolation"
+      (lambda ()
+        (define (x a)
+          (if a "inter" "polation"))
+        #`"string ,(x #t),(x #f)"))
+
 (test-end)
