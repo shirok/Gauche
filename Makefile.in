@@ -6,8 +6,8 @@ CONFIG_GENERATED=Makefile config.cache config.log config.status \
 
 
 all : gc/libgc.a src/gosh
-	cd doc; $(MAKE) all
 	cd ext; $(MAKE) all
+	cd doc; $(MAKE) all
 
 gc/libgc.a :
 	cd gc; $(MAKE) 
