@@ -12,12 +12,13 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.25 2001-04-22 06:36:08 shiro Exp $
+ *  $Id: number.c,v 1.26 2001-04-22 07:42:00 shiro Exp $
  */
 
 #include <math.h>
 #include <limits.h>
 #include <string.h>
+#include <ctype.h>
 #include "gauche.h"
 
 #ifndef M_PI
@@ -506,7 +507,6 @@ ScmObj Scm_Subtract(ScmObj arg0, ScmObj arg1, ScmObj args)
 {
     int result_int = 0;
     double result_real = 0.0, result_imag = 0.0;
-    int nc0, nc1;
 
     if (SCM_INTP(arg0)) {
         result_int = SCM_INT_VALUE(arg0);
@@ -712,7 +712,8 @@ ScmObj Scm_Multiply(ScmObj args)
 
 ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
 {
-    double result_real = 0.0, result_imag = 0.0, div_real, div_imag;
+    double result_real = 0.0, result_imag = 0.0;
+    double div_real = 0.0, div_imag = 0.0;
     int exact = 1;
 
     if (SCM_INTP(arg0)) {
@@ -988,7 +989,7 @@ ScmObj Scm_Min(ScmObj arg0, ScmObj args)
 
 ScmObj Scm_Round(ScmObj num, int mode)
 {
-    double r, v;
+    double r = 0.0, v;
     
     if (SCM_EXACTP(num)) return num;
     if (!SCM_FLONUMP(num))
@@ -1106,16 +1107,16 @@ static void number_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 
 ScmObj Scm_NumberToString(ScmObj obj, int radix)
 {
-    ScmObj r;
+    ScmObj r = SCM_NIL;
     
     if (SCM_INTP(obj)) {
         char buf[50];
         if (radix == 10) {
-            snprintf(buf, 50, "%d", SCM_INT_VALUE(obj));
+            snprintf(buf, 50, "%ld", SCM_INT_VALUE(obj));
         } else if (radix == 16) {
-            snprintf(buf, 50, "%x", SCM_INT_VALUE(obj));
+            snprintf(buf, 50, "%lx", SCM_INT_VALUE(obj));
         } else if (radix == 8) {
-            snprintf(buf, 50, "%o", SCM_INT_VALUE(obj));
+            snprintf(buf, 50, "%lo", SCM_INT_VALUE(obj));
         } else {
             /* TODO: implement this! */
             buf[0] = '?';
@@ -1147,7 +1148,7 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix)
 
 static ScmObj read_integer(const char *str, int len, int radix)
 {
-    long value_int = 0, t;
+    long value_int = 0;
     ScmObj value_big = SCM_FALSE;
     int minusp = 0;
     char c;

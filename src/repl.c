@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: repl.c,v 1.9 2001-04-05 10:01:27 shiro Exp $
+ *  $Id: repl.c,v 1.10 2001-04-22 07:43:46 shiro Exp $
  */
 
 #include "gauche.h"
@@ -20,7 +20,7 @@
 void Scm_Repl(ScmObj prompt, ScmPort *in, ScmPort *out)
 {
     ScmObj c, v;
-    int eofread = FALSE;
+    volatile int eofread = FALSE;
     
     for (;;) {
         ScmObj p = Scm_Eval(prompt, SCM_NIL);

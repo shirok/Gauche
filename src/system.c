@@ -12,15 +12,17 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.14 2001-04-04 18:49:02 shiro Exp $
+ *  $Id: system.c,v 1.15 2001-04-22 07:44:43 shiro Exp $
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <errno.h>
 #include <grp.h>
 #include <pwd.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -45,7 +47,7 @@
    or can't be opened by some reason, an error is signalled. */
 ScmObj Scm_ReadDirectory(ScmString *pathname)
 {
-    ScmObj head = SCM_NIL, tail;
+    ScmObj head = SCM_NIL, tail = SCM_NIL;
     struct dirent *dire;
     DIR *dirp = opendir(Scm_GetStringConst(pathname));
     
@@ -64,7 +66,7 @@ ScmObj Scm_GlobDirectory(ScmString *pattern)
 {
 #ifdef HAVE_GLOB_H
     glob_t globbed;
-    ScmObj head = SCM_NIL, tail;
+    ScmObj head = SCM_NIL, tail = SCM_NIL;
     int i, r = glob(Scm_GetStringConst(pattern), 0, NULL, &globbed);
     if (r < 0) Scm_Error("Couldn't glob %S", pattern);
     for (i = 0; i < globbed.gl_pathc; i++) {
@@ -263,7 +265,7 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysGroupClass, NULL);
 
 static ScmObj make_group(struct group *g)
 {
-    ScmObj head = SCM_NIL, tail, p;
+    ScmObj head = SCM_NIL, tail = SCM_NIL, p;
     char **memp;
     ScmSysGroup *sg = SCM_NEW(ScmSysGroup);
     SCM_SET_CLASS(sg, SCM_CLASS_SYS_GROUP);

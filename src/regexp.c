@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.11 2001-04-20 08:34:12 shiro Exp $
+ *  $Id: regexp.c,v 1.12 2001-04-22 07:37:32 shiro Exp $
  */
 
 #include <setjmp.h>
@@ -176,6 +176,7 @@ static ScmObj last_item(struct comp_ctx *ctx, ScmObj head, ScmObj tail,
             return tail;
         }
     }
+    return SCM_NIL; /* dummy */
 }
 
 /* Util function in pass1.  Fold the last branch into alternative subtree
@@ -221,7 +222,7 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
 {
     ScmObj head = SCM_NIL, tail = SCM_NIL, elt, cell, cs;
     ScmObj grpstack;            /* group stack. */
-    ScmChar ch;
+    ScmChar ch = 0;
     int grpcount = 0;
     int insncount = 0;
 
@@ -349,7 +350,7 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
             default:
                 goto ordchar;
             }
-            insncount++;
+            insncount+=2;
             continue;
         default:
         ordchar:
@@ -983,7 +984,6 @@ ScmObj Scm_RegMatchEnd(ScmRegMatch *rm, int i)
 /* for debug */
 void Scm_RegMatchDump(ScmRegMatch *rm)
 {
-    const char *cp;
     int i;
     
     Scm_Printf(SCM_CUROUT, "RegMatch %p\n", rm);

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.15 2001-04-05 10:01:27 shiro Exp $
+ *  $Id: proc.c,v 1.16 2001-04-22 07:38:06 shiro Exp $
  */
 
 #include "gauche.h"
@@ -179,8 +179,8 @@ ScmObj Scm_Map1(ScmProcedure *proc, ScmObj args)
 static int mapper_collect_args(ScmObj argslist,
                                ScmObj *thisargs, ScmObj *moreargs)
 {
-    ScmObj arg = SCM_NIL, argtail;
-    ScmObj more = SCM_NIL, moretail;
+    ScmObj arg = SCM_NIL, argtail = SCM_NIL;
+    ScmObj more = SCM_NIL, moretail = SCM_NIL;
     ScmObj cp;
     
     SCM_FOR_EACH(cp, argslist) {
@@ -201,7 +201,7 @@ static int mapper_collect_args(ScmObj argslist,
 static ScmObj foreachN_cc(ScmObj result, void **data)
 {
     ScmObj proc;
-    ScmObj args_list = SCM_OBJ(data[1]), cp;
+    ScmObj args_list = SCM_OBJ(data[1]);
     ScmObj args, moreargs;
     void *d[2];
 
@@ -231,7 +231,7 @@ ScmObj Scm_ForEach(ScmProcedure *proc, ScmObj arg1, ScmObj args)
 static ScmObj mapN_cc(ScmObj result, void **data)
 {
     ScmObj proc;
-    ScmObj args_list = SCM_OBJ(data[1]), cp;
+    ScmObj args_list = SCM_OBJ(data[1]);
     ScmObj head = SCM_OBJ(data[2]);
     ScmObj tail = SCM_OBJ(data[3]);
     ScmObj args, moreargs;

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: io.c,v 1.8 2001-03-11 09:42:23 shiro Exp $
+ *  $Id: io.c,v 1.9 2001-04-22 07:43:27 shiro Exp $
  */
 
 #include "gauche.h"
@@ -88,7 +88,7 @@ static ScmObj port_restorer(ScmObj *args, int nargs, void *data)
 
 ScmObj Scm_WithPort(ScmPort *port, ScmProcedure *thunk, int type, int closep)
 {
-    ScmObj origport, finalizer;
+    ScmObj origport = SCM_NIL, finalizer;
     struct with_port_packet *packet;
     
     SCM_ASSERT(type >= 0 && type <= 2);

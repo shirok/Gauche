@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.13 2001-04-22 07:37:22 shiro Exp $
+ *  $Id: read.c,v 1.14 2001-04-22 07:40:38 shiro Exp $
  */
 
 #include <stdio.h>
@@ -269,7 +269,7 @@ static ScmObj read_quoted(ScmPort *port, ScmObj quoter)
 
 static ScmObj read_string(ScmPort *port)
 {
-    int c;
+    int c = 0;
     ScmDString ds;
 
     Scm_DStringInit(&ds);

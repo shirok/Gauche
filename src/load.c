@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.34 2001-04-14 23:59:12 shiro Exp $
+ *  $Id: load.c,v 1.35 2001-04-22 07:43:16 shiro Exp $
  */
 
 #include <stdlib.h>
@@ -159,7 +159,7 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths, int error_if_not_found)
     int size = SCM_STRING_LENGTH(filename);
     const char *ptr = SCM_STRING_START(filename);
     int use_load_paths = TRUE;
-    ScmObj file = SCM_OBJ(filename), fpath;
+    ScmObj file = SCM_OBJ(filename), fpath = SCM_NIL;
     
     if (size == 0) Scm_Error("bad filename to load: \"\"");
     if (*ptr == '~') {
@@ -523,7 +523,6 @@ void Scm__InitLoad(void)
 {
     ScmModule *m = Scm_SchemeModule();
     ScmObj init_load_path, init_dynload_path, t;
-    const char *pathvar;
 
     init_load_path = t = SCM_NIL;
     SCM_APPEND(init_load_path, t, break_env_paths("GAUCHE_LOAD_PATH"));
