@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.119 2001-11-08 09:55:39 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.120 2001-11-09 09:13:55 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -4153,7 +4153,50 @@ Returns @code{#t} if a hash table @var{hash} has a key @var{key}.
 @c COMMON
 @end defun
 
+@defun hash-table-push! hash key value
+@c EN
+Conses @var{value} to the existing value for the key @var{key} in the
+hash table @var{hash} and makes it the new value for @var{key}.
+If there's no entry for @var{key}, an entry
+is created with the value @code{(list @var{value})}.
+
+Works the same as the following code, except that this function
+only looks up the @var{key} once, thus it's more efficient.
+@c JP
+ハッシュテーブル@var{hash}中の、キー@var{key}に対応する値に@var{value}をコンスし、
+それを@var{key}に対する新たな値とします。もし@var{key}に対応する値がまだ無ければ、
+新たなエントリが作成され、@code{(list @var{value})}がその値となります。
+
+この手続きは次のコードと同じ動作をしますが、キーの探索が一度しか行われないためより高速です。
+@c COMMON
+@example
+(hash-table-put! hash key
+    (cons value (hash-table-get hash key '())))
+@end example
+@end defun
+
+@defun hash-table-pop! hash key &optional default
+@c EN
+Looks for the value for the key @var{key} in the hash table @var{hash}.
+If found and it is a pair, replaces the value for its cdr and returns
+car of the original value.  If no entry for @var{key} is in the table,
+or the value is not a pair, the table is not modified and
+the procedure returns @var{default} if given, or signals an error otherwise.  
+
+During the operation the key is looked for only once, thus runs
+efficiently.
+@c JP
+ハッシュテーブル@var{hash}中のキー@var{key}に対応する値が存在し、かつペアで
+あった場合に、そのエントリーを元の値のcdrで置き換え、元の値のcarを返します。
+@var{key}に対応する値が存在しないかペアではなかった場合、テーブルは変更されず、
+@var{optional}が与えられていればそれが返され、与えられていなければエラーが報告されます。
+
+値が置き換えれる場合でもキーの探索は一度しか行われないため効率が良いです。
+@c COMMON
+@end defun
+
 @defun hash-table-for-each hash proc
+@defunx hash-table-map hash proc
 @c EN
 A procedure @var{proc} is called with two arguments, a key and associated
 value, over all the entries in the hash table @var{hash}.
@@ -7743,26 +7786,33 @@ See gdbm manpage for
 
 @defun gdbm-open path &optional size rwmode fmode error-callback
 
-@defvr Constant @code{|GDBM_READERT|}
-@end defvr
+@deftp Variable @code{|GDBM_READER|}
+@vindex GDBM_READER
+@end deftp
 
-@defvr Constant @code{|GDBM_WRITER|}
-@end defvr
+@deftp Variable @code{|GDBM_WRITER|}
+@vindex GDBM_WRITER
+@end deftp
 
-@defvr Constant @code{|GDBM_WRCREAT|}
-@end defvr
+@deftp Variable @code{|GDBM_WRCREAT|}
+@vindex GDBM_WRCREAT
+@end deftp
 
-@defvr Constant @code{|GDBM_NEWDB|}
-@end defvr
+@deftp Variable @code{|GDBM_NEWDB|}
+@vindex GDBM_NEWDB
+@end deftp
 
-@defvr Constant @code{|GDBM_FAST|}
-@end defvr
+@deftp Variable @code{|GDBM_FAST|}
+@vindex GDBM_FAST
+@end deftp
 
-@defvr Constant @code{|GDBM_SYNC|}
-@end defvr
+@deftp Variable @code{|GDBM_SYNC|}
+@vindex GDBM_SYNC
+@end deftp
 
-@defvr Constant @code{|GDBM_NOLOCK|}
-@end defvr
+@deftp Variable @code{|GDBM_NOLOCK|}
+@vindex GDBM_NOLOCK
+@end deftp
 @end defun
 
 @defun gdbm-close gdbm-object
@@ -7773,11 +7823,13 @@ See gdbm manpage for
 
 @defun gdbm-store key value &optional flag
 
-@defvr Constant @code{|GDBM_INSERT|}
-@end defvr
+@deftp Variable @code{|GDBM_INSERT|}
+@vindex GDBM_INSERT
+@end deftp
 
-@defvr Constant @code{|GDBM_REPLACE|}
-@end defvr
+@deftp Variable @code{|GDBM_REPLACE|}
+@vindex GDBM_REPLACE
+@end deftp
 
 @end defun
 
@@ -7816,20 +7868,25 @@ See gdbm manpage for
 
 @defun gdbm-setopt gdbm-object option value
 
-@defvr Constant @code{|GDBM_CACHESIZE|}
-@end defvr
+@deftp Variable @code{|GDBM_CACHESIZE|}
+@vindex GDBM_CACHESIZE
+@end deftp
 
-@defvr Constant @code{|GDBM_FASTMODE|}
-@end defvr
+@deftp Variable @code{|GDBM_FASTMODE|}
+@vindex GDBM_FASTMODE
+@end deftp
 
-@defvr Constant @code{|GDBM_SYNCMODE|}
-@end defvr
+@deftp Variable @code{|GDBM_SYNCMODE|}
+@vindex GDBM_SYNCMODE
+@end deftp
 
-@defvr Constant @code{|GDBM_CENTFREE|}
-@end defvr
+@deftp Variable @code{|GDBM_CENTFREE|}
+@vindex GDBM_CENTFREE
+@end deftp
 
-@defvr Constant @code{|GDBM_COALESCEBLKS|}
-@end defvr
+@deftp Variable @code{|GDBM_COALESCEBLKS|}
+@vindex GDBM_COALESCEBLKS
+@end deftp
 @end defun
 
 
