@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.7 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: error.c,v 1.8 2001-03-06 08:42:00 shiro Exp $
  */
 
 #include <errno.h>
@@ -36,10 +36,11 @@ SCM_DEFCLASS(Scm_ExceptionClass, "<exception>",
  * Constructor
  */
 
-ScmObj Scm_MakeException(ScmObj data)
+ScmObj Scm_MakeException(int continuable, ScmObj data)
 {
     ScmException *e = SCM_NEW(ScmException);
     SCM_SET_CLASS(e, SCM_CLASS_EXCEPTION);
+    e->continuable = continuable;
     e->data = data;
     return SCM_OBJ(e);
 }
@@ -60,19 +61,21 @@ void Scm_Error(const char *msg, ...)
 {
     ScmObj e;
     va_list args;
-    
+
     SCM_PUSH_ERROR_HANDLER {
         ScmObj ostr = Scm_MakeOutputStringPort();
         va_start(args, msg);
         Scm_Vprintf(SCM_PORT(ostr), msg, args);
         va_end(args);
-        e = Scm_MakeException(Scm_GetOutputString(SCM_PORT(ostr)));
+        e = Scm_MakeException(FALSE, Scm_GetOutputString(SCM_PORT(ostr)));
     }
     SCM_WHEN_ERROR {
-        e = Scm_MakeException(SCM_MAKE_STR("Error occurred in error handler"));
+        e = Scm_MakeException(FALSE,
+                              SCM_MAKE_STR("Error occurred in error handler"));
     }
     SCM_POP_ERROR_HANDLER;
     Scm_VMThrowException(e);
+    Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
 }
 
 /*
@@ -93,10 +96,11 @@ void Scm_SysError(const char *msg, ...)
         va_end(args);
         SCM_PUTCSTR(": ", ostr);
         SCM_PUTS(syserr, ostr);
-        e = Scm_MakeException(Scm_GetOutputString(SCM_PORT(ostr)));
+        e = Scm_MakeException(FALSE, Scm_GetOutputString(SCM_PORT(ostr)));
     }
     SCM_WHEN_ERROR {
-        e = Scm_MakeException(SCM_MAKE_STR("Error occurred in error handler"));
+        e = Scm_MakeException(FALSE,
+                              SCM_MAKE_STR("Error occurred in error handler"));
     }
     SCM_POP_ERROR_HANDLER;
     Scm_VMThrowException(e);
@@ -117,10 +121,11 @@ ScmObj Scm_SError(ScmObj fmt, ScmObj args)
             /* this shouldn't happen, but we tolerate it. */
             Scm_Write(fmt, ostr, SCM_PRINT_WRITE);
         }
-        e = Scm_MakeException(Scm_GetOutputString(SCM_PORT(ostr)));
+        e = Scm_MakeException(FALSE, Scm_GetOutputString(SCM_PORT(ostr)));
     }
     SCM_WHEN_ERROR {
-        e = Scm_MakeException(SCM_MAKE_STR("Error occurred in error handler"));
+        e = Scm_MakeException(FALSE,
+                              SCM_MAKE_STR("Error occurred in error handler"));
     }
     SCM_POP_ERROR_HANDLER;
     return Scm_VMThrowException(e);
