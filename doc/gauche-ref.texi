@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.239 2002-07-09 05:02:38 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.240 2002-07-09 09:52:09 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -11284,6 +11284,11 @@ is also modified.
 
 @var{signal} may be either a signal number, another @code{<sys-sigset>}
 object, or @code{#t} for all available signals.
+@end defun
+
+@defun sys-sigset-fill! sigset
+@defunx sys-sigset-empty! sigset
+Fills @var{sigset} by all available signals, or empties @var{sigset}.
 @end defun
 
 @defun sys-signal-name signal
