@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.71 2004-02-29 13:45:51 shirok Exp $
+ *  $Id: read.c,v 1.72 2004-04-01 12:51:49 shirok Exp $
  */
 
 #include <stdio.h>
@@ -487,6 +487,10 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                     if (c2 == '"') return read_string(port, TRUE, ctx);
                     Scm_ReadError(port, "unsupported #*-syntax: #*%C", c2);
                 }
+            case ';':
+                /* #;expr - comment out sexpr */
+                read_item(port, ctx); /* read and discard */
+                return SCM_UNDEFINED; /* indicate this is a comment */
             default:
                 Scm_ReadError(port, "unsupported #-syntax: #%C", c1);
             }

@@ -526,5 +526,15 @@
  \"#| this is a string, not a comment\"
  |# and this is not a comment terminator but an escaped symbol|)"))
 
+;;-------------------------------------------------------------------
+(test-section "#;-style commend (a la Chez)")
+
+(test* "#;123 456" 456
+       (read-from-string "#;123 456"))
+(test* "#; (123 456) 789" 789
+       (read-from-string "#; (123 456) 789"))
+(test* "#;#;(123 456) 789 1" 1
+       (read-from-string "#;#;(123 456) 789 1"))
+
 (test-end)
 

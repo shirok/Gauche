@@ -1,6 +1,8 @@
 2004-04-01  Shiro Kawai  <shiro@acm.org>
 
-	* lib/gauche/common-macros.scm (let/cc): added let/cc (as in PLT).
+	* src/read.c (read_internal): added #;expr style commend (a la Chez).
+
+	* lib/gauche/common-macros.scm (let/cc): added let/cc (a la PLT).
 	* src/autoloads.scm: ditto.
 
 2004-03-15  Shiro Kawai  <shiro@acm.org>
