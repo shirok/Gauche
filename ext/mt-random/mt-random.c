@@ -10,7 +10,7 @@
  *     the allocated memory for random number generator object.
  *   - changed the names of the functions
  *   - added stuff to make it as a Gauche extension module.
- * $Id: mt-random.c,v 1.8 2002-05-27 12:22:25 shirok Exp $
+ * $Id: mt-random.c,v 1.9 2002-05-27 22:57:56 shirok Exp $
  *
  * The original copyright notice follows.
  */
@@ -268,7 +268,7 @@ static ScmObj key_seed;
 static ScmObj mt_allocate(ScmClass *klass, ScmObj initargs);
 SCM_DEFINE_BUILTIN_CLASS(Scm_MersenneTwisterClass,
                          NULL, NULL, NULL, mt_allocate,
-                         SCM_CLASS_DEFAULT_CPL);
+                         NULL);
 
 static ScmObj mt_allocate(ScmClass *klass, ScmObj initargs)
 {
