@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.146 2002-05-05 05:00:50 shirok Exp $
+;;; $Id: extlib.stub,v 1.147 2002-05-14 09:36:03 shirok Exp $
 ;;;
 
 "
@@ -1278,6 +1278,10 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc mutex-specific-set! (mutex obj)
   (assert (mutex? mutex))
   "mutex->specific = obj; SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc mutex-name (mutex)
+  (assert (mutex? mutex))
+  "SCM_RETURN(mutex->name);")
 
 (define-cproc vm-dump (&optional vm)
   " if (vm == SCM_UNBOUND) vm = SCM_OBJ(Scm_VM());

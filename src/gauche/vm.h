@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.63 2002-04-25 03:15:02 shirok Exp $
+ *  $Id: vm.h,v 1.64 2002-05-14 09:36:03 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -199,8 +199,6 @@ struct ScmVMRec {
                                    is used only in compilation. */
     ScmCStack *cstack;          /* current escape point.  see the comment of
                                    "C stack rewinding" below. */
-    ScmObj mutexes;             /* list of mutexes this thread is locking. */
-
     unsigned int runtimeFlags;  /* Runtime flags */
     unsigned int compilerFlags; /* Compiler flags */
 

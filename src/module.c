@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.28 2002-05-12 11:33:39 shirok Exp $
+ *  $Id: module.c,v 1.29 2002-05-14 09:36:03 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -70,9 +70,9 @@ static ScmObj make_module(ScmSymbol *name, ScmModule *parent)
 ScmObj Scm_MakeModule(ScmSymbol *name)
 {
     ScmObj r;
-    (void)SCM_INTERNAL_MUTEX_LOCK(&modules.mutex);
+    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
     r = make_module(name, gaucheModule);
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(&modules.mutex);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
     return r;
 }
 
@@ -200,14 +200,14 @@ ScmObj Scm_FindModule(ScmSymbol *name, int createp)
     ScmHashEntry *e;
     ScmObj m;
 
-    (void)SCM_INTERNAL_MUTEX_LOCK(&modules.mutex);
+    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
     e = Scm_HashTableGet(modules.table, SCM_OBJ(name));
     if (e == NULL) {
         if (createp) m = make_module(name, gaucheModule);
         else m = SCM_FALSE;
     }
     else m = e->value;
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(&modules.mutex);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
     return m;
 }
 
@@ -217,12 +217,12 @@ ScmObj Scm_AllModules(void)
     ScmHashIter iter;
     ScmHashEntry *e;
 
-    (void)SCM_INTERNAL_MUTEX_LOCK(&modules.mutex);
+    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
     Scm_HashIterInit(modules.table, &iter);
     while ((e = Scm_HashIterNext(&iter)) != NULL) {
         SCM_APPEND1(h, t, e->value);
     }
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(&modules.mutex);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
     return h;
 }
 
@@ -266,7 +266,7 @@ ScmModule *Scm_CurrentModule(void)
 
 void Scm__InitModule(void)
 {
-    (void)SCM_INTERNAL_MUTEX_INIT(&modules.mutex);
+    (void)SCM_INTERNAL_MUTEX_INIT(modules.mutex);
     modules.table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 64));
 
     nullModule   = MAKEMOD(SCM_SYM_NULL, NULL);

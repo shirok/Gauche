@@ -11,6 +11,33 @@
   (format #t "thread not supported")
   (test-end))
 
+;;---------------------------------------------------------------------
+(test-section "basic thread API")
+
+(test "current-thread" #t
+      (lambda () (eq? (current-thread) (current-thread)) ))
+(test "thread?" '(#t #f)
+      (lambda ()
+        (list (thread? (current-thread))
+              (thread? 'foo))))
+(test "make-thread" #t
+      (lambda ()
+        (thread? (make-thread (lambda () #f)))))
+(test "thread-name" 'foo
+      (lambda ()
+        (thread-name (make-thread (lambda () #f) 'foo))))
+(test "thread-specific" "hello"
+      (lambda ()
+        (thread-specific-set! (current-thread) "hello")
+        (thread-specific (current-thread))))
+(test "thread-start!" "hello"
+      (lambda ()
+        (call-with-output-string
+          (lambda (p)
+            (let1 t (thread-start! (make-thread (lambda () (display "hello" p))))
+              (thread-join! t))))))
+
+
 ;; calculate fibonacchi in awful way
 (define (mt-fib n)
   (let ((threads (make-vector n)))

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.249 2002-05-12 11:33:39 shirok Exp $
+ *  $Id: gauche.h,v 1.250 2002-05-14 09:36:03 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1971,15 +1971,42 @@ SCM_EXTERN void Scm_RegMatchDump(ScmRegMatch *match);
 #define SCM_CURRENT_MODULE()        (Scm_VM()->module)
 
 /*---------------------------------------------------------
- * MUTEX
+ * SYNCHRONIZATION DEVICES
+ *
+ *  Scheme-level synchrnization devices (ScmMutex, ScmConditionVariable,
+ *  and ScmRWLock) are built on top of lower-level synchronization devices
+ *  (ScmInternalMutex and ScmInternalCond).
  */
 
+/*
+ * Time object, as specified in SRFI-18, SRFI-19 and SRFI-21.
+ */
+typedef struct ScmTimeRec {
+    SCM_HEADER;
+    int type;
+    unsigned long second;
+    unsigned long nanosecond;
+} ScmTime;
+
+SCM_CLASS_DECL(Scm_TimeClass);
+#define SCM_CLASS_TIME        (&Scm_TimeClass)
+#define SCM_TIME(obj)         ((ScmTime*)obj)
+#define SCM_TIMEP(obj)        SCM_XTYPEP(obj, SCM_CLASS_TIME)
+
+/* Scheme mutex.
+ *  If locker == NULL, the mutex is unlocked/not-abandoned
+ *  If locker != NULL
+ *    If locker->state != SCM_VM_TERMINATED, the mutex is locked/owned
+ *    If locker->state == SCM_VM_TERMINATED, the mutex is unlocked/abandoned
+ * In Gauche, mutex doesn't take the state locked/not-owned.
+ */
 typedef struct ScmMutexRec {
     SCM_HEADER;
     ScmInternalMutex mutex;
+    ScmInternalCond  cv;
+    ScmObj name;
     ScmObj specific;
-    int    status;
-    ScmVM *owner;
+    ScmVM *locker;              /* the thread who owns this lock */
 } ScmMutex;
 
 SCM_CLASS_DECL(Scm_MutexClass);
@@ -1987,14 +2014,9 @@ SCM_CLASS_DECL(Scm_MutexClass);
 #define SCM_MUTEX(obj)         ((ScmMutex*)obj)
 #define SCM_MUTEXP(obj)        SCM_XTYPEP(obj, SCM_CLASS_MUTEX)
 
-enum {
-    SCM_MUTEX_UNLOCKED,
-    SCM_MUTEX_LOCKED,
-    SCM_MUTEX_ABANDONED
-};
-
+ScmObj Scm_MakeMutex(ScmObj name);
 ScmObj Scm_MutexLock(ScmMutex *mutex);
-ScmObj Scm_MutexUnlock(ScmMutex *mutex);    
+ScmObj Scm_MutexUnlock(ScmMutex *mutex);
 
 /*---------------------------------------------------
  * SIGNAL

@@ -1,3 +1,8 @@
+2002-05-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h, src/mutex.c, etc. : rewriting Scheme-level mutex
+	* test/thread.scm : added basic thread API tests
+
 2002-05-12  Shiro Kawai  <shiro@acm.org>
 
 	* ext/mt-random/test.scm : added some tests
