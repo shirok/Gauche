@@ -1,3 +1,7 @@
+2002-02-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/file/filter.scm : added.
+
 2002-02-20  Shiro Kawai  <shiro@acm.org>
 
 	* ext/auxsys/*, src/syslib.stub : added auxiliary system function
