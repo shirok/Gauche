@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.418 2003-06-10 05:18:09 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.419 2003-06-10 06:53:11 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -14010,7 +14010,7 @@ and has a signal handler installed is delivered, the associated
 handler is called, then @code{sys-sigsuspend} returns.
 @c JP
 アトミックに、スレッドのシグナルマスクを@var{mask}にセットし、
-呼び出しているスレッドを中断します。ブロックされておらずシグナル
+呼び出しているスレッドを一時停止します。ブロックされておらずシグナル
 ハンドラがインストールされているシグナルが送出されると、関連
 付けられたハンドラが呼ばれ、@code{sys-sigsuspend}は戻ります。
 @c COMMON
@@ -14044,7 +14044,7 @@ the signal may not be handled at all, so be careful.
 細かいことは知りたくないという場合は、脚注付きで1つのことだけを
 覚えておいて下さい。
 @strong{デフォルトでは}、シグナルはメインスレッドで処理されます。
-しかし、メインスレッドがmutexや条件変数で中断している場合は、
+しかし、メインスレッドがmutexや条件変数で一時停止している場合は、
 シグナルは全く処理されないので注意が必要です。
 @c COMMON
 
@@ -14809,36 +14809,72 @@ more convenient process handling on top of above primitives.
 @c NODE Wait
 
 @defun sys-wait
+@c EN
 [POSIX] Calls system's @code{wait(2)}.  The process suspends its execution
 until one of the child terminates.  Returns two exact integer values,
 the first one is the child's process id, and the second is a status code.
 The status code can be interpreted by the following functions.
+@c JP
+[POSIX] システムの@code{wait(2)}を呼びます。プロセスは、子プロセスの1つが
+終了するまでその実行を一時停止します。2つの正確整数、1つ目は子プロセスのID、
+2つ目はステータスコードを返します。ステータスコードは以下の関数によって
+解釈できます。
+@c COMMON
 @end defun
 
 @defun sys-waitpid pid &keyword nohang untraced
+@c EN
 [POSIX] This is an interface to @code{waitpid(3)}, an extended version of
 wait.
+@c JP
+[POSIX] これは、waitの拡張バージョンである、@code{waitpid(3)}への
+インターフェースです。
+@c COMMON
 
+@c EN
 @var{pid} is an exact integer specifying which child(ren) it's waiting.
 If it is a positive integer,
 it waits fot that specific child.  If it is zero, it waits for any
 member of this process group.  If it is -1, it waits for any child process.
 If it is less than -1, it waits for any child process whose process group
 id is equal to the absolute value of @var{pid}.
+@c JP
+@var{pid}は、待っている子プロセスを指定する正確整数です。正の整数ならば、
+特定の子プロセスを待っています。0ならば、このプロセスグループのいずれかの
+メンバを待っています。-1ならば、いずれかの子プロセスを待っています。
+-1よりも小さければ、プロセスグループIDが@var{pid}の絶対値と等しいいずれかの
+子プロセスを待っています。
+@c COMMON
 
+@c EN
 The calling process suspends until one of those child process is terminated,
 unless true is specified to the keyword argument @var{nohang}.
+@c JP
+キーワード引数@var{nohang}に真値が指定されていなければ、
+呼んでいるプロセスは、それらの子プロセスのうちの1つが終了するまで一時停止します。
+@c COMMON
 
+@c EN
 If true is specified to the keyword argument @var{untraced},
 the status of stopped child process can be also returned.
+@c JP
+キーワード引数@var{untraced}に真値が指定されていれば、
+停止した子プロセスのステータスも返ります。
+@c COMMON
 
+@c EN
 The return values are two exact integers, the first one is the child
 process id, and the second is a status code.  If @var{nohang} is true and
 no child process status is available, the first value is zero.
+@c JP
+戻り値は2つの正確整数で、1つ目は子プロセスのID、2つ目はステータスコードです。
+@var{nohang}が真で子プロセスのステータスが利用できない場合は、1つ目の値は0です。
+@c COMMON
 @end defun
 
 @defun sys-wait-exited? status
 @defunx sys-wait-exit-status status
+@c EN
 [POSIX]
 The argument is an exit status returned as a second value
 from @code{sys-wait} or @code{sys-waitpid}.
@@ -14846,20 +14882,36 @@ from @code{sys-wait} or @code{sys-waitpid}.
 terminated normally.   @code{sys-wait-exit-status} returns the exit
 code the child process passed to @code{exit(2)}, or the return value
 of @code{main()}.
+@c JP
+[POSIX]
+引数は@code{sys-wait}か@code{sys-waitpid}の2番目の値として返される
+終了ステータスです。子プロセスが正常終了したら、@code{sys-wait-exited?}は
+@code{#t}を返します。@code{sys-wait-exit-status}は、子プロセスが
+@code{exit(2)}に渡した終了コードか、@code{main()}の戻り値を返します。
+@c COMMON
 @end defun
 
 @defun sys-wait-signaled? status
 @defunx sys-wait-termsig status
+@c EN
 [POSIX]
 The argument is an exit status returned as a second value
 from @code{sys-wait} or @code{sys-waitpid}.
 @code{sys-wait-signaled?} returns @code{#t} if the child process
 is termintaed by an uncaught signal.
 @code{sys-wait-termsig} returns the signal number that terminted the child.
+@c JP
+[POSIX]
+引数は、@code{sys-wait}か@code{sys-waitpid}の2つ目の戻り値である終了ステータスです。
+子プロセスが捕捉されないシグナルで終了した場合は、@code{sys-wait-signaled?}は
+@code{#t}を返します。
+@code{sys-wait-termsig}は、子プロセスを終了したシグナルの番号を返します。
+@c COMMON
 @end defun
 
 @defun sys-wait-stopped? status
 @defunx sys-wait-stopsig status
+@c EN
 [POSIX]
 The argument is an exit status returned as a second value
 from @code{sys-waitpid}.
@@ -14867,20 +14919,40 @@ from @code{sys-waitpid}.
 stopped.   This status can be caught only by @code{sys-waitpid} with
 true @var{untraced} argument.  @code{sys-wait-stopsig} returns the
 signum number that stopped the child.
+@c JP
+[POSIX]
+引数は、@code{sys-waitpid}の2つ目の戻り値である終了ステータスです。
+子プロセスが停止されれば、@code{sys-wait-stopped?}は@code{#t}を
+返します。このステータスは、@code{sys-waitpid}が@var{untraced}引数に
+真値を持っている場合にのみ捕捉されます。@code{sys-wait-stopsig}は
+子プロセスを停止させたシグナルの番号を返します。
+@c COMMON
 @end defun
 
 @node I/O multiplexing, Miscellaneous system calls, Unix process management, System interface
 @subsection I/O multiplexing
 @c NODE I/Oの多重化
 
+@c EN
 The interface functions for @code{select(2)}.
 The higher level interface is provided on top of these
 primitives; see @ref{gauche.selector - Simple dispatcher}.
+@c JP
+@code{select(2)}へのインターフェース関数です。
+これらのプリミティブの上に構築された高次元のインターフェースが
+提供されています。@ref{gauche.selector - Simple dispatcher}を
+参照して下さい。
+@c COMMON
 
 @deftp {Builtin Class} <sys-fdset>
 @clindex sys-fdset
+@c EN
 Represents @code{fd_set}, a set of file descriptors.  You can make
 an empty file descriptor set by make method:
+@c JP
+ファイルディスクリプタの集合である@code{fd_set}を表します。
+makeメソッドによって、空のファイルディスクリプタの集合を作れます。
+@c COMMON
 @example
 (make <sys-fdset>)
 @end example
@@ -14888,13 +14960,24 @@ an empty file descriptor set by make method:
 
 @defun sys-fdset-ref fdset port-or-fd
 @defunx sys-fdset-set! fdset port-or-fd flag
+@c EN
 Gets and sets specific file descritor bit of @var{fdset}.
 @var{port-or-fd} may be a port or an integer file descriptor.
 If @var{port-or-fd} is a port that doesn't have associated file descriptor,
 @code{sys-fdset-ref} returns @code{#f}, and @code{sys-fdset-set!} doesn't
 modify @var{fdset}.  @var{flag} must be a boolean value.
+@c JP
+@var{fdset}の特定のファイルディスクリプタビットを取得・セットできます。
+@var{port-or-fd}は関連付けられたファイルディスクリプタを持っていないポートで、
+@code{sys-fdset-ref}は@code{#f}を返し、@code{sys-fdset-set!}は@var{fdset}を
+変更しません。@var{flag}は真偽値でなければなりません。
+@c COMMON
 
+@c EN
 You can use generic setter of @code{sys-fdset-ref} as this:
+@c JP
+下記のように、@code{sys-fdset-ref}のジェネリックなセッタが使えます。
+@c COMMON
 @example
 (set! (sys-fdset-ref fdset port-or-fd) flag)
   @equiv{} (sys-fdset-set! fdset port-or-fd flag)
@@ -14902,11 +14985,16 @@ You can use generic setter of @code{sys-fdset-ref} as this:
 @end defun
 
 @defun sys-fdset-max-fd fdset
+@c EN
 Returns the maximum file descriptor number in @var{fdset}.
+@c JP
+@var{fdset}にある最大のファイルディスクリプタ番号を返します。
+@c COMMON
 @end defun
 
 @defun sys-select readfds writefds exceptfds &optional timeout
 @defunx sys-select! readfds writefds exceptfds &optional timeout
+@c EN
 Waits for a set of file descriptors to change status.
 @var{readfds}, @var{writefds}, and @var{exceptfds} are @code{<fdset>}
 objects to represent a set of file descriptors to watch.
@@ -14915,13 +15003,32 @@ are ready to be read.   File descriptors in @var{writefds} are
 watched if writing to them is ok.  File descriptors in @var{exceptfds}
 are watched for exceptions.  You can pass @code{#f} to one or more
 of those arguments if you don't care about watching the condition.
+@c JP
+ステータスを変更するためにファイルディスクリプタの集合を待ちます。
+@var{readfds}、@var{writefds}、@var{exceptfds}は、注目するファイル
+ディスクリプタの集合を表す@code{<fdset>}オブジェクトです。
+@var{readfds}にあるファイルディスクリプタは、文字を読み込む準備が
+出来たかどうかを検査するために監視されています。
+@var{writefds}にあるファイルディスクリプタはそこへ書き込むことができる
+ようになったか監視されています。@var{exceptfds}にあるファイルディスクリプタは
+例外のために監視されています。条件を監視する必要がない場合は、これらの引数の
+1つ以上に@code{#f}を渡すことができます。
+@c COMMON
 
+@c EN
 @var{timeout} specifies maximum time @code{sys-select} waits for
 the condition change.  It can be a real number, for number of microseconds,
 or a list of two integers, the first is the number of seconds and
 the second is the number of microseconds.  If you pass @code{#f},
 @code{sys-select} waits indefinitely.
+@c JP
+@var{timeout}は@code{sys-select}が条件の変更を待つ最大の時間を指定します。
+それは、マイクロミリ秒を表す実数か、1つ目が秒数で2つ目がマイクロ秒である
+2つの整数からなるリストです。@code{#f}を渡すと、@code{sys-select}は
+永久に待ちます。
+@c COMMON
 
+@c EN
 @code{sys-select} returns four values.  The first value is a number
 of descriptors it detected status change.  It may be zero if 
 timeout expired.  The second, third and fourth values are @code{<fdset>}
@@ -14930,11 +15037,26 @@ for reading, writing, and exception, respectively.
 If you passed @code{#f} to one or more of @var{readfds},
 @var{writefds} and @var{exceptfds}, the corresponding return value
 is @code{#f}.
+@c JP
+@code{sys-select}は4つの値を返します。1つ目の値は、ステータスの変更を
+検知したディスクリプタの数です。timeoutが経過したら0になるでしょう。
+2、3、4番目の値は、それぞれ読み込み、書き出し、例外のステータスを変更
+するディスクリプタの集合を含む@code{<fdset>}オブジェクトです。
+@var{readfds}、@{writefds}、@var{exceptfds}のうちの1つ以上に@code{#f}を
+渡すと、対応する戻り値は@code{#f}になります。
+@c COMMON
 
+@c EN
 @code{sys-select!} variant works the same as @code{sys-select}, except
 it modifies the passed @code{<fdset>} arguments.
 @code{sys-select} creates new @code{<fdset>} objects and
 doesn't modify its arguments.
+@c JP
+@code{sys-select!}の仲間は、それが渡された引数@code{<fdset>}を変更することを
+除けば、@code{sys-select}と同じように動作します。
+@code{sys-select}は、新しい@code{<fdset>}オブジェクトを作り、その
+引数を変更しません。
+@c COMMON
 @end defun
 
 
@@ -14943,35 +15065,68 @@ doesn't modify its arguments.
 @c NODE その他のシステムコール
 
 @defun sys-pause
+@c EN
 [POSIX]
 Suspends the process until it receives a signal whose
 action is to either execute a signal-catching function or to terminate
 the process.  This function only returns when the signal-catching
 function returns.  The returned value is undefined.
+@c JP
+[POSIX]
+シグナルキャッチ関数の実行かプロセスの終了を指示するシグナルを
+受け取るまでプロセスを一時停止します。この関数は、シグナルキャッチ関数が
+戻ったときにのみ戻ります。戻り値は未定義です。
+@c COMMON
 
+@c EN
 Note that just calling @code{pause()} doesn't suffice the above semantics
 in Scheme-level.  Internally this procedure calls @code{sigsuspend()}
 with the current signal mask.
+@c JP
+Schemeレベルでは、@code{pause()}を呼ぶだけでは上記のセマンティクスを
+満足しません。内部的にこの手続きは現在のシグナルマスクを伴って、
+@code{sigsuspend()}を呼びます。
+@c COMMON
 @end defun
 
 @defun sys-alarm seconds
+@c EN
 [POSIX] Arranges a SIGALRM signal to be delivered after @var{seconds}.
 The previous settings of the alarm clock is cancelled.  Passing zero
 to @var{seconds} doesn't schedule new alarm.
 Returns the number of seconds remaining until previously scheduled
 alarm was due to be delivered (or zero if no alarm is active).
+@c JP
+[POSIX] SIGALRMシグナルが@var{seconds}秒後に送出されるように準備します。
+以前のアラームクロックのセッティングはキャンセルされます。
+@var{seconds}に0を渡すと、新しいアラームをスケジューリングしません。
+以前にスケジューリングされていたアラームが送出されるまでの残り時間を
+秒数で返します(アラームがアクティブでない場合は0を返します)。
+@c COMMON
 @end defun
 
 @defun sys-sleep seconds
+@c EN
 [POSIX] Suspends the process until the specified number of seconds elapses,
 or the process receives a signal.  Returns zero if it sleeps well,
 or the number of unslept seconds if it is woke up by a signal.
+@c JP
+[POSIX] 指定された秒数が経過するまで、あるいはプロセスがシグナルを受け取るまで
+スレッドを一時停止します。一時停止している場合は0を返し、
+シグナルによって一時停止が解除されている場合は、解除されてからの秒数を返します。
+@c COMMON
 
-To be porable across POSIX implementation, keep @var{seconds} less than
+@c EN
+To be portable across POSIX implementation, keep @var{seconds} less than
 65536.
+@c JP
+POSIX実装間でポータブルにするためには、@var{seconds}を65536より小さく保って
+下さい。
+@c COMMON
 @end defun
 
 @defun sys-nanosleep nanoseconds
+@c EN
 [POSIX] 
 Suspends the process until the specified number of nanoseconds elapses,
 or the process receives a signal.  The argument @var{nanoseconds} can be
@@ -14979,6 +15134,14 @@ a @code{<time>} object (@xref{SRFI time}), or a real number.
 Returns @code{#f} if @var{nanoseconds} elapsed, or a @code{<time>}
 object that indicates the remaining time if @code{sys-nanosleep}
 is interrupted by a signal.
+@c JP
+[POSIX]
+指定されたナノ秒が経過するか、シグナルを受け取るまでプロセスを一時停止します。
+引数@var{nanoseconds}は@code{<time>}オブジェクト(@ref{SRFI time}参照)か
+実数です。@var{nanoseconds}が経過したら@code{#f}を返し、
+@code{sys-nanosleep}がシグナルによって割り込まれると残りの時間を表す
+@code{<time>}オブジェクトを返します。
+@c COMMON
 
 @example
 ;@r{wait for 0.5 sec}
@@ -14991,25 +15154,48 @@ is interrupted by a signal.
 
 @defun sys-random
 @defunx sys-srandom seed
+@c EN
 A pseudo random number generator.
 @code{sys-random} returns a random number between 0 and a positive
 integer @var{rand_max}, inclusive.  This is a straightforward
 interface to @code{random(3)}.  If the underlying system doesn't have
 @code{random(3)}, @code{lrand48(3)} is used.
+@c JP
+擬似的な乱数ジェネレータです。
+@code{sys-random}は0から@var{rand_max}(それ自体を含む)までの間で乱数を
+返します。これは@code{random(3)}への直接的なインターフェースです。
+システムにで@code{random(3)}がない場合、@code{lrand48(3)}が使われます。
+@c COMMON
 
+@c EN
 @code{sys-srandom} sets the seed of the random number generator.
 It uses either @code{srandom(3)} or @code{srand48(3)}, depending on
 the system.
+@c JP
+@code{sys-srandom}は乱数ジェネレータの種をセットします。
+システムによって、@code{srandom(3)}か@code{srand48(3)}を使います。
+@c COMMON
 
-The intension of these functions are to provide an off-the-stock handy
+@c EN
+The intention of these functions are to provide an off-the-stock handy
 random number generator (RNG) for applications that doens't
 sensitive to the quality and/or speed of RNG.  For serious statistics
 analysis, use Mersenne Twister RNG in @code{math.mt-random}
 module (@xref{math.mt-random - Mersenne-Twister random number generator}).
+@c JP
+これらの関数の意図は、乱数ジェネレータ(RNG; random number generator)の
+品質や速度を気にしないアプリケーションに、完成された便利なRNGを提供することです。
+本格的な統計分析には、@code{math.mt-random}モジュールのMersenne Twister RNGを
+使って下さい(@ref{math.mt-random - Mersenne-Twister random number generator}参照)。
+@c COMMON
 @end defun
 
 @defvar RAND_MAX
+@c EN
 Bound to a positive integer that @code{sys-random} may return.
+@c JP
+@code{sys-random}が返す正の整数に束縛されます。
+@c COMMON
 @end defvar
 
 @c ======================================================================
