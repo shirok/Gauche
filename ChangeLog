@@ -1,3 +1,18 @@
+2001-03-10  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.1.7
+	* src/genstub: Now the stub generator runs under gosh itself; no need
+	  for external scheme system.
+	* src/stdlib.stub (integer?): fixed bug that caused an error when
+	  non-number was given.
+	* src/compile.c (compile_int): fixed a bug that didn't recognize
+	  syntactic binding inserted in different module.
+	* src/main.c: invoked as a script, command line arguments are
+	  available in the variable *argv*.
+	* src/io.c, src/extlib.stub: with-{output-to|input-from}-{port|string}
+	* lib/srfi-17.scm: added srfi-17, generalized set!
+	* test/srfi.scm: test file for srfi's.  not completed yet.
+
 2001-03-09  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.1.6
