@@ -19,7 +19,7 @@ CommonLispのpackageは、表記名からシンボルの実体へのマッピングである。
   x -----------> [symbol bar::x value=1]
 
 
-Lispデータをreadした場合。同じように見えるシンボルがeqでないのではまる場合がある。
+Lispデータをreadした場合、同じように見えるシンボルがeqでないのではまる場合がある。
 
 一方、Gaucheのmoduleは、シンボルの実体から値を格納する場所(global location, gloc)
 へのマッピングとなる。表記名からシンボルの実体へのマッピングは内部のobtableにより
