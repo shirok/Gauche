@@ -1,10 +1,7 @@
 #!/bin/sh
 # Helper script to create a symlink to sharedlib,
-#   like libgauche.so.0 -> libgauche.so
+#   like libgauche.so -> libgauche.so.0.1
 # Assumes $TARGETLIB is set by the caller.
-
-# NB: the link direction is somewhat reversed from the tradition.
-# should be fixed later.
 
 LIBGAUCHE=$1
 
@@ -24,6 +21,9 @@ API_MICRO_VERSION=$3
 
 LIB_VVV=$LIBGAUCHE.$API_MAJOR_VERSION.$API_MINOR_VERSION.$API_MICRO_VERSION
 LIB_V=$LIBGAUCHE.$API_MAJOR_VERSION
+
+# avoid re-running mkverslink.
+if test -f $TARGETLIB/$LIB_VVV -a -L $TARGETLIB/$LIBGAUCHE; then exit; fi
 
 cd $TARGETLIB
 rm -f $LIB_VVV
