@@ -222,7 +222,7 @@ if [ "$mingw" = "yes" ]; then
   rm -rf $distdir/Gauche/lib/libgauche.dll*
   rm -rf $distdir/Gauche/lib/gauche/$VERSION/*/gosh.exe
   rm -rf $distdir/Gauche/lib/gauche/$VERSION/*/libgauche.dll
-  cp COPYING 
+  cp COPYING $distdir/Gauche
   cp $mingwdir/bin/mingwm10.dll $distdir/Gauche/bin
   (cd $distdir; zip -r Gauche-mingw-$VERSION.zip Gauche)
 fi
