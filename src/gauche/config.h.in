@@ -2,7 +2,7 @@
  *
  * Configuration parmateres
  *  
- * $Id: config.h.in,v 1.17 2001-08-30 06:41:04 shirok Exp $
+ * $Id: config.h.in,v 1.18 2001-09-06 07:07:00 shirok Exp $
  */
 
 #undef STDC_HEADERS
@@ -54,6 +54,9 @@
 
 /* Define if the system has symlink */
 #undef HAVE_SYMLINK
+
+/* Define if the system has readlink */
+#undef HAVE_READLINK
 
 /* Define if the system has mkstemp */
 #undef HAVE_MKSTEMP
