@@ -12,12 +12,12 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: html-lite.scm,v 1.5 2001-11-10 11:02:35 shirok Exp $
+;;;  $Id: html-lite.scm,v 1.6 2001-11-10 11:32:57 shirok Exp $
 ;;;
 
 (define-module text.html-lite
   (use text.tree)
-  (export html-escape html-escape-string)
+  (export html-escape html-escape-string html-doctype)
   )
 (select-module text.html-lite)
 
@@ -34,6 +34,18 @@
 
 (define (html-escape-string string)
   (with-string-io string html-escape))
+
+(define (html-doctype . args)
+  (let ((type (get-keyword :type args :strict)))
+    (case type
+      ((:strict)
+       "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\">\n")
+      ((:transitional)
+       "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n")
+      ((:frameset)
+       "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Frameset//EN\">\n")
+      (else
+       (error "Unknown doctype" type)))))
 
 (define (make-html-element name . args)
   (let ((empty? (get-keyword :empty? args #f)))
