@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.32 2002-06-12 10:45:40 shirok Exp $
+ *  $Id: charconv.c,v 1.33 2002-06-14 11:18:52 shirok Exp $
  */
 
 #include <string.h>
@@ -33,7 +33,7 @@ typedef struct conv_guess_rec {
 static struct {
     conv_guess *procs;
     ScmInternalMutex mutex;
-} guess;
+} guess = { NULL };
 
 /*------------------------------------------------------------
  * Query
@@ -152,7 +152,7 @@ static int conv_input_filler(ScmPort *port, int mincnt)
     /* Conversion. */
     inroom = insize;
     outroom = SCM_PORT_BUFFER_ROOM(port);
-  retry:
+
 #ifdef JCONV_DEBUG
     fprintf(stderr, "=> in(%p)%d out(%p)%d\n", inbuf, insize, outbuf, outroom);
 #endif
@@ -161,20 +161,6 @@ static int conv_input_filler(ScmPort *port, int mincnt)
     fprintf(stderr, "<= r=%d, in(%p)%d out(%p)%d\n",
             result, inbuf, inroom, outbuf, outroom);
 #endif
-    if (result >= 0) {
-        /* Conversion is done completely. */
-        /* NB: There are cases that some bytes are left in the input buffer
-           even iconv returns positive value.  We need to shift those bytes. */
-        if (inroom > 0) {
-            memmove(info->buf, info->buf+insize-inroom, inroom);
-            info->ptr = info->buf + inroom;
-            return info->bufsiz - outroom;
-        } else {
-            info->ptr = info->buf;
-            return info->bufsiz - outroom;
-        }
-    }
-
     /* we've got an error. */
     if (result == INPUT_NOT_ENOUGH || result == OUTPUT_NOT_ENOUGH) {
         /* Conversion stopped due to an incomplete character at the
@@ -184,15 +170,24 @@ static int conv_input_filler(ScmPort *port, int mincnt)
         memmove(info->buf, info->buf+insize-inroom, inroom);
         info->ptr = info->buf + inroom;
         return info->bufsiz - outroom;
-    }
-    
-    /* Now, it's likely that the input contains invalid sequence. */
-    {
+    } else if (result == ILLEGAL_SEQUENCE) {
+        /* it's likely that the input contains invalid sequence. */
         int cnt = inroom >= 6 ? 6 : inroom;
         ScmObj s = Scm_MakeString(info->buf+insize-inroom, cnt, cnt,
                                   SCM_MAKSTR_COPYING|SCM_MAKSTR_INCOMPLETE);
         Scm_Error("invalid character sequence in the input stream: %S ...", s);
-        return 0;           /* dummy */
+    }
+
+    /* Conversion is done completely. */
+    /* NB: There are cases that some bytes are left in the input buffer
+       even iconv returns positive value.  We need to shift those bytes. */
+    if (inroom > 0) {
+        memmove(info->buf, info->buf+insize-inroom, inroom);
+        info->ptr = info->buf + inroom;
+        return info->bufsiz - outroom;
+    } else {
+        info->ptr = info->buf;
+        return info->bufsiz - outroom;
     }
 }
 
@@ -210,7 +205,6 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
                                    int ownerp)
 {
     ScmConvInfo *cinfo;
-    iconv_t handle;
     conv_guess *guess;
     char *inbuf = NULL;
     int preread = 0;
@@ -339,34 +333,32 @@ static int conv_output_flusher(ScmPort *port, int mincnt)
         fprintf(stderr, "<= r=%d, in(%p)%d out(%p)%d\n",
                 result, inbuf, inroom, outbuf, outroom);
 #endif
-        if (result < 0) {
-            if (result == INPUT_NOT_ENOUGH) {
+        if (result == INPUT_NOT_ENOUGH) {
 #ifndef GLIBC_2_1_ICONV_BUG
-                /* Conversion stopped due to an incomplete character at the
-                   end of the input buffer.  We just return # of bytes
-                   flushed.  (Shifting unconverted characters is done by
-                   buffered port routine) */
-                info->ptr = outbuf;
-                return len - inroom;
+            /* Conversion stopped due to an incomplete character at the
+               end of the input buffer.  We just return # of bytes
+               flushed.  (Shifting unconverted characters is done by
+               buffered port routine) */
+            info->ptr = outbuf;
+            return len - inroom;
 #else
-                /* See the above notes.  We always flush the output buffer
-                   here, so that we can avoid output buffer overrun. */
-                Scm_Putz(info->buf, outbuf - info->buf, info->remote);
-                info->ptr = info->buf;
-                return len - inroom;
+            /* See the above notes.  We always flush the output buffer
+               here, so that we can avoid output buffer overrun. */
+            Scm_Putz(info->buf, outbuf - info->buf, info->remote);
+            info->ptr = info->buf;
+            return len - inroom;
 #endif
-            } else if (result == OUTPUT_NOT_ENOUGH) {
-                /* Output buffer got full.  Flush it, and continue
-                   conversion. */
-                Scm_Putz(info->buf, outbuf - info->buf, info->remote);
-                info->ptr = info->buf;
-                continue;
-            } else {
-                /* it's likely that input contains invalid sequence.
-                   TODO: we should handle this case gracefully. */
-                Scm_Error("invalid character sequence in the input stream");
-                return 0;           /* dummy */
-            }
+        } else if (result == OUTPUT_NOT_ENOUGH) {
+            /* Output buffer got full.  Flush it, and continue
+               conversion. */
+            Scm_Putz(info->buf, outbuf - info->buf, info->remote);
+            info->ptr = info->buf;
+            continue;
+        } else if (result == ILLEGAL_SEQUENCE) {
+            /* it's likely that input contains invalid sequence.
+               TODO: we should handle this case gracefully. */
+            Scm_Error("invalid character sequence in the input stream");
+            return 0;           /* dummy */
         } else {
 #ifndef GLIBC_2_1_ICONV_BUG
             /* Conversion is done completely.  Update outptr. */
@@ -389,7 +381,6 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
                                     int bufsiz, int ownerp)
 {
     ScmConvInfo *cinfo;
-    iconv_t handle;
     ScmPortBuffer bufrec;
     ScmObj name;
     

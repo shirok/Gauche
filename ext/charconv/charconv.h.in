@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.h.in,v 1.7 2002-06-09 09:38:42 shirok Exp $
+ *  $Id: charconv.h.in,v 1.8 2002-06-14 11:18:52 shirok Exp $
  */
 
 #ifndef GAUCHE_CHARCONV_H
@@ -34,11 +34,11 @@ extern "C" {
 
 struct ScmConvInfoRec;
 
-typedef int (*ScmConvProc)(struct ScmConvInfoRec*, const char*, int,
-                           char*, int, int*);
-typedef int (*ScmConvReset)(struct ScmConvInfoRec*, char*, int);
-typedef int (*ScmConvHandler)(struct ScmConvInfoRec*, const char **, int*,
-                              char**, int*);
+typedef size_t (*ScmConvProc)(struct ScmConvInfoRec*, const char*, size_t,
+                              char*, size_t, size_t*);
+typedef size_t (*ScmConvReset)(struct ScmConvInfoRec*, char*, size_t);
+typedef size_t (*ScmConvHandler)(struct ScmConvInfoRec*, const char **,
+                                 size_t*, char**, size_t*);
 
 /* Packaging conversion context info.*/
 typedef struct ScmConvInfoRec {
@@ -86,15 +86,15 @@ extern const char *Scm_GuessCES(const char *code,
                                 int buflen);
 
 /* jconv error code */
-#define ILLEGAL_SEQUENCE  -1
-#define INPUT_NOT_ENOUGH  -2
-#define OUTPUT_NOT_ENOUGH -3
+#define ILLEGAL_SEQUENCE  ((size_t)-1)
+#define INPUT_NOT_ENOUGH  ((size_t)-2)
+#define OUTPUT_NOT_ENOUGH ((size_t)-3)
 
 extern ScmConvInfo *jconv_open(const char *toCode, const char *fromCode);
 extern int jconv_close(ScmConvInfo*);
-extern int jconv(ScmConvInfo*, const char **inptr, int *inroom,
-                 char **outptr, int *outroom);
-extern int jconv_reset(ScmConvInfo *, char *outptr, int outroom);
+extern size_t jconv(ScmConvInfo*, const char **inptr, size_t *inroom,
+                    char **outptr, size_t *outroom);
+extern size_t jconv_reset(ScmConvInfo *, char *outptr, size_t outroom);
 
 #ifdef __cplusplus
 }

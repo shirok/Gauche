@@ -1,5 +1,6 @@
 2002-06-13  Shiro Kawai  <shiro@acm.org>
 
+	* ext/charconv.c : fixed int* and size_t* discrepancy
 	* src/port.c (Scm_Getc): fixed a bug that getc didn't work when
 	  the size of character was bigger than the size of the buffer
 	  (pretty rare case, but bug is bug).
