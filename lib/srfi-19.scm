@@ -24,12 +24,13 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19.scm,v 1.2 2002-03-09 20:25:42 shirok Exp $
+;;; $Id: srfi-19.scm,v 1.3 2002-04-13 12:06:23 shirok Exp $
 
 (define-module srfi-19
   (use gauche.time)
+  (use gauche.let-opt)
   (export time-tai time-utc time-monotonic time-thread
-          time-process time-duration
+          time-process time-duration current-time
           make-time time? time-type time-second time-nanosecond
           set-time-type! set-time-second! set-time-nanosecond copy-time
           time=? time<? time<=? time>? time>=?
@@ -165,7 +166,7 @@
          (nsec  (* (/ tm:nano tick) (remainder cpu tick))))
     (make-time type sec nsec)))
 
-(define (current-time args)
+(define (current-time . args)
   (let-optionals* args ((clock-type 'time-utc))
     (case clock-type
      ((time-tai)
