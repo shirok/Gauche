@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.97 2001-04-01 07:13:18 shiro Exp $
+ *  $Id: gauche.h,v 1.98 2001-04-01 09:18:46 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1404,12 +1404,7 @@ extern ScmObj Scm_Quotient(ScmObj arg1, ScmObj arg2);
 extern ScmObj Scm_Remainder(ScmObj arg1, ScmObj arg2);
 extern ScmObj Scm_Modulo(ScmObj arg1, ScmObj arg2, int remainder);
 
-extern ScmObj Scm_NumEq(ScmObj arg0, ScmObj arg1, ScmObj args); /* = */
-extern ScmObj Scm_NumLt(ScmObj arg0, ScmObj arg1, ScmObj args); /* < */
-extern ScmObj Scm_NumLe(ScmObj arg0, ScmObj arg1, ScmObj args); /* <= */
-extern ScmObj Scm_NumGt(ScmObj arg0, ScmObj arg1, ScmObj args); /* > */
-extern ScmObj Scm_NumGe(ScmObj arg0, ScmObj arg1, ScmObj args); /* >= */
-
+extern int    Scm_NumCmp(ScmObj x, ScmObj y);
 extern ScmObj Scm_Max(ScmObj arg0, ScmObj args);
 extern ScmObj Scm_Min(ScmObj arg0, ScmObj args);
 
