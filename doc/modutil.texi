@@ -11328,8 +11328,8 @@ and @code{cgi-main} by @var{part-handlers} argument.
 ないかもしれません。@code{cgi-parse-parameters}や@code{cgi-main}の
 @var{part-handlers}引数によって、ファイルアップロードの
 処理をカスタマイズすることが可能です。
-(この引数は、@code{multipart/form-data} enctypeで
-送られるフォームデータにのみ適用されます)。
+(この引数は、フォームデータが@code{multipart/form-data} enctypeで
+送られた場合にのみ意味を持ちます)。
 @c COMMON
 
 @c EN
@@ -11341,7 +11341,7 @@ is the 'name' attribute given to the @code{input} element in the
 submitted form, not the name of the uploaded file).
 @c JP
 @var{part-handlers}引数が与えられている場合、それはリストのリストで、
-ならず、内部のリストは@code{(@var{name-pattern} @var{action})} の形式で
+内部のリストは@code{(@var{name-pattern} @var{action})} の形式で
 なければなりません。
 アップロードされたファイルは、そのパラメータ名が@var{name-pattern}に
 マッチした場合に@var{action}で指示されるように処理されます。
