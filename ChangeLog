@@ -1,3 +1,9 @@
+2001-02-06  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.0.6
+	* src/string.c: added a few new functions following SRFI-13.
+	* src/repl.c: the caller can specify the prompt now.
+
 2001-02-05  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.0.5
