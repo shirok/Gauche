@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: fcntlib.stub,v 1.1 2001-09-16 06:50:43 shirok Exp $
+;;; $Id: fcntlib.stub,v 1.2 2001-09-16 08:01:16 shirok Exp $
 ;;;
 
 "#include \"fcntl.h\""
@@ -35,6 +35,7 @@
 
 (define-symbol |FD_CLOEXEC| "fcntl_cloexec" "Scm_MakeInteger(FD_CLOEXEC)")
 
+(define-symbol |O_ACCMODE| "fcntl_accmode" "Scm_MakeInteger(O_ACCMODE)")
 (define-symbol |O_RDONLY| "fcntl_rdonly" "Scm_MakeInteger(O_RDONLY)")
 (define-symbol |O_WRONLY| "fcntl_wronly" "Scm_MakeInteger(O_WRONLY)")
 (define-symbol |O_RDWR| "fcntl_rdwr" "Scm_MakeInteger(O_RDWR)")
