@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.h,v 1.2 2001-02-23 12:59:38 shiro Exp $
+ *  $Id: macro.h,v 1.3 2001-02-23 13:31:36 shiro Exp $
  */
 
 #ifndef GAUCHE_MACRO_H
@@ -44,6 +44,7 @@ typedef struct ScmSyntaxRuleBranchRec {
     ScmObj pattern;             /* pattern to match */
     ScmObj template;            /* template to be expanded */
     int numPvars;               /* # of pattern variables */
+    int maxLevel;               /* maximum # of nested subpatterns */
 } ScmSyntaxRuleBranch;
 
 typedef struct ScmSyntaxRules {
