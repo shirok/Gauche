@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.381 2003-03-30 12:54:40 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.382 2003-04-16 23:03:10 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -13988,9 +13988,12 @@ process remain open.
 @example
 (sys-exec "ls" '("ls" "-l")) @result{} ;; ls is executed.
 
-(sys-exec "ls" '("ls" "-l") '((1 . 2) (1 . 1)))
-   @result{} ;; ls is executed, with its stderr and stdout are mapped to the
-              current process's stdout.
+(let ((out (open-output-file "ls.out")))
+  (sys-exec "ls" '("ls" "-l") `((2 . 1) (1 . ,out)))
+   @result{}
+  ;; ls is executed, with its stderr redirected
+  ;; to the current process's stdout, and its
+  ;; stdout redirected to the file "ls.out".
 @end example
 
 When it encounters an error, most of the time it raises an error condition.
