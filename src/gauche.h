@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.25 2001-02-05 09:46:26 shiro Exp $
+ *  $Id: gauche.h,v 1.26 2001-02-05 09:58:53 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1091,38 +1091,9 @@ extern ScmClass Scm_SymbolClass;
 #define SCM_CLASS_SYMBOL        (&Scm_SymbolClass)
 
 /* predefined symbols */
-extern ScmSymbol ScmQquote;
-extern ScmSymbol ScmQquasiquote;
-extern ScmSymbol ScmQunquote;
-extern ScmSymbol ScmQunquoteSplicing;
-extern ScmSymbol ScmQdefine;
-extern ScmSymbol ScmQlambda;
-extern ScmSymbol ScmQif;
-extern ScmSymbol ScmQset;
-extern ScmSymbol ScmQlet;
-extern ScmSymbol ScmQletStar;
-extern ScmSymbol ScmQletrec;
-extern ScmSymbol ScmQbegin;
-extern ScmSymbol ScmQwhen;
-extern ScmSymbol ScmQunless;
-extern ScmSymbol ScmQand;
-extern ScmSymbol ScmQor;
-extern ScmSymbol ScmQcond;
-extern ScmSymbol ScmQcase;
-extern ScmSymbol ScmQelse;
-extern ScmSymbol ScmQyields;
-extern ScmSymbol ScmQdo;
-extern ScmSymbol ScmQdelay;
-extern ScmSymbol ScmQmacroExpand;
-
-extern ScmSymbol ScmQcons;
-extern ScmSymbol ScmQcar;
-extern ScmSymbol ScmQcdr;
-extern ScmSymbol ScmQlist;
-extern ScmSymbol ScmQeq;
-extern ScmSymbol ScmQeqv;
-extern ScmSymbol ScmQequal;
-extern ScmSymbol ScmQmemv;
+#define DEFSYM(cname, sname)   extern ScmSymbol cname
+#include <gauche/predef-syms.h>
+#undef DEFSYM
 
 #define SCM_SYM_QUOTE            SCM_OBJ(&ScmQquote)
 #define SCM_SYM_QUASIQUOTE       SCM_OBJ(&ScmQquasiquote)
@@ -1147,15 +1118,6 @@ extern ScmSymbol ScmQmemv;
 #define SCM_SYM_DO               SCM_OBJ(&ScmQdo)
 #define SCM_SYM_DELAY            SCM_OBJ(&ScmQdelay)
 #define SCM_SYM_MACRO_EXPAND     SCM_OBJ(&ScmQmacroExpand)
-
-#define SCM_SYM_CONS             SCM_OBJ(&ScmQcons)
-#define SCM_SYM_CAR              SCM_OBJ(&ScmQcar)
-#define SCM_SYM_CDR              SCM_OBJ(&ScmQcdr)
-#define SCM_SYM_LIST             SCM_OBJ(&ScmQlist)
-#define SCM_SYM_EQ               SCM_OBJ(&ScmQeq)
-#define SCM_SYM_EQV              SCM_OBJ(&ScmQeqv)
-#define SCM_SYM_EQUAL            SCM_OBJ(&ScmQequal)
-#define SCM_SYM_MEMV             SCM_OBJ(&ScmQmemv)
 
 /* Gloc (global location) */
 struct ScmGlocRec {

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: symbol.c,v 1.6 2001-02-05 09:46:26 shiro Exp $
+ *  $Id: symbol.c,v 1.7 2001-02-05 09:58:53 shiro Exp $
  */
 
 #include "gauche.h"
@@ -96,7 +96,6 @@ ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
  * Initialization
  */
 
-#define SYMINIT   { SCM_CLASS_SYMBOL, NULL }
 #define SYMREG(var, nam)                                                \
     do {                                                                \
         ScmObj snam = Scm_MakeStringConst(nam, -1, -1);                 \
@@ -104,73 +103,16 @@ ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
         Scm_HashTablePut(obtable, SCM_OBJ(snam), SCM_OBJ(&var));        \
     } while (0)
 
-ScmSymbol ScmQquote            = SYMINIT;
-ScmSymbol ScmQquasiquote       = SYMINIT;
-ScmSymbol ScmQunquote          = SYMINIT;
-ScmSymbol ScmQunquoteSplicing  = SYMINIT;
-ScmSymbol ScmQdefine           = SYMINIT;
-ScmSymbol ScmQlambda           = SYMINIT;
-ScmSymbol ScmQif               = SYMINIT;
-ScmSymbol ScmQset              = SYMINIT;
-ScmSymbol ScmQlet              = SYMINIT;
-ScmSymbol ScmQletStar          = SYMINIT;
-ScmSymbol ScmQletrec           = SYMINIT;
-ScmSymbol ScmQbegin            = SYMINIT;
-ScmSymbol ScmQwhen             = SYMINIT;
-ScmSymbol ScmQunless           = SYMINIT;
-ScmSymbol ScmQand              = SYMINIT;
-ScmSymbol ScmQor               = SYMINIT;
-ScmSymbol ScmQcond             = SYMINIT;
-ScmSymbol ScmQcase             = SYMINIT;
-ScmSymbol ScmQelse             = SYMINIT;
-ScmSymbol ScmQyields           = SYMINIT;
-ScmSymbol ScmQdo               = SYMINIT;
-ScmSymbol ScmQdelay            = SYMINIT;
-ScmSymbol ScmQmacroExpand      = SYMINIT;
-
-ScmSymbol ScmQcons             = SYMINIT;
-ScmSymbol ScmQcar              = SYMINIT;
-ScmSymbol ScmQcdr              = SYMINIT;
-ScmSymbol ScmQlist             = SYMINIT;
-ScmSymbol ScmQeq               = SYMINIT;
-ScmSymbol ScmQeqv              = SYMINIT;
-ScmSymbol ScmQequal            = SYMINIT;
-ScmSymbol ScmQmemv             = SYMINIT;
+#define DEFSYM(cname, sname) \
+    ScmSymbol cname = { SCM_CLASS_SYMBOL, NULL }
+#include "gauche/predef-syms.h"
+#undef DEFSYM
 
 void Scm__InitSymbol(void)
 {
     obtable = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_STRING, NULL, 2000));
 
-    SYMREG(ScmQquote, "quote");
-    SYMREG(ScmQquasiquote, "quasiquote");
-    SYMREG(ScmQunquote, "unquote");
-    SYMREG(ScmQunquoteSplicing, "unquote-splicing");
-    SYMREG(ScmQdefine, "define");
-    SYMREG(ScmQlambda, "lambda");
-    SYMREG(ScmQif, "if");
-    SYMREG(ScmQset, "set!");
-    SYMREG(ScmQlet, "let");
-    SYMREG(ScmQletStar, "let*");
-    SYMREG(ScmQletrec, "letrec");
-    SYMREG(ScmQbegin, "begin");
-    SYMREG(ScmQwhen, "when");
-    SYMREG(ScmQunless, "unless");
-    SYMREG(ScmQand,    "and");
-    SYMREG(ScmQor,     "or");
-    SYMREG(ScmQcond,   "cond");
-    SYMREG(ScmQcase,   "case");
-    SYMREG(ScmQelse,   "else");
-    SYMREG(ScmQyields, "=>");
-    SYMREG(ScmQdo,     "do");
-    SYMREG(ScmQdelay,  "delay");
-    SYMREG(ScmQmacroExpand, "%macro-expand");
-
-    SYMREG(ScmQcons,   "cons");
-    SYMREG(ScmQcar,    "car");
-    SYMREG(ScmQcdr,    "cdr");
-    SYMREG(ScmQlist,   "list");
-    SYMREG(ScmQeq,     "eq?");
-    SYMREG(ScmQeqv,    "eqv?");
-    SYMREG(ScmQequal,  "equal");
-    SYMREG(ScmQmemv,   "memv");
+#define DEFSYM(cname, sname) SYMREG(cname, sname)
+#include "gauche/predef-syms.h"
+#undef DEFSYM
 }
