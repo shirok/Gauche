@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.32 2001-04-01 09:40:23 shiro Exp $
+;;;  $Id: genstub,v 1.33 2001-04-04 06:57:51 shiro Exp $
 ;;;
 
 ;; (define-cproc scheme-name (argspec)
@@ -159,7 +159,7 @@
 (make-type "exact integer" 'exact? "int"          "SCM_EXACTP"  "Scm_GetInteger")
 (make-type "number"    'number?    "ScmObj"       "SCM_NUMBERP" #f)
 (make-type "character" 'char?      "ScmChar"      "SCM_CHARP" "SCM_CHAR_VALUE")
-
+(make-type "char-set"  'char-set?  "ScmCharSet*"  "SCM_CHARSETP" "SCM_CHARSET")
 (make-type "port"        'port?        "ScmPort*" "SCM_PORTP"  "SCM_PORT")
 (make-type "input port"  'input-port?  "ScmPort*" "SCM_IPORTP" "SCM_PORT")
 (make-type "output port" 'output-port? "ScmPort*" "SCM_OPORTP" "SCM_PORT")
