@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.38 2003-02-05 01:44:34 shirok Exp $
+ *  $Id: write.c,v 1.39 2003-06-22 19:42:53 shirok Exp $
  */
 
 #include <stdio.h>
@@ -153,7 +153,7 @@ static void write_internal(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 }
 
 /*
- * Scm_Write - Standard Write.  Returns # of written characters.
+ * Scm_Write - Standard Write.
  */
 void Scm_Write(ScmObj obj, ScmObj port, int mode)
 {
