@@ -13,7 +13,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;; $Id: matrix.scm,v 1.1 2004-03-24 01:55:30 foof Exp $
+;;; $Id: matrix.scm,v 1.2 2004-04-02 01:13:53 foof Exp $
 ;;;
 
 (select-module gauche.array)
@@ -27,6 +27,7 @@
          (a-end (end-vector-of a))
          (b-start (start-vector-of b))
          (b-end (end-vector-of b))
+         (diff (s32vector->vector (s32vector-sub a-start b-start)))
          (a-rank (s32vector-length a-start))
          (b-rank (s32vector-length b-start)))
     (unless (= a-rank b-rank)
@@ -44,7 +45,7 @@
                                             (s32vector-ref b-start dimension))))
       (let ((c (make-minimal-backend-array
                 (list a b) (start/end-vector->shape c-start c-end)))
-            (off (s32vector-ref a-end dimension)))
+            (off (- (s32vector-ref a-end dimension) (s32vector-ref a-start dimension))))
         (array-for-each-index a
           (lambda (i)
             (array-set! c i (array-ref a i)))
@@ -52,6 +53,8 @@
         (array-for-each-index b
           (lambda (i)
             (let ((j (vector-copy i)))
+              (dotimes (dim a-rank)
+                (vector-set! j dim (+ (vector-ref j dim) (vector-ref diff dim))))
               (vector-set! j dimension (+ off (vector-ref j dimension)))
               (array-set! c j (array-ref b i))))
           (make-vector b-rank))
@@ -130,99 +133,86 @@
 ;; linear algebra
 
 (define (identity-array n . opt)
-  (let ((res (make (get-optional opt <array>)
-               :shape (shape 0 n 0 n) :create-args '(0))))
+  (let ((res (make-array-internal (get-optional opt <array>)
+                                  (shape 0 n 0 n) 0)))
     (do ((i 0 (+ i 1)))
         ((= i n) res)
       (array-set! res i i 1))))
 
-;; ultra-slow leibniz formula
-; (define (determinant a)
-;   (let* ((start (s32vector->list (start-vector-of a)))
-;          (end (s32vector->list (end-vector-of a)))
-;          (i-off (car start))
-;          (j-off (cadr start))
-;          (n (- (car end) i-off))
-;          (nums (iota n))
-;          (det 0)
-;          (sign +))
-;     (permutations-for-each
-;      (lambda (sigma)
-;        (set! det (sign det
-;                        (apply * (map (lambda (i j)
-;                                        (array-ref a (+ i i-off) (+ j j-off)))
-;                                      nums sigma))))
-;        (set! sign (if (eq? sign +) - +)))
-;      nums)
-;     det))
-
 ;; Gaussian elimination, returns factor applied to determinant
 (define (array-row-echelon! a)
   (let* ((start (start-vector-of a))
+         (row-start (s32vector-ref start 0))
+         (col-start (s32vector-ref start 1))
          (end (end-vector-of a))
-         (n (- (s32vector-ref end 0) (s32vector-ref start 0)))
-         (m (- (s32vector-ref end 1) (s32vector-ref start 1))))
+         (row-end (s32vector-ref end 0))
+         (col-end (s32vector-ref end 1))
+         (row-col-offset (- row-start col-start)))
     (define (row-swap! i j)
-      (do ((k 0 (+ k 1)))
-          ((= k m))
+      (do ((k col-start (+ k 1)))
+          ((= k col-end))
         (let ((temp (array-ref a i k)))
           (array-set! a i k (array-ref a j k))
           (array-set! a j k temp))))
     (define (row-sub! i j factor)
-      (do ((k 0 (+ k 1)))
-          ((= k m))
+      (do ((k col-start (+ k 1)))
+          ((= k col-end))
         (array-set! a i k (- (array-ref a i k) (* factor (array-ref a j k))))))
-    (let loop ((i 0) (factor 1))
-      (cond
-        ((= i n) factor)
-        ((zero? (array-ref a i i))
-         ;; pivot non-zero row to top
-         (let loop2 ((j (+ i 1)))
-           (cond ((= j n) 0)
-                 ((zero? (array-ref a j i))
-                  (loop2 (+ j 1)))
-                 (else
-                  (row-swap! j i)
-                  (loop i (* factor -1))))))
-        (else
-         ;; eliminate other non-zero rows
-         (let loop2 ((j (+ i 1)))
-           (cond ((= j n) (loop (+ i 1) factor))
-                 ((zero? (array-ref a j i))
-                  (loop2 (+ j 1)))
-                 (else
-                  (let ((factor (/ (array-ref a j i)
-                                   (array-ref a i i))))
-                    (row-sub! j i factor)
-                    (loop2 (+ j 1)))))))))))
+    (let loop ((i row-start) (factor 1))
+      (let ((col (- i row-col-offset)))
+        (cond
+          ((= i row-end) factor)
+          ((zero? (array-ref a i col))
+           ;; pivot non-zero row to top
+           (let loop2 ((j (+ i 1)))
+             (cond ((= j row-end) 0)
+                   ((zero? (array-ref a j col))
+                    (loop2 (+ j 1)))
+                   (else
+                    (row-swap! j i)
+                    (loop i (* factor -1))))))
+          (else
+           ;; eliminate other non-zero rows
+           (let loop2 ((j (+ i 1)))
+             (cond ((= j row-end) (loop (+ i 1) factor))
+                   ((zero? (array-ref a j col))
+                    (loop2 (+ j 1)))
+                   (else
+                    (let ((factor (/ (array-ref a j col)
+                                     (array-ref a i col))))
+                      (row-sub! j i factor)
+                      (loop2 (+ j 1))))))))))))
 
 (define (array-solve-left-identity! a)
   (array-row-echelon! a)
   (let* ((start (start-vector-of a))
+         (row-start (s32vector-ref start 0))
+         (col-start (s32vector-ref start 1))
          (end (end-vector-of a))
-         (n (- (s32vector-ref end 0) (s32vector-ref start 0)))
-         (m (* n 2)))
+         (row-end (s32vector-ref end 0))
+         (col-end (s32vector-ref end 1))
+         (row-col-offset (- row-start col-start)))
     ;; zero-out
-    (do ((i (- n 1) (- i 1)))
-        ((< i 0))
-      (let ((divisor (array-ref a i i)))
+    (do ((i (- row-end 1) (- i 1)))   ; for-each row in reverse
+        ((< i row-start))
+      (let ((divisor (array-ref a i (- i row-col-offset))))
         (unless (zero? divisor)
-          (do ((j (- i 1) (- j 1)))
-              ((< j 0))
-            (let ((x (/ (array-ref a j i) divisor)))
-              (array-set! a i j 0)
-              (do ((k j (+ k 1)))
-                  ((= k m))
+          (do ((j (- i 1) (- j 1)))   ; for-each lower row
+              ((< j row-start))
+            (let ((factor (/ (array-ref a j (- i row-col-offset)) divisor)))
+              (array-set! a i (- j row-col-offset) 0)
+              (do ((k (- j row-col-offset) (+ k 1))) ; for-each column
+                  ((= k col-end))
                 (array-set! a j k (- (array-ref a j k)
-                                     (* x (array-ref a i k))))))))))
+                                     (* factor (array-ref a i k))))))))))
     ;; reduce
-    (do ((i 0 (+ i 1)))
-        ((= i n))
-      (let ((divisor (array-ref a i i)))
-        (unless (zero? divisor)
-          (array-set! a i i 1)
-          (do ((j n (+ j 1)))
-              ((= j m))
+    (do ((i row-start (+ i 1)))       ; for-each row
+        ((= i row-end))
+      (let ((divisor (array-ref a i (- i row-col-offset))))
+        (unless (or (zero? divisor) (= divisor 1))
+          (array-set! a i (- i row-col-offset) 1)
+          (do ((j (- i row-col-offset -1) (+ j 1))) ; for-each higher column
+              ((= j col-end))
             (array-set! a i j (/ (array-ref a i j) divisor))))))))
 
 (define (array-inverse a)
@@ -243,51 +233,68 @@
       (array-solve-left-identity! tmp)
       (and (= 1 (array-ref tmp (- (s32vector-ref end 0) 1)
                            (- (s32vector-ref end 1) 1)))
-           (subarray tmp (shape (s32vector-ref start 0) (s32vector-ref end 0) m (* m 2)))))))
+           (subarray tmp (shape (s32vector-ref start 0) (s32vector-ref end 0)
+                                (s32vector-ref end 1) (+ (s32vector-ref end 1) n)))))))
 
 (define (determinant! a)
-  (let ((start (s32vector->list (start-vector-of a)))
-        (end (s32vector->list (end-vector-of a)))
-        (factor (array-row-echelon! a)))
+  (let* ((start (s32vector->list (start-vector-of a)))
+         (end (s32vector->list (end-vector-of a)))
+         (row-col-offset (- (car start) (cadr start)))
+         (factor (array-row-echelon! a)))
     (unless (= 2 (length start)) ; add determinant for the 2x2x2 case?
       (error "can't compute hyperdeterminants in the general case"))
     (unless (apply = (map - end start))
       (error "can't compute determinants of non-square matrices"))
-    (apply * factor (map (lambda (i) (array-ref a i i))
-                         (iota (- (car end) (car start)))))))
+    (apply * factor (map (lambda (i) (array-ref a i (- i row-col-offset)))
+                         (map (cute + <> (car start))
+                              (iota (- (car end) (car start))))))))
 
 (define (determinant a)
-  (determinant! (copy-object a)))
+  (let ((class (class-of a)))
+    (if (or (eq? class <f32array>)
+            (eq? class <f64array>)
+            (eq? class <array>))
+      (determinant! (copy-object a))
+      (let ((rank (s32vector-length (start-vector-of a)))
+            (b (tabulate-array (array-shape a)
+                 (lambda (ind) (array-ref a ind))
+                 (make-vector rank))))
+        (determinant! b)))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; matrix arithmetic
 
 (define (array-mul a b) ; NxM * MxP => NxP
-  (let* ((a-start (start-vector-of a))
-         (a-end (end-vector-of a))
-         (b-start (start-vector-of b))
-         (b-end (end-vector-of b))
-         (n (s32vector-ref a-end 0))
-         (m (s32vector-ref a-end 1))
-         (p (s32vector-ref b-end 1))
-         (off (- (s32vector-ref b-start 1) (s32vector-ref a-start 1)))
-         (res (make-minimal-backend-array (list a b)
-               (shape 0 (- n (s32vector-ref a-start 0))
-                      0 (- p (s32vector-ref b-start 0))))))
-    (unless (= (- m (s32vector-ref a-start 1))
-               (- (s32vector-ref b-end 0) (s32vector-ref b-start 0)))
-      (errorf "dimension mismatch: can't mul shapes ~S and ~S"
-              (array-shape a) (array-shape b)))
-    (do ((i (s32vector-ref a-start 0) (+ i 1)))
-        ((= i n) res)
-      (do ((k (s32vector-ref b-start 0) (+ k 1)))
-          ((= k p))
-        (let ((tmp 0))
-          (do ((j (s32vector-ref a-start 1) (+ j 1)))
-              ((= j m))
-            (inc! tmp (* (array-ref a i j) (array-ref b (+ j off) k))))
-          (array-set! res i k tmp))))))
+  (let ((a-start (start-vector-of a))
+        (a-end (end-vector-of a))
+        (b-start (start-vector-of b))
+        (b-end (end-vector-of b)))
+    (unless (= 2 (s32vector-length a-start) (s32vector-length b-start))
+      (error "array-mul matrices must be of rank 2"))
+    (let* ((a-start-row (s32vector-ref a-start 0))
+           (a-end-row (s32vector-ref a-end 0))
+           (a-start-col (s32vector-ref a-start 1))
+           (a-end-col (s32vector-ref a-end 1))
+           (b-start-col (s32vector-ref b-start 1))
+           (b-end-col (s32vector-ref b-end 1))
+           (n (- a-end-row a-start-row))
+           (m (- a-end-col a-start-col))
+           (p (- b-end-col b-start-col))
+           (a-col-b-row-off (- a-start-col (s32vector-ref b-start 0)))
+           (res (make-minimal-backend-array (list a b) (shape 0 n 0 p))))
+      (unless (= m (- (s32vector-ref b-end 0) (s32vector-ref b-start 0)))
+        (errorf "dimension mismatch: can't mul shapes ~S and ~S"
+                (array-shape a) (array-shape b)))
+      (do ((i a-start-row (+ i 1)))       ; for-each row of a
+          ((= i a-end-row) res)
+        (do ((k b-start-col (+ k 1)))     ; for-each col of b
+            ((= k b-end-col))
+          (let ((tmp 0))
+            (do ((j a-start-col (+ j 1))) ; for-each col of a & row of b
+                ((= j a-end-col))
+              (inc! tmp (* (array-ref a i j) (array-ref b (- j a-col-b-row-off) k))))
+            (array-set! res (- i a-start-row) (- k b-start-col) tmp)))))))
 
 (define (array-div-left a b)
   (array-mul (array-inverse b) a))
@@ -545,7 +552,7 @@
 
 (define (make-minimal-backend-array ls sh . args)
   (define (return class)
-    (make class :shape sh :create-args args))
+    (apply make-array-internal class sh args))
   (define (signed? x)
     (member x *signed-arrays*))
   (define (size x)
