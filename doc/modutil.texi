@@ -3348,9 +3348,54 @@ Otherwise, the return value of @var{handler} is stored.
 @end defivar
 @end deftp
 
-@defun mime-body->string packet reader inp
+@defun mime-retrieve-body part-info reader inp outp
+A procedure to retrieve message body.  It is intended to
+to be a building block of @var{handler} to be passed to
+@code{mime-parse-message}.
+
+@var{Part-info} is a @code{<mime-part>} object.  @var{Reader}
+is the line reader passed to the handler, and 
+@var{inp} must be an input port from which the body will be read.
+
+This procedure applies @var{reader} to @var{inp} repeatedly,
+until it returns EOF (note that @var{reader} may return EOF
+when it reads MIME part boundary).  It also looks at the
+@code{transfer-encoding} of @var{part-info}, and decodes
+the body accordingly; that is, base64 encoding and
+quoted-printable encoding is handled.
+
+This procedure does not handle charset conversion.
+The caller must use CES conversion port as @var{outp}
+(@xref{gauche.charconv - Character code conversion}) if desired.
 @end defun
 
+A couple of convenience procedures are defined for typical
+cases on top of @code{mime-retrieve-body}.
+
+@defun mime-body->string part-info reader inp
+@defunx mime-body->file part-info reader inp filename
+Reads in the body of mime message, decoding transfer encoding,
+and returns it as a string or writes it to a file, respectively.
+@end defun
+
+The simplest form of MIME message parser would be like this:
+
+@example
+(let ((headers (rfc822-header->list port)))
+  (mime-parse-message port headers
+                      (cut mime-body->string <> <> port)))
+@end example
+
+This reads all the message on memory (i.e. the "leaf" @code{<mime-part>}
+objects' @code{content} field would hold the part's body as a string),
+and returns the top @code{<mime-part>} object.  Content transfer encoding
+is recognized and handled, but character set conversion isn't done.
+
+You may want to feed the message body to a file directly,
+or even want to skip some body according to mime media types and/or
+other header information.  Then you can put the logic in the handler
+closure.  That's the reason that this module provides building
+blocks, instead of all-in-one procedure.
 
 
 @c ----------------------------------------------------------------------
