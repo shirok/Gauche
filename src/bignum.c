@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.29 2002-02-11 10:06:15 shirok Exp $
+ *  $Id: bignum.c,v 1.30 2002-04-05 00:49:43 shirok Exp $
  */
 
 #include <math.h>
@@ -53,6 +53,8 @@ int Scm_DumpBignum(ScmBignum *b, ScmPort *out);
 
 /*---------------------------------------------------------------------
  * Constructor
+ *
+ *   Scm_MakeBignum* always returns bignum, possibly denormalized.
  */
 static ScmBignum *bignum_clear(ScmBignum *b)
 {
@@ -98,38 +100,35 @@ ScmObj Scm_MakeBignumFromUI(u_long val)
     return SCM_OBJ(b);
 }
 
+ScmObj Scm_MakeBignumFromUIArray(int sign, u_long *values, int size)
+{
+    ScmBignum *b = make_bignum(size);
+    int i;
+    b->sign = (sign >= 0)? 1 : -1;
+    for (i=0; i<size; i++) b->values[i] = values[i];
+    return SCM_OBJ(b);
+}
+
 ScmObj Scm_MakeBignumFromDouble(double val)
 {
-    double absval, fraction, fbit;
-    int exponent, nwords;
-    u_long lval = 0, mask;
-    ScmBignum *b;
+    int exponent, sign;
+    ScmObj mantissa, b;
 
     if (val >= LONG_MIN && val <= LONG_MAX) {
         return Scm_MakeBignumFromSI((long)val);
     }
-    /* NB: strangely, in all documents I saw, the behavior of frexp()
-       when it is given a negative floating point number is not documented
-       explicitly. */
-    absval = fabs(val);
-    fraction = frexp(absval, &exponent);
-/*    fprintf(stderr, "fraction=%f, exponent=%d, ", fraction, exponent);*/
-    for (mask = (1L<<(WORD_BITS-1)), fbit = 0.5;
-         mask != 0 && fbit > 0.0 && fraction > 0;
-         mask>>=1, fbit /= 2) {
-        if (fraction >= fbit) {
-            lval |= mask;
-            fraction -= fbit;
-        }
+
+    mantissa = Scm_DecodeFlonum(val, &exponent, &sign);
+    if (!SCM_NUMBERP(mantissa)) {
+        Scm_Error("can't convert %lf to an integer", val);
     }
-    nwords = (exponent + WORD_BITS - 1)/WORD_BITS;
-/*    fprintf(stderr, "nwords=%d, lval=%08lx\n", nwords, lval);*/
-    b = make_bignum(nwords);
-    b->sign = (val < 0)? -1 : 1;
-    b->values[0] = lval;
-    SCM_ASSERT(exponent >= WORD_BITS);
-    bignum_lshift(b, b, exponent - WORD_BITS);
-    return Scm_NormalizeBignum(b);
+    b = Scm_Ash(mantissa, exponent);
+    /* always returns bignum */
+    if (SCM_INTP(b)) {
+        return Scm_MakeBignumFromSI(SCM_INT_VALUE(b));
+    } else {
+        return b;
+    }
 }
 
 ScmObj Scm_BignumCopy(ScmBignum *b)

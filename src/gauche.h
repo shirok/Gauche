@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.225 2002-04-04 08:25:40 shirok Exp $
+ *  $Id: gauche.h,v 1.226 2002-04-05 00:49:43 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1436,6 +1436,7 @@ struct ScmBignumRec {
 
 SCM_EXTERN ScmObj Scm_MakeBignumFromSI(long val);
 SCM_EXTERN ScmObj Scm_MakeBignumFromUI(u_long val);
+SCM_EXTERN ScmObj Scm_MakeBignumFromUIArray(int sign, u_long *values, int size);
 SCM_EXTERN ScmObj Scm_MakeBignumFromDouble(double val);
 SCM_EXTERN ScmObj Scm_BignumCopy(ScmBignum *b);
 SCM_EXTERN ScmObj Scm_BignumToString(ScmBignum *b, int radix, int use_upper);
@@ -1495,6 +1496,7 @@ SCM_EXTERN u_long Scm_GetUInteger(ScmObj obj);
 
 SCM_EXTERN ScmObj Scm_MakeFlonum(double d);
 SCM_EXTERN double Scm_GetDouble(ScmObj obj);
+SCM_EXTERN ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign);
 
 SCM_EXTERN ScmObj Scm_MakeComplex(double real, double imag);
 

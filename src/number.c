@@ -1,7 +1,7 @@
 /*
  * number.c - numeric functions
  *
- *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.73 2002-04-04 19:45:23 shirok Exp $
+ *  $Id: number.c,v 1.74 2002-04-05 00:49:43 shirok Exp $
  */
 
 #include <math.h>
@@ -101,6 +101,96 @@ ScmObj Scm_MakeFlonumToNumber(double d, int exact)
         }
     }
     return Scm_MakeFlonum(d);
+}
+
+/* Decompose flonum D into an integer mantissa F and exponent E, where
+ *   -1022 <= E <= 1023,
+ *    0 <= abs(F) < 2^53
+ *    D = F * 2^(E - 53)
+ * Some special cases:
+ *    F = 0, E = 0 if D = 0.0 or -0.0
+ *    F = #t if D is infinity (positive or negative)
+ *    F = #f if D is NaN.
+ * If D is normalized number, F >= 2^52.
+ *
+ * Cf. IEEE 754 Reference
+ * http://babbage.cs.qc.edu/courses/cs341/IEEE-754references.html
+ */
+union ieee_double {
+    double d;
+    struct {
+#ifdef WORDS_BIGENDIAN
+#if SIZEOF_LONG >= 8
+        unsigned int sign:1;
+        unsigned int exp:11;
+        unsigned long mant:52;
+#else  /*SIZEOF_LONG < 8*/
+        unsigned int sign:1;
+        unsigned int exp:11;
+        unsigned long mant0:20;
+        unsigned long mant1:32;
+#endif /*SIZEOF_LONG < 8*/
+#else  /*!WORDS_BIGENDIAN*/
+#if SIZEOF_LONG >= 8
+        unsigned long mant:52;
+        unsigned int  exp:11;
+        unsigned int  sign:1;
+#else  /*SIZEOF_LONG < 8*/
+        unsigned long mant1:32;
+        unsigned long mant0:20;
+        unsigned int  exp:11;
+        unsigned int  sign:1;
+#endif /*SIZEOF_LONG < 8*/
+#endif /*!WORDS_BIGENDIAN*/
+    } components;
+};
+
+ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign)
+{
+    union ieee_double dd;
+    ScmObj f;
+    
+    dd.d = d;
+
+    /* Check exceptional cases */
+    if (dd.components.exp == 0x7ff) {
+        *exp = 0;
+        if (
+#if SIZEOF_LONG >= 8
+            dd.components.mant == 0
+#else  /*SIZEOF_LONG < 8*/
+            dd.components.mant0 == 0 && dd.components.mant1 == 0
+#endif /*SIZEOF_LONG < 8*/
+            ) {
+            return SCM_TRUE;  /* infinity */
+        } else {
+            return SCM_FALSE; /* NaN */
+        }
+    }
+
+    *exp  = dd.components.exp - 0x3ff - 52;
+    *sign = (dd.components.sign? -1 : 1);
+    
+#if SIZEOF_LONG >= 8
+    {
+        unsigned long lf = dd.components.mant;
+        if (dd.components.exp > 0) {
+            lf += (1L<<52);     /* hidden bit */
+        }
+        f = Scm_MakeInteger(dd.components.mant);
+    }
+#else  /*SIZEOF_LONG < 8*/
+    {
+        unsigned long values[2];
+        values[0] = dd.components.mant1;
+        values[1] = dd.components.mant0;
+        if (dd.components.exp > 0) {
+            values[1] += (1L<<20); /* hidden bit */
+        }
+        f = Scm_NormalizeBignum(SCM_BIGNUM(Scm_MakeBignumFromUIArray(1, values, 2)));
+    }
+#endif /*SIZEOF_LONG < 8*/
+    return f;
 }
 
 /*=======================================================================
@@ -1281,20 +1371,26 @@ ScmObj Scm_LogXor(ScmObj x, ScmObj y)
  */
 
 /*
- * Printer
+ * Number Printer
+ *
+ * For flonum printer, the algorithm is taken from Robert G. Burger
+ * and R. Kent Dybvig, "Priting Floating-Point Numbers Quickly and Accurately",
+ * PLDI '96, pp.108--116.  
+ *
+ *  
  */
-
-static void number_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
-{
-    ScmObj s = Scm_NumberToString(obj, 10, FALSE);
-    SCM_PUTS(SCM_STRING(s), port);
-}
 
 static void double_print(char *buf, int buflen, double val, int plus_sign)
 {
-    /* TODO: Look at the algorithm of Burger & Dybvig :
-      "Priting Floating-Point Numbers Quickly and Accurately",
-      PLDI '96, pp108--116. */
+#if 0
+    union ieee754_double dd;
+    int exponent;
+    ScmObj f; /* fraction part in integer*/
+
+    /* decompose double value into integer fraction part and exponent */
+    dd.d = val;
+    f = Scm_MakeBignumFromUI(dd.ieee.mantissa0);
+#endif
     if (SCM_IS_INF(val)) {
         if (plus_sign) *buf++ = '+';
         strcpy(buf, "#<inf>");
@@ -1307,6 +1403,12 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
         if (strchr(buf, '.') == NULL && strchr(buf, 'e') == NULL)
             strcat(buf, ".0");
     }
+}
+
+static void number_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+{
+    ScmObj s = Scm_NumberToString(obj, 10, FALSE);
+    SCM_PUTS(SCM_STRING(s), port);
 }
 
 #define FLT_BUF 50
