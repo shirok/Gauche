@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.387 2003-04-25 01:47:54 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.388 2003-05-06 07:59:19 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -20097,23 +20097,42 @@ If called with @var{flag}, it is set to the current verbosity flag.
 
 @deftp {Module} gauche.selector
 @mdindex gauche.selector
+@c EN
 This module provides a simple interface to dispatch I/O events to
 registered handlers, based on @code{sys-select} (@xref{I/O multiplexing}).
+@c JP
+このモジュールは、@code{sys-select} (@ref{I/Oの多重化}参照)に基づき、
+登録されたハンドラにI/Oイベントをディスパッチするためのシンプルな
+インタフェースを提供します。
+@c COMMON
 @end deftp
 
 @deftp {Class} <selector>
 @clindex selector
+@c EN
 A dispatcher instance that keeps watching I/O ports with associated
 handlers.  A new instance can be created by @code{make} method.
+@c JP
+ディスパッチャのインスタンスで、ハンドラを携えてI/Oポートを監視します。
+@code{make}メソッドで新しいインスタンスを作れます。
+@c COMMON
 @end deftp
 
 
 @deffn {Method} selector-add! (self <selector>) port-or-fd proc flags
+@c EN
 Add a handler @var{proc} to the selector.  @var{proc} is called
 when @var{port-or-fd}, which should be a port object or an integer
 that specifies a system file descriptor,  meets a certain condition
 specified by @var{flags}.
 @var{flags} must be a list of one or more of the following symbols.
+@c JP
+セレクタにハンドラ@var{proc}を追加します。@var{proc}は、@var{port-or-fd}
+(ポートオブジェクトかシステムのファイルディスクリプタを表す整数)が
+@var{flags}で指定された条件に合致した場合に呼ばれます。
+@var{flags}は、以下のシンボルの1つ以上のリストでなければなりません。
+@c COMMON
+@c EN
 @table @code
 @item r
 Calls @var{proc} when data is available at @var{port-or-fd} to read.
@@ -20122,47 +20141,105 @@ Calls @var{proc} when @var{port-or-fd} is ready to be written.
 @item x
 Calls @var{proc} when an exceptional condition occurs on @var{port-or-fd}.
 @end table
+@c JP
+@table @code
+@item r
+@var{port-or-fd}が読み取り可能になった時点で@var{proc}が呼ばれます。
+@item w
+@var{port-or-fd}が書き込み可能になった時点で@var{proc}が呼ばれます。
+@item x
+@var{port-or-fd}で例外的な状況が発生した場合に@var{proc}が呼ばれます。
+@end table
+@c COMMON
 
+@c EN
 @var{proc} is called with two arguments.  The first one is @var{port-or-fd}
 itself, and the second one is a symbol @code{r}, @code{w} or @code{x},
 indicating the condition.
+@c JP
+@var{proc}は、2引数で呼ばれます。1つ目は@var{port-or-fd}そのもので、
+2つ目は条件を表すシンボル、@code{r}、@code{w}あるいは@code{x}です。
+@c COMMON
 
+@c EN
 If a handler is already associated with @var{port-or-fd} under the
 same condition, the previous handler is replaced by @var{proc}.
+@c JP
+同じ条件の下ですでに@var{port-or-fd}にハンドラが関連付けられていた場合は、
+以前のハンドラが@var{proc}で置き換えられます。
+@c COMMON
 @end deffn
 
 @deffn {Method} selector-delete! (self <selector>) port-or-fd proc flags
+@c EN
 Deletes the handler entries that matches @var{port-or-fd}, @var{proc}
 and @var{flags}.   One or more of the arguments may be @code{#f},
 meaning ``don't care''.  For example,
+@c JP
+@var{port-or-fd}、@var{proc}、@var{flags}にマッチするハンドラエントリを
+削除します。引数のいずれかが@code{#f}である場合は、それが何でも良いことを
+意味します。例えば、
+@c COMMON
 @example
 (selector-delete! selector the-port #f #f)
 @end example
+@c EN
 deletes all the handlers associated to @var{the-port}, and
+@c JP
+@var{the-port}に関連付けられた全てのハンドラを削除します。
+@c COMMON
 @example
 (selector-delete! selector #f #f '(w))
 @end example
+@c EN
 delets all the handlers waiting for writable condition.
+@c JP
+書き込み可能になるのを待っている全てのハンドラを削除します。
+@c COMMON
 @end deffn
 
 
 @deffn {Method} selector-select (self <selector>) &optional (timeout #f)
+@c EN
 Dispatcher body.  Waits for the conditions registered in @var{self},
 and when it occurs, calls the associated handler.
-
+@c JP
+ディスパッチャのボディです。@var{self}に登録された条件を待ち、条件が合致すると
+それに関連付けられたハンドラを呼びます。
+@c COMMON
+@c EN
 If the @var{timeout} argument is omitted or false, this method waits
 indefinitely.  Alternatively you can give a timeout value, that can
 be a real number in microseconds, or a list of two integers that
 represents seconds and microseconds.
+@c JP
+@var{timeout}引数が省略されるか偽の場合、このメソッドは永久に待ちます。
+タイムアウトの値を与える場合は、マイクロ秒を表す実数か、秒とマイクロ秒を
+表す2つの整数のリストを与えます。
+@c COMMON
 
+@c EN
 Returns the number of handlers called.  Zero means the selector has been
 timed out.
+@c JP
+戻り値は、ハンドラが呼ばれた回数です。0(ゼロ)は、セレクタがタイムアウト
+したことを意味します。
+@c COMMON
 
+@c EN
 It is safe to modify @var{self} inside handler.  The change will be
 effective from the next call of @code{selector-select}
+@c JP
+ハンドラの中で@var{self}を変更することは安全です。その変更は、次回の
+@code{selector-select}の呼び出し以降に反映されます。
+@c COMMON
 @end deffn
 
+@c EN
 This is a simple example of "echo" server:
+@c JP
+echoサーバのシンプルな例を示します。
+@c COMMON
 
 @example
 (use gauche.net)
