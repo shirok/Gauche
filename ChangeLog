@@ -1,3 +1,13 @@
+2002-09-07  Shiro Kawai  <shiro@acm.org>
+
+	* configure.in, doc/Makefile.in : changed autoconf variable GZIP to
+	  GZIP_PROGRAM, for it interferes gzip's operation.
+
+2002-09-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/genstub : fixed a bug that generates bad C predicate for <uint32>
+	  stub type.
+
 2002-09-02  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.6.2

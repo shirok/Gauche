@@ -4,7 +4,7 @@ GENERATED = Makefile $(MANPAGES)
 GOSH = ../src/gosh -I../src -I../lib
 INSTALL = @INSTALL@
 MAKEINFO = @MAKEINFO@
-GZIP = @GZIP@
+GZIP_PROGRAM = @GZIP_PROGRAM@
 
 # Manual page destination.  Default @mandir@ doesn't include 'share'
 # in the path, so I redefine it---a user can still override it by
@@ -66,10 +66,10 @@ gauche-refe.texi : gauche-ref.texi extract
 	gosh ./extract -en -o gauche-refe.texi gauche-ref.texi
 
 gauche-refe.info.gz : gauche-refe.texi
-	if test X$(MAKEINFO) != X -a X$(GZIP) != X; then \
+	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
 	  $(MAKEINFO) --no-warn gauche-refe.texi; \
 	  rm -rf gauche-refe.info*.gz; \
-	  $(GZIP) gauche-refe.info gauche-refe.info-[0-9]*; \
+	  $(GZIP_PROGRAM) gauche-refe.info gauche-refe.info-[0-9]*; \
 	fi
 
 gauche-refj.html : gauche-refj.texi
@@ -88,10 +88,10 @@ gauche-refj.texi : gauche-ref.texi extract
 	gosh ./extract -jp -o gauche-refj.texi gauche-ref.texi
 
 gauche-refj.info.gz : gauche-refj.texi
-	if test X$(MAKEINFO) != X -a X$(GZIP) != X; then \
+	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
 	  $(MAKEINFO) --no-warn gauche-refj.texi; \
 	  rm -rf gauche-refj.info*.gz; \
-	  $(GZIP) gauche-refj.info gauche-refj.info-[0-9]*; \
+	  $(GZIP_PROGRAM) gauche-refj.info gauche-refj.info-[0-9]*; \
 	fi
 
 clean:

@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.74 2002-08-24 04:14:39 shirok Exp $
+dnl $Id: configure.in,v 1.75 2002-09-08 04:28:29 shirok Exp $
 AC_INIT(src/gauche.h)
 AC_PREREQ(2.52)
-AC_REVISION($Revision: 1.74 $)
+AC_REVISION($Revision: 1.75 $)
 AC_CONFIG_HEADER(src/gauche/config.h)
 AC_CANONICAL_SYSTEM
 
@@ -164,7 +164,7 @@ AC_PROG_INSTALL
 AC_CHECK_PROGS(AR, ar gar)
 AC_CHECK_PROGS(AS, as gas)
 AC_CHECK_PROGS(MAKEINFO, makeinfo)
-AC_CHECK_PROGS(GZIP, gzip)
+AC_CHECK_PROGS(GZIP_PROGRAM, gzip)
 
 dnl Safe default CFLAGS (usually -g -O2 if you're using gcc, empty otherwise).
 dnl If the user overrides CFLAGS during configure, which is recorded.
