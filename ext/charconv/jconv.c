@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: jconv.c,v 1.12 2003-02-06 00:21:38 shirok Exp $
+ *  $Id: jconv.c,v 1.13 2003-02-07 02:44:06 shirok Exp $
  */
 
 /* Some iconv() implementations don't support japanese character encodings,
@@ -1357,7 +1357,7 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode)
 
     incode  = conv_name_find(fromCode);
     outcode = conv_name_find(toCode);
-
+    
     if (incode < 0 || outcode < 0) {
 #ifdef HAVE_ICONV_H        
         /* try iconv */

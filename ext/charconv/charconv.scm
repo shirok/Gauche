@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: charconv.scm,v 1.13 2003-02-06 09:19:32 shirok Exp $
+;;;  $Id: charconv.scm,v 1.14 2003-02-07 02:44:01 shirok Exp $
 ;;;
 
 (define-module gauche.charconv
@@ -129,13 +129,13 @@
   (let-keywords* opts ((to-code (gauche-character-encoding)))
     (if (ces-upper-compatible? to-code from-code)
         port
-        (apply open-input-conversion-port port from-code :owner #t opts))))
+        (apply open-input-conversion-port port from-code :owner? #t opts))))
 
 (define (wrap-with-output-conversion port to-code . opts)
   (let-keywords* opts ((from-code (gauche-character-encoding)))
     (if (ces-upper-compatible? from-code to-code)
         port
-        (apply open-output-conversion-port port to-code :owner #t opts))))
+        (apply open-output-conversion-port port to-code :owner? #t opts))))
 
 ;; Replace system's open-*-file to accept :encoding option
 (define (open-input-file name . args)
