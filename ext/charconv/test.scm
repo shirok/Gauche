@@ -107,6 +107,13 @@
 (define (test-output/chunk20 file from to)
   (test-output "chunk20" (lambda (p) (read-block 20 p)) display file from to))
 
+(define internal-enc
+  (case (gauche-character-encoding)
+    ((euc-jp) '("EUCJP"))
+    ((sjis)   '("SJIS"))
+    ((utf-8)  '("UTF-8"))
+    (else '())))
+
 (map-test test-output/byte "data/jp1"
           '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
           '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
@@ -117,7 +124,7 @@
           '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
           '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
 (map-test test-output/char "data/jp1"
-          '("EUCJP")
+          internal-enc
           '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
 
 (map-test test-output/byte "data/jp2"
@@ -130,7 +137,7 @@
           '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
           '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
 (map-test test-output/char "data/jp2"
-          '("EUCJP")
+          internal-enc
           '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
 
 (map-test test-output/byte "data/kr1"
@@ -151,9 +158,7 @@
         (infile  (format #f "~a.~a" file code)))
     (test infostr code
           (lambda ()
-            (call-with-input-file infile
-              (lambda (p)
-                (ces-guess-from-string (port->string p) scheme)))))))
+            (ces-guess-from-string (file->string infile) scheme)))))
 
 (map-test test-guess "data/jp1"
           '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")

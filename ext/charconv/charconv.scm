@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: charconv.scm,v 1.6 2001-07-12 20:38:58 shirok Exp $
+;;;  $Id: charconv.scm,v 1.7 2001-12-23 03:38:52 shirok Exp $
 ;;;
 
 (define-module gauche.charconv
@@ -29,9 +29,12 @@
 
 (define (ces-convert string fromcode . args)
   (let-optionals* args ((tocode #f))
-    (port->string
-     (open-input-conversion-port (open-input-string string) fromcode
-                                 :to-code tocode
-                                 :buffer-size (string-size string)))))
+    (let ((out (open-output-string)))
+      (copy-port
+       (open-input-conversion-port (open-input-string string) fromcode
+                                   :to-code tocode
+                                   :buffer-size (string-size string))
+       out :unit 'byte)
+      (get-output-string out))))
 
 (provide "gauche/charconv")
