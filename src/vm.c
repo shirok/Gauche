@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.97 2001-09-04 10:49:36 shirok Exp $
+ *  $Id: vm.c,v 1.98 2001-09-06 11:15:07 shirok Exp $
  */
 
 #include "gauche.h"
@@ -53,7 +53,6 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->parent = base;
     v->module = module ? module : base->module;
     v->escape = base ? base->escape : NULL;
-    v->history = NULL;
     
     v->curin  = SCM_PORT(Scm_Stdin());
     v->curout = SCM_PORT(Scm_Stdout());
@@ -78,21 +77,12 @@ ScmVM *Scm_NewVM(ScmVM *base,
     
     v->handlers = SCM_NIL;
 
+    v->escapeReason = 0;
+    v->escapeData[0] = NULL;
+    v->escapeData[1] = NULL;
+
     return v;
 }
-
-#if 0
-static void vm_reset()
-{
-    theVM->sp = theVM->stack;
-    theVM->env = NULL;
-    theVM->argp = (ScmEnvFrame*)theVM->stack;
-    theVM->cont = NULL;
-    theVM->pc = SCM_NIL;
-    theVM->val0 = SCM_UNDEFINED;
-    theVM->numVals = 1;
-}
-#endif
 
 ScmObj Scm_VMGetResult(ScmVM *vm)
 {
@@ -362,7 +352,7 @@ static void run_loop()
            !SCM_PAIRP(pc) than SCM_NULLP(pc), but the latter is faster.
            (the former makes nqueen.scm 2% slower) */
         if (SCM_NULLP(pc)) {
-            if (cont == NULL) {
+            if (cont == NULL || cont == vm->escape->cont) {
                 SAVE_REGS();
                 return; /* no more continuations */
             }
@@ -1256,7 +1246,7 @@ static inline ScmEnvFrame *save_env(ScmVM *vm,
 {
     ScmEnvFrame *e = env_begin, *prev = NULL, *head = env_begin, *s;
     ScmContFrame *c = cont_begin, *hc;
-    ScmVMActivationHistory *h;
+    ScmEscapePoint *esc;
     
     int size;
     for (; IN_STACK_P((ScmObj*)e); e = e->up) {
@@ -1266,6 +1256,12 @@ static inline ScmEnvFrame *save_env(ScmVM *vm,
         for (c = cont_begin; c; c = c->prev) {
             if (c->env == e) {
                 c->env = s;
+            }
+        }
+        for (esc = vm->escape; esc; esc = esc->prev) {
+            for (c = esc->cont; c; c = c->prev) {
+                if (!IN_STACK_P((ScmObj*)c)) break;
+                if (c->env == e) c->env = s;
             }
         }
         if (e == env_begin) head = s;
@@ -1286,6 +1282,8 @@ static inline ScmEnvFrame *save_env(ScmVM *vm,
 static void save_cont(ScmVM *vm, ScmContFrame *cont_begin)
 {
     ScmContFrame *c = cont_begin, *prev = NULL;
+    ScmEscapePoint *esc;
+    
     for (; IN_STACK_P((ScmObj*)c); c = c->prev) {
         ScmEnvFrame *e = save_env(vm, c->env, c);
         int size = (CONT_FRAME_SIZE + c->size) * sizeof(ScmObj);
@@ -1302,6 +1300,9 @@ static void save_cont(ScmVM *vm, ScmContFrame *cont_begin)
             /* C continuation */
             memcpy(csave, c, (CONT_FRAME_SIZE + c->size) * sizeof(ScmObj));
         }
+        for (esc = vm->escape; esc; esc = esc->prev) {
+            if (esc->cont == c) esc->cont = csave;
+        }
         if (prev) prev->prev = csave;
         prev = csave;
     }
@@ -1310,10 +1311,11 @@ static void save_cont(ScmVM *vm, ScmContFrame *cont_begin)
 static void save_stack(ScmVM *vm)
 {
     ScmObj *p;
-    
-//    struct timeval t0, t1;
-//    fprintf(stderr, "save_stack\n");
-//    gettimeofday(&t0, NULL);
+#if 0    
+    struct timeval t0, t1;
+    fprintf(stderr, "save_stack\n");
+    gettimeofday(&t0, NULL);
+#endif
     
     vm->env = save_env(vm, vm->env, vm->cont);
     save_cont(vm, vm->cont);
@@ -1323,9 +1325,11 @@ static void save_stack(ScmVM *vm)
     vm->argp = (ScmEnvFrame*)vm->stackBase;
     /* Clear the stack.  This removes bogus pointers and accelerates GC */
     for (p = vm->sp; p < vm->stackEnd; p++) *p = NULL;
-//    gettimeofday(&t1, NULL);
-//    fprintf(stderr, "elapsed = %d\n",
-//            (t1.tv_sec - t0.tv_sec)*1000000+(t1.tv_usec - t0.tv_usec));
+#if 0
+    gettimeofday(&t1, NULL);
+    fprintf(stderr, "elapsed = %d\n",
+            (t1.tv_sec - t0.tv_sec)*1000000+(t1.tv_usec - t0.tv_usec));
+#endif
 }
 
 ScmEnvFrame *Scm_GetCurrentEnv(void)
@@ -1417,50 +1421,39 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
  *   returns, continuations saved during the execution of the
  *   Scheme code becomes invalid.
  *
- *   To realize this, we make a chain of records (ScmVMActivationHistory)
- *   which keeps VM status at the border.   Call/cc captures the tail of
- *   the chain.  And when the captured continuation is invoked,
- *   it checks if the chain is still valid.
+ *   At the implementation level, this boundary is kept in a
+ *   structure ScmEscapePoint.
  */
 
 /* Border gate.  All the C->Scheme calls should go through here.  */
 static ScmObj user_eval_inner(ScmObj program)
 {
-    ScmVM *vm = theVM;
-    volatile ScmObj result = SCM_UNDEFINED, pc = vm->pc;
+    DECL_REGS_VOLATILE;
 
-    /* Keep activation history in heap.  It can be on the C stack,
-       since it is discarded when this routine returns.  However,
-       it may not be safe to do so if some routine other than Gauche
-       does longjmp() and discards the current frame... */
-    ScmVMActivationHistory *h = SCM_NEW(ScmVMActivationHistory);
-    h->prev = vm->history;
-    h->cont = vm->cont;
-    h->env = vm->env;
-    vm->history = h;
-    vm->numVals = 1;
+    /* Push extra continuation to preserve vm state.
+       TODO: this won't be necessary if we're called directly
+       from a subr */
+    CHECK_STACK(CONT_FRAME_SIZE);
+    PUSH_CONT(pc);
+    SAVE_REGS();
     
     SCM_PUSH_ERROR_HANDLER {
-        vm->cont = NULL;
         vm->pc = program;
         run_loop();
-        result = vm->val0;
-        vm->cont = vm->history->cont;
-        vm->env  = vm->history->env;
-        vm->pc = pc;
-        vm->history = vm->history->prev;
+        val0 = vm->val0;
+        RESTORE_REGS();
+        POP_CONT();
+        SAVE_REGS();
     }
     SCM_WHEN_ERROR {
-        ScmVM *vm = theVM;
-        vm->pc = SCM_NIL;
-        vm->cont = vm->history->cont;
-        vm->env  = vm->history->env;
-        vm->pc = pc;
-        vm->history = vm->history->prev;
+        vm->cont = escape.cont;
+        RESTORE_REGS();
+        POP_CONT();
+        SAVE_REGS();
         SCM_PROPAGATE_ERROR;
     }
     SCM_POP_ERROR_HANDLER;
-    return result;
+    return vm->val0;
 }
 
 ScmObj Scm_Eval(ScmObj expr, ScmObj e)
@@ -1657,7 +1650,7 @@ ScmObj Scm_VMThrowException(ScmObj exception)
 struct cont_data {
     ScmContFrame *cont;
     ScmObj handlers;
-    ScmVMActivationHistory *history;
+    ScmEscapePoint *escape;
 };
 
 static ScmObj throw_cont_cc(ScmObj, void **);
@@ -1723,7 +1716,6 @@ static ScmObj throw_cont_body(ScmObj cur_handlers, /* dynamic handlers of
     vm->pc = SCM_NIL;
     vm->cont = cd->cont;
     vm->handlers = dest_handlers;
-    vm->history = cd->history;
 
     nargs = Scm_Length(args);
     if (nargs == 1) {
@@ -1750,24 +1742,34 @@ static ScmObj throw_cont_cc(ScmObj result, void **data)
     return throw_cont_body(cur_handlers, dest_handlers, cd, args);
 }
 
+/* Body of the continuation SUBR */
 static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
 {
 
     struct cont_data *cd = (struct cont_data*)data;
+    ScmVM *vm = theVM;
     ScmObj handlers = cd->handlers;
-    ScmObj current = theVM->handlers;
+    ScmObj current = vm->handlers;
     ScmObj args = argframe[0];
-    ScmVMActivationHistory *h;
+    ScmEscapePoint *ep;
 
-    if (theVM->history != cd->history) {
-        for (h = theVM->history; h; h = h->prev) {
-            if (cd->history == h) break;
+    if (vm->escape != cd->escape) {
+        for (ep = vm->escape; ep; ep = ep->prev) {
+            if (cd->escape == ep) break;
         }
-        if (h == NULL) {
+        if (ep == NULL) {
             Scm_Error("a continuation is thrown outside of it's extent: %p",
                       cd);
         } else {
-            Scm_Error("continuation can't be thrown across C strack (yet)");
+            /* Rewind C stack */
+            Scm_Error("a continuation is thrown across C stack boundary: %p",
+                      cd);
+            /*
+            vm->escapeReason = SCM_VM_ESCAPE_CONT;
+            vm->escapeData[0] = cd;
+            vm->escapeData[1] = args;
+            longjmp(vm->escape->jbuf, 1);
+            */
         }
     }
     return throw_cont_body(current, handlers, cd, args);
@@ -1787,7 +1789,7 @@ ScmObj Scm_VMCallCC(ScmObj proc)
     data = SCM_NEW(struct cont_data);
     data->cont = vm->cont;
     data->handlers = vm->handlers;
-    data->history = vm->history;
+    data->escape = vm->escape;
 
     contproc = Scm_MakeSubr(throw_continuation, data, 0, 1,
                             SCM_MAKE_STR("continuation"));
@@ -1987,7 +1989,7 @@ void Scm_VMDump(ScmVM *vm)
     ScmPort *out = vm->curerr;
     ScmEnvFrame *env = vm->env;
     ScmContFrame *cont = vm->cont;
-    ScmVMActivationHistory *hist = vm->history;
+    ScmEscapePoint *esc = vm->escape;
 
     Scm_Printf(out, "VM %p -----------------------------------------------------------\n", vm);
     Scm_Printf(out, "   pc: %#65.1S\n", vm->pc);
@@ -2015,11 +2017,11 @@ void Scm_VMDump(ScmVM *vm)
         cont = cont->prev;
     }
 
-    Scm_Printf(out, "history:\n");
-    while (hist) {
-        Scm_Printf(out, "  %p: prev=%p, base=%p, cont=%p\n",
-                   hist, hist->prev, hist->stackBase, hist->cont);
-        hist = hist->prev;
+    Scm_Printf(out, "escape points:\n");
+    while (esc) {
+        Scm_Printf(out, "  %p: prev=%p, cont=%p\n",
+                   esc, esc->prev, esc->cont);
+        esc = esc->prev;
     }
     Scm_Printf(out, "dynenv: %S\n", vm->handlers);
 }

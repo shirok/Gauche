@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.39 2001-09-04 10:49:37 shirok Exp $
+ *  $Id: vm.h,v 1.40 2001-09-06 11:15:08 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -72,21 +72,6 @@ typedef struct ScmContFrameRec {
 #define CONT_FRAME_SIZE  5
 
 extern void Scm_CallCC(ScmObj body);
-
-/*
- * VM activation history
- *
- *   Activation history keeps the chain of C calls from where
- *   VM is activated (by run_loop()).  Only "upward" continuation
- *   can be thrown across this record.  See vm.c for details.
- */
-
-typedef struct ScmVMActivationHistoryRec {
-    struct ScmVMActivationHistoryRec *prev; /* previous history */
-    ScmObj *stackBase;          /* saved stack base */
-    ScmContFrame *cont;         /* saved continuation frame chain */
-    ScmEnvFrame *env;           /* saved environment frame chain */
-} ScmVMActivationHistory;
 
 /*
  * Identifier
@@ -160,8 +145,13 @@ typedef struct ScmEscapeHandlerRec {
 typedef struct ScmEscapePointRec {
     struct ScmEscapePointRec *prev;
     ScmEscapeHandler *handlers;
+    ScmContFrame *cont;
     jmp_buf jbuf;
 } ScmEscapePoint;
+
+/* Escape types */
+#define SCM_VM_ESCAPE_ERROR  0
+#define SCM_VM_ESCAPE_CONT   1
 
 /*
  * VM structure
@@ -172,7 +162,6 @@ struct ScmVMRec {
     ScmVM *parent;
     ScmModule *module;          /* current global namespace */
     ScmEscapePoint *escape;     /* current escape point */
-    ScmVMActivationHistory *history; /* activation history */
 
     unsigned int compilerFlags; /* Compiler flags */
     unsigned int errorFlags;    /* Error flags */
@@ -201,6 +190,10 @@ struct ScmVMRec {
     ScmObj *stackBase;          /* base of current stack area  */
     ScmObj *stackEnd;           /* end of current stack area */
     int stackSize;
+
+    /* Escape handling */
+    int escapeReason;
+    void *escapeData[2];
 };
 
 extern ScmVM *Scm_SetVM(ScmVM *vm);
@@ -256,6 +249,7 @@ extern ScmObj Scm_VMInsnInspect(ScmObj obj);
     do {                                        \
        ScmEscapePoint escape;                   \
        escape.prev = Scm_VM()->escape;          \
+       escape.cont = Scm_VM()->cont;            \
        Scm_VM()->escape = &escape;              \
        if (setjmp(escape.jbuf) == 0) {
            
