@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.11 2001-04-15 21:53:39 shiro Exp $
+ *  $Id: read.c,v 1.12 2001-04-20 08:35:25 shiro Exp $
  */
 
 #include <stdio.h>
@@ -35,6 +35,7 @@ static ScmObj read_number(ScmPort *port, ScmChar initial);
 static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial);
 static ScmObj read_keyword(ScmPort *port);
 static ScmObj read_regexp(ScmPort *port);
+static ScmObj read_charset(ScmPort *port);
 static ScmObj maybe_uvector(ScmPort *port, char c);
 
 /* Special hook for SRFI-4 syntax */
@@ -155,6 +156,9 @@ ScmObj read_internal(ScmPort *port)
             case '/':
                 /* #/.../ literal regexp */
                 return read_regexp(port);
+            case '[':
+                /* #[...] literal charset */
+                return read_charset(port);
             default:
                 read_error(port, "unsupported #-syntax: #%C", c1);
             }
@@ -416,7 +420,7 @@ static ScmObj read_keyword(ScmPort *port)
 }
 
 /*----------------------------------------------------------------
- * Regexp
+ * Regexp & charset
  */
 
 /* gauche extension :  #/regexp/ */
@@ -443,6 +447,12 @@ static ScmObj read_regexp(ScmPort *port)
             SCM_DSTRING_PUTC(&ds, c);
         }
     }
+}
+
+/* gauche extension :  #[charset] */
+static ScmObj read_charset(ScmPort *port)
+{
+    return Scm_CharSetRead(port, NULL, TRUE);
 }
 
 /*----------------------------------------------------------------
