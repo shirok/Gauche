@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: cgi.scm,v 1.1 2001-09-18 20:00:04 shirok Exp $
+;;;  $Id: cgi.scm,v 1.2 2001-09-21 08:06:18 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CG.
@@ -22,7 +22,9 @@
   (use srfi-1)
   (use srfi-13)
   (use rfc.uri)
-  (export cgi-get-input)
+  (export cgi-get-input
+          cgi-parse-parameters
+          cgi-get-parameter)
   )
 (select-module cgi)
 
@@ -35,7 +37,6 @@
                  (flush)
                  (let loop ((line (read-line))
                             (params '()))
-                   (format #t "~s\n" params)
                    (if (eof-object? line)
                        (string-join (reverse params) "&")
                        (loop (read-line) (cons line params)))))
@@ -47,7 +48,32 @@
            (string-concatenate (port->string-list (current-input-port))))
           (else (error "unknown REQUEST_METHOD" method)))))
 
+(define (cgi-parse-parameters . args)
+  (fold-right (lambda (elt params)
+                (let* ((ss (string-split elt #\=))
+                       (p  (assoc (car ss) params))
+                       (v  (if (null? (cdr ss))
+                               #t
+                               (uri-decode-string (string-join (cdr ss) "=")
+                                                  :cgi-decode #t))))
+                  (if p
+                      (begin (set! (cdr p) (cons v (cdr p))) params)
+                      (cons (list (car ss) v) params))))
+              '()
+              (append-map (lambda (s) (string-split s #\&))
+                          (if (null? args)
+                              (list (cgi-get-input))
+                              args))))
 
-
+(define (cgi-get-parameter key params . args)
+  (let ((default (get-keyword :default args #f))
+        (list?   (get-keyword :list args #f))
+        (convert (get-keyword :convert args (lambda (x) x))))
+    (cond ((assoc key params)
+           => (lambda (p)
+                (if list?
+                    (map convert (cdr p))
+                    (convert (string-join (cdr p) " ")))))
+          (else (if list? (list default) default)))))
 
 (provide "cgi")
