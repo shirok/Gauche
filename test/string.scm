@@ -253,6 +253,29 @@
                        (string-pointer-substring sp :after #t))))
 
 ;;-------------------------------------------------------------------
+(test-section "input string port")
+
+;; These also tests port's ungetc buffer and scratch buffer.
+
+(define istr (open-input-string "abcdefg"))
+
+(test "read-char" #\a (lambda () (read-char istr)))
+(test "peek-char" #\b (lambda () (peek-char istr)))
+(test "read-byte" 98  (lambda () (read-byte istr)))
+(test "read-byte from ungotten buffer" 99
+      (lambda () (peek-char istr) (read-byte istr)))
+(test "read-block using ungotten buffer" #"d"
+      (lambda () (peek-char istr) (read-block 1 istr)))
+(test "read-block using ungotten buffer" #"efg"
+      (lambda () (peek-char istr) (read-block 10 istr)))
+(test "termination" #t
+      (lambda () (eof-object? (read-char istr))))
+(test "termination" #t
+      (lambda () (eof-object? (read-byte istr))))
+(test "termination" #t
+      (lambda () (eof-object? (read-block 3 istr))))
+
+;;-------------------------------------------------------------------
 (test-section "output string port")
 
 ;; This effectively tests the dynamic string implemenatation.

@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with euc-jp.
 
-;; $Id: euc-jp.scm,v 1.11 2001-09-23 04:57:08 shirok Exp $
+;; $Id: euc-jp.scm,v 1.12 2002-04-27 08:22:58 shirok Exp $
 
 (use gauche.test)
 
@@ -217,6 +217,22 @@
                    (integer-range->char-set (char->integer #\ぁ)
                                             (char->integer #\お)))))
 
+;;-------------------------------------------------------------------
+(test-section "ports")
+
+(define istr (open-input-string "イロハニホヘト"))
+(test "read-char" #\イ (lambda () (read-char istr)))
+(test "read-byte" #xa5 (lambda () (read-byte istr)))
+(test "read-byte (using scratch)" #xed
+      (lambda () (peek-char istr) (read-byte istr)))
+(test "read-char (using scratch)" #\ハ
+      (lambda () (read-char istr)))
+(test "read-block (using scratch)" #"ニ"
+      (lambda () (peek-char istr) (read-block 2 istr)))
+(test "read-block (using scratch)" #"\xa5"
+      (lambda () (peek-char istr) (read-block 1 istr)))
+(test "read-block (using scratch)" #"\xdbヘト"
+      (lambda () (peek-char istr) (read-block 10 istr)))
 
 ;;-------------------------------------------------------------------
 (test-section "buffered ports")
