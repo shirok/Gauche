@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.37 2001-06-30 09:42:38 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.38 2001-09-17 01:36:39 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -54,6 +54,7 @@
 ;; won't complain.
 (define-module srfi-6 )
 (define-module srfi-8 )
+(define-module srfi-10 )
 (define-module srfi-17 )
 
 ;;

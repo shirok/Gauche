@@ -1,7 +1,7 @@
 ;;;
 ;;; SRFI-0   feature based conditional expansion construct
 ;;;
-;;; $Id: srfi-0.scm,v 1.7 2001-07-08 19:18:32 shirok Exp $
+;;; $Id: srfi-0.scm,v 1.8 2001-09-17 01:41:05 shirok Exp $
 ;;;
 
 ;; This implementation is based on the reference implementation
@@ -52,6 +52,8 @@
      (begin body ...))
     ((cond-expand (srfi-9 body ...) more-clauses ...)
      (begin (use srfi-9) body ...))
+    ((cond-expand (srfi-10 body ...) more-clauses ...)
+     (begin body ...))
     ((cond-expand (srfi-11 body ...) more-clauses ...)
      (begin (use srfi-11) body ...))
     ((cond-expand (srfi-13 body ...) more-clauses ...)

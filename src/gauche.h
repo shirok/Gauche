@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.173 2001-09-16 07:00:09 shirok Exp $
+ *  $Id: gauche.h,v 1.174 2001-09-17 01:36:39 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1083,6 +1083,8 @@ extern void Scm_Vprintf(ScmPort *port, const char *fmt, va_list args);
 extern ScmObj Scm_Read(ScmObj port);
 extern ScmObj Scm_ReadList(ScmObj port, ScmChar closer);
 
+extern ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc);
+    
 /*--------------------------------------------------------
  * IO
  */

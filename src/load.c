@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.42 2001-07-14 18:58:28 shirok Exp $
+ *  $Id: load.c,v 1.43 2001-09-17 01:36:39 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -559,8 +559,10 @@ void Scm__InitLoad(void)
     DEF(load_next_rec,    SCM_SYM_LOAD_NEXT, SCM_NIL);
     DEF(load_port_rec,    SCM_SYM_LOAD_PORT, SCM_FALSE);
 
-    provided = SCM_LIST2(SCM_MAKE_STR("srfi-6"), /* string ports (builtin) */
-                         SCM_MAKE_STR("srfi-8")  /* receive (builtin) */
+    provided = SCM_LIST4(SCM_MAKE_STR("srfi-6"), /* string ports (builtin) */
+                         SCM_MAKE_STR("srfi-8"), /* receive (builtin) */
+                         SCM_MAKE_STR("srfi-10"), /* #, (builtin) */
+                         SCM_MAKE_STR("srfi-17")  /* set! (builtin) */
                          );
     dso_list = SCM_NIL;
 }

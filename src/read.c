@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.23 2001-08-31 08:34:09 shirok Exp $
+ *  $Id: read.c,v 1.24 2001-09-17 01:36:39 shirok Exp $
  */
 
 #include <stdio.h>
@@ -37,10 +37,15 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim);
 static ScmObj read_keyword(ScmPort *port);
 static ScmObj read_regexp(ScmPort *port);
 static ScmObj read_charset(ScmPort *port);
+static ScmObj read_sharp_comma(ScmPort *port, ScmObj form);
 static ScmObj maybe_uvector(ScmPort *port, char c);
 
 /* Special hook for SRFI-4 syntax */
 ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag);
+
+/* Table of 'read-time constructor' in SRFI-10 */
+/* TODO: MT Safeness */
+static ScmHashTable *read_ctor_table;
 
 /*----------------------------------------------------------------
  * Entry point
@@ -163,6 +168,12 @@ ScmObj read_internal(ScmPort *port)
             case '"':
                 /* #"..." explicit incomplete string */
                 return read_string(port, TRUE);
+            case ',':
+                /* #,(form) - SRFI-10 read-time macro */
+                {
+                    ScmObj form = read_internal(port);
+                    return read_sharp_comma(port, form);
+                }
             default:
                 read_error(port, "unsupported #-syntax: #%C", c1);
             }
@@ -536,6 +547,42 @@ static ScmObj read_charset(ScmPort *port)
 }
 
 /*----------------------------------------------------------------
+ * SRFI-10 support
+ */
+
+ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc)
+{
+    ScmHashEntry *e;
+    if (!SCM_PROCEDUREP(proc)) {
+        Scm_Error("procedure required, but got %S\n", proc);
+    }
+    /* TODO: MT Safeness */
+    Scm_HashTablePut(read_ctor_table, symbol, proc);
+    return SCM_UNDEFINED;
+}
+
+static ScmObj read_sharp_comma(ScmPort *port, ScmObj form)
+{
+    int len = Scm_Length(form);
+    ScmHashEntry *e;
+    
+    if (len <= 0) read_error(port, "bad #,-form: #,%S", form);
+
+    /* TODO: MT Safeness */
+    e = Scm_HashTableGet(read_ctor_table, SCM_CAR(form));
+    if (e == NULL) {
+        read_error(port, "unknown #,-key: %S", SCM_CAR(form));
+    }
+    SCM_ASSERT(SCM_PROCEDUREP(e->value));
+    return Scm_Apply(e->value, SCM_CDR(form));
+}
+
+static ScmObj reader_ctor(ScmObj *args, int nargs, void *data)
+{
+    return Scm_DefineReaderCtor(args[0], args[1]);
+}
+
+/*----------------------------------------------------------------
  * Uvector
  */
 
@@ -590,5 +637,19 @@ static ScmObj maybe_uvector(ScmPort *port, char ch)
             Scm_Error("couldn't load srfi-4 module");
     }
     return Scm_ReadUvectorHook(port, tag);
+}
+
+/*----------------------------------------------------------------
+ * Initialization
+ */
+
+void Scm__InitRead(void)
+{
+    ScmObj sym_reader_ctor = SCM_INTERN("define-reader-ctor");
+    read_ctor_table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS,
+                                                      NULL, 0));
+    Scm_DefineReaderCtor(sym_reader_ctor,
+                         Scm_MakeSubr(reader_ctor, NULL, 2, 0,
+                                      SCM_INTERN("sym_reader_ctor")));
 }
 
