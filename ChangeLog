@@ -1,3 +1,10 @@
+2001-05-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/numerical.scm : fixed more numeric instability of
+	  acos, asinh, acosh.  Finally Gauche can plot the fascinating
+	  pictures shown in the "Numbers" section of "Common Lisp, the
+	  Language, 2nd edition".
+
 2001-05-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/numeric.c: fixed asin and acos to avoid numeric
