@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.83 2002-07-01 08:52:05 shirok Exp $
+ *  $Id: class.c,v 1.84 2002-08-28 09:14:43 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1702,8 +1702,9 @@ static void initialize_builtin_class(ScmClass *k, const char *name,
                                      int instanceSize, ScmModule *mod)
 {
     ScmObj slots = SCM_NIL, t = SCM_NIL;
-    ScmObj acc = SCM_NIL;
+    ScmObj acc = SCM_NIL, sp;
     ScmObj s = SCM_INTERN(name);
+    ScmClass **super;
 
     if (k->cpa == NULL) {
 	k->cpa = SCM_CLASS_DEFAULT_CPL;
@@ -1726,6 +1727,7 @@ static void initialize_builtin_class(ScmClass *k, const char *name,
     initialize_builtin_cpl(k);
     Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(k));
 
+    /* initialize direct slots */
     if (specs) {
         for (;specs->name; specs++) {
             ScmObj snam = SCM_INTERN(specs->name);
@@ -1740,12 +1742,28 @@ static void initialize_builtin_class(ScmClass *k, const char *name,
                                  NULL));
         }
     }
+    k->directSlots = slots;
+
+    /* compute other slots inherited from supers */
+    for (super = k->cpa; *super; super++) {
+        SCM_FOR_EACH(sp, (*super)->directSlots) {
+            ScmObj slot = SCM_CAR(sp), snam, p, a;
+            SCM_ASSERT(SCM_PAIRP(slot));
+            snam = SCM_CAR(slot);
+            p = Scm_Assq(snam, slots);
+            if (SCM_FALSEP(p)) {
+                slots = Scm_Cons(Scm_CopyList(slot), slots);
+                a = Scm_GetKeyword(key_slot_accessor, SCM_CDR(slot), SCM_FALSE);
+                SCM_ASSERT(SCM_SLOT_ACCESSOR_P(a));
+                acc = Scm_Acons(snam, a, acc);
+            }
+        }
+    }
+    k->slots = slots;
     k->accessors = acc;
-    k->directSlots = k->slots = slots;
     if (instanceSize > 0) {
         k->instanceSlotOffset = instanceSize / sizeof(ScmObj);
     }
-
 }
 
 void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
