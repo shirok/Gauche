@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.67 2002-04-01 10:33:25 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.68 2002-04-03 10:36:13 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -131,7 +131,7 @@
 (%autoload-scheme "gauche/numerical"
                   exp log sqrt expt cos sin tan asin acos atan
                   gcd lcm numerator denominator
-                  make-polar real-part imag-part)
+                  real-part imag-part)
 
 (autoload "gauche/numerical"
           sinh cosh tanh asinh acosh atanh)

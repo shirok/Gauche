@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: numerical.scm,v 1.13 2002-03-07 09:59:24 shirok Exp $
+;;;  $Id: numerical.scm,v 1.14 2002-04-03 10:36:18 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -80,10 +80,17 @@
 ;; Complex numbers
 ;;
 
-(define-in-module scheme (make-polar r t)
-  (check-arg real? r)
-  (check-arg real? t)
-  (make-rectangular (* r (%cos t)) (* r (%sin t))))
+;; I put make-polar back to the C subr.  Because of Intel's 80-bit
+;; floating-point number arithmetic, the calculation done in C (in the
+;; number reading routine) doesn't exactly meet the calculation done
+;; in Scheme (via Scm_Multiply), and it made the following expression fail:
+;;
+;;   (eqv? (make-polar 7.0 -1.5) 7.0@1.5)
+;;
+;(define-in-module scheme (make-polar r t)
+;  (check-arg real? r)
+;  (check-arg real? t)
+;  (make-rectangular (* r (%cos t)) (* r (%sin t))))
 
 (define-in-module scheme (real-part z)
   (receive (x y) (%complex->real/imag z) x))

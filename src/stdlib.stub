@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.75 2002-01-20 22:59:57 shirok Exp $
+;;; $Id: stdlib.stub,v 1.76 2002-04-03 10:36:13 shirok Exp $
 ;;;
 
 
@@ -326,6 +326,13 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   "if (b == 0.0) SCM_RETURN(Scm_MakeFlonum(a));
   else SCM_RETURN(Scm_MakeComplex(a, b));")
 
+(define-cproc make-polar (r t)
+  (assert (real? r))
+  (assert (real? t))
+  "double real = r * cos(t), imag = r * sin(t);
+  if (imag == 0.0) SCM_RETURN(Scm_MakeFlonum(real));
+  else SCM_RETURN(Scm_MakeComplex(real, imag));")
+
 (define-cproc %complex->real/imag (z)
   "  if (SCM_EXACTP(z)) { SCM_RETURN(Scm_Values2(z, SCM_MAKE_INT(0))); }
   else if (SCM_FLONUMP(z)) { SCM_RETURN(Scm_Values2(z, Scm_MakeFlonum(0.0))); }
@@ -354,7 +361,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-cproc string->number (obj &optional (radix 10))
   (assert (string? obj))
   (assert (small-integer? radix))
-  "  SCM_RETURN(Scm_StringToNumber(obj, radix));")
+  "  SCM_RETURN(Scm_StringToNumber(obj, radix, FALSE));")
 
 ;;
 ;; 6.3.1  Booleans
