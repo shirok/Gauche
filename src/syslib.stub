@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.21 2001-03-12 08:05:12 shiro Exp $
+;;; $Id: syslib.stub,v 1.22 2001-03-12 08:30:35 shiro Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -579,13 +579,14 @@
   "  pause();  SCM_RETURN(SCM_UNDEFINED);")
 
 ;; returns a list of two ports
-(define-cproc sys-pipe (&keyword (name "(pipe)") (buffer-size 0))
-  (assert (small-integer? buffer-size))
+(define-cproc sys-pipe (&keyword (name "(pipe)") (buffered? #t))
   "  int fds[2], r; ScmObj rend, wend;
   r = pipe(fds);
   if (r < 0) Scm_SysError(\"pipe failed\");
-  rend = Scm_MakePortWithFd(name, SCM_PORT_INPUT, fds[0], buffer_size, TRUE);
-  wend = Scm_MakePortWithFd(name, SCM_PORT_OUTPUT, fds[1], buffer_size, TRUE);
+  rend = Scm_MakePortWithFd(name, SCM_PORT_INPUT, fds[0],
+                            !SCM_FALSEP(bufferedP), TRUE);
+  wend = Scm_MakePortWithFd(name, SCM_PORT_OUTPUT, fds[1],
+                            !SCM_FALSEP(bufferedP), TRUE);
   SCM_RETURN(SCM_LIST2(rend, wend));")  
 
 (define-cproc sys-rmdir (pathname)
