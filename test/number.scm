@@ -235,13 +235,13 @@
       (lambda () (- x z)))
 (test "bignum - bignum" x
       (lambda () (- (+ x y) y)))
-(test "-bignum + bignum" (- #xfffffffd00000000fffffffd00000000)
+(test "-bignum + bignum" #x-fffffffd00000000fffffffd00000000
       (lambda () (+ xx y)))
-(test "-bignum + -bignum" (- #x100000001000000010000000100000000)
+(test "-bignum + -bignum" #x-100000001000000010000000100000000
       (lambda () (+ xx yy)))
-(test "-bignum - bignum" (- #x100000001000000010000000100000000)
+(test "-bignum - bignum" #x-100000001000000010000000100000000
       (lambda () (- xx y)))
-(test "-bignum - -bignum" (- #xfffffffd00000000fffffffd00000000)
+(test "-bignum - -bignum" #x-fffffffd00000000fffffffd00000000
       (lambda () (- xx yy)))
 
 ;;------------------------------------------------------------------
@@ -274,9 +274,9 @@
 (test "NUMADDI" #x100000003 (lambda () (+ x 3)))
 (test "NUMADDI" #xffffffff (lambda () (+ -1 x)))
 (test "NUMADDI" #xffffffff (lambda () (+ x -1)))
-(test "NUMSUBI" (- #xfffffffd) (lambda () (- 3 x)))
+(test "NUMSUBI" #x-fffffffd (lambda () (- 3 x)))
 (test "NUMSUBI" #xfffffffd (lambda () (- x 3)))
-(test "NUMSUBI" (- #x100000003) (lambda () (- -3 x)))
+(test "NUMSUBI" #x-100000003 (lambda () (- -3 x)))
 (test "NUMSUBI" #x100000003 (lambda () (- x -3)))
 
 ;;------------------------------------------------------------------
@@ -595,20 +595,20 @@
       (lambda () (ash #x408000 -100)))
 (test "ash (fixnum)" #x81
       (lambda () (ash #x81 0)))
-(test "ash (neg. fixnum)" (- #x408000)  ;negative fixnum
-      (lambda () (ash (- #x81) 15)))
-(test "ash (neg. fixnum)" (- #x81)      ;nagative fixnum
-      (lambda () (ash (- #x408000) -15)))
+(test "ash (neg. fixnum)" #x-408000  ;negative fixnum
+      (lambda () (ash #x-81 15)))
+(test "ash (neg. fixnum)" #x-81      ;nagative fixnum
+      (lambda () (ash #x-408000 -15)))
 (test "ash (fixnum)" -2
-      (lambda () (ash (- #x408000) -22)))
+      (lambda () (ash #x-408000 -22)))
 (test "ash (fixnum)" -1
-      (lambda () (ash (- #x408000) -23)))
+      (lambda () (ash #x-408000 -23)))
 (test "ash (fixnum)" -1
-      (lambda () (ash (- #x408000) -24)))
+      (lambda () (ash #x-408000 -24)))
 (test "ash (fixnum)" -1
-      (lambda () (ash (- #x408000) -100)))
-(test "ash (fixnum)" (- #x408000)
-      (lambda () (ash (- #x408000) 0)))
+      (lambda () (ash #x-408000 -100)))
+(test "ash (fixnum)" #x-408000
+      (lambda () (ash #x-408000 0)))
 
 (test "ash (fixnum->bignum)" #x81000000
       (lambda () (ash #x81 24)))
@@ -622,18 +622,18 @@
       (lambda () (ash #x81 63)))
 (test "ash (fixnum->bignum)" #x810000000000000000
       (lambda () (ash #x81 64)))
-(test "ash (neg.fixnum->bignum)" (- #x81000000)
-      (lambda () (ash (- #x81) 24)))
-(test "ash (neg.fixnum->bignum)" (- #x4080000000)
-      (lambda () (ash (- #x81) 31)))
-(test "ash (neg.fixnum->bignum)" (- #x8100000000)
-      (lambda () (ash (- #x81) 32)))
-(test "ash (neg.fixnum->bignum)" (- #x8100000000000000)
-      (lambda () (ash (- #x81) 56)))
-(test "ash (neg.fixnum->bignum)" (- #x408000000000000000)
-      (lambda () (ash (- #x81) 63)))
-(test "ash (neg.fixnum->bignum)" (- #x810000000000000000)
-      (lambda () (ash (- #x81) 64)))
+(test "ash (neg.fixnum->bignum)" #x-81000000
+      (lambda () (ash #x-81 24)))
+(test "ash (neg.fixnum->bignum)" #x-4080000000
+      (lambda () (ash #x-81 31)))
+(test "ash (neg.fixnum->bignum)" #x-8100000000
+      (lambda () (ash #x-81 32)))
+(test "ash (neg.fixnum->bignum)" #x-8100000000000000
+      (lambda () (ash #x-81 56)))
+(test "ash (neg.fixnum->bignum)" #x-408000000000000000
+      (lambda () (ash #x-81 63)))
+(test "ash (neg.fixnum->bignum)" #x-810000000000000000
+      (lambda () (ash #x-81 64)))
 
 (test "ash (bignum->fixnum)" #x81
       (lambda () (ash  #x81000000 -24)))
@@ -672,44 +672,44 @@
 (test "ash (bignum->fixnum)" 0
       (lambda () (ash #x408000000000000000 -100)))
 
-(test "ash (neg.bignum->fixnum)" (- #x81)
-      (lambda () (ash (- #x81000000) -24)))
-(test "ash (neg.bignum->fixnum)" (- #x41)
-      (lambda () (ash (- #x81000000) -25)))
-(test "ash (neg.bignum->fixnum)" (- #x21)
-      (lambda () (ash (- #x81000000) -26)))
+(test "ash (neg.bignum->fixnum)" #x-81
+      (lambda () (ash #x-81000000 -24)))
+(test "ash (neg.bignum->fixnum)" #x-41
+      (lambda () (ash #x-81000000 -25)))
+(test "ash (neg.bignum->fixnum)" #x-21
+      (lambda () (ash #x-81000000 -26)))
 (test "ash (neg.bignum->fixnum)" -2
-      (lambda () (ash (- #x81000000) -31)))
+      (lambda () (ash #x-81000000 -31)))
 (test "ash (neg.bignum->fixnum)" -1
-      (lambda () (ash (- #x81000000) -32)))
+      (lambda () (ash #x-81000000 -32)))
 (test "ash (neg.bignum->fixnum)" -1
-      (lambda () (ash (- #x81000000) -33)))
+      (lambda () (ash #x-81000000 -33)))
 (test "ash (neg.bignum->fixnum)" -1
-      (lambda () (ash (- #x81000000) -100)))
-(test "ash (neg.bignum->fixnum)" (- #x81)
-      (lambda () (ash (- #x4080000000) -31)))
-(test "ash (neg.bignum->fixnum)" (- #x41)
-      (lambda () (ash (- #x4080000000) -32)))
-(test "ash (neg.bignum->fixnum)" (- #x21)
-      (lambda () (ash (- #x4080000000) -33)))
+      (lambda () (ash #x-81000000 -100)))
+(test "ash (neg.bignum->fixnum)" #x-81
+      (lambda () (ash #x-4080000000 -31)))
+(test "ash (neg.bignum->fixnum)" #x-41
+      (lambda () (ash #x-4080000000 -32)))
+(test "ash (neg.bignum->fixnum)" #x-21
+      (lambda () (ash #x-4080000000 -33)))
 (test "ash (neg.bignum->fixnum)" -2
-      (lambda () (ash (- #x4080000000) -38)))
+      (lambda () (ash #x-4080000000 -38)))
 (test "ash (neg.bignum->fixnum)" -1
-      (lambda () (ash (- #x4080000000) -39)))
+      (lambda () (ash #x-4080000000 -39)))
 (test "ash (neg.bignum->fixnum)" -1
-      (lambda () (ash (- #x4080000000) -100)))
-(test "ash (neg.bignum->fixnum)" (- #x81)
-      (lambda () (ash (- #x408000000000000000) -63)))
-(test "ash (neg.bignum->fixnum)" (- #x41)
-      (lambda () (ash (- #x408000000000000000) -64)))
-(test "ash (neg.bignum->fixnum)" (- #x21)
-      (lambda () (ash (- #x408000000000000000) -65)))
+      (lambda () (ash #x-4080000000 -100)))
+(test "ash (neg.bignum->fixnum)" #x-81
+      (lambda () (ash #x-408000000000000000 -63)))
+(test "ash (neg.bignum->fixnum)" #x-41
+      (lambda () (ash #x-408000000000000000 -64)))
+(test "ash (neg.bignum->fixnum)" #x-21
+      (lambda () (ash #x-408000000000000000 -65)))
 (test "ash (neg.bignum->fixnum)" -2
-      (lambda () (ash (- #x408000000000000000) -70)))
+      (lambda () (ash #x-408000000000000000 -70)))
 (test "ash (neg.bignum->fixnum)" -1
-      (lambda () (ash (- #x408000000000000000) -71)))
+      (lambda () (ash #x-408000000000000000 -71)))
 (test "ash (neg.bignum->fixnum)" -1
-      (lambda () (ash (- #x408000000000000000) -72)))
+      (lambda () (ash #x-408000000000000000 -72)))
 
 (test "ash (bignum->bignum)" #x12345678123456780
       (lambda () (ash #x1234567812345678 4)))
@@ -721,19 +721,19 @@
       (lambda () (ash #x1234567812345678 -4)))
 (test "ash (bignum->bignum)" #x12345678
       (lambda () (ash #x1234567812345678 -32)))
-(test "ash (neg.bignum->bignum)" (- #x123456781234568)
-      (lambda () (ash (- #x1234567812345678) -4)))
-(test "ash (bignum->bignum)" (- #x12345679)
-      (lambda () (ash (- #x1234567812345678) -32)))
+(test "ash (neg.bignum->bignum)" #x-123456781234568
+      (lambda () (ash #x-1234567812345678 -4)))
+(test "ash (bignum->bignum)" #x-12345679
+      (lambda () (ash #x-1234567812345678 -32)))
 
 (test "lognot (fixnum)" -1 (lambda () (lognot 0)))
 (test "lognot (fixnum)" 0 (lambda () (lognot -1)))
 (test "lognot (fixnum)" -65536 (lambda () (lognot 65535)))
 (test "lognot (fixnum)" 65535 (lambda () (lognot -65536)))
-(test "lognot (bignum)" (- #x1000000000000000001)
+(test "lognot (bignum)" #x-1000000000000000001
       (lambda () (lognot #x1000000000000000000)))
 (test "lognot (bignum)" #x1000000000000000000
-      (lambda () (lognot (- #x1000000000000000001))))
+      (lambda () (lognot #x-1000000000000000001)))
 
 (test "logand (+fix & 0)" 0
       (lambda () (logand #x123456 0)))
@@ -756,35 +756,35 @@
 (test "logand (+big & +big)" #x400000
       (lambda () (logand #xaa55ea55aa #x55aa55aa55)))
 (test "logand (+fix & -fix)" #x8810
-      (lambda () (logand #xaa55 (- #x6666))))
+      (lambda () (logand #xaa55 #x-6666)))
 (test "logand (+fix & -big)" #x8810
-      (lambda () (logand #xaa55 (- #x6666666666))))
+      (lambda () (logand #xaa55 #x-6666666666)))
 (test "logand (+big & -fix)" #xaa55aa118a
-      (lambda () (logand #xaa55aa55aa (- #x6666))))
+      (lambda () (logand #xaa55aa55aa #x-6666)))
 (test "logand (+big & -big)" #x881188118a
-      (lambda () (logand #xaa55aa55aa (- #x6666666666))))
+      (lambda () (logand #xaa55aa55aa #x-6666666666)))
 (test "logand (+big & -big)" #x20002488010146
-      (lambda () (logand #x123456789abcdef (- #xfedcba987654321fedcba987654321fedcba))))
+      (lambda () (logand #x123456789abcdef #x-fedcba987654321fedcba987654321fedcba)))
 (test "logand (-fix & +fix)" #x4422
-      (lambda () (logand (- #xaa55) #x6666)))
+      (lambda () (logand #x-aa55 #x6666)))
 (test "logand (-fix & +big)" #x6666664422
-      (lambda () (logand (- #xaa55) #x6666666666)))
+      (lambda () (logand #x-aa55 #x6666666666)))
 (test "logand (-big & +fix)" #x2246
-      (lambda () (logand (- #xaa55aa55aa) #x6666)))
+      (lambda () (logand #x-aa55aa55aa #x6666)))
 (test "logand (-big & +big)" #x4422442246
-      (lambda () (logand (- #xaa55aa55aa) #x6666666666)))
+      (lambda () (logand #x-aa55aa55aa #x6666666666)))
 (test "logand (-big & +big)" #xfedcba987654321fedcba884200020541010
-      (lambda () (logand (- #x123456789abcdef) #xfedcba987654321fedcba987654321fedcba)))
-(test "logand (-fix & -fix)" (- #xee76)
-      (lambda () (logand (- #xaa55) (- #x6666))))
-(test "logand (-fix & -big)" (- #x666666ee76)
-      (lambda () (logand (- #xaa55) (- #x6666666666))))
-(test "logand (-big & -fix)" (- #xaa55aa77ee)
-      (lambda () (logand (- #xaa55aa55aa) (- #x6666))))
-(test "logand (-big & -big)" (- #xee77ee77ee)
-      (lambda () (logand (- #xaa55aa55aa) (- #x6666666666))))
-(test "logand (-big & -big)" (- #xfedcba987654321fedcba9a76567a9ffde00)
-      (lambda () (logand (- #x123456789abcdef) (- #xfedcba987654321fedcba987654321fedcba))))
+      (lambda () (logand #x-123456789abcdef #xfedcba987654321fedcba987654321fedcba)))
+(test "logand (-fix & -fix)" #x-ee76
+      (lambda () (logand #x-aa55 #x-6666)))
+(test "logand (-fix & -big)" #x-666666ee76
+      (lambda () (logand #x-aa55 #x-6666666666)))
+(test "logand (-big & -fix)" #x-aa55aa77ee
+      (lambda () (logand #x-aa55aa55aa #x-6666)))
+(test "logand (-big & -big)" #x-ee77ee77ee
+      (lambda () (logand #x-aa55aa55aa #x-6666666666)))
+(test "logand (-big & -big)" #x-fedcba987654321fedcba9a76567a9ffde00
+      (lambda () (logand #x-123456789abcdef #x-fedcba987654321fedcba987654321fedcba)))
 
 (test "logior (+fix | 0)" #x123456
       (lambda () (logior #x123456 0)))
@@ -804,36 +804,36 @@
       (lambda () (logior #xaa55aa55aa #x6666666666)))
 (test "logior (+big | +big)" #xfedcba987654321fedcba9a76567a9ffddff
       (lambda () (logior #x123456789abcdef #xfedcba987654321fedcba987654321fedcba)))
-(test "logior (+fix | -fix)" (- #x4421)
-      (lambda () (logior #xaa55 (- #x6666))))
-(test "logior (+fix | -big)" (- #x6666664421)
-      (lambda () (logior #xaa55 (- #x6666666666))))
-(test "logior (+big | -fix)" (- #x2246)
-      (lambda () (logior #xaa55aa55aa (- #x6666))))
-(test "logior (+big | -big)" (- #x4422442246)
-      (lambda () (logior #xaa55aa55aa (- #x6666666666))))
-(test "logior (+big | -big)" (- #xfedcba987654321fedcba884200020541011)
-      (lambda () (logior #x123456789abcdef (- #xfedcba987654321fedcba987654321fedcba))))
-(test "logior (-fix | +fix)" (- #x8811)
-      (lambda () (logior (- #xaa55) #x6666)))
-(test "logior (-fix | +big)" (- #x8811)
-      (lambda () (logior (- #xaa55) #x6666666666)))
-(test "logior (-big | +fix)" (- #xaa55aa118a)
-      (lambda () (logior (- #xaa55aa55aa) #x6666)))
-(test "logior (-big | +big)" (- #x881188118a)
-      (lambda () (logior (- #xaa55aa55aa) #x6666666666)))
-(test "logior (-big | +big)" (- #x20002488010145)
-      (lambda () (logior (- #x123456789abcdef) #xfedcba987654321fedcba987654321fedcba)))
-(test "logior (-fix | -fix)" (- #x2245)
-      (lambda () (logior (- #xaa55) (- #x6666))))
-(test "logior (-fix | -big)" (- #x2245)
-      (lambda () (logior (- #xaa55) (- #x6666666666))))
-(test "logior (-big | -fix)" (- #x4422)
-      (lambda () (logior (- #xaa55aa55aa) (- #x6666))))
-(test "logior (-big | -big)" (- #x2244224422)
-      (lambda () (logior (- #xaa55aa55aa) (- #x6666666666))))
-(test "logior (-big | -big)" (- #x103454301aacca9)
-      (lambda () (logior (- #x123456789abcdef) (- #xfedcba987654321fedcba987654321fedcba))))
+(test "logior (+fix | -fix)" #x-4421
+      (lambda () (logior #xaa55 #x-6666)))
+(test "logior (+fix | -big)" #x-6666664421
+      (lambda () (logior #xaa55 #x-6666666666)))
+(test "logior (+big | -fix)" #x-2246
+      (lambda () (logior #xaa55aa55aa #x-6666)))
+(test "logior (+big | -big)" #x-4422442246
+      (lambda () (logior #xaa55aa55aa #x-6666666666)))
+(test "logior (+big | -big)" #x-fedcba987654321fedcba884200020541011
+      (lambda () (logior #x123456789abcdef #x-fedcba987654321fedcba987654321fedcba)))
+(test "logior (-fix | +fix)" #x-8811
+      (lambda () (logior #x-aa55 #x6666)))
+(test "logior (-fix | +big)" #x-8811
+      (lambda () (logior #x-aa55 #x6666666666)))
+(test "logior (-big | +fix)" #x-aa55aa118a
+      (lambda () (logior #x-aa55aa55aa #x6666)))
+(test "logior (-big | +big)" #x-881188118a
+      (lambda () (logior #x-aa55aa55aa #x6666666666)))
+(test "logior (-big | +big)" #x-20002488010145
+      (lambda () (logior #x-123456789abcdef #xfedcba987654321fedcba987654321fedcba)))
+(test "logior (-fix | -fix)" #x-2245
+      (lambda () (logior #x-aa55 #x-6666)))
+(test "logior (-fix | -big)" #x-2245
+      (lambda () (logior #x-aa55 #x-6666666666)))
+(test "logior (-big | -fix)" #x-4422
+      (lambda () (logior #x-aa55aa55aa #x-6666)))
+(test "logior (-big | -big)" #x-2244224422
+      (lambda () (logior #x-aa55aa55aa #x-6666666666)))
+(test "logior (-big | -big)" #x-103454301aacca9
+      (lambda () (logior #x-123456789abcdef #x-fedcba987654321fedcba987654321fedcba)))
 
 
 (test-end)
