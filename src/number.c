@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.55 2001-08-31 08:31:53 shirok Exp $
+ *  $Id: number.c,v 1.56 2001-10-09 19:42:26 shirok Exp $
  */
 
 #include <math.h>
@@ -61,13 +61,13 @@ static ScmClass *numeric_cpl[] = {
 static void number_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_NumberClass, number_print, NULL, NULL, NULL,
-                         numeric_cpl+4);
-SCM_DEFINE_BUILTIN_CLASS(Scm_ComplexClass, number_print, NULL, NULL, NULL,
                          numeric_cpl+3);
-SCM_DEFINE_BUILTIN_CLASS(Scm_RealClass, number_print, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_ComplexClass, number_print, NULL, NULL, NULL,
                          numeric_cpl+2);
-SCM_DEFINE_BUILTIN_CLASS(Scm_IntegerClass, number_print, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_RealClass, number_print, NULL, NULL, NULL,
                          numeric_cpl+1);
+SCM_DEFINE_BUILTIN_CLASS(Scm_IntegerClass, number_print, NULL, NULL, NULL,
+                         numeric_cpl);
 
 /*=====================================================================
  *  Flonums
