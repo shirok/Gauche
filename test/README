@@ -1,0 +1,3 @@
+This directory contains several Scheme files useful for testing.
+Run "make test" in src directory to run those tests.
+
