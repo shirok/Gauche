@@ -1,5 +1,6 @@
 2002-12-14  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.6.6
 	* ext/digest/{configure.in,md5.h,sha.h} : slight fix for portability.
 	* src/vm.c : added Scm_VMApply3
 
