@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.126 2001-05-03 10:29:50 shirok Exp $
+ *  $Id: gauche.h,v 1.127 2001-05-05 10:07:57 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -682,7 +682,6 @@ extern int     Scm_MBLen(const char *str, const char *stop);
 extern ScmObj  Scm_MakeString(const char *str, int size, int len);
 extern ScmObj  Scm_MakeStringConst(const char *str, int size, int len);
 extern ScmObj  Scm_MakeFillString(int len, ScmChar fill);
-extern ScmObj  Scm_MakeStringFromList(ScmObj chars);
 extern ScmObj  Scm_CopyString(ScmString *str);
 
 extern char*   Scm_GetString(ScmString *str);

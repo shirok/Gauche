@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.33 2001-05-03 10:29:17 shirok Exp $
+ *  $Id: string.c,v 1.34 2001-05-05 10:07:58 shirok Exp $
  */
 
 #include <stdio.h>
@@ -146,7 +146,7 @@ ScmObj Scm_MakeFillString(int len, ScmChar fill)
     return SCM_OBJ(make_str(len, size*len, ptr));
 }
 
-static ScmObj makestring_from_list(ScmObj chars)
+ScmObj Scm_ListToString(ScmObj chars)
 {
     ScmObj cp;
     int size = 0, len = 0;
@@ -168,11 +168,6 @@ static ScmObj makestring_from_list(ScmObj chars)
     }
     *bufp = '\0';
     return Scm_MakeStringConst(buf, size, len);
-}
-
-ScmObj Scm_MakeStringFromList(ScmObj chars)
-{
-    return makestring_from_list(chars);
 }
 
 char *Scm_GetString(ScmString *str)
@@ -712,11 +707,6 @@ ScmObj Scm_StringToList(ScmString *str)
         SCM_APPEND1(start, end, SCM_MAKE_CHAR(ch));
     }
     return start;
-}
-
-ScmObj Scm_ListToString(ScmObj chars)
-{
-    return makestring_from_list(chars);
 }
 
 ScmObj Scm_StringFill(ScmString *str, ScmChar ch,
