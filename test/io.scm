@@ -388,6 +388,8 @@
       (lambda () (format #f "~a ~a ~:*~a ~a ~a ~a" 1 2 3 4 5)))
 (test "format ~:*" "1 2 3 1 2 3 4 5"
       (lambda () (format #f "~a ~a ~a ~3:*~a ~a ~a ~a ~a" 1 2 3 4 5)))
+(test "format ~:*" "1 2 3 1"
+      (lambda () (format #f "~a ~a ~a ~3:*~a" 1 2 3 4 5)))
 (test "format ~@*" "1 2 5"
       (lambda () (format #f "~a ~a ~4@*~a" 1 2 3 4 5)))
 
