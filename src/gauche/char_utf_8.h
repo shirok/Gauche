@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char_utf_8.h,v 1.4 2001-05-28 11:49:00 shirok Exp $
+ *  $Id: char_utf_8.h,v 1.5 2001-05-28 11:55:20 shirok Exp $
  */
 
 #ifndef SCM_CHAR_ENCODING_BODY
@@ -117,7 +117,7 @@ extern void Scm_CharUtf8Putc(char *, ScmChar);
 
 /* Array of character encoding names, recognizable by iconv, that are
    compatible with this native encoding. */
-char *Scm_SupportedCharacterEncodigs[] = {
+static const char *supportedCharacterEncodings[] = {
     "UTF-8",
     "ISO-10646/UTF-8",
     "UTF8",

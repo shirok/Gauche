@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char_sjis.h,v 1.2 2001-05-28 11:49:00 shirok Exp $
+ *  $Id: char_sjis.h,v 1.3 2001-05-28 11:55:20 shirok Exp $
  */
 
 #ifndef SCM_CHAR_ENCODING_BODY
@@ -96,7 +96,7 @@
 
 /* Array of character encoding names, recognizable by iconv, that are
    compatible with this native encoding. */
-char *Scm_SupportedCharacterEncodigs[] = {
+static const char *supportedCharacterEncodings[] = {
     "SHIFT-JIS",
     "SJIS",
     NULL
