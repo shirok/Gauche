@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.32 2001-03-03 08:48:09 shiro Exp $
+ *  $Id: compile.c,v 1.33 2001-03-04 07:56:45 shiro Exp $
  */
 
 #include "gauche.h"
@@ -179,9 +179,6 @@ ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context)
  *
  *   There are a few interface functions to access this structure.
  *
- *     free_var_p(VAR, ENV)  returns VAR when it is not bound locally.
- *        Syntactic binding is ignored.
- *
  *     lookup_env(VAR, ENV, OP)  
  *        When OP is false, VAR is looked up in variable binding frames.
  *        if it is bound locally, an LREF object is returned.  Otherwise
@@ -203,33 +200,26 @@ ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context)
 
 #define TOPLEVEL_ENV_P(env)   SCM_NULLP(env)
 
-static inline ScmObj free_var_p(ScmObj var, ScmObj env)
-{
-    ScmObj frame, fp;
-    SCM_FOR_EACH(frame, env) {
-        if (SCM_PAIRP(SCM_CAR(frame)) && SCM_TRUEP(SCM_CAAR(frame))) continue;
-        SCM_FOR_EACH(fp, SCM_CAR(frame)) {
-            if (SCM_CAR(fp) == var) return FALSE;
-        }
-    }
-    return var;
-}
-
 static inline ScmObj lookup_env(ScmObj var, ScmObj env, int op)
 {
-    ScmObj frame, fp;
+    ScmObj ep, frame, fp;
     int depth = 0, offset = 0;
-    SCM_FOR_EACH(frame, env) {
-        if (SCM_PAIRP(SCM_CAR(frame))) {
-            if (SCM_TRUEP(SCM_CAAR(frame))) {
+    SCM_FOR_EACH(ep, env) {
+        if (SCM_IDENTIFIERP(var) && SCM_IDENTIFIER(var)->env == ep) {
+            /* strip off the "wrapping" */
+            var = SCM_OBJ(SCM_IDENTIFIER(var)->name);
+        }
+        frame = SCM_CAR(ep);
+        if (SCM_PAIRP(frame)) {
+            if (SCM_TRUEP(SCM_CAR(frame))) {
                 if (op) {
-                    SCM_FOR_EACH(fp, SCM_CDAR(frame)) {
+                    SCM_FOR_EACH(fp, SCM_CDR(frame)) {
                         if (SCM_CAAR(fp) == var) return SCM_CDAR(fp);
                     }
                 }
                 continue;
             }
-            SCM_FOR_EACH(fp, SCM_CAR(frame)) {
+            SCM_FOR_EACH(fp, frame) {
                 if (SCM_CAR(fp) == var)
                     return SCM_VM_INSN2(SCM_VM_LREF, depth, offset);
                 offset++;
@@ -298,6 +288,13 @@ int Scm_IdentifierBindingEqv(ScmIdentifier *id, ScmSymbol *sym, ScmObj env)
     return (bf == id->env);
 }
 
+/* returns true if variable VAR (symbol or identifier) is free and equal
+   to symbol SYM */
+int Scm_FreeVariableEqv(ScmObj var, ScmObj sym, ScmObj env)
+{
+    return global_eq(var, sym, env);
+}
+
 ScmObj Scm_CopyIdentifier(ScmIdentifier *orig)
 {
     ScmIdentifier *id = SCM_NEW(ScmIdentifier);
@@ -344,8 +341,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                 } else if (SCM_SYMBOLP(var)) {
                     sym = SCM_SYMBOL(var);
                 } else {
-                    Scm_Printf(SCM_CURERR, "AARGGARGA: %S\n", var);
-                    Scm_Panic("internal compiler error (compile_int)");
+                    Scm_Panic("internal compiler error (compile_int): bad frame");
                 }
             
                 g = Scm_FindBinding(vm->module, sym, FALSE);
