@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.9 2001-03-07 07:59:49 shiro Exp $
+;;; $Id: syslib.stub,v 1.10 2001-03-07 08:07:46 shiro Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -21,6 +21,7 @@
 "#include <sys/types.h>
 #include <dirent.h>
 #include <grp.h>
+#include <pwd.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
@@ -44,11 +45,13 @@
 
 (define-cproc sys-normalize-pathname (pathname
                                       &keyword (absolute #f)
-                                               (expand #f))
+                                               (expand #f)
+                                               (canonicalize #f))
   (assert (string? pathname))
   "  int flags = 0;
   if (!SCM_FALSEP(absolute)) flags |= SCM_PATH_ABSOLUTE;
   if (!SCM_FALSEP(expand))   flags |= SCM_PATH_EXPAND;
+  if (!SCM_FALSEP(canonicalize)) flags |= SCM_PATH_CANONICALIZE;
   SCM_RETURN(Scm_NormalizePathname(pathname, flags));")
 
 (define-cproc sys-basename (pathname)
@@ -62,15 +65,27 @@
 ;;---------------------------------------------------------------------
 ;; grp.h - groups
 
+;; NOTE: the structure of return value may change later
 (define-cproc sys-getgrgid (gid)
   (assert (small-integer? gid))         ;TODO: make sure it covers all gids
   "  SCM_RETURN(Scm_GetGroupById(gid));")
 
+;; NOTE: the structure of return value may change later
 (define-cproc sys-getgrnam (name)
   (assert (string? name))
   "  SCM_RETURN(Scm_GetGroupByName(name));")
 
-;; faster function
+;; faster functions
+(define-cproc sys-gid->group-name (gid)
+  (assert (small-integer? gid))         ;TODO: make sure it covers all gids
+  "  struct group *g = getgrgid(gid);
+  if (g == NULL) SCM_RETURN(SCM_FALSE);
+  else SCM_RETURN(Scm_MakeString(g->gr_name, -1, -1));")
+(define-cproc sys-group-name->gid (name)
+  (assert (string? name))
+  "  struct group *g = getgrnam(Scm_GetStringConst(name));
+  if (g == NULL) SCM_RETURN(SCM_FALSE);
+  else SCM_RETURN(Scm_MakeInteger(g->gr_gid));")
 
 ;;---------------------------------------------------------------------
 ;; locale.h
@@ -81,13 +96,27 @@
 ;;---------------------------------------------------------------------
 ;; pwd.h - passwords
 
+;; NOTE: the structure of return value may change later
 (define-cproc sys-getpwuid (uid)
-  (assert (small-integer? uid))
+  (assert (small-integer? uid))         ;TODO: make sure it covers all gids
   "  SCM_RETURN(Scm_GetPasswdById(uid));")
 
+;; NOTE: the structure of return value may change later
 (define-cproc sys-getpwnam (name)
   (assert (string? name))
   "  SCM_RETURN(Scm_GetPasswdByName(name));")
+
+;; faster functions
+(define-cproc sys-uid->user-name (uid)
+  (assert (small-integer? uid))         ;TODO: make sure it covers all uids
+  "  struct passwd *p = getpwuid(uid);
+  if (p == NULL) SCM_RETURN(SCM_FALSE);
+  else SCM_RETURN(Scm_MakeString(p->pw_name, -1, -1));")
+(define-cproc sys-user-name->uid (name)
+  (assert (string? name))
+  "  struct passwd *p = getpwnam(Scm_GetStringConst(name));
+  if (p == NULL) SCM_RETURN(SCM_FALSE);
+  else SCM_RETURN(Scm_MakeInteger(p->pw_uid));")
 
 ;;---------------------------------------------------------------------
 ;; setjmp.h
