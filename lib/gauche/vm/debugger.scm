@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: debugger.scm,v 1.16 2004-02-03 13:12:28 shirok Exp $
+;;;  $Id: debugger.scm,v 1.16.2.1 2004-12-31 21:06:15 shirok Exp $
 ;;;
 
 ;; NB: this is still a working version.  
@@ -39,7 +39,6 @@
   (use srfi-1)
   (use srfi-2)
   (use srfi-13)
-  (use gauche.vm.disasm)
   (use text.parse)
   (export enable-debug disable-debug debug-print)
   )
