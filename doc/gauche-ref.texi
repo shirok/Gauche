@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.171 2002-03-07 10:38:59 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.172 2002-04-13 10:52:24 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3414,6 +3414,14 @@ Returns a maximum or minimum number in the given real numbers, respectively.
 @c COMMON
 @end defun
 
+@defun min&max x1 x2 @dots{}
+@c EN
+Returns a maximum and minimum number in the given real numbers.
+@c JP
+与えられた実数から、最大値と最小値の二つの値を返します。
+@c COMMON
+@end defun
+
 @node Arithmetics, Numerical conversions, Numerical comparison, Numbers
 @subsection Arithmetics
 @c NODE 数値の演算
@@ -3723,6 +3731,34 @@ part, respectively.  @code{magnitude} and @code{angle} return
 @c COMMON
 @end defun
 
+@defun decode-float x
+@c EN
+Given floating-point number (inexact real number), returns
+a vector of three exact integers, @code{#(@var{m}, @var{e}, @var{sign})},
+where
+@example
+  @var{x} = (* @var{sign} @var{m} (expt 2.0 @var{e}))
+  @var{sign} is either 1, 0 or -1.
+@end example
+The API is taken from ChezScheme.
+@c JP
+与えられた浮動小数点数(不正確な実数)@var{x}に対して、
+3つの正確な整数からなるベクタ @code{#(@var{m}, @var{e}, @var{sign})}
+を返します。ここで、
+@example
+  @var{x} = (* @var{sign} @var{m} (expt 2.0 @var{e}))
+  @var{sign} は 1, 0 または -1.
+@end example
+です。このAPIはChezSchemeから取られました。
+@c COMMON
+@example
+(decode-float 3.1415926)
+ @result{} #(7074237631354954 -51 1)
+(* 7074237631354954 (expt 2.0 -51))
+ @result{} 3.1415926
+@end example
+@end defun
+
 @defun fmod x y
 @defunx modf x
 @defunx frexp x
@@ -3934,13 +3970,23 @@ Returns @code{#t} if @var{index}-th bit of integer @var{n} is 1,
 
 @defun bit-field n start end
 @c EN
+Extracts (@var{start}+1)-th bit to @var{end}-th bit (inclusive) from
+an exact integer @var{n}, where @var{start} < @var{end}.
 @c JP
+整数@var{n}の@var{start}+1ビット目から@var{end}ビット目(両端含む)までを
+取り出した数値を返します。@var{start} < @var{end} でなければなりません。
 @c COMMON
 @end defun
 
 @defun copy-bit index n bit
 @c EN
+If @var{bit} is true, sets @var{index}-th bit of an exact integer @var{n}.
+If @var{bit} is false, resets @var{index}-th bit of an exact integer @var{n}.
 @c JP
+@var{bit}が真の値なら、整数@var{n}の@var{index}ビット目をセットした数値を
+返します。
+@var{bit}が偽の値なら、整数@var{n}の@var{index}ビット目をリセットした数値を
+返します。
 @c COMMON
 @end defun
 
