@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with euc-jp.
 
-;; $Id: euc-jp.scm,v 1.8 2001-05-31 10:12:40 shirok Exp $
+;; $Id: euc-jp.scm,v 1.9 2001-05-31 19:43:30 shirok Exp $
 
 (use gauche.test)
 
@@ -221,6 +221,13 @@
   (let loop ((c (read-char p)) (r '()))
     (if (eof-object? c) (reverse r) (loop (read-char p) (cons c r)))))
 
+(define (port->byte-list p)
+  (let loop ((b (read-byte p)) (r '()))
+    (if (eof-object? b) (reverse r) (loop (read-byte p) (cons b r)))))
+
+(define (port->chunk-list p siz)
+  (let loop ((b (read-block siz p)) (r '()))
+    (if (eof-object? b) (reverse r) (loop (read-block siz p) (cons b r)))))
 
 (test "buffered port (getc, bufsiz=256)"
       '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ)
@@ -246,5 +253,74 @@
       '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ)
       (lambda ()
         (port->char-list (open-input-buffered-port (make-filler) 1))))
+
+(test "buffered port (getb, bufsiz=256)"
+      '(#xa4 #xa2 #xa4 #xa4 #xa4 #xa6 #xa4 #xa8 #xa4 #xaa
+        #xa4 #xab #xa4 #xad #xa4 #xaf #xa4 #xb1 #xa4 #xb3)
+      (lambda ()
+        (port->byte-list (open-input-buffered-port (make-filler) 256))))
+
+(test "buffered port (getb, bufsiz=20)"
+      '(#xa4 #xa2 #xa4 #xa4 #xa4 #xa6 #xa4 #xa8 #xa4 #xaa
+        #xa4 #xab #xa4 #xad #xa4 #xaf #xa4 #xb1 #xa4 #xb3)
+      (lambda ()
+        (port->byte-list (open-input-buffered-port (make-filler) 20))))
+
+(test "buffered port (getb, bufsiz=19)"
+      '(#xa4 #xa2 #xa4 #xa4 #xa4 #xa6 #xa4 #xa8 #xa4 #xaa
+        #xa4 #xab #xa4 #xad #xa4 #xaf #xa4 #xb1 #xa4 #xb3)
+      (lambda ()
+        (port->byte-list (open-input-buffered-port (make-filler) 19))))
+
+(test "buffered port (getb, bufsiz=2)"
+      '(#xa4 #xa2 #xa4 #xa4 #xa4 #xa6 #xa4 #xa8 #xa4 #xaa
+        #xa4 #xab #xa4 #xad #xa4 #xaf #xa4 #xb1 #xa4 #xb3)
+      (lambda ()
+        (port->byte-list (open-input-buffered-port (make-filler) 2))))
+
+(test "buffered port (getb, bufsiz=1)"
+      '(#xa4 #xa2 #xa4 #xa4 #xa4 #xa6 #xa4 #xa8 #xa4 #xaa
+        #xa4 #xab #xa4 #xad #xa4 #xaf #xa4 #xb1 #xa4 #xb3)
+      (lambda ()
+        (port->byte-list (open-input-buffered-port (make-filler) 1))))
+
+(test "buffered port (getz, siz=20,5)"
+      '(#"\xa4\xa2\xa4\xa4\xa4" #"\xa6\xa4\xa8\xa4\xaa"
+        #"\xa4\xab\xa4\xad\xa4" #"\xaf\xa4\xb1\xa4\xb3")
+      (lambda ()
+        (port->chunk-list (open-input-buffered-port (make-filler) 20) 5)))
+
+(test "buffered port (getz, siz=20,20)"
+      '(#"\xa4\xa2\xa4\xa4\xa4\xa6\xa4\xa8\xa4\xaa\xa4\xab\xa4\xad\xa4\xaf\xa4\xb1\xa4\xb3")
+      (lambda ()
+        (port->chunk-list (open-input-buffered-port (make-filler) 20) 20)))
+
+(test "buffered port (getz, siz=9,20)"
+      '(#"\xa4\xa2\xa4\xa4\xa4\xa6\xa4\xa8\xa4\xaa\xa4\xab\xa4\xad\xa4\xaf\xa4\xb1\xa4\xb3")
+      (lambda ()
+        (port->chunk-list (open-input-buffered-port (make-filler) 9) 20)))
+
+(test "buffered port (getz, siz=9,7)"
+      '(#"\xa4\xa2\xa4\xa4\xa4\xa6\xa4" #"\xa8\xa4\xaa\xa4\xab\xa4\xad"
+        #"\xa4\xaf\xa4\xb1\xa4\xb3")
+      (lambda ()
+        (port->chunk-list (open-input-buffered-port (make-filler) 9) 7)))
+
+(test "buffered port (getz, siz=3,50)"
+      '(#"\xa4\xa2\xa4\xa4\xa4\xa6\xa4\xa8\xa4\xaa\xa4\xab\xa4\xad\xa4\xaf\xa4\xb1\xa4\xb3")
+      (lambda ()
+        (port->chunk-list (open-input-buffered-port (make-filler) 3) 50)))
+
+(test "buffered port (getz, siz=2,7)"
+      '(#"\xa4\xa2\xa4\xa4\xa4\xa6\xa4" #"\xa8\xa4\xaa\xa4\xab\xa4\xad"
+        #"\xa4\xaf\xa4\xb1\xa4\xb3")
+      (lambda ()
+        (port->chunk-list (open-input-buffered-port (make-filler) 2) 7)))
+
+(test "buffered port (getz, siz=1,7)"
+      '(#"\xa4\xa2\xa4\xa4\xa4\xa6\xa4" #"\xa8\xa4\xaa\xa4\xab\xa4\xad"
+        #"\xa4\xaf\xa4\xb1\xa4\xb3")
+      (lambda ()
+        (port->chunk-list (open-input-buffered-port (make-filler) 1) 7)))
 
 (test-end)
