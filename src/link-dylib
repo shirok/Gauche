@@ -6,5 +6,5 @@ shift
 if echo "$*" | grep dynamiclib > /dev/null 2>&1 ; then
   $CCLD -install_name ${TARGETLIB}/libgauche.dylib "$@"
 else
-  $CCLD "$@"
+  $CCLD -L${TARGETLIB} "$@"
 fi
