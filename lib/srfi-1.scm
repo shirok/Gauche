@@ -2,7 +2,7 @@
 ;;; SRFI-1 - List processing library
 ;;;
 
-;; $Id: srfi-1.scm,v 1.15 2003-01-08 02:24:20 shirok Exp $
+;; $Id: srfi-1.scm,v 1.16 2003-01-09 11:43:56 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -42,7 +42,7 @@
           delete$
           assoc alist-cons alist-copy alist-delete alist-delete!
           assoc$
-          lset lset= lset-adjoin lset-union lset-union!
+          lset<= lset= lset-adjoin lset-union lset-union!
           lset-intersection lset-intersection! lset-difference
           lset-difference! lset-xor lset-xor!
           lset-diff+intersection lset-diff+intersection!))

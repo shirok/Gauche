@@ -1,7 +1,7 @@
 ;;;
 ;;; ndbm - ndbm interface
 ;;;
-;;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2001-2003 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: ndbm.scm,v 1.2 2001-10-28 11:38:14 shirok Exp $
+;;;  $Id: ndbm.scm,v 1.3 2003-01-09 11:41:14 shirok Exp $
 ;;;
 
 (define-module dbm.ndbm
@@ -23,7 +23,7 @@
           ndbm-store          ndbm-fetch            ndbm-exists?
           ndbm-delete
           ndbm-firstkey       ndbm-nextkey          ndbm-error
-          ndbm-clear-error
+          ndbm-clearerror
           |DBM_INSERT|        |DBM_REPLACE|)
   )
 (select-module dbm.ndbm)

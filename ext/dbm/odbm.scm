@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: odbm.scm,v 1.3 2001-10-29 00:50:20 shirok Exp $
+;;;  $Id: odbm.scm,v 1.4 2003-01-09 11:41:45 shirok Exp $
 ;;;
 
 (define-module dbm.odbm
@@ -21,7 +21,7 @@
           ;; low level funcions
           odbm-init    odbm-close    odbm-closed?
           odbm-store   odbm-fetch   odbm-delete
-          obdm-firstkey  odbm-nextkey)
+          odbm-firstkey  odbm-nextkey)
   )
 (select-module dbm.odbm)
 (dynamic-load "odbm")
