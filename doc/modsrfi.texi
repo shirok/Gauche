@@ -3525,7 +3525,7 @@ is called as follows:
 @c JP
 ここで、@var{option} はマッチしたオプションオブジェクトで、@var{name}
 は実際にオプションを指定するのに使われた文字列、@var{arg} はそのオプション
-の引数(あるいは存在しなければ、@code{#f})、そして @var{seed} @dot{} は
+の引数(あるいは存在しなければ、@code{#f})、そして @var{seed} @dots{} は
 利用者側の状態情報です。@var{option-proc} は @var{seed} と同じ数だけ
 値を返さなければなりません。
 
@@ -3545,7 +3545,6 @@ to @code{args-fold}.  The values returned from option procedure,
 arguments of next invocation of those procedures.  The values
 returned from the last call to the procedures are returned
 from @code{args-fold}.
-@end defun
 @c JP
 @var{option-proc} は @var{seed} と同じ数だけ
 値を返さなければなりません。
@@ -3557,6 +3556,7 @@ from @code{args-fold}.
 これらの手続きの最後の呼出しから返されたこの値は @code{args-fold} によって
 返されます。
 @c COMMON
+@end defun
 
 @defun option names require-arg? optional-arg? processor
 @c EN

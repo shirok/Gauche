@@ -86,7 +86,7 @@ gauche-refe.dvi : gauche-refe.texi
 gauche-refe.pdf : gauche-refe.texi
 	texi2pdf gauche-refe.texi
 
-gauche-refe.texi : gauche-ref.texi extract
+gauche-refe.texi : $(TEXIS) extract
 	$(GOSH) ./extract -en -o gauche-refe.texi gauche-ref.texi
 
 gauche-refe.info.gz : gauche-refe.texi
@@ -112,7 +112,7 @@ ngauche-refj.dvi : gauche-refj.texi
 gauche-refj.pdf : gauche-refj.texi
 	texi2pdf gauche-refj.texi
 
-gauche-refj.texi : gauche-ref.texi extract
+gauche-refj.texi : $(TEXIS) extract
 	$(GOSH) ./extract -jp -o gauche-refj.texi gauche-ref.texi
 
 gauche-refj.info.gz : gauche-refj.texi
