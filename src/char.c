@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.9 2001-04-04 18:55:14 shiro Exp $
+ *  $Id: char.c,v 1.10 2001-04-05 07:06:46 shiro Exp $
  */
 
 #include "gauche.h"
@@ -21,6 +21,10 @@
 
 /*
  * Character set (cf. SRFI-14)
+ */
+/* NB: operations on charset are not very optimized, for I don't see
+ * the immediate needs to do so, except Scm_CharSetContains (this one
+ * will be a macro in the future).
  */
 
 static int charset_print(ScmObj obj, ScmPort *out, int mode);
@@ -98,6 +102,21 @@ ScmObj Scm_CopyCharSet(ScmCharSet *src)
     }
     if (rd) rd->next = NULL;
     return SCM_OBJ(dst);
+}
+
+/* comparison */
+
+int Scm_CharSetEq(ScmCharSet *x, ScmCharSet *y)
+{
+    int i;
+    struct ScmCharSetRange *rx, *ry;
+    for (i=0; i<SCM_CHARSET_MASK_SIZE; i++)
+        if (x->mask[i] != y->mask[i]) return FALSE;
+    for (rx=x->ranges, ry=y->ranges; rx && ry; rx=rx->next, ry=ry->next) {
+        if (rx->lo != ry->lo || rx->hi != ry->hi) return FALSE;
+    }
+    if (rx || ry) return FALSE;
+    return TRUE;
 }
 
 /* modification */
@@ -235,7 +254,44 @@ int Scm_CharSetContains(ScmCharSet *cs, ScmChar c)
     }
 }
 
-/* for debug */
+/* inspection */
+
+/* returns a list of ranges contained in the charset */
+ScmObj Scm_CharSetRanges(ScmCharSet *cs)
+{
+    ScmObj h = SCM_NIL, t = SCM_NIL, cell;
+    int ind, begin = 0, prev = FALSE;
+    struct ScmCharSetRange *r;
+    
+    for (ind = 0; ind < SCM_CHARSET_MASK_CHARS; ind++) {
+        int bit = MASK_ISSET(cs, ind);
+        if (!prev && bit) begin = ind;
+        if (prev && !bit) {
+            cell = Scm_Cons(SCM_MAKE_INT(begin), SCM_MAKE_INT(ind-1));
+            SCM_APPEND1(h, t, cell);
+        }
+        prev = bit;
+    }
+    if (prev) {
+        if (!cs->ranges || cs->ranges->lo != SCM_CHARSET_MASK_CHARS) {
+            cell = Scm_Cons(SCM_MAKE_INT(begin),
+                            SCM_MAKE_INT(SCM_CHARSET_MASK_CHARS-1));
+            SCM_APPEND1(h, t, cell);
+            r = cs->ranges;
+        } else {
+            cell = Scm_Cons(SCM_MAKE_INT(begin), SCM_MAKE_INT(cs->ranges->hi));
+            SCM_APPEND1(h, t, cell);
+            r = cs->ranges->next;
+        }
+    } else {
+        r = cs->ranges;
+    }
+    for (; r; r = r->next) {
+        cell = Scm_Cons(SCM_MAKE_INT(r->lo), SCM_MAKE_INT(r->hi));
+        SCM_APPEND1(h, t, cell);
+    }
+    return h;
+}
 
 void Scm_CharSetDump(ScmCharSet *cs, ScmPort *port)
 {
