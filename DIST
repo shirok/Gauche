@@ -28,6 +28,7 @@ if [ "$tgz" = "yes" ]; then
   (cd ext/charconv/; make GOSH=/usr/local/bin/gosh eucj2ucs.c)
   (cd ext/charconv/; make GOSH=/usr/local/bin/gosh guess_tab.c)
   (cd ext/charconv/data; make)
+  (cd doc; make texi)
   make distclean
 
   rm -f DIST_EXCLUDE_X
@@ -36,6 +37,7 @@ if [ "$tgz" = "yes" ]; then
 
   escm -i gosh -o INSTALL INSTALL.esc
   LANG=ja_JP escm -i gosh -o INSTALL.eucjp INSTALL.esc
+
   mkdir ../Gauche-$VERSION
   tar cvfX - DIST_EXCLUDE_X . | (cd ../Gauche-$VERSION; tar xf -)
   (cd ..; tar cvf - Gauche-$VERSION | gzip -9 > Gauche-$VERSION.tgz)
@@ -88,22 +90,22 @@ if [ "$testcode" = "yes" ]; then
   rm -f testcode.log
   echo "EUC-JP ----------------------------------------------------"
   ./configure --enable-threads=pthreads --enable-multibyte=euc-jp >> testcode.log 2>&1
-  make -s
+  make -s >> testcode.log 2>&1
   make -s test
   make -s distclean
   echo "UTF-8 -----------------------------------------------------"
   ./configure --enable-threads=pthreads --enable-multibyte=utf-8  >> testcode.log 2>&1
-  make -s
+  make -s >> testcode.log 2>&1
   make -s test
   make -s distclean
   echo "SJIS ------------------------------------------------------"
   ./configure --enable-threads=pthreads --enable-multibyte=sjis   >> testcode.log 2>&1
-  make -s
+  make -s >> testcode.log 2>&1
   make -s test
   make -s distclean
   echo "NONE ------------------------------------------------------"
   ./configure --enable-threads=pthreads --enable-multibyte=none   >> testcode.log 2>&1
-  make -s
+  make -s >> testcode.log 2>&1
   make -s test
 fi
 

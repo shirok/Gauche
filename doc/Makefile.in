@@ -1,5 +1,6 @@
 MANPAGES = gosh.1 gauche-config.1
-GENERATED = gauche-refe.texi gauche-refj.texi Makefile $(MANPAGES)
+EXTRACTED = gauche-refe.texi gauche-refj.texi
+GENERATED = Makefile $(MANPAGES)
 GOSH = ../src/gosh -I../src -I../lib
 INSTALL = @INSTALL@
 MAKEINFO = @MAKEINFO@
@@ -63,7 +64,7 @@ gauche-refe.pdf : gauche-refe.texi
 	texi2pdf gauche-refe.texi
 
 gauche-refe.texi : gauche-ref.texi extract
-	$(GOSH) ./extract -en -o gauche-refe.texi gauche-ref.texi
+	gosh ./extract -en -o gauche-refe.texi gauche-ref.texi
 
 gauche-refe.info.gz : gauche-refe.texi
 	if test X$(MAKEINFO) != X -a X$(GZIP) != X; then \
@@ -85,7 +86,7 @@ gauche-refj.pdf : gauche-refj.texi
 	texi2pdf gauche-refj.texi
 
 gauche-refj.texi : gauche-ref.texi extract
-	$(GOSH) ./extract -jp -o gauche-refj.texi gauche-ref.texi
+	gosh ./extract -jp -o gauche-refj.texi gauche-ref.texi
 
 gauche-refj.info.gz : gauche-refj.texi
 	if test X$(MAKEINFO) != X -a X$(GZIP) != X; then \
@@ -102,4 +103,4 @@ distclean : clean
 	rm -rf $(GENERATED)
 
 realclean : clean
-	rm -f gauche-ref*.html gauche-ref.dvi Makefile $(GENERATED)
+	rm -f gauche-ref*.html gauche-ref.dvi Makefile $(GENERATED) $(EXTRACTED)

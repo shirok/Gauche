@@ -1,5 +1,5 @@
 # Spec file to build Gauche RPM package
-# $Id: Gauche.spec,v 1.9 2002-07-17 19:12:02 shirok Exp $
+# $Id: Gauche.spec,v 1.10 2002-07-19 03:44:41 shirok Exp $
 #
 # In order to build different encoding-specific packages (like
 # Gauche-euc-jp, etc) from a single source rpm, the actual package
@@ -14,6 +14,7 @@
 
 %define version  0.6
 %define encoding eucjp
+%define threads  pthreads
 
 Summary: Scheme script interpreter with multibyte character handling
 Name: Gauche
@@ -49,13 +50,13 @@ This package is compiled with %{encoding} as the native character encoding.
 %setup
 
 %build
+./configure --prefix=/usr --enable-threads=%{threads} --enable-multibyte=%{encoding}
 %ifarch i386
-OPTFLAGS="-fomit-frame-pointer"
+make OPTFLAGS="-fomit-frame-pointer"
 %else
-OPTFLAGS="-march=i686 -fomit-frame-pointer -DUSE_I686_PREFETCH"
+make
 %endif
-./configure --prefix=/usr --enable-threads=pthreads --enable-multibyte=%{encoding}
-make OPTFLAGS="${OPTFLAGS}"
+
 
 %install
 # These dirs are not cleared after rpm -ba --clean.   To ensure clean
@@ -88,7 +89,7 @@ make prefix=${RPM_BUILD_ROOT}/usr install-doc
 /usr/share/man/man1/
 
 %changelog
-* Wed Jul 17 2002 Shiro Kawai
+* Thu Jul 18 2002 Shiro Kawai
 - Gauche release 0.6
 
 * Sun Jun 30 2002 Shiro Kawai
