@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.255 2002-09-01 20:54:50 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.256 2002-09-02 03:49:37 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -507,7 +507,7 @@ Gaucheの動作を正確に理解する助けになると思います。
 * Multibyte Strings::           
 * Case-sensitivity::            
 * Integerated Object System::   
-* Module System::               
+* Module system::               
 * Compilation::                 
 @end menu
 
@@ -728,6 +728,7 @@ SRFI-28 @code{format}.  @xref{Output}.
 @c JP
 Gauche組み込みの@code{format}がSRFI-28のもののスーパーセットに
 なっています。@ref{Output}参照。
+@c COMMON
 
 @item SRFI-30, Nested multi-line comments.
 @c EN
@@ -953,7 +954,7 @@ inside the intepreter; an API will be provided in the later versions.
 @c COMMON
 
 
-@node Integerated Object System, Module System, Case-sensitivity, Concepts
+@node Integerated Object System, Module system, Case-sensitivity, Concepts
 @section Integrated Object System
 @c NODE 統合されたオブジェクトシステム
 
@@ -1116,12 +1117,12 @@ For more details about metaobject protocol, see @ref{mop,[MOP],MOP}.
 @c COMMON
 @end table
 
-@node Module System, Compilation, Integerated Object System, Concepts
-@section Module System
+@node Module system, Compilation, Integerated Object System, Concepts
+@section Module system
 @c NODE モジュールシステム
 
 @c EN
-Gauche adopts a simple module system that allows
+Gauche has a simple module system that allows
 modularlized development of large software.
 @c JP
 Gaucheは大きなソフトウェアをモジュール化して開発するための、
@@ -1206,7 +1207,6 @@ writing modules.
 @ref{Modules} describes special forms and macros to
 define and to use modules, along the built-in functions
 to introspect module internals.
-@item
 @end itemize
 @c JP
 以下のセクションでモジュールの機能について詳しく説明しています。
@@ -1220,7 +1220,7 @@ to introspect module internals.
 @end itemize
 @c COMMON
 
-@node Compilation,  , Module System, Concepts
+@node Compilation,  , Module system, Concepts
 @section Compilation
 @c NODE コンパイル
 
@@ -1455,12 +1455,12 @@ You can specify this option more than once to load multiple files.
 Evaluate @var{scheme-expression}
 before starting execution of @var{scheme-file} or entering
 the read-eval-print loop.   Evaluation is done in the
-@var{interaction-environment} (@xref{Eval}).
+@var{interaction-environment} (@xref{Eval and repl}).
 You can specify this option more than once to evaluate multiple experssions.
 @c JP
 起動後、インタラクティブなread-eval-printループに入る前、もしくは@var{scheme-file}
 をロードする前に@var{scheme-expression}を評価します。評価は
-@var{interaction-environment}中で行われます(@ref{Eval}参照)。
+@var{interaction-environment}中で行われます(@ref{Eval and repl}参照)。
 このオプションは複数回指定できます。
 @c COMMON
 @end deftp
@@ -2143,6 +2143,7 @@ module name.
 
 @c ----------------------------------------------------------------------
 @menu
+* Lexical structure::           
 * Literals::                    
 * Making Procedures::           
 * Assignments::                 
@@ -2155,7 +2156,7 @@ module name.
 * Modules::                     
 @end menu
 
-@node Lexical structure
+@node Lexical structure, Literals, Core syntax, Core syntax
 @section Lexical structure
 @c NODE 字句構造
 
@@ -2182,17 +2183,139 @@ Either integral part or fraction part of inexact real numbers can be omitted
 if it is zero, i.e. @code{30.}, @code{.25}, @code{-.4} are read as 
 real numbers.   Using '@code{#}' as insignificant digits is not supported.
 @c JP
+@item 数値リテラル
+不正確な実数の整数部または小数部のいずれかが0の場合、それを省略することが
+できます。例：@code{30.}, @code{.25}, @code{-.4}。
+不正確な桁を '@code{#}' で表現する構文はサポートされていません。
 @c COMMON
 
 @c EN
-@item
+@item Symbol names
+Symbol names are case sensitive by default (@xref{Case-sensitivity}).
+Symbol name can begin with digits, '@code{+}' or '@code{-}', as long as
+the entire token doesn't consist valid number syntax.
+Other weird characters can be included in a symbol name by surrounding
+it with '|', e.g. '@code{|this is a symbol|}'.
+@xref{Symbols}, for details.
 @c JP
-@item
+@item シンボル名
+シンボル名はデフォルトで大文字小文字を区別します (@ref{Case-sensitivity}参照)。
+数字や'@code{+}', '@code{-}' で始まるシンボル名も、
+トークンが有効な数値リテラルを構成しない限り許されます。
+また、他の変な文字も '|' でシンボルを囲むことによってシンボル名に含めることが
+できます (例：'@code{|this is a symbol|}')。
+@ref{Symbols}も参照して下さい。
+@c COMMON
+
+@c EN
+@item Character literal by character code
+Character literals can be written using its code, 
+by @code{#\x@var{NN}} (Gauche internal code) or @code{#\u{NN}} (Unicode).
+@xref{Characters}, for details.
+@c JP
+@item 文字コードによる文字リテラル
+文字リテラルを文字コードにより表記することができます。
+Gauche内部コードを使う @code{#\x@var{NN}} と、
+Unicodeを使う @code{#\u{NN}}という表記があります。
+@ref{Characters}を参照して下さい。
+@c COMMON
+
+@c EN
+@item Extended sharp syntax
+Many more special tokens begins with '@code{#}' is defined.
+See the table below.
+@c JP
+@item 拡張された#構文
+'@code{#}' で始まる特殊構文がたくさん定義されています。
+下の表を参照して下さい。
 @c COMMON
 @end table
 
+The table below lists sharp-syntaxes.
+
+@multitable {aaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@item @code{#!}
+ @tab [SRFI-22] Specifies interpreter at the beginning of file.
+      Scheme loader ignores the line.
+@item @code{#"}
+ @tab Introducing incomplete string.  @xref{Strings}.
+@item @code{##}, @code{#$}, @code{#%}, @code{#&}, @code{#'}
+ @tab Unused.
+@item @code{#(}
+ @tab [R5RS] Introduces a vector.
+@item @code{#)}, @code{#*}, @code{#+}
+ @tab Unused.
+@item @code{#,}
+ @tab [SRFI-10] Introduces reader constructor syntax.
+@item @code{#-}, @code{#.}
+ @tab Unused.
+@item @code{#/}
+ @tab Introduces a literal regular expression.  @xref{Regular expression}.
+@item @code{#0} @dots{} @code{#9}
+ @tab Reserved for shared structure reference.
+@item @code{#:}, @code{#;}
+ @tab Unused
+@item @code{#<}
+ @tab Introduces an unreadable object.
+@item @code{#=}, @code{#>}
+ @tab Unused.
+@item @code{#?}
+ @tab Introduces debug macros.  @xref{Debugging}.
+@item @code{#@@}
+ @tab Unused.
+@item @code{#a}
+ @tab Unused.
+@item @code{#b}
+ @tab [R5RS] Binary number prefix.
+@item @code{#c}
+ @tab Unused.
+@item @code{#d}
+ @tab [R5RS] Decimal number prefix.
+@item @code{#e}
+ @tab [R5RS] Exact number prefix.
+@item @code{#f}
+ @tab [R5RS] Boolean false, or
+      introducing SRFI-4 uniform vector.  @xref{Uniform vectors}.
+@item @code{#g}, @code{#h}
+ @tab Unused.
+@item @code{#i}
+ @tab [R5RS] Inxact number prefix.
+@item @code{#j}, @code{#k}, @code{#l}, @code{#m}, @code{#n}
+ @tab Unused.
+@item @code{#o}
+ @tab [R5RS] Octal number prefix.
+@item @code{#p}, @code{#q}, @code{#r}
+ @tab Unused.
+@item @code{#s}
+ @tab [SRFI-4] introducing SRFI-4 uniform vector.  @xref{Uniform vectors}.
+@item @code{#t}
+ @tab [R5RS] Boolean true.
+@item @code{#u}
+ @tab [SRFI-4] introducing SRFI-4 uniform vector.  @xref{Uniform vectors}.
+@item @code{#v}, @code{#w}
+ @tab Unused.
+@item @code{#x}
+ @tab [R5RS] Hexadecimal number prefix.
+@item @code{#y}, @code{#z}
+ @tab Unused.
+@item @code{#[}
+ @tab Introduces a literal character set.  @xref{Character set}.
+@item @code{#\}
+ @tab [R5RS] Introduces a literal character.  @xref{Characters}.
+@item @code{#]}, @code{#^}, @code{#_}
+ @tab Unused.
+@item @code{#`}
+ @tab Introduces an interpolated string.  @xref{String interpolation}.
+@item @code{#@{}
+ @tab Unused.
+@item @code{#|}
+ @tab [SRFI-30] Introduces a block comment.  Comment ends by matching '@code{|#}'.
+@item @code{#@}}, @code{#~}
+ @tab Unused.
+@end multitable
+
 @c ----------------------------------------------------------------------
-@node Literals, Making Procedures, Core syntax, Core syntax
+@node Literals, Making Procedures, Lexical structure, Core syntax
 @section Literals
 @c NODE リテラル
 
@@ -3289,6 +3412,14 @@ Gaucheで使われているモジュールの書法については@ref{Writing Gauche modules}も
 * Predefined modules::          
 @end menu
 
+@node Module semantics
+@subsection Module semantics
+@c NODE モジュールのセマンティクス
+
+@c EN
+@c JP
+@c COMMON
+
 @node Defining and selecting modules, Using modules, Modules, Modules
 @subsection Defining and selecting modules
 @c NODE モジュールの定義と選択
@@ -3789,7 +3920,7 @@ symbols.
 * Weak pointers::               
 * Control features::            
 * Exceptions::                  
-* Eval::                        
+* Eval and repl::               
 * Input and output::            
 * Loading Programs::            
 * Comparison and sorting::      
@@ -5372,15 +5503,31 @@ Returns a symbol whose name is a string @var{string}.
 
 @deftp {Builtin Class} <keyword>
 @clindex keyword
+A keyword is a sort of a special symbol that is automatically quoted.
+It is extensively used in pass-by-name arguments (keyword arguments),
+and keyword-value list
+Unlike CommonLisp, keywords and symbols are distinct types.
 @end  deftp
 
+@deftp {Reader syntax} @code{:@var{name}}
+Read to a keyword whose name is @var{name}.
+(Note that the preceding ':' is not a part of the keyword's name.)
+@end deftp
+
 @defun keyword? obj
+Returns @code{#t} iff @var{obj} is a keyword.
 @end defun
 
 @defun make-keyword name
+Returns a keyword whose name is @var{name}.
+@end defun
+
+@defun keyword->string keyword
+Returns the name of the keyword @var{keyword}.
 @end defun
 
 @defun get-keyword key list [fallback]
+
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -5935,7 +6082,7 @@ SRFI-13については@ref{String library}を参照してください。
 * String syntax::               
 * String Predicates::           
 * String Constructors::         
-* String Interpolation::        
+* String interpolation::        
 * String Accessors & Modifiers::  
 * String Comparison::           
 * String utilities::            
@@ -6071,7 +6218,7 @@ Returns @code{#t} if @var{obj} is an immutable string, @code{#f} otherwise
 Returns @code{#t} if @var{obj} is an incomplete string, @code{#f} otherwise
 @end defun
 
-@node String Constructors, String Interpolation, String Predicates, Strings
+@node String Constructors, String interpolation, String Predicates, Strings
 @subsection String Constructors
 @c NODE 文字列の作成
 
@@ -6147,8 +6294,8 @@ Other class may provide a method to customize the behavior.
 @c COMMON
 @end deffn
 
-@node String Interpolation, String Accessors & Modifiers, String Constructors, Strings
-@subsection String Interpolation
+@node String interpolation, String Accessors & Modifiers, String Constructors, Strings
+@subsection String interpolation
 @c NODE 文字列の補間
 
 @c EN
@@ -6292,7 +6439,7 @@ Schemeは他のスクリプト言語より一般的により多くの文字を変数名に使うことが出来るこ
 混乱を避けるためには、この構文内では常に直接の変数参照は`|'で区切るようにしておくのが良いかもしれません。
 @c COMMON
 
-@node String Accessors & Modifiers, String Comparison, String Interpolation, Strings
+@node String Accessors & Modifiers, String Comparison, String interpolation, Strings
 @subsection String Accessors & Modifiers
 @c NODE 文字列のアクセスと変更
 
@@ -7791,7 +7938,7 @@ returns.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Exceptions, Eval, Control features, Core library
+@node Exceptions, Eval and repl, Control features, Core library
 @section Exceptions
 @c NODE 例外
 
@@ -7973,8 +8120,8 @@ the following conceptual Scheme code.
 @end example
 
 @c ----------------------------------------------------------------------
-@node Eval, Input and output, Exceptions, Core library
-@section Eval
+@node Eval and repl, Input and output, Exceptions, Core library
+@section Eval and repl
 
 @defun eval expr env
 [R5RS]
@@ -8011,8 +8158,52 @@ Gauche built-ins for now.  It'll be removed as soon as I find
 a better way.
 @end defun
 
+@defun read-eval-print-loop &optional reader evaluator printer prompter
+This exports @code{Gosh}'s default read-eval-print loop to applications.
+Each argument can be @code{#f}, which indicates it to use Gauche's
+default procedure(s), or a procedure that satisfies the
+following conditions.
+
+@table @emph
+@item reader
+A procedure that takes no arguments.  It is supposed to read an expression
+and returns it.
+@item evaluator
+A procedure that takes two argument, an expression and an environment
+specifier.  It is supposed to evaluate the expression and returns zero or
+more value(s).
+@item printer
+A procedure that takes zero or more arguments.   It is supposed to
+print out these values.   The result of this procedure is discarded.
+@item prompter
+A procedure that takes no arguments.  It is supposed to print
+out the prompt.   The result of this procedure is discarded.
+@end table
+
+Given those procedures, @code{read-eval-print-loop} runs as follows:
+
+@enumerate
+@item
+Prints the prompt by calling @var{prompter}.
+@item
+Reads an expression by calling @var{reader}.  If it returns EOF,
+exits the loop and returns from @code{read-eval-print-loop}.
+@item
+Evaluates an expression by calling @var{evaluator}
+@item
+Prints the result by calling @var{printer}, then repeats from 1.
+@end enumerate
+
+When an error is signalled from one of those procedures, it is
+captured and reported by the default escape handler, then
+the loop restarts from 1.
+
+It is OK to capture a continuation within those procedures
+and re-invoke them afterwards.
+@end defun
+
 @c ----------------------------------------------------------------------
-@node Input and output, Loading Programs, Eval, Core library
+@node Input and output, Loading Programs, Eval and repl, Core library
 @section Input and Output
 @c NODE 入出力
 
