@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fetch.scm,v 1.1 2004-04-23 06:01:27 shirok Exp $
+;;;  $Id: fetch.scm,v 1.2 2004-04-23 06:03:01 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -61,7 +61,7 @@
           (ncftpget  (assq-ref config 'ncfptget *ncftpget-program*)))
       (rxmatch-case uri
         (#/^https?:/ (#f)
-         (run #`",wget -nv -P \",build-dir\" \",uri\"")
+         (run #`",wget -P \",build-dir\" \",uri\"")
          (build-path build-dir (sys-basename uri)))
         (#/^ftp:/ (#f)
          (let ((dest (build-path build-dir (sys-basename uri))))
@@ -70,7 +70,7 @@
                  (sys-unlink dest)
                  (raise e))
              (lambda ()
-               (run #`",ncftpget -V -c \",uri\" > \",dest\"")))
+               (run #`",ncftpget -c \",uri\" > \",dest\"")))
            dest))
         (else
          (unless (file-is-readable? uri)
