@@ -385,6 +385,43 @@
         (the-procedure '(5 1 9 3))))
 
 ;;----------------------------------------------------------------------
+;; macro defining macros
+
+(test-section "macro defining macros")
+
+(define-syntax mdm-foo1
+  (syntax-rules ()
+    ((mdm-foo1 x y)
+     (define-syntax x
+       (syntax-rules ()
+         ((x z) (cons z y)))))
+    ))
+
+(mdm-foo1 mdm-cons 0)
+
+(test "define-syntax - define-syntax" '(1 . 0)
+      (lambda () (mdm-cons 1)))
+
+(define-syntax mdm-foo2
+  (syntax-rules ()
+    ((mdm-foo2 x y)
+     (let-syntax ((x (syntax-rules ()
+                       ((x z) (cons z y)))))
+       (x 1)))))
+
+(test "define-syntax - let-syntax" '(1 . 0)
+      (lambda () (mdm-foo2 cons 0)))
+
+(test "let-syntax - let-syntax" '(4 . 3)
+      (lambda ()
+        (let-syntax ((mdm-foo3 (syntax-rules ()
+                                 ((mdm-foo3 x y body)
+                                  (let-syntax ((x (syntax-rules ()
+                                                    ((x z) (cons z y)))))
+                                    body)))))
+          (mdm-foo3 list 3 (list 4)))))
+
+;;----------------------------------------------------------------------
 ;; common-macros
 
 (test-section "common-macros utilities")

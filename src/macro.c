@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.43 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: macro.c,v 1.44 2003-09-28 04:41:05 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -294,9 +294,15 @@ static inline ScmObj pvref_to_pvar(PatternContext *ctx, ScmObj pvref)
 }
 
 /* search an identifier with name NAME from a list of identifiers */
-static inline ScmObj id_memq(ScmObj name, ScmObj list)
+static ScmObj id_memq(ScmObj name, ScmObj list)
 {
     ScmObj lp;
+    ScmObj n;
+    if (SCM_IDENTIFIERP(name)) {
+        n = SCM_OBJ(SCM_IDENTIFIER(name)->name);
+    } else {
+        n = name;
+    } 
     SCM_FOR_EACH(lp, list) {
         if (SCM_OBJ(SCM_IDENTIFIER(SCM_CAR(lp))->name) == name)
             return SCM_CAR(lp);
@@ -375,11 +381,13 @@ static ScmObj compile_rule1(ScmObj form,
         ScmObj l = Scm_VectorToList(SCM_VECTOR(form), 0, -1);
         return Scm_ListToVector(compile_rule1(l, spat, ctx, patternp));
     }
+#if 0
     else if (patternp && SCM_IDENTIFIERP(form)) {
         /* this happens in a macro produced by another macro */
         form = SCM_OBJ(SCM_IDENTIFIER(form)->name);
     }
-    if (SCM_SYMBOLP(form)) {
+#endif
+    if (SCM_SYMBOLP(form)||SCM_IDENTIFIERP(form)) {
         ScmObj q;
         if (form == SCM_SYM_ELLIPSIS) BAD_ELLIPSIS(ctx);
         if (!SCM_FALSEP(q = id_memq(form, ctx->literals))) return q;
@@ -391,7 +399,11 @@ static ScmObj compile_rule1(ScmObj form,
             if (pvref == form) {
                 /* form is not a pattern variable.  make it an identifier. */
                 if (!SCM_FALSEP(q = id_memq(form, ctx->tvars))) return q;
-                id = Scm_MakeIdentifier(SCM_SYMBOL(form), ctx->env);
+                if (SCM_IDENTIFIERP(form)) {
+                    id = form;
+                } else {
+                    id = Scm_MakeIdentifier(SCM_SYMBOL(form), ctx->env);
+                }
                 ctx->tvars = Scm_Cons(id, ctx->tvars);
                 return id;
             } else {
