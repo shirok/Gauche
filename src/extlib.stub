@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.230 2004-12-18 04:11:12 shirok Exp $
+;;; $Id: extlib.stub,v 1.231 2005-01-25 02:31:28 shirok Exp $
 ;;;
 
 "
@@ -217,7 +217,14 @@
 
 (define-cproc append! (&rest list)
   "  ScmObj cp, h = SCM_NIL, t = SCM_NIL;
-  SCM_FOR_EACH(cp, list) SCM_APPEND(h, t, SCM_CAR(cp));
+  SCM_FOR_EACH(cp, list) {
+    /* allow non-list argument at the last position */
+    if (!SCM_PAIRP(SCM_CAR(cp)) && SCM_NULLP(SCM_CDR(cp))) {
+      if (SCM_NULLP(h)) return SCM_CAR(cp);
+      else { SCM_SET_CDR(t, SCM_CAR(cp)); return h; }
+    }
+    SCM_APPEND(h, t, SCM_CAR(cp));
+  }
   SCM_RETURN(h);")
 
 (define-cproc reverse! (list)

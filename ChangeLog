@@ -1,3 +1,8 @@
+2005-01-24  Shiro Kawai  <shiro@acm.org>
+
+	* extlib.stub (append!): fixed to allow non-list in the last arg,
+	  for consistency of srfi-1.
+
 2005-01-07  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/net.scm (make-server-socket, make-server-sockets): added
