@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: uri.scm,v 1.12 2002-11-13 11:03:31 shirok Exp $
+;;;  $Id: uri.scm,v 1.13 2002-12-26 20:39:06 shirok Exp $
 ;;;
 
 ;; Main reference:
@@ -156,20 +156,19 @@
 ;; See 2.3 "Unreserved Characters" of RFC 2396.
 (define *uri-unreserved-char-set* #[-_.!~*'()0-9A-Za-z])
 
+;; NB: Converts byte by byte, instead of chars, to avoid complexity
+;; from different character encodings (suggested by Fumitoshi UKAI).
+;; 'noescape' char-set is only valid in ASCII range.  All bytes
+;; larger than #x80 are encoded unconditionally.
 (define (uri-encode . args)
   (let ((echars (get-keyword :noescape args *uri-unreserved-char-set*)))
-    (let loop ((c (read-char)))
-      (cond ((eof-object? c))
-            ((char-set-contains? echars c)
-             (write-char c) (loop (read-char)))
-            (else
-             (let loop1 ((i (char->integer c)))
-               (if (< i #x100)
-                   (format #t "%~2,'0x" i)
-                   (begin
-                     (loop1 (quotient i #x100))
-                     (format #t "%~2,'0x" (modulo i #x100)))))
-             (loop (read-char)))))))
+    (let loop ((b (read-byte)))
+      (unless (eof-object? b)
+        (if (and (< b #x80)
+                 (char-set-contains? echars (integer->char b)))
+            (write-byte b) 
+            (format #t "%~2,'0x" b))
+        (loop (read-byte))))))
 
 (define (uri-encode-string string . args)
   (with-string-io string (lambda () (apply uri-encode args))))

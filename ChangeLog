@@ -1,3 +1,9 @@
+2002-12-26  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/uri.scm (uri-encode): process byte-wise, instead of
+	  character-wise, to avoid complexity of different character
+	  encodings.  Suggested by Fumitoshi UKAI.
+
 2002-12-25  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/* : added immutability check for all destructive ops.
