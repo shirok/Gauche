@@ -1496,6 +1496,45 @@
          (array-set! arr (array (shape 0 4) 1 3 5 7) 'd)
          (array-ref arr 1 3 5 7)))
 
+(test* "array-valid-index? (list)" #t
+       (array-valid-index? (make-array (shape) 'o)))
+(test* "array-valid-index? (list)" #t
+       (array-valid-index? (make-array (shape -1 1) 'o) -1))
+(test* "array-valid-index? (list)" #t
+       (array-valid-index? (make-array (shape 1 2 3 4 5 6 7 8) 'o) 1 3 5 7))
+(test* "array-valid-index? (list)" #f
+       (array-valid-index? (make-array (shape) 'o) 0))
+(test* "array-valid-index? (list)" #f
+       (array-valid-index? (make-array (shape -1 1) 'o) -2))
+(test* "array-valid-index? (list)" #f
+       (array-valid-index? (make-array (shape 1 2 3 4 5 6 7 8) 'o) 1 3 5))
+
+(test* "array-valid-index? (vector)" #t
+       (array-valid-index? (make-array (shape) 'o) #()))
+(test* "array-valid-index? (vector)" #t
+       (array-valid-index? (make-array (shape -1 1) 'o) #(0)))
+(test* "array-valid-index? (vector)" #t
+       (array-valid-index? (make-array (shape 1 2 3 4 5 6 7 8) 'o) #(1 3 5 7)))
+(test* "array-valid-index? (vector)" #f
+       (array-valid-index? (make-array (shape) 'o) #(0)))
+(test* "array-valid-index? (vector)" #f
+       (array-valid-index? (make-array (shape -1 1) 'o) #(1)))
+(test* "array-valid-index? (vector)" #f
+       (array-valid-index? (make-array (shape 1 2 3 4 5 6 7 8) 'o) #(1 3 5 7 9)))
+
+(test* "array-valid-index? (array)" #t
+       (array-valid-index? (make-array (shape) 'o) #,(<array> (0 0))))
+(test* "array-valid-index? (array)" #t
+       (array-valid-index? (make-array (shape -1 1) 'o) #,(<array> (0 1) 0)))
+(test* "array-valid-index? (array)" #t
+       (array-valid-index? (make-array (shape 1 2 3 4 5 6 7 8) 'o) #,(<array> (0 4) 1 3 5 7)))
+(test* "array-valid-index? (array)" #f
+       (array-valid-index? (make-array (shape) 'o) #,(<array> (0 1) 0)))
+(test* "array-valid-index? (array)" #f
+       (array-valid-index? (make-array (shape -1 1) 'o) #,(<array> (0 1) 1)))
+(test* "array-valid-index? (array)" #f
+       (array-valid-index? (make-array (shape 1 2 3 4 5 6 7 8) 'o) #,(<array> (0 4) 1 4 5 7)))
+
 ;;; Share and change:
 ;;;
 ;;;  org     brk     swp            box
@@ -1758,53 +1797,98 @@
                  (array-ref sub 6)))
     ))
 
+(test-section "subarray")
+(let ((super (array (shape 0 3 0 3)
+                    1 * *
+                    * 2 *
+                    * * 3))
+      (subshape (shape 1 3 1 3)))
+  (let ((sub (subarray super subshape)))
+    (test* "sub check" #t
+           (equal? sub (array (shape 0 2 0 2) 2 * * 3)))
+    (test* "sharing with sharing subshape" (list 2 0 2 2 * * 3)
+           (list (array-rank sub)
+                 (array-start sub 0)
+                 (array-end sub 0)
+                 (array-ref sub 0 0)
+                 (array-ref sub 0 1)
+                 (array-ref sub 1 0)
+                 (array-ref sub 1 1)))
+    ))
+
 ;;----------------------------------------------------------------
 (test-section "array-iteration")
 
-(test* "array-for-each-index-list" '((0 0) (0 1) (1 0) (1 1))
+(test* "array-for-each-index (list)" '((0 0) (0 1) (1 0) (1 1))
   (let ((ar (make-array (shape 0 2 0 2)))
         (ls '()))
     (array-for-each-index ar (lambda (a b) (push! ls (list a b))))
     (reverse ls)))
 
-(test* "array-for-each-index-vector" '(#(0 0) #(0 1) #(1 0) #(1 1))
+(test* "array-for-each-index (vector)" '(#(0 0) #(0 1) #(1 0) #(1 1))
   (let ((ar (make-array (shape 0 2 0 2)))
         (ls '())
         (vec (make-vector 2)))
     (array-for-each-index ar (lambda (v) (push! ls (vector-copy v))) vec)
     (reverse ls)))
 
-(test* "array-for-each-index-array" '(#(0 0) #(0 1) #(1 0) #(1 1))
+(test* "array-for-each-index (array)" '(#(0 0) #(0 1) #(1 0) #(1 1))
   (let ((ar (make-array (shape 0 2 0 2)))
         (ls '())
         (ind (make-array (shape 0 2))))
     (array-for-each-index ar (lambda (a) (push! ls (array->vector a))) ind)
     (reverse ls)))
 
-(test* "shape-for-each-list" '((0 0) (0 1) (1 0) (1 1))
+(test* "array-for-each-index-by-dimension (list)" '(0 1)
+  (let ((ar (make-array (shape 0 2 5 7)))
+        (ls '()))
+    (array-for-each-index-by-dimension
+     ar '(0)
+     (lambda (a b) (push! ls a)))
+    (reverse ls)))
+
+(test* "array-for-each-index-by-dimension (vector)" '(#(3 5) #(3 6) #(3 7))
+  (let ((ar (make-array (shape 0 2 5 8)))
+        (ls '()))
+    (array-for-each-index-by-dimension
+     ar '(1)
+     (lambda (v) (push! ls (vector-copy v)))
+     (vector 3 4))
+    (reverse ls)))
+
+(test* "array-for-each-index-by-dimension (array)" '(#(5) #(6) #(7))
+  (let ((ar (make-array (shape 5 8 0 2)))
+        (ls '()))
+    (array-for-each-index-by-dimension
+     ar '(0)
+     (lambda (a) (push! ls (array->vector a)))
+     (make-array (shape 0 1)))
+    (reverse ls)))
+
+(test* "shape-for-each (list)" '((0 0) (0 1) (1 0) (1 1))
   (let ((sh (shape 0 2 0 2))
         (ls '()))
     (shape-for-each sh (lambda (a b) (push! ls (list a b))))
     (reverse ls)))
 
-(test* "shape-for-each-vector" '(#(0 0) #(0 1) #(1 0) #(1 1))
+(test* "shape-for-each (vector)" '(#(0 0) #(0 1) #(1 0) #(1 1))
   (let ((sh (shape 0 2 0 2))
         (ls '())
         (vec (make-vector 2)))
     (shape-for-each sh (lambda (v) (push! ls (vector-copy v))) vec)
     (reverse ls)))
 
-(test* "shape-for-each-array" '(#(0 0) #(0 1) #(1 0) #(1 1))
+(test* "shape-for-each (array)" '(#(0 0) #(0 1) #(1 0) #(1 1))
   (let ((sh (shape 0 2 0 2))
         (ls '())
         (ind (make-array (shape 0 2))))
     (shape-for-each sh (lambda (a) (push! ls (array->vector a))) ind)
     (reverse ls)))
 
-(test* "tabulate-array-list" #,(<array> (1 3 1 3) 11 12 21 22)
+(test* "tabulate-array (list)" #,(<array> (1 3 1 3) 11 12 21 22)
   (tabulate-array (shape 1 3 1 3) (lambda (a b) (+ (* a 10) b))))
 
-(test* "tabulate-array-vector" #,(<array> (2 4 2 4) 12 31 17 36)
+(test* "tabulate-array (vector)" #,(<array> (2 4 2 4) 12 31 17 36)
   (let ((vec (make-vector 2))
         (square (lambda (x) (* x x)))
         (cube (lambda (x) (* x x x))))
@@ -1812,12 +1896,12 @@
                                                    (cube (ref v 1))))
                     vec)))
 
-(test* "array-retabulate! list" #,(<array> (0 2 0 2) 1.0 0.5 0.25 0.125)
+(test* "array-retabulate! (list)" #,(<array> (0 2 0 2) 1.0 0.5 0.25 0.125)
   (let ((ar #,(<array> (0 2 0 2) 1 2 4 8)))
     (array-retabulate! ar (lambda (i j) (/ 1.0 (array-ref ar i j))))
     ar))
 
-(test* "array-retabulate! vector" #,(<array> (0 2 0 2) 1.0 0.5 0.25 0.125)
+(test* "array-retabulate! (vector)" #,(<array> (0 2 0 2) 1.0 0.5 0.25 0.125)
   (let ((ar #,(<array> (0 2 0 2) 1 2 4 8))
         (vec (make-vector 2)))
     (array-retabulate! ar (lambda (v) (/ 1.0 (array-ref ar v))) vec)
@@ -1843,6 +1927,28 @@
              #,(<array> (0 2 0 2) 10 20 30 40)
              #,(<array> (0 2 0 2) .1 .2 .3 .4)
              #,(<array> (0 2 0 2) 10.0 1.0 0.1 0.01)))
+
+(test* "array-every-1" #t
+  (array-every even? #,(<array> (0 0))))
+(test* "array-every-2" #t
+  (array-every even? #,(<array> () 2)))
+(test* "array-every-3" #t
+  (array-every even? #,(<array> (0 2 0 2) 2 4 6 8)))
+(test* "array-every-4" #f
+  (array-every even? #,(<array> () 3)))
+(test* "array-every-5" #f
+  (array-every even? #,(<array> (0 2 0 2) 2 4 3 8)))
+
+(test* "array-any-1" #t
+  (array-any even? #,(<array> () 2)))
+(test* "array-any-2" #t
+  (array-any even? #,(<array> (0 2 0 2) 1 2 3 8)))
+(test* "array-any-3" #f
+  (array-any even? #,(<array> (0 0))))
+(test* "array-any-4" #f
+  (array-any even? #,(<array> () 3)))
+(test* "array-any-5" #f
+  (array-any even? #,(<array> (0 2 0 2) 1 3 5 7)))
 
 ;;-------------------------------------------------------------------
 ;; NB: copy-port uses read-block! and write-block for block copy,
