@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.243 2002-07-15 23:22:28 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.244 2002-07-17 05:33:54 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -10906,24 +10906,47 @@ An example session.  It may differ on your system settings.
 @subsection Signal
 @c NODE  シグナル
 
-Gauche can send out POSIX signals to the other processes
+@c EN
+Gauche can send out operating system's signals to the other processes
 (including itself) and can handle the incoming signals.
+@c JP
+Gaucheでは、OSのシグナルを自分自身や他のプロセスに送ったり、
+送られたシグナルを処理することができます。
+@c COMMON
+
+@c EN
+In multithread environment, all threads share the signal
+handlers, and each thread has its own signal mask.
+See @ref{Signals and threads}, for details.
+@c JP
+マルチスレッド環境では、全てのスレッドがシグナルハンドラを共有し、
+各スレッドが独自のシグナルマスクを持ちます。
+詳しくは@ref{Signals and threads}を参照して下さい。
+@c COMMON
 
 @menu
 * Signals and signal sets::     
 * Sending signals::             
 * Handling signals::            
+* Signals and threads::         
 @end menu
 
 @node Signals and signal sets, Sending signals, Signal, Signal
 @subsubsection Signals and signal sets
 @c NODE シグナルとシグナルセット
 
-POSIX signals are referred by its signal number (a small integer)
-defined on the system.
+@c EN
+Signals are referred by its signal number (a small integer)
+defined on the underlying operating system.
 Variables are pre-defined to the system's signal number.
 System's signal numbers may be architecture dependent, so you should
 use those variables rather than using literal integers.
+@c JP
+シグナルはオペレーティングシステムで定義された小さな整数値で表現されます。
+システムのシグナル番号に束縛された変数が定義されています。
+システムのシグナル番号はアーキテクチャによって異なるので、
+なるべく変数を利用するようにして下さい。
+@c COMMON
 
 @defvar  SIGABRT
 @defvarx SIGALRM
@@ -10944,7 +10967,11 @@ use those variables rather than using literal integers.
 @defvarx SIGTTOU
 @defvarx SIGUSR1
 @defvarx SIGUSR2
+@c EN
 These variables are bound to the signal numbers of POSIX signals.
+@c JP
+これらの変数はPOSIXで定義された対応するシグナルの番号に束縛されています。
+@c COMMON
 @end defvar
 
 @defvar  SIGTRAP
@@ -10960,17 +10987,33 @@ These variables are bound to the signal numbers of POSIX signals.
 @defvarx SIGPOLL
 @defvarx SIGIO
 @defvarx SIGPWR
+@c EN
 These variables are bound to the signal numbers of system-dependent
 signals.  Not all of them may be defined on some systems.
+@c JP
+これらの変数はシステム依存のシグナル番号に束縛されています。
+全てのシステムで全てのシグナルがサポートされているわけではありません。
+@c COMMON
 @end defvar
 
+@c EN
 Besides each signal numbers, you can refer to a set of signals
-using @code{<sys-sigset>} object.  It is used in the low-level
-handlers inside Gauche and usual applications may not need to use it.
+using a @code{<sys-sigset>} object.
+It can be used to manipulate the signal mask, and to install a signal
+handler to a set of signals at once.
+@c JP
+それぞれのシグナル番号の他に、@code{<sys-sigset>}オブジェクトを使って
+シグナルの集合を扱うことができます。シグナルの集合はシグナルマスクを操作したり、
+ひとつのシグナルハンドラを多数のシグナルに同時に設定したりする際に使えます。
+@c COMMON
 
 @deftp {Class} <sys-sigset>
 @clindex sys-sigset
+@c EN
 A set of signals.   An empty sigset can be created by
+@c JP
+シグナルの集合を表します。空のシグナルの集合は次の式で作成できます：
+@c COMMON
 @example
 (make <sys-sigset>)
 @end example
@@ -10978,74 +11021,258 @@ A set of signals.   An empty sigset can be created by
 
 @defun sys-sigset-add! sigset signal @dots{}
 @defunx sys-sigset-delete! sigset signal @dots{}
-@var{sigset} must be a @code{<sys-sigset>} object.
+@c EN
+@var{Sigset} must be a @code{<sys-sigset>} object.
 Those procedures adds and removes the specified signals from
 @var{sigset} respectively, and returns the result.  @var{sigset} itself
 is also modified.
 
 @var{signal} may be either a signal number, another @code{<sys-sigset>}
 object, or @code{#t} for all available signals.
+@c JP
+@var{sigset}は@code{<sys-sigset>}オブジェクトでなければなりません。
+これらの手続きは@var{sigset}に指定されたシグナルを追加、
+もしくは@var{sigset}から指定されたシグナルを削除します。
+変更された@var{sigset}が返されます。
+@c COMMON
 @end defun
 
 @defun sys-sigset-fill! sigset
 @defunx sys-sigset-empty! sigset
+@c EN
 Fills @var{sigset} by all available signals, or empties @var{sigset}.
+@c JP
+システムで定義された全てのシグナルを@var{sigset}にセット、
+もしくは@var{sigset}を空にします。
+@c COMMON
 @end defun
 
 @defun sys-signal-name signal
+@c EN
 Returns the human-readable name of the signal.
+@c JP
+シグナルの名前を返します。
+@c COMMON
 @end defun
-
 
 @node Sending signals, Handling signals, Signals and signal sets, Signal
 @subsubsection Sending signals
 @c NODE シグナルの送出
 
+@c EN
 To send a signal, you can use @code{sys-kill} which works like
 @code{kill(2)}.
+@c JP
+シグナルを送るには、@code{sys-kill}を使うことができます。
+これはシステムの@code{kill(2)}のように動作します。
+@c COMMON
 
 @defun sys-kill pid sig
-[POSIX] Sends a signal @var{sig} to the specified process.  @var{sig}
+[POSIX]
+@c EN
+Sends a signal @var{sig} to the specified process(es).  @var{Sig}
 must be a positive exact integer.  @var{pid} is an exact integer and
 specifies the target process(es):
+@c JP
+シグナル@var{sig}を指定されたプロセス(群)に送ります。
+@var{sig}は正確な正整数でなければなりません。@var{pid}は正確な整数でなければ
+ならず、次のルールで対象となるプロセスを指定します。
+@c COMMON
 @itemize @bullet
 @item
+@c EN
 If @var{pid} is positive, it is the target process id.
+@c JP
+@var{pid}が正ならば、それがそのまま対象となるプロセスIDです。
+@c COMMON
 @item
+@c EN
 If @var{pid} is zero, the signal is sent to every process in the process
 group of the current process.
+@c JP
+@var{pid}がゼロならば、シグナルは現在のプロセスのプロセスグループ内の全ての
+プロセスに送られます。
+@c COMMON
 @item
+@c EN
 If @var{pid} is less than -1, the signal is sent to every process in
 the process group @var{-pid}.
+@c JP
+@var{pid}が-1より小さければ、シグナルはプロセスグループIDが@var{-pid}である
+全てのプロセスに送られます。
+@c COMMON
 @end itemize
 @end defun
 
+@c EN
 There's no Scheme equivalence for @code{raise()}, but you can use
 @code{(sys-kill (sys-getpid) @var{sig})}.
+@c JP
+POSIXの@var{raise()}に対応するScheme関数はありませんが、
+@code{(sys-kill (sys-getpid) @var{sig})} で同じことができます。
+@c COMMON
 
-
-@node Handling signals,  , Sending signals, Signal
+@node Handling signals, Signals and threads, Sending signals, Signal
 @subsubsection Handling signals
 @c NODE シグナルの処理
 
-You can set one or more signal handlers in Scheme.
+@c EN
+You can register signal handling procedures in Scheme.
+(In multithread environment, signal handlers are shared by all
+threads; see @ref{Signals and threads} for details).
+@c JP
+Schemeでシグナルを処理する手続きを登録できます。
+(マルチスレッド環境では、シグナルハンドラの設定は全てのスレッドで共有されます。
+@ref{Signals and threads}を参照して下さい)。
+@c COMMON
 
-When you're using the @code{gosh} interpreter, all the signals
-except @code{SIGABRT}, @code{SIGILL}, @code{SIGKILL}, @code{SIGCONT},
-@code{SIGSTOP}, @code{SIGSEGV} and @code{SIGCHLD} can be handled
-in Scheme.  If no handlers are available when a signal is delivered,
-the default handler is called, which raises an error (unhandled signal).
+@c EN
+When a signal is delivered to the Scheme process, it is queued in VM,
+and processed in a 'safe point' where the state of VM is consistent.
+(Note that this makes handling of some signals such as @code{SIGILL}
+useless, for the process can't continue sensible execution after
+queuing the signal).
+@c JP
+シグナルがSchemeプロセスに送られると、それはVM中のキューに入れられます。
+VMは「安全なポイント」に達した時にキューを検査し、シグナルが届いていれば
+それを順に処理します。
+(このメカニズムのため、@code{SIGILL}のようなシグナルはSchemeレベルでは
+処理できません。そのシグナルをキューに入れた後でプロセスが処理を続行できない
+からです)。
+@c COMMON
 
+@c EN
+When you're using the @code{gosh} interpreter, the default
+behavior for each signal is as in the following table.
+@c JP
+@code{gosh}インタプリタを使っている場合、デフォルトでのシグナルの処理は
+次のように設定されています。
+@c COMMON
+
+@multitable {aaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@item @code{SIGABRT}, @code{SIGILL}, @code{SIGKILL}, @code{SIGCONT}, @code{SIGSTOP}, @code{SIGSEGV}, @code{SIGBUS}
+@c EN
+  @tab Cannot be handled in Scheme.  @code{Gosh} follows the system's
+       default behavior.
+@c JP
+  @tab Schemeでは処理できません。@code{gosh}ではこれらのシグナルを受けると
+       システムのデフォルトの動作をします。
+@c COMMON
+@item @code{SIGCHLD}, @code{SIGTSTP}, @code{SIGTTIN}, @code{SIGTTOU}, @code{SIGWINCH}
+@c EN
+  @tab No signal handles are installed for these signals by @code{gosh},
+       so the process follows the system's default behavior.
+       Scheme programs can install its own signal handler if necessary.
+@c JP
+  @tab @code{gosh}は初期状態ではこれらのシグナルのハンドラを設定せず、
+       システムのデフォルトの振るまいに任せます。Schemeプログラムは必要ならば
+       これらのシグナルのハンドラを設定できます。
+@c COMMON
+@item @code{SIGPWR}, @code{SIGXCPU}, @code{SIGUSR1}, @code{SIGUSR2}
+@c EN
+  @tab On Linux platforms with thread support, these signals are used
+       by the system and not available for Scheme.  On other systems,
+       these signals behaves the same as described below.
+@c JP
+  @tab Linuxプラットフォームでスレッドを使用している場合は、
+       これらのシグナルはシステムで使用されるため、Schemeからは使用できません。
+       他のシステムではこれらのシグナルは下記の「他のシグナル」と同じ動作と
+       なります。
+@c COMMON
+@c EN
+@item other signals
+  @tab @code{Gosh} installs the default signal handler, which signals
+       an "unhandled signal" error.  Scheme programs can override it
+       by its own signal handler.
+@c JP
+@item 他のシグナル
+  @tab @code{gosh}はデフォルトのシグナルハンドラを設定します。
+       デフォルトのシグナルハンドラは "unhandled signal" エラーを通知します。
+       Schemeプログラムはシグナル毎に独自のハンドラを設定することが可能です。
+@c COMMON
+@end multitable
+
+@c EN
 If you're using Gauche embedded in some other application,
-it may redefine the set of signals handleable by Gauche.
+it may redefine the default behavior.
+@c JP
+@code{gosh}でなく、他のアプリケーションに埋め込まれたGaucheを使っている場合、
+Schemeレベルでのシグナルの使用をアプリケーションが制限している場合があります。
+@c COMMON
 
-@defun set-signal-handler! signum handler
+@c EN
+Use the following procedures to get/set signal handlers from Scheme.
+@c JP
+Schemeからシグナルハンドラを設定するには以下の手続きを使って下さい。
+@c COMMON
+
+@defun set-signal-handler! signals handler
+@c EN
+@var{Signals} may be a single signal number or a @code{<sys-sigset>}
+object, and @var{handler} should be either @code{#t}, @code{#f}
+or a procedure that takes one argument.
+If @var{handler} is a procedure, it will be called when the process
+receives one of specified signal(s), with the received signal
+number as an argument.
+It is safe to do anything in @var{handler}, including throwing
+an error or invoking continuation captured elsewhere.  (However,
+continuations captured inside @var{handler} will be invalid
+once you return from @var{handler}).
+@c JP
+@var{signals}はシグナル番号か@code{<sys-sigset>}オブジェクト、
+@var{handler}は@code{#t}、@code{#f}、一つの引数を取る手続きのいずれか
+でなければなりません。
+@var{handler}が手続きの場合、プロセスが指定されたシグナル(のうちのいずれか)を
+受けた時に、そのシグナル番号を引数として@var{handler}が呼ばれます。
+@var{handler}の中でできる操作にはほとんど制限がありません。
+@var{handler}からエラーを投げたり、他の場所で補足された継続を呼ぶことも
+できます。但し、@var{handler}内で補足した継続は@var{handler}から
+戻った時点で無効になります。
+@c COMMON
+
+@c EN
+If @var{handler} is @code{#t}, the operating system's default 
+behavior is set to the specified signal(s).  If @var{handler}
+is @code{#f}, the specified signals(s) will be ignored.
+@c JP
+@var{handler}が@code{#t}の場合、指定されたシグナルにはオペレーティングシステムの
+デフォルトの振るまいが設定されます。
+@var{handler}が@code{#f}の場合、指定されたシグナルは無視されます。
+@c COMMON
+
+@c EN
+Note that signal handler setting is shared among threads in
+multithread enviornment.  The handler is called from the thread
+which is received the signal.  See @ref{Signals and threads}
+for details.
+@c JP
+マルチスレッドプログラムでは、
+シグナルハンドラの設定はスレッド間で共有されることに注意して下さい。
+ハンドラはシグナルを受けたスレッドで実行されます。
+詳しくは@ref{Signals and threads}を参照して下さい。
+@c COMMON
 @end defun
 
 @defun get-signal-handler signum
+@c EN
+Returns the handler setting of a signal @var{signum}.
+@c JP
+シグナル@var{signum}に設定されたハンドラを返します。
+@c COMMON
 @end defun
 
 @defun get-signal-handlers
+@c EN
+Returns an associative list of all signal handler settings.
+Car of each element of returned list is a @code{<sys-sigset>} object,
+and cdr of it is the handler (a procedure or a boolean value)
+of the signals in the set.
+@c JP
+現在の全てのシグナルハンドラの設定を連想リストにして返します。
+返されるリストの各要素のcarには@code{<sys-sigset>}オブジェクトが、
+cdrにはそれらのシグナルに対応するハンドラ(手続きもしくはブール値)がセットされて
+います。
+@c COMMON
 @end defun
 
 @defmac with-signal-handlers (handler-clause @dots{}) thunk
@@ -11086,6 +11313,12 @@ the system reports an error (interrupted system call) or
 returns prematurely (for example, read returns EOF in such case).
 In future versions of Gauche more procedures will be correctly
 restarted.
+
+@node Signals and threads,  , Handling signals, Signal
+@subsubsection Signals and threads
+@c NODE シグナルとスレッド
+
+
 
 
 @node System Inquiry, Time, Signal, System interface
@@ -11585,10 +11818,15 @@ doesn't modify its arguments.
 @c NODE その他のシステムコール
 
 @defun sys-pause
-[POSIX] Suspends the process until it receives a signal whose
+[POSIX]
+Suspends the process until it receives a signal whose
 action is to either execute a signal-catching function or to terminate
 the process.  This function only returns when the signal-catching
 function returns.  The returned value is undefined.
+
+Note that just calling @code{pause()} doesn't suffice the above semantics
+in Scheme-level.  Internally this procedure calls @code{sigsuspend()}
+with the current signal mask.
 @end defun
 
 @defun sys-alarm seconds
