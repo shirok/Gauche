@@ -30,7 +30,7 @@ convlib.c : convlib.stub
 	$(GOSH) genstub convlib.stub
 
 test : all
-	@cd data; make all
+	@cd data; $(MAKE) all
 	@rm -f test.log
 	$(GOSH) test.scm > test.log
 
