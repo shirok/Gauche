@@ -30,11 +30,12 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: ndbm.scm,v 1.4 2003-07-05 03:29:10 shirok Exp $
+;;;  $Id: ndbm.scm,v 1.5 2003-09-15 12:47:43 shirok Exp $
 ;;;
 
 (define-module dbm.ndbm
-  (use dbm)
+  (extend dbm)
+  (use srfi-1)
   (export <ndbm>
           ;; low level funcions
           ndbm-open           ndbm-close            ndbm-closed?
@@ -51,9 +52,13 @@
 ;; Initialize
 ;;
 
+(define-class <ndbm-meta> (<dbm-meta>)
+  ())
+
 (define-class <ndbm> (<dbm>)
   ((ndbm-file :accessor ndbm-file-of :initform #f)
-   ))
+   )
+  :metaclass <ndbm-meta>)
 
 (define-method dbm-open ((self <ndbm>))
   (next-method)
@@ -124,5 +129,24 @@
                   (proc (%dbm-s2k self key) (%dbm-s2v self val) r)))
           r))
     ))
+
+(define (ndbm-files name)
+  (map (cut string-append name <>) ".pag" ".dir"))
+
+(define-method dbm-db-exists? ((class <ndbm-meta>) name)
+  (every file-exists? (ndbm-files name)))
+
+(define-method dbm-db-remove ((class <ndbm-meta>) name)
+  (for-each sys-unlink (ndbm-files name)))
+
+(define-method dbm-db-copy ((class <ndbm-meta>) from to . keys)
+  (apply %dbm-copy2
+         (append (append-map list (ndbm-files from) (ndbm-files to))
+                 keys)))
+
+(define-method dbm-db-rename ((class <ndbm-meta>) from to . keys)
+  (apply %dbm-rename2
+         (append (append-map list (ndbm-files from) (ndbm-files to))
+                 keys)))
 
 (provide "dbm/ndbm")

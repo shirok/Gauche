@@ -30,11 +30,11 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gdbm.scm,v 1.6 2003-07-09 10:55:26 shirok Exp $
+;;;  $Id: gdbm.scm,v 1.7 2003-09-15 12:47:43 shirok Exp $
 ;;;
 
 (define-module dbm.gdbm
-  (use dbm)
+  (extend dbm)
   (export <gdbm>
           ;; low-level functions
           gdbm-open          gdbm-close          gdbm-closed?
@@ -55,12 +55,16 @@
 ;; Initialize
 ;;
 
+(define-class <gdbm-meta> (<dbm-meta>)
+  ())
+
 (define-class <gdbm> (<dbm>)
   ((gdbm-file :accessor gdbm-file-of :initform #f)
    (sync      :init-keyword :sync   :initform #f)
    (nolock    :init-keyword :nolock :initform #f)
    (bsize     :init-keyword :bsize  :initform 0)
-   ))
+   )
+  :metaclass <gdbm-meta>)
 
 (define-method dbm-open ((self <gdbm>))
   (next-method)
@@ -141,5 +145,31 @@
             (loop (gdbm-nextkey gdbm key)
                   (proc (%dbm-s2k self key) (%dbm-s2v self val) r)))
           r))))
+
+;;
+;; Metaoperations
+;;
+
+(autoload file.util copy-file move-file)
+
+(define (%with-gdbm-locking path thunk)
+  (let1 db (gdbm-open path 0 |GDBM_READER| #o664) ;; put read-lock
+    (with-error-handler
+        (lambda (e) (gdbm-close db) (raise e))
+      (lambda () (thunk) (gdbm-close db)))))
+        
+(define-method dbm-db-exists? ((class <gdbm-meta>) name)
+  (file-exists? name))
+
+(define-method dbm-db-remove ((class <gdbm-meta>) name)
+  (sys-unlink name))
+
+(define-method dbm-db-copy ((class <gdbm-meta>) from to . keys)
+  (%with-gdbm-locking
+   (lambda () (apply copy-file from to :safe #t keys))))
+
+(define-method dbm-db-rename ((class <gdbm-meta>) from to . keys)
+  (%with-gdbm-locking
+   (lambda () (apply move-file from to :safe #t keys))))
 
 (provide "dbm/gdbm")

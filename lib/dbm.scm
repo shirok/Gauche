@@ -30,15 +30,14 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: dbm.scm,v 1.1 2003-09-07 23:49:52 shirok Exp $
+;;;  $Id: dbm.scm,v 1.2 2003-09-15 12:47:45 shirok Exp $
 ;;;
 
 (define-module dbm
   (export <dbm> <dbm-meta>
           dbm-open    dbm-close   dbm-closed? dbm-get
           dbm-put!    dbm-delete! dbm-exists?
-          dbm-fold    dbm-for-each  dbm-map
-          %dbm-k2s    %dbm-s2k    %dbm-v2s    %dbm-s2v)
+          dbm-fold    dbm-for-each  dbm-map)
   )
 (select-module dbm)
 
@@ -55,7 +54,7 @@
    k2s s2k v2s s2v)
   :metaclass <dbm-meta>)
 
-;; Macros that can be used by implementation modules
+;; Macros & procedures that can be used by implementation modules
 (define-syntax %dbm-k2s
   (syntax-rules ()
     ((_ self key) ((slot-ref self 'k2s) key))))
@@ -71,6 +70,35 @@
 (define-syntax %dbm-s2v
   (syntax-rules ()
     ((_ self key) ((slot-ref self 's2v) key))))
+
+;; Utilities to copy/rename two files (esp. *.dir and *.pag file of
+;; traditional dbm).  Makes some effort to take care of rollback on failure.
+;; Also check if two files are hard-linked (gdbm_compat does that).
+
+(autoload file.util file-eq? copy-file move-file)
+
+(define (%dbm-copy2 from1 to1 from2 to2 . keys)
+  (let-keywords* keys ((if-exists :error))
+    (if (file-eq? from1 from2)
+      (begin ;; dir and pag files are identical
+        (copy-file from1 to1 :safe #t :if-exists if-exists)
+        (sys-link to1 to2))
+      (begin
+        (copy-file from1 to1 :safe #t :if-exists if-exists)
+        (with-error-handler
+            (lambda (e) (sys-unlink to1) (sys-unlink to2) (raise e))
+          (lambda () (copy-file from2 to2 :safe #t :if-exists if-exists)))))))
+
+(define (%dbm-rename2 from1 to1 from2 to2 . keys)
+  (let-keywords* keys ((if-exists :error))
+    (if (file-eq? from1 from2)
+      (begin
+        (move-file from1 to1 :if-exists if-exists)
+        (sys-link to1 to2)
+        (sys-unlink from2))
+      (begin
+        (move-file from1 to1 :if-exists if-exists)
+        (move-file from2 to2 :if-exists if-exists)))))
 
 ;;
 ;; DBM-OPEN
@@ -138,15 +166,19 @@
   (reverse (dbm-fold dbm (lambda (key value r) (cons (proc key value) r)) '())))
 
 ;;
-;; Metainformation
-;;
+;; Meta-operations
+;;  Subclass has to implement these.
 
-(define-method dbm-db-exists? ((class <dbm-meta>) name) #f)
+(define-method dbm-db-exists? ((class <dbm-meta>) name)
+  (errorf "dbm-db-exists?: not supported in ~a" class))
 
-(define-method dbm-db-remove ((class <dbm-meta>) name) #f)
+(define-method dbm-db-remove ((class <dbm-meta>) name)
+  (errorf "dbm-db-remove: not supported in ~a" class))
 
-(define-method dbm-db-copy   ((class <dbm-meta>) from to) #f)
+(define-method dbm-db-copy   ((class <dbm-meta>) from to)
+  (errorf "dbm-db-copy: not supported in ~a" class))
 
-(define-method dbm-db-rename ((class <dbm-meta>) from to) #f)
+(define-method dbm-db-rename ((class <dbm-meta>) from to)
+  (errorf "dbm-db-rename: not supported in ~a" class))
 
 (provide "dbm")

@@ -30,11 +30,12 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: odbm.scm,v 1.5 2003-07-05 03:29:10 shirok Exp $
+;;;  $Id: odbm.scm,v 1.6 2003-09-15 12:47:44 shirok Exp $
 ;;;
 
 (define-module dbm.odbm
-  (use dbm)
+  (extend dbm)
+  (use srfi-1)
   (export <odbm>
           ;; low level funcions
           odbm-init    odbm-close    odbm-closed?
@@ -58,8 +59,12 @@
 ;; Initialize
 ;;
 
-(define-class <odbm> (<dbm>)
+(define-class <odbm-meta> (<dbm-meta>)
   ())
+
+(define-class <odbm> (<dbm>)
+  ()
+  :metaclass <odbm-meta>)
 
 (define-method dbm-open ((self <odbm>))
   (next-method)
@@ -137,5 +142,25 @@
           (loop (odbm-nextkey key)
                 (proc (%dbm-s2k self key) (%dbm-s2v self val) r)))
         r)))
+
+
+(define (odbm-files name)
+  (map (cut string-append name <>) ".pag" ".dir"))
+
+(define-method dbm-db-exists? ((class <odbm-meta>) name)
+  (every file-exists? (odbm-files name)))
+
+(define-method dbm-db-remove ((class <odbm-meta>) name)
+  (for-each sys-unlink (odbm-files name)))
+
+(define-method dbm-db-copy ((class <odbm-meta>) from to . keys)
+  (apply %dbm-copy2
+         (append (append-map list (odbm-files from) (odbm-files to))
+                 keys)))
+
+(define-method dbm-db-rename ((class <odbm-meta>) from to . keys)
+  (apply %dbm-rename2
+         (append (append-map list (odbm-files from) (odbm-files to))
+                 keys)))
   
 (provide "dbm/odbm")
