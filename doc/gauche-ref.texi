@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.268 2002-09-21 08:37:02 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.269 2002-09-21 09:26:30 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -6246,6 +6246,10 @@ If @i{char-set-spec} begins with caret, the actual character set
 is a complement of what the rest of @i{char-set-spec} indicates.
 @item \x@var{NN}
 A character whose internal code is a hexadecimal number @var{NN}.
+@item \u@var{NNNN}
+A character whose UCS-2 code is a 4-digit hexadecimal number @var{NNNN}.
+@item \U@var{NNNNNNNN}
+A character whose UCS-4 code is a 8-digit hexadecimal number @var{NNNNNNNN}.
 @item \s
 Whitespace characters.
 @item \S
@@ -6264,11 +6268,17 @@ A backslash character.
 A minus character.
 @item \^
 A caret character.
+@item [:alnum:] @dots{}
+Character set a la POSIX.  The following character set name is
+recognized: @code{alnum}, @code{alpha}, @code{blank}, @code{cntrl},
+@code{digit}, @code{graph}, @code{lower}, @code{print}, @code{punct},
+@code{space}, @code{upper} and @code{xdigit}.
 @end table
 
 @example
 #[aeiou]     ; @r{a character set consists of vowels}
-#[a-zA-Z]    ; @r{alphabets}
+#[a-zA-Z]    ; @r{alphabet}
+#[[:alpha:]] ; @r{alphabet (using POSIX notation)}
 #[\x0d\x0a]  ; @r{newline and carriage return}
 #[\\\-]      ; @r{backslash and minus}
 #[]          ; @r{empty charset}
@@ -6286,6 +6296,10 @@ A caret character.
 補集合がこの文字集合となります。
 @item \x@var{NN}
 内部文字コード@var{NN}(16進数表記)の文字。
+@item \u@var{NNNN}
+UnicodeのUCS-2で@var{NNNN}(16進数表記4桁)の文字。
+@item \U@var{NNNNNNNN}
+UnicodeのUCS-4で@var{NNNNNNNN}(16進数表記8桁)の文字。
 @item \s
 空白文字。
 @item \S
@@ -6304,11 +6318,17 @@ A caret character.
 マイナス文字
 @item \^
 カレット文字
+@item [:alnum:] @dots{}
+POSIX流文字集合表記。以下の文字集合名が認識されます:
+@code{alnum}, @code{alpha}, @code{blank}, @code{cntrl},
+@code{digit}, @code{graph}, @code{lower}, @code{print}, @code{punct},
+@code{space}, @code{upper}, @code{xdigit}。
 @end table
 
 @example
 #[aeiou]     ; @r{母音文字'a', 'e', 'i', 'o', 'u'の集合}
 #[a-zA-Z]    ; @r{アルファベット}
+#[[:alpha:]] ; @r{アルファベット (POSIX表記)}
 #[\x0d\x0a]  ; @r{改行とリターン}
 #[\\\-]      ; @r{バックスラッシュとマイナス文字}
 #[]          ; @r{空の文字集合}
@@ -7171,9 +7191,11 @@ Alternative by @code{|}.
 @c COMMON
 @item 
 @c EN
-Character class by @code{[]}.
+Character class by @code{[]}.  The syntax recognized by character set
+literals (@xref{Character set}) are valid.
 @c JP
-@code{[]}による文字クラス。
+@code{[]}による文字クラス。文字集合リテラル (@ref{Character set}参照) で認識される
+表記が全て有効です。
 @c COMMON
 @item
 @c EN
@@ -7203,11 +7225,6 @@ And Gauche does not supports:
 @c COMMON
 @itemize @bullet
 @item
-@c EN
-Symbolic character class notation, e.g. @code{[:alpha:]}.
-@c JP
-@code{[:alpha:]}のような、シンボリックな文字クラス表記。
-@c COMMON
 @item
 @c EN
 Collating elements, e.g. @code{[=e=]} and @code{[.ll.]}.
@@ -7235,13 +7252,13 @@ Back reference of submatches.
 @end itemize
 
 @c EN
-Among those unsupported features, the first four will eventually
+Among those unsupported features, the first three will eventually
 be supported.  It is unlikely to support back reference, however.
 If you use back reference, you're not dealing with regular grammer
 any more.  And if you're dealing with higher class of grammer,
 there should be appropriate tools rather than regular expressions.
 @c JP
-これらのサポートされていない機能のうち、最初の4つはいずれサポートする予定です。
+これらのサポートされていない機能のうち、最初の3つはいずれサポートする予定です。
 但し、バックリファレンスに関してはおそらくサポートしないでしょう。
 バックリファレンスを使わなければならないということは、
 その対象は正規文法では表現できないということです。
