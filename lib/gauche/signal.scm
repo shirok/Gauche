@@ -12,41 +12,55 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: signal.scm,v 1.1 2002-01-23 10:18:36 shirok Exp $
+;;;  $Id: signal.scm,v 1.2 2002-01-24 10:33:35 shirok Exp $
 ;;;
 
 ;; This file is to be autoloaded
 
-(use srfi-1)
 (select-module gauche)
+(use srfi-1)
 
 ;; (with-signal-handlers
-;;   ((signals expr ...)
-;;    ...)
+;;   (clause ...)
 ;;   thunk)
 ;;
-;;  signals may be a list of integers or #t (all signals)
+;; clause := (signals expr ...) or (signals => proc)
+;; signals := an expr that evaluates to an integer, a list of integers or
+;;            a sigset object
+;; proc   := an expr that evaluates to a procedure that takes one arg
 
-(define-macro (with-signal-handlers handlers body)
-  `(%with-signal-handlers
-    (list ,@(map (lambda (clause)
-                   (unless (pair? clause)
-                     (error "bad signal handler clause: ~s" clause))
-                   `(cons (%make-sigset ,(car clause))
-                          (lambda _ ,@(cdr clause))))
-                 handlers))
-    ,body))
+(define-syntax with-signal-handlers
+  (syntax-rules (=>)
+    ((_ "loop" () handlers thunk)
+     (%with-signal-handlers (list . handlers) thunk))
+    ((_ "loop" ((sigs => proc) . clauses) (handlers ...) thunk)
+     (with-signal-handlers "loop" clauses
+                           (handlers ... (cons (%make-sigset sigs) proc))
+                           thunk))
+    ((_ "loop" ((sigs expr ...) . clauses) (handlers ...) thunk)
+     (with-signal-handlers "loop" clauses
+                           (handlers ...
+                            (cons (%make-sigset sigs) (lambda _ expr ...)))
+                           thunk))
+    ((_ "loop" whatever handlers thunk)
+     (syntax-error "bad clause in with-signal-handlers" whatever))
+    ((_ (clause ...) thunk)
+     (with-signal-handlers "loop" (clause ...) () thunk))
+    ((_ . whatever)
+     (syntax-error "malformed with-signal-handlers"
+                   (with-signal-handlers . whatever)))
+    ))
 
 (define (%make-sigset signals)
   (cond
    ((is-a? signals <sys-sigset>) signals)
-   ((integer? signals)
+   ((or (integer? signals) (eq? signals #t))
     (sys-sigset-add! (make <sys-sigset>) signals))
    ((and (list? signals)
          (every integer? signals))
     (apply sys-sigset-add! (make <sys-sigset>) signals))
    (else
-    (error "bad signal set: ~s" signals))))
+    (error "bad signal set" signals))))
 
 (provide "gauche/signal")
 
