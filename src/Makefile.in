@@ -53,7 +53,7 @@ extlib.c : extlib.stub genstub
 
 libgauche.a : $(OBJS) $(GCLIB)
 	$(AR) x $(GCLIB)
-	$(AR) r libgauche.a $(OBJS) `$(AR) t $(GCLIB)`
+	$(AR) cr libgauche.a $(OBJS) `$(AR) t $(GCLIB)`
 
 clean :
 	rm -f core gosh *.o *~ *.a $(GENERATED) gauche/*~
