@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.414 2003-06-10 00:55:44 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.415 2003-06-10 01:24:23 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -9471,7 +9471,11 @@ mechanisms (similar to "one-shot continuation", @ref{onecont, [1CC], 1CC}).
 @c COMMON
 
 @example
+@c EN
 ;; @r{conceptual implementation of with-error-handler}
+@c JP
+;; @r{with-error-handlerの概念的な実装}
+@c COMMON
 (define (with-error-handler handler thunk)
   (call/cc
     (lambda (cont)
@@ -9651,16 +9655,25 @@ the following conceptual Scheme code.
 @section Eval and repl
 
 @defun eval expr env
+@c EN
 [R5RS]
 Evaluate @var{expr}.   @var{env} must be a value returned by
 the following procedures below.  Right now it is just a
 @code{<module>} object, but it is possible that the Gauche
 adopts a first-class environment object in future.
+@c JP
+[R5RS]
+@var{expr}を評価します。@var{env}は下に述べる手続きにより
+返される値でなければなりません。現時点では、それは単なる
+@code{<module>}オブジェクトですが、Gaucheが将来、ファースト
+クラスの環境オブジェクトを採用する可能性はあります。
+@c COMMON
 @end defun
 
 @defun null-environment version
 @defunx scheme-report-environment version
 @defunx interaction-environment
+@c EN
 [R5RS]
 Returns an environment specifier which can be used as the second
 argument of @code{eval}.   Right now an environment specifier
@@ -9674,59 +9687,143 @@ whatever the user defined.
 It is possible that the Gauche adopts a first-class environment object
 in future, so do not rely on the fact that the environment specifier
 is just a module.
+@c JP
+[R5RS]
+@code{eval}の第2引数として使われる環境識別子を返します。
+現時点では、環境識別子は単にモジュールです。
+@code{(null-environment 5)}は、R5RSで規定されている単なる構文的な
+束縛を含む@code{null}モジュールを返します。
+@code{(scheme-report-environment 5)}は、R5RSで規定されている
+構文的な束縛と手続きの束縛を含む@code{scheme}モジュールを返します。
+@code{(interaction-environment)}は、全てのGaucheのビルトインと
+ユーザ定義の全てを含んだ@code{user}モジュールを返します。
+将来、Gaucheがファーストクラスの環境オブジェクトを採用する可能性が
+あるので、環境識別子が単なるモジュールであることを当てにしないで
+下さい。
+@c COMMON
 
+@c EN
 An error is signaled if a value other than 5 is passed as @var{version}
 argument.
+@c JP
+引数@var{version}に5以外の値を渡すとエラーが通知されます。
+@c COMMON
 
+@c EN
 There's one difference from R5RS in @code{null-environment} and
 @code{scheme-report-environment}; they contain @code{with-module}
 special form.   It is necessary to define R5RS procedure using
 Gauche built-ins for now.  It'll be removed as soon as I find
 a better way.
+@c JP
+R5RSでは、@code{null-environment}と@code{scheme-report-environment}の
+間には1つの異なる点があります。それは@code{with-module}というスペシャル
+フォームを含むことです。現在は、R5RSな手続きを定義するには、
+Gaucheのビルトインを使う必要があります。より良い方法が見つかり次第、
+その制限を取り除くつもりです。
+@c COMMON
 @end defun
 
 @defun read-eval-print-loop &optional reader evaluator printer prompter
+@c EN
 This exports @code{Gosh}'s default read-eval-print loop to applications.
 Each argument can be @code{#f}, which indicates it to use Gauche's
 default procedure(s), or a procedure that satisfies the
 following conditions.
+@c JP
+@code{gosh}のデフォルトのread-eval-printループをアプリケーションに
+エクスポートします。それぞれの引数は、Gaucheのデフォルトの手続きを使うことを
+示す@code{#f}であっても良いですし、以下の条件を満たす手続きであっても構いません。
+@c COMMON
 
 @table @emph
 @item reader
+@c EN
 A procedure that takes no arguments.  It is supposed to read an expression
 and returns it.
+@c JP
+引数を取らない手続きです。式を読み込んでそれを返すことを期待されます。
+@c COMMON
 @item evaluator
+@c EN
 A procedure that takes two arguments, an expression and an environment
 specifier.  It is supposed to evaluate the expression and returns zero or
 more value(s).
+@c JP
+式と環境識別子を2引数として取る手続きです。式を評価して、0個以上の値を
+返すことを期待されます。
+@c COMMON
 @item printer
+@c EN
 A procedure that takes zero or more arguments.   It is supposed to
 print out these values.   The result of this procedure is discarded.
+@c JP
+0個以上の引数を取る手続きです。それらの値を出力することを期待されます。
+この手続きの戻り値は無視されます。
+@c COMMON
 @item prompter
+@c EN
 A procedure that takes no arguments.  It is supposed to print
 out the prompt.   The result of this procedure is discarded.
+@c JP
+引数を取らない手続きです。プロンプトを出力することを期待されます。
+この手続きの戻り値は無視されます。
+@c COMMON
 @end table
 
+@c EN
 Given those procedures, @code{read-eval-print-loop} runs as follows:
+@c JP
+これらの手続きが与えられると、@code{read-eval-print-loop}は以下のように
+動作します。
+@c COMMON
 
 @enumerate
 @item
+@c EN
 Prints the prompt by calling @var{prompter}.
+@c JP
+@var{prompter}を呼んでプロンプトを出力します。
+@c COMMON
 @item
+@c EN
 Reads an expression by calling @var{reader}.  If it returns EOF,
 exits the loop and returns from @code{read-eval-print-loop}.
+@c JP
+@var{reader}を呼んで式を読み込みます。EOFが返されたら、ループを終了し
+@code{read-eval-print-loop}から戻ります。
+@c COMMON
 @item
+@c EN
 Evaluates an expression by calling @var{evaluator}
+@c JP
+@var{evaluator}を呼んで式を評価します。
+@c COMMON
 @item
+@c EN
 Prints the result by calling @var{printer}, then repeats from 1.
+@c JP
+@var{printer}を呼んで結果を出力し、その後、1から繰り返します。
+@c COMMON
 @end enumerate
 
+@c EN
 When an error is signaled from one of those procedures, it is
 captured and reported by the default escape handler, then
 the loop restarts from 1.
+@c JP
+これらの手続きのうちの1つからエラーが通知されると、そのエラーは
+デフォルトのエスケープハンドラにより捕捉・報告され、その後、
+ループが1から再開します。
+@c COMMON
 
+@c EN
 It is OK to capture a continuation within those procedures
 and re-invoke them afterwards.
+@c JP
+これらの手続きの内部で継続を捕捉し、後で再起動することは
+許されています。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
