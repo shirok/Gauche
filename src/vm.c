@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.40 2001-02-17 10:19:46 shiro Exp $
+ *  $Id: vm.c,v 1.41 2001-02-18 23:35:04 shiro Exp $
  */
 
 #include "gauche.h"
@@ -277,12 +277,9 @@ ScmVM *Scm_SetVM(ScmVM *vm)
 /* move the current chain of environments from the stack to the heap.
    if there're continuation frames which point to the moved env, those
    pointers are adjusted as well. */
-#ifdef __GNUC__
-inline
-#endif
-static ScmEnvFrame *save_env(ScmVM *vm,
-                             ScmEnvFrame *env_begin,
-                             ScmContFrame *cont_begin)
+inline static ScmEnvFrame *save_env(ScmVM *vm,
+                                    ScmEnvFrame *env_begin,
+                                    ScmContFrame *cont_begin)
 {
     ScmEnvFrame *e = env_begin, *prev = NULL, *head = env_begin;
     ScmContFrame *c = cont_begin;
@@ -306,11 +303,8 @@ static ScmEnvFrame *save_env(ScmVM *vm,
  * args, fold those arguments to the list.  Returns adjusted size of
  * the argument frame.
  */
-#ifdef __GNUC__
-inline
-#endif
-static int adjust_argument_frame(ScmVM *vm,
-                                 ScmObj proc, int caller_args)
+inline static int adjust_argument_frame(ScmVM *vm,
+                                        ScmObj proc, int caller_args)
 {
     int i, reqargs, restarg, callee_args;
     
