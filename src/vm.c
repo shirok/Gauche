@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.51 2001-03-09 08:35:08 shiro Exp $
+ *  $Id: vm.c,v 1.52 2001-03-12 07:23:17 shiro Exp $
  */
 
 #include "gauche.h"
@@ -281,11 +281,12 @@ inline static ScmEnvFrame *save_env(ScmVM *vm,
                                     ScmEnvFrame *env_begin,
                                     ScmContFrame *cont_begin)
 {
-    ScmEnvFrame *e = env_begin, *prev = NULL, *head = env_begin;
+    ScmEnvFrame *e = env_begin, *prev = NULL, *head = env_begin, *s;
     ScmContFrame *c = cont_begin;
+    int size;
     for (; IN_STACK_P((ScmObj*)e); e = e->up) {
-        int size = ENV_SIZE(e->size) * sizeof(ScmObj);
-        ScmEnvFrame *s = SCM_NEW2(ScmEnvFrame*, size);
+        size = ENV_SIZE(e->size) * sizeof(ScmObj);
+        s = SCM_NEW2(ScmEnvFrame*, size);
         memcpy(s, e, size);
         for (c = cont_begin; c; c = c->prev) {
             if (c->env == e) {
@@ -989,6 +990,16 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
     return SCM_UNDEFINED;
 }
 
+/* Saves the current environment chain to heap, adjusting all related
+   pointers.  Needed for the user to create their own closure in local
+   scope. */
+ScmEnvFrame *Scm_VMSaveCurrentEnv(void)
+{
+    ScmEnvFrame *e = save_env(theVM, theVM->env, theVM->cont);
+    theVM->env = e;
+    return e;
+}
+
 /*-------------------------------------------------------------
  * User level eval and apply.
  *   When the C routine wants the Scheme code to return to the
@@ -1340,7 +1351,7 @@ ScmObj Scm_VMCallCC(ScmObj proc)
         - Environment frame in it may be moved later, and corresponding
           pointers must be adjusted, and
         - The stack frame contains a pointer value to other frames,
-          which will be valid if the continuation is resumed by
+          which will be invalid if the continuation is resumed by
           the different thread.
        Copying frame-by-frame will be terribly slow.  I'd like to fix
        it asap. */
