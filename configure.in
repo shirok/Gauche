@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.27 2001-05-30 07:49:39 shirok Exp $
+dnl $Id: configure.in,v 1.28 2001-06-02 21:13:09 shirok Exp $
 AC_INIT(src/gauche.h)
 AC_CONFIG_HEADER(src/gauche/config.h)
 AC_CANONICAL_SYSTEM
@@ -55,14 +55,18 @@ if test $search_slib = "yes"; then
 fi
 AC_SUBST(SLIB_DIR)
 
-dnl --with-iconv
-dnl  This is handled by ext/charconv.  Here I just put a help message.
+dnl --with-iconv, --with-iconv-lib
+dnl  These are handled by ext/charconv.  Here I just put a help message.
 AC_ARG_WITH(iconv, [  --with-iconv[=PATH]:    Use iconv function installend under PATH.
                           Gauche's charconv module uses iconv if it is
                           available.   If your system has iconv function
                           in non-trivial location, specify this option.
                           If you don't want to use iconv for some reason,
                           say --without-iconv. ])
+AC_ARG_WITH(iconv, [  --with-iconv-lib=LIB:   If your system needs to use external library for
+                          iconv and which is not libiconv, specify it.  For
+                          example, if you need -lconv to use iconv, say
+                            --with-iconv-lib=conv])
 
 dnl ==========================================================
 dnl Checks for programs.
