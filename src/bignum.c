@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.34 2002-04-13 07:17:55 shirok Exp $
+ *  $Id: bignum.c,v 1.35 2002-04-13 23:08:29 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -828,7 +828,7 @@ static ScmBignum *bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
             for (k = 0; k < n; k++) {
                 vv = DIGIT(v, k);
                 uj = DIGIT(u, j+k) + vv + cy;
-                cy = (uj > HALF_WORD)? 1 : 0;
+                cy = (uj >= HALF_WORD)? 1 : 0;
                 SETDIGIT(u, j+k, uj);
             }
             uj = DIGIT(u, j+n) + cy;
