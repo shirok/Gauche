@@ -10,7 +10,7 @@
 ;;;      sxpath-ext.scm,v 1.911
 ;;;   Public domain.
 ;;;
-;;; $Id: sxpath.scm.in,v 1.4 2003-08-29 10:48:35 shirok Exp $
+;;; $Id: sxpath.scm.in,v 1.5 2003-09-25 10:06:20 shirok Exp $
 ;;;
 
 (define-module sxml.sxpath
@@ -31,7 +31,7 @@
           sxml:equal? sxml:relational-cmp
           sxml:attribute sxml:child sxml:parent sxml:ancestor
           sxml:ancestor-or-self sxml:descendant sxml:descendant-or-self
-          sxml:following sxml:following-siblink sxml:namespace
+          sxml:following sxml:following-sibling sxml:namespace
           sxml:preceding sxml:preceding-sibling
           sxml:child-nodes sxml:child-elements
           ))
