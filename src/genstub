@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.77 2002-08-26 02:40:46 shirok Exp $
+;;;  $Id: genstub,v 1.78 2002-08-26 07:30:28 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -540,7 +540,7 @@
 (define-class <keyword-literal> (<literal>) ())
 (define-method emit-definition ((self <keyword-literal>))
   (emit-static-string (c-name-of self)
-                      (write-to-string keyword display))
+                      (write-to-string (value-of self) display))
   (f "static ScmObj ~a = SCM_UNBOUND;" (c-name-of self)))
 (define-method emit-initializer ((self <keyword-literal>))
   (f "  ~a = Scm_MakeKeyword(&~:*~a__NAME);" (c-name-of self)))
@@ -645,7 +645,7 @@
 (define-method emit-initializer ((self <cvariable>))
   (emit-initializer (symbol-of self))
   (emit-initializer (initializer-of self))
-  (f "  ~a(module, ~a, ~a);"
+  (f "  ~a(module, SCM_SYMBOL(~a), ~a);"
      (if (constant? self) "Scm_DefineConst" "Scm_Define")
      (value-getter-of (symbol-of self))
      (value-getter-of (initializer-of self))))
@@ -689,26 +689,29 @@
 (define-class <ckeyword> (<stub>)
   ((keyword :init-keyword :keyword :accessor keyword-of)
    ;; - <literal> : literal keyword
-  )
-
-(define (get-ckeyword key)
-  (find (lambda (k) (equal? (x->string key) (x->string (scheme-name-of k))))
-        (get-stubs <ckeyword>)))
+   ))
 
 (define-method emit-definition ((self <ckeyword>))
-  (emit-static-string (c-name-of self) (scheme-name-of self))
-  (f "static ScmObj ~a = SCM_FALSE;" (c-name-of self))
-  (newline))
+  (emit-definition (keyword-of self)))
 
 (define-method emit-initializer ((self <ckeyword>))
-  (f "  ~a = Scm_MakeKeyword(&~:*~a__NAME);" (c-name-of self)))
+  (emit-initializer (keyword-of self)))
+
+(define (get-static-keyword name c-name)
+  (or (find (lambda (k)
+              (equal? (x->string name)
+                      (x->string (value-of (keyword-of k)))))
+            (get-stubs <ckeyword>))
+      (let* ((literal (make-literal (make-keyword name) :c-name c-name))
+             (keyword (make <ckeyword> :keyword literal)))
+        (with-cpp-condition keyword (emit-definition keyword))
+        keyword)))
 
 (define-form-parser define-keyword (name c-name)
   (check-arg symbol? name)
   (check-arg string? c-name)
-  (emit-definition (make <ckeyword>
-                     :scheme-name name :c-name c-name)))
-    
+  (get-static-keyword name c-name))
+
 ;;===================================================================
 ;; Procedure
 ;;
@@ -1003,7 +1006,7 @@
       (f "  }"))
      ((eq? class <keyword-arg>)
       (f "  ~a = Scm_GetKeyword(~a, SCM_OPTARGS, ~a);"
-         sname (c-name-of (c-keyword-of arg))
+         sname (value-getter-of (keyword-of (c-keyword-of arg)))
          (scheme-constant->c-constant (default-of arg))))
      ((eq? class <rest-arg>)
       (f "  ~a = SCM_OPTARGS;" sname)))
@@ -1015,14 +1018,9 @@
         (f "  ~a = ~a;" cname sname))))
 
 (define (ensure-keyword-arg arg)
-  (let ((c-key (get-ckeyword (name-of arg))))
-    (if c-key
-        (set! (c-keyword-of arg) c-key)
-        (let ((c-key (make <ckeyword>
-                           :scheme-name (name-of arg)
-                           :c-name (get-c-name "KEYARG_" (name-of arg)))))
-          (set! (c-keyword-of arg) c-key)
-          (emit-definition c-key)))))
+  (set! (c-keyword-of arg)
+        (get-static-keyword (name-of arg)
+                            (get-c-name "KEYARG_" (name-of arg)))))
 
 ;; TODO: arg type assertion
 (define (emit-inliner cproc)
