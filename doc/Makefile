@@ -7,7 +7,7 @@ html : gauche-ref.html
 dvi : gauche-ref.dvi
 
 gauche-ref.html : gauche-ref.texi
-	texi2html -monolithic -number gauche-ref.texi
+	texi2html -number -split chapter gauche-ref.texi
 
 gauche-ref.dvi : gauche-ref.texi
 	texi2dvi gauche-ref.texi
@@ -20,5 +20,5 @@ distclean : clean
 
 
 realclean : clean
-	rm -f gauche-ref.html gauche-ref.dvi
+	rm -f gauche-ref*.html gauche-ref.dvi
 
