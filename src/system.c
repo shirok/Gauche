@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.13 2001-03-30 07:41:55 shiro Exp $
+ *  $Id: system.c,v 1.14 2001-04-04 18:49:02 shiro Exp $
  */
 
 #include <stdio.h>
@@ -25,17 +25,6 @@
 #include <sys/stat.h>
 
 #include "gauche.h"
-
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
 
 #ifdef HAVE_GLOB_H
 #include <glob.h>
