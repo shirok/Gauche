@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: csv.scm,v 1.3 2001-09-24 05:51:38 shirok Exp $
+;;;  $Id: csv.scm,v 1.4 2001-09-24 08:50:04 shirok Exp $
 ;;;
 
 (define-module text.csv
@@ -87,7 +87,23 @@
           (start line '())))
     ))
 
-  
-  
+(define (make-csv-writer separator . args)
+  (define newline (if (pair? args) (car args) "\n"))
+
+  (lambda (port fields)
+    (define (write-a-field field)
+      (if (string-index field #[ ,\"\n\r])
+          (begin (display #\" port)
+                 (display (regexp-replace-all #/\"/ field "\"\"") port)
+                 (display #\" port))
+          (display field port)))
+
+    (unless (null? fields)
+      (write-a-field (car fields))
+      (for-each (lambda (field)
+                  (display separator port)
+                  (write-a-field field))
+                (cdr fields)))
+    (display newline port)))
 
 (provide "text/csv")
