@@ -165,10 +165,10 @@ test : gosh$(EXEEXT) test-vmstack$(EXEEXT) test-arith$(EXEEXT)
 	@echo "See test.log for details."
 
 test-vmstack$(EXEEXT) : test-vmstack.$(OBJEXT) libgauche.$(SOEXT)
-	$(LINK)	test-vmstack.$(OBJEXT) $(gosh_LDADD) $(LIBS)
+	$(LINK)	-o test-vmstack$(EXEEXT) test-vmstack.$(OBJEXT) $(gosh_LDADD) $(LIBS)
 
 test-arith$(EXEEXT) : test-arith.$(OBJEXT) libgauche.$(SOEXT)
-	$(LINK)	test-arith.$(OBJEXT) $(gosh_LDADD) $(LIBS)
+	$(LINK)	-o test-arith$(EXEEXT) test-arith.$(OBJEXT) $(gosh_LDADD) $(LIBS)
 
 test-arith.$(OBJEXT) : gauche/arith.h
 
