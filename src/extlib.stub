@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.197 2003-05-24 10:44:10 shirok Exp $
+;;; $Id: extlib.stub,v 1.198 2003-05-31 07:06:56 shirok Exp $
 ;;;
 
 "
@@ -377,11 +377,11 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   if (SCM_EXACTP(from)) fromc = Scm_GetInteger(from);
   else if (SCM_CHARP(from)) fromc = SCM_CHAR_VALUE(from);
   if (fromc < 0) Scm_Error(\"character or positive integer required, but got %S\", from);
-  if (fromc >= SCM_CHAR_MAX) Scm_Error(\"argument out of range: %S\", from);
+  if (fromc > SCM_CHAR_MAX) Scm_Error(\"argument out of range: %S\", from);
   if (SCM_EXACTP(to)) toc = Scm_GetInteger(to);
   else if (SCM_CHARP(to)) toc = SCM_CHAR_VALUE(to);
   if (toc < 0) Scm_Error(\"character or positive integer required, but got %S\", to);
-  if (toc >= SCM_CHAR_MAX) Scm_Error(\"argument out of range: %S\", to);
+  if (toc > SCM_CHAR_MAX) Scm_Error(\"argument out of range: %S\", to);
   SCM_RETURN(Scm_CharSetAddRange(cs, (ScmChar)fromc, (ScmChar)toc));")
 
 (define-cproc %char-set-add! (dst::<char-set> src::<char-set>)

@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.29 2003-02-18 07:01:09 shirok Exp $
+;; $Id: srfi.scm,v 1.30 2003-05-31 07:06:56 shirok Exp $
 
 (use gauche.test)
 
@@ -868,6 +868,7 @@
                                    (string->char-set "ioeauaiii")))
 (test* "char-set<=" #t (char-set<= (char-set #\e #\i #\o #\u)
                                    (string->char-set "ioeauaiii")))
+
 (test* "char-set-hash" #t
        (<= 0 (char-set-hash char-set:graphic 100) 99))
 (test* "char-set-fold" #t
@@ -1034,6 +1035,9 @@
 (test* "char-set-delete" #f
        (char-set= (char-set-delete (->char-set "123") #\2 #\a #\2)
                   (->char-set "13a")))
+(test* "char-set-delete" #t
+       (char-set= (char-set-adjoin (char-set-delete char-set:full #\;) #\;)
+                  char-set:full))
 (test* "char-set-delete!" #t
        (char-set= (char-set-delete! (->char-set "123") #\2 #\a #\2)
                   (->char-set "13")))

@@ -2,6 +2,10 @@
 
 	* release 0.7
 
+	* src/gauche.h (SCM_CHAR_MAX), src/extlib.stub (%char-set-add-range!):
+	  fixed the range check bug that prevents
+	  (char-set-delete char-set:full #\;) from running.
+
 	* src/syslib.stub (sys-access): the last change didn't work.
 	  Reverted to the original code, but kept the check if we're
 	  running suid/sgid code.
