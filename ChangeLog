@@ -1,3 +1,9 @@
+2002-01-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/signal.c : added default signal handler, and make signal queue
+	  calling routine work
+	* lib/gauche/signal.scm : added with-signal-handlers.
+
 2002-01-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c, src/regexp.c, src/gauche/vm.h : use sig{set|long}jmp
