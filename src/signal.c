@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.5 2002-01-21 10:34:10 shirok Exp $
+ *  $Id: signal.c,v 1.6 2002-01-22 01:52:35 shirok Exp $
  */
 
 #include <signal.h>
@@ -107,6 +107,17 @@ static int validsigp(int signum)
     return FALSE;
 }
 
+static void sigset_op(sigset_t *s1, sigset_t *s2, int delp)
+{
+    struct sigdesc *desc = sigDesc;
+    for (; desc->name; desc++) {
+        if (sigismember(s2, desc->num)) {
+            if (!delp) sigaddset(s1, desc->num);
+            else       sigdelset(s1, desc->num);
+        }
+    }
+}
+
 /*
  * sigset class
  */
@@ -135,7 +146,7 @@ ScmObj sigset_allocate(ScmClass *klass, ScmObj initargs)
 /* multifunction on sigset
     if delp == FALSE, signals are added to set.
     else, signals are removed from set.
-    signal is either integer or #t (all signals)
+    signals is a list of either integer or #t (all signals), or other sigset.
 */
 ScmObj Scm_SysSigsetOp(ScmSysSigset *set, ScmObj signals, int delp)
 {
@@ -151,8 +162,12 @@ ScmObj Scm_SysSigsetOp(ScmSysSigset *set, ScmObj signals, int delp)
             else       sigemptyset(&set->set);
             break;
         }
+        if (SCM_SYS_SIGSET_P(s)) {
+            sigset_op(&set->set, &SCM_SYS_SIGSET(s)->set, delp);
+            continue;
+        }
         if (!SCM_INTP(s) || !validsigp(SCM_INT_VALUE(s))) {
-                Scm_Error("bad signal number %S", s);
+            Scm_Error("bad signal number %S", s);
         }
         if (!delp) sigaddset(&set->set, SCM_INT_VALUE(s));
         else       sigdelset(&set->set, SCM_INT_VALUE(s));
@@ -229,6 +244,39 @@ void Scm_SigCheck(ScmVM *vm)
 }
 
 /*
+ * %with-signal-handlers
+ */
+/* this is a low-level routine that will be called from
+   with-signal-handlers macro.  handlers are list of (<sigset> . <handler>)
+   where <handler> is either a handler procedure or #f (ignore).
+*/
+
+static ScmObj set_sighandlers(ScmObj *args, int nargs, void *data)
+{
+    ScmObj handlers = SCM_OBJ(data);
+    Scm_VM()->sigHandlers = handlers;
+}
+
+ScmObj Scm_VMWithSignalHandlers(ScmObj handlers, ScmProcedure *thunk)
+{
+    ScmObj cp, before, after, newhandlers;
+    ScmVM *vm = Scm_VM();
+    /* check validity of args */
+    SCM_FOR_EACH(cp, handlers) {
+        ScmObj p = SCM_CAR(cp);
+        if (!SCM_PAIRP(p) || !SCM_SYS_SIGSET_P(SCM_CAR(p))
+            || !SCM_PROCEDUREP(SCM_CDR(p))) {
+            Scm_Error("bad sighandler entry: %S", p);
+        }
+    }
+    if (!SCM_NULLP(cp)) Scm_Error("bad sighandler list: %S", handlers);
+    newhandlers = Scm_Append2(handlers, vm->sigHandlers);
+    before = Scm_MakeSubr(set_sighandlers, newhandlers, 0, 0, SCM_FALSE);
+    after = Scm_MakeSubr(set_sighandlers, vm->sigHandlers, 0, 0, SCM_FALSE);
+    return Scm_VMDynamicWind(before, SCM_OBJ(thunk), after);
+}
+
+/*
  * initialize
  */
 
@@ -236,6 +284,8 @@ void Scm__InitSignal(void)
 {
     ScmModule *mod = Scm_GaucheModule();
     struct sigdesc *desc;
+
+    sigemptyset(&masterSigset);
     
     Scm_InitBuiltinClass(&Scm_SysSigsetClass, "<sys-sigset>", NULL,
                          sizeof(ScmSysSigset), mod);
