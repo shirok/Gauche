@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.96 2001-10-13 21:27:59 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.97 2001-10-15 09:20:36 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -571,6 +571,19 @@ Gaucheのインタプリタです。  @var{scheme-file}が与えられなければ、
 @c COMMON
 
 @c EN
+If @code{gosh} is invoked without @var{scheme-file}, but the input
+is not a terminal, it enters read-eval-print loop but not writes
+out a prompt while waiting input form.  This is useful when you
+pipe Scheme program into @code{gosh}.  You can force this behavior
+or suppress this behavior by @code{-b} and @code{-i} options.
+@c JP
+もし@var{scheme-file}が与えられておらず、しかし入力が端末でない場合、
+@code{gosh}はread-eval-printループに入りますが、入力待ちの際にプロンプトを
+表示しません。これはScheme式をパイプで@var{gosh}に処理させる場合に便利です。
+@code{-b}または@code{-i}オプションでこの動作を強制的にonまたはoffできます。
+@c COMMON
+
+@c EN
 If @var{scheme-file} is specified, @code{gosh} runs it as a
 Scheme program and exit.
 @xref{Writing Scheme scripts}, for details.
@@ -629,6 +642,25 @@ You can specify this option more than once to use multiple modules.
 をロードする前に@var{module}を``use''します。つまりそのモジュールがロードされ
 インポートされます。(@code{use}の詳細については@ref{Module syntax}を参照して下さい)。
 このオプションは複数回指定できます。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -b
+@c EN
+Batch. Does not print prompts in read-eval-print loop even if
+the input is a terminal.
+@c JP
+バッチ。入力が端末であっても、read-eval-printループがプロンプトを出さないようにします。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -i
+@c EN
+Interactive. Print prompts in read-eval-print loop even if
+the input is not a terminal.
+@c JP
+インタラクティブ。入力が端末で無くても、read-eval-printループが
+プロンプトを出すようにします。
 @c COMMON
 @end deftp
 
