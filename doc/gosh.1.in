@@ -1,0 +1,130 @@
+.\" $Id: gosh.1.in,v 1.1 2002-03-07 07:06:43 shirok Exp $ -*-nroff-*-
+.TH GOSH "version @GAUCHE_VERSION@"
+.UC 4
+.SH NAME
+gosh \- a Scheme script interpreter
+.SH SYNOPSIS
+.B gosh
+[-biqV]
+[-I
+.I path
+]
+[-u
+.I module
+]
+[-l
+.I file
+]
+[-e
+.I expr
+]
+[-f
+.I flag
+]
+[--]
+[
+.I script argument ...
+]
+.br
+.sp 0.3
+.SH DESCRIPTION
+.I Gosh
+is a stand-alone Scheme interpreter built on top of the
+.I Gauche
+Scheme implementation.
+
+When
+.I script
+is given, gosh loads the script, evaluating Scheme code in it.
+Then, if the
+.I script
+defines a procedure named
+.I main,
+gosh calls it with a single argument which is a list of
+the script name and subsequent arguments.
+When
+.I main
+returns an integer value, gosh exits with it as an exit code.
+If
+.I main
+returns non-integer value, or an error is signaled during
+evaluation, gosh exits with exit code 70 (EX_SOFTWARE).
+See SRFI-22 (http://srfi.schemers.org/srfi-22/srfi-22.html) for
+details.
+If there's no
+.I main
+procedure defined in the script, gosh exits with code 0
+after loading the script file.
+
+If no script file is given, gosh goes into an interactive mode.
+By default, gosh prompts the user to enter a Scheme expression,
+read and evaluates it, then prints the result, until EOF is read.
+If the standard input is not a terminal, however, gosh doesn't
+print a prompt; it allows a user to use gosh as a filter program.
+This behavior can be controlled by -i or -b option; see below.
+
+.SH OPTIONS
+Command line options are processed before loading the script file
+or entering the interactive mode.
+.TP 5
+.BI -V
+Prints gosh version and exits.
+.TP
+.BI -b
+Batch mode.  Don't print prompt even the standard input
+is a terminal.  Supersedes -i.
+.TP
+.BI -i
+Interactive mode.  Force to print prompt, even the standard input
+is not a terminal.
+.TP
+.BI -q
+Prevents reading the default initialization file.
+.TP
+.BI -I path
+Adds
+.I path
+at the front of the load path list.  
+.TP
+.BI -u module
+Loads and imports
+.I module,
+as if "(use 
+.I module
+)" is specified in the code.
+.TP
+.BI -l file
+Loads a Scheme file
+.I file.
+.TP
+.BI -e expr
+Evaluates a Scheme expression
+.I expr.
+.TP
+.BI -f flag
+Sets various flags.
+  no-inline       don't inline primitive procedures
+  no-source-info  don't preserve source information for debug
+  load-verbose    report while loading files
+  case-fold       uses case-insensitive reader (as in R5RS)
+  compat-0.5      'main' behaves backward-compatible for 0.5 and before
+.TP
+.BI --
+Specifies that there are no more options.  If there are more
+arguments after this, they are taken as script file name and
+its arguments.
+
+.SH AUTHORS
+Shiro Kawai (shiro @ acm . org)
+
+.SH SEE ALSO
+gauche-config(1)
+.PP
+Gauche Scheme interpreter:
+.br
+http://www.shiro.dreamhost.com/scheme/gauche/
+.PP
+The information about Scheme language can be obtained from
+.br
+http://www.schemers.org/
+

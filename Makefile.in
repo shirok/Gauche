@@ -1,7 +1,7 @@
 EXTENSIONS=@EXTENSIONS@
 INSTALL=@INSTALL@
 CONFIG_GENERATED=Makefile config.cache config.log config.status \
-                 configure autom4te.cache
+                 autom4te.cache gc/Makefile
 .PHONY: test clean install
 
 
@@ -10,10 +10,10 @@ all : gc/libgc.a src/gosh
 	cd ext; $(MAKE) all
 
 gc/libgc.a :
-	cd gc; $(MAKE)
+	cd gc; $(MAKE) 
 
 src/gosh : gc/libgc.a
-	cd src; $(MAKE)
+	cd src; $(MAKE) 
 
 test : src/gosh
 	cd src; $(MAKE) test
@@ -35,17 +35,21 @@ distclean : clean
 	cd ext; $(MAKE) distclean
 	rm -rf $(CONFIG_GENERATED)
 
+install-all : install install-doc
+
 install :
 	cd src; $(MAKE) install
 	cd lib; $(MAKE) install
-	cd doc; $(MAKE) install
 	cd ext; $(MAKE) install
 	$(INSTALL) -m 444 aclocal.m4 `sh src/gauche-config --ac`/aclocal.m4
+
+install-doc :
+	cd doc; $(MAKE) install
 
 realclean : clean
 	cd src; $(MAKE) realclean
 	cd lib; $(MAKE) realclean
 	cd doc; $(MAKE) realclean
 	cd ext; $(MAKE) realclean
-	rm -rf $(CONFIG_GENERATED) INSTALL INSTALL.eucjp
+	rm -rf $(CONFIG_GENERATED) configure INSTALL INSTALL.eucjp
 

@@ -1,9 +1,25 @@
 GENERATED = gauche-refe.texi gauche-refj.texi
 GOSH = gosh
+INSTALL = @INSTALL@
+
+# Manual page destination.  Default @mandir@ doesn't include 'share'
+# in the path, so I redefine it---a user can still override it by
+# make mandir=wherever
+prefix  = @prefix@
+datadir = @datadir@
+mandir  = $(datadir)/man/man1
+
+MANPAGES = gosh.1 gauche-config.1
 
 all:
 
 install:
+	if test ! -d $(mandir); then\
+	  $(INSTALL) -d $(mandir); \
+	fi
+	for m in $(MANPAGES); do \
+	  $(INSTALL) -m 444 $$m $(mandir); \
+	done
 
 texi : gauche-refe.texi gauche-refj.texi
 

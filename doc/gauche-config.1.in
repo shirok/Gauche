@@ -1,0 +1,87 @@
+.\" $Id: gauche-config.1.in,v 1.1 2002-03-07 07:06:43 shirok Exp $ -*-nroff-*-
+.TH GOSH "version @GAUCHE_VERSION@"
+.UC 4
+.SH NAME
+gauche-config \- retrieve configuration parameters of Gauche
+.SH SYNOPSIS
+.B gauche-config
+.I option
+.br
+.sp 0.3
+.SH DESCRIPTION
+.I Gauche-config 
+displays various parameters specified at the configuration time
+of the Gauche Scheme implementation.  It can be used in Makefile
+and other configuration scripts that uses Gauche.
+
+.SH OPTIONS
+.SS General parameters
+.TP 5
+.B -V
+Gauche version.
+.TP
+.B --reconfigure
+Prints the command line used to configure the current Gauche installation.
+
+.SS Parameters to compile an application using Gauche
+.TP
+.B -I, -L, -l
+List of "-I" options (include directories), 
+"-L" options (library directories), and
+"-l" options (libraries) for the compiler
+which are required to compile applications that links Gauche library.
+.TP
+.B --cc
+Name of the compiler used to compile the current installation.
+.TP
+.B --ac
+Directory name that contains Gauche specific autoconf macro.
+.TP
+.B --arch
+The architecture signature, which is used in the pathname of
+architecture-dependent files, e.g. "i686-pc-linux-gnu".
+
+.SS Parameters to install files
+.TP
+.B --syslibdir, --sitelibdir
+Directories where system/site scheme files go.
+.TP
+.B --sysarchdir, --sitearchdir
+Directories where architecture-dependent system/site files go.
+.TP
+.B --sysincdir, --siteincdir
+Directories where system/site header files of extensions go.
+
+.SH Parameters to compile Gauche extention
+.TP
+.B --so-suffix
+Object file suffix of the gauche extension.
+.TP 
+.B --so-cflags
+Flags required to compile shared object.
+.TP 
+.B --so-ldflags
+Flags required to link a gauche extension.
+.TP
+.B --so-libs
+Libraries to be linked with a gauche extension.
+.TP
+.B --dylib-suffix
+Dynamic/shared library file suffix of the system.
+.TP
+.B --dylib-ldflags
+Flags required to link dynamic/shared library file.
+.TP
+.B --libgauche-so
+The name of shared library of libgauche.
+
+.SH AUTHORS
+Shiro Kawai (shiro @ acm . org)
+
+.SH SEE ALSO
+gosh(1)
+.PP
+Gauche Scheme interpreter:
+.br
+http://www.shiro.dreamhost.com/scheme/gauche/
+
