@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.48 2001-09-05 12:08:00 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.49 2001-09-05 19:15:53 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -5038,6 +5038,41 @@ timed out.
 It is safe to modify @var{self} inside handler.  The change will be
 effective from the next call of @code{selector-select}
 @end deffn
+
+This is a simple example of "echo" server:
+
+@example
+(use gauche.net)
+(use gauche.selector)
+
+(define (echo-server port)
+  (let ((selector (make <selector>))
+        (server   (make-server-socket 'inet port :reuse-addr? #t)))
+
+    (define (accept-handler sock flag)
+      (let* ((client (socket-accept server))
+             (output (socket-output-port client)))
+        (selector-add! selector
+                       (socket-input-port client :buffered? #f)
+                       (lambda (input flag)
+                         (echo client input output))
+                       '(r))))
+
+    (define (echo client input output)
+      (let ((str (read-block 4096 input)))
+        (if (eof-object? str)
+            (begin (selector-delete! selector input #f #f)
+                   (socket-close client))
+            (begin (display str output)
+                   (flush output)))))
+
+    (selector-add! selector
+                   (socket-fd server)
+                   accept-handler
+                   '(r))
+    (do () (#f) (selector-select selector))))
+@end example
+
 
 @c ----------------------------------------------------------------------
 @node Serializer, Unit Testing, Simple dispatcher, Libarary Modules
