@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.269 2002-09-21 09:26:30 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.270 2002-09-21 09:50:24 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -7311,19 +7311,35 @@ The returned string is immutable.
 A string @var{string} is matched by
 @var{regexp}.  If it matches, the function returns a @code{<regmatch>}
 object.  Otherwise it returns @code{#f}.
-
-This is called @code{match}, @code{regexp-search} or @code{string-match}
-in some other Scheme implementations.
 @c JP
 正規表現オブジェクト@var{regexp}に一致するものを文字列@var{string}から
 探します。一致が見付かった場合は@code{<regmatch>}オブジェクトを返し、
 見付からなかった場合は@code{#f}を返します。
+@c COMMON
 
+@c EN
+This is called @code{match}, @code{regexp-search} or @code{string-match}
+in some other Scheme implementations.
+@c JP
 他のScheme処理系ではこれは
 @code{match}、@code{regexp-search}、@code{string-match}など
 様々な名で呼ばれています。
 @c COMMON
 @end defun
+
+@deftp {Generic application} @var{regexp} @var{string}
+@c EN
+A regular expression object can be applied directly to the string.
+This works the same as @code{(rxmatch @var{regexp} @var{string})},
+but allows shorter notation.   @xref{Applicable objects}, for
+generic mechanism used to implement this.
+@c JP
+正規表現オブジェクトは直接文字列に対して適用することもできます。
+これは@code{(rxmatch @var{regexp} @var{string})}と同じ動作をしますが、
+表記が短くて済みます。この機能は@ref{Applicable objects} で述べているメカニズムを
+使って実装されています。
+@c COMMON
+@end deftp
 
 @defun rxmatch-start match &optional (i 0)
 @defunx rxmatch-end match &optional (i 0)
@@ -7380,6 +7396,43 @@ If optional argument is given, the @var{i}-th submatch is used
 (rxmatch-before match 2) @result{} "pi=3."
 @end example
 @end defun
+
+@deftp {Generic application} @var{regmatch} &optional @var{index}
+@deftpx {Generic application} @var{regmatch} @code{'before} &optional @var{index}
+@deftpx {Generic application} @var{regmatch} @code{'after} &optional @var{index}
+@c EN
+A regmatch object can be applied directly to the integer index,
+or a symbol @code{before} or @code{after}.
+They works the same as @code{(rxmatch-substring @var{regmatch} @var{index})},
+@code{(rxmatch-before @var{regmatch})}, and
+@code{(rxmatch-after @var{regmatch})}, respectively.
+This allows shorter notation.  @xref{Applicable objects}, for
+generic mechanism used to implement this.
+@c JP
+マッチオブジェクトは直接整数のインデックスもしくはシンボル@code{before}または
+@code{after}に対して適用することができます。
+それぞれ@code{(rxmatch-substring @var{regmatch} @var{index})}、
+@code{(rxmatch-before @var{regmatch})}、および
+@code{(rxmatch-after @var{regmatch})}と同じ動作をしますが、
+表記が短くて済みます。
+この機能は@ref{Applicable objects} で述べているメカニズムを使って実装されています。
+@c COMMON
+
+@example
+(define match (#/(\d+)\.(\d+)/ "pi=3.14..."))
+
+(match)           @result{} "3.14"
+(match 1)         @result{} "3"
+(match 2)         @result{} "14"
+
+(match 'after)    @result{} "..."
+(match 'after 1)  @result{} ".14..."
+
+(match 'before)   @result{} "pi="
+(match 'before 2) @result{} "pi=3."
+@end example
+@end deftp
+
 
 @c EN
 Seel also @ref{Regular expression utilities}, which defines
@@ -8178,7 +8231,7 @@ Gauche doesn't define a method of @code{object-apply} that takes
 However, if you define such a method:
 @c JP
 デフォルトでは、@code{<string>}と@code{<integer>}を引数とする
-@code{object-apply}のメソッドはGauche定義されていないので、
+@code{object-apply}のメソッドは定義されていないので、
 この式はエラーになります。しかし、次のようなメソッドを定義すると：
 @c COMMON
 
@@ -8208,6 +8261,16 @@ This mechanism works on almost all occasions where a procedure is allowed.
 (apply "abcde" '(1))   @result{} (#\b)
 (map "abcde" '(3 2 1)) @result{} (#\d #\c #\b)
 @end example
+
+@c EN
+Among Gauche built-in objects, @code{<regexp>} object and
+@code{<regmatch>} object have @code{object-apply} defined.
+@xref{Regular expression}.
+@c JP
+Gauche組み込みオブジェクトのうち、@code{<regexp>}オブジェクトと
+@code{<regmatch>}オブジェクトに対しては@code{object-apply}メソッドが定義されて
+います。@ref{Regular expression}を参照して下さい。
+@c COMMON
 
 @deffn {Generic Function} {(setter object-apply)} @var{object} @var{arg} @dots{} @var{value}
 @c EN

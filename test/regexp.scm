@@ -2,7 +2,7 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.11 2002-09-21 03:00:13 shirok Exp $
+;; $Id: regexp.scm,v 1.12 2002-09-21 09:50:29 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -521,5 +521,24 @@
         (cond ((rxmatch (string->regexp "p[A-Z]d") "pad")
                => rxmatch-substring)
               (else #f))))
+
+;;-------------------------------------------------------------------------
+(test-section "applicable regexp")
+
+(define match #f)
+
+(test "object-apply regexp" #t
+      (lambda ()
+        (set! match (#/(\d+)\.(\d+)/ "pi=3.14..."))
+        (regmatch? match)))
+
+(test "object-apply regmatch (index)" '("3.14" "3" "14")
+      (lambda ()
+        (list (match) (match 1) (match 2))))
+
+(test "object-apply regmatch (symbol)" '("..." ".14..." "pi=" "pi=3.")
+      (lambda ()
+        (list (match 'after) (match 'after 1)
+              (match 'before) (match 'before 2))))
 
 (test-end)

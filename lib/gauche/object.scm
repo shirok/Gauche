@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.36 2002-09-19 05:45:28 shirok Exp $
+;;;  $Id: object.scm,v 1.37 2002-09-21 09:50:29 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -478,11 +478,15 @@
   (rxmatch-substring self))
 (define-method object-apply ((self <regmatch>) (i <integer>))
   (rxmatch-substring self i))
-;(define-method object-apply ((self <rxmatch>) (s <symbol>))
-;  (case s
-;    ((before) (rxmatch-before self))
-;    ((after)  (rxmatch-after self))
-;    ((
+(define-method object-apply ((self <regmatch>) (s <symbol>))
+  (object-apply self s 0))
+(define-method object-apply ((self <regmatch>) (s <symbol>) (i <integer>))
+  (case s
+    ((before) (rxmatch-before self i))
+    ((after)  (rxmatch-after self i))
+    (else
+     (errorf "bad symbol argument to ~s: ~s: must be either 'before or 'after"
+             self s))))
 
 ;;;
 ;;; Make exported symbol visible from outside
