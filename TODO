@@ -9,10 +9,6 @@ Runtime library
 
 * port.c: add character count that keeps # of chars input/output from/to the
           port.  This allows print protocol keep simple.
-* write.c and object print protocol: change the third arg from integer to
-          context object, and integrate write-limited and write* nicely.
-* read.c: finish character reader, symbol reader, and circular list reader.
-
 * serial.c: realize native serializer.
 
 Compiler and VM
