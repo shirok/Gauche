@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.48 2001-06-27 08:11:55 shirok Exp $
+ *  $Id: string.c,v 1.49 2001-08-30 06:43:03 shirok Exp $
  */
 
 #include <stdio.h>
@@ -721,16 +721,15 @@ ScmObj Scm_StringContains(ScmString *s1, ScmString *s2)
         if (len2 < 0 || siz2 == len2) goto sbstring;
         return SCM_FALSE;       /* sbstring can't contain mbstring. */
     }
-    if (len1 < len2) return SCM_FALSE;
-    else {
+    if (len1 >= len2) {
         const char *ssp = ss1;
         for (i=0; i<=len1-len2; i++) {
             if (memcmp(ssp, ss2, siz2) == 0) return Scm_MakeInteger(i);
             ssp += SCM_CHAR_NFOLLOWS(*ssp);
         }
-        return SCM_FALSE;
     }
     return SCM_FALSE;
+
   sbstring: /* short cut for special case */
     if (siz1 < siz2) return SCM_FALSE;
     if (siz1 < 256 || siz2 >= 256) {
