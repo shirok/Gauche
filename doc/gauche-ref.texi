@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.303 2002-11-15 02:53:47 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.304 2002-11-15 04:27:06 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -13727,6 +13727,7 @@ WWWで主として使われるプロトコルやデータフォーマットの実装。
 * gauche.parseopt - Parsing command-line options::  
 * gauche.process - High Level Process Interface::  
 * gauche.regexp - Regular expression utilities::  
+* gauche.reload - Reloading modules::  
 * gauche.selector - Simple dispatcher::  
 * gauche.sequence - Sequence framework::  
 * gauche.syslog - Syslog::      
@@ -16372,11 +16373,11 @@ class the property of singleton.
 
 @c ----------------------------------------------------------------------
 @node gauche.mop.validator - Slot with validator, gauche.net - Networking, gauche.mop.singleton - Singleton, Library modules - Gauche extensions
-@section @code{gauche.validator} - Slot with validator
-@c NODE gauche.mop.validator - Validator付きスロット, @code{gauche.validator} - Validator付きスロット
+@section @code{gauche.mop.validator} - Slot with validator
+@c NODE gauche.mop.validator - Validator付きスロット, @code{gauche.mop.validator} - Validator付きスロット
 
-@deftp {Module} gauche.validator
-@mdindex gauche.validator
+@deftp {Module} gauche.mop.validator
+@mdindex gauche.mop.validator
 @c EN
 Provides a metaclass that adds @code{:validator} slot option.
 @c JP
@@ -17715,7 +17716,7 @@ Internally, @var{command} is run by @code{call-with-input-process}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node gauche.regexp - Regular expression utilities, gauche.selector - Simple dispatcher, gauche.process - High Level Process Interface, Library modules - Gauche extensions
+@node gauche.regexp - Regular expression utilities, gauche.reload - Reloading modules, gauche.process - High Level Process Interface, Library modules - Gauche extensions
 @section @code{gauche.regexp} - Regular expression utilities
 @c NODE gauche.regexp - 正規表現ユーティリティ, @code{gauche.regexp} - 正規表現ユーティリティ
 
@@ -17942,7 +17943,83 @@ value from the procedure is inserted to the output string using
 @end defun
 
 @c ----------------------------------------------------------------------
-@node gauche.selector - Simple dispatcher, gauche.sequence - Sequence framework, gauche.regexp - Regular expression utilities, Library modules - Gauche extensions
+@node gauche.reload - Reloading modules, gauche.selector - Simple dispatcher, gauche.regexp - Regular expression utilities, Library modules - Gauche extensions
+@section @code{gauche.reload} - Reloading modules
+
+@deftp {Module} gauche.reload
+@mdindex gauche.reload
+In the development cycle, you often have to reload modules frequently.
+This module supports it.
+
+Note that some part of semantics of the program depends on
+the order of loading modules, so reloading arbitrary modules
+may change the program behavior unexpectedly.  This module
+is for developers who knows what they are doing.
+
+@strong{Redefinition rules}: Reloading a module resets all
+the binding in the module by default.
+Sometimes it is not desirable, however.  For example,
+you might have  a large list of objects that takes time to rebuild.
+You can specify rules for the reloading procedure to determine
+which binding to keep.
+
+The rule is described in the following syntax.
+@example
+  <module-rules> : (<module-rule> @dots{})
+  <module-rule>  : (<module-pattern> <rule> @dots{})
+  <module-pattern> : @r{a symbol module name, or a symbol containing glob pattern}
+  <rule>         : @r{procedure} | @r{symbol} | @r{regexp}
+                 | (and <rule> @dots{})
+                 | (or  <rule> @dots{})
+                 | (not <rule>)
+@end example
+
+@code{<module-rules>} is the global rule to determine per-module
+rules.  @code{<module-pattern>} is either a symbol module name
+or a symbol that contains glob pattern (e.g. @code{mylib.*}).
+If @code{<rule>} is a procedure, it is used as a predicate
+and the bindings whose value satisfies the predicate are kept from
+redefinition.   If @code{<rule>} is a symbol, the binding of
+the variable whose name is the symbol is kept.  If @code{<rule>}
+is a regexp, the bindings of the variable whose name matches the
+regexp are kept.
+
+Note that the mechanism to prevent redefinition is kind of ad-hoc
+hack and semantically unclean.  It's just for your convenience.
+Take a look at the code if you want to know the exact behavior.
+@end deftp
+
+@defun reload module-name &optional rule @dots{}
+Reloads the specified module.   You can optionally specify
+redefinition rules by @var{rule} @dots{},
+where each @var{rule} is the term @code{<rule>} defined above.
+@end defun
+
+@defun reload-modified-modules &optional module-rules
+Reloads module(s) that have been modified since they are loaded
+last time.  If optional @var{module-rules} is given, it is
+used to determine the redefinition rules for reloaded modules.
+If @var{module-rules} is omitted, the current rules are used.
+The default of current rules is empty.   You can set the current
+rules by @code{module-reload-rules}.
+@end defun
+
+@defun module-reload-rules &optional module-rules
+This is a parameter (@xref{gauche.parameter - Parameters}) that keeps
+the default module rules for @code{reload-modified-modules}.
+If called without arguments, returns the current module rules.
+If called with @var{module-rules}, sets the argument to the
+current module rules.
+@end defun
+
+@defun reload-verbose &optional flag
+This is a parameter to control verbosity of the reloading procedures.
+If called without arguments, returns the current verbosity flag.
+If called with @var{flag}, it is set to the current verbosity flag.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node gauche.selector - Simple dispatcher, gauche.sequence - Sequence framework, gauche.reload - Reloading modules, Library modules - Gauche extensions
 @section @code{gauche.selector} - Simple dispatcher
 @c NODE gauche.selector - 簡単なディスパッチャ, @code{gauche.selector} - 簡単なディスパッチャ
 
