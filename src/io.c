@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: io.c,v 1.7 2001-03-04 22:23:37 shiro Exp $
+ *  $Id: io.c,v 1.8 2001-03-11 09:42:23 shiro Exp $
  */
 
 #include "gauche.h"
@@ -27,8 +27,7 @@
 static ScmObj wrapper1(ScmObj *args, int nargs, void *data)
 {
     ScmObj p = SCM_OBJ(data);
-    Scm_VMApply1(SCM_CAR(p), SCM_CDR(p));
-    return SCM_FALSE;
+    return Scm_VMApply1(SCM_CAR(p), SCM_CDR(p));
 }
 
 static ScmObj port_closer(ScmObj *args, int nargs, void *data)
@@ -37,7 +36,7 @@ static ScmObj port_closer(ScmObj *args, int nargs, void *data)
     SCM_RETURN(SCM_UNDEFINED);
 }
 
-void Scm_CallWithFile(ScmString *path, ScmProcedure *proc, int inputp)
+ScmObj Scm_CallWithFile(ScmString *path, ScmProcedure *proc, int inputp)
 {
     ScmObj port, finalizer, bodyproc;
 
@@ -55,55 +54,78 @@ void Scm_CallWithFile(ScmString *path, ScmProcedure *proc, int inputp)
     bodyproc = Scm_MakeSubr(wrapper1,
                             (void*)Scm_Cons(SCM_OBJ(proc), port),
                             0, 0, SCM_FALSE);
-    Scm_VMDynamicWind(Scm_NullProc(), bodyproc, finalizer);
+    return Scm_VMDynamicWind(Scm_NullProc(), bodyproc, finalizer);
 }
+
+
+/* with-port */
+
+struct with_port_packet {
+    ScmObj origport;
+    int type;
+    int closep;
+};
 
 static ScmObj port_restorer(ScmObj *args, int nargs, void *data)
 {
-    ScmObj origport = SCM_CAR(SCM_OBJ(data));
-    ScmObj type = SCM_CDR(SCM_OBJ(data));
-    if (type == SCM_MAKE_INT(0)) {
-        Scm_ClosePort(SCM_VM_CURRENT_INPUT_PORT(Scm_VM()));
+    struct with_port_packet *p = (struct with_port_packet*)data;
+    ScmObj origport = p->origport;
+    ScmPort *curport;
+    
+    if (p->type == 0) {
+        curport = SCM_VM_CURRENT_INPUT_PORT(Scm_VM());
         SCM_VM_CURRENT_INPUT_PORT(Scm_VM()) = SCM_PORT(origport);
-    } else if (type == SCM_MAKE_INT(1)) {
-        Scm_ClosePort(SCM_VM_CURRENT_OUTPUT_PORT(Scm_VM()));
+    } else if (p->type == 1) {
+        curport = SCM_VM_CURRENT_OUTPUT_PORT(Scm_VM());
         SCM_VM_CURRENT_OUTPUT_PORT(Scm_VM()) = SCM_PORT(origport);
     } else {
-        Scm_ClosePort(SCM_VM_CURRENT_ERROR_PORT(Scm_VM()));
+        curport = SCM_VM_CURRENT_ERROR_PORT(Scm_VM());
         SCM_VM_CURRENT_ERROR_PORT(Scm_VM()) = SCM_PORT(origport);
     }
+    if (p->closep) Scm_ClosePort(curport);
     return SCM_UNDEFINED;
 }
-   
-void Scm_WithFile(ScmString *path, ScmProcedure *thunk, int type)
+
+ScmObj Scm_WithPort(ScmPort *port, ScmProcedure *thunk, int type, int closep)
 {
-    ScmObj port, origport, finalizer;
+    ScmObj origport, finalizer;
+    struct with_port_packet *packet;
+    
     SCM_ASSERT(type >= 0 && type <= 2);
     if (SCM_PROCEDURE_REQUIRED(thunk) != 0) {
         Scm_Error("thunk required: %S", thunk);
     }
+    switch (type) {
+    case 0:
+        origport = SCM_OBJ(SCM_VM_CURRENT_INPUT_PORT(Scm_VM()));
+        SCM_VM_CURRENT_INPUT_PORT(Scm_VM()) = port;
+        break;
+    case 1:
+        origport = SCM_OBJ(SCM_VM_CURRENT_OUTPUT_PORT(Scm_VM()));
+        SCM_VM_CURRENT_OUTPUT_PORT(Scm_VM()) = port;
+        break;
+    case 2:
+        origport = SCM_OBJ(SCM_VM_CURRENT_ERROR_PORT(Scm_VM()));
+        SCM_VM_CURRENT_ERROR_PORT(Scm_VM()) = port;
+        break;
+    }
+    
+    packet = SCM_NEW(struct with_port_packet);
+    packet->origport = origport;
+    packet->type = type;
+    packet->closep = closep;
+    finalizer = Scm_MakeSubr(port_restorer, (void*)packet,
+                             0, 0, SCM_FALSE);
+    return Scm_VMDynamicWind(Scm_NullProc(), SCM_OBJ(thunk), finalizer);
+}
+
+ScmObj Scm_WithFile(ScmString *path, ScmProcedure *thunk, int type)
+{
+    ScmObj port;
     port = Scm_OpenFilePort(Scm_GetStringConst(path),
                             (type == 0)? "r" : "w");
     if (port == SCM_FALSE)
         Scm_Error("can't open %s file: %S",
                   (type == 0)? "input" : "output", path);
-    switch (type) {
-    case 0:
-        origport = SCM_OBJ(SCM_VM_CURRENT_INPUT_PORT(Scm_VM()));
-        SCM_VM_CURRENT_INPUT_PORT(Scm_VM()) = SCM_PORT(port);
-        break;
-    case 1:
-        origport = SCM_OBJ(SCM_VM_CURRENT_OUTPUT_PORT(Scm_VM()));
-        SCM_VM_CURRENT_OUTPUT_PORT(Scm_VM()) = SCM_PORT(port);
-        break;
-    case 2:
-        origport = SCM_OBJ(SCM_VM_CURRENT_ERROR_PORT(Scm_VM()));
-        SCM_VM_CURRENT_ERROR_PORT(Scm_VM()) = SCM_PORT(port);
-        break;
-    }
-    
-    finalizer = Scm_MakeSubr(port_restorer,
-                             Scm_Cons(origport, SCM_MAKE_INT(type)),
-                             0, 0, SCM_FALSE);
-    Scm_VMDynamicWind(Scm_NullProc(), SCM_OBJ(thunk), finalizer);
+    return Scm_WithPort(SCM_PORT(port), thunk, type, TRUE);
 }
