@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.52 2001-12-11 10:18:42 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.53 2001-12-11 10:19:54 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -147,10 +147,11 @@
           (:macro push!) (:macro pop!) (:macro inc!) (:macro dec!)
           (:macro dotimes) (:macro while) (:macro until))
 
-(autoload gauche.regexp
-          (:macro rxmatch-let) (:macro rxmatch-if)
-          (:macro rxmatch-cond) (:macro rxmatch-case)
-          regexp-replace regexp-replace-all)
+;; This doesn't work well for now...
+;(autoload gauche.regexp
+;          (:macro rxmatch-let) (:macro rxmatch-if)
+;          (:macro rxmatch-cond) (:macro rxmatch-case)
+;          regexp-replace regexp-replace-all)
 
 ;; these are so useful that I couldn't resist to add...
 (define (file-exists? path)
