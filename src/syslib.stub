@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.50 2001-10-06 10:08:54 shirok Exp $
+;;; $Id: syslib.stub,v 1.51 2001-11-15 06:44:25 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -819,7 +819,7 @@
 ;;---------------------------------------------------------------------
 ;; symbolic link
 
-(if (defined? "HAVE_SYMLiNK")
+(if (defined? "HAVE_SYMLINK")
 (define-cproc sys-symlink (existing new)
   (assert (string? existing))
   (assert (string? new))
