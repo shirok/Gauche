@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: array.scm,v 1.8 2003-04-01 04:06:41 shirok Exp $
+;;;  $Id: array.scm,v 1.9 2003-04-12 06:29:27 foof Exp $
 ;;;
 
 ;; Conceptually, an array is a backing storage and a procedure to
@@ -461,27 +461,31 @@
 (define-method array-map! ((ar <array>) (proc <procedure>) ar0)
   (array-for-each-index ar
                         (lambda (ind)
-                          (array-set! ar ind (proc (array-ref ar0 ind))))))
+                          (array-set! ar ind (proc (array-ref ar0 ind)))
+                          (make-vector (array-rank ar)))))
 
 (define-method array-map! ((ar <array>) (proc <procedure>) ar0)
   (array-for-each-index ar
                         (lambda (ind)
-                          (array-set! ar ind (proc (array-ref ar0 ind))))))
+                          (array-set! ar ind (proc (array-ref ar0 ind))))
+                        (make-vector (array-rank ar))))
 
 (define-method array-map! ((ar <array>) (proc <procedure>) ar0 ar1)
   (array-for-each-index ar
                         (lambda (ind)
                           (array-set! ar ind
                                       (proc (array-ref ar0 ind)
-                                            (array-ref ar1 ind))))))
-                        
+                                            (array-ref ar1 ind))))
+                        (make-vector (array-rank ar))))
+
 (define-method array-map! ((ar <array>) (proc <procedure>) ar0 ar1 ar2)
   (array-for-each-index ar
                         (lambda (ind)
                           (array-set! ar ind
                                       (proc (array-ref ar0 ind)
                                             (array-ref ar1 ind)
-                                            (array-ref ar2 ind))))))
+                                            (array-ref ar2 ind))))
+                        (make-vector (array-rank ar))))
 
 (define-method array-map! ((ar <array>) (proc <procedure>) ar0 ar1 ar2 . more)
   (let1 arlist (list* ar0 ar1 ar2 more)
@@ -498,7 +502,8 @@
 
 (define-method array-map ((proc <procedure>) ar0 . more)
   (let1 target (make-array (array-shape ar0))
-    (apply array-map! target proc ar0 more)))
+    (apply array-map! target proc ar0 more)
+    target))
 
 (define (array->vector ar)
   (with-builder (<vector> add! get :size (array-size ar))
