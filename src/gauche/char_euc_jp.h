@@ -1,6 +1,23 @@
+/*
+ * char-euc-jp.h
+ *
+ *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+ *
+ *  Permission to use, copy, modify, ditribute this software and
+ *  accompanying documentation for any purpose is hereby granted,
+ *  provided that existing copyright notices are retained in all
+ *  copies and that this notice is included verbatim in all
+ *  distributions.
+ *  This software is provided as is, without express or implied
+ *  warranty.  In no circumstances the author(s) shall be liable
+ *  for any damages arising out of the use of this software.
+ *
+ *  $Id: char_euc_jp.h,v 1.2 2001-02-05 09:51:47 shiro Exp $
+ */
 
-/* for now */
-
+/*
+ * For now, we ignore 3-byte encodings.
+ */
 #define SCM_CHAR_NFOLLOWS(ch) \
     ((((unsigned char)(ch)) >= 0x80) ? 1 : 0)
 
