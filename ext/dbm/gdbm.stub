@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: gdbm.stub,v 1.5 2001-10-24 19:39:26 shirok Exp $
+;;  $Id: gdbm.stub,v 1.6 2001-10-29 00:56:58 shirok Exp $
 ;;
 
 "
@@ -68,6 +68,15 @@
 
 (define-type "gdbm" gdbm? "ScmGdbm*" "SCM_GDBM_P" "SCM_GDBM")
 
+;; finalization
+"static void gdbm_finalize(GC_PTR obj, GC_PTR data)
+ {
+    ScmGdbm *g = SCM_GDBM(obj);
+    if (g->dbf) { gdbm_close(g->dbf); g->dbf = NULL; }
+ }
+"
+
+
 (define-cproc gdbm-open (name &optional
                               (size 0)
                               (rwmode (c "SCM_MAKE_INT(GDBM_READER)"))
@@ -76,8 +85,10 @@
   (assert (small-integer? size))
   (assert (small-integer? rwmode))
   (assert (small-integer? fmode))
-  "ScmGdbm *z = SCM_NEW(ScmGdbm);
+  "GC_finalization_proc ofn; GC_PTR ocd;
+  ScmGdbm *z = SCM_NEW(ScmGdbm);
   SCM_SET_CLASS(z, SCM_CLASS_GDBM);
+  GC_REGISTER_FINALIZER(z, gdbm_finalize, NULL, &ofn, &ocd);
   z->name = SCM_OBJ(name);
   z->dbf = gdbm_open(Scm_GetString(name), size, rwmode, fmode, NULL);
   if (z->dbf == NULL) Scm_SysError(\"couldn't open gdbm file %S\", name);
