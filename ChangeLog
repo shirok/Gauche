@@ -1,5 +1,7 @@
 2004-02-03  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.7.4
+	
 	* src/link-dylib : avoid linking old library to gosh.
 
 	* ext/net/netlib.stub : check existence of definitions of MSG_*
