@@ -51,7 +51,7 @@ install : all
 	done
 
 clean :
-	rm -rf core $(TARGET) $(OBJS) *~ test.log so_locations
+	rm -rf core $(TARGET) $(OBJS) auxsyslib.c *~ test.log so_locations
 
 distclean : clean
 	rm -rf $(CONFIG_GENERATED)
