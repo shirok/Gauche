@@ -1,9 +1,9 @@
 /*
  * module.c - module implementation
  *
- *  Copyright(C) 2000 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
  *
- *  Permission to use, copy, modify, ditribute this software and
+ *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
  *  provided that existing copyright notices are retained in all
  *  copies and that this notice is included verbatim in all
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: module.c,v 1.15 2001-03-17 09:17:51 shiro Exp $
  */
 
 #include "gauche.h"
@@ -20,12 +20,11 @@
 /*
  * Modules
  *
- *   A module maps symbols to global loations.
+ *  A module maps symbols to global locations.
+ *  Note that the mapping is resolved at the compile time.
+ *  Scheme's current-module is therefore a syntax, instead of
+ *  a procedure, to capture compile-time information.
  */
-
-static ScmClass *collection_cpl[] = {
-    SCM_CLASS_COLLECTION, SCM_CLASS_TOP, NULL
-};
 
 static int module_print(ScmObj obj, ScmPort *port, int mode)
 {
@@ -33,38 +32,38 @@ static int module_print(ScmObj obj, ScmPort *port, int mode)
     return Scm_Printf(port, "#<module %S>", m->name);
 }
 
-ScmClass Scm_ModuleClass = {
-    SCM_CLASS_CLASS,
-    "<module>",
-    module_print,
-    collection_cpl
-};
+SCM_DEFINE_BUILTIN_CLASS(Scm_ModuleClass,
+                         module_print, NULL, NULL, NULL,
+                         SCM_CLASS_COLLECTION_CPL);
 
-/*
+static ScmHashTable *moduleTable; /* global, must be protected in MT env */
+
+/*----------------------------------------------------------------------
  * Constructor
  */
-ScmObj Scm_MakeModule(ScmString *name, ScmObj parentList)
+
+/* internal */
+static ScmObj make_module(ScmSymbol *name, ScmModule *parent)
 {
     ScmModule *z;
-    ScmObj e;
-    int pllen = Scm_Length(parentList), i = 0;
-
-    /* Assertion */
-    if (pllen < 0) Scm_Abort("improper list is given to Scm_MakeModule");
-    SCM_FOR_EACH(e, parentList) {
-        if (!SCM_MODULEP(SCM_CAR(e)))
-            Scm_Abort("non-module is passed to Scm_MakeModule as a parent");
-    }
-    
     z = SCM_NEW(ScmModule);
-    z->hdr.klass = SCM_CLASS_MODULE;
-    z->name = SCM_STRING(Scm_CopyString(name));
-    z->parents = Scm_CopyList(parentList);
+    SCM_SET_CLASS(z, SCM_CLASS_MODULE);
+    z->name = name;
+    z->parent = parent;
+    z->imported = SCM_NIL;
+    z->exported = SCM_NIL;
     z->table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 0));
+
+    Scm_HashTablePut(moduleTable, SCM_OBJ(name), SCM_OBJ(z));
     return SCM_OBJ(z);
 }
 
-/*
+ScmObj Scm_MakeModule(ScmSymbol *name)
+{
+    return make_module(name, Scm_GaucheModule());
+}
+
+/*----------------------------------------------------------------------
  * Finding and modifying bindings
  */
 
@@ -72,12 +71,22 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
                          int stay_in_module)
 {
     ScmHashEntry *e = Scm_HashTableGet(module->table, SCM_OBJ(symbol));
+    ScmModule *m;
+    ScmObj p;
+
     if (e) return SCM_GLOC(e->value);
     if (!stay_in_module) {
-        ScmObj mod;
-        SCM_FOR_EACH(mod, module->parents) {
-            e = Scm_HashTableGet(SCM_MODULE(SCM_CAR(mod))->table,
-                                 SCM_OBJ(symbol));
+        /* First, search from imported modules */
+        SCM_FOR_EACH(p, module->imported) {
+            SCM_ASSERT(SCM_MODULEP(SCM_CAR(p)));
+            m = SCM_MODULE(SCM_CAR(p));
+            e = Scm_HashTableGet(m->table, SCM_OBJ(symbol));
+            if (e && !SCM_FALSEP(Scm_Memq(SCM_OBJ(symbol), m->exported)))
+                return SCM_GLOC(e->value);
+        }
+        /* Then, search from parent module */
+        for (m = module->parent; m; m = m->parent) {
+            e = Scm_HashTableGet(m->table, SCM_OBJ(symbol));
             if (e) return SCM_GLOC(e->value);
         }
     }
@@ -87,13 +96,13 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
 ScmObj Scm_SymbolValue(ScmModule *module, ScmSymbol *symbol)
 {
     ScmObj mod;
-    ScmGloc *g = Scm_FindBinding(module, symbol, 0);
+    ScmGloc *g = Scm_FindBinding(module, symbol, FALSE);
     return (g != NULL)? g->value : SCM_UNBOUND;
 }
 
 ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
 {
-    ScmGloc *g = Scm_FindBinding(module, symbol, 1);
+    ScmGloc *g = Scm_FindBinding(module, symbol, TRUE);
     if (g) {
         g->value = value;
     } else {
@@ -101,45 +110,92 @@ ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
         g->value = value;
         Scm_HashTablePut(module->table, SCM_OBJ(symbol), SCM_OBJ(g));
     }
-    return SCM_OBJ(symbol);
+    return SCM_OBJ(g);
 }
 
-ScmObj Scm_GlobalSet(ScmModule *module, ScmSymbol *symbol, ScmObj value)
+ScmObj Scm_ImportModules(ScmModule *module, ScmObj list)
 {
-    ScmObj mod;
-    ScmHashEntry *e = Scm_HashTableGet(module->table, SCM_OBJ(symbol));
-
-    if (e) {
-        SCM_GLOC(e->value)->value = value;
-        return value;
-    } else {
-        SCM_FOR_EACH(mod, module->parents) {
-            e = Scm_HashTableGet(SCM_MODULE(SCM_CAR(mod))->table,
-                                 SCM_OBJ(symbol));
-            if (e) {
-                SCM_GLOC(e->value)->value = value;
-                return value;
-            }
-        }
-        {
-            ScmGloc *g = SCM_GLOC(Scm_MakeGloc(symbol, module));
-            g->value = value;
-            Scm_HashTablePut(module->table, SCM_OBJ(symbol), SCM_OBJ(g));
-            return value;
-        }
+    ScmObj lp, head = SCM_NIL, tail, mod;
+    SCM_APPEND(head, tail, module->imported);
+    SCM_FOR_EACH(lp, list) {
+        if (!SCM_SYMBOLP(SCM_CAR(lp)))
+            Scm_Error("module name required, but got %S", SCM_CAR(lp));
+        mod = Scm_FindModule(SCM_SYMBOL(SCM_CAR(lp)), FALSE);
+        if (!SCM_MODULEP(mod))
+            Scm_Error("no such module: %S", SCM_CAR(lp));
+        if (SCM_FALSEP(Scm_Memq(mod, head)))
+            SCM_APPEND1(head, tail, mod);
     }
+    return (module->imported = head);
 }
 
-/*
+ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list)
+{
+    ScmObj lp, syms = module->exported;
+    SCM_FOR_EACH(lp, list) {
+        if (!SCM_SYMBOLP(SCM_CAR(lp)))
+            Scm_Error("symbol required, but got %S", SCM_CAR(lp));
+        if (SCM_FALSEP(Scm_Memq(SCM_CAR(lp), syms)))
+            syms = Scm_Cons(SCM_CAR(lp), syms);
+    }
+    return (module->exported = syms);
+}
+
+/*----------------------------------------------------------------------
+ * Finding modules
+ */
+
+ScmObj Scm_FindModule(ScmSymbol *name, int createp)
+{
+    ScmHashEntry *e = Scm_HashTableGet(moduleTable, SCM_OBJ(name));
+    if (e == NULL) {
+        if (createp) return Scm_MakeModule(name);
+        else return SCM_FALSE;
+    }
+    else return e->value;
+}
+
+ScmObj Scm_AllModules(void)
+{
+    ScmObj h = SCM_NIL, t;
+    ScmHashIter iter;
+    ScmHashEntry *e;
+    
+    Scm_HashIterInit(moduleTable, &iter);
+    while ((e = Scm_HashIterNext(&iter)) != NULL) {
+        SCM_APPEND1(h, t, e->value);
+    }
+    return h;
+}
+
+void Scm_SelectModule(ScmModule *mod)
+{
+    SCM_ASSERT(SCM_MODULEP(mod));
+    Scm_VM()->module = mod;
+}
+
+/*----------------------------------------------------------------------
  * Predefined modules and initialization
  */
 
+static ScmModule *nullModule;
 static ScmModule *schemeModule;
+static ScmModule *gaucheModule;
 static ScmModule *userModule;
+
+ScmModule *Scm_NullModule(void)
+{
+    return nullModule;
+}
 
 ScmModule *Scm_SchemeModule(void)
 {
     return schemeModule;
+}
+
+ScmModule *Scm_GaucheModule(void)
+{
+    return gaucheModule;
 }
 
 ScmModule *Scm_UserModule(void)
@@ -147,13 +203,21 @@ ScmModule *Scm_UserModule(void)
     return userModule;
 }
 
+ScmModule *Scm_CurrentModule(void)
+{
+    return Scm_VM()->module;
+}
+
+#define MAKEMOD(sym, parent) SCM_MODULE(make_module(SCM_SYMBOL(sym), parent))
+
+
 void Scm__InitModule(void)
 {
-    ScmString *Sscheme = SCM_STRING(Scm_MakeStringConst("scheme", -1, -1));
-    ScmString *Suser = SCM_STRING(Scm_MakeStringConst("user", -1, -1));
-    schemeModule = SCM_MODULE(Scm_MakeModule(Sscheme, SCM_NIL));
-    userModule = SCM_MODULE(Scm_MakeModule(Suser,
-                                           Scm_Cons(SCM_OBJ(schemeModule),
-                                                    SCM_NIL)));
+    moduleTable = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 64));
+
+    nullModule   = MAKEMOD(SCM_SYM_NULL, NULL);
+    schemeModule = MAKEMOD(SCM_SYM_SCHEME, nullModule);
+    gaucheModule = MAKEMOD(SCM_SYM_GAUCHE, schemeModule);
+    userModule   = MAKEMOD(SCM_SYM_USER, gaucheModule);
 }
 
