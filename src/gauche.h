@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.12 2001-01-19 20:09:53 shiro Exp $
+ *  $Id: gauche.h,v 1.13 2001-01-24 11:30:39 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -239,14 +239,14 @@ extern ScmObj Scm_VMGetResult(ScmVM *vm);
 extern ScmObj Scm_VMGetErrorString(ScmVM *vm);
 extern ScmObj Scm_VMGetStack(ScmVM *vm);
 
-extern void Scm_Apply(ScmObj proc, ScmObj args);
-extern void Scm_Apply0(ScmObj proc);
-extern void Scm_Apply1(ScmObj proc, ScmObj arg);
-extern void Scm_Apply2(ScmObj proc, ScmObj arg1, ScmObj arg2);
+extern ScmObj Scm_VMApply(ScmObj proc, ScmObj args);
+extern ScmObj Scm_VMApply0(ScmObj proc);
+extern ScmObj Scm_VMApply1(ScmObj proc, ScmObj arg);
+extern ScmObj Scm_VMApply2(ScmObj proc, ScmObj arg1, ScmObj arg2);
 
-extern void Scm_Eval(ScmObj expr, ScmObj env);
+extern ScmObj Scm_VMEval(ScmObj expr, ScmObj env);
 
-extern void Scm_DynamicWind(ScmObj pre, ScmObj body, ScmObj post);
+extern ScmObj Scm_VMDynamicWind(ScmObj pre, ScmObj body, ScmObj post);
 
 extern void Scm_ThrowException(ScmObj exception);
 
@@ -1279,7 +1279,7 @@ extern ScmObj Scm_MakeClosure(int required, int optional,
 
 struct ScmSubrRec {
     ScmProcedure common;
-    void (*func)(ScmObj *, int, void*);
+    ScmObj (*func)(ScmObj *, int, void*);
     ScmObj (*inliner)(ScmSubr *, ScmObj, ScmObj, int);
     void *data;
 };
@@ -1294,7 +1294,7 @@ struct ScmSubrRec {
 extern ScmClass Scm_SubrClass;
 #define SCM_CLASS_SUBR   (&Scm_SubrClass)
 
-extern ScmObj Scm_MakeSubr(void (*func)(ScmObj*, int, void*),
+extern ScmObj Scm_MakeSubr(ScmObj (*func)(ScmObj*, int, void*),
                            void *data,
                            int required, int optional,
                            ScmObj info);
@@ -1342,7 +1342,7 @@ extern ScmClass Scm_PromiseClass;
 #define SCM_CLASS_PROMISE           (&Scm_PromiseClass)
 
 extern ScmObj Scm_MakePromise(ScmObj code);
-extern void Scm_Force(ScmObj p);
+extern ScmObj Scm_Force(ScmObj p);
 
 /*--------------------------------------------------------
  * EXCEPTION
@@ -1371,8 +1371,7 @@ extern void Scm_SError(ScmObj fmt, ScmObj args);
 #define SCM_ENTER_SUBR(name)
 
 #define SCM_ARGREF(count)           (SCM_FP[count])
-#define SCM_RETURN(value) \
-    (Scm_VM()->argp = Scm_Cons(value, Scm_VM()->argp))
+#define SCM_RETURN(value)           return value
 #define SCM_CURRENT_MODULE()        (Scm_VM()->module)
 
 /*---------------------------------------------------

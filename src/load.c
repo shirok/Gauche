@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: load.c,v 1.2 2001-01-24 11:30:39 shiro Exp $
  */
 
 #include "gauche.h"
@@ -32,17 +32,19 @@
  */
 
 /* C-continuation of the loading */
-static void load_cc(ScmObj result, void **data)
+static ScmObj load_cc(ScmObj result, void **data)
 {
     ScmObj port = SCM_OBJ(data[0]);
     ScmObj expr = Scm_Read(port);
+
+
     if (!SCM_EOFP(expr)) {
         Scm_VMPushCC(load_cc, (void **)&port, 1);
-        Scm_Eval(expr, SCM_UNBOUND);
+        Scm_VMEval(expr, SCM_UNBOUND);
     } else {
         Scm_ClosePort(SCM_PORT(port));
-        SCM_RETURN(result);
     }
+    SCM_RETURN(result);
 }
 
 void Scm_LoadFromPort(ScmPort *port)

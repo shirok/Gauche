@@ -590,48 +590,50 @@
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_PROCEDUREP(obj)));")
 
 (define-cproc apply (proc arg1 &rest args)
-  "  if (SCM_NULLP(args)) Scm_Apply(proc, arg1);
+  "  ScmObj head, tail, cp;
+  if (SCM_NULLP(args)) return Scm_VMApply(proc, arg1);
   else {
-    ScmObj head, tail, cp;
     head = tail = Scm_Cons(arg1, SCM_NIL);
     SCM_FOR_EACH(cp, args) {
       if (SCM_NULLP(SCM_CDR(cp))) {
         SCM_APPEND(head, tail, SCM_CAR(cp));
-        Scm_Apply(proc, head);
-        return;
+        break;
       }
       if (!SCM_PAIRP(SCM_CDR(cp))) {
         Scm_Error(\"improper list not allowed: %S\", SCM_CDR(cp));
       }
       SCM_APPEND1(head, tail, SCM_CAR(cp));
     }
-  } /*NOTREACHED*/")
+  }
+  return Scm_VMApply(proc, head);")
 
 (define-cproc map (proc args &rest moreargs)
   (assert (procedure? proc))
   (assert (list? args))
-  "  Scm_Map(proc, args, moreargs);")
+  "  Scm_Map(proc, args, moreargs);
+  SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc for-each (proc args &rest moreargs)
   (assert (procedure? proc))
   (assert (list? args))
-  "  Scm_ForEach(proc, args, moreargs);")
+  "  Scm_ForEach(proc, args, moreargs);
+  SCM_RETURN(SCM_UNDEFINED);")
           
 (define-cproc force (p)
-  "  Scm_Force(p);")
+  "  return Scm_Force(p);")
 
 (define-proc call-with-current-continuation (proc)
-  "  Scm_CallCC(proc);")
+  "  Scm_CallCC(proc);
+  SCM_RETURN(SCM_UNDEFINED);")
 
 ; values
 ; call-with-values
 
 (define-cproc dynamic-wind (pre body post)
-  "  Scm_DynamicWind(pre, body, post);")
+  "  SCM_RETURN(Scm_VMDynamicWind(pre, body, post));")
 
 (define-cproc eval (expr env)
-  ;; Result is pushed by evaluation of expr
-  "  Scm_Eval(expr, env);")
+  "  SCM_RETURN(Scm_VMEval(expr, env));")
 
 ;; TODO: implement environments!
 ; scheme-report-environment
@@ -645,12 +647,14 @@
 (define-cproc call-with-input-file (file proc)
   (assert (string? file))
   (assert (procedure? proc))
-  "  Scm_CallWithFile(file, proc, 1);")
+  "  Scm_CallWithFile(file, proc, 1);
+  SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc call-with-output-file (file proc)
   (assert (string? file))
   (assert (procedure? proc))
-  "  Scm_CallWithFile(file, proc, 0);")
+  "  Scm_CallWithFile(file, proc, 0);
+  SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc input-port? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_IPORTP(obj)));")
@@ -667,12 +671,14 @@
 (define-cproc with-input-from-file (file thunk)
   (assert (string? file))
   (assert (procedure? thunk))
-  "  Scm_WithFile(file, thunk, 0);")
+  "  Scm_WithFile(file, thunk, 0);
+  SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc with-output-to-file (file thunk)
   (assert (string? file))
   (assert (procedure? thunk))
-  "  Scm_WithFile(file, thunk, 1);")
+  "  Scm_WithFile(file, thunk, 1);
+  SCM_RETURN(SCM_UNDEFINED);")
 
 
 (define-cproc open-input-file (path)
@@ -756,7 +762,8 @@
 
 (define-cproc load (file)
   (assert (string? file))
-  "  Scm_Load(Scm_GetStringConst(file));")
+  "  Scm_Load(Scm_GetStringConst(file));
+  SCM_RETURN(SCM_UNDEFINED);")
 
 ; transcript-on
 ; transcript-off

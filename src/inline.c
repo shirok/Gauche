@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: inline.c,v 1.6 2001-01-19 20:09:53 shiro Exp $
+ *  $Id: inline.c,v 1.7 2001-01-24 11:30:39 shiro Exp $
  */
 
 #include "gauche.h"
@@ -38,8 +38,6 @@
     ScmObj code = SCM_NIL, codetail
 
 #define INLINE_RETURN                                           \
-    if (ctx == 0) SCM_APPEND1(code, codetail,                   \
-                              SCM_VM_INSN(SCM_VM_POPARG)); \
     return code
 
 #define PUSH_ARG0                                       \

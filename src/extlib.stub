@@ -144,7 +144,8 @@
 
 (define-cproc load-from-port (port)
   (assert (input-port? port))
-  "  Scm_LoadFromPort(port);")
+  "  Scm_LoadFromPort(port);
+  SCM_RETURN(SCM_UNDEFINED);")
 
 ;;
 ;; Hashtable
@@ -164,9 +165,8 @@
   if (!e || e->value == SCM_UNBOUND) {
     if (defval != SCM_UNBOUND) SCM_RETURN(defval);
     else Scm_Error(\"hash table doesn't have an entry for key %S\", key);
-  } else {
-    SCM_RETURN(e->value);
-  }")
+  }
+  SCM_RETURN(e->value);")
 
 (define-cproc hash-table-put! (hash key value)
   (assert (hash-table? hash))
@@ -180,7 +180,7 @@
   else
     SCM_RETURN(SCM_FALSE);")
 
-"static void hash_table_for_each_cc(ScmObj result, void **data)
+"static ScmObj hash_table_for_each_cc(ScmObj result, void **data)
  {
   ScmHashIter *iter = (ScmHashIter*)(data[0]);
   ScmProcedure *p = SCM_PROCEDURE(data[1]);
@@ -189,10 +189,9 @@
   if (e) {
     void *data[2]; data[0] = iter; data[1] = p;
     Scm_VMPushCC(hash_table_for_each_cc, data, 2);
-    Scm_Apply2(SCM_OBJ(p), e->key, e->value);
-  } else {
-    SCM_RETURN(SCM_UNDEFINED);
+    Scm_VMApply2(SCM_OBJ(p), e->key, e->value);
   }
+  SCM_RETURN(SCM_UNDEFINED);
  }"
 
 (define-cproc hash-table-for-each (hash proc)
@@ -202,8 +201,8 @@
   ScmHashIter *iter = SCM_NEW(ScmHashIter);
   Scm_HashIterInit(hash, iter);
   data[0] = iter; data[1] = proc;
-  Scm_VMPushCC(hash_table_for_each_cc, data, 2);"
-  )
+  Scm_VMPushCC(hash_table_for_each_cc, data, 2);
+  SCM_RETURN(SCM_UNDEFINED);")
 
 ;;
 ;; Gauche extentions
@@ -228,10 +227,12 @@
 
 (define-cproc exit (&optional (code 0))
   (assert (small-integer? code))
-  "  Scm_Exit(code);")
+  "  Scm_Exit(code);
+  SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc error (fmt &rest args)
-  "  Scm_SError(fmt, args);")
+  "  Scm_SError(fmt, args);
+  SCM_RETURN(SCM_UNDEFINED);")
 
 ;; Inspecting feature
 (define-cproc current-vm ()

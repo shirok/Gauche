@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: io.c,v 1.3 2001-01-19 20:09:53 shiro Exp $
+ *  $Id: io.c,v 1.4 2001-01-24 11:30:39 shiro Exp $
  */
 
 #include "gauche.h"
@@ -25,18 +25,19 @@
 /* call-with-*-file */
 
 
-static void null_thunk(ScmObj *args, int nargs, void *data)
+static ScmObj null_thunk(ScmObj *args, int nargs, void *data)
 {
     SCM_RETURN(SCM_UNDEFINED);
 }
 
-static void wrapper1(ScmObj *args, int nargs, void *data)
+static ScmObj wrapper1(ScmObj *args, int nargs, void *data)
 {
     ScmObj p = SCM_OBJ(data);
-    Scm_Apply1(SCM_CAR(p), SCM_CDR(p));
+    Scm_VMApply1(SCM_CAR(p), SCM_CDR(p));
+    return SCM_FALSE;
 }
 
-static void port_closer(ScmObj *args, int nargs, void *data)
+static ScmObj port_closer(ScmObj *args, int nargs, void *data)
 {
     Scm_ClosePort(SCM_PORT(data));
     SCM_RETURN(SCM_UNDEFINED);
@@ -61,10 +62,10 @@ void Scm_CallWithFile(ScmString *path, ScmProcedure *proc, int inputp)
     bodyproc = Scm_MakeSubr(wrapper1,
                             (void*)Scm_Cons(SCM_OBJ(proc), port),
                             0, 0, SCM_FALSE);
-    Scm_DynamicWind(nullproc, bodyproc, finalizer);
+    Scm_VMDynamicWind(nullproc, bodyproc, finalizer);
 }
 
-static void port_restorer(ScmObj *args, int nargs, void *data)
+static ScmObj port_restorer(ScmObj *args, int nargs, void *data)
 {
     ScmObj origport = SCM_CAR(SCM_OBJ(data));
     ScmObj type = SCM_CDR(SCM_OBJ(data));
@@ -78,6 +79,7 @@ static void port_restorer(ScmObj *args, int nargs, void *data)
         Scm_ClosePort(SCM_VM_CURRENT_ERROR_PORT(Scm_VM()));
         SCM_VM_CURRENT_ERROR_PORT(Scm_VM()) = SCM_PORT(origport);
     }
+    return SCM_UNDEFINED;
 }
    
 void Scm_WithFile(ScmString *path, ScmProcedure *thunk, int type)
@@ -111,5 +113,5 @@ void Scm_WithFile(ScmString *path, ScmProcedure *thunk, int type)
                              Scm_Cons(origport, SCM_MAKE_INT(type)),
                              0, 0, SCM_FALSE);
     nullproc = Scm_MakeSubr(null_thunk, NULL, 0, 0, SCM_FALSE);
-    Scm_DynamicWind(nullproc, SCM_OBJ(thunk), finalizer);
+    Scm_VMDynamicWind(nullproc, SCM_OBJ(thunk), finalizer);
 }

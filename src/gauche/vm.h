@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.7 2001-01-19 20:09:53 shiro Exp $
+ *  $Id: vm.h,v 1.8 2001-01-24 11:30:39 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -42,6 +42,7 @@
  */
 
 typedef struct ScmEnvFrameRec {
+    ScmObj *sp;                 /* saved sp */
     struct ScmEnvFrameRec *up;  /* static link */
     ScmObj info;                /* source code info for debug */
     int size;                   /* size of the frame */
@@ -63,10 +64,10 @@ typedef struct ScmEnvFrameRec {
  */
 
 typedef struct ScmContFrameRec {
-    struct ScmContFrameRec *prev; /* dynamic link */
-    ScmEnvFrame *env;           /* current environment */
-    ScmObj argp;                /* current accumulated arglist */
-    ScmObj next;                /* next PC */
+    struct ScmContFrameRec *prev; /* previous frame */
+    ScmObj *sp;                   /* sp to be recovered */
+    ScmEnvFrame *env;             /* current environment */
+    ScmObj pc;                    /* next PC */
 } ScmContFrame;
 
 extern void Scm_CallCC(ScmObj body);
@@ -104,7 +105,8 @@ typedef struct ScmErrorHandlerRec {
 /*
  * VM structure
  *
- *
+ *  Some of the VM "registers" are not in ScmVM, but declared as a
+ *  local variable in the vm loop (run_loop).  They are only saved
  */
 
 struct ScmVMRec {
@@ -121,19 +123,16 @@ struct ScmVMRec {
     ScmPort *curout;            /* current output port */
     ScmPort *curerr;            /* current error port */
 
-    ScmObj pc;                  /* program pointer.  only used when
-                                   SUBR is called. */
-    ScmObj argp;                /* accumulated argument */
+    ScmObj pc;                  /* program pointer. */
     ScmEnvFrame *env;           /* environment */
     ScmContFrame *cont;         /* continuation */
+    ScmObj val0;
 
     ScmObj handlers;            /* chain of active dynamic handlers */
 
-#ifdef SCM_VM_USE_STACK
     ScmObj *sp;
     ScmObj *stack;
     int stackSize;
-#endif
 };
 
 extern ScmVM *Scm_SetVM(ScmVM *vm);
@@ -199,7 +198,7 @@ extern ScmObj Scm_VMInsnInspect(ScmObj obj);
 
 typedef struct ScmCContinuation {
     SCM_HEADER;
-    void (*func)(ScmObj value, void **data);
+    ScmObj (*func)(ScmObj value, void **data);
     void *data[SCM_CCONT_DATA_SIZE];
 } ScmCContinuation;
 
@@ -209,7 +208,7 @@ typedef struct ScmCContinuation {
 extern ScmClass Scm_CContClass;
 #define SCM_CLASS_CCONT           (&Scm_CContClass)
 
-extern void Scm_VMPushCC(void (*func)(ScmObj value, void **data),
+extern void Scm_VMPushCC(ScmObj (*func)(ScmObj value, void **data),
                          void **data,
                          int datasize);
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: promise.c,v 1.2 2001-01-17 08:21:27 shiro Exp $
+ *  $Id: promise.c,v 1.3 2001-01-24 11:30:39 shiro Exp $
  */
 
 #include "gauche.h"
@@ -56,7 +56,7 @@ ScmObj Scm_MakePromise(ScmObj code)
  * force
  */
 
-static void force_cc(ScmObj result, void **data)
+static ScmObj force_cc(ScmObj result, void **data)
 {
     ScmPromise *p = (ScmPromise*)data[0];
     ScmObj r;
@@ -72,15 +72,17 @@ static void force_cc(ScmObj result, void **data)
     SCM_RETURN(r);
 }
 
-void Scm_Force(ScmObj obj)
+ScmObj Scm_Force(ScmObj obj)
 {
-    if (!SCM_XTYPEP(obj, SCM_CLASS_PROMISE)) SCM_RETURN(obj);
-    else {
+    if (!SCM_XTYPEP(obj, SCM_CLASS_PROMISE)) {
+        SCM_RETURN(obj);
+    } else {
         ScmPromise *p = (ScmPromise*)obj;
         if (p->forced) SCM_RETURN(p->code);
         else {
             Scm_VMPushCC(force_cc, (void**)&p, 1);
-            Scm_Apply0(p->code);
+            Scm_VMApply0(p->code);
+            SCM_RETURN(SCM_UNDEFINED);
         }
     }
 }

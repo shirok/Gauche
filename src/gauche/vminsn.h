@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.4 2001-01-16 09:08:46 shiro Exp $
+ *  $Id: vminsn.h,v 1.5 2001-01-24 11:30:39 shiro Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -23,6 +23,37 @@
  *  Used for placeholder.
  */
 DEFINSN(SCM_VM_NOP, "NOP", 0)
+
+/* PUSH
+ *
+ *  Push value of val0 to the stack top
+ */
+DEFINSN(SCM_VM_PUSH, "PUSH", 0)
+
+/* PRE-CALL
+ *
+ *  Prepair for normal call.   Push continuation and the head of argument
+ *  frame.
+ */
+DEFINSN(SCM_VM_PRE_CALL, "PRE-CALL", 0)
+
+/* PRE-TAIL
+ *
+ *  Prepair for tail call.   Push the head of argument frame.
+ */
+DEFINSN(SCM_VM_PRE_TAIL, "PRE-TAIL", 0)
+
+/* CALL(NARGS)
+ *
+ *  Call procedure in val0.
+ */
+DEFINSN(SCM_VM_CALL, "CALL", 1)
+
+/* TAIL_CALL(NARGS)
+ *
+ *  Call procedure in val0.
+ */
+DEFINSN(SCM_VM_TAIL_CALL, "TAIL-CALL", 1)
 
 /* DEFINE <SYMBOL>
  *   Input stack  : value
@@ -63,22 +94,6 @@ DEFINSN(SCM_VM_LET, "LET", 1)
  */
 DEFINSN(SCM_VM_POPENV, "POPENV", 0)
 
-/* POPARG
- *   Input stack  : arg
- *   Result stack : -
- *
- *  Discard the result pushed on top of the stack.
- */
-DEFINSN(SCM_VM_POPARG, "POPARG", 0)
-
-/* DUPARG
- *   Input stack  : value
- *   Result stack : value value
- *
- *  Duplicate the value of the arg stack.
- */
-DEFINSN(SCM_VM_DUPARG, "DUPARG", 0)
-
 /* IF  <THEN-CODE>
  *   Input stack  : test
  *   Result stack : -
@@ -87,23 +102,6 @@ DEFINSN(SCM_VM_DUPARG, "DUPARG", 0)
  *  it continues execution.   Test arg is popped.
  */
 DEFINSN(SCM_VM_IF, "IF", 0)
-
-/* IFNP <THEN-CODE>
- *   Input stack  : test
- *   Result stack : test
- *
- *  Similar to IF, but leave the test on the stack.  `NP' stands
- *  for "No-Pop".
- */
-DEFINSN(SCM_VM_IFNP, "IFNP", 0)
-
-/* CALL(NARGS,NRETS)
- *   Input stack  : arg0 ... argN proc
- *   Result stack : ret0 ... retM
- *
- *  Call PROC.  If NRETS is SCM_VM_NRETS_UNKNOWN, this is a tail call.
- */
-DEFINSN(SCM_VM_CALL, "CALL", 2)
 
 /* TAILBIND(NARGS) <INFO>
  *   Input stack  : value0 ... valueN-1

@@ -179,7 +179,7 @@
 ;;; emit code
 
 (define-method emit-definition ((cproc <cproc>))
-  (println "static void ~a(ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)"
+  (println "static ScmObj ~a(ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)"
            (c-name-of cproc))
   (println "{")
   ;; argument decl
