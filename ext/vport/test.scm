@@ -1,5 +1,5 @@
 ;;
-;; testing termios
+;; testing vport
 ;;
 
 (use gauche.test)
