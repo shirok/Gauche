@@ -2,7 +2,7 @@
  *
  * Configuration parmateres
  *  
- * $Id: config.h.in,v 1.26 2002-07-09 10:39:32 shirok Exp $
+ * $Id: config.h.in,v 1.27 2002-07-12 11:12:46 shirok Exp $
  */
 
 #undef STDC_HEADERS
@@ -111,3 +111,15 @@
 
 /* Define if we use pthreads */
 #undef GAUCHE_USE_PTHREADS
+
+/* Define appropriate flags for thread support */
+#undef GC_LINUX_THREADS
+#undef GC_HPUX_THREADS
+#undef GC_FREEBSD_THREADS
+#undef GC_SOLARIS_THREADS
+#undef GC_SOLARIS_PTHREADS
+#undef GC_IRIX_THREADS
+#undef GC_WIN32_THREADS
+#undef _POSIX_C_SOURCE
+#undef _REENTRANT
+
