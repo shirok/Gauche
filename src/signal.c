@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.23 2002-08-01 01:11:02 shirok Exp $
+ *  $Id: signal.c,v 1.24 2002-08-29 07:18:02 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -65,7 +65,14 @@ static struct sigHandlersRec {
     ScmInternalMutex mutex;
 } sigHandlers;
 
-/* Table of signals and its name, to display sigset content. */
+/* Table of signals and its initial behavior. */
+#define SIGDEF_NOHANDLE 0       /* Gauche doesn't install a signal handler,
+                                   leaving it to the application. */
+#define SIGDEF_ERROR    1       /* Gauche installs a default signal handler
+                                   that raises an error. */
+#define SIGDEF_EXIT     2       /* Gauche installs a handler that calls
+                                   Scm_Exit(). */
+
 #define SIGDEF(x, flag)  { #x, x, flag }
 
 static struct sigdesc {
@@ -73,63 +80,63 @@ static struct sigdesc {
     int num;
     int defaultHandle;
 } sigDesc[] = {
-    SIGDEF(SIGHUP, TRUE),       /* Hangup (POSIX).  */
-    SIGDEF(SIGINT, TRUE),       /* Interrupt (ANSI).  */
-    SIGDEF(SIGQUIT, TRUE),      /* Quit (POSIX).  */
-    SIGDEF(SIGILL, FALSE),      /* Illegal instruction (ANSI).  */
+    SIGDEF(SIGHUP,  SIGDEF_EXIT),     /* Hangup (POSIX) */
+    SIGDEF(SIGINT,  SIGDEF_ERROR),    /* Interrupt (ANSI) */
+    SIGDEF(SIGQUIT, SIGDEF_EXIT),     /* Quit (POSIX) */
+    SIGDEF(SIGILL,  SIGDEF_NOHANDLE), /* Illegal instruction (ANSI) */
 #ifdef SIGTRAP
-    SIGDEF(SIGTRAP, TRUE),      /* Trace trap.  */
+    SIGDEF(SIGTRAP, SIGDEF_ERROR),    /* Trace trap */
 #endif
-    SIGDEF(SIGABRT, FALSE),     /* Abort (ANSI).  */
+    SIGDEF(SIGABRT, SIGDEF_NOHANDLE), /* Abort (ANSI) */
 #ifdef SIGIOT
-    SIGDEF(SIGIOT, TRUE),       /* IOT trap (4.2 BSD).  */
+    SIGDEF(SIGIOT,  SIGDEF_ERROR),    /* IOT trap (4.2 BSD) */
 #endif
 #ifdef SIGBUS
-    SIGDEF(SIGBUS, FALSE),      /* BUS error (4.2 BSD).  */
+    SIGDEF(SIGBUS,  SIGDEF_NOHANDLE), /* BUS error (4.2 BSD) */
 #endif
-    SIGDEF(SIGFPE, TRUE),       /* Floating-point exception (ANSI).  */
-    SIGDEF(SIGKILL, FALSE),     /* Kill, unblockable (POSIX).  */
-    SIGDEF(SIGUSR1, TRUE),      /* User-defined signal 1 (POSIX).  */
-    SIGDEF(SIGSEGV, FALSE),     /* Segmentation violation (ANSI).  */
-    SIGDEF(SIGUSR2, TRUE),      /* User-defined signal 2 (POSIX).  */
-    SIGDEF(SIGPIPE, TRUE),      /* Broken pipe (POSIX).  */
-    SIGDEF(SIGALRM, TRUE),      /* Alarm clock (POSIX).  */
-    SIGDEF(SIGTERM, TRUE),      /* Termination (ANSI).  */
+    SIGDEF(SIGFPE,  SIGDEF_ERROR),    /* Floating-point exception (ANSI) */
+    SIGDEF(SIGKILL, SIGDEF_NOHANDLE), /* Kill, unblockable (POSIX) */
+    SIGDEF(SIGUSR1, SIGDEF_ERROR),    /* User-defined signal 1 (POSIX) */
+    SIGDEF(SIGSEGV, SIGDEF_NOHANDLE), /* Segmentation violation (ANSI) */
+    SIGDEF(SIGUSR2, SIGDEF_ERROR),    /* User-defined signal 2 (POSIX) */
+    SIGDEF(SIGPIPE, SIGDEF_ERROR),    /* Broken pipe (POSIX) */
+    SIGDEF(SIGALRM, SIGDEF_ERROR),    /* Alarm clock (POSIX) */
+    SIGDEF(SIGTERM, SIGDEF_EXIT),     /* Termination (ANSI) */
 #ifdef SIGSTKFLT
-    SIGDEF(SIGSTKFLT, TRUE),    /* Stack fault.  */
+    SIGDEF(SIGSTKFLT, SIGDEF_ERROR),  /* Stack fault */
 #endif
-    SIGDEF(SIGCHLD, FALSE),     /* Child status has changed (POSIX).  */
-    SIGDEF(SIGCONT, FALSE),     /* Continue (POSIX).  */
-    SIGDEF(SIGSTOP, FALSE),     /* Stop, unblockable (POSIX).  */
-    SIGDEF(SIGTSTP, FALSE),     /* Keyboard stop (POSIX).  */
-    SIGDEF(SIGTTIN, FALSE),     /* Background read from tty (POSIX).  */
-    SIGDEF(SIGTTOU, FALSE),     /* Background write to tty (POSIX).  */
+    SIGDEF(SIGCHLD, SIGDEF_NOHANDLE), /* Child status has changed (POSIX) */
+    SIGDEF(SIGCONT, SIGDEF_NOHANDLE), /* Continue (POSIX) */
+    SIGDEF(SIGSTOP, SIGDEF_NOHANDLE), /* Stop, unblockable (POSIX) */
+    SIGDEF(SIGTSTP, SIGDEF_NOHANDLE), /* Keyboard stop (POSIX) */
+    SIGDEF(SIGTTIN, SIGDEF_NOHANDLE), /* Background read from tty (POSIX) */
+    SIGDEF(SIGTTOU, SIGDEF_NOHANDLE), /* Background write to tty (POSIX) */
 #ifdef SIGURG
-    SIGDEF(SIGURG, FALSE),      /* Urgent condition on socket (4.2 BSD).  */
+    SIGDEF(SIGURG,  SIGDEF_NOHANDLE), /* Urgent condition on socket (4.2 BSD) */
 #endif
 #ifdef SIGXCPU
-    SIGDEF(SIGXCPU, FALSE),     /* CPU limit exceeded (4.2 BSD).  */
+    SIGDEF(SIGXCPU, SIGDEF_NOHANDLE), /* CPU limit exceeded (4.2 BSD) */
 #endif
 #ifdef SIGXFSZ
-    SIGDEF(SIGXFSZ, TRUE),      /* File size limit exceeded (4.2 BSD).  */
+    SIGDEF(SIGXFSZ, SIGDEF_ERROR),    /* File size limit exceeded (4.2 BSD) */
 #endif
 #ifdef SIGVTALRM
-    SIGDEF(SIGVTALRM, TRUE),    /* Virtual alarm clock (4.2 BSD).  */
+    SIGDEF(SIGVTALRM, SIGDEF_ERROR),  /* Virtual alarm clock (4.2 BSD) */
 #endif
 #ifdef SIGPROF
-    SIGDEF(SIGPROF, TRUE),      /* Profiling alarm clock (4.2 BSD).  */
+    SIGDEF(SIGPROF, SIGDEF_ERROR),    /* Profiling alarm clock (4.2 BSD) */
 #endif
 #ifdef SIGWINCH
-    SIGDEF(SIGWINCH, FALSE),    /* Window size change (4.3 BSD, Sun).  */
+    SIGDEF(SIGWINCH, SIGDEF_NOHANDLE),/* Window size change (4.3 BSD, Sun) */
 #endif
 #ifdef SIGPOLL
-    SIGDEF(SIGPOLL, TRUE),      /* Pollable event occurred (System V).  */
+    SIGDEF(SIGPOLL, SIGDEF_ERROR),    /* Pollable event occurred (System V) */
 #endif
 #ifdef SIGIO
-    SIGDEF(SIGIO, TRUE),        /* I/O now possible (4.2 BSD).  */
+    SIGDEF(SIGIO,   SIGDEF_ERROR),    /* I/O now possible (4.2 BSD) */
 #endif
 #ifdef SIGPWR
-    SIGDEF(SIGPWR, FALSE),      /* Power failure restart (System V).  */
+    SIGDEF(SIGPWR,  SIGDEF_NOHANDLE), /* Power failure restart (System V) */
 #endif
     { NULL, -1 }
 };
@@ -185,6 +192,7 @@ ScmObj Scm_SignalName(int signum)
 /*
  * default handler
  */
+/* For most signals, default handler raises an error. */
 static ScmObj default_sighandler(ScmObj *args, int nargs, void *data)
 {
     int signum;
@@ -216,6 +224,21 @@ static SCM_DEFINE_SUBR(default_sighandler_stub, 1, 0,
                        NULL, NULL);
 
 #define DEFAULT_SIGHANDLER    SCM_OBJ(&default_sighandler_stub)
+
+/* For some signals, exits. */
+static ScmObj exit_sighandler(ScmObj *args, int nargs, void *data)
+{
+    Scm_Exit(0);
+}
+
+static SCM_DEFINE_STRING_CONST(exit_sighandler_name,
+                               "%exit-signal-handler", 22, 22);
+static SCM_DEFINE_SUBR(exit_sighandler_stub, 1, 0,
+                       SCM_OBJ(&exit_sighandler_name),
+                       exit_sighandler,
+                       NULL, NULL);
+
+#define EXIT_SIGHANDLER    SCM_OBJ(&exit_sighandler_stub)
 
 /*
  * sigset class
@@ -492,12 +515,16 @@ void Scm_SetMasterSigmask(sigset_t *set)
             sigHandlers.handlers[desc->num] = SCM_TRUE;
         } else if (!sigismember(&sigHandlers.masterSigset, desc->num)
                    && sigismember(set, desc->num)) {
-            /* add sighandler, only if defaultHandle is true. */
-            if (desc->defaultHandle) {
+            /* add sighandler if necessary */
+            if (desc->defaultHandle != SIGDEF_NOHANDLE) {
                 if (sigaction(desc->num, &acton, NULL) != 0) {
                     Scm_SysError("sigaction on %d failed", desc->num);
                 }
-                sigHandlers.handlers[desc->num] = DEFAULT_SIGHANDLER;
+                if (desc->defaultHandle == SIGDEF_EXIT) {
+                    sigHandlers.handlers[desc->num] = EXIT_SIGHANDLER;
+                } else {
+                    sigHandlers.handlers[desc->num] = DEFAULT_SIGHANDLER;
+                }
             }
         }
     }
