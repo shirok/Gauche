@@ -6,7 +6,8 @@ cc="@CC@"
 
 case "$host" in 
   *cygwin*)
-    dlltool --export-all --output-def gauche.def "$@"
+    objs=`echo $* | tr ' ' '\012' | sed s/^-l.*//g`
+    dlltool --export-all --output-def gauche.def $objs
     dllwrap --def gauche.def -o @LIBGAUCHE_SO@ "$@"
     ;;
   *)  
