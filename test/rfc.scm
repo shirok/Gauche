@@ -57,6 +57,7 @@ Content-Length: 4349
 (test-section "rfc.base64")
 (use rfc.base64)
 
+(test "encode" "" (lambda () (base64-encode-string "")))
 (test "encode" "YQ==" (lambda () (base64-encode-string "a")))
 (test "encode" "MA==" (lambda () (base64-encode-string "0")))
 (test "encode" "Cg==" (lambda () (base64-encode-string "\n")))
@@ -68,6 +69,7 @@ Content-Length: 4349
 (test "encode" "OTNiamFl" (lambda () (base64-encode-string "93bjae")))
 (test "encode" "QkFSMGVyOQ==" (lambda () (base64-encode-string "BAR0er9")))
 
+(test "decode" "" (lambda () (base64-decode-string "")))
 (test "decode" "a" (lambda () (base64-decode-string "YQ==")))
 (test "decode" "a" (lambda () (base64-decode-string "YQ=")))
 (test "decode" "a" (lambda () (base64-decode-string "YQ")))
@@ -80,6 +82,22 @@ Content-Length: 4349
 (test "decode" "BAR0er9" (lambda () (base64-decode-string "QkFSMGVyOQ==")))
 (test "decode" "BAR0er9" (lambda () (base64-decode-string "QkFS\r\nMGVyOQ\r\n==")))
 
+;;--------------------------------------------------------------------
+(test-section "rfc.uri")
+(use rfc.uri)
+
+(test "encode" "abc%3c%20%3e%20%22%20%23%25%7b%7c%7d%5c%5e"
+      (lambda () (uri-encode-string "abc< > \" #%{|}\\^")))
+(test "decode" "abc< > \" #%?{|}\\^"
+      (lambda ()
+        (uri-decode-string "abc%3c%20%3e%20%22%20%23%25%3f%7b%7c%7d%5c%5e")))
+(test "decode" "abc<+>+\"+#%?{|}\\^"
+      (lambda ()
+        (uri-decode-string "abc%3c+%3e+%22+%23%25%3f%7b%7c%7d%5c%5e")))
+(test "decode" "abc< > \" #%?{|}\\^"
+      (lambda ()
+        (uri-decode-string "abc%3c+%3e+%22+%23%25%3f%7b%7c%7d%5c%5e"
+                           :cgi-decode #t)))
 
 (test-end)
 
