@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vport.c,v 1.8 2004-11-12 02:42:28 shirok Exp $
+ *  $Id: vport.c,v 1.9 2004-11-14 08:58:20 shirok Exp $
  */
 
 #include "gauche/vport.h"
@@ -541,7 +541,7 @@ static int bport_flush(ScmPort *p, int cnt, int forcep)
  */
 static void bport_close(ScmPort *p)
 {
-    bport *data = (bport*)p->src.vt.data;
+    bport *data = (bport*)p->src.buf.data;
     SCM_ASSERT(data != NULL);
     if (!SCM_FALSEP(data->close_proc)) {
         Scm_Apply(data->close_proc, SCM_NIL);
@@ -553,7 +553,7 @@ static void bport_close(ScmPort *p)
  */
 static int bport_ready(ScmPort *p)
 {
-    bport *data = (bport*)p->src.vt.data;
+    bport *data = (bport*)p->src.buf.data;
     SCM_ASSERT(data != NULL);
 
     if (!SCM_FALSEP(data->ready_proc)) {
@@ -570,7 +570,7 @@ static int bport_ready(ScmPort *p)
  */
 static int bport_filenum(ScmPort *p)
 {
-    bport *data = (bport*)p->src.vt.data;
+    bport *data = (bport*)p->src.buf.data;
     SCM_ASSERT(data != NULL);
 
     if (SCM_FALSEP(data->filenum_proc)) {
@@ -587,7 +587,7 @@ static int bport_filenum(ScmPort *p)
  */
 static off_t bport_seek(ScmPort *p, off_t off, int whence)
 {
-    bport *data = (bport*)p->src.vt.data;
+    bport *data = (bport*)p->src.buf.data;
     SCM_ASSERT(data != NULL);
     if (!SCM_FALSEP(data->seek_proc)) {
         ScmObj r = Scm_Apply(data->seek_proc,
