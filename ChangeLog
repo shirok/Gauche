@@ -1,3 +1,9 @@
+2004-09-01  Shiro Kawai  <shiro@acm.org>
+
+	* ext/fcntl/fcntl.c (Scm_SysFcntl): Supports F_GETOWN and F_SETOWN
+	  if the system provides them.
+	* ext/fcntl/fcntl.scm, ext/fcntl/fcntlib.stub: ditto
+
 2004-08-28  Kimura Fuyuki  <fuyuki@hadaly.org>
 
 	* src/bignum.c (Scm_BignumToUI64): Avoid using `a=a=1' style

@@ -2469,6 +2469,24 @@ the lock is available.
 場合には @code{F_SETLK} のときは @code{#f} を返します。一方、@code{F_SETLKW}
 のときはロックが利用可能になるまで待ちます。
 @c COMMON
+
+@item F_GETOWN
+@vindex F_GETOWN
+Returns the process id or process group that will receive
+SIGIO and SIGURG signals for events on the file descriptor.
+Process group is indicated by a negative value.
+This flag is only available on the systems that has this 
+feature (BSD and Linux have this).
+
+@item F_SETOWN
+@vindex F_SETOWN
+Sets the process id or process group that will receive SIGIO
+and SIGURG signals for events on the file descriptor.
+Process group is indicated by a negative value.
+This flag is only available on the systems that has this 
+feature (BSD and Linux have this).
+Check out fcntl(2) manpage of your system for the details.
+
 @end table
 
 @c EN
