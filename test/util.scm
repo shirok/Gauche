@@ -1,15 +1,15 @@
 ;;
-;; test argorithm modules
+;; test util modules
 ;;
 
 (use gauche.test)
-(test-start "algorithm.*")
+(test-start "util")
 
 (use srfi-1)
 
 ;;-----------------------------------------------
-(test-section "algorithm.isomorph")
-(use algorithm.isomorph)
+(test-section "util.isomorph")
+(use util.isomorph)
 
 (define (make-data type)
   (let* ((z (vector #f #f #f))
@@ -27,8 +27,8 @@
 
 
 ;;-----------------------------------------------
-(test-section "algorithm.toposort")
-(use algorithm.toposort)
+(test-section "util.toposort")
+(use util.toposort)
 
 
 ;; using famous socks example (Corman)
