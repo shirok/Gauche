@@ -25,6 +25,7 @@ and so on.
 
 @c ----------------------------------------------------------------------
 @menu
+* Introduction to the object system::  
 * General Inquiry::             
 * Defining class::              
 * Defining methods::            
@@ -33,7 +34,579 @@ and so on.
 * Metaobject protocol::         
 @end menu
 
-@node General Inquiry, Defining class, Object system, Object system
+@node Introduction to the object system, General Inquiry, Object system, Object system
+@section  Introduction to the object system
+@c NODE オブジェクトシステムの紹介
+
+This section briefly explains the basic structure of
+Gauche's object system.   It is strongly influenced
+by CLOS (Common-Lisp Object System).
+If you have experience in CLOS or related systems
+such as TinyCLOS, STklos or Guile's object system,
+you may skip to tne next section.
+
+You can find the code of definitions in the examples of this section
+in @code{examples/oointro.scm} of Gauche's source distribution.
+
+Three concepts plays the central role in CLOS-like object systems:
+A @emph{class}, a @emph{generic function}, and a @emph{method}.
+
+A @emph{class} specifies a structure of object.
+It also defines a datatype (strictly speaking,
+it's not the same thing as a datatype,
+but let's skip the complicated part for now).
+
+For example, a point in 2D space can be represented by 
+x and y coordinates.
+A point class can be defined using @code{define-class} macro.
+In the shortest form, it can be defined like this:
+
+@example
+(define-class <2d-point> () (x y))
+@end example
+
+The symbol @code{<2d-point>} is the name of the class, and also
+the global variable @code{<2d-point>} is bound to a class object.
+Surrounding a class name by @code{<} and @code{>} is just a
+convention; you can pass any symbol to @code{define-class}.
+
+The second argument of @code{define-class} is a list of
+direct superclasses, from which you can inherit your class.
+We'll come back to it later.
+
+The third argument of @code{define-class} is a list of
+@emph{slots}.  A slot is a space, usually in each object,
+where you can store a value.  It is something similar to
+what is called a field or an instance variable in other
+object-oriented languages; but slots can be configured more
+than just a per-object storage space.
+
+Now we defined a 2D point class, so we can create an instance
+of a point.  You can pass a class to a generic function @code{make}
+to create an instance.  (Don't worry about what generic function
+is---think it as a special type of function, just for now).
+@example
+(define a-point (make <2d-point>))
+
+a-point  @result{} #<<2d-point> 0x8117570>
+@end example
+
+If you are using @code{gosh} interactively, you can use
+a generic function @code{describe} to inspect its internals.
+A short alias, @code{d}, is defined to @code{describe} for
+the convenience.  (See @ref{gauche.interactive - Interactive session}
+for the details).
+
+@example
+gosh> (d a-point)
+#<<2d-point> 0x8117570> is an instance of class <2d-point>
+slots:
+  x         : #<unbound>
+  y         : #<unbound>
+@end example
+
+In order to access or modify the value of the slot, you can use
+@code{slot-ref} and @code{slot-set!}, respectively.
+These names are taken from STklos.
+@example
+(slot-ref a-point 'x)  ;; access to the slot x of a-point
+  @result{} @r{error, since slot 'x doesn't have a value yet}
+
+(slot-set! a-point 'x 10.0)  ;; set 10.0 to the slot x of a-point
+
+(slot-ref a-point 'x)
+  @result{} 10.0
+@end example
+
+Gauche also provides a shorter name, @code{ref}, which can also
+be used in srfi-17's generalized @code{set!} syntax:
+@example
+(ref a-point 'x) @result{} 10.0
+
+(set! (ref a-point 'y) 20.0)
+
+(ref a-point 'y) @result{} 20.0
+@end example
+
+Now you can see slot values are set.
+@example
+gosh> (d a-point)
+#<<2d-point> 0x8117570> is an instance of class <2d-point>
+slots:
+  x         : 10.0
+  y         : 20.0
+@end example
+
+In practice, it is usually convenient if you can specify the default
+value for a slot, or give values for slots when you create an instance.
+Such information can be specified by @emph{slot options}.
+Let's modify the definition of @code{<2d-point>} like this:
+
+@example
+(define-class <2d-point> ()
+  ((x :init-value 0.0 :init-keyword :x :accessor x-of)
+   (y :init-value 0.0 :init-keyword :y :accessor y-of)))
+@end example
+
+Note that each slot specification is now a list, instead of just
+a symbol as in the previous example.
+The list's car now specifies the slot name, and its cdr
+gives various information.   The value after @code{:init-value}
+defines a default value of the slot.  The keyword after @code{:init-keyword}
+defines a keyword argument which can be passed to @code{make} to
+initialize the slot at creation time.
+The name after keyword @code{:accessor} is bound to a generic
+function that can be used to access/modify the slot, instead of
+using @code{slot-ref}/@code{slot-set!}.
+
+Let's see some interactive session.  You create an instance
+of the new @code{<2d-point>} class, and you can see the slots are
+initialized by the default values.
+@example
+gosh> (define a-point (make <2d-point>))
+a-point
+gosh> (d a-point)
+#<<2d-point> 0x8148680> is an instance of class <2d-point>
+slots:
+  x         : 0.0
+  y         : 0.0
+@end example
+
+You create another instance, this time giving initialization values
+by keyword arguments.
+@example
+gosh> (define b-point (make <2d-point> :x 50.0 :y -10.0))
+b-point
+gosh> (d b-point)
+#<<2d-point> 0x8155b80> is an instance of class <2d-point>
+slots:
+  x         : 50.0
+  y         : -10.0
+@end example
+
+Accessors are less verbose than @code{slot-ref}/@code{slot-set!}, thus
+convenient.
+@example
+gosh> (x-of a-point)
+0.0
+gosh> (x-of b-point)
+50.0
+gosh> (set! (y-of a-point) 3.33)
+#<undef>
+gosh> (y-of a-point)
+3.33
+@end example
+
+The full list of available slot options is described in 
+@ref{Defining class}.
+You might feel that the declarations of such slot options are overly
+verbose.  Actually it depends on the applications.
+Sometimes you find its flexibility convenient.  Besides,
+using a mechanism called metaobject protocol, you can customize
+how these slot options are interpreted, and you can add
+your own slot options as well.
+See @ref{Metaobject protocol}, for details.
+
+We can also have @code{<2d-vector>} class in similar fashion.
+
+@example
+(define-class <2d-vector> ()
+  ((x :init-value 0.0 :init-keyword :x :accessor x-of)
+   (y :init-value 0.0 :init-keyword :y :accessor y-of)))
+@end example
+
+Yes, we can use the same accessor name like @code{x-of}, and
+it is effectively overloaded.
+
+If you are familiar with mainstream object-oriented languages,
+you may wonder where methods are.  Here it is.
+The following form defines a method @code{move-by!} of
+three arguments, @var{pt}, @var{dy}, @var{dy}, where @var{pt} is
+an instance of @code{<2d-point>}.
+
+@example
+(define-method move-by! ((pt <2d-point>) dx dy)
+  (inc! (x-of pt) dx)
+  (inc! (y-of pt) dy))
+@end example
+
+The second argument of @code{define-method} macro specifies a
+@emph{method specializer}.  It indicates the first argument must be
+an instance of @code{<2d-point>}, and the second and third
+can be any type.   The syntax to call a method is just like
+the one to call an ordinary function.
+
+@example
+gosh> (move-by! b-point 1.4 2.5)
+#<undef>
+gosh> (d b-point)
+#<<2d-point> 0x8155b80> is an instance of class <2d-point>
+slots:
+  x         : 51.4
+  y         : -7.5
+@end example
+
+You can overload the method by different specializers; here
+you can move a point using a vector.
+
+@example
+(define-method move-by! ((pt <2d-point>) (delta <2d-vector>))
+  (move-by pt (x-of delta) (y-of delta)))
+@end example
+
+Specialization isn't limited to a user-defined classes.
+You can also specialize a method using Gauche's built-in type.
+
+@example
+(define-method move-by! ((pt <2d-point>) (c <complex>))
+  (move-by! pt (real-part c) (imag-part c)))
+@end example
+
+And here's the example session:
+@example
+gosh> (define d-vector (make <2d-vector> :x -9.0 :y 7.25))
+d-vector
+gosh> (move-by! b-point d-vector)
+#<undef>
+gosh> (d b-point)
+#<<2d-point> 0x8155b80> is an instance of class <2d-point>
+slots:
+  x         : 42.4
+  y         : -0.25
+gosh> (move-by! b-point 3+2i)
+#<undef>
+gosh> (d b-point)
+#<<2d-point> 0x8155b80> is an instance of class <2d-point>
+slots:
+  x         : 45.4
+  y         : -2.25
+@end example
+
+You see that a method is dispached not only by its primary
+receiver (@code{<2d-point>}), but also other arguments.
+In fact, there is no difference between the first argument and
+the rest.  In CLOS-like system a method does not belong to
+a particular class.
+
+So what is actually a method?  Inspecting @code{move-by!}
+reveals that it is an instance of @code{<generic>}, a generic function.
+(Note that @code{describe} truncates the printed value in @code{methods}
+slot for the sake of readability).
+
+@example
+gosh> move-by!
+#<generic move-by! (3)>
+gosh> (d move-by!)
+#<generic move-by! (3)> is an instance of class <generic>
+slots:
+  name      : move-by!
+  methods   : (#<method (move-by! <2d-point> <complex>)> #<method (move-
+gosh> (ref move-by! 'methods)
+(#<method (move-by! <2d-point> <complex>)>
+ #<method (move-by! <2d-point> <2d-vector>)> 
+ #<method (move-by! <2d-point> <top> <top>)>)
+@end example
+
+I said a generic function is a special type of function.
+It is recognized by Gauche as an applicable object, but
+when applied, it selects appropriate method(s) according to
+its arguments and calls the selected method(s).
+
+What the @code{define-method} macro actually does is (1) to create
+a generic function of the given name if it does not exist yet,
+(2) to create a method object with the given specializers
+and the body, and (3) to add the method object to the generic function.
+
+The accessors are also generic functions, created implicitly by the
+@code{define-class} macro.
+@example
+gosh> (d x-of)
+#<generic x-of (2)> is an instance of class <generic>
+slots:
+  name      : x-of
+  methods   : (#<method (x-of <2d-vector>)> #<method (x-of <2d-point>)>)
+@end example
+
+In the mainstream dynamic object-oriented languages, a class
+has many roles: it defines a structure and a type, creates a
+namespace for its slots and methods, and is responsible for
+method dispatch.  In Gauche, namespace is managed by modules,
+and method dispatch is handled by generic functions.
+
+The default printed representation of object is not very user-friendly.
+Gauche's @code{write} and @code{display} function calls a generic
+function @code{write-object} when it encounters an instance
+it doesn't know how to print.  You can define its method
+specialized to your class to customize how the instance is
+printed.
+
+@example
+(define-method write-object ((pt <2d-point>) port)
+  (format port "[[~a, ~a]]" (x-of pt) (y-of pt)))
+
+(define-method write-object ((vec <2d-vector>) port)
+  (format port "<<~a, ~a>>" (x-of vec) (y-of vec)))
+@end example
+
+And what you'll get is:
+@example
+gosh> a-point
+[[0.0, 3.33]]
+gosh> d-vector
+<<-9.0, 7.25>>
+@end example
+
+If you customize the printed representation to conform srfi-10
+format, and define a corresponding read-time constructor,
+you can make your instances to be written-out and read-back
+just like built-in objects.  See @ref{Read-time constructor} for
+the details.
+
+Several built-in functions have similar way to extend their
+functionality for user-defined objects.  For example, if
+you specialize a generic function @code{object-equal?}, 
+you can compare the instances by @code{equal?}:
+
+@example
+(define-method object-equal? ((a <2d-point>) (b <2d-point>))
+  (and (equal? (x-of a) (x-of b))
+       (equal? (y-of a) (y-of b))))
+
+(equal? (make <2d-point> :x 1 :y 2) (make <2d-point> :x 1 :y 2))
+  @result{} #t
+
+(equal? (make <2d-point> :x 1 :y 2) (make <2d-point> :x 2 :y 1))
+  @result{} #f
+
+(equal? (make <2d-point> :x 1 :y 2) 'a)
+  @result{} #f
+
+(equal? (list (make <2d-point> :x 1 :y 2)
+              (make <2d-point> :x 3 :y 4))
+        (list (make <2d-point> :x 1 :y 2)
+              (make <2d-point> :x 3 :y 4)))
+  @result{} #t
+@end example
+
+Let's proceed for more interesting examples.
+Think of a class @code{<shape>}, 
+which is an entity that can be drawn.
+As a base class, it keeps
+common attributes such as a color and thickness in its slots.
+
+@example
+(define-class <shape> ()
+  ((color     :init-value '(0 0 0) :init-keyword :color)
+   (thickness :init-value 2 init-keyword :thickness)))
+@end example
+
+When an instance is created, @code{make} calls a generic function
+@code{initialize}, which takes care of initializing slots
+such as processing init-keywords and init-values.
+You can customize the initialization behavior by specializing
+the @code{initialize} method.   The @code{initialize} method
+is called with two arguments, one is a newly created instance,
+and another is a list of arguments passed to @code{make}.
+
+We define a @code{initialize} method for @code{<shape>} class,
+so that the created shape will be automatically recorded in a global
+list.   Note that we don't want to replace system's
+@code{initialize} behavior completely,
+since we still need the init-keywords to be handled.
+
+@example
+(define *shapes* '())  ;; global shape list
+
+(define-method initialize ((self <shape>) initargs)
+  (next-method)  ;; let the system to handle slot initialization
+  (push! *shapes* self)) ;; record myself to the global list
+@end example
+
+The trick is a special method, @code{next-method}.  It can only be
+used inside a method body, and calls @emph{less specific method}
+of the same generic function---generally, it means you call the
+same method of @emph{superclass}.   
+Most object-oriented languages have the concept of calling
+superclass's method.  Because of multiple-argument
+dispatching and multiple inheritance, @code{next-method} is
+a little bit more complicated, but the basic idea is the same.
+
+So, what's the superclass of @code{<shape>}?  In fact, all 
+Scheme-defined class inherits a class called @code{<object>}.
+And it is @code{<object>}'s initialize method which takes care
+of slot initialization.  After calling @code{next-method}
+within your @code{initialize} method, you can assume all
+the slots are properly initialized.  So it is generally the
+first thing in your @code{initialize} method to call @code{next-method}.
+
+Let's inspect the above code.  When you call
+@code{(make <shape> args @dots{})}, the system allocates
+memory for an instance of @code{<shape>}, and calls
+@code{initialize} generic funciton with the instance and
+@code{args @dots{}}.  It is dispatched to the @code{initialize}
+method you just defined.  In it, you call @code{next-method},
+which in fact calls @code{<object>} class's @code{initialize}
+method.  It initializes the instance with init-values and init-keywords.
+After it returns, you register the new @code{<shape>} instance
+to the global shape list @code{*shapes*}.
+
+The @code{<shape>} class represents just an abstract concept of
+shape.  Now we define some concrete drawable shapes, by
+@emph{subclassing} the @code{<shape>} class.
+
+@example
+(define-class <point-shape> (<shape>)
+  ((point  :init-form (make <2d-point>) :init-keyword :point)))
+
+(define-class <polyline-shape> (<shape>)
+  ((points :init-value '() :init-keyword :points)
+   (closed :init-value #f  :init-keyword :closed)))
+@end example
+
+Note the second argument passed to @code{define-class}.
+It indicates that @code{<point-shape>} and @code{<polyline-shape>}
+inherits slots of @code{<shape>} class, and also instances of
+those subclasses can be accepted wherever an instance of 
+@code{<shape>} class is accepted.
+
+The @code{<point-shape>} adds one slot, @code{point}, which
+contains an instance of @code{<2d-point>} defined in the beginning
+of this section.  The @code{<polyline-shape>} class stores
+a list of points, and a flag, which specifies whether the end
+point of the polyline is connected to its starting point or not.
+
+Inheritance is a powerful mechanism that should be used with care,
+or it easily result a code which is untractable
+("Object-oriented programming offers a sustainable way to
+write spaghetti code.", as Paul Graham says in his article
+"The Hundred-Year Language").
+The rule of thumb is to make a subclass when you need a subtype.
+The inheritance of slots is just something that comes with,
+but it shouldn't be the main reason to do subclassing.
+You can always "include" the substructure, as is done in
+@code{<point-shape>} class.
+
+There appeared a new slot option in @code{<point-shape>} class.
+The @code{:init-form} slot option specifies the default value of
+the slot when init-keyword is not given to @code{make} method.
+However, unlike @code{:init-value}, with which the value is
+evaluated at the time the class is defined, 
+the value with @code{:init-form} is evaluated when the system
+actually needs the value.  So, in the @code{<point-shape>} instance,
+the default @code{<2d-point>} instance is only created if the
+@code{<point-shape>} instance is created without having @code{:point}
+init-keyword argument.
+
+A shape may be drawn in different formats for different devices.
+For now, we just consider a PostScript output.  To make the @code{draw}
+method polymorphic, we define a postscript output device class,
+@code{<ps-device>}.
+
+@example
+(define-class <ps-device> () ())
+@end example
+
+Then we can write a @code{draw} method, specialized for
+both @code{<shape>} and @code{<ps-device>}.
+
+@example
+(define-method draw ((self <shape>) (device <ps-device>))
+  (format #t "gsave\n")
+  (draw-path self device)
+  (apply format #t "~a ~a ~a setrgbcolor\n" (ref self 'color))
+  (format #t "~a setlinewidth\n" (ref self 'thickness))
+  (format #t "stroke\n")
+  (format #t "grestore\n"))
+@end example
+
+In this code, the @var{device} argument isn't
+used within the method body.  It is just used for method dispatching.
+If we eventually have different output devices, we can add
+a @code{draw} method that is specialized for such devices.
+
+The above @code{draw} method does the common work, but actual
+drawing must be done in specialized way for each subclasses.
+
+@example
+(define-method draw-path ((self <point-shape>) (device <ps-device>))
+  (apply format #t "newpath ~a ~a 1 0 360 arc closepath\n"
+         (point->list (ref self 'point))))
+
+(define-method draw-path ((self <polyline-shape>) (device <ps-device>))
+  (let ((pts (ref self 'points)))
+    (when (>= (length pts) 2)
+      (format #t "newpath\n")
+      (apply format #t "~a ~a moveto\n" (point->list (car pts)))
+      (for-each (lambda (pt)
+                  (apply format #t "~a ~a lineto\n" (point->list pt)))
+                (cdr pts))
+      (when (ref self 'closed)
+        (apply format #t "~a ~a lineto\n" (point->list (car pts))))
+      (format #t "closepath\n"))))
+@end example
+
+Finally, we do a little hack.  Let @code{draw} method work on
+the list of shapes, so that we can draw multiple shapes within a page
+in batch.
+
+@example
+(define-method draw ((shapes <list>) (device <ps-device>))
+  (format #t "%%\n")
+  (for-each (cut draw <> device) shapes)
+  (format #t "showpage\n"))
+@end example
+
+Then we can write some simple figures @dots{}.
+
+@example
+(use srfi-1)      ;; for iota
+(use math.const)  ;; for constant pi
+
+(define (shape-sample)
+
+  ;; creates 5 corner points of pentagon
+  (define (make-corners scale)
+    (map (lambda (i)
+           (let ((pt (make <2d-point>)))
+             (move-by! pt (make-polar scale (* i 2/5 pi)))
+             (move-by! pt 200 200)
+             pt))
+         (iota 5)))
+
+  (set! *shapes* '())  ;; clear the shape list
+  (let* ((corners (make-corners 100)))
+    ;; a pentagon in green
+    (make <polyline-shape>
+      :color '(0 1 0) :closed #t
+      :points corners)
+    ;; a star-shape in blue
+    (make <polyline-shape>
+      :color '(1 0 0) :closed #t
+      :points (list (list-ref corners 0)
+                    (list-ref corners 2)
+                    (list-ref corners 4)
+                    (list-ref corners 1)
+                    (list-ref corners 3)))
+    ;; put dots in each corner of the star
+    (for-each (cut make <point-shape> :point <>)
+              (make-corners 90))
+    ;; draw the shapes
+    (draw *shapes* (make <ps-device>)))
+  )
+@end example
+
+The function @code{shape-sample} writes out a PostScript code of
+simple drawing to the current output port.  You can write it out
+to file by the following expression, and then view the result
+by PostScript viewer such as GhostScript.
+
+@example
+(with-output-to-file "oointro.ps" shape-sampe)
+@end example
+
+
+@c ----------------------------------------------------------------------
+@node General Inquiry, Defining class, Introduction to the object system, Object system
 @section  General Inquiry
 @c NODE 一般的な問い合わせ
 
@@ -41,12 +614,13 @@ and so on.
 @c EN
 Returns a class metaobject of @var{obj}.
 @c JP
-@var{obj}のメタオブジェクト、クラスを返します。
+@var{obj}のクラスを返します。
 @c COMMON
 
 @example
-(class-of 3)     @result{} #<class <integer>>
-(class-of "foo") @result{} #<class <string>>
+(class-of 3)         @result{} #<class <integer>>
+(class-of "foo")     @result{} #<class <string>>
+(class-of <integer>) @result{} #<class <class>>
 @end example
 @end defun
 
@@ -290,7 +864,7 @@ It can be defined like the following code
 
 @c ----------------------------------------------------------------------
 @node Metaobject protocol,  , Accessing Instance, Object system
-@section Metaobject procotol
+@section Metaobject protocol
 @c NODE メタオブジェクトプロトコル
 
 @menu

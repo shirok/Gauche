@@ -1,3 +1,9 @@
+2003-11-07  Shiro Kawai  <shiro@acm.org>
+
+	* example/oointro.scm, doc/object.texi : added "introduction to
+	  the object system" section, and the code snippet of the
+	  examples.
+
 2003-11-05  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sxml/sxpath.scm.in, ext/sxml/tools.scm.in : added missing
