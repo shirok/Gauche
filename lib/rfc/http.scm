@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: http.scm,v 1.4 2002-11-14 05:08:42 shirok Exp $
+;;;  $Id: http.scm,v 1.5 2002-11-14 05:16:07 shirok Exp $
 ;;;
 
 ;; HTTP handling routines.
@@ -112,7 +112,8 @@
                            (assoc "location" headers))
                       => (lambda (loc)
                            (let1 uri (canonical-uri (cadr loc) host)
-                             (when (member uri history)
+                             (when (or (member uri history)
+                                       (> (length history) 20))
                                (errorf "redirection is looping via ~a" uri))
                              (values code headers #f uri))))
                      (else
