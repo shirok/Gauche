@@ -1,3 +1,25 @@
+2001-06-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/syslib.stub: added fdset operations
+
+2001-06-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/proc.c, src/compile.c, src/vm.c, src/gauche/vminsn.c :
+	  support generalized setter natively.
+	* lib/srfi-17.scm : removed.
+	* src/genstub : added 'setter' directive to define generalized
+	  setter in C code.
+
+2001-06-16  Shiro Kawai  <shiro@scherzo>
+
+	* src/gauche.h, src/genstub : changed to use macros rather than
+	  bare static initializer in generated code
+
+2001-06-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/genstub : reorganized the structure in more object-oriented
+	  way.
+
 2001-06-13  Shiro Kawai  <shiro@acm.org>
 
 	* configure.in : made work with Solaris
