@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.52 2001-09-23 05:05:43 shirok Exp $
+ *  $Id: string.c,v 1.53 2001-10-28 22:39:27 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1016,24 +1016,39 @@ static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_StringPointerClass, NULL);
 
-ScmObj Scm_MakeStringPointer(ScmString *src, int index)
+ScmObj Scm_MakeStringPointer(ScmString *src, int index, int start, int end)
 {
-    const char *ptr;
+    int len = SCM_STRING_LENGTH(src);
+    int siz = SCM_STRING_SIZE(src);
+    int effective_size;
+    const char *sptr, *ptr, *eptr;
     ScmStringPointer *sp;
+
+    if (start < 0 || start > len)
+        Scm_Error("start argument out of range: %d", start);
+    if (end == -1) end = len; /* special */
+    if (end < 0 || end > len)
+        Scm_Error("end argument out of range: %d", end);
+    if (end < start)
+        Scm_Error("end (%d) must comes after start(%d)", end, start);
+    while (index < 0) index += (end - start) + 1;
+    if (index > (end - start)) goto badindex;
+    
     if (SCM_STRING_SINGLE_BYTE_P(src)) {
-        while (index < 0) index += SCM_STRING_SIZE(src)+1;
-        if (index > SCM_STRING_SIZE(src)) goto badindex;
-        else           ptr = src->start + index;
+        sptr = src->start + start;
+        ptr = sptr + index;
+        effective_size = end - start;
     } else {
-        while (index < 0) index += SCM_STRING_LENGTH(src)+1;
-        if (index > SCM_STRING_LENGTH(src)) goto badindex;
-        ptr = forward_pos(src->start, index);
+        sptr = forward_pos(src->start, start);
+        ptr = forward_pos(sptr, index);
+        eptr = forward_pos(sptr, end - start);
+        effective_size = eptr - ptr;
     }
     sp = SCM_NEW(ScmStringPointer);
     SCM_SET_CLASS(sp, SCM_CLASS_STRING_POINTER);
-    sp->length = (SCM_STRING_INCOMPLETE_P(src)? -1 : SCM_STRING_LENGTH(src));
-    sp->size = SCM_STRING_SIZE(src);
-    sp->start = SCM_STRING_START(src);
+    sp->length = (SCM_STRING_INCOMPLETE_P(src)? -1 : (end-start));
+    sp->size = effective_size;
+    sp->start = sptr;
     sp->index = index;
     sp->current = ptr;
     return SCM_OBJ(sp);
