@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.72 2001-04-05 10:01:27 shiro Exp $
+ *  $Id: vm.c,v 1.73 2001-04-07 06:38:18 shiro Exp $
  */
 
 #include "gauche.h"
@@ -399,7 +399,7 @@ static void run_loop()
         
         if (!SCM_VM_INSNP(code)) {
             /* literal object or source info. */
-            if (!SCM_SOURCE_INFOP(code)) { val0 = code; }
+            if (!SCM_SOURCE_INFOP(code)) { val0 = code; theVM->numVals = 1; }
             continue;
         }
 
@@ -424,12 +424,10 @@ static void run_loop()
                 PUSH_CONT(next);
                 PUSH_ENV_HDR();
                 pc = prep;
-                vm->numVals = 1; /* default */
                 continue;
             }
             CASE(SCM_VM_PRE_TAIL) {
                 PUSH_ENV_HDR();
-                vm->numVals = 1; /* default */
                 continue;
             }
             CASE(SCM_VM_TAIL_CALL) ; /* FALLTHROUGH */
@@ -516,6 +514,7 @@ static void run_loop()
                     argp = (ScmEnvFrame*)to;
                     sp = to + ENV_SIZE(argcnt);
                 }
+                vm->numVals = 1; /* default */
 
                 /*
                  * Step 3. Call
@@ -1434,6 +1433,8 @@ static ScmObj throw_cont_body(ScmObj cur_handlers, /* dynamic handlers of
                                                      target continuation */ 
 {
     void *data[4];
+    int nargs, i;
+    ScmObj ap;
 
     /*
      * first, check to see if we need to evaluate dynamic handlers.
@@ -1484,8 +1485,21 @@ static ScmObj throw_cont_body(ScmObj cur_handlers, /* dynamic handlers of
     theVM->cont = cd->cont;
     theVM->handlers = dest_handlers;
     theVM->history = cd->history;
-    
-    return args;
+
+    nargs = Scm_Length(args);
+    if (nargs == 1) {
+        return SCM_CAR(args);
+    } else if (nargs < 1) {
+        return SCM_UNDEFINED;
+    } else if (nargs >= SCM_VM_MAX_VALUES) {
+        Scm_Error("too many values passed to the continuation");
+    }
+
+    for (i=0, ap=SCM_CDR(args); SCM_PAIRP(ap); i++, ap=SCM_CDR(ap)) {
+        theVM->vals[i] = SCM_CAR(ap);
+    }
+    theVM->numVals = nargs;
+    return SCM_CAR(args);
 }
 
 static ScmObj throw_cont_cc(ScmObj result, void **data)
@@ -1494,7 +1508,6 @@ static ScmObj throw_cont_cc(ScmObj result, void **data)
     ScmObj dest_handlers = SCM_OBJ(data[1]);
     struct cont_data *cd = (struct cont_data *)data[2];
     ScmObj args = SCM_OBJ(data[3]);
-
     return throw_cont_body(cur_handlers, dest_handlers, cd, args);
 }
 
@@ -1513,10 +1526,6 @@ static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
     }
     if (h == NULL)
         Scm_Error("a continuation is thrown outside of it's extent: %p", cd);
-    
-    SCM_ASSERT(cont != NULL);
-    args = argframe[0];
-    
     return throw_cont_body(current, handlers, cd, args);
 }
 
@@ -1568,7 +1577,7 @@ ScmObj Scm_VMCallCC(ScmObj proc)
     data->handlers = vm->handlers;
     data->history = vm->history;
 
-    contproc = Scm_MakeSubr(throw_continuation, data, 1, 0,
+    contproc = Scm_MakeSubr(throw_continuation, data, 0, 1,
                             SCM_MAKE_STR("continuation"));
     return Scm_VMApply1(proc, contproc);
 }
