@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.131 2001-05-06 23:59:36 shirok Exp $
+ *  $Id: gauche.h,v 1.132 2001-05-07 08:39:16 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1518,8 +1518,6 @@ enum {
     SCM_ROUND_ROUND
 };
 extern ScmObj Scm_Round(ScmObj num, int mode);
-
-extern ScmObj Scm_Expt(ScmObj z1, ScmObj z2);
 
 extern ScmObj Scm_Magnitude(ScmObj z);
 extern ScmObj Scm_Angle(ScmObj z);
