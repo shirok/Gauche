@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.102 2004-09-17 03:42:10 shirok Exp $
+ *  $Id: port.c,v 1.103 2004-09-17 10:00:00 shirok Exp $
  */
 
 #include <unistd.h>
@@ -1023,37 +1023,37 @@ ScmObj Scm_MakeVirtualPort(int direction, ScmPortVTable *vtable)
 }
 
 /*===============================================================
- * Program-source port
+ * Coding-aware port
  */
 
-/* Source port wraps an input port, and specifically recognizes
-   'encoding' magic comment. */
+/* Coding-aware port wraps an input port, and specifically recognizes
+   'coding' magic comment.   It is primarily used when loading source
+   code, but can be used separately. */
 
 /* gauche.charconv sets the pointer */
-
-ScmPort *(*Scm_ProgramSourceConversionHook)(ScmPort *src,
-                                            const char *srcencoding)
+ScmPort *(*Scm_CodingAwarePortHook)(ScmPort *src,
+                                    const char *srcencoding)
     = NULL;
 
-#define SOURCE_MAGIC_COMMENT_LINES 2 /* maximum number of lines to be
+#define CODING_MAGIC_COMMENT_LINES 2 /* maximum number of lines to be
                                         looked at for the 'encoding' magic
                                         comment. */
 
-typedef struct source_port_data_rec {
+typedef struct coding_port_data_rec {
     ScmPort *source;            /* source port */
     int state;                  /* port state; see below */
     const char *pbuf;           /* prefetched buffer.  NUL terminated.
-                                   contains at most SOURCE_MAGIC_COMMENT_LINES
+                                   contains at most CODING_MAGIC_COMMENT_LINES
                                    newlines. */
     int pbufsize;               /* # of bytes in pbuf */
-} source_port_data;
+} coding_port_data;
 
 enum {
-    SOURCE_PORT_INIT,           /* initial state */
-    SOURCE_PORT_RECOGNIZED,     /* prefetched up to two lines, and
+    CODING_PORT_INIT,           /* initial state */
+    CODING_PORT_RECOGNIZED,     /* prefetched up to two lines, and
                                    conversion port is set if necessary.
                                    there are buffered data in lines[]. */
-    SOURCE_PORT_FLUSHED         /* prefetched lines are flushed. */
+    CODING_PORT_FLUSHED         /* prefetched lines are flushed. */
 };
 
 /* A hardcoded DFA to recognize #/;.*coding[:=]\s*([\w.-]+)/ */
@@ -1101,8 +1101,8 @@ static const char *look_for_encoding(const char *buf)
     return encoding;
 }
 
-static void source_port_recognize_encoding(ScmPort *port,
-                                           source_port_data *data)
+static void coding_port_recognize_encoding(ScmPort *port,
+                                           coding_port_data *data)
 {
     ScmDString ds;
     int num_newlines = 0, c;
@@ -1111,7 +1111,7 @@ static void source_port_recognize_encoding(ScmPort *port,
 
     SCM_ASSERT(data->source != NULL);
 
-    /* Prefetch up to SOURCE_MAGIC_COMMENT_LINES lines or the first NUL
+    /* Prefetch up to CODING_MAGIC_COMMENT_LINES lines or the first NUL
        character.   data->pbuf ends up holding NUL terminated string. */
     Scm_DStringInit(&ds);
     for (;;) {
@@ -1126,7 +1126,7 @@ static void source_port_recognize_encoding(ScmPort *port,
         if (c == '\r') {   /* for the source that only uses '\r' */
             cr_seen = TRUE;
         } else if (c == '\n' || cr_seen) {
-            if (++num_newlines >= SOURCE_MAGIC_COMMENT_LINES) {
+            if (++num_newlines >= CODING_MAGIC_COMMENT_LINES) {
                 if (cr_seen) Scm_UngetbUnsafe(c, data->source);
                 break;
             }
@@ -1145,44 +1145,44 @@ static void source_port_recognize_encoding(ScmPort *port,
         return;
     }
 
-    if (Scm_ProgramSourceConversionHook == NULL) {
+    if (Scm_CodingAwarePortHook == NULL) {
         /* Require gauche.charconv.
            NB: we don't need mutex here, for loading the module is
            serialized in Scm_Require. */
         Scm_Require(SCM_MAKE_STR("gauche/charconv"));
-        if (Scm_ProgramSourceConversionHook == NULL) {
+        if (Scm_CodingAwarePortHook == NULL) {
             Scm_Error("couldn't load gauche.charconv module");
         }
     }
-    data->source = Scm_ProgramSourceConversionHook(data->source, encoding);
+    data->source = Scm_CodingAwarePortHook(data->source, encoding);
 }
 
-static int source_filler(ScmPort *p, int cnt)
+static int coding_filler(ScmPort *p, int cnt)
 {
     int nread = 0, i;
-    source_port_data *data = (source_port_data*)p->src.buf.data;
+    coding_port_data *data = (coding_port_data*)p->src.buf.data;
     char *datptr = p->src.buf.end;
 
     SCM_ASSERT(data->source);
 
     /* deals with the most frequent case */
-    if (data->state == SOURCE_PORT_FLUSHED) {
+    if (data->state == CODING_PORT_FLUSHED) {
         return Scm_GetzUnsafe(datptr, cnt, data->source);
     }
     
-    if (data->state == SOURCE_PORT_INIT) {
-        source_port_recognize_encoding(p, data);
-        data->state = SOURCE_PORT_RECOGNIZED;
+    if (data->state == CODING_PORT_INIT) {
+        coding_port_recognize_encoding(p, data);
+        data->state = CODING_PORT_RECOGNIZED;
     }
 
-    /* Here, we have data->state == SOURCE_PORT_RECOGNIZED */
+    /* Here, we have data->state == CODING_PORT_RECOGNIZED */
     if (data->pbufsize > 0) {
         if (data->pbufsize <= cnt) {
             memcpy(datptr, data->pbuf, data->pbufsize);
             nread = data->pbufsize;
             data->pbuf = NULL;
             data->pbufsize = 0;
-            data->state = SOURCE_PORT_FLUSHED;
+            data->state = CODING_PORT_FLUSHED;
         } else {
             memcpy(datptr, data->pbuf, cnt);
             nread = cnt;
@@ -1191,62 +1191,62 @@ static int source_filler(ScmPort *p, int cnt)
         }
         return nread;
     } else {
-        data->state = SOURCE_PORT_FLUSHED;
+        data->state = CODING_PORT_FLUSHED;
         return Scm_GetzUnsafe(datptr, cnt, data->source);
     }
 }
 
-static int source_closer(ScmPort *p)
+static int coding_closer(ScmPort *p)
 {
-    source_port_data *data = (source_port_data*)p->src.buf.data;
+    coding_port_data *data = (coding_port_data*)p->src.buf.data;
     if (data->source) {
         Scm_ClosePort(data->source);
         data->source = NULL;
     }
 }
 
-static int source_ready(ScmPort *p)
+static int coding_ready(ScmPort *p)
 {
-    source_port_data *data = (source_port_data*)p->src.buf.data;
+    coding_port_data *data = (coding_port_data*)p->src.buf.data;
     if (data->source == NULL) return TRUE;
-    if (data->state == SOURCE_PORT_RECOGNIZED) {
+    if (data->state == CODING_PORT_RECOGNIZED) {
         return SCM_FD_READY;
     } else {
         return Scm_ByteReadyUnsafe(p);
     }
 }
 
-static int source_filenum(ScmPort *p)
+static int coding_filenum(ScmPort *p)
 {
-    source_port_data *data = (source_port_data*)p->src.buf.data;
+    coding_port_data *data = (coding_port_data*)p->src.buf.data;
     if (data->source == NULL) return -1;
     return Scm_PortFileNo(data->source);
 }
 
-ScmObj Scm_MakeProgramSourcePort(ScmPort *iport)
+ScmObj Scm_MakeCodingAwarePort(ScmPort *iport)
 {
     ScmObj p;
     ScmPortBuffer bufrec;
-    source_port_data *data;
+    coding_port_data *data;
     int i;
 
     if (!SCM_IPORTP(iport)) {
-        Scm_Error("open-source-port requires an input port, but got %S", iport);
+        Scm_Error("open-coding-aware-port requires an input port, but got %S", iport);
     }
-    data = SCM_NEW(source_port_data);
+    data = SCM_NEW(coding_port_data);
     data->source = iport;
-    data->state = SOURCE_PORT_INIT;
+    data->state = CODING_PORT_INIT;
     data->pbuf = NULL;
     data->pbufsize = 0;
 
     bufrec.mode = SCM_PORT_BUFFER_FULL;
     bufrec.buffer = NULL;
     bufrec.size = 0;
-    bufrec.filler = source_filler;
+    bufrec.filler = coding_filler;
     bufrec.flusher = NULL;
-    bufrec.closer = source_closer;
-    bufrec.ready = source_ready;
-    bufrec.filenum = source_filenum;
+    bufrec.closer = coding_closer;
+    bufrec.ready = coding_ready;
+    bufrec.filenum = coding_filenum;
     bufrec.seeker = NULL;
     bufrec.data = (void*)data;
     p = Scm_MakeBufferedPort(Scm_PortName(iport), SCM_PORT_INPUT,

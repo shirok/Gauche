@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.381 2004-09-17 03:42:10 shirok Exp $
+ *  $Id: gauche.h,v 1.382 2004-09-17 10:00:00 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1282,7 +1282,7 @@ SCM_EXTERN ScmObj Scm_MakePortWithFd(ScmObj name,
 				     int fd,
 				     int bufmode,
 				     int ownerp);
-SCM_EXTERN ScmObj Scm_MakeProgramSourcePort(ScmPort *iport);
+SCM_EXTERN ScmObj Scm_MakeCodingAwarePort(ScmPort *iport);
 
 SCM_EXTERN ScmObj Scm_PortName(ScmPort *port);
 SCM_EXTERN int    Scm_PortLine(ScmPort *port);

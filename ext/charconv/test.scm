@@ -407,7 +407,7 @@
    ))
 
 ;;--------------------------------------------------------------------
-(test-section "program source encoding")
+(test-section "coding-aware port")
 
 (define *target-string*
   (case (gauche-character-encoding)
@@ -418,13 +418,13 @@
      (read-from-string
       "\"\\xe3\\x81\\x93\\xe3\\x82\\x93\\xe3\\x81\\xab\\xe3\\x81\\xa1\\xe3\\x81\\xaf\\xe3\\x80\\x81\\xe4\\xb8\\x96\\xe7\\x95\\x8c\""))))
 
-(define (test-program-source-port num encoding)
+(define (test-coding-aware-port num encoding)
   (when (ces-conversion-supported? (gauche-character-encoding) encoding)
     (test* (format "program source port reading from jpsrc~a.~a" num encoding)
            *target-string*
            (call-with-input-file (format "data/jpsrc~a.~a.scm" num encoding)
              (lambda (in)
-               (let ((src (open-program-source-port in)))
+               (let ((src (open-coding-aware-port in)))
                  (let loop ((x (read src)))
                    (cond ((eof-object? x) (close-input-port src) x)
                          ((eq? (cadr x) '*the-string*)
@@ -434,6 +434,6 @@
 
 (dolist (num '(1 2 3))
   (dolist (enc '("EUCJP" "SJIS" "UTF-8"))
-    (test-program-source-port num enc)))
+    (test-coding-aware-port num enc)))
 
 (test-end)

@@ -581,27 +581,27 @@
        (read-from-string "#;#;(123 456) 789 1"))
 
 ;;-------------------------------------------------------------------
-(test-section "program-source-port basic")
+(test-section "coding-aware-port basic")
 
 ;; Testing source port _without_ any conversion.  Basically, these
 ;; tests just checks up the boundary condition of source-port prefetching
 ;; routine.
 ;; The actual conversion is tested in ext/charconv.
 
-(define (with-program-source-port input proc)
+(define (with-coding-aware-port input proc)
   (let* ((src  (open-input-string input))
-         (wrap (open-program-source-port src)))
+         (wrap (open-coding-aware-port src)))
     (proc src wrap)))
 
 (test* "ownership" #t
-       (with-program-source-port
+       (with-coding-aware-port
         "abc"
         (lambda (src wrap)       
           (close-input-port wrap)          
           (port-closed? src))))
 
 (test* "read from empty port" '(#t #t #t #t #t)
-       (map (lambda (p) (with-program-source-port "" p))
+       (map (lambda (p) (with-coding-aware-port "" p))
             (list
              (lambda (src wrap) (eof-object? (read-char wrap)))
              (lambda (src wrap) (eof-object? (read-byte wrap)))
@@ -615,7 +615,7 @@
   (test* "read from simple contents"
          tdata
          (map (lambda (i)
-                (with-program-source-port
+                (with-coding-aware-port
                  i
                  (lambda (src wrap)
                    (let loop ((ch (read-char wrap))
@@ -636,7 +636,7 @@
   (test* "to confuse DFA"
          tdata
          (map (lambda (i)
-                (with-program-source-port
+                (with-coding-aware-port
                  i
                  (lambda (src wrap)
                    (let loop ((ch (read-char wrap))

@@ -1,9 +1,9 @@
 2004-09-16  Shiro Kawai  <shiro@acm.org>
 
-	* src/port.c (Scm_MakeProgramSourcePort): preparation of enabling
+	* src/port.c (Scm_MakeCodingAwarePort): preparation of enabling
           'coding:' magic comment in the source file.
 	* src/gauche.h: ditto
-	* src/extlib.stub (open-program-source-port): ditto
+	* src/extlib.stub (open-coding-aware-port): ditto
 	* ext/charconv/charconv.c: ditto
 	* tests/io.scm, ext/charconv/test.scm: ditto.
 	* src/portapi.c (Scm_ByteReady): added
