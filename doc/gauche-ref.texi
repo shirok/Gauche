@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.426 2003-07-21 12:00:13 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.427 2004-01-19 22:28:35 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -72,6 +72,13 @@ Gaucheのバージョン@VERSION@に対応します。
 * References::                  
 * C to Scheme mapping::         
 * Indices::                     
+
+@detailmenu
+* Function and Syntax Index::   
+* Module Index::                
+* Class Index::                 
+* Variable Index::              
+@end detailmenu
 @end menu
 
 @include intro.texi

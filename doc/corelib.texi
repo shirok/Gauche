@@ -179,13 +179,13 @@ are topologically equal, i.e., if one has a shared substructure,
 the other has a shared substructure in the same way.
 @code{Equal?} can't handle it; module @code{util.isomorph} 
 provides a procedure @code{isomorphic?} which does the job
-(@xref{util.isomorph - Determine isomorphism}).
+(@xref{Determine isomorphism}).
 @c JP
 しばしば、ふたつの複合型オブジェクトに関して、両者がトポロジー的に等しいこと、
 すなわち一方が共有する部分構造を持っている場合にもう一方も同じように部分構造を
 共有しているかどうかを調べたいことがあります。@code{equal?}はその目的には
 使えません。モジュール@code{util.isomorph}の提供する@code{isomorphic?}が
-その目的に使えます。(@ref{util.isomorph - Determine isomorphism}参照)。
+その目的に使えます。(@ref{Determine isomorphism}参照)。
 @c COMMON
 
 @c ----------------------------------------------------------------------
@@ -1078,23 +1078,23 @@ Pairs and lists are one of the most fundamental data structure in Scheme.
 Gauche core provides all standard list procedures, plus some useful
 procedures that are commonly supported in lots of implementations.
 If they are not enough, you can find more procedures in the modules
-described in @ref{srfi-1 - List library}, 
-@ref{util.list - Additional list library}, and
-@ref{util.combinations - Combination library}.
-See also @ref{gauche.collection - Collection framework} and
-@ref{gauche.sequence - Sequence framework} for generic collection/sequence
+described in @ref{List library}, 
+@ref{Additional list library}, and
+@ref{Combination library}.
+See also @ref{Collection framework} and
+@ref{Sequence framework} for generic collection/sequence
 operations.
 @c JP
 ペアとリストはSchemeにおける最も基本的なデータ構造のひとつです。
 Gaucheのコアは全ての標準のリスト手続きと、多くのScheme実装に見られる
 便利な手続きのいくつかを提供します。それらで足りない場合は
-さらに多くの手続きが@ref{srfi-1 - List library}、
-@ref{util.list - Additional list library}、
-@ref{util.combinations - Combination library}
+さらに多くの手続きが@ref{List library}、
+@ref{Additional list library}、
+@ref{Combination library}
 といったモジュールで提供されています。
 また、リストに限らないジェネリックなシーケンス/コレクションの操作が
-@ref{gauche.collection - Collection framework}と
-@ref{gauche.sequence - Sequence framework}で提供されています。
+@ref{Collection framework}と
+@ref{Sequence framework}で提供されています。
 @c COMMON
 
 @menu
@@ -1488,10 +1488,10 @@ Otherwise, @code{#f} is returned.
 @c COMMON
 
 @c EN
-If you use SRFI-1 (@xref{srfi-1 - List library}), @code{member} is extended
+If you use SRFI-1 (@xref{List library}), @code{member} is extended
 to take optional argument for a equality procedure.
 @c JP
-SRFI-1 (@ref{srfi-1 - List library}) を使うと、@code{member}は
+SRFI-1 (@ref{List library}) を使うと、@code{member}は
 オプショナルな同一性判定手続きを取るように拡張されます。
 @c COMMON
 @example
@@ -1524,10 +1524,10 @@ If no pair matches, these return @code{#f}.
 @c COMMON
 
 @c EN
-If you use SRFI-1 (@xref{srfi-1 - List library}), @code{assoc} is extended
+If you use SRFI-1 (@xref{List library}), @code{assoc} is extended
 to take optional argument for a equality procedure.
 @c JP
-SRFI-1 (@ref{srfi-1 - List library}) を使うと、@code{assoc}は
+SRFI-1 (@ref{List library}) を使うと、@code{assoc}は
 オプショナルな同一性判定手続きを取るように拡張されます。
 @c COMMON
 @end defun
@@ -1977,7 +1977,7 @@ same as @code{char->integer} and @code{integer->char}.
 
 When Gauche's internal encoding differs from UTF-8, these procedures
 implicitly loads @code{gauche.charconv} module to convert internal
-character code to UCS or vice versa (@xref{gauche.charconv - Character code conversion}).
+character code to UCS or vice versa (@xref{Character code conversion}).
 If @var{char} doesn't have corresponding UCS codepoint, 
 @code{char->ucs} returns @code{#f}.  If UCS codepoint @var{n} can't
 be represented in the internal character encoding, @code{ucs->char}
@@ -1993,7 +1993,7 @@ Gaucheの内部文字エンコーディングがUTF-8でコンパイルされている場合は、
 
 Gaucheの内部文字エンコーディングがUTF-8でない場合、
 これらの手続きは@code{gauche.charconv}モジュールを使って
-内部文字コードとUCSとの変換を行います (@ref{gauche.charconv - Character code conversion}参照)。
+内部文字コードとUCSとの変換を行います (@ref{Character code conversion}参照)。
 @var{char}が対応するUCSコードを持っていない場合、@code{char->ucs}は@code{#f}を
 返します。UCSコード@code{n}に対応する文字が内部エンコーディングで定義されていない
 場合、変換ルーチンが代替文字を提供していればそれを、そうでなければ@code{#f}
@@ -2113,14 +2113,14 @@ Gauche provides built-in support of character set creation and
 a predicate that tests whether a character is in the set or not.
 
 Further operations, such as set algebra, is defined in SRFI-14
-module (@xref{srfi-14 - Character-set library}).
+module (@xref{Character-set library}).
 @c JP
 文字の集合を取り扱う、文字集合(キャラクタセット)のクラスです。
 Gaucheは文字集合オブジェクトのサポートと、
 ある文字がその集合に属するかどうかを調べる手続きを言語組み込みで持っています。
 
 文字集合に関する他の操作、例えば集合演算などは、SRFI-14モジュール
-(@ref{srfi-14 - Character-set library}参照) で提供されています。
+(@ref{Character-set library}参照) で提供されています。
 @c COMMON
 @end deftp
 
@@ -2305,12 +2305,12 @@ a sequence of characters, or a sequence of bytes.
 @c EN
 R5RS string operations are very minimal.  Gauche supports some
 extra built-in operations, and also a rich string library
-defined in SRFI-13.   @xref{srfi-13 - String library}, for details about SRFI-13.
+defined in SRFI-13.   @xref{String library}, for details about SRFI-13.
 @c JP
 R5RSに定義されている文字列操作は非常に限られています。
 Gaucheでは追加の組込み手続きのほか、
 SRFI-13に定義されている豊富な文字列ライブラリを備えています。
-SRFI-13については@ref{srfi-13 - String library}を参照してください。
+SRFI-13については@ref{String library}を参照してください。
 @c COMMON
 
 @menu
@@ -3118,12 +3118,12 @@ order (either forward or backward).
 
 @c EN
 Higher level string iterators and accessors are constructed on top of 
-this primitive.  @xref{srfi-13 - String library}, for details.
+this primitive.  @xref{String library}, for details.
 It is highly recommended to use SRFI-13 functions instead of these
 string pointer objects, for portability.
 @c JP
 このプリミティブに基づき、高レベルな文字列イテレータとアクセッサが
-構成されています。詳細は、@ref{srfi-13 - String library}を参照して下さい。
+構成されています。詳細は、@ref{String library}を参照して下さい。
 ポータビリティのため、これらの文字列ポインタオブジェクトの代わりに
 SRFI-13の関数を使うことを強く推奨します。
 @c COMMON
@@ -3634,10 +3634,10 @@ generic mechanism used to implement this.
 
 
 @c EN
-Seel also @ref{gauche.regexp - Regular expression utilities}, which defines
+Seel also @ref{Regular expression utilities}, which defines
 useful macros and functions to deal with regular expression matching.
 @c JP
-また、@ref{gauche.regexp - Regular expression utilities}には、正規表現検索に便利な
+また、@ref{Regular expression utilities}には、正規表現検索に便利な
 マクロや手続きが定義されています。参照して下さい。
 @c COMMON
 
@@ -3655,10 +3655,10 @@ Once created, a vector can't be resized.
 
 Class @code{<vector>} inherits @code{<sequence>} and 
 you can use various generic functions such as @code{map} and @code{fold}
-on it.   @xref{gauche.collection - Collection framework}, and @xref{gauche.sequence - Sequence framework}.
+on it.   @xref{Collection framework}, and @xref{Sequence framework}.
 
 If you keep only a homogeneous numeric type, you may be able
-to use SRFI-4 homogenous vectors (@xref{srfi-4 - Homogeneous vectors}).
+to use SRFI-4 homogenous vectors (@xref{Homogeneous vectors}).
 @c JP
 ベクタはSchemeオブジェクトの単純な一次元配列です。
 インデックスを用いて定数時間でその要素にアクセスできます。
@@ -3666,11 +3666,11 @@ to use SRFI-4 homogenous vectors (@xref{srfi-4 - Homogeneous vectors}).
 
 @code{<vector>}クラスはまた@code{<sequence>}クラスを継承し、
 @code{map}や@code{fold}など様々な総称関数を使うことができます。
-@ref{gauche.collection - Collection framework} と
-@ref{gauche.sequence - Sequence framework} を参照して下さい。
+@ref{Collection framework} と
+@ref{Sequence framework} を参照して下さい。
 
 数値しか要素に持たないベクタを使う場合、SRFI-4の
-単一型ベクタも使えるかもしれません (@ref{srfi-4 - Homogeneous vectors}参照)。
+単一型ベクタも使えるかもしれません (@ref{Homogeneous vectors}参照)。
 @c COMMON
 @end deftp
 
@@ -4024,6 +4024,14 @@ Returns one of symbols @code{eq?}, @code{eqv?}, @code{equal?} or
 @c COMMON
 @end defun
 
+@defun hash-table-num-entries ht
+@c EN
+Returns the number of entries in the hash table @var{ht}.
+@c JP
+ハッシュテーブル@var{ht}中の要素の個数を返します。
+@c COMMON
+@end defun
+
 @defun hash-table type key&value @dots{}
 @c EN
 Constructs and returns a hash table of type @var{type} from given
@@ -4173,10 +4181,10 @@ Returns all the keys or values of hash table @var{ht} in a list,
 @end defun
 
 @c EN
-See also @ref{util.list - Additional list library}, where @code{hash-table->alist}
+See also @ref{Additional list library}, where @code{hash-table->alist}
 and @code{alist->hash-table} are defined.
 @c JP
-@ref{util.list - Additional list library}も参照して下さい。
+@ref{Additional list library}も参照して下さい。
 @code{hash-table->alist}と@code{alist->hash-table}が定義されています。
 @c COMMON
 
@@ -4223,12 +4231,12 @@ gosh> (weak-vector-ref v 0)
 @c EN
 The weak vector class.  Inherits @code{<sequence>} and @code{<collection>},
 so you can use
-@code{gauche.collection} (@xref{gauche.collection - Collection framework}) and
-@code{gauche.sequence} (@xref{gauche.sequence - Sequence framework}).
+@code{gauche.collection} (@xref{Collection framework}) and
+@code{gauche.sequence} (@xref{Sequence framework}).
 @c JP
 Weak vectorのクラスです。@code{<sequence>}と@code{<collection>}を継承しているので、
-@code{gauche.collection} (@ref{gauche.collection - Collection framework}参照) と
-@code{gauche.sequence} (@ref{gauche.sequence - Sequence framework}参照) も使えます。
+@code{gauche.collection} (@ref{Collection framework}参照) と
+@code{gauche.sequence} (@ref{Sequence framework}参照) も使えます。
 @c COMMON
 @example
 (coerce-to <weak-vector> '(1 2 3 4))
@@ -4372,10 +4380,10 @@ the list is exhausted.
 @end example
 
 @c EN
-Note that the @code{gauche.collection} module (@xref{gauche.collection - Collection framework})
+Note that the @code{gauche.collection} module (@xref{Collection framework})
 extends @code{map} to work on any type of collection.
 @c JP
-@code{gauche.collection}モジュール(@ref{gauche.collection - Collection framework}参照)
+@code{gauche.collection}モジュール(@ref{Collection framework}参照)
 を使うと、@code{map}がリスト以外のコレクション型に対しても動作するようになります。
 @c COMMON
 @end defun
@@ -4394,10 +4402,10 @@ The results of @var{proc} are discarded.  The return value of
 @c COMMON
 
 @c EN
-Note that the @code{gauche.collection} module (@xref{gauche.collection - Collection framework})
+Note that the @code{gauche.collection} module (@xref{Collection framework})
 extends @code{for-each} to work on any type of collection.
 @c JP
-@code{gauche.collection}モジュール(@ref{gauche.collection - Collection framework}参照)
+@code{gauche.collection}モジュール(@ref{Collection framework}参照)
 を使うと、@code{for-each}がリスト以外のコレクション型に対しても動作するようになります。
 @c COMMON
 @end defun
@@ -4459,12 +4467,12 @@ Partial application version of @code{apply}, @code{map} and @code{for-each}.
 
 @c EN
 There are more 'partial-applied' version of procedures defined in
-SRFI-1 (@xref{srfi-1 - List library}), such as @code{fold$},
+SRFI-1 (@xref{List library}), such as @code{fold$},
 @code{filter$}, @code{member$}, etc.
 @c JP
 他にも@code{fold$}、@code{filter$}、@code{member$}等
 いくつかの部分適用版の手続きが定義されています。
-@ref{srfi-1 - List library}を参照してください。
+@ref{List library}を参照してください。
 @c COMMON
 
 @defun compose f g h @dots{}
@@ -5109,13 +5117,13 @@ Returns @var{obj} @dots{} as multiple values.
 Caller can capture multiple values by a built-in syntax
 @code{receive} (@ref{Binding constructs}), or the R5Rs procedure
 @code{call-with-values} described below.
-See also @ref{srfi-11 - Let-values}.
+See also @ref{Let-values}.
 @c JP
 @var{obj} @dots{} を多値として返します。
 呼び出し側は、組み込み構文の @code{receive} (@ref{Binding constructs}参照)か、
 下に説明するR5RSの手続き@code{call-with-values}を使って多値を受け取ることが
 できます。
-@ref{srfi-11 - Let-values}も参照してください。
+@ref{Let-values}も参照してください。
 @c COMMON
 @example
 (values 1 2) @result{} 1 @r{and} 2
@@ -5157,13 +5165,60 @@ is flipped to match other Scheme's @code{*-ref} procedures.
 @subsection  Delayed Evaludation
 @c NODE 遅延評価
 
+A syntax @code{delay} and a procedure @code{force} are used
+together to implemnt @emph{lazy evaluation} semantics.
+
 @defspec delay expression
 [R5RS]
+Returns a @emph{promise} object that encapsulates the evaluation
+of @var{expression}.   The evaluation of @var{expression} is
+delayed until its value is explicitly requested by @code{force}.
 @end defspec
 
 @defun force promise
 [R5RS]
+If @var{promise} is not a promise, it is just returned.
+
+Otherwise, if @var{promise}'s value hasn't been computed,
+@code{force} makes @var{promise}'s encapsulated expression
+be evaluated, and returns the result.
+
+Once @var{promise}'s value is computed, it is memoized in it
+so that subsequent @code{force} on it won't cause the computation.
 @end defun
+
+@defun promise? obj
+Returns @code{#t} iff @var{obj} is a promise object
+created by @code{delay}.
+@end defun
+
+The following example uses a simple lazy stream to calculate
+fibonacci numbers.
+
+@example
+(define (lcar lis)   ;; lazy car
+  (car (force lis)))
+
+(define (lcdr lis)   ;; lazy cdr
+  (cdr (force lis)))
+
+(define (ltake lis n)  ;; lazy take
+  (if (<= n 0) '() (cons (lcar lis) (ltake (lcdr lis) (- n 1)))))
+
+(define (lmap proc l1 l2)  ;; lazy map
+  (if (null? l1)
+    '()
+    (cons (proc (lcar l1) (lcar l2))
+          (delay (lmap proc (lcdr l1) (lcdr l2))))))
+
+;; lazy list of fibonacci numbers
+(define fibs (list* 1 1 (delay (lmap + fibs (cdr fibs)))))
+
+;; take a look
+(ltake fibs 20)
+  @result{} (1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 
+      987 1597 2584 4181 6765)
+@end example
 
 @c ----------------------------------------------------------------------
 @node Exceptions, Eval and repl, Control features, Core library
@@ -5745,14 +5800,14 @@ stream, this operation uses @code{fread} or @code{fwrite}).
 Some ports can be used to convert a data stream from one format
 to another; one of such applications is character code conversion
 ports, provided by @code{gauche.charconv} module
-(@xref{gauche.charconv - Character code conversion}, for details).
+(@xref{Character code conversion}, for details).
 You can define a procedural ports, in both Scheme and C, 
 to implement other functionality.
 @c JP
 @item 変換
 ポートはまた、データストリームを変換するのにも使えます。例えば@code{gauche.charconv}
 モジュールでは、文字コード間の変換を行うポートを提供しています
-(詳しくは@ref{gauche.charconv - Character code conversion}を参照)。
+(詳しくは@ref{Character code conversion}を参照)。
 プロシージャルなポートを定義することにより、様々な機能を実装できます。
 @c COMMON
 @end table
@@ -6374,12 +6429,12 @@ use @code{sys-access} or @code{file-exists?} (@xref{File stats}).
 @c EN
 Note: @code{gauche.charconv} module extends these procedures to
 take @var{encoding} keyword argument so that they can read or write
-in different character encoding scheme.  @xref{gauche.charconv - Character code conversion}.
+in different character encoding scheme.  @xref{Character code conversion}.
 @c JP
 註：@code{gauche.charconv}モジュールはこれらの手続きを、
 @var{encoding}キーワード引数を取るように拡張して、
 異なる文字エンコーディングでのファイルの読み書きを可能にします。
-@ref{gauche.charconv - Character code conversion}参照。
+@ref{Character code conversion}参照。
 @c COMMON
 
 @c EN
@@ -8059,7 +8114,7 @@ and it is taken as a file name (without suffix) to be loaded.
 This loading takes place at compile time.   The loaded file must provide
 @var{feature}; if not, a warning is issued.
 
-If you load SLIB module, @code{require} is extended.  @xref{slib - SLIB} for
+If you load SLIB module, @code{require} is extended.  @xref{SLIB} for
 details.
 @c JP
 @var{feature}がまだロードされていなければロードします。@var{feature}は文字列で
@@ -8068,7 +8123,7 @@ details.
 ロードされたファイルはその中で@var{feature}をprovideしなければなりません。
 そうでないと警告が出されます。
 
-SLIBモジュールをロードすると、@code{require}が拡張されます。詳しくは@ref{slib - SLIB}を
+SLIBモジュールをロードすると、@code{require}が拡張されます。詳しくは@ref{SLIB}を
 参照して下さい。
 @c COMMON
 @end defspec
@@ -8551,12 +8606,12 @@ interpreter itself.
 
 @c EN
 System calls that deal with filesystems.
-See also @ref{file.util - Filesystem utilities}, which defines high-level APIs
+See also @ref{Filesystem utilities}, which defines high-level APIs
 on top of the procedures described here.
 @c JP
 ファイルシステムに関するシステムコール群です。
 ここで述べる手続きの上に、より高レベルなAPIがモジュール@code{file.util}として
-実装されています。@ref{file.util - Filesystem utilities}を参照して下さい。
+実装されています。@ref{Filesystem utilities}を参照して下さい。
 @c COMMON
 
 @menu
@@ -9957,9 +10012,17 @@ a list of signals, or a @code{<sys-sigset>} object.
 Installs a signal handler for @var{signals} that evaluates
 @var{expr} @dots{} when one of the signals in @var{signals} is delivered.
 
-@item (@var{signals} => @var{proc})
-@var{Proc} must be a procedure that takes one argument.
-This form installs @var{proc} as the signal handler for @var{signals}.
+@item (@var{signals} => @var{handler})
+This form sets the handler of @var{signals} to @var{handler},
+where @var{handler} should be either @code{#t}, @code{#f}
+or a procedure that takes one argument.
+
+If @var{handler} is a procedure, it will be called when the process
+receives one of specified signal(s), with the received signal
+number as an argument.
+If @var{handler} is @code{#t}, the operating system's default 
+behavior is set to the specified signal(s).  If @var{handler}
+is @code{#f}, the specified signals(s) will be ignored.
 @end table
 @c JP
 @var{handler-clause}は以下のいずれかの形式です
@@ -9970,9 +10033,17 @@ This form installs @var{proc} as the signal handler for @var{signals}.
 @var{signals}に含まれるシグナルを受け取った時に、@var{expr} @dots{}を
 評価するようなハンドラを設定します。
 
-@item (@var{signals} => @var{proc})
+@item (@var{signals} => @var{handler})
 @var{signals}は上と同じです。@var{signals}に含まれるシグナルに
-対して、一つの引数を取る手続き@var{proc}をハンドラとして設定します。
+対して、処理@var{handler}を設定します。
+
+@var{handler}は@code{#t}、@code{#f}、一つの引数を取る手続きのいずれか
+でなければなりません。
+@var{handler}が手続きの場合、プロセスが指定されたシグナル(のうちのいずれか)を
+受けた時に、そのシグナル番号を引数として@var{handler}が呼ばれます。
+@var{handler}が@code{#t}の場合、指定されたシグナルにはオペレーティングシステムの
+デフォルトの振るまいが設定されます。
+@var{handler}が@code{#f}の場合、指定されたシグナルは無視されます。
 @end table
 @c COMMON
 
@@ -10637,10 +10708,10 @@ The @code{<time>} object also represents a point of time.
 @c EN
 Indicates time type.  @code{time-utc} is the default, and that
 represents the number of seconds since Unix Epoch.
-SRFI-19 (@xref{srfi-19 - Time data types and procedures}) adds more types.
+SRFI-19 (@xref{Time data types and procedures}) adds more types.
 @c JP
 timeの型を表します。デフォルトは@code{time-utc}で、Unixエポックからの
-秒数を表します。SRFI-19(@ref{srfi-19 - Time data types and procedures}参照)
+秒数を表します。SRFI-19(@ref{Time data types and procedures}参照)
 ではさらに型が追加されています。
 @c COMMON
 @end defivar
@@ -10664,13 +10735,13 @@ timeのナノ秒の部分です。
 @c EN
 [SRFI-18][SRFI-21]
 Returns the @code{<time>} object representing the current time in
-@code{time-utc}.   @xref{srfi-19 - Time data types and procedures}, for
+@code{time-utc}.   @xref{Time data types and procedures}, for
 it redefines @code{current-time} to allow optional argument to
 specify time type.
 @c JP
 [SRFI-18][SRFI-21]
 現在の時間を@code{time-utc}で表す@code{<time>}オブジェクトを返します。
-@ref{srfi-19 - Time data types and procedures}では、@code{current-time}が再定義され、
+@ref{Time data types and procedures}では、@code{current-time}が再定義され、
 timeの型を指定するオプショナル引数を受け付けるようにされています。
 @c COMMON
 @end defun
@@ -10840,10 +10911,10 @@ available!), so Gauche simply exits on the error.
 @end defun
 
 @c EN
-See also @ref{gauche.process - High Level Process Interface}, which provides
+See also @ref{High Level Process Interface}, which provides
 more convenient process handling on top of above primitives.
 @c JP
-@ref{gauche.process - High Level Process Interface}も参照して下さい。
+@ref{High Level Process Interface}も参照して下さい。
 上記のプリミティブの上に構築されたより便利なプロセス処理の方法が提供されて
 います。
 @c COMMON
@@ -10978,11 +11049,11 @@ signum number that stopped the child.
 @c EN
 The interface functions for @code{select(2)}.
 The higher level interface is provided on top of these
-primitives; see @ref{gauche.selector - Simple dispatcher}.
+primitives; see @ref{Simple dispatcher}.
 @c JP
 @code{select(2)}へのインターフェース関数です。
 これらのプリミティブの上に構築された高次元のインターフェースが
-提供されています。@ref{gauche.selector - Simple dispatcher}を
+提供されています。@ref{Simple dispatcher}を
 参照して下さい。
 @c COMMON
 
@@ -11223,12 +11294,12 @@ The intention of these functions are to provide an off-the-stock handy
 random number generator (RNG) for applications that doens't
 sensitive to the quality and/or speed of RNG.  For serious statistics
 analysis, use Mersenne Twister RNG in @code{math.mt-random}
-module (@xref{math.mt-random - Mersenne-Twister random number generator}).
+module (@xref{Mersenne-Twister random number generator}).
 @c JP
 これらの関数の意図は、乱数ジェネレータ(RNG; random number generator)の
 品質や速度を気にしないアプリケーションに、完成された便利なRNGを提供することです。
 本格的な統計分析には、@code{math.mt-random}モジュールのMersenne Twister RNGを
-使って下さい(@ref{math.mt-random - Mersenne-Twister random number generator}参照)。
+使って下さい(@ref{Mersenne-Twister random number generator}参照)。
 @c COMMON
 @end defun
 

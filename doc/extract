@@ -12,19 +12,13 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: extract,v 1.12 2003-06-21 06:37:02 shirok Exp $
+;;;  $Id: extract,v 1.13 2004-01-19 22:28:35 shirok Exp $
 ;;;
 
 (use gauche.regexp)
 (use gauche.parseopt)
-(use srfi-13)
-
-;; trick to load charconv before it is installed in the library path
-(when (file-exists? "../ext/charconv/charconv.scm")
-  (eval '(begin (add-load-path "../ext/charconv")
-                (load "../ext/charconv/charconv"))
-        (interaction-environment)))
 (use gauche.charconv)
+(use srfi-13)
 
 (define *outfile* #f)
 (define *lang* 'en)
@@ -71,8 +65,10 @@
         (process-node nodedesc) (in (read-line)))
       (#/^@(chapter|(sub)*section|appendix\w*)\s+(.*)/ (#f cmd #f header)
         (process-header cmd header) (in (read-line)))
-      (#/^\* ([^:]+)::/ (#f menu)
-        (process-menu menu) (in (read-line)))
+      (#/^\* ([^:]+)::(.*)?/ (#f node desc)
+        (process-menu node #f desc) (in (read-line)))
+      (#/^\* ([^:]+):\s+([^.]+)\.(.*)?/ (#f tag node desc)
+        (process-menu node tag desc) (in (read-line)))
       (else (display
              (regexp-replace-all #/@VERSION@/
               (regexp-replace-all #/(@x?ref)\{([^\}]+)\}/ line process-ref)
@@ -106,10 +102,17 @@
           (cond ((assoc (string-trim-both header) *header-table*) => cdr)
                 (else header))))
 
-(define (process-menu menu)
-  (format #t "* ~a::\n"
-          (cond ((assoc (string-trim-both menu) *node-table*) => cdr)
-                (else menu))))
+(define (process-menu node tag desc)
+  (if tag
+    (format #t "* ~a: ~a.  ~a\n"
+            tag
+            (cond ((assoc (string-trim-both node) *node-table*) => cdr)
+                  (else node))
+            (string-trim-both (or desc "")))
+    (format #t "* ~a::  ~a\n"
+            (cond ((assoc (string-trim-both node) *node-table*) => cdr)
+                  (else node))
+            (string-trim-both (or desc "")))))
 
 (define (process-ref match)
   (let ((cmd  (rxmatch-substring match 1))

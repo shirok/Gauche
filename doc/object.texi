@@ -141,14 +141,14 @@ If you are using @code{gosh} interactively, you can use
 a generic function @code{describe} to inspect the internal
 of an instance.
 A short alias, @code{d}, is defined to @code{describe} for
-the convenience.  (See @ref{gauche.interactive - Interactive session}
+the convenience.  (See @ref{Interactive session}
 for the details).
 
 @c JP
 対話モードで @code{gosh} を使っているなら、ジェネリック関数 @code{describe} を
 使って、インスタンスの内部を点検できます。
 便利なので、省略形として@code{d}という名前も定義されています。
-(詳細については、@ref{gauche.interactive - Interactive session}参照)
+(詳細については、@ref{Interactive session}参照)
 
 @c COMMON
 @example

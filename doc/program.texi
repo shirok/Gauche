@@ -288,7 +288,7 @@ or evaluate @code{(exit)}.
 
 @c EN
 In interactive session, @code{gosh} loads @code{gauche.interactive}
-module (@xref{gauche.interactive - Interactive session}) for the
+module (@xref{Interactive session}) for the
 convenience.  The module also loads a file @file{.gaucherc} under
 the user's home directory if it exists.
 You may put settings there that would help interactive debugging.
@@ -298,7 +298,7 @@ in script mode.)
 @c JP
 インタラクティブセッションでは、@code{gosh}は
 @code{gauche.interactive}モジュールをロードします
-(@ref{gauche.interactive - Interactive session}参照)。
+(@ref{Interactive session}参照)。
 このモジュールはまた、ユーザーのホームディレクトリに@file{.gaucherc}という
 ファイルがあればをれをロードします。
 インタラクティブデバッグに便利な設定をそこに書いておくことができます。
@@ -601,11 +601,11 @@ The following script is a simple grep command.
 @end example
 
 @c EN
-See also @ref{gauche.parseopt - Parsing command-line options}, for a convenient way to
+See also @ref{Parsing command-line options}, for a convenient way to
 parse command-line options.
 @c JP
 コマンドライン引数を処理するモジュールがあります。
-@ref{gauche.parseopt - Parsing command-line options}を参照してください。
+@ref{Parsing command-line options}を参照してください。
 @c COMMON
 
 @c ----------------------------------------------------------------------

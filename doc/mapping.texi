@@ -79,7 +79,7 @@ R5RS operator @code{modulo} and @code{remainder}.  @xref{Arithmetics}.
 No equivalent procedure.
 @item []
 R5RS @code{vector-ref} (@xref{Vectors}) is something close.
-Or you can use Gauche's generic function @code{ref} (@xref{gauche.sequence - Sequence framework})
+Or you can use Gauche's generic function @code{ref} (@xref{Sequence framework})
 for arbitrary sequences.
 @item .
 Gauche @code{slot-ref} is something close to this.  @xref{Accessing instance}.
@@ -129,7 +129,7 @@ R5RS @code{ceiling}.  @xref{Arithmetics}.
 @itemx cfsetispeed
 @itemx cfsetospeed
 Gauche @code{sys-cfgetispeed}, @code{sys-cfgetospeed},
-@code{sys-cfsetispeed}, @code{sys-cfsetospeed}.  @xref{gauche.termios - Termios}.
+@code{sys-cfsetispeed}, @code{sys-cfsetospeed}.  @xref{Termios}.
 @item chdir
 Gauche @code{sys-chdir}.   @xref{Other file operations}.
 @item chmod
@@ -184,7 +184,7 @@ of @code{sys-exec}.  @xref{Unix process management}.
 @itemx execve
 @itemx execvp
 Gauche @code{sys-exec}.  @xref{Unix process management}.
-For higher level interface, @ref{gauche.process - High Level Process Interface}.
+For higher level interface, @ref{High Level Process Interface}.
 @item exit
 @item _exit
 Use @code{exit} or @code{sys-exit}, depends on what you need.
@@ -202,7 +202,7 @@ when operation is finished.  The file is also closed when
 its governing port is garbage collected.
 @item fcntl
 Implented as @code{sys-fcntl} in @code{gauche.fcntl} module.
-@xref{gauche.fcntl - Low-level file operations}.
+@xref{Low-level file operations}.
 @item fdopen
 Gauche's @code{open-input-fd-port} or @code{open-output-fd-port}.
 @xref{File ports}.
@@ -230,7 +230,7 @@ corresponds to this operation.  @xref{File ports}.
 @item fork
 Gauche's @code{sys-fork}.   @xref{Unix process management}.
 @item forkpty
-Use @code{sys-forkpty}.  @xref{gauche.termios - Termios}.
+Use @code{sys-forkpty}.  @xref{Termios}.
 @item fpathconf
 Not supported.
 @item fprintf
@@ -254,9 +254,9 @@ Gauche's @code{frexp}
 Not supported.  For general case, you have to write a parser.
 If you can keep the data in S-exp, you can use @code{read}.
 If the syntax is very simple, you may be able to utilize
-@code{string-tokenize} in @code{srfi-14} (@ref{srfi-13 - String library}),
+@code{string-tokenize} in @code{srfi-14} (@ref{String library}),
 and/or regular expression stuff (@ref{Regular expression},
-also @ref{gauche.regexp - Regular expression utilities}.
+also @ref{Regular expression utilities}.
 @item fseek
 Use Gauche's @code{port-seek} (@xref{Common port operations})
 @item fsetpos
@@ -311,48 +311,48 @@ Gauche's @code{sys-gmtime}.   @xref{Time}.
 @item isalnum
 Not directly supported, but you can use R5RS @code{char-alphabetic?} and
 @code{char-numeric?}.  @xref{Characters}.   You can also use
-character set.  @xref{Character set}, also @ref{srfi-14 - Character-set library}.
+character set.  @xref{Character set}, also @ref{Character-set library}.
 @item isalpha
 R5RS @code{char-alphabetic?}.  @xref{Characters}.  See also
-@ref{Character set} and @ref{srfi-14 - Character-set library}.
+@ref{Character set} and @ref{Character-set library}.
 @item isatty
 Gauche's @code{sys-isatty}.   @xref{Other file operations}.
 @item iscntrl
 Not directly supported, but you can use
 @code{(char-set-contains? char-set:iso-control c)} with @code{srfi-14}.
-@xref{srfi-14 - Character-set library}.
+@xref{Character-set library}.
 @item isdigit
 R5RS @code{char-numeric?}.  @xref{Characters}. 
 You can also use @code{(char-set-contains? char-set:digit c)}
-with @code{srfi-14}.   @xref{srfi-14 - Character-set library}.
+with @code{srfi-14}.   @xref{Character-set library}.
 @item isgraph
 Not directly supported, but you can use
 @code{(char-set-contains? char-set:graphic c)} with @code{srfi-14}.
-@xref{srfi-14 - Character-set library}.
+@xref{Character-set library}.
 @item islower
 R5RS @code{char-lower-case?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:lower-case c)}
-with @code{srfi-14}.   @xref{srfi-14 - Character-set library}.
+with @code{srfi-14}.   @xref{Character-set library}.
 @item isprint
 Not directly supported, but you can use
 @code{(char-set-contains? char-set:printing c)} with @code{srfi-14}.
-@xref{srfi-14 - Character-set library}.
+@xref{Character-set library}.
 @item ispunct
 Not directly supported, but you can use
 @code{(char-set-contains? char-set:punctuation c)} with @code{srfi-14}.
-@xref{srfi-14 - Character-set library}.
+@xref{Character-set library}.
 @item isspace
 R5RS @code{char-whitespace?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:whitespace c)}
-with @code{srfi-14}.   @xref{srfi-14 - Character-set library}.
+with @code{srfi-14}.   @xref{Character-set library}.
 @item isupper
 R5RS @code{char-upper-case?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:upper-case c)}
-with @code{srfi-14}.   @xref{srfi-14 - Character-set library}.
+with @code{srfi-14}.   @xref{Character-set library}.
 @item isxdigit
 Not directly supported, but you can use
 @code{(char-set-contains? char-set:hex-digit c)} with @code{srfi-14}.
-@xref{srfi-14 - Character-set library}.
+@xref{Character-set library}.
 @item kill
 Gauche's @code{sys-kill}.  @xref{Signal}.
 @item labs
@@ -386,7 +386,7 @@ Gauche handles multibyte strings internally, so generally you don't
 need to care about multibyte-ness of the string.   @code{string-length}
 always returns a number of characters for a string in supported
 encoding.   If you want to convert the character encoding,
-see @ref{gauche.charconv - Character code conversion}.
+see @ref{Character code conversion}.
 @item memcmp
 @itemx memcpy
 @itemx memmove
@@ -412,7 +412,7 @@ Not directly supported.
 You can use @code{sys-readdir} to read the directory entries at once.
 @xref{Directories}.
 @item openpty
-Use @code{sys-openpty}.  @xref{gauche.termios - Termios}.
+Use @code{sys-openpty}.  @xref{Termios}.
 @item pathconf
 Not supported.
 @item pause
@@ -472,9 +472,9 @@ Gauche's @code{sys-rmdir}.  @xref{Directory manipulation}.
 Not supported.  For general case, you have to write a parser.
 If you can keep the data in S-exp, you can use @code{read}.
 If the syntax is very simple, you may be able to utilize
-@code{string-tokenize} in @code{srfi-14} (@ref{srfi-13 - String library}),
+@code{string-tokenize} in @code{srfi-14} (@ref{String library}),
 and/or regular expression stuff (@ref{Regular expression},
-also @ref{gauche.regexp - Regular expression utilities}.
+also @ref{Regular expression utilities}.
 @item select
 Gauche @code{sys-select}.  @xref{I/O multiplexing}.
 @item setbuf
@@ -538,9 +538,9 @@ as @code{sys-srandom}.  @xref{Miscellaneous system calls}.
 Not supported.  For general case, you have to write a parser.
 If you can keep the data in S-exp, you can use @code{read}.
 If the syntax is very simple, you may be able to utilize
-@code{string-tokenize} in @code{srfi-14} (@ref{srfi-13 - String library}),
+@code{string-tokenize} in @code{srfi-14} (@ref{String library}),
 and/or regular expression stuff (@ref{Regular expression},
-also @ref{gauche.regexp - Regular expression utilities}.
+also @ref{Regular expression utilities}.
 @item stat
 Gauche's @code{sys-stat}.  @xref{File stats}.
 @item strcasecmp
@@ -611,7 +611,7 @@ Not supported yet.
 @item system
 Gauche @code{sys-system}.   @xref{Unix process management}.
 It is generally recommended to use the process library
-(@ref{gauche.process - High Level Process Interface}).
+(@ref{High Level Process Interface}).
 @item tan
 @itemx tanh
 R5RS @code{tan} and Gauche @code{tanh}.  @xref{Arithmetics}.
@@ -626,7 +626,7 @@ R5RS @code{tan} and Gauche @code{tanh}.  @xref{Arithmetics}.
 Corresponding functions are: @code{sys-tcdrain}, @code{sys-tcflow},
 @code{sys-tcflush}, @code{sys-tcgetattr}, @code{sys-tcgetpgrp},
 @code{sys-tcsendbreak}, @code{sys-tcsetattr}, @code{sys-tcsetpgrp.}
-@xref{gauche.termios - Termios}
+@xref{Termios}
 @item time
 Gauche's @code{sys-time}.  @xref{Time}.
 @item times
@@ -676,7 +676,7 @@ Gauche handles multibyte strings internally, so generally you don't
 need to care about multibyte-ness of the string.   @code{string-length}
 always returns a number of characters for a string in supported
 encoding.   If you want to convert the character encoding,
-see @ref{gauche.charconv - Character code conversion}.
+see @ref{Character code conversion}.
 @item write
 R5RS @code{display} (@xref{Output}).
 Or @code{write-block} (@xref{Uvector block I/O}).

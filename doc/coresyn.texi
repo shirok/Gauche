@@ -147,7 +147,7 @@ The table below lists sharp-syntaxes.
  @tab [R5RS] Exact number prefix.
 @item @code{#f}
  @tab [R5RS] Boolean false, or
-      introducing SRFI-4 uniform vector.  @xref{gauche.uvector - Uniform vectors}.
+      introducing SRFI-4 uniform vector.  @xref{Uniform vectors}.
 @item @code{#g}, @code{#h}
  @tab Unused.
 @item @code{#i}
@@ -159,11 +159,11 @@ The table below lists sharp-syntaxes.
 @item @code{#p}, @code{#q}, @code{#r}
  @tab Unused.
 @item @code{#s}
- @tab [SRFI-4] introducing SRFI-4 uniform vector.  @xref{gauche.uvector - Uniform vectors}.
+ @tab [SRFI-4] introducing SRFI-4 uniform vector.  @xref{Uniform vectors}.
 @item @code{#t}
  @tab [R5RS] Boolean true.
 @item @code{#u}
- @tab [SRFI-4] introducing SRFI-4 uniform vector.  @xref{gauche.uvector - Uniform vectors}.
+ @tab [SRFI-4] introducing SRFI-4 uniform vector.  @xref{Uniform vectors}.
 @item @code{#v}, @code{#w}
  @tab Unused.
 @item @code{#x}
@@ -388,6 +388,24 @@ Gaucheはまた、部分適用を行う@code{pa$}という組み込み手続きを持っています
 @c COMMON
 @end defmac
 
+@defmac case-lambda clause @dots{}
+[SRFI-16]
+Each @var{clause} should have the form (@var{formals} @var{expr} @dots{}),
+where @var{formals} is a formal arguments list as for @code{lambda}.
+
+This expression evaluates to a procedure that accepts a variable
+number of arguments and is lexically scoped in the same manner as
+procedures resulting from @code{lambda} expressions.
+When the procedure is called with some arguments,
+then the first @var{clause} for which the arguments agree with
+@var{formals} is selected, where agreement is specified as for
+the @var{formals} of a @code{lambda} expression.
+The variables of @code{formals} are bound to the given
+arguments, and the @var{expr} @dots{} are evaluated withing the environment.
+
+It is an error for the arguments not to agree with
+the @var{formals} of any @var{clause}.
+@end defmac
 
 @c ----------------------------------------------------------------------
 @node Assignments, Conditionals, Making Procedures, Core syntax
@@ -594,7 +612,7 @@ order.   I adopted this order since it is consistent with other
 destructive operations.  Perl's @code{push} function takes the same
 argument order, but it appends @var{item} at the end of the array
 (Perl's @code{unshift} is closer to @code{push!}).
-You can use a queue (@xref{util.queue - Queue}) if you need a behavior of Perl's
+You can use a queue (@xref{Queue}) if you need a behavior of Perl's
 @code{push}.
 @c JP
 註：Common Lispの@code{push}マクロは引数を逆の順番で取ります。
@@ -602,7 +620,7 @@ You can use a queue (@xref{util.queue - Queue}) if you need a behavior of Perl's
 Perlの@code{push}関数は@code{push!}マクロと同じ引数順ですが、
 @var{item}はシーケンスの末尾に追加されます (Perlの@code{unshift}の方が
 @code{push!}の動作に近いです)。
-Perlのpushオペレータの動作が必要ならQueueが使えます (@ref{util.queue - Queue}参照)。
+Perlのpushオペレータの動作が必要ならQueueが使えます (@ref{Queue}参照)。
 @c COMMON
 @end defmac
 
@@ -967,7 +985,7 @@ Note that, in multithreaded environment,
 the change of the value of @var{var}s are visible from
 all the threads.   This form is provided mainly for
 the porting convenience.   Use parameter objects instead
-(@xref{gauche.parameter - Parameters}) for thread-local dynamic state.
+(@xref{Parameters}) for thread-local dynamic state.
 @c JP
 動的スコープの変数をエミュレートするマクロです。
 @var{var}は@code{fluid-let}フォームを含むスコープで定義されている
@@ -978,7 +996,7 @@ the porting convenience.   Use parameter objects instead
 マルチスレッド環境下では、@var{var}の値の変化は全てのスレッドから見えます。
 このフォームは主として他の処理系のコードを移植する際の利便性のために
 追加されました。スレッドローカルな動的状態を実現するには、
-パラメータオブジェクト(@ref{gauche.parameter - Parameters}参照)を
+パラメータオブジェクト(@ref{Parameters}参照)を
 使って下さい。
 @c COMMON
 @example
@@ -1027,14 +1045,14 @@ which is the procedural equivalent of @code{receive}.
 You can use @code{define-values} (@xref{Definitions}) to
 bind multiple values to the toplevel variables simultaneously.
 Also @code{let-values} and @code{let*-values} 
-in SRFI-11 (@ref{srfi-11 - Let-values}) provides
+in SRFI-11 (@ref{Let-values}) provides
 @code{let}-like syntax with multiple values.
 @c JP
 なお、@ref{Multiple values}の@code{call-with-values}は
 @code{receive}と等価な手続き的インタフェースです。
 多値を複数のトップレベル変数に束縛するには、@code{define-values}
 (@ref{Definitions}参照) が使えます。
-また、SRFI-11 (@ref{srfi-11 - Let-values}) の@code{let-values}と
+また、SRFI-11 (@ref{Let-values}) の@code{let-values}と
 @code{let*-values}は@code{let}のような形式で多値を扱うことができます。
 @c COMMON
 @end defspec
@@ -1283,11 +1301,11 @@ parenthesis are not there.  Thus these two forms are equivalent.
 @var{Expr} is evaluated, and it should return as many values as
 @var{var}s.  Then each value of the results are
 bound to each variable in @var{var} @dots{}.
-@xref{srfi-11 - Let-values}.
+@xref{Let-values}.
 @c JP
 まず@var{expr}が評価されます。それは与えられた@var{var}と同数の値を
 返さなければなりません。続いて各値が@var{var}に順に束縛されます。
-@ref{srfi-11 - Let-values}も参照してください。
+@ref{Let-values}も参照してください。
 @c COMMON
 @example
 (define-values (lo hi) (min&max 3 -1 15 2))

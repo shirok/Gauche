@@ -84,41 +84,51 @@ Gaucheはまた、以下のSRFIをサポートしています。
 @table @asis
 @c EN
 @item SRFI-0, Feature-based conditional expansion construct.
-As an autoloaded macro.   @xref{srfi-0 - Feature conditional}.
+As an autoloaded macro.   @xref{Feature conditional}.
 @c JP
 @item SRFI-0, 機能ベースの条件展開
-オートロードされるマクロとしてサポートされます。@ref{srfi-0 - Feature conditional}参照。
+オートロードされるマクロとしてサポートされます。@ref{Feature conditional}参照。
 @c COMMON
 
 @c EN
 @item SRFI-1, List library.
-Supported by the module @code{srfi-1}.  @xref{srfi-1 - List library}.
+Supported by the module @code{srfi-1}.  @xref{List library}.
 (Some of SRFI-1 procedures are built-in).
 @c JP
 @item SRFI-1, リストライブラリ
-モジュール@code{srfi-1}でサポートされます。@ref{srfi-1 - List library}参照。
+モジュール@code{srfi-1}でサポートされます。@ref{List library}参照。
 SRFI-1の手続きのうちいくつかは組み込みになっています。
 @c COMMON
 
 @c EN
 @item SRFI-2, AND-LET*: an AND with local bindings, a guarded LET* special form.
-Supported by the module @code{srfi-2}.  @xref{srfi-2 - And-let*}.
+Supported by the module @code{srfi-2}.  @xref{And-let*}.
 @c JP
 @item SRFI-2, AND-LET*: 局所束縛をともなう AND、ガード付 LET* 特殊フォーム
-モジュール@code{srfi-2}でサポートされます。@ref{srfi-2 - And-let*}参照。
+モジュール@code{srfi-2}でサポートされます。@ref{And-let*}参照。
 @c COMMON
 
 @c EN
 @item SRFI-4, Homogeneous numeric vector datatypes.
 The module @code{gauche.uvector} provides a superset of
 @code{srfi-4} procedures, including arithmetic operations and
-generic interface on the SRFI-4 vectors.  @xref{gauche.uvector - Uniform vectors}.
+generic interface on the SRFI-4 vectors.  @xref{Uniform vectors}.
 @c JP
 @item SRFI-4, 一様型の数値ベクタ
 モジュール@code{gauche.uvector}が、
 @code{srfi-4}の手続きのスーパーセットを提供します。
 同モジュールにはSRFI-4の手続きに加え、
-算術演算やジェネリックなインタフェースが定義されています。@ref{gauche.uvector - Uniform vectors}参照。
+算術演算やジェネリックなインタフェースが定義されています。@ref{Uniform vectors}参照。
+@c COMMON
+
+@c EN
+@item SRFI-5, A compatible let form with signatures and rest arguments
+Supported by the module @code{srfi-5}.  
+@xref{A compatible let form with signatures and rest arguments}.
+@c JP
+@item SRFI-6, シグネチャとrest引数に互換性のあるlet形式
+モジュール@code{srfi-5}でサポートされます。
+@ref{A compatible let form with signatures and rest arguments}参照。
 @c COMMON
 
 @c EN
@@ -140,10 +150,10 @@ Syntax @code{receive} is built-in.  @xref{Binding constructs}.
 
 @c EN
 @item SRFI-9, Defining record types.
-Supported by the module @code{srfi-9}.  @xref{srfi-9 - Record types}.
+Supported by the module @code{srfi-9}.  @xref{Record types}.
 @c JP
 @item SRFI-9, レコード型の定義
-モジュール@code{srfi-9}でサポートされます。@ref{srfi-9 - Record types}参照。
+モジュール@code{srfi-9}でサポートされます。@ref{Record types}参照。
 @c COMMON
 
 @c EN
@@ -156,19 +166,19 @@ Built-in.  @xref{Read-time constructor}.
 
 @c EN
 @item SRFI-11, Syntax for receiving multiple values.
-Supported by the module @code{srfi-11}.  @xref{srfi-11 - Let-values}.
+Supported by the module @code{srfi-11}.  @xref{Let-values}.
 @c JP
 @item SRFI-11, 多値を受け取るための構文
-モジュール@code{srfi-11}でサポートされます。@ref{srfi-11 - Let-values}参照。
+モジュール@code{srfi-11}でサポートされます。@ref{Let-values}参照。
 @c COMMON
 
 @c EN
 @item SRFI-13, String library
-Supported by the module @code{srfi-13}.  @xref{srfi-13 - String library}.
+Supported by the module @code{srfi-13}.  @xref{String library}.
 (Some of SRFI-13 procedures are built-in).
 @c JP
 @item SRFI-13, 文字列ライブラリ
-モジュール@code{srfi-13}でサポートされます。@ref{srfi-13 - String library}参照。
+モジュール@code{srfi-13}でサポートされます。@ref{String library}参照。
 (SRFI-13の手続きのいくつかは組み込みになっています)。
 @c COMMON
 
@@ -177,12 +187,20 @@ Supported by the module @code{srfi-13}.  @xref{srfi-13 - String library}.
 Character-set object and a few SRFI-14 procedures are built-in.
 @xref{Character set}.
 Complete set of SRFI-14 is supported by the module @code{srfi-14}.
-@xref{srfi-14 - Character-set library}.
+@xref{Character-set library}.
 @c JP
 @item SRFI-14, 文字集合のライブラリ
 文字集合と基本的なSRFI-14手続きは組み込みになっています。
 @ref{Character set}参照。SRFI-14の完全なサポートはモジュール@code{srfi-14}
-で提供されています。@ref{srfi-14 - Character-set library}参照。
+で提供されています。@ref{Character-set library}参照。
+@c COMMON
+
+@c EN
+@item SRFI-16, Syntax for procedures of variable arity (case-lambda)
+Built-in.  @xref{Making Procedures}.
+@c JP
+@item SRFI-16, 可変長引数手続き構文 (case-lambda)
+組み込みです。@ref{Making Procedures}参照。
 @c COMMON
 
 @c EN
@@ -196,23 +214,23 @@ Built-in.  @xref{Assignments}.
 @c EN
 @item SRFI-18, Multithreading support
 Some SRFI-18 features are built-in, and the rest is in @code{gauche.threads}
-module.  @xref{gauche.threads - Threads}.
+module.  @xref{Threads}.
 @c JP
 @item SRFI-18, マルチスレッドのサポート
 いくつかのSRFI-18の機能は組み込みであり、、残りのAPIは
-@code{gauche.threads}モジュールで提供されます。@ref{gauche.threads - Threads}参照。
+@code{gauche.threads}モジュールで提供されます。@ref{Threads}参照。
 @c COMMON
 
 @c EN
 @item SRFI-19, Time Data Types and Procedures.
 Time data type is Gauche built-in (@xref{Time}).
 Complete set of SRFI-19 is supported by the module @code{srfi-19}.
-@xref{srfi-19 - Time data types and procedures}.
+@xref{Time data types and procedures}.
 @c JP
 @item SRFI-19, 時間データの型と手続き
 時間のデータ型はGauche組み込みです(@ref{Time}参照)。
 SRFI-19の完全なサポートはモジュール@code{srfi-19}で提供されています。
-@ref{srfi-19 - Time data types and procedures}参照。
+@ref{Time data types and procedures}参照。
 @c COMMON
 
 @c EN
@@ -234,11 +252,11 @@ Built-in.   @xref{Signalling errors}.
 @c EN
 @item SRFI-25, Multi-dimensional array primitives. 
 Supported by the module @code{gauche.array}, which defines
-superset of SRFI-25.  @xref{gauche.array - Arrays}.
+superset of SRFI-25.  @xref{Arrays}.
 @c JP
 @item SRFI-25, 多次元配列のプリミティブ
 モジュール@code{gauche.array}が、SRFI-25のスーパーセットと
-なっています。@ref{gauche.array - Arrays}参照。
+なっています。@ref{Arrays}参照。
 @c COMMON
 
 @c EN
@@ -251,10 +269,10 @@ As an autoloaded macro.  @xref{Making Procedures}.
 
 @c EN
 @item SRFI-27, Sources of Random Bits.
-Supported by the module @code{srfi-27}.  @xref{srfi-27 - Sources of random bits}.
+Supported by the module @code{srfi-27}.  @xref{Sources of random bits}.
 @c JP
 @item SRFI-27, ランダムビットのソース
-モジュール@code{srfi-27}でサポートされます。@ref{srfi-27 - Sources of random bits}参照。
+モジュール@code{srfi-27}でサポートされます。@ref{Sources of random bits}参照。
 @c COMMON
 
 @c EN
@@ -286,11 +304,21 @@ Defined as an autoloaded macro.  @xref{Binding constructs}.
 @c EN
 @item SRFI-37, args-fold: a program argument processor
 Supported by the module @code{srfi-37}.
-@xref{srfi-37 - a program argument processor}.
+@xref{A program argument processor}.
 @c JP
 @item SRFI-37, args-fold: プログラム引数処理
 モジュール@code{srfi-37}でサポートされます。
-@ref{srfi-37 - a program argument processor}参照。
+@ref{A program argument processor}参照。
+@c COMMON
+
+@c EN
+@item SRFI-39, Parameter objects
+Supported by the module @code{gauche.parameter}.
+@xref{Parameters}.
+@c JP
+@item SRFI-39, パラメータオブジェクト
+モジュール@code{gauche.parameter}でサポートされます。
+@ref{Parameters}参照。
 @c COMMON
 @end table
 
@@ -420,10 +448,10 @@ with certain character encodings.
 
 @c EN
 Conversions from other encoding scheme is provided 
-as a special port. @xref{gauche.charconv - Character code conversion}, for details.
+as a special port. @xref{Character code conversion}, for details.
 @c JP
 他の文字エンコーディングからの変換は特別なポートを使って行われます。
-@ref{gauche.charconv - Character code conversion} を参照して下さい。
+@ref{Character code conversion} を参照して下さい。
 @c COMMON
 
 @c EN

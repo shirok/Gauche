@@ -5,51 +5,51 @@
 
 @c ----------------------------------------------------------------------
 @menu
-* binary.pack - Packing Binary Data::  
-* dbm - Generic DBM interface::  
-* dbm.fsdbm - File-system dbm::  
-* dbm.gdbm - GDBM interface::   
-* dbm.ndbm - NDBM interface::   
-* dbm.odbm - Original DBM interface::  
-* file.filter - Filtering file content::  
-* file.util - Filesystem utilities::  
-* math.const - Mathematic constants::  
-* math.mt-random - Mersenne-Twister random number generator::  
-* rfc.822 - RFC822 message parsing::  
-* rfc.base64 - Base64 encoding/decoding::  
-* rfc.cookie - HTTP cookie handling::  
-* rfc.hmac - HMAC keyed-hashing::  
-* rfc.http - HTTP::             
-* rfc.md5 - MD5 message digest::  
-* rfc.mime - MIME message handling::  
-* rfc.quoted-printable - Quoted-printable encoding/decoding::  
-* rfc.sha1 - SHA1 message digest::  
-* rfc.uri - URI parsing and construction::  
-* slib - SLIB::                 
-* sxml.ssax - Functional XML parser::  
-* sxml.sxpath - SXML Query Language::  
-* sxml.tools - manipulationg SXML structure::  
-* text.csv - CSV tables::       
-* text.diff - Calculate difference of text streams::  
-* text.html-lite - Simple HTML document construction::  
-* text.parse - Parsing input stream::  
-* text.tr - Transliterate characters::  
-* text.tree - Lazy text construction::  
-* util.combinations - Combination library::  
-* util.digest - Message digester framework::  
-* util.isomorph - Determine isomorphism::  
-* util.lcs - The longest common subsequence::  
-* util.list - Additional list library::  
-* util.queue - Queue::          
-* util.record - SLIB-compatible record type::  
-* util.toposort - Topological sort::  
-* www.cgi - CGI Utility::       
+* Packing Binary Data::         (binary.pack)
+* Generic DBM interface::       (dbm)
+* File-system dbm::             (dbm.fsdbm)
+* GDBM interface::              (dbm.gdbm)
+* NDBM interface::              (dbm.ndbm)
+* Original DBM interface::      (dbm.odbm)
+* Filtering file content::      (file.filter)
+* Filesystem utilities::        (file.util)
+* Mathematic constants::        (math.const)
+* Mersenne-Twister random number generator::  (math.mt-random)
+* RFC822 message parsing::      (rfc.822)
+* Base64 encoding/decoding::    (rfc.base64)
+* HTTP cookie handling::        (rfc.cookie)
+* HMAC keyed-hashing::          (rfc.hmac)
+* HTTP::                        (rfc.http)
+* MD5 message digest::          (rfc.md5)
+* MIME message handling::       (rfc.mime)
+* Quoted-printable encoding/decoding::  (rfc.quoted-printable)
+* SHA1 message digest::         (rfc.sha1)
+* URI parsing and construction::  (rfc.uri)
+* SLIB::                        (slib)
+* Functional XML parser::       (sxml.ssax)
+* SXML Query Language::         (sxml.sxpath)
+* manipulationg SXML structure::  (sxml.tools)
+* CSV tables::                  (text.csv)
+* Calculate difference of text streams::  (text.diff)
+* Simple HTML document construction::  (text.html-lite)
+* Parsing input stream::        (text.parse)
+* Transliterate characters::    (text.tr)
+* Lazy text construction::      (text.tree)
+* Combination library::         (util.combinations)
+* Message digester framework::  (util.digest)
+* Determine isomorphism::       (util.isomorph)
+* The longest common subsequence::  (util.lcs)
+* Additional list library::     (util.list)
+* Queue::                       (util.queue)
+* SLIB-compatible record type::  (util.record)
+* Topological sort::            (util.toposort)
+* CGI Utility::                 (www.cgi)
 @end menu
 
 @c ----------------------------------------------------------------------
-@node binary.pack - Packing Binary Data, dbm - Generic DBM interface, Library modules - Utilities, Library modules - Utilities
+@node Packing Binary Data, Generic DBM interface, Library modules - Utilities, Library modules - Utilities
 @section @code{binary.pack} - Packing Binary Data
-@c NODE binary.pack - バイナリデータのパック, @code{binary.pack} - バイナリデータのパック
+@c NODE バイナリデータのパック, @code{binary.pack} - バイナリデータのパック
 
 @deftp {Module} binary.pack
 @mdindex binary.pack
@@ -515,9 +515,9 @@ return #t if the template has variable length elements.
 @c ----------------------------------------------------------------------
 
 
-@node dbm - Generic DBM interface, dbm.fsdbm - File-system dbm, binary.pack - Packing Binary Data, Library modules - Utilities
+@node Generic DBM interface, File-system dbm, Packing Binary Data, Library modules - Utilities
 @section @code{dbm} - Generic DBM interface
-@c NODE dbm - 汎用DBMインタフェース, @code{dbm} - 汎用DBMインタフェース
+@c NODE 汎用DBMインタフェース, @code{dbm} - 汎用DBMインタフェース
 
 @deftp {Module} dbm
 @mdindex dbm
@@ -559,30 +559,30 @@ Gauche defines only what the system provides.
 @table @code
 @item dbm.fsdbm
 @c EN
-file-system dbm (@xref{dbm.fsdbm - File-system dbm}).
+file-system dbm (@xref{File-system dbm}).
 @c JP
-ファイルシステムdbm (@ref{dbm.fsdbm - File-system dbm}参照).
+ファイルシステムdbm (@ref{File-system dbm}参照).
 @c COMMON
 
 @item dbm.gdbm
 @c EN
-GDBM library (@xref{dbm.gdbm - GDBM interface}).
+GDBM library (@xref{GDBM interface}).
 @c JP
-GDBMライブラリ (@ref{dbm.gdbm - GDBM interface}参照).
+GDBMライブラリ (@ref{GDBM interface}参照).
 @c COMMON
 
 @item dbm.ndbm
 @c EN
-NDBM library (@xref{dbm.ndbm - NDBM interface}).
+NDBM library (@xref{NDBM interface}).
 @c JP
-NDBMライブラリ (@ref{dbm.ndbm - NDBM interface}参照).
+NDBMライブラリ (@ref{NDBM interface}参照).
 @c COMMON
 
 @item dbm.odbm
 @c EN
-DBM library  (@xref{dbm.odbm - Original DBM interface}).
+DBM library  (@xref{Original DBM interface}).
 @c JP
-DBMライブラリ  (@ref{dbm.odbm - Original DBM interface}参照).
+DBMライブラリ  (@ref{Original DBM interface}参照).
 @c COMMON
 @end table
 @end deftp
@@ -620,7 +620,7 @@ The following code shows a typical usage of the database.
 * Managing dbm database instance::  
 @end menu
 
-@node Opening and closing a dbm database, Accessing a dbm database, dbm - Generic DBM interface, dbm - Generic DBM interface
+@node Opening and closing a dbm database, Accessing a dbm database, Generic DBM interface, Generic DBM interface
 @subsection Opening and closing a dbm database
 @c NODE DBMデータベースのオープンとクローズ
 
@@ -811,7 +811,7 @@ Returns true if a database @var{dbm} is already closed, false otherwise.
 @c COMMON
 @end deffn
 
-@node Accessing a dbm database, Iterating on a database, Opening and closing a dbm database, dbm - Generic DBM interface
+@node Accessing a dbm database, Iterating on a database, Opening and closing a dbm database, Generic DBM interface
 @subsection Accessing a dbm database
 @c NODE DBMデータベースのアクセス
 
@@ -858,7 +858,7 @@ Delete a value associated with @var{key}.
 @end deffn
 
 
-@node Iterating on a database, Managing dbm database instance, Accessing a dbm database, dbm - Generic DBM interface
+@node Iterating on a database, Managing dbm database instance, Accessing a dbm database, Generic DBM interface
 @subsection Iterating on a dbm database
 @c NODE DBMデータベース上の繰り返し処理
 
@@ -918,7 +918,7 @@ which is returned as a result of @code{dbm-map}.
 @c COMMON
 @end deffn
 
-@node Managing dbm database instance,  , Iterating on a database, dbm - Generic DBM interface
+@node Managing dbm database instance,  , Iterating on a database, Generic DBM interface
 @subsection Managing dbm database instance
 @c NODE DBMデータベースインスタンスの管理
 
@@ -1001,9 +1001,9 @@ Moves or renames a database of class @var{class} specified by
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node dbm.fsdbm - File-system dbm, dbm.gdbm - GDBM interface, dbm - Generic DBM interface, Library modules - Utilities
+@node File-system dbm, GDBM interface, Generic DBM interface, Library modules - Utilities
 @section @code{dbm.fsdbm} - File-system dbm
-@c NODE dbm.fsdbm - ファイルシステムdbm, @code{dbm.fsdbm} - ファイルシステムdbm
+@c NODE ファイルシステムdbm, @code{dbm.fsdbm} - ファイルシステムdbm
 
 @deftp {Module} dbm.fsdbm
 @mdindex dbm.fsdbm
@@ -1072,18 +1072,18 @@ characters.
 
 @c EN
 Fsdbm implements all of the dbm protocol 
-(see @ref{dbm - Generic DBM interface}).
+(see @ref{Generic DBM interface}).
 It doesn't have any fsdbm-specific procedures.
 @c JP
 fsdbmは、全てのDBMプロトコルを実装しています
-(@ref{dbm - Generic DBM interface}参照)。
+(@ref{Generic DBM interface}参照)。
 fsdbm特有の手続きというものはありません。
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node dbm.gdbm - GDBM interface, dbm.ndbm - NDBM interface, dbm.fsdbm - File-system dbm, Library modules - Utilities
+@node GDBM interface, NDBM interface, File-system dbm, Library modules - Utilities
 @section @code{dbm.gdbm} - GDBM interface
-@c NODE dbm.gdbm - GDBMインタフェース, @code{dbm.gdbm} - GDBMインタフェース
+@c NODE GDBMインタフェース, @code{dbm.gdbm} - GDBMインタフェース
 
 @deftp {Module} dbm.gdbm
 @mdindex dbm.gdbm
@@ -1112,12 +1112,12 @@ This module is only installed when your system already has GDBM
 @end deftp
 
 @c EN
-Besides the unified DBM interface (@xref{dbm - Generic DBM interface}),
+Besides the unified DBM interface (@xref{Generic DBM interface}),
 this module provides the following low-level functions that provides
 direct access to the gdbm API.  See gdbm manual for details of these
 APIs.
 @c JP
-統合された DBM インターフェース (@xref{dbm - Generic DBM interface}) の
+統合された DBM インターフェース (@xref{Generic DBM interface}) の
 他に、このモジュールでは GDBM API への直接のアクセスを提供する以下の
 低レベルな手続きを提供しています。これらの API の詳細については GDBM の
 マニュアルを見て下さい。
@@ -1222,9 +1222,9 @@ APIs.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node dbm.ndbm - NDBM interface, dbm.odbm - Original DBM interface, dbm.gdbm - GDBM interface, Library modules - Utilities
+@node NDBM interface, Original DBM interface, GDBM interface, Library modules - Utilities
 @section @code{dbm.ndbm} - NDBM interface
-@c NODE dbm.ndbm - NDBMインタフェース, @code{dbm.ndbm} - NDBMインタフェース
+@c NODE NDBMインタフェース, @code{dbm.ndbm} - NDBMインタフェース
 
 @deftp {Module} dbm.ndbm
 @mdindex dbm.ndbm
@@ -1245,12 +1245,12 @@ This module is only installed when your system already has NDBM.
 @end deftp
 
 @c EN
-Besides the unified DBM interface (@xref{dbm - Generic DBM interface}),
+Besides the unified DBM interface (@xref{Generic DBM interface}),
 this module provides the following low-level functions that provides
 direct access to the ndbm API.  See ndbm manual for details of these
 APIs.
 @c JP
-統合された DBM インターフェース (@xref{dbm - Generic DBM interface}) の
+統合された DBM インターフェース (@xref{Generic DBM interface}) の
 他に、このモジュールでは NDBM API への直接のアクセスを提供する以下の
 低レベルな手続きを提供しています。これらの API の詳細については NDBM の
 マニュアルを見て下さい。
@@ -1287,9 +1287,9 @@ APIs.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node dbm.odbm - Original DBM interface, file.filter - Filtering file content, dbm.ndbm - NDBM interface, Library modules - Utilities
+@node Original DBM interface, Filtering file content, NDBM interface, Library modules - Utilities
 @section @code{dbm.odbm} - Original DBM interface
-@c NODE dbm.odbm - オリジナルのDBMインタフェース, @code{dbm.odbm} - オリジナルのDBMインタフェース
+@c NODE オリジナルのDBMインタフェース, @code{dbm.odbm} - オリジナルのDBMインタフェース
 
 @deftp {Module} dbm.odbm
 @mdindex dbm.odbm
@@ -1320,12 +1320,12 @@ you'll get an error.
 @end deftp
 
 @c EN
-Besides the unified DBM interface (@xref{dbm - Generic DBM interface}),
+Besides the unified DBM interface (@xref{Generic DBM interface}),
 this module provides the following low-level functions that provides
 direct access to the dbm API.  See dbm manual for details of these
 APIs.
 @c JP
-統合された DBM インターフェース (@xref{dbm - Generic DBM interface}) の
+統合された DBM インターフェース (@xref{Generic DBM interface}) の
 他に、このモジュールでは DBM API への直接のアクセスを提供する以下の
 低レベルな手続きを提供しています。これらの API の詳細については DBM の
 マニュアルを見て下さい。
@@ -1358,9 +1358,9 @@ APIs.
 @c @section @code{dbm.pdbm} - Pseudo DBM interface
 
 @c ----------------------------------------------------------------------
-@node file.filter - Filtering file content, file.util - Filesystem utilities, dbm.odbm - Original DBM interface, Library modules - Utilities
+@node Filtering file content, Filesystem utilities, Original DBM interface, Library modules - Utilities
 @section @code{file.filter} - Filtering file content
-@c NODE file.filter - ファイルのフィルタ, @code{file.filter} - ファイルのフィルタ
+@c NODE ファイルのフィルタ, @code{file.filter} - ファイルのフィルタ
 
 @deftp {Module} file.filter
 @mdindex file.filter
@@ -1497,9 +1497,9 @@ By default, the output (or the temporary file when
 @end defun
 
 @c ----------------------------------------------------------------------
-@node file.util - Filesystem utilities, math.const - Mathematic constants, file.filter - Filtering file content, Library modules - Utilities
+@node Filesystem utilities, Mathematic constants, Filtering file content, Library modules - Utilities
 @section @code{file.util} - Filesystem utilities
-@c NODE file.util - ファイルシステムユーティリティ, @code{file.util} - ファイルシステムユーティリティ
+@c NODE ファイルシステムユーティリティ, @code{file.util} - ファイルシステムユーティリティ
 
 @deftp {Module} file.util
 @mdindex file.util
@@ -1548,7 +1548,7 @@ Gaucheでは@emph{両方の}名前を提供することにしました。
 * File operations::             
 @end menu
 
-@node Directory utilities, Pathname utilities, file.util - Filesystem utilities, file.util - Filesystem utilities
+@node Directory utilities, Pathname utilities, Filesystem utilities, Filesystem utilities
 @subsection Directory utilities
 @c NODE ディレクトリユーティリティ
 
@@ -1793,7 +1793,7 @@ followed.
 @end defun
 
 
-@node Pathname utilities, File attribute utilities, Directory utilities, file.util - Filesystem utilities
+@node Pathname utilities, File attribute utilities, Directory utilities, Filesystem utilities
 @subsection Pathname utilities
 @c NODE パスネームユーティリティ
 
@@ -1904,7 +1904,7 @@ by default.
 @end example
 @end defun
 
-@node File attribute utilities, File operations, Pathname utilities, file.util - Filesystem utilities
+@node File attribute utilities, File operations, Pathname utilities, Filesystem utilities
 @subsection File attibute utilities
 @c NODE ファイル属性ユーティリティ
 
@@ -2084,7 +2084,7 @@ defined.
 @c COMMON
 @end deffn
 
-@node File operations,  , File attribute utilities, file.util - Filesystem utilities
+@node File operations,  , File attribute utilities, Filesystem utilities
 @subsection File operations
 @c NODE ファイル操作
 
@@ -2237,9 +2237,9 @@ it to @var{dst}, then removes @var{src}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node math.const - Mathematic constants, math.mt-random - Mersenne-Twister random number generator, file.util - Filesystem utilities, Library modules - Utilities
+@node Mathematic constants, Mersenne-Twister random number generator, Filesystem utilities, Library modules - Utilities
 @section @code{math.const} - Mathematic constants
-@c NODE math.const - 定数, @code{math.const} - 定数
+@c NODE 定数, @code{math.const} - 定数
 
 @deftp {Module} math.const
 @mdindex math.const
@@ -2268,9 +2268,9 @@ e.
 @end defvr
 
 @c ----------------------------------------------------------------------
-@node math.mt-random - Mersenne-Twister random number generator, rfc.822 - RFC822 message parsing, math.const - Mathematic constants, Library modules - Utilities
+@node Mersenne-Twister random number generator, RFC822 message parsing, Mathematic constants, Library modules - Utilities
 @section @code{math.mt-random} - Mersenne Twister Random number generator
-@c NODE math.mt-random - Mersenne Twister乱数発生器, @code{math.mt-random} - Mersenne Twister乱数発生器
+@c NODE Mersenne Twister乱数発生器, @code{math.mt-random} - Mersenne Twister乱数発生器
 
 @deftp {Module} math.mt-random
 @mdindex math.mt-random
@@ -2323,13 +2323,13 @@ Mersenne Twister RNGの状態をカプセル化するクラスです。
 @c EN
 Sets random seed value @var{seed} to the Mersenne Twister RNG @var{mt}.
 @var{Seed} can be an arbitrary positive exact integer,
-or arbitrary length of u32vector (@xref{srfi-4 - Homogeneous vectors}).
+or arbitrary length of u32vector (@xref{Homogeneous vectors}).
 If it is an integer, the lower 32bits are used for initialization.
 If it is a u32vector, up to 624 elements are used for initialization.
 @c JP
 Mersenne Twister RNG @var{mt}にランダムシードの値@var{seed}をセットします。
 @var{seed}は任意の正の正確整数か、任意長のu32vector
-(@ref{srfi-4 - Homogeneous vectors}参照)が使えます。
+(@ref{Homogeneous vectors}参照)が使えます。
 整数の場合は、初期化のために低位の32ビットが使われます。
 u32vectorの場合は、初期化のために624までの要素が使われます。
 @c COMMON
@@ -2401,9 +2401,9 @@ faster than getting one by one.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node rfc.822 - RFC822 message parsing, rfc.base64 - Base64 encoding/decoding, math.mt-random - Mersenne-Twister random number generator, Library modules - Utilities
+@node RFC822 message parsing, Base64 encoding/decoding, Mersenne-Twister random number generator, Library modules - Utilities
 @section @code{rfc.822} - RFC822 message parsing
-@c NODE rfc.822 - RFC822メッセージ形式, @code{rfc.822} - RFC822メッセージ形式
+@c NODE RFC822メッセージ形式, @code{rfc.822} - RFC822メッセージ形式
 
 @deftp {Module} rfc.822
 @mdindex rfc.822
@@ -2617,9 +2617,9 @@ returns @code{#f} instead.
 
 
 @c ----------------------------------------------------------------------
-@node rfc.base64 - Base64 encoding/decoding, rfc.cookie - HTTP cookie handling, rfc.822 - RFC822 message parsing, Library modules - Utilities
+@node Base64 encoding/decoding, HTTP cookie handling, RFC822 message parsing, Library modules - Utilities
 @section @code{rfc.base64} - Base64 encoding/decoding
-@c NODE rfc.base64 - Base64エンコーディング, @code{rfc.base64} - Base64エンコーディング
+@c NODE Base64エンコーディング, @code{rfc.base64} - Base64エンコーディング
 
 @deftp {Module} rfc.base64
 @mdindex rfc.base64
@@ -2688,9 +2688,9 @@ Base64 でエンコードされた文字として適当でない文字は沈黙のまま無視されます。
 @end defun
 
 @c ----------------------------------------------------------------------
-@node rfc.cookie - HTTP cookie handling, rfc.hmac - HMAC keyed-hashing, rfc.base64 - Base64 encoding/decoding, Library modules - Utilities
+@node HTTP cookie handling, HMAC keyed-hashing, Base64 encoding/decoding, Library modules - Utilities
 @section @code{rfc.cookie} - HTTP cookie handling
-@c NODE rfc.cookie - HTTPクッキー, @code{rfc.cookie} - HTTPクッキー
+@c NODE HTTPクッキー, @code{rfc.cookie} - HTTPクッキー
 
 @deftp {Module} rfc.cookie
 @mdindex rfc.cookie
@@ -2849,9 +2849,9 @@ Some examples:
 @end defun
 
 @c ----------------------------------------------------------------------
-@node rfc.hmac - HMAC keyed-hashing, rfc.http - HTTP, rfc.cookie - HTTP cookie handling, Library modules - Utilities
+@node HMAC keyed-hashing, HTTP, HTTP cookie handling, Library modules - Utilities
 @section @code{rfc.hmac} - HMAC keyed-hashing
-@c NODE rfc.hmac - HMAC鍵付きハッシング, @code{rfc.hmac} - HMAC鍵付きハッシング
+@c NODE HMAC鍵付きハッシング, @code{rfc.hmac} - HMAC鍵付きハッシング
 
 @deftp {Module} rfc.hmac
 @mdindex rfc.hmac
@@ -2881,18 +2881,18 @@ Keeps state informatoin of HMAC algorithm.
 Key and the hashing algorithm should be given at the construction
 time, using @code{:key} and @code{:hasher} keyword-arguments respectively.
 You can pass any class object that implements message digest 
-interface (@xref{util.digest - Message digester framework}),
-such as @code{<md5>} (@xref{rfc.md5 - MD5 message digest})
-or @code{<sha1>} (@xref{rfc.sha1 - SHA1 message digest}).
+interface (@xref{Message digester framework}),
+such as @code{<md5>} (@xref{MD5 message digest})
+or @code{<sha1>} (@xref{SHA1 message digest}).
 
 Example:
 @c JP
 HMACアルゴリズムの状態情報を保持します。
 鍵とハッシングアルゴリズムは、キーワード引数@code{:key}と@code{:hasher}を
 それぞれ使って、生成時に与えます。
-@code{<md5>} (@ref{rfc.md5 - MD5 message digest}参照)や
-@code{<sha1>} (@ref{rfc.sha1 - SHA1 message digest}参照)などのような
-ダイジェストインタフェース(@ref{util.digest - Message digester framework}参照)を
+@code{<md5>} (@ref{MD5 message digest}参照)や
+@code{<sha1>} (@ref{SHA1 message digest}参照)などのような
+ダイジェストインタフェース(@ref{Message digester framework}参照)を
 実装するいかなるクラスオブジェクトを渡すこともできます。
 
 例:
@@ -2917,7 +2917,7 @@ which must be represented by a (possibly incomplete) string.
 Finalizes the internal state of @var{hmac} and returns the
 hashed string in incomplete string.
 You can use @code{digest-hexify}
-(@xref{util.digest - Message digester framework}) to obtain "hexified"
+(@xref{Message digester framework}) to obtain "hexified"
 result.
 Once finalized, you can't call @code{hmac-update!} or @code{hmac-final!}
 on @var{hmac}.
@@ -2925,7 +2925,7 @@ on @var{hmac}.
 @var{hmac}の内部状態を終了させ、不完全文字列でハッシュされた文字列を
 返します。
 ``hexified''(16進化)された結果を得るために、@code{digest-hexify}
-(@ref{util.digest - Message digester framework}参照)を使うことが
+(@ref{Message digester framework}参照)を使うことが
 できます。
 一旦終了されると、@var{hmac}に対しては@code{hmac-update!}や
 @code{hmac-final!}を呼ぶことはできません。
@@ -2955,7 +2955,7 @@ then returns the hashed result in an incomplete string.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node rfc.http - HTTP, rfc.md5 - MD5 message digest, rfc.hmac - HMAC keyed-hashing, Library modules - Utilities
+@node HTTP, MD5 message digest, HMAC keyed-hashing, Library modules - Utilities
 @section @code{rfc.http} - HTTP
 
 @deftp {Module} rfc.http
@@ -3186,9 +3186,9 @@ without allocating (potentially very big) string buffer.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node rfc.md5 - MD5 message digest, rfc.mime - MIME message handling, rfc.http - HTTP, Library modules - Utilities
+@node MD5 message digest, MIME message handling, HTTP, Library modules - Utilities
 @section @code{rfc.md5} - MD5 message digest
-@c NODE rfc.md5 - MD5メッセージダイジェスト, @code{rfc.md5} - MD5メッセージダイジェスト
+@c NODE MD5メッセージダイジェスト, @code{rfc.md5} - MD5メッセージダイジェスト
 
 @deftp {Module} rfc.md5
 @mdindex rfc.md5
@@ -3196,11 +3196,11 @@ without allocating (potentially very big) string buffer.
 This module implements MD5 message digest algorithm, defined in
 RFC 1321 (@ref{rfc1321, [RFC1321], RFC1321}).
 The module extends util.digest 
-(@xref{util.digest - Message digester framework}).
+(@xref{Message digester framework}).
 @c JP
 このモジュールは、RFC 1321(@ref{rfc1321, [RFC1321], RFC1321}参照)で
 定義されている、MD5メッセージダイジェストアルゴリズムを実装しています。
-このモジュールは、util.digest (@ref{util.digest - Message digester framework}参照)
+このモジュールは、util.digest (@ref{Message digester framework}参照)
 を拡張しています。
 @c COMMON
 @end deftp
@@ -3213,7 +3213,7 @@ The instance of this class keeps internal state of MD5 digest algorithm.
 This class implements @code{util.digest} framework interface,
 @code{digest-update!}, @code{digest-final!}, 
 @code{digest}, and @code{digest-string}.
-@xref{util.digest - Message digester framework}, for detailed explanation
+@xref{Message digester framework}, for detailed explanation
 of these methods.
 @c JP
 このクラスのインスタンスは、MD5ダイジェストアルゴリズムの内部状態を
@@ -3222,7 +3222,7 @@ of these methods.
 このクラスは、@code{util.digest}フレームワークのインターフェースである、
 @code{digest-update!}、@code{digest-final!}、@code{digest}、
 @code{digest-string}を実装しています。
-これらのメソッドの詳細な説明は、@ref{util.digest - Message digester framework}
+これらのメソッドの詳細な説明は、@ref{Message digester framework}
 を参照して下さい。
 @c COMMON
 @end deftp
@@ -3256,9 +3256,9 @@ in an incomplete string.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node rfc.mime - MIME message handling, rfc.quoted-printable - Quoted-printable encoding/decoding, rfc.md5 - MD5 message digest, Library modules - Utilities
+@node MIME message handling, Quoted-printable encoding/decoding, MD5 message digest, Library modules - Utilities
 @section @code{rfc.mime} - MIME message handling
-@c NODE rfc.mime - MIMEメッセージ処理, @code{rfc.mime} - MIMEメッセージ処理
+@c NODE MIMEメッセージ処理, @code{rfc.mime} - MIMEメッセージ処理
 
 @deftp {Module} rfc.mime
 @mdindex rfc.mime
@@ -3273,10 +3273,10 @@ RFC2045からRFC2049で定義されている、
 
 @c EN
 This module is supposed to be used with @code{rfc.822} module
-(@xref{rfc.822 - RFC822 message parsing}).
+(@xref{RFC822 message parsing}).
 @c JP
 このモジュールは、@code{rfc.822}モジュールと一緒に使うことを
-想定しています(@ref{rfc.822 - RFC822 message parsing}参照)。
+想定しています(@ref{RFC822 message parsing}参照)。
 @c COMMON
 @end deftp
 
@@ -3608,7 +3608,7 @@ quoted-printable encoding is handled.
 
 This procedure does not handle charset conversion.
 The caller must use CES conversion port as @var{outp}
-(@xref{gauche.charconv - Character code conversion}) if desired.
+(@xref{Character code conversion}) if desired.
 @c JP
 この手続きは、@var{reader}がEOFを返すまで、@var{inp}に@var{reader}を
 繰り返し適用します(@var{reader}はMIMEパートバウンダリを読み込むと
@@ -3619,7 +3619,7 @@ EOFを返すことを思い出して下さい)。この手続きはまた、
 
 この手続きは文字セットの変換は扱いません。
 必要であれば、呼び出し側が@var{outp}としてCES変換ポートを
-使う必要があります(@ref{gauche.charconv - Character code conversion}参照)。
+使う必要があります(@ref{Character code conversion}参照)。
 
 @c COMMON
 @end defun
@@ -3684,9 +3684,9 @@ blocks, instead of all-in-one procedure.
 
 
 @c ----------------------------------------------------------------------
-@node rfc.quoted-printable - Quoted-printable encoding/decoding, rfc.sha1 - SHA1 message digest, rfc.mime - MIME message handling, Library modules - Utilities
+@node Quoted-printable encoding/decoding, SHA1 message digest, MIME message handling, Library modules - Utilities
 @section @code{rfc.quoted-printable} - Quoted-printable encoding/decoding
-@c NODE rfc.quoted-printable - Quoted-printableエンコーディング, @code{rfc.quoted-printable} - Quoted-printableエンコーディング
+@c NODE Quoted-printableエンコーディング, @code{rfc.quoted-printable} - Quoted-printableエンコーディング
 
 @deftp {Module} rfc.quoted-printable
 @mdindex rfc.quoted-printable
@@ -3753,9 +3753,9 @@ Quoted-printableエンコードされた文字列@var{string}をデコードし、
 @end defun
 
 @c ----------------------------------------------------------------------
-@node rfc.sha1 - SHA1 message digest, rfc.uri - URI parsing and construction, rfc.quoted-printable - Quoted-printable encoding/decoding, Library modules - Utilities
+@node SHA1 message digest, URI parsing and construction, Quoted-printable encoding/decoding, Library modules - Utilities
 @section @code{rfc.sha1} - SHA1 message digest
-@c NODE rfc.sha1 - SHA1メッセージダイジェスト, @code{rfc.sha1} - SHA1メッセージダイジェスト
+@c NODE SHA1メッセージダイジェスト, @code{rfc.sha1} - SHA1メッセージダイジェスト
 
 @deftp {Module} rfc.sha1
 @mdindex rfc.sha1
@@ -3763,11 +3763,11 @@ Quoted-printableエンコードされた文字列@var{string}をデコードし、
 This module implements US Secure Hash Algorithm 1 (SHA1), 
 defined in RFC 3174 (@ref{rfc3174, [RFC3174], RFC3174}).
 The module extends util.digest 
-(@xref{util.digest - Message digester framework}).
+(@xref{Message digester framework}).
 @c JP
 このモジュールは、RFC 3174 (@ref{rfc3174, [RFC3174], RFC3174}参照)で
 定義されている、US Secure Hash Algorithm 1 (SHA1)を実装しています。
-このモジュールは、util.digest (@ref{util.digest - Message digester framework}参照)
+このモジュールは、util.digest (@ref{Message digester framework}参照)
 を拡張しています。
 @c COMMON
 @end deftp
@@ -3780,7 +3780,7 @@ The instance of this class keeps internal state of SHA1 digest algorithm.
 This class implements @code{util.digest} framework interface,
 @code{digest-update!}, @code{digest-final!}, 
 @code{digest}, and @code{digest-string}.
-@xref{util.digest - Message digester framework}, for detailed explanation
+@xref{Message digester framework}, for detailed explanation
 of these methods.
 @c JP
 このクラスのインスタンスは、SHA1ダイジェストアルゴリズムの内部状態を
@@ -3789,7 +3789,7 @@ of these methods.
 このクラスは、@code{util.digest}フレームワークのインターフェース、
 @code{digest-update!}、@code{digest-final!}、@code{digest}、
 @code{digest-string}を実装しています。
-これらのメソッドの詳細な説明は、@ref{util.digest - Message digester framework}を
+これらのメソッドの詳細な説明は、@ref{Message digester framework}を
 参照して下さい。
 @c COMMON
 @end deftp
@@ -3823,7 +3823,7 @@ in an incomplete string.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node rfc.uri - URI parsing and construction, slib - SLIB, rfc.sha1 - SHA1 message digest, Library modules - Utilities
+@node URI parsing and construction, SLIB, SHA1 message digest, Library modules - Utilities
 @section @code{rfc.uri} - URI parsing and construction
 @c NODE URIの解析と作成, @code{rfc.uri} - URIの解析と作成
 
@@ -4018,9 +4018,9 @@ native multibyte representation.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node slib - SLIB, sxml.ssax - Functional XML parser, rfc.uri - URI parsing and construction, Library modules - Utilities
+@node SLIB, Functional XML parser, URI parsing and construction, Library modules - Utilities
 @section @code{slib} - SLIB interface
-@c NODE slib - SLIBインタフェース, @code{slib} - SLIBインタフェース
+@c NODE SLIBインタフェース, @code{slib} - SLIBインタフェース
 
 @deftp {Module} slib
 @mdindex slib
@@ -4067,9 +4067,9 @@ module @code{slib}.
 @end example
 
 @c ----------------------------------------------------------------------
-@node sxml.ssax - Functional XML parser, sxml.sxpath - SXML Query Language, slib - SLIB, Library modules - Utilities
+@node Functional XML parser, SXML Query Language, SLIB, Library modules - Utilities
 @section @code{sxml.ssax} - Functional XML parser
-@c NODE sxml.ssax - 関数的なXMLパーザ, @code{sxml.ssax} - 関数的なXMLパーザ
+@c NODE 関数的なXMLパーザ, @code{sxml.ssax} - 関数的なXMLパーザ
 
 @deftp {Module} sxml.ssax
 @mdindex sxml.ssax
@@ -4171,7 +4171,7 @@ check out @code{ssax:xml->sxml} in @ref{SSAX Highest-level parsers - XML to SXML
 * SSAX Highest-level parsers - XML to SXML::  
 @end menu
 
-@node SSAX data types, SSAX low-level parsing code, sxml.ssax - Functional XML parser, sxml.ssax - Functional XML parser
+@node SSAX data types, SSAX low-level parsing code, Functional XML parser, Functional XML parser
 @subsection SSAX data types
 @c NODE SSAXデータタイプ
 
@@ -4506,7 +4506,7 @@ Accessor macros of a @var{XML-TOKEN} record.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node SSAX low-level parsing code, SSAX higher-level parsers and scanners, SSAX data types, sxml.ssax - Functional XML parser
+@node SSAX low-level parsing code, SSAX higher-level parsers and scanners, SSAX data types, Functional XML parser
 @subsection SSAX low-level parsing code
 @c NODE SSAXの低レベルパージングコード
 
@@ -5124,7 +5124,7 @@ correspondingly a @code{SYSTEM} or @code{PUBLIC} token. This procedure returns t
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SSAX higher-level parsers and scanners, SSAX Highest-level parsers - XML to SXML, SSAX low-level parsing code, sxml.ssax - Functional XML parser
+@node SSAX higher-level parsers and scanners, SSAX Highest-level parsers - XML to SXML, SSAX low-level parsing code, Functional XML parser
 @subsection SSAX higher-level parsers and scanners
 @c NODE SSAXの高レベルのパーザとスキャナ
 
@@ -5299,7 +5299,7 @@ The result of @var{error-cont} is returned.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SSAX Highest-level parsers - XML to SXML,  , SSAX higher-level parsers and scanners, sxml.ssax - Functional XML parser
+@node SSAX Highest-level parsers - XML to SXML,  , SSAX higher-level parsers and scanners, Functional XML parser
 @subsection SSAX Highest-level parsers - XML to SXML
 @c NODE SSAXの高レベルのパーザ - XMLからSXMLへ
 
@@ -5683,9 +5683,9 @@ XMLドキュメントのSXML表現を返します。
 @end defun
 
 @c ----------------------------------------------------------------------
-@node sxml.sxpath - SXML Query Language, sxml.tools - manipulationg SXML structure, sxml.ssax - Functional XML parser, Library modules - Utilities
+@node SXML Query Language, manipulationg SXML structure, Functional XML parser, Library modules - Utilities
 @section @code{sxml.sxpath} - SXML Query Language
-@c NODE sxml.sxpath - SXMLクエリ言語, @code{sxml.sxpath} - SXMLクエリ言語
+@c NODE SXMLクエリ言語, @code{sxml.sxpath} - SXMLクエリ言語
 
 @deftp {Module} sxml.sxpath
 @mdindex sxml.sxpath
@@ -5760,7 +5760,7 @@ W3CのXPathコア関数ライブラリのSXML版を実装する拡張ライブラリ。
 * SXPath extension::            
 @end menu
 
-@node SXPath basic converters and applicators, SXPath query language, sxml.sxpath - SXML Query Language, sxml.sxpath - SXML Query Language
+@node SXPath basic converters and applicators, SXPath query language, SXML Query Language, SXML Query Language
 @subsection SXPath basic converters and applicators
 @c NODE SXPathの基本的なコンバータとアプリケータ
 
@@ -6285,7 +6285,7 @@ can be stopped.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SXPath query language, SXPath extension, SXPath basic converters and applicators, sxml.sxpath - SXML Query Language
+@node SXPath query language, SXPath extension, SXPath basic converters and applicators, SXML Query Language
 @subsection SXPath query language
 @c NODE SXPathクエリ言語
 
@@ -6380,7 +6380,7 @@ node.  @var{lpaths} are location paths for attributes of type ID.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SXPath extension,  , SXPath query language, sxml.sxpath - SXML Query Language
+@node SXPath extension,  , SXPath query language, SXML Query Language
 @subsection SXPath extension
 @c NODE SXPathの拡張
 
@@ -6714,9 +6714,9 @@ Popular shortcuts:
 
 
 @c ----------------------------------------------------------------------
-@node sxml.tools - manipulationg SXML structure, text.csv - CSV tables, sxml.sxpath - SXML Query Language, Library modules - Utilities
+@node manipulationg SXML structure, CSV tables, SXML Query Language, Library modules - Utilities
 @section @code{sxml.tools} - manipulationg SXML structure
-@c NODE sxml.tools - SXML構造を操作する, @code{sxml.tools} - SXML構造を操作する
+@c NODE SXML構造を操作する, @code{sxml.tools} - SXML構造を操作する
 
 @deftp {Module} sxml.tools
 @mdindex sxml.tools
@@ -6746,7 +6746,7 @@ source code.
 @end menu
 
 @c ----------------------------------------------------------------------
-@node SXML predicates, SXML accessors, sxml.tools - manipulationg SXML structure, sxml.tools - manipulationg SXML structure
+@node SXML predicates, SXML accessors, manipulationg SXML structure, manipulationg SXML structure
 @subsection SXML predicates
 @c NODE SXMLの述語
 
@@ -6808,7 +6808,7 @@ The element itself and all its nested elements have to be minimised.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SXML accessors, SXML modifiers, SXML predicates, sxml.tools - manipulationg SXML structure
+@node SXML accessors, SXML modifiers, SXML predicates, manipulationg SXML structure
 @subsection SXML accessors
 @c NODE SXMLへのアクセッサ
 
@@ -7184,7 +7184,7 @@ namespace-id is used instead.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SXML modifiers, SXPath auxiliary utilities, SXML accessors, sxml.tools - manipulationg SXML structure
+@node SXML modifiers, SXPath auxiliary utilities, SXML accessors, manipulationg SXML structure
 @subsection SXML modifiers
 @c NODE SXMLのモディファイヤ
 
@@ -7367,7 +7367,7 @@ Returns a minimized and normalized SXML element.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SXPath auxiliary utilities, SXML to markup conversion, SXML modifiers, sxml.tools - manipulationg SXML structure
+@node SXPath auxiliary utilities, SXML to markup conversion, SXML modifiers, manipulationg SXML structure
 @subsection SXPath auxiliary utilities
 @c NODE SXPathの補助的ユーティリティ
 
@@ -7414,7 +7414,7 @@ Lookup an element using its ID.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SXML to markup conversion,  , SXPath auxiliary utilities, sxml.tools - manipulationg SXML structure
+@node SXML to markup conversion,  , SXPath auxiliary utilities, manipulationg SXML structure
 @subsection SXML to markup conversion
 @c NODE SXMLからマークアップへの変換
 
@@ -7506,11 +7506,11 @@ Given a string, check to make sure it does not contain characters
 @var{<}, @var{>}, @var{&},
 @var{"} that require encoding.
 See also @code{html-escape-string}
-in @ref{text.html-lite - Simple HTML document construction}.
+in @ref{Simple HTML document construction}.
 @c JP
 与えられた文字列で、それがエンコーディングを必要とする文字、
 @var{<}、@var{>}、@var{&}、@var{``}を含まないことをチェックします。
-@ref{text.html-lite - Simple HTML document construction}の
+@ref{Simple HTML document construction}の
 @code{html-escape-string}も参照して下さい。
 @c COMMON
 @end defun
@@ -7535,9 +7535,9 @@ SXML->HTML変換に対して特化され最適化されたバージョンのノードディスパッチ
 @end defun
 
 @c ----------------------------------------------------------------------
-@node text.csv - CSV tables, text.diff - Calculate difference of text streams, sxml.tools - manipulationg SXML structure, Library modules - Utilities
+@node CSV tables, Calculate difference of text streams, manipulationg SXML structure, Library modules - Utilities
 @section @code{text.csv} - CSV tables
-@c NODE text.csv - CSVテーブル, @code{text.csv} - CSVテーブル
+@c NODE CSVテーブル, @code{text.csv} - CSVテーブル
 
 @deftp {Module} text.csv
 @mdindex text.csv
@@ -7614,7 +7614,7 @@ to prepare a file to be read by Windows programs.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node text.diff - Calculate difference of text streams, text.html-lite - Simple HTML document construction, text.csv - CSV tables, Library modules - Utilities
+@node Calculate difference of text streams, Simple HTML document construction, CSV tables, Library modules - Utilities
 @section @code{text.diff} - Calculate difference of text streams
 @c NODE テキストストリームの相違点を計算する, @code{text.diff} - テキストストリームの相違点を計算する
 
@@ -7622,9 +7622,9 @@ to prepare a file to be read by Windows programs.
 @mdindex text.diff
 @c EN
 This module calculates the difference of two text streams or strings,
-using @code{util.lcs} (@xref{util.lcs - The longest common subsequence}).
+using @code{util.lcs} (@xref{The longest common subsequence}).
 @c JP
-このモジュールでは、@code{util.lcs} (@ref{util.lcs - The longest common subsequence}参照)を
+このモジュールでは、@code{util.lcs} (@ref{The longest common subsequence}参照)を
 使って、2つのテキストストリーム、あるいは2つの文字列の相違点を計算します。
 @c COMMON
 @end deftp
@@ -7777,9 +7777,9 @@ displays:
 @c @end defun
 
 @c ----------------------------------------------------------------------
-@node text.html-lite - Simple HTML document construction, text.parse - Parsing input stream, text.diff - Calculate difference of text streams, Library modules - Utilities
+@node Simple HTML document construction, Parsing input stream, Calculate difference of text streams, Library modules - Utilities
 @section @code{text.html-lite} - Simple HTML document construction
-@c NODE text.html-lite - シンプルなHTMLドキュメントの構築, @code{text.html-lite} - シンプルなHTMLドキュメントの構築
+@c NODE シンプルなHTMLドキュメントの構築, @code{text.html-lite} - シンプルなHTMLドキュメントの構築
 
 @deftp {Module} text.html-lite
 @mdindex text.html-lite
@@ -7966,7 +7966,7 @@ title    tr         tt         ul          var
 The result of these functions is a tree of text segments,
 which can be written out to a port by @code{write-tree} or
 can be converted to a string by @code{tree->string}
-(@xref{text.tree - Lazy text construction}).
+(@xref{Lazy text construction}).
 
 You can specify attributes of the element by using a keyword-value
 notation before the actual content.
@@ -7974,7 +7974,7 @@ notation before the actual content.
 これらの手続きは、テキスト・セグメントのツリーを返すので、
 @code{write-tree} でポートに書き出したり、@code{tree->string} で
 文字列に変換したりできます
-(@ref{text.tree - Lazy text construction}参照)。
+(@ref{Lazy text construction}参照)。
 
 要素のアトリビュートは要素の内容に先立つキーワード-値の表記で指定することができます。
 @c COMMON
@@ -8027,9 +8027,9 @@ if the given content is valid for the element.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node text.parse - Parsing input stream, text.tr - Transliterate characters, text.html-lite - Simple HTML document construction, Library modules - Utilities
+@node Parsing input stream, Transliterate characters, Simple HTML document construction, Library modules - Utilities
 @section @code{text.parse} - Parsing input stream
-@c NODE text.parse - 入力ストリームのパージング, @code{text.parse} - 入力ストリームのパージング
+@c NODE 入力ストリームのパージング, @code{text.parse} - 入力ストリームのパージング
 
 @deftp {Module} text.parse
 @mdindex text.parse
@@ -8242,9 +8242,9 @@ as many characters available.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node text.tr - Transliterate characters, text.tree - Lazy text construction, text.parse - Parsing input stream, Library modules - Utilities
+@node Transliterate characters, Lazy text construction, Parsing input stream, Library modules - Utilities
 @section @code{text.tr} - Transliterate characters
-@c NODE text.tr - 文字変換, @code{text.tr} - 文字変換
+@c NODE 文字変換, @code{text.tr} - 文字変換
 
 @deftp {Module} text.tr
 @mdindex text.tr
@@ -8491,9 +8491,9 @@ current-output-port at the time transliterator is called.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node text.tree - Lazy text construction, util.combinations - Combination library, text.tr - Transliterate characters, Library modules - Utilities
+@node Lazy text construction, Combination library, Transliterate characters, Library modules - Utilities
 @section @code{text.tree} - Lazy text construction
-@c NODE text.tree - 怠惰なテキスト構築, @code{text.tree} - 怠惰なテキスト構築
+@c NODE 怠惰なテキスト構築, @code{text.tree} - 怠惰なテキスト構築
 
 @deftp {Module} text.tree
 @mdindex text.tree
@@ -8585,9 +8585,9 @@ an output string port, and returns the result string.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node util.combinations - Combination library, util.digest - Message digester framework, text.tree - Lazy text construction, Library modules - Utilities
+@node Combination library, Message digester framework, Lazy text construction, Library modules - Utilities
 @section @code{util.combinations} - Combination library
-@c NODE util.combinations - 組み合わせ, @code{util.combinations} - 組み合わせ
+@c NODE 組み合わせ, @code{util.combinations} - 組み合わせ
 
 @deftp {Module} util.combinations
 @mdindex util.combinations
@@ -8763,19 +8763,19 @@ Returns a cartesian product of sets in @var{list-of-sets}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node util.digest - Message digester framework, util.isomorph - Determine isomorphism, util.combinations - Combination library, Library modules - Utilities
+@node Message digester framework, Determine isomorphism, Combination library, Library modules - Utilities
 @section @code{util.digest} - Message digester framework
-@c NODE util.digest - メッセージダイジェストフレームワーク, @code{util.digest} - メッセージダイジェストフレームワーク
+@c NODE メッセージダイジェストフレームワーク, @code{util.digest} - メッセージダイジェストフレームワーク
 
 @deftp {Module} util.digest
 @mdindex util.digest
 @c EN
 This module provides a base class and common interface for 
-message digest algorithms, such as MD5 (@xref{rfc.md5 - MD5 message digest})
-and SHA1 (@xref{rfc.sha1 - SHA1 message digest}).
+message digest algorithms, such as MD5 (@xref{MD5 message digest})
+and SHA1 (@xref{SHA1 message digest}).
 @c JP
-このモジュールは、MD5 (@ref{rfc.md5 - MD5 message digest}参照)や
-SHA1 (@ref{rfc.sha1 - SHA1 message digest}参照)などの、メッセージ
+このモジュールは、MD5 (@ref{MD5 message digest}参照)や
+SHA1 (@ref{SHA1 message digest}参照)などの、メッセージ
 ダイジェストアルゴリズムのためのベースクラスと一般的なインターフェースを
 提供します。
 @c COMMON
@@ -8863,9 +8863,9 @@ converts it to a hexified string.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node util.isomorph - Determine isomorphism, util.lcs - The longest common subsequence, util.digest - Message digester framework, Library modules - Utilities
+@node Determine isomorphism, The longest common subsequence, Message digester framework, Library modules - Utilities
 @section @code{util.isomorph} - Determine isomorphism
-@c NODE util.isomorph - 同型判定, @code{util.isomorph} - 同型判定
+@c NODE 同型判定, @code{util.isomorph} - 同型判定
 
 @deftp {Module} util.isomorph
 @mdindex util.isomorph
@@ -8929,7 +8929,7 @@ equal (in the sense of @code{equal?}).
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node util.lcs - The longest common subsequence, util.list - Additional list library, util.isomorph - Determine isomorphism, Library modules - Utilities
+@node The longest common subsequence, Additional list library, Determine isomorphism, Library modules - Utilities
 @section @code{util.lcs} - The longest common subsequence
 @c NODE 最長共通サブシーケンス, @code{util.lcs} - 最長共通サブシーケンス
 
@@ -8942,14 +8942,14 @@ Eugene Meyers' O(ND) algorithm (@ref{meyers86,[Meyers86],Meyers86}).
 
 One of the applications of this algorithm is to calculate
 the difference of two text streams;
-see @ref{text.diff - Calculate difference of text streams}.
+see @ref{Calculate difference of text streams}.
 @c JP
 このモジュールは、与えられた2つのシーケンスの最長共通サブシーケンスを見つける
 アルゴリズムを実装しています。アルゴリズムは、Eugene Meyersの
 O(ND)アルゴリズムに基づいています(@ref{meyers86,[Meyers86],Meyers86})。
 
 このアルゴリズムを使うアプリケーションの1つは、2つのテキストストリームの
-相違点を計算する@ref{text.diff - Calculate difference of text streams}です。
+相違点を計算する@ref{Calculate difference of text streams}です。
 @c COMMON
 @end deftp
 
@@ -9129,26 +9129,26 @@ returns.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node util.list - Additional list library, util.queue - Queue, util.lcs - The longest common subsequence, Library modules - Utilities
+@node Additional list library, Queue, The longest common subsequence, Library modules - Utilities
 @section @code{util.list} - Additional list library
-@c NODE util.list - その他のリストライブラリ, @code{util.list} - その他のリストライブラリ
+@c NODE その他のリストライブラリ, @code{util.list} - その他のリストライブラリ
 
 @deftp {Module} util.list
 @mdindex util.list
 @c EN
 This module provides list utility functions which are not in srfi-1
-(@xref{srfi-1 - List library}) but generally useful.
+(@xref{List library}) but generally useful.
 
-See also @ref{gauche.collection - Collection framework}
-and @ref{gauche.sequence - Sequence framework}, for
+See also @ref{Collection framework}
+and @ref{Sequence framework}, for
 these modules also defines useful generic functions that can
 be used for lists.
 @c JP
-このモジュールは、srfi-1 (@ref{srfi-1 - List library}参照)にはないが、
+このモジュールは、srfi-1 (@ref{List library}参照)にはないが、
 一般的に便利なリストユーティリティ関数を提供します。
 
 リストに対して用いることができる便利なジェネリック関数を定義している
-@ref{gauche.collection - Collection framework}と@ref{gauche.sequence - Sequence framework}も
+@ref{Collection framework}と@ref{Sequence framework}も
 見て下さい。
 @c COMMON
 @end deftp
@@ -9458,9 +9458,9 @@ uses @code{eq?} and @code{eqv?}, respectively.
 
 
 @c ----------------------------------------------------------------------
-@node util.queue - Queue, util.record - SLIB-compatible record type, util.list - Additional list library, Library modules - Utilities
+@node Queue, SLIB-compatible record type, Additional list library, Library modules - Utilities
 @section @code{util.queue} - Queue
-@c NODE util.queue - キュー, @code{util.queue} - キュー
+@c NODE キュー, @code{util.queue} - キュー
 
 @deftp {Module} util.queue
 @mdindex util.queue
@@ -9469,7 +9469,7 @@ Provides a queue (FIFO).   This implementation is tuned for speed
 than safety; a queue is simply a pair that keeps head and tail of
 the queue, and minimal check is done in most of the operations.
 
-SLIB (@xref{slib - SLIB}) provides the queue library that is safer.
+SLIB (@xref{SLIB}) provides the queue library that is safer.
 This API is upper compatible to the SLIB's.
 The idea is that this queue is used inside other procedure or
 structure that you know you don't need the strict checks.
@@ -9479,7 +9479,7 @@ Use either one depending on your requirement.
 キューは単に先頭と末尾のpairで表現され、多くのオペレーションでキューが正しいかどうかは
 チェックされません。
 
-SLIB (@ref{slib - SLIB}参照)にはより安全なキューの実装があります。
+SLIB (@ref{SLIB}参照)にはより安全なキューの実装があります。
 このAPIはSLIBの実装の上位互換です。特定の手続きや構造体の中だけで使うため、
 厳しいチェックが必要でない場合にはこのモジュールを使うのが良く、そうでない場合は
 SLIBのものが良いでしょう。要求仕様によって使い分けて下さい。
@@ -9658,7 +9658,7 @@ Scheme48 compatible way or consistent to SRFI-1 argument order.
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node util.record - SLIB-compatible record type, util.toposort - Topological sort, util.queue - Queue, Library modules - Utilities
+@node SLIB-compatible record type, Topological sort, Queue, Library modules - Utilities
 @section @code{util.record} - SLIB-compatible record type
 
 @deftp {Module} util.record
@@ -9666,7 +9666,7 @@ Scheme48 compatible way or consistent to SRFI-1 argument order.
 This module provides a Guile and SLIB compatible record type API.
 It is built on top of Gauche's object system.
 
-See also @ref{srfi-9 - Record types}, which provides a convenience macro
+See also @ref{Record types}, which provides a convenience macro
 @code{define-record-type}.
 @end deftp
 
@@ -9674,7 +9674,7 @@ See also @ref{srfi-9 - Record types}, which provides a convenience macro
 Returns a new class which represents a new record type.
 (It is what is called @emph{record-type descriptor} in SLIB).
 In Gauche, the new class is a subclass of @code{<record>}
-(see @ref{srfi-9}).
+(see @ref{Record types}).
 
 @var{type-name} is a string that is used for debugging purposes.
 It is converted to a symbol and set as the name of the new class.
@@ -9735,9 +9735,9 @@ obj @result{} #<my-record 0x819d9b0>
 
 
 @c ----------------------------------------------------------------------
-@node util.toposort - Topological sort, www.cgi - CGI Utility, util.record - SLIB-compatible record type, Library modules - Utilities
+@node Topological sort, CGI Utility, SLIB-compatible record type, Library modules - Utilities
 @section @code{util.toposort} - Topological sort
-@c NODE util.toposort - トポロジカルソート, @code{util.toposort} - トポロジカルソート
+@c NODE トポロジカルソート, @code{util.toposort} - トポロジカルソート
 
 @deftp {Module} util.toposort
 @mdindex util.toposort
@@ -9779,9 +9779,9 @@ If the graph contains circular reference, an error is signalled.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node www.cgi - CGI Utility,  , util.toposort - Topological sort, Library modules - Utilities
+@node CGI Utility,  , Topological sort, Library modules - Utilities
 @section @code{www.cgi} - CGI utility
-@c NODE www.cgi - CGIユーティリティ, @code{www.cgi} - CGIユーティリティ
+@c NODE CGIユーティリティ, @code{www.cgi} - CGIユーティリティ
 
 @deftp {Module} www.cgi
 @mdindex www.cgi
@@ -9789,9 +9789,9 @@ If the graph contains circular reference, an error is signalled.
 Provides a few basic functions useful to write a CGI script.
 
 In order to write CGI script easily, you may want to use
-other modules, such as @code{rfc.uri} (@xref{rfc.uri - URI parsing and construction}),
-@code{text.html-lite} (@xref{text.html-lite - Simple HTML document construction}) and
-@code{text.tree} (@xref{text.tree - Lazy text construction}).
+other modules, such as @code{rfc.uri} (@xref{URI parsing and construction}),
+@code{text.html-lite} (@xref{Simple HTML document construction}) and
+@code{text.tree} (@xref{Lazy text construction}).
 
 Note: it seems that there is no active formal specification for CGI.
 See @uref{http://w3c.org/CGI/} for more information.
@@ -9799,9 +9799,9 @@ See @uref{http://w3c.org/CGI/} for more information.
 CGIスクリプトを書くのに便利ないくつかの基本的な手続きを提供します。
 
 CGIスクリプトを手軽に書くにはこのモジュールの他に、
-@code{rfc.uri} (@ref{rfc.uri - URI parsing and construction})、
-@code{text.html-lite} (@ref{text.html-lite - Simple HTML document construction})、
-@code{text.tree} (@ref{text.tree - Lazy text construction}) 等のモジュールを併せて
+@code{rfc.uri} (@ref{URI parsing and construction})、
+@code{text.html-lite} (@ref{Simple HTML document construction})、
+@code{text.tree} (@ref{Lazy text construction}) 等のモジュールを併せて
 使うとよいでしょう。
 
 注：現在有効な、CGIに関する「正式な」仕様というのはどうも無いようです。
@@ -9824,7 +9824,7 @@ value of the variable by string.
 
 For example, the following code overrides @code{REQUEST_METHOD}
 and @code{QUERY_STRING} meta-variables during execution of
-@code{my-cgi-procedure}.  (@xref{gauche.parameter - Parameters},
+@code{my-cgi-procedure}.  (@xref{Parameters},
 for the details of @code{parameterize}).
 @c JP
 通常、httpdはcgiプログラムに様々な情報を環境変数経由で渡します。
@@ -9840,7 +9840,7 @@ for the details of @code{parameterize}).
 例えば次のコードは@code{REQUEST_METHOD}と
 @code{QUERY_STRING}のメタ変数を@code{my-cgi-procedure}の実行期間中に
 上書きします。(@code{parameterize}の詳細については
-@ref{gauche.parameter - Parameters}を参照して下さい)。
+@ref{Parameters}を参照して下さい)。
 @c COMMON
 
 @example
@@ -9947,11 +9947,11 @@ is @code{#f} if @var{list} is false, or @code{()} otherwise.
 
 @defun cgi-header &keyword content-type location cookies
 @c EN
-Creates a text tree (@xref{text.tree - Lazy text construction}) for the
+Creates a text tree (@xref{Lazy text construction}) for the
 HTTP header of the reply message.  The most simple form is
 like this:
 @c JP
-HTTPリプライメッセージのヘッダを、テキストツリー形式(@ref{text.tree - Lazy text construction}参照)
+HTTPリプライメッセージのヘッダを、テキストツリー形式(@ref{Lazy text construction}参照)
 で作成して返します。最も簡単な呼び出しでは次のようになります。
 @c COMMON
 @example
@@ -9963,13 +9963,13 @@ HTTPリプライメッセージのヘッダを、テキストツリー形式(@ref{text.tree - Lazy text 
 You can specify alternative content-type by the keyword argument
 @var{content-type}.   If you want to set cookies to the client,
 specify a list of cookie strings to the keyword argument @var{cookies}.
-You can use @code{construct-cookie-string} (@xref{rfc.cookie - HTTP cookie handling})
+You can use @code{construct-cookie-string} (@xref{HTTP cookie handling})
 to build such a list of cookie strings.
 @c JP
 キーワード引数@var{content-type}によってContent typeを指定できます。
 また、@var{cookies}にクッキー文字列のリストを渡すことにより、
 クライアントにクッキーを設定できます。クッキー文字列を構築するには手続き
-@code{construct-cookie-string} (@ref{rfc.cookie - HTTP cookie handling}参照)
+@code{construct-cookie-string} (@ref{HTTP cookie handling}参照)
 が使えます。
 @c COMMON
 
@@ -9990,14 +9990,14 @@ The default value is Gauche's native encoding.
 If the parameter is set other than the native encoding, @code{cgi-main}
 converts the output
 encoding by @code{gauche.charconv} module
-(@xref{gauche.charconv - Character code conversion}).
+(@xref{Character code conversion}).
 @c JP
 このパラメータの値は次に説明する@code{cgi-main}が出力するデータの
 文字符合化法(CES)を指定します。デフォルトの値はGaucheのネイティブエンコーディング
 です。それ以外の値がセットされている場合、@code{cgi-main}は
 @code{gauche.charconv}モジュールを用いて出力のエンコーディングの変換を
 行います。
-(@ref{gauche.charconv - Character code conversion}参照)。
+(@ref{Character code conversion}参照)。
 @c COMMON
 @end deffn
 
@@ -10018,12 +10018,12 @@ CGIスクリプトのための便利なラッパー手続きです。
 
 @c EN
 @var{proc} has to return a tree of strings
-(@xref{text.tree - Lazy text construction}), including the HTTP header.
+(@xref{Lazy text construction}), including the HTTP header.
 @code{cgi-main} outputs the returned tree to the current output port
 by @code{write-tree}, then returns zero.
 @c JP
 手続き@var{proc}はHTTPヘッダを含むドキュメントを
-テキストツリー構造(@ref{text.tree - Lazy text construction}参照)で
+テキストツリー構造(@ref{Lazy text construction}参照)で
 返さなければなりません。@code{cgi-main}はそれを@code{write-tree}を使って
 現在の出力ポートに書き出し、0を返します。
 @c COMMON

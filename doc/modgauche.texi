@@ -4,37 +4,37 @@
 
 @c ----------------------------------------------------------------------
 @menu
-* gauche.array - Arrays::       
-* gauche.charconv - Character code conversion::  
-* gauche.collection - Collection framework::  
-* gauche.config - Configuration parameters::  
-* gauche.fcntl - Low-level file operations::  
-* gauche.hook - Hooks::         
-* gauche.interactive - Interactive session::  
-* gauche.listener - Listener::  
-* gauche.logger - User-level logging::  
-* gauche.mop.singleton - Singleton::  
-* gauche.mop.validator - Slot with validator::  
-* gauche.net - Networking::     
-* gauche.parameter - Parameters::  
-* gauche.parseopt - Parsing command-line options::  
-* gauche.process - High Level Process Interface::  
-* gauche.regexp - Regular expression utilities::  
-* gauche.reload - Reloading modules::  
-* gauche.selector - Simple dispatcher::  
-* gauche.sequence - Sequence framework::  
-* gauche.syslog - Syslog::      
-* gauche.termios - Termios::    
-* gauche.test - Unit testing::  
-* gauche.threads - Threads::    
-* gauche.time - Measure timings::  
-* gauche.uvector - Uniform vectors::  
-* gauche.version - Comparing version numbers::  
+* Arrays::                        (gauche.array)
+* Character code conversion::     (gauche.charconv)
+* Collection framework::          (gauche.collection)
+* Configuration parameters::      (gauche.config)
+* Low-level file operations::     (gauche.fcntl)
+* Hooks::                         (gauche.hook)
+* Interactive session::           (gauche.interactive)
+* Listener::                      (gauche.listener)
+* User-level logging::            (gauche.logger)
+* Singleton::                     (gauche.mop.singleton)
+* Slot with validator::           (gauche.mop.validator)
+* Networking::                    (gauche.net)
+* Parameters::                    (gauche.parameter)
+* Parsing command-line options::  (gauche.parseopt)
+* High Level Process Interface::  (gauche.process)
+* Regular expression utilities::  (gauche.regexp)
+* Reloading modules::             (gauche.reload)
+* Simple dispatcher::             (gauche.selector)
+* Sequence framework::            (gauche.sequence)
+* Syslog::                        (gauche.syslog)
+* Termios::                       (gauche.termios)
+* Unit testing::                  (gauche.test)
+* Threads::                       (gauche.threads)
+* Measure timings::               (gauche.time)
+* Uniform vectors::               (gauche.uvector)
+* Comparing version numbers::     (gauche.version)
 @end menu
 
-@node gauche.array - Arrays, gauche.charconv - Character code conversion, Library modules - Gauche extensions, Library modules - Gauche extensions
+@node Arrays, Character code conversion, Library modules - Gauche extensions, Library modules - Gauche extensions
 @section @code{gauche.array} - Arrays
-@c NODE gauche.array - 配列, @code{gauche.array} - 配列
+@c NODE 配列, @code{gauche.array} - 配列
 
 @deftp {Module} gauche.array
 @mdindex gauche.array
@@ -384,9 +384,9 @@ Shapeが@var{shape}であり、与えられた配列@var{array}とバッキングストレージを
 @end defun
 
 @c ----------------------------------------------------------------------
-@node gauche.charconv - Character code conversion, gauche.collection - Collection framework, gauche.array - Arrays, Library modules - Gauche extensions
+@node Character code conversion, Collection framework, Arrays, Library modules - Gauche extensions
 @section @code{gauche.charconv} - Character Code Conversion
-@c NODE gauche.charconv - 文字コード変換, @code{gauche.charconv} - 文字コード変換
+@c NODE 文字コード変換, @code{gauche.charconv} - 文字コード変換
 
 @deftp {Module} gauche.charconv
 @mdindex gauche.charconv
@@ -426,7 +426,7 @@ UTF-8 (Unicode 3.2))間の変換を自前で持つようになりました。
 * Extended port procedures::    
 @end menu
 
-@node Supported character encoding schemes, Autodetecting the encoding scheme, gauche.charconv - Character code conversion, gauche.charconv - Character code conversion
+@node Supported character encoding schemes, Autodetecting the encoding scheme, Character code conversion, Character code conversion
 @subsection Supported character encoding schemes
 @c NODE サポートされる文字エンコーディング
 
@@ -705,7 +705,7 @@ Gaucheでは互換性のため、これらの文字もJIS X 0208のエスケープシーケンスを
 @c COMMON
 @end table
 
-@node Autodetecting the encoding scheme, Conversion ports, Supported character encoding schemes, gauche.charconv - Character code conversion
+@node Autodetecting the encoding scheme, Conversion ports, Supported character encoding schemes, Character code conversion
 @subsection Autodetecting the encoding scheme
 @c NODE 文字エンコーディングの自動判定
 
@@ -758,7 +758,7 @@ usually in favor of the native CES.
 @end defun
 
 
-@node Conversion ports, Extended port procedures, Autodetecting the encoding scheme, gauche.charconv - Character code conversion
+@node Conversion ports, Extended port procedures, Autodetecting the encoding scheme, Character code conversion
 @subsection Conversion ports
 @c NODE 変換ポート
 
@@ -1000,7 +1000,7 @@ the @code{open-*-conversion-port}.
 @c COMMON
 @end defun
 
-@node Extended port procedures,  , Conversion ports, gauche.charconv - Character code conversion
+@node Extended port procedures,  , Conversion ports, Character code conversion
 @subsection Extended port procedures
 @c NODE 拡張されたポート手続き
 
@@ -1040,9 +1040,9 @@ meaning as @var{buffer-size} of @code{open-input-conversion-port}.
 
 
 @c ----------------------------------------------------------------------
-@node gauche.collection - Collection framework, gauche.config - Configuration parameters, gauche.charconv - Character code conversion, Library modules - Gauche extensions
+@node Collection framework, Configuration parameters, Character code conversion, Library modules - Gauche extensions
 @section @code{gauche.collection} - Collection framework
-@c NODE gauche.collection - コレクションフレームワーク, @code{gauche.collection} - コレクションフレームワーク
+@c NODE コレクションフレームワーク, @code{gauche.collection} - コレクションフレームワーク
 
 @deftp {Module} gauche.collection
 @mdindex gauche.collection
@@ -1050,7 +1050,7 @@ meaning as @var{buffer-size} of @code{open-input-conversion-port}.
 This module provides a set of generic functions (GFs) that iterate over
 various collections.   The Scheme standard [R5RS] has some iterative
 primitives such as @code{map} and @code{for-each},
-and SRFI-1 (@xref{srfi-1 - List library} adds a rich set of such functions,
+and SRFI-1 (@xref{List library} adds a rich set of such functions,
 but they work only on lists.
 
 Using the method dispatch of the object system, this module
@@ -1062,7 +1062,7 @@ So far, the following operations are defined.
 @c JP
 このモジュールは、様々なコレクションに対して繰り返し処理を行う総称関数を提供します。
 Schemeの規格は@code{map}や@code{for-each}などの繰り返し手続きを定義しており、
-またSRFI-1(@ref{srfi-1 - List library}参照)は更に数多くの繰り返し手続きを提供しますが、
+またSRFI-1(@ref{List library}参照)は更に数多くの繰り返し手続きを提供しますが、
 それらはリストに対してしか動作しません。
 
 このモジュールはオブジェクトシステムのメソッドディスパッチを利用して、
@@ -1154,18 +1154,18 @@ A collection.  Each element is a pair of a key and a value.
 @item <s8vector>, <u8vector>, @dots{} <f64vector>
 @c EN
 A sequence (methods defined in @code{srfi-4} module,
-@xref{srfi-4 - Homogeneous vectors}).
+@xref{Homogeneous vectors}).
 @c JP
 シーケンス。メソッドは@code{srfi-4}モジュール内で定義されます。
-@ref{srfi-4 - Homogeneous vectors}参照。
+@ref{Homogeneous vectors}参照。
 @c COMMON
 @end table
 
 @c EN
-@xref{gauche.sequence - Sequence framework}, for it adds more sequence specific
+@xref{Sequence framework}, for it adds more sequence specific
 methods.
 @c JP
-@ref{gauche.sequence - Sequence framework}も参照してください。シーケンス特有のメソッドが
+@ref{Sequence framework}も参照してください。シーケンス特有のメソッドが
 追加されます。
 @c COMMON
 
@@ -1192,7 +1192,7 @@ takes a collection class argument and returns the collection of the class.
 * Implementing collections::    
 @end menu
 
-@node Mapping over collection, Selection and searching in collection, gauche.collection - Collection framework, gauche.collection - Collection framework
+@node Mapping over collection, Selection and searching in collection, Collection framework, Collection framework
 @subsection Mapping over collection
 @c NODE コレクションに対するマッピング
 
@@ -1458,7 +1458,7 @@ Gaucheではクラスメタオブジェクトを渡すようにしたため、メソッドディスパッチを使っ
 取るというインタフェースはコレクションフレームワーク中で統一的に使われています。
 @c COMMON
 
-@node Selection and searching in collection, Miscellaneous operations on collection, Mapping over collection, gauche.collection - Collection framework
+@node Selection and searching in collection, Miscellaneous operations on collection, Mapping over collection, Collection framework
 @subsection Selection and searching in collection
 @c NODE コレクションからの選択と探索
 
@@ -1594,7 +1594,7 @@ in the collections of class @var{class}.
 @end example
 @end deffn
 
-@node Miscellaneous operations on collection, Fundamental iterator creators, Selection and searching in collection, gauche.collection - Collection framework
+@node Miscellaneous operations on collection, Fundamental iterator creators, Selection and searching in collection, Collection framework
 @subsection Miscellaneous operations on collection
 @c NODE コレクションに対する様々な操作
 
@@ -1651,7 +1651,7 @@ the order is preserved.
 @end example
 @end deffn
 
-@node Fundamental iterator creators, Implementing collections, Miscellaneous operations on collection, gauche.collection - Collection framework
+@node Fundamental iterator creators, Implementing collections, Miscellaneous operations on collection, Collection framework
 @subsection Fundamental iterator creators
 @c NODE 基礎的なイテレータ構築メソッド
 
@@ -1976,7 +1976,7 @@ implementator to take care of the resource problem.
 避けています。また、現在のインタフェースはリソース管理の問題を解決しています。
 @c COMMON
 
-@node Implementing collections,  , Fundamental iterator creators, gauche.collection - Collection framework
+@node Implementing collections,  , Fundamental iterator creators, Collection framework
 @subsection Implementing collections
 @c NODE コレクションの実装
 
@@ -2048,9 +2048,9 @@ performance.
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node gauche.config - Configuration parameters, gauche.fcntl - Low-level file operations, gauche.collection - Collection framework, Library modules - Gauche extensions
+@node Configuration parameters, Low-level file operations, Collection framework, Library modules - Gauche extensions
 @section @code{gauche.config} - Configuration parameters
-@c NODE gauche.config - コンフィグレーション情報, @code{gauche.config} - コンフィグレーション情報
+@c NODE コンフィグレーション情報, @code{gauche.config} - コンフィグレーション情報
 
 @deftp {Module} gauche.config
 @mdindex gauche.config
@@ -2097,9 +2097,9 @@ without any argument from the shell, to find out the valid options.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node gauche.fcntl - Low-level file operations, gauche.hook - Hooks, gauche.config - Configuration parameters, Library modules - Gauche extensions
+@node Low-level file operations, Hooks, Configuration parameters, Library modules - Gauche extensions
 @section @code{gauche.fcntl} - Low-level file operations
-@c NODE gauche.fcntl - 低レベルファイル操作, @code{gauche.fcntl} - 低レベルファイル操作
+@c NODE 低レベルファイル操作, @code{gauche.fcntl} - 低レベルファイル操作
 
 @deftp {Module} gauche.fcntl
 @mdindex gauche.fcntl
@@ -2399,9 +2399,9 @@ An integer process id that holding the lock; used only by @code{F_GETLK}.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node gauche.hook - Hooks, gauche.interactive - Interactive session, gauche.fcntl - Low-level file operations, Library modules - Gauche extensions
+@node Hooks, Interactive session, Low-level file operations, Library modules - Gauche extensions
 @section @code{gauche.hook} - Hooks
-@c NODE gauche.hook - フック, @code{gauche.hook} - フック
+@c NODE フック, @code{gauche.hook} - フック
 
 @deftp {Module} gauche.hook
 @mdindex gauche.hook
@@ -2549,9 +2549,9 @@ The number of arguments must match the arity given at @code{make-hook}.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node gauche.interactive - Interactive session, gauche.listener - Listener, gauche.hook - Hooks, Library modules - Gauche extensions
+@node Interactive session, Listener, Hooks, Library modules - Gauche extensions
 @section @code{gauche.interactive} - Utilities for interactive session
-@c NODE gauche.interactive - インタラクティブセッション, @code{gauche.interactive} - インタラクティブセッション
+@c NODE インタラクティブセッション, @code{gauche.interactive} - インタラクティブセッション
 
 @deftp {Module} gauche.interactive
 @mdindex gauche.interactive
@@ -2563,7 +2563,7 @@ interactively.
 
 This module also sets autoloads for functions defined in
 @code{gauche.reload} module 
-(see @ref{gauche.reload - Reloading modules}), so that
+(see @ref{Reloading modules}), so that
 those functions can be used by default in interactive development.
 @c JP
 インタラクティブセッションで便利なユーティリティ手続きを提供します。
@@ -2572,7 +2572,7 @@ those functions can be used by default in interactive development.
 このモジュールは自動的にロードされます。
 
 また、このモジュールは@code{gauche.reload}
-(@ref{gauche.reload - Reloading modules}参照)で定義される
+(@ref{Reloading modules}参照)で定義される
 手続きに対してautoloadを設定し、それらの手続きが
 インタラクティブな開発時にデフォルトで使えるようにします。
 @c COMMON
@@ -2687,9 +2687,9 @@ to parse the info file.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node gauche.listener - Listener, gauche.logger - User-level logging, gauche.interactive - Interactive session, Library modules - Gauche extensions
+@node Listener, User-level logging, Interactive session, Library modules - Gauche extensions
 @section @code{gauche.listener} - Listener
-@c NODE gauche.listener - リスナー, @code{gauche.listener} - リスナー
+@c NODE リスナー, @code{gauche.listener} - リスナー
 
 @deftp {Module} gauche.listener
 @mdindex gauche.listener
@@ -3033,9 +3033,9 @@ this program on the machine accessible from outside network!)
 @end example
 
 @c ----------------------------------------------------------------------
-@node gauche.logger - User-level logging, gauche.mop.singleton - Singleton, gauche.listener - Listener, Library modules - Gauche extensions
+@node User-level logging, Singleton, Listener, Library modules - Gauche extensions
 @section @code{gauche.logger} - User-level logging
-@c NODE gauche.logger - ユーザレベルのロギング, @code{gauche.logger} - ユーザレベルのロギング
+@c NODE ユーザレベルのロギング, @code{gauche.logger} - ユーザレベルのロギング
 
 @deftp {Module} gauche.logger
 @mdindex gauche.logger
@@ -3214,7 +3214,7 @@ the prefix slot.
 Specifies the way the log file should be locked.
 If the value of this slot is a symbol @code{fcntl},
 the log file is locked using
-fcntl() (@xref{gauche.fcntl - Low-level file operations}).
+fcntl() (@xref{Low-level file operations}).
 If the value is a symbol @code{file}, the log file is locked by
 creating auxiliary lock file, whose name is generated by appending ".lock"
 after the log file path.  The logging
@@ -3232,7 +3232,7 @@ The locking isn't performed if the destination is not a file.
 ログファイルのロックの方法を指定します。
 このスロットの値がシンボル@code{fcntl}だった場合は、
 fcntl()によるファイルロックが使われます
-(@ref{gauche.fcntl - Low-level file operations}参照)。
+(@ref{Low-level file operations}参照)。
 このスロットの値がシンボル@code{file}だった場合は、
 ログファイルのパス名に ".lock" を追加したロックファイルを作成することによる
 排他制御が行われます。この場合、ログを行うプロセスはログファイルの
@@ -3255,12 +3255,12 @@ fcntl()によるファイルロックが使われます
 @defivarx {<log-drain>} syslog-priority
 @c EN
 The value of these slots are used when the destination of the drain
-is the system logger.   @xref{gauche.syslog - Syslog}, for the detailed information
+is the system logger.   @xref{Syslog}, for the detailed information
 about these values.  The default values of these slots
 are @code{LOG_PID}, @code{LOG_USER} and @code{LOG_INFO}, respectively.
 @c JP
 これらのスロットの値は、ログの行き先がシステムログの場合にのみ使われます。
-これらの値に関する説明は@ref{gauche.syslog - Syslog}を参照して下さい。
+これらの値に関する説明は@ref{Syslog}を参照して下さい。
 デフォルトの値はそれぞれ@code{LOG_PID}、@code{LOG_USER}、@code{LOG_INFO}です。
 @c COMMON
 @end defivar
@@ -3307,12 +3307,12 @@ the specfied drain.
 The file is opened and closed every time.  You can safely move
 the log file while your program that touches the log file is running.
 Also @code{log-format} acquires a write lock of the log file by
-@code{sys-fcntl} (@xref{gauche.fcntl - Low-level file operations}).
+@code{sys-fcntl} (@xref{Low-level file operations}).
 @c JP
 ファイルはこの手続きが呼ばれるたびにオープンされクローズされます。
 したがって、ログファイルに書き出すプログラムが走っている最中でも
 ログファイルをmoveすることができます。
-また、@code{log-format}は@code{sys-fcntl} (@ref{gauche.fcntl - Low-level file operations}参照)
+また、@code{log-format}は@code{sys-fcntl} (@ref{Low-level file operations}参照)
 を使ってファイルロックを獲得します。
 @c COMMON
 
@@ -3331,9 +3331,9 @@ the code runs without logging.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node gauche.mop.singleton - Singleton, gauche.mop.validator - Slot with validator, gauche.logger - User-level logging, Library modules - Gauche extensions
+@node Singleton, Slot with validator, User-level logging, Library modules - Gauche extensions
 @section @code{gauche.mop.singleton} - Singleton
-@c NODE gauche.mop.singleton - シングルトン, @code{gauche.mop.singleton} - シングルトン
+@c NODE シングルトン, @code{gauche.mop.singleton} - シングルトン
 
 @deftp {Module} gauche.mop.singleton
 @mdindex gauche.mop.singleton
@@ -3403,9 +3403,9 @@ class the property of singleton.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node gauche.mop.validator - Slot with validator, gauche.net - Networking, gauche.mop.singleton - Singleton, Library modules - Gauche extensions
+@node Slot with validator, Networking, Singleton, Library modules - Gauche extensions
 @section @code{gauche.mop.validator} - Slot with validator
-@c NODE gauche.mop.validator - Validator付きスロット, @code{gauche.mop.validator} - Validator付きスロット
+@c NODE Validator付きスロット, @code{gauche.mop.validator} - Validator付きスロット
 
 @deftp {Module} gauche.mop.validator
 @mdindex gauche.mop.validator
@@ -3510,9 +3510,9 @@ only couple of dozen lines of code.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node gauche.net - Networking, gauche.parameter - Parameters, gauche.mop.validator - Slot with validator, Library modules - Gauche extensions
+@node Networking, Parameters, Slot with validator, Library modules - Gauche extensions
 @section @code{gauche.net} - Networking
-@c NODE gauche.net - ネットワーキング, @code{gauche.net} - ネットワーキング
+@c NODE ネットワーキング, @code{gauche.net} - ネットワーキング
 
 @deftp {Module} gauche.net
 @mdindex gauche.net
@@ -3547,7 +3547,7 @@ BSDソケットインタフェースに近いインタフェースを提供し、高レベルの手続きは
 * Netdb interface::             
 @end menu
 
-@node Socket address, High-level network functions, gauche.net - Networking, gauche.net - Networking
+@node Socket address, High-level network functions, Networking, Networking
 @subsection Socket address
 @c NODE ソケットアドレス
 
@@ -3739,7 +3739,7 @@ is failed, null list is returned.
 @end defun
 
 
-@node High-level network functions, Low-level socket interface, Socket address, gauche.net - Networking
+@node High-level network functions, Low-level socket interface, Socket address, Networking
 @subsection High-level network functions
 @c NODE 高レベルネットワーク手続き
 
@@ -4038,7 +4038,7 @@ a very simple http client.
 @end example
 
 
-@node Low-level socket interface, Netdb interface, High-level network functions, gauche.net - Networking
+@node Low-level socket interface, Netdb interface, High-level network functions, Networking
 @subsection Low-level socket interface
 @c NODE 低レベルソケットインタフェース
 
@@ -4406,7 +4406,7 @@ Can be only used with @code{socket-getsockopt}.
 @c COMMON
 @end defvar
 
-@node Netdb interface,  , Low-level socket interface, gauche.net - Networking
+@node Netdb interface,  , Low-level socket interface, Networking
 @subsection  Netdb interface
 @c NODE Netdbインタフェース
 
@@ -4693,9 +4693,9 @@ This is only available if gauche is compiled with --enable-ipv6 option.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node gauche.parameter - Parameters, gauche.parseopt - Parsing command-line options, gauche.net - Networking, Library modules - Gauche extensions
+@node Parameters, Parsing command-line options, Networking, Library modules - Gauche extensions
 @section @code{gauche.parameter} - Parameters
-@c NODE gauche.parameter - パラメータ, @code{gauche.parameter} - パラメータ
+@c NODE パラメータ, @code{gauche.parameter} - パラメータ
 
 @deftp {Module} gauche.parameter
 @mdindex gauche.parameter
@@ -4757,12 +4757,14 @@ replace so-called "traced variables"
 @c COMMON
 
 @c EN
-@var{Parameters} can be found in other Scheme implementations,
+The basic parameter object feature is defined in SRFI-39.
+It also can be found in other Scheme implementations,
 including ChezScheme, Chicken and MzScheme.
-Guile and Scheme48 call them @var{fluids}, with different APIs.
+Gauche's one is upper compatible to SRFI-39.
 @c JP
-この機能はChezScheme、Chicken、MzSchemeなどいくつかのScheme処理系に
-見られます。また、これはGuileやScheme48では@var{fluid}と呼ばれています。
+パラメータオブジェクトの基本的な機能はSRFI-39で定義されています。
+この機能はまた、ChezScheme、Chicken、MzSchemeなどいくつかのScheme処理系に
+見られます。GaucheのパラメータはSRFI-39の上位互換になっています。
 @c COMMON
 @end deftp
 
@@ -4778,6 +4780,7 @@ so that a parameter can be used as if it were a procedure.
 @end deftp
 
 @defun make-parameter value &optional filter
+[SRFI-39]
 @c EN
 Creates a parameter whose initial value is @var{value}.
 If an optional argument @var{filter} is given, it must be
@@ -4798,6 +4801,7 @@ can raise an error or reject to change the parameter's value.
 @end defun
 
 @defmac parameterize ((param value) @dots{}) body @dots{}
+[SRFI-39]
 @c EN
 Evaluages @var{body} @dots{}, with
 change parameter @var{param}'s value to the given @var{value} within
@@ -4897,14 +4901,14 @@ from both lists.
 @deffn {Method} parameter-pre-observers (p <parameter>)
 @deffnx {Method} parameter-post-observers (p <parameter>)
 @c EN
-Returns a hook object (@xref{gauche.hook - Hooks}) that keeps
+Returns a hook object (@xref{Hooks}) that keeps
 "before" or "after" observers, respectively.
 
 @emph{Note}: Although the parameter value itself is thread-local,
 these hook objects are shared by all threads.
 @c JP
 ``before''か``after''オブザーバをそれぞれキープするフックオブジェクト
-(@ref{gauche.hook - Hooks}参照)を返します。
+(@ref{Hooks}参照)を返します。
 
 @emph{注意}: パラメータの値自身がスレッドローカルであっても、
 オブザーバのリストは全てのスレッドで共有されます。
@@ -4912,9 +4916,9 @@ these hook objects are shared by all threads.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node gauche.parseopt - Parsing command-line options, gauche.process - High Level Process Interface, gauche.parameter - Parameters, Library modules - Gauche extensions
+@node Parsing command-line options, High Level Process Interface, Parameters, Library modules - Gauche extensions
 @section @code{gauche.parseopt} - Parsing command-line options
-@c NODE gauche.parseopt - コマンドライン引数の解析, @code{gauche.parseopt} - コマンドライン引数の解析
+@c NODE コマンドライン引数の解析, @code{gauche.parseopt} - コマンドライン引数の解析
 
 @deftp {Module} gauche.parseopt
 @mdindex gauche.parseopt
@@ -4925,7 +4929,7 @@ options with mutiple option arguments.
 
 Actually, you have a few choices to parse command-line
 options in Gauche.
-SRFI-37 (@xref{srfi-37 - a program argument processor}) provides
+SRFI-37 (@xref{A program argument processor}) provides
 functional interface to parse POSIX/GNU compatible argument syntax.
 SLIB has @code{getopt}-compatible utility.
 Required features may differ from application to application,
@@ -4936,7 +4940,7 @@ so choose whichever fits your requirement.
 伴う長い形式のオプションを便利に扱うことができます。
 
 実際、Gauche でコマンドラインオプションをパースするにはいくつかの選択肢が
-あります。SRFI-37 (@ref{srfi-37 - a program argument processor}参照)では、
+あります。SRFI-37 (@ref{A program argument processor}参照)では、
 POSIX/GNU 互換の引数構文をパースするための関数的なインタフェースを提供しています。
 SLIB は、@code{getopt} 互換のユーティリティを持っています。
 要求される機能はアプリケーションごとに異なるので、
@@ -5378,9 +5382,9 @@ the procedure is used as if it is the body of @code{else} option clause.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node gauche.process - High Level Process Interface, gauche.regexp - Regular expression utilities, gauche.parseopt - Parsing command-line options, Library modules - Gauche extensions
+@node High Level Process Interface, Regular expression utilities, Parsing command-line options, Library modules - Gauche extensions
 @section @code{gauche.process} - High Level Process Interface
-@c NODE gauche.process - 高レベルプロセスインタフェース, @code{gauche.process} - 高レベルプロセスインタフェース
+@c NODE 高レベルプロセスインタフェース, @code{gauche.process} - 高レベルプロセスインタフェース
 
 @deftp {Module} gauche.process
 @mdindex gauche.process
@@ -5404,7 +5408,7 @@ a convenient way to send/receive information to/from subprocesses.
 * Process ports::               
 @end menu
 
-@node Process object, Process ports, gauche.process - High Level Process Interface, gauche.process - High Level Process Interface
+@node Process object, Process ports, High Level Process Interface, High Level Process Interface
 @subsection Process object
 
 @deftp {Class} <process>
@@ -5677,7 +5681,7 @@ Sends SIGKILL, SIGSTOP and SIGCONT to @var{process}, respectively.
 @c COMMON
 @end defun
 
-@node Process ports,  , Process object, gauche.process - High Level Process Interface
+@node Process ports,  , Process object, High Level Process Interface
 @subsection Process ports
 
 @defun open-input-process-port command &keyword output error encoding conversion-buffer-size
@@ -5736,7 +5740,7 @@ from the Gauche's internal encoding format,
 conversion port.  
 If @var{encoding} is given, the @var{conversion-buffer-size} keyword
 argument can control the conversion buffer size.
-See @ref{gauche.charconv - Character code conversion}, for
+See @ref{Character code conversion}, for
 the details of character encoding conversions.
 @c JP
 また、プロセスの出力の文字エンコーディングを指定するために
@@ -5745,7 +5749,7 @@ the details of character encoding conversions.
 @code{open-input-process-port}は文字コード変換ポートを挿入します。
 @var{encoding}が与えられた場合、@var{conversion-buffer-size}キーワード引数で
 変換バッファの大きさを指定することも可能です。文字コード変換の詳細については
-@ref{gauche.charconv - Character code conversion}を参照して下さい。
+@ref{Character code conversion}を参照して下さい。
 @c COMMON
 @example
 (receive (port process) (open-input-process-port "ls -l Makefile")
@@ -5960,9 +5964,9 @@ Internally, @var{command} is run by @code{call-with-input-process}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node gauche.regexp - Regular expression utilities, gauche.reload - Reloading modules, gauche.process - High Level Process Interface, Library modules - Gauche extensions
+@node Regular expression utilities, Reloading modules, High Level Process Interface, Library modules - Gauche extensions
 @section @code{gauche.regexp} - Regular expression utilities
-@c NODE gauche.regexp - 正規表現ユーティリティ, @code{gauche.regexp} - 正規表現ユーティリティ
+@c NODE 正規表現ユーティリティ, @code{gauche.regexp} - 正規表現ユーティリティ
 
 @deftp {Module} gauche.regexp
 @mdindex gauche.regexp
@@ -6367,9 +6371,9 @@ Returns a string with the characters that are special to regexp escaped.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node gauche.reload - Reloading modules, gauche.selector - Simple dispatcher, gauche.regexp - Regular expression utilities, Library modules - Gauche extensions
+@node Reloading modules, Simple dispatcher, Regular expression utilities, Library modules - Gauche extensions
 @section @code{gauche.reload} - Reloading modules
-@c NODE gauche.reload - モジュールの再ロード, @code{gauche.reload} - モジュールの再ロード
+@c NODE モジュールの再ロード, @code{gauche.reload} - モジュールの再ロード
 
 @deftp {Module} gauche.reload
 @mdindex gauche.reload
@@ -6482,13 +6486,13 @@ rules by @code{module-reload-rules}.
 
 @defun module-reload-rules &optional module-rules
 @c EN
-This is a parameter (@xref{gauche.parameter - Parameters}) that keeps
+This is a parameter (@xref{Parameters}) that keeps
 the default module rules for @code{reload-modified-modules}.
 If called without arguments, returns the current module rules.
 If called with @var{module-rules}, sets the argument to the
 current module rules.
 @c JP
-これは一種の「パラメータ」(@ref{gauche.parameter - Parameters}参照)で、
+これは一種の「パラメータ」(@ref{Parameters}参照)で、
 @code{reload-modified-modules}に対応するデフォルトのモジュールルールを
 保持しています。引数なしで呼ばれたときには、現在のモジュールルールを
 返します。@var{module-rules}とともに呼ばれたきにはその引数を
@@ -6509,9 +6513,9 @@ If called with @var{flag}, it is set to the current verbosity flag.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node gauche.selector - Simple dispatcher, gauche.sequence - Sequence framework, gauche.reload - Reloading modules, Library modules - Gauche extensions
+@node Simple dispatcher, Sequence framework, Reloading modules, Library modules - Gauche extensions
 @section @code{gauche.selector} - Simple dispatcher
-@c NODE gauche.selector - 簡単なディスパッチャ, @code{gauche.selector} - 簡単なディスパッチャ
+@c NODE 簡単なディスパッチャ, @code{gauche.selector} - 簡単なディスパッチャ
 
 @deftp {Module} gauche.selector
 @mdindex gauche.selector
@@ -6692,9 +6696,9 @@ echoサーバのシンプルな例を示します。
 @end example
 
 @c ----------------------------------------------------------------------
-@node gauche.sequence - Sequence framework, gauche.syslog - Syslog, gauche.selector - Simple dispatcher, Library modules - Gauche extensions
+@node Sequence framework, Syslog, Simple dispatcher, Library modules - Gauche extensions
 @section @code{gauche.sequence} - Sequence framework
-@c NODE gauche.sequence - シーケンスフレームワーク, @code{gauche.sequence} - シーケンスフレームワーク
+@c NODE シーケンスフレームワーク, @code{gauche.sequence} - シーケンスフレームワーク
 
 @deftp {Module} gauche.sequence
 @mdindex gauche.sequence
@@ -6709,11 +6713,11 @@ starting with zero.
 @c COMMON
 
 @c EN
-This module inherits @code{gauche.collection} (@xref{gauche.collection - Collection framework}),
+This module inherits @code{gauche.collection} (@xref{Collection framework}),
 All the collection generic operations can be applied to a sequence as well.
 @c JP
 このモジュールは@code{gauche.collection}を継承しています
-(@ref{gauche.collection - Collection framework}参照)。
+(@ref{Collection framework}参照)。
 コレクションに使えるジェネリックな操作は全てシーケンスに対しても適用可能です。
 @c COMMON
 
@@ -6736,7 +6740,7 @@ Gauche組み込みクラスのうち、リスト、ベクター、そして文字列は
 * Implementing sequence::       
 @end menu
 
-@node Fundamental sequence accessors, Slicing sequence, gauche.sequence - Sequence framework, gauche.sequence - Sequence framework
+@node Fundamental sequence accessors, Slicing sequence, Sequence framework, Sequence framework
 @subsection Fundamental sequence accessors
 @c NODE 基本的なシーケンスのアクセサ
 
@@ -6794,7 +6798,7 @@ This is the uniform sequence modifier.
 @deffn {Method} modifier (seq <sequence>)
 @end deffn
 
-@node Slicing sequence, Mapping over sequences, Fundamental sequence accessors, gauche.sequence - Sequence framework
+@node Slicing sequence, Mapping over sequences, Fundamental sequence accessors, Sequence framework
 @subsection Slicing sequence
 @c NODE シーケンスのスライス
 
@@ -6846,7 +6850,7 @@ s @result{} #(#\a #\b 5 6 e)
 @end example
 @end deffn
 
-@node Mapping over sequences, Implementing sequence, Slicing sequence, gauche.sequence - Sequence framework
+@node Mapping over sequences, Implementing sequence, Slicing sequence, Sequence framework
 @subsection Mapping over sequences
 @c NODE シーケンス上のマップ
 
@@ -6947,7 +6951,7 @@ SRFI-1 (@ref{SRFI-1 Searching}参照)の@code{list-index}も見て下さい。
 @c COMMON
 @end deffn
 
-@node Implementing sequence,  , Mapping over sequences, gauche.sequence - Sequence framework
+@node Implementing sequence,  , Mapping over sequences, Sequence framework
 @subsection Implementing sequence
 @c NODE シーケンスを実装する
 
@@ -6962,9 +6966,9 @@ SRFI-1 (@ref{SRFI-1 Searching}参照)の@code{list-index}も見て下さい。
 @c @end deftp
 
 @c ----------------------------------------------------------------------
-@node gauche.syslog - Syslog, gauche.termios - Termios, gauche.sequence - Sequence framework, Library modules - Gauche extensions
+@node  Syslog, Termios, Sequence framework, Library modules - Gauche extensions
 @section @code{gauche.syslog} - Syslog
-@c NODE gauche.syslog - Syslog, @code{gauche.syslog} - Syslog
+@c NODE Syslog, @code{gauche.syslog} - Syslog
 
 @deftp {Module} gauche.syslog
 @mdindex gauche.syslog
@@ -6972,7 +6976,7 @@ SRFI-1 (@ref{SRFI-1 Searching}参照)の@code{list-index}も見て下さい。
 This module provides syslog(3) system logger interface.
 
 For the common applications, you might find @code{gauche.logger} module
-easier to use (@xref{gauche.logger - User-level logging}).  This module is for those
+easier to use (@xref{User-level logging}).  This module is for those
 who need direct access to the syslog API.
 
 The procedures are only defined if the undelying system supports them.
@@ -6980,7 +6984,7 @@ The procedures are only defined if the undelying system supports them.
 このモジュールは syslog(3) のシステムロガーのインタフェースを提供します。
 
 一般的なアプリケーションについては、@code{gauche.logger} モジュールの
-ほうが使いやすいでしょう(@ref{gauche.logger - User-level logging}参照)。
+ほうが使いやすいでしょう(@ref{User-level logging}参照)。
 このモジュールは syslog の API に直接アクセスする必要のある人向きです。
 
 手続き群は基盤になっているシステムで syslog がサポートされている場合に
@@ -7046,7 +7050,7 @@ these constants.
 Log the string @var{message}.  Unlike syslog(3), this procedure doesn't
 do formatting---you can use @code{format} (@xref{Output}) to create
 a formatted message, or use higher-level routine @code{log-format}
-(@xref{gauche.logger - User-level logging}).
+(@xref{User-level logging}).
 
 An integer argument @var{priority} can be composed by @code{logior}-ing
 one of the @var{facility} constants described above and
@@ -7057,7 +7061,7 @@ the @var{level} constants: @code{LOG_EMERG}, @code{LOG_ALERT},
 文字列 @var{message} をログに記録します。syslog(3) とは違って、この手続きは
 フォーマットを行いません。フォーマットされた文字列を生成するなら
 @code{format} (@ref{Output}参照)が使えます。あるいは、より高水準の
-ルーチン @code{log-format} (@ref{gauche.logger - User-level logging}参照)
+ルーチン @code{log-format} (@ref{User-level logging}参照)
 を使うこともできます。
 
 整数の引数 @var{priority} は上述の @var{facility} 定数のどれかひとつ
@@ -7108,9 +7112,9 @@ the log level @var{level}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node gauche.termios - Termios, gauche.test - Unit testing, gauche.syslog - Syslog, Library modules - Gauche extensions
+@node Termios, Unit testing, Syslog, Library modules - Gauche extensions
 @section @code{gauche.termios} - Termios
-@c NODE gauche.termios - Termios, @code{gauche.termios} - Termios
+@c NODE Termios, @code{gauche.termios} - Termios
 
 @deftp {Module} gauche.termios
 @mdindex gauche.termios
@@ -7446,9 +7450,9 @@ without echoing:
 @end example
 
 @c ----------------------------------------------------------------------
-@node gauche.test - Unit testing, gauche.threads - Threads, gauche.termios - Termios, Library modules - Gauche extensions
+@node Unit testing, Threads, Termios, Library modules - Gauche extensions
 @section @code{gauche.test} - Unit Testing
-@c NODE gauche.test - 単体テスト, @code{gauche.test} - 単体テスト
+@c NODE 単体テスト, @code{gauche.test} - 単体テスト
 
 @deftp {Module} gauche.test
 @mdindex gauche.test
@@ -7659,9 +7663,9 @@ Prints out list of failed tests.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node gauche.threads - Threads, gauche.time - Measure timings, gauche.test - Unit testing, Library modules - Gauche extensions
+@node Threads, Measure timings, Unit testing, Library modules - Gauche extensions
 @section @code{gauche.threads} - Threads
-@c NODE gauche.threads - スレッド, @code{gauche.threads} - スレッド
+@c NODE スレッド, @code{gauche.threads} - スレッド
 
 @c EN
 If enabled at compilation time, Gauche can use threads
@@ -7724,7 +7728,7 @@ SchemeレベルのスレッドAPIはSRFI-18、``マルチスレッドサポート''
 * Thread exceptions::           
 @end menu
 
-@node Thread programming tips, Thread procedures, gauche.threads - Threads, gauche.threads - Threads
+@node Thread programming tips, Thread procedures, Threads, Threads
 @subsection Thread programming tips
 @c NODE スレッドプログラミングTips
 
@@ -7828,11 +7832,11 @@ is much faster than creating native threads.
 @c EN
 If what you need is to deal with blocking I/O, and you have
 all your code at hand, it is sometimes easier to use good old
-@code{select}-based dispatching (@xref{gauche.selector - Simple dispatcher},
+@code{select}-based dispatching (@xref{Simple dispatcher},
 for example).
 @c JP
 ブロッキングI/Oを扱う必要があり、全てのコードが手元にある場合は、
-古き良き@code{select}ベースのディスパッチ(@ref{gauche.selector - Simple dispatcher}に
+古き良き@code{select}ベースのディスパッチ(@ref{Simple dispatcher}に
 例があります)を使うほうが簡単なことがあります。
 @c COMMON
 
@@ -7869,7 +7873,7 @@ are not only but one of the ways to realize those features.
 @c COMMON
 
 
-@node Thread procedures, Synchronization primitives, Thread programming tips, gauche.threads - Threads
+@node Thread procedures, Synchronization primitives, Thread programming tips, Threads
 @subsection Thread procedures
 @c NODE スレッド手続き
 
@@ -8174,7 +8178,7 @@ if given, or raises @code{<join-timeout-exception>}.
 @c COMMON
 @end defun
 
-@node Synchronization primitives, Thread exceptions, Thread procedures, gauche.threads - Threads
+@node Synchronization primitives, Thread exceptions, Thread procedures, Threads
 @subsection Synchronization primitives
 @c NODE 同期プリミティブ
 
@@ -8568,7 +8572,7 @@ Unblocks all the threads waiting on @var{cv}.
 @c COMMON
 @end defun
 
-@node Thread exceptions,  , Synchronization primitives, gauche.threads - Threads
+@node Thread exceptions,  , Synchronization primitives, Threads
 @subsection Thread exceptions
 @c NODE スレッド例外
 
@@ -8706,9 +8710,9 @@ SRFI-18との互換性のために提供されています。
 
 
 @c ----------------------------------------------------------------------
-@node gauche.time - Measure timings, gauche.uvector - Uniform vectors, gauche.threads - Threads, Library modules - Gauche extensions
+@node Measure timings, Uniform vectors, Threads, Library modules - Gauche extensions
 @section @code{gauche.time} - Measure timings
-@c NODE gauche.time - 時間の計測, @code{gauche.time} - 時間の計測
+@c NODE 時間の計測, @code{gauche.time} - 時間の計測
 
 @deftp {Module} gauche.time
 @mdindex gauche.time
@@ -8915,9 +8919,9 @@ spend in process-A and process-B inside a loop.
 
 
 @c ----------------------------------------------------------------------
-@node gauche.uvector - Uniform vectors, gauche.version - Comparing version numbers, gauche.time - Measure timings, Library modules - Gauche extensions
+@node Uniform vectors, Comparing version numbers, Measure timings, Library modules - Gauche extensions
 @section @code{gauche.uvector} - Uniform vectors
-@c NODE gauche.uvector - ユニフォームベクタ, @code{gauche.uvector} - ユニフォームベクタ
+@c NODE ユニフォームベクタ, @code{gauche.uvector} - ユニフォームベクタ
 
 @deftp {Module} gauche.uvector
 @mdindex gauche.uvector
@@ -8937,8 +8941,8 @@ Additional functions: copy procedures (@code{@var{TAG}vector-copy} and
 (@code{@var{TAG}vector->vector} and @code{vector->@var{TAG}vector}),
 and some arithmetic functions (@code{@var{TAG}vector-add}, etc.)
 @item
-Implements the collection framework (@xref{gauche.collection - Collection framework})
-and the sequence framework (@xref{gauche.sequence - Sequence framework}).  So the
+Implements the collection framework (@xref{Collection framework})
+and the sequence framework (@xref{Sequence framework}).  So the
 methods like @code{map}, @code{for-each}, @code{ref} or @code{subseq}
 can be used on the SRFI-4 vector types.
 @end itemize
@@ -8958,8 +8962,8 @@ Gaucheの実装は、SRFI-4の仕様を次のように拡張しています。
 変換 (@code{@var{TAG}vector->vector}, @code{vector->@var{TAG}vector})、
 及び各種算術演算(@code{@var{TAG}vector-add}等)。
 @item
-コレクションフレームワーク (@ref{gauche.collection - Collection framework}参照)と
-シーケンスフレームワーク (@ref{gauche.sequence - Sequence framework}参照)の実装。
+コレクションフレームワーク (@ref{Collection framework}参照)と
+シーケンスフレームワーク (@ref{Sequence framework}参照)の実装。
 例えば @code{map}, @code{for-each}, @code{ref}, @code{subseq}等の
 メソッドがSRFI-4ベクタに対して使えます。
 @end itemize
@@ -9108,7 +9112,7 @@ for any of @code{s8}, @code{u8}, @code{s16}, @code{u16},
 * Uvector block I/O::           
 @end menu
 
-@node Uvector basic operations, Uvector conversion operations, gauche.uvector - Uniform vectors, gauche.uvector - Uniform vectors
+@node Uvector basic operations, Uvector conversion operations, Uniform vectors, Uniform vectors
 @subsection Uvector basic operations
 @c NODE ユニフォームベクタの基本操作
 
@@ -9234,13 +9238,13 @@ Returns the length of the @var{TAG}vector @var{vec}.
 Note that the generic function @code{size-of} can be used 
 to obtain the length of @var{vec} as well,
 if you import @code{gauche.collection}
-(@xref{gauche.collection - Collection framework}).
+(@xref{Collection framework}).
 @c JP
 @var{TAG}vector @var{vec}の長さを返します。
 
 モジュール@code{gauche.collection}をインポートしていれば、
 @var{vec}の長さを知るのに、総称関数@code{size-of}を使うこともできます
-(@ref{gauche.collection - Collection framework}参照)。
+(@ref{Collection framework}参照)。
 @c COMMON
 @example
 (s16vector-length '#s16(111 222 333)) @result{} 3
@@ -9395,7 +9399,7 @@ various operations on the homogeneous vectors.
 @end example
 
 
-@node Uvector conversion operations, Uvector numeric operations, Uvector basic operations, gauche.uvector - Uniform vectors
+@node Uvector conversion operations, Uvector numeric operations, Uvector basic operations, Uniform vectors
 @subsection Uvector conversion operations
 @c NODE ユニフォームベクタの変換
 
@@ -9698,7 +9702,7 @@ alignment constraint.
 @end defun
 
 
-@node Uvector numeric operations, Uvector block I/O, Uvector conversion operations, gauche.uvector - Uniform vectors
+@node Uvector numeric operations, Uvector block I/O, Uvector conversion operations, Uniform vectors
 @subsection Uvector numeric operations
 @c NODE ユニフォームベクタの数値演算
 
@@ -10059,7 +10063,7 @@ Both return the clamped vector.
 @end example
 @end deftp
 
-@node Uvector block I/O,  , Uvector numeric operations, gauche.uvector - Uniform vectors
+@node Uvector block I/O,  , Uvector numeric operations, Uniform vectors
 @subsection Uvector block I/O
 @c NODE ユニフォームベクタのブロック入出力
 
@@ -10179,9 +10183,9 @@ as the byte sequence @code{#x01, #x02, #x03, #x04} or
 @end defun
 
 @c ----------------------------------------------------------------------
-@node gauche.version - Comparing version numbers,  , gauche.uvector - Uniform vectors, Library modules - Gauche extensions
+@node Comparing version numbers,  , Uniform vectors, Library modules - Gauche extensions
 @section @code{gauche.version} - Comparing version numbers
-@c NODE gauche.version - バージョン番号の比較, @code{gauche.version} - バージョン番号の比較
+@c NODE バージョン番号の比較, @code{gauche.version} - バージョン番号の比較
 
 @deftp {Module} gauche.version
 @mdindex gauche.version

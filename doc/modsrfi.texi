@@ -16,22 +16,23 @@ of supported SRFIs.
 
 @c ----------------------------------------------------------------------
 @menu
-* srfi-0 - Feature conditional::  
-* srfi-1 - List library::       
-* srfi-2 - And-let*::           
-* srfi-4 - Homogeneous vectors::  
-* srfi-9 - Record types::       
-* srfi-11 - Let-values::        
-* srfi-13 - String library::    
-* srfi-14 - Character-set library::  
-* srfi-19 - Time data types and procedures::  
-* srfi-27 - Sources of random bits::  
-* srfi-37 - a program argument processor::  
+* Feature conditional::         (srfi-0)
+* List library::                (srfi-1)
+* And-let*::                    (srfi-2)
+* Homogeneous vectors::         (srfi-4)
+* A compatible let form with signatures and rest arguments::  (srfi-5)
+* Record types::                (srfi-9)
+* Let-values::                  (srfi-11)
+* String library::              (srfi-13)
+* Character-set library::       (srfi-14)
+* Time data types and procedures::  (srfi-19)
+* Sources of random bits::      (srfi-27)
+* A program argument processor::  (srfi-37)
 @end menu
 
-@node srfi-0 - Feature conditional, srfi-1 - List library, Library modules - SRFIs, Library modules - SRFIs
+@node Feature conditional, List library, Library modules - SRFIs, Library modules - SRFIs
 @section @code{srfi-0} - Feature conditional
-@c NODE @code{srfi-0} - 機能条件式
+@c NODE 機能条件式, @code{srfi-0} - 機能条件式
 
 @deftp {Module} srfi-0
 @mdindex srfi-0
@@ -185,7 +186,7 @@ as well, by providing alternative library definitions.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node srfi-1 - List library, srfi-2 - And-let*, srfi-0 - Feature conditional, Library modules - SRFIs
+@node List library, And-let*, Feature conditional, Library modules - SRFIs
 @section @code{srfi-1} - List library
 
 @deftp {Module} srfi-1
@@ -219,7 +220,7 @@ Olin Shivers氏のリファレンス実装に基づいて実装されています。
 * SRFI-1 Set operations::       
 @end menu
 
-@node SRFI-1 List constructors, SRFI-1 List predicates, srfi-1 - List library, srfi-1 - List library
+@node SRFI-1 List constructors, SRFI-1 List predicates, List library, List library
 @subsection List constructors
 @c NODE SRFI-1 リスト構築子, リストの構築子
 
@@ -285,7 +286,7 @@ increasing by @var{step}.
 @end example
 @end defun
 
-@node SRFI-1 List predicates, SRFI-1 List selectors, SRFI-1 List constructors, srfi-1 - List library
+@node SRFI-1 List predicates, SRFI-1 List selectors, SRFI-1 List constructors, List library
 @subsection List predicates
 @c NODE SRFI-1 リストの述語, リストの述語
 
@@ -363,7 +364,7 @@ The equality procedure must be consistent with @code{eq?}, i.e.
 @end example
 @end defun
 
-@node SRFI-1 List selectors, SRFI-1 List miscellaneous routines, SRFI-1 List predicates, srfi-1 - List library
+@node SRFI-1 List selectors, SRFI-1 List miscellaneous routines, SRFI-1 List predicates, List library
 @subsection List selectors
 @c NODE SRFI-1 リスト選択子, リスト選択子
 
@@ -423,7 +424,7 @@ On the other hand, take always allocates a new list
 for result if the argument is a list of non-zero length.
 
 An error is signalled if @var{i} is past the end of list @var{x}.
-@xref{util.list - Additional list library}, for more tolerant version
+@xref{Additional list library}, for more tolerant version
 of @code{take} and @code{drop}.
 
 For generic subsequence extranction from any sequence, see @code{subseq}
@@ -436,7 +437,7 @@ take は、引数のリストが長さ0でないリストなら必ず新しいリストの
 
 @var{i} がリスト @var{x} の終端を超えたらエラーが発生します。
 より寛容なバージョンの @code{take} と @code{drop} については、
-@xref{util.list - Additional list library} を参照してください。
+@xref{Additional list library} を参照してください。
 
 あらゆる並びからの部分並びを抽出する汎用的な方法に関しては、
 @ref{Slicing sequence} にある @code{subseq} を参照してください。
@@ -476,7 +477,7 @@ tail with @var{flist}.
 if the argument is a list of non-zero length.
 
 An error is signalled if @var{i} is larger than the length of @var{flist}.
-@xref{util.list - Additional list library}, for more tolerant version
+@xref{Additional list library}, for more tolerant version
 of @code{take-right} and @code{drop-right}.
 @c JP
 @code{take-right} の返す値はいつでも @var{first} の共通の末尾を共有します。
@@ -485,7 +486,7 @@ of @code{take-right} and @code{drop-right}.
 
 @var{i} がリスト @var{flist} の長さより大きければエラーが発生します。
 より寛容なバージョンの @code{take-right} と @code{drop-right} については、
-@xref{util.list - Additional list library} を参照してください。
+@xref{Additional list library} を参照してください。
 @c COMMON
 @end defun
 
@@ -542,7 +543,7 @@ Note that @code{last-pair} is Gauche built-in procedure.
 @c COMMON
 @end defun
 
-@node SRFI-1 List miscellaneous routines, SRFI-1 Fold, SRFI-1 List selectors, srfi-1 - List library
+@node SRFI-1 List miscellaneous routines, SRFI-1 Fold, SRFI-1 List selectors, List library
 @subsection List miscellaneous routines
 @c NODE 種々のリスト処理ルーチン
 
@@ -676,7 +677,7 @@ Partial application version of @code{count}
 @end example
 @end defun
 
-@node SRFI-1 Fold, SRFI-1 Filtering & Partitioning, SRFI-1 List miscellaneous routines, srfi-1 - List library
+@node SRFI-1 Fold, SRFI-1 Filtering & Partitioning, SRFI-1 List miscellaneous routines, List library
 @subsection List fold, unfold & map
 @c NODE リストの畳み込み(fold)、解きほぐし(unfold)、および写像(map)
 
@@ -941,7 +942,7 @@ Partial application versions of @code{fold}, @code{fold-right},
 @c COMMON
 @end defun
 
-@node SRFI-1 Filtering & Partitioning, SRFI-1 Searching, SRFI-1 Fold, srfi-1 - List library
+@node SRFI-1 Filtering & Partitioning, SRFI-1 Searching, SRFI-1 Fold, List library
 @subsection List filtering & partitioning
 @c NODE リストのフィルタおよび分割
 
@@ -1025,7 +1026,7 @@ Partial application versions of @code{filter}, @code{remove} and
 @end defun
 
 
-@node SRFI-1 Searching, SRFI-1 Deletion, SRFI-1 Filtering & Partitioning, srfi-1 - List library
+@node SRFI-1 Searching, SRFI-1 Deletion, SRFI-1 Filtering & Partitioning, List library
 @subsection List searching
 @c NODE リストの探索
 
@@ -1148,7 +1149,7 @@ Partial application version of @code{member}, @code{find}, @code{find-tail},
 @c COMMON
 @end defun
 
-@node SRFI-1 Deletion, SRFI-1 Association lists, SRFI-1 Searching, srfi-1 - List library
+@node SRFI-1 Deletion, SRFI-1 Association lists, SRFI-1 Searching, List library
 @subsection List deletion
 @c NODE リストの削除
 
@@ -1199,7 +1200,7 @@ The comparison procedure, @var{elt=}, defaults to @code{equal?}.
 @c COMMON
 @end defun
 
-@node SRFI-1 Association lists, SRFI-1 Set operations, SRFI-1 Deletion, srfi-1 - List library
+@node SRFI-1 Association lists, SRFI-1 Set operations, SRFI-1 Deletion, List library
 @subsection Association lists
 @c NODE 連想リスト
 
@@ -1262,7 +1263,7 @@ Partial application version of @code{assoc}.
 @c COMMON
 @end defun
 
-@node SRFI-1 Set operations,  , SRFI-1 Association lists, srfi-1 - List library
+@node SRFI-1 Set operations,  , SRFI-1 Association lists, List library
 @subsection Lists as sets
 @c NODE 集合としてのリスト
 
@@ -1274,7 +1275,7 @@ All procedures in this category takes a comparison procedure
 @var{elt=}, as the first argument, which is used to determine
 two elements in the given sets are the same.
 
-See also @ref{util.combinations - Combination library}, which
+See also @ref{Combination library}, which
 concerns combinations of elements in the set.
 @c JP
 これらの手続きはリストを集合としてあつかいます。すなわち、どのような
@@ -1284,7 +1285,7 @@ concerns combinations of elements in the set.
 とります。この比較手続きは与えられた二つの集合の要素が等しいかどうかを
 判定します。
 
-集合の要素の組み合せについては @ref{util.combinations - Combination library}
+集合の要素の組み合せについては @ref{Combination library}
 も参照してください。
 @c COMMON
 
@@ -1411,7 +1412,7 @@ The cells in the first list argument may be reused to construct the result.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node srfi-2 - And-let*, srfi-4 - Homogeneous vectors, srfi-1 - List library, Library modules - SRFIs
+@node And-let*, Homogeneous vectors, List library, Library modules - SRFIs
 @section @code{srfi-2} - And-let*
 
 @deftp {Module} srfi-2
@@ -1510,27 +1511,56 @@ number from a few possibilities (environment variable, configuration file,
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node srfi-4 - Homogeneous vectors, srfi-9 - Record types, srfi-2 - And-let*, Library modules - SRFIs
+@node Homogeneous vectors, A compatible let form with signatures and rest arguments, And-let*, Library modules - SRFIs
 @section @code{srfi-4} - Homogeneous vectors
-@c NODE srfi-4 - 単一型のベクタ, @code{srfi-4} - 単一型のベクタ
+@c NODE 単一型のベクタ, @code{srfi-4} - 単一型のベクタ
 
 @deftp {Module} srfi-4
 @mdindex srfi-4
 @c EN
 SRFI-4 is now implemented in @code{gauche.uvector} module
-@xref{gauche.uvector - Uniform vectors}.
+@xref{Uniform vectors}.
 This module simply inherits @code{gauche.uvector} for backward-compatibility.
 @c JP
 SRFI-4は、@code{gauche.uvector}モジュールとして実装されています。
-@ref{gauche.uvector - Uniform vectors}参照。
+@ref{Uniform vectors}参照。
 このモジュールは後方互換性のために単に@code{gauche.uvector}を継承しています。
 @c COMMON
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node srfi-9 - Record types, srfi-11 - Let-values, srfi-4 - Homogeneous vectors, Library modules - SRFIs
+@node A compatible let form with signatures and rest arguments, Record types, Homogeneous vectors, Library modules - SRFIs
+@section @code{srfi-5} - A compatible let form with signatures and rest arguments
+@c NODE シグネチャとrest引数に互換性のあるlet形式, @code{srfi-5} - シグネチャとrest引数に互換性のあるlet形式
+
+@deftp {Module} srfi-5
+@mdindex srfi-5
+This module provides srfi-5's extended @code{let} syntax.
+@end deftp
+
+@defmac let ((var val) @dots{} [. (rest val @dots{})]) body @dots{}
+@defmacx let name ((var val) @dots{} [. (rest val @dots{})]) body @dots{}
+@defmacx let (name (var val) @dots{} [. (rest val @dots{})]) body @dots{}
+[SRFI-5]
+The @code{let} syntax is extended in two ways.
+
+@itemize @bullet
+@item 
+The extended @code{let} syntax accepts the @var{name} identifier (for
+named let syntax) within the list of bindings (as in the third
+syntax above).
+@item
+The extended @code{let} syntax accepts the rest parameter binding
+which works like the rest paremter in the @code{lambda} syntax.
+@end itemize
+
+See SRFI-5 document for rationale of this extension.
+@end defmac
+
+@c ----------------------------------------------------------------------
+@node Record types, Let-values, A compatible let form with signatures and rest arguments, Library modules - SRFIs
 @section @code{srfi-9} - Record types
-@c NODE @code{srfi-9} - レコード型
+@c NODE レコード型, @code{srfi-9} - レコード型
 
 @deftp {Module} srfi-9
 @mdindex srfi-9
@@ -1541,7 +1571,7 @@ top of Gauche's object system.
 The SRFI-9 record type is not as powerful as the object system, but
 it will be useful if you want your program to be portable.
 
-See also @ref{util.record - SLIB-compatible record type},
+See also @ref{SLIB-compatible record type},
 which provides an SCM-compatible
 procedural interface of record types.
 @c JP
@@ -1552,7 +1582,7 @@ SRFI-9 のレコード型はオブジェクトシステムほどには強力ではありませんが、
 ポータブルなプログラムを書くときには役に立ちます。
 
 ちなみに、レコード型に対するSCMコンパチブルな
-手続き的APIを提供する@ref{util.record - SLIB-compatible record type}モジュールもあります。
+手続き的APIを提供する@ref{SLIB-compatible record type}モジュールもあります。
 @c COMMON
 @end deftp
 
@@ -1645,9 +1675,8 @@ sequence of forms.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node srfi-11 - Let-values, srfi-13 - String library, srfi-9 - Record types, Library modules - SRFIs
+@node Let-values, String library, Record types, Library modules - SRFIs
 @section @code{srfi-11} - Let-values
-@c NODE @code{srfi-11} - Let-values
 
 @deftp {Module} srfi-11
 @mdindex srfi-11
@@ -1734,9 +1763,9 @@ the preceding @var{vars}.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node srfi-13 - String library, srfi-14 - Character-set library, srfi-11 - Let-values, Library modules - SRFIs
+@node String library, Character-set library, Let-values, Library modules - SRFIs
 @section @code{srfi-13} - String library
-@c NODE @code{srfi-13} - 文字列ライブラリ
+@c NODE 文字列ライブラリ, @code{srfi-13} - 文字列ライブラリ
 
 @deftp {Module} srfi-13
 @mdindex srfi-13
@@ -1793,7 +1822,7 @@ Gaucheでは、一貫性のために``srfi-13''と名付けています。
 * SRFI-13 Low-level string procedures::  
 @end menu
 
-@node SRFI-13 General conventions, SRFI-13 String predicates, srfi-13 - String library, srfi-13 - String library
+@node SRFI-13 General conventions, SRFI-13 String predicates, String library, String library
 @subsection General conventions
 @c NODE 一般規約
 
@@ -1903,7 +1932,7 @@ that works from right to left.
 
 @end table
 
-@node SRFI-13 String predicates, SRFI-13 String Constructors, SRFI-13 General conventions, srfi-13 - String library
+@node SRFI-13 String predicates, SRFI-13 String Constructors, SRFI-13 General conventions, String library
 @subsection String predicates
 @c NODE 文字列についての述語
 
@@ -1945,7 +1974,7 @@ satisfies @var{char/char-set/pred}, @code{#f} is returned.
 @c COMMON
 @end defun
 
-@node SRFI-13 String Constructors, SRFI-13 String Selection, SRFI-13 String predicates, srfi-13 - String library
+@node SRFI-13 String Constructors, SRFI-13 String Selection, SRFI-13 String predicates, String library
 @subsection String Constructors
 @c NODE 文字列の構築子
 
@@ -1972,7 +2001,7 @@ creates a string, whose @var{i}-th character is calculated by
 [SRFI-13] @equiv{} @code{(list->string (reverse char-list))}.
 @end defun
 
-@node SRFI-13 String Selection, SRFI-13 String Comparison, SRFI-13 String Constructors, srfi-13 - String library
+@node SRFI-13 String Selection, SRFI-13 String Comparison, SRFI-13 String Constructors, String library
 @subsection String selection
 @c NODE 文字列の選択
 
@@ -2101,7 +2130,7 @@ the substring of @var{s} is used as the source.
 @end example
 @end defun
 
-@node SRFI-13 String Comparison, SRFI-13 String Prefixes & Suffixes, SRFI-13 String Selection, srfi-13 - String library
+@node SRFI-13 String Comparison, SRFI-13 String Prefixes & Suffixes, SRFI-13 String Selection, String library
 @subsection String comparison
 @c NODE 文字列の色々な比較
 
@@ -2133,7 +2162,7 @@ the substring of @var{s} is used as the source.
 [SRFI-13]
 @end defun
 
-@node SRFI-13 String Prefixes & Suffixes, SRFI-13 String searching, SRFI-13 String Comparison, srfi-13 - String library
+@node SRFI-13 String Prefixes & Suffixes, SRFI-13 String searching, SRFI-13 String Comparison, String library
 @subsection String Prefixes & Suffixes
 @c NODE 文字列のプリフィックスとサフィックス
 
@@ -2151,7 +2180,7 @@ the substring of @var{s} is used as the source.
 [SRFI-13]
 @end defun
 
-@node SRFI-13 String searching, SRFI-13 String case mapping, SRFI-13 String Prefixes & Suffixes, srfi-13 - String library
+@node SRFI-13 String searching, SRFI-13 String case mapping, SRFI-13 String Prefixes & Suffixes, String library
 @subsection String searching
 @c NODE 文字列の探索
 
@@ -2236,7 +2265,7 @@ See also the Gauche built-in procedure @code{string-scan}
 @c COMMON
 @end defun
 
-@node SRFI-13 String case mapping, SRFI-13 String reverse & append, SRFI-13 String searching, srfi-13 - String library
+@node SRFI-13 String case mapping, SRFI-13 String reverse & append, SRFI-13 String searching, String library
 @subsection String case mapping
 @c NODE 文字列のケース(大文字小文字)マッピング
 
@@ -2255,7 +2284,7 @@ See also the Gauche built-in procedure @code{string-scan}
 [SRFI-13]
 @end defun
 
-@node SRFI-13 String reverse & append, SRFI-13 String mapping, SRFI-13 String case mapping, srfi-13 - String library
+@node SRFI-13 String reverse & append, SRFI-13 String mapping, SRFI-13 String case mapping, String library
 @subsection String reverse & append
 @c NODE 文字列の反転と追加
 
@@ -2314,7 +2343,7 @@ Gaucheでは、``共有''バージョンは全く同じ動作をします。
 @c COMMON
 @end defun
 
-@node SRFI-13 String mapping, SRFI-13 String rotation, SRFI-13 String reverse & append, srfi-13 - String library
+@node SRFI-13 String mapping, SRFI-13 String rotation, SRFI-13 String reverse & append, String library
 @subsection String mapping
 @c NODE 文字列のマッピング
 
@@ -2361,7 +2390,7 @@ On the other hand, @code{string-map!} modifies @var{s}.
 [SRFI-13]
 @end defun
 
-@node SRFI-13 String rotation, SRFI-13 other string operations, SRFI-13 String mapping, srfi-13 - String library
+@node SRFI-13 String rotation, SRFI-13 other string operations, SRFI-13 String mapping, String library
 @subsection String rotation
 @c NODE 文字列のローテーション
 
@@ -2373,7 +2402,7 @@ On the other hand, @code{string-map!} modifies @var{s}.
 [SRFI-13]
 @end defun
 
-@node SRFI-13 other string operations, SRFI-13 String filtering, SRFI-13 String rotation, srfi-13 - String library
+@node SRFI-13 other string operations, SRFI-13 String filtering, SRFI-13 String rotation, String library
 @subsection Other string operations
 @c NODE 他の文字列操作
 
@@ -2405,7 +2434,7 @@ which provides similar features but different criteria.
 @c COMMON
 @end defun
 
-@node SRFI-13 String filtering, SRFI-13 Low-level string procedures, SRFI-13 other string operations, srfi-13 - String library
+@node SRFI-13 String filtering, SRFI-13 Low-level string procedures, SRFI-13 other string operations, String library
 @subsection String filtering
 @c NODE 文字列のフィルタリング
 
@@ -2414,7 +2443,7 @@ which provides similar features but different criteria.
 [SRFI-13]
 @end defun
 
-@node SRFI-13 Low-level string procedures,  , SRFI-13 String filtering, srfi-13 - String library
+@node SRFI-13 Low-level string procedures,  , SRFI-13 String filtering, String library
 @subsection Low-level string procedures
 @c NODE 低レベルな文字列に関する手続き
 
@@ -2445,9 +2474,9 @@ which provides similar features but different criteria.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node srfi-14 - Character-set library, srfi-19 - Time data types and procedures, srfi-13 - String library, Library modules - SRFIs
+@node Character-set library, Time data types and procedures, String library, Library modules - SRFIs
 @section @code{srfi-14} - Character-set library
-@c NODE @code{srfi-14} - 文字集合ライブラリ
+@c NODE 文字集合ライブラリ, @code{srfi-14} - 文字集合ライブラリ
 
 @deftp {Module} srfi-14
 @mdindex srfi-14
@@ -2472,7 +2501,7 @@ SRFI-14で定義された文字セットライブラリを実装します
 * SRFI-14 Predefined character-set::  
 @end menu
 
-@node SRFI-14 Character-set constructors, SRFI-14 Character-set Comparison, srfi-14 - Character-set library, srfi-14 - Character-set library
+@node SRFI-14 Character-set constructors, SRFI-14 Character-set Comparison, Character-set library, Character-set library
 @subsection Character-set constructors
 @c NODE 文字セットの構築子
 
@@ -2547,7 +2576,7 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 @c COMMON
 @end defun
 
-@node SRFI-14 Character-set Comparison, SRFI-14 Character-set iteration, SRFI-14 Character-set constructors, srfi-14 - Character-set library
+@node SRFI-14 Character-set Comparison, SRFI-14 Character-set iteration, SRFI-14 Character-set constructors, Character-set library
 @subsection Character-set comparison
 @c NODE 文字セットの比較
 
@@ -2572,7 +2601,7 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 @c COMMON
 @end defun
 
-@node SRFI-14 Character-set iteration, SRFI-14 Character-set query, SRFI-14 Character-set Comparison, srfi-14 - Character-set library
+@node SRFI-14 Character-set iteration, SRFI-14 Character-set query, SRFI-14 Character-set Comparison, Character-set library
 @subsection Character-set iteration
 @c NODE 文字セットのイテレーション
 
@@ -2633,7 +2662,7 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 @c COMMON
 @end defun
 
-@node SRFI-14 Character-set query, SRFI-14 Character-set algebra, SRFI-14 Character-set iteration, srfi-14 - Character-set library
+@node SRFI-14 Character-set query, SRFI-14 Character-set algebra, SRFI-14 Character-set iteration, Character-set library
 @subsection Character-set query
 @c NODE 文字セットへの問い合わせ
 
@@ -2679,13 +2708,15 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 @c COMMON
 @end defun
 
-@node SRFI-14 Character-set algebra, SRFI-14 Predefined character-set, SRFI-14 Character-set query, srfi-14 - Character-set library
+@node SRFI-14 Character-set algebra, SRFI-14 Predefined character-set, SRFI-14 Character-set query, Character-set library
 @subsection Character-set algebra
 @c NODE 文字セットに適用できる代数的関数
 
 @defun char-set-adjoin char-set char1 @dots{}
 @defunx char-set-adjoin! char-set char1 @dots{}
 [SRFI-14]
+Returns a character set that adds @var{char1} @dots{} to
+@var{char-set}.
 @end defun
 
 @defun char-set-delete char-set char1 @dots{}
@@ -2725,7 +2756,7 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 
 
 
-@node SRFI-14 Predefined character-set,  , SRFI-14 Character-set algebra, srfi-14 - Character-set library
+@node SRFI-14 Predefined character-set,  , SRFI-14 Character-set algebra, Character-set library
 @subsection Predefined character-set
 @c NODE 定義済みの文字セット
 
@@ -2785,9 +2816,9 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 @end defvar
 
 @c ----------------------------------------------------------------------
-@node srfi-19 - Time data types and procedures, srfi-27 - Sources of random bits, srfi-14 - Character-set library, Library modules - SRFIs
+@node Time data types and procedures, Sources of random bits, Character-set library, Library modules - SRFIs
 @section @code{srfi-19} - Time data types and procedures
-@c NODE srfi-19 - 時間のデータ型と手続き, @code{srfi-19} - 時間のデータ型と手続き
+@c NODE 時間のデータ型と手続き, @code{srfi-19} - 時間のデータ型と手続き
 
 @c EN
 This SRFI defines various representations of time and date, and
@@ -2814,7 +2845,7 @@ Gaucheでは、timeオブジェクトは@code{<time>}クラスとして組み込みで
 * SRFI-19 Date reader and writer::  
 @end menu
 
-@node SRFI-19 Time types, SRFI-19 Time queries, srfi-19 - Time data types and procedures, srfi-19 - Time data types and procedures
+@node SRFI-19 Time types, SRFI-19 Time queries, Time data types and procedures, Time data types and procedures
 @subsection Time types
 @c NODE 時間のタイプ
 
@@ -2892,7 +2923,7 @@ In the current implementation, this is the same as @code{time-process}.
 @c COMMON
 @end defvr
 
-@node SRFI-19 Time queries, SRFI-19 Time procedures, SRFI-19 Time types, srfi-19 - Time data types and procedures
+@node SRFI-19 Time queries, SRFI-19 Time procedures, SRFI-19 Time types, Time data types and procedures
 @subsection Time queries
 @c NODE 時間に関する問い合わせ
 
@@ -2954,7 +2985,7 @@ number of days since 1858-11-17T00:00:00Z
 @end defun
 
 
-@node SRFI-19 Time procedures, SRFI-19 Date, SRFI-19 Time queries, srfi-19 - Time data types and procedures
+@node SRFI-19 Time procedures, SRFI-19 Date, SRFI-19 Time queries, Time data types and procedures
 @subsection Time procedures
 @c NODE 時間に関する手続き
 
@@ -3049,7 +3080,7 @@ Type of returned time is the same as @var{time0}.  Type of
 @c COMMON
 @end defun
 
-@node SRFI-19 Date, SRFI-19 Date reader and writer, SRFI-19 Time procedures, srfi-19 - Time data types and procedures
+@node SRFI-19 Date, SRFI-19 Date reader and writer, SRFI-19 Time procedures, Time data types and procedures
 @subsection Date
 @c NODE 日付
 
@@ -3274,7 +3305,7 @@ UTC 形式から様々な様式の日付/時間に変換します。
 @c COMMON
 @end defun
 
-@node SRFI-19 Date reader and writer,  , SRFI-19 Date, srfi-19 - Time data types and procedures
+@node SRFI-19 Date reader and writer,  , SRFI-19 Date, Time data types and procedures
 @subsection Date reader and writer
 @c NODE 日付の読み書き
 
@@ -3287,20 +3318,20 @@ UTC 形式から様々な様式の日付/時間に変換します。
 @end defun
 
 @c ----------------------------------------------------------------------
-@node srfi-27 - Sources of random bits, srfi-37 - a program argument processor, srfi-19 - Time data types and procedures, Library modules - SRFIs
+@node Sources of random bits, A program argument processor, Time data types and procedures, Library modules - SRFIs
 @section @code{srfi-27} - Sources of Random Bits
-@c NODE srfi-27 - ランダムビットのソース, @code{srfi-27} - ランダムビットのソース
+@c NODE ランダムビットのソース, @code{srfi-27} - ランダムビットのソース
 
 @deftp {Module} srfi-27
 @mdindex srfi-27
 @c EN
 This module provides SRFI-27 pseudo random generator interface,
 using Mersenne Twister algorithm 
-(@xref{math.mt-random - Mersenne-Twister random number generator}) as the backbone.
+(@xref{Mersenne-Twister random number generator}) as the backbone.
 @c JP
-このモジュールは SRFI-27 のメルセンヌツイスタアルゴリズム
-(@ref{math.mt-random - Mersenne-Twister random number generator} を参照)
-基礎に用いた疑似乱数発生器インタフェースを提供します。
+このモジュールはメルセンヌツイスタアルゴリズム
+(@ref{Mersenne-Twister random number generator} 参照)
+を基礎に用いたSRFI-27疑似乱数発生器インタフェースを提供します。
 @c COMMON
 @end deftp
 
@@ -3439,9 +3470,9 @@ generates will be quantized by the given @var{unit}, where
 @end defun
 
 @c ----------------------------------------------------------------------
-@node srfi-37 - a program argument processor,  , srfi-27 - Sources of random bits, Library modules - SRFIs
+@node A program argument processor,  , Sources of random bits, Library modules - SRFIs
 @section @code{srfi-37} - args-fold: a program argument processor
-@c NODE @code{srfi-37} - args-fold プログラム引数処理
+@c NODE args-fold プログラム引数処理, @code{srfi-37} - args-fold プログラム引数処理
 
 @deftp {Module} srfi-37
 @mdindex srfi-37
@@ -3451,7 +3482,7 @@ yet another procedure to process command-line
 arguments, defined in SRFI-37 (@ref{srfi-37,[SRFI-37],SRFI-37}).
 
 Unlike @code{gauche.parseopt}
-(@xref{gauche.parseopt - Parsing command-line options}),
+(@xref{Parsing command-line options}),
 @code{args-fold} provides functional interface, i.e. 
 the user's states are explicitly passed via parser's argument and
 return values, and also follows POSIX and GNU getopt guidelines,
@@ -3461,7 +3492,7 @@ including long options.
 これは、SRFI-37 (@ref{srfi-37,[SRFI-37],SRFI-37}) で定義されている
 コマンドライン引数の処理をするもうひとつの手続きです。
 
-@code{gauche.parseopt} (@ref{gauche.parseopt - Parsing command-line options}
+@code{gauche.parseopt} (@ref{Parsing command-line options}
 参照) とは違って、@code{args-fold} は関数的なインタフェースです。すなわち、
 利用者側の状態は、パーザの引数を通じて明示的に渡され、値が返ります。
 また、ロングオプションを含む、POSIX および GNU の getopt のガイドラインに

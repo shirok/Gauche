@@ -11,18 +11,18 @@
 
 @node Function and Syntax Index, Module Index, Indices, Indices
 @appendixsec Function and Syntax Index
-@c NODE 手続きと構文索引
+@c NODE Index - 手続きと構文索引
 @printindex fn
 
 @node Module Index, Class Index, Function and Syntax Index, Indices
 @appendixsec Module Index
-@c NODE モジュール索引
+@c NODE Index - モジュール索引
 @printindex md
 
 
 @node Class Index, Variable Index, Module Index, Indices
 @appendixsec Class Index
-@c NODE クラス索引
+@c NODE Index - クラス索引
 
 For readability, the surrounding @code{<} and @code{>} are stripped off.
 
@@ -30,6 +30,6 @@ For readability, the surrounding @code{<} and @code{>} are stripped off.
 
 @node Variable Index,  , Class Index, Indices
 @appendixsec Variable Index
-@c NODE 変数索引
+@c NODE Index - 変数索引
 @printindex vr
 
