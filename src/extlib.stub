@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.43 2001-03-11 09:42:52 shiro Exp $
+;;; $Id: extlib.stub,v 1.44 2001-03-11 21:16:34 shiro Exp $
 ;;;
 
 "
@@ -91,17 +91,17 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   "  SCM_RETURN(Scm_MonotonicMerge(start, sequences,
                                    monotonic_merge_cb, (void*)get_super));")
 
-(define-cproc pair-attributes (pair)
-  (assert (pair? pair))
-  "  SCM_RETURN(SCM_PAIR_ATTR(pair));")
-
-(define-cproc pair-attribute-get (pair key &optional fallback)
-  (assert (pair? pair))
-  "  SCM_RETURN(Scm_PairAttrGet(SCM_PAIR(pair), key, fallback));")
-
-(define-cproc pair-attribute-set! (pair key value)
-  (assert (pair? pair))
-  "  SCM_RETURN(Scm_PairAttrSet(SCM_PAIR(pair), key, value));")
+;(define-cproc pair-attributes (pair)
+;  (assert (pair? pair))
+;  "  SCM_RETURN(SCM_PAIR_ATTR(pair));")
+;
+;(define-cproc pair-attribute-get (pair key &optional fallback)
+;  (assert (pair? pair))
+;  "  SCM_RETURN(Scm_PairAttrGet(SCM_PAIR(pair), key, fallback));")
+;
+;(define-cproc pair-attribute-set! (pair key value)
+;  (assert (pair? pair))
+;  "  SCM_RETURN(Scm_PairAttrSet(SCM_PAIR(pair), key, value));")
 
 ;;
 ;; 6.3.3  Symbols
@@ -288,6 +288,10 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 ;;
 
 ; read-byte
+
+(define-cproc read-line (&optional (port (current-input-port)))
+  (assert (input-port? port))
+  "  SCM_RETURN(Scm_ReadLine(port));")
 
 ;;
 ;; 6.6.3  Output
