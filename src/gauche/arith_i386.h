@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: arith_i386.h,v 1.4 2004-12-22 00:35:32 shirok Exp $
+ *  $Id: arith_i386.h,v 1.5 2004-12-22 01:49:00 shirok Exp $
  */
 
 #ifdef __GNUC__
@@ -177,7 +177,7 @@
         "movl $0, %1;" \
         "rcll $1, %1;" \
            :"=g" (r), "=g" (v) \
-           :"g" (x), "g" (y) \
+           :"g" (x), "r" (y) \
            :"%eax", "%edx")
 
 /*-----------------------------------------------------------------
@@ -200,7 +200,7 @@
         "1: movl $-1, %1;"\
         "0:" \
            :"=g" (r), "=&g" (v) \
-           :"g" (x), "g" (y) \
+           :"g" (x), "r" (y) \
            :"%eax", "%edx")
 
 #endif /*__GNUC__*/
