@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.62 2002-05-25 09:03:34 shirok Exp $
+ *  $Id: load.c,v 1.63 2002-06-11 09:27:15 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -215,8 +215,7 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths, int error_if_not_found)
         ScmObj lpath;
         SCM_FOR_EACH(lpath, *paths) {
             if (!SCM_STRINGP(SCM_CAR(lpath))) {
-                /* TODO: should be warning? */
-                Scm_Error("*load-path* contains invalid element: %S", *paths);
+                Scm_Warn("*load-path* contains invalid element: %S", *paths);
             }
             fpath = Scm_StringAppendC(SCM_STRING(SCM_CAR(lpath)), "/", 1, 1);
             fpath = Scm_StringAppend2(SCM_STRING(fpath), SCM_STRING(file));
