@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.17 2001-02-05 00:37:08 shiro Exp $
+ *  $Id: compile.c,v 1.18 2001-02-05 08:23:49 shiro Exp $
  */
 
 #include "gauche.h"
@@ -104,8 +104,6 @@ enum {
  *
  *   Statically analyzes given form recursively, converting it
  *   to the intermediate form.   Syntactic error is detected here.
- *
- *   TODO: macro expansion
  */
 
 /* Semantics of global (free) reference:
@@ -182,7 +180,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
             if (SCM_SYMBOLP(head)) {
                 /* Let's see if the symbol is bound to a syntax, a macro,
                    or an inlinable procedure in the current module. */
-                ScmGloc *g = Scm_FindBinding(vm->module, SCM_SYMBOL(head), 0);
+                ScmGloc *g = Scm_FindBinding(vm->module, SCM_SYMBOL(head), FALSE);
                 if (g != NULL) {
                     if (SCM_SYNTAXP(g->value)) {
                         ScmCompileProc cmpl = SCM_SYNTAX(g->value)->compiler;
@@ -1318,6 +1316,48 @@ ScmObj Scm_MakeMacroTransformer(ScmSymbol *name, ScmProcedure *proc)
     return Scm_MakeSyntax(name, macro_transform, (void*)proc);
 }
 
+/* Expand macro.
+ * To capture locally-bound macros, macro-expand needs to be a syntax.
+ * From scheme, this syntax is visible as %macro-expand.
+ * The procedure version, which works only for globally defined macros,
+ * can be defined as
+ *  (define (macro-expand form) (%macro-expand form))
+ */
+static ScmObj compile_macro_expand(ScmObj form, ScmObj env,
+                                   int ctx, void *data)
+{
+    ScmObj expr, sym;
+    ScmGloc *gloc;
+    
+    if (!SCM_PAIRP(SCM_CDR(form)) || !SCM_NULLP(SCM_CDDR(form)))
+        Scm_Error("syntax error: %S", form);
+    expr = SCM_CADR(form);
+    if (!SCM_PAIRP(expr)) return SCM_LIST1(expr);
+    if (!SCM_SYMBOLP(SCM_CAR(expr))) return SCM_LIST1(expr);
+    
+    sym = lookup_env(SCM_CAR(expr), env);
+    /* TODO: case of locally bound macros */
+    if (SCM_SYMBOLP(sym)) {
+        ScmGloc *g = Scm_FindBinding(Scm_VM()->module, SCM_SYMBOL(sym), FALSE);
+        if (g && SCM_SYNTAXP(g->value)) {
+            ScmSyntax *syn = SCM_SYNTAX(g->value);
+            if (syn->compiler == macro_transform) {
+                ScmObj proc = SCM_OBJ(syn->data);
+                ScmObj translated = Scm_Apply(proc, expr);
+                return SCM_LIST1(translated);
+            }
+        }
+    }
+    return SCM_LIST1(expr);
+}
+
+static ScmSyntax syntax_macro_expand = {
+    SCM_CLASS_SYNTAX,
+    SCM_SYMBOL(SCM_SYM_MACRO_EXPAND),
+    compile_macro_expand,
+    NULL
+};
+
 /*===================================================================
  * Initializer
  */
@@ -1349,4 +1389,5 @@ void Scm__InitCompiler(void)
     DEFSYN(SCM_SYM_LETREC,       syntax_letrec);
     DEFSYN(SCM_SYM_DO,           syntax_do);
     DEFSYN(SCM_SYM_DELAY,        syntax_delay);
+    DEFSYN(SCM_SYM_MACRO_EXPAND, syntax_macro_expand);
 }

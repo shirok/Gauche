@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.23 2001-02-05 00:37:51 shiro Exp $
+ *  $Id: gauche.h,v 1.24 2001-02-05 08:23:49 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1095,6 +1095,7 @@ extern ScmSymbol ScmQelse;
 extern ScmSymbol ScmQyields;
 extern ScmSymbol ScmQdo;
 extern ScmSymbol ScmQdelay;
+extern ScmSymbol ScmQmacroExpand;
 
 extern ScmSymbol ScmQcons;
 extern ScmSymbol ScmQcar;
@@ -1127,6 +1128,7 @@ extern ScmSymbol ScmQmemv;
 #define SCM_SYM_YIELDS           SCM_OBJ(&ScmQyields) /* => */
 #define SCM_SYM_DO               SCM_OBJ(&ScmQdo)
 #define SCM_SYM_DELAY            SCM_OBJ(&ScmQdelay)
+#define SCM_SYM_MACRO_EXPAND     SCM_OBJ(&ScmQmacroExpand)
 
 #define SCM_SYM_CONS             SCM_OBJ(&ScmQcons)
 #define SCM_SYM_CAR              SCM_OBJ(&ScmQcar)

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.24 2001-02-05 00:36:51 shiro Exp $
+ *  $Id: vm.c,v 1.25 2001-02-05 08:23:49 shiro Exp $
  */
 
 #include "gauche.h"
@@ -459,7 +459,7 @@ static void run_loop()
                     }
                 } else if (SCM_SYMBOLP(sym)) {
                     ScmGloc *gloc =
-                        Scm_FindBinding(vm->module, SCM_SYMBOL(sym), 0);
+                        Scm_FindBinding(vm->module, SCM_SYMBOL(sym), FALSE);
                     if (gloc == NULL) {
                         VM_ERR(("unbound variable: %S", sym));
                     }
@@ -541,7 +541,8 @@ static void run_loop()
                     e->data[off] = val0;
                 } else if (SCM_SYMBOLP(location)) {
                     ScmGloc *gloc = Scm_FindBinding(vm->module,
-                                                    SCM_SYMBOL(location), 1);
+                                                    SCM_SYMBOL(location),
+                                                    TRUE);
                     if (gloc == NULL) {
                         VM_ERR(("symbol not defined: %S", location));
                     }
