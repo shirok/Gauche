@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.7 2001-03-05 00:39:11 shiro Exp $
+ *  $Id: module.c,v 1.8 2001-03-05 04:41:56 shiro Exp $
  */
 
 #include "gauche.h"
@@ -37,28 +37,56 @@ static ScmHashTable *moduleTable; /* global, must be protected in MT env */
 /*----------------------------------------------------------------------
  * Constructor
  */
-ScmObj Scm_MakeModule(ScmSymbol *name, ScmObj parentList)
+
+/* internal */
+static ScmObj make_module(ScmSymbol *name, ScmObj directParents,
+                          ScmObj parents)
 {
     ScmModule *z;
-    ScmObj e;
+    z = SCM_NEW(ScmModule);
+    SCM_SET_CLASS(z, SCM_CLASS_MODULE);
+    z->name = name;
+    z->directParents = directParents;
+    z->parents = parents;
+    z->table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 0));
+
+    Scm_HashTablePut(moduleTable, SCM_OBJ(name), SCM_OBJ(z));
+    return SCM_OBJ(z);
+}
+
+static ScmObj module_direct_supers(ScmObj mod, void *ignore)
+{
+    if (SCM_MODULEP(mod)) {
+        return SCM_MODULE(mod)->directParents;
+    } else {
+        return SCM_FALSE;
+    }
+}
+
+ScmObj Scm_MakeModule(ScmSymbol *name, ScmObj parentList)
+{
+    ScmObj mod, pp, pa, pseqs = SCM_NIL, ptail, parents;
     int pllen = Scm_Length(parentList), i = 0;
 
     /* Assertion */
     if (pllen < 0) Scm_Abort("improper list is given to Scm_MakeModule");
-    SCM_FOR_EACH(e, parentList) {
-        if (!SCM_MODULEP(SCM_CAR(e)))
-            Scm_Abort("non-module is passed to Scm_MakeModule as a parent");
+
+    SCM_APPEND1(pseqs, ptail, parentList);
+    SCM_FOR_EACH(pp, parentList) {
+        pa = SCM_CAR(pp);
+        if (!SCM_MODULEP(pa))
+            Scm_Error("non-module is passed to Scm_MakeModule as a parent: %S",
+                      pa);
+        SCM_APPEND1(pseqs, ptail,
+                    Scm_Cons(pa, SCM_MODULE(pa)->parents));
     }
     
-    z = SCM_NEW(ScmModule);
-    SCM_SET_CLASS(z, SCM_CLASS_MODULE);
-    z->name = name;
-    z->parents = Scm_CopyList(parentList);
-    z->table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 0));
-
-    Scm_HashTablePut(moduleTable, SCM_OBJ(name), SCM_OBJ(z));
-
-    return SCM_OBJ(z);
+    mod = make_module(name, Scm_CopyList(parentList), SCM_NIL);
+    parents = Scm_MonotonicMerge(mod, pseqs, module_direct_supers, NULL);
+    if (SCM_FALSEP(parents))
+        Scm_Error("module parent graph has inconsistency: %S", parentList);
+    SCM_MODULE(mod)->parents = parents;
+    return mod;
 }
 
 /*----------------------------------------------------------------------
@@ -172,17 +200,23 @@ ScmModule *Scm_CurrentModule(void)
     return Scm_VM()->module;
 }
 
-#define MAKEMOD(sym, parent) \
-    SCM_MODULE(Scm_MakeModule(SCM_SYMBOL(sym), parent))
+#define MAKEMOD(sym, direct, parent) \
+    SCM_MODULE(make_module(SCM_SYMBOL(sym), direct, parent))
 
 
 void Scm__InitModule(void)
 {
     moduleTable = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 64));
 
-    nullModule   = MAKEMOD(SCM_SYM_NULL, SCM_NIL);
-    schemeModule = MAKEMOD(SCM_SYM_SCHEME, SCM_LIST1(SCM_OBJ(nullModule)));
-    gaucheModule = MAKEMOD(SCM_SYM_GAUCHE, SCM_LIST1(SCM_OBJ(schemeModule)));
-    userModule   = MAKEMOD(SCM_SYM_USER, SCM_LIST1(SCM_OBJ(schemeModule)));
+    nullModule   = MAKEMOD(SCM_SYM_NULL, SCM_NIL, SCM_NIL);
+    schemeModule = MAKEMOD(SCM_SYM_SCHEME,
+                           SCM_LIST1(SCM_OBJ(nullModule)),
+                           SCM_LIST1(SCM_OBJ(nullModule)));
+    gaucheModule = MAKEMOD(SCM_SYM_GAUCHE,
+                           SCM_LIST1(SCM_OBJ(schemeModule)),
+                           SCM_LIST2(SCM_OBJ(schemeModule), SCM_OBJ(nullModule)));
+    userModule   = MAKEMOD(SCM_SYM_USER,
+                           SCM_LIST1(SCM_OBJ(gaucheModule)),
+                           SCM_LIST3(SCM_OBJ(gaucheModule), SCM_OBJ(schemeModule), SCM_OBJ(nullModule)));
 }
 
