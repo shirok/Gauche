@@ -953,6 +953,14 @@ there's no way to undo the buffered input to @var{iport}
 when @var{proc} returns.
 @end defun
 
+@defun with-input-conversion iport thunk &keyword encoding conversion-buffer-size
+@defunx with-output-conversion oport thunk &keyword encoding conversion-buffer-size
+Similar to @code{call-with-*-conversion},
+but these procedures call @var{thunk} without arguments,
+while the conversion port is set as the current input or output port,
+respectively.
+The meaning of keyword arguments are the same as @code{call-with-*-conversion}.
+@end defun
 
 @defun wrap-with-input-conversion port from-code &keyword to-code owner? buffer-size
 @defunx wrap-with-output-conversion port to-code &keyword from-code owner? buffer-size

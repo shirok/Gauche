@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: charconv.scm,v 1.16 2003-09-28 02:48:03 shirok Exp $
+;;;  $Id: charconv.scm,v 1.17 2003-10-23 09:15:52 shirok Exp $
 ;;;
 
 (define-module gauche.charconv
@@ -46,6 +46,8 @@
           wrap-with-output-conversion
           call-with-input-conversion
           call-with-output-conversion
+          with-input-conversion
+          with-output-conversion
           open-input-file open-output-file
           call-with-input-file call-with-output-file
           with-input-from-file with-output-to-file
@@ -183,6 +185,16 @@
           (lambda ()
             (begin0 (proc cvp) (close-output-port cvp)))))
       )))
+
+(define (with-input-conversion port thunk . opts)
+  (apply call-with-input-conversion port
+         (cut with-input-from-port <> thunk)
+         opts))
+
+(define (with-output-conversion port thunk . opts)
+  (apply call-with-output-conversion port
+         (cut with-output-to-port <> thunk)
+         opts))
 
 ;; Replace system's open-*-file to accept :encoding option
 (define (open-input-file name . args)
