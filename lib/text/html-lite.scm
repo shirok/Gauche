@@ -12,12 +12,13 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: html-lite.scm,v 1.2 2001-11-08 11:10:38 shirok Exp $
+;;;  $Id: html-lite.scm,v 1.3 2001-11-09 07:43:06 shirok Exp $
 ;;;
 
 (define-module text.html-lite
-  (use text.tree))
-
+  (use text.tree)
+  (export html-escape html-escape-string)
+  )
 (select-module text.html-lite)
 
 (define (html-escape)
