@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.110 2004-10-22 05:59:14 shirok Exp $
+ *  $Id: port.c,v 1.111 2004-10-23 06:36:38 shirok Exp $
  */
 
 #include <unistd.h>
@@ -1002,10 +1002,9 @@ static void null_puts(ScmString *s, ScmPort *dummy)
 {
 }
 
-static int null_flush(ScmPort *dummy)
+static void null_flush(ScmPort *dummy)
     /*ARGSUSED*/
 {
-    return 0;
 }
 
 ScmObj Scm_MakeVirtualPort(ScmClass *klass, int direction,

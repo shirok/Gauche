@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vport.c,v 1.4 2004-10-22 05:59:14 shirok Exp $
+ *  $Id: vport.c,v 1.5 2004-10-23 06:36:31 shirok Exp $
  */
 
 #include "gauche/vport.h"
@@ -215,47 +215,99 @@ static int vport_ready(ScmPort *p, int charp)
 /*------------------------------------------------------------
  * Vport putb
  */
-static int vport_putb(ScmByte b, ScmPort *p)
+static void vport_putb(ScmByte b, ScmPort *p)
 {
     vport *data = (vport*)p->src.vt.data;
-    ScmObj r;
     SCM_ASSERT(data != NULL);
 
-    if (!SCM_FALSEP(data->putb_proc)) {
+    if (SCM_FALSEP(data->putb_proc)) {
         Scm_PortError(p, SCM_PORT_ERROR_UNIT,
                       "cannot perform binary output to the port %S", p);
     }
-    r = Scm_Apply(data->putb_proc, SCM_LIST1(SCM_MAKE_INT(b)));
-    if (!SCM_INTP(r)) return 0;
-    else return SCM_INT_VALUE(r);
+    Scm_Apply(data->putb_proc, SCM_LIST1(SCM_MAKE_INT(b)));
 }
 
 /*------------------------------------------------------------
  * Vport putc
  */
-static int vport_putc(ScmChar c, ScmPort *p)
+static void vport_putc(ScmChar c, ScmPort *p)
 {
     vport *data = (vport*)p->src.vt.data;
-    ScmObj r;
     SCM_ASSERT(data != NULL);
 
-    if (!SCM_FALSEP(data->putc_proc)) {
-        if (!SCM_FALSEP(data->putb_proc)) {
+    if (SCM_FALSEP(data->putc_proc)) {
+        if (SCM_FALSEP(data->putb_proc)) {
+            Scm_PortError(p, SCM_PORT_ERROR_OTHER,
+                          "cannot perform output to the port %S", p);
+        } else {
             unsigned char buf[SCM_CHAR_MAX_BYTES];
             int i, n=SCM_CHAR_NBYTES(c);
             SCM_CHAR_PUT(buf, c);
             for (i=0; i<n; i++) {
-                r = Scm_Apply(data->putb_proc, SCM_LIST1(SCM_MAKE_INT(buf[i])));
+                Scm_Apply(data->putb_proc, SCM_LIST1(SCM_MAKE_INT(buf[i])));
             }
         }
     } else {
-        r = Scm_Apply(data->putc_proc, SCM_LIST1(SCM_MAKE_CHAR(c)));
+        Scm_Apply(data->putc_proc, SCM_LIST1(SCM_MAKE_CHAR(c)));
     }
-    if (!SCM_INTP(r)) return 0;
-    else return SCM_INT_VALUE(r);
 }
 
+/*------------------------------------------------------------
+ * Vport putz
+ */
+static void vport_putz(const char *buf, int size, ScmPort *p)
+{
+    if (!SCM_FALSEP(data->puts_proc)) {
+        Scm_Apply(data->puts_proc,
+                  SCM_LIST1(Scm_MakeString(buf, size, -1,
+                                           SCM_MAKSTR_COPYING)));
+    } else if (!SCM_FALSEP(data->putb_proc)) {
+        int i;
+        for (i=0; i<size, i++) {
+            unsigned char b = buf[i];
+            Scm_Apply(data->putb_proc, SCM_LIST1(SCM_MAKE_INT(b)));
+        }
+    } else {
+        Scm_PortError(p, SCM_PORT_ERROR_UNIT,
+                      "cannot perform binary output to the port %S", p);
+   }
+}
 
+/*------------------------------------------------------------
+ * Vport puts
+ */
+static void vport_puts(ScmString *s, ScmPort *p)
+{
+    if (!SCM_FALSEP(data->puts_proc)) {
+        Scm_Apply(data->puts_proc, SCM_LIST1(SCM_OBJ(s)));
+    } else if (SCM_STRING_INCOMPLETE_P(s) 
+               || (SCM_FALSEP(data->putc_proc)
+                   && !SCM_FALSEP(data->putb_proc))) {
+        vport_putz(SCM_STRING_START(s), SCM_STRING_SIZE(s), p);
+    } else if (!SCM_FALSEP(data->putc_proc)) {
+        ScmChar c;
+        const char *cp = SCM_STRING_START(s);
+        for (i=0; i < SCM_STRING_LENGTH(s); i++) {
+            SCM_CHAR_GET(cp, c);
+            cp += SCM_CHAR_NFOLLOWS(*cp);
+            i++;
+            Scm_Apply(data->putc_proc, SCM_LIST1(SCM_MAKE_CHAR(c)));
+        }
+    } else {
+        Scm_PortError(p, SCM_PORT_ERROR_OTHER,
+                      "cannot perform output to the port %S", p);
+    }
+}
+
+/*------------------------------------------------------------
+ * Vport flush
+ */
+static void vport_flush(ScmPort *p)
+{
+    if (!SCM_FALSEP(data->flush_proc)) {
+        Scm_Apply(data->flush_proc, SCM_NIL);
+    }
+}
 
 /*================================================================
  * <buffered-port>
