@@ -2,7 +2,7 @@
 ;; test error handlers
 ;;
 
-;;  $Id: error.scm,v 1.5 2001-12-20 07:20:40 shirok Exp $
+;;  $Id: error.scm,v 1.6 2001-12-20 11:47:46 shirok Exp $
 
 (use gauche.test)
 (test-start "error and exception handlers")
@@ -326,13 +326,36 @@
         (let ((x '())
               (c #f))
           (with-error-handler
-           (lambda (e) #?(push! x 'x))
+           (lambda (e) (push! x 'x))
            (lambda ()
-             #?(push! x 'a)
-             (set! c #?(call/cc (lambda (k) k)))
-             #?(push! x 'b)
+             (push! x 'a)
+             (set! c (call/cc identity))
+             (push! x 'b)
              (car 3)
              (push! x 'z)))
+          (when c (c #f))
+          (reverse x))))
+
+(test "restart & dynamic-wind" '(a b c x e f z a b x e f z)
+      (lambda ()
+        (let ((x '())
+              (c #f))
+          (dynamic-wind
+           (lambda () (push! x 'a))
+           (lambda ()
+             (with-error-handler
+              (lambda (e) (push! x 'x))
+              (lambda ()
+                (dynamic-wind
+                 (lambda () (push! x 'b))
+                 (lambda ()
+                   (push! x 'c)
+                   (set! c (call/cc (lambda (k) k)))
+                   (car 3)
+                   (push! x 'd))
+                 (lambda () (push! x 'e))))))
+           (lambda () (push! x 'f)))
+          (push! x 'z)
           (when c (c #f))
           (reverse x))))
 
