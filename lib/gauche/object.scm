@@ -12,10 +12,11 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.5 2001-03-25 10:51:24 shiro Exp $
+;;;  $Id: object.scm,v 1.6 2001-03-26 10:24:20 shiro Exp $
 ;;;
 
 (select-module gauche)
+(use srfi-17) ;; generalized set!.  TODO: support it natively!
 
 ;; Bootstrapping "make"
 ;;   We already have generic-function for "make" defined in C.  Just wanted
@@ -93,21 +94,31 @@
                  (error "bad slot specification: ~s" slot))
                 (else
                  (case (car opts)
-                   ((:initform :init-form)
+                   ((:initform :init-form) ;former for stklos, latter for guile
                     (loop (cddr opts)
                           (list* `(lambda () ,(cadr opts)) :init-thunk r)))
+                   ((:getter :setter :accessor)
+                    (loop (cddr opts)
+                          (list* `',(cadr opts) (car opts) r)))
                    (else
                     (loop (cddr opts) (list* (cadr opts) (car opts) r))))
                  )))
         `'(,slot)))
   (let ((slot-defs (map transform-slot-definition slots))
-        (class     (get-keyword :metaclass options '<class>)))
+        (metaclass (get-keyword :metaclass options '<class>))
+        (class     (gensym))
+        (slot      (gensym)))
     `(define ,name
-       (make ,class
-             :name ',name
-             :supers (list ,@supers)
-             :slots (list ,@slot-defs)
-             ,@options))))
+       (let ((,class (make ,metaclass
+                       :name ',name
+                       :supers (list ,@supers)
+                       :slots (list ,@slot-defs)
+                       ,@options)))
+         (for-each (lambda (,slot)
+                     (%make-accessor ,class ,slot (current-module)))
+                   (class-slots ,class))
+         ,class))
+    ))
 
 (define-method initialize ((class <class>) initargs)
   (let ((name   (get-keyword :name   initargs #f))
@@ -162,6 +173,47 @@
         ))
   )
 
+(define (%make-accessor class slot module)
+  (let ((getter   (slot-definition-getter slot))
+        (setter   (slot-definition-setter slot))
+        (accessor (slot-definition-accessor slot))
+        (name     (slot-definition-name slot)))
+    (when getter
+      (let ((gf (%ensure-generic-function getter module)))
+        (add-method! gf
+                     (make <method> :generic gf :specializers `(,class)
+                           :lambda-list '(obj)
+                           :body (lambda (obj next-method)
+                                   (slot-ref obj name))))))
+    (when setter
+      (let ((gf (%ensure-generic-function setter module)))
+        (add-method! gf
+                     (make <method> :generic gf
+                           :specializers `(,class ,<top>)
+                           :lambda-list '(obj val)
+                           :body (lambda (obj val next-method)
+                                   (slot-set! obj name val))))))
+    (when accessor
+      (let ((gf  (%ensure-generic-function accessor module))
+            (gfs (%ensure-generic-function
+                  (string->symbol (format #f "setter of ~s" accessor))
+                  module)))
+        (add-method! gf
+                     (make <method> :generic gf :specializers `(,class)
+                           :lambda-list '(obj)
+                           :body (lambda (obj next-method)
+                                   (slot-ref obj name))))
+        (add-method! gfs
+                     (make <method> :generic gfs
+                           :specializers `(,class ,<top>)
+                           :lambda-list '(obj val)
+                           :body (lambda (obj val next-method)
+                                   (slot-set! obj name val))))
+        ;; TODO: (set! (setter gf) gfs) doesn't work -- find the reason.
+        ;; the following is a dirty trick.
+        (with-module srfi-17 (setter-set! gf gfs))))
+    ))
+ 
 (define-method compute-slots ((class <class>))
   (let ((cpl (slot-ref class 'cpl))
         (slots '()))
