@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.79 2002-11-02 22:50:39 shirok Exp $
+ *  $Id: vm.h,v 1.80 2002-11-03 04:26:37 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -21,16 +21,16 @@
 #define SCM_VM_MAX_VALUES      20
 #define SCM_VM_SIGQ_SIZE       32
 
-/*#define USE_NVM 1*/
+/*#define GAUCHE_USE_NVM 1*/
 
 /* NB: experment of 'new VM' implementation */
-#ifdef USE_NVM
+#ifdef GAUCHE_USE_NVM
 #define PCTYPE ScmObj*
 #else
 #define PCTYPE ScmObj
 #endif
 
-#ifdef USE_NVM
+#ifdef GAUCHE_USE_NVM
 /*
  * Instruction vector (only for "new VM")
  */
@@ -38,7 +38,7 @@ typedef struct ScmIVectorRec {
     ScmObj info;
     ScmObj insn[1];             /* variable length */
 } ScmIVector;
-#endif /*USE_NVM*/
+#endif /*GAUCHE_USE_NVM*/
 
 /*
  * Environment frame
@@ -86,7 +86,7 @@ typedef struct ScmContFrameRec {
     int size;                     /* size of argument frame */
     PCTYPE pc;                    /* next PC */
     ScmObj info;                  /* debug info */
-#ifdef USE_NVM
+#ifdef GAUCHE_USE_NVM
     ScmIVector *ivec;
 #endif
 } ScmContFrame;
@@ -209,7 +209,7 @@ struct ScmVMRec {
     ScmPort *curout;            /* current output port */
     ScmPort *curerr;            /* current error port */
 
-#ifdef USE_NVM
+#ifdef GAUCHE_USE_NVM
     ScmIVector *ivec;           /* current instruction vector */
 #endif
 

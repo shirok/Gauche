@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.183 2002-11-02 02:50:42 shirok Exp $
+ *  $Id: vm.c,v 1.184 2002-11-03 04:26:35 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -105,12 +105,12 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->env = NULL;
     v->argp = v->stack;
     v->cont = NULL;
-#ifdef USE_NVM
+#ifdef GAUCHE_USE_NVM
     v->pc = NULL;
     v->ivec = NULL;
-#else
+#else  /*!GAUCHE_USE_NVM*/
     v->pc = SCM_NIL;
-#endif
+#endif /*!GAUCHE_USE_NVM*/
     v->val0 = SCM_UNDEFINED;
     for (i=0; i<SCM_VM_MAX_VALUES; i++) v->vals[i] = SCM_UNDEFINED;
     v->numVals = 1;
@@ -388,6 +388,12 @@ void Scm__InitVM(void)
 #define DEFAULT     default :
 #endif
 
+#ifdef GAUCHE_USE_NVM
+#define NEXT        goto *(void*)pc
+#else  /* !GAUCHE_USE_NVM */
+#define NEXT        continue
+#endif /* !GAUCHE_USE_NVM */
+
 /* check the argument count is OK for call to PROC.  if PROC takes &rest
  * args, fold those arguments to the list.  Returns adjusted size of
  * the argument frame.
@@ -462,17 +468,17 @@ static void run_loop()
             CASE(SCM_VM_PUSH) {
                 CHECK_STACK(0);
                 PUSH_ARG(val0);
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_POP) {
                 POP_ARG(val0);
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_DUP) {
                 ScmObj arg = *(sp-1);
                 CHECK_STACK(0);
                 PUSH_ARG(arg);
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_PRE_CALL) {
                 ScmObj prep = SCM_CAR(pc), next = SCM_CDR(pc);
@@ -484,19 +490,19 @@ static void run_loop()
                     PUSH_CONT(prevpc, next);
                 }
                 pc = prep;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_PRE_TAIL) {
                 /* Note: The call instruction will push extra word for
                    next-method, hence +1 */
                 int reqstack = ENV_SIZE(SCM_VM_INSN_ARG(code))+1;
                 CHECK_STACK(reqstack);
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_CHECK_STACK) {
                 int reqstack = SCM_VM_INSN_ARG(code);
                 CHECK_STACK(reqstack);
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_TAIL_CALL) {
                 /* discard the caller's argument frame, and shift
@@ -561,7 +567,7 @@ static void run_loop()
                     val0 = SCM_SUBR(val0)->func(argp, argc,
                                                 SCM_SUBR(val0)->data);
                     RESTORE_REGS();
-                    continue;
+                    NEXT;
                 }
                 if (proctype == SCM_PROC_CLOSURE) {
                     ADJUST_ARGUMENT_FRAME(val0, argc);
@@ -573,7 +579,7 @@ static void run_loop()
                         argp = sp;
                     }
                     pc = SCM_CLOSURE(val0)->code;
-                    continue;
+                    NEXT;
                 }
                 /*
                  * Generic function application
@@ -604,7 +610,7 @@ static void run_loop()
                         }
                         Scm_VMApply2(SCM_OBJ(&Scm_GenericApplyGeneric),
                                      val0, args);
-                        continue;
+                        NEXT;
                     }
                 } else if (proctype == SCM_PROC_NEXT_METHOD) {
                     ScmNextMethod *n = SCM_NEXT_METHOD(val0);
@@ -637,7 +643,7 @@ static void run_loop()
                                                        argc,
                                                        SCM_GENERIC(val0));
                     RESTORE_REGS();
-                    continue;
+                    NEXT;
                 }
 
                 /*
@@ -664,7 +670,7 @@ static void run_loop()
                                SCM_METHOD(val0)->env);
                     pc = SCM_OBJ(SCM_METHOD(val0)->data);
                 }
-                continue;
+                NEXT;
                 /*
                  * Error case (jumped from ADJUST_ARGUMENT_FRAME)
                  */
@@ -702,18 +708,18 @@ static void run_loop()
                     RESTORE_REGS();
                 }
                 pc = SCM_CDR(pc);
-                continue;
+                NEXT;
             }
-            CASE(SCM_VM_LREF0) { val0 = ENV_DATA(env, 0); continue; }
-            CASE(SCM_VM_LREF1) { val0 = ENV_DATA(env, 1); continue; }
-            CASE(SCM_VM_LREF2) { val0 = ENV_DATA(env, 2); continue; }
-            CASE(SCM_VM_LREF3) { val0 = ENV_DATA(env, 3); continue; }
-            CASE(SCM_VM_LREF4) { val0 = ENV_DATA(env, 4); continue; }
-            CASE(SCM_VM_LREF10) { val0 = ENV_DATA(env->up, 0); continue; }
-            CASE(SCM_VM_LREF11) { val0 = ENV_DATA(env->up, 1); continue; }
-            CASE(SCM_VM_LREF12) { val0 = ENV_DATA(env->up, 2); continue; }
-            CASE(SCM_VM_LREF13) { val0 = ENV_DATA(env->up, 3); continue; }
-            CASE(SCM_VM_LREF14) { val0 = ENV_DATA(env->up, 4); continue; }
+            CASE(SCM_VM_LREF0) { val0 = ENV_DATA(env, 0); NEXT; }
+            CASE(SCM_VM_LREF1) { val0 = ENV_DATA(env, 1); NEXT; }
+            CASE(SCM_VM_LREF2) { val0 = ENV_DATA(env, 2); NEXT; }
+            CASE(SCM_VM_LREF3) { val0 = ENV_DATA(env, 3); NEXT; }
+            CASE(SCM_VM_LREF4) { val0 = ENV_DATA(env, 4); NEXT; }
+            CASE(SCM_VM_LREF10) { val0 = ENV_DATA(env->up, 0); NEXT; }
+            CASE(SCM_VM_LREF11) { val0 = ENV_DATA(env->up, 1); NEXT; }
+            CASE(SCM_VM_LREF12) { val0 = ENV_DATA(env->up, 2); NEXT; }
+            CASE(SCM_VM_LREF13) { val0 = ENV_DATA(env->up, 3); NEXT; }
+            CASE(SCM_VM_LREF14) { val0 = ENV_DATA(env->up, 4); NEXT; }
             CASE(SCM_VM_LREF) {
                 int dep = SCM_VM_INSN_ARG0(code);
                 int off = SCM_VM_INSN_ARG1(code);
@@ -726,37 +732,37 @@ static void run_loop()
                 VM_ASSERT(e != NULL);
                 VM_ASSERT(e->size > off);
                 val0 = ENV_DATA(e, off);
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_LREF0_PUSH) {
-                val0 = ENV_DATA(env, 0); PUSH_ARG(val0); continue;
+                val0 = ENV_DATA(env, 0); PUSH_ARG(val0); NEXT;
             }
             CASE(SCM_VM_LREF1_PUSH) {
-                val0 = ENV_DATA(env, 1); PUSH_ARG(val0); continue;
+                val0 = ENV_DATA(env, 1); PUSH_ARG(val0); NEXT;
             }
             CASE(SCM_VM_LREF2_PUSH) {
-                val0 = ENV_DATA(env, 2); PUSH_ARG(val0); continue;
+                val0 = ENV_DATA(env, 2); PUSH_ARG(val0); NEXT;
             }
             CASE(SCM_VM_LREF3_PUSH) {
-                val0 = ENV_DATA(env, 3); PUSH_ARG(val0); continue;
+                val0 = ENV_DATA(env, 3); PUSH_ARG(val0); NEXT;
             }
             CASE(SCM_VM_LREF4_PUSH) {
-                val0 = ENV_DATA(env, 4); PUSH_ARG(val0); continue;
+                val0 = ENV_DATA(env, 4); PUSH_ARG(val0); NEXT;
             }
             CASE(SCM_VM_LREF10_PUSH) {
-                val0 = ENV_DATA(env->up, 0); PUSH_ARG(val0); continue;
+                val0 = ENV_DATA(env->up, 0); PUSH_ARG(val0); NEXT;
             }
             CASE(SCM_VM_LREF11_PUSH) {
-                val0 = ENV_DATA(env->up, 1); PUSH_ARG(val0); continue;
+                val0 = ENV_DATA(env->up, 1); PUSH_ARG(val0); NEXT;
             }
             CASE(SCM_VM_LREF12_PUSH) {
-                val0 = ENV_DATA(env->up, 2); PUSH_ARG(val0); continue;
+                val0 = ENV_DATA(env->up, 2); PUSH_ARG(val0); NEXT;
             }
             CASE(SCM_VM_LREF13_PUSH) {
-                val0 = ENV_DATA(env->up, 3); PUSH_ARG(val0); continue;
+                val0 = ENV_DATA(env->up, 3); PUSH_ARG(val0); NEXT;
             }
             CASE(SCM_VM_LREF14_PUSH) {
-                val0 = ENV_DATA(env->up, 4); PUSH_ARG(val0); continue;
+                val0 = ENV_DATA(env->up, 4); PUSH_ARG(val0); NEXT;
             }
             CASE(SCM_VM_LREF_PUSH) {
                 int dep = SCM_VM_INSN_ARG0(code);
@@ -771,7 +777,7 @@ static void run_loop()
                 VM_ASSERT(e->size > off);
                 val0 = ENV_DATA(e, off);
                 PUSH_ARG(val0);
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_TAILBIND) {
                 ScmObj *to, *from;
@@ -794,7 +800,7 @@ static void run_loop()
                 } else {
                     sp = argp - CONT_FRAME_SIZE;
                 }
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_LET) {
                 int nlocals = SCM_VM_INSN_ARG(code);
@@ -808,7 +814,7 @@ static void run_loop()
                 }
                 PUSH_LOCAL_ENV(nlocals, prevpc);
                 pc = body;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_GSET) {
                 ScmObj loc;
@@ -833,13 +839,13 @@ static void run_loop()
                     SCM_SET_CAR(pc, SCM_OBJ(gloc));
                 }
                 pc = SCM_CDR(pc);
-                continue;
+                NEXT;
             }
-            CASE(SCM_VM_LSET0) { ENV_DATA(env, 0) = val0; continue; }
-            CASE(SCM_VM_LSET1) { ENV_DATA(env, 1) = val0; continue; }
-            CASE(SCM_VM_LSET2) { ENV_DATA(env, 2) = val0; continue; }
-            CASE(SCM_VM_LSET3) { ENV_DATA(env, 3) = val0; continue; }
-            CASE(SCM_VM_LSET4) { ENV_DATA(env, 4) = val0; continue; }
+            CASE(SCM_VM_LSET0) { ENV_DATA(env, 0) = val0; NEXT; }
+            CASE(SCM_VM_LSET1) { ENV_DATA(env, 1) = val0; NEXT; }
+            CASE(SCM_VM_LSET2) { ENV_DATA(env, 2) = val0; NEXT; }
+            CASE(SCM_VM_LSET3) { ENV_DATA(env, 3) = val0; NEXT; }
+            CASE(SCM_VM_LSET4) { ENV_DATA(env, 4) = val0; NEXT; }
             CASE(SCM_VM_LSET) {
                 int dep = SCM_VM_INSN_ARG0(code);
                 int off = SCM_VM_INSN_ARG1(code);
@@ -852,10 +858,10 @@ static void run_loop()
                 VM_ASSERT(e != NULL);
                 VM_ASSERT(e->size > off);
                 ENV_DATA(e, off) = val0;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_NOP) {
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_DEFINE) {
                 ScmObj var; ScmSymbol *name;
@@ -866,7 +872,7 @@ static void run_loop()
                 Scm_Define(SCM_IDENTIFIER(var)->module,
                            (name = SCM_IDENTIFIER(var)->name), val0);
                 val0 = SCM_OBJ(name);
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_DEFINE_CONST) {
                 ScmObj var; ScmSymbol *name;
@@ -877,12 +883,12 @@ static void run_loop()
                 Scm_DefineConst(SCM_IDENTIFIER(var)->module,
                                 (name = SCM_IDENTIFIER(var)->name), val0);
                 val0 = SCM_OBJ(name);
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_IF) {
                 if (SCM_FALSEP(val0)) { pc = SCM_CDR(pc); }
                 else                  { pc = SCM_CAR(pc); }
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_LAMBDA) {
                 ScmObj body;
@@ -898,7 +904,7 @@ static void run_loop()
                                        body,
                                        prevpc);
                 RESTORE_REGS();
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_VALUES_BIND) {
                 /* TODO: clean up stack management */
@@ -941,13 +947,13 @@ static void run_loop()
 
                 FINISH_ENV(prevpc, env);
                 pc = body;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_QUOTE_INSN) {
                 VM_ASSERT(SCM_PAIRP(pc));
                 val0 = SCM_CAR(pc);
                 pc = SCM_CDR(pc);
-                continue;
+                NEXT;
             }
 
             /* combined push immediate */
@@ -955,12 +961,12 @@ static void run_loop()
                 long imm = SCM_VM_INSN_ARG(code);
                 val0 = SCM_MAKE_INT(imm);
                 PUSH_ARG(val0);
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_PUSHNIL) {
                 val0 = SCM_NIL;
                 PUSH_ARG(val0);
-                continue;
+                NEXT;
             }
             /* Inlined procedures */
             CASE(SCM_VM_CONS) {
@@ -969,7 +975,7 @@ static void run_loop()
                 SAVE_REGS();
                 val0 = Scm_Cons(ca, val0);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_CONS_PUSH) {
                 ScmObj ca;
@@ -978,33 +984,33 @@ static void run_loop()
                 val0 = Scm_Cons(ca, val0);
                 vm->numVals = 1;
                 PUSH_ARG(val0);
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_CAR) {
                 if (!SCM_PAIRP(val0)) VM_ERR(("pair required, but got %S", val0));
                 val0 = SCM_CAR(val0);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_CAR_PUSH) {
                 if (!SCM_PAIRP(val0)) VM_ERR(("pair required, but got %S", val0));
                 val0 = SCM_CAR(val0);
                 PUSH_ARG(val0);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_CDR) {
                 if (!SCM_PAIRP(val0)) VM_ERR(("pair required, but got %S", val0));
                 val0 = SCM_CDR(val0);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_CDR_PUSH) {
                 if (!SCM_PAIRP(val0)) VM_ERR(("pair required, but got %S", val0));
                 val0 = SCM_CDR(val0);
                 PUSH_ARG(val0);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_LIST) {
                 int nargs = SCM_VM_INSN_ARG(code);
@@ -1021,7 +1027,7 @@ static void run_loop()
                 }
                 val0 = cp;
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_LIST_STAR) {
                 int nargs = SCM_VM_INSN_ARG(code);
@@ -1037,24 +1043,24 @@ static void run_loop()
                 }
                 val0 = cp;
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_NOT) {
                 val0 = SCM_MAKE_BOOL(SCM_FALSEP(val0));
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_NULLP) {
                 val0 = SCM_MAKE_BOOL(SCM_NULLP(val0));
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_EQ) {
                 ScmObj item;
                 POP_ARG(item);
                 val0 = SCM_MAKE_BOOL(item == val0);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_EQV) {
                 ScmObj item;
@@ -1062,7 +1068,7 @@ static void run_loop()
                 SAVE_REGS();
                 val0 = SCM_MAKE_BOOL(Scm_EqvP(item, val0));
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_MEMQ) {
                 ScmObj item;
@@ -1070,7 +1076,7 @@ static void run_loop()
                 SAVE_REGS();
                 val0 = Scm_Memq(item, val0);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_MEMV) {
                 ScmObj item;
@@ -1078,7 +1084,7 @@ static void run_loop()
                 SAVE_REGS();
                 val0 = Scm_Memv(item, val0);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_ASSQ) {
                 ScmObj item;
@@ -1086,7 +1092,7 @@ static void run_loop()
                 SAVE_REGS();
                 val0 = Scm_Assq(item, val0);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_ASSV) {
                 ScmObj item;
@@ -1094,32 +1100,32 @@ static void run_loop()
                 SAVE_REGS();
                 val0 = Scm_Assv(item, val0);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_PAIRP) {
                 val0 = SCM_MAKE_BOOL(SCM_PAIRP(val0));
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_CHARP) {
                 val0 = SCM_MAKE_BOOL(SCM_CHARP(val0));
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_EOFP) {
                 val0 = SCM_MAKE_BOOL(SCM_EOFP(val0));
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_STRINGP) {
                 val0 = SCM_MAKE_BOOL(SCM_STRINGP(val0));
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_SYMBOLP) {
                 val0 = SCM_MAKE_BOOL(SCM_SYMBOLP(val0));
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_APPEND) {
                 int nargs = SCM_VM_INSN_ARG(code);
@@ -1136,13 +1142,13 @@ static void run_loop()
                 }
                 val0 = cp;
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_REVERSE) {
                 SAVE_REGS();
                 val0 = Scm_Reverse(val0);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_APPLY) {
                 int nargs = SCM_VM_INSN_ARG(code);
@@ -1163,19 +1169,19 @@ static void run_loop()
                 val0 = Scm_VMApply(val0, cp);
                 RESTORE_REGS();
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_PROMISE) {
                 SAVE_REGS();
                 val0 = Scm_MakePromise(val0);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_SETTER) {
                 SAVE_REGS();
                 val0 = Scm_Setter(val0);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_VALUES) {
                 int nargs = SCM_VM_INSN_ARG(code), i;
@@ -1189,7 +1195,7 @@ static void run_loop()
                     }
                 }
                 vm->numVals = nargs;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_VEC) {
                 int nargs = SCM_VM_INSN_ARG(code), i;
@@ -1206,7 +1212,7 @@ static void run_loop()
                 }
                 val0 = vec;
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_APP_VEC) {
                 int nargs = SCM_VM_INSN_ARG(code);
@@ -1224,7 +1230,7 @@ static void run_loop()
                 SAVE_REGS();
                 val0 = Scm_ListToVector(cp);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_VEC_LEN) {
                 int siz;
@@ -1233,7 +1239,7 @@ static void run_loop()
                 siz = SCM_VECTOR_SIZE(val0);
                 val0 = SCM_MAKE_INT(siz);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_VEC_REF) {
                 ScmObj vec;
@@ -1248,7 +1254,7 @@ static void run_loop()
                     VM_ERR(("index out of range: %d\n", k));
                 val0 = SCM_VECTOR_ELEMENT(vec, k);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_VEC_SET) {
                 ScmObj vec, ind;
@@ -1265,7 +1271,7 @@ static void run_loop()
                 SCM_VECTOR_ELEMENT(vec, k) = val0;
                 val0 = SCM_UNDEFINED;
                 vm->numVals = 1;
-                continue;
+                NEXT;
 
             }
             CASE(SCM_VM_NUMEQ2) {
@@ -1278,7 +1284,7 @@ static void run_loop()
                     val0 = SCM_MAKE_BOOL(Scm_NumEq(arg, val0));
                 }
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_NUMLT2) {
                 ScmObj arg;
@@ -1286,7 +1292,7 @@ static void run_loop()
                 SAVE_REGS();
                 val0 = SCM_MAKE_BOOL(Scm_NumCmp(arg, val0) < 0);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_NUMLE2) {
                 ScmObj arg;
@@ -1294,7 +1300,7 @@ static void run_loop()
                 SAVE_REGS();
                 val0 = SCM_MAKE_BOOL(Scm_NumCmp(arg, val0) <= 0);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_NUMGT2) {
                 ScmObj arg;
@@ -1302,7 +1308,7 @@ static void run_loop()
                 SAVE_REGS();
                 val0 = SCM_MAKE_BOOL(Scm_NumCmp(arg, val0) > 0);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_NUMGE2) {
                 ScmObj arg;
@@ -1310,7 +1316,7 @@ static void run_loop()
                 SAVE_REGS();
                 val0 = SCM_MAKE_BOOL(Scm_NumCmp(arg, val0) >= 0);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_NUMADD2) {
                 ScmObj arg;
@@ -1318,7 +1324,7 @@ static void run_loop()
                 SAVE_REGS();
                 val0 = Scm_Add(arg, val0, SCM_NIL);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_NUMSUB2) {
                 ScmObj arg;
@@ -1326,7 +1332,7 @@ static void run_loop()
                 SAVE_REGS();
                 val0 = Scm_Subtract(arg, val0, SCM_NIL);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_NUMADDI) {
                 long imm = SCM_VM_INSN_ARG(code);
@@ -1343,7 +1349,7 @@ static void run_loop()
                     val0 = Scm_Add(SCM_MAKE_INT(imm), val0, SCM_NIL);
                 }
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_NUMSUBI) {
                 long imm = SCM_VM_INSN_ARG(code);
@@ -1360,7 +1366,7 @@ static void run_loop()
                     val0 = Scm_Subtract(SCM_MAKE_INT(imm), val0, SCM_NIL);
                 }
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_READ_CHAR) {
                 int nargs = SCM_VM_INSN_ARG(code), ch = 0;
@@ -1377,7 +1383,7 @@ static void run_loop()
                 RESTORE_REGS();
                 val0 = (ch < 0)? SCM_EOF : SCM_MAKE_CHAR(ch);
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_WRITE_CHAR) {
                 int nargs = SCM_VM_INSN_ARG(code);
@@ -1399,7 +1405,7 @@ static void run_loop()
                 RESTORE_REGS();
                 val0 = SCM_UNDEFINED;
                 vm->numVals = 1;
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_SLOT_REF) {
                 ScmObj obj;
@@ -1411,7 +1417,7 @@ static void run_loop()
                 val0 = Scm_VMSlotRef(obj, val0, FALSE);
                 vm->numVals = 1;
                 RESTORE_REGS();
-                continue;
+                NEXT;
             }
             CASE(SCM_VM_SLOT_SET) {
                 ScmObj obj, slot;
@@ -1424,7 +1430,7 @@ static void run_loop()
                 val0 = Scm_VMSlotSet(obj, slot, val0);
                 vm->numVals = 1;
                 RESTORE_REGS();
-                continue;
+                NEXT;
             }
 #ifndef __GNUC__
             DEFAULT

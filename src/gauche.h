@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.307 2002-10-14 12:20:24 shirok Exp $
+ *  $Id: gauche.h,v 1.308 2002-11-03 04:26:35 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1768,7 +1768,11 @@ SCM_CLASS_DECL(Scm_ProcedureClass);
 /* Closure - Scheme defined procedure */
 struct ScmClosureRec {
     ScmProcedure common;
+#ifdef GAUCHE_USE_NVM
+    ScmIVector *code;           /* compiled code */
+#else
     ScmObj code;                /* compiled code */
+#endif
     ScmEnvFrame *env;           /* environment */
 };
 
