@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.54 2002-03-01 19:26:01 shirok Exp $
+;;;  $Id: genstub,v 1.55 2002-03-13 12:07:39 shirok Exp $
 ;;;
 
 (use srfi-0)
@@ -117,6 +117,7 @@
 (make-type "hash table" 'hash-table? "ScmHashTable*" "SCM_HASHTABLEP" "SCM_HASHTABLE")
 (make-type "class"     'class?     "ScmClass*"     "SCM_CLASSP" "SCM_CLASS")
 (make-type "module"    'module?    "ScmModule*"    "SCM_MODULEP" "SCM_MODULE")
+(make-type "thread"    'thread?    "ScmVM*"        "SCM_VMP"     "SCM_VM")
 
 ;; default
 (define *scm-type*

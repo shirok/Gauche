@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.57 2002-03-13 10:45:54 shirok Exp $
+ *  $Id: vm.h,v 1.58 2002-03-13 12:07:49 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -166,6 +166,8 @@ typedef struct ScmEscapePointRec {
 /*
  * VM structure
  *
+ *  In Gauche, VM == Thread.
+ *
  *  Almost all members in the VM structure are private for the thread.
  *  Exception is a children list---it will be modified when the child
  *  thread exits.  We need to keep bidirectional link for child and
@@ -177,7 +179,9 @@ struct ScmVMRec {
     ScmVM *parent;              /* link to the parent VM.  NULL for root VM */
     ScmObj children;            /* list of child VMs. */
     ScmInternalThread thread;   /* the thread executing this VM. */
-    ScmInternalMutex  vmlock;   /* mutex to be used */
+    ScmInternalMutex  vmlock;   /* mutex to be used for children list */
+    ScmObj name;                /* Scheme thread name. */
+    ScmObj specific;            /* Scheme thread specific data. */
     ScmModule *module;          /* current global namespace.  note that this
                                    is used only in compilation. */
     ScmCStack *cstack;          /* current escape point.  see the comment of
@@ -240,7 +244,7 @@ struct ScmVMRec {
     sigset_t sigMask;           /* current signal mask */
 };
 
-SCM_EXTERN ScmVM *Scm_NewVM(ScmVM *base, ScmModule *module);
+SCM_EXTERN ScmVM *Scm_NewVM(ScmVM *base, ScmModule *module, ScmObj name);
 SCM_EXTERN void Scm_VMDump(ScmVM *vm);
 SCM_EXTERN void Scm_VMDefaultExceptionHandler(ScmObj);
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.133 2002-03-13 10:45:53 shirok Exp $
+ *  $Id: vm.c,v 1.134 2002-03-13 12:07:39 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -26,19 +26,22 @@
 #endif
 
 /*
- * The VM.
+ * The VM. 
  *
  *   VM encapsulates the dynamic status of the current exection.
  *   In Gauche, there's always one active virtual machine per thread,
- *   referred by Scm_VM().
+ *   referred by Scm_VM().   From Scheme, VM is seen as a <thread> object.
  */
 
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_VMClass, NULL);
+static void vm_print(ScmObj vm, ScmPort *port, ScmWriteContext *ctx);
+
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_VMClass, vm_print);
+
+static ScmVM *rootVM;           /* VM for primodial thread */
 
 #ifdef GAUCHE_USE_PTHREAD
 static pthread_key_t vm_key;
 #define theVM   ((ScmVM*)pthread_getspecific(vm_key))
-static ScmVM *rootVM;           /* VM for primodial thread */
 #else
 static ScmVM *theVM;
 #endif  /* !GAUCHE_USE_PTHREAD */
@@ -57,7 +60,8 @@ static ScmObj handle_exception(ScmVM *, ScmEscapePoint *, ScmObj);
  */
 
 ScmVM *Scm_NewVM(ScmVM *base,
-                 ScmModule *module)
+                 ScmModule *module,
+                 ScmObj name)
 {
     ScmVM *v = SCM_NEW(ScmVM);
     int i;
@@ -70,6 +74,8 @@ ScmVM *Scm_NewVM(ScmVM *base,
 #else  /* !GAUCHE_USE_PTHREAD */
     v->vmlock = 0;
 #endif /* !GAUCHE_USE_PTHREAD */
+    v->name = name;
+    v->specific = SCM_FALSE;
     v->module = module ? module : base->module;
     v->cstack = base ? base->cstack : NULL;
     
@@ -131,8 +137,15 @@ ScmObj Scm_VMGetResult(ScmVM *vm)
 
 void Scm_VMSetResult(ScmObj obj)
 {
-    theVM->val0 = obj;
-    theVM->numVals = 1;
+    ScmVM *vm = theVM;
+    vm->val0 = obj;
+    vm->numVals = 1;
+}
+
+void vm_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+{
+    ScmVM *vm = SCM_VM(obj);
+    Scm_Printf(port, "#<thread %S %p>", vm->name, vm);
 }
 
 /*
@@ -144,20 +157,47 @@ ScmVM *Scm_VM(void)
 }
 
 /*
+ * VM locking
+ */
+ScmObj Scm_WithVMLock(ScmVM *vm, ScmObj (*func)(ScmVM *, void *), void *data)
+{
+#ifdef GAUCHE_USE_PTHREAD
+    volatile ScmObj obj;
+    int r = pthread_mutex_lock(&vm->vmlock);
+    if (r == EDEADLK) {
+        Scm_Error("dead lock detected when trying to lock %S", vm);
+    }
+    SCM_UNWIND_PROTECT {
+        obj = func(vm, data);
+    }
+    SCM_WHEN_ERROR {
+        pthread_mutex_unlock(&vm->vmlock);
+        SCM_NEXT_HANDLER;
+    }
+    SCM_END_PROTECT;
+    pthread_mutex_unlock(&vm->vmlock);
+    return obj;
+#else  /* !GAUCHE_USE_PTHREAD */
+    return func(vm, data);
+#endif /* !GAUCHE_USE_PTHREAD */
+}
+
+/*
  * Clean up VM when thread exits.
  */
 #ifdef GAUCHE_USE_PTHREAD
+static ScmObj vm_delete_child(ScmVM *vm, void *data)
+{
+    ScmVM *child = SCM_VM(data);
+    vm->children = Scm_DeleteX(SCM_OBJ(child), vm->children, SCM_CMP_EQ);
+    return SCM_UNDEFINED;
+}
+
 static void vm_cleanup(void *data)
 {
     ScmVM *vm = SCM_VM(data);
     if (vm->parent) {
-        int r = pthread_mutex_lock(&vm->parent->vmlock);
-        /* TODO: take appropriate action */
-        if (r != 0) Scm_Panic("mutex error");
-        vm->parent->children = Scm_DeleteX(SCM_OBJ(vm), vm->parent->children, SCM_CMP_EQ);
-        r = pthread_mutex_unlock(&vm->parent->vmlock);
-        /* TODO: take appropriate action */
-        if (r != 0) Scm_Panic("mutex error");
+        Scm_WithVMLock(vm->parent, vm_delete_child, (void*)vm);
         vm->parent = NULL;
     }
 }
@@ -172,12 +212,13 @@ void Scm__InitVM(void)
     if (pthread_key_create(&vm_key, vm_cleanup) != 0) {
         Scm_Panic("pthread_key_create failed.");
     }
-    rootVM = Scm_NewVM(NULL, Scm_SchemeModule());
+    rootVM = Scm_NewVM(NULL, Scm_SchemeModule(),
+                       SCM_MAKE_STR_IMMUTABLE("root"));
     if (pthread_setspecific(vm_key, rootVM) != 0) {
         Scm_Panic("pthread_setspecific failed.");
     }
 #else   /* !GAUCHE_USE_PTHREAD */
-    theVM = Scm_NewVM(NULL, Scm_SchemeModule());
+    rootVM = theVM = Scm_NewVM(NULL, Scm_SchemeModule());
 #endif  /* !GAUCHE_USE_PTHREAD */
 }
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.220 2002-03-04 19:58:30 shirok Exp $
+ *  $Id: gauche.h,v 1.221 2002-03-13 12:07:39 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -327,6 +327,10 @@ typedef struct ScmWriteContextRec ScmWriteContext;
 #define SCM_VM_CURRENT_ERROR_PORT(vm)   (SCM_VM(vm)->curerr)
 
 SCM_EXTERN ScmVM *Scm_VM(void);     /* Returns the current VM */
+
+SCM_EXTERN ScmObj Scm_WithVMLock(ScmVM *vm,
+                                 ScmObj (*func)(ScmVM *, void *),
+                                 void *data);
 
 SCM_EXTERN ScmObj Scm_Compile(ScmObj form, ScmObj env, int context);
 SCM_EXTERN ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context);
@@ -1868,25 +1872,8 @@ SCM_EXTERN void Scm_RegMatchDump(ScmRegMatch *match);
 #define SCM_CURRENT_MODULE()        (Scm_VM()->module)
 
 /*---------------------------------------------------------
- * THREAD
+ * MUTEX
  */
-
-typedef struct ScmThreadRec {
-    SCM_HEADER;
-    ScmVM *vm;
-    ScmInternalThread tid;
-    ScmObj thunk;
-    ScmObj specific;
-    ScmObj exitCondition;
-    ScmObj exitResult;
-} ScmThread;
-
-SCM_CLASS_DECL(Scm_ThreadClass);
-#define SCM_CLASS_THREAD       (&Scm_ThreadClass)
-#define SCM_THREAD(obj)        ((ScmThread*)obj)
-#define SCM_THREADP(obj)       SCM_XTYPEP(obj, SCM_CLASS_THREAD)
-
-
 
 typedef struct ScmMutexRec {
     SCM_HEADER;
