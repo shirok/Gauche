@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.26 2001-04-25 07:30:49 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.27 2001-05-06 07:46:26 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -77,7 +77,53 @@
 
 (with-module gauche
   (autoload "gauche/numerical" gcd lcm numerator denominator
-                               make-polar real-part imag-part))
+                               make-polar real-part imag-part
+                               %complex-exp %complex-log %complex-sqrt
+                               %complex-cos %complex-sin %complex-tan
+                               %complex-acos %complex-asin %complex-atan
+                               %complex-sinh %complex-cosh %complex-tanh
+                               %complex-asinh %complex-acosh %complex-atanh))
+
+(define-syntax define-trans
+  (syntax-rules ()
+    ((_ ?name ?real-fn ?complex-fn)
+     (define (?name z)
+       (cond ((real? z) (?real-fn z))
+             ((number? z) (?complex-fn z))
+             (else (error "number required, but got ~s" z)))))
+    ))
+
+(define-trans exp   %exp   %complex-exp)
+(define-trans log   %log   %complex-log)
+(define-trans sqrt  %sqrt  %complex-sqrt)
+
+(define-trans sin   %sin   %complex-sin)
+(define-trans cos   %cos   %complex-cos)
+(define-trans tan   %tan   %complex-tan)
+(define-trans asin  %asin  %complex-asin)
+(define-trans acos  %acos  %complex-acos)
+(define (atan z . x)
+  (if (null? x)
+      (cond ((real? z) (%atan z))
+            ((number? x) (%complex-atan z))
+            (else (error "number required, but got ~s" z)))
+      (%atan z (car x))))
+(define-trans sinh  %sinh  %complex-sinh)
+(define-trans cosh  %cosh  %complex-cosh)
+(define-trans tanh  %tanh  %complex-tanh)
+(define-trans asinh %asinh %complex-asinh)
+(define-trans acosh %acosh %complex-acosh)
+(define-trans atanh %atanh %complex-atanh)
+
+(with-module scheme
+  (define exp (with-module gauche exp))
+  (define log (with-module gauche log))
+  (define sin (with-module gauche sin))
+  (define cos (with-module gauche cos))
+  (define tan (with-module gauche tan))
+  (define asin (with-module gauche asin))
+  (define acos (with-module gauche acos))
+  (define atan (with-module gauche atan)))
 
 ;; useful stuff
 (define-syntax check-arg
