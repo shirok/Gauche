@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.152 2002-02-11 09:27:56 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.153 2002-02-12 07:43:11 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -296,9 +296,17 @@ Gaucheはポートオブジェクトを入出力のための統合された抽象化オブジェクトと考え、
 On the other hand, Gauche is @emph{not} designed for 
 applications such like high-performance number cruncher or
 very large scale database handling.  It is an interpreter, after all.
+
+You can still use Gauche as a "glue" language for such applications,
+however.  For example, you can write a performance-critical part 
+in another language that compiles to native code, and use Gauche to set up.
 @c JP
 一方、Gaucheは所詮インタプリタですから、高速に大量の計算をこなしたり
 巨大なデータセットを扱ったりするのは苦手です。
+
+但し、そのような場合でも、Gaucheを各コンポーネントをつなぐ「糊」言語として
+使うことは可能です。例えば性能の要求の厳しい部分はネイティブコードにコンパイルする言語で
+書いておき、セットアップにGaucheを使うといった方法があります。
 @c COMMON
 
 
@@ -1019,6 +1027,34 @@ You can specify this option more than once to use multiple modules.
 @c COMMON
 @end deftp
 
+@deftp {Command Option} -l file
+@c EN
+Load @var{file} before starting execution of @var{scheme-file} or entering
+the read-eval-print loop.   The file is loaded in the same way as
+@code{load} (@xref{Loading Scheme file}).
+You can specify this option more than once to load multiple files.
+@c JP
+起動後、インタラクティブなread-eval-printループに入る前、もしくは@var{scheme-file}
+をロードする前に@var{file}をロードします(ロードの詳細については@ref{Loading Scheme file}
+を参照して下さい)。このオプションは複数回指定できます。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -e scheme-expression
+@c EN
+Evaluate @var{scheme-expression}
+before starting execution of @var{scheme-file} or entering
+the read-eval-print loop.   Evaluation is done in the
+@var{interaction-environment} (@xref{Eval}).
+You can specify this option more than once to load multiple files.
+@c JP
+起動後、インタラクティブなread-eval-printループに入る前、もしくは@var{scheme-file}
+をロードする前に@var{scheme-expression}を評価します。評価は
+@var{interaction-environment}中で行われます(@ref{Eval}参照)。
+このオプションは複数回指定できます。
+@c COMMON
+@end deftp
+
 @deftp {Command Option} -b
 @c EN
 Batch. Does not print prompts in read-eval-print loop even if
@@ -1090,7 +1126,6 @@ although it is not generally recommended.
 
 When @code{gosh} is invoked without any script files,
 it goes into interactive read-eval-print loop.
-You can type in any Scheme expressions
 
 To exit the interpreter, type EOF (usually Control-D in Unix termials)
 or evaluate @code{(exit)}.
@@ -1535,7 +1570,22 @@ Equivalent to @code{(quote datum)}.
 @end example
 @end deftp
 
-
+@c EN
+@emph{Note:}  R5RS says it is an error to alter the value of
+a literal expression.
+Gauche doesn't check constant-ness of pairs and vectors, so you can
+alter them using the destructive procedures such as @code{set-car!}
+and @code{vector-set!}.  Doing so will cause unexpected results.
+Gauche does check constant-ness of strings, and signals an error
+if you try to alter a constant string.
+@c JP
+@emph{注:} R5RSは、リテラル式の値を変更するのはエラーであるとしています。
+しかしGaucheはペアとベクタについてはそれが定数であるかどうかをチェックしておらず、
+@code{set-car!}や@code{vector-set!}等の破壊的手続きによってそれらの値を
+変更できてしまいます。そうした場合の動作は不定です。
+文字列に関しては定数かどうかのチェックを行っており、定数文字列を変更しようとすると
+エラーが報告されます。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Making Procedures, Assignments, Literals, Core syntax
@@ -1544,8 +1594,63 @@ Equivalent to @code{(quote datum)}.
 
 @defspec lambda formals body @dots{}
 [R5RS]
+@c EN
+Evaluates to a procedure.  The environment in effect when this expression
+is evaluated is stored in the procedure.   When the procedure
+is called, @var{body} is evaluated sequentially in the
+stored environment extended by the bindings of the formal arguments,
+and returns the value(s) of the last expression in the body.
+@c JP
+この式は評価されると手続きを生成します。この式が評価された時点の環境が手続き中に保持されます。
+手続きが呼ばれると、記憶された環境に引数の束縛を追加した環境中で@var{body} が順に評価され、
+最後の式の値が返されます。
+@c COMMON
+
+@c EN
+@var{Formals} should have one of the following forms:
+@itemize @bullet
+@item
+@code{(@var{variable} @dots{})} : The procedure takes a fixed number of
+arguments.  The actual arguments are bound to the corresponding
+variables.
+@item
+@code{@var{variable}} : The procedure takes any number of argumnets.
+The actual arguments are collected to form a new list and bound to
+the variable.
+@item
+@code{(@var{variable_0} @dots{} @var{variable_N-1}. @var{variable_N})} : 
+The procedure takes at least @var{N} arguments.  The actual arguments
+up to @var{N} is bound to the corresponding varibles.
+If more than @var{N} arguments are given, the rest arguments are
+collected to form a new list and bound to @var{variable_N}.
+@end itemize
+@c JP
+@var{Formals} は以下のいずれかの形でなければなりません。
+@itemize @bullet
+@item
+@code{(@var{variable} @dots{})} : 手続きは決まった数の引数を取ります。
+実引数がそれぞれ対応する@var{variable}に束縛されます。
+@item
+@code{@var{variable}} : 手続きは不定個の引数を取ります。
+実引数は新しいリストに集められて、そのリストが@var{varible}に束縛されます。
+@item
+@code{(@var{variable_0} @dots{} @var{variable_N-1}. @var{variable_N})} :
+手続きは少なくとも@var{N}個の引数を取ります。@var{N}個までの実引数は対応する@var{variable}
+に束縛されます。@var{N}個を越えた実引数は新しいリストに集められて
+@var{variable_N}に束縛されます。
+@end itemize
+@c COMMON
 @end defspec
 
+@c EN
+@emph{Note:} Some Scheme implementations extend the syntax of @var{formals}
+to have notation of optional arguments or keyword arguments, similar to
+CommonLisp's.  Gauche doesn't have such extensions now.
+@c JP
+@emph{注:} いくつかのSchemeの実装では@var{formals}の構文を拡張して、
+CommonLispのように省略可能引数やキーワード引数などの表記を可能にしているものが
+あります。Gaucheには今のところそのような拡張はありません。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Assignments, Conditionals, Making Procedures, Core syntax
@@ -3189,8 +3294,32 @@ part, respectively.  @code{magnitude} and @code{angle} return
 @defunx inexact->exact z
 [R5RS]
 @c EN
+Converts an exact number to an inexact number, or vice versa.
 
+Since Gauche doesn't support general rational numbers, 
+the result of @code{inexact->exact} is always a whole number.
+If the passed number is not an integer, the fraction part is
+rounded.  Note that it is an implementation dependent behavior.
+If you want to get a closest exact integer of the given inexact
+real number, it's better to use @code{round} explicitly before
+@code{inexact->exact}.
+
+If you pass an inexact number to @code{exact->inexact} or
+an exact number to @code{inexact->exact}, Gauche returns
+the argument as is, instead of reporting an error.
+This is also an implementation dependent behavior and
+you shouldn't count on that.
 @c JP
+正確な数を不正確な数に変換、またその逆を行う手続きです。
+
+Gaucheは一般的な有理数をサポートしないため、@code{inexact->exact}の結果は
+常に整数となります。整数でない数を渡した場合は小数点以下が丸められます。但しこれは
+実装依存の振舞いなので、ポータブルなプログラムで不正確な実数を正確な整数に丸めたい
+時には@code{inexact->exact}の前に明示的に@code{round}を使うべきでしょう。
+
+不正確な数を@code{exact->inexact}に渡したり、または正確な数を
+@code{inexact->exact}に渡した場合、Gaucheでは今のところエラーにならず
+引数がそのまま返されます。これも実装依存の振舞いなのでなるべく避けるようにして下さい。
 @c COMMON
 @end defun
 
@@ -3198,8 +3327,9 @@ part, respectively.  @code{magnitude} and @code{angle} return
 @defunx string->number string &optional radix
 [R5RS+]
 @c EN
-These convert a number and its string representation in radix @var{radix}
-system.    @var{radix} must be between 2 and 36 inclusive.
+These procedurs convert a number and its string representation
+in radix @var{radix} system.
+@var{radix} must be between 2 and 36 inclusive.
 If @var{radix} is omitted, 10 is assumed.
 
 @code{Number->string} takes a number @var{z} and returns a string.
@@ -3963,9 +4093,31 @@ it is the character.  Otherwise, the reader matches the read characters
 with predefined character names.  If it doesn't match any, an error
 is signalled.
 
-You can denote multibyte characters with this syntax if
-the program text is written in the same encoding as the internal
-character encoding.
+The following character names are recognized.
+These haracter names are case insensitive.
+@table @code
+@item space
+Whitespace (ASCII #x20)
+@item newline, nl, lf
+Newline (ASCII #x0a)
+@item return, cr
+Carriage return (ASCII #x0d)
+@item tab, ht
+Horizontal tab (ASCII #x09)
+@item page
+Form feed (ASCII #x0c)
+@item escape, esc
+Escape (ASCII #x1b)
+@item delete, del
+Delete (ASCII #x7f)
+@item null
+NUL character (ASCII #x00)
+@item x@var{N}
+A character whose internal encoding is the integer @var{N},
+when @var{N} is a hexadecimal integer.
+Note that this notation is not portable among different
+internal encoding schemes except ASCII character range.
+@end table
 @c JP
 リテラルの文字オブジェクトを表現します。
 
@@ -3976,6 +4128,36 @@ character encoding.
 その単語が文字の名前として解釈されます。
 それが有効な文字の名前でなければエラーとなります。
 
+以下の文字の名前が認識されます。これらの文字の名前は大文字小文字を区別しません。
+@table @code
+@item space
+スペース (ASCII #x20)
+@item newline, nl, lf
+改行文字 (ASCII #x0a)
+@item return, cr
+復帰文字 (ASCII #x0d)
+@item tab, ht
+水平タブ (ASCII #x09)
+@item page
+フォームフィード、改ページ (ASCII #x0c)
+@item escape, esc
+エスケープ (ASCII #x1b)
+@item delete, del
+デリート (ASCII #x7f)
+@item null
+NUL文字 (ASCII #x00)
+@item x@var{N}
+@var{N} が16進表記の整数であるとき、内部エンコーディングが整数@var{N}
+であるような文字。この表記はASCII文字の範囲の外では、内部エンコーディングが異なる
+処理系間で互換性が無いことに注意。
+@end table
+@c COMMON
+
+@c EN
+You can denote multibyte characters with this syntax if
+the program text is written in the same encoding as the internal
+character encoding.
+@c JP
 プログラムテキストがGaucheの内部エンコーディングと同じエンコーディングで
 書かれていれば、マルチバイト文字を直接表記することもできます。
 @example
@@ -4013,6 +4195,15 @@ character encoding.
 @defunx char-ci@code{>}? char1 char2
 @defunx char-ci@code{>=}? char1 char2
 [R5RS]
+@c EN
+Compares characters in case-insensitive way.
+In the current version, character cases are not well defined
+outside the ASCII character range.
+@c JP
+文字を、大文字小文字を区別せずに比較します。
+現在のバージョンではASCII文字の範囲外における大文字小文字の扱いが
+きちんと定義されていないことに注意して下さい。
+@c COMMON
 @end defun
 
 @defun char-alphabetic? char
@@ -4026,11 +4217,48 @@ character encoding.
 @defun char->integer char
 @defunx integer->char n
 [R5RS]
+@c EN
+@var{char->integer} returns an exact integer that represents
+internal encoding of the character @var{char}.
+@var{integer->char} returns a character whose internal encoding
+is an exact integer @var{n}.  The following expression is always
+true for valid charcter @var{char}:
+@example
+(eq? char (integer->char (char->integer char)))
+@end example
+
+The result is undefined if you pass @var{n} to @var{integer->char}
+that doesn't have a corresponding character.
+@c JP
+@var{char->integer}は文字@var{char}の内部エンコーディングに対応する
+整数値を返します。@var{integer->char}は数値@var{n}と内部エンコーディングが
+同じ文字を返します。有効な文字@var{char}に対して以下の式は常に真となります。
+@example
+(eq? char (integer->char (char->integer char)))
+@end example
+
+対応する内部エンコーディングを持つ文字が無い数値を@var{integer->char}に渡した
+場合の結果は不定です。
+@c COMMON
 @end defun
 
 @defun char-upcase char
 @defunx char-downcase char
 [R5RS]
+@c EN
+Returns the upper case and lower case of @var{char}, respectively.
+If @var{char} doesn't have such distinction of upper or lower case,
+@code{char} itself is returned.
+
+In the current version, character cases are not well defined
+outside the ASCII character range.
+@c JP
+@var{char}の大文字と小文字をそれぞれ返します。@var{char}に大文字小文字の区別が
+無ければ@var{char}がそのまま返されます。
+
+現在のバージョンではASCII文字の範囲外における大文字小文字の扱いが
+きちんと定義されていないことに注意して下さい。
+@c COMMON
 @end defun
 
 @defun digit->integer char &optional (radix 10)
@@ -4077,9 +4305,14 @@ Common Lispの@code{digit-char}に当たります。
 @end defun
 
 @defun gauche-character-encoding
+@c EN
 Returns a symbol designates the native character encoding, selected
 at the compile time.
 The possible return values are those:
+@c JP
+コンパイル時に選択された内部文字エンコーディングを表すシンボルを返します。
+返される値は以下のいずれかです。
+@c COMMON
 @table @code
 @item euc-jp
 EUC-JP
@@ -4093,7 +4326,7 @@ No multibyte character support (8-bit fixed-length character).
 @end defun
 
 @defun supported-character-encodings
-Returns a list of names of character encoding schemes
+Returns a list of string names of character encoding schemes
 that are supported in the native multibyte encoding scheme.
 @end defun
 
@@ -4271,13 +4504,25 @@ Copies a character set @var{char-set}.
 
 @deftp {Builtin Class} <string>
 @clindex string
+@c EN
 A string class.   In Gauche, a string can be viewed in two ways:
 a sequence of characters, or a sequence of bytes.
+@c JP
+文字列のクラスです。Gaucheでは、文字列は文字のシーケンスともバイトのシーケンスとも
+みなすことができます。
+@c COMMON
 @end deftp
 
+@c EN
 R5RS string operations are very minimal.  Gauche supports some
 extra built-in operations, and also a rich string library
-defined in SRFI-13.   @xref{String library}, for details.
+defined in SRFI-13.   @xref{String library}, for details about SRFI-13.
+@c JP
+R5RSに定義されている文字列操作は非常に限られています。
+Gaucheでは追加の組込み手続きのほか、
+SRFI-13に定義されている豊富な文字列ライブラリを備えています。
+SRFI-13については@ref{String library}を参照してください。
+@c COMMON
 
 @menu
 * String Predicates::           
@@ -4294,11 +4539,20 @@ defined in SRFI-13.   @xref{String library}, for details.
 @c NODE 文字列に関する述語
 
 @defun string? obj
-[R5RS] Returns @code{#t} if @var{obj} is a string, @code{#f} otherwise.
+[R5RS]
+@c EN
+Returns @code{#t} if @var{obj} is a string, @code{#f} otherwise.
+@c JP
+@var{obj}が文字列なら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun string-immutable? obj
+@c EN
 Returns @code{#t} if @var{obj} is an immutable string, @code{#f} otherwise
+@c JP
+@var{obj}が変更不可な文字列なら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun string-incomplete? obj
@@ -6832,7 +7086,7 @@ the @code{~D} directive.
 @end menu
 
 @node Loading Scheme file, Loading dynamic library, Loading Programs, Loading Programs
-@subsection Load Scheme file
+@subsection Loading Scheme file
 @c NODE Schemeファイルのロード
 
 @defun load file &keyword paths (error-if-not-found #t)
