@@ -1700,9 +1700,9 @@ slot @code{y} of new class, she may write something like this:
 Updating instance for a redefined class is also handled
 as class change.  If object's class has been
 redefined (see @ref{Class redefinition}) when the object
-is accessed, this generic function is called with the
+is accessed, @code{change-class} is called with the
 redefined class as @var{new-class}; that is, updating
-an instance is regarded as chaning object's class from
+an instance is regarded as changing object's class from
 the original one to the redefined one.
 
 By specializing @code{change-class}, you can customize the
