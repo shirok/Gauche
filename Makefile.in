@@ -19,7 +19,13 @@ test : src/gosh
 	cd src; $(MAKE) test
 	cd ext; $(MAKE) test
 
-clean :
+link : all
+	cd ext; $(MAKE) link
+
+unlink :
+	cd ext; $(MAKE) unlink
+
+clean : unlink
 	rm -rf core *~
 	cd gc; $(MAKE) clean
 	cd src; $(MAKE) clean

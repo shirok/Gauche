@@ -1,0 +1,64 @@
+;; Tool to create symlinks from main source tree to extension modules,
+;; or to remove them.  This is useful to test gosh in the source tree,
+;; without installing them.
+;; Such links are only interest of developers; they must be cleaned out
+;; to create a distribution tarball.
+;;
+;; $Id: xlink,v 1.1 2002-04-17 03:28:01 shirok Exp $
+;;
+
+(use gauche.parseopt)
+(use srfi-1)
+(use srfi-13)
+
+(define (usage)
+  (print "Usage: gosh xlink [-l|-u][-d dir] <scm-or-so-file> ...\n"
+         "  -d dir - specifies extra level of directory in library path."
+         "  -l     - creates symlinks from the source tree to the given\n"
+         "           files.  If the given file is a Scheme file, the link\n"
+         "           is created in $(TOPDIR)/lib/$(dir)/.  If the given\n"
+         "           file is a compiled DSO, the link is created in\n"
+         "           $(TOPDIR)/src.\n"
+         "  -u     - removes symlinks created by -l option.")
+  (exit 1))
+
+(define (main args)
+  (let* ((dir   #f)
+         (cmd   #f)
+         (mydir (last (string-split (sys-getcwd) #\/)))
+         (files (parse-options (cdr args)
+                  (("d=s" (d) (set! dir d))
+                   ("l" () (set! cmd 'link))
+                   ("u" () (set! cmd 'unlink))
+                   (else _ (usage))))))
+    (unless cmd (usage))
+    (for-each (lambda (file)
+                (receive (name target)
+                    (if (string-suffix? ".scm" file)
+                        (process-scm mydir dir file)
+                        (process-so  mydir file))
+                  (if (eq? cmd 'unlink)
+                      (sys-unlink name)
+                      (sys-symlink target name))))
+              files))
+  0)
+
+(define (process-scm mydir dir file)
+  (let* ((name   #`"../../lib/,(or dir \"\")/,|file|")
+         (target-path (if dir
+                          (string-join
+                           (make-list (length (string-split dir #\/))
+                                      "..")
+                           "/" 'suffix)
+                          ""))
+         (target #`"../,|target-path|ext/,|mydir|/,|file|"))
+    (values name target)))
+
+(define (process-so mydir file)
+  (let* ((name   #`"../../src/,|file|")
+         (target #`"../ext/,|mydir|/,|file|"))
+    (values name target)))
+
+;; Local variables:
+;; mode: scheme
+;; end:

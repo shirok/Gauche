@@ -50,7 +50,7 @@ install : all
 	  fi; \
 	done
 
-clean :
+clean : 
 	rm -rf core $(TARGET) $(OBJS) *~ test.log so_locations
 
 distclean : clean
@@ -59,6 +59,12 @@ distclean : clean
 realclean : clean
 	rm -rf $(CONFIG_GENERATED) configure
 
+# 'link' creates symlinks from source tree to extension modules, so that
+# it can be tested within the source tree.  'unlink' removes them.
+# these are only for developer's.
 
+link : $(TARGET) $(SCMFILES)
+	$(GOSH) ../xlink -d gauche -l $(TARGET) $(SCMFILES)
 
-
+unlink :
+	-$(GOSH) ../xlink -d gauche -u $(TARGET) $(SCMFILES)

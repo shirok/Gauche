@@ -77,6 +77,14 @@ distclean : clean
 realclean : clean
 	rm -rf $(CONFIG_GENERATED) configure
 
+# 'link' creates symlinks from source tree to extension modules, so that
+# it can be tested within the source tree.  'unlink' removes them.
+# these are only for developer's.
 
+link : $(TARGET) $(SCMFILES)
+	if test ! -d $(GAUCHE_TOP)/lib/dbm; then mkdir $(GAUCHE_TOP)/lib/dbm; fi
+	$(GOSH) ../xlink -d dbm -l $(TARGET) $(SCMFILES)
 
-
+unlink :
+	-$(GOSH) ../xlink -d dbm -u $(TARGET) $(SCMFILES)
+	rm -rf $(GAUCHE_TOP)/lib/dbm

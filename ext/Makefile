@@ -20,4 +20,11 @@ distclean :
 realclean :
 	@for dir in $(SUBDIRS); do (cd $$dir; $(MAKE) realclean); done
 
+link :
+	@for dir in $(SUBDIRS); do (cd $$dir; $(MAKE) link); done
+
+unlink :
+	@for dir in $(SUBDIRS); do (cd $$dir; $(MAKE) unlink); done
+
+
 

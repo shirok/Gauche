@@ -1,3 +1,11 @@
+2002-04-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c : adds "." and "../lib" to the *load-path* if gosh is
+	  invoked from the source tree, for the convenience of testing.
+	  Checks are performed to see if we're really in the source tree.
+	* Makefile.in, ext/xlink, ext/*/Makefile.in: added make target to
+	  create some symlinks for the convenience of development.
+
 2002-04-15  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.5.3
