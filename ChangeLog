@@ -1,3 +1,8 @@
+2004-06-22  Shiro Kawai  <shiro@acm.org>
+
+	* examples/spigot/Makefile.in (*_INSTALL_DIR): there shouldn't
+	  be a '/' between $(DESTDIR) and the actual pathname.
+
 2004-06-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.c (unwrap_identifier): fixed a bug when expanded

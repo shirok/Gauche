@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.in,v 1.7 2004-04-23 10:17:47 shirok Exp $
+# $Id: Makefile.in,v 1.8 2004-06-22 11:32:00 shirok Exp $
 #
 
 SHELL       = @SHELL@
@@ -41,9 +41,9 @@ GENERATED = spigotlib.c $(MODULE)_head.c $(MODULE)_tail.c
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
 		   configure.lineno autom4te*.cache spigot.gpd
 
-HEADER_INSTALL_DIR  = $(DESTDIR)/`$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
-SCM_INSTALL_DIR     = $(DESTDIR)/`$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
-ARCH_INSTALL_DIR    = $(DESTDIR)/`$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
+HEADER_INSTALL_DIR  = $(DESTDIR)`$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
+SCM_INSTALL_DIR     = $(DESTDIR)`$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
+ARCH_INSTALL_DIR    = $(DESTDIR)`$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 
 all : $(TARGET)
 
