@@ -11,24 +11,296 @@
 ;;; them.
 ;;;
 
+"#include <sys/types.h>
+#include <dirent.h>
+#include <grp.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/utsname.h>
+#include <sys/wait.h>
+"
+
+;;---------------------------------------------------------------------
 ;; dirent.h - read directory
 ;;   we don't have correspoinding functions, but provide these:
 
-(define-cproc sys-read-directory (pathname)
+(define-cproc sys-readdir (pathname)
   (assert (string? pathname))
   "  SCM_RETURN(Scm_ReadDirectory(pathname));")
 
-(define-cproc sys-glob-directory (pattern)
+(define-cproc sys-glob (pattern)
   (assert (string? pattern))
   "  SCM_RETURN(Scm_GlobDirectory(pattern));")
 
+;;---------------------------------------------------------------------
 ;; grp.h - groups
 
-(define-cproc sys-get-group-by-id (gid)
+(define-cproc sys-getgrgid (gid)
   (assert (small-integer? gid))         ;TODO: make sure it covers all gids
   "  SCM_RETURN(Scm_GetGroupById(gid));")
 
-(define-cproc sys-get-group-by-name (name)
+(define-cproc sys-getgrnam (name)
   (assert (string? name))
   "  SCM_RETURN(Scm_GetGroupByName(name));")
+
+;; faster function
+
+;;---------------------------------------------------------------------
+;; locale.h
+
+;;---------------------------------------------------------------------
+;; math.h
+
+;;---------------------------------------------------------------------
+;; pwd.h
+
+;;---------------------------------------------------------------------
+;; setjmp.h
+
+;;  No equivalent functions --- use call/cc
+
+;;---------------------------------------------------------------------
+;; signal.h
+
+;;---------------------------------------------------------------------
+;; stdio.h
+
+(define-cproc sys-remove (filename)
+  (assert (string? filename))
+  "  if (remove(Scm_GetStringConst(filename)) < 0)
+       Scm_SysError(\"removing %S failed\", filename);
+  SCM_RETURN(SCM_TRUE);")
+
+(define-cproc sys-rename (old new)
+  (assert (string? old))
+  (assert (string? new))
+  "  if (rename(Scm_GetStringConst(old), Scm_GetStringconst(new)) < 0)
+       Scm_SysError(\"renaming %S to %S failed\", old, new);
+  SCM_RETURN(SCM_TRUE);")
+
+;; TODO: check reentrancy
+(define-cproc sys-tmpnam ()
+  "  char *s = tmpnam(NULL);
+  SCM_RETURN(Scm_MakeString(s, -1, -1));")
+
+;; tmpfile
+
+;;---------------------------------------------------------------------
+;; stdlib.h
+
+(define-cproc sys-getenv (name)
+  (assert (string? name))
+  "  const char *p = getenv(Scm_GetStringConst(name));
+  if (p == NULL) {
+    SCM_RETURN(SCM_FALSE);
+  } else {
+    SCM_RETURN(Scm_MakeString(p, -1, -1));
+  }")
+
+;; Note: the return value of system() is not portable.
+(define-cproc sys-system (command)
+  (assert (string? command))
+  "  int r = system(Scm_GetStringConst(command));
+  SCM_RETURN(Scm_MakeInteger(r));")
+
+;;---------------------------------------------------------------------
+;; string.h
+
+;;  use Scheme functions
+
+;;---------------------------------------------------------------------
+;; sys/stat.h
+
+
+
+;;---------------------------------------------------------------------
+;; sys/times.h
+
+;; TODO: bignum
+;; times
+
+;;---------------------------------------------------------------------
+;; sys/utsname.h
+
+;; returns list of (sysname nodename release versino machine)
+(defnie-cproc sys-uname ()
+  "  struct utsname info;
+  ScmObj head = SCM_NIL, tail;
+  if (uname(&info) < 0) Scm_SysError(\"uname() failed\");
+  SCM_APPEND1(head, tail, Scm_MakeString(info.sysname, -1, -1));
+  SCM_APPEND1(head, tail, Scm_MakeString(info.nodename, -1, -1));
+  SCM_APPEND1(head, tail, Scm_MakeString(info.release, -1, -1));
+  SCM_APPEND1(head, tail, Scm_MakeString(info.version, -1, -1));
+  SCM_APPEND1(head, tail, Scm_MakeString(info.machine, -1, -1));
+  return head;")
+
+;;---------------------------------------------------------------------
+;; sys/wait.h
+
+;; returns a pair of pid and status 
+(define-cproc sys-wait ()
+  "  int status;
+  pid_t r = wait(&status);
+  if (r < 0) Scm_SysError(\"wait() failed\");
+  SCM_RETURN(Scm_Cons(Scm_MakeInteger(r), Scm_MakeInteger(status)));")
+
+(define-cproc sys-waitpid (pid &keyword (nohang #f) (untraced #f))
+  (assert (small-integer? pid))         ;TODO: small-int is enough?
+  "  int status, options = 0;  pid_t r;
+  if (!SCM_FALSEP(nohang))   options |= WNOHANG;
+  if (!SCM_FALSEP(untraced)) options |= WUNTRACED;
+  r = waitpid(pid, &status, options);
+  if (r < 0) Scm_SysError(\"waitpid() failed\");
+  SCM_RETURN(Scm_Cons(Scm_MakeInteger(r), Scm_MakeInteger(status)));")
+
+;; status interpretation
+(define-cproc sys-wait-exited? (status)
+  (assert (small-integer? status))      ;TODO: small-int is enough?
+  "  SCM_RETURN(SCM_MAKE_BOOL(WIFEXITED(status)));")
+
+(define-cproc sys-wait-exit-status (status)
+  (assert (small-integer? status))      ;TODO: small-int is enough?
+  "  SCM_RETURN(Scm_MakeInteger(WEXITSTATUS(status)));")
+
+(define-cproc sys-wait-signaled? (status)
+  (assert (small-integer? status))      ;TODO: small-int is enough?
+  "  SCM_RETURN(SCM_MAKE_BOOL(WIFSIGNALED(status)));")
+
+(define-cproc sys-wait-termsig (status)
+  (assert (small-integer? status))      ;TODO: small-int is enough?
+  "  SCM_RETURN(Scm_MakeInteger(WTERMSIG(status)));")
+
+(define-cproc sys-wait-stopped? (status)
+  (assert (small-integer? status))      ;TODO: small-int is enough?
+  "  SCM_RETURN(SCM_MAKE_BOOL(WIFSTOPPED(status)));")
+
+(define-cproc sys-wait-stopsig (status)
+  (assert (small-integer? status))      ;TODO: small-int is enough?
+  "  SCM_RETURN(Scm_MakeInteger(WSTOPSIG(status)));")
+
+;;---------------------------------------------------------------------
+;; termios.h
+
+;;---------------------------------------------------------------------
+;; time.h
+
+;;---------------------------------------------------------------------
+;; unistd.h - miscellaneous functions
+
+(define-cproc sys-access (pathname amode)
+  (assert (string? pathname))
+  (assert (exact? amode))
+  "  int r = access(Scm_GetStringConst(pathname), amode);
+  SCM_RETURN((r == 0)? SCM_TRUE : SCM_FALSE);")
+
+(define-cproc sys-chdir (pathname)
+  (assert (string? pathname))
+  "  if (chdir(Scm_GetStringConst(pathname)) < 0)
+    Scm_SysError(\"chdir failed\");
+  SCM_RETURN(SCM_TRUE);")
+
+(define-cproc sys-fork ()
+  "  int pid = fork();
+  SCM_RETURN(Scm_MakeInteger(pid));")
+
+(define-cproc sys-getcwd ()
+  "  char p[PATH_MAX+1];
+  if (getcwd(p, PATH_MAX+1) == NULL)
+    Scm_SysError(\"getcwd failed\");
+  SCM_RETURN(Scm_MakeString(p, -1, -1));")
+
+(define-cproc sys-getegid ()
+  "  SCM_RETURN(Scm_MakeInteger(getegid()));")
+
+(define-cproc sys-getgid ()
+  "  SCM_RETURN(Scm_MakeInteger(getgid()));")
+
+(define-cproc sys-geteuid ()
+  "  SCM_RETURN(Scm_MakeInteger(geteuid()));")
+
+(define-cproc sys-getuid ()
+  "  SCM_RETURN(Scm_MakeInteger(getuid()));")
+
+(define-cproc sys-getgroups ()
+  "
+#ifndef NGROUPS
+#define NGROUPS 32
+#endif
+  gid_t glist[NGROUPS], *pglist = glist;
+  int size = NGROUPS;
+  for (;;) {
+    int i, n = getgroups(size, pglist);
+    if (n >= 0) {
+      ScmObj head = SCM_NIL, tail;
+      for (i=0; i<n; i++) SCM_APPEND1(head, tail, Scm_MakeInteger(pglist[i]));
+      SCM_RETURN(head);
+    }
+    if (errno == EINVAL) {
+      size += NGROUPS;
+      pglist = (gid_t *)SCM_MALLOC(size * sizeof(gid_t));
+    } else {
+      Scm_SysError(\"getgroups failed\");
+    }
+  }
+  /* NOTREACHED */")
+
+(define-cproc sys-getlogin ()
+  "  const char *p = getlogin();
+  if (p) SCM_RETURN(Scm_MakeString(getlogin(), -1, -1));
+  else SCM_RETURN(SCM_FALSE);")
+
+(define-cproc sys-getpgrp ()
+  "  SCM_RETURN(Scm_MakeInteger(getpgrp()));")
+
+(define-cproc sys-getpid ()
+  "  SCM_RETURN(Scm_MakeInteger(getpid()));")
+
+(define-cproc sys-getppid ()
+  "  SCM_RETURN(Scm_MakeInteger(getppid()));")
+
+
+(define-cproc sys-link (existing new)
+  (assert (string? existing))
+  (assert (string? new))
+  "  if (link(Scm_GetStringConst(existing), Scm_GetStringConst(new)) < 0)
+        Scm_SysError(\"link failed\");
+  SCM_RETURN(SCM_TRUE);")
+
+(define-cproc sys-pause ()
+  "  pause();  SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc sys-rmdir (pathname)
+  (assert (string? pathname))
+  "  if (rmdir(Scm_GetStringConst(pathname)) < 0)
+    Scm_SysError(\"rmdir failed\");
+  SCM_RETURN(SCM_TRUE);")
+
+(define-cproc sys-sleep (seconds)
+  (assert (exact? seconds))
+  "  sleep(seconds); SCM_RETURN(SCM_TRUE);")
+
+(define-cproc sys-unlink (pathname)
+  (assert (string? pathname))
+  "  if (unlink(Scm_GetStringConst(pathname)) < 0)
+        Scm_SysError(\"unlink failed\");
+  SCM_RETURN(SCM_TRUE);")
+
+;; not supported yet:
+;;  isatty fpathconf lseek pathconf pipe read
+;;  setgid setpgid setsid setuid sysconf tcgetpgrp tcsetpgrp
+;;  ttyname write
+
+
+;; Symbolic links
+;; TODO: need to check if the system has symlink()
+(define-cproc sys-symlink (existing new)
+  (assert (string? existing))
+  (assert (string? new))
+  "  int r = symlink(Scm_GetStringConst(existing), Scm_GetStringConst(new));
+  if (r < 0) Scm_SysError(\"link failed\");
+  SCM_RETURN(SCM_TRUE);")
+
+
+
 
