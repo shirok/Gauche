@@ -82,10 +82,11 @@ gauche/arch.h : Makefile
 	@echo '#define GAUCHE_SITE_ARCH_DIR "$(SITE_ARCH_DIR)"' >> gauche/arch.h
 
 test : gosh
-	rm -f test.log
+	@rm -f test.log
 	@for testfile in $(TESTFILES); do \
 	  ./gosh $$testfile >> test.log; \
 	done
+	@echo "See test.log for details."
 
 clean :
 	rm -f core gosh *.o *~ *.a *.t test.log gauche/*~
