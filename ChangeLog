@@ -1,3 +1,16 @@
+2002-01-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c : implemented case-sensitive reader.
+	* src/main.c : added -fcase-fold flag to turn on the case-insensitive
+	  (R5RS-comformant) reader.  The default is case-sensitive.
+
+2002-01-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/Makefile.in : fixed install action on creating
+	  {BIN|LIB}_INSTALL_DIR when they don't exist (Thanks for Mr. Ogawa
+	  to point this out).
+	   
+
 2002-01-07  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.4.12
