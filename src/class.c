@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.41 2001-04-02 10:26:06 shiro Exp $
+ *  $Id: class.c,v 1.42 2001-04-03 08:03:37 shiro Exp $
  */
 
 #include "gauche.h"
@@ -26,6 +26,7 @@
 static int class_print(ScmObj, ScmPort *, int);
 static int generic_print(ScmObj, ScmPort *, int);
 static int method_print(ScmObj, ScmPort *, int);
+static int next_method_print(ScmObj, ScmPort *, int);
 static int slot_accessor_print(ScmObj, ScmPort *, int);
 
 static ScmObj object_allocate(ScmClass *k, ScmObj initargs);
@@ -67,7 +68,7 @@ SCM_DEFINE_BASE_CLASS(Scm_MethodClass, ScmMethod,
 
 /* Internally used classes */
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SlotAccessorClass, slot_accessor_print);
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_NextMethodClass, NULL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_NextMethodClass, next_method_print);
 
 /* Builtin generic functions */
 SCM_DEFINE_GENERIC(Scm_GenericMake, Scm_NoNextMethod, NULL);
@@ -234,10 +235,10 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
     instance = SCM_NEW2(ScmClass*,
                         sizeof(ScmClass) + sizeof(ScmObj)*nslots);
     SCM_SET_CLASS(instance, klass);
+    instance->allocate = NULL;  /* will be set when CPL is set */
     instance->print = NULL;
     instance->compare = NULL;
     instance->serialize = NULL; /* class_serialize? */
-    instance->allocate = object_allocate; /* default allocation */
     instance->cpa = NULL;
     instance->numInstanceSlots = nslots;
     instance->instanceSlotOffset = 1; /* default */
@@ -257,7 +258,7 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
 static int class_print(ScmObj obj, ScmPort *port, int mode) 
 {
     ScmClass *c = (ScmClass*)obj;
-    return Scm_Printf(port, "#<class %A>", Scm_ClassName(c));
+    return Scm_Printf(port, "#<class %A>", c->name);
 }
 
 /*
@@ -320,7 +321,7 @@ ScmClass *Scm_ClassOf(ScmObj obj)
  */
 /* TODO: disable modification of system-builtin classes */
 
-ScmObj Scm_ClassName(ScmClass *klass)
+static ScmObj class_name(ScmClass *klass)
 {
     return klass->name;
 }
@@ -330,38 +331,44 @@ static void class_name_set(ScmClass *klass, ScmObj val)
     klass->name = val;
 }
 
-ScmObj Scm_ClassCPL(ScmClass *klass)
+static ScmObj class_cpl(ScmClass *klass)
 {
-    /* TODO: MT safeness */
-    if (!SCM_PAIRP(klass->cpl)) {
-        /* This is the case of builtin class.  The second head of cpl is
-           always the only direct superclass. */
-        ScmClass **p = klass->cpa;
-        ScmObj h = SCM_NIL, t;
-        SCM_APPEND1(h, t, SCM_OBJ(klass));
-        while (*p) {
-            SCM_APPEND1(h, t, SCM_OBJ(*p));
-            p++;
-        }
-        klass->cpl = h;
-        if (SCM_PAIRP(SCM_CDR(h))) {
-            klass->directSupers = SCM_LIST1(SCM_CADR(h));
-        } else {
-            klass->directSupers = SCM_NIL;
-        }
-    }
     return klass->cpl;
 }
 
 static void class_cpl_set(ScmClass *klass, ScmObj val)
 {
+    /* have to make sure things are consistent */
     int len;
+    ScmObj cp;
+    ScmClass **p;
+    
     if (!SCM_PAIRP(val)) goto err;
     if (SCM_CAR(val) != SCM_OBJ(klass)) goto err;
-    if ((len = Scm_Length(val)) < 0) goto err;
-    klass->cpa = class_list_to_array(val, len);
+    /* set up the cpa */
+    cp = SCM_CDR(val);
+    if ((len = Scm_Length(cp)) < 0) goto err;
+    klass->cpa = class_list_to_array(cp, len);
     if (klass->cpa[len-1] != SCM_CLASS_TOP) goto err;
     klass->cpl = Scm_CopyList(val);
+    /* find correct allocation method */
+    klass->allocate = NULL;
+    for (p = klass->cpa; *p; p++) {
+        if ((*p)->allocate) {
+            if ((*p)->allocate != object_allocate) {
+                if (klass->allocate && klass->allocate != object_allocate) {
+                    Scm_Error("class precedence list has more than one C-defined base class (except <object>): %S", val);
+                }
+                klass->allocate = (*p)->allocate;
+            } else {
+                if (klass->allocate == NULL) {
+                    klass->allocate = object_allocate;
+                }
+            }
+        }
+    }
+    if (!klass->allocate)
+        Scm_Error("class precedence list doesn't have a base class: %S", val);
     return;
   err:
     Scm_Error("class precedence list must be a proper list of class "
@@ -369,11 +376,8 @@ static void class_cpl_set(ScmClass *klass, ScmObj val)
               "and ending by the class <top>: %S", val);
 }
 
-ScmObj Scm_ClassDirectSupers(ScmClass *klass)
+static ScmObj class_direct_supers(ScmClass *klass)
 {
-    if (!SCM_PAIRP(klass->directSupers)) {
-        Scm_ClassCPL(klass);    /* set directSupers */
-    }
     return klass->directSupers;
 }
 
@@ -383,7 +387,7 @@ static void class_direct_supers_set(ScmClass *klass, ScmObj val)
     klass->directSupers = val;
 }
 
-ScmObj Scm_ClassDirectSlots(ScmClass *klass)
+static ScmObj class_direct_slots(ScmClass *klass)
 {
     return klass->directSlots;
 }
@@ -394,7 +398,7 @@ static void class_direct_slots_set(ScmClass *klass, ScmObj val)
     klass->directSlots = val;
 }
 
-ScmObj Scm_ClassSlots(ScmClass *klass)
+static ScmObj class_slots_ref(ScmClass *klass)
 {
     return klass->slots;
 }
@@ -405,7 +409,7 @@ static void class_slots_set(ScmClass *klass, ScmObj val)
     klass->slots = val;
 }
 
-ScmObj Scm_SlotAccessors(ScmClass *klass)
+static ScmObj class_accessors(ScmClass *klass)
 {
     return klass->accessors;
 }
@@ -416,7 +420,7 @@ static void class_accessors_set(ScmClass *klass, ScmObj val)
     klass->accessors = val;
 }
 
-ScmObj Scm_ClassDirectSubclasses(ScmClass *klass)
+static ScmObj class_direct_subclasses(ScmClass *klass)
 {
     return klass->directSubclasses;
 }
@@ -489,9 +493,9 @@ ScmObj Scm_ComputeCPL(ScmClass *klass)
         if (SCM_CAR(dp) == SCM_OBJ(SCM_CLASS_OBJECT)
             || SCM_CAR(dp) == SCM_OBJ(SCM_CLASS_TOP))
             continue;
-        SCM_APPEND1(seqh, seqt, Scm_ClassCPL(SCM_CLASS(SCM_CAR(dp))));
+        SCM_APPEND1(seqh, seqt, SCM_CLASS(SCM_CAR(dp))->cpl);
     }
-    SCM_APPEND1(seqh, seqt, Scm_ClassCPL(SCM_CLASS_OBJECT));
+    SCM_APPEND1(seqh, seqt, Scm_ObjectClass.cpl);
     
     result = Scm_MonotonicMerge(SCM_OBJ(klass), seqh, compute_cpl_cb, NULL);
     if (SCM_FALSEP(result))
@@ -1430,16 +1434,28 @@ static SCM_DEFINE_METHOD(generic_addmethod_rec, &Scm_GenericAddMethod, 2, 0,
  */
 
 ScmObj Scm_MakeNextMethod(ScmGeneric *gf, ScmObj methods,
-                          ScmObj *args, int nargs)
+                          ScmObj *args, int nargs, int copyArgs)
 {
     ScmNextMethod *nm = SCM_NEW(ScmNextMethod);
     SCM_SET_CLASS(nm, SCM_CLASS_NEXT_METHOD);
     SCM_PROCEDURE_INIT(nm, 0, 0, SCM_PROC_NEXT_METHOD, SCM_FALSE);
     nm->generic = gf;
     nm->methods = methods;
-    nm->args = args;
+    if (copyArgs) {
+        nm->args = SCM_NEW2(ScmObj*, sizeof(ScmObj)*nargs);
+        memcpy(nm->args, args, sizeof(ScmObj)*nargs);
+    } else {
+        nm->args = args;
+    }
     nm->nargs = nargs;
     return SCM_OBJ(nm);
+}
+
+static int next_method_print(ScmObj obj, ScmPort *out, int mode)
+{
+    ScmNextMethod *nm = SCM_NEXT_METHOD(obj);
+    ScmObj args = Scm_ArrayToList(nm->args, nm->nargs);
+    return Scm_Printf(out, "#<next-method %S %S>", nm->methods, args);
 }
 
 /*=====================================================================
@@ -1451,21 +1467,21 @@ ScmObj Scm_MakeNextMethod(ScmGeneric *gf, ScmObj methods,
 
 static ScmClassStaticSlotSpec class_slots[] = {
     SCM_CLASS_SLOT_SPEC("name",
-                        Scm_ClassName, class_name_set, SCM_FALSE),
+                        class_name, class_name_set, SCM_FALSE),
     SCM_CLASS_SLOT_SPEC("cpl",
-                        Scm_ClassCPL, class_cpl_set, SCM_FALSE),
+                        class_cpl, class_cpl_set, SCM_FALSE),
     SCM_CLASS_SLOT_SPEC("direct-supers", 
-                        Scm_ClassDirectSupers, class_direct_supers_set,
+                        class_direct_supers, class_direct_supers_set,
                         SCM_FALSE),
     SCM_CLASS_SLOT_SPEC("accessors",
-                        Scm_SlotAccessors, class_accessors_set, SCM_FALSE),
+                        class_accessors, class_accessors_set, SCM_FALSE),
     SCM_CLASS_SLOT_SPEC("slots",
-                        Scm_ClassSlots, class_slots_set, SCM_FALSE),
+                        class_slots_ref, class_slots_set, SCM_FALSE),
     SCM_CLASS_SLOT_SPEC("direct-slots",
-                        Scm_ClassDirectSlots, class_direct_slots_set,
+                        class_direct_slots, class_direct_slots_set,
                         SCM_FALSE),
     SCM_CLASS_SLOT_SPEC("direct-subclasses", 
-                        Scm_ClassDirectSubclasses,
+                        class_direct_subclasses,
                         class_direct_subclasses_set, SCM_FALSE),
     SCM_CLASS_SLOT_SPEC("num-instance-slots",
                         class_numislots, class_numislots_set, SCM_FALSE),
@@ -1531,8 +1547,20 @@ void bootstrap_class(ScmClass *k,
 
 void Scm_InitBuiltinClass(ScmClass *klass, const char *name, ScmModule *mod)
 {
+    ScmObj h = SCM_NIL, t;
     ScmObj s = SCM_INTERN(name);
+    ScmClass **p;
+    
     klass->name = s;
+    /* cpa -> cpl */
+    SCM_APPEND1(h, t, SCM_OBJ(klass));
+    for (p = klass->cpa; *p; p++) SCM_APPEND1(h, t, SCM_OBJ(*p));
+    klass->cpl = h;
+    if (SCM_PAIRP(SCM_CDR(h))) {
+        klass->directSupers = SCM_LIST1(SCM_CADR(h));
+    } else {
+        klass->directSupers = SCM_NIL;
+    }
     Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(klass));
 }
 
@@ -1554,7 +1582,7 @@ void Scm_InitBuiltinMethod(ScmMethod *m)
 void Scm__InitClass(void)
 {
     ScmModule *mod = Scm_GaucheModule();
-    ScmClass *nullcpa[] = { NULL }; /* for <top> */
+    static ScmClass *nullcpa[] = { NULL }; /* for <top> */
 
     key_allocation = SCM_MAKE_KEYWORD("allocation");
     key_instance = SCM_MAKE_KEYWORD("instance");
