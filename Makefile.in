@@ -11,16 +11,20 @@ clean :
 	rm -rf core *~
 	cd gc; $(MAKE) clean
 	cd src; $(MAKE) clean
+	cd lib; $(MAKE) clean
 	cd test; $(MAKE) clean
 
 distclean : clean
 	cd src; $(MAKE) distclean
+	cd lib; $(MAKE) distclean
 	rm -rf Makefile config.cache config.log config.status
 
 install :
 	cd src; $(MAKE) install
+	cd lib; $(MAKE) install
 
-realclean : distclean
+realclean : clean
 	cd src; $(MAKE) realclean
-	rm -rf configure
+	cd lib; $(MAKE) realclean
+	rm -rf configure Makefile config.cache config.log config.status
 
