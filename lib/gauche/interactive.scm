@@ -12,11 +12,11 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: interactive.scm,v 1.8 2001-12-15 11:07:35 shirok Exp $
+;;;  $Id: interactive.scm,v 1.9 2002-07-11 11:22:36 shirok Exp $
 ;;;
 
 (define-module gauche.interactive
-  (export apropos describe d)
+  (export apropos describe d info)
   )
 (select-module gauche.interactive)
 
@@ -114,5 +114,8 @@
 
 ;; Turn on debugger
 ;(enable-debug)
+
+;; Autoload online info viewer
+(autoload gauche.interactive.info info)
 
 (provide "gauche/interactive")

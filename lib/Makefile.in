@@ -1,7 +1,7 @@
 #
 # Makefile.in for Gauche/lib
 #
-#  $Id: Makefile.in,v 1.64 2002-07-10 21:55:56 shirok Exp $
+#  $Id: Makefile.in,v 1.65 2002-07-11 11:22:35 shirok Exp $
 #
 
 prefix = @prefix@
@@ -29,11 +29,12 @@ SCMS = srfi-0.scm \
        gauche/numerical.scm gauche/let-opt.scm gauche/logical.scm \
        gauche/vm/disasm.scm gauche/vm/debugger.scm gauche/procedure.scm \
        gauche/serializer.scm gauche/serializer/aserializer.scm \
-       gauche/parseopt.scm gauche/interactive.scm gauche/selector.scm \
-       gauche/logger.scm gauche/port.scm gauche/common-macros.scm \
-       gauche/singleton.scm gauche/validator.scm gauche/version.scm \
-       gauche/collection.scm gauche/sequence.scm gauche/interpolate.scm \
-       gauche/parameter.scm gauche/defvalues.scm gauche/thread.scm \
+       gauche/parseopt.scm gauche/interactive.scm gauche/interactive/info.scm \
+       gauche/selector.scm gauche/logger.scm gauche/port.scm \
+       gauche/common-macros.scm gauche/singleton.scm gauche/validator.scm \
+       gauche/version.scm gauche/collection.scm gauche/sequence.scm \
+       gauche/interpolate.scm gauche/parameter.scm gauche/defvalues.scm \
+       gauche/thread.scm \
        math/const.scm \
        util/isomorph.scm util/toposort.scm util/queue.scm util/tree.scm \
        port/jfilter.scm port/stk.scm \
@@ -44,7 +45,8 @@ SCMS = srfi-0.scm \
        text/html-lite.scm text/info.scm \
        www/cgi.scm
 
-SUBDIRS = gauche gauche/vm gauche/serializer file math port rfc \
+SUBDIRS = gauche gauche/vm gauche/serializer gauche/interactive \
+          file math port rfc \
 	  srfi-1 srfi-13 srfi-14 srfi-19 util text www
 
 INSTALL=@INSTALL@
@@ -53,8 +55,8 @@ all : $(SCMS)
 
 clean :
 	rm -f core *~ gauche/*~ gauche/vm/*~ gauche/serializer/*~ \
-	file/*~ math/*~ port/*~ rfc/*~ srfi-1/*~ srfi-13/*~ srfi-14/*~ \
-	srfi-19/*~ util/*~ text/*~ www/*~
+	gauche/interactive/*~ file/*~ math/*~ port/*~ rfc/*~ \
+	srfi-1/*~ srfi-13/*~ srfi-14/*~ srfi-19/*~ util/*~ text/*~ www/*~
 
 distclean : clean
 	rm -f Makefile slib.scm

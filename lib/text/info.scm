@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: info.scm,v 1.1 2002-07-10 21:55:58 shirok Exp $
+;;;  $Id: info.scm,v 1.2 2002-07-11 11:22:36 shirok Exp $
 ;;;
 
 (define-module text.info
@@ -44,15 +44,19 @@
    (content :init-keyword :content)
    ))
 
-;; Read an info file FILE, and returns a list of strings splitted by
-;; ^_ (#\x1f)
+;; Find gunzip location
+(define gunzip (find-file-in-paths "gunzip"))
 
+;; Read an info file FILE, and returns a list of strings splitted by ^_ (#\x1f)
+;; If FILE is not found, look for gzipped one (FILE.gz) and decompress it.
 (define (read-info-file-split file opts)
   (define (with-input-from-info thunk)
-    (if (string-suffix? ".gz" file)
-        (with-input-from-process #`"gunzip -c ,file" thunk)
-        (with-input-from-file file thunk)))
-  
+    (cond ((file-exists? file)
+           (with-input-from-file file thunk))
+          ((file-exists? #`",|file|.gz")
+           (with-input-from-process #`",gunzip -c ,file" thunk))
+          (else
+           (error "can't find info file" file))))
   (with-input-from-info
    (lambda ()
      (let loop ((c (skip-while (char-set-complement #[\x1f])))
