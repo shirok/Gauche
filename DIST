@@ -3,11 +3,15 @@ VERSION=`cat VERSION`
 TGZ_DEST="$HOME/shiro.dreamhost.com/scheme/vault/"
 CHANGELOG_DEST="$HOME/shiro.dreamhost.com/scheme/gauche/ChangeLog.txt"
 
+rm -f DIST_EXCLUDE_X
+cat DIST_EXCLUDE > DIST_EXCLUDE_X
+(cd ..; find Gauche -name CVS -print -prune) >> DIST_EXCLUDE_X
+
 if [ -f Makefile ]; then make realclean; fi
-autoconf
+./AUTOCONF
 configure
-make
+(cd src; for stub in *.stub; do make `echo $stub | sed 's/\.stub/.c/'` ; done)
 make distclean
-(cd ..; tar c -v -f - -X Gauche/DIST_EXCLUDE Gauche | gzip -9 > Gauche-$VERSION.tgz)
+(cd ..; tar c -v -f - -X Gauche/DIST_EXCLUDE_X Gauche | gzip -9 > Gauche-$VERSION.tgz)
 mv ../Gauche-$VERSION.tgz $TGZ_DEST
 cp ChangeLog $CHANGELOG_DEST
