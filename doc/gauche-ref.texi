@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.350 2003-01-27 05:30:34 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.351 2003-01-27 06:09:51 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -27570,6 +27570,7 @@ if the given content is valid for the element.
 
 @deftp {Module} text.parse
 @mdindex text.parse
+@c EN
 A collection of utilities that does simple parsing from
 the input port.   The API is inspired, and compatible with
 Oleg Kiselyov's input parsing library (@ref{oleg1,,OLEG1}).
@@ -27587,9 +27588,27 @@ and predicates, as well as a list of characters.
 These functions work sequentially on the given input port,
 that is, they read from the port as much as they need, without
 buffering extra characters.
+@c JP
+入力ポートに対して単純な解析を行うユーティリティのコレクションです。
+API は Oleg Kiselyov 氏の入力解析ライブラリ (@ref{oleg1,,OLEG1}) に
+触発され、互換性を持つものです。氏のライブラリは、他のたくさんの
+ライブラリで使われています。特に、Scheme のみで書かれたパーサ/ジェネレータ
+である SSAX (@ref{ssax,,SSAX}) が挙げられます。
+
+このモジュールは、氏の @code{input-parse.scm} や @code{look-for-str.scm}
+の代わりに使うことができます。
+
+Gauche で効果的になるように手続きを再実装しました。特に、@code{string-set!}
+の使用は完全に取り除きました。インターフェースを少し拡張したので、
+文字セットや述語、文字のリストにも使うことができます。
+
+これらの手続きは、与えられた入力ポートに対してシーケンシャルに動作します。
+それは、ポートから必要なだけ読み、余分な文字をバッファリングしないということです。
+@c COMMON
 @end deftp
 
 @defun find-string-from-port? str in-port &optional max-no-chars
+@c EN
 Looks for a string @var{str} from the input port @var{in-port}.
 The optional argument @var{max-no-chars} limits the maximum number of
 characters to be read from the port; if omitted, the search span is
@@ -27601,14 +27620,32 @@ of @var{str}.  If @var{str} is not found, it returns @code{#f}.
 
 Note: Although this procedure has `@code{?}' in its name,
 it may return non-boolean value, contrary to the Scheme convention.
+@c JP
+入力ポート @var{in-port} から、文字列 @var{str} を探します。
+オプショナル引数 @var{max-no-chars} は、ポートから読み込まれる最大文字数を
+制限します。省略されると、検索する範囲は EOF までとなります。
+
+@var{str} が見つかると、手続きはすでに読み込んだ文字の数を返します。
+@var{in-port} の次回の読み込みは、@var{str} の次の文字を返します。
+@var{str} が見つからない場合、@code{#f} が返ります。
+
+注意: この手続きはその名前に「@code{?}」がつきますが、Scheme の慣習に反し、
+真偽値ではない値を返すことがあります。
+@c COMMON
 @end defun
 
 @defun peek-next-char &optional port
+@c EN
 Discards the current character and peeks the next character from @var{port}.
 Useful to look ahead one character.
 If @var{port} is omitted, the current input port is used.
+@c JP
+現在の文字を破棄し、@var{port} から次の文字を読みます。一文字先読みするのに
+便利です。@var{port} が省略されると、現在の入力ポートが使われます。
+@c COMMON
 @end defun
 
+@c EN
 In the following functions, @var{char-list} refers to one of the
 followings:
 @itemize @bullet
@@ -27620,25 +27657,53 @@ A list of characters, character sets and/or symbol @code{*eof*}.
 That denotes a set of characters.  If a symbol @code{*eof*} is
 included, the EOF condition is also included.  Without @code{*eof*},
 the EOF condition is regarded as an error.
+@c JP
+以下の手続きでは、@var{char-list} は次のどれかを意味します。
+@itemize @bullet
+@item
+文字セット。
+@item
+文字、文字セット、シンボル @code{*eof*} の任意の組み合わせのリスト。
+@end itemize
+[That denotes a set of characters.] シンボル @code{*eof*} が含まれる場合、
+EOF の条件もまた含まれます。@code{*eof*} が含まれない場合、EOF の条件は
+エラーとして扱われます。
+@c COMMON
 
 @defun assert-curr-char char-list string &optional port
+@c EN
 Reads a character from @var{port}.  If it is included in @var{char-list},
 returns the character.  Otherwise, signals an error with a message
 containing @var{string}.
 If @var{port} is omitted, the current input port is used.
+@c JP
+@var{port} から文字を読みます。その文字が @var{char-list} に含まれている場合は
+その文字を返します。そうでなければ、@var{string} を含むメッセージとともに
+エラーを通知します。
+@c COMMON
 @end defun
 
 @defun skip-until char-list/number &optional port
+@c EN
 @var{char-list/number} is either a char-list or a number.
-If it is a number; it reas that many characters and returns @code{#f}.
+If it is a number; it reads that many characters and returns @code{#f}.
 If the input is not long enough, an error is signalled.
-IF @var{char-list/number} is a char-list, it reads from @var{port}
+If @var{char-list/number} is a char-list, it reads from @var{port}
 until it sees a character that belongs to the char-list.
 Then the character is returned.
 If @var{port} is omitted, the current input port is used.
+@c JP
+@var{char-list/number} は、文字のリストか数です。
+数の場合、たくさんの文字を読んで、@code{#f} を返します。
+入力が十分に長くない場合は、エラーが通知されます。
+@var{char-list/number} が文字のリストの場合、その文字リストに属する文字に
+出会うまで @var{port} を読み込み、その文字を返します。
+@var{port} が省略された場合、現在の入力ポートが使われます。
+@c COMMON
 @end defun
 
 @defun skip-while char-list &optional port
+@c EN
 Reads from @var{port} until it sees a character that does not
 belong to @var{char-list}.  The character remains in the stream.
 If it reaches EOF, an EOF is returned.
@@ -27646,12 +27711,21 @@ If @var{port} is omitted, the current input port is used.
 
 This example skips whitespaces from input.  Next read from
 port returns the first non-whitespace character.
+@c JP
+@var{char-list} に属しない文字に出会うまで、@var{port} を読み込みます。
+文字はストリームに残されます。EOF に達したら EOF が返されます。
+@var{port} が省略された場合、現在の入力ポートが使われます。
+
+この例では、入力から空白スペースをスキップしています。ポートからの次の
+読み込みは、最初の空白スペースでない文字を返します。
+@c COMMON
 @example
 (skip-while #[\s] port)
 @end example
 @end defun
 
 @defun next-token prefix-char-list break-char-list &optional comment port
+@c EN
 Skips any number of characters in @var{prefix-char-list},
 then collects the characters until it sees @var{break-char-list}.
 The collected characters are returned as a string.
@@ -27660,9 +27734,19 @@ The break character remains in the @var{port}.
 If the function encounters EOF and @code{*eof*} is not included in
 @var{break-char-list}, an error is signalled with @var{comment} is
 included in the message.
+@c JP
+@var{prefix-char-list} に含まれる文字はいくつでもスキップします。
+そして、@var{break-char-list} に含まれる文字に出会うまで、文字を
+蓄積します。蓄積された文字群は文字列として返されます。
+中断文字は @var{port} に残されます。
+
+手続きが EOF に達し、@code{*eof*} が @var{break-char-list} に含まれていない
+場合、@var{comment} が含まれたメッセージとともにエラーが通知されます。
+@c COMMON
 @end defun
 
 @defun next-token-of char-list/pred &optional port
+@c EN
 Reads and collects the characters as far as
 it belongs to @var{char-list/pred}, then returns them as a string.
 The first character that doesn't belong to @var{char-list/pred} remains
@@ -27672,12 +27756,26 @@ on the port.
 a character.   If it is a predicate, each character is passed to it,
 and the character is regarded to ``belong to'' @var{char-list/pred}
 when it returns a true value.
+@c JP
+読み込んだ文字が @var{char-list/pred} にある限り蓄積し、文字列として
+返します。@var{char-list/pred} に含まれない最初の文字はポートに残されます。
+
+@var{char-list/pred} は文字のリストか文字を取る述語です。述語の場合、
+それぞれの文字がその述語に渡され、真の値が返る場合はその文字は
+@var{char-list/pred} に属するとみなされます。
+@c COMMON
 @end defun
 
 @defun read-string n &optional port
+@c EN
 Reads up to @var{n} characters, collects them into a string, and returns it.
 If the input stream contains less characters, the returns string contains
 as many characters available.
+@c JP
+@var{n} 文字まで読み込み、文字列として蓄積しそれを返します。
+入力ストリームに含まれる文字のほうが少ない場合、有効な文字を可能な限り
+含む文字列が返ります。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
