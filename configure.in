@@ -9,10 +9,12 @@ AC_PROG_RANLIB
 AC_PROG_INSTALL
 
 dnl Checks for libraries.
+AC_CHECK_LIB(dl, dlopen)
 
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(glob.h)
+AC_CHECK_HEADERS(dlfcn.h)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
