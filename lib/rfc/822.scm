@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: 822.scm,v 1.6 2002-10-26 09:02:43 shirok Exp $
+;;;  $Id: 822.scm,v 1.7 2002-11-20 05:21:11 shirok Exp $
 ;;;
 
 ;; Parser and constructor of the message defined in
@@ -59,6 +59,7 @@
 (define (read-single-field input line strict?)
   (rxmatch-case line
     (test eof-object? (values #t #t #f))
+    (test string-null? (values #t #t #f))
     (#/^([\x21-\x39\x3b-\x7e]+):\s*(.*)$/ (#f name body)
      (let ((name (string-downcase name)))
        (let loop ((nline (read-line input))
