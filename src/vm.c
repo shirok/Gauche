@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.173 2002-09-11 23:41:28 shirok Exp $
+ *  $Id: vm.c,v 1.174 2002-09-12 03:26:03 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1531,6 +1531,9 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
         Scm_Error("module required, but got %S", e);
     } else {
         v = compile_for_eval(expr, SCM_MODULE(e), theVM->module);
+    }
+    if (SCM_VM_COMPILER_FLAG_IS_SET(theVM, SCM_COMPILE_SHOWRESULT)) {
+        Scm_Printf(theVM->curerr, "== %#S\n", v);
     }
     argp = sp;
     PUSH_CONT(v, v);

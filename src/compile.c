@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.81 2002-07-31 22:09:11 shirok Exp $
+ *  $Id: compile.c,v 1.82 2002-09-12 03:26:03 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -230,8 +230,8 @@ ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context)
 
 static inline ScmObj lookup_env(ScmObj var, ScmObj env, int op)
 {
-    ScmObj ep, frame, fp, found = SCM_FALSE;
-    int depth = 0, offset = 0;
+    ScmObj ep, frame, fp;
+    int depth = 0, offset = 0, found = -1;
     SCM_FOR_EACH(ep, env) {
         if (SCM_IDENTIFIERP(var) && SCM_IDENTIFIER(var)->env == ep) {
             /* strip off the "wrapping" */
@@ -248,18 +248,15 @@ static inline ScmObj lookup_env(ScmObj var, ScmObj env, int op)
                 }
                 continue;
             }
-            /* seek for variable binding.  there may be a case that
+            /* look for variable binding.  there may be a case that
                single frame contains more than one variable with the
                same name (in the case like '(let* ((x 1) (x 2)) ...)'),
-               so we have to scan the frame until the end.
-             */
+               so we have to scan the frame until the end. */
             SCM_FOR_EACH(fp, frame) {
-                if (SCM_CAR(fp) == var) {
-                    found = make_lref(depth, offset);
-                }
+                if (SCM_CAR(fp) == var) found = offset;
                 offset++;
             }
-            if (!SCM_FALSEP(found)) return found;
+            if (found >= 0) return make_lref(depth, offset - found - 1);
         }
         depth++;
         offset = 0;
@@ -810,7 +807,7 @@ static ScmObj compile_body(ScmObj form,
             for (cnt=0; cnt<idefs; cnt++) {
                 SCM_APPEND(body, bodytail,
                            compile_int(SCM_CAR(idef_vals), env, SCM_COMPILE_NORMAL));
-                SCM_APPEND1(body, bodytail, make_lset(0, cnt));
+                SCM_APPEND1(body, bodytail, make_lset(0, idefs-cnt-1));
                 idef_vars = SCM_CDR(idef_vars);
                 idef_vals = SCM_CDR(idef_vals);
             }
@@ -1231,7 +1228,7 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
     int count = 0;
 
     if (type == BIND_LETREC) cfr = vars;
-    else                     cfr = SCM_NIL;
+    else cfr = Scm_MakeList(Scm_Length(vars), SCM_UNDEFINED); /* dummy frame */
     newenv = Scm_Cons(cfr, env);
 
     for (count=0, varp=vars, valp=vals;
@@ -1239,11 +1236,11 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
          count++, varp=SCM_CDR(varp), valp=SCM_CDR(valp)) {
         ScmObj val = compile_int(SCM_CAR(valp), newenv, SCM_COMPILE_NORMAL);
         ADDCODE(val);
-        ADDCODE1(make_lset(0, count));
+        ADDCODE1(make_lset(0, nvars-count-1));
             
         if (type == BIND_LET_STAR) {
-            SCM_APPEND1(cfr, cfrtail, SCM_CAR(varp));
-            newenv = Scm_Cons(cfr, env);
+            ScmObj p = Scm_ListTail(cfr, count);
+            SCM_SET_CAR(p, SCM_CAR(varp));
         }
     }
     if (type == BIND_LET) newenv = Scm_Cons(vars, env);
