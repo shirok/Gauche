@@ -3902,6 +3902,7 @@ define hash functions for user-defined objects.
 @end defun
 
 @defun hash obj
+@c EN
 Returns a hash value of @var{obj}.  This is the hash function used
 in @code{equal?}-type hash table.  The hash value is an exact
 non-negative integer, and it has two properties:
@@ -3921,9 +3922,31 @@ a symbol, a keyword, a string, a list or a vector,
 internal hash function is used to calculate the hash value.
 If @var{obj} is other than that, @code{hash} calls
 a generic function @code{object-hash} to calculate the hash value.
+@c JP
+@var{obj} のハッシュ値を返します。@code{equal?}-タイプのハッシュテーブルで
+利用するハッシュ関数です。この関数が返すハッシュ値は正確な非負整数で、
+以下の二つの性質があります。
+@itemize
+@item
+もし、@var{a} および @var{b} の型について、@code{has} が定義されているなら、
+あらゆるオブジェクト @var{a} および  @var{b} に対して、
+@code{(equal? @var{a} @var{b})} と @code{(= (hash @var{a}) (hash @var{b}))}
+とは同等です。
+@item
+@code{hash} は(そのデータのアドレスというような)実行時の計算機の状態とは
+独立しています。それゆえ、その値をファイルに格納し、別のプロセスで読み込んで
+利用しても、ハッシュ値の正当性を失うことがないので、安全です。
+@end itemize
+@var{obj} が、数値、真理値、文字、シンボル、キーワード、文字列、リスト、
+ベクタのいずれかならば、そのハッシュ値を求めるのには内部ハッシュ関数を
+使います。
+@var{obj} が、それ以外であれば、 @code{hash} は総称関数 @code{object-hash}
+を呼んで、そのハッシュ値を計算します。
+@c COMMON
 @end defun
 
 @deffn {Generic Function} object-hash obj
+@c EN
 By defining a method for this generic function, objects of
 user-defined types can have a hash value and can be used
 in @code{equal?} hash table.  
@@ -3934,7 +3957,20 @@ has to follow the same constraints as of @code{hash}.
 If the method needs to get hash value of @var{obj}'s elements,
 it has to call @code{hash} on them, not @code{object-hash}.
 For the hashing of primitive objects are done in @code{hash}.
+@c JP
+この総称関数に対するメソッドを定義することにより、ユーザ定義された
+型のオブジェクトはハッシュ値を持つことができ、@code{equal?}型のハッシュ
+テーブルで利用することができるようになります。
 
+メソッドは正確な非負整数を返さなければなりません。また、@code{hash} と
+同じ制約に従わなければなりません。
+
+メソッドが @var{obj} の要素のハッシュ値を必要とする場合には、
+それらに対しては、@code{object-hash} ではなく、@code{hash} を
+呼ばなければなりません。プリミティブなオブジェクトのハッシュ計算は
+@code{hash} が行うからです。
+
+@c COMMON
 @example
 (define-class <myclass> () (x y))
 
