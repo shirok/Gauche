@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.324 2002-12-12 06:13:51 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.325 2002-12-12 06:32:34 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -25527,8 +25527,8 @@ on @var{hmac}.
 
 @deffn {Method} hmac-digest &keyword key hasher
 Creates an @code{<hmac>} object and hash the data stream
-from the current input port, then writes the hashed result
-(in an incomplete string) to the current output port.
+from the current input port, then returns the hashed result
+in an incomplete string.
 @end deffn
 
 @deffn {Method} hmac-digest-string string &keyword key hasher
@@ -25691,8 +25691,8 @@ Besides the digester framework, this module provides to
 short-cut procedures.
 
 @defun md5-digest
-Reads data from the current input port until EOF, and writes
-its digest (in an incomplete string) to the current output port.
+Reads data from the current input port until EOF, and returns
+its digest in an incomplete string.
 @end defun
 
 @defun md5-digest-string string
@@ -25765,8 +25765,8 @@ Besides the digester framework, this module provides to
 short-cut procedures.
 
 @defun sha1-digest
-Reads data from the current input port until EOF, and writes
-its digest (in an incomplete string) to the current output port.
+Reads data from the current input port until EOF, and returns
+its digest in an incomplete string.
 @end defun
 
 @defun sha1-digest-string string
@@ -26651,8 +26651,7 @@ returns the digest result in an incomplete string.
 @deffn {Generic function} digest class
 A wrapper of digest routines.  Given message-digest algorithm @var{class},
 this function reads the input data from current input port until EOF,
-and writes the digest result in an incomplete string to the current
-output port.
+and returns the digest result in an incomplete string.
 @end deffn
 
 @deffn {Generic function} digest-string class string

@@ -1,5 +1,7 @@
 2002-12-11  Shiro Kawai  <shiro@acm.org>
 
+	* ext/digest/*.scm, lib/util/digest.scm : define digest-string
+	  in util.digest (patch from Kimura Fuyuki).
 	* src/list.c, src/stdlib.stub, lib/gauche/listutil.scm : made
 	  caar..cddr be inlined.  got rid of less-frequently used
 	  caaar...cddddr from gosh core and defines them in autoloaded

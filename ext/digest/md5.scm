@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: md5.scm,v 1.4 2002-12-11 03:09:26 shirok Exp $
+;;;  $Id: md5.scm,v 1.5 2002-12-12 06:32:35 shirok Exp $
 ;;;
 
 ;;; RFC 1321 The MD5 Message-Digest Algorithm
@@ -46,13 +46,12 @@
 (define (md5-digest-string string)
   (with-input-from-string string md5-digest))
 
+;; digest framework
 (define-method digest-update! ((self <md5>) data)
   (%md5-update (context-of self) data))
 (define-method digest-final! ((self <md5>))
   (%md5-final (context-of self)))
 (define-method digest ((class <md5-meta>))
   (md5-digest))
-(define-method digest-string ((class <md5-meta>) string)
-  (md5-digest-string string))
 
 (provide "rfc/md5")

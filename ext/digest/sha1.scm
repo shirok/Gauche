@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: sha1.scm,v 1.3 2002-12-11 03:09:26 shirok Exp $
+;;;  $Id: sha1.scm,v 1.4 2002-12-12 06:32:35 shirok Exp $
 ;;;
 
 ;;; RFC 3174 US Secure Hash Algorithm 1 (SHA1)
@@ -45,13 +45,12 @@
 (define (sha1-digest-string string)
   (with-input-from-string string sha1-digest))
 
+;; digest framework
 (define-method digest-update! ((self <sha1>) data)
   (%sha1-update (context-of self) data))
 (define-method digest-final! ((self <sha1>))
   (%sha1-final (context-of self)))
 (define-method digest ((class <sha1-meta>))
   (sha1-digest))
-(define-method digest-string ((class <sha1-meta>) string)
-  (sha1-digest-string string))
 
 (provide "rfc/sha1")

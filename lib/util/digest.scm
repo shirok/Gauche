@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: digest.scm,v 1.4 2002-12-11 03:09:26 shirok Exp $
+;;;  $Id: digest.scm,v 1.5 2002-12-12 06:32:35 shirok Exp $
 ;;;
 
 ;; An abstract base- and meta-class of message digest algorithms.
@@ -40,7 +40,7 @@
 (define-method digest ((class <message-digest-algorithm-meta>))
   #f)
 (define-method digest-string ((class <message-digest-algorithm-meta>) string)
-  #f)
+  (with-input-from-string string (lambda () (digest class))))
 
 ;; utility
 (define (digest-hexify string)
