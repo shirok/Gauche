@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.24 2001-05-20 08:58:15 shirok Exp $
+ *  $Id: port.c,v 1.25 2001-05-20 09:16:14 shirok Exp $
  */
 
 #include <unistd.h>
@@ -439,6 +439,62 @@ int Scm_Getc(ScmPort *port)
     int c = 0;
     SCM_GETC(c, port);
     return c;
+}
+
+/*
+ * Getz - block read.
+ */
+int Scm_Getz(ScmPort *port, char *buf, int buflen)
+{
+    int nread = 0;
+    
+    if (!SCM_IPORTP(port))
+        Scm_Error("input port required, but got %S", SCM_OBJ(port));
+    switch (SCM_PORT_TYPE(port)) {
+    case SCM_PORT_FILE:
+        nread = fread(buf, 1, buflen, port->src.file.fp);
+        break;
+    case SCM_PORT_ISTR:
+        if (buflen <= port->src.istr.rest) {
+            memcpy(buf, port->src.istr.current, buflen);
+            port->src.istr.rest -= buflen;
+            port->src.istr.current += buflen;
+            nread = buflen;
+        } else {
+            int pre = port->src.istr.rest;
+            memcpy(buf, port->src.istr.current, pre);
+            port->src.istr.rest = 0;
+            if (port->src.istr.fill) {
+                while (port->src.istr.fill(port, FALSE) >= 0) {
+                    if (buflen - pre <= port->src.istr.rest) {
+                        memcpy(buf+pre, port->src.istr.current, buflen-pre);
+                        port->src.istr.rest -= buflen-pre;
+                        port->src.istr.current += buflen-pre;
+                        nread = buflen;
+                        break;
+                    } else {
+                        memcpy(buf+pre, port->src.istr.current,
+                               port->src.istr.rest);
+                        pre += port->src.istr.rest;
+                        port->src.istr.rest = 0;
+                    }
+                }
+                if (nread != buflen) nread = pre;
+            } else {
+                nread = pre;
+            }
+        }
+        break;
+    case SCM_PORT_PROC:
+        nread = port->src.proc.vtable->Getz(port, buf, buflen);
+        break;
+    case SCM_PORT_CLOSED:
+        Scm_Error("attempted to read from closed port: %S", port);
+        break;
+    default:
+        Scm_Panic("Scm_Getz: something very wrong internally");
+    }
+    return nread;
 }
 
 /*
