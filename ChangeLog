@@ -3,7 +3,7 @@
 	* ext/charconv/charconv.c : adapted to the new port API.
 	* src/port.c, src/gauche.h, src/extlib.stub : completely rewritten
 	  the file I/O code; now Gauche does its own buffering instead of
-	  using FILE*.
+	  using FILE*.   Implemented proper char-ready?.
 	
 2002-04-23  Shiro Kawai  <shiro@acm.org>
 
