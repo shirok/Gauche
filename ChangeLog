@@ -236,7 +236,7 @@
 
 	* src/compile.c (compile_cond_int): fixed a bug that 'case' didn't
 	  work when it appeared in the macro-expanded form (Pointed out by
-	  Grzegorz Chrupa-Ała).$)B
+	  Grzegorz ChrupaAła).
 
 2004-05-31  Shiro Kawai  <shiro@acm.org>
 
@@ -293,7 +293,7 @@
 	  (patch from Nekoie).
 
 	* lib/file/util.scm (build-path): ignore empty string in the components
-	  (patch from Grzegorz Chrupa-Ała).$)B
+	  (patch from Grzegorz Chrupała).
 
 2004-05-20  Shiro Kawai  <shiro@acm.org>
 
@@ -514,7 +514,7 @@
 
 	* lib/srfi-13/searcher.scm (string-contains, string-contains-ci):
 	  Return value was wrong when start1 is given (patch from 
-	  Grzegorz Chrupa-Ała).$)B
+	  Grzegorz Chrupała).
 
 2004-03-04  Shiro Kawai  <shiro@acm.org>
 
@@ -553,7 +553,7 @@
 	* lib/srfi-13/revapp.scm (string-concatenate-reverse): optional arg
 	  handling was missing.
 	* lib/www/cgi.scm (cgi-get-query): fixed a funky behavior when used
-	  interactively (Patch from Grzegorz Chrupa-Ała).$)B
+	  interactively (Patch from Grzegorz Chrupała).
 	* lib/srfi-1/set.scm (lset-xor, lset-xor!): fixed bad call
 	  of lset-difference (pointed out by Ueyama Rui).
 
@@ -1231,7 +1231,7 @@
 	  instruction vectorization.   Not yet finalized.
 
 	* lib/dbm.scm (dbm-open): fixed a bug when a custom accessor
-	  specification is given (Patch from Grzegorz Chrupa-Ała).$)B
+	  specification is given (Patch from Grzegorz Chrupała).
 
 2003-10-08  Shiro Kawai  <shiro@acm.org>
 
@@ -1334,7 +1334,7 @@
 	  to (null-list? ...).  The latter change makes the code check an
 	  improper list more strictly, and the original srfi-1 reference
 	  implmentation uses null-list? consistently, but "not pair?" sneaked
-	  in when I tuned some procedures.  (Patch from Grzegorz Chrupa-Ała)$)B
+	  in when I tuned some procedures.  (Patch from Grzegorz Chrupała)
 
 2003-09-18  Shiro Kawai  <shiro@acm.org>
 
@@ -1838,7 +1838,7 @@
 	  src/core.c : snapshot to make things work on cygwin (not quite, yet).
 
 	* doc/gauche-ref.texi : fix in srfi-37 description
-	  (patch from Grzegorz Chrupa-Ała).$)B
+	  (patch from Grzegorz Chrupała).
 
 	* Makefile.am's, Makefile.in's, ext/Makefile.ext.in, DIST:
 	  Removed automake dependency.
@@ -1977,7 +1977,7 @@
 2003-02-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/parse.scm (next-token) : fixed error message handling
-	  (Patch from Grzegorz Chrupa-Ała).$)B
+	  (Patch from Grzegorz Chrupała).
 
 2003-02-09  Shiro Kawai  <shiro@acm.org>
 
