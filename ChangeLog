@@ -1,3 +1,8 @@
+2003-06-16  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm (receive-body) : added fallback case when neither
+	  content-length nor transfer-encoding is provided by the server.
+
 2003-06-11  Shiro Kawai  <shiro@acm.org>
 
 	* doc/gauche-ref.texi : splitted chapters into separate texi files.
