@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.13 2001-03-20 07:10:42 shiro Exp $
+ *  $Id: proc.c,v 1.14 2001-03-20 08:47:04 shiro Exp $
  */
 
 #include "gauche.h"
@@ -21,25 +21,27 @@
  * Classes
  */
 
-static ScmClass *proc_cpl[] = { SCM_CLASS_PROCEDURE, SCM_CLASS_TOP, NULL };
-
 static int proc_print(ScmObj obj, ScmPort *port, int mode);
-static int closure_print(ScmObj obj, ScmPort *port, int mode);
-static int subr_print(ScmObj obj, ScmPort *port, int mode);
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_ProcedureClass,
-                         proc_print, NULL, NULL, NULL,
-                         SCM_CLASS_DEFAULT_CPL);
-SCM_DEFINE_BUILTIN_CLASS(Scm_ClosureClass,
-                         closure_print, NULL, NULL, NULL,
-                         proc_cpl);
-SCM_DEFINE_BUILTIN_CLASS(Scm_SubrClass,
-                         subr_print, NULL, NULL, NULL,
-                         proc_cpl);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ProcedureClass, proc_print);
 
 static int proc_print(ScmObj obj, ScmPort *port, int mode)
 {
-    return Scm_Printf(port, "#<procedure %p>", obj);
+    if (SCM_PROCEDURE_TYPE(obj) == SCM_PROC_SUBR) {
+        ScmSubr *subr = SCM_SUBR(obj);
+        int nc = 0;
+        SCM_PUTCSTR("#<subr", port); nc += 6;
+        if (SCM_PROCEDURE_INFO(subr)) {
+            nc += Scm_Printf(port, ":%S", SCM_PROCEDURE_INFO(subr));
+        }
+        if (mode == SCM_PRINT_DEBUG) {
+            nc += Scm_Printf(port, " %p", subr);
+        }
+        SCM_PUTC('>', port); nc++;
+        return nc;
+    } else {
+        return Scm_Printf(port, "#<closure %p>", obj);
+    }
 }
 
 /*
@@ -53,19 +55,11 @@ ScmObj Scm_MakeClosure(int required, int optional,
                        ScmObj code, ScmEnvFrame *env, ScmObj info)
 {
     ScmClosure *c = SCM_NEW(ScmClosure);
-    SCM_SET_CLASS(c, SCM_CLASS_CLOSURE);
-    c->common.required = required;
-    c->common.optional = optional;
-    c->common.generic = FALSE;
-    c->common.info = info;
+    SCM_SET_CLASS(c, SCM_CLASS_PROCEDURE);
+    SCM_PROCEDURE_INIT(c, required, optional, SCM_PROC_CLOSURE, info);
     c->code = code;
     c->env = env;
     return SCM_OBJ(c);
-}
-
-static int closure_print(ScmObj obj, ScmPort *port, int mode)
-{
-    return Scm_Printf(port, "#<closure %p>", obj);
 }
 
 /*
@@ -78,32 +72,12 @@ ScmObj Scm_MakeSubr(ScmObj (*func)(ScmObj*, int, void*),
                     ScmObj info)
 {
     ScmSubr *s = SCM_NEW(ScmSubr);
-    SCM_SET_CLASS(s, SCM_CLASS_SUBR);
-    s->common.required = required;
-    s->common.optional = optional;
-    s->common.generic = FALSE;
-    s->common.info = info;
+    SCM_SET_CLASS(s, SCM_CLASS_PROCEDURE);
+    SCM_PROCEDURE_INIT(s, required, optional, SCM_PROC_SUBR, info);
     s->func = func;
     s->inliner = NULL;
     s->data = data;
     return SCM_OBJ(s);
-}
-
-static int subr_print(ScmObj obj, ScmPort *port, int mode)
-{
-    ScmSubr *subr = SCM_SUBR(obj);
-    int nc = 0;
-
-    SCM_PUTCSTR("#<subr", port); nc += 6;
-    
-    if (SCM_PROCEDURE_INFO(subr)) {
-        nc += Scm_Printf(port, ":%S", SCM_PROCEDURE_INFO(subr));
-    }
-    if (mode == SCM_PRINT_DEBUG) {
-        nc += Scm_Printf(port, " %p", subr);
-    }
-    SCM_PUTC('>', port); nc++;
-    return nc;
 }
 
 /*
@@ -308,6 +282,5 @@ ScmObj Scm_Map(ScmProcedure *proc, ScmObj arg1, ScmObj args)
  */
 void Scm__InitProc(void)
 {
-    Scm_ClosureClass.flags |= SCM_CLASS_APPLICABLE;
-    Scm_SubrClass.flags |= SCM_CLASS_APPLICABLE;
+    Scm_ProcedureClass.flags |= SCM_CLASS_APPLICABLE;
 }

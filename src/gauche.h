@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.83 2001-03-19 11:07:14 shiro Exp $
+ *  $Id: gauche.h,v 1.84 2001-03-20 08:47:04 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -236,6 +236,7 @@ typedef struct ScmClosureRec   ScmClosure;
 typedef struct ScmSubrRec      ScmSubr;
 typedef struct ScmGenericRec   ScmGeneric;
 typedef struct ScmMethodRec    ScmMethod;
+typedef struct ScmNextMethodRec ScmNextMethod;
 typedef struct ScmSyntaxRec    ScmSyntax;
 typedef struct ScmPromiseRec   ScmPromise;
 typedef struct ScmExceptionRec ScmException;
@@ -297,7 +298,6 @@ struct ScmClassRec {
     int (*compare)(ScmObj x, ScmObj y);
     int (*serialize)(ScmObj obj, ScmPort *sink, ScmObj context);
     ScmObj (*allocate)(ScmClass *klass, int nslots);
-    ScmObj (*apply)(ScmObj self, ScmObj *args, int nargs);
     struct ScmClassRec **cpa;
     short numInstanceSlots;     /* # of instance slots */
     unsigned short flags;
@@ -381,7 +381,6 @@ extern ScmClass *Scm_ObjectCPL[];
         equal,                                          \
         compare,                                        \
         serialize,                                      \
-        NULL,                                           \
         NULL,                                           \
         cpa,                                            \
         0,                                              \
@@ -475,6 +474,7 @@ extern ScmObj Scm_List(ScmObj elt, ...);
 extern ScmObj Scm_Conses(ScmObj elt, ...);
 extern ScmObj Scm_VaList(va_list elts);
 extern ScmObj Scm_VaCons(va_list elts);
+extern ScmObj Scm_ArrayToList(ScmObj *elts, int nelts);
 
 extern ScmObj Scm_PairP(ScmObj obj);
 extern ScmObj Scm_Car(ScmObj obj);
@@ -1410,27 +1410,41 @@ extern ScmObj Scm_StringToNumber(ScmString *str, int radix);
  * PROCEDURE (APPLICABLE OBJECT)
  */
 
-/* Base class */
+/* Base structure */
 struct ScmProcedureRec {
     SCM_HEADER;
     unsigned char required;     /* # of required args */
     unsigned char optional;     /* 1 if it takes rest args */
-    unsigned char generic;      /* 1 if this is a generic func */
+    unsigned char type;         /* procedure type  */
     ScmObj info;                /* source code info */
+};
+
+/* procedure type */
+enum {
+    SCM_PROC_SUBR,
+    SCM_PROC_CLOSURE,
+    SCM_PROC_GENERIC,
+    SCM_PROC_METHOD,
+    SCM_PROC_NEXT_METHOD
 };
 
 #define SCM_PROCEDURE(obj)          ((ScmProcedure*)(obj))
 #define SCM_PROCEDURE_REQUIRED(obj) SCM_PROCEDURE(obj)->required
 #define SCM_PROCEDURE_OPTIONAL(obj) SCM_PROCEDURE(obj)->optional
+#define SCM_PROCEDURE_TYPE(obj)     SCM_PROCEDURE(obj)->type
 #define SCM_PROCEDURE_INFO(obj)     SCM_PROCEDURE(obj)->info
 
 extern ScmClass Scm_ProcedureClass;
 #define SCM_CLASS_PROCEDURE   (&Scm_ProcedureClass)
-
 #define SCM_PROCEDUREP(obj) \
     (SCM_PTRP(obj) && SCM_CLASS_APPLICABLE_P(SCM_CLASS_OF(obj)))
 #define SCM_PROCEDURE_TAKE_NARG_P(obj, narg) \
     (SCM_PROCEDUREP(obj)&&SCM_PROCEDURE_REQUIRED(obj)==(narg))
+#define SCM_PROCEDURE_INIT(obj, req, opt, typ, inf)     \
+    SCM_PROCEDURE(obj)->required = req,                 \
+    SCM_PROCEDURE(obj)->optional = opt,                 \
+    SCM_PROCEDURE(obj)->type = typ,                     \
+    SCM_PROCEDURE(obj)->info = inf
 
 /* Closure - Scheme defined procedure */
 struct ScmClosureRec {
@@ -1439,11 +1453,9 @@ struct ScmClosureRec {
     ScmEnvFrame *env;           /* environment */
 };
 
-extern ScmClass Scm_ClosureClass;
-#define SCM_CLASS_CLOSURE          (&Scm_ClosureClass)
-#define SCM_CLOSUREP(obj)          SCM_XTYPEP(obj, SCM_CLASS_CLOSURE)
+#define SCM_CLOSUREP(obj) \
+    (SCM_PROCEDUREP(obj)&&(SCM_PROCEDURE_TYPE(obj)==SCM_PROC_CLOSURE))
 #define SCM_CLOSURE(obj)           ((ScmClosure*)(obj))
-
 
 extern ScmObj Scm_MakeClosure(int required, int optional,
                               ScmObj code, ScmEnvFrame *env, ScmObj info);
@@ -1456,9 +1468,8 @@ struct ScmSubrRec {
     void *data;
 };
 
-extern ScmClass Scm_SubrClass;
-#define SCM_CLASS_SUBR             (&Scm_SubrClass)
-#define SCM_SUBRP(obj)             SCM_XTYPEP(obj, SCM_CLASS_SUBR)
+#define SCM_SUBRP(obj) \
+    (SCM_PROCEDUREP(obj)&&(SCM_PROCEDURE_TYPE(obj)==SCM_PROC_SUBR))
 #define SCM_SUBR(obj)              ((ScmSubr*)(obj))
 #define SCM_SUBR_FUNC(obj)         SCM_SUBR(obj)->func
 #define SCM_SUBR_INLINER(obj)      SCM_SUBR(obj)->inliner
@@ -1474,7 +1485,7 @@ extern ScmObj Scm_NullProc(void);
 struct ScmGenericRec {
     ScmProcedure common;
     ScmObj methods;
-    ScmObj (*fallback)(ScmObj *, int, ScmGeneric *, void*);
+    ScmObj (*fallback)(ScmObj *args, int nargs, ScmGeneric *gf);
     void *data;
 };
 
@@ -1483,13 +1494,20 @@ extern ScmClass Scm_GenericClass;
 #define SCM_GENERICP(obj)          SCM_XTYPEP(obj, SCM_CLASS_GENERIC)
 #define SCM_GENERIC(obj)           ((ScmGeneric*)obj)
 
-/* Method - method.
-   Receives next method object at the implicit first argument. */
+#define SCM_DEFINE_GENERIC(cvar, info, cfunc, data)             \
+    ScmGeneric cvar = {                                         \
+        { SCM_CLASS_GENERIC, 0, 0, SCM_PROC_GENERIC, info },    \
+        SCM_NIL, cfunc, data                                    \
+    };
+
+ScmObj Scm_NoNextMethod(ScmObj *args, int nargs, ScmGeneric *gf);
+
+/* Method - method */
 struct ScmMethodRec {
     ScmProcedure common;
     ScmGeneric *generic;
     ScmObj specializers;
-    ScmObj (*func)(ScmObj *, int, void *);
+    ScmObj (*func)(ScmNextMethod *nm, ScmObj *args, int nargs, void * data);
     void *data;
 };
 
@@ -1503,6 +1521,7 @@ extern ScmClass Scm_MethodClass;
    the arguments. */
 struct ScmNextMethodRec {
     ScmProcedure common;
+    ScmGeneric *generic;
     ScmObj methods;             /* list of applicable methods */
     ScmObj *args;               /* original arguments */
     int nargs;                  /* # of original arguments */

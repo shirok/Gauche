@@ -2,7 +2,7 @@
 ;;; Simple stub generator
 ;;;
 
-;;; $Id: genstub,v 1.28 2001-03-19 11:07:14 shiro Exp $
+;;; $Id: genstub,v 1.29 2001-03-20 08:47:04 shiro Exp $
 
 (add-load-path "../lib")
 
@@ -575,8 +575,8 @@
              (string-length scm-func-name)
              scm-func-name)
     (println "static ScmSubr ~a_STUB = {" c-func-name)
-    (println "  SCM_CLASS_SUBR,")
-    (println "  ~a, ~a, 0,"
+    (println "  SCM_CLASS_PROCEDURE,")
+    (println "  ~a, ~a, SCM_PROC_SUBR,"
              (num-reqargs-of cproc)
              (if (or (have-rest-arg? cproc) (> (num-optargs-of cproc) 0)) 1 0))
     (println "  SCM_OBJ(&~a_NAME)," c-func-name)

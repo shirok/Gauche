@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.16 2001-03-19 11:07:14 shiro Exp $
+ *  $Id: class.c,v 1.17 2001-03-20 08:47:04 shiro Exp $
  */
 
 #include "gauche.h"
@@ -116,7 +116,6 @@ static ScmObj key_instance;
  *   Category:  core final     core base     core abstract 
  *   -----------------------------------------------------
  *    allocate   required       optional        NULL
- *    apply      (*1)           NULL            NULL
  *    print      optional       optional        ignored
  *    equal      optional       optional        ignored
  *    compare    optional       optional        ignored
@@ -139,9 +138,6 @@ static ScmObj key_instance;
  *     members of the C-specific part of the instance, including SCM_HEADER.
  *     This protocol can be NULL for core base classes; if so, attempt
  *     to "make" such class reports an error.
- *
- *  ScmObj klass->apply(ScmObj obj, ScmObj args)
- *     Called from the VM engine to initiate application.
  *
  *  int klass->print(ScmObj obj, ScmPort *sink, int mode)
  *     OBJ is an instance of klass (you can safely assume it).  This
@@ -189,7 +185,6 @@ static ScmObj class_allocate(ScmClass *klass, int nslots)
     instance->compare = NULL;
     instance->serialize = NULL; /* class_serialize? */
     instance->allocate = class_allocate;
-    instance->apply = NULL;
     instance->cpa = NULL;
     instance->numInstanceSlots = nslots;
     instance->flags = 0;        /* ?? */
@@ -497,18 +492,12 @@ static ScmObj generic_allocate(ScmClass *klass, int nslots)
     instance = SCM_NEW2(ScmGeneric*,
                         sizeof(ScmGeneric) + sizeof(ScmObj)*nslots);
     SCM_SET_CLASS(instance, klass);
-    instance->common.required = 0;
-    instance->common.optional = 0;
-    instance->common.info = SCM_FALSE;
+    SCM_PROCEDURE_INIT(instance, 0, 0, SCM_PROC_GENERIC, SCM_FALSE);
     instance->methods = SCM_NIL;
-    instance->fallback = NULL;
+    instance->fallback = Scm_NoNextMethod;
+    instance->data = NULL;
     /* TODO: initialize extended slots */
     return SCM_OBJ(instance);
-}
-
-static ScmObj generic_apply(ScmObj g, ScmObj *args, int nargs)
-{
-    ScmGeneric *gf = SCM_GENERIC(g);
 }
 
 static ScmObj generic_name(ScmGeneric *gf)
@@ -529,6 +518,13 @@ static ScmObj generic_methods(ScmGeneric *gf)
 static void generic_methods_set(ScmGeneric *gf, ScmObj val)
 {
     gf->methods = val;
+}
+
+ScmObj Scm_NoNextMethod(ScmObj *args, int nargs, ScmGeneric *gf)
+{
+    Scm_Error("no applicable method for %S with arguments %S",
+              SCM_OBJ(gf), Scm_ArrayToList(args, nargs));
+    return SCM_UNDEFINED;       /* dummy */
 }
 
 ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf, ScmObj *args, int nargs)
@@ -555,7 +551,7 @@ ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf, ScmObj *args, int nargs)
     return h;
 }
 
-ScmObj Scm_SortMethods(ScmObj methods, ScmObj args)
+ScmObj Scm_SortMethods(ScmObj methods, ScmObj *args, int nargs)
 {
     /* implement me */
     return methods;
@@ -572,6 +568,7 @@ static ScmObj method_allocate(ScmClass *klass, int nslots)
     instance = SCM_NEW2(ScmMethod*,
                         sizeof(ScmMethod) + sizeof(ScmObj)*nslots);
     SCM_SET_CLASS(instance, klass);
+    SCM_PROCEDURE_INIT(instance, 0, 0, SCM_PROC_METHOD, SCM_FALSE);
     instance->generic = NULL;
     instance->specializers = SCM_NIL;
     instance->func = NULL;
@@ -614,6 +611,23 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
     method->generic = gf;
     gf->methods = Scm_Cons(SCM_OBJ(method), gf->methods);
     return SCM_UNDEFINED;
+}
+
+/*=====================================================================
+ * Next Method
+ */
+
+ScmObj Scm_MakeNextMethod(ScmGeneric *gf, ScmObj methods,
+                          ScmObj *args, int nargs)
+{
+    ScmNextMethod *nm = SCM_NEW(ScmNextMethod);
+    SCM_SET_CLASS(nm, SCM_CLASS_NEXT_METHOD);
+    SCM_PROCEDURE_INIT(nm, 0, 0, SCM_PROC_NEXT_METHOD, SCM_FALSE);
+    nm->generic = gf;
+    nm->methods = methods;
+    nm->args = args;
+    nm->nargs = nargs;
+    return SCM_OBJ(nm);
 }
 
 /*=====================================================================
@@ -755,8 +769,6 @@ void Scm__InitClass(void)
 
     /* proc.c */
     CINIT(SCM_CLASS_PROCEDURE,        "<procedure>");
-    CINIT(SCM_CLASS_CLOSURE,          "<closure>");
-    CINIT(SCM_CLASS_SUBR,             "<subr>");
 
     /* promise.c */
     CINIT(SCM_CLASS_PROMISE,          "<promise>");

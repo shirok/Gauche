@@ -12,11 +12,12 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.56 2001-03-19 10:53:09 shiro Exp $
+ *  $Id: vm.c,v 1.57 2001-03-20 08:47:04 shiro Exp $
  */
 
 #include "gauche.h"
 #include "gauche/memory.h"
+#include "gauche/class.h"
 
 /*
  * The VM.
@@ -431,12 +432,28 @@ static void run_loop()
             CASE(SCM_VM_CALL) {
                 int nargs = SCM_VM_INSN_ARG(code);
                 int argcnt;
+                ScmObj nm = SCM_FALSE;
 
                 if (!SCM_PROCEDUREP(val0)) VM_ERR(("bad procedure: %S", val0));
-                if (SCM_PROCEDURE(val0)->generic) {
-                    /* prepare method list. */
-                    Scm_Error("generic function not supported yet.");
+                /*
+                 * Step 1. Preprocess for generic function
+                 */
+                if (SCM_PROCEDURE_TYPE(val0) == SCM_PROC_GENERIC) {
+                    ScmObj mm
+                        = Scm_ComputeApplicableMethods(SCM_GENERIC(val0),
+                                                       argp->data, nargs);
+                    if (!SCM_NULLP(mm)) {
+                        ScmObj *argv = SCM_NEW2(ScmObj*, sizeof(ScmObj)*nargs);
+                        memcpy(argv, argp->data, sizeof(ScmObj)*nargs);
+                        mm = Scm_SortMethods(mm, argv, nargs);
+                        nm = Scm_MakeNextMethod(SCM_GENERIC(val0),
+                                                SCM_CDR(mm), argv, nargs);
+                        val0 = SCM_CAR(mm);
+                    }
                 }
+                /*
+                 * Step 2. Prepare argument frame
+                 */
                 ADJUST_ARGUMENT_FRAME(val0, nargs, argcnt);
                 if (SCM_VM_INSN_CODE(code)==SCM_VM_TAIL_CALL) {
                     /* discard the caller's argument frame, and shift
@@ -452,6 +469,9 @@ static void run_loop()
                     }
                 }
 
+                /*
+                 * Step 3. Call
+                 */
                 if (SCM_SUBRP(val0)) {
                     env = argp;
                     SAVE_REGS();
@@ -462,12 +482,17 @@ static void run_loop()
                     env = argp;
                     env->up = SCM_CLOSURE(val0)->env;
                     pc = SCM_CLOSURE(val0)->code;
-                } else {
-                    /* Generic function */
+                } else if (SCM_PROCEDURE_TYPE(val0) == SCM_PROC_GENERIC) {
+                    /* we have no applicable methods.  call fallback fn. */
                     env = argp;
                     SAVE_REGS();
-                    val0 = SCM_CLASS_OF(val0)->apply(val0, argp->data, argcnt);
+                    val0 = SCM_GENERIC(val0)->fallback(argp->data,
+                                                       argcnt,
+                                                       SCM_GENERIC(val0));
                     RESTORE_REGS();
+                } else {
+                    /* it's method. */
+                    Scm_Error("method not supported yet.");
                 }
                 continue;
             }
