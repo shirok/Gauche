@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.29 2002-06-05 10:40:41 shirok Exp $
+ *  $Id: charconv.c,v 1.30 2002-06-09 09:38:41 shirok Exp $
  */
 
 #include <string.h>
@@ -135,8 +135,22 @@ static int conv_input_filler(ScmPort *port, int mincnt)
     insize = info->ptr - info->buf;
     nread = Scm_Getz(info->ptr, info->bufsiz - insize, info->remote);
     if (nread <= 0) {
-        if (info->ownerp) Scm_ClosePort(info->remote);
-        if (insize == 0) return 0; /* All done. */
+        /* input reached EOF.  finish the output state */
+        if (insize == 0) {
+            outroom = SCM_PORT_BUFFER_ROOM(port);
+            result = jconv_reset(info, outbuf, outroom);
+            if (result < 0) {
+                /* The port buffer doesn't have enough space to contain the
+                   finishing sequence.  Its unusual, for the port buffer
+                   must be almost empty at this time, and the finishing
+                   sequence is usually just a few bytes.
+                   We signal an error. */
+                Scm_Error("couldn't flush the ending escape sequence in the character encoding conversion port (%s -> %s).  possibly an implementation error",
+                          info->fromCode, info->toCode);
+            }
+            if (info->ownerp) Scm_ClosePort(info->remote);
+            return result;
+        }
     } else {
         insize += nread;
     }
@@ -153,7 +167,7 @@ static int conv_input_filler(ScmPort *port, int mincnt)
     fprintf(stderr, "<= r=%d, in(%p)%d out(%p)%d\n",
             result, inbuf, inroom, outbuf, outroom);
 #endif
-    if (result != (size_t)-1) {
+    if (result >= 0) {
         /* Conversion is done completely. */
         /* NB: There are cases that some bytes are left in the input buffer
            even iconv returns positive value.  We need to shift those bytes. */
@@ -168,7 +182,7 @@ static int conv_input_filler(ScmPort *port, int mincnt)
     }
 
     /* we've got an error. */
-    if (errno == EINVAL || errno == E2BIG) {
+    if (result == INPUT_NOT_ENOUGH || result == OUTPUT_NOT_ENOUGH) {
         /* Conversion stopped due to an incomplete character at the
            end of the input buffer, or the output buffer is full.
            We shift the unconverted bytes to the beginning of input
@@ -285,9 +299,23 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
 static int conv_output_closer(ScmPort *port)
 {
     ScmConvInfo *info = (ScmConvInfo*)port->src.buf.data;
+    int r;
+    
+    /* if there's remaining bytes in buf, send them to the remote port. */
     if (info->ptr > info->buf) {
         Scm_Putz(info->buf, info->ptr - info->buf, info->remote);
+        info->ptr = info->buf;
     }
+    /* sends out the closing sequence, if any */
+    r = jconv_reset(info, info->buf, info->bufsiz);
+    if (r < 0) {
+        Scm_Error("something wrong in resetting output character encoding conversion (%s -> %s).  possibly implementation error.",
+                  info->fromCode, info->toCode);
+    }
+    if (r > 0) {
+        Scm_Putz(info->buf, r, info->remote);
+    }
+    /* flush remove port */
     Scm_Flush(info->remote);
     if (info->ownerp) Scm_ClosePort(info->remote);
     return jconv_close(info);
@@ -317,8 +345,8 @@ static int conv_output_flusher(ScmPort *port, int mincnt)
         fprintf(stderr, "<= r=%d, in(%p)%d out(%p)%d\n",
                 result, inbuf, inroom, outbuf, outroom);
 #endif
-        if (result == (size_t)-1) {
-            if (errno == EINVAL) {
+        if (result < 0) {
+            if (result == INPUT_NOT_ENOUGH) {
 #ifndef GLIBC_2_1_ICONV_BUG
                 /* Conversion stopped due to an incomplete character at the
                    end of the input buffer.  We just return # of bytes
@@ -333,7 +361,7 @@ static int conv_output_flusher(ScmPort *port, int mincnt)
                 info->ptr = info->buf;
                 return len - inroom;
 #endif
-            } else if (errno == E2BIG) {
+            } else if (result == OUTPUT_NOT_ENOUGH) {
                 /* Output buffer got full.  Flush it, and continue
                    conversion. */
                 Scm_Putz(info->buf, outbuf - info->buf, info->remote);
@@ -430,7 +458,7 @@ static const signed char eucjp[][256] = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*5*/
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*6*/
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*7*/
-       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, 2,-1, /*8*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, 2, 3, /*8*/
        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*9*/
        -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*A*/
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*B*/
@@ -477,6 +505,44 @@ static const signed char eucjp[][256] = {
        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*E*/
        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*F*/
     },
+    /* EUC-JP JISX0212 or JISX0213 plane 2, first byte */
+    {/* 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*0*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*1*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*2*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*3*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*4*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*5*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*6*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*7*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*8*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*9*/
+       -1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, /*A*/
+        4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, /*B*/
+        4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, /*C*/
+        4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, /*D*/
+        4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, /*E*/
+        4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,-1, /*F*/
+    },
+    /* EUC-JP JISX0212 or JISX0213 plane 2, second byte */
+    {/* 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*0*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*1*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*2*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*3*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*4*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*5*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*6*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*7*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*8*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*9*/
+       -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*A*/
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*B*/
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*C*/
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*D*/
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*E*/
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-1, /*F*/
+    },
 };
 
 static const signed char sjis[][256] = {
@@ -490,14 +556,14 @@ static const signed char sjis[][256] = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*5*/
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*6*/
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*7*/
-        0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*8*/
+       -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*8*/
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*9*/
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*A*/
+       -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*A*/
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*B*/
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*C*/
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*D*/
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*E*/
-       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*F*/
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, /*F*/
     },
     /* SJIS second byte dispatch */
     {/* 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F*/
@@ -650,7 +716,7 @@ static const char *guess_jp(const char *buf, int buflen, void *data)
         if (c == 0x1b) {
             if (i < buflen-1) {
                 c = (unsigned char)buf[++i];
-                if (c == '$' || c == '(') return "CSISO2022JP";
+                if (c == '$' || c == '(') return "ISO2022JP";
             }
         }
         if (eucstat >= 0) {
@@ -673,8 +739,8 @@ static const char *guess_jp(const char *buf, int buflen, void *data)
     /* Now, we have ambigous code. */
 #if defined GAUCHE_CHAR_ENCODING_EUC_JP
     if (eucstat >= 0) return "EUCJP";
-    if (sjisstat >= 0) return "SJIS";
     if (utf8stat >= 0) return "UTF-8";
+    if (sjisstat >= 0) return "SJIS";
     return NULL;
 #elif defined GAUCHE_CHAR_ENCODING_UTF_8
     if (utf8stat >= 0) return "UTF-8";

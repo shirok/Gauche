@@ -1,7 +1,7 @@
 /*
  * charconv.h - character code conversion library
  *
- *  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.h.in,v 1.6 2002-06-08 10:08:22 shirok Exp $
+ *  $Id: charconv.h.in,v 1.7 2002-06-09 09:38:42 shirok Exp $
  */
 
 #ifndef GAUCHE_CHARCONV_H
@@ -36,6 +36,7 @@ struct ScmConvInfoRec;
 
 typedef int (*ScmConvProc)(struct ScmConvInfoRec*, const char*, int,
                            char*, int, int*);
+typedef int (*ScmConvReset)(struct ScmConvInfoRec*, char*, int);
 typedef int (*ScmConvHandler)(struct ScmConvInfoRec*, const char **, int*,
                               char**, int*);
 
@@ -43,6 +44,7 @@ typedef int (*ScmConvHandler)(struct ScmConvInfoRec*, const char **, int*,
 typedef struct ScmConvInfoRec {
     ScmConvHandler jconv;       /* jconv handler */
     ScmConvProc convproc[2];    /* conversion routine */
+    ScmConvReset reset;         /* reset routine */
     iconv_t handle;             /* iconv handle, if the conversion is
                                    handled by iconv */
     const char *fromCode;       /* convert from ... */
@@ -83,10 +85,16 @@ extern const char *Scm_GuessCES(const char *code,
                                 const char *buf,
                                 int buflen);
 
+/* jconv error code */
+#define ILLEGAL_SEQUENCE  -1
+#define INPUT_NOT_ENOUGH  -2
+#define OUTPUT_NOT_ENOUGH -3
+
 extern ScmConvInfo *jconv_open(const char *toCode, const char *fromCode);
 extern int jconv_close(ScmConvInfo*);
 extern int jconv(ScmConvInfo*, const char **inptr, int *inroom,
                  char **outptr, int *outroom);
+extern int jconv_reset(ScmConvInfo *, char *outptr, int outroom);
 
 #ifdef __cplusplus
 }

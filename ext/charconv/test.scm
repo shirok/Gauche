@@ -58,26 +58,34 @@
     ))
 
 (map-test test-input "data/jp1"
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 (map-test test-input "data/jp2"
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
+(map-test test-input "data/jp3"
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 (map-test test-input "data/kr1"
-          '("EUCKR" "UTF-8" "CSISO2022KR")
-          '("EUCKR" "UTF-8" "CSISO2022KR"))
+          '("EUCKR" "UTF-8" "ISO2022KR")
+          '("EUCKR" "UTF-8" "ISO2022KR"))
 
 ;; autodetect tester
 (map-test (lambda (file from to)
             (test-input file from to "*JP"))
           "data/jp1"
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 (map-test (lambda (file from to)
             (test-input file from to "*JP"))
           "data/jp2"
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
+(map-test (lambda (file from to)
+            (test-input file from to "*JP"))
+          "data/jp3"
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 
 ;;--------------------------------------------------------------------
 (test-section "output conversion")
@@ -115,40 +123,53 @@
     (else '())))
 
 (map-test test-output/byte "data/jp1"
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 (map-test test-output/chunk256 "data/jp1"
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 (map-test test-output/chunk20 "data/jp1"
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 (map-test test-output/char "data/jp1"
           internal-enc
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 
 (map-test test-output/byte "data/jp2"
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 (map-test test-output/chunk256 "data/jp2"
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 (map-test test-output/chunk20 "data/jp2"
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 (map-test test-output/char "data/jp2"
           internal-enc
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
+
+(map-test test-output/byte "data/jp3"
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
+(map-test test-output/chunk256 "data/jp3"
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
+(map-test test-output/chunk20 "data/jp3"
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
+(map-test test-output/char "data/jp3"
+          internal-enc
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 
 (map-test test-output/byte "data/kr1"
-          '("EUCKR" "UTF-8" "CSISO2022KR")
-          '("EUCKR" "UTF-8" "CSISO2022KR"))
+          '("EUCKR" "UTF-8" "ISO2022KR")
+          '("EUCKR" "UTF-8" "ISO2022KR"))
 (map-test test-output/chunk256 "data/kr1"
-          '("EUCKR" "UTF-8" "CSISO2022KR")
-          '("EUCKR" "UTF-8" "CSISO2022KR"))
+          '("EUCKR" "UTF-8" "ISO2022KR")
+          '("EUCKR" "UTF-8" "ISO2022KR"))
 (map-test test-output/chunk20 "data/kr1"
-          '("EUCKR" "UTF-8" "CSISO2022KR")
-          '("EUCKR" "UTF-8" "CSISO2022KR"))
+          '("EUCKR" "UTF-8" "ISO2022KR")
+          '("EUCKR" "UTF-8" "ISO2022KR"))
 
 ;;--------------------------------------------------------------------
 (test-section "code guessing")
@@ -161,10 +182,13 @@
             (ces-guess-from-string (file->string infile) scheme)))))
 
 (map-test test-guess "data/jp1"
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
           '("*JP"))
 (map-test test-guess "data/jp2"
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("*JP"))
+(map-test test-guess "data/jp3"
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
           '("*JP"))
 
 ;;--------------------------------------------------------------------
@@ -185,11 +209,14 @@
     ))
 
 (map-test test-string "data/jp1"
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 (map-test test-string "data/jp2"
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
-          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP"))
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
+(map-test test-string "data/jp3"
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
+          '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 
 
 (test-end)

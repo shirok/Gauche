@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: jconv.c,v 1.5 2002-06-08 10:08:22 shirok Exp $
+ *  $Id: jconv.c,v 1.6 2002-06-09 09:38:42 shirok Exp $
  */
 
 /* Some iconv() implementations don't support japanese character encodings,
@@ -29,10 +29,6 @@
  */
 
 #include "charconv.h"
-
-#define ILLEGAL_SEQUENCE  -1
-#define INPUT_NOT_ENOUGH  -2
-#define OUTPUT_NOT_ENOUGH -3
 
 #define INCHK(n)   do{if (inroom < (n)) return INPUT_NOT_ENOUGH;}while(0)
 #define OUTCHK(n)  do{if (outroom < (n)) return OUTPUT_NOT_ENOUGH;}while(0)
@@ -895,6 +891,10 @@ static int jis2eucj(ScmConvInfo *cinfo, const char *inptr, int inroom,
         r = jis_esc(cinfo, inptr+inoffset, inroom-inoffset);
         if (r < 0) return r;
         inoffset += r;
+        if (inoffset >= inroom) {
+            *outchars = 0;
+            return inoffset;
+        }
         j0 = inptr[inoffset];
     }
     
@@ -978,7 +978,7 @@ static int jis_ensure_state(ScmConvInfo *cinfo, int newstate, int outbytes,
     const char *escseq = NULL;
     int esclen = 0;
     
-    if (cinfo->istate == newstate) return 0;
+    if (cinfo->ostate == newstate) return 0;
     switch (newstate) {
     case JIS_ASCII:
         escseq = "\033(B";  esclen = 3; break;
@@ -996,7 +996,7 @@ static int jis_ensure_state(ScmConvInfo *cinfo, int newstate, int outbytes,
     }
     OUTCHK(esclen + outbytes);
     memcpy(outptr, escseq, esclen);
-    cinfo->istate = newstate;
+    cinfo->ostate = newstate;
     return esclen;
 }
 
@@ -1056,6 +1056,24 @@ static int eucj2jis(ScmConvInfo *cinfo, const char *inptr, int inroom,
     return ILLEGAL_SEQUENCE;
 }
 
+/* reset proc */
+static int jis_reset(ScmConvInfo *cinfo, char *outptr, int outroom)
+{
+    if (outptr == NULL) {
+        /* just reset */
+        cinfo->ostate = JIS_ASCII;
+        return 0;
+    } else {
+        if (cinfo->ostate == JIS_ASCII) return 0;
+        if (outroom < 3) return OUTPUT_NOT_ENOUGH;
+        outptr[0] = 0x1b;
+        outptr[1] = '(';
+        outptr[2] = 'B';
+        cinfo->ostate = JIS_ASCII;
+        return 3;
+    }
+}
+
 /*=================================================================
  * EUC_JP
  */
@@ -1089,11 +1107,12 @@ enum {
 static struct conv_converter_rec {
     ScmConvProc inconv;
     ScmConvProc outconv;
+    ScmConvReset reset;
 } conv_converter[] = {
-    { eucj2eucj, eucj2eucj },
-    { sjis2eucj, eucj2sjis },
-    { utf2eucj,  eucj2utf  },
-    { jis2eucj,  eucj2jis  },
+    { eucj2eucj, eucj2eucj, NULL },
+    { sjis2eucj, eucj2sjis, NULL },
+    { utf2eucj,  eucj2utf,  NULL },
+    { jis2eucj,  eucj2jis,  jis_reset },
 };
 
 /* map convesion name to the canonical code */
@@ -1148,7 +1167,7 @@ static int conv_name_find(const char *name)
 static int jconv_error(ScmConvInfo *info, int retval, int converted)
 {
     if (retval == ILLEGAL_SEQUENCE) {
-        return -1;
+        return retval;
     } if (retval == INPUT_NOT_ENOUGH || retval == OUTPUT_NOT_ENOUGH) {
         return converted;
     } else {
@@ -1228,8 +1247,7 @@ static int jconv_1tier(ScmConvInfo *info, const char **iptr, int *iroom,
     *iroom = inr;
     *optr = outp;
     *oroom = outr;
-    if (converted >= 0) return converted;
-    else return EILSEQ;
+    return converted;
 }
    
 /* case (4) */
@@ -1254,10 +1272,14 @@ static int jconv_2tier(ScmConvInfo *info, const char **iptr, int *iroom,
             converted = jconv_error(info, inchars, converted);
             break;
         }
-        bufchars = ocvt(info, buf, bufchars, outp, outr, &outchars);
-        if (bufchars <= 0) {
-            converted = jconv_error(info, bufchars, converted);
-            break;
+        if (bufchars == 0) {
+            outchars = 0;
+        } else {
+            bufchars = ocvt(info, buf, bufchars, outp, outr, &outchars);
+            if (bufchars <= 0) {
+                converted = jconv_error(info, bufchars, converted);
+                break;
+            }
         }
         converted += inchars;
         inp += inchars;
@@ -1269,18 +1291,39 @@ static int jconv_2tier(ScmConvInfo *info, const char **iptr, int *iroom,
     *iroom = inr;
     *optr = outp;
     *oroom = outr;
-    if (converted >= 0) return converted;
-    else return EILSEQ;
+    return converted;
 }
 
 /* case (5) */
 static int jconv_iconv(ScmConvInfo *info, const char **iptr, int *iroom,
                        char **optr, int *oroom)
 {
+    size_t r;
 #ifdef JCONV_DEBUG
     fprintf(stderr, "jconv_iconv %s->%s\n", info->fromCode, info->toCode);
 #endif
-    return iconv(info->handle, (char **)iptr, iroom, optr, oroom);
+    r = iconv(info->handle, (char **)iptr, iroom, optr, oroom);
+    if (r == (size_t)-1) {
+        if (errno == EILSEQ) return ILLEGAL_SEQUENCE;
+        if (errno == EINVAL) return INPUT_NOT_ENOUGH;
+        if (errno == E2BIG)  return OUTPUT_NOT_ENOUGH;
+        Scm_Panic("jconv_iconv: unknown error number %d\n", errno);
+    } else {
+        return (int)r;
+    }
+}
+
+/* reset routine for iconv */
+static int jconv_iconv_reset(ScmConvInfo *info, char *optr, int oroom)
+{
+    int oroom_prev = oroom;
+    size_t r = iconv(info->handle, NULL, 0, &optr, &oroom);
+    if (r == (size_t)-1) {
+        if (errno == E2BIG)  return OUTPUT_NOT_ENOUGH;
+        Scm_Panic("jconv_iconv_reset: unknown error number %d\n", errno);
+    } else {
+        return oroom_prev - oroom;
+    }
 }
 
 /*------------------------------------------------------------------
@@ -1294,6 +1337,7 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode)
     ScmConvHandler handler = NULL;
     int incode, outcode;
     ScmConvProc convproc[2];
+    ScmConvReset reset;
     iconv_t handle = (iconv_t)-1;
 
     incode  = conv_name_find(fromCode);
@@ -1306,6 +1350,7 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode)
         if (handle == (iconv_t)-1) return NULL;
         handler = jconv_iconv;
         convproc[0] = convproc[1] = NULL;
+        reset = jconv_iconv_reset;
 #else /*!HAVE_ICONV_H*/
         return NULL;
 #endif
@@ -1313,26 +1358,31 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode)
         /* pattern (1) */
         handler = jconv_ident;
         convproc[0] = convproc[1] = NULL;
+        reset = NULL;
     } else if (incode == JCODE_EUCJ) {
         /* pattern (2) */
         handler = jconv_1tier;
         convproc[0] = conv_converter[outcode].outconv;
         convproc[1] = NULL;
+        reset = conv_converter[outcode].reset;
     } else if (outcode == JCODE_EUCJ) {
         /* pattern (3) */
         handler = jconv_1tier;
         convproc[0] = conv_converter[incode].inconv;
         convproc[1] = NULL;
+        reset = NULL;
     } else {
         /* pattern (4) */
         handler = jconv_2tier;
         convproc[0] = conv_converter[incode].inconv;
         convproc[1] = conv_converter[outcode].outconv;
+        reset = conv_converter[outcode].reset;
     }
     info = SCM_NEW(ScmConvInfo);
     info->jconv = handler;
     info->convproc[0] = convproc[0];
     info->convproc[1] = convproc[1];
+    info->reset = reset;
     info->handle = handle;
     info->toCode = toCode;
     info->istate = info->ostate = JIS_ASCII;
@@ -1366,3 +1416,14 @@ int jconv(ScmConvInfo *info,
     return info->jconv(info, inptr, inroom, outptr, outroom);
 }
 
+/*------------------------------------------------------------------
+ * JCONV_RESET - reset
+ */
+int jconv_reset(ScmConvInfo *info, char *outptr, int outroom)
+{
+    if (info->reset) {
+        return info->reset(info, outptr, outroom);
+    } else {
+        return 0;
+    }
+}
