@@ -1,5 +1,9 @@
 2004-05-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.c (compile_define): added check to prevent non-toplevel
+	  use of define family ('internal' defines should be resolved
+	  elsewhere).
+
 	* lib/text/html-lite.scm (frameset): added frame-related tags
 	  (patch from Nekoie).
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.107 2004-01-25 11:11:38 shirok Exp $
+ *  $Id: compile.c,v 1.108 2004-05-21 11:40:21 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -660,9 +660,24 @@ static ScmObj compile_define(ScmObj form, ScmObj env, int ctx,
     ScmObj var, val, tail = SCM_CDR(form);
     ScmObj code = SCM_NIL, codetail = SCM_NIL;
     ScmModule *module = NULL;
-    int in_module_p = (data == (void*)DEFINE_TYPE_IN_MODULE);
+    int type = (int)(long)data;
+
+    /* See if we are called in non-toplevel env.
+       NB: this isn't checked until Gauche 0.8, and there may be
+       some code that depends on the fact that one can use define-in-module
+       in non-toplevel env.  That should be forbidden in future, but for
+       now we just warn it to the user. */
+    if (!SCM_NULLP(env)) {
+        if (type == DEFINE_TYPE_IN_MODULE) {
+            Scm_Warn("%S is used at non-toplevel: %S",
+                     SCM_CAR(form), form);
+        } else {
+            Scm_Error("%S is used at non-toplevel: %S",
+                      SCM_CAR(form), form);
+        }
+    }
     
-    if (in_module_p) {
+    if (type == DEFINE_TYPE_IN_MODULE) {
         ScmObj mod;
         if (!SCM_PAIRP(tail)) Scm_Error("syntax error: %S", form);
         mod = SCM_CAR(tail);
@@ -696,7 +711,7 @@ static ScmObj compile_define(ScmObj form, ScmObj env, int ctx,
     }
 
     ADDCODE(val);
-    if (data == (void*)DEFINE_TYPE_CONST) {
+    if (type == DEFINE_TYPE_CONST) {
         ADDCODE1(SCM_VM_INSN(SCM_VM_DEFINE_CONST));
     } else {
         ADDCODE1(SCM_VM_INSN(SCM_VM_DEFINE));
