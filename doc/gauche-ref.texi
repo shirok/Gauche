@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.184 2002-04-27 04:51:05 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.185 2002-04-29 05:09:41 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -6960,8 +6960,8 @@ the copying is done character by character, using C-version of
 @subsection File ports
 @c NODE ファイルポート
 
-@defun open-input-file filename &keyword if-does-not-exist element-type
-@defunx open-output-file filename &keyword if-does-not-exist if-exists element-type
+@defun open-input-file filename &keyword if-does-not-exist buffering element-type
+@defunx open-output-file filename &keyword if-does-not-exist if-exists buffering element-type
 [R5RS+]
 @c EN
 Opens a file @var{filename} for input or output, and
@@ -7048,6 +7048,24 @@ No action is taken, and the function returns @code{#f}.
 @c COMMON
 @end table
 
+@item :buffering
+@c EN
+This argument specifies the buffering mode.
+Either one of @code{:full}, @code{:modest} or @code{:none} can be specified
+for @code{open-input-port}, and one of @code{:full}, @code{:line} or
+@code{:none} can be specified for @code{open-output-port}.
+The port's buffering mode can be get/set by @code{port-buffering}.
+See the entry of @code{port-buffering} 
+(@xref{Common port operations}) for explanation of the buffering mode.
+@c JP
+この引数はバッファリングモードを指定します。
+@code{open-input-port}には@code{:full}、@code{:modest}、@code{:none}の
+いずれかが、@code{open-output-port}には@code{:full}、@code{:line}、@code{:none}
+のいすれかが指定できます。ポートのバッファリングモードは手続き@code{port-buffering}によって
+参照/変更可能です。バッファリングモードの詳しい説明は@code{port-buffering}のエントリ
+(@ref{Common port operations})を参照して下さい。
+@c COMMON
+
 @item :element-type
 @c EN
 This argument specifies the type of the file.
@@ -7057,21 +7075,23 @@ This argument specifies the type of the file.
 @table @code
 @item :character
 @c EN
-The file is opened in ``character'' (or ``text'') mode.
+The file is opened in "character" (or "text") mode.
 @c JP
 ファイルはキャラクタモード(テキストモード)でオープンされます。
 @c COMMON
 @item :binary
 @c EN
-The file is opened in ``binary'' mode.
+The file is opened in "binary" mode.
 @c JP
 ファイルはバイナリモードでオープンされます。
 @c COMMON
 @end table
 @c EN
-The two makes no difference on most Unix systems.
+@emph{In the current version, this argument is ignored and all files
+are opened in binary mode.  It doesn't make difference in the Unix platforms.}
 @c JP
-Unixシステムでは両者の動作に違いはありません。
+@emph{現在のバージョンでは、この引数は無視され、全てのファイルはバイナリモードで
+オープンされます。いずれにせよUnixプラットフォームでは違いはありません。}
 @c COMMON
 @end table
 
