@@ -30,12 +30,15 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: vport.scm,v 1.1 2004-11-01 12:03:54 shirok Exp $
+;;;  $Id: vport.scm,v 1.2 2004-11-02 02:38:22 shirok Exp $
 ;;;
 
 (define-module gauche.vport
+  (use gauche.uvector)
   (export <virtual-input-port>
           <virtual-output-port>
+          <buffered-input-port>
+          <buffered-output-port>
           ))
 (select-module gauche.vport)
 

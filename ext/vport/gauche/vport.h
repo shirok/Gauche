@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vport.h,v 1.2 2004-11-01 10:40:00 shirok Exp $
+ *  $Id: vport.h,v 1.3 2004-11-02 02:38:41 shirok Exp $
  */
 
 #ifndef GAUCHE_VPORT_H
@@ -44,7 +44,10 @@ SCM_CLASS_DECL(Scm_VirtualInputPortClass);
 SCM_CLASS_DECL(Scm_VirtualOutputPortClass);
 #define SCM_CLASS_VIRTUAL_OUTPUT_PORT   (&Scm_VirtualOutputPortClass)
 
-SCM_CLASS_DECL(Scm_BufferedPortClass);
-#define SCM_CLASS_BUFFERED_PORT    (&Scm_BufferedPortClass)
+SCM_CLASS_DECL(Scm_BufferedInputPortClass);
+#define SCM_CLASS_BUFFERED_INPUT_PORT   (&Scm_BufferedInputPortClass)
+
+SCM_CLASS_DECL(Scm_BufferedOutputPortClass);
+#define SCM_CLASS_BUFFERED_OUTPUT_PORT  (&Scm_BufferedOutputPortClass)
 
 #endif /* GAUCHE_VPORT_H */

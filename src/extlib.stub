@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.226 2004-10-31 21:57:21 shirok Exp $
+;;; $Id: extlib.stub,v 1.227 2004-11-02 02:38:42 shirok Exp $
 ;;;
 
 "
@@ -767,7 +767,7 @@
 
 ;; Buffered port
 ;; NB: the interface may be changed soon!!
-"static int bufport_closer(ScmPort *p)
+"static void bufport_closer(ScmPort *p)
  {
     if (SCM_PORT_DIR(p) == SCM_PORT_OUTPUT) {
        ScmObj scmflusher = SCM_OBJ(p->src.buf.data);
@@ -775,7 +775,6 @@
        if (siz > 0) Scm_Apply(scmflusher, SCM_LIST1(Scm_MakeString(p->src.buf.buffer, siz, siz, SCM_MAKSTR_INCOMPLETE|SCM_MAKSTR_COPYING)));
        Scm_Apply(scmflusher, SCM_LIST1(SCM_FALSE));
     }
-    return 0;
  }"
 
 "static int bufport_filler(ScmPort *p, int cnt)

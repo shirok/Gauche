@@ -13,10 +13,12 @@ OBJECTS = vport_head.$(OBJEXT) vport.$(OBJEXT) vportlib.$(OBJEXT) vport_tail.$(O
 
 GENERATED = Makefile vportlib.c vport_head.c vport_tail.c
 
+EXTRA_INCLUDES = -I$(srcdir)/../uvector
+
 all : $(LIBFILES)
 
 vport.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) vport.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+	$(MODLINK) vport.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
 
 vportlib.c : vportlib.stub
 

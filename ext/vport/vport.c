@@ -30,10 +30,11 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vport.c,v 1.6 2004-11-01 10:40:00 shirok Exp $
+ *  $Id: vport.c,v 1.7 2004-11-02 02:38:22 shirok Exp $
  */
 
 #include "gauche/vport.h"
+#include "gauche/uvector.h"
 #include <gauche/class.h>
 #include <gauche/extend.h>
 
@@ -194,7 +195,6 @@ static int vport_ready(ScmPort *p, int charp)
     SCM_ASSERT(data != NULL);
 
     if (!SCM_FALSEP(data->ready_proc)) {
-        int size;
         ScmObj s = Scm_Apply(data->ready_proc,
                              SCM_LIST1(SCM_MAKE_BOOL(charp)));
         return !SCM_FALSEP(s);
@@ -387,6 +387,8 @@ static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs)
         dir = SCM_PORT_INPUT;
     } else if (Scm_SubtypeP(klass, SCM_CLASS_VIRTUAL_OUTPUT_PORT)) {
         dir = SCM_PORT_OUTPUT;
+    } else {
+        Scm_Panic("vport_allocate: implementaion error (class wiring screwed?)");
     }
     port = Scm_MakeVirtualPort(klass, dir, &vtab);
     SCM_PORT(port)->src.vt.data = data;
@@ -473,15 +475,216 @@ static ScmClassStaticSlotSpec vioport_slots[] = {
  * <buffered-port>
  */
 
-#if 0
 static ScmObj bport_allocate(ScmClass *klass, ScmObj initargs);
-static void   bport_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_BufferedPortClass,
-                         bport_print, NULL, NULL,
-                         bport_allocate, NULL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_BufferedInputPortClass,
+                         vport_print, NULL, NULL,
+                         bport_allocate, vport_cpa);
 
-#endif
+SCM_DEFINE_BUILTIN_CLASS(Scm_BufferedOutputPortClass,
+                         vport_print, NULL, NULL,
+                         bport_allocate, vport_cpa);
+
+/*
+ * Scheme handlers.  They are visible from Scheme as instance slots.
+ */
+
+typedef struct bport_rec {
+    ScmObj fill_proc;           /* (U8vector) -> Maybe Int*/
+    ScmObj flush_proc;          /* (U8vector, Bool) -> Maybe Int */
+    ScmObj close_proc;          /* () -> () */
+    ScmObj ready_proc;          /* () -> Bool */
+    ScmObj filenum_proc;        /* () -> Maybe Int */
+    ScmObj seek_proc;           /* (Offset, Whence) -> Offset */
+} bport;
+
+/*------------------------------------------------------------
+ * Bport fill
+ */
+static int bport_fill(ScmPort *p, int cnt)
+{
+    bport *data = (bport*)p->src.buf.data;
+    ScmObj vec, r;
+    SCM_ASSERT(data != NULL);
+    if (SCM_FALSEP(data->fill_proc)) {
+        return 0;               /* indicates EOF */
+    }
+    vec = Scm_MakeU8VectorFromArrayShared(cnt,
+                                          (unsigned char*)p->src.buf.buffer);
+    r = Scm_Apply(data->fill_proc, SCM_LIST1(vec));
+    if (SCM_INTP(r)) return SCM_INT_VALUE(r);
+    else if (SCM_EOFP(r)) return 0;
+    else return -1;
+}
+
+/*------------------------------------------------------------
+ * Bport flush
+ */
+static int bport_flush(ScmPort *p, int cnt, int forcep)
+{
+    bport *data = (bport*)p->src.buf.data;
+    ScmObj vec, r;
+    SCM_ASSERT(data != NULL);
+    if (SCM_FALSEP(data->flush_proc)) {
+        return cnt;             /* blackhole */
+    }
+    vec = Scm_MakeU8VectorFromArrayShared(cnt,
+                                          (unsigned char*)p->src.buf.buffer);
+    r = Scm_Apply(data->flush_proc, SCM_LIST2(vec, SCM_MAKE_BOOL(forcep)));
+    if (SCM_INTP(r)) return SCM_INT_VALUE(r);
+    else if (SCM_EOFP(r)) return 0;
+    else return -1;
+}
+
+/*------------------------------------------------------------
+ * Bport close
+ */
+static void bport_close(ScmPort *p)
+{
+    bport *data = (bport*)p->src.vt.data;
+    SCM_ASSERT(data != NULL);
+    if (!SCM_FALSEP(data->close_proc)) {
+        Scm_Apply(data->close_proc, SCM_NIL);
+    }
+}
+
+/*------------------------------------------------------------
+ * Bport Ready
+ */
+static int bport_ready(ScmPort *p)
+{
+    bport *data = (bport*)p->src.vt.data;
+    SCM_ASSERT(data != NULL);
+
+    if (!SCM_FALSEP(data->ready_proc)) {
+        ScmObj s = Scm_Apply(data->ready_proc, SCM_NIL);
+        return !SCM_FALSEP(s);
+    } else {
+        /* if no method is given, always return #t */
+        return TRUE;
+    }
+}
+
+/*------------------------------------------------------------
+ * Bport filenum
+ */
+static int bport_filenum(ScmPort *p)
+{
+    bport *data = (bport*)p->src.vt.data;
+    SCM_ASSERT(data != NULL);
+
+    if (SCM_FALSEP(data->filenum_proc)) {
+        return -1;
+    } else {
+        ScmObj s = Scm_Apply(data->filenum_proc, SCM_NIL);
+        if (SCM_INTP(s)) return SCM_INT_VALUE(s);
+        else return -1;
+    }
+}
+
+/*------------------------------------------------------------
+ * Bport seek
+ */
+static off_t bport_seek(ScmPort *p, off_t off, int whence)
+{
+    bport *data = (bport*)p->src.vt.data;
+    SCM_ASSERT(data != NULL);
+    if (!SCM_FALSEP(data->seek_proc)) {
+        ScmObj r = Scm_Apply(data->seek_proc,
+                             SCM_LIST2(Scm_OffsetToInteger(off),
+                                       Scm_MakeInteger(whence)));
+        if (SCM_INTEGERP(r)) {
+            return Scm_IntegerToOffset(r);
+        }
+    }
+    return (off_t)-1;
+}
+
+/*------------------------------------------------------------
+ * Allocation & wiring
+ */
+
+static ScmObj bport_allocate(ScmClass *klass, ScmObj initargs)
+{
+    ScmObj port;
+    bport *data = SCM_NEW(bport);
+    ScmPortBuffer buf;
+    int dir;
+
+    data->fill_proc  = SCM_FALSE;
+    data->flush_proc = SCM_FALSE;
+    data->close_proc = SCM_FALSE;
+    data->ready_proc = SCM_FALSE;
+    data->filenum_proc = SCM_FALSE;
+    data->seek_proc  = SCM_FALSE;
+
+    buf.buffer  = NULL;
+    buf.current = NULL;
+    buf.end     = NULL;
+    buf.size    = 0;
+    buf.mode    = SCM_PORT_BUFFER_FULL;
+    buf.filler  = bport_fill;
+    buf.flusher = bport_flush;
+    buf.closer  = bport_close;
+    buf.ready   = bport_ready;
+    buf.filenum = bport_filenum;
+    buf.seeker  = bport_seek;
+    buf.data    = data;
+
+    if (Scm_SubtypeP(klass, SCM_CLASS_BUFFERED_INPUT_PORT)) {
+        dir = SCM_PORT_INPUT;
+    } else if (Scm_SubtypeP(klass, SCM_CLASS_BUFFERED_OUTPUT_PORT)) {
+        dir = SCM_PORT_OUTPUT;
+    } else {
+        Scm_Panic("bport_allocate: implementaion error (class wiring screwed?)");
+    }
+    port = Scm_MakeBufferedPort(klass, SCM_FALSE, dir, TRUE, &buf);
+    return port;
+}
+
+/* Accessors */
+#define BPORT_ACC(name)                                                 \
+    static ScmObj SCM_CPP_CAT3(bport_,name,_get) (ScmObj p)             \
+    {                                                                   \
+        bport *data = (bport*)SCM_PORT(p)->src.buf.data;                \
+        SCM_ASSERT(data != NULL);                                       \
+        return data->SCM_CPP_CAT(name,_proc);                           \
+    }                                                                   \
+    static void SCM_CPP_CAT3(bport_,name,_set) (ScmObj p, ScmObj v)     \
+    {                                                                   \
+        bport *data = (bport*)SCM_PORT(p)->src.buf.data;                \
+        SCM_ASSERT(data != NULL);                                       \
+        data->SCM_CPP_CAT(name,_proc) = v;                              \
+    }
+
+BPORT_ACC(fill)
+BPORT_ACC(ready)
+BPORT_ACC(flush)
+BPORT_ACC(close)
+BPORT_ACC(filenum)
+BPORT_ACC(seek)
+
+#define BPORT_SLOT(name)                                \
+    SCM_CLASS_SLOT_SPEC(#name,                          \
+                        SCM_CPP_CAT3(bport_,name,_get), \
+                        SCM_CPP_CAT3(bport_,name,_set))
+
+static ScmClassStaticSlotSpec biport_slots[] = {
+    BPORT_SLOT(fill),
+    BPORT_SLOT(ready),
+    BPORT_SLOT(close),
+    BPORT_SLOT(filenum),
+    BPORT_SLOT(seek),
+    SCM_CLASS_SLOT_SPEC_END()
+};
+
+static ScmClassStaticSlotSpec boport_slots[] = {
+    BPORT_SLOT(flush),
+    BPORT_SLOT(close),
+    BPORT_SLOT(filenum),
+    BPORT_SLOT(seek),
+    SCM_CLASS_SLOT_SPEC_END()
+};
 
 /*================================================================
  * Initialization
@@ -495,6 +698,10 @@ void Scm_Init_vport(void)
                         "<virtual-input-port>", mod, viport_slots, 0);
     Scm_InitStaticClass(&Scm_VirtualOutputPortClass,
                         "<virtual-output-port>", mod, voport_slots, 0);
+    Scm_InitStaticClass(&Scm_BufferedInputPortClass,
+                        "<buffered-input-port>", mod, biport_slots, 0);
+    Scm_InitStaticClass(&Scm_BufferedOutputPortClass,
+                        "<buffered-output-port>", mod, boport_slots, 0);
     Scm_Init_vportlib(mod);
 }
 

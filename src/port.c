@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.112 2004-11-01 10:40:01 shirok Exp $
+ *  $Id: port.c,v 1.113 2004-11-02 02:38:42 shirok Exp $
  */
 
 #include <unistd.h>
@@ -56,7 +56,7 @@ static void port_finalize(ScmObj obj, void* data);
 static void register_buffered_port(ScmPort *port);
 static void unregister_buffered_port(ScmPort *port);
 static void bufport_flush(ScmPort*, int, int);
-static int file_closer(ScmPort *p);
+static void file_closer(ScmPort *p);
 
 SCM_DEFINE_BASE_CLASS(Scm_PortClass,
                       ScmPort, /* instance type */
@@ -802,11 +802,11 @@ static int file_flusher(ScmPort *p, int cnt, int forcep)
     return nwrote;
 }
 
-static int file_closer(ScmPort *p)
+static void file_closer(ScmPort *p)
 {
     int fd = (int)p->src.buf.data;
     SCM_ASSERT(fd >= 0);
-    return close(fd);
+    close(fd);
 }
 
 static int file_ready(ScmPort *p)
@@ -1194,7 +1194,7 @@ static int coding_filler(ScmPort *p, int cnt)
     }
 }
 
-static int coding_closer(ScmPort *p)
+static void coding_closer(ScmPort *p)
 {
     coding_port_data *data = (coding_port_data*)p->src.buf.data;
     if (data->source) {
