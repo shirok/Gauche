@@ -5,8 +5,8 @@
 	
 	* src/gauche-config.in : records OBJEXT and EXEEXT.
 
-	* aclocal.m4, acinclude.m4 : added adjustment of OBJEXT and EXEEXT
-	  in AC_GAUCHE_CC macro.
+	* aclocal.m4, acinclude.m4 : added adjustment of OBJEXT, EXEEXT,
+	  SOEXT and DYLIBEXT in AC_GAUCHE_CC macro.
 	
 	* ext/Makefile.ext.in : expose BIN_INSTALL_DIR etc.
 
