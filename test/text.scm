@@ -70,8 +70,69 @@
 (test "delete" "h, w!"
       (lambda ()
         (string-tr "Hello, World!" "A-Za-z" "a-z" :delete #t)))
-'(test "complement" "Hello??World?"
+(test "complement" "Hello??World?"
       (lambda ()
         (string-tr "Hello, World!" "A-Za-z" "?*" :complement #t)))
+(test "complement" "H??????W?????"
+      (lambda ()
+        (string-tr "Hello, World!" "A-Z" "?*" :complement #t)))
+(test "complement & delete" "HelloWorld"
+      (lambda ()
+        (string-tr "Hello, World!" "A-Za-z" ""
+                   :complement #t :delete #t)))
+(test "squeeze" "helo,   world!!!!"
+      (lambda ()
+        (string-tr "Hello,   World!!!!" "A-Za-z" "a-z" :squeeze #t)))
+(test "squeeze & complement" "Hello, World!"
+      (lambda ()
+        (string-tr "Hello,   World!!!!" "A-Za-z" ""
+                   :squeeze #t :complement #t)))
+
+;; whole test over smaller table size
+(test "basic, table-size" "hELLO, wORLD!"
+      (lambda ()
+        (string-tr "Hello, World!" "A-Za-z" "a-zA-Z" :table-size 65)))
+(test "repeat, table-size" "h????, w????!"
+      (lambda ()
+        (string-tr "Hello, World!" "A-Za-z" "a-z?*" :table-size 66)))
+(test "repeat, table-size" "h????, w????!"
+      (lambda ()
+        (string-tr "Hello, World!" "A-Za-z" "a-z?*0" :table-size 98)))
+(test "repeat, table-size" "h???!, w!!??!"
+      (lambda ()
+        (string-tr "Hello, World!" "A-Za-z" "a-z?*13!*13" :table-size 99)))
+(test "delete, table-size" ", !"
+      (lambda ()
+        (string-tr "Hello, World!" "A-Za-z" ""
+                   :delete #t :table-size 32)))
+(test "delete, table-size" "H, W!"
+      (lambda ()
+        (string-tr "Hello, World!" "a-z" ""
+                   :delete #t :table-size 64)))
+(test "delete, table-size" "h, w!"
+      (lambda ()
+        (string-tr "Hello, World!" "A-Za-z" "a-z"
+                   :delete #t :table-size 68)))
+(test "complement, table-size" "Hello??World?"
+      (lambda ()
+        (string-tr "Hello, World!" "A-Za-z" "?*"
+                   :complement #t :table-size 87)))
+(test "complement, table-size" "H??????W?????"
+      (lambda ()
+        (string-tr "Hello, World!" "A-Z" "?*"
+                   :complement #t :table-size 2)))
+(test "complement & delete, table-size" "HelloWorld"
+      (lambda ()
+        (string-tr "Hello, World!" "A-Za-z" ""
+                   :complement #t :delete #t :table-size 70)))
+(test "squeeze, table-size" "helo,   world!!!!"
+      (lambda ()
+        (string-tr "Hello,   World!!!!" "A-Za-z" "a-z"
+                   :squeeze #t :table-size 65)))
+(test "squeeze & complement, table-size" "Hello, World!"
+      (lambda ()
+        (string-tr "Hello,   World!!!!" "A-Za-z" ""
+                   :squeeze #t :complement #t :table-size 103)))
+
 
 (test-end)
