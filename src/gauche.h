@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.70 2001-03-11 21:16:40 shiro Exp $
+ *  $Id: gauche.h,v 1.71 2001-03-12 04:19:39 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -646,8 +646,10 @@ extern ScmObj Scm_VectorToList(ScmVector *v);
 
 struct ScmPortRec {
     SCM_HEADER;
-    char direction;
-    char type;
+    char direction;             /* SCM_PORT_INPUT or SCM_PORT_OUTPUT */
+    char type;                  /* SCM_PORT_{FILE|ISTR|OSTR|PORT|CLOSED} */
+    char ownerp;                /* TRUE if this port owns underlying
+                                   file descriptor/stream */
     char bufcnt;                /* # of bytes in the incomplete buffer */
     char buf[SCM_CHAR_MAX_BYTES]; /* incomplete buffer */
     
@@ -682,16 +684,15 @@ typedef struct ScmProcPortInfoRec {
 } ScmProcPortInfo;
     
 typedef struct ScmPortVTableRec {
-    int       (*Getb)(ScmPort *);
-    int       (*Getc)(ScmPort *);
-    ScmObj    (*Getline)(ScmPort *);
-    int       (*Ready)(ScmPort *);
-    int       (*Putb)(ScmPort *, ScmByte);
-    int       (*Putc)(ScmPort *, ScmChar);
-    int       (*Putcstr)(ScmPort *, const char *);
-    int       (*Puts)(ScmPort *, ScmString *);
-    int       (*Close)(ScmPort *);
-    ScmProcPortInfo *(*Info)(ScmPort *);
+    int       (*Getb)(ScmPort *p);
+    int       (*Getc)(ScmPort *p);
+    ScmObj    (*Getline)(ScmPort *p);
+    int       (*Ready)(ScmPort *p);
+    int       (*Putb)(ScmPort *p, ScmByte b);
+    int       (*Putc)(ScmPort *p, ScmChar c);
+    int       (*Puts)(ScmPort *p, const char *buf, int size, int len);
+    int       (*Close)(ScmPort *p);
+    ScmProcPortInfo *(*Info)(ScmPort *p);
 } ScmPortVTable;
 
 enum ScmPortDirection {
@@ -727,7 +728,8 @@ extern ScmObj Scm_Stdout(void);
 extern ScmObj Scm_Stderr(void);
 
 extern ScmObj Scm_OpenFilePort(const char *path, const char *mode);
-extern ScmObj Scm_MakeFilePort(FILE *fp, ScmObj name, const char *mode);
+extern ScmObj Scm_MakeFilePort(FILE *fp, ScmObj name, const char *mode,
+                               int ownerp);
 
 extern ScmObj Scm_MakeInputStringPort(ScmString *str);
 extern ScmObj Scm_MakeOutputStringPort(void);
@@ -735,7 +737,7 @@ extern ScmObj Scm_GetOutputString(ScmPort *port);
 
 extern ScmObj Scm_MakeVirtualPort(int direction,
                                   ScmPortVTable *vtable,
-                                  void *clientData);
+                                  void *clientData, int ownerp);
 
 extern ScmObj Scm_PortName(ScmPort *port);
 extern int    Scm_PortLine(ScmPort *port);
@@ -797,10 +799,12 @@ extern ScmObj Scm_ReadLine(ScmPort *port);
 #define SCM__PROC_PUTC(c, port)                         \
     SCM_PORT(port)->src.proc.vtable->Putc(SCM_PORT(port), c)
 #define SCM__PROC_PUTCSTR(s, port)                      \
-    SCM_PORT(port)->src.proc.vtable->Putcstr(SCM_PORT(port), s)
-#define SCM__PROC_PUTS(s, port)                           \
-    SCM_PORT(port)->src.proc.vtable->Puts(SCM_PORT(port), \
-                                          SCM_STRING(s))
+    SCM_PORT(port)->src.proc.vtable->Puts(SCM_PORT(port), s, strlen(s), -1)
+#define SCM__PROC_PUTS(s, port)                                 \
+    SCM_PORT(port)->src.proc.vtable->Puts(SCM_PORT(port),       \
+                                          SCM_STRING_START(s),  \
+                                          SCM_STRING_SIZE(s),   \
+                                          SCM_STRING_LENGTH(s))
 
 #define SCM_PUTB(byte, port)                                            \
     do {                                                                \
