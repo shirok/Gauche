@@ -1,6 +1,3 @@
-/usr/lib/gauche/0.7.2
-/usr/lib/gauche/0.7.2/include
-/usr/lib/gauche/0.7.2/include/gauche
 /usr/lib/gauche/0.7.2/include/gauche/config.h
 /usr/lib/gauche/0.7.2/include/gauche/vm.h
 /usr/lib/gauche/0.7.2/include/gauche/vminsn.h
@@ -21,7 +18,6 @@
 /usr/lib/gauche/0.7.2/include/gc.h
 /usr/lib/gauche/0.7.2/include/gc_config_macros.h
 /usr/lib/gauche/0.7.2/include/gc_pthread_redirects.h
-/usr/lib/gauche/0.7.2/i686-pc-linux-gnu
 /usr/lib/gauche/0.7.2/i686-pc-linux-gnu/libgauche.so
 /usr/lib/gauche/0.7.2/i686-pc-linux-gnu/gosh
 /usr/lib/gauche/0.7.2/i686-pc-linux-gnu/gauche-config

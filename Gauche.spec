@@ -1,5 +1,5 @@
 # Spec file to build Gauche RPM package
-# $Id: Gauche.spec,v 1.25 2003-10-05 09:34:35 shirok Exp $
+# $Id: Gauche.spec,v 1.26 2003-10-05 10:17:19 shirok Exp $
 #
 # In order to build different encoding-specific packages (like
 # Gauche-euc-jp, etc) from a single source rpm, the actual package
@@ -21,13 +21,12 @@ Name: Gauche
 Version: %{version}
 Release: 1
 Source: Gauche-%{version}.tgz
-CopyRight: modBSD
+CopyRight: revised BSD
 Group: Development/Languages
 Packager: Shiro Kawai (shiro@acm.org)
 Buildroot: %{_tmppath}/rpm
 URL: http://www.shiro.dreamhost.com/scheme/gauche/
 #Prefix: /usr
-Requires: gdbm >= 1.8.0
 
 %description
 Gauche is a Scheme interpreter conforming Revised^5 Report on
@@ -39,7 +38,8 @@ It can handle multibyte character strings natively.
 Summary: Scheme script interpreter with multibyte character handling
 Group: Development/Languages
 Provides: Gauche libgauche.so
-CopyRight: modBSD
+Copyright: revised BSD
+Requires: Gauche-common
 %description %{encoding}
 Gauche is a Scheme interpreter conforming Revised^5 Report on
 Algorithmic Language Scheme.  It is designed for rapid development
@@ -50,7 +50,7 @@ This package is compiled with %{encoding} as the native character encoding.
 %package common
 Summary: Scheme script interpreter with multibyte character handling
 Group: Development/Languages
-Copyright: modBSD
+Copyright: revised BSD
 %description common
 Gauche is a Scheme interpreter conforming Revised^5 Report on
 Algorithmic Language Scheme.  It is designed for rapid development
@@ -65,6 +65,7 @@ Summary: gdbm binding for Gauche Scheme system
 Group: Development/Languages
 Copyright: LGPL
 Provides: Gauche-gdbm
+Requires: gdbm >= 1.8.0, Gauche-%{encoding}
 %description gdbm-%{encoding}
 This package adds gdbm binding to the Gauche Scheme system.
 
@@ -98,14 +99,14 @@ make prefix=${RPM_BUILD_ROOT}/usr install-doc
 # creates slib catalog, if possible.
 /usr/bin/gosh -u slib -e "(require 'logical)" -e "(exit 0)" > /dev/null 2>&1 || echo
 
-%files common -f rpmfiles.common
+%files common -f rpmfiles-common.txt
 %defattr(-,root,root)
 %doc COPYING ChangeLog INSTALL INSTALL.eucjp Gauche.spec
 /usr/share/info/
 /usr/share/man/man1/
 /usr/share/gauche/site
 
-%files %{encoding} -f rpmfiles.encoding
+%files %{encoding} -f rpmfiles-encoding.txt
 %defattr(-,root,root)
 /usr/bin/gosh
 /usr/bin/gauche-config
@@ -115,7 +116,7 @@ make prefix=${RPM_BUILD_ROOT}/usr install-doc
 /usr/lib/libgauche.so.0.0.0
 /usr/lib/gauche/site/
 
-%files gdbm-%{encoding} -f rpmfiles.gdbm
+%files gdbm-%{encoding} -f rpmfiles-gdbm.txt
 %defattr(-,root,root)
 
 %changelog

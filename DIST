@@ -144,10 +144,10 @@ if [ "$rpmfiles" = "yes" ]; then
   rm -f rpmfiles-common.txt rpmfiles-encoding.txt rpmfiles-gdbm.txt
   if [ ! -f VERSION ]; then echo "No VERSION; do DIST tgz first"; exit 1; fi
   VERSION=`cat VERSION`
-  find /usr/share/gauche/$VERSION -print | grep -v 'dbm/[ong]dbm' > rpmfiles-common.txt
-  find /usr/share/gauche/$VERSION -print | grep 'dbm/[ong]dbm' > rpmfiles-gdbm.txt
-  find /usr/lib/gauche/$VERSION -print | grep -v '/[ong]dbm' > rpmfiles-encoding.txt
-  find /usr/lib/gauche/$VERSION -print | grep '/[ong]dbm' >> rpmfiles-gdbm.txt
+  find /usr/share/gauche/$VERSION -type f -print | grep -v 'dbm/[ong]dbm' > rpmfiles-common.txt
+  find /usr/share/gauche/$VERSION -type f -print | grep 'dbm/[ong]dbm' > rpmfiles-gdbm.txt
+  find /usr/lib/gauche/$VERSION -type f -print | grep -v '/[ong]dbm' > rpmfiles-encoding.txt
+  find /usr/lib/gauche/$VERSION -type f -print | grep '/[ong]dbm' >> rpmfiles-gdbm.txt
 fi
 
 if [ "$rpm" = "yes" ]; then
@@ -164,7 +164,7 @@ if [ "$rpm" = "yes" ]; then
   echo "UTF8, i686 ----------------------------------------------"
   rm -f $spec
   cat Gauche.spec | sed 's/%define encoding .*/%define encoding utf8/' > $spec
-  rpm -bb --clean --target i686 $spec
+  rpmbuild -bb --clean --target i686 $spec
 #  echo "EUC, i386 -----------------------------------------------"
 #  rm -f $spec
 #  cat Gauche.spec | sed 's/%define encoding .*/%define encoding eucjp/' > $spec
@@ -172,7 +172,7 @@ if [ "$rpm" = "yes" ]; then
   echo "EUC, i686 -----------------------------------------------"
   rm -f $spec
   cat Gauche.spec | sed 's/%define encoding .*/%define encoding eucjp/' > $spec
-  rpm -ba --clean --target i686 $spec
+  rpmbuild -ba --clean --target i686 $spec
   echo "Finishing..."
 #  mv $RPMDIR/RPMS/i386/Gauche-eucjp-*.rpm $TGZ_DEST
 #  mv $RPMDIR/RPMS/i386/Gauche-utf8-*.rpm $TGZ_DEST
