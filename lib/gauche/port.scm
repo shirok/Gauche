@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: port.scm,v 1.2 2001-10-04 11:46:05 shirok Exp $
+;;;  $Id: port.scm,v 1.3 2001-10-05 08:06:40 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -70,3 +70,12 @@
         (reverse! r)
         (loop (reader) (cons (fn item) r)))))
 
+;; useful for error messages
+(define (port-position-prefix port)
+  (let ((n (port-name port))
+        (l (port-current-line port)))
+    (if n
+        (if (positive? l)
+            (format #f "~s:line ~a: " n l)
+            (format #f "~s: " n))
+        "")))
