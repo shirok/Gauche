@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: regexp.scm,v 1.6 2001-09-23 11:34:17 shirok Exp $
+;;;  $Id: regexp.scm,v 1.7 2001-09-23 21:57:19 shirok Exp $
 ;;;
 
 (define-module gauche.regexp
@@ -88,30 +88,40 @@
        (rxmatch-case #t temp strp ?clause ...)))
     ))
 
+;;---------------------------------------------------------
+;; regexp replace
+
 ;; aux routine for regexp-replace[-all]
 ;; "abc\\1de\\3" => '("abc" 1 "de" 3)
 (define (regexp-parse-subpattern sub)
-  (let loop ((sub sub) (r '()))
-    (receive (head rest) (string-scan sub #\\ 'both)
-      (if (not head)
-          (reverse (cons sub r))
-          (let ((i (string-skip rest #[\d])))
-            (cond ((not i) (reverse (list* (string->number rest) head r)))
-                  ((= i 0) (loop rest (list* head r)))
-                  (else
-                   (loop (string-drop rest i)
-                         (list* (string->number (string-take rest i)) head r)))
-                  ))))
-    ))
+  (cond
+   ((string? sub)
+    (let loop ((sub sub) (r '()))
+      (receive (head rest) (string-scan sub #\\ 'both)
+        (if (not head)
+            (reverse (cons sub r))
+            (let ((i (string-skip rest #[\d])))
+              (cond ((not i) (reverse (list* (string->number rest) head r)))
+                    ((= i 0) (loop rest (list* head r)))
+                    (else
+                     (loop (string-drop rest i)
+                           (list* (string->number (string-take rest i))
+                                  head r)))
+                    ))))))
+   ((procedure? sub) sub)
+   (else (error "string or procedure required, but got" sub))))
 
+;; internal loop
 (define (regexp-replace-rec match subpat out rec)
   (display (rxmatch-before match) out)
-  (for-each (lambda (pat)
-              (display (if (number? pat)
-                           (rxmatch-substring match pat)
-                           pat)
-                       out))
-            subpat)
+  (if (procedure? subpat)
+      (display (subpat match) out)
+      (for-each (lambda (pat)
+                  (display (if (number? pat)
+                               (rxmatch-substring match pat)
+                               pat)
+                           out))
+                subpat))
   (rec (rxmatch-after match)))
 
 (define (regexp-replace rx string sub)
@@ -124,7 +134,7 @@
                                 (lambda (str) (display str out)))))
         string)))
 
-;; The inner call is redundant to avoid creation of output string
+;; The inner call is awkward to avoid creation of output string
 ;; when no match at all.
 (define (regexp-replace-all rx string sub)
   (let ((subpat (regexp-parse-subpattern sub))
