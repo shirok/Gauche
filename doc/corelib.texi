@@ -8646,8 +8646,8 @@ it reads the first form of the code and see if it is a
 @deffn {Generic Function} object-compare obj1 obj2
 @end deffn
 
-@defun sort seq &optional cmfpn
-@defunx sort! seq &optional cmfpn
+@defun sort seq &optional cmpfn
+@defunx sort! seq &optional cmpfn
 @c EN
 Sorts elements in a sequence @var{seq} (a list or a vector) 
 in ascending order and returns the sorted sequence.
@@ -8695,6 +8695,15 @@ This might be changed later.
 @c COMMON
 @end defun
 
+@defun stable-sort seq cmpfn
+@defunx stable-sort! seq cmpfn
+Sort a sequence @var{seq} (a list or a vector), using stable sort algorithm
+(currently they are using merge sort).  
+The sorting order is specified by @code{cmpfn}, which is
+a procedure takes two elements of @var{list}, and returns @code{#t}
+if the first argument strictly precedes the second.
+Unlike @code{sort}/@code{sort!}, @var{cmpfn} cannot be omitted.
+@end defun
 
 @c ----------------------------------------------------------------------
 @node System interface,  , Comparison and sorting, Core library

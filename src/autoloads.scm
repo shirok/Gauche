@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.8 2004-04-10 12:14:17 fuyuki Exp $
+;;; $Id: autoloads.scm,v 1.9 2004-05-05 12:06:21 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.8 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.9 $.  DO NOT EDIT */"
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
 
@@ -187,5 +187,6 @@
 (autoload gauche.libutil  library-fold library-map library-for-each
                           library-exists? library-has-module?)
 
-(autoload gauche.sortutil sort sort! merge merge! sorted?)
+(autoload gauche.sortutil sort sort! merge merge! sorted?
+                          stable-sort stable-sort!)
 
