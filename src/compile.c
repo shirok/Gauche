@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.101 2003-08-17 23:26:45 shirok Exp $
+ *  $Id: compile.c,v 1.102 2003-10-03 09:22:27 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -362,7 +362,9 @@ static ScmObj lookup_env(ScmObj var, ScmObj env, int op)
                 /* macro binding */
                 if (op) {
                     SCM_FOR_EACH(fp, SCM_CDR(frame)) {
-                        if (SCM_CAAR(fp) == var) return SCM_CDAR(fp);
+                        if (SCM_EQ(var, SCM_CAAR(fp))) {
+                            return SCM_CDAR(fp);
+                        }
                     }
                 }
                 continue;
@@ -372,7 +374,9 @@ static ScmObj lookup_env(ScmObj var, ScmObj env, int op)
                same name (in the case like '(let* ((x 1) (x 2)) ...)'),
                so we have to scan the frame until the end. */
             SCM_FOR_EACH(fp, frame) {
-                if (SCM_CAR(fp) == var) found = offset;
+                if (SCM_EQ(var, SCM_CAR(fp))) {
+                    found = offset;
+                }
                 offset++;
             }
             if (found >= 0) return make_lref(depth, offset - found - 1);
