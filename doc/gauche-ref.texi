@@ -4,10 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@synindex tp fn
-@synindex vr fn
-
-@c $Id: gauche-ref.texi,v 1.2 2001-05-16 20:11:16 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.3 2001-05-17 09:04:21 shirok Exp $
 
 @iftex
 @finalout
@@ -36,9 +33,30 @@ This is a reference manual of Gauche, an R5RS Scheme implementation.
 @node Introduction
 @chapter Introduction
 
-Gauche is an R5RS Scheme system, meant to be used
-as a handy scripting tools for programmers and system administrators,
-as well as a extensible embedded scripting language.
+This is a programmers' guide and reference of Gauche Scheme system.
+Here I tried to describe Gauche's implementation precisely,
+sometimes with background design choices.
+The target audiences are those who already know Scheme and
+want to write useful programs in Gauche.
+
+For those who are new to Scheme, it'll be easier to start
+from some kind of tutorial.  I'm planning to write one.
+
+This manual only deals with Scheme side of things.  Gauche has
+another face, a C interface.   Details of it is discussed
+in a separate document I'm planning.
+Those who wants to use Gauche as an embedded language, or wants
+to write an extension, need that volume.
+
+@node Overview of Gauche
+@section Overview of Gauche
+
+Gauche is a Scheme language interpreter, almost conformant of
+"Revised^5 Report on the Algorithmic Language Scheme".
+Gauche has also various extensions, such as CLOS-like object system,
+module system, and regular expression matcher,
+so that it can be used in the daily works of programmers and system
+administrators, and/or an extensible embedded scripting language.
 
 There are lots of Scheme implementations out there.
 Some even say there are more Scheme implementations than
@@ -53,35 +71,94 @@ There is even a pracical reason to have lots of Scheme systems.
 When implementing a language, you always have to decide
 one strategy that fits best for your goal,
 out of some possible implementation designs.
-Since every goal requires different strategy,
+Since different goals may require different choices,
+there can't be a single "right" implementation of the language.
+
+So, what are Gauche's goals and strengths?
+Basically, Gauche aims to the areas where people currently
+use Python, Perl or Tcl.  The scripting work such that
+you need to build something quick, and you may use it only several
+times and discard it, while sometimes the code lives much longer
+than you expected first.
+
+No, I'm not trying to replace those languages.
+However, there are jobs in that application domain to which
+Scheme style of programming fits.  Those scripting languages,
+although started from simple concepts, have eventually involved
+lots of modern programming language concepts such as object orientation
+and first-class closures.  There have been demands to include
+those fancy concepts.  Then, why don't we use a language
+carefully designed with those concepts from the beginning,
+at least for the problems that requires those fancy concepts?
+
+@node Notations
+@section Notations
 
 
-This manual focuses Gauche as a Scheme interpreter.
-If you want to use Gauche from your C/C++ code,
-as an embedded language and/or a handy list-processing library,
-see the other document (Gauche C Reference Manual).
-The installation procedure is dealt with different document.
 
 
+@node Structure of this document
+@section Structure of this document
+
+
+
+
+@c ======================================================================
 @node Concepts
 @chapter Concepts
+
+In this chapter I describe a few Gauche's design concepts
+that help you to understand how Gauche works.
+
+@node Compilation
+@section Compilation
+
+Gauche is a Scheme interpreter, in the sense that it reads
+a Scheme form at a time and evaluates it.   Actually,
+Gauche compiles every form into an intermediate form
+before executing.  
+
 
 
 @node Module System
 @section Module System
 
+Gauche adopts a simple module system that allows
+modularlized development of large software.
+
+A higher level interface is simple enough from the user's point
+of view.   When you want to use the features provided by module
+@code{foo}, you just need to say @code{(use foo)} in your code.
+This form is a macro and interpreted at compile time.
+
+
+
+
+The @code{use} mechanism is built on top of two independent
+mechanisms, namespace separation and file loading mechanism.
+Those two can be used separately, although it is much more
+convenient when used together.
+
+
+
+
+
+
+@node Objects
+@section Objects
 
 
 @node Multibyte Strings
 @section Multibyte Strings
 
 
-
+@c ======================================================================
 @node Invoking Gosh
 @chapter Invoking Gosh
 
 
 
+@c ======================================================================
 @node Core Syntax
 @chapter Core Syntax
 
@@ -93,9 +170,10 @@ The installation procedure is dealt with different document.
 @end defspec
 
 
-@node Procedures
-@section Procedures
 
+
+@node Making Procedures
+@section Making Procedures
 
 @defspec lambda formals body
 [R5RS]
@@ -151,6 +229,9 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 [R5RS]
 @end defspec
 
+@defspec when test . body
+@defspecx unless test . body
+@end defspec
 
 @node Binding constructs
 @section Binding constructs
@@ -195,20 +276,6 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @end defspec
 
 
-
-@node Delayed Evaludation
-@section  Delayed Evaludation
-
-
-@defspec delay expression
-[R5RS]
-@end defspec
-
-@defun force promise
-[R5RS]
-@end defun
-
-
 @node Quasiquotation
 @section Quasiquotation
 
@@ -229,6 +296,9 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @node Modules
 @section Modules
 
+@node Module syntax
+@subsection Module syntax
+
 @defspec define-module name body
 @end defspec
 
@@ -244,8 +314,15 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @defspec import module-name @dots{}
 @end defspec
 
-@defspec use name
-@end defspec
+@defmac use name
+@end defmac
+
+
+@node Module introspection
+@subsection Module introspection
+
+@deftp {Builtin Class} <module>
+@end deftp
 
 @defun module? obj
 @end defun
@@ -262,7 +339,7 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @defun all-modules
 @end defun
 
-
+@c ======================================================================
 @node Macros
 @chapter Macros
 
@@ -296,9 +373,12 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @defspecx %macro-expand1 form
 @end defspec
 
+
+@c ======================================================================
 @node Core library
 @chapter Core library
 
+@c ----------------------------------------------------------------------
 @node Equivalence
 @section Equivalence
 
@@ -314,8 +394,18 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 [R5Rs]
 @end defun
 
+@c ----------------------------------------------------------------------
 @node Numbers
 @section Numbers
+
+@node Number classes
+@subsection Number classes
+
+@deftp {Builtin Class} <number>
+@deftpx {Builtin Class} <complex>
+@deftpx {Builtin Class} <real>
+@deftpx {Builtin Class} <integer>
+@end deftp
 
 @node Numerical predicates
 @subsection Numerical predicates
@@ -348,7 +438,7 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @end defun
 
 @node Numerical comparison
-@subsection Numerical omparison
+@subsection Numerical comparison
 
 @defun = z1 z2 z3 @dots{}
 @defunx < x1 x2 x3 @dots{}
@@ -466,11 +556,26 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @node Logical operations
 @subsection Logical operations
 
+@defun ash n count
+@end defun
 
+@defun logand n1 n2
+@end defun
 
+@defun logior n1 n2
+@end defun
+
+@defun logxor n1 n2
+@end defun
+
+@defun lognot n
+@end defun
 
 @node Booleans
 @section Booleans
+
+@deftp {Builtin Class} <boolean>
+@end deftp
 
 @defun not obj
 [R5RS]
@@ -480,8 +585,21 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 [R5RS]
 @end defun
 
+@c ----------------------------------------------------------------------
 @node Pairs and Lists
 @section Pairs and Lists
+
+@node Pair and null class
+@subsection Pair and null class
+
+@deftp {Builtin Class} <list>
+@end deftp
+
+@deftp {Builtin Class} <null>
+@end deftp
+
+@deftp {Builtin Class} <pair>
+@end deftp
 
 @node List predicates
 @subsection List predicates
@@ -626,8 +744,12 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @end defun
 
 
+@c ----------------------------------------------------------------------
 @node Symbols
 @section Symbols
+
+@deftp {Builtin Class} <symbol>
+@end  deftp
 
 @defun symbol? obj
 [R5RS]
@@ -645,8 +767,12 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @end defun
 
 
+@c ----------------------------------------------------------------------
 @node Keywords
 @section Keywords
+
+@deftp {Builtin Class} <keyword>
+@end  deftp
 
 @defun keyword? obj
 @end defun
@@ -657,8 +783,12 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @defun get-keyword key list [fallback]
 @end defun
 
+@c ----------------------------------------------------------------------
 @node Identifiers
 @section Identifiers
+
+@deftp {Builtin Class} <identifier>
+@end  deftp
 
 @defun identifier? obj
 @end defun
@@ -667,8 +797,12 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @end defun
 
 
+@c ----------------------------------------------------------------------
 @node Characters
 @section Characters
+
+@deftp {Builtin Class} <char>
+@end  deftp
 
 @defun char? obj
 [R5RS]
@@ -712,14 +846,37 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @end defun
 
 
+@c ----------------------------------------------------------------------
 @node Character Set
 @section Character Set
 
+@deftp {Builtin Class} <char-set>
+@end deftp
+
+@defun char-set? obj
+[SRFI-14]
+@end defun
+
+@defun char-set-contains? char-set char
+[SRFI-14]
+@end defun
+
+@defun char-set char @dots{}
+[SRFI-14]
+@end defun
+
+@defun char-set-copy char-set
+[SRFI-14]
+@end defun
 
 
 
+@c ----------------------------------------------------------------------
 @node Strings
 @section Strings
+
+@deftp {Builtin Class} <string>
+@end deftp
 
 @node String Predicates
 @subsection String Predicates
@@ -839,8 +996,15 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @defun string-pointer-index sp
 @end defun
 
+@c ----------------------------------------------------------------------
 @node Regular Expression
 @section Regular Expression
+
+@deftp {Builtin Class} <regexp>
+@end deftp
+
+@deftp {Builtin Class} <regmatch>
+@end deftp
 
 @defun string->regexp string
 @end defun
@@ -853,8 +1017,12 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @defunx rxmatch-end match &optional (i 0)
 @end defun
 
+@c ----------------------------------------------------------------------
 @node Vectors
 @section Vectors
+
+@deftp {Builtin Class} <vector>
+@end deftp
 
 @defun vector? obj
 [R5RS]
@@ -889,8 +1057,12 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 [R5RS]
 @end defun
 
+@c ----------------------------------------------------------------------
 @node Hashtables
 @section Hashtables
+
+@deftp {Builtin Class} <hash-table>
+@end deftp
 
 @defun make-hash-table args
 @end defun
@@ -918,8 +1090,15 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @end defun
 
 
+@c ----------------------------------------------------------------------
 @node Control features
 @section Control features
+
+@node Procedures
+@subsection Procedures
+
+@deftp {Builtin Class} <procedure>
+@end deftp
 
 @defun procedure? obj
 [R5RS]
@@ -961,6 +1140,19 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 [R5RS]
 @end defun
 
+
+@node Delayed Evaludation
+@subsection  Delayed Evaludation
+
+@defspec delay expression
+[R5RS]
+@end defspec
+
+@defun force promise
+[R5RS]
+@end defun
+
+@c ----------------------------------------------------------------------
 @node Eval
 @section Eval
 
@@ -974,6 +1166,7 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 [R5RS]
 @end defun
 
+@c ----------------------------------------------------------------------
 @node Input and Output
 @section Input and Output
 
@@ -1125,6 +1318,7 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @end defun
 
 
+@c ----------------------------------------------------------------------
 @node Loading Programs
 @section Loading Programs
 
@@ -1150,7 +1344,11 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @defun provided? feature
 @end defun
 
+@defmac autoload file var @dots{}
+@end defun
 
+
+@c ----------------------------------------------------------------------
 @node System interface
 @section System interface
 
@@ -1163,6 +1361,9 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 
 @node Environment Inquiry
 @subsection Environment Inquiry
+
+@defun sys-getenv name
+@end defun
 
 @defun gauche-version
 @defunx gauche-architecture
@@ -1184,6 +1385,30 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @defun sys-glob
 @end defun
 
+@node Directory manipulation
+@subsubsection Directory manipulation
+
+@defun sys-remove filenmae
+@end defun
+
+@defun sys-rename old new
+@end defun
+
+@defun sys-tmpnam
+@end defun
+
+@defun sys-link existing new
+@end defun
+
+@defun sys-rmdir pathname
+@end defun
+
+@defun sys-unlink pathname
+@end defun
+
+@defun sys-symlink existing new
+@end defun
+
 @node Pathnames
 @subsubsection Pathnames
 
@@ -1197,26 +1422,180 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @node File stats
 @subsubsection File stats
 
+@deftp {Builtin Class} <sys-stat>
+@end deftp
 
+@defun sys-stat path
+@end defun
 
+@defun sys-lstat path
+@end defun
+
+@defun sys-fstat fd
+@end defun
+
+@defun sys-access pathname amode
+@end defun
+
+@node Other file operations
+@subsubsection Other file operations
+
+@defun sys-chdir dir
+@end defun
+
+@defun sys-pipe &keyword name buffered?
+@end defun
+
+@defun sys-isatty port-or-fd
+@end defun
+
+@defun sys-ttyname port-or-fd
+@end defun
 
 @node Unix groups and passwords
 @subsection Unix groups and passwords
 
+@node Unix Group
+@subsubsection Unix Group
+
+@deftp {Builtin Class} <sys-group>
+@end deftp
+
+@defun sys-getgrid gid
+@defunx sys-getgrnam name
+@end defun
+
+@defun sys-gid->group->name gid
+@defunx sys-group-name->gid name
+@end defun
+
+@node Unix Password
+@subsubsection Unix Password
+
+@deftp {Builtin Class} <sys-passwd>
+@end deftp
+
+@defun sys-getpwuid uid
+@defunx sys-getpwnam name
+@end defun
+
+@defun sys-uid->user-name uid
+@defunx sys-user-name->uid
+@end defun
+
+
+@node Password encryption
+@subsubsection Password encryption
+
+@defun sys-crypt key salt
+@end defun
+
 @node Locale
 @subsection Locale
+
+@defun sys-setlocate category locale
+@end defun
 
 
 @node Signal
 @subsection Signal
 
+@defvar SIGABRT
+@defvarx SIGALRM
+@defvarx SIGCHLD
+@defvarx SIGCONT
+@defvarx SIGFPE
+@defvarx SIGHUP
+@defvarx SIGILL
+@defvarx SIGINT
+@defvarx SIGKILL
+@defvarx SIGPIPE
+@defvarx SIGQUIT
+@defvarx SIGSEGV
+@defvarx SIGSTOP
+@defvarx SIGTSTP
+@defvarx SIGTTIN
+@defvarx SIGTTOU
+@defvarx SIGUSR1
+@defvarx SIGUSR2
+
+@end defvar
+
+@defun sys-kill pid sig
+@end defun
+
 
 @node System Inquiry
 @subsection System Inquiry
 
+@defun sys-uname
+@end defun
+
+@defun sys-getcwd
+@end defun
+
+@defun sys-getgid
+@defunx sys-getegid
+@end defun
+
+@defun sys-getuid
+@defunx sys-geteuid
+@end defun
+
+@defun sys-getgroups
+@end defun
+
+@defun sys-getlogin
+@end defun
+
+@defun sys-getpgrp
+@end defun
+
+@defun sys-getpid
+@defunx sys-getppid
+@end defun
+
+
+
 
 @node Time
 @subsection Time
+
+@defun sys-times
+@end defun
+
+@deftp {Builtin Class} <sys-time>
+@end deftp
+
+@deftp {Builtin Class} <sys-tm>
+@end deftp
+
+@defun sys-time
+@end defun
+
+@defun sys-gmtime time
+@end defun
+
+@defun sys-localtime time
+@end defun
+
+@defun sys-ctime time
+@end defun
+
+@defun sys-difftime time1 time0
+@end defun
+
+@defun sys-asctime tm
+@end defun
+
+@defun sys-strftime format tm
+@end defun
+
+@defun sys-mktime tm
+@end defun
+
+@defin sys-tm->alist tm
+@end defun
 
 
 @node Unix process management
@@ -1225,71 +1604,353 @@ specified in @uref{http://srfi.schemers.org/srfi-17/srfi-17.html, SRFI-17}.
 @node Fork and exec
 @subsubsection Fork and exec
 
+@defun sys-system command
+@end defun
+
+@defun sys-fork
+@end defun
+
+@defun sys-exec command args &optional iomap
+@end defun
+
+
 @node Wait
 @subsubsection Wait
 
+@defun sys-wait
+@end defun
 
+@defun sys-waitpid pid &keyword nohang untraced
+@end defun
+
+@defun sys-wait-exited? status
+@defunx sys-wait-exit-status status
+@end defun
+
+@defun sys-wait-signaled? status
+@defunx sys-wait-termsig status
+@end defun
+
+@defun sys-wait-stopped? status
+@defunx sys-wait-stopsig status
+@end defun
+
+
+@node Miscellaneous
+@subsection Miscellaneous
+
+@defun sys-pause
+@end defun
+
+@defun sys-sleep seconds
+@end defun
+
+@c ======================================================================
 @node Object System
 @chapter Object System
 
+@c ----------------------------------------------------------------------
+@node General Inquiry
+@section  General Inquiry
+
+@defun class-of obj
+@end defun
+
+@defun is-a? obj class
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Defining class
+@section Defining class
+
+@defmac define-class name supers (slot-spec @dots{}) option @dots{}
+@end defmac
 
 
+@c ----------------------------------------------------------------------
+@node Defining methods
+@section Defining methods
+
+@defmac define-generic name
+@end defmac
+
+@defmac define-method name specs body
+@end defmac
+
+@c ----------------------------------------------------------------------
+@node Creating Instance
+@section Creating Instance
+
+@deffn {Generic Function} make class arg @dots{}
+@end deffn
+
+@deffn {Method} make (class <class>) arg @dots{}
+@end deffn
+
+@deffn {Method} make (class <method>)  arg @dots{}
+@deffnx {Method} make (class <generic>)  arg @dots{}
+@end deffn
+
+@deffn {Method} initialize (class <class>) initargs
+@end deffn
+
+@c ----------------------------------------------------------------------
+@node Accessing Instance
+@section Accessing Instance
+
+@defun slot-ref obj slot
+@end defun
+
+@defun slot-set! obj slot
+@end defun
+
+@defun slot-bound? obj slot
+@end defun
+
+@defun slot-exists? slot
+@end defun
+
+@deffn {Generic Function} slot-unbound
+@end deffn
+
+@deffn {Method} slot-unbound (class <class>) obj slot
+@end deffn
+
+@deffn {Generic Function} slot-missing
+@end deffn
+
+@deffn {Method} slot-missing (class <class>) obj slot &optional value
+@end deffn
+
+
+@defun class-slot-ref class slot-name
+@defunx class-slot-set! class slot-name obj
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Metaobject protocol
+@section Metaobject procotol
+
+@node System metaclasses
+@subsection System metaclasses
+
+@deftp {Class} <class>
+@end deftp
+
+@deftp {Class} <generic>
+@end deftp
+
+@deftp {Class} <method>
+@end deftp
+
+@deftp {Class} <object>
+@end deftp
+
+
+@node Class introspection
+@subsection Class introspection
+
+@node Class metaobject
+@subsubsection Class metaobject
+
+@defun class-name class
+@end defun
+
+@defun class-precedence-list class
+@end defun
+
+@defun class-direct-supers class
+@end defun
+
+@defun class-direct-slots class
+@end defun
+
+@defun class-slots
+@end defun
+
+@node Slot definition
+@subsubsection Slot definition
+
+@defun class-slot-definition class slot-name
+@end defun
+
+@defun class-slot-accessor class slot-name
+@end defun
+
+@defun slot-definition-name slot-def
+@end defun
+@defun slot-definition-allocation slot
+@end defun
+
+@defun slot-definition-getter slot
+@defunx slot-defininion-setter slot
+@defunx slot-definition-accessor slot
+@end defun
+
+@defun slot-definition-options slot-def
+@defunx slot-definition-option slot-def key &optional default
+@end defun
+
+@node Class instantiation
+@subsection Class instantiation
+
+@node Customizing slot access
+@subsection Customizing slot access
+
+@node Method instantiation
+@subsection Method instantiation
+
+@node Customizing method application
+@subsection Customizing method application
+
+
+
+@c ======================================================================
 @node Libarary Modules
 @chapter Library Modules
 
 
-@node Feature Conditional
-@section Feature Conditional (SRFI-0)
+@c ----------------------------------------------------------------------
+@node Process interface
+@section @code{gauche.process} - Object-oriented interface for processes
 
+@deftp {Class} <process>
+@end deftp
 
-@node List library
-@section List library (SRFI-1)
+@defun run-process command arg @dots{}
+@end defun
 
+@defun process? obj
+@end defun
 
-@node And-let*
-@section And-let* (SRFI-2)
+@deffn {Method} process-pid (process <process>)
+@end deffn
 
+@deffn {Method} process-command (process <process>)
+@end deffn
 
-@node Homogeneous Vectors
-@section Homogeneous Vectors (SRFI-4)
+@deffn {Method} process-status (process <process>)
+@end deffn
 
+@deffn {Method} process-input (process <process>)
+@deffnx {Method} process-output (process <process>)
+@deffnx {Method} process-error (process <process>)
+@end deffn
 
-@node Let-values
-@section Let-values (SRFI-11)
+@defun process-alive? process
+@end defun
 
+@defun process-list
+@end defun
 
-@node String library
-@section String library (SRFI-13)
+@defun process-wait process
+@end defun
 
+@defun process-send-signal process signal
+@end defun
 
-@node Character-set library
-@section Character-set library (SRFI-14)
+@defun process-kill process
+@defunx process-stop process
+@defunx process-continue process
+@end defun
 
-
+@c ----------------------------------------------------------------------
 @node Regular expression library
-@section  Regular expression library
+@section @code{gauche.regexp} - Regular expression library
 
-
-@node Testing
-@section Testing
-
-
+@c ----------------------------------------------------------------------
 @node Serializer
-@section Serializer
+@section @code{gauche.serializer} - Serializer
+
+@c ----------------------------------------------------------------------
+@node Unit Testing
+@section @code{gauche.test} - Unit Testing
+
+@defun test name 
+@end defun
+
+@defun test-start module-name
+@end defun
+
+@defun test-section section-name
+@end defun
+
+@defun test-end
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Base64 encoding/decoding
+@section @code{rfc.base64} - Base64 encoding/decoding
+
+@defun base64-encode
+@end defun
+
+@defun base64-encode-string string
+@end defun
+
+@defun base64-decode
+@end defun
+
+@defun base64-decode-string string
+@end defun
 
 
-@node Introspection
-@section Introspection
+@c ----------------------------------------------------------------------
+@node Feature Conditional
+@section @code{srfi-0} - Feature Conditional
 
 
-@node Processes
-@section Processes
+@c ----------------------------------------------------------------------
+@node List library
+@section @code{srfi-1} - List library
+
+
+@c ----------------------------------------------------------------------
+@node And-let*
+@section @code{srfi-2} - And-let*
+
+
+@c ----------------------------------------------------------------------
+@node Homogeneous Vectors
+@section @code{srfi-4} - Homogeneous Vectors
+
+
+@c ----------------------------------------------------------------------
+@node Let-values
+@section @code{srfi-11} - Let-values
+
+
+@c ----------------------------------------------------------------------
+@node String library
+@section @code{srfi-13} - String library
+
+
+@c ----------------------------------------------------------------------
+@node Character-set library
+@section @code{srfi-14} - Character-set library
 
 
 
-@node Index,  , Filters, Top
-@unnumbered Index
+@c ======================================================================
+@node References
+@unnumbered References
+
+
+
+
+@c ======================================================================
+@node Function and Syntax Index
+@unnumbered Function and Syntax Index
 @printindex fn
+
+@node Class Index
+@unnumbered Class Index
+@printindex tp
+
+@node Variable Index
+@unnumbered Variable Index
+@printindex vr
+
 
 @contents
 @bye
