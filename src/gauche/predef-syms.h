@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: predef-syms.h,v 1.19 2001-09-27 11:13:43 shirok Exp $
+ *  $Id: predef-syms.h,v 1.20 2002-02-26 09:06:08 shirok Exp $
  */
 
 /* DEFSYM(c-name, scheme-name) */
@@ -22,6 +22,7 @@ DEFSYM(ScmQquasiquote,      "quasiquote");
 DEFSYM(ScmQunquote,         "unquote");
 DEFSYM(ScmQunquoteSplicing, "unquote-splicing");
 DEFSYM(ScmQdefine,          "define");
+DEFSYM(ScmQdefineInModule,  "define-in-module");
 DEFSYM(ScmQlambda,          "lambda");
 DEFSYM(ScmQif,              "if");
 DEFSYM(ScmQset,             "set!");
@@ -76,6 +77,7 @@ DEFSYM(ScmQsourceInfo,      "source-info");
 #define SCM_SYM_UNQUOTE          SCM_OBJ(&ScmQunquote)
 #define SCM_SYM_UNQUOTE_SPLICING SCM_OBJ(&ScmQunquoteSplicing)
 #define SCM_SYM_DEFINE           SCM_OBJ(&ScmQdefine)
+#define SCM_SYM_DEFINE_IN_MODULE SCM_OBJ(&ScmQdefineInModule)
 #define SCM_SYM_LAMBDA           SCM_OBJ(&ScmQlambda)
 #define SCM_SYM_IF               SCM_OBJ(&ScmQif)
 #define SCM_SYM_SET              SCM_OBJ(&ScmQset)

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.73 2002-02-23 07:28:47 shirok Exp $
+ *  $Id: compile.c,v 1.74 2002-02-26 09:04:23 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -221,8 +221,6 @@ ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context)
 #define VAR_P(obj)         (SCM_SYMBOLP(obj)||SCM_IDENTIFIERP(obj))
 #define ENSURE_SYMBOL(obj) \
     (SCM_IDENTIFIERP(obj)? SCM_OBJ(SCM_IDENTIFIER(obj)->name) : (obj))
-#define ENSURE_IDENTIFIER(obj, env) \
-    (SCM_SYMBOLP(obj)? Scm_MakeIdentifier(SCM_SYMBOL(obj), env) : (obj))
 
 #define TOPLEVEL_ENV_P(env)   SCM_NULLP(env)
 
@@ -327,6 +325,23 @@ ScmObj Scm_CopyIdentifier(ScmIdentifier *orig)
     id->module = orig->module;
     id->env = orig->env;
     return SCM_OBJ(id);
+}
+
+/* used in compile_define.  var may be a symbol or an identifier. */
+static ScmObj ensure_identifier(ScmObj var, ScmObj env, ScmModule *mod)
+{
+    ScmObj ident;
+    if (SCM_SYMBOLP(var)) {
+        ident = Scm_MakeIdentifier(SCM_SYMBOL(var), env);
+        if (mod) SCM_IDENTIFIER(ident)->module = mod;
+        return ident;
+    } else if (mod) {
+        ident = Scm_CopyIdentifier(SCM_IDENTIFIER(var));
+        SCM_IDENTIFIER(ident)->module = mod;
+        return ident;
+    } else {
+        return var;
+    }
 }
 
 /*------------------------------------------------------------------
@@ -472,6 +487,7 @@ static int check_valid_lambda_args(ScmObj args)
 
 /*------------------------------------------------------------------
  * DEFINE (toplevel define)
+ * DEFINE-IN-MODULE
  *   This should never called for internal defines (they are handled by
  *   compile_body).
  */
@@ -480,7 +496,25 @@ static ScmObj compile_define(ScmObj form,
                              int ctx,
                              void *data)
 {
-    ScmObj var, val, tail = SCM_CDR(form), code = SCM_NIL, codetail = SCM_NIL;
+    ScmObj var, val, tail = SCM_CDR(form);
+    ScmObj code = SCM_NIL, codetail = SCM_NIL;
+    ScmModule *module = NULL;
+    int in_module_p = (data != NULL);
+
+    if (in_module_p) {
+        ScmObj mod;
+        if (!SCM_PAIRP(tail)) Scm_Error("syntax error: %S", form);
+        mod = SCM_CAR(tail);
+        tail = SCM_CDR(tail);
+        if (SCM_IDENTIFIERP(mod))  mod = SCM_OBJ(SCM_IDENTIFIER(mod)->name);
+        if (SCM_SYMBOLP(mod)){
+            module = SCM_MODULE(Scm_FindModule(SCM_SYMBOL(mod), FALSE));
+        } else if (SCM_MODULEP(mod)) {
+            module = SCM_MODULE(mod);
+        } else {
+            Scm_Error("malformed define-in-module: module or module name required, but got %S", mod);
+        }
+    }
     if (!SCM_PAIRP(tail)) Scm_Error("syntax error: %S", form);
     var = SCM_CAR(tail);
 
@@ -489,12 +523,12 @@ static ScmObj compile_define(ScmObj form,
         if (!VAR_P(SCM_CAR(var))) Scm_Error("syntax error: %S", form);
         val = compile_lambda_family(form, SCM_CDR(var), SCM_CDR(tail),
                                     env, SCM_COMPILE_NORMAL);
-        var = ENSURE_IDENTIFIER(SCM_CAR(var), env);
+        var = ensure_identifier(SCM_CAR(var), env, module);
     } else {
         if (!VAR_P(var) || !LIST1_P(SCM_CDR(tail)))
             Scm_Error("syntax error: %S", form);
         val = compile_int(SCM_CADR(tail), env, SCM_COMPILE_NORMAL);
-        var = ENSURE_IDENTIFIER(var, env);
+        var = ensure_identifier(var, env, module);
     }
 
     ADDCODE(val);
@@ -508,6 +542,13 @@ static ScmSyntax syntax_define = {
     SCM_SYMBOL(SCM_SYM_DEFINE),
     compile_define,
     NULL
+};
+
+static ScmSyntax syntax_define_in_module = {
+    { SCM_CLASS_STATIC_PTR(Scm_SyntaxClass) },
+    SCM_SYMBOL(SCM_SYM_DEFINE_IN_MODULE),
+    compile_define,
+    (void*)1
 };
 
 /*------------------------------------------------------------------
@@ -1836,6 +1877,7 @@ void Scm__InitCompiler(void)
      * Just leave that until I find a better way.
      */
     DEFSYN_N(SCM_SYM_DEFINE,       syntax_define);
+    DEFSYN_G(SCM_SYM_DEFINE_IN_MODULE, syntax_define_in_module);
     DEFSYN_N(SCM_SYM_QUOTE,        syntax_quote);
     DEFSYN_N(SCM_SYM_QUASIQUOTE,   syntax_quasiquote);
     DEFSYN_N(SCM_SYM_UNQUOTE,      syntax_unquote);
