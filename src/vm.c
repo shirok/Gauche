@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.5 2001-01-15 08:47:22 shiro Exp $
+ *  $Id: vm.c,v 1.6 2001-01-16 05:53:50 shiro Exp $
  */
 
 #include "gauche.h"
@@ -596,6 +596,52 @@ static void run_loop(ScmObj program)
                 POP_ARG(code);
                 p = Scm_MakePromise(code);
                 PUSH_ARG(p);
+                continue;
+            }
+        case SCM_VM_VEC_LEN:
+            {
+                ScmObj vec;
+                CHECK_ARGCNT(1);
+                POP_ARG(vec);
+                if (!SCM_VECTORP(vec))
+                    Scm_Error("vector expected, but got %S", vec);
+                PUSH_ARG(Scm_MakeInteger(SCM_VECTOR_SIZE(vec)));
+                continue;
+            }
+        case SCM_VM_VEC_REF:
+            {
+                ScmObj vec, k;
+                int i;
+                CHECK_ARGCNT(2);
+                POP_ARG(k);
+                POP_ARG(vec);
+                if (!SCM_VECTORP(vec))
+                    Scm_Error("vector expected, but got %S", vec);
+                if (!SCM_INTP(k))
+                    Scm_Error("exact integer required, but got %S", k);
+                i = SCM_INT_VALUE(k);
+                if (i<0 || i>=SCM_VECTOR_SIZE(vec))
+                    Scm_Error("index out of range: %d", i);
+                PUSH_ARG(SCM_VECTOR_ELEMENT(vec, i));
+                continue;
+            }
+        case SCM_VM_VEC_SET:
+            {
+                ScmObj vec, k, val;
+                int i;
+                CHECK_ARGCNT(3);
+                POP_ARG(val);
+                POP_ARG(k);
+                POP_ARG(vec);
+                if (!SCM_VECTORP(vec))
+                    Scm_Error("vector expected, but got %S", vec);
+                if (!SCM_INTP(k))
+                    Scm_Error("exact integer required, but got %S", k);
+                i = SCM_INT_VALUE(k);
+                if (i<0 || i>=SCM_VECTOR_SIZE(vec))
+                    Scm_Error("index out of range: %d", i);
+                SCM_VECTOR_ELEMENT(vec, i) = val;
+                PUSH_ARG(SCM_UNDEFINED);
                 continue;
             }
         default:

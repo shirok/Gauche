@@ -516,15 +516,18 @@
   "  SCM_RETURN(Scm_ListToVector(args));")
 
 (define-cproc vector-length (vec)
+  (inliner "Scm_inline_vector_length")
   (assert (vector? vec))
   "  SCM_RETURN(Scm_MakeInteger(SCM_VECTOR_SIZE(vec)));")
 
 (define-cproc vector-ref (vec k)
+  (inliner "Scm_inline_vector_ref")
   (assert (vector? vec))
   (assert (small-integer? k))
   "  SCM_RETURN(Scm_VectorRef(vec, k));")
 
 (define-cproc vector-set! (vec k obj)
+  (inliner "Scm_inline_vector_set")
   (assert (vector? vec))
   (assert (small-integer? k))
   "  Scm_VectorSet(vec, k, obj);

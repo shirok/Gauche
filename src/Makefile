@@ -1,7 +1,7 @@
 SCM = snow
 CC = cc
-CFLAGS = -g -I. -I../gc
-#CFLAGS = -O2 -I. -I../gc
+#CFLAGS = -g -I. -I../gc
+CFLAGS = -O2 -I. -I../gc
 LDFLAGS = -lm
 AR = ar
 

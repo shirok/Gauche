@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.4 2001-01-15 04:44:54 shiro Exp $
+ *  $Id: compile.c,v 1.5 2001-01-16 05:53:50 shiro Exp $
  */
 
 #include "gauche.h"
@@ -200,8 +200,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                         ScmObj inlined =
                             SCM_SUBR_INLINER(g->value)(SCM_SUBR(g->value),
                                                        form, env, ctx);
-                        if (SCM_PAIRP(inlined))
-                            return inlined;
+                        if (!SCM_FALSEP(inlined)) return inlined;
                     }
                 }
                 
