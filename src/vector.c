@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vector.c,v 1.16 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: vector.c,v 1.17 2002-06-11 10:48:36 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -94,10 +94,17 @@ ScmObj Scm_VectorSet(ScmVector *vec, int i, ScmObj obj)
     return (vec->elements[i] = obj);
 }
 
-ScmObj Scm_VectorFill(ScmVector *vec, ScmObj fill)
+ScmObj Scm_VectorFill(ScmVector *vec, ScmObj fill, int start, int end)
 {
-    int i;
-    for (i=0; i < SCM_VECTOR_SIZE(vec); i++) {
+    int i, len = SCM_VECTOR_SIZE(vec);
+    if (start < 0 || start > len) {
+        Scm_Error("start argument out of range: %d", start);
+    }
+    if (end < 0) end = len;
+    else if (end > len || end < start) {
+        Scm_Error("end argument out of range: %d", start);
+    }
+    for (i=start; i < end; i++) {
         SCM_VECTOR_ELEMENT(vec, i) = fill;
     }
     return SCM_OBJ(vec);

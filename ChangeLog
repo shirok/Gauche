@@ -4,6 +4,9 @@
 	  to the imported list multiple times.  Also added proper mutex for
 	  module access.
 	* src/core.c (Scm_Warn) : added Scm_Warn.
+	* src/vector.c (Scm_VectorFill), src/extlib.stub (vector-fill!) :
+	  allow to take optional start and end argument (parallel to
+	  SRFI-13 string-fill!).
 
 2002-06-09  Shiro Kawai  <shiro@acm.org>
 

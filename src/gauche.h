@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.265 2002-06-11 09:23:36 shirok Exp $
+ *  $Id: gauche.h,v 1.266 2002-06-11 10:48:36 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -970,7 +970,7 @@ SCM_CLASS_DECL(Scm_VectorClass);
 SCM_EXTERN ScmObj Scm_MakeVector(int size, ScmObj fill);
 SCM_EXTERN ScmObj Scm_VectorRef(ScmVector *vec, int i, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_VectorSet(ScmVector *vec, int i, ScmObj obj);
-SCM_EXTERN ScmObj Scm_VectorFill(ScmVector *vec, ScmObj fill);
+SCM_EXTERN ScmObj Scm_VectorFill(ScmVector *vec, ScmObj fill, int start, int end);
 
 SCM_EXTERN ScmObj Scm_ListToVector(ScmObj l);
 SCM_EXTERN ScmObj Scm_VectorToList(ScmVector *v);
