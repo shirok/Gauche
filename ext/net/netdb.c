@@ -440,6 +440,72 @@ static ScmClassStaticSlotSpec servent_slots[] = {
 };
 
 /*-------------------------------------------------------------
+ * Addrinfo
+ */
+
+#ifdef HAVE_IPV6
+
+ScmObj addrinfo_allocate(ScmClass *klass, ScmObj initargs)
+{
+    ScmSysAddrinfo *info = SCM_ALLOCATE(ScmSysAddrinfo, klass);
+    SCM_SET_CLASS(info, SCM_CLASS_SYS_ADDRINFO);
+    info->canonname = NULL;
+    info->addr = NULL;
+    return SCM_OBJ(info);
+}
+
+static ScmSysAddrinfo *make_addrinfo(struct addrinfo *ai)
+{
+    ScmSysAddrinfo *info = SCM_NEW(ScmSysAddrinfo);
+
+    SCM_SET_CLASS(info, SCM_CLASS_SYS_ADDRINFO);
+    info->flags = ai->ai_flags;
+    info->family = ai->ai_family;
+    info->socktype = ai->ai_socktype;
+    info->protocol = ai->ai_protocol;
+    info->addrlen = ai->ai_addrlen;
+    if (ai->ai_canonname != NULL)
+	info->canonname = SCM_STRING(SCM_MAKE_STR_COPYING(ai->ai_canonname));
+    if (ai->ai_addr != NULL) {
+      ScmClass *addrClass;
+      switch (ai->ai_family) {
+      case AF_INET:
+	addrClass = SCM_CLASS_SOCKADDR_IN;
+        break;
+      case AF_INET6:
+	addrClass = SCM_CLASS_SOCKADDR_IN6;
+        break;
+      default:
+        Scm_Error("unknown address type (%d)", ai->ai_family);
+	break;
+      }
+      info->addr = SCM_SOCKADDR(Scm_MakeSockAddr(addrClass,
+						 ai->ai_addr, ai->ai_addrlen));
+    }
+    return info;
+}
+
+ScmObj Scm_GetAddrinfo(const char *nodename,
+		       const char *servname,
+		       struct addrinfo *hints)
+{
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    struct addrinfo *res, *res0;
+    int r;
+
+    r = getaddrinfo(nodename, servname, hints, &res0);
+    if (r) Scm_Error("getaddrinfo: %s", gai_strerror(r));
+
+    for (res = res0; res != NULL; res = res->ai_next) {
+        SCM_APPEND1(h, t, SCM_OBJ(make_addrinfo(res)));
+    }
+    freeaddrinfo(res0);
+    return h;
+}
+
+#endif /* HAVE_IPV6 */
+
+/*-------------------------------------------------------------
  * Initialize
  */
 

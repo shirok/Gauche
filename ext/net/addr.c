@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: addr.c,v 1.14 2003-02-15 07:13:44 shirok Exp $
+ *  $Id: addr.c,v 1.15 2003-05-02 10:34:56 shirok Exp $
  */
 
 #include "net.h"
@@ -178,6 +178,55 @@ static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
 }
 
 /*==================================================================
+ * Inet6 domain socket
+ */
+
+#ifdef HAVE_IPV6
+
+static ScmObj sockaddr_in6_allocate(ScmClass *klass, ScmObj initargs);
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrIn6Class, sockaddr_print,
+                         NULL, NULL, sockaddr_in6_allocate, Scm_SockAddrCPL);
+
+static ScmObj sockaddr_in6_allocate(ScmClass *klass, ScmObj initargs)
+{
+    ScmObj host = Scm_GetKeyword(key_host, initargs, key_any);
+    ScmObj port = Scm_GetKeyword(key_port, initargs, SCM_MAKE_INT(0));
+    ScmSockAddrIn6 *addr;
+
+    if (!SCM_INTP(port)) {
+        Scm_Error(":port parameter must be a small exact integer, but got %S",
+                  port);
+    }
+    addr = SCM_NEW(ScmSockAddrIn6);
+    SCM_SET_CLASS(addr, &Scm_SockAddrIn6Class);
+    memset(&addr->addr, sizeof(struct sockaddr_in6), 0);
+    addr->addr.sin6_family = AF_INET6;
+    addr->addr.sin6_port = htons(SCM_INT_VALUE(port));
+    if (SCM_STRINGP(host)) {
+        const char *hname = Scm_GetStringConst(SCM_STRING(host));
+	struct addrinfo hints, *res;
+	int r;
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET6;
+	hints.ai_socktype = SOCK_STREAM;
+	r = getaddrinfo(hname, NULL, &hints, &res);
+	if (r) Scm_Error("getaddrinfo: %s", gai_strerror(r));
+	addr->addr.sin6_addr = ((struct sockaddr_in6*)res->ai_addr)->sin6_addr;
+    } else if (host == key_any) {
+	addr->addr.sin6_addr = in6addr_any;
+    } else if (host == key_loopback) {
+	addr->addr.sin6_addr = in6addr_loopback;
+    } else {
+        Scm_Error("bad :host parameter: %S", host);
+    }
+    addr->addrlen = sizeof(struct sockaddr_in6);
+    return SCM_OBJ(addr);
+}
+
+#endif /* HAVE_IPV6 */
+
+/*==================================================================
  * Initialization stuff
  */
 
@@ -196,5 +245,9 @@ void Scm_Init_NetAddr(ScmModule *mod)
                          sizeof(ScmSockAddrUn), mod);
     Scm_InitBuiltinClass(&Scm_SockAddrInClass, "<sockaddr-in>", NULL,
                          sizeof(ScmSockAddrIn), mod);
+#ifdef HAVE_IPV6
+    Scm_InitBuiltinClass(&Scm_SockAddrIn6Class, "<sockaddr-in6>", NULL,
+                         sizeof(ScmSockAddrIn6), mod);
+#endif /* HAVE_IPV6 */
 }
 

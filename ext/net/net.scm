@@ -12,12 +12,12 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: net.scm,v 1.15 2003-01-30 12:14:20 shirok Exp $
+;;;  $Id: net.scm,v 1.16 2003-05-02 10:34:56 shirok Exp $
 ;;;
 
 (define-module gauche.net
   (export <socket> make-socket
-          |PF_UNIX| |PF_INET| |AF_UNIX| |AF_INET|
+          |PF_UNSPEC| |PF_UNIX| |PF_INET| |AF_UNSPEC| |AF_UNIX| |AF_INET|
           |SOCK_STREAM| |SOCK_DGRAM| |SOCK_RAW|
           socket-address socket-status socket-input-port socket-output-port
           socket-shutdown socket-close socket-bind socket-connect socket-fd
@@ -29,12 +29,21 @@
           <sys-hostent> sys-gethostbyname sys-gethostbyaddr
           <sys-protoent> sys-getprotobyname sys-getprotobynumber
           <sys-servent> sys-getservbyname sys-getservbyport
-          ))
-          
+          )
+  )
+  
 (select-module gauche.net)
 
 (dynamic-load "libnet" :export-symbols #t)
 
+;; if ipv6 is supported, these symbols are defiend in the C routine.
+
+(export-if-defined
+ |PF_INET6| |AF_INET6|
+ <sockaddr-in6> <sys-addrinfo> sys-getaddrinfo make-hints
+ |AI_PASSIVE| |AI_CANONNAME| |AI_NUMERICHOST| |AI_NUMERICSERV|
+ |AI_V4MAPPED| |AI_ALL| |AI_ADDRCONFIG|)
+         
 ;; High-level interface.  We need some hardcoded heuristics here.
 
 (define (make-client-socket proto . args)
@@ -110,6 +119,19 @@
       (begin0
        (proc (socket-input-port socket) (socket-output-port socket))
        (socket-close socket)))))
+
+(if (symbol-bound? '|AF_INET6|)
+    (define (make-hints . args)
+      (let-keywords* args ((flags :flags 0)
+			   (family :family |AF_UNSPEC|)
+			   (socktype :socktype 0)
+			   (protocol :protocol 0))
+	(let1 hints (make <sys-addrinfo>)
+	  (slot-set! hints 'flags (if (list? flags) (apply logior flags) flags))
+	  (slot-set! hints 'family family)
+	  (slot-set! hints 'socktype socktype)
+	  (slot-set! hints 'protocol protocol)
+	  hints))))
 
 ;; backward compatibility -- will be removed!
 (define pf_inet |PF_INET|)

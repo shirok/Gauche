@@ -135,6 +135,9 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define if you have IPv6 support */
+#undef HAVE_IPV6
+
 /* Define to 1 if you have the `isinf' function. */
 #undef HAVE_ISINF
 
@@ -303,7 +306,7 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* Directory where libtool place the compiled libraries */
+/* Directory where libtool places the compiled libraries */
 #undef SCM_LIBTOOL_OBJDIR
 
 /* Define if uses i386 optimizations */

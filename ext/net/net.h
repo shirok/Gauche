@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.h,v 1.14 2003-04-14 10:11:54 shirok Exp $
+ *  $Id: net.h,v 1.15 2003-05-02 10:34:56 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -84,6 +84,19 @@ typedef struct ScmSockAddrInRec {
 
 SCM_CLASS_DECL(Scm_SockAddrInClass);
 #define SCM_CLASS_SOCKADDR_IN   (&Scm_SockAddrInClass)
+
+#ifdef HAVE_IPV6
+
+typedef struct ScmSockAddrIn6Rec {
+    SCM_HEADER;
+    int addrlen;
+    struct sockaddr_in6 addr;
+} ScmSockAddrIn6;
+
+SCM_CLASS_DECL(Scm_SockAddrIn6Class);
+#define SCM_CLASS_SOCKADDR_IN6   (&Scm_SockAddrIn6Class)
+
+#endif /* HAVE_IPV6 */
 
 #define SCM_SOCKADDR_MAXLEN    128
 
@@ -194,6 +207,34 @@ SCM_CLASS_DECL(Scm_SysServentClass);
 
 extern ScmObj Scm_GetServByName(const char *name, const char *proto);
 extern ScmObj Scm_GetServByPort(int port, const char *proto);
+
+/*
+ * Address information
+ */
+
+#ifdef HAVE_IPV6
+
+typedef struct ScmSysAddrinfoRec {
+    SCM_HEADER;
+    int flags;
+    int family;
+    int socktype;
+    int protocol;
+    socklen_t addrlen;
+    ScmString *canonname;
+    ScmSockAddr *addr;
+} ScmSysAddrinfo;
+
+SCM_CLASS_DECL(Scm_SysAddrinfoClass);
+#define SCM_CLASS_SYS_ADDRINFO  (&Scm_SysAddrinfoClass)
+#define SCM_SYS_ADDRINFO(obj)   ((ScmSysAddrinfo*)obj)
+#define SCM_SYS_ADDRINFO_P(obj) SCM_XTYPEP(obj, SCM_CLASS_SYS_ADDRINFO)
+
+extern ScmObj Scm_GetAddrinfo(const char *nodename,
+			      const char *servname,
+			      struct addrinfo *hints);
+
+#endif /* HAVE_IPV6 */
 
 SCM_DECL_END
 

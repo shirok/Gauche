@@ -12,10 +12,11 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: netlib.stub,v 1.19 2003-02-05 01:44:34 shirok Exp $
+;;  $Id: netlib.stub,v 1.20 2003-05-02 10:34:56 shirok Exp $
 ;;
 
 "#include \"net.h\"
+#include <gauche/class.h>
 "
 
 (define-type <socket-address> "ScmSockAddr*" "socket address"
@@ -62,6 +63,23 @@
 (define-cmethod sockaddr-family ((addr "Scm_SockAddrInClass"))
   "  SCM_RETURN(sym_inet);")
 
+(if "defined HAVE_IPV6"
+    (begin
+      (define-symbol inet6 "sym_inet6")
+
+      (define-cmethod sockaddr-name ((addr "Scm_SockAddrIn6Class"))
+	"  ScmSockAddrIn6 *a = (ScmSockAddrIn6*)addr;
+  ScmPort *out = SCM_PORT(Scm_MakeOutputStringPort(TRUE));
+  char buf[INET6_ADDRSTRLEN];
+  const char *r = inet_ntop(AF_INET6, &a->addr.sin6_addr, buf, sizeof(buf));
+  if (r == NULL) Scm_SysError(\"inet_ntop\");
+  Scm_Printf(out, \"[%s]:%d\", buf, ntohs(a->addr.sin6_port));
+  SCM_RETURN(Scm_GetOutputStringUnsafe(out));")
+
+      (define-cmethod sockaddr-family ((addr "Scm_SockAddrIn6Class"))
+	"  SCM_RETURN(sym_inet6);")
+      ))
+
 ;;----------------------------------------------------------
 ;; low-level socket routines
 
@@ -69,9 +87,11 @@
                                             &optional (protocol::<fixnum> 0))
   (return "Scm_MakeSocket"))
 
+(define-enum PF_UNSPEC)
 (define-enum PF_UNIX)
 (define-enum PF_INET)
 
+(define-enum AF_UNSPEC)
 (define-enum AF_UNIX)
 (define-enum AF_INET)
 
@@ -177,6 +197,69 @@
 
 (define-cproc sys-getservbyport (port::<fixnum> proto::<string>)
   "  SCM_RETURN(Scm_GetServByPort(port, Scm_GetStringConst(proto)));")
+
+;;----------------------------------------------------------
+;; IPv6 routines
+
+"extern ScmObj addrinfo_allocate(ScmClass *klass, ScmObj initargs);"
+
+(if "defined HAVE_IPV6"
+    (begin
+      (define-type <sys-addrinfo> "ScmSysAddrinfo*" #f
+	"SCM_SYS_ADDRINFO_P" "SCM_SYS_ADDRINFO")
+
+      (define-cclass <sys-addrinfo>
+	"ScmSysAddrinfo*" "Scm_SysAddrinfoClass"
+	()
+	((flags :type <int>)
+	 (family :type <int>)
+	 (socktype :type <int>)
+	 (protocol :type <int>)
+	 (addrlen :type <uint32>)
+	 (canonname :type <string>)
+	 (addr :setter "  if (!SCM_SOCKADDRP(value)) Scm_Error(\"ScmSockAddr* required, but got %S\", value);
+  obj->addr = SCM_SOCKADDR(value);"))
+	(allocator (c "addrinfo_allocate")))
+
+      (define-cproc sys-getaddrinfo (nodename servname hints)
+	"  struct addrinfo ai;
+  if (!SCM_STRINGP(nodename) && !SCM_FALSEP(nodename))
+    Scm_Error(\"string or #f required, but got %S\", nodename);
+  if (!SCM_STRINGP(servname) && !SCM_FALSEP(servname))
+    Scm_Error(\"string or #f required, but got %S\", servname);
+  if (!SCM_SYS_ADDRINFO_P(hints) && !SCM_FALSEP(hints))
+    Scm_Error(\"<sys-addrinfo> or #f required, but got %S\", hints);
+  if (!SCM_FALSEP(hints)) {
+    memset(&ai, 0, sizeof(ai));
+    ai.ai_flags = SCM_SYS_ADDRINFO(hints)->flags;
+    ai.ai_family = SCM_SYS_ADDRINFO(hints)->family;
+    ai.ai_socktype = SCM_SYS_ADDRINFO(hints)->socktype;
+    ai.ai_protocol = SCM_SYS_ADDRINFO(hints)->protocol;
+  }
+  SCM_RETURN(Scm_GetAddrinfo(SCM_FALSEP(nodename) ? NULL : Scm_GetStringConst(SCM_STRING(nodename)),
+                             SCM_FALSEP(servname) ? NULL : Scm_GetStringConst(SCM_STRING(servname)),
+                             SCM_FALSEP(hints) ? NULL : &ai));")
+      ))
+
+(if "defined AF_INET6" (define-enum AF_INET6))
+(if "defined PF_INET6" (define-enum PF_INET6))
+
+(if "defined IPPROTO_IPV6" (define-enum IPPROTO_IPV6))
+(if "defined IPV6_UNICAST_HOPS" (define-enum IPV6_UNICAST_HOPS))
+(if "defined IPV6_MULTICAST_IF" (define-enum IPV6_MULTICAST_IF))
+(if "defined IPV6_MULTICAST_HOPS" (define-enum IPV6_MULTICAST_HOPS))
+(if "defined IPV6_MULTICAST_LOOP" (define-enum IPV6_MULTICAST_LOOP))
+(if "defined IPV6_JOIN_GROUP" (define-enum IPV6_JOIN_GROUP))
+(if "defined IPV6_LEAVE_GROUP" (define-enum IPV6_LEAVE_GROUP))
+(if "defined IPV6_V6ONLY" (define-enum IPV6_V6ONLY))
+
+(if "defined AI_PASSIVE" (define-enum AI_PASSIVE))
+(if "defined AI_CANONNAME" (define-enum AI_CANONNAME))
+(if "defined AI_NUMERICHOST" (define-enum AI_NUMERICHOST))
+(if "defined AI_NUMERICSERV" (define-enum AI_NUMERICSERV))
+(if "defined AI_V4MAPPED" (define-enum AI_V4MAPPED))
+(if "defined AI_ALL" (define-enum AI_ALL))
+(if "defined AI_ADDRCONFIG" (define-enum AI_ADDRCONFIG))
 
 ;; Local variables:
 ;; mode: scheme

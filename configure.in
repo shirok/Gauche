@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.87 2003-04-30 08:41:50 shirok Exp $
-AC_PREREQ(2.53)
+dnl $Id: configure.in,v 1.88 2003-05-02 10:34:19 shirok Exp $
+AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.7_pre2, shiro@acm.org)
-AC_REVISION($Revision: 1.87 $)
+AC_REVISION($Revision: 1.88 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h)
 
@@ -174,6 +174,16 @@ if test $GAUCHE_THREAD_TYPE = pthreads; then
 fi
 LIBS="$LIBS $THREADLIBS"
 
+dnl --enable-ipv6
+dnl   Even if you specify --enable-ipv6, we'll check if they are
+dnl   really available later, and disable the support if not.
+AC_ARG_ENABLE(ipv6, AC_HELP_STRING(--enable-ipv6, [enable IPv6 support]), [
+  case $enableval in
+    no) enable_ipv6=no ;;
+    *) enable_ipv6=yes ;;
+  esac
+], enable_ipv6=no)
+
 dnl ==========================================================
 dnl Checks for programs.
 AC_PROG_CC
@@ -213,8 +223,21 @@ if test $with_iconv != no; then
   AC_CHECK_HEADER($ICONV_NAME.h, AC_DEFINE(HAVE_ICONV_H,1,[Define if you have iconv.h and want to use it]))
 fi
 
+dnl Checks availability of ipv6 support
+if test $enable_ipv6 = yes; then
+  AC_CACHE_CHECK([for IPv6], ac_cv_ipv6, [
+  AC_TRY_COMPILE([
+#include <sys/types.h>
+#include <sys/socket.h>], [
+  socket(AF_INET6, SOCK_STREAM, 0);
+  ], ac_cv_ipv6=yes, ac_cv_ipv6=no)])
+  if test $ac_cv_ipv6 = yes; then
+    AC_DEFINE(HAVE_IPV6,1,[Define if you have IPv6 support])
+  fi
+fi
+
 dnl ===========================================================
-dnl Checks processor type, in order to
+dnl Checks processor type, for processor-specific optimization
 case $target in
   i?86-*)
     AC_DEFINE(SCM_TARGET_I386,1,[Define if uses i386 optimizations])
