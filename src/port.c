@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.12 2001-03-12 04:38:41 shiro Exp $
+ *  $Id: port.c,v 1.13 2001-03-12 06:15:31 shiro Exp $
  */
 
 #include <errno.h>
@@ -474,6 +474,12 @@ static int null_puts(ScmPort *dummy, const char *buf, int size, int len)
     return 0;
 }
 
+static int null_flush(ScmPort *dummy)
+    /*ARGSUSED*/
+{
+    return 0;
+}
+
 static int null_close(ScmPort *dummy)
     /*ARGSUSED*/
 {
@@ -501,6 +507,7 @@ ScmObj Scm_MakeVirtualPort(int direction, ScmPortVTable *vtable, void *data,
     if (!vt->Putb) vt->Putb = null_putb;
     if (!vt->Putc) vt->Putc = null_putc;
     if (!vt->Puts) vt->Puts = null_puts;
+    if (!vt->Flush) vt->Flush = null_flush;
     if (!vt->Close) vt->Close = null_close;
     if (!vt->Info) vt->Info = null_info;
 
@@ -689,6 +696,7 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
         vt.Putb = fdport_putb_unbuffered;
         vt.Putc = fdport_putc_unbuffered;
         vt.Puts = fdport_puts_unbuffered;
+        vt.Flush = NULL;        /* use default */
         vt.Close = fdport_close_unbuffered;
         vt.Info = fdport_info;
     }
