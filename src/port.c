@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.63 2002-04-30 09:12:07 shirok Exp $
+ *  $Id: port.c,v 1.64 2002-05-02 01:24:52 shirok Exp $
  */
 
 #include <unistd.h>
@@ -489,11 +489,18 @@ static int bufport_read(ScmPort *p, char *dst, int siz)
         req = MIN(siz, p->src.buf.size);
         r = bufport_fill(p, req, TRUE);
         if (r <= 0) break; /* EOF or an error*/
-        memcpy(dst, p->src.buf.current, r);
-        p->src.buf.current += r;
-        nread += r;
-        siz -= r;
-        dst += r;
+        if (r >= siz) {
+            memcpy(dst, p->src.buf.current, siz);
+            p->src.buf.current += siz;
+            nread += siz;
+            break;
+        } else {
+            memcpy(dst, p->src.buf.current, r);
+            p->src.buf.current += r;
+            nread += r;
+            siz -= r;
+            dst += r;
+        }
         if (p->src.buf.mode != SCM_PORT_BUFFER_FULL) {
             if (r < req) break;
             if (p->src.buf.ready
