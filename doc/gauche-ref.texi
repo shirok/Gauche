@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.47 2001-08-31 09:17:20 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.48 2001-09-05 12:08:00 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3332,6 +3332,8 @@ signum number that stopped the child.
 @subsection I/O multiplexing
 
 The interface functions for @code{select(2)}.
+The higher level interface is provided on top of these
+primitives; see @ref{Simple dispatcher}.
 
 @deftp {Builtin Class} <sys-fdset>
 @clindex sys-fdset
@@ -3642,6 +3644,7 @@ of descendants of @var{class}.
 * Parsing command-line options::  
 * High Level Process Interface::  
 * Regular expression utilities::  
+* Simple dispatcher::           
 * Serializer::                  
 * Unit Testing::                
 * RFC822 Message parsing::      
@@ -4111,6 +4114,11 @@ These variables are bound to @code{AF_UNIX} and @code{AF_INET}.
 These variables are bound to @code{SOCK_STREAM}, @code{SOCK_DGRAM}
 and @code{SOCK_RAW}.
 @end defvar
+
+@defun socket-fd socket
+Returns an integer system file descriptor of the underlying socket.
+@end defun
+
 
 @defun socket-status socket
 Returns a internal status of @var{socket}, by one of the following
@@ -4783,7 +4791,7 @@ returns or raises an error.
 
 
 @c ----------------------------------------------------------------------
-@node Regular expression utilities, Serializer, High Level Process Interface, Libarary Modules
+@node Regular expression utilities, Simple dispatcher, High Level Process Interface, Libarary Modules
 @section @code{gauche.regexp} - Regular expression utilities
 
 @deftp {Module} gauche.regexp
@@ -4960,9 +4968,79 @@ The @code{parse-date} example above becomes simpler if you use
 @end example
 @end defmac
 
+@c ----------------------------------------------------------------------
+@node Simple dispatcher, Serializer, Regular expression utilities, Libarary Modules
+@section @code{gauche.selector} - Simple dispatcher
+
+@deftp {Module} gauche.selector
+@mdindex gauche.selector
+This module provides a simple interface to dispatch I/O events to
+registered handlers, based on @code{sys-select}.
+@end deftp
+
+@deftp {Class} <selector>
+@clindex selector
+A dispatcher instance that keeps watching I/O ports with associated
+handlers.  A new instance can be created by @code{make} method.
+@end deftp
+
+
+@deffn {Method} selector-add! (self <selector>) port-or-fd proc flags
+Add a handler @var{proc} to the selector.  @var{proc} is called
+when @var{port-or-fd}, which should be a port object or an integer
+that specifies a system file descriptor,  meets a certain condition
+specified by @var{flags}.
+@var{flags} must be a list of one or more of the following symbols.
+@table @code
+@item r
+Calls @var{proc} when data is available at @var{port-or-fd} to read.
+@item w
+Calls @var{proc} when @var{port-or-fd} is ready to be written.
+@item x
+Calls @var{proc} when an exceptional condition occurs on @var{port-or-fd}.
+@end table
+
+@var{proc} is called with two arguments.  The first one is @var{port-or-fd}
+itself, and the second one is a symbol @code{r}, @code{w} or @code{x},
+indicating the condition.
+
+If a handler is already associated with @var{port-or-fd} under the
+same condition, the previous handler is replaced by @var{proc}.
+@end deffn
+
+@deffn {Method} selector-delete! (self <selector>) port-or-fd proc flags
+Deletes the handler entries that matches @var{port-or-fd}, @var{proc}
+and @var{flags}.   One or more of the arguments may be @code{#f},
+meaning ``don't care''.  For example,
+@example
+(selector-delete! selector the-port #f #f)
+@end example
+deletes all the handlers associated to @var{the-port}, and
+@example
+(selector-delete! selector #f #f '(w))
+@end example
+delets all the handlers waiting for writable condition.
+@end deffn
+
+
+@deffn {Method} selector-select (self <selector>) &optional (timeout #f)
+Dispatcher body.  Waits for the conditions registered in @var{self},
+and when it occurs, calls the associated handler.
+
+If the @var{timeout} argument is omitted or false, this method waits
+indefinitely.  Alternatively you can give a timeout value, that can
+be a real number in microseconds, or a list of two integers that
+represents seconds and microseconds.
+
+Returns the number of handlers called.  Zero means the selector has been
+timed out.
+
+It is safe to modify @var{self} inside handler.  The change will be
+effective from the next call of @code{selector-select}
+@end deffn
 
 @c ----------------------------------------------------------------------
-@node Serializer, Unit Testing, Regular expression utilities, Libarary Modules
+@node Serializer, Unit Testing, Simple dispatcher, Libarary Modules
 @section @code{gauche.serializer} - Serializer
 
 @deftp {Module} gauche.serializer
