@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.136 2002-03-28 19:50:54 shirok Exp $
+ *  $Id: vm.c,v 1.137 2002-04-01 22:45:36 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -197,7 +197,7 @@ ScmObj Scm_WithLock(ScmInternalMutex *mutex,
     pthread_mutex_unlock(mutex);
     return obj;
 #else  /* !GAUCHE_USE_PTHREAD */
-    return func(vm, data);
+    return func(data);
 #endif /* !GAUCHE_USE_PTHREAD */
 }
 
@@ -246,7 +246,8 @@ void Scm__InitVM(void)
     }
     rootVM->thread = pthread_self();
 #else   /* !GAUCHE_USE_PTHREAD */
-    rootVM = theVM = Scm_NewVM(NULL, Scm_SchemeModule());
+    rootVM = theVM = Scm_NewVM(NULL, Scm_SchemeModule(),
+                               SCM_MAKE_STR_IMMUTABLE("root"));
 #endif  /* !GAUCHE_USE_PTHREAD */
     vmList = SCM_LIST1(SCM_OBJ(rootVM));
     SCM_INTERNAL_MUTEX_INIT(vmListMutex);
@@ -2380,6 +2381,7 @@ ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name)
    This is to prevent exitted thread's system resources from being
    uncollected.
  */
+#ifdef GAUCHE_USE_PTHREAD
 static void *thread_entry(void *vm)
 {
     if (pthread_setspecific(vm_key, vm) != 0) {
@@ -2389,6 +2391,7 @@ static void *thread_entry(void *vm)
     SCM_VM(vm)->result = Scm_Apply(SCM_OBJ(SCM_VM(vm)->thunk), SCM_NIL);
     return NULL;
 }
+#endif /* GAUCHE_USE_PTHREAD */
 
 static ScmObj thread_start(void *data)
 {
