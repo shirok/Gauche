@@ -1,3 +1,7 @@
+2001-10-29  Shiro Kawai  <shiro@acm.org>
+
+	* various files: adapted to LP64 architecture.
+
 2001-10-28  Shiro Kawai  <shiro@acm.org>
 
 	* configure.in's and Makefile.in's : made it work on more
