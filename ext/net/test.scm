@@ -56,7 +56,10 @@
         (let ((host (sys-gethostbyname "localhost")))
           (and host
                (or (equal? (slot-ref host 'name) "localhost")
-                   (member "localhost" (slot-ref host 'aliases)))
+                   (member "localhost" (slot-ref host 'aliases))
+		   ;; cygwin usually doesn't define "localhost", and
+		   ;; returns hostname.  For now we skip this test.
+		   (string-suffix? "cygwin" (gauche-architecture)))
                (member "127.0.0.1" (slot-ref host 'addresses))
                #t))))
 
@@ -65,7 +68,10 @@
         (let ((host (sys-gethostbyaddr "127.0.0.1" |AF_INET|)))
           (and host
                (or (equal? (slot-ref host 'name) "localhost")
-                   (member "localhost" (slot-ref host 'aliases)))
+                   (member "localhost" (slot-ref host 'aliases))
+		   ;; cygwin usually doesn't define "localhost", and
+		   ;; returns hostname.  For now we skip this test.
+		   (string-suffix? "cygwin" (gauche-architecture)))
                (member "127.0.0.1" (slot-ref host 'addresses))
                #t))))
 
