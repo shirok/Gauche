@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: cookie.scm,v 1.4 2001-11-14 07:58:16 shirok Exp $
+;;;  $Id: cookie.scm,v 1.5 2002-02-11 19:43:54 shirok Exp $
 ;;;
 
 ;; Parser and constructor of http "Cookies" defined in
@@ -216,7 +216,7 @@
 (define (make-expires-attr time)
   (format #f "Expires=~a"
           (if (number? time)
-              (sys-strftime "%a, %d-%b-%Y %T GMT" (sys-gmtime time))
+              (sys-strftime "%a, %d-%b-%Y %H:%M:%S GMT" (sys-gmtime time))
               (time))))
 
 (provide "rfc/cookie")
