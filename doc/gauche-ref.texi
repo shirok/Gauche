@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.177 2002-04-22 04:48:49 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.178 2002-04-24 12:01:35 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -7310,6 +7310,8 @@ but I don't have Scheme interface yet, except the following ones:
 
 @defun open-input-buffered-port filler buffer-size
 @defunx open-output-buffered-port flusher buffer-size
+@b{These procedures are deprecated and will be replaced by more general procedural APIs.}
+
 These are the Scheme interface to the ``buffered port''.
 
 @code{open-input-buffered-port} creates and returns an input port,
@@ -7337,8 +7339,8 @@ to be flushed.   @var{flusher} must return a number of bytes flushed,
 which must be the same as the size of the passed string.
 The string may shorter than @var{buffer-size}.
 When the port is closed, @var{flusher} is called with any data
-remaining in the buffer, then it is called again with argument @code{#f},
-indicating that the port is closed.
+remaining in the buffer, then it is called again with @code{#f} to
+indicate the port is closed.
 @end defun
 
 @node Input, Output, Procedural ports, Input and output
