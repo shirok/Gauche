@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.9 2001-06-26 07:39:08 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.10 2001-07-24 19:30:00 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -27,7 +27,7 @@ cat <<EOF
 #include <limits.h>
 #include <string.h>  /* for memcpy() */
 #include <gauche.h>
-#include "uvector.h"
+#include "gauche/uvector.h"
 #include "uvectorP.h"
 
 #ifndef EPSILON

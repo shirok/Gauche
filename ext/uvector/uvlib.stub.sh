@@ -13,11 +13,11 @@ cat << EOF
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; \$Id: uvlib.stub.sh,v 1.3 2001-06-26 07:39:08 shirok Exp $
+;;; \$Id: uvlib.stub.sh,v 1.4 2001-07-24 19:30:00 shirok Exp $
 ;;;
 
 "
-#include \\"uvector.h\\"
+#include \\"gauche/uvector.h\\"
 #include \\"uvectorP.h\\"
 "
 

@@ -14,7 +14,7 @@ HEADERS   = uvector.h
 TARGET    = libuvector.so
 OBJS      = uvector.o uvlib.o
 CONFIG_GENERATED = Makefile config.cache config.log config.status
-GENERATED = uvector.h uvector.c uvlib.c uvlib.stub
+GENERATED = gauche/uvector.h uvector.c uvlib.c uvlib.stub
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`/gauche
@@ -26,11 +26,12 @@ all : $(TARGET)
 libuvector.so : $(OBJS)
 	$(CC) $(LDFLAGS) libuvector.so $(OBJS) $(LIBS)
 
-$(OBJS) : uvector.h uvectorP.h
+$(OBJS) : gauche/uvector.h uvectorP.h
 
-uvector.h : uvector.h.sh
-	rm -rf uvector.h
-	sh ./uvector.h.sh > uvector.h
+gauche/uvector.h : uvector.h.sh
+	if test ! -d gauche; then mkdir gauche; fi
+	rm -rf gauche/uvector.h
+	sh ./uvector.h.sh > gauche/uvector.h
 
 uvector.c : uvector.c.sh
 	rm -rf uvector.c
@@ -48,7 +49,7 @@ test : all
 	$(GOSH) test.scm > test.log
 
 install : all
-	@for f in $(HEADERS) _end; do \
+	@for f in gauche/$(HEADERS) _end; do \
 	  if test $$f != _end; then \
 	    $(INSTALL) -m 444 $$f $(HEADER_INSTALL_DIR); \
 	  fi; \
@@ -68,8 +69,8 @@ clean :
 	rm -rf core $(TARGET) $(OBJS) *~ test.log so_locations
 
 distclean : clean
-	rm -rf $(CONFIG_GENERATED)
+	rm -rf $(CONFIG_GENERATED) gauche
 
 realclean : clean
-	rm -rf $(CONFIG_GENERATED) $(GENERATED) configure
+	rm -rf $(CONFIG_GENERATED) $(GENERATED) gauche configure
 
