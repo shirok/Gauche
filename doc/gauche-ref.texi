@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.143 2001-12-22 21:09:32 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.144 2002-01-08 06:00:13 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -554,7 +554,9 @@ you'll find it easy to understand the basic usage:
 @example
 ;; @r{Defines a class point, that has x and y coordinate}
 (define-class point ()
-  (x y))
+  ((x :init-value 0)
+   (y :init-value 0))
+  )
 
 (define-method move ((p point) dx dy)
   (inc! (slot-ref p 'x) dx)
@@ -1270,6 +1272,8 @@ Equivalent to @code{(quote datum)}.
 '(1 2 3) @result{} (1 2 3)
 @end example
 @end deftp
+
+
 
 @c ----------------------------------------------------------------------
 @node Making Procedures, Assignments, Literals, Core syntax
@@ -5377,6 +5381,16 @@ output port and current error port are set to @var{port}, respectively.
 Closes input and output @var{port}, respectively
 @c JP
 それぞれ、入力ポートと出力ポートを閉じます。
+@c COMMON
+@end defun
+
+@defun port-type port
+@c EN
+Returns the type of @var{port} in one of the symbols @code{file}, 
+@code{string} or @code{proc}.
+@c JP
+@var{port}のタイプを、シンボル@code{file}、@code{string}、@code{proc}の
+いずれかで返します。
 @c COMMON
 @end defun
 
