@@ -13,7 +13,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: extract,v 1.1 2001-09-27 09:25:55 shirok Exp $
+;;;  $Id: extract,v 1.2 2001-10-05 10:56:55 shirok Exp $
 ;;;
 
 (use gauche.regexp)
@@ -37,14 +37,14 @@
   (in (read-line)))
 
 (define (usage)
-  (display "Usage: extract [-en|-ja][-o outfile] infile\n")
+  (display "Usage: extract [-en|-jp][-o outfile] infile\n")
   (exit 1))
 
 (define (main args)
   (let ((a (parse-options args
              (("o=s" (outfile) (set! *outfile* outfile))
               ("en"  () (set! *lang* 'en))
-              ("ja"  () (set! *lang* 'ja))
+              ("jp"  () (set! *lang* 'jp))
               (else _ (usage))))))
 
     (define (do-it)

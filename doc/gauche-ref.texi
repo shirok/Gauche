@@ -1,10 +1,15 @@
 \input texinfo  @c -*-texinfo-*-
 @comment %**start of header
-@setfilename gauche-ref
+@c EN
+@setfilename gauche-refe
 @settitle Gauche Reference Manual
+@c JP
+@setfilename gauche-refj
+@settitle Gauche リファレンスマニュアル
+@c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.83 2001-10-05 09:56:50 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.84 2001-10-05 10:56:55 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -16,7 +21,11 @@
 @end iftex
 
 @titlepage
+@c EN
 @title Gauche Reference Manual
+@c JP
+@title Gauche リファレンスマニュアル
+@c COMMON
 @subtitle version 0.4.7
 @author Shiro Kawai (shiro@@acm.org)
 
@@ -29,7 +38,11 @@ Copyright @copyright{} 2001 Shiro Kawai (shiro@@acm.org)
 @node Top, Introduction, (dir), (dir)
 
 @ifnottex
+@c EN
 This is a reference manual of Gauche, an R5RS Scheme implementation.
+@c JP
+本書は、R5RS準拠のScheme処理系、Gaucheのリファレンスマニュアルです。
+@c COMMON
 @end ifnottex
 
 @menu
@@ -52,22 +65,43 @@ This is a reference manual of Gauche, an R5RS Scheme implementation.
 @node Introduction, Concepts, Top, Top
 @chapter Introduction
 
+@c EN
 This is a programmers' guide and reference manual of
 the Gauche Scheme system.
 Here I tried to describe Gauche's implementation precisely,
 sometimes referring to background design choices.
+@c JP
+本書はGauche Scheme systemに関する、プログラマーのためのガイドと
+リファレンスです。なるべくGaucheの実装を正確に記述することを
+目的として、時には背景となる設計上の選択も含めて説明しています。
+@c COMMON
 
+@c EN
 The target readers are those who already know Scheme and
 want to write useful programs in Gauche.
 For those who are new to Scheme, it'll be easier to start
 from some kind of tutorial.  I'm planning to write one.
+@c JP
+したがって、既にSchemeを知っていてGaucheの全機能を活用して
+プログラムを書きたいという読者を対象にしています。
+Schemeに触れるのが初めての読者は、何らかのチュートリアルを併用すると
+良いでしょう。私もいずれチュートリアルめいたものを書くつもりです。
+@c COMMON
 
+@c EN
 This manual only deals with Scheme side of things.  Gauche has
 another face, a C interface.   Details of it will be discussed
 in a separate document to be written.
 Those who wants to use Gauche as an embedded language, or wants
 to write an extension, need that volume.
+@c JP
+このマニュアルでは、GaucheのScheme言語としての面のみを扱います。
+GaucheはC言語から呼べる汎用リスト処理ライブラリとしての側面も持っていますが、
+それは別ドキュメントで解説する予定です。Gaucheを組み込み言語として使いたい、
+もしくはGaucheをC言語で拡張したいという読者はそのドキュメントが必要となります。
+@c COMMON
 
+@c EN
 For the Scheme side, I tried to make this manual self-contained
 for reader's convenience, i.e. as far as you want to look up
 Gauche's features you don't need to refer to other documents, 
@@ -78,9 +112,22 @@ copy of the standard documents; sometimes I omit detailed
 discussions in the standard documents for brevity.
 I put pointers to the original documents, so please consult them if you
 need to refer to the standards.
+@c JP
+Scheme言語としての側面に関しては、なるべくこのマニュアル一冊でリファレンスとしての
+用が足りるように記述しました。標準に定められている関数でも、こちらのマニュアルだけで
+使うのに必要な事項を知ることができます。但し、このマニュアルは標準文書の替わりには
+なりません。記述を短くするために理論的な背景などは省略してあります。
+オリジナルのドキュメントへのポインタを参考文献の項に上げておきましたので、
+必要に応じて参照して下さい。
+@c COMMON
 
+@c EN
 If you're reading this document off-line, you may find the most
 recent version on the web:
+@c JP
+もしあなたがこのマニュアルをオフラインで読んでいるなら、
+時々下記のURLをチェックしてみて下さい。更新があるかもしれません。
+@c COMMON
 @example
 @uref{http://www.shiro.dreamhost.com/scheme/gauche/}.
 @end example
@@ -94,40 +141,82 @@ recent version on the web:
 @node Overview of Gauche, Notations, Introduction, Introduction
 @section Overview of Gauche
 
+@c EN
 Gauche is a script interpreter based on Scheme.
 Gauche conforms the language standard
 "Revised^5 Report on the Algorithmic Language Scheme"
 (@ref{r5rs,[R5RS],R5RS}),
 and supports various common libraries defined in SRFIs
 (@uref{http://srfi.schemers.org}).
+@c JP
+GaucheはScheme言語に基づくスクリプトインタプリタです。
+Scheme言語の標準である、"Revised^5 Report on the Algorithmic Language Scheme"
+(@ref{r5rs,[R5RS],R5RS})に準拠しています。また、SRFI
+(@uref{http://srfi.schemers.org}) に規定されている数多くのライブラリを
+サポートしています。
+@c COMMON
 
+@c EN
 The goal of Gauche is to provide a handy tool for
 programmers and system administrators to handle
 daily works conveniently and efficiently in the production environment.
+@c JP
+Gaucheは、プログラマやシステム管理者がこなす日常の雑事を
+効率よくSchemeで書けるようにすることを目的として設計されています。
+@c COMMON
 
+@c EN
 There are lots of Scheme implementations available, and each
 of them has its design emphasis and weeknesses.  Gauche is
 designed with emphasis on the following criteria.
+@c JP
+世の中には多くのSchemeの実装がありますが、
+それぞれの実装には長所と短所があります。
+Gaucheが長所とするべく重点を置いているのは次のようなポイントです。
+@c COMMON
 
 @table @b
+@c EN
 @item Quick startup
+@c JP
+@item 立ち上りが速いこと
+@c COMMON
 
+@c EN
 In the production environment, there are situations that 
 you write a ten-line Scheme script which does a simple but useful thing,
 and others invoke it from 
-from their shell scripts (or Perl, Phthon, Tcl, whatever) very frequently.
+from their shell scripts (or Perl, Python, Tcl, whatever) very frequently.
 You don't want to use a big fat scripting engine that takes half a second
 to start up for this kind of scripts, or people start writing their own
 libraries in their own favorite languages.
 Sharing scripts, not only code, is very important in the practical
 situation, and you want to have a reasonably lightweight interpreter
 to populate your scripts.
+@c JP
+プロダクション環境では、よくほんの10数行のスクリプトをちょいと書いたら、それが
+他の人のシェルスクリプト(あるいはPerlでもPythonでも)から頻繁に呼ばれるようになった、
+ということが起こります。ちょっとした処理を行うのに、毎回立上りに1秒もかかる
+インタプリタを使っていたら、他の人はあなたのスクリプトを呼ぶのを嫌って
+自分の言語で同等の機能を書いてしまうでしょう。こんな環境では、とにかく軽く立ち上がって
+くれることが重要になります。
+@c COMMON
 
+@c EN
 Gauche includes a set of most common features in its executable,
 while splits less common stuffs into libraries which are to be loaded
 on demand, to make itself start quickly.
+@c JP
+Gaucheでは、言語のコアとスクリプトとして良く使いそうな機能に絞って
+実行ファイルにコンパイルインし、使う分野が特定される機能は必要に応じて
+読み込むようにしています。
+@c COMMON
 
+@c EN
 @item Modular development
+@c JP
+@item モジュラー開発
+@c COMMON
 
 Richness of libraries is one of the criteria on which
 people choose scripting language, so you want to include as many
@@ -278,8 +367,13 @@ The API of the entry reflects the API specified in POSIX.
 @node Concepts, Writing Scheme program using Gauche, Introduction, Top
 @chapter Concepts
 
+@c EN
 In this chapter I describe a few Gauche's design concepts
 that help you to understand how Gauche works.
+@c JP
+本章では、Gauche動作の背景となるいくつかの概念を説明します。
+Gaucheの動作を正確に理解する助けになると思います。
+@c COMMON
 
 ---This chapter is under construction---
 
@@ -293,25 +387,51 @@ that help you to understand how Gauche works.
 @node Compilation, Module System, Concepts, Concepts
 @section Compilation
 
+@c EN
 Gauche is a Scheme interpreter, in the sense that it reads
 a Scheme form at a time and evaluates it.   Actually,
 Gauche compiles every toplevel form into an intermediate form
 before executing.
+@c JP
+Gaucheは、Schemeフォームをひとつづつ読み込んでは評価するという意味では
+インタプリタです。しかし内部では、Gaucheはひとつひとつのフォームを中間形式に
+コンパイルして仮想マシンで実行しています。
+@c COMMON
 
+@c EN
 Built-in sytanxes and macros are recognized and expanded
 at the compilation time.  Some built-in procedures are
 expanded in-line as far as the compiler can see the global
 binding is not altered at the time the form is compiled.
+@c JP
+組み込みの構文とマクロはコンパイル時に認識されて展開されます。
+よく使われる組み込み関数は、コンパイル時にグローバルな束縛が置き換わっていない場合に、
+インライン展開されます。
+@c COMMON
 
+@c EN
 This raises a few problems you should care.
+@c JP
+プログラマは通常、コンパイラの動作を気にする必要はほとんどありませんが、
+いくつかの点に注意する必要があります。
+@c COMMON
 
 @table @emph
+@c EN
 @item load is done at run time.
 @code{load} is a procedure in Gauche, therefore evaluated at run time.
 If the loaded program defines a macro, which is available for the compiler
 after the toplevel form containing @code{load} is evaluated.  So, suppose
 @code{foo.scm} defines a macro @code{foo}, and you use the macro
 like this:
+@c JP
+@item loadは実行時に評価される
+@code{load}はGaucheでは一般の関数なので、実行時に評価されます。
+ロードされるファイル中でマクロを定義している場合、そのマクロは
+その@code{load}の呼び出しを含むトップレベルフォームが評価された後で
+有効になります。例えば、@code{foo.scm}がマクロ@code{foo}を定義しているとして、
+次のような用法を考えてみてください。
+@c COMMON
 @example
 ;; @r{in ``foo.scm''}
 (define-syntax foo
@@ -324,21 +444,44 @@ like this:
 (load "foo")
 (foo (1 2 3)) @result{} '(1 2 3)
 @end example
+@c EN
 The @code{(begin (load ...))} form fails,  because the compiler
 doesn't know @code{foo} is a special form at the compilation time
 and compiles @code{(1 2 3)} as if it is a normal procedure call.
 The latter example works, however, since the execution
 of the toplevel form @code{(load "foo")} is done before
 @code{(foo (1 2 3))} is compiled.
+@c JP
+@code{begin}で@code{load}と@code{foo}の呼び出しを囲んだ場合、
+コンパイラはまず@code{begin}全体をコンパイルします。その時点でマクロ
+@code{foo}は定義されていませんから、これは評価時にエラーになります。
+一方、後者では@code{load}が評価されてから@code{foo}がコンパイルされるので、
+問題は起きません。
+@c COMMON
 
+@c EN
 To avoid this kind of subtleties, use @code{require} or @code{use}
 to load a program fragments.  Those are recognized by the compiler.
+@c JP
+このような混乱を避けるために、別のプログラムファイルを読み込む必要がある時は
+@code{require}か@code{use}を使うことを勧めます。これらは構文であり、
+コンパイラに認識されます。
+@c COMMON
 
+@c EN
 @item require is done at compile time
 On the other hand, since @code{require} and @code{use} is recognized
 by the compiler, the specified file is loaded even if the form
 is in the conditional expression.  Use @code{load} if you need
 such behavior.
+@c JP
+@item require はコンパイル時に評価される
+上記の裏返しですが、@code{require}と@code{use}はコンパイル時に
+解釈されます。したがって、@code{if}などの条件文のボディにこれらのフォームを
+置いておいても、指定されたファイルは条件にかかわらず読み込まれてしまいます。
+もし条件によって読み込むかどうかを変えたい場合は、@code{load}を使うか、
+条件判断自体をマクロで行うようにしてください。
+@c COMMON
 @end table
 
 
