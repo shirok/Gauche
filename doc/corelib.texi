@@ -1616,7 +1616,7 @@ Returns a symbol whose name is a string @var{string}.
 @example
 (string->symbol "a") @result{} a
 (string->symbol "A") @result{} A
-(string->symbol "weird symbol name" @result{} |weird symbol name|
+(string->symbol "weird symbol name") @result{} |weird symbol name|
 @end example
 @end defun
 
