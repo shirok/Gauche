@@ -4,6 +4,7 @@ module.scm
 macro.scm
 number.scm
 string.scm
+keyword.scm
 hash.scm
 io.scm
 dynwind.scm

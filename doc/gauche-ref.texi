@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.289 2002-10-24 00:47:12 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.290 2002-10-26 05:53:54 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -5860,8 +5860,31 @@ Returns a keyword whose name is @var{name}.
 Returns the name of the keyword @var{keyword}.
 @end defun
 
-@defun get-keyword key list [fallback]
+@defun get-keyword key list &optional fallback
+A useful procedure to extract a value from key-value list.
+A key-value list @var{list} must contains even number of elements;
+the first, third, fifth @dots{} elements are regarded as keys,
+and the second, fourth, sixth @dots{} elements are the values of
+the preceding keys.
 
+This procedure looks for @var{key} from the keys, and if it finds one,
+it returns the corresponding value.
+If there are more than one matching keys, the leftmost one is taken.
+If there is no matching key, it returns @var{fallback} if provided,
+or signals an error otherwise.
+
+It is an error if @var{list} is not a proper, even-number element list.
+
+Actually, `keywords' in the keyword-value list and the @var{key} argument
+need not be a keyword---it can be any Scheme object.  Key comparison
+is done by @code{eq?}.
+
+This procedure is taken from STk.
+@end defun
+
+@demac get-keyword* key list &optional fallback
+Like @code{get-keyword}, but @var{fallback} is evaluated only
+if @var{list} does not have @var{key}.
 @end defun
 
 @c ----------------------------------------------------------------------

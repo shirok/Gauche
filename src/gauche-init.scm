@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.90 2002-08-30 00:18:53 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.91 2002-10-26 05:53:50 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -198,11 +198,22 @@
 ;; useful stuff
 (define-syntax check-arg
   (syntax-rules ()
-    ((_ ?test ?arg)
-     (let ((tmp ?arg))
-       (unless (?test tmp)
-         (errorf "bad type of argument for ~s: ~s" '?arg tmp))))
+    ((_ test arg)
+     (let ((tmp arg))
+       (unless (test tmp)
+         (errorf "bad type of argument for ~s: ~s" 'arg tmp))))
     ))
+
+(define-syntax get-keyword*
+  (syntax-rules ()
+    ((_ key lis default)
+     (let ((li lis))
+       (let loop ((l li))
+         (cond ((null? l) default)
+               ((null? (cdr l)) (error "keyword list not even" li))
+               ((eq? key (car l)) (cadr l))
+               (else (loop (cddr l)))))))
+    ((_ key lis) (get-keyword key lis))))
 
 ;; hash table iterators
 (define (hash-table-map hash proc)
