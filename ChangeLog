@@ -1,5 +1,7 @@
 2003-04-14  Shiro Kawai  <shiro@acm.org>
 
+	* various Makefile.am's and configure.in: made "make install" work.
+	
 	* various files: revised build process of built-in extensions (ext/*).
 	  They no longer have separate configure.in; the toplevel configure.in
 	  takes care of all the Makefiles.  All of them uses Makefile.am now.

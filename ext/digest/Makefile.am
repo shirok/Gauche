@@ -1,9 +1,9 @@
 include ../Makefile.ext
 
-pkglibdir  = $(GAUCHE_ARCHDIR)
-pkgdatadir = $(GAUCHE_LIBDIR)/rfc
+SCM_CATEGORY = rfc
 
-pkglib_LTLIBRARIES = md5.la sha1.la
+pkgarch_LTLIBRARIES = md5.la sha1.la
+pkgdata_DATA        = md5.scm sha1.scm
 
 md5_la_SOURCES = md5_head.c md5.c md5c.c md5_tail.c
 md5_la_LDFLAGS = -no-undefined -module -avoid-version
@@ -14,8 +14,6 @@ sha1_la_LDFLAGS = -no-undefined -module -avoid-version
 sha1_la_LIBADD  = $(top_builddir)/src/libgauche.la
 
 GENERATED = Makefile md5.c sha1.c *_head.c *_tail.c
-
-pkgdata_SCRIPTS = md5.scm sha1.scm
 
 md5_head.c md5_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension md5

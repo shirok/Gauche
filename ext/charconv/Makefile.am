@@ -1,10 +1,9 @@
 include ../Makefile.ext
 
-pkghdrdir  = $(GAUCHE_INCDIR)/gauche
-pkgdatadir = $(GAUCHE_LIBDIR)/gauche
-pkglibdir  = $(GAUCHE_ARCHDIR)
+SCM_CATEGORY = gauche
 
-pkglib_LTLIBRARIES = libcharconv.la
+pkgarch_LTLIBRARIES = libcharconv.la
+pkgdata_DATA        = charconv.scm
 
 libcharconv_la_SOURCES = charconv_head.c charconv.c convlib.c jconv.c \
                          guess.c charconv_tail.c
@@ -13,7 +12,6 @@ libcharconv_la_LIBADD  = $(top_builddir)/src/libgauche.la
 
 GENERATED = Makefile charconv.h convlib.c charconv_head.c charconv_tail.c
 
-pkgdata_SCRIPTS = charconv.scm
 
 jconv.lo : eucj2ucs.c ucs2eucj.c jconv.c
 

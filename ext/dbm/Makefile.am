@@ -1,16 +1,14 @@
 include ../Makefile.ext
 
-INSTALL_TYPE = sys
-
-pkglibdir  = $(GAUCHE_ARCHDIR)
-pkgdatadir = $(GAUCHE_LIBDIR)/dbm
+SCM_CATEGORY = dbm
 
 ## NB: automake doesn't like substituted variable in pkglib_LTLIBRARIES;
 ## it requires EXTRA_LTLIBRARIES defined in such a case; however, if I do so,
 ## I need to add -rpath manually in _LDFLAGS to convince libtool that
 ## I'm creating dlopen-able library.
 
-pkglib_LTLIBRARIES = @DBM_ARCHFILES@
+pkgarch_LTLIBRARIES = @DBM_ARCHFILES@
+pkgdata_DATA        = @DBM_SCMFILES@
 
 EXTRA_LTLIBRARIES = gdbm.la ndbm.la odbm.la
 
@@ -28,9 +26,6 @@ odbm_la_LIBADD    = $(top_builddir)/src/libgauche.la @ODBMLIB@
 
 GENERATED = Makefile gdbm.c ndbm.c odbm.c *_head.c *_tail.c
 
-pkgdata_SCRIPTS = @DBM_SCMFILES@
-
-EXTRA_SCRIPTS = gdbm.scm ndbm.scm odbm.scm
 
 gdbm_head.c gdbm_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension gdbm

@@ -1,4 +1,24 @@
 ## Common stuff used in Makefiles of extensions
+## $Id: Makefile.ext,v 1.3 2003-04-15 04:48:57 shirok Exp $
+## 
+## [Writing Makefile.am of the built-in extension foo.bar]
+##
+##  include ../Makefile.ext
+##
+##  SCM_CATEGORY = foo   # your module goes to foo.bar
+##
+##  pkgarch_LTLIBRARIES = bar.la
+##  pkgdata_DATA        = bar.scm
+##
+##  bar_la_SOURCES = ...
+##  bar_la_LDFLAGS = -no-undefined -module -avoid-version
+##  bar_la_LDADD   = $(top_builddir)/src/libgauche.la
+##
+##  GENERATED = ... # list files that should be cleaned by distclean
+##
+##  bar_head.c bar_tail.c :
+##         $(GAUCHE_CONFIG) --fixup-extension bar
+##
 
 AUTOMAKE_OPTIONS = foreign no-dependencies
 
@@ -9,6 +29,10 @@ INSTALL_TYPE = sys
 GAUCHE_INCDIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
 GAUCHE_LIBDIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
 GAUCHE_ARCHDIR = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
+
+pkghdrdir  = $(GAUCHE_INCDIR)
+pkgdatadir = $(GAUCHE_LIBDIR)/$(SCM_CATEGORY)
+pkgarchdir = $(GAUCHE_ARCHDIR)
 
 CLEANFILES = core *~ test.log
 
@@ -26,3 +50,17 @@ SUFFIXES = .stub
 check :
 	@rm -f test.log
 	$(GOSH) -I. test.scm > test.log
+
+## Seems that automake doesn't like to install files from subdirectories.
+
+install-data-local : $(SCM_INSTHDRS)
+	@if test ! -z "$(SCM_INSTHDRS)"; then \
+	  for p in $(SCM_INSTHDRS); do \
+	    if test -f "$$p"; then d= ; else d="$(srcdir)/"; fi; \
+	    _target=$(DESTDIR)$(pkghdrdir)/$$p; \
+	    _destdir=`dirname $$_target`; \
+	    if test ! -d $$_destdir; then $(mkinstalldirs) $$_destdir; fi; \
+	    echo " $(INSTALL_DATA) $$d$$p $$_target"; \
+	    $(INSTALL_DATA) $$d$$p $$_target; \
+	  done; \
+	fi
