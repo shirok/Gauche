@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.70 2002-07-06 07:13:20 shirok Exp $
+ *  $Id: vm.h,v 1.71 2002-07-06 10:13:39 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -195,6 +195,8 @@ struct ScmVMRec {
                                    structure.  PUBLIC. */
     ScmInternalCond cond;       /* the condition variable to wait for state
                                    change of this VM.  PUBLIC. */
+    ScmVM *canceller;           /* the thread that called thread-terminate!
+                                   on this thread.  PUBLIC. */
     ScmObj name;                /* Scheme thread name. */
     ScmObj specific;            /* Scheme thread specific data. */
     ScmProcedure *thunk;        /* Entry point of this VM. */

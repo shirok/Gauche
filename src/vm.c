@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.160 2002-07-06 07:13:15 shirok Exp $
+ *  $Id: vm.c,v 1.161 2002-07-06 10:13:39 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -44,16 +44,11 @@ static ScmObj boundaryFrameMark;
  *   In Gauche, there's always one active virtual machine per thread,
  *   referred by Scm_VM().   From Scheme, VM is seen as a <thread> object.
  *
- *   All the VMs are chained to a global list vmList.  It is necessary
- *   since GC may not be able to see the thread specific data.
- *
  *   From Scheme, VM is viewed as <thread> object.  The class definition
  *   is in thrlib.stub.
  */
 
 static ScmVM *rootVM = NULL;         /* VM for primodial thread */
-static ScmObj vmList = SCM_NIL;      /* list of all VMs */
-static ScmInternalMutex vmListMutex; /* mutex for vmList. */
 
 #ifdef GAUCHE_USE_PTHREAD
 static pthread_key_t vm_key;
@@ -82,9 +77,10 @@ ScmVM *Scm_NewVM(ScmVM *base,
     int i;
     
     SCM_SET_CLASS(v, SCM_CLASS_VM);
+    v->state = SCM_VM_NEW;
     (void)SCM_INTERNAL_MUTEX_INIT(v->vmlock);
     (void)SCM_INTERNAL_COND_INIT(v->cond);
-    v->state = SCM_VM_NEW;
+    v->canceller = NULL;
     v->name = name;
     v->specific = SCM_FALSE;
     v->thunk = NULL;
@@ -134,10 +130,6 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->sigHandlers =  SCM_NIL;
     sigemptyset(&v->sigMask);
 
-    (void)SCM_INTERNAL_MUTEX_LOCK(vmListMutex);
-    vmList = Scm_Cons(SCM_OBJ(v), vmList);
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(vmListMutex);
-    
     return v;
 }
 
@@ -179,45 +171,15 @@ pthread_key_t Scm_VMKey(void)
 #endif /*GAUCHE_USE_PTHREAD*/
 
 /*
- * Clean up VM when thread exits.
- * NB: when this callback is invoked, pthread's thread specific data
- * is already cleared, so theVM returns NULL.  We can't do much---even
- * Scm_Error is not available.  
- */
-#ifdef GAUCHE_USE_PTHREAD
-static void vm_cleanup(void *data)
-{
-    ScmVM *vm = SCM_VM(data);
-    /* Remove this VM from the global list. */
-    if (pthread_mutex_lock(&vmListMutex) == EDEADLK) {
-        Scm_Panic("dead lock in vm_cleanup.");
-    }
-    /* NB: Assuming Scm_DeleteX doesn't throw an error for EQ comparison. */
-    vmList = Scm_DeleteX(SCM_OBJ(vm), vmList, SCM_CMP_EQ);
-    pthread_mutex_unlock(&vmListMutex);
-
-    /* Change this VM state to TERMINATED, and signals the change
-       to the waiting threads. */
-    if (pthread_mutex_lock(&vm->vmlock) == EDEADLK) {
-        Scm_Panic("dead lock in vm_cleanup.");
-    }
-    vm->state = SCM_VM_TERMINATED;
-    pthread_cond_broadcast(&vm->cond);
-    pthread_mutex_unlock(&vm->vmlock);
-}
-#endif /* GAUCHE_USE_PTHREAD */
-
-/*
  * Initialization.  This should be called after modules are initialized.
  */
 void Scm__InitVM(void)
 {
-    (void)SCM_INTERNAL_MUTEX_INIT(vmListMutex);
     boundaryFrameMark = SCM_MAKE_STR("boundary-frame");
 
     /* Create root VM */
 #ifdef GAUCHE_USE_PTHREAD
-    if (pthread_key_create(&vm_key, vm_cleanup) != 0) {
+    if (pthread_key_create(&vm_key, NULL) != 0) {
         Scm_Panic("pthread_key_create failed.");
     }
     rootVM = Scm_NewVM(NULL, Scm_SchemeModule(),
@@ -227,7 +189,6 @@ void Scm__InitVM(void)
     }
     rootVM->thread = pthread_self();
 #else   /* !GAUCHE_USE_PTHREAD */
-    (void)SCM_INTERNAL_MUTEX_INIT(vmListMutex);
     rootVM = theVM = Scm_NewVM(NULL, Scm_SchemeModule(),
                                SCM_MAKE_STR_IMMUTABLE("root"));
 #endif  /* !GAUCHE_USE_PTHREAD */

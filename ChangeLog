@@ -1,3 +1,10 @@
+2002-07-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/thread.c : separated Scheme thread API-related
+	  routines from vm.c to thread.c.  Fixed thread cleanup routine;
+	  now it's called by pthread_cleanup_push mechanism.
+	  Scm_ThreadTerminate is implemented.
+
 2002-07-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c: added mutex protection to getc, getz and readline.

@@ -1,7 +1,7 @@
 /*
  * thread.c - Scheme thread API
  *
- *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: thread.c,v 1.1 2002-07-06 07:13:15 shirok Exp $
+ *  $Id: thread.c,v 1.2 2002-07-06 10:13:39 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -55,13 +55,36 @@ ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name)
    This is to prevent exitted thread's system resources from being
    uncollected.
  */
+
 #ifdef GAUCHE_USE_PTHREAD
+static void thread_cleanup(void *data)
+{
+    ScmVM *vm = SCM_VM(data);
+    ScmObj exc;
+    
+    /* Change this VM state to TERMINATED, and signals the change
+       to the waiting threads. */
+    if (pthread_mutex_lock(&vm->vmlock) == EDEADLK) {
+        Scm_Panic("dead lock in vm_cleanup.");
+    }
+    vm->state = SCM_VM_TERMINATED;
+    if (vm->canceller) {
+        /* This thread is cancelled. */
+        exc = Scm_MakeThreadException(SCM_CLASS_TERMINATED_THREAD_EXCEPTION, vm);
+        SCM_THREAD_EXCEPTION(exc)->data = SCM_OBJ(vm->canceller);
+        vm->resultException = exc;
+    }
+    pthread_cond_broadcast(&vm->cond);
+    pthread_mutex_unlock(&vm->vmlock);
+}
+
 static void *thread_entry(void *vm)
 {
     if (pthread_setspecific(Scm_VMKey(), vm) != 0) {
         /* NB: at this point, theVM is not set and we can't use Scm_Error. */
         Scm_Panic("pthread_setspecific failed");
     }
+    pthread_cleanup_push(thread_cleanup, vm);
     SCM_UNWIND_PROTECT {
         SCM_VM(vm)->result = Scm_Apply(SCM_OBJ(SCM_VM(vm)->thunk), SCM_NIL);
     } SCM_WHEN_ERROR {
@@ -79,6 +102,7 @@ static void *thread_entry(void *vm)
             SCM_VM(vm)->resultException = exc;
         }
     } SCM_END_PROTECT;
+    pthread_cleanup_pop(TRUE);
     return NULL;
 }
 #endif /* GAUCHE_USE_PTHREAD */
@@ -190,7 +214,31 @@ ScmObj Scm_ThreadSleep(ScmObj timeout)
 /* Thread terminate */
 ScmObj Scm_ThreadTerminate(ScmVM *target)
 {
+#ifdef GAUCHE_USE_PTHREAD
+    ScmVM *vm = Scm_VM();
+    if (target == vm) {
+        /* self termination */
+        (void)SCM_INTERNAL_MUTEX_LOCK(target->vmlock);
+        if (target->canceller == NULL) {
+            target->canceller = vm;
+        }
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(target->vmlock);
+        /* Need to unlock before calling pthread_exit(), or the cleanup
+           routine can't obtain the lock */
+        pthread_exit(NULL);
+    } else {
+        (void)SCM_INTERNAL_MUTEX_LOCK(target->vmlock);
+        /* This ensures only the first call of thread-terminate! on a thread
+           is in effect. */
+        if (target->canceller == NULL) {
+            target->canceller = vm;
+            pthread_cancel(target->thread);
+        }
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(target->vmlock);
+    }
+#else  /*!GAUCHE_USE_PTHREAD*/
     Scm_Error("not implemented!\n");
+#endif /*!GAUCHE_USE_PTHREAD*/
     return SCM_UNDEFINED;
 }
 
