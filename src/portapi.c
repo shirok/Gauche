@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: portapi.c,v 1.26 2004-11-03 13:09:39 shirok Exp $
+ *  $Id: portapi.c,v 1.27 2004-11-29 10:54:39 shirok Exp $
  */
 
 /* This file is included _twice_ by port.c to define safe- and unsafe-
@@ -361,7 +361,7 @@ void Scm_UngetbUnsafe(int b, ScmPort *p)
     SHORTCUT(p, Scm_UngetbUnsafe(b, p); return);
     LOCK(p);
     if (p->ungotten != SCM_CHAR_INVALID
-        || p->scrcnt >= SCM_CHAR_MAX_BYTES-1) {
+        || p->scrcnt >= SCM_CHAR_MAX_BYTES) {
         Scm_PortError(p, SCM_PORT_ERROR_INPUT,
                       "pushback buffer overflow on port %S", p);
     }
