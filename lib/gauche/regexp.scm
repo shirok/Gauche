@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: regexp.scm,v 1.9 2002-12-06 05:26:16 shirok Exp $
+;;;  $Id: regexp.scm,v 1.10 2002-12-20 07:32:27 shirok Exp $
 ;;;
 
 (define-module gauche.regexp
@@ -80,6 +80,8 @@
           ?bind
        (begin ?form ...)
        (rxmatch-case #t ?temp ?strp ?clause ...)))
+    ((rxmatch-case #t ?temp ?strip ?clause ...)
+     (syntax-error "malformed rxmatch-case"))
     ;; main entry
     ((rxmatch-case ?str ?clause ...)
      (let* ((temp ?str)
