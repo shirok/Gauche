@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.78 2002-05-09 06:22:19 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.79 2002-05-09 09:01:50 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -172,6 +172,9 @@
           sys-gethostname sys-getdomainname sys-putenv
           sys-gettimeofday sys-utime)
 
+(autoload gauche.defvalues
+          (:macro define-values) (:macro set!-values))
+
 ;; these are so useful that I couldn't resist to add...
 (define (file-exists? path)
   (sys-access path |F_OK|))
@@ -217,22 +220,6 @@
 ;; print (from SCM, Chicken)
 (define (print . args)
   (for-each display args) (newline))
-
-;; define-values (from Chicken, MzScheme)
-(define-syntax define-values
-  (syntax-rules ()
-    ((_ "gentmp" (tmp ...) () (var ...) expr)
-     (begin (define var (undefined)) ...
-            (receive (tmp ...) expr
-              (set! var tmp) ...
-              (undefined))))
-    ((_ "gentmp" (tmp ...) (v v2 ...) (var ...) expr)
-     (define-values "gentmp" (tmp ... tmp1) (v2 ...) (var ...) expr))
-    ((_ (var  ...) expr)
-     (define-values "gentmp" () (var ...) (var ...) expr))
-    ((_ . else)
-     (syntax-error "malformed define-values" (define-values . else)))
-    ))
 
 ;; system object accessors (for backward compatibility)
 (define (sys-stat->file-type s)  (slot-ref s 'type))

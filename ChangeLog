@@ -1,5 +1,7 @@
 2002-05-08  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/defvalues.scm : moved define-values here, and added
+	  set!-values.
 	* ext/auxsys/auxsyslib.stub : added sys-utime.
 
 2002-05-06  Shiro Kawai  <shiro@acm.org>
