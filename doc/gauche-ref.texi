@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.201 2002-05-09 06:22:22 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.202 2002-05-11 00:11:57 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3130,8 +3130,6 @@ When a form @code{(name @var{arg} @dots{})} is seen by the compiler,
 it calls @var{procedure} with @var{arg} @dots{}.  When @var{procedure}
 returns, the compiler inserts the returned form in place of the original
 form, and compile it again.
-
-
 @end defspec
 
 @node Macro expansion, Macro utilities, Traditional Macros, Macros
@@ -9612,10 +9610,12 @@ If either of them is -1, the corresponding ownership is not changed.
 Change the file's access time and modification time to @var{atime}
 and @var{mtime}, respectively.   If @var{atime} and @var{mtime} is
 omitted, they are set to the current time.
+See also @code{touch-file} (@xref{File operations}).
 @c JP
 ファイルのアクセスタイムと変更タイムを@var{atime}と@var{mtime}が示す
 値にセットします。@var{atime}と@var{mtime}が省略された場合は現在の時刻が
 使われます。
+@ref{File operations}の@code{touch-file}も参照して下さい。
 @c COMMON
 @end defun
 
@@ -10983,7 +10983,6 @@ Generic implementations of various algorithms.
 @c COMMON
 @end table
 
-
 @c ----------------------------------------------------------------------
 @node Generic DBM interface, GDBM interface, Library modules overview, Library modules
 @section @code{dbm} - Generic DBM interface
@@ -12083,6 +12082,51 @@ This function does not access the filesystem.
 @c COMMON
 @end defun
 
+@defun find-file-in-paths name &keyword paths pred
+@c EN
+Looks for a file that has name @var{name} in the given list of pathnames
+@var{paths} and that satisfies a predicate @var{pred}.  If found,
+the absolute pathname of the file is returned.  Otherwise, @code{#f}
+is returned.
+
+If @var{name} is an absolute path, only the existence of @var{name}
+and whether it satisfies @var{pred} are checked.
+
+The default value of @var{paths} is taken from the environment variable
+@code{PATH}, and the default value of @var{pred} is @code{file-is-executable?}
+(@xref{File attribute utilities}).  That is, @code{find-file-in-paths}
+searches the named executable file in the command search paths
+by default.
+@c JP
+名前@var{name}を持ち、述語@var{pred}を満たすファイルをパス名のリスト@var{paths}
+から探します。見つかった場合はファイルの絶対パス名を、見つからなかった場合は
+@code{#f}を返します。
+
+@var{name}が絶対パス名で与えられた場合はそれが存在するかどうかと
+@var{pred}を満たすかどうかのみがチェックされます。
+
+@var{paths}のデフォルト値は環境変数@code{PATH}から取られます。また、
+@var{pred}のデフォルト値は@code{file-is-executable?}
+(@ref{File attribute utilities}参照)です。すなわち、デフォルトでは
+この手続きはコマンドサーチパスから実行可能ファイルを探すのに使えます。
+@c COMMON
+
+@example
+(find-file-in-path "ls")
+  @result{} "/bin/ls"
+
+@c EN
+;; @r{example of searchin user preference file of my application}
+@c JP
+;; @r{アプリケーション"myapp"のユーザプレファレンスファイルを探す例}
+@c COMMON
+(find-file-in-path "userpref"
+  :paths `(,(expand-path "~/.myapp")
+           "/usr/local/share/myapp"
+           "/usr/share/myapp")
+  :pred  file-is-readable?)
+@end example
+@end defun
 
 @node File attribute utilities, File operations, Pathname utilities, Filesystem utilities
 @subsection File attibute utilities
@@ -12262,11 +12306,159 @@ defined.
 関して比較します。
 @code{<}, @code{<=}, @code{>}, @code{>=}を使う関数も同様に定義されています。
 @c COMMON
-@end deftp
+@end deffn
 
 @node File operations,  , File attribute utilities, Filesystem utilities
 @subsection File operations
 @c NODE ファイル操作
+
+@defun touch-file path
+@c EN
+Updates timestamp of @var{path} to the current time.  If @var{path} 
+doesn't exist, a new file with size zero is created.
+See also @code{sys-utime} (@xref{File stats}).
+@c JP
+@var{path}のタイムスタンプを現在の時刻に更新します。
+@var{path}が存在しなかった場合はそのファイルを作成します。
+@ref{File stats}の@code{sys-utime}も参照して下さい。
+@c COMMON
+@end defun
+
+@defun copy-file src dst &keyword if-exists backup-suffix safe keep-timestamp
+@c EN
+Copies file from @var{src} to @var{dst}.  The source file @var{src} must exist.
+The behavior when the destination @var{dst} exists varies by the keyword
+argument @var{if-exists};
+
+@table @code
+@item :error
+(Default) Signals an error when @var{dst} exists.
+@item :supersede
+Replaces @var{dst} to the copy of @code{src}. 
+@item :backup
+Keeps @var{dst} by renaming it.
+@item #f
+Doesn't copy and returns @code{#f} when @var{dst} exists.
+@end table
+@c JP
+ファイル@var{src}を@var{dst}へコピーします。コピー元ファイル@var{src}は
+存在していなければなりません。コピー先ファイル@var{dst}が存在していた場合の
+ふるまいはキーワード引数@var{if-exists}によって以下のように指定されます。
+
+@table @code
+@item :error
+(デフォルト) @var{dst}が存在していたらエラーを通知する。
+@item :supersede
+@var{dst}を@code{src}のコピーで置き換える。
+@item :backup
+@var{dst}の名前を変えてキープする。
+@item #f
+@var{dst}が存在していたらコピーをせず@code{#f}を返す。
+@end table
+@c COMMON
+
+@c EN
+@code{Copy-file} returns @code{#t} after completion.
+@c JP
+@code{copy-file}はコピーが完了したら@code{#t}を返します。
+@c COMMON
+
+@c EN
+If @var{if-exists} is @code{:backup}, the keyword argument @var{backup-suffix}
+specifies the suffix attached to the @var{dst} to be renamed.
+The default value is @code{".orig"}.
+@c JP
+@var{if-exists}が@code{:backup}である場合、@var{dst}がリネームされる
+名前は@var{dst}にキーワード引数@var{backup-suffix}で指定されるサフィックスを
+付けたものとなります。デフォルト値は@code{".orig"}です。
+@c COMMON
+
+@c EN
+By default, @code{copy-file} starts copying to @var{dst} directly.
+However, if the keyword argument @var{safe} is a true value,
+it copies the file to a temporary file in the same directory of @var{dst},
+then renames it to @var{dst} when copy is completed.
+If copy is interrupted for some reason, the filesystem is "rolled back"
+properly.
+@c JP
+デフォルトでは@code{copy-file}は直接@var{dst}にコピーを行いますが、
+キーワード引数@var{safe}に真の値が与えられた場合は、@var{dst}と同じディレクトリ
+内の一時ファイルにまずコピーし、それが完了した時点で@var{dst}へとリネームします。
+コピーが何らかの理由で中断された場合、ファイルシステムはコピー前の状態へと
+「ロールバック」されます。
+@c COMMON
+
+@c EN
+If the keyword argument @var{keep-timestamp} is true, @code{copy-file}
+sets the destination's timestamp to the same as the source's timestamp
+after copying.
+@c JP
+キーワード引数@var{keep-timestamp}に真の値が与えられた場合は、
+@code{copy-file}はコピー後にコピー先のファイルのタイムスタンプを
+コピー元のタイムスタンプに合わせます。
+@c COMMON
+@end defun
+
+@defun move-file src dst &keyword if-exists backup-suffix
+@c EN
+Moves file @var{src} to @var{dst}.   The source @var{src} must exist.
+The behavior when @var{dst} exists varies by the keyword argument
+@var{if-exists}, as follows.
+@table @code
+@item :error
+(Default) Signals an error when @var{dst} exists.
+@item :supersede
+Replaces @var{dst} by @code{src}. 
+@item :backup
+Keeps @var{dst} by renaming it.
+@item #f
+Doesn't move and returns @code{#f} when @var{dst} exists.
+@end table
+@c JP
+ファイル@var{src}を@var{dst}へ移動します。移動元ファイル@var{src}は
+存在していなければなりません。移動先ファイル@var{dst}が存在した場合の
+ふるまいはキーワード引数@var{if-exists}によって以下のように指定されます。
+@table @code
+@item :error
+(デフォルト) @var{dst}が存在していたらエラーを通知する。
+@item :supersede
+@var{dst}を@code{src}で置き換える。
+@item :backup
+@var{dst}の名前を変えてキープする。
+@item #f
+@var{dst}が存在していたら移動をせず@code{#f}を返す。
+@end table
+@c COMMON
+
+@c EN
+@code{Move-file} returns @code{#t} after completion.
+@c JP
+@code{move-file}は移動が完了したら@code{#t}を返します。
+@c COMMON
+
+@c EN
+If @var{if-exists} is @code{:backup}, the keyword argument @var{backup-suffix}
+specifies the suffix attached to the @var{dst} to be renamed.
+The default value is @code{".orig"}.
+@c JP
+@var{if-exists}が@code{:backup}である場合、@var{dst}がリネームされる
+名前は@var{dst}にキーワード引数@var{backup-suffix}で指定されるサフィックスを
+付けたものとなります。デフォルト値は@code{".orig"}です。
+@c COMMON
+
+@c EN
+The file @var{src} and @var{dst} can be on the different filesystem.
+In such a case, @code{move-file} first copies @var{src} to the
+temporary file on the same directory as @var{dst}, then renames
+it to @var{dst}, then removes @var{src}.
+@c JP
+ファイル@var{src}と@var{dst}は別のファイルシステム上にあっても構いません。
+その場合、@code{move-file}はまず@var{src}を@var{dst}と同じディレクトリの
+一時ファイルにコピーし、それを@var{dst}にリネームし、それから
+@var{src}を消去します。
+@c COMMON
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node Character code conversion, Collection framework, Filesystem utilities, Library modules
