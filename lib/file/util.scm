@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: util.scm,v 1.2 2002-05-02 11:35:48 shirok Exp $
+;;;  $Id: util.scm,v 1.3 2002-05-03 04:27:00 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -27,7 +27,7 @@
   (use srfi-13)
   (use gauche.let-opt)
   (use gauche.time)
-  (export current-directory directory-list directory-list2
+  (export current-directory directory-list directory-list2 directory-fold
           build-path resolve-path expand-path simplify-path
           absolute-path? relative-path? decompose-path
           file-type file-perm file-mode file-ino file-dev file-rdev file-nlink
@@ -59,30 +59,28 @@
         (else (filter (lambda (e)
                         (every (lambda (p) (p e)) preds))
                       (sys-readdir dir)))))
+(define (%directory-filter-compose opts)
+  `(,@(if (get-keyword :children? opts #f)
+          `(,(lambda (e) (not (member e '("." "..")))))
+          '())
+    ,@(cond ((get-keyword :filter opts #f) => list)
+            (else '()))))
 
 ;; directory-list DIR &keyword ADD-PATH? CHILDREN? FILTER
 (define (directory-list dir . opts)
   (let* ((add-path? (get-keyword :add-path? opts #f))
-         (filters   `(,@(if (get-keyword :children? opts #f)
-                            '(,(lambda (e) (not (member e '("." "..")))))
-                            '())
-                      ,@(cond ((get-keyword :filter opts #f) => list)
-                              (else '())))))
+         (filters   (%directory-filter-compose opts)))
     (let1 entries (sort (%directory-filter dir filters))
       (if add-path?
           (map (l_ (string-append dir "/" _)) entries)
           entries))))
 
-;; directory-list2 DIR &optional ADD-DIR? CHILDREN? FILTER DONT-FOLLOW-LINK?
+;; directory-list2 DIR &optional ADD-DIR? CHILDREN? FILTER FOLLOW-LINK?
 (define (directory-list2 dir . opts)
   (let* ((add-path? (get-keyword :add-path? opts #f))
-         (filters   `(,@(if (get-keyword :children? opts #f)
-                            `(,(lambda (e) (not (member e '("." "..")))))
-                            '())
-                      ,@(cond ((get-keyword :filter opts #f) => list)
-                              (else '()))))
+         (filters   (%directory-filter-compose opts))
          (selector  (let1 stat
-                        (if (get-keyword :dont-follow-link? opts #f)
+                        (if (get-keyword :follow-link? opts #t)
                             sys-lstat sys-stat)
                       (lambda (e)
                         (eq? (slot-ref (stat e) 'type) 'directory)))))
@@ -93,8 +91,19 @@
           (partition (l_ (selector (string-append dir "/" _)))
                      entries)))))
 
-;; directory-fold DIR PROC &keyword OPENER DONT-FOLLOW-LINK
-
+;; directory-fold DIR PROC KNIL &keyword LISTER FOLLOW-LINK?
+(define (directory-fold dir proc knil . opts)
+  (let* ((follow (get-keyword :follow-link? opts #t))
+         (lister (get-keyword :walker opts
+                              (lambda (path knil)
+                                (directory-list path
+                                                :add-path? #t
+                                                :children? #t)))))
+    (define (rec path knil)
+      (if (eq? (file-type path :follow-link? follow) 'directory)
+          (fold rec knil (lister path))
+          (proc path knil)))
+    (rec dir knil)))
 
 ;;;=============================================================
 ;;; Pathnames
@@ -129,7 +138,7 @@
            (p    (build-path ndir base)))
       (unless (sys-access p |F_OK|)
         (error "path doesn't exist" path))
-      (if (eq? (file-type p #t) 'symlink)
+      (if (eq? (file-type p :follow-link #f) 'symlink)
           (let1 np (sys-readlink p)
             (if (absolute-path? np) np (build-path ndir np)))
           p)))
@@ -149,13 +158,14 @@
 
 ;; convenient accessors for file stats.  accepts string file name or
 ;; <sys-stat>.  If the named file doesn't exist, returns #f.
-;; accepts optional argument DONT-FOLLOW-LINK? 
+;; accepts keyword argument FOLLOW-LINK? 
 (define-syntax define-stat-accessor
   (syntax-rules ()
     ((_ name slot)
      (define (name path . opts)
        (and-let* (((sys-access path F_OK))
-                  (stat (if (and (pair? opts) (car opts)) sys-lstat sys-stat))
+                  (stat (if (get-keyword :follow-link opts #t)
+                            sys-stat sys-lstat))
                   (s (stat path)))
          (slot-ref s slot))))))
 
@@ -287,14 +297,42 @@
 ;;;=============================================================
 ;;; File operation
 
+
+;; copy file.  
 ;(define (copy-file src dst . opts)
 ;  (check-arg string? src)
 ;  (check-arg string? dst)
-;  (unless (sys-access src |R_OK|)
+;  (unless (file-is-readable? src)
 ;    (error "can't read the source file" src))
-;  (let* ((if-exists   (get-keyword :if-exists opts :error))
-;         (transaction (get-keyword :transaction opts #f))
-;         (
+;  (let* ((if-exists (get-keyword :if-exists opts :error))
+;         (backup    (get-keyword :backup-suffix opts ".orig"))
+;         (tmp?      (get-keyword :use-temporary-file opts #f)
+;         )
+;    (unless (memq if-exists '(:error :supersede :backup))
+;      (error "value of keyword argument if-exists must be either :error, :supersede or :backup, but got" if-exists))
+;    (define (open-dst)
+;      (cond (tmp? (sys-mkstemp src))
+;            ((eq? if-exists :supersede)
+;             (values (open-output-file dst :if-exists :supersede) dst))
+;            ((eq? if-exists :backup)
+;             (begin (when (file-exists? dst)
+;                      (begin (sys-rename dst (string-append dst backup))))
+;                    (values (open-output-file dst :if-exists :error))))
+;            (else (error "copy-file: cannot be here; implementation bug?"))))
+;    (define (commit in out tmp)
+;      (cond ((eq? if-exists :backup)
+;             (begin 
+    
+
+;    (if (file-exists? dst)
+;        (cond ((file-eqv? src dst)
+;               (error "source and destination files are identical"))
+;              ((eq? if-exists :error)
+;               (error "destination file exists" dst))
+;              ((eq? if-exists :backup)
+;               (error "
+               
+           
 
 
 (provide "file/util")

@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.194 2002-05-02 11:35:48 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.195 2002-05-03 04:26:59 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -11641,6 +11641,19 @@ procedures described in @ref{Filesystems}.
 これらの手続きは@ref{Filesystems}で述べられたプリミティブなシステム手続きの上に
 構築されています。
 @c COMMON
+
+@c EN
+Many procedures in this module takes a keyword argument @var{follow-link?},
+which specifies the behavior when the procedure sees a symbolic link.
+If true value is given to @var{follow-link?} (which is the default),
+the procedure operates on the file referenced by the link; if false is 
+given, it operates on the link itself.
+@c JP
+このモジュール内の多くの手続きは@var{follow-link?}というキーワード引数を取ります。
+これは手続きがシンボリックリンクに出会ったときの動作を指定します。@var{follow-link?}が
+真であれば、手続きはリンクの指す先のファイルに作用します。これがデフォルトの振舞いです。
+@var{follow-link?}に@code{#f}が渡された場合は手続きはリンクそのものに作用します。
+@c COMMON
 @end deftp
 
 @menu
@@ -11718,29 +11731,126 @@ If @var{path} is not a directory, an error is signalled.
 @end example
 @end defun
 
-@defun directory-list2 path &keyword children? add-path? filter dont-follow-link?
+@defun directory-list2 path &keyword children? add-path? filter follow-link?
 @c EN
 Like @code{directory-list}, but returns two values; the first one is a list
 of subdirectories, and the second one is a list of the rest.
-
 The keyword arguments @var{children?}, @code{add-path?} and @var{filter}
-are the same as @code{directory-list}.   Giving true value to
-@var{dont-follow-link?} makes @code{directory-list2} not follow
-the symbolic links; if the @var{path} contains a symlink to a directory,
-it will be included in the first list if @var{dont-follow-link?} is omitted
-or false, while it will be in the second list if @var{dont-follow-link?}
-is true.
+are the same as @code{directory-list}.
+
+Giving false value to @var{follow-link?} makes @code{directory-list2}
+not follow the symbolic links; if the @var{path} contains a
+symlink to a directory,
+it will be included in the first list if @var{follow-link?}
+is omitted or true,
+while it will be in the second list if @var{follow-link?} is false.
 @c JP
 @code{directory-list}に似ていますが、ふたつの値を返します。最初の値は
 @var{path}内にあるサブディレクトリのリストで、次の値はそれ以外のエントリのリストです。
-
 キーワード引数@var{children?}、@code{add-path?}、@var{filter}は
 @code{directory-list}と同じ意味をもちます。
-真の値を@var{dont-follow-link?}に与えると、@var{path}内のシンボリックリンクを
+
+偽の値を@var{follow-link?}に与えると、@var{path}内のシンボリックリンクを
 辿りません；すなわち、@var{path}内にディレクトリへのシンボリックリンクがあった場合、
-デフォルトではそれは最初のリスト(サブディレクトリ)に入りますが、@var{dont-follow-link?}
-が与えられていて真の値を持つ場合は後者のリスト(その他のエントリ)に入ります。
+デフォルト、もしくは@var{follow-link?}に真の値が与えられた場合は
+それは最初のリスト(サブディレクトリ)に入りますが、@var{follow-link?}
+に偽の値が与えられた場合は後者のリスト(その他のエントリ)に入ります。
 @c COMMON
+@end defun
+
+@defun directory-fold path proc knil &keyword lister follow-link?
+@c EN
+A fundamental directory traverser.
+Conceptually it works as follows, in recursive way.
+@c JP
+ディレクトリ探索の最も基本的な手続きです。基本的な動作は以下に示すような再帰的なものです。
+@c COMMON
+
+@c EN
+@itemize @bullet
+@item
+If @var{path} is not a directory, calls 
+@code{(@var{proc} @var{path} @var{knil})} and returns the result.
+@item
+If @var{path} is a directory, calls
+@code{(@var{lister} @var{path} @var{knil})}.  The procedure @var{lister}
+is expected to return a list of pathnames.  Then
+@code{directory-fold} is called on each returned pathname.
+Each result of @code{directory-fold} is passed as the @var{knil}
+argument of the next recursive invocation.
+Returns the result of the last recursive call.
+@end itemize
+@c JP
+@itemize @bullet
+@item
+@var{path}がディレクトリでない場合は@code{(@var{proc} @var{path} @var{knil})} を
+評価し、結果を返します。
+@item
+@var{path}がディレクトリであった場合、まず
+@var{(@var{lister} @var{path} @var{knil})} を評価します。
+手続き@var{lister}はパス名のリストを返さなければなりません。
+続いて、@code{directory-fold}が各パス名に対して再帰的に呼ばれます。
+各呼び出しの結果が次の再帰呼び出しの@var{knil}の値に使われます。
+@end itemize
+@c COMMON
+
+@c EN
+The default procedure of @var{lister} is just a call to @code{directory-list},
+as follows.
+@c JP
+デフォルトの@var{lister}は@code{directory-list}を次のように呼び出すものです。
+@c COMMON
+@example
+(lambda (path knil)
+  (directory-list path :add-path? #t :children? #t)))))
+@end example
+
+@c EN
+Note that @var{lister} shouldn't return the given path itself (@code{"."})
+nor the parent directory (@code{".."}), or the recursion wouldn't
+terminate.  Also note @var{lister} is expected to return a path accesible
+from the current directory, i.e. if @var{path} is @code{"/usr/lib/foo"} and
+it contains @code{"libfoo.a"} and @code{"libfoo.so"}, @var{lister} should
+return @code{'("/usr/lib/foo/libfoo.a" "/usr/lib/foo/libfoo.so")}.
+@c JP
+@var{lister}は@var{path}自身への参照 (@code{"."}) やその親ディレクトリへの参照を
+返してはなりません。また、@var{lister}の戻り値は現在のディレクトリからアクセス可能な
+パス名でなければなりません。例えば@var{path}が@code{"/usr/lib/foo"}であり、
+そのディレクトリが@code{"libfoo.a"}と@code{"libfoo.so"}を含んでいた場合、
+@var{lister}は@code{'("/usr/lib/foo/libfoo.a" "/usr/lib/foo/libfoo.so")}
+のようなリストを返す必要があります。
+@c COMMON
+
+@c EN
+The keyword argument @var{follow-link?} is used to determine whether
+@var{lister} should be called on a symbolic link pointing to a directory.
+When @var{follow-link?} is true (default), @var{lister} is called
+with the symbolic link if it points to a directory.
+When @var{follow-link?} is false, @var{proc} is not called.
+@c JP
+キーワード引数@var{follow-link?}はディレクトリを指しているシンボリックリンクに対して
+@var{lister}を呼ぶかどうかを決定します。@var{follow-link?}が真(デフォルト値)である
+場合はそのようなシンボリックリンクに対しても@var{lister}が呼ばれます。
+一方、@var{follow-link?}が偽であればシンボリックリンクに対しては@var{proc}が呼ばれます。
+@c COMMON
+
+@c EN
+The following examble returns a list of pathnames of the emacs backup files
+(whose name ends with "~") under the given path.
+@c JP
+次の例は、与えられたpath以下からemacsのバックアップファイル ("~"で終る名を持つファイル)
+のリストを返します。
+@c COMMON
+@example
+(use srfi-13) ;; for string-suffix?
+(directory-fold path
+                (lambda (entry result) 
+                  (if (string-suffix? "~" entry)
+                      (cons entry result)
+                      result))
+                '())
+@end example
+
 @end defun
 
 @node Pathname utilities, File attribute utilities, Directory utilities, Filesystem utilities
@@ -11813,19 +11923,19 @@ This function does not access the filesystem.
 @subsection File attibute utilities
 @c NODE ファイル属性ユーティリティ
 
-@defun file-type path &optional dont-follow-link?
-@defunx file-perm path &optional dont-follow-link?
-@defunx file-mode path &optional dont-follow-link?
-@defunx file-ino path &optional dont-follow-link?
-@defunx file-dev path &optional dont-follow-link?
-@defunx file-rdev path &optional dont-follow-link?
-@defunx file-nlink path &optional dont-follow-link?
-@defunx file-uid path &optional dont-follow-link?
-@defunx file-gid path &optional dont-follow-link?
-@defunx file-size path &optional dont-follow-link?
-@defunx file-atime path &optional dont-follow-link?
-@defunx file-mtime path &optional dont-follow-link?
-@defunx file-ctime path &optional dont-follow-link?
+@defun file-type path &keyword follow-link?
+@defunx file-perm path &keyword follow-link?
+@defunx file-mode path &keyword follow-link?
+@defunx file-ino path &keyword follow-link?
+@defunx file-dev path &keyword follow-link?
+@defunx file-rdev path &keyword follow-link?
+@defunx file-nlink path &keyword follow-link?
+@defunx file-uid path &keyword follow-link?
+@defunx file-gid path &keyword follow-link?
+@defunx file-size path &keyword follow-link?
+@defunx file-atime path &keyword follow-link?
+@defunx file-mtime path &keyword follow-link?
+@defunx file-ctime path &keyword follow-link?
 @c EN
 These functions return the attribute of file/directory specified by
 @var{path}.  The attribute name corresponds to the slot name of
@@ -11834,7 +11944,7 @@ If the named path doesn't exist, @code{#f} is returned.
 
 If @var{path} is a symbolic link, these functions queries the
 attributes of the file pointed by the link, unless
-an optional argument @var{dont-follow-link?} is given and true.
+an optional argument @var{follow-link?} is given and false.
 
 MzScheme and Chicken have @code{file-size}.  Chicken also has
 @code{file-modification-time}, which is @code{file-mtime}.
@@ -11845,7 +11955,7 @@ MzScheme and Chicken have @code{file-size}.  Chicken also has
 存在しなければ@code{#f}が返されます。
 
 @var{path}がシンボリックリンクだった場合、オプショナルな引数
-@var{dont-follow-link?} に真の値が与えられていない限り、これらの手続きは
+@var{follow-link?} に偽の値が与えられていない限り、これらの手続きは
 リンクの指す先のファイルに関する情報を返します。
 
 MzSchemeとChickenには@code{file-size}があります。
