@@ -21,9 +21,9 @@
       (lambda () (string->list "abcdefg")))
 (test "string->list" '() (lambda () (string->list "")))
 
-(test "string-ref" #\b (lambda () (string-ref "abc" 2)))
+(test "string-ref" #\b (lambda () (string-ref "abc" 1)))
 (define x (string-copy "abcde"))
-(test "string-set!" "abZde" (lambda () (string-set! x 2 #\Z)))
+(test "string-set!" "abZde" (lambda () (string-set! x 2 #\Z) x))
 
 (test "string-join" "foo bar baz"
       (lambda () (string-join '("foo" "bar" "baz"))))
@@ -87,7 +87,4 @@
           (list (string-pointer-substring sp)
                 (string-pointer-substring sp :after #t)))))
 
-
-
-
-              
+(test-end)
