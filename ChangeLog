@@ -1,3 +1,10 @@
+2004-05-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/ioutil.scm, src/gauche-init.scm: moved contents of
+	  ioutil to gauche-init.scm, and removed ioutil.scm.
+	* src/autoloads.scm: removed reference to ioutil.  added autoload
+	  of values-ref.
+
 2004-05-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/stdlib.stub : moved open-input-file and open-output-file to

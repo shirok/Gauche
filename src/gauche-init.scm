@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-init.scm,v 1.114 2004-02-03 13:12:28 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.115 2004-05-14 12:06:35 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -89,6 +89,41 @@
   (let ((proc (lambda x (apply get x))))
     (set! (setter proc) set)
     proc))
+
+;; print (as in SCM, Chicken)
+(define (print . args) (for-each display args) (newline))
+
+;; srfi-38
+(define read-with-shared-structure read)
+(define read/ss read)
+
+(define (write-with-shared-structure obj . args)
+  (write* obj (if (pair? args) (car args) (current-output-port))))
+(define write/ss write-with-shared-structure)
+
+;; format
+(define format (undefined))
+(define format/ss (undefined))
+(let ((format-int
+       (lambda (port fmt args shared?)
+         (cond ((eqv? port #f)
+                (let ((out (open-output-string :private? #t)))
+                  (%format out fmt args shared?)
+                  (get-output-string out)))
+               ((eqv? port #t)
+                (%format (current-output-port) fmt args shared?))
+               (else (%format port fmt args shared?))))))
+  (set! format
+        (lambda (fmt . args)
+          (if (string? fmt)
+            (format-int #f fmt args #f) ;; srfi-28 compatible behavior
+            (format-int fmt (car args) (cdr args) #f))))
+  (set! format/ss
+        (lambda (fmt . args)
+          (if (string? fmt)
+            (format-int #f fmt args #t) ;; srfi-28 compatible behavior
+            (format-int fmt (car args) (cdr args) #t))))
+  )
 
 ;;
 ;; Load object system
