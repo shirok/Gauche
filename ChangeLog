@@ -1,3 +1,8 @@
+2002-09-26  Shiro Kawai  <shiro@acm.org>
+
+	* ext/charconv/jconv.c : use internal conversion routine for
+	  "iso-2022-jp" as well.
+
 2002-09-25  Shiro Kawai  <shiro@acm.org>
 
 	* ext/charconv/jconv.c (jconv_iconv_reset): fixed a bug that caused

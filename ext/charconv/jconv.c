@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: jconv.c,v 1.10 2002-09-26 05:24:44 shirok Exp $
+ *  $Id: jconv.c,v 1.11 2002-09-27 05:37:52 shirok Exp $
  */
 
 /* Some iconv() implementations don't support japanese character encodings,
@@ -1129,10 +1129,14 @@ static struct conv_support_rec {
     { "utf8",         JCODE_UTF8 },
     { "iso2022jp",    JCODE_ISO2022JP },
     { "iso2022-jp",   JCODE_ISO2022JP },
+    { "iso-2022-jp",  JCODE_ISO2022JP },
     { "csiso2022jp",  JCODE_ISO2022JP },
     { "iso2022jp-1",  JCODE_ISO2022JP },
+    { "iso-2022jp-1", JCODE_ISO2022JP },
     { "iso2022jp-2",  JCODE_ISO2022JP },
+    { "iso-2022jp-2", JCODE_ISO2022JP },
     { "iso2022jp-3",  JCODE_ISO2022JP },
+    { "iso-2022jp-3", JCODE_ISO2022JP },
     { NULL, 0 }
 };
 
