@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.8 2001-02-03 11:29:39 shiro Exp $
+ *  $Id: vminsn.h,v 1.9 2001-02-06 07:00:02 shiro Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -29,6 +29,18 @@ DEFINSN(SCM_VM_NOP, "NOP", 0)
  *  Push value of val0 to the stack top
  */
 DEFINSN(SCM_VM_PUSH, "PUSH", 0)
+
+/* POP
+ *
+ *  Pop arg
+ */
+DEFINSN(SCM_VM_POP, "POP", 0)
+
+/* DUP
+ *
+ *  Duplicate the value on top of the stack
+ */
+DEFINSN(SCM_VM_DUP, "DUP", 0)
 
 /* PRE-CALL <preparation>
  *
@@ -116,14 +128,21 @@ DEFINSN(SCM_VM_IF, "IF", 0)
  */
 DEFINSN(SCM_VM_TAILBIND, "TAILBIND", 1)
 
-/* SET <LOCATION>
+/* LSET(DEPTH, OFFSET)
  *   Input stack  : value
  *   Result stack : -
  *
- *  LOCATION may be a symbol (in case of global set!) or LREF
- *  instruction (local set!)
+ *  Local set
  */
-DEFINSN(SCM_VM_SET, "SET", 0)
+DEFINSN(SCM_VM_LSET, "LSET", 2)
+
+/* GSET <LOCATION>
+ *   Input stack  : value
+ *   Result stack : -
+ *
+ *  LOCATION may be a symbol or gloc
+ */
+DEFINSN(SCM_VM_GSET, "GSET", 0)
 
 /* LREF(DEPTH,OFFSET)
  *   Input stack  : -
