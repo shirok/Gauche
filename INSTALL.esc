@@ -26,7 +26,7 @@
                       Compiling and Installing Gauche
 <? ) !>
 
-$Id: INSTALL.esc,v 1.16 2002-06-30 04:26:10 shirok Exp $
+$Id: INSTALL.esc,v 1.17 2002-07-01 02:51:17 shirok Exp $
 <? (if-lang japanese? !>
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:<? else !>
@@ -334,6 +334,39 @@ The files are installed in those locations:
 <? else !>
      These are default locations where user installed machine-indenpedent/
      dependent files will go.
+<? ) !>
+
+
+<? (header "最適化オプション" "Optimization options") !>
+
+<? (if-lang japanese? !>
+Make時に、makeマクロOPTFLAGSを用いて追加のコンパイルオプションを指定すること
+ができます。例えばi686アーキテクチャでgccを使う場合、次のオプションは多少
+性能を改善するようです。
+<? else !>
+You can pass extra options at make time, using make macro OPTFLAGS.
+For example, the following may produce a bit faster code on i686
+architecture using gcc.
+<? ) !>
+
+  make OPTFLAGS="-march=i686 -fomit-frame-pointer -DUSE_I686_PREFETCH"
+
+
+<? (header "アンインストール" "Uninstallation") !>
+
+<? (if-lang japanese? !>
+インストールされたGaucheソフトウェアを取り除くには、ソースツリーのトップ
+ディレクトリで
+
+  make uninstall
+
+として下さい。
+<? else !>
+You can remove installed Gauche software by run
+
+  make uninstall
+
+on top of the source tree.
 <? ) !>
 
 
