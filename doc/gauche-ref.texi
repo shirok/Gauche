@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.190 2002-04-30 05:55:58 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.191 2002-04-30 08:12:32 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -9495,16 +9495,15 @@ working directory to @var{dir}.   An error is signalled if
 access @var{dir}.
 @end defun
 
-@defun sys-pipe &keyword (buffered? @code{#t})
+@defun sys-pipe &keyword (buffering :line)
 [POSIX] Creates a pipe, and returns two ports.
 The first returned port is an input port and the second is an output port.
 The data put to the output port can be read from the input port.
 
-By default, the returned port is buffered using stdio interface,
-i.e. you may want to call @code{flush} for the output port to make sure
-the data can be read from the input port.  If the keyword argument
-@var{buffered?} is false, however, the ports uses low-level
-system calls (@code{read(2)} and @code{write(2)}.
+@var{Buffering} can be @code{:full}, @code{:line} or @code{:none}, 
+and specifies the buffering mode of the ports opened on the pipe.
+@xref{File ports}, for details of the buffering mode.
+The default mode is sufficient for typical cases.
 
 @example
 (receive (in out) (sys-pipe)
