@@ -221,7 +221,13 @@
                 ((eq? (car form) 'inliner)
                  (unless (pair? (cdr form))
                    (error "bad `inliner' spec: ~s" form))
-                 (set! (inline-insn-of cproc) (cadr form))
+                 (if (and (pair? (cadr form))
+                          (eq? (caadr form) 'proc))
+                     (if (not (string? (cadadr form)))
+                         (error "inliner procedure name must be a string: ~s"
+                                form)
+                         (set! (inliner-of cproc) (cadadr form)))
+                     (set! (inline-insn-of cproc) (cadr form)))
                  (loop next))
                 (else
                  (error "unknown body form: ~s" form)))))))
