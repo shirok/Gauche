@@ -51,6 +51,7 @@ if [ "$tgz" = "yes" ]; then
   mkdir ../Gauche-$VERSION
   tar cvfX - DIST_EXCLUDE_X . | (cd ../Gauche-$VERSION; tar xf -)
   (cd ..; tar cvf - Gauche-$VERSION | gzip -9 > Gauche-$VERSION.tgz)
+  rm -rf ../Gauche-$VERSION
 #  if [ -d $TGZ_DEST ]; then
 #    mv ../Gauche-$VERSION.tgz $TGZ_DEST
 #    cp ChangeLog $CHANGELOG_DEST
@@ -78,19 +79,27 @@ if [ "$docs" = "yes" ]; then
 fi
 
 if [ "$test" = "yes" ]; then
-  rm -rf ../test/Gauche
+  if [ ! -f VERSION ]; then echo "No VERSION; do DIST tgz first"; exit 1; fi
+  VERSION=`cat VERSION`
+  if [ ! -f ../Gauche-$VERSION.tgz ]; then echo "No tarball; do DIST tgz first"; exit 1; fi
+  mkdir -p ../test
+  rm -rf ../test/Gauche-$VERSION ../test/test-inst
   cd ../test
-  tar xzvf ~/shiro.dreamhost.com/scheme/vault/Gauche-$VERSION.tgz
+  mkdir -p test-inst
+  tar xzvf ../Gauche-$VERSION.tgz
   cd Gauche-$VERSION
-  ./configure --enable-threads=pthreads
+  ./configure --enable-threads=pthreads --prefix=`pwd`/../test-inst
   make
   make -s test
   make install
   cd ..
+  testgosh=`pwd`/test-inst/bin/gosh
   for tt in `cat ./Gauche-$VERSION/test/TESTS`; do
-    /usr/local/bin/gosh -I./Gauche-$VERSION/test $tt >> test.log
+    $testgosh -I./Gauche-$VERSION/test $tt >> test.log
   done
-  (cd $XTRA_TEST_DIR/r4rstest/ && make test)
+  if [ -f $XTRA_TEST_DIR/r4rstest/r4rstest.scm ]; then
+    (cd $XTRA_TEST_DIR/r4rstest/ && make GOSH=$testgosh test)
+  fi
 fi
 
 if [ "$testcode" = "yes" ]; then
