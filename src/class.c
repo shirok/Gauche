@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.100 2003-11-11 22:58:53 shirok Exp $
+ *  $Id: class.c,v 1.101 2003-11-12 07:37:32 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -535,7 +535,9 @@ static void class_cpl_set(ScmClass *klass, ScmObj val)
     ScmClass **p;
 
     if (!SCM_PAIRP(val)) goto err;
+    /* check if the CPL begins with the class itself. */
     if (SCM_CAR(val) != SCM_OBJ(klass)) goto err;
+
     /* set up the cpa */
     cp = SCM_CDR(val);
     if ((len = Scm_Length(cp)) < 0) goto err;
@@ -1049,11 +1051,11 @@ void Scm_TransplantInstance(ScmObj src, ScmObj dst)
     memcpy(dst, src, base->coreSize);
 }
 
-/* update-instance! obj 
+/* touch-instance! obj 
  * If obj's class is redefined, update obj.  Otherwise it does nothing.
  * Handy to ensure obj is in the newest state.  Returns obj.
  */
-ScmObj Scm_UpdateInstance(ScmObj obj)
+ScmObj Scm_VMTouchInstance(ScmObj obj)
 {
     ScmClass *klass = Scm_ClassOf(obj);
     if (!SCM_FALSEP(klass->redefined)) {

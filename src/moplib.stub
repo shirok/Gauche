@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: moplib.stub,v 1.21 2003-11-11 09:35:31 shirok Exp $
+;;; $Id: moplib.stub,v 1.22 2003-11-12 07:37:32 shirok Exp $
 ;;;
 
 "
@@ -146,8 +146,8 @@
 (define-cproc instance-slot-set (obj num::<fixnum> value)
   (return <void> "Scm_InstanceSlotSet"))
 
-(define-cproc update-instance! (obj)
-  (return "Scm_UpdateInstance"))
+(define-cproc touch-instance! (obj)
+  (return "Scm_VMTouchInstance"))
 
 ;; Local variables:
 ;; mode: scheme
