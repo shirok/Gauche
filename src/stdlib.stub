@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.51 2001-05-06 07:45:21 shirok Exp $
+;;; $Id: stdlib.stub,v 1.52 2001-05-07 08:49:43 shirok Exp $
 ;;;
 
 
@@ -289,7 +289,11 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   else        SCM_RETURN(Scm_MakeFlonum(sqrt(vx)));")
   
 (define-cproc %expt (x y)
-  "  SCM_RETURN(Scm_Expt(x, y));")
+  "  double vx, vy;
+  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
+  if (!SCM_REALP(y)) Scm_Error(\"real number required, but got %S\", y);
+  /* TODO: optimize the case where x and y is integer, y>0 */
+  SCM_RETURN(Scm_MakeFlonum(pow(Scm_GetDouble(x), Scm_GetDouble(y))));")
 
 (define-cproc make-rectangular (a b)
   "  ScmObj z;
