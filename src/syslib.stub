@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.23 2001-03-12 10:12:43 shiro Exp $
+;;; $Id: syslib.stub,v 1.24 2001-03-13 08:33:55 shiro Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -29,6 +29,7 @@
 #include <sys/times.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
+#include <signal.h>
 "
 ;;---------------------------------------------------------------------
 ;; dirent.h - read directory
@@ -222,6 +223,40 @@
 
 ;;---------------------------------------------------------------------
 ;; signal.h
+
+(define-symbol SIGABRT "sym_sigabrt" "Scm_MakeInteger(SIGABRT)")
+(define-symbol SIGALRM "sym_sigalrm" "Scm_MakeInteger(SIGALRM)")
+(define-symbol SIGCHLD "sym_sigchld" "Scm_MakeInteger(SIGCHLD)")
+(define-symbol SIGCONT "sym_sigcont" "Scm_MakeInteger(SIGCONT)")
+(define-symbol SIGFPE  "sym_sigfpe"  "Scm_MakeInteger(SIGFPE)")
+(define-symbol SIGHUP  "sym_sighup"  "Scm_MakeInteger(SIGHUP)")
+(define-symbol SIGILL  "sym_sigill"  "Scm_MakeInteger(SIGILL)")
+(define-symbol SIGINT  "sym_sigint"  "Scm_MakeInteger(SIGINT)")
+(define-symbol SIGKILL "sym_sigkill" "Scm_MakeInteger(SIGKILL)")
+(define-symbol SIGPIPE "sym_sigpipe" "Scm_MakeInteger(SIGPIPE)")
+(define-symbol SIGQUIT "sym_sigquit" "Scm_MakeInteger(SIGQUIT)")
+(define-symbol SIGSEGV "sym_sigsegv" "Scm_MakeInteger(SIGSEGV)")
+(define-symbol SIGSTOP "sym_sigstop" "Scm_MakeInteger(SIGSTOP)")
+(define-symbol SIGTSTP "sym_sigtstp" "Scm_MakeInteger(SIGTSTP)")
+(define-symbol SIGTTIN "sym_sigttin" "Scm_MakeInteger(SIGTTIN)")
+(define-symbol SIGTTOU "sym_sigttou" "Scm_MakeInteger(SIGTTOU)")
+(define-symbol SIGUSR1 "sym_sigusr1" "Scm_MakeInteger(SIGUSR1)")
+(define-symbol SIGUSR2 "sym_sigusr2" "Scm_MakeInteger(SIGUSR2)")
+
+(define-cproc sys-kill (pid sig)
+  (assert (exact? pid))
+  (assert (exact? sig))
+  "  int r = kill(pid, sig);
+  if (r < 0) Scm_SysError(\"kill failed\");
+  SCM_RETURN(SCM_UNDEFINED);")
+
+;; to be implemented
+;;   signal raise
+;;   sigset object, sigaction object
+;;   sigaciton, sigaddset, sigdelset, sigemptyset, sigfillset, sigismember,
+;;   sigpending, sigprocmask, sigsuspend
+;; signal handling mechanism should interact with Scheme kernel's use of
+;; setjmp/longjmp
 
 ;;---------------------------------------------------------------------
 ;; stdio.h
@@ -515,6 +550,21 @@
 (define-cproc sys-fork ()
   "  int pid = fork();
   SCM_RETURN(Scm_MakeInteger(pid));")
+
+(define-cproc sys-exec (command arg0 &rest rest)
+  (assert (string? command))
+  "  ScmObj args = Scm_Cons(arg0, rest), ap;
+  int argc = Scm_Length(args), i;
+  char **argv;
+  argv = SCM_NEW2(char **, sizeof(char *)*(argc+1));
+  for (i=0, ap = args; i<argc; i++, ap = SCM_CDR(ap)) {
+    if (!SCM_STRINGP(SCM_CAR(ap))) Scm_Error(\"bad argument (string required): %S\", SCM_CAR(ap));
+    argv[i] = Scm_GetString(SCM_STRING(SCM_CAR(ap)));
+  }
+  argv[i] = NULL;
+  execvp(Scm_GetStringConst(command), (char *const*)argv);
+  Scm_SysError(\"exec failed\");
+  SCM_RETURN(SCM_UNDEFINED); /* dummy */")
 
 (define-cproc sys-getcwd ()
   "  char *p; ScmObj s;
