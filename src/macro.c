@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.2 2001-02-20 12:01:57 shiro Exp $
+ *  $Id: macro.c,v 1.3 2001-02-21 13:33:19 shiro Exp $
  */
 
 #include "gauche.h"
@@ -104,25 +104,139 @@ static ScmSyntax syntax_macro_expand = {
  * R5RS Macro
  */
 
-static ScmObj synrule_transform(ScmObj form, ScmObj env,
-                                  int ctx, void *data)
+/* To be a handy scripting interpreter, expansion speed of complex macro
+ * is important.  That's why I impelement it in C.
+ */
+
+/*-------------------------------------------------------------------
+ * pattern language matcher
+ */
+
+#if 0
+static inline ScmObj match_insert(ScmObj var, ScmObj matched, ScmObj matchlist)
 {
-    Scm_Error("synrule-tranformer: not implemented yet.  Sorry.");
+    ScmObj p = Scm_Assq(var, matchlist);
+    if (SCM_PAIRP(p)) {
+        SCM_SET_CDR(p, Scm_Cons(matched, SCM_CDR(p)));
+        return matchlist;
+    } else {
+        return Scm_Cons(SCM_LIST2(var, matched), matchlist);
+    }
+}
+
+#define ELLIPSIS_FOLLOWING(pat) \
+    (SCM_PAIRP(SCM_CDR(pat)) && SCM_CADR(pat)==SCM_SYM_ELLIPSIS)
+
+/* See if form matches pattern.  If match, add matched syntax variable
+   bindings to matchlist and returns modified matchlist. */
+static ScmObj match_synrule(ScmObj form, ScmObj pattern,
+                            ScmObj literals, ScmObj env,
+                            ScmObj matchlist)
+{
+    ScmObj r;
+
+    Scm_Printf(SCM_CUROUT, "--- %S %S %S\n", form, pattern, matchlist);
+    if (SCM_SYMBOLP(pattern)) {
+        if (SCM_FALSEP(Scm_Member(pattern, literals))) {
+            return match_insert(pattern, form, matchlist);
+        } else {
+            
+        }
+    }
+    if (SCM_PAIRP(pattern)) {
+        while (SCM_PAIRP(pattern)) {
+            if (ELLIPSIS_FOLLOWING(pattern)) {
+                while (SCM_PAIRP(form)) {
+                    r = match_synrule(SCM_CAR(form), SCM_CAR(pattern), matchlist);
+                    if (SCM_FALSEP(r)) return SCM_FALSE;
+                    form = SCM_CDR(form);
+                    matchlist = r;
+                }
+                if (!SCM_NULLP(form)) return SCM_FALSE;
+                else return matchlist;
+            } else if (!SCM_PAIRP(form)) {
+                return SCM_FALSE;
+            } else {
+                r = match_synrule(SCM_CAR(form), SCM_CAR(pattern), matchlist);
+                if (SCM_FALSEP(r)) return SCM_FALSE;
+                matchlist = r;
+                pattern = SCM_CDR(pattern);
+                form = SCM_CDR(form);
+            }
+        }
+        if (!SCM_NULLP(pattern))
+            return match_insert(pattern, form, matchlist);
+        else 
+            return SCM_NULLP(form)? matchlist : SCM_FALSE;
+    }
+    if (SCM_VECTORP(pattern)) {
+        int i, plen, flen, elli;
+        if (!SCM_VECTORP(form)) return SCM_FALSE;
+        plen = SCM_VECTOR_SIZE(pattern);
+        flen = SCM_VECTOR_SIZE(form);
+        if (plen == 0) return (flen == 0 ? matchlist: SCM_FALSE);
+        elli = (SCM_VECTOR_ELEMENT(pattern, plen-1) == SCM_SYM_ELLIPSIS)? 2 : 0;
+        if (plen < 2 && elli) Scm_Error("bad pattern: %S", form);
+        if ((!elli && plen!=flen) || (elli && plen-2>flen)) return SCM_FALSE;
+        for (i=0; i < plen-elli; i++) {
+            r = match_synrule(SCM_VECTOR_ELEMENT(form, i),
+                              SCM_VECTOR_ELEMENT(pattern, i),
+                              matchlist);
+            if (SCM_FALSEP(r)) return SCM_FALSE;
+            matchlist = r;
+        }
+        if (!elli) return matchlist;
+        for (i=plen-elli; i<flen; i++) {
+            r = match_synrule(SCM_VECTOR_ELEMENT(form, i),
+                              SCM_VECTOR_ELEMENT(pattern, plen-2),
+                              matchlist);
+            if (SCM_FALSEP(r)) return SCM_FALSE;
+            matchlist = r;
+        }
+        return matchlist;
+    }
+
+    /* literal */
+    if (Scm_EqualP(pattern, form)) return matchlist;
+    else return SCM_FALSE;
+}
+#endif
+/*-------------------------------------------------------------------
+ * pattern language transformer
+ */
+static ScmObj synrule_transform(ScmObj form, ScmObj env,
+                                int ctx, void *data)
+{
+#if 0
+    ScmObj cp;
+    ScmObj literals = SCM_CAR(data);
+    ScmObj rules = SCM_CADR(data);
+    ScmObj cmpl_env = SCM_CAR(SCM_CDDR(data));
+    
+    Scm_Printf(SCM_CUROUT, "**** synrule_transform: %S\n", form);
+    SCM_FOR_EACH(cp, rules) {
+        ScmObj r = match_synrule(form, SCM_CAAR(cp), SCM_NIL);
+        Scm_Printf(SCM_CUROUT, "  %S => %S\n", SCM_CAAR(cp), r);
+    }
+#endif
     return SCM_NIL;
 }
 
-static ScmObj make_synrule_transformer(ScmObj literals, ScmObj rules)
+static ScmObj make_synrule_transformer(ScmObj literals, ScmObj rules,
+                                       ScmObj cmpl_env)
 {
     return Scm_MakeSyntax(SCM_SYMBOL(SCM_INTERN("macro")), /* TODO: need better info */
                           synrule_transform,
-                          (void*)Scm_Cons(literals, rules));
+                          (void*)SCM_LIST3(literals, rules, cmpl_env));
 }
 
+/*-------------------------------------------------------------------
+ * syntax-rules
+ */
 static ScmObj compile_syntax_rules(ScmObj form, ScmObj env,
                                    int ctx, void *data)
 {
     ScmObj literals, rules, cp;
-    int badlit = 0;
     
     if (Scm_Length(form) < 3)
         Scm_Error("malformed syntax-rules: %S", form);
@@ -142,7 +256,7 @@ static ScmObj compile_syntax_rules(ScmObj form, ScmObj env,
         }
     }
 
-    return SCM_LIST1(make_synrule_transformer(literals, rules));
+    return SCM_LIST1(make_synrule_transformer(literals, rules, env));
 }
 
 static ScmSyntax syntax_syntax_rules = {
