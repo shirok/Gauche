@@ -1,3 +1,8 @@
+2003-03-31  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/array.scm (tabulate-array): referred to non-existent
+	  procedure.  (Patch from Alex Shinn).
+
 2003-03-30  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.6.8
