@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.26 2001-07-08 18:54:10 shirok Exp $
+ *  $Id: macro.c,v 1.27 2001-08-30 06:41:44 shirok Exp $
  */
 
 #include "gauche.h"
@@ -46,11 +46,11 @@ ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmCompileProc compiler, void *data)
 
 static void pattern_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    return Scm_Printf(port, "#<pattern:%d%S %S%s>",
-                      SCM_SYNTAX_PATTERN(obj)->level,
-                      SCM_SYNTAX_PATTERN(obj)->vars,
-                      SCM_SYNTAX_PATTERN(obj)->pattern,
-                      SCM_SYNTAX_PATTERN(obj)->repeat? " ..." : "");
+    Scm_Printf(port, "#<pattern:%d%S %S%s>",
+               SCM_SYNTAX_PATTERN(obj)->level,
+               SCM_SYNTAX_PATTERN(obj)->vars,
+               SCM_SYNTAX_PATTERN(obj)->pattern,
+               SCM_SYNTAX_PATTERN(obj)->repeat? " ..." : "");
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SyntaxPatternClass, pattern_print);
