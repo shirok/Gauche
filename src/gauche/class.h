@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.h,v 1.12 2001-03-25 06:34:02 shiro Exp $
+ *  $Id: class.h,v 1.13 2001-03-25 10:23:24 shiro Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -62,7 +62,6 @@ typedef struct ScmClassStaticSlotSpecRec {
 /* some internal methods */
     
 extern ScmObj Scm_ClassAllocate(ScmClass *klass, int nslots);
-extern ScmObj Scm_GetSlotAllocation(ScmObj slot);
 extern ScmObj Scm_ComputeCPL(ScmClass *klass);
 extern ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf,
                                            ScmObj *args,
