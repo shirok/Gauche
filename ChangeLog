@@ -1,3 +1,9 @@
+2002-01-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/regexp.c, src/gauche/vm.h : use sig{set|long}jmp
+	  instead of {set|long}jmp.
+	* src/signal.c : added master signal handling mechanism.
+
 2002-01-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/stdlib.stub : fix a bug in the code generator of
