@@ -1,3 +1,10 @@
+2003-11-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/object.scm, lib/gauche/redefutil.scm : splitted
+	  class-redefinition implementation into an autoloaded file.
+	  Fix instance update protocol so that only instance-allocated
+	  slots (in the old instance) will be carried over.
+
 2003-11-24  Shiro Kawai  <shiro@acm.org>
 
 	* lib/dbm.scm : added dbm-db-* to the export list.  (Pointed out

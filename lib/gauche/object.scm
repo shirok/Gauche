@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: object.scm,v 1.48 2003-11-12 09:11:49 shirok Exp $
+;;;  $Id: object.scm,v 1.49 2003-11-27 11:16:04 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -416,88 +416,18 @@
 ;; Class Redefinition
 ;;
 
-;; redefine-class! old new  [function]
-;;   <with locking old>
-;;     class-redefinition old new   [gf]
-;;       <update direct methods>
-;;       <update direct supers>
-;;       update-direct-subclass! c orig clone      [gf]
+;; implemented in gauche/redefutil.scm 
+(autoload "gauche/redefutil"
+          redefine-class! class-redefinition
+          update-direct-subclass! change-object-class)
+(with-module gauche
+  (autoload "gauche/redefutil"
+            redefine-class! class-redefinition
+            update-direct-subclass! change-object-class))
 
-(define (redefine-class! old new)
-  (%start-class-redefinition! old) ;; MT safety
-  (with-error-handler
-      (lambda (e)
-        (%commit-class-redefinition! old #f)
-        (warn "Class redefinition of ~S is aborted.  The state of the class may be inconsistent" old)
-        (raise e))
-    (lambda ()
-      (class-redefinition old new)
-      (%commit-class-redefinition! old new))))
-
-(define-method class-redefinition ((old <class>) (new <class>))
-  (for-each (lambda (m)
-              (if (is-a? m <accessor-method>)
-                (delete-method! (slot-ref m 'generic) m)
-                (update-direct-method! m old new)))
-            (class-direct-methods old))
-  (for-each (lambda (sup) (%delete-direct-subclass! sup old))
-            (class-direct-supers old))
-  (for-each (lambda (sub) (update-direct-subclass! sub old new))
-            (class-direct-subclasses old))
-  )
-
-(define-method update-direct-subclass! ((sub <class>)
-                                        (orig <class>)
-                                        (new <class>))
-  (define (new-supers supers)
-    (map (lambda (s) (if (eq? s orig) new s)) supers))
-
-  (define (fix-initargs initargs supers metaclass)
-    (let loop ((args initargs) (r '()))
-      (cond ((null? args) (reverse! r))
-            ((eq? (car args) :supers)
-             (loop (cddr args) (list* supers :supers r)))
-            ((eq? (car args) :metaclass)
-             (loop (cddr args) (list* metaclass :metaclass r)))
-            (else
-             (loop (cddr args) (list* (cadr args) (car args) r))))))
-
-  (let* ((initargs (slot-ref sub 'initargs))
-         (supers   (new-supers (class-direct-supers sub)))
-         ;; NB: this isn't really correct!
-         (metaclass (or (get-keyword :metaclass initargs #f)
-                        (%get-default-metaclass supers)))
-         (new-sub  (apply make metaclass
-                          (fix-initargs initargs supers metaclass))))
-    (redefine-class! sub new-sub)
-    ;; Trick: redefine-class! above removes subclass form original
-    ;; superclass's direct-subclass list, but we want to keep it.
-    ;; so we add to it again.  We can't do this within class-redefinition,
-    ;; for we don't know if it is called on the top of redefinition
-    ;; or in the subclasses' redefinition.
-    (for-each (lambda (sup) (%add-direct-subclass! sup sub))
-              (class-direct-supers sub))
-    ;; If the subclass has global bindings, replace them.
-    (%replace-class-binding! sub new-sub)))
-
-;; Change class.  Be very careful not to invoke updating obj recursively!
-(define-method change-class ((obj <object>)
-                             (new-class <class>))
-  (let* ((old-class (current-class-of obj))
-         (new       (allocate-instance new-class '())))
-    (for-each
-     (lambda (slot)
-       (let ((slot-name (slot-definition-name slot)))
-         (if (and (slot-exists-using-class? old-class obj slot-name)
-                  (not (eq? (slot-definition-allocation slot) :builtin))
-                  (slot-bound-using-class? old-class obj slot-name))
-           (let ((val (slot-ref-using-class old-class obj slot-name)))
-             (slot-set-using-class! new-class new slot-name val))
-           (let ((acc (class-slot-accessor new-class slot-name)))
-             (slot-initialize-using-accessor! new acc '())))))
-     (class-slots new-class))
-    (%transplant-instance! new obj)
-    obj))
+;; change-class gf is defined in C, so we can't use autoload for it.
+(define-method change-class ((obj <object>) (new-class <class>) . maybe-slots)
+  (apply change-object-class obj (current-class-of obj) new-class maybe-slots))
 
 ;;----------------------------------------------------------------
 ;; Method Application
@@ -628,13 +558,12 @@
                 class-slot-ref class-slot-set!
                 slot-push! slot-unbound slot-missing
                 slot-exists? slot-exists-using-class?
+                change-class
                 apply-generic sort-applicable-methods
                 apply-methods apply-method
                 class-name class-precedence-list class-direct-supers
                 class-direct-methods class-direct-subclasses
                 class-direct-slots class-slots
-                redefine-class! class-redefinition
-                change-class update-direct-subclass!
                 slot-definition-name slot-definition-options
                 slot-definition-option
                 slot-definition-allocation slot-definition-getter

@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.28 2003-11-12 09:11:51 shirok Exp $
+;; $Id: object.scm,v 1.29 2003-11-27 11:16:03 shirok Exp $
 
 (use gauche.test)
 
@@ -271,7 +271,7 @@
          (list i j)))
 
 ;;----------------------------------------------------------------
-(test-section "class redefinition")
+(test-section "class redefinition (part 1)")
 
 ;; save original <x> and <y> defined above
 (define <x>-orig <x>)
@@ -974,6 +974,187 @@
          (instance-pool-remove! <pool-z> (cut eq? pool-z2 <>))
          (or (instance-pool-find <pool-x> (cut eq? pool-z2 <>))
              (instance-pool-find <pool-y> (cut eq? pool-z2 <>)))))
+
+;;----------------------------------------------------------------
+(test-section "class redefinition (part 2)")
+
+;; Here, we test more involved cases of class redefinition.
+;; This time, the class to be redefined contains not-a-simple instance slot.
+
+;; First version of <member>
+(define-class <member> ()
+  ((name       :init-keyword :name)
+   (occupation :init-keyword :occupation)))
+
+(define *member-alan*
+  (make <member> :name "Alan Pangborn" :occupation "County Sheriff"))
+
+(define *member-mike*
+  (make <member> :name "Mike Noonan" :occupation "Writer"))
+
+(define *member-ted*
+  (make <member> :name "Ted Brautigan" :occupation "Breaker"))
+
+;; Now, we redefine <member> with splitting name slot to
+;; first-name and last-name, updating them using change-class method.
+
+(define <old-member> <member>) ;; saving old class
+
+(define-class <member> ()
+  ((first-name :init-keyword :first-name)
+   (last-name  :init-keyword :last-name)
+   (occupation :init-keyword :occupation)
+   (name       :allocation :virtual
+               :slot-ref (lambda (o)
+                           (string-append (slot-ref o 'first-name)
+                                          " "
+                                          (slot-ref o 'last-name)))
+               :slot-set! (lambda (o v) #f))
+   ))
+
+(define-method change-class ((obj <old-member>) new-class)
+  (let* ((old-name (slot-ref-using-class (current-class-of obj) obj 'name))
+         (first&last (string-split old-name #\space)))
+    (next-method)
+    (slot-set-using-class! new-class obj 'first-name (car first&last))
+    (slot-set-using-class! new-class obj 'last-name (cadr first&last))
+    obj))
+
+;; Let's see we have done it right.
+(test* "customizing change-class" '("Alan Pangborn" "Alan" "Pangborn"
+                                    "County Sheriff")
+       (map (cut slot-ref *member-alan* <>)
+            '(name first-name last-name occupation)))
+
+;; Now, we refactor part of <member> into <person>.
+;; This also involves redefinition of the virtual slot.
+(define-class <person> ()
+  ((first-name :init-keyword :first-name)
+   (last-name  :init-keyword :last-name)
+   (name       :allocation :virtual
+               :slot-ref (lambda (o)
+                           (string-append (slot-ref o 'first-name)
+                                          " "
+                                          (slot-ref o 'last-name)))
+               :slot-set! (lambda (o v) #f))
+   (sex        :init-keyword :sex)
+   ))
+
+(define-class <member> (<person>)
+  ((occupation :init-keyword :occupation)))
+
+;; Let's see we have done it right.
+(test* "inserting parent class" '("Alan Pangborn" "Alan" "Pangborn"
+                                  "County Sheriff")
+       (map (cut slot-ref *member-alan* <>)
+            '(name first-name last-name occupation)))
+
+(test* "inserting parent class" '("Mike Noonan" "Mike" "Noonan"
+                                  "Writer")
+       (map (cut slot-ref *member-mike* <>)
+            '(name first-name last-name occupation)))
+
+(slot-set! *member-alan* 'sex 'what?)
+
+;; Now, we change <person> to <validator> class, and validates
+;; the value of 'sex' slot.
+(define-class <person> (<validator-mixin>)
+  ((first-name :init-keyword :first-name)
+   (last-name  :init-keyword :last-name)
+   (name       :allocation :virtual
+               :slot-ref (lambda (o)
+                           (string-append (slot-ref o 'first-name)
+                                          " "
+                                          (slot-ref o 'last-name)))
+               :slot-set! (lambda (o v) #f))
+   (sex        :init-keyword :sex
+               :validator (lambda (o v)
+                            (if (memq v '(male female))
+                              v
+                              'unknown)))
+   ))
+
+;; Let's see we have done it right.
+(test* "changing parent's metaclass" '("Alan Pangborn" "Alan" "Pangborn"
+                                       "County Sheriff" unknown)
+       (map (cut slot-ref *member-alan* <>)
+            '(name first-name last-name occupation sex)))
+
+(test* "changing parent's metaclass" '(#f male)
+       (let* ((bound? (slot-bound? *member-mike* 'sex))
+              (val    (begin (slot-set! *member-mike* 'sex 'male)
+                             (slot-ref *member-mike* 'sex))))
+         (list bound? val)))
+
+;; Now, we drop the first-name/last-name slots and make the name slot
+;; to be real one again.
+;; This also tests overriding change-class of superclass.
+(define <old-person> <person>)
+
+(define-class <person> (<validator-mixin>)
+  ((name       :init-keyword :name)
+   (sex        :init-keyword :sex
+               :validator (lambda (o v)
+                            (if (memq v '(male female))
+                              v
+                              'unknown)))
+   ))
+
+(define-method change-class ((obj <old-person>) new-class)
+  (let ((fn (slot-ref-using-class (current-class-of obj) obj 'first-name))
+        (ln (slot-ref-using-class (current-class-of obj) obj 'last-name)))
+    (next-method)
+    (slot-set-using-class! new-class obj 'name (string-append fn " " ln))
+    obj))
+
+;; Let's see we have done it right.
+(test* "reincarnating name slot" '("Alan Pangborn" "County Sheriff" unknown)
+       (map (cut slot-ref *member-alan* <>)
+            '(name occupation sex)))
+
+(test* "reincarnating name slot" '("Mike Noonan" "Writer" male)
+       (map (cut slot-ref *member-mike* <>)
+            '(name occupation sex)))
+
+;; Now, we reorganize the whole structure.
+(define <old-member> <member>)
+
+(define-class <member> (<propagate-mixin>)
+  ((person    :init-keyword :person)
+   (full-name :allocation :propagated
+              :propagate-to '(person name))
+   (sex       :allocation :propagated
+              :propagate-to 'person)
+   (occupation :init-keyword :occupation)))
+
+(define-class <person> ()
+  ((name       :init-keyword :name)
+   (sex        :init-keyword :sex)
+   ))
+
+(define-method change-class ((obj <old-member>) new-class)
+  (let* ((old-class (current-class-of obj))
+         (name (slot-ref-using-class old-class obj 'name))
+         (sex  (if (slot-bound-using-class? old-class obj 'sex)
+                 (slot-ref-using-class old-class obj 'sex)
+                 'unknown))
+         (person (make <person> :name name :sex sex)))
+    (change-object-class obj old-class new-class)
+    (slot-set-using-class! new-class obj 'person person)
+    obj))
+
+;; Let's see we have done it right.
+(test* "reorganizing structure" '("Alan Pangborn" "County Sheriff" unknown)
+       (map (cut slot-ref *member-alan* <>)
+            '(full-name occupation sex)))
+
+(test* "reorganizing structure" '("Mike Noonan" "Writer" male)
+       (map (cut slot-ref *member-mike* <>)
+            '(full-name occupation sex)))
+
+(test* "reorganizing structure" '("Ted Brautigan" "Breaker" unknown)
+       (map (cut slot-ref *member-ted* <>)
+            '(full-name occupation sex)))
 
 (test-end)
 
