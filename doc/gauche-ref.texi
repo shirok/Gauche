@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.425 2003-07-18 09:47:00 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.426 2003-07-21 12:00:13 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -87,41 +87,7 @@ Gaucheのバージョン@VERSION@に対応します。
 @include modutil.texi
 @include references.texi
 @include mapping.texi
-
-@node Indices,  , C to Scheme mapping, Top
-@appendix Indices
-@c NODE 索引
-
-@menu
-* Function and Syntax Index::   
-* Module Index::                
-* Class Index::                 
-* Variable Index::              
-@end menu
-
-@node Function and Syntax Index, Module Index, Indices, Indices
-@appendixsec Function and Syntax Index
-@c NODE 手続きと構文索引
-@printindex fn
-
-@node Module Index, Class Index, Function and Syntax Index, Indices
-@appendixsec Module Index
-@c NODE モジュール索引
-@printindex md
-
-
-@node Class Index, Variable Index, Module Index, Indices
-@appendixsec Class Index
-@c NODE クラス索引
-
-For readability, the surrounding @code{<} and @code{>} are stripped off.
-
-@printindex cl
-
-@node Variable Index,  , Class Index, Indices
-@appendixsec Variable Index
-@c NODE 変数索引
-@printindex vr
+@include index.texi
 
 
 @contents

@@ -24,6 +24,7 @@
 * rfc.sha1 - SHA1 message digest::  
 * rfc.uri - URI parsing and construction::  
 * slib - SLIB::                 
+* sxml.ssax::                   
 * text.csv - CSV tables::       
 * text.diff - Calculate difference of text streams::  
 * text.html-lite - Simple HTML document construction::  
@@ -3283,7 +3284,7 @@ native multibyte representation.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node slib - SLIB, text.csv - CSV tables, rfc.uri - URI parsing and construction, Library modules - Utilities
+@node slib - SLIB, sxml.ssax, rfc.uri - URI parsing and construction, Library modules - Utilities
 @section @code{slib} - SLIB interface
 @c NODE slib - SLIBインタフェース, @code{slib} - SLIBインタフェース
 
@@ -3332,7 +3333,797 @@ module @code{slib}.
 @end example
 
 @c ----------------------------------------------------------------------
-@node text.csv - CSV tables, text.diff - Calculate difference of text streams, slib - SLIB, Library modules - Utilities
+@node sxml.ssax, text.csv - CSV tables, slib - SLIB, Library modules - Utilities
+@section @code{sxml.ssax} - functional XML parser
+
+@deftp {Module} sxml.ssax
+@mdindex sxml.ssax
+@code{sxml.*} modules are the adaptation of
+Oleg Kiselyov's SXML framework (@ref{ssax,,SSAX}),
+which is based on S-expression representation of XML structure.
+
+SSAX is a parser part of SXML framework.
+This is a quote from SSAX webpage:
+
+@quotation
+A SSAX functional XML parsing framework consists of a DOM/SXML parser,
+a SAX parser, and a supporting library of lexing and parsing procedures.
+The procedures in the package can be used separately to tokenize or parse
+various pieces of XML documents.
+The framework supports XML Namespaces, character, internal
+and external parsed entities, attribute value normalization,
+processing instructions and CDATA sections. The package includes
+a semi-validating SXML parser : a DOM-mode parser that is an
+instantiation of a SAX parser (called SSAX).
+@end quotation
+
+The current version is based on the SSAX CVS version newer than
+the last 'official' release of SXML toolset (4.9), and
+SXML-gauche-0.9 package which was based on SXML-4.9.
+There is an important change from that release.
+Now the API uses lowercase letter suffix @code{ssax:}
+instead of uppercase @code{SSAX:}---the difference matters since
+Gauche is case sensitive by default.
+Alias names are defined for backward compatibility,
+but the use of uppercase suffixed names are deprecated.
+@end deftp
+
+I derived the content of this part of the manual from SSAX
+source code, just by converting its comments into texinfo format.
+The original text is by Oleg Kiselyov.  Shiro Kawai
+should be responsible for any typographical error or formatting error
+introduced by conversion.
+
+The manual entries are ordered in "bottom-up" way, beginning from
+the lower-level constructs towards the high-level utilities.
+If you just want to parse XML document and obtain SXML,
+check out @code{ssax:xml->sxml} in @ref{SSAX Highest-level parsers - XML to SXML}.
+
+@c ----------------------------------------------------------------------
+@menu
+* SSAX data types::             
+* SSAX low-level parsing code::  
+* SSAX higher-level parsers and scanners::  
+* SSAX Highest-level parsers - XML to SXML::  
+@end menu
+
+@node SSAX data types, SSAX low-level parsing code, sxml.ssax, sxml.ssax
+@subsection SSAX data types
+
+@table @emph
+@item TAG-KIND
+a symbol '@code{START}, '@code{END}, '@code{PI}, '@code{DECL}, '@code{COMMENT}, '@code{CDSECT}
+or '@code{ENTITY-REF} that identifies a markup token.
+@item UNRES-NAME
+a name (called @code{GI} in the XML Recommendation) as given in an xml
+document for a markup token: start-tag, @code{PI} target, attribute name.
+If a @code{GI} is an @code{NCName}, @var{UNRES-NAME} is this @code{NCName} converted into
+a Scheme symbol. If a @code{GI} is a @code{QName}, @var{UNRES-NAME} is a pair of
+symbols: (@var{PREFIX} . @var{LOCALPART})
+@item RES-NAME
+An expanded name, a resolved version of an @var{UNRES-NAME}.
+For an element or an attribute name with a non-empty namespace URI,
+@var{RES-NAME} is a pair of symbols, (@var{URI-SYMB} . @var{LOCALPART}).
+Otherwise, it's a single symbol.
+@item ELEM-CONTENT-MODEL 
+A symbol:
+@multitable @columnfractions .3 .7
+@item @code{ANY} 
+@tab anything goes, expect an END tag.
+@item @code{EMPTY-TAG} 
+@tab no content, and no END-tag is coming.
+@item @code{EMPTY} 
+@tab no content, expect the END-tag as the next token.
+@item @code{PCDATA}
+@tab expect character data only, and no children elements.
+@item @code{MIXED}
+@tab
+@item @code{ELEM-CONTENT}
+@tab
+@end multitable
+@item URI-SYMB
+A symbol representing a namespace URI -- or other symbol chosen
+by the user to represent URI. In the former case,
+@var{URI-SYMB} is created by @code{%}-quoting of bad URI characters and
+converting the resulting string into a symbol.
+@item NAMESPACES
+A list representing namespaces in effect. An element of the list
+has one of the following forms:
+@table @code
+@item (@var{prefix} @var{uri-symb} . @var{uri-symb})
+or,
+@item (@var{prefix} @var{user-prefix} . @var{uri-symb})
+@var{user-prefix} is a symbol chosen by the user
+to represent the URI.
+@item (#f @var{user-prefix} . @var{uri-symb})
+Specification of the user-chosen prefix and a @var{uri-symbol}.
+@item (*DEFAULT* @var{user-prefix} . @var{uri-symb})
+Declaration of the default namespace
+@item (*DEFAULT* #f . #f)
+Un-declaration of the default namespace. This notation
+represents overriding of the previous declaration
+@end table
+A @var{NAMESPACES} list may contain several elements for the same @var{PREFIX}.
+The one closest to the beginning of the list takes effect.
+@item ATTLIST
+An ordered collection of (@var{NAME} . @var{VALUE}) pairs, where @var{NAME} is
+a @var{RES-NAME} or an @var{UNRES-NAME}. The collection is an ADT.
+@item STR-HANDLER
+A procedure of three arguments:
+@code{(@var{string1} @var{string2} @var{seed})}
+returning a new @var{seed}.
+The procedure is supposed to handle a chunk of character data
+@var{string1} followed by a chunk of character data @var{string2}.
+@var{string2} is a short string, often "\n" and even ""
+@item ENTITIES
+An assoc list of pairs:
+@example
+  (@var{named-entity-name} . @var{named-entity-body})
+@end example
+where @var{named-entity-name} is a symbol under which the entity was
+declared, @var{named-entity-body} is either a string, or
+(for an external entity) a thunk that will return an
+input port (from which the entity can be read).
+@var{named-entity-body} may also be @code{#f}. This is an indication that a
+@var{named-entity-name} is currently being expanded. A reference to
+this @var{named-entity-name} will be an error: violation of the
+WFC nonrecursion.
+@item XML-TOKEN
+A record with two slots, @var{kind} and @var{token}.
+This record represents a markup, which is, according to the XML
+Recommendation, "takes the form of start-tags, end-tags, empty-element tags,
+entity references, character references, comments, CDATA section delimiters,
+document type declarations, and processing instructions."
+@table @var
+@item kind
+a @var{TAG-KIND}
+@item head
+an @var{UNRES-NAME}. For xml-tokens of kinds '@code{COMMENT} and
+'@code{CDSECT}, the head is @code{#f}
+@end table
+For example,
+@example
+<P>  => kind='START, head='P
+</P> => kind='END, head='P
+<BR/> => kind='EMPTY-EL, head='BR
+<!DOCTYPE OMF ...> => kind='DECL, head='DOCTYPE
+<?xml version="1.0"?> => kind='PI, head='xml
+&my-ent; => kind = 'ENTITY-REF, head='my-ent
+@end example
+Character references are not represented by xml-tokens as these references
+are transparently resolved into the corresponding characters.
+@item XML-DECL
+A record with three slots, @var{elems}, @var{entities}, and @var{notations}.
+
+The record represents a datatype of an XML document: the list of
+declared elements and their attributes, declared notations, list of
+replacement strings or loading procedures for parsed general
+entities, etc. Normally an xml-decl record is created from a DTD or
+an XML Schema, although it can be created and filled in in many other
+ways (e.g., loaded from a file).
+
+@var{elems}: an (assoc) list of decl-elem or @code{#f}. The latter instructs
+the parser to do no validation of elements and attributes.
+
+@var{decl-elem}: declaration of one element:
+@code{(@var{elem-name} @var{elem-content} @var{decl-attrs})};
+@var{elem-name} is an @var{UNRES-NAME} for the element.
+@var{elem-content} is an @var{ELEM-CONTENT-MODEL}.
+@var{decl-attrs} is an @var{ATTLIST},
+of @code{(@var{attr-name} . @var{value})} associations.
+This element can declare a user procedure to handle parsing of an
+element (e.g., to do a custom validation, or to build a hash of
+IDs as they're encountered).
+
+@var{decl-attr}: an element of an @var{ATTLIST}, declaration of one attribute
+@code{(@var{attr-name} @var{content-type} @var{use-type} @var{default-value})}:
+@var{attr-name} is an @var{UNRES-NAME} for the declared attribute;
+@var{content-type} is a symbol: @code{CDATA}, @var{NMTOKEN}, @var{NMTOKENS}, ...;
+or a list of strings for the enumerated type.
+@var{use-type} is a symbol: @code{REQUIRED}, @code{IMPLIED}, @code{FIXED}
+default-value is a string for the default value, or @code{#f} if not given.
+@end table
+
+@defun make-empty-attlist
+@defunx attlist-add attlist name-value
+@defunx attlist-null?
+@defunx attlist-remoev-top attlist
+@defunx attlist->alist attlist
+@defunx attlist-fold
+Utility procedures to deal with attribute list, which
+keeps name-value association.
+@end defun
+
+@defun make-xml-token kind head
+@defunx xml-token? token
+A constructor and a predicate for a @var{XML-TOKEN} record.
+@end defun
+
+@defmac xml-token-kind token
+@defmacx xml-token-head token
+Accessor macros of a @var{XML-TOKEN} record.
+@end defmac
+
+@c ----------------------------------------------------------------------
+@node SSAX low-level parsing code, SSAX higher-level parsers and scanners, SSAX data types, sxml.ssax
+@subsection SSAX low-level parsing code
+
+They deal with primitive lexical units (Names, whitespaces, tags)
+and with pieces of more generic productions. Most of these parsers
+must be called in appropriate context. For example, @code{ssax:complete-start-tag}
+must be called only when the start-tag has been detected and its @code{GI}
+has been read.
+
+@defun ssax:skip-S port
+Skip the S (whitespace) production as defined by
+@example
+ [3] S ::= (#x20 | #x9 | #xD | #xA)
+@end example
+The procedure returns the first not-whitespace character it
+encounters while scanning the @var{port}. This character is left
+on the input stream.
+@end defun
+
+@defun ssax:ncname-starting-char? a-char
+Check to see if a-char may start a @code{NCName}.
+@end defun
+
+@defun ssax:read-NCName port
+Read a @code{NCName} starting from the current position in the @var{port} and
+return it as a symbol.
+@end defun
+
+@defun ssax:read-QName port
+Read a (namespace-) Qualified Name, @code{QName}, from the current
+position in the @var{port}.
+
+From REC-xml-names:
+@example
+ [6] QName ::= (Prefix ':')? LocalPart
+ [7] Prefix ::= NCName
+ [8] LocalPart ::= NCName
+@end example
+
+Return: an @var{UNRES-NAME}.
+@end defun
+
+@defvar ssax:Prefix-XML
+The prefix of the pre-defined XML namespace, i.e. '@code{xml}.
+@end defvar
+
+@defun ssax:read-markup-token port
+This procedure starts parsing of a markup token. The current position
+in the stream must be @code{#\<}. This procedure scans enough of the input stream
+to figure out what kind of a markup token it is seeing. The procedure returns
+an xml-token structure describing the token. Note, generally reading
+of the current markup is not finished! In particular, no attributes of
+the start-tag token are scanned.
+
+Here's a detailed break out of the return values and the position in the @var{port}
+when that particular value is returned:
+@table @code
+@item PI-token
+only @code{PI}-target is read.
+To finish the Processing Instruction and disregard it,
+call @code{ssax:skip-pi}. @code{ssax:read-attributes} may be useful
+as well (for @code{PI}s whose content is attribute-value
+pairs)
+@item END-token
+The end tag is read completely; the current position
+is right after the terminating @code{#\>} character.	
+@item COMMENT
+is read and skipped completely. The current position
+is right after "@code{-->}" that terminates the comment.
+@item CDSECT
+The current position is right after "@code{<!CDATA[}".
+Use @code{ssax:read-cdata-body} to read the rest.
+@item DECL
+We have read the keyword (the one that follows "@code{<!}")
+identifying this declaration markup. The current
+position is after the keyword (usually a
+whitespace character)
+@item START-token
+We have read the keyword (@code{GI}) of this start tag.
+No attributes are scanned yet. We don't know if this
+tag has an empty content either.
+Use @code{ssax:complete-start-tag} to finish parsing of
+the token.
+@end table
+@end defun
+
+@defun ssax:skip-pi port
+The current position is inside a @code{PI}. Skip till the rest of the @code{PI}.
+@end defun
+
+@defun ssax:read-pi-body-as-string port
+The current position is right after reading the @code{PITarget}. We read the
+body of @code{PI} and return is as a string. The port will point to the
+character right sfter '@code{?>}' combination that terminates @code{PI}.
+@example
+ [16] PI ::= '<?' PITarget (S (Char* - (Char* '?>' Char*)))? '?>'
+@end example
+@end defun
+
+@defun ssax:skip-internal-dtd port
+The current pos in the port is inside an internal DTD subset
+(e.g., after reading @code{#\[ }that begins an internal DTD subset)
+Skip until the "@code{]>}" combination that terminates this DTD
+@end defun
+
+@defun ssax:read-cdata-body port str-handler seed
+This procedure must be called after we have read a string "@code{<![CDATA[}"
+that begins a @code{CDATA} section. The current position must be the first
+position of the @code{CDATA} body. This function reads @emph{lines} of the @code{CDATA}
+body and passes them to a @var{STR-HANDLER}, a character data consumer.
+
+The str-handler is a @var{STR-HANDLER}, a procedure @code{string1} @var{string2} @var{seed}.
+The first @var{string1} argument to @var{STR-HANDLER} never contains a newline.
+The second @var{string2} argument often will. On the first invocation of
+the @var{STR-HANDLER}, the seed is the one passed to @code{ssax:read-cdata-body}
+as the third argument. The result of this first invocation will be
+passed as the seed argument to the second invocation of the line
+consumer, and so on. The result of the last invocation of the
+@var{STR-HANDLER} is returned by the @code{ssax:read-cdata-body}.  Note a
+similarity to the fundamental '@code{fold}' iterator.
+
+Within a @code{CDATA} section all characters are taken at their face value,
+with only three exceptions:
+@itemize @bullet
+@item 
+@code{CR}, @code{LF}, and @code{CRLF} are treated as line delimiters, and passed
+as a single @code{#\newline} to the @var{STR-HANDLER}.
+@item
+"@code{]]>}" combination is the end of the @code{CDATA} section.
+@item
+@code{&gt;} is treated as an embedded @code{#\>} character.
+Note, @code{&lt;} and @code{&amp;} are not specially recognized (and are not expanded)!
+@end itemize
+@end defun
+
+@defun ssax:read-char-ref port
+@example
+ [66]  CharRef ::=  '&#' [0-9]+ ';' 
+                  | '&#x' [0-9a-fA-F]+ ';'
+@end example
+This procedure must be called after we we have read "@code{&#}" 
+that introduces a char reference.
+The procedure reads this reference and returns the corresponding char
+The current position in @var{port} will be after "@code{;}" that terminates
+the char reference.
+Faults detected: @code{WFC: XML-Spec.html#wf-Legalchar}.
+
+According to Secttion "4.1 Character and Entity References"
+of the XML Recommendation:
+@quotation
+"[Definition: A character reference refers to a specific character
+ in the ISO/IEC 10646 character set, for example one not directly
+ accessible from available input devices.]"
+@end quotation
+Therefore, we use a @code{ucscode->char} function to convert a character
+code into the character -- @emph{regardless} of the current character
+encoding of the input stream.
+@end defun
+
+@defun ssax:handle-parsed-entity port name entities content-handler str-handler seed
+Expand and handle a parsed-entity reference
+@itemize @bullet
+@item
+@var{port} - a PORT
+@item
+@var{name} - the name of the parsed entity to expand, a symbol.
+@item
+@var{entities} - see @var{ENTITIES}
+@item
+@var{content-handler} -- procedure @var{port} @var{entities} @var{seed}
+that is supposed to return a @var{seed}.
+@item
+@var{str-handler} - a @var{STR-HANDLER}. It is called if the entity in question
+turns out to be a pre-declared entity
+@end itemize
+The result is the one returned by @var{content-handler} or @var{str-handler}.
+
+Faults detected:
+@example
+  WFC: XML-Spec.html#wf-entdeclared
+  WFC: XML-Spec.html#norecursion
+@end example
+@end defun
+
+@defun ssax:read-attributes port entities
+This procedure reads and parses a production @code{Attribute*}
+@example
+ [41] Attribute ::= Name Eq AttValue
+ [10] AttValue ::=  '"' ([^<&"] | Reference)* '"' 
+                 | "'" ([^<&'] | Reference)* "'"
+ [25] Eq ::= S? '=' S?
+@end example
+The procedure returns an @var{ATTLIST}, of @var{Name} (as @var{UNRES-NAME}),
+@var{Value} (as string) pairs.
+The current character on the @var{port} is a non-whitespace character
+that is not an ncname-starting character.
+
+Note the following rules to keep in mind when reading an 'AttValue'
+"Before the value of an attribute is passed to the application
+or checked for validity, the XML processor must normalize it as follows:
+@itemize @bullet
+@item
+a character reference is processed by appending the referenced
+character to the attribute value 
+@item
+an entity reference is processed by recursively processing the
+replacement text of the entity [see @var{ENTITIES}]
+[named entities amp lt gt quot apos are assumed pre-declared]
+@item
+a whitespace character (@code{#x20}, @code{#xD}, @code{#xA}, @code{#x9}) is processed by appending @code{#x20}
+to the normalized value, except that only a single @code{#x20} is appended for a
+"@code{#xD#xA}" sequence that is part of an external parsed entity or the
+literal entity value of an internal parsed entity
+@item
+other characters are processed by appending them to the normalized value "
+@end itemize
+
+Faults detected:
+@example
+ WFC: XML-Spec.html#CleanAttrVals
+ WFC: XML-Spec.html#uniqattspec
+@end example
+@end defun
+
+@defun ssax:resolve-name port unres-name namespaces apply-default-ns?
+Convert an @var{unres-name} to a @var{res-name} given the appropriate @var{namespaces}
+declarations.
+The last parameter @var{apply-default-ns?} determines if the default
+namespace applies (for instance, it does not for attribute names)
+
+Per @code{REC-xml-names/#nsc-NSDeclared}, "xml" prefix is considered pre-declared
+and bound to the namespace name "@url{http://www.w3.org/XML/1998/namespace}".
+
+This procedure tests for the namespace constraints:
+@url{http://www.w3.org/TR/REC-xml-names/#nsc-NSDeclared}.
+@end defun
+
+@defun ssax:uri-string->symbol uri-str
+Convert a @var{uri-str} to an appropriate symbol.
+@end defun
+
+@defun ssax:complete-start-tag tag port elems entities namespaces
+This procedure is to complete parsing of a start-tag markup. The
+procedure must be called after the start tag token has been
+read. @var{Tag} is an @var{UNRES-NAME}.
+@var{Elems} is an instance of @code{xml-decl::elems};
+it can be @code{#f} to tell the function to do @emph{no} validation of elements
+and their attributes.
+
+This procedure returns several values:
+@table @var
+@item elem-gi
+a @var{RES-NAME}.
+@item attributes
+element's attributes, an @var{ATTLIST} of @code{(@var{res-name} . @var{string})}
+pairs. The list does @emph{not} include @code{xmlns} attributes.
+@item namespaces
+the input list of namespaces amended with namespace
+(re-)declarations contained within the start-tag under parsing
+@var{ELEM-CONTENT-MODEL}.
+@end table
+
+On exit, the current position in @var{port} will be the first character after
+@code{#\>} that terminates the start-tag markup.
+
+Faults detected:
+@example
+ VC: XML-Spec.html#enum 
+ VC: XML-Spec.html#RequiredAttr
+ VC: XML-Spec.html#FixedAttr
+ VC: XML-Spec.html#ValueType
+ WFC: XML-Spec.html#uniqattspec (after namespaces prefixes are resolved)
+ VC: XML-Spec.html#elementvalid 
+ WFC: REC-xml-names/#dt-NSName
+@end example
+
+Note, although XML Recommendation does not explicitly say it,
+@var{xmlns} and @var{xmlns:} attributes don't have to be declared (although they
+can be declared, to specify their default value).
+@end defun
+
+@defun ssax:read-external-id port
+This procedure parses an @code{ExternalID} production.
+@example
+ [75] ExternalID ::= 'SYSTEM' S SystemLiteral
+                 | 'PUBLIC' S PubidLiteral S SystemLiteral
+ [11] SystemLiteral ::= ('"' [^"]* '"') | ("'" [^']* "'") 
+ [12] PubidLiteral ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'"
+ [13] PubidChar ::=  #x20 | #xD | #xA | [a-zA-Z0-9]
+                | [-'()+,./:=?;!*#@@$_%]
+@end example
+This procedure is supposed to be called when an @code{ExternalID} is expected;
+that is, the current character must be either @code{#\S} or @code{#\P} that start
+correspondingly a @code{SYSTEM} or @code{PUBLIC} token. This procedure returns the
+@code{SystemLiteral} as a string. A @code{PubidLiteral} is disregarded if present.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node SSAX higher-level parsers and scanners, SSAX Highest-level parsers - XML to SXML, SSAX low-level parsing code, sxml.ssax
+@subsection SSAX higher-level parsers and scanners
+
+They parse productions corresponding to the whole (document) entity
+or its higher-level pieces (prolog, root element, etc).
+
+@defun ssax:scan-Misc port
+Scan the @code{Misc} production in the context:
+@example
+[1]  document ::=  prolog element Misc*
+[22] prolog ::= XMLDecl? Misc* (doctypedec l Misc*)?
+[27] Misc ::= Comment | PI |  S
+@end example
+The following function should be called in the prolog or epilog contexts.
+In these contexts, whitespaces are completely ignored.
+The return value from @code{ssax:scan-Misc} is either a @code{PI}-token,
+a @code{DECL}-token, a @code{START} token, or EOF.
+Comments are ignored and not reported.
+@end defun
+
+@defun ssax:read-char-data port expect-eof? str-handler seed
+This procedure is to read the character content of an XML document
+or an XML element.
+@example
+ [43] content ::= 
+        (element | CharData | Reference | CDSect | PI
+         | Comment)*
+@end example
+To be more precise, the procedure reads @code{CharData}, expands @code{CDSect}
+and character entities, and skips comments. The procedure stops
+at a named reference, EOF, at the beginning of a @code{PI} or a start/end tag.
+
+@table @var
+@item port
+a port to read
+@item expect-eof?
+a boolean indicating if EOF is normal, i.e., the character
+data may be terminated by the EOF. EOF is normal
+while processing a parsed entity.
+@item str-handler
+a @var{STR-HANDLER}.
+@item seed
+an argument passed to the first invocation of @var{STR-HANDLER}.
+@end table
+
+The procedure returns two results: @var{seed} and @var{token}.
+
+The @var{seed} is the result of the last invocation of @var{str-handler}, or the
+original seed if @var{str-handler} was never called.
+
+@var{Token} can be either an eof-object (this can happen only if
+@var{expect-eof?} was @code{#t}), or:
+@itemize @bullet
+@item
+an xml-token describing a @var{START} tag or an @var{END}-tag;
+For a start token, the caller has to finish reading it.
+@item
+an xml-token describing the beginning of a @code{PI}. It's up to an
+application to read or skip through the rest of this @code{PI};
+@item
+an xml-token describing a named entity reference.
+@end itemize
+
+@code{CDATA} sections and character references are expanded inline and
+never returned. Comments are silently disregarded.
+
+As the XML Recommendation requires, all whitespace in character data
+must be preserved. However, a @code{CR} character (@code{#xD}) must be disregarded
+if it appears before a @code{LF} character (@code{#xA}), or replaced by a @code{#xA} character
+otherwise. See Secs. 2.10 and 2.11 of the XML Recommendation. See also
+the canonical XML Recommendation.
+@end defun
+
+@defun ssax:assert-token token kind gi error-cont
+Make sure that @var{token} is of anticipated @var{kind} and has anticipated @var{gi}.
+Note @var{gi} argument may actually be a pair of two symbols, Namespace
+URI or the prefix, and of the localname.
+If the assertion fails, @var{error-cont} is evaluated by passing it
+three arguments: @var{token} @var{kind} @var{gi}.
+The result of @var{error-cont} is returned.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node SSAX Highest-level parsers - XML to SXML,  , SSAX higher-level parsers and scanners, sxml.ssax
+@subsection SSAX Highest-level parsers - XML to SXML
+
+These parsers are a set of syntactic forms to instantiate a SSAX parser.
+A user can instantiate the parser to do the full validation, or
+no validation, or any particular validation. The user specifies
+which @code{PI} he wants to be notified about. The user tells what to do
+with the parsed character and element data. The latter handlers
+determine if the parsing follows a SAX or a DOM model.
+
+@defmac ssax:make-pi-parser my-pi-handlers
+Create a parser to parse and process one Processing Element (@code{PI}).
+
+@var{My-pi-handlers}:
+An assoc list of pairs (@var{PI-TAG} . @var{PI-HANDLER})
+where @var{PI-TAG} is an @var{NCName} symbol, the @code{PI} target, and
+@var{PI-HANDLER} is a procedure @var{port} @var{pi-tag} @var{seed}
+where @var{port} points to the first symbol after the @code{PI} target.
+The handler should read the rest of the @code{PI} up to and including
+the combination '@code{?>}' that terminates the @code{PI}. The handler should
+return a new seed.
+One of the @var{PI-TAG}s may be a symbol @code{*DEFAULT*}. The corresponding
+handler will handle @code{PI}s that no other handler will. If the
+@code{*DEFAULT*} @var{PI-TAG} is not specified,
+@code{ssax:make-pi-parser} will make
+one, which skips the body of the @code{PI}.
+
+The output of the @code{ssax:make-pi-parser} is a procedure
+@var{port} @var{pi-tag} @var{seed},
+that will parse the current @code{PI} accoding to user-specified handlers.
+@end defmac
+
+@defmac ssax:make-elem-parser my-new-level-seed my-finish-element my-char-data-handler my-pi-handlers
+Create a parser to parse and process one element, including its
+character content or children elements. The parser is typically
+applied to the root element of a document.
+
+@table @var
+@item my-new-level-seed
+procedure @var{elem-gi} @var{attributes} @var{namespaces} @var{expected-content} @var{seed} @*
+where @var{elem-gi} is a @var{RES-NAME} of the element
+about to be processed.
+This procedure is to generate the seed to be passed
+to handlers that process the content of the element.
+@c This is the function identified as 'fdown' in the denotational
+@c semantics of the XML parser given in the title comments to this
+@c file.
+
+@item my-finish-element
+procedure @var{elem-gi} @var{attributes} @var{namespaces} @var{parent-seed} @var{seed} @*
+This procedure is called when parsing of @var{elem-gi} is finished.
+The @var{seed} is the result from the last content parser (or
+from @var{my-new-level-seed} if the element has the empty content).
+@var{Parent-seed} is the same seed as was passed to @var{my-new-level-seed}.
+The procedure is to generate a seed that will be the result
+of the element parser.
+@c This is the function identified as 'fup' in the denotational
+@c semantics of the XML parser given in the title comments to this
+@c file.
+
+@item my-char-data-handler
+A @var{STR-HANDLER}.
+
+@item my-pi-handlers
+See @code{ssax:make-pi-handler} above.
+@end table
+
+The generated parser is a:
+procedure @var{start-tag-head} @var{port} @var{elems} @var{entities}
+@var{namespaces} @var{preserve-ws?} @var{seed}. @*
+The procedure must be called after the start tag token has been
+read. @var{Start-tag-head} is an @var{UNRES-NAME} from the start-element tag.
+@var{Elems} is an instance of @code{xml-decl::elems}.
+See @code{ssax:complete-start-tag::preserve-ws?}
+
+Faults detected:
+@example
+ VC: XML-Spec.html#elementvalid 
+ WFC: XML-Spec.html#GIMatch
+@end example
+@end defmac
+
+@defmac ssax:make-parser user-handler-tag user-handler-proc ...
+Create an XML parser, an instance of the XML parsing framework.
+This will be a SAX, a DOM, or a specialized parser depending
+on the supplied user-handlers.
+
+@var{user-handler-tag} is a symbol that identifies a procedural expression
+that follows the tag. Given below are tags and signatures of the
+corresponding procedures. Not all tags have to be specified. If some
+are omitted, reasonable defaults will apply.
+
+@table @code
+@item tag: @var{DOCTYPE}
+handler-procedure: @var{port} @var{docname} @var{systemid} @var{internal-subset?} @var{seed}
+
+If @var{internal-subset?} is @code{#t}, the current position in the port
+is right after we have read @code{#\[} that begins the internal DTD subset.
+We must finish reading of this subset before we return
+(or must call skip-internal-subset if we aren't interested in reading it).
+The port at exit must be at the first symbol after the whole
+DOCTYPE declaration.
+
+The handler-procedure must generate four values: @*
+@var{elems} @var{entities} @var{namespaces} @var{seed}@*
+See @code{xml-decl::elems} for @var{elems}.
+It may be @code{#f} to switch off the validation.
+@var{namespaces} will typically contain @var{USER-PREFIX}es for selected @var{URI-SYMB}s.
+The default handler-procedure skips the internal subset,
+if any, and returns @code{(values #f '() '() seed)}.
+
+@item tag: @var{UNDECL-ROOT}
+handler-procedure: @var{elem-gi} @var{seed} @*
+where @var{elem-gi} is an @var{UNRES-NAME} of the root element. This procedure
+is called when an XML document under parsing contains @emph{no} @code{DOCTYPE}
+declaration.
+The handler-procedure, as a DOCTYPE handler procedure above,
+must generate four values: @*
+@var{elems} @var{entities} @var{namespaces} @var{seed}@*
+The default handler-procedure returns @code{(values #f '() '() seed)}.
+
+@item tag: @var{DECL-ROOT}
+handler-procedure: @var{elem-gi} @var{seed} @*
+where @var{elem-gi} is an @var{UNRES-NAME} of the root element. This procedure
+is called when an XML document under parsing does contains the @code{DOCTYPE}
+declaration.
+The handler-procedure must generate a new @code{seed} (and verify
+that the name of the root element matches the doctype, if the handler
+so wishes). 
+The default handler-procedure is the identity function.
+
+@item tag: @var{NEW-LEVEL-SEED}
+handler-procedure: see @code{ssax:make-elem-parser}, @var{my-new-level-seed}
+
+@item tag: @var{FINISH-ELEMENT}
+handler-procedure: see @code{ssax:make-elem-parser}, @var{my-finish-element}
+
+@item tag: @var{CHAR-DATA-HANDLER}
+handler-procedure: see @code{ssax:make-elem-parser}, @var{my-char-data-handler}
+
+@item tag: @var{PI}
+handler-procedure: see @code{ssax:make-pi-parser}. @*
+The default value is @code{'()}.
+@end table
+ 
+The generated parser is a @*
+procedure @var{PORT} @var{SEED}
+
+This procedure parses the document prolog and then exits to
+an element parser (created by ssax:make-elem-parser) to handle
+the rest.
+
+@example
+ [1]  document ::=  prolog element Misc*
+ [22] prolog ::= XMLDecl? Misc* (doctypedec | Misc*)?
+ [27] Misc ::= Comment | PI |  S
+
+ [28] doctypedecl ::=  '<!DOCTYPE' S Name (S ExternalID)? S? 
+                        ('[' (markupdecl | PEReference | S)* ']' S?)? '>'
+ [29] markupdecl ::= elementdecl | AttlistDecl
+                      | EntityDecl
+                      | NotationDecl | PI
+                      | Comment 
+@end example
+@end defmac
+
+A few utility procedures that turned out useful.
+
+@defun ssax:reverse-collect-str fragments
+given the list of @var{fragments} (some of which are text strings)
+reverse the list and concatenate adjacent text strings.
+@end defun
+
+@defun ssax:reverse-collect-str-drop-ws fragments
+given the list of fragments (some of which are text strings)
+reverse the list and concatenate adjacent text strings.
+We also drop "unsignificant" whitespace, that is, whitespace
+in front, behind and between elements. The whitespace that
+is included in character data is not affected.
+We use this procedure to "intelligently" drop "insignificant"
+whitespace in the parsed SXML. If the strict compliance with
+the XML Recommendation regarding the whitespace is desired, please
+use the @code{ssax:reverse-collect-str} procedure instead.
+@end defun
+
+@defun ssax:xml->sxml port namespace-prefix-assig
+This is an instance of a SSAX parser above that returns an SXML
+representation of the XML document to be read from @var{port}.
+@var{Namespace-prefix-assig} is a list of
+@code{(@var{USER-PREFIX} . @var{URI-STRING})}
+that assigns @var{USER-PREFIX}es to certain namespaces identified by
+particular @var{URI-STRING}s. It may be an empty list.
+The procedure returns an SXML tree. The port points out to the
+first character after the root element.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node text.csv - CSV tables, text.diff - Calculate difference of text streams, sxml.ssax, Library modules - Utilities
 @section @code{text.csv} - CSV tables
 @c NODE text.csv - CSVテーブル, @code{text.csv} - CSVテーブル
 
