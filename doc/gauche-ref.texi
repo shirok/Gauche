@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.108 2001-10-27 10:13:09 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.109 2001-10-29 09:42:29 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -6918,8 +6918,6 @@ of descendants of @var{class}.
 @c ----------------------------------------------------------------------
 @menu
 * Library modules overview::    
-* Determine isomorphism::       
-* Topological sort::            
 * Generic DBM interface::       
 * GDBM interface::              
 * NDBM interface::              
@@ -6955,119 +6953,89 @@ of descendants of @var{class}.
 * CSV tables::                  
 * Parsing input stream::        
 * Transliterate characters::    
+* Determine isomorphism::       
+* Topological sort::            
 * CGI::                         
 @end menu
 
-@node Library modules overview, Determine isomorphism, Library modules, Library modules
+@node Library modules overview, Generic DBM interface, Library modules, Library modules
 @section Library modules overview
 @c NODE ライブラリモジュールの概要
 
+@c EN
 The modules are organized hierarchically.
 Here's a table of general guideline.
+@c JP
+ライブラリモジュールは階層的にまとめられています。
+今のところ、以下のように分類されています。
+@c COMMON
 
 @table @code
 @item gauche.*
+@c EN
 Stuffs more or less considered as Gauche core features.
-@item algorithm.*
-Generic implementations of various algorithms.
+@c JP
+Gauche本体の一部として考えられている機能。
+@c COMMON
 @item data.*
+@c EN
 Generic data structures.
+@c JP
+汎用的なデータ構造。
+@c COMMON
 @item file.*
+@c EN
 Manipulating files and directories.
+@c JP
+ファイルとディレクトリの操作。
+@c COMMON
 @item math.*
+@c EN
 Mathematics.
+@c JP
+数学。
+@c COMMON
 @item lang.*
+@c EN
 Language-related libraries (artificial and/or natural). 
+@c JP
+言語に関するライブラリ(人工的なものも自然言語関連も)。
+@c COMMON
 @item text.*
+@c EN
 Libraries dealing with text data.
+@c JP
+テキストデータを扱うライブラリ
+@c COMMON
 @item rfc.*
+@c EN
 Implementations of net protocols defined in RFC's.
+@c JP
+RFCで定義されているデータフォーマットやネットワークプロトコルの実装。
+@c COMMON
 @item www.*
+@c EN
 Implementations of various protocols and formats mainly used in WWW.
+@c JP
+WWWで主として使われるプロトコルやデータフォーマットの実装。
+@c COMMON
 @item srfi-*
+@c EN
 SRFI implementations.
+@c JP
+SRFIの実装
+@c COMMON
+@item util.*
+@c EN
+Generic implementations of various algorithms.
+@c JP
+汎用的なアルゴリズムの実装。
+@c COMMON
 @end table
-@c ----------------------------------------------------------------------
-@node Determine isomorphism, Topological sort, Library modules overview, Library modules
-@section @code{algorithm.isomorph} - Determine isomorphism
-@c NODE 同型判定, @code{algorithm.isomorph} - 同型判定
-
-@deftp {Module} algorithm.isomorph
-@mdindex algorithm.isomorph
-@c EN
-Provides a procedure that determines whether two structures are
-isomorphic.
-@c JP
-二つの構造が同型かどうかを判定する手続きを提供するモジュールです。
-@c COMMON
-@end deftp
-
-@defun isomorphic? obj1 obj2 &optional context
-@c EN
-Returns @code{#t} if @var{obj1} and @var{obj2} are isomorphic.
-
-@var{context} is used if you want to call @code{isomorphic?}
-recursively inside @code{object-isomorphic?} described below.
-@c JP
-@var{obj1}と@var{obj2}が同型であれば@code{#t}を返します。
-
-省略可能な引数@var{context}は、下で説明する@code{object-isomorphic?}
-の中から@code{isomorphic?}を再帰的に呼び出す場合に使います。
-@c COMMON
-
-@example
-(isomorphic? '(a b) '(a b)) @result{} #t
-
-(define x (cons 0 0))
-(define y (cons 0 0))
-(isomorphic? (cons x x)
-             (cons x y))
- @result{} #f
-(isomorphic? (cons x x)
-             (cons y y))
- @result{} #t
-@end example
-@end defun
-
-@deffn {Generic Function} object-isomorphic? obj1 obj2 context
-@c EN
-With this method, you can customize how to determine isomorphism of
-two objects.  Basically, you will call @code{isomorphic?} recursively
-for each slots of object you want to traverse; the method should return
-@code{#t} if all of the test succeeds, or return @code{#f} otherwise.
-@var{context} is an opaque structure
-that keeps the traversal context, and you should pass it to
-@code{isomorphic?} as is.
-
-The default method returns @code{#t} if @var{obj1} and @var{obj2} are
-equal (in the sense of @code{equal?}).
-@c JP
-このメソッドで、二つのオブジェクトの同型判定処理をカスタマイズできます。
-基本的には、オブジェクトのトラバースしたいスロットに対して@code{isomorphic?}を順に適用し、
-全てが成功すれば@code{#t}を、一つでも失敗すれば@code{#f}を返すようにします。
-@var{context}はトラバースのコンテクストを保持しているオブジェクトです。そのまま
-@code{isomorphic?}に渡して下さい。
-
-デフォルトメソッドは、@var{obj1}と@var{obj2}が@code{equal?}の意味で等しければ
-@code{#t}を返します。
-@c COMMON
-@end deffn
-
-@c ----------------------------------------------------------------------
-@node Topological sort, Generic DBM interface, Determine isomorphism, Library modules
-@section @code{algorithm.toposort} - Topological sort
-@c NODE トポロジカルソート, @code{algorithm.toposort} - トポロジカルソート
-
-@deftp {Module} algorithm.toposort
-@mdindex algorithm.toposort
-
-@end deftp
-
-
 
 
 @c ----------------------------------------------------------------------
-@node Generic DBM interface, GDBM interface, Topological sort, Library modules
+@node Generic DBM interface, GDBM interface, Library modules overview, Library modules
 @section @code{dbm} - Generic DBM interface
 @c NODE 汎用DBMインタフェース, @code{dbm} - 汎用DBMインタフェース
 
@@ -11459,7 +11427,7 @@ as many characters available.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Transliterate characters, CGI, Parsing input stream, Library modules
+@node Transliterate characters, Determine isomorphism, Parsing input stream, Library modules
 @section @code{text.tr} - Transliterate characters
 @c NODE 文字変換, @code{text.tr} - 文字変換
 
@@ -11590,7 +11558,86 @@ once and apply it repeatedly, saving the overhead of initialization.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node CGI,  , Transliterate characters, Library modules
+@node Determine isomorphism, Topological sort, Transliterate characters, Library modules
+@section @code{util.isomorph} - Determine isomorphism
+@c NODE 同型判定, @code{util.isomorph} - 同型判定
+
+@deftp {Module} util.isomorph
+@mdindex util.isomorph
+@c EN
+Provides a procedure that determines whether two structures are
+isomorphic.
+@c JP
+二つの構造が同型かどうかを判定する手続きを提供するモジュールです。
+@c COMMON
+@end deftp
+
+@defun isomorphic? obj1 obj2 &optional context
+@c EN
+Returns @code{#t} if @var{obj1} and @var{obj2} are isomorphic.
+
+@var{context} is used if you want to call @code{isomorphic?}
+recursively inside @code{object-isomorphic?} described below.
+@c JP
+@var{obj1}と@var{obj2}が同型であれば@code{#t}を返します。
+
+省略可能な引数@var{context}は、下で説明する@code{object-isomorphic?}
+の中から@code{isomorphic?}を再帰的に呼び出す場合に使います。
+@c COMMON
+
+@example
+(isomorphic? '(a b) '(a b)) @result{} #t
+
+(define x (cons 0 0))
+(define y (cons 0 0))
+(isomorphic? (cons x x)
+             (cons x y))
+ @result{} #f
+(isomorphic? (cons x x)
+             (cons y y))
+ @result{} #t
+@end example
+@end defun
+
+@deffn {Generic Function} object-isomorphic? obj1 obj2 context
+@c EN
+With this method, you can customize how to determine isomorphism of
+two objects.  Basically, you will call @code{isomorphic?} recursively
+for each slots of object you want to traverse; the method should return
+@code{#t} if all of the test succeeds, or return @code{#f} otherwise.
+@var{context} is an opaque structure
+that keeps the traversal context, and you should pass it to
+@code{isomorphic?} as is.
+
+The default method returns @code{#t} if @var{obj1} and @var{obj2} are
+equal (in the sense of @code{equal?}).
+@c JP
+このメソッドで、二つのオブジェクトの同型判定処理をカスタマイズできます。
+基本的には、オブジェクトのトラバースしたいスロットに対して@code{isomorphic?}を順に適用し、
+全てが成功すれば@code{#t}を、一つでも失敗すれば@code{#f}を返すようにします。
+@var{context}はトラバースのコンテクストを保持しているオブジェクトです。そのまま
+@code{isomorphic?}に渡して下さい。
+
+デフォルトメソッドは、@var{obj1}と@var{obj2}が@code{equal?}の意味で等しければ
+@code{#t}を返します。
+@c COMMON
+@end deffn
+
+@c ----------------------------------------------------------------------
+@node Topological sort, CGI, Determine isomorphism, Library modules
+@section @code{util.toposort} - Topological sort
+@c NODE トポロジカルソート, @code{util.toposort} - トポロジカルソート
+
+@deftp {Module} util.toposort
+@mdindex util.toposort
+
+@end deftp
+
+
+
+
+@c ----------------------------------------------------------------------
+@node CGI,  , Topological sort, Library modules
 @section @code{www.cgi} - CGI utility
 
 @deftp {Module} www.cgi
