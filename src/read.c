@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.52 2002-08-01 01:11:02 shirok Exp $
+ *  $Id: read.c,v 1.53 2002-08-18 02:49:03 shirok Exp $
  */
 
 #include <stdio.h>
@@ -51,8 +51,10 @@ static ScmObj maybe_uvector(ScmPort *port, char c, ScmReadContext *ctx);
 ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag);
 
 /* Table of 'read-time constructor' in SRFI-10 */
-/* TODO: MT Safeness */
-static ScmHashTable *read_ctor_table;
+static struct {
+    ScmHashTable *table;
+    ScmInternalMutex mutex;
+} readCtorData;
 
 /*----------------------------------------------------------------
  * Entry points
@@ -773,8 +775,9 @@ ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc)
     if (!SCM_PROCEDUREP(proc)) {
         Scm_Error("procedure required, but got %S\n", proc);
     }
-    /* TODO: MT Safeness */
-    Scm_HashTablePut(read_ctor_table, symbol, proc);
+    (void)SCM_INTERNAL_MUTEX_LOCK(readCtorData.mutex);
+    Scm_HashTablePut(readCtorData.table, symbol, proc);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(readCtorData.mutex);
     return SCM_UNDEFINED;
 }
 
@@ -787,8 +790,9 @@ static ScmObj read_sharp_comma(ScmPort *port, ScmObj form)
         Scm_ReadError(port, "bad #,-form: #,%S", form);
     }
 
-    /* TODO: MT Safeness */
-    e = Scm_HashTableGet(read_ctor_table, SCM_CAR(form));
+    (void)SCM_INTERNAL_MUTEX_LOCK(readCtorData.mutex);
+    e = Scm_HashTableGet(readCtorData.table, SCM_CAR(form));
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(readCtorData.mutex);
     if (e == NULL) {
         Scm_ReadError(port, "unknown #,-key: %S", SCM_CAR(form));
     }
@@ -867,8 +871,9 @@ static ScmObj maybe_uvector(ScmPort *port, char ch, ScmReadContext *ctx)
 void Scm__InitRead(void)
 {
     ScmObj sym_reader_ctor = SCM_INTERN("define-reader-ctor");
-    read_ctor_table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS,
-                                                      NULL, 0));
+    readCtorData.table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS,
+                                                         NULL, 0));
+    (void)SCM_INTERNAL_MUTEX_INIT(readCtorData.mutex);
     Scm_DefineReaderCtor(sym_reader_ctor,
                          Scm_MakeSubr(reader_ctor, NULL, 2, 0,
                                       sym_reader_ctor));

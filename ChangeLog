@@ -13,6 +13,10 @@
 	  return EOF in such case.  (Thanks to Julian Fondren for pointing
 	  out the bug.)
 
+2002-08-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c: protect read ctor table by mutex.
+
 2002-08-08  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvector.scm : defines object-[+-*/] methods for uvectors.
