@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.191 2003-01-31 02:34:30 shirok Exp $
+;;; $Id: extlib.stub,v 1.192 2003-02-03 21:17:39 shirok Exp $
 ;;;
 
 "
@@ -204,11 +204,28 @@
 (define-cproc reverse! (list)
   (return "Scm_ReverseX"))
 
-(define-cproc sort (list &optional (fn #f))
-  (return "Scm_SortList"))
+(define-cproc sort (seq &optional (fn #f))
+  "if (SCM_VECTORP(seq)) {
+    ScmObj r = Scm_VectorCopy(SCM_VECTOR(seq), 0, -1);
+    Scm_SortArray(SCM_VECTOR_ELEMENTS(r), SCM_VECTOR_SIZE(r), fn);
+    SCM_RETURN(r);
+  } else if (Scm_Length(seq) >= 0) {
+    SCM_RETURN(Scm_SortList(seq, fn));
+  } else {
+    Scm_Error(\"proper list or vector required, but got %S\", seq);
+    SCM_RETURN(SCM_UNDEFINED);
+  }")
 
-(define-cproc sort! (list &optional (fn #f))
-  (return "Scm_SortListX"))
+(define-cproc sort! (seq &optional (fn #f))
+  "if (SCM_VECTORP(seq)) {
+    Scm_SortArray(SCM_VECTOR_ELEMENTS(seq), SCM_VECTOR_SIZE(seq), fn);
+    SCM_RETURN(seq);
+  } else if (Scm_Length(seq) >= 0) {
+    SCM_RETURN(Scm_SortList(seq, fn));
+  } else {
+    Scm_Error(\"proper list or vector required, but got %S\", seq);
+    SCM_RETURN(SCM_UNDEFINED);
+  }")
 
 ;(define-cproc topological-sort (edges)
 ;  (assert (list? edges))
