@@ -107,3 +107,18 @@
 (title "qq" '#())           (run `#())
 (title "qq" '#())           (run `#(,@(list)))
 
+;;----------------------------------------------------------------
+(section "multiple values")
+
+(title "receive" '(1 2 3))
+(run (receive (a b c) (values 1 2 3) (list a b c)))
+(title "receive" '(1 2 3))
+(run (receive (a . r) (values 1 2 3) (cons a r)))
+(title "receive" '(1 2 3))
+(run (receive x (values 1 2 3) x))
+(title "receive" 1)
+(run (receive (a) 1 a))
+(title "call-with-values" '(1 2 3))
+(run (call-with-values (lambda () (values 1 2 3)) list))
+(title "call-with-values" '())
+(run (call-with-values (lambda () (values)) list))
