@@ -464,6 +464,10 @@
         (gen-tester add v0 v1))
   (test (format #f "~avector-add (v+v)" tag) (result-hi-ok v0+v2)
         (gen-tester add v0 v2))
+  (test (format #f "~avector-add (v+l)" tag) (result-normal v0+v1)
+        (gen-tester add v0 (coerce-to <list> v1)))
+  (test (format #f "~avector-add (v+vv)" tag) (result-normal v0+v1)
+        (gen-tester add v0 (coerce-to <vector> v1)))
   (test (format #f "~avector-add (v+s)" tag) (result-normal v1)
         (gen-tester add v0 4))
   (test (format #f "~avector-add (v+s)" tag) (result-hi-ok v0+v2)
@@ -492,6 +496,10 @@
         (gen-tester sub v1 v0))
   (test (format #f "~avector-sub (v-v)" tag) (result-lo-ok  v3-v0)
         (gen-tester sub v3 v0))
+  (test (format #f "~avector-sub (v-l)" tag) (result-normal v1-v0)
+        (gen-tester sub v1 (coerce-to <list> v0)))
+  (test (format #f "~avector-sub (v-vv)" tag) (result-normal v1-v0)
+        (gen-tester sub v1 (coerce-to <vector> v0)))
   (test (format #f "~avector-sub (v-s)" tag) (result-normal v0)
         (gen-tester sub v1 4))
   (test (format #f "~avector-sub (v-s)" tag) (result-lo-ok v0-min-1)
@@ -517,6 +525,10 @@
         (gen-tester mul v0 v1))
   (test (format #f "~avector-mul (v*v)" tag) (result-hi-ok v0*v2)
         (gen-tester mul v0 v2))
+  (test (format #f "~avector-mul (v*l)" tag) (result-normal v0*v1)
+        (gen-tester mul v0 (coerce-to <list> v1)))
+  (test (format #f "~avector-mul (v*vv)" tag) (result-normal v0*v1)
+        (gen-tester mul v0 (coerce-to <vector> v1)))
   (unless (memq tag '(u8 u16 u32 u64))
     (test (format #f "~avector-mul (v*v)" tag) (result-lo-ok v0*v3)
           (gen-tester mul v0 v3)))
@@ -671,18 +683,26 @@
 ;;-------------------------------------------------------------------
 (test-section "dot product")
 
-(define (dotprod-test tag v0 v1 dot ->list)
-  (test (format #f "~svector-dot(~s, ~s)" tag v0 v1)
-        (fold (lambda (e0 e1 sum)
-                (+ sum (* e0 e1)))
-              0
-              (->list v0) (->list v1))
-        (lambda () (dot v0 v1))))
+(define (dotprod-test tag v0 v1 dot)
+  (let1 result (fold (lambda (e0 e1 sum)
+                       (+ sum (* e0 e1)))
+                     0
+                     (coerce-to <list> v0)
+                     (coerce-to <list> v1))
+    (test (format #f "~svector-dot(~s, ~s)" tag v0 v1)
+          result
+          (lambda () (dot v0 v1)))
+    (test (format #f "~svector-dot(~s, ~s)" tag v0 (coerce-to <list> v1))
+          result
+          (lambda () (dot v0 (coerce-to <list> v1))))
+    (test (format #f "~svector-dot(~s, ~s)" tag v0 (coerce-to <vector> v1))
+          result
+          (lambda () (dot v0 (coerce-to <vector> v1))))
+    ))
 
 (define-macro (dotprod-test-generate tag v0 v1)
   `(dotprod-test ',tag ',v0 ',v1
-                 ,(string->symbol #`",|tag|vector-dot")
-                 ,(string->symbol #`",|tag|vector->list")))
+                 ,(string->symbol #`",|tag|vector-dot")))
 
 (dotprod-test-generate s8 #s8() #s8())
 (dotprod-test-generate s8 #s8(0 1 2 3) #s8(4 5 6 7))
@@ -986,6 +1006,15 @@
                                   minv)
                               (if (tagvector? maxv)
                                   (coerce-to <list> maxv)
+                                  maxv))))
+      (test (format #f "~svector-clamp (vector)" tag)
+            result
+            (lambda () (clamp v
+                              (if (tagvector? minv)
+                                  (coerce-to <vector> minv)
+                                  minv)
+                              (if (tagvector? maxv)
+                                  (coerce-to <vector> maxv)
                                   maxv)))))
     ))
 
