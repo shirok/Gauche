@@ -1,7 +1,7 @@
 ;;;
 ;;; csv.scm - read and write CSV (actually, xSV) format.
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: csv.scm,v 1.6 2003-07-05 03:29:12 shirok Exp $
+;;;  $Id: csv.scm,v 1.7 2004-11-10 21:42:36 shirok Exp $
 ;;;
 
 (define-module text.csv
@@ -66,62 +66,73 @@
                    (make-csv-reader (slot-ref self 'separator))
                    (make-csv-writer (slot-ref self 'separator))))))
 
-(define (make-csv-reader separator)
-  (lambda (port)
-    (define (start line fields)
-      (if (eof-object? line)
+(define (make-csv-reader separator . args)
+  (let* ((quote-char (get-optional args #\"))
+         (quote-string (string quote-char)))
+    (lambda (port)
+      (define (start line fields)
+        (if (eof-object? line)
           (reverse! fields)
           (let ((next (string-trim line #[ ])))
-            (if (string-prefix? "\"" next)
-                (quoted (string-drop next 1) fields '())
-                (noquote next fields)))))
-    (define (noquote line fields)
-      (cond ((string-index line separator)
-             => (lambda (i)
-                  (start (string-drop line (+ i 1))
-                         (cons (string-trim-right (string-take line i))
-                               fields))))
-            (else (reverse! (cons (string-trim-right line #[ ]) fields)))))
-    (define (quoted line fields partial)
-      (cond ((eof-object? line) (error "unterminated quoted field"))
-            ((string-null? line)
-             (quoted (read-line port) fields (cons "\n" partial)))
-            (else
-             (receive (this next) (string-scan line #\" 'both)
-               (if this
-                   (if (string-prefix? "\"" next)
-                       (quoted (string-drop next 1) fields
-                               (list* "\"" this partial))
-                       (let ((next-next (string-scan next separator 'after))
-                             (f (string-concatenate-reverse (cons this partial))))
-                         (if next-next
-                             (start next-next (cons f fields))
-                             (reverse!(cons f fields)))))
+            (if (string-prefix? quote-string next)
+              (quoted (string-drop next 1) fields '())
+              (noquote next fields)))))
+      (define (noquote line fields)
+        (cond ((string-index line separator)
+               => (lambda (i)
+                    (start (string-drop line (+ i 1))
+                           (cons (string-trim-right (string-take line i))
+                                 fields))))
+              (else (reverse! (cons (string-trim-right line #[ ]) fields)))))
+      (define (quoted line fields partial)
+        (cond ((eof-object? line) (error "unterminated quoted field"))
+              ((string-null? line)
+               (quoted (read-line port) fields (cons "\n" partial)))
+              (else
+               (receive (this next) (string-scan line quote-char 'both)
+                 (if this
+                   (if (string-prefix? quote-string next)
+                     (quoted (string-drop next 1) fields
+                             (list* quote-string this partial))
+                     (let ((next-next (string-scan next separator 'after))
+                           (f (string-concatenate-reverse (cons this partial))))
+                       (if next-next
+                         (start next-next (cons f fields))
+                         (reverse!(cons f fields)))))
                    (quoted (read-line port) fields
                            (list*  "\n" line partial)))))))
-    (let ((line (read-line port)))
-      (if (eof-object? line)
+      (let ((line (read-line port)))
+        (if (eof-object? line)
           line
           (start line '())))
-    ))
+      )))
 
 (define (make-csv-writer separator . args)
-  (define newline (if (pair? args) (car args) "\n"))
+  (let-optionals* args ((newline "\n")
+                        (quote-char #\"))
+    (let* ((quote-string (string quote-char))
+           (quote-escape (string-append quote-string quote-string))
+           (quote-rx (string->regexp (regexp-quote quote-string)))
+           (separator-chars (if (string? separator)
+                              (string->list separator)
+                              (list separator)))
+           (special-chars
+            (apply char-set quote-char #\newline #\return separator-chars)))
 
-  (lambda (port fields)
-    (define (write-a-field field)
-      (if (string-index field #[ ,\"\n\r])
-          (begin (display #\" port)
-                 (display (regexp-replace-all #/\"/ field "\"\"") port)
-                 (display #\" port))
-          (display field port)))
+      (lambda (port fields)
+        (define (write-a-field field)
+          (if (string-index field special-chars)
+            (begin (display quote-char port)
+                   (display (regexp-replace-all quote-rx field quote-escape) port)
+                   (display quote-char port))
+            (display field port)))
 
-    (unless (null? fields)
-      (write-a-field (car fields))
-      (for-each (lambda (field)
-                  (display separator port)
-                  (write-a-field field))
-                (cdr fields)))
-    (display newline port)))
+        (unless (null? fields)
+          (write-a-field (car fields))
+          (for-each (lambda (field)
+                      (display separator port)
+                      (write-a-field field))
+                    (cdr fields)))
+        (display newline port)))))
 
 (provide "text/csv")
