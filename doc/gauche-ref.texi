@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.413 2003-06-09 12:04:50 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.414 2003-06-10 00:55:44 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -9334,10 +9334,18 @@ returns.
 @section Exceptions
 @c NODE 例外
 
+@c EN
 In Gauche, error singnaling mechanism is implemented in multiple
 layers.   The lower layer provides very simple mechanism with which
 the user can implement various semantics.  The higher layer provides
 a way to handle common patterns like error handling in a simple way.
+@c JP
+Guacheでは、エラー通知メカニズムは複数のレイヤとして実装されています。
+下層のレイヤは、ユーザが様々なセマンティクスを実装できるような
+とてもシンプルなメカニズムを提供しています。上層のレイヤは、
+シンプルな方法で、エラーハンドリングのような一般的なパターンを扱う
+方法を提供します。
+@c COMMON
 
 @menu
 * Signalling errors::           
@@ -9351,28 +9359,56 @@ a way to handle common patterns like error handling in a simple way.
 @c NODE エラーの通知
 
 @defun error string arg @dots{}
+@c EN
 [SRFI-23] Signals an error.   Internally the action is realized
 by those two steps.
+@c JP
+[SRFI-23] エラーを通知します。内部的には、このアクションは次の
+2つのステップで実現されます。
+@c COMMON
 @enumerate
 @item
+@c EN
 An error exception is created, with the message prefixed
 by @var{string} and followed by @var{arg}s.
+@c JP
+前に@var{string}、後に@var{arg}が続くメッセージとともに、
+エラー例外が生成されます。
+@c COMMON
 @item
+@c EN
 The error exception is thrown, which may be handled by the
 current active error handler, if any.
+@c JP
+エラー例外が投げられます。現在アクティブなエラーハンドラがあれば、
+それにより処理されます。
+@c COMMON
 @end enumerate
 
+@c EN
 If no error handler is active, the default error handler is
 used, which prints the error message to the current error port
 and some debug information.   Then, if Gauche is running
 interactively, the control moves to the toplevel; if Gauche
 is running as a script, it exits with the exit status @code{EX_SOFTWARE}
 (70).
+@c JP
+アクティブなエラーハンドラがない場合、デフォルトのエラーハンドラが
+使われます。それはエラーメッセージといくらかのデバッグ情報を現在の
+エラーポートに出力します。Gaucheがインタラクティブに動作しているときは、
+制御がトップレベルに移ります。Gaucheがスクリプトを実行しているときは、
+終了ステータス@code{EX_SOFTWARE}とともに終了します。
+@c COMMON
 @end defun
 
 @defun errorf fmt-string arg @dots{}
+@c EN
 Similar to an error, but the error message is formatted by
 @code{format}, i.e. it is equivalent to:
+@c JP
+エラーに似ていますが、エラーメッセージは@code{format}によりフォーマット
+されます。すなわち、以下と等価です。
+@c COMMON
 @example
 (define (errorf fmt . args)
   (error (apply format #f fmt args)))
@@ -9384,6 +9420,7 @@ Similar to an error, but the error message is formatted by
 @c NODE エラーの処理
 
 @defun with-error-handler handler thunk
+@c EN
 Makes @var{handler} the active error handler and executes @var{thunk}.
 If @var{thunk} returns normally, the result(s) will be returned.
 If an error is signalled during execution of @var{thunk},
@@ -9391,20 +9428,47 @@ If an error is signalled during execution of @var{thunk},
 representing the error, with the continuation of @code{with-error-handler}.
 That is, @code{with-error-handler} returns whatever value(s) @var{handler}
 returns.
+@c JP
+@var{handler}をアクティブなエラーハンドラにし、@var{thunk}を実行します。
+@var{thunk}が正常に戻ったら、その結果が返されます。
+@var{thunk}の実行中にエラーが通知されたら、エラーを表す例外オブジェクトを
+1引数とする@var{handler}が、@code{with-error-handler}の継続とともに呼ばれます。
+すなわち、@code{with-error-handler}は、@var{handler}が返す値を返します。
+@c COMMON
 
+@c EN
 If @var{handler} signals an error, it will be handled by the
 handler installed when @code{with-error-handler} called.
+@c JP
+@var{handler}がエラーを通知したら、それは@code{with-error-handler}が
+呼ばれたときにインストールされていたハンドラにより処理されます。
+@c COMMON
 
+@c EN
 The dynamic environment where @var{handler} is executed is
 the same as the error occurs.  If @code{dynamic-wind} is used
 in @var{thunk}, its @var{after} method is called after @var{handler}
 has returned, and before @code{with-error-handler} returns.
+@c JP
+@var{handler}が実行される場合の動的な環境は、エラーが起きたときのそれと
+同じです。@var{thunk}内で@code{dynamic-wind}が使われていたら、
+その@var{after}メソッドは@var{handler}が戻った後、かつ@code{with-error-handler}が
+戻る前に呼ばれます。
+@c COMMON
 
+@c EN
 The behavior of @code{with-error-handler} can be
 described in the form of Scheme code shown below,
 using the low-level mechanism (@xref{Low-level exception mechanism}).
 Note that the actual function is built in VM, using lighter
 mechanisms (similar to "one-shot continuation", @ref{onecont, [1CC], 1CC}).
+@c JP
+@code{with-error-handler}の振舞いは、低レベルなメカニズムを使って
+(@ref{Low-level exception mechanism}参照)、以下のようなSchemeコードで
+表すことができます。実際の関数は、より軽量なメカニズム
+(``one-shot continuation'', @ref{onecont, [1CC], 1CC}に似ています)
+を使って仮想マシンに組み込まれていることに注意して下さい。
+@c COMMON
 
 @example
 ;; @r{conceptual implementation of with-error-handler}
@@ -9429,34 +9493,64 @@ mechanisms (similar to "one-shot continuation", @ref{onecont, [1CC], 1CC}).
 
 @deftp {Class} <exception>
 @clindex exception
+@c EN
 Represents An exception.
 The complete exception class hierarchy is under construction.
 Right now, only the following information is available.
+@c JP
+例外を表すクラスです。
+完全な例外クラスの階層は構築中です。
+現時点では、以下の情報のみ公開されます。
+@c COMMON
 
 @defivar {<exception>} message
+@c EN
 For an error exception, this is the error message.
+@c JP
+エラー例外におけるエラーメッセージです。
+@c COMMON
 @end defivar
 @end deftp
 
 @node Low-level exception mechanism,  , Exception object, Exceptions
 @subsection Low-level exception mechanism
 
+@c EN
 This layer provides SRFI-18 compatible simple exception mechanism.
 You can override the behavior of higher-level constructs such as
 @code{with-error-handler} by using @code{with-exception-handler}.
+@c JP
+このレイヤはSRFI-18互換のシンプルな例外メカニズムを提供します。
+@code{with-error-handler}のような高次元の構造の振る舞いを、
+@code{with-exception-handler}を使って上書きすることができます。
+@c COMMON
 
+@c EN
 Note that it is a double-edged sword.  You'll get a freedom to
 construct your own exception handling semantics, but the Gauche
 system won't save if something goes wrong.   Use these primitives
 when you want to customize the system's higher-level semantics
 or you are porting from other SRFI-18 code.
+@c JP
+それは諸刃の剣であることに注意して下さい。あなた独自の例外処理
+セマンティクスを構築する自由がありますが、Gaucheシステムは何か
+間違いがあっても何も保存しません。システムの高次元のセマンティクスを
+カスタマイズしたいか、他のSRFI-18準拠のコードを移植している場合は、
+これらのプリミティブを使って下さい。
+@c COMMON
 
 @defun current-exception-handler
+@c EN
 [SRFI-18]
 Returns the current exception handler.
+@c JP
+[SRFI-18]
+現在の例外ハンドラを返します。
+@c COMMON
 @end defun
 
 @defun raise exception
+@c EN
 [SRFI-18] 
 Invokes the current exception handler with one argument, @var{exception}.
 @var{exception} can be any Scheme object; it doesn't need to be
@@ -9464,15 +9558,31 @@ an instance of @code{<exception>} class.
 Combined with @code{with-exception-handler} you can give your own
 semantics to the @var{exception}.
 @code{raise} returns whatever the handler returns.
+@c JP
+[SRFI-18]
+現在の例外ハンドラを1引数、@var{exception}を伴って呼び出します。
+@var{exception}はいかなるSchemeオブジェクトでも構いません。
+@code{<exception>}クラスのインスタンスである必要もありません。
+@code{with-exception-handler}と組み合わせることによって、
+@var{exception}に独自のセマンティクスを与えることができます。
+@code{raise}は、ハンドラが返すものを返します。
+@c COMMON
 @end defun
 
 @defun with-exception-handler handler thunk
+@c EN
 [SRFI-18]
 A procedure @var{handler} must take one argument.  This procedure
 sets @var{handler} to the current exception handler and calls
 @var{thunk}.
+@c JP
+[SRFI-18]
+@var{handler}は1引数を取る手続きです。この手続きは、@var{handler}を
+現在の例外ハンドラにセットし、@var{thunk}を呼び出します。
+@c COMMON
 @end defun
 
+@c EN
 Generally, if you want to handle non-continuable exception such as
 errors using this low-level mechanism,
 you have to transfer the control from the handler explicitly
@@ -9480,19 +9590,44 @@ you have to transfer the control from the handler explicitly
 @code{raise} detects if the handler returns on the
 non-continuable exceptions and reports an error using the
 default error handler mechanism, but it is just a safety net.
+@c JP
+一般的に、エラーのような継続不可能な例外をこの低レベルなメカニズムで
+扱いたい場合は、明示的にそのハンドラから制御を移さなければなりません
+(前述の@code{with-error-handler}の説明を参照して下さい)。
+@code{raise}は、ハンドラが継続不可能な例外を返したことを検知し、
+デフォルトのエラーハンドラメカニズムを使ってエラーを報告しますが、
+それは単に安全ネットにしか過ぎません。
+@c COMMON
 
+@c EN
 Note also that @var{handler} is called in the same dynamic environment
 of @code{raise}.  So if you raise an exception inside @var{handler},
 it is captured by @var{handler} again.   It is the programmer's
 responsibility to propagate the exception handling to the ``outer''
 exception handlers.
+@c JP
+@var{handler}は@code{raise}の動的な環境と同じ環境で呼ばれることにも
+注意して下さい。したがって、@var{handler}内部で例外を発生させると、
+再度@var{handler}によって捕捉されます。その例外処理を``外側''の例外
+ハンドラへ伝播させるのはプログラマの責任です。
+@c COMMON
 
+@c EN
 The behavior of those procedures can be explained in
 the following conceptual Scheme code.
+@c JP
+これらの手続きの振る舞いは、次の概念的なSchemeコードによって
+説明されるでしょう。
+@c COMMON
 
 @example
+@c EN
 ;; @r{Conceptual implementation of low-level exception mechanism.}
 ;; @r{Suppose %xh is a list of exception handlers}
+@c JP
+;; @r{低レベルな例外メカニズムの概念的な実装}
+;; @r{%xhは例外ハンドラのリスト}
+@c COMMON
 
 (define (current-exception-handler) (car %xh))
 
