@@ -83,6 +83,36 @@ Content-Length: 4349
 (test "decode" "BAR0er9" (lambda () (base64-decode-string "QkFS\r\nMGVyOQ\r\n==")))
 
 ;;--------------------------------------------------------------------
+(test-section "rfc.quoted-printable")
+(use rfc.quoted-printable)
+
+(test "encode" "abcd=0Cefg"
+      (lambda () (quoted-printable-encode-string "abcd\x0cefg")))
+(test "encode"
+      "abcd\r\nefg"
+      (lambda () (quoted-printable-encode-string "abcd\r\nefg")))
+(test "encode (tab/space at eol)"
+      "abcd=09\r\nefg=20\r\n"
+      (lambda () (quoted-printable-encode-string "abcd\t\r\nefg \r\n")))
+(test "encode (soft line break)"
+      "0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abc=\r\ndefghij0123456789abcdefghij"
+      (lambda ()
+        (quoted-printable-encode-string "0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij")))
+
+(test "decode" "\x01\x08abcde=\r\n"
+      (lambda ()
+        (quoted-printable-decode-string "=01=08abc=64=65=3D\r\n")))
+(test "decode (soft line break)"
+      "Now's the time for all folk to come to the aid of their country."
+      (lambda ()
+        (quoted-printable-decode-string "Now's the time =\r\nfor all folk to come=   \r\n to the aid of their country.")))
+(test "decode (robustness)"
+      "foo=1qr =  j\r\n"
+      (lambda ()
+        (quoted-printable-decode-string "foo=1qr =  j\r\n=")))
+
+
+;;--------------------------------------------------------------------
 (test-section "rfc.cookie")
 (use rfc.cookie)
 
