@@ -1,13 +1,13 @@
 ;;;
 ;;; Adapt SSAX to Gauche
 ;;;
-;;; $Id: adaptor.scm,v 1.5 2003-07-22 11:22:07 shirok Exp $
+;;; $Id: adaptor.scm,v 1.6 2003-07-23 12:45:49 shirok Exp $
 ;;;
 
 (define-module sxml.adaptor
   (use srfi-1)
   (export ascii->char ucscode->char char-return char-tab char-newline
-          make-char-quotator assert |--| parser-error))
+          make-char-quotator assert |--| parser-error cout cerr nl))
 (select-module sxml.adaptor)
 
 ;; Charcode related stuff, used in ssax.scm
@@ -122,5 +122,20 @@
     (newline err)
     (error (get-output-string err))))
 
+;; error reporting
+
+(define (cout . args)
+  (for-each (lambda (x)
+              (if (procedure? x) (x) (display x)))
+            args))
+
+(define (cerr . args)
+  (for-each (lambda (x)
+              (if (procedure? x)
+                (x (current-error-port))
+                (display x (current-error-port))))
+            args))
+
+(define nl "\n")
 
 (provide "ssax/adaptor")

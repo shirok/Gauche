@@ -10,11 +10,13 @@
 ;;;      sxpath-ext.scm,v 1.911
 ;;;   Public domain.
 ;;;
-;;; $Id: sxpath.scm.in,v 1.2 2003-07-22 11:22:07 shirok Exp $
+;;; $Id: sxpath.scm.in,v 1.3 2003-07-23 12:45:49 shirok Exp $
 ;;;
 
 (define-module sxml.sxpath
   (use srfi-1)
+  (use srfi-2)
+  (use srfi-11)
   (use srfi-13)
   (use text.parse)
   (use sxml.adaptor)
