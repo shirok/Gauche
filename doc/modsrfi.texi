@@ -1528,17 +1528,27 @@ SRFI-4は、@code{gauche.uvector}モジュールとして実装されています。
 @c ----------------------------------------------------------------------
 @node srfi-9 - Record types, srfi-11 - Let-values, srfi-4 - Homogeneous vectors, Library modules - SRFIs
 @section @code{srfi-9} - Record types
+@c NODE @code{srfi-9} - レコード型
 
 @deftp {Module} srfi-9
 @mdindex srfi-9
+@c EN
 Contains a macro to use record types.  A record type is implemented on
 top of Gauche's object system.
 
 The SRFI-9 record type is not as powerful as the object system, but
 it will be useful if you want your program to be portable.
+@c JP
+このモジュールはレコード型を使うマクロを含んでいます。レコード型は
+Gauche のオブジェクトシステム上で実装されています。
+
+SRFI-9 のレコード型はこのオブジェクトシステムほどには強力ではありませんが、
+ポータブルなプログラムを書くときには役に立ちます。
+@c COMMON
 @end deftp
 
 @defmac define-record-type name (constructor init-tag @dots{}) predicate (field accessor [modifier]) @dots{}
+@c EN
 Creates a record type and binds it to @var{name}.
 In Gauche, a record type is just a subclass of @code{<record>}.
 
@@ -1560,6 +1570,29 @@ Followings are field specifications.  The record has fields
 to a method that sets the value to the field.
 
 Example:
+@c JP
+レコード型を作成し、それを @var{name} に束縛します。Gauche では、
+レコード型は @code{<record>} のサブクラスです。
+
+@var{constructor} はそのレコード型のインスタンスを作成する手続きに
+束縛されており、@var{init-tag} @dots{} として多くの引数をとります。
+それぞれの @var{init-tag} はフィールド名に対応しており、作成された
+レコード型のインスタンスのフィールドはそれぞれの  @var{init-tag} 
+にしたがって、初期化されます。@var{init-tag} には全てのフィールドが
+ある必要なはく、初期化されないフィールドは、未束縛のままになります。
+
+@var{predicate} は、一つの引数をとり、もしその引数が、定義された
+レコード型のインスタンスであれば、@code{#t} を返し、さもなければ、
+@code{#f} を返すような手続きに束縛されます。
+
+そのあとは、フィールドの仕様です。レコードはフィールド
+@var{field} @dots{} をもち、それぞれのフィールドはメソッド
+@var{accessor} によってアクセス可能です。そのフィールドに対して
+@var{modifier} が与えられていれば、それは、そのフィールドの
+値をセットするメソッドに束縛されます。
+
+例:
+@c COMMON
 @example
 (define-record-type pare
   (kons x y) pare?
@@ -1578,8 +1611,12 @@ Example:
   (kar x)) @result{} -1
 @end example
 
+@c EN
 Conceptually, the above example is expanded into the following
 sequence of forms.
+@c JP
+概念的には、上の例は以下の形式のならびに展開されます。
+@c COMMON
 @example
 (define-class pare (<record>) (x y))
 (define (kons x y)
