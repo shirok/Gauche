@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.308 2002-12-02 02:17:11 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.309 2002-12-05 05:34:20 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2618,7 +2618,7 @@ b @result{} 3
 [SRFI-17]
 @c EN
 Returns a setter procedure associated to the procedure @var{proc}.
-If no setter is associated to @var{proc}, an error is signalled.
+If no setter is associated to @var{proc}, its behavior is undefined.
 
 A setter procedure @var{g} of a procedure @var{f} is such that when used
 as @code{(g a b @dots{} v)}, the next evaluation of @code{(f a b @dots{})}
@@ -2634,9 +2634,15 @@ A procedure's setter can be ``locked'' to it.  System default setters,
 like @code{set-car!} for @code{car}, is locked and can't be set by
 the above way.   In order to lock a setter to a user defined procedure,
 use @code{getter-with-setter} below.
+
+If @var{proc} is not a procedure, a setter generic function
+of @code{object-apply} is returned;
+it allows the applicable object extension to work
+seamlessly with the generalized @code{set!}.
+@xref{Applicable objects}, for the details.
 @c JP
-手続き@var{proc}のsetter手続きを返します。もし@var{proc}がsetter手続きを持たなければ、
-エラーが返されます。
+手続き@var{proc}のsetter手続きを返します。
+@var{proc}がsetter手続きを持たない場合の動作は不定です。
 
 ある関数@var{f}のsetter手続き@var{g}とは、もし@code{(g a b @dots{} v)}のように
 呼ばれた場合、次の@code{(f a b @dots{})}が@var{v}を返すようになる手続きのことです。
@@ -2651,6 +2657,18 @@ use @code{getter-with-setter} below.
 例えば@code{car}に対する@code{set-car!}等はロックされていて、上記のような方法で
 変更することは出来ません。ユーザ定義手続きにsetter手続きをロックするには下記の
 @code{getter-with-setter}を使います。
+
+@var{proc}が手続きでない場合は、@code{object-apply}ジェネリックファンクションの
+setterが返されます。これにより、適用可能オブジェクトが一般化された@code{set!}
+でもうまく動作します。詳しくは@ref{Applicable objects}を参照して下さい。
+@c COMMON
+@end defun
+
+@defun has-setter? proc
+@c EN
+Returns @code{#t} if a setter is associated to @var{proc}.
+@c JP
+@var{proc}がsetter手続きを持っている場合は@code{#t}を返します。
 @c COMMON
 @end defun
 
