@@ -14,7 +14,7 @@ GENERATED = Makefile syslog.c syslog_head.c syslog_tail.c
 all : $(LIBFILES)
 
 syslog.la : $(OBJECTS) 
-	$(MODLINK)  $(OBJECTS) $(LIBGAUCHE)
+	$(MODLINK)  $(OBJECTS) $(EXT_LIBGAUCHE)
 
 syslog_head.c syslog_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension syslog

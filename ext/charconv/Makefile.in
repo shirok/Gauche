@@ -15,7 +15,7 @@ OBJECTS = charconv_head.lo charconv.lo convlib.lo jconv.lo \
 all : $(LIBFILES)
 
 libcharconv.la : $(OBJECTS)
-	$(MODLINK) $(OBJECTS) $(LIBGAUCHE)
+	$(MODLINK) $(OBJECTS) $(EXT_LIBGAUCHE)
 
 charconv_head.c charconv_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension charconv

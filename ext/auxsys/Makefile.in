@@ -14,7 +14,7 @@ OBJECTS = auxsys_head.lo auxsys.lo auxsyslib.lo auxsys_tail.lo
 all : $(LIBFILES)
 
 auxsys.la : $(OBJECTS) 
-	$(MODLINK) $(OBJECTS) $(LIBGAUCHE)
+	$(MODLINK) $(OBJECTS) $(EXT_LIBGAUCHE)
 
 auxsys_head.c auxsys_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension auxsys

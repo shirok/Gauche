@@ -14,7 +14,7 @@ GENERATED = Makefile termiolib.c termios_head.c termios_tail.c
 all : $(LIBFILES)
 
 termios.la : $(OBJECTS) 
-	$(MODLINK) $(OBJECTS) $(LIBGAUCHE)
+	$(MODLINK) $(OBJECTS) $(EXT_LIBGAUCHE)
 
 termios_head.c termios_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension termios

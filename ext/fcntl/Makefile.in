@@ -14,7 +14,7 @@ GENERATED = Makefile fcntllib.c fcntl_head.c fcntl_tail.c
 all : $(LIBFILES)
 
 fcntl.la : $(OBJECTS) 
-	$(MODLINK) $(OBJECTS) $(LIBGAUCHE)
+	$(MODLINK) $(OBJECTS) $(EXT_LIBGAUCHE)
 
 fcntl_head.c fcntl_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension fcntl

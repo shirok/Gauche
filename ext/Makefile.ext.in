@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions
-## $Id: Makefile.ext.in,v 1.5 2003-05-16 10:15:35 shirok Exp $
+## $Id: Makefile.ext.in,v 1.6 2003-05-19 06:23:26 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -34,8 +34,8 @@ EXEEXT   = @EXEEXT@
 COMPILE   = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(OPTFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(OPTFLAGS)
 CCLD      = $(CC)
-LINK      = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@ -rpath $(GAUCHE_ARCHDIR)
-MODLINK   = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) $(MOD_LDFLAGS) -o $@ -rpath $(GAUCHE_ARCHDIR)
+LINK      = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) $(EXT_NO_UNDEFINED) -o $@ -rpath $(GAUCHE_ARCHDIR)
+MODLINK   = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) $(EXT_NO_UNDEFINED) $(MOD_LDFLAGS) -o $@ -rpath $(GAUCHE_ARCHDIR)
 INSTALL   = $(LIBTOOL) --mode=install @INSTALL@
 
 GOSH = $(top_builddir)/src/gosh -ftest
@@ -44,6 +44,7 @@ INSTALL_TYPE = sys
 
 MOD_LDFLAGS  = -module -avoid-version
 EXT_LIBGAUCHE = @EXT_LIBGAUCHE@
+EXT_NO_UNDEFINED = @EXT_NO_UNDEFINED@
 
 GAUCHE_INCDIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
 GAUCHE_LIBDIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`

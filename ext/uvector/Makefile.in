@@ -17,7 +17,7 @@ uvector_OBJECTS = uvector_head.lo uvector.lo uvutil.lo \
                   uvinit.lo uvlib.lo uvector_tail.lo
 
 uvector.la : $(uvector_OBJECTS) 
-	$(MODLINK) $(uvector_OBJECTS) $(LIBGAUCHE)
+	$(MODLINK) $(uvector_OBJECTS) $(EXT_LIBGAUCHE)
 
 uvector_head.c uvector_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension uvector

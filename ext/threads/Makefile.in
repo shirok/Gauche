@@ -14,7 +14,7 @@ GENERATED = Makefile thrlib.c threads_head.c threads_tail.c
 all : $(LIBFILES)
 
 threads.la : $(OBJECTS) 
-	$(MODLINK) $(OBJECTS) $(LIBGAUCHE)
+	$(MODLINK) $(OBJECTS) $(EXT_LIBGAUCHE)
 
 threads_head.c threads_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension threads

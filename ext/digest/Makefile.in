@@ -14,12 +14,12 @@ all : $(LIBFILES)
 md5_OBJECTS = md5_head.lo md5.lo md5c.lo md5_tail.lo
 
 md5.la : $(md5_OBJECTS) 
-	$(MODLINK) $(md5_OBJECTS) $(LIBGAUCHE)
+	$(MODLINK) $(md5_OBJECTS) $(EXT_LIBGAUCHE)
 
 sha1_OBJECTS = sha1_head.lo sha1.lo sha.lo sha1_tail.lo
 
 sha1.la : $(sha1_OBJECTS) 
-	$(MODLINK) $(sha1_OBJECTS) $(LIBGAUCHE)
+	$(MODLINK) $(sha1_OBJECTS) $(EXT_LIBGAUCHE)
 
 md5_head.c md5_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension md5
