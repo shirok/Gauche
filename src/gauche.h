@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.120 2001-04-23 09:37:26 shiro Exp $
+ *  $Id: gauche.h,v 1.121 2001-04-25 07:31:08 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -686,6 +686,8 @@ extern ScmChar Scm_StringRef(ScmString *str, int k);
 extern ScmObj  Scm_StringSet(ScmString *str, int k, ScmChar sc);
 extern int     Scm_StringByteRef(ScmString *str, int k);
 extern ScmObj  Scm_StringByteSet(ScmString *str, int k, ScmByte b);
+extern ScmObj  Scm_StringSubstitute(ScmString *target, int start, int end,
+                                    ScmString *str);
 
 extern ScmObj  Scm_Substring(ScmString *x, int start, int end);
 extern ScmObj  Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end);
