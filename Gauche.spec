@@ -1,5 +1,5 @@
 # Spec file to build Gauche RPM package
-# $Id: Gauche.spec,v 1.33 2004-02-27 04:45:42 shirok Exp $
+# $Id: Gauche.spec,v 1.34 2004-05-23 04:00:22 shirok Exp $
 #
 # In order to build different encoding-specific packages (like
 # Gauche-euc-jp, etc) from a single source rpm, the actual package
@@ -12,7 +12,7 @@
 #    Gauche-ENC-VERS.ARCH.rpm     ;; binary package with encoding ENC
 #    Gauche-VERS.src.rpm          ;; source package
 
-%define version  0.7.4.2
+%define version  0.8
 %define encoding eucjp
 %define threads  pthreads
 
@@ -111,6 +111,9 @@ make prefix=${RPM_BUILD_ROOT}/usr install-doc
 %defattr(-,root,root)
 /usr/bin/gosh
 /usr/bin/gauche-config
+/usr/bin/gauche-cesconv
+/usr/bin/gauche-install
+/usr/bin/gauche-package
 #/usr/lib/libgauche.a
 /usr/lib/libgauche.so
 /usr/lib/libgauche.so.0
@@ -121,6 +124,9 @@ make prefix=${RPM_BUILD_ROOT}/usr install-doc
 %defattr(-,root,root)
 
 %changelog
+* Tue May 22 2004 Shiro Kawai
+- Gauche release 0.8.
+
 * Tue Feb 26 2004 Shiro Kawai
 - Gauche release 0.7.4.2.
 

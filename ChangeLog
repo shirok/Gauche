@@ -1,3 +1,11 @@
+2004-05-22  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.8
+
+	* lib/gauche/package/build.scm (gauche-package-build): clean builddir
+	  before untar.
+	* src/gauche-cesconv.in: fixed command-line argument handling bug.
+
 2004-05-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c (modules): make sure the global module name map is
