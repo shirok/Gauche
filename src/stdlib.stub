@@ -95,11 +95,20 @@
 (define-cproc quotient (n1 n2)
   "  SCM_RETURN(Scm_Quotient(n1, n2));")
 
-;; remainder
-;; modulo
-;; gcd
-;; lcm
+(define-cproc remainder (n1 n2)
+  "  SCM_RETURN(Scm_Modulo(n1, n2, 1));")
 
+(define-cproc modulo (n1 n2)
+  "  SCM_RETURN(Scm_Modulo(n1, n2, 0));")
+
+
+(define-cproc gcd (&rest args)
+  ;; TODO: implement me!
+  "  SCM_RETURN(SCM_MAKE_INT(1));")
+
+(define-cproc lcm (&rest args)
+  ;; TODO: implement me!
+  "  SCM_RETURN(SCM_MAKE_INT(1));")
 
 ;; in Gauche, rational number is exact integer, i.e. N/1
 (define-cproc numerator (q)
@@ -164,8 +173,9 @@
 (define-cproc inexact->exact (obj)
   "  SCM_RETURN(Scm_InexactToExact(obj));")
 
-(define-cproc number->string (obj)
-  "  SCM_RETURN(Scm_NumberToString(obj));")
+(define-cproc number->string (obj &optional (radix 10))
+  (assert (small-integer? radix))
+  "  SCM_RETURN(Scm_NumberToString(obj, radix));")
 
 (define-cproc string->number (obj)
   (assert (string? obj))

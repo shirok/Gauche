@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.4 2001-01-14 11:55:59 shiro Exp $
+ *  $Id: gauche.h,v 1.5 2001-01-15 01:28:28 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -483,11 +483,11 @@ extern void        Scm_DStringPutc(ScmDString *dstr, ScmChar ch);
 #define SCM_DSTRING_START(dstr)   ((dstr)->start)
 #define SCM_DSTRING_SIZE(dstr)    ((dstr)->end - (dstr)->start)
 
-#define SCM_DSTRING_PUTB(dstr, byte)                                    \
-    do {                                                                \
-        if ((dstr)->current >= (dstr)->end) Scm__DStringRealloc(dstr);  \
-        *(dstr)->current++ = (char)(byte);                              \
-        (dstr)->length = -1;    /* may be incomplete */                 \
+#define SCM_DSTRING_PUTB(dstr, byte)                                     \
+    do {                                                                 \
+        if ((dstr)->current >= (dstr)->end) Scm__DStringRealloc(dstr, 1);\
+        *(dstr)->current++ = (char)(byte);                               \
+        (dstr)->length = -1;    /* may be incomplete */                  \
     } while (0)
 
 #define SCM_DSTRING_PUTC(dstr, ch)                      \
@@ -496,7 +496,7 @@ extern void        Scm_DStringPutc(ScmDString *dstr, ScmChar ch);
         ScmDString *d_DSTR = (dstr);                    \
         int siz_DSTR = SCM_CHAR_NBYTES(ch_DSTR);        \
         if (d_DSTR->current + siz_DSTR >= d_DSTR->end)  \
-            Scm__DStringRealloc(d_DSTR);                \
+            Scm__DStringRealloc(d_DSTR, siz_DSTR);      \
         SCM_STR_PUTC(d_DSTR->current, ch_DSTR);         \
         d_DSTR->current += siz_DSTR;                    \
         if (d_DSTR->length >= 0) d_DSTR->length++;      \
@@ -505,14 +505,14 @@ extern void        Scm_DStringPutc(ScmDString *dstr, ScmChar ch);
 #define SCM_DSTRING_PUTS(dstr, str, size, len)          \
     do {                                                \
         if ((dstr)->current + (size) >= (dstr)->end)    \
-            Scm__DStringRealloc(dstr);                  \
+            Scm__DStringRealloc(dstr, size);            \
         memcpy((dstr)->current, (str), (size));         \
         if ((len) >= 0 && (dstr)->length >= 0)          \
             (dstr)->length += (len);                    \
         else (dstr)->length = -1;                       \
     } while (0)
 
-extern void Scm__DStringRealloc(ScmDString *dstr);
+extern void Scm__DStringRealloc(ScmDString *dstr, int min_incr);
 
 
 /*--------------------------------------------------------
@@ -1176,7 +1176,7 @@ extern ScmObj Scm_Divide(ScmObj arg1, ScmObj arg2, ScmObj args);
 
 extern ScmObj Scm_Quotient(ScmObj arg1, ScmObj arg2);
 extern ScmObj Scm_Remainder(ScmObj arg1, ScmObj arg2);
-extern ScmObj Scm_Modulo(ScmObj arg1, ScmObj arg2);
+extern ScmObj Scm_Modulo(ScmObj arg1, ScmObj arg2, int remainder);
 
 extern ScmObj Scm_NumEq(ScmObj arg0, ScmObj arg1, ScmObj args); /* = */
 extern ScmObj Scm_NumLt(ScmObj arg0, ScmObj arg1, ScmObj args); /* < */
@@ -1187,7 +1187,7 @@ extern ScmObj Scm_NumGe(ScmObj arg0, ScmObj arg1, ScmObj args); /* >= */
 extern ScmObj Scm_Max(ScmObj arg0, ScmObj args);
 extern ScmObj Scm_Min(ScmObj arg0, ScmObj args);
 
-extern ScmObj Scm_NumberToString(ScmObj num);
+extern ScmObj Scm_NumberToString(ScmObj num, int radix);
 extern ScmObj Scm_StringToNumber(ScmString *str);
 
 /*--------------------------------------------------------

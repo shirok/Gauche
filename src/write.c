@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.3 2001-01-14 20:02:18 shiro Exp $
+ *  $Id: write.c,v 1.4 2001-01-15 01:28:28 shiro Exp $
  */
 
 #include <stdio.h>
@@ -460,7 +460,7 @@ int Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
                     SCM_DSTRING_PUTB(&argbuf, c);
                     SCM_DSTRING_PUTB(&argbuf, 0);
                     nc += snprintf(buf, SPBUFSIZ,
-                                   SCM_DSTRING_START(&argbuf), val);
+                                   Scm_DStringGetCstr(&argbuf), val);
                     SCM_PUTCSTR(buf, out);
                     break;
                 }
@@ -470,7 +470,7 @@ int Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
                     SCM_DSTRING_PUTB(&argbuf, c);
                     SCM_DSTRING_PUTB(&argbuf, 0);
                     nc += snprintf(buf, SPBUFSIZ,
-                                   SCM_DSTRING_START(&argbuf), val);
+                                   Scm_DStringGetCstr(&argbuf), val);
                     SCM_PUTCSTR(buf, out);
                     break;
                 }
@@ -480,7 +480,7 @@ int Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
                     SCM_DSTRING_PUTB(&argbuf, c);
                     SCM_DSTRING_PUTB(&argbuf, 0);
                     nc += snprintf(buf, SPBUFSIZ,
-                                   SCM_DSTRING_START(&argbuf), val);
+                                   Scm_DStringGetCstr(&argbuf), val);
                     SCM_PUTCSTR(buf, out);
                     break;
                 }
@@ -510,7 +510,7 @@ int Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap)
                     SCM_DSTRING_PUTB(&argbuf, c);
                     SCM_DSTRING_PUTB(&argbuf, 0);
                     nc += snprintf(buf, SPBUFSIZ,
-                                   SCM_DSTRING_START(&argbuf), val);
+                                   Scm_DStringGetCstr(&argbuf), val);
                     SCM_PUTCSTR(buf, out);
                     break;
                 }

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.2 2001-01-13 10:31:13 shiro Exp $
+ *  $Id: string.c,v 1.3 2001-01-15 01:28:28 shiro Exp $
  */
 
 #include <stdio.h>
@@ -573,6 +573,8 @@ static int string_print(ScmObj obj, ScmPort *port, int mode)
  */
 
 #define DSTRING_CHUNK_SIZE 16
+#define DSTRING_CHUNK_ROUND_UP(siz) \
+    ((siz+DSTRING_CHUNK_SIZE-1)&~(DSTRING_CHUNK_SIZE-1))
 
 void Scm_DStringInit(ScmDString *dstr)
 {
@@ -582,13 +584,23 @@ void Scm_DStringInit(ScmDString *dstr)
     dstr->length = 0;
 }
 
-void Scm__DStringRealloc(ScmDString *dstr)
+void Scm__DStringRealloc(ScmDString *dstr, int minincr)
 {
-    int newsize = dstr->end - dstr->start + DSTRING_CHUNK_SIZE;
+    char *p;
+    int newsize = dstr->end - dstr->start + DSTRING_CHUNK_ROUND_UP(minincr);
     int cursize = dstr->current - dstr->start;
-    dstr->start = (char *)Scm_Realloc(dstr->start, newsize);
-    dstr->end = dstr->start + newsize;
-    dstr->current = dstr->start + cursize;
+    /* TODO: Maybe we should avoid realloc.  Maybe we should use chained
+       segments of str.  So far, what I know is the program crashes
+       if we use GC_realloc here. */
+    p = (char *)Scm_Malloc(newsize);
+    memcpy(p, dstr->start, GC_size(dstr->start));
+#if 0
+    p = (char *)Scm_Realloc(dstr->start, newsize);
+#endif
+
+    dstr->start = p;
+    dstr->end = p + newsize;
+    dstr->current = p + cursize;
 }
 
 /* We don't need to copy the string, thanks to GC.
@@ -622,7 +634,7 @@ void Scm_DStringPutCstr(ScmDString *dstr, const char *str)
 {
     int size = strlen(str);
     while (dstr->current + size >= dstr->end) {
-        Scm__DStringRealloc(dstr);
+        Scm__DStringRealloc(dstr, size);
     }
     memcpy(dstr->current, str, size);
     dstr->current += size;
@@ -637,7 +649,7 @@ void Scm_DStringAdd(ScmDString *dstr, ScmString *str)
 {
     int size = SCM_STRING_SIZE(str);
     while (dstr->current + size >= dstr->end) {
-        Scm__DStringRealloc(dstr);
+        Scm__DStringRealloc(dstr, size);
     }
     memcpy(dstr->current, SCM_STRING_START(str), size);
     dstr->current += size;

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.3 2001-01-14 11:55:59 shiro Exp $
+ *  $Id: number.c,v 1.4 2001-01-15 01:28:28 shiro Exp $
  */
 
 #include <math.h>
@@ -720,6 +720,62 @@ ScmObj Scm_Quotient(ScmObj x, ScmObj y)
     return SCM_UNDEFINED;       /* dummy */
 }
 
+/* Modulo and Reminder.
+   TODO: on gcc, % works like reminder.  I'm not sure the exact behavior
+   of % is defined in ANSI C.  Need to check it later. */
+ScmObj Scm_Modulo(ScmObj x, ScmObj y, int reminder)
+{
+    double rx, ry, div, rem;
+    if (SCM_INTP(x)) {
+        if (SCM_INTP(y)) {
+            int r;
+            if (SCM_INT_VALUE(y) == 0) goto DIVBYZERO;
+            r = SCM_INT_VALUE(x)%SCM_INT_VALUE(y);
+            if (!reminder) {
+                if ((SCM_INT_VALUE(x) > 0 && SCM_INT_VALUE(y) < 0)
+                    || (SCM_INT_VALUE(x) < 0 && SCM_INT_VALUE(y) > 0)) {
+                    r += SCM_INT_VALUE(y);
+                }
+            }
+            return SCM_MAKE_INT(r);
+        }
+        rx = (double)SCM_INT_VALUE(x);
+        if (SCM_FLONUMP(y)) {
+            ry = SCM_FLONUM_VALUE(y);
+            if (ry != floor(ry)) goto BADARGY;
+            goto DO_FLONUM;
+        }
+        goto BADARGY;
+    } else if (SCM_FLONUMP(x)) {
+        rx = SCM_FLONUM_VALUE(x);
+        if (rx != floor(rx)) goto BADARG;
+        if (SCM_INTP(y)) {
+            ry = (double)SCM_INT_VALUE(y);
+        } else if (SCM_FLONUMP(y)) {
+            ry = SCM_FLONUM_VALUE(y);
+            if (ry != floor(ry)) goto BADARGY;
+        } else {
+            goto BADARGY;
+        }
+      DO_FLONUM:
+        if (ry == 0.0) goto DIVBYZERO;
+        div = floor(rx/ry);
+        rem = rx - (div * ry);
+        if (!reminder) {
+            if ((rx > 0 && ry < 0) || (rx < 0 && ry > 0)) {
+                rem += ry;
+            }
+        }
+        return Scm_MakeFlonum(rem);
+    }
+  DIVBYZERO:
+    Scm_Error("divide by zero");
+  BADARGY:
+    x = y;
+  BADARG:
+    Scm_Error("integer required, but got %S", x);
+    return SCM_UNDEFINED;       /* dummy */
+}
 
 /*===============================================================
  * Comparison
@@ -916,19 +972,28 @@ ScmObj Scm_Min(ScmObj arg0, ScmObj args)
 
 static int number_print(ScmObj obj, ScmPort *port, int mode)
 {
-    ScmObj s = Scm_NumberToString(obj);
+    ScmObj s = Scm_NumberToString(obj, 10);
     SCM_PUTS(SCM_STRING(s), port);
     return SCM_STRING_LENGTH(s);
 }
 
-/* TODO: add radix! */
-ScmObj Scm_NumberToString(ScmObj obj)
+ScmObj Scm_NumberToString(ScmObj obj, int radix)
 {
     ScmObj r;
     
     if (SCM_INTP(obj)) {
         char buf[50];
-        snprintf(buf, 50, "%d", SCM_INT_VALUE(obj));
+        if (radix == 10) {
+            snprintf(buf, 50, "%d", SCM_INT_VALUE(obj));
+        } else if (radix == 16) {
+            snprintf(buf, 50, "%x", SCM_INT_VALUE(obj));
+        } else if (radix == 8) {
+            snprintf(buf, 50, "%o", SCM_INT_VALUE(obj));
+        } else {
+            /* TODO: implement this! */
+            buf[0] = '?';
+            buf[1] = '\0';
+        }
         r = Scm_MakeString(buf, -1, -1);
     } else if (SCM_FLONUMP(obj)) {
         char buf[50];

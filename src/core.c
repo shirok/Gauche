@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.2 2001-01-12 11:33:37 shiro Exp $
+ *  $Id: core.c,v 1.3 2001-01-15 01:28:28 shiro Exp $
  */
 
 #include "gauche.h"
@@ -35,12 +35,16 @@ void *Scm_MallocAtomic(size_t size)
     return p;
 }
 
+#if 0
 void *Scm_Realloc(void *ptr, size_t size)
 {
-    void *p = GC_REALLOC(ptr, size);
+    void *p = GC_MALLOC_ATOMIC(size);
+    int oldsize = GC_size(ptr);
     if (p == NULL) Scm_Panic("out of memory");
+    memcpy(p, ptr, oldsize);
     return p;
 }
+#endif
 
 /*
  * Program initialization and default error handlers.
