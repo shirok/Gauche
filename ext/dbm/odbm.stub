@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: odbm.stub,v 1.1 2001-10-20 11:47:14 shirok Exp $
+;;  $Id: odbm.stub,v 1.2 2001-10-21 09:02:29 shirok Exp $
 ;;
 
 "
@@ -23,36 +23,6 @@
  #elif HAVE_GDBM_DBM_H
  #include <gdbm/dbm.h>
  #endif
-
- static void odbm_print(ScmObj, ScmPort *, ScmWriteContext*);
- static SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_OdbmClass, odbm_print);
-
- #define SCM_CLASS_ODBM       (&Scm_OdbmClass)
- #define SCM_ODBM(obj)        ((ScmOdbm*)obj)
- #define SCM_ODBM_P(obj)      TYPEP(obj, SCM_CLASS_ODBM)
-
- typedef struct ScmOdbmRec {
-    ScmObj name;
- } ScmOdbm;
-
- static void odbm_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
- {
-    Scm_Printf(out, \"#<odbm-file %S>\", SCM_ODBM(obj)->name);
- }
-
- #define TO_DATUM(datum_, scm_)             \\
-   do {                                     \\
-     datum_.dptr = Scm_GetString(scm_);     \\
-     datum_.dsize = SCM_STRING_SIZE(scm_);  \\
-   } while (0)
- #define FROM_DATUM(scm_, datum_)           \\
-   do {                                     \\
-     if (datum_.dptr) {                     \\
-       scm_ = Scm_MakeString(datum_.dptr, datum_.dsize, -1, SCM_MAKSTR_COPYING); \\
-     } else {                               \\
-       scm_ = SCM_FALSE;                    \\
-     }                                      \\
-   } while (0)
 
  #define CHECK_ODBM() if (!odbm_opened) Scm_Error(\"odbm file already closed\")
 "
@@ -107,7 +77,7 @@
   "datum dkey; int r;
    CHECK_ODBM();
    TO_DATUM(dkey, key);
-   r = delete(key);
+   r = delete(dkey);
    SCM_RETURN(SCM_MAKE_INT(r));")
 
 (define-cproc odbm-firstkey ()

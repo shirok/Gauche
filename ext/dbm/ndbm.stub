@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: ndbm.stub,v 1.2 2001-10-20 11:29:14 shirok Exp $
+;;  $Id: ndbm.stub,v 1.3 2001-10-21 09:02:29 shirok Exp $
 ;;
 
 "
@@ -30,7 +30,7 @@
 
  #define SCM_CLASS_NDBM       (&Scm_NdbmClass)
  #define SCM_NDBM(obj)        ((ScmNdbm*)obj)
- #define SCM_NDBM_P(obj)      TYPEP(obj, SCM_CLASS_NDBM)
+ #define SCM_NDBM_P(obj)      SCM_TYPEP(obj, SCM_CLASS_NDBM)
 
  typedef struct ScmNdbmRec {
     ScmObj name;
@@ -59,8 +59,10 @@
  #define CHECK_NDBM(g)    if (!g->dbf) Scm_Error(\"ndbm file already closed: %S\", g)
 "
 
-(define-type "ndbm" ndbm?
-  "ScmNdbm*" "SCM_NDBM_P" "SCM_NDBM")
+(initcode
+ "Scm_InitBuiltinClass(&Scm_NdbmClass, \"<ndbm-file>\", NULL, module);\n")
+
+(define-type "ndbm" ndbm? "ScmNdbm*" "SCM_NDBM_P" "SCM_NDBM")
 
 (define-cproc ndbm-open (name flags mode)
   (assert (string? name))
@@ -94,7 +96,7 @@
   CHECK_NDBM(ndbm);
   TO_DATUM(dkey, key);
   TO_DATUM(dval, val);
-  r = dbm_store(ndbm->dbf, key, val, flags);
+  r = dbm_store(ndbm->dbf, dkey, dval, flags);
   SCM_RETURN(SCM_MAKE_INT(r));")
 
 (define-cproc ndbm-fetch (ndbm key)
@@ -103,7 +105,7 @@
   "datum dkey, dval; ScmObj r;
   CHECK_NDBM(ndbm);
   TO_DATUM(dkey, key);
-  dval = dbm_fetch(ndbm->dbf, key);
+  dval = dbm_fetch(ndbm->dbf, dkey);
   FROM_DATUM(r, dval);
   SCM_RETURN(r);")
 
@@ -113,7 +115,7 @@
   "datum dkey; int r;
   CHECK_NDBM(ndbm);
   TO_DATUM(dkey, key);
-  r = dbm_delete(ndbm->dbf, key);
+  r = dbm_delete(ndbm->dbf, dkey);
   SCM_RETURN(SCM_MAKE_INT(r));")
 
 (define-cproc ndbm-firstkey (ndbm)
