@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.9 2001-03-10 05:34:46 shiro Exp $
+ *  $Id: port.c,v 1.10 2001-03-11 21:16:26 shiro Exp $
  */
 
 #include "gauche.h"
@@ -369,6 +369,37 @@ int Scm_Getc(ScmPort *port)
 }
 
 /*
+ * ReadLine
+ */
+
+static inline ScmObj readline_int(ScmPort *port)
+{
+    ScmDString ds;
+    int ch;
+    SCM_GETC(ch, port);
+    if (ch == SCM_CHAR_INVALID) return SCM_EOF;
+    Scm_DStringInit(&ds);
+    for (;;) {
+        if (ch == '\n' || ch == SCM_CHAR_INVALID)
+            return Scm_DStringGet(&ds);
+        SCM_DSTRING_PUTC(&ds, ch);
+        SCM_GETC(ch, port);
+    }
+}
+
+ScmObj Scm_ReadLine(ScmPort *port)
+{
+    if (SCM_PORT_DIR(port) != SCM_PORT_INPUT)
+        Scm_Error("input port required: %S\n", port);
+    if (SCM_PORT_TYPE(port) == SCM_PORT_PROC) {
+        /* procedure port may have optimized method */
+        return port->src.proc.vtable->Getline(port);
+    } else {
+        return readline_int(port);
+    }
+}
+
+/*
  * Procedural port protocol
  */
 
@@ -376,31 +407,18 @@ int Scm_Getc(ScmPort *port)
 static int null_getb(ScmPort *dummy)
     /*ARGSUSED*/
 {
-    return EOF;
+    return SCM_CHAR_INVALID;
 }
 
 static int null_getc(ScmPort *dummy)
     /*ARGSUSED*/
 {
-    return EOF;
+    return SCM_CHAR_INVALID;
 }
 
 static ScmObj null_getline(ScmPort *port)
 {
-    ScmPortVTable *vt = port->src.proc.vtable;
-    int ch = vt->Getc(port);
-    ScmDString ds;
-
-    if (ch == SCM_CHAR_INVALID) return SCM_EOF;
-
-    Scm_DStringInit(&ds);
-    for (;;) {
-        SCM_DSTRING_PUTC(&ds, ch);
-        ch = vt->Getc(port);
-        if (ch == '\n' || ch == SCM_CHAR_INVALID)
-            return Scm_DStringGet(&ds);
-    }
-    /*NOTREACHED*/
+    return readline_int(port);
 }
 
 static int null_ready(ScmPort *dummy)

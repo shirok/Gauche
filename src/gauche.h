@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.69 2001-03-11 09:42:36 shiro Exp $
+ *  $Id: gauche.h,v 1.70 2001-03-11 21:16:40 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -754,6 +754,8 @@ extern void Scm_Flush(ScmPort *port);
 extern void Scm_Ungetc(ScmChar ch, ScmPort *port);
 extern int Scm_Getb(ScmPort *port);
 extern int Scm_Getc(ScmPort *port);
+
+extern ScmObj Scm_ReadLine(ScmPort *port);
 
 #define SCM_CURIN    SCM_VM_CURRENT_INPUT_PORT(Scm_VM())
 #define SCM_CUROUT   SCM_VM_CURRENT_OUTPUT_PORT(Scm_VM())
