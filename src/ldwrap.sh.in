@@ -1,0 +1,16 @@
+#!/bin/sh
+# Wrapper to link gosh with shared library libgauche
+
+host="@host@"
+cc="@CC@"
+
+case "$host" in 
+  *cygwin*)
+    dlltool --export-all --output-def gauche.def "$@"
+    dllwrap --def gauche.def -o @LIBGAUCHE_SO@ "$@"
+    ;;
+  *)  
+    $cc @SHLIB_DYLIB_LDFLAGS@ @LIBGAUCHE_SO@ "$@"
+    ;;
+esac
+
