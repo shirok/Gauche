@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: util.scm,v 1.11 2002-05-15 05:25:43 shirok Exp $
+;;;  $Id: util.scm,v 1.12 2002-06-13 05:35:53 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -38,6 +38,7 @@
           file-atime=? file-atime<? file-atime<=? file-atime>? file-atime>=?
           file-ctime=? file-ctime<? file-ctime<=? file-ctime>? file-ctime>=?
           touch-file copy-file move-file
+          file->string file->string-list file->list file->sexp-list
           ))
 (select-module file.util)
 
@@ -456,10 +457,22 @@
           (do-copying)))
     ))
 
-
-
-
 ;; copy-directory
 ;; move-directory
+
+;; file->string, file->list, file->string-list, file->sexp-list
+;; shortcuts of port->string, port->list, port->string-list adn port->sexp-list
+
+(define (file->string file . opts)
+  (apply call-with-input-file file port->string opts))
+
+(define (file->list reader file . opts)
+  (apply call-with-input-file file (pa$ port->list reader) opts))
+
+(define (file->string-list file . opts)
+  (apply call-with-input-file file (pa$ port->list read-line) opts))
+
+(define (file->sexp-list file . opts)
+  (apply call-with-input-file file (pa$ port->list read) opts))
 
 (provide "file/util")
