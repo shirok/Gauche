@@ -1,0 +1,29 @@
+#
+# Makefile.in for Gauche/lib
+#
+#  $Id: Makefile.in,v 1.1 2001-02-14 10:08:51 shiro Exp $
+#
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+SCM_INSTALL_DIR = @libdir@/gauche/@GAUCHE_VERSION@/lib
+
+SCMS = srfi-1.scm
+
+INSTALL=@INSTALL@
+
+all :
+
+clean :
+	rm -f core *~ vm/*~
+
+distclean : clean
+	rm -f Makefile
+
+realclean : clean
+	rm -f Makefile
+
+install : all
+	for f in $(SCMS); do \
+	  $(INSTALL) -m 444 $$f $(SCM_INSTALL_DIR); \
+	done
