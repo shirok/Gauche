@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.1 2001-03-24 09:50:16 shiro Exp $
+;;;  $Id: object.scm,v 1.2 2001-03-24 10:45:22 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -204,8 +204,8 @@
   (let ((alloc (get-keyword :allocation (cdr slot) :instance)))
     (case alloc
       ((:instance)
-       (let ((num (slot-ref <class> 'num-instance-slots)))
-         (slot-set! <class> 'num-instance-slots (+ num 1))
+       (let ((num (slot-ref class 'num-instance-slots)))
+         (slot-set! class 'num-instance-slots (+ num 1))
          num))
       ((:builtin)
        (let ((acc (get-keyword :accessor (cdr slot) #f)))
