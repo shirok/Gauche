@@ -37,9 +37,7 @@
      (for-each (lambda (var) . body) list))))
 
 (define (signum num)
-  (cond ((positive? num) 1)
-        ((negative? num) -1)
-        (else 0)))
+  (if (zero? num) num (/ num (abs num))))
 
 (define rest cdr)
 
@@ -74,8 +72,9 @@
 (defun comment-line (stream . stuff)
   (format stream "\n% ")
   (apply format stream stuff)
-  (format #t "\n% ")
-  (apply format #t stuff))
+  ;(format #t "\n% ")
+  ;(apply format #t stuff)
+  )
 
 (defun parametric-path (from to paramfn plotfn)
   (check-arg positive? from)
@@ -107,7 +106,7 @@
                               (close f2 f3))
                          (and (not (close f0 f1))
                               (not (close f2 f3)))))
-            (format #t "Periodicity detected.")
+            (format #t "\nPeriodicity detected.")
             (set! to (+ from (* (signum (- to from)) 2 pi)))))))
      (let ((fromrange (ignore-errors (rangeval from)))
            (torange (ignore-errors (rangeval to))))
@@ -286,7 +285,7 @@
         (straight-line -5 5 axisline stream)
         (dotimes (j (floor units-to-show))
                  (let ((q (+ j 1))) (tick q) (tick (- q))))
-        (dotimes (j (floor units-to-show (/ pi 2)))
+        (dotimes (j (floor (/ units-to-show (/ pi 2))))
                  (let ((q (* (/ pi 2) (+ j 1))))
                    (smalltick q)
                    (smalltick (- q)))))
@@ -304,7 +303,7 @@
       (straight-line -5i +5i axisline stream)
       (dotimes (j (floor units-to-show))
         (let ((q (+ j 1))) (tick q) (tick (- q))))
-      (dotimes (j (floor units-to-show (/ pi 2)))
+      (dotimes (j (floor (/ units-to-show (/ pi 2))))
         (let ((q (* (/ pi 2) (+ j 1))))
           (smalltick q)
           (smalltick (- q))))))))
@@ -368,18 +367,19 @@
 (defun splice (p q)
   (let ((v (last p))
         (w (first q)))
-    (and (far-out v)
-         (far-out w)
-         (>= (abs (- v w)) path-outer-delta)
-         ;; Two far-apart far-out points.  Try to walk around
-         ;;  outside the perimeter, in the shorter direction.
-         (let* ((pdiff (angle (/ v w)))
-                (npoints (floor (abs pdiff) (asin .2)))
-                (delta (/ pdiff (+ npoints 1)))
-                (incr (cis delta)))
-           (do ((j 0 (+ j 1))
-                (p (list w "end splice") (cons (* (car p) incr) p)))
-               ((= j npoints) (cons "start splice" p)))))))
+    (if (and (far-out v)
+             (far-out w)
+             (>= (abs (- v w)) path-outer-delta))
+        ;; Two far-apart far-out points.  Try to walk around
+        ;;  outside the perimeter, in the shorter direction.
+        (let* ((pdiff (angle (/ v w)))
+               (npoints (floor (abs pdiff) (asin .2)))
+               (delta (/ pdiff (+ npoints 1)))
+               (incr (cis delta)))
+          (do ((j 0 (+ j 1))
+               (p (list w "end splice") (cons (* (car p) incr) p)))
+              ((= j npoints) (cons "start splice" p))))
+        '())))
 
 ;;; This function draws the annuli for the pattern.
 (defun shaded-annulus (inner outer sectors firstshade lastshade fn stream)
@@ -470,7 +470,7 @@
   (format stream "\nnewpath")
   (let ((fmt "\n  ~S ~S moveto"))
     (dolist (pt path)
-      (cond ((stringp pt)
+      (cond ((string? pt)
              (format stream "\n  %~A" pt))
             (else (format stream
                        fmt
@@ -512,25 +512,25 @@
   (call-with-output-file (string-append (string-downcase name)
                                         "-plot.ps")
     (lambda (stream)
-    (format stream "% PostScript file for plot of function ~S\n" fn)
-    (format stream "% Plot is to fit in a region ~S inches square\n"
-            (/ text-width-in-picas 6.0))
-    (format stream
-            "%  showing axes extending ~S units from the origin.\n"
-            units-to-show)
-    (let ((scaling (/ (* text-width-in-picas 12) (* units-to-show 2))))
-      (format stream "\n~S ~S scale" scaling scaling))
-    (format stream "\n~S ~S translate" units-to-show units-to-show)
-    (format stream "\nnewpath")
-    (format stream "\n  ~S ~S moveto" (- units-to-show) (- units-to-show))
-    (format stream "\n  ~S ~S lineto" units-to-show (- units-to-show))
-    (format stream "\n  ~S ~S lineto" units-to-show units-to-show)
-    (format stream "\n  ~S ~S lineto" (- units-to-show) units-to-show)
-    (format stream "\n  closepath")
-    (format stream "\nclip")
-    (moby-grid fn stream)
-    (format stream
-            "\n% End of PostScript file for plot of function ~S"
-            fn)
-    (newline stream))))
+      (format stream "% PostScript file for plot of function ~S\n" fn)
+      (format stream "% Plot is to fit in a region ~S inches square\n"
+              (/ text-width-in-picas 6.0))
+      (format stream
+              "%  showing axes extending ~S units from the origin.\n"
+              units-to-show)
+      (let ((scaling (/ (* text-width-in-picas 12) (* units-to-show 2))))
+        (format stream "\n~S ~S scale" scaling scaling))
+      (format stream "\n~S ~S translate" units-to-show units-to-show)
+      (format stream "\nnewpath")
+      (format stream "\n  ~S ~S moveto" (- units-to-show) (- units-to-show))
+      (format stream "\n  ~S ~S lineto" units-to-show (- units-to-show))
+      (format stream "\n  ~S ~S lineto" units-to-show units-to-show)
+      (format stream "\n  ~S ~S lineto" (- units-to-show) units-to-show)
+      (format stream "\n  closepath")
+      (format stream "\nclip")
+      (moby-grid fn stream)
+      (format stream
+              "\n% End of PostScript file for plot of function ~S"
+              fn)
+      (newline stream))))
 
