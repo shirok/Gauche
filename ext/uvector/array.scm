@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: array.scm,v 1.3 2002-06-28 19:16:41 shirok Exp $
+;;;  $Id: array.scm,v 1.4 2002-06-29 07:35:31 shirok Exp $
 ;;;
 
 ;; Conceptually, an array is a backing storage and a procedure to
@@ -400,7 +400,7 @@
                       (end-vector-of ar)
                       o))
 
-(define (shape-for-each-index sh proc . o)
+(define (shape-for-each sh proc . o)
   (let* ((rank (array-end sh 0))
          (ser  (iota rank)))
     (array-for-each-int proc
