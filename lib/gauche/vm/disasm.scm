@@ -1,6 +1,19 @@
 ;;;
 ;;; Disassembler - print VM compiled code in (sort of) human-readable way
 ;;;
+;;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;;
+;;;  Permission to use, copy, modify, distribute this software and
+;;;  accompanying documentation for any purpose is hereby granted,
+;;;  provided that existing copyright notices are retained in all
+;;;  copies and that this notice is included verbatim in all
+;;;  distributions.
+;;;  This software is provided as is, without express or implied
+;;;  warranty.  In no circumstances the author(s) shall be liable
+;;;  for any damages arising out of the use of this software.
+;;;
+;;;  $Id: disasm.scm,v 1.7 2001-09-28 10:00:55 shirok Exp $
+;;;
 
 (define-module gauche.vm.disasm
   (use srfi-1)
