@@ -209,7 +209,7 @@ of an array.
 
 @example
 (shape 0 2 1 3 3 5)
- @result{} #,(<array> (0 3 0 2) 0 1 3 2 3 5)
+ @result{} #,(<array> (0 3 0 2) 0 2 1 3 3 5)
 
 (shape)
  @result{} #,(<array> (0 0 0 2))
