@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: ndbm.stub,v 1.1 2001-10-20 11:19:02 shirok Exp $
+;;  $Id: ndbm.stub,v 1.2 2001-10-20 11:29:14 shirok Exp $
 ;;
 
 "
@@ -69,7 +69,7 @@
   "ScmNdbm *z = SCM_NEW(ScmNdbm);
   SCM_SET_CLASS(z, SCM_CLASS_NDBM);
   z->name = SCM_OBJ(name);
-  z->dbf = ndbm_open(Scm_GetString(name), flags, mode);
+  z->dbf = dbm_open(Scm_GetString(name), flags, mode);
   if (z->dbf == NULL) Scm_SysError(\"couldn't open ndbm file %S\", name);
   SCM_RETURN(SCM_OBJ(z));")
 
