@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: html-lite.scm,v 1.3 2001-11-09 07:43:06 shirok Exp $
+;;;  $Id: html-lite.scm,v 1.4 2001-11-10 10:33:48 shirok Exp $
 ;;;
 
 (define-module text.html-lite
@@ -35,34 +35,35 @@
 (define (html-escape-string string)
   (with-string-io string html-escape))
 
-(define (make-attribute attrspecs)
-  (map (lambda (spec)
-         (list " "
-               (if (pair? spec)
-                   (list (car spec)
-                         (format #f "=~s"
-                                 (html-escape-string (cadr spec))))
-                   spec)))
-       attrspecs))
-
 (define (make-html-element name . args)
   (let ((empty? (get-keyword :empty? args #f)))
-    (define (get-attr args)
-      (if (and (pair? args)
-               (pair? (car args))
-               (eq? (caar args) '@))
-          (values (make-attribute (cdar args)) (cdr args))
-          (values '() args)))
+    (define (get-attr args attrs)
+      (cond ((null? args) (values (reverse attrs) args))
+            ((keyword? (car args))
+             (cond ((null? (cdr args))
+                    (values (reverse (list* (car args) " " attrs)) args))
+                   ((eq? (cadr args) #f)
+                    (get-attr (cddr args) attrs))
+                   ((eq? (cadr args) #t)
+                    (get-attr (cddr args) (list* (car args) " " attrs)))
+                   (else
+                    (get-attr (cddr args)
+                              (list* (format #f "=~s"
+                                             (html-escape-string (x->string (cadr args))))
+                                     (car args)
+                                     " "
+                                     attrs)))))
+            (else (values (reverse attrs) args))))
 
     (if empty?
         (lambda args
-          (receive (attr args) (get-attr args)
+          (receive (attr args) (get-attr args '())
             (unless (null? args)
               (error "element ~s can't have content: ~s" args))
-            (list "<" name attr ">")))
+            (list "<" name attr ">\n")))
         (lambda args
-          (receive (attr args) (get-attr args)
-            (list "<" name attr ">" args "</" name ">"))))))
+          (receive (attr args) (get-attr args '())
+            (list "<" name attr ">" args "</" name ">\n"))))))
 
 (define-macro (define-html-elements . elements)
   (define (make-scheme-name name)
