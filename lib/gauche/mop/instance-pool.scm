@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: instance-pool.scm,v 1.2 2002-10-14 01:50:39 shirok Exp $
+;;;  $Id: instance-pool.scm,v 1.3 2003-01-03 11:14:01 shirok Exp $
 ;;;
 
 ;; EXPERIMENTAL.   THE API MAY CHANGE.
@@ -22,9 +22,9 @@
   (use util.queue)
   (export <instance-pool-meta> <instance-pool-mixin>
           <instance-table-meta> <instance-table-mixin>
-          instance-pool->list instance-pool-find instance-pool-remove
+          instance-pool->list instance-pool-find instance-pool-remove!
           instance-pool:create-pool instance-pool:compute-pools
-          instance-pool:add instance-pool:find instance-pool:remove
+          instance-pool:add instance-pool:find instance-pool:remove!
           instance-pool:->list)
   )
 (select-module gauche.mop.instance-pool)
@@ -118,19 +118,22 @@
 
 (define-method instance-pool-find ((class <instance-pool-meta>) pred)
   (cond ((instance-pool-of class) => (cut instance-pool:find <> pred))
-        (else (map instance-pool-find (instance-pools-of class)))))
+        (else (map (cut instance-pool:find <> pred) (instance-pools-of class)))
+        ))
 
-(define-method instance-pool-remove ((class <instance-pool-meta>) pred)
-  (cond ((instance-pool-of class) => (cut instance-pool:remove <> pred))
-        (else (map instance-pool-find (instance-pools-of class)))))
+(define-method instance-pool-remove! ((class <instance-pool-meta>) pred)
+  (cond ((instance-pool-of class) => (cut instance-pool:remove! <> pred))
+        (else (map (cut instance-pool:remove! <> pred)
+                   (instance-pools-of class)))
+        ))
 
 ;; The operations to the instance propagates to its class
 (define-method instance-pool->list ((self <instance-pool-mixin>))
   (instance-pool->list (class-of self)))
 (define-method instance-pool-find ((self <instance-pool-mixin>) pred)
   (instance-pool-find (class-of self)))
-(define-method instance-pool-remove ((self <instance-pool-mixin>) pred)
-  (instance-pool-remove (class-of self)))
+(define-method instance-pool-remove! ((self <instance-pool-mixin>) pred)
+  (instance-pool-remove! (class-of self)))
 
 (provide "gauche/mop/instance-pool")
 
