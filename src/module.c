@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.32 2002-08-01 01:11:02 shirok Exp $
+ *  $Id: module.c,v 1.33 2002-08-17 07:05:07 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -160,6 +160,7 @@ ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
 {
     ScmGloc *g;
     ScmHashEntry *e;
+    ScmObj oldval = SCM_UNDEFINED;
     int redefining = FALSE;
 
     (void)SCM_INTERNAL_MUTEX_LOCK(module->mutex);
@@ -167,7 +168,10 @@ ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
     /* NB: this function bypasses check of gloc setter */
     if (e) {
         g = SCM_GLOC(e->value);
-        if (SCM_GLOC_CONST_P(g) && g->value != value) redefining = TRUE;
+        if (SCM_GLOC_CONST_P(g)) {
+            redefining = TRUE;
+            oldval = g->value;
+        }
         g->setter = Scm_GlocConstSetter;
         g->value  = value;
     } else {
@@ -177,7 +181,7 @@ ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(module->mutex);
 
-    if (redefining) {
+    if (redefining && !Scm_EqualP(value, oldval)) {
         Scm_Warn("redefining constant %S::%S", g->module->name, g->name);
     }
     return SCM_OBJ(g);
