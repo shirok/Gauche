@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.95 2002-09-19 20:17:27 shirok Exp $
+;;; $Id: stdlib.stub,v 1.96 2002-12-12 06:16:08 shirok Exp $
 ;;;
 
 
@@ -114,13 +114,13 @@
   "ScmObj r; Scm_MinMax(arg0, args, &r, NULL); SCM_RETURN(r);")
 
 "/* inliner for `+' */
-static inline ScmObj immediate_integer_inliner(long insn, long arg0, ScmObj arg1, ScmObj env)
+static ScmObj immediate_integer_inliner(long insn, long arg0, ScmObj arg1, ScmObj env)
 {
   return Scm_Append2X(Scm_Compile(arg1, env, SCM_COMPILE_NORMAL),
                       Scm_Cons(SCM_VM_INSN1(insn, arg0), SCM_NIL));
 }
 
-static inline ScmObj num2op_inliner(long insn, ScmObj arg0, ScmObj arg1, ScmObj env)
+static ScmObj num2op_inliner(long insn, ScmObj arg0, ScmObj arg1, ScmObj env)
 {
   return Scm_CompileInliner(SCM_LIST3(SCM_FALSE, arg0, arg1), env,
                             2, 0, insn, \"\");
@@ -361,62 +361,40 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   SCM_SET_C##PRE##R(cell, value); SCM_RETURN(SCM_UNDEFINED);
 "
 
-(define-cproc caar (obj)    "SCM_RETURN(Scm_Caar(obj));"
-  (setter (obj value)       "CXR_SETTER(A, a, a);"))
-(define-cproc cadr (obj)    "SCM_RETURN(Scm_Cadr(obj));"
-  (setter (obj value)       "CXR_SETTER(A, a, d);"))
-(define-cproc cdar (obj)    "SCM_RETURN(Scm_Cdar(obj));"
-  (setter (obj value)       "CXR_SETTER(D, d, a);"))
-(define-cproc cddr (obj)    "SCM_RETURN(Scm_Cddr(obj));"
-  (setter (obj value)       "CXR_SETTER(D, d, d);"))
-(define-cproc caaar (obj)   "SCM_RETURN(Scm_Caaar(obj));"
-  (setter (obj value)       "CXR_SETTER(A, a, aa);"))
-(define-cproc caadr (obj)   "SCM_RETURN(Scm_Caadr(obj));"
-  (setter (obj value)       "CXR_SETTER(A, a, ad);"))
-(define-cproc cadar (obj)   "SCM_RETURN(Scm_Cadar(obj));"
-  (setter (obj value)       "CXR_SETTER(A, a, da);"))
-(define-cproc caddr (obj)   "SCM_RETURN(Scm_Caddr(obj));"
-  (setter (obj value)       "CXR_SETTER(A, a, dd);"))
-(define-cproc cdaar (obj)   "SCM_RETURN(Scm_Cdaar(obj));"
-  (setter (obj value)       "CXR_SETTER(D, d, aa);"))
-(define-cproc cdadr (obj)   "SCM_RETURN(Scm_Cdadr(obj));"
-  (setter (obj value)       "CXR_SETTER(D, d, ad);"))
-(define-cproc cddar (obj)   "SCM_RETURN(Scm_Cddar(obj));"
-  (setter (obj value)       "CXR_SETTER(D, d, da);"))
-(define-cproc cdddr (obj)   "SCM_RETURN(Scm_Cdddr(obj));"
-  (setter (obj value)       "CXR_SETTER(D, d, dd);"))
-(define-cproc caaaar (obj)  "SCM_RETURN(Scm_Caaaar(obj));"
-  (setter (obj value)       "CXR_SETTER(A, a, aaa);"))
-(define-cproc caaadr (obj)  "SCM_RETURN(Scm_Caaadr(obj));"
-  (setter (obj value)       "CXR_SETTER(A, a, aad);"))
-(define-cproc caadar (obj)  "SCM_RETURN(Scm_Caadar(obj));"
-  (setter (obj value)       "CXR_SETTER(A, a, ada);"))
-(define-cproc caaddr (obj)  "SCM_RETURN(Scm_Caaddr(obj));"
-  (setter (obj value)       "CXR_SETTER(A, a, add);"))
-(define-cproc cadaar (obj)  "SCM_RETURN(Scm_Cadaar(obj));"
-  (setter (obj value)       "CXR_SETTER(A, a, daa);"))
-(define-cproc cadadr (obj)  "SCM_RETURN(Scm_Cadadr(obj));"
-  (setter (obj value)       "CXR_SETTER(A, a, dad);"))
-(define-cproc caddar (obj)  "SCM_RETURN(Scm_Caddar(obj));"
-  (setter (obj value)       "CXR_SETTER(A, a, dda);"))
-(define-cproc cadddr (obj)  "SCM_RETURN(Scm_Cadddr(obj));"
-  (setter (obj value)       "CXR_SETTER(A, a, ddd);"))
-(define-cproc cdaaar (obj)  "SCM_RETURN(Scm_Cdaaar(obj));"
-  (setter (obj value)       "CXR_SETTER(D, d, aaa);"))
-(define-cproc cdaadr (obj)  "SCM_RETURN(Scm_Cdaadr(obj));"
-  (setter (obj value)       "CXR_SETTER(D, d, aad);"))
-(define-cproc cdadar (obj)  "SCM_RETURN(Scm_Cdadar(obj));"
-  (setter (obj value)       "CXR_SETTER(D, d, ada);"))
-(define-cproc cdaddr (obj)  "SCM_RETURN(Scm_Cdaddr(obj));"
-  (setter (obj value)       "CXR_SETTER(D, d, add);"))
-(define-cproc cddaar (obj)  "SCM_RETURN(Scm_Cddaar(obj));"
-  (setter (obj value)       "CXR_SETTER(D, d, daa);"))
-(define-cproc cddadr (obj)  "SCM_RETURN(Scm_Cddadr(obj));"
-  (setter (obj value)       "CXR_SETTER(D, d, dad);"))
-(define-cproc cdddar (obj)  "SCM_RETURN(Scm_Cdddar(obj));"
-  (setter (obj value)       "CXR_SETTER(D, d, dda);"))
-(define-cproc cddddr (obj)  "SCM_RETURN(Scm_Cddddr(obj));"
-  (setter (obj value)       "CXR_SETTER(D, d, ddd);"))
+"static ScmObj cxxr_inliner(ScmObj form, ScmObj env,
+                            const char *name, int insn1, int insn2)
+ {
+   ScmObj h = SCM_NIL, t = SCM_NIL;
+   if (Scm_Length(form) != 2)
+     Scm_Error(\"%s requires exactly one argument\", name);
+   SCM_APPEND(h, t, Scm_Compile(SCM_CADR(form), env, SCM_COMPILE_NORMAL));
+   SCM_APPEND1(h, t, SCM_VM_INSN(insn1));
+   SCM_APPEND1(h, t, SCM_VM_INSN(insn2));
+   return h;
+ }
+ static ScmObj caar_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
+ { return cxxr_inliner(form, env, \"caar\", SCM_VM_CAR, SCM_VM_CAR); }
+ static ScmObj cadr_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
+ { return cxxr_inliner(form, env, \"cadr\", SCM_VM_CDR, SCM_VM_CAR); }
+ static ScmObj cdar_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
+ { return cxxr_inliner(form, env, \"cdar\", SCM_VM_CAR, SCM_VM_CDR); }
+ static ScmObj cddr_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
+ { return cxxr_inliner(form, env, \"cddr\", SCM_VM_CDR, SCM_VM_CDR); }
+"
+
+(define-cproc caar (obj)
+  (inliner (proc "caar_inliner")) "SCM_RETURN(Scm_Caar(obj));"
+  (setter (obj value) "CXR_SETTER(A, a, a);"))
+(define-cproc cadr (obj)
+  (inliner (proc "cadr_inliner")) "SCM_RETURN(Scm_Cadr(obj));"
+  (setter (obj value) "CXR_SETTER(A, a, d);"))
+(define-cproc cdar (obj)
+  (inliner (proc "cdar_inliner")) "SCM_RETURN(Scm_Cdar(obj));"
+  (setter (obj value) "CXR_SETTER(D, d, a);"))
+(define-cproc cddr (obj)
+  (inliner (proc "cddr_inliner")) "SCM_RETURN(Scm_Cddr(obj));"
+  (setter (obj value) "CXR_SETTER(D, d, d);"))
+;; NB: caaar ... cddddr are in autoloaded Scheme file now.
 
 (define-cproc null? (obj)
   (inliner "SCM_VM_NULLP")

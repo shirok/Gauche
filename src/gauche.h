@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.311 2002-12-10 10:07:48 shirok Exp $
+ *  $Id: gauche.h,v 1.312 2002-12-12 06:16:08 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -76,7 +76,7 @@ SCM_DECL_BEGIN
 
 /* This defines several auxiliary routines that are useful for debugging */
 #ifndef SCM_DEBUG_HELPER
-#define SCM_DEBUG_HELPER      TRUE
+#define SCM_DEBUG_HELPER      FALSE
 #endif
 
 #define SCM_INLINE_MALLOC_PRIMITIVES
@@ -278,12 +278,12 @@ SCM_EXTERN int Scm_SupportedCharacterEncodingP(const char *encoding);
 #endif /* __CYGWIN__ */
 
 typedef struct ScmHeaderRec {
-    ScmClass *klass;
+    ScmClass *klass;            /* private */
 } ScmHeader;
 
 #define SCM_HEADER       ScmHeader hdr /* for declaration */
 
-/* Only these two macros should be used to access header's klass field. */
+/* Only these two macros can access header's klass field. */
 #ifdef __CYGWIN__
 #define SCM_CLASS_OF(obj)      (*((ScmClass**)(SCM_OBJ(obj)->klass)))
 #define SCM_SET_CLASS(obj, k)  (SCM_OBJ(obj)->klass = (ScmClass*)((k)->classPtr))
@@ -292,8 +292,13 @@ typedef struct ScmHeaderRec {
 #define SCM_SET_CLASS(obj, k)  (SCM_OBJ(obj)->klass = (k))
 #endif /* !__CYGWIN__ */
 
+/* Check if classof(OBJ) equals to an exteded class KLASS */
 #define SCM_XTYPEP(obj, klass) (SCM_PTRP(obj)&&(SCM_CLASS_OF(obj)==(klass)))
 
+/* Check if classof(OBJ) is a subtype of an extended class KLASS */
+#define SCM_ISA(obj, klass)    (SCM_XTYPEP(obj,klass)||Scm_TypeP(obj,klass))
+
+/* Fundamental allocators */
 #define SCM_MALLOC(size)          GC_MALLOC(size)
 #define SCM_MALLOC_ATOMIC(size)   GC_MALLOC_ATOMIC(size)
 
@@ -306,7 +311,7 @@ typedef void (*ScmFinalizerProc)(ScmObj z, void *data);
 SCM_EXTERN void Scm_RegisterFinalizer(ScmObj z, ScmFinalizerProc finalizer,
                                       void *data);
 
-/* safe coercer */
+/* Safe coercer */
 #define SCM_OBJ_SAFE(obj)     ((obj)?SCM_OBJ(obj):SCM_UNDEFINED)
 
 typedef struct ScmVMRec        ScmVM;
@@ -438,8 +443,11 @@ typedef struct ScmClassStaticSlotSpecRec ScmClassStaticSlotSpec;
 enum {
     SCM_CLASS_BUILTIN = 0x01,   /* true if builtin class */
     SCM_CLASS_FINAL = 0x02,     /* true if the class is final */
-    SCM_CLASS_APPLICABLE = 0x04 /* true if the instance is an applicable
-                                   object. */
+    SCM_CLASS_APPLICABLE = 0x04 /* true if the instance is "natively
+                                   applicable" object, such as suprs, closures
+                                   or generic functions.  Other objects are
+                                   applicable only if object-apply method
+                                   is defined. */
 };
 
 #define SCM_CLASS_FLAGS(obj)     (SCM_CLASS(obj)->flags)
@@ -584,7 +592,7 @@ SCM_CLASS_DECL(Scm_NullClass);
 
 #define SCM_LISTP(obj)          (SCM_NULLP(obj) || SCM_PAIRP(obj))
 
-/* Useful macros to manipulating lists. */
+/* Useful macros to manipulate lists. */
 
 #define	SCM_FOR_EACH(p, list) \
     for((p) = (list); SCM_PAIRP(p); (p) = SCM_CDR(p))
@@ -635,30 +643,6 @@ SCM_EXTERN ScmObj Scm_Caar(ScmObj obj);
 SCM_EXTERN ScmObj Scm_Cadr(ScmObj obj);
 SCM_EXTERN ScmObj Scm_Cdar(ScmObj obj);
 SCM_EXTERN ScmObj Scm_Cddr(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Caaar(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Caadr(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Cadar(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Caddr(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Cdaar(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Cdadr(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Cddar(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Cdddr(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Caaaar(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Caaadr(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Caadar(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Caaddr(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Cadaar(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Cadadr(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Caddar(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Cadddr(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Cdaaar(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Cdaadr(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Cdadar(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Cdaddr(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Cddaar(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Cddadr(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Cdddar(ScmObj obj);
-SCM_EXTERN ScmObj Scm_Cddddr(ScmObj obj);
 
 SCM_EXTERN int    Scm_Length(ScmObj obj);
 SCM_EXTERN ScmObj Scm_CopyList(ScmObj list);

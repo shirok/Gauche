@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.186 2002-12-10 12:39:25 shirok Exp $
+;;; $Id: extlib.stub,v 1.187 2002-12-12 06:16:08 shirok Exp $
 ;;;
 
 "
@@ -195,16 +195,6 @@
 
 (define-cproc %alist-delete! (elt list::<list> &optional cmpmode)
   "  SCM_RETURN(Scm_AssocDeleteX(elt, list, getcmpmode(cmpmode)));")
-
-;; SRFI-1 has this.
-;(define-cproc union (&rest args)        ;use eq? to compare.
-;  (assert (list? args))
-;  "  ScmObj set, ap;
-;  if (SCM_NULLP(args)) SCM_RETURN(SCM_NIL);
-;  set = SCM_CAR(args);
-;  SCM_FOR_EACH(ap, SCM_CDR(args))
-;    set = Scm_Union(set, SCM_CAR(ap));
-;  SCM_RETURN(set);")
 
 (define-cproc append! (&rest list)
   "  ScmObj cp, h = SCM_NIL, t = SCM_NIL;

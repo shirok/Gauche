@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.35 2002-12-04 02:34:49 shirok Exp $
+ *  $Id: list.c,v 1.36 2002-12-12 06:16:08 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -182,37 +182,12 @@ ScmObj cname (ScmObj obj)                       \
    if (!SCM_PAIRP(obj2)) Scm_Error("bad object: %S", obj);      \
    obj2 = SCM_CDR(obj2);
 
-
 CXR(Scm_Car, "car", A)
 CXR(Scm_Cdr, "cdr", D)
 CXR(Scm_Caar, "caar", A A)
 CXR(Scm_Cadr, "cadr", D A)
 CXR(Scm_Cdar, "cdar", A D)
 CXR(Scm_Cddr, "cddr", D D)
-CXR(Scm_Caaar, "caaar", A A A)
-CXR(Scm_Caadr, "caadr", D A A)
-CXR(Scm_Cadar, "cadar", A D A)
-CXR(Scm_Caddr, "caddr", D D A)
-CXR(Scm_Cdaar, "cdaar", A A D)
-CXR(Scm_Cdadr, "cdadr", D A D)
-CXR(Scm_Cddar, "cddar", A D D)
-CXR(Scm_Cdddr, "cdddr", D D D)
-CXR(Scm_Caaaar, "caaaar", A A A A)
-CXR(Scm_Caaadr, "caaadr", D A A A)
-CXR(Scm_Caadar, "caadar", A D A A)
-CXR(Scm_Caaddr, "caaddr", D D A A)
-CXR(Scm_Cadaar, "cadaar", A A D A)
-CXR(Scm_Cadadr, "cadadr", D A D A)
-CXR(Scm_Caddar, "caddar", A D D A)
-CXR(Scm_Cadddr, "cadddr", D D D A)
-CXR(Scm_Cdaaar, "cdaaar", A A A D)
-CXR(Scm_Cdaadr, "cdaadr", D A A D)
-CXR(Scm_Cdadar, "cdadar", A D A D)
-CXR(Scm_Cdaddr, "cdaddr", D D A D)
-CXR(Scm_Cddaar, "cddaar", A A D D)
-CXR(Scm_Cddadr, "cddadr", D A D D)
-CXR(Scm_Cdddar, "cdddar", A D D D)
-CXR(Scm_Cddddr, "cddddr", D D D D)
 
 /*
  * List manipulate routines:

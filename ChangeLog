@@ -1,3 +1,10 @@
+2002-12-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/list.c, src/stdlib.stub, lib/gauche/listutil.scm : made
+	  caar..cddr be inlined.  got rid of less-frequently used
+	  caaar...cddddr from gosh core and defines them in autoloaded
+	  Scheme file.
+
 2002-12-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/regexp.c : made regexp printed as #/.../
