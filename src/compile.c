@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.34 2001-03-04 09:13:15 shiro Exp $
+ *  $Id: compile.c,v 1.35 2001-03-05 07:14:03 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1546,6 +1546,45 @@ static ScmSyntax syntax_receive = {
     NULL
 };
 
+/*------------------------------------------------------------------
+ * With-module
+ */
+
+static ScmObj compile_with_module(ScmObj form, ScmObj env, int ctx, void *data)
+{
+    ScmObj modname, body, module, code;
+    volatile ScmModule *current;
+
+    if (Scm_Length(form) < 2) Scm_Error("syntax error: %S", form);
+    modname = SCM_CADR(form);
+    body = SCM_CDDR(form);
+    if (!SCM_SYMBOLP(modname))
+        Scm_Error("with-module: bad module name: %S", modname);
+    module = Scm_FindModule(SCM_SYMBOL(modname));
+    if (!SCM_MODULEP(module))
+        Scm_Error("with-module: no such module: %S", modname);
+
+    current = Scm_CurrentModule();
+    SCM_PUSH_ERROR_HANDLER {
+        Scm_SelectModule(SCM_MODULE(module));
+        code = compile_body(body, env, ctx);
+    }
+    SCM_WHEN_ERROR {
+        Scm_SelectModule(SCM_MODULE(current));
+        SCM_PROPAGATE_ERROR;
+    }
+    SCM_POP_ERROR_HANDLER;
+    Scm_SelectModule(SCM_MODULE(current));
+    return code;
+}
+
+static ScmSyntax syntax_with_module = {
+    SCM_CLASS_SYNTAX,
+    SCM_SYMBOL(SCM_SYM_WITH_MODULE),
+    compile_with_module,
+    NULL
+};
+
 /*===================================================================
  * Initializer
  */
@@ -1578,4 +1617,5 @@ void Scm__InitCompiler(void)
     DEFSYN(SCM_SYM_DO,           syntax_do);
     DEFSYN(SCM_SYM_DELAY,        syntax_delay);
     DEFSYN(SCM_SYM_RECEIVE,      syntax_receive);
+    DEFSYN(SCM_SYM_WITH_MODULE,  syntax_with_module);
 }
