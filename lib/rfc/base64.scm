@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: base64.scm,v 1.2 2001-03-30 10:09:50 shiro Exp $
+;;;  $Id: base64.scm,v 1.3 2001-03-31 09:33:25 shiro Exp $
 ;;;
 
 ;; Implements Base64 encoding/decoding routine
@@ -51,23 +51,23 @@
     #\w #\x #\y #\z #\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\+ #\/
   ))
 
-(define *decode-table-1*  (make-vector 96 #f))
+(define *decode-table-0*  (make-vector 96 #f))
+(define *decode-table-1a* (make-vector 96 #f))
+(define *decode-table-1b* (make-vector 96 #f))
 (define *decode-table-2a* (make-vector 96 #f))
 (define *decode-table-2b* (make-vector 96 #f))
-(define *decode-table-3a* (make-vector 96 #f))
-(define *decode-table-3b* (make-vector 96 #f))
-(define *decode-table-4*  *decode-table*)
+(define *decode-table-3*  *decode-table*)
 
 (define (setup-decode-table)
   (do ((i 0 (+ i 1)))
       ((> i 96))
-    (let ((v (vector-ref *decode-table-1* i)))
-      (vector-set! *decode-table-1* i  (* v 4))
-      (vector-set! *decode-table-2a* i (quotient v 16))
-      (vector-set! *decode-table-2b* i (* (modulo v 16) 16))
-      (vector-set! *decode-table-3a* i (quotient v 4))
-      (vector-set! *decode-table-3b* i (* (modulo v 4) 64)))))
-
+    (let ((v (vector-ref *decode-table* i)))
+      (when v
+        (vector-set! *decode-table-0* i  (* v 4))
+        (vector-set! *decode-table-1a* i (quotient v 16))
+        (vector-set! *decode-table-1b* i (* (modulo v 16) 16))
+        (vector-set! *decode-table-2a* i (quotient v 4))
+        (vector-set! *decode-table-2b* i (* (modulo v 4) 64))))))
 
 
 
