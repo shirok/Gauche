@@ -1,7 +1,7 @@
 /*
  * gauche.h - Gauche scheme system header
  *
- *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2003 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.320 2003-01-01 13:33:24 shirok Exp $
+ *  $Id: gauche.h,v 1.321 2003-01-11 11:27:45 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1445,7 +1445,7 @@ SCM_CLASS_DECL(Scm_ModuleClass);
 
 SCM_EXTERN ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
 				    int stay_in_module);
-SCM_EXTERN ScmObj Scm_MakeModule(ScmSymbol *name);
+SCM_EXTERN ScmObj Scm_MakeModule(ScmSymbol *name, int error_if_exists);
 SCM_EXTERN ScmObj Scm_SymbolValue(ScmModule *module, ScmSymbol *symbol);
 SCM_EXTERN ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol,
 			     ScmObj value);

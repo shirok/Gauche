@@ -1,7 +1,7 @@
 /*
  * module.c - module implementation
  *
- *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2003 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.39 2002-09-03 00:30:57 shirok Exp $
+ *  $Id: module.c,v 1.40 2003-01-11 11:27:45 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -25,20 +25,33 @@
  *  The mapping is resolved at the compile time.   Therefore,
  *  Scheme's current-module is therefore a syntax, instead of
  *  a procedure, to capture compile-time information.
+ *
+ *  Modules are registered to global hash table using their names
+ *  as keys, so that the module is retrieved by its name.  The exception
+ *  is "anonymous modules", which have '#' as the name field
+ *  and not registered in the global table.   Anonymous modules are especially
+ *  useful for certain applications that need temporary, segregated
+ *  namespace---for example, a 'sandbox' environment to evaluate an
+ *  expression sent over the network during a session.
+ *  The anonymous namespace will be garbage-collected if nobody references
+ *  it, recovering its resouces.
  */
+static ScmObj anon_module_name = SCM_FALSE; /* symbol '#', set by init */
 
 static void module_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    Scm_Printf(port, "#<module %S>", SCM_MODULE(obj)->name);
+    Scm_Printf(port, "#<module %A>", SCM_MODULE(obj)->name);
 }
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_ModuleClass, module_print, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_ModuleClass,
+                         module_print, NULL, NULL, NULL,
                          SCM_CLASS_COLLECTION_CPL);
 
 /* Global module table */
 static struct {
-    ScmHashTable *table;
-    ScmInternalMutex mutex;
+    ScmHashTable *table;    /* Maps name -> module. */
+    ScmInternalMutex mutex; /* Lock for table.  Only register_module and
+                               lookup_module may hold the lock. */
 } modules;
 
 /* Predefined modules - slots will be initialized by Scm__InitModule */
@@ -66,10 +79,9 @@ static void init_module(ScmModule *m, ScmSymbol *name)
     m->mpl = Scm_Cons(SCM_OBJ(m), defaultMpl);
     m->table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 0));
     (void)SCM_INTERNAL_MUTEX_INIT(m->mutex);
-    Scm_HashTablePut(modules.table, SCM_OBJ(name), SCM_OBJ(m));
 }
 
-/* Internal.  Caller is responsible to lock the global module table */
+/* Internal */
 static ScmObj make_module(ScmSymbol *name)
 {
     ScmModule *m;
@@ -79,12 +91,51 @@ static ScmObj make_module(ScmSymbol *name)
     return SCM_OBJ(m);
 }
 
-ScmObj Scm_MakeModule(ScmSymbol *name)
+/* Internal.  Lookup module with name N from the table. */
+static ScmModule *lookup_module(ScmSymbol *name)
+{
+    ScmHashEntry *e;
+    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
+    e = Scm_HashTableGet(modules.table, SCM_OBJ(name));
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
+    if (e) return SCM_MODULE(e->value);
+    else return NULL;
+}
+
+/* Internal.  Lookup module, and if there's none, create one. */
+static ScmModule *lookup_module_create(ScmSymbol *name, int *created)
+{
+    ScmHashEntry *e;
+    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
+    e = Scm_HashTableAdd(modules.table, SCM_OBJ(name), SCM_FALSE);
+    if (e->value == SCM_FALSE) {
+        e->value = make_module(name);
+        *created = TRUE;
+    } else {
+        *created = FALSE;
+    }
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
+    return SCM_MODULE(e->value);
+}
+
+ScmObj Scm_MakeModule(ScmSymbol *name, int error_if_exists)
 {
     ScmObj r;
-    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
-    r = make_module(name);
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
+    if (name == NULL) name = SCM_SYMBOL(anon_module_name);
+    if (SCM_EQ(SCM_OBJ(name), anon_module_name)) {
+        r = make_module(name);
+    } else {
+        int created;
+        r = SCM_OBJ(lookup_module_create(name, &created));
+        if (!created) {
+            if (error_if_exists) {
+                Scm_Error("couldn't create module '%S': named module already exists",
+                          SCM_OBJ(name));
+            } else {
+                r = SCM_FALSE;
+            }
+        }
+    }
     return r;
 }
 
@@ -305,17 +356,16 @@ ScmObj Scm_ExtendModule(ScmModule *module, ScmObj supers)
 ScmObj Scm_FindModule(ScmSymbol *name, int createp)
 {
     ScmHashEntry *e;
-    ScmObj m;
+    ScmModule *m;
+    int created;
 
-    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
-    e = Scm_HashTableGet(modules.table, SCM_OBJ(name));
-    if (e == NULL) {
-        if (createp) m = make_module(name);
-        else m = SCM_FALSE;
+    if (createp) {
+        m = lookup_module_create(name, &created);
+    } else {
+        m = lookup_module(name);
     }
-    else m = e->value;
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
-    return m;
+    if (m) return SCM_OBJ(m);
+    else return SCM_FALSE;
 }
 
 ScmObj Scm_AllModules(void)
@@ -368,12 +418,14 @@ ScmModule *Scm_CurrentModule(void)
     return Scm_VM()->module;
 }
 
-#define INIT_MOD(mod, name, mpl)                                           \
-    do {                                                                   \
-        SCM_SET_CLASS(&mod, SCM_CLASS_MODULE);                             \
-        init_module(&mod, SCM_SYMBOL(name));                               \
-        mod.parents = (SCM_NULLP(mpl)? SCM_NIL : SCM_LIST1(SCM_CAR(mpl))); \
-        mpl = mod.mpl = Scm_Cons(SCM_OBJ(&mod), mpl);                      \
+/* NB: we don't need to lock the global module table */
+#define INIT_MOD(mod, mname, mpl)                                           \
+    do {                                                                    \
+        SCM_SET_CLASS(&mod, SCM_CLASS_MODULE);                              \
+        init_module(&mod, SCM_SYMBOL(mname));                               \
+        Scm_HashTablePut(modules.table, SCM_OBJ((mod).name), SCM_OBJ(&mod));\
+        mod.parents = (SCM_NULLP(mpl)? SCM_NIL : SCM_LIST1(SCM_CAR(mpl)));  \
+        mpl = mod.mpl = Scm_Cons(SCM_OBJ(&mod), mpl);                       \
     } while (0)
 
 void Scm__InitModule(void)
@@ -392,4 +444,6 @@ void Scm__InitModule(void)
     mpl = SCM_CDR(mpl);  /* default mpl doesn't include user module */
     defaultParents = SCM_LIST1(SCM_CAR(mpl));
     defaultMpl = mpl;
+
+    anon_module_name = SCM_INTERN("#");
 }

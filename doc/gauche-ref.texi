@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.338 2003-01-09 12:12:42 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.339 2003-01-11 11:27:44 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -4045,11 +4045,76 @@ If the named module doesn't exist, @code{#f} is returned.
 @c COMMON
 @end defun
 
+@defun make-module name &keyword if-exists
+@c EN
+Creates and returns a module that has symbol @var{name}.
+If the named module already exists, the behavior is specified by
+@var{if-exists} keyword argument.  If it is @code{:error} (default),
+an error is signalled.  If it is @code{#f}, @code{#f} is returned.
+@c JP
+シンボルの名前@var{name}を持つモジュールを作成して返します。
+その名前を持つモジュールが既に存在していた場合、その動作は
+@var{if-exists}キーワード引数で指定されます。
+@var{if-exists}引数が@code{:error}である場合（デフォルト）、
+エラーが報告されます。それが@code{#f}である場合は単に@code{#f}が返されます。
+@c COMMON
+
+@c EN
+Note that creating modules on-the-fly isn't usually necessary
+for ordinal scripts, since to execute already written program requires modules
+to be specified by name, i.e. syntax @code{define-module}, @code{import},
+@code{extend}, @code{with-module} all takes module names, not
+modules.  It is because module are inherently compile-time structure.
+However, there are some cases that dynamically created modules
+are useful, especially the program itself is dynamically created.
+You can pass a module to @code{eval} to compile and
+evaluate such dynamically created
+programs in it (@xref{Eval and repl}).
+@c JP
+モジュールを実行時に動的に生成することは、通常のスクリプトでは
+あまり必要とはされません。既に書かれたプログラムの解釈においては、
+モジュールは名前で指定されている必要があるからです。
+構文@code{define-module}、@code{import}、@code{extend}、@code{with-module}
+等はモジュールそのものではなくモジュール名を取ります。
+これは、モジュールが本質的にコンパイル時の構造であるためです。
+しかし、動的に作られるモジュールが有用な場合もあります---プログラムそのものが、
+動的に作られる場合です。@code{eval}にモジュールを渡して、
+そのような動的に作られたプログラムがそのモジュールの中で
+コンパイルされ評価されるようにできます。
+@c COMMON
+
+@c EN
+You can also pass @code{#f} to @var{name} to create
+@emph{anonymous} module.   Anonymous modules can't be
+looked up by @code{find-module}, nor can be imported
+or inherited (since @code{import} and @code{extend} take
+module names, not modules). 
+It is useful when you want to have a temporary, segregated namespace
+dynamically---for example, you can create an anonymous module
+to evaluate code fragments sent from other program, and
+discards the module when the connection is terminated.
+Anonymous modules are not registered in the system dictionary
+and are garbage collected when nobody keeps reference to it.
+@c JP
+また、@var{name}に@code{#f}を渡すことで無名のモジュールを作ることもできます。
+無名のモジュールは@code{find-module}で探すことはできませんし、
+他のモジュールから@code{import}することも@code{extend}されることも
+できません（@code{import}や@code{extend}はモジュール名を必要とするからです）。
+無名のモジュールは、一時的に隔離された名前空間を動的に作りたい時に
+便利です。例えばネットワークで接続されたプログラムから送られた式を
+その中で評価して、コネクションが終了したら名前空間ごと捨ててしまうという
+ような場合です。無名のモジュールはシステムの内部辞書に登録されないので、
+モジュールへの参照が無くなればガベージコレクトされます。
+@c COMMON
+@end defun
+
 @defun all-modules
 @c EN
-Returns a list of modules currently known to the system.
+Returns a list of all named modules.
+Anonymous modules are not included.
 @c JP
-現在存在する全てのモジュールのリストを返します。
+現在存在する全ての名前付きモジュールのリストを返します。
+無名のモジュールは含まれません。
 @c COMMON
 @end defun
 

@@ -116,5 +116,49 @@
       (lambda ()
         (with-module V (list a b c d))))
 
+;;------------------------------------------------------------------
+;; creates modules on-the-fly
+
+(test "make-module" #t
+      (lambda ()
+        (make-module 'foo)
+        (module? (find-module 'foo))))
+
+(test "make-module (duplicate name)" *test-error*
+      (lambda ()
+        (make-module 'foo)))
+
+(test "make-module (duplicate name)" *test-error*
+      (lambda ()
+        (make-module 'foo :if-exists :error)))
+
+(test "make-module (duplicate name)" #f
+      (lambda ()
+        (make-module 'foo :if-exists #f)))
+
+(test "anynomous module" #t
+      (lambda ()
+        (let ((m0 (make-module #f))
+              (m1 (make-module #f)))
+          (and (module? m0) (module? m1) (not (eq? m0 m1))))))
+
+(test "anonymous module" 13
+      (lambda ()
+        (let ((m0 (make-module #f)))
+          (eval '(define x 13) m0)
+          (eval 'x m0))))
+              
+(test "anonymous module" *test-error*
+      (lambda ()
+        (let ((m0 (make-module #f))
+              (m1 (make-module #f)))
+          (eval '(define x 13) m0)
+          (eval 'x m1))))
+
+              
+          
+
+
+
 
 (test-end)
