@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.71 2002-07-18 10:52:21 shirok Exp $
+dnl $Id: configure.in,v 1.72 2002-07-18 12:34:21 shirok Exp $
 AC_INIT(src/gauche.h)
 AC_PREREQ(2.52)
-AC_REVISION($Revision: 1.71 $)
+AC_REVISION($Revision: 1.72 $)
 AC_CONFIG_HEADER(src/gauche/config.h)
 AC_CANONICAL_SYSTEM
 
@@ -119,8 +119,8 @@ AC_ARG_ENABLE(threads, [  --enable-threads=TYPE:  Choose thread type.  Currently
 
 dnl Platform-dependent thread configuration.  This must be in sync
 dnl with gc's configure.in.
-THREADLIBS="-lpthread"
 if test $GAUCHE_THREAD_TYPE = pthreads; then
+  THREADLIBS="-lpthread"
   case "$host" in
     *-*-linux*)
       AC_DEFINE(GC_LINUX_THREADS)
