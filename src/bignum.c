@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.12 2001-04-22 09:53:20 shiro Exp $
+ *  $Id: bignum.c,v 1.13 2001-04-22 11:42:11 shiro Exp $
  */
 
 #include <math.h>
@@ -672,11 +672,10 @@ static inline int div_normalization_factor(u_long w)
 
 /* General case of division.  We use each half word as a digit. 
    Assumes digitsof(dividend) >= digitsof(divisor) > 1.
-   Assumes enough digits are allocated to quotient and remainder.
-   Note that remainder may need one more word than divisor because
-   of the temporary result. */
-static void bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
-                        ScmBignum *quotient, ScmBignum *remainder)
+   Assumes enough digits are allocated to quotient.
+   Remainder is returned (not normalized) */
+static ScmBignum *bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
+                              ScmBignum *quotient)
 {
     ScmBignum *u, *v;
     int d = div_normalization_factor(divisor->values[divisor->size-1]);
@@ -705,20 +704,22 @@ static void bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
     vn_1 = DIGIT(v, n-1);
     vn_2 = DIGIT(v, n-2);
 
+#if 0
     printf("shift=%d, vn_1=%08lx, vn_2=%08lx\n", d, vn_1, vn_2);
     printf("u="); Scm_DumpBignum(u, SCM_CUROUT); printf("\n");
     printf("v="); Scm_DumpBignum(v, SCM_CUROUT); printf("\n");
+#endif
 
     for (j = m; j >= 0; j--) {
         u_long uu = (DIGIT(u, j+n) << HALF_BITS) + DIGIT(u, j+n-1);
         u_long qq = uu/vn_1;
         u_long rr = uu%vn_1;
-        printf("j=%d, uu=%08lx, qq=%08lx, rr=%08lx\n", j, uu, qq, rr);
+        /*printf("j=%d, uu=%08lx, qq=%08lx, rr=%08lx\n", j, uu, qq, rr);*/
         if (qq == HALF_WORD) { qq--; rr += vn_1; }
         while ((qq*vn_2 > (rr<<HALF_BITS)+DIGIT(u, j+n-2)) && (rr < HALF_WORD)) {
             qq--; rr += vn_1;
         }
-        printf("j=%d, uu=%08lx, qq=%08lx, rr=%08lx\n", j, uu, qq, rr);
+        /*printf("j=%d, uu=%08lx, qq=%08lx, rr=%08lx\n", j, uu, qq, rr);*/
         cy = 0;
         for (k = 0; k < n; k++) {
             vv = qq * DIGIT(v, k);
@@ -732,9 +733,10 @@ static void bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
         cy = (uj > DIGIT(u, j+n))? -1 : 0;
         SETDIGIT(u, j+n, uj);
 
+#if 0
         printf("cy = %d, ", cy);
         printf("u="); Scm_DumpBignum(u, SCM_CUROUT); printf("\n");
-        
+#endif
         if (cy < 0) {
             qq--;
             cy = 0;
@@ -746,13 +748,12 @@ static void bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
             }
             uj = DIGIT(u, j+n) + cy;
             SETDIGIT(u, j+n, uj);
-
-            printf("u="); Scm_DumpBignum(u, SCM_CUROUT); printf("\n");
+            
+            /*printf("u="); Scm_DumpBignum(u, SCM_CUROUT); printf("\n");*/
         }
         SETDIGIT(quotient, j, qq);
-        SETDIGIT(remainder, j, rr);
     }
-    bignum_rshift(remainder, remainder, d);
+    return bignum_rshift(u, u, d);
 }
 
 /* Fast path if divisor fits in a half word.  Quotient remains in the
@@ -790,12 +791,12 @@ ScmObj Scm_BignumDivSI(ScmBignum *dividend, long divisor, long *remainder)
         rr = bignum_sdiv(q, dd);
     } else {
         ScmBignum *bv = SCM_BIGNUM(Scm_MakeBignumFromSI(dd));
-        ScmBignum *br = make_bignum(2);
+        ScmBignum *br;
         q = make_bignum(dividend->size + 1);
-        bignum_gdiv(dividend, bv, q, br);
+        br = bignum_gdiv(dividend, bv, q);
         rr = br->values[0];
     }
-    if (remainder) *remainder = (dividend->sign * d_sign < 0)? -rr : rr;
+    if (remainder) *remainder = (dividend->sign < 0)? -rr : rr;
     q->sign = dividend->sign * d_sign;
     return Scm_NormalizeBignum(q);
 }
@@ -812,8 +813,7 @@ ScmObj Scm_BignumDivRem(ScmBignum *dividend, ScmBignum *divisor)
     }
 
     q = make_bignum(dividend->size - divisor->size + 1);
-    r = make_bignum(divisor->size + 1);
-    bignum_gdiv(dividend, divisor, q, r);
+    r = bignum_gdiv(dividend, divisor, q);
     q->sign = dividend->sign * divisor->sign;
     r->sign = dividend->sign;
     return Scm_Cons(Scm_NormalizeBignum(q), Scm_NormalizeBignum(r));

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.27 2001-04-22 09:53:08 shiro Exp $
+ *  $Id: number.c,v 1.28 2001-04-22 11:41:44 shiro Exp $
  */
 
 #include <math.h>
@@ -721,8 +721,42 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
         goto DO_FLONUM;
     }
     if (SCM_BIGNUMP(arg0)) {
-        result_real = Scm_BignumToDouble(SCM_BIGNUM(arg0));
-        goto DO_FLONUM;
+        /* Try integer division first, and if remainder != 0, shift to
+           inexact number */
+        if (SCM_INTP(arg1)) {
+            long rem;
+            ScmObj div = Scm_BignumDivSI(SCM_BIGNUM(arg0),
+                                         SCM_INT_VALUE(arg1),
+                                         &rem);
+            if (rem != 0) {
+                result_real = Scm_BignumToDouble(SCM_BIGNUM(arg0));
+                exact = 0;
+                goto DO_FLONUM;
+            }
+            if (SCM_NULLP(args)) return div;
+            return Scm_Divide(div, SCM_CAR(args), SCM_CDR(args));
+        }
+        if (SCM_BIGNUMP(arg1)) {
+            ScmObj divrem = Scm_BignumDivRem(SCM_BIGNUM(arg0), SCM_BIGNUM(arg1));
+            if (SCM_CDR(divrem) != SCM_MAKE_INT(0)) {
+                result_real = Scm_BignumToDouble(SCM_BIGNUM(arg0));
+                exact = 0;
+                goto DO_FLONUM;
+            }
+            if (SCM_NULLP(args)) return SCM_CAR(divrem);
+            return Scm_Divide(divrem, SCM_CAR(args), SCM_CDR(args));
+        }
+        if (SCM_FLONUMP(arg1)) {
+            exact = 0;
+            result_real = Scm_BignumToDouble(SCM_BIGNUM(arg0));
+            goto DO_FLONUM;
+        }
+        if (SCM_COMPLEXP(arg1)) {
+            exact = 0;
+            result_real = Scm_BignumToDouble(SCM_BIGNUM(arg0));
+            goto DO_COMPLEX;
+        }
+        Scm_Error("number required, but got %S", arg1);
     }
     if (SCM_FLONUMP(arg0)) {
         result_real = SCM_FLONUM_VALUE(arg0);
@@ -826,6 +860,8 @@ ScmObj Scm_Quotient(ScmObj x, ScmObj y)
         if (rx != floor(rx)) goto BADARG;
         if (SCM_INTP(y)) {
             ry = (double)SCM_INT_VALUE(y);
+        } else if (SCM_BIGNUMP(y)) {
+            ry = Scm_BignumToDouble(SCM_BIGNUM(y));
         } else if (SCM_FLONUMP(y)) {
             ry = SCM_FLONUM_VALUE(y);
             if (ry != floor(ry)) goto BADARGY;
@@ -849,21 +885,33 @@ ScmObj Scm_Quotient(ScmObj x, ScmObj y)
 /* Modulo and Reminder.
    TODO: on gcc, % works like reminder.  I'm not sure the exact behavior
    of % is defined in ANSI C.  Need to check it later. */
-ScmObj Scm_Modulo(ScmObj x, ScmObj y, int reminder)
+ScmObj Scm_Modulo(ScmObj x, ScmObj y, int remp)
 {
-    double rx, ry, div, rem;
+    double rx, ry;
     if (SCM_INTP(x)) {
         if (SCM_INTP(y)) {
             int r;
             if (SCM_INT_VALUE(y) == 0) goto DIVBYZERO;
             r = SCM_INT_VALUE(x)%SCM_INT_VALUE(y);
-            if (!reminder) {
+            if (!remp && r) {
                 if ((SCM_INT_VALUE(x) > 0 && SCM_INT_VALUE(y) < 0)
                     || (SCM_INT_VALUE(x) < 0 && SCM_INT_VALUE(y) > 0)) {
                     r += SCM_INT_VALUE(y);
                 }
             }
             return SCM_MAKE_INT(r);
+        }
+        if (SCM_BIGNUMP(y)) {
+            if (remp) {
+                return x;
+            } else {
+                if ((SCM_INT_VALUE(x) < 0 && SCM_BIGNUM_SIGN(y) > 0)
+                    || (SCM_INT_VALUE(x) > 0 && SCM_BIGNUM_SIGN(y) < 0)) {
+                    return Scm_BignumAddSI(SCM_BIGNUM(y), SCM_INT_VALUE(x));
+                } else {
+                    return x;
+                }
+            }
         }
         rx = (double)SCM_INT_VALUE(x);
         if (SCM_FLONUMP(y)) {
@@ -872,11 +920,47 @@ ScmObj Scm_Modulo(ScmObj x, ScmObj y, int reminder)
             goto DO_FLONUM;
         }
         goto BADARGY;
+    } else if (SCM_BIGNUMP(x)) {
+        if (SCM_INTP(y)) {
+            int iy = SCM_INT_VALUE(y);
+            long rem;
+            Scm_BignumDivSI(SCM_BIGNUM(x), iy, &rem);
+            if (!remp
+                && rem
+                && ((SCM_BIGNUM_SIGN(x) < 0 && iy > 0)
+                    || (SCM_BIGNUM_SIGN(x) > 0 && iy < 0))) {
+                return SCM_MAKE_INT(iy + rem);
+            }
+            return SCM_MAKE_INT(rem);
+        }
+        if (SCM_BIGNUMP(y)) {
+            ScmObj rem = SCM_CDR(Scm_BignumDivRem(SCM_BIGNUM(x), SCM_BIGNUM(y)));
+            if (!remp
+                && (rem != SCM_MAKE_INT(0))
+                && (SCM_BIGNUM_SIGN(x) * SCM_BIGNUM_SIGN(y) < 0)) {
+                if (SCM_BIGNUMP(rem)) {
+                    return Scm_BignumAdd(SCM_BIGNUM(y), SCM_BIGNUM(rem));
+                } else {
+                    return Scm_BignumAddSI(SCM_BIGNUM(y), SCM_INT_VALUE(rem));
+                }       
+            }
+            return rem;
+        }
+        rx = Scm_BignumToDouble(SCM_BIGNUM(x));
+        if (SCM_FLONUMP(y)) {
+            ry = SCM_FLONUM_VALUE(y);
+            if (ry != floor(ry)) goto BADARGY;
+            goto DO_FLONUM;
+        }
+        goto BADARGY;
     } else if (SCM_FLONUMP(x)) {
+        double rem;
         rx = SCM_FLONUM_VALUE(x);
         if (rx != floor(rx)) goto BADARG;
         if (SCM_INTP(y)) {
             ry = (double)SCM_INT_VALUE(y);
+        } else if (SCM_BIGNUMP(y)) {
+            ry = Scm_BignumToDouble(SCM_BIGNUM(y));
         } else if (SCM_FLONUMP(y)) {
             ry = SCM_FLONUM_VALUE(y);
             if (ry != floor(ry)) goto BADARGY;
@@ -885,9 +969,8 @@ ScmObj Scm_Modulo(ScmObj x, ScmObj y, int reminder)
         }
       DO_FLONUM:
         if (ry == 0.0) goto DIVBYZERO;
-        div = floor(rx/ry);
-        rem = rx - (div * ry);
-        if (!reminder) {
+        rem = fmod(rx, ry);
+        if (!remp && rem != 0.0) {
             if ((rx > 0 && ry < 0) || (rx < 0 && ry > 0)) {
                 rem += ry;
             }
