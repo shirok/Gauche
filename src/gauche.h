@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.286 2002-07-14 05:54:46 shirok Exp $
+ *  $Id: gauche.h,v 1.287 2002-07-14 22:43:11 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -379,13 +379,6 @@ SCM_EXTERN ScmObj Scm_VMDynamicWindC(ScmObj (*before)(ScmObj *, int, void *),
 SCM_EXTERN ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk);
 SCM_EXTERN ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk);
 SCM_EXTERN ScmObj Scm_VMThrowException(ScmObj exception);
-
-SCM_EXTERN ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name);
-SCM_EXTERN ScmObj Scm_ThreadStart(ScmVM *vm);
-SCM_EXTERN ScmObj Scm_ThreadJoin(ScmVM *vm, ScmObj timeout, ScmObj timeoutval);
-SCM_EXTERN ScmObj Scm_ThreadYield(void);
-SCM_EXTERN ScmObj Scm_ThreadSleep(ScmObj timeout);
-SCM_EXTERN ScmObj Scm_ThreadTerminate(ScmVM *vm);
 
 /*---------------------------------------------------------
  * CLASS
@@ -2034,79 +2027,6 @@ SCM_EXTERN void Scm_RegMatchDump(ScmRegMatch *match);
 #define SCM_ARGREF(count)           (SCM_FP[count])
 #define SCM_RETURN(value)           return value
 #define SCM_CURRENT_MODULE()        (Scm_VM()->module)
-
-/*---------------------------------------------------------
- * SYNCHRONIZATION DEVICES
- *
- *  Scheme-level synchrnization devices (ScmMutex, ScmConditionVariable,
- *  and ScmRWLock) are built on top of lower-level synchronization devices
- *  (ScmInternalMutex and ScmInternalCond).
- */
-
-/*
- * Scheme condition variable.
- */
-typedef struct ScmConditionVariableRec {
-    SCM_HEADER;
-    ScmInternalCond cv;
-    ScmObj name;
-    ScmObj specific;
-} ScmConditionVariable;
-
-SCM_CLASS_DECL(Scm_ConditionVariableClass);
-#define SCM_CLASS_CONDITION_VARIABLE  (&Scm_ConditionVariableClass)
-#define SCM_CONDITION_VARIABLE(obj)   ((ScmConditionVariable*)obj)
-#define SCM_CONDITION_VARIABLE_P(obj) SCM_XTYPEP(obj, SCM_CLASS_CONDITION_VARIABLE)
-
-ScmObj Scm_MakeConditionVariable(ScmObj name);
-ScmObj Scm_ConditionVariableSignal(ScmConditionVariable *cond);
-ScmObj Scm_ConditionVariableBroadcast(ScmConditionVariable *cond);
-
-/*
- * Scheme mutex.
- *    locked=FALSE  owner=dontcare       unlocked/not-abandoned
- *    locked=TRUE   owner=NULL           locked/not-owned
- *    locked=TRUE   owner=active vm      locked/owned
- *    locked=TRUE   owner=terminated vm  unlocked/abandoned
- */
-typedef struct ScmMutexRec {
-    SCM_HEADER;
-    ScmInternalMutex mutex;
-    ScmInternalCond  cv;
-    ScmObj name;
-    ScmObj specific;
-    int   locked;
-    ScmVM *owner;              /* the thread who owns this lock; may be NULL */
-} ScmMutex;
-
-SCM_CLASS_DECL(Scm_MutexClass);
-#define SCM_CLASS_MUTEX        (&Scm_MutexClass)
-#define SCM_MUTEX(obj)         ((ScmMutex*)obj)
-#define SCM_MUTEXP(obj)        SCM_XTYPEP(obj, SCM_CLASS_MUTEX)
-
-ScmObj Scm_MakeMutex(ScmObj name);
-ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner);
-ScmObj Scm_MutexUnlock(ScmMutex *mutex, ScmConditionVariable *cv, ScmObj timeout);
-
-/*
- * Scheme reader/writer lock.
- */
-typedef struct ScmRWLockRec {
-    SCM_HEADER;
-    ScmInternalMutex mutex;
-    ScmInternalCond cond;
-    ScmObj name;
-    ScmObj specific;
-    int numReader;
-    int numWriter;
-} ScmRWLock;
-
-SCM_CLASS_DECL(Scm_RWLockClass);
-#define SCM_CLASS_RWLOCK       (&Scm_RWLockClass)
-#define SCM_RWLOCK(obj)        ((ScmRWLock*)obj)
-#define SCM_RWLOCKP(obj)       SCM_XTYPEP(obj, SCM_CLASS_RWLOCK)
-
-ScmObj Scm_MakeRWLock(ScmObj name);
 
 /*---------------------------------------------------
  * SIGNAL

@@ -12,13 +12,14 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: mutex.c,v 1.1 2002-07-14 09:53:38 shirok Exp $
+ *  $Id: mutex.c,v 1.2 2002-07-14 22:43:11 shirok Exp $
  */
 
 #include <math.h>
-#include "gauche.h"
-#include "gauche/class.h"
-#include "gauche/exception.h"
+#include <gauche.h>
+#include <gauche/class.h>
+#include <gauche/exception.h>
+#include "threads.h"
 
 /*=====================================================
  * Mutex
@@ -27,9 +28,13 @@
 static ScmObj mutex_allocate(ScmClass *klass, ScmObj initargs);
 static void   mutex_print(ScmObj mutex, ScmPort *port, ScmWriteContext *ctx);
 
+static ScmClass *default_cpl[] = {
+    SCM_CLASS_STATIC_PTR(Scm_TopClass), NULL
+};
+
 SCM_DEFINE_BASE_CLASS(Scm_MutexClass, ScmMutex, 
                       mutex_print, NULL, NULL, mutex_allocate,
-                      SCM_CLASS_DEFAULT_CPL);
+                      default_cpl);
 
 #ifdef GAUCHE_USE_PTHREADS
 static void mutex_finalize(GC_PTR obj, GC_PTR data)
@@ -239,7 +244,7 @@ static void   cv_print(ScmObj cv, ScmPort *port, ScmWriteContext *ctx);
 
 SCM_DEFINE_BASE_CLASS(Scm_ConditionVariableClass, ScmConditionVariable,
                       cv_print, NULL, NULL, cv_allocate,
-                      SCM_CLASS_DEFAULT_CPL);
+                      default_cpl);
 
 #ifdef GAUCHE_USE_PTHREADS
 static void cv_finalize(GC_PTR obj, GC_PTR data)

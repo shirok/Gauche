@@ -12,13 +12,14 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: threads.c,v 1.1 2002-07-14 09:53:38 shirok Exp $
+ *  $Id: threads.c,v 1.2 2002-07-14 22:43:11 shirok Exp $
  */
 
-#include "gauche.h"
-#include "gauche/vm.h"
-#include "gauche/extend.h"
-#include "gauche/exception.h"
+#include <gauche.h>
+#include <gauche/vm.h>
+#include <gauche/extend.h>
+#include <gauche/exception.h>
+#include "threads.h"
 
 #include <unistd.h>
 #ifdef HAVE_SCHED_H
