@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.7 2001-02-06 06:58:28 shiro Exp $
+ *  $Id: read.c,v 1.8 2001-02-08 07:14:14 shiro Exp $
  */
 
 #include <stdio.h>
@@ -83,6 +83,7 @@ static int skipws(ScmPort *port)
             for (;;) {
                 SCM_GETC(c, port);
                 if (c == '\n') break;
+                if (c == EOF) return EOF;
             }
             continue;
         }
@@ -126,6 +127,13 @@ ScmObj read_internal(ScmPort *port)
             case 'e':; case 'E':; case 'i':; case 'I':;
                 SCM_UNGETC(c1, port);
                 return read_number(port, c);
+            case '!':
+                /* allow `#!' magic of executable */
+                for (;;) {
+                    SCM_GETC(c, port);
+                    if (c == '\n') return read_internal(port);
+                    if (c == EOF) return SCM_EOF;
+                }
             default:
                 read_error(port, "unsupported #-syntax: #%C", c1);
             }
