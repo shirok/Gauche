@@ -1,5 +1,5 @@
 ;;
-;; gdbmlib.stub - gdbm interface
+;; gdbm.stub - gdbm interface
 ;;
 ;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
 ;;
@@ -12,11 +12,12 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: gdbm.stub,v 1.9 2001-11-07 09:33:00 shirok Exp $
+;;  $Id: gdbm.stub,v 1.10 2001-11-17 22:45:05 shirok Exp $
 ;;
 
 "
  #include <gdbm.h>
+ #include <stdlib.h>
  #include \"dbmconfig.h\"
 
  static void gdbm_print(ScmObj, ScmPort *, ScmWriteContext*);
@@ -37,10 +38,10 @@
     Scm_Printf(out, \"#<gdbm-file %S>\", SCM_GDBM(obj)->name);
  }
 
- #define TO_DATUM(datum_, scm_)             \\
-   do {                                     \\
-     datum_.dptr = Scm_GetString(scm_);     \\
-     datum_.dsize = SCM_STRING_SIZE(scm_);  \\
+ #define TO_DATUM(datum_, scm_)                     \\
+   do {                                             \\
+     datum_.dptr = (char*)Scm_GetStringConst(scm_); \\
+     datum_.dsize = SCM_STRING_SIZE(scm_);          \\
    } while (0)
  #define FROM_DATUM(scm_, datum_)           \\
    do {                                     \\

@@ -1,5 +1,5 @@
 ;;
-;; ndbmlib.stub - ndbm interface
+;; ndbm.stub - ndbm interface
 ;;
 ;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
 ;;
@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: ndbm.stub,v 1.10 2001-11-14 10:12:59 shirok Exp $
+;;  $Id: ndbm.stub,v 1.11 2001-11-17 22:45:06 shirok Exp $
 ;;
 
 "
@@ -43,10 +43,10 @@
     Scm_Printf(out, \"#<ndbm-file %S>\", SCM_NDBM(obj)->name);
  }
 
- #define TO_DATUM(datum_, scm_)             \\
-   do {                                     \\
-     datum_.dptr = Scm_GetString(scm_);     \\
-     datum_.dsize = SCM_STRING_SIZE(scm_);  \\
+ #define TO_DATUM(datum_, scm_)                     \\
+   do {                                             \\
+     datum_.dptr = (char*)Scm_GetStringConst(scm_); \\
+     datum_.dsize = SCM_STRING_SIZE(scm_);          \\
    } while (0)
  #define FROM_DATUM(scm_, datum_)           \\
    do {                                     \\
@@ -131,7 +131,7 @@
 (define-cproc ndbm-exists? (ndbm key)
   (assert (ndbm? ndbm))
   (assert (string? key))
-  "datum dkey, dval; ScmObj r;
+  "datum dkey, dval;
   CHECK_NDBM(ndbm);
   TO_DATUM(dkey, key);
   dval = dbm_fetch(ndbm->dbf, dkey);

@@ -1,5 +1,5 @@
 ;;
-;; odbmlib.stub - original dbm interface
+;; odbm.stub - original dbm interface
 ;;
 ;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
 ;;
@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: odbm.stub,v 1.5 2001-11-14 10:12:59 shirok Exp $
+;;  $Id: odbm.stub,v 1.6 2001-11-17 22:45:06 shirok Exp $
 ;;
 
 "
@@ -35,10 +35,10 @@
  }
  #define Scm_Init_odbm  internal_init
 
- #define TO_DATUM(datum_, scm_)             \\
-   do {                                     \\
-     datum_.dptr = Scm_GetString(scm_);     \\
-     datum_.dsize = SCM_STRING_SIZE(scm_);  \\
+ #define TO_DATUM(datum_, scm_)                    \\
+   do {                                            \\
+     datum_.dptr = (char*)Scm_GetStringConst(scm_);\\
+     datum_.dsize = SCM_STRING_SIZE(scm_);         \\
    } while (0)
  #define FROM_DATUM(scm_, datum_)           \\
    do {                                     \\
