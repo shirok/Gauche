@@ -36,7 +36,7 @@
 (test-macro "simple" (c z) (simple #f z))
 (test-macro "simple" (d z) (simple (#\a #\b) z))
 (test-macro "simple" (e z) (simple #(1 2) z))
-(test-macro "simple" (e z) (simple #(1.0 2.0) z))
+(test-macro "simple" (f z #(1.0 2.0)) (simple #(1.0 2.0) z))
 (test-macro "simple" (f z (#\b #\a)) (simple (#\b #\a) z))
 (test-macro "simple" (f z #(2 1)) (simple #(2 1) z))
 

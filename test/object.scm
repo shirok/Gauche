@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.15 2001-12-02 12:54:52 shirok Exp $
+;; $Id: object.scm,v 1.16 2002-07-01 10:46:21 shirok Exp $
 
 (use gauche.test)
 
@@ -223,6 +223,62 @@
                (i (s-get-i s))
                (j (begin (set! (s-get-i s) "j") (s-get-i s))))
           (list i j))))
+
+;;----------------------------------------------------------------
+(test-section "object comparison protocol")
+
+(define-class <cmp> () ((x :init-keyword :x)))
+
+(define-method object-equal? ((x <cmp>) (y <cmp>))
+  (equal? (slot-ref x 'x) (slot-ref y 'x)))
+
+(define-method object-compare ((x <cmp>) (y <cmp>))
+  (compare (slot-ref x 'x) (slot-ref y 'x)))
+
+(test "object-equal?" #t
+      (lambda ()
+        (equal? (make <cmp> :x 3) (make <cmp> :x 3))))
+
+(test "object-equal?" #f
+      (lambda ()
+        (equal? (make <cmp> :x 3) (make <cmp> :x 2))))
+
+(test "object-equal?" #t
+      (lambda ()
+        (equal? (make <cmp> :x (list 1 2))
+                (make <cmp> :x (list 1 2)))))
+
+(test "object-equal?" #f
+      (lambda ()
+        (equal? (make <cmp> :x 5) 5)))
+
+(test "object-compare" -1 (lambda () (compare 0 1)))
+(test "object-compare" 0  (lambda () (compare 0 0)))
+(test "object-compare" 1  (lambda () (compare 1 0)))
+(test "object-compare" -1 (lambda () (compare "abc" "abd")))
+(test "object-compare" 0  (lambda () (compare "abc" "abc")))
+(test "object-compare" 1  (lambda () (compare "abd" "abc")))
+(test "object-compare" -1 (lambda () (compare #\a #\b)))
+(test "object-compare" 0  (lambda () (compare #\a #\a)))
+(test "object-compare" 1  (lambda () (compare #\b #\a)))
+(test "object-compare" 'error
+      (lambda () (with-error-handler
+                     (lambda (e) 'error)
+                   (lambda () (compare #\b 4)))))
+(test "object-compare" 'error
+      (lambda () (with-error-handler
+                     (lambda (e) 'error)
+                   (lambda () (compare "zzz" 4)))))
+(test "object-compare" 'error
+      (lambda () (with-error-handler
+                     (lambda (e) 'error)
+                   (lambda () (compare 2+i 3+i)))))
+(test "object-compare" -1
+      (lambda () (compare (make <cmp> :x 3) (make <cmp> :x 4))))
+(test "object-compare" 0
+      (lambda () (compare (make <cmp> :x 3) (make <cmp> :x 3))))
+(test "object-compare" 1
+      (lambda () (compare (make <cmp> :x 4) (make <cmp> :x 3))))
 
 ;;----------------------------------------------------------------
 (test-section "metaclass")
