@@ -48,7 +48,7 @@
 	  ;; Use this path if your scheme does not support GETENV
 	  ;; or if SCHEME_LIBRARY_PATH is not set.
 	  (case (software-type)
-	    ((UNIX) "@SLIB_DIR@")
+	    ((UNIX) "@SLIB_DIR@/")
 	    ((VMS) "lib$scheme:")
 	    ((MS-DOS) "C:\\SLIB\\")
 	    (else "")))))
