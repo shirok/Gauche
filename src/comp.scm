@@ -1,41 +1,48 @@
 ;;
 ;; A compiler.
-;;  $Id: comp.scm,v 1.1.2.3 2004-12-31 01:03:10 shirok Exp $
+;;  $Id: comp.scm,v 1.1.2.4 2005-01-01 07:22:34 shirok Exp $
 
-(define-module gauche.compile
+(define-module gauche.internal
   (use util.match)
   )
-(select-module gauche.compile)
+(select-module gauche.internal)
 
 ;; Entry
 (define (compile program . opts)
-  (compile-int program (get-optional opts #f) 'tail))
+  (let1 mod (get-optional opts #f)
+    (if mod
+      (let1 origmod (vm-current-module)
+        (dynamic-wind
+            (lambda () (vm-set-current-module mod))
+            (lambda () (compile-int program '() 'tail))
+            (lambda () (vm-set-current-module origmod))))
+      (compile-int program '() 'tail))))
 
 ;; compile-int:: (Program, Env, Ctx) -> [Insn]
 (define (compile-int program env ctx)
   (match program
     ((op . args)
-     (let ((head 
-            (if (variable? op)
-              (match (lookup-env op env #t)
-                (('LREF detph offset) `((LREF ,depth ,offset)))
-                ((? (cut is-a? <> <macro>))
-                 (error "local macro not supported"))
-                (else
-                 ;; global variable reference.
-                 (compile-varref op '())))
-              (compile-int head env 'normal)))
-           (argcode (compile-args args env))
-           (nargs  (length args)))
-       (case ctx
-         ((tail)
-          (append `((PRE-TAIL ,nargs))
-                  argcode
-                  head
-                  `((TAIL-CALL ,nargs))))
-         (else
-          (append `((PRE-CALL ,nargs))
-                  (append argcode head `((CALL ,nargs))))))))
+     (if (variable? op)
+       (let1 local (lookup-env op env #t)
+         (cond
+          ((vm-insn? local) ;; LREF
+           (list local))
+          ((is-a? local <macro>) ;; local macro
+           (compile-int (call-macro-expander local program env) env ctx))
+          ((get-global-binding op env)
+           => (lambda (gloc)
+                (let1 val (gloc-ref gloc)
+                  (cond
+                   ((is-a? val <syntax>)
+                    (call-syntax-compiler val program env ctx))
+                   ((is-a? val <macro>)
+                    (compile-int (call-macro-expander val program env)
+                                 env ctx))
+                   (else
+                    (compile-call (compile-varref op '()) args env ctx))))))
+          (else
+           (compile-call (compile-varref op '()) args env ctx))))
+       (compile-call (compile-int op env 'normal) args env ctx)))
     ((? variable?)
      (compile-varref program env))
     (else
@@ -45,15 +52,28 @@
 (define (compile-varref var env)
   (let1 loc (lookup-env var env #f)
     (if (variable? loc)
-      `((GREF ,loc))
+      (list (vm-insn-make 'GREF) loc)
       (list loc))))
+
+(define (compile-call head args env ctx)
+  (let ((argcode (compile-args args env))
+        (numargs (length args)))
+    (case ctx
+      ((tail)
+       `(,(vm-insn-make 'PRE-TAIL numargs)
+         ,@argcode
+         ,@head
+         ,(vm-insn-make 'TAIL-CALL numargs)))
+      (else
+       `(,(vm-insn-make 'PRE-CALL numargs)
+         (,@argcode ,@head ,(vm-insn-make 'CALL numargs)))))))
 
 (define (compile-args args env)
   (if (null? args)
     '()
-    (append (compile-int (car args) env 'normal)
-            '((PUSH))
-            (compile-args (cdr args) env))))
+    `(,@(compile-int (car args) env 'normal)
+      ,(vm-insn-make 'PUSH)
+      ,@(compile-args (cdr args) env))))
 
 ;; Look up local environment
 ;;
@@ -63,7 +83,7 @@
     (if (pair? env)
       (let ((var (if (and (identifier? var)
                           (eq? (ref var 'env) env))
-                   (ref var 'name)
+                   (slot-ref var 'name)
                    var))
             (frame (car env)))
         (if (eq? (car frame) #t)
@@ -79,7 +99,7 @@
           (let inner ((frame frame) (offset 0) (found #f))
             (cond ((null? frame)
                    (if found
-                     `(LREF ,depth ,(- offset found 1))
+                     (vm-insn-make 'LREF depth (- offset found 1))
                      (outer (cdr env) (+ depth 1))))
                   ((eq? (car frame) var)
                    (inner (cdr frame) (+ offset 1) offset))
@@ -90,6 +110,17 @@
       (if (and (symbol? var) (not syntax?))
         (make-identifier var '())
         var))))
+
+(define (get-global-binding name env)
+  (cond
+   ((identifier? name)
+    (find-binding (slot-ref name 'module) (slot-ref name 'name) #f))
+   ((symbol? name)
+    (find-binding (get-current-module env) name #f))
+   (else #f)))
+
+(define (get-current-module env)
+  (vm-current-module))
 
 ;;============================================================
 ;; Special forms
@@ -130,6 +161,18 @@
           ((pred (car lis)))
           (else (loop (cdr lis))))))
 
+(define (fold proc seed lis)
+  (let loop ((lis lis) (seed seed))
+    (if (null? lis)
+      seed
+      (loop (cdr lis) (proc (car lis) seed)))))
+
 (define (append-map proc lis)
   (apply append (map proc lis)))
+
+;; return the last cdr of improper list.
+;; when applied to compiler env, this returns a module.
+(define (last-cdr lis)
+  (let loop ((lis lis))
+    (if (pair? lis) (loop (cdr lis)) lis)))
 

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: debugger.scm,v 1.16.2.1 2004-12-31 21:06:15 shirok Exp $
+;;;  $Id: debugger.scm,v 1.16.2.2 2005-01-01 07:22:18 shirok Exp $
 ;;;
 
 ;; NB: this is still a working version.  
@@ -40,6 +40,7 @@
   (use srfi-2)
   (use srfi-13)
   (use text.parse)
+  (extend gauche.internal)
   (export enable-debug disable-debug debug-print)
   )
 (select-module gauche.vm.debugger)

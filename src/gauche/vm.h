@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.98.2.10 2004-12-28 11:13:23 shirok Exp $
+ *  $Id: vm.h,v 1.98.2.11 2005-01-01 07:22:36 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -596,6 +596,18 @@ enum {
 #define SCM_VM_COMPILER_FLAG_IS_SET(vm, flag) ((vm)->compilerFlags & (flag))
 #define SCM_VM_COMPILER_FLAG_SET(vm, flag)    ((vm)->compilerFlags |= (flag))
 #define SCM_VM_COMPILER_FLAG_CLEAR(vm, flag)  ((vm)->compilerFlags &= ~(flag))
+
+/*
+ * Compiler internal APIs
+ */
+
+SCM_EXTERN ScmObj Scm_Compile(ScmObj program, ScmObj mod);
+SCM_EXTERN ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context);
+SCM_EXTERN ScmObj Scm_CompileLookupEnv(ScmObj sym, ScmObj env, int op);
+
+SCM_EXTERN ScmObj Scm_CallSyntaxCompiler(ScmObj syn, ScmObj from, ScmObj env, int ctx);
+SCM_EXTERN ScmObj Scm_CallMacroExpander(ScmMacro *mac, ScmObj expr, ScmObj env);
+
 
 /*
  * Inline assembler stuff

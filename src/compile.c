@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.121.2.5 2004-12-30 09:28:53 shirok Exp $
+ *  $Id: compile.c,v 1.121.2.6 2005-01-01 07:22:34 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -50,6 +50,25 @@ static ScmObj id_if     = SCM_UNBOUND;
 static ScmObj id_begin  = SCM_UNBOUND;
 static ScmObj id_letrec = SCM_UNBOUND;
 static ScmObj id_asm    = SCM_UNBOUND;
+
+/*
+ * Syntax
+ */
+
+/* Temporary: to expose syntax to the new compiler */
+ScmObj Scm_CallSyntaxCompiler(ScmObj syn, ScmObj form, ScmObj env, int ctx)
+{
+    ScmCompileProc cmpl;
+    void *data;
+
+    if (!SCM_SYNTAXP(syn)) {
+        Scm_Error("syntax required, but got %S", syn);
+    }
+    cmpl = SCM_SYNTAX(syn)->compiler;
+    data = SCM_SYNTAX(syn)->data;
+    return cmpl(form, env, ctx, data);
+}
+
 
 /* Conventions of internal functions
  *
@@ -282,10 +301,12 @@ enum {
  */
 static ScmObj compile_in_module(ScmObj, ScmModule*);
 
+#define USE_NEW_COMPILER
+
 ScmObj Scm_Compile(ScmObj program, ScmObj env)
 {
+#if !defined(USE_NEW_COMPILER)
     ScmObj insn_list = SCM_NIL;
-    
     if (SCM_FALSEP(env) || SCM_UNBOUNDP(env)) {
         insn_list = compile_int(program, SCM_NIL, SCM_COMPILE_TAIL);
     } else if (!SCM_MODULEP(env)) {
@@ -294,6 +315,31 @@ ScmObj Scm_Compile(ScmObj program, ScmObj env)
         insn_list = compile_in_module(program, SCM_MODULE(env));
     }
     return Scm_PackCode(insn_list);
+#else  /* USE_NEW_COMPILER */
+    static ScmGloc *compile_gloc = NULL;
+    static ScmModule *internal_mod = NULL;
+    ScmObj insn_list;
+
+    if (compile_gloc == NULL) {
+        /* initialization */
+        internal_mod = SCM_MODULE(SCM_FIND_MODULE("gauche.internal", TRUE));
+        compile_gloc = Scm_FindBinding(internal_mod,
+                                       SCM_SYMBOL(SCM_INTERN("compile")),
+                                       TRUE);
+        if (compile_gloc == NULL) {
+            Scm_Panic("no compile procedure in gauche.internal");
+        }
+    }
+
+    if (SCM_FALSEP(env) || SCM_UNBOUNDP(env)) {
+        insn_list = Scm_Apply(SCM_GLOC_GET(compile_gloc),
+                              SCM_LIST1(program));
+    } else {
+        insn_list = Scm_Apply(SCM_GLOC_GET(compile_gloc),
+                              SCM_LIST2(program, env));
+    }
+    return Scm_PackCode(insn_list);
+#endif /* USE_NEW_COMPILER */
 }
 
 /* When compiling with other module, make sure the current module
@@ -589,7 +635,6 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
         /* we have a pair.  This is either a special form
            or a function call */
         ScmObj head = SCM_CAR(form);
-        ScmCompileProc cmpl;
         ScmTransformerProc trns;
         void *data;
 
@@ -605,9 +650,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                 head = add_srcinfo(Scm_ExtendedCons(var, SCM_NIL), head);
             } else if (SCM_SYNTAXP(var)) {
                 /* variable is bound syntactically. */
-                cmpl = SCM_SYNTAX(var)->compiler;
-                data = SCM_SYNTAX(var)->data;
-                return cmpl(form, env, ctx, data);
+                return Scm_CallSyntaxCompiler(var, form, env, ctx);
             } else if (SCM_MACROP(var)) {
                 form = Scm_CallMacroExpander(SCM_MACRO(var), form, env);
                 goto recompile;
@@ -619,9 +662,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                 if (g != NULL) {
                     ScmObj gv = SCM_GLOC_GET(g);
                     if (SCM_SYNTAXP(gv)) {
-                        cmpl = SCM_SYNTAX(gv)->compiler;
-                        data = SCM_SYNTAX(gv)->data;
-                        return cmpl(form, env, ctx, data);
+                        return Scm_CallSyntaxCompiler(gv, form, env, ctx);
                     }
                     if (SCM_MACROP(gv)) {
                         form = Scm_CallMacroExpander(SCM_MACRO(gv), form, env);

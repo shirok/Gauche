@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.403.2.5 2004-12-30 09:28:54 shirok Exp $
+ *  $Id: gauche.h,v 1.403.2.6 2005-01-01 07:22:35 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -393,10 +393,6 @@ typedef struct ScmAutoloadRec  ScmAutoload;
 #define SCM_VM_CURRENT_ERROR_PORT(vm)   (SCM_VM(vm)->curerr)
 
 SCM_EXTERN ScmVM *Scm_VM(void);     /* Returns the current VM */
-
-SCM_EXTERN ScmObj Scm_Compile(ScmObj program, ScmObj mod);
-SCM_EXTERN ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context);
-SCM_EXTERN ScmObj Scm_CompileLookupEnv(ScmObj sym, ScmObj env, int op);
 
 SCM_EXTERN ScmObj Scm_Eval(ScmObj form, ScmObj env);
 SCM_EXTERN ScmObj Scm_Apply(ScmObj proc, ScmObj args);
@@ -2220,7 +2216,6 @@ SCM_EXTERN ScmObj Scm_MakeMacro(ScmSymbol *name,
                                 void *data);
 
 SCM_EXTERN ScmObj Scm_MacroExpand(ScmObj expr, ScmObj env, int oncep);
-SCM_EXTERN ScmObj Scm_CallMacroExpander(ScmMacro *mac, ScmObj expr, ScmObj env);
 
 /*--------------------------------------------------------
  * PROMISE

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.1.2.1 2004-12-31 01:03:10 shirok Exp $
+;;; $Id: intlib.stub,v 1.1.2.2 2005-01-01 07:22:36 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -70,19 +70,47 @@
 (define-cproc make-identifier (name::<symbol> env::<list>)
   (return "Scm_MakeIdentifier"))
 
-;; Returns two values
-;; If found:      the value and #t
-;; If not found:  #<undef>  and #f
-(define-cproc module-find-binding (mod::<module> name::<symbol>
-                                                 stay-in-module::<boolean>)
-  "ScmGloc *g = Scm_FindBinding(mod, name, stay_in_module);
-   if (g) {
-     ScmObj val = SCM_GLOC_GET(g);
-     SCM_RETURN(Scm_Values2(val, SCM_TRUE));
-   } else {
-     SCM_RETURN(Scm_Values2(SCM_UNDEFINED, SCM_FALSE));
-   }")
+;;
+;; Symbol table
+;;
 
+;; Returns GLOC object or #f
+(define-cproc find-binding (mod::<module> name::<symbol>
+                            stay-in-module::<boolean>)
+  "ScmGloc *g = Scm_FindBinding(mod, name, stay_in_module);
+   if (g) SCM_RETURN(SCM_OBJ(g));
+   else   SCM_RETURN(SCM_FALSE);")
+
+(define-cproc gloc-ref (gloc)
+  "if (!SCM_GLOCP(gloc)) Scm_Error(\"GLOC required, but got %S\", gloc);
+   SCM_RETURN(SCM_GLOC_GET(SCM_GLOC(gloc)));")
+
+(define-cproc gloc-set! (gloc value)
+  "if (!SCM_GLOCP(gloc)) Scm_Error(\"GLOC required, but got %S\", gloc);
+   SCM_RETURN(SCM_GLOC_SET(SCM_GLOC(gloc), value));")
+
+;;
+;; Compiler interface (Temporary)
+;;
+
+(define-symbol normal "sym_normal")
+(define-symbol stmt   "sym_stmt")
+(define-symbol tail   "sym_tail")
+
+(define-cproc call-syntax-compiler (syn form env ctx)
+  "int context = SCM_COMPILE_NORMAL;
+  if (SCM_EQ(ctx, sym_tail)) {
+    context = SCM_COMPILE_TAIL;
+  } else if (SCM_EQ(ctx, sym_stmt)) {
+    context = SCM_COMPILE_STMT;
+  } else if (!SCM_EQ(ctx, sym_normal)) {
+    Scm_Error(\"Context must be either one of normal, stmt or tail, but got %S\", ctx);
+  }
+  SCM_RETURN(Scm_CallSyntaxCompiler(syn, form, env, context));")
+
+(define-cproc call-macro-expander (mac expr env)
+  "if (!SCM_MACROP(mac)) Scm_Error(\"macro required, but got %S\", mac);
+  SCM_RETURN(Scm_CallMacroExpander(SCM_MACRO(mac), expr, env));")
 
 ;;
 ;; VM inspection and interface
@@ -103,11 +131,21 @@
   (return "Scm_CompiledCodeToList"))
 (define-cproc vm-compile (program &optional env)
   (return "Scm_Compile"))
+
 (define-cproc vm-insn-build (insn)
   (return <ulong> "Scm_VMInsnBuild"))
 
+;; temporary
+(define-cproc vm-insn-make (&rest insn)
+  "SCM_RETURN(SCM_VM_INSN(Scm_VMInsnBuild(insn)));")
+(define-cproc vm-insn? (obj)
+  (return <boolean> "SCM_VM_INSNP"))
 
-
+;; Set/get VM's current module info. (temporary)
+(define-cproc vm-current-module ()
+  "  SCM_RETURN(SCM_OBJ(Scm_VM()->module));")
+(define-cproc vm-set-current-module (mod::<module>)
+  "Scm_VM()->module = mod; SCM_RETURN(SCM_UNDEFINED);")
 
 
 ;; Local variables:
