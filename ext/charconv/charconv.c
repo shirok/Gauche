@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.40 2003-02-05 22:02:13 shirok Exp $
+ *  $Id: charconv.c,v 1.41 2003-02-08 09:25:54 shirok Exp $
  */
 
 #include <string.h>
@@ -22,6 +22,7 @@
 #include "charconv.h"
 
 #define DEFAULT_CONVERSION_BUFFER_SIZE 1024
+#define MINIMUM_CONVERSION_BUFFER_SIZE 16
 
 typedef struct conv_guess_rec {
     const char *codeName;
@@ -234,6 +235,9 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
         Scm_Error("input port required, but got %S", fromPort);
 
     if (bufsiz <= 0) bufsiz = DEFAULT_CONVERSION_BUFFER_SIZE;
+    if (bufsiz <= MINIMUM_CONVERSION_BUFFER_SIZE) {
+        bufsiz = MINIMUM_CONVERSION_BUFFER_SIZE;
+    }
     guess = findGuessingProc(fromCode);
     if (guess) {
         const char *guessed;
@@ -409,6 +413,11 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
     
     if (!SCM_OPORTP(toPort))
         Scm_Error("output port required, but got %S", toPort);
+
+    if (bufsiz <= 0) bufsiz = DEFAULT_CONVERSION_BUFFER_SIZE;
+    if (bufsiz <= MINIMUM_CONVERSION_BUFFER_SIZE) {
+        bufsiz = MINIMUM_CONVERSION_BUFFER_SIZE;
+    }
     
     cinfo = jconv_open(toCode, fromCode);
     if (cinfo == NULL) {

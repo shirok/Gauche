@@ -1,3 +1,10 @@
+2003-02-07  Shiro Kawai  <shiro@acm.org>
+
+	* ext/charconv/charconv.c : fixed a bug that caused ces-convert
+	  returns null string when it tried to convert one kanji character
+	  string in EUCJP or SJIS to UTF8.  The cause was that the allocated
+	  buffer was too small in that case.  I set minimum size of buffer.
+
 2003-02-06  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.6.7
