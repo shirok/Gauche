@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.11 2001-11-07 09:33:00 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.12 2001-12-02 06:07:32 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -268,13 +268,15 @@ extern ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag);
  
 void Scm_Init_libuvector(void)
 {
-    ScmModule *m = Scm_SchemeModule();
+    ScmModule *m = SCM_MODULE(SCM_FIND_MODULE("srfi-4", TRUE));
     Scm_InitBuiltinClass(&Scm_S8VectorClass,  "<s8vector>",  NULL, 0, m);
     Scm_InitBuiltinClass(&Scm_U8VectorClass,  "<u8vector>",  NULL, 0, m);
     Scm_InitBuiltinClass(&Scm_S16VectorClass, "<s16vector>", NULL, 0, m);
     Scm_InitBuiltinClass(&Scm_U16VectorClass, "<u16vector>", NULL, 0, m);
     Scm_InitBuiltinClass(&Scm_S32VectorClass, "<s32vector>", NULL, 0, m);
     Scm_InitBuiltinClass(&Scm_U32VectorClass, "<u32vector>", NULL, 0, m);
+    Scm_InitBuiltinClass(&Scm_S64VectorClass, "<s64vector>", NULL, 0, m);
+    Scm_InitBuiltinClass(&Scm_U64VectorClass, "<u64vector>", NULL, 0, m);
     Scm_InitBuiltinClass(&Scm_F32VectorClass, "<f32vector>", NULL, 0, m);
     Scm_InitBuiltinClass(&Scm_F64VectorClass, "<f64vector>", NULL, 0, m);
     Scm_Init_uvlib(m);
