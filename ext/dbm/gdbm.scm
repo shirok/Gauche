@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gdbm.scm,v 1.1 2001-10-20 11:19:02 shirok Exp $
+;;;  $Id: gdbm.scm,v 1.2 2001-10-20 11:23:00 shirok Exp $
 ;;;
 
 (define-module dbm.gdbm
@@ -30,8 +30,8 @@
           |GDBM_CACHESIZE|   |GDBM_FASTMODE|     |GDBM_CENTFREE|
           |GDBM_COALESCEBLKS|)
   )
-
-(dynamic-load "gdbm.so")
+(select-module dbm.gdbm)
+(dynamic-load "gdbm")
 
 ;;
 ;; Initialize
@@ -86,7 +86,7 @@
                          (stringify key)
                          (stringify value)
                          |GDBM_REPLACE|))
-        (error "dbm-put!: database ~s is read only" self))))
+        (errorf "dbm-put!: database ~s is read only" self))))
 
 (define-method dbm-get ((self <gdbm>) key . args)
   (next-method)
@@ -95,8 +95,8 @@
     (cond ((gdbm-fetch (gdbm-file-of self) (stringify key))
            => (lambda (v) (unstringify v)))
           ((pair? args) (car args))     ;fall-back value
-          (else  (error "gdbm: no data for key ~s in database ~s"
-                        key (gdbm-file-of self))))))
+          (else  (errorf "gdbm: no data for key ~s in database ~s"
+                         key (gdbm-file-of self))))))
 
 (define-method dbm-exists? ((self <gdbm>) key)
   (next-method)
@@ -105,7 +105,7 @@
 (define-method dbm-delete! ((self <gdbm>) key)
   (next-method)
   (if (> 0 (gdbm-delete (gdbm-file-of self) ((slot-ref self '->string) key)))
-      (error "dbm-delete!: deleteting key ~s from ~s failed" key self)))
+      (errorf "dbm-delete!: deleteting key ~s from ~s failed" key self)))
 
 ;;
 ;; Iterations
