@@ -1,3 +1,19 @@
+2001-03-07  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.1.4
+	* configure.in: changed installation directory of architecture
+	  dependent files.   Compiled DSO files should go under exec_prefix,
+	  while Scheme files go under prefix.
+	* src/port.c: line count starts from 1.
+	* src/gauche/config.h.in, configure.in: added check for members
+	  of struct group and struct passwd.
+	* src/system.c, src/syslib.stub: complete group and password interface.
+	  added stat interface.  added times interface.  added class
+	  definitions for time_t and struct tm.
+	  added crypt interface by Yuuki Takahashi (t.yuuki@mbc.nifty.com).
+	* src/load.c: changed *load-filename* to *load-port*, since it's more
+	  general.  implemented *load-history*.
+
 2001-03-06  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.1.3
