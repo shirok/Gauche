@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.4 2001-01-15 04:44:54 shiro Exp $
+ *  $Id: vm.c,v 1.5 2001-01-15 08:47:22 shiro Exp $
  */
 
 #include "gauche.h"
@@ -780,10 +780,6 @@ static void throw_cont_body(ScmObj cur_handlers, /* dynamic handlers of
 {
     void *data[4];
 
-    Scm_Printf(SCM_PORT(Scm_Stderr()),
-               ">>> cur: %S\n>>> dst: %S\n>>>cont: %p\n>>>args: %S\n",
-               cur_handlers, dest_handlers, cont, args);
-    
     /*
      * first, check to see if we need to evaluate dynamic handlers.
      */
@@ -802,7 +798,7 @@ static void throw_cont_body(ScmObj cur_handlers, /* dynamic handlers of
         } else if (SCM_PAIRP(dest_handlers)
                    && SCM_FALSEP(Scm_Memq(SCM_CAR(dest_handlers), cur_handlers))) {
             /* evaluate "before" handlers of the target continuation */
-            SCM_ASSERT(SCM_PAIRP(SCM_CAR(cur_handlers)));
+            SCM_ASSERT(SCM_PAIRP(SCM_CAR(dest_handlers)));
             data[0] = (void*)cur_handlers;
             data[1] = (void*)SCM_CDR(dest_handlers);
             data[2] = (void*)cont;
@@ -826,8 +822,6 @@ static void throw_cont_body(ScmObj cur_handlers, /* dynamic handlers of
     SCM_FOR_EACH(args, args) {
         theVM->argp = Scm_Cons(SCM_CAR(args), theVM->argp);
     }
-
-    Scm_VMDump(theVM);
 }
 
 static void throw_cont_cc(ScmObj result, void **data)
