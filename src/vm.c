@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.19 2001-02-02 11:55:48 shiro Exp $
+ *  $Id: vm.c,v 1.20 2001-02-02 12:17:12 shiro Exp $
  */
 
 #include "gauche.h"
@@ -624,6 +624,17 @@ static void run_loop()
             }
         case SCM_VM_LIST:
             {
+                int nargs = SCM_VM_INSN_ARG(code);
+                ScmObj cp = SCM_NIL;
+                if (nargs > 0) {
+                    ScmObj arg;
+                    cp = Scm_Cons(val0, cp);
+                    while (--nargs > 0) {
+                        POP_ARG(arg);
+                        cp = Scm_Cons(arg, cp);
+                    }
+                }
+                val0 = cp;
                 continue;
             }
         case SCM_VM_LIST_STAR:
@@ -632,6 +643,9 @@ static void run_loop()
             }
         case SCM_VM_EQ:
             {
+                ScmObj item;
+                POP_ARG(item);
+                val0 = SCM_MAKE_BOOL(item == val0);
                 continue;
             }
         case SCM_VM_EQV:

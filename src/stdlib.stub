@@ -11,9 +11,11 @@
 ;;
 
 (define-cproc eqv? (obj1 obj2)
+  (inliner "SCM_VM_EQV")
   "  SCM_RETURN(Scm_EqvP(obj1, obj2));")
 
 (define-cproc eq? (obj1 obj2)
+  (inliner "SCM_VM_EQ")
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_EQ(obj1, obj2)));")
 
 (define-cproc equal? (obj1 obj2)
@@ -272,6 +274,7 @@
   "  SCM_RETURN(SCM_MAKE_BOOL(Scm_Length(obj) >= 0));")
 
 (define-cproc list (&rest args)
+  (inliner "SCM_VM_LIST")
   "  SCM_RETURN(args);")
 
 (define-cproc length (list)
