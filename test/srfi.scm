@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.14 2001-05-03 18:50:29 shirok Exp $
+;; $Id: srfi.scm,v 1.15 2001-05-19 11:04:35 shirok Exp $
 
 (use gauche.test)
 
@@ -1144,7 +1144,7 @@
 (test "(setter vector-ref)" '#(1 2 3 #f 5)
       (lambda () (set! (vector-ref x 3) #f) x))
 
-(define x "abcde")
+(define x (string-copy "abcde"))
 (test "(setter string-ref)" "abcQe"
       (lambda () (set! (string-ref x 3) #\Q) x))
 
