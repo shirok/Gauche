@@ -1,3 +1,8 @@
+2003-08-08  Shiro Kawai  <shiro@acm.org>
+
+	* ext/charconv/Makefile.in : changed LDFLAGS so that @ICONV_LDFLAGS@
+	  will be added before $LDFLAGS.  Patch from Kogule, Ryo.
+
 2003-08-07  Shiro Kawai  <shiro@acm.org>
 
 	* lib/slib.scm.in : provides substitute of slib's "byte" module---
