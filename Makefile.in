@@ -2,6 +2,7 @@ EXTENSIONS=@EXTENSIONS@
 
 
 all : gc/libgc.a src/gosh
+	cd doc; $(MAKE) all
 	cd ext; $(MAKE) all
 
 gc/libgc.a :
@@ -20,22 +21,26 @@ clean :
 	cd src; $(MAKE) clean
 	cd lib; $(MAKE) clean
 	cd test; $(MAKE) clean
+	cd doc; $(MAKE) clean
 	cd ext; $(MAKE) clean
 
 distclean : clean
 	cd src; $(MAKE) distclean
 	cd lib; $(MAKE) distclean
+	cd doc; $(MAKE) distclean
 	cd ext; $(MAKE) distclean
 	rm -rf Makefile config.cache config.log config.status
 
 install :
 	cd src; $(MAKE) install
 	cd lib; $(MAKE) install
+	cd doc; $(MAKE) install
 	cd ext; $(MAKE) install
 
 realclean : clean
 	cd src; $(MAKE) realclean
 	cd lib; $(MAKE) realclean
+	cd doc; $(MAKE) realclean
 	cd ext; $(MAKE) realclean
 	rm -rf configure Makefile config.cache config.log config.status
 
