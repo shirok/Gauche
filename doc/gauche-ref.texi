@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.328 2002-12-15 00:16:16 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.329 2002-12-15 12:05:14 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1552,7 +1552,7 @@ the input is not a terminal.
 
 @deftp {Command Option} -f compiler-option
 @c EN
-This option controls the compiler behavior.  For now we have
+This option controls compiler and runtime behavior.  For now we have
 following options available:
 @table @asis
 @item no-inline
@@ -1564,10 +1564,14 @@ Reports whenever a file is loaded.
 @item case-fold
 Ignore case for symbols as specified in R5RS.
 (It is distinguished by default).  @xref{Case-sensitivity}.
+@item test
+Adds "@code{../src}" and "@code{../lib}" to the load path before loading 
+initialization file.  This is useful when you want to test the
+compiled @code{gosh} interpreter inside source tree, without installing it.
 @end table
 @c JP
-このオプションはコンパイラの動作に影響を与えます、今のところ、次のオプションのみが
-@var{compiler-option}として有効です。
+このオプションはコンパイラとランタイムの動作に影響を与えます。
+今のところ、次のオプションのみが@var{compiler-option}として有効です。
 @table @asis
 @item no-inline
 Schemeの基本関数のインライン展開を行いません。
@@ -1578,6 +1582,10 @@ Schemeの基本関数のインライン展開を行いません。
 @item case-fold
 R5RSに示される通り、シンボルの大文字小文字を区別しません。
 (デフォルトではこれらは区別されます)。 @ref{Case-sensitivity} を参照して下さい。
+@item test
+"@code{../src}" と "@code{../lib}" を、初期化ファイルを読む前に
+ロードパスに加えます。これは、作成された@code{gosh}をインストールせずに
+ソースツリーの中で実行してみるのに便利です。
 @end table
 @c COMMON
 @end deftp
