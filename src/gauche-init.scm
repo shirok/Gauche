@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.61 2002-02-23 07:40:32 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.62 2002-02-26 09:05:34 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -96,22 +96,20 @@
 
 ;; special macro to define autoload in Scheme module.
 (define-macro (%autoload-scheme file . vars)
-  `(with-module scheme
+  `(begin
      ,@(map (lambda (v)
-              `(define ,v (with-module gauche (%make-autoload ',v ,file))))
+              `(define-in-module scheme ,v (%make-autoload ',v ,file)))
             vars)))
 
 ;;
 ;; Auxiliary definitions
 ;;
 
-(define call/cc call-with-current-continuation)
+(define-in-module scheme call/cc call-with-current-continuation)
 
 ;; 
-(define (call-with-values producer consumer)
+(define-in-module scheme (call-with-values producer consumer)
   (receive vals (producer) (apply consumer vals)))
-(with-module scheme
-  (define call-with-values (with-module gauche call-with-values)))
 
 (%autoload-scheme "gauche/with"
                   call-with-input-file call-with-output-file
@@ -132,15 +130,12 @@
           port-position-prefix)
 
 (%autoload-scheme "gauche/numerical"
+                  exp log sqrt expt cos sin tan asin acos atan
                   gcd lcm numerator denominator
                   make-polar real-part imag-part)
 
-(autoload "gauche/numerical" 
-          %complex-exp %complex-log %complex-sqrt %complex-expt
-          %complex-cos %complex-sin %complex-tan
-          %complex-acos %complex-asin %complex-atan
-          %complex-sinh %complex-cosh %complex-tanh
-          %complex-asinh %complex-acosh %complex-atanh)
+(autoload "gauche/numerical"
+          sinh cosh tanh asinh acosh atanh)
 
 (autoload "gauche/logical"
           logtest logbit? copy-bit bit-field copy-bit-field logcount
@@ -172,55 +167,6 @@
 (define (file-is-directory? path)
   (and (sys-access path |F_OK|)
        (eq? (sys-stat->file-type (sys-stat path)) 'directory)))
-
-(define-syntax define-trans
-  (syntax-rules ()
-    ((_ ?name ?real-fn ?complex-fn)
-     (define (?name z)
-       (cond ((real? z) (?real-fn z))
-             ((number? z) (?complex-fn z))
-             (else (error "number required, but got" z)))))
-    ))
-
-(define-trans exp   %exp   %complex-exp)
-(define-trans log   %log   %complex-log)
-(define-trans sqrt  %sqrt  %complex-sqrt)
-
-(define-trans sin   %sin   %complex-sin)
-(define-trans cos   %cos   %complex-cos)
-(define-trans tan   %tan   %complex-tan)
-(define-trans asin  %asin  %complex-asin)
-(define-trans acos  %acos  %complex-acos)
-(define-trans sinh  %sinh  %complex-sinh)
-(define-trans cosh  %cosh  %complex-cosh)
-(define-trans tanh  %tanh  %complex-tanh)
-
-(define (asinh z) (%complex-asinh z))
-(define (acosh z) (%complex-acosh z))
-(define (atanh z) (%complex-atanh z))
-
-(define (atan z . x)
-  (if (null? x)
-      (cond ((real? z) (%atan z))
-            ((number? z) (%complex-atan z))
-            (else (error "number required, but got" z)))
-      (%atan z (car x))))
-
-(define (expt x y)
-  (cond ((and (real? x) (real? y)) (%expt x y))
-        ((and (number? x) (number? y)) (%complex-expt x y))
-        (else (error "number required, but got" (if (number? x) y x)))))
-
-(with-module scheme
-  (define exp (with-module gauche exp))
-  (define log (with-module gauche log))
-  (define sin (with-module gauche sin))
-  (define cos (with-module gauche cos))
-  (define tan (with-module gauche tan))
-  (define asin (with-module gauche asin))
-  (define acos (with-module gauche acos))
-  (define atan (with-module gauche atan))
-  (define expt (with-module gauche expt)))
 
 ;; useful stuff
 (define-syntax check-arg

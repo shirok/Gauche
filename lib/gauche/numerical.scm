@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: numerical.scm,v 1.11 2001-11-07 09:55:32 shirok Exp $
+;;;  $Id: numerical.scm,v 1.12 2002-02-26 09:05:34 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -27,7 +27,7 @@
 ;; These are the simplest ones.  If you need efficiency, consult
 ;;  Knuth: "The Art of Computer Programming" Chap. 4.5.2
 
-(define (gcd . args)
+(define-in-module scheme (gcd . args)
   (define (rec u v)
     (if (zero? v) u (rec v (remainder u v))))
   (define (recn arg args)
@@ -43,7 +43,7 @@
           ((null? (cdr args)) (car args))
           (else (recn (car args) (cdr args))))))
 
-(define (lcm . args)
+(define-in-module scheme (lcm . args)
   (define (gcd u v)
     (if (zero? v) u (gcd v (remainder u v))))
   (define (lcm2 u v)
@@ -68,11 +68,11 @@
 
 ;; in Gauche, rational number is just the same as integer, i.e. N/1
 
-(define (numerator q)
+(define-in-module scheme (numerator q)
   (unless (integer? q) (error "integer required, but got:" q))
   q)
 
-(define (denominator q)
+(define-in-module scheme (denominator q)
   (unless (integer? q) (error "integer required, but got:" q))
   (if (exact? q) 1 1.0))
 
@@ -80,119 +80,148 @@
 ;; Complex numbers
 ;;
 
-(define (make-polar r t)
+(define-in-module scheme (make-polar r t)
   (check-arg real? r)
   (check-arg real? t)
   (make-rectangular (* r (%cos t)) (* r (%sin t))))
 
-(define (real-part z)
+(define-in-module scheme (real-part z)
   (receive (x y) (%complex->real/imag z) x))
 
-(define (imag-part z)
+(define-in-module scheme (imag-part z)
   (receive (x y) (%complex->real/imag z) y))
 
-;; Complex transcedental functions.
-;; These are called by the main transcedental functions.  assumes
-;; z are complex.
+;; Transcedental functions.
+;; The real version of these functions are built-in.
 ;;  Cf. Teiji Takagi: "Kaiseki Gairon" pp.193--198
 
-(define (%complex-exp z)
-  (receive (x y)
-      (%complex->real/imag z)
-    (make-polar (%exp x) y)))
+(define-in-module scheme (exp z)
+  (cond ((real? z) (%exp z))
+        ((complex? x)
+         (receive (x y)
+             (%complex->real/imag z)
+           (make-polar (%exp x) y)))
+        (else (error "number required, but got" z))))
 
-(define (%complex-log z)
-  (make-rectangular (%log (magnitude z)) (angle z)))
+(define-in-module scheme (log z)
+  (cond ((real? z) (%log z))
+        ((complex? z)
+         (make-rectangular (%log (magnitude z)) (angle z)))
+        (else (error "number required, but got" z))))
 
-(define (%complex-sqrt z)
-  (make-polar (%sqrt (magnitude z)) (/ (angle z) 2.0)))
+(define-in-module scheme (sqrt z)
+  (cond ((real? z) (%sqrt z))
+        ((complex? z) 
+         (make-polar (%sqrt (magnitude z)) (/ (angle z) 2.0)))
+        (else (error "number required, but got" z))))
 
-(define (%complex-expt x y)
-  (if (real? x)
-      (receive (real imag) (%complex->real/imag y)
-        (* (%expt x real) (exp (* +i imag (%log x)))))
-      (exp (* y (log x)))))
+(define-in-module scheme (expt x y)
+  (cond ((real? x)
+         (cond ((real? y) (%expt x y))
+               ((number? y)
+                (receive (real imag) (%complex->real/imag y)
+                  (* (%expt x real) (exp (* +i imag (%log x))))))
+               (else (error "number required, but got" y))))
+        ((number? x) (exp (* y (log x))))
+        (else (error "number required, but got" x))))
 
-(define (%complex-cos z)
-  (receive (x y) (%complex->real/imag z)
-    (make-rectangular (* (%cos x) (%cosh y))
-                      (- (* (%sin x) (%sinh y))))))
+(define-in-module scheme (cos z)
+  (cond ((real? z) (%cos z))
+        ((number? z)
+         (receive (x y) (%complex->real/imag z)
+           (make-rectangular (* (%cos x) (%cosh y))
+                             (- (* (%sin x) (%sinh y))))))
+        (else (error "number required, but got" z))))
 
-(define (%complex-cosh z)
-  (receive (x y) (%complex->real/imag z)
-    (make-rectangular (* (%cosh x) (%cos y))
-                      (* (%sinh x) (%sin y)))))
+(define (cosh z)
+  (cond ((real? z) (%cosh z))
+        ((number? z)
+         (receive (x y) (%complex->real/imag z)
+           (make-rectangular (* (%cosh x) (%cos y))
+                             (* (%sinh x) (%sin y)))))
+        (else (error "number required, but got" z))))
 
-(define (%complex-sin z)
-  (receive (x y) (%complex->real/imag z)
-    (make-rectangular (* (%sin x) (%cosh y))
-                      (* (%cos x) (%sinh y)))))
+(define-in-module scheme (sin z)
+  (cond ((real? z) (%sin z))
+        ((number? z)
+         (receive (x y) (%complex->real/imag z)
+           (make-rectangular (* (%sin x) (%cosh y))
+                             (* (%cos x) (%sinh y)))))
+        (else (error "number required, but got" z))))
 
-(define (%complex-sinh z)
-  (receive (x y) (%complex->real/imag z)
-    (make-rectangular (* (%sinh x) (%cos y))
-                      (* (%cosh x) (%sin y)))))
+(define (sinh z)
+  (cond ((real? z) (%sinh z))
+        ((number? z)
+         (receive (x y) (%complex->real/imag z)
+           (make-rectangular (* (%sinh x) (%cos y))
+                             (* (%cosh x) (%sin y)))))
+        (else (error "number required, but got" z))))
 
-(define (%complex-tan z)
-  (let ((iz (* +i z)))
-    (* -i
-       (/ (- (exp iz) (exp (- iz)))
-          (+ (exp iz) (exp (- iz)))))))
+(define-in-module scheme (tan z)
+  (cond ((real? z) (%tan z))
+        ((number? z)
+         (let ((iz (* +i z)))
+           (* -i
+              (/ (- (exp iz) (exp (- iz)))
+                 (+ (exp iz) (exp (- iz)))))))
+        (else (error "number required, but got" z))))
 
-(define (%complex-tanh z)
-  (/ (- (exp z) (exp (- z)))
-     (+ (exp z) (exp (- z)))))
+(define (tanh z)
+  (cond ((real? z) (%tanh z))
+        ((number? z)
+         (/ (- (exp z) (exp (- z)))
+            (+ (exp z) (exp (- z)))))
+        (else (error "number required, but got" z))))
 
-(define (%complex-asin z)
-  ;; The definition of asin is
-  ;;   (* -i (log (+ (* +i z) (sqrt (- 1 (* z z))))))
-  ;; This becomes unstable when the term in the log is reaching
-  ;; toward 0.0.  The term, k = (+ (* +i z) (sqrt (- 1 (* z z)))),
-  ;; gets closer to zero when |z| gets bigger, but for large |z|, k is prone
-  ;; to lose precision and starts drifting around the point zero.
-  ;; For now, I let asin to return NaN for large z's.
-  (if (> (magnitude z) 1.0e5)
-      (make-rectangular (log 0.0) (log 0.0)) ;NaN+NaNi
-      (* -i (log (+ (* +i z) (sqrt (- 1 (* z z)))))))
-  )
+(define-in-module scheme (asin z)
+  (cond ((real? z) (%asin z))
+        ((number? z)
+         ;; The definition of asin is
+         ;;   (* -i (log (+ (* +i z) (sqrt (- 1 (* z z))))))
+         ;; This becomes unstable when the term in the log is reaching
+         ;; toward 0.0.  The term, k = (+ (* +i z) (sqrt (- 1 (* z z)))),
+         ;; gets closer to zero when |z| gets bigger, but for large |z|,
+         ;; k is prone to lose precision and starts drifting around
+         ;; the point zero.
+         ;; For now, I let asin to return NaN for large z's.
+         (if (> (magnitude z) 1.0e5)
+             (make-rectangular (log 0.0) (log 0.0)) ;NaN+NaNi
+             (* -i (log (+ (* +i z) (sqrt (- 1 (* z z))))))))
+        (else (error "number required, but got" z))))
 
-(define (%complex-asinh z)
+(define (asinh z)
   (if (> (magnitude z) 1.0e5)
       (make-rectangular (log 0.0) (log 0.0)) ;NaN+NaNi
       (log (+ z (sqrt (+ (* z z) 1))))))
 
-(define (%complex-acos z)
-  ;; The definition of acos is
-  ;;  (* -i (log (+ z (* +i (sqrt (- 1 (* z z)))))))))
-  ;; This also falls in the victim of numerical unstability; worse than
-  ;; asin, sometimes the real part of marginal value "hops" between
-  ;; +pi and -pi.  It's rather stable to use asin.
-  (- 1.5707963267948966 (asin z)))
+(define-in-module scheme (acos z)
+  (cond ((real? z) (%acos z))
+        ((number? z)
+         ;; The definition of acos is
+         ;;  (* -i (log (+ z (* +i (sqrt (- 1 (* z z)))))))))
+         ;; This also falls in the victim of numerical unstability; worse than
+         ;; asin, sometimes the real part of marginal value "hops" between
+         ;; +pi and -pi.  It's rather stable to use asin.
+         (- 1.5707963267948966 (asin z)))
+        (else (error "number required, but got" z))))
 
-(define (%complex-acosh z)
+(define (acosh z)
   ;; See the discussion of CLtL2, pp. 313-314
   (* 2 (log (+ (sqrt (/ (+ z 1) 2))
                (sqrt (/ (- z 1) 2))))))
 
-(define (%complex-atan z)
-  (let ((iz (* z +i)))
-    (/ (- (log (+ 1 iz))
-          (log (- 1 iz)))
-       +2i)))
+(define-in-module scheme (atan z . x)
+  (if (null? x)
+      (cond ((real? z) (%atan z))
+            ((number? z)
+             (let ((iz (* z +i)))
+               (/ (- (log (+ 1 iz))
+                     (log (- 1 iz)))
+                  +2i)))
+            (else (error "number required, but got" z)))
+      (%atan z (car x))))
 
-(define (%complex-atanh z)
+(define (atanh z)
   (/ (- (log (+ 1 z)) (log (- 1 z))) 2))
-
-;; Insert R5RS functions into scheme module
-
-(with-module scheme
-  (define gcd (with-module gauche gcd))
-  (define lcm (with-module gauche lcm))
-  (define numerator (with-module gauche numerator))
-  (define denominator (with-module gauche denominator))
-  (define make-polar (with-module gauche make-polar))
-  (define real-part (with-module gauche real-part))
-  (define imag-part (with-module gauche imag-part))
-  )
 
 (provide "gauche/numerical")
