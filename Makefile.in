@@ -1,5 +1,5 @@
 # Top Makefle for Gauche
-# $Id: Makefile.in,v 1.48 2003-12-16 10:09:39 shirok Exp $
+# $Id: Makefile.in,v 1.49 2004-01-28 01:04:52 shirok Exp $
 #  Run 'configure' script to generate Makefile
 
 .PHONY: all test check install uninstall clean distclean maintainer-clean install-check
@@ -30,7 +30,7 @@ all:
 
 test : check
 
-check:
+check: all
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) check); done
 
 install: install-pkg install-doc
