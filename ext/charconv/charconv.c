@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.3 2001-05-26 09:55:53 shirok Exp $
+ *  $Id: charconv.c,v 1.4 2001-05-29 08:42:24 shirok Exp $
  */
 
 #include <iconv.h>
@@ -35,7 +35,8 @@ static int conv_input_filler(char *buf, int len, void *data)
 {
     conv_info *info = (conv_info*)data;
     int inleft, outleft, converted;
-    char *inbuf = info->inbuf, *outbuf = info->outbuf;
+    const char *inbuf = info->inbuf;
+    char *outbuf = info->outbuf;
 
     inleft = info->inptr - info->inbuf;
     outleft = info->outptr - info->outbuf;
@@ -57,7 +58,7 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
 
     handle = iconv_open(Scm_GetStringConst(toCode),
                         Scm_GetStringConst(fromCode));
-    if (handle == NULL) {
+    if (handle == (iconv_t)-1) {
         if (errno == EINVAL) {
             Scm_Error("conversion from code %S to code %S is not supported",
                       SCM_OBJ(fromCode), SCM_OBJ(toCode));
