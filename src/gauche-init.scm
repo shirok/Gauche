@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.70 2002-04-28 00:16:05 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.71 2002-04-30 03:50:26 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -227,6 +227,21 @@
     ((_ . else)
      (syntax-error "malformed define-values" (define-values . else)))
     ))
+
+;; system object accessors (for backward compatibility)
+(define (sys-stat->file-type s)  (slot-ref s 'type))
+(define (sys-stat->mode s)  (slot-ref s 'mode))
+(define (sys-stat->ino s)   (slot-ref s 'ino))
+(define (sys-stat->dev s)   (slot-ref s 'dev))
+(define (sys-stat->rdev s)  (slot-ref s 'rdev))
+(define (sys-stat->nlink s) (slot-ref s 'nlink))
+(define (sys-stat->size s)  (slot-ref s 'size))
+(define (sys-stat->uid s)   (slot-ref s 'uid))
+(define (sys-stat->gid s)   (slot-ref s 'gid))
+(define (sys-stat->atime s) (slot-ref s 'atime))
+(define (sys-stat->mtime s) (slot-ref s 'mtime))
+(define (sys-stat->ctime s) (slot-ref s 'ctime))
+(define (sys-stat->type s)  (slot-ref s 'type))
 
 ;;
 ;; Load object system

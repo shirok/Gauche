@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.33 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: system.c,v 1.34 2002-04-30 03:50:27 shirok Exp $
  */
 
 #include <stdio.h>
@@ -303,6 +303,59 @@ ScmObj Scm_MakeSysStat(void)
     return stat_allocate(&Scm_SysStatClass, SCM_NIL);
 }
 
+static ScmObj sym_directory, sym_regular, sym_character, sym_block, sym_fifo, sym_symlink, sym_socket;
+
+static ScmObj stat_type_get(ScmSysStat *stat)
+{
+  if (S_ISDIR(stat->statrec.st_mode)) return (sym_directory);
+  if (S_ISREG(stat->statrec.st_mode)) return (sym_regular);
+  if (S_ISCHR(stat->statrec.st_mode)) return (sym_character);
+  if (S_ISBLK(stat->statrec.st_mode)) return (sym_block);
+  if (S_ISFIFO(stat->statrec.st_mode)) return (sym_fifo);
+#ifdef S_ISLNK
+  if (S_ISLNK(stat->statrec.st_mode)) return (sym_symlink);
+#endif
+#ifdef S_ISSOCK
+  if (S_ISSOCK(stat->statrec.st_mode)) return (sym_socket);
+#endif
+  return (SCM_FALSE);
+}
+
+#define STAT_GETTER_UI(name) \
+  static ScmObj SCM_CPP_CAT3(stat_, name, _get)(ScmSysStat *s) \
+  { return Scm_MakeIntegerFromUI((u_long)s->statrec.name); }
+#define STAT_GETTER_TIME(name) \
+  static ScmObj SCM_CPP_CAT3(stat_, name, _get)(ScmSysStat *s) \
+  { return Scm_MakeSysTime(s->statrec.name); }
+
+STAT_GETTER_UI(st_mode)
+STAT_GETTER_UI(st_ino)
+STAT_GETTER_UI(st_dev)
+STAT_GETTER_UI(st_rdev)
+STAT_GETTER_UI(st_nlink)
+STAT_GETTER_UI(st_uid)
+STAT_GETTER_UI(st_gid)
+STAT_GETTER_UI(st_size) /*TODO: check portability of off_t (maybe 64bits)*/
+STAT_GETTER_TIME(st_atime)
+STAT_GETTER_TIME(st_mtime)
+STAT_GETTER_TIME(st_ctime)
+
+static ScmClassStaticSlotSpec stat_slots[] = {
+    SCM_CLASS_SLOT_SPEC("type",  stat_type_get,  NULL),
+    SCM_CLASS_SLOT_SPEC("mode",  stat_st_mode_get,  NULL),
+    SCM_CLASS_SLOT_SPEC("ino",   stat_st_ino_get,   NULL),
+    SCM_CLASS_SLOT_SPEC("dev",   stat_st_dev_get,   NULL),
+    SCM_CLASS_SLOT_SPEC("rdev",  stat_st_rdev_get,  NULL),
+    SCM_CLASS_SLOT_SPEC("nlink", stat_st_nlink_get, NULL),
+    SCM_CLASS_SLOT_SPEC("uid",   stat_st_uid_get,   NULL),
+    SCM_CLASS_SLOT_SPEC("gid",   stat_st_gid_get,   NULL),
+    SCM_CLASS_SLOT_SPEC("size",  stat_st_size_get,  NULL),
+    SCM_CLASS_SLOT_SPEC("atime", stat_st_atime_get, NULL),
+    SCM_CLASS_SLOT_SPEC("mtime", stat_st_mtime_get, NULL),
+    SCM_CLASS_SLOT_SPEC("ctime", stat_st_ctime_get, NULL),
+    { NULL }
+};
+
 /*
  * Time (sys/time.h)
  */
@@ -446,6 +499,23 @@ ScmObj Scm_GetGroupByName(ScmString *name)
     }
 }
 
+#define GRP_GETTER(name) \
+  static ScmObj SCM_CPP_CAT3(grp_, name, _get)(ScmSysGroup *s) \
+  { return s->name; }
+
+GRP_GETTER(name)
+GRP_GETTER(gid)
+GRP_GETTER(passwd)
+GRP_GETTER(mem)
+
+static ScmClassStaticSlotSpec grp_slots[] = {
+    SCM_CLASS_SLOT_SPEC("name",   grp_name_get, NULL),
+    SCM_CLASS_SLOT_SPEC("gid",    grp_gid_get, NULL),
+    SCM_CLASS_SLOT_SPEC("passwd", grp_passwd_get, NULL),
+    SCM_CLASS_SLOT_SPEC("mem",    grp_mem_get, NULL),
+    { NULL }
+};
+
 /*
  * Passwords (pwd.h)
  *   Patch provided by Yuuki Takahashi (t.yuuki@mbc.nifty.com)
@@ -504,6 +574,31 @@ ScmObj Scm_GetPasswdByName(ScmString *name)
         return make_passwd(pdata);
     }
 }
+
+#define PWD_GETTER(name) \
+  static ScmObj SCM_CPP_CAT3(pwd_, name, _get)(ScmSysPasswd *p) \
+  { return p->name; }
+
+PWD_GETTER(name)
+PWD_GETTER(uid)
+PWD_GETTER(gid)
+PWD_GETTER(passwd)
+PWD_GETTER(gecos)
+PWD_GETTER(dir)
+PWD_GETTER(shell)
+PWD_GETTER(pwclass)
+
+static ScmClassStaticSlotSpec pwd_slots[] = {
+    SCM_CLASS_SLOT_SPEC("name",   pwd_name_get, NULL),
+    SCM_CLASS_SLOT_SPEC("uid",    pwd_uid_get, NULL),
+    SCM_CLASS_SLOT_SPEC("gid",    pwd_gid_get, NULL),
+    SCM_CLASS_SLOT_SPEC("passwd", pwd_passwd_get, NULL),
+    SCM_CLASS_SLOT_SPEC("gecos",  pwd_gecos_get, NULL),
+    SCM_CLASS_SLOT_SPEC("dir",    pwd_dir_get, NULL),
+    SCM_CLASS_SLOT_SPEC("shell",  pwd_shell_get, NULL),
+    SCM_CLASS_SLOT_SPEC("class",  pwd_pwclass_get, NULL),
+    { NULL }
+};
 
 /*
  * Exec
@@ -735,10 +830,17 @@ ScmObj Scm_SysSelectX(ScmObj rfds, ScmObj wfds, ScmObj efds, ScmObj timeout)
 void Scm__InitSystem(void)
 {
     ScmModule *mod = Scm_GaucheModule();
-    Scm_InitBuiltinClass(&Scm_SysStatClass, "<sys-stat>", NULL, 0, mod);
+    sym_directory = SCM_INTERN("directory");
+    sym_regular   = SCM_INTERN("regular");
+    sym_character = SCM_INTERN("character");
+    sym_block     = SCM_INTERN("block");
+    sym_fifo      = SCM_INTERN("fifo");
+    sym_symlink   = SCM_INTERN("symlink");
+    sym_socket    = SCM_INTERN("socket");
+    Scm_InitBuiltinClass(&Scm_SysStatClass, "<sys-stat>", stat_slots, 0, mod);
     Scm_InitBuiltinClass(&Scm_SysTmClass, "<sys-tm>", tm_slots, 0, mod);
-    Scm_InitBuiltinClass(&Scm_SysGroupClass, "<sys-group>", NULL, 0, mod);
-    Scm_InitBuiltinClass(&Scm_SysPasswdClass, "<sys-passwd>", NULL, 0, mod);
+    Scm_InitBuiltinClass(&Scm_SysGroupClass, "<sys-group>", grp_slots, 0, mod);
+    Scm_InitBuiltinClass(&Scm_SysPasswdClass, "<sys-passwd>", pwd_slots, 0, mod);
 #ifdef HAVE_SELECT
     Scm_InitBuiltinClass(&Scm_SysFdsetClass, "<sys-fdset>", NULL, 0, mod);
 #endif
