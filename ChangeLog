@@ -1,3 +1,13 @@
+2001-02-20  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.0.15
+	* src/compile.c, src/gauche/vm.h: changed the compile-time
+	  environment structure so that it can handle locally defined macros.
+	  ScmIdentifier object is introduced to realize hygienic macros.
+	* src/vm.c: changed to use ScmIdentifier objects for global variable
+	  reference instead of bare symbols.   fixed a bug in VALUES_BIND
+	  which messed up argp.
+
 2001-02-19  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.0.14
