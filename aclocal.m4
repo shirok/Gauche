@@ -11,7 +11,7 @@ dnl even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 dnl PARTICULAR PURPOSE.
 
 dnl Gauche-specific aucotonf macros.
-dnl $Id: aclocal.m4,v 1.17 2003-04-22 10:36:15 shirok Exp $
+dnl $Id: aclocal.m4,v 1.18 2003-04-22 21:50:31 shirok Exp $
 
 dnl AC_GAUCHE_INIT_EXT
 dnl   Sets some parameters about installed Gauche package. 
@@ -2954,7 +2954,7 @@ case $host_os in
     # as there is no search path for DLLs.
     _LT_AC_TAGVAR(hardcode_libdir_flag_spec, $1)='-L$libdir'
     _LT_AC_TAGVAR(allow_undefined_flag, $1)=unsupported
-    _LT_AC_TAGVAR(always_export_symbols, $1)=no
+    _LT_AC_TAGVAR(always_export_symbols, $1)=yes
     _LT_AC_TAGVAR(enable_shared_with_static_runtimes, $1)=yes
 
     if $LD --help 2>&1 | grep 'auto-import' > /dev/null; then
@@ -5168,7 +5168,7 @@ EOF
       # as there is no search path for DLLs.
       _LT_AC_TAGVAR(hardcode_libdir_flag_spec, $1)='-L$libdir'
       _LT_AC_TAGVAR(allow_undefined_flag, $1)=unsupported
-      _LT_AC_TAGVAR(always_export_symbols, $1)=no
+      _LT_AC_TAGVAR(always_export_symbols, $1)=yes
       _LT_AC_TAGVAR(enable_shared_with_static_runtimes, $1)=yes
       _LT_AC_TAGVAR(export_symbols_cmds, $1)='$NM $libobjs $convenience | $global_symbol_pipe | $SED -e '\''/^[[BCDGS]] /s/.* \([[^ ]]*\)/\1 DATA/'\'' | $SED -e '\''/^[[AITW]] /s/.* //'\'' | sort | uniq > $export_symbols'
 

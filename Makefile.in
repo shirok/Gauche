@@ -1,5 +1,5 @@
 # Top Makefle for Gauche
-# $Id: Makefile.in,v 1.35 2003-04-22 10:36:15 shirok Exp $
+# $Id: Makefile.in,v 1.36 2003-04-22 21:50:30 shirok Exp $
 #  Run 'configure' script to generate Makefile
 
 @SET_MAKE@
@@ -53,10 +53,17 @@ distcheck:
 	@echo "To create a distribution tarball, use DIST script."
 
 # NB: I intentionally make aclocal.m4 not depend on acinclude.m4, to
-# prevent aclocal from running accidentally; if the developer uses
-# different versions of libtool/automake, rebuilding aclocal.m4 is
-# certainly a recipe of incomprehensive errors. 
-# Use CVS version of aclocal.m4, unless you edited acinclude.m4 on purpose.
+# prevent aclocal from running accidentally.
 aclocal.m4 :
-	@echo "Make sure you have libtool 1.5, or you'll be in deep trouble"
-	aclocal
+	@echo "************************************************************"
+	@echo "To rebuild aclocal.m4 from acinclude.m4, follow the instructions"
+	@echo "below:"
+	@echo " - Make sure you have libtool 1.5, or you'll be in deep trouble"
+	@echo " - Run aclocal"
+	@echo " - Edit aclocal.m4 so that always_export_symbols libtool parameter"
+	@echo "   shall be 'yes' on cygwin platforms.  (Don't change the default"
+	@echo "   value.  There are two occurrences of setting the parameter in"
+	@echo "   case statement when the target platform is cygwin.)"
+	@echo "************************************************************"
+
+

@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions
-## $Id: Makefile.ext.in,v 1.1 2003-04-21 21:58:13 shirok Exp $
+## $Id: Makefile.ext.in,v 1.2 2003-04-22 21:51:03 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -32,15 +32,15 @@ EXEEXT   = @EXEEXT@
 COMPILE   = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(OPTFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(OPTFLAGS)
 CCLD      = $(CC)
-LINK      = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@ -rpath $(GAUCHE_ARCHDIR)
-MODLINK   = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) $(MOD_LDFLAGS) -o $@ -rpath $(GAUCHE_ARCHDIR)
+LINK      = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) -no-undefined -o $@ -rpath $(GAUCHE_ARCHDIR)
+MODLINK   = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) -no-undefined $(MOD_LDFLAGS) -o $@ -rpath $(GAUCHE_ARCHDIR)
 INSTALL   = $(LIBTOOL) --mode=install @INSTALL@
 
 GOSH = $(top_srcdir)/src/gosh -ftest
 GAUCHE_CONFIG = $(SHELL) $(top_srcdir)/src/gauche-config
 INSTALL_TYPE = sys
 
-MOD_LDFLAGS  = -no-undefined -module -avoid-version
+MOD_LDFLAGS  = -module -avoid-version
 LIBGAUCHE = $(top_builddir)/src/libgauche.la
 
 GAUCHE_INCDIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
