@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.13 2001-06-02 09:52:47 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.14 2001-06-02 11:13:06 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -155,7 +155,72 @@ Gauche uses a port object as a unified abstraction, but
 @node Notations
 @section Notations
 
+In this manual, each entry is represented like this:
 
+@deftp {Category} foo arg1 arg2
+[spec] Description of foo @dots{}
+@end deftp
+
+@var{Category} denotes the category of the entry @b{foo}.
+The following category will appear in this manual:
+
+@table @asis
+@item Function
+A Scheme function.
+@item Special Form
+A special form (in the R5RS term, ``syntax'').
+@item Macro
+A macro.
+@item Module
+A module
+@item Class
+A class.
+@item Reader Syntax
+A lexical syntax that is interpreted by the reader.
+@end table
+
+For functions, special forms and macros, the entry may followed
+by one or more arguments.  In the argument list, the following notations
+may appear:
+
+@table @var
+@item arg @dots{}
+This notation may appear in special forms and macros, and indicates
+zero or more arguments.
+@item &optional x y z
+@itemx &optional (x x-default) (y y-default) z
+Indicates it may take up to three optional arguments.
+The second form specifies default values.
+Note that Gauche doesn't really support Common-Lisp style
+@code{&optional} argument specifier in the lambda list.
+I use this notation since it is useful to indicate valid pattern of arguments.
+@item &keyword x y z
+@itemx &keyword (x x-default) (y y-default) z
+Indicates it may take keyword arguments @var{x}, @var{y} and @var{z.}
+Note that Gauche doesn't really support Common-Lisp style
+@code{&keyword} argument specifier in the lambda list.
+I use this notation since it is useful to indicate valid pattern of arguments.
+@item &rest args
+Indicates it may take rest arguements.
+Note that Gauche doesn't really support Common-Lisp style
+@code{&rest} argument specifier in the lambda list.
+I use this notation since it is useful to indicate valid pattern of arguments.
+@end table
+
+The description of the entry follows the entry line.
+If the specification of the entry comes from some standard or
+implementation, its origin is noted in the bracket at the beginning
+of the description.  The following origins are noted:
+
+@table @asis
+@item [R5RS]
+The entry works as specified in ``Revised^5 Report of Algorithmic Language
+Scheme.''.
+@item [SRFI-@var{n}]
+The entry works as specified in SRFI-@var{n}.
+@item [POSIX]
+The API of the entry reflects the API specified in POSIX.
+@end table
 
 
 @node Structure of this document
@@ -232,6 +297,31 @@ class, Gauche methods don't
 @node Invoking Gosh
 @chapter Invoking Gosh
 
+@deftp {Program} gosh [options] [--] [file arg @dots{}]
+@code{Gosh} is Gauche's interpreter.   Without @var{file}s,
+it reads a Scheme expression from the standard input, evaluates it,
+and prints the result, and repeat that until it reads EOF or
+is terminated.
+
+If @var{file} is specified, @code{gosh} loads the file as a Scheme
+program and exits.  The command line arguments following @var{file}
+is passed to the Scheme program as program arguments.
+@end deftp
+
+@deftp {Command Option} -I path
+@end deftp
+
+@deftp {Command Option} -q
+@end deftp
+
+@deftp {Command Option} -V
+@end deftp
+
+@deftp {Command Option} -u module
+@end deftp
+
+@deftp {Command Option} -f function
+@end deftp
 
 
 @c ======================================================================
@@ -1731,6 +1821,9 @@ Reads @var{nbytes} bytes from @var{iport}, and returns an incomplete
 string consisted by those bytes.  The size of returned string may
 shorter than @var{nbytes} when @var{iport} doesn't have enough bytes
 to fill.  If @var{iport} has already reached EOF, an eof object is returned.
+
+Note: if you want to write a chunk of bytes (incomplete string) to a port,
+use @code{display}.
 @end defun
 
 @defun eof-object? obj
@@ -2183,11 +2276,14 @@ take leap seconds into acount.
 @end defun
 
 @defun sys-gmtime time
-[POSIX]
+[POSIX] @var{time} is a number of seconds since Epoch.
+This function converts it to @code{<sys-tm>} object, represented in GMT.
 @end defun
 
 @defun sys-localtime time
-[POSIX]
+[POSIX] @var{time} is a number of seconds since Epoch.
+This function converts it to @code{<sys-tm>} object, represented in the
+local time.
 @end defun
 
 @defun sys-ctime time
@@ -2863,7 +2959,7 @@ Prints out list of failed tests.
 
 @deftp {Module} rfc.822
 @mdindex rfc.822
-Definds a set of functions that parses and constructs the ``Internet
+Defines a set of functions that parses and constructs the ``Internet
 Message Format'', a text format used to exchange e-mails.
 The most recent specification can be found in
 @uref{http://www.rfc-editor.org/rfc/rfc2822.txt, RFC2822}.
