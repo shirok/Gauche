@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.29 2001-05-03 09:37:47 shirok Exp $
+ *  $Id: number.c,v 1.30 2001-05-04 20:18:50 shirok Exp $
  */
 
 #include <math.h>
@@ -337,20 +337,6 @@ ScmObj Scm_InexactToExact(ScmObj obj)
     }
     return obj;
 }
-
-enum NumberClass {
-    FIXNUM,
-    BIGNUM,
-    FLONUM,
-    COMPLEX,
-    NONUMBER
-};
-
-#define NUMBER_CLASS(obj)                       \
-    (SCM_INTP(obj)? FIXNUM :                    \
-       SCM_BIGNUMP(obj)? BIGNUM :               \
-         SCM_FLONUMP(obj)? FLONUM :             \
-           SCM_COMPLEXP(obj)? COMPLEX: NONUMBER)
 
 /* Type conversion:
  *   `promote' means a conversion from lower number class to higher,
@@ -1046,10 +1032,18 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
 
 ScmObj Scm_Max(ScmObj arg0, ScmObj args)
 {
-    if (NUMBER_CLASS(arg0) > FLONUM)
-        Scm_Error("real number required, but got %S", arg0);
+    int inexact = SCM_EXACTP(arg0);
     for (;;) {
-        if (SCM_NULLP(args)) return arg0;
+        if (!SCM_REALP(arg0))
+            Scm_Error("real number required, but got %S", arg0);
+        if (SCM_NULLP(args)) {
+            if (inexact && SCM_EXACTP(arg0)) {
+                return Scm_ExactToInexact(arg0);
+            } else {
+                return arg0;
+            }
+        }
+        if (!SCM_EXACTP(SCM_CAR(args))) inexact = TRUE;
         if (Scm_NumCmp(arg0, SCM_CAR(args)) < 0) {
             arg0 = SCM_CAR(args);
         }
@@ -1059,10 +1053,18 @@ ScmObj Scm_Max(ScmObj arg0, ScmObj args)
 
 ScmObj Scm_Min(ScmObj arg0, ScmObj args)
 {
-    if (NUMBER_CLASS(arg0) > FLONUM)
-        Scm_Error("real number required, but got %S", arg0);
+    int inexact = SCM_EXACTP(arg0);
     for (;;) {
-        if (SCM_NULLP(args)) return arg0;
+        if (!SCM_REALP(arg0))
+            Scm_Error("real number required, but got %S", arg0);
+        if (SCM_NULLP(args)) {
+            if (inexact && SCM_EXACTP(arg0)) {
+                return Scm_ExactToInexact(arg0);
+            } else {
+                return arg0;
+            }
+        }
+        if (!SCM_EXACTP(SCM_CAR(args))) inexact = TRUE;
         if (Scm_NumCmp(arg0, SCM_CAR(args)) > 0) {
             arg0 = SCM_CAR(args);
         }
