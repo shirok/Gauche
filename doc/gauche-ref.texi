@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.126 2001-11-15 09:01:00 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.127 2001-11-16 11:39:55 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -4203,6 +4203,23 @@ Returns @code{#t} if a hash table @var{hash} has a key @var{key}.
 @c COMMON
 @end defun
 
+@defun hash-table-delete! hash key
+@c EN
+Deletes an entry that has a key @var{key} from the hash table @var{hash}.
+Returns @code{#t} if the entry has exist, or @code{#f} if the entry
+hasn't exist.   The same function is called @code{hash-table-remove!} in STk
+(except that it returns an undefined value); I use `delete' for consistency
+to SRFI-1, SRFI-13 and other parts of the libraries.
+@c JP
+ハッシュテーブル@code{hash}からキー@var{key}を持つエントリを削除します。
+@var{key}を持つエントリが実際に存在して削除された場合は@code{#t}を、
+エントリが存在しなかった場合は@code{#f}を返します。
+この手続きはSTkで@code{hash-table-remove!}と呼ばれているものです
+(STkのは戻り値が定義されていませんが)。GaucheではSRFI-1, SRFI-13やその他の
+ライブラリとの一貫性のために `delete' を採用しました。
+@c COMMON
+@end defun
+
 @defun hash-table-push! hash key value
 @c EN
 Conses @var{value} to the existing value for the key @var{key} in the
@@ -5426,6 +5443,24 @@ You can customize how the object is printed out by this method.
 [R5RS]
 @c EN
 @c JP
+@c COMMON
+@end defun
+
+@defun flush &optional port
+@c @defunx flush-output-port &optional port
+[R5RS]
+@c EN
+Output the buffered data in @var{port}.
+This function is called in variety of ways on the various
+Scheme implementations: @code{force-output} (Scsh, SCM),
+@code{flush-output} (Gambit), or @code{flush-output-port} (Bigloo).
+The name @code{flush} is taken from STk and STklos.
+@c JP
+@var{port}にバッファされているデータを全て書き出します。
+この手続きはScheme実装によって様々な名前で呼ばれています：
+@code{force-output} (Scsh, SCM)、
+@code{flush-output} (Gambit)、@code{flush-output-port} (Bigloo) 等。
+@code{flush}の名前はSTkとSTklosから取りました。
 @c COMMON
 @end defun
 
