@@ -26,7 +26,7 @@
                         Compiling and Installing Gauche
 <? ) !>
 
-$Id: INSTALL.esc,v 1.13 2002-02-21 08:59:11 shirok Exp $
+$Id: INSTALL.esc,v 1.14 2002-04-16 09:48:01 shirok Exp $
 <? (if-lang japanese? !>
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:<? else !>
@@ -200,6 +200,27 @@ GauchehはSLIB無しでも動作します。SLIBを使う必要がなければ、このオプションは
 Gauche works without SLIB, anyway.  If you're not interested, you
 don't need to care about this.
 <? ) !>
+
+<? (if-lang japanese? !>
+SLIBは最初に使う前にGaucheのライブラリディレクトリにカタログファイルを
+作成します。Gaucheのインストール時に既にSLIBが存在すればインストール
+スクリプトがカタログファイルを作成しますが、Gaucheインストール後にSLIB
+がインストールされた場合、最初にSLIBを使おうとした時点でカタログファイルが
+作成されます。この時、Gauche使用者がライブラリディレクトリに書き込み権限を
+持っていないとエラーとなります。書き込み権限を持つユーザがgoshを起動して
+例えば次のような式を評価すればカタログファイルが正しく作られます。
+<? else !>
+SLIB needs a catalog file to be created in the Gauche library
+directory before use.  If Gauche finds SLIB during installation,
+the install procedure creates the catalog file.
+If you install slib after installing Gauche, it tries to create
+the catalog file when you use slib first time, and you may get
+an error if you don't have a permission to write into the
+Gauche library directory.   Run gosh in the right permission
+and evaluate something like the following will solve the problem.
+<? ) !>
+  (use slib)
+  (require 'logical)
 
 
 <? (header "実行時のライブラリパス" "Run-time library path") !>
