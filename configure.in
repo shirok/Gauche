@@ -17,6 +17,8 @@ AC_CHECK_LIB(m, sin) dnl needed to check trunc and rint below
 dnl ===========================================================
 dnl Checks for header files.
 AC_HEADER_STDC
+AC_HEADER_TIME
+AC_CHECK_HEADERS(sys/time.h)
 AC_CHECK_HEADERS(glob.h)
 AC_CHECK_HEADERS(dlfcn.h)
 

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.24 2001-03-13 08:33:55 shiro Exp $
+;;; $Id: syslib.stub,v 1.25 2001-03-14 10:31:01 shiro Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -30,6 +30,16 @@
 #include <sys/utsname.h>
 #include <sys/wait.h>
 #include <signal.h>
+#if TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# if HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
 "
 ;;---------------------------------------------------------------------
 ;; dirent.h - read directory

@@ -2,13 +2,19 @@
  *
  * Configuration parmateres
  *  
- * $Id: config.h.in,v 1.6 2001-03-10 05:36:54 shiro Exp $
+ * $Id: config.h.in,v 1.7 2001-03-14 10:31:01 shiro Exp $
  */
 
 #undef STDC_HEADERS
 
 /* Define gauche version */
 #define GAUCHE_VERSION "0.0"
+
+/* Define if the system allows including both time.h and sys/time.h */
+#undef TIME_WITH_SYS_TIME
+
+/* Define if the system has sys/time.h */
+#undef HAVE_SYS_TIME_H
 
 /* Define if the system has glob(). */
 #undef HAVE_GLOB_H
