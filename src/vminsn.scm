@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: vminsn.scm,v 1.1.2.2 2005-01-07 08:26:12 shirok Exp $
+;;;  $Id: vminsn.scm,v 1.1.2.3 2005-01-14 02:14:17 shirok Exp $
 ;;;
 
 ;;; This file is processed by geninsn to produce a couple of C files:
@@ -326,3 +326,6 @@
 (define-insn LOCAL-ENV  1 none)
 (define-insn POP-LOCAL-ENV 0 none)
 (define-insn LIST2VEC    0 none)        ; list->vector
+(define-insn CONST-PUSH  0 obj)
+(define-insn PUSHFALSE   0 none)
+(define-insn GREF-PUSH   0 obj)

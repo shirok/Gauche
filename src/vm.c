@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.218.2.15 2005-01-07 08:26:12 shirok Exp $
+ *  $Id: vm.c,v 1.218.2.16 2005-01-14 02:14:16 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -216,6 +216,7 @@ pthread_key_t Scm_VMKey(void)
 #define FETCH_INSN(var)         ((var) = *PC++)
 #define FETCH_LOCATION(var)     ((var) = (ScmWord*)*PC)
 #define FETCH_OPERAND(var)      ((var) = SCM_OBJ(*PC))
+#define FETCH_OPERAND_PUSH      (*SP++ = SCM_OBJ(*PC))
 
 /* check if *pc is an return instruction.  if so, some
    shortcuts are taken. */
@@ -598,7 +599,12 @@ pthread_key_t Scm_VMKey(void)
                 INCR_PC;
                 NEXT;
             }
-            
+            CASE(SCM_VM_CONST_PUSH) {
+                FETCH_OPERAND_PUSH;
+                INCR_PC;
+                NEXT;
+            }
+                        
             CASE(SCM_VM_PUSH) {
                 CHECK_STACK(0);
                 PUSH_ARG(VAL0);
@@ -851,34 +857,42 @@ pthread_key_t Scm_VMKey(void)
                 POP_CONT();
                 NEXT;
             }
+            CASE(SCM_VM_GREF_PUSH) {
+                /* fallthrough */
+            }
             CASE(SCM_VM_GREF) {
                 ScmGloc *gloc;
-                FETCH_OPERAND(VAL0);
+                ScmObj v;
+                FETCH_OPERAND(v);
 
-                if (!SCM_GLOCP(VAL0)) {
-                    VM_ASSERT(SCM_IDENTIFIERP(VAL0));
-                    gloc = Scm_FindBinding(SCM_IDENTIFIER(VAL0)->module,
-                                           SCM_IDENTIFIER(VAL0)->name,
+                if (!SCM_GLOCP(v)) {
+                    VM_ASSERT(SCM_IDENTIFIERP(v));
+                    gloc = Scm_FindBinding(SCM_IDENTIFIER(v)->module,
+                                           SCM_IDENTIFIER(v)->name,
                                            FALSE);
                     if (gloc == NULL) {
                         VM_ERR(("unbound variable: %S",
-                                SCM_IDENTIFIER(VAL0)->name));
+                                SCM_IDENTIFIER(v)->name));
                     }
                     /* memorize gloc */
-                    /* TODO: make it MT safe! */
                     *PC = SCM_WORD(gloc);
                 } else {
-                    gloc = SCM_GLOC(VAL0);
+                    gloc = SCM_GLOC(v);
                 }
-                VAL0 = SCM_GLOC_GET(gloc);
-                if (VAL0 == SCM_UNBOUND) {
+                v = SCM_GLOC_GET(gloc);
+                if (v == SCM_UNBOUND) {
                     VM_ERR(("unbound variable: %S", SCM_OBJ(gloc->name)));
-                } else if (SCM_AUTOLOADP(VAL0)) {
+                } else if (SCM_AUTOLOADP(v)) {
                     SAVE_REGS();
-                    VAL0 = Scm_LoadAutoload(SCM_AUTOLOAD(VAL0));
+                    v = Scm_LoadAutoload(SCM_AUTOLOAD(v));
                     RESTORE_REGS();
                 }
                 INCR_PC;
+                if (SCM_NVM_INSN_CODE(code) == SCM_VM_GREF_PUSH) {
+                    *SP++ = v;
+                } else {
+                    VAL0 = v;
+                }
                 NEXT;
             }
             CASE(SCM_VM_LREF0) { VAL0 = ENV_DATA(ENV, 0); NEXT; }
@@ -1133,13 +1147,15 @@ pthread_key_t Scm_VMKey(void)
             /* combined push immediate */
             CASE(SCM_VM_PUSHI) {
                 long imm = SCM_NVM_INSN_ARG(code);
-                VAL0 = SCM_MAKE_INT(imm);
-                PUSH_ARG(VAL0);
+                PUSH_ARG(SCM_MAKE_INT(imm));
                 NEXT;
             }
             CASE(SCM_VM_PUSHNIL) {
-                VAL0 = SCM_NIL;
-                PUSH_ARG(VAL0);
+                PUSH_ARG(SCM_NIL);
+                NEXT;
+            }
+            CASE(SCM_VM_PUSHFALSE) {
+                PUSH_ARG(SCM_FALSE);
                 NEXT;
             }
 
@@ -3199,6 +3215,13 @@ static void pk_rec(pk_data *data, ScmObj code, int need_ret)
             continue;
         }
         switch (SCM_VM_INSN_CODE(insn)) {
+        case SCM_VM_CONST:;
+        case SCM_VM_CONST_PUSH:;
+            pk_emit(data, insn);
+            cp = SCM_CDR(cp);
+            pk_constant(data, SCM_CAR(cp));
+            pk_emit(data, SCM_CAR(cp));
+            break;
         case SCM_VM_PUSH:;
         case SCM_VM_POP:;
         case SCM_VM_DUP:;
@@ -3218,8 +3241,10 @@ static void pk_rec(pk_data *data, ScmObj code, int need_ret)
             pk_emit(data, insn);
             break;
         case SCM_VM_JUMP:;
+            /* won't appear in the old compiler output. */
             break;
         case SCM_VM_GREF:;
+        case SCM_VM_GREF_PUSH:;
             pk_emit(data, insn);
             cp = SCM_CDR(cp);
             pk_constant(data, SCM_CAR(cp));
@@ -3337,6 +3362,7 @@ static void pk_rec(pk_data *data, ScmObj code, int need_ret)
             break;
         case SCM_VM_PUSHI:;
         case SCM_VM_PUSHNIL:;
+        case SCM_VM_PUSHFALSE:;
         case SCM_VM_CONS:;
         case SCM_VM_CONS_PUSH:;
         case SCM_VM_CAR:;
