@@ -12,13 +12,14 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.65 2002-04-01 23:01:58 shirok Exp $
+ *  $Id: number.c,v 1.66 2002-04-03 10:38:34 shirok Exp $
  */
 
 #include <math.h>
 #include <limits.h>
 #include <string.h>
 #include <ctype.h>
+#include <float.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 
@@ -1317,7 +1318,7 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
         if (plus_sign) *buf++ = '+';
         strcpy(buf, "#<nan>");
     } else {
-        if (plus_sign && val > 0) { *buf++ = '+'; buflen--; }
+        if (plus_sign && val >= 0) { *buf++ = '+'; buflen--; }
         snprintf(buf, buflen - 3, "%.15g", val);
         if (strchr(buf, '.') == NULL && strchr(buf, 'e') == NULL)
             strcat(buf, ".0");
@@ -1371,20 +1372,65 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix, int use_upper)
 
 /*
  * Number Parser
+ *
+ *  <number> : <prefix> <complex>
+ *  <prefix> : <radix> <exactness> | <exactness> <radix>
+ *  <radix>  : <empty> | '#b' | '#o' | '#d' | '#x'
+ *  <exactness> : <empty> | '#e' | '#i'
+ *  <complex> : <real>
+ *            | <real> '@' <real>
+ *            | <real> '+' <ureal> 'i'
+ *            | <real> '-' <ureal> 'i'
+ *            | <real> '+' 'i'
+ *            | <real> '-' 'i'
+ *            | '+' <ureal> 'i'
+ *            | '-' <ureal> 'i'
+ *            | '+' 'i'
+ *            | '-' 'i'
+ *  <real>   : <sign> <ureal>
+ *  <sign>   : <empty> | '+' | '-'
+ *  <ureal>  : <uinteger>
+ *           | <uinteger> '/' <uinteger>
+ *           | <decimal>
+ *  <uinteger> : <digit>+ '#'*
+ *  <decimal> : <digit10>+ '#'* <suffix>
+ *            | '.' <digit10>+ '#'* <suffix>
+ *            | <digit10>+ '.' <digit10>+ '#'* <suffix>
+ *            | <digit10>+ '#'+ '.' '#'* <suffix>
+ *  <suffix>  : <empty> | <exponent-marker> <sign> <digit10>+
+ *  <exponent-marker> : 'e' | 's' | 'f' | 'd' | 'l'
+ *
+ * The parser reads characters from on-memory buffer.
+ * Multibyte strings are filtered out in the early stage of
+ * parsing, so the subroutines assume the buffer contains
+ * only ASCII chars.
  */
 
-/* NB: multibyte strings are filtered out in the early stage of
-   parsing, so these routines can assume the input string contains
-   only ASCII chars. */
-static ScmObj read_integer(const char *str, int len, int radix);
-static ScmObj read_rational(const char *str, int len, ScmObj numerator);
-static double read_real(const char *str, int len, const char **next);
-static ScmObj read_complex(const char *str, int len);
+struct numread_packet {
+    const char *buffer;         /* original buffer */
+    int buflen;                 /* original length */
+    int radix;                  /* radix */
+    int exactness;              /* exactness; see enum below */
+    int strict;                 /* when true, reports an error if the
+                                   input violates implementation limitation;
+                                   otherwise, the routine returns #f. */
+};
 
-static ScmObj read_uinteger(const char **strp, int *lenp, int radix)
+enum { /* used in the exactness flag */
+    NOEXACT, EXACT, INEXACT
+};
+
+static ScmObj numread_error(const char *msg, struct numread_packet *context);
+
+/* Returns either small integer or bignum. */
+static ScmObj read_uint(const char **strp, int *lenp,
+                        struct numread_packet *ctx,
+                        int fractpart)
 {
     const char *str = *strp;
     int len = *lenp;
+    int radix = ctx->radix;
+    int padseen = FALSE;
     long value_int = 0;
     ScmObj value_big = SCM_FALSE;
     char c;
@@ -1417,129 +1463,162 @@ static ScmObj read_uinteger(const char **strp, int *lenp, int radix)
     else                       return value_big;
 }
 
-static ScmObj read_integer(const char *str, int len, int radix)
+static ScmObj read_real(const char **strp, int *lenp,
+                        struct numread_packet *ctx)
 {
-    int minusp = 0, lensave = len;
-    const char *strsave = str;
-    ScmObj r, d;
+    int minusp = FALSE, exp_minusp = FALSE;
+    int exponent = 0, fracdigs = 0;
+    ScmObj intpart, fraction;
 
-    if (*str == '+')      { minusp = 0; str++; len--; }
-    else if (*str == '-') { minusp = 1; str++; len--; }
-    if (len == 0) return SCM_FALSE;
-
-    r = read_uinteger(&str, &len, radix);
-    if (len != 0) {
-        if (*str != '/' || len == 1) return SCM_FALSE;
-        /* potentially rational number */
-        str++; len--;
-        d = read_uinteger(&str, &len, radix);
-        if (len != 0) return SCM_FALSE;
-        if (d == SCM_MAKE_INT(0)) {
-            Scm_Error("zero in denominator of rational number: %A",
-                      Scm_MakeString(strsave, lensave, lensave, SCM_MAKSTR_IMMUTABLE));
-        }
-        /* Gauche doesn't support rational number, so we convert it
-           to real. */
-        r = Scm_Divide(r, d, SCM_NIL);
+    switch (**strp) {
+    case '-': minusp = TRUE;
+        /* FALLTHROUGH */
+    case '+':
+        (*strp)++; (*lenp)--;
     }
-    if (minusp) return Scm_Negate(r);
-    else        return r;
-}
+    if ((*lenp) <= 0) return SCM_FALSE;
 
-static double read_real(const char *str, int len, const char **next)
-{
-    char c;
-    ScmDString ds;
-    double value;
-    int point_seen = 0, exp_seen = 0, digits = 0;
-    
-    Scm_DStringInit(&ds);
-
-    if (*str == '+' || *str == '-') {
-        SCM_DSTRING_PUTB(&ds, *str);
-        str++;
-        len--;
-    }
-    if (len == 0) { *next = NULL; return 0.0; }
-
-    for (; len > 0; len--, str++) {
-        switch (c = *str) {
-        case '0':; case '1':; case '2':; case '3':; case '4':;
-        case '5':; case '6':; case '7':; case '8':; case '9':
-            digits++;
-            SCM_DSTRING_PUTB(&ds, c);
-            continue;
-        case '.':
-            if (point_seen) { *next = NULL; return 0.0; }
-            SCM_DSTRING_PUTB(&ds, c);
-            point_seen = 1;
-            continue;
-        case 'e':; case 'E':;
-        case 's':; case 'S':; case 'f':; case 'F':;
-        case 'd':; case 'D':; case 'l':; case 'L':;
-            if (digits == 0 || exp_seen) { *next = NULL; return 0.0; }
-            point_seen = exp_seen = 1;
-            SCM_DSTRING_PUTB(&ds, 'e');
-            if (len > 0 && (str[1] == '+' || str[1] == '-')) {
-                SCM_DSTRING_PUTB(&ds, *++str);
-                len--;
+    /* Read integral part */
+    if (**strp != '.') {
+        intpart = read_uint(strp, lenp, ctx, FALSE);
+        if ((*lenp) <= 0) {
+            if (minusp) intpart = Scm_Negate(intpart);
+            if (ctx->exactness == INEXACT) {
+                return Scm_ExactToInexact(intpart);
+            } else {
+                return intpart;
             }
-            continue;
-        case '+':; case '-':; case 'i':
-            break;
-        default:
-            *next = NULL;
-            return 0.0;
         }
-        break;
+        if (**strp == '/') {
+            /* possibly rational */
+            ScmObj denom, ratval;
+            int lensave;
+            
+            if ((*lenp) <= 1) return SCM_FALSE;
+            (*strp)++; (*lenp)--;
+            lensave = *lenp;
+            denom = read_uint(strp, lenp, ctx, FALSE);
+            if (SCM_FALSEP(denom)) return SCM_FALSE;
+            if (denom == SCM_MAKE_INT(0)) {
+                if (lensave > *lenp) {
+                    return numread_error("(zero in denominator of rational number)",
+                                         ctx);
+                } else {
+                    return SCM_FALSE;
+                }
+            }
+            if (minusp) intpart = Scm_Negate(intpart);
+            ratval = Scm_Divide(intpart, denom, SCM_NIL);
+
+            if (ctx->exactness == EXACT && !Scm_IntegerP(ratval)) {
+                return numread_error("(exact non-integral rational number is not supported)",
+                                     ctx);
+            }
+            if (ctx->exactness == INEXACT && !SCM_FLONUMP(ratval)) {
+                return Scm_ExactToInexact(ratval);
+            } else {
+                return ratval;
+            }
+        }
+        /* fallthrough */
+    } else {
+        intpart = SCM_FALSE; /* indicate there was no intpart */
     }
-    if (digits == 0) SCM_DSTRING_PUTB(&ds, '1');
-    sscanf(Scm_DStringGetz(&ds), "%lf", &value);
-    *next = str;
-    return value;
+
+    /* Read fractional part.
+       At this point, simple integer is already eliminated. */
+    if (**strp == '.') {
+        int lensave;
+        if (ctx->radix != 10) {
+            return numread_error("(only 10-based fraction is supported)",
+                                 ctx);
+        }
+        (*strp)++; (*lenp)--;
+        lensave = *lenp;
+        fraction = read_uint(strp, lenp, ctx, TRUE);
+        fracdigs = lensave - *lenp;
+    } else {
+        fraction = SCM_MAKE_INT(0);
+    }
+
+    if (SCM_FALSEP(intpart)) {
+        if (fracdigs == 0) return SCM_FALSE;
+        intpart = SCM_MAKE_INT(0);
+    }
+
+    /* Read exponent.  */
+    if (*lenp > 0 && strchr("eEsSfFdDlL", (int)**strp)) {
+        (*strp)++;
+        if (--(*lenp) <= 0) return SCM_FALSE;
+        switch (**strp) {
+        case '-': exp_minusp = TRUE;
+            /*FALLTHROUGH*/
+        case '+':
+            (*strp)++;
+            if (--(*lenp) <= 0) return SCM_FALSE;
+        }
+        while (*lenp > 0) {
+            int c = **strp;
+            if (!isdigit(c)) break;
+            (*strp)++, (*lenp)--;
+            if (isdigit(c)) {
+                exponent = exponent * 10 + (c - '0');
+                if (exponent >= DBL_MAX_10_EXP) return SCM_FALSE;
+            }
+        }
+        if (exp_minusp) exponent = -exponent;
+    }
+
+    /* Compose flonum.
+       It is known that double-precision arithmetic is not enough to
+       find the best approximation of the given external
+       represenation (Cf. William D Clinger, "How to Read Floating
+       Point Numbers Accurately", in the ACM SIGPLAN '90 Conference
+       on Programming Language Design and Implementation, 1990.)
+       For now, we trade accuracy for simplicity. */
+    {
+        double realnum = Scm_GetDouble(intpart) * pow(10.0, exponent);
+        if (fracdigs) {
+            realnum += Scm_GetDouble(fraction) * pow(10.0, exponent - fracdigs);
+        }
+        if (minusp) realnum = -realnum;
+        /* check exactness */
+        if (ctx->exactness == EXACT) {
+            double integ;
+            if (modf(realnum, &integ) != 0.0) {
+                return numread_error("(exact non-integral number is not supported",
+                                     ctx);
+            }
+            return Scm_InexactToExact(Scm_MakeFlonum(realnum));
+        }
+        return Scm_MakeFlonum(realnum);
+    }
 }
 
-static ScmObj read_complex(const char *str, int len)
+/* Entry point */
+static ScmObj read_number(const char *str, int len, int radix, int strict)
 {
-    double real, imag;
-    const char *next;
-    char sign = 0;
+    struct numread_packet ctx;
+    int radix_seen = 0, exactness_seen = 0, sign_seen = 0;
+    int minusp = FALSE;
+    ScmObj realpart;
 
-    if (*str == '.' && len == 1) return SCM_FALSE;
-    if (*str == '+' || *str == '-') sign = *str;
+    ctx.buffer = str;
+    ctx.buflen = len;
+    ctx.exactness = NOEXACT;
+    ctx.strict = strict;
 
-    real = read_real(str, len, &next);
-    if (next == NULL) return SCM_FALSE;
+#define CHK_EXACT_COMPLEX()                                                 \
+    do {                                                                    \
+        if (ctx.exactness == EXACT) {                                       \
+            return numread_error("(exact complex number is not supported)", \
+                                 &ctx);                                     \
+        }                                                                   \
+    } while (0)
 
-    if (next == str+len) return Scm_MakeFlonum(real);
-
-    if (*next == 'i') {
-        if (sign && next == str+len-1) {
-            if (real == 0.0) return Scm_MakeFlonum(0.0);
-            else return Scm_MakeComplex(0, real);
-        }
-        else return SCM_FALSE;
-    }
-
-    if (*next == '+' || *next == '-') {
-        imag = read_real(next, len-(next-str), &next);
-        if (next == NULL || next != str+len-1) return SCM_FALSE;
-        if (*next != 'i') return SCM_FALSE;
-        if (imag == 0.0)
-            return Scm_MakeFlonum(real);
-        else
-            return Scm_MakeComplex(real, imag);
-    }
-    return SCM_FALSE;
-}
-
-static ScmObj read_number(const char *str, int len, int radix)
-{
-    int radix_seen = 0;
-    int exactness = 0, exactness_seen = 0;
-    int i;
-
-    if (radix <= 1 || radix > 36) return SCM_FALSE; /* XXX:should be error? */
+    /* suggested radix.  may be overridden by prefix. */
+    if (radix <= 1 || radix > 36) return SCM_FALSE;
+    ctx.radix = radix;
     
     /* start from prefix part */
     for (; len >= 0; len-=2) {
@@ -1548,52 +1627,110 @@ static ScmObj read_number(const char *str, int len, int radix)
         switch (*str++) {
         case 'x':; case 'X':;
             if (radix_seen) return SCM_FALSE;
-            radix = 16; radix_seen++;
+            ctx.radix = 16; radix_seen++;
             continue;
         case 'o':; case 'O':;
             if (radix_seen) return SCM_FALSE;
-            radix = 8; radix_seen++;
+            ctx.radix = 8; radix_seen++;
             continue;
         case 'b':; case 'B':;
             if (radix_seen) return SCM_FALSE;
-            radix = 2; radix_seen++;
+            ctx.radix = 2; radix_seen++;
             continue;
         case 'd':; case 'D':;
             if (radix_seen) return SCM_FALSE;
-            radix = 10; radix_seen++;
+            ctx.radix = 10; radix_seen++;
             continue;
         case 'e':; case 'E':;
             if (exactness_seen) return SCM_FALSE;
-            exactness = 1; exactness_seen++;
+            ctx.exactness = EXACT; exactness_seen++;
             continue;
         case 'i':; case 'I':;
             if (exactness_seen) return SCM_FALSE;
-            exactness = 0; exactness_seen++;
+            ctx.exactness = INEXACT; exactness_seen++;
             continue;
         }
         return SCM_FALSE;
     }
     if (len <= 0) return SCM_FALSE;
 
-    /* number body */
-    if (exactness || radix != 10)  return read_integer(str, len, radix);
-
-    i = (*str == '+' || *str == '-')? 1 : 0;
-    for (; i<len; i++) {
-        if (!isdigit(str[i]) && str[i] != '/') {
-            return read_complex(str, len);
+    /* number body.  need to check the special case of pure imaginary */
+    if (*str == '+' || *str == '-') {
+        if (len == 1) return SCM_FALSE;
+        if (len == 2 && str[1] == 'i' || str[1] == 'I') {
+            CHK_EXACT_COMPLEX();
+            return Scm_MakeComplex(0.0, (*str == '+')? 1.0 : -1.0);
         }
+        sign_seen = TRUE;
     }
-    return read_integer(str, len, 10);
+
+    realpart = read_real(&str, &len, &ctx);
+    if (SCM_FALSEP(realpart) || len == 0) return realpart;
+
+    switch (*str) {
+    case '@':
+        /* polar representation of complex*/
+        if (len <= 1) {
+            return SCM_FALSE;
+        } else {
+            ScmObj angle;
+            double dmag, dangle;
+            str++; len--;
+            angle = read_real(&str, &len, &ctx);
+            if (SCM_FALSEP(angle) || len != 0) return SCM_FALSE;
+            CHK_EXACT_COMPLEX();
+            dmag = Scm_GetDouble(realpart);
+            dangle = Scm_GetDouble(angle);
+            return Scm_MakeComplex(dmag * cos(dangle),
+                                   dmag * sin(dangle));
+        }
+    case '+':;
+    case '-':
+        /* rectangular representation of complex */
+        if (len <= 1) {
+            return SCM_FALSE;
+        } else if (len == 2 && str[1] == 'i') {
+            return Scm_MakeComplex(Scm_GetDouble(realpart),
+                                   (*str == '+' ? 1.0 : -1.0));
+        } else {
+            ScmObj imagpart = read_real(&str, &len, &ctx);
+            if (SCM_FALSEP(imagpart) || len != 1 || *str != 'i') {
+                return SCM_FALSE;
+            }
+            CHK_EXACT_COMPLEX();
+            if (Scm_Sign(imagpart) == 0) return realpart;
+            return Scm_MakeComplex(Scm_GetDouble(realpart), 
+                                   Scm_GetDouble(imagpart));
+        }
+    case 'i':
+        /* '+' <ureal> 'i'  or '-' <ureal> 'i' */
+        if (!sign_seen || len != 1) return SCM_FALSE;
+        CHK_EXACT_COMPLEX();
+        if (Scm_Sign(realpart) == 0) return Scm_MakeFlonum(0.0);
+        else return Scm_MakeComplex(0.0, Scm_GetDouble(realpart));
+    default:
+        return SCM_FALSE;
+    }
+}
+
+static ScmObj numread_error(const char *msg, struct numread_packet *context)
+{
+    if (context->strict) {
+        Scm_Error("bad number format %s: %A", msg,
+                  Scm_MakeString(context->buffer, context->buflen,
+                                 context->buflen, 0));
+    }
+    return SCM_FALSE;
 }
 
 
-ScmObj Scm_StringToNumber(ScmString *str, int radix)
+ScmObj Scm_StringToNumber(ScmString *str, int radix, int strict)
 {
     if (SCM_STRING_LENGTH(str) != SCM_STRING_SIZE(str)) {
         /* This can't be a proper number. */
         return SCM_FALSE;
     } else {
-        return read_number(SCM_STRING_START(str), SCM_STRING_SIZE(str), radix);
+        return read_number(SCM_STRING_START(str), SCM_STRING_SIZE(str),
+                           radix, strict);
     }
 }

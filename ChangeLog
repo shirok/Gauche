@@ -1,3 +1,14 @@
+2002-04-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c, src/read.c : rewrote number reader to handle
+	  properly exactness, rational representation, and "#e#x" etc.
+	* lib/gauche/numerical.scm, src/gauche-init.scm, src/stlib.stub :
+	  changed 'make-polar' to a subr from a Scheme-defined function,
+          since the result of make-polar didn't exactly match the
+	  result of polar representation (<real>@<real>) on x86, because of
+	  the Intel's 80-bit floating-point arithmetic, and which was
+	  confusing.
+
 2002-04-01  Shiro Kawai  <shiro@acm.org>
 
 	* configure.in : search slib from /usr/share/slib first, for

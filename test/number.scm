@@ -60,16 +60,159 @@
 (test "peculiarity around 2^32"
       (* 477226729 10) (lambda () 4772267290))
 
+(test "radix" '(43605 342391 718048024785
+                123456789 123456789987654321
+                1193046 3735928559 3735928559)
+      (lambda ()
+        (list #b1010101001010101
+              #o1234567
+              #o12345677654321
+              #d123456789
+              #d123456789987654321
+              #x123456
+              #xdeadbeef
+              #xDeadBeef)))
+
+(test "exactness" #t (lambda () (exact? #e10)))
+(test "exactness" #t (lambda () (exact? #e10.0)))
+(test "exactness" #t (lambda () (exact? #e10e10)))
+(test "exactness" #f (lambda () (string->number "#e12.34")))
+(test "inexactness" #f (lambda () (exact? #i10)))
+(test "inexactness" #f (lambda () (exact? #i10.0)))
+(test "inexactness" #f (lambda () (exact? #i12.34)))
+
+(test "exactness & radix" '(#t 3735928559 #t 3735928559)
+      (lambda () (list (exact? #e#xdeadbeef)
+                       #e#xdeadbeef
+                       (exact? #x#edeadbeef)
+                       #x#edeadbeef)))
+(test "inexactness & radix" '(#f 3735928559.0 #f 3735928559.0)
+      (lambda () (list (exact? #i#xdeadbeef)
+                       #i#xdeadbeef
+                       (exact? #x#ideadbeef)
+                       #x#ideadbeef)))
+
+(test "invalid exactness/radix spec" #f
+      (lambda () (or (string->number "#e")
+                     (string->number "#i")
+                     (string->number "#e#i3")
+                     (string->number "#i#e5")
+                     (string->number "#x#o13")
+                     (string->number "#e#b#i00101"))))
+
+;;------------------------------------------------------------------
+(test-section "rational reader")
+
+(define (rational-test v)
+  (if (number? v) (list v (exact? v)) v))
+
+(test "rational reader" '(1234 #t) (lambda () (rational-test '1234/1)))
+(test "rational reader" '(-1234 #t) (lambda () (rational-test '-1234/1)))
+(test "rational reader" '(1234 #t) (lambda () (rational-test '+1234/1)))
+(test "rational reader" '|1234/-1| (lambda () (rational-test '1234/-1)))
+(test "rational reader" '(1234 #t) (lambda () (rational-test '2468/2)))
+(test "rational reader" '(0.5 #f) (lambda () (rational-test '1/2)))
+(test "rational reader" '(-0.5 #f) (lambda () (rational-test '-1/2)))
+(test "rational reader" '(0.5 #f) (lambda () (rational-test '+1/2)))
+(test "rational reader" '(0.5 #f) (lambda () (rational-test '751/1502)))
+
+(test "rational reader" '(1 #t)
+      (lambda () (rational-test (string->number "3/03"))))
+(test "rational reader" #f
+      (lambda () (rational-test (string->number "3/0"))))
+(test "rational reader" #f
+      (lambda () (rational-test (string->number "3/3/4"))))
+(test "rational reader" #f
+      (lambda () (rational-test (string->number "1/2."))))
+(test "rational reader" #f
+      (lambda () (rational-test (string->number "1.3/2"))))
+
+(test "rational reader w/#e" '(1234 #t)
+      (lambda () (rational-test '#e1234/1)))
+(test "rational reader w/#e" '(-1234 #t)
+      (lambda () (rational-test '#e-1234/1)))
+(test "rational reader w/#e" #f
+      (lambda () (string->number "#e32/7")))
+(test "rational reader w/#e" #f
+      (lambda () (string->number "#e-32/7")))
+(test "rational reader w/#i" '(1234.0 #f)
+      (lambda () (rational-test '#i1234/1)))
+(test "rational reader w/#i" '(-1234.0 #f)
+      (lambda () (rational-test '#i-1234/1)))
+(test "rational reader w/#i" '(-0.125 #f)
+      (lambda () (rational-test '#i-4/32)))
+
+(test "rational reader w/radix" '(15 #t)
+      (lambda () (rational-test '#e#xff/11)))
+(test "rational reader w/radix" '(56 #t)
+      (lambda () (rational-test '#o770/11)))
+(test "rational reader w/radix" '(15.0 #f)
+      (lambda () (rational-test '#x#iff/11)))
+
+
+;;------------------------------------------------------------------
+(test-section "flonum reader")
+
+(define (flonum-test v)
+  (if (number? v) (list v (inexact? v)) v))
+
+(test "flonum reader" '(3.14 #t)  (lambda () (flonum-test 3.14)))
+(test "flonum reader" '(0.14 #t)  (lambda () (flonum-test 0.14)))
+(test "flonum reader" '(0.14 #t)  (lambda () (flonum-test .14)))
+(test "flonum reader" '(3.0  #t)  (lambda () (flonum-test 3.)))
+(test "flonum reader" '(-3.14 #t)  (lambda () (flonum-test -3.14)))
+(test "flonum reader" '(-0.14 #t)  (lambda () (flonum-test -0.14)))
+(test "flonum reader" '(-0.14 #t)  (lambda () (flonum-test -.14)))
+(test "flonum reader" '(-3.0  #t)  (lambda () (flonum-test -3.)))
+(test "flonum reader" '(3.14 #t)  (lambda () (flonum-test +3.14)))
+(test "flonum reader" '(0.14 #t)  (lambda () (flonum-test +0.14)))
+(test "flonum reader" '(0.14 #t)  (lambda () (flonum-test +.14)))
+(test "flonum reader" '(3.0  #t)  (lambda () (flonum-test +3.)))
+(test "flonum reader" '(0.0  #t)  (lambda () (flonum-test .0)))
+(test "flonum reader" '(0.0  #t)  (lambda () (flonum-test 0.)))
+(test "flonum reader" #f (lambda () (string->number ".")))
+(test "flonum reader" #f (lambda () (string->number "-.")))
+(test "flonum reader" #f (lambda () (string->number "+.")))
+
+(test "flonum reader (exp)" '(314.0 #t) (lambda () (flonum-test 3.14e2)))
+(test "flonum reader (exp)" '(314.0 #t) (lambda () (flonum-test .314e3)))
+(test "flonum reader (exp)" '(314.0 #t) (lambda () (flonum-test 314e0)))
+(test "flonum reader (exp)" '(314.0 #t) (lambda () (flonum-test 314e-0)))
+(test "flonum reader (exp)" '(314.0 #t) (lambda () (flonum-test 3140000e-4)))
+(test "flonum reader (exp)" '(-314.0 #t) (lambda () (flonum-test -3.14e2)))
+(test "flonum reader (exp)" '(-314.0 #t) (lambda () (flonum-test -.314e3)))
+(test "flonum reader (exp)" '(-314.0 #t) (lambda () (flonum-test -314e0)))
+(test "flonum reader (exp)" '(-314.0 #t) (lambda () (flonum-test -314.e-0)))
+(test "flonum reader (exp)" '(-314.0 #t) (lambda () (flonum-test -3140000e-4)))
+(test "flonum reader (exp)" '(314.0 #t) (lambda () (flonum-test +3.14e2)))
+(test "flonum reader (exp)" '(314.0 #t) (lambda () (flonum-test +.314e3)))
+(test "flonum reader (exp)" '(314.0 #t) (lambda () (flonum-test +314.e0)))
+(test "flonum reader (exp)" '(314.0 #t) (lambda () (flonum-test +314e-0)))
+(test "flonum reader (exp)" '(314.0 #t) (lambda () (flonum-test +3140000.000e-4)))
+
+(test "flonum reader (exp)" '(314.0 #t) (lambda () (flonum-test .314E3)))
+(test "flonum reader (exp)" '(314.0 #t) (lambda () (flonum-test .314s3)))
+(test "flonum reader (exp)" '(314.0 #t) (lambda () (flonum-test .314S3)))
+(test "flonum reader (exp)" '(314.0 #t) (lambda () (flonum-test .314l3)))
+(test "flonum reader (exp)" '(314.0 #t) (lambda () (flonum-test .314L3)))
+(test "flonum reader (exp)" '(314.0 #t) (lambda () (flonum-test .314f3)))
+(test "flonum reader (exp)" '(314.0 #t) (lambda () (flonum-test .314F3)))
+(test "flonum reader (exp)" '(314.0 #t) (lambda () (flonum-test .314d3)))
+(test "flonum reader (exp)" '(314.0 #t) (lambda () (flonum-test .314D3)))
+
 ;;------------------------------------------------------------------
 (test-section "complex reader")
 
 (define (decompose-complex z)
-  (if (complex? z)
-      (list (real-part z) (imag-part z))
-      z))
+  (cond ((real? z) z)
+        ((complex? z)
+         (list (real-part z) (imag-part z)))
+        (else z)))
 
 (test "complex reader" '(1 1) (lambda () (decompose-complex '1+i)))
 (test "complex reader" '(1 1) (lambda () (decompose-complex '1+1i)))
+(test "complex reader" '(1 -1) (lambda () (decompose-complex '1-i)))
+(test "complex reader" '(1 -1) (lambda () (decompose-complex '1-1i)))
 (test "complex reader" '(1 1) (lambda () (decompose-complex '1.0+1i)))
 (test "complex reader" '(1 1) (lambda () (decompose-complex '1.0+1.0i)))
 (test "complex reader" '(1e-5 1) (lambda () (decompose-complex '1e-5+1i)))
@@ -81,12 +224,50 @@
 (test "complex reader" '(0 -1) (lambda () (decompose-complex '-i)))
 (test "complex reader" '(0 1) (lambda () (decompose-complex '+1i)))
 (test "complex reader" '(0 -1) (lambda () (decompose-complex '-1i)))
+(test "complex reader" '(0 1) (lambda () (decompose-complex '+1.i)))
+(test "complex reader" '(0 -1) (lambda () (decompose-complex '-1.i)))
 (test "complex reader" '(0 1) (lambda () (decompose-complex '+1.0i)))
 (test "complex reader" '(0 -1) (lambda () (decompose-complex '-1.0i)))
-(test "complex reader" '(1 0) (lambda () (decompose-complex '1+0.0i)))
-(test "complex reader" '(1 0) (lambda () (decompose-complex '1+0.0e-43i)))
+(test "complex reader" 1.0 (lambda () (decompose-complex '1+0.0i)))
+(test "complex reader" 1.0 (lambda () (decompose-complex '1+.0i)))
+(test "complex reader" 1.0 (lambda () (decompose-complex '1+0.i)))
+(test "complex reader" 1.0 (lambda () (decompose-complex '1+0.0e-43i)))
+(test "complex reader" 100.0 (lambda () (decompose-complex '1e2+0.0e-43i)))
+
 (test "complex reader" 'i (lambda () (decompose-complex 'i)))
+(test "complex reader" #f
+      (lambda () (decompose-complex (string->number ".i"))))
+(test "complex reader" #f
+      (lambda () (decompose-complex (string->number "+.i"))))
+(test "complex reader" #f
+      (lambda () (decompose-complex (string->number "-.i"))))
+(test "complex reader" '33i (lambda () (decompose-complex '33i)))
 (test "complex reader" 'i+1 (lambda () (decompose-complex 'i+1)))
+
+(test "complex reader" '(0.5 0.5)
+      (lambda () (decompose-complex 1/2+1/2i)))
+(test "complex reader" '(0 0.5)
+      (lambda () (decompose-complex 0+1/2i)))
+(test "complex reader" '(0 -0.5)
+      (lambda () (decompose-complex -1/2i)))
+(test "complex reader" 0.5
+      (lambda () (decompose-complex 1/2-0/2i)))
+(test "complex reader" #f
+      (lambda () (decompose-complex (string->number "1/2-1/0i"))))
+
+(test "complex reader (polar)" (make-polar 1.0 1.0)
+      (lambda () 1.0@1.0))
+(test "complex reader (polar)" (make-polar 1.0 -1.0)
+      (lambda () 1.0@-1.0))
+(test "complex reader (polar)" (make-polar 1.0 1.0)
+      (lambda () 1.0@+1.0))
+(test "complex reader (polar)" (make-polar -7.0 -3.0)
+      (lambda () -7@-3.0))
+(test "complex reader (polar)" (make-polar 3.5 -3.0)
+      (lambda () 7/2@-3.0))
+(test "complex reader (polar)" #f
+      (lambda () (string->number "7/2@-3.14i")))
+
 
 ;;------------------------------------------------------------------
 (test-section "integer writer syntax")

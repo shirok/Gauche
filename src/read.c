@@ -1,7 +1,7 @@
 /*
  * read.c - reader
  *
- *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.43 2002-02-18 20:45:45 shirok Exp $
+ *  $Id: read.c,v 1.44 2002-04-03 10:38:34 shirok Exp $
  */
 
 #include <stdio.h>
@@ -129,12 +129,16 @@ void Scm_ReadError(ScmPort *port, const char *msg, ...)
    special meanings.
     bit 0 : a valid constituent char of words
     bit 1 : candidate of case folding
+
+   NB: '#' is marked as a constituent char, in order to read a possible
+   number as a word in read_word.  The leading '#' is recognized by
+   read_internal and will not be passed to read_word.
 */
 static unsigned char ctypes[] = {
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
  /*     !   "   #   $   %   &   '   (   )   *   +   ,   -   .   /  */
-    0,  1,  0,  0,  1,  1,  1,  0,  0,  0,  1,  1,  0,  1,  1,  1,
+    0,  1,  0,  1,  1,  1,  1,  0,  0,  0,  1,  1,  0,  1,  1,  1,
  /* 0   1   2   3   4   5   6   7   8   9   :   ;   <   =   >   ?  */
     1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  1,  1,  1,  1,
  /* @   A   B   C   D   E   F   G   H   I   J   K   L   M   N   O  */
@@ -564,7 +568,7 @@ static ScmObj read_symbol(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 static ScmObj read_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 {
     ScmString *s = SCM_STRING(read_word(port, initial, ctx, FALSE));
-    ScmObj num = Scm_StringToNumber(s, 10);
+    ScmObj num = Scm_StringToNumber(s, 10, TRUE);
     if (num == SCM_FALSE)
         Scm_ReadError(port, "bad numeric format: %S", s);
     return num;
@@ -573,7 +577,7 @@ static ScmObj read_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial, ScmReadContext *ctx)
 {
     ScmString *s = SCM_STRING(read_word(port, initial, ctx, FALSE));
-    ScmObj num = Scm_StringToNumber(s, 10);
+    ScmObj num = Scm_StringToNumber(s, 10, TRUE);
     if (num == SCM_FALSE)
         return Scm_Intern(s);
     else

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.223 2002-03-28 19:50:54 shirok Exp $
+ *  $Id: gauche.h,v 1.224 2002-04-03 10:38:34 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1543,7 +1543,7 @@ SCM_EXTERN ScmObj Scm_Magnitude(ScmObj z);
 SCM_EXTERN ScmObj Scm_Angle(ScmObj z);
 
 SCM_EXTERN ScmObj Scm_NumberToString(ScmObj num, int radix, int use_upper);
-SCM_EXTERN ScmObj Scm_StringToNumber(ScmString *str, int radix);
+SCM_EXTERN ScmObj Scm_StringToNumber(ScmString *str, int radix, int strict);
 
 /*--------------------------------------------------------
  * PROCEDURE (APPLICABLE OBJECT)
