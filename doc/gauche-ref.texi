@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.263 2002-09-04 09:11:08 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.264 2002-09-10 05:58:22 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -16811,7 +16811,7 @@ slot described below.
 @c EN
 The process id of this program.
 @c JP
-¤³¤Î¥×¥í¥°¥é¥à¤Î¥×¥í¥»¥¹IDŽ¡
+¤³¤Î¥×¥í¥°¥é¥à¤Î¥×¥í¥»¥¹ID¡£
 @c COMMON
 
 @item ~U
@@ -17496,8 +17496,8 @@ keep-alive messages on connection-oriented sockets.
 
 @defvar SO_OOBINLINE
 Expects integer value.  If it is not zero, out-of-band data is
-directly placed into the receive data stream.  Oth-A­$)B
-erwise  out-of-band  data  is  only passed when the
+directly placed into the receive data stream.  Otherwise
+out-of-band  data  is  only passed when the
 MSG_OOB flag is set during receiving.
 @end defvar
 
