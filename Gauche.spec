@@ -1,5 +1,5 @@
 # Spec file to build Gauche RPM package
-# $Id: Gauche.spec,v 1.27 2003-10-22 02:04:05 shirok Exp $
+# $Id: Gauche.spec,v 1.28 2003-10-23 05:05:35 shirok Exp $
 #
 # In order to build different encoding-specific packages (like
 # Gauche-euc-jp, etc) from a single source rpm, the actual package
@@ -63,7 +63,7 @@ package as well.
 %package gdbm-%{encoding}
 Summary: gdbm binding for Gauche Scheme system
 Group: Development/Languages
-Copyright: LGPL
+Copyright: GPL
 Provides: Gauche-gdbm
 Requires: gdbm >= 1.8.0, Gauche-%{encoding}
 %description gdbm-%{encoding}
@@ -121,6 +121,9 @@ make prefix=${RPM_BUILD_ROOT}/usr install-doc
 %defattr(-,root,root)
 
 %changelog
+* Wed Oct 22 2003 Shiro Kawai
+- Fix gdbm package license
+
 * Tue Oct 21 2003 Shiro Kawai
 - include aclocal/gauche.m4 in common rpm
 
