@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.52 2001-09-08 11:25:36 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.53 2001-09-09 05:43:26 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -5108,39 +5108,130 @@ This is a simple example of "echo" server:
 @node Termios, Unit Testing, Serializer, Libarary Modules
 @section @code{gauche.termios} - Termios
 
+@deftp {Module} gauche.termios
+@mdindex gauche.termios
+This module defines POSIX termios interface, which
+controls serial ports.
+@end deftp
+
 @deftp {Builtin Class} <sys-termios>
 @clindex sys-termios
+POSIX termios(7) structure.
+
+@defivar {<sys-termios>}  iflag
+@end defivar
+@defivar {<sys-termios>}  oflag
+@end defivar
+@defivar {<sys-termios>}  cflag
+@end defivar
+@defivar {<sys-termios>}  lflag
+@end defivar
 
 @end deftp
 
+Throughout this section, argument @var{port-or-fd} refers to
+either a port object or a small integer representing system's file 
+descriptor.  If @var{port} is not associated
+to the system terminal, an error is signalled.  (You can check if @var{port}
+has an associated terminal by @code{sys-isatty?}.
+@xref{Other file operations}).
+
 @defun sys-tcgetattr port-or-fd
+Returns terminal parameters in a @code{<sys-termios>} object,
+associated to @var{port-or-fd}.
 @end defun
 
-@defun sys-tcsetattr port-or-fd options termios
+@defun sys-tcsetattr port-or-fd when termios
+Sets terminal parameters associated to @var{port-or-fd} by @var{termios},
+which must be an instance of @code{<sys-termios>}.
+
+An integer argument @var{when} specifies when the changes take effect.
+Three variables are pre-defined for the argument:
+@table @code
+@item |TCSANOW|
+@vindex TCSANOW 
+The change is reflected immediately.
+@item |TCSADRAIN|
+@vindex TCSADRAIN
+The change is reflected after all pending output is flushed.
+@item |TCSAFLUSH|
+@vindex TCSAFLUSH
+The change is reflected after all pending output is flushed,
+and all pending input is discarded.
+@end table
 @end defun
 
 @defun sys-tcsendbreak port-or-fd duration
+Transmits a zero stream for the specified duration
+to the terminal associated to @var{port-or-fd}.
+The unit of duration depends on the system; see man tcsendbreak(3) of
+your system for details.
 @end defun
 
 @defun sys-tcdrain port-or-fd
+Waits until all output written to @var{port-or-fd} is transmitted.
 @end defun
 
 @defun sys-tcflush port-or-fd queue
+Discards data in the buffer of @var{port-or-fd}, specified by 
+@var{queue}, which may be one of the following values.
+@table @code
+@item |TCIFLUSH|
+@vindex TCIFLUSH
+Discards data received but not read.
+@item |TCOFLUSH|
+@vindex TCOFLUSH
+Discards data written but not transmitted.
+@item |TCIOFLUSH|
+@vindex TCIOFLUSH
+Do both @code{TCIFLUSH} and @code{TCOFLUSH} action.
+@end table
 @end defun
 
 @defun sys-tcflow port-or-fd action
+Controls data flow of @var{port-or-fd} by @var{action}, which may be
+one of the following values:
+@table @code
+@item |TCOOFF|
+@vindex TCOOFF
+Suspends output transmission.
+@item |TCOON|
+@vindex TCOON
+Restarts output transmission.
+@item |TCIOFF|
+@vindex TCIOFF
+Transmits a STOP character to make the terminal device stop transmitting
+data to the system.
+@item |TCION|
+@vindex TCION
+Transmits a START character to make the terminal device resume transmitting
+data to the system.
+@end table
 @end defun
 
 @defun sys-tcgetpgrp port-or-fd
+Returns process group ID of the terminal associated to @var{port-or-fd}.
 @end defun
 
 @defun sys-tcsetpgrp port-or-fd pgrp
+Sets process group ID of the terminal associated to @var{port-or-fd}
+to @var{pgrp}.
 @end defun
 
 @defun sys-cfgetispeed termios
 @defunx sys-cfsetispeed termios speed
 @defunx sys-cfgetospeed termios
 @defunx sys-cfsetospeed termios speed
+Gets/sets input/output speed (baud rate) parameter stored in @var{termios}
+object.   Speed is represented by the following predefined numbers:
+@code{|B0|}, @code{|B50|}, @code{|B75|}, @code{|B110|}, @code{|B134|}, 
+@code{|B150|}, @code{|B200|}, @code{|B300|}, @code{|B600|}, @code{|B1200|}, 
+@code{|B1800|}, @code{|B2400|}, @code{|B4800|}, @code{|B9600|},
+@code{|B19200|}, @code{|B38400|}.
+Some system may support higher baud rate, such as @code{|B57600|},
+@code{|B115200|} or @code{|B230400|}.  You can use @code{symbol-bound?}
+to check these options are defined.  @code{|B0|} is used to
+terminate the connection.
 @end defun
 
 
@@ -7219,6 +7310,9 @@ and/or regular expression stuff (@ref{Regular expression},
 also @ref{Regular expression utilities}.
 @item stat
 Gauche's @code{sys-stat}.  @xref{File stats}.
+@item strcasecmp
+R5RS @code{string-ci=?} and other comparison functions.
+@xref{String Comparison}.
 @item strcat
 R5RS @code{string-append}.  @xref{String Utilities}.
 @item strchr
@@ -7242,7 +7336,13 @@ R5RS @code{string-length}.   @xref{String Accessors & Modifiers}.
 @item strncat
 Not directly supported, but you can use @code{string-append} and
 @code{substring}.
-@item strmcmp
+@item strncasecmp
+SRFI-13 @code{string-compare-ci} provides the most flexible
+(but a bit difficult to use) functionality.
+@xref{SRFI-13 String Comparison}.
+If what you want is just to check the fixed-length prefixes of two
+string matches, you can use SRFI-13 @code{string-prefix-ci?}.
+@item strncmp
 SRFI-13 @code{string-compare} provides the most flexible
 (but a bit difficult to use) functionality.
 @xref{SRFI-13 String Comparison}.
