@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.62 2001-11-07 09:33:00 shirok Exp $
+ *  $Id: class.c,v 1.63 2001-11-29 11:38:59 shirok Exp $
  */
 
 #include "gauche.h"
@@ -35,6 +35,7 @@ static ScmObj method_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj object_allocate(ScmClass *k, ScmObj initargs);
 static ScmObj slot_accessor_allocate(ScmClass *klass, ScmObj initargs);
 static void scheme_slot_default(ScmObj obj);
+static void initialize_builtin_cpl(ScmClass *klass);
 
 static ScmObj builtin_initialize(ScmObj *, int, ScmGeneric *);
 
@@ -61,7 +62,7 @@ SCM_DEFINE_BASE_CLASS(Scm_ObjectClass, ScmObj,
                       NULL, NULL, NULL, object_allocate,
                       SCM_CLASS_DEFAULT_CPL);
 
-/* Those basic metaobjects will be initialized further in Scm__InitClass */
+/* Basic metaobjects */
 SCM_DEFINE_BASE_CLASS(Scm_ClassClass, ScmClass,
                       class_print, NULL, NULL, class_allocate,
                       SCM_CLASS_OBJECT_CPL);
@@ -71,6 +72,10 @@ SCM_DEFINE_BASE_CLASS(Scm_GenericClass, ScmGeneric,
 SCM_DEFINE_BASE_CLASS(Scm_MethodClass, ScmMethod,
                       method_print, NULL, NULL, method_allocate,
                       SCM_CLASS_OBJECT_CPL);
+
+static ScmClass *Scm_MetaclassCPL[] = {
+    SCM_CLASS_CLASS, SCM_CLASS_OBJECT, SCM_CLASS_TOP, NULL
+};
 
 /* Internally used classes */
 SCM_DEFINE_BUILTIN_CLASS(Scm_SlotAccessorClass,
@@ -157,48 +162,84 @@ static ScmObj class_array_to_names(ScmClass **array, int len)
 /* One of the design goals of Gauche object system is to make Scheme-defined
  * class easily accessible from C code, and vice versa.
  *
- * Classes in Gauche fall into four categories: builtin class, base class,
- * abstract class and Scheme class.  A C-defined class may belong to one
- * of the first three, while a Scheme-defined class is always a Scheme class.
+ * Class is implemented in two layers; Scheme layer and C layer.  The two
+ * layers work together to realize efficient MOP.   In the following
+ * description, (FOOBAR baz) indicates Scheme call where FooBar(baz) indicates
+ * C call.
  *
- * Builtin classes are the ones that represents basic objects of the
- * language, such as <integer> or <string>.   Those classes are just
- * the way to reify the basic object, and don't follow object protorol;
- * for example, you can't overload "initialize" method specialized to
- * <integer> to customize initialization of integers, nor subclass <integer>,
- * although you can use them to specialize methods you write.
+ * Class instantiation is handled as follows.
  *
- * Base classes are the ones from which you can derive Scheme classes.
- * <class>, <generic-method> and <method> are in this category.  The instance
- * of those classes may have extra slots that contains C-specific data, such
- * as function pointers.  You can subclass them, but there is one restriction:
- * There can't be more than one core base class in the class' superclasses.
- * Because of this fact, C routines can take the pointer to the instance
- * of subclasses and safely cast it to one of the core base classes.
- * (<object> is an only exception of this rule, so that <class> can inherit
- * <object>).
+ *  (MAKE class . initargs)
+ *    If class is a descendant of <class> eventually this calls
+ *    a method (MAKE <class> . initargs).
  *
- * Abstract classes are just for method specialization.  They can't
- * create instances directly, and they shouldn't have any direct slots.
- * <top>, <collection> and <sequence> are in this category, among others.
+ *  (MAKE <class> . initargs)
+ *    Defined in lib/gauche/object.scm.  This calls
+ *    (ALLOCATE-INSTANCE <class> initargs), then
+ *    (INITIALIZE obj initargs).
  *
- * Since a class must be <class> itself or its descendants, C code can
- * treat them as ScmClass*, and can determine the category of the class.
+ *  (ALLOCATE-INSTANCE <class> <list>)
+ *    This is a C-defined method, and calls allocate() below.
  *
- * Depending on its category, a class must or may provide those function
- * pointers:
+ *  static ScmObj allocate(ScmNextMethod *, ScmObj *, int, void*)
+ *    The default allocation dispatcher.   This calls class->allocate().
+ *    Some builtin function doesn't allow instantiation from Scheme and
+ *    sets class->allocate() to NULL; an error is raised in such case.
  *
- *   Category:   base           builtin         abstract
- *   -----------------------------------------------------
- *    allocate   required       NULL            NULL
- *    print      optional       optional        ignored
- *    compare    optional       optional        ignored
- *    serialize  optional       optional        ignored
+ *    The class->allocate() function usually allocates the instance
+ *    (Scm*** structure) and initializes its slots with reasonable values.
+ *    For example, if class is <class>, class->allocate allocates
+ *    ScmClass structure.  If the class allows subclassing, class->allocate
+ *    must allocate extra storage for as many slots as class->numInstanceSlots.
  *
- * If the function is optional, you can set NULL there and the system
- * uses default function.  For Scheme class the system sets appropriate
- * functions.   See the following section for details of these function
- * potiners.
+ *    The allocated and set up structure is returned as ScmObj, which
+ *    eventually retured by (ALLOCATE-INSTANCE ...) method, and passed to
+ *    (INITIALIZE obj initargs) structure.
+ *
+ *  (INITIALIZE obj initargs)
+ *    In most cases this method is defined in Scheme, if ever defined.
+ *    The Scheme method does whatever it want, but it must call
+ *    (NEXT-METHOD) in it, and it eventually calls the C-defined fallback
+ *    method buildin_initialize().
+ *
+ *  ScmObj builtin_initialize(ScmObj *, int, ScmGeneric*)
+ *    This function traverses the slot accessors, and if the slot has
+ *    not been initialized, initialize it as specified in initargs or
+ *    slot options.
+ */
+
+/* Defining builtin class in C.
+ *
+ *    Defining classes in C is devided in two steps.  First, you have to
+ *    define the static part of the class; it is done by one of the
+ *    SCM_DEFINE_***_CLASS macros provided in gauche.h, and it defines
+ *    static instance of ScmClass structure.  Then, in the initialization
+ *    phase, you have to call Scm_InitBuiltinClass to initialize the dynamic
+ *    part of the structure.
+ *
+ *      void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
+ *                                ScmClassStaticSlotSpec *slots,
+ *                                int instanceSize, ScmModule *mod)
+ *
+ *         This function fills the ScmClass structure that can't be
+ *         defined statically, and inserts the binding from the named
+ *         symbol to the class object in the specified module.
+ *
+ *    There may be three types of classes defined in C.
+ *
+ *    * A class that is not intended to be instantiated from Scheme.
+ *      To define this type of class, leave its allocate() field NULL.
+ *
+ *    * A class that can be instantiated from Scheme, but can't be
+ *      inherited in the Scheme level.
+ *      Provide allocate() function, and sets SCM_CLASS_FINAL flag.
+ *      Note that SCM_CLASS_FINAL won't prevent you from creating
+ *      the subclass in C.
+ *
+ *    * A class that can be instantiated from Scheme and can be
+ *      inherited in Scheme.
+ *      Provide allocate() function.  Be sure to honor numInstanceSlots
+ *      field of the class structure.
  */
 
 /*
@@ -381,7 +422,7 @@ static void class_cpl_set(ScmClass *klass, ScmObj val)
     return;
   err:
     Scm_Error("class precedence list must be a proper list of class "
-              "metaobject, begenning from the class itself owing the list, "
+              "metaobject, beginning from the class itself owing the list, "
               "and ending by the class <top>: %S", val);
 }
 
@@ -474,6 +515,32 @@ static void class_numislots_set(ScmClass *klass, ScmObj snf)
         /*NOTREACHED*/
     }
     klass->numInstanceSlots = nf;
+}
+
+/*--------------------------------------------------------------
+ * Implicit metaclass
+ */
+/* This function does the equivalent to
+ *  (make <class> :name NAME :supers (list <class>))
+ */
+
+static ScmClass *make_implicit_meta(const char *name, ScmModule *mod)
+{
+    ScmClass *meta = (ScmClass*)class_allocate(SCM_CLASS_CLASS, SCM_NIL);
+    ScmObj s = SCM_INTERN(name);
+    ScmObj sp, h = SCM_NIL, t;
+    static ScmClass *metacpl[] = { SCM_CLASS_CLASS, SCM_CLASS_OBJECT, SCM_CLASS_TOP, NULL };
+    
+    meta->name = s;
+    meta->allocate = class_allocate;
+    meta->print = class_print;
+    meta->cpa = metacpl;
+    meta->instanceSlotOffset = sizeof(ScmClass) / sizeof(ScmObj);
+    initialize_builtin_cpl(meta);
+    Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(meta));
+    meta->slots = Scm_ClassClass.slots;
+    meta->accessors = Scm_ClassClass.accessors;
+    return meta;
 }
 
 /*--------------------------------------------------------------
@@ -795,162 +862,6 @@ static SCM_DEFINE_METHOD(slot_bound_using_class_p_rec,
                          3, 0,
                          slot_bound_using_class_p_SPEC,
                          slot_bound_using_class_p, NULL);
-
-#if 0
-/* NB: Scm_GetSlotRefProc(CLASS, SLOT) and Scm_GetSlotSetProc(CLASS, SLOT)
- *   return subrs that can be used in place of (slot-ref OBJ SLOT) and
- *   and (slot-set! OBJ SLOT), where OBJ's class is CLASS.   The intention
- *   is to pre-calculate slot lookup and type dispatch according to
- *   the slot implementation.  The rudimental benchmark showed it is
- *   faster than applying slot-ref/slot-set!.
- *
- *   However, I found that inlining slot-ref/slot-set! makes
- *   the code even faster, so you don't need to do all these precalculation
- *   for speed.   I leave the code inside #if 0 -- #endif, for in future
- *   I may find it useful...
- */
-struct slot_acc_packet {
-    union {
-        ScmNativeGetterProc cgetter;
-        ScmNativeSetterProc csetter;
-        int slotNum;
-        ScmObj sgetter;
-        ScmObj ssetter;
-    } method;
-    ScmObj slot;
-};
-
-static ScmObj slot_ref_native(ScmObj *args, int nargs, void *data)
-{
-    struct slot_acc_packet *p = (struct slot_acc_packet *)data;
-    ScmObj val = p->method.cgetter(args[0]);
-    if (SCM_UNBOUNDP(val)) 
-        return SLOT_UNBOUND(Scm_ClassOf(args[0]), args[0], p->slot);
-    else
-        return val;
-}
-
-static ScmObj slot_ref_instance(ScmObj *args, int nargs, void *data)
-{
-    struct slot_acc_packet *p = (struct slot_acc_packet *)data;
-    ScmObj val = scheme_slot_ref(args[0], p->method.slotNum);
-    if (SCM_UNBOUNDP(val)) 
-        return SLOT_UNBOUND(Scm_ClassOf(args[0]), args[0], p->slot);
-    else
-        return val;
-}
-
-static ScmObj slot_ref_procedural(ScmObj *args, int nargs, void *data)
-{
-    struct slot_acc_packet *p = (struct slot_acc_packet *)data;
-    void *next[2];
-    next[0] = args[0];
-    next[1] = p->slot;
-    Scm_VMPushCC(slot_ref_cc, next, 2);
-    return Scm_VMApply(p->method.sgetter, SCM_LIST1(args[0]));
-}
-
-static ScmObj slot_ref_missing(ScmObj *args, int nargs, void *data)
-{
-    struct slot_acc_packet *p = (struct slot_acc_packet *)data;
-    return Scm_VMApply(SCM_OBJ(&Scm_GenericSlotMissing),
-                       SCM_LIST3(SCM_OBJ(Scm_ClassOf(args[0])), args[0],
-                                         p->slot));
-
-}
-
-static ScmObj slot_set_native(ScmObj *args, int nargs, void *data)
-{
-    struct slot_acc_packet *p = (struct slot_acc_packet *)data;
-    p->method.csetter(args[0], args[1]);
-    return SCM_UNDEFINED;
-}
-
-static ScmObj slot_set_instance(ScmObj *args, int nargs, void *data)
-{
-    struct slot_acc_packet *p = (struct slot_acc_packet *)data;
-    scheme_slot_set(args[0], p->method.slotNum, args[1]);
-    return SCM_UNDEFINED;
-}
-
-static ScmObj slot_set_procedural(ScmObj *args, int nargs, void *data)
-{
-    struct slot_acc_packet *p = (struct slot_acc_packet *)data;
-    return Scm_VMApply(p->method.ssetter, SCM_LIST2(args[0], args[1]));
-}
-
-static ScmObj slot_set_missing(ScmObj *args, int nargs, void *data)
-{
-    struct slot_acc_packet *p = (struct slot_acc_packet *)data;
-    return Scm_VMApply(SCM_OBJ(&Scm_GenericSlotMissing),
-                       SCM_LIST4(SCM_OBJ(Scm_ClassOf(args[0])), args[0],
-                                         p->slot, args[1]));
-
-}
-
-ScmObj Scm_GetSlotRefProc(ScmClass *klass, ScmObj slot)
-{
-    ScmSlotAccessor *ca = Scm_GetSlotAccessor(klass, slot);
-    struct slot_acc_packet *p = SCM_NEW(struct slot_acc_packet);
-    ScmObj outp = Scm_MakeOutputStringPort(), name;
-    p->slot = slot;
-
-    Scm_Printf(SCM_PORT(outp), "slot-ref %S %S", klass->name, slot);
-    name = Scm_GetOutputString(SCM_PORT(outp));
-
-    if (ca == NULL) {
-        return Scm_MakeSubr(slot_ref_missing, p, 1, 0, name);
-    }
-    if (ca->getter) {
-        p->method.cgetter = ca->getter;
-        return Scm_MakeSubr(slot_ref_native, p, 1, 0, name);
-    }
-    if (ca->slotNumber >= 0) {
-        p->method.slotNum = ca->slotNumber;
-        return Scm_MakeSubr(slot_ref_instance, p, 1, 0, name);
-    }
-    if (SCM_PAIRP(ca->schemeAccessor)
-        && SCM_PROCEDUREP(SCM_CAR(ca->schemeAccessor))) {
-        p->method.sgetter = SCM_CAR(ca->schemeAccessor);
-        return Scm_MakeSubr(slot_ref_procedural, p, 1, 0, name);
-    } else {
-        Scm_Error("don't know how to make slot referencer of slot %S of class %S (MOP error?)",
-                  slot, klass);
-        return SCM_UNDEFINED;
-    }
-}
-
-ScmObj Scm_GetSlotSetProc(ScmClass *klass, ScmObj slot)
-{
-    ScmSlotAccessor *ca = Scm_GetSlotAccessor(klass, slot);
-    struct slot_acc_packet *p = SCM_NEW(struct slot_acc_packet);
-    ScmObj outp = Scm_MakeOutputStringPort(), name;
-    p->slot = slot;
-
-    Scm_Printf(SCM_PORT(outp), "slot-set %S %S", klass->name, slot);
-    name = Scm_GetOutputString(SCM_PORT(outp));
-    
-    if (ca == NULL) {
-        return Scm_MakeSubr(slot_set_missing, p, 2, 0, name);
-    }
-    if (ca->setter) {
-        p->method.csetter = ca->setter;
-        return Scm_MakeSubr(slot_set_native, p, 2, 0, name);
-    }
-    if (ca->slotNumber >= 0) {
-        p->method.slotNum = ca->slotNumber;
-        return Scm_MakeSubr(slot_set_instance, p, 2, 0, name);
-    }
-    if (SCM_PAIRP(ca->schemeAccessor)
-        && SCM_PROCEDUREP(SCM_CDR(ca->schemeAccessor))) {
-        p->method.ssetter = SCM_CDR(ca->schemeAccessor);
-        return Scm_MakeSubr(slot_set_procedural, p, 2, 0, name);
-    } else {
-        Scm_Error("slot %S of class %S is read-only", slot, SCM_OBJ(klass));
-        return SCM_UNDEFINED;
-    }
-}
-#endif
 
 /*
  * Builtin object initializer
@@ -1615,12 +1526,32 @@ static ScmClassStaticSlotSpec slot_accessor_slots[] = {
 };
 
 /* booting class metaobject */
-void bootstrap_class(ScmClass *k,
-                     ScmClassStaticSlotSpec *specs,
-                     int instanceSize)
+static void initialize_builtin_cpl(ScmClass *klass)
+{
+    ScmClass **p;
+    ScmObj h = SCM_NIL, t;
+    
+    SCM_APPEND1(h, t, SCM_OBJ(klass));
+    for (p = klass->cpa; *p; p++) SCM_APPEND1(h, t, SCM_OBJ(*p));
+    klass->cpl = h;
+    if (SCM_PAIRP(SCM_CDR(h))) {
+        klass->directSupers = SCM_LIST1(SCM_CADR(h));
+    } else {
+        klass->directSupers = SCM_NIL;
+    }
+}
+
+static void initialize_builtin_class(ScmClass *k, const char *name,
+                                     ScmClassStaticSlotSpec *specs,
+                                     int instanceSize, ScmModule *mod)
 {
     ScmObj slots = SCM_NIL, t = SCM_NIL;
     ScmObj acc = SCM_NIL;
+    ScmObj s = SCM_INTERN(name);
+    
+    k->name = s;
+    initialize_builtin_cpl(k);
+    Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(k));
 
     if (specs) {
         for (;specs->name; specs++) {
@@ -1641,30 +1572,30 @@ void bootstrap_class(ScmClass *k,
     if (instanceSize > 0) {
         k->instanceSlotOffset = instanceSize / sizeof(ScmObj);
     }
+
 }
 
 void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
                           ScmClassStaticSlotSpec *slots,
                           int instanceSize, ScmModule *mod)
 {
-    ScmObj h = SCM_NIL, t;
-    ScmObj s = SCM_INTERN(name);
-    ScmClass **p;
+    /* insert metaclass */
+    if (klass != SCM_CLASS_CLASS && SCM_XTYPEP(klass, SCM_CLASS_CLASS)) {
+        int nlen = strlen(name);
+        char *metaname = SCM_NEW_ATOMIC2(char *, nlen + 6);
+        ScmClass *meta;
+
+        if (name[nlen - 1] == '>') {
+            strncpy(metaname, name, nlen-1);
+            strcat(metaname, "-meta>");
+        } else {
+            strcpy(metaname, name);
+            strcat(metaname, "-meta");
+        }
+        SCM_SET_CLASS(klass, make_implicit_meta(metaname, mod));
+    }
     
-    klass->name = s;
-    /* cpa -> cpl */
-    SCM_APPEND1(h, t, SCM_OBJ(klass));
-    for (p = klass->cpa; *p; p++) SCM_APPEND1(h, t, SCM_OBJ(*p));
-    klass->cpl = h;
-    if (SCM_PAIRP(SCM_CDR(h))) {
-        klass->directSupers = SCM_LIST1(SCM_CADR(h));
-    } else {
-        klass->directSupers = SCM_NIL;
-    }
-    Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(klass));
-    if (slots) {
-        bootstrap_class(klass, slots, instanceSize);
-    }
+    initialize_builtin_class(klass, name, slots, instanceSize, mod);
 }
 
 void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod)
@@ -1711,29 +1642,28 @@ void Scm__InitClass(void)
     /* booting class metaobject */
     Scm_TopClass.cpa = nullcpa;
 
+#define BINIT(cl, nam, slots, instsiz) \
+    initialize_builtin_class(cl, nam, slots, instsiz, mod)
+
 #define CINIT(cl, nam) \
     Scm_InitBuiltinClass(cl, nam, NULL, 0, mod)
     
     /* class.c */
-    CINIT(SCM_CLASS_TOP,              "<top>");
-    CINIT(SCM_CLASS_BOOL,             "<boolean>");
-    CINIT(SCM_CLASS_CHAR,             "<char>");
-    CINIT(SCM_CLASS_UNKNOWN,          "<unknown>");
-    CINIT(SCM_CLASS_OBJECT,           "<object>");
-    CINIT(SCM_CLASS_CLASS,            "<class>");
-    bootstrap_class(&Scm_ClassClass, class_slots, sizeof(ScmClass));
-    CINIT(SCM_CLASS_GENERIC,          "<generic>");
-    bootstrap_class(&Scm_GenericClass, generic_slots, sizeof(ScmGeneric));
+    BINIT(SCM_CLASS_CLASS,  "<class>", class_slots, sizeof(ScmClass));
+    BINIT(SCM_CLASS_TOP,    "<top>",     NULL, 0);
+    BINIT(SCM_CLASS_BOOL,   "<boolean>", NULL, 0);
+    BINIT(SCM_CLASS_CHAR,   "<char>",    NULL, 0);
+    BINIT(SCM_CLASS_UNKNOWN,"<unknown>", NULL, 0);
+    BINIT(SCM_CLASS_OBJECT, "<object>",  NULL, 0);
+    BINIT(SCM_CLASS_GENERIC,"<generic>", generic_slots, sizeof(ScmGeneric));
     Scm_GenericClass.flags |= SCM_CLASS_APPLICABLE;
-    CINIT(SCM_CLASS_METHOD,           "<method>");
-    bootstrap_class(&Scm_MethodClass, method_slots, sizeof(ScmMethod));
+    BINIT(SCM_CLASS_METHOD, "<method>",  method_slots, sizeof(ScmMethod));
     Scm_MethodClass.flags |= SCM_CLASS_APPLICABLE;
-    CINIT(SCM_CLASS_NEXT_METHOD,      "<next-method>");
+    BINIT(SCM_CLASS_NEXT_METHOD, "<next-method>", NULL, 0);
     Scm_NextMethodClass.flags |= SCM_CLASS_APPLICABLE;
-    CINIT(SCM_CLASS_SLOT_ACCESSOR,    "<slot-accessor>");
-    bootstrap_class(&Scm_SlotAccessorClass, slot_accessor_slots, sizeof(ScmSlotAccessor));
-    CINIT(SCM_CLASS_COLLECTION,       "<collection>");
-    CINIT(SCM_CLASS_SEQUENCE,         "<sequence>");
+    BINIT(SCM_CLASS_SLOT_ACCESSOR,"<slot-accessor>", slot_accessor_slots, sizeof(ScmSlotAccessor));
+    BINIT(SCM_CLASS_COLLECTION, "<collection>", NULL, 0);
+    BINIT(SCM_CLASS_SEQUENCE,   "<sequence>", NULL, 0);
 
     /* char.c */
     CINIT(SCM_CLASS_CHARSET,          "<char-set>");
