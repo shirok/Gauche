@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.17 2001-02-17 12:18:51 shiro Exp $
+ *  $Id: load.c,v 1.18 2001-02-19 14:44:05 shiro Exp $
  */
 
 #include <unistd.h>
@@ -190,7 +190,7 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
     return load_path_rec->value;
 }
 
-/*
+/*------------------------------------------------------------------
  * Dynamic link
  */
 
@@ -234,7 +234,41 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn)
 #endif
 }
 
-/*
+/*------------------------------------------------------------------
+ * Autoload
+ */
+
+ScmObj Scm_MakeAutoload(ScmSymbol *name, ScmString *path)
+{
+    ScmAutoload *a = SCM_NEW(ScmAutoload);
+    a->name = name;
+    a->path = path;
+    a->module = SCM_CURRENT_MODULE();
+    return SCM_OBJ(a);
+}
+
+static ScmObj autoload_cc(ScmObj result, void *data[])
+{
+    ScmSymbol *name = (ScmSymbol*)data[0];
+    ScmModule *module = (ScmModule*)data[1];
+
+    ScmGloc *g = Scm_FindBinding(module, name, FALSE);
+    if (g == NULL || SCM_UNBOUNDP(g->value)) {
+        Scm_Error("symbol unbound even after autoloaded: %S", name);
+    }
+    return g->value;
+}
+
+ScmObj Scm_ResolveAutoload(ScmAutoload *a)
+{
+    void *data[2];
+    data[0] = a->name;
+    data[1] = a->module;
+    Scm_VMPushCC(autoload_cc, data, 2);
+    return Scm_VMLoad(a->path);
+}
+
+/*------------------------------------------------------------------
  * Initialization
  */
 
