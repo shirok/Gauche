@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.33 2001-06-25 01:38:38 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.34 2001-06-25 01:57:11 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -5419,8 +5419,59 @@ The form @code{(use srfi-8)} doesn't do anything.
 
 @deftp {Module} srfi-11
 @mdindex srfi-11
+Defines two macros, @code{let-values} and @code{let*-values}.
+They are convenient to use with multiple values.
+
+
 @end deftp
 
+@defmac let-values ((vars expr) @dots{}) body @dots{}
+@var{vars} are list of variables. @var{expr} is evaluated, and
+its first return value is bound to the first variable in @var{vars},
+its second return value to the second variable, and so on, then
+@var{body} is evaluated.
+The scope of @var{expr}s are the outside of @code{let-values} form,
+like primitive @code{let}.
+
+@example
+(let-values (((a b) (values 1 2))
+             ((c d) (values 3 4)))
+  (list a b c d)) @result{} (1 2 3 4)
+
+(let ((a 1) (b 2) (c 3) (d 4))
+  (let-values (((a b) (values c d))
+               ((c d) (values a b)))
+    (list a b c d))) @result{} (3 4 1 2)
+@end example
+
+@var{vars} can be a dotted list or a single symbol, like the
+lambda parameters.  The values are bound like
+bindin the procedure arguments.
+
+@example
+(let-values (((x . y) (values 1 2 3 4)))
+  y) @result{} (2 3 4)
+
+(let-values ((x (values 1 2 3 4)))
+  x) @result{} (1 2 3 4)
+@end example
+
+If @var{expr} returns less values than specified in @var{vars},
+an error is signalled.  If @var{expr} returns more values than
+specified in @var{vars}, the unused values are discarded.
+@end defmac
+
+@defmac let*-values ((vars expr) @dots{}) body @dots{}
+Same as @code{let-values}, but each @var{expr}'s scope includes
+the preceding @var{vars}.
+
+@example
+(let ((a 1) (b 2) (c 3) (d 4))
+  (let*-values (((a b) (values c d))
+                ((c d) (values a b)))
+    (list a b c d))) @result{} (3 4 3 4)
+@end example
+@end defmac
 
 @c ----------------------------------------------------------------------
 @node String library, Character-set library, Let-values, Libarary Modules
