@@ -44,7 +44,7 @@ if [ "$tgz" = "yes" ]; then
   (cd ..; tar cvf - Gauche-$VERSION | gzip -9 > Gauche-$VERSION.tgz)
   if [ -d $TGZ_DEST ]; then
     mv ../Gauche-$VERSION.tgz $TGZ_DEST
-#    cp ChangeLog $CHANGELOG_DEST
+    cp ChangeLog $CHANGELOG_DEST
   fi
 fi
 

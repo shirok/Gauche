@@ -1,3 +1,7 @@
+2003-03-30  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.6.8
+
 2003-03-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/char.c, src/regexp.c : #[\w] to include underscore (following
