@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.279 2002-10-14 01:19:20 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.280 2002-10-14 02:01:16 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -23108,6 +23108,21 @@ If @var{path} is not a directory, an error is signalled.
    :filter (lambda (e) (not (string-suffix? "~" e))))
  @result{} ("test/test.scm")
 @end example
+@end defun
+
+@defun home-directory &optional user
+@c EN
+Returns the home directory of the given @var{user},
+which may be a string user name or an integer user id.
+If @var{user} is omitted, the current user is assumed.
+If the given user cannot be found, or the home directory
+of the user cannot be determined, @code{#f} is returned.
+@c JP
+名前または整数のユーザidで与えられたユーザ@var{user}のホームディレクトリを
+返します。@var{user}が省略された場合はカレントユーザが使われます。
+与えられたユーザが見付けられないか、ホームディレクトリを決定できなかった場合は
+@code{#f}が返されます。
+@c COMMON
 @end defun
 
 @defun directory-list2 path &keyword children? add-path? filter follow-link?
