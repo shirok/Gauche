@@ -2,7 +2,7 @@
 ;; test error handlers
 ;;
 
-;;  $Id: error.scm,v 1.6 2001-12-20 11:47:46 shirok Exp $
+;;  $Id: error.scm,v 1.7 2001-12-21 07:04:52 shirok Exp $
 
 (use gauche.test)
 (test-start "error and exception handlers")
@@ -126,13 +126,13 @@
            (lambda () (push! x 'a))
            (lambda ()
              (with-error-handler
-              (lambda (e) (push! x e))
+              (lambda (e) (push! x 'e))
               (lambda ()
                 (dynamic-wind
                  (lambda () (push! x 'b))
                  (lambda ()
                    (with-error-handler
-                    (lambda (e) (push! x 'd) (raise 'e))
+                    (lambda (e) (push! x 'd) (raise e))
                     (lambda ()  (push! x 'c) (car 3) (push! x 'z))))
                  (lambda () (push! x 'f))))))
            (lambda () (push! x 'g)))
@@ -164,19 +164,19 @@
            (lambda () (push! x 'a))
            (lambda ()
              (with-error-handler
-              (lambda (e) (push! x e))
+              (lambda (e) (push! x 'g))
               (lambda ()
                 (dynamic-wind
                  (lambda () (push! x 'b))
                  (lambda ()
                    (with-error-handler
-                    (lambda (e) (push! x e) (raise 'g))
+                    (lambda (e) (push! x 'f) (raise e))
                     (lambda ()
                       (dynamic-wind
                        (lambda () (push! x 'c))
                        (lambda ()
                          (with-error-handler
-                          (lambda (e) (push! x 'e) (raise 'f))
+                          (lambda (e) (push! x 'e) (raise e))
                           (lambda () (push! x 'd) (car 3) (push! x 'z))))
                        (lambda () (push! x 'h))))))
                  (lambda () (push! x 'i))))))
@@ -190,10 +190,10 @@
            (lambda () (push! x 'a))
            (lambda ()
              (with-error-handler
-              (lambda (e) (push! x e))
+              (lambda (e) (push! x 'e))
               (lambda ()
                 (with-error-handler
-                 (lambda (e) (push! x 'd) (raise 'e))
+                 (lambda (e) (push! x 'd) (raise e))
                  (lambda ()
                    (dynamic-wind
                     (lambda () (push! x 'b))
@@ -206,7 +206,7 @@
       (lambda ()
         (let ((x '()))
           (with-error-handler
-           (lambda (e) (push! x e))
+           (lambda (e) (push! x 'e))
            (lambda () 
              (dynamic-wind
               (lambda () (push! x 'a))
@@ -215,7 +215,7 @@
                  (lambda () (push! x 'b))
                  (lambda ()
                    (with-error-handler
-                    (lambda (e) (push! x 'd) (raise 'e))
+                    (lambda (e) (push! x 'd) (raise e))
                     (lambda ()  (push! x 'c) (open-input-file 3) (push! x 'z))))
                  (lambda () (push! x 'f))))
               (lambda () (push! x 'g)))))
@@ -284,13 +284,13 @@
       (lambda ()
         (let ((x '()))
           (with-error-handler
-           (lambda (e) (push! x e))
+           (lambda (e) (push! x 'd))
            (lambda ()
              (dynamic-wind
               (lambda () (push! x 'a))
               (lambda ()
                 (with-error-handler
-                 (lambda (e) (push! x 'c) (raise 'd))
+                 (lambda (e) (push! x 'c) (raise e))
                  (lambda ()
                    (dynamic-wind
                     (lambda () (push! x 'b) (car 3) (push! x 'z))
@@ -303,13 +303,13 @@
       (lambda ()
         (let ((x '()))
           (with-error-handler
-           (lambda (e) (push! x e))
+           (lambda (e) (push! x 'f))
            (lambda ()
              (dynamic-wind
               (lambda () (push! x 'a))
               (lambda ()
                 (with-error-handler
-                 (lambda (e) (push! x 'e) (raise 'f))
+                 (lambda (e) (push! x 'e) (raise e))
                  (lambda ()
                    (dynamic-wind
                     (lambda () (push! x 'b))
@@ -362,6 +362,33 @@
 ;;----------------------------------------------------------------
 (test-section "with-exception-handler")
 
+(test "simple" '(a b c)
+      (lambda ()
+        (let ((x '()))
+          (with-exception-handler
+           (lambda (e) (push! x e))
+           (lambda ()
+             (push! x 'a)
+             (raise 'b)
+             (push! x 'c)))
+          (reverse x))))
+
+(test "w/dynamic-wind" '(a b c d e f g)
+      (lambda ()
+        (let ((x '()))
+          (dynamic-wind
+           (lambda () (push! x 'a))
+           (lambda ()
+             (with-exception-handler
+              (lambda (e) (push! x e))
+              (lambda ()
+                (dynamic-wind
+                 (lambda () (push! x 'b))
+                 (lambda () (push! x 'c) (raise 'd) (push! x 'e))
+                 (lambda () (push! x 'f))))))
+           (lambda () (push! x 'g)))
+          (reverse x))))
+
 (test "manual restart (simple)" '(a b c)
       (lambda ()
         (let ((x '()))
@@ -374,7 +401,7 @@
                        (cont 'c))
                      (lambda () (push! x 'a) (car 3))))))
           (reverse x))))
-              
+
 (test "manual restart (w/ dynamic-wind)" '(a b c e d)
       (lambda ()
         (let ((x '()))
@@ -390,6 +417,65 @@
                           (cont 'd))
                         (lambda () (push! x 'b) (car 3))))
                      (lambda () (push! x 'e))))))
+          (reverse x))))
+
+(test "noncontinuable error" '(a b c g y)
+      (lambda ()
+        (let ((x '()))
+          (with-error-handler
+           (lambda (e) (push! x 'g))
+           (lambda ()
+             (with-exception-handler
+              (lambda (e) (push! x 'c))
+              (lambda ()
+                (dynamic-wind
+                 (lambda () (push! x 'a))
+                 (lambda () (push! x 'b) (car 3) (push! x 'z))
+                 (lambda () (push! x 'y)))))))
+          (reverse x))))
+
+;;----------------------------------------------------------------
+(test-section "nesting exception/error handlers")
+
+(test "propagating continuable exception" '(a b c)
+      (lambda ()
+        (let ((x '()))
+          (with-exception-handler
+           (lambda (e) (push! x e))
+           (lambda ()
+             (with-error-handler
+              (lambda (e) (push! x 'z))
+              (lambda ()
+                (push! x 'a)
+                (raise 'b)
+                (push! x 'c)))))
+          (reverse x))))
+
+(test "propagating continuable exception" '(a b c d e f g h)
+      (lambda ()
+        (let ((x '()))
+          (with-exception-handler
+           (lambda (e) (push! x e))
+           (lambda ()
+             (dynamic-wind
+              (lambda () (push! x 'a))
+              (lambda ()
+                (with-error-handler
+                 (lambda (e) (push! x 'z))
+                 (lambda ()
+                   (dynamic-wind
+                    (lambda () (push! x 'b))
+                    (lambda ()
+                      (with-error-handler
+                       (lambda (e) (push! x 'f))
+                       (lambda ()
+                         (push! x 'c)
+                         (raise 'd)
+                         (push! x 'e)
+                         (car 3)
+                         (push! x 'z))))
+                    (lambda () (push! x 'g))))))
+              (lambda () (push! x 'h)))))
           (reverse x))))
 
 (test-end)
