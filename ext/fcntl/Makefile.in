@@ -1,0 +1,25 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SCM_CATEGORY = gauche
+
+LIBFILES = fcntl.la
+SCMFILES = fcntl.scm
+
+OBJECTS = fcntl_head.lo fcntl.lo fcntlib.lo fcntl_tail.lo
+
+GENERATED = Makefile fcntllib.c fcntl_head.c fcntl_tail.c
+
+all : $(LIBFILES)
+
+fcntl.la : $(OBJECTS) 
+	$(MODLINK) $(OBJECTS) $(LIBGAUCHE)
+
+fcntl_head.c fcntl_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension fcntl
+
+install : install-std
+
+include ../Makefile.ext
+

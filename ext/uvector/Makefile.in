@@ -1,0 +1,54 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SCM_CATEGORY = gauche
+
+LIBFILES = libgauche-uvector.la uvector.la
+SCMFILES = array.scm uvector.scm
+HDRFILES = gauche/uvector.h
+
+GENERATED = Makefile uvlib.c uvlib.stub uvector.c gauche/uvector.h \
+            uvutil.c uvector_head.c uvector_tail.c
+
+all : $(LIBFILES)
+
+lib_OBJECTS = uvector.lo uvutil.lo
+
+libgauche-uvector.la : $(lib_OBJECTS) 
+	$(LINK) $(lib_OBJECTS) $(LIBGAUCHE)
+
+uvector_OBJECTS = uvector_head.lo uvinit.lo uvlib.lo uvector_tail.lo
+
+uvector.la : $(uvector_OBJECTS) 
+	$(MODLINK) $(uvector_OBJECTS) $(LIBGAUCHE) $(top_builddir)/ext/uvector/libgauche-uvector.la
+
+uvector_head.c uvector_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension uvector
+
+gauche/uvector.h : uvector.h.sh
+	if test ! -d gauche; then mkdir gauche; fi
+	rm -rf gauche/uvector.h
+	sh ./uvector.h.sh > gauche/uvector.h
+
+uvector.lo uvutil.lo uvlib.lo uvinit.lo : gauche/uvector.h
+
+uvector.c : uvector.c.sh
+	rm -rf uvector.c
+	sh ./uvector.c.sh > uvector.c
+
+uvutil.c : uvutil.c.sh
+	rm -rf uvutil.c
+	sh ./uvutil.c.sh > uvutil.c
+
+uvlib.c : uvlib.stub
+	$(GOSH) genstub uvlib.stub
+
+uvlib.stub : uvlib.stub.sh
+	rm -rf uvlib.stub
+	sh ./uvlib.stub.sh > uvlib.stub
+
+install : install-std
+
+include ../Makefile.ext
+

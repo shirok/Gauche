@@ -1,0 +1,25 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SCM_CATEGORY = gauche
+
+LIBFILES = termios.la
+SCMFILES = termios.scm
+
+OBJECTS = termios_head.lo termios.lo termiolib.lo termios_tail.lo
+
+GENERATED = Makefile termiolib.c termios_head.c termios_tail.c
+
+all : $(LIBFILES)
+
+termios.la : $(OBJECTS) 
+	$(MODLINK) $(OBJECTS) $(LIBGAUCHE)
+
+termios_head.c termios_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension termios
+
+install : install-std
+
+include ../Makefile.ext
+

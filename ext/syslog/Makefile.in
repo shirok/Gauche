@@ -1,0 +1,25 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SCM_CATEGORY = gauche
+
+LIBFILES = syslog.la
+SCMFILES = syslog.scm
+
+OBJECTS = syslog_head.lo syslog.lo syslog_tail.lo
+
+GENERATED = Makefile syslog.c syslog_head.c syslog_tail.c
+
+all : $(LIBFILES)
+
+syslog.la : $(OBJECTS) 
+	$(MODLINK)  $(OBJECTS) $(LIBGAUCHE)
+
+syslog_head.c syslog_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension syslog
+
+install : install-std
+
+include ../Makefile.ext
+

@@ -1,0 +1,25 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SCM_CATEGORY = gauche
+
+LIBFILES = threads.la
+SCMFILES = threads.scm
+
+OBJECTS = threads_head.lo threads.lo mutex.lo thrlib.lo threads_tail.lo
+
+GENERATED = Makefile thrlib.c threads_head.c threads_tail.c
+
+all : $(LIBFILES)
+
+threads.la : $(OBJECTS) 
+	$(MODLINK) $(OBJECTS) $(LIBGAUCHE)
+
+threads_head.c threads_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension threads
+
+install : install-std
+
+include ../Makefile.ext
+

@@ -1,7 +1,29 @@
+#
+# Makefile.in for Gauche/lib
+#  $Id: Makefile.in,v 1.89 2003-04-21 23:07:27 shirok Exp $
 
-pkgdataversiondir = $(pkgdatadir)/$(VERSION)/lib
+DESTDIR =
 
-pkgdataversion_DATA = srfi-0.scm \
+prefix      = @prefix@
+exec_prefix = @exec_prefix@
+bindir      = @bindir@
+libdir      = @libdir@
+srcdir      = @srcdir@
+VPATH       = $(srcdir)
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+GAUCHE_DATA_DIR = @datadir@/gauche
+SCM_INSTALL_DIR = $(GAUCHE_DATA_DIR)/@GAUCHE_VERSION@/lib
+INSTALL         = @INSTALL@
+
+CONFIG_GENERATED = Makefile slib.scm
+
+SUBDIRS  = gauche gauche/vm gauche/serializer gauche/interactive gauche/mop \
+           srfi-1 srfi-13 srfi-14 srfi-19 math util compat \
+	   file rfc text www
+
+SCMFILES = srfi-0.scm \
        srfi-1.scm srfi-1/cat.scm srfi-1/filter.scm srfi-1/finder.scm \
        srfi-1/folder.scm srfi-1/generator.scm srfi-1/mapper.scm \
        srfi-1/nary.scm srfi-1/nth.scm srfi-1/pred.scm srfi-1/selector.scm \
@@ -42,16 +64,27 @@ pkgdataversion_DATA = srfi-0.scm \
        text/html-lite.scm text/info.scm text/gettext.scm \
        www/cgi.scm
 
-install-pkgdataversionDATA:
-	for p in $(DATA) ; do \
-	  _dirname=`dirname $$p` ; \
-	  _target="$(DESTDIR)$(pkgdataversiondir)/$$_dirname"; \
-	  if test ! -d $$_target; then $(mkinstalldirs) $$_target ; fi; \
-	  if test -f "$(srcdir)/$$p"; then d=$(srcdir)/; else d= ; fi; \
-	  echo "$(INSTALL_DATA) $$d$$p $(DESTDIR)$(pkgdataversiondir)/$$p" ; \
-	  $(INSTALL_DATA) $$d$$p "$(DESTDIR)$(pkgdataversiondir)/$$p" ; \
+all:
+
+check:
+
+install:
+	for d in $(SUBDIRS); do \
+	  $(INSTALL) -d $(DESTDIR)$(SCM_INSTALL_DIR)/$$d; \
+	done
+	for p in $(SCMFILES); do \
+	  $(INSTALL) -m 444 $$p $(DESTDIR)$(SCM_INSTALL_DIR)/$$p; \
 	done
 
-CLEANFILES += core *~
-DISTCLEANFILES += 
-MAINTAINERCLEANFILES += Makefile.in
+uninstall:
+
+clean:
+	rm -f core *~
+	for d in $(SUBDIRS); do (cd $$d; rm -f core *~); done
+
+distclean: clean
+	rm -f $(CONFIG_GENERATED)
+
+maintainer-clean: clean
+	rm -f $(CONFIG_GENERATED)
+

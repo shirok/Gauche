@@ -1,0 +1,36 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SCM_CATEGORY = gauche
+
+LIBFILES = libcharconv.la
+SCMFILES = charconv.scm
+
+GENERATED = Makefile charconv.h convlib.c charconv_head.c charconv_tail.c
+
+OBJECTS = charconv_head.lo charconv.lo convlib.lo jconv.lo \
+          guess.lo charconv_tail.lo
+
+all : $(LIBFILES)
+
+libcharconv.la : $(OBJECTS)
+	$(MODLINK) $(OBJECTS) $(LIBGAUCHE)
+
+charconv_head.c charconv_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension charconv
+
+jconv.lo : eucj2ucs.c ucs2eucj.c jconv.c
+
+guess.lo : guess_tab.c guess.c
+
+eucj2ucs.c ucs2eucj.c : cvt.scm euc-jp-2000-std.txt
+	$(GOSH) cvt.scm
+
+guess_tab.c : guess.scm
+	$(GOSH) guess.scm guess_tab.c
+
+install : install-std
+
+include ../Makefile.ext
+

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: process.scm,v 1.11 2002-07-12 05:01:38 shirok Exp $
+;;;  $Id: process.scm,v 1.12 2003-04-21 23:07:28 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -239,5 +239,8 @@
 
 (define (process-output->string-list command)
   (call-with-input-process command port->string-list))
+
+;; 
+
 
 (provide "gauche/process")

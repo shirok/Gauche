@@ -1,7 +1,7 @@
 /*
  * load.c - load a program
  *
- *  Copyright(C) 2000-2003 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.69 2003-04-12 03:41:21 shirok Exp $
+ *  $Id: load.c,v 1.70 2003-04-21 23:07:28 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -31,9 +31,7 @@
 #include <dlfcn.h>
 #endif
 
-#include <ltdl.h>
-
-#define LOAD_SUFFIX ".scm"
+#define LOAD_SUFFIX ".scm"      /* default load suffix */
 
 /*
  * Load file.
@@ -42,8 +40,9 @@
 /* Static parameters */
 static struct {
     /* Load path list */
-    ScmGloc *load_path_rec;       /* *load-path*         */
-    ScmGloc *dynload_path_rec;    /* *dynamic-load-path* */
+    ScmGloc *load_path_rec;     /* *load-path*         */
+    ScmGloc *dynload_path_rec;  /* *dynamic-load-path* */
+    ScmGloc *load_suffixes_rec; /* *load-suffixes* */
     ScmInternalMutex path_mutex;
 
     /* Provided features */
@@ -57,6 +56,8 @@ static struct {
     ScmInternalCond  prov_cv;
 
     /* Dynamic linking */
+    ScmObj dso_suffixes;
+    ScmObj dso_list;              /* List of dynamically loaded objects. */
     ScmInternalMutex dso_mutex;
 } ldinfo;
 
@@ -203,6 +204,10 @@ void Scm_LoadFromPort(ScmPort *port)
  *   If a file is found, it's pathname is returned.  *PATH is modified
  *   to contain the remains of *load-path*, which can be used again to
  *   find next matching filename.
+ *   If SUFFIXES is given, filename is assumed not to have suffix,
+ *   and suffixes listed in SUFFIXES are tried one by one.
+ *   The element in SUFFIXES is directly appended to the FILENAME;
+ *   so usually it begins with dot.
  */
 
 static int regfilep(ScmObj path)
@@ -213,12 +218,24 @@ static int regfilep(ScmObj path)
     return S_ISREG(statbuf.st_mode);
 }
 
-ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths, int error_if_not_found)
+static ScmObj try_suffixes(ScmObj base, ScmObj suffixes)
+{
+    ScmObj sp, fpath;
+    if (regfilep(base)) return base;
+    SCM_FOR_EACH(sp, suffixes) {
+        fpath = Scm_StringAppend2(SCM_STRING(base), SCM_STRING(SCM_CAR(sp)));
+        if (regfilep(fpath)) return fpath;
+    }
+    return SCM_FALSE;
+}
+
+ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths,
+                    ScmObj suffixes, int error_if_not_found)
 {
     int size = SCM_STRING_LENGTH(filename);
     const char *ptr = SCM_STRING_START(filename);
     int use_load_paths = TRUE;
-    ScmObj file = SCM_OBJ(filename), fpath = SCM_NIL;
+    ScmObj file = SCM_OBJ(filename), fpath;
     
     if (size == 0) Scm_Error("bad filename to load: \"\"");
     if (*ptr == '~') {
@@ -238,9 +255,8 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths, int error_if_not_found)
             }
             fpath = Scm_StringAppendC(SCM_STRING(SCM_CAR(lpath)), "/", 1, 1);
             fpath = Scm_StringAppend2(SCM_STRING(fpath), SCM_STRING(file));
-            if (regfilep(fpath)) break;
-            fpath = Scm_StringAppendC(SCM_STRING(fpath), LOAD_SUFFIX, -1, -1);
-            if (regfilep(fpath)) break;
+            fpath = try_suffixes(fpath, suffixes);
+            if (!SCM_FALSEP(fpath)) break;
         }
         if (SCM_PAIRP(lpath)) {
             *paths = SCM_CDR(lpath);
@@ -252,9 +268,8 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths, int error_if_not_found)
         }
     } else {
         *paths = SCM_NIL;
-        if (regfilep(file)) return SCM_OBJ(file);
-        fpath = Scm_StringAppendC(SCM_STRING(file), LOAD_SUFFIX, -1, -1);
-        if (regfilep(fpath)) return fpath;
+        fpath = try_suffixes(file, suffixes);
+        if (!SCM_FALSEP(fpath)) return fpath;
         if (error_if_not_found) {
             Scm_Error("cannot find file %S to load", file);
         }
@@ -269,11 +284,12 @@ ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths, int error_if_not_found)
 ScmObj Scm_VMLoad(ScmString *filename, ScmObj load_paths,
                   ScmObj env, int errorp)
 {
-    ScmObj port, truename;
+    ScmObj port, truename, suffixes;
     ScmVM *vm = Scm_VM();
 
+    suffixes = SCM_GLOC_GET(ldinfo.load_suffixes_rec);
     if (!SCM_PAIRP(load_paths)) load_paths = Scm_GetLoadPath();
-    truename = Scm_FindFile(filename, &load_paths, errorp);
+    truename = Scm_FindFile(filename, &load_paths, suffixes, errorp);
     if (SCM_FALSEP(truename)) return SCM_FALSE;
     if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_LOAD_VERBOSE)) {
         int len = Scm_Length(vm->load_history);
@@ -436,101 +452,198 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
  * one time.
  */
 
+#ifdef HAVE_DLOPEN
+#if defined(__NetBSD__)
+#define DYNLOAD_PREFIX   ___STRING(_C_LABEL(Scm_Init_))
+#elif defined(__ppc__) && defined(__APPLE__) && defined(__MACH__)
+/* Darwin/MacOSX */
+#define DYNLOAD_PREFIX   "_Scm_Init_"
+#elif defined(__FreeBSD__) && __FreeBSD__ < 3
+/* FreeBSD 2.x   (patch from Abe Hiroshi) */
+#define RTLD_NOW         1
+#define RTLD_GLOBAL      4
+#define DYNLOAD_PREFIX   "_Scm_Init_"
+#else
+/* We might have some other ifdefs... */
 #define DYNLOAD_PREFIX   "Scm_Init_"
+#endif
 static const char *get_dynload_initfn(const char *filename)
 {
     const char *head, *tail, *s;
     char *name, *d;
-    static const char prefix[] = DYNLOAD_PREFIX;
 
     head = strrchr(filename, '/');
     if (head == NULL) head = filename;
-    else              head++;
-    tail = filename + strlen(filename);
+    else head++;
+    tail = strchr(head, '.');
+    if (tail == NULL) tail = filename + strlen(filename);
 
-    name = SCM_NEW_ATOMIC2(char *, sizeof(prefix) + (tail - head));
-    strncpy(name, prefix, strlen(prefix));
-    for (s = head, d = name + sizeof(prefix) - 1; s < tail; s++, d++) {
-        *d = isalnum(*s)? tolower(*s) : '_';
+    name = SCM_NEW_ATOMIC2(char *, sizeof(DYNLOAD_PREFIX) + tail - head);
+    strcpy(name, DYNLOAD_PREFIX);
+    for (s = head, d = name + sizeof(DYNLOAD_PREFIX) - 1; s < tail; s++, d++) {
+        if (isalnum(*s)) *d = tolower(*s);
+        else *d = '_';
     }
     *d = '\0';
     return name;
 }
+#endif /* HAVE_DLOPEN */
 
-/* Dynamically load the specified object by LIBNAME.
- * LIBNAME must not contain the system's suffix (e.g. .so).
- */
-ScmObj Scm_DynLoad(ScmString *libname, ScmObj initfn, int export)
+#ifdef HAVE_DLOPEN
+/* Aux fn to get a parameter value from *.la file line */
+static const char *get_la_val(const char *start)
 {
-    ScmObj load_paths = Scm_GetDynLoadPath();
-    lt_dlhandle handle;
+    const char *end;
+    if (start[0] == '\'') start++;
+    end = strrchr(start, '\'');
+    if (end) {
+        char *p = SCM_NEW_ATOMIC2(char*, (end-start+1));
+        memcpy(p, start, (end-start));
+        p[end-start] = '\0';
+        return (const char*)p;
+    } else {
+        return start;
+    }
+}
+
+/* We found libtool *.la file.  Retrieve DSO path from it.
+   This routine make some assumption on .la file.  I couldn't
+   find a formal specification of .la file format. */
+static ScmObj find_so_from_la(ScmString *lafile)
+{
+    ScmObj f = Scm_OpenFilePort(Scm_GetStringConst(lafile),
+                                O_RDONLY, SCM_PORT_BUFFER_FULL, 0);
+    const char *dlname = NULL, *libdir = NULL;
+    int installed = FALSE;
+    
+    for (;;) {
+        const char *cline;
+        ScmObj line = Scm_ReadLineUnsafe(SCM_PORT(f));
+        if (SCM_EOFP(line)) break;
+        cline = Scm_GetStringConst(SCM_STRING(line));
+        if (strncmp(cline, "dlname=", sizeof("dlname=")-1) == 0) {
+            dlname = get_la_val(cline+sizeof("dlname=")-1);
+            continue;
+        }
+        if (strncmp(cline, "libdir=", sizeof("libdir=")-1) == 0) {
+            libdir = get_la_val(cline+sizeof("libdir=")-1);
+            continue;
+        }
+        if (strncmp(cline, "installed=yes", sizeof("installed=yes")-1) == 0) {
+            installed = TRUE;
+            continue;
+        }
+    }
+    Scm_ClosePort(SCM_PORT(f));
+    if (!dlname) return SCM_FALSE;
+    if (installed && libdir) {
+        ScmObj path = Scm_StringAppendC(SCM_STRING(SCM_MAKE_STR(libdir)),
+                                        "/", 1, 1);
+        path = Scm_StringAppend2(SCM_STRING(path),
+                                 SCM_STRING(SCM_MAKE_STR(dlname)));
+        /*Scm_Printf(SCM_CURERR, "Z=%S\n", path);*/
+        if (regfilep(path)) return path;
+    } else {
+        ScmObj dir = Scm_DirName(lafile);
+        ScmObj path = Scm_StringAppendC(SCM_STRING(dir),
+                                        "/" SCM_LIBTOOL_OBJDIR "/",
+                                        sizeof("/" SCM_LIBTOOL_OBJDIR "/")-1,
+                                        sizeof("/" SCM_LIBTOOL_OBJDIR "/")-1);
+        path = Scm_StringAppend2(SCM_STRING(path),
+                                 SCM_STRING(SCM_MAKE_STR(dlname)));
+        /*Scm_Printf(SCM_CURERR, "T=%S\n", path);*/
+        if (regfilep(path)) return path;
+    }
+    return SCM_FALSE;
+}
+#endif /* HAVE_DLOPEN */
+
+/* Dynamically load the specified object by FILENAME.
+   FILENAME must not contain the system's suffix (.so, for example).
+*/
+ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
+{
+#ifdef HAVE_DLOPEN
+    ScmObj truename, load_paths = Scm_GetDynLoadPath();
+    void *handle;
     void (*func)(void);
-    const char *cpath, *spath, *initsym, *err = NULL;
-    ScmObj p, h = SCM_NIL, t = SCM_NIL;
+    const char *cpath, *initname, *err = NULL, *suff;
+    int flags = RTLD_NOW;
     enum  {
         DLERR_NONE,             /* no error */
-        DLERR_DLOPEN,           /* failure in lt_dlopen */
+        DLERR_DLOPEN,           /* failure in dlopen */
         DLERR_NOINITFN,         /* failure in finding initfn */
     } errtype = DLERR_NONE;
 
-    /* NB: load_path might contain a relative pathname, but lt_dlsearchpath
-       requires all pathnames absolute.  So we loop over load_path.
-       (Actually, it is arguable whether the relative path in load_path
-       should be resolved when it is added to the load path list, or
-       when a module is about to be loaded.  For now, I resolve it here;
-       but it might be changed in future.) */
-    SCM_FOR_EACH(p, load_paths) {
-        SCM_APPEND1(h, t, Scm_NormalizePathname(SCM_STRING(SCM_CAR(p)),
-                                                SCM_PATH_ABSOLUTE));
+    truename = Scm_FindFile(filename, &load_paths, ldinfo.dso_suffixes, TRUE);
+    if (SCM_FALSEP(truename)) {
+        Scm_Error("can't find dlopen-able module %S", filename);
     }
-    p = Scm_StringJoin(h, SCM_STRING(SCM_MAKE_STR(":")), SCM_STRING_JOIN_INFIX);
-    spath = Scm_GetStringConst(SCM_STRING(p));
-    cpath = Scm_GetStringConst(libname);
+    cpath = Scm_GetStringConst(SCM_STRING(truename));
+
+    if ((suff = strrchr(cpath, '.')) && strcmp(suff, ".la") == 0) {
+        truename = find_so_from_la(SCM_STRING(truename));
+        if (SCM_FALSEP(truename)) {
+            Scm_Error("couldn't find dlopen-able module from libtool archive file %s", cpath);
+        }
+        cpath = Scm_GetStringConst(SCM_STRING(truename));
+    }
+
     if (SCM_STRINGP(initfn)) {
-        initsym = Scm_GetStringConst(SCM_STRING(initfn));
+        initname = Scm_GetStringConst(SCM_STRING(initfn));
     } else {
-        initsym = get_dynload_initfn(cpath);
+        initname = get_dynload_initfn(cpath);
     }
 
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
-    lt_dlsetsearchpath(spath);
-    handle = lt_dlopenext(cpath);
+    if (!SCM_FALSEP(Scm_Member(truename, ldinfo.dso_list, SCM_CMP_EQUAL))) {
+        /* already loaded */
+        goto cleanup;
+    }
+    if (export) flags |= RTLD_GLOBAL;
+    handle = dlopen(cpath, flags);
     if (handle == NULL) {
-        err = lt_dlerror();
+        /* TODO: check if dlerror() is available on all platforms */
+        err = dlerror();
         errtype = DLERR_DLOPEN;
         goto cleanup;
     }
-    func = (void(*)(void))lt_dlsym(handle, initsym);
+    func = (void(*)(void))dlsym(handle, initname);
     if (func == NULL) {
-        lt_dlclose(handle);
+        dlclose(handle);
         errtype = DLERR_NOINITFN;
         goto cleanup;
     }
-    /* TODO: if the module initialization function fails, there's no
-       safe way to unload the module, and we can't load the same module
-       again, we're stuck to the broken module.  This has to be addressed. */
+    /* TODO: if the module initialization function fails,
+       there's no safe way to unload the module, and we
+       can't load the same module again.  We're stuck to
+       the broken module.  This has to be addressed. */
     SCM_UNWIND_PROTECT {
         func();
     } SCM_WHEN_ERROR {
         (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
         SCM_NEXT_HANDLER;
     } SCM_END_PROTECT;
-
+    ldinfo.dso_list = Scm_Cons(truename, ldinfo.dso_list);
   cleanup:
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
     switch (errtype) {
     case DLERR_DLOPEN:
         if (err == NULL) {
-            Scm_Error("failed to link %S dynamically", libname);
+            Scm_Error("failed to link %S dynamically", filename);
         } else {
-            Scm_Error("failed to link %S dynamically: %s", libname, err);
+            Scm_Error("failed to link %S dynamically: %s", filename, err);
         }
         /*NOTREACHED*/
     case DLERR_NOINITFN:
-        Scm_Error("dynamic linking of %S failed: couldn't find initialization function %s", libname, initsym);
+        Scm_Error("dynamic linking of %S failed: couldn't find initialization function %s", filename, initname);
         /*NOTREACHED*/
     }
     return SCM_TRUE;
+#else
+    Scm_Error("dynamic linking is not supported on this architecture");
+    return SCM_FALSE;           /* dummy */
+#endif
 }
 
 /*------------------------------------------------------------------
@@ -780,10 +893,7 @@ ScmObj Scm_LoadAutoload(ScmAutoload *adata)
 void Scm__InitLoad(void)
 {
     ScmModule *m = Scm_SchemeModule();
-    ScmObj init_load_path, init_dynload_path, t;
-
-    /*LTDL_SET_PRELOADED_SYMBOLS();*/
-    lt_dlinit();
+    ScmObj init_load_path, init_dynload_path, init_load_suffixes, t;
 
     init_load_path = t = SCM_NIL;
     SCM_APPEND(init_load_path, t, break_env_paths("GAUCHE_LOAD_PATH"));
@@ -794,6 +904,9 @@ void Scm__InitLoad(void)
     SCM_APPEND(init_dynload_path, t, break_env_paths("GAUCHE_DYNLOAD_PATH"));
     SCM_APPEND1(init_dynload_path, t, SCM_MAKE_STR(GAUCHE_SITE_ARCH_DIR));
     SCM_APPEND1(init_dynload_path, t, SCM_MAKE_STR(GAUCHE_ARCH_DIR));
+
+    init_load_suffixes = t = SCM_NIL;
+    SCM_APPEND1(init_load_suffixes, t, SCM_MAKE_STR(LOAD_SUFFIX));
 
     (void)SCM_INTERNAL_MUTEX_INIT(ldinfo.path_mutex);
     (void)SCM_INTERNAL_MUTEX_INIT(ldinfo.prov_mutex);
@@ -812,6 +925,7 @@ void Scm__InitLoad(void)
 
     DEF(ldinfo.load_path_rec,    SCM_SYM_LOAD_PATH, init_load_path);
     DEF(ldinfo.dynload_path_rec, SCM_SYM_DYNAMIC_LOAD_PATH, init_dynload_path);
+    DEF(ldinfo.load_suffixes_rec, SCM_SYM_LOAD_SUFFIXES, init_load_suffixes);
 
     ldinfo.provided = SCM_LIST4(SCM_MAKE_STR("srfi-6"), /* string ports (builtin) */
                                 SCM_MAKE_STR("srfi-8"), /* receive (builtin) */
@@ -820,4 +934,7 @@ void Scm__InitLoad(void)
         );
     ldinfo.providing = SCM_NIL;
     ldinfo.waiting = SCM_NIL;
+    ldinfo.dso_suffixes = SCM_LIST2(SCM_MAKE_STR(".la"),
+                                    SCM_MAKE_STR("." SHLIB_SO_SUFFIX));
+    ldinfo.dso_list = SCM_NIL;
 }

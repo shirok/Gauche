@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: predef-syms.h,v 1.24 2002-09-17 09:42:06 shirok Exp $
+ *  $Id: predef-syms.h,v 1.25 2003-04-21 23:07:28 shirok Exp $
  */
 
 /* DEFSYM(c-name, scheme-name) */
@@ -68,6 +68,7 @@ DEFSYM(ScmQloadPath,        "*load-path*");
 DEFSYM(ScmQloadNext,        "*load-next*");
 DEFSYM(ScmQloadHistory,     "*load-history*");
 DEFSYM(ScmQloadPort,        "*load-port*");
+DEFSYM(ScmQloadSuffixes,    "*load-suffixes*");
 DEFSYM(ScmQdynamicLoadPath, "*dynamic-load-path*");
 
 DEFSYM(ScmQsourceInfo,      "source-info");
@@ -127,6 +128,7 @@ DEFSYM(ScmQbindInfo,        "bind-info");
 #define SCM_SYM_LOAD_NEXT        SCM_OBJ(&ScmQloadNext)
 #define SCM_SYM_LOAD_HISTORY     SCM_OBJ(&ScmQloadHistory)
 #define SCM_SYM_LOAD_PORT        SCM_OBJ(&ScmQloadPort)
+#define SCM_SYM_LOAD_SUFFIXES    SCM_OBJ(&ScmQloadSuffixes)
 #define SCM_SYM_DYNAMIC_LOAD_PATH SCM_OBJ(&ScmQdynamicLoadPath)
 
 #define SCM_SYM_SOURCE_INFO      SCM_OBJ(&ScmQsourceInfo)

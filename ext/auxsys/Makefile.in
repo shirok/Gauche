@@ -1,0 +1,24 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SCM_CATEGORY = gauche
+
+LIBFILES = auxsys.la
+SCMFILES = auxsys.scm
+
+GENERATED = Makefile auxsyslib.c auxsys_head.c auxsys_tail.c
+
+OBJECTS = auxsys_head.lo auxsys.lo auxsyslib.lo auxsys_tail.lo
+
+all : $(LIBFILES)
+
+auxsys.la : $(OBJECTS) 
+	$(MODLINK) $(OBJECTS) $(LIBGAUCHE)
+
+auxsys_head.c auxsys_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension auxsys
+
+install : install-std
+
+include ../Makefile.ext

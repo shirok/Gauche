@@ -1,0 +1,40 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SCM_CATEGORY = dbm
+
+LIBFILES = @DBM_ARCHFILES@
+SCMFILES = @DBM_SCMFILES@
+
+GENERATED = Makefile gdbm.c ndbm.c odbm.c *_head.c *_tail.c
+
+all : $(LIBFILES)
+
+gdbm_OBJECTS   = gdbm_head.lo gdbm.lo gdbm_tail.lo
+
+gdbm.la : $(gdbm_OBJECTS)
+	$(MODLINK) $(gdbm_OBJECTS) $(LIBGAUCHE) @GDBMLIB@
+
+ndbm_OBJECTS   = ndbm_head.lo ndbm.lo ndbm_tail.lo
+
+ndbm.la : $(ndbm_OBJECTS)
+	$(MODLINK) $(ndbm_OBJECTS) $(LIBGAUCHE) @NDBMLIB@
+
+odbm_OBJECTS   = odbm_head.lo odbm.lo odbm_tail.lo
+
+odbm.la : $(odbm_OBJECTS)
+	$(MODLINK) $(odbm_OBJECTS) $(LIBGAUCHE) @ODBMLIB@
+
+gdbm_head.c gdbm_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension gdbm
+
+ndbm_head.c ndbm_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension ndbm
+
+odbm_head.c odbm_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension odbm
+
+install : install-std
+
+include ../Makefile.ext
