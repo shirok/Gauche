@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.347 2003-01-27 03:51:32 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.348 2003-01-27 04:48:29 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -18628,11 +18628,19 @@ Sends SIGKILL, SIGSTOP and SIGCONT to @var{process}, respectively.
 @subsection Process ports
 
 @defun open-input-process-port command
+@c EN
 Runs @var{command} via @code{/bin/sh} asynchronously.
 An input port is returned, which is connected to the
 stdout of @var{command}.   The stdin and stderr of @var{command}
 is redirected from/to @code{/dev/null}.  If you need to get
 an error output, you can use shell's redirection.
+@c JP
+@var{command} を @code{/bin/sh} 経由で非同期に実行します。
+@var{command} の標準出力に接続された入力ポートが返されます。
+@var{command} の標準入力と標準出力はそれぞれ @code{/dev/null} に
+リダイレクトされます。エラー出力が必要な場合は、シェルのリダイレクションを
+使うことができます。
+@c COMMON
 @example
 (define port (open-input-process-port "ls -l Makefile"))
 (read-line port)
@@ -18644,6 +18652,7 @@ an error output, you can use shell's redirection.
 (open-input-process-port "command 2>&1 1>/dev/null")
  @result{} ;@r{the port reads stderr}
 @end example
+@c EN
 Metacharacters are interpreted by shell.
 You have to be careful if you pass the string provided from
 the outside world, for it may make a security flaw.
@@ -18652,14 +18661,31 @@ The exit status of subprocess is not automatically collected.
 It is the caller's responsibility to issue @code{process-wait},
 or the subprocess remains in a zombie state.  If it bothers you,
 you can use one of the following functions.
+@c JP
+メタキャラクタはシェルによって展開されます。外部から与えられた文字列を
+渡す場合には、セキュリティ上の問題が起こるので気を付けて下さい。
+
+サブプロセスの終了ステータスは自動的に回収されません。
+@code{process-wait} を呼ぶことは呼び出し側の責任であり、これを怠ると
+サブプロセスはゾンビプロセスになります。それが面倒であれば、以下の
+手続きを使うことができます。
+@c COMMON
 @end defun
 
 @defun call-with-input-process command proc
+@c EN
 Runs @var{command} via @code{/bin/sh} and pipes its stdout
 to an input port, then call @var{proc} with the port as an argument.
 When @var{proc} returns, it collects its exit status,
 then returns the result @var{proc} returned.
 The cleanup is done even if @var{proc} raises an error.
+@c JP
+@code{/bin/sh} 経由で @var{command} を実行し、その標準出力と入力ポートを
+パイプで繋ぎ、そのポートを引数として @var{proc} を呼び出します。
+@var{proc} が返るとその終了ステータスを回収し、@var{proc} が返した
+結果を返します。@var{proc} がエラーを通知しても、クリーンアップは
+行われます。
+@c COMMON
 @example
 (call-with-input-process "ls -l *"
   (lambda (p) (read-line p)))
@@ -18667,16 +18693,24 @@ The cleanup is done even if @var{proc} raises an error.
 @end defun
 
 @defun with-input-from-process command thunk
+@c EN
 Runs @var{command} via @code{/bin/sh}, and calls @var{thunk}
 with its current input port connected to the command's stdout.
 The command is terminated and its exit status is collected
 when @var{thunk} returns, or it raises an error.
+@c JP
+@code{/bin/sh} 経由で @var{command} を実行し、コマンドの標準出力に
+接続された現在の入力ポートとともに @var{think} を呼び出します。
+コマンドが終了すると、@var{think} が返った時点で終了ステータスが
+回収されますが、そうでない場合はエラーを通知します。
+@c COMMON
 @example
 (with-input-from-process "ls -l *" read-line)
 @end example
 @end defun
 
 @defun open-output-process-port command
+@c EN
 Runs @code{command} via @code{/bin/sh}, and returns an output
 port which is connected to the stdin of the command.
 The stdout and stderr of the command is redirected to @var{/dev/null}.
@@ -18684,14 +18718,29 @@ The stdout and stderr of the command is redirected to @var{/dev/null}.
 The exit status of the subprocess is not automatically collected.
 The caller should call @code{process-wait} on the subprocess
 at appropriate time.
+@c JP
+@code{/bin/sh} 経由で @code{command} を実行し、コマンドの標準入力に
+接続された出力ポートを返します。
+コマンドの標準出力と標準エラーは @var{/dev/null} へリダイレクトされます。
+
+サブプロセスの終了ステータスは自動的には回収されません。
+適切なタイミングで、サブプロセスに対して @code{process-wait} を呼ぶ
+必要があります。
+@c COMMON
 @end defun
 
 @defun call-with-output-process command proc
+@c EN
 Runs @code{command} via @code{/bin/sh}, and calls @var{proc} 
-with an output port which is conected to the stdin of the command.
+with an output port which is connected to the stdin of the command.
 The exit status of the command is collected after @var{proc}
 returns, or it raises an error.
-
+@c JP
+@code{/bin/sh} 経由で @code{command} を実行し、コマンドの標準入力に
+接続された出力ポートとともに @var{proc} を呼び出します。
+コマンドの終了ステータスは、@var{proc} が返ると回収されますが、
+そうでない場合はエラーが通知されます。
+@c COMMON
 @example
 (call-with-output-process "/usr/sbin/sendmail"
   (lambda (out) (display mail-body out)))
@@ -18699,12 +18748,19 @@ returns, or it raises an error.
 @end defun
 
 @defun with-output-to-process command thunk
+@c EN
 Same as @code{call-with-output-process}, except that the
 output port which is connected to the stdin of the command
 is set to the current output port while executing @var{thunk}.
+@c JP
+コマンドの標準入力に接続された出力ポートが、@var{think} の実行中は
+現在の出力ポートにセットされることを除いて、@code{call-with-output-process}
+と同じです。
+@c COMMON
 @end defun
 
 @defun call-with-process-io command proc
+@c EN
 Runs @var{command} via @code{/bin/sh}, and calls @var{proc}
 with two arguments; the first argument is an input port which
 is connected to the command's stdout, and the second is an output
@@ -18713,10 +18769,18 @@ the command is redirected to @code{/dev/null}.
 
 The exit status of the command is collected when @var{proc}
 returns or raises an error.
+@c JP
+@code{/bin/sh} 経由で @var{command} を実行し、@var{proc} を2つの引数と
+ともに呼び出します。最初の引数は入力ポートで、コマンドの標準出力に
+接続されたものです。2番目の引数は出力ポートでコマンドの標準入力に
+接続されたものです。コマンドからのエラー出力は、@code{/dev/null} へ
+リダイレクトされます。
+@c COMMON
 @end defun
 
 @defun process-output->string command
 @defunx process-output->string-list command
+@c EN
 Runs @var{command} and collects its output (to stdout) to return them.
 @code{process-output->string} concatenates all the output from @var{command}
 to one string, replacing any sequence of whitespace characters to
@@ -18727,7 +18791,18 @@ in shell scripts.
 characters are stripped.
 
 Internally, @var{command} is run by @code{call-with-input-process}.
+@c JP
+@var{command} を実行し、その(標準出力への)出力を返すために回収します。
+@code{process-output->string} は @var{command} からの全ての出力を連結し
+1つの文字列とします。その際、空白文字からなるシーケンスは1つの空白に
+置換されます。このアクションは、シェルスクリプトにおける「コマンド置換」
+に似たものです。
+@code{process-output->string-list} は @var{command} からの出力を行ごとに
+回収し、それらをリストにしたものを返します。改行文字は削除されます。
 
+内部的には、@var{command} は @code{call-with-input-process} により
+実行されます。
+@c COMMON
 @example
 (process-output->string "uname -smp")
   @result{} "Linux i686 unknown"
