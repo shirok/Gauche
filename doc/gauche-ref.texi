@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.163 2002-02-22 11:54:56 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.164 2002-02-23 07:39:55 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -5162,6 +5162,16 @@ I chose this syntax with respect to the quasiquote (@xref{Quasiquotation}).
 Althogh it may be awkward to delimit variable names by `|',
 the comma syntax should be easier to read than the other exotic syntax
 for seasoned Scheme programmers.
+
+Note that Scheme allows wider range of characters for valid identifier names
+than usual scripting languages.
+Consequently, you will almost always need to use `|' delimiters
+when you interpolate the value of a variable.
+For example, while you can write
+@code{"$year/$month/$day $hour:$minutes:$seconds"} in Perl,
+you should write @code{#`",|year|/,|month|/,day ,|hour|:,|minutes|:,seconds"}.
+It may be better always to delimit direct variable references
+in this syntax to avoid confusion.
 @c JP
 @emph{この構文を採用した理由:} 
 他のスクリプト言語では、`@code{$expr}' や '@code{#@{...@}}' が良く使われています。
@@ -5169,6 +5179,15 @@ for seasoned Scheme programmers.
 変数名の区切りを明確にするのに`|'を使う必要があるのは少々奇妙ですが、
 慣れたSchemeプログラマならコンマ構文を読むのは他の言語から借りた構文よりも
 楽だと思います。
+
+Schemeは他のスクリプト言語より一般的により多くの文字を変数名に使うことが出来ることに注意して下さい。
+結果として、変数の値を文字列に挿入する際、ほとんどの場合において変数名を`|'で区切る
+必要があるでしょう。例えば、Perlでは
+@code{"$year/$month/$day $hour:$minutes:$seconds"}
+と書けたものが、Gaucheでは
+@code{#`",|year|/,|month|/,day ,|hour|:,|minutes|:,seconds"}
+と書かねばなりません。
+混乱を避けるためには、この構文内では常に直接の変数参照は`|'で区切るようにしておくのが良いかもしれません。
 @c COMMON
 
 @node String Accessors & Modifiers, String Comparison, String Interpolation, Strings
