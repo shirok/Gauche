@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.39 2001-04-01 10:07:35 shiro Exp $
+ *  $Id: class.c,v 1.40 2001-04-01 22:07:43 shiro Exp $
  */
 
 #include "gauche.h"
@@ -78,6 +78,7 @@ SCM_DEFINE_GENERIC(Scm_GenericComputeCPL, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeSlots, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeGetNSet, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeApplicableMethods, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericApplyGeneric, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericMethodMoreSpecificP, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotMissing, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotUnbound, Scm_NoNextMethod, NULL);
@@ -1677,6 +1678,7 @@ void Scm__InitClass(void)
     GINIT(&Scm_GenericComputeGetNSet, "compute-get-n-set");
     GINIT(&Scm_GenericComputeApplicableMethods, "compute-applicable-methods");
     GINIT(&Scm_GenericMethodMoreSpecificP, "method-more-specific?");
+    GINIT(&Scm_GenericApplyGeneric, "apply-generic");
     GINIT(&Scm_GenericSlotMissing, "slot-missing");
     GINIT(&Scm_GenericSlotUnbound, "slot-unbound");
     GINIT(&Scm_GenericSlotBoundUsingClassP, "slot-bound-using-class?");
