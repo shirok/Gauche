@@ -217,7 +217,7 @@
               (list (logand #o777 (sys-stat->mode s))
                     (sys-stat->file-type s)))))))
 
-(sys-remove "test.dir")
+(sys-rmdir "test.dir")
 
 ;;-------------------------------------------------------------------
 (test-section "pipe")
