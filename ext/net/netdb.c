@@ -3,6 +3,24 @@
 
 #define DATA_BUFSIZ  980
 
+static struct netdb_data_rec {
+    int dummy;                  /* dummy var to make sure this structure is
+                                   placed in data area. */
+    ScmInternalMutex hostent_mutex;
+    ScmInternalMutex protoent_mutex;
+    ScmInternalMutex servent_mutex;
+} netdb_data = { 0 };
+
+#define WITH_GLOBAL_LOCK(mutex, body)           \
+    SCM_UNWIND_PROTECT {                        \
+      SCM_INTERNAL_MUTEX_LOCK(mutex);           \
+      body;                                     \
+    } SCM_WHEN_ERROR {                          \
+        SCM_INTERNAL_MUTEX_UNLOCK(mutex);       \
+        SCM_NEXT_HANDLER;                       \
+    } SCM_END_PROTECT;                          \
+    SCM_INTERNAL_MUTEX_UNLOCK(mutex)
+
 /*-------------------------------------------------------------
  * Hostent
  */
@@ -43,8 +61,8 @@ static ScmSysHostent *make_hostent(struct hostent *he)
 
 ScmObj Scm_GetHostByName(const char *name)
 {
-    ScmObj entry = SCM_FALSE;
 #if defined(GETHOSTBYNAME_R_NUMARGS)
+    ScmObj entry = SCM_FALSE;
     {
         int herr = 0, bufsiz = DATA_BUFSIZ;
         struct hostent he;
@@ -71,19 +89,20 @@ ScmObj Scm_GetHostByName(const char *name)
     }
     return entry;
 #else /* !defined(GETHOSTBYNAME_R_NUMARGS) */
-    /* TODO: global lock */
-    {
-        struct hostent *he = gethostbyname(name);
-        if (he != NULL) entry = SCM_OBJ(make_hostent(he));
-    }
-    /* TODO: global unlock */
+    /* We don't have thread-safe call.  Using global lock. */
+    volatile ScmObj entry = SCM_FALSE;
+    WITH_GLOBAL_LOCK(netdb_data.hostent_mutex,
+                     do {
+                         struct hostent *he;
+                         he = gethostbyname(name);
+                         if (he != NULL) entry = SCM_OBJ(make_hostent(he));
+                     } while (0));
     return entry;
 #endif /* !defined(GETHOSTBYNAME_R_NUMARGS) */
 }
 
 ScmObj Scm_GetHostByAddr(const char *addr, int type)
 {
-    ScmObj entry = SCM_FALSE;
     struct in_addr iaddr;
     if (type != AF_INET) {
         Scm_Error("unsupported address type: %d", type);
@@ -94,6 +113,7 @@ ScmObj Scm_GetHostByAddr(const char *addr, int type)
     
 #if defined(GETHOSTBYNAME_R_NUMARGS)
     {
+        ScmObj entry = SCM_FALSE;
         int herr = 0, bufsiz = DATA_BUFSIZ;
         struct hostent he;
         char staticbuf[DATA_BUFSIZ], *buf = staticbuf;
@@ -119,17 +139,24 @@ ScmObj Scm_GetHostByAddr(const char *addr, int type)
 #endif
         }
         entry = SCM_OBJ(make_hostent(&he));
+        return entry;
     }
-    return entry;
 #else /* !defined(GETHOSTBYNAME_R_NUMARGS) */
-    /* TODO: global lock */
     {
-        struct hostent *he = gethostbyaddr((void*)&iaddr,
-                                           sizeof(struct in_addr), AF_INET);
-        if (he != NULL) entry = SCM_OBJ(make_hostent(he));
+        volatile ScmObj entry = SCM_FALSE;
+        struct hostent *he;
+        
+        WITH_GLOBAL_LOCK(netdb_data.hostent_mutex,
+                         do {
+                             he = gethostbyaddr((void*)&iaddr,
+                                                sizeof(struct in_addr),
+                                                AF_INET);
+                             if (he != NULL) {
+                                 entry = SCM_OBJ(make_hostent(he));
+                             }
+                         } while (0));
+        return entry;
     }
-    /* TODO: global unlock */
-    return entry;
 #endif /* !defined(GETHOSTBYNAME_R_NUMARGS) */
 }
 
@@ -179,8 +206,8 @@ static ScmSysProtoent *make_protoent(struct protoent *pe)
 
 ScmObj Scm_GetProtoByName(const char *name)
 {
-    ScmObj entry = SCM_FALSE;
 #if defined(GETPROTOBYNAME_R_NUMARGS)
+    ScmObj entry = SCM_FALSE;
     {
         int bufsiz = DATA_BUFSIZ;
         struct protoent pe;
@@ -207,20 +234,20 @@ ScmObj Scm_GetProtoByName(const char *name)
     }
     return entry;
 #else /* !defined(GETPROTOBYNAME_R_NUMARGS) */
-    /* TODO: global lock */
-    {
-        struct protoent *pe = getprotobyname(name);
-        if (pe != NULL) entry = SCM_OBJ(make_protoent(pe));
-    }
-    /* TODO: global unlock */
+    volatile ScmObj entry = SCM_FALSE;
+    WITH_GLOBAL_LOCK(netdb_data.protoent_mutex,
+                     do {
+                         struct protoent *pe = getprotobyname(name);
+                         if (pe != NULL) entry = SCM_OBJ(make_protoent(pe));
+                     } while (0));
     return entry;
 #endif /* !defined(GETPROTOBYNAME_R_NUMARGS) */
 }
 
 ScmObj Scm_GetProtoByNumber(int number)
 {
-    ScmObj entry = SCM_FALSE;
 #if defined(GETPROTOBYNUMBER_R_NUMARGS)
+    ScmObj entry = SCM_FALSE;
     {
         int bufsiz = DATA_BUFSIZ;
         struct protoent pe;
@@ -247,12 +274,12 @@ ScmObj Scm_GetProtoByNumber(int number)
     }
     return entry;
 #else /* !defined(GETPROTOBYNUMBER_R_NUMARGS) */
-    /* TODO: global lock */
-    {
-        struct protoent *pe = getprotobynumber(number);
-        if (pe != NULL) entry = SCM_OBJ(make_protoent(pe));
-    }
-    /* TODO: global unlock */
+    volatile ScmObj entry = SCM_FALSE;
+    WITH_GLOBAL_LOCK(netdb_data.protoent_mutex,
+                     do {
+                         struct protoent *pe = getprotobynumber(number);
+                         if (pe != NULL) entry = SCM_OBJ(make_protoent(pe));
+                     } while (0));
     return entry;
 #endif /* !defined(GETPROTOBYNUMBER_R_NUMARGS) */
 }
@@ -304,8 +331,8 @@ static ScmSysServent *make_servent(struct servent *se)
 
 ScmObj Scm_GetServByName(const char *name, const char *proto)
 {
-    ScmObj entry = SCM_FALSE;
 #if defined(GETSERVBYNAME_R_NUMARGS)
+    ScmObj entry = SCM_FALSE;
     {
         int bufsiz = DATA_BUFSIZ;
         struct servent se;
@@ -332,20 +359,20 @@ ScmObj Scm_GetServByName(const char *name, const char *proto)
     }
     return entry;
 #else /* !defined(GETSERVBYNAME_R_NUMARGS) */
-    /* TODO: global lock */
-    {
-        struct servent *se = getservbyname(name, proto);
-        if (se != NULL) entry = SCM_OBJ(make_servent(se));
-    }
-    /* TODO: global unlock */
+    volatile ScmObj entry = SCM_FALSE;
+    WITH_GLOBAL_LOCK(netdb_data.servent_mutex,
+                     do {
+                         struct servent *se = getservbyname(name, proto);
+                         if (se != NULL) entry = SCM_OBJ(make_servent(se));
+                     } while (0));
     return entry;
 #endif /* !defined(GETSERVBYNAME_R_NUMARGS) */
 }
 
 ScmObj Scm_GetServByPort(int port, const char *proto)
 {
-    ScmObj entry = SCM_FALSE;
 #if defined(GETSERVBYPORT_R_NUMARGS)
+    ScmObj entry = SCM_FALSE;
     {
         int bufsiz = DATA_BUFSIZ;
         struct servent se;
@@ -373,12 +400,13 @@ ScmObj Scm_GetServByPort(int port, const char *proto)
     }
     return entry;
 #else /* !defined(GETSERVBYPORT_R_NUMARGS) */
-    /* TODO: global lock */
-    {
-        struct servent *se = getservbyport(htons(port), proto);
-        if (se != NULL) entry = SCM_OBJ(make_servent(se));
-    }
-    /* TODO: global unlock */
+    volatile ScmObj entry = SCM_FALSE;
+    WITH_GLOBAL_LOCK(netdb_data.servent_mutex,
+                     do {
+                         struct servent *se =
+                             getservbyport(htons(port), proto);
+                         if (se != NULL) entry = SCM_OBJ(make_servent(se));
+                     } while (0));
     return entry;
 #endif /* !defined(GETSERVBYPORT_R_NUMARGS) */
 }
@@ -423,4 +451,7 @@ void Scm_Init_NetDB(ScmModule *mod)
                          protoent_slots, sizeof(ScmSysProtoent), mod);
     Scm_InitBuiltinClass(&Scm_SysServentClass, "<sys-servent>",
                          servent_slots, sizeof(ScmSysServent), mod);
+    SCM_INTERNAL_MUTEX_INIT(netdb_data.hostent_mutex);
+    SCM_INTERNAL_MUTEX_INIT(netdb_data.protoent_mutex);
+    SCM_INTERNAL_MUTEX_INIT(netdb_data.servent_mutex);
 }

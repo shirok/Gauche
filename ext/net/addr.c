@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: addr.c,v 1.13 2002-11-30 10:43:16 shirok Exp $
+ *  $Id: addr.c,v 1.14 2003-02-15 07:13:44 shirok Exp $
  */
 
 #include "net.h"
@@ -44,7 +44,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrClass, sockaddr_print,
 
 void sockaddr_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    Scm_Printf(port, "#<sockaddr%S %S>",
+    Scm_Printf(port, "#<sockaddr %S %S>",
                Scm_SockAddrFamily(SCM_SOCKADDR(obj)),
                Scm_SockAddrName(SCM_SOCKADDR(obj)));
 }
@@ -146,13 +146,24 @@ static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
     addr->addr.sin_family = AF_INET;
     addr->addr.sin_port = htons(SCM_INT_VALUE(port));
     if (SCM_STRINGP(host)) {
-        /* TODO: MT safeness */
-        struct hostent *hent = gethostbyname(Scm_GetStringConst(SCM_STRING(host)));
-        if (hent == NULL) Scm_Error("unknown host: %S", host);
-        if (hent->h_addrtype != AF_INET)
-            Scm_Error("host have unknown address type: %S", host);
-        memcpy(&addr->addr.sin_addr, hent->h_addr_list[0],
-               sizeof(struct in_addr));
+        const char *hname = Scm_GetStringConst(SCM_STRING(host));
+        /* First, see if host is dotted number notation. */
+        if (inet_aton(hname, &addr->addr.sin_addr) == 0) {
+            /* Now, we need to look up the host name.
+               Call MT-safe Scm_GetHostByName */
+            ScmObj ap, hent = Scm_GetHostByName(hname);
+            if (!SCM_SYS_HOSTENT_P(hent)) {
+                Scm_Error("unknown host: %S", host);
+            }
+            ap = SCM_SYS_HOSTENT(hent)->addresses;
+            if (SCM_NULLP(ap) || !SCM_STRINGP(SCM_CAR(ap))) {
+                Scm_Error("host have unknown address type: %S", host);
+            }
+            hname = Scm_GetStringConst(SCM_STRING(SCM_CAR(ap)));
+            if (inet_aton(hname, &addr->addr.sin_addr) == 0) {
+                Scm_Error("host name lookup failure: %S", host);
+            }
+        }
     } else if (host == key_any) {
         addr->addr.sin_addr.s_addr = htonl(INADDR_ANY);
     } else if (host == key_broadcast) {

@@ -1,7 +1,7 @@
 /*
  * net.h - network interface
  *
- *  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2001-2003 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.h,v 1.12 2003-01-04 23:51:48 shirok Exp $
+ *  $Id: net.h,v 1.13 2003-02-15 07:13:44 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -37,9 +37,7 @@
 #include <stdint.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+SCM_DECL_BEGIN
 
 /*==================================================================
  * Socket
@@ -152,8 +150,8 @@ typedef struct ScmSysHostentRec {
 
 SCM_CLASS_DECL(Scm_SysHostentClass);
 #define SCM_CLASS_SYS_HOSTENT  (&Scm_SysHostentClass)
-#define SCM_SYS_HOSTENT        ((ScmHostent*)obj)
-#define SCM_SYS_HOSTENT_P      SCM_XTYPEP(obj, SCM_CLASS_SYS_HOSTENT)
+#define SCM_SYS_HOSTENT(obj)   ((ScmSysHostent*)obj)
+#define SCM_SYS_HOSTENT_P(obj) SCM_XTYPEP(obj, SCM_CLASS_SYS_HOSTENT)
 
 extern ScmObj Scm_GetHostByName(const char *name);
 extern ScmObj Scm_GetHostByAddr(const char *addr, int type);
@@ -198,8 +196,6 @@ SCM_CLASS_DECL(Scm_SysServentClass);
 extern ScmObj Scm_GetServByName(const char *name, const char *proto);
 extern ScmObj Scm_GetServByPort(int port, const char *proto);
 
-#ifdef __cplusplus
-}
-#endif
+SCM_DECL_END
 
 #endif /*GAUCHE_NET_H */

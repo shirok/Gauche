@@ -1,3 +1,11 @@
+2003-02-14  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/netdb.c (Scm_GetHostByName etc.): made the fallback code
+	  (when no reentrant version of gethostbyaddr_r etc. are found)
+	  thread-safe, using global lock.
+	* ext/net/addr.c (sockaddr_in_allocate): made address lookup
+	  thread-safe.
+
 2003-02-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/parse.scm (next-token) : fixed error message handling
