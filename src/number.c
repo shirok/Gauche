@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.14 2001-03-06 09:04:50 shiro Exp $
+ *  $Id: number.c,v 1.15 2001-03-08 10:21:31 shiro Exp $
  */
 
 #include <math.h>
@@ -136,12 +136,26 @@ ScmObj Scm_MakeInteger(long i)
     }
 }
 
+ScmObj Scm_MakeIntegerFromUI(u_long i)
+{
+    if (i <= SCM_SMALL_INT_MAX) return SCM_MAKE_INT(i);
+    else return Scm_MakeBignumFromUI(i);
+}
+
 /* Convert scheme integer to C integer. Overflow is neglected. */
 long Scm_GetInteger(ScmObj obj)
 {
     if (SCM_INTP(obj)) return SCM_INT_VALUE(obj);
     else if (SCM_BIGNUMP(obj)) return Scm_BignumToSI(SCM_BIGNUM(obj));
     else if (SCM_FLONUMP(obj)) return (long)SCM_FLONUM_VALUE(obj);
+    else return 0;
+}
+
+u_long Scm_GetUInteger(ScmObj obj)
+{
+    if (SCM_INTP(obj)) return SCM_INT_VALUE(obj);
+    else if (SCM_BIGNUMP(obj)) return Scm_BignumToUI(SCM_BIGNUM(obj));
+    else if (SCM_FLONUMP(obj)) return (u_long)SCM_FLONUM_VALUE(obj);
     else return 0;
 }
 
