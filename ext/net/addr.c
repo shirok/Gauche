@@ -12,18 +12,18 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: addr.c,v 1.10 2002-02-10 05:40:05 shirok Exp $
+ *  $Id: addr.c,v 1.11 2002-06-30 04:23:40 shirok Exp $
  */
 
 #include "net.h"
 #include <string.h>
 
-static ScmObj key_path;
-static ScmObj key_host;
-static ScmObj key_port;
-static ScmObj key_any;
-static ScmObj key_broadcast;
-static ScmObj key_loopback;
+static ScmObj key_path = SCM_FALSE;
+static ScmObj key_host = SCM_FALSE;
+static ScmObj key_port = SCM_FALSE;
+static ScmObj key_any = SCM_FALSE;
+static ScmObj key_broadcast = SCM_FALSE;
+static ScmObj key_loopback = SCM_FALSE;
 
 /*==================================================================
  * Generic Socket Address

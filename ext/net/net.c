@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.c,v 1.18 2002-04-29 03:07:38 shirok Exp $
+ *  $Id: net.c,v 1.19 2002-06-30 04:23:40 shirok Exp $
  */
 
 #include "net.h"
@@ -269,8 +269,6 @@ ScmObj Scm_SocketGetOpt(ScmSocket *s, int level, int option, int rtype)
 extern void Scm_Init_NetAddr(ScmModule *mod);
 extern void Scm_Init_NetDB(ScmModule *mod);
 extern void Scm_Init_netlib(ScmModule *mod);
-
-extern void *Scm_DataHead, *Scm_DataEnd;
 
 void Scm_Init_libnet(void)
 {
