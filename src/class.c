@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.70 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: class.c,v 1.71 2002-02-08 09:10:58 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1629,7 +1629,10 @@ static void initialize_builtin_class(ScmClass *k, const char *name,
     ScmObj slots = SCM_NIL, t = SCM_NIL;
     ScmObj acc = SCM_NIL;
     ScmObj s = SCM_INTERN(name);
-    
+
+    if (k->cpa == NULL) {
+	k->cpa = SCM_CLASS_DEFAULT_CPL;
+    }
 #ifdef __CYGWIN__
     /* fix CPA on __CYGWIN__ */
     {

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: fcntl.h,v 1.1 2001-09-16 06:50:43 shirok Exp $
+ *  $Id: fcntl.h,v 1.2 2002-02-08 09:10:57 shirok Exp $
  */
 
 #ifndef GAUCHE_FCNTL_H
@@ -26,7 +26,7 @@ typedef struct ScmSysFlockRec {
     struct flock lock;
 } ScmSysFlock;
 
-extern ScmClass Scm_SysFlockClass;
+SCM_CLASS_DECL(Scm_SysFlockClass);
 #define SCM_CLASS_SYS_FLOCK   (&Scm_SysFlockClass)
 #define SCM_SYS_FLOCK(obj)    ((ScmSysFlock*)(obj))
 #define SCM_SYS_FLOCK_P(obj)  (SCM_XTYPEP(obj, SCM_CLASS_SYS_FLOCK))

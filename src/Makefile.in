@@ -10,7 +10,7 @@ prefix = @prefix@
 exec_prefix = @exec_prefix@
 
 GENERATED = stdlib.c extlib.c syslib.c moplib.c
-CONFIG_GENERATED = Makefile gauche-config gauche/config.h gauche/arch.h
+CONFIG_GENERATED = Makefile gauche-config gauche/config.h gauche/arch.h ldwrap.sh
 
 LIB_INSTALL_DIR = @libdir@
 BIN_INSTALL_DIR = @bindir@
@@ -53,7 +53,7 @@ TESTFILES = `cat ../test/TESTS`
 .SUFFIXES: .stub
 
 .stub.c:
-	gosh ./genstub $<
+	gosh ./genstub -D LIBGAUCHE_BODY $<
 
 HDRS = gauche.h gauche/arch.h
 
@@ -106,7 +106,7 @@ test-vmstack : test-vmstack.c libgauche.a
 	./test-vmstack >> test.log
 
 clean :
-	rm -rf core gosh test-vmstack @LIBGAUCHE_SO@ *.o *~ *.a *.t test.log test.dir so_locations gauche/*~
+	rm -rf core gosh test-vmstack @LIBGAUCHE_SO@ *.o *~ *.a *.t *.def *.exp *.exe test.log test.dir so_locations gauche/*~
 
 distclean : clean
 	rm -f $(CONFIG_GENERATED)

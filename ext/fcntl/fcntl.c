@@ -12,13 +12,16 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: fcntl.c,v 1.5 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: fcntl.c,v 1.6 2002-02-08 09:10:57 shirok Exp $
  */
 
-#define LIBGAUCHE_BODY
-#include "fcntl.h"
 #include <errno.h>
+#include <gauche.h>
 #include <gauche/class.h>
+
+#undef SCM_EXTERN
+#define SCM_EXTERN  extern
+#include "fcntl.h"
 
 /* struct flock */
 

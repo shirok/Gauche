@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: memory.h,v 1.3 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: memory.h,v 1.4 2002-02-08 09:10:58 shirok Exp $
  */
 
 #ifndef GAUCHE_MEM_H
@@ -61,7 +61,7 @@
 #define SCM_NEW_PAIR(p, car_, cdr_)                                      \
     do {                                                                 \
         SCM_MALLOC_WORDS(p, sizeof(ScmPair)/sizeof(GC_word), ScmPair *); \
-        p->hdr.klass = SCM_CLASS_PAIR;                                   \
+        SCM_SET_CLASS(p, SCM_CLASS_PAIR);                                \
         SCM_SET_CAR(p, car_);                                            \
         SCM_SET_CDR(p, cdr_);                                            \
         p->attributes = SCM_NIL;                                         \
@@ -88,17 +88,17 @@
 #else /* !SCM_INLINE_MALLOC_PRIMITIVES */
 
 #define SCM_MALLOC_WORDS(p, n, type) \
-    (p = (type)Scm_Malloc(n * sizeof(GC_word)))
+    (p = (type)SCM_MALLOC(n * sizeof(GC_word)))
 
 #define SCM_MALLOC_ATOMIC_WORDS(p, n, type) \
-    (p = (type)Scm_MallocAtomic(n * sizeof(GC_word)))
+    (p = (type)SCM_MALLOC_ATOMIC(n * sizeof(GC_word)))
 
-#define SCM_NEW_PAIR(p, car_, cdr_) (p = Scm_Cons(car_, cdr_))
+#define SCM_NEW_PAIR(p, car_, cdr_) (p = (ScmPair*)Scm_Cons(car_, cdr_))
 
 #define SCM_NEW_LIST1(p, obj0)        (p = Scm_Cons(obj0, SCM_NIL))
 #define SCM_NEW_LIST2(p, obj0, obj1) \
     (p = Scm_Cons(obj0, Scm_Cons(obj1, SCM_NIL))
-#define SCM_NEW_LIST3(p, obj0, obj1, obj2)
+#define SCM_NEW_LIST3(p, obj0, obj1, obj2) \
     (p = Scm_Cons(obj0, Scm_Cons(obj1, Scm_Cons(obj2, SCM_NIL))))
 
 #endif /* SCM_INLINE_MALLOC_PRIMITIVES */

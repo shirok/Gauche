@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.215 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: gauche.h,v 1.216 2002-02-08 09:10:58 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -464,16 +464,12 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
 
 /* internal macro. do not use directly */
 #ifdef __CYGWIN__
-#define SCM__CLASS_PTR_SLOT(cname)   &SCM_CPP_CAT(_imp__, cname),
-# ifdef LIBGAUCHE_BODY
-#  define SCM__CLASS_PTR_BODY(cname) \
+# define SCM__CLASS_PTR_SLOT(cname)   &SCM_CPP_CAT(_imp__, cname),
+# define SCM__CLASS_PTR_BODY(cname) \
       ; ScmClass *SCM_CPP_CAT(_imp__, cname) = &cname
-# else
-#  define SCM__CLASS_PTR_BODY(cname)   /*none*/
-# endif
 #else
-#define SCM__CLASS_PTR_SLOT(cname)   /*none*/
-#define SCM__CLASS_PTR_BODY(cname)   /*none*/
+# define SCM__CLASS_PTR_SLOT(cname)   /*none*/
+# define SCM__CLASS_PTR_BODY(cname)   /*none*/
 #endif
 
 #define SCM__DEFINE_CLASS_COMMON(cname, size, flag, printer, compare, serialize, allocate, cpa) \

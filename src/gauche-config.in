@@ -3,7 +3,7 @@
 #
 # Retrieve configuration parameters
 #
-# $Id: gauche-config.in,v 1.12 2002-01-24 08:02:50 shirok Exp $
+# $Id: gauche-config.in,v 1.13 2002-02-08 09:10:58 shirok Exp $
 #
 
 prefix=${prefix:-@prefix@}
@@ -73,7 +73,11 @@ case $1 in
   -V) echo $gauche_version;;
   -I) echo "-I$gauche_incdir $local_incdir";;
   -L) echo "-L$gauche_archdir $local_libdir";;
-  -l) echo "-lgauche $gauche_libs";;
+  -l) if [ "@GOSH_USE_SHLIB@" = "yes" ]; then
+        echo "-lgauche $gauche_libs"
+      else
+        echo "$gauche_libs"
+      fi;;
   --cc) echo $cc;;
   --reconfigure) echo ./configure $gauche_configure_args;;
 
