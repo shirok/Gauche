@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.in,v 1.4 2003-10-25 01:28:04 fuyuki Exp $
+# $Id: Makefile.in,v 1.5 2003-10-27 00:29:51 fuyuki Exp $
 #
 
 SHELL       = @SHELL@
@@ -70,21 +70,15 @@ check : all
 
 install : all
 	if test ! -z "$(HEADERS)"; then \
-	  if test ! -d $(HEADER_INSTALL_DIR); then \
-	    $(INSTALL) -d $(HEADER_INSTALL_DIR); \
-	  fi; \
+	  $(INSTALL) -d $(HEADER_INSTALL_DIR); \
 	  $(INSTALL) -m 444 $(HEADERS) $(HEADER_INSTALL_DIR); \
 	fi
 	if test ! -z "$(SCMFILES)"; then \
-	  if test ! -d $(SCM_INSTALL_DIR); then \
-	    $(INSTALL) -d $(SCM_INSTALL_DIR); \
-	  fi; \
+	  $(INSTALL) -d $(SCM_INSTALL_DIR); \
 	  $(INSTALL) -m 444 $(SCMFILES) $(SCM_INSTALL_DIR); \
 	fi
 	if test ! -z "$(ARCHFILES)"; then \
-	  if test ! -d $(ARCH_INSTALL_DIR); then \
-	    $(INSTALL) -d $(ARCH_INSTALL_DIR); \
-	  fi; \
+	  $(INSTALL) -d $(ARCH_INSTALL_DIR); \
 	  $(INSTALL) -m 555 $(ARCHFILES) $(ARCH_INSTALL_DIR); \
 	fi
 
