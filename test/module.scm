@@ -57,7 +57,7 @@
 ;;------------------------------------------------------------------
 ;; select-module, and restoration in load().
 
-(test "select-module" '(o o n o)
+(test "select-module" '(O O N O)
       (lambda ()
         (with-module O
           (define load-data '((select-module O)
