@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.44 2001-10-05 08:16:19 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.45 2001-10-23 09:33:12 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -49,6 +49,17 @@
        (require ,path)
        (import ,module)))
   )
+
+;; Inter-version compatibility.
+(define-macro (use-version version)
+  (let ((compat (string-append "gauche/compat/" version)))
+    (unless (provided? compat)
+      (let ((path (string-append (gauche-library-directory) "/" compat ".scm")))
+        (when (file-exists? path)
+          (let ((module (string->symbol (string-append "gauche-" version))))
+            `(begin
+               (require ,compat)
+               (import ,module))))))))
 
 ;; create built-in srfi-6 and srfi-8 modules, so that (use srfi-6)
 ;; won't complain.
