@@ -1,3 +1,8 @@
+2001-10-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c : fixed equal?-hash.
+	* INSTALL.esc : added description about --with-rpath option.
+
 2001-10-14  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.4.7
