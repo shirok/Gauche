@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.24 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: write.c,v 1.25 2002-04-09 10:27:44 shirok Exp $
  */
 
 #include <stdio.h>
@@ -277,11 +277,13 @@ static void write_circular_vector(ScmObj obj, ScmPort *port,
 {
     int len = SCM_VECTOR_SIZE(obj), i;
     ScmObj *elts = SCM_VECTOR_ELEMENTS(obj);
-    for (i=0; i<len-1; i++) {
+    if (len > 0) {
+        for (i=0; i<len-1; i++) {
+            write_circular(elts[i], port, ctx);
+            SCM_PUTC(' ', port);
+        }
         write_circular(elts[i], port, ctx);
-        SCM_PUTC(' ', port);
     }
-    write_circular(elts[i], port, ctx);
     SCM_PUTC(')', port);
 }
 
