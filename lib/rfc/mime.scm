@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: mime.scm,v 1.6 2004-01-25 11:11:22 shirok Exp $
+;;;  $Id: mime.scm,v 1.7 2004-01-27 06:24:34 shirok Exp $
 ;;;
 
 ;; RFC2045 Multipurpose Internet Mail Extensions (MIME)
@@ -115,11 +115,15 @@
     (#/^=\?([-!#-'*+\w\^-~]+)\?([-!#-'*+\w\^-~]+)\?([!->@-~]+)\?=$/
      (#f charset encoding body)
      (if (ces-conversion-supported? charset #f)
-       (cond ((string-ci=? encoding "q")
-              (ces-convert (quoted-printable-decode-string body) charset #f))
-             ((string-ci=? encoding "b")
-              (ces-convert (base64-decode-string body) charset #f))
-             (else word)) ;; unsupported encoding
+       (with-error-handler
+           (lambda (e) word) ;; capture illegal encoding
+         (lambda ()
+           (cond ((string-ci=? encoding "q")
+                  (ces-convert (quoted-printable-decode-string body)
+                               charset #f))
+                 ((string-ci=? encoding "b")
+                  (ces-convert (base64-decode-string body) charset #f))
+                 (else word)))) ;; unsupported encoding
        word))
     (else word)))
 

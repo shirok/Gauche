@@ -1,5 +1,9 @@
 2004-01-26  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/mime.scm (mime-decode-word): capture the error from
+	  ces-convert so that illegal encoded sequence won't stop the
+	  processing.
+
 	* src/cesconv : added generally useful CES conversion script.
 
 	* lib/text/gettext.scm : updated to the new version from Alex Shinn.
