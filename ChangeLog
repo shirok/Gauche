@@ -1,3 +1,7 @@
+2001-09-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/error.c : implemented exception class hierarchy.
+
 2001-09-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c, src/extlib.stub : added error handling mechanism,
