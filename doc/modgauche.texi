@@ -3913,12 +3913,16 @@ buffering mode.
 @c EN
 Closes @var{socket}.  All the ports associated to
 @var{socket} are closed as well.   If the socket is connected,
-it is shut down before closing.
 @c JP
 ソケット@var{socket}をクローズします。@var{socket}の入出力ポートも
-クローズされます。ソケットが接続されていた場合は、クローズの前に接続が
-シャットダウンされます。
+クローズされます。
 @c COMMON
+
+Note: as of release 0.7.2, this procedure does not shutdown
+the connection.  It is because @var{socket} may be referenced
+by forked process(es) and you might want to close it without
+interfering the existing connection.   You can call
+@code{socket-shutdown} to shutdown the connection explicitly.
 @end defun
 
 @defun call-with-client-socket socket proc
@@ -4153,9 +4157,6 @@ It is an error to call this function on a non-connected socket.
 If you shut down the send channel of the socket, the remote peer
 sees EOF from its receive channel.  This is useful if the remote peer
 expects EOF before sending something back to you.
-
-Other than this kind of special cases, you don't usually need to
-call @code{socket-shutdown} explicitly; @code{socket-close} calls it anyway.
 @c JP
 @var{socket} の接続をシャットダウンします。@var{how} が0なら、
 @var{socket} の受信チャネルが不許可となります。@var{how} が1なら、
@@ -4166,10 +4167,6 @@ call @code{socket-shutdown} explicitly; @code{socket-close} calls it anyway.
 ソケットの送信チャネルをシャットダウンすると、リモート側の受信チャネル
 に EOF があらわれます。これは、リモート側が何かを送り返す前に EOF
 を受けとることを期待している場合、便利です。
-
-この特殊な場合を除けば、通常、@code{socket-shutdown} が明示的に必要に
-なることはありません。どのみち、@code{socket-close} がこの手続きを
-呼びます。
 @c COMMON
 @end defun
 
