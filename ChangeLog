@@ -1,3 +1,9 @@
+2004-03-13  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-13/searcher.scm (string-contains, string-contains-ci):
+	  Return value was wrong when start1 is given (patch from 
+	  Grzegorz Chrupa-B³a).$)B
+
 2004-03-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/vm.h, src/vm.c and src/regexp.c: make sigsetjmp not
