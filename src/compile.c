@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.30 2001-02-22 06:49:44 shiro Exp $
+ *  $Id: compile.c,v 1.31 2001-02-27 08:25:04 shiro Exp $
  */
 
 #include "gauche.h"
@@ -68,6 +68,7 @@ static ScmObj compile_varref(ScmObj form, ScmObj env);
 static ScmObj compile_int(ScmObj form, ScmObj env, int ctx);
 static ScmObj compile_lambda_family(ScmObj form, ScmObj args, ScmObj body,
                                     ScmObj env, int ctx);
+static ScmObj compile_body(ScmObj form, ScmObj env, int ctx);
 
 #define LIST1_P(obj) \
     (SCM_PAIRP(obj) && SCM_NULLP(SCM_CDR(obj)))
@@ -151,6 +152,11 @@ enum {
 ScmObj Scm_Compile(ScmObj form, ScmObj env, int context)
 {
     return compile_int(form, env, context);
+}
+
+ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context)
+{
+    return compile_body(form, env, context);
 }
 
 /* Notes on compiler environment:
