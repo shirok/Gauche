@@ -12,23 +12,10 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.14 2001-03-10 08:15:18 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.15 2001-03-11 09:43:02 shiro Exp $
 ;;;
 
 (select-module gauche)
-
-;;
-;; Some useful aliases
-;;
-
-(define CALL/CC call-with-current-continuation)
-
-;;
-;; Auxiliary stuff for R5RS
-;;
-
-(define (CALL-WITH-VALUES producer consumer)
-  (receive vals (producer) (apply consumer vals)))
 
 ;;
 ;; Loading, require and provide
@@ -70,5 +57,16 @@
   (cons 'begin (map (lambda (v) `(define ,v (%make-autoload ',v ,file)))
                     vars)))
 
+;;
+;; Auxiliary definitions
+;;
 
+(define CALL/CC call-with-current-continuation)
 
+(define (CALL-WITH-VALUES producer consumer)
+  (receive vals (producer) (apply consumer vals)))
+
+(define (WITH-OUTPUT-TO-STRING thunk)
+  (let ((out (open-output-string)))
+    (with-output-to-port out thunk)
+    (get-output-string out)))
