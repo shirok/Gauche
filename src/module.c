@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.47 2004-01-18 12:07:31 shirok Exp $
+ *  $Id: module.c,v 1.48 2004-04-24 09:58:14 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -165,12 +165,20 @@ ScmObj Scm_MakeModule(ScmSymbol *name, int error_if_exists)
  * Finding and modifying bindings
  */
 
+#define SEARCHED_ARRAY_SIZE  64
+
 ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
                          int stay_in_module)
 {
     ScmHashEntry *e;
     ScmModule *m = module;
-    ScmObj p, mp, searched = SCM_NIL;
+    ScmObj p, mp;
+
+    /* keep record of searched modules.  we use stack array for small # of
+       modules, in order to avoid consing for common cases. */
+    ScmObj searched[SEARCHED_ARRAY_SIZE];
+    int num_searched = 0, i;
+    ScmObj more_searched = SCM_NIL;
 
     /* fist, search from the specified module */
     (void)SCM_INTERNAL_MUTEX_LOCK(m->mutex);
@@ -184,7 +192,15 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
             SCM_ASSERT(SCM_MODULEP(SCM_CAR(p)));
             SCM_FOR_EACH(mp, SCM_MODULE(SCM_CAR(p))->mpl) {
                 SCM_ASSERT(SCM_MODULEP(SCM_CAR(mp)));
-                if (!SCM_FALSEP(Scm_Memq(SCM_CAR(mp), searched))) break;
+                
+                for (i=0; i<num_searched; i++) {
+                    if (SCM_EQ(SCM_CAR(mp), searched[i])) goto skip;
+                }
+                if (i == num_searched) {
+                    if (!SCM_FALSEP(Scm_Memq(SCM_CAR(mp), more_searched))) {
+                        goto skip;
+                    }
+                }
                 
                 m = SCM_MODULE(SCM_CAR(mp));
                 (void)SCM_INTERNAL_MUTEX_LOCK(m->mutex);
@@ -195,8 +211,14 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
                      || !SCM_FALSEP(Scm_Memq(SCM_OBJ(symbol), m->exported)))) {
                     return SCM_GLOC(e->value);
                 }
-                searched = Scm_Cons(SCM_OBJ(m), searched);
+
+                if (num_searched < SEARCHED_ARRAY_SIZE) {
+                    searched[num_searched++] = SCM_OBJ(m);
+                } else {
+                    more_searched = Scm_Cons(SCM_OBJ(m), more_searched);
+                }
             }
+          skip:;
         }
         /* Then, search from parent modules */
         SCM_ASSERT(SCM_PAIRP(module->mpl));

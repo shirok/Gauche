@@ -1,5 +1,12 @@
 2004-04-23  Shiro Kawai  <shiro@acm.org>
 
+	* src/module.c (Scm_FindBinding): avoid using cons and memq in
+	  temporary data.  It speeds up loading quite a bit.
+
+	* src/port.c, src/gauche/port.h: added PORT_PRELOCK macro for
+	  'pre-owned' private port, i.e. the ports that are known to be
+	  used privately in a thread.  It avoids call to pthread_mutex_lock.
+
 	* src/write.c (write_ss_rec): integrated the non-shared-structure
 	  writer inner loop and shared-structure write inner loop.
 

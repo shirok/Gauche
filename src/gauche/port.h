@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.h,v 1.8 2004-02-03 13:12:28 shirok Exp $
+ *  $Id: port.h,v 1.9 2004-04-24 09:58:15 shirok Exp $
  */
 
 /*
@@ -123,4 +123,13 @@
 #define PORT_LOCKED(p, vm) \
    (((p)->flags&SCM_PORT_PRIVATE)||((p)->lockOwner == (vm)))
 
+/* Should be used in the constructor of provate ports.
+   Mark the port locked by vm, so that it can be used exclusively by
+   the vm. */
 
+#define PORT_PRELOCK(p, vm)                     \
+   do {                                         \
+     p->lockOwner = vm;                         \
+     p->lockCount = 1;                          \
+   } while (0)
+   

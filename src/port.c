@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.99 2004-02-17 13:22:58 shirok Exp $
+ *  $Id: port.c,v 1.100 2004-04-24 09:58:14 shirok Exp $
  */
 
 #include <unistd.h>
@@ -890,7 +890,7 @@ ScmObj Scm_MakeInputStringPort(ScmString *str, int privatep)
     p->src.istr.current = SCM_STRING_START(str);
     p->src.istr.end = SCM_STRING_START(str) + SCM_STRING_SIZE(str);
     SCM_PORT(p)->name = SCM_MAKE_STR("(input string port)");
-    if (privatep) PORT_LOCK(p, Scm_VM());
+    if (privatep) PORT_PRELOCK(p, Scm_VM());
     return SCM_OBJ(p);
 }
 
@@ -899,7 +899,7 @@ ScmObj Scm_MakeOutputStringPort(int privatep)
     ScmPort *p = make_port(SCM_PORT_OUTPUT, SCM_PORT_OSTR);
     Scm_DStringInit(&p->src.ostr);
     SCM_PORT(p)->name = SCM_MAKE_STR("(output string port)");
-    if (privatep) PORT_LOCK(p, Scm_VM());
+    if (privatep) PORT_PRELOCK(p, Scm_VM());
     return SCM_OBJ(p);
 }
 
