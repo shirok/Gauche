@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: process.scm,v 1.15 2003-10-03 09:27:28 shirok Exp $
+;;;  $Id: process.scm,v 1.16 2003-10-30 00:25:15 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -38,10 +38,11 @@
 
 (define-module gauche.process
   (use srfi-1)
+  (use srfi-2)
   (use srfi-13)
   (export <process> run-process process? process-alive? process-pid
           process-input process-output process-error
-          process-wait process-exit-status
+          process-wait process-wait-any process-exit-status
           process-send-signal process-kill process-stop process-continue
           process-list
           ;; process ports
@@ -181,14 +182,27 @@
 (define (process-list) (class-slot-ref <process> 'processes))
 
 ;; wait
-(define (process-wait process)
+(define (process-wait process . args)
   (if (process-alive? process)
-      (receive (p code) (sys-waitpid (process-pid process))
-        (slot-set! process 'status code)
-        (slot-set! process 'processes
-                   (delete process (slot-ref process 'processes)))
-        #t)
-      #f))
+    (let-optionals* args ((nohang? #f))
+      (receive (p code) (sys-waitpid (process-pid process) :nohang nohang?)
+        (and (not (zero? p))
+             (begin
+               (slot-set! process 'status code)
+               (slot-set! process 'processes
+                          (delete process (slot-ref process 'processes)))
+               #t))))
+    #f))
+
+(define (process-wait-any . args)
+  (let-optionals* args ((nohang? #f))
+    (receive (pid status) (sys-waitpid -1 :nohang nohang?)
+      (and pid
+           (and-let* ((p (find (lambda (pp) (= (process-pid pp) pid))
+                               (process-list))))
+             (slot-set! p 'status status)
+             (update! (ref p 'processes) (cut delete p <>))
+             p)))))
 
 ;; signal
 (define (process-send-signal process signal)

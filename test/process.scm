@@ -75,6 +75,18 @@
            (and (sys-wait-signaled? x)
                 (sys-wait-termsig x)))))
 
+(test* "non-blocking wait" '(#f #t #f)
+       (let* ((p  (run-process "cat" :input :pipe :output :pipe
+                               :error "/dev/null"))
+              (r0 (process-wait p #t))
+              (r1 (begin (process-kill p) (process-wait p)))
+              (r2 (process-wait p #t))
+              )
+         (list r0 r1 r2)))
+
+(test* "process-list" '()
+       (process-list))
+
 ;;-------------------------------
 (test-section "process ports")
 

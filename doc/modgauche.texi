@@ -5563,30 +5563,63 @@ know the subprocess' status until it is explicitly checked by
 @c EN
 Returns a list of active processes.  The process remains active
 until its exit status is explicitly collected by @code{process-wait}.
+Once the process's exit status is collected and its state changed
+to inactive, it is removed from the list @code{process-list} returns.
 @c JP
 アクティブなプロセスのリストを返します。プロセスは、その終了ステータスが
 @code{process-wait} によって明示的に回収されない場合は、アクティブなまま
 残ります。
+ひとたび終了ステータスが回収され、プロセスの状態がインアクティブに
+変更されると、そのプロセスは@code{process-list}が返すリストからは除かれます。
 @c COMMON
 @end defun
 
-@defun process-wait process
+@defun process-wait process &optional nohang
 @c EN
-Obtains exit status of the subprocess @var{process}, and stores it
+Obtains the exit status of the subprocess @var{process}, and stores it
 to @var{process}'s status slot.  The status can be obtained by
 @code{process-exit-status}.
-This suspends execution until @var{process} exits.
-Returns @code{#f} if @var{process} is already exitted and status
-is taken, or @code{#t} if this call actually obtains the exit status.
+
+This suspends execution until @var{process} exits by default.
+However, if a true value is given to an optional argument @var{nohang},
+it returns immediately if @var{process} hasn't exit.
+
+Returns @code{#t} if this call actually obtains the exit status,
+or @code{#f} otherwise.
 @c JP
 サブプロセス @var{process} の終了ステータスを取得し、@var{process}
 のstatusスロットに値を格納します。statusスロットの値は
 @code{process-exit-status}で得ることができます。
-これは、@var{process} が終了するまで実行を一時停止します。
-@var{process}が既に終了していてステータスも取得されていた場合は
-@code{#f}を、そうでなければ@code{#t}を返します。
+
+デフォルトでは、この手続きは@var{process} が終了するまで実行を一時停止します。
+しかし、@var{nohang}に真の値が与えられた場合は、@var{process}が終了して
+いない場合にも直ちに返ります。
+
+この呼び出しによって@var{process}の終了ステータスが実際に取得された場合は
+@code{#t}を、そうでなければ@code{#f}を返します。
 @c COMMON
 @end defun
+
+@defun process-wait-any &optional nohang
+@c EN
+Obtains the exit status of any of the subprocesses created by
+@code{run-process}.
+Returns a process object whose exit status is collected.
+
+If a true value is given to the optional argument @var{nohang}, this procedure
+returns @code{#f }immediately even if no child process has exit.
+If @var{nohang} is omitted or
+@code{#f}, this procedure waits for any of children exits.
+@c JP
+@code{run-process}で作られたサブプロセスのどれかの終了ステータスを取得します。
+終了ステータスが取得できたプロセスのプロセスオブジェクトを返します。
+
+真の値が@var{nohang}に与えられた場合は、どの子プロセスも終了していない場合は
+直ちに@code{#f}を返します。そうでなければ、この手続きはいずれかの子プロセスが
+終了するまで待ちます。
+@c COMMON
+@end defun
+
 
 @defun process-exit-status process
 @c EN
