@@ -3264,93 +3264,159 @@ UTC 形式から様々な様式の日付/時間に変換します。
 
 @deftp {Module} srfi-27
 @mdindex srfi-27
+@c EN
 This module provides SRFI-27 pseudo random generator interface,
 using Mersenne Twister algorithm 
 (@xref{math.mt-random - Mersenne-Twister random number generator}) as the backbone.
+@c JP
+このモジュールは SRFI-27 のメルセンヌツイスタアルゴリズム
+(@ref{math.mt-random - Mersenne-Twister random number generator} を参照)
+基礎に用いた疑似乱数発生器インタフェースを提供します。
+@c COMMON
 @end deftp
 
 @defun random-integer n
 [SRFI-27]
+@c EN
 Returns a random exact integer between [0, @var{n}-1], inclusive,
 using the default random source.
 To set a random seed for this procedure, use @code{random-source-randomize!}
 or @code{random-source-pseudo-randomize!} on @code{default-random-source}.
+@c JP
+デフォルトの乱数発生源を用いて、0 から @var{n}-1 までの正確な整数の乱数を
+返します。この手続きの乱数のシードを設定するには 
+@code{default-random-source} に対して
+@code{random-source-randomize!} あるいは、
+@code{random-source-pseudo-randomize!} を用います。
+@c COMMON
 @end defun
 
 @defun random-real
 [SRFI-27]
+@c EN
 Returns a random real number between (0, 1), exclusive,
 using the default random source.
 To set a random seed for this procedure, use @code{random-source-randomize!}
 or @code{random-source-pseudo-randomize!} on @code{default-random-source}.
+@c JP
+デフォルトの乱数発生源を用いて、0 より大きく、1 未満の実数乱数を返します。
+この手続きの乱数のシードを設定するには @code{default-random-source} に対して
+@code{random-source-randomize!} あるいは、
+or @code{random-source-pseudo-randomize!} を用います。
+@c COMMON
 @end defun
 
 @defvar default-random-source
 [SRFI-27]
+@c EN
 Keeps the default random source that is used by @code{random-integer}
 and @code{random-real}.
+@c JP
+@code{random-integer} が利用するデフォルトの乱数発生源を保持しています。
+@c COMMON
 @end defvar
 
 @defun make-random-source
 [SRFI-27]
+@c EN
 Creates and returns a new random source.
 In the current Gauche implementation, it is just a @code{<mersenne-twister>}
 object.  It may be changed in the future implementation.
+@c JP
+乱数の発生源を生成し返します。
+現在の Gauche の実装では、これは @code{<mersenne-twister>} のオブジェクトです。
+将来の実装では変更される可能性があります。
+@c COMMON
 @end defun
 
 @defun random-source? obj
 [SRFI-27]
+@c EN
 Returns @code{#t} if @var{obj} is a random source object.
+@c JP
+@var{obj} が乱数発生源オブジェクトであれば、@code{#t} を返します。
+@c COMMON
 @end defun
 
 @defun random-source-state-ref s
 @defunx random-source-state-set! s state
 [SRFI-27]
+@c EN
 Gets and sets the "snapshot" of the state of the random source @var{s}.
 @var{State} is an opaque object whose content depends on the backbone
 generator.
+@c JP
+乱数発生源 @var{s} の状態の「スナップショット」を獲得あるいは設定します。
+@var{state} は背後にある発生器に依存する内容をもつ不透明な状態です。
+@c COMMON
 @end defun
 
 @defun random-source-randomize! s
 [SRFI-27]
+@c EN
 Makes an effort to set the state of the random source @var{s} to 
 a truly random state.  The current implementation uses the current
 time and the process ID to set the random seed.
+@c JP
+乱数発生源 @var{s} の状態を完全にランダムな状態にしようとします。
+現在の実装では乱数のシードを設定するのに、現在の時刻とプロセス ID を
+使います。
+@c COMMON
 @end defun
 
 @defun random-source-pseudo-randomize! s i j
 [SRFI-27]
+@c EN
 Changes the state of the random source @var{s} into the initial state 
 of the (@var{i}, @var{j})-th independent random source, 
 where @var{i} and @var{j} are non-negative integers. 
 This procedure can be used to reuse a random source @var{s} as large 
 number of independent random source, indexed by two non-negative integers.
 Note that this procedure is entirely deterministic. 
+@c JP
+乱数発生源 @var{s} の状態を発生源とは独立した (@var{i}, @var{j}) 番の
+初期状態に設定します。@var{i} および @var{j} は非負の整数です。
+この手続きは乱数発生源 @var{s} を二つの非負整数でインデックス付した、
+大規模の独立の乱数発生源として再利用するときに利用できます。
+この手続きは、完全な決定性があることに注意してください。
+@c COMMON
 @end defun
 
 @defun random-source-make-integers s
 [SRFI-27]
+@c EN
 Returns a procedure, that takes one integer argument @var{n} and
 returns a random integer between 0 and @var{n}-1 inclusive for every
 invocation, from the random source @var{s}.
+@c JP
+呼出しのたびに乱数発生源 @var{s} より、 0 から @var{n}-1 までの整数の
+乱数を返す、一つの整数 @var{n} を引数としてとる手続きを、返します。
+@c COMMON
 @end defun
 
 @defun random-source-make-reals s &optional unit
 [SRFI-27]
+@c EN
 Returns a procedure, that takes no argument and
 returns a random real between 0 and 1 exclusive for
 every invocation, from the random source @var{s}.
 If @var{unit} is given, the random real the returned procedure
 generates will be quantized by the given @var{unit}, where 
 0 < @var{unit} < 1.
+@c JP
+呼出しのたびに乱数発生源 @var{s} から 0 より大きく 1 未満の実数乱数を
+返す、無引数の手続きを返します。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
 @node srfi-37 - a program argument processor,  , srfi-27 - Sources of random bits, Library modules - SRFIs
 @section @code{srfi-37} - args-fold: a program argument processor
+@c NODE @code{srfi-37} - args-fold プログラム引数処理
 
 @deftp {Module} srfi-37
 @mdindex srfi-37
+@c EN
 This module implements @code{args-fold},
 yet another procedure to process command-line
 arguments, defined in SRFI-37 (@ref{srfi-37,[SRFI-37],SRFI-37}).
@@ -3361,9 +3427,21 @@ Unlike @code{gauche.parseopt}
 the user's states are explicitly passed via parser's argument and
 return values, and also follows POSIX and GNU getopt guidelines,
 including long options.
+@c JP
+このモジュールは、@code{args-fold} を実装しています。
+これは、SRFI-37 (@ref{srfi-37,[SRFI-37],SRFI-37}) で定義されている
+コマンドライン引数の処理をするもうひとつの手続きです。
+
+@code{gauche.parseopt} (@ref{gauche.parseopt - Parsing command-line options}
+参照) とは違って、@code{args-fold} は関数的なインタフェースです。すなわち、
+利用者側の状態は、パーザの引数を通じて明示的に渡され、値が返ります。
+また、ロングオプションを含む、POSIX および GNU の getopt のガイドラインに
+準拠しています。
+@c COMMON
 @end deftp
 
 @defun args-fold args options unrecognized-proc operand-proc &rest seeds
+@c EN
 Processes program options @var{args} from left to right,
 according to given option specification @var{options},
 and two procedures @var{unrecognized-proc} and @var{operand-proc}.
@@ -3395,9 +3473,42 @@ regardless of beginning with hyphen or not.
 
 When the given option matches one of option object in @var{options},
 the option procedure is called as follows:
+@c JP
+与えられたオプション仕様 @var{options} および、ふたつの手続き
+@var{unrecognized-proc} と @var{operand-proc} とにしたがって、プログラム
+引数 @var{args} を左から右へ処理ます。
+
+@var{options} はオプションオブジェクトのリストで以下のようなものです。
+各オプションオブジェクトはオプションの名前、そのオプションが引数を
+とるかどうかを指定するフラグ、そのオプションを処理する手続き
+(今後これを @emph{オプション手続き}とよびます)を保持しています。
+
+@code{args-fold} は単一文字のオプション(ショートオプション)と
+ロングオプションの両方を認識します。ショートオプションは単一の
+ハイフンで始まって(たとえば、@code{-a})いなければなりません。一方、
+ロングオプションは二つのハイフンで始まって(たとえば、@code{--help})
+いなければなりません。ショートオプションは連結することが可能で、
+たとえば、@code{-abc} あるいは @code{-a -b -c} と書くことができます。
+ショートオプション、ロングオプションはともに、必須引数あるいはオプショナル
+引数を取ることができます。ショートオプションの必須引数は当該オプション
+あとに空白なしあるいは空白をいれて指定することができます。たとえば、
+@code{-afoo} あるいは @code{-a foo} が可能です。ロングオプションの
+引数は'@code{=}'文字あるいは空白をはさみます。たとえば、
+@code{--long=foo} または @code{--long foo} です。
+
+@code{args-fold} はオプションの引数ではなく、ハイフンで始まっていない
+コマンドライン引数を@emph{オペランド}としてとりあつかう。
+@code{args-fold} はオペランドとオプションが交互に出現するのを許します。
+しかし、'@code{--}' に出逢うと、のこりは、ハイフンで始まっていようと
+なかろうと、オペランドとして扱われます。
+
+与えられたオプションが @var{options} 内のオプションオブジェクトのひとつ
+にマッチすれば、オプション手続きが以下のように呼出されます。
+@c COMMON
 @example
 (@var{option-proc} @var{option} @var{name} @var{arg} @var{seed} @dots{})
 @end example
+@ EN
 where @var{option} is the matched option object, @var{name} is
 the string actually used to specify the option, @var{arg} is
 the option argument (or @code{#f} if there's none), and
@@ -3411,9 +3522,20 @@ with the same arguments as @var{option-proc}.
 
 When @code{args-fold} finds an operand, @var{operand-proc}
 is called as follows:
+@c JP
+ここで、@var{option} はマッチしたオプションオブジェクトで、@var{name}
+は実際にオプションを指定するのに使われた文字列、@var{arg} はそのオプション
+の引数(あるいは存在しなければ、@code{#f})、そして @var{seed} @dot{} は
+利用者側の状態情報です。@var{option-proc} は @var{seed} と同じ数だけ
+値を返さなければなりません。
+
+@code{args-fold} がオペランドを見つけたら、@var{operand-proc} が
+以下のように呼出されます。
+@c COMMON
 @example
 (@var{operand-proc} @var{operand} @var{seed} @dots{})
 @end example
+@c EN
 @var{Operand-proc} must return as many arguments as @var{seed}s.
 
 The caller's state should be explicitly passed around seed arguments
@@ -3424,8 +3546,20 @@ arguments of next invocation of those procedures.  The values
 returned from the last call to the procedures are returned
 from @code{args-fold}.
 @end defun
+@c JP
+@var{option-proc} は @var{seed} と同じ数だけ
+値を返さなければなりません。
+
+呼出し側の状態は明示的にシード引数で渡され、戻されます。初期のシード値は
+@code{args-fold} に与えた @var{seed} にです。この値は、オプション手続き
+@var{unrecognized-proc} と @var{operand-proc} によって戻され、
+次にこれらのオプション手続きの呼出し時にシード引数として使われます。
+これらの手続きの最後の呼出しから返されたこの値は @code{args-fold} によって
+返されます。
+@c COMMON
 
 @defun option names require-arg? optional-arg? processor
+@c EN
 Creates an option object with the passed properties.
 
 @var{Names} is a list of characters and/or strings.
@@ -3453,21 +3587,59 @@ but '@code{-d foo}' is interpreted as '@code{-d}' without argument
 and an operand @code{foo}.  If '@code{d}' is marked to
 take required option argument, however, both are interpreted
 as '@code{-d}' with argument '@code{foo}'.
+@c JP
+渡されたプロパティでオプションオブジェクトを作成します。
+
+@var{name} は文字と(あるいは)文字列のリストです。文字はショートオプションに
+使い、文字列はロングオプションに使います。
+
+ふたつのフラグ @var{require-arg?} と @var{optional-arg?} はオプションが
+必須引数をとるか、あるいは、オプショナル引数をとるかを示します。
+
+@var{processor} はそのオプションの処理をする手続きです。
+
+オプションの引数が '@code{=}' つきで渡された場合には、
+たとえ @var{require-arg?}、@var{optional-arg?} がともに @code{#f}
+であっても、そのオプションの引数はオプション処理手続きに渡されることに
+注意してください。オプション手続きにその引数を処理させようとします。
+
+ショートオプションに対するオプショナルなオプションの引数は、オプションに
+つづいてスペースなしで指定されたときにだけ認識されることにも
+注意してください。たとえば、ショートオプション @code{d} がオプショナル
+引数をもつことになっているとき、'@code{-dfoo}' は '@code{-d}' が引数
+'@code{foo}' をもつと解釈されますが、'@code{-d foo}' は引数なしの
+'@code{-d}' とオペランド '@code{foo}' と解釈されてしまいます。もし、
+'@code{-d}' が必須引数をもつと設定されているなら、両方ともに
+'@code{-dfoo}' は '@code{-d}' が引数 '@code{foo}' をもつと解釈されます。
+@c COMMON
 @end defun
 
 @defun option? obj
+@c EN
 Returns @code{#t} if @var{obj} is an option object,
 @code{#f} otherwise.
+@c JP
+@var{obj} がオプションオブジェクトなら @code{#t} を返し、
+そうでなければ、@code{#f} を返します。
+@c COMMON
 @end defun
 
 @defun option-names option
 @defunx option-required-arg? option
 @defunx option-optional-arg? option
 @defunx option-processor
+@c EN
 Returns the properties of an option object @var{option}.
+@c JP
+オプションオブジェクト @var{option} のプロパティを返します。
+@c COMMON
 @end defun
 
+@c EN
 A simple example:
+@c JP
+簡単な例:
+@c COMMON
 
 @example
 (use srfi-37)
@@ -3502,6 +3674,4 @@ A simple example:
      (print "files = " (reverse files))
      0))
 @end example
-
-
 
