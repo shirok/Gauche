@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.h,v 1.3 2001-06-12 10:20:45 shirok Exp $
+ *  $Id: net.h,v 1.4 2001-06-13 10:07:10 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -100,10 +100,11 @@ extern ScmObj Scm_SocketConnect(ScmSocket *s, ScmSockAddr *addr);
 extern ScmObj Scm_SocketListen(ScmSocket *s, int backlog);
 extern ScmObj Scm_SocketAccept(ScmSocket *s);
 
-extern ScmObj Scm_MakeClientSocket(ScmString *host, int port);
-extern ScmObj Scm_MakeServerSocket(int port);
-
-
+extern ScmObj Scm_SocketSetOpt(ScmSocket *s, int level,
+                               int option, ScmObj value);
+extern ScmObj Scm_SocketGetOpt(ScmSocket *s, int level,
+                               int option, int resulttype);
+    
 /*==================================================================
  * Netdb interface
  */

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.c,v 1.4 2001-06-12 10:25:09 shirok Exp $
+ *  $Id: net.c,v 1.5 2001-06-13 10:07:10 shirok Exp $
  */
 
 #include "net.h"
@@ -216,6 +216,52 @@ ScmObj Scm_SocketConnect(ScmSocket *sock, ScmSockAddr *addr)
     sock->status = SCM_SOCKET_STATUS_CONNECTED;
     return SCM_OBJ(sock);
 }
+
+/* Low-level setsockopt() and getsockopt() interface. */
+/* for getsockopt(), we need to know the size of the result.
+   if rtype > 0, it is used as the size of result buffer and
+   a string value is returned.  if rtype == 0, the result value
+   assumed to be an integer. */
+
+ScmObj Scm_SocketSetOpt(ScmSocket *s, int level, int option, ScmObj value)
+{
+    int r = 0;
+    if (s->fd < 0) {
+        Scm_Error("attempt to set a socket option of a closed socket: %S", s);
+    }
+    if (SCM_STRINGP(value)) {
+        r = setsockopt(s->fd, level, option, SCM_STRING_START(value),
+                       SCM_STRING_SIZE(value));
+    } else if (SCM_INTP(value) || SCM_BIGNUMP(value)) {
+        int v = Scm_GetInteger(value);
+        r = setsockopt(s->fd, level, option, &v, sizeof(int));
+    } else {
+        Scm_Error("socket option must be a string or an integer: %S", value);
+    }
+    if (r < 0) Scm_SysError("setsockopt failed");
+    return SCM_TRUE;
+}
+
+ScmObj Scm_SocketGetOpt(ScmSocket *s, int level, int option, int rtype)
+{
+    int r = 0, rsize;
+    if (s->fd < 0) {
+        Scm_Error("attempt to get a socket option of a closed socket: %S", s);
+    }
+    if (rtype > 0) {
+        char *buf = SCM_NEW_ATOMIC2(char *, rtype);
+        rsize = rtype;
+        r = getsockopt(s->fd, level, option, buf, &rsize);
+        if (r < 0) Scm_SysError("getsockopt failed");
+        return Scm_MakeString(buf, rsize, -1, SCM_MAKSTR_INCOMPLETE);
+    } else {
+        int val;
+        rsize = sizeof(int);
+        r = getsockopt(s->fd, level, option, &val, &rsize);
+        if (r < 0) Scm_SysError("getsockopt failed");
+        return Scm_MakeInteger(val);
+    }
+}
                           
 /*==================================================================
  * Initialization
@@ -231,4 +277,18 @@ void Scm_Init_libnet(void)
     Scm_InitBuiltinClass(&Scm_SocketClass, "<socket>", mod);
     Scm_Init_NetAddr(mod);
     Scm_Init_netlib(mod);
+
+    /* Constants for socket option operation.
+       I define them here, instead of netlib.stub,  so that I can check
+       the symbol is defined */
+#define DEFSYM(sym, val) \
+    SCM_DEFINE(mod, sym, Scm_MakeInteger(val))
+
+    DEFSYM("sol_socket", SOL_SOCKET);
+#ifdef SOL_TCP
+    DEFSYM("sol_tcp", SOL_TCP);
+#endif
+#ifdef SOL_IP
+    DEFSYM("sol_ip", SOL_IP);
+#endif
 }

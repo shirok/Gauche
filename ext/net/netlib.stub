@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: netlib.stub,v 1.2 2001-06-12 10:20:45 shirok Exp $
+;;  $Id: netlib.stub,v 1.3 2001-06-13 10:07:10 shirok Exp $
 ;;
 
 "#include \"net.h\"
@@ -39,6 +39,40 @@
 (define-symbol SOCK_STREAM "sym_sock_stream" "Scm_MakeInteger(SOCK_STREAM)")
 (define-symbol SOCK_DGRAM  "sym_sock_dgram" "Scm_MakeInteger(SOCK_DGRAM)")
 (define-symbol SOCK_RAW    "sym_sock_raw" "Scm_MakeInteger(SOCK_RAW)")
+
+(define-cproc socket-address (sock)
+  (assert (socket? sock))
+  "  if (sock->address) { SCM_RETURN(SCM_OBJ(sock->address)); }
+  else { SCM_RETURN(SCM_FALSE); }")
+
+(define-symbol NONE      "sym_none")
+(define-symbol BOUND     "sym_bound")
+(define-symbol LISTENING "sym_listening")
+(define-symbol CONNECTED "sym_connected")
+(define-symbol SHUTDOWN  "sym_shutdown")
+(define-symbol CLOSED    "sym_closed")
+
+(define-cproc socket-status (sock)
+  (assert (socket? sock))
+  "  switch (sock->status) {
+  case SCM_SOCKET_STATUS_NONE:      SCM_RETURN(sym_none);
+  case SCM_SOCKET_STATUS_BOUND:     SCM_RETURN(sym_bound);
+  case SCM_SOCKET_STATUS_LISTENING: SCM_RETURN(sym_listening);
+  case SCM_SOCKET_STATUS_CONNECTED: SCM_RETURN(sym_connected);
+  case SCM_SOCKET_STATUS_SHUTDOWN:  SCM_RETURN(sym_shutdown);
+  case SCM_SOCKET_STATUS_CLOSED:    SCM_RETURN(sym_closed);
+  default: Scm_Error(\"invalid state of socket %S: implementation bugs?\",
+                     sock);
+           SCM_RETURN(SCM_UNDEFINED); /* dummy */
+  }")
+
+(define-cproc socket-input-port (sock)
+  (assert (socket? sock))
+  "  SCM_RETURN(Scm_SocketInputPort(sock));")
+
+(define-cproc socket-output-port (sock)
+  (assert (socket? sock))
+  "  SCM_RETURN(Scm_SocketOutputPort(sock));")
 
 (define-cproc socket-shutdown (sock &optional (how 2))
   (assert (socket? sock))
@@ -67,6 +101,21 @@
   (assert (socket? sock))
   (assert (socket-address? addr))
   "  SCM_RETURN(Scm_SocketConnect(sock, addr));")
+
+;; socket option interface
+
+(define-cproc socket-setopt (sock level option value)
+  (assert (socket? sock))
+  (assert (small-integer? level))
+  (assert (small-integer? option))
+  "  SCM_RETURN(Scm_SocketSetOpt(sock, level, option, value));")
+
+(define-cproc socket-getopt (sock level option rsize)
+  (assert (socket? sock))
+  (assert (small-integer? level))
+  (assert (small-integer? option))
+  (assert (small-integer? rsize))
+  "  SCM_RETURN(Scm_SocketGetOpt(sock, level, option, rsize));")
 
 ;; Local variables:
 ;; mode: scheme
