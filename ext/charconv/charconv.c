@@ -1,7 +1,7 @@
 /*
  * charconv.c - character code conversion library
  *
- *  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.20 2002-02-10 05:40:04 shirok Exp $
+ *  $Id: charconv.c,v 1.21 2002-04-25 02:49:05 shirok Exp $
  */
 
 #include <string.h>
@@ -105,15 +105,15 @@ static conv_guess *findGuessingProc(const char *code)
  *  <-- Bufferd port <--outbuf-- filler <--inbuf--- getz(remote)
  */
 
-static int conv_input_filler(char *buf, int len, void *data)
+static int conv_input_filler(ScmPort *port, int mincnt)
 {
-    conv_info *info = (conv_info*)data;
+    conv_info *info = (conv_info*)port->data;
     size_t insize, inroom, outroom, result;
     int nread;
     const char *inbuf = info->inbuf;
-    char *outbuf = info->outbuf;
+    char *outbuf = port->src.buf.end;
 
-    /* Fill the input buffer.  There are some remaining bytes in the
+    /* Fill the input buffer.  There may be some remaining bytes in the
        inbuf from the last conversion (insize), so we try to fill the
        rest. */
     insize = info->inptr - info->inbuf, 
@@ -127,7 +127,7 @@ static int conv_input_filler(char *buf, int len, void *data)
 
     /* Conversion. */
     inroom = insize;
-    outroom = info->bufsiz;
+    outroom = SCM_PORT_BUFFER_ROOM(port);
 #ifdef DEBUG
     fprintf(stderr, "=> in(%p,%p)%d out(%p,%p)%d\n",
             info->inbuf, info->inptr, insize,
@@ -170,6 +170,11 @@ static int conv_input_filler(char *buf, int len, void *data)
             return info->bufsiz - outroom;
         }
     }
+}
+
+static int conv_input_closer(ScmPort *p)
+{
+    return 0;
 }
 
 ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
@@ -232,9 +237,11 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
     cinfo->outbuf = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
     cinfo->outptr = cinfo->outbuf;
     
-    return Scm_MakeBufferedPort(SCM_PORT_INPUT, cinfo->bufsiz, 0,
-                                cinfo->outbuf, conv_input_filler,
-                                (void*)cinfo);
+    newport = SCM_PORT(Scm_MakeBufferedPort(SCM_PORT_INPUT, cinfo->bufsiz, 0,
+                                            cinfo->outbuf, conv_input_filler,
+                                            NULL, conv_input_closer, -1));
+    newport->data = (void*)cinfo;
+    return SCM_OBJ(newport);
 }
 
 /*------------------------------------------------------------
@@ -258,24 +265,27 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
 
 #define GLIBC_2_1_ICONV_BUG
 
-static int conv_output_flusher(char *buf, int len, void *data)
+static int conv_output_closer(ScmPort *port)
 {
-    conv_info *info = (conv_info*)data;
-    size_t outsize, inroom, outroom, result;
+    conv_info *info = (conv_info*)port->data;
+    if (info->outptr > info->outbuf) {
+        Scm_Putz(info->outbuf, info->outptr - info->outbuf, info->remote);
+    }
+    Scm_Flush(info->remote);
+    if (info->ownerp) Scm_ClosePort(info->remote);
+    return 0;
+}
+
+static int conv_output_flusher(ScmPort *port, int mincnt)
+{
+    conv_info *info = (conv_info*)port->data;
+    size_t outsize, inroom, outroom, result, len;
     int nread;
     const char *inbuf;
     char *outbuf;
 
-    if (buf == NULL) {
-        /* the port is closed.  flush outbuf */
-        Scm_Putz(info->outbuf, info->outptr - info->outbuf, info->remote);
-        Scm_Flush(info->remote);
-        if (info->ownerp) Scm_ClosePort(info->remote);
-        return 0;
-    }
-
-    inbuf = info->inbuf;
-    inroom = len;
+    inbuf = port->src.buf.buffer;
+    inroom = len = SCM_PORT_BUFFER_AVAIL(port);
     for (;;) {
         /* Conversion. */
         outbuf = info->outptr;
@@ -346,7 +356,7 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
     
     if (!SCM_OPORTP(toPort))
         Scm_Error("output port required, but got %S", toPort);
-
+    
     handle = iconv_open(toCode, fromCode);
     if (handle == (iconv_t)-1) {
         if (errno == EINVAL) {
@@ -367,9 +377,12 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
     cinfo->outbuf = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
     cinfo->outptr = cinfo->outbuf;
     
-    return Scm_MakeBufferedPort(SCM_PORT_OUTPUT, cinfo->bufsiz, 0,
-                                cinfo->inbuf, conv_output_flusher,
-                                (void*)cinfo);
+    newport = SCM_PORT(Scm_MakeBufferedPort(SCM_PORT_OUTPUT, cinfo->bufsiz, 0,
+                                            cinfo->inbuf, NULL,
+                                            conv_output_flusher,
+                                            conv_output_closer, -1));
+    newport->data = (void*)cinfo;
+    return SCM_OBJ(newport);
 }
 
 /*------------------------------------------------------------
