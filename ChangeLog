@@ -1,3 +1,8 @@
+2002-10-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/genstub : renamed ulong -> u_long etc. in the generated
+	  code.  (a bug pointed out by Kimura Fuyuki)
+
 2002-10-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c (method_initialize): allow methods without required

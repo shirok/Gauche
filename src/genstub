@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.85 2002-09-20 06:54:13 shirok Exp $
+;;;  $Id: genstub,v 1.86 2002-10-21 10:07:27 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -351,17 +351,17 @@
      "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
    (define-type <int32>   "int" "C integer"
      "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
-   (define-type <uint>    "uint" "C integer"
+   (define-type <uint>    "u_int" "C integer"
      "SCM_UINTP" "Scm_GetUInteger" "Scm_MakeIntegerFromUI")
-   (define-type <ulong>   "ulong" "C integer"
+   (define-type <ulong>   "u_long" "C integer"
      "SCM_EXACTP" "Scm_GetUInteger" "Scm_MakeIntegerFromUI")
-   (define-type <ushort>  "ushort" "C short integer"
+   (define-type <ushort>  "u_short" "C short integer"
      "SCM_EXACTP" "(unsigned short)Scm_GetUInteger" "Scm_MakeIntegerFromUI")
-   (define-type <uint8>   "uint" "C integer"
+   (define-type <uint8>   "u_int" "C integer"
      "SCM_UINTP" "Scm_GetUInteger" "Scm_MakeIntegerFromUI")
-   (define-type <uint16>  "uint" "C integer"
+   (define-type <uint16>  "u_int" "C integer"
      "SCM_UINTP" "Scm_GetUInteger" "Scm_MakeIntegerFromUI")
-   (define-type <uint32>  "uint" "C integer"
+   (define-type <uint32>  "u_int" "C integer"
      "SCM_EXACTP" "Scm_GetUInteger" "Scm_MakeIntegerFromUI")
    (define-type <float>   "float" "real number"
      "SCM_REALP" "(float)Scm_GetDouble" "Scm_MakeFlonum")
