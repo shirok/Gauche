@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.34 2001-03-30 07:41:04 shiro Exp $
+ *  $Id: class.c,v 1.35 2001-03-30 09:03:02 shiro Exp $
  */
 
 #include "gauche.h"
@@ -142,30 +142,30 @@ static ScmObj class_array_to_names(ScmClass **array, int len)
 /* One of the design goals of Gauche object system is to make Scheme-defined
  * class easily accessible from C code, and vice versa.
  *
- * Classes in Gauche fall into four categories: core final class, core
- * base class, core abstract class and Scheme class.  A C-defined class
- * may belong to one of the first three, while a Scheme-defined class is
- * always a Scheme class.
+ * Classes in Gauche fall into four categories: builtin class, base class,
+ * abstract class and Scheme class.  A C-defined class may belong to one
+ * of the first three, while a Scheme-defined class is always a Scheme class.
  *
- * Core final classes are the ones that represents basic objects of the
- * language, such as <integer> or <port>.   Those classes are just
+ * Builtin classes are the ones that represents basic objects of the
+ * language, such as <integer> or <string>.   Those classes are just
  * the way to reify the basic object, and don't follow object protorol;
  * for example, you can't overload "initialize" method specialized to
  * <integer> to customize initialization of integers, nor subclass <integer>,
- * although you can use them to specialize methods you write.  "Make" methods
- * for these objects are dispatched to the appropriate C functions.
+ * although you can use them to specialize methods you write.
  *
- * Core base classes are the ones from which you can derive Scheme classes.
+ * Base classes are the ones from which you can derive Scheme classes.
  * <class>, <generic-method> and <method> are in this category.  The instance
- * of those classes have extra slots that contains C-specific data, such
+ * of those classes may have extra slots that contains C-specific data, such
  * as function pointers.  You can subclass them, but there is one restriction:
  * There can't be more than one core base class in the class' superclasses.
  * Because of this fact, C routines can take the pointer to the instance
- * of subclasses and safely cast it to oen of the core base classes.
+ * of subclasses and safely cast it to one of the core base classes.
+ * (<object> is an only exception of this rule, so that <class> can inherit
+ * <object>).
  *
- * Core abstract classes are just for method specialization.  They can't
+ * Abstract classes are just for method specialization.  They can't
  * create instances directly, and they shouldn't have any direct slots.
- * <top>, <object> and <sequence> are in this category, among others.
+ * <top>, <collection> and <sequence> are in this category, among others.
  *
  * Since a class must be <class> itself or its descendants, C code can
  * treat them as ScmClass*, and can determine the category of the class.
@@ -173,15 +173,12 @@ static ScmObj class_array_to_names(ScmClass **array, int len)
  * Depending on its category, a class must or may provide those function
  * pointers:
  *
- *   Category:  core final     core base     core abstract 
+ *   Category:   base           builtin         abstract
  *   -----------------------------------------------------
- *    allocate   required       optional        NULL
+ *    allocate   required       NULL            NULL
  *    print      optional       optional        ignored
- *    equal      optional       optional        ignored
  *    compare    optional       optional        ignored
  *    serialize  optional       optional        ignored
- *
- *  (*1: required for applicable classes, must be NULL otherwise)
  *
  * If the function is optional, you can set NULL there and the system
  * uses default function.  For Scheme class the system sets appropriate
@@ -207,11 +204,6 @@ static ScmObj class_array_to_names(ScmClass **array, int len)
  *     debug information.
  *     If this function pointer is not set, a default print method
  *     is used.
- *
- *  int klass->equal(ScmObj x, ScmObj y)
- *     X and Y are instances of klass.  This function should return TRUE iff
- *     X equals Y, FALSE otherwise.   If this function pointer is not set,
- *     Gauche uses pointer comparison to see their equality.
  *
  *  int klass->compare(ScmObj x, ScmObj y)
  *     X and Y are instances of klass or its descendants.  If the objects
