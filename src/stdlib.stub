@@ -1,8 +1,20 @@
-;; -*-Scheme-*-
+;;;
+;;; stdlib.stub - r5rs scheme procedures
+;;;
+;;;   Copyright (c) 2000-2001 Shiro Kawai (shiro@acm.org)
+;;;
+;;;   Permission to use, copy, modify, ditribute this software and
+;;;   accompanying documentation for any purpose is hereby granted,
+;;;   provided that existing copyright notices are retained in all
+;;;   copies and that this notice is included verbatim in all
+;;;   distributions.
+;;;   This software is provided as is, without express or implied
+;;;   warranty.  In no circumstances the author(s) shall be liable
+;;;   for any damages arising out of the use of this software.
+;;;
+;;; $Id: stdlib.stub,v 1.25 2001-02-13 07:06:08 shiro Exp $
+;;;
 
-;;
-;; built-in scheme procedures
-;;
 
 "#include <math.h>\n"
 
@@ -768,3 +780,6 @@
 ; transcript-on
 ; transcript-off
 
+;; Local variables:
+;; mode: scheme
+;; end:

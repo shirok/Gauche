@@ -1,15 +1,22 @@
-;; -*-Scheme-*-
+;;;
+;;; syslib.stub - system interface functions
+;;;
+;;;   Copyright (c) 2000-2001 Shiro Kawai (shiro@acm.org)
+;;;
+;;;   Permission to use, copy, modify, ditribute this software and
+;;;   accompanying documentation for any purpose is hereby granted,
+;;;   provided that existing copyright notices are retained in all
+;;;   copies and that this notice is included verbatim in all
+;;;   distributions.
+;;;   This software is provided as is, without express or implied
+;;;   warranty.  In no circumstances the author(s) shall be liable
+;;;   for any damages arising out of the use of this software.
+;;;
+;;; $Id: syslib.stub,v 1.6 2001-02-13 07:06:08 shiro Exp $
+;;;
 
-;;;
-;;; System interface functions.   Mostly I followed POSIX.1, but included
-;;; some non-posix functions which are important for programming on Unix.
-;;;
-;;; If mapping from Scheme to the function is trivial, it is defined directly
-;;; in syslib.stub.  
-;;;
-;;; The functions are listed in the order of the header file which defines
-;;; them.
-;;;
+;; System interface functions.   Mostly I followed POSIX.1, but included
+;; some non-posix functions which are important for programming on Unix.
 
 "#include <sys/types.h>
 #include <dirent.h>
@@ -321,6 +328,6 @@
   if (r < 0) Scm_SysError(\"link failed\");
   SCM_RETURN(SCM_TRUE);")
 
-
-
-
+;; Local variables:
+;; mode: scheme
+;; end:
