@@ -22,7 +22,7 @@ void toplevel(void)
                 SCM_FLUSH(out);
                 v = Scm_Read(in);
                 if (SCM_EOFP(v)) break;
-                v = Scm_Compile(v);
+                v = Scm_Compile(v, SCM_NIL, -1);
                 if (show_compile) Scm_Printf(SCM_PORT(out), "== %S\n", v);
 
                 Scm_Run(v);

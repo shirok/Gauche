@@ -199,6 +199,7 @@
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_PAIRP(obj)));")
 
 (define-cproc cons (obj1 obj2)
+  (inliner "Scm_inline_cons")
   "  SCM_RETURN(Scm_Cons(obj1, obj2));")
 
 (define-cproc car (obj)
@@ -283,6 +284,7 @@
 
 (define-cproc memv (obj list)
   (assert (list? list))
+  (inliner "Scm_inline_memv")
   "  SCM_RETURN(Scm_Memv(obj, list));")
 
 (define-cproc member (obj list)
@@ -532,9 +534,23 @@
 (define-cproc procedure? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_PROCEDUREP(obj)));")
 
-(define-cproc apply (proc args)
-  ;; Scm_Apply leaves argument pushing by the callee.
-  "  Scm_Apply(proc, args);")
+(define-cproc apply (proc arg1 &rest args)
+  "  if (SCM_NULLP(args)) Scm_Apply(proc, arg1);
+  else {
+    ScmObj head, tail, cp;
+    head = tail = Scm_Cons(arg1, SCM_NIL);
+    SCM_FOR_EACH(cp, args) {
+      if (SCM_NULLP(SCM_CDR(cp))) {
+        SCM_GROW_LIST_SPLICING(head, tail, SCM_CAR(cp));
+        Scm_Apply(proc, head);
+        return;
+      }
+      if (!SCM_PAIRP(SCM_CDR(cp))) {
+        Scm_Error(\"improper list not allowed: %S\", SCM_CDR(cp));
+      }
+      SCM_GROW_LIST(head, tail, SCM_CAR(cp));
+    }
+  } /*NOTREACHED*/")
 
 (define-cproc map (proc args &rest moreargs)
   (assert (procedure? proc))
@@ -549,7 +565,7 @@
 (define-cproc force (p)
   "  Scm_Force(p);")
 
-(define-proc call/cc (proc)
+(define-proc call-with-current-continuation (proc)
   "  Scm_CallCC(proc);")
 
 ; values
@@ -562,6 +578,7 @@
   ;; Result is pushed by evaluation of expr
   "  Scm_Eval(expr, env);")
 
+;; TODO: implement environments!
 ; scheme-report-environment
 ; null-environment
 ; interaction-environment
@@ -569,7 +586,7 @@
 ;;
 ;; 6.6.1  Ports
 ;;
-
+  
 ; call-with-input-file
 ; call-with-output-file
 

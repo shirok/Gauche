@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.3 2001-01-13 10:31:13 shiro Exp $
+ *  $Id: vm.h,v 1.4 2001-01-15 04:44:54 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -109,6 +109,7 @@ struct ScmVMRec {
     ScmObj errstr;              /* error string */
 
     int debugLevel;             /* debug level */
+    int enableInline;           /* enable inlining on compilation */
 
     ScmPort *curin;             /* current input port */
     ScmPort *curout;            /* current output port */
@@ -247,5 +248,7 @@ extern ScmClass Scm_CContClass;
 extern void Scm_VMPushCC(void (*func)(ScmObj value, void **data),
                          void **data,
                          int datasize);
+
+#include "vminline.h"
 
 #endif /* GAUCHE_VM_H */

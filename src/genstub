@@ -27,6 +27,7 @@
    (have-rest-arg?  :initform #f  :accessor have-rest-arg?)
    (decls           :initform '() :accessor decls-of)
    (stmts           :initform '() :accessor stmts-of)
+   (inliner         :initform #f  :accessor inliner-of)
    (c-name          :accessor c-name-of)
    ))
 
@@ -123,6 +124,11 @@
                 ((eq? (car form) 'assert)
                  (process-assert cproc (cadr form))
                  (loop next))
+                ((eq? (car form) 'inliner)
+                 (unless (and (pair? (cdr form))
+                              (string? (cadr form)))
+                   (error "bad `inliner' spec: ~s" form))
+                 (set! (inliner-of cproc) (cadr form)))
                 (else
                  (error "unknown body form: ~s" form)))))))
 
@@ -268,6 +274,7 @@
              (if (or (have-rest-arg? cproc) (> (num-optargs-of cproc) 0)) 1 0))
     (println "  SCM_OBJ(&~a_NAME)," c-func-name)
     (println "  ~a," c-func-name)
+    (println "  ~a, " (or (inliner-of cproc) "NULL"))
     (println "  NULL")
     (println "};")
     (linebreak)))

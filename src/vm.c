@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.3 2001-01-13 10:31:13 shiro Exp $
+ *  $Id: vm.c,v 1.4 2001-01-15 04:44:54 shiro Exp $
  */
 
 #include "gauche.h"
@@ -62,6 +62,7 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->curerr = SCM_PORT(Scm_Stderr());
 
     v->debugLevel = SCM_VM_DEBUG_DEFAULT;
+    v->enableInline = 1;
 
     /* initial frame */
     v->env = topenv(v->module);
@@ -693,7 +694,7 @@ void Scm_Apply(ScmObj proc, ScmObj args)
    for now, we ignore env argument. */
 void Scm_Eval(ScmObj expr, ScmObj env)
 {
-    ScmObj code = Scm_Compile(expr);
+    ScmObj code = Scm_Compile(expr, SCM_NIL, -1);
     push_continuation(theVM->pc);
     /* restore env here */
     theVM->env = NULL;

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.3 2001-01-13 10:31:13 shiro Exp $
+ *  $Id: compile.c,v 1.4 2001-01-15 04:44:54 shiro Exp $
  */
 
 #include "gauche.h"
@@ -162,9 +162,9 @@ enum {
  *   I think.
  */
 
-ScmObj Scm_Compile(ScmObj form)
+ScmObj Scm_Compile(ScmObj form, ScmObj env, int context)
 {
-    return compile_int(form, SCM_NIL, -1);
+    return compile_int(form, env, context);
 }
 
 static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
@@ -185,8 +185,8 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
         if (SCM_SYMBOLP(head)) {
             head = lookup_env(head, env);
             if (SCM_SYMBOLP(head)) {
-                /* Let's see if the symbol is bound to a syntax or a macro
-                   in the current module. */
+                /* Let's see if the symbol is bound to a syntax, a macro,
+                   or an inlinable procedure in the current module. */
                 ScmGloc *g = Scm_FindBinding(vm->module, SCM_SYMBOL(head), 0);
                 if (g != NULL) {
                     if (SCM_SYNTAXP(g->value)) {
@@ -194,31 +194,14 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                         void *data = SCM_SYNTAX(g->value)->data;
                         return cmpl(form, env, ctx, data);
                     }
-                }
-                /* EXPERIMENTAL: force inlining for some case */
-                {
-                    int nargs = Scm_Length(SCM_CDR(form));
-                    if (head == SCM_SYM_CONS && nargs == 2) {
-                        SCM_GROW_LIST_SPLICING(code, codetail,
-                                               compile_int(SCM_CADR(form),
-                                                           env, 1));
-                        SCM_GROW_LIST_SPLICING(code, codetail,
-                                               compile_int(SCM_CAR(SCM_CDDR(form)),
-                                                           env, 1));
-                        SCM_GROW_LIST(code, codetail,
-                                      SCM_VM_MAKE_INSN(SCM_VM_CONS));
-                        return code;
-                    }
-                    if (head == SCM_SYM_MEMV && nargs == 2) {
-                        SCM_GROW_LIST_SPLICING(code, codetail,
-                                               compile_int(SCM_CADR(form),
-                                                           env, 1));
-                        SCM_GROW_LIST_SPLICING(code, codetail,
-                                               compile_int(SCM_CAR(SCM_CDDR(form)),
-                                                           env, 1));
-                        SCM_GROW_LIST(code, codetail,
-                                      SCM_VM_MAKE_INSN(SCM_VM_MEMV));
-                        return code;
+
+                    if (vm->enableInline &&
+                        SCM_SUBRP(g->value) && SCM_SUBR_INLINER(g->value)) {
+                        ScmObj inlined =
+                            SCM_SUBR_INLINER(g->value)(SCM_SUBR(g->value),
+                                                       form, env, ctx);
+                        if (SCM_PAIRP(inlined))
+                            return inlined;
                     }
                 }
                 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: port.c,v 1.2 2001-01-15 04:44:54 shiro Exp $
  */
 
 #include "gauche.h"
@@ -350,6 +350,14 @@ int Scm_Getc(ScmPort *port)
     SCM_GETC(c, port);
     return c;
 }
+
+/*
+ * Higher-level Interfaces
+ *
+ *  the following procedures have to interact with VM.
+ */
+
+
 
 /*
  * predefined ports and initialization

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.3 2001-01-15 01:28:28 shiro Exp $
+ *  $Id: string.c,v 1.4 2001-01-15 04:44:54 shiro Exp $
  */
 
 #include <stdio.h>
@@ -448,7 +448,7 @@ ScmObj Scm_Substring(ScmString *x, int start, int end)
     
     if (start < 0)
         Scm_Error("start argument needs to be positive: %d", start);
-    if (end >= lenx)
+    if (end > lenx)
         Scm_Error("end argument is out of range: %d", end);
     if (end < start)
         Scm_Error("end argument must be equal to or greater than the start argument: start=%d, end=%d", start, end);

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: proc.c,v 1.2 2001-01-15 04:44:54 shiro Exp $
  */
 
 #include "gauche.h"
@@ -91,6 +91,7 @@ ScmObj Scm_MakeSubr(void (*func)(ScmObj*, int, void*),
     s->common.optional = optional;
     s->common.info = info;
     s->func = func;
+    s->inliner = NULL;
     s->data = data;
     return SCM_OBJ(s);
 }

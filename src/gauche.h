@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.5 2001-01-15 01:28:28 shiro Exp $
+ *  $Id: gauche.h,v 1.6 2001-01-15 04:44:54 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -203,6 +203,8 @@ typedef struct ScmModuleRec    ScmModule;
 typedef struct ScmSymbolRec    ScmSymbol;
 typedef struct ScmGlocRec      ScmGloc;
 typedef struct ScmProcedureRec ScmProcedure;
+typedef struct ScmClosureRec   ScmClosure;
+typedef struct ScmSubrRec      ScmSubr;
 typedef struct ScmSyntaxRec    ScmSyntax;
 typedef struct ScmPromiseRec   ScmPromise;
 
@@ -223,7 +225,7 @@ typedef struct ScmPromiseRec   ScmPromise;
 
 extern ScmVM *Scm_VM(void);     /* Returns the current VM */
 
-extern ScmObj Scm_Compile(ScmObj form);
+extern ScmObj Scm_Compile(ScmObj form, ScmObj env, int context);
 extern void   Scm_Run(ScmObj program);
 
 extern ScmObj Scm_VMGetResult(ScmVM *vm);
@@ -1211,11 +1213,11 @@ extern ScmClass Scm_ProcedureClass;
 
 #define SCM_PROCEDUREP(obj)         (SCM_SUBRP(obj)||SCM_CLOSUREP(obj))
 
-typedef struct ScmClosureRec {
+struct ScmClosureRec {
     ScmProcedure common;
     ScmObj code;                /* compiled code */
     ScmEnvFrame *env;           /* environment */
-} ScmClosure;
+};
 
 #define SCM_CLOSUREP(obj)          SCM_XTYPEP(obj, SCM_CLASS_CLOSURE)
 #define SCM_CLOSURE(obj)           ((ScmClosure*)(obj))
@@ -1226,14 +1228,19 @@ extern ScmClass Scm_ClosureClass;
 extern ScmObj Scm_MakeClosure(int required, int optional,
                               ScmObj code, ScmEnvFrame *env, ScmObj info);
 
-typedef struct ScmSubrRec {
+struct ScmSubrRec {
     ScmProcedure common;
     void (*func)(ScmObj *, int, void*);
+    ScmObj (*inliner)(ScmSubr *, ScmObj, ScmObj, int);
     void *data;
-} ScmSubr;
+};
 
 #define SCM_SUBRP(obj)             SCM_XTYPEP(obj, SCM_CLASS_SUBR)
 #define SCM_SUBR(obj)              ((ScmSubr*)(obj))
+
+#define SCM_SUBR_FUNC(obj)         SCM_SUBR(obj)->func
+#define SCM_SUBR_INLINER(obj)      SCM_SUBR(obj)->inliner
+#define SCM_SUBR_DATA(obj)         SCM_SUBR(obj)->data
 
 extern ScmClass Scm_SubrClass;
 #define SCM_CLASS_SUBR   (&Scm_SubrClass)
