@@ -1,5 +1,6 @@
 2002-12-10  Shiro Kawai  <shiro@acm.org>
 
+	* src/regexp.c : made regexp printed as #/.../
 	* lib/gauche/collection.scm (call-with-iterator): fixed a bug
 	  (patch provided from Kimura Fuyuki).
 	* ext/digest/*, lib/util/digest.scm : revise some APIs.

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.35 2002-12-06 05:25:16 shirok Exp $
+ *  $Id: regexp.c,v 1.36 2002-12-11 05:46:54 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -20,7 +20,9 @@
 #include "gauche.h"
 #include "gauche/class.h"
 
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_RegexpClass, NULL);
+static void regexp_print(ScmObj obj, ScmPort *port, ScmWriteContext *c);
+
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_RegexpClass, regexp_print);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_RegMatchClass, NULL);
 
 /* I don't like to reinvent wheels, so I looked for a regexp implementation
@@ -115,7 +117,18 @@ static ScmRegexp *make_regexp(void)
     rx->sets = NULL;
     rx->mustMatch = NULL;
     rx->flags = 0;
+    rx->pattern = NULL;
     return rx;
+}
+
+static void regexp_print(ScmObj rx, ScmPort *out, ScmWriteContext *ctx)
+{
+    if (SCM_REGEXP(rx)->pattern) {
+        Scm_Printf(out, "#/%A/", SCM_REGEXP(rx)->pattern);
+    } else {
+        /* fail safe */
+        Scm_Printf(out, "#<regexp %p>", rx);
+    }
 }
 
 #define CASEFOLDP(rx)   ((rx)->flags&SCM_REGEXP_CASE_FOLD)
