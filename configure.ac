@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.1 2003-07-09 11:37:25 shirok Exp $
+dnl $Id: configure.ac,v 1.2 2003-07-09 11:40:14 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.7, shiro@acm.org)
-AC_REVISION($Revision: 1.1 $)
+AC_REVISION($Revision: 1.2 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h)
 
@@ -35,8 +35,8 @@ dnl  with-slib
 dnl
 SLIB_DIR=/usr/local/slib
 AC_ARG_WITH(slib,
-  AC_HELP_STRING[--with-slib=PATH]
-                [Configure Gauche's slib module to use Aubrey Jaffer's SLIB
+  AC_HELP_STRING([--with-slib=PATH]
+                 [Configure Gauche's slib module to use Aubrey Jaffer's SLIB
 installed under PATH.  If PATH is not specified, or this option is omitted,
 Gauche still tries to find your slib installation from some typical places.]),
   [
