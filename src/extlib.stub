@@ -135,7 +135,7 @@
   SCM_RETURN(SCM_MAKE_INT(n));")
 
 (define-cproc write* (obj &optional (port (current-output-port)))
-  "  int n = Scm_WriteCircular(obj, port, SCM_PRINT_WRITE);
+  "  int n = Scm_WriteCircular(obj, port, SCM_PRINT_WRITE, 0);
   SCM_RETURN(SCM_MAKE_INT(n));")
 
 ;;
