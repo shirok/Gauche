@@ -26,6 +26,7 @@ util.scm
 process.scm
 version.scm
 file.scm
+selector.scm
 listener.scm
 www.scm
 binary.scm

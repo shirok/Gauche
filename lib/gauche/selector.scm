@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: selector.scm,v 1.4 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: selector.scm,v 1.5 2003-11-01 12:23:34 shirok Exp $
 ;;;
 
 (define-module gauche.selector
@@ -99,7 +99,7 @@
                           ((eq? proc (cdar h))
                            (let ((fds (slot-ref selector fds)))
                              (when fds
-                               (sys-fdset-set! fds (car h) #f)))
+                               (sys-fdset-set! fds (caar h) #f)))
                            (loop (cdr h) newh))
                           (else
                            (loop (cdr h) (cons (car h) newh))))))

@@ -1,3 +1,8 @@
+2003-10-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/selector.scm (selector-delete!): fixed an error when
+	  only procedure is specified.  Also added unit test for selector.
+
 2003-10-29  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/process.scm (process-wait, process-wait-any) : added
