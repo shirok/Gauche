@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: tr.scm,v 1.4 2001-09-21 09:58:33 shirok Exp $
+;;;  $Id: tr.scm,v 1.5 2001-09-21 20:15:44 shirok Exp $
 ;;;
 
 ;;; tr(1) equivalent.
@@ -41,12 +41,14 @@
          (s? (get-keyword :squeeze options #f))
          (c? (get-keyword :complement options #f))
          (size (get-keyword :table-size options 256))
-         (tab  (build-tr-table from to size)))
+         (tab  (build-tr-table from to size c?)))
     (lambda ()
       (let loop ((char (read-char)))
         (unless (eof-object? char)
           (let ((c (tr-table-ref tab (char->integer char))))
-            (display (or c char))
+            (cond ((char? c) (display c))
+                  (c         (display char)) ;pass through
+                  ((not d?)  (display char)))
             (loop (read-char))))))
     ))
 
@@ -121,6 +123,25 @@
           (else (let ((from (char->integer (cadar array)))
                       (to   (char->integer (caddar array))))
                   (integer->char (+ from (- index cnt))))))))
+
+;; complement.  array doesn't contain repeat.
+(define (complement-char-array array table-size)
+  (define (range from to)
+    (list (- to from -1) (integer->char from) (integer->char to)))
+  (let loop ((in array)
+             (out '())
+             (index 0))
+    (if (null? in)
+        (if (<= index *char-code-max*)
+            (reverse! (cons (range index *char-code-max*) out))
+            (reverse! out))
+        (let* ((lo (char->integer (cadar in)))
+               (hi (+ lo (caar in))))
+          (if (< index lo)
+              (loop (cdr in)
+                    (cons (range index (- lo 1)) out)
+                    hi)
+              (loop (cdr in) out hi))))))
 
 ;; `split' the char array at given index
 ;; (split-char-array '((26 #\A #\Z)) 1) => ((1 #\A)) and ((25 #\B #\Z))
@@ -197,13 +218,17 @@
 (define-method initialize ((self <tr-table>) initargs)
   (next-method)
   (let ((size (slot-ref self 'vector-size)))
-    (set! (vector-of self) (make-vector size #f))))
+    (set! (vector-of self) (make-vector size #t))))
 
+;; Returns
+;;   char - mapped char
+;;   #f   - appears in from-set but not to-set
+;;   #t   - doesn't appear in from-set
 (define (tr-table-ref tab index)
   (if (< index (slot-ref tab 'vector-size))
       (vector-ref (vector-of tab) index)
       (let loop ((e (sparse-of tab)))
-        (cond ((null? e) #f)
+        (cond ((null? e) #t)
               ((<= (caar e) index (cadar e))
                (let ((v (caddar e)))
                  (if (integer? v)
@@ -211,12 +236,17 @@
                      v)))
               (else (loop (cdr e)))))))
 
-(define (build-tr-table from-spec to-spec size)
+(define (build-tr-table from-spec to-spec size compl?)
   (let ((tab     (make <tr-table> :vector-size size))
         (from-ca (build-char-array from-spec size))
         (to-ca   (build-char-array to-spec size)))
     (check-from-spec-validity from-spec from-ca)
-    (fill-tr-table tab from-ca to-ca)))
+    (fill-tr-table tab
+                   (if compl?
+                       (complement-char-array from-ca size)
+                       from-ca)
+                   to-ca)
+    tab))
 
 (define (fill-tr-table tab from-ca to-ca)
   (let loop ((from-ca from-ca)
