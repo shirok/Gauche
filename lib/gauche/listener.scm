@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: listener.scm,v 1.5 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: listener.scm,v 1.6 2004-01-30 20:20:27 shirok Exp $
 ;;;
 
 ;; provides functions useful to implement a repl listener
@@ -57,7 +57,7 @@
 
 (define-class <listener> ()
   ((input-port  :init-keyword :input-port  :init-form (current-input-port))
-   (ouptut-port :init-keyword :output-port :init-form (current-output-port))
+   (output-port :init-keyword :output-port :init-form (current-output-port))
    (error-port  :init-keyword :error-port  :init-form (current-error-port))
    (reader      :init-keyword :reader    :init-form read)
    (evaluator   :init-keyword :evaluator :init-form eval)
@@ -75,7 +75,7 @@
    ))
 
 (define-method listener-show-prompt ((self <listener>))
-  (with-output-to-port (ref self 'ouptut-port)
+  (with-output-to-port (ref self 'output-port)
     (lambda ()
       ((ref self 'prompter))
       (flush))))
@@ -96,7 +96,7 @@
              (let* ((env  (ref self 'environment))
                     (expr ((ref self 'reader))))
                (unless (eof-object? expr)
-                 (with-output-to-port (ref self 'ouptut-port)
+                 (with-output-to-port (ref self 'output-port)
                    (lambda ()
                      (call-with-values
                       (lambda () ((ref self 'evaluator) expr env))
