@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: cookie.scm,v 1.1 2001-09-22 23:47:57 shirok Exp $
+;;;  $Id: cookie.scm,v 1.2 2001-09-23 06:01:14 shirok Exp $
 ;;;
 
 ;; Parser and constructor of http "Cookies" defined in
@@ -28,7 +28,8 @@
   (use srfi-1)
   (use srfi-2)
   (use srfi-13)
-  (export parse-cookie)
+  (export parse-cookie-string
+          construct-cookie-string)
   )
 (select-module rfc.cookie)
 
@@ -102,7 +103,7 @@
 ;;   ((<name> <value> [:path <path>] [:domain <domain>] [:port <port>])
 ;;    ...)
 
-(define (parse-cookie input . version)
+(define (parse-cookie-string input . version)
   (let ((ver (cond ((and (pair? version) (integer? (car version)))
                     (car version))
                    ((rxmatch #/^\s*$Version\s*=\s*(\d+)/ input)
@@ -129,5 +130,14 @@
                        (cons (reverse current) r)
                        (list (cdar av-pairs) (caar av-pairs)))))))
     ))
+
+;; Construct a cookie string suitable for Set-Cookie or Set-Cookie2 header.
+;;  
+;(define (construct-cookie-string specs . version)
+;  (let ((ver (if (and (pair? version) (integer? (car version)))
+;                 (car version)
+;                 0)))
+;    (
+  
 
 (provide "rfc/cookie")
