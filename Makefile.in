@@ -1,7 +1,7 @@
 EXTENSIONS=@EXTENSIONS@
 INSTALL=@INSTALL@
 CONFIG_GENERATED=Makefile config.cache config.log config.status \
-                 autom4te.cache gc/Makefile
+                 autom4te*.cache gc/Makefile
 .PHONY: test clean install
 
 

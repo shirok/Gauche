@@ -15,7 +15,7 @@ HEADERS =
 TARGET = example.so
 OBJS = example_head.o example.o example_tail.o
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
-		   autom4te.cache example_head.c example_tail.c
+		   autom4te*.cache example_head.c example_tail.c
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`

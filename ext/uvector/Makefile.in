@@ -15,7 +15,7 @@ HEADERS   = uvector.h
 TARGET    = libuvector.so
 OBJS      = uvector_head.o uvector.o uvutil.o uvlib.o uvector_tail.o
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
-		   autom4te.cache uvector_head.c uvector_tail.c
+		   autom4te*.cache uvector_head.c uvector_tail.c
 GENERATED = gauche/uvector.h uvector.c uvutil.c uvlib.c uvlib.stub
 
 INSTALL_TYPE = @INSTALL_TYPE@

@@ -15,7 +15,7 @@ HEADERS =
 TARGET = threads.so
 OBJS = threads_head.o threads.o mutex.o thrlib.o threads_tail.o
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
-		   autom4te.cache threads_head.c threads_tail.c
+		   autom4te*.cache threads_head.c threads_tail.c
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`

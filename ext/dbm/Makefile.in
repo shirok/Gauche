@@ -17,7 +17,7 @@ HEADERS =
 TARGET = @ARCHFILES@
 CONFIG_GENERATED = Makefile config.cache config.log config.status dbmconfig.h \
 		   gdbm_head.c gdbm_tail.c ndbm_head.c ndbm_tail.c \
-                   odbm_head.c odbm_tail.c autom4te.cache 
+                   odbm_head.c odbm_tail.c autom4te*.cache 
 GENERATED = gdbm.c ndbm.c odbm.c
 
 GDBM_OBJS = gdbm_head.o gdbm.o gdbm_tail.o

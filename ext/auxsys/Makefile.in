@@ -15,7 +15,7 @@ HEADERS =
 TARGET = auxsys.so
 OBJS = auxsys_head.o auxsys.o auxsyslib.o auxsys_tail.o
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
-		   auxsysconf.h autom4te.cache auxsys_head.c auxsys_tail.c
+		   auxsysconf.h autom4te*.cache auxsys_head.c auxsys_tail.c
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
