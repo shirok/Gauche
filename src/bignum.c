@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.25 2001-09-20 06:56:01 shirok Exp $
+ *  $Id: bignum.c,v 1.26 2001-10-16 20:35:00 shirok Exp $
  */
 
 #include <math.h>
@@ -995,9 +995,11 @@ ScmObj Scm_BignumLogXor(ScmBignum *x, ScmBignum *y)
  * Printing
  */
 
-ScmObj Scm_BignumToString(ScmBignum *b, int radix)
+ScmObj Scm_BignumToString(ScmBignum *b, int radix, int use_upper)
 {
-    static const char tab[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+    static const char ltab[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+    static const char utab[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const char *tab = use_upper? utab : ltab;
     ScmObj h = SCM_NIL, t = SCM_NIL;
     ScmBignum *q;
     long rem;

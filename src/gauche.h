@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.183 2001-10-13 11:45:12 shirok Exp $
+ *  $Id: gauche.h,v 1.184 2001-10-16 20:35:00 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1341,7 +1341,7 @@ extern ScmObj Scm_MakeBignumFromSI(long val);
 extern ScmObj Scm_MakeBignumFromUI(u_long val);
 extern ScmObj Scm_MakeBignumFromDouble(double val);
 extern ScmObj Scm_BignumCopy(ScmBignum *b);
-extern ScmObj Scm_BignumToString(ScmBignum *b, int radix);
+extern ScmObj Scm_BignumToString(ScmBignum *b, int radix, int use_upper);
 
 extern long   Scm_BignumToSI(ScmBignum *b);
 extern u_long Scm_BignumToUI(ScmBignum *b);
@@ -1445,7 +1445,7 @@ extern ScmObj Scm_Round(ScmObj num, int mode);
 extern ScmObj Scm_Magnitude(ScmObj z);
 extern ScmObj Scm_Angle(ScmObj z);
 
-extern ScmObj Scm_NumberToString(ScmObj num, int radix);
+extern ScmObj Scm_NumberToString(ScmObj num, int radix, int use_upper);
 extern ScmObj Scm_StringToNumber(ScmString *str, int radix);
 
 /*--------------------------------------------------------

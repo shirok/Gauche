@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.57 2001-10-11 08:48:49 shirok Exp $
+ *  $Id: number.c,v 1.58 2001-10-16 20:35:00 shirok Exp $
  */
 
 #include <math.h>
@@ -1298,7 +1298,7 @@ ScmObj Scm_LogXor(ScmObj x, ScmObj y)
 
 static void number_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    ScmObj s = Scm_NumberToString(obj, 10);
+    ScmObj s = Scm_NumberToString(obj, 10, FALSE);
     SCM_PUTS(SCM_STRING(s), port);
 }
 
@@ -1340,7 +1340,7 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
 
 #define FLT_BUF 50
 
-ScmObj Scm_NumberToString(ScmObj obj, int radix)
+ScmObj Scm_NumberToString(ScmObj obj, int radix, int use_upper)
 {
     ScmObj r = SCM_NIL;
     char buf[FLT_BUF];
@@ -1355,17 +1355,17 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix)
         if (radix == 10) {
             snprintf(pbuf, 49, "%ld", value);
         } else if (radix == 16) {
-            snprintf(pbuf, 49, "%lx", value);
+            snprintf(pbuf, 49, (use_upper? "%lX" : "%lx"), value);
         } else if (radix == 8) {
             snprintf(pbuf, 49, "%lo", value);
         } else {
             /* sloppy way ... */
             r = Scm_BignumToString(SCM_BIGNUM(Scm_MakeBignumFromSI(SCM_INT_VALUE(obj))),
-                                   radix);
+                                   radix, use_upper);
         }
         if (r == SCM_NIL) r = SCM_MAKE_STR_COPYING(buf);
     } else if (SCM_BIGNUMP(obj)) {
-        r = Scm_BignumToString(SCM_BIGNUM(obj), radix);
+        r = Scm_BignumToString(SCM_BIGNUM(obj), radix, use_upper);
     } else if (SCM_FLONUMP(obj)) {
         double_print(buf, FLT_BUF, SCM_FLONUM_VALUE(obj), FALSE);
         r = SCM_MAKE_STR_COPYING(buf);

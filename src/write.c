@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.18 2001-09-20 19:14:10 shirok Exp $
+ *  $Id: write.c,v 1.19 2001-10-16 20:35:00 shirok Exp $
  */
 
 #include <stdio.h>
@@ -423,7 +423,7 @@ static void format_writer(ScmObj out, ScmObj arg,
 /* ~d, ~b, ~o, and ~x */
 static void format_integer(ScmObj out, ScmObj arg,
                            ScmObj *params, int nparams, int radix,
-                           int delimited, int alwayssign)
+                           int delimited, int alwayssign, int use_upper)
 {
     int mincol = 0, commainterval = 3;
     ScmChar padchar = ' ', commachar = ',';
@@ -438,7 +438,7 @@ static void format_integer(ScmObj out, ScmObj arg,
     if (nparams>1 && SCM_CHARP(params[1])) padchar = SCM_CHAR_VALUE(params[1]);
     if (nparams>2 && SCM_CHARP(params[2])) commachar = SCM_CHAR_VALUE(params[2]);
     if (nparams>3 && SCM_INTP(params[3])) commainterval = SCM_INT_VALUE(params[3]);
-    str = Scm_NumberToString(arg, radix);
+    str = Scm_NumberToString(arg, radix, use_upper);
     if (alwayssign && SCM_STRING_START(str)[0] != '-') {
         str = Scm_StringAppend2(SCM_STRING(SCM_MAKE_STR("+")),
                                 SCM_STRING(str));
@@ -543,49 +543,49 @@ ScmObj Scm_Format(ScmObj out, ScmString *fmt, ScmObj args)
                     Scm_Write(arg, out, SCM_WRITE_DISPLAY);
                 } else {
                     format_integer(out, arg, params, numParams, 10,
-                                   colonflag, atflag);
+                                   colonflag, atflag, FALSE);
                 }
                 break;
             case 'b':; case 'B':;
                 NEXT_ARG(arg, args);
                 if (numParams == 0 && !atflag && !colonflag) {
                     if (Scm_IntegerP(arg)) {
-                        Scm_Write(Scm_NumberToString(arg, 2), out,
+                        Scm_Write(Scm_NumberToString(arg, 2, FALSE), out,
                                   SCM_WRITE_DISPLAY);
                     } else {
                         Scm_Write(arg, out, SCM_WRITE_DISPLAY);
                     }
                 } else {
                     format_integer(out, arg, params, numParams, 2,
-                                   colonflag, atflag);
+                                   colonflag, atflag, FALSE);
                 }
                 break;
             case 'o':; case 'O':;
                 NEXT_ARG(arg, args);
                 if (numParams == 0 && !atflag && !colonflag) {
                     if (Scm_IntegerP(arg)) {
-                        Scm_Write(Scm_NumberToString(arg, 8), out,
+                        Scm_Write(Scm_NumberToString(arg, 8, FALSE), out,
                                   SCM_WRITE_DISPLAY);
                     } else {
                         Scm_Write(arg, out, SCM_WRITE_DISPLAY);
                     }
                 } else {
                     format_integer(out, arg, params, numParams, 8,
-                                   colonflag, atflag);
+                                   colonflag, atflag, FALSE);
                 }
                 break;
             case 'x':; case 'X':;
                 NEXT_ARG(arg, args);
                 if (numParams == 0 && !atflag && !colonflag) {
                     if (Scm_IntegerP(arg)) {
-                        Scm_Write(Scm_NumberToString(arg, 16), out,
+                        Scm_Write(Scm_NumberToString(arg, 16, ch == 'X'), out,
                                   SCM_WRITE_DISPLAY);
                     } else {
                         Scm_Write(arg, out, SCM_WRITE_DISPLAY);
                     }
                 } else {
                     format_integer(out, arg, params, numParams, 16,
-                                   colonflag, atflag);
+                                   colonflag, atflag, ch == 'X');
                 }
                 break;
             case 'v':; case 'V':;

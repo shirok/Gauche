@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.69 2001-10-04 10:33:00 shirok Exp $
+;;; $Id: stdlib.stub,v 1.70 2001-10-16 20:35:00 shirok Exp $
 ;;;
 
 
@@ -355,9 +355,9 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-cproc inexact->exact (obj)
   "  SCM_RETURN(Scm_InexactToExact(obj));")
 
-(define-cproc number->string (obj &optional (radix 10))
+(define-cproc number->string (obj &optional (radix 10) (use-upper? #f))
   (assert (small-integer? radix))
-  "  SCM_RETURN(Scm_NumberToString(obj, radix));")
+  "  SCM_RETURN(Scm_NumberToString(obj, radix, !SCM_FALSEP(use_upperP)));")
 
 (define-cproc string->number (obj &optional (radix 10))
   (assert (string? obj))
