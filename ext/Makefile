@@ -1,6 +1,6 @@
 
 # the following line is examined by configure.  keep "^SUBDIRS=" pattern.
-SUBDIRS= example auxsys threads uvector charconv net termios fcntl syslog dbm mt-random
+SUBDIRS= example auxsys threads uvector charconv net termios fcntl syslog dbm mt-random digest
 
 all :
 	@for dir in $(SUBDIRS); do (cd $$dir; $(MAKE) all); done

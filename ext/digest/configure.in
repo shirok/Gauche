@@ -1,0 +1,27 @@
+dnl
+dnl Configuring Gauche-md5
+dnl  process this file with "autoconf --include `gauche-config --ac`"
+dnl  to generate 'configure'.
+dnl $Id: configure.in,v 1.1 2002-12-03 01:19:16 shirok Exp $
+
+AC_INIT(md5.stub)
+AC_CANONICAL_SYSTEM
+AC_GAUCHE_INIT_EXT
+
+# Sets the default value of INSTALL_TYPE macro.
+AC_GAUCHE_INSTALL_TYPE(sys)
+
+# Get compiler parameters which Gauche has been compiled with.
+AC_GAUCHE_CC
+AC_GAUCHE_FLAGS
+
+# Check for other programs.
+AC_PROG_INSTALL
+
+# Set LDFLAGS to generate shared library.
+AC_GAUCHE_FIX_LIBS
+
+# Output
+AC_GAUCHE_EXT_FIXUP(md5)
+AC_GAUCHE_EXT_FIXUP(sha1)
+AC_OUTPUT(Makefile)

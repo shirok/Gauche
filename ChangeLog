@@ -1,3 +1,8 @@
+2002-12-02  Shiro Kawai  <shiro@acm.org>
+
+	* ext/digest/*, lib/util/digest.scm, lib/rfc/hmac.scm : integrated
+	  Kimura Fuyuki's message digesting packages.
+
 2002-12-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/logger.scm : added lock-policy slot to <log-drain>

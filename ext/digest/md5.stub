@@ -1,0 +1,72 @@
+;;;
+;;; md5.stub - MD5 message-digest
+;;;
+;;;  Copyright(C) 2002 by Kimura Fuyuki (fuyuki@hadaly.org)
+;;;
+;;;  Permission to use, copy, modify, distribute this software and
+;;;  accompanying documentation for any purpose is hereby granted,
+;;;  provided that existing copyright notices are retained in all
+;;;  copies and that this notice is included verbatim in all
+;;;  distributions.
+;;;  This software is provided as is, without express or implied
+;;;  warranty.  In no circumstances the author(s) shall be liable
+;;;  for any damages arising out of the use of this software.
+;;;
+;;;  $Id: md5.stub,v 1.1 2002-12-03 01:19:16 shirok Exp $
+;;;
+
+"
+ #include <gauche/extend.h>
+ #include <gauche/class.h>
+ #include \"md5.h\"
+
+ typedef struct ScmMd5Rec {
+   SCM_HEADER;
+   MD5_CTX ctx;
+ } ScmMd5;
+
+ SCM_CLASS_DECL(Scm_Md5Class);
+ static ScmObj md5_allocate(ScmClass *, ScmObj);
+ SCM_DEFINE_BUILTIN_CLASS(Scm_Md5Class,
+                          NULL, NULL, NULL, md5_allocate,
+                          NULL);
+
+ #define SCM_CLASS_MD5      (&Scm_Md5Class)
+ #define SCM_MD5(obj)       ((ScmMd5*)obj)
+ #define SCM_MD5P(obj)      SCM_XTYPEP(obj, SCM_CLASS_MD5)
+
+ static ScmObj md5_allocate(ScmClass *klass, ScmObj initargs)
+ {
+   ScmMd5 *md5 = SCM_ALLOCATE(ScmMd5, klass);
+   SCM_SET_CLASS(md5, klass);
+   MD5Init(&md5->ctx);
+   return SCM_OBJ(md5);
+ }
+
+ /* Hack for initialization stub */
+ static void internal_init(ScmModule*);
+ void Scm_Init_md5(void)
+ {
+   ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE(\"rfc.md5\", TRUE));
+   SCM_INIT_EXTENSION(md5);
+   Scm_InitBuiltinClass(&Scm_Md5Class, \"<md5-context>\", NULL, sizeof(ScmMd5), mod);
+   internal_init(mod);
+ }
+
+ #define Scm_Init_md5 internal_init
+"
+
+(define-type <md5> "ScmMd5*")
+
+(define-cproc %md5-update (md5::<md5> data::<string>)
+  "  MD5Update(&md5->ctx, Scm_GetString(data), SCM_STRING_SIZE(data));
+  SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc %md5-final (md5::<md5>)
+  "  unsigned char digest[16];
+  MD5Final(digest, &md5->ctx);
+  SCM_RETURN(Scm_MakeString(digest, 16, 16, SCM_MAKSTR_INCOMPLETE|SCM_MAKSTR_COPYING));")
+
+;; Local variables:
+;; mode: scheme
+;; end:
