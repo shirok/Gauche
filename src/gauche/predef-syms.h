@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: predef-syms.h,v 1.22 2002-05-12 10:39:45 shirok Exp $
+ *  $Id: predef-syms.h,v 1.23 2002-08-20 20:47:19 shirok Exp $
  */
 
 /* DEFSYM(c-name, scheme-name) */
@@ -61,6 +61,7 @@ DEFSYM(ScmQmacroExpand1,    "%macroexpand-1");
 DEFSYM(ScmQnull,            "null");
 DEFSYM(ScmQscheme,          "scheme");
 DEFSYM(ScmQgauche,          "gauche");
+DEFSYM(ScmQgaucheGf,        "gauche.gf");
 DEFSYM(ScmQuser,            "user");
 
 DEFSYM(ScmQloadPath,        "*load-path*");
@@ -118,6 +119,7 @@ DEFSYM(ScmQsourceInfo,      "source-info");
 #define SCM_SYM_NULL             SCM_OBJ(&ScmQnull)
 #define SCM_SYM_SCHEME           SCM_OBJ(&ScmQscheme)
 #define SCM_SYM_GAUCHE           SCM_OBJ(&ScmQgauche)
+#define SCM_SYM_GAUCHE_GF        SCM_OBJ(&ScmQgaucheGf)
 #define SCM_SYM_USER             SCM_OBJ(&ScmQuser)
 
 #define SCM_SYM_LOAD_PATH        SCM_OBJ(&ScmQloadPath)

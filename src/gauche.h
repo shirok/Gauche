@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.293 2002-08-19 13:57:44 shirok Exp $
+ *  $Id: gauche.h,v 1.294 2002-08-20 20:47:19 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -395,7 +395,7 @@ struct ScmClassRec {
     int (*compare)(ScmObj x, ScmObj y, int equalp);
     int (*serialize)(ScmObj obj, ScmPort *sink, ScmObj context);
     ScmObj (*allocate)(ScmClass *klass, ScmObj initargs);
-    ScmClass **cpa;
+    ScmClass **cpa;             /* class precedence array, NULL terminated */
     short numInstanceSlots;     /* # of instance slots */
     unsigned char instanceSlotOffset;
     unsigned char flags;
@@ -1406,7 +1406,8 @@ struct ScmModuleRec {
     ScmSymbol *name;
     ScmObj imported;
     ScmObj exported;
-    ScmModule *parent;
+    ScmObj parents;             /* direct parent modules */
+    ScmObj mpl;                 /* module precedence list */
     ScmHashTable *table;
     ScmInternalMutex mutex;
 };
@@ -1426,6 +1427,7 @@ SCM_EXTERN ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol,
 SCM_EXTERN ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol,
                                   ScmObj value);
 
+SCM_EXTERN ScmObj Scm_ExtendModule(ScmModule *module, ScmObj supers);
 SCM_EXTERN ScmObj Scm_ImportModules(ScmModule *module, ScmObj list);
 SCM_EXTERN ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list);
 SCM_EXTERN ScmObj Scm_ExportAll(ScmModule *module);

@@ -76,6 +76,33 @@
 
 (test "select-module" 'user (lambda () (module-name (current-module))))
 
+;;------------------------------------------------------------------
+;; module inheritance
+
+(define-module P
+  (define a 'alpha)
+  (define b 'beta))
+(define-module Q
+  (define a 'ei)
+  (define b 'bee))
+(define-module R
+  (extend P)
+  (define c 'gamma))
+(define-module S
+  (extend Q P)
+  (define c 'delta))
+(define-module T
+  (extend Q)
+  (define c 'delta))
+(define-module U
+  (extend R T)
+  )
+
+(test "module inheritance" 'alpha (lambda () (with-module R a)))
+(test "module inheritance" 'ei    (lambda () (with-module S a)))
+(test "module inheritance" '(gamma beta)
+      (lambda ()
+        (with-module U (list c b))))
 
 
 (test-end)

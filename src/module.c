@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.33 2002-08-17 07:05:07 shirok Exp $
+ *  $Id: module.c,v 1.34 2002-08-20 20:47:19 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -41,30 +41,41 @@ static struct {
     ScmInternalMutex mutex;
 } modules;
 
-/* Predefined modules */
-static ScmModule *nullModule;
-static ScmModule *schemeModule;
-static ScmModule *gaucheModule;
-static ScmModule *userModule;
+/* Predefined modules - slots will be initialized by Scm__InitModule */
+#define DEFINE_STATIC_MODULE(cname) \
+    static ScmModule cname = { { SCM_CLASS_MODULE } }
+
+DEFINE_STATIC_MODULE(nullModule);
+DEFINE_STATIC_MODULE(schemeModule);
+DEFINE_STATIC_MODULE(gaucheModule);
+DEFINE_STATIC_MODULE(gfModule);
+DEFINE_STATIC_MODULE(userModule);
+
+static ScmObj defaultParents = SCM_NIL; /* will be initialized */
+static ScmObj defaultMpl = SCM_NIL;     /* will be initialized */
 
 /*----------------------------------------------------------------------
  * Constructor
  */
 
-/* internal.  caller is responsible to lock the global module table.  */
-static ScmObj make_module(ScmSymbol *name, ScmModule *parent)
+static void init_module(ScmModule *m, ScmSymbol *name)
+{
+    m->name = name;
+    m->imported = m->exported = SCM_NIL;
+    m->parents = defaultParents;
+    m->mpl = defaultMpl;
+    m->table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 0));
+    (void)SCM_INTERNAL_MUTEX_INIT(m->mutex);
+    Scm_HashTablePut(modules.table, SCM_OBJ(name), SCM_OBJ(m));
+}
+
+/* Internal.  Caller is responsible to lock the global module table */
+static ScmObj make_module(ScmSymbol *name)
 {
     ScmModule *m;
     m = SCM_NEW(ScmModule);
     SCM_SET_CLASS(m, SCM_CLASS_MODULE);
-    m->name = name;
-    m->parent = parent;
-    m->imported = SCM_NIL;
-    m->exported = SCM_NIL;
-    m->table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 0));
-    (void)SCM_INTERNAL_MUTEX_INIT(m->mutex);
-
-    Scm_HashTablePut(modules.table, SCM_OBJ(name), SCM_OBJ(m));
+    init_module(m, name);
     return SCM_OBJ(m);
 }
 
@@ -72,7 +83,7 @@ ScmObj Scm_MakeModule(ScmSymbol *name)
 {
     ScmObj r;
     (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
-    r = make_module(name, gaucheModule);
+    r = make_module(name);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
     return r;
 }
@@ -86,7 +97,7 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
 {
     ScmHashEntry *e;
     ScmModule *m = module;
-    ScmObj p;
+    ScmObj p, mp;
 
     /* fist, search from the specified module */
     (void)SCM_INTERNAL_MUTEX_LOCK(m->mutex);
@@ -107,8 +118,11 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
                  || !SCM_FALSEP(Scm_Memq(SCM_OBJ(symbol), m->exported))))
                 return SCM_GLOC(e->value);
         }
-        /* Then, search from parent module */
-        for (m = module->parent; m; m = m->parent) {
+        /* Then, search from parent modules */
+        SCM_ASSERT(SCM_PAIRP(module->mpl));
+        SCM_FOR_EACH(mp, SCM_CDR(module->mpl)) {
+            SCM_ASSERT(SCM_MODULEP(SCM_CAR(mp)));
+            m = SCM_MODULE(SCM_CAR(mp));
             (void)SCM_INTERNAL_MUTEX_LOCK(m->mutex);
             e = Scm_HashTableGet(m->table, SCM_OBJ(symbol));
             (void)SCM_INTERNAL_MUTEX_UNLOCK(m->mutex);
@@ -238,6 +252,41 @@ ScmObj Scm_ExportAll(ScmModule *module)
 }
 
 /*----------------------------------------------------------------------
+ * Extending (inheriting) modules
+ */
+
+/* Module inheritance obeys the same rule as class inheritance,
+   hence we use monotonic merge. */
+/* NB: ExtendModule alters module's precedence list, and may cause
+   unwanted side effects when used carelessly.  */
+
+static ScmObj mod_get_super(ScmObj module, void *data)
+{
+    return SCM_MODULE(module)->parents;
+}
+
+ScmObj Scm_ExtendModule(ScmModule *module, ScmObj supers)
+{
+    ScmObj mpl, seqh = SCM_NIL, seqt = SCM_NIL, sp;
+
+    SCM_APPEND1(seqh, seqt, supers);
+    SCM_FOR_EACH(sp, supers) {
+        if (!SCM_MODULEP(SCM_CAR(sp))) {
+            Scm_Error("non-module object found in the extend syntax: %S",
+                      SCM_CAR(sp));
+        }
+        SCM_APPEND1(seqh, seqt, SCM_MODULE(SCM_CAR(sp))->mpl);
+    }
+    module->parents = supers;
+    mpl = Scm_MonotonicMerge(SCM_OBJ(module), seqh, mod_get_super, NULL);
+    if (SCM_FALSEP(mpl)) {
+        Scm_Error("can't extend those modules simultaneously because of inconsistent precedence lists: %S", supers);
+    }
+    module->mpl = mpl;
+    return mpl;
+}
+
+/*----------------------------------------------------------------------
  * Finding modules
  */
 
@@ -249,7 +298,7 @@ ScmObj Scm_FindModule(ScmSymbol *name, int createp)
     (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
     e = Scm_HashTableGet(modules.table, SCM_OBJ(name));
     if (e == NULL) {
-        if (createp) m = make_module(name, gaucheModule);
+        if (createp) m = make_module(name);
         else m = SCM_FALSE;
     }
     else m = e->value;
@@ -284,22 +333,22 @@ void Scm_SelectModule(ScmModule *mod)
 
 ScmModule *Scm_NullModule(void)
 {
-    return nullModule;
+    return &nullModule;
 }
 
 ScmModule *Scm_SchemeModule(void)
 {
-    return schemeModule;
+    return &schemeModule;
 }
 
 ScmModule *Scm_GaucheModule(void)
 {
-    return gaucheModule;
+    return &gaucheModule;
 }
 
 ScmModule *Scm_UserModule(void)
 {
-    return userModule;
+    return &userModule;
 }
 
 ScmModule *Scm_CurrentModule(void)
@@ -307,17 +356,27 @@ ScmModule *Scm_CurrentModule(void)
     return Scm_VM()->module;
 }
 
-#define MAKEMOD(sym, parent) SCM_MODULE(make_module(SCM_SYMBOL(sym), parent))
-
+#define INIT_MOD(mod, name, mpl)                                           \
+    do {                                                                   \
+        init_module(&mod, SCM_SYMBOL(name));                               \
+        mod.parents = (SCM_NULLP(mpl)? SCM_NIL : SCM_LIST1(SCM_CAR(mpl))); \
+        mpl = mod.mpl = Scm_Cons(SCM_OBJ(&mod), mpl);                      \
+    } while (0)
 
 void Scm__InitModule(void)
 {
+    ScmObj mpl = SCM_NIL;
+
     (void)SCM_INTERNAL_MUTEX_INIT(modules.mutex);
     modules.table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 64));
 
-    nullModule   = MAKEMOD(SCM_SYM_NULL, NULL);
-    schemeModule = MAKEMOD(SCM_SYM_SCHEME, nullModule);
-    gaucheModule = MAKEMOD(SCM_SYM_GAUCHE, schemeModule);
-    userModule   = MAKEMOD(SCM_SYM_USER, gaucheModule);
-}
+    INIT_MOD(nullModule, SCM_SYM_NULL, mpl);
+    INIT_MOD(schemeModule, SCM_SYM_SCHEME, mpl);
+    INIT_MOD(gaucheModule, SCM_SYM_GAUCHE, mpl);
+    INIT_MOD(gfModule, SCM_SYM_GAUCHE_GF, mpl);
+    INIT_MOD(userModule, SCM_SYM_USER, mpl);
 
+    mpl = SCM_CDR(mpl);  /* default mpl doesn't include user module */
+    defaultParents = SCM_LIST1(SCM_CAR(mpl));
+    defaultMpl = mpl;
+}
