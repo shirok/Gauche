@@ -1,5 +1,8 @@
 2004-04-24  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/package/build.scm, src/gauche-package: added --sudo
+	  option for 'install' command.
+
 	* src/system.c (Scm_SysExec): display program name as well when
 	  failed (Patch from Kouhei Sutou).
 

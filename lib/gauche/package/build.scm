@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: build.scm,v 1.3 2004-04-23 06:17:46 shirok Exp $
+;;;  $Id: build.scm,v 1.4 2004-04-24 12:08:15 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -56,6 +56,7 @@
 (define *bzip2-program* (find-file-in-paths "bzip2"))
 (define *make-program*  (or (find-file-in-paths "gmake")
                             (find-file-in-paths "make")))
+(define *sudo-program*  (find-file-in-paths "sudo"))
 (define *rm-program*    (find-file-in-paths "rm"))
 
 (define (untar config file)
@@ -101,9 +102,12 @@
   (let ((make (assq-ref config 'make *make-program*)))
     (run #`"cd \",dir\"; \",make\" check")))
 
-(define (make-install config dir)
-  (let ((make (assq-ref config 'make *make-program*)))
-    (run #`"cd \",dir\"; \",make\" install")))
+(define (make-install config dir use-sudo?)
+  (let ((make (assq-ref config 'make *make-program*))
+        (sudo (assq-ref config 'sudo *sudo-program*)))
+    (if use-sudo?
+      (run #`"cd \",dir\"; \",sudo\" \",make\" install")
+      (run #`"cd \",dir\"; \",make\" install"))))
 
 (define (clean config dir)
   (let ((rm (assq-ref config 'rm *rm-program*)))
@@ -128,7 +132,8 @@
                        (reconfigure? :reconfigure #f)
                        (check?       :check #t)
                        (install?     :install #f)
-                       (clean?       :clean #f))
+                       (clean?       :clean #f)
+                       (sudo?        :sudo-install #f))
     (parameterize ((dry-run dry?))
       (let* ((tarball   (gauche-package-ensure uri :config config))
              (build-dir (assq-ref config 'build-dir "."))
@@ -141,7 +146,7 @@
           (make config dir)
           (when check?   (make-check config dir)))
         (when (or install? install-only?)
-          (make-install config dir))
+          (make-install config dir sudo?))
         (when clean?   (clean config dir))))))
 
 (provide "gauche/package/build")
