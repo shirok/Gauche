@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.108.2.2 2005-01-09 04:28:49 shirok Exp $
+;;; $Id: stdlib.stub,v 1.108.2.3 2005-01-15 00:40:01 shirok Exp $
 ;;;
 
 
@@ -131,6 +131,7 @@
 (define-cproc min (arg0 &rest args)
   "ScmObj r; Scm_MinMax(arg0, args, &r, NULL); SCM_RETURN(r);")
 
+#|
 "/* inliner for `+' */
 static ScmObj immediate_integer_inliner(long insn, long arg0, ScmObj arg1, ScmObj env)
 {
@@ -189,6 +190,7 @@ static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
 }
 
 "
+|#
 
 (define-cproc + (&rest args)
 ;  (inliner (case-nargs (2 "SCM_VM_NUMADD2") (else #f)))
@@ -377,6 +379,7 @@ static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
   SCM_SET_C##PRE##R(cell, value); SCM_RETURN(SCM_UNDEFINED);
 "
 
+#|
 "static ScmObj cxxr_inliner(ScmObj form, ScmObj env,
                             const char *name, int insn1, int insn2)
  {
@@ -395,6 +398,7 @@ static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
  static ScmObj cddr_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
  { return cxxr_inliner(form, env, \"cddr\", SCM_VM_CDR, SCM_VM_CDR); }
 "
+|#
 
 (define-cproc caar (obj)
   (inliner (proc "caar_inliner")) "SCM_RETURN(Scm_Caar(obj));"

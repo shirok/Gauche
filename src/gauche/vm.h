@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.98.2.15 2005-01-12 23:38:59 shirok Exp $
+ *  $Id: vm.h,v 1.98.2.16 2005-01-15 00:40:02 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -634,7 +634,7 @@ SCM_EXTERN ScmObj Scm_Compile(ScmObj program, ScmObj mod);
 SCM_EXTERN ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context);
 SCM_EXTERN ScmObj Scm_CompileLookupEnv(ScmObj sym, ScmObj env, int op);
 
-SCM_EXTERN ScmObj Scm_CallSyntaxCompiler(ScmObj syn, ScmObj from, ScmObj env, int ctx);
+SCM_EXTERN ScmObj Scm_CallSyntaxCompiler(ScmObj syn, ScmObj from, ScmObj env);
 SCM_EXTERN ScmObj Scm_CallMacroExpander(ScmMacro *mac, ScmObj expr, ScmObj env);
 SCM_EXTERN ScmObj Scm_CallMacroExpanderOld(ScmMacro *mac, ScmObj expr, ScmObj env);
 SCM_EXTERN int    Scm_HasInlnierP(ScmObj obj);

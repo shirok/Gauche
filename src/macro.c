@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.52.2.6 2005-01-14 09:49:14 shirok Exp $
+ *  $Id: macro.c,v 1.52.2.7 2005-01-15 00:40:01 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -41,6 +41,7 @@
 
 
 /*#define DEBUG_SYNRULE*/
+#define USE_NEW_COMPILER
 
 /*===================================================================
  * Syntax object
@@ -233,6 +234,8 @@ ScmObj Scm_MakeMacroAutoload(ScmSymbol *name, ScmAutoload *adata)
     return Scm_MakeMacro(name, macro_autoload, (void*)adata);
 }
 
+#if !defined(USE_NEW_COMPILER)
+
 static ScmObj compile_define_macro(ScmObj form, ScmObj env, int ctx,
                                    void *data)
 {
@@ -285,6 +288,8 @@ static ScmSyntax syntax_define_macro = {
     compile_define_macro,
     NULL
 };
+
+#endif /* !USE_NEW_COMPILER */
 
 /*===================================================================
  * R5RS Macro
@@ -951,6 +956,7 @@ static ScmObj synrule_transform(ScmObj self, ScmObj form, ScmObj env,
     return synrule_expand(form, env, sr);
 }
 
+#if !defined(USE_NEW_COMPILER)
 /*-------------------------------------------------------------------
  * %syntax-rules
  *    Internal macro of syntax-rules.  Taking macro name as the first arg.
@@ -991,6 +997,7 @@ static ScmSyntax syntax_syntax_rules = {
     compile_syntax_rules,
     NULL
 };
+#endif /*!USE_NEW_COMPILER*/
 
 /* NB: a stub for the new compiler (TEMPORARY) */
 ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj literals, ScmObj rules,
@@ -1010,6 +1017,7 @@ ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj literals, ScmObj rules,
  * define-syntax
  */
 
+#if !defined(USE_NEW_COMPILER)
 static ScmObj compile_define_syntax(ScmObj form, ScmObj env, int ctx,
                                     void *data)
 {
@@ -1115,6 +1123,7 @@ static ScmSyntax syntax_letrec_syntax = {
     compile_let_syntax,
     (void*)1
 };
+#endif /* !USE_NEW_COMPILER */
 
 /*===================================================================
  * macro-expand
@@ -1134,7 +1143,11 @@ ScmObj Scm_MacroExpand(ScmObj expr, ScmObj env, int oncep)
             return expr;
         } else {
             mac = NULL;
+#if !defined(USE_NEW_COMPILER)
             sym = Scm_CompileLookupEnv(op, env, TRUE);
+#else  /*USE_NEW_COMPILER*/
+            sym = op;
+#endif /*USE_NEW_COMPILER*/
             if (SCM_MACROP(sym)) {
                 /* local syntactic binding */
                 mac = SCM_MACRO(sym);
@@ -1166,6 +1179,7 @@ ScmObj Scm_CallMacroExpander(ScmMacro *mac, ScmObj expr, ScmObj env)
     return mac->transformer(SCM_OBJ(mac), expr, env, mac->data);
 }
 
+#if !defined(USE_NEW_COMPILER)
 /*
  * To capture locally-bound macros, we need a syntax version of macro-expand.
  * From scheme, this syntax is visible as %macro-expand.
@@ -1192,6 +1206,7 @@ static ScmSyntax syntax_macro_expand_1 = {
     compile_macro_expand,
     (void*)1
 };
+#endif /*!USE_NEW_COMPILER*/
 
 /*===================================================================
  * Initializer
@@ -1199,6 +1214,7 @@ static ScmSyntax syntax_macro_expand_1 = {
 
 void Scm__InitMacro(void)
 {
+#if !defined(USE_NEW_COMPILER)
     ScmModule *n = SCM_MODULE(Scm_NullModule());   /* for r5rs syntax */
     ScmModule *g = SCM_MODULE(Scm_GaucheModule()); /* for gauche syntax */
 
@@ -1214,4 +1230,5 @@ void Scm__InitMacro(void)
     DEFSYN_G(SCM_SYM_DEFINE_MACRO, syntax_define_macro);
     DEFSYN_G(SCM_SYM_MACRO_EXPAND, syntax_macro_expand);
     DEFSYN_G(SCM_SYM_MACRO_EXPAND_1, syntax_macro_expand_1);
+#endif /*!USE_NEW_COMPILER*/
 }

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.100.2.1 2004-12-24 21:25:57 shirok Exp $
+;;;  $Id: genstub,v 1.100.2.2 2005-01-15 00:40:01 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -860,15 +860,15 @@
                  (process-assert cproc (cadr form))
                  (loop next))
                 ((eq? (car form) 'inliner)
-                 (unless (pair? (cdr form))
-                   (error "bad `inliner' spec:" form))
-                 (if (and (pair? (cadr form))
-                          (eq? (caadr form) 'proc))
-                     (if (not (string? (cadadr form)))
-                         (error "inliner procedure name must be a string:"
-                                form)
-                         (set! (inliner-of cproc) (cadadr form)))
-                     (set! (inline-insn-of cproc) (cadr form)))
+;                 (unless (pair? (cdr form))
+;                   (error "bad `inliner' spec:" form))
+;                 (if (and (pair? (cadr form))
+;                          (eq? (caadr form) 'proc))
+;                     (if (not (string? (cadadr form)))
+;                         (error "inliner procedure name must be a string:"
+;                                form)
+;                         (set! (inliner-of cproc) (cadadr form)))
+;                     (set! (inline-insn-of cproc) (cadr form)))
                  (loop next))
                 ((eq? (car form) 'setter)
                  (unless (pair? (cdr form))

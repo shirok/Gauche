@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.121.2.13 2005-01-14 09:49:14 shirok Exp $
+ *  $Id: compile.c,v 1.121.2.14 2005-01-15 00:40:01 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -41,8 +41,12 @@
 #include "gauche/class.h"
 #include "gauche/builtin-syms.h"
 
+
+#define USE_NEW_COMPILER
+
 /* constructor definition comes below */
 
+#if !defined(USE_NEW_COMPILER)
 /* global id to be inserted during transformation.
    initialized by Init routine. */
 static ScmObj id_lambda = SCM_UNBOUND;
@@ -50,13 +54,14 @@ static ScmObj id_if     = SCM_UNBOUND;
 static ScmObj id_begin  = SCM_UNBOUND;
 static ScmObj id_letrec = SCM_UNBOUND;
 static ScmObj id_asm    = SCM_UNBOUND;
+#endif /* !USE_NEW_COMPILER */
 
 /*
  * Syntax
  */
 
 /* Temporary: to expose syntax to the new compiler */
-ScmObj Scm_CallSyntaxCompiler(ScmObj syn, ScmObj form, ScmObj env, int ctx)
+ScmObj Scm_CallSyntaxCompiler(ScmObj syn, ScmObj form, ScmObj env)
 {
     ScmCompileProc cmpl;
     void *data;
@@ -66,8 +71,10 @@ ScmObj Scm_CallSyntaxCompiler(ScmObj syn, ScmObj form, ScmObj env, int ctx)
     }
     cmpl = SCM_SYNTAX(syn)->compiler;
     data = SCM_SYNTAX(syn)->data;
-    return cmpl(form, env, ctx, data);
+    return cmpl(form, env, 0, data);
 }
+
+#if !defined(USE_NEW_COMPILER)
 
 /* Conventions of internal functions
  *
@@ -299,8 +306,7 @@ enum {
  *   called recursively from inside of the compiler.
  */
 static ScmObj compile_in_module(ScmObj, ScmModule*);
-
-#define USE_NEW_COMPILER
+#endif /* !USE_NEW_COMPILER */
 
 #ifdef USE_NEW_COMPILER
 static ScmGloc *compile_gloc = NULL;
@@ -353,6 +359,7 @@ ScmObj Scm_Compile(ScmObj program, ScmObj env)
 #endif /* USE_NEW_COMPILER */
 }
 
+#if !defined(USE_NEW_COMPILER)
 /* When compiling with other module, make sure the current module
    is restored after compilation. */
 static ScmObj compile_in_module(ScmObj program, ScmModule* nmodule)
@@ -467,6 +474,7 @@ static ScmObj lookup_env(ScmObj var, ScmObj env, int op)
         return var;
     }
 }
+#endif /*!USE_NEW_COMPILER*/
 
 static ScmObj get_binding_frame(ScmObj var, ScmObj env)
 {
@@ -494,6 +502,7 @@ static ScmObj get_binding_frame(ScmObj var, ScmObj env)
     return SCM_NIL;
 }
 
+#if !defined(USE_NEW_COMPILER)
 /* Given symbol or identifier, try to find its global binding.
    Returns GLOC if found, or NULL otherwise. */
 static ScmGloc *find_identifier_binding(ScmVM *vm, ScmObj sym_or_id)
@@ -529,6 +538,7 @@ ScmObj Scm_CompileLookupEnv(ScmObj sym, ScmObj env, int op)
 {
     return lookup_env(sym, env, op);
 }
+#endif /*!USE_NEW_COMPILER*/
 
 /*-------------------------------------------------------------
  * Syntactic closure object
@@ -616,12 +626,14 @@ int Scm_IdentifierBindingEqv(ScmIdentifier *id, ScmSymbol *sym, ScmObj env)
     return (bf == id->env);
 }
 
+#if !defined(USE_NEW_COMPILER)
 /* returns true if variable VAR (symbol or identifier) is free and equal
    to symbol SYM */
 int Scm_FreeVariableEqv(ScmObj var, ScmObj sym, ScmObj env)
 {
     return global_eq(var, sym, env);
 }
+#endif /*!USE_NEW_COMPILER*/
 
 ScmObj Scm_CopyIdentifier(ScmIdentifier *orig)
 {
@@ -633,6 +645,7 @@ ScmObj Scm_CopyIdentifier(ScmIdentifier *orig)
     return SCM_OBJ(id);
 }
 
+#if !defined(USE_NEW_COMPILER)
 /* used in compile_define.  var may be a symbol or an identifier. */
 static ScmObj ensure_identifier(ScmObj var, ScmObj env, ScmModule *mod)
 {
@@ -649,6 +662,7 @@ static ScmObj ensure_identifier(ScmObj var, ScmObj env, ScmModule *mod)
         return var;
     }
 }
+#endif /* !USE_NEW_COMPILER */
 
 static ScmObj identifier_name_get(ScmObj obj)
 {
@@ -700,9 +714,10 @@ static ScmClassStaticSlotSpec identifier_slots[] = {
  * Compiler main body
  */
 
+#if !defined(USE_NEW_COMPILER)
+
 static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
 {
-#if !defined(USE_NEW_COMPILER)
     ScmObj code = SCM_NIL, codetail = SCM_NIL, callinsn;
     ScmVM *vm = Scm_VM();
 
@@ -807,9 +822,6 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
         if (ctx == SCM_COMPILE_STMT) return SCM_NIL;
         else return SCM_LIST1(form);
     }
-#else   /*!USE_NEW_COMPILER*/
-    Scm_Error("compile_int is called!");
-#endif  /*!USE_NEW_COMPILER*/
 }
 
 /* obj may be a symbol or an identifier */
@@ -945,6 +957,7 @@ static ScmSyntax syntax_define_in_module = {
 /*------------------------------------------------------------------
  * QUOTE
  */
+#endif /* !USE_NEW_COMPILER */
 
 /* Convert all identifiers in form into a symbol.
    Avoid extra allocation as much as possible. */
@@ -985,6 +998,7 @@ ScmObj Scm_UnwrapSyntax(ScmObj form)
     return form;
 }
 
+#if !defined(USE_NEW_COMPILER)
 static ScmObj compile_quote(ScmObj form, ScmObj env, int ctx,
                             void *data)
 {
@@ -2325,6 +2339,8 @@ ScmObj Scm_CallProcedureInliner(ScmObj obj, ScmObj form, ScmObj env)
     data = SCM_PROCEDURE_INLINER(obj)->data;
     return trns(obj, form, env, data);
 }
+#endif /* !USE_NEW_COMPILER */
+
 
 /*===================================================================
  * Initializer
@@ -2340,6 +2356,7 @@ void Scm__InitCompiler(void)
 #define DEFSYN_G(symbol, syntax) \
     Scm_Define(g, SCM_SYMBOL(symbol), SCM_OBJ(&syntax))
 
+#if !defined(USE_NEW_COMPILER)
     DEFSYN_N(SCM_SYM_DEFINE,       syntax_define);
     DEFSYN_G(SCM_SYM_DEFINE_CONSTANT,  syntax_define_constant);
     DEFSYN_G(SCM_SYM_DEFINE_IN_MODULE, syntax_define_in_module);
@@ -2370,17 +2387,20 @@ void Scm__InitCompiler(void)
     DEFSYN_G(SCM_SYM_IMPORT,       syntax_import);
     DEFSYN_G(SCM_SYM_EXPORT,       syntax_export);
     DEFSYN_G(SCM_SYM_ASM,          syntax_asm);
+#endif /*!USE_NEW_COMPILER*/
 
     Scm_InitStaticClass(SCM_CLASS_SYNTACTIC_CLOSURE, "<syntactic-closure>", g,
                         synclo_slots, 0);
     Scm_InitStaticClass(SCM_CLASS_IDENTIFIER, "<identifier>", g,
                         identifier_slots, 0);
 
+#if !defined(USE_NEW_COMPILER)
     id_lambda = Scm_MakeIdentifier(SCM_SYMBOL(SCM_SYM_LAMBDA), SCM_NIL);
     id_if = Scm_MakeIdentifier(SCM_SYMBOL(SCM_SYM_IF), SCM_NIL);
     id_begin = Scm_MakeIdentifier(SCM_SYMBOL(SCM_SYM_BEGIN), SCM_NIL);
     id_letrec = Scm_MakeIdentifier(SCM_SYMBOL(SCM_SYM_LETREC), SCM_NIL);
     id_asm = Scm_MakeIdentifier(SCM_SYMBOL(SCM_SYM_ASM), SCM_NIL);
     SCM_IDENTIFIER(id_asm)->module = Scm_GaucheModule(); /* hack */
+#endif /*!USE_NEW_COMPILER */
 }
 

@@ -1,3 +1,10 @@
+2005-01-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.c, src/vm.c, src/comp.scm, etc: snapshot of replacing
+	  the legacy compiler for the new compiler.  Legacy code is #ifdef-ed
+	  out.  Procedure inlining is not supported, but other functionalities
+	  work.
+
 2005-01-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c, src/gauche/vm.h (ScmSyntacticClosure): Added syntactic

@@ -1,6 +1,6 @@
 ;;
 ;; A compiler.
-;;  $Id: comp.scm,v 1.1.2.22 2005-01-14 09:49:14 shirok Exp $
+;;  $Id: comp.scm,v 1.1.2.23 2005-01-15 00:40:01 shirok Exp $
 
 (define-module gauche.internal
   (use srfi-2)
@@ -219,7 +219,7 @@
          ((is-a? gval <macro>)
           (pass1 (call-macro-expander gval program (cenv-frames cenv)) cenv))
          ((is-a? gval <syntax>)
-          ((get-pass1-syntax gval) program cenv))
+          (call-syntax-compiler gval program cenv))
          (else
           (pass1/call program `($gref ,id) (cdr program) cenv)))))))
 
@@ -369,11 +369,13 @@
 
 (define *pass1-syntax-alist* '())
 
-(define-macro (define-pass1-syntax formals . body)
-  `(set! *pass1-syntax-alist*
-         (acons ,(car formals)
-                (lambda ,(cdr formals) ,@body)
-                *pass1-syntax-alist*)))
+(define-macro (define-pass1-syntax formals module . body)
+  (let1 mod (case module
+              ((:null)   'null)
+              ((:gauche) 'gauche))
+    `(%insert-binding (find-module ',mod) ',(car formals)
+                      (make-syntax ',(car formals)
+                                   (lambda ,(cdr formals) ,@body)))))
 
 (define (global-id id)
   (make-identifier id '() (find-module 'gauche)))
@@ -396,13 +398,13 @@
                ,(pass1 expr cenv)))
     (else (error "syntax-error:" oform))))
 
-(define-pass1-syntax (define form cenv)
+(define-pass1-syntax (define form cenv) :null
   (pass1/define form form '() (cenv-module cenv) cenv))
 
-(define-pass1-syntax (define-constant form cenv)
+(define-pass1-syntax (define-constant form cenv) :gauche
   (pass1/define form form '(const) (cenv-module cenv) cenv))
 
-(define-pass1-syntax (define-in-module form cenv)
+(define-pass1-syntax (define-in-module form cenv) :gauche
   (match form
     ((_ module . rest)
      (pass1/define `(_ . ,rest) form '()
@@ -427,13 +429,13 @@
        ($const-undef)))
     (else (error "syntax-error:" oform))))
 
-(define-pass1-syntax (define-macro form cenv)
+(define-pass1-syntax (define-macro form cenv) :gauche
   (unless (cenv-toplevel? cenv)
     (error "syntax-error: non-toplevel define-macro is not allowed:" form))
   (pass1/define-macro form form (cenv-module cenv) cenv))
 
 
-(define-pass1-syntax (define-syntax form cenv)
+(define-pass1-syntax (define-syntax form cenv) :null
   (unless (cenv-toplevel? cenv)
     (error "syntax-error: non-toplevel define-syntax is not allowed:" oform))
   ;; Temporary: we use the old compiler's syntax-rules implementation
@@ -449,17 +451,17 @@
 
 ;; Macros ...........................................
 
-(define-pass1-syntax (%macroexpand form cenv)
+(define-pass1-syntax (%macroexpand form cenv) :gauche
   (match form
     ((_ expr) `($const ,(%internal-macro-expand expr (cenv-frames cenv) #f)))
     (else "syntax-error: malformed %macroexpand:" form)))
 
-(define-pass1-syntax (%macroexpand-1 form cenv)
+(define-pass1-syntax (%macroexpand-1 form cenv) :gauche
   (match form
     ((_ expr) `($const ,(%internal-macro-expand expr (cenv-frames cenv) #t)))
     (else "syntax-error: malformed %macroexpand-1:" form)))
 
-(define-pass1-syntax (let-syntax form cenv)
+(define-pass1-syntax (let-syntax form cenv) :null
   (match form
     ((_ ((name trans-spec) ...) body ...)
      (let* ((trans (map (lambda (n spec)
@@ -475,7 +477,7 @@
        (pass1/body body body newenv)))
     (else "syntax-error: malformed let-syntax:" form)))
 
-(define-pass1-syntax (letrec-syntax form cenv)
+(define-pass1-syntax (letrec-syntax form cenv) :null
   (match form
     ((_ ((name trans-spec) ...) body ...)
      (let* ((newenv (cenv-extend cenv (map cons name trans-spec) 'syntax))
@@ -494,7 +496,7 @@
 
 ;; If family ........................................
 
-(define-pass1-syntax (if form cenv)
+(define-pass1-syntax (if form cenv) :null
   (match form
     ((_ test then else)
      `($if ,form ,(pass1 test cenv) ,(pass1 then cenv) ,(pass1 else cenv)))
@@ -503,7 +505,7 @@
     (else
      (error "syntax-error: malformed if:" form))))
 
-(define-pass1-syntax (and form cenv)
+(define-pass1-syntax (and form cenv) :null
   (define (rec exprs)
     (match exprs
       (() '($const #t))
@@ -514,7 +516,7 @@
        (error "syntax-error: malformed and:" form))))
   (rec (cdr form)))
 
-(define-pass1-syntax (or form cenv)
+(define-pass1-syntax (or form cenv) :null
   (define (rec exprs)
     (match exprs
       (() '($const #f))
@@ -525,7 +527,7 @@
        (error "syntax-error: malformed or:" form))))
   (rec (cdr form)))
 
-(define-pass1-syntax (when form cenv)
+(define-pass1-syntax (when form cenv) :gauche
   (match form
     ((_ test body ...)
      `($if ,form ,(pass1 test cenv)
@@ -534,7 +536,7 @@
     (else
      (error "syntax-error: malformed when:" form))))
 
-(define-pass1-syntax (unless form cenv)
+(define-pass1-syntax (unless form cenv) :gauche
   (match form
     ((_ test body ...)
      `($if ,form ,(pass1 test cenv)
@@ -543,7 +545,7 @@
     (else
      (error "syntax-error: malformed unless:" form))))
 
-(define-pass1-syntax (cond form cenv)
+(define-pass1-syntax (cond form cenv) :null
   (define (process-clauses cls)
     (match cls
       (() ($const-undef))
@@ -580,7 +582,7 @@
     (else
      (error "syntax-error: malformed cond:" form))))
 
-(define-pass1-syntax (case form cenv)
+(define-pass1-syntax (case form cenv) :null
   (define (process-clauses tmpvar cls)
     (match cls
       (() ($const-undef))
@@ -613,12 +615,12 @@
 (define (pass1/quote obj)
   `($const ,(%unwrap-syntax obj)))
 
-(define-pass1-syntax (quote form cenv)
+(define-pass1-syntax (quote form cenv) :null
   (match form
     ((_ obj) (pass1/quote obj))
     (else (error "syntax-error: malformed quote:" form))))
 
-(define-pass1-syntax (quasiquote form cenv)
+(define-pass1-syntax (quasiquote form cenv) :null
   (define (wrap obj orig)
     (if (eq? obj orig) `($const ,obj) obj))
   (define (quasi obj level)
@@ -698,15 +700,15 @@
      (let1 v (quasi obj 0) (wrap v obj)))
     (else (error "syntax-error: malformed quasiquote:" form))))
 
-(define-pass1-syntax (unquote form cenv)
+(define-pass1-syntax (unquote form cenv) :null
   (error "unquote appeared outside quasiquote:" form))
 
-(define-pass1-syntax (unquote-splicing form cenv)
+(define-pass1-syntax (unquote-splicing form cenv) :null
   (error "unquote-splicing appeared outside quasiquote:" form))
 
 ;; Lambda family (binding constructs) ...................
 
-(define-pass1-syntax (lambda form cenv)
+(define-pass1-syntax (lambda form cenv) :null
   (match form
     ((_ formals . body)
      (receive (args reqargs optarg) (parse-lambda-args formals)
@@ -717,7 +719,7 @@
     (else
      (error "syntax-error: malformed lambda:" form))))
 
-(define-pass1-syntax (receive form cenv)
+(define-pass1-syntax (receive form cenv) :gauche
   (match form
     ((_ formals expr body ...)
      (receive (args reqargs optarg) (parse-lambda-args formals)
@@ -729,7 +731,7 @@
     (else
      (error "syntax-error: malformed receive:" form))))
 
-(define-pass1-syntax (let form cenv)
+(define-pass1-syntax (let form cenv) :null
   (match form
     ((_ () body ...)
      (pass1/body body form cenv))
@@ -757,7 +759,7 @@
     (else
      (error "syntax-error: malformed let:" form))))
 
-(define-pass1-syntax (let* form cenv)
+(define-pass1-syntax (let* form cenv) :null
   (match form
     ((_ ((var expr) ...) body ...)
      (let loop ((vars var) (inits expr) (cenv cenv))
@@ -770,7 +772,7 @@
     (else
      (error "syntax-error: malformed let*:" form))))
 
-(define-pass1-syntax (letrec form cenv)
+(define-pass1-syntax (letrec form cenv) :null
   (match form
     ((_ () body ...)
      (pass1/body body form cenv))
@@ -785,7 +787,7 @@
     (else
      (error "syntax-error: malformed letrec:" form))))
 
-(define-pass1-syntax (do form cenv)
+(define-pass1-syntax (do form cenv) :null
   (match form
     ((_ ((var init . update) ...) (test expr ...) body ...)
      (let* ((tmp  (make-lvar 'do-proc))
@@ -823,7 +825,7 @@
 
 ;; Set! ......................................................
 
-(define-pass1-syntax (set! form cenv)
+(define-pass1-syntax (set! form cenv) :null
   (match form
     ((_ (op . args) expr)
      `($call ,form
@@ -845,12 +847,12 @@
 
 ;; Begin .....................................................
 
-(define-pass1-syntax (begin form cenv)
+(define-pass1-syntax (begin form cenv) :null
   `($seq ,@(map (cut pass1 <> cenv) (cdr form))))
 
 ;; Delay .....................................................
 
-(define-pass1-syntax (delay form cenv)
+(define-pass1-syntax (delay form cenv) :null
   (match form
     ((_ expr)
      `($promise ,form ,(pass1 `(,(global-id 'lambda) () ,expr) cenv)))
@@ -858,7 +860,7 @@
 
 ;; Module related ............................................
 
-(define-pass1-syntax (define-module form cenv)
+(define-pass1-syntax (define-module form cenv) :gauche
   (unless (cenv-toplevel? cenv)
     (error "define-module should be used only in the toplevel"))
   (match form
@@ -872,7 +874,7 @@
     (else
      (error "syntax-error: malformed define-module:" form))))
 
-(define-pass1-syntax (with-module form cenv)
+(define-pass1-syntax (with-module form cenv) :gauche
   (match form
     ((_ name body ...)
      (let* ((mod (ensure-module name 'with-module #f))
@@ -884,7 +886,7 @@
     (else
      (error "syntax-error: malformed with-module:" form))))
 
-(define-pass1-syntax (select-module form cenv)
+(define-pass1-syntax (select-module form cenv) :gauche
   (unless (cenv-toplevel? cenv)
     (error "select-module should be used only in the toplevel"))
   (match form
@@ -893,23 +895,16 @@
      ($const-undef))
     (else (error "syntax-error: malformed select-module:" form))))
 
-(define-pass1-syntax (current-module form cenv)
+(define-pass1-syntax (current-module form cenv) :gauche
   (unless (null? (cdr form))
     (error "syntax-error: malformed current-module:" form))
   `($const ,(cenv-module cenv)))
 
-(define-pass1-syntax (export form cenv)
+(define-pass1-syntax (export form cenv) :gauche
   `($const ,(%export-symbols (cenv-module cenv) (cdr form))))
 
-(define-pass1-syntax (import form cenv)
+(define-pass1-syntax (import form cenv) :gauche
   `($const ,(%import-modules (cenv-module cenv) (cdr form))))
-
-;; Bridge to dispatch new compiler pass-1 syntax handler based on
-;; original binding
-
-(define (get-pass1-syntax val)
-  (cond ((assq val *pass1-syntax-alist*) => cdr)
-        (else (error "pass1 syntax not supported:" val))))
 
 ;;------------------------------------------------------------
 ;; Pass 2.  Optimization
@@ -1311,18 +1306,4 @@
 ;;
 
 (define (init-compiler)
-  ;; Injects syntax objects into basic modules.
-;  (define (inject module name comp)
-;    (%insert-binding module name comp))
-
-;  (let ((N (find-module 'null))
-;        (G (find-module 'gauche)))
-    
-;    (inject N 'if              if@)
-;    (inject G 'when            when@)
-;    (inject G 'unless          unless@)
-;    (inject N 'and             and@)
-;    (inject N 'or              or@)
-
-;    (inject N 'begin           begin@)
   #f)
