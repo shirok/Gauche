@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: guess.c,v 1.3 2004-03-14 05:30:37 shirok Exp $
+ *  $Id: guess.c,v 1.4 2004-10-06 09:25:36 shirok Exp $
  */
 
 #include <gauche.h>
@@ -43,20 +43,20 @@ typedef struct guess_arc_rec {
 } guess_arc;
 
 typedef struct guess_dfa_rec {
-    signed char (*states)[][256];
+    signed char (*states)[256];
     guess_arc *arcs;
     int state;
     double score;
 } guess_dfa;
 
 #define DFA_INIT(st, ar) \
-    { &st, ar, 0, 1.0 }
+    { st, ar, 0, 1.0 }
 
 #define DFA_NEXT(dfa, ch)                               \
     do {                                                \
         int arc__;                                      \
         if (dfa.state >= 0) {                           \
-            arc__ = (*dfa.states)[dfa.state][ch];       \
+            arc__ = dfa.states[dfa.state][ch];          \
             if (arc__ < 0) {                            \
                 dfa.state = -1;                         \
             } else {                                    \

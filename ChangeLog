@@ -1,5 +1,7 @@
 2004-10-05  Shiro Kawai  <shiro@acm.org>
 
+	* ext/charconv/guess.c: fixed initializer type mismatch.
+
 	* lib/rfc/822.scm (rfc822-parse-date) : fix off-by-one error of
 	  return value of month.
 	* test/rfc.scm : ditto
