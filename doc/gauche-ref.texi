@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.111 2001-10-31 11:35:19 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.112 2001-10-31 20:31:55 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -7150,11 +7150,17 @@ An abstract class for dbm-style database.  Defindes the common
 database operations.   This class has the following instance slots.
 They must be set before the database is actually opened by
 @code{dbm-open}.
+
+The concrete class may add more slots for finer control on the database,
+such as locking.
 @c JP
 DBM系のデータベースのための抽象クラスです。データベースへの共通のオペレーションを
 定義します。以下のインスタンススロットを持ちます。これらのスロットの値は
 @code{dbm-open}によってデータベースがオープンされる前にセットされて
 いなければなりません。
+
+具体クラスは、データベースの操作をより細かく行うための追加のスロット(例えばロックを
+行うかどうか)を持つかもしれません。
 @c COMMON
 
 @defivar <dbm> path
@@ -7288,69 +7294,138 @@ DBMインスタンスを作成してオープンするための便利なメソッドです。
 @end example
 @end deffn
 
+@c EN
 Database file is closed when it is garbage collected.
 However, to ensure the modification is properly synchornized,
 you should close the database explicitly.
+@c JP
+データベースファイルはガベージコレクトされる際にクローズされますが、
+変更を正しくデータベースに反映するには、明示的にクローズした方が良いでしょう。
+@c COMMON
 
 @deffn {Method} dbm-close (dbm @code{<dbm>})
+@c EN
 Closes a database @var{dbm}.  Once the database is closed, any
 operation to access the database content raises an error.
+@c JP
+データベース@var{dbm}をクローズします。データベースがクローズされると、
+それ以降のアクセスオペレーションはエラーとなります。
+@c COMMON
 @end deffn
 
 @deffn {Method} dbm-closed? (dbm @code{<dbm>})
+@c EN
 Returns true if a database @var{dbm} is already closed, false otherwise.
+@c JP
+データベース@var{dbm}が既にクローズされていたら@code{#t}を返します。
+@c COMMON
 @end deffn
 
 @node Accessing a dbm database, Iterating on a database, Opening and closing a dbm database, Generic DBM interface
 @subsection Accessing a dbm database
+@c NODE DBMデータベースのアクセス
 
+@c EN
 Once a database is opened, you can use the following methods
 to access individual key/value pairs.
+@c JP
+データベースがオープンされたら、以下のアクセスメソッドが使えます。
+@c COMMON
 
 @deffn {Method} dbm-put! (dbm @code{<dbm>}) key value
+@c EN
 Put a @var{value} with @var{key}.
+@c JP
+値@var{value}をキー@var{key}と関連付けて保存します。
+@c COMMON
 @end deffn
 
 @deffn {Method} dbm-get (dbm @code{<dbm>}) key &optional default
+@c EN
 Get a value associated with @var{key}.  If no value exists for @var{key}
 and @var{default} is specified, it is returned.  If no value exists for
 @var{key} and @var{default} is not specified, an error is signalled.
+@c JP
+キー@var{key}に関連付けられた値を返します。もし値が存在しなければ、@var{default}が
+与えられていればそれを返し、そうでなければエラーを報告します。
+@c COMMON
 @end deffn
 
 @deffn {Method} dbm-exists? (dbm @code{<dbm>}) key
+@c EN
 Return true if a value exists for @var{key}, false otherwise.
+@c JP
+キー@var{key}に関連付けられた値が存在すれば@code{#t}を返します。
+@c COMMON
 @end deffn
 
 @deffn {Method} dbm-delete! (dbm @code{<dbm>}) key
+@c EN
 Delete a value associated with @var{key}.  
+@c JP
+キー@var{key}に関連付けられた値を消去します。値が存在しない場合は何もしません。
+@c COMMON
 @end deffn
 
 
 @node Iterating on a database,  , Accessing a dbm database, Generic DBM interface
 @subsection Iterating on a dbm database
+@c NODE DBMデータベース上の繰り返し処理
 
+@c EN
 To walk over the entire database, following methos are provided.
+@c JP
+全データベースを渡り歩く処理のために、以下のメソッドが用意されています。
+@c COMMON
 
 @deffn {Method} dbm-fold (dbm @code{<dbm>}) procedure knil
+@c EN
 The basic iterator.
 For each key/value pair, @var{procedure} is called as
-@code{(@var{procedure} @var{key} @var{value} @code{r})},
+@code{(@var{procedure} @var{key} @var{value} @var{r})},
 where @var{r} is @var{knil} for the fist call of @var{procedure},
 and the return value of the previous call for subsequent calls.
 Returns the result of the last call of @var{procedure}.
+If no data is in the database, @var{knil} is returned.
+
+The following method returns the sum of all the integer values.
+@c JP
+基本的な繰り返し処理です。データベース内の各キー／値のペアに関して、手続き
+@var{procedure}が @code{(@var{procedure} @var{key} @var{value} @var{r})},
+のように呼ばれます。ここで@var{r}は、最初の@var{procedure}の呼び出しの時には@var{knil}
+が、以降の呼び出しの時にはその直前の@var{procedure}が返した値が渡されます。
+最後の@var{procedure}の戻り値が@code{dbm-fold}の戻り値となります。
+データベース中にデータがひとつもなければ@var{knil}がそのまま返されます。
+
+次の例は、データベース中の整数の値を全て加算します。
+@c COMMON
+@example
+(dbm-fold dbm (lambda (k v r) (if (integer? v) (+ v r) r) 0))
+@end example
 @end deffn
 
 @deffn {Method} dbm-for-each (dbm @code{<dbm>}) procedure
+@c EN
 For each key/value pair in the database @var{dbm}, @var{procedure}
 is called.  Two arguments are passed to @var{procedure}---a key and
 a value.   The result of @var{procedure} is discarded.
+@c JP
+データベース内の各キー／値のペアに関して、手続き@var{procedure}を呼び出します。
+@var{procedure}にはキーと値が渡されます。@var{procedure}の戻り値は捨てられます。
+@c COMMON
 @end deffn
 
 @deffn {Method} dbm-map (dbm @code{<dbm>}) procedure
+@c EN
 For each key/value pair in the database @var{dbm}, @var{procedure}
 is called.  Two arguments are passed to @var{procedure}---a key and
 a value.   The result of @var{procedure} is accumulated to a list
 which is returned as a result of @code{dbm-map}.
+@c JP
+データベース内の各キー／値のペアに関して、手続き@var{procedure}を呼び出します。
+@var{procedure}にはキーと値が渡されます。@var{procedure}の戻り値はリストに
+集められて@code{dbm-map}の戻り値となります。
+@c COMMON
 @end deffn
 
 
@@ -7370,8 +7445,19 @@ which is returned as a result of @code{dbm-map}.
 @node GDBM-specific options, GDBM low-level, GDBM interface, GDBM interface
 @subsection GDBM-specific options
 
-The GDBM module defines a class @code{<gdbm>}.
+@deftp {Class} <gdbm>
+@clindex gdbm
+Inherits @code{<dbm>}.  Provides an implementation for GDBM library.
+This module is only installed when your system already has GDBM
+(1.8.0 is preferred, but works with older 1.7.x with some limitations).
 
+@defivar <gdbm> sync
+@end defivar
+@defivar <gdbm> nolock
+@end defivar
+@defivar <gdbm> bsize
+@end defivar
+@end deftp
 
 
 @node GDBM low-level,  , GDBM-specific options, GDBM interface
@@ -7497,6 +7583,12 @@ See gdbm manpage for
 @node NDBM-specific options, NDBM low-level, NDBM interface, NDBM interface
 @subsection NDBM-specific options
 
+@deftp {Class} <ndbm>
+@clindex ndbm
+Inherits @code{<dbm>}.  Provides an implementation for NDBM library.
+This module is only installed when your system already has NDBM.
+@end deftp
+
 @node NDBM low-level,  , NDBM-specific options, NDBM interface
 @subsection NDBM low-level interface
 
@@ -7547,6 +7639,18 @@ See gdbm manpage for
 
 @node DBM-specific options, DBM low-level, Original DBM interface, Original DBM interface
 @subsection DBM-specific options
+
+@deftp {Class} <odbm>
+@clindex odbm
+Inherits @code{<dbm>}.  Provides an implementation for legacy DBM
+library.
+This module is only installed when your system already has DBM.
+
+The biggest limitation of the legacy DBM is that you can only open
+one database at a time.  You can create a multiple @code{<odbm>}
+instances, but you can open at most one of it at a time, or
+you'll get an error.
+@end deftp
 
 @node DBM low-level,  , DBM-specific options, Original DBM interface
 @subsection DBM low-level interface
