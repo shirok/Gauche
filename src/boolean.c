@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: boolean.c,v 1.20 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: boolean.c,v 1.21 2003-12-16 20:05:29 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -98,6 +98,25 @@ int Scm_EqualP(ScmObj x, ScmObj y)
         }
         return FALSE;
     }
+    /* EXPERIMENTAL: when identifier is compared by equal?,
+       we use its symbolic name to compare.  This allows
+       comparing macro output with equal?, and also less confusing
+       when R5RS macro and legacy macro are mixed.
+       For "proper" comparison of identifiers keeping their semantics,
+       we need such procedures as free-identifier=? and bound-identifier=?
+       anyway, so this change of equal? won't have a negative impact, I hope.
+
+       NB: this operation come here instead of the beginning of this
+       procedure, since comparing identifiers are relatively rare so
+       we don't want to check idnetifier-ness every time.
+    */
+    if (SCM_IDENTIFIERP(x) || SCM_IDENTIFIERP(y)) {
+        if (SCM_IDENTIFIERP(x)) x = SCM_OBJ(SCM_IDENTIFIER(x)->name);
+        if (SCM_IDENTIFIERP(y)) y = SCM_OBJ(SCM_IDENTIFIER(y)->name);
+        return SCM_EQ(x, y);
+    }
+    /* End of EXPERIMENTAL code */
+
     if (!SCM_PTRP(x)) return (x == y);
     cx = Scm_ClassOf(x);
     cy = Scm_ClassOf(y);

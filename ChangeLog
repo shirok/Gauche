@@ -1,3 +1,8 @@
+2003-12-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/boolean.c (Scm_EqualP): Experimentally put code that compares
+	  identifiers by name in equal?.  See the comment in the source.
+
 2003-12-15  Shiro Kawai  <shiro@acm.org>
 
 	* Makefile.in (install-pkg): fix aclocal.m4 installation directory;

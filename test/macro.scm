@@ -524,6 +524,17 @@
       (lambda () ((mdm-bar-m3 z (+ z 1)) 4)))
 
 ;;----------------------------------------------------------------------
+;; identifier comparison
+
+;; This is EXPERIMENTAL: may be changed in later release.
+
+(define-syntax hoge (syntax-rules () ((hoge foo ...) (cdr b))))
+(test "comparison of identifiers" '(cdr b)
+      (lambda () (macroexpand '(hoge bar))))
+(test "comparison of identifiers" (macroexpand '(hoge bar))
+      (lambda () (macroexpand '(hoge bar))))
+
+;;----------------------------------------------------------------------
 ;; common-macros
 
 (test-section "common-macros utilities")
