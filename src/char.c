@@ -12,9 +12,10 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.13 2001-04-20 08:32:06 shiro Exp $
+ *  $Id: char.c,v 1.14 2001-04-22 07:30:41 shiro Exp $
  */
 
+#include <ctype.h>
 #include "gauche.h"
 
 /*=======================================================================
@@ -192,9 +193,9 @@ static struct ScmCharSetRange *newrange(int lo, int hi,
 ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to)
 {
     int i;
-    struct ScmCharSetRange *lo, *lop, *hi, *hip, *n;
+    struct ScmCharSetRange *lo, *lop, *hi, *hip;
     
-    if (to < from) return;
+    if (to < from) return SCM_OBJ(cs);
     if (from < SCM_CHARSET_MASK_CHARS) {
         if (to < SCM_CHARSET_MASK_CHARS) {
             for (i=from; i<=to; i++) MASK_SET(cs, i);
@@ -392,8 +393,7 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p, int error_p)
     ScmCharSet *set = SCM_CHARSET(Scm_MakeEmptyCharSet());
     ScmObj moreset;
     ScmObj chars = SCM_NIL;
-    ScmChar ch;
-    char *errstr = "";
+    ScmChar ch = 0;
 
     for (;;) {
         SCM_GETC(ch, input);
@@ -537,7 +537,7 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p, int error_p)
 /* !!!MT WARNING!!! */
 static ScmCharSet *predef_charsets[SCM_CHARSET_NUM_PREDEFINED_SETS];
 
-static install_charsets(void)
+static void install_charsets(void)
 {
     int i, code;
 #define CS(n)  predef_charsets[n]

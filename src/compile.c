@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.49 2001-04-09 13:01:55 shiro Exp $
+ *  $Id: compile.c,v 1.50 2001-04-22 07:29:54 shiro Exp $
  */
 
 #include "gauche.h"
@@ -346,7 +346,7 @@ ScmObj Scm_CopyIdentifier(ScmIdentifier *orig)
 
 static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
 {
-    ScmObj code = SCM_NIL, codetail;
+    ScmObj code = SCM_NIL, codetail = SCM_NIL;
     ScmVM *vm = Scm_VM();
 
     if (SCM_PAIRP(form)) {
@@ -356,7 +356,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
 
         if (VAR_P(head)) {
             ScmObj var = lookup_env(head, env, TRUE);
-            ScmSymbol *sym;
+            ScmSymbol *sym = NULL;
             ScmGloc *g;
 
             if (SCM_VM_INSNP(var)) {
@@ -371,7 +371,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                 /* it's a global variable.   Let's see if the symbol is
                    bound to a global syntax, or an inlinable procedure
                    in the current module. */
-                ScmModule *mod;
+                ScmModule *mod = NULL;
 
                 if (SCM_IDENTIFIERP(var)) {
                     sym = SCM_IDENTIFIER(var)->name;
@@ -449,7 +449,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
 /* obj may be a symbol or an identifier */
 static ScmObj compile_varref(ScmObj obj, ScmObj env)
 {
-    ScmObj loc, code = SCM_NIL, codetail;
+    ScmObj loc, code = SCM_NIL, codetail = SCM_NIL;
 
     loc = lookup_env(obj, env, FALSE);
     if (VAR_P(loc)) {
@@ -483,7 +483,7 @@ static ScmObj compile_define(ScmObj form,
                              int ctx,
                              void *data)
 {
-    ScmObj var, val, tail = SCM_CDR(form), code = SCM_NIL, codetail;
+    ScmObj var, val, tail = SCM_CDR(form), code = SCM_NIL, codetail = SCM_NIL;
     if (!SCM_PAIRP(tail)) Scm_Error("syntax error: %S", form);
     var = SCM_CAR(tail);
 
@@ -585,7 +585,7 @@ static ScmObj compile_set(ScmObj form,
 {
     ScmObj tail = SCM_CDR(form);
     ScmObj location, expr;
-    ScmObj code = SCM_NIL, codetail;
+    ScmObj code = SCM_NIL, codetail = SCM_NIL;
 
     if (!LIST2_P(tail)) Scm_Error("syntax error: %S", form);
     location = SCM_CAR(tail);
@@ -648,9 +648,9 @@ static ScmObj compile_body(ScmObj form,
                            ScmObj env,
                            int ctx)
 {
-    ScmObj body = SCM_NIL, bodytail, formtail;
-    ScmObj idef_vars = SCM_NIL, idef_vars_tail;
-    ScmObj idef_vals = SCM_NIL, idef_vals_tail;
+    ScmObj body = SCM_NIL, bodytail = SCM_NIL, formtail = SCM_NIL;
+    ScmObj idef_vars = SCM_NIL, idef_vars_tail = SCM_NIL;
+    ScmObj idef_vals = SCM_NIL, idef_vals_tail = SCM_NIL;
     int idefs = 0, body_started = 0;
 
     for (formtail = form; SCM_PAIRP(formtail); ) {
@@ -732,7 +732,7 @@ static ScmObj compile_body(ScmObj form,
 static ScmObj compile_lambda_family(ScmObj form, ScmObj args, ScmObj body,
                                     ScmObj env, int ctx)
 {
-    ScmObj newenv, bodycode, code = SCM_NIL, codetail;
+    ScmObj newenv, bodycode, code = SCM_NIL, codetail = SCM_NIL;
     int nargs, restarg;
     
     if (!check_valid_lambda_args(args))
@@ -742,7 +742,7 @@ static ScmObj compile_lambda_family(ScmObj form, ScmObj args, ScmObj body,
 
     /* extend environment */
     {
-        ScmObj a, e = SCM_NIL, t;
+        ScmObj a, e = SCM_NIL, t = SCM_NIL;
         nargs = 0;
         restarg = 0;
         
@@ -801,7 +801,7 @@ static ScmObj compile_begin(ScmObj form,
                             void *data)
 {
     if (TOPLEVEL_ENV_P(env)) {
-        ScmObj code = SCM_NIL, codetail, cp;
+        ScmObj code = SCM_NIL, codetail = SCM_NIL, cp;
         SCM_FOR_EACH(cp, SCM_CDR(form)) {
             ADDCODE(compile_int(SCM_CAR(cp), env,
                                 (SCM_NULLP(SCM_CDR(cp)))?
@@ -847,8 +847,8 @@ static ScmObj compile_if_family(ScmObj test_code, ScmObj then_code,
 static ScmObj compile_if(ScmObj form, ScmObj env, int ctx, void *data)
 {
     ScmObj tail = SCM_CDR(form);
-    ScmObj then_code = SCM_NIL, then_tail;
-    ScmObj else_code = SCM_NIL, else_tail;
+    ScmObj then_code = SCM_NIL, then_tail = SCM_NIL;
+    ScmObj else_code = SCM_NIL, else_tail = SCM_NIL;
     ScmObj merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
     int nargs = Scm_Length(tail);
     
@@ -874,9 +874,9 @@ static ScmSyntax syntax_if = {
 
 static ScmObj compile_when(ScmObj form, ScmObj env, int ctx, void *data)
 {
-    ScmObj tail = SCM_CDR(form), body;
-    ScmObj then_code = SCM_NIL, then_tail;
-    ScmObj else_code = SCM_NIL, else_tail;
+    ScmObj tail = SCM_CDR(form);
+    ScmObj then_code = SCM_NIL, then_tail = SCM_NIL;
+    ScmObj else_code = SCM_NIL, else_tail = SCM_NIL;
     ScmObj merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
     int unlessp = (int)data;
     int nargs = Scm_Length(tail);
@@ -963,8 +963,8 @@ static ScmObj compile_cond_int(ScmObj form, ScmObj clauses, ScmObj merger,
                                ScmObj env, int ctx, int casep)
 {
     ScmObj clause, test, body;
-    ScmObj code = SCM_NIL, codetail;
-    ScmObj altcode = SCM_NIL, altcodetail;
+    ScmObj code = SCM_NIL, codetail = SCM_NIL;
+    ScmObj altcode = SCM_NIL, altcodetail = SCM_NIL;
     int clen;
 
     if (SCM_NULLP(clauses)) {
@@ -1111,7 +1111,7 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
                                  ScmObj env, int ctx)
 {
     ScmObj code = SCM_NIL, codetail;
-    ScmObj cfr = SCM_NIL, cfrtail;  /* current frame */
+    ScmObj cfr = SCM_NIL, cfrtail = SCM_NIL;  /* current frame */
     ScmObj newenv, varp, valp;
     int count = 0;
     ADDCODE1(SCM_VM_INSN1(SCM_VM_LET, nvars));
@@ -1163,7 +1163,7 @@ static ScmObj compile_let(ScmObj form, ScmObj env, int ctx, void *data)
 
     /* Check binding syntax */
     {
-        ScmObj vars_p, vals_p, bind_p;
+        ScmObj vars_p = SCM_NIL, vals_p = SCM_NIL, bind_p;
 
         vars = SCM_NIL;
         vals = SCM_NIL;
@@ -1246,10 +1246,10 @@ static ScmObj compile_do_body(ScmObj body, ScmObj env, int ctx)
     ScmObj updts = SCM_CAR(SCM_CDDR(body)), updtsp;
     ScmObj merger = SCM_LIST1(SCM_VM_INSN(SCM_VM_NOP));
 
-    ScmObj code = SCM_NIL, codetail;
-    ScmObj fincode = SCM_NIL, fintail;
-    ScmObj bodycode = SCM_NIL, bodytail;
-    ScmObj updcode = SCM_NIL, updtail;
+    ScmObj code = SCM_NIL, codetail = SCM_NIL;
+    ScmObj fincode = SCM_NIL, fintail = SCM_NIL;
+    ScmObj bodycode = SCM_NIL, bodytail = SCM_NIL;
+    ScmObj updcode = SCM_NIL, updtail = SCM_NIL;
     int varcnt;
 
     /* Compile body */
@@ -1295,9 +1295,9 @@ static ScmObj compile_do_body(ScmObj body, ScmObj env, int ctx)
 static ScmObj compile_do(ScmObj form, ScmObj env, int ctx, void *data)
 {
     ScmObj binds, test, body, bp;
-    ScmObj vars = SCM_NIL, vars_tail;
-    ScmObj inits = SCM_NIL, inits_tail;
-    ScmObj updts = SCM_NIL, updts_tail;
+    ScmObj vars = SCM_NIL, vars_tail = SCM_NIL;
+    ScmObj inits = SCM_NIL, inits_tail = SCM_NIL;
+    ScmObj updts = SCM_NIL, updts_tail = SCM_NIL;
     int nvars = 0;
     int flen = Scm_Length(form);
     if (flen < 3) Scm_Error("badly formed `do': %S", form);
@@ -1367,7 +1367,7 @@ static ScmObj compile_qq_list(ScmObj form, ScmObj env, int level)
 {
     int len = 0, splice = 0, last_spliced = FALSE;
     ScmObj car = SCM_CAR(form), cp;
-    ScmObj code = SCM_NIL, codetail;
+    ScmObj code = SCM_NIL, codetail = SCM_NIL;
 
     if (UNQUOTEP(car, env)) {
         if (!VALID_QUOTE_SYNTAX_P(form))
@@ -1445,7 +1445,7 @@ static ScmObj compile_qq_list(ScmObj form, ScmObj env, int level)
 
 static ScmObj compile_qq_vec(ScmObj form, ScmObj env, int level)
 {
-    ScmObj code = SCM_NIL, codetail;
+    ScmObj code = SCM_NIL, codetail = SCM_NIL;
     int vlen = SCM_VECTOR_SIZE(form), i, alen = 0;
     int spliced = 0, last_spliced = FALSE;
     for (i=0; i<vlen; i++) {
@@ -1563,7 +1563,7 @@ static ScmSyntax syntax_unquote_splicing = {
 
 static ScmObj compile_delay(ScmObj form, ScmObj env, int ctx, void *data)
 {
-    ScmObj code = SCM_NIL, codetail;
+    ScmObj code = SCM_NIL, codetail = SCM_NIL;
     
     if (!LIST1_P(SCM_CDR(form))) Scm_Error("bad delay form: %S", form);
     ADDCODE(compile_int(SCM_LIST3(SCM_SYM_LAMBDA,
@@ -1587,8 +1587,8 @@ static ScmSyntax syntax_delay = {
 
 static ScmObj compile_receive(ScmObj form, ScmObj env, int ctx, void *data)
 {
-    ScmObj code = SCM_NIL, codetail, vars, expr, body;
-    ScmObj bind = SCM_NIL, bindtail, vp;
+    ScmObj code = SCM_NIL, codetail = SCM_NIL, vars, expr, body;
+    ScmObj bind = SCM_NIL, bindtail = SCM_NIL, vp;
     int nvars, restvars;
     
     if (Scm_Length(form) < 4) Scm_Error("badly formed receive: %S", form);
@@ -1626,8 +1626,9 @@ static ScmSyntax syntax_receive = {
 
 static ScmObj compile_with_module(ScmObj form, ScmObj env, int ctx, void *data)
 {
-    ScmObj modname, body, module, code = SCM_NIL, codetail;
+    ScmObj modname, module;
     int createp = (int)data;
+    volatile ScmObj body, code = SCM_NIL, codetail = SCM_NIL;
     volatile ScmModule *current;
 
     if (Scm_Length(form) < 2) Scm_Error("syntax error: %S", form);

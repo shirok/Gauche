@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.24 2001-04-05 10:01:27 shiro Exp $
+ *  $Id: macro.c,v 1.25 2001-04-22 07:30:16 shiro Exp $
  */
 
 #include "gauche.h"
@@ -265,7 +265,7 @@ static inline ScmObj id_memq(ScmObj name, ScmObj list)
 /* convert literal symbols into identifiers */
 static ScmObj preprocess_literals(ScmObj literals, ScmObj env)
 {
-    ScmObj lp, h = SCM_NIL, t;
+    ScmObj lp, h = SCM_NIL, t = SCM_NIL;
     SCM_FOR_EACH(lp, literals) {
         ScmObj lit = SCM_CAR(lp);
         if (SCM_IDENTIFIERP(lit))
@@ -294,7 +294,7 @@ static ScmObj compile_rule1(ScmObj form,
                             int patternp)
 {
     if (SCM_PAIRP(form)) {
-        ScmObj pp, h = SCM_NIL, t;
+        ScmObj pp, h = SCM_NIL, t = SCM_NIL;
         SCM_FOR_EACH(pp, form) {
             if (ELLIPSIS_FOLLOWING(pp)) {
                 ScmSyntaxPattern *nspat;
@@ -647,7 +647,7 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
                 return FALSE;
         }
         if (elli) {
-            ScmObj h = SCM_NIL, t;
+            ScmObj h = SCM_NIL, t = SCM_NIL;
             ScmObj pat = SCM_VECTOR_ELEMENT(pattern, plen-1);
             for (i=plen-1; i<flen; i++) {
                 SCM_APPEND1(h, t, SCM_VECTOR_ELEMENT(form, i));
@@ -674,7 +674,7 @@ static ScmObj realize_template_rec(ScmObj template,
                                    int *exlev)
 {
     if (SCM_PAIRP(template)) {
-        ScmObj h = SCM_NIL, t, r, e;
+        ScmObj h = SCM_NIL, t = SCM_NIL, r, e;
         while (SCM_PAIRP(template)) {
             e = SCM_CAR(template);
             if (SCM_SYNTAX_PATTERN_P(e)) {
@@ -700,7 +700,7 @@ static ScmObj realize_template_rec(ScmObj template,
     }
     if (SCM_SYNTAX_PATTERN_P(template)) {
         ScmSyntaxPattern *pat = SCM_SYNTAX_PATTERN(template);
-        ScmObj h = SCM_NIL, t, r;
+        ScmObj h = SCM_NIL, t = SCM_NIL, r;
         indices[level+1] = 0;
         for (;;) {
             r = realize_template_rec(pat->pattern, mvec, level+1, indices, idlist, exlev);
@@ -710,7 +710,7 @@ static ScmObj realize_template_rec(ScmObj template,
         }
     }
     if (SCM_VECTORP(template)) {
-        ScmObj h = SCM_NIL, t, r, *pe;
+        ScmObj h = SCM_NIL, t = SCM_NIL, r, *pe;
         int len = SCM_VECTOR_SIZE(template), i;
         pe = SCM_VECTOR_ELEMENTS(template);
         
@@ -880,7 +880,7 @@ static ScmSyntax syntax_define_syntax = {
 static ScmObj compile_let_syntax(ScmObj form, ScmObj env, int ctx, void *data)
 {
     int letrecp = (data != NULL);
-    ScmObj var, rule, vars = SCM_NIL, vars_t;
+    ScmObj var, rule, vars = SCM_NIL, vars_t = SCM_NIL;
     ScmObj frame = SCM_NIL, frame_t;
     ScmObj syntax, body, synbinds, sp, newenv;
 

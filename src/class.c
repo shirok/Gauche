@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.45 2001-04-05 10:01:27 shiro Exp $
+ *  $Id: class.c,v 1.46 2001-04-22 07:30:30 shiro Exp $
  */
 
 #include "gauche.h"
@@ -127,14 +127,14 @@ static ScmClass **class_list_to_array(ScmObj classes, int len)
 
 static ScmObj class_array_to_list(ScmClass **array, int len)
 {
-    ScmObj h = SCM_NIL, t;
+    ScmObj h = SCM_NIL, t = SCM_NIL;
     if (array) while (len-- > 0) SCM_APPEND1(h, t, SCM_OBJ(*array++));
     return h;
 }
 
 static ScmObj class_array_to_names(ScmClass **array, int len)
 {
-    ScmObj h = SCM_NIL, t;
+    ScmObj h = SCM_NIL, t = SCM_NIL;
     int i;
     for (i=0; i<len; i++, array++) SCM_APPEND1(h, t, (*array)->name);
     return h;
@@ -460,7 +460,7 @@ static ScmObj class_numislots(ScmClass *klass)
 
 static void class_numislots_set(ScmClass *klass, ScmObj snf)
 {
-    int nf;
+    int nf = 0;
     if (!SCM_INTP(snf) || (nf = SCM_INT_VALUE(snf)) < 0) {
         Scm_Error("invalid argument: %S", snf);
         /*NOTREACHED*/
@@ -963,7 +963,7 @@ static ScmObj slot_accessor_slot_number(ScmSlotAccessor *sa)
 
 static void slot_accessor_slot_number_set(ScmSlotAccessor *sa, ScmObj val)
 {
-    int n;
+    int n = 0;
     if (!SCM_INTP(val) || ((n = SCM_INT_VALUE(val)) < 0))
         Scm_Error("small positive integer required, but got %S", val);
     sa->slotNumber = n;
@@ -1135,7 +1135,7 @@ ScmObj Scm_NoOperation(ScmObj *arg, int nargs, ScmGeneric *gf)
 ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf, ScmObj *args, int nargs)
 {
     ScmObj methods = gf->methods, mp;
-    ScmObj h = SCM_NIL, t;
+    ScmObj h = SCM_NIL, t = SCM_NIL;
 
     SCM_FOR_EACH(mp, methods) {
         ScmMethod *m = SCM_METHOD(SCM_CAR(mp));
@@ -1545,7 +1545,7 @@ void bootstrap_class(ScmClass *k,
                      ScmClassStaticSlotSpec *specs,
                      ScmObj (*allocate)(ScmClass*, ScmObj initargs))
 {
-    ScmObj slots = SCM_NIL, t;
+    ScmObj slots = SCM_NIL, t = SCM_NIL;
     ScmObj acc = SCM_NIL;
 
     k->allocate = allocate;
