@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.24 2003-11-11 09:35:31 shirok Exp $
+;; $Id: object.scm,v 1.25 2003-11-11 22:58:53 shirok Exp $
 
 (use gauche.test)
 
@@ -399,7 +399,7 @@
 (test* "redefine <y>" '(a e c x)
        (begin
          (eval '(define-class <y> (<x>)
-                  ((a)
+                  ((a :accessor a-of)
                    (e :init-value -200)))
                (current-module))
          (eval '(map car (class-slots <y>)) (current-module))))

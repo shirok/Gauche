@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.99 2003-11-11 09:35:31 shirok Exp $
+ *  $Id: class.c,v 1.100 2003-11-11 22:58:53 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2782,6 +2782,7 @@ void Scm__InitClass(void)
     GINIT(&Scm_GenericAllocate, "allocate-instance");
     GINIT(&Scm_GenericInitialize, "initialize");
     GINIT(&Scm_GenericAddMethod, "add-method!");
+    GINIT(&Scm_GenericDeleteMethod, "delete-method!");
     GINIT(&Scm_GenericComputeCPL, "compute-cpl");
     GINIT(&Scm_GenericComputeSlots, "compute-slots");
     GINIT(&Scm_GenericComputeGetNSet, "compute-get-n-set");
@@ -2813,6 +2814,7 @@ void Scm__InitClass(void)
     Scm_InitBuiltinMethod(&object_initialize_rec);
     Scm_InitBuiltinMethod(&generic_initialize_rec);
     Scm_InitBuiltinMethod(&generic_addmethod_rec);
+    Scm_InitBuiltinMethod(&generic_deletemethod_rec);
     Scm_InitBuiltinMethod(&method_initialize_rec);
     Scm_InitBuiltinMethod(&accessor_method_initialize_rec);
     Scm_InitBuiltinMethod(&compute_applicable_methods_rec);
