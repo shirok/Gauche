@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.72 2003-12-16 20:08:37 shirok Exp $
+ *  $Id: main.c,v 1.73 2003-12-27 12:54:10 shirok Exp $
  */
 
 #include <unistd.h>
@@ -166,6 +166,9 @@ static void sig_setup(void)
     sigdelset(&set, SIGCONT);
     sigdelset(&set, SIGSTOP);
     sigdelset(&set, SIGSEGV);
+#ifdef SIGPROF
+    sigdelset(&set, SIGPROF);
+#endif /*SIGPROF*/
 #ifdef SIGBUS
     sigdelset(&set, SIGBUS);
 #endif /*SIGBUS*/
