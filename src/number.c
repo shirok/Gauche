@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.83 2002-04-11 08:43:00 shirok Exp $
+ *  $Id: number.c,v 1.84 2002-04-11 10:29:51 shirok Exp $
  */
 
 #include <math.h>
@@ -1791,33 +1791,37 @@ static ScmObj read_uint(const char **strp, int *lenp,
 static double algorithmR(ScmObj f, int e, double z)
 {
     ScmObj m, x, y, d, d2;
-    double ff;
-    int k, s, ee;
+    int k, s, kprev;
     m = Scm_DecodeFlonum(z, &k, &s);
     IEXPT10_INIT();
-    for (;;) {
+  retry:
+    if (k >= 0) {
         if (e >= 0) {
-            if (k >= 0) {
-                x = Scm_Multiply2(f, iexpt10(e));
-                y = Scm_Ash(m, k);
-            } else {
-                x = Scm_Ash(Scm_Multiply2(f, iexpt10(e)), -k);
-                y = m;
-            }
+            x = Scm_Multiply2(f, iexpt10(e));
+            y = Scm_Ash(m, k);
         } else {
-            if (k >= 0) {
-                x = f;
-                y = Scm_Ash(Scm_Multiply2(m, iexpt10(-e)), k);
-            } else {
-                x = Scm_Ash(f, -k);
-                y = Scm_Multiply2(m, iexpt10(-e));
-            }
+            x = f;
+            y = Scm_Ash(Scm_Multiply2(m, iexpt10(-e)), k);
         }
+    } else {
+        if (e >= 0) {
+            x = Scm_Ash(Scm_Multiply2(f, iexpt10(e)), -k);
+            y = m;
+        } else {
+            x = Scm_Ash(f, -k);
+            y = Scm_Multiply2(m, iexpt10(-e));
+        }
+    }
+    kprev = k;
+
+    /* compare  */
+    for (;;) {
         /*Scm_Printf(SCM_CURERR, "z=%.20lg,\nx=%S,\ny=%S\nf=%S\nm=%S\ne=%d, k=%d\n", z, x, y, f, m, e, k);*/
         /* compare */
         d = Scm_Subtract2(x, y);
         d2 = Scm_Ash(Scm_Multiply2(m, Scm_Abs(d)), 1);
-        if (Scm_NumCmp(d2, y) < 0) {
+        switch (Scm_NumCmp(d2, y)) {
+        case -1: /* d2 < y */
             if (Scm_NumCmp(m, iexpt2_52) == 0
                 && Scm_Sign(d) < 0
                 && Scm_NumCmp(Scm_Ash(d2, 1), y) > 0) {
@@ -1825,7 +1829,7 @@ static double algorithmR(ScmObj f, int e, double z)
             } else {
                 return ldexp(Scm_GetDouble(m), k);
             }
-        } else if (Scm_NumCmp(d2, y) == 0) {
+        case 0: /* d2 == y */
             if (!Scm_OddP(m)) {
                 if (Scm_NumCmp(m, iexpt2_52) == 0
                     && Scm_Sign(d) < 0) {
@@ -1838,10 +1842,9 @@ static double algorithmR(ScmObj f, int e, double z)
             } else {
                 goto nextfloat;
             }
-        } else if (Scm_Sign(d) < 0) {
-            goto prevfloat;
-        } else {
-            goto nextfloat;
+        default:
+            if (Scm_Sign(d) < 0) goto prevfloat;
+            else                 goto nextfloat;
         }
       prevfloat:
         m = Scm_Subtract2(m, SCM_MAKE_INT(1));
@@ -1849,14 +1852,42 @@ static double algorithmR(ScmObj f, int e, double z)
             m = Scm_Ash(m, 1);
             k--;
         }
-        continue;
+        goto next;
       nextfloat:
         m = Scm_Add2(m, SCM_MAKE_INT(1));
         if (Scm_NumCmp(m, iexpt2_53) >= 0) {
             m = Scm_Ash(m, -1);
             k++;
         }
-        continue;
+        /*FALLTHROUGH*/
+      next:
+        if (kprev >= 0) {
+            if (k >= 0) {
+                /* k stays positive. x is invariant */
+                if (e >= 0) {
+                    y = Scm_Ash(m, k);
+                } else {
+                    y = Scm_Ash(Scm_Multiply2(m, iexpt10(-e)), k);
+                }
+            } else {
+                /* k turned to negative */
+                goto retry;
+            }
+        } else {
+            if (k < 0) {
+                /* k stays negative. */
+                if (e >= 0) {
+                    if (k != kprev) x = Scm_Ash(Scm_Multiply2(f, iexpt10(e)), -k);
+                    y = m;
+                } else {
+                    if (k != kprev) x = Scm_Ash(f, -k);
+                    y = Scm_Multiply2(m, iexpt10(-e));
+                }
+            } else {
+                /* k turned to positive */
+                goto retry;
+            }
+        }
     }
     /*NOTREACHED*/
 }
@@ -1977,7 +2008,7 @@ static ScmObj read_real(const char **strp, int *lenp,
 
         realnum = raise_pow10(realnum, exponent-fracdigs);
         if (realnum > 0.0
-            && (Scm_NumCmp(fraction, Scm_Ash(SCM_MAKE_INT(1), 52)) > 0
+            && (Scm_NumCmp(fraction, iexpt2_52) > 0
                 || exponent-fracdigs > MAX_EXACT_10_EXP
                 || exponent-fracdigs < MAX_EXACT_10_EXP)) {
             realnum = algorithmR(fraction, exponent-fracdigs, realnum);
