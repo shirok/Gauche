@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.69 2001-04-26 20:06:38 shirok Exp $
+;;; $Id: extlib.stub,v 1.70 2001-04-27 07:56:40 shirok Exp $
 ;;;
 
 "
@@ -349,26 +349,6 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (char? ch))
   "  SCM_RETURN(Scm_StringSplitByChar(s, ch));")
 
-(define-cproc string-take (s nchars)  ;; SRFI-13
-  (assert (string? s))
-  (assert (small-integer? nchars))
-  "  SCM_RETURN(Scm_StringTake(s, nchars, TRUE, FALSE));")
-
-(define-cproc string-drop (s nchars)  ;; SRFI-13
-  (assert (string? s))
-  (assert (small-integer? nchars))
-  "  SCM_RETURN(Scm_StringTake(s, nchars, FALSE, FALSE));")
-
-(define-cproc string-take-right (s nchars)  ;; SRFI-13
-  (assert (string? s))
-  (assert (small-integer? nchars))
-  "  SCM_RETURN(Scm_StringTake(s, nchars, FALSE, TRUE));")
-
-(define-cproc string-drop-right (s nchars)  ;; SRFI-13
-  (assert (string? s))
-  (assert (small-integer? nchars))
-  "  SCM_RETURN(Scm_StringTake(s, nchars, TRUE, TRUE));")
-
 (define-cproc string-contains (s1 s2)  ;; SRFI-13 takes optional args
   (assert (string? s1))
   (assert (string? s2))
@@ -385,13 +365,13 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc string-pointer? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_STRING_POINTERP(obj)));")
 
-(define-cproc string-pointer-next (sp)
+(define-cproc string-pointer-next! (sp)
   (assert (string-pointer? sp))
   "  SCM_RETURN(Scm_StringPointerNext(sp));")
-(define-cproc string-pointer-prev (sp)
+(define-cproc string-pointer-prev! (sp)
   (assert (string-pointer? sp))
   "  SCM_RETURN(Scm_StringPointerPrev(sp));")
-(define-cproc string-pointer-set (sp index)
+(define-cproc string-pointer-set! (sp index)
   (assert (string-pointer? sp))
   (assert (small-integer? index))
   "  SCM_RETURN(Scm_StringPointerSet(sp, index));")

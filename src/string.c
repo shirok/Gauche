@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.29 2001-04-26 20:06:38 shirok Exp $
+ *  $Id: string.c,v 1.30 2001-04-27 07:56:40 shirok Exp $
  */
 
 #include <stdio.h>
@@ -557,19 +557,6 @@ ScmObj Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end)
     return Scm_Substring(x, istart, iend);
 }
 
-/* SRFI-13 string-take and string-drop */
-ScmObj Scm_StringTake(ScmString *x, int nchars, int takefirst, int fromright)
-{
-    int len = SCM_STRING_LENGTH(x);
-    if (nchars < 0 || nchars >= len)
-        Scm_Error("nchars argument out of range: %d", nchars);
-    if (fromright) nchars = len - nchars;
-    if (takefirst)
-        return Scm_Substring(x, 0, nchars);
-    else
-        return Scm_Substring(x, nchars, len);
-}
-
 /*----------------------------------------------------------------
  * Search & parse
  */
@@ -678,13 +665,6 @@ ScmObj Scm_StringContains(ScmString *s1, ScmString *s2)
     }
     return SCM_FALSE;
 }
-
-/*----------------------------------------------------------------
- * Prefix/suffix
- */
-
-
-
 
 /*----------------------------------------------------------------
  * Miscellaneous functions
@@ -845,20 +825,22 @@ ScmObj Scm_MakeStringPointer(ScmString *src, int index)
 {
     const char *ptr;
     ScmStringPointer *sp;
-    if (index < 0) goto badindex;
+    if (SCM_STRING_SINGLE_BYTE_P(src)) {
+        while (index < 0) index += SCM_STRING_SIZE(src)+1;
+        if (index > SCM_STRING_SIZE(src)) goto badindex;
+        else           ptr = src->start + index;
+    } else {
+        while (index < 0) index += SCM_STRING_LENGTH(src)+1;
+        if (index > SCM_STRING_LENGTH(src)) goto badindex;
+        ptr = forward_pos(src->start, index);
+    }
     sp = SCM_NEW(ScmStringPointer);
     SCM_SET_CLASS(sp, SCM_CLASS_STRING_POINTER);
     sp->length = SCM_STRING_LENGTH(src);
     sp->size = SCM_STRING_SIZE(src);
     sp->start = SCM_STRING_START(src);
     sp->index = index;
-    if (SCM_STRING_SINGLE_BYTE_P(src)) {
-        if (index > SCM_STRING_SIZE(src)) goto badindex;
-        sp->current = sp->start + index;
-    } else {
-        if (index > SCM_STRING_LENGTH(src)) goto badindex;
-        sp->current = forward_pos(sp->start, index);
-    }
+    sp->current = ptr;
     return SCM_OBJ(sp);
   badindex:
     Scm_Error("index out of range: %d", index);
