@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: charconv.scm,v 1.19 2004-05-14 11:28:25 shirok Exp $
+;;;  $Id: charconv.scm,v 1.20 2004-11-23 20:34:24 shirok Exp $
 ;;;
 
 (define-module gauche.charconv
@@ -137,14 +137,16 @@
 ;; Convert string
 (define (ces-convert string fromcode . args)
   (let-optionals* args ((tocode #f))
-    (let ((out (open-output-string :private? #t)))
-      (copy-port
-       (open-input-conversion-port (open-input-string string :private? #t)
-                                   fromcode
-                                   :to-code tocode
-                                   :buffer-size (string-size string))
-       out :unit 'byte)
-      (get-output-string out))))
+    (let ((out (open-output-string :private? #t))
+          (in  (open-input-conversion-port
+                (open-input-string string :private? #t)
+                fromcode
+                :to-code tocode :buffer-size (string-size string) :owner? #t)))
+      (copy-port in out :unit 'byte)
+      (close-input-port in)
+      (begin0
+       (get-output-string out)
+       (close-output-port out)))))
 
 ;; "Wrap" the given port for convering to/from native encoding if needed.
 ;; Unlike open-*-conversion-port, these return port itself if the conversion
@@ -206,7 +208,7 @@
      port
      (get-keyword :encoding args #f)
      :buffer-size (get-keyword :conversion-buffer-size args 0)
-     :owner #t)))
+     :owner? #t)))
 
 (define (%open-output-file/conv name . args)
   (and-let* ((port (apply %open-output-file name args)))
@@ -214,6 +216,6 @@
      port
      (get-keyword :encoding args #f)
      :buffer-size (get-keyword :conversion-buffer-size args 0)
-     :owner #t)))
+     :owner? #t)))
 
 (provide "gauche/charconv")

@@ -1,3 +1,8 @@
+2004-11-23  Shiro Kawai  <shiro@acm.org>
+
+	* ext/charconv/charconv.scm (ces-convert): close temporary ports
+	  properly to avoid unnecessary finalizer invocation.
+
 2004-11-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/write.c (write_ss): close temporary port to avoid unnecessary
