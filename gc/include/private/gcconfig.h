@@ -1005,6 +1005,10 @@
 #	define OS_TYPE "FREEBSD"
 #	define MPROTECT_VDB
 #	define FREEBSD_STACKBOTTOM
+        /* SK: I'm not sure this is safe; at least it seems to work on
+           FreeBSD/i386, but I haven't confirmed. */
+#       define DYNAMIC_LOADING
+        /* SK: end */
 #   endif
 #   ifdef NETBSD
 #	define OS_TYPE "NETBSD"
