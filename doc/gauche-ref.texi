@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.305 2002-11-24 21:25:26 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.306 2002-11-26 08:32:28 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -437,7 +437,7 @@ I use this notation since it is useful to indicate valid pattern of arguments.
 キーワード引数の表記。この例では@var{x}、@var{y}、@var{z}の3つのキーワード引数を
 取ることが示されます。2番目の形式では省略された場合の既定値も示されます。
 この表記はCommonLispのスタイルにならっていますが、Gauche自身がラムダリストに
-@code{&optional}のような表記を受け付けるわけではないことに注意してください。
+@code{&keyword}のような表記を受け付けるわけではないことに注意してください。
 マニュアルの表記を簡潔にするためにこのような表現を用いているだけです。
 @c COMMON
 @item &rest args
@@ -449,7 +449,7 @@ I use this notation since it is useful to indicate valid pattern of arguments.
 @c JP
 残りの引数全てがリストになって@var{args}に束縛されることを示します。
 この表記はCommonLispのスタイルにならっていますが、Gauche自身がラムダリストに
-@code{&optional}のような表記を受け付けるわけではないことに注意してください。
+@code{&rest}のような表記を受け付けるわけではないことに注意してください。
 マニュアルの表記を簡潔にするためにこのような表現を用いているだけです。
 @c COMMON
 @end table
@@ -10032,14 +10032,94 @@ sequence, then use input string port to read characters.)
 Read-time constructor, defined in SRFI-10, provides an easy way
 to create an external representation of user-defined structures.
 
-
 @deftp {Reader Syntax} @code{#,(@var{tag} @var{arg} @dots{})}
 [SRFI-10]
+Gauche maintains a global table that associates a @var{tag} (symbol)
+to @emph{a constructor procedure}.
+
+When the reader encounters this syntax, it reads @var{arg} @dots{},
+finds a reader constructor associated with @var{tag}, and
+calls the constructor with @var{arg} @dots{} as arguments,
+then inserts the value returned by the constructor as the result
+of reading the syntax.
+
+Note that this syntax is processed inside the reader---the
+evaluator doesn't see any of @var{arg}s, but only sees the object
+the reader returns.
 @end deftp
 
-@defun define-read-ctor @var{tag} @var{procedure}
+@defun define-reader-ctor @var{tag} @var{procedure}
 [SRFI-10]
+Associates a reader constructor @var{procedure} with @var{tag}.
+
+Examples:
+@example
+(define-reader-ctor 'pi (lambda () (* (atan 1) 4)))
+
+#,(pi) @result{} 3.141592653589793
+
+'(#,(pi)) @result{} (3.141592653589793)
+
+(define-reader-ctor 'hash
+  (lambda (type . pairs)
+    (let ((tab (make-hash-table type)))
+      (for-each (lambda (pair)
+                  (hash-table-put! tab (car pair) (cdr pair)))
+                pairs)
+      tab)))
+
+(define table
+ #,(hash eq? (foo . bar) (duh . dah) (bum . bom)))
+
+table @result{} #<hash-table eq? 0x80f9398>
+(hash-table-get table 'duh) @result{} dah
+@end example
+
+Combined with @code{write-object} method (@xref{Output}),
+it is easy to make a user-defined class written in the form
+it can be read back:
+
+@example
+(define-class <point> ()
+  ((x :init-value 0 :init-keyword :x)
+   (y :init-value 0 :init-keyword :y)))
+
+(define-method write-object ((p <point>) out)
+  (format out "#,(<point> ~s ~s)" (ref p 'x) (ref p 'y)))
+
+(define-reader-ctor '<point>
+  (lambda (x y) (make <point> :x x :y y)))
+@end example
+
 @end defun
+
+@emph{NOTE:} The extent of the effect of @code{define-reader-ctor}
+is not specified in SRFI-10, and might pose a compatibility problem
+among implementations that support SRFI-10.
+(In fact, the very existence of @code{define-reader-ctor} is
+up to an implementation choice.)
+
+In Gauche, at least for the time being, @code{define-reader-ctor}
+take effects as soon as the form is compiled and evaluated.  Since
+Gauche compiles and evaluates each toplevel form in order, @var{tag}
+specified in @code{define-reader-ctor} can be used immediately after that.
+However, it doesn't work if the call of @code{define-reader-ctor} and
+the use of @var{tag} is enclosed in a @code{begin} form, for the entire
+@code{begin} form is compiled at once before being evaluated.
+
+Other implementations may require to read the entire file before
+making its @code{define-reader-ctor} call effective.  If so, it
+effectively prevents one from using @code{define-reader-ctor} and
+the defined @var{tag} in the same file.   It is desirable to separate
+the call of @code{define-reader-ctor} and the use of @var{tag}
+in the different files if possible.
+
+Another issue about the current @code{define-reader-ctor} is that
+it modifies the global table of Gauche system, hence not modular.
+The code written by different people might use the same tags,
+and yield an unexpected result.   In future versions, Gauche may
+have some way to encapsulate the scope of @var{tag}, although
+the author doesn't have clear idea yet.
 
 
 @node Input utility functions,  , Read-time constructor, Input
