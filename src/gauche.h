@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.345 2003-10-18 11:07:01 shirok Exp $
+ *  $Id: gauche.h,v 1.346 2003-10-21 14:13:09 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1055,7 +1055,7 @@ typedef struct ScmPortBufferRec {
     int  mode;          /* buffering mode (ScmPortBufferMode) */
     int  line;          /* line counter */
     int  (*filler)(ScmPort *p, int min);
-    int  (*flusher)(ScmPort *p, int min);
+    int  (*flusher)(ScmPort *p, int cnt, int forcep);
     int  (*closer)(ScmPort *p);
     int  (*ready)(ScmPort *p);
     int  (*filenum)(ScmPort *p);

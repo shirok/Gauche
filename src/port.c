@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.91 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: port.c,v 1.92 2003-10-21 14:13:09 shirok Exp $
  */
 
 #include <unistd.h>
@@ -52,7 +52,7 @@ static void port_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static void port_finalize(ScmObj obj, void* data);
 static void register_buffered_port(ScmPort *port);
 static void unregister_buffered_port(ScmPort *port);
-static void bufport_flush(ScmPort*, int);
+static void bufport_flush(ScmPort*, int, int);
 static int file_closer(ScmPort *p);
 
 SCM_DEFINE_BASE_CLASS(Scm_PortClass,
@@ -77,7 +77,7 @@ static int port_cleanup(ScmPort *port)
     switch (SCM_PORT_TYPE(port)) {
     case SCM_PORT_FILE:
         if (SCM_PORT_DIR(port) == SCM_PORT_OUTPUT && !SCM_PORT_ERROR_P(port)) {
-            bufport_flush(port, 0);
+            bufport_flush(port, 0, TRUE);
         }
         if (port->ownerp && port->src.buf.closer) port->src.buf.closer(port);
         break;
@@ -281,29 +281,53 @@ int Scm_FdReady(int fd, int dir)
  *    the buffer.  Initially the buffer is empty and the current pointer
  *    is the same as the beginning of the buffer.
  *
- *    port->src.buf.flusher(ScmPort* p, int cnt) is called when the port
- *    needs to create some room in the buffer.   When the flusher is called,
- *    the buffer is like this:
+ *    port->src.buf.flusher(ScmPort* p, int cnt, int forcep) is called when
+ *    the port needs to create some room in the buffer.   When the flusher
+ *    is called, the buffer is like this:
  *
  *        <--------------- size ---------------->
  *       |*********************************-----|
  *        ^                                ^     ^
  *        b                                c     e
  *
- *    The flusher is supposed to output as much data as from the beginning
- *    of the buffer up to the cnt bytes, which is usually up to the current
- *    pointer.  The flusher may return before entire data is output, in
- *    case like underlying device is busy.  The flusher must output at least
- *    one byte.  The flusher returns the number of bytes actually written out.
+ *    The flusher is supposed to output the cnt bytes of data beginning from
+ *    the buffer, which is usually up to the current pointer (but the flusher
+ *    doesn't need to check the current pointer; it is taken care of by the
+ *    caller of the flusher). 
+ *
+ *    If the third argument forcep is false, the flusher may return before
+ *    entire data is output, in case like underlying device is busy.
+ *    The flusher must output at least one byte even in that case.
+ *    On the other hand, if the forcep argument is true, the flusher must
+ *    write cnt bytes; if it is not possible, the flusher must return -1 to
+ *    indicate an error(*1).
+ *
+ *    The flusher returns the number of bytes actually written out.
  *    If an error occurs, the flusher must return -1.
  *
- *    After flusher returns, bufport_flush shifts the unflushed data
+ *    The flusher must be aware that the port p is locked by the current
+ *    thread when called.
+ *
+ *    The flusher shoudn't change the buffer's internal state.
+ *
+ *    After the flusher returns, bufport_flush shifts the unflushed data
  *    (if any), so the buffer becomes like this:
  *
  *        <--------------- size ---------------->
  *       |****----------------------------------|
  *        ^   ^                                  ^
  *        b   c                                  e
+ *
+ *    (*1) Why should these two mode need to be distinguished?  Suppose
+ *    you implement a buffered port that does character encoding conversion.
+ *    The flusher converts the content of the buffer to different character
+ *    encoding and feed it to some specified port.  It is often the case
+ *    that you find a few bytes at the end of the buffer which you can't
+ *    convert into a whole character but have to wait for next byte(s).
+ *    It is valid that you leave them in the buffer if you can expect
+ *    more data to come.  However, if you know it is really the end of
+ *    the stream, you can't leave any data in the buffer and you should
+ *    take appropriate action, for example, raising an error.
  *
  *  Input
  *
@@ -439,17 +463,28 @@ ScmObj Scm_MakeBufferedPort(ScmObj name,
     return SCM_OBJ(p);
 }
 
-/* flushes the buffer, to make a room of cnt bytes.  cnt == 0 means
-   all the available data. */
-static void bufport_flush(ScmPort *p, int cnt)
+/* flushes the buffer, to make a room of cnt bytes.
+   cnt == 0 means all the available data.   Note that, unless forcep == TRUE,
+   this function only does "best effort" to make room, but doesn't
+   guarantee to output cnt bytes.  */
+static void bufport_flush(ScmPort *p, int cnt, int forcep)
 {
     int cursiz = SCM_PORT_BUFFER_AVAIL(p);
-    int nwrote;
+    int nwrote, force = FALSE;
+    
     if (cursiz == 0) return;
-    if (cnt <= 0) cnt = cursiz;
-    nwrote = p->src.buf.flusher(p, cnt);
+    if (cnt <= 0)  { cnt = cursiz; force = TRUE; }
+    nwrote = p->src.buf.flusher(p, cnt, forcep);
+    if (nwrote < 0) {
+        p->src.buf.current = p->src.buf.buffer; /* for safety */
+        p->error = TRUE;
+        /* TODO: can we raise an error here, or should we propagate
+           it to the caller? */
+        Scm_Error("Couldn't flush port %S due to an error", p);
+    }
     if (nwrote >= 0 && nwrote < cursiz) {
-        memmove(p->src.buf.buffer, p->src.buf.buffer+nwrote, cursiz-nwrote);
+        memmove(p->src.buf.buffer, p->src.buf.buffer+nwrote,
+                cursiz-nwrote);
         p->src.buf.current -= nwrote;
     } else {
         p->src.buf.current = p->src.buf.buffer;
@@ -471,7 +506,7 @@ static void bufport_write(ScmPort *p, const char *src, int siz)
             p->src.buf.current += room;
             siz -= room;
             src += room;
-            bufport_flush(p, 0);
+            bufport_flush(p, 0, FALSE);
         }
     } while (siz > 0);
 }
@@ -647,7 +682,9 @@ void Scm_FlushAllPorts(int exitting)
         (void)SCM_INTERNAL_MUTEX_UNLOCK(active_buffered_ports.mutex);
         if (!SCM_FALSEP(p)) {
             SCM_ASSERT(SCM_PORTP(p) && SCM_PORT_TYPE(p)==SCM_PORT_FILE);
-            if (!SCM_PORT_ERROR_P(SCM_PORT(p))) bufport_flush(SCM_PORT(p), 0);
+            if (!SCM_PORT_ERROR_P(SCM_PORT(p))) {
+                bufport_flush(SCM_PORT(p), 0, TRUE);
+            }
         }
     }
     if (!exitting && saved) {
@@ -744,7 +781,7 @@ static int file_filler(ScmPort *p, int cnt)
     return nread;
 }
 
-static int file_flusher(ScmPort *p, int cnt)
+static int file_flusher(ScmPort *p, int cnt, int forcep)
 {
     int nwrote = 0, r;
     int datsiz = SCM_PORT_BUFFER_AVAIL(p);
@@ -752,7 +789,8 @@ static int file_flusher(ScmPort *p, int cnt)
     char *datptr = p->src.buf.buffer;
     
     SCM_ASSERT(fd >= 0);
-    while (nwrote == 0) {
+    while ((!forcep && nwrote == 0)
+           || (forcep && nwrote < cnt)) {
         errno = 0;
         r = write(fd, datptr, datsiz-nwrote);
         if (r < 0) {

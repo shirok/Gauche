@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: charconv.c,v 1.43 2003-09-13 11:36:22 shirok Exp $
+ *  $Id: charconv.c,v 1.44 2003-10-21 14:13:09 shirok Exp $
  */
 
 #include <string.h>
@@ -330,7 +330,7 @@ static int conv_output_closer(ScmPort *port)
 {
     ScmConvInfo *info = (ScmConvInfo*)port->src.buf.data;
     int r;
-    
+
     /* if there's remaining bytes in buf, send them to the remote port. */
     if (info->ptr > info->buf) {
         Scm_Putz(info->buf, info->ptr - info->buf, info->remote);
@@ -338,6 +338,10 @@ static int conv_output_closer(ScmPort *port)
     }
     /* sends out the closing sequence, if any */
     r = jconv_reset(info, info->buf, info->bufsiz);
+#ifdef JCONV_DEBUG
+    fprintf(stderr, "<= r=%d(reset), buf(%p)\n",
+            r, info->buf);
+#endif
     if (r < 0) {
         Scm_Error("something wrong in resetting output character encoding conversion (%s -> %s).  possibly an implementation error.",
                   info->fromCode, info->toCode);
@@ -354,7 +358,7 @@ static int conv_output_closer(ScmPort *port)
     return jconv_close(info);
 }
 
-static int conv_output_flusher(ScmPort *port, int mincnt)
+static int conv_output_flusher(ScmPort *port, int cnt, int forcep)
 {
     ScmConvInfo *info = (ScmConvInfo*)port->src.buf.data;
     size_t outsize, inroom, outroom, result, len;
@@ -385,14 +389,13 @@ static int conv_output_flusher(ScmPort *port, int mincnt)
                flushed.  (Shifting unconverted characters is done by
                buffered port routine) */
             info->ptr = outbuf;
-            return len - inroom;
 #else
             /* See the above notes.  We always flush the output buffer
                here, so that we can avoid output buffer overrun. */
             Scm_Putz(info->buf, outbuf - info->buf, info->remote);
             info->ptr = info->buf;
-            return len - inroom;
 #endif
+            return len - inroom;
         } else if (result == OUTPUT_NOT_ENOUGH) {
             /* Output buffer got full.  Flush it, and continue
                conversion. */
@@ -408,14 +411,14 @@ static int conv_output_flusher(ScmPort *port, int mincnt)
 #ifndef GLIBC_2_1_ICONV_BUG
             /* Conversion is done completely.  Update outptr. */
             info->ptr = outbuf;
-            return len - inroom;
 #else
             /* See the above notes.  We always flush the output buffer here,
                so that we can avoid output buffer overrun. */
             Scm_Putz(info->buf, outbuf - info->buf, info->remote);
             info->ptr = info->buf;
-            return len - inroom;
 #endif
+            if (forcep && len - inroom != cnt) continue;
+            return len - inroom;
         }
     }
 }

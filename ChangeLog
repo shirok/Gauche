@@ -1,3 +1,11 @@
+2003-10-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c, src/portapi.c, ext/charconv/charconv.c : changed the
+	  internal protocol of flush routine of buffered port, so that it
+	  can behave differently when the flush request is a final one or not.
+	  See the comment at buffererd port implementation of port.c for
+	  the detailed discussion.
+
 2003-10-20  Kimura Fuyuki  <fuyuki@nigredo.org>
 
 	* ext/net/*, doc/modgauche.texi : added sockaddr-addr and

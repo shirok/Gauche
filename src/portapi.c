@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: portapi.c,v 1.14 2003-08-10 06:43:38 shirok Exp $
+ *  $Id: portapi.c,v 1.15 2003-10-21 14:13:09 shirok Exp $
  */
 
 /* This file is included twice by port.c to define safe- and unsafe-
@@ -84,12 +84,12 @@ void Scm_PutbUnsafe(ScmByte b, ScmPort *p)
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
         if (p->src.buf.current >= p->src.buf.end) {
-            SAFE_CALL(p, bufport_flush(p, 1));
+            SAFE_CALL(p, bufport_flush(p, 1, FALSE));
         }
         SCM_ASSERT(p->src.buf.current < p->src.buf.end);
         *p->src.buf.current++ = b;
         if (p->src.buf.mode == SCM_PORT_BUFFER_NONE) {
-            SAFE_CALL(p, bufport_flush(p, 1));
+            SAFE_CALL(p, bufport_flush(p, 1, FALSE));
         }
         UNLOCK(p);
         break;
@@ -127,17 +127,17 @@ void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
     case SCM_PORT_FILE:
         nb = SCM_CHAR_NBYTES(c);
         if (p->src.buf.current+nb > p->src.buf.end) {
-            SAFE_CALL(p, bufport_flush(p, nb));
+            SAFE_CALL(p, bufport_flush(p, nb, FALSE));
         }
         SCM_ASSERT(p->src.buf.current+nb <= p->src.buf.end);
         SCM_CHAR_PUT(p->src.buf.current, c);
         p->src.buf.current += nb;
         if (p->src.buf.mode == SCM_PORT_BUFFER_LINE) {
             if (c == '\n') {
-                SAFE_CALL(p, bufport_flush(p, nb));
+                SAFE_CALL(p, bufport_flush(p, nb, FALSE));
             }
         } else if (p->src.buf.mode == SCM_PORT_BUFFER_NONE) {
-            SAFE_CALL(p, bufport_flush(p, nb));
+            SAFE_CALL(p, bufport_flush(p, nb, FALSE));
         }
         UNLOCK(p);
         break;
@@ -178,12 +178,12 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
             const char *cp = p->src.buf.current;
             while (cp-- > p->src.buf.buffer) {
                 if (*cp == '\n') {
-                    SAFE_CALL(p, bufport_flush(p, (int)(cp - p->src.buf.current)));
+                    SAFE_CALL(p, bufport_flush(p, (int)(cp - p->src.buf.current), FALSE));
                     break;
                 }
             }
         } else if (p->src.buf.mode == SCM_PORT_BUFFER_NONE) {
-            SAFE_CALL(p, bufport_flush(p, 0));
+            SAFE_CALL(p, bufport_flush(p, 0, TRUE));
         }
         UNLOCK(p);
         break;
@@ -223,12 +223,12 @@ void Scm_PutzUnsafe(const char *s, int siz, ScmPort *p)
             const char *cp = p->src.buf.current;
             while (cp-- > p->src.buf.buffer) {
                 if (*cp == '\n') {
-                    SAFE_CALL(p, bufport_flush(p, (int)(cp - p->src.buf.current)));
+                    SAFE_CALL(p, bufport_flush(p, (int)(cp - p->src.buf.current), FALSE));
                     break;
                 }
             }
         } else if (p->src.buf.mode == SCM_PORT_BUFFER_NONE) {
-            SAFE_CALL(p, bufport_flush(p, 0));
+            SAFE_CALL(p, bufport_flush(p, 0, TRUE));
         }
         UNLOCK(p);
         break;
@@ -262,7 +262,7 @@ void Scm_FlushUnsafe(ScmPort *p)
     CLOSE_CHECK(p);
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
-        SAFE_CALL(p, bufport_flush(p, 0));
+        SAFE_CALL(p, bufport_flush(p, 0, TRUE));
         UNLOCK(p);
         break;
     case SCM_PORT_OSTR:
@@ -840,7 +840,7 @@ ScmObj Scm_PortSeekUnsafe(ScmPort *p, ScmObj off, int whence)
                 p->src.buf.current = p->src.buf.end; /* invalidate buffer */
                 SAFE_CALL(p, r = p->src.buf.seeker(p, o, whence));
             } else {
-                SAFE_CALL(p, bufport_flush(p, 0));
+                SAFE_CALL(p, bufport_flush(p, 0, TRUE));
                 SAFE_CALL(p, r = p->src.buf.seeker(p, o, whence));
             }
         }
