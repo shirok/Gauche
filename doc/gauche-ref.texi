@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.14 2001-06-02 11:13:06 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.15 2001-06-02 22:17:24 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -309,18 +309,33 @@ is passed to the Scheme program as program arguments.
 @end deftp
 
 @deftp {Command Option} -I path
+Prepends @var{path} to the load path list.
+You can specify this option more than once to add multiple paths.
 @end deftp
 
 @deftp {Command Option} -q
+Makes @code{gosh} not to load the default initialization file.
 @end deftp
 
 @deftp {Command Option} -V
+Prints the @code{gosh} version and exits.
 @end deftp
 
 @deftp {Command Option} -u module
+Use @var{module}.  Before starting execution of @var{file} or entering
+the read-eval-print loop, the specified module is @var{use}d, i.e.
+it is loaded and imported. 
+You can specify this option more than once to use multiple modules.
 @end deftp
 
-@deftp {Command Option} -f function
+@deftp {Command Option} -f compiler-option
+This option controls the compiler behavior.  For now we have
+following options available:
+@table @asis
+@item no-inline
+Prohibits the compiler to iniline primitive Scheme procedures.
+@end table
+
 @end deftp
 
 
@@ -1279,18 +1294,23 @@ A string class.   In Gauche, a string can be viewed in two ways:
 a sequence of characters, or a sequence of bytes.
 @end deftp
 
+R5RS string operations are very minimal.  Gauche supports some
+extra built-in operations, and also a rich string library
+defined in SRFI-13.   @xref{String library}, for details.
+
 @node String Predicates
 @subsection String Predicates
 
 @defun string? obj
-[R5RS] Returns if and only if @var{obj} is a string.
+[R5RS] Returns @code{#t} if @var{obj} is a string, @code{#f} otherwise.
 @end defun
 
 @defun string-immutable? obj
-Returns true if and only if @var{obj} is an immutable string.
+Returns @code{#t} if @var{obj} is an immutable string, @code{#f} otherwise
 @end defun
 
 @defun string-incomplete? obj
+Returns @code{#t} if @var{obj} is an incomplete string, @code{#f} otherwise
 @end defun
 
 @node String Constructors
@@ -1345,10 +1365,25 @@ Returned value is an integer in the range between 0 and 255.
 @end defun
 
 @defun string-set! string k char
-[R5RS]
+[R5RS] Substitute @var{string}'s @var{k}-th character by @var{char}.
+@var{k} must be greater than or equal to zero, and less than
+@code{(string-length @var{string})}.
+Return value is undefined.
+
+If @var{string} is an incomplete string, integer value of the lower 8 bits
+of @var{char} is used to set @var{string}'s @var{k}-th byte.
+
+See the notes in @code{make-string} about performance consideration.
 @end defun
 
 @defun string-byte-set! string k byte
+Substitute @var{string}'s @var{k}-th byte by integer @var{byte}.
+@var{byte} must be in the range between 0 to 255, inclusive.
+@var{k} must be greater than or equal to zero, and less than
+@code{(string-size @var{string})}.
+If @var{string} is a complete string, it is turned to incomplete string
+by this operation.
+Return value is undefined.
 @end defun
 
 @node String Comparison
@@ -1688,6 +1723,9 @@ to implement other functionality.
 
 @end deftp
 
+@node Common port operations
+@subsection Common port operations
+
 @defun input-port? obj
 @defunx output-port? obj
 [R5RS] Returns true if @var{obj} is an input port and an output port,
@@ -1732,7 +1770,16 @@ Returns the current output port.
 Copies data from an input port @var{src} to an output port @var{dst},
 until eof is read from @var{src}.
 
-
+The keyword argument @var{unit} may be zero, a positive exact integer,
+a symbol @code{byte} or a symbol @code{char}, to specify the unit
+of copying.  If it is an integer, a buffer of the size
+(in case of zero, a system default size) is used to copy,
+using block I/O.  Generally it is the fastest if you copy
+between normal files.   If @var{unit} is a symbol @code{byte},
+the copying is done byte by byte, using C-verson of @code{read-byte}
+and @code{write-byte}.  If @var{unit} is a symbol @code{char},
+the copying is done character by character, using C-version of
+@code{read-char} and @code{write-char}.
 @end defun
 
 
@@ -1788,6 +1835,42 @@ until eof is read from @var{src}.
 
 @node Procedural ports
 @subsection Procedural ports
+
+The underlying mechanism of procedural ports is very flexible,
+but I don't have Scheme interface yet, except the following ones:
+
+@defun open-input-buffered-port filler buffer-size
+@defunx open-output-buffered-port flusher buffer-size
+These are the Scheme interface to the ``buffered port''.
+
+@code{open-input-buffered-port} creates and returns an input port,
+with associated buffer of size @var{buffer-size}.
+The data is read from the buffer.
+When the port is read and the buffer is empty, a procedure @var{filler}
+is called with one argument, the size of required data.
+@var{filler} must return a string (either complete or incomplete)
+of the specified size.  It is permitted for @var{filler}
+to return a string shorter than the size, if not enough data is available.
+The behavior is undefined if @var{filler} returns larger string than
+specified.  Note that the @var{size} of string matters, not the @var{length}
+of string.
+If @var{filler} finds that it reached EOF of its data source, it can
+return EOF.  Retuning zero size string has the same effect as EOF.
+Initially, the buffer is empty, so @var{filler} is always called
+at the first attempt of reading from the port.
+
+@code{open-output-buffered-port} creates and returns an output port,
+with associated buffer of size @var{buffer-size}.
+The data output to the port is accumulated in the buffer.
+When the buffer gets full, or @code{flush} is called on the port,
+a procedure @var{flusher} is called with an @emph{incomplete} string
+to be flushed.   @var{flusher} must return a number of bytes flushed,
+which must be the same as the size of the passed string.
+The string may shorter than @var{buffer-size}.
+When the port is closed, @var{flusher} is called with any data
+remaining in the buffer, then it is called again with argument @code{#f},
+indicating that the port is closed.
+@end defun
 
 @node Input
 @subsection Input 
@@ -2998,17 +3081,34 @@ defined in @uref{http://www.rfc-editor.org/rfc/rfc2045.txt, RFC 2045},
 section 6.3.
 @end deftp
 
-
 @defun base64-encode
+Reads byte stream from the current input port, encodes it in Base64
+format and writes the result character stream to the current output port.
+The conversion ends when it reads EOF from the current input port.
 @end defun
 
 @defun base64-encode-string string
+Converts contents of @var{string} to Base64 encoded format.
+Input string can be either complete or incomplete string;
+it is always interpreted as a byte sequence.
 @end defun
 
 @defun base64-decode
+Reads character stream from the current input port, decodes it from Base64
+format and writes the result byte stream to the current output port.
+The conversion ends when it reads EOF or the termination character
+(@code{=}).  The characters which does not in legal Base64 encoded character
+set are silently ignored.
+Output string is always an incomplete string.
 @end defun
 
 @defun base64-decode-string string
+Decodes a Base64 encoded string @var{string} and returns
+a result string.  The conversion terminates at the end of @var{string} or
+the termination character (@code{=}).
+The characters which does not in legal Base64 encoded character
+set are silently ignored.
+Output string is always an incomplete string.
 @end defun
 
 
