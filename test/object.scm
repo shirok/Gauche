@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.25 2003-11-11 22:58:53 shirok Exp $
+;; $Id: object.scm,v 1.26 2003-11-11 23:46:00 shirok Exp $
 
 (use gauche.test)
 
@@ -706,18 +706,37 @@
 (test* "metaclass" '(<ww> <vv> <yy> <xx>)
        (class-slot-ref <listing-class> 'classes))
 
+;;----------------------------------------------------------------
 (test-section "metaclass w/ slots")
 
-(define-class <documentation-meta> (<class>)
-  ((doc :init-keyword :doc :initform #f)))
+(define-class <docu-meta> (<class>)
+  ((sub :accessor sub-of)
+   (doc :init-keyword :doc :initform #f)))
+
+(define-method initialize ((self <docu-meta>) initargs)
+  (next-method)
+  (set! (sub-of self) "sub"))
 
 (define-class <xxx> ()
   (a b c)
-  :metaclass <documentation-meta>
+  :metaclass <docu-meta>
   :doc "Doc doc")
 
-(test* "class slot in meta" "Doc doc"
-       (slot-ref <xxx> 'doc))
+(test* "class slot in meta" '("Doc doc" "sub")
+       (list (slot-ref <xxx> 'doc)
+             (slot-ref <xxx> 'sub)))
+
+(define-class <docu-meta-sub> (<docu-meta>)
+  ((xtra :init-value 'xtra)))
+
+(define-class <xxx-sub> (<xxx>)
+  (x y z)
+  :metaclass <docu-meta-sub>)
+
+(test* "class slot in meta (sub)" '(#f "sub" xtra)
+       (list (slot-ref <xxx-sub> 'doc)
+             (slot-ref <xxx-sub> 'sub)
+             (slot-ref <xxx-sub> 'xtra)))
 
 ;;----------------------------------------------------------------
 (test-section "metaclass/singleton")
@@ -829,8 +848,11 @@
 (use srfi-1)
 (use gauche.mop.instance-pool)
 
+(define-class <pool-meta> (<instance-pool-meta>)
+  (a b c))
+
 (define-class <pool-x> (<instance-pool-mixin>) ())
-(define-class <pool-y> (<instance-pool-mixin>) ())
+(define-class <pool-y> (<instance-pool-mixin>) () :metaclass <pool-meta>)
 (define-class <pool-z> (<pool-x> <pool-y>) ())
 
 (define pool-x1 (make <pool-x>))

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: instance-pool.scm,v 1.5 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: instance-pool.scm,v 1.6 2003-11-11 23:46:00 shirok Exp $
 ;;;
 
 ;; EXPERIMENTAL.   THE API MAY CHANGE.
@@ -40,6 +40,8 @@
   (use util.queue)
   (export <instance-pool-meta> <instance-pool-mixin>
           <instance-table-meta> <instance-table-mixin>
+          instance-pool-of instance-pools-of
+          |setter of instance-pool-of| |setter of instance-pools-of|
           instance-pool->list instance-pool-find instance-pool-remove!
           instance-pool-fold instance-pool-for-each instance-pool-map
           instance-pool:create-pool instance-pool:compute-pools

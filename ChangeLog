@@ -1,5 +1,11 @@
 2003-11-11  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/mop/instance-pool.scm : export some accessors; without
+	  them, weird things happen when other modules creates subclasses
+	  of <instance-pool-meta>.  This fix is just to dodge the real
+	  problem, which is the interaction between generic function and
+	  namespaces.
+
 	* src/class.c : added missing delete-method! generic function
 	  registration.
 
