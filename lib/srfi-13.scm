@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: srfi-13.scm,v 1.2 2001-04-25 07:31:53 shiro Exp $
+;;;  $Id: srfi-13.scm,v 1.3 2001-04-27 08:29:07 shirok Exp $
 ;;;
 
 ;; Srfi-13 is a large set of functions, so I splitted it up to a number of
@@ -26,7 +26,6 @@
 ;; Natively implemented functions:
 ;;   string? make-string string string->list list->string
 ;;   string-join string-length string-ref string-copy
-;;   string-take string-drop string-take-right string-drop-right
 ;;   string-set! string-fill!
 ;;   string-append
 
@@ -85,6 +84,8 @@
 (autoload "srfi-13/generator" string-tabulate reverse-list->string)
 (autoload "srfi-13/selector"  substring/shared string-copy!
                               string-pad string-pad-right
+                              string-take string-take-right
+                              string-drop string-drop-right
                               string-trim string-trim-right string-trim-both)
 (autoload "srfi-13/comparer"  string-compare string-compare-ci
                               string= string<> string<
