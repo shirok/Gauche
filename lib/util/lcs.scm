@@ -13,56 +13,73 @@
   (export lcs lcs-with-positions lcs-fold lcs-edit-list))
 (select-module util.lcs)
 
-;; Utility for lcs-with-positions
-(define (max-seq . opt-ls)
-  (if (null? opt-ls)
-    (list 0 '())
-    (let loop ((a (car opt-ls)) (ls (cdr opt-ls)))
-      (if (null? ls)
-        a
-        (let ((b (car ls)))
-          (if (>= (car a) (car b))
-            (loop a (cdr ls))
-            (loop b (cdr ls))))))))
-
 ;; The base algorithm.   This algorithm consumes NxM space and time
 ;; where N = (length a-ls) and M = (length b-ls)
+
+;; [SK] The original version by Alex, using recursion and memoization,
+;; was clean and elegant, but the current Gauche doesn't handle deep
+;; recursion well (its stack handler sucks).  So I rewrote it by
+;; imperative style (ugh).  Once I fixed Gauche's stack handler,
+;; I may get Alex' version back.
+
 (define (lcs-with-positions a-ls b-ls . opt-eq)
   (let* ((eq (get-optional opt-eq equal?))
          (a-size (+ 1 (size-of a-ls)))
          (b-size (+ 1 (size-of b-ls)))
+         (a-rev  (reverse a-ls))
+         (b-rev  (reverse b-ls))
          (undef  (cons #f #f))
-         (cache  (make-vector (* a-size b-size) undef)))
-    (let-syntax ((cache-ref
+         (len-tab (make-vector (* a-size b-size) 0))
+         (seq-tab (make-vector (* a-size b-size) 0)))
+    (let-syntax ((tref
                   (syntax-rules ()
-                    ((_ a b) (vector-ref cache (+ (* a b-size) b)))))
-                 (cache-set!
+                    ((_ t a b) (vector-ref t (+ (* a b-size) b)))))
+                 (tset!
                   (syntax-rules ()
-                    ((_ a b v) (vector-set! cache (+ (* a b-size) b) v)))))
-      (let loop ((a a-ls) (a-pos 0) (b b-ls) (b-pos 0))
-        ;; cache this step if not already done
-        (when (eq? (cache-ref a-pos b-pos) undef)
-          (cache-set!
-           a-pos b-pos
-           (if (or (null? a) (null? b))
-               (list 0 '()) ;; base case
-               (let ((a1 (car a))
-                     (b1 (car b))
-                     (a-tail (loop (cdr a) (+ a-pos 1) b b-pos))
-                     (b-tail (loop a a-pos (cdr b) (+ b-pos 1))))
-                 (cond ((eq a1 b1)
-                        ;; match found, we either use it or we don't
-                        (let* ((a-b-tail (loop (cdr a) (+ a-pos 1)
-                                               (cdr b) (+ b-pos 1)))
-                               (a-b-res (list (+ 1 (car a-b-tail))
-                                              (cons (list a1 a-pos b-pos)
-                                                    (cadr a-b-tail)))))
-                          (max-seq a-b-res a-tail b-tail)))
-                       (else
-                        ;; not a match
-                        (max-seq a-tail b-tail)))))))
-        ;; return the computed cache
-        (cache-ref a-pos b-pos) ))))
+                    ((_ t a b v) (vector-set! t (+ (* a b-size) b) v)))))
+
+      ;; set up boundary
+      (dotimes (pos a-size)
+        (tset! len-tab pos (- b-size 1) 0)
+        (tset! seq-tab pos (- b-size 1) '()))
+      (dotimes (pos b-size)
+        (tset! len-tab (- a-size 1) pos 0)
+        (tset! seq-tab (- a-size 1) pos '()))
+      ;; fill the table from the bottom-right
+      (let a-loop ((a a-rev) (a-pos (- a-size 2)))
+        (unless (null? a)
+          (let b-loop ((b b-rev) (b-pos (- b-size 2)))
+            (if (null? b)
+              (a-loop (cdr a) (- a-pos 1))
+              (let* ((a-pos1 (+ a-pos 1))
+                     (b-pos1 (+ b-pos 1))
+                     (a-tail-len (tref len-tab a-pos1 b-pos))
+                     (b-tail-len (tref len-tab a-pos b-pos1)))
+                (receive (len seq)
+                    (if (eq (car a) (car b))
+                      ;; we got match.
+                      (let1 a-b-tail-len (+ (tref len-tab a-pos1 b-pos1) 1)
+                        (if (>= a-tail-len b-tail-len)
+                          (if (>= a-b-tail-len a-tail-len)
+                            (values a-b-tail-len
+                                    (cons (list (car a) a-pos b-pos)
+                                          (tref seq-tab a-pos1 b-pos1)))
+                            (values a-tail-len (tref seq-tab a-pos1 b-pos)))
+                          (if (>= a-b-tail-len b-tail-len)
+                            (values a-b-tail-len
+                                    (cons (list (car a) a-pos b-pos)
+                                          (tref seq-tab a-pos1 b-pos1)))
+                            (values b-tail-len (tref seq-tab a-pos b-pos1)))))
+                      ;; non-common 
+                      (if (>= a-tail-len b-tail-len)
+                        (values a-tail-len (tref seq-tab a-pos1 b-pos))
+                        (values b-tail-len (tref seq-tab a-pos b-pos1))))
+                  (tset! len-tab a-pos b-pos len)
+                  (tset! seq-tab a-pos b-pos seq)
+                  (b-loop (cdr b) (- b-pos 1))))))))
+      
+      (list (tref len-tab 0 0) (tref seq-tab 0 0))
+      )))
 
 ;; Just returns the LCS
 (define (lcs a b . opt-eq)
