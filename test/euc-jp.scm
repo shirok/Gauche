@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with euc-jp.
 
-;; $Id: euc-jp.scm,v 1.16 2002-11-02 06:47:13 shirok Exp $
+;; $Id: euc-jp.scm,v 1.17 2003-01-08 00:25:30 shirok Exp $
 
 (use gauche.test)
 
@@ -10,254 +10,239 @@
 ;;-------------------------------------------------------------------
 (test-section "string builtins")
 
-(test "string" "いろhにほへt"
-      (lambda () (string #\い #\ろ #\h #\に #\ほ #\へ #\t)))
-(test "list->string" "いろhにほへt"
-      (lambda () (list->string '(#\い #\ろ #\h #\に #\ほ #\へ #\t))))
-(test "make-string" "へへへへへ" (lambda () (make-string 5 #\へ)))
-(test "make-string" "" (lambda () (make-string 0 #\へ)))
+(test* "string" "いろhにほへt"
+       (string #\い #\ろ #\h #\に #\ほ #\へ #\t))
+(test* "list->string" "いろhにほへt"
+       (list->string '(#\い #\ろ #\h #\に #\ほ #\へ #\t)))
+(test* "make-string" "へへへへへ" (make-string 5 #\へ))
+(test* "make-string" "" (make-string 0 #\へ))
 
-(test "string->list" '(#\い #\ろ #\h #\に #\ほ #\へ #\t)
-      (lambda () (string->list "いろhにほへt")))
-(test "string->list" '(#\ろ #\h #\に #\ほ #\へ #\t)
-      (lambda () (string->list "いろhにほへt" 1)))
-(test "string->list" '(#\ろ #\h #\に)
-      (lambda () (string->list "いろhにほへt" 1 4)))
+(test* "string->list" '(#\い #\ろ #\h #\に #\ほ #\へ #\t)
+       (string->list "いろhにほへt"))
+(test* "string->list" '(#\ろ #\h #\に #\ほ #\へ #\t)
+       (string->list "いろhにほへt" 1))
+(test* "string->list" '(#\ろ #\h #\に)
+       (string->list "いろhにほへt" 1 4))
 
-(test "string-copy" '("ぁゃνぃ" #f)
-      (lambda () (let* ((x "ぁゃνぃ") (y (string-copy x)))
-                   (list y (eq? x y)))))
-(test "string-copy" "ゃνぃ" (lambda () (string-copy "ぁゃνぃ" 1)))
-(test "string-copy" "ゃν"  (lambda () (string-copy "ぁゃνぃ" 1 3)))
+(test* "string-copy" '("ぁゃνぃ" #f)
+       (let* ((x "ぁゃνぃ") (y (string-copy x)))
+         (list y (eq? x y))))
+(test* "string-copy" "ゃνぃ" (string-copy "ぁゃνぃ" 1))
+(test* "string-copy" "ゃν"  (string-copy "ぁゃνぃ" 1 3))
 
-(test "string-ref" #\ろ (lambda () (string-ref "いろは" 1)))
+(test* "string-ref" #\ろ (string-ref "いろは" 1))
 (define x (string-copy "いろはにほ"))
-(test "string-set!" "いろZにほ" (lambda () (string-set! x 2 #\Z) x))
+(test* "string-set!" "いろZにほ" (begin (string-set! x 2 #\Z) x))
 
-(test "string-fill!" "のののののの"
-      (lambda () (string-fill! (string-copy "000000") #\の)))
-(test "string-fill!" "000ののの"
-      (lambda () (string-fill! (string-copy "000000") #\の 3)))
-(test "string-fill!" "000のの0"
-      (lambda () (string-fill! (string-copy "000000") #\の 3 5)))
+(test* "string-fill!" "のののののの"
+       (string-fill! (string-copy "000000") #\の))
+(test* "string-fill!" "000ののの"
+       (string-fill! (string-copy "000000") #\の 3))
+(test* "string-fill!" "000のの0"
+       (string-fill! (string-copy "000000") #\の 3 5))
 
-(test "string-join" "ふぅ ばぁ ばず"
-      (lambda () (string-join '("ふぅ" "ばぁ" "ばず"))))
-(test "string-join" "ふぅ！ばぁ！ばず"
-      (lambda () (string-join '("ふぅ" "ばぁ" "ばず") "！")))
-(test "string-join" "ふぅ→←ばぁ→←ばず"
-      (lambda () (string-join '("ふぅ" "ばぁ" "ばず") "→←" 'infix)))
-(test "string-join" ""
-      (lambda () (string-join '() "→←")))
-(test "string-join" "ふぅ！ばぁ！ばず！"
-      (lambda () (string-join '("ふぅ" "ばぁ" "ばず") "！" 'suffix)))
-(test "string-join" "！ふぅ！ばぁ！ばず"
-      (lambda () (string-join '("ふぅ" "ばぁ" "ばず") "！" 'prefix)))
-(test "string-join" "ふぅ！ばぁ！ばず"
-      (lambda () (string-join '("ふぅ" "ばぁ" "ばず") "！" 'strict-infix)))
+(test* "string-join" "ふぅ ばぁ ばず"
+       (string-join '("ふぅ" "ばぁ" "ばず")))
+(test* "string-join" "ふぅ！ばぁ！ばず"
+       (string-join '("ふぅ" "ばぁ" "ばず") "！"))
+(test* "string-join" "ふぅ→←ばぁ→←ばず"
+       (string-join '("ふぅ" "ばぁ" "ばず") "→←" 'infix))
+(test* "string-join" ""
+       (string-join '() "→←"))
+(test* "string-join" "ふぅ！ばぁ！ばず！"
+       (string-join '("ふぅ" "ばぁ" "ばず") "！" 'suffix))
+(test* "string-join" "！ふぅ！ばぁ！ばず"
+       (string-join '("ふぅ" "ばぁ" "ばず") "！" 'prefix))
+(test* "string-join" "ふぅ！ばぁ！ばず"
+       (string-join '("ふぅ" "ばぁ" "ばず") "！" 'strict-infix))
 
-(test "string-scan" 7
-      (lambda () (string-scan "あえいうえおあおあいうえお" "おあい")))
-(test "string-scan" "あえいうえおあ"
-      (lambda () (string-scan "あえいうえおあおあいうえお" "おあい" 'before)))
-(test "string-scan" "うえお"
-      (lambda () (string-scan "あえいうえおあおあいうえお" "おあい" 'after)))
-(test "string-scan" '("あえいうえおあ" "おあいうえお")
-      (lambda ()
-        (receive r (string-scan "あえいうえおあおあいうえお" "おあい" 'before*) r)))
-(test "string-scan" '("あえいうえおあおあい" "うえお")
-      (lambda ()
-        (receive r (string-scan "あえいうえおあおあいうえお" "おあい" 'after*) r)))
-(test "string-scan" '("あえいうえおあ" "うえお")
-      (lambda ()
-        (receive r (string-scan "あえいうえおあおあいうえお" "おあい" 'both) r)))
-(test "string-scan" #f
-      (lambda () (string-scan "あえいうえおあおあいうえお" "おい")))
+(test* "string-scan" 7
+       (string-scan "あえいうえおあおあいうえお" "おあい"))
+(test* "string-scan" "あえいうえおあ"
+       (string-scan "あえいうえおあおあいうえお" "おあい" 'before))
+(test* "string-scan" "うえお"
+       (string-scan "あえいうえおあおあいうえお" "おあい" 'after))
+(test* "string-scan" '("あえいうえおあ" "おあいうえお")
+       (receive r (string-scan "あえいうえおあおあいうえお" "おあい" 'before*) r))
+(test* "string-scan" '("あえいうえおあおあい" "うえお")
+       (receive r (string-scan "あえいうえおあおあいうえお" "おあい" 'after*) r))
+(test* "string-scan" '("あえいうえおあ" "うえお")
+       (receive r (string-scan "あえいうえおあおあいうえお" "おあい" 'both) r))
+(test* "string-scan" #f
+       (string-scan "あえいうえおあおあいうえお" "おい"))
 
-(test "string-substitute!" "うえおdefghi"
-      (lambda ()
-        (let ((s (string-copy "abcdefghi")))
-          (string-substitute! s 0 "うえお")
-          s)))
-(test "string-substitute!" "abcうえおghi"
-      (lambda ()
-        (let ((s (string-copy "abcdefghi")))
-          (string-substitute! s 3 "うえお")
-          s)))
+(test* "string-substitute!" "うえおdefghi"
+       (let ((s (string-copy "abcdefghi")))
+         (string-substitute! s 0 "うえお")
+         s))
+(test* "string-substitute!" "abcうえおghi"
+       (let ((s (string-copy "abcdefghi")))
+         (string-substitute! s 3 "うえお")
+         s))
 
 ;;-------------------------------------------------------------------
 (test-section "string-pointer")
 (define sp #f)
-(test "make-string-pointer" #t
-      (lambda ()
-        (set! sp (make-string-pointer "いろはにhoへと"))
-        (string-pointer? sp)))
-(test "string-pointer-next!" #\い
-      (lambda () (string-pointer-next! sp)))
-(test "string-pointer-next!" #\ろ
-      (lambda () (string-pointer-next! sp)))
-(test "string-pointer-prev!" #\ろ
-      (lambda () (string-pointer-prev! sp)))
-(test "string-pointer-prev!" #\い
-      (lambda () (string-pointer-prev! sp)))
-(test "string-pointer-prev!" #t
-      (lambda () (eof-object? (string-pointer-prev! sp))))
-(test "string-pointer-index" 0
-      (lambda () (string-pointer-index sp)))
-(test "string-pointer-index" 8
-      (lambda () (do ((x (string-pointer-next! sp) (string-pointer-next! sp)))
-                     ((eof-object? x) (string-pointer-index sp)))))
-(test "string-pointer-substring" '("いろはにhoへと" "")
-      (lambda () (list (string-pointer-substring sp)
-                       (string-pointer-substring sp :after #t))))
-(test "string-pointer-substring" '("いろはにh" "oへと")
-      (lambda ()
-        (string-pointer-set! sp 5)
-        (list (string-pointer-substring sp)
-              (string-pointer-substring sp :after #t))))
-(test "string-pointer-substring" '("" "いろはにhoへと")
-      (lambda ()
-        (string-pointer-set! sp 0)
-        (list (string-pointer-substring sp)
-              (string-pointer-substring sp :after #t))))
+(test* "make-string-pointer" #t
+       (begin (set! sp (make-string-pointer "いろはにhoへと"))
+              (string-pointer? sp)))
+(test* "string-pointer-next!" #\い (string-pointer-next! sp))
+(test* "string-pointer-next!" #\ろ (string-pointer-next! sp))
+(test* "string-pointer-prev!" #\ろ (string-pointer-prev! sp))
+(test* "string-pointer-prev!" #\い (string-pointer-prev! sp))
+(test* "string-pointer-prev!" #t (eof-object? (string-pointer-prev! sp)))
+(test* "string-pointer-index" 0 (string-pointer-index sp))
+(test* "string-pointer-index" 8
+       (do ((x (string-pointer-next! sp) (string-pointer-next! sp)))
+           ((eof-object? x) (string-pointer-index sp))))
+(test* "string-pointer-substring" '("いろはにhoへと" "")
+       (list (string-pointer-substring sp)
+             (string-pointer-substring sp :after #t)))
+(test* "string-pointer-substring" '("いろはにh" "oへと")
+       (begin
+         (string-pointer-set! sp 5)
+         (list (string-pointer-substring sp)
+               (string-pointer-substring sp :after #t))))
+(test* "string-pointer-substring" '("" "いろはにhoへと")
+       (begin
+         (string-pointer-set! sp 0)
+         (list (string-pointer-substring sp)
+               (string-pointer-substring sp :after #t))))
 
 ;;-------------------------------------------------------------------
 (test-section "incomplete strings")
 
-(test "string-length" 6 (lambda () (string-length #*"あいう")))
-(test "string-complete->incomplete" #*"あいう" 
-      (lambda () (string-complete->incomplete "あいう")))
-(test "string-complete->incomplete" #*"あいう"
-      (lambda () (string-complete->incomplete #*"あいう")))
-(test "string-incomplete->complete" "あいう"
-      (lambda () (string-incomplete->complete #*"あいう")))
-(test "string-incomplete->complete" "あいう"
-      (lambda () (string-incomplete->complete "あいう")))
+(test* "string-length" 6 (string-length #*"あいう"))
+(test* "string-complete->incomplete" #*"あいう" 
+       (string-complete->incomplete "あいう"))
+(test* "string-complete->incomplete" #*"あいう"
+       (string-complete->incomplete #*"あいう"))
+(test* "string-incomplete->complete" "あいう"
+       (string-incomplete->complete #*"あいう"))
+(test* "string-incomplete->complete" "あいう"
+       (string-incomplete->complete "あいう"))
 
-(test "string=?" #t (lambda () (string=? #*"あいう" #*"あいう")))
+(test* "string=?" #t (string=? #*"あいう" #*"あいう"))
 
-(test "string-byte-ref" #xa2 (lambda () (string-byte-ref #*"あいう" 1)))
+(test* "string-byte-ref" #xa2 (string-byte-ref #*"あいう" 1))
 
-(test "string-append" #*"あいうえお"
-      (lambda () (string-append "あいう" #*"えお")))
-(test "string-append" #*"あいうえお"
-      (lambda () (string-append #*"あいう" "えお")))
-(test "string-append" #*"あいうえお"
-      (lambda () (string-append #*"あいう" #*"えお")))
-(test "string-append" 10
-      (lambda () (string-length (string-append "あいう" "えお" #*""))))
+(test* "string-append" #*"あいうえお"
+       (string-append "あいう" #*"えお"))
+(test* "string-append" #*"あいうえお"
+       (string-append #*"あいう" "えお"))
+(test* "string-append" #*"あいうえお"
+       (string-append #*"あいう" #*"えお"))
+(test* "string-append" 10
+       (string-length (string-append "あいう" "えお" #*"")))
 
-(test "string-substitute!" #*"\xa4bc\xa4"
-      (lambda () (string-substitute! (string-copy #*"あい") 1 #*"bc")))
+(test* "string-substitute!" #*"\xa4bc\xa4"
+       (string-substitute! (string-copy #*"あい") 1 #*"bc"))
 
-(test "string-incompltet->incomplete" "あ"
-      (lambda () (string-incomplete->complete
-                  (string-append #*"\xa4" #*"\xa2"))))
+(test* "string-incompltet->incomplete" "あ"
+       (string-incomplete->complete
+        (string-append #*"\xa4" #*"\xa2")))
 
 ;;-------------------------------------------------------------------
 (test-section "format")
 
-(test "format" "あぶら"
-      (lambda () (format #f "~,,,,3a" "あぶらかだぶら")))
-(test "format" "abら"
-      (lambda () (format #f "~,,,,3a" "abらかだぶら")))
-(test "format" "あぶらかだぶら"
-      (lambda () (format #f "~,,,,7:a" "あぶらかだぶら")))
-(test "format" "あぶらか"
-      (lambda () (format #f "~,,,,7:a" "あぶらか")))
-(test "format" "あぶら ..."
-      (lambda () (format #f "~,,,,7:a" "あぶらかだぶらぶらぶら")))
+(test* "format" "あぶら"
+       (format #f "~,,,,3a" "あぶらかだぶら"))
+(test* "format" "abら"
+       (format #f "~,,,,3a" "abらかだぶら"))
+(test* "format" "あぶらかだぶら"
+       (format #f "~,,,,7:a" "あぶらかだぶら"))
+(test* "format" "あぶらか"
+       (format #f "~,,,,7:a" "あぶらか"))
+(test* "format" "あぶら ..."
+       (format #f "~,,,,7:a" "あぶらかだぶらぶらぶら"))
 
 ;;-------------------------------------------------------------------
 (test-section "string-library")
 (use srfi-13)
 
-(test "string-every" #t (lambda () (string-every #\あ "")))
-(test "string-every" #t (lambda () (string-every #\あ "ああああ")))
-(test "string-every" #f (lambda () (string-every #\あ "あああa")))
-(test "string-every" #t (lambda () (string-every #[あ-ん] "ああいあ")))
-(test "string-every" #f (lambda () (string-every #[あ-ん] "ああaあ")))
-(test "string-every" #t (lambda () (string-every #[あ-ん] "")))
-(test "string-every" #t (lambda () (string-every (lambda (x) (char-ci=? x #\あ)) "ああああ")))
-(test "string-every" #f (lambda () (string-every (lambda (x) (char-ci=? x #\あ)) "あいあい")))
+(test* "string-every" #t (string-every #\あ ""))
+(test* "string-every" #t (string-every #\あ "ああああ"))
+(test* "string-every" #f (string-every #\あ "あああa"))
+(test* "string-every" #t (string-every #[あ-ん] "ああいあ"))
+(test* "string-every" #f (string-every #[あ-ん] "ああaあ"))
+(test* "string-every" #t (string-every #[あ-ん] ""))
+(test* "string-every" #t (string-every (lambda (x) (char-ci=? x #\あ)) "ああああ"))
+(test* "string-every" #f (string-every (lambda (x) (char-ci=? x #\あ)) "あいあい"))
 
-(test "string-any" #t (lambda () (string-any #\あ "ああああ")))
-(test "string-any" #f (lambda () (string-any #\あ "いうえお")))
-(test "string-any" #f (lambda () (string-any #\あ "")))
-(test "string-any" #t (lambda () (string-any #[あ-ん] "すきーむ")))
-(test "string-any" #f (lambda () (string-any #[あ-ん] "スキーム")))
-(test "string-any" #f (lambda () (string-any #[あ-ん] "")))
-(test "string-any" #t (lambda () (string-any (lambda (x) (char-ci=? x #\あ)) "らららあ")))
-(test "string-any" #f (lambda () (string-any (lambda (x) (char-ci=? x #\あ)) "ラララア")))
-(test "string-tabulate" "アィイゥウ"
-      (lambda ()
-        (string-tabulate (lambda (code)
-                           (integer->char (+ code
-                                             (char->integer #\ア))))
-                         5)))
-(test "reverse-list->string" "んをわ"
-      (lambda () (reverse-list->string '(#\わ #\を #\ん))))
-(test "string-copy!" "abうえおfg"
-      (lambda () (let ((x (string-copy "abcdefg")))
-                   (string-copy! x 2 "あいうえおか" 2 5)
-                   x)))
-(test "string-take" "あいうえ"  (lambda () (string-take "あいうえおか" 4)))
-(test "string-drop" "おか"  (lambda () (string-drop "あいうえおか" 4)))
-(test "string-take-right" "うえおか"  (lambda () (string-take-right "あいうえおか" 4)))
-(test "string-drop-right" "あい"  (lambda () (string-drop-right "あいうえおか" 4)))
-(test "string-pad" "■■パッド" (lambda () (string-pad "パッド" 5 #\■)))
-(test "string-pad" "パディング" (lambda () (string-pad "パディング" 5 #\■)))
-(test "string-pad" "ディングス" (lambda () (string-pad "パディングス" 5 #\■)))
-(test "string-pad-right" "パッド■■" (lambda () (string-pad-right "パッド" 5 #\■)))
-(test "string-pad" "パディング" (lambda () (string-pad-right "パディングス" 5 #\■)))
+(test* "string-any" #t (string-any #\あ "ああああ"))
+(test* "string-any" #f (string-any #\あ "いうえお"))
+(test* "string-any" #f (string-any #\あ ""))
+(test* "string-any" #t (string-any #[あ-ん] "すきーむ"))
+(test* "string-any" #f (string-any #[あ-ん] "スキーム"))
+(test* "string-any" #f (string-any #[あ-ん] ""))
+(test* "string-any" #t (string-any (lambda (x) (char-ci=? x #\あ)) "らららあ"))
+(test* "string-any" #f (string-any (lambda (x) (char-ci=? x #\あ)) "ラララア"))
+(test* "string-tabulate" "アィイゥウ"
+       (string-tabulate (lambda (code)
+                          (integer->char (+ code
+                                            (char->integer #\ア))))
+                        5))
+(test* "reverse-list->string" "んをわ"
+       (reverse-list->string '(#\わ #\を #\ん)))
+(test* "string-copy!" "abうえおfg"
+       (let ((x (string-copy "abcdefg")))
+         (string-copy! x 2 "あいうえおか" 2 5)
+         x))
+(test* "string-take" "あいうえ"  (string-take "あいうえおか" 4))
+(test* "string-drop" "おか"  (string-drop "あいうえおか" 4))
+(test* "string-take-right" "うえおか"  (string-take-right "あいうえおか" 4))
+(test* "string-drop-right" "あい"  (string-drop-right "あいうえおか" 4))
+(test* "string-pad" "■■パッド" (string-pad "パッド" 5 #\■))
+(test* "string-pad" "パディング" (string-pad "パディング" 5 #\■))
+(test* "string-pad" "ディングス" (string-pad "パディングス" 5 #\■))
+(test* "string-pad-right" "パッド■■" (string-pad-right "パッド" 5 #\■))
+(test* "string-pad" "パディング" (string-pad-right "パディングス" 5 #\■))
 
 ;;-------------------------------------------------------------------
 (test-section "char set")
 
 (use srfi-14)
 
-(test "char-set" #t
-      (lambda () (char-set= (char-set #\あ #\い #\う #\え #\お)
-                            (string->char-set "おうえいあ"))))
-(test "char-set" #t
-      (lambda () (char-set= (list->char-set '(#\あ #\い #\う #\ん))
-                            (string->char-set "んんいいいああう"))))
-(test "char-set" #t
-      (lambda () (char-set<= (list->char-set '(#\ほ #\げ))
-                             char-set:full)))
-(test "char-set" #t
-      (lambda ()
-        (char-set= (->char-set "ぁぃぅぇぉあいうえ")
-                   (integer-range->char-set (char->integer #\ぁ)
-                                            (char->integer #\お)))))
+(test* "char-set" #t
+       (char-set= (char-set #\あ #\い #\う #\え #\お)
+                  (string->char-set "おうえいあ")))
+(test* "char-set" #t
+       (char-set= (list->char-set '(#\あ #\い #\う #\ん))
+                  (string->char-set "んんいいいああう")))
+(test* "char-set" #t
+       (char-set<= (list->char-set '(#\ほ #\げ))
+                   char-set:full))
+(test* "char-set" #t
+       (char-set= (->char-set "ぁぃぅぇぉあいうえ")
+                  (integer-range->char-set (char->integer #\ぁ)
+                                           (char->integer #\お))))
 
 ;;-------------------------------------------------------------------
 (test-section "ports")
 
 (define istr (open-input-string "イロハニホヘト"))
-(test "read-char" #\イ (lambda () (read-char istr)))
-(test "read-byte" #xa5 (lambda () (read-byte istr)))
-(test "read-byte (using scratch)" #xed
-      (lambda () (peek-char istr) (read-byte istr)))
-(test "read-char (using scratch)" #\ハ
-      (lambda () (read-char istr)))
-(test "read-block (using scratch)" #*"ニ"
-      (lambda () (peek-char istr) (read-block 2 istr)))
-(test "read-block (using scratch)" #*"\xa5"
-      (lambda () (peek-char istr) (read-block 1 istr)))
-(test "read-block (using scratch)" #*"\xdbヘト"
-      (lambda () (peek-char istr) (read-block 10 istr)))
+(test* "read-char" #\イ (read-char istr))
+(test* "read-byte" #xa5 (read-byte istr))
+(test* "read-byte (using scratch)" #xed
+       (begin (peek-char istr) (read-byte istr)))
+(test* "read-char (using scratch)" #\ハ
+       (read-char istr))
+(test* "read-block (using scratch)" #*"ニ"
+       (begin (peek-char istr) (read-block 2 istr)))
+(test* "read-block (using scratch)" #*"\xa5"
+       (begin (peek-char istr) (read-block 1 istr)))
+(test* "read-block (using scratch)" #*"\xdbヘト"
+       (begin (peek-char istr) (read-block 10 istr)))
 
-(test "read-line (LF)" "なむ"
-      (lambda () (read-line (open-input-string "なむ\n"))))
-(test "read-line (CR)" "なむ"
-      (lambda () (read-line (open-input-string "なむ\r"))))
-(test "read-line (CRLF)" "なむ"
-      (lambda () (read-line (open-input-string "なむ\r\n"))))
-(test "read-line (using ungotten)" "なむ"
-      (lambda ()
-        (let1 s (open-input-string "なむ\n")
-          (peek-char s) (read-line s))))
+(test* "read-line (LF)" "なむ"
+       (read-line (open-input-string "なむ\n")))
+(test* "read-line (CR)" "なむ"
+       (read-line (open-input-string "なむ\r")))
+(test* "read-line (CRLF)" "なむ"
+       (read-line (open-input-string "なむ\r\n")))
+(test* "read-line (using ungotten)" "なむ"
+       (let1 s (open-input-string "なむ\n")
+         (peek-char s) (read-line s)))
 
 ;(test "read-line (using scratch)" "なむ"
 ;      (lambda ()
@@ -298,99 +283,82 @@
   (let loop ((b (read-block siz p)) (r '()))
     (if (eof-object? b) (reverse r) (loop (read-block siz p) (cons b r)))))
 
-(test "buffered port (getc, bufsiz=256)"
-      '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ)
-      (lambda ()
-        (port->char-list (open-input-buffered-port (make-filler) 256))))
+(test* "buffered port (getc, bufsiz=256)"
+       '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ)
+       (port->char-list (open-input-buffered-port (make-filler) 256)))
 
-(test "buffered port (getc, bufsiz=7)"
-      '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ)
-      (lambda ()
-        (port->char-list (open-input-buffered-port (make-filler) 7))))
+(test* "buffered port (getc, bufsiz=7)"
+       '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ)
+       (port->char-list (open-input-buffered-port (make-filler) 7)))
 
-(test "buffered port (getc, bufsiz=3)"
-      '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ)
-      (lambda ()
-        (port->char-list (open-input-buffered-port (make-filler) 3))))
+(test* "buffered port (getc, bufsiz=3)"
+       '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ)
+       (port->char-list (open-input-buffered-port (make-filler) 3)))
 
-(test "buffered port (getc, bufsiz=2)"
-      '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ)
-      (lambda ()
-        (port->char-list (open-input-buffered-port (make-filler) 2))))
+(test* "buffered port (getc, bufsiz=2)"
+       '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ)
+       (port->char-list (open-input-buffered-port (make-filler) 2)))
 
-(test "buffered port (getc, bufsiz=1)"
-      '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ)
-      (lambda ()
-        (port->char-list (open-input-buffered-port (make-filler) 1))))
+(test* "buffered port (getc, bufsiz=1)"
+       '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ)
+       (port->char-list (open-input-buffered-port (make-filler) 1)))
 
-(test "buffered port (getb, bufsiz=256)"
-      '(#xa4 #xa2 #xa4 #xa4 #xa4 #xa6 #xa4 #xa8 #xa4 #xaa
-        #xa4 #xab #xa4 #xad #xa4 #xaf #xa4 #xb1 #xa4 #xb3)
-      (lambda ()
-        (port->byte-list (open-input-buffered-port (make-filler) 256))))
+(test* "buffered port (getb, bufsiz=256)"
+       '(#xa4 #xa2 #xa4 #xa4 #xa4 #xa6 #xa4 #xa8 #xa4 #xaa
+              #xa4 #xab #xa4 #xad #xa4 #xaf #xa4 #xb1 #xa4 #xb3)
+       (port->byte-list (open-input-buffered-port (make-filler) 256)))
 
-(test "buffered port (getb, bufsiz=20)"
-      '(#xa4 #xa2 #xa4 #xa4 #xa4 #xa6 #xa4 #xa8 #xa4 #xaa
-        #xa4 #xab #xa4 #xad #xa4 #xaf #xa4 #xb1 #xa4 #xb3)
-      (lambda ()
-        (port->byte-list (open-input-buffered-port (make-filler) 20))))
+(test* "buffered port (getb, bufsiz=20)"
+       '(#xa4 #xa2 #xa4 #xa4 #xa4 #xa6 #xa4 #xa8 #xa4 #xaa
+              #xa4 #xab #xa4 #xad #xa4 #xaf #xa4 #xb1 #xa4 #xb3)
+       (port->byte-list (open-input-buffered-port (make-filler) 20)))
 
-(test "buffered port (getb, bufsiz=19)"
-      '(#xa4 #xa2 #xa4 #xa4 #xa4 #xa6 #xa4 #xa8 #xa4 #xaa
-        #xa4 #xab #xa4 #xad #xa4 #xaf #xa4 #xb1 #xa4 #xb3)
-      (lambda ()
-        (port->byte-list (open-input-buffered-port (make-filler) 19))))
+(test* "buffered port (getb, bufsiz=19)"
+       '(#xa4 #xa2 #xa4 #xa4 #xa4 #xa6 #xa4 #xa8 #xa4 #xaa
+              #xa4 #xab #xa4 #xad #xa4 #xaf #xa4 #xb1 #xa4 #xb3)
+       (port->byte-list (open-input-buffered-port (make-filler) 19)))
 
-(test "buffered port (getb, bufsiz=2)"
-      '(#xa4 #xa2 #xa4 #xa4 #xa4 #xa6 #xa4 #xa8 #xa4 #xaa
-        #xa4 #xab #xa4 #xad #xa4 #xaf #xa4 #xb1 #xa4 #xb3)
-      (lambda ()
-        (port->byte-list (open-input-buffered-port (make-filler) 2))))
+(test* "buffered port (getb, bufsiz=2)"
+       '(#xa4 #xa2 #xa4 #xa4 #xa4 #xa6 #xa4 #xa8 #xa4 #xaa
+              #xa4 #xab #xa4 #xad #xa4 #xaf #xa4 #xb1 #xa4 #xb3)
+       (port->byte-list (open-input-buffered-port (make-filler) 2)))
 
-(test "buffered port (getb, bufsiz=1)"
-      '(#xa4 #xa2 #xa4 #xa4 #xa4 #xa6 #xa4 #xa8 #xa4 #xaa
-        #xa4 #xab #xa4 #xad #xa4 #xaf #xa4 #xb1 #xa4 #xb3)
-      (lambda ()
-        (port->byte-list (open-input-buffered-port (make-filler) 1))))
+(test* "buffered port (getb, bufsiz=1)"
+       '(#xa4 #xa2 #xa4 #xa4 #xa4 #xa6 #xa4 #xa8 #xa4 #xaa
+              #xa4 #xab #xa4 #xad #xa4 #xaf #xa4 #xb1 #xa4 #xb3)
+       (port->byte-list (open-input-buffered-port (make-filler) 1)))
 
-(test "buffered port (getz, siz=20,5)"
-      '(#*"\xa4\xa2\xa4\xa4\xa4" #*"\xa6\xa4\xa8\xa4\xaa"
-        #*"\xa4\xab\xa4\xad\xa4" #*"\xaf\xa4\xb1\xa4\xb3")
-      (lambda ()
-        (port->chunk-list (open-input-buffered-port (make-filler) 20) 5)))
+(test* "buffered port (getz, siz=20,5)"
+       '(#*"\xa4\xa2\xa4\xa4\xa4" #*"\xa6\xa4\xa8\xa4\xaa"
+           #*"\xa4\xab\xa4\xad\xa4" #*"\xaf\xa4\xb1\xa4\xb3")
+       (port->chunk-list (open-input-buffered-port (make-filler) 20) 5))
 
-(test "buffered port (getz, siz=20,20)"
-      '(#*"\xa4\xa2\xa4\xa4\xa4\xa6\xa4\xa8\xa4\xaa\xa4\xab\xa4\xad\xa4\xaf\xa4\xb1\xa4\xb3")
-      (lambda ()
-        (port->chunk-list (open-input-buffered-port (make-filler) 20) 20)))
+(test* "buffered port (getz, siz=20,20)"
+       '(#*"\xa4\xa2\xa4\xa4\xa4\xa6\xa4\xa8\xa4\xaa\xa4\xab\xa4\xad\xa4\xaf\xa4\xb1\xa4\xb3")
+       (port->chunk-list (open-input-buffered-port (make-filler) 20) 20))
 
-(test "buffered port (getz, siz=9,20)"
-      '(#*"\xa4\xa2\xa4\xa4\xa4\xa6\xa4\xa8\xa4\xaa\xa4\xab\xa4\xad\xa4\xaf\xa4\xb1\xa4\xb3")
-      (lambda ()
-        (port->chunk-list (open-input-buffered-port (make-filler) 9) 20)))
+(test* "buffered port (getz, siz=9,20)"
+       '(#*"\xa4\xa2\xa4\xa4\xa4\xa6\xa4\xa8\xa4\xaa\xa4\xab\xa4\xad\xa4\xaf\xa4\xb1\xa4\xb3")
+       (port->chunk-list (open-input-buffered-port (make-filler) 9) 20))
 
-(test "buffered port (getz, siz=9,7)"
-      '(#*"\xa4\xa2\xa4\xa4\xa4\xa6\xa4" #*"\xa8\xa4\xaa\xa4\xab\xa4\xad"
-        #*"\xa4\xaf\xa4\xb1\xa4\xb3")
-      (lambda ()
-        (port->chunk-list (open-input-buffered-port (make-filler) 9) 7)))
+(test* "buffered port (getz, siz=9,7)"
+       '(#*"\xa4\xa2\xa4\xa4\xa4\xa6\xa4" #*"\xa8\xa4\xaa\xa4\xab\xa4\xad"
+           #*"\xa4\xaf\xa4\xb1\xa4\xb3")
+       (port->chunk-list (open-input-buffered-port (make-filler) 9) 7))
 
-(test "buffered port (getz, siz=3,50)"
-      '(#*"\xa4\xa2\xa4\xa4\xa4\xa6\xa4\xa8\xa4\xaa\xa4\xab\xa4\xad\xa4\xaf\xa4\xb1\xa4\xb3")
-      (lambda ()
-        (port->chunk-list (open-input-buffered-port (make-filler) 3) 50)))
+(test* "buffered port (getz, siz=3,50)"
+       '(#*"\xa4\xa2\xa4\xa4\xa4\xa6\xa4\xa8\xa4\xaa\xa4\xab\xa4\xad\xa4\xaf\xa4\xb1\xa4\xb3")
+       (port->chunk-list (open-input-buffered-port (make-filler) 3) 50))
 
-(test "buffered port (getz, siz=2,7)"
-      '(#*"\xa4\xa2\xa4\xa4\xa4\xa6\xa4" #*"\xa8\xa4\xaa\xa4\xab\xa4\xad"
-        #*"\xa4\xaf\xa4\xb1\xa4\xb3")
-      (lambda ()
-        (port->chunk-list (open-input-buffered-port (make-filler) 2) 7)))
+(test* "buffered port (getz, siz=2,7)"
+       '(#*"\xa4\xa2\xa4\xa4\xa4\xa6\xa4" #*"\xa8\xa4\xaa\xa4\xab\xa4\xad"
+           #*"\xa4\xaf\xa4\xb1\xa4\xb3")
+       (port->chunk-list (open-input-buffered-port (make-filler) 2) 7))
 
-(test "buffered port (getz, siz=1,7)"
-      '(#*"\xa4\xa2\xa4\xa4\xa4\xa6\xa4" #*"\xa8\xa4\xaa\xa4\xab\xa4\xad"
-        #*"\xa4\xaf\xa4\xb1\xa4\xb3")
-      (lambda ()
-        (port->chunk-list (open-input-buffered-port (make-filler) 1) 7)))
+(test* "buffered port (getz, siz=1,7)"
+       '(#*"\xa4\xa2\xa4\xa4\xa4\xa6\xa4" #*"\xa8\xa4\xaa\xa4\xab\xa4\xad"
+           #*"\xa4\xaf\xa4\xb1\xa4\xb3")
+       (port->chunk-list (open-input-buffered-port (make-filler) 1) 7))
 
 (define *flusher-out* '())
 
@@ -417,68 +385,58 @@
   (close-output-port p)
   *flusher-out*)
 
-(test "buffered port (putb, bufsiz=7)"
-      #*"@ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      (lambda ()
-        (byte-list->port (open-output-buffered-port flusher 7)
-                         (iota 27 #x40))))
+(test* "buffered port (putb, bufsiz=7)"
+       #*"@ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+       (byte-list->port (open-output-buffered-port flusher 7)
+                        (iota 27 #x40)))
 
-(test "buffered port (putb, bufsiz=30)"
-      #*"@ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      (lambda ()
-        (byte-list->port (open-output-buffered-port flusher 30)
-                         (iota 27 #x40))))
+(test* "buffered port (putb, bufsiz=30)"
+       #*"@ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+       (byte-list->port (open-output-buffered-port flusher 30)
+                        (iota 27 #x40)))
 
-(test "buffered port (putc, bufsiz=7)"
-      #*"あいうえおかきくけこさしすせそ"
-      (lambda ()
-        (char-list->port (open-output-buffered-port flusher 7)
-                         '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ
-                           #\さ #\し #\す #\せ #\そ))))
+(test* "buffered port (putc, bufsiz=7)"
+       #*"あいうえおかきくけこさしすせそ"
+       (char-list->port (open-output-buffered-port flusher 7)
+                        '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ
+                          #\さ #\し #\す #\せ #\そ)))
 
-(test "buffered port (putc, bufsiz=30)"
-      #*"あいうえおかきくけこさしすせそ"
-      (lambda ()
-        (char-list->port (open-output-buffered-port flusher 30)
-                         '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ
-                           #\さ #\し #\す #\せ #\そ))))
+(test* "buffered port (putc, bufsiz=30)"
+       #*"あいうえおかきくけこさしすせそ"
+       (char-list->port (open-output-buffered-port flusher 30)
+                        '(#\あ #\い #\う #\え #\お #\か #\き #\く #\け #\こ
+                          #\さ #\し #\す #\せ #\そ)))
 
-(test "buffered port (puts, bufsiz=6)"
-      #*"あいうえおかきくけこさしすせそ"
-      (lambda ()
-        (string-list->port (open-output-buffered-port flusher 6)
-                           '("あいう" "えおか" "きくけ" "こさし" "すせそ"))))
+(test* "buffered port (puts, bufsiz=6)"
+       #*"あいうえおかきくけこさしすせそ"
+       (string-list->port (open-output-buffered-port flusher 6)
+                          '("あいう" "えおか" "きくけ" "こさし" "すせそ")))
 
-(test "buffered port (puts, bufsiz=7)"
-      #*"あいうえおかきくけこさしすせそ"
-      (lambda ()
-        (string-list->port (open-output-buffered-port flusher 7)
-                           '("あいう" "えおか" "きくけ" "こさし" "すせそ"))))
+(test* "buffered port (puts, bufsiz=7)"
+       #*"あいうえおかきくけこさしすせそ"
+       (string-list->port (open-output-buffered-port flusher 7)
+                          '("あいう" "えおか" "きくけ" "こさし" "すせそ")))
 
-(test "buffered port (puts, bufsiz=7)"
-      #*"あいうえおかきくけこさしすせそ"
-      (lambda ()
-        (string-list->port (open-output-buffered-port flusher 7)
-                           '("あいうえお" "かきくけこ" "さしすせ" "そ"))))
+(test* "buffered port (puts, bufsiz=7)"
+       #*"あいうえおかきくけこさしすせそ"
+       (string-list->port (open-output-buffered-port flusher 7)
+                          '("あいうえお" "かきくけこ" "さしすせ" "そ")))
 
-(test "buffered port (puts, bufsiz=3)"
-      #*"あいうえおかきくけこさしすせそ"
-      (lambda ()
-        (string-list->port (open-output-buffered-port flusher 3)
-                           '("あいうえお" "かきくけこ" "さしすせ" "そ"))))
+(test* "buffered port (puts, bufsiz=3)"
+       #*"あいうえおかきくけこさしすせそ"
+       (string-list->port (open-output-buffered-port flusher 3)
+                          '("あいうえお" "かきくけこ" "さしすせ" "そ")))
 
 ;;-------------------------------------------------------------------
 (test-section "regexp")
 
-(test "regexp" "いaろbはc"
-      (lambda ()
-        (cond ((rxmatch #/([ぁ-ん][a-z])+/ "xyいaろbはcdに")
-               => rxmatch-substring)
-              (else #f))))
-(test "regexp" "いaろBはC"
-      (lambda ()
-        (cond ((rxmatch #/([ぁ-ん][a-z])+/i "XYいaろBはCdに")
-               => rxmatch-substring)
-              (else #f))))
+(test* "regexp" "いaろbはc"
+       (cond ((rxmatch #/([ぁ-ん][a-z])+/ "xyいaろbはcdに")
+              => rxmatch-substring)
+             (else #f)))
+(test* "regexp" "いaろBはC"
+       (cond ((rxmatch #/([ぁ-ん][a-z])+/i "XYいaろBはCdに")
+              => rxmatch-substring)
+             (else #f)))
 
 (test-end)
