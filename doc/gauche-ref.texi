@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.260 2002-09-02 21:19:18 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.261 2002-09-02 21:36:22 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2216,7 +2216,7 @@ by @code{#\x@var{NN}} (Gauche internal code) or @code{#\u@var{NN}} (Unicode).
 @item 文字コードによる文字リテラル
 文字リテラルを文字コードにより表記することができます。
 Gauche内部コードを使う @code{#\x@var{NN}} と、
-Unicodeを使う @code{#\u{NN}}という表記があります。
+Unicodeを使う @code{#\u@var{NN}}という表記があります。
 @ref{Characters}を参照して下さい。
 @c COMMON
 
