@@ -1,9 +1,9 @@
 /*
- * io.c - input/output
+ * read.c - reader
  *
- *  Copyright(C) 2000 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
  *
- *  Permission to use, copy, modify, ditribute this software and
+ *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
  *  provided that existing copyright notices are retained in all
  *  copies and that this notice is included verbatim in all
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: read.c,v 1.9 2001-02-19 14:48:49 shiro Exp $
  */
 
 #include <stdio.h>
@@ -33,6 +33,7 @@ static ScmObj read_word(ScmPort *port, ScmChar initial);
 static ScmObj read_symbol(ScmPort *port, ScmChar initial);
 static ScmObj read_number(ScmPort *port, ScmChar initial);
 static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial);
+static ScmObj read_keyword(ScmPort *port);
 
 ScmObj Scm_Read(ScmObj port)
 {
@@ -82,6 +83,7 @@ static int skipws(ScmPort *port)
             for (;;) {
                 SCM_GETC(c, port);
                 if (c == '\n') break;
+                if (c == EOF) return EOF;
             }
             continue;
         }
@@ -125,16 +127,21 @@ ScmObj read_internal(ScmPort *port)
             case 'e':; case 'E':; case 'i':; case 'I':;
                 SCM_UNGETC(c1, port);
                 return read_number(port, c);
+            case '!':
+                /* allow `#!' magic of executable */
+                for (;;) {
+                    SCM_GETC(c, port);
+                    if (c == '\n') return read_internal(port);
+                    if (c == EOF) return SCM_EOF;
+                }
             default:
                 read_error(port, "unsupported #-syntax: #%C", c1);
             }
         }
     case '\'': return read_quoted(port, SCM_SYM_QUOTE);
-    case '`': return read_quoted(port, SCM_SYM_BACKQUOTE);
+    case '`': return read_quoted(port, SCM_SYM_QUASIQUOTE);
     case ':':
-        /* TODO: need to deal with keywords.
-           For now, just make them as symbols. */
-        return read_symbol(port, c);
+        return read_keyword(port);
     case ',':
         {
             int c1;
@@ -173,6 +180,8 @@ ScmObj read_internal(ScmPort *port)
     case '0':; case '1':; case '2':; case '3':; case '4':;
     case '5':; case '6':; case '7':; case '8':; case '9':;
         return read_number(port, c);
+    case ')':; case ']':; case '}':;
+        read_error(port, "extra close parenthesis");
     case EOF:
         return SCM_EOF;
     default:
@@ -218,7 +227,7 @@ static ScmObj read_list(ScmPort *port, ScmChar closer)
             SCM_UNGETC(c, port);
             item = read_internal(port);
         }
-        SCM_GROW_LIST(start, last, item);
+        SCM_APPEND1(start, last, item);
     }
 }
 
@@ -363,7 +372,7 @@ static ScmObj read_symbol(ScmPort *port, ScmChar initial)
 static ScmObj read_number(ScmPort *port, ScmChar initial)
 {
     ScmString *s = SCM_STRING(read_word(port, initial));
-    ScmObj num = Scm_StringToNumber(s);
+    ScmObj num = Scm_StringToNumber(s, 10);
     if (num == SCM_FALSE)
         read_error(port, "bad numeric format: %S", s);
     return num;
@@ -372,9 +381,15 @@ static ScmObj read_number(ScmPort *port, ScmChar initial)
 static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial)
 {
     ScmString *s = SCM_STRING(read_word(port, initial));
-    ScmObj num = Scm_StringToNumber(s);
+    ScmObj num = Scm_StringToNumber(s, 10);
     if (num == SCM_FALSE)
         return Scm_Intern(s);
     else
         return num;
+}
+
+static ScmObj read_keyword(ScmPort *port)
+{
+    ScmString *s = SCM_STRING(read_word(port, SCM_CHAR_INVALID));
+    return Scm_MakeKeyword(s);
 }
