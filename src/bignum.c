@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.17 2001-05-12 21:25:49 shirok Exp $
+ *  $Id: bignum.c,v 1.18 2001-05-14 19:08:07 shirok Exp $
  */
 
 #include <math.h>
@@ -39,6 +39,11 @@
 #define LOMASK             (HALF_WORD-1)
 #define LO(word)           ((word) & LOMASK)
 #define HI(word)           (((word) >> HALF_BITS)&LOMASK)
+
+#undef min
+#define min(x, y)   (((x) < (y))? (x) : (y))
+#undef max
+#define max(x, y)   (((x) > (y))? (x) : (y))
 
 static ScmBignum *bignum_rshift(ScmBignum *br, ScmBignum *bx, int amount);
 static ScmBignum *bignum_lshift(ScmBignum *br, ScmBignum *bx, int amount);
@@ -489,7 +494,7 @@ static ScmBignum *bignum_rshift(ScmBignum *br, ScmBignum *bx, int amount)
     if (bx->size <= nwords) {
         br->size = 0; br->values[0] = 0;
     } else if (nbits == 0) {
-        for (i = nwords; i < bx->size-1; i++) {
+        for (i = nwords; i < bx->size; i++) {
             br->values[i-nwords] = bx->values[i];
         }
         br->size = bx->size - nwords;
@@ -504,7 +509,6 @@ static ScmBignum *bignum_rshift(ScmBignum *br, ScmBignum *bx, int amount)
         br->size = bx->size - nwords;
         br->sign = bx->sign;
     }
-/*    Scm_DumpBignum(br, SCM_CUROUT); printf("\n");*/
     return br;
 }
 
@@ -833,6 +837,85 @@ ScmObj Scm_BignumDivRem(ScmBignum *dividend, ScmBignum *divisor)
     r->sign = dividend->sign;
     
     return Scm_Cons(Scm_NormalizeBignum(q), Scm_NormalizeBignum(r));
+}
+
+/*-----------------------------------------------------------------------
+ * Logical (bitwise) opertaions
+ */
+
+ScmObj Scm_BignumAsh(ScmBignum *x, int cnt)
+{
+    if (cnt == 0) return SCM_OBJ(x);
+    if (cnt > 0) {
+        int rsize = SCM_BIGNUM_SIZE(x) + (cnt+WORD_BITS-1)/WORD_BITS;
+        ScmBignum *r = make_bignum(rsize);
+        return Scm_NormalizeBignum(bignum_lshift(r, x, cnt));
+    } else {
+        int rsize = SCM_BIGNUM_SIZE(x) + cnt/WORD_BITS;
+        if (rsize < 1) {
+            if (SCM_BIGNUM_SIGN(x) < 0) {
+                return SCM_MAKE_INT(-1);
+            } else {
+                return SCM_MAKE_INT(0);
+            }
+        } else {
+            if (SCM_BIGNUM_SIGN(x) < 0) {
+                /* painful way */
+                ScmObj r = Scm_Quotient(Scm_Add(SCM_OBJ(x), SCM_MAKE_INT(1),
+                                                SCM_NIL),
+                                        Scm_Ash(SCM_MAKE_INT(1), -cnt));
+                return Scm_Add(r, SCM_MAKE_INT(-1), SCM_NIL);
+            } else {
+                ScmBignum *r = make_bignum(rsize);
+                return Scm_NormalizeBignum(bignum_rshift(r, x, -cnt));
+            }
+        }
+    }
+}
+
+ScmObj Scm_BignumLogAndSI(ScmBignum *x, long y)
+{
+    if (y == 0) {
+        return SCM_MAKE_INT(0);
+    } else if (y > 0) {
+        if (SCM_BIGNUM_SIGN(x) > 0) {
+            return Scm_MakeInteger(x->values[0] & y);
+        } else {
+            return Scm_MakeInteger(((~x->values[0])+1) & y);
+        }
+    } else if (y < 0) {
+        ScmBignum *z = SCM_BIGNUM(Scm_BignumCopy(x));
+        if (SCM_BIGNUM_SIGN(x) > 0) {
+            z->values[0] = x->values[0] & y;
+        } else {
+            z->values[0] = ~(((~x->values[0])+1) & y)+1;
+        }
+        return SCM_OBJ(z);
+    }
+}
+
+/* assumes x and y are normalized */
+ScmObj Scm_BignumLogAnd(ScmBignum *x, ScmBignum *y)
+{
+    int xsize = SCM_BIGNUM_SIZE(x), xsign = SCM_BIGNUM_SIGN(x);
+    int ysize = SCM_BIGNUM_SIZE(y), ysign = SCM_BIGNUM_SIGN(y);
+    int zsize, digit;
+    ScmBignum *z;
+
+    if (xsign > 0) {
+        if (ysign > 0) zsize = min(xsize, ysize);
+        else           zsize = xsize;
+    } else {
+        if (ysign < 0) zsize = ysize;
+        else           zsize = max(xsize, ysize);
+    }
+    z = make_bignum(zsize);
+    SCM_BIGNUM_SIGN(z) = (xsign > 0 && ysign > 0)? 1 : -1;
+    
+    while (digit < zsize) {
+        
+    }
+    return SCM_OBJ(z);
 }
 
 /*-----------------------------------------------------------------------
