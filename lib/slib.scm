@@ -4,9 +4,10 @@
 ;;;
 ;;; This code is in the public domain.
 
-;; dummy module.  slib stuffs are defined in user module.
+;; SLIB module exports all symbols for compatibility.
 (define-module slib
-  )
+  (export-all))
+(select-module slib)
 
 ;;; (software-type) should be set to the generic operating system type.
 ;;; UNIX, VMS, MACOS, AMIGA and MS-DOS are supported.
@@ -150,7 +151,7 @@
 ;;; use this definition if your system doesn't have such a procedure.
 (define force-output flush)
 
-;; CURRENT-TIME
+;; CURRENT-TIME - need <sys-time> to seconds conversion
 ;(define current-time sys-time)
 
 ;; PROGRAM-ARGUMENTS
@@ -179,9 +180,13 @@
 ;;; SLIB:EVAL is single argument eval using the top-level (user) environment.
 (define (slib:eval expr) (eval expr (interaction-environment)))
 
+;;; %SLIB-LOAD loads file in slib module.
+(define (%slib-load file)
+  (with-module slib (load file)))
+
 ;;; If your implementation provides R4RS macros:
 (define macro:eval slib:eval)
-(define macro:load load)
+(define macro:load %slib-load)
 
 (define-syntax defmacro
   (syntax-rules ()
@@ -234,7 +239,7 @@
 ;	  (evl o))
 ;	(set! *load-pathname* old-load-pathname)))))
 
-(define defmacro:load load)
+(define defmacro:load %slib-load)
 
 (define slib:warn
   (lambda args
