@@ -1,3 +1,14 @@
+2003-09-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/macro.c (compile_rule1): fixed the problem of macro-defining
+	  macro.
+
+	* ext/net/net.c (Scm_SocketClose) : do not shutdown the connection
+	  when a socket is closed; other forked process may still be using
+	  it.  Also fixed a socket's finalizer not to refer to the ports
+	  (it is not guaranteed that they are valid when the finalizer is
+	  called).
+
 2003-09-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/srfi-1/filter.scm : fixed typo, and changed (not (pair? ...))
