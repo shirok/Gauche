@@ -12,10 +12,12 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.44 2001-06-30 09:42:38 shirok Exp $
+;;;  $Id: genstub,v 1.45 2001-09-06 07:07:58 shirok Exp $
 ;;;
 
 (use srfi-1)
+(use srfi-13)
+(use gauche.regexp)
 
 (define *file-prefix* "")
 (define *insert-sharp-line* #t)         ;if #t, output #line directive
@@ -35,6 +37,36 @@
 
 (define (file-exists? file) (sys-access file F_OK))
 
+;;===================================================================
+;; Get configuration parameters
+;;
+
+(define *cpp-defines* '())
+
+;; parses config.h file and add defined symbols to *cpp-defines*.
+;; this is not intended to parse generic CPP syntax.
+(define (read-config.h config.h)
+  (with-input-from-file config.h
+    (lambda ()
+      (let loop ((line (read-line)))
+        (rxmatch-cond
+          (test (eof-object? line))
+          ((rxmatch #/^#define\s+([\w_]+)(.*)$/ line)
+           (#f symbol rest)
+           (set! *cpp-defines*
+                 (acons symbol (string-trim-both rest) *cpp-defines*))
+           (loop (read-line)))
+          (else (loop (read-line))))))
+    ))
+
+;; find config.h's
+(define (init-config.h)
+  (for-each (lambda (dir)
+              (let ((f (string-append dir "/gauche/config.h")))
+                (when (file-exists? f)
+                  (read-config.h f))))
+            *load-path*))
+                    
 ;;===================================================================
 ;; Type handling
 ;;
@@ -780,7 +812,49 @@
     )
   )
 
-;;------------------------------------------------------------------------
+;;===================================================================
+;; Main parser
+;;
+
+(define (process-if form)
+  (unless (<= 2 (length form) 3)
+    (error "malformed if: " form))
+  (if (parse-form (cadr form))
+      (parse-form (caddr form))
+      (when (pair? (cdddr form))
+        (parse-form (cadddr form)))))
+
+(define (process-defined? form)
+  (unless (= (length form) 2)
+    (error "malformed defined?: " form))
+  (assoc (cadr form) *cpp-defines*))
+
+(define (process-begin form)
+  (let loop ((f (cdr form))
+             (r #f))
+    (if (null? f)
+        r
+        (loop (cdr f) (process-form (car f))))))
+
+(define *syntax-table*
+  `((define-cproc     . ,process-define-cproc)
+    (define-symbol    . ,process-define-symbol)
+    (define-type      . ,process-define-type)
+    (define-cgeneric  . ,process-define-cgeneric)
+    (define-cmethod   . ,process-define-cmethod)
+    (if               . ,process-if)
+    (defined?         . ,process-defined?)
+    (begin            . ,process-begin)))
+
+(define (parse-form form)
+  (cond ((string? form) (println form))
+        ((not (pair? form))
+         (error "bad form:" form))
+        ((assq (car form) *syntax-table*)
+         => (lambda (p) ((cdr p) form)))
+        (else (error "bad form:" form))))
+
+;;===================================================================
 ;; main entry point
 ;;
 
@@ -794,11 +868,13 @@
   (println "}")
   )
 
-(define (%main . argv)
+(define (main argv)
   (unless (and (= (length argv) 1)
                (> (string-length (car argv)) 5))
     (println "Usage: genstub FILE.stub")
     (exit 1))
+
+  (init-config.h)
 
   (let* ((file (car argv))
          (base (sys-basename file))
@@ -820,26 +896,11 @@
           (lambda ()
             (let loop ((form (read)))
               (unless (eof-object? form)
-                (cond ((string? form) (println form))
-                      ((not (pair? form))
-                       (error "bad form:" form))
-                      ((eq? (car form) 'define-cproc)
-                       (process-define-cproc form))
-                      ((eq? (car form) 'define-symbol)
-                       (process-define-symbol form))
-                      ((eq? (car form) 'define-type)
-                       (process-define-type form))
-                      ((eq? (car form) 'define-cgeneric)
-                       (process-define-cgeneric form))
-                      ((eq? (car form) 'define-cmethod)
-                       (process-define-cmethod form))
-                      (else (error "bad form:" form)))
+                (parse-form form)
                 (loop (read))))))
         (emit-initializer (get-c-name "" prefix))
         )))
-  )
-
-(apply %main *argv*)
+  0)
 
 ;; Local variables:
 ;; mode: scheme
