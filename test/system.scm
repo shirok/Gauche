@@ -220,6 +220,18 @@
 (sys-remove "test.dir")
 
 ;;-------------------------------------------------------------------
+(test-section "pipe")
+
+(test "pipe" "abc"
+      (lambda ()
+        (receive (in out) (sys-pipe)
+          (display "abc\n" out) (flush out)
+          (let ((r (read-line in)))
+            (close-input-port in)
+            (close-output-port out)
+            r))))
+
+;;-------------------------------------------------------------------
 (test-section "fork&exec")
 
 (test "fork & wait" #t
