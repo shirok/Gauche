@@ -16,7 +16,7 @@ OBJS = charconv.o convlib.o
 CONFIG_GENERATED = Makefile config.cache config.log config.status
 
 INSTALL_TYPE = @INSTALL_TYPE@
-HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
+HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`/gauche
 SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`/gauche
 ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 
