@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.62 2001-03-07 08:00:01 shiro Exp $
+ *  $Id: gauche.h,v 1.63 2001-03-08 10:19:01 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -20,6 +20,8 @@
 
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/time.h>
 #include <stdarg.h>
 #include <setjmp.h>
 #include <gc.h>
@@ -1212,25 +1214,26 @@ struct ScmBignumRec {
 #define SCM_BIGNUM_SIZE(obj)   SCM_BIGNUM(obj)->size
 #define SCM_BIGNUM_SIGN(obj)   SCM_BIGNUM(obj)->sign
 
-ScmObj Scm_MakeBignumFromSI(long val);
-ScmObj Scm_MakeBignumFromUI(u_long val);
-ScmObj Scm_MakeBignumFromDouble(double val);
-ScmObj Scm_BignumCopy(ScmBignum *b);
+extern ScmObj Scm_MakeBignumFromSI(long val);
+extern ScmObj Scm_MakeBignumFromUI(u_long val);
+extern ScmObj Scm_MakeBignumFromDouble(double val);
+extern ScmObj Scm_BignumCopy(ScmBignum *b);
 
-long   Scm_BignumToSI(ScmBignum *b);
-double Scm_BignumToDouble(ScmBignum *b);
-ScmObj Scm_NormalizeBignum(ScmBignum *b);
-ScmObj Scm_BignumNegate(ScmBignum *b);
-int    Scm_BignumCmp(ScmBignum *bx, ScmBignum *by);
-ScmObj Scm_BignumAdd(ScmBignum *bx, ScmBignum *by);
-ScmObj Scm_BignumAddSI(ScmBignum *bx, long y);
-ScmObj Scm_BignumAddN(ScmBignum *bx, ScmObj args);
-ScmObj Scm_BignumSub(ScmBignum *bx, ScmBignum *by);
-ScmObj Scm_BignumSubSI(ScmBignum *bx, long y);
-ScmObj Scm_BignumSubN(ScmBignum *bx, ScmObj args);
-ScmObj Scm_BignumMul(ScmBignum *bx, ScmBignum *by);
-ScmObj Scm_BignumMulSI(ScmBignum *bx, long y);
-ScmObj Scm_BignumMulN(ScmBignum *bx, ScmObj args);
+extern long   Scm_BignumToSI(ScmBignum *b);
+extern u_long Scm_BignumToUI(ScmBignum *b);
+extern double Scm_BignumToDouble(ScmBignum *b);
+extern ScmObj Scm_NormalizeBignum(ScmBignum *b);
+extern ScmObj Scm_BignumNegate(ScmBignum *b);
+extern int    Scm_BignumCmp(ScmBignum *bx, ScmBignum *by);
+extern ScmObj Scm_BignumAdd(ScmBignum *bx, ScmBignum *by);
+extern ScmObj Scm_BignumAddSI(ScmBignum *bx, long y);
+extern ScmObj Scm_BignumAddN(ScmBignum *bx, ScmObj args);
+extern ScmObj Scm_BignumSub(ScmBignum *bx, ScmBignum *by);
+extern ScmObj Scm_BignumSubSI(ScmBignum *bx, long y);
+extern ScmObj Scm_BignumSubN(ScmBignum *bx, ScmObj args);
+extern ScmObj Scm_BignumMul(ScmBignum *bx, ScmBignum *by);
+extern ScmObj Scm_BignumMulSI(ScmBignum *bx, long y);
+extern ScmObj Scm_BignumMulN(ScmBignum *bx, ScmObj args);
 
 struct ScmFlonumRec {
     SCM_HEADER;
@@ -1253,7 +1256,9 @@ struct ScmComplexRec {
 #define SCM_COMPLEX_IMAG(obj)      SCM_COMPLEX(obj)->imag
 
 extern ScmObj Scm_MakeInteger(long i);
+extern ScmObj Scm_MakeIntegerFromUI(u_long i);
 extern long Scm_GetInteger(ScmObj obj);
+extern u_long Scm_GetUInteger(ScmObj obj);
 
 extern ScmObj Scm_MakeFlonum(double d);
 extern double Scm_GetDouble(ScmObj obj);
@@ -1465,8 +1470,79 @@ extern ScmObj Scm_NormalizePathname(ScmString *pathname, int flags);
 extern ScmObj Scm_DirName(ScmString *filename);
 extern ScmObj Scm_BaseName(ScmString *filename);
 
+/* struct stat */
+typedef struct ScmSysStatRec {
+    SCM_HEADER;
+    struct stat statrec;
+} ScmSysStat;
+    
+extern ScmClass Scm_SysStatClass;
+#define SCM_CLASS_SYS_STAT    (&Scm_SysStatClass)
+#define SCM_SYS_STAT(obj)     ((ScmSysStat*)(obj))
+#define SCM_SYS_STAT_P(obj)   (SCM_XTYPEP(obj, SCM_CLASS_SYS_STAT))
+
+extern ScmObj Scm_MakeSysStat(void); /* returns empty SysStat */
+
+/* time_t */
+typedef struct ScmSysTimeRec {
+    SCM_HEADER;
+    time_t time;
+} ScmSysTime;
+    
+extern ScmClass Scm_SysTimeClass;
+#define SCM_CLASS_SYS_TIME    (&Scm_SysTimeClass)
+#define SCM_SYS_TIME(obj)     ((ScmSysTime*)(obj))
+#define SCM_SYS_TIME_P(obj)   (SCM_XTYPEP(obj, SCM_CLASS_SYS_TIME))
+
+extern ScmObj Scm_MakeSysTime(time_t);
+
+/* struct tm */
+typedef struct ScmSysTmRec {
+    SCM_HEADER;
+    struct tm tm;
+} ScmSysTm;
+    
+extern ScmClass Scm_SysTmClass;
+#define SCM_CLASS_SYS_TM      (&Scm_SysTmClass)
+#define SCM_SYS_TM(obj)       ((ScmSysTm*)(obj))
+#define SCM_SYS_TM_P(obj)     (SCM_XTYPEP(obj, SCM_CLASS_SYS_TM))
+
+extern ScmObj Scm_MakeSysTm(struct tm *);
+    
+/* struct group */
+typedef struct ScmSysGroupRec {
+    SCM_HEADER;
+    ScmObj name;
+    ScmObj gid;
+    ScmObj passwd;
+    ScmObj mem;
+} ScmSysGroup;
+
+extern ScmClass Scm_SysGroupClass;
+#define SCM_CLASS_SYS_GROUP    (&Scm_SysGroupClass)
+#define SCM_SYS_GROUP(obj)     ((ScmSysGroup*)(obj))
+#define SCM_SYS_GROUP_P(obj)   (SCM_XTYPEP(obj, SCM_CLASS_SYS_GROUP))
+    
 extern ScmObj Scm_GetGroupById(gid_t gid);
 extern ScmObj Scm_GetGroupByName(ScmString *name);
+
+/* struct passwd */
+typedef struct ScmSysPasswdRec {
+    SCM_HEADER;
+    ScmObj name;
+    ScmObj passwd;
+    ScmObj uid;
+    ScmObj gid;
+    ScmObj gecos;
+    ScmObj dir;
+    ScmObj shell;
+    ScmObj class;
+} ScmSysPasswd;
+
+extern ScmClass Scm_SysPasswdClass;
+#define SCM_CLASS_SYS_PASSWD    (&Scm_SysPasswdClass)
+#define SCM_SYS_PASSWD(obj)     ((ScmSysPasswd*)(obj))
+#define SCM_SYS_PASSWD_P(obj)   (SCM_XTYPEP(obj, SCM_CLASS_SYS_PASSWD))
 
 extern ScmObj Scm_GetPasswdById(uid_t uid);
 extern ScmObj Scm_GetPasswdByName(ScmString *name);
