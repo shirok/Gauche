@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.182 2001-10-06 09:58:17 shirok Exp $
+ *  $Id: gauche.h,v 1.183 2001-10-13 11:45:12 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1144,10 +1144,12 @@ struct ScmHashTableRec {
 extern ScmClass Scm_HashTableClass;
 #define SCM_CLASS_HASHTABLE  (&Scm_HashTableClass)
 
-#define SCM_HASH_DEFAULT   ((ScmHashProc)0)
-#define SCM_HASH_STRING    ((ScmHashProc)1)
-#define SCM_HASH_SMALLINT  ((ScmHashProc)2)
-#define SCM_HASH_ADDRESS   ((ScmHashProc)3)
+#define SCM_HASH_ADDRESS   ((ScmHashProc)0)  /* eq?-hash */
+#define SCM_HASH_EQV       ((ScmHashProc)1)
+#define SCM_HASH_EQUAL     ((ScmHashProc)2)
+#define SCM_HASH_STRING    ((ScmHashProc)3)
+#define SCM_HASH_SMALLINT  ((ScmHashProc)4)
+#define SCM_HASH_GENERAL   ((ScmHashProc)5)
 
 /* auxiliary structure; not an ScmObj. */
 struct ScmHashEntryRec {
