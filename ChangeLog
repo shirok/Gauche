@@ -1,3 +1,8 @@
+2002-11-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c : removed the special treatment of argv[0]=="./gosh"
+	  for in-place test; instead, added -ftest option to do the job.
+
 2002-11-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/822.scm : deal with empty header (patch from Kimura

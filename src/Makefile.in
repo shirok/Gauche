@@ -105,10 +105,10 @@ test : gosh
 	$(MAKE) test-vmstack; ./test-vmstack >> test.log
 	$(MAKE) test-arith; ./test-arith >> test.log
 	@for testfile in $(TESTFILES); do \
-	  ./gosh -I. -I../lib -I../test $$testfile >> test.log; \
+	  ./gosh -ftest -I../test $$testfile >> test.log; \
 	done
-	@./gosh -I. -I../lib -e "(define *case-fold* #f)" ../test/symcase.scm >> test.log
-	@./gosh -I. -I../lib -fcase-fold -e "(define *case-fold* #t)" ../test/symcase.scm >> test.log
+	@./gosh -ftest -e "(define *case-fold* #f)" ../test/symcase.scm >> test.log
+	@./gosh -ftest -fcase-fold -e "(define *case-fold* #t)" ../test/symcase.scm >> test.log
 	@echo "See test.log for details."
 
 test-vmstack : test-vmstack.o @LIBGAUCHE_SO@

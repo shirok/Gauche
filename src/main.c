@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.63 2002-10-13 23:32:39 shirok Exp $
+ *  $Id: main.c,v 1.64 2002-11-21 05:21:00 shirok Exp $
  */
 
 #include <unistd.h>
@@ -30,6 +30,7 @@
 int load_initfile = TRUE;       /* if false, not to load init files */
 int batch_mode = FALSE;         /* force batch mode */
 int interactive_mode = FALSE;   /* force interactive mode */
+int test_mode = FALSE;          /* add . and ../lib implicitly  */
 
 ScmObj pre_cmds = SCM_NIL;      /* assoc list of commands that needs to be
                                    processed before entering repl.
@@ -59,6 +60,7 @@ void usage(void)
             "      load-verbose    report while loading files\n"
             "      no-inline       don't inline primitive procedures\n"
             "      no-source-info  don't preserve source information for debug\n"
+            "      test            test mode, to run gosh inside the build tree\n"
             );
     exit(1);
 }
@@ -94,9 +96,12 @@ void further_options(const char *optarg)
     else if (strcmp(optarg, "case-fold") == 0) {
         SCM_VM_RUNTIME_FLAG_SET(vm, SCM_CASE_FOLD);
     }
+    else if (strcmp(optarg, "test") == 0) {
+        test_mode = TRUE;
+    }
     else {
         fprintf(stderr, "unknown -f option: %s\n", optarg);
-        fprintf(stderr, "supported options are: -fcase-fold or -fload-verbose, -fno-inline, -fno-source-info\n");
+        fprintf(stderr, "supported options are: -fcase-fold or -fload-verbose, -fno-inline, -fno-source-info, -ftest\n");
         exit(1);
     }
 }
@@ -171,19 +176,15 @@ int main(int argc, char **argv)
     Scm_Init();
     sig_setup();
 
-    /* Special case; if the binary is invoked as "./gosh", we may be in
-       the source tree.  Adds . and ../lib to the library path.
-       This feature is turned off if we're run by root or suid-ed. */
-    if (strcmp(argv[0], "./gosh") == 0
-        && access("./gauche.h", R_OK) == 0
-        && access("./gauche-init.scm", R_OK) == 0
-        && access("../lib/gauche/object.scm", R_OK) == 0
-        && geteuid() != 0 && getuid() == geteuid()) {
-        Scm_AddLoadPath("../lib", FALSE);
-        Scm_AddLoadPath(".", FALSE);
-    }
-
     argind = parse_options(argc, argv);
+
+    /* If -ftest option is given, and we seems to be in the source
+       tree, adds ../src and ../lib to the library path _before_
+       loading init file.  */
+    if (test_mode) {
+        if (access("../lib", R_OK) == 0) Scm_AddLoadPath("../lib", FALSE);
+        if (access("../src", R_OK) == 0) Scm_AddLoadPath("../src", FALSE);
+    }
 
     /* load init file */
     if (load_initfile) {
