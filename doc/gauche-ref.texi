@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.415 2003-06-10 01:24:23 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.416 2003-06-10 02:29:53 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -10870,15 +10870,29 @@ STkには@code{read-from-string}がありますが、省略可能な引数は取りません。
 @subsection Procedural ports
 @c NODE 手続き的ポート
 
+@c EN
 The underlying mechanism of procedural ports is very flexible,
 but I don't have Scheme interface yet, except the following ones:
+@c JP
+手続き的ポートの下層のメカニズムは大変柔軟ですが、以下を除いて
+まだSchemeインターフェースは実装されていません。
+@c COMMON
 
 @defun open-input-buffered-port filler buffer-size
 @defunx open-output-buffered-port flusher buffer-size
+@c EN
 @b{These procedures are deprecated and will be replaced by more general procedural APIs.}
+@c JP
+@b{これらの手続きは利用が推奨されず、より一般的な手続き的なAPIに置き換えられるでしょう。}
+@c COMMON
 
+@c EN
 These are the Scheme interface to the ``buffered port''.
+@c JP
+これらは``バッファされるポート''へのSchemeインターフェースです。
+@c COMMON
 
+@c EN
 @code{open-input-buffered-port} creates and returns an input port,
 with associated buffer of size @var{buffer-size}.
 The data is read from the buffer.
@@ -10894,7 +10908,21 @@ If @var{filler} finds that it reached EOF of its data source, it can
 return EOF.  Retuning zero size string has the same effect as EOF.
 Initially, the buffer is empty, so @var{filler} is always called
 at the first attempt of reading from the port.
+@c JP
+@code{open-input-buffered-port}は、@var{buffer-size}の大きさを持つ
+バッファを伴う入力ポートを作成して返します。
+データはバッファから読み込まれます。
+ポートが読まれバッファが空のとき、手続き@var{filler}が要求されるデータの
+サイズを1引数として呼ばれます。
+@var{filler}は指定されたサイズの(完全、あるいは不完全)文字列を返さなければ
+なりません。十分なデータがない場合に、@var{filler}が指定されたサイズよりも
+短い文字列を返すことは許されています。文字列の@var{size}が問題で、
+文字列の@var{length}ではないことに注意して下さい。
+@var{filler}がそのデータソースの終わり(EOF)に達したことを検知したら、
+EOFを返すことができます。
+@c COMMON
 
+@c EN
 @code{open-output-buffered-port} creates and returns an output port,
 with associated buffer of size @var{buffer-size}.
 The data output to the port is accumulated in the buffer.
@@ -10906,6 +10934,18 @@ The string may shorter than @var{buffer-size}.
 When the port is closed, @var{flusher} is called with any data
 remaining in the buffer, then it is called again with @code{#f} to
 indicate the port is closed.
+@c JP
+@code{open-output-buffered-port}は、@var{buffer-size}の大きさのバッファを
+伴う出力ポートを作成して返します。
+このポートに出力されたデータはバッファに溜められます。
+バッファが一杯になるか、そのポートに対して@code{flush}が呼ばれると、
+フラッシュされる@emph{不完全}な文字列とともに手続き@var{flusher}が呼ばれます。
+@var{flusher}はフラッシュされたバイト数を返さなければならず、そのバイト数は
+渡された文字列のサイズと同じでなければなりません。
+このポートが閉じられると、バッファに残っているデータとともに
+@var{flusher}が呼ばれ、ポートが閉じられたことを示すために
+@code{#f}を伴って再度@var{flusher}が呼ばれます。
+@c COMMON
 @end defun
 
 @node Input, Output, Procedural ports, Input and output
@@ -11115,30 +11155,60 @@ sequence, then use input string port to read characters.)
 @subsubsection Read-time constructor
 @c NODE 読み込み時コンストラクタ
 
+@c EN
 Read-time constructor, defined in SRFI-10, provides an easy way
 to create an external representation of user-defined structures.
+@c JP
+SRFI-10で定義されている読み込み時コンストラクタは、ユーザ定義の構造の
+外部表現を作るための簡単な方法を提供します。
+@c COMMON
 
 @deftp {Reader Syntax} @code{#,(@var{tag} @var{arg} @dots{})}
+@c EN
 [SRFI-10]
 Gauche maintains a global table that associates a @var{tag} (symbol)
 to @emph{a constructor procedure}.
+@c JP
+[SRFI-10]
+Gaucheは@var{tag} (シンボル)を@emph{コンストラクタ手続き}に関連付ける
+グローバルなテーブルを管理しています。
+@c COMMON
 
+@c EN
 When the reader encounters this syntax, it reads @var{arg} @dots{},
 finds a reader constructor associated with @var{tag}, and
 calls the constructor with @var{arg} @dots{} as arguments,
 then inserts the value returned by the constructor as the result
 of reading the syntax.
+@c JP
+リーダーがこの構文に出会ったとき、@var{arg} @dots{}を読み込み、
+@var{tag}に関連付けられた読み込みコンストラクタを探し、
+@var{arg} @dots{}を引数としてそのコンストラクタを呼び出し、
+その構文を読み込んだ結果としてそのコンストラクタが返した値を挿入します。
+@c COMMON
 
+@c EN
 Note that this syntax is processed inside the reader---the
 evaluator doesn't see any of @var{arg}s, but only sees the object
 the reader returns.
+@c JP
+この構文はリーダー内部で処理されることに注意して下さい。評価器は
+@var{arg}を見ず、リーダーが返したオブジェクトしか見ません。
+@c COMMON
 @end deftp
 
 @defun define-reader-ctor @var{tag} @var{procedure}
+@c EN
 [SRFI-10]
 Associates a reader constructor @var{procedure} with @var{tag}.
 
 Examples:
+@c JP
+[SRFI-10]
+読み込みコンストラクタ@var{procedure}を@var{tag}に関連付けます。
+
+例:
+@c COMMON
 @example
 (define-reader-ctor 'pi (lambda () (* (atan 1) 4)))
 
@@ -11161,9 +11231,15 @@ table @result{} #<hash-table eq? 0x80f9398>
 (hash-table-get table 'duh) @result{} dah
 @end example
 
+@c EN
 Combined with @code{write-object} method (@xref{Output}),
 it is easy to make a user-defined class written in the form
 it can be read back:
+@c JP
+@code{write-object}メソッド(@ref{Output}参照)と組み合わせて、
+読み戻ることが可能なフォームで書かれたユーザ定義のクラスを
+作ることが簡単になります。
+@c COMMON
 
 @example
 (define-class <point> ()
@@ -11179,12 +11255,21 @@ it can be read back:
 
 @end defun
 
+@c EN
 @emph{NOTE:} The extent of the effect of @code{define-reader-ctor}
 is not specified in SRFI-10, and might pose a compatibility problem
 among implementations that support SRFI-10.
 (In fact, the very existence of @code{define-reader-ctor} is
 up to an implementation choice.)
+@c JP
+@emph{注意:} @code{define-reader-ctor}の効果の範囲はSRFI-10には
+規定されておらず、SRFI-10をサポートする実装においても互換性の問題を
+起こすことがあるかもしれません。
+(実際に、@code{define-reader-ctor}の存在そのものが実装の選択に
+任されています。)
+@c COMMON
 
+@c EN
 In Gauche, at least for the time being, @code{define-reader-ctor}
 take effects as soon as the form is compiled and evaluated.  Since
 Gauche compiles and evaluates each toplevel form in order, @var{tag}
@@ -11192,20 +11277,50 @@ specified in @code{define-reader-ctor} can be used immediately after that.
 However, it doesn't work if the call of @code{define-reader-ctor} and
 the use of @var{tag} is enclosed in a @code{begin} form, for the entire
 @code{begin} form is compiled at once before being evaluated.
+@c JP
+Gaucheでは、現時点においては、@code{define-reader-ctor}はそのフォームが
+コンパイルされ評価された時点で効力を持ちます。
+Gaucheはトップレベルのフォームを順番にコンパイル・評価するので、
+@code{define-reader-ctor}で指定された@var{tag}は、その指定の直後から
+使えます。
+しかし、@code{define-reader-ctor}の呼び出しと@var{tag}の使用が
+@code{begin}フォームで囲まれている場合は、@code{begin}フォーム全体は
+評価される前に一度にコンパイルされるため、うまく動作しません。
+@c COMMON
 
+@c EN
 Other implementations may require to read the entire file before
 making its @code{define-reader-ctor} call effective.  If so, it
 effectively prevents one from using @code{define-reader-ctor} and
 the defined @var{tag} in the same file.   It is desirable to separate
 the call of @code{define-reader-ctor} and the use of @var{tag}
 in the different files if possible.
+@c JP
+他の実装では@code{define-reader-ctor}の呼び出しが効力を持つようにする
+前にファイル全体を読み込むことを要求するかも知れません。
+その場合は、@code{define-reader-ctor}と定義された@var{tag}の使用が
+同じファイルに存在することを効果的に回避されることになります。
+可能ならば、@code{define-reader-ctor}の呼び出しと、@var{tag}の使用は
+異なるファイルに分離されることが望まれます。
+@c COMMON
 
+@c EN
 Another issue about the current @code{define-reader-ctor} is that
 it modifies the global table of Gauche system, hence not modular.
 The code written by different people might use the same tags,
 and yield an unexpected result.   In future versions, Gauche may
 have some way to encapsulate the scope of @var{tag}, although
 the author doesn't have clear idea yet.
+@c JP
+現在の@code{define-reader-ctor}に関するもう1つの問題は、それが
+Gaucheシステムのグローバルテーブルを変更してしまうことで、それゆえに
+モジュール化されていません。
+複数人によって書かれたコードは同じタグを使っているかも知れず、
+期待されない結果を引き起こすかも知れません。
+将来のバージョンでは、作者にはまだ明確なアイデアがありませんが、
+Gaucheには@var{tag}のスコープをカプセル化するほうほうが導入されるかも
+しれません。
+@c COMMON
 
 
 @node Input utility functions,  , Read-time constructor, Input
