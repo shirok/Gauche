@@ -1,9 +1,9 @@
 /*
  * port.c - port implementation
  *
- *  Copyright(C) 2000 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
  *
- *  Permission to use, copy, modify, ditribute this software and
+ *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
  *  provided that existing copyright notices are retained in all
  *  copies and that this notice is included verbatim in all
@@ -12,57 +12,89 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.1.1.1 2001-01-11 19:26:03 shiro Exp $
+ *  $Id: port.c,v 1.17 2001-03-31 08:45:20 shiro Exp $
  */
 
+#include <unistd.h>
+#include <errno.h>
 #include "gauche.h"
 
-/*
+/*================================================================
  * Common
  */
 
-#define PORTINIT(port, dir_, type_)             \
-    do {                                        \
-        port->hdr.klass = SCM_CLASS_PORT;       \
-        port->direction = dir_;                 \
-        port->type = type_;                     \
-        port->bufcnt = 0;                       \
-        port->ungotten = SCM_CHAR_INVALID;      \
-    } while (0)
-
 static int port_print(ScmObj obj, ScmPort *port, int mode);
-static ScmClass *top_cpl[] = { SCM_CLASS_TOP, NULL };
+static void port_finalize(GC_PTR obj, GC_PTR data);
 
-ScmClass Scm_PortClass = {
-    SCM_CLASS_CLASS,
-    "<port>",
-    port_print,
-    top_cpl
-};
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_PortClass, port_print);
+
+/* Cleaning up:
+ *   The underlying file descriptor/stream may be closed when the port
+ *   is explicitly closed by close-port, or implicitly destroyed by
+ *   garbage collector.  To keep consistency, Scheme ports should never
+ *   share the same file descriptor.  However, C code and Scheme port
+ *   may share the same file descriptor for efficiency (e.g. stdios).
+ *   In such cases, it is C code's responsibility to destroy the port.
+ */
+static int port_cleanup(ScmPort *port)
+{
+    if (port->ownerp) {
+        switch (SCM_PORT_TYPE(port)) {
+        case SCM_PORT_FILE:
+            return fclose(port->src.file.fp);
+        case SCM_PORT_PROC:
+            if (port->src.proc.vtable->Close) {
+                return port->src.proc.vtable->Close(SCM_PORT(port));
+            }
+        }
+    }
+    return 0;
+}
+
+/* called by GC */
+static void port_finalize(GC_PTR obj, GC_PTR data)
+{
+    port_cleanup((ScmPort *)obj);
+}
+
+/*
+ * Internal Constructor.
+ *   If this port owns the underlying file descriptor/stream, 
+ *   ownerp must be TRUE.
+ */
+static ScmPort *make_port(int dir, int type, int ownerp)
+{
+    ScmPort *port;
+    GC_finalization_proc ofn; GC_PTR ocd;
+
+    port = SCM_NEW(ScmPort);
+    SCM_SET_CLASS(port, SCM_CLASS_PORT);
+    port->direction = dir;
+    port->type = type;
+    port->bufcnt = 0;
+    port->ungotten = SCM_CHAR_INVALID;
+    port->ownerp = ownerp;
+    if (ownerp) {
+        GC_REGISTER_FINALIZER(port,
+                              port_finalize,
+                              NULL,
+                              &ofn, &ocd);
+    }
+    return port;
+}
 
 /*
  * Close
  */
 ScmObj Scm_ClosePort(ScmPort *port)
 {
-    int result = 0;
-
-    switch (SCM_PORT_TYPE(port)) {
-    case SCM_PORT_FILE:
-        result = fclose(port->src.file.fp);
-        break;
-    case SCM_PORT_PROC:
-        if (port->src.proc.vtable->Close) {
-            result = port->src.proc.vtable->Close(SCM_PORT(port));
-        }
-        break;
-    }
+    int result = port_cleanup(port);
     port->type = SCM_PORT_CLOSED;
     return result? SCM_FALSE : SCM_TRUE;
 }
 
-/*
- * Getting informations
+/*===============================================================
+ * Getting information
  */
 ScmObj Scm_PortName(ScmPort *port)
 {
@@ -83,11 +115,14 @@ ScmObj Scm_PortName(ScmPort *port)
         z = SCM_MAKE_STR("(closed port)");
         break;
     case SCM_PORT_PROC:
-        /* TODO: add getinfo protocol to proc port */
-        z = SCM_MAKE_STR("(proc port)");
+        {
+            ScmProcPortInfo *info = port->src.proc.vtable->Info(port);
+            z = info ? info->name : SCM_MAKE_STR("(proc port)");
+        }
         break;
     default:
         Scm_Panic("Scm_PortName: something screwed up");
+        /*NOTREACHED*/
     }
     return z;
 }
@@ -106,11 +141,14 @@ int Scm_PortLine(ScmPort *port)
         l = -1;
         break;
     case SCM_PORT_PROC:
-        /* TODO: add getinfo protocol to proc port */
-        l = -1;
+        {
+            ScmProcPortInfo *info = port->src.proc.vtable->Info(port);
+            l = info ? info->line : -1;
+        }
         break;
     default:
         Scm_Panic("Scm_PortLine: something screwed up");
+        /*NOTREACHED*/
     }
     return l;
 }
@@ -132,11 +170,14 @@ int Scm_PortPosition(ScmPort *port)
         pos = -1;
         break;
     case SCM_PORT_PROC:
-        /* TODO: add getinfo protocol to proc port */
-        pos = -1;
+        {
+            ScmProcPortInfo *info = port->src.proc.vtable->Info(port);
+            pos = info ? info->position : -1;
+        }
         break;
     default:
         Scm_Panic("Scm_PortLine: something screwed up");
+        /*NOTREACHED*/
     }
     return pos;
 }
@@ -150,36 +191,49 @@ static int port_print(ScmObj obj, ScmPort *port, int mode)
                       obj);
 }
 
-/*
+/* Returns port's associated file descriptor number, if any.
+   Returns -1 otherwise. */
+int Scm_PortFileNo(ScmPort *port)
+{
+    if (SCM_PORT_TYPE(port) == SCM_PORT_FILE) {
+        return fileno(port->src.file.fp);
+    } else if (SCM_PORT_TYPE(port) == SCM_PORT_PROC) {
+        ScmProcPortInfo *info = port->src.proc.vtable->Info(port);
+        if (info) {
+            if (info->fd >= 0) return info->fd;
+            if (info->fp) return fileno(info->fp);
+        }
+        return -1;
+    } else {
+        return -1;
+    }
+}
+
+/*===============================================================
  * File Port
  */
 
-ScmObj Scm_MakeFilePort(FILE *fp, ScmObj name, const char *mode)
+ScmObj Scm_MakeFilePort(FILE *fp, ScmObj name, const char *mode, int ownerp)
 {
     int dir;
     ScmPort *p;
-
     if (*mode == 'r') dir = SCM_PORT_INPUT;
     else              dir = SCM_PORT_OUTPUT;
-
-    p = SCM_NEW(ScmPort);
-    PORTINIT(p, dir, SCM_PORT_FILE);
+    p = make_port(dir, SCM_PORT_FILE, ownerp);
     p->src.file.fp = fp;
-    p->src.file.line = 0;
-    p->src.file.column = 0;
+    p->src.file.line = 1;
+    p->src.file.column = 1;
     p->src.file.name = name;
     return SCM_OBJ(p);
 }
 
 ScmObj Scm_OpenFilePort(const char *path, const char *mode)
 {
-    int dir;
     FILE *fp;
     
     fp = fopen(path, mode);
     if (fp == NULL) return SCM_FALSE;
-
-    return Scm_MakeFilePort(fp, Scm_MakeString(path, -1, -1), mode);
+    return Scm_MakeFilePort(fp, Scm_MakeString(path, -1, -1), mode, TRUE);
 }
 
 /* Auxiliary function for macros */
@@ -191,7 +245,6 @@ ScmObj Scm_OpenFilePort(const char *path, const char *mode)
 
 int Scm__PortFileGetc(int prefetch, ScmPort *port)
 {
-    unsigned char b;
     char *p;
     int next, nfollows, i, ch;
 
@@ -256,6 +309,7 @@ int Scm__PortGetcInternal(ScmPort *port)
               case SCM_PORT_ISTR: SCM__ISTR_GETB(b, port); break;
               case SCM_PORT_PROC: SCM__PROC_GETB(b, port); break;
               default: Scm_Panic("getc: something screwed up");
+                  /*NOTREACHED*/
             }
             if (b == EOF) return EOF;
             port->buf[port->bufcnt] = b;
@@ -266,28 +320,22 @@ int Scm__PortGetcInternal(ScmPort *port)
     return ch;
 }
 
-/*
- * Input string port
+/*===============================================================
+ * String port
  */
 
 ScmObj Scm_MakeInputStringPort(ScmString *str)
 {
-    ScmPort *z = SCM_NEW(ScmPort);
-    PORTINIT(z, SCM_PORT_INPUT, SCM_PORT_ISTR);
+    ScmPort *z = make_port(SCM_PORT_INPUT, SCM_PORT_ISTR, FALSE);
     z->src.istr.start = SCM_STRING_START(str);
     z->src.istr.rest  = SCM_STRING_SIZE(str);
     z->src.istr.current = z->src.istr.start;
     return SCM_OBJ(z);
 }
 
-/*
- * Output string port
- */
-
 ScmObj Scm_MakeOutputStringPort(void)
 {
-    ScmPort *z = SCM_NEW(ScmPort);
-    PORTINIT(z, SCM_PORT_OUTPUT, SCM_PORT_OSTR);
+    ScmPort *z = make_port(SCM_PORT_OUTPUT, SCM_PORT_OSTR, FALSE);
     Scm_DStringInit(&z->src.ostr);
     return SCM_OBJ(z);
 }
@@ -298,7 +346,7 @@ ScmObj Scm_GetOutputString(ScmPort *port)
     return Scm_DStringGet(&SCM_PORT(port)->src.ostr);
 }
 
-/*
+/*===============================================================
  * Generic procedures
  */
 
@@ -352,7 +400,299 @@ int Scm_Getc(ScmPort *port)
 }
 
 /*
- * predefined ports and initialization
+ * ReadLine
+ */
+
+static inline ScmObj readline_int(ScmPort *port)
+{
+    ScmDString ds;
+    int ch;
+    SCM_GETC(ch, port);
+    if (ch == SCM_CHAR_INVALID) return SCM_EOF;
+    Scm_DStringInit(&ds);
+    for (;;) {
+        if (ch == '\n' || ch == SCM_CHAR_INVALID)
+            return Scm_DStringGet(&ds);
+        SCM_DSTRING_PUTC(&ds, ch);
+        SCM_GETC(ch, port);
+    }
+}
+
+ScmObj Scm_ReadLine(ScmPort *port)
+{
+    if (SCM_PORT_DIR(port) != SCM_PORT_INPUT)
+        Scm_Error("input port required: %S\n", port);
+    if (SCM_PORT_TYPE(port) == SCM_PORT_PROC) {
+        /* procedure port may have optimized method */
+        return port->src.proc.vtable->Getline(port);
+    } else {
+        return readline_int(port);
+    }
+}
+
+/*===============================================================
+ * Procedural port
+ */
+
+/* default dummy procedures */
+static int null_getb(ScmPort *dummy)
+    /*ARGSUSED*/
+{
+    return SCM_CHAR_INVALID;
+}
+
+static int null_getc(ScmPort *dummy)
+    /*ARGSUSED*/
+{
+    return SCM_CHAR_INVALID;
+}
+
+static ScmObj null_getline(ScmPort *port)
+{
+    return readline_int(port);
+}
+
+static int null_ready(ScmPort *dummy)
+    /*ARGSUSED*/
+{
+    return TRUE;
+}
+
+static int null_putb(ScmPort *dummy, ScmByte b)
+    /*ARGSUSED*/
+{
+    return 0;
+}
+
+static int null_putc(ScmPort *dummy, ScmChar c)
+    /*ARGSUSED*/
+{
+    return 0;
+}
+
+static int null_puts(ScmPort *dummy, const char *buf, int size, int len)
+    /*ARGSUSED*/
+{
+    return 0;
+}
+
+static int null_flush(ScmPort *dummy)
+    /*ARGSUSED*/
+{
+    return 0;
+}
+
+static int null_close(ScmPort *dummy)
+    /*ARGSUSED*/
+{
+    return 0;
+}
+
+static ScmProcPortInfo *null_info(ScmPort *dummy)
+    /*ARGSUSED*/
+{
+    return NULL;
+}
+
+ScmObj Scm_MakeVirtualPort(int direction, ScmPortVTable *vtable, void *data,
+                           int ownerp)
+{
+    ScmPortVTable *vt = SCM_NEW_ATOMIC(ScmPortVTable);
+    ScmPort *port = make_port(direction, SCM_PORT_PROC, ownerp);
+    
+    /* Copy vtable, and ensure all entries contain some ptr */
+    *vt = *vtable;
+    if (!vt->Getb) vt->Getb = null_getb;
+    if (!vt->Getc) vt->Getc = null_getc;
+    if (!vt->Getline) vt->Getline = null_getline;
+    if (!vt->Ready) vt->Ready = null_ready;
+    if (!vt->Putb) vt->Putb = null_putb;
+    if (!vt->Putc) vt->Putc = null_putc;
+    if (!vt->Puts) vt->Puts = null_puts;
+    if (!vt->Flush) vt->Flush = null_flush;
+    if (!vt->Close) vt->Close = null_close;
+    if (!vt->Info) vt->Info = null_info;
+
+    port->src.proc.vtable = vt;
+    port->src.proc.clientData = data;
+    return SCM_OBJ(port);
+}
+
+/*===============================================================
+ * Port over file descriptor
+ */
+
+/* A port can be constructed over given file descriptor.  It may be
+   either buffered or unbuffered. */
+/* TODO: need to fix how to handle the error condition */
+
+struct fdport {
+    ScmProcPortInfo info;       /* includes file descriptor */
+    char eofread;               /* TRUE if EOF is read. */
+    char err;                   /* TRUE if error has occurred. */
+};
+
+#define DECL_FDPORT(pdata, port) \
+    struct fdport *pdata = (struct fdport *)port->src.proc.clientData
+#define CHECK_EOF(pdata, eofcode) \
+    if (pdata->eofread) return EOF
+#define CHECK_RESULT(result, pdata, eofcode)                            \
+    do {                                                                \
+        if (result < 0)  { pdata->err = errno; return eofcode; }        \
+        if (result == 0) { pdata->eofread = TRUE; return eofcode; }     \
+    } while (0)
+#define CHECK_ERROR(result, pdata)                              \
+    do {                                                        \
+        if (result < 0)  { pdata->err = errno; return -1; }     \
+    } while (0)
+
+/* Unbuffered I/O */
+static int fdport_getb_unbuffered(ScmPort *port)
+{
+    char c;
+    int nread;
+    DECL_FDPORT(pdata, port);
+    CHECK_EOF(pdata, EOF);
+    nread = read(pdata->info.fd, &c, 1);
+    CHECK_RESULT(nread, pdata, EOF);
+    if (c == '\n') { pdata->info.line++; pdata->info.position = 1; }
+    else pdata->info.position++;
+    return c;
+}
+
+static int fdport_getc_unbuffered(ScmPort *port)
+{
+    char chbuf[SCM_CHAR_MAX_BYTES], c;
+    int chcnt, chmax, ch, nread;
+    DECL_FDPORT(pdata, port);
+    CHECK_EOF(pdata, SCM_CHAR_INVALID);
+
+    nread = read(pdata->info.fd, &c, 1);
+    CHECK_RESULT(nread, pdata, SCM_CHAR_INVALID);
+    if ((chmax = SCM_CHAR_NFOLLOWS(c)) == 0) {
+        return c;
+    }
+    chmax++;
+    chbuf[0] = c;
+    for (chcnt = 1; chcnt < chmax; chcnt++) {
+        nread = read(pdata->info.fd, &chbuf[chcnt], 1);
+        CHECK_RESULT(nread, pdata, SCM_CHAR_INVALID);
+    }
+    SCM_STR_GETC(chbuf, ch);
+    if (ch == '\n') { pdata->info.line++; pdata->info.position = 1; }
+    else pdata->info.position++;
+    return ch;
+}
+
+static int fdport_ready_unbuffered(ScmPort *port)
+{
+    /* TODO: write me */
+    return TRUE;
+}
+
+static int fdport_putb_unbuffered(ScmPort *port, ScmByte b)
+{
+    DECL_FDPORT(pdata, port);
+    int nwrote;
+    do {
+        nwrote = write(pdata->info.fd, &b, 1);
+        CHECK_ERROR(nwrote, pdata);
+    } while (nwrote == 0);
+    return 1;
+}
+
+static int fdport_putc_unbuffered(ScmPort *port, ScmChar ch)
+{
+    DECL_FDPORT(pdata, port);
+    int nwrote, nbytes, count;
+    char chbuf[SCM_CHAR_MAX_BYTES], *bufp;
+    count = nbytes = SCM_CHAR_NBYTES(ch);
+    SCM_STR_PUTC(chbuf, ch);
+    bufp = chbuf;
+    do {
+        nwrote = write(pdata->info.fd, bufp, count);
+        CHECK_ERROR(nwrote, pdata);
+        count -= nwrote;
+        bufp += nwrote;
+    } while (count > 0);
+    return nbytes;
+}
+
+static int fdport_puts_unbuffered(ScmPort *port, const char *buf, int size,
+                                  int len)
+{
+    DECL_FDPORT(pdata, port);
+    int nwrote, count = size;
+    do {
+        nwrote = write(pdata->info.fd, buf, count);
+        CHECK_ERROR(nwrote, pdata);
+        count -= nwrote;
+        buf += nwrote;
+    } while (count > 0);
+    return size;
+}
+
+static int fdport_close_unbuffered(ScmPort *port)
+{
+    DECL_FDPORT(pdata, port);
+    if (port->ownerp && pdata->info.fd >= 0)
+        return close(pdata->info.fd);
+    else
+        return -1;
+}
+
+static ScmProcPortInfo *fdport_info(ScmPort *port)
+{
+    DECL_FDPORT(pdata, port);
+    return &pdata->info;
+}
+
+/* Create a port on specified file descriptor.
+      NAME  - used for the name of the port.
+      DIRECTION - either SCM_PORT_INPUT or SCM_PORT_OUTPUT
+      FD - the opened file descriptor.
+      BUFFERED - if TRUE, the port will be buffered (using fdopen).
+      OWNERP - if TRUE, fd will be closed when this port is closed.
+ */
+ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
+                          int fd, int buffered, int ownerp)
+{
+    if (buffered) {
+        FILE *fp;
+        char *mode;
+        if (direction == SCM_PORT_INPUT) mode = "r";
+        else if (direction == SCM_PORT_OUTPUT) mode = "w";
+        else Scm_Error("invalid port direction: %d", direction);
+        fp = fdopen(fd, mode);
+        if (fp == NULL) Scm_SysError("fdopen failed on %d", fd);
+        return Scm_MakeFilePort(fp, name, mode, ownerp);
+    } else {
+        ScmPortVTable vt;
+        struct fdport *pdata;
+    
+        pdata = SCM_NEW(struct fdport);
+        pdata->info.name = name;
+        pdata->info.line = 1;
+        pdata->info.position = 1;
+        pdata->info.fd = fd;
+        pdata->info.fp = NULL;
+        pdata->eofread = pdata->err = FALSE;
+        vt.Getb = fdport_getb_unbuffered;
+        vt.Getc = fdport_getc_unbuffered;
+        vt.Getline = NULL;      /* use default */
+        vt.Ready = fdport_ready_unbuffered;
+        vt.Putb = fdport_putb_unbuffered;
+        vt.Putc = fdport_putc_unbuffered;
+        vt.Puts = fdport_puts_unbuffered;
+        vt.Flush = NULL;        /* use default */
+        vt.Close = fdport_close_unbuffered;
+        vt.Info = fdport_info;
+        return Scm_MakeVirtualPort(direction, &vt, pdata, ownerp);
+    }
+}
+
+/*===============================================================
+ * Standard ports
  */
 
 static ScmObj scm_stdin;
@@ -376,7 +716,7 @@ ScmObj Scm_Stderr(void)
 
 void Scm__InitPort(void)
 {
-    scm_stdin  = Scm_MakeFilePort(stdin, SCM_MAKE_STR("(stdin)"), "r");
-    scm_stdout = Scm_MakeFilePort(stdout, SCM_MAKE_STR("(stdout)"), "w");
-    scm_stderr = Scm_MakeFilePort(stderr, SCM_MAKE_STR("(stderr)"), "w");
+    scm_stdin  = Scm_MakeFilePort(stdin, SCM_MAKE_STR("(stdin)"), "r", FALSE);
+    scm_stdout = Scm_MakeFilePort(stdout,SCM_MAKE_STR("(stdout)"), "w",FALSE);
+    scm_stderr = Scm_MakeFilePort(stderr,SCM_MAKE_STR("(stderr)"), "w",FALSE);
 }

@@ -1,0 +1,92 @@
+;;;
+;;; moplib.stub - extra built-ins
+;;;
+;;;   Copyright (c) 2000-2001 Shiro Kawai (shiro@acm.org)
+;;;
+;;;   Permission to use, copy, modify, distribute this software and
+;;;   accompanying documentation for any purpose is hereby granted,
+;;;   provided that existing copyright notices are retained in all
+;;;   copies and that this notice is included verbatim in all
+;;;   distributions.
+;;;   This software is provided as is, without express or implied
+;;;   warranty.  In no circumstances the author(s) shall be liable
+;;;   for any damages arising out of the use of this software.
+;;;
+;;; $Id: moplib.stub,v 1.8 2001-03-31 08:46:13 shiro Exp $
+;;;
+
+"
+#include <gauche/class.h>
+"
+
+;; Gauche object system interface
+
+(define-type "generic" generic?
+  "ScmGeneric*" "SCM_GENERIC_P" "SCM_GENERIC")
+
+(define-type "method" method?
+  "ScmMethod*" "SCM_METHOD_P" "SCM_METHOD")
+
+
+;;
+;; Internal routines
+;;
+
+;; 
+(define-cproc %compute-applicable-methods (gf args)
+  (assert (list? args))
+  "  ScmObj argv, *argp;  int nargs;
+  if (!Scm_TypeP(gf, SCM_CLASS_GENERIC))
+     Scm_Error(\"generic function required, but got: %S\", gf);
+  argv = Scm_ListToVector(args);
+  nargs = SCM_VECTOR_SIZE(argv);
+  argp = SCM_VECTOR_ELEMENTS(argv);
+  SCM_RETURN(Scm_ComputeApplicableMethods(SCM_GENERIC(gf), argp, nargs));")
+
+"static ScmObj call_fallback_proc(ScmObj *args, int nargs, ScmGeneric *gf)
+ {
+  ScmObj proc = SCM_OBJ(gf->data);
+  ScmObj arglist = Scm_ArrayToList(args, nargs);
+  SCM_RETURN(Scm_VMApply(proc, arglist));
+ }
+"
+
+(define-cproc %ensure-generic-function (name module)
+  (assert (symbol? name))
+  (assert (module? module))
+  "  ScmObj val = Scm_SymbolValue(module, name);
+  if (!Scm_TypeP(val, SCM_CLASS_GENERIC)) {
+    if (SCM_SUBRP(val) || SCM_CLOSUREP(val)) {
+      val = Scm_MakeBaseGeneric(SCM_OBJ(name), call_fallback_proc, val);
+    } else {
+      val = Scm_MakeBaseGeneric(SCM_OBJ(name), NULL, NULL);
+    }
+    Scm_Define(module, name, val);
+  }
+  SCM_RETURN(val);")
+
+;;
+;; Public interface
+;;
+
+(define-cproc class-of (obj)
+  "  SCM_RETURN(SCM_OBJ(Scm_ClassOf(obj)));")
+
+(define-cproc is-a? (obj klass)
+  (assert (class? klass))
+  "  SCM_RETURN(SCM_MAKE_BOOL(Scm_TypeP(obj, klass)));")
+
+(define-cproc slot-ref (obj slot)
+  (inliner "SCM_VM_SLOT_REF")
+  "  SCM_RETURN(Scm_VMSlotRef(obj, slot, FALSE));")
+
+(define-cproc slot-set! (obj slot value)
+  (inliner "SCM_VM_SLOT_SET")
+  "  SCM_RETURN(Scm_VMSlotSet(obj, slot, value));")
+
+(define-cproc slot-bound? (obj slot)
+  "  SCM_RETURN(Scm_VMSlotBoundP(obj, slot));")
+
+;; Local variables:
+;; mode: scheme
+;; end:
