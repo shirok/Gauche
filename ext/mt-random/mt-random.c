@@ -10,7 +10,7 @@
  *     the allocated memory for random number generator object.
  *   - changed the names of the functions
  *   - added stuff to make it as a Gauche extension module.
- * $Id: mt-random.c,v 1.4 2002-05-12 02:21:48 shirok Exp $
+ * $Id: mt-random.c,v 1.5 2002-05-12 22:02:40 shirok Exp $
  *
  * The original copyright notice follows.
  */
@@ -251,7 +251,7 @@ ScmObj Scm_MTGenrandInt(ScmMersenneTwister *mt, ScmObj n)
         if (SCM_BIGNUM_SIZE(n) == 2
             && SCM_BIGNUM(n)->values[0] == 0
             && SCM_BIGNUM(n)->values[1] == 1) {
-            return Scm_MakeInteger(Scm_MTGenrandU32(mt));
+            return Scm_MakeIntegerFromUI(Scm_MTGenrandU32(mt));
         }
     }
 #endif
