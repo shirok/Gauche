@@ -5442,11 +5442,31 @@ until its exit status is explicitly collected by @code{process-wait}.
 
 @defun process-wait process
 @c EN
-Obtains exit status of the subprocess @var{process}.
+Obtains exit status of the subprocess @var{process}, and stores it
+to @var{process}'s status slot.  The status can be obtained by
+@code{process-exit-status}.
 This suspends execution until @var{process} exits.
+Returns @code{#f} if @var{process} is already exitted and status
+is taken, or @code{#t} if this call actually obtains the exit status.
 @c JP
-サブプロセス @var{process} の終了ステータスを取得します。
+サブプロセス @var{process} の終了ステータスを取得し、@var{process}
+のstatusスロットに値を格納します。statusスロットの値は
+@code{process-exit-status}で得ることができます。
 これは、@var{process} が終了するまで実行を一時停止します。
+@var{process}が既に終了していてステータスも取得されていた場合は
+@code{#f}を、そうでなければ@code{#t}を返します。
+@c COMMON
+@end defun
+
+@defun process-exit-status process
+@c EN
+Returns exit status of @var{process} retrieved by @code{process-wait}.
+If this is called before @code{process-wait} is called on @var{process},
+the result is undefined.
+@c JP
+@code{process-wait}によって取得された@var{process}の終了ステータスを
+返します。@var{process}に対して@code{process-wait}を呼ぶ前にこの手続きを
+呼んだ場合の結果は未定義です。
 @c COMMON
 @end defun
 
