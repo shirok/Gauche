@@ -1,3 +1,8 @@
+2003-06-20  Shiro Kawai  <shiro@acm.org>
+
+	* doc/extract : fixed a problem of @include when Gauche is compiled
+	  other than euc-jp as a native encoding.
+
 2003-06-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/stdlib.stub (char-ready?) : made char-ready?'s argument optional

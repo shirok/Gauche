@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: extract,v 1.11 2003-06-12 07:17:31 shirok Exp $
+;;;  $Id: extract,v 1.12 2003-06-21 06:37:02 shirok Exp $
 ;;;
 
 (use gauche.regexp)
@@ -49,7 +49,7 @@
             (push! *node-table* (cons current-node jn))
             (push! *header-table* (cons current-header jh))))
          (#/^@include\s+(\S+)/ (#f file)
-           (with-input-from-file file (cut scan-nodes)))
+           (with-input-from-file file (cut scan-nodes) :encoding 'euc-jp))
          ))
      read-line)))
 
@@ -60,7 +60,8 @@
       (pattern-in () (in (read-line)))
       (pattern-out () (out (read-line)))
       (#/^@include\s+(\S+)/ (#f file)
-        (with-input-from-file file (cut filter pattern-in pattern-out))
+        (with-input-from-file file (cut filter pattern-in pattern-out)
+                              :encoding 'euc-jp)
         (in (read-line)))
       (#/^@c COMMON$/ () (in (read-line)))
       (test (lambda _ (eq? *lang* 'en))
