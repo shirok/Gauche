@@ -4236,7 +4236,7 @@ The socket is bound to a unix domain socket with a name @var{path}.
 @c JP
 パス名@var{path}を持つUnixドメインソケットが作成されます。
 @c COMMON
-@item (make-server-socket 'inet @var{port} [:reuse-addr? @var{flag}])
+@item (make-server-socket 'inet @var{port} [:reuse-addr? @var{flag}] [:sock-init @var{proc}])
 @c EN
 The socket is bound to an inet domain TCP socket, listening
 port @var{port}, which must be a non-negative exact integer
@@ -4255,7 +4255,19 @@ immediately after other process releases the port.
 このオプションをセットすると、他のプロセスがそのポートを使わなくなったら直ちに
 このプロセスがそのポートを使うことができます。
 @c COMMON
-@item (make-server-socket @var{port} [:reuse-addr? @var{flag}])
+
+@c EN
+If keyword argument @code{sock-init} is given, it should be a procedure
+that takes two arguments, a created socket and the socket address.
+The procedure is called just after the socket is created.  It is
+useful to set some special socket options.
+@c JP
+キーワード引数@code{sock-init}が与えられた場合、それは
+2つ引数を取る手続きでなければなりません。その手続きは
+ソケットが作られた直後に、ソケットとアドレスを引数にして呼び出されます。
+特殊なソケットオプションを設定したいような場合に使えます。
+@c COMMON
+@item (make-server-socket @var{port} [:reuse-addr? @var{flag}] [:sock-init @var{proc}])
 @c EN
 This is a synonym to the above form (except @var{port} must be 
 an integer).  This form is backward-compatible
@@ -4265,7 +4277,7 @@ with STk's @code{make-server-socket}.
 上の形式と同じ動作をします。STkの@code{make-server-socket}との
 互換性のために提供されています。
 @c COMMON
-@item (make-server-socket @var{sockaddr} [:reuse-addr? @var{flag}])
+@item (make-server-socket @var{sockaddr} [:reuse-addr? @var{flag}][:sock-init @var{proc}])
 @c EN
 This form explicitly specifies the socket address to listen
 by an instance of @code{<sockaddr>}.
@@ -4287,7 +4299,7 @@ by an instance of @code{<sockaddr>}.
 @end example
 @end defun
 
-@defun make-server-sockets host port &keyword reuse-addr?
+@defun make-server-sockets host port &keyword reuse-addr? sock-init
 @c EN
 Creates one or more sockets that listen at @var{port}
 on all available network interfaces of @var{host}.
@@ -4299,6 +4311,8 @@ This procedure is particularly useful when the host
 has multiple protocol stacks, such as IPv4 and IPv6; in which
 case, you can start a server that listenes both protocol
 using @code{make-server-sockets}.
+
+The meaning of keyword arguments are the same as of @code{make-server-socket}.
 @c JP
 @var{host} のすべての利用可能なネットワークインタフェース上の
 @var{port} をリッスンする1つ以上のソケットを生成します。
@@ -4311,6 +4325,8 @@ using @code{make-server-sockets}.
 持つ場合に特に便利です。このような場合、両方のプロトコルで
 リッスンするようなサーバを @code{make-server-sockets} をつかって、
 スタートすることができます。
+
+キーワード引数の意味は@code{make-server-socket}のそれと同じです。
 @c COMMON
 @end defun
 

@@ -1,276 +1,14 @@
 ;;
 ;; A compiler.
-;;  $Id: comp.scm,v 1.1.2.15 2005-01-09 04:28:49 shirok Exp $
+;;  $Id: comp.scm,v 1.1.2.16 2005-01-10 00:22:39 shirok Exp $
 
 (define-module gauche.internal
   (use util.match)
   )
 (select-module gauche.internal)
 
-;;; Entry
-;(define (compile program . opts)
-;  (let1 mod (get-optional opts #f)
-;    (if mod
-;      (let1 origmod (vm-current-module)
-;        (dynamic-wind
-;            (lambda () (vm-set-current-module mod))
-;            (lambda () (compile-int program '() 'tail))
-;            (lambda () (vm-set-current-module origmod))))
-;      (compile-int program '() 'tail))))
-
-;;; compile-int:: (Program, Env, Ctx) -> [Insn]
-;(define (compile-int program env ctx)
-;  (match program
-;    ((op . args)
-;     (cond
-;      ((variable? op)
-;       (let1 local (lookup-env op env #t)
-;         (cond
-;          ((vm-insn? local) ;; LREF
-;           (compile-call (add-srcinfo (extended-list local) op)
-;                         program env ctx))
-;          ((is-a? local <macro>) ;; local macro
-;           (compile-int (call-macro-expander local program env) env ctx))
-;          ((get-global-binding op env)
-;           => (lambda (gloc)
-;                (let1 val (gloc-ref gloc)
-;                  (cond
-;                   ((is-a? val <syntax>)
-;                    (call-syntax-compiler val program env ctx))
-;                   ((is-a? val <macro>)
-;                    (compile-int (call-macro-expander val program env)
-;                                 env ctx))
-;                   ((has-inliner? val)
-;                    (let1 inlined (call-procedure-inliner val program env)
-;                      (if inlined
-;                        (compile-int inlined env ctx)
-;                        (compile-call (compile-varref op '()) program env ctx))))
-;                   (else
-;                    (compile-call (compile-varref op '()) program env ctx))))))
-;          (else
-;           (compile-call (compile-varref op '()) program env ctx)))))
-;      ((is-a? op <syntax>)
-;       (call-syntax-compiler op program env ctx))
-;      (else
-;       (compile-call (compile-int op env 'normal) program env ctx))))
-;    ((? variable?)
-;     (compile-varref program env))
-;    (else
-;     (if (eq? ctx 'stmt) '() (list program)))
-;    ))
-
-;(define (compile-varref var env)
-;  (let1 loc (lookup-env var env #f)
-;    (add-srcinfo
-;     (if (variable? loc)
-;       (extended-list (vm-insn-make 'GREF) loc)
-;       (extended-list loc))
-;     var)))
-
-;;; Returns an insn list of function invocation 
-;;;  PROGRAM = (OP . ARGS) and HEAD is the compiled insn list for OP.
-;(define (compile-call head program env ctx)
-;  (compile-call-finish head (compile-args (cdr program) env)
-;                       (length (cdr program)) program ctx))
-
-;;; Finish compilation of calling sequence.  ARGCODE is an insn list
-;;; to push arguments into the stack.  HEADCODE is an insn list to
-;;; leave the procedure in the register.   PROGRAM is the source code
-;;; to be attached to the call instruction.
-;(define (compile-call-finish headcode argcode numargs program ctx)
-;  (define (srcinfo insn)
-;    (if program
-;      (add-srcinfo (extended-list insn) program)
-;      (list insn)))
-;  (if (eq? ctx 'tail)
-;    (append! (list (vm-insn-make 'PRE-TAIL numargs))
-;             argcode
-;             headcode
-;             (srcinfo (vm-insn-make 'TAIL-CALL numargs)))
-;    (list (vm-insn-make 'PRE-CALL numargs)
-;          (append! argcode headcode
-;                   (srcinfo (vm-insn-make 'CALL numargs))))))
-
-;;; Returns an insn list to push arguments ARGS into the stack.
-;(define (compile-args args env)
-;  (if (null? args)
-;    '()
-;    (append! (compile-int (car args) env 'normal)
-;             (list (vm-insn-make 'PUSH))
-;             (compile-args (cdr args) env))))
-
-;;; Returns an insn list of executing EXPRS in sequence.
-;(define (compile-seq exprs env ctx)
-;  (match exprs
-;    (() '())
-;    ((expr) (compile-int expr env ctx))
-;    ((expr . exprs)
-;     (append! (compile-int expr env 'stmt)
-;              (compile-seq exprs env ctx)))))
-
-;;; Look up local environment
-;;;
-;(define (lookup-env var env syntax?)
-;  (let outer ((env env)
-;              (depth 0))
-;    (if (pair? env)
-;      (let ((frame (car env)))
-;        (when (and (identifier? var)
-;                   (eq? (slot-ref var 'env) env))
-;          (set! var (slot-ref var 'name)))
-;        (if (pair? frame)
-;          (if (eq? (car frame) #t)
-;            ;; macro binding.
-;            (if syntax?
-;              (or (find-local-macro (cdr frame) var)
-;                  (outer (cdr env) depth))
-;              (outer (cdr env) depth))
-;            ;; look for variable binding.  there may be a case that
-;            ;; single frame contains more than one variable with the
-;            ;; same name (in the case like '(let* ((x 1) (x 2)) ...)'),
-;            ;; so we have to scan the frame until the end. */
-;            (let inner ((frame frame) (offset 0) (found #f))
-;              (cond ((null? frame)
-;                     (if found
-;                       (vm-insn-make 'LREF depth (- offset found 1))
-;                       (outer (cdr env) (+ depth 1))))
-;                    ((eq? (car frame) var)
-;                     (inner (cdr frame) (+ offset 1) offset))
-;                    (else
-;                     (inner (cdr frame) (+ offset 1) found))))
-;            )
-;          ;; don't count empty frames.  they are omitted at runtime.
-;          (outer (cdr env) depth)))
-;      ;; binding not found in local env.  returns an identifier.
-;      (if (and (symbol? var) (not syntax?))
-;        (make-identifier-old var '())
-;        var))))
-
-;(define (find-local-macro frame var)
-;  (let loop ((frame frame))
-;    (cond ((null? frame) #f)
-;          ((eq? (caar frame) var) (cdar frame))
-;          (else (loop (cdr frame))))))
-
-;(define (get-global-binding name env)
-;  (cond
-;   ((identifier? name)
-;    (find-binding (slot-ref name 'module) (slot-ref name 'name) #f))
-;   ((symbol? name)
-;    (find-binding (get-current-module env) name #f))
-;   (else #f)))
-
-;(define (get-current-module env)
-;  (vm-current-module))
-
-;(define (add-srcinfo form info)
-;  (when info
-;    (pair-attribute-set! form 'source-info info))
-;  form)
-
-(define (list/info info arg0 . args)
-  (if info
-    (let1 p (extended-cons arg0 args)
-      (pair-attribute-set! p 'source-info info)
-      p)
-    (cons arg0 args)))
-
 ;;============================================================
-;; Special forms
-;;
-
-;(define-macro (define-primitive-syntax formals . body)
-;  `(define ,(car formals)
-;     (make-syntax ',(car formals) (lambda ,(cdr formals) ,@body))))
-
-;;------------------------------------------------------------
-;; IF family  (if, when, unless, and, or)
-;;
-
-;(define (compile-if-family test-code then-code else-code env ctx)
-;  (if (eq? ctx 'tail)
-;    (append! test-code
-;             (list (vm-insn-make 'IF) then-code)
-;             else-code)
-;    (let1 merger (list (vm-insn-make 'MNOP))
-;      (append! test-code
-;               (list (vm-insn-make 'IF) (append! then-code merger))
-;               (append! else-code merger)))))
-
-;(define-primitive-syntax (if@ form env ctx)
-;  (match form
-;    ((_ test then else)
-;     (compile-if-family (compile-int test env 'normal)
-;                        (compile-int then env ctx)
-;                        (compile-int else env ctx)
-;                        env ctx))
-;    ((_ test then)
-;     (compile-int `(,if@ ,test ,then ,(undefined)) env ctx))
-;    (else
-;     (error "malformed if:" form))))
-
-;(define-primitive-syntax (when@ form env ctx)
-;  (match form
-;    ((_ test . body)
-;     (compile-if-family (compile-int test env 'normal)
-;                        (compile-seq body env ctx)
-;                        (list (undefined))
-;                        env ctx))
-;    (else
-;     (error "malformed when:" form))))
-
-;(define-primitive-syntax (unless@ form env ctx)
-;  (match form
-;    ((_ test . body)
-;     (compile-if-family (compile-int test env 'normal)
-;                        (list (undefined))
-;                        (compile-seq body env ctx)
-;                        env ctx))
-;    (else
-;     (error "malformed unless:" form))))
-
-;(define-primitive-syntax (and@ form env ctx)
-;  (let1 merger (if (eq? ctx 'tail) '() (list (vm-insn-make 'MNOP)))
-;    (define (and-rec exprs)
-;      (match exprs
-;        (() (list #t))
-;        ((expr) (append! (compile-int expr env ctx) merger))
-;        ((expr . other)
-;         (append! (compile-int expr env 'normal)
-;                  (list (vm-insn-make 'IF)
-;                        (and-rec other))
-;                  merger))))
-;    (and-rec (cdr form))))
-
-;(define-primitive-syntax (or@ form env ctx)
-;  (let1 merger (if (eq? ctx 'tail) '() (list (vm-insn-make 'MNOP)))
-;    (define (or-rec exprs)
-;      (match exprs
-;        (() (list #f))
-;        ((expr) (append! (compile-int expr env ctx) merger))
-;        ((expr . other)
-;         (append! (compile-int expr env 'normal)
-;                  (list (vm-insn-make 'IF) merger)
-;                  (or-rec other)))))
-;    (or-rec (cdr form))))
-
-;;------------------------------------------------------------
-;; BEGIN
-;;
-
-;; NB: begins in the beginning of lambda bodies are handled
-;; within lambda-family compiler.
-
-;(define-primitive-syntax (begin@ form env ctx)
-;  (compile-seq (cdr form) env ctx))
-
-;;------------------------------------------------------------
-;; LAMBDA family  (lambda, let, let*, letrec, receive)
-;;
-
-
-;;============================================================
-;; Some experiment
+;; For testing
 ;;
 
 (define (kompile program . opts)
@@ -289,6 +27,10 @@
     (let1 p3 (pass3 (pass2 p1) '() 'tail)
       (display "Pass3: ") (write p3) (newline)
       (vm-dump-code (vm-pack-code p3)))))
+
+;;============================================================
+;; Data structures
+;;
 
 ;; NB: for the time being, we use simple vector and manually
 ;; defined accessors/modifiers.  We can't use define-class stuff
@@ -319,11 +61,13 @@
 ;;   Slots:
 ;;     module   - The 'current-module' to resolve global binding.
 ;;     frames   - List of local frames.  Each local frame has a form:
-;;                (<syntax?> (<name> . <obj>) ...)
-;;                where <syntax?> is #t for the local macro frames,
-;;                and #f for the local binding frames.  <obj> is
-;;                a <macro> object for the local macro frames, and
-;;                lvar object for the local binding frames.
+;;                (<type> (<name> . <obj>) ...)
+;;
+;;                <type>     <obj>
+;;                ----------------------------------------------
+;;                'lexical   <lvar>     ;; lexical binding
+;;                'syntax    <macro>    ;; syntactic binding
+;;                'pattern   <pvar>     ;; pattern variable
 
 (define (make-cenv module frames) (vector 'cenv module frames))
 
@@ -334,23 +78,33 @@
 (define (make-bottom-cenv)
   (make-cenv (vm-current-module) '()))
 
-(define (cenv-extend cenv frame syntax?)
+(define (cenv-extend cenv frame type)
   (make-cenv (cenv-module cenv)
-             (acons syntax? frame (cenv-frames cenv))))
+             (acons type frame (cenv-frames cenv))))
 
 ;; toplevel environment == cenv has only syntactic frames
 (define (cenv-toplevel? cenv)
   (every (lambda (frame) (eq? (car frame) #t)) (cenv-frames)))
 
-;; Lookup compiler enviroment.  Returns either lvar, syntax, or identifier.
-;; NB: the treatment of locally-bound identifier should be fixed.
-(define (cenv-lookup cenv sym-or-id syntax?)
+;; Lookup compiler enviroment.
+;; lookup-as argument
+;;    'lexical - lookup only lexical bindings
+;;    'syntax  - lookup lexical and syntactic bindings
+;;    'pattern - lookup lexical, syntactic and pattern bindings
+
+(define (cenv-lookup cenv sym-or-id lookup-as)
+
+  (define search-types
+    (case lookup-as
+      ((lexical) '(lexical))
+      ((syntax)  '(lexical syntax))
+      ((pattern) '(lexical syntax pattern))))
+
   (define (find-lvar frame)
-    (if (car frame) ;; syntactic frame
-      (cond ((and syntax? (assq sym-or-id (cdr frame))) => cdr)
-            (else #f))
-      (cond ((assq sym-or-id (cdr frame)) => cdr)
-            (else #f))))
+    (cond ((and (memq (car frame) search-types)
+                (assq sym-or-id (cdr frame)))
+           => cdr)
+          (else #f)))
 
   (let ((frames (cenv-frames cenv)))
     (let loop ((frames frames))
@@ -373,11 +127,23 @@
 (define (sc-apply-op op)
   (lambda (sc) (make-sc (op (sc-form sc)) (sc-cenv sc))))
 
-(define (sc-pair? sc)   (pair? (sc-form sc)))
-(define sc-car          (sc-apply-op car))
-(define sc-cdr          (sc-apply-op cdr))
+(define (sc-pair? sc)        (pair? (sc-form sc)))
+(define (sc-proper-list? sc) (proper-list? (sc-form sc)))
+(define sc-car               (sc-apply-op car))
+(define sc-cdr               (sc-apply-op cdr))
 
+(define (sc->list sc)
+  (let1 env (sc-cenv sc)
+    (map (lambda (elt) (make-sc elt env)) (sc-form sc))))
 
+;; Pattern variable (pvar)
+;;   Keeps binding info of pattern variables at the compile time.
+
+(define (make-pvar name level value)  (vector 'pvar name level value))
+
+(define (pvar-name pvar)   (vector-ref pvar 1))
+(define (pvar-level pvar)  (vector-ref pvar 2))
+(define (pvar-value pvar)  (vector-ref pvar 3))
 
 ;; Intermediate form
 ;;
@@ -771,7 +537,8 @@
     ((_ formals . body)
      (receive (args reqargs optarg) (parse-lambda-args formals)
        (let* ((lvars (map make-lvar args))
-              (newenv (cenv-extend cenv (cons #f (map cons args lvars)) #f)))
+              (newenv (cenv-extend cenv (cons #f (map cons args lvars))
+                                   'lexical)))
          `($lambda ,form ,reqargs ,optarg
                    ,lvars ,(pass1/body body form newenv)))))
     (else
@@ -782,7 +549,8 @@
     ((_ formals expr body ...)
      (receive (args reqargs optarg) (parse-lambda-args formals)
        (let* ((lvars (map make-lvar args))
-              (newenv (cenv-extend cenv (cons #f (map cons args lvars)) #f)))
+              (newenv (cenv-extend cenv (cons #f (map cons args lvars))
+                                   'lexical)))
          `($receive ,form ,reqargs ,optarg
                     ,lvars ,(pass1 expr cenv)
                     ,(pass1/body body form newenv)))))
@@ -795,7 +563,8 @@
      (pass1/body body form cenv))
     ((_ ((var expr) ...) body ...)
      (let* ((lvars (map make-lvar var))
-            (newenv (cenv-extend cenv (cons #f (map cons var lvars)) #f)))
+            (newenv (cenv-extend cenv (cons #f (map cons var lvars))
+                                 'lexical)))
        `($let ,form ,lvars ,(map (cut pass1 <> newenv) expr)
               ,(pass1/body body form newenv))))
     ((_ name ((var expr) ...) body ...)
@@ -805,8 +574,8 @@
      ;; == ((letrec ((name (lambda (var ...) body ...))) name) exp ...)
      (let* ((lvar (make-lvar name))
             (args (map make-lvar var))
-            (env1 (cenv-extend cenv `(#f (,name . ,lvar)) #f))
-            (env2 (cenv-extend env1 (cons #f (map cons var args)) #f)))
+            (env1 (cenv-extend cenv `(#f (,name . ,lvar)) 'lexical))
+            (env2 (cenv-extend env1 (cons #f (map cons var args)) 'lexical)))
      `($call ,form
              ($let #f (,lvar) (($const ,(undefined)))
                    ($seq ($lset ,lvar
@@ -824,7 +593,8 @@
        (if (null? vars)
          (pass1/body body form cenv)
          (let* ((lv (make-lvar (car vars)))
-                (newenv (cenv-extend cenv (list #f (cons (car vars) lv)) #f)))
+                (newenv (cenv-extend cenv (list #f (cons (car vars) lv))
+                                     'lexical)))
            `($let #f (,lv) (,(pass1 (car inits) cenv))
                   ,(loop (cdr vars) (cdr inits) newenv))))))
     (else
@@ -836,7 +606,7 @@
      (pass1/body body form cenv))
     ((_ ((var expr) ...) body ...)
      (let* ((lvars (map make-lvar var))
-            (newenv (cenv-extend cenv (cons #f (map cons var lvars)) #f))
+            (newenv (cenv-extend cenv (cons #f (map cons var lvars)) 'lexical))
             (setup (map (lambda (lv init)
                           `($lset ,lv ,(pass1 init newenv)))
                         lvars expr)))
@@ -1070,6 +840,24 @@
 ;; Macros for the new compiler
 ;;
 
+;; Hygienic macro pattern-matching & binding
+;;
+
+;; Generating pattern matcher:
+;;
+;;   Given set of pattern templates, generate a program that
+;;   (1) matches the pattern, and (2) create a pattern variable
+;;   binding frame.
+;;   NB: the generated program is evaled in the compiler's toplevel
+;;   environment, so we don't care about shadowing global identifiers
+;;   such as lambda.
+
+;(define (generate-matcher patterns literals)
+
+;  (define (generate-1 pattern)
+;    (cond
+;     ((
+
 
 
 
@@ -1077,6 +865,13 @@
 ;;============================================================
 ;; Utilities
 ;;
+
+(define (list/info info arg0 . args)
+  (if info
+    (let1 p (extended-cons arg0 args)
+      (pair-attribute-set! p 'source-info info)
+      p)
+    (cons arg0 args)))
 
 (define (variable? arg)
   (or (symbol? arg) (identifier? arg)))
