@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.185 2002-04-29 05:09:41 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.186 2002-04-29 07:49:45 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -31,7 +31,7 @@
 
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 2001 Shiro Kawai (shiro@@acm.org)
+Copyright @copyright{} 2001-2002 Shiro Kawai (shiro@@acm.org)
 
 @end titlepage
 
@@ -3101,21 +3101,21 @@ form, and compile it again.
 @section Macro expansion
 @c NODE マクロの展開
 
-@defun macro-expand form
-@defunx macro-expand-1 form
+@defun macroexpand form
+@defunx macroexpand-1 form
 If @var{form} is a list and its first element is a variable
-globally bound to a macro, @code{macro-expand-1}
+globally bound to a macro, @code{macroexpand-1}
 invokes its macro transformer and
 returns the expanded form.  Otherwise, returns @var{form} as is.
 
-@code{macro-expand} repeats @code{macro-expand-1} until the
+@code{macroexpand} repeats @code{macroexpand-1} until the
 @var{form} can't be expanded.
 
 These procedures can be used to expand globally defined macros.
 @end defun
 
-@defspec %macro-expand form
-@defspecx %macro-expand-1 form
+@defspec %macroexpand form
+@defspecx %macroexpand-1 form
 @end defspec
 
 @node Macro utilities,  , Macro expansion, Macros
@@ -6107,6 +6107,7 @@ gosh> (weak-vector-ref v 0)
 @end example
 
 @deftp {Builtin Class} <weak-vector>
+@clindex weak-vector
 @c EN
 The weak vector class.  Inherits @code{<sequence>} and @code{<collection>},
 so you can use
@@ -6801,24 +6802,18 @@ to implement other functionality.
 @subsection Common port operations
 @c NODE ポート共通の操作
 
-@defun input-port? obj
+@defun port? obj
+@defunx input-port? obj
 @defunx output-port? obj
 [R5RS]
 @c EN
-Returns true if @var{obj} is an input port and an output port, respectively.
-@c JP
-@var{obj} がそれぞれ入力ポートと出力ポートなら真を返します。
-@c COMMON
-@end defun
-
-@defun port? obj
-[R5RS]
-@c EN
-Returns true if @var{obj} is a port.  This is not listed in the
+Returns true if @var{obj} is a port, an input port and an output port,
+respectively.  @code{Port?} is not listed in the
 R5RS standard procedures, but mentioned in the "Disjointness of Types"
 section.
 @c JP
-@var{obj} がポートなら真を返します。この手続きはR5RSの"Standard Procedures"の項には
+@var{obj} がそれぞれポート、入力ポート、出力ポートなら真を返します。
+@code{port?}はR5RSの"Standard Procedures"の項には
 載っていませんが、"Disjointness of Types"の項に挙げられています。
 @c COMMON
 @end defun
@@ -6900,6 +6895,35 @@ it is the name of the file.   Otherwise, it is some description of the port.
 @c JP
 @var{port}の名前を返します。ポートがファイルに関連付けられている場合は、ポートの名前は
 ファイル名です。そうでない場合、ポートを説明する文字列が返されます。
+@c COMMON
+@end defun
+
+@defun port-buffering port
+@defunx {(setter port-buffering)} port buffering-mode
+@c EN
+If @var{port} is type of file port (i.e. @code{(port-type @var{port})}
+returns @code{file}), these procedures gets and sets the port's
+buffering mode.  For input ports, the port buffering mode may be
+either one of @code{:full}, @code{:modest} or @code{:none}.
+For output ports, @code{port-buffering}, it may be
+one of @code{:full}, @code{:line} or @code{:none}.
+@xref{File ports}, for explanation of those modes.
+
+If @code{port-buffering} is applied to ports other than file ports,
+it returns @code{#f}.  If the setter of port-buffering is
+applied to ports other than file ports, it signals an error.
+@c JP
+ファイルポート(@code{(port-type @var{port})}が@code{file}を返すもの)
+に対して、そのバッファリングモードを読みだし、もしくは変更します。
+入力ポートではバッファリングモードは
+@code{:full}、 @code{:modest}、@code{:none}のいずれかです。
+出力ポートでは
+@code{:full}、 @code{:line}、@code{:none}のいずれかです。
+バッファリングモードの詳細な説明は、@ref{File ports} を参照してください。
+
+@code{port-buffering}がファイルポート以外のポートに対して呼ばれた場合は
+@code{#f}を返します。@code{port-buffering}のsetterが
+ファイルポート以外のポートに対して呼ばれた場合はエラーとなります。
 @c COMMON
 @end defun
 
@@ -7050,21 +7074,66 @@ No action is taken, and the function returns @code{#f}.
 
 @item :buffering
 @c EN
-This argument specifies the buffering mode.
-Either one of @code{:full}, @code{:modest} or @code{:none} can be specified
-for @code{open-input-port}, and one of @code{:full}, @code{:line} or
-@code{:none} can be specified for @code{open-output-port}.
+This argument specifies the buffering mode.  The following values are
+allowed.
 The port's buffering mode can be get/set by @code{port-buffering}.
-See the entry of @code{port-buffering} 
-(@xref{Common port operations}) for explanation of the buffering mode.
+(@xref{Common port operations}).
 @c JP
-この引数はバッファリングモードを指定します。
-@code{open-input-port}には@code{:full}、@code{:modest}、@code{:none}の
-いずれかが、@code{open-output-port}には@code{:full}、@code{:line}、@code{:none}
-のいすれかが指定できます。ポートのバッファリングモードは手続き@code{port-buffering}によって
-参照/変更可能です。バッファリングモードの詳しい説明は@code{port-buffering}のエントリ
-(@ref{Common port operations})を参照して下さい。
+この引数はバッファリングモードを指定します。以下の値が設定できます。
+ポートのバッファリングモードは手続き@code{port-buffering}
+(@ref{Common port operations}参照)によって
+読みだし/変更可能です。
 @c COMMON
+@table @code
+@item :full
+@c EN
+Buffer the data as much as possible.  This is the default mode.
+@c JP
+出来る限りデータをバッファリングします。これがデフォルトのモードです。
+@c COMMON
+@item :none
+@c EN
+No buffering is done.  Every time the data is written (to an output port)
+or read (from an input port), the underlying system call is used.
+Process's standard error port is opened in this mode by default.
+@c JP
+バッファリングを行いません。出力ポートにデータが書き出されるか、
+入力ポートからデータが読み込まれる度に、下位にあるシステムコールが呼ばれます。
+プロセスの標準エラーポートはこのモードでオープンされています。
+@c COMMON
+@item :line
+@c EN
+This is valid only for output ports.  The written data is buffered, but
+the buffer is flushed whenever a newline character is written.
+This is suitable for interactive output port.  Process's standard
+output port is opened in this mode by default.
+(Note that this differs from the line buffering mode of C stdio, which
+flushes the buffer as well when input is requested from the same file
+descriptor.)
+@c JP
+このモードは出力ポートにのみ有効です。書き出されたデータはバッファに
+貯められますが、改行文字が書かれたらフラッシュされます。
+このモードは対話的な出力ポートなどに便利です。
+プロセスの標準出力ポートはこのモードでオープンされています。
+(これは、Cのstdioライブラリの「ラインバッファリング」とちょっと違うことに
+注意してください。stdioでは同じファイルディスクリプタから入力が行われる時も
+バッファはフラッシュされますが、Gaucheではそうはなりません)。
+@c COMMON
+@item :modest
+@c EN
+This is valid only for input ports.  This is almost the same as the mode
+@code{:full}, except that @code{read-block} may return less data
+than requested if the requested amount of data is not immediately available.
+(In the @code{:full} mode, @code{read-block} waits the entire data to be
+read).   This is suitable for the port connected to a pipe or network.
+@c JP
+このモードは入力ポートにのみ有効です。ほとんど@code{:full}バッファリングモードと
+同じですが、@code{read-block}はポートに要求されたデータより少ないデータしか
+無かった場合、要求された量がたまるまで待つのではなく、今あるデータだけを
+返します。このモードはポートがパイプやネットワークに接続されている場合に
+便利です。
+@c COMMON
+@end table
 
 @item :element-type
 @c EN
@@ -7165,8 +7234,8 @@ Gaucheでは、@code{open-input-file}と@code{open-output-file}は
 @c COMMON
 @end defun
 
-@defun call-with-input-file string proc &keyword if-exists element-type
-@defunx call-with-output-file string proc &keyword if-does-not-exist if-exists element-type
+@defun call-with-input-file string proc &keyword if-exists buffering element-type
+@defunx call-with-output-file string proc &keyword if-does-not-exist if-exists buffering element-type
 [R5RS]
 @c EN
 Opens a file specified by @var{string} for input/output,
@@ -7188,7 +7257,7 @@ if you specify @code{#f} to @var{if-exists} and/or @var{if-does-not-exist},
 @var{proc} may receive @code{#f} instead of a port object when
 the file is not opened.
 @c JP
-キーワード引数は@code{if-exists}、@code{element-type}、
+キーワード引数は@code{if-exists}、@code{buffering}, @code{element-type}、
 @code{if-does-not-exist}は
 @code{open-input-file}及び@code{open-output-file}のものと同じ意味を持ちます。
 @var{if-exists}や@var{if-does-not-exist}に@code{#f}を指定した場合、
@@ -7203,8 +7272,8 @@ Returns the value(s) @code{proc} returned.
 @c COMMON
 @end defun
 
-@defun with-input-from-file string thunk &keyword if-exists element-type
-@defunx with-output-to-file string thunk &keyword if-does-not-exist if-exists element-type
+@defun with-input-from-file string thunk &keyword if-exists buffering element-type
+@defunx with-output-to-file string thunk &keyword if-does-not-exist if-exists buffering element-type
 [R5RS]
 @c EN
 Opens a file specified by @var{string} for input or output
@@ -7546,33 +7615,54 @@ If @var{iport} has already reached EOF, an eof object is returned.
 @end defun
 
 @defun read-block nbytes &optional iport
+@c EN
 Reads @var{nbytes} bytes from @var{iport}, and returns an incomplete
 string consisted by those bytes.  The size of returned string may
 shorter than @var{nbytes} when @var{iport} doesn't have enough bytes
 to fill.  If @var{iport} has already reached EOF, an eof object is returned.
+@c JP
+@var{nbytes}バイトのデータを@var{iport}から読み込み、
+不完全な文字列として返します。@var{iport}に十分なデータが無い場合、
+返される文字列は@var{nbytes}より短いかもしれません。
+@var{iport}が既にEOFに達していた場合はEOFオブジェクトが返されます。
+@c COMMON
 
-When the available data in @var{iport} is less than @var{nbytes},
-the behavior of this function differs by the underlying port mechanism.
-@table @bullet
+@c EN
+If @var{iport} is a file port, the behavior of @code{read-block}
+differs by the buffering mode of the port (@xref{File ports}, for
+the detail explanation of buffering modes).
+@c JP
+@var{iport}がファイルポートだった場合、@code{read-block}は
+ポートのバッファリングモードによってふるまいが異なります
+(バッファリングモードの詳細については@ref{File ports}を参照して下さい)。
+@c COMMON
+@itemize @bullet
 @item
-If the input port is a buffered port, this function uses @code{fread(3)},
-and usually it suspends until either the requested bytes becomes available
-or the EOF is read.
+@c EN
+If the buffering mode is @code{:full}, @code{read-block} waits 
+until @var{nbytes} data is read, except it reads EOF.
+@c JP
+バッファリングモードが@code{:full}の場合、@code{read-block}は
+EOFを読まない限り、@var{nbytes}のデータが読まれるまで待ちます。
+@c COMMON
 @item
-If the input port is an unbuffered port, this function uses @code{read(2)},
-and usually returns after reading as many bytes as avaialble, which may
-less than @var{nbytes}.   This is critical when you're communicating
-with some other entity (e.g. a person via interactive session, or an other
-process over the network) through the port; you can specify big @var{nbytes}
-and retrieve small size of packet.   Note that, however, the function
-does suspend when no data is immediately available from @var{iport}.
-@item
-If the input port is based on the in-core source (e.g. an input string),
-the function never suspends.
-@end table
+@c EN
+If the buffering mode is @code{:modest} or @code{:none}, @code{read-block}
+returns shorter string than @var{nbytes} even if it doesn't reach EOF,
+but the entire data is not available immediately.
+@c JP
+バッファリングモードが@code{:modest}か@code{:none}である場合、
+@code{read-block}はEOFが読まれなくても、すぐに読めるデータが@var{nbytes}よりも
+少ない場合はそのデータだけを返します。
+@c COMMON
+@end itemize
 
+@c EN
 Note: if you want to write a chunk of bytes (incomplete string) to a port,
 use @code{display}.
+@c JP
+注：データブロックをポートに書き出すには@code{display}が使えます。
+@c COMMON
 @end defun
 
 @defun eof-object? obj
@@ -7612,49 +7702,102 @@ sequence, then use input string port to read characters.)
 @defunx port->list reader port
 @defunx port->string-list port
 @defunx port->sexp-list port
+@c EN
 Generally useful input procedures.  The API is taken from
 scsh and STk.
+@c JP
+便利な入力手続きです。APIはScshとSTkから取りました。
+@c COMMON
 
+@c EN
 @code{port->string} reads @var{port}
 until EOF and returns the accumulated data as a string.
+@c JP
+@code{port->string}は@var{port}をEOFまで読み込み、
+読んだものを文字列として返します。
+@c COMMON
 
+@c EN
 @code{port->list} applies @var{reader} on @var{port} repeatedly, until
 @var{reader} returns an EOF, then returns the list of objects
 @var{reader} returned.
+@c JP
+@code{port->list}は手続き@var{reader}を@var{port}に繰り返し適用し、
+結果をリストに蓄積します。@var{reader}がEOFを返したら
+蓄積されたリストを返します。
+@c COMMON
 
 @code{(port->string-list port)} @equiv{}
-@code{(port->list read-line port)}, and
+@code{(port->list read-line port)}
+@c EN
+, and
+@c JP
+であり、
+@c COMMON
 @code{(port->sexp-list port)} @equiv{}
-@code{(port->list read port)}.
+@code{(port->list read port)}
+@c EN
+.
+@c JP
+です。
+@c COMMON
 @end defun
 
 @defun port-fold fn knil reader
 @defunx port-fold-right fn knil reader
 @defunx port-for-each fn reader
 @defunx port-map fn reader
+@c EN
 Convenient iterators over the input read by @var{reader}.
 Basically, @var{reader} is called repeatedly without arguments
 and @var{fn} is called for each item it returns, until @var{reader}
 returns EOF.   Actually @var{reader} can be any thunk; it doesn't
 need to be related to input port.
+@c JP
+@var{reader}によって読まれる入力に対する便利な繰り返し手続きです。
+基本的に、@var{reader}が引数無しでEOFを返すまで繰り返し呼ばれ、
+それが返した値に対して@var{fn}が呼ばれます。
+@var{reader}はいずれEOFを返す手続きなら、入力ポートと関係している必要はありません。
+@c COMMON
 
+@c EN
 Suppose @var{reader} returns a series of items
 @{X0, X1, @dots{}, Xn@}.
 @code{port-fold} returns the following:
+@c JP
+@var{reader}が要素 @{X0, X1, @dots{}, Xn@} を返したとすると、
+@code{port-fold} は次の値を返します。
+@c COMMON
 @example
 (fn Xn (fn Xn-1 @dots{} (fn X0 knil)))
 @end example
+@c EN
 while @var{port-fold-right} returns the following:
+@c JP
+一方、@var{port-fold-right}は次の値を返します。
+@c COMMON
 @example
 (fn X0 (fn X1 @dots{} (fn Xn knil)))
 @end example
+@c EN
 That is, @code{(port-fold cons '() read)} returns a reverse
 list of all the inputs, while @code{(port-fold-right cons '() read)}
 returns the same thing as @code{(port->list read port)}.
+@c JP
+すなわち、@code{(port-fold cons '() read)}は全ての入力の逆リストを
+返し、@code{(port-fold-right cons '() read)}は
+@code{(port->list read port)}と同じものを返します。
+@c COMMON
 
+@c EN
 On the other hand, @code{port-for-each} and @code{port-map}
 applies @var{fn} to each item.  The former discards the results
 @var{fn} returns, while the latter returns a list of results.
+@c JP
+@code{port-for-each}と@code{port-map}は@var{fn}を読まれた要素に
+次々と適用します。前者は@code{fn}の結果を捨てますが、後者は@code{fn}の
+結果をリストにして返します。
+@c COMMON
 @end defun
 
 @node Output,  , Input, Input and output
@@ -8512,7 +8655,7 @@ a file), some do more abstraction introducing new Scheme objects.
 Instead of just picking one of such interfaces, I decided to implement
 Gauche's system interface API in two layers; the lower level layer,
 described in this section, follows the operating system's API
-as much as possible.  On top of that, the higher-level APIs are
+as close as possible.  On top of that, the higher-level APIs are
 provided, with considering compatibility to the existing systems.
 @c JP
 多くのScheme実装はいろいろな形で何らかのシステムインタフェースを提供
