@@ -9,6 +9,7 @@ while [ $# -gt 0 ]; do
     doc) docs=yes; shift ;;
     tgz) tgz=yes; shift ;;
     test) test=yes; shift ;;
+    testcode) testcode=yes; shift ;;
     testclean) testclean=yes; shift ;;
     *) echo "DIST [doc][tgz][test][testclean]"; exit 0;;
   esac
@@ -53,6 +54,33 @@ if [ "$test" = "yes" ]; then
   for tt in `cat ./Gauche/test/TESTS`; do
     gosh -I./Gauche/test $tt >> test.log
   done
+fi
+
+if [ "$testcode" = "yes" ]; then
+  rm -rf ../test/Gauche
+  cd ../test
+  tar xzvf ~/shiro.dreamhost.com/scheme/vault/Gauche-$VERSION.tgz >& /dev/null
+  cd Gauche
+  rm -f testcode.log
+  echo "EUC-JP ----------------------------------------------------"
+  ./configure --enable-multibyte=euc-jp >> testcode.log 2>&1
+  make -s
+  make -s test
+  make -s distclean
+  echo "UTF-8 -----------------------------------------------------"
+  ./configure --enable-multibyte=utf-8  >> testcode.log 2>&1
+  make -s
+  make -s test
+  make -s distclean
+  echo "SJIS ------------------------------------------------------"
+  ./configure --enable-multibyte=sjis   >> testcode.log 2>&1
+  make -s
+  make -s test
+  make -s distclean
+  echo "NONE ------------------------------------------------------"
+  ./configure --enable-multibyte=none   >> testcode.log 2>&1
+  make -s
+  make -s test
 fi
 
 if [ "$testclean" = "yes" ]; then
