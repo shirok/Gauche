@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.249 2002-08-15 01:03:30 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.250 2002-08-16 23:27:29 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -13155,7 +13155,7 @@ keyword argument.
 If the given file name begins with characters except @code{"/"}, @code{"./"}
 or @code{"../"}, the directory of the file name given to @var{output} argument
 is attached before it.
-Furthermore, a unique is attached to the temporary file name
+Furthermore, a unique name is attached to the temporary file name
 (the temporary file is opened by @code{sys-mkstemp}.)
 
 This argument is ignored when @var{output} argument is not a string
