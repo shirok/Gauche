@@ -12,36 +12,27 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.9 2001-02-02 10:11:40 shiro Exp $
+ *  $Id: string.c,v 1.10 2001-02-05 09:46:26 shiro Exp $
  */
 
 #include <stdio.h>
 #include <sys/types.h>
 #include "gauche.h"
 
+static int string_print(ScmObj obj, ScmPort *port, int mode);
+SCM_DEFCLASS(Scm_StringClass, "<string>", string_print, 
+             SCM_CLASS_SEQUENCE_CPL);
+
 #define INITSTR(var, len, siz, p)               \
     do {                                        \
         (var) = SCM_NEW(ScmString);             \
-        (var)->hdr.klass = SCM_CLASS_STRING;    \
+        SCM_SET_CLASS(var, SCM_CLASS_STRING);   \
         (var)->length = (len);                  \
         (var)->size = (siz);                    \
         (var)->start = (p);                     \
     } while (0)
 
 #define DUMP_LENGTH   50
-
-static int string_print(ScmObj obj, ScmPort *port, int mode);
-
-static ScmClass *sequence_cpl[] = {
-    SCM_CLASS_SEQUENCE, SCM_CLASS_COLLECTION, SCM_CLASS_TOP, NULL
-};
-
-ScmClass Scm_StringClass = {
-    SCM_CLASS_CLASS,
-    "<string>",
-    string_print,
-    sequence_cpl
-};
 
 /* for debug */
 void Scm_StringDump(FILE *out, ScmObj str)

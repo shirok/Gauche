@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.18 2001-02-05 08:23:49 shiro Exp $
+ *  $Id: compile.c,v 1.19 2001-02-05 09:46:26 shiro Exp $
  */
 
 #include "gauche.h"
@@ -26,19 +26,12 @@ static int syntax_print(ScmObj obj, ScmPort *port, int mode)
     return Scm_Printf(port, "#<syntax %A>", SCM_SYNTAX(obj)->name);
 }
 
-static ScmClass *top_cpl[] = { SCM_CLASS_TOP, NULL };
-
-ScmClass Scm_SyntaxClass = {
-    SCM_CLASS_CLASS,
-    "<syntax>",
-    syntax_print,
-    top_cpl
-};
+SCM_DEFCLASS(Scm_SyntaxClass, "<syntax>", syntax_print, SCM_CLASS_DEFAULT_CPL);
 
 ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmCompileProc compiler, void *data)
 {
     ScmSyntax *s = SCM_NEW(ScmSyntax);
-    s->hdr.klass = SCM_CLASS_SYNTAX;
+    SCM_SET_CLASS(s, SCM_CLASS_SYNTAX);
     s->name = name;
     s->compiler = compiler;
     s->data = data;
@@ -55,17 +48,13 @@ static int source_info_print(ScmObj obj, ScmPort *port, int mode)
                       SCM_SOURCE_INFO(obj)->info);
 }
 
-ScmClass Scm_SourceInfoClass = {
-    SCM_CLASS_CLASS,
-    "<source-info>",
-    source_info_print,
-    top_cpl
-};
+SCM_DEFCLASS(Scm_SourceInfoClass, "<source-info>",
+             source_info_print, SCM_CLASS_DEFAULT_CPL);
 
 ScmObj Scm_MakeSourceInfo(ScmObj info, ScmSourceInfo *up)
 {
     ScmSourceInfo *i = SCM_NEW(ScmSourceInfo);
-    i->hdr.klass = SCM_CLASS_SOURCE_INFO;
+    SCM_SET_CLASS(i, SCM_CLASS_SOURCE_INFO);
     i->info = info;
     i->up = up;
     return SCM_OBJ(i);

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: hash.c,v 1.4 2001-02-01 08:18:00 shiro Exp $
+ *  $Id: hash.c,v 1.5 2001-02-05 09:46:26 shiro Exp $
  */
 
 #include "gauche.h"
@@ -348,18 +348,9 @@ static int general_cmp(ScmObj key, ScmHashEntry *e)
  * Constructor
  */
 
-static ScmClass *collection_cpl[] = {
-    SCM_CLASS_COLLECTION, SCM_CLASS_TOP, NULL
-};
-
 static int hash_print(ScmObj obj, ScmPort *port, int mode);
-
-ScmClass Scm_HashTableClass = {
-    SCM_CLASS_CLASS,
-    "<hash-table>",
-    hash_print,
-    collection_cpl
-};
+SCM_DEFCLASS(Scm_HashTableClass, "<hash-table>", hash_print,
+             SCM_CLASS_COLLECTION_CPL);
 
 ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
                          ScmHashCmpProc cmpfn,
@@ -374,7 +365,7 @@ ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
 
     b = SCM_NEW2(ScmHashEntry**, sizeof(ScmHashEntry)*initSize);
     z = SCM_NEW(ScmHashTable);
-    z->hdr.klass = SCM_CLASS_HASHTABLE;
+    SCM_SET_CLASS(z, SCM_CLASS_HASHTABLE);
     z->buckets = b;
     z->numBuckets = initSize;
     z->numEntries = 0;

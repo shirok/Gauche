@@ -127,7 +127,7 @@
 ;;
 
 (define-cproc current-error-port ()     ;gauche extention
-  "  SCM_RETURN(SCM_OBJ(SCM_CURRENT_ERROR_PORT));")
+  "  SCM_RETURN(SCM_OBJ(SCM_CURERR));")
 
 (define-cproc port-name (port)
   (assert (port? port))

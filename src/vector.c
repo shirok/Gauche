@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vector.c,v 1.3 2001-01-31 07:29:13 shiro Exp $
+ *  $Id: vector.c,v 1.4 2001-02-05 09:46:26 shiro Exp $
  */
 
 #include "gauche.h"
@@ -20,10 +20,6 @@
 /*
  * Constructor
  */
-
-static ScmClass *sequence_cpl[] = {
-    SCM_CLASS_SEQUENCE, SCM_CLASS_COLLECTION, SCM_CLASS_TOP, NULL
-};
 
 static int vector_print(ScmObj obj, ScmPort *port, int mode)
 {
@@ -37,18 +33,14 @@ static int vector_print(ScmObj obj, ScmPort *port, int mode)
     return nc;
 }
 
-ScmClass Scm_VectorClass = {
-    SCM_CLASS_CLASS,
-    "<vector>",
-    vector_print,
-    sequence_cpl
-};
+SCM_DEFCLASS(Scm_VectorClass, "<vector>", vector_print, 
+             SCM_CLASS_SEQUENCE_CPL);
 
 static ScmVector *make_vector(int size)
 {
     ScmVector *v = SCM_NEW2(ScmVector *,
                             sizeof(ScmVector) + sizeof(ScmObj)*(size-1));
-    v->hdr.klass = SCM_CLASS_VECTOR;
+    SCM_SET_CLASS(v, SCM_CLASS_VECTOR);
     v->size = size;
     return v;
 }

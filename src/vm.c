@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.25 2001-02-05 08:23:49 shiro Exp $
+ *  $Id: vm.c,v 1.26 2001-02-05 09:46:26 shiro Exp $
  */
 
 #include "gauche.h"
@@ -26,20 +26,7 @@
  *   refered by Scm_VM().
  */
 
-static int vm_print(ScmObj obj, ScmPort *out, int mode)
-{
-    ScmVM *v = SCM_VM(obj);
-    return Scm_Printf(out, "#<vm %p>", v);
-}
-
-static ScmClass *top_cpl[] = { SCM_CLASS_TOP, NULL };
-
-ScmClass Scm_VMClass = {
-    SCM_CLASS_CLASS,
-    "<vm>",
-    vm_print,
-    top_cpl
-};
+SCM_DEFCLASS(Scm_VMClass, "<vm>", NULL, SCM_CLASS_DEFAULT_CPL);
 
 static ScmVM *theVM;    /* this must be thread specific in MT version */
 
@@ -51,7 +38,7 @@ ScmVM *Scm_NewVM(ScmVM *base,
                  ScmModule *module)
 {
     ScmVM *v = SCM_NEW(ScmVM);
-    v->hdr.klass = &Scm_VMClass;
+    SCM_SET_CLASS(v, &Scm_VMClass);
     v->parent = base;
     v->module = module ? module : base->module;
     v->escape = base ? base->escape : NULL;
@@ -958,22 +945,6 @@ ScmObj Scm_Apply(ScmObj proc, ScmObj args)
     return result;
 }
 
-/*
- * C-continuations.
- */
-
-static int cc_print(ScmObj obj, ScmPort *port, int mode)
-{
-    return Scm_Printf(port, "#<c-continuation %p>", obj);
-}
-
-ScmClass Scm_CContClass = {
-    SCM_CLASS_CLASS,
-    "<c-continuation>",
-    cc_print,
-    top_cpl
-};
-
 /* Arrange C function AFTER to be called after the procedure returns.
  * Usually followed by Scm_VMApply* function.
  */
@@ -1249,12 +1220,6 @@ ScmObj Scm_VMGetStack(ScmVM *vm)
                 SCM_APPEND1(stack, stacktail,
                             SCM_SOURCE_INFO(SCM_CAR(pc))->info);
                 break;
-            }
-            if (SCM_CCONTP(SCM_CAR(pc))) {
-                /* We're middle in some "splitted" c-function.
-                   Look for the source info from which the c-function
-                   is called. */
-                continue;
             }
             break;
         }

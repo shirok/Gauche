@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.3 2001-02-05 08:23:49 shiro Exp $
+ *  $Id: module.c,v 1.4 2001-02-05 09:46:26 shiro Exp $
  */
 
 #include "gauche.h"
@@ -23,22 +23,14 @@
  *   A module maps symbols to global loations.
  */
 
-static ScmClass *collection_cpl[] = {
-    SCM_CLASS_COLLECTION, SCM_CLASS_TOP, NULL
-};
-
 static int module_print(ScmObj obj, ScmPort *port, int mode)
 {
     ScmModule *m = SCM_MODULE(obj);
     return Scm_Printf(port, "#<module %S>", m->name);
 }
 
-ScmClass Scm_ModuleClass = {
-    SCM_CLASS_CLASS,
-    "<module>",
-    module_print,
-    collection_cpl
-};
+SCM_DEFCLASS(Scm_ModuleClass, "<module>", module_print,
+             SCM_CLASS_COLLECTION_CPL);
 
 /*
  * Constructor
@@ -57,7 +49,7 @@ ScmObj Scm_MakeModule(ScmString *name, ScmObj parentList)
     }
     
     z = SCM_NEW(ScmModule);
-    z->hdr.klass = SCM_CLASS_MODULE;
+    SCM_SET_CLASS(z, SCM_CLASS_MODULE);
     z->name = SCM_STRING(Scm_CopyString(name));
     z->parents = Scm_CopyList(parentList);
     z->table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 0));

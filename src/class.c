@@ -12,74 +12,35 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.5 2001-02-02 06:35:28 shiro Exp $
+ *  $Id: class.c,v 1.6 2001-02-05 09:46:26 shiro Exp $
  */
 
 #include "gauche.h"
 
-static int printObj(ScmObj, ScmPort *, int);
 static int printClass(ScmObj, ScmPort *, int);
 
 /*
  * Built-in classes
  */
 
-static ScmClass *class_top_cpl[] = { SCM_CLASS_TOP, NULL };
-
-ScmClass Scm_TopClass = {
-    SCM_CLASS_CLASS,
-    "<top>",
-    printObj,
-    class_top_cpl
-};
-
-ScmClass Scm_BoolClass = {
-    SCM_CLASS_CLASS,
-    "<bool>",
-    printObj,
-    class_top_cpl
-};
-
-ScmClass Scm_CharClass = {
-    SCM_CLASS_CLASS,
-    "<char>",
-    printObj,
-    class_top_cpl
-};
-
-ScmClass Scm_UnknownClass = {
-    SCM_CLASS_CLASS,
-    "<unknown>",
-    printObj,
-    class_top_cpl
-};
-
-ScmClass Scm_ClassClass = {
-    SCM_CLASS_CLASS,
-    "<class>",
-    printClass,
-    class_top_cpl
-};
-
-/* Collection and sequence types */
-
-ScmClass Scm_CollectionClass = {
-    SCM_CLASS_CLASS,
-    "<collection>",
-    printObj,
-    class_top_cpl
-};
-
-static ScmClass *class_collection_cpl[] = {
+ScmClass *Scm_DefaultCPL[] = { SCM_CLASS_TOP, NULL };
+ScmClass *Scm_CollectionCPL[] = {
     SCM_CLASS_COLLECTION, SCM_CLASS_TOP, NULL
 };
-
-ScmClass Scm_SequenceClass = {
-    SCM_CLASS_CLASS,
-    "<sequence>",
-    printObj,
-    class_collection_cpl
+ScmClass *Scm_SequenceCPL[] = {
+    SCM_CLASS_SEQUENCE, SCM_CLASS_COLLECTION, SCM_CLASS_TOP, NULL
 };
+
+SCM_DEFCLASS(Scm_TopClass,     "<top>",     NULL, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFCLASS(Scm_BoolClass,    "<bool>",    NULL, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFCLASS(Scm_CharClass,    "<char>",    NULL, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFCLASS(Scm_UnknownClass, "<unknown>", NULL, SCM_CLASS_DEFAULT_CPL);
+
+SCM_DEFCLASS(Scm_ClassClass,   "<class>", printClass, SCM_CLASS_DEFAULT_CPL);
+
+/* Collection and sequence types */
+SCM_DEFCLASS(Scm_CollectionClass, "<collection>", NULL, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFCLASS(Scm_SequenceClass, "<sequence>", NULL, SCM_CLASS_COLLECTION_CPL);
 
 /*
  * Get class
@@ -140,12 +101,6 @@ static int printClass(ScmObj obj, ScmPort *port, int mode)
     return Scm_Printf(port, "#<class %s>", c->name);
 }
 
-static int printObj(ScmObj obj, ScmPort *port, int mode)
-{
-    ScmClass *c = Scm_ClassOf(obj);
-    return Scm_Printf(port, "#<%s %p>", c->name, obj);
-}
-
 /*
  * External interface
  */
@@ -155,10 +110,10 @@ ScmClass *Scm_MakeBuiltinClass(const char *name,
                                ScmObj supers)
 {
     ScmClass *c = SCM_NEW(ScmClass);
-    c->hdr.klass = SCM_CLASS_CLASS;
+    SCM_SET_CLASS(c, SCM_CLASS_CLASS);
     c->name = (char *)Scm_MallocAtomic(strlen(name)+1);
     strcpy(c->name, name);
-    c->print = printer ? printer : printObj;
+    c->print = printer;
 
     /* TODO: need to call compute-cpl.  for now, we ignore supers */
     c->cpl = (ScmClass **)Scm_Malloc(sizeof(ScmClass*) * 2);

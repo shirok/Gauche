@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.4 2001-01-31 07:29:13 shiro Exp $
+ *  $Id: port.c,v 1.5 2001-02-05 09:46:26 shiro Exp $
  */
 
 #include "gauche.h"
@@ -21,24 +21,18 @@
  * Common
  */
 
+static int port_print(ScmObj obj, ScmPort *port, int mode);
+SCM_DEFCLASS(Scm_PortClass, "<port>", port_print, SCM_CLASS_DEFAULT_CPL);
+
 #define PORTINIT(port, dir_, type_)             \
     do {                                        \
-        port->hdr.klass = SCM_CLASS_PORT;       \
+        SCM_SET_CLASS(port, SCM_CLASS_PORT);    \
         port->direction = dir_;                 \
         port->type = type_;                     \
         port->bufcnt = 0;                       \
         port->ungotten = SCM_CHAR_INVALID;      \
     } while (0)
 
-static int port_print(ScmObj obj, ScmPort *port, int mode);
-static ScmClass *top_cpl[] = { SCM_CLASS_TOP, NULL };
-
-ScmClass Scm_PortClass = {
-    SCM_CLASS_CLASS,
-    "<port>",
-    port_print,
-    top_cpl
-};
 
 /*
  * Close

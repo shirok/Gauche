@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: promise.c,v 1.4 2001-01-31 07:29:13 shiro Exp $
+ *  $Id: promise.c,v 1.5 2001-02-05 09:46:26 shiro Exp $
  */
 
 #include "gauche.h"
@@ -28,16 +28,8 @@ static int promise_print(ScmObj obj, ScmPort *port, int mode)
                       p->forced? " (forced)" : "");
 }
 
-static ScmClass *top_cpl[] = {
-    SCM_CLASS_TOP, NULL
-};
-
-ScmClass Scm_PromiseClass = {
-    SCM_CLASS_CLASS,
-    "<promise>",
-    promise_print,
-    top_cpl
-};
+SCM_DEFCLASS(Scm_PromiseClass, "<promise>", promise_print,
+             SCM_CLASS_DEFAULT_CPL);
 
 /*
  * promise object
@@ -46,7 +38,7 @@ ScmClass Scm_PromiseClass = {
 ScmObj Scm_MakePromise(ScmObj code)
 {
     ScmPromise *p = SCM_NEW(ScmPromise);
-    p->hdr.klass = SCM_CLASS_PROMISE;
+    SCM_SET_CLASS(p, SCM_CLASS_PROMISE);
     p->forced = 0;
     p->code = code;
     return SCM_OBJ(p);

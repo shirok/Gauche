@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.7 2001-01-31 07:29:13 shiro Exp $
+ *  $Id: number.c,v 1.8 2001-02-05 09:46:26 shiro Exp $
  */
 
 #include <math.h>
@@ -24,10 +24,6 @@
 /*
  * Classes of Numeric Tower
  */
-
-static ScmClass *top_cpl[] = {
-    SCM_CLASS_TOP, NULL
-};
 
 static ScmClass *number_cpl[] = {
     SCM_CLASS_NUMBER, SCM_CLASS_TOP, NULL
@@ -44,33 +40,10 @@ static ScmClass *real_cpl[] = {
 
 static int number_print(ScmObj obj, ScmPort *port, int mode);
 
-ScmClass Scm_NumberClass = {
-    SCM_CLASS_CLASS,
-    "<number>",
-    number_print,
-    top_cpl
-};
-
-ScmClass Scm_ComplexClass = {
-    SCM_CLASS_CLASS,
-    "<complex>",
-    number_print,
-    number_cpl
-};
-
-ScmClass Scm_RealClass = {
-    SCM_CLASS_CLASS,
-    "<real>",
-    number_print,
-    complex_cpl
-};
-
-ScmClass Scm_IntegerClass = {
-    SCM_CLASS_CLASS,
-    "<integer>",
-    number_print,
-    real_cpl
-};
+SCM_DEFCLASS(Scm_NumberClass, "<number>", number_print, SCM_CLASS_DEFAULT_CPL);
+SCM_DEFCLASS(Scm_ComplexClass, "<complex>", number_print, number_cpl);
+SCM_DEFCLASS(Scm_RealClass, "<real>", number_print, complex_cpl);
+SCM_DEFCLASS(Scm_IntegerClass, "<integer>", number_print, real_cpl);
 
 /*=====================================================================
  *  Flonums
@@ -79,7 +52,7 @@ ScmClass Scm_IntegerClass = {
 ScmObj Scm_MakeFlonum(double d)
 {
     ScmFlonum *f = SCM_NEW(ScmFlonum);
-    f->hdr.klass = SCM_CLASS_REAL;
+    SCM_SET_CLASS(f, SCM_CLASS_REAL);
     f->value = d;
     return SCM_OBJ(f);
 }
@@ -126,7 +99,7 @@ ScmObj Scm_MakeBignum(int sign, int size, long *values)
 ScmObj Scm_MakeComplex(double r, double i)
 {
     ScmComplex *c = SCM_NEW_ATOMIC(ScmComplex);
-    c->hdr.klass = SCM_CLASS_COMPLEX;
+    SCM_SET_CLASS(c, SCM_CLASS_COMPLEX);
     c->real = r;
     c->imag = i;
     return SCM_OBJ(c);

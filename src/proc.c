@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.6 2001-01-31 07:29:13 shiro Exp $
+ *  $Id: proc.c,v 1.7 2001-02-05 09:46:26 shiro Exp $
  */
 
 #include "gauche.h"
@@ -21,33 +21,16 @@
  * Classes
  */
 
-static ScmClass *top_cpl[] = { SCM_CLASS_TOP, NULL };
 static ScmClass *proc_cpl[] = { SCM_CLASS_PROCEDURE, SCM_CLASS_TOP, NULL };
 
 static int proc_print(ScmObj obj, ScmPort *port, int mode);
 static int closure_print(ScmObj obj, ScmPort *port, int mode);
 static int subr_print(ScmObj obj, ScmPort *port, int mode);
 
-ScmClass Scm_ProcedureClass = {
-    SCM_CLASS_CLASS,
-    "<procedure>",
-    proc_print,
-    top_cpl
-};
-
-ScmClass Scm_ClosureClass = {
-    SCM_CLASS_CLASS,
-    "<closure>",
-    closure_print,
-    proc_cpl
-};
-
-ScmClass Scm_SubrClass = {
-    SCM_CLASS_CLASS,
-    "<subr>",
-    subr_print,
-    proc_cpl
-};
+SCM_DEFCLASS(Scm_ProcedureClass, "<procedure>", proc_print,
+             SCM_CLASS_DEFAULT_CPL);
+SCM_DEFCLASS(Scm_ClosureClass, "<closure>", closure_print, proc_cpl);
+SCM_DEFCLASS(Scm_SubrClass, "<subr>", subr_print, proc_cpl);
 
 static int proc_print(ScmObj obj, ScmPort *port, int mode)
 {
@@ -62,7 +45,7 @@ ScmObj Scm_MakeClosure(int required, int optional,
                        ScmObj code, ScmEnvFrame *env, ScmObj info)
 {
     ScmClosure *c = SCM_NEW(ScmClosure);
-    c->common.hdr.klass = SCM_CLASS_CLOSURE;
+    SCM_SET_CLASS(c, SCM_CLASS_CLOSURE);
     c->common.required = required;
     c->common.optional = optional;
     c->common.info = info;
@@ -86,7 +69,7 @@ ScmObj Scm_MakeSubr(ScmObj (*func)(ScmObj*, int, void*),
                     ScmObj info)
 {
     ScmSubr *s = SCM_NEW(ScmSubr);
-    s->common.hdr.klass = SCM_CLASS_SUBR;
+    SCM_SET_CLASS(s, SCM_CLASS_SUBR);
     s->common.required = required;
     s->common.optional = optional;
     s->common.info = info;

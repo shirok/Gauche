@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.7 2001-02-02 11:55:48 shiro Exp $
+ *  $Id: load.c,v 1.8 2001-02-05 09:46:26 shiro Exp $
  */
 
 #include "gauche.h"
@@ -56,7 +56,10 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port)
     return load_cc(SCM_NIL, (void **)&port);
 }
 
-/* TODO: search path, default suffix, etc... */
+/*
+ * Load
+ */
+
 ScmObj Scm_VMLoad(const char *s)
 {
     ScmObj p = Scm_OpenFilePort(s, "r");

@@ -663,10 +663,10 @@
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_OPORTP(obj)));")
 
 (define-cproc current-input-port ()
-  "  SCM_RETURN(SCM_OBJ(SCM_CURRENT_INPUT_PORT));")
+  "  SCM_RETURN(SCM_OBJ(SCM_CURIN));")
 
 (define-cproc current-output-port ()
-  "  SCM_RETURN(SCM_OBJ(SCM_CURRENT_OUTPUT_PORT));")
+  "  SCM_RETURN(SCM_OBJ(SCM_CUROUT));")
 
 (define-cproc with-input-from-file (file thunk)
   (assert (string? file))

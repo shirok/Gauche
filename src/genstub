@@ -255,11 +255,11 @@
         ((eq? value *unbound*)
          "SCM_UNBOUND")
         ((equal? value '(current-input-port))
-         (format #f "SCM_OBJ(SCM_CURRENT_INPUT_PORT)"))
+         (format #f "SCM_OBJ(SCM_CURIN)"))
         ((equal? value '(current-output-port))
-         (format #f "SCM_OBJ(SCM_CURRENT_OUTPUT_PORT)"))
+         (format #f "SCM_OBJ(SCM_CUROUT)"))
         ((equal? value '(current-error-port))
-         (format #f "SCM_OBJ(SCM_CURRENT_ERROR_PORT)"))
+         (format #f "SCM_OBJ(SCM_CURERR)"))
         (else
          (error "Scheme constant ~s can't be used" value))))
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.6 2001-01-31 07:29:13 shiro Exp $
+ *  $Id: list.c,v 1.7 2001-02-05 09:46:26 shiro Exp $
  */
 
 #include "gauche.h"
@@ -22,42 +22,14 @@
  * Classes
  */
 
-/* placeholder.  these routine should never be called */
-static int dummy_print(ScmObj obj, ScmPort *port, int mode)
-{
-    Scm_Abort("dummy print routine is called.  something's wrong.");
-    return 0;
-}
-
-static ScmClass *sequence_cpl[] = {
-    SCM_CLASS_SEQUENCE, SCM_CLASS_COLLECTION, SCM_CLASS_TOP, NULL
-};
-
 static ScmClass *list_cpl[] = {
     SCM_CLASS_LIST, SCM_CLASS_SEQUENCE, SCM_CLASS_COLLECTION, SCM_CLASS_TOP,
     NULL
 };
 
-ScmClass Scm_ListClass = {
-    SCM_CLASS_CLASS,
-    "<list>",
-    dummy_print,
-    sequence_cpl
-};
-
-ScmClass Scm_PairClass = {
-    SCM_CLASS_CLASS,
-    "<pair>",
-    dummy_print,
-    list_cpl
-};
-
-ScmClass Scm_NullClass = {
-    SCM_CLASS_CLASS,
-    "<null>",
-    dummy_print,
-    list_cpl
-};
+SCM_DEFCLASS(Scm_ListClass, "<list>", NULL, SCM_CLASS_SEQUENCE_CPL);
+SCM_DEFCLASS(Scm_PairClass, "<pair>", NULL, list_cpl);
+SCM_DEFCLASS(Scm_NullClass, "<null>", NULL, list_cpl);
 
 /*
  * CONSTRUCTOR
@@ -67,7 +39,7 @@ ScmObj Scm_Cons(ScmObj car, ScmObj cdr)
 {
     ScmPair *z;
     SCM_MALLOC_WORDS(z, sizeof(ScmPair)/sizeof(GC_word), ScmPair*);
-    z->hdr.klass = SCM_CLASS_PAIR;
+    SCM_SET_CLASS(z, SCM_CLASS_PAIR);
     SCM_SET_CAR(z, car);
     SCM_SET_CDR(z, cdr);
     z->attributes = SCM_NIL;

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.4 2001-01-31 07:29:13 shiro Exp $
+ *  $Id: error.c,v 1.5 2001-02-05 09:46:26 shiro Exp $
  */
 
 #include "gauche.h"
@@ -27,16 +27,8 @@ static int exception_print(ScmObj obj, ScmPort *port, int mode)
                       obj, SCM_EXCEPTION_DATA(obj));
 }
 
-static ScmClass *top_cpl[] = {
-    SCM_CLASS_TOP, NULL
-};
-
-ScmClass Scm_ExceptionClass = {
-    SCM_CLASS_CLASS,
-    "<exception>",
-    exception_print,
-    top_cpl
-};
+SCM_DEFCLASS(Scm_ExceptionClass, "<exception>",
+             exception_print, SCM_CLASS_DEFAULT_CPL);
 
 /*
  * Constructor
@@ -45,7 +37,7 @@ ScmClass Scm_ExceptionClass = {
 ScmObj Scm_MakeException(ScmObj data)
 {
     ScmException *e = SCM_NEW(ScmException);
-    e->hdr.klass = SCM_CLASS_EXCEPTION;
+    SCM_SET_CLASS(e, SCM_CLASS_EXCEPTION);
     e->data = data;
     return SCM_OBJ(e);
 }

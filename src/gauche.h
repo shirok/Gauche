@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.24 2001-02-05 08:23:49 shiro Exp $
+ *  $Id: gauche.h,v 1.25 2001-02-05 09:46:26 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -39,12 +39,16 @@
 #endif
 #endif
 
+/* Some useful macros */
+
 #ifndef FALSE
 #define FALSE 0
 #endif
 #ifndef TRUE
 #define TRUE (!FALSE)
 #endif
+
+#define SCM_CPP_CAT(a, b)   a ## b
 
 /*-------------------------------------------------------------
  * BASIC TYPES
@@ -195,6 +199,8 @@ typedef struct ScmHeaderRec {
 #define SCM_NEW_ATOMIC(type)  ((type*)(Scm_MallocAtomic(sizeof(type))))
 #define SCM_NEW_ATOMIC2(type, size) ((type)(Scm_MallocAtomic(size)))
 
+#define SCM_SET_CLASS(obj, type)   (SCM_OBJ(obj)->klass = type)
+
 extern void *Scm_MallocWords(size_t words);
 extern void *Scm_Malloc(size_t size);
 extern void *Scm_MallocAtomic(size_t size);
@@ -254,9 +260,7 @@ extern ScmObj Scm_VMApply(ScmObj proc, ScmObj args);
 extern ScmObj Scm_VMApply0(ScmObj proc);
 extern ScmObj Scm_VMApply1(ScmObj proc, ScmObj arg);
 extern ScmObj Scm_VMApply2(ScmObj proc, ScmObj arg1, ScmObj arg2);
-
 extern ScmObj Scm_VMEval(ScmObj expr, ScmObj env);
-
 extern ScmObj Scm_VMCall(ScmObj *args, int argcnt, void *data);
 
 extern ScmObj Scm_VMDynamicWind(ScmObj pre, ScmObj body, ScmObj post);
@@ -299,6 +303,20 @@ extern ScmClass Scm_SequenceClass;
 #define SCM_CLASS_UNKNOWN      (&Scm_UnknownClass)
 #define SCM_CLASS_COLLECTION   (&Scm_CollectionClass)
 #define SCM_CLASS_SEQUENCE     (&Scm_SequenceClass)
+
+extern ScmClass *Scm_DefaultCPL[];
+extern ScmClass *Scm_CollectionCPL[];
+extern ScmClass *Scm_SequenceCPL[];
+
+#define SCM_CLASS_DEFAULT_CPL     (Scm_DefaultCPL)
+#define SCM_CLASS_COLLECTION_CPL  (Scm_CollectionCPL)
+#define SCM_CLASS_SEQUENCE_CPL    (Scm_SequenceCPL)
+
+/* define built-in class statically */
+#define SCM_DEFCLASS(cname, sname, printer, cpl)        \
+    ScmClass cname = {                                  \
+        SCM_CLASS_CLASS, sname, printer, cpl            \
+    }
 
 /*--------------------------------------------------------
  * PAIR AND LIST
@@ -700,9 +718,9 @@ extern void Scm_Ungetc(ScmChar ch, ScmPort *port);
 extern int Scm_Getb(ScmPort *port);
 extern int Scm_Getc(ScmPort *port);
 
-#define SCM_CURRENT_INPUT_PORT    SCM_VM_CURRENT_INPUT_PORT(Scm_VM())
-#define SCM_CURRENT_OUTPUT_PORT   SCM_VM_CURRENT_OUTPUT_PORT(Scm_VM())
-#define SCM_CURRENT_ERROR_PORT    SCM_VM_CURRENT_ERROR_PORT(Scm_VM())
+#define SCM_CURIN    SCM_VM_CURRENT_INPUT_PORT(Scm_VM())
+#define SCM_CUROUT   SCM_VM_CURRENT_OUTPUT_PORT(Scm_VM())
+#define SCM_CURERR   SCM_VM_CURRENT_ERROR_PORT(Scm_VM())
 
 /* Inlined operation for better performance.  Assuming the port is
    confirmed as input/output port. */

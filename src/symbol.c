@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: symbol.c,v 1.5 2001-02-05 08:23:49 shiro Exp $
+ *  $Id: symbol.c,v 1.6 2001-02-05 09:46:26 shiro Exp $
  */
 
 #include "gauche.h"
@@ -27,18 +27,11 @@ static int symbol_print(ScmObj obj, ScmPort *port, int mode)
     return SCM_STRING_LENGTH(SCM_SYMBOL(obj)->name);
 }
 
-static ScmClass *cpl[] = { SCM_CLASS_TOP, NULL };
-
-ScmClass Scm_SymbolClass = {
-    SCM_CLASS_CLASS,
-    "<symbol>",
-    symbol_print,
-    cpl
-};
+SCM_DEFCLASS(Scm_SymbolClass, "<symbol>", symbol_print, SCM_CLASS_DEFAULT_CPL);
 
 #define INITSYM(sym, nam)                       \
     sym = SCM_NEW(ScmSymbol);                   \
-    sym->hdr.klass = SCM_CLASS_SYMBOL;          \
+    SCM_SET_CLASS(sym, SCM_CLASS_SYMBOL);       \
     sym->name = SCM_STRING(nam)
 
 /* These two are global resource.  Must be protected in MT environment. */
@@ -87,17 +80,12 @@ static int gloc_print(ScmObj obj, ScmPort *port, int mode)
                       g->module->name, g->name);
 }
 
-ScmClass Scm_GlocClass = {
-    SCM_CLASS_CLASS,
-    "<gloc>",
-    gloc_print,
-    cpl
-};
+SCM_DEFCLASS(Scm_GlocClass, "<gloc>", gloc_print, SCM_CLASS_DEFAULT_CPL);
 
 ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
 {
     ScmGloc *g = SCM_NEW(ScmGloc);
-    g->hdr.klass = &Scm_GlocClass;
+    SCM_SET_CLASS(g, &Scm_GlocClass);
     g->name = sym;
     g->module = module;
     g->value = SCM_UNBOUND;
