@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: revapp.scm,v 1.7 2004-02-02 10:43:37 shirok Exp $
+;;;  $Id: revapp.scm,v 1.8 2004-02-25 11:11:20 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -77,9 +77,17 @@
 
 (define string-append/shared string-append)
 
-(define (string-concatenate-reverse list)
-  (string-concatenate (reverse list)))
+(define (string-concatenate-reverse list . args)
+  (cond ((null? args)
+         (string-concatenate (reverse list)))
+        ((null? (cdr args))
+         (string-concatenate (reverse (cons (car args) list))))
+        (else
+         (string-concatenate (reverse (cons (string-take (car args)
+                                                         (cadr args))
+                                            list))))))
 
-(define (string-concatenate-reverse/shared list)
-  (string-concatenate (reverse list)))
+(define string-concatenate-reverse/shared
+  string-concatenate-reverse)
+
 

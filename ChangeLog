@@ -1,5 +1,7 @@
 2004-02-24  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-13/revapp.scm (string-concatenate-reverse): optional arg
+	  handling was missing.
 	* lib/www/cgi.scm (cgi-get-query): fixed a funky behavior when used
 	  interactively (Patch from Grzegorz Chrupa-B³a).$)B
 	* lib/srfi-1/set.scm (lset-xor, lset-xor!): fixed bad call
