@@ -1,3 +1,15 @@
+2001-03-27  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.2.13
+	* src/vm.c, src/compile.c: finally deals with let-family, do and
+	  receive properly tail recursive way.
+	  consolidate compiler flags.
+	* src/main.c: added -fno-source-info option.  it disables inserting
+	  debug information into the final code, and improves performance
+	  considerably.
+	* lib/gauche/vm/disasm.scm: more reasonable output format.
+	* lib/gauche/object.scm: added class-slot-ref and class-slot-set!
+
 2001-03-26  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.2.12
