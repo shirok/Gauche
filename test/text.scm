@@ -1,5 +1,8 @@
-(use gauche.test)
+;;
+;; testing text.* module
+;;
 
+(use gauche.test)
 (test-start "text utilities")
 
 ;;-------------------------------------------------------------------
@@ -43,6 +46,32 @@
       (lambda ()
         (eof-object?
          (call-with-input-string "" (make-csv-reader #\,)))))
+
+(test "csv-writer"
+      "abc,def,123,\"what's up?\",\"he said, \"\"nothing new.\"\"\"\n"
+      (lambda ()
+        (call-with-output-string
+          (lambda (out)
+            ((make-csv-writer #\,)
+             out
+             '("abc" "def" "123" "what's up?" "he said, \"nothing new.\"")))))
+      )
+
+(test "csv-writer"
+      "abc,def,123,\"what's up?\",\"he said, \"\"nothing new.\"\"\"\r\n"
+      (lambda ()
+        (call-with-output-string
+          (lambda (out)
+            ((make-csv-writer #\, "\r\n")
+             out
+             '("abc" "def" "123" "what's up?" "he said, \"nothing new.\"")))))
+      )
+
+(test "csv-writer" "\n"
+      (lambda () (call-with-output-string
+                   (lambda (out)
+                     ((make-csv-writer #\,) out '())))))
+      
 
 ;;-------------------------------------------------------------------
 (test-section "tr")
