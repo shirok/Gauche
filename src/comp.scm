@@ -1,8 +1,9 @@
 ;;
 ;; A compiler.
-;;  $Id: comp.scm,v 1.1.2.21 2005-01-14 02:14:16 shirok Exp $
+;;  $Id: comp.scm,v 1.1.2.22 2005-01-14 09:49:14 shirok Exp $
 
 (define-module gauche.internal
+  (use srfi-2)
   (use util.match)
   )
 (select-module gauche.internal)
@@ -110,12 +111,17 @@
 
   (let ((frames (cenv-frames cenv)))
     (let loop ((frames frames))
-      (cond ((null? frames)
-             (if (identifier? sym-or-id)
-               sym-or-id
-               (make-identifier sym-or-id '() (cenv-module cenv))))
-            ((find-lvar (car frames)))
-            (else (loop (cdr frames)))))))
+      (if (null? frames)
+        (if (identifier? sym-or-id)
+          sym-or-id
+          (make-identifier sym-or-id '() (cenv-module cenv)))
+        (begin
+          ;; strip identifier if we're the same env (kludge).
+          (when (and (identifier? sym-or-id)
+                     (eq? (slot-ref sym-or-id 'env) frames))
+            (set! sym-or-id (slot-ref sym-or-id 'name)))
+          (or (find-lvar (car frames)) (loop (cdr frames)))))))
+  )
 
 ;; Pattern variable (pvar)
 ;;   Keeps binding info of pattern variables at the compile time.
@@ -177,7 +183,7 @@
            (lvar-ref++! head)
            (pass1/call program `($lref ,head) args cenv))
           ((is-a? head <macro>)
-           (pass1 (call-macro-expander head program cenv) cenv))
+           (pass1 (call-macro-expander head program (cenv-frames cenv)) cenv))
           ((identifier? head)
            (pass1/global-call head program cenv))
           (else
@@ -211,7 +217,7 @@
       (let1 gval (gloc-ref gloc)
         (cond
          ((is-a? gval <macro>)
-          (pass1 (call-macro-expander gval program cenv) cenv))
+          (pass1 (call-macro-expander gval program (cenv-frames cenv)) cenv))
          ((is-a? gval <syntax>)
           ((get-pass1-syntax gval) program cenv))
          (else
@@ -247,13 +253,27 @@
             ((lvar? var) (wrap-intdefs intdefs exprs))
             ((is-a? var <macro>)
              (pick-intdefs
-              (append (call-macro-expander var (car exprs) cenv)
-                      exprs)
+              (cons (call-macro-expander var (car exprs) (cenv-frames cenv))
+                    rest)
               intdefs))
             ((identifier? var)
-             (if (eq? (slot-ref var 'name) 'define)
-               (handle-intdef (car exprs) rest intdefs)
-               (wrap-intdefs intdefs exprs)))
+             (cond
+              ((global-eq? var 'define cenv)
+               (handle-intdef (car exprs) rest intdefs))
+              ((global-eq? var 'begin cenv)
+               ;; intersperse the body of begin
+               (pick-intdefs (append args rest) intdefs))
+              (else
+               (or (and-let* ((gloc (find-binding (slot-ref var 'module)
+                                                  (slot-ref var 'name)
+                                                  #f))
+                              (gval (gloc-ref gloc))
+                              ( (is-a? gval <macro>) ))
+                     (pick-intdefs
+                      (cons (call-macro-expander gval (car exprs) (cenv-frames cenv))
+                            rest)
+                      intdefs))
+                   (wrap-intdefs intdefs exprs)))))
             (else
              (error "[internal] pass1/body" var))))))
       (else
@@ -420,7 +440,8 @@
   ;; for the time being.
   (match form
     ((_ name ('syntax-rules (literal ...) rule ...))
-     (let1 transformer (compile-syntax-rules name literal rule cenv)
+     (let1 transformer
+         (compile-syntax-rules name literal rule (cenv-frames cenv))
        (%insert-binding (cenv-module cenv) name transformer)
        ($const-undef)))
     (else
@@ -430,12 +451,12 @@
 
 (define-pass1-syntax (%macroexpand form cenv)
   (match form
-    ((_ expr) `($const ,(%internal-macro-expand expr cenv #f)))
+    ((_ expr) `($const ,(%internal-macro-expand expr (cenv-frames cenv) #f)))
     (else "syntax-error: malformed %macroexpand:" form)))
 
 (define-pass1-syntax (%macroexpand-1 form cenv)
   (match form
-    ((_ expr) `($const ,(%internal-macro-expand expr cenv #t)))
+    ((_ expr) `($const ,(%internal-macro-expand expr (cenv-frames cenv) #t)))
     (else "syntax-error: malformed %macroexpand-1:" form)))
 
 (define-pass1-syntax (let-syntax form cenv)
@@ -444,7 +465,8 @@
      (let* ((trans (map (lambda (n spec)
                           (match spec
                             (('syntax-rules (lit ...) rule ...)
-                             (compile-syntax-rules n lit rule cenv))
+                             (compile-syntax-rules n lit rule
+                                                   (cenv-frames cenv)))
                             (else
                              (error "syntax-error: malformed transformer-spec:"
                                     spec))))
@@ -452,6 +474,23 @@
             (newenv (cenv-extend cenv (map cons name trans) 'syntax)))
        (pass1/body body body newenv)))
     (else "syntax-error: malformed let-syntax:" form)))
+
+(define-pass1-syntax (letrec-syntax form cenv)
+  (match form
+    ((_ ((name trans-spec) ...) body ...)
+     (let* ((newenv (cenv-extend cenv (map cons name trans-spec) 'syntax))
+            (trans (map (lambda (n spec)
+                          (match spec
+                            (('syntax-rules (lit ...) rule ...)
+                             (compile-syntax-rules n lit rule
+                                                   (cenv-frames newenv)))
+                            (else
+                             (error "syntax-error: malformed transformer-spec:"
+                                    spec))))
+                        name trans-spec)))
+       (for-each set-cdr! (cdar (cenv-frames newenv)) trans)
+       (pass1/body body body newenv)))
+    (else "syntax-error: malformed letrec-syntax:" form)))
 
 ;; If family ........................................
 
@@ -967,13 +1006,15 @@
               ((1) (emit! '(LREF1)))
               ((2) (emit! '(LREF2)))
               ((3) (emit! '(LREF3)))
-              ((4) (emit! '(LREF4)))))
+              ((4) (emit! '(LREF4)))
+              (else (emit! insn))))
        ((1) (case off
               ((0) (emit! '(LREF10)))
               ((1) (emit! '(LREF11)))
               ((2) (emit! '(LREF12)))
               ((3) (emit! '(LREF13)))
-              ((4) (emit! '(LREF14)))))
+              ((4) (emit! '(LREF14)))
+              (else (emit! insn))))
        (else (emit! insn))))
     (('LSET depth off)
      (case depth
@@ -982,7 +1023,8 @@
               ((1) (emit! '(LSET1)))
               ((2) (emit! '(LSET2)))
               ((3) (emit! '(LSET3)))
-              ((4) (emit! '(LSET4)))))
+              ((4) (emit! '(LSET4)))
+              (else (emit! insn))))
        (else (emit! insn))))
     (('PUSH)
      (let1 ci (iacc-current-insn iacc)
@@ -1008,8 +1050,9 @@
                   (replace/operand! '(PUSHNIL)))
                  ((not operand)
                   (replace/operand! '(PUSHFALSE)))
-                 ((and (integer? operand)
-                       (<= #x-fffff operand #xfffff)) ;;kludge!
+                 ((and (exact? operand)
+                       (integer? operand)
+                       (<= #x-7ffff operand #x7ffff)) ;;kludge!
                   (replace/operand! `(PUSHI ,operand)))
                  (else
                   (replace! '(CONST-PUSH))))))
@@ -1201,7 +1244,9 @@
   (and (variable? var)
        (let1 v (cenv-lookup cenv var 'lexical)
          (cond
-          ((identifier? v) (eq? (slot-ref v 'name) sym))
+          ((identifier? v)
+           (and (eq? (slot-ref v 'name) sym)
+                (null? (slot-ref v 'env))))
           ((symbol? v) (eq? v sym))
           (else #f)))))
 
@@ -1215,7 +1260,7 @@
           (else (loop (cdr lis))))))
 
 (define (every pred lis)
-  (if (null? lis) #t (and (pref (car lis)) (every pred (cdr lis)))))
+  (if (null? lis) #t (and (pred (car lis)) (every pred (cdr lis)))))
 
 (define (fold proc seed lis)
   (let loop ((lis lis) (seed seed))

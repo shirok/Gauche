@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.52.2.5 2005-01-12 23:38:47 shirok Exp $
+ *  $Id: macro.c,v 1.52.2.6 2005-01-14 09:49:14 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -38,6 +38,9 @@
 #include "gauche/macro.h"
 #include "gauche/vminsn.h"
 #include "gauche/builtin-syms.h"
+
+
+/*#define DEBUG_SYNRULE*/
 
 /*===================================================================
  * Syntax object
@@ -629,7 +632,7 @@ static ScmObj get_pvref_value(ScmObj pvref, MatchVar *mvec,
 }
 
 /* for debug */
-#if 0
+#ifdef DEBUG_SYNRULE
 static void print_matchvec(MatchVar *mvec, int numPvars, ScmPort *port)
 {
     int i;

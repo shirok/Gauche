@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.121.2.12 2005-01-12 23:38:46 shirok Exp $
+ *  $Id: compile.c,v 1.121.2.13 2005-01-14 09:49:14 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -300,7 +300,7 @@ enum {
  */
 static ScmObj compile_in_module(ScmObj, ScmModule*);
 
-/*#define USE_NEW_COMPILER*/
+#define USE_NEW_COMPILER
 
 #ifdef USE_NEW_COMPILER
 static ScmGloc *compile_gloc = NULL;
@@ -473,6 +473,15 @@ static ScmObj get_binding_frame(ScmObj var, ScmObj env)
     ScmObj frame, fp;
     SCM_FOR_EACH(frame, env) {
         if (!SCM_PAIRP(SCM_CAR(frame))) continue;
+#ifdef USE_NEW_COMPILER
+        /* NB: the new compiler uses different compile-time frame
+           structure.  This assumes the provisional frame structure,
+           which may be changed later. */
+        if (!SCM_SYMBOLP(SCM_CAAR(frame))) continue;
+        SCM_FOR_EACH(fp, SCM_CDAR(frame)) {
+            if (SCM_CAAR(fp) == var) return frame;
+        }
+#else  /* USE_NEW_COMPILER */
         if (SCM_TRUEP(SCM_CAAR(frame))) {
             SCM_FOR_EACH(fp, SCM_CDAR(frame))
                 if (SCM_CAAR(fp) == var) return frame;
@@ -480,6 +489,7 @@ static ScmObj get_binding_frame(ScmObj var, ScmObj env)
             SCM_FOR_EACH(fp, SCM_CAR(frame))
                 if (SCM_CAR(fp) == var) return frame;
         }
+#endif /* USE_NEW_COMPILER */
     }
     return SCM_NIL;
 }
