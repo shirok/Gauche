@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.50 2001-03-06 08:41:24 shiro Exp $
+ *  $Id: vm.c,v 1.51 2001-03-09 08:35:08 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1025,8 +1025,9 @@ static ScmObj user_eval_inner(ScmObj program)
         theVM->cont = NULL;
         theVM->pc = program;
         run_loop();
-        result = theVM->val0;
+        val0 = result = theVM->val0;
         theVM->history = theVM->history->prev;
+        SAVE_REGS();            /* restore current VM regs */
     }
     SCM_WHEN_ERROR {
         SAVE_REGS();            /* restore current VM regs */
