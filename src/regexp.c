@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.30 2002-09-21 03:00:13 shirok Exp $
+ *  $Id: regexp.c,v 1.31 2002-09-21 08:52:49 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -359,11 +359,11 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
                 break;
             case 'u':
                 ch = read_regexp_xdigits(ctx->ipat, 4, 'u');
-                SCM_APPEND1(head, tail, SCM_MAKE_CHAR(ch));
+                SCM_APPEND1(head, tail, SCM_MAKE_CHAR(Scm_UcsToChar(ch)));
                 break;
             case 'U':
                 ch = read_regexp_xdigits(ctx->ipat, 8, 'U');
-                SCM_APPEND1(head, tail, SCM_MAKE_CHAR(ch));
+                SCM_APPEND1(head, tail, SCM_MAKE_CHAR(Scm_UcsToChar(ch)));
                 break;
             case 'd':
                 cs = Scm_GetStandardCharSet(SCM_CHARSET_DIGIT);

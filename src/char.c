@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.32 2002-09-21 08:37:02 shirok Exp $
+ *  $Id: char.c,v 1.33 2002-09-21 08:52:49 shirok Exp $
  */
 
 #include <ctype.h>
@@ -655,9 +655,14 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
             case 't': ch = '\t'; goto ordchar;
             case 'f': ch = '\f'; goto ordchar;
             case 'e': ch = 0x1b; goto ordchar;
-            case 'x': ch = read_charset_xdigits(input, 2, 'x'); goto ordchar;
-            case 'u': ch = read_charset_xdigits(input, 4, 'u'); goto ordchar;
-            case 'U': ch = read_charset_xdigits(input, 8, 'U'); goto ordchar;
+            case 'x':
+                ch = read_charset_xdigits(input, 2, 'x'); goto ordchar;
+            case 'u':
+                ch = Scm_UcsToChar(read_charset_xdigits(input, 4, 'u'));
+                goto ordchar;
+            case 'U':
+                ch = Scm_UcsToChar(read_charset_xdigits(input, 8, 'U'));
+                goto ordchar;
             case 'd':
                 moreset_complement = FALSE;
                 moreset = Scm_GetStandardCharSet(SCM_CHARSET_DIGIT);
