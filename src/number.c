@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.111 2004-06-27 23:27:28 shirok Exp $
+ *  $Id: number.c,v 1.112 2004-09-19 11:49:52 shirok Exp $
  */
 
 #include <math.h>
@@ -1655,12 +1655,12 @@ static double roundeven(double v)
     if (v > 0.0) {
         if (frac > 0.5) r += 1.0;
         else if (frac == 0.5) {
-            if (r/2.0 != 0.0) r += 1.0;
+            if (fmod(r,2.0) != 0.0) r += 1.0;
         }
     } else {
         if (frac < -0.5) r -= 1.0;
-        else if (frac == 0.5) {
-            if (r/2.0 != 0.0) r -= 1.0;
+        else if (frac == -0.5) {
+            if (fmod(r,2.0) != 0.0) r -= 1.0;
         }
     }
     return r;

@@ -1,3 +1,7 @@
+2004-09-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (roundeven): fixed a bug.
+
 2004-09-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm_VMLoad): use coding-aware port to load source file
