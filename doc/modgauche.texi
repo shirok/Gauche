@@ -5877,8 +5877,8 @@ an undefined value is returned.
 @c EN
 This macro corresponds to scsh's @code{match-cond}.
 @c JP
-@c JP
 このマクロはscshの@code{match-cond}に相当します。
+@c COMMON
 @end defmac
 
 @defmac rxmatch-case string-expr clause @dots{}
