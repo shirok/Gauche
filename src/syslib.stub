@@ -12,23 +12,23 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.11 2001-03-07 08:23:19 shiro Exp $
+;;; $Id: syslib.stub,v 1.12 2001-03-08 10:19:54 shiro Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
 ;; some non-posix functions which are important for programming on Unix.
 
-"#include <sys/types.h>
+"#include <unistd.h>
+#include <sys/types.h>
 #include <dirent.h>
 #include <grp.h>
 #include <pwd.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <errno.h>
+#include <sys/times.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
 "
-
 ;;---------------------------------------------------------------------
 ;; dirent.h - read directory
 ;;   we don't have correspoinding functions, but provide these:
@@ -65,17 +65,27 @@
 ;;---------------------------------------------------------------------
 ;; grp.h - groups
 
-;; NOTE: the structure of return value may change later
 (define-cproc sys-getgrgid (gid)
   (assert (small-integer? gid))         ;TODO: make sure it covers all gids
   "  SCM_RETURN(Scm_GetGroupById(gid));")
-
-;; NOTE: the structure of return value may change later
 (define-cproc sys-getgrnam (name)
   (assert (string? name))
   "  SCM_RETURN(Scm_GetGroupByName(name));")
 
-;; faster functions
+(define-cproc sys-group->name (group)
+  (assert (sys-group? group))
+  "  SCM_RETURN(group->name);")
+(define-cproc sys-group->gid (group)
+  (assert (sys-group? group))
+  "  SCM_RETURN(group->gid);")
+(define-cproc sys-group->passwd (group)
+  (assert (sys-group? group))
+  "  SCM_RETURN(group->passwd);")
+(define-cproc sys-group->mem (group)
+  (assert (sys-group? group))
+  "  SCM_RETURN(group->mem);")
+
+;; faster functions; bypassing creation of group object
 (define-cproc sys-gid->group-name (gid)
   (assert (small-integer? gid))         ;TODO: make sure it covers all gids
   "  struct group *g = getgrgid(gid);
@@ -96,17 +106,36 @@
 ;;---------------------------------------------------------------------
 ;; pwd.h - passwords
 
-;; NOTE: the structure of return value may change later
 (define-cproc sys-getpwuid (uid)
   (assert (small-integer? uid))         ;TODO: make sure it covers all gids
   "  SCM_RETURN(Scm_GetPasswdById(uid));")
-
-;; NOTE: the structure of return value may change later
 (define-cproc sys-getpwnam (name)
   (assert (string? name))
   "  SCM_RETURN(Scm_GetPasswdByName(name));")
 
-;; faster functions
+(define-cproc sys-passwd->name (passwd)
+  (assert (sys-passwd? passwd))
+  "  SCM_RETURN(passwd->name);")
+(define-cproc sys-passwd->uid (passwd)
+  (assert (sys-passwd? passwd))
+  "  SCM_RETURN(passwd->uid);")
+(define-cproc sys-passwd->gid (passwd)
+  (assert (sys-passwd? passwd))
+  "  SCM_RETURN(passwd->gid);")
+(define-cproc sys-passwd->passwd (passwd)
+  (assert (sys-passwd? passwd))
+  "  SCM_RETURN(passwd->passwd);")
+(define-cproc sys-passwd->gecos (passwd)
+  (assert (sys-passwd? passwd))
+  "  SCM_RETURN(passwd->gecos);")
+(define-cproc sys-passwd->dir (passwd)
+  (assert (sys-passwd? passwd))
+  "  SCM_RETURN(passwd->dir);")
+(define-cproc sys-passwd->shell (passwd)
+  (assert (sys-passwd? passwd))
+  "  SCM_RETURN(passwd->shell);")
+
+;; faster functions; bypassing creation of passwd object
 (define-cproc sys-uid->user-name (uid)
   (assert (small-integer? uid))         ;TODO: make sure it covers all uids
   "  struct passwd *p = getpwuid(uid);
@@ -175,13 +204,73 @@
 ;;---------------------------------------------------------------------
 ;; sys/stat.h
 
+(define-cproc sys-stat (path)
+  (assert (string? path))
+  "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
+  int r = stat(Scm_GetStringConst(path), &s->statrec);
+  if (r < 0) Scm_SysError(\"stat failed for %S\", path);
+  return SCM_OBJ(s);")
 
+(define-cproc sys-lstat (path)
+  (assert (string? path))
+  "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
+  int r = lstat(Scm_GetStringConst(path), &s->statrec);
+  if (r < 0) Scm_SysError(\"lstat failed for %S\", path);
+  return SCM_OBJ(s);")
+
+(define-cproc sys-fstat (fd)
+  (assert (small-integer? fd))
+  "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
+  int r = fstat(fd, &s->statrec);
+  if (r < 0) Scm_SysError(\"fstat failed for %d\", fd);
+  return SCM_OBJ(s);")
+
+;; TODO: check range of integer values; check non-standard fields
+(define-cproc sys-stat->mode (stat)
+  (assert (sys-stat? stat))
+  "  SCM_RETURN(Scm_MakeIntegerFromUI(stat->statrec.st_mode));")
+(define-cproc sys-stat->ino (stat)
+  (assert (sys-stat? stat))
+  "  SCM_RETURN(Scm_MakeIntegerFromUI(stat->statrec.st_ino));")
+(define-cproc sys-stat->dev (stat)
+  (assert (sys-stat? stat))
+  "  SCM_RETURN(Scm_MakeIntegerFromUI(stat->statrec.st_dev));")
+(define-cproc sys-stat->rdev (stat)
+  (assert (sys-stat? stat))
+  "  SCM_RETURN(Scm_MakeIntegerFromUI(stat->statrec.st_rdev));")
+(define-cproc sys-stat->nlink (stat)
+  (assert (sys-stat? stat))
+  "  SCM_RETURN(Scm_MakeIntegerFromUI(stat->statrec.st_nlink));")
+(define-cproc sys-stat->uid (stat)
+  (assert (sys-stat? stat))
+  "  SCM_RETURN(Scm_MakeIntegerFromUI(stat->statrec.st_uid));")
+(define-cproc sys-stat->gid (stat)
+  (assert (sys-stat? stat))
+  "  SCM_RETURN(Scm_MakeIntegerFromUI(stat->statrec.st_gid));")
+;; TODO: check timespec_t
 
 ;;---------------------------------------------------------------------
 ;; sys/times.h
 
-;; TODO: bignum
-;; times
+(define-cproc sys-times ()
+  "  struct tms info;
+  ScmObj h = SCM_NIL, t;
+  int r = times(&info);
+  if (r < 0) Scm_SysError(\"times() failed\");
+  SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_utime));
+  SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_stime));
+  SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_cutime));
+  SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_cstime));
+#ifdef CLOCKS_PER_SEC
+  SCM_APPEND1(h, t, Scm_MakeInteger(CLOCKS_PER_SEC));
+#else
+#ifdef CLK_TCK
+  SCM_APPEND1(h, t, Scm_MakeInteger(CLK_TCK)); /* older name */
+#else
+  SCM_APPEND1(h, t, Scm_MakeInteger(1));  /* or maybe 100, we don't know ...*/
+#endif
+#endif
+  SCM_RETURN(h);")
 
 ;;---------------------------------------------------------------------
 ;; sys/utsname.h
@@ -350,19 +439,46 @@
         Scm_SysError(\"unlink failed\");
   SCM_RETURN(SCM_TRUE);")
 
-(define-cproc sys-isatty (port)
-  (assert (port? port))
-  "  int fd = Scm_PortFileNo(port);
+(define-cproc sys-isatty (port_or_fd)
+  "  int fd;
+  if (SCM_INTP(port_or_fd)) fd = SCM_INT_VALUE(port_or_fd);
+  else if (SCM_PORTP(port_or_fd)) fd = Scm_PortFileNo(SCM_PORT(port_or_fd));
+  else Scm_Error(\"port or small integer required, but got %S\", port_or_fd);
   SCM_RETURN(SCM_MAKE_BOOL(fd >= 0 && isatty(fd)));")
+  
+(define-cproc sys-ttyname (port_or_fd)
+  "  int fd; const char *name;
+  if (SCM_INTP(port_or_fd)) fd = SCM_INT_VALUE(port_or_fd);
+  else if (SCM_PORTP(port_or_fd)) fd = Scm_PortFileNo(SCM_PORT(port_or_fd));
+  else Scm_Error(\"port or small integer required, but got %S\", port_or_fd);
+  if (fd < 0) SCM_RETURN(SCM_FALSE);
+  name = ttyname(fd);
+  if (name) SCM_RETURN(Scm_MakeString(name, -1, -1));
+  else SCM_RETURN(SCM_FALSE);")
+
+;; NB. Linux needs _XOPEN_SOURCE defined before unistd.h to get crypt()
+;; prototype.  However, it screws up something else.  Just for now I
+;; cast the return value of crypt() to avoid it...such a kludge...
+(define-cproc sys-crypt (key salt)
+  (assert (string? key))
+  (assert (string? salt))
+  "
+#ifdef HAVE_LIBCRYPT
+  SCM_RETURN(Scm_MakeString((const char *)crypt(Scm_GetStringConst(key),
+                                          Scm_GetStringConst(salt)), -1, -1));
+#else
+  Scm_Error(\"system doesn't have crypt().\");
+  SCM_RETURN(SCM_UNDEFINED);
+#endif
+")
 
 ;; not supported yet:
 ;;  fpathconf lseek pathconf pipe read
-;;  setgid setpgid setsid setuid sysconf tcgetpgrp tcsetpgrp
-;;  ttyname write
+;;  setgid setpgid setsid setuid sysconf tcgetpgrp tcsetpgrp write
 
+;;---------------------------------------------------------------------
+;; symbolic link
 
-;; Symbolic links
-;; TODO: need to check if the system has symlink()
 (define-cproc sys-symlink (existing new)
   (assert (string? existing))
   (assert (string? new))
