@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.121 2001-12-20 10:57:39 shirok Exp $
+ *  $Id: vm.c,v 1.122 2001-12-20 11:46:43 shirok Exp $
  */
 
 #include "gauche.h"
@@ -40,7 +40,8 @@ static void save_stack(ScmVM *vm);
 
 static ScmSubr default_exception_handler_rec;
 #define DEFAULT_EXCEPTION_HANDLER  SCM_OBJ(&default_exception_handler_rec)
-static ScmObj throw_cont_body(ScmObj, ScmObj, ScmEscapePoint*, ScmObj);
+static ScmObj throw_cont_calculate_handlers(ScmEscapePoint *, ScmVM *);
+static ScmObj throw_cont_body(ScmObj, ScmEscapePoint*, ScmObj);
 static ScmObj handle_exception(ScmVM *, ScmEscapePoint *, ScmObj);
 
 /*
@@ -1488,10 +1489,8 @@ static ScmObj user_eval_inner(ScmObj program)
         if (vm->escapeReason == SCM_VM_ESCAPE_CONT) {
             ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
             if (ep->cstack == vm->cstack) {
-                val0 = throw_cont_body(vm->handlers,
-                                       ep->handlers,
-                                       ep,
-                                       vm->escapeData[1]);
+                ScmObj handlers = throw_cont_calculate_handlers(ep, vm);
+                val0 = throw_cont_body(handlers, ep, vm->escapeData[1]);
                 RESTORE_REGS();
                 POP_CONT();
                 SAVE_REGS();
@@ -1809,7 +1808,7 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
         /* unwind the dynamic handlers */
         SCM_FOR_EACH(hp, vm->handlers) {
             ScmObj proc = SCM_CDAR(hp);
-            vm->handlers = SCM_CDR(hp); /* prevent infinite loop */
+            vm->handlers = SCM_CDR(hp);
             Scm_Apply(proc, SCM_NIL);
         }
     }
@@ -1943,17 +1942,38 @@ ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk)
  * Call With Current Continuation
  */
 
+/* Figure out which before and after thunk should be called. */
+static ScmObj throw_cont_calculate_handlers(ScmEscapePoint *ep, /*target*/
+                                            ScmVM *vm)
+{
+    ScmObj target  = Scm_Reverse(ep->handlers);
+    ScmObj current = vm->handlers;
+    ScmObj h = SCM_NIL, t = SCM_NIL, p;
+
+    SCM_FOR_EACH(p, current) {
+        SCM_ASSERT(SCM_PAIRP(SCM_CAR(p)));
+        if (!SCM_FALSEP(Scm_Memq(SCM_CAR(p), target))) break;
+        /* push 'after' handlers to be called */
+        SCM_APPEND1(h, t, SCM_CDAR(p));
+    }
+    SCM_FOR_EACH(p, target) {
+        SCM_ASSERT(SCM_PAIRP(SCM_CAR(p)));
+        if (!SCM_FALSEP(Scm_Memq(SCM_CAR(p), current))) continue;
+        /* push 'before' handlers to be called */
+        SCM_APPEND1(h, t, SCM_CAAR(p));
+    }
+    return h;
+}
+
 static ScmObj throw_cont_cc(ScmObj, void **);
 
-static ScmObj throw_cont_body(ScmObj cur_handlers, /* dynamic handlers of
-                                                      current continuation */
-                              ScmObj dest_handlers, /* dynamic handlers of
-                                                       target continuation */
+static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
+                                                     to be called */
                               ScmEscapePoint *ep, /* target continuation */
                               ScmObj args)        /* args to pass to the
                                                      target continuation */ 
 {
-    void *data[4];
+    void *data[3];
     int nargs, i;
     ScmObj ap;
     ScmVM *vm = theVM;
@@ -1961,43 +1981,12 @@ static ScmObj throw_cont_body(ScmObj cur_handlers, /* dynamic handlers of
     /*
      * first, check to see if we need to evaluate dynamic handlers.
      */
-    if (cur_handlers != dest_handlers) {
-        while (SCM_PAIRP(cur_handlers)) {
-            SCM_ASSERT(SCM_PAIRP(SCM_CAR(cur_handlers)));
-            if (SCM_CAAR(cur_handlers) == SCM_FALSE)
-                continue;       /* this is an error handler */
-            if (SCM_FALSEP(Scm_Memq(SCM_CAR(cur_handlers), dest_handlers))) {
-                /* evaluate "after" handlers of the current continuation */
-                data[0] = (void*)SCM_CDR(cur_handlers);
-                data[1] = (void*)dest_handlers;
-                data[2] = (void*)ep;
-                data[3] = (void*)args;
-                vm->handlers = SCM_CDR(cur_handlers);
-                Scm_VMPushCC(throw_cont_cc, data, 4);
-                return Scm_VMApply0(SCM_CDAR(cur_handlers));
-            } else {
-                /* the destination is in the same dynamic environment, so
-                   we don't need to go further */
-                break;
-            }
-        }
-        while (SCM_PAIRP(dest_handlers)) {
-            SCM_ASSERT(SCM_PAIRP(SCM_CAR(dest_handlers)));
-            if (SCM_CAAR(dest_handlers) == SCM_FALSE)
-                continue;       /* this is an error handler */
-            if (SCM_FALSEP(Scm_Memq(SCM_CAR(dest_handlers), cur_handlers))) {
-                /* evaluate "before" handlers of the target continuation */
-                data[0] = (void*)cur_handlers;
-                data[1] = (void*)SCM_CDR(dest_handlers);
-                data[2] = (void*)ep;
-                data[3] = (void*)args;
-                vm->handlers = SCM_CDR(dest_handlers);
-                Scm_VMPushCC(throw_cont_cc, data, 4);
-                return Scm_VMApply0(SCM_CAR(SCM_CAR(dest_handlers)));
-            } else {
-                break;
-            }
-        }
+    if (SCM_PAIRP(handlers)) {
+        data[0] = (void*)SCM_CDR(handlers);
+        data[1] = (void*)ep;
+        data[2] = (void*)args;
+        Scm_VMPushCC(throw_cont_cc, data, 3);
+        return Scm_VMApply0(SCM_CAR(handlers));
     }
 
     /*
@@ -2005,7 +1994,6 @@ static ScmObj throw_cont_body(ScmObj cur_handlers, /* dynamic handlers of
      */
     vm->pc = SCM_NIL;
     vm->cont = ep->cont;
-    vm->handlers = dest_handlers;
 
     nargs = Scm_Length(args);
     if (nargs == 1) {
@@ -2025,11 +2013,10 @@ static ScmObj throw_cont_body(ScmObj cur_handlers, /* dynamic handlers of
 
 static ScmObj throw_cont_cc(ScmObj result, void **data)
 {
-    ScmObj cur_handlers = SCM_OBJ(data[0]);
-    ScmObj dest_handlers = SCM_OBJ(data[1]);
-    ScmEscapePoint *ep = (ScmEscapePoint *)data[2];
-    ScmObj args = SCM_OBJ(data[3]);
-    return throw_cont_body(cur_handlers, dest_handlers, ep, args);
+    ScmObj handlers = SCM_OBJ(data[0]);
+    ScmEscapePoint *ep = (ScmEscapePoint *)data[1];
+    ScmObj args = SCM_OBJ(data[2]);
+    return throw_cont_body(handlers, ep, args);
 }
 
 /* Body of the continuation SUBR */
@@ -2037,12 +2024,10 @@ static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
 {
     ScmEscapePoint *ep = (ScmEscapePoint*)data;
     ScmVM *vm = theVM;
-    ScmObj handlers = ep->handlers;
-    ScmObj current = vm->handlers;
     ScmObj args = argframe[0];
-    ScmCStack *cstk;
 
     if (vm->cstack != ep->cstack) {
+        ScmCStack *cstk;
         for (cstk = vm->cstack; cstk; cstk = cstk->prev) {
             if (ep->cstack == cstk) break;
         }
@@ -2056,8 +2041,11 @@ static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
             vm->escapeData[1] = args;
             longjmp(vm->cstack->jbuf, 1);
         }
+    } else {
+        ScmObj handlers_to_call = throw_cont_calculate_handlers(ep, vm);
+        vm->handlers = ep->handlers;
+        return throw_cont_body(handlers_to_call, ep, args);
     }
-    return throw_cont_body(current, handlers, ep, args);
 }
 
 ScmObj Scm_VMCallCC(ScmObj proc)
