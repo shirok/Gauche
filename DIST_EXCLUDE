@@ -5,3 +5,4 @@ DIST_EXCLUDE_X
 TEST
 INSTALL.esc
 autom4te.cache
+lib/net
