@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.104 2001-09-12 20:04:49 shirok Exp $
+ *  $Id: vm.c,v 1.105 2001-09-16 01:24:43 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1481,6 +1481,11 @@ static ScmObj user_eval_inner(ScmObj program)
         } else if (vm->escapeReason == SCM_VM_ESCAPE_ERROR) {
             ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
             ScmException *exn = (ScmException*)vm->escapeData[1];
+
+            if (!ep) {
+                Scm_VMDefaultExceptionHandler(SCM_OBJ(exn), NULL);
+                exit(EX_SOFTWARE);
+            }
 
             if (ep && ep->cstack == vm->cstack) {
                 val0 = handle_exception(vm, ep, exn);
