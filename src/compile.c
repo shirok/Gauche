@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.22 2001-02-06 12:04:55 shiro Exp $
+ *  $Id: compile.c,v 1.23 2001-02-15 10:28:21 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1273,6 +1273,34 @@ static ScmSyntax syntax_delay = {
 };
 
 /*------------------------------------------------------------------
+ * Receive
+ */
+
+/* In Gauche, call-with-values is defined using receive
+   - do not to redefine receive by call-with-values! */
+
+static ScmObj compile_receive(ScmObj form, ScmObj env, int ctx, void *data)
+{
+    ScmObj code = SCM_NIL, codetail, vars, expr, body;
+    int nvals;
+    
+    if (Scm_Length(form) < 4) Scm_Error("badly formed receive: %S", form);
+    vars = SCM_CADR(form);
+    expr = SCM_CAR(SCM_CDDR(form));
+    body = SCM_CDR(SCM_CDDR(form));
+
+    Scm_Error("receive not implemented yet!");
+    return SCM_UNDEFINED;
+}
+
+static ScmSyntax syntax_receive = {
+    SCM_CLASS_SYNTAX,
+    SCM_SYMBOL(SCM_SYM_RECEIVE),
+    compile_receive,
+    NULL
+};
+
+/*------------------------------------------------------------------
  * Traditional Macro
  */
 
@@ -1365,5 +1393,6 @@ void Scm__InitCompiler(void)
     DEFSYN(SCM_SYM_LETREC,       syntax_letrec);
     DEFSYN(SCM_SYM_DO,           syntax_do);
     DEFSYN(SCM_SYM_DELAY,        syntax_delay);
+    DEFSYN(SCM_SYM_RECEIVE,      syntax_receive);
     DEFSYN(SCM_SYM_MACRO_EXPAND, syntax_macro_expand);
 }
