@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.68 2001-04-25 07:31:22 shiro Exp $
+;;; $Id: extlib.stub,v 1.69 2001-04-26 20:06:38 shirok Exp $
 ;;;
 
 "
@@ -373,6 +373,34 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (string? s1))
   (assert (string? s2))
   "  SCM_RETURN(Scm_StringContains(s1, s2));")
+
+;; string pointer
+(define-type "string-pointer" string-pointer?
+  "ScmStringPointer*" "SCM_STRING_POINTERP" "SCM_STRING_POINTER")
+
+(define-cproc make-string-pointer (str &optional (index 0))
+  (assert (string? str))
+  (assert (small-integer? index))
+  "  SCM_RETURN(Scm_MakeStringPointer(str, index));")
+(define-cproc string-pointer? (obj)
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_STRING_POINTERP(obj)));")
+
+(define-cproc string-pointer-next (sp)
+  (assert (string-pointer? sp))
+  "  SCM_RETURN(Scm_StringPointerNext(sp));")
+(define-cproc string-pointer-prev (sp)
+  (assert (string-pointer? sp))
+  "  SCM_RETURN(Scm_StringPointerPrev(sp));")
+(define-cproc string-pointer-set (sp index)
+  (assert (string-pointer? sp))
+  (assert (small-integer? index))
+  "  SCM_RETURN(Scm_StringPointerSet(sp, index));")
+(define-cproc string-pointer-substring (sp &keyword (after #f))
+  (assert (string-pointer? sp))
+  "  SCM_RETURN(Scm_StringPointerSubstring(sp, !SCM_FALSEP(after)));")
+(define-cproc string-pointer-index (sp)
+  (assert (string-pointer? sp))
+  "  SCM_RETURN(Scm_MakeInteger(sp->index));")
 
 ;; Regexp
 (define-cproc string->regexp (str)

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.123 2001-04-26 08:23:00 shiro Exp $
+ *  $Id: gauche.h,v 1.124 2001-04-26 20:06:38 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -661,6 +661,8 @@ struct ScmStringRec {
 #define SCM_STRING_START(obj)   (SCM_STRING(obj)->start)
 
 #define SCM_STRING_COMPLETE_P(obj) (SCM_STRING_LENGTH(obj) >= 0)
+#define SCM_STRING_SINGLE_BYTE_P(obj) \
+    (SCM_STRING_SIZE(obj)==SCM_STRING_LENGTH(obj)||SCM_STRING_LENGTH(obj)<0)
 
 #define SCM_MAKE_STR(cstr)   Scm_MakeStringConst(cstr, -1, -1)
 
@@ -769,6 +771,7 @@ typedef struct ScmStringPointerRec {
     int length;
     int size;
     const char *start;
+    int index;
     const char *current;
 } ScmStringPointer;
 
@@ -778,9 +781,10 @@ extern ScmClass Scm_StringPointerClass;
 #define SCM_STRING_POINTER(obj)   ((ScmStringPointer*)obj)
 
 extern ScmObj Scm_MakeStringPointer(ScmString *src, int index);
-extern ScmChar Scm_StringPointerNext(ScmStringPointer *sp);
-extern ScmChar Scm_StringPointerPrev(ScmStringPointer *sp);
-extern void Scm_StringPointerSet(ScmStringPointer *sp, int index);
+extern ScmObj Scm_StringPointerNext(ScmStringPointer *sp);
+extern ScmObj Scm_StringPointerPrev(ScmStringPointer *sp);
+extern ScmObj Scm_StringPointerSet(ScmStringPointer *sp, int index);
+extern ScmObj Scm_StringPointerSubstring(ScmStringPointer *sp, int beforep);
 
 /*--------------------------------------------------------
  * VECTOR

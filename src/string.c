@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.28 2001-04-26 08:23:00 shiro Exp $
+ *  $Id: string.c,v 1.29 2001-04-26 20:06:38 shirok Exp $
  */
 
 #include <stdio.h>
@@ -844,10 +844,97 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_StringPointerClass, NULL);
 ScmObj Scm_MakeStringPointer(ScmString *src, int index)
 {
     const char *ptr;
-    return SCM_NIL;             /* writeme */
+    ScmStringPointer *sp;
+    if (index < 0) goto badindex;
+    sp = SCM_NEW(ScmStringPointer);
+    SCM_SET_CLASS(sp, SCM_CLASS_STRING_POINTER);
+    sp->length = SCM_STRING_LENGTH(src);
+    sp->size = SCM_STRING_SIZE(src);
+    sp->start = SCM_STRING_START(src);
+    sp->index = index;
+    if (SCM_STRING_SINGLE_BYTE_P(src)) {
+        if (index > SCM_STRING_SIZE(src)) goto badindex;
+        sp->current = sp->start + index;
+    } else {
+        if (index > SCM_STRING_LENGTH(src)) goto badindex;
+        sp->current = forward_pos(sp->start, index);
+    }
+    return SCM_OBJ(sp);
+  badindex:
+    Scm_Error("index out of range: %d", index);
+    return SCM_UNDEFINED;
 }
 
+ScmObj Scm_StringPointerNext(ScmStringPointer *sp)
+{
+    ScmChar ch;
+    if (sp->length < 0 || sp->size == sp->length) {
+        if (sp->index >= sp->size) return SCM_EOF;
+        sp->index++;
+        ch = *sp->current++;
+    } else {
+        if (sp->index >= sp->length) return SCM_EOF;
+        SCM_CHAR_GET(sp->current, ch);
+        sp->index++;
+        sp->current += SCM_CHAR_NFOLLOWS(*sp->current) + 1;
+    }
+    return SCM_MAKE_CHAR(ch);
+}
 
+ScmObj Scm_StringPointerPrev(ScmStringPointer *sp)
+{
+    ScmChar ch;
+    if (sp->index <= 0) return SCM_EOF;
+    if (sp->length < 0 || sp->size == sp->length) {
+        sp->index--;
+        ch = *--sp->current;
+    } else {
+        const char *prev;
+        SCM_CHAR_BACKWARD(sp->current, sp->start, prev);
+        SCM_ASSERT(prev != NULL);
+        SCM_CHAR_GET(prev, ch);
+        sp->index--;
+        sp->current = prev;
+    }
+    return SCM_MAKE_CHAR(ch);
+}
+
+ScmObj Scm_StringPointerSet(ScmStringPointer *sp, int index)
+{
+    if (index < 0) goto badindex;
+    if (sp->length < 0 || sp->size == sp->length) {
+        if (index > sp->size) goto badindex;
+        sp->index = index;
+        sp->current = sp->start + index;
+    } else {
+        if (index > sp->length) goto badindex;
+        sp->index = index;
+        sp->current = forward_pos(sp->start, index);
+    }
+    return SCM_OBJ(sp);
+  badindex:
+    Scm_Error("index out of range: %d", index);
+    return SCM_UNDEFINED;
+}
+
+ScmObj Scm_StringPointerSubstring(ScmStringPointer *sp, int afterp)
+{
+    if (sp->length < 0) {
+        if (afterp)
+            return SCM_OBJ(make_str(-1, sp->size - sp->index, sp->current));
+        else
+            return SCM_OBJ(make_str(-1, sp->index, sp->start));
+    } else {
+        if (afterp)
+            return SCM_OBJ(make_str(sp->length - sp->index,
+                                    sp->start + sp->size - sp->current,
+                                    sp->current));
+        else
+            return SCM_OBJ(make_str(sp->index,
+                                    sp->current - sp->start,
+                                    sp->start));
+    }
+}
 
 /*==================================================================
  *
