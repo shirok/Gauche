@@ -2,19 +2,21 @@ srcdir       = @srcdir@
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
+include ../Makefile.ext
+
 SCM_CATEGORY = gauche
 
-LIBFILES = libnet.la
+LIBFILES = libnet.$(SOEXT)
 SCMFILES = net.scm
 
-OBJECTS = net_head.lo net.lo addr.lo netdb.lo netlib.lo net_tail.lo
+OBJECTS = net_head.$(OBJEXT) net.$(OBJEXT) addr.$(OBJEXT) netdb.$(OBJEXT) netlib.$(OBJEXT) net_tail.$(OBJEXT)
 
 GENERATED = Makefile netlib.c net_head.c net_tail.c
 
 all : $(LIBFILES)
 
-libnet.la : $(OBJECTS) 
-	$(MODLINK)  $(OBJECTS) $(EXT_LIBGAUCHE)
+libnet.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) libnet.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE)
 
 netlib.c : netlib.stub
 
@@ -23,5 +25,4 @@ net_head.c net_tail.c :
 
 install : install-std
 
-include ../Makefile.ext
 

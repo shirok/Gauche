@@ -2,9 +2,11 @@ srcdir       = @srcdir@
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
+include ../Makefile.ext
+
 SCM_CATEGORY = gauche
 
-LIBFILES = libgauche-uvector.la
+LIBFILES = libgauche-uvector.$(SOEXT)
 SCMFILES = array.scm uvector.scm
 HDRFILES = gauche/uvector.h
 
@@ -13,11 +15,11 @@ GENERATED = Makefile uvlib.c uvlib.stub uvector.c gauche/uvector.h \
 
 all : $(LIBFILES)
 
-uvector_OBJECTS = uvector_head.lo uvector.lo uvutil.lo \
-                  uvinit.lo uvlib.lo uvector_tail.lo
+uvector_OBJECTS = uvector_head.$(OBJEXT) uvector.$(OBJEXT) uvutil.$(OBJEXT) \
+                  uvinit.$(OBJEXT) uvlib.$(OBJEXT) uvector_tail.$(OBJEXT)
 
-libgauche-uvector.la : $(uvector_OBJECTS) 
-	$(MODLINK) $(uvector_OBJECTS) $(EXT_LIBGAUCHE)
+libgauche-uvector.$(SOEXT) : $(uvector_OBJECTS) 
+	$(MODLINK) libgauche-uvector.$(SOEXT) $(uvector_OBJECTS) $(EXT_LIBGAUCHE)
 
 uvector_head.c uvector_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension uvector
@@ -27,7 +29,7 @@ gauche/uvector.h : uvector.h.sh
 	rm -rf gauche/uvector.h
 	sh ./uvector.h.sh > gauche/uvector.h
 
-uvector.lo uvutil.lo uvlib.lo uvinit.lo : gauche/uvector.h
+uvector.$(OBJEXT) uvutil.$(OBJEXT) uvlib.$(OBJEXT) uvinit.$(OBJEXT) : gauche/uvector.h
 
 uvector.c : uvector.c.sh
 	rm -rf uvector.c
@@ -44,6 +46,4 @@ uvlib.stub : uvlib.stub.sh
 	sh ./uvlib.stub.sh > uvlib.stub
 
 install : install-std
-
-include ../Makefile.ext
 

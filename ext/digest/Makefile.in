@@ -2,26 +2,28 @@ srcdir       = @srcdir@
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
+include ../Makefile.ext
+
 SCM_CATEGORY = rfc
 
-LIBFILES = md5.la sha1.la
+LIBFILES = md5.$(SOEXT) sha1.$(SOEXT)
 SCMFILES = md5.scm sha1.scm
 
 GENERATED = Makefile md5.c sha1.c *_head.c *_tail.c
 
 all : $(LIBFILES)
 
-md5_OBJECTS = md5_head.lo md5.lo md5c.lo md5_tail.lo
+md5_OBJECTS = md5_head.$(OBJEXT) md5.$(OBJEXT) md5c.$(OBJEXT) md5_tail.$(OBJEXT)
 
-md5.la : $(md5_OBJECTS) 
-	$(MODLINK) $(md5_OBJECTS) $(EXT_LIBGAUCHE)
+md5.$(SOEXT) : $(md5_OBJECTS) 
+	$(MODLINK) md5.$(SOEXT) $(md5_OBJECTS) $(EXT_LIBGAUCHE)
 
 md5.c : md5.stub
 
-sha1_OBJECTS = sha1_head.lo sha1.lo sha.lo sha1_tail.lo
+sha1_OBJECTS = sha1_head.$(OBJEXT) sha1.$(OBJEXT) sha.$(OBJEXT) sha1_tail.$(OBJEXT)
 
-sha1.la : $(sha1_OBJECTS) 
-	$(MODLINK) $(sha1_OBJECTS) $(EXT_LIBGAUCHE)
+sha1.$(SOEXT) : $(sha1_OBJECTS) 
+	$(MODLINK) sha1.$(SOEXT) $(sha1_OBJECTS) $(EXT_LIBGAUCHE)
 
 sha1.c : sha1.stub
 
@@ -33,5 +35,4 @@ sha1_head.c sha1_tail.c :
 
 install : install-std
 
-include ../Makefile.ext
 

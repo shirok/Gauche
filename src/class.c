@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.91 2003-04-30 20:24:06 shirok Exp $
+ *  $Id: class.c,v 1.92 2003-06-25 09:58:30 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -310,7 +310,7 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmClass *instance = SCM_ALLOCATE(ScmClass, klass);
     SCM_SET_CLASS(instance, klass);
-#ifdef __CYGWIN__
+#if 0 /*def __CYGWIN__*/
     instance->classPtr = SCM_NEW(ScmClass*);
     *instance->classPtr = instance;
 #endif
@@ -1715,7 +1715,7 @@ static void initialize_builtin_class(ScmClass *k, const char *name,
     if (k->cpa == NULL) {
 	k->cpa = SCM_CLASS_DEFAULT_CPL;
     }
-#ifdef __CYGWIN__
+#if 0 /*def __CYGWIN__*/
     /* fix CPA on __CYGWIN__ */
     {
 	ScmClass **c, **d, **cpa; int depth = 0;
@@ -1807,7 +1807,7 @@ void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod)
 
 void Scm_InitBuiltinMethod(ScmMethod *m)
 {
-#ifdef __CYGWIN__
+#if 0 /*def __CYGWIN__*/
     /* fix specializer array on __CYGWIN__ */
     {
 	ScmClass **c, **d, **spa;

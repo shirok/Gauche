@@ -2,12 +2,14 @@ srcdir       = @srcdir@
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
+include ../Makefile.ext
+
 SCM_CATEGORY = math
 
-LIBFILES = mt-random.la
+LIBFILES = mt-random.$(SOEXT)
 SCMFILES = mt-random.scm
 
-OBJECTS = mt-random_head.lo mt-random.lo mt-lib.lo mt-random_tail.lo
+OBJECTS = mt-random_head.$(OBJEXT) mt-random.$(OBJEXT) mt-lib.$(OBJEXT) mt-random_tail.$(OBJEXT)
 
 GENERATED = Makefile mt-lib.c mt-random_head.c mt-random_tail.c
 
@@ -15,15 +17,12 @@ EXTRA_INCLUDES = -I$(srcdir)/../uvector
 
 all : $(LIBFILES)
 
-mt-random.la : $(OBJECTS) 
-	$(MODLINK) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) 
-
+mt-random.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) mt-random.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) 
 mt-lib.c : mt-lib.stub
 
 mt-random_head.c mt-random_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension mt-random mtrandom
 
 install : install-std
-
-include ../Makefile.ext
 

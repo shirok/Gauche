@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.75 2003-05-29 08:40:39 shirok Exp $
+ *  $Id: load.c,v 1.76 2003-06-25 09:58:30 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -503,6 +503,7 @@ static const char *get_dynload_initfn(const char *filename)
     return name;
 }
 
+#if 0
 /* Aux fn to get a parameter value from *.la file line */
 static const char *get_la_val(const char *start)
 {
@@ -569,6 +570,7 @@ static ScmObj find_so_from_la(ScmString *lafile)
     }
     return SCM_FALSE;
 }
+#endif
 
 /* Dynamically load the specified object by FILENAME.
    FILENAME must not contain the system's suffix (.so, for example).
@@ -592,6 +594,7 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
     reqname = truename;         /* save requested name */
     cpath = Scm_GetStringConst(SCM_STRING(truename));
 
+#if 0
     if ((suff = strrchr(cpath, '.')) && strcmp(suff, ".la") == 0) {
         truename = find_so_from_la(SCM_STRING(truename));
         if (SCM_FALSEP(truename)) {
@@ -599,6 +602,7 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
         }
         cpath = Scm_GetStringConst(SCM_STRING(truename));
     }
+#endif
 
     if (SCM_STRINGP(initfn)) {
         ScmObj _initfn = Scm_StringAppend2(SCM_STRING(Scm_MakeString("_", 1, 1, 0)),

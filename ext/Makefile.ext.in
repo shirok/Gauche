@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions
-## $Id: Makefile.ext.in,v 1.8 2003-05-29 21:12:13 shirok Exp $
+## $Id: Makefile.ext.in,v 1.9 2003-06-25 09:58:30 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -14,37 +14,36 @@ DESTDIR  =
 CC       = @CC@
 AR       = @AR@
 LIBS     = @LIBS@
-CFLAGS   = @CFLAGS@ 
+CFLAGS   = @CFLAGS@ @SHLIB_SO_CFLAGS@
 CPPFLAGS = @CPPFLAGS@
-LDFLAGS  = @LDFLAGS@
+LDFLAGS  = @SHLIB_SO_LDFLAGS@
 
 
 # These are set by configure
-LIBTOOL  = @LIBTOOL@ --disable-static
 DEFS     = @DEFS@
 OPTFLAGS = @OPTFLAGS@
 INCLUDES = -I$(srcdir) -I$(top_srcdir)/src -I$(top_srcdir)/gc/include @LOCAL_INC@ $(EXTRA_INCLUDES)
 RANLIB   = @RANLIB@
 OBJEXT   = @OBJEXT@
 EXEEXT   = @EXEEXT@
+SOEXT    = @SHLIB_SO_SUFFIX@
 
 # Main definition of compilation commands
 #  NB: we don't use -no-undefined flag to link, since it causes a problem
 #  on MacOSX, on which we need to make gosh statically linked.
 COMPILE   = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(OPTFLAGS)
-LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(OPTFLAGS)
 CCLD      = $(CC)
 MKINSTDIR = $(top_srcdir)/mkinstalldirs
-LINK      = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) $(EXT_NO_UNDEFINED) -o $@ -rpath $(GAUCHE_ARCHDIR)
-MODLINK   = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) $(EXT_NO_UNDEFINED) $(MOD_LDFLAGS) -o $@ -rpath $(GAUCHE_ARCHDIR)
-INSTALL   = $(LIBTOOL) --mode=install @INSTALL@
+LINK      = $(CCLD) $(CFLAGS) $(LDFLAGS)
+MODLINK   = $(CCLD) $(CFLAGS) $(LDFLAGS)
+INSTALL   = @INSTALL@
 
 GOSH = $(top_builddir)/src/gosh -ftest
 GAUCHE_CONFIG = $(SHELL) $(top_srcdir)/src/gauche-config
 INSTALL_TYPE = sys
 
 MOD_LDFLAGS  = -module -avoid-version
-EXT_LIBGAUCHE = @EXT_LIBGAUCHE@
+EXT_LIBGAUCHE = -L$(top_builddir)/src @EXT_LIBGAUCHE@
 EXT_NO_UNDEFINED = @EXT_NO_UNDEFINED@
 
 GAUCHE_INCDIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
@@ -54,13 +53,10 @@ GAUCHE_ARCHDIR = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 CLEANFILES = core *~ test.log
 
 .SUFFIXES:
-.SUFFIXES: .S .c .lo .o .obj .s .stub
+.SUFFIXES: .S .c .o .obj .s .stub
 
 .c.obj:
 	$(COMPILE) -c `cygpath -w $<`
-
-.c.lo:
-	$(LTCOMPILE) -c $<
 
 .c.o:
 	$(COMPILE) -c $<
@@ -71,14 +67,10 @@ CLEANFILES = core *~ test.log
 .S.o:
 	$(COMPILE) -c $<
 
-.s.lo:
-	$(LIBTOOL) --mode=compile $(COMPILE) -c $<
-
-.S.lo:
-	$(LIBTOOL) --mode=compile $(COMPILE) -c $<
-
 .stub.c :
 	$(GOSH) genstub $<
+
+default : all
 
 check : all
 	@rm -f test.log
@@ -88,7 +80,7 @@ install-check :
 	${bindir}/gosh test.scm
 
 clean : 
-	rm -rf $(CLEANFILES) .libs *.lo *.o *.la
+	rm -rf $(CLEANFILES) *.$(OBJEXT) *.$(SOEXT)
 
 distclean : clean
 	rm -rf $(GENERATED)

@@ -2,6 +2,8 @@ srcdir       = @srcdir@
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
+include ../Makefile.ext
+
 SCM_CATEGORY = dbm
 
 LIBFILES = @DBM_ARCHFILES@
@@ -11,24 +13,24 @@ GENERATED = Makefile gdbm.c ndbm.c odbm.c *_head.c *_tail.c
 
 all : $(LIBFILES)
 
-gdbm_OBJECTS   = gdbm_head.lo gdbm.lo gdbm_tail.lo
+gdbm_OBJECTS   = gdbm_head.$(OBJEXT) gdbm.$(OBJEXT) gdbm_tail.$(OBJEXT)
 
-gdbm.la : $(gdbm_OBJECTS)
-	$(MODLINK) $(gdbm_OBJECTS) $(EXT_LIBGAUCHE) @GDBMLIB@
+gdbm.$(SOEXT) : $(gdbm_OBJECTS)
+	$(MODLINK) gdbm.$(SOEXT) $(gdbm_OBJECTS) $(EXT_LIBGAUCHE) @GDBMLIB@ $(LIBS)
 
 gdbm.c : gdbm.stub
 
-ndbm_OBJECTS   = ndbm_head.lo ndbm.lo ndbm_tail.lo
+ndbm_OBJECTS   = ndbm_head.$(OBJEXT) ndbm.$(OBJEXT) ndbm_tail.$(OBJEXT)
 
-ndbm.la : $(ndbm_OBJECTS)
-	$(MODLINK) $(ndbm_OBJECTS) $(EXT_LIBGAUCHE) @NDBMLIB@
+ndbm.$(SOEXT) : $(ndbm_OBJECTS)
+	$(MODLINK) ndbm.$(SOEXT) $(ndbm_OBJECTS) $(EXT_LIBGAUCHE) @NDBMLIB@ $(LIBS)
 
 ndbm.c : ndbm.stub
 
-odbm_OBJECTS   = odbm_head.lo odbm.lo odbm_tail.lo
+odbm_OBJECTS   = odbm_head.$(OBJEXT) odbm.$(OBJEXT) odbm_tail.$(OBJEXT)
 
-odbm.la : $(odbm_OBJECTS)
-	$(MODLINK) $(odbm_OBJECTS) $(EXT_LIBGAUCHE) @ODBMLIB@
+odbm.$(SOEXT) : $(odbm_OBJECTS)
+	$(MODLINK) odbm.$(SOEXT) $(odbm_OBJECTS) $(EXT_LIBGAUCHE) @ODBMLIB@ $(LIBS)
 
 odbm.c : odbm.stub
 
@@ -46,4 +48,3 @@ install-dbm :
 
 install : install-dbm install-std
 
-include ../Makefile.ext

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.338 2003-06-04 09:18:05 shirok Exp $
+ *  $Id: gauche.h,v 1.339 2003-06-25 09:58:30 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -264,7 +264,7 @@ SCM_EXTERN int Scm_SupportedCharacterEncodingP(const char *encoding);
 /* For ScmClass, we shouldn't use __declspec(dllimport) magic on Win32.
  * See doc/cygwin-memo.txt for details.
  */
-#ifdef __CYGWIN__
+#if 0 /*def __CYGWIN__*/
 # define SCM_CLASS_DECL(klass)                      \
      SCM_EXTERN ScmClass klass;                     \
      extern ScmClass *SCM_CPP_CAT(_imp__, klass)
@@ -281,7 +281,7 @@ typedef struct ScmHeaderRec {
 #define SCM_HEADER       ScmHeader hdr /* for declaration */
 
 /* Only these two macros can access header's klass field. */
-#ifdef __CYGWIN__
+#if 0 /*def __CYGWIN__*/
 #define SCM_CLASS_OF(obj)      (*((ScmClass**)(SCM_OBJ(obj)->klass)))
 #define SCM_SET_CLASS(obj, k)  (SCM_OBJ(obj)->klass = (ScmClass*)((k)->classPtr))
 #else  /* !__CYGWIN__ */
@@ -405,7 +405,7 @@ SCM_EXTERN ScmObj Scm_VMThrowException(ScmObj exception);
 /* See class.c for the description of function pointer members. */
 struct ScmClassRec {
     SCM_HEADER;
-#ifdef __CYGWIN__
+#if 0 /*def __CYGWIN__*/
     ScmClass **classPtr;
 #endif
     void (*print)(ScmObj obj, ScmPort *sink, ScmWriteContext *mode);
@@ -502,7 +502,7 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
  */
 
 /* internal macro. do not use directly */
-#ifdef __CYGWIN__
+#if 0 /*def __CYGWIN__*/
 # define SCM__CLASS_PTR_SLOT(cname)   &SCM_CPP_CAT(_imp__, cname),
 # define SCM__CLASS_PTR_BODY(cname) \
       ; ScmClass *SCM_CPP_CAT(_imp__, cname) = &cname

@@ -2,19 +2,21 @@ srcdir       = @srcdir@
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
+include ../Makefile.ext
+
 SCM_CATEGORY = gauche
 
-LIBFILES = syslog.la
+LIBFILES = syslog.$(SOEXT)
 SCMFILES = syslog.scm
 
-OBJECTS = syslog_head.lo syslog.lo syslog_tail.lo
+OBJECTS = syslog_head.$(OBJEXT) syslog.$(OBJEXT) syslog_tail.$(OBJEXT)
 
 GENERATED = Makefile syslog.c syslog_head.c syslog_tail.c
 
 all : $(LIBFILES)
 
-syslog.la : $(OBJECTS) 
-	$(MODLINK)  $(OBJECTS) $(EXT_LIBGAUCHE)
+syslog.$(SOEXT) : $(OBJECTS) 
+	$(MODLINK) syslog.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE)
 
 syslog.c : syslog.stub
 
@@ -23,5 +25,4 @@ syslog_head.c syslog_tail.c :
 
 install : install-std
 
-include ../Makefile.ext
 

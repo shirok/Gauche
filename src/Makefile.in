@@ -6,13 +6,10 @@
 # prelude ---------------------------------------------
 
 .SUFFIXES:
-.SUFFIXES: .S .c .lo .o .obj .s .stub
+.SUFFIXES: .S .c .o .obj .s .stub
 
 .c.obj:
 	$(COMPILE) -c `cygpath -w $<`
-
-.c.lo:
-	$(LTCOMPILE) -c $<
 
 .c.o:
 	$(COMPILE) -c $<
@@ -22,12 +19,6 @@
 
 .S.o:
 	$(COMPILE) -c $<
-
-.s.lo:
-	$(LIBTOOL) --mode=compile $(COMPILE) -c $<
-
-.S.lo:
-	$(LIBTOOL) --mode=compile $(COMPILE) -c $<
 
 .stub.c:
 	gosh ./genstub -D LIBGAUCHE_BODY $<
@@ -53,21 +44,20 @@ LDFLAGS  = @LDFLAGS@
 
 
 # These are set by configure
-LIBTOOL  = @LIBTOOL@ @MAIN_LIBTOOL_OPTION@
 DEFS     = @DEFS@
 OPTFLAGS = @OPTFLAGS@
 INCLUDES = -I$(srcdir) -I$(srcdir)/../gc/include @LOCAL_INC@
 RANLIB   = @RANLIB@
 OBJEXT   = @OBJEXT@
 EXEEXT   = @EXEEXT@
+SOEXT    = @SHLIB_DYLIB_SUFFIX@
 
 # Main definition of compilation commands
 COMPILE   = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(OPTFLAGS)
-LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(OPTFLAGS)
-CCLD      = $(CC)
 MKINSTDIR = $(top_srcdir)/mkinstalldirs
-LINK      = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
-INSTALL   = $(LIBTOOL) --mode=install @INSTALL@
+CCLD      = $(CC)
+LINK      = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
+INSTALL   = @INSTALL@
 
 LIB_INSTALL_DIR  = @libdir@
 BIN_INSTALL_DIR  = @bindir@
@@ -90,7 +80,7 @@ INSTALL_SUBHEADERS = gauche/config.h gauche/vm.h gauche/vminsn.h \
                      gauche/predef-syms.h gauche/extend.h        \
 		     gauche/class.h gauche/exception.h           \
                      gauche/pthread.h gauche/uthread.h gauche/arch.h
-INSTALL_LIBS = libgauche.la
+INSTALL_LIBS = libgauche.$(SOEXT)
 INSTALL_BINS = gosh gauche-config
 INSTALL_SCMS = genstub gauche-init.scm
 
@@ -101,25 +91,30 @@ GCLIB = ../gc/libgc.la
 
 gosh_SOURCES = main.c
 gosh_OBJECTS = main.$(OBJEXT)
-gosh_LDADD   = libgauche.la
-gosh_LDFLAGS = 
+gosh_LDADD   = -L. -lgauche
+gosh_LDFLAGS = @SHLIB_MAIN_LDFLAGS@
 
-libgauche_la_LTLIBRARIES = libgauche.la
-libgauche_la_OBJECTS     = \
-       core.lo vm.lo compile.lo macro.lo error.lo class.lo boolean.lo char.lo \
-       string.lo list.lo port.lo hash.lo write.lo read.lo vector.lo weak.lo \
-       symbol.lo keyword.lo compare.lo regexp.lo signal.lo parameter.lo \
-       module.lo proc.lo number.lo bignum.lo load.lo promise.lo repl.lo \
-       system.lo stdlib.lo extlib.lo exclib.lo syslib.lo moplib.lo
-libgauche_la_LDFLAGS     = -no-undefined -version-info 0:0:0
+libgauche_LIBRARY = libgauche.$(SOEXT)
+libgauche_OBJECTS = \
+        core.$(OBJEXT) vm.$(OBJEXT) compile.$(OBJEXT) macro.$(OBJEXT) \
+	error.$(OBJEXT) class.$(OBJEXT) boolean.$(OBJEXT) char.$(OBJEXT) \
+        string.$(OBJEXT) list.$(OBJEXT) port.$(OBJEXT) hash.$(OBJEXT) \
+	write.$(OBJEXT) read.$(OBJEXT) vector.$(OBJEXT) weak.$(OBJEXT) \
+	symbol.$(OBJEXT) keyword.$(OBJEXT) compare.$(OBJEXT) \
+	regexp.$(OBJEXT) signal.$(OBJEXT) parameter.$(OBJEXT) \
+	module.$(OBJEXT) proc.$(OBJEXT) number.$(OBJEXT) bignum.$(OBJEXT) \
+	load.$(OBJEXT) promise.$(OBJEXT) repl.$(OBJEXT) \
+	system.$(OBJEXT) stdlib.$(OBJEXT) extlib.$(OBJEXT) exclib.$(OBJEXT) \
+	syslib.$(OBJEXT) moplib.$(OBJEXT)
+libgauche_LDFLAGS = @SHLIB_SO_LDFLAGS@
 
 HEADERS = gauche.h $(INSTALL_SUBHEADERS)
 
-OBJECTS = $(libgauche_la_OBJECTS) $(gosh_OBJECTS)
+OBJECTS = $(libgauche_OBJECTS) $(gosh_OBJECTS)
 
-all : gosh$(EXEEXT) libgauche.la
+all : gosh$(EXEEXT) libgauche.$(SOEXT)
 
-gosh$(EXEEXT) : libgauche.la $(gosh_OBJECTS) 
+gosh$(EXEEXT) : libgauche.$(SOEXT) $(gosh_OBJECTS) 
 	@rm -f gosh$(EXEEXT)
 	$(LINK) $(gosh_LDFLAGS) $(gosh_OBJECTS) $(gosh_LDADD) $(LIBS)
 
@@ -135,8 +130,8 @@ port.$(OBJEXT) : port.c portapi.c
 
 load.$(OBJEXT) : dl_dlopen.c dl_dummy.c dl_win.c dl_darwin.c
 
-libgauche.la : $(libgauche_la_OBJECTS) $(GCLIB)
-	$(LINK) -rpath $(libdir) $(libgauche_la_LDFLAGS) $(libgauche_la_OBJECTS) $(GCLIB) $(LIBS)
+libgauche.$(SOEXT) : $(libgauche_OBJECTS) $(GCLIB)
+	$(LINK) $(libgauche_LDFLAGS) libgauche.$(SOEXT) $(libgauche_OBJECTS) ../gc/.libs/*.o $(LIBS)
 
 gauche/arch.h :
 	@rm -f gauche/arch.h
@@ -163,10 +158,10 @@ test : gosh$(EXEEXT) test-vmstack$(EXEEXT) test-arith$(EXEEXT)
 	@./gosh -ftest -fcase-fold -e "(define *case-fold* #t)" ../test/symcase.scm >> test.log
 	@echo "See test.log for details."
 
-test-vmstack$(EXEEXT) : test-vmstack.$(OBJEXT) libgauche.la
+test-vmstack$(EXEEXT) : test-vmstack.$(OBJEXT) libgauche.$(SOEXT)
 	$(LINK)	test-vmstack.$(OBJEXT) $(gosh_LDADD) $(LIBS)
 
-test-arith$(EXEEXT) : test-arith.$(OBJEXT) libgauche.la
+test-arith$(EXEEXT) : test-arith.$(OBJEXT) libgauche.$(SOEXT)
 	$(LINK)	test-arith.$(OBJEXT) $(gosh_LDADD) $(LIBS)
 
 test-arith.$(OBJEXT) : gauche/arith.h
@@ -184,8 +179,7 @@ CONFIG_GENERATED = Makefile gauche-config gauche-config.h
 clean :
 	rm -rf core core.[0-9]* gosh$(EXEEXT) \
 	       test-vmstack$(EXEEXT) test-arith$(EXEEXT)   \
-	       libgauche.la *.lo *.o *~ *.a *.t *.def *.exp \
-	       .libs .deps \
+	       libgauche.$(SOEXT) *.$(OBJEXT) *~ *.a *.t *.def *.exp \
 	       test.log test.dir so_locations gauche/*~ gauche/arch.h
 
 distclean : clean
