@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char_euc_jp.h,v 1.11 2002-06-12 12:01:24 shirok Exp $
+ *  $Id: char_euc_jp.h,v 1.12 2003-02-09 08:10:38 shirok Exp $
  */
 
 #ifndef SCM_CHAR_ENCODING_BODY
@@ -88,22 +88,9 @@
  * just before cp.   cp and start is not modified.
  */
 #define SCM_CHAR_BACKWARD(cp, start, result)                    \
-    do {                                                        \
-        switch ((cp) - (start)) {                               \
-        default:                                                \
-            (result) = (cp) - 3;                                \
-            if (SCM_CHAR_NFOLLOWS(*(result)) == 2) break;       \
-            /* FALLTHROUGH */                                   \
-        case 2:                                                 \
-            (result) = (cp) - 2;                                \
-            if (SCM_CHAR_NFOLLOWS(*(result)) == 1) break;       \
-            /* FALLTHROUGH */                                   \
-        case 1:                                                 \
-            (result) = (cp) - 1;                                \
-            if (SCM_CHAR_NFOLLOWS(*(result)) == 0) break;       \
-            (result) = NULL;                                    \
-        }                                                       \
-    } while (0)
+    ((result) = Scm_CharBackwardEUC(cp, start))
+
+SCM_EXTERN const char *Scm_CharBackwardEUC(const char *cp, const char *start);
 
 #else  /* !SCM_CHAR_ENCODING_BODY */
 /*==================================================================
@@ -117,5 +104,33 @@ static const char *supportedCharacterEncodings[] = {
     "EUCJP",
     NULL
 };
+
+/* An ad-hoc algorithm to return a ptr to the previous character
+   boundary. */
+const char *Scm_CharBackwardEUC(const char *cp, const char *start)
+{
+    const unsigned char *t;
+    /* be careful not to access beyond the beginning of the string */
+    switch (cp - start) {
+    default:
+        t = (unsigned char*)(cp-3);
+        if (t[0] == 0x8f && t[1] > 0xa0 && t[2] > 0xa0) {
+            return (const char *)t;
+        }
+        /*FALLTHROUGH*/
+    case 2:
+        t = (unsigned char*)(cp-2);
+        if ((t[0] > 0xa0 || t[0] == 0x8e) && t[1] > 0xa0) {
+            return (const char*)t;
+        }
+        /*FALLTHROUGH*/
+    case 1:
+        t = (unsigned char*)(cp-1);
+        if (t[0] < 0x80) {
+            return (const char*)t;
+        }
+    }
+    return NULL;
+}
 
 #endif /* !SCM_CHAR_ENCODING_BODY */

@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with euc-jp.
 
-;; $Id: euc-jp.scm,v 1.18 2003-02-05 09:50:00 shirok Exp $
+;; $Id: euc-jp.scm,v 1.19 2003-02-09 08:10:38 shirok Exp $
 
 (use gauche.test)
 
@@ -108,6 +108,18 @@
          (string-pointer-set! sp 0)
          (list (string-pointer-substring sp)
                (string-pointer-substring sp :after #t))))
+
+;; torturing backward pointer movement
+(define sp (make-string-pointer "むa" -1))
+(test* "string-pointer-prev!" #\a (string-pointer-prev! sp))
+(test* "string-pointer-prev!" #\む (string-pointer-prev! sp))
+(test* "string-pointer-prev!" #t (eof-object? (string-pointer-prev! sp)))
+
+(define sp (make-string-pointer "ｲﾁﾞめﾙa" -1)) ;;dreaded jisx0201 kana
+(test* "string-pointer-prev!" #\a (string-pointer-prev! sp))
+(test* "string-pointer-prev!" #\ﾙ (string-pointer-prev! sp))
+(test* "string-pointer-prev!" #\め (string-pointer-prev! sp))
+(test* "string-pointer-prev!" #\ﾞ (string-pointer-prev! sp))
 
 ;;-------------------------------------------------------------------
 (test-section "incomplete strings")

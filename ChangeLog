@@ -1,3 +1,9 @@
+2003-02-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/char_euc_jp.h (Scm_CharBackwardEUC): made string pointer
+	  backward operation work more precisely so that it won't be confused
+	  with ASCII/Kanji mixed situation.
+
 2003-02-07  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.6.7.1
