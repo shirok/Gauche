@@ -8526,9 +8526,9 @@ This is the common usage of pthreads' condition variable:
 このような、pthreadで条件変数を使う定石は：
 @c COMMON
 @example
-while (some_condition != TRUE) {
+while (some_condition != TRUE) @{
   pthread_cond_wait(condition_variable, mutex);
-}
+@}
 @end example
 @c EN
 And it can be translated to SRFI-18 as follows:
