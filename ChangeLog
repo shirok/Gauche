@@ -1,5 +1,8 @@
 2004-11-01  Shiro Kawai  <shiro@acm.org>
 
+	* lib/file/util.scm (directory-list): fix not to include "." and
+	  ".." even if :filter-add-path? is #t.
+
 	* lib/srfi-19.scm (date->julian-day): fix a bug to honor tz-offset.
 
 	* configure.ac, ext/Makefile.in : added ext/vport

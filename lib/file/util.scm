@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.27 2004-07-26 20:50:57 shirok Exp $
+;;;  $Id: util.scm,v 1.28 2004-11-01 21:53:30 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -98,7 +98,7 @@
 (define (%directory-filter-compose opts)
   (apply every-pred
          (cond-list ((get-keyword :children? opts #f)
-                     (lambda (e) (not (member e '("." "..")))))
+                     (lambda (e) (not (member (sys-basename e) '("." "..")))))
                     ((get-keyword :filter opts #f)))))
 
 ;; directory-list DIR &keyword ADD-PATH? FILTER-ADD-PATH? CHILDREN? FILTER
