@@ -1,3 +1,8 @@
+2002-11-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/822.scm : deal with empty header (patch from Kimura
+	  Shigenobu)	  
+
 2002-11-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c (Scm_MakeFillString): added arg range check (pointed
