@@ -33,6 +33,10 @@
        (string->list "abcdefg" 0 1)) ;srfi-13 extension
 (test* "string->list" '() (string->list ""))
 
+;; 
+(test* "string w/ char >= \\x80" (integer->char #xa1)
+       (string-ref (string (integer->char #xa1)) 0))
+
 (test* "string-copy" '("abcde" #f)
        (let* ((x "abcde") (y (string-copy x)))
          (list y (eq? x y))))

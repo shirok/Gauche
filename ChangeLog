@@ -1,3 +1,8 @@
+2003-07-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/char_none.h (SCM_CHAR_GET): make sure retrieval of
+	  char is not sign-extended.
+
 2003-07-08  Shiro Kawai  <shiro@acm.org>
 
 	* configure.in, configure.ac, ext/charconv/charconv.ac,

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char_none.h,v 1.6 2003-07-05 03:29:13 shirok Exp $
+ *  $Id: char_none.h,v 1.7 2003-07-10 13:12:28 shirok Exp $
  */
 
 #ifndef SCM_CHAR_ENCODING_BODY
@@ -59,7 +59,7 @@
 /* Maximun # of multibyte character */
 #define SCM_CHAR_MAX_BYTES     1
 
-#define SCM_CHAR_GET(cp, ch) ((ch) = *(cp))
+#define SCM_CHAR_GET(cp, ch) ((ch) = *(const unsigned char*)(cp))
 #define SCM_CHAR_PUT(cp, ch)  (*(cp) = (ch))
 
 #define SCM_CHAR_BACKWARD(cp, start, result)    \
