@@ -10,7 +10,7 @@
  *     the allocated memory for random number generator object.
  *   - changed the names of the functions
  *   - added stuff to make it as a Gauche extension module.
- * $Id: mt-random.c,v 1.3 2002-05-11 10:19:43 shirok Exp $
+ * $Id: mt-random.c,v 1.4 2002-05-12 02:21:48 shirok Exp $
  *
  * The original copyright notice follows.
  */
@@ -154,21 +154,19 @@ inline unsigned long Scm_MTGenrandU32(ScmMersenneTwister *mt)
     return y;
 }
 
-/* generates a random number on (0,1)-real-interval */
-/* this is modified from the original version to exclude 0,
-   according to the proposed SRFI-27 */
-float Scm_MTGenrandF32(ScmMersenneTwister *mt)
+/* generates a random number on (0,1) or [0,1) -real-interval */
+float Scm_MTGenrandF32(ScmMersenneTwister *mt, int exclude0)
 {
     float r;
     do {
         r = (float)(Scm_MTGenrandU32(mt)*(1.0/4294967296.0));
         /* divided by 2^32 */
-    } while (r == 0.0); /*if we get 0.0, try another one. */;
+    } while (exclude0 && r == 0.0); /*if we get 0.0, try another one. */;
     return r;
 }
 
-/* generates a random number on (0,1) with 53-bit resolution*/
-double Scm_MTGenrandF64(ScmMersenneTwister *mt)
+/* generates a random number on (0,1) or [0,1) with 53-bit resolution*/
+double Scm_MTGenrandF64(ScmMersenneTwister *mt, int exclude0)
 {
     double r;
     unsigned long a, b;
@@ -176,7 +174,7 @@ double Scm_MTGenrandF64(ScmMersenneTwister *mt)
         a = Scm_MTGenrandU32(mt)>>5;
         b = Scm_MTGenrandU32(mt)>>6;
         r = (a*67108864.0+b)*(1.0/9007199254740992.0);
-    } while (r == 0.0); /*if we get 0.0, try another one. */;
+    } while (exclude0 && r == 0.0); /*if we get 0.0, try another one. */;
     return r;
 } 
 

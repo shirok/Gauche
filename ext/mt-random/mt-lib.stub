@@ -46,7 +46,11 @@
 
 (define-cproc mt-random-real (mt)
   (assert (mersenne-twister? mt))
-  "SCM_RETURN(Scm_MakeFlonum(Scm_MTGenrandF64(mt)));")
+  "SCM_RETURN(Scm_MakeFlonum(Scm_MTGenrandF64(mt, TRUE)));")
+
+(define-cproc mt-random-real0 (mt)
+  (assert (mersenne-twister? mt))
+  "SCM_RETURN(Scm_MakeFlonum(Scm_MTGenrandF64(mt, FALSE)));")
 
 (define-cproc %mt-random-integer (mt n)
   (assert (mersenne-twister? mt))
@@ -69,7 +73,7 @@
   (assert (f32vector? v))
   " int len = SCM_F32VECTOR_SIZE(v), i;
   float *p = SCM_F32VECTOR_ELEMENTS(v);
-  for (i=0; i<len; i++) *p++ = Scm_MTGenrandF32(mt);
+  for (i=0; i<len; i++) *p++ = Scm_MTGenrandF32(mt, TRUE);
   SCM_RETURN(SCM_OBJ(v));")
 
 (define-cproc mt-random-fill-f64vector! (mt v)
@@ -77,6 +81,6 @@
   (assert (f64vector? v))
   " int len = SCM_F64VECTOR_SIZE(v), i;
   double *p = SCM_F64VECTOR_ELEMENTS(v);
-  for (i=0; i<len; i++) *p++ = Scm_MTGenrandF64(mt);
+  for (i=0; i<len; i++) *p++ = Scm_MTGenrandF64(mt, TRUE);
   SCM_RETURN(SCM_OBJ(v));")
 
