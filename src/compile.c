@@ -12,10 +12,34 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.28 2001-02-20 06:01:51 shiro Exp $
+ *  $Id: compile.c,v 1.29 2001-02-21 13:32:24 shiro Exp $
  */
 
 #include "gauche.h"
+
+/*
+ * Identifier object
+ */
+
+static int identifier_print(ScmObj obj, ScmPort *port, int mode)
+{
+    return Scm_Printf(port, "#<gvar %A::%A>",
+                      SCM_IDENTIFIER(obj)->module->name,
+                      SCM_IDENTIFIER(obj)->name);
+}
+
+SCM_DEFCLASS(Scm_IdentifierClass, "<identifier>",
+             identifier_print, SCM_CLASS_DEFAULT_CPL);
+
+ScmObj Scm_MakeIdentifier(ScmSymbol *name, ScmObj env)
+{
+    ScmIdentifier *id = SCM_NEW(ScmIdentifier);
+    SCM_SET_CLASS(id, SCM_CLASS_IDENTIFIER);
+    id->name = name;
+    id->module = SCM_CURRENT_MODULE();
+    id->env = env;
+    return SCM_OBJ(id);
+}
 
 /*
  * SourceInfo object
@@ -48,14 +72,15 @@ ScmObj Scm_MakeSourceInfo(ScmObj info, ScmSourceInfo *up)
  *    concatenated later.
  */
 
-static ScmObj lookup_env(ScmObj symbol, ScmObj env);
 static ScmObj compile_varref(ScmObj form, ScmObj env);
 static ScmObj compile_int(ScmObj form, ScmObj env, int ctx);
 static ScmObj compile_lambda_family(ScmObj form, ScmObj args, ScmObj body,
                                     ScmObj env, int ctx);
 
-#define FREE_VAR_P(sym, env)  SCM_SYMBOLP(lookup_env(sym, env))
-#define TOPLEVEL_ENV_P(env)   SCM_NULLP(env)
+#define LIST1_P(obj) \
+    (SCM_PAIRP(obj) && SCM_NULLP(SCM_CDR(obj)))
+#define LIST2_P(obj) \
+    (SCM_PAIRP(obj) && SCM_PAIRP(SCM_CDR(obj)) && SCM_NULLP(SCM_CDDR(obj)))
 
 #define ADDCODE1(c)   SCM_APPEND1(code, codetail, c)
 #define ADDCODE(c)    SCM_APPEND(code, codetail, c)
@@ -84,9 +109,10 @@ enum {
  *   we saw free variables; in our hierarchical module system, we can't
  *   do that.)
  *
- *   So we just put a [GREF symbol] or [SET symbol] in the compiled code.
+ *   So we just put a [GREF <id>] or [GSET <id>] in the compiled code,
+ *   where <id> is an identifier.
  *   At runtime, VM looks for the binding in the given module and replaces
- *   the symbol to the GLOC object.  Afterwards, the global reference will
+ *   <id> to the GLOC object.  Afterwards, the global reference will
  *   be faster.
  *
  *   This "memorization" creates a small hazard in the interative
@@ -129,15 +155,117 @@ enum {
  *   I think.
  */
 
+/* entry point. */
 ScmObj Scm_Compile(ScmObj form, ScmObj env, int context)
 {
     return compile_int(form, env, context);
 }
 
+/* Notes on compiler environment:
+ *
+ *   Compiler environment is a structure representing current lexical
+ *   scope.  It is passed around during compilation.   It's not the
+ *   same as runtime environment, which keeps actual values.
+ *
+ *   Compiler environment is simply a list of lists.  Each inner list
+ *   represents a frame, and innermost frame comes first.  Each frame
+ *   is either a variable binding frame or a syntactic binding frame.
+ *   Syntactic binding frame is inserted by let-syntax and letrec-syntax.
+ *
+ *     (<var> ...)       ; variable binding frame
+ *
+ *     (#t (<var> . <syntax>) ...) ; syntactic binding frame
+ *
+ *   where <var> is either a symbol or an identifier.
+ *
+ *   There are a few interface functions to access this structure.
+ *
+ *     free_var_p(VAR, ENV)  returns VAR when it is not bound locally.
+ *        Syntactic binding is ignored.
+ *
+ *     lookup_env(VAR, ENV, OP)  
+ *        When OP is false, VAR is looked up in variable binding frames.
+ *        if it is bound locally, an LREF object is returned.  Otherwise
+ *        an identifier is returned.
+ *        When OP is true, VAR is looked up both in variable binding
+ *        frames and in syntactic binding frames.  If it is bound locally,
+ *        an LREF object or a syntax object is returned.  Otherwise, VAR
+ *        is returned.
+ *
+ *     global_eq(VAR, SYM, ENV)  returns true iff VAR is a free variable
+ *        and it's symbol is eq? to SYM.
+ */
+
+#define VAR_P(obj)         (SCM_SYMBOLP(obj)||SCM_IDENTIFIERP(obj))
+#define ENSURE_SYMBOL(obj) \
+    (SCM_IDENTIFIERP(obj)? SCM_OBJ(SCM_IDENTIFIER(obj)->name) : (obj))
+#define ENSURE_IDENTIFIER(obj, env) \
+    (SCM_SYMBOLP(obj)? Scm_MakeIdentifier(SCM_SYMBOL(obj), env) : (obj))
+
+#define TOPLEVEL_ENV_P(env)   SCM_NULLP(env)
+
+static inline ScmObj free_var_p(ScmObj var, ScmObj env)
+{
+    ScmObj frame, fp;
+    SCM_FOR_EACH(frame, env) {
+        if (SCM_PAIRP(SCM_CAR(frame)) && SCM_TRUEP(SCM_CAAR(frame))) continue;
+        SCM_FOR_EACH(fp, SCM_CAR(frame)) {
+            if (SCM_CAR(fp) == var) return FALSE;
+        }
+    }
+    return var;
+}
+
+static inline ScmObj lookup_env(ScmObj var, ScmObj env, int op)
+{
+    ScmObj frame, fp;
+    int depth = 0, offset = 0;
+    SCM_FOR_EACH(frame, env) {
+        if (SCM_PAIRP(SCM_CAR(frame)) && SCM_TRUEP(SCM_CAAR(frame))) {
+            if (op) {
+                SCM_FOR_EACH(fp, SCM_CDAR(frame)) {
+                    if (SCM_CAAR(fp) == var) return SCM_CDAR(fp);
+                }
+            }
+            continue;
+        }
+        SCM_FOR_EACH(fp, SCM_CAR(frame)) {
+            if (SCM_CAR(fp) == var)
+                return SCM_VM_INSN2(SCM_VM_LREF, depth, offset);
+            offset++;
+        }
+        depth++;
+        offset = 0;
+    }
+    if (SCM_SYMBOLP(var) && !op) {
+        return Scm_MakeIdentifier(SCM_SYMBOL(var), env);
+    } else {
+        return var;
+    }
+}
+
+static inline int global_eq(ScmObj var, ScmObj sym, ScmObj env)
+{
+    ScmObj v;
+    if (!VAR_P(var)) return FALSE;
+    v = lookup_env(var, env, TRUE);
+    if (SCM_IDENTIFIERP(v)) {
+        return SCM_OBJ(SCM_IDENTIFIER(v)->name) == sym;
+    } else if (SCM_SYMBOLP(v)) {
+        return v == sym;
+    } else {
+        return FALSE;
+    }
+}
+
 ScmObj Scm_CompileLookupEnv(ScmObj sym, ScmObj env)
 {
-    return lookup_env(sym, env);
+    return lookup_env(sym, env, FALSE);
 }
+
+/*
+ * Compiler main body
+ */
 
 static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
 {
@@ -149,12 +277,33 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
            or a function call */
         ScmObj head = SCM_CAR(form);
         
-        if (SCM_SYMBOLP(head)) {
-            head = lookup_env(head, env);
-            if (SCM_SYMBOLP(head)) {
-                /* Let's see if the symbol is bound to a syntax, a macro,
-                   or an inlinable procedure in the current module. */
-                ScmGloc *g = Scm_FindBinding(vm->module, SCM_SYMBOL(head), FALSE);
+        if (VAR_P(head)) {
+            ScmObj var = lookup_env(head, env, TRUE);
+            ScmSymbol *sym;
+            ScmGloc *g;
+            
+            if (SCM_VM_INSNP(var)) {
+                /* variable is bound locally */
+                head = SCM_LIST1(var);
+            } else if (SCM_SYNTAXP(var)) {
+                /* variable is bound syntactically. */
+                ScmCompileProc cmpl = SCM_SYNTAX(var)->compiler;
+                void *data = SCM_SYNTAX(var)->data;
+                return cmpl(form, env, ctx, data);
+            } else {
+                /* it's a global variable.   Let's see if the symbol is
+                   bound to a global syntax, or an inlinable procedure
+                   in the current module. */
+                if (SCM_IDENTIFIERP(var)) {
+                    sym = SCM_IDENTIFIER(var)->name;
+                } else if (SCM_SYMBOLP(var)) {
+                    sym = SCM_SYMBOL(var);
+                } else {
+                    Scm_Printf(SCM_CURERR, "AARGGARGA: %S\n", var);
+                    Scm_Panic("internal compiler error (compile_int)");
+                }
+            
+                g = Scm_FindBinding(vm->module, sym, FALSE);
                 if (g != NULL) {
                     if (SCM_SYNTAXP(g->value)) {
                         ScmCompileProc cmpl = SCM_SYNTAX(g->value)->compiler;
@@ -169,12 +318,9 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                         if (!SCM_FALSEP(inlined)) return inlined;
                     }
                 }
-                
                 /* Symbol doesn't have syntactic bindings.  It must be
                    a global procedure call. */
-                head = SCM_LIST2(SCM_VM_INSN(SCM_VM_GREF), head);
-            } else {
-                head = SCM_LIST1(head);
+                head = compile_varref(var, SCM_NIL);
             }
         } else {
             head = compile_int(head, env, SCM_COMPILE_NORMAL);
@@ -205,7 +351,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
             return code;
         }
     }
-    if (SCM_SYMBOLP(form)) {
+    if (VAR_P(form)) {
         /* variable reference.  even in the statement context we evaluate
            the variable, for it may raise an error. */
         ADDCODE(compile_varref(form, env));
@@ -219,33 +365,19 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
     }
 }
 
-static ScmObj lookup_env(ScmObj symbol, ScmObj env)
+/* obj may be a symbol or global var */
+static ScmObj compile_varref(ScmObj obj, ScmObj env)
 {
-    int depth = 0;
-    int offset = 0;
-    ScmObj frame, var;
-    
-    SCM_FOR_EACH(frame, env) {
-        SCM_FOR_EACH(var, SCM_CAR(frame)) {
-            if (SCM_CAR(var) == symbol)
-                return SCM_VM_INSN2(SCM_VM_LREF, depth, offset);
-            offset++;
-        }
-        depth++;
-        offset = 0;
-    }
-    return symbol;              /* global ref */
-}
-
-static ScmObj compile_varref(ScmObj sym, ScmObj env)
-{
-    ScmObj v = lookup_env(sym, env);
     ScmObj code = SCM_NIL, codetail;
-    if (SCM_SYMBOLP(v)) {
+
+    obj = lookup_env(obj, env, FALSE);
+    if (VAR_P(obj)) {
         ADDCODE1(SCM_VM_INSN(SCM_VM_GREF));
+        ADDCODE1(obj);
+    } else {
+        ADDCODE1(obj);
     }
-    ADDCODE1(v);
-    ADDCODE1(Scm_MakeSourceInfo(sym, NULL));
+    ADDCODE1(Scm_MakeSourceInfo(obj, NULL));
     return code;
 }
 
@@ -275,15 +407,15 @@ static ScmObj compile_define(ScmObj form,
 
     if (SCM_PAIRP(var)) {
         /* (define (f args ...) body ...) */
-        if (!SCM_SYMBOLP(SCM_CAR(var)))
-            Scm_Error("syntax error: %S", form);
+        if (!VAR_P(SCM_CAR(var))) Scm_Error("syntax error: %S", form);
         val = compile_lambda_family(form, SCM_CDR(var), SCM_CDR(tail),
                                     env, SCM_COMPILE_NORMAL);
-        var = SCM_CAR(var);
+        var = ENSURE_IDENTIFIER(SCM_CAR(var), env);
     } else {
-        if (!SCM_PAIRP(SCM_CDR(tail)) || !SCM_NULLP(SCM_CDR(SCM_CDR(tail))))
+        if (!VAR_P(var) || !LIST1_P(SCM_CDR(tail)))
             Scm_Error("syntax error: %S", form);
         val = compile_int(SCM_CADR(tail), env, SCM_COMPILE_NORMAL);
+        var = ENSURE_IDENTIFIER(var, env);
     }
 
     ADDCODE(val);
@@ -302,16 +434,56 @@ static ScmSyntax syntax_define = {
 /*------------------------------------------------------------------
  * QUOTE
  */
+
+/* Convert all identifiers in form into a symbol.
+   Avoid extra allocation as much as possible. */
+static ScmObj unwrap_identifier(ScmObj form)
+{
+    if (SCM_PAIRP(form)) {
+        ScmObj ca = unwrap_identifier(SCM_CAR(form));
+        ScmObj cd = unwrap_identifier(SCM_CDR(form));
+        if (ca == SCM_CAR(form) && cd == SCM_CDR(form)) {
+            return form;
+        } else {
+            return Scm_Cons(ca, cd);
+        }
+    }
+    if (SCM_IDENTIFIERP(form)) {
+        return SCM_OBJ(SCM_IDENTIFIER(form)->name);
+    }
+    if (SCM_VECTORP(form)) {
+        int i, j, len = SCM_VECTOR_SIZE(form);
+        ScmObj elt, *pelt = SCM_VECTOR_ELEMENTS(form);
+        for (i=0; i<len; i++, pelt++) {
+            elt = unwrap_identifier(*pelt);
+            if (elt != *pelt) {
+                ScmObj newvec = Scm_MakeVector(len, SCM_FALSE);
+                pelt = SCM_VECTOR_ELEMENTS(form);
+                for (j=0; j<i; j++, pelt++) {
+                    SCM_VECTOR_ELEMENT(newvec, j) = *pelt;
+                }
+                SCM_VECTOR_ELEMENT(newvec, i) = elt;
+                for (pelt++; j<len; j++, pelt++) {
+                    SCM_VECTOR_ELEMENT(newvec, j) = unwrap_identifier(*pelt);
+                }
+                return newvec;
+            }
+        }
+        return form;
+    }
+    return form;
+}
+
 static ScmObj compile_quote(ScmObj form,
                             ScmObj env, 
                             int ctx,
                             void *data)
 {
     ScmObj tail = SCM_CDR(form);
-    if (!SCM_PAIRP(tail) || !SCM_NULLP(SCM_CDR(tail)))
+    if (!LIST1_P(tail))
         Scm_Error("syntax error: %S", form);
     if (ctx == SCM_COMPILE_STMT) return SCM_NIL;
-    else return SCM_LIST1(SCM_CAR(tail));
+    else return SCM_LIST1(unwrap_identifier(SCM_CAR(tail)));
 }
 
 static ScmSyntax syntax_quote = {
@@ -333,10 +505,7 @@ static ScmObj compile_set(ScmObj form,
     ScmObj location, expr;
     ScmObj code = SCM_NIL, codetail;
 
-    if (!SCM_PAIRP(tail) || !SCM_PAIRP(SCM_CDR(tail))
-        || !SCM_NULLP(SCM_CDDR(tail))) {
-        Scm_Error("syntax error: %S", form);
-    }
+    if (!LIST2_P(tail)) Scm_Error("syntax error: %S", form);
     location = SCM_CAR(tail);
     expr = SCM_CADR(tail);
 
@@ -344,13 +513,13 @@ static ScmObj compile_set(ScmObj form,
     if (SCM_PAIRP(location)) {
         Scm_Error("generalized set! not supported (yet): %S", form);
     }
-    if (!SCM_SYMBOLP(location)) {
+    if (!VAR_P(location)) {
         Scm_Error("syntax error: %S", form);
     }
 
-    location = lookup_env(location, env);
+    location = lookup_env(location, env, FALSE);
     ADDCODE(compile_int(expr, env, SCM_COMPILE_NORMAL));
-    if (SCM_SYMBOLP(location)) {
+    if (SCM_IDENTIFIERP(location)) {
         ADDCODE1(SCM_VM_INSN(SCM_VM_GSET));
         ADDCODE1(location);
     } else {
@@ -387,40 +556,36 @@ static ScmObj compile_body(ScmObj form,
 
     SCM_FOR_EACH(formtail, form) {
         ScmObj expr = SCM_CAR(formtail), x;
-
         /* Check for internal define. */
-        if (SCM_PAIRP(expr) && SCM_CAR(expr) == SCM_SYM_DEFINE) {
+        if (SCM_PAIRP(expr) && global_eq(SCM_CAR(expr), SCM_SYM_DEFINE, env)) {
             ScmObj var, val;
             int llen;
 
-            if (FREE_VAR_P(SCM_SYM_DEFINE, env)) {
-                if (body_started)
-                    Scm_Error("internal define should appear at the head of teh body: %S",
-                              expr);
-                if ((llen = Scm_Length(expr)) < 3)
+            if (body_started)
+                Scm_Error("internal define should appear at the head of teh body: %S",
+                          expr);
+            if ((llen = Scm_Length(expr)) < 3)
+                Scm_Error("badly formed internal define: %S", expr);
+            var = SCM_CADR(expr);
+            if (SCM_PAIRP(var)) {
+                ScmObj args = SCM_CDR(var);
+                var = SCM_CAR(var);
+                if (!VAR_P(var) || !check_valid_lambda_args(args))
                     Scm_Error("badly formed internal define: %S", expr);
-                var = SCM_CADR(expr);
-                if (SCM_PAIRP(var)) {
-                    ScmObj args = SCM_CDR(var);
-                    if (!check_valid_lambda_args(args))
-                        Scm_Error("badly formed internal define: %S", expr);
-                    var = SCM_CAR(var);
-                    /* TODO: this doens't work if `lambda' is locally bound.
-                       Need to use compile_lambda_family, but we can't
-                       use it until we have the new environment. */
-                    val = Scm_Cons(SCM_SYM_LAMBDA,
-                                   Scm_Cons(args, SCM_CDDR(expr)));
-                } else {
-                    if (llen != 3)
-                        Scm_Error("badly formed internal define: %S", expr);
-                    val = SCM_CAR(SCM_CDDR(expr));
-                }
-
-                SCM_APPEND1(idef_vars, idef_vars_tail, var);
-                SCM_APPEND1(idef_vals, idef_vals_tail, val);
-                idefs++;
-                continue;
+                /* TODO: this doens't work if `lambda' is locally bound.
+                   I should use an identifier instead. */
+                val = Scm_Cons(SCM_SYM_LAMBDA,
+                               Scm_Cons(args, SCM_CDDR(expr)));
+            } else {
+                if (!VAR_P(var) || llen != 3)
+                    Scm_Error("badly formed internal define: %S", expr);
+                val = SCM_CAR(SCM_CDDR(expr));
             }
+
+            SCM_APPEND1(idef_vars, idef_vars_tail, var);
+            SCM_APPEND1(idef_vals, idef_vals_tail, val);
+            idefs++;
+            continue;
         } else if (!body_started && idefs > 0) {
             /* starting the `real' body */
             int cnt;
@@ -485,7 +650,7 @@ static ScmObj compile_lambda_family(ScmObj form, ScmObj args, ScmObj body,
 
     bodycode = compile_body(body, newenv, SCM_COMPILE_TAIL);
     SCM_APPEND(code, codetail, 
-               SCM_LIST3(SCM_VM_INSN2(SCM_VM_LAMBDA, nargs,restarg),
+               SCM_LIST3(SCM_VM_INSN2(SCM_VM_LAMBDA, nargs, restarg),
                          form, bodycode));
     return code;
 }
@@ -503,8 +668,9 @@ static ScmObj compile_lambda(ScmObj form,
     ScmObj args, body;
     int nargs, restarg;
     
-    if (!SCM_PAIRP(tail) || !SCM_PAIRP(SCM_CDR(tail)))
-        Scm_Error("syntax error: %S", form);
+    if (!SCM_PAIRP(tail) || !SCM_PAIRP(SCM_CDR(tail))) {
+        Scm_Error("bad lambda form: %S", form);
+    }
     args = SCM_CAR(tail);
     body = SCM_CDR(tail);
 
@@ -711,10 +877,9 @@ static ScmObj compile_cond_int(ScmObj form, ScmObj clauses, ScmObj merger,
     body = SCM_CDR(clause);
 
     /* Check for `else' clause. */
-    if (test == SCM_SYM_ELSE) {
+    if (global_eq(test, SCM_SYM_ELSE, env)) {
         if (!SCM_NULLP(SCM_CDR(clauses))) {
-            Scm_Error("extra clause appears after 'else' clause: %S",
-                      form);
+            Scm_Error("extra clause appears after 'else' clause: %S", form);
         }
         if (!SCM_PAIRP(body)) {
             Scm_Error("empty `else' clause is not allowed: %S", form);
@@ -726,7 +891,7 @@ static ScmObj compile_cond_int(ScmObj form, ScmObj clauses, ScmObj merger,
     }
 
     /* Let's compile the clause. */
-    if (!casep && clen >= 2 && SCM_CAR(body) == SCM_SYM_YIELDS) {
+    if (!casep && clen >= 2 && global_eq(SCM_CAR(body), SCM_SYM_YIELDS, env)) {
         /* `=>' */
         ScmObj xcode = SCM_NIL, xtail;
         
@@ -828,7 +993,7 @@ static ScmSyntax syntax_case = {
  * LET family (LET, LET*, LETREC)
  */
 
-/* Common routine to compile binding construct.   The compilation of
+/* Common routine to compile a binding construct.   The compilation of
    body part is delegated to BODY_COMPILER function */
 static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
                                  int nvars, int type, ScmObj body,
@@ -862,7 +1027,9 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
     }
     
     if (type == BIND_LET) newenv = Scm_Cons(vars, env);
-/*    SCM_APPEND(code, codetail, body_compiler(body, newenv, ctx));*/
+    /* TODO: the last expression of body is not compiled as tail recursive
+       even the form is at tail position, because POPENV is needed.
+       I need to fix this. */
     ADDCODE(body_compiler(body, newenv, SCM_COMPILE_NORMAL));
     ADDCODE1(SCM_VM_INSN(SCM_VM_POPENV));
     return code;
@@ -881,7 +1048,7 @@ static ScmObj compile_let(ScmObj form, ScmObj env, int ctx, void *data)
     body = SCM_CDR(tail);
 
     /* Check named let */
-    if (SCM_SYMBOLP(bindings)) {
+    if (VAR_P(bindings)) {
         if (type != BIND_LET) Scm_Error("syntax error: %S", form);
         if (!SCM_PAIRP(body)) Scm_Error("badly formed named let: %S", form);
         name = bindings;
@@ -900,9 +1067,8 @@ static ScmObj compile_let(ScmObj form, ScmObj env, int ctx, void *data)
             ScmObj binding = SCM_CAR(bind_p);
 
             if (!SCM_PAIRP(binding)
-                || !SCM_PAIRP(SCM_CDR(binding))
-                || !SCM_NULLP(SCM_CDDR(binding))
-                || !SCM_SYMBOLP(SCM_CAR(binding))) {
+                || !LIST1_P(SCM_CDR(binding))
+                || !VAR_P(SCM_CAR(binding))) {
                 Scm_Error("syntax error (invalid binding form): %S", form);
             }
             /* TODO: check duplicate binding */
@@ -937,7 +1103,7 @@ static ScmObj compile_named_let_body(ScmObj body, ScmObj env, int ctx)
     ScmObj oldenv = SCM_CAR(body);
     ScmObj name = SCM_CADR(body);
     ScmObj args = SCM_CDR(SCM_CDR(body));
-    name = lookup_env(name, env);
+    name = lookup_env(name, env, FALSE);
     return compile_body(SCM_LIST1(Scm_Cons(name, args)),
                         Scm_Cons(SCM_NIL, oldenv),
                         ctx);
@@ -1039,7 +1205,7 @@ static ScmObj compile_do(ScmObj form, ScmObj env, int ctx, void *data)
     SCM_FOR_EACH(bp, binds) {
         ScmObj bind = SCM_CAR(bp);
         int blen = Scm_Length(bind);
-        if ((blen != 2) && (blen != 3))
+        if (!((blen >= 2) && (blen <= 3)) || !VAR_P(SCM_CAR(bind)))
             Scm_Error("bad binding form in `do': %S", form);
         SCM_APPEND1(vars, vars_tail, SCM_CAR(bind));
         SCM_APPEND1(inits, inits_tail, SCM_CADR(bind));
@@ -1071,11 +1237,11 @@ static ScmSyntax syntax_do = {
 #define VALID_QUOTE_SYNTAX_P(form) \
     (SCM_PAIRP(SCM_CDR(form)) && SCM_NULLP(SCM_CDDR(form)))
 #define UNQUOTEP(obj, env) \
-    ((obj)==SCM_SYM_UNQUOTE && FREE_VAR_P(obj, env))
+    global_eq(obj, SCM_SYM_UNQUOTE, env)
 #define UNQUOTE_SPLICING_P(obj, env) \
-    ((obj)==SCM_SYM_UNQUOTE_SPLICING && FREE_VAR_P(obj, env))
+    global_eq(obj, SCM_SYM_UNQUOTE_SPLICING, env)
 #define QUASIQUOTEP(obj, env) \
-    ((obj)==SCM_SYM_QUASIQUOTE && FREE_VAR_P(obj, env))
+    global_eq(obj, SCM_SYM_QUASIQUOTE, env)
 
 static ScmObj compile_qq_list(ScmObj form, ScmObj env, int level);
 static ScmObj compile_qq_vec(ScmObj form, ScmObj env, int level);
@@ -1089,7 +1255,7 @@ static ScmObj compile_qq(ScmObj form, ScmObj env, int level)
     } else if (SCM_VECTORP(form)) {
         return compile_qq_vec(form, env, level);
     } else {
-        return SCM_LIST1(form);
+        return SCM_LIST1(unwrap_identifier(form));
     }
 }
 
@@ -1183,12 +1349,12 @@ static ScmObj compile_qq_vec(ScmObj form, ScmObj env, int level)
                 spliced+=2;
             } else {
                 if (i > 0) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
-                ADDCODE1(p);
+                ADDCODE1(unwrap_identifier(p));
                 alen++;
             }
         } else {
             if (i > 0) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
-            ADDCODE1(p);
+            ADDCODE1(unwrap_identifier(p));
             alen++;
         }
     }
@@ -1249,8 +1415,7 @@ static ScmObj compile_delay(ScmObj form, ScmObj env, int ctx, void *data)
 {
     ScmObj code = SCM_NIL, codetail, info, p;
     
-    if (!SCM_PAIRP(SCM_CDR(form)) || !SCM_NULLP(SCM_CDDR(form)))
-        Scm_Error("bad delay form: %S", form);
+    if (!LIST1_P(SCM_CDR(form))) Scm_Error("bad delay form: %S", form);
     ADDCODE(compile_int(SCM_LIST3(SCM_SYM_LAMBDA,
                                   SCM_NIL,
                                   SCM_CADR(form)),
@@ -1283,12 +1448,13 @@ static ScmObj compile_receive(ScmObj form, ScmObj env, int ctx, void *data)
 
     nvars = restvars = 0;
     SCM_FOR_EACH(vp, vars) {
+        if (!VAR_P(SCM_CAR(vp))) Scm_Error("badly formed receive: %S", form);
         nvars++;
         SCM_APPEND1(bind, bindtail, SCM_CAR(vp));
     }
     if (!SCM_NULLP(vp)) { restvars=1; SCM_APPEND1(bind, bindtail, vp); }
     
-    /* TODO: this implementation doens't take advantage of tail call. */
+    /* TODO: this implementation doesn't take advantage of tail call. */
     ADDCODE(compile_int(expr, env, SCM_COMPILE_NORMAL));
     ADDCODE1(SCM_VM_INSN2(SCM_VM_VALUES_BIND, nvars, restvars));
     ADDCODE1(form);             /* info; should be source-inro? */
