@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: html-lite.scm,v 1.4 2001-11-10 10:33:48 shirok Exp $
+;;;  $Id: html-lite.scm,v 1.5 2001-11-10 11:02:35 shirok Exp $
 ;;;
 
 (define-module text.html-lite
@@ -125,7 +125,7 @@
 (define-html-elements p)
 
 ;; HEADINGS
-(define-html-elements h1 2h h3 h4 h5 h6)
+(define-html-elements h1 h2 h3 h4 h5 h6)
 
 ;; PREFORMATTED
 (define-html-elements pre)
