@@ -1,3 +1,11 @@
+2002-04-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (double_print): switched back to the MP version
+	  of Burger&Dybvig, for it was difficult to get the consistent
+	  result by flonum version on multiple platforms.
+	* src/bignum.c : fixed a bug in bignum_gdiv that missed a carry
+	  in some occasion.
+
 2002-04-12  Shiro Kawai  <shiro@acm.org>
 	
 	* configure.in, src/gauche/config.h.in : added a test for alloca().

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.229 2002-04-13 09:44:20 shirok Exp $
+ *  $Id: gauche.h,v 1.230 2002-04-13 23:19:52 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1399,7 +1399,8 @@ SCM_EXTERN ScmObj Scm_GetKeyword(ScmObj key, ScmObj list, ScmObj fallback);
  * NUMBER
  */
 
-#define SCM_SMALL_INT_MAX          ((1L << 29) - 1)
+#define SCM_SMALL_INT_SIZE         (SIZEOF_LONG*8-3)
+#define SCM_SMALL_INT_MAX          ((1L << SCM_SMALL_INT_SIZE) - 1)
 #define SCM_SMALL_INT_MIN          (-SCM_SMALL_INT_MAX-1)
 #define SCM_SMALL_INT_FITS(k) \
     (((k)<=SCM_SMALL_INT_MAX)&&((k)>=SCM_SMALL_INT_MIN))

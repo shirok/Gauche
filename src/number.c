@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.89 2002-04-13 21:37:58 shirok Exp $
+ *  $Id: number.c,v 1.90 2002-04-13 23:19:52 shirok Exp $
  */
 
 #include <math.h>
@@ -973,7 +973,7 @@ ScmObj Scm_Modulo(ScmObj x, ScmObj y, int remp)
     double rx, ry;
     if (SCM_INTP(x)) {
         if (SCM_INTP(y)) {
-            int r;
+            long r;
             if (SCM_INT_VALUE(y) == 0) goto DIVBYZERO;
             r = SCM_INT_VALUE(x)%SCM_INT_VALUE(y);
             if (!remp && r) {
@@ -1005,7 +1005,7 @@ ScmObj Scm_Modulo(ScmObj x, ScmObj y, int remp)
         goto BADARGY;
     } else if (SCM_BIGNUMP(x)) {
         if (SCM_INTP(y)) {
-            int iy = SCM_INT_VALUE(y);
+            long iy = SCM_INT_VALUE(y);
             long rem;
             Scm_BignumDivSI(SCM_BIGNUM(x), iy, &rem);
             if (!remp
@@ -1472,21 +1472,7 @@ static double raise_pow10(double x, int n)
  *
  * This version implements Burger&Dybvig algorithm (Robert G. Burger
  * and and R. Kent Dybvig, "Priting Floating-Point Numbers Quickly and 
- * Accurately", PLDI '96, pp.108--116, 1996), except I use floating-point
- * arithmetic instead of multiple-precision integer arithmetic.
- * So it is fast but inaccurate.
- *
- * Mainly I avoid the inaccuracy by emitting more digits than the strictly
- * necessary shown in Burger&Dybvig.  It is done by scaling m+ and m-
- * 10% smaller when checking the termination condition.  This idea is
- * taken from Aubrey Jaffer's SCM.
- *
- * Still there are cases that double precision comes short.  For example,
- * 9.999999999999784e-1 and 9.999999999999782e-1 become indistinguishable
- * after scaling using double.  On x86, however, the floating-point
- * registers actually have extended precision, and with compiler optimization
- * the intermediate result is kept in extended precision and works without
- * loss of precision.
+ * Accurately", PLDI '96, pp.108--116, 1996).
  */
 
 static void double_print(char *buf, int buflen, double val, int plus_sign)
@@ -1501,113 +1487,118 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
         strcpy(buf, "0.0");
     } else {
         /* variable names follows Burger&Dybvig paper. mp, mm for m+, m- */
-        double f, r, s, mp, mm, q;
-        int exp, est, tc1, tc2, digs, point, round;
+        ScmObj f, e, r, s, mp, mm, q, rp;
+        int exp, sign, est, tc1, tc2, digs, point, round;
 
+        IEXPT10_INIT();
         if (val < 0) val = -val;
         
         /* initialize r, s, m+ and m- */
-        f = frexp(val, &exp);
-        s = 1.0;
-        if (exp > -1022) {
-            mp = ldexp(0.5, -53);
-            if (f != 0.5) {
-                mm = ldexp(0.5, -53);
+        f = Scm_DecodeFlonum(val, &exp, &sign);
+        round = !Scm_OddP(f);
+        if (exp >= 0) {
+            ScmObj be = Scm_Ash(SCM_MAKE_INT(1), exp);
+            if (Scm_NumCmp(f, iexpt2_52) != 0) {
+                r = Scm_Ash(f, exp+1);
+                s = SCM_MAKE_INT(2);
+                mp = be;
+                mm = be;
             } else {
-                mm = ldexp(0.25, -53);
+                r = Scm_Ash(f, exp+2);
+                s = SCM_MAKE_INT(4);
+                mp = Scm_Ash(be, 1);
+                mm = be;
             }
         } else {
-            /* val is denormalized.  we should scale mp and mm accordingly. */
-            mp = ldexp(0.5, -exp-1074);
-            mm = ldexp(0.5, -exp-1074);
+            if (exp == -1023 || Scm_NumCmp(f, iexpt2_52) != 0) {
+                r = Scm_Ash(f, 1);
+                s = Scm_Ash(SCM_MAKE_INT(1), -exp+1);
+                mp = SCM_MAKE_INT(1);
+                mm = SCM_MAKE_INT(1);
+            } else {
+                r = Scm_Ash(f, 2);
+                s = Scm_Ash(SCM_MAKE_INT(1), -exp+2);
+                mp = SCM_MAKE_INT(2);
+                mm = SCM_MAKE_INT(1);
+            }
         }
 
         /* estimate scale */
         est = (int)ceil(log10(val) - 0.1);
-        r  = raise_pow10(val, -est+1);
-        mp = ldexp(raise_pow10(mp, -est+1), exp);
-        mm = ldexp(raise_pow10(mm, -est+1), exp);
-
-        /*fprintf(stderr, "scale est=%d, r=%.20g, mp=%.20g, mm=%.20g\n",
-          est, r, mp, mm);*/
+        if (est >= 0) {
+            s = Scm_Multiply2(s, iexpt10(est));
+        } else {
+            ScmObj scale = iexpt10(-est);
+            r =  Scm_Multiply2(r, scale);
+            mp = Scm_Multiply2(mp, scale);
+            mm = Scm_Multiply2(mm, scale);
+        }
 
         /* fixup */
-        if (r + mp >= 10.0) {
-            r /= 10.0;
-            mp /= 10.0;
-            mm /= 10.0;
-            est++;
-        } else if (r < mm) {
-            r *= 10.0;
-            mp *= 10.0;
-            mm *= 10.0;
-            est--;
-        }
-
-        /*fprintf(stderr, "fixup est=%d, r=%.20g, mp=%.20g, mm=%.20g\n",
-          est, r, mp, mm);*/
-
-        /* determine position of decimal point.  we avoid exponential
-           notation if exponent is small, i.e. 0.9 and 30.0 instead of
-           9.0e-1 and 3.0e1.   The magic number 10 is arbitrary. */
-        if (est < 10 && est > -3) {
-            point = est; est = 1;
+        if (round) {
+            if (Scm_NumCmp(Scm_Add2(r, mp), s) >= 0) {
+                s = Scm_Multiply2(s, SCM_MAKE_INT(10));
+                est++;
+            }
         } else {
-            point = 1;
-        }
-
-        /* generate */
-        if (point <= 0) {
-            *buf++ = q + '0', buflen--;
-            *buf++ = '.', buflen--;
-            for (digs=point;digs<0 && buflen>5;digs++) {
-                *buf++ = '0'; buflen--;
+            if (Scm_NumCmp(Scm_Add2(r, mp), s) > 0) {
+                s = Scm_Multiply2(s, SCM_MAKE_INT(10));
+                est++;
             }
         }
-        for (digs=1;buflen>5;digs++) {
-            int q;
-            q = r;
-            r -= q;
+        
+        /* Scm_Printf(SCM_CURERR, "est=%d, r=%S, s=%S, mp=%S, mm=%S\n",
+           est, r, s, mp, mm); */
 
-            /*fprintf(stderr, "generate, r=%.20g, mp=%.20g\n", r, mp);*/
-            tc1 = (r < 0.9*mm);
-            tc2 = (r + 0.9*mp > s);
+        /* generate */
+        for (digs=0;;digs++) {
+            ScmObj r10 = Scm_Multiply2(r, SCM_MAKE_INT(10));
+            q = Scm_Quotient(r10, s);
+            r = Scm_Modulo(r10, s, TRUE);
+            mp = Scm_Multiply2(mp, SCM_MAKE_INT(10));
+            mm = Scm_Multiply2(mm, SCM_MAKE_INT(10));
+            
+            /* Scm_Printf(SCM_CURERR, "q=%S, s=%S, r=%S, mp=%S, mm=%S\n",
+               q, s, r, mp, mm); */
+
+            SCM_ASSERT(SCM_INTP(q));
+            if (round) {
+                tc1 = (Scm_NumCmp(r, mm) <= 0);
+                tc2 = (Scm_NumCmp(Scm_Add2(r, mp), s) >= 0);
+            } else {
+                tc1 = (Scm_NumCmp(r, mm) < 0);
+                tc2 = (Scm_NumCmp(Scm_Add2(r, mp), s) > 0);
+            }
             if (!tc1) {
                 if (!tc2) {
-                    *buf++ = q + '0', buflen--;
-                    if (digs == point) *buf++ = '.', buflen--;
-                    r *= 10.0;
-                    mp *= 10.0;
-                    mm *= 10.0;
+                    *buf++ = SCM_INT_VALUE(q) + '0';
+                    if (digs == 0) *buf++ = '.';
                     continue;
                 } else {
-                    *buf++ = q + '1', buflen--;
+                    *buf++ = SCM_INT_VALUE(q) + '1';
                     break;
                 }
             } else {
                 if (!tc2) {
-                    *buf++ = q + '0', buflen--;
+                    *buf++ = SCM_INT_VALUE(q) + '0';
                     break;
                 } else {
-                    if (r * 2.0 < s) {
-                        *buf++ = q + '0', buflen--;
+                    if (Scm_NumCmp(Scm_Ash(r, 1), s) < 0) {
+                        *buf++ = SCM_INT_VALUE(q) + '0';
                         break;
                     } else {
-                        *buf++ = q + '1', buflen--;
+                        *buf++ = SCM_INT_VALUE(q) + '1';
                         break;
                     }
                 }
             }
         }
 
-        if (digs <= point) {
-            for (;digs<point&&buflen>5;digs++) {
-                *buf++ = '0', buflen--;
-            }
+        if (digs == 0) {
             *buf++ = '.';
             *buf++ = '0';
         }
-
+        
         /* prints exponent.  we shifted decimal point, so -1. */
         est--;
         if (est != 0) {
