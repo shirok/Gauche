@@ -2,7 +2,7 @@
 ;; Test dynamic-wind, call/cc and related stuff
 ;;
 
-;; $Id: dynwind.scm,v 1.13 2001-09-08 10:50:06 shirok Exp $
+;; $Id: dynwind.scm,v 1.14 2001-12-20 07:18:16 shirok Exp $
 
 (use gauche.test)
 
@@ -145,6 +145,23 @@
 (test "dynamic-wind"
       '(3 connect talk1 disconnect connect talk2 disconnect 1)
       dynwind-test2)
+
+;; Test for multiple values
+(test "dynamic-wind (multival)" '(a b c)
+      (lambda ()
+        (receive x
+            (dynamic-wind (lambda () #f)
+                          (lambda () (values 'a 'b 'c))
+                          (lambda () #f))
+          x)))
+
+(test "dynamic-wind (multival)" '()
+      (lambda ()
+        (receive x
+            (dynamic-wind (lambda () #f)
+                          (lambda () (values))
+                          (lambda () #f))
+          x)))
 
 ;;-----------------------------------------------------------------------
 ;; Test for stack overflow handling
