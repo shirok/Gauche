@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.41 2002-02-11 09:22:44 shirok Exp $
+ *  $Id: read.c,v 1.42 2002-02-13 06:14:12 shirok Exp $
  */
 
 #include <stdio.h>
@@ -232,10 +232,22 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                     return read_sharp_comma(port, form);
                 }
             case '?':
-                /* #?form - debug print (for now) */
+                /* #? - debug directives */
                 {
-                    ScmObj form = read_internal(port, ctx);
-                    return SCM_LIST2(SCM_INTERN("debug-print"), form);
+                    int c2 = 0;
+                    ScmObj form;
+                    
+                    SCM_GETC(c2, port);
+                    switch (c2) {
+                    case '=':
+                        /* #?=form - debug print */
+                        form = read_internal(port, ctx);
+                        return SCM_LIST2(SCM_INTERN("debug-print"), form);
+                    case EOF:
+                        return SCM_EOF;
+                    default:
+                        Scm_ReadError(port, "unsupported #?-syntax: #?%C", c2);
+                    }
                 }
             case '0': case '1': case '2': case '3': case '4':
             case '5': case '6': case '7': case '8': case '9':

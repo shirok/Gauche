@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: debugger.scm,v 1.8 2002-01-06 06:25:13 shirok Exp $
+;;;  $Id: debugger.scm,v 1.9 2002-02-13 06:14:15 shirok Exp $
 ;;;
 
 (define-module gauche.vm.debugger
@@ -33,21 +33,20 @@
 (define-syntax debug-print
   (syntax-rules ()
     ((_ ?form)
-     (receive (tmp . more) ?form
+     (begin
        (or (and-let* ((info (and (pair? '?form)
                                  (pair-attribute-get '?form 'source-info #f)))
                       ((pair? info))
                       ((pair? (cadr info))))
-             (format (current-error-port) "#?~s:~a:~,,,,50:s\n"
+             (format (current-error-port) "#?=~s:~a:~,,,,50:s\n"
                      (cadr info) (car info) '?form)
              #t)
-           (format (current-error-port) "#?~,,,,50:s\n" '?form))
-       (format (current-error-port) "   [~,,,,50:s" tmp)
-       (for-each (lambda (elt)
-                   (format (current-error-port) " ~,,,,50:s\n" elt))
-                 more)
-       (format (current-error-port) "]\n")
-       (apply values tmp more)))))
+           (format (current-error-port) "#?=~,,,,50:s\n" '?form))
+       (receive vals ?form
+         (for-each (lambda (elt)
+                     (format (current-error-port) "#?-    ~,,,,50:s\n" elt))
+                   vals)
+         (apply values vals))))))
 
 ;; Print stack trace -----------------------------------------
 ;; NB: the same code is in vm.c.  Should be refactored.
