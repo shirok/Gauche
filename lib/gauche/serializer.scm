@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: serializer.scm,v 1.1 2001-04-03 11:14:50 shiro Exp $
+;;;  $Id: serializer.scm,v 1.2 2001-11-14 07:58:45 shirok Exp $
 ;;;
 
 ;; THIS MODULE IS UNDER DEVELOPMENT.
@@ -111,7 +111,7 @@
   (let loop ((slots (class-slots (class-of obj)))
              (result '()))
     (cond ((null? slots) (reverse result))
-          ((eqv? (slot-definition-allocation (car slots)) :virtual)
+          ((not (eqv? (slot-definition-allocation (car slots)) :virtual))
            (loop (cdr slots) (cons (slot-definition-name (car slots)) result)))
           (else (loop (cdr slots) result)))))
 
