@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.28 2001-03-25 10:23:05 shiro Exp $
+ *  $Id: class.c,v 1.29 2001-03-26 08:24:13 shiro Exp $
  */
 
 #include "gauche.h"
@@ -923,10 +923,70 @@ ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf, ScmObj *args, int nargs)
     return h;
 }
 
+/* sort-methods
+ *  This is a naive implementation just to make things work.
+ * TODO: can't we carry around the method list in array
+ * instead of list, at least internally?
+ */
+static inline int method_more_specific(ScmMethod *x, ScmMethod *y,
+                                       ScmObj *args, int nargs)
+{
+    ScmClass **xs = x->specializers;
+    ScmClass **ys = y->specializers;
+    ScmClass *ac, **acpl;
+    int i;
+    SCM_ASSERT(SCM_PROCEDURE_REQUIRED(x) == SCM_PROCEDURE_REQUIRED(y));
+    for (i=0; i < SCM_PROCEDURE_REQUIRED(x); i++) {
+        if (xs[i] != ys[i]) {
+            ac = Scm_ClassOf(args[i]);
+            if (xs[i] == ac) return TRUE;
+            if (ys[i] == ac) return TRUE;
+            for (acpl = ac->cpa; *acpl; acpl++) {
+                if (xs[i] == *acpl) return TRUE;
+                if (ys[i] == *acpl) return FALSE;
+            }
+            Scm_Panic("internal error: couldn't determine more specific method.");
+        }
+    }
+    /* all specializers match.  the one without optional arg is more special.*/
+    if (SCM_PROCEDURE_OPTIONAL(x)) return TRUE;
+    else return FALSE;
+}
+
+#define STATIC_SORT_ARRAY_SIZE  32
+
 ScmObj Scm_SortMethods(ScmObj methods, ScmObj *args, int nargs)
 {
-    /* implement me */
-    return methods;
+    ScmObj starray[STATIC_SORT_ARRAY_SIZE], *array = starray;
+    int cnt = 0, len = Scm_Length(methods), step, i, j, k;
+    ScmObj mp;
+
+    if (len >= STATIC_SORT_ARRAY_SIZE)
+        array = SCM_NEW2(ScmObj*, sizeof(ScmObj)*len);
+
+    SCM_FOR_EACH(mp, methods) {
+        if (!Scm_TypeP(SCM_CAR(mp), SCM_CLASS_METHOD))
+            Scm_Error("bad method in applicable method list: %S", SCM_CAR(mp));
+        array[cnt] = SCM_CAR(mp);
+        cnt++;
+    }
+
+    for (step = len/2; step > 0; step /= 2) {
+        for (i=step; i<len; i++) {
+            for (j=i-step; j >= 0; j -= step) {
+                if (method_more_specific(SCM_METHOD(array[j]),
+                                         SCM_METHOD(array[j+step]),
+                                         args, nargs)) {
+                    break;
+                } else {
+                    ScmObj tmp = array[j+step];
+                    array[j+step] = array[j];
+                    array[j] = tmp;
+                }
+            }
+        }
+    }
+    return Scm_ArrayToList(array, len);
 }
 
 /*=====================================================================
