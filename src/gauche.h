@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.370 2004-05-21 03:43:29 shirok Exp $
+ *  $Id: gauche.h,v 1.371 2004-05-21 07:19:52 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1621,6 +1621,8 @@ SCM_CLASS_DECL(Scm_KeywordClass);
 
 SCM_EXTERN ScmObj Scm_MakeKeyword(ScmString *name);
 SCM_EXTERN ScmObj Scm_GetKeyword(ScmObj key, ScmObj list, ScmObj fallback);
+SCM_EXTERN ScmObj Scm_DeleteKeyword(ScmObj key, ScmObj list);
+SCM_EXTERN ScmObj Scm_DeleteKeywordX(ScmObj key, ScmObj list);
 
 #define SCM_MAKE_KEYWORD(cstr) \
     Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR_IMMUTABLE(cstr)))

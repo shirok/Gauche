@@ -1,5 +1,8 @@
 2004-05-20  Shiro Kawai  <shiro@acm.org>
 
+	* src/keyword.c, src/extlib.stub :
+	  added delete-keyword and delete-keyword!.
+
 	* src/gauche-init.scm (add-load-path): reverted afterp optional
 	  argument that was dropped inadvertently.
 

@@ -1681,10 +1681,10 @@ Returns the name of the keyword @var{keyword}.
 @c COMMON
 @end defun
 
-@defun get-keyword key list &optional fallback
+@defun get-keyword key kv-list &optional fallback
 @c EN
 A useful procedure to extract a value from key-value list.
-A key-value list @var{list} must contains even number of elements;
+A key-value list @var{kv-list} must contains even number of elements;
 the first, third, fifth @dots{} elements are regarded as keys,
 and the second, fourth, sixth @dots{} elements are the values of
 the preceding keys.
@@ -1695,7 +1695,7 @@ If there are more than one matching keys, the leftmost one is taken.
 If there is no matching key, it returns @var{fallback} if provided,
 or signals an error otherwise.
 
-It is an error if @var{list} is not a proper, even-number element list.
+It is an error if @var{kv-list} is not a proper, even-number element list.
 
 Actually, `keywords' in the keyword-value list and the @var{key} argument
 need not be a keyword---it can be any Scheme object.  Key comparison
@@ -1704,7 +1704,7 @@ is done by @code{eq?}.
 This procedure is taken from STk.
 @c JP
 キー-値のリストから値を取り出すのに便利な手続きです。
-キー-値のリスト @var{list} は偶数個の要素を持たなければなりません。
+キー-値のリスト @var{kv-list} は偶数個の要素を持たなければなりません。
 1つ目、3つ目、5つ目、@dots{} の要素はキーとして扱われ、
 2つ目、4つ目、6つ目、@dots{} の要素は、その前の要素をキーとした値と
 なります。
@@ -1715,7 +1715,7 @@ This procedure is taken from STk.
 マッチするキーがない場合、@var{fallback} が与えられていればそれを
 返し、さもなければエラーを通知します。
 
-@var{list} が正しい偶数個の要素を持つリストでない場合は、エラーに
+@var{kv-list} が正しい偶数個の要素を持つリストでない場合は、エラーに
 なります。
 
 キーワード-値リストの `キーワード' と、@var{key} 引数は、実際には
@@ -1724,17 +1724,53 @@ This procedure is taken from STk.
 
 この手続きは、STk から導入されました。
 @c COMMON
+
+@example
+(get-keyword :y '(:x 1 :y 2 :z 3))
+  @result{} 2
+(get-keyword 'z '(x 1 y 2 z 3))
+  @result{} 3
+
+(get-keyword :t '(:x 1 :y 2 :z 3))
+  @result{} #<error>
+(get-keyword :t '(:x 1 :y 2 :z 3) #f)
+  @result{} #f
+@end example
 @end defun
 
-@defmac get-keyword* key list &optional fallback
+@defmac get-keyword* key kv-list &optional fallback
 @c EN
 Like @code{get-keyword}, but @var{fallback} is evaluated only
-if @var{list} does not have @var{key}.
+if @var{kv-list} does not have @var{key}.
 @c JP
-@code{get-keyword} と同様ですが、@var{list} が @var{key} を
+@code{get-keyword} と同様ですが、@var{kv-list} が @var{key} を
 含まない場合にのみ @var{fallback} が評価されることだけが違います。
 @c COMMON
 @end defmac
+
+@defun delete-keyword key kv-list
+@defunx delete-keyword! key kv-list
+Removes all the keys and values from @var{kv-list} for
+keys that are @code{eq?} to @var{key}.
+
+@code{delete-keyword} doesn't change @var{kv-list}, but the returned
+list may share the common tail of it.
+
+@code{delete-keyword!} doesn't allocate, and @emph{may} destructively
+changes @var{kv-list}.  You still have to use the returned value,
+for the original list may not be changed if its first key matches
+@var{key}.
+
+If there's no key that matches @var{key}, @var{kv-list} is returned.
+
+@example
+(delete-keyword :y '(:x 1 :y 2 :z 3 :y 4))
+ @result{} (:x 1 :z 3)
+@end example
+
+@end defun
+
+
 
 @c ----------------------------------------------------------------------
 @node Identifiers, Characters, Keywords, Core library

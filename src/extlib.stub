@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.217 2004-05-14 11:28:25 shirok Exp $
+;;; $Id: extlib.stub,v 1.218 2004-05-21 07:19:51 shirok Exp $
 ;;;
 
 "
@@ -297,6 +297,12 @@
 
 (define-cproc get-keyword (key list &optional fallback)
   (return "Scm_GetKeyword"))
+
+(define-cproc delete-keyword (key list)
+  (return "Scm_DeleteKeyword"))
+
+(define-cproc delete-keyword! (key list)
+  (return "Scm_DeleteKeywordX"))
 
 (define-cproc keyword->string (key::<keyword>)
   "SCM_RETURN(SCM_OBJ(SCM_KEYWORD_NAME(key)));")

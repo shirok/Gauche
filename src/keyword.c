@@ -1,7 +1,7 @@
 /*
  * keyword.c - keyword implementation
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: keyword.c,v 1.13 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: keyword.c,v 1.14 2004-05-21 07:19:52 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -83,7 +83,9 @@ ScmObj Scm_GetKeyword(ScmObj key, ScmObj list, ScmObj fallback)
 {
     ScmObj cp;
     SCM_FOR_EACH(cp, list) {
-        if (!SCM_PAIRP(SCM_CDR(cp))) Scm_Error("incomplete key list: %S", list);
+        if (!SCM_PAIRP(SCM_CDR(cp))) {
+            Scm_Error("incomplete key list: %S", list);
+        }
         if (key == SCM_CAR(cp)) return SCM_CADR(cp);
         cp = SCM_CDR(cp);
     }
@@ -91,6 +93,56 @@ ScmObj Scm_GetKeyword(ScmObj key, ScmObj list, ScmObj fallback)
         Scm_Error("value for key %S is not provided: %S", key, list);
     }
     return fallback;
+}
+
+ScmObj Scm_DeleteKeyword(ScmObj key, ScmObj list)
+{
+    ScmObj cp;
+    SCM_FOR_EACH(cp, list) {
+        if (!SCM_PAIRP(SCM_CDR(cp))) {
+            Scm_Error("incomplete key list: %S", list);
+        }
+        if (key == SCM_CAR(cp)) {
+            /* found */
+            ScmObj h = SCM_NIL, t = SCM_NIL;
+            ScmObj tail = Scm_DeleteKeyword(key, SCM_CDR(SCM_CDR(cp)));
+            ScmObj cp2;
+            SCM_FOR_EACH(cp2, list) {
+                if (cp2 == cp) {
+                    SCM_APPEND(h, t, tail);
+                    return h;
+                } else {
+                    SCM_APPEND1(h, t, SCM_CAR(cp2));
+                }
+            }
+        }
+        cp = SCM_CDR(cp);
+    }
+    return list;
+}
+
+ScmObj Scm_DeleteKeywordX(ScmObj key, ScmObj list)
+{
+    ScmObj cp, prev = SCM_FALSE;
+    SCM_FOR_EACH(cp, list) {
+        if (!SCM_PAIRP(SCM_CDR(cp))) {
+            Scm_Error("incomplete key list: %S", list);
+        }
+        if (key == SCM_CAR(cp)) {
+            /* found */
+            if (SCM_FALSEP(prev)) {
+                /* we're at the head of list */
+                return Scm_DeleteKeywordX(key, SCM_CDR(SCM_CDR(cp)));
+            } else {
+                ScmObj tail = Scm_DeleteKeywordX(key, SCM_CDR(SCM_CDR(cp)));
+                SCM_SET_CDR(prev, tail);
+                return list;
+            }
+        }
+        cp = SCM_CDR(cp);
+        prev = cp;
+    }
+    return list;
 }
 
 void Scm__InitKeyword(void)
