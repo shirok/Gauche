@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: 822.scm,v 1.5 2001-09-18 07:07:17 shirok Exp $
+;;;  $Id: 822.scm,v 1.6 2002-10-26 09:02:43 shirok Exp $
 ;;;
 
 ;; Parser and constructor of the message defined in
@@ -21,7 +21,6 @@
 (define-module rfc.822
   (use srfi-1)
   (use srfi-13)
-  (use gauche.let-opt)
   (use gauche.regexp)
   (export rfc822-header->list
           rfc822-skip-cfws

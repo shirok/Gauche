@@ -179,7 +179,7 @@
                                    (receive (dirs files)
                                        (directory-list2 dir :add-path? #t :children? #t :follow-link? #f)
                                      (append dirs
-                                             (filter (l_ (string-contains _ "test1"))
+                                             (filter (cut string-contains <> "test1")
                                                      files)))))))
       )
 
@@ -219,7 +219,7 @@
                       '("test.out/test.d" "test.out/test2.d" "test.out/test1.o"))))
 (when (symbol-bound? 'sys-symlink)
   (test "file-type :follow-link? #f" '(directory symlink regular)
-        (lambda () (map (l_ (file-type _ :follow-link? #f))
+        (lambda () (map (cut file-type <> :follow-link? #f)
                         '("test.out/test.d" "test.out/test2.d" "test.out/test1.o"))))
   )
 

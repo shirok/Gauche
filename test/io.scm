@@ -136,7 +136,8 @@
       (lambda () (eof-object? (call-with-input-file "tmp1.o" read-line))))
 (test "read-block (EOF)" #t
       (lambda ()
-        (eof-object? (call-with-input-file "tmp1.o" (l_ (read-block 10 _))))))
+        (eof-object? (call-with-input-file "tmp1.o"
+                       (cut read-block 10 <>)))))
 
 (with-output-to-file "tmp1.o" (lambda () (display "ab")))
 (test "read-char (a)" #\a
@@ -145,65 +146,73 @@
       (lambda () (call-with-input-file "tmp1.o" read-byte)))
 (test "read-byte (ungotten)" 97
       (lambda ()
-        (call-with-input-file "tmp1.o" (l_ (peek-char _) (read-byte _)))))
+        (call-with-input-file "tmp1.o"
+          (lambda (p) (peek-char p) (read-byte p)))))
 (test "read-line (a)" "ab"
       (lambda () (call-with-input-file "tmp1.o" read-line)))
 (test "read-byte (ungotten)" 97
       (lambda ()
-        (call-with-input-file "tmp1.o" (l_ (peek-char _) (read-byte _)))))
+        (call-with-input-file "tmp1.o"
+          (lambda (p) (peek-char p) (read-byte p)))))
 (test "read-block (a)" #*"ab"
       (lambda ()
-        (call-with-input-file "tmp1.o" (l_ (read-block 10 _)))))
+        (call-with-input-file "tmp1.o" (cut read-block 10 <>))))
 (test "read-block (ungotten)" #*"ab"
       (lambda ()
-        (call-with-input-file "tmp1.o" (l_ (peek-char _) (read-block 10 _)))))
+        (call-with-input-file "tmp1.o"
+          (lambda (p) (peek-char p) (read-block 10 p)))))
 
 (with-output-to-file "tmp1.o" (lambda () (display "\n")))
 (test "read-line (LF)" ""
       (lambda () (call-with-input-file "tmp1.o" read-line)))
 (test "read-line (LF, ungotten)" ""
       (lambda ()
-        (call-with-input-file "tmp1.o" (l_ (peek-char _) (read-line _)))))
+        (call-with-input-file "tmp1.o"
+          (lambda (p) (peek-char p) (read-line p)))))
 (with-output-to-file "tmp1.o" (lambda () (display "\r")))
 (test "read-line (CR)" ""
       (lambda () (call-with-input-file "tmp1.o" read-line)))
 (test "read-line (CR, ungotten)" ""
       (lambda ()
-        (call-with-input-file "tmp1.o" (l_ (peek-char _) (read-line _)))))
+        (call-with-input-file "tmp1.o"
+          (lambda (p) (peek-char p) (read-line p)))))
 (with-output-to-file "tmp1.o" (lambda () (display "\n\n")))
 (test "read-line (LF)" '("" "" #t)
       (lambda ()
         (call-with-input-file "tmp1.o"
-          (l_ (let* ((c1 (peek-char _))
-                     (l1 (read-line _))
-                     (c2 (peek-char _))
-                     (l2 (read-line _))
-                     (c2 (peek-char _))
-                     (l3 (read-line _)))
-                (list l1 l2 (eof-object? l3)))))))
+          (lambda (_)
+             (let* ((c1 (peek-char _))
+                    (l1 (read-line _))
+                    (c2 (peek-char _))
+                    (l2 (read-line _))
+                    (c2 (peek-char _))
+                    (l3 (read-line _)))
+               (list l1 l2 (eof-object? l3)))))))
 (with-output-to-file "tmp1.o" (lambda () (display "\r\r\n")))
 (test "read-line (CR, CRLF)" '("" "" #t)
       (lambda ()
         (call-with-input-file "tmp1.o"
-          (l_ (let* ((c1 (peek-char _))
-                     (l1 (read-line _))
-                     (c2 (peek-char _))
-                     (l2 (read-line _))
-                     (c2 (peek-char _))
-                     (l3 (read-line _)))
-                (list l1 l2 (eof-object? l3)))))))
+          (lambda (_)
+            (let* ((c1 (peek-char _))
+                   (l1 (read-line _))
+                   (c2 (peek-char _))
+                   (l2 (read-line _))
+                   (c2 (peek-char _))
+                   (l3 (read-line _)))
+              (list l1 l2 (eof-object? l3)))))))
 (with-output-to-file "tmp1.o" (lambda () (display "a\r\nb\nc")))
 (test "read-line (mix)" '("a" "b" "c" #t)
       (lambda ()
         (call-with-input-file "tmp1.o"
-          (l_ (let* ((c1 (peek-char _))
-                     (l1 (read-line _))
-                     (c2 (peek-char _))
-                     (l2 (read-line _))
-                     (c2 (peek-char _))
-                     (l3 (read-line _))
-                     (c3 (peek-char _)))
-                (list l1 l2 l3 (eof-object? c3)))))))
+          (lambda (_)
+            (let* ((c1 (peek-char _))
+                   (l1 (read-line _))
+                   (c2 (peek-char _))
+                   (l2 (read-line _))
+                   (c2 (peek-char _))
+                   (l3 (read-line _))
+                   (c3 (peek-char _)))
+              (list l1 l2 l3 (eof-object? c3)))))))
 
 (with-output-to-file "tmp1.o"
   (lambda ()

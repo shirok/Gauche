@@ -2,7 +2,7 @@
 ;;; SRFI-1 - List processing library
 ;;;
 
-;; $Id: srfi-1.scm,v 1.12 2002-05-25 05:38:58 shirok Exp $
+;; $Id: srfi-1.scm,v 1.13 2002-10-26 09:02:40 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -47,11 +47,6 @@
           lset-difference! lset-xor lset-xor!
           lset-diff+intersection lset-diff+intersection!))
 (select-module srfi-1)
-
-(define-syntax %optional
-  (syntax-rules ()
-    ((%optional ?opts ?default)
-     (if (pair? ?opts) (car ?opts) ?default))))
 
 (autoload "srfi-1/generator"  list-tabulate iota circular-list)
 (autoload "srfi-1/pred"       proper-list? dotted-list? circular-list? length+)

@@ -12,11 +12,10 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: charconv.scm,v 1.8 2002-01-11 19:57:07 shirok Exp $
+;;;  $Id: charconv.scm,v 1.9 2002-10-26 09:02:40 shirok Exp $
 ;;;
 
 (define-module gauche.charconv
-  (use gauche.let-opt)
   (export open-input-conversion-port
           open-output-conversion-port
           open-input-file open-output-file

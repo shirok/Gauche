@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.92 2002-10-26 08:41:31 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.93 2002-10-26 09:02:44 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -152,7 +152,6 @@
           (:macro syntax-error) (:macro syntax-errorf) unwrap-syntax
           (:macro push!) (:macro pop!) (:macro inc!) (:macro dec!) (:macro update!)
           (:macro let1) (:macro begin0)
-          (:macro l_)
           (:macro dotimes) (:macro dolist) (:macro while) (:macro until))
 
 (autoload gauche.regexp

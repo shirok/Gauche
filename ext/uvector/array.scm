@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: array.scm,v 1.6 2002-07-01 00:57:38 shirok Exp $
+;;;  $Id: array.scm,v 1.7 2002-10-26 09:02:40 shirok Exp $
 ;;;
 
 ;; Conceptually, an array is a backing storage and a procedure to
@@ -24,7 +24,6 @@
   (use gauche.uvector)
   (use gauche.collection)
   (use gauche.sequence)
-  (use gauche.let-opt)
   (export <array-meta> <array>
           array? make-array shape array array-rank
           array-start array-end array-ref array-set!

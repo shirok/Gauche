@@ -12,12 +12,11 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: selector.scm,v 1.2 2001-09-05 19:07:33 shirok Exp $
+;;;  $Id: selector.scm,v 1.3 2002-10-26 09:02:42 shirok Exp $
 ;;;
 
 (define-module gauche.selector
   (use srfi-1)
-  (use gauche.let-opt)
   (export <selector> selector-add! selector-delete! selector-select)
   )
 (select-module gauche.selector)

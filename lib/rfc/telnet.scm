@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: telnet.scm,v 1.1 2001-08-29 11:29:36 shirok Exp $
+;;;  $Id: telnet.scm,v 1.2 2002-10-26 09:02:43 shirok Exp $
 ;;;
 
 ;;;  RFC 854  Telnet Protocol Specification
@@ -102,8 +102,8 @@
 (define (setup-socket self initargs)
   (let ((sock (socket-of self)))
     (cond ((not sock)
-           (let ((host (get-keyword :host initargs #f))
-                 (port (get-keyword :port initargs *telnet-port*)))
+           (let-keywords* initargs ((host #f)
+                                    (port *telnet-port*))
              (unless host
                (error "either connected socket or remote host name must be given to initialize a telnet session.   Given initargs is" initargs))
              (let ((sock (make-client-socket 'inet host port)))

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: util.scm,v 1.16 2002-10-14 01:50:07 shirok Exp $
+;;;  $Id: util.scm,v 1.17 2002-10-26 09:02:41 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -25,7 +25,6 @@
   (use srfi-2)
   (use srfi-11)
   (use srfi-13)
-  (use gauche.let-opt)
   (export current-directory directory-list directory-list2 directory-fold
           home-directory
           make-directory* create-directory* remove-directory* delete-directory*
@@ -430,9 +429,10 @@
 ;;  if-exists  - :error :supersede :backup #f
 ;;  backup-suffix
 (define (move-file src dst . opts)
-  (let* ((if-exists (get-keyword :if-exists opts :error))
-         (backsfx   (get-keyword :backup-suffix opts ".orig"))
-         )
+  (let-keywords* opts
+      ((if-exists :error)
+       (backsfx   :backup-suffix ".orig"))
+
     (define (do-rename)
       (if (file-exists? dst)
           (cond ((eq? if-exists :error)

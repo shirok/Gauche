@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: parameter.scm,v 1.2 2002-04-20 02:53:18 shirok Exp $
+;;;  $Id: parameter.scm,v 1.3 2002-10-26 09:02:42 shirok Exp $
 ;;;
 
 ;; NB: This is a "quick patch" to realize parameters in Gauche.
@@ -21,7 +21,6 @@
 ;; The API is taken from ChezScheme and Chicken.
 
 (define-module gauche.parameter
-  (use gauche.let-opt)
   (export make-parameter parameterize)
   )
 (select-module gauche.parameter)

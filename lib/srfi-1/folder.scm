@@ -2,7 +2,7 @@
 ;;; Folders of SRFI-1
 ;;;
 
-;; $Id: folder.scm,v 1.3 2002-10-13 09:03:00 shirok Exp $
+;; $Id: folder.scm,v 1.4 2002-10-26 09:02:44 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -31,7 +31,7 @@
 (define (count$ pred) (pa$ count pred))
 
 (define (unfold-right p f g seed . maybe-tail)
-  (let lp ((seed seed) (ans (%optional maybe-tail '())))
+  (let lp ((seed seed) (ans (get-optional maybe-tail '())))
     (if (p seed) ans
 	(lp (g seed)
 	    (cons (f seed) ans)))))

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: jfilter.scm,v 1.4 2001-11-20 20:12:20 shirok Exp $
+;;;  $Id: jfilter.scm,v 1.5 2002-10-26 09:02:42 shirok Exp $
 ;;;
 
 ;; This file defines a set of character-code conversion routine with
@@ -27,7 +27,6 @@
 ;; is irrelevant.  I only implement the higher-level routines.
 
 (define-module port.jfilter
-  (use gauche.let-opt)
   (use gauche.charconv)
   (use srfi-13)
   (export cv-file

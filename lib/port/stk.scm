@@ -12,14 +12,13 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: stk.scm,v 1.2 2002-02-25 20:51:16 shirok Exp $
+;;;  $Id: stk.scm,v 1.3 2002-10-26 09:02:42 shirok Exp $
 ;;;
 
 (define-module port.stk
   (use srfi-1)
   (use srfi-13)
   (use srfi-14)
-  (use gauche.let-opt)
   (use gauche.auxsys)
   (use gauche.sequence)
   (export *argc*

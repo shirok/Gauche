@@ -12,11 +12,10 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: net.scm,v 1.13 2001-09-29 09:27:45 shirok Exp $
+;;;  $Id: net.scm,v 1.14 2002-10-26 09:02:40 shirok Exp $
 ;;;
 
 (define-module gauche.net
-  (use gauche.let-opt)
   (export <socket> make-socket
           |PF_UNIX| |PF_INET| |AF_UNIX| |AF_INET|
           |SOCK_STREAM| |SOCK_DGRAM| |SOCK_RAW|

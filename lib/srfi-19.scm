@@ -24,10 +24,9 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19.scm,v 1.7 2002-05-25 10:26:39 shirok Exp $
+;;; $Id: srfi-19.scm,v 1.8 2002-10-26 09:02:41 shirok Exp $
 
 (define-module srfi-19
-  (use gauche.let-opt)
   (export time-tai time-utc time-monotonic time-thread
           time-process time-duration current-time
           make-time time? time-type time-second time-nanosecond
