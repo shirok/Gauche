@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.216 2004-11-23 04:56:07 shirok Exp $
+ *  $Id: vm.c,v 1.217 2004-11-23 13:10:00 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -147,7 +147,6 @@ ScmVM *Scm_NewVM(ScmVM *base,
 
     sigemptyset(&v->sigMask);
     Scm_SignalQueueInit(&v->sigq);
-    Scm_FinalizerQueueInit(&v->finq);
 
     return v;
 }
@@ -453,6 +452,7 @@ static void run_loop()
         
         /* Check if there's a queued processing first. */
         if (vm->queueNotEmpty) {
+            CHECK_STACK(CONT_FRAME_SIZE);
             PUSH_CONT(prevpc, pc);
             SAVE_REGS();
             process_queued_requests(vm);

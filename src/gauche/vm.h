@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.96 2004-11-23 04:56:08 shirok Exp $
+ *  $Id: vm.h,v 1.97 2004-11-23 13:10:01 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -230,33 +230,15 @@ SCM_EXTERN void Scm_SignalQueueInit(ScmSignalQueue* q);
 SCM_EXTERN void   Scm_SigCheck(ScmVM *vm);
 
 /*
- * Finalizer queue
+ * Finalizers
  *
- *  If a finalizer needs to call Scheme procedure, it enqueues
- *  the Scheme calling part, so that it runs when VM is in consistent
- *  state.  See core.c for the implementation.
- *  The finalizer queue can be temporarily big (when the program creates
- *  large amount of temporary objects that requires finalization in
- *  a short period of time).   We extend the finalizer queue on demand,
- *  but currently we do not shrink it.  See if it becomes a problem.
+ *  Finalizers are queued inside GC.  We disable automatic finalizer
+ *  invocation of GC and only set the flag on VM when finalizers are
+ *  queued.  VM loop check the flag and calls Scm_VMFinalizerRun()
+ *  to run the finalizers.  (If VM is not running, C library must
+ *  call it explicitly to run finalizers).
  */
-typedef ScmObj (*ScmQueuedFinalizerProc)(void *data);
 
-typedef struct ScmFinalizerClosureRec {
-    ScmQueuedFinalizerProc proc;
-    void *data;
-} ScmFinalizerClosure;
-
-typedef struct ScmFinalizerQueueRec {
-    ScmFinalizerClosure *queue; /* queue array */
-    unsigned int size;          /* allocated size of queue array */
-    unsigned int full;          /* flag if queue is full */
-    unsigned int head;          /* ring buffer head index */
-    unsigned int tail;          /* ring buffer tail index */
-} ScmFinalizerQueue;
-
-SCM_EXTERN void Scm_FinalizerQueueInit(ScmFinalizerQueue* q);
-SCM_EXTERN void Scm_FinalizerEnqueue(ScmQueuedFinalizerProc proc, void *data);
 SCM_EXTERN ScmObj Scm_VMFinalizerRun(ScmVM *vm);
 
 /*
@@ -349,9 +331,6 @@ struct ScmVMRec {
     /* Signal information */
     ScmSignalQueue sigq;
     sigset_t sigMask;           /* current signal mask */
-
-    /* Finalizer queue */
-    ScmFinalizerQueue finq;     /* finalizer queue */
 };
 
 SCM_EXTERN ScmVM *Scm_NewVM(ScmVM *base, ScmModule *module, ScmObj name);

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: parameter.scm,v 1.8 2004-07-15 23:16:13 shirok Exp $
+;;;  $Id: parameter.scm,v 1.9 2004-11-23 13:09:43 shirok Exp $
 ;;;
 
 ;; The API is upper-compatible to ChezScheme and Chicken's.

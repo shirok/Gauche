@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.115 2004-11-23 04:56:07 shirok Exp $
+ *  $Id: port.c,v 1.116 2004-11-23 13:10:00 shirok Exp $
  */
 
 #include <unistd.h>
@@ -102,26 +102,14 @@ static void port_cleanup(ScmPort *port)
         break;
     }
     SCM_PORT_CLOSED_P(port) = TRUE;
-}
-
-static ScmObj port_finalize_closure(void *obj)
-{
-    port_cleanup(SCM_PORT(obj));
-    return SCM_UNDEFINED;
+    /* avoid unnecessary finalization */
+    Scm_UnregisterFinalizer(SCM_OBJ(port));
 }
 
 /* called by GC */
 static void port_finalize(ScmObj obj, void* data)
 {
-    /* UGLY: duplicate the condition port_cleanup to avoid unnecessary
-       queueing of finalizers. */
-
-    if (!SCM_PORT_CLOSED_P(SCM_PORT(obj))
-        && ((SCM_PORT_TYPE(obj) == SCM_PORT_FILE)
-            || (SCM_PORT_TYPE(obj) == SCM_PORT_PROC
-                && SCM_PORT(obj)->src.vt.Close != NULL))) {
-        Scm_FinalizerEnqueue(port_finalize_closure, obj);
-    }
+    port_cleanup(SCM_PORT(obj));
 }
 
 /*

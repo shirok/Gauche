@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: exception.h,v 1.10 2004-11-21 09:25:36 shirok Exp $
+ *  $Id: exception.h,v 1.11 2004-11-23 13:10:00 shirok Exp $
  */
 
 #ifndef GAUCHE_EXCEPTION_H
@@ -79,7 +79,7 @@ SCM_CLASS_DECL(Scm_ConditionClass);
 #define SCM_CLASS_CONDITION        (&Scm_ConditionClass)
 #define SCM_CONDITIONP(obj)        SCM_ISA(obj, SCM_CLASS_CONDITION)
 
-SCM_EXTERN Scm_ConditionHasType(ScmObj c, ScmObj k);
+SCM_EXTERN int Scm_ConditionHasType(ScmObj c, ScmObj k);
 
 /* <message-condition> : condition with message. */
 typedef struct ScmMessageConditionRec {

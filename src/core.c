@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.59 2004-11-23 04:56:06 shirok Exp $
+ *  $Id: core.c,v 1.60 2004-11-23 13:10:00 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -80,6 +80,9 @@ extern void Scm_Init_extlib(ScmModule *);
 extern void Scm_Init_syslib(ScmModule *);
 extern void Scm_Init_moplib(ScmModule *);
 
+static void finalizable(void);
+
+
 #ifdef GAUCHE_USE_PTHREADS
 /* a trick to make sure the gc thread object is linked */
 static int (*ptr_pthread_create)(void) = NULL;
@@ -97,7 +100,12 @@ void Scm_Init(const char *signature)
        already initialized, so we call it here just in case. */
     GC_init();
 
+    /* Set up GC parameters.  We need to call finalizers at the safe
+       point of VM loop, so we disable auto finalizer invocation, and
+       ask GC to call us back when finalizers are queued. */
     GC_oom_fn = oom_handler;
+    GC_finalize_on_demand = FALSE;
+    GC_finalizer_notifier = finalizable;
 
     /* Initialize components.  The order is important, for some components
        rely on the other components to be initialized. */
@@ -155,66 +163,25 @@ void Scm_RegisterFinalizer(ScmObj z, ScmFinalizerProc finalizer, void *data)
                                    data, &ofn, &ocd);
 }
 
-void Scm_FinalizerQueueInit(ScmFinalizerQueue *q)
+void Scm_UnregisterFinalizer(ScmObj z)
 {
-    q->queue = NULL;
-    q->size = 0;
-    q->head = q->tail = 0;
-    q->full = TRUE;
+    GC_finalization_proc ofn; GC_PTR ocd;
+    GC_REGISTER_FINALIZER_NO_ORDER(z, (GC_finalization_proc)NULL, NULL,
+                                   &ofn, &ocd);
 }
 
-void Scm_FinalizerEnqueue(ScmQueuedFinalizerProc proc, void *data)
+/* GC calls this back when finalizers are queued */
+void finalizable(void)
 {
     ScmVM *vm = Scm_VM();
-    ScmFinalizerQueue *q = &vm->finq;
-
-    if (q->full) {
-        /* Extend finalizer queue */
-        int i, j;
-        ScmFinalizerClosure *newq =
-            SCM_NEW_ARRAY(ScmFinalizerClosure, q->size + SCM_VM_FINQ_SIZE);
-        for (i=0, j=q->head; i<q->size; i++, j++) {
-            if (j >= q->size) j = 0;
-            newq[i].proc = q->queue[j].proc;
-            newq[i].data = q->queue[j].data;
-            /* nullify the old array, so that the finalized obj will be
-               collected earlier. */
-            q->queue[j].proc = NULL;
-            q->queue[j].data = NULL;
-        }
-        q->queue = newq;
-        q->head = q->tail = q->size;
-        q->size += SCM_VM_FINQ_SIZE;
-        q->full = FALSE;
-    }
-    q->queue[q->tail].proc = proc;
-    q->queue[q->tail].data = data;
-    q->tail++;
-    if (q->tail >= q->size) q->tail = 0;
-    if (q->tail == q->head) q->full = TRUE;
     vm->queueNotEmpty |= SCM_VM_FINQ_MASK;
 }
 
 /* Called from VM loop.  Queue is not empty. */
 ScmObj Scm_VMFinalizerRun(ScmVM *vm)
 {
-    ScmFinalizerQueue *q = &vm->finq;
-    ScmQueuedFinalizerProc proc;
-    void *data;
-
-    if (q->head == q->tail && !q->full) return; /* sanity check */
-    
-    proc = q->queue[q->head].proc;
-    data = q->queue[q->head].data;
-    q->queue[q->head].proc = NULL;
-    q->queue[q->head].data = NULL;
-    q->head++;
-    if (q->head >= q->size) q->head = 0;
-    q->full = FALSE;
-
-    if (q->head == q->tail) vm->queueNotEmpty &= ~SCM_VM_FINQ_MASK;
-
-    return proc(data);
+    GC_invoke_finalizers();
+    vm->queueNotEmpty &= ~SCM_VM_FINQ_MASK;
 }
 
 /*

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.400 2004-11-22 14:12:43 shirok Exp $
+ *  $Id: gauche.h,v 1.401 2004-11-23 13:10:00 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -332,6 +332,7 @@ typedef struct ScmInstanceRec {
 typedef void (*ScmFinalizerProc)(ScmObj z, void *data);
 SCM_EXTERN void Scm_RegisterFinalizer(ScmObj z, ScmFinalizerProc finalizer,
                                       void *data);
+SCM_EXTERN void Scm_UnregisterFinalizer(ScmObj z);
 
 /* Safe coercer */
 #define SCM_OBJ_SAFE(obj)     ((obj)?SCM_OBJ(obj):SCM_UNDEFINED)
@@ -1118,7 +1119,7 @@ SCM_EXTERN ScmObj Scm_WeakVectorSet(ScmWeakVector *v, int index, ScmObj val);
  * You shouldn't rely on the underlying port implementation, for
  * it is likely to be changed in future.  There are enough macros
  * and API functions provided to use and extend the port mechanism.
- * See also ext/vport/* for the way to extend the port from Scheme.
+ * See also ext/vport for the way to extend the port from Scheme.
  */
 
 /* Substructures */
