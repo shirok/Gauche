@@ -1,5 +1,8 @@
 2003-12-17  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac, src/link-hpux : fixed compilation problem on
+	  HP-UX 11.11.
+
 	* src/port.c (MIN, MAX): #undef before defining.  Some platforms
 	  defines them and warns the duplicate definition.
 
