@@ -1,8 +1,12 @@
 2001-10-28  Shiro Kawai  <shiro@acm.org>
 
+	* configure.in's and Makefile.in's : made it work on more
+	  configurations.
 	* src/string.c, lib/srfi-13/* : fixed the buf of string-index with
 	  start/end args.  added make-string-pointer start/end optional
 	  args, and optimized srfi-13 functions to it.
+	* src/string.c (string_substitute) : fixed an evil bug that
+	  overwritten the out-of-range memory area.
 	* src/load.c, src/vm.c : fixed autoload bug that doesn't load
 	  the file when autoload symbol is referenced as a variable.
 	* ext/dbm/* : made it pass through the test.
