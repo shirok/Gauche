@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.99 2001-04-01 10:20:04 shiro Exp $
+ *  $Id: gauche.h,v 1.100 2001-04-01 20:18:37 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1775,6 +1775,12 @@ extern void Scm_Panic(const char *msg, ...);
 
 /* Inspect the configuration */
 extern const char *Scm_HostArchitecture(void);
+
+/* Compare and Sort */
+int Scm_Compare(ScmObj x, ScmObj y);
+void Scm_SortArray(ScmObj *elts, int nelts, ScmObj cmpfn);
+ScmObj Scm_SortList(ScmObj objs, ScmObj fn);
+ScmObj Scm_SortListX(ScmObj objs, ScmObj fn);
 
 /* Assertion */
 
