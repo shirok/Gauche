@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.13 2001-03-05 04:00:25 shiro Exp $
+ *  $Id: list.c,v 1.14 2001-03-05 04:23:49 shiro Exp $
  */
 
 #include "gauche.h"
@@ -581,12 +581,12 @@ ScmObj Scm_TopologicalSort(ScmObj lists)
  *
  *  Merge lists, keeping the order of elements (left to right) in each
  *  list.  Returns SCM_FALSE if the lists are inconsistent to be ordered
- *  in the way.
+ *  in the way. 
  *
- *  Two lists of lists must be provided.  SEQUENCES is a list of lists
- *  describing the order of preference.  For each distinct element appears
- *  in sequence there's an assoc list entry in PARENTS, which associates
- *  the element with its direct ascendants.
+ *  START is an item of the starting point.  It is inserted into the result
+ *  first.  SEQUENCES is a list of lists describing the order of preference.
+ *  GET_SUPER is a C procedure which returns direct parents of the given
+ *  element.
  *
  *  The algorithm is used in class precedence list calculation of
  *  Dylan, described in the paper
@@ -595,7 +595,9 @@ ScmObj Scm_TopologicalSort(ScmObj lists)
  *  of the algorithm here.
  */
 
-ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences, ScmObj parents)
+ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences,
+                          ScmObj (*get_super)(ScmObj, void*),
+                          void* data)
 {
     ScmObj result = Scm_Cons(start, SCM_NIL), rp, next;
     ScmObj *seqv, *sp;
@@ -618,10 +620,9 @@ ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences, ScmObj parents)
         next = SCM_FALSE;
         SCM_FOR_EACH(rp, result) {
             ScmObj e = SCM_CAR(rp);
-            ScmObj p = Scm_Assq(e, parents);
-            ScmObj supers;
-            if (!SCM_PAIRP(p)) continue;
-            SCM_FOR_EACH(supers, SCM_CDR(p)) {
+            ScmObj supers = get_super(e, data);
+            if (!SCM_PAIRP(supers)) continue;
+            SCM_FOR_EACH(supers, supers) {
                 ScmObj s = SCM_CAR(supers);
                 /* see if s can go to the result */
                 for (sp = seqv; sp < seqv+nseqs; sp++) {
