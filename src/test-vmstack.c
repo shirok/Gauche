@@ -1,6 +1,6 @@
 /* 
  * Test VM stack sanity
- * $Id: test-vmstack.c,v 1.2 2002-06-18 06:16:30 shirok Exp $
+ * $Id: test-vmstack.c,v 1.3 2003-12-16 09:50:46 shirok Exp $
  */
 
 #include <stdio.h>
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 
     fprintf(stderr, "%-65s", testmsg);
     message(stdout, testmsg, '=');
-    Scm_Init();
+    Scm_Init(GAUCHE_SIGNATURE);
     
     eproc = Scm_MakeSubr(dummy_eproc, NULL, 0, 1, SCM_FALSE);
     Scm_VM()->defaultEscapeHandler = eproc;

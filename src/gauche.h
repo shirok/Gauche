@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.357 2003-12-09 19:45:48 shirok Exp $
+ *  $Id: gauche.h,v 1.358 2003-12-16 09:50:46 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2392,7 +2392,7 @@ SCM_EXTERN ScmObj Scm_LoadAutoload(ScmAutoload *autoload);
 
 /* Program start and termination */
 
-SCM_EXTERN void Scm_Init(void);
+SCM_EXTERN void Scm_Init(const char *signature);
 SCM_EXTERN void Scm_Exit(int code);
 SCM_EXTERN void Scm_Abort(const char *msg);
 SCM_EXTERN void Scm_Panic(const char *msg, ...);

@@ -1,5 +1,10 @@
 2003-12-15  Shiro Kawai  <shiro@acm.org>
 
+	* src/core.c (Scm_Init), src/gauche.h, src/gauche/config.h.in,
+	  src/main.c : API Change: Scm_Init now takes const char *signature
+	  argument, in order to detect version mismatch between main
+	  app and libgauche.so.
+
 	* ext/charconv/jconv.c (jconv_open): conversion to/from "none"
 	  should always be allowed, and it should be just pass-through.
 

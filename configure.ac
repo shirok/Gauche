@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.19 2003-12-05 03:02:42 shirok Exp $
+dnl $Id: configure.ac,v 1.20 2003-12-16 09:50:43 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.7.3_pre2, shiro@acm.org)
-AC_REVISION($Revision: 1.19 $)
+AC_REVISION($Revision: 1.20 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -13,6 +13,7 @@ dnl
 dnl ----------------------------------------------------------
 dnl   enable-multibyte
 dnl
+GAUCHE_CHAR_ENCODING=eucjp
 AC_ARG_ENABLE(multibyte,
   AC_HELP_STRING([--enable-multibyte=ENCODING],
                  [Use ENCODING as the internal multibyte string encoding.
@@ -21,14 +22,21 @@ Following encodings are currently recognized:
 or 'no' (No multibyte support)]),
   [
    case $enable_multibyte in
-     euc-jp|eucjp|yes)  AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP);;
-     utf-8|utf8)        AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8);;
-     sjis|shift-jis)    AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS);;
-     no|none) ;;
+     euc-jp|eucjp|yes)  GAUCHE_CHAR_ENCODING=eucjp;;
+     utf-8|utf8)        GAUCHE_CHAR_ENCODING=utf8;;
+     sjis|shift-jis)    GAUCHE_CHAR_ENCODING=sjis;;
+     no|none)           GAUCHE_CHAR_ENCODING=none;;
      *) echo "unrecognized encoding option: '$enable_multibyte'; type ./configure --help for available options"
         exit 1;;
    esac
-  ], [AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP)])
+  ])
+
+case $GAUCHE_CHAR_ENCODING in
+ eucjp) AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP);;
+ utf8)  AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8);;
+ sjis)  AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS);;
+ none)  ;;
+esac
 
 dnl ----------------------------------------------------------
 dnl  with-slib
@@ -539,6 +547,10 @@ dnl Add version macro
 GAUCHE_VERSION=$PACKAGE_VERSION
 AC_SUBST(GAUCHE_VERSION)
 AC_DEFINE_UNQUOTED(GAUCHE_VERSION, "$GAUCHE_VERSION")
+
+GAUCHE_SIGNATURE="$GAUCHE_VERSION,$GAUCHE_CHAR_ENCODING,$GAUCHE_THREAD_TYPE"
+AC_DEFINE_UNQUOTED(GAUCHE_SIGNATURE, "$GAUCHE_SIGNATURE")
+
 changequote(<<, >>)dnl
 GAUCHE_VERSION_TRUNC=`echo $GAUCHE_VERSION | sed 's/[-_].*//'`
 changequote([, ])dnl

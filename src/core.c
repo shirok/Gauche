@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.52 2003-12-09 19:45:48 shirok Exp $
+ *  $Id: core.c,v 1.53 2003-12-16 09:50:46 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -84,8 +84,14 @@ extern void Scm_Init_moplib(ScmModule *);
 static int (*ptr_pthread_create)(void) = NULL;
 #endif
 
-void Scm_Init(void)
+void Scm_Init(const char *signature)
 {
+    /* make sure the main program links the same version of libgauche */
+    if (strcmp(signature, GAUCHE_SIGNATURE) != 0) {
+        Scm_Panic("libgauche version mismatch: libgauche %s, expected %s",
+                  GAUCHE_SIGNATURE, signature);
+    }
+
     /* Some platforms require this.  It is harmless if GC is
        already initialized, so we call it here just in case. */
     GC_init();

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.70 2003-12-16 08:34:18 shirok Exp $
+ *  $Id: main.c,v 1.71 2003-12-16 09:50:46 shirok Exp $
  */
 
 #include <unistd.h>
@@ -198,7 +198,7 @@ int main(int argc, char **argv)
     extern int _bss_end__;
     GC_add_roots((void*)&_data_start__, (void*)&_bss_end__);
 #endif
-    Scm_Init();
+    Scm_Init(GAUCHE_SIGNATURE);
     sig_setup();
 
     argind = parse_options(argc, argv);

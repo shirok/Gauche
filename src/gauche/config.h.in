@@ -13,17 +13,20 @@
 /* Gauche major version number */
 #undef GAUCHE_MAJOR_VERSION
 
-/* Gauche patch level number */
-#undef GAUCHE_MICRO_VERSION
-
 /* Gauche minor version number */
 #undef GAUCHE_MINOR_VERSION
+
+/* Gauche patch level number */
+#undef GAUCHE_MICRO_VERSION
 
 /* Define if we use pthreads */
 #undef GAUCHE_USE_PTHREADS
 
 /* Gauche version string */
 #undef GAUCHE_VERSION
+
+/* Gauche signature string */
+#undef GAUCHE_SIGNATURE
 
 /* Define to use Darwin threads */
 #undef GC_DARWIN_THREADS
