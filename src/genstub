@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.87 2002-11-09 08:18:43 shirok Exp $
+;;;  $Id: genstub,v 1.88 2002-12-13 19:39:23 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -1022,7 +1022,7 @@
          (scheme-constant->c-constant (default-of arg))))
      ((eq? class <rest-arg>)
       (f "  ~a = SCM_OPTARGS;" sname)))
-    (when pred
+    (when (and pred (not (string-null? pred)))
       (f "  if (!~a(~a)) Scm_Error(\"~a required, but got %S\", ~a);"
          pred sname tdesc sname))
     (if unbox

@@ -2,6 +2,8 @@
 
 	* ext/auxsys/* : moved sys-getgroups, sys-getlogin and sys-localeconv
 	  here.
+	* src/genstub : have been generating a redundant type checking code
+	  for scheme object.  fixed.
 
 2002-12-12  Shiro Kawai  <shiro@acm.org>
 
