@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.23 2001-12-18 11:02:29 shirok Exp $
+ *  $Id: error.c,v 1.24 2001-12-21 07:08:56 shirok Exp $
  */
 
 #include <errno.h>
@@ -166,10 +166,9 @@ int Scm_ExceptionP(ScmObj e)
     return Scm_TypeP(e, SCM_CLASS_EXCEPTION);
 }
 
-int Scm_ContinuableExceptionP(ScmObj e)
+int Scm_NoncontinuableExceptionP(ScmObj e)
 {
-    return (Scm_TypeP(e, SCM_CLASS_EXCEPTION)
-            && !Scm_TypeP(e, SCM_CLASS_ERROR));
+    return (Scm_TypeP(e, SCM_CLASS_ERROR));
 }
 
 /*
