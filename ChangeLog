@@ -1,7 +1,15 @@
+2001-11-13  Shiro Kawai  <shiro@acm.org>
+
+	* configure.in : fixed the support of --with-local.  added support
+	  for Darwin1.3 and later.
+	* lib/gauche/object.scm : allow '(setter foo)' style method definition
+	* src/extlib.stub, src/gauche-init.scm : moved hash table mappers
+	  to the Scheme code.
+	
 2001-11-12  Shiro Kawai  <shiro@scm.org>
 
-	* ext/dbm/configure.in : fix
-	
+	* ext/dbm/configure.in : more robust support on the systems that
+	  has both gdbm and ndbm.
 	
 2001-11-11  Shiro Kawai  <shiro@scm.org>
 
