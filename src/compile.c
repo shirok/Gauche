@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.42 2001-03-24 08:12:43 shiro Exp $
+ *  $Id: compile.c,v 1.43 2001-03-24 09:24:05 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1335,7 +1335,7 @@ static ScmObj compile_qq(ScmObj form, ScmObj env, int level)
 
 static ScmObj compile_qq_list(ScmObj form, ScmObj env, int level)
 {
-    int len = 0, splice = 0;
+    int len = 0, splice = 0, last_spliced = FALSE;
     ScmObj car = SCM_CAR(form), cp;
     ScmObj code = SCM_NIL, codetail;
 
@@ -1377,13 +1377,15 @@ static ScmObj compile_qq_list(ScmObj form, ScmObj env, int level)
             if (!VALID_QUOTE_SYNTAX_P(car))
                 Scm_Error("badly formed quasiquote: %S\n", form);
             if (level == 0) {
-                if (cp != form) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
+                if (last_spliced) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
                 ADDCODE1(SCM_VM_INSN1(SCM_VM_LIST, len));
                 ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
                 len = 0;
                 ADDCODE(compile_int(SCM_CADR(car), env, SCM_COMPILE_NORMAL));
+                last_spliced = TRUE;
                 splice+=2;
             } else {
+                if (cp != form) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
                 ADDCODE1(SCM_CAR(car));
                 ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
                 ADDCODE(compile_qq(SCM_CADR(car), env, level-1));
@@ -1393,6 +1395,7 @@ static ScmObj compile_qq_list(ScmObj form, ScmObj env, int level)
         } else {
             if (cp != form) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
             ADDCODE(compile_qq(SCM_CAR(cp), env, level));
+            last_spliced = FALSE;
             len++;
         }
     }
@@ -1401,9 +1404,7 @@ static ScmObj compile_qq_list(ScmObj form, ScmObj env, int level)
         ADDCODE(compile_qq(cp, env, level));
         ADDCODE1(SCM_VM_INSN1(SCM_VM_LIST_STAR, len+1));
     } else {
-        if (len == 0 && !SCM_NULLP(form)) {
-            ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
-        }
+        if (last_spliced) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
         ADDCODE1(SCM_VM_INSN1(SCM_VM_LIST, len));
     }
     if (splice) {
@@ -1415,7 +1416,8 @@ static ScmObj compile_qq_list(ScmObj form, ScmObj env, int level)
 static ScmObj compile_qq_vec(ScmObj form, ScmObj env, int level)
 {
     ScmObj code = SCM_NIL, codetail;
-    int vlen = SCM_VECTOR_SIZE(form), i, alen = 0, spliced = 0;
+    int vlen = SCM_VECTOR_SIZE(form), i, alen = 0;
+    int spliced = 0, last_spliced = FALSE;
     for (i=0; i<vlen; i++) {
         ScmObj p = SCM_VECTOR_ELEMENT(form, i), q;
         if (SCM_PAIRP(p)) {
@@ -1423,8 +1425,8 @@ static ScmObj compile_qq_vec(ScmObj form, ScmObj env, int level)
             if (UNQUOTEP(car, env)) {
                 if (!VALID_QUOTE_SYNTAX_P(p))
                     Scm_Error("badly formed unquote: %S\n", p);
+                if (i > 0) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
                 if (level == 0) {
-                    if (i > 0) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
                     ADDCODE(compile_int(SCM_CADR(p), env, SCM_COMPILE_NORMAL));
                 } else {
                     ADDCODE1(car);
@@ -1432,17 +1434,21 @@ static ScmObj compile_qq_vec(ScmObj form, ScmObj env, int level)
                     ADDCODE(compile_qq(SCM_CADR(p), env, level-1));
                     ADDCODE1(SCM_VM_INSN1(SCM_VM_LIST, 2));
                 }
+                last_spliced = FALSE;
                 alen++;
             } else if (UNQUOTE_SPLICING_P(car, env)) {
                 if (!VALID_QUOTE_SYNTAX_P(p))
                     Scm_Error("badly formed unquote-splicing: %S\n", form);
                 if (level == 0) {
+                    if (last_spliced) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
                     ADDCODE1(SCM_VM_INSN1(SCM_VM_LIST, alen));
                     ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
                     alen = 0;
                     ADDCODE(compile_int(SCM_CADR(p), env, SCM_COMPILE_NORMAL));
+                    last_spliced = TRUE;
                     spliced+=2;
                 } else {
+                    if (i > 0) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
                     ADDCODE1(car);
                     ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
                     ADDCODE(compile_qq(SCM_CADR(p), env, level-1));
@@ -1452,19 +1458,23 @@ static ScmObj compile_qq_vec(ScmObj form, ScmObj env, int level)
             } else if (QUASIQUOTEP(car, env)) {
                 if (!VALID_QUOTE_SYNTAX_P(p))
                     Scm_Error("badly formed quasiquote: %S\n", form);
+                if (i > 0) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
                 ADDCODE1(car);
                 ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
                 ADDCODE(compile_qq(SCM_CADR(p), env, level+1));
                 ADDCODE1(SCM_VM_INSN1(SCM_VM_LIST, 2));
+                last_spliced = FALSE;
                 alen++;
             } else {
                 if (i > 0) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
                 ADDCODE1(unwrap_identifier(p));
+                last_spliced = FALSE;
                 alen++;
             }
         } else {
             if (i > 0) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
             ADDCODE1(unwrap_identifier(p));
+            last_spliced = FALSE;
             alen++;
         }
     }
