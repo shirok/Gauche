@@ -3440,7 +3440,7 @@ module @code{slib}.
 @c ----------------------------------------------------------------------
 @node sxml.ssax - Functional XML parser, sxml.sxpath - SXML Query Language, slib - SLIB, Library modules - Utilities
 @section @code{sxml.ssax} - Functional XML parser
-@c NODE sxml.ssax - 機能的なXMLパーザ, @code{sxml.ssax} - 機能的なXMLパーザ
+@c NODE sxml.ssax - 関数的なXMLパーザ, @code{sxml.ssax} - 関数的なXMLパーザ
 
 @deftp {Module} sxml.ssax
 @mdindex sxml.ssax
@@ -3473,7 +3473,7 @@ processing instructions and CDATA sections. The package includes
 a semi-validating SXML parser : a DOM-mode parser that is an
 instantiation of a SAX parser (called SSAX).
 @c JP
-SSAX機能的XMLパージングフレームワークは、DOM/SXMLパーザ、SAXパーザ、
+SSAXは関数的なXMLパージングフレームワークで、DOM/SXMLパーザ、SAXパーザ、
 字句解析・構文解析手続きのサポートライブラリから構成されます。
 パッケージ内の手続きは、XML文書の様々な部分をトークナイズ、あるいは
 パーズするために独立して使うことができます。
