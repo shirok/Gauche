@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.30 2001-05-26 09:50:58 shirok Exp $
+ *  $Id: port.c,v 1.31 2001-05-31 10:10:22 shirok Exp $
  */
 
 #include <unistd.h>
@@ -783,15 +783,16 @@ struct bufport {
 static void bufport_fill(struct bufport *bp)
 {
     bp->chars = bp->filler(bp->buffer, bp->bufsiz, bp->clientData);
+    if (bp->chars == 0) bp->chars = -1;
     bp->current = 0;
 }
 
 static int bufport_getb(ScmPort *port)
 {
     struct bufport *bp = PORT_BUFPORT(port);
-    if (bp->chars <= 0) return EOF;
+    if (bp->chars < 0) return EOF;
     if (bp->current >= bp->chars) bufport_fill(bp);
-    if (bp->chars <= 0) return EOF;
+    if (bp->chars < 0) return EOF;
     return bp->buffer[bp->current++];
 }
 
@@ -802,13 +803,13 @@ static int bufport_getc(ScmPort *port)
     int nbytes;
 
     for (;;) {
-        if (bp->chars <= 0) return EOF;
+        if (bp->chars < 0) return EOF;
         if (bp->current >= bp->chars) {
             bufport_fill(bp);
             continue;
         }
         nbytes = SCM_CHAR_NFOLLOWS(bp->buffer[bp->current]) + 1;
-        if (bp->current + nbytes >= bp->chars) {
+        if (bp->current + nbytes > bp->chars) {
             /* We don't have enough bytes to consist a character. Move
                incomplete character to the scratch, and repeat filling
                until we have enough bytes or encounters EOF. */
@@ -819,13 +820,14 @@ static int bufport_getc(ScmPort *port)
                     port->scratch[port->scrcnt++] = bp->buffer[bp->current++];
                 }
                 bufport_fill(bp);
-                if (bp->chars <= 0) return EOF;
+                if (bp->chars < 0) return EOF;/* TODO: deal with scratch buf */
                 if (bp->chars + port->scrcnt >= nbytes) break;
             }
             while (port->scrcnt < nbytes) {
                 port->scratch[port->scrcnt++] = bp->buffer[bp->current++];
             }
             SCM_CHAR_GET(port->scratch, ch);
+            port->scrcnt = 0;
             return ch;
         } else {
             SCM_CHAR_GET(bp->buffer+bp->current, ch);
@@ -840,13 +842,13 @@ static int bufport_getz(ScmPort *port, char *buf, int buflen)
     struct bufport *bp = PORT_BUFPORT(port);
     int nread = 0;
     
-    if (bp->chars <= 0) return 0;
+    if (bp->chars < 0) return 0;
     while (bp->chars - bp->current < buflen) {
         int chunklen = bp->chars - bp->current;
         memcpy(buf + nread, bp->buffer + bp->current, chunklen);
         nread += chunklen;
         bufport_fill(bp);
-        if (bp->chars <= 0) return nread;
+        if (bp->chars < 0) return nread;
     }
     memcpy(buf + nread, bp->buffer + bp->current,
            buflen - (bp->chars - bp->current));
@@ -953,6 +955,7 @@ ScmObj Scm_MakeBufferedPort(int direction, /* SCM_PORT_{INPUT|OUTPUT} */
     ScmPortVTable vt;
     struct bufport *packet;
 
+    if (bufsiz <= 0) Scm_Error("buffer size expected positive: %d", bufsiz);
     if (buffer == NULL) buffer = SCM_NEW_ATOMIC2(char*, bufsiz);
     packet = SCM_NEW(struct bufport);
     packet->filler = filler;
