@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.191 2002-04-30 08:12:32 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.192 2002-04-30 21:25:56 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -6611,7 +6611,8 @@ returns.
 返します。
 @c COMMON
 @example
-(call-with-values (values 1 2) cons) @result{} (1 . 2)
+(call-with-values (lambda () (values 1 2)) cons)
+  @result{} (1 . 2)
 @end example
 @end defun
 
