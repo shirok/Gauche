@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.155 2001-06-17 06:52:12 shirok Exp $
+ *  $Id: gauche.h,v 1.156 2001-06-17 09:30:06 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1426,7 +1426,9 @@ struct ScmProcedureRec {
     unsigned char required;     /* # of required args */
     unsigned char optional;     /* 1 if it takes rest args */
     unsigned char type;         /* procedure type  */
+    unsigned char locked;       /* setter locked? */
     ScmObj info;                /* source code info */
+    ScmObj setter;              /* setter, if exists. */
 };
 
 /* procedure type */
@@ -1443,6 +1445,7 @@ enum {
 #define SCM_PROCEDURE_OPTIONAL(obj) SCM_PROCEDURE(obj)->optional
 #define SCM_PROCEDURE_TYPE(obj)     SCM_PROCEDURE(obj)->type
 #define SCM_PROCEDURE_INFO(obj)     SCM_PROCEDURE(obj)->info
+#define SCM_PROCEDURE_SETTER(obj)   SCM_PROCEDURE(obj)->setter
 
 extern ScmClass Scm_ProcedureClass;
 #define SCM_CLASS_PROCEDURE   (&Scm_ProcedureClass)
@@ -1457,7 +1460,7 @@ extern ScmClass Scm_ProcedureClass;
     SCM_PROCEDURE(obj)->info = inf
 
 #define SCM__PROCEDURE_INITIALIZER(klass, req, opt, typ, inf) \
-    { { (klass) }, (req), (opt), (typ), (inf) }
+    { { (klass) }, (req), (opt), (typ), FALSE, (inf), SCM_FALSE }
 
 /* Closure - Scheme defined procedure */
 struct ScmClosureRec {
@@ -1500,6 +1503,10 @@ extern ScmObj Scm_MakeSubr(ScmObj (*func)(ScmObj*, int, void*),
                            int required, int optional,
                            ScmObj info);
 extern ScmObj Scm_NullProc(void);
+
+extern ScmObj Scm_SetterSet(ScmProcedure *proc, ScmProcedure *setter,
+                            int lock);
+extern ScmObj Scm_Setter(ScmProcedure *proc);
 
 /* Generic - Generic function */
 struct ScmGenericRec {
