@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.75 2002-04-18 10:30:47 shirok Exp $
+ *  $Id: class.c,v 1.76 2002-04-24 23:18:15 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1834,6 +1834,9 @@ void Scm__InitClass(void)
     
     /* vm.c */
     CINIT(SCM_CLASS_VM,               "<vm>");
+
+    /* weak.c */
+    CINIT(SCM_CLASS_WEAKVECTOR,       "<weak-vector>");
 
 #define GINIT(gf, nam) \
     Scm_InitBuiltinGeneric(gf, nam, mod);

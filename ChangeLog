@@ -1,3 +1,15 @@
+2002-04-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c, src/gauche.h, src/extlib.stub : completely rewritten
+	  the file I/O code; now Gauche does its own buffering instead of
+	  using FILE*.
+	
+2002-04-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/weak.c, src/gauche.h, src/class.c, src/extlib.stub : added
+	  weak vector which is needed for Gauche's own buffering port
+	  implementation.
+
 2002-04-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.c : eliminated the "merger" NOP instruction at the

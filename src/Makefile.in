@@ -36,8 +36,8 @@ INSTALL_HEADERS = gauche.h ../gc/include/gc.h
 INSTALL_SUBHEADERS = gauche/config.h gauche/vm.h gauche/vminsn.h \
                      gauche/char_euc_jp.h gauche/char_utf_8.h    \
                      gauche/char_sjis.h gauche/char_none.h       \
-                     gauche/predef-syms.h gauche/portmacros.h    \
-		     gauche/extend.h gauche/pthread.h gauche/uthread.h
+                     gauche/predef-syms.h gauche/extend.h        \
+                     gauche/pthread.h gauche/uthread.h
 INSTALL_LIBS = libgauche.a @LIBGAUCHE_SO@
 INSTALL_BINS = gosh gauche-config
 INSTALL_SCMS = genstub gauche-init.scm
@@ -47,7 +47,7 @@ INSTALL=@INSTALL@
 GCLIB = ../gc/gc.a
 
 OBJS = core.o vm.o compile.o macro.o error.o class.o boolean.o char.o \
-       string.o list.o port.o hash.o write.o read.o vector.o \
+       string.o list.o port.o hash.o write.o read.o vector.o weak.o \
        symbol.o keyword.o compare.o regexp.o signal.o mutex.o \
        module.o proc.o number.o bignum.o load.o promise.o repl.o \
        system.o stdlib.o extlib.o syslib.o moplib.o

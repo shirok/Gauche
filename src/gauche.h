@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.235 2002-04-20 07:51:07 shirok Exp $
+ *  $Id: gauche.h,v 1.236 2002-04-24 23:18:15 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -26,6 +26,7 @@
 #include <limits.h>
 #include <signal.h>
 #include <string.h>
+#include <errno.h>
 #include <gauche/config.h>  /* read config.h _before_ gc.h */
 #define GC_DLL
 #include <gc.h>
@@ -975,6 +976,25 @@ SCM_EXTERN ScmObj Scm_VectorToList(ScmVector *v);
          obj = SCM_VECTOR_ELEMENT(vec, ++cnt)) 
 
 /*--------------------------------------------------------
+ * WEAK VECTOR
+ */
+
+typedef struct ScmWeakVectorRec {
+    SCM_HEADER;
+    int size;
+    void *pointers;  /* opaque */
+} ScmWeakVector;
+
+#define SCM_WEAKVECTOR(obj)   ((ScmWeakVector*)(obj))
+#define SCM_WEAKVECTORP(obj)  SCM_XTYPEP(obj, SCM_CLASS_WEAKVECTOR)
+SCM_CLASS_DECL(Scm_WeakVectorClass);
+#define SCM_CLASS_WEAKVECTOR  (&Scm_WeakVectorClass)
+    
+SCM_EXTERN ScmObj Scm_MakeWeakVector(int size);
+SCM_EXTERN ScmObj Scm_WeakVectorRef(ScmWeakVector *v, int index, ScmObj fallback);
+SCM_EXTERN ScmObj Scm_WeakVectorSet(ScmWeakVector *v, int index, ScmObj val);
+
+/*--------------------------------------------------------
  * PORT
  */
 
@@ -994,42 +1014,35 @@ SCM_EXTERN ScmObj Scm_VectorToList(ScmVector *v);
  * (Right now, binary/character mixed I/O is not well supported and
  * contains some serious bugs).
  */
-    
-struct ScmPortRec {
-    SCM_HEADER;
-    unsigned char direction;    /* SCM_PORT_INPUT or SCM_PORT_OUTPUT */
-    unsigned char type;         /* SCM_PORT_{FILE|ISTR|OSTR|PORT|CLOSED} */
-    unsigned char scrcnt;       /* # of bytes in the scratch buffer */
 
-    unsigned int ownerp    : 1; /* TRUE if this ports owns underlying
-                                   file pointer */
-    unsigned int icpolicy  : 2; /* Policy to handle incomplete characters */
-    unsigned int biop      : 1; /* byte/block I/O capable? */
+/* Substructures */
 
-    char scratch[SCM_CHAR_MAX_BYTES]; /* incomplete buffer */
-    
-    ScmChar ungotten;           /* ungotten character */
+/* The alternative of FILE* structure */
+   
+typedef struct ScmPortBufferRec {
+    char *buffer;       /* ptr to the buffer area */
+    char *current;      /* current buffer position */
+    char *end;          /* the end of the current valid data */
+    int  size;          /* buffer size */
+    int (*filler)(ScmPort *p, int min);
+    int (*flusher)(ScmPort *p, int min);
+    int (*closer)(ScmPort *p);
+    int fd;
+    int line;
+    int column;
+} ScmPortBuffer;
 
-    union {
-        struct ScmFilePort {
-            FILE *fp;
-            int line;
-            int column;
-            ScmObj name;        /* ScmString if it has name */
-        } file;
-        struct ScmIStrPort {
-            const char *start;
-            int rest;
-            const char *current;
-        } istr;
-        ScmDString ostr;
-        struct ScmProcPort {
-            struct ScmPortVTableRec *vtable;
-            void *clientData;
-        } proc;
-    } src;
-};
+/* For input buffered port, returns the size of room that can be filled
+   by the filler */
+#define SCM_PORT_BUFFER_ROOM(p) \
+    (int)((p)->src.buf.buffer+(p)->src.buf.size-(p)->src.buf.end)
 
+/* For output buffered port, returns the size of available data that can
+   be flushed by the flusher */
+#define SCM_PORT_BUFFER_AVAIL(p) \
+    (int)((p)->src.buf.current-(p)->src.buf.buffer)
+
+#if 0
 typedef struct ScmProcPortInfoRec {
     ScmObj name;
     int line;
@@ -1037,6 +1050,7 @@ typedef struct ScmProcPortInfoRec {
     int fd;
     FILE *fp;
 } ScmProcPortInfo;
+#endif
     
 typedef struct ScmPortVTableRec {
     int       (*Getb)(ScmPort *p);
@@ -1050,8 +1064,36 @@ typedef struct ScmPortVTableRec {
     int       (*Puts)(ScmString *s, ScmPort *p);
     int       (*Flush)(ScmPort *p);
     int       (*Close)(ScmPort *p);
-    ScmProcPortInfo *(*Info)(ScmPort *p);
 } ScmPortVTable;
+
+struct ScmPortRec {
+    SCM_HEADER;
+    unsigned char direction;    /* SCM_PORT_INPUT or SCM_PORT_OUTPUT */
+    unsigned char type;         /* SCM_PORT_{BUF|STR|PROC} */
+    unsigned char scrcnt;       /* # of bytes in the scratch buffer */
+
+    unsigned int ownerp    : 1; /* TRUE if this port owns underlying
+                                   file pointer */
+    unsigned int closed    : 1; /* TRUE if this port is closed */
+
+    char scratch[SCM_CHAR_MAX_BYTES]; /* incomplete buffer */
+    
+    ScmChar ungotten;           /* ungotten character.
+                                   SCM_CHAR_INVALID if empty. */
+    ScmObj name;                /* port's name */
+
+    void *data;                 /* client data */
+    
+    union {
+        ScmPortBuffer buf;      /* buffered port */
+        struct {
+            const char *current;
+            const char *end;
+        } istr;                 /* input string port */
+        ScmDString ostr;        /* output string port */
+        ScmPortVTable vt;       /* virtual port */
+    } src;
+};
 
 /* Port direction */
 enum ScmPortDirection {
@@ -1061,11 +1103,10 @@ enum ScmPortDirection {
 
 /* Port types */
 enum ScmPortType {
-    SCM_PORT_FILE,
-    SCM_PORT_ISTR,
-    SCM_PORT_OSTR,
-    SCM_PORT_PROC,
-    SCM_PORT_CLOSED
+    SCM_PORT_FILE,              /* file (buffered) port */
+    SCM_PORT_ISTR,              /* input string port */
+    SCM_PORT_OSTR,              /* output string port */
+    SCM_PORT_PROC               /* virtual port */
 };
 
 /* Incomplete character handling policy.
@@ -1090,7 +1131,7 @@ enum ScmPortICPolicy {
 #define SCM_PORT_UNGOTTEN(obj)  (SCM_PORT(obj)->ungotten)
 #define SCM_PORT_ICPOLICY(obj)  (SCM_PORT(obj)->icpolicy)
 
-#define SCM_PORT_CLOSED_P(obj)  (SCM_PORT_TYPE(obj) == SCM_PORT_CLOSED)
+#define SCM_PORT_CLOSED_P(obj)  (SCM_PORT(obj)->closed)
 #define SCM_PORT_OWNER_P(obj)   (SCM_PORT(obj)->ownerp)
 
 #define SCM_IPORTP(obj)  (SCM_PORTP(obj)&&(SCM_PORT_DIR(obj)&SCM_PORT_INPUT))
@@ -1103,9 +1144,9 @@ SCM_EXTERN ScmObj Scm_Stdin(void);
 SCM_EXTERN ScmObj Scm_Stdout(void);
 SCM_EXTERN ScmObj Scm_Stderr(void);
 
-SCM_EXTERN ScmObj Scm_OpenFilePort(const char *path, const char *mode);
-SCM_EXTERN ScmObj Scm_MakeFilePort(FILE *fp, ScmObj name, const char *mode,
-				   int ownerp);
+SCM_EXTERN ScmObj Scm_OpenFilePort(const char *path, int flags, int mode);
+
+SCM_EXTERN void   Scm_FlushAllPorts(int exitting);
 
 SCM_EXTERN ScmObj Scm_MakeInputStringPort(ScmString *str);
 SCM_EXTERN ScmObj Scm_MakeOutputStringPort(void);
@@ -1113,13 +1154,15 @@ SCM_EXTERN ScmObj Scm_GetOutputString(ScmPort *port);
 
 SCM_EXTERN ScmObj Scm_MakeVirtualPort(int direction,
 				      ScmPortVTable *vtable,
-				      void *clientData, int ownerp);
+				      void *clientData);
 SCM_EXTERN ScmObj Scm_MakeBufferedPort(int direction,
 				       int bufsize,
-				       int chars,
+				       int bytes,
 				       char *buffer,
-				       int (*filler)(char *, int, void *),
-				       void *data);
+                                       int (*filler)(ScmPort *p, int cnt),
+                                       int (*flusher)(ScmPort *p, int cnt),
+                                       int (*closer)(ScmPort *p),
+                                       int fd);
 SCM_EXTERN ScmObj Scm_MakePortWithFd(ScmObj name,
 				     int direction,
 				     int fd,
@@ -1158,8 +1201,18 @@ SCM_EXTERN ScmObj Scm_WithPort(ScmPort *port[], ScmProcedure *thunk,
 #define SCM_CUROUT   SCM_VM_CURRENT_OUTPUT_PORT(Scm_VM())
 #define SCM_CURERR   SCM_VM_CURRENT_ERROR_PORT(Scm_VM())
 
-/* Inlined operations are defined in the separater file */
-#include <gauche/portmacros.h>
+#define SCM_PUTB(b, p)     Scm_Putb(b, SCM_PORT(p))
+#define SCM_PUTC(c, p)     Scm_Putc(c, SCM_PORT(p))
+#define SCM_PUTZ(s, l, p)  Scm_Putz(s, l, SCM_PORT(p))
+#define SCM_PUTS(s, p)     Scm_Puts(SCM_STRING(s), SCM_PORT(p))
+#define SCM_FLUSH(p)       Scm_Flush(SCM_PORT(p))
+#define SCM_PUTNL(p)       SCM_PUTC('\n', p)
+
+#define SCM_UNGETC(c, port)      (SCM_PORT(port)->ungotten = (c))
+#define SCM_PORT_SCRATCH_EMPTY_P(port) \
+    (SCM_PORT(port)->scrcnt == 0)
+#define SCM_GETB(b, p)     (b = Scm_Getb(SCM_PORT(p)))
+#define SCM_GETC(c, p)     (c = Scm_Getc(SCM_PORT(p)))
 
 /*--------------------------------------------------------
  * WRITE

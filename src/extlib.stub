@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.135 2002-04-20 07:51:07 shirok Exp $
+;;; $Id: extlib.stub,v 1.136 2002-04-24 23:18:15 shirok Exp $
 ;;;
 
 "
@@ -628,6 +628,22 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 ;; 6.3.6  Vectors
 ;;
 
+;; weak vector
+(define-cproc make-weak-vector (size)
+  (assert (small-integer? size))
+  "SCM_RETURN(Scm_MakeWeakVector(size));")
+
+(define-cproc weak-vector-ref (wv index &optional fallback)
+  (assert (weak-vector? wv))
+  (assert (small-integer? index))
+  "SCM_RETURN(Scm_WeakVectorRef(wv, index, fallback));")
+  
+(define-cproc weak-vector-set! (wv index val)
+  (assert (weak-vector? wv))
+  (assert (small-integer? index))
+  "SCM_RETURN(Scm_WeakVectorSet(wv, index, val));")
+  
+
 ;;
 ;; 6.4  Control Features
 ;;
@@ -648,6 +664,7 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 ;; 6.6.1  Ports
 ;;
 
+;; String port
 (define-cproc open-input-string (string) ;SRFI-6
   (assert (string? string))
   "  SCM_RETURN(Scm_MakeInputStringPort(string));")
@@ -661,45 +678,66 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
         Scm_Error(\"output string port required, but got: %S\", oport);
   SCM_RETURN(Scm_GetOutputString(oport));")
  
-"static int bufport_filler(char *buf, int siz, void *data)
+;; Buffered port
+;; NB: the interface may be changed soon!!
+"static int bufport_closer(ScmPort *p)
  {
+    if (SCM_PORT_DIR(p) == SCM_PORT_OUTPUT) {
+       ScmObj scmflusher = SCM_OBJ(p->data);
+       int siz = (int)(p->src.buf.current - p->src.buf.buffer);
+       if (siz > 0) Scm_Apply(scmflusher, SCM_LIST1(Scm_MakeString(p->src.buf.buffer, siz, siz, SCM_MAKSTR_INCOMPLETE|SCM_MAKSTR_COPYING)));
+       Scm_Apply(scmflusher, SCM_LIST1(SCM_FALSE));
+    }
+    return 0;
+ }"
+
+"static int bufport_filler(ScmPort *p, int mincnt)
+ {
+    ScmObj scmfiller, r;  int bufsiz, siz;
+    scmfiller = SCM_OBJ(p->data);
+    bufsiz = p->src.buf.buffer + p->src.buf.size - p->src.buf.end;
     /* no need to use VMApply; we're in the C callback */
-    ScmObj r = Scm_Apply(SCM_OBJ(data), SCM_LIST1(Scm_MakeInteger(siz)));
+    r = Scm_Apply(scmfiller, SCM_LIST1(Scm_MakeInteger(bufsiz)));
     if (SCM_EOFP(r) || SCM_FALSEP(r)) {
-       return -1;
+       return 0;
     } else if (!SCM_STRINGP(r)) {
        Scm_Error(\"buffered port callback procedure returned non-string: %S\", r);
     }
-    memcpy(buf, SCM_STRING_START(r), SCM_STRING_SIZE(r));
+    /* TODO: check mincnt */
+    siz = SCM_STRING_SIZE(r);
+    if (siz > bufsiz) siz = bufsiz; /* for safety */
+    memcpy(p->src.buf.end, SCM_STRING_START(r), siz);
     return SCM_STRING_SIZE(r);
  }"
 
 (define-cproc open-input-buffered-port (filler buffer-size)
   (assert (procedure? filler))
   (assert (small-integer? buffer-size))
-  "  SCM_RETURN(Scm_MakeBufferedPort(SCM_PORT_INPUT, buffer_size, 0, NULL, bufport_filler, filler));")
+  "  ScmObj p = Scm_MakeBufferedPort(SCM_PORT_INPUT, buffer_size, 0, NULL, bufport_filler, NULL, bufport_closer, -1);
+  SCM_PORT(p)->data = (void*)filler;
+  SCM_RETURN(p);")
 
-"static int bufport_flusher(char *buf, int siz, void *data)
+"static int bufport_flusher(ScmPort *p, int mincnt)
  {
-   if (buf == NULL) {
-     Scm_Apply(SCM_OBJ(data), SCM_LIST1(SCM_FALSE));
-     return 0;
-   } else {
-     ScmObj s = Scm_MakeString(buf, siz, siz, SCM_MAKSTR_INCOMPLETE|SCM_MAKSTR_COPYING);
-     Scm_Apply(SCM_OBJ(data), SCM_LIST1(s));
+     ScmObj scmflusher, s;
+     int siz;
+     scmflusher = SCM_OBJ(p->data);
+     siz = (int)(p->src.buf.current - p->src.buf.buffer);
+     s = Scm_MakeString(p->src.buf.buffer, siz, siz, SCM_MAKSTR_INCOMPLETE|SCM_MAKSTR_COPYING);
+     Scm_Apply(scmflusher, SCM_LIST1(s));
      return siz;
-   }
  }"
 
 (define-cproc open-output-buffered-port (flusher buffer-size)
   (assert (procedure? flusher))
   (assert (small-integer? buffer-size))
-  "  SCM_RETURN(Scm_MakeBufferedPort(SCM_PORT_OUTPUT, buffer_size, 0, NULL, bufport_flusher, flusher));")
+  "  ScmObj p = Scm_MakeBufferedPort(SCM_PORT_OUTPUT, buffer_size, 0, NULL, NULL, bufport_flusher, bufport_closer, -1);
+   SCM_PORT(p)->data = (void*)flusher;
+   SCM_RETURN(p);")
 
 (define-cproc flush (&optional (oport (current-output-port)))
   (assert (output-port? oport))
-  "  Scm_Flush(oport);
-  SCM_RETURN(SCM_UNDEFINED);")
+  "  Scm_Flush(oport); SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc port-closed? (obj)
   (assert (port? obj))

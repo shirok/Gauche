@@ -12,13 +12,14 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.81 2002-04-15 22:04:59 shirok Exp $
+;;; $Id: stdlib.stub,v 1.82 2002-04-24 23:18:15 shirok Exp $
 ;;;
 
 
 "
 #include <stdlib.h>
 #include <ctype.h>
+#include <fcntl.h>
 #include <math.h>
 
 #ifndef M_PI
@@ -868,11 +869,12 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-keyword character "key_character")
 (define-keyword binary "key_binary")
 
-;; Compose mode string to be passed to Scm_OpenFilePort.
-"static const char *file_flags(int inputp,
-                               ScmObj if_does_not_exist,
-                               ScmObj if_exists,
-                               ScmObj element_type, int *ignerr)
+;; Compose mode flags to be passed to Scm_OpenFilePort, checking errors.
+;; TODO: binmode
+"static int file_flags(int inputp,
+                       ScmObj if_does_not_exist,
+                       ScmObj if_exists,
+                       ScmObj element_type, int *ignerr)
  {
   int binmode = FALSE;
 
@@ -888,50 +890,50 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
     } else if (if_does_not_exist != key_error) {
       Scm_Error(\"argument for :if-does-not-exist must be either :error or #f, but got %S\", if_does_not_exist);
     }
-    return binmode? \"rb\" : \"r\";
+    return O_RDONLY;
   } else {
     if (if_does_not_exist != key_error && !SCM_FALSEP(if_does_not_exist) && if_does_not_exist != key_create) { 
       Scm_Error(\"argument for :if-does-not-exist must be either :error, :create or #f, but got %S\", if_does_not_exist);
     }
     if (if_exists == key_supersede) {
       if (if_does_not_exist == key_create) {
-        return binmode? \"wb\" : \"w\";
+        return O_WRONLY|O_CREAT|O_TRUNC;
       } else if (if_does_not_exist == key_error) {
-        return binmode? \"Wb\" : \"W\";
+        return O_WRONLY|O_TRUNC;
       } else {
         if (ignerr) *ignerr = TRUE;
-        return binmode? \"Wb\" : \"W\";
+        return O_WRONLY|O_TRUNC;
       }
     } else if (if_exists == key_append) {
       if (if_does_not_exist == key_create) {
-        return binmode? \"ab\" : \"a\";
+        return O_WRONLY|O_APPEND|O_CREAT;
       } else if (if_does_not_exist == key_error) {
-        return binmode? \"Ab\" : \"A\";
+        return O_WRONLY|O_APPEND;
       } else {
         if (ignerr) *ignerr = TRUE;
-        return binmode? \"Ab\" : \"A\";
+        return O_WRONLY|O_APPEND;
       }
     } else if (if_exists == key_error) {
       if (if_does_not_exist == key_create) {
-        return binmode? \"cb\" : \"c\";
+        return O_WRONLY|O_CREAT|O_EXCL;
       } else if (if_does_not_exist == key_error) {
         Scm_Error(\"bad flag combination: :if-exists and :if-does-not-exist can't be :error the same time.\");
       } else {
         if (ignerr) *ignerr = TRUE;
-        return binmode? \"cb\" : \"c\";
+        return O_WRONLY|O_CREAT|O_EXCL;
       }
     } else if (SCM_FALSEP(if_exists)) {
       if (if_does_not_exist == key_create) {
         if (ignerr) *ignerr = TRUE;
-        return binmode? \"cb\" : \"c\";
+        return O_WRONLY|O_CREAT|O_EXCL;
       } else {
-        return binmode? \"Wb\" : \"W\";
+        return O_WRONLY;
       }
     } else {
       Scm_Error(\"argument for :if-exists must be either :supersede, :append, :error or #f, but got %S\", if_exists);
     }
   }
-  return NULL; /* dummy */
+  return 0; /* dummy */
  }
 "
 
@@ -953,8 +955,8 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
                                )
   (assert (string? path))
   "  ScmObj o;  int ignerr;
-  const char *flags = file_flags(TRUE, if_does_not_exist, 0, element_type, &ignerr);
-  o  = Scm_OpenFilePort(Scm_GetStringConst(path), flags);
+  int flags = file_flags(TRUE, if_does_not_exist, 0, element_type, &ignerr);
+  o  = Scm_OpenFilePort(Scm_GetStringConst(path), flags, 0);
   if (o == SCM_FALSE && !ignerr) {
      Scm_Error(\"couldn't open input file: %S\", path_scm);
   }
@@ -963,12 +965,14 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-cproc open-output-file (path
                                 &keyword (if-exists (c "key_supersede"))
                                          (if-does-not-exist (c "key_create"))
+                                         (mode #o666)
                                          (element-type (c "key_character"))
                                          )
   (assert (string? path))
+  (assert (small-integer? mode))
   "  ScmObj o; int ignerr;
-  const char *flags = file_flags(FALSE, if_does_not_exist, if_exists, element_type, &ignerr);
-  o = Scm_OpenFilePort(Scm_GetStringConst(path), flags);
+  int flags = file_flags(FALSE, if_does_not_exist, if_exists, element_type, &ignerr);
+  o = Scm_OpenFilePort(Scm_GetStringConst(path), flags, mode);
   if (!ignerr && o == SCM_FALSE) {
      Scm_Error(\"couldn't open output file: %S\", path_scm);
   }

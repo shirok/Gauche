@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.49 2002-04-17 00:41:38 shirok Exp $
+ *  $Id: main.c,v 1.50 2002-04-24 23:18:15 shirok Exp $
  */
 
 #include <unistd.h>
@@ -272,7 +272,7 @@ int main(int argc, char **argv)
                 if (SCM_INTP(result)) exit(SCM_INT_VALUE(result));
             }
         }
-        exit(0);
+        Scm_Exit(0);
     }
 
     /* now, we're in the interactive mode. */
@@ -300,5 +300,6 @@ int main(int argc, char **argv)
                  SCM_PORT(Scm_Stdin()),
                  SCM_PORT(Scm_Stdout()));
     }
-    return 0;
+    Scm_Exit(0);
+    return 0;                   /* dummy */
 }

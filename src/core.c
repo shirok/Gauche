@@ -12,9 +12,11 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.36 2002-04-03 22:31:22 shirok Exp $
+ *  $Id: core.c,v 1.37 2002-04-24 23:18:15 shirok Exp $
  */
 
+#include <stdlib.h>
+#include <unistd.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/arch.h"
@@ -106,6 +108,7 @@ void Scm_Exit(int code)
         vm->handlers = SCM_CDR(hp);
         Scm_Apply(SCM_CDAR(hp), SCM_NIL);
     }
+    Scm_FlushAllPorts(TRUE);
     exit(code);
 }
 
