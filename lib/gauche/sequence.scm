@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: sequence.scm,v 1.4 2002-04-26 10:05:07 shirok Exp $
+;;;  $Id: sequence.scm,v 1.5 2002-09-25 04:38:34 shirok Exp $
 ;;;
 
 ;; This module defines an unified way to treat sequence-like objects
@@ -20,8 +20,8 @@
 ;; See also gauche.collection, that defines various mapping functions.
 
 (define-module gauche.sequence
-  (use gauche.collection)
   (export referencer modifier ref subseq)
+  (extend gauche.collection)
   )
 (select-module gauche.sequence)
 
@@ -64,5 +64,17 @@
       (with-iterator (seq end? next :start start)
         (dotimes (i size (get)) (add! (next)))))))
 
+(define-method (setter subseq) ((seq <sequence>) start vals)
+  (with-iterator (vals end? next)
+    (do ((index start (+ index 1)))
+        ((end?))
+      (set! (ref seq index) (next)))))
+
+(define-method (setter subseq) ((seq <sequence>) start end vals)
+  (with-iterator (vals end? next)
+    (do ((index start (+ index 1)))
+        ((>= index end))
+      (when (end?) (error "not enough values for (setter subseq)" vals))
+      (set! (ref seq index) (next)))))
 
 (provide "gauche/sequence")

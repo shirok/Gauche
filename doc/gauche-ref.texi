@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.273 2002-09-22 09:58:17 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.274 2002-09-25 04:38:33 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -17392,18 +17392,35 @@ This is a simple example of "echo" server:
 
 @deftp {Module} gauche.sequence
 @mdindex gauche.sequence
+@c EN
 Provides a generic opertaions on @emph{sequences}.  A sequence is
 a collection in which elements can be accessed by integer index,
 starting with zero.
+@c JP
+@emph{シーケンス}に関するジェネリックな操作を提供するモジュールです。
+シーケンスとは、コレクションのうち0から始まる整数インデックスで
+アクセスできるものです。
+@c COMMON
 
-Since a sequence is also a collection, all the collection generic
-operations (@xref{Collection framework}) can be applied to a sequence.
-This module defines other operations that are meaningful only for
-sequences.
+@c EN
+This module inherits @code{gauche.collection} (@xref{Collection framework}),
+All the collection generic operations can be applied to a sequence as well.
+@c JP
+このモジュールは@code{gauche.collection}を継承しています
+(@ref{Collection framework}参照)。
+コレクションに使えるジェネリックな操作は全てシーケンスに対しても適用可能です。
+@c COMMON
 
+@c EN
 Among Gauche builtin class, lists, vectors and strings are sequences
 and the specialized methods are defined for them.   Other extension
 types, such as SRFI-4 uniform vector, have the methods as well.
+@c JP
+Gauche組み込みクラスのうち、リスト、ベクター、そして文字列は
+シーケンスであり、このモジュールでメソッドが定義されます。
+また@code{gauche.uvector}のユニフォームベクタ等、
+いくつかの拡張データタイプはシーケンスとなっています。
+@c COMMON
 @end deftp
 
 @menu
@@ -17414,8 +17431,25 @@ types, such as SRFI-4 uniform vector, have the methods as well.
 
 @node Fundamental sequence accessors, Slicing sequence, Sequence framework, Sequence framework
 @subsection Fundamental sequence accessors
+@c NODE 基本的なシーケンスのアクセサ
 
 @deffn {Generic function} ref (seq <sequence>) index &optional fallback
+@c EN
+Returns @var{index}-th element of the sequence @var{seq}.
+This method enables uniform access for any sequence types.
+
+When @var{index} is less than zero, or greater than or equal to the
+size of the sequence, @var{fallback} is returned if provided, or
+an error is signalled if not.
+@c JP
+シーケンス@var{seq}の@var{index}番目の要素を返します。
+このメソッドによって、全てのシーケンスが統一的にアクセスできます。
+
+@var{index}が負値だったりシーケンスのサイズ以上だった場合は、
+@var{fallback}が与えられていればそれが返され、
+そうでなければエラーとなります。
+@c COMMON
+
 @example
 (ref '(a b c) 1)  @result{} b
 (ref '#(a b c) 1) @result{} b
@@ -17424,6 +17458,14 @@ types, such as SRFI-4 uniform vector, have the methods as well.
 @end deffn
 
 @deffn {Generic function} {(setter ref)} (seq <sequence>) index value
+@c EN
+Sets @var{value} to the @var{index}-th element of the sequence @var{seq}.
+This is the uniform sequence modifier.
+@c JP
+統一的なシーケンスの変更メソッドです。
+シーケンス@var{seq}の@var{index}番目の要素に@var{value}をセットします。
+@c COMMON
+
 @example
 (let ((x (list a b c)))
   (set! (ref x 1) 'z)
@@ -17447,14 +17489,56 @@ types, such as SRFI-4 uniform vector, have the methods as well.
 
 @node Slicing sequence, Implementing sequence, Fundamental sequence accessors, Sequence framework
 @subsection Slicing sequence
+@c NODE シーケンスのスライス
 
 @deffn {Generic function} subseq (seq <sequence>) &optional start end
+@c EN
+Retrieve a subsequence of the sequence @var{seq}, from
+@var{start}-th element (inclusive) to @var{end}-th element (exclusive).
+If @var{end} is omitted, up to the end of sequence is taken.
+The type of the returned sequence is the same as @var{seq}.
+@c JP
+シーケンス@var{seq}の、@var{start}番目の要素から@var{end}番目の要素の直前
+までの部分シーケンスを返します。@var{end}が省略された場合はシーケンスの
+最後までが取られます。返されるシーケンスの型は@var{seq}と同じになります。
+@c COMMON
+
 @example
 (subseq '(a b c d e) 1 4)   @result{} (b c d)
 (subseq '#(a b c d e) 1 4)  @result{} #(b c d)
 (subseq "abcde" 1 4)        @result{} "bcd"
+
+(subseq '(a b c d e) 3)     @result{} (d e)
 @end example
 @end deffn
+
+@deffn {Generic function} {(setter subseq)} (seq <sequence>) start end value-seq
+@deffnx {Generic function} {(setter subseq)} (seq <sequence>) start value-seq
+@c EN
+Sets the elements of @var{value-seq} from the @var{start}-th element
+(inclusive) to the @var{end}-th element (exclusive) of the sequence @var{seq}.
+@var{Value-seq} can be any sequence, but its size
+must be larger than (@var{end} - @var{start}).
+
+In the second form, @var{end} is figured out by the length of @var{value-seq}.
+@c JP
+@var{value-seq}の各要素を、シーケンス@var{seq}の@var{start}番目から
+@var{end}番目の直前まで順にセットします。
+@var{value-seq}はどんなシーケンスでも構いませんが、
+(@var{end} - @var{start}) よりは長くなくてはなりません。
+
+2番目の形式では、@var{end}が@var{value-seq}の長さから算出されます。
+@c COMMON
+
+@example
+(define s '#(a b c d e))
+(set! (subseq s 1 4) '(4 5 6))
+s @result{} #(a 4 5 6 e)
+(set! (subseq s 0)   "ab")
+s @result{} #(#\a #\b 5 6 e)
+@end example
+@end deffn
+
 
 @node Implementing sequence,  , Slicing sequence, Sequence framework
 @subsection Implementing sequence
