@@ -1,7 +1,7 @@
 /*
  * bignum.c - multiple precision exact integer arithmetic
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bignum.c,v 1.54 2004-01-27 23:52:14 shirok Exp $
+ *  $Id: bignum.c,v 1.55 2004-01-28 08:36:26 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -325,7 +325,9 @@ ScmInt64 Scm_BignumToSI64(ScmBignum *b, int clamphi, int clamplo)
             r = ((int64_t)b->values[1] << 32) + (uint64_t)b->values[0];
         }
     } else { /* b->sign < 0 */
-        if (b->size > 2 || b->values[1] > (u_long)LONG_MAX + 1) {
+        if (b->size > 2
+            || ((b->values[1] > (u_long)LONG_MAX)
+                && (b->values[0] > 0))) {
             if (!clamplo) goto err;
             SCM_SET_INT64_MIN(r);
         } else {
