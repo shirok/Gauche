@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: util.scm,v 1.6 2002-05-05 01:50:18 shirok Exp $
+;;;  $Id: util.scm,v 1.7 2002-05-09 03:03:52 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -37,6 +37,7 @@
           file-mtime=? file-mtime<? file-mtime<=? file-mtime>? file-mtime>=?
           file-atime=? file-atime<? file-atime<=? file-atime>? file-atime>=?
           file-ctime=? file-ctime<? file-ctime<=? file-ctime>? file-ctime>=?
+          touch-file
           ))
 (select-module file.util)
 
@@ -325,6 +326,10 @@
 ;;;=============================================================
 ;;; File operation
 
-;; -- to be written --
+(define (touch-file pathname)
+  (if (sys-access pathname |F_OK|)
+      (sys-utime pathname)
+      (close-output-port (open-output-file pathname)))
+  (values))
 
 (provide "file/util")
