@@ -1,3 +1,9 @@
+2002-10-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c : added -A and -E option.  makes -A, -I, -E, -e, -l, -u
+	  options be processed in the order of appearance.
+	* doc/gauche.ref.texi : added @direntry (suggested by MINOURA Makoto).
+
 2002-10-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-1/* : replaced several non-tail-recursive calls for 

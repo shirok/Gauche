@@ -1,4 +1,4 @@
-.\" $Id: gosh.1.in,v 1.1 2002-03-07 07:06:43 shirok Exp $ -*-nroff-*-
+.\" $Id: gosh.1.in,v 1.2 2002-10-13 23:32:39 shirok Exp $ -*-nroff-*-
 .TH GOSH "version @GAUCHE_VERSION@"
 .UC 4
 .SH NAME
@@ -9,6 +9,9 @@ gosh \- a Scheme script interpreter
 [-I
 .I path
 ]
+[-A
+.I path
+]
 [-u
 .I module
 ]
@@ -16,6 +19,9 @@ gosh \- a Scheme script interpreter
 .I file
 ]
 [-e
+.I expr
+]
+[-E
 .I expr
 ]
 [-f
@@ -66,16 +72,21 @@ This behavior can be controlled by -i or -b option; see below.
 .SH OPTIONS
 Command line options are processed before loading the script file
 or entering the interactive mode.
+
+The options -I, -A, -u, -l, -e and -E are processed in the order
+of appearance.  For example, adding a load path by -I option
+affects the -l options after it, but not the ones before it.
+
 .TP 5
 .BI -V
 Prints gosh version and exits.
 .TP
 .BI -b
-Batch mode.  Don't print prompt even the standard input
+Batch mode.  Doesn't print prompt even the standard input
 is a terminal.  Supersedes -i.
 .TP
 .BI -i
-Interactive mode.  Force to print prompt, even the standard input
+Interactive mode.  Forces to print prompt, even the standard input
 is not a terminal.
 .TP
 .BI -q
@@ -84,7 +95,12 @@ Prevents reading the default initialization file.
 .BI -I path
 Adds
 .I path
-at the front of the load path list.  
+in front of the load path list.  
+.TP
+.BI -A path
+Appends
+.I path
+to the tail of the load path list.  
 .TP
 .BI -u module
 Loads and imports
@@ -101,13 +117,17 @@ Loads a Scheme file
 Evaluates a Scheme expression
 .I expr.
 .TP
+.BI -E expr
+Same as -e, except that the
+.I expr
+is read as if it is surrounded by parenthesis.
+.TP
 .BI -f flag
 Sets various flags.
   no-inline       don't inline primitive procedures
   no-source-info  don't preserve source information for debug
   load-verbose    report while loading files
   case-fold       uses case-insensitive reader (as in R5RS)
-  compat-0.5      'main' behaves backward-compatible for 0.5 and before
 .TP
 .BI --
 Specifies that there are no more options.  If there are more
@@ -124,7 +144,7 @@ Gauche Scheme interpreter:
 .br
 http://www.shiro.dreamhost.com/scheme/gauche/
 .PP
-The information about Scheme language can be obtained from
+For the information about Scheme language, see
 .br
 http://www.schemers.org/
 

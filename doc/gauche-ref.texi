@@ -4,7 +4,7 @@
 @setfilename gauche-refe.info
 @settitle Gauche Reference Manual
 @dircategory The Algorithmic Language Scheme
-@directory
+@direntry
 * Gauche Reference: (gauche-refe.info).	An R5RS Scheme implementation.
 @end direntry
 @c JP
@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.277 2002-10-13 20:06:48 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.278 2002-10-13 23:32:39 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1438,7 +1438,16 @@ that begins with a minus sign, use a dummy option `@code{--}'.
 Prepends @var{path} to the load path list.
 You can specify this option more than once to add multiple paths.
 @c JP
-@var{path}をロードパスのリストに加えます。このオプションは複数指定できます。
+@var{path}をロードパスのリストの最初に加えます。このオプションは複数指定できます。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -A path
+@c EN
+Appends @var{path} to the tail of the load path list.
+You can specify this option more than once to add multiple paths.
+@c JP
+@var{path}をロードパスのリストの末尾に加えます。このオプションは複数指定できます。
 @c COMMON
 @end deftp
 
@@ -1498,6 +1507,21 @@ You can specify this option more than once to evaluate multiple experssions.
 @var{interaction-environment}中で行われます(@ref{Eval and repl}参照)。
 このオプションは複数回指定できます。
 @c COMMON
+@end deftp
+
+@deftp {Command Option} -E scheme-expression
+@c EN
+Same as -e, except the @var{scheme-experssion} is read
+as if it is surrounded by parenthesis.  For example:
+@c JP
+オプション-eとほぼ同じですが、@var{scheme-expression}は
+それが括弧で囲まれているかのように読まれます。
+このオプションは複数回指定できます。例：
+@c COMMON
+@example
+% gosh -umath.const -E"print (sin (* pi/180 15))" -Eexit
+0.25881904510252074
+@end example
 @end deftp
 
 @deftp {Command Option} -b
@@ -1563,6 +1587,17 @@ although it is not generally recommended.
 始まっている場合に必要です。
 @c COMMON
 @end deftp
+
+@c EN
+The options -I, -A, -l, -u, -e and -E are processes in the order
+of appearance.  For example, adding a load path by -I affects the
+-l and -u option after it but not before it.
+@c JP
+オプション-I, -A, -l, -u, -e 及び -E は、それらがコマンドライン引数として
+出現した順に処理されます。例えば、-Iにより追加されるロードパスは
+それ以降の-lや-uオプションに影響を与えますが、それ以前のものには影響を
+与えません。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Interactive development, Debugging, Invoking Gosh, Programming in Gauche
