@@ -115,6 +115,29 @@ Content-Length: 4349
         (parse-cookie-string " foo=bar, aaa = bbb ; $Path=/a/b;$Domain =a.b.com,x12=\"Yy \\\"yY\\\" ;; Zz\"; $Port=\"100, 200, 300\",zzz ,_n_=,mmm=ppp"
                       1)))
 
+(define *cookie-spec*
+  '(("guest-id" "foo123"
+                :domain "foo.com" :path "/abc"
+                :expires 1000000000 :max-age 864000
+                :discard #t :comment "hogehoge"
+                :comment-url "http://foo.com/hogehoge"
+                :port "80, 8080" :version 1)
+    ("guest-account" "87975348"
+                     :domain "zzz.com" :path "/zzz"
+                     :discard #f :secure #t :comment "ZzzZzz, OooOoo"
+                     :comment-url "http://foo.com/hogehoge")))
+
+(test "cookie, old"
+      '("guest-id=foo123;Domain=foo.com;Path=/abc;Expires=Sun, 09-Sep-2001 01:46:40 GMT"
+        "guest-account=87975348;Domain=zzz.com;Path=/zzz;Secure")
+      (lambda ()
+        (construct-cookie-string *cookie-spec* 0)))
+
+(test "cookie, new"
+      '("guest-id=foo123;Domain=foo.com;Path=/abc;Max-Age=864000;Discard;Comment=hogehoge;CommentURL=\"http://foo.com/hogehoge\";Port=\"80, 8080\";Version=1"
+        "guest-account=87975348;Domain=zzz.com;Path=/zzz;Secure;Comment=\"ZzzZzz, OooOoo\";CommentURL=\"http://foo.com/hogehoge\"")
+      (lambda ()
+        (construct-cookie-string *cookie-spec* 1)))
 
 ;;--------------------------------------------------------------------
 (test-section "rfc.uri")
