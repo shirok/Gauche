@@ -1,7 +1,7 @@
 ;;;
 ;;; charconv - character code conversion module
 ;;;
-;;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2001-2003 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: charconv.scm,v 1.9 2002-10-26 09:02:40 shirok Exp $
+;;;  $Id: charconv.scm,v 1.10 2003-01-09 11:34:21 shirok Exp $
 ;;;
 
 (define-module gauche.charconv
@@ -20,7 +20,7 @@
           open-output-conversion-port
           open-input-file open-output-file
           call-with-input-file call-with-output-file
-          with-input-from-file with-output-from-file
+          with-input-from-file with-output-to-file
           ces-conversion-supported?
           ces-convert
           ces-guess-from-string))
