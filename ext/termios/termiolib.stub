@@ -1,7 +1,7 @@
 ;;;
 ;;; termiolib.stub - termios interface
 ;;;
-;;;   Copyright (c) 2001 Shiro Kawai (shiro@acm.org)
+;;;   Copyright (c) 2001-2002 Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;   Permission to use, copy, modify, distribute this software and
 ;;;   accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: termiolib.stub,v 1.4 2002-04-29 22:24:36 shirok Exp $
+;;; $Id: termiolib.stub,v 1.5 2002-04-30 01:52:32 shirok Exp $
 ;;;
 
 "#include \"termios.h\""
@@ -140,6 +140,10 @@
 (if "defined(HAVE_OPENPTY)"
 (define-cproc sys-openpty (&optional term)
   "SCM_RETURN(Scm_Openpty(term));")
+)
+(if "defined(HAVE_FORKPTY)"
+(define-cproc sys-forkpty (&optional term)
+  "SCM_RETURN(Scm_Forkpty(term));")
 )
 
 ;; Local variables:

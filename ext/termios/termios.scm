@@ -1,7 +1,7 @@
 ;;;
 ;;; termios - termios interface
 ;;;
-;;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: termios.scm,v 1.2 2001-09-08 11:16:49 shirok Exp $
+;;;  $Id: termios.scm,v 1.3 2002-04-30 01:52:32 shirok Exp $
 ;;;
 
 (define-module gauche.termios
@@ -21,6 +21,7 @@
           sys-tcsendbreak sys-tcdrain sys-tcflush sys-tcflow
           sys-tcgetpgrp sys-tcsetpgrp
           sys-cfgetispeed sys-cfsetispeed sys-cfgetospeed sys-cfsetospeed
+          sys-openpty sys-forkpty
 
           |IGNBRK|  |BRKINT|  |IGNPAR|  |PARMRK|  |INPCK|  |ISTRIP|
           |INLCR|   |IGNCR|   |ICRNL|   |IUCLC|   |IXON|   |IXANY|

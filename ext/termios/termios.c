@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: termios.c,v 1.7 2002-04-29 22:24:36 shirok Exp $
+ *  $Id: termios.c,v 1.8 2002-04-30 01:52:32 shirok Exp $
  */
 
 #include <string.h>
@@ -87,6 +87,19 @@ ScmObj Scm_Openpty(ScmObj slaveterm)
 #endif /*HAVE_OPENPTY*/
 
 #ifdef HAVE_FORKPTY
+ScmObj Scm_Forkpty(ScmObj slaveterm)
+{
+    int master;
+    pid_t pid;
+    struct termios *term = NULL;
+    if (SCM_SYS_TERMIOS_P(slaveterm)) {
+        term = &SCM_SYS_TERMIOS(slaveterm)->term;
+    }
+    if ((pid = forkpty(&master, NULL, term, NULL)) < 0) {
+        Scm_SysError("forkpty failed");
+    }
+    return Scm_Values2(Scm_MakeInteger(pid), SCM_MAKE_INT(master));
+}
 #endif /*HAVE_FORKPTY*/
 
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: termios.h,v 1.3 2002-04-29 22:24:36 shirok Exp $
+ *  $Id: termios.h,v 1.4 2002-04-30 01:52:32 shirok Exp $
  */
 
 #ifndef GAUCHE_TERMIOS_H
@@ -45,6 +45,9 @@ SCM_EXTERN ScmObj Scm_MakeSysTermios(void);
 
 #ifdef HAVE_OPENPTY
 SCM_EXTERN ScmObj Scm_Openpty(ScmObj slaveterm);
+#endif
+#ifdef HAVE_FORKPTY
+SCM_EXTERN ScmObj Scm_Forkpty(ScmObj slaveterm);
 #endif
 
 #endif /* GAUCHE_TERMIOS_H */
