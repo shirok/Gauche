@@ -90,3 +90,20 @@
 (define (fact-do n)
   (do ((n n (- n 1)) (r 1 (* n r))) ((<= n 1) r)))
 (title "loop do"           120) (run (fact-do 5))
+
+;;----------------------------------------------------------------
+(section "quasiquote")
+
+(title "qq" '(1 2 3))       (run `(1 2 3))
+(title "qq" '())            (run `())
+(title "qq" '((1 . 2)))     (run `(,(cons 1 2)))
+(title "qq" '((1 . 2) 3))   (run `(,(cons 1 2) 3))
+(title "qq" '(1 2 3 4))     (run `(1 ,@(list 2 3) 4))
+(title "qq" '(1 2 3 4))     (run `(1 2 ,@(list 3 4)))
+(title "qq" '(1 2 3 4))     (run `(1 2 . ,(list 3 4)))
+(title "qq" '#((1 . 2) 3))  (run `#(,(cons 1 2) 3))
+(title "qq" '#(1 2 3 4))    (run `#(1 ,@(list 2 3) 4))
+(title "qq" '#(1 2 3 4))    (run `#(1 2 ,@(list 3 4)))
+(title "qq" '#())           (run `#())
+(title "qq" '#())           (run `#(,@(list)))
+
