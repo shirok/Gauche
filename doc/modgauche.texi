@@ -2509,10 +2509,21 @@ Provides useful utilities for the interactive session.
 
 This module is automatically loaded when you run @code{gosh}
 interactively.
+
+This module also sets autoloads for functions defined in
+@code{gauche.reload} module 
+(see @ref{gauche.reload - Reloading modules}), so that
+those functions can be used by default in interactive development.
 @c JP
 インタラクティブセッションで便利なユーティリティ手続きを提供します。
 
-@code{gosh}をインタラクティブモードで起動した場合、このモジュールは自動的にロードされます。
+@code{gosh}をインタラクティブモードで起動した場合、
+このモジュールは自動的にロードされます。
+
+また、このモジュールは@code{gauche.reload}
+(@ref{gauche.reload - Reloading modules}参照)で定義される
+手続きに対してautoloadを設定し、それらの手続きが
+インタラクティブな開発時にデフォルトで使えるようにします。
 @c COMMON
 @end deftp
 
