@@ -1,0 +1,33 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SCM_CATEGORY = rfc
+
+LIBFILES = md5.la sha1.la
+SCMFILES = md5.scm sha1.scm
+
+GENERATED = Makefile md5.c sha1.c *_head.c *_tail.c
+
+all : $(LIBFILES)
+
+md5_OBJECTS = md5_head.lo md5.lo md5c.lo md5_tail.lo
+
+md5.la : $(md5_OBJECTS) 
+	$(MODLINK) $(md5_OBJECTS) $(LIBGAUCHE)
+
+sha1_OBJECTS = sha1_head.lo sha1.lo sha.lo sha1_tail.lo
+
+sha1.la : $(sha1_OBJECTS) 
+	$(MODLINK) $(sha1_OBJECTS) $(LIBGAUCHE)
+
+md5_head.c md5_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension md5
+
+sha1_head.c sha1_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension sha1
+
+install : install-std
+
+include ../Makefile.ext
+
