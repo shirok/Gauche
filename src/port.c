@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.61 2002-04-29 23:58:58 shirok Exp $
+ *  $Id: port.c,v 1.62 2002-04-30 08:10:56 shirok Exp $
  */
 
 #include <unistd.h>
@@ -624,6 +624,11 @@ int Scm_BufferingMode(ScmObj flag, int direction, int fallback)
         if (SCM_EQ(flag, key_line)) return SCM_PORT_BUFFER_LINE;
         else Scm_Error("buffering mode must be one of :full, :line or :none, but got %S", flag);
     }
+    /* if direction is none of input or output, allow both. */
+    if (SCM_EQ(flag, key_line) || SCM_EQ(flag, key_modest)) {
+        return SCM_PORT_BUFFER_LINE;
+    }
+    else Scm_Error("buffering mode must be one of :full, :modest, :line or :none, but got %S", flag);
     return -1;                  /* dummy */
 }
 

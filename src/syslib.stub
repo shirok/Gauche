@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.70 2002-04-30 05:35:46 shirok Exp $
+;;; $Id: syslib.stub,v 1.71 2002-04-30 08:10:56 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -578,14 +578,17 @@
   SCM_RETURN(Scm_MakeInteger(r));")
 
 ;; returns a list of two ports
-(define-cproc sys-pipe (&keyword (name "(pipe)") (buffered? #t))
-  "  int fds[2], r; ScmObj rend, wend;
+(define-cproc sys-pipe (&keyword (name "(pipe)") (buffering #f) (buffered? #f))
+  "  int fds[2], r, bufmode; ScmObj rend, wend;
   r = Scm_SysCall(pipe(fds));
   if (r < 0) Scm_SysError(\"pipe failed\");
-  rend = Scm_MakePortWithFd(name, SCM_PORT_INPUT, fds[0],
-                            SCM_FALSEP(bufferedP) ? SCM_PORT_BUFFER_NONE : SCM_PORT_BUFFER_FULL, TRUE);
-  wend = Scm_MakePortWithFd(name, SCM_PORT_OUTPUT, fds[1],
-                            SCM_FALSEP(bufferedP) ? SCM_PORT_BUFFER_NONE : SCM_PORT_BUFFER_FULL, TRUE);
+  if (SCM_TRUEP(bufferedP)) {
+    bufmode = SCM_PORT_BUFFER_FULL; /* for backward compatibility */
+  } else {
+    bufmode = Scm_BufferingMode(buffering, -1, SCM_PORT_BUFFER_LINE);
+  }
+  rend = Scm_MakePortWithFd(name, SCM_PORT_INPUT, fds[0], bufmode, TRUE);
+  wend = Scm_MakePortWithFd(name, SCM_PORT_OUTPUT, fds[1], bufmode, TRUE);
   SCM_RETURN(Scm_Values2(rend, wend));")  
 
 (define-cproc sys-mkdir (pathname mode)
