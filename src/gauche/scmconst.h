@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: scmconst.h,v 1.1 2004-01-27 23:52:14 shirok Exp $
+ *  $Id: scmconst.h,v 1.2 2004-11-05 10:33:52 shirok Exp $
  */
 
 #ifndef GAUCHE_SCMCONST_H
@@ -39,15 +39,16 @@
 SCM_EXTERN ScmObj Scm__ConstObjs[];   /* initialized in number.c */
 
 #define SCM_2_64          (Scm__ConstObjs[0])    /*  2^64 */
-#define SCM_2_63          (Scm__ConstObjs[1])    /*  2^63 */
-#define SCM_MINUS_2_63    (Scm__ConstObjs[2])    /* -2^63 */
-#define SCM_2_53          (Scm__ConstObjs[3])    /*  2^52 */
-#define SCM_2_52          (Scm__ConstObjs[4])    /*  2^52 */
-#define SCM_2_32          (Scm__ConstObjs[5])    /*  2^32 */
-#define SCM_2_31          (Scm__ConstObjs[6])    /*  2^31 */
-#define SCM_MINUS_2_31    (Scm__ConstObjs[7])    /* -2^31 */
+#define SCM_2_64_MINUS_1  (Scm__ConstObjs[1])    /*  2^64-1 */
+#define SCM_2_63          (Scm__ConstObjs[2])    /*  2^63 */
+#define SCM_MINUS_2_63    (Scm__ConstObjs[3])    /* -2^63 */
+#define SCM_2_53          (Scm__ConstObjs[4])    /*  2^52 */
+#define SCM_2_52          (Scm__ConstObjs[5])    /*  2^52 */
+#define SCM_2_32          (Scm__ConstObjs[6])    /*  2^32 */
+#define SCM_2_31          (Scm__ConstObjs[7])    /*  2^31 */
+#define SCM_MINUS_2_31    (Scm__ConstObjs[8])    /* -2^31 */
 
-#define SCM_NUM_CONST_OBJS  8
+#define SCM_NUM_CONST_OBJS  9
 
 #endif /*GAUCHE_SCMCONST_H*/
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.397 2004-11-02 02:38:42 shirok Exp $
+ *  $Id: gauche.h,v 1.398 2004-11-05 10:33:38 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1744,6 +1744,34 @@ struct ScmBignumRec {
 
 #define SCM_BIGNUM_MAX_DIGITS  ((1UL<<(SIZEOF_INT*CHAR_BIT-2))-1)
 
+/* Converting a Scheme number to a C number:
+ *
+ * It's a tricky business.  It's always possible that the Scheme number
+ * you got may not fit into the desired C variable.  There are several
+ * options you can choose.
+ *
+ *  - Error.  Throws an error.
+ *  - Clamping.  If the Scheme value falls out of the supported range
+ *    of C variable, use the closest representable value.
+ *  - Convert only when possible.  If conversion is not possible, use
+ *    the Scheme value as-is.  It is useful to provide a shortcut path
+ *    to improve performance.
+ *
+ * Some APIs take 'clamp' argument to specify the behavior.  The value
+ * can be one of the SCM_CLAMP_* enums.  If an API supports SCM_CLAMP_NONE,
+ * it also takes an output argument to return a flag whether the argument
+ * is out of range or not.  This output argument can be NULL if the caller 
+ * doesn't specify SCM_CLAMP_NONE flag.
+ */
+
+enum {
+    SCM_CLAMP_ERROR = 0,       /* throws an error when out-of-range */
+    SCM_CLAMP_HI = 1,
+    SCM_CLAMP_LO = 2,
+    SCM_CLAMP_BOTH = 3,
+    SCM_CLAMP_NONE = 4         /* do not convert when out-of-range */
+};
+
 SCM_EXTERN ScmObj Scm_MakeBignumFromSI(long val);
 SCM_EXTERN ScmObj Scm_MakeBignumFromUI(u_long val);
 SCM_EXTERN ScmObj Scm_MakeBignumFromUIArray(int sign, u_long *values, int size);
@@ -1751,11 +1779,11 @@ SCM_EXTERN ScmObj Scm_MakeBignumFromDouble(double val);
 SCM_EXTERN ScmObj Scm_BignumCopy(ScmBignum *b);
 SCM_EXTERN ScmObj Scm_BignumToString(ScmBignum *b, int radix, int use_upper);
 
-SCM_EXTERN long   Scm_BignumToSI(ScmBignum *b, int clamphi, int clamplo);
-SCM_EXTERN u_long Scm_BignumToUI(ScmBignum *b, int clamphi, int clamplo);
+SCM_EXTERN long   Scm_BignumToSI(ScmBignum *b, int clamp, int* oor);
+SCM_EXTERN u_long Scm_BignumToUI(ScmBignum *b, int clamp, int* oor);
 #if SIZEOF_LONG == 4
-SCM_EXTERN ScmInt64  Scm_BignumToSI64(ScmBignum *b, int hi, int lo);
-SCM_EXTERN ScmUInt64 Scm_BignumToUI64(ScmBignum *b, int hi, int lo);
+SCM_EXTERN ScmInt64  Scm_BignumToSI64(ScmBignum *b, int clamp, int *oor);
+SCM_EXTERN ScmUInt64 Scm_BignumToUI64(ScmBignum *b, int clamp, int *oor);
 #else  /* SIZEOF_LONG >= 8 */
 #define Scm_BignumToSI64       Scm_BignumToSI
 #define Scm_BignumToUI64       Scm_BignumToUI
@@ -1815,28 +1843,28 @@ struct ScmComplexRec {
 SCM_EXTERN ScmObj Scm_MakeInteger(long i);
 SCM_EXTERN ScmObj Scm_MakeIntegerU(u_long i);
 
-SCM_EXTERN long   Scm_GetIntegerClamp(ScmObj obj, int clamphi, int clamplo);
-SCM_EXTERN u_long Scm_GetIntegerUClamp(ScmObj obj, int clamphi, int clamplo);
-#define Scm_GetInteger(x)  Scm_GetIntegerClamp(x, TRUE, TRUE)
-#define Scm_GetIntegerU(x) Scm_GetIntegerUClamp(x, TRUE, TRUE)
+SCM_EXTERN long   Scm_GetIntegerClamp(ScmObj obj, int clamp, int *oor);
+SCM_EXTERN u_long Scm_GetIntegerUClamp(ScmObj obj, int clamp, int *oor);
+#define Scm_GetInteger(x)  Scm_GetIntegerClamp(x, SCM_CLAMP_BOTH, NULL)
+#define Scm_GetIntegerU(x) Scm_GetIntegerUClamp(x, SCM_CLAMP_BOTH, NULL)
 
-SCM_EXTERN ScmInt32  Scm_GetInteger32Clamp(ScmObj obj, int hi, int lo);
-SCM_EXTERN ScmUInt32 Scm_GetIntegerU32Clamp(ScmObj obj, int hi, int lo);
+SCM_EXTERN ScmInt32  Scm_GetInteger32Clamp(ScmObj obj, int clamp, int *oor);
+SCM_EXTERN ScmUInt32 Scm_GetIntegerU32Clamp(ScmObj obj, int clamp, int *oor);
 
 /* 64bit integer stuff */
 #if SIZEOF_LONG == 4
 SCM_EXTERN ScmObj Scm_MakeInteger64(ScmInt64 i);
 SCM_EXTERN ScmObj Scm_MakeIntegerU64(ScmUInt64 i);
-SCM_EXTERN ScmInt64  Scm_GetInteger64Clamp(ScmObj obj, int hi, int lo);
-SCM_EXTERN ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int hi, int lo);
+SCM_EXTERN ScmInt64  Scm_GetInteger64Clamp(ScmObj obj, int clamp, int *oor);
+SCM_EXTERN ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor);
 #else  /* SIZEOF_LONG >= 8 */
 #define Scm_MakeInteger64      Scm_MakeInteger
 #define Scm_MakeIntegerU64     Scm_MakeIntegerU
 #define Scm_GetInteger64Clamp  Scm_GetIntegerClamp
 #define Scm_GetIntegerU64Clamp Scm_GetIntegerUClamp
 #endif /* SIZEOF_LONG >= 8 */
-#define Scm_GetInteger64(x)    Scm_GetInteger64Clamp(x, TRUE, TRUE)
-#define Scm_GetIntegerU64(x)   Scm_GetIntegerU64Clamp(x, TRUE, TRUE)
+#define Scm_GetInteger64(x)    Scm_GetInteger64Clamp(x, SCM_CLAMP_BOTH, NULL)
+#define Scm_GetIntegerU64(x)   Scm_GetIntegerU64Clamp(x, SCM_CLAMP_BOTH, NULL)
 
 /* for backward compatibility -- will be gone soon */
 #define Scm_MakeIntegerFromUI Scm_MakeIntegerU

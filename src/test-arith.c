@@ -1,11 +1,12 @@
 /*
- * Test/arith.h macros
- * $Id: test-arith.c,v 1.5 2002-06-22 10:58:59 shirok Exp $
+ * Test the lowest-level numeric routines.
+ * $Id: test-arith.c,v 1.6 2004-11-05 10:33:39 shirok Exp $
  */
 
 #include <stdio.h>
 #include "gauche.h"
 #include "gauche/arith.h"
+#include "gauche/scmconst.h"
 
 #define UMAX SCM_ULONG_MAX
 #define SMAX LONG_MAX
@@ -24,6 +25,10 @@ void message(FILE *out, const char *m, int filler)
     }
     putc('\n', out);
 }
+
+/*=============================================================
+ * Testing macros in gauche/arith.h
+ */
 
 #define TEST_SECTION(name) message(stdout, "<" name ">", '-')
 
@@ -451,13 +456,209 @@ void test_smulov(void)
     TEST_SMULOV(-SMAX, -SMAX, 0, 1);
 }
 
+/*=============================================================
+ * Testing 32/64-bit conversion routines
+ */
 
-/*
+int test_scm_c_scm(const char *msg, ScmObj expect, ScmObj val)
+{
+    Scm_Printf(SCM_CUROUT, "testing %s, expects %S =>", msg, expect);
+    if (Scm_EqualP(expect, val)) {
+        Scm_Printf(SCM_CUROUT, "ok\n");
+    } else {
+        Scm_Printf(SCM_CUROUT, "ERROR: got %S\n", val);
+        errcount++;
+    }
+}
+
+int test_true(const char *msg, int val)
+{
+    Scm_Printf(SCM_CUROUT, "testing %s, expects TRUE =>", msg);
+    if (val) {
+        Scm_Printf(SCM_CUROUT, "ok\n");
+    } else {
+        Scm_Printf(SCM_CUROUT, "ERROR: got %d\n", val);
+        errcount++;
+    }
+}
+
+
+
+int test_32_64(void)
+{
+    ScmObj vv;
+    int oor;
+
+    TEST_SECTION("integer conversions, non clamping");
+
+    vv = Scm_Add2(SCM_2_31, SCM_MAKE_INT(-1));
+    test_scm_c_scm("long roundtrip 2^31-1", vv,
+                   Scm_MakeInteger(Scm_GetInteger(vv)));
+    vv = Scm_Add2(SCM_2_31, SCM_MAKE_INT(-3));
+    test_scm_c_scm("long roundtrip 2^31-3", vv,
+                   Scm_MakeInteger(Scm_GetInteger(vv)));
+    vv = Scm_Negate(SCM_2_31);
+    test_scm_c_scm("long roundtrip -2^31", vv,
+                   Scm_MakeInteger(Scm_GetInteger(vv)));
+    vv = Scm_Add2(Scm_Negate(SCM_2_31), SCM_MAKE_INT(2));
+    test_scm_c_scm("long roundtrip -2^31+2", vv,
+                   Scm_MakeInteger(Scm_GetInteger(vv)));
+#if SIZEOF_LONG >= 8
+    vv = Scm_Add2(SCM_2_63, SCM_MAKE_INT(-1));
+    test_scm_c_scm("long roundtrip 2^63-1", vv,
+                   Scm_MakeInteger(Scm_GetInteger(vv)));
+    vv = Scm_Add2(SCM_2_63, SCM_MAKE_INT(-3));
+    test_scm_c_scm("long roundtrip 2^63-3", vv,
+                   Scm_MakeInteger(Scm_GetInteger(vv)));
+    vv = Scm_Negate(SCM_2_63);
+    test_scm_c_scm("long roundtrip -2^63", vv,
+                   Scm_MakeInteger(Scm_GetInteger(vv)));
+    vv = Scm_Add2(Scm_Negate(SCM_2_63), SCM_MAKE_INT(2));
+    test_scm_c_scm("long roundtrip -2^63+2", vv,
+                   Scm_MakeInteger(Scm_GetInteger(vv)));
+#endif
+    vv = Scm_Add2(SCM_2_32, SCM_MAKE_INT(-1));
+    test_scm_c_scm("u_long roundtrip 2^31-1", vv,
+                   Scm_MakeIntegerU(Scm_GetIntegerU(vv)));
+    vv = Scm_Add2(SCM_2_32, SCM_MAKE_INT(-3));
+    test_scm_c_scm("u_long roundtrip 2^31-3", vv,
+                   Scm_MakeIntegerU(Scm_GetIntegerU(vv)));
+#if SIZEOF_LONG >= 8
+    vv = Scm_Add2(SCM_2_64, SCM_MAKE_INT(-1));
+    test_scm_c_scm("u_long roundtrip 2^64-1", vv,
+                   Scm_MakeIntegerU(Scm_GetIntegerU(vv)));
+    vv = Scm_Add2(SCM_2_64, SCM_MAKE_INT(-3));
+    test_scm_c_scm("u_long roundtrip 2^64-3", vv,
+                   Scm_MakeIntegerU(Scm_GetIntegerU(vv)));
+#endif
+
+    vv = Scm_Add2(SCM_2_31, SCM_MAKE_INT(-1));
+    test_scm_c_scm("ScmInt32 roundtrip 2^31-1", vv,
+                   Scm_MakeInteger(Scm_GetInteger32Clamp(vv, 0, NULL)));
+    vv = Scm_Add2(SCM_2_31, SCM_MAKE_INT(-3));
+    test_scm_c_scm("ScmInt32 roundtrip 2^31-3", vv,
+                   Scm_MakeInteger(Scm_GetInteger32Clamp(vv, 0, NULL)));
+    vv = Scm_Negate(SCM_2_31);
+    test_scm_c_scm("ScmInt32 roundtrip -2^31", vv,
+                   Scm_MakeInteger(Scm_GetInteger32Clamp(vv, 0, NULL)));
+    vv = Scm_Add2(Scm_Negate(SCM_2_31), SCM_MAKE_INT(2));
+    test_scm_c_scm("ScmInt32 roundtrip -2^31+2", vv,
+                   Scm_MakeInteger(Scm_GetInteger32Clamp(vv, 0, NULL)));
+    vv = Scm_Add2(SCM_2_32, SCM_MAKE_INT(-1));
+    test_scm_c_scm("ScmUInt32 roundtrip 2^32-1", vv,
+                   Scm_MakeIntegerU(Scm_GetIntegerU32Clamp(vv, 0, NULL)));
+    vv = Scm_Add2(SCM_2_32, SCM_MAKE_INT(-3));
+    test_scm_c_scm("ScmUInt32 roundtrip 2^32-3", vv,
+                   Scm_MakeIntegerU(Scm_GetIntegerU32Clamp(vv, 0, NULL)));
+
+    vv = Scm_Add2(SCM_2_31, SCM_MAKE_INT(-1));
+    test_scm_c_scm("ScmInt64 roundtrip 2^31-1", vv,
+                   Scm_MakeInteger64(Scm_GetInteger64(vv)));
+    vv = SCM_2_31;
+    test_scm_c_scm("ScmInt64 roundtrip 2^31", vv,
+                   Scm_MakeInteger64(Scm_GetInteger64(vv)));
+    vv = Scm_Add2(SCM_2_32, SCM_MAKE_INT(-1));
+    test_scm_c_scm("ScmInt64 roundtrip 2^32-1", vv,
+                   Scm_MakeInteger64(Scm_GetInteger64(vv)));
+    vv = SCM_2_32;
+    test_scm_c_scm("ScmInt64 roundtrip 2^32", vv,
+                   Scm_MakeInteger64(Scm_GetInteger64(vv)));
+
+    vv = Scm_Add2(Scm_Negate(SCM_2_31), SCM_MAKE_INT(1));
+    test_scm_c_scm("ScmInt64 roundtrip -2^31+1", vv,
+                   Scm_MakeInteger64(Scm_GetInteger64(vv)));
+    vv = Scm_Negate(SCM_2_31);
+    test_scm_c_scm("ScmInt64 roundtrip -2^31", vv,
+                   Scm_MakeInteger64(Scm_GetInteger64(vv)));
+    vv = Scm_Add2(Scm_Negate(SCM_2_32), SCM_MAKE_INT(1));
+    test_scm_c_scm("ScmInt64 roundtrip -2^32+1", vv,
+                   Scm_MakeInteger64(Scm_GetInteger64(vv)));
+    vv = Scm_Negate(SCM_2_32);
+    test_scm_c_scm("ScmInt64 roundtrip -2^32", vv,
+                   Scm_MakeInteger64(Scm_GetInteger64(vv)));
+
+
+    vv = Scm_Add2(SCM_2_63, SCM_MAKE_INT(-1));
+    test_scm_c_scm("ScmInt64 roundtrip 2^63-1", vv,
+                   Scm_MakeInteger64(Scm_GetInteger64(vv)));
+    vv = Scm_Add2(SCM_2_63, SCM_MAKE_INT(-3));
+    test_scm_c_scm("ScmInt64 roundtrip 2^63-3", vv,
+                   Scm_MakeInteger64(Scm_GetInteger64(vv)));
+    vv = Scm_Negate(SCM_2_63);
+    test_scm_c_scm("ScmInt64 roundtrip -2^63", vv,
+                   Scm_MakeInteger64(Scm_GetInteger64(vv)));
+    vv = Scm_Add2(Scm_Negate(SCM_2_63), SCM_MAKE_INT(2));
+    test_scm_c_scm("ScmInt64 roundtrip -2^63+2", vv,
+                   Scm_MakeInteger64(Scm_GetInteger64(vv)));
+
+    vv = Scm_Add2(SCM_2_31, SCM_MAKE_INT(-1));
+    test_scm_c_scm("ScmUInt64 roundtrip 2^31", vv,
+                   Scm_MakeIntegerU64(Scm_GetIntegerU64(vv)));
+    vv = SCM_2_31;
+    test_scm_c_scm("ScmUInt64 roundtrip 2^31", vv,
+                   Scm_MakeIntegerU64(Scm_GetIntegerU64(vv)));
+    vv = Scm_Add2(SCM_2_32, SCM_MAKE_INT(-1));
+    test_scm_c_scm("ScmUInt64 roundtrip 2^32-1", vv,
+                   Scm_MakeIntegerU64(Scm_GetIntegerU64(vv)));
+    vv = SCM_2_32;
+    test_scm_c_scm("ScmUInt64 roundtrip 2^32", vv,
+                   Scm_MakeIntegerU64(Scm_GetIntegerU64(vv)));
+
+    vv = Scm_Add2(SCM_2_64, SCM_MAKE_INT(-1));
+    test_scm_c_scm("ScmUInt64 roundtrip 2^64-1", vv,
+                   Scm_MakeIntegerU64(Scm_GetIntegerU64(vv)));
+
+    TEST_SECTION("integer conversions, clamping");
+    vv = SCM_2_32;
+    test_scm_c_scm("ScmInt32 clamp 2^32",
+                   Scm_Add2(SCM_2_31, SCM_MAKE_INT(-1)),
+                   Scm_MakeInteger(Scm_GetInteger32Clamp(vv, SCM_CLAMP_BOTH, NULL)));
+    vv = SCM_2_63;
+    test_scm_c_scm("ScmInt32 clamp 2^63",
+                   Scm_Add2(SCM_2_31, SCM_MAKE_INT(-1)),
+                   Scm_MakeInteger(Scm_GetInteger32Clamp(vv, SCM_CLAMP_BOTH, NULL)));
+    vv = SCM_2_64;
+    test_scm_c_scm("ScmInt32 clamp 2^64",
+                   Scm_Add2(SCM_2_31, SCM_MAKE_INT(-1)),
+                   Scm_MakeInteger(Scm_GetInteger32Clamp(vv, SCM_CLAMP_BOTH, NULL)));
+    vv = Scm_Negate(SCM_2_32);
+    test_scm_c_scm("ScmInt32 clamp -2^32",
+                   Scm_Negate(SCM_2_31),
+                   Scm_MakeInteger(Scm_GetInteger32Clamp(vv, SCM_CLAMP_BOTH, NULL)));
+    vv = Scm_Negate(SCM_2_63);
+    test_scm_c_scm("ScmInt32 clamp -2^63",
+                   Scm_Negate(SCM_2_31),
+                   Scm_MakeInteger(Scm_GetInteger32Clamp(vv, SCM_CLAMP_BOTH, NULL)));
+    vv = Scm_Negate(SCM_2_64);
+    test_scm_c_scm("ScmInt32 clamp -2^64",
+                   Scm_Negate(SCM_2_31),
+                   Scm_MakeInteger(Scm_GetInteger32Clamp(vv, SCM_CLAMP_BOTH, NULL)));
+
+
+    TEST_SECTION("integer conversions, CLAMP_NONE");
+
+    vv = SCM_MAKE_INT(-1);
+    Scm_GetIntegerU64Clamp(vv, SCM_CLAMP_NONE, &oor);
+    test_true("ScmUInt64 oor -1", oor);
+
+    vv = Scm_Add2(Scm_Negate(SCM_2_31), SCM_MAKE_INT(1));
+    Scm_GetIntegerU64Clamp(vv, SCM_CLAMP_NONE, &oor);
+    test_true("ScmUInt64 oor -2^31+1", oor);
+
+    vv = Scm_Add2(Scm_Negate(SCM_2_32), SCM_MAKE_INT(1));
+    Scm_GetIntegerU64Clamp(vv, SCM_CLAMP_NONE, &oor);
+    test_true("ScmUInt64 oor -2^32+1", oor);
+}
+
+
+/*=============================================================
  * main
  */
 int main(int argc, char **argv)
 {
     const char *testmsg = "Testing integer arithmetic macros ... ";
+
+    Scm_Init(GAUCHE_SIGNATURE);
     
     fprintf(stderr, "%-65s", testmsg);
     message(stdout, testmsg, '=');
@@ -471,6 +672,8 @@ int main(int argc, char **argv)
     test_umul();
     test_umulov();
     test_smulov();
+
+    test_32_64();
 
     if (errcount) {
         fprintf(stderr, "failed.\n");

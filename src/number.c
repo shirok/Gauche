@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.113 2004-09-19 21:41:12 shirok Exp $
+ *  $Id: number.c,v 1.114 2004-11-05 10:33:38 shirok Exp $
  */
 
 #include <math.h>
@@ -323,92 +323,123 @@ ScmObj Scm_MakeIntegerU(u_long i)
 }
 
 /* Convert scheme integer to C integer */
-long Scm_GetIntegerClamp(ScmObj obj, int clamphi, int clamplo)
+long Scm_GetIntegerClamp(ScmObj obj, int clamp, int *oor)
 {
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (SCM_INTP(obj)) return SCM_INT_VALUE(obj);
     else if (SCM_BIGNUMP(obj)) {
-        return Scm_BignumToSI(SCM_BIGNUM(obj), clamphi, clamplo);
+        return Scm_BignumToSI(SCM_BIGNUM(obj), clamp, oor);
     }
     else if (SCM_FLONUMP(obj)) {
         double v = SCM_FLONUM_VALUE(obj);
         if (v > (double)LONG_MAX) {
-            if (clamphi) return LONG_MAX;
+            if (clamp & SCM_CLAMP_HI) return LONG_MAX;
             else goto err;
         }
         if (v < (double)LONG_MIN) {
-            if (clamplo) return LONG_MIN;
+            if (clamp & SCM_CLAMP_LO) return LONG_MIN;
             else goto err;
         }
         return (long)v;
     }
   err:
-    Scm_Error("argument out of range: %S", obj);
-    return 0; /* dummy */
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) {
+        *oor = TRUE;
+    } else {
+        Scm_Error("argument out of range: %S", obj);
+    }
+    return 0;
 }
 
-u_long Scm_GetIntegerUClamp(ScmObj obj, int clamphi, int clamplo)
+u_long Scm_GetIntegerUClamp(ScmObj obj, int clamp, int *oor)
 {
-    if (SCM_INTP(obj) && SCM_INT_VALUE(obj) >= 0) return SCM_INT_VALUE(obj);
-    else if (SCM_BIGNUMP(obj)) {
-        return Scm_BignumToUI(SCM_BIGNUM(obj), clamphi, clamplo);
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
+    if (SCM_INTP(obj)) {
+        if (SCM_INT_VALUE(obj) < 0) {
+            if (clamp & SCM_CLAMP_LO) return 0;
+            else goto err;
+        }
+        return SCM_INT_VALUE(obj);
+    } else if (SCM_BIGNUMP(obj)) {
+        return Scm_BignumToUI(SCM_BIGNUM(obj), clamp, oor);
     }
     else if (SCM_FLONUMP(obj)) {
         double v = SCM_FLONUM_VALUE(obj);
         if (v > (double)ULONG_MAX) {
-            if (clamphi) return ULONG_MAX;
+            if (clamp & SCM_CLAMP_HI) return ULONG_MAX;
             else goto err;
         }
         if (v < 0.0) {
-            if (clamplo) return 0;
+            if (clamp & SCM_CLAMP_LO) return 0;
             else goto err;
         }
         return (u_long)v;
     }
   err:
-    Scm_Error("argument out of range: %S", obj);
-    return 0; /* dummy */
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) {
+        *oor = TRUE;
+    } else {
+        Scm_Error("argument out of range: %S", obj);
+    }
+    return 0;
 }
 
 /* 32bit integer specific */
-ScmInt32 Scm_GetInteger32Clamp(ScmObj obj, int clamphi, int clamplo)
+ScmInt32 Scm_GetInteger32Clamp(ScmObj obj, int clamp, int *oor)
 {
 #if SIZEOF_LONG == 4
-    return (ScmInt32)Scm_GetIntegerClamp(obj, clamphi, clamplo);
+    return (ScmInt32)Scm_GetIntegerClamp(obj, clamp, oor);
 #else  /* SIZEOF_LONG >= 8 */
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (SCM_INTP(obj)) {
         long r = SCM_INT_VALUE(obj);
         if (r < -(1L<<31)) {
-            if (clamplo) return -(1L<<31);
-            Scm_Error("argument out of range: %S", obj);
+            if (clamp & SCM_CLAMP_LO) return -(1L<<31);
+            goto err;
         }
         if (r >= (1L<<31)) {
-            if (clamphi) return (1L<<31)-1;
-            Scm_Error("argument out of range: %S", obj);
+            if (clamp & SCM_CLAMP_HI) return (1L<<31)-1;
+            goto err;
         }
     }
     /*FALLTHROUGH*/
-    return (ScmInt32)Scm_GetIntegerClamp(obj, clamphi, clamplo);
+    return (ScmInt32)Scm_GetIntegerClamp(obj, clamp, oor);
+  err:
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) {
+        *oor = TRUE;
+    } else {
+        Scm_Error("argument out of range: %S", obj);
+    }
+    return 0;
 #endif /* SIZEOF_LONG >= 8 */
 }
 
-ScmUInt32 Scm_GetIntegerU32Clamp(ScmObj obj, int clamphi, int clamplo)
+ScmUInt32 Scm_GetIntegerU32Clamp(ScmObj obj, int clamp, int *oor)
 {
 #if SIZEOF_LONG == 4
-    return (ScmUInt32)Scm_GetIntegerUClamp(obj, clamphi, clamplo);
+    return (ScmUInt32)Scm_GetIntegerUClamp(obj, clamp, oor);
 #else  /* SIZEOF_LONG >= 8 */
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (SCM_INTP(obj)) {
         long r = SCM_INT_VALUE(obj);
         if (r < 0) {
-            if (clamplo) return 0;
-            Scm_Error("argument out of range: %S", obj);
+            if (clamp & SCM_CLAMP_LO) return 0;
+            goto err;
         }
         if (r >= (1L<<32)) {
-            if (clamphi) return (1L<<32)-1;
-            Scm_Error("argument out of range: %S", obj);
+            if (clamp & SCM_CLAMP_HI) return (1L<<32)-1;
+            goto err;
         }
     }
     /*FALLTHROUGH*/
-    return (ScmUInt32)Scm_GetIntegerUClamp(obj, clamphi, clamplo);
+    return (ScmUInt32)Scm_GetIntegerUClamp(obj, clamp, *oor);
+  err:
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) {
+        *oor = TRUE;
+    } else {
+        Scm_Error("argument out of range: %S", obj);
+    }
+    return 0;
 #endif /* SIZEOF_LONG >= 8 */
 }
 
@@ -420,7 +451,6 @@ ScmObj Scm_MakeInteger64(ScmInt64 i)
 #if SCM_EMULATE_INT64
     u_long val[2];
     if (i.hi == 0) return Scm_MakeInteger(i.lo);
-    if (i.hi == ULONG_MAX) return Scm_MakeInteger((long)i.lo);
     val[0] = i.lo;
     val[1] = i.hi;
     return Scm_MakeBignumFromUIArray(0, val, 2); /* bignum checks sign */
@@ -428,9 +458,8 @@ ScmObj Scm_MakeInteger64(ScmInt64 i)
     u_long val[2];
     val[0] = (uint64_t)i & ULONG_MAX;
     val[1] = (uint64_t)i >> 32;
-    if (val[1] == 0) return Scm_MakeInteger(val[0]);
-    if (val[1] == ULONG_MAX) return Scm_MakeInteger((long)val[0]);
-    return Scm_MakeBignumFromUIArray(0, val, 2);
+    if (val[1] == 0 && val[0] <= LONG_MAX) return Scm_MakeInteger(val[0]);
+    return Scm_NormalizeBignum(SCM_BIGNUM(Scm_MakeBignumFromUIArray(0, val, 2)));
 #endif
 }
 
@@ -451,11 +480,11 @@ ScmObj Scm_MakeIntegerU64(ScmUInt64 i)
 #endif
 }
 
-ScmInt64 Scm_GetInteger64Clamp(ScmObj obj, int clamphi, int clamplo)
+ScmInt64 Scm_GetInteger64Clamp(ScmObj obj, int clamp, int *oor)
 {
 #if SCM_EMULATE_INT64
     ScmInt64 r = {0, 0};
-
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (SCM_INTP(obj)) {
         long v = SCM_INT_VALUE(obj);
         r.lo = v;
@@ -463,29 +492,28 @@ ScmInt64 Scm_GetInteger64Clamp(ScmObj obj, int clamphi, int clamplo)
         return r;
     }
     if (SCM_BIGNUMP(obj)) {
-        return Scm_BignumToSI64(SCM_BIGNUM(obj), clamphi, clamplo);
+        return Scm_BignumToSI64(SCM_BIGNUM(obj), clamp, oor);
     }
     if (SCM_FLONUMP(obj)) {
         if (Scm_NumCmp(obj, SCM_2_63) >= 0) {
-            if (!clamphi) goto err;
+            if (!(clamp&SCM_CLAMP_HI)) goto err;
             SCM_SET_INT64_MAX(r);
             return r;
         } else if (Scm_NumCmp(obj, SCM_MINUS_2_63) < 0) {
-            if (!clamplo) goto err;
+            if (!(clamp&SCM_CLAMP_LO)) goto err;
             SCM_SET_INT64_MIN(r);
             return r;
         } else {
             ScmObj b = Scm_MakeBignumFromDouble(SCM_FLONUM_VALUE(obj));
-            return Scm_BignumToSI64(SCM_BIGNUM(b), clamphi, clamplo);
+            return Scm_BignumToSI64(SCM_BIGNUM(b), clamp, oor);
         }
     }
-  err:
-    Scm_Error("argument out of range: %S", obj);
-    return r; /* dummy */
 #else /*!SCM_EMULATE_INT64*/
+    ScmInt64 r = 0;
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (SCM_INTP(obj)) return (ScmInt64)SCM_INT_VALUE(obj);
     if (SCM_BIGNUMP(obj)) {
-        return Scm_BignumToSI64(SCM_BIGNUM(obj), clamphi, clamplo);
+        return Scm_BignumToSI64(SCM_BIGNUM(obj), clamp, oor);
     }
     if (SCM_FLONUMP(obj)) {
         int64_t maxval, minval;
@@ -495,87 +523,94 @@ ScmInt64 Scm_GetInteger64Clamp(ScmObj obj, int clamphi, int clamplo)
         SCM_SET_INT64_MIN(minval);
         v = SCM_FLONUM_VALUE(obj);
         if (v > (double)maxval) {
-            if (!clamphi) goto err;
+            if (!(clamp&SCM_CLAMP_HI)) goto err;
             return maxval;
         } else if (v < (double)minval) {
-            if (!clamplo) goto err;
+            if (!(clamp&SCM_CLAMP_LO)) goto err;
             return minval;
         } else {
             return (long)v;
         }
     }
-  err:
-    Scm_Error("argument out of range: %S", obj);
-    return 0; /* dummy */
 #endif /*!SCM_EMULATE_INT64*/
+  err:
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) {
+        *oor = TRUE;
+    } else {
+        Scm_Error("argument out of range: %S", obj);
+    }
+    return r;
 }
                                
-ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamphi, int clamplo)
+ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor)
 {
 #if SCM_EMULATE_INT64
     ScmUInt64 r = {0, 0};
-
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (SCM_INTP(obj)) {
         long v = SCM_INT_VALUE(obj);
         if (v < 0) {
-            if (!clamplo) goto err;
+            if (!(clamp&SCM_CLAMP_LO)) goto err;
         } else {
             r.lo = v;
         }
         return r;
     }
     if (SCM_BIGNUMP(obj)) {
-        return Scm_BignumToUI64(SCM_BIGNUM(obj), clamphi, clamplo);
+        return Scm_BignumToUI64(SCM_BIGNUM(obj), clamp, oor);
     }
     if (SCM_FLONUMP(obj)) {
         if (Scm_NumCmp(obj, SCM_2_64) >= 0) {
-            if (!clamphi) goto err;
+            if (!(clamp&SCM_CLAMP_HI)) goto err;
             SCM_SET_UINT64_MAX(r);
             return r;
         } else if (SCM_FLONUM_VALUE(obj) < 0) {
-            if (!clamplo) goto err;
+            if (!(clamp&SCM_CLAMP_LO)) goto err;
             return r;
         } else {
             ScmObj b = Scm_MakeBignumFromDouble(SCM_FLONUM_VALUE(obj));
-            return Scm_BignumToUI64(SCM_BIGNUM(b), clamphi, clamplo);
+            return Scm_BignumToUI64(SCM_BIGNUM(b), clamp, oor);
         }
     }
-  err:
-    Scm_Error("argument out of range: %S", obj);
-    return r; /* dummy */
-#else /*SCM_EMULATE_INT64*/
+#else /*!SCM_EMULATE_INT64*/
+    ScmInt64 r = 0;
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (SCM_INTP(obj)) {
         long v = SCM_INT_VALUE(obj);
         if (v < 0) {
-            if (!clamplo) goto err;
+            if (!(clamp&SCM_CLAMP_LO)) goto err;
             return 0;
         } else {
             return (ScmUInt64)v;
         }
     }
     if (SCM_BIGNUMP(obj)) {
-        return Scm_BignumToUI64(SCM_BIGNUM(obj), clamphi, clamplo);
+        return Scm_BignumToUI64(SCM_BIGNUM(obj), clamp, oor);
     }
     if (SCM_FLONUMP(obj)) {
         double v = SCM_FLONUM_VALUE(obj);
         uint64_t maxval;
 
         if (v < 0) {
-            if (!clamplo) goto err;
+            if (!(clamp&SCM_CLAMP_LO)) goto err;
             return 0;
         }
         SCM_SET_UINT64_MAX(maxval);
         if (v > (double)maxval) {
-            if (!clamphi) goto err;
+            if (!(clamp&SCM_CLAMP_HI)) goto err;
             return maxval;
         } else {
             return (uint32_t)v;
         }
     }
-  err:
-    Scm_Error("argument out of range: %S", obj);
-    return 0; /* dummy */
 #endif
+  err:
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) {
+        *oor = TRUE;
+    } else {
+        Scm_Error("argument out of range: %S", obj);
+    }
+    return r;
 }
                                
 #endif /* SIZEOF_LONG == 4 */
@@ -2641,6 +2676,7 @@ void Scm__InitNumber(void)
     
     SCM_2_63 = Scm_Ash(SCM_MAKE_INT(1), 63);
     SCM_2_64 = Scm_Ash(SCM_MAKE_INT(1), 64);
+    SCM_2_64_MINUS_1 = Scm_Subtract2(SCM_2_64, SCM_MAKE_INT(1));
     SCM_2_52 = Scm_Ash(SCM_MAKE_INT(1), 52);
     SCM_2_53 = Scm_Ash(SCM_MAKE_INT(1), 53);
     SCM_MINUS_2_63 = Scm_Negate(SCM_2_63);

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bignum.c,v 1.58 2004-08-28 10:05:25 fuyuki Exp $
+ *  $Id: bignum.c,v 1.59 2004-11-05 10:33:37 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -246,56 +246,67 @@ ScmObj Scm_NormalizeBignum(ScmBignum *b)
 }
 
 /* b must be normalized.  */
-long Scm_BignumToSI(ScmBignum *b, int clamphi, int clamplo)
+long Scm_BignumToSI(ScmBignum *b, int clamp, int *oor)
 {
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (b->sign >= 0) {
         if (b->values[0] > LONG_MAX || b->size >= 2) {
-            if (clamphi) return LONG_MAX;
+            if (clamp & SCM_CLAMP_HI) return LONG_MAX;
             else goto err;
         } else {
             return (long)b->values[0];
         }
     } else {
         if (b->values[0] > (u_long)LONG_MAX+1 || b->size >= 2) {
-            if (clamplo) return LONG_MIN;
+            if (clamp & SCM_CLAMP_LO) return LONG_MIN;
             else goto err;
         } else {
             return -(long)b->values[0];
         }
     }
   err:
-    Scm_Error("argument out of range: %S", SCM_OBJ(b));
-    return 0; /*dummy*/
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) {
+        *oor = TRUE;
+    } else {
+        Scm_Error("argument out of range: %S", SCM_OBJ(b));
+    }
+    return 0;
 }
 
 /* b must be normalized. */
-u_long Scm_BignumToUI(ScmBignum *b, int clamphi, int clamplo)
+u_long Scm_BignumToUI(ScmBignum *b, int clamp, int *oor)
 {
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (b->sign >= 0) {
         if (b->size >= 2) {
-            if (clamphi) return SCM_ULONG_MAX;
+            if (clamp & SCM_CLAMP_HI) return SCM_ULONG_MAX;
             else goto err;
         } else {
             return b->values[0];
         }
     } else {
-        if (clamplo) return 0;
+        if (clamp & SCM_CLAMP_LO) return 0;
         else goto err;
     }
   err:
-    Scm_Error("argument out of range: %S", SCM_OBJ(b));
-    return 0; /*dummy*/
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) {
+        *oor = TRUE;
+    } else {
+        Scm_Error("argument out of range: %S", SCM_OBJ(b));
+    }
+    return 0;
 }
 
 #if SIZEOF_LONG == 4
 /* we need special routines for int64 */
-ScmInt64 Scm_BignumToSI64(ScmBignum *b, int clamphi, int clamplo)
+ScmInt64 Scm_BignumToSI64(ScmBignum *b, int clamp, int *oor)
 {
 #if SCM_EMULATE_INT64
     ScmInt64 r = {0, 0};
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (b->sign > 0) {
         if (b->size > 2 || b->values[1] > LONG_MAX) {
-            if (!clamphi) goto err;
+            if (!(clamp & SCM_CLAMP_HI)) goto err;
             SCM_SET_INT64_MAX(r);
         } else {
             r.lo = b->values[0];
@@ -303,7 +314,7 @@ ScmInt64 Scm_BignumToSI64(ScmBignum *b, int clamphi, int clamplo)
         }
     } else if (b->sign < 0) {
         if (b->size > 2 || b->values[1] > (u_long)LONG_MAX + 1) {
-            if (!clamplo) goto err;
+            if (!(clamp&SCM_CLAMP_LO)) goto err;
             SCM_SET_INT64_MIN(r);
         } else {
             b = SCM_BIGNUM(Scm_BignumComplement(b));
@@ -313,74 +324,80 @@ ScmInt64 Scm_BignumToSI64(ScmBignum *b, int clamphi, int clamplo)
         }
     }
     return r;
-  err:
-    Scm_Error("argument out of range: %S", SCM_OBJ(b));
-    return r; /*dummy*/
 #else  /*!SCM_EMULATE_INT64*/
     int64_t r = 0;
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (b->sign > 0) {
-        if (b->size > 2 || b->values[1] > LONG_MAX) {
-            if (!clamphi) goto err;
+        if (b->size == 1) {
+            r = b->values[0];
+        } else if (b->size > 2 || b->values[1] > LONG_MAX) {
+            if (!(clamp & SCM_CLAMP_HI)) goto err;
             SCM_SET_INT64_MAX(r);
         } else {
             r = ((int64_t)b->values[1] << 32) + (uint64_t)b->values[0];
         }
     } else { /* b->sign < 0 */
-        if (b->size > 2
-            || ((b->values[1] > (u_long)LONG_MAX)
-                && (b->values[0] > 0))) {
-            if (!clamplo) goto err;
+        if (b->size == 1) {
+            r = -(int64_t)b->values[0];
+        } else if (b->size > 2 || (b->values[1] > LONG_MAX && b->values[0] > 0)) {
+            if (!(clamp&SCM_CLAMP_LO)) goto err;
             SCM_SET_INT64_MIN(r);
         } else {
-            b = SCM_BIGNUM(Scm_BignumComplement(b));
-            r = ((int64_t)b->values[1] << 32) + (uint64_t)b->values[0];
+            r = -(((int64_t)b->values[1] << 32) + (uint64_t)b->values[0]);
         }
     }
     return r;
-  err:
-    Scm_Error("argument out of range: %S", SCM_OBJ(b));
-    return 0; /*dummy*/
 #endif /*!SCM_EMULATE_INT64*/
+  err:
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) {
+        *oor = TRUE;
+    } else {
+        Scm_Error("argument out of range: %S", SCM_OBJ(b));
+    }
+    return r;
 }
 
-ScmUInt64 Scm_BignumToUI64(ScmBignum *b, int clamphi, int clamplo)
+ScmUInt64 Scm_BignumToUI64(ScmBignum *b, int clamp, int *oor)
 {
 #if SCM_EMULATE_INT64
     ScmInt64 r = {0, 0};
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (b->sign > 0) {
         if (b->size > 2) {
-            if (!clamphi) goto err;
+            if (!(clamp&SCM_CLAMP_HI)) goto err;
             SCM_SET_UINT64_MAX(r);
         } else {
             r.lo = b->values[0];
             if (b->size == 2) r.hi = b->values[1];
         }
     } else if (b->sign < 0) {
-        if (!clamplo) goto err;
+        if (!(clamp&SCM_CLAMP_LO)) goto err;
     }
     return r;
-  err:
-    Scm_Error("argument out of range: %S", SCM_OBJ(b));
-    return r; /*dummy*/
 #else  /*!SCM_EMULATE_INT64*/
     uint64_t r = 0;
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (b->sign > 0) {
         if (b->size > 2) {
-            if (!clamphi) goto err;
+            if (!(clamp&SCM_CLAMP_HI)) goto err;
             SCM_SET_UINT64_MAX(r);
         } else if (b->size == 2) {
-            r = ((uint64_t)b->values[1] << 32) + (uint64_t)b->values[0];
+            r = (((uint64_t)b->values[1]) << 32) + (uint64_t)b->values[0];
         } else {
             r = (uint64_t)b->values[0];
         }
     } else { /* b->sign < 0 */
-        if (!clamplo) goto err;
+        if (!(clamp&SCM_CLAMP_LO)) goto err;
     }
     return r;
-  err:
-    Scm_Error("argument out of range: %S", SCM_OBJ(b));
-    return 0; /*dummy*/
 #endif /*!SCM_EMULATE_INT64*/
+  err:
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) {
+        *oor = TRUE;
+    } else {
+        Scm_Error("argument out of range: %S", SCM_OBJ(b));
+    }
+    return r;
 }
 #endif /* SIZEOF_LONG == 4 */
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: int64.h,v 1.4 2004-11-02 06:37:43 shirok Exp $
+ *  $Id: int64.h,v 1.5 2004-11-05 10:33:52 shirok Exp $
  */
 
 /* Some Scheme API needs to deal with 64bit signed/unsigned integer
@@ -96,29 +96,33 @@ typedef struct {
 #endif /* !WORDS_BIGENDIAN */
 #endif /* SIZEOF_LONG == 4 */
 
-/* initialize given variable v64 to max/min values.
-   only used on sizeof(long)==4 systems. */
+/* Used internally to set up 64bit integer values */
 #if SIZEOF_LONG == 4
 #if SCM_EMULATE_INT64
 #define SCM_SET_INT64_MAX(v64)  \
-   ((v64).hi = LONG_MAX, (v64).lo = ULONG_MAX)
+    ((v64).hi = LONG_MAX, (v64).lo = ULONG_MAX)
 #define SCM_SET_INT64_MIN(v64)  \
-   ((v64).hi = (u_long)LONG_MAX + 1, (v64).lo = 0)
+    ((v64).hi = (u_long)LONG_MAX + 1, (v64).lo = 0)
 #define SCM_SET_UINT64_MAX(v64) \
-   ((v64).hi = ULONG_MAX, (v64).lo = ULONG_MAX)
+    ((v64).hi = ULONG_MAX, (v64).lo = ULONG_MAX)
 #define SCM_SET_INT64_ZERO(v64) \
-   ((v64).hi = (v64).lo = 0)
+    ((v64).hi = (v64).lo = 0)
 #else  /* !SCM_EMULATE_INT64 */
 #define SCM_SET_INT64_MAX(v64)  \
-   ((v64) = ((((int64_t)LONG_MAX)<<32) + (int64_t)ULONG_MAX))
+    ((v64) = ((((int64_t)LONG_MAX)<<32) + (int64_t)ULONG_MAX))
 #define SCM_SET_INT64_MIN(v64)  \
-   ((v64) = (((int64_t)LONG_MAX + 1) << 32))
+    ((v64) = (((int64_t)LONG_MAX + 1) << 32))
 #define SCM_SET_UINT64_MAX(v64) \
-   ((v64) = ((((uint64_t)ULONG_MAX) << 32) + (uint64_t)ULONG_MAX))
+    ((v64) = ((((uint64_t)ULONG_MAX) << 32) + (uint64_t)ULONG_MAX))
 #define SCM_SET_INT64_ZERO(v64) \
-   ((v64) = 0)
+    ((v64) = 0)
 #endif /* !SCM_EMULATE_INT64 */
-#endif /* SIZEOF_LONG == 4 */
+#elif  SIZEOF_LONG == 8
+#define SCM_SET_INT64_MAX(v64)    ((v64) = LONG_MAX)
+#define SCM_SET_INT64_MIN(v64)    ((v64) = LONG_MIN)
+#define SCM_SET_UINT64_MAX(v64)   ((v64) = ULONG_MAX)
+#define SCM_SET_INT64_ZERO(v64)   ((v64) = 0)
+#endif /* SIZEOF_LONG == 4 or 8 */
 
 /* ScmInt32 and ScmUInt32 can be used when one needs exactly 32bit int */
 
@@ -134,5 +138,19 @@ typedef u_long ScmUInt32;
 #else
 #error system does not have 32bit integer
 #endif
+
+/* Some macros that can be used without concerning underlying implementation
+   of int64. */
+
+/* SCM_INT64_TO_DOUBLE  - coerce int64 value to double */
+#if SCM_EMULATE_INT64
+#define SCM_INT64_TO_DOUBLE(v64) \
+    ((v64.hi)*4294967296.0 + (double)(v64.lo))
+#else /* !SCM_EMULATE_INT64 */
+#define SCM_INT64_TO_DOUBLE(v64)   ((double)(v64))
+#endif
+
+
+
 
 #endif /*GAUCHE_INT64_H*/
