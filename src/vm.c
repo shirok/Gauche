@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.22 2001-02-03 09:50:07 shiro Exp $
+ *  $Id: vm.c,v 1.23 2001-02-03 11:29:39 shiro Exp $
  */
 
 #include "gauche.h"
@@ -772,6 +772,55 @@ static void run_loop()
                 val0 = SCM_UNDEFINED;
                 continue;
 
+            }
+        case SCM_VM_NUMEQ2:
+            {
+                ScmObj arg;
+                POP_ARG(arg);
+                val0 = Scm_NumEq(arg, val0, SCM_NIL);
+                continue;
+            }
+        case SCM_VM_NUMLT2:
+            {
+                ScmObj arg;
+                POP_ARG(arg);
+                val0 = Scm_NumLt(arg, val0, SCM_NIL);
+                continue;
+            }
+        case SCM_VM_NUMLE2:
+            {
+                ScmObj arg;
+                POP_ARG(arg);
+                val0 = Scm_NumLe(arg, val0, SCM_NIL);
+                continue;
+            }
+        case SCM_VM_NUMGT2:
+            {
+                ScmObj arg;
+                POP_ARG(arg);
+                val0 = Scm_NumGt(arg, val0, SCM_NIL);
+                continue;
+            }
+        case SCM_VM_NUMGE2:
+            {
+                ScmObj arg;
+                POP_ARG(arg);
+                val0 = Scm_NumGe(arg, val0, SCM_NIL);
+                continue;
+            }
+        case SCM_VM_NUMADD2:
+            {
+                ScmObj arg;
+                POP_ARG(arg);
+                val0 = Scm_Add(SCM_LIST2(arg, val0));
+                continue;
+            }
+        case SCM_VM_NUMSUB2:
+            {
+                ScmObj arg;
+                POP_ARG(arg);
+                val0 = Scm_Subtract(arg, val0, SCM_NIL);
+                continue;
             }
         default:
             Scm_Panic("Illegal vm instruction: %08x",  SCM_VM_INSN_CODE(code));

@@ -42,14 +42,23 @@
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_INEXACTP(obj)));")
 
 (define-cproc = (arg0 arg1 &rest args)
+  (inliner (case-nargs (2 "SCM_VM_NUMEQ2") (else #f)))
   "  SCM_RETURN(Scm_NumEq(arg0, arg1, args));")
+
 (define-cproc < (arg0 arg1 &rest args)
+  (inliner (case-nargs (2 "SCM_VM_NUMLT2") (else #f)))
   "  SCM_RETURN(Scm_NumLt(arg0, arg1, args));")
+
 (define-cproc <= (arg0 arg1 &rest args)
+  (inliner (case-nargs (2 "SCM_VM_NUMLE2") (else #f)))
   "  SCM_RETURN(Scm_NumLe(arg0, arg1, args));")
+
 (define-cproc > (arg0 arg1 &rest args)
+  (inliner (case-nargs (2 "SCM_VM_NUMGT2") (else #f)))
   "  SCM_RETURN(Scm_NumGt(arg0, arg1, args));")
+
 (define-cproc >= (arg0 arg1 &rest args)
+  (inliner (case-nargs (2 "SCM_VM_NUMGE2") (else #f)))
   "  SCM_RETURN(Scm_NumGe(arg0, arg1, args));")
 
 (define-cproc zero? (obj)
@@ -74,12 +83,14 @@
 
 
 (define-cproc + (&rest args)
+  (inliner (case-nargs (2 "SCM_VM_NUMADD2") (else #f)))
   "  SCM_RETURN(Scm_Add(args)); ")
 
 (define-cproc * (&rest args)
   "  SCM_RETURN(Scm_Multiply(args));")
 
 (define-cproc - (arg1 &rest args)
+  (inliner (case-nargs (2 "SCM_VM_NUMSUB2") (else #f)))
   "  ScmObj r;
   if (SCM_NULLP(args)) r = Scm_Negate(arg1);
   else r = Scm_Subtract(arg1, SCM_CAR(args), SCM_CDR(args));

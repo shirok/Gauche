@@ -46,8 +46,8 @@ gosh : libgauche.a main.o
 
 $(OBJS) main.o : $(HDRS)
 
-stdlib.c : stdlib.stub
-extlib.c : extlib.stub
+stdlib.c : stdlib.stub genstub 
+extlib.c : extlib.stub genstub
 
 libgauche.a : $(OBJS) $(GCLIB)
 	$(AR) x $(GCLIB)
