@@ -20,7 +20,7 @@ done
 if [ "$tgz" = "yes" ]; then
   rm -f DIST_EXCLUDE_X
   cat DIST_EXCLUDE > DIST_EXCLUDE_X
-  (cd ..; find Gauche -name CVS -print -prune) >> DIST_EXCLUDE_X
+  find . -name CVS -print -prune >> DIST_EXCLUDE_X
 
   if [ -f Makefile ]; then make realclean; fi
   ./AUTOCONF
@@ -30,7 +30,10 @@ if [ "$tgz" = "yes" ]; then
   make distclean
   escm -o INSTALL INSTALL.esc
   LANG=ja_JP escm -o INSTALL.eucjp INSTALL.esc
-  (cd ..; tar c -v -f - -X Gauche/DIST_EXCLUDE_X Gauche | gzip -9 > Gauche-$VERSION.tgz)
+  rm -rf ../Gauche-$VERSION
+  mkdir ../Gauche-$VERSION
+  tar cvfX - DIST_EXCLUDE_X . | (cd ../Gauche-$VERSION; tar xf -)
+  (cd ..; tar cvf - Gauche-$VERSION | gzip -9 > Gauche-$VERSION.tgz)
   mv ../Gauche-$VERSION.tgz $TGZ_DEST
   cp ChangeLog $CHANGELOG_DEST
 fi
@@ -59,7 +62,7 @@ if [ "$test" = "yes" ]; then
   rm -rf ../test/Gauche
   cd ../test
   tar xzvf ~/shiro.dreamhost.com/scheme/vault/Gauche-$VERSION.tgz
-  cd Gauche
+  cd Gauche-$VERSION
   ./configure
   make
   make test
@@ -74,7 +77,7 @@ if [ "$testcode" = "yes" ]; then
   rm -rf ../test/Gauche
   cd ../test
   tar xzvf ~/shiro.dreamhost.com/scheme/vault/Gauche-$VERSION.tgz >& /dev/null
-  cd Gauche
+  cd Gauche-$VERSION
   rm -f testcode.log
   echo "EUC-JP ----------------------------------------------------"
   ./configure --enable-multibyte=euc-jp >> testcode.log 2>&1
@@ -98,6 +101,6 @@ if [ "$testcode" = "yes" ]; then
 fi
 
 if [ "$testclean" = "yes" ]; then
-  rm -rf ../test/Gauche
+  rm -rf ../test/Gauche ../test/Gauche-$VERSION
   rm -rf ../test/test.log ../test/temp.o ../test/tmp1.o
 fi
