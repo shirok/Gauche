@@ -2,6 +2,7 @@
 
 	* lib/srfi-19.scm, lib/srfi-19/* : added srfi-19 support (not
 	  finished yet).
+	* lib/gauche/common-macros.scm : added update! (experimentally).
 
 2002-03-08  Shiro Kawai  <shiro@acm.org>
 
