@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.11 2001-05-29 08:39:24 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.12 2001-05-30 07:55:07 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3696,7 +3696,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 @subsection String mapping
 
 @defun string-map proc s &optional start end
-@deufnx string-map! proc s &optional start end
+@defunx string-map! proc s &optional start end
 [SRFI-13]
 @end defun
 
