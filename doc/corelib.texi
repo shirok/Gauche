@@ -7299,10 +7299,17 @@ GaucheはR5RSに定義されている構文要素に加え、@ref{Lexical structure}に
 @defun read-with-shared-structure &optional iport
 @defunx read/ss &optional iport
 [SRFI-38]
+@c EN
 These procedures are defined in srfi-38 to recognize shared substructure
 notation (@code{#n=}, @code{#n#}).   Gauche's builtin @code{read} recognizes
 the srfi-38 notation, so these are just synonyms to @code{read}; these
 are only provided for srfi-38 compatibility.
+@c JP
+これらの手続きは，SRFI-38 で定義されていて，共有構造を表す記法
+(@code{#n=}, @code{#n#})を認識できます．Gauche の組み込み @code{read} は
+この SRFI-38 の記法を認識します．それゆえ，これらの手続きは，@code{read}
+と同じで，SRFI-38 との互換性のために用意されています．
+@c COMMON
 @end defun
 
 @defun read-char &optional iport
@@ -7894,7 +7901,12 @@ then writes a newline.
 @end defun
 
 @deffn {Method} write-object (obj <object>) port
+@c EN
 You can customize how the object is printed out by this method.
+@c JP
+このメソッドをつかって，オブジェクトをどのように印字するかをカスタマイズ
+できます．
+@c COMMON
 @end deffn
 
 @defun newline &optional port
