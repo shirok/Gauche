@@ -440,10 +440,35 @@
         (call-with-input-file "test.out" port->string)))
 
 ;;---------------------------------------------------------------------
-(test-section "thread and signal")
+;(test-section "thread and signal")
 
 ;(test "catching signal by primordial thread" (make-list 10 'int)
-      
+
+;;---------------------------------------------------------------------
+(test-section "thread-local parameters")
+
+(use gauche.parameter)
+
+(define *thr1-val* #f)
+(define *thr2-val* #f)
+
+(define p (make-parameter 3))
+
+(test "check locality of parameters" '(3 4 5)
+      (lambda ()
+        (let ((th1 (make-thread
+                    (lambda ()
+                      (p 4)
+                      (set! *thr1-val* (p)))))
+              (th2 (make-thread
+                    (lambda ()
+                      (p 5)
+                      (set! *thr2-val* (p))))))
+          (thread-start! th1)
+          (thread-start! th2)
+          (thread-join! th1)
+          (thread-join! th2)
+          (list (p) *thr1-val* *thr2-val*))))
 
 (test-end)
 
