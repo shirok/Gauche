@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.222 2002-06-17 22:36:33 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.223 2002-06-18 09:25:31 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -4949,26 +4949,26 @@ return @code{#f} for all other characters.
 @defunx integer->char n
 [R5RS]
 @c EN
-@var{char->integer} returns an exact integer that represents
+@code{char->integer} returns an exact integer that represents
 internal encoding of the character @var{char}.
-@var{integer->char} returns a character whose internal encoding
+@code{integer->char} returns a character whose internal encoding
 is an exact integer @var{n}.  The following expression is always
 true for valid charcter @var{char}:
 @example
 (eq? char (integer->char (char->integer char)))
 @end example
 
-The result is undefined if you pass @var{n} to @var{integer->char}
+The result is undefined if you pass @var{n} to @code{integer->char}
 that doesn't have a corresponding character.
 @c JP
-@var{char->integer}は文字@var{char}の内部エンコーディングに対応する
-整数値を返します。@var{integer->char}は数値@var{n}と内部エンコーディングが
+@code{char->integer}は文字@var{char}の内部エンコーディングに対応する
+整数値を返します。@code{integer->char}は数値@var{n}と内部エンコーディングが
 同じ文字を返します。有効な文字@var{char}に対して以下の式は常に真となります。
 @example
 (eq? char (integer->char (char->integer char)))
 @end example
 
-対応する内部エンコーディングを持つ文字が無い数値を@var{integer->char}に渡した
+対応する内部エンコーディングを持つ文字が無い数値を@code{integer->char}に渡した
 場合の結果は不定です。
 @c COMMON
 @end defun
@@ -4995,7 +4995,7 @@ character.
 またUCSコードポイントを表す整数@var{n}を文字へと変換する手続きです。
 
 Gaucheの内部文字エンコーディングがUTF-8でコンパイルされている場合は、
-これらの手続きはそれぞれ@var{char->integer}および@code{integer->char}
+これらの手続きはそれぞれ@code{char->integer}および@code{integer->char}
 と等価です。
 
 Gaucheの内部文字エンコーディングがUTF-8でない場合、
