@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.30 2001-03-04 22:23:19 shiro Exp $
+;;; $Id: extlib.stub,v 1.31 2001-03-05 00:39:27 shiro Exp $
 ;;;
 
 ;;
@@ -76,6 +76,10 @@
 
 (define-cproc reverse! (list)
   "  SCM_RETURN(Scm_ReverseX(list));")
+
+(define-cproc topological-sort (edges)
+  (assert (list? edges))
+  "  SCM_RETURN(Scm_TopologicalSort(edges));")
 
 (define-cproc pair-attributes (pair)
   (assert (pair? pair))
@@ -347,6 +351,20 @@
   data[0] = iter; data[1] = proc;
   Scm_VMPushCC(hash_table_for_each_cc, data, 2);
   SCM_RETURN(SCM_UNDEFINED);")
+
+;;
+;; Modules
+;;
+
+(define-cproc module? (obj)
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_MODULEP(obj)));")
+
+(define-cproc module-name (mod)
+  (assert (module? mod))
+  "  SCM_RETURN(SCM_OBJ(SCM_MODULE(mod)->name));")
+
+(define-cproc current-module ()
+  "  SCM_RETURN(SCM_OBJ(SCM_CURRENT_MODULE()));")
 
 ;;
 ;; Gauche extentions
