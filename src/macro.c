@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.11 2001-02-27 09:44:08 shiro Exp $
+ *  $Id: macro.c,v 1.12 2001-03-01 00:26:28 shiro Exp $
  */
 
 #include "gauche.h"
@@ -262,7 +262,7 @@ static ScmObj compile_rule1(ScmObj form,
         SCM_FOR_EACH(pp, form) {
             if (ELLIPSIS_FOLLOWING(pp)) {
                 ScmSyntaxPattern *nspat;
-                if (!SCM_NULLP(SCM_CDDR(pp))) BAD_ELLIPSIS(ctx);
+                if (patternp && !SCM_NULLP(SCM_CDDR(pp))) BAD_ELLIPSIS(ctx);
                 nspat = make_syntax_pattern(spat->level+1, TRUE);
                 if (ctx->maxlev <= spat->level) ctx->maxlev++;
                 nspat->pattern = compile_rule1(SCM_CAR(pp), nspat, ctx,
@@ -633,6 +633,7 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
  * pattern language transformer
  */
 
+/* If a pattern variable is exhausted, SCM_UNDEFINED is returned. */
 static ScmObj realize_template_rec(ScmObj template,
                                    MatchVar *mvec,
                                    int level,
@@ -647,12 +648,14 @@ static ScmObj realize_template_rec(ScmObj template,
                 SCM_APPEND(h, t, r);
             } else {
                 r = realize_template_rec(e, mvec, level, indices);
+                if (SCM_UNBOUNDP(r)) return r;
                 SCM_APPEND1(h, t, r);
             }
             template = SCM_CDR(template);
         }
         if (!SCM_NULLP(template)) {
             r = realize_template_rec(template, mvec, level, indices);
+            if (SCM_UNBOUNDP(r)) return r;
             SCM_APPEND(h, t, r);
         }
         return h;
@@ -666,7 +669,7 @@ static ScmObj realize_template_rec(ScmObj template,
         indices[level+1] = 0;
         for (;;) {
             r = realize_template_rec(pat->pattern, mvec, level+1, indices);
-            if (r == SCM_UNBOUND) return h;
+            if (SCM_UNBOUNDP(r)) return h;
             SCM_APPEND1(h, t, r);
             indices[level+1]++;
         }
@@ -839,30 +842,40 @@ static ScmObj compile_macro_expand(ScmObj form, ScmObj env,
 {
     ScmObj expr, sym;
     ScmGloc *gloc;
-    
+    int oncep = (int)data;
+
     if (!SCM_PAIRP(SCM_CDR(form)) || !SCM_NULLP(SCM_CDDR(form)))
         Scm_Error("syntax error: %S", form);
     expr = SCM_CADR(form);
-    if (!SCM_PAIRP(expr)) return SCM_LIST1(expr);
-    if (!SCM_SYMBOLP(SCM_CAR(expr))) return SCM_LIST1(expr);
-    
-    sym = Scm_CompileLookupEnv(SCM_CAR(expr), env, TRUE);
-    /* TODO: adapt to the new compiler API (check identifier/syntax) */
-    if (SCM_SYMBOLP(sym)) {
-        ScmGloc *g = Scm_FindBinding(Scm_VM()->module, SCM_SYMBOL(sym), FALSE);
-        if (g && SCM_SYNTAXP(g->value)) {
-            ScmSyntax *syn = SCM_SYNTAX(g->value);
-            if (syn->compiler == macro_transform) {
-                ScmObj proc = SCM_OBJ(syn->data);
-                ScmObj translated = Scm_Apply(proc, expr);
-                return SCM_LIST1(translated);
-            }
-            if (syn->compiler == synrule_transform) {
-                ScmSyntaxRules *sr = (ScmSyntaxRules *)syn->data;
-                ScmObj expanded = synrule_expand(expr, env, sr);
-                return SCM_LIST1(expanded);
+
+    for (;;) {
+        if (!SCM_PAIRP(expr)) return SCM_LIST1(expr);
+        if (!SCM_SYMBOLP(SCM_CAR(expr)) && !SCM_IDENTIFIERP(SCM_CAR(expr)))
+            return SCM_LIST1(expr);
+
+        sym = Scm_CompileLookupEnv(SCM_CAR(expr), env, TRUE);
+        /* TODO: check local syntactic binding */
+        if (SCM_IDENTIFIERP(sym)) {
+            sym = SCM_OBJ(SCM_IDENTIFIER(sym)->name);
+        }
+        if (SCM_SYMBOLP(sym)) {
+            ScmGloc *g = Scm_FindBinding(Scm_VM()->module, SCM_SYMBOL(sym),
+                                         FALSE);
+            if (g && SCM_SYNTAXP(g->value)) {
+                ScmSyntax *syn = SCM_SYNTAX(g->value);
+                if (syn->compiler == macro_transform) {
+                    ScmObj proc = SCM_OBJ(syn->data);
+                    expr = Scm_Apply(proc, expr);
+                    if (!oncep) continue;
+                }
+                if (syn->compiler == synrule_transform) {
+                    ScmSyntaxRules *sr = (ScmSyntaxRules *)syn->data;
+                    expr = synrule_expand(expr, env, sr);
+                    if (!oncep) continue;
+                }
             }
         }
+        break;
     }
     return SCM_LIST1(expr);
 }
@@ -871,7 +884,14 @@ static ScmSyntax syntax_macro_expand = {
     SCM_CLASS_SYNTAX,
     SCM_SYMBOL(SCM_SYM_MACRO_EXPAND),
     compile_macro_expand,
-    NULL
+    (void*)0
+};
+
+static ScmSyntax syntax_macro_expand_1 = {
+    SCM_CLASS_SYNTAX,
+    SCM_SYMBOL(SCM_SYM_MACRO_EXPAND_1),
+    compile_macro_expand,
+    (void*)1
 };
 
 /*===================================================================
@@ -885,8 +905,9 @@ void Scm__InitMacro(void)
 #define DEFSYN(symbol, syntax) \
     Scm_Define(m, SCM_SYMBOL(symbol), SCM_OBJ(&syntax))
     
-    DEFSYN(SCM_SYM_MACRO_EXPAND, syntax_macro_expand);
     DEFSYN(SCM_SYM_SYNTAX_RULES, syntax_syntax_rules);
     DEFSYN(SCM_SYM_LET_SYNTAX, syntax_let_syntax);
     DEFSYN(SCM_SYM_LETREC_SYNTAX, syntax_letrec_syntax);
+    DEFSYN(SCM_SYM_MACRO_EXPAND, syntax_macro_expand);
+    DEFSYN(SCM_SYM_MACRO_EXPAND_1, syntax_macro_expand_1);
 }
