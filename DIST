@@ -2,16 +2,18 @@
 VERSION=`cat VERSION`
 TGZ_DEST="$HOME/shiro.dreamhost.com/scheme/vault/"
 MAN_DEST="$HOME/shiro.dreamhost.com/scheme/gauche/man/"
+DOC_DEST="../test"
 CHANGELOG_DEST="$HOME/shiro.dreamhost.com/scheme/gauche/ChangeLog.txt"
 
 while [ $# -gt 0 ]; do
   case $1 in
-    doc) docs=yes; shift ;;
+    doc) doc=yes; shift ;;
+    docs) doc=yes; docs=yes; shift ;;
     tgz) tgz=yes; shift ;;
     test) test=yes; shift ;;
     testcode) testcode=yes; shift ;;
     testclean) testclean=yes; shift ;;
-    *) echo "DIST [doc][tgz][test][testclean]"; exit 0;;
+    *) echo "DIST [doc][docs][tgz][test][testclean]"; exit 0;;
   esac
 done
 
@@ -33,12 +35,24 @@ if [ "$tgz" = "yes" ]; then
   cp ChangeLog $CHANGELOG_DEST
 fi
 
-if [ "$docs" = "yes" ]; then
+if [ "$doc" = "yes" ]; then
   (cd doc; make texi)
-  cp doc/gauche-ref.texi doc/gauche-refe.texi doc/gauche-refj.texi doc/extract doc/Makefile $MAN_DEST
-  (cd $MAN_DEST; make htmls)
-  rm -f $MAN_DEST/*.texi $MAN_DEST/extract $MAN_DEST/Makefile
-  (cd doc; make html; gzip gauche-ref?.html; mv gauche-ref?.html.gz $TGZ_DEST)
+  for lang in j e; do
+    rm -rf $DOC_DEST/gauche-ref$lang
+    mkdir $DOC_DEST/gauche-ref$lang
+    cp doc/gauche-ref$lang.texi doc/gauche-ref.texi doc/Makefile doc/extract $DOC_DEST/gauche-ref$lang/
+    (cd $DOC_DEST/gauche-ref$lang; make gauche-ref${lang}_toc.html; rm -f *.texi extract Makefile)
+  done
+fi
+
+if [ "$docs" = "yes" ]; then
+  rm -rf $MAN_DEST
+  mkdir $MAN_DEST
+  for lang in j e; do
+    (cd doc; make gauche-ref$lang.html; gzip gauche-ref$lang.html; mv gauche-ref$lang.html.gz $TGZ_DEST)
+    (cd $DOC_DEST; tar czf $TGZ_DEST/gauche-ref$lang.tgz gauche-ref$lang)
+    cp $DOC_DEST/gauche-ref$lang/* $MAN_DEST
+  done
 fi
 
 if [ "$test" = "yes" ]; then

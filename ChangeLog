@@ -1,3 +1,12 @@
+2002-01-30  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.5
+
+2002-01-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/core.c : unwind dynamic handlers upon exit().  this is a
+	  temporary solution and has to be rewritten for MT support.
+
 2002-01-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c : added support for back-reference reader syntax
