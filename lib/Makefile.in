@@ -1,7 +1,7 @@
 #
 # Makefile.in for Gauche/lib
 #
-#  $Id: Makefile.in,v 1.30 2001-09-18 08:56:55 shirok Exp $
+#  $Id: Makefile.in,v 1.31 2001-09-22 10:19:38 shirok Exp $
 #
 
 prefix = @prefix@
@@ -28,9 +28,12 @@ SCMS = srfi-0.scm \
        gauche/parseopt.scm gauche/interactive.scm gauche/selector.scm \
        gauche/logger.scm \
        port/jfilter.scm \
-       rfc/822.scm rfc/base64.scm rfc/uri.scm
+       rfc/822.scm rfc/base64.scm rfc/uri.scm \
+       text/csv.scm text/tr.scm \
+       w3c/cgi.scm
 
-SUBDIRS = gauche gauche/vm gauche/serializer port rfc srfi-1 srfi-13 srfi-14
+SUBDIRS = gauche gauche/vm gauche/serializer port rfc srfi-1 srfi-13 srfi-14 \
+	  text w3c
 
 INSTALL=@INSTALL@
 
