@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.49 2001-03-05 00:54:30 shiro Exp $
+ *  $Id: vm.c,v 1.50 2001-03-06 08:41:24 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1182,36 +1182,38 @@ void default_exception_handler(ScmObj e)
     }
 }
 
-ScmObj throw_exception_cc(ScmObj result, void **data)
+/* Throw exception.
+ *
+ * TODO: need to think over the specification of "continuable" exception.
+ *       so far I assume all the exception is uncontinuable, so this routine
+ *       never returns.
+ */
+ScmObj Scm_VMThrowException(ScmObj exception)
 {
-    ScmObj handlers = SCM_OBJ(data[0]);
-    if (!SCM_NULLP(handlers)) {
-        ScmObj proc = SCM_CDAR(handlers);
-        void *data = SCM_CDR(handlers);
-        theVM->handlers = SCM_CDR(handlers);
-        Scm_VMPushCC(throw_exception_cc, &data, 1);
-        return Scm_VMApply0(proc);
+    ScmObj handlers = theVM->handlers, hp;
+
+    if (SCM_PROCEDUREP(theVM->errorHandler)) {
+        Scm_Apply(theVM->errorHandler, SCM_LIST1(exception));
+    } else {
+        default_exception_handler(exception);
+    }
+
+    /* unwind the dynamic handlers */
+    SCM_FOR_EACH(hp, handlers) {
+        ScmObj proc = SCM_CDAR(hp);
+        theVM->handlers = SCM_CDR(hp); /* prevent infinite loop */
+        Scm_Apply(proc, SCM_NIL);
     }
 
     if (theVM->escape) {
         longjmp(theVM->escape->jbuf, 1);
     } else {
-        /* No error handler */
+        /* No escape point */
         exit(1);
     }
-    return SCM_UNDEFINED;       /* NOTREACHED */
-}
 
-ScmObj Scm_VMThrowException(ScmObj exception)
-{
-    void *data = theVM->handlers;
-    if (SCM_PROCEDUREP(theVM->errorHandler)) {
-        Scm_VMPushCC(throw_exception_cc, &data, 1);
-        return Scm_VMApply1(theVM->errorHandler, exception);
-    } else {
-        default_exception_handler(exception);
-    }   
-    return throw_exception_cc(SCM_UNDEFINED, &data);
+    /* NOTREACHED */
+    return SCM_UNDEFINED;
 }
 
 /*==============================================================
