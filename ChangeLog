@@ -1,3 +1,9 @@
+2004-12-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/Makefile.in: changed LDFLAGS to have -L. before the directories
+	  given in --with-local=DIR, to avoid conflicts against the existing
+	  libgauche in DIRs.
+
 2004-12-02  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.8.3
