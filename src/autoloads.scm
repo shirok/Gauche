@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.14 2004-08-01 05:41:22 shirok Exp $
+;;; $Id: autoloads.scm,v 1.15 2004-10-11 04:38:59 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.14 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.15 $.  DO NOT EDIT */"
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
 
@@ -191,3 +191,6 @@
 (autoload gauche.sortutil sort sort! merge merge! sorted?
                           stable-sort stable-sort!)
 
+(autoload gauche.condutil make-condition-type condition-type?
+                          make-condition condition-ref extract-condition
+                          define-condition-type condition)

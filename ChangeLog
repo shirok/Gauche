@@ -1,3 +1,12 @@
+2004-10-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/condutil.scm : added.  defines miscellaneous srfi-35
+	  compatible APIs.  autoloaded.
+	* lib/Makefile.in : added condutil.scm
+	* src/error.c : changed the name of 'conditions' slot of
+	  <compound-condition> to '%conditions', to avoid name conflict
+	  with its members.
+
 2004-10-09  Shiro Kawai  <shiro@acm.org>
 
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.55 2004-10-10 09:52:09 shirok Exp $
+ *  $Id: error.c,v 1.56 2004-10-11 04:38:59 shirok Exp $
  */
 
 #include <errno.h>
@@ -347,7 +347,7 @@ static void   conditions_set(ScmCompoundCondition *obj, ScmObj conds)
 }
 
 static ScmClassStaticSlotSpec compound_slots[] = {
-    SCM_CLASS_SLOT_SPEC("conditions", conditions_get, conditions_set),
+    SCM_CLASS_SLOT_SPEC("%conditions", conditions_get, conditions_set),
     { NULL }
 };
 

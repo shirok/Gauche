@@ -2,10 +2,15 @@
 ;; test error handlers
 ;;
 
-;;  $Id: error.scm,v 1.9 2003-01-07 13:28:04 shirok Exp $
+;;  $Id: error.scm,v 1.10 2004-10-11 04:38:59 shirok Exp $
 
 (use gauche.test)
 (test-start "error and exception handlers")
+
+;; NB: this test is run just after the primitive syntax test,
+;; and before tests of many standard features.  So we test
+;; the minimal features here.  The full test for the exception
+;; handling system is done in exception.scm.
 
 ;;----------------------------------------------------------------
 (test-section "with-error-handler")
