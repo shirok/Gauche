@@ -12,10 +12,11 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.38 2001-08-09 09:42:52 shirok Exp $
+ *  $Id: port.c,v 1.39 2001-08-30 06:55:49 shirok Exp $
  */
 
 #include <unistd.h>
+#include <string.h>
 #include <errno.h>
 #include "gauche.h"
 
@@ -280,7 +281,7 @@ int Scm__PortFileGetc(int prefetch, ScmPort *port)
    incomplete char. */
 int Scm__PortGetbInternal(ScmPort *port)
 {
-    int ch;
+    int ch = 0;
     
     if (SCM_PORT_UNGOTTEN(port)) {
         char *p = port->scratch;
@@ -900,7 +901,7 @@ static int bufport_putb(ScmByte b, ScmPort *port)
 static int bufport_putc(ScmChar c, ScmPort *port)
 {
     struct bufport *bp = PORT_BUFPORT(port);
-    int nbytes = SCM_CHAR_NBYTES(c), i;
+    int nbytes = SCM_CHAR_NBYTES(c);
     if (bp->current + nbytes >= bp->bufsiz) {
         SCM_CHAR_PUT(port->scratch, c);
         port->scrcnt = 0;
