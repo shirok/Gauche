@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.12 2001-11-07 09:33:38 shirok Exp $
+;; $Id: object.scm,v 1.13 2001-11-14 10:47:43 shirok Exp $
 
 (use gauche.test)
 
@@ -203,6 +203,26 @@
 (test "next-method"
       '(y-in (y*-in (x-in (t*-in fallback t*-out) x-out) y*-out) y-out)
       (lambda () (nm (make <y>))))
+
+;;----------------------------------------------------------------
+(test-section "setter method definition")
+
+(define-method s-get-i ((self <s>)) (slot-ref self 'i))
+(define-method (setter s-get-i) ((self <s>) v) (slot-set! self 'i v))
+(define-method (setter s-get-i) ((self <ss>) v) (slot-set! self 'i (cons v v)))
+
+(test "setter of s-get-i(<s>)" '("i" "j")
+      (lambda ()
+        (let* ((s (make <s> :i "i"))
+               (i (s-get-i s))
+               (j (begin (set! (s-get-i s) "j") (s-get-i s))))
+          (list i j))))
+(test "setter of s-get-i(<ss>)" '("i" ("j" . "j"))
+      (lambda ()
+        (let* ((s (make <ss> :i "i"))
+               (i (s-get-i s))
+               (j (begin (set! (s-get-i s) "j") (s-get-i s))))
+          (list i j))))
 
 ;;----------------------------------------------------------------
 (test-section "metaclass")

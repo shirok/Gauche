@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.24 2001-11-07 09:38:03 shirok Exp $
+;;;  $Id: object.scm,v 1.25 2001-11-14 10:47:41 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -51,10 +51,25 @@
 ;; Generic function
 ;;
 
-(define-syntax define-generic
-  (syntax-rules ()
-    ((_ ?name)
-     (define ?name (make <generic> :name '?name)))))
+(define-macro (define-generic name)
+  (receive (true-name getter-name) (%check-setter-name name)
+    (if getter-name
+        `(begin
+           (define ,true-name (make <generic> :name ',true-name))
+           (set! (setter ,getter-name) ,true-name))
+        `(define ,true-name (make <generic> :name ',true-name)))))
+
+;; allow (setter name) type declaration
+(define (%check-setter-name name)
+  (cond ((symbol? name) (values name #f))
+        ((and (pair? name) (eq? (car name) 'setter)
+              (pair? (cdr name)) (symbol? (cadr name))
+              (null? (cddr name)))
+         (values (%make-setter-name (cadr name)) (cadr name)))
+        (else (error "Bad name for generic function or method" name))))
+
+(define (%make-setter-name name)
+  (string->symbol (format #f "setter of ~a" name)))
 
 ;;----------------------------------------------------------------
 ;; Method
@@ -78,14 +93,18 @@
                                     (list '<top> (car ss) (car ss))
                                     result))))
               ))
-    `(begin
-       (%ensure-generic-function ',name (current-module))
-       (add-method! ,name
-                    (make <method>
-                      :generic ,name
-                      :specializers (list ,@specializers)
-                      :lambda-list ',lambda-list
-                      :body (lambda ,body-args ,@body))))
+    (receive (true-name getter-name) (%check-setter-name name)
+      `(begin
+         (%ensure-generic-function ',true-name (current-module))
+         (add-method! ,true-name
+                      (make <method>
+                        :generic ,true-name
+                        :specializers (list ,@specializers)
+                        :lambda-list ',lambda-list
+                        :body (lambda ,body-args ,@body)))
+         ,(if getter-name
+              `(set! (setter ,getter-name) ,true-name)
+              #f)))
     ))
 
 ;;----------------------------------------------------------------
@@ -241,9 +260,8 @@
                                    (slot-set! obj name val))))))
     (when %accessor
       (let ((gf  (%ensure-generic-function %accessor module))
-            (gfs (%ensure-generic-function
-                  (string->symbol (format #f "setter of ~s" %accessor))
-                  module)))
+            (gfs (%ensure-generic-function (%make-setter-name %accessor)
+                                           module)))
         (add-method! gf
                      (make <method> :generic gf :specializers `(,class)
                            :lambda-list '(obj)
