@@ -1,3 +1,17 @@
+2002-02-13  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-0.scm : added SRFI-22 to the feature set, and fixed a
+	  bug that prevents cond-expand from working.
+	* src/main.c : INCOMPATIBLE CHANGE - fix the convention to pass
+	  the list of arguments to 'main' according to the final SRFI-22.
+	  Now the argument list includes the script name itself.  For
+	  backward compatibility, -fcompat-0.5 command-line option is
+	  added.
+	* src/genstub : adapted to the change of main.c
+	* lib/gauche/test.scm (test-end) : reports descrepancies in the
+	  order of tests (instead of reverse order).
+	* lib/gauche/version.scm : added.
+
 2002-02-12  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/test.scm : allow sys-stat->file-type to return 'fifo
