@@ -91,6 +91,10 @@ test : gosh
 	done
 	@echo "See test.log for details."
 
+test-vmstack : test-vmstack.c libgauche.a
+	$(CC) $(CFLAGS) $(LDFLAGS) -o test-vmstack test-vmstack.c libgauche.a $(LIBS)
+	./test-vmstack >> test.log
+
 clean :
 	rm -rf core gosh @LIBGAUCHE_SO@ *.o *~ *.a *.t test.log test.dir so_locations gauche/*~
 

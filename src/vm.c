@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.125 2002-01-02 06:24:45 shirok Exp $
+ *  $Id: vm.c,v 1.126 2002-01-07 10:42:18 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1484,16 +1484,22 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
  *   structure ScmCStack.
  */
 
-/* Border gate.  All the C->Scheme calls should go through here.  */
+/* Border gate.  All the C->Scheme calls should go through here.
+ *
+ *   The current C stack information is saved in cstack.  The
+ *   current VM stack information is saved (as a continuation
+ *   frame pointer) in cstack.cont.
+ */
 static ScmObj user_eval_inner(ScmObj program)
 {
     DECL_REGS_VOLATILE;
-    volatile int restarted = FALSE;
     ScmCStack cstack;
 
-    /* Push extra continuation to preserve vm state.
-       TODO: this won't be necessary if we're called directly
-       from a subr */
+    /* Push extra continuation to preserve vm state.  This is necessary
+       since the stack may have unfinisied argument frame, and it must
+       be saved when a continuation is captured inside PROGRAM.
+       TODO: This won't be necessary if we're called directly
+       from a subr so it can be optimized. */
     CHECK_STACK(CONT_FRAME_SIZE);
     PUSH_CONT(pc, pc);
     pc = program;
@@ -1508,47 +1514,55 @@ static ScmObj user_eval_inner(ScmObj program)
     if (setjmp(cstack.jbuf) == 0) {
         run_loop();
         val0 = vm->val0;
-        if (vm->cont) {
+        if (vm->cont == cstack.cont) {
             RESTORE_REGS();
             POP_CONT();
             SAVE_REGS();
         }
     } else {
+        /* An escape situation happened. */
         if (vm->escapeReason == SCM_VM_ESCAPE_CONT) {
-            ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
+             ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
             if (ep->cstack == vm->cstack) {
                 ScmObj handlers = throw_cont_calculate_handlers(ep, vm);
-                val0 = throw_cont_body(handlers, ep, vm->escapeData[1]);
+                vm->val0 = throw_cont_body(handlers, ep, vm->escapeData[1]);
+                vm->pc = SCM_NIL;
+                goto restart;
+            } else {
+                SCM_ASSERT(vm->cstack && vm->cstack->prev);
+                vm->cont = cstack.cont;
+                val0 = vm->val0;
                 RESTORE_REGS();
                 POP_CONT();
                 SAVE_REGS();
-                restarted = TRUE;
-                goto restart;
+                vm->cstack = vm->cstack->prev;
+                longjmp(vm->cstack->jbuf, 1);
             }
-            SCM_ASSERT(vm->cstack && vm->cstack->prev);
-            vm->cstack = vm->cstack->prev;
-            longjmp(vm->cstack->jbuf, 1);
         } else if (vm->escapeReason == SCM_VM_ESCAPE_ERROR) {
             ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
 
-            val0 = vm->val0;
             if (ep && ep->cstack == vm->cstack) {
                 vm->cont = ep->cont;
-                RESTORE_REGS();
-                POP_CONT();
-                SAVE_REGS();
-                restarted = TRUE;
+                vm->pc = SCM_NIL;
                 goto restart;
-            }
-            if (vm->cstack->prev == NULL) {
+            } else if (vm->cstack->prev == NULL) {
                 /* This loop is the outermost C stack, and nobody will
                    capture the error.  Usually this means we're running
                    scripts.  We can safely exit here, for the dynamic
                    stack is already rewind. */
                 exit(EX_SOFTWARE);
+            } else {
+                /* Jump again until C stack is recovered.  We sould pop
+                   the extra continuation frame so that the VM stack
+                   is consistent. */
+                vm->cont = cstack.cont;
+                val0 = vm->val0;
+                RESTORE_REGS();
+                POP_CONT();
+                SAVE_REGS();
+                vm->cstack = vm->cstack->prev;
+                longjmp(vm->cstack->jbuf, 1);
             }
-            vm->cstack = vm->cstack->prev;
-            longjmp(vm->cstack->jbuf, 1);
         } else {
             Scm_Panic("invalid longjmp");
         }
