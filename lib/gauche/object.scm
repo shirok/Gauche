@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.7 2001-03-27 06:27:37 shiro Exp $
+;;;  $Id: object.scm,v 1.8 2001-03-27 10:16:50 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -120,6 +120,7 @@
          ,class))
     ))
 
+;;; Method INITIALIZE (class <class>) initargs
 (define-method initialize ((class <class>) initargs)
   (let ((name   (get-keyword :name   initargs #f))
         (slots  (get-keyword :slots  initargs '()))
@@ -214,6 +215,7 @@
         (with-module srfi-17 (setter-set! gf gfs))))
     ))
  
+;;; Method COMPUTE-SLOTS (class <class>)
 (define-method compute-slots ((class <class>))
   (let ((cpl (slot-ref class 'cpl))
         (slots '()))
@@ -225,10 +227,22 @@
               cpl)
     (reverse slots)))
 
+;;; Method COMPUTE-GET-N-SET (class <class>) slot
 (define-method compute-get-n-set ((class <class>) slot)
+
+  ;; NB: STklos ignores :initform slot option for class slots, but
+  ;;     I think it's sometimes useful.
   (define (make-class-slot)
-    (let ((cell #f))         ; TODO:need to be unbound value, but how?
-      (cons (lambda (o) cell) (lambda (o v) (set! cell v)))))
+    (let ((cell (undefined))
+          (init-value (slot-definition-option slot :init-value (undefined)))
+          (init-thunk (slot-definition-option slot :init-thunk #f)))
+      (cons (lambda (o)
+              (when (undefined? cell)
+                (cond ((not (undefined? init-value)) (set! cell init-value))
+                      ((procedure? init-thunk) (set! cell (init-thunk)))))
+              cell)
+            (lambda (o v)
+              (set! cell v)))))
   
   (let ((slot-name (slot-definition-name slot))
         (alloc (slot-definition-allocation slot)))
