@@ -3649,7 +3649,12 @@ an @var{UNRES-NAME}. For xml-tokens of kinds '@code{COMMENT} and
 そのheadは@code{#f}になります。
 @c COMMON
 @end table
+
+@c EN
 For example,
+@c JP
+例を示します。
+@c COMMON
 @example
 <P>  => kind='START, head='P
 </P> => kind='END, head='P
@@ -4948,9 +4953,11 @@ XMLドキュメントのSXML表現を返します。
 @c ----------------------------------------------------------------------
 @node sxml.sxpath - SXML Query Language, sxml.tools - manipulationg SXML structure, sxml.ssax - Functional XML parser, Library modules - Utilities
 @section @code{sxml.sxpath} - SXML Query Language
+@c NODE @code{sxml.sxpath} - SXMLクエリ言語, @code{sxml.sxpath} - SXMLクエリ言語
 
 @deftp {Module} sxml.sxpath
 @mdindex sxml.sxpath
+@c EN
 SXPath is a query language for SXML, an instance of XML Information
 set (Infoset) in the form of s-expressions. 
 
@@ -4961,24 +4968,57 @@ various procedures written for SXPath by Dmitry Lizorkin and Kirill Lisovsky.
 
 Current version is based on sxpathlib.scm,v 3.915,
 sxpath.scm,v 1.1, and sxpath-ext.scm,v 1.911.
+@c JP
+SXPathは、XML Information set (Infoset)のインスタンスのS式フォームである
+SXMLのためのクエリ言語です。
+
+これは最初にOleg Kiselyovによって書かれ、Dmitry LizorkinとKirill Lisovsky
+によって改良されました。
+このモジュールにはまた、Dmitry LizorkinとKirill LisovskyによりSXPathのために
+書かれたたくさんの手続きが盛り込まれています。
+
+現在のバージョンは、sxpathlib.scm v3.915、sxpath.scm v1.1、sxpath-ext.scm v1.911を
+ベースにしています。
+@c COMMON
 @end deftp
 
+@c EN
 This manual is mostly derived from the comments in the
 original source files.
 
 The module consists of three layers.
+@c JP
+このマニュアルは、そのほとんどがオリジナルのソースファイルのコメントより
+導出されいます。
+
+このモジュールは3つのレイヤから構成されます。
+@c COMMON
 @enumerate
 @item
+@c EN
 Basic converters and applicators, which provides the means to
 access and translate SXML tree.
+@c JP
+SXMLツリーへのアクセスやその変換の手段を提供する基本的なコンバータや
+アプリケータ(適用子)。
+@c COMMON
 @item
+@c EN
 High-level query language compiler,
 which takes abbreviated SXPath and
 returns a Scheme function that selects a nodeset
 that satisfies the specified path from the given nodeset.
+@c JP
+省略形のSXPathを取り、与えられたノードセットから指定されたパスを満足する
+ノードセットを選択するScheme関数を返す、高レベルなクエリ言語コンパイラ。
+@c COMMON
 @item
+@c EN
 Extension libraries, which implements
 SXML counterparts to W3C XPath Core Functions Library.
+@c JP
+W3CのXPathコア関数ライブラリのSXML版を実装する拡張ライブラリ。
+@c COMMON
 @end enumerate
 
 @c ----------------------------------------------------------------------
@@ -4990,90 +5030,187 @@ SXML counterparts to W3C XPath Core Functions Library.
 
 @node SXPath basic converters and applicators, SXPath query language, sxml.sxpath - SXML Query Language, sxml.sxpath - SXML Query Language
 @subsection SXPath basic converters and applicators
+@c NODE SXPathの基本的なコンバータとアプリケータ
 
+@c EN
 A converter is a function
+@c JP
+コンバータは、以下を満たす関数です。
+@c COMMON
 @example
   type Converter = Node|Nodeset -> Nodeset
 @end example
+@c EN
 A converter can also play a role of a predicate: in that case, if a
 converter, applied to a node or a nodeset, yields a non-empty
 nodeset, the converter-predicate is deemed satisfied. Throughout
 this file a nil nodeset is equivalent to @code{#f} in denoting a failure.
+@c JP
+コンバータは、述語としての役割を担うこともあります。
+その場合、コンバータが、ノードやノードセットに適用され、空ではないノードセットを
+返す場合、述語としてのコンバータは満足したものとみなされます。
+このファイルを通して、nilノードセットは失敗を表す@code{#f}と等価です。
+@c COMMON
 
 @defun nodeset? x
+@c EN
 Returns @code{#t} if given object is a nodeset.
+@c JP
+与えられたオブジェクトがノードセットならば、@code{#t}を返します。
+@c COMMON
 @end defun
 
 @defun as-nodeset x
+@c EN
 If @var{x} is a nodeset - returns it as is, otherwise wrap it in a list.
+@c JP
+@var{x}がノードセットならば、それをそのまま返し、そうでなければそれを
+リストでラップして返します。
+@c COMMON
 @end defun
 
 @defun sxml:element? obj
+@c EN
 Predicate which returns @var{#t}
 if @var{obj} is SXML element, otherwise returns @var{#f}.
+@c JP
+@var{obj}がSXMLの要素であれば@var{#t}を返し、そうでなければ@var{#f}を
+返す述語です。
+@c COMMON
 @end defun
 
 @defun ntype-names?? crit
+@c EN
 The function @code{ntype-names??} takes a list of acceptable node names as a
 criterion and returns a function, which, when applied to a node, 
 will return @code{#t} if the node name is present in criterion list
 and @code{#f} othervise.
+@c JP
+関数@code{ntype-names??}は、判定基準として受け付け可能なノード名のリストを取り、
+関数を返します。この関数は、ノードに適用された際、そのノード名が判定基準リストに
+含まれていれば@code{#t}を、含まれていなければ@code{#f}を返す関数です。
+@c COMMON
 @example
  ntype-names?? :: ListOfNames -> Node -> Boolean
 @end example
 @end defun
 
 @defun ntype?? crit
+@c EN
 The function @code{ntype??} takes a type criterion and returns
 a function, which, when applied to a node, will tell if the node satisfies
 the test.
+@c JP
+関数@code{ntype??}は、型に関する判定基準を取り、関数を返します。
+この関数は、ノードに適用された際、そのノードがそのテストを満足するかを
+返します。
+@c COMMON
 @example
   ntype?? :: Crit -> Node -> Boolean
 @end example
 
+@c EN
 The criterion @var{crit} is 
 one of the following symbols:
+@c JP
+判定基準@var{crit}は、以下のシンボルのうちの1つです。
+@c COMMON
 @table @code
 @item id
+@c EN
 tests if the Node has the right name (id)
+@c JP
+そのノードが正しい名前(id)を持っているかをテストします。
+@c COMMON
 @item @@
+@c EN
 tests if the Node is an @var{attributes-list}.
+@c JP
+そのノードが@var{attributes-list}であるかをテストします。
+@c COMMON
 @item *
+@c EN
 tests if the Node is an @var{Element}.
+@c JP
+そのノードが@var{Element}であるかをテストします。
+@c COMMON
 @item *text*
+@c EN
 tests if the Node is a text node.
+@c JP
+そのノードがテキストノードであるかをテストします。
+@c COMMON
 @item *data*
+@c EN
 tests if the Node is a data node 
 (text, number, boolean, etc., but not pair).
+@c JP
+そのノードがデータノード(テキスト、数値、真偽値などで、ペアではない)であるか
+をテストします。
+@c COMMON
 @item *PI*
+@c EN
 tests if the Node is a @code{PI} node.
+@c JP
+そのノードが@code{PI}ノードであるかをテストします。
+@c COMMON
 @item *COMMENT*
+@c EN
 tests if the Node is a @code{COMMENT} node.
+@c JP
+そのノードが@code{COMMENT}ノードであるかをテストします。
+@c COMMON
 @item *ENTITY*
+@c EN
 tests if the Node is a @code{ENTITY} node.
+@c JP
+そのノードが@code{ENTITY}ノードであるかをテストします。
+@c COMMON
 @item *any*
+@c EN
 @code{#t} for any type of Node.
+@c JP
+どんなタイプのノードに対しても@code{#t}を返します。
+@c COMMON
 @end table
 @end defun
 
 @defun ntype-namespace-id?? ns-id
+@c EN
 This function takes a namespace-id, and returns a predicate
 @code{Node -> Boolean}, which is @code{#t}
 for nodes with this very namespace-id.
 @var{ns-id} is a string.
 @code{(ntype-namespace-id?? #f)} will be @code{#t}
 for nodes with non-qualified names.
+@c JP
+この関数は、名前空間IDを取り、述語@code{Node -> Boolean}を
+返します。この述語はまさにその名前空間IDを持つノードに対しては
+@code{#t}を返します。@var{ns-id}は文字列です。
+@code{(ntype-namespace-id?? #f)}は、完全修飾されていない名前を
+持つノードに対して@code{#t}を返します。
+@c COMMON
 @end defun
 
 @defun sxml:invert pred
+@c EN
 This function takes a predicate and returns it inverted .
-That is if the given predicate yelds @code{#f} or '@code{()} the inverted one  
+That is if the given predicate yields @code{#f} or '@code{()} the inverted one  
 yields the given node (@code{#t}) and vice versa.
+@c JP
+この関数は、述語を取り、それを反対にして返します。
+与えられた述語が@code{#f}や'@code{()}を返す場合、反対にされたものは
+与えられたノード(@code{#t})を返します。
+@c COMMON
 @end defun
 
 @defun node-eq? other
 @defunx node-equal? other
+@c EN
 Curried equivalence converter-predicates, i.e.
+@c JP
+等価な述語としてのコンパータにカリー化します。すなわち、
+@c COMMON
 @example
   ((node-eq? a) b)    @equiv{} (eq? a b)
   ((node-equal? a) b) @equiv{} (equal? a b)
@@ -5087,6 +5224,7 @@ Curried equivalence converter-predicates, i.e.
  node-pos:: N -> Converter
 @end example
 
+@c EN
 Select the @var{N}'th element of a Nodeset and return as a singular Nodeset;
 Return an empty nodeset if the Nth element does not exist.
 @code{((node-pos 1) Nodeset)} selects the node at the head of the Nodeset,
@@ -5097,6 +5235,15 @@ exists.
 the tail of the list.
 @code{((node-pos -1) Nodeset)} selects the last node of a non-empty nodeset;
 @code{((node-pos -2) Nodeset)} selects the last but one node, if exists.
+@c JP
+ノードセットの@var{N}番目の要素を選択し、1つの要素を持つノードセットを返します。
+N番目の要素が存在しなければ、空のノードセットを返します。
+@code{((node-pos 1) Nodeset)}は、ノードセットの先頭ノードがあればそれを選択します。
+@code{((node-pos 2) Nodeset)}は、2番目のノードがあればそれを選択します。
+@var{N}は負の数でも構いません。その場合、ノードはリストの末尾から数えられます。
+@code{((node-pos -1) Nodeset)}は、空ではないノードセットの最後のノードを選択します。
+@code{((node-pos -2) Nodeset)}は、最後から2番目のノードがあればそれを選択します。
+@c COMMON
 @end defun
 
 @defun sxml:filter pred?
@@ -5105,9 +5252,15 @@ the tail of the list.
  filter:: Converter -> Converter
 @end example
 
+@c EN
 A filter applicator, which introduces a filtering context. The argument
 converter is considered a predicate, with either @code{#f}
 or nil result meaning failure.
+@c JP
+フィルタリングを行う、フィルタアプリケータです。
+引数のコンバータは、@code{#f}あるいはnilとなることが失敗を意味する述語と
+みなされます。
+@c COMMON
 @end defun
 
 @defun take-until pred?
@@ -5117,6 +5270,7 @@ or nil result meaning failure.
  take-until:: Pred -> Node|Nodeset -> Nodeset
 @end example
 
+@c EN
 Given a converter-predicate and a nodeset, apply the predicate to
 each element of the nodeset, until the predicate yields anything but
 @var{#f} or nil. Return the elements of the input nodeset that have
@@ -5129,6 +5283,18 @@ element that satisfies the predicate.
 The nodeset returned by @code{((take-until (not pred)) nset)} is a subset -- 
 to be more precise, a prefix -- of the nodeset returned by
 @code{((filter pred) nset)}.
+@c JP
+述語としてのコンバータとノードセットが与えられると、
+ノードセットの各要素に述語を適用し、
+述語が@var{#f}あるいはnil以外を返すと、
+(その述語が失敗した)その時点までに処理された要素を返します。
+@code{take-until}は、上のフィルタのバリエーションの1つです。
+@code{take-until}は、その述語を満足する最初の要素(それ自体は含まない)まで、
+順序付けられた入力のセットの要素をパスします。
+@code{((take-until (not pred)) nset)}により返されるノードセットは、
+@code{((filter pred) nset)}により返されるノードセットのサブセット
+-- 具体的には接頭辞 --になります。
+@c COMMON
 @end defun
 
 @defun take-after pred?
@@ -5138,6 +5304,7 @@ take-after:: Converter -> Converter, or
 take-after:: Pred -> Node|Nodeset -> Nodeset
 @end example
 
+@c EN
 Given a converter-predicate and a nodeset, apply the predicate to
 each element of the nodeset, until the predicate yields anything but
 @code{#f} or
@@ -5148,15 +5315,35 @@ element that satisfied the predicate.
 partition an input nodeset into three
 parts: the first element that satisfies a predicate, all preceding
 elements and all following elements.
+@c JP
+述語としてのコンバータとノードセットを与えると、
+述語をノードセットの各要素に適用し、
+述語が@code{#f}かnil以外を返すと、
+まだ述語が適用されていない要素を返します。
+つまり、述語を満足する最初の要素の後に続く要素を返します。
+@code{take-after}と@code{take-until}を一緒に使うと、
+入力のノードセットを3つのパート:
+述語を満足する最初の要素、その要素の前の部分、その要素の後の部分に
+分けます。
+@c COMMON
 @end defun
 
 @defun map-union proc lst
+@c EN
 Apply proc to each element of lst and return the list of results.
-if proc returns a nodeset, splice it into the result.
+If proc returns a nodeset, splice it into the result.
 
 From another point of view,
 @code{map-union} is a function Converter->Converter,
 which places an argument-converter in a joining context.
+@c JP
+procをlstの各要素に適用し、結果のリストを返します。
+procがノードセットを返す場合、それを結果につなぎ合わせます。
+
+別の観点から見ると、@code{map-union}はConverter->Converter関数で、
+結合を行いたいコンテキストでの引数としてのコンバータに
+位置します。
+@c COMMON
 @end defun
 
 @defun node-reverse node-or-nodeset
@@ -5166,9 +5353,15 @@ node-reverse :: Converter, or
 node-reverse:: Node|Nodeset -> Nodeset
 @end example
 
-Reverses the order of nodes in the nodeset
+@c EN
+Reverses the order of nodes in the nodeset.
 This basic converter is needed to implement a reverse document order
 (see the XPath Recommendation).
+@c JP
+ノードセットでのノードの順番を逆順にします。
+この基本的なコンバータは、逆順のドキュメントオーダーを実装するために
+必要です。(XPath勧告を参照して下さい。)
+@c COMMON
 @end defun
 
 @defun node-trace title
@@ -5177,12 +5370,19 @@ This basic converter is needed to implement a reverse document order
  node-trace:: String -> Converter
 @end example
 
+@c EN
 @code{(node-trace title)} is an identity converter. In addition it prints out
 a node or nodeset it is applied to, prefixed with the 'title'.
 This converter is very useful for debugging.
+@c JP
+@code{(node-trace title)}は、それ自身を返すコンバータです。
+また、自身が適用されるノードやノードセットを、'title'という
+プリフィックスを付けてプリントします。
+このコンバータは、デバッグの際にとても便利です。
+@c COMMON
 @end defun
 
-
+@c EN
 What follow are Converter combinators,
 higher-order functions that transmogrify a converter
 or glue a sequence of converters into a single, non-trivial
@@ -5195,20 +5395,43 @@ such patterns that together implement XPath location path
 specification. As it turns out, all these combinators can be built
 from a small number of basic blocks: regular functional composition,
 map-union and filter applicators, and the nodeset union.
+@c JP
+コンバータの組み合わせに続くものは、コンバータを一変させる、
+あるいはコンバータのシーケンスを1つの強力なコンバータにつなぎ合わせる
+高階関数です。そのゴールは、XPathのロケーションパスに対応する
+コンバータとなることです。
+
+別の観点から見ると、コンバータは、コンバータ群の適用の固定され
+名前の付いた@emph{パターン}とみなせます。
+以下に挙げるのは、XPathのロケーションパスの仕様を実装する
+そのようなパターンの完全なセットです。
+結局のところ、これら全てのコンビネータはいくつかの基本的なブロック、
+通常の関数的なコンポジション、map-unionとfilterアプリケータ、
+ノードセットユニオンなどから構築することができます
+@c COMMON
 
 @defun select-kids test-pred?
 
 @example
 select-kids:: Pred -> Node -> Nodeset
 @end example
+@c EN
 Given a Node, return an (ordered) subset its children that satisfy
 the Pred (a converter, actually).
+@c JP
+ノードを与えると、述語(実際はコンバータ)を満足するその子要素の
+(順序付けられた)サブセットを返します。
+@c COMMON
 
 @example
 select-kids:: Pred -> Nodeset -> Nodeset
 @end example
+@c EN
 The same as above, but select among children of all the nodes in
 the Nodeset.
+@c JP
+上と同じですが、ノードセットの全てのノードの子要素から選択します。
+@c COMMON
 @end defun
 
 @defun node-self pred
@@ -5218,9 +5441,16 @@ the Nodeset.
  node-self:: Converter -> Converter
 @end example
 
+@c EN
 Similar to select-kids but apply to the Node itself rather
 than to its children. The resulting Nodeset will contain either one
 component, or will be empty (if the Node failed the Pred).
+@c JP
+select-kidsに似ていますが、自身をその子要素に適用するのでは
+なく、ノードそれ自身に適用します。
+結果のノードセットは、1つのコンポーネントを含むか、
+空(ノードが述語を満足しない場合)になります。
+@c COMMON
 @end defun
 
 @defun node-join . selectors
@@ -5230,8 +5460,13 @@ component, or will be empty (if the Node failed the Pred).
  node-join:: [Converter] -> Converter
 @end example
 
+@c EN
 join the sequence of location steps or paths as described
 in the title comments above.
+@c JP
+上のタイトルコメントで説明されるようなロケーションステップ
+あるいはロケーションパスのシーケンスをつなぎ合わせます。
+@c COMMON
 @end defun
 
 @defun node-reduce . converters
@@ -5241,6 +5476,7 @@ in the title comments above.
  node-reduce:: [Converter] -> Converter
 @end example
 
+@c EN
 A regular functional composition of converters.
 From a different point of view,
 @code{((apply node-reduce converters) nodeset)}
@@ -5248,6 +5484,13 @@ is equivalent to
 @code{(foldl apply nodeset converters)}
 i.e., folding, or reducing, a list of converters with the nodeset
 as a seed.
+@c JP
+コンバータの通常の関数的なコンポジションです。
+見方を変えると、@code{((apply node-reduce converters) nodeset)}は
+@code{(foldl apply nodeset converters)}と等価です。
+すなわち、コンバータのリストをノードセットをseedとして畳み込みや分解
+を行うようなものです。
+@c COMMON
 @end defun
 
 @defun node-or . converters
@@ -5256,10 +5499,17 @@ as a seed.
  node-or:: [Converter] -> Converter
 @end example
 
+@c EN
 This combinator applies all converters to a given node and
 produces the union of their results.
 This combinator corresponds to a union, '@code{|}' operation for XPath
 location paths.
+@c JP
+このコンビネータは、全てのコンバータを与えられたノードに適用し、
+それらの結果のユニオンを作ります。
+このコンビネータは、XPathのロケーションパスでの'@code{|}'オペレーション
+であるユニオンに対応します。
+@c COMMON
 @end defun
 
 @defun node-closure test-pred?
@@ -5268,11 +5518,19 @@ location paths.
  node-closure:: Converter -> Converter
 @end example
 
+@c EN
 Select all @emph{descendants} of a node that satisfy a converter-predicate.
 This combinator is similar to @code{select-kids} but applies to
 grand... children as well.
 This combinator implements the "@code{descendant::}" XPath axis.
 Conceptually, this combinator can be expressed as
+@c JP
+述語としてのコンバータを満足するノードの全ての@emph{子孫}を選択します。
+このコンビネータは@code{select-kids}に似ていますが、孫要素やその
+子要素達にも適用を行います。
+このコンビネータは、XPathの軸である``@code{descendant::}''を実装します。
+概念的には、このコンビネータは以下のように表現することができます。
+@c COMMON
 @example
  (define (node-closure f)
       (node-or
@@ -5280,27 +5538,37 @@ Conceptually, this combinator can be expressed as
 	 (node-reduce (select-kids (ntype?? '*)) (node-closure f))))
 @end example
 
+@c EN
 This definition, as written, looks somewhat like a fixpoint, and it
 will run forever.  It is obvious however that sooner or later
 @code{(select-kids (ntype?? '*))} will return an empty nodeset. At
 this point further iterations will no longer affect the result and
 can be stopped.
+@c JP
+この定義は、字面の通り、フィックスポイントのような何かで、
+永久に実行し続けます。しかし、いつかは@code{(select-kids (ntype?? '*))}
+が空のノードセットを返すことは明白です。その時点では、以降の
+イテレーションはその結果に影響を及ぼさず停止されることができます。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
 @node SXPath query language, SXPath extension, SXPath basic converters and applicators, sxml.sxpath - SXML Query Language
 @subsection SXPath query language
-
-@defun sxpath path . ns-binding
-Evaluates an abbreviated SXPath.
+@c NODE SXPathクエリ言語
 
 @example
  sxpath:: AbbrPath -> Converter, or
  sxpath:: AbbrPath -> Node|Nodeset -> Nodeset
 @end example
 
+@c EN
 @var{AbbrPath} is a list. It is translated to the full SXPath according
 to the following rewriting rules:
+@c JP
+@var{AbbrPath}はリストです。これは、以下の書き換えルールに従って
+完全なSXPathに変換されます。
+@c COMMON
 @example
  (sxpath '()) -> (node-join)
  (sxpath '(path-component ...)) ->
@@ -5328,86 +5596,172 @@ to the following rewriting rules:
 @end example
 @end defun
 
+@c EN
 Some wrapper functions around @code{sxpath}:
+@c JP
+@code{sxpath}には、いくつかのラッパ関数があります。
+@c COMMON
 
 @defun if-sxpath path
+@c EN
 @code{sxpath} always returns a list, which is @code{#t} in Scheme.
 @code{if-sxpath} returns @code{#f} instead of empty list.
+@c JP
+@code{sxpath}は、常にリストを返し、それはSchemeでは@code{#t}となります。
+@code{if-sxpath}は、空リストの代わりに@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun if-car-sxpath path
+@c EN
 Returns first node found, if any.
 Otherwise returns @code{#f}.
+@c JP
+もし存在すれば、最初に見つかったノードを返します。
+そうでなければ、@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun car-sxpath path
+@c EN
 Returns first node found, if any.
 Otherwise returns empty list.
+@c JP
+もし存在すれば、最初に見つかったノードを返します。
+そうでなければ、空リストを返します。
+@c COMMON
 @end defun
 
 @defun sxml:id-alist node . lpaths
+@c EN
 Built an index as a list of
 @code{(@var{ID_value} . @var{element})} pairs for given
 node.  @var{lpaths} are location paths for attributes of type ID.
+@c JP
+与えられたノードについて、@code{(@var{ID_value} . @var{element})}の
+ペアのリストをインデックスとして構築します。
+@var{lpaths}は、タイプIDの属性のロケーションパスです。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
 @node SXPath extension,  , SXPath query language, sxml.sxpath - SXML Query Language
 @subsection SXPath extension
+@c NODE SXPathの拡張
 
+@c EN
 SXML counterparts to W3C XPath Core Functions Library.
+@c JP
+W3CのXPathコア関数ライブラリのSXML版です。
+@c COMMON
 
 @defun sxml:string object
+@c EN
 The counterpart to XPath @code{string} function (section 4.2 XPath Rec.)
 Converts a given object to a string.
 NOTE:
+@c JP
+XPathの@code{string}関数(XPath勧告のセクション4.2)に対応するものです。
+与えられたオブジェクトを文字列に変換します。
+注意:
+@c COMMON
 @enumerate
 @item
+@c EN
 When converting a nodeset - a document order is not preserved
+@c JP
+ノードセットを変換する時は、ドキュメントオーダーは保持されません。
+@c COMMON
 @item
+@c EN
 @var{number->string} function returns the result in a form which is slightly
 different from XPath Rec. specification
+@c JP
+@var{number->string}関数は、その結果をXPath勧告の仕様とは少し違った
+フォームで返します。
+@c COMMON
 @end enumerate
 @end defun
 
 @defun sxml:boolean object
+@c EN
 The counterpart to XPath @code{boolean} function (section 4.3 XPath Rec.)
 Converts its argument to a boolean.
+@c JP
+XPathの@code{boolean}関数(XPath勧告のセクション4.3)に対応するものです。
+引数を真偽値に変換します。
+@c COMMON
 @end defun
 
 @defun sxml:number obj
+@c EN
 The counterpart to XPath @code{number} function (section 4.4 XPath Rec.)
 Converts its argument to a number
 NOTE:
+@c JP
+XPathの@code{number}関数(XPath勧告のセクション4.4)に対応するものです。
+引数を数値に変換します。
+注意:
+@c COMMON
 @enumerate
 @item
+@c EN
 The argument is not optional (yet?).
+@c JP
+引数は(まだ?)オプションではありません。
+@c COMMON
 @item
+@c EN
 @code{string->number} conversion is not IEEE 754 round-to-nearest.
+@c JP
+@code{string->number}の変換は、IEEE 754の四捨五入ではありません。
+@c COMMON
 @item
+@c EN
 NaN is represented as 0.
+@c JP
+NaNは、0として表現されます。
+@c COMMON
 @end enumerate
 @end defun
 
 @defun sxml:string-value node
+@c EN
 Returns a string value for a given node in accordance to
-XPath Rec. 5.1 - 5.7 
+XPath Rec. 5.1 - 5.7
+@c JP
+XPath勧告のセクション5.1 - 5.7にしたがって、与えられたノードの
+文字列値を返します。
+@c COMMON
 @end defun
 
 
 @defun sxml:node? node
+@c EN
 According to XPath specification 2.3, this test is true for any
 XPath node.
 For SXML auxiliary lists and lists of attributes has to be excluded.
+@c JP
+XPathの仕様2.3にしたがい、このテストはいかなるXPathノードに
+対しても真を返します。
+SXMLの補助的なリストや属性のリストは除外されます。
+@c COMMON
 @end defun
 
 @defun sxml:attr-list obj
-Returns the list of attributes for a given SXML node
-Empty list is returned if the given node os not an element,
+@c EN
+Returns the list of attributes for a given SXML node.
+Empty list is returned if the given node is not an element,
 or if it has no list of attributes
+@c JP
+与えられたSXMLノードの属性のリストを返します。
+与えられたノードが要素ではないか、属性のリストを持っていない場合は、
+空リストが返されます。
+@c COMMON
 @end defun
 
 @defun sxml:id id-index
+@c EN
 Select SXML element by its unique IDs.  (XPath Rec. 4.1)
 Returns a converter that takes @var{object},
 which is a nodeset or a datatype which can be converted to a string by means
@@ -5415,44 +5769,91 @@ of a '@code{string}' function.
 
 @var{id-index} is @code{( (id-value . element) (id-value . element) ... )}.
 
-This index is used for selection of an element by its unique ID. 
+This index is used for selection of an element by its unique ID.
+@c JP
+SXML要素を、そのユニークなIDによって選択します(XPath勧告 4.1)。
+@var{object}を引数に取るコンバータを返します。
+この@var{object}は、ノードセットか、'@code{string}'関数により
+文字列に変換できるデータタイプです。
+
+@var{id-index}は、@code{( (id-value . element) (id-value . element) ... )}です。
+
+このインデックスは、要素をそのユニークなIDによって選択するために使われます。
+@c COMMON
 @end defun
 
+@c EN
 Comparators for XPath objects:
+@c JP
+XPathオブジェクトの比較子:
+@c COMMON
 
 @defun sxml:equality-cmp bool-op number-op string-op
+@c EN
 A helper for XPath equality operations: @code{=} , @code{!=}
 @var{bool-op}, @var{number-op} and
 @var{'string-op} are comparison operations for 
 a pair of booleans,  numbers and strings respectively.
+@c JP
+XPathの等値比較: @code{=}、@code{!=}のためのヘルパです。
+@var{bool-op}、@var{number-op}、@var{'string-op}はそれぞれ、
+真偽値、数値、文字列のペアのための比較子です。
+@c COMMON
 @end defun
 
 @defun sxml:equal? a b
 @defunx sxml:not-equal? a b
+@c EN
 Counterparts of XPath equality operations: @code{=} , @code{!=},
 using default equality tests.
+@c JP
+XPathの等値比較: @code{=}、@code{!=}に対応するもので、
+デフォルトの等値テストを使います。
+@c COMMON
 @end defun
 
 @defun sxml:relational-cmp op
+@c EN
 Creates a relational operation ( @code{<} , @code{>} , @code{<=} , @code{>=} )
 for two XPath objects.
 @code{op} is comparison procedure: @code{<} , @code{>} , @code{<=} or @code{>=}.
+@c JP
+2つのXPathオブジェクトの関係比較( @code{<}、@code{>}、@code{<=}、@code{>=} )
+を作ります。
+@code{op}は、比較を行う手続き: @code{<}、@code{>}、@code{<=}、@code{>=}です。
+@c COMMON
 @end defun
 
+@c EN
 XPath axises.
 An order in resulting nodeset is preserved.
+@c JP
+XPathの軸。
+結果のノードセットにおける順序は維持されます。
+@c COMMON
 
 @defun sxml:attribute test-pred?
+@c EN
 Attribute axis.
+@c JP
+属性の軸です。
+@c COMMON
 @end defun
 
 @defun sxml:child test-pred?
+@c EN
 Child axis.
 This function is similar to '@code{select-kids}', but it returns an empty
-child-list for PI, Comment and Entity nodes
+child-list for PI, Comment and Entity nodes.
+@c JP
+子要素の軸です。
+この関数は、'@code{select-kids}'に似ていますが、処理命令やコメント、
+実体ノードについては、空の子リストを返します。
+@c COMMON
 @end defun
 
 @defun sxml:parent test-pred?
+@c EN
 Parent axis.
 
 Given a predicate, it returns a function 
@@ -5469,45 +5870,100 @@ list of parents of nodes in the nodeset. The rootnode does not have
 to be the root node of the whole SXML tree -- it may be a root node
 of a branch of interest.
 The @code{parent::} axis can be used with any SXML node.
+@c JP
+親の軸です。
+
+述語を与えると、@code{RootNode -> Converter}関数を返します。
+この関数は、rootnodeに適用されると、@code{node -> parent}と
+なります。
+
+このようなコンバータは、@code{ ((sxml:parent test-pred) rootnode) }
+を使って構築され、それが適用されたノードの親を帰します。
+ノードセットに適用された場合、そのノードセットにあるノードの
+親のリストを返します。
+rootnodeはSXMLツリー全体のルートノードである必要はありません。
+興味の対象となるブランチ(枝)のルートノードでも構いません。
+@code{parent::}軸は、どんなSXMLノードにも使えます。
+@c COMMON
 @end defun
 
 @defun sxml:ancestor test-pred?
+@c EN
 Ancestor axis
+@c JP
+祖先の軸です。
+@c COMMON
 @end defun
 
 @defun sxml:ancestor-or-self test-pred?
+@c EN
 Ancestor-or-self axis
+@c JP
+祖先と自分の軸です。
+@c COMMON
 @end defun
 
 @defun sxml:descendant test-pred?
+@c EN
 Descendant axis
+@c JP
+子孫の軸です。
+@c COMMON
 @end defun
 
 @defun sxml:descendant-or-self test-pred?
+@c EN
 Descendant-or-self axis
+@c JP
+子孫と自分の軸です。
+@c COMMON
 @end defun
 
 @defun sxml:following test-pred?
+@c EN
 Following axis
+@c JP
+後続するものの軸です。
+@c COMMON
 @end defun
 
 @defun sxml:following-sibling test-pred?
+@c EN
 Following-sibling axis
+@c JP
+後続する兄弟の軸です。
+@c COMMON
 @end defun
 
 @defun sxml:namespace test-pred?
+@c EN
 Namespace axis
+@c JP
+名前空間の軸です。
+@c COMMON
 @end defun
 
 @defun sxml:preceding test-pred?
+@c EN
 Preceding axis
+@c JP
+先行するものの軸です。
+@c COMMON
 @end defun
 
 @defun sxml:preceding-sibling test-pred?
+@c EN
 Preceding-sibling axis
+@c JP
+先行する兄弟の軸です。
+@c COMMON
 @end defun
 
+@c EN
 Popular shortcuts:
+@c JP
+ポピュラーなショートカット:
+@c COMMON
 
 @defun sxml:child-nodes nodeset
 @example
@@ -5525,16 +5981,18 @@ Popular shortcuts:
 @c ----------------------------------------------------------------------
 @node sxml.tools - manipulationg SXML structure, text.csv - CSV tables, sxml.sxpath - SXML Query Language, Library modules - Utilities
 @section @code{sxml.tools} - manipulationg SXML structure
+@c NODE @code{sxml.tools} - SXML構造を操作する, @code{sxml.tools} - SXML構造を操作する
 
-@deftp {Module} sxml.tools
-@mdindex sxml.tools
-This module is a port of Kirill Lisovsky's sxml-tools,
-a colection of convenient procedures that work on
-SXML structure.
+@c EN
 The current version is derived from sxml-tools CVS revision 3.13.
 
 The manual entry is mainly derived from the comments in the original
 source code.
+@c JP
+現在のバージョンは、sxml-toolsのCVSのリビジョン3.13から導出されています。
+
+マニュアルのエントリは主に、オリジナルのソースコードから導出されています。
+@c COMMON
 @end deftp
 
 @c ----------------------------------------------------------------------
@@ -5549,75 +6007,141 @@ source code.
 @c ----------------------------------------------------------------------
 @node SXML predicates, SXML accessors, sxml.tools - manipulationg SXML structure, sxml.tools - manipulationg SXML structure
 @subsection SXML predicates
+@c NODE SXMLの述語
 
 @defun sxml:empty-element? obj
+@c EN
 A predicate which returns @var{#t} if given element @var{obj} is empty. 
 Empty element has no nested elements, text nodes, @code{PI}s,
 Comments or entities
 but it may contain attributes or namespace-id.
 It is a SXML counterpart of XML @code{empty-element}.
+@c JP
+与えられた要素@var{obj}が空なら@var{#t}を返す述語です。
+空要素は、ネストした要素、テキストノード、@code{PI}、コメントや実体を
+持ちませんが、属性や名前空間IDは持つかもしれません。
+それは、XMLの@code{empty-element}のSXML版です。
+@c COMMON
 @end defun
 
 @defun sxml:shallow-normalized? obj
+@c EN
 Returns @code{#t} if the given @var{obj} is shallow-normalized SXML element.
 The element itself has to be normalized but its nested elements are not tested.
+@c JP
+与えられた@var{obj}が浅く正規化されたSXML要素であれば@code{#t}を返します。
+要素それ自体は正規化されていなければなりませんが、ネストした要素は
+テストされません。
+@c COMMON
 @end defun
 
 @defun sxml:normalized? obj
+@c EN
 Returns @code{#t} if the given @var{obj} is normalized SXML element.
 The element itself and all its nested elements have to be normalised.
+@c JP
+与えられた@var{obj}が正規化されたSXML要素であれば@code{#t}を返します。
+要素それ自体とその全てのネストした要素が正規化されていなければなりません。
+@c COMMON
 @end defun
 
 @defun sxml:shallow-minimized? obj
+@c EN
 Returns @code{#t} if the given @var{obj} is shallow-minimized SXML element.
 The element itself has to be minimised but its nested elements are not tested.
+@c JP
+与えられた@var{obj}が浅く最小化されたSXML要素であれば@code{#t}を返します。
+要素それ自体は最小化されていなければなりませんが、そのネストした要素は
+テストされません。
+@c COMMON
 @end defun
 
 @defun sxml:minimized? obj
+@c EN
 Returns @code{#t} if the given @var{obj} is minimized SXML element.
 The element itself and all its nested elements have to be minimised.
+@c JP
+与えられた@var{obj}が最小化されたSXML要素であれば@code{#t}が返されます。
+要素それ自体とその全てのネストした要素が最小化されていなければなりません。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
 @node SXML accessors, SXML modifiers, SXML predicates, sxml.tools - manipulationg SXML structure
 @subsection SXML accessors
+@c NODE SXMLへのアクセッサ
 
 @defun sxml:name obj
+@c EN
 Returns a name of a given SXML node.
 It's just an alias of @code{car}, but introduced for the sake of encapsulation.
+@c JP
+与えられたSXMLノードの名前を返します。
+これは単に@code{car}のエイリアスに過ぎませんが、カプセル化のために導入されています。
+@c COMMON
 @end defun
 
 @defun sxml:element-name obj
+@c EN
 A version of @code{sxml:name}, which returns @code{#f}
 if the given @var{obj} is not a SXML element.
 Otherwise returns its name.
+@c JP
+@code{sxml:name}の、与えられた@var{obj}がSXML要素ではない場合は@code{#f}を返す
+バージョンです。@var{obj}がSXML要素であれば、その名前を返します。
+@c COMMON
 @end defun
 
 @defun sxml:node-name obj
+@c EN
 Safe version of @code{sxml:name}, which returns @code{#f}
 if the given @var{obj} is not a SXML node.
 Otherwise returns its name.
+@c JP
+@code{sxml:name}の、与えられた@var{obj}がSXMLノードでない場合は@code{#f}を返す、
+安全なバージョンです。@var{obj}がSXMLノードであれば、その名前を返します。
+@c COMMON
 @end defun
 
 @defun sxml:ncname obj
+@c EN
 Returns Local Part of Qualified Name (Namespaces in XML production [6])
-for given obj, which is "@code{:}"-separated suffix of its Qualified Name
+for given obj, which is "@code{:}"-separated suffix of its Qualified Name.
 If a name of a node given is @code{NCName} (Namespaces in XML production [4]),
 then it is returned as is.
 Please note that while SXML name is a symbol this function returns a string.
+@c JP
+与えられたobjの完全修飾名(Namespaces in XML production [6])のローカルパート、
+つまりその完全修飾名を``@code{:}''で分割した後ろの部分を返します。
+与えられたノードの名前が@code{NCName}(Namespaces in XML production [4])であれば、
+それをそのまま返します。
+SXMLの名前はシンボルですが、この関数は文字列を返すことに注意して下さい。
+@c COMMON
 @end defun
 
 @defun sxml:name->ns-id sxml-name
+@c EN
 Returns namespace-id part of given name, or @var{#f} if it's LocalName
+@c JP
+与えられた名前の名前空間ID部分を返します。与えられた名前がLocalNameの
+場合は@var{#f}を返します。
+@c COMMON
 @end defun
 
 @defun sxml:content obj
+@c EN
 Returns the content of given SXML element or nodeset (just text and element
 nodes) representing it as a list of strings and nested elements in document 
 order.  This list is empty if @var{obj} is empty element or empty list.
+@c JP
+与えられたSXML要素かノードセット(テキストノードと要素ノードのみ)の内容を、
+ドキュメントオーダーにしたがった文字列のリストとネストした要素として
+返します。このリストは、@var{obj}が空要素や空リストの場合は空です。
+@c COMMON
 @end defun
 
 @defun sxml:content-raw obj
+@c EN
 Returns all the content of normalized SXML element except
 @var{attr-list} and @var{aux-list}.
 Thus it includes @code{PI}, @code{COMMENT} and @code{ENTITY}
@@ -5626,12 +6150,26 @@ returned by @code{sxml:content}.
 Returns  a list of nodes in document order or empty list if @var{obj} is empty 
 element or empty list.
 This function is faster than @code{sxml:content}.
+@c JP
+正規化されたSXML要素の全ての内容を、@var{attr-list}と@var{aux-list}を除いて
+返します。
+したがってそれは、@code{PI}、@code{COMMENT}、@code{ENTITY}
+ノードとともに、@code{sxml:content}によって返される@code{TEXT}や@code{ELEMENT}も含みます。
+戻り値は、ドキュメントオーダーにしたがったノードのリストか、
+@var{obj}が空要素や空リストの場合は空リストになります。
+この関数は、@code{sxml:content}よりも高速です。
+@c COMMON
 @end defun
 
+@c EN
 In SXML normal form, an element is represented by a list as this:
+@c JP
+SXMLの通常のフォームでは、1つの要素は次のようなリストで表現されます。
+@c COMMON
 @example
   (@var{name} @var{attr-list} @var{aux-list} @var{content} @dots{})
 @end example
+@c EN
 where @var{attr-list} is a list beginning with @code{@@},
 and @var{aux-list} is a list beginning with @code{@@@@}.
 
@@ -5641,75 +6179,146 @@ In the minimized form,
 @var{aux-list} is absent.
 
 The following procedures extract @var{attr-list} and @var{aux-list}.
+@c JP
+@var{attr-list}は@code{@@}で始まるリストで、@var{aux-list}は@code{@@@@}で
+始まるリストです。
+
+最小化されたフォームでは、@var{aux-list}は空であれば省略できます。
+@var{attr-list}は、それが空で@emph{かつ}@var{aux-list}がなければ省略できます。
+
+以下の手続きは、@var{attr-list}と@var{aux-list}を抽出するものです。
+@c COMMON
 
 @defun sxml:attr-list-node obj
+@c EN
 Returns @var{attr-list} for a given @var{obj},
 or @code{#f} if it is absent
+@c JP
+与えられた@var{obj}の@var{attr-list}を返します。
+@{attr-list}が存在しなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun sxml:attr-as-list obj
+@c EN
 Returns @var{attr-list} wrapped in list,
 or '@code{((@@))} if it is absent and @var{aux-list} is present,
 or '@code{()} if both lists are absent.
+@c JP
+@var{attr-list}をリストにラップして返します。
+@var{attr-list}が存在せず@var{aun-list}がある場合は'@code{((@@))}を返します。
+両方とも存在しない場合には'@code{()}を返します。
+@c COMMON
 @end defun
 
 @defun sxml:aux-list-node obj
+@c EN
 Returns @var{aux-list} for a given @var{obj},
 or @code{#f} if it is absent.
+@c JP
+与えられた@var{obj}の@var{aux-list}を返します。
+@var{attr-list}が存在しなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun sxml:aux-as-list obj
+@c EN
 Returns @var{aux-list} wrapped in list,
 or '@code{()} if it is absent.
+@c JP
+@var{aux-list}をリストにラップして返します。
+@var{aux-list}が存在しなければ'@code{()}を返します。
+@c COMMON
 @end defun
 
 @defun sxml:attr-list-u obj
+@c EN
 Returns the list of attributes for given element or nodeset.
 Analog of @code{((sxpath '(@@ *)) @var{obj})}.
 Empty list is returned if there is no list of attributes.
 
 The @code{-u} suffix indicates it can be used for non-normalized
 SXML node.  ('u' stands for 'universal').
+@c JP
+与えられた要素かノードセットの属性のリストを返します。
+@code{((sxpath '(@@ *)) @var{obj})}と類似です。
+属性のリストがない場合は空リストが返されます。
+@c COMMON
 @end defun
 
 @defun sxml:aux-list obj
+@c EN
 Returns the list of auxiliary nodes for given element or nodeset.
 Analog of @code{((sxpath '(@@@@ *)) @var{obj})}.
 Empty list is returned if a list of auxiliary nodes is absent.
+@c JP
+与えられた要素かノードセットの補助ノードのリストを返します。
+@code{((sxpath '(@@@@ *)) @var{obj})}と類似です。
+補助ノードのリストがない場合は空リストが返されます。
+@c COMMON
 @end defun
 
 @defun sxml:aux-list-u obj
+@c EN
 Returns the list of auxiliary nodes for given element or nodeset.
 Analog of @code{((sxpath '(@@@@ *)) @var{obj})}.
 Empty list is returned if a list of auxiliary nodes is absent.
 
 The @code{-u} suffix indicates it can be used for non-normalized
 SXML node.  ('u' stands for 'universal').
+@c JP
+与えられた要素かノードセットの補助ノードのリストを返します。
+@code{((sxpath '(@@@@ *)) @var{obj})}と類似です。
+補助ノードのリストがない場合は空リストが返されます。
+
+@code{-u}が付くものは、正規化されていないSXMLノードに対しても
+使えるということを示しています。('u'は'universal'の意味です。)
+@c COMMON
 @end defun
 
 @defun sxml:aux-node obj aux-name
+@c EN
 Return the first aux-node with @var{aux-name}
 given in SXML element @var{obj}
 or @code{#f} is such a node is absent.
 Note: it returns just the @emph{first} node found even if multiple nodes are
 present, so it's mostly intended for nodes with unique names .
+@c JP
+与えられたSXML要素@var{obj}で@var{aux-name}という名前の付いている最初の
+補助ノードを返します。そのようなノードがない場合は@code{#f}を返します。
+注意: 複数のノードがあっても@emph{最初に}見つかったノードのみを
+返します。したがって、ユニークな名前を持っているノード群に対して
+使われることを意図しています。
+@c COMMON
 @end defun
 
 @defun sxml:aux-nodes obj aux-name
+@c EN
 Return a list of aux-node with @var{aux-name}
 given in SXML element @var{obj} 
 or '@code{()} if such a node is absent.
+@c JP
+与えられたSXML要素@var{obj}で@var{aux-name}とうい名前の付いている補助ノードの
+リストを返します。そのようなノードがなければ'@code{()}を返します。
+@c COMMON
 @end defun
 
 @defun sxml:attr obj attr-name
+@c EN
 Accessor for an attribute @var{attr-name} of
 given SXML element @var{obj}.
 It returns: 
 the value of the attribute if the attribute is present, or
 @var{#f} if there is no such an attribute in the given element.
+@c JP
+与えられたSXML要素@var{obj}の@var{attr-name}という属性へのアクセッサです。
+戻り値は、その属性が存在すればその属性の値、与えられた要素に
+そのような属性がなければ@var{#f}です。
+@c COMMON
 @end defun
 
 @defun sxml:num-attr obj attr-name
+@c EN
 Accessor for a numerical attribute @var{attr-name}
 of given SXML element @var{obj}.
 It returns: 
@@ -5717,9 +6326,18 @@ a value of the attribute as the attribute as a number if the attribute
 is present and its value may be converted to number using @code{string->number},
 or @code{#f} if there is no such an attribute in the given element or
 its value can't be converted to a number.
+@c JP
+与えられたSXML要素@var{obj}の@var{attr-name}という数値の属性への
+アクセッサです。
+戻り値は、その属性が存在してその値が@code{string->number}により数値へ
+変換できる場合はその属性を数値としてその属性の値、
+与えられた要素にそのような属性がないかその値が数値へ変換できない場合は
+@code{#f}です。
+@c COMMON
 @end defun
 
 @defun sxml:attr-u obj attr-name
+@c EN
 Accessor for an attribute @var{attr-name}
 of given SXML element @var{obj} which 
 may also be an attributes-list or nodeset (usually content of SXML element).
@@ -5730,175 +6348,343 @@ or @code{#f} if there is no such an attribute in the given element.
 
 The @code{-u} suffix indicates it can be used for non-normalized
 SXML node.  ('u' stands for 'universal').
+@c JP
+与えられたSXML要素@var{obj}の@var{attr-name}という名前の属性への
+アクセッサです。@var{obj}は、(通常はSXML要素の内容である)
+属性リストやノードセットでも構いません。
+
+戻り値は、その属性が存在すればその属性の値、与えられた要素に
+そのような属性がない場合は@code{#f}です。
+
+@code{-u}が付くものは、正規化されていないSXMLノードに対しても
+使えるということを示しています。('u'は'universal'の意味です。)
+@c COMMON
 @end defun
 
 @defun sxml:ns-list obj
+@c EN
 Returns the list of namespaces for given element.
 Analog of @code{((sxpath '(@@@@ *NAMESPACES* *)) @var{obj})}
 Empty list is returned if there is no list of namespaces.
+@c JP
+与えられた要素の名前空間のリストを返します。
+@code{((sxpath '(@@@@ *NAMESPACES* *)) @var{obj})}と類似です。
+名前空間のリストがない場合は空リストが返されます。
+@c COMMON
 @end defun
 
 @defun sxml:ns-id->nodes obj namespace-id
+@c ENn
 Returns the list of namespace-assoc's for given @var{namespace-id} in 
 SXML element @var{obj}.
 Analog of @code{((sxpath '(@@@@ *NAMESPACES* namespace-id)) @var{obj})}.
 Empty list is returned if there is no namespace-assoc with
 @var{namespace-id} given.
+@c JP
+SXML要素@var{obj}で、与えられた@var{namespace-id}に対応する名前空間の
+連想リストのリストを返します。
+@code{((sxpath '(@@@@ *NAMESPACES* namespace-id)) @var{obj})}と類似です。
+与えられた@var{namespace-id}に対応する名前空間の連想リストがない場合は
+空リストが返されます。
+@c COMMON
 @end defun
 
 @defun sxml:ns-id->uri obj namespace-id
+@c EN
 Returns a URI for @var{namespace-id} given, or
 @code{#f} if there is no namespace-assoc with @var{namespace-id} given.
+@c JP
+与えられた@var{namespace-id}に対応するURIを返します。
+与えられた@var{namespace-id}に対応する名前空間の連想リストがない場合は
+@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun sxml:ns-uri->id obj uri
+@c EN
 Returns a namespace-id for namespace URI given.
+@c JP
+与えられた名前空間URIに対応する名前空間IDを返します。
+@c COMMON
 @end defun
 
 @defun sxml:ns-id ns-assoc
+@c EN
 Returns namespace-id for given namespace-assoc list.
+@c JP
+与えられた名前空間連想リストに対応する名前空間IDを返します。
+@c COMMON
 @end defun
 
 @defun sxml:ns-uri ns-assoc
+@c EN
 Returns URI for given namespace-assoc list.
+@c JP
+与えられた名前空間連想リストに対応するURIを返します。
+@c COMMON
 @end defun
 
 @defun sxml:ns-prefix ns-assoc
+@c EN
 It returns namespace prefix for given namespace-assoc list.
 Original (as in XML document) prefix for namespace-id given 
 has to be strored as the third element in namespace-assoc list 
 if it is different from namespace-id.
 If original prefix is omitted in namespace-assoc then
 namespace-id is used instead.
+@c JP
+与えられた名前空間連想リストに対応する名前空間接頭辞を返します。
+与えられた名前空間IDの(XML文書における)オリジナルの接頭辞は、
+それが名前空間IDと異なる場合は、名前空間連想リストの3番目の要素として
+格納されなければなりません。
+名前空間連想リストでオリジナルの接頭辞が省略されている場合は、
+代わりに名前空間IDが使われます。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
 @node SXML modifiers, SXPath auxiliary utilities, SXML accessors, sxml.tools - manipulationg SXML structure
 @subsection SXML modifiers
+@c NODE SXMLのモディファイヤ
 
+@c EN
 Constructors and mutators for normalized SXML data.
 These functions are optimized for normalized SXML data.
 They are not applicable to arbitrary non-normalized SXML data.
 
 Most of the functions are provided in two variants:
+@c JP
+正規化されたSXMLデータのコンストラクタやミューテータです。
+これらの関数は、正規化されたSXMLデータに最適化されています。
+任意の正規化されていないSXMLデータには適用できません。
+
+ほとんどの関数には2つのバージョンがあります。
+@c COMMON
 @enumerate
 @item
+@c EN
 side-effect intended functions for linear update of given elements.
 Their names are ended with exclamation mark.
 Note that the returned value of this variant is unspecified,
 unless explicitly noted.
 An example: @code{sxml:change-content!}.
+@c JP
+与えられた要素のその場での更新のために副作用が意図された関数。
+これらの名前はエクスクラメーションマークで終わっています。
+このバージョンの戻り値は、特に断りのない限り未定義です。
+例としては、@code{sxml:change-content!}が挙げられます。
+@c COMMON
 @item
+@c EN
 pure functions without side-effects which return modified elements.
 An example: @code{sxml:change-content}.
+@c JP
+変更された要素を返す、副作用のない純粋な関数。
+例としては、@code{sxml:change-content}が挙げられます。
+@c COMMON
 @end enumerate
 
 @defun sxml:change-content obj new-content
 @defunx sxml:change-content! obj new-content
+@c EN
 Change the content of given SXML element to @var{new-content}.
-If @var{new-content} is an empty list then the @var{obj} is transformed.
+If @var{new-content} is an empty list then the @var{obj} is transformed
 to an empty element.
 The resulting SXML element is normalized.
+@c JP
+与えられたSXML要素の内容を、@var{new-content}に変更します。
+@var{new-content}が空リストの場合は、@var{obj}は空要素に変更されます。
+結果のSXML要素は正規化されています。
+@c COMMON
 @end defun
 
 @defun sxml:change-attrlist obj new-attrlist
 @defunx sxml:change-attrlist! obj new-attrlist
+@c EN
 The resulting SXML element is normalized.
 If @var{new-attrlist} is empty,
 the cadr of @var{obj} is @code{(@@)}.
+@c JP
+結果のSXML要素は正規化されています。
+@var{new-attrlist}が空の場合は、@var{obj}のcadrは@code{(@@)}になります。
+@c COMMON
 @end defun
 
 @defun sxml:change-name obj new-name
 @defunx sxml:change-name! obj new-name
+@c EN
 Change a name of SXML element destructively.
+@c JP
+SXML要素の名前を破壊的に変更します。
+@c COMMON
 @end defun
 
 @defun sxml:add-attr obj attr
+@c EN
 Returns SXML element @var{obj} with attribute @var{attr} added,
 or @code{#f} if the attribute with given name already exists.
 @var{attr} is @code{(@var{attr-name} @var{attr-value})}.
 Pure functional counterpart to @code{sxml:add-attr!}.
+@c JP
+属性@var{attr}が追加されたSXML要素@var{obj}を返します。
+与えられた名前の属性がすでに存在する場合は@code{#f}を返します。
+@var{attr}は@code{(@var{attr-name} @var{attr-value})}です。
+@code{sxml:add-attr!}に対応する純粋関数的な関数です。
+@c COMMON
 @end defun
 
 @defun sxml:add-attr! obj attr
+@c EN
 Add an attribute @var{attr} for an element @var{obj}.
 Returns @code{#f} if the attribute with given name already exists. 
 The resulting SXML node is normalized.
 Linear update counterpart to @code{sxml:add-attr}.
+@c JP
+要素@var{obj}に属性@var{attr}を追加します。
+与えられた名前の属性がすでに存在する場合は@code{#f}を返します。
+結果のSXMLノードは正規化されています。
+@code{sxml:add-attr}に対応するその場で更新する関数です。
+@c COMMON
 @end defun
 
 @defun sxml:change-attr obj attr
+@c EN
 Returns SXML element @var{obj} with changed value of
 attribute @var{attr}, or @code{#f}
 if where is no attribute with given name. 
 @var{attr} is @code{(@var{attr-name} @var{attr-value})}.
+@c JP
+属性@var{attr}の値が変更されたSXML要素@var{obj}を返します。
+与えられた名前の属性がない場合は@code{#f}を返します。
+@var{attr}は@code{(@var{attr-name} @var{attr-value})}です。
+@c COMMON
 @end defun
 
 @defun sxml:change-attr! obj attr
+@c EN
 Change value of the attribute for element @var{obj}.
 @var{attr} is @code{(@var{attr-name} @var{attr-value})}.
 Returns @code{#f} if where is no such attribute.
+@c JP
+要素@var{obj}の属性の値を変更します。
+@var{attr}は@code{(@var{attr-name} @var{attr-value})}です。
+そのような属性がない場合は@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun sxml:set-attr obj attr
 @defunx sxml:set-attr! obj attr
+@c EN
 Set attribute @var{attr} of element @var{obj}.
 If there is no such attribute the new one is added.
+@c JP
+要素@var{obj}の属性@var{attr}をセットします。
+そのような属性がない場合は新しい属性として追加されます。
+@c COMMON
 @end defun
 
 @defun sxml:add-aux obj aux-node
+@c EN
 Returns SXML element @var{obj}
 with an auxiliary node @var{aux-node} added.
+@c JP
+補助ノード@var{aux-node}が追加されたSXML要素@var{obj}を返します。
+@c COMMON
 @end defun
 
 @defun sxml:add-aux! obj aux-node
+@c EN
 Add an auxiliary node @var{aux-node} for an element @var{obj}.
+@c JP
+要素@var{obj}に補助ノード@var{aux-node}を追加します。
+@c COMMON
 @end defun
 
 @defun sxml:squeeze obj
 @defunx sxml:squeeze! obj
+@c EN
 Eliminates empty lists of attributes and aux-lists for given SXML element 
 @var{obj} and its descendants ("minimize" it).
 Returns a minimized and normalized SXML element.
+@c JP
+与えられたSXML要素@var{obj}とその子孫について、空のリストである属性
+および補助リストを排除します(最小化)。
+最小化され、正規化されたSXML要素が返されます。
+@c COMMON
 @end defun
 
 @defun sxml:clean obj
+@c EN
 Eliminates empty lists of attributes and all aux-lists for given SXML element 
 @var{obj} and its descendants.
 Returns a minimized and normalized SXML element.
+@c JP
+与えられたSXML要素@var{obj}とその子孫について、空リストである属性と、
+全ての補助リストを削除します。
+最小化され、正規化されたSXML要素が返されます。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
 @node SXPath auxiliary utilities, SXML to markup conversion, SXML modifiers, sxml.tools - manipulationg SXML structure
 @subsection SXPath auxiliary utilities
+@c NODE SXPathの補助的ユーティリティ
 
+@c EN
 These are convenience utilities to extend SXPath functionalities.
+@c JP
+これらは、SXPathの機能を拡張する便利なユーティリティです。
+@c COMMON
 
 @defun sxml:add-parents obj . top-ptr
+@c EN
 Returns an SXML nodeset with a 'parent pointer' added.
 A parent pointer is an aux node of the form @code{(*PARENT* @var{thunk})},
 where @var{thunk} returns the parent element.
+@c JP
+SXMLノードセットに'親へのポインタ'を追加したものを返します。
+親へのポインタは、@code{(*PARENT* @var{thunk})}というフォームを持つ
+補助ノードです。@var{thunk}は親要素を返します。
+@c COMMON
 @end defun
 
 @defun sxml:node-parent rootnode
+@c EN
 Returns a fast 'node-parent' function, i.e.
 a function of one argument - SXML element - which returns its parent
 node using @code{*PARENT*} pointer in aux-list.
 '@code{*TOP-PTR*} may be used as a pointer to root node.
 It return an empty list when applyed to root node.
+@c JP
+高速な'node-parent'関数を返します。
+すなわち、SXML要素を1引数として取り、補助リストで
+@code{*PARENT*}ポインタを使ってその親ノードを返す関数を返します。
+'@code{*TOP-PTR*}はルートノードへのポインタとして使われます。
+ルートノードに対して適用されると空リストを返します。
+@c COMMON
 @end defun
 
 @defun sxml:lookup id index
+@c EN
 Lookup an element using its ID.
+@c JP
+要素をそのIDを使って探します。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
 @node SXML to markup conversion,  , SXPath auxiliary utilities, sxml.tools - manipulationg SXML structure
 @subsection SXML to markup conversion
+@c NODE SXMLからマークアップへの変換
 
+@c EN
 Procedures to generate XML or HTML marked up text from SXML.
+@c JP
+SXMLからXMLやHTMLなどのマークアップされたテキストを生成する手続き。
+@c COMMON
 
 @defun sxml:clean-feed . fragments
+@c EN
 Filter the 'fragments'.
 The fragments are a list of strings, characters,
 numbers, thunks, @code{#f} -- and other fragments.
@@ -5914,44 +6700,97 @@ It may be considered as a variant of Oleg Kiselyov's
 @code{SRV:send-reply}:
 While @code{SRV:send-reply} displays fragments, this function returns the list 
 of meaningful fragments and filter out the garbage.
+@c JP
+'fragments'をフィルタします。
+fragmentsは、文字列、文字、数値、手続き、@code{#f}、他のフラグメントの
+リストです。
+この関数はツリーを深さ優先でトラバースし、
+文字列、文字、実行された手続きのリストを返し、
+@code{#f}と'@code{()}を無視します。
+
+全ての意味のあるフラグメントは文字列で、
+この関数の結果に@var{(apply string-append ... )}を
+適用すると、そのstring-valueを返します。
+
+これは、Oleg Kiselyovの@code{SRV:send-reply}の変種であるとみなすことが
+できるでしょう。
+@code{SRV:send-reply}はフラグメントを印字(display)しますが、
+この関数は意味のあるフラグメントのリストを返し、ごみをふるい落とします。
+@c COMMON
 @end defun
 
 @defun sxml:attr->xml attr
+@c EN
 Creates the XML markup for attributes.
+@c JP
+属性のXMLマークアップを作ります。
+@c COMMON
 @end defun
 
 @defun sxml:string->xml string
+@c EN
 Return a string or a list of strings where all the occurences of 
 characters @code{<}, @code{>},
 @code{&}, @code{"}, or @code{'} in a given string are
 replaced by corresponding 
 character entity references. See also @code{sxml:string->html}.
+@c JP
+与えられた文字列中の全ての@code{<}、@code{>}、@code{&}、@code{``}、
+@code{'}を対応する文字実体参照に置き換えた、文字列あるいは
+文字列のリストを返します。
+@code{sxml:string->html}も参照して下さい。
+@c COMMON
 @end defun
 
 @defun sxml:sxml->xml tree
+@c EN
 A version of dispatch-node specialized and optimized for SXML->XML
 transformation.
+@c JP
+SXML->XML変換に特化され最適化されたバージョンのノードディスパッチです。
+@c COMMON
 @end defun
 
 @defun sxml:attr->html attr
+@c EN
 Creates the HTML markup for attributes.
+@c JP
+属性のHTMLマークアップを作ります。
+@c COMMON
 @end defun
 
 @defun sxml:string->html string
+@c EN
 Given a string, check to make sure it does not contain characters
 @var{<}, @var{>}, @var{&},
 @var{"} that require encoding.
 See also @code{html-escape-string}
 in @ref{text.html-lite - Simple HTML document construction}.
+@c JP
+与えられた文字列で、それがエンコーディングを必要とする文字、
+@var{<}、@var{>}、@var{&}、@var{``}を含まないことをチェックします。
+@ref{text.html-lite - Simple HTML document construction}の
+@code{html-escape-string}も参照して下さい。
+@c COMMON
 @end defun
 
 @defun sxml:non-terminated-html-tag? tag
+@c EN
 This predicate yields @code{#t} for "non-terminated" HTML 4.0 tags.
+@c JP
+この述語は、``終了タグのない''HTML 4.0のタグに対して@code{#t}を
+返します。
+@c COMMON
 @end defun
 
 @defun sxml:sxml->html tree
+@c EN
 A version of dispatch-node specialized and optimized for SXML->HTML
 transformation.
+@c JP
+SXML->HTML変換に対して特化され最適化されたバージョンのノードディスパッチ
+です。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
