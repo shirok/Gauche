@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: common-macros.scm,v 1.5 2001-12-01 21:13:51 shirok Exp $
+;;;  $Id: common-macros.scm,v 1.6 2002-03-10 00:40:57 shirok Exp $
 ;;;
 
 ;;; Defines number of useful macros.  This file is loaded by
@@ -42,6 +42,27 @@
 
 ;;;-------------------------------------------------------------
 ;;; generalized set! family
+
+(define-syntax update!
+  (syntax-rules ()
+    ((_ "vars" ((var arg) ...) () proc updater val ...)
+     (let ((getter proc)
+           (var arg) ...)
+       ((setter getter) var ... (updater val ... (getter var ...)))))
+    ((_ "vars" ((var arg) ...) (arg0 arg1 ...) proc updater val ...)
+     (update! "vars"
+              ((var arg) ... (newvar arg0))
+              (arg1 ...)
+              proc updater val ...))
+    ((_ (proc arg ...) updater val ...)
+     (update! "vars"
+              ()
+              (arg ...)
+              proc updater val ...))
+    ((_ loc updater val ...)
+     (set! loc (updater val ... loc)))
+    ((_ . other)
+     (syntax-error "malformed update!" (update! . other)))))
 
 (define-syntax push!
   (syntax-rules ()
