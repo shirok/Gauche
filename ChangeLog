@@ -1,3 +1,13 @@
+2001-04-04  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.3
+	* src/*.[ch]: changed object write protocol.  Object writers receive
+	  ScmWriteContext that encapsulates various information instead of
+	  an simple interger.  Further enhancement will be done, without
+	  breaking the protocol.
+	* lib/srfi-14.scm, src/char.c: finished working version of char-set
+	  srfi (although the UCS support is limited).
+
 2001-04-03  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.2.20:
