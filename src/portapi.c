@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: portapi.c,v 1.1 2002-07-05 21:10:49 uid50821 Exp $
+ *  $Id: portapi.c,v 1.2 2002-07-05 21:50:08 uid50821 Exp $
  */
 
 /* This file is included twice by port.c to define safe- and unsafe-
@@ -612,6 +612,39 @@ ScmObj Scm_ReadLineUnsafe(ScmPort *p)
     }
     UNLOCK(p);
     return Scm_DStringGet(&ds);
+}
+
+/*=================================================================
+ * CharReady
+ */
+
+#ifdef SAFE_PORT_OP
+int Scm_CharReady(ScmPort *p)
+#else
+int Scm_CharReadyUnsafe(ScmPort *p)
+#endif
+{
+    int r;
+    VMDECL;
+    if (!SCM_IPORTP(p)) Scm_Error("input port required, but got %S", p);
+    LOCK(p);
+    if (SCM_PORT_UNGOTTEN(p) != SCM_CHAR_INVALID) r = TRUE;
+    else {
+        switch (SCM_PORT_TYPE(p)) {
+        case SCM_PORT_FILE:
+            if (p->src.buf.current < p->src.buf.end) r = TRUE;
+            else if (p->src.buf.ready == NULL) r = TRUE;
+            else r = (p->src.buf.ready(p) != SCM_FD_WOULDBLOCK);
+            break;
+        case SCM_PORT_PROC:
+            SAFE_CALL(p, r = p->src.vt.Ready(p));
+            break;
+        default:
+            r = TRUE;
+        }
+    }
+    UNLOCK(p);
+    return r;
 }
 
 

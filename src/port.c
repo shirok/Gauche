@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.70 2002-07-05 21:10:49 uid50821 Exp $
+ *  $Id: port.c,v 1.71 2002-07-05 21:50:08 uid50821 Exp $
  */
 
 #include <unistd.h>
@@ -176,11 +176,18 @@ static ScmPort *make_port(int dir, int type, int ownerp)
  */
 ScmObj Scm_ClosePort(ScmPort *port)
 {
-    int result = port_cleanup(port);
-    if (SCM_PORT_TYPE(port) == SCM_PORT_FILE
-        && SCM_PORT_DIR(port) == SCM_PORT_OUTPUT) {
-        unregister_buffered_port(port);
-    }
+    int result;
+    ScmVM *vm = Scm_VM();
+    PORT_LOCK(port, vm);
+    PORT_SAFE_CALL(port,
+                   do {
+                       result = port_cleanup(port);
+                       if (SCM_PORT_TYPE(port) == SCM_PORT_FILE
+                           && SCM_PORT_DIR(port) == SCM_PORT_OUTPUT) {
+                           unregister_buffered_port(port);
+                       }
+                   } while (0));
+    PORT_UNLOCK(port);
     return result? SCM_FALSE : SCM_TRUE;
 }
 
@@ -260,22 +267,6 @@ int Scm_FdReady(int fd, int dir)
 #else  /*!HAVE_SELECT*/
     return SCM_FD_UNKNOWN;
 #endif /*!HAVE_SELECT*/
-}
-
-int Scm_CharReady(ScmPort *p)
-{
-    if (!SCM_IPORTP(p)) Scm_Error("input port required, but got %S", p);
-    if (SCM_PORT_UNGOTTEN(p) != SCM_CHAR_INVALID) return TRUE;
-    switch (SCM_PORT_TYPE(p)) {
-    case SCM_PORT_FILE:
-        if (p->src.buf.current < p->src.buf.end) return TRUE;
-        if (p->src.buf.ready == NULL) return TRUE;
-        return (p->src.buf.ready(p) != SCM_FD_WOULDBLOCK);
-    case SCM_PORT_PROC:
-        return p->src.vt.Ready(p);
-    default:
-        return TRUE;
-    }
 }
 
 /*===============================================================
@@ -875,6 +866,19 @@ ScmObj Scm_MakeOutputStringPort(void)
 }
 
 ScmObj Scm_GetOutputString(ScmPort *port)
+{
+    ScmObj r;
+    ScmVM *vm;
+    if (SCM_PORT_TYPE(port) != SCM_PORT_OSTR)
+        Scm_Error("output string port required, but got %S", port);
+    vm = Scm_VM();
+    PORT_LOCK(port, vm);
+    r = Scm_DStringGet(&SCM_PORT(port)->src.ostr);
+    PORT_UNLOCK(port);
+    return r;
+}
+
+ScmObj Scm_GetOutputStringUnsafe(ScmPort *port)
 {
     if (SCM_PORT_TYPE(port) != SCM_PORT_OSTR)
         Scm_Error("output string port required, but got %S", port);
