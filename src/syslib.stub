@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.8 2001-03-07 06:58:54 shiro Exp $
+;;; $Id: syslib.stub,v 1.9 2001-03-07 07:59:49 shiro Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -79,7 +79,15 @@
 ;; math.h
 
 ;;---------------------------------------------------------------------
-;; pwd.h
+;; pwd.h - passwords
+
+(define-cproc sys-getpwuid (uid)
+  (assert (small-integer? uid))
+  "  SCM_RETURN(Scm_GetPasswdById(uid));")
+
+(define-cproc sys-getpwnam (name)
+  (assert (string? name))
+  "  SCM_RETURN(Scm_GetPasswdByName(name));")
 
 ;;---------------------------------------------------------------------
 ;; setjmp.h

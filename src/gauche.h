@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.61 2001-03-07 06:58:54 shiro Exp $
+ *  $Id: gauche.h,v 1.62 2001-03-07 08:00:01 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1467,6 +1467,9 @@ extern ScmObj Scm_BaseName(ScmString *filename);
 
 extern ScmObj Scm_GetGroupById(gid_t gid);
 extern ScmObj Scm_GetGroupByName(ScmString *name);
+
+extern ScmObj Scm_GetPasswdById(uid_t uid);
+extern ScmObj Scm_GetPasswdByName(ScmString *name);
 
 /*---------------------------------------------------
  * LOAD AND DYNAMIC LINK

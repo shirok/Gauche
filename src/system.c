@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.6 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: system.c,v 1.7 2001-03-07 07:59:36 shiro Exp $
  */
 
 #include <stdio.h>
@@ -219,14 +219,14 @@ ScmObj Scm_DirName(ScmString *filename)
  * Groups (grp.h)
  */
 
+/* TODO: should return some sort of record instead of list, so that
+   we can add more information when system supports it. */
 static ScmObj decode_group(struct group *g)
 {
     ScmObj head = SCM_NIL, tail, memhead = SCM_NIL, memtail;
     ScmObj p;
     char **memp;
     p = Scm_MakeString(g->gr_name, -1, -1);
-    SCM_APPEND1(head, tail, p);
-    p = Scm_MakeString(g->gr_passwd, -1, -1);
     SCM_APPEND1(head, tail, p);
     p = Scm_MakeInteger(g->gr_gid);
     SCM_APPEND1(head, tail, p);
@@ -254,3 +254,44 @@ ScmObj Scm_GetGroupByName(ScmString *name)
     else return decode_group(gdata);
 }
 
+/*
+ * Passwords (pwd.h)
+ *   Patch provided by Yuuki Takahashi (t.yuuki@mbc.nifty.com)
+ */
+
+/* TODO: should return some sort of record instead of list, so that
+   we can add more information when system supports it. */
+static ScmObj decode_passwd(struct passwd *pw)
+{
+    ScmObj head = SCM_NIL, tail;
+    ScmObj p;
+
+    p = Scm_MakeString(pw->pw_name, -1, -1);
+    SCM_APPEND1(head, tail, p);
+    p = Scm_MakeInteger(pw->pw_uid);
+    SCM_APPEND1(head, tail, p);
+    p = Scm_MakeInteger(pw->pw_gid);
+    SCM_APPEND1(head, tail, p);
+    p = Scm_MakeString(pw->pw_dir, -1, -1);
+    SCM_APPEND1(head, tail, p);
+    p = Scm_MakeString(pw->pw_shell, -1, -1);
+    SCM_APPEND1(head, tail, p);
+
+    return head;
+}
+
+ScmObj Scm_GetPasswdById(uid_t uid)
+{
+    struct passwd *pdata;
+    pdata = getpwuid(uid);
+    if (pdata == NULL) return SCM_FALSE;
+    else return decode_passwd(pdata);
+}
+
+ScmObj Scm_GetPasswdByName(ScmString *name)
+{
+    struct passwd *pdata;
+    pdata = getpwnam(Scm_GetStringConst(name));
+    if (pdata == NULL) return SCM_FALSE;
+    else return decode_passwd(pdata);
+}
