@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: srfi-13.scm,v 1.9 2002-10-26 09:02:41 shirok Exp $
+;;;  $Id: srfi-13.scm,v 1.10 2003-01-09 09:48:48 shirok Exp $
 ;;;
 
 ;; Srfi-13 is a large set of functions, so I splitted it up to a number of
@@ -39,7 +39,7 @@
           string-trim string-trim-right string-trim-both
           string-compare string-compare-ci
           string= string<> string< string> string<= string>=
-          string-ci= string-ci<> string-ci< string-ci> stirng-ci<= string-ci>=
+          string-ci= string-ci<> string-ci< string-ci> string-ci<= string-ci>=
           string-hash string-hash-ci
           string-prefix-length string-suffix-length
           string-prefix-length-ci string-suffix-length-ci
@@ -93,7 +93,7 @@
                               string= string<> string<
                               string<= string> string>=
                               string-ci= string-ci<> string-ci<
-                              stirng-ci<= string-ci> string-ci>=)
+                              string-ci<= string-ci> string-ci>=)
 (autoload "srfi-13/hash"      string-hash string-hash-ci)
 (autoload "srfi-13/prefix"    string-prefix-length string-suffix-length
                               string-prefix-length-ci string-suffix-length-ci
