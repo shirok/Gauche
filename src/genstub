@@ -104,6 +104,7 @@
 (make-type "closure"   'closure?   "ScmClosure*"   "SCM_CLOSUREP"   "SCM_CLOSURE")
 (make-type "hash table" 'hash-table? "ScmHashTable*" "SCM_HASHTABLEP" "SCM_HASHTABLE")
 (make-type "class"     'class?     "ScmClass*"     "SCM_CLASSP" "SCM_CLASS")
+(make-type "module"    'module?    "ScmModule*"    "SCM_MODULEP" "SCM_MODULE")
 
 ;; default
 (define *scm-type*
