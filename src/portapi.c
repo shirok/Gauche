@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: portapi.c,v 1.12 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: portapi.c,v 1.13 2003-08-10 06:42:40 shirok Exp $
  */
 
 /* This file is included twice by port.c to define safe- and unsafe-
@@ -683,10 +683,46 @@ int Scm_GetzUnsafe(char *buf, int buflen, ScmPort *p)
  *   Reads up to EOL or EOF.  
  */
 
-/* Readline can be optimized by directly scanning the buffer instead of
-   reading one char at a time, bypassing mb->char->mb conversion and
-   DString creation.   There was a some attempt to implement it; see
-   port.c, v1.69 for details.  For now, I drop that. */
+/* Auxiliary procedures */
+
+/* NB: it may be further optimized by scanning the contents of buffer
+   when the port is a buffered port or an input string, which allows
+   us to avoid mb->wc->mb conversion.   See port.c, v 1.69 for some
+   attempt to do so.  The problem there is that if I have to take
+   into account the cases of the ungotten char and the scratch buffer,
+   code becomes ugly.  There might be some better approach. */
+
+#ifndef READLINE_AUX
+#define READLINE_AUX
+/* Assumes the port is locked, and the caller takes care of unlocking
+   even if an error is signalled within this body */
+ScmObj readline_body(ScmPort *p)
+{
+    int c1 = 0, c2 = 0;
+    ScmDString ds;
+
+    Scm_DStringInit(&ds);
+    c1 = Scm_GetcUnsafe(p);
+    if (c1 == EOF) return SCM_EOF;
+    for (;;) {
+        if (c1 == EOF || c1 == '\n') break;
+        if (c1 == '\r') {
+            c2 = Scm_GetcUnsafe(p);
+            if (c2 == EOF || c2 == '\n') break;
+            Scm_UngetcUnsafe(c2, p);
+            break;
+        }
+        SCM_DSTRING_PUTC(&ds, c1);
+        c1 = Scm_GetcUnsafe(p);
+    }
+    return Scm_DStringGet(&ds);
+}
+#endif /* READLINE_AUX */
+
+/*
+ * The optmized version of readline.  If the input is a buffered
+ * port or an input string, it tries to avoid mb->wc->mb conversion.
+ */
 
 #ifdef SAFE_PORT_OP
 ScmObj Scm_ReadLine(ScmPort *p)
@@ -694,31 +730,14 @@ ScmObj Scm_ReadLine(ScmPort *p)
 ScmObj Scm_ReadLineUnsafe(ScmPort *p)
 #endif
 {
-    int c1 = 0, c2 = 0;
-    ScmDString ds;
+    ScmObj r;
     VMDECL;
     SHORTCUT(p, return Scm_ReadLineUnsafe(p));
 
-    Scm_DStringInit(&ds);
     LOCK(p);
-    SAFE_CALL(p, c1 = Scm_GetcUnsafe(p));
-    if (c1 == EOF) {
-        UNLOCK(p);
-        return SCM_EOF;
-    }
-    for (;;) {
-        if (c1 == EOF || c1 == '\n') break;
-        if (c1 == '\r') {
-            SAFE_CALL(p, c2 = Scm_GetcUnsafe(p));
-            if (c2 == EOF || c2 == '\n') break;
-            Scm_UngetcUnsafe(c2, p);
-            break;
-        }
-        SCM_DSTRING_PUTC(&ds, c1);
-        SAFE_CALL(p, c1 = Scm_GetcUnsafe(p));
-    }
+    SAFE_CALL(p, r = readline_body(p));
     UNLOCK(p);
-    return Scm_DStringGet(&ds);
+    return r;
 }
 
 /*=================================================================
