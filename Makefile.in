@@ -2,7 +2,7 @@
 all : gc/libgc.a src/gosh
 
 gc/libgc.a :
-	cd gc; $(MAKE)
+	cd gc; $(MAKE) CC=@CC@
 
 src/gosh : gc/libgc.a
 	cd src; $(MAKE)
