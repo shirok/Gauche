@@ -1,3 +1,9 @@
+2002-04-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c : modified Burger&Dybvig algorithm to use floating-
+	  point arithmetic instead of multiple-precision integer arithmetic.
+	  The routine doesn't work for very small numbers yet.
+
 2002-04-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c : naively implemented Burger&Dybvig printing algorithm.
@@ -8,6 +14,8 @@
 	* src/number.c : fixed read_real to avoid underflow of reading
 	  very small numbers.  still needs to work on denormalized flonum
 	  case.
+	* src/number.c, src/bignum.c, src/extlib.stub : added floating
+	  number decode routine.
 
 2002-04-03  Shiro Kawai  <shiro@acm.org>
 

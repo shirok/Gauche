@@ -40,6 +40,16 @@
         (- (+ (* sec1 1000000) usec1)
            (+ (* sec0 1000000) usec0))))))
 
+;; Benchmarking writers
+(define (test-writer file repeat)
+  (let ((input (call-with-input-file file port->sexp-list)))
+    (receive (sec0 usec0) (sys-gettimeofday)
+      (dotimes (n repeat)
+        (for-each number->string input))
+      (receive (sec1 usec1) (sys-gettimeofday)
+        (- (+ (* sec1 1000000) usec1)
+           (+ (* sec0 1000000) usec0))))))
+
 ;; test writer-reader invariance
 (define (test-writer-reader-invariance file)
   (with-input-from-file file
@@ -51,4 +61,3 @@
                            (print #`"ERROR: ,num and ,num2 (original ,input)"))))
                      read-line))))
 
-                       

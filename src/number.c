@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.78 2002-04-08 06:04:51 shirok Exp $
+ *  $Id: number.c,v 1.79 2002-04-08 09:45:53 shirok Exp $
  */
 
 #include <math.h>
@@ -1375,13 +1375,15 @@ ScmObj Scm_LogXor(ScmObj x, ScmObj y)
  *
  * This version implements Burger&Dybvig algorithm (Robert G. Burger
  * and and R. Kent Dybvig, "Priting Floating-Point Numbers Quickly and 
- * Accurately", PLDI '96, pp.108--116, 1996) naively.
+ * Accurately", PLDI '96, pp.108--116, 1996), except I use floating-point
+ * arithmetic instead of multiple-precision integer arithmetic.
+ * So it is fast but inaccurate.
  */
 
 static void double_print(char *buf, int buflen, double val, int plus_sign)
 {
-    if (val < 0.0) *buf++ = '-';
-    else if (plus_sign) *buf++ = '+';
+    if (val < 0.0) *buf++ = '-', buflen--;
+    else if (plus_sign) *buf++ = '+', buflen--;
     if (SCM_IS_INF(val)) {
         strcpy(buf, "#<inf>");
     } else if (SCM_IS_NAN(val)) {
@@ -1389,110 +1391,122 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
     } else if (val == 0.0) {
         strcpy(buf, "0.0");
     } else {
-        /* variable names follows Burger&Dybvig paper */
-        ScmObj f, e, r, s, mp, mm, q;
-        int exp, sign, est, tc1, tc2, digs, round;
+        /* variable names follows Burger&Dybvig paper. mp, mm for m+, m- */
+        double f, r, s, mp, mm, q, est;
+        int exp, tc1, tc2, digs, round;
 
         if (val < 0) val = -val;
         
         /* initialize r, s, m+ and m- */
-        f = Scm_DecodeFlonum(val, &exp, &sign);
-        round = !Scm_OddP(f);
+        f = frexp(val, &exp);
+        round = (fmod(ldexp(f, 53), 2.0) == 0.0);
         if (exp >= 0) {
-            ScmObj be = Scm_Ash(SCM_MAKE_INT(1), exp);
-            ScmObj be1 = Scm_Ash(be, 1);
-            if (Scm_NumCmp(f, Scm_Ash(SCM_MAKE_INT(1), 52)) != 0) {
-                r = Scm_Multiply(f, be1, SCM_NIL);
-                s = SCM_MAKE_INT(2);
-                mp = be;
-                mm = be;
+            r = ldexp(f, exp);
+            s = 1.0;
+            mp = ldexp(0.5, exp-53);
+            if (f != 0.5) {
+                mm = ldexp(0.5, exp-53);
             } else {
-                ScmObj be2 = Scm_Ash(be1, 1);
-                r = Scm_Multiply(f, be2, SCM_NIL);
-                s = SCM_MAKE_INT(4);
-                mp = be1;
-                mm = be;
+                mm = ldexp(0.5, exp-54);
             }
         } else {
-            if (exp == -1023 || Scm_NumCmp(f, Scm_Ash(SCM_MAKE_INT(1), 52)) != 0) {
-                r = Scm_Ash(f, 1);
-                s = Scm_Ash(SCM_MAKE_INT(1), -exp+1);
-                mp = SCM_MAKE_INT(1);
-                mm = SCM_MAKE_INT(1);
+            if (exp == -1023 || f != 0.5) {
+                r = f * 2.0;
+                s = ldexp(2.0, -exp);
+                mp = ldexp(1.0, -53);
+                mm = ldexp(1.0, -53);
             } else {
-                r = Scm_Ash(f, 2);
-                s = Scm_Ash(SCM_MAKE_INT(1), -exp+2);
-                mp = SCM_MAKE_INT(2);
-                mm = SCM_MAKE_INT(1);
+                r = f * 4.0;
+                s = ldexp(4.0, -exp);
+                mp = ldexp(1.0, -52);
+                mm = ldexp(1.0, -53);
             }
         }
 
         /* estimate scale */
-        est = (int)ceil(log10(val) - 0.1);
+        est = ceil(log10(val) - 0.1);
         if (est >= 0) {
-            s = Scm_Multiply(s, Scm_Expt(SCM_MAKE_INT(10), SCM_MAKE_INT(est)),
-                             SCM_NIL);
+            if (est >= DBL_MAX_10_EXP) {
+                s *= pow(10.0, est-1);
+                r /= 10.0;
+                mp /= 10.0;
+                mm /= 10.0;
+            } else {
+                s *= pow(10.0, est);
+            }
         } else {
-            ScmObj scale = Scm_Expt(SCM_MAKE_INT(10), SCM_MAKE_INT(-est));
-            r = Scm_Multiply(r, scale, SCM_NIL);
-            mp = Scm_Multiply(mp, scale, SCM_NIL);
-            mm = Scm_Multiply(mm, scale, SCM_NIL);
+            double scale = pow(10.0, -est);
+            r *= scale;
+            mp *= scale;
+            mm *= scale;
         }
 
         /* fixup */
-        if (round) {
-            if (Scm_NumCmp(Scm_Add(r, mp, SCM_NIL), s) >= 0) {
-                s = Scm_Multiply(s, SCM_MAKE_INT(10), SCM_NIL);
-                est++;
+        if (est < DBL_MAX_10_EXP) {
+            if (round) {
+                if (r + mp >= s) {
+                    s *= 10.0;
+                    est++;
+                }
+            } else {
+                if (r + mp > s) {
+                    s *= 10.0;
+                    est++;
+                }
             }
         } else {
-            if (Scm_NumCmp(Scm_Add(r, mp, SCM_NIL), s) > 0) {
-                s = Scm_Multiply(s, SCM_MAKE_INT(10), SCM_NIL);
-                est++;
+            /* avoid overflow */
+            if (round) {
+                if (r + mp >= s) {
+                    r  /= 10.0;
+                    mp /= 10.0;
+                    mm /= 10.0;
+                    est++;
+                }
+            } else {
+                if (r + mp > s) {
+                    r  /= 10.0;
+                    mp /= 10.0;
+                    mm /= 10.0;
+                    est++;
+                }
             }
         }
-        
-        /* Scm_Printf(SCM_CURERR, "est=%d, r=%S, s=%S, mp=%S, mm=%S\n",
-           est, r, s, mp, mm); */
 
         /* generate */
-        for (digs=0;;digs++) {
-            ScmObj r10 = Scm_Multiply(r, SCM_MAKE_INT(10), SCM_NIL);
-            q = Scm_Quotient(r10, s);
-            r = Scm_Modulo(r10, s, TRUE);
-            mp = Scm_Multiply(mp, SCM_MAKE_INT(10), SCM_NIL);
-            mm = Scm_Multiply(mm, SCM_MAKE_INT(10), SCM_NIL);
+        for (digs=0;buflen>5;digs++) {
+            double r10 = r * 10.0;
+            int q = (int)floor(r10/s);
+            r = fmod(r10, s);
+            mp *= 10.0;
+            mm *= 10.0;
             
-            /* Scm_Printf(SCM_CURERR, "q=%S, r=%S, mp=%S, mm=%S\n",
-               q, r, mp, mm); */
-
-            SCM_ASSERT(SCM_INTP(q));
             if (round) {
-                tc1 = (Scm_NumCmp(r, mm) <= 0);
-                tc2 = (Scm_NumCmp(Scm_Add(r, mp, SCM_NIL), s) >= 0);
+                tc1 = (r <= mm);
+                tc2 = (r + mp >= s);
             } else {
-                tc1 = (Scm_NumCmp(r, mm) < 0);
-                tc2 = (Scm_NumCmp(Scm_Add(r, mp, SCM_NIL), s) > 0);
+                tc1 = (r < mm);
+                tc2 = (r + mp > s);
             }
             if (!tc1) {
                 if (!tc2) {
-                    *buf++ = SCM_INT_VALUE(q) + '0';
-                    if (digs == 0) *buf++ = '.';
+                    *buf++ = q + '0', buflen--;
+                    if (digs == 0) *buf++ = '.', buflen--;
                     continue;
                 } else {
-                    *buf++ = SCM_INT_VALUE(q) + '1';
+                    *buf++ = q + '1', buflen--;
                     break;
                 }
             } else {
                 if (!tc2) {
-                    *buf++ = SCM_INT_VALUE(q) + '0';
+                    *buf++ = q + '0', buflen--;
                     break;
                 } else {
-                    if (Scm_NumCmp(Scm_Ash(r, 1), s) < 0) {
-                        *buf++ = SCM_INT_VALUE(q) + '0';
+                    if (r * 2.0 < s) {
+                        *buf++ = q + '0', buflen--;
                         break;
                     } else {
-                        *buf++ = SCM_INT_VALUE(q) + '1';
+                        *buf++ = q + '1', buflen--;
                         break;
                     }
                 }
@@ -1508,7 +1522,7 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
         est--;
         if (est != 0) {
             *buf++ = 'e';
-            sprintf(buf, "%d", est);
+            sprintf(buf, "%d", (int)est);
         } else {
             *buf++ = 0;
         }
@@ -1823,6 +1837,7 @@ static ScmObj read_real(const char **strp, int *lenp,
         if (exp_minusp) exponent = -exponent;
     }
 
+    /*Scm_Printf(SCM_CURERR, "fraction=%S, exponent=%d\n", fraction, exponent);*/
     /* Compose flonum.
        It is known that double-precision arithmetic is not enough to
        find the best approximation of the given external
