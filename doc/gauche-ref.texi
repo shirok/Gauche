@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.116 2001-11-05 04:07:39 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.117 2001-11-06 09:50:28 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -8183,12 +8183,9 @@ Provides useful utilities for the interactive session.
 
 This module is automatically loaded when you run @code{gosh}
 interactively.
-
-So far, only one function is provided; will be populated later.
 @end deftp
 
 @defmac apropos pattern &optional module
-@defmacx a pattern &optional module
 Show a list of variables whose name matches @var{pattern}.
 If you give a module or a module name @var{module}, only the variables
 defined in that module are listed.  Without @var{module},
@@ -8209,6 +8206,9 @@ Some examples:
 (apropos 'char 'srfi-14)
 @end example
 @end defmac
+
+
+
 
 @c ----------------------------------------------------------------------
 @node User-level logging, Networking, Interactive session, Library modules
@@ -12274,7 +12274,7 @@ Peek the head or the tail of the queue and returns the object, respectively.
 @var{Queue} is not modified.  An error is signalled
 if @var{queue} is empty.
 @c JP
-キュー@var{queue}の先頭もしくは末尾の要素を返します。キューそのものは変更されます。
+キュー@var{queue}の先頭もしくは末尾の要素を返します。キューそのものは変更されません。
 キューが空の場合はエラーが報告されます。
 @c COMMON
 @end defun
@@ -12286,12 +12286,40 @@ if @var{queue} is empty.
 
 @deftp {Module} util.toposort
 @mdindex util.toposort
+@c EN
 Implements topological sort algorithm.
+@c JP
+トポロジカルソートのアルゴリズムを実装します。
+@c COMMON
 @end deftp
 
-@defun topological-sort graph &optional =
+@defun topological-sort graph &optional eqproc
 @c EN
+@var{Graph} represents a directed acyclic graph (DAG) by a list
+of connections, where each connection is the form
+@example
+(<node> <downstream> <downstream2> ...)
+@end example
+that means a node @code{<node>} is connected to other nodes
+@code{<downstream>} etc.   @code{<node>} can be arbitrary
+object, as far as it can be compared by the procedure @var{eqproc},
+which is @var{eqv?} by default (@xref{Equivalence}).
+Returns a list of @code{<node>}s sorted topologically.
+
+If the graph contains circular reference, an error is signalled.
 @c JP
+@var{Graph}は有向非循環グラフ(DAG)を表現するリストです。
+リストの各要素は次の形をしています。
+@example
+(<node> <downstream> <downstream2> ...)
+@end example
+これで、ノード@code{<node>}から別のノード@code{<downstream>}等への接続が
+あることを表現します。@code{<node>}はどんなオブジェクトであっても構いませんが、
+同一性の判定が@var{eqproc}で行えなければなりません。@var{eqproc}の既定値は
+@code{eqv?}です (@ref{Equivalence}参照)。
+トポロジカルにソートされたノードのリストを返します。
+
+グラフに循環が検出された場合はエラーとなります。
 @c COMMON
 @end defun
 
