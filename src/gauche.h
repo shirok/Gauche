@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.53 2001-02-27 08:24:51 shiro Exp $
+ *  $Id: gauche.h,v 1.54 2001-03-05 00:54:30 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -141,9 +141,17 @@ typedef struct ScmHeaderRec *ScmObj;
 
 #define SCM_EQ(x, y)         ((x) == (y))
 
-extern ScmObj Scm_EqP(ScmObj x, ScmObj y);
-extern ScmObj Scm_EqvP(ScmObj x, ScmObj y);
-extern ScmObj Scm_EqualP(ScmObj x, ScmObj y);
+extern int Scm_EqP(ScmObj x, ScmObj y);
+extern int Scm_EqvP(ScmObj x, ScmObj y);
+extern int Scm_EqualP(ScmObj x, ScmObj y);
+
+enum {
+    SCM_CMP_EQ,
+    SCM_CMP_EQV,
+    SCM_CMP_EQUAL
+};
+
+extern int Scm_EqualM(ScmObj x, ScmObj y, int mode);
 
 /*
  * FIXNUM
@@ -449,8 +457,13 @@ extern ScmObj Scm_Assq(ScmObj obj, ScmObj alist);
 extern ScmObj Scm_Assv(ScmObj obj, ScmObj alist);
 extern ScmObj Scm_Assoc(ScmObj obj, ScmObj alist);
 
+extern ScmObj Scm_AssocDelete(ScmObj elt, ScmObj alist, int cmpmode);
+extern ScmObj Scm_AssocDeleteX(ScmObj elt, ScmObj alist, int cmpmode);
+
 extern ScmObj Scm_Union(ScmObj list1, ScmObj list2);
 extern ScmObj Scm_Intersection(ScmObj list1, ScmObj list2);
+
+extern ScmObj Scm_TopologicalSort(ScmObj edges);
 
 extern ScmObj Scm_PairAttrGet(ScmPair *pair, ScmObj key, ScmObj fallback);
 extern ScmObj Scm_PairAttrSet(ScmPair *pair, ScmObj key, ScmObj value);
@@ -493,7 +506,7 @@ extern ScmObj  Scm_CopyString(ScmString *str);
 extern char*   Scm_GetString(ScmString *str);
 extern const char* Scm_GetStringConst(ScmString *str);
 
-extern ScmObj  Scm_StringEqual(ScmString *x, ScmString *y);
+extern int     Scm_StringEqual(ScmString *x, ScmString *y);
 extern ScmObj  Scm_StringLt(ScmString *x, ScmString *y);
 extern ScmObj  Scm_StringLe(ScmString *x, ScmString *y);
 extern ScmObj  Scm_StringGt(ScmString *x, ScmString *y);
@@ -1045,7 +1058,7 @@ extern ScmHashEntry *Scm_HashIterNext(ScmHashIter *iter);
 
 struct ScmModuleRec {
     SCM_HEADER;
-    ScmString *name;
+    ScmSymbol *name;
     ScmObj parents;
     ScmHashTable *table;
 };
@@ -1058,13 +1071,19 @@ extern ScmClass Scm_ModuleClass;
 
 extern ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
                                 int stay_in_module);
-extern ScmObj Scm_MakeModule(ScmString *name, ScmObj parentList);
+extern ScmObj Scm_MakeModule(ScmSymbol *name, ScmObj parentList);
 extern ScmObj Scm_SymbolValue(ScmModule *module, ScmSymbol *symbol);
 extern ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value);
 extern ScmObj Scm_GlobalSet(ScmModule *module, ScmSymbol *symbol, ScmObj value);
 
+extern ScmObj Scm_FindModule(ScmSymbol *name);
+extern ScmObj Scm_AllModules(void);
+
+extern ScmModule *Scm_NullModule(void);
 extern ScmModule *Scm_SchemeModule(void);
+extern ScmModule *Scm_GaucheModule(void);
 extern ScmModule *Scm_UserModule(void);
+extern ScmModule *Scm_CurrentModule(void);
 
 #define SCM_DEFINE(module, cstr, val)                                     \
     Scm_Define(SCM_MODULE(module),                                        \

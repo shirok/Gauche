@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.10 2001-02-22 19:46:37 shiro Exp $
+ *  $Id: list.c,v 1.11 2001-03-05 00:54:30 shiro Exp $
  */
 
 #include "gauche.h"
@@ -407,7 +407,7 @@ ScmObj Scm_Memq(ScmObj obj, ScmObj list)
 ScmObj Scm_Memv(ScmObj obj, ScmObj list)
 {
     SCM_FOR_EACH(list, list) {
-        if (Scm_EqvP(obj, SCM_CAR(list)) != SCM_FALSE) return list;
+        if (Scm_EqvP(obj, SCM_CAR(list))) return list;
     }
     return SCM_FALSE;
 }
@@ -415,7 +415,7 @@ ScmObj Scm_Memv(ScmObj obj, ScmObj list)
 ScmObj Scm_Member(ScmObj obj, ScmObj list)
 {
     SCM_FOR_EACH(list, list) {
-        if (Scm_EqualP(obj, SCM_CAR(list)) != SCM_FALSE) return list;
+        if (Scm_EqualP(obj, SCM_CAR(list))) return list;
     }
     return SCM_FALSE;
 }
@@ -443,7 +443,7 @@ ScmObj Scm_Assv(ScmObj obj, ScmObj alist)
     SCM_FOR_EACH(cp,alist) {
 	ScmObj entry = SCM_CAR(cp);
 	if (!SCM_PAIRP(entry)) continue;
-	if (Scm_EqvP(obj, SCM_CAR(entry)) != SCM_FALSE) return entry;
+	if (Scm_EqvP(obj, SCM_CAR(entry))) return entry;
     }
     return SCM_FALSE;
 }
@@ -454,7 +454,7 @@ ScmObj Scm_Assoc(ScmObj obj, ScmObj alist)
     SCM_FOR_EACH(cp,alist) {
         ScmObj entry = SCM_CAR(cp);
         if (!SCM_PAIRP(entry)) continue;
-        if (Scm_EqualP(obj, SCM_CAR(entry)) != SCM_FALSE) return entry;
+        if (Scm_EqualP(obj, SCM_CAR(entry))) return entry;
     }
     return SCM_FALSE;
 }
@@ -481,6 +481,58 @@ ScmObj Scm_Union(ScmObj list1, ScmObj list2)
 }
 
 /* Return intersection of two lists. */
+
+/*
+ * Topological sort
+ *
+ *  Given list of directed edge (from . to), returns a list of nodes
+ *  sorted topologically.
+ */
+
+ScmObj Scm_TopologicalSort(ScmObj lists)
+{
+    ScmObj nodes = SCM_NIL, nt;  /* list of (node indeg to ... ) */
+    ScmObj result = SCM_NIL, rt; /* result list */
+    ScmObj ep, np;
+    
+    /* construct node alist */
+    SCM_FOR_EACH(ep, lists) {
+        ScmObj edge = SCM_CAR(ep), p;
+        if (!SCM_PAIRP(edge)) Scm_Error("bad edge: %S", edge);
+
+        p = Scm_Assq(SCM_CAR(edge), nodes);
+        if (SCM_FALSEP(p)) {
+            SCM_APPEND1(nodes, nt,
+                        SCM_LIST3(SCM_CAR(edge),
+                                  SCM_MAKE_INT(0),
+                                  SCM_CDR(edge)));
+        } else {
+            Scm_Append2X(p, Scm_Cons(SCM_CDR(edge), SCM_NIL));
+        }
+        
+        p = Scm_Assq(SCM_CDR(edge), nodes);
+        if (SCM_FALSEP(p)) {
+            SCM_APPEND1(nodes, nt, SCM_LIST2(SCM_CDR(edge), SCM_MAKE_INT(1)));
+        } else {
+            int indeg = SCM_INT_VALUE(SCM_CADR(p)) + 1;
+            SCM_SET_CDR(p, Scm_Cons(SCM_MAKE_INT(indeg), SCM_CDDR(p)));
+        }
+    }
+
+    /* construct result */
+#if 0    
+    while (!SCM_NULLP(nodes)) {
+        SCM_FOR_EACH(np, nodes) {
+            ScmObj node = SCM_CAR(np);
+            if (SCM_CADR(node) == SCM_MAKE_INT(0)) {
+                SCM_APPEND1(result, rt, SCM_CAR(node));
+                nodes = 
+            }
+        }
+    }
+#endif
+    return nodes;
+}
 
 /*
  * Pair attributes

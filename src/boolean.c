@@ -12,45 +12,45 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: boolean.c,v 1.5 2001-03-04 07:50:46 shiro Exp $
+ *  $Id: boolean.c,v 1.6 2001-03-05 00:54:30 shiro Exp $
  */
 
 #include "gauche.h"
 
-ScmObj Scm_EqP(ScmObj x, ScmObj y)
+int Scm_EqP(ScmObj x, ScmObj y)
 {
-    return SCM_EQ(x, y)? SCM_TRUE : SCM_FALSE;
+    return (x == y);
 }
 
-ScmObj Scm_EqvP(ScmObj x, ScmObj y)
+int Scm_EqvP(ScmObj x, ScmObj y)
 {
     /* for our implementation, only the number matters. */
     if (SCM_NUMBERP(x)) {
-        if (SCM_NUMBERP(y)) return Scm_NumEq(x, y, SCM_NIL);
-        else return SCM_FALSE;
+        if (SCM_NUMBERP(y)) return !SCM_FALSEP(Scm_NumEq(x, y, SCM_NIL));
+        else return FALSE;
     }
-    return SCM_EQ(x, y)? SCM_TRUE : SCM_FALSE;
+    return (x == y);
 }
 
-ScmObj Scm_EqualP(ScmObj x, ScmObj y)
+int Scm_EqualP(ScmObj x, ScmObj y)
 {
     if (SCM_PAIRP(x)) {
         if (SCM_PAIRP(y)) {
-            if (SCM_TRUEP(Scm_EqualP(SCM_CAR(x), SCM_CAR(y)))
-                && SCM_TRUEP(Scm_EqualP(SCM_CDR(x), SCM_CDR(y))))
-                return SCM_TRUE;
+            if (Scm_EqualP(SCM_CAR(x), SCM_CAR(y))
+                && Scm_EqualP(SCM_CDR(x), SCM_CDR(y)))
+                return TRUE;
         }
-        return SCM_FALSE;
+        return FALSE;
     }
     if (SCM_STRINGP(x)) {
         if (SCM_STRINGP(y)) {
             return Scm_StringEqual(SCM_STRING(x), SCM_STRING(y));
         }
-        return SCM_FALSE;
+        return FALSE;
     }
     if (SCM_NUMBERP(x)) {
-        if (SCM_NUMBERP(y)) return Scm_NumEq(x, y, SCM_NIL);
-        else return SCM_FALSE;
+        if (SCM_NUMBERP(y)) return SCM_TRUEP(Scm_NumEq(x, y, SCM_NIL));
+        else return FALSE;
     }
     if (SCM_VECTORP(x)) {
         if (SCM_VECTORP(y)) {
@@ -58,18 +58,16 @@ ScmObj Scm_EqualP(ScmObj x, ScmObj y)
             int sizy = SCM_VECTOR_SIZE(y);
             if (sizx == sizy) {
                 while (sizx--) {
-                    if (Scm_EqualP(SCM_VECTOR_ELEMENT(x, sizx),
-                                   SCM_VECTOR_ELEMENT(y, sizx))
-                        == SCM_FALSE){
+                    if (!Scm_EqualP(SCM_VECTOR_ELEMENT(x, sizx),
+                                    SCM_VECTOR_ELEMENT(y, sizx)))
                         break;
-                    }
                 }
-                if (sizx < 0) return SCM_TRUE;
+                if (sizx < 0) return TRUE;
             }
         }
-        return SCM_FALSE;
+        return FALSE;
     }
-    return SCM_EQ(x, y)? SCM_TRUE : SCM_FALSE;
+    return (x == y);
 }
 
 

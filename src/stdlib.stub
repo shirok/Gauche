@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.29 2001-02-27 08:16:44 shiro Exp $
+;;; $Id: stdlib.stub,v 1.30 2001-03-05 00:54:30 shiro Exp $
 ;;;
 
 
@@ -24,14 +24,14 @@
 
 (define-cproc eqv? (obj1 obj2)
   (inliner "SCM_VM_EQV")
-  "  SCM_RETURN(Scm_EqvP(obj1, obj2));")
+  "  SCM_RETURN(SCM_MAKE_BOOL(Scm_EqvP(obj1, obj2)));")
 
 (define-cproc eq? (obj1 obj2)
   (inliner "SCM_VM_EQ")
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_EQ(obj1, obj2)));")
 
 (define-cproc equal? (obj1 obj2)
-  "  SCM_RETURN(Scm_EqualP(obj1, obj2));")
+  "  SCM_RETURN(SCM_MAKE_BOOL(Scm_EqualP(obj1, obj2)));")
 
 ;;
 ;; 6.2  Numbers
@@ -545,11 +545,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-cproc string=? (s1 s2)
   (assert (string? s1))
   (assert (string? s2))
-  "  if (SCM_STRING_LENGTH(s1) != SCM_STRING_LENGTH(s2)) SCM_RETURN(SCM_FALSE);
-  if (memcmp(SCM_STRING_START(s1), SCM_STRING_START(s2), SCM_STRING_SIZE(s1)) == 0)
-     SCM_RETURN(SCM_TRUE);
-  else
-     SCM_RETURN(SCM_FALSE);")
+  "  SCM_RETURN(SCM_MAKE_BOOL(Scm_StringEqual(s1, s2)));")
 
 (define-cproc string<? (s1 s2)
   (assert (string? s1))

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.15 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: string.c,v 1.16 2001-03-05 00:54:30 shiro Exp $
  */
 
 #include <stdio.h>
@@ -233,16 +233,16 @@ ScmObj Scm_CopyString(ScmString *x)
  * Comparison
  */
 
-ScmObj Scm_StringEqual(ScmString *x, ScmString *y)
+int Scm_StringEqual(ScmString *x, ScmString *y)
 {
     int sizx = SCM_STRING_SIZE(x);
     int sizy = SCM_STRING_SIZE(y);
     if (sizx == sizy) {
         if (memcmp(SCM_STRING_START(x), SCM_STRING_START(y), sizx) == 0) {
-            return SCM_TRUE;
+            return TRUE;
         }
     }
-    return SCM_FALSE;
+    return FALSE;
 }
 
 #define STRCMP(fn, op1, op2)                                            \

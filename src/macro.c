@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.16 2001-03-04 08:17:28 shiro Exp $
+ *  $Id: macro.c,v 1.17 2001-03-05 00:54:30 shiro Exp $
  */
 
 #include "gauche.h"
@@ -621,7 +621,7 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj env,
     }
 
     /* literal */
-    return !SCM_FALSEP(Scm_EqualP(pattern, form));
+    return Scm_EqualP(pattern, form);
 }
 
 /*-------------------------------------------------------------------
