@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.41 2001-09-08 10:49:06 shirok Exp $
+ *  $Id: vm.h,v 1.42 2001-09-08 13:13:45 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -125,29 +125,29 @@ extern ScmClass Scm_SourceInfoClass;
 extern ScmObj Scm_MakeSourceInfo(ScmObj info, ScmSourceInfo *up);
 
 /*
- * Escape handler
+ * Escape handling
  */
-
-/*
- * Escape record
- */
-typedef struct ScmEscapeHandlerRec {
-    struct ScmEscapeHandlerRec *prev;
-    ScmObj ehandler;
-    ScmEnvFrame *env;
-    ScmContFrame *cont;
-    ScmObj dhandlers;
-} ScmEscapeHandler;
 
 /*
  * C stack record
  */
-typedef struct ScmEscapePointRec {
-    struct ScmEscapePointRec *prev;
-    ScmEscapeHandler *handlers;
+typedef struct ScmCStackRec {
+    struct ScmCStackRec *prev;
     ScmContFrame *cont;
     jmp_buf jbuf;
+} ScmCStack;
+
+/*
+ * Escape handler
+ */
+typedef struct ScmEscapePointRec {
+    struct ScmEscapePointRec *prev;
+    ScmObj ehandler;            /* handler closure */
+    ScmContFrame *cont;         /* saved continuation */
+    ScmObj handlers;            /* saved dynamic handler chain */
+    ScmCStack *cstack;          /* C stack */
 } ScmEscapePoint;
+
 
 /* Escape types */
 #define SCM_VM_ESCAPE_NONE   0
@@ -162,7 +162,7 @@ struct ScmVMRec {
     SCM_HEADER;
     ScmVM *parent;
     ScmModule *module;          /* current global namespace */
-    ScmEscapePoint *escape;     /* current escape point */
+    ScmCStack *cstack;     /* current escape point */
 
     unsigned int compilerFlags; /* Compiler flags */
     unsigned int errorFlags;    /* Error flags */
@@ -193,6 +193,7 @@ struct ScmVMRec {
     int stackSize;
 
     /* Escape handling */
+    ScmEscapePoint *escapePoint;
     int escapeReason;
     void *escapeData[2];
 };
@@ -248,27 +249,27 @@ extern ScmObj Scm_VMInsnInspect(ScmObj obj);
 
 #define SCM_PUSH_ERROR_HANDLER                  \
     do {                                        \
-       ScmEscapePoint escape;                   \
-       escape.prev = Scm_VM()->escape;          \
-       escape.cont = Scm_VM()->cont;            \
-       Scm_VM()->escape = &escape;              \
-       if (setjmp(escape.jbuf) == 0) {
+       ScmCStack cstack;                        \
+       cstack.prev = Scm_VM()->cstack;          \
+       cstack.cont = Scm_VM()->cont;            \
+       Scm_VM()->cstack = &cstack;              \
+       if (setjmp(cstack.jbuf) == 0) {
            
 #define SCM_WHEN_ERROR                          \
        } else {
 
 #define SCM_PROPAGATE_ERROR                                     \
            do {                                                 \
-               if (Scm_VM()->escape->prev) {                    \
-                   Scm_VM()->escape = Scm_VM()->escape->prev;   \
-                   longjmp(Scm_VM()->escape->jbuf, 1);          \
+               if (Scm_VM()->cstack->prev) {                    \
+                   Scm_VM()->cstack = Scm_VM()->cstack->prev;   \
+                   longjmp(Scm_VM()->cstack->jbuf, 1);          \
                }                                                \
                else exit(1);                                    \
            } while (0)
 
-#define SCM_POP_ERROR_HANDLER                     \
-       }                                          \
-       Scm_VM()->escape = Scm_VM()->escape->prev; \
+#define SCM_POP_ERROR_HANDLER                           \
+       }                                                \
+       Scm_VM()->cstack = Scm_VM()->cstack->prev;       \
     } while (0)
 
 /* flag for vm->errorFlag */

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.99 2001-09-08 10:49:06 shirok Exp $
+ *  $Id: vm.c,v 1.100 2001-09-08 13:13:45 shirok Exp $
  */
 
 #include "gauche.h"
@@ -38,13 +38,7 @@ static ScmVM *theVM;    /* this must be thread specific in MT version */
 
 static void save_stack(ScmVM *vm);
 
-struct cont_data {
-    ScmContFrame *cont;
-    ScmObj handlers;
-    ScmEscapePoint *escape;
-};
-
-static ScmObj throw_cont_body(ScmObj, ScmObj, struct cont_data*, ScmObj);
+static ScmObj throw_cont_body(ScmObj, ScmObj, ScmEscapePoint*, ScmObj);
 
 /*
  * Constructor
@@ -60,7 +54,7 @@ ScmVM *Scm_NewVM(ScmVM *base,
     SCM_SET_CLASS(v, &Scm_VMClass);
     v->parent = base;
     v->module = module ? module : base->module;
-    v->escape = base ? base->escape : NULL;
+    v->cstack = base ? base->cstack : NULL;
     
     v->curin  = SCM_PORT(Scm_Stdin());
     v->curout = SCM_PORT(Scm_Stdout());
@@ -85,6 +79,7 @@ ScmVM *Scm_NewVM(ScmVM *base,
     
     v->handlers = SCM_NIL;
 
+    v->escapePoint = NULL;
     v->escapeReason = SCM_VM_ESCAPE_NONE;
     v->escapeData[0] = NULL;
     v->escapeData[1] = NULL;
@@ -360,7 +355,7 @@ static void run_loop()
            !SCM_PAIRP(pc) than SCM_NULLP(pc), but the latter is faster.
            (the former makes nqueen.scm 2% slower) */
         if (SCM_NULLP(pc)) {
-            if (cont == NULL || cont == vm->escape->cont) {
+            if (cont == NULL || cont == vm->cstack->cont) {
                 SAVE_REGS();
                 return; /* no more continuations */
             }
@@ -1253,7 +1248,7 @@ static inline ScmEnvFrame *save_env(ScmVM *vm,
 {
     ScmEnvFrame *e = env_begin, *prev = NULL, *head = env_begin, *s;
     ScmContFrame *c = cont_begin;
-    ScmEscapePoint *esc;
+    ScmCStack *cstk;
     
     int size;
     for (; IN_STACK_P((ScmObj*)e); e = e->up) {
@@ -1265,8 +1260,8 @@ static inline ScmEnvFrame *save_env(ScmVM *vm,
                 c->env = s;
             }
         }
-        for (esc = vm->escape; esc; esc = esc->prev) {
-            for (c = esc->cont; c; c = c->prev) {
+        for (cstk = vm->cstack; cstk; cstk = cstk->prev) {
+            for (c = cstk->cont; c; c = c->prev) {
                 if (!IN_STACK_P((ScmObj*)c)) break;
                 if (c->env == e) c->env = s;
             }
@@ -1289,7 +1284,7 @@ static inline ScmEnvFrame *save_env(ScmVM *vm,
 static void save_cont(ScmVM *vm, ScmContFrame *cont_begin)
 {
     ScmContFrame *c = cont_begin, *prev = NULL;
-    ScmEscapePoint *esc;
+    ScmCStack *cstk;
     
     for (; IN_STACK_P((ScmObj*)c); c = c->prev) {
         ScmEnvFrame *e = save_env(vm, c->env, c);
@@ -1307,8 +1302,8 @@ static void save_cont(ScmVM *vm, ScmContFrame *cont_begin)
             /* C continuation */
             memcpy(csave, c, (CONT_FRAME_SIZE + c->size) * sizeof(ScmObj));
         }
-        for (esc = vm->escape; esc; esc = esc->prev) {
-            if (esc->cont == c) esc->cont = csave;
+        for (cstk = vm->cstack; cstk; cstk = cstk->prev) {
+            if (cstk->cont == c) cstk->cont = csave;
         }
         if (prev) prev->prev = csave;
         prev = csave;
@@ -1429,7 +1424,7 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
  *   Scheme code becomes invalid.
  *
  *   At the implementation level, this boundary is kept in a
- *   structure ScmEscapePoint.
+ *   structure ScmCStack.
  */
 
 /* Border gate.  All the C->Scheme calls should go through here.  */
@@ -1437,7 +1432,7 @@ static ScmObj user_eval_inner(ScmObj program)
 {
     DECL_REGS_VOLATILE;
     volatile int restarted = FALSE;
-    ScmEscapePoint escape;
+    ScmCStack cstack;
 
     /* Push extra continuation to preserve vm state.
        TODO: this won't be necessary if we're called directly
@@ -1447,13 +1442,13 @@ static ScmObj user_eval_inner(ScmObj program)
     pc = program;
     SAVE_REGS();
 
-    escape.prev = vm->escape;
-    escape.cont = vm->cont;
-    vm->escape = &escape;
+    cstack.prev = vm->cstack;
+    cstack.cont = vm->cont;
+    vm->cstack = &cstack;
     
   restart:
     vm->escapeReason = SCM_VM_ESCAPE_NONE;
-    if (setjmp(escape.jbuf) == 0) {
+    if (setjmp(cstack.jbuf) == 0) {
         run_loop();
         if (!restarted) {
             val0 = vm->val0;
@@ -1463,11 +1458,11 @@ static ScmObj user_eval_inner(ScmObj program)
         }
     } else {
         if (vm->escapeReason == SCM_VM_ESCAPE_CONT) {
-            struct cont_data *cd = (struct cont_data*)vm->escapeData[0];
-            if (cd->escape == vm->escape) {
+            ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
+            if (ep->cstack == vm->cstack) {
                 val0 = throw_cont_body(vm->handlers,
-                                       cd->handlers,
-                                       cd,
+                                       ep->handlers,
+                                       ep,
                                        vm->escapeData[1]);
                 RESTORE_REGS();
                 POP_CONT();
@@ -1480,12 +1475,12 @@ static ScmObj user_eval_inner(ScmObj program)
         } else {
             Scm_Panic("invalid longjmp");
         }
-        vm->cont = escape.cont;
-        SCM_ASSERT(vm->escape->prev);
-        vm->escape = vm->escape->prev;
-        longjmp(vm->escape->jbuf, 1);
+        vm->cont = cstack.cont;
+        SCM_ASSERT(vm->cstack->prev);
+        vm->cstack = vm->cstack->prev;
+        longjmp(vm->cstack->jbuf, 1);
     }
-    vm->escape = vm->escape->prev;
+    vm->cstack = vm->cstack->prev;
     return vm->val0;
 }
 
@@ -1665,8 +1660,8 @@ ScmObj Scm_VMThrowException(ScmObj exception)
     }
 
     Scm_VM()->errorFlags &= ~SCM_ERROR_BEING_HANDLED;
-    if (theVM->escape) {
-        longjmp(theVM->escape->jbuf, 1);
+    if (theVM->cstack) {
+        longjmp(theVM->cstack->jbuf, 1);
     } else {
         /* No escape point.  Returns EX_SOFTWARE as specified in SRFI-22. */
         exit(EX_SOFTWARE);
@@ -1686,7 +1681,7 @@ static ScmObj throw_cont_body(ScmObj cur_handlers, /* dynamic handlers of
                                                       current continuation */
                               ScmObj dest_handlers, /* dynamic handlers of
                                                        target continuation */
-                              struct cont_data *cd,/* target continuation */
+                              ScmEscapePoint *ep, /* target continuation */
                               ScmObj args)        /* args to pass to the
                                                      target continuation */ 
 {
@@ -1707,7 +1702,7 @@ static ScmObj throw_cont_body(ScmObj cur_handlers, /* dynamic handlers of
                 /* evaluate "after" handlers of the current continuation */
                 data[0] = (void*)SCM_CDR(cur_handlers);
                 data[1] = (void*)dest_handlers;
-                data[2] = (void*)cd;
+                data[2] = (void*)ep;
                 data[3] = (void*)args;
                 vm->handlers = SCM_CDR(cur_handlers);
                 Scm_VMPushCC(throw_cont_cc, data, 4);
@@ -1726,7 +1721,7 @@ static ScmObj throw_cont_body(ScmObj cur_handlers, /* dynamic handlers of
                 /* evaluate "before" handlers of the target continuation */
                 data[0] = (void*)cur_handlers;
                 data[1] = (void*)SCM_CDR(dest_handlers);
-                data[2] = (void*)cd;
+                data[2] = (void*)ep;
                 data[3] = (void*)args;
                 vm->handlers = SCM_CDR(dest_handlers);
                 Scm_VMPushCC(throw_cont_cc, data, 4);
@@ -1741,7 +1736,7 @@ static ScmObj throw_cont_body(ScmObj cur_handlers, /* dynamic handlers of
      * now, install the target continuation
      */
     vm->pc = SCM_NIL;
-    vm->cont = cd->cont;
+    vm->cont = ep->cont;
     vm->handlers = dest_handlers;
 
     nargs = Scm_Length(args);
@@ -1764,44 +1759,44 @@ static ScmObj throw_cont_cc(ScmObj result, void **data)
 {
     ScmObj cur_handlers = SCM_OBJ(data[0]);
     ScmObj dest_handlers = SCM_OBJ(data[1]);
-    struct cont_data *cd = (struct cont_data *)data[2];
+    ScmEscapePoint *ep = (ScmEscapePoint *)data[2];
     ScmObj args = SCM_OBJ(data[3]);
-    return throw_cont_body(cur_handlers, dest_handlers, cd, args);
+    return throw_cont_body(cur_handlers, dest_handlers, ep, args);
 }
 
 /* Body of the continuation SUBR */
 static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
 {
 
-    struct cont_data *cd = (struct cont_data*)data;
+    ScmEscapePoint *ep = (ScmEscapePoint*)data;
     ScmVM *vm = theVM;
-    ScmObj handlers = cd->handlers;
+    ScmObj handlers = ep->handlers;
     ScmObj current = vm->handlers;
     ScmObj args = argframe[0];
-    ScmEscapePoint *ep;
+    ScmCStack *cstk;
 
-    if (vm->escape != cd->escape) {
-        for (ep = vm->escape; ep; ep = ep->prev) {
-            if (cd->escape == ep) break;
+    if (vm->cstack != ep->cstack) {
+        for (cstk = vm->cstack; cstk; cstk = cstk->prev) {
+            if (ep->cstack == cstk) break;
         }
-        if (ep == NULL) {
+        if (cstk == NULL) {
             Scm_Error("a continuation is thrown outside of it's extent: %p",
-                      cd);
+                      ep);
         } else {
             /* Rewind C stack */
             vm->escapeReason = SCM_VM_ESCAPE_CONT;
-            vm->escapeData[0] = cd;
+            vm->escapeData[0] = ep;
             vm->escapeData[1] = args;
-            longjmp(vm->escape->jbuf, 1);
+            longjmp(vm->cstack->jbuf, 1);
         }
     }
-    return throw_cont_body(current, handlers, cd, args);
+    return throw_cont_body(current, handlers, ep, args);
 }
 
 ScmObj Scm_VMCallCC(ScmObj proc)
 {
     ScmObj contproc;
-    struct cont_data *data;
+    ScmEscapePoint *ep;
     ScmVM *vm = theVM;
 
     if (!SCM_PROCEDUREP(proc) || SCM_PROCEDURE_REQUIRED(proc) != 1)
@@ -1809,12 +1804,13 @@ ScmObj Scm_VMCallCC(ScmObj proc)
                   proc);
 
     save_cont(vm, vm->cont);
-    data = SCM_NEW(struct cont_data);
-    data->cont = vm->cont;
-    data->handlers = vm->handlers;
-    data->escape = vm->escape;
+    ep = SCM_NEW(ScmEscapePoint);
+    ep->ehandler = SCM_FALSE;
+    ep->cont = vm->cont;
+    ep->handlers = vm->handlers;
+    ep->cstack = vm->cstack;
 
-    contproc = Scm_MakeSubr(throw_continuation, data, 0, 1,
+    contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                             SCM_MAKE_STR("continuation"));
     return Scm_VMApply1(proc, contproc);
 }
@@ -2012,7 +2008,7 @@ void Scm_VMDump(ScmVM *vm)
     ScmPort *out = vm->curerr;
     ScmEnvFrame *env = vm->env;
     ScmContFrame *cont = vm->cont;
-    ScmEscapePoint *esc = vm->escape;
+    ScmCStack *cstk = vm->cstack;
 
     Scm_Printf(out, "VM %p -----------------------------------------------------------\n", vm);
     Scm_Printf(out, "   pc: %#65.1S\n", vm->pc);
@@ -2040,11 +2036,11 @@ void Scm_VMDump(ScmVM *vm)
         cont = cont->prev;
     }
 
-    Scm_Printf(out, "escape points:\n");
-    while (esc) {
+    Scm_Printf(out, "C stacks:\n");
+    while (cstk) {
         Scm_Printf(out, "  %p: prev=%p, cont=%p\n",
-                   esc, esc->prev, esc->cont);
-        esc = esc->prev;
+                   cstk, cstk->prev, cstk->cont);
+        cstk = cstk->prev;
     }
     Scm_Printf(out, "dynenv: %S\n", vm->handlers);
 }
