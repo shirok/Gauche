@@ -1,7 +1,7 @@
 dnl
 dnl Example of configuring Gauche extension
 dnl
-dnl $Id: configure.in,v 1.4 2001-06-07 07:15:17 shirok Exp $
+dnl $Id: configure.in,v 1.5 2001-06-08 08:53:19 shirok Exp $
 AC_INIT(charconv.c)
 
 dnl Determine if we're configuring inside of Gauche main source tree or not.
@@ -36,7 +36,7 @@ AC_ARG_WITH(iconv, , [
          iconv_lib="-liconv";;
   esac], [with_iconv=yes])
 AC_ARG_WITH(iconv-lib, , [ iconv_lib="-l$with_iconv_lib" ])
-LIBS="$LIBS $iconv_lib"  
+LIBS="$LIBS $iconv_lib"
 
 dnl Get compiler parameters which Gauche has been compiled with.
 CC="`$GAUCHE_CONFIG --cc`"
@@ -50,6 +50,19 @@ AC_PROG_INSTALL
 dnl Add more test
 if test $with_iconv != no; then
   AC_CHECK_HEADERS(iconv.h)
+fi
+
+dnl Check the iconv() prototype
+AC_CACHE_CHECK(iconv takes const char **input, ac_cv_iconv_const_input, [
+AC_TRY_COMPILE([#include <iconv.h>],[
+const char *inbuf;
+char *outbuf;
+int inroom, outroom;
+iconv((iconv_t)0, &inbuf, &inroom, &outbuf, &outroom);
+], ac_cv_iconv_const_input=yes, ac_cv_iconv_const_input=no)])
+
+if test "$ac_cv_iconv_const_input" = yes; then
+AC_DEFINE(ICONV_CONST_INPUT)
 fi
 
 dnl Set LDFLAGS to generate shared library.
