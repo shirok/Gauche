@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with euc-jp.
 
-;; $Id: euc-jp.scm,v 1.19 2003-02-09 08:10:38 shirok Exp $
+;; $Id: euc-jp.scm,v 1.20 2003-02-28 01:07:07 shirok Exp $
 
 (use gauche.test)
 
@@ -465,6 +465,41 @@
              (else #f)))
 (test* "regexp" "いaろBはC"
        (cond ((rxmatch #/([ぁ-ん][a-z])+/i "XYいaろBはCdに")
+              => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp" #f
+       (cond ((rxmatch #/(.*)a/ "あいう")
+              => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp" "あいa"
+       (cond ((rxmatch #/(.*)a/ "あいaう")
+              => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp" #f
+       (cond ((rxmatch #/([^a]*)a/ "あいう")
+              => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp" "あいう"
+       (cond ((rxmatch #/([^a]*)う/ "あいう")
+              => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp" "あいa"
+       (cond ((rxmatch #/([^a]+)a/ "aあいaう")
+              => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp" #f
+       (cond ((rxmatch #/([^a]+)う/ "aあいaう")
+              => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp" "あい"
+       (cond ((rxmatch #/([^a]+)い/ "aあいaう")
               => rxmatch-substring)
              (else #f)))
 

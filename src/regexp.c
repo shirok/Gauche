@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.37 2003-02-05 01:44:34 shirok Exp $
+ *  $Id: regexp.c,v 1.38 2003-02-28 01:07:07 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -1118,9 +1118,10 @@ ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
         }
     }
 #endif
-    for (; start <= end-mustMatchLen; start++) {
+    while (start <= end-mustMatchLen) {
         ScmObj r = re_exec(rx, str, start, end);
         if (!SCM_FALSEP(r)) return r;
+        start += SCM_CHAR_NFOLLOWS(*start)+1;
     }
     return SCM_FALSE;
 }

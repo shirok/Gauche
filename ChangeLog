@@ -1,3 +1,10 @@
+2003-02-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c (Scm_RegExec): fixed a bug regarding multibyte
+	  regexp match.
+	* src/char.c (Scm_CharSetCaseFold): fixed a bug that case folding
+	  charset didn't consider 'z' and 'Z'.
+
 2003-02-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/common-macros.scm (values-ref): added values-ref

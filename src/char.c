@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.33 2002-09-21 08:52:49 shirok Exp $
+ *  $Id: char.c,v 1.34 2003-02-28 01:07:07 shirok Exp $
  */
 
 #include <ctype.h>
@@ -465,7 +465,7 @@ ScmObj Scm_CharSetComplement(ScmCharSet *cs)
 ScmObj Scm_CharSetCaseFold(ScmCharSet *cs)
 {
     int ch;
-    for (ch='a'; ch<'z'; ch++) {
+    for (ch='a'; ch<='z'; ch++) {
         if (MASK_ISSET(cs, ch) || MASK_ISSET(cs, (ch-('a'-'A')))) {
             MASK_SET(cs, ch);
             MASK_SET(cs, (ch-('a'-'A')));
