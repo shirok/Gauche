@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.231 2002-07-01 01:14:43 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.232 2002-07-01 01:19:18 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -13429,10 +13429,6 @@ in the sense of @code{equal?}.
 配列は@code{equal?}手続きで比較することが出来ます。
 二つの配列のshapeが等しく、また対応する各要素が@code{equal?}の意味で
 等しい場合に二つの配列は@code{equal?}であると見なされます。
-@c COMMON
-@end defun
-
-@c JP
 @c COMMON
 
 @c EN
