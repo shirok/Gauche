@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.217 2002-02-09 21:52:42 shirok Exp $
+ *  $Id: gauche.h,v 1.218 2002-02-10 05:11:45 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -26,7 +26,7 @@
 #include <limits.h>
 #include <signal.h>
 #include <gauche/config.h>  /* read config.h _before_ gc.h */
-#define GC_USE_DLL
+#define GC_DLL
 #include <gc.h>
 
 #ifdef __cplusplus
