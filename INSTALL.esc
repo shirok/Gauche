@@ -26,7 +26,7 @@
                       Compiling and Installing Gauche
 <? ) !>
 
-$Id: INSTALL.esc,v 1.20 2002-07-18 19:22:19 shirok Exp $
+$Id: INSTALL.esc,v 1.21 2003-02-05 07:50:07 shirok Exp $
 <? (if-lang japanese? !>
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:<? else !>
@@ -415,4 +415,25 @@ on top of the source tree.
          CC="cc -64" AS="as -64" ./configure
 <? ) !>
 
+<? (if-lang japanese? !>
+* Linux/Crusoe TM5800 - 最近のLinuxでは Crusoe TM5800がi686互換とされる
+       ようになったようですが、gc中でi686特有のprefetch命令を使っているところ
+       でコンパイルに失敗するという報告がありました。とりあえずのfixは、
+       configure後にgc/Makefile中の 
+
+         -DUSE_I686_PREFETCH
+
+       という記述を消してからmakeして下さい。
+
+<? else !>
+* Linux/Crusoe TM5800 - It is reported that recent Linux kernel thinks
+       TM5800 as i686-compatible, and compilation of Gauche fails at
+       gc where the i686's prefetch instruction is used.   A quick fix
+       is to edit gc/Makefile AFTER configure, to remove the following
+       flag:
+
+         -DUSE_I686_PREFETCH
+
+       Then make it.
+<? ) !>
 
