@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: hash.c,v 1.24 2002-07-31 22:09:11 shirok Exp $
+ *  $Id: hash.c,v 1.25 2002-11-11 09:05:46 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -248,7 +248,8 @@ static ScmHashEntry *string_access(ScmHashTable *table, ScmObj key,
     ScmHashEntry *e, *p;
     
     if (!SCM_STRINGP(key)) {
-        Scm_Abort("Got non-string key to the string hashtable\n");
+        Scm_Error("Got non-string key %S to the string hashtable %S",
+                  key, table);
     }
     s = SCM_STRING_START(key);
     size = SCM_STRING_SIZE(key);
