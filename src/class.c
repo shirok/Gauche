@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.18 2001-03-20 09:56:10 shiro Exp $
+ *  $Id: class.c,v 1.19 2001-03-21 19:31:50 shiro Exp $
  */
 
 #include "gauche.h"
@@ -25,6 +25,7 @@
 
 static int class_print(ScmObj, ScmPort *, int);
 static int generic_print(ScmObj, ScmPort *, int);
+static int method_print(ScmObj, ScmPort *, int);
 
 ScmClass *Scm_DefaultCPL[] = { SCM_CLASS_TOP, NULL };
 ScmClass *Scm_CollectionCPL[] = {
@@ -61,20 +62,54 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_GenericClass,
                          generic_print, NULL, NULL, NULL,
                          SCM_CLASS_OBJECT_CPL);
 SCM_DEFINE_BUILTIN_CLASS(Scm_MethodClass,
-                         NULL, NULL, NULL, NULL,
+                         method_print, NULL, NULL, NULL,
                          SCM_CLASS_OBJECT_CPL);
 
 /* Internally used classes */
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ClassAccessorClass, NULL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_NextMethodClass, NULL);
 
+/* Builtin generic functions */
+SCM_DEFINE_GENERIC(Scm_GenericMake, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericAllocate, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericInitialize, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericAddMethod, Scm_NoNextMethod, NULL);
+
 /* Some frequently-used pointers */
 static ScmObj key_allocation;
 static ScmObj key_instance;
+static ScmObj key_builtin;
+static ScmObj key_name;
+static ScmObj key_lambda_list;
+static ScmObj key_generic;
+static ScmObj key_specializers;
+static ScmObj key_body;
 
 /*=====================================================================
- * Auxiliary classes
+ * Auxiliary utilities
  */
+
+static ScmClass **class_list_to_array(ScmObj classes, int len)
+{
+    ScmObj cp;
+    ScmClass **v, **vp;
+    v = vp = SCM_NEW2(ScmClass**, sizeof(ScmClass*)*(len+1));
+    SCM_FOR_EACH(cp, classes) {
+        if (!Scm_TypeP(SCM_CAR(cp), SCM_CLASS_CLASS))
+            Scm_Error("list of classes required, but found non-class object"
+                      " %S in %S", SCM_CAR(cp), classes);
+        *vp++ = SCM_CLASS(SCM_CAR(cp));
+    }
+    *vp = NULL;
+    return v;
+}
+
+static ScmObj class_array_to_list(ScmClass **array, int len)
+{
+    ScmObj h = SCM_NIL, t;
+    if (array) while (len-- > 0) SCM_APPEND1(h, t, SCM_OBJ(*array++));
+    return h;
+}
 
 /*=====================================================================
  * Class metaobject
@@ -133,7 +168,7 @@ static ScmObj key_instance;
 /*
  * Built-in protocols
  *
- *  ScmObj klass->allocate(ScmClass *klass, ScmObj initargs)
+ *  ScmObj klass->allocate(ScmClass *klass)
  *     Called at the bottom of the chain of allocate-instance method.
  *     Besides allocating the required space, it must initialize
  *     members of the C-specific part of the instance, including SCM_HEADER.
@@ -172,12 +207,10 @@ static ScmObj key_instance;
  */
 
 /* Allocate class structure.  klass is a metaclass. */
-static ScmObj class_allocate(ScmClass *klass, int nslots)
+static ScmObj class_allocate(ScmClass *klass)
 {
     ScmClass *instance;
-    int i;
-
-    SCM_ASSERT(nslots >= 0);
+    int i, nslots = klass->numInstanceSlots;
     instance = SCM_NEW2(ScmClass*,
                         sizeof(ScmClass) + sizeof(ScmObj)*nslots);
     SCM_SET_CLASS(instance, klass);
@@ -211,7 +244,7 @@ static int class_print(ScmObj obj, ScmPort *port, int mode)
 }
 
 /*
- * Hardcoded (make <class> ...)
+ * (make <class> ...)   - default method to make a class instance.
  */
 
 static ScmObj class_make(ScmNextMethod *nm, ScmObj *args, int nargs,
@@ -221,6 +254,27 @@ static ScmObj class_make(ScmNextMethod *nm, ScmObj *args, int nargs,
                nm, Scm_ArrayToList(args, nargs));
     return SCM_FALSE;
 }
+
+static ScmClass *class_make_SPEC[] = { SCM_CLASS_CLASS };
+static SCM_DEFINE_METHOD(class_make_rec, &Scm_GenericMake, 1, 1,
+                         class_make_SPEC, class_make, NULL);
+
+/*
+ * (allocate-instance <class> initargs)
+ */
+static ScmObj allocate(ScmNextMethod *nm, ScmObj *args, int nargs, void *d)
+{
+    ScmClass *c = SCM_CLASS(args[0]);
+    if (c->allocate == NULL) {
+        Scm_Error("built-in class can't be allocated via allocate-instance: %S",
+                  SCM_OBJ(c));
+    }
+    return c->allocate(c);
+}
+
+static ScmClass *class_allocate_SPEC[] = { SCM_CLASS_CLASS, SCM_CLASS_LIST };
+static SCM_DEFINE_METHOD(class_allocate_rec, &Scm_GenericAllocate,
+                         2, 0, class_allocate_SPEC, allocate, NULL);
 
 /*
  * Get class
@@ -280,14 +334,12 @@ ScmObj Scm_ClassCPL(ScmClass *klass)
 static void class_cpl_set(ScmClass *klass, ScmObj val)
 {
     ScmObj cp;
+    int len;
     if (!SCM_PAIRP(val)) goto err;
     if (SCM_CAR(val) != SCM_OBJ(klass)) goto err;
-    SCM_FOR_EACH(cp, val) {
-        if (!Scm_TypeP(SCM_CAR(cp), SCM_CLASS_CLASS)) goto err;
-        if (SCM_NULLP(SCM_CDR(cp)) && SCM_CAR(cp) != SCM_OBJ(SCM_CLASS_TOP))
-            goto err;
-    }
-    if (!SCM_NULLP(cp)) goto err;
+    if ((len = Scm_Length(val)) < 0) goto err;
+    klass->cpa = class_list_to_array(val, len);
+    if (klass->cpa[len-1] != SCM_CLASS_TOP) goto err;
     klass->cpl = Scm_CopyList(val);
     return;
   err:
@@ -414,20 +466,6 @@ ScmObj Scm_ComputeCPL(ScmClass *klass, ScmObj directSupers)
     return result;
 }
 
-/* allocate-instance fallback */
-ScmObj Scm_AllocateInstance(ScmObj klass, ScmObj initargs)
-{
-    ScmClass *c;
-    if (!Scm_TypeP(klass, SCM_CLASS_CLASS))
-        Scm_Error("can't allocate instance of non class: %S", klass);
-    c = SCM_CLASS(klass);
-    if (c->allocate == NULL) {
-        Scm_Error("built-in class can't be allocated via allocate-instance: %S",
-                  klass);
-    }
-    return c->allocate(c, c->numInstanceSlots);
-}
-
 /*=====================================================================
  * Slot accessors
  */
@@ -497,10 +535,10 @@ ScmObj Scm_GetSlotAllocation(ScmObj slot)
  * Generic function
  */
 
-static ScmObj generic_allocate(ScmClass *klass, int nslots)
+static ScmObj generic_allocate(ScmClass *klass)
 {
     ScmGeneric *instance;
-    SCM_ASSERT(nslots >= 0);
+    int nslots = klass->numInstanceSlots;
     instance = SCM_NEW2(ScmGeneric*,
                         sizeof(ScmGeneric) + sizeof(ScmObj)*nslots);
     SCM_SET_CLASS(instance, klass);
@@ -519,6 +557,31 @@ static int generic_print(ScmObj obj, ScmPort *port, int mode)
                       Scm_Length(SCM_GENERIC(obj)->methods));
 }
 
+/*
+ * (initialize <generic> &key name)  - default initialize function for gf
+ */
+static ScmObj generic_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
+                                 void *data)
+{
+    ScmGeneric *g = SCM_GENERIC(args[0]);
+    ScmObj initargs = args[1], name;
+    name = Scm_GetKeyword(key_name, initargs, SCM_FALSE);
+    g->common.info = name;
+    return SCM_OBJ(g);
+}
+
+static ScmClass *generic_initialize_SPEC[] = {
+    SCM_CLASS_GENERIC, SCM_CLASS_LIST
+};
+static SCM_DEFINE_METHOD(generic_initialize_rec,
+                         &Scm_GenericInitialize,
+                         2, 0,
+                         generic_initialize_SPEC,
+                         generic_initialize, NULL);
+
+/*
+ * Accessors
+ */
 static ScmObj generic_name(ScmGeneric *gf)
 {
     return gf->common.info;
@@ -553,19 +616,18 @@ ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf, ScmObj *args, int nargs)
 
     SCM_FOR_EACH(mp, methods) {
         ScmMethod *m = SCM_METHOD(SCM_CAR(mp));
-        ScmObj sp, *ap;
+        ScmObj *ap;
+        ScmClass **sp;
         int n;
         
         if (nargs < m->common.required) continue;
         if (!m->common.optional && nargs > m->common.required) continue;
         for (ap = args, sp = m->specializers, n = 0;
-             n < nargs && SCM_PAIRP(sp);
-             ap++, n++, sp = SCM_CDR(sp)) {
-            ScmClass *aclass = Scm_ClassOf(*ap);
-            ScmClass *sclass = SCM_CLASS(SCM_CAR(sp));
-            if (!Scm_SubtypeP(aclass, sclass)) break;
+             n < m->common.required;
+             ap++, sp++, n++) {
+            if (!Scm_SubtypeP(Scm_ClassOf(*ap), *sp)) break;
         }
-        if (SCM_NULLP(sp)) SCM_APPEND1(h, t, SCM_OBJ(m));
+        if (n == m->common.required) SCM_APPEND1(h, t, SCM_OBJ(m));
     }
     return h;
 }
@@ -576,28 +638,83 @@ ScmObj Scm_SortMethods(ScmObj methods, ScmObj *args, int nargs)
     return methods;
 }
 
-SCM_DEFINE_GENERIC(Scm_GenericInitialize, Scm_NoNextMethod, NULL);
-SCM_DEFINE_GENERIC(Scm_GenericMake, Scm_NoNextMethod, NULL);
-
 /*=====================================================================
  * Method
  */
 
-static ScmObj method_allocate(ScmClass *klass, int nslots)
+static ScmObj method_allocate(ScmClass *klass)
 {
     ScmMethod *instance;
-    SCM_ASSERT(nslots >= 0);
+    int nslots = klass->numInstanceSlots;
     instance = SCM_NEW2(ScmMethod*,
                         sizeof(ScmMethod) + sizeof(ScmObj)*nslots);
     SCM_SET_CLASS(instance, klass);
     SCM_PROCEDURE_INIT(instance, 0, 0, SCM_PROC_METHOD, SCM_FALSE);
     instance->generic = NULL;
-    instance->specializers = SCM_NIL;
+    instance->specializers = NULL;
     instance->func = NULL;
     /* TODO: initialize extended slots */
     return SCM_OBJ(instance);
 }
 
+static int method_print(ScmObj obj, ScmPort *port, int mode)
+{
+    return Scm_Printf(port, "#<method %S>",
+                      SCM_METHOD(obj)->common.info);
+}
+
+/*
+ * (initialize <method> (&key lamdba-list generic specializers body))
+ *    Method initialization.
+ */
+static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
+                                void *data)
+{
+#if 0 /* not finished yet */
+    ScmMethod *m = SCM_METHOD(args[0]);
+    ScmObj initargs = args[1];
+    ScmObj llist = Scm_GetKeyword(key_lambda_list, initargs, SCM_FALSE);
+    ScmObj generic = Scm_GetKeyword(key_generic, initargs, SCM_FALSE);
+    ScmObj specs = Scm_GetKeyword(key_specializers, initargs, SCM_FALSE);
+    ScmObj body = Scm_GetKeyword(key_body, initargs, SCM_FALSE);
+    ScmClass **specarray;
+    ScmObj lp;
+    int speclen, req = 0, opt = 0;
+
+    if (!Scm_TypeP(generic, SCM_CLASS_GENERIC))
+        Scm_Error("generic function required for :generic argument: %S",
+                  generic);
+    if (!SCM_CLOSUREP(body))
+        Scm_Error("closure required for :body argument: %S", body);
+    if (!SCM_PAIRP(specs) ||(speclen = Scm_Length(specs)) < 0)
+        Scm_Error("invalid specializers list: %S", specs);
+    specarray = class_list_to_array(specs, speclen);
+
+    /* find out # of args from lambda list */
+    SCM_FOR_EACH(lp, llist) req++;
+    if (!SCM_NULLP(lp)) opt++;
+
+    if (SCM_PROCEDURE_REQUIRED(body) != req + opt + 1)
+        Scm_Error("body doesn't match with specified lambda list: %S", body);
+#endif
+
+    Scm_Printf(SCM_CURERR, "method_initialize(%S, %S)\n",
+               nm, Scm_ArrayToList(args, nargs));
+    return SCM_FALSE;
+}
+
+static ScmClass *method_initialize_SPEC[] = {
+    SCM_CLASS_METHOD, SCM_CLASS_LIST
+};
+static SCM_DEFINE_METHOD(method_initialize_rec,
+                         &Scm_GenericInitialize,
+                         2, 0,
+                         method_initialize_SPEC,
+                         method_initialize, NULL);
+
+/*
+ * Accessors
+ */
 static ScmObj method_generic(ScmMethod *m)
 {
     return m->generic ? SCM_OBJ(m->generic) : SCM_FALSE;
@@ -613,14 +730,27 @@ static void method_generic_set(ScmMethod *m, ScmObj val)
 
 static ScmObj method_specializers(ScmMethod *m)
 {
-    return m->specializers;
+    if (m->specializers) {
+        return class_array_to_list(m->specializers, m->common.required);
+    } else {
+        return SCM_NIL;
+    }
 }
 
 static void method_specializers_set(ScmMethod *m, ScmObj val)
 {
-    m->specializers = val;
+    int len = Scm_Length(val);
+    if (len != m->common.required)
+        Scm_Error("specializer list doesn't match body's lambda list:", val);
+    if (len == 0) 
+        m->specializers = NULL;
+    else 
+        m->specializers = class_list_to_array(val, len);
 }
 
+/*
+ * ADD-METHOD, and it's default method version.
+ */
 ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
 {
     if (method->generic && method->generic != gf)
@@ -635,8 +765,17 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
     return SCM_UNDEFINED;
 }
 
-static SCM_DEFINE_METHOD(method_make_class, &Scm_GenericMake,
-                         1, 1, class_make, NULL);
+static ScmObj generic_addmethod(ScmNextMethod *nm, ScmObj *args, int nargs,
+                                void *data)
+{
+    return Scm_AddMethod(SCM_GENERIC(args[0]), SCM_METHOD(args[1]));
+}
+
+static ScmClass *generic_addmethod_SPEC[] = {
+    SCM_CLASS_GENERIC, SCM_CLASS_METHOD
+};
+static SCM_DEFINE_METHOD(generic_addmethod_rec, &Scm_GenericAddMethod, 2, 0,
+                         generic_addmethod_SPEC, generic_addmethod, NULL);
 
 /*=====================================================================
  * Next Method
@@ -702,7 +841,7 @@ static ScmClassStaticSlotSpec method_slots[] = {
 /* booting class metaobject */
 void bootstrap_class(ScmClass *k,
                      ScmClassStaticSlotSpec *specs,
-                     ScmObj (*allocate)(ScmClass*, int))
+                     ScmObj (*allocate)(ScmClass*))
 {
     ScmObj slots = SCM_NIL, t;
     ScmObj acc = SCM_NIL;
@@ -733,10 +872,18 @@ void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod)
     Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(gf));
 }
 
-void Scm_InitBuiltinMethod(ScmMethod *m, ScmObj specializers)
+void Scm_InitBuiltinMethod(ScmMethod *m)
 {
-    m->specializers = specializers;
-    m->common.info = Scm_Cons(m->generic->common.info, specializers);
+    ScmObj info = SCM_NIL, t;
+    ScmClass **cp;
+    int i;
+
+    /* build info */
+    SCM_APPEND1(info, t, m->generic->common.info);
+    for (i=0, cp=m->specializers; i<m->common.required; i++, cp++) {
+        SCM_APPEND1(info, t, (*cp)->name);
+    }
+    m->common.info = info;
     Scm_AddMethod(m->generic, m);
 }
 
@@ -747,6 +894,12 @@ void Scm__InitClass(void)
 
     key_allocation = SCM_MAKE_KEYWORD("allocation");
     key_instance = SCM_MAKE_KEYWORD("instance");
+    key_builtin = SCM_MAKE_KEYWORD("builtin");
+    key_name = SCM_MAKE_KEYWORD("name");
+    key_lambda_list = SCM_MAKE_KEYWORD("lambda-list");
+    key_generic = SCM_MAKE_KEYWORD("generic");
+    key_specializers = SCM_MAKE_KEYWORD("specializers");
+    key_body = SCM_MAKE_KEYWORD("body");
 
     /* booting class metaobject */
     Scm_TopClass.cpa = nullcpa;
@@ -835,10 +988,14 @@ void Scm__InitClass(void)
     /* vm.c */
     CINIT(SCM_CLASS_VM,               "<vm>");
 
-    Scm_InitBuiltinGeneric(&Scm_GenericInitialize, "initialize", mod);
     Scm_InitBuiltinGeneric(&Scm_GenericMake, "make", mod);
+    Scm_InitBuiltinGeneric(&Scm_GenericAllocate, "allocate-instance", mod);
+    Scm_InitBuiltinGeneric(&Scm_GenericInitialize, "initialize", mod);
+    Scm_InitBuiltinGeneric(&Scm_GenericAddMethod, "add-method!", mod);
 
-    Scm_InitBuiltinMethod(&method_make_class,
-                          SCM_LIST1(SCM_OBJ(SCM_CLASS_CLASS)));
-
+    Scm_InitBuiltinMethod(&class_make_rec);
+    Scm_InitBuiltinMethod(&class_allocate_rec);
+    Scm_InitBuiltinMethod(&generic_initialize_rec);
+    Scm_InitBuiltinMethod(&generic_addmethod_rec);
+    Scm_InitBuiltinMethod(&method_initialize_rec);
 }

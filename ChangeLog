@@ -1,3 +1,10 @@
+2001-03-21  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.2.7
+	* src/gauche.h, src/class.c: further code for C-defined generic
+	  functions and methods.
+	* src/vm.c: integration of method invocation.
+
 2001-03-19  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.2.6

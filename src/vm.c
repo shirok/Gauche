@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.58 2001-03-20 09:56:10 shiro Exp $
+ *  $Id: vm.c,v 1.59 2001-03-21 19:31:50 shiro Exp $
  */
 
 #include "gauche.h"
@@ -454,6 +454,12 @@ static void run_loop()
                     }
                 } else if (proctype == SCM_PROC_NEXT_METHOD) {
                     ScmNextMethod *n = SCM_NEXT_METHOD(val0);
+                    if (nargs == 0) {
+                        /* TODO: check sp boundary */
+                        memcpy(sp, n->args, sizeof(ScmObj)*n->nargs);
+                        sp += n->nargs;
+                        nargs = n->nargs;
+                    }
                     if (SCM_NULLP(n->methods)) {
                         val0 = SCM_OBJ(n->generic);
                         proctype = SCM_PROC_GENERIC;
@@ -507,13 +513,25 @@ static void run_loop()
                                                        SCM_GENERIC(val0));
                     RESTORE_REGS();
                 } else if (proctype == SCM_PROC_METHOD) {
+                    ScmMethod *m = SCM_METHOD(val0);
                     VM_ASSERT(!SCM_FALSEP(nm));
-                    SAVE_REGS();
-                    val0 = SCM_METHOD(val0)->func(SCM_NEXT_METHOD(nm),
-                                                  argp->data,
-                                                  argcnt,
-                                                  SCM_METHOD(val0)->data);
-                    RESTORE_REGS();
+                    if (m->func) {
+                        /* C-defined method */
+                        SAVE_REGS();
+                        val0 = m->func(SCM_NEXT_METHOD(nm),
+                                       argp->data,
+                                       argcnt,
+                                       m->data);
+                        RESTORE_REGS();
+                    } else {
+                        /* Scheme-defined method.  next-method arg is passed
+                           as the last arg (note that rest arg is already
+                           folded. */
+                        /* TODO: stack boundary check */
+                        PUSH_ARG(SCM_OBJ(nm));
+                        env->up = m->env;
+                        pc = SCM_OBJ(m->data);
+                    }
                 } else {
                     Scm_Panic("(VM_CALL) something wrong internally");
                 }

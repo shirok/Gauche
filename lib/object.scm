@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.4 2001-03-20 09:58:05 shiro Exp $
+;;;  $Id: object.scm,v 1.5 2001-03-21 19:31:50 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -20,6 +20,14 @@
 ;;;
 ;;; This module is A WORK IN PROGRESS.   Don't expect this to work.
 ;;;
+
+;;; Bootstrapping "make"
+
+(define (%make class . initargs)
+  (initialize (allocate-instance class initargs) initargs))
+
+
+
 
 (define-syntax define-class
   (syntax-rules ()

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.85 2001-03-20 09:56:10 shiro Exp $
+ *  $Id: gauche.h,v 1.86 2001-03-21 19:31:50 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -297,7 +297,7 @@ struct ScmClassRec {
     int (*equal)(ScmObj x, ScmObj y);
     int (*compare)(ScmObj x, ScmObj y);
     int (*serialize)(ScmObj obj, ScmPort *sink, ScmObj context);
-    ScmObj (*allocate)(ScmClass *klass, int nslots);
+    ScmObj (*allocate)(ScmClass *klass);
     struct ScmClassRec **cpa;
     short numInstanceSlots;     /* # of instance slots */
     unsigned short flags;
@@ -1503,13 +1503,19 @@ extern ScmClass Scm_GenericClass;
 void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod);
 ScmObj Scm_NoNextMethod(ScmObj *args, int nargs, ScmGeneric *gf);
 
-/* Method - method */
+/* Method - method
+   A method can be defined either by C or by Scheme.  C-defined method
+   have func ptr, with optional data.   Scheme-define method has NULL
+   in func, code in data, and optional environment in env.
+   We can't use union here since we want to initialize C-defined method
+   statically. */
 struct ScmMethodRec {
     ScmProcedure common;
     ScmGeneric *generic;
-    ScmObj specializers;
+    ScmClass **specializers;    /* array of specializers, size==required */
     ScmObj (*func)(ScmNextMethod *nm, ScmObj *args, int nargs, void * data);
-    void *data;
+    void *data;                 /* closure, or code */
+    ScmEnvFrame *env;           /* for Scheme-defined method */
 };
 
 extern ScmClass Scm_MethodClass;
@@ -1517,13 +1523,13 @@ extern ScmClass Scm_MethodClass;
 #define SCM_METHODP(obj)           SCM_XTYPEP(obj, SCM_CLASS_METHOD)
 #define SCM_METHOD(obj)            ((ScmMethod*)obj)
 
-#define SCM_DEFINE_METHOD(cvar, generic, required, optional, func, data)      \
-    ScmMethod cvar = {                                                        \
-        { SCM_CLASS_METHOD, required, optional, SCM_PROC_METHOD, SCM_FALSE }, \
-        generic, SCM_NIL, func, data                                          \
+#define SCM_DEFINE_METHOD(cvar, gf, req, opt, specs, func, data)        \
+    ScmMethod cvar = {                                                  \
+        { SCM_CLASS_METHOD, req, opt, SCM_PROC_METHOD, SCM_FALSE },     \
+        gf, specs, func, data, NULL                                     \
     };
 
-void Scm_InitBuiltinMethod(ScmMethod *m, ScmObj specializers);
+void Scm_InitBuiltinMethod(ScmMethod *m);
 
 /* Next method object
    Next method is just another callable entity, with memorizing
