@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.25 2001-02-19 14:48:49 shiro Exp $
+;;; $Id: extlib.stub,v 1.26 2001-02-19 22:54:58 shiro Exp $
 ;;;
 
 ;;
@@ -264,6 +264,11 @@
 (define-cproc dynamic-load (file &keyword (init-function #f))
   (assert (string? file))
   "  SCM_RETURN(Scm_DynLoad(file, init_function));")
+
+(define-cproc %make-autoload (sym path)
+  (assert (symbol? sym))
+  (assert (string? path))
+  "  SCM_RETURN(Scm_MakeAutoload(sym, path));")
 
 ;;
 ;; Hashtable
