@@ -68,6 +68,7 @@ gauche-refe.texi : gauche-ref.texi extract
 gauche-refe.info.gz : gauche-refe.texi
 	if test X$(MAKEINFO) != X -a X$(GZIP) != X; then \
 	  $(MAKEINFO) --no-warn gauche-refe.texi; \
+	  rm -rf gauche-refe.info*.gz; \
 	  $(GZIP) gauche-refe.info gauche-refe.info-[0-9]*; \
 	fi
 
@@ -89,6 +90,7 @@ gauche-refj.texi : gauche-ref.texi extract
 gauche-refj.info.gz : gauche-refj.texi
 	if test X$(MAKEINFO) != X -a X$(GZIP) != X; then \
 	  $(MAKEINFO) --no-warn gauche-refj.texi; \
+	  rm -rf gauche-refj.info*.gz; \
 	  $(GZIP) gauche-refj.info gauche-refj.info-[0-9]*; \
 	fi
 
