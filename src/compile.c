@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.29 2001-02-21 13:32:24 shiro Exp $
+ *  $Id: compile.c,v 1.30 2001-02-22 06:49:44 shiro Exp $
  */
 
 #include "gauche.h"
@@ -23,7 +23,7 @@
 
 static int identifier_print(ScmObj obj, ScmPort *port, int mode)
 {
-    return Scm_Printf(port, "#<gvar %A::%A>",
+    return Scm_Printf(port, "#<id %A::%A>",
                       SCM_IDENTIFIER(obj)->module->name,
                       SCM_IDENTIFIER(obj)->name);
 }
@@ -31,15 +31,7 @@ static int identifier_print(ScmObj obj, ScmPort *port, int mode)
 SCM_DEFCLASS(Scm_IdentifierClass, "<identifier>",
              identifier_print, SCM_CLASS_DEFAULT_CPL);
 
-ScmObj Scm_MakeIdentifier(ScmSymbol *name, ScmObj env)
-{
-    ScmIdentifier *id = SCM_NEW(ScmIdentifier);
-    SCM_SET_CLASS(id, SCM_CLASS_IDENTIFIER);
-    id->name = name;
-    id->module = SCM_CURRENT_MODULE();
-    id->env = env;
-    return SCM_OBJ(id);
-}
+/* constructor definition comes below */
 
 /*
  * SourceInfo object
@@ -94,7 +86,7 @@ enum {
 
 /*================================================================
  *
- * Compile toplevel form
+ * Compiler
  *
  *   Statically analyzes given form recursively, converting it
  *   to the intermediate form.   Syntactic error is detected here.
@@ -221,27 +213,45 @@ static inline ScmObj lookup_env(ScmObj var, ScmObj env, int op)
     ScmObj frame, fp;
     int depth = 0, offset = 0;
     SCM_FOR_EACH(frame, env) {
-        if (SCM_PAIRP(SCM_CAR(frame)) && SCM_TRUEP(SCM_CAAR(frame))) {
-            if (op) {
-                SCM_FOR_EACH(fp, SCM_CDAR(frame)) {
-                    if (SCM_CAAR(fp) == var) return SCM_CDAR(fp);
+        if (SCM_PAIRP(SCM_CAR(frame))) {
+            if (SCM_TRUEP(SCM_CAAR(frame))) {
+                if (op) {
+                    SCM_FOR_EACH(fp, SCM_CDAR(frame)) {
+                        if (SCM_CAAR(fp) == var) return SCM_CDAR(fp);
+                    }
                 }
+                continue;
             }
-            continue;
-        }
-        SCM_FOR_EACH(fp, SCM_CAR(frame)) {
-            if (SCM_CAR(fp) == var)
-                return SCM_VM_INSN2(SCM_VM_LREF, depth, offset);
-            offset++;
+            SCM_FOR_EACH(fp, SCM_CAR(frame)) {
+                if (SCM_CAR(fp) == var)
+                    return SCM_VM_INSN2(SCM_VM_LREF, depth, offset);
+                offset++;
+            }
         }
         depth++;
         offset = 0;
     }
     if (SCM_SYMBOLP(var) && !op) {
-        return Scm_MakeIdentifier(SCM_SYMBOL(var), env);
+        return Scm_MakeIdentifier(SCM_SYMBOL(var), SCM_NIL);
     } else {
         return var;
     }
+}
+
+static inline ScmObj get_binding_frame(ScmObj var, ScmObj env)
+{
+    ScmObj frame, fp;
+    SCM_FOR_EACH(frame, env) {
+        if (!SCM_PAIRP(SCM_CAR(frame))) continue;
+        if (SCM_TRUEP(SCM_CAAR(frame))) {
+            SCM_FOR_EACH(fp, SCM_CDAR(frame))
+                if (SCM_CAAR(fp) == var) return frame;
+        } else {
+            SCM_FOR_EACH(fp, SCM_CAR(frame))
+                if (SCM_CAR(fp) == var) return frame;
+        }
+    }
+    return SCM_NIL;
 }
 
 static inline int global_eq(ScmObj var, ScmObj sym, ScmObj env)
@@ -258,12 +268,30 @@ static inline int global_eq(ScmObj var, ScmObj sym, ScmObj env)
     }
 }
 
-ScmObj Scm_CompileLookupEnv(ScmObj sym, ScmObj env)
+ScmObj Scm_CompileLookupEnv(ScmObj sym, ScmObj env, int op)
 {
-    return lookup_env(sym, env, FALSE);
+    return lookup_env(sym, env, op);
 }
 
-/*
+ScmObj Scm_MakeIdentifier(ScmSymbol *name, ScmObj env)
+{
+    ScmObj fp;
+    ScmIdentifier *id = SCM_NEW(ScmIdentifier);
+    SCM_SET_CLASS(id, SCM_CLASS_IDENTIFIER);
+    id->name = name;
+    id->module = SCM_CURRENT_MODULE();
+    id->env = (env == SCM_NIL)? SCM_NIL : get_binding_frame(SCM_OBJ(name), env);
+    return SCM_OBJ(id);
+}
+
+/* returns true if SYM has the same binding with ID in ENV. */
+int Scm_IdentifierBindingEqv(ScmIdentifier *id, ScmSymbol *sym, ScmObj env)
+{
+    ScmObj bf = get_binding_frame(SCM_OBJ(sym), env);
+    return (bf == id->env);
+}
+
+/*------------------------------------------------------------------
  * Compiler main body
  */
 
@@ -365,17 +393,17 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
     }
 }
 
-/* obj may be a symbol or global var */
+/* obj may be a symbol or an identifier */
 static ScmObj compile_varref(ScmObj obj, ScmObj env)
 {
-    ScmObj code = SCM_NIL, codetail;
+    ScmObj loc, code = SCM_NIL, codetail;
 
-    obj = lookup_env(obj, env, FALSE);
-    if (VAR_P(obj)) {
+    loc = lookup_env(obj, env, FALSE);
+    if (VAR_P(loc)) {
         ADDCODE1(SCM_VM_INSN(SCM_VM_GREF));
-        ADDCODE1(obj);
+        ADDCODE1(loc);
     } else {
-        ADDCODE1(obj);
+        ADDCODE1(loc);
     }
     ADDCODE1(Scm_MakeSourceInfo(obj, NULL));
     return code;
@@ -1012,7 +1040,7 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
     if (type == BIND_LETREC) cfr = vars;
     else                     cfr = SCM_NIL;
     newenv = Scm_Cons(cfr, env);
-    
+
     for (count=0, varp=vars, valp=vals;
          count<nvars;
          count++, varp=SCM_CDR(varp), valp=SCM_CDR(valp)) {
