@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.94 2004-11-21 12:46:59 shirok Exp $
+ *  $Id: load.c,v 1.95 2005-02-19 03:10:11 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -386,7 +386,7 @@ int Scm_Load(const char *cpath, int flags)
     ScmObj r, f = SCM_MAKE_STR_COPYING(cpath);
     ScmObj options = SCM_NIL;
     
-    if (!(flags&SCM_LOAD_QUIET_NOFILE)) {
+    if (flags&SCM_LOAD_QUIET_NOFILE) {
         options = Scm_Cons(key_error_if_not_found,
                            Scm_Cons(SCM_FALSE, options));
     }
@@ -797,7 +797,7 @@ ScmObj Scm_Require(ScmObj feature)
     ScmVM *vm = Scm_VM();
     ScmObj provided, providing, p, q;
     int loop = FALSE;
-    
+
     if (!SCM_STRINGP(feature)) {
         Scm_Error("require: string expected, but got %S\n", feature);
     }
