@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.41 2001-09-18 07:51:35 shirok Exp $
+ *  $Id: port.c,v 1.42 2001-11-03 09:56:35 shirok Exp $
  */
 
 #include <unistd.h>
@@ -1034,6 +1034,68 @@ ScmObj Scm_MakeBufferedPort(int direction, /* SCM_PORT_{INPUT|OUTPUT} */
     vt.Close = (direction == SCM_PORT_OUTPUT)? bufport_close : NULL;
     vt.Info = NULL;            /* TODO */
     return Scm_MakeVirtualPort(direction, &vt, packet, FALSE);
+}
+
+/*===============================================================
+ * with-port
+ */
+struct with_port_packet {
+    ScmPort *origport[3];
+    int mask;
+    int closep;
+};
+
+static ScmObj port_restorer(ScmObj *args, int nargs, void *data)
+{
+    struct with_port_packet *p = (struct with_port_packet*)data;
+    int pcnt = 0;
+    ScmPort *curport;
+
+    if (p->mask & SCM_PORT_CURIN) {
+        curport = SCM_CURIN;
+        SCM_CURIN = p->origport[pcnt++];
+        if (p->closep) Scm_ClosePort(curport);
+    }
+    if (p->mask & SCM_PORT_CUROUT) {
+        curport = SCM_CUROUT;
+        SCM_CUROUT = p->origport[pcnt++];
+        if (p->closep) Scm_ClosePort(curport);
+    }
+    if (p->mask & SCM_PORT_CURERR) {
+        curport = SCM_CURERR;
+        SCM_CURERR = p->origport[pcnt++];
+        if (p->closep) Scm_ClosePort(curport);
+    }
+    return SCM_UNDEFINED;
+}
+
+ScmObj Scm_WithPort(ScmPort *port[], ScmProcedure *thunk, int mask, int closep)
+{
+    ScmObj finalizer;
+    struct with_port_packet *packet;
+    int pcnt = 0;
+    
+    if (SCM_PROCEDURE_REQUIRED(thunk) != 0) {
+        Scm_Error("thunk required: %S", thunk);
+    }
+    packet = SCM_NEW(struct with_port_packet);
+    if (mask & SCM_PORT_CURIN) {
+        packet->origport[pcnt] = SCM_CURIN;
+        SCM_CURIN = port[pcnt++];
+    }
+    if (mask & SCM_PORT_CUROUT) {
+        packet->origport[pcnt] = SCM_CUROUT;
+        SCM_CUROUT = port[pcnt++];
+    }
+    if (mask & SCM_PORT_CURERR) {
+        packet->origport[pcnt] = SCM_CURERR;
+        SCM_CURERR = port[pcnt++];
+    }
+    packet->mask = mask;
+    packet->closep = closep;
+    finalizer = Scm_MakeSubr(port_restorer, (void*)packet,
+                             0, 0, SCM_FALSE);
+    return Scm_VMDynamicWind(Scm_NullProc(), SCM_OBJ(thunk), finalizer);
 }
 
 /*===============================================================

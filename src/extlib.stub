@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.112 2001-10-30 09:00:30 shirok Exp $
+;;; $Id: extlib.stub,v 1.113 2001-11-03 09:56:35 shirok Exp $
 ;;;
 
 "
@@ -671,17 +671,17 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc with-input-from-port (port thunk)
   (assert (input-port? port))
   (assert (procedure? thunk))
-  "  SCM_RETURN(Scm_WithPort(port, thunk, 0, FALSE));")
+  "  SCM_RETURN(Scm_WithPort(&port, thunk, SCM_PORT_CURIN, FALSE));")
 
 (define-cproc with-output-to-port (port thunk)
   (assert (output-port? port))
   (assert (procedure? thunk))
-  "  SCM_RETURN(Scm_WithPort(port, thunk, 1, FALSE));")
+  "  SCM_RETURN(Scm_WithPort(&port, thunk, SCM_PORT_CUROUT, FALSE));")
 
 (define-cproc with-error-to-port (port thunk)
   (assert (output-port? port))
   (assert (procedure? thunk))
-  "  SCM_RETURN(Scm_WithPort(port, thunk, 2, FALSE));")
+  "  SCM_RETURN(Scm_WithPort(&port, thunk, SCM_PORT_CURERR, FALSE));")
 
 (define-cproc port-name (port)
   (assert (port? port))

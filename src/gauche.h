@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.187 2001-10-30 09:00:30 shirok Exp $
+ *  $Id: gauche.h,v 1.188 2001-11-03 09:56:35 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1060,6 +1060,12 @@ extern int Scm_Getz(char *buf, int buflen, ScmPort *port);
 
 extern ScmObj Scm_ReadLine(ScmPort *port);
 
+extern ScmObj Scm_WithPort(ScmPort *port[], ScmProcedure *thunk,
+                           int mask, int closep);
+#define SCM_PORT_CURIN  (1<<0)
+#define SCM_PORT_CUROUT (1<<1)
+#define SCM_PORT_CURERR (1<<2)
+
 #define SCM_CURIN    SCM_VM_CURRENT_INPUT_PORT(Scm_VM())
 #define SCM_CUROUT   SCM_VM_CURRENT_OUTPUT_PORT(Scm_VM())
 #define SCM_CURERR   SCM_VM_CURRENT_ERROR_PORT(Scm_VM())
@@ -1106,14 +1112,6 @@ extern ScmObj Scm_ReadList(ScmObj port, ScmChar closer);
 
 extern ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc);
     
-/*--------------------------------------------------------
- * IO
- */
-
-extern ScmObj Scm_CallWithFile(ScmString *path, ScmProcedure *proc, int inputp);
-extern ScmObj Scm_WithFile(ScmString *path, ScmProcedure *thunk, int type);
-extern ScmObj Scm_WithPort(ScmPort *port, ScmProcedure *thunk, int type, int closep);
-
 /*--------------------------------------------------------
  * HASHTABLE
  */

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.47 2001-10-25 10:35:05 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.48 2001-11-03 09:56:35 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -88,10 +88,18 @@
     (with-module gauche (receive vals (producer) (apply consumer vals)))))
 
 (with-module gauche
-  (autoload "gauche/with" with-output-to-string call-with-output-string
+  (autoload "gauche/with" call-with-input-file call-with-output-file
+                          with-input-from-file with-output-to-file
+                          with-output-to-string call-with-output-string
                           with-input-from-string call-with-input-string
                           with-string-io call-with-string-io
                           write-to-string read-from-string))
+
+(with-module scheme
+  (define call-with-input-file  (with-module gauche call-with-input-file))
+  (define call-with-output-file (with-module gauche call-with-output-file))
+  (define with-input-from-file  (with-module gauche with-input-from-file))
+  (define with-output-to-file   (with-module gauche with-output-to-file)))
 
 (with-module gauche
   (autoload "gauche/port" port->string port->list
@@ -109,12 +117,6 @@
                                %complex-acos %complex-asin %complex-atan
                                %complex-sinh %complex-cosh %complex-tanh
                                %complex-asinh %complex-acosh %complex-atanh))
-
-;; for backward compatibility (will be gone)
-;(define r_ok (if (symbol-bound? 'r_ok) r_ok |R_OK|))
-;(define w_ok (if (symbol-bound? 'w_ok) w_ok |W_OK|))
-;(define x_ok (if (symbol-bound? 'x_ok) x_ok |X_OK|))
-;(define f_ok (if (symbol-bound? 'f_ok) f_ok |F_OK|))
 
 ;; these are so useful that I couldn't resist to add...
 (define (file-exists? path)

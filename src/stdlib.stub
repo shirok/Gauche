@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.70 2001-10-16 20:35:00 shirok Exp $
+;;; $Id: stdlib.stub,v 1.71 2001-11-03 09:56:35 shirok Exp $
 ;;;
 
 
@@ -933,18 +933,6 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
  }
 "
 
-(define-cproc call-with-input-file (file proc)
-  (assert (string? file))
-  (assert (procedure? proc))
-  "  Scm_CallWithFile(file, proc, 1);
-  SCM_RETURN(SCM_UNDEFINED);")
-
-(define-cproc call-with-output-file (file proc)
-  (assert (string? file))
-  (assert (procedure? proc))
-  "  Scm_CallWithFile(file, proc, 0);
-  SCM_RETURN(SCM_UNDEFINED);")
-
 (define-cproc input-port? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_IPORTP(obj)));")
 
@@ -956,18 +944,6 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 
 (define-cproc current-output-port ()
   "  SCM_RETURN(SCM_OBJ(SCM_CUROUT));")
-
-(define-cproc with-input-from-file (file thunk)
-  (assert (string? file))
-  (assert (procedure? thunk))
-  "  Scm_WithFile(file, thunk, 0);
-  SCM_RETURN(SCM_UNDEFINED);")
-
-(define-cproc with-output-to-file (file thunk)
-  (assert (string? file))
-  (assert (procedure? thunk))
-  "  Scm_WithFile(file, thunk, 1);
-  SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc open-input-file (path
                                &keyword (if-does-not-exist (c "key_error"))
