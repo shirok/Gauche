@@ -12,11 +12,8 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: collection.scm,v 1.4 2001-12-01 11:35:06 shirok Exp $
+;;;  $Id: collection.scm,v 1.5 2001-12-02 05:13:58 shirok Exp $
 ;;;
-
-;;; NOTE: This is an experimental implementation.
-;;; API is subject to change without notification.
 
 ;; Defines generic operations over collection.   A collection is
 ;; a set of objects, possibly containing infinite objects.
@@ -26,10 +23,9 @@
   (use util.queue)
   (export call-with-iterator with-iterator call-with-iterators
           call-with-builder  with-builder
-          size-of fold map map-to
-          filter filter-to remove remove-to partition partition-to
-          delete delete-to
-          find coerce-to)
+          fold map map-to for-each
+          find filter filter-to remove remove-to partition partition-to
+          size-of lazy-size-of coerce-to)
   )
 (select-module gauche.collection)
 
@@ -143,7 +139,7 @@
        (cons coll more)
        (lambda (ends? nexts)
          (do ((r knil (apply proc (fold-right (lambda (p r) (cons (p) r))
-                                              r
+                                              (list r)
                                               nexts))))
              ((any (lambda (p) (p)) ends?) r)
            #f)))))
@@ -268,7 +264,8 @@
 (define-method filter (pred (coll <collection>))
   (let ((q (make-queue)))
     (with-iterator (coll end? next)
-      (until (end?) (let ((e (next))) (when (pred e) (enqueue! q e)))))))
+      (until (end?) (let ((e (next))) (when (pred e) (enqueue! q e))))
+      (dequeue-all! q))))
 
 (define-method filter-to ((class <class>) pred (coll <collection>))
   (with-builder (class add! get)
@@ -290,7 +287,8 @@
 (define-method remove (pred (coll <collection>))
   (let ((q (make-queue)))
     (with-iterator (coll end? next)
-      (until (end?) (let ((e (next))) (unless (pred e) (enqueue! q e)))))))
+      (until (end?) (let ((e (next))) (unless (pred e) (enqueue! q e))))
+      (dequeue-all! q))))
 
 (define-method remove-to ((class <class>) pred (coll <collection>))
   (with-builder (class add! get)
@@ -355,24 +353,6 @@
   (list->vector coll))
 (define-method coerce-to ((class <string-meta>) (coll <list>))
   (list->string coll))
-
-;; sequence ----------------------------------------------
-
-(define-method subseq ((coll <collection>))
-  (subseq coll 0 (size-of coll)))
-
-(define-method subseq ((coll <collection>) start)
-  (subseq coll start (size-of coll)))
-
-(define-method subseq ((coll <collection>) start end)
-  (when (< end 0) (set! end (modulo end (size-of coll))))
-  (when (> start end)
-    (errorf "start ~a must be smaller than or equal to end ~a" start end))
-  (let ((size (- end start)))
-    (with-builder ((class-of coll) add! get :size size)
-      (with-iterator (coll end? next :start start)
-        (dotimes (i size (get)) (add! (next)))))))
-
 
 
 (provide "gauche/collection")
