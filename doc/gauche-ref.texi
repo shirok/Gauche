@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.367 2003-02-11 01:05:43 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.368 2003-02-18 13:27:26 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -24589,15 +24589,23 @@ number of days since 1858-11-17T00:00:00Z
 @subsection Time procedures
 @c NODE 時間に関する手続き
 
-@defun make-time type seconds nanoseconds
+@defun make-time type nanoseconds seconds
 [SRFI-19]
 @c EN
 Returns an instance of @code{<time>} class with specified initial values.
 Equivalent to @code{(make <time> :type type :second seconds :nanosecond nanoseconds)}.
+
+(This funciton had been defined incorrectly before release 0.6.8; 
+the arguments @var{seconds} and @var{nanoseconds} were switched.
+Please check your code if it uses @code{make-time}).
 @c JP
 与えられた初期値を持つ@code{<time>}クラスのインスタンスを返します。
 @code{(make <time> :type type :second seconds :nanosecond nanoseconds)}
 と等価です。
+
+(この関数は0.6.8より前のリリースでは間違って定義されていました。
+@var{seconds}と@var{nanoseconds}の引数が逆になっていたのです。
+@code{make-time}を使っているコードは注意して下さい)。
 @c COMMON
 @end defun
 
