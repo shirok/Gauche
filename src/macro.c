@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.14 2001-03-03 11:01:04 shiro Exp $
+ *  $Id: macro.c,v 1.15 2001-03-04 07:57:01 shiro Exp $
  */
 
 #include "gauche.h"
@@ -797,7 +797,7 @@ static ScmObj compile_syntax_rules(ScmObj form, ScmObj env,
 
 static ScmSyntax syntax_syntax_rules = {
     SCM_CLASS_SYNTAX,
-    SCM_SYMBOL(SCM_SYM_SYNTAX_RULES),
+    SCM_SYMBOL(SCM_SYM_SYNTAX_RULES_INT),
     compile_syntax_rules,
     NULL
 };
@@ -809,8 +809,7 @@ static ScmSyntax syntax_syntax_rules = {
 static ScmObj compile_let_syntax(ScmObj form, ScmObj env, int ctx, void *data)
 {
     int letrecp = (data != NULL);
-    ScmObj vars = SCM_NIL, vars_t;
-    ScmObj rules = SCM_NIL, rules_t;
+    ScmObj var, rule, vars = SCM_NIL, vars_t;
     ScmObj frame = SCM_NIL, frame_t;
     ScmObj syntax, body, synbinds, sp, newenv;
 
@@ -821,25 +820,48 @@ static ScmObj compile_let_syntax(ScmObj form, ScmObj env, int ctx, void *data)
     SCM_APPEND1(frame, frame_t, SCM_TRUE);
 
     if (!SCM_PAIRP(synbinds))
-        Scm_Error("%S: malformed syntaxtic bindings: %S", syntax, form);
+        Scm_Error("%S: malformed syntactic bindings: %S", syntax, form);
     
     SCM_FOR_EACH(sp, synbinds) {
-        ScmObj synbind = SCM_CAR(sp), var, rule;
-        if (Scm_Length(synbind) != 2) 
-            Scm_Error("%S: malformed syntaxtic bindings: %S", syntax, synbind);
-        if (!SCM_SYMBOLP(var))
-            Scm_Error("%S: malformed syntaxtic bindings: %S", syntax, synbind);
-        if (!SCM_PAIRP(rule))
-            Scm_Error("%S: malformed syntaxtic bindings: %S", syntax, synbind);
-        SCM_APPEND1(vars, vars_t, var);
-        SCM_APPEND1(rules, rules_t, rule);
-        if (letrecp) SCM_APPEND1(frame, frame_t, Scm_Cons(var, SCM_NIL));
-    }
+        ScmObj synbind = SCM_CAR(sp);
+        if (Scm_Length(synbind) != 2)
+            Scm_Error("%S: malformed syntactic binding: %S", syntax, synbind);
+        var = SCM_CAR(synbind);
+        rule = SCM_CADR(synbind);
+        if (!SCM_SYMBOLP(var) && !SCM_IDENTIFIERP(var))
+            Scm_Error("%S: symbol required in syntactic binding: %S",
+                      syntax, synbind);
+        if (!SCM_PAIRP(rule) ||
+            !Scm_FreeVariableEqv(SCM_CAR(rule), SCM_SYM_SYNTAX_RULES, env))
+            Scm_Error("%S: needs syntax-rules form, but got: %S",
+                      syntax, rule);
+        if (!SCM_FALSEP(Scm_Memq(var, vars)))
+            Scm_Error("%S: duplicate names in syntactic bindings: %S",
+                      syntax, var);
 
+        SCM_APPEND1(vars, vars_t, var);
+        SCM_APPEND1(frame, frame_t, Scm_Cons(var, rule));
+    }
+    newenv = letrecp? Scm_Cons(frame, env) : env;
+
+    /* compile rules */
+    SCM_FOR_EACH(sp, SCM_CDR(frame)) {
+        ScmObj synrule;
+        
+        var = SCM_CAAR(sp);
+        rule = SCM_CDAR(sp);
+        synrule = compile_syntax_rules(Scm_Cons(SCM_SYM_SYNTAX_RULES_INT,
+                                                Scm_Cons(var, SCM_CDR(rule))),
+                                       newenv, ctx, NULL);
+        SCM_ASSERT(SCM_PAIRP(synrule));
+        SCM_SET_CDR(SCM_CAR(sp), SCM_CAR(synrule));
+    }
     
+    if (!letrecp) newenv = Scm_Cons(frame, env);
+
+    Scm_Printf(SCM_CUROUT, "$$$ %S\n", newenv);
     
-    Scm_Error("%S is not supported yet.", SCM_CAR(form));
-    return SCM_NIL;
+    return Scm_CompileBody(body, newenv, ctx);
 }
 
 static ScmSyntax syntax_let_syntax = {
@@ -871,6 +893,7 @@ static ScmObj compile_macro_expand(ScmObj form, ScmObj env,
                                    int ctx, void *data)
 {
     ScmObj expr, sym;
+    ScmSyntax *syn;
     ScmGloc *gloc;
     int oncep = (int)data;
 
@@ -883,26 +906,33 @@ static ScmObj compile_macro_expand(ScmObj form, ScmObj env,
         if (!SCM_SYMBOLP(SCM_CAR(expr)) && !SCM_IDENTIFIERP(SCM_CAR(expr)))
             return SCM_LIST1(expr);
 
+        syn = NULL;
         sym = Scm_CompileLookupEnv(SCM_CAR(expr), env, TRUE);
-        /* TODO: check local syntactic binding */
-        if (SCM_IDENTIFIERP(sym)) {
-            sym = SCM_OBJ(SCM_IDENTIFIER(sym)->name);
+        if (SCM_SYNTAXP(sym)) {
+            /* local syntactic binding */
+            syn = SCM_SYNTAX(sym);
+        } else {
+            if (SCM_IDENTIFIERP(sym)) {
+                sym = SCM_OBJ(SCM_IDENTIFIER(sym)->name);
+            }
+            if (SCM_SYMBOLP(sym)) {
+                ScmGloc *g = Scm_FindBinding(Scm_VM()->module, SCM_SYMBOL(sym),
+                                             FALSE);
+                if (g && SCM_SYNTAXP(g->value)) {
+                    syn = SCM_SYNTAX(g->value);
+                }
+            }
         }
-        if (SCM_SYMBOLP(sym)) {
-            ScmGloc *g = Scm_FindBinding(Scm_VM()->module, SCM_SYMBOL(sym),
-                                         FALSE);
-            if (g && SCM_SYNTAXP(g->value)) {
-                ScmSyntax *syn = SCM_SYNTAX(g->value);
-                if (syn->compiler == macro_transform) {
-                    ScmObj proc = SCM_OBJ(syn->data);
-                    expr = Scm_Apply(proc, expr);
-                    if (!oncep) continue;
-                }
-                if (syn->compiler == synrule_transform) {
-                    ScmSyntaxRules *sr = (ScmSyntaxRules *)syn->data;
-                    expr = synrule_expand(expr, env, sr);
-                    if (!oncep) continue;
-                }
+        if (syn) {
+            if (syn->compiler == macro_transform) {
+                ScmObj proc = SCM_OBJ(syn->data);
+                expr = Scm_Apply(proc, expr);
+                if (!oncep) continue;
+            }
+            if (syn->compiler == synrule_transform) {
+                ScmSyntaxRules *sr = (ScmSyntaxRules *)syn->data;
+                expr = synrule_expand(expr, env, sr);
+                if (!oncep) continue;
             }
         }
         break;
@@ -935,7 +965,7 @@ void Scm__InitMacro(void)
 #define DEFSYN(symbol, syntax) \
     Scm_Define(m, SCM_SYMBOL(symbol), SCM_OBJ(&syntax))
     
-    DEFSYN(SCM_SYM_SYNTAX_RULES, syntax_syntax_rules);
+    DEFSYN(SCM_SYM_SYNTAX_RULES_INT, syntax_syntax_rules);
     DEFSYN(SCM_SYM_LET_SYNTAX, syntax_let_syntax);
     DEFSYN(SCM_SYM_LETREC_SYNTAX, syntax_letrec_syntax);
     DEFSYN(SCM_SYM_MACRO_EXPAND, syntax_macro_expand);
