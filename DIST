@@ -91,12 +91,9 @@ if [ "$test" = "yes" ]; then
   ./configure --enable-threads=pthreads --prefix=`pwd`/../test-inst
   make
   make -s test
-  make install
+  make install-check
   cd ..
   testgosh=`pwd`/test-inst/bin/gosh
-  for tt in `cat ./Gauche-$VERSION/test/TESTS`; do
-    $testgosh -I./Gauche-$VERSION/test $tt >> test.log
-  done
   if [ -f $XTRA_TEST_DIR/r4rstest/r4rstest.scm ]; then
     (cd $XTRA_TEST_DIR/r4rstest/ && make GOSH=$testgosh test)
   fi
