@@ -1,3 +1,15 @@
+2001-09-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/cookie.scm : added construct-cookie-string
+	* lib/gauche/regexp.scm : allow user-specified  procedure to be
+	  called in regexp-replace[-all].
+	* lib/text/tr.scm, lib/text/cvs.scm, lib/w3c/cgi.scm : added
+	  more features.
+	* src/vm.c : fixed a bug that exception handler didn't get a
+	  proper stack trace.
+	* src/*.c : removed source-info stuff.
+	* lib/gauche/vm/disasm.scm : adapted to new LET-family insns.
+
 2001-09-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/cookie.scm : added
