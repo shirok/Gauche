@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.264 2002-09-10 05:58:22 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.265 2002-09-16 10:13:12 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -13056,6 +13056,7 @@ for the usage of metaclass.
 * RFC822 Message parsing::      
 * Base64 encoding/decoding::    
 * HTTP cookie handling::        
+* Quoted-printable encoding/decoding::  
 * URI parsing and construction::  
 * SLIB::                        
 * Feature Conditional::         
@@ -20827,7 +20828,7 @@ set are silently ignored.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node HTTP cookie handling, URI parsing and construction, Base64 encoding/decoding, Library modules
+@node HTTP cookie handling, Quoted-printable encoding/decoding, Base64 encoding/decoding, Library modules
 @section @code{rfc.cookie} - HTTP cookie handling
 @c NODE HTTPクッキー, @code{rfc.cookie} - HTTPクッキー
 
@@ -20919,7 +20920,44 @@ Some examples:
 @end defun
 
 @c ----------------------------------------------------------------------
-@node URI parsing and construction, SLIB, HTTP cookie handling, Library modules
+@node Quoted-printable encoding/decoding, URI parsing and construction, HTTP cookie handling, Library modules
+@section @code{rfc.quoted-printable} - Quoted-printable encoding/decoding
+@c NODE Quoted-printableエンコーディング, @code{rfc.quoted-printable} - Quoted-printableエンコーディング
+
+@deftp {Module} rfc.quoted-printable
+@mdindex rfc.quoted-printable
+This module defines a few functions to encode/decode Quoted-printable format,
+defined in RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}), section 6.7.
+@end deftp
+
+@defun quoted-printable-encode
+Reads byte stream from the current input port, encodes it in Quoted-printable
+format and writes the result character stream to the current output port.
+The conversion ends when it reads EOF from the current input port.
+@end defun
+
+@defun quoted-printable-encode-string string
+Converts contents of @var{string} to Quoted-printable encoded format.
+Input string can be either complete or incomplete string;
+it is always interpreted as a byte sequence.
+@end defun
+
+@defun quoted-printable-decode
+Reads character stream from the current input port,
+decodes it from Quoted-printable
+format and writes the result byte stream to the current output port.
+The conversion ends when it reads EOF.
+If it encounters illegal character sequence (such as '=' followed 
+by non-hexadecimal characters), it copies them literally to the output.
+@end defun
+
+@defun quoted-printable-decode-string string
+Decodes a Quoted-printable encoded string @var{string} and returns
+the result as a string.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node URI parsing and construction, SLIB, Quoted-printable encoding/decoding, Library modules
 @section @code{rfc.uri} - URI parsing and construction
 @c NODE URIの解析と作成, @code{rfc.uri} - URIの解析と作成
 
