@@ -566,7 +566,7 @@ extern GC_warn_proc GC_current_warn_proc;
 # ifdef SMALL_CONFIG
 #   define CPP_LOG_HBLKSIZE 10
 # else
-#   if CPP_WORDSZ == 32
+#   if CPP_WORDSZ == 32 || defined(HP_PA) /*Patch from ABE Hiroshi 1/24/2002*/
 #     define CPP_LOG_HBLKSIZE 12
 #   else
 #     define CPP_LOG_HBLKSIZE 13
