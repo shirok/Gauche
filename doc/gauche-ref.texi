@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.53 2001-09-09 05:43:26 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.54 2001-09-09 06:40:28 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -5234,6 +5234,30 @@ to check these options are defined.  @code{|B0|} is used to
 terminate the connection.
 @end defun
 
+The following example shows how to get a password from the user
+without echoing:
+
+@example
+(use gauche.termios)
+
+(define (get-password prompt)
+  (let* ((port (current-input-port))
+         (attr (sys-tcgetattr port))
+         (lflag (slot-ref attr 'lflag)))
+    ;; Show prompt
+    (display prompt)
+    (flush)
+    ;; Turn off echo during reading.
+    (dynamic-wind
+     (lambda ()
+       (slot-set! attr 'lflag (logand lflag (lognot |ECHO|)))
+       (sys-tcsetattr port |TCSAFLUSH| attr))
+     (lambda ()
+       (read-line port))
+     (lambda ()
+       (slot-set! attr 'lflag lflag)
+       (sys-tcsetattr port |TCSANOW| attr)))))
+@end example
 
 @c ----------------------------------------------------------------------
 @node Unit Testing, RFC822 Message parsing, Termios, Libarary Modules
