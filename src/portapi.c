@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: portapi.c,v 1.8 2003-02-05 09:50:00 shirok Exp $
+ *  $Id: portapi.c,v 1.9 2003-03-25 06:18:39 shirok Exp $
  */
 
 /* This file is included twice by port.c to define safe- and unsafe-
@@ -676,7 +676,7 @@ ScmObj Scm_ReadLine(ScmPort *p)
 ScmObj Scm_ReadLineUnsafe(ScmPort *p)
 #endif
 {
-    int c1, c2;
+    int c1 = 0, c2 = 0;
     ScmDString ds;
     VMDECL;
     SHORTCUT(p, return Scm_ReadLineUnsafe(p));

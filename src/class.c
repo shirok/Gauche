@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.89 2003-01-21 11:16:13 shirok Exp $
+ *  $Id: class.c,v 1.90 2003-03-25 06:18:38 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -35,7 +35,6 @@ static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj method_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj object_allocate(ScmClass *k, ScmObj initargs);
 static ScmObj slot_accessor_allocate(ScmClass *klass, ScmObj initargs);
-static void scheme_slot_default(ScmObj obj);
 static void initialize_builtin_cpl(ScmClass *klass);
 
 static int object_compare(ScmObj x, ScmObj y, int equalp);

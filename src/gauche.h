@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.330 2003-03-06 23:27:36 shirok Exp $
+ *  $Id: gauche.h,v 1.331 2003-03-25 06:18:38 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -76,7 +76,7 @@ SCM_DECL_BEGIN
 
 /* This defines several auxiliary routines that are useful for debugging */
 #ifndef SCM_DEBUG_HELPER
-#define SCM_DEBUG_HELPER      FALSE
+#define SCM_DEBUG_HELPER      TRUE
 #endif
 
 #define SCM_INLINE_MALLOC_PRIMITIVES
@@ -717,6 +717,7 @@ SCM_CLASS_DECL(Scm_CharSetClass);
 SCM_EXTERN ScmObj Scm_MakeEmptyCharSet(void);
 SCM_EXTERN ScmObj Scm_CopyCharSet(ScmCharSet *src);
 SCM_EXTERN int    Scm_CharSetEq(ScmCharSet *x, ScmCharSet *y);
+SCM_EXTERN int    Scm_CharSetLE(ScmCharSet *x, ScmCharSet *y);
 SCM_EXTERN ScmObj Scm_CharSetAddRange(ScmCharSet *cs,
 				      ScmChar from, ScmChar to);
 SCM_EXTERN ScmObj Scm_CharSetAdd(ScmCharSet *dest, ScmCharSet *src);
@@ -2022,16 +2023,13 @@ SCM_EXTERN ScmObj Scm_MakeApplicationExit(int);
 struct ScmRegexpRec {
     SCM_HEADER;
     ScmString *pattern;
-    const char *code;
+    const unsigned char *code;
     int numGroups;
     int numCodes;
     ScmCharSet **sets;
     int numSets;
     int flags;
     ScmString *mustMatch;
-#ifdef SCM_DEBUG_HELPER
-    ScmObj ast;      /* intermediate parser result (for debug only)*/
-#endif
 };
 
 SCM_CLASS_DECL(Scm_RegexpClass);
@@ -2041,8 +2039,11 @@ SCM_CLASS_DECL(Scm_RegexpClass);
 
 /* flags */
 #define SCM_REGEXP_CASE_FOLD      (1L<<0)
+#define SCM_REGEXP_PARSE_ONLY     (1L<<1)
 
 SCM_EXTERN ScmObj Scm_RegComp(ScmString *pattern, int flags);
+SCM_EXTERN ScmObj Scm_RegCompFromAST(ScmObj ast);
+SCM_EXTERN ScmObj Scm_RegOptimizeAST(ScmObj ast);
 SCM_EXTERN ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *input);
 SCM_EXTERN void Scm_RegDump(ScmRegexp *rx);
 

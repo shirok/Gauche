@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.377 2003-03-10 05:44:15 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.378 2003-03-25 06:18:37 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -7572,6 +7572,25 @@ Returns @code{#t} iff @var{obj} is a string pointer.
 @node Regular expression, Vectors, Strings, Core library
 @section Regular expression
 @c NODE 正規表現
+
+@c EN
+Gauche has a built-in regular expression engine which is mostly
+upper-compatible of POSIX extended regular expression.
+Gauche's regexp also includes some extensions from Perl 5 regexp.
+@c JP
+GaucheはPOSIXの拡張正規表現にほぼ上位互換な正規表現エンジンを
+組込みで持っています。また、Perl 5の正規表現からいくつかの
+拡張機能を採り入れています。
+@c COMMON
+
+@c EN
+Gauche's regexp compiles the given regular expression pattern to
+an internal byte-code, which is executed by the engine when
+applied to a string.   Besides, the regexp compiler separates parsing stage
+and back-end compiler, allowing the program to provide alternative
+syntax.
+@c JP
+@c COMMON
 
 @deftp {Builtin Class} <regexp>
 @clindex regexp

@@ -1,3 +1,21 @@
+2003-03-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/charset.c (Scm_CharSetLE): implemented to-arg char-set<= in C,
+	  for it is used in regexp optimizer.  Available as %char-set<=?
+	  from Scheme.
+	* lib/srfi-14.scm (char-set<=): revised to use the native %char-set<=?.
+	* src/regexp.c (Scm_RegOptimizeAST, rex_rec): added regexp optimizer
+	  that works on AST.   Added regexp byte-code instructions that
+	  works on the special optimized paths.
+	* lib/slib.scm : provided object->string and object->limited-string.
+
+2003-03-22  Shiro Kawai  <shiro@acm.org>
+	* src/regexp.c : Total rewrite.  The compilation paths are divided
+	  more clearly.  Pass 1 and pass 2 are available individually from
+	  Scheme, as regexp-parse and regexp-compile.  Added bounded repetition
+	  "{n,m}", non-capturing group "(?:...)", scoped case sensitivity
+	  control "(?i:...)" and "(?-i:...)".
+
 2003-03-03  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/822.scm (rfc822-parse-date): fixed behavior to conform

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: srfi-14.scm,v 1.9 2003-01-09 11:27:31 shirok Exp $
+;;;  $Id: srfi-14.scm,v 1.10 2003-03-25 06:18:38 shirok Exp $
 ;;;
 
 ;; Basic operators are built in the Gauche kernel.  This module
@@ -75,16 +75,13 @@
                       (else #f))))
         ))
 
-(define (%char-set<= x y)
-  (%char-set-equal? (%char-set-add! (char-set-copy y) x) y))
-
 (define (char-set<= . args)
   (cond ((null? args) #t)
         ((null? (cdr args)) #t)
         (else (let loop ((cs (car args))
                          (rest (cdr args)))
                 (cond ((null? rest) #t)
-                      ((%char-set<= cs (car rest))
+                      ((%char-set<=? cs (car rest))
                        (loop (car rest) (cdr rest)))
                       (else #f))))
         ))

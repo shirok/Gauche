@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.40 2003-01-11 11:27:45 shirok Exp $
+ *  $Id: module.c,v 1.41 2003-03-25 06:18:39 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -355,7 +355,6 @@ ScmObj Scm_ExtendModule(ScmModule *module, ScmObj supers)
 
 ScmObj Scm_FindModule(ScmSymbol *name, int createp)
 {
-    ScmHashEntry *e;
     ScmModule *m;
     int created;
 

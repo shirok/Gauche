@@ -2,7 +2,7 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.14 2003-01-08 02:36:50 shirok Exp $
+;; $Id: regexp.scm,v 1.15 2003-03-25 06:18:39 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -220,8 +220,8 @@
        (match&list #/a\\b/ "a\\b" 1))
 (test* "a\\\\\\*b" '("a\\*b")
        (match&list #/a\\\*b/ "a\\*b" 1))
-(test* "a\\bc" '("abc")
-       (match&list #/a\bc/ "abc" 1))
+(test* "a\\jc" '("ajc")
+       (match&list #/a\jc/ "ajc" 1))
 (test* "a\\\\bc" '("a\\bc")
        (match&list #/a\\bc/ "a\\bc" 1))
 (test* "a\\[b" '("a[b")
@@ -358,6 +358,85 @@
        (match&list #/[\s\d]+/ "a 1 2 3 b " 1))
 (test* "[\\s\\D]+" '("a ")
        (match&list #/[\s\D]+/ "a 1 2 3 b " 1))
+
+;;-------------------------------------------------------------------------
+(test-section "{n,m}")
+
+(test* "a{2}"   "aabaa"    (rxmatch-after (#/a{2}/ "abaaaabaa")))
+(test* "a{2,}"  "baa"      (rxmatch-after (#/a{2,}/ "abaaaabaa")))
+(test* "a{1,2}" "baaaabaa" (rxmatch-after (#/a{1,2}/ "abaaaabaa")))
+(test* "a{2,3}" "abaa"     (rxmatch-after (#/a{2,3}/ "abaaaabaa")))
+(test* "a{b,c}" "def"      (rxmatch-after (#/a{b,c}/ "za{b,c}def")))
+(test* "a{,2}*" "def"       (rxmatch-after (#/a{,2}*/  "za{,2}}def")))
+
+(test* "(ab){2}"   "abba"      (rxmatch-after (#/(ab){2}/ "babbabababba")))
+(test* "(ab){2,2}" "abba"      (rxmatch-after (#/(ab){2}/ "babbabababba")))
+(test* "(ab){2,}"  "ba"        (rxmatch-after (#/(ab){2,}/ "babbabababba")))
+(test* "(ab){1,2}" "babababba" (rxmatch-after (#/(ab){1,2}/ "babbabababba")))
+(test* "(ab){2,3}" "ba"        (rxmatch-after (#/(ab){2,3}/ "babbabababba")))
+(test* "(ab){b,c}" "def"       (rxmatch-after (#/(ab){b,c}/ "zab{b,c}def")))
+
+(test* "(\\d{2})(\\d{2})" '("1234" "12" "34")
+       (match&list #/(\d{2})(\d{2})/ "a12345b" 3))
+(test* "(\\d{2,})(\\d{2,})" '("12345" "123" "45")
+       (match&list #/(\d{2,})(\d{2,})/ "a12345b" 3))
+(test* "(\\d{2})(\\d{2,})" '("12345" "12" "345")
+       (match&list #/(\d{2})(\d{2,})/ "a12345b" 3))
+(test* "(\\d{1,3})(\\d{2,})" '("1234" "12" "34")
+       (match&list #/(\d{1,3})(\d{2,})/ "a1234b" 3))
+(test* "(\\d{1,3})(\\d{0,2})" '("1234" "123" "4")
+       (match&list #/(\d{1,3})(\d{0,2})/ "a1234b" 3))
+(test* "(\\d{2}){2}" '("1234")
+       (match&list #/(\d{2}){2}/ "a12345b" 1))
+
+(test* "{2}" *test-error*  (regexp? (string->regexp "{2}")))
+(test* "{z}" #t            (regexp? (string->regexp "{z}")))
+(test* "{-1}" #t           (regexp? (string->regexp "{-1}")))
+(test* "{300}" *test-error* (regexp? (string->regexp "{300}")))
+(test* "{3,1}" *test-error* (regexp? (string->regexp "{3,1}")))
+
+;;-------------------------------------------------------------------------
+(test-section "uncapturing group")
+
+(test* "a(?:b)*c(d)"  "d"
+       (rxmatch-substring (#/a(?:b)*c(d)/ "abcdbcdefg") 1))
+(test* "a(?:bcd)*e(f)"  "f"
+       (rxmatch-substring (#/a(?:bcd)*e(f)/ "abcdbcdefg") 1))
+(test* "a(?:bcd)*e(f)"  "f"
+       (rxmatch-substring (#/a(?:bcd)*e(f)/ "aefg") 1))
+(test* "a(?:bcd)+e(f)"  #f
+       (rxmatch-substring (#/a(?:bcd)+e(f)/ "aefg") 1))
+(test* "a(?:bc(de(?:fg)?hi)jk)?l" "defghi"
+       (rxmatch-substring (#/a(?:bc(de(?:fg)?hi)jk)?l/ "abcdefghijkl") 1))
+(test* "a(?:bc(de(?:fg)?hi)jk)?l" "dehi"
+       (rxmatch-substring (#/a(?:bc(de(?:fg)?hi)jk)?l/ "abcdehijkl") 1))
+
+(test* "a(?i:bc)d" "aBCd"
+       (rxmatch-substring (#/a(?i:bc)d/ "!aBCd!")))
+(test* "a(?i:bc)d" #f
+       (rxmatch-substring (#/a(?i:bc)d/ "!aBCD!")))
+(test* "a(?i:[a-z]+)d" "aBcd"
+       (rxmatch-substring (#/a(?i:[a-z]+)d/ "!aBcd!")))
+(test* "a(?i:[a-z]+)d" #f
+       (rxmatch-substring (#/a(?i:[a-z]+)d/ "!ABcd!")))
+
+(test* "A(?-i:Bc)D" "ABcD"
+       (rxmatch-substring (#/A(?-i:Bc)D/ "!ABcD!")))
+(test* "A(?-i:Bc)D" #f
+       (rxmatch-substring (#/A(?-i:Bc)D/ "!ABcd!")))
+(test* "A(?-i:[A-Z]+)D" "ABCD"
+       (rxmatch-substring (#/A(?-i:[A-Z]+)D/ "!ABCD!")))
+(test* "A(?-i:[A-Z]+)D" #f
+       (rxmatch-substring (#/A(?-i:[A-Z]+)D/ "!abCD!")))
+
+(test* "A(?-i:Bc)D/i" "aBcd"
+       (rxmatch-substring (#/A(?-i:Bc)D/i "!aBcd!")))
+(test* "A(?-i:Bc)D/i" #f
+       (rxmatch-substring (#/A(?-i:Bc)D/i "!abCd!")))
+(test* "A(?-i:[A-Z]+)D/i" "aBCd"
+       (rxmatch-substring (#/A(?-i:[A-Z]+)D/i "!aBCd!")))
+(test* "A(?-i:[A-Z]+)D/i" #f
+       (rxmatch-substring (#/A(?-i:[A-Z]+)D/i "!abcd!")))
 
 ;;-------------------------------------------------------------------------
 (test-section "regexp macros")

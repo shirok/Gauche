@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with shift-jis.
 
-;; $Id: sjis.scm,v 1.7 2003-02-28 02:03:58 shirok Exp $
+;; $Id: sjis.scm,v 1.8 2003-03-25 06:18:39 shirok Exp $
 
 (use gauche.test)
 
@@ -229,19 +229,33 @@
 
 (use srfi-14)
 
-(test* "char-set" #t
+(test* "char-set=" #t
        (char-set= (char-set #\‚  #\‚¢ #\‚¤ #\‚¦ #\‚¨)
                   (string->char-set "‚¨‚¤‚¦‚¢‚ ")))
-(test* "char-set" #t
+(test* "char-set=" #t
        (char-set= (list->char-set '(#\‚  #\‚¢ #\‚¤ #\‚ñ))
                   (string->char-set "‚ñ‚ñ‚¢‚¢‚¢‚ ‚ ‚¤")))
-(test* "char-set" #t
-       (char-set<= (list->char-set '(#\‚Ù #\‚°))
-                   char-set:full))
-(test* "char-set" #t
+(test* "char-set=" #t
        (char-set= (->char-set "‚Ÿ‚¡‚£‚¥‚§‚ ‚¢‚¤‚¦")
                   (integer-range->char-set (char->integer #\‚Ÿ)
                                            (char->integer #\‚¨))))
+
+(test* "char-set" #t
+       (char-set<= (list->char-set '(#\‚Ù #\‚°))
+                   char-set:full))
+(test* "char-set<=" #t (char-set<= #[‚ ‚¢] #[‚ ‚¢]))
+(test* "char-set<=" #t (char-set<= #[‚ ‚¢] #[‚ -‚¢]))
+(test* "char-set<=" #f (char-set<= #[‚ -‚¢] #[‚ ‚¢]))
+(test* "char-set<=" #t (char-set<= #[‚ -‚¢‚¤-‚¦] #[‚ -‚¦]))
+(test* "char-set<=" #f (char-set<= #[‚ -‚¦] #[‚ -‚¢‚¤-‚¦]))
+(test* "char-set<=" #f (char-set<= #[‚ -‚¢‚¤-‚§] #[‚ -‚¦]))
+(test* "char-set<=" #f (char-set<= #[‚Ÿ-‚¢‚¤-‚¦] #[‚ -‚¦]))
+(test* "char-set<=" #t (char-set<= #[‚ -‚¢‚©-‚«] #[‚ -‚¤‚¨-‚¯]))
+(test* "char-set<=" #t (char-set<= #[‚ -‚¢‚©-‚«] #[‚ -‚¤‚¨-‚«]))
+(test* "char-set<=" #t (char-set<= #[‚ -‚¢‚©-‚«] #[‚ -‚¤‚©-‚±]))
+(test* "char-set<=" #t (char-set<= #[‚©-‚«] #[‚ -‚¤‚©-‚±]))
+(test* "char-set<=" #t (char-set<= #[‚©-‚«‚­-‚¯] #[‚ -‚¤‚©-‚±]))
+(test* "char-set<=" #f (char-set<= #[‚¤-‚­] #[‚ -‚¦‚©-‚±]))
 
 ;;-------------------------------------------------------------------
 (test-section "ports")

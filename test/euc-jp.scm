@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with euc-jp.
 
-;; $Id: euc-jp.scm,v 1.20 2003-02-28 01:07:07 shirok Exp $
+;; $Id: euc-jp.scm,v 1.21 2003-03-25 06:18:39 shirok Exp $
 
 (use gauche.test)
 
@@ -215,19 +215,32 @@
 
 (use srfi-14)
 
-(test* "char-set" #t
+(test* "char-set=" #t
        (char-set= (char-set #\あ #\い #\う #\え #\お)
                   (string->char-set "おうえいあ")))
-(test* "char-set" #t
+(test* "char-set=" #t
        (char-set= (list->char-set '(#\あ #\い #\う #\ん))
                   (string->char-set "んんいいいああう")))
-(test* "char-set" #t
-       (char-set<= (list->char-set '(#\ほ #\げ))
-                   char-set:full))
-(test* "char-set" #t
+(test* "char-set=" #t
        (char-set= (->char-set "ぁぃぅぇぉあいうえ")
                   (integer-range->char-set (char->integer #\ぁ)
                                            (char->integer #\お))))
+(test* "char-set<=" #t
+       (char-set<= (list->char-set '(#\ほ #\げ))
+                   char-set:full))
+(test* "char-set<=" #t (char-set<= #[あい] #[あい]))
+(test* "char-set<=" #t (char-set<= #[あい] #[あ-い]))
+(test* "char-set<=" #f (char-set<= #[あ-い] #[あい]))
+(test* "char-set<=" #t (char-set<= #[あ-いう-え] #[あ-え]))
+(test* "char-set<=" #f (char-set<= #[あ-え] #[あ-いう-え]))
+(test* "char-set<=" #f (char-set<= #[あ-いう-ぉ] #[あ-え]))
+(test* "char-set<=" #f (char-set<= #[ぁ-いう-え] #[あ-え]))
+(test* "char-set<=" #t (char-set<= #[あ-いか-き] #[あ-うお-け]))
+(test* "char-set<=" #t (char-set<= #[あ-いか-き] #[あ-うお-き]))
+(test* "char-set<=" #t (char-set<= #[あ-いか-き] #[あ-うか-こ]))
+(test* "char-set<=" #t (char-set<= #[か-き] #[あ-うか-こ]))
+(test* "char-set<=" #t (char-set<= #[か-きく-け] #[あ-うか-こ]))
+(test* "char-set<=" #f (char-set<= #[う-く] #[あ-えか-こ]))
 
 ;;-------------------------------------------------------------------
 (test-section "ports")

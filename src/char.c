@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.34 2003-02-28 01:07:07 shirok Exp $
+ *  $Id: char.c,v 1.35 2003-03-25 06:18:38 shirok Exp $
  */
 
 #include <ctype.h>
@@ -138,8 +138,7 @@ int Scm_CharToUcs(ScmChar ch)
  * Character set (cf. SRFI-14)
  */
 /* NB: operations on charset are not very optimized, for I don't see
- * the immediate needs to do so, except Scm_CharSetContains (this one
- * will be a macro in the future).
+ * the immediate needs to do so, except Scm_CharSetContains.
  */
 
 static void charset_print(ScmObj obj, ScmPort *out, ScmWriteContext*);
@@ -335,6 +334,25 @@ int Scm_CharSetEq(ScmCharSet *x, ScmCharSet *y)
         if (rx->lo != ry->lo || rx->hi != ry->hi) return FALSE;
     }
     if (rx || ry) return FALSE;
+    return TRUE;
+}
+
+/* whether x <= y */
+int Scm_CharSetLE(ScmCharSet *x, ScmCharSet *y)
+{
+    int i;
+    struct ScmCharSetRange *rx, *ry;
+    for (i=0; i<SCM_CHARSET_MASK_SIZE; i++)
+        if ((x->mask[i] | y->mask[i]) != y->mask[i]) return FALSE;
+    rx = x->ranges;
+    ry = y->ranges;
+    while (rx && ry) {
+        if (rx->lo < ry->lo) return FALSE;
+        if (rx->lo > ry->hi) { ry = ry->next; continue; }
+        if (rx->hi > ry->hi) return FALSE;
+        rx = rx->next;
+    }
+    if (rx) return FALSE;
     return TRUE;
 }
 
@@ -588,7 +606,7 @@ static ScmChar read_charset_xdigits(ScmPort *port, int ndigs, int key)
    #f, depending error_p flag.
 
    If bracket_syntax is TRUE, the first closing bracket ']' in the
-   charset (except the complimenting caret) is takes as a literal
+   charset (except the complimenting caret) is taken as a literal
    character, instead of terminating the charset.  It should be TRUE
    during reading the regexp syntax for compatibility to POSIX regexp.
    
