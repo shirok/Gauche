@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.55 2004-07-15 23:16:13 shirok Exp $
+ *  $Id: core.c,v 1.56 2004-11-21 12:46:58 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -196,12 +196,125 @@ void Scm_Abort(const char *msg)
 
 /*
  * Inspect the configuration
+ * For MinGW32, we don't know where things will be installed at
+ * the compile time, so we don't use configure-variable GAUCHE_LIB_DIR etc.
+ * Instead, we query the directory of DLL and calculate the paths
+ *
  */
 
 const char *Scm_HostArchitecture(void)
 {
     return GAUCHE_ARCH;
 }
+
+#ifdef __MINGW32__
+
+ScmObj get_install_dir(void)
+{
+    static ScmObj dir = SCM_FALSE;
+    if (SCM_FALSEP(dir)) {
+	HMODULE mod;
+	DWORD r;
+	char path[MAX_PATH];
+
+	mod = GetModuleHandle("libgauche.dll");
+	if (mod == NULL) {
+	    Scm_Error("GetModuleHandle failed");
+	}
+	r = GetModuleFileName(mod, path, MAX_PATH);
+	if (r == 0) {
+	    Scm_Error("GetModuleFileName failed");
+	}
+	/* remove \libgauche.dll */
+	if (!PathRemoveFileSpec(path)) {
+	    Scm_Error("PathRemoveFileSpec failed on %s", path);
+	}
+	/* remobe \bin */
+	if (!PathRemoveFileSpec(path)) {
+	    Scm_Error("PathRemoveFileSpec failed on %s", path);
+	}
+	dir = SCM_MAKE_STR_COPYING(path);
+    }
+    return dir;
+}
+
+ScmObj Scm_LibraryDirectory(void)
+{
+    static ScmObj dir = SCM_FALSE;
+    if (SCM_FALSEP(dir)) {
+        dir = Scm_StringAppendC(SCM_STRING(get_install_dir()),
+                                "\\share\\gauche\\"GAUCHE_VERSION"\\lib",
+                                -1, -1);
+    }
+    return dir;
+}
+
+ScmObj Scm_ArchitectureDirectory(void)
+{
+    static ScmObj dir = SCM_FALSE;
+    if (SCM_FALSEP(dir)) {
+        dir = Scm_StringAppendC(SCM_STRING(get_install_dir()),
+                                "\\lib\\gauche\\"GAUCHE_VERSION"\\"GAUCHE_ARCH,
+                                -1, -1);
+    }
+    return dir;
+}
+
+ScmObj Scm_SiteLibraryDirectory(void)
+{
+    static ScmObj dir = SCM_FALSE;
+    if (SCM_FALSEP(dir)) {
+        dir = Scm_StringAppendC(SCM_STRING(get_install_dir()),
+                                "\\share\\gauche\\site\\lib",
+                                -1, -1);
+    }
+    return dir;
+}
+
+ScmObj Scm_SiteArchitectureDirectory(void)
+{
+    static ScmObj dir = SCM_FALSE;
+    if (SCM_FALSEP(dir)) {
+        dir = Scm_StringAppendC(SCM_STRING(get_install_dir()),
+                                "\\lib\\gauche\\site\\"GAUCHE_VERSION"\\"GAUCHE_ARCH,
+                                -1, -1);
+    }
+    return dir;
+}
+
+#else /* !__MINGW32__ */
+
+#define DEFSTR(n, s) \
+    static SCM_DEFINE_STRING_CONST(n, s, sizeof(s)-1, sizeof(s)-1)
+
+DEFSTR(libdir,      GAUCHE_LIB_DIR);
+DEFSTR(archdir,     GAUCHE_ARCH_DIR);
+DEFSTR(sitelibdir,  GAUCHE_SITE_LIB_DIR);
+DEFSTR(sitearchdir, GAUCHE_SITE_ARCH_DIR);
+
+ScmObj Scm_LibraryDirectory(void)
+{
+    return SCM_OBJ(&libdir);
+}
+
+ScmObj Scm_ArchitectureDirectory(void)
+{
+    return SCM_OBJ(&archdir);
+}
+
+ScmObj Scm_SiteLibraryDirectory(void)
+{
+    return SCM_OBJ(&sitelibdir);
+}
+
+ScmObj Scm_SiteArchitectureDirectory(void)
+{
+    return SCM_OBJ(&sitearchdir);
+}
+
+#undef DEFSTR
+
+#endif /* !__MINGW32__ */
 
 /*
  * Useful routine for debugging, to check if an object is inadvertently

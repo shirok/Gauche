@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.228 2004-11-05 10:33:38 shirok Exp $
+;;; $Id: extlib.stub,v 1.229 2004-11-21 12:46:58 shirok Exp $
 ;;;
 
 "
@@ -1309,13 +1309,13 @@
 (define-cproc gauche-architecture ()
   "  SCM_RETURN(SCM_MAKE_STR(GAUCHE_ARCH));")
 (define-cproc gauche-library-directory ()
-  "  SCM_RETURN(SCM_MAKE_STR(GAUCHE_LIB_DIR));")
+  (return "Scm_LibraryDirectory"))
 (define-cproc gauche-architecture-directory ()
-  "  SCM_RETURN(SCM_MAKE_STR(GAUCHE_ARCH_DIR));")
+  (return "Scm_ArchitectureDirectory"))
 (define-cproc gauche-site-library-directory ()
-  "  SCM_RETURN(SCM_MAKE_STR(GAUCHE_SITE_LIB_DIR));")
+  (return "Scm_SiteLibraryDirectory"))
 (define-cproc gauche-site-architecture-directory ()
-  "  SCM_RETURN(SCM_MAKE_STR(GAUCHE_SITE_ARCH_DIR));")
+  (return "Scm_SiteArchitectureDirectory"))
 (define-cproc gauche-dso-suffix ()
   "  SCM_RETURN(SCM_MAKE_STR(SHLIB_SO_SUFFIX));")
 

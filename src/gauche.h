@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.398 2004-11-05 10:33:38 shirok Exp $
+ *  $Id: gauche.h,v 1.399 2004-11-21 12:46:58 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2594,6 +2594,11 @@ SCM_EXTERN void Scm_Repl(ScmObj reader, ScmObj evaluator, ScmObj printer,
 
 /* Inspect the configuration */
 SCM_EXTERN const char *Scm_HostArchitecture(void);
+
+SCM_EXTERN ScmObj Scm_LibraryDirectory(void);
+SCM_EXTERN ScmObj Scm_ArchitectureDirectory(void);
+SCM_EXTERN ScmObj Scm_SiteLibraryDirectory(void);
+SCM_EXTERN ScmObj Scm_SiteArchitectureDirectory(void);
 
 /* Compare and Sort */
 SCM_EXTERN int Scm_Compare(ScmObj x, ScmObj y);

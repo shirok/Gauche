@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.93 2004-11-20 11:54:27 shirok Exp $
+ *  $Id: load.c,v 1.94 2004-11-21 12:46:59 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -1039,55 +1039,6 @@ ScmObj Scm_LoadAutoload(ScmAutoload *adata)
 }
 
 /*------------------------------------------------------------------
- * Windows tricks
- */
-#ifdef __MINGW32__
-
-ScmObj get_install_dir(void)
-{
-    static ScmObj dir = SCM_FALSE;
-    if (SCM_FALSEP(dir)) {
-	HMODULE mod;
-	DWORD r;
-	char path[MAX_PATH];
-
-	mod = GetModuleHandle("libgauche.dll");
-	if (mod == NULL) {
-	    Scm_Error("GetModuleHandle failed");
-	}
-	r = GetModuleFileName(mod, path, MAX_PATH);
-	if (r == 0) {
-	    Scm_Error("GetModuleFileName failed");
-	}
-	/* remove \libgauche.dll */
-	if (!PathRemoveFileSpec(path)) {
-	    Scm_Error("PathRemoveFileSpec failed on %s", path);
-	}
-	/* remobe \bin */
-	if (!PathRemoveFileSpec(path)) {
-	    Scm_Error("PathRemoveFileSpec failed on %s", path);
-	}
-	dir = SCM_MAKE_STR_COPYING(path);
-    }
-    return dir;
-}
-
-ScmObj get_archdir(void)
-{
-    return Scm_StringAppendC(SCM_STRING(get_install_dir()),
-			     "\\lib\\gauche\\"GAUCHE_VERSION"\\"GAUCHE_ARCH,
-			     -1, -1);
-}
-
-ScmObj get_scmdir(void)
-{
-    return Scm_StringAppendC(SCM_STRING(get_install_dir()),
-			     "\\share\\gauche\\"GAUCHE_VERSION"\\lib",
-			     -1, -1);
-}
-#endif /*__MINGW32__*/
-
-/*------------------------------------------------------------------
  * Initialization
  */
 
@@ -1099,21 +1050,13 @@ void Scm__InitLoad(void)
 
     init_load_path = t = SCM_NIL;
     SCM_APPEND(init_load_path, t, break_env_paths("GAUCHE_LOAD_PATH"));
-#ifndef __MINGW32__
-    SCM_APPEND1(init_load_path, t, SCM_MAKE_STR(GAUCHE_SITE_LIB_DIR));
-    SCM_APPEND1(init_load_path, t, SCM_MAKE_STR(GAUCHE_LIB_DIR));
-#else  /*__MINGW32__*/
-    SCM_APPEND1(init_load_path, t, get_scmdir());
-#endif /*__MINGW32__*/
+    SCM_APPEND1(init_load_path, t, Scm_SiteLibraryDirectory());
+    SCM_APPEND1(init_load_path, t, Scm_LibraryDirectory());
 
     init_dynload_path = t = SCM_NIL;
     SCM_APPEND(init_dynload_path, t, break_env_paths("GAUCHE_DYNLOAD_PATH"));
-#ifndef __MINGW32__
-    SCM_APPEND1(init_dynload_path, t, SCM_MAKE_STR(GAUCHE_SITE_ARCH_DIR));
-    SCM_APPEND1(init_dynload_path, t, SCM_MAKE_STR(GAUCHE_ARCH_DIR));
-#else  /*__MINGW32__*/
-    SCM_APPEND1(init_dynload_path, t, get_archdir());
-#endif /*__MINGW32__*/
+    SCM_APPEND1(init_dynload_path, t, Scm_SiteArchitectureDirectory());
+    SCM_APPEND1(init_dynload_path, t, Scm_ArchitectureDirectory());
 
     init_load_suffixes = t = SCM_NIL;
     SCM_APPEND1(init_load_suffixes, t, SCM_MAKE_STR(LOAD_SUFFIX));

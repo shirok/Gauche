@@ -1,3 +1,11 @@
+2004-11-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/core.c (Scm_LibraryDirectory etc): made these API instead of
+	  configure-time macro reference, to hide difference in MinGW.
+	* src/load.c (Scm__InitLoad): ditto
+
+	* DIST, src/Makefile.in: tweaks to create MinGW binary distribution.
+
 2004-11-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/mime.scm (make-mime-port): fixed a bug that didn't
