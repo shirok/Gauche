@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.87 2001-10-08 20:16:22 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.88 2001-10-09 09:08:48 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -823,10 +823,14 @@ x                    @result{} (5 2)
 Returns a setter procedure associated to the procedure @var{proc}.
 If no setter is associated to @var{proc}, an error is signalled.
 
+A setter procedure @var{g} of a procedure @var{f} is such that when used
+as @code{(g a b @dots{} v)}, the next evaluation of @code{(f a b @dots{})}
+returns @var{v}.
+
 To associate a setter procedure to another procedure, you can use
 the setter of @code{setter}, like this:
 @example
-(set! (setter @var{get}) @var{set})
+(set! (setter @var{f}) @var{g})
 @end example
 
 A procedure's setter can be ``locked'' to it.  System default setters,
@@ -837,37 +841,63 @@ use @code{getter-with-setter} below.
 手続き@var{proc}のsetter手続きを返します。もし@var{proc}がsetter手続きを持たなければ、
 エラーが返されます。
 
+ある関数@var{f}のsetter手続き@var{g}とは、もし@code{(g a b @dots{} v)}のように
+呼ばれた場合、次の@code{(f a b @dots{})}が@var{v}を返すようになる手続きのことです。
+
 ある手続きにsetter手続きを関連付けるには、@code{setter}自身のsetter手続きを使うことが
 できます。
 @example
-(set! (setter @var{get}) @var{set})
+(set! (setter @var{f}) @var{g})
 @end example
 
-特定の手続きにsetter手続きを「ロック」することができます。
+特定の手続きにsetter手続きを「ロック」することができます。システム既定のsetter手続き、
+例えば@code{car}に対する@code{set-car!}等はロックされていて、上記のような方法で
+変更することは出来ません。ユーザ定義手続きにsetter手続きをロックするには下記の
+@code{getter-with-setter}を使います。
 @c COMMON
 @end defun
 
 @defun getter-with-setter get set
-[SRFI-17] Takes two procedure @var{get} and @var{set}.  Returns a new
+[SRFI-17]
+@c EN
+Takes two procedure @var{get} and @var{set}.  Returns a new
 procedure which does the same thing as @var{get}, and its setter is
 locked to @var{set}.
 
 The intention of this procedure is, according to the SRFI-17 document,
 to allow implementations to inline setters efficiently.  Gauche
 hasn't implement such optimization yet.
+@c JP
+2つの手続き、@var{get}と@var{set}を取り、新しい手続きを返します。
+新しい手続きは@var{get}と同じ動作をし、そのsetter手続きは@var{set}にロックされて
+います。
+
+この手続きは、SRFI-17によれば、setter手続きのインライン展開を可能にするための
+ものですが、Gaucheではまだそのような最適化は実装されていません。
+@c COMMON
 @end defun
 
+@c EN
 A few macros that adopts the same semantics of generalized @code{set!}
 are also provided.  They are built on top of @code{set!}.
-Use of these side-effect functions are not actively encouraged.
-Nevertheless, they are sometimes quite handy.
+@c JP
+Gaucheでは、一般化された@code{set!}と同じセマンティクスを持ついくつかのマクロが定義
+されています。これらは@var{set!}を使った形に展開されます。
+@c COMMON
 
 @defmac push! place item
+@c EN
 Conses @var{item}
 and the value of @var{place}, then sets the result to @var{place}.
 @var{place} is either a variable or a form @var{(proc arg @dots{})}, 
 as the second argument of @code{set!}.   The result of this form
 is undefined.
+@c JP
+@var{item}と@var{place}の値をコンスし、その結果を再び@var{place}にセットします。
+@var{place}は@code{set!}と同様に、
+変数か@var{(proc arg @dots{})}という形式でなければなりません。このマクロの戻り値は
+未定義です。
+@c COMMON
 
 @example
 (define x (list 2))
@@ -878,7 +908,11 @@ x @result{} (3 2)
 x @result{} (3 4 2)
 @end example
 
+@c EN
 When @var{place} is a list, it roughly expands like the following.
+@c JP
+@var{place}がリストの場合、だいたいこんなふうに展開されます。
+@c COMMON
 
 @example
 (push! (foo x y) item)
@@ -889,14 +923,29 @@ When @var{place} is a list, it roughly expands like the following.
    ((setter tfoo) tx ty (cons item (tfoo tx ty))))
 @end example
 
+@c EN
 Note: Common Lisp's @code{push} macro takes its argument reverse
 order.   I adopted this order since it is consistent with other
-destructive operations.
+destructive operations.  Perl's @code{push} function takes the same
+argument order, but it appends @var{item} at the end of the array
+(Perl's @code{unshift} is closer to @code{push!}).
+@c JP
+註：Common Lispの@code{push}マクロは引数を逆の順番で取ります。
+@code{push!}は他の副作用を持つ形式との互換性を考えてこの順番としました。
+Perlの@code{push}関数は@code{push!}マクロと同じ引数順ですが、
+@var{item}はシーケンスの末尾に追加されます (Perlの@code{unshift}の方が
+@code{push!}の動作に近いです)。
+@c COMMON
 @end defmac
 
 @defmac pop! place
+@c EN
 Retrieves the value of @var{place}, sets its cdr back to @var{place}
 and returns its car.
+@c JP
+@var{place}の値を取り出し、その@code{cdr}を@var{place}にセットします。
+元の値の@code{car}を返します。
+@c COMMON
 
 @example
 (define x (list 1 2 3))
@@ -909,7 +958,15 @@ x @result{} #((1 2 3))
 x @result{} #((2 3))
 @end example
 
+@c EN
 Note: This works the same as Common Lisp's @code{pop}.
+Perl's @code{pop} pops value from the end of the sequence;
+its @code{shift} does the same thing as @code{pop!}.
+@c JP
+註：この動作はCommon Lispの@code{pop}と同じです。
+Perlの@code{pop}はシーケンスの末尾から値を取ります。
+Perlなら@code{shift}が@code{pop!}の動作に近いです。
+@c COMMON
 @end defmac
 
 
@@ -921,39 +978,210 @@ Note: This works the same as Common Lisp's @code{pop}.
 @node Conditionals, Binding constructs, Assignments, Core Syntax
 @section Conditionals
 
-@defspec if test consequent alternate
+@defspec if test consequent alternative
 @defspecx if test consequent
-[R5RS] @var{Test} is evaluated.  If it yields a true value,
+[R5RS]
+@c EN
+@var{Test} is evaluated.  If it yields a true value,
 @var{consequent} is evaluated.  Otherwise, @var{alternative} is
 evaluated.  If @var{alternative} is not provided, it results undefined value.
-@end defspec
+@c JP
+まず@code{test}を評価し、それが真の値を返したら@var{consequent}を評価します。
+そうでなければ@var{alternative}を評価します。もし@var{alternative}が与えられて
+いなければ未定義の値を返します。
+@c COMMON
 
+@example
+(if (number? 3) 'yes 'no) @result{} yes
+(if (number? #f) 'yes 'no) @result{} no
+
+(let ((x '(1 . 2)))
+  (if (cons? x)
+      (values (car x) (cdr x))
+      (values #f #f)))
+  @result{} 1 @r{and} 2
+@end example
+@end defspec
 
 @defspec cond clause1 clause2 @dots{}
 [R5RS]
+@c EN
+Each @code{clause} must be the form
+@example
+(@var{test} @var{expr} @dots{})
+(@var{test} => @var{expr})
+(else @var{expr} @var{expr2} @dots{})
+@end example
+The last form can appear only as the last clause.
+
+@code{cond} evaluates @var{test} of each clauses in order, until
+it yields a true value.   Once it yields true, if the clause
+is the first form,  the corresponding @var{expr}s are evaluated
+and the result(s) of last @var{expr} is(are) returned; if the clause
+is the second form, the @var{expr} is evaluated and it must yield
+a procedure that takes one argument.  Then the result of @var{test}
+is passed to it, and the result(s) it returns will be returned.
+If no test yields true, and the last clause is not the third form
+(else clause), an undefined value is returned.
+
+If the last clause is else clause and all tests are failed,
+@var{expr}s in the else clause are evaluated, and its last
+@var{expr}'s result(s) is(are) returned.
+@c JP
+各@code{clause}節は次のいずれかの形式でなければなりません。
+@example
+(@var{test} @var{expr} @dots{})
+(@var{test} => @var{expr})
+(else @var{expr} @var{expr2} @dots{})
+@end example
+最後の形式は最後の節のみに許されます。
+
+最初の節から順に@var{test}が評価され、それが真の値を返すまで次の節の@var{test}が
+評価されます。@var{test}が真の値を返したら、それが最初の形式であれば
+その節の@var{expr}が順に評価され、最後の評価値が戻り値となります。
+それが2番目の形式であれば、@var{expr}がまず評価されます。
+@var{expr}は引数をひとつ取る手続きを返さねばなりません。
+続いて、@var{test}の結果がその手続きに渡され、その手続きの戻り値が@code{cond}形式の
+評価値となります。
+もし全てのテストが偽の値を返し、最後の節が3番目の形式(else節)でなければ、未定義の値が返されます。
+
+最後の節が@code{else}節で、他の全てのテストが失敗した場合、@code{else}節の@var{expr}
+が順に評価され、その最後の値が@code{cond}形式の値となります。
+@c COMMON
+
+@example
+(cond ((> 3 2) 'greater)
+      ((< 3 2) 'less)) @result{} greater
+(cond ((> 3 3) 'greater)
+      ((< 3 3) 'less)
+      (else 'equal)) @result{} equal
+(cond ((assv 'b '((a 1) (b 2))) => cadr)
+      (else #f)) @result{} 2
+@end example
 @end defspec
 
 
 @defspec case key clause1 clause2 @dots{}
 [R5RS]
+@c EN
+@var{Key} may be any expression. 
+Each @var{clause} should have the form 
+@example
+((@var{datum} ...) @var{expr} @var{expr2} @dots{})
+@end example
+where each @var{datum} is an external representation of some object.
+All the @var{datum}s must be distinct. The last @var{clause}
+may be an ``else clause,'' which has the form 
+@example
+(else @var{expr} @var{expr2} @dots{})
+@end example
+
+First, @var{key} is evaluated and its result is compared against each
+@var{datum}.  If the result of evaluating @var{datum} is equivalent
+(using @code{eqv?}, @xref{Equivalence}), to a @var{datum},
+then the expressions in the corresponding clause are evaluated
+sequentially, and the result(s) of the last expression in the
+@var{clause} is(are) returned from the case expression.
+If the result of evaluating @var{key} is different from every @var{datum},
+then if there is an else clause its expressions are evaluated and
+the result(s) of the last is(are) the result(s) of the case expression;
+otherwise the result of the case expression is unspecified.
+@c JP
+@var{key}は任意の式です。@var{clause}は以下の形式でなければなりません。
+@example
+((@var{datum} ...) @var{expr} @var{expr2} @dots{})
+@end example
+ここで、各@var{datum}はSchemeオブジェクトの外部表現であり、全ての@var{datum}は
+異なっていなければなりません。最後の@var{clause}には次の形式を持つelse節が許されます。
+@example
+(else @var{expr} @var{expr2} @dots{})
+@end example
+
+まず@var{key}が評価され、その結果がそれぞれの@var{datum}と比較されます。
+@var{key}の値と@code{eqv?}(@ref{Equivalence}参照)を使って一致する@var{datum}
+が見つかれば、対応する@var{expr}が順に評価され、その最後の値が@code{case}の
+値となります。もし一致する@var{datum}が見つからない場合、else節が与えられていれば
+その@var{expr}が順に評価され、最後の値が返されます。else節がなければ@code{case}節
+の値は未定義です。
+@c COMMON
+@example
+(case (* 2 3)
+  ((2 3 5 7) 'prime)
+  ((1 4 6 8 9) 'composite)) @result{} composite
+(case (car '(c d))
+  ((a) 'a)
+  ((b) 'b)) @result{} @r{undefined}
+(case (car '(c d))
+  ((a e i o u) 'vowel)
+  ((w y) 'semivowel)
+  (else 'consonant)) @result{} consonant
+@end example
 @end defspec
 
 
 @defspec and test @dots{}
 [R5RS] 
+@c EN
+The @var{test} expressions are evaluated from left to right,
+and the value of the first expression that evaluates to a false
+value is returned.
+Any remaining expressions are not evaluated.
+If all the expressions evaluate to true values,
+the value of the last expression is returned.
+If there are no expressions then @code{#t} is returned.
+@c JP
+@var{test}式が順に評価されます。最初に偽の値を返したところで評価が止まり、
+偽の値が返されます。残りの式は評価されません。
+もし全ての式が真の値を返した場合は、最後の式の値が返されます。
+式が与えれない場合は@code{#t}が返されます。
+@c COMMON
+
+@example
+(and (= 2 2) (> 2 1)) @result{} #t
+(and (= 2 2) (< 2 1)) @result{} #f
+(and 1 2 'c '(f g))   @result{} (f g)
+(and)                 @result{} #t
+@end example
 @end defspec
 
 
 @defspec or test @dots{}
 [R5RS]
+@c EN
+The @var{test} expressions are evaluated from left to right,
+and the value of the first expression that evaluates to a true
+value is returned. Any remaining expressions are not evaluated.
+If all expressions evaluate to false values, the value of the
+last expression is returned. If there are no expressions then
+@code{#f} is returned.
+@c JP
+@var{test}式が順に評価されます。最初に真の値を返したところで評価が止まり、
+その値が返されます。残りの式は評価されません。
+もし全ての式が偽の値を返した場合は、偽の値が返されます。
+式が与えれない場合は@code{#f}が返されます。
+@c COMMON
+
+@example
+(or (= 2 2) (> 2 1)) @result{} #t
+(or (= 2 2) (< 2 1)) @result{} #t
+(or #f #f #f)        @result{} #f
+(or (memq 'b '(a b c)) 
+    (/ 3 0)) @result{} (b c)
+@end example
 @end defspec
 
 @defspec when test body @dots{}
 @defspecx unless test body @dots{}
+@c EN
 Evaluates @var{test}.  If it yields true value (or false in case of
 @code{unless}), @var{body} @dots{} are evaluated sequentially, and
-the result of the last evaluation is returned.  Otherwise, undefined
+the result(s) of the last evaluation is(are) returned.  Otherwise, undefined
 value is returned.
+@c JP
+まず@var{test}が評価されます。それが真の値(@code{unless}の場合は偽の値)を返した場合、
+引続き@var{body}が順に評価され、最後の@var{body}の評価値が返されます。
+そうでなければ、未定義の値が返されます。
+@c COMMON
 @end defspec
 
 @node Binding constructs, Sequencing, Conditionals, Core Syntax
@@ -1000,7 +1228,11 @@ value is returned.
 
 
 @defmac dotimes (variable limit [result]) body @dots{}
+@c EN
 Imported from Common Lisp.  This is equivalent to
+@c JP
+Common Lispからの輸入です。以下のように展開されます。
+@c COMMON
 @example
 (do ((tlimit limit)
      (variable 0 (+ variable 1)))
@@ -1009,7 +1241,12 @@ Imported from Common Lisp.  This is equivalent to
 @end example
 @end defmac
 
+@c EN
 There's no @code{dolist}.  Use @code{for-each}, or write your own.
+@c JP
+Common Lispの@code{dolist}は提供されていません。@code{for-each}を使うか、
+自分で書いて下さい。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Quasiquotation, Definitions, Iteration, Core Syntax
@@ -1026,8 +1263,17 @@ There's no @code{dolist}.  Use @code{for-each}, or write your own.
 
 @defspec define variable expression
 @defspecx define (variable formals) body @dots{}
-[R5RS] In the first form, it globally binds a symbol @var{variable}
+[R5RS]
+@c EN
+This form has different meanings in the toplevel (without no
+local bindings) or inside a local scope.
+
+On toplevel, it defines a global binding to a symbol @var{variable}.
+In the first form, it globally binds a symbol @var{variable}
 to the value of @var{expression}, in the current module.
+@c JP
+最初の形式では、@var{variable}
+@c COMMON
 @example
 (define x (+ 1 2))
 x @result{} 3
@@ -1035,11 +1281,44 @@ x @result{} 3
 (y 8) @result{} 16
 @end example
 
+@c EN
 The second form is a syntactic sugar of defining a procedure.
+@c JP
+@c COMMON
 @example
 (define (@var{name} . @var{args}) @var{body} @dots{})
   @equiv{} (define @var{name} (lambda @var{args} @var{body} @dots{}))
 @end example
+
+@c EN
+If the form appears inside a local scope (internal define),
+this introduce a local binding of the variable.
+
+@c explanation of internal define here
+@c JP
+@c COMMON
+
+
+@c EN
+Note that @code{begin} (@xref{Sequencing}) doesn't introduce a new scope.
+@code{Define}s in the @code{begin} act as if @code{begin} and surrounding
+parenthesis are not there.  Thus these two forms are equivalent.
+@c JP
+@code{begin}は新しいスコープを作らないことに注意してください(@ref{Sequencing}参照)。
+@code{begin}の中に現われる@code{define}は、あたかも@code{begin}とそれを囲む
+括弧な無いかのように振舞います。すなわち、以下の2つの形式は等価です。
+@c COMMON
+@example
+(let ((x 0))
+  (begin
+    (define (foo y) (+ x y)))
+  (foo 3))
+ @equiv{}
+(let ((x 0))
+  (define (foo y) (+ x y))
+  (foo 3))
+@end example
+
 @end defspec
 
 @c ----------------------------------------------------------------------
