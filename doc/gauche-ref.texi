@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.202 2002-05-11 00:11:57 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.203 2002-05-11 23:17:41 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -10876,6 +10876,7 @@ for the usage of metaclass.
 * Unit Testing::                
 * Slot with validator::         
 * Comparing version numbers::   
+* Mersenne Twister Random number generator::  
 * RFC822 Message parsing::      
 * Base64 encoding/decoding::    
 * HTTP cookie handling::        
@@ -16287,7 +16288,7 @@ only a dozen lines of code.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Comparing version numbers, RFC822 Message parsing, Slot with validator, Library modules
+@node Comparing version numbers, Mersenne Twister Random number generator, Slot with validator, Library modules
 @section @code{gauche.version} - Comparing version numbers
 @c NODE バージョン番号の比較, @code{gauche.version} - バージョン番号の比較
 
@@ -16461,7 +16462,37 @@ prior to @var{rel2}, @var{rel1} is the same as @var{rel2}, or
 @end defun
 
 @c ----------------------------------------------------------------------
-@node RFC822 Message parsing, Base64 encoding/decoding, Comparing version numbers, Library modules
+@node Mersenne Twister Random number generator, RFC822 Message parsing, Comparing version numbers, Library modules
+@section @code{math.mt-random} - Mersenne Twister Random number generator
+@c NODE Mersenne Twister乱数発生器, @code{math.mt-random} - Mersenne Twister乱数発生器
+
+@deftp {Module} math.mt-random
+@mdindex math.mt-random
+@end deftp
+
+@deftp {Class} <mersenne-twister>
+@end deftp
+
+@defun mt-random-set-seed! mt seed
+@end defun
+
+@defun mt-random-get-state mt
+@defunx mt-random-set-state! mt state
+@end defun
+
+@defun mt-random-real mt
+@end defun
+
+@defun mt-random-integer mt range
+@end defun
+
+@defun mt-random-fill-u32vector! mt vec
+@defunx mt-random-fill-f32vector! mt vec
+@defunx mt-random-fill-f64vector! mt vec
+@end defun
+
+@c ----------------------------------------------------------------------
+@node RFC822 Message parsing, Base64 encoding/decoding, Mersenne Twister Random number generator, Library modules
 @section @code{rfc.822} - RFC822 message parsing
 @c NODE RFC822メッセージ形式, @code{rfc.822} - RFC822メッセージ形式
 
