@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.407 2003-06-09 04:29:41 nobsun Exp $
+@c $Id: gauche-ref.texi,v 1.408 2003-06-09 06:02:12 nobsun Exp $
 
 @c module and class index
 @defcodeindex md
@@ -18822,26 +18822,50 @@ Can be only used with @code{socket-getsockopt}.
 
 @deftp {Builtin Class} <sys-hostent>
 @clindex sys-hostent
+@c EN
 A class of objects for network hosts.  Corresponding to
-@code{struct hostent}.  The following slots are available read-only.
+@code{struct hostent} in C.  The following slots are available read-only.
+@c JP
+このクラスはネットワークホストのオブジェクト用で、
+C の @code{struct hostent}
+に対応しています。以下のスロットは読み込み専用です。
+@c COMMON
 
 @defivar {<sys-hostent>} name
+@c EN
 The formal name of the host (string).
+@c JP
+ホストの正式名(文字列)
+@c COMMON
 @end defivar
 @defivar {<sys-hostent>} aliases
+@c EN
 A list of alias names of the host (list of strings).
+@c JP
+ホストの別名リスト(文字列のリスト)
+@c COMMON
 @end defivar
 @defivar {<sys-hostent>} addresses
+@c EN
 A list of addresses (list of strings).  Only ipv4 address is 
 supported currently.  Each address is represented by dotted decimal
 notation.
+@c JP
+アドレスのリスト(文字列のリスト)。現時点では IPv4 のアドレスのみサポート
+しています。それぞれのアドレスは、ドットつき十進記法で表記されています。
+@c COMMON
 @end defivar
 @end deftp
 
 @defun sys-gethostbyname name
+@c EN
 Looks up a host named @var{name}.
 If found, returns a @code{<sys-hostent>} object.
 Otherwise, returns @code{#f}.
+@c JP
+@var{name}という名まえのホストを探し、見つかれば、@code{<sys-hostent>}
+オブジェクトを返します。見つからなければ、@code{#f} を返します。
+@c COMMON
 @example
 (let ((host (sys-gethostbyname "www.w3c.org")))
   (list (slot-ref host 'name)
@@ -18852,12 +18876,21 @@ Otherwise, returns @code{#f}.
 @end defun
 
 @defun sys-gethostbyaddr addr proto
+@c EN
 Looks up a host that has an address @var{addr} of protocol @var{proto}.
 @var{addr} is a natural string representation of the address;
 for ipv4, it is a dotted decimal notation.  @var{proto} is a
 protocol number; only @code{AF_INET} is supported currently.
 If the host is found, returns a @code{<sys-hostent>} object.
 Otherwise, returns @code{#f}.
+@c JP
+@var{proto}というプロトコルの、@var{addr}というアドレスを持つホストを
+探します。@var{addr}はアドレスの自然な文字列表現で、IPv4 については、
+ドットつき十進記法です。@var{proto}はプロトコル番号で、現時点では
+@code{AF_INET}のみサポートされています。ホストが見つかれば、
+@code{<sys-hostent>}オブジェクトを返します。
+見つからなければ、@code{#f} を返します。
+@c COMMON
 @example
 (let ((host (sys-gethostbyaddr "127.0.0.1" AF_INET)))
   (list (slot-ref host 'name)
@@ -18869,28 +18902,57 @@ Otherwise, returns @code{#f}.
 
 @deftp {Builtin Class} <sys-servent>
 @clindex sys-servent
+@c EN
 An entry of the network service database.  Corresponding to
-@code{struct servent}.  The following slots are available read-only.
+@code{struct servent} in C.  The following slots are available read-only.
+@c JP
+ネットワークサービスデータベースのエントリです。
+C の @code{struct servent}に対応しています。
+以下のスロットは読み込み専用です。
+@c COMMON
 
 @defivar {<sys-servent>} name
+@c EN
 The formal name of the service (string).
+@c JP
+サービスの正式名(文字列)
+@c COMMON
 @end defivar
 @defivar {<sys-servent>} aliases
+@c EN
 A list of alias names of the service (list of strings).
+@c JP
+サービスの別名リスト(文字列のリスト)
+@c COMMON
 @end defivar
 @defivar {<sys-servent>} port
+@c EN
 A port number registered for this service (exact integer).
+@c JP
+サービスに割り当てられたポート番号(正確な整数)
+@c COMMON
 @end defivar
 @defivar {<sys-servent>} proto
+@c EN
 A protocol name for this service (string).
+@c JP
+このサービス用のプロトコル名(文字列)
+@c COMMON
 @end defivar
 @end deftp
 
 @defun sys-getservbyname name proto
+@c EN
 Looks up the network service database with a service name @var{name} and
 a protocol @var{proto}.  Both @var{name} and @var{proto} must be a string.
 If a service is found, an instance of @code{<sys-servent>} is returned.
 Otherwise, @code{#f} is returned.
+@c JP
+ネットワークサービスデータベースをサービス名 @var{name} および
+プロトコル @var{proto} で検索します。@var{name} および @var{proto}
+は文字列でなければなりません。サービスが見つかれば、@code{<sys-servent>}
+のインスタンスが返します。見つからなければ、@code{#f} を返します。
+@c COMMON
 @example
 (let ((serv (sys-getservbyname "http" "tcp")))
   (list (slot-ref serv 'name)
@@ -18902,11 +18964,19 @@ Otherwise, @code{#f} is returned.
 @end defun
 
 @defun sys-getservbyport port proto
+@c EN
 Looks up the network service database with a service port @var{port} and
 a protocol @var{proto}.  @var{port} must be an exact integer, and
 @var{proto} must be a string.
 If a service is found, an instance of @code{<sys-servent>} is returned.
 Otherwise, @code{#f} is returned.
+@c JP
+ネットワークサービスデータベースをサービス名 @var{port} および
+プロトコル @var{proto} で検索します。@var{port} は正確な整数でなければ
+なりません。また、@var{proto} は文字列でなければなりません。
+サービスが見つかれば、@code{<sys-servent>}
+のインスタンスが返します。見つからなければ、@code{#f} を返します。
+@c COMMON
 @example
 (let ((serv (sys-getservbyport 6000 "tcp")))
   (list (slot-ref serv 'name)
@@ -18919,25 +18989,49 @@ Otherwise, @code{#f} is returned.
 
 @deftp {Builtin Class} <sys-protoent>
 @clindex sys-protoent
+@c EN
 An entry of the protocol database.   Corresponds to @code{struct protoent}
 in C.   The following slots are available read-only.
+@c JP
+プロトコルデータベースのエントリです。C の @code{struct protoent}に
+対応しています。以下のスロットは読み込み専用です。
+@c COMMON
 
 @defivar {<sys-servent>} name
+@c EN
 The formal name of the protocol (string).
+@c JP
+プロトコルの正式名(文字列)
+@c COMMON
 @end defivar
 @defivar {<sys-servent>} aliases
+@c EN
 A list of alias names of the protocol (list of strings).
+@c JP
+プロトコルの別名のリスト(文字列のリスト)
+@c COMMON
 @end defivar
 @defivar {<sys-servent>} proto
+@c EN
 A protocol number (exact integer).
+@c JP
+プロトコル番号(正確な整数)
+@c COMMON
 @end defivar
 @end deftp
 
 @defun sys-getprotobyname name
+@c EN
 Looks up the network protocol database with a name @var{name},
 which must be a string.
 If a protocol is found, an instance of @code{<sys-protoent>} is returned.
 Otherwise, @code{#f} is returned.
+@c JP
+名前 @var{name} でネットワークプロトコルデータベースを検索します。
+名前 @var{name} は文字列でなければなりません。
+プロトコルが見つかれば、@code{<sys-protoent>}
+のインスタンスを返します。見つからなければ、@code{#f} を返します。
+@c COMMON
 @example
 (let ((proto (sys-getprotobyname "icmp")))
   (list (slot-ref proto 'name)
@@ -18948,10 +19042,17 @@ Otherwise, @code{#f} is returned.
 @end defun
 
 @defun sys-getprotobynumber number
-Looks up the network protoice database with a protocol number @var{number},
+@c EN
+Looks up the network protocol database with a protocol number @var{number},
 which must be an exact integer.
 If a protocol is found, an instance of @code{<sys-protoent>} is returned.
 Otherwise, @code{#f} is returned.
+@c JP
+プロトコル番号 @var{number} でネットワークプロトコルデータベースを検索
+する。プロトコル番号 @var{number} は正確な整数でなければなりません。
+プロトコルが見つかれば、@code{<sys-protoent>}
+のインスタンスを返します。見つからなければ、@code{#f} を返します。
+@c COMMON
 @example
 (let ((proto (sys-getprotobynumber 17)))
   (list (slot-ref proto 'name)
@@ -18963,10 +19064,16 @@ Otherwise, @code{#f} is returned.
 
 @deftp {Builtin Class} <sys-addrinfo>
 @clindex sys-addrinfo
+@c EN
 The new interface to keep address information.
 Corresponds to @code{struct addrinfo} in C.
 This is only available if gauche is configured with --enable-ipv6 option.
 The following slots are provided.
+@c JP
+アドレス情報を保持する新しいインタフェースです。C の @code{struct addrinfo}
+に対応しています。これは gauche が --enable-ipv6 オプションで設定され、
+ビルドされた場合にのみ利用可能です。以下のスロットが提供されます。
+@c COMMON
 
 @defivar {<sys-addrinfo>} flags
 @end defivar
@@ -18983,9 +19090,16 @@ The following slots are provided.
 @end deftp
 
 @defun sys-getaddrinfo nodename servname hints
+@c EN
 Returns @code{<sys-addrinfo>} instance from the given @var{nodename},
 @var{servname} and @var{hints}.
 This is only available if gauche is compiled with --enable-ipv6 option.
+@c JP
+与えられた @var{nodename}、@var{servname} および @var{hints} から
+@code{<sys-addrinfo>} のインスタンスを返します。
+これは gauche が --enable-ipv6 オプションで設定され、
+ビルドされた場合にのみ利用可能です。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
