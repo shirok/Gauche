@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.29 2001-12-01 21:41:01 shirok Exp $
+;;;  $Id: object.scm,v 1.30 2001-12-01 22:30:52 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -188,8 +188,7 @@
 (define-method initialize ((class <class>) initargs)
   (next-method)
   (let ((slots  (get-keyword :slots  initargs '()))
-        (supers (let ((s (get-keyword :supers initargs '())))
-                  (if (null? s) (list <object>) s))))
+        (supers (append (get-keyword :supers initargs '()) `(,<object>))))
     ;; The order of initialization is somewhat important, since calculation
     ;; of values of some slots depends on the other slots.
     (slot-set! class 'direct-supers supers)
