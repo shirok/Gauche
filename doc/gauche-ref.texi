@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.37 2001-06-30 10:26:33 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.38 2001-07-01 02:33:11 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -510,7 +510,8 @@ option processing and error handling.
                   (call-with-input-file file
                     (lambda (in)
                       (copy-port in (current-output-port)))))
-                args)))
+                args))
+  0)
 @end cartouche
 @end example
 
@@ -545,7 +546,8 @@ The following script is a simple grep command.
             (for-each (lambda (f)
                         (call-with-input-file f
                           (lambda (p) (grep rx p))))
-                      (cdr args))))))
+                      (cdr args))))
+        0))
 @end cartouche
 @end example
 
@@ -2009,7 +2011,7 @@ useful macros to deal with regular expression matching.
 
 
 @defun call-with-current-continuation proc
-@defunx call/cc
+@defunx call/cc proc
 [R5RS]
 @end defun
 
@@ -2027,8 +2029,13 @@ useful macros to deal with regular expression matching.
 @var{string} is printed by @code{display}, and each @var{arg} is printed
 by @code{write}, into the current error port.
 @item
-A current stack trace is also displayed (although it is buggy
+If Gauche is running in the interactive mode,
+the current stack trace is also displayed (although it is not correct
 in the current release).
+@item
+The current dynamic environment is unwound, i.e.
+all the active ``after'' thunk set by @code{dynamic-wind} are
+executed.
 @item
 If Gauche is running in the interactive mode, the control goes
 to the toplevel REPL.  If Gauche is running as a script,
@@ -2052,7 +2059,10 @@ Similar to an error, but the error message is formatted by
 @subsection Multiple values
 
 @defun values obj @dots{}
-[R5RS]
+[R5RS] Returns @var{obj} @dots{} as multiple values.
+Caller can capture multiple values by a built-in syntax
+@code{receive} (@ref{Binding constructs}), or the R5Rs procedure
+@code{call-with-values} described below.  See also @ref{Let-values}.
 @end defun
 
 @defun call-with-values producer consumer
@@ -3639,7 +3649,7 @@ specific socket address family.
 @end deftp
 
 @deffn {Generic Function} sockaddr-family addr
-Returns a keyword which indicates the family of the socket address
+Returns a symbol that indicates the family of the socket address
 @var{addr}.
 @end deffn
 
@@ -3669,7 +3679,7 @@ IPv4 loopback address "127.0.0.1".
 @end deftp
 
 @deffn {Method} sockaddr-family (addr <sockaddr-in>)
-Returns @code{:inet}.
+Returns a symbol @code{inet}.
 @end deffn
 
 @deffn {Method} sockaddr-name (addr <sockaddr-in>)
@@ -3689,7 +3699,7 @@ use @code{make} method as follows:
 @end deftp
 
 @deffn {Method} sockaddr-family (addr <sockaddr-un>)
-Returns @code{:unix}.
+Returns a symbol @code{unix}.
 @end deffn
 
 @deffn {Method} sockaddr-name (addr <sockaddr-un>)
@@ -3839,7 +3849,8 @@ a very simple www client.
 (define (main args)
   (if (= (length args) 1)
       (get (car args))
-      (usage)))
+      (usage))
+  0)
 @end example
 
 
@@ -4369,7 +4380,7 @@ output port which is connected to the stdin of the command
 is set to the current output port while executing @var{thunk}.
 @end defun
 
-@defun call-with-io-process command proc
+@defun call-with-process-io command proc
 Runs @var{command} via @code{/bin/sh}, and calls @var{proc}
 with two arguments; the first argument is an input port which
 is connected to the command's stdout, and the second is an output
