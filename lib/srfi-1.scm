@@ -2,7 +2,7 @@
 ;;; SRFI-1 - List processing library
 ;;;
 
-;; $Id: srfi-1.scm,v 1.5 2001-04-06 10:07:52 shiro Exp $
+;; $Id: srfi-1.scm,v 1.6 2001-04-06 11:10:32 shiro Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -18,7 +18,7 @@
 ;; You can obtain the original version from http://srfi.schemers.org
 
 (define-module srfi-1
-  (export xcons cons* make-list list-copy circular-list iota
+  (export xcons cons* make-list list-tabulate list-copy circular-list iota
           proper-list? circular-list? dotted-list? not-pair?
           null-list? list=
           first second third fourth fifth sixth seventh eighth
@@ -46,7 +46,7 @@
     ((%optional ?opts ?default)
      (if (pair? ?opts) (car ?opts) ?default))))
 
-(autoload "srfi-1/generators" list-tabulate iota circular-list)
+(autoload "srfi-1/generator"  list-tabulate iota circular-list)
 (autoload "srfi-1/pred"       proper-list? dotted-list? circular-list? length+)
 (autoload "srfi-1/zipper"     zip unzip1 unzip2 unzip3 unzip4 unzip5)
 (autoload "srfi-1/nth"        first second third fourth fifth sixth
