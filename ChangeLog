@@ -1,3 +1,8 @@
+2002-04-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c : improved integer reader to do bignum calculation
+	  with chunk of digits, instead of every digits.
+
 2002-04-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c, src/read.c : rewrote number reader to handle

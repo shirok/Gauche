@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.67 2002-04-03 22:31:22 shirok Exp $
+ *  $Id: number.c,v 1.68 2002-04-04 08:06:13 shirok Exp $
  */
 
 #include <math.h>
@@ -1423,12 +1423,14 @@ enum { /* used in the exactness flag */
     NOEXACT, EXACT, INEXACT
 };
 
-/* An integer table of limit value V for each radix R that V fits in
-   signed long but V*R doesn't.  */
-static long intlimits[RADIX_MAX-RADIX_MIN+1];
-/* An integer table of 10^n.  The size of the table is
-   ceiling(log10(LONG_MAX)) < LONG_BITS/3+1, since log10(2) ~ 0.30103. */
-static long ipow10[(SIZEOF_LONG*8)/3+1];
+/*
+ * Max digits D such that all D-digit radix R integers fit in signed
+   long, i.e. R^(D+1)-1 <= LONG_MAX */
+static long longdigs[RADIX_MAX-RADIX_MIN+1];
+
+/* An integer table of R^D, which is a "big digit" to be added
+   into bignum. */
+static long bigdig[RADIX_MAX-RADIX_MIN+1];
 
 static ScmObj numread_error(const char *msg, struct numread_packet *context);
 
@@ -1436,16 +1438,8 @@ static ScmObj numread_error(const char *msg, struct numread_packet *context);
 static inline long ipow(int r, int n)
 {
     int k;
-    
-    switch (r) {
-    case 10: return ipow10[n];
-    case 2:  return 1L<<n;
-    case 8:  return 1L<<(n*3);
-    case 16: return 1L<<(n*4);
-    default:
-        for (k=1; n>0; n--) k *= r;
-        return k;
-    }
+    for (k=1; n>0; n--) k *= r;
+    return k;
 }
 
 /* Returns either small integer or bignum. */
@@ -1456,13 +1450,16 @@ static ScmObj read_uint(const char **strp, int *lenp,
     const char *str = *strp;
     int len = *lenp;
     int radix = ctx->radix;
-    int digits = 0;
-    int padseen = FALSE;
-    long value_int = 0, limit = intlimits[radix - RADIX_MIN];
+    int digits = 0, diglimit = longdigs[radix - RADIX_MIN];
+    long bdig = bigdig[radix - RADIX_MIN];
+    long value_int = 0;
     ScmObj value_big = SCM_FALSE;
     char c;
     static const char tab[] = "0123456789abcdefghijklmnopqrstuvwxyz";
     const char *ptab;
+
+    /* Ignore leading 0's, to avoid unnecessary bignum operations. */
+    while (len > 0 && *str == '0') { str++; len--; }
 
     while (len--) {
         c = tolower(*str++);
@@ -1470,15 +1467,14 @@ static ScmObj read_uint(const char **strp, int *lenp,
             if (c == *ptab) {
                 value_int = value_int * radix + (ptab-tab);
                 digits++;
-                if (value_int >= limit) {
+                if (digits > diglimit) {
                     if (SCM_FALSEP(value_big)) {
                         value_big = Scm_MakeBignumFromSI(value_int);
                         value_int = digits = 0;
                     } else {
-                        value_big = Scm_BignumMulSI(SCM_BIGNUM(value_big),
-                                                    ipow(radix, digits));
-                        value_big = Scm_BignumAddSI(SCM_BIGNUM(value_big),
-                                                    value_int);
+                        value_big = Scm_BignumMulSI(SCM_BIGNUM(value_big), bdig);
+                        SCM_ASSERT(SCM_BIGNUMP(value_big));
+                        value_big = Scm_BignumAddSI(SCM_BIGNUM(value_big), value_int);
                         value_int = digits = 0;
                     }
                 }
@@ -1489,11 +1485,16 @@ static ScmObj read_uint(const char **strp, int *lenp,
     }
     *strp = str-1;
     *lenp = len+1;
-    
+
     if (SCM_FALSEP(value_big)) return Scm_MakeInteger(value_int);
     if (digits > 0) {
         value_big = Scm_BignumMulSI(SCM_BIGNUM(value_big),
                                     ipow(radix, digits));
+        if (SCM_INTP(value_big)) {
+            /* There may be a case that the above calculation yields
+               fixnum. */
+            value_big = Scm_MakeBignumFromSI(SCM_INT_VALUE(value_big));
+        }
         value_big = Scm_BignumAddSI(SCM_BIGNUM(value_big), value_int);
     }
     return value_big;
@@ -1777,12 +1778,16 @@ ScmObj Scm_StringToNumber(ScmString *str, int radix, int strict)
 
 void Scm__InitNumber(void)
 {
-    int radix, n;
-    long pow10;
+    int radix, n, i;
     for (radix = RADIX_MIN; radix <= RADIX_MAX; radix++) {
-        intlimits[radix-RADIX_MIN] = LONG_MAX/radix - radix;
-    }
-    for (pow10 = 1, n = 0; pow10 < intlimits[10]; n++, pow10 *= 10) {
-        ipow10[n] = pow10;
+        /* Find max D where R^(D+1)-1 <= LONG_MAX */
+        for (i = 0, n = 1; ; i++, n *= radix) {
+            if (n >= LONG_MAX/radix) {
+                fprintf(stderr, "radix %d, longdigs %d, bigdig %d\n", radix, i-1, n);
+                longdigs[radix-RADIX_MIN] = i-1;
+                bigdig[radix-RADIX_MIN] = n;
+                break;
+            }
+        }
     }
 }
