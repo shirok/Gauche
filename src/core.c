@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.3 2001-01-15 01:28:28 shiro Exp $
+ *  $Id: core.c,v 1.4 2001-01-16 04:45:32 shiro Exp $
  */
 
 #include "gauche.h"
@@ -35,7 +35,7 @@ void *Scm_MallocAtomic(size_t size)
     return p;
 }
 
-#if 0
+#if 1
 void *Scm_Realloc(void *ptr, size_t size)
 {
     void *p = GC_MALLOC_ATOMIC(size);
