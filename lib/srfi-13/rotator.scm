@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: rotator.scm,v 1.2 2001-05-01 06:51:34 shirok Exp $
+;;;  $Id: rotator.scm,v 1.3 2001-05-03 10:30:29 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -39,7 +39,7 @@
              (error "argument out of range (from, to): (~s, ~s)" from to))
             (else
              (set! from from-mod)
-             (set! to (- to from-rank))))
+             (set! to (- to (* from-rank len)))))
       (let ((sp (make-string-pointer str from)))
         (let loop ((count from)
                    (ch (string-pointer-next! sp)))
@@ -59,5 +59,4 @@
   (check-arg string? target)
   (check-arg (lambda (x) (and (integer? x) (exact? x))) tstart)
   (let ((result (apply xsubstring s sfrom args)))
-    (string-substitute! target tstart (+ tstart (string-length result))
-                        result)))
+    (string-substitute! target tstart result)))
