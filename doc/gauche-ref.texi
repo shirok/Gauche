@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.136 2001-12-08 08:04:24 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.137 2001-12-11 09:52:50 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -231,6 +231,7 @@ Gaucheは内部的に文字列を全て、コンパイル時に選択したエンコーディングの
 @c COMMON
 
 @c EN
+Gauche has a simple module system to separate module namespaces,
 
 @c JP
 @c COMMON
@@ -2447,10 +2448,59 @@ The complex part is Gauche extension.
 [R5RS]
 @c EN
 Returns the quotient, remainder and modulo of dividing an integer @var{n1}
-by an integer @var{n2}.
-@c JP
+by an integer @var{n2}.   The result is an exact number only if
+both @var{n1} and @var{n2} are exact numbers.
 
+Remainder and modulo differ when either one of the arguments is negative.
+Remainder @var{R} and quotient @var{Q} have the following relationship.
+@example
+  @var{n1} = @var{Q} * @var{n2} + @var{R}
+@end example
+where @code{abs(@var{Q}) = floor(abs(@var{n1})/abs(@var{n2}))}.
+Consequently, @var{R}'s sign is always the same as @var{n1}'s.
+
+On the other hand, modulo works as expected for positive @var{n2},
+regardless of the sign of @var{n1}
+(e.g. @code{(modulo -1 @var{n2}) == @var{n2} - 1}).
+If @var{n2} is negative, it is mapped to the positive case by
+the following relationship.
+@example
+  modulo(@var{n1}, @var{n2}) = @minus{}modulo(@minus{}@var{n1}, @minus{}@var{n2})
+@end example
+Consequently, @var{modulo}'s sign is always the same as @var{n2}'s.
+@c JP
+整数@var{n1}を整数@var{n2}で割った商(quotient)および余り(remainder, modulo)
+を返します。  @var{n1}と@var{n2}の両方が正確な数値の時のみ、戻り値は正確な数値になります。
+
+@code{remainder}と@code{modulo} はどちらかの引数が負の時に異なる値を返します。
+Remainder @var{R} と商 @var{Q} とは次の関係があります。
+@example
+  @var{n1} = @var{Q} * @var{n2} + @var{R}
+@end example
+ここで商について @code{abs(@var{Q}) = floor(abs(@var{n1})/abs(@var{n2}))}
+ですから、@var{R}の符号は常に@var{n1}と同じになります。
+
+一方、moduloは@var{n2}が正の時は@var{n1}の符号に関わらず期待したように動作します
+(例: @code{(modulo -1 @var{n2}) == @var{n2} - 1})。
+@var{n2}が負の場合は次の式によって正の場合にマップできます。
+@example
+  modulo(@var{n1}, @var{n2}) = @minus{}modulo(@minus{}@var{n1}, @minus{}@var{n2})
+@end example
+したがって、moduloの結果の符号は常に@var{n2}の符号と同じになります。
 @c COMMON
+@example
+(remainder 10 3)    @result{} 1
+(modulo 10 3)       @result{} 1
+
+(remainder -10 3)   @result{} -1
+(modulo -10 3)      @result{} 2
+
+(remainder 10 -3)   @result{} 1
+(modulo 10 -3)      @result{} -2
+
+(remainder -10 -3)  @result{} -1
+(modulo -10 -3)     @result{} -1
+@end example
 @end defun
 
 @defun gcd n @dots{}
@@ -2487,6 +2537,12 @@ always returns @var{q} and @code{denominator} always return 1.
 @defunx round x
 [R5RS]
 @c EN
+The argument @var{x} must be a real number.
+@code{Floor} and @code{ceiling} return a minimum integer that
+is greater than @var{x} and a maximim integer that is less than @var{x},
+respectively.  @var{Truncate} returns an integer that truncates
+@var{x} towards zero.  @var{Round} returns an integer that is closest
+to @var{x}.
 @c JP
 @c COMMON
 @end defun
@@ -3519,32 +3575,161 @@ that are supported in the native multibyte encoding scheme.
 
 @deftp {Builtin Class} <char-set>
 @clindex char-set
+@c EN
 Character set class.  Character set object represents a set of characters.
 Gauche provides built-in support of character set creation and
 a predicate that tests whether a character is in the set or not.
 
 Further operations, such as set algebra, is defined in SRFI-14
-module (See @ref{Character-set library}).
+module (@xref{Character-set library}).
+@c JP
+文字の集合を取り扱う、文字集合(キャラクタセット)のクラスです。
+Gaucheは文字集合オブジェクトのサポートと、
+ある文字がその集合に属するかどうかを調べる手続きを言語組み込みで持っています。
+
+文字集合に関する他の操作、例えば集合演算などは、SRFI-14モジュール
+(@ref{Character-set library}参照) で提供されています。
+@c COMMON
 @end deftp
 
 @deftp {Reader Syntax} @code{#[@i{char-set-spec}]}
+@c EN
+You can write a literal character set in this syntax.
+@i{char-set-spec} is a sequence of characters to be included
+in the set.  You can include the following special sequences:
+@table @code
+@item @var{x}-@var{y}
+Characters between @var{x} and @var{y}, inclusive.
+@var{x} must be smaller than @var{y} in the internal encoding.
+@item ^
+If @i{char-set-spec} begins with caret, the actual character set
+is a complement of what the rest of @i{char-set-spec} indicates.
+@item \x@var{NN}
+A character whose internal code is a hexadecimal number @var{NN}.
+@item \s
+Whitespace characters.
+@item \S
+Complement of whitespace characters.
+@item \d
+Decimal digit characters.
+@item \D
+Complement of decimal digit characters.
+@item \w
+Alphanumeric characters.
+@item \W
+Complement of alphanumeric characters.
+@item \\
+A backslash character.
+@item \-
+A minus character.
+@item \^
+A caret character.
+@end table
+
+@example
+#[aeiou]     ; @r{a character set consists of vowels}
+#[a-zA-Z]    ; @r{alphabets}
+#[\x0d\x0a]  ; @r{newline and carriage return}
+#[\\\-]      ; @r{backslash and minus}
+#[]          ; @r{empty charset}
+@end example
+@c JP
+この構文で、リテラル文字集合を記述することができます。
+@i{char-set-spec}には集合に含める文字を列挙します。
+次の特殊なシーケンスを含めることができます。
+@table @code
+@item @var{x}-@var{y}
+文字@var{x}と文字@code{y}の間の文字全て。@var{x}と@var{y}も含みます。
+@var{x}は@var{y}よりも内部文字コードで比較して小さくなければなりません。
+@item ^
+カレットが@i{char-set-spec}の最初に来た場合、以降に示される文字集合の
+補集合がこの文字集合となります。
+@item \x@var{NN}
+内部文字コード@var{NN}(16進数表記)の文字。
+@item \s
+空白文字。
+@item \S
+空白でない文字。(@code{\s}の補集合)
+@item \d
+10進数の数字
+@item \D
+@code{\d}の補集合
+@item \w
+アルファベットと数字
+@item \W
+@code{\w}の補集合
+@item \\
+バックスラッシュ文字
+@item \-
+マイナス文字
+@item \^
+カレット文字
+@end table
+
+@example
+#[aeiou]     ; @r{母音文字'a', 'e', 'i', 'o', 'u'の集合}
+#[a-zA-Z]    ; @r{アルファベット}
+#[\x0d\x0a]  ; @r{改行とリターン}
+#[\\\-]      ; @r{バックスラッシュとマイナス文字}
+#[]          ; @r{空の文字集合}
+#[ぁ-ん]     ; @r{平仮名の集合}
+@end example
+@c COMMON
 @end deftp
 
 @defun char-set? obj
-[SRFI-14] Returns true if and only if @var{obj} is a character set object.
+[SRFI-14]
+@c EN
+Returns true if and only if @var{obj} is a character set object.
+@c JP
+@var{obj}が文字集合であれば真の値を返します。
+@c COMMON
 @end defun
 
 @defun char-set-contains? char-set char
-[SRFI-14] Returns true if and only if a character set object
+[SRFI-14]
+@c EN
+Returns true if and only if a character set object
 @var{char-set} contains a character @var{char}.
+@c JP
+文字集合@var{char-set}が文字@var{char}を含んでいれば真の値を返します。
+@c COMMON
+@example
+(char-set-contains? #[a-z] #\y) @result{} #t
+(char-set-contains? #[a-z] #\3) @result{} #f
+
+(char-set-contains? #[^ABC] #\A) @result{} #f
+(char-set-contains? #[^ABC] #\D) @result{} #t
+
+@c JP
+(char-set-contains? #[あ-お] #\う) @result{} #t
+(char-set-contains? #[あ-お] #\ぷ) @result{} #f
+@c COMMON
+@end example
 @end defun
 
 @defun char-set char @dots{}
-[SRFI-14] Creates a character set that contains @var{char} @dots{}.
+[SRFI-14]
+@c EN
+Creates a character set that contains @var{char} @dots{}.
+@c JP
+文字@var{char} @dots{} からなる文字集合を作成して返します。
+@c COMMON
+@example
+(char-set #\a #\b #\c)   @result{} #[a-c]
+@c JP
+(char-set #\あ #\い #\う) @result{} #[あいう]
+@c COMMON
+@end example
 @end defun
 
 @defun char-set-copy char-set
-[SRFI-14] Copies a character set @var{char-set}.
+[SRFI-14]
+@c EN
+Copies a character set @var{char-set}.
+@c JP
+@var{char-set}のコピーを作って返します。
+@c COMMON
 @end defun
 
 
@@ -4088,6 +4273,30 @@ useful macros and functions to deal with regular expression matching.
 
 @deftp {Builtin Class} <vector>
 @clindex vector
+@c EN
+A vector is a simple 1-dimensional array of Scheme objects.
+You can access its element by index in constant time.
+Once created, a vector can't be resized.
+
+Class @code{<vector>} inherits @code{<sequence>} and 
+you can use various generic functions such as @code{map} and @code{fold}
+on it.   @xref{Collection framework}, and @xref{Sequence framework}.
+
+If you keep only a homogeneous numeric type, you may be able
+to use SRFI-4 homogenous vectors (@xref{Homogeneous Vectors}).
+@c JP
+ベクタはSchemeオブジェクトの単純な一次元配列です。
+インデックスを用いて定数時間でその要素にアクセスできます。
+一度作成されたベクタはその大きさを変えることはできません。
+
+@code{<vector>}クラスはまた@code{<sequence>}クラスを継承し、
+@code{map}や@code{fold}など様々な総称関数を使うことができます。
+@ref{Collection framework} と
+@ref{Sequence framework} を参照して下さい。
+
+数値しか要素に持たないベクタを使う場合、SRFI-4の
+単一型ベクタも使えるかもしれません (@ref{Homogeneous Vectors}参照)。
+@c COMMON
 @end deftp
 
 @defun vector? obj
