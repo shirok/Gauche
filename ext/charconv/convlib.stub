@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: convlib.stub,v 1.7 2001-06-07 07:15:17 shirok Exp $
+;;; $Id: convlib.stub,v 1.8 2001-06-07 19:58:02 shirok Exp $
 ;;;
 
 "#include \"charconv.h\""
@@ -45,6 +45,14 @@
   SCM_RETURN(Scm_MakeOutputConversionPort(sink, tc, fc,
                                           buffer_size, !SCM_FALSEP(ownerP)));")
 
+(define-cproc ces-guess-from-string (string scheme)
+  (assert (string? string))
+  (assert (string? scheme))
+  " const char *guessed = Scm_GuessCES(Scm_GetStringConst(scheme),
+                                       SCM_STRING_START(string),
+                                       SCM_STRING_SIZE(string));
+  if (guessed) SCM_RETURN(SCM_MAKE_STR(guessed));
+  else SCM_RETURN(SCM_FALSE);")
 
 ;;; Local variables:
 ;;; mode: scheme

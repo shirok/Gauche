@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.13 2001-06-07 19:42:07 shirok Exp $
+ *  $Id: charconv.c,v 1.14 2001-06-07 19:58:02 shirok Exp $
  */
 
 #include <string.h>
@@ -370,6 +370,17 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
                                 (void*)cinfo);
 }
 
+/*------------------------------------------------------------
+ * Direct interface for code guessing
+ */
+const char *Scm_GuessCES(const char *code, const char *buf, int buflen)
+{
+    conv_guess *guess = findGuessingProc(code);
+    if (guess == NULL)
+        Scm_Error("unknown code guessing scheme: %s", code);
+    return guess->proc(buf, buflen, guess->data);
+}
+
 /*====================================================================
  * Builtin code guessing functions
  */
@@ -390,14 +401,14 @@ static const char eucjp[][256] = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*5*/
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*6*/
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*7*/
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, /*8*/
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /*9*/
-        0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*A*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, 2,-1, /*8*/
+       -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, /*9*/
+       -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*A*/
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*B*/
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*C*/
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*D*/
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /*E*/
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, /*F*/
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,-1, /*F*/
     },
     /* EUC-JP second byte dispatch */
     {/* 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F*/

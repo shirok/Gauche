@@ -142,6 +142,23 @@
           '("EUCKR" "UTF-8" "CSISO2022KR")
           '("EUCKR" "UTF-8" "CSISO2022KR"))
 
-;; WRITEME
+;;--------------------------------------------------------------------
+(test-section "code guessing")
+
+(define (test-guess file code scheme)
+  (let ((infostr (format #f "guess ~a from ~a.~a" scheme file code))
+        (infile  (format #f "~a.~a" file code)))
+    (test infostr code
+          (lambda ()
+            (call-with-input-file infile
+              (lambda (p)
+                (ces-guess-from-string (port->string p) scheme)))))))
+
+(map-test test-guess "data/jp1"
+          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
+          '("*JP"))
+(map-test test-guess "data/jp2"
+          '("EUCJP" "UTF-8" "SJIS" "CSISO2022JP")
+          '("*JP"))
 
 (test-end)

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.h,v 1.7 2001-06-07 19:42:07 shirok Exp $
+ *  $Id: charconv.h,v 1.8 2001-06-07 19:58:02 shirok Exp $
  */
 
 #ifndef GAUCHE_CHARCONV_H
@@ -45,6 +45,10 @@ extern int Scm_ConversionSupportedP(const char *from, const char *to);
 extern void Scm_RegisterCodeGuessingProc(const char *code,
                                          ScmCodeGuessingProc proc,
                                          void *data);
+
+extern const char *Scm_GuessCES(const char *code,
+                                const char *buf,
+                                int buflen);
 
 #ifdef __cplusplus
 }
