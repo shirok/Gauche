@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.306 2002-11-26 08:32:28 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.307 2002-11-28 02:20:30 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -5283,7 +5283,7 @@ A boolean class.  Only @code{#t} and @code{#f} belong to this class.
 @defun not obj
 [R5RS]
 @c EN
-Returns @code{#t} if and only if @var{obj} is @code{#t},
+Returns @code{#t} if and only if @var{obj} is @code{#f},
 and returns @code{#f} otherwise.
 @c JP
 @var{obj}が@code{#f}の時のみ@code{#t}を返し、それ以外の場合は@code{#f}を
