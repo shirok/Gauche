@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.327 2003-02-15 12:23:30 shirok Exp $
+ *  $Id: gauche.h,v 1.328 2003-02-16 01:02:54 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -985,7 +985,7 @@ SCM_CLASS_DECL(Scm_VectorClass);
         if ((end) < 0) (end) = (len);                                   \
         else if ((end) > (len)) {                                       \
             Scm_Error("end argument out of range: %d\n", (end));        \
-        } else if ((end) <= (start)) {                                  \
+        } else if ((end) < (start)) {                                   \
             Scm_Error("end argument (%d) must be greater than or "      \
                       "equal to the start argument (%d)",               \
                       (end), (start));                                  \
