@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.46 2001-09-24 19:57:38 shirok Exp $
+;;; $Id: syslib.stub,v 1.47 2001-09-27 10:12:23 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -116,12 +116,12 @@
 ;;---------------------------------------------------------------------
 ;; locale.h
 
-(define-symbol LC_ALL "lc_all" "Scm_MakeInteger(LC_ALL)")
-(define-symbol LC_COLLATE "lc_collate" "Scm_MakeInteger(LC_COLLATE)")
-(define-symbol LC_CTYPE "lc_ctype" "Scm_MakeInteger(LC_CTYPE)")
-(define-symbol LC_MONETARY "lc_monetary" "Scm_MakeInteger(LC_MONETARY)")
-(define-symbol LC_NUMERIC "lc_numeric" "Scm_MakeInteger(LC_NUMERIC)")
-(define-symbol LC_TIME "lc_time" "Scm_MakeInteger(LC_TIME)")
+(define-symbol |LC_ALL| "lc_all" "Scm_MakeInteger(LC_ALL)")
+(define-symbol |LC_COLLATE| "lc_collate" "Scm_MakeInteger(LC_COLLATE)")
+(define-symbol |LC_CTYPE| "lc_ctype" "Scm_MakeInteger(LC_CTYPE)")
+(define-symbol |LC_MONETARY| "lc_monetary" "Scm_MakeInteger(LC_MONETARY)")
+(define-symbol |LC_NUMERIC| "lc_numeric" "Scm_MakeInteger(LC_NUMERIC)")
+(define-symbol |LC_TIME| "lc_time" "Scm_MakeInteger(LC_TIME)")
 
 (define-cproc sys-setlocale (category locale)
   (assert (small-integer? category))
@@ -235,25 +235,25 @@
 ;;---------------------------------------------------------------------
 ;; signal.h
 
-(define-symbol SIGABRT "sym_sigabrt" "Scm_MakeInteger(SIGABRT)")
-(define-symbol SIGALRM "sym_sigalrm" "Scm_MakeInteger(SIGALRM)")
-(define-symbol SIGCHLD "sym_sigchld" "Scm_MakeInteger(SIGCHLD)")
-(define-symbol SIGCONT "sym_sigcont" "Scm_MakeInteger(SIGCONT)")
-(define-symbol SIGFPE  "sym_sigfpe"  "Scm_MakeInteger(SIGFPE)")
-(define-symbol SIGHUP  "sym_sighup"  "Scm_MakeInteger(SIGHUP)")
-(define-symbol SIGILL  "sym_sigill"  "Scm_MakeInteger(SIGILL)")
-(define-symbol SIGINT  "sym_sigint"  "Scm_MakeInteger(SIGINT)")
-(define-symbol SIGKILL "sym_sigkill" "Scm_MakeInteger(SIGKILL)")
-(define-symbol SIGPIPE "sym_sigpipe" "Scm_MakeInteger(SIGPIPE)")
-(define-symbol SIGQUIT "sym_sigquit" "Scm_MakeInteger(SIGQUIT)")
-(define-symbol SIGSEGV "sym_sigsegv" "Scm_MakeInteger(SIGSEGV)")
-(define-symbol SIGSTOP "sym_sigstop" "Scm_MakeInteger(SIGSTOP)")
-(define-symbol SIGTSTP "sym_sigtstp" "Scm_MakeInteger(SIGTSTP)")
-(define-symbol SIGTTIN "sym_sigttin" "Scm_MakeInteger(SIGTTIN)")
-(define-symbol SIGTTOU "sym_sigttou" "Scm_MakeInteger(SIGTTOU)")
-(define-symbol SIGUSR1 "sym_sigusr1" "Scm_MakeInteger(SIGUSR1)")
-(define-symbol SIGUSR2 "sym_sigusr2" "Scm_MakeInteger(SIGUSR2)")
-(define-symbol SIGTERM "sym_sigterm" "Scm_MakeInteger(SIGTERM)")
+(define-symbol |SIGABRT| "sym_sigabrt" "Scm_MakeInteger(SIGABRT)")
+(define-symbol |SIGALRM| "sym_sigalrm" "Scm_MakeInteger(SIGALRM)")
+(define-symbol |SIGCHLD| "sym_sigchld" "Scm_MakeInteger(SIGCHLD)")
+(define-symbol |SIGCONT| "sym_sigcont" "Scm_MakeInteger(SIGCONT)")
+(define-symbol |SIGFPE|  "sym_sigfpe"  "Scm_MakeInteger(SIGFPE)")
+(define-symbol |SIGHUP|  "sym_sighup"  "Scm_MakeInteger(SIGHUP)")
+(define-symbol |SIGILL|  "sym_sigill"  "Scm_MakeInteger(SIGILL)")
+(define-symbol |SIGINT|  "sym_sigint"  "Scm_MakeInteger(SIGINT)")
+(define-symbol |SIGKILL| "sym_sigkill" "Scm_MakeInteger(SIGKILL)")
+(define-symbol |SIGPIPE| "sym_sigpipe" "Scm_MakeInteger(SIGPIPE)")
+(define-symbol |SIGQUIT| "sym_sigquit" "Scm_MakeInteger(SIGQUIT)")
+(define-symbol |SIGSEGV| "sym_sigsegv" "Scm_MakeInteger(SIGSEGV)")
+(define-symbol |SIGSTOP| "sym_sigstop" "Scm_MakeInteger(SIGSTOP)")
+(define-symbol |SIGTSTP| "sym_sigtstp" "Scm_MakeInteger(SIGTSTP)")
+(define-symbol |SIGTTIN| "sym_sigttin" "Scm_MakeInteger(SIGTTIN)")
+(define-symbol |SIGTTOU| "sym_sigttou" "Scm_MakeInteger(SIGTTOU)")
+(define-symbol |SIGUSR1| "sym_sigusr1" "Scm_MakeInteger(SIGUSR1)")
+(define-symbol |SIGUSR2| "sym_sigusr2" "Scm_MakeInteger(SIGUSR2)")
+(define-symbol |SIGTERM| "sym_sigterm" "Scm_MakeInteger(SIGTERM)")
 
 (define-cproc sys-kill (pid sig)
   (assert (exact? pid))
@@ -619,10 +619,10 @@
 ;;---------------------------------------------------------------------
 ;; unistd.h - miscellaneous functions
 
-(define-symbol r_ok "sym_r_ok" "Scm_MakeInteger(R_OK)")
-(define-symbol w_ok "sym_w_ok" "Scm_MakeInteger(W_OK)")
-(define-symbol x_ok "sym_x_ok" "Scm_MakeInteger(X_OK)")
-(define-symbol f_ok "sym_f_ok" "Scm_MakeInteger(F_OK)")
+(define-symbol |R_OK| "sym_r_ok" "Scm_MakeInteger(R_OK)")
+(define-symbol |W_OK| "sym_w_ok" "Scm_MakeInteger(W_OK)")
+(define-symbol |X_OK| "sym_x_ok" "Scm_MakeInteger(X_OK)")
+(define-symbol |F_OK| "sym_f_ok" "Scm_MakeInteger(F_OK)")
 
 (define-cproc sys-access (pathname amode)
   (assert (string? pathname))
