@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.78 2001-03-15 08:01:10 shiro Exp $
+ *  $Id: gauche.h,v 1.79 2001-03-16 10:54:17 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -290,7 +290,7 @@ extern ScmObj Scm_VMThrowException(ScmObj exception);
 /* See class.c for the description of function pointer members. */
 struct ScmClassRec {
     SCM_HEADER;
-    char *name;                 /* char* for static initialization */
+    const char *name;           /* char* for static initialization */
     int (*print)(ScmObj obj, ScmPort *sink, int mode);
     int (*equal)(ScmObj x, ScmObj y);
     int (*compare)(ScmObj x, ScmObj y);
@@ -298,13 +298,17 @@ struct ScmClassRec {
     ScmObj (*allocate)(ScmClass *klass, int nslots);
     ScmObj (*apply)(ScmObj obj, ScmObj args);
     struct ScmClassRec **cpa;
-    unsigned int flags;
-    ScmObj directSupers;
-    ScmObj cpl;
-    ScmObj directSlots;
-    ScmObj effectiveSlots;
+    short numInstanceSlots;     /* # of instance slots */
+    unsigned short flags;
+    ScmObj sname;               /* scheme name */
+    ScmObj directSupers;        /* list of classes */
+    ScmObj cpl;                 /* list of classes */
+    ScmObj accessorTable;       /* hashtable or #f */
+    ScmObj directSlots;         /* list of slot names */
+    ScmObj slots;               /* alist of slot-name & slot-definition */
+    ScmObj directSubclasses;
     ScmObj directMethods;
-#define SCM_CLASS_PREDEFINED_SLOTS 5
+#define SCM_CLASS_PREDEFINED_SLOTS 6
 };
 
 #define SCM_CLASS(obj)        ((ScmClass*)(obj))
@@ -322,16 +326,16 @@ enum {
 #define SCM_CLASS_FINAL_P(obj)   (SCM_CLASS_FLAGS(obj)&SCM_CLASS_FINAL)
 
 extern ScmClass *Scm_ClassOf(ScmObj obj);
+extern ScmObj Scm_ClassName(ScmClass *klass);
 extern ScmObj Scm_ClassCPL(ScmClass *klass);
 extern ScmObj Scm_ClassDirectSupers(ScmClass *klass);
 extern ScmObj Scm_ClassDirectSlots(ScmClass *klass);
 extern ScmObj Scm_ClassEffectiveSlots(ScmClass *klass);
-extern ScmObj Scm_SubtypeP(ScmClass *sub, ScmClass *type);
-extern ScmObj Scm_TypeP(ScmObj obj, ScmClass *type);
+extern int Scm_SubtypeP(ScmClass *sub, ScmClass *type);
+extern int Scm_TypeP(ScmObj obj, ScmClass *type);
 
-extern ScmClass *Scm_MakeBuiltinClass(const char *name,
-                                      int (*printer)(ScmObj, ScmPort*, int),
-                                      ScmObj supers);
+extern ScmObj Scm_SlotRef(ScmObj obj, ScmObj slot);
+extern void Scm_SlotSet(ScmObj obj, ScmObj slot, ScmObj value);
 
 /* built-in classes */
 extern ScmClass Scm_TopClass;
@@ -350,6 +354,7 @@ extern ScmClass Scm_ObjectClass; /* base of Scheme-defined objects */
 #define SCM_CLASS_UNKNOWN      (&Scm_UnknownClass)
 #define SCM_CLASS_COLLECTION   (&Scm_CollectionClass)
 #define SCM_CLASS_SEQUENCE     (&Scm_SequenceClass)
+#define SCM_CLASS_OBJECT       (&Scm_ObjectClass)
 
 extern ScmClass *Scm_DefaultCPL[];
 extern ScmClass *Scm_CollectionCPL[];
@@ -362,10 +367,27 @@ extern ScmClass *Scm_ObjectCPL[];
 #define SCM_CLASS_OBJECT_CPL      (Scm_ObjectCPL)
     
 /* define built-in class statically. */
-#define SCM_DEFCLASS(cname, sname, printer, cpa)                             \
-    ScmClass cname = {                                                       \
-        SCM_CLASS_CLASS, sname, printer, NULL, NULL, NULL, NULL, NULL, cpa,  \
-        0, SCM_FALSE, SCM_FALSE, SCM_NIL, SCM_NIL, SCM_NIL                   \
+#define SCM_DEFCLASS(cname, sname, printer, cpa)        \
+    ScmClass cname = {                                  \
+        SCM_CLASS_CLASS,        /* header */            \
+        sname,                  /* name */              \
+        printer,                /* print */             \
+        NULL,                   /* equal */             \
+        NULL,                   /* compare */           \
+        NULL,                   /* serialize */         \
+        NULL,                   /* allocate */          \
+        NULL,                   /* apply */             \
+        cpa,                    /* cpa */               \
+        0,                      /* numislots */         \
+        0,                      /* flags */             \
+        SCM_FALSE,              /* scheme name */       \
+        SCM_FALSE,              /* directsupers */      \
+        SCM_FALSE,              /* cpl */               \
+        SCM_FALSE,              /* accessortable */     \
+        SCM_NIL,                /* directslots */       \
+        SCM_NIL,                /* slots */             \
+        SCM_NIL,                /* directsubclasses */  \
+        SCM_NIL                 /* directmethods */     \
     }
 
 /*--------------------------------------------------------

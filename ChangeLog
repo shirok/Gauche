@@ -1,8 +1,16 @@
+2001-03-15  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.2.3
+	* src/class.c, src/gauche/class.h, src/moplib.stub, lib/object.scm:
+	  gradually developing class allocation protocol and slot access
+	  protocol.
+	* src/repl.c: fixed a bug that didn't let repl exit when EOF read.
+
 2001-03-14  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.2.2
 	* COPYING: clearify the copyright and distributing condition.
-        * src/class.c, src/moplib.stub: added some OO stuff.  not quite
+	* src/class.c, src/moplib.stub: added some OO stuff.  not quite
 	  working.
 	* src/hash.c, src/extlib.stub: added Scm_HashTableKeys and
 	  Scm_HashTableValues.  hash-table-keys and hash-table-values

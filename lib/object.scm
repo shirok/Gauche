@@ -12,12 +12,19 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.1 2001-03-15 09:46:00 shiro Exp $
+;;;  $Id: object.scm,v 1.2 2001-03-16 10:54:17 shiro Exp $
 ;;;
 
 (select-module gauche)
 
 ;;;
-;;; To be implemented ...
+;;; This module is A WORK IN PROGRESS.   Don't expect this to work.
 ;;;
+
+(define (class-name class) (slot-ref class 'name))
+(define (class-precedence-list class) (slot-ref class 'cpl))
+(define (class-direct-supers class) (slot-ref class 'direct-supers))
+(define (class-direct-slots class) (slot-ref class 'direct-slots))
+(define (class-slots class) (slot-ref class 'slots))
+
 

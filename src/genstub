@@ -2,7 +2,7 @@
 ;;; Simple stub generator
 ;;;
 
-;;; $Id: genstub,v 1.26 2001-03-12 10:14:51 shiro Exp $
+;;; $Id: genstub,v 1.27 2001-03-16 10:54:17 shiro Exp $
 
 (add-load-path "../lib")
 
@@ -17,6 +17,7 @@
 (define *file-prefix* "")
 (define *cprocs* '())
 (define *symbols* '())
+(define *cclasses* '())
 
 (define *unbound* (cons #f #f))         ;placeholder for unbound value
 
@@ -128,6 +129,43 @@
 (define (push-stmt! cproc stmt)
   (set! (stmts-of cproc) (cons stmt (stmts-of cproc))))
 
+;;-----------------------------------------------------------------
+;; Built-in class
+;;
+
+(define *super-table* '())
+
+(define-klass <cclass> ()
+  ((scheme-class-name :accessor scheme-class-name-of)
+   (c-class-name      :accessor c-class-name-of)
+   (slots             :accessor slots-of)
+   (super             :accessor super-of)
+   (extensible?       :accessor extensible?)
+  ))
+
+(define (make-cclass scheme-class-name c-class-name super slots)
+  (let ((cclass (make <cclass>)))
+    (set! (scheme-class-name-of cclass) scheme-class-name)
+    (set! (c-class-name-of cclass) c-class-name)
+    (set! (super-of cclass) super)
+    (set! (slots-of cclass) slots)
+    (set! *cclasses* (cons cclass *cclasses*))
+    cclass))
+
+(define (register-inheritance class cplname supers)
+  (let ((p (assq class *super-table*)))
+    (if p
+        (unless (equal? (cdr p) (cons cplname supers))
+          (error "conflicting built-in class inheritance: ~s vs ~s"
+                 (cdr p) (cons cplname supers)))
+        (set! *super-table* (acons class (cons cplname supers) *super-table*))
+        )))
+
+(register-inheritance '<top> "Scm_DefaultCPL" '())
+(register-inheritance '<collection> "Scm_CollectionCPL" '(<top>))
+(register-inheritance '<sequence> "Scm_SequenceCPL" '(<collection> <top>))
+(register-inheritance '<object> "Scm_ObjectCPL" '(<top>))
+
 ;;--------------------------------------------------------------------
 ;; Types
 ;;
@@ -233,7 +271,34 @@
     ))
 
 ;;--------------------------------------------------------------------
-;; Parse definition
+;; Cclass definition
+;;
+
+;; NOT OPERATIONAL YET
+(define (process-define-cclass form)
+  (unless (and (> (length form) 4)
+               (symbol? (cadr form))
+               (list? (caddr form))
+               (list? (cadddr form)))
+    (error "malformed define-cclass: ~s" form))
+  (let* ((scheme-class (cadr form))
+         (super (caddr form))
+         (slots (cadddr form))
+         (c-class (get-keyword :c-name (cddddr form) #f))
+         (c-class-sym (string-append c-class "_SYM"))
+         (scheme-name-len (string-length (symbol->string scheme-class))))
+    (unless c-class (error "C-class name unspecified: ~s" form))
+    (case (length super)
+      ((0) (set! super '<top>))
+      ((1) (set! super (car suprt)))
+      (else (error "built-in class can't use multiple inheritance: ~s" form)))
+    ;; TODO: check slot vailidity
+    (make-cclass scheme-class c-class super slots)
+    (newline))
+  )
+
+;;--------------------------------------------------------------------
+;; Cproc definition
 ;;
 
 (define (process-define-cproc form)
@@ -609,6 +674,8 @@
                      (process-define-symbol form))
                     ((eq? (car form) 'define-type)
                      (process-define-type form))
+                    ((eq? (car form) 'define-cclass)
+                     (process-define-cclass form))
                     (else (error "bad form: ~s" form)))
               (loop (read))))))
       (emit-initializer (get-c-name "" prefix))

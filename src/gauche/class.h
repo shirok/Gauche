@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.h,v 1.1 2001-03-15 08:01:10 shiro Exp $
+ *  $Id: class.h,v 1.2 2001-03-16 10:54:17 shiro Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -22,6 +22,33 @@
 extern "C" {
 #endif
 
+/* internal object to couple C-written getter & setter */
+typedef struct ScmClassAccessorRec {
+    SCM_HEADER;
+    ScmClass *klass;
+    ScmObj (*getter)(ScmObj instance);
+    void (*setter)(ScmObj instance, ScmObj value);
+} ScmClassAccessor;
+
+typedef ScmObj (*ScmNativeGetterProc)(ScmObj);
+typedef void   (*ScmNativeSetterProc)(ScmObj, ScmObj);
+
+extern ScmClass Scm_ClassAccessorClass;
+#define SCM_CLASS_CLASS_ACCESSOR    (&Scm_ClassAccessorClass)
+#define SCM_CLASS_ACCESSOR(obj)     ((ScmClassAccessor*)obj)
+
+/* for static declaration of fields */
+typedef struct ScmClassStaticSlotSpecRec {
+    const char *name;
+    ScmClassAccessor accessor;
+} ScmClassStaticSlotSpec;
+
+#define SCM_CLASS_SLOT_SPEC(name, klass, getter, setter)        \
+    { name, { SCM_CLASS_CLASS_ACCESSOR,                         \
+              klass,                                            \
+              (ScmNativeGetterProc)getter,                      \
+              (ScmNativeSetterProc)setter }}
+              
 /* object system base classes */
 typedef struct ScmGenericFunctionRec {
     SCM_HEADER;
@@ -37,7 +64,10 @@ typedef struct ScmSubClassRec {
 
 
 extern ScmObj Scm_ClassAllocate(ScmClass *klass, int nslots);
-extern ScmObj Scm_AllocateInstance(ScmClass *klass, int nslots);
+
+extern ScmObj Scm_AllocateInstance(ScmObj klass, ScmObj initargs);
+
+extern ScmObj Scm_GetSlotAllocation(ScmObj slot);
 
 #ifdef __cplusplus
 }
