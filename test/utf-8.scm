@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with utf-8.
 
-;; $Id: utf-8.scm,v 1.4 2003-02-05 09:50:00 shirok Exp $
+;; $Id: utf-8.scm,v 1.5 2003-02-06 11:47:53 shirok Exp $
 
 (use gauche.test)
 
@@ -240,7 +240,7 @@
 (test* "read-char" #\イ (read-char istr))
 (test* "read-byte" #xe3 (read-byte istr))
 (test* "read-byte (using scratch)" #xad
-       (begin (read-byte istr) (read-byte istr) (read-byte istr)))
+       (begin (read-byte istr) (read-byte istr)))
 (test* "read-char (using scratch)" #\ハ
        (begin (peek-byte istr) (read-char istr)))
 (test* "read-block (using scratch)" #*"ニ"

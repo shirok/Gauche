@@ -6,6 +6,13 @@
 (use gauche.parameter)
 (test-start "www.* modules")
 
+;; need to pre-load charconv if test without installation
+(when (file-exists? "../ext/syslog/syslog.scm")
+  (eval
+   '(begin (add-load-path "../ext/charconv")
+           (load "../ext/charconv/charconv"))
+   (interaction-environment)))
+
 ;;------------------------------------------------
 (test-section "www.cgi")
 (use www.cgi)

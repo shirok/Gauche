@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with shift-jis.
 
-;; $Id: sjis.scm,v 1.5 2003-02-05 09:50:00 shirok Exp $
+;; $Id: sjis.scm,v 1.6 2003-02-06 11:47:53 shirok Exp $
 
 (use gauche.test)
 
@@ -32,7 +32,7 @@
 
 (test* "string-ref" #\ÇÎ (string-ref "Ç¢ÇÎÇÕ" 1))
 (define x (string-copy "Ç¢ÇÎÇÕÇ…ÇŸ"))
-(test* "string-set!" "Ç¢ÇÎZÇ…ÇŸ" (string-set! x 2 #\Z) x)
+(test* "string-set!" "Ç¢ÇÎZÇ…ÇŸ" (begin (string-set! x 2 #\Z) x))
 
 (test* "string-fill!" "ÇÃÇÃÇÃÇÃÇÃÇÃ"
        (string-fill! (string-copy "000000") #\ÇÃ))
