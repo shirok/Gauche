@@ -735,7 +735,105 @@
 (test "lognot (bignum)" #x1000000000000000000
       (lambda () (lognot (- #x1000000000000000001))))
 
-      
+(test "logand (+fix & 0)" 0
+      (lambda () (logand #x123456 0)))
+(test "logand (+big & 0)" 0
+      (lambda () (logand #x1234567812345678 0)))
+(test "logand (+fix & -1)" #x123456
+      (lambda () (logand #x123456 -1)))
+(test "logand (+big & -1)" #x1234567812345678
+      (lambda () (logand #x1234567812345678 -1)))
+(test "logand (+fix & +fix)" #x2244
+      (lambda () (logand #xaa55 #x6666)))
+(test "logand (+fix & +big)" #x2244
+      (lambda () (logand #xaa55 #x6666666666)))
+(test "logand (+big & +fix)" #x4422
+      (lambda () (logand #xaa55aa55aa #x6666)))
+(test "logand (+big & +big)" #x2244224422
+      (lambda () (logand #xaa55aa55aa #x6666666666)))
+(test "logand (+big & +big)" #x103454301aaccaa
+      (lambda () (logand #x123456789abcdef #xfedcba987654321fedcba987654321fedcba)))
+(test "logand (+big & +big)" #x400000
+      (lambda () (logand #xaa55ea55aa #x55aa55aa55)))
+(test "logand (+fix & -fix)" #x8810
+      (lambda () (logand #xaa55 (- #x6666))))
+(test "logand (+fix & -big)" #x8810
+      (lambda () (logand #xaa55 (- #x6666666666))))
+(test "logand (+big & -fix)" #xaa55aa118a
+      (lambda () (logand #xaa55aa55aa (- #x6666))))
+(test "logand (+big & -big)" #x881188118a
+      (lambda () (logand #xaa55aa55aa (- #x6666666666))))
+(test "logand (+big & -big)" #x20002488010146
+      (lambda () (logand #x123456789abcdef (- #xfedcba987654321fedcba987654321fedcba))))
+(test "logand (-fix & +fix)" #x4422
+      (lambda () (logand (- #xaa55) #x6666)))
+(test "logand (-fix & +big)" #x6666664422
+      (lambda () (logand (- #xaa55) #x6666666666)))
+(test "logand (-big & +fix)" #x2246
+      (lambda () (logand (- #xaa55aa55aa) #x6666)))
+(test "logand (-big & +big)" #x4422442246
+      (lambda () (logand (- #xaa55aa55aa) #x6666666666)))
+(test "logand (-big & +big)" #xfedcba987654321fedcba884200020541010
+      (lambda () (logand (- #x123456789abcdef) #xfedcba987654321fedcba987654321fedcba)))
+(test "logand (-fix & -fix)" (- #xee76)
+      (lambda () (logand (- #xaa55) (- #x6666))))
+(test "logand (-fix & -big)" (- #x666666ee76)
+      (lambda () (logand (- #xaa55) (- #x6666666666))))
+(test "logand (-big & -fix)" (- #xaa55aa77ee)
+      (lambda () (logand (- #xaa55aa55aa) (- #x6666))))
+(test "logand (-big & -big)" (- #xee77ee77ee)
+      (lambda () (logand (- #xaa55aa55aa) (- #x6666666666))))
+(test "logand (-big & -big)" (- #xfedcba987654321fedcba9a76567a9ffde00)
+      (lambda () (logand (- #x123456789abcdef) (- #xfedcba987654321fedcba987654321fedcba))))
+
+(test "logior (+fix | 0)" #x123456
+      (lambda () (logior #x123456 0)))
+(test "logior (+big | 0)" #x1234567812345678
+      (lambda () (logior #x1234567812345678 0)))
+(test "logior (+fix | -1)" -1
+      (lambda () (logior #x123456 -1)))
+(test "logior (+big | -1)" -1
+      (lambda () (logior #x1234567812345678 -1)))
+(test "logior (+fix | +fix)" #xee77
+      (lambda () (logior #xaa55 #x6666)))
+(test "logior (+fix | +big)" #x666666ee77
+      (lambda () (logior #xaa55 #x6666666666)))
+(test "logior (+big | +fix)" #xaa55aa77ee
+      (lambda () (logior #xaa55aa55aa #x6666)))
+(test "logior (+big | +big)" #xee77ee77ee
+      (lambda () (logior #xaa55aa55aa #x6666666666)))
+(test "logior (+big | +big)" #xfedcba987654321fedcba9a76567a9ffddff
+      (lambda () (logior #x123456789abcdef #xfedcba987654321fedcba987654321fedcba)))
+(test "logior (+fix | -fix)" (- #x4421)
+      (lambda () (logior #xaa55 (- #x6666))))
+(test "logior (+fix | -big)" (- #x6666664421)
+      (lambda () (logior #xaa55 (- #x6666666666))))
+(test "logior (+big | -fix)" (- #x2246)
+      (lambda () (logior #xaa55aa55aa (- #x6666))))
+(test "logior (+big | -big)" (- #x4422442246)
+      (lambda () (logior #xaa55aa55aa (- #x6666666666))))
+(test "logior (+big | -big)" (- #xfedcba987654321fedcba884200020541011)
+      (lambda () (logior #x123456789abcdef (- #xfedcba987654321fedcba987654321fedcba))))
+(test "logior (-fix | +fix)" (- #x8811)
+      (lambda () (logior (- #xaa55) #x6666)))
+(test "logior (-fix | +big)" (- #x8811)
+      (lambda () (logior (- #xaa55) #x6666666666)))
+(test "logior (-big | +fix)" (- #xaa55aa118a)
+      (lambda () (logior (- #xaa55aa55aa) #x6666)))
+(test "logior (-big | +big)" (- #x881188118a)
+      (lambda () (logior (- #xaa55aa55aa) #x6666666666)))
+(test "logior (-big | +big)" (- #x20002488010145)
+      (lambda () (logior (- #x123456789abcdef) #xfedcba987654321fedcba987654321fedcba)))
+(test "logior (-fix | -fix)" (- #x2245)
+      (lambda () (logior (- #xaa55) (- #x6666))))
+(test "logior (-fix | -big)" (- #x2245)
+      (lambda () (logior (- #xaa55) (- #x6666666666))))
+(test "logior (-big | -fix)" (- #x4422)
+      (lambda () (logior (- #xaa55aa55aa) (- #x6666))))
+(test "logior (-big | -big)" (- #x2244224422)
+      (lambda () (logior (- #xaa55aa55aa) (- #x6666666666))))
+(test "logior (-big | -big)" (- #x103454301aacca9)
+      (lambda () (logior (- #x123456789abcdef) (- #xfedcba987654321fedcba987654321fedcba))))
 
 
 (test-end)
