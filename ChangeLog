@@ -1,3 +1,15 @@
+2001-06-21  Shiro Kawai  <shiro@acm.org>
+
+	* sys/class.c : changed API of Scm_InitBuiltinClass to allow
+	  hardcoded slots.
+	* ext/net/netdb.c : added netdb interface (hostent, protoent
+	  and servent).
+
+2001-06-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/Makefile.in : added system test
+	* src/syslib.stub, src/system.c: various bug fixes
+
 2001-06-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/syslib.stuc, src/system.c : added sys-select[!], the select(2)
