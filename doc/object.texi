@@ -881,6 +881,7 @@ A CPL of a class always begins with the class, and end with
 @code{(<object> <top>)}.   @code{<object>} is a superclass of
 all Scheme-defined classes, and @code{<top>} is a superclass of
 all classes (including built-in classes).
+
 If there's only single inheritance, CPL is straightforward:
 you can just follow the class's super, its super's super, its
 super's super's super, @dots{}, until you reach @code{<top>}.
@@ -919,12 +920,28 @@ definitions, @code{c} and @code{d}'s come from @code{<T>}, and
 @end example
 
 Note that this is a default behavior.
-You can also be customized by defining metaclass.
+You can also be customized by defining metaclass.  For example,
+you can write a metaclass that allows you to merge slot options
+of the same slot names, instead of the one shadowing the other.
+Or you can write a metaclass that forbids a subclass shadows
+the superclass's slot.
 
 You can get a list of slot definitions of a class object using
 @code{class-slots} function.
 
-Now, suppose you create an instance @code{u} from the class @code{<U>};
+Now, suppose you create an instance @code{u} from the class @code{<U>}:
+
+@example
+(define u (make <U>))
+
+(is-a? u <U>) @result{} #t
+@end example
+
+Then, @code{u} can be passed to methods that expects argument of
+class @code{<U>}, or any of superclasses of @code{<U>}.
+The method dispatch mechanism is explained in @ref{Defining methods}.
+
+
 
 
 

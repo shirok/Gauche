@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.103 2003-11-12 14:15:49 shirok Exp $
+ *  $Id: class.c,v 1.104 2003-11-15 03:36:17 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1447,8 +1447,8 @@ ScmObj Scm_VMSlotSet(ScmObj obj, ScmObj slot, ScmObj val)
         return instance_class_redefinition(obj, klass);
     }
     sa = Scm_GetSlotAccessor(klass, slot);
-    if (sa == NULL) SLOT_MISSING4(klass, obj, slot, val);
-    return          slot_set_using_accessor(obj, sa, val);
+    if (sa == NULL) return SLOT_MISSING4(klass, obj, slot, val);
+    else            return slot_set_using_accessor(obj, sa, val);
 }
 
 /* SLOT-SET-USING-ACCESSOR

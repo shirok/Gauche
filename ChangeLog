@@ -1,3 +1,10 @@
+2003-11-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (Scm_VMSlotSet) : fix calling slot-missing.
+
+	* src/list.c (Scm_Assq, Scm_Assv) : check 'alist' argument if
+	  it's a list.
+
 2003-11-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/mop/validator.scm : make slot-bound? work on a slot

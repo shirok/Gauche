@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: list.c,v 1.38 2003-08-30 10:19:58 shirok Exp $
+ *  $Id: list.c,v 1.39 2003-11-15 03:36:17 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -494,6 +494,7 @@ ScmObj Scm_DeleteX(ScmObj obj, ScmObj list, int cmpmode)
 ScmObj Scm_Assq(ScmObj obj, ScmObj alist)
 {
     ScmObj cp;
+    if (!SCM_LISTP(alist)) Scm_Error("assq: list required, but got %S", alist);
     SCM_FOR_EACH(cp,alist) {
         ScmObj entry = SCM_CAR(cp);
         if (!SCM_PAIRP(entry)) continue;
@@ -505,6 +506,7 @@ ScmObj Scm_Assq(ScmObj obj, ScmObj alist)
 ScmObj Scm_Assv(ScmObj obj, ScmObj alist)
 {
     ScmObj cp;
+    if (!SCM_LISTP(alist)) Scm_Error("assv: list required, but got %S", alist);
     SCM_FOR_EACH(cp,alist) {
 	ScmObj entry = SCM_CAR(cp);
 	if (!SCM_PAIRP(entry)) continue;
@@ -528,6 +530,7 @@ ScmObj Scm_Assoc(ScmObj obj, ScmObj alist, int cmpmode)
 ScmObj Scm_AssocDelete(ScmObj elt, ScmObj alist, int cmpmode)
 {
     ScmObj p;
+    if (!SCM_PAIRP(alist)) Scm_Error("assq: list required, but got %S", alist);
     for (;;) {
         if (SCM_NULLP(alist)) return SCM_NIL;
         p = SCM_CAR(alist);
