@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.13 2001-11-14 10:47:43 shirok Exp $
+;; $Id: object.scm,v 1.14 2001-11-29 11:51:31 shirok Exp $
 
 (use gauche.test)
 
@@ -328,5 +328,29 @@
 
 (test "class slot in meta" "Doc doc"
       (lambda () (slot-ref <xxx> 'doc)))
+
+;;----------------------------------------------------------------
+(test-section "metaclass/singleton")
+
+(use gauche.singleton)
+
+(define-class <single> ()
+  ((foo :init-keyword :foo :initform 4))
+  :metaclass <singleton-meta>)
+
+(define single-obj (make <single> :foo 5))
+
+(test "singleton" #t
+      (lambda () (eq? single-obj (make <single>))))
+
+(test "singleton" #t
+      (lambda () (eq? single-obj (instance-of <single>))))
+
+(test "singleton" 5
+      (lambda () (slot-ref (make <single>) 'foo)))
+
+(define-class <single-2> () () :metaclass <singleton-meta>)
+
+(test "singleton" #f (lambda () (eq? single-obj (make <single-2>))))
 
 (test-end)
