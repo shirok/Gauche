@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: redefutil.scm,v 1.2 2003-12-13 09:14:26 shirok Exp $
+;;;  $Id: redefutil.scm,v 1.3 2003-12-14 00:52:15 shirok Exp $
 ;;;
 
 ;; This file is autoloaded
@@ -124,7 +124,7 @@
 (define instance-changing-class-stack (make-parameter '()))
 
 ;; Change class.
-(define (change-object-class obj old-class new-class . maybe-slots)
+(define (change-object-class obj old-class new-class)
 
   (define (default-carry-over-slot? slot)
     (let ((slot-name (slot-definition-name slot))
@@ -134,41 +134,26 @@
                     (not (class-slot-bound? new-class slot-name))))
            (cons slot-name slot))))
 
-  (define (customized-carry-over-slot? slot spec)
-    (let ((slot-name (slot-definition-name slot)))
-      (cond ((find (lambda (p) (eq? slot-name (cdr p))) spec)
-             => (lambda (p) (cons (car p) slot)))
-            (else #f))))
-
-  (let* ((new (allocate-instance new-class '()))
-         (pred (cond ((get-optional maybe-slots #f)
-                      => (lambda (slots)
-                           (cute customized-carry-over-slot? <>
-                                 (map (lambda (s)
-                                        (if (symbol? s) (cons s s) s))
-                                      slots))))
-                     (else default-carry-over-slot?)))
-         (transfer-spec (filter-map pred (class-slots new-class)))
-         )
+  (let ((new (allocate-instance new-class '()))
+        (new-slots (filter default-carry-over-slot? (class-slots new-class)))
+        )
     (cond
      ((assq obj (instance-changing-class-stack))
       ;; change-class is called recursively.  abort change-class protocol.
       => (lambda (p) ((cdr p) #f)))
      (else
-      (dolist (spec transfer-spec)
-        (let* ((old-name  (car spec))
-               (slot      (cdr spec))
-               (slot-name (slot-definition-name slot)))
+      (dolist (slot new-slots)
+        (let ((slot-name (slot-definition-name slot)))
           (or (and
-               (slot-exists-using-class? old-class obj old-name)
+               (slot-exists-using-class? old-class obj slot-name)
                (call/cc
                 (lambda (cont)
                   (parameterize
                       ((instance-changing-class-stack
                         (acons obj cont (instance-changing-class-stack))))
-                    (and (slot-bound-using-class? old-class obj old-name)
+                    (and (slot-bound-using-class? old-class obj slot-name)
                          (let1 val
-                             (slot-ref-using-class old-class obj old-name)
+                             (slot-ref-using-class old-class obj slot-name)
                            (slot-set-using-class! new-class new slot-name val)
                            #t))))))
               (let ((acc (class-slot-accessor new-class slot-name)))

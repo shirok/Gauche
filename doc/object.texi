@@ -1590,41 +1590,15 @@ classes doesn't need to be related; you can change a sewing
 machine into an umbrella, if you like.
 
 @deffn {Generic Function} change-class
-@deffnx {Method} change-class (obj <object>) (new-class <class>) &optional slots
+@deffnx {Method} change-class (obj <object>) (new-class <class>)
 Changes an object @var{obj}'s class to @var{new-class}.
 The default method just calls @code{change-object-class} procedure.
 @end deffn
 
-@defun change-object-class obj orig-class new-class &optional slots
+@defun change-object-class obj orig-class new-class
 Changes an object @var{obj}'s class from @var{orig-class} to
 @var{new-class}.  This isn't a generic function---changing object's
 class needs some secret magic, and this procedure encapsulates it.
-
-By default, instance-allocated slots and class-allocated slots
-whose name appears both in the @var{orig-class} and in the
-@var{new-class} are @emph{carried over}---that is,
-their values are kept to the changed instance.
-@var{New-class}'s slots which aren't carried over are
-initialized by the standard slot initialization mechanism,
-as described in @ref{Creating instance}.
-
-You can customize which slots should be carried over by
-the optional @var{slots} argument.  It is a list of either
-a symbol or a cons of symbols.  The symbol element
-specifies that the slot whose name is the symbol in both classes
-is carried over.  The cons specifies that @var{orig-class}'s
-slot whose name is the car of the cons is carried over to
-@var{new-class}'s slot whose name is the cdr of the cons.
-For example, the following code changes @var{obj}'s class
-from @code{<class-a>} to @var{<class-b>}, while keeping
-the value of @code{name} slot (which should be in both classes)
-and taking the value of the original @code{attr} slot to
-initialize the new @code{attributes} slot.
-
-@example
-(change-object-class obj <class-a> <class-b>
-                     '(name (attr . attributes)))
-@end example
 
 The precise steps of changing class are as follow:
 
@@ -1636,11 +1610,12 @@ A new instance of @var{new-class} is allocated by @code{allocate-instance}.
 For each slot of @var{new-class}:
 @enumerate
 @item
-If it is a carried-over slot, and the slot is bound in @var{obj},
+If the slot also exists in @var{old-class}, and is bound in @var{obj},
 the value is retrieved from @var{obj} and set to the new instance.
+(The slot is @emph{carried over}).
 @item
 Otherwise, the slot of the new instance is initialized by standard
-slot initialization protocol.
+slot initialization protocol, as described in @ref{Creating instance}.
 @end enumerate
 
 @item
@@ -1655,6 +1630,18 @@ If you desire, you can call it by your own @code{change-class} method.
 @code{Change-object-class} returns @var{obj}.
 @end defun
 
+Usually a user is not supposed to call @code{change-object-class} directly.
+Instead, she can define a specialized @code{change-class}.  For example,
+if she wants to carry over the slot @code{x} of old class to the
+slot @code{y} of new class, she may write something like this:
+
+@example
+(define-method change-class ((obj <old-class>) <new-class>)
+  (let ((old-val (slot-ref obj 'x)))
+    (next-method)               ;; calls default change-class
+    (slot-set! obj 'y old-val)  ;; here, obj's class is already <new-class>.
+    obj))
+@end example
 
 @subsubheading Customizing instance update
 

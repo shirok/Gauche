@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: object.scm,v 1.50 2003-12-13 09:13:48 shirok Exp $
+;;;  $Id: object.scm,v 1.51 2003-12-14 00:52:15 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -429,8 +429,8 @@
             update-direct-subclass! change-object-class))
 
 ;; change-class gf is defined in C, so we can't use autoload for it.
-(define-method change-class ((obj <object>) (new-class <class>) . maybe-slots)
-  (apply change-object-class obj (current-class-of obj) new-class maybe-slots))
+(define-method change-class ((obj <object>) (new-class <class>))
+  (change-object-class obj (current-class-of obj) new-class))
 
 ;;----------------------------------------------------------------
 ;; Method Application

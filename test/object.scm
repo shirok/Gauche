@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.30 2003-12-13 09:14:26 shirok Exp $
+;; $Id: object.scm,v 1.31 2003-12-14 00:52:15 shirok Exp $
 
 (use gauche.test)
 
@@ -1168,6 +1168,7 @@
        (map (cut slot-ref *member-ted* <>)
             '(full-name occupation sex cname)))
 
+#|
 ;; Another scenario.  Using customized slot spec
 
 (define <old-member> <member>)
@@ -1187,6 +1188,7 @@
                                     unknown "alan")
        (map (cut slot-ref *member-alan* <>)
             '(full-name job gender cname)))
+|#
 
 (test-end)
 

@@ -1,11 +1,15 @@
 2003-12-13  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/redefutil.scm, lib/gauche/object.scm : Oops. 
+	  Yesterday's support of the optional slot specifier doesn't work
+	  well with inheritance.   I remove the feature for now.
+
 	* src/macro.c (compile_rule1): Checks if template ellipsis level
 	  matches pattern variables'.  Without catching this error, such
 	  erroneous macro would cause infinite loop at expansion time.
 	  (add_pvar) : fixed wrong condition to check duplicated pattern
 	  variables.
-	  (These patches from Mr. Teranishi)
+	  (These patches from teranishi)
 
 2003-12-12  Shiro Kawai  <shiro@acm.org>
 
