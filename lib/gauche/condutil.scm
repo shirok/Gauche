@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: condutil.scm,v 1.6 2004-11-29 22:13:59 shirok Exp $
+;;;  $Id: condutil.scm,v 1.7 2005-01-26 06:27:24 shirok Exp $
 ;;;
 
 ;; Defines some condition-related primitives.
@@ -82,8 +82,8 @@
 
 (define (extract-condition c type)
   (unless (condition-has-type? c type)
-    (error "cannot extract a condition of type ~s from a condition ~s"
-           type c))
+    (errorf "cannot extract a condition of type ~s from a condition ~s"
+            type c))
   (let ((cc (make type)))
     (let loop ((slots (class-slots type)))
       (if (null? slots)

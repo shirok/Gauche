@@ -1,3 +1,9 @@
+2005-01-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/condutil.scm (extract-condition): fixed a bug that
+	  error was used where errorf should have been.  Patch from
+	  Ueyama Rui.
+
 2005-01-24  Shiro Kawai  <shiro@acm.org>
 
 	* extlib.stub (append!): fixed to allow non-list in the last arg,
