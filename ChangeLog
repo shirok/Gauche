@@ -1,8 +1,10 @@
 2002-05-14  Shiro Kawai  <shiro@acm.org>
 
+	* ext/mt-random/test.scm : make test work without installing srfi-4
 	* configure.in, src/gauche/config.h.in : moved check of gettimeofday
 	  here
 	* src/gauche.h, src/system.c, src/syslib.stub : added <time> object
+	* lib/gauche/time.scm, lib/srfi-19.scm : removed time.scm
 
 2002-05-13  Shiro Kawai  <shiro@acm.org>
 
