@@ -4,6 +4,7 @@
 
 (use gauche.test)
 (use srfi-1)
+(use srfi-11)                           ;let-values
 (use srfi-13)
 
 (test-start "system")
@@ -310,24 +311,24 @@
 
 (test "select" '(0 #f #f #f #f 1 #t #f #f #t #\x)
       (lambda ()
-        (let* ((pipe (sys-pipe))
-               (pid (sys-fork)))
+        (let*-values (((in out) (sys-pipe))
+                      ((pid) (sys-fork)))
           (if (= pid 0)
               (begin (sys-select #f #f #f 100000)
-                     (display "x" (cadr pipe))
-                     (close-output-port (cadr pipe))
+                     (display "x" out)
+                     (close-output-port out)
                      (sys-exit 0))
               (let ((rfds (make <sys-fdset>)))
-                (sys-fdset-set! rfds (car pipe) #t)
+                (sys-fdset-set! rfds in #t)
                 (receive (an ar aw ae)
                     (sys-select rfds #f #f 0)
                   (receive (bn br bw be)
                       (sys-select! rfds #f #f #f)
                     (list an (eq? ar rfds) aw ae
-                          (sys-fdset-ref ar (car pipe))
+                          (sys-fdset-ref ar in)
                           bn (eq? br rfds) bw be
-                          (sys-fdset-ref rfds (car pipe))
-                          (read-char (car pipe))))))))))
+                          (sys-fdset-ref rfds in)
+                          (read-char in)))))))))
 
 (test-end)
 
