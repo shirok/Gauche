@@ -1,5 +1,6 @@
 2002-11-08  Shiro Kawai  <shiro@acm.org>
 
+	* src/genstub : typo fix (patch from Kimura Fuyuki).
 	* various files: started nvm-experiment branch for next VM
 	  experiments.
 
