@@ -2,7 +2,7 @@
 ;; Test dynamic-wind, call/cc and related stuff
 ;;
 
-;; $Id: dynwind.scm,v 1.12 2001-08-04 11:08:38 shirok Exp $
+;; $Id: dynwind.scm,v 1.13 2001-09-08 10:50:06 shirok Exp $
 
 (use gauche.test)
 
@@ -50,21 +50,18 @@
 ;;------------------------------------------------------------------------
 ;; Test for continuation thrown over C stack boundary
 ;;
-;; NOT YET SUPPORTED
-;;
 
-;;
-'(define (callcc-over-cstack)
+(define (callcc-over-cstack)
   (call-with-current-continuation
    (lambda (c)
      (sort '(1 2 3 4 5 6) (lambda (a b) (c 10))))))
 
-'(test "call/cc (cstack)" 10 callcc-over-cstack)
+(test "call/cc (cstack)" 10 callcc-over-cstack)
 
-'(test "call/cc (cstack2)" '(10 . 11)
+(test "call/cc (cstack2)" '(10 . 11)
       (lambda () (cons (callcc-over-cstack) 11)))
 
-'(test "call/cc (cstack, values)" '(10 11)
+(test "call/cc (cstack, values)" '(10 11)
       (lambda ()
         (receive x
             (call-with-current-continuation
@@ -73,7 +70,7 @@
                      (lambda (a b) (c 10 11)))))
           x)))
 
-'(test "call/cc (cstack, two level)" '(10 . 11)
+(test "call/cc (cstack, two level)" '(10 . 11)
       (lambda ()
         (cons (call-with-current-continuation
                (lambda (c)
@@ -83,7 +80,7 @@
                                (lambda (a b) (c 10)))))))
               11)))
 
-'(test "call/cc (cstack, two level, two hop)" '(11 . 11)
+(test "call/cc (cstack, two level, two hop)" '(11 . 11)
       (lambda ()
         (cons (call-with-current-continuation
                (lambda (c)
@@ -98,7 +95,7 @@
 
 ;; Paranoia
 
-'(test "call/cc & dynwind (cstack)" '(a b c)
+(test "call/cc & dynwind (cstack)" '(a b c)
       (lambda ()
         (let ((x '()))
           (call-with-current-continuation
