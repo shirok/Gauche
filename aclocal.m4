@@ -1,6 +1,6 @@
 #
 # Gauche-specific aucotonf macros.
-#
+# $Id: aclocal.m4,v 1.2 2002-02-09 22:00:55 shirok Exp $
 
 # AC_GAUCHE_INIT_EXT
 #   Sets some parameters about installed Gauche package.  This macro checks
@@ -56,5 +56,24 @@ AC_SUBST(CC)
 ])
 
 # AC_GAUCHE_FLAGS
-#   Sets CFLAGS, CPPFLAGS and LDFLAGS 
-#
+#   Sets CFLAGS, CPPFLAGS and LDFLAGS appropriate for furthre testing.
+#   This should come before any testings that requires those flags to be set.
+AC_DEFUN([AC_GAUCHE_FLAGS],
+         [
+CFLAGS="$CFLAGS $GAUCHE_INC `$GAUCHE_CONFIG --so-cflags`"
+AC_SUBST(CFLAGS)
+CPPFLAGS="$GAUCHE_INC"       # some test requires this
+LDFLAGS="$LDFLAGS `$GAUCHE_CONFIG --local-libdir`"
+])
+
+# AC_GAUCHE_FIX_LIBS
+#   Sets LDFLAGS and LIBS to generate shared library.
+#   This has to come all the tests that requre linking, or those test
+#   will fail because they can't generate stand-alone executable.
+AC_DEFUN([AC_GAUCHE_FIX_LIBS],
+         [
+LDFLAGS="$LDFLAGS `$GAUCHE_CONFIG --so-ldflags`"
+LIBS="$GAUCHE_LIB `$GAUCHE_CONFIG -l`"
+AC_SUBST(LDFLAGS)
+])
+
