@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.350 2003-11-20 03:13:05 shirok Exp $
+ *  $Id: gauche.h,v 1.351 2003-11-25 04:41:42 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1251,6 +1251,7 @@ SCM_EXTERN ScmObj Scm_MakeInputStringPort(ScmString *str, int privatep);
 SCM_EXTERN ScmObj Scm_MakeOutputStringPort(int privatep);
 SCM_EXTERN ScmObj Scm_GetOutputString(ScmPort *port);
 SCM_EXTERN ScmObj Scm_GetOutputStringUnsafe(ScmPort *port);
+SCM_EXTERN ScmObj Scm_GetRemainingInputString(ScmPort *port);
 
 SCM_EXTERN ScmObj Scm_MakeVirtualPort(int direction,
 				      ScmPortVTable *vtable);

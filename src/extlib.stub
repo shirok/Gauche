@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.207 2003-11-21 18:06:20 shirok Exp $
+;;; $Id: extlib.stub,v 1.208 2003-11-25 04:41:42 shirok Exp $
 ;;;
 
 "
@@ -688,9 +688,10 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   "SCM_RETURN(Scm_MakeOutputStringPort(TRUE));")
 
 (define-cproc get-output-string (oport::<output-port>) ;SRFI-6
-  "  if (SCM_PORT_TYPE(oport) != SCM_PORT_OSTR)
-        Scm_Error(\"output string port required, but got: %S\", oport);
-  SCM_RETURN(Scm_GetOutputString(oport));")
+  (return "Scm_GetOutputString"))
+
+(define-cproc get-remaining-input-string (iport::<input-port>)
+  (return "Scm_GetRemainingInputString"))
 
 ;; Buffered port
 ;; NB: the interface may be changed soon!!

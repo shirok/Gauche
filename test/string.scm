@@ -322,6 +322,17 @@
 (test* "termination" #t
        (eof-object? (read-block 3 istr)))
 
+(test* "get-remaining-input-string" "defg"
+       (let ((istr (open-input-string "abcdefg")))
+         (read-char istr)
+         (read-char istr)
+         (read-char istr)
+         (get-remaining-input-string istr)))
+(test* "get-remaining-input-string" ""
+       (let ((istr (open-input-string "abcdefg")))
+         (read-line istr)
+         (get-remaining-input-string istr)))
+
 (define (read-line-tester str)
   (let1 s (open-input-string str)
     (let loop ((l (read-line s))
