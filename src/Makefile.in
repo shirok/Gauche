@@ -92,7 +92,7 @@ INSTALL_SUBHEADERS = gauche/config.h gauche/vm.h gauche/vminsn.h \
                      gauche/pthread.h gauche/uthread.h gauche/arch.h
 INSTALL_LIBS = libgauche.$(SOEXT)
 INSTALL_BINS = gosh gauche-config
-INSTALL_SCMS = genstub gauche-init.scm
+INSTALL_SCMS = gauche-init.scm genstub cesconv 
 
 PRIVATE_HEADERS = gauche/arith.h gauche/builtin-syms.h
 

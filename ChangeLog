@@ -1,3 +1,13 @@
+2004-01-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/cesconv : added generally useful CES conversion script.
+
+	* lib/text/gettext.scm : updated to the new version from Alex Shinn.
+
+	* test/gettext.scm, test/data/Makefile, test/gettext.data.utf-8.scm,
+	  test/data/locale/* : added test routines for gettext, written by
+	  Alex Shinn.
+
 2004-01-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/math/const.scm : added missing definition of 2pi.

@@ -1,0 +1,88 @@
+# Test .po file for Gauche gettext.
+# Copyright (C) 2004 Alex Shinn.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Gauche-gettext 0.2\n"
+"PO-Revision-Date: 2004-01-25 16:57+0900\n"
+"Last-Translator: Alex Shinn <foof@synthcode.com>\n"
+"MIME-Version: 1.0\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"Content-Type: text/plain; charset=ISO-8859-15\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+# single line
+msgid "Hello, World!"
+msgstr "Hello, World!"
+
+msgid "Strawberry!"
+msgstr "Strawberry!"
+
+# single line, msgid doesn't match translation
+msgid "Menu|File|Quit"
+msgstr "Quit"
+
+msgid "Help|Shrink"
+msgstr "Emacs Psychiatrist"
+
+# multi-line
+msgid ""
+"A banana plant in the autumn gale\n"
+"I listen to the dripping of rain\n"
+"Into a basin at night.\n"
+msgstr ""
+"A banana plant in the autumn gale\n"
+"I listen to the dripping of rain\n"
+"Into a basin at night.\n"
+
+msgid ""
+"Against the brushwood gate\n"
+"Dead tea leaves swirl\n"
+"In the stormy wind.\n"
+msgstr ""
+"Against the brushwood gate\n"
+"Dead tea leaves swirl\n"
+"In the stormy wind.\n"
+
+# extra empty lines
+msgid ""
+"Clouds will separate\n"
+"The two friends, after the migrating\n"
+"Wild goose's departure\n"
+""
+msgstr ""
+"Clouds will separate\n"
+"The two friends, after the migrating\n"
+"Wild goose's departure\n"
+""
+
+msgid ""
+"The sound of hail\n"
+"I am the same as before\n"
+"Like that aging oak\n"
+""
+msgstr ""
+"The sound of hail\n"
+"I am the same as before\n"
+"Like that aging oak\n"
+""
+
+# plural forms
+msgid ""
+"There is ~D mouse."
+msgid_plural ""
+"There are ~D mice."
+msgstr[0] ""
+"There is ~D mouse."
+msgstr[1] ""
+"There are ~D mice."
+
+msgid ""
+"He was stabbed with ~D knife."
+msgid_plural ""
+"He was stabbed with ~D knives."
+msgstr[0] ""
+"He was stabbed with ~D knife."
+msgstr[1] ""
+"He was stabbed with ~D knives."
+

@@ -22,6 +22,7 @@ parameter.scm
 hook.scm
 logger.scm
 text.scm
+gettext.scm
 util.scm
 process.scm
 version.scm
