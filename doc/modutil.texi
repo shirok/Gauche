@@ -11090,7 +11090,7 @@ is @code{#f} if @var{list} is false, or @code{()} otherwise.
 @c COMMON
 
 
-@defun cgi-header &keyword content-type location cookies
+@defun cgi-header &keyword status content-type location cookies
 @c EN
 Creates a text tree (@xref{Lazy text construction}) for the
 HTTP header of the reply message.  The most simple form is
@@ -11121,10 +11121,20 @@ to build such a list of cookie strings.
 @c EN
 The keyword argument @var{location} may be used to generate
 a @code{Location:} header to redirect the client to the specified URI.
+You can also specify the @code{Status:} header by the keyword argument
+@var{status}.   A typical way to redirect the client is as follows:
 @c JP
 キーワード引数@var{location}は、@code{Location}ヘッダを作成して
-クライアントを別のURIに誘導するのに使えます。
+クライアントを別のURIに誘導するのに使えます。また、@code{Status}ヘッダを
+指定するために@var{status}キーワード引数が使えます。クライアントを
+別URIに転送するよくある方法は次のようなものです。
 @c COMMON
+
+@example
+(cgi-header :status "302 Moved Temporarily"
+            :location target-uri)
+@end example
+
 @end defun
 
 @deffn {Parameter} cgi-output-character-encoding &optional encoding

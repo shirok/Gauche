@@ -1,3 +1,7 @@
+2004-09-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/www/cgi.scm (cgi-header): put :status first if specified.
+
 2004-09-13  Shiro Kawai  <shiro@acm.org>
 
 	* gc/* : updated to gc6.3

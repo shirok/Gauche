@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.17 2004-07-31 08:46:09 shirok Exp $
+;;;  $Id: cgi.scm,v 1.18 2004-09-14 21:18:05 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -262,10 +262,12 @@
 (define (cgi-header . args)
   (let-keywords* args ((content-type #f)
                        (location     #f)
+                       (status       #f)
                        (cookies      '()))
     (let ((ct (or content-type
                   (and (not location) "text/html")))
           (r '()))
+      (when status   (push! r #`"Status: ,status\n"))
       (when ct       (push! r #`"Content-type: ,ct\n"))
       (when location (push! r #`"Location: ,location\n"))
       (for-each (lambda (cookie)
@@ -274,7 +276,7 @@
       (let loop ((args args))
         (cond ((null? args))
               ((null? (cdr args)))
-              ((memv (car args) '(:content-type :location :cookies))
+              ((memv (car args) '(:content-type :location :status :cookies))
                (loop (cddr args)))
               (else
                (push! r #`",(car args): ,(cadr args)\n")
