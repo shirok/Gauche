@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.22 2004-11-25 11:44:28 shirok Exp $
+;;;  $Id: cgi.scm,v 1.23 2004-11-26 14:07:05 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -134,7 +134,8 @@
              'mime 
              (or (and-let* ((lenp (or content-length
                                       (get-meta "CONTENT_LENGTH")))
-                            (len  (x->integer lenp)))
+                            (len  (x->integer lenp))
+                            ((positive? len)))
                    (string-incomplete->complete (read-block len)))
                  (port->string (current-input-port)))))
           (else (error "unknown REQUEST_METHOD" method)))))
@@ -255,7 +256,9 @@
            )
       (if name (list name result) #f)))
 
-  (let* ((inp (if clength (open-input-limited-length-port inp clength) inp))
+  (let* ((inp (if (and clength (positive? (x->integer clength)))
+                (open-input-limited-length-port inp (x->integer clength))
+                inp))
          (result (mime-parse-message inp `(("content-type" ,ctype))
                                      handle-part)))
     (filter-map (cut ref <> 'content) (ref result 'content)))
