@@ -43,5 +43,5 @@ realclean : clean
 	cd lib; $(MAKE) realclean
 	cd doc; $(MAKE) realclean
 	cd ext; $(MAKE) realclean
-	rm -rf configure Makefile config.cache config.log config.status
+	rm -rf configure Makefile config.cache config.log config.status INSTALL INSTALL.eucjp
 
