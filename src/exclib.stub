@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: exclib.stub,v 1.1 2002-05-21 04:47:15 shirok Exp $
+;;; $Id: exclib.stub,v 1.2 2002-07-07 04:14:49 shirok Exp $
 ;;;
 
 "
@@ -86,6 +86,18 @@
    }
  }"
 
+"static void uncaught_exception_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+ {
+   ScmThreadException *exc = SCM_THREAD_EXCEPTION(obj);
+   Scm_Printf(port, \"#<uncaught-exception in thread %S: %S>\", SCM_OBJ_SAFE(exc->thread), exc->data);
+ }"
+
+"static void terminated_thread_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+ {
+   ScmThreadException *exc = SCM_THREAD_EXCEPTION(obj);
+   Scm_Printf(port, \"#<terminated-thread-exception: %S terminated by %S>\", SCM_OBJ_SAFE(exc->thread), exc->data);
+ }"
+
 "static ScmClass *thread_exception_cpa[] = {
    SCM_CLASS_STATIC_PTR(Scm_ThreadExceptionClass),
    SCM_CLASS_STATIC_PTR(Scm_ExceptionClass),
@@ -127,7 +139,7 @@
            :getter (c "Scm_ThreadExceptionClass_thread_GET")
            :setter (c "Scm_ThreadExceptionClass_thread_SET")))
   (allocator (c "thread_exception_allocate"))
-  (printer   (c "thread_exception_print")))
+  (printer   (c "terminated_thread_print")))
 
 (define-cclass <uncaught-exception>
   "ScmThreadException" "Scm_UncaughtExceptionClass"
@@ -137,7 +149,7 @@
            :setter (c "Scm_ThreadExceptionClass_thread_SET"))
    (exception :c-name data))
   (allocator (c "thread_exception_allocate"))
-  (printer   (c "thread_exception_print")))
+  (printer   (c "uncaught_exception_print")))
 
 ;;
 ;; Error class hierarchy
