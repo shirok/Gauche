@@ -5,7 +5,7 @@
 ;;;  Public Domain..  I guess lots of Scheme programmers have already
 ;;;  written similar code.
 ;;;
-;;;  $Id: queue.scm,v 1.4 2001-11-03 11:54:07 shirok Exp $
+;;;  $Id: queue.scm,v 1.5 2002-08-27 08:03:37 shirok Exp $
 ;;;
 
 ;; This queue implementation is tuned for speed.  A queue is simply
@@ -17,22 +17,24 @@
 (define-module util.queue
   (export make-queue queue? queue-empty?
           queue-push! enqueue! queue-pop! dequeue! dequeue-all!
-          queue-front queue-rear)
+          queue-front queue-rear queue-length
+          queue->list list->queue
+          find-in-queue remove-from-queue!)
   )
 (select-module util.queue)
 
-(define (make-queue) (cons #f #f))
+(define (make-queue) (cons '() '()))
 
 ;; this one we does (expensive) check.
 (define (queue? obj)
   (and (pair? obj)
-       (or (and (not (car obj)) (not (cdr obj)))
+       (or (and (null? (car obj)) (null? (cdr obj)))
            (and (pair? (car obj)) (pair? (cdr obj))
                 (eq? (last-pair (car obj)) (cdr obj))))))
 
 ;; internal macro
 (define-syntax %empty? 
-  (syntax-rules () ((_ obj) (not (car obj)))))
+  (syntax-rules () ((_ obj) (null? (car obj)))))
 
 (define (queue-empty? obj) (%empty? obj))
 
@@ -79,7 +81,7 @@
   (when (%empty? q) (error "queue is empty" q))
   (let ((item (caar q)))
     (if (eq? (car q) (cdr q))
-        (begin (set-car! q #f) (set-cdr! q #f))
+        (begin (set-car! q '()) (set-cdr! q '()))
         (set-car! q (cdar q)))
     item))
 
@@ -89,8 +91,53 @@
   (if (%empty? q)
       '()
       (let ((r (car q)))
-        (set-car! q #f)
-        (set-cdr! q #f)
+        (set-car! q '())
+        (set-cdr! q '())
         r)))
+
+(define (queue-length q) (length (car q)))
+
+(define (queue->list q) (list-copy (car q)))
+
+;; copy list and find tail at once
+(define (list->queue lis)
+  (let loop ((head '())
+             (tail '())
+             (p    lis))
+    (cond ((null? p) (cons head tail))
+          ((pair? p)
+           (if (null? head)
+               (let1 cell (cons (car p) '())
+                 (loop cell cell (cdr p)))
+               (begin (set-cdr! tail (cons (car p) '()))
+                      (loop head (cdr tail) (cdr p)))))
+          (else (error "proper list required, but got" lis)))))
+
+;; find and remove.
+(define (find-in-queue pred q)
+  (let loop ((lis (car q)))
+    (cond ((null? lis) #f)
+          ((pred (car lis)) (car lis))
+          (else (loop (cdr lis))))))
+
+(define (remove-from-queue! pred q)
+  (let1 head
+      (let rec ((lis (car q)))
+        (cond ((null? lis) '())
+              ((pred (car lis)) (rec (cdr lis)))
+              (else (let1 tail (rec (cdr lis))
+                      (if (eq? (cdr lis) tail)
+                          lis
+                          (cons (car lis) tail))))
+              ))
+    (set-car! q head)
+    (set-cdr! q (last-pair head))))
+
+;; NB: Scheme48 has delete-from-queue!, which has reversed order
+;; of arguments of delete in SRFI-1.   I leave it undefined here.
+;;
+;; (define (delete-from-queue! q item)  ;;Scheme48
+;;   (remove-from-queue! (lambda (elt) (eq? item elt)) q))
+
 
 (provide "util/queue")
