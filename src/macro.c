@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.21 2001-03-17 09:17:51 shiro Exp $
+ *  $Id: macro.c,v 1.22 2001-03-22 09:21:33 shiro Exp $
  */
 
 #include "gauche.h"
@@ -319,7 +319,7 @@ static ScmObj compile_rule1(ScmObj form,
             }
         }
         if (!SCM_NULLP(pp))
-            SCM_APPEND1(h, t, compile_rule1(pp, spat, ctx, patternp));
+            SCM_APPEND(h, t, compile_rule1(pp, spat, ctx, patternp));
         return h;
     }
     else if (SCM_VECTORP(form)) {
