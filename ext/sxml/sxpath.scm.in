@@ -1,0 +1,42 @@
+;;;
+;;; sxml.sxpath - SXML Query Language
+;;;
+;;;   This file is mechanically translated for Gauche from
+;;;   Oleg Kiselyov's SXPATH SXML query language, SXPath.scm, v3.5.
+;;;   Public domain.
+;;;
+;;; $Id: sxpath.scm.in,v 1.1 2003-07-21 12:23:02 shirok Exp $
+;;;
+
+(define-module sxml.sxpath
+  (use srfi-1)
+  (use srfi-13)
+  (use text.parse)
+  (use sxml.adaptor)
+  (export sxpath
+          node-parent
+          node-closure
+          node-or
+          node-reduce
+          node-join
+          node-self
+          node-trace
+          node-reverse
+          node-pos
+          nodeset?
+          node-typeof?
+          node-eq?
+          node-equal?
+          select-kids
+          map-union
+          ))
+(select-module sxml.sxpath)
+
+;#include-body "src/SXPath.scm"
+
+(provide "sxml/sxpath")
+
+          
+;; Local variables:
+;; mode: scheme
+;; end:
