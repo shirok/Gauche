@@ -1,3 +1,42 @@
+2001-11-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c : Correctly initialize implicit metaclass hierarchy
+	  when the builtin class has hierarchy.
+	* lib/gauche/common-macros.scm : added while and until experimentally
+	  to see how usable they are.
+	* lib/gauche/collection.scm : finalizing API of collection framework.
+
+2001-11-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/list.c (Scm_ListRef) : fixed a bug that caused SEGV.
+	* src/class.c : experimentally added a feature that inserts
+	  implicit metaclass for builtin classes, which allows to define
+	  ``class-method''.
+	* src/moplib.stub : fixed a bug in is-a? that rejects a descendant
+	  of <class> in the second argument.
+
+2001-11-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-1.scm : fixed a bug in alist-delete!
+	
+2001-11-22  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/object.scm : added a customizable method
+	  compute-slot-accessor
+	* lib/gauche/validator.scm : added
+	
+2001-11-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/www/cgi.scm : fixed a bug in the default error method of
+	  cgi-main that used old interface of text.html-lite.
+	
+2001-11-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/port/jfilter.scm : fixed a bug in cv-file.
+	* lib/gauche/object.scm : changed the protocol of compute-get-n-set
+	  so that it returns a _list_ of getter and setter procedure (as
+	  opposed to a cons).  The new behavior is compatible to STklos.
+
 2001-11-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/write.c : write 'a instead of (quote a), etc.
