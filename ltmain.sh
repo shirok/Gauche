@@ -53,6 +53,8 @@ fi
 : ${SED=sed}
 # [SK: so as max_cmd_len]
 : ${max_cmd_len=-1}
+# [SK: so as egrep - patch from Kogule Ryo]
+: ${EGREP=grep -E}
 
 # The name of this program.
 progname=`$echo "$0" | ${SED} 's%^.*/%%'`

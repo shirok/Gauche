@@ -1,3 +1,8 @@
+2004-08-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/Makefile.in (slibcat-in-place): fix.  patch from Kogulé, Ryo.
+	* ltmain.sh (EGREP): fix.  patch from Kogulé, Ryo.
+
 2004-08-02  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.8.1

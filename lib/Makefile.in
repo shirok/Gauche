@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/lib
-#  $Id: Makefile.in,v 1.116 2004-05-14 12:06:35 shirok Exp $
+#  $Id: Makefile.in,v 1.117 2004-08-05 07:58:41 shirok Exp $
 
 .PHONY: all check install uninstall slibcat slibcat-in-place clean distclean \
         maintainer-clean
@@ -110,7 +110,7 @@ slibcat :
 # before installing gosh.
 slibcat-in-place :
 	if test -f $(SLIB_DIR)/require.scm; then \
-	  $(SHELL) ./mklibcat $(top_builddir)/bin/gosh ; \
+	  $(SHELL) ./mklibcat $(top_builddir)/src/gosh ; \
 	fi
 
 clean:
