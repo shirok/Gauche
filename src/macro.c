@@ -12,12 +12,12 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.1 2001-02-20 01:09:37 shiro Exp $
+ *  $Id: macro.c,v 1.2 2001-02-20 12:01:57 shiro Exp $
  */
 
 #include "gauche.h"
 
-/*
+/*===================================================================
  * Syntax object
  */
 
@@ -101,6 +101,58 @@ static ScmSyntax syntax_macro_expand = {
 };
 
 /*===================================================================
+ * R5RS Macro
+ */
+
+static ScmObj synrule_transform(ScmObj form, ScmObj env,
+                                  int ctx, void *data)
+{
+    Scm_Error("synrule-tranformer: not implemented yet.  Sorry.");
+    return SCM_NIL;
+}
+
+static ScmObj make_synrule_transformer(ScmObj literals, ScmObj rules)
+{
+    return Scm_MakeSyntax(SCM_SYMBOL(SCM_INTERN("macro")), /* TODO: need better info */
+                          synrule_transform,
+                          (void*)Scm_Cons(literals, rules));
+}
+
+static ScmObj compile_syntax_rules(ScmObj form, ScmObj env,
+                                   int ctx, void *data)
+{
+    ScmObj literals, rules, cp;
+    int badlit = 0;
+    
+    if (Scm_Length(form) < 3)
+        Scm_Error("malformed syntax-rules: %S", form);
+    literals = SCM_CADR(form);
+    rules = SCM_CDDR(form);
+
+    SCM_FOR_EACH(cp, literals) {
+        if (!SCM_SYMBOLP(SCM_CAR(cp))) break;
+    }
+    if (!SCM_NULLP(cp)) {
+        Scm_Error("bad literal list in syntax-rules: %S", literals);
+    }
+
+    SCM_FOR_EACH(cp, rules) {
+        if (Scm_Length(SCM_CAR(cp)) != 2) {
+            Scm_Error("malformed syntax-rules: %S", form);
+        }
+    }
+
+    return SCM_LIST1(make_synrule_transformer(literals, rules));
+}
+
+static ScmSyntax syntax_syntax_rules = {
+    SCM_CLASS_SYNTAX,
+    SCM_SYMBOL(SCM_SYM_SYNTAX_RULES),
+    compile_syntax_rules,
+    NULL
+};
+
+/*===================================================================
  * Initializer
  */
 
@@ -112,4 +164,5 @@ void Scm__InitMacro(void)
     Scm_Define(m, SCM_SYMBOL(symbol), SCM_OBJ(&syntax))
     
     DEFSYN(SCM_SYM_MACRO_EXPAND, syntax_macro_expand);
+    DEFSYN(SCM_SYM_SYNTAX_RULES, syntax_syntax_rules);
 }
