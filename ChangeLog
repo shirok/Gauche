@@ -1,3 +1,7 @@
+2002-12-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-0.scm : added srfi-31 and some missing feature ids.
+
 2002-12-14  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.6.6
