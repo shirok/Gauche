@@ -27,7 +27,7 @@ example.so : $(OBJS)
 
 test : all
 	@rm -f test.log
-	@GAUCHE_LOAD_PATH=$(GAUCHE_TOP)src:$(GAUCHE_TOP)lib $(GOSH) test.scm > test.log
+	$(GOSH) test.scm > test.log
 
 install : all
 	@for f in $(HEADERS) _end; do \
