@@ -12,14 +12,12 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: with.scm,v 1.11 2002-01-14 09:05:52 shirok Exp $
+;;;  $Id: with.scm,v 1.12 2002-02-23 07:37:45 shirok Exp $
 ;;;
 
 (select-module gauche)
 
 ;; File ports
-
-(with-module scheme
 
 (define (call-with-input-file filename proc . flags)
   (let ((port (apply open-input-file filename flags)))
@@ -51,7 +49,13 @@
           (lambda () ((with-module gauche with-output-to-port) port thunk))
           (lambda () (close-output-port port))))))
 
-) ;; with-module scheme
+;; intern R5RS procedures in scheme module
+(with-module scheme
+  (define call-with-input-file  (with-module gauche call-with-input-file))
+  (define call-with-output-file (with-module gauche call-with-output-file))
+  (define with-input-from-file  (with-module gauche with-input-from-file))
+  (define with-output-to-file   (with-module gauche with-output-to-file))
+  )
 
 ;; String ports
 
