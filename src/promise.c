@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: promise.c,v 1.10 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: promise.c,v 1.11 2002-09-12 19:21:18 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -72,8 +72,7 @@ ScmObj Scm_Force(ScmObj obj)
         if (p->forced) SCM_RETURN(p->code);
         else {
             Scm_VMPushCC(force_cc, (void**)&p, 1);
-            Scm_VMApply0(p->code);
-            SCM_RETURN(SCM_UNDEFINED);
+            SCM_RETURN(Scm_VMApply0(p->code));
         }
     }
 }
