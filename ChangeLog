@@ -1,5 +1,9 @@
 2003-12-15  Shiro Kawai  <shiro@acm.org>
 
+	* Makefile.in (install-pkg): fix aclocal.m4 installation directory;
+	  there shouldn't be a slash after $(DESTDIR); it would cause error
+	  on cygwin.
+	
 	* src/core.c (Scm_Init), src/gauche.h, src/gauche/config.h.in,
 	  src/main.c : API Change: Scm_Init now takes const char *signature
 	  argument, in order to detect version mismatch between main
