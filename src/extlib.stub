@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.105 2001-10-03 10:42:40 shirok Exp $
+;;; $Id: extlib.stub,v 1.106 2001-10-04 10:33:00 shirok Exp $
 ;;;
 
 "
@@ -87,10 +87,6 @@
   (assert (pair? list))
   "  SCM_RETURN(Scm_LastPair(list));")
 
-(define-cproc list-ref+ (list k &optional fallback)
-  (assert (small-integer? k))
-  "  SCM_RETURN(Scm_ListRefSafe(list, k, fallback));")
-
 (define-cproc list-copy (list)          ; SRFI-1
   "  SCM_RETURN(Scm_CopyList(list));")
 
@@ -133,14 +129,15 @@
   (assert (list? list))
   "  SCM_RETURN(Scm_AssocDeleteX(elt, list, getcmpmode(cmpmode)));")
 
-(define-cproc union (&rest args)        ;use eq? to compare.
-  (assert (list? args))
-  "  ScmObj set, ap;
-  if (SCM_NULLP(args)) SCM_RETURN(SCM_NIL);
-  set = SCM_CAR(args);
-  SCM_FOR_EACH(ap, SCM_CDR(args))
-    set = Scm_Union(set, SCM_CAR(ap));
-  SCM_RETURN(set);")
+;; SRFI-1 has this.
+;(define-cproc union (&rest args)        ;use eq? to compare.
+;  (assert (list? args))
+;  "  ScmObj set, ap;
+;  if (SCM_NULLP(args)) SCM_RETURN(SCM_NIL);
+;  set = SCM_CAR(args);
+;  SCM_FOR_EACH(ap, SCM_CDR(args))
+;    set = Scm_Union(set, SCM_CAR(ap));
+;  SCM_RETURN(set);")
 
 (define-cproc append! (&rest list)
   "  ScmObj cp, h = SCM_NIL, t;
@@ -371,15 +368,6 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (string? str))
   "  SCM_RETURN(SCM_MAKE_INT(SCM_STRING_SIZE(str)));")
 
-(define-cproc string-ref+ (str k &optional (fallback #f))
-  (assert (string? str))
-  (assert (small-integer? k))
-  "  if (k < 0 || k >= SCM_STRING_LENGTH(str)) {
-     SCM_RETURN(fallback);
-   } else {
-     SCM_RETURN(SCM_MAKE_CHAR(Scm_StringRef(str, k)));
-   }")
-
 (define-cproc string-byte-ref (str k)   ;gauche specific
   (assert (string? str))
   (assert (small-integer? k))
@@ -557,11 +545,6 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 ;; 6.3.6  Vectors
 ;;
 
-(define-cproc vector-ref+ (vec k &optional fallback)
-  (assert (vector? vec))
-  (assert (small-integer? k))
-  "  SCM_RETURN(Scm_VectorRefSafe(vec, k, fallback));")
-
 ;;
 ;; 6.4  Control Features
 ;;
@@ -638,6 +621,15 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 
 (define-cproc current-error-port ()     ;gauche extention
   "  SCM_RETURN(SCM_OBJ(SCM_CURERR));")
+
+(define-cproc standard-input-port ()
+  "  SCM_RETURN(Scm_Stdin());")
+
+(define-cproc standard-output-port ()
+  "  SCM_RETURN(Scm_Stdout());")
+
+(define-cproc standard-error-port ()
+  "  SCM_RETURN(Scm_Stderr());")
 
 (define-cproc with-input-from-port (port thunk)
   (assert (input-port? port))

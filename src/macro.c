@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.28 2001-09-02 21:43:45 shirok Exp $
+ *  $Id: macro.c,v 1.29 2001-10-04 10:33:00 shirok Exp $
  */
 
 #include "gauche.h"
@@ -238,7 +238,7 @@ static inline ScmObj pvar_to_pvref(PatternContext *ctx,
 static inline ScmObj pvref_to_pvar(PatternContext *ctx, ScmObj pvref)
 {
     int count = PVREF_COUNT(pvref);
-    ScmObj q = Scm_ListRef(ctx->pvars, count);
+    ScmObj q = Scm_ListRef(ctx->pvars, count, SCM_UNBOUND);
     SCM_ASSERT(SCM_PAIRP(q));
     return SCM_CAR(q);
 }

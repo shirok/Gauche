@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vector.c,v 1.13 2001-10-03 10:42:40 shirok Exp $
+ *  $Id: vector.c,v 1.14 2001-10-04 10:33:00 shirok Exp $
  */
 
 #include "gauche.h"
@@ -74,17 +74,14 @@ ScmObj Scm_VectorToList(ScmVector *v)
  * Accessors
  */
 
-ScmObj Scm_VectorRef(ScmVector *vec, int i)
-{
-    if (i < 0 || i >= vec->size)
-        Scm_Error("argument out of range: %d", i);
-    return vec->elements[i];
-}
-
-ScmObj Scm_VectorRefSafe(ScmVector *vec, int i, ScmObj fallback)
+ScmObj Scm_VectorRef(ScmVector *vec, int i, ScmObj fallback)
 {
     if (i < 0 || i >= vec->size) {
-        return SCM_UNBOUNDP(fallback)? SCM_FALSE : fallback;
+        if (SCM_UNBOUNDP(fallback)) {
+            Scm_Error("argument out of range: %d", i);
+        } else {
+            return fallback;
+        }
     }
     return vec->elements[i];
 }

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.68 2001-09-24 11:55:28 shirok Exp $
+;;; $Id: stdlib.stub,v 1.69 2001-10-04 10:33:00 shirok Exp $
 ;;;
 
 
@@ -502,9 +502,9 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   (assert (small-integer? k))
   "  SCM_RETURN(Scm_ListTail(list, k));")
 
-(define-cproc list-ref (list k)
+(define-cproc list-ref (list k &optional fallback)
   (assert (small-integer? k))
-  "  SCM_RETURN(Scm_ListRef(list, k));")
+  "  SCM_RETURN(Scm_ListRef(list, k, fallback));")
 
 (define-cproc memq (obj list)
   (assert (list? list))
@@ -652,11 +652,18 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   (assert (string? str))
   "  SCM_RETURN(SCM_MAKE_INT(SCM_STRING_LENGTH(str)));")
 
-(define-cproc string-ref (str k)
+(define-cproc string-ref (str k &optional fallback)
   (assert (string? str))
   (assert (small-integer? k))
   (setter string-set!)
-  "  SCM_RETURN(SCM_MAKE_CHAR(Scm_StringRef(str, k)));")
+  "if (k < 0 || k >= SCM_STRING_LENGTH(str)) {
+    if (SCM_UNBOUNDP(fallback)) {
+      Scm_Error(\"index out of bounds: %d\", k);
+    } else {
+      SCM_RETURN(fallback);
+    }
+  }
+  SCM_RETURN(SCM_MAKE_CHAR(Scm_StringRef(str, k)));")
 
 (define-cproc string-set! (str k c)
   (assert (string? str))
@@ -756,12 +763,12 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   (assert (vector? vec))
   "  SCM_RETURN(Scm_MakeInteger(SCM_VECTOR_SIZE(vec)));")
 
-(define-cproc vector-ref (vec k)
-  (inliner "SCM_VM_VEC_REF")
+(define-cproc vector-ref (vec k &optional fallback)
+  (inliner (case-nargs (2 "SCM_VM_VEC_REF") (else #f)))
   (assert (vector? vec))
   (assert (small-integer? k))
   (setter vector-set!)
-  "  SCM_RETURN(Scm_VectorRef(vec, k));")
+  "  SCM_RETURN(Scm_VectorRef(vec, k, fallback));")
 
 (define-cproc vector-set! (vec k obj)
   (inliner "SCM_VM_VEC_SET")
