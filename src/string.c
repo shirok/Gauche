@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.25 2001-04-23 09:36:26 shiro Exp $
+ *  $Id: string.c,v 1.26 2001-04-25 07:30:13 shiro Exp $
  */
 
 #include <stdio.h>
@@ -24,14 +24,15 @@ static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *);
 SCM_DEFINE_BUILTIN_CLASS(Scm_StringClass, string_print, NULL, NULL,
                          SCM_CLASS_SEQUENCE_CPL);
 
-#define INITSTR(var, len, siz, p)               \
-    do {                                        \
-        (var) = SCM_NEW(ScmString);             \
-        SCM_SET_CLASS(var, SCM_CLASS_STRING);   \
-        (var)->length = (len);                  \
-        (var)->size = (siz);                    \
-        (var)->start = (p);                     \
-    } while (0)
+static ScmString *make_str(int len, int siz, const char *p)
+{
+    ScmString *s = SCM_NEW(ScmString);
+    SCM_SET_CLASS(s, SCM_CLASS_STRING);
+    s->length = len;
+    s->size = siz;
+    s->start = p;
+    return s;
+}
 
 #define DUMP_LENGTH   50
 
@@ -116,30 +117,24 @@ int Scm_MBLen(const char *str, const char *stop)
 
 ScmObj Scm_MakeStringConst(const char *str, int size, int len)
 {
-    ScmString *z;
-
     if (size < 0) count_size_and_length(str, &size, &len);
     else if (len < 0) len = count_length(str, size);
-    INITSTR(z, len, size, str);
-    return SCM_OBJ(z);
+    return SCM_OBJ(make_str(len, size, str));
 }
 
 ScmObj Scm_MakeString(const char *str, int size, int len)
 {
-    ScmString *z;
     char *nstr;
 
     if (size < 0) count_size_and_length(str, &size, &len);
     else if (len < 0) len = count_length(str, size);
     nstr = SCM_NEW_ATOMIC2(char *, size + 1);
     memcpy(nstr, str, size+1);  /* includes \0 */
-    INITSTR(z, len, size, nstr);
-    return SCM_OBJ(z);
+    return SCM_OBJ(make_str(len, size, nstr));
 }
 
 ScmObj Scm_MakeFillString(int len, ScmChar fill)
 {
-    ScmString *z;
     int size = SCM_CHAR_NBYTES(fill), i;
     char *ptr = SCM_NEW_ATOMIC2(char *, size*len+1);
     char *p;
@@ -148,8 +143,7 @@ ScmObj Scm_MakeFillString(int len, ScmChar fill)
         SCM_STR_PUTC(p, fill);
     }
     ptr[size*len] = '\0';
-    INITSTR(z, len, size*len, ptr);
-    return SCM_OBJ(z);
+    return SCM_OBJ(make_str(len, size*len, ptr));
 }
 
 static ScmObj makestring_from_list(ScmObj chars)
@@ -211,9 +205,8 @@ const char *Scm_GetStringConst(ScmString *str)
 
 ScmObj Scm_CopyString(ScmString *x)
 {
-    ScmString *z;
-    INITSTR(z, SCM_STRING_LENGTH(x), SCM_STRING_SIZE(x), SCM_STRING_START(x));
-    return SCM_OBJ(z);
+    return SCM_OBJ(make_str(SCM_STRING_LENGTH(x), SCM_STRING_SIZE(x),
+                            SCM_STRING_START(x)));
 }
 
 /*----------------------------------------------------------------
@@ -336,7 +329,6 @@ ScmObj Scm_StringAppend2(ScmString *x, ScmString *y)
     int sizex = SCM_STRING_SIZE(x), lenx = SCM_STRING_LENGTH(x);
     int sizey = SCM_STRING_SIZE(y), leny = SCM_STRING_LENGTH(y);
     int lenz;
-    ScmString *z;
     char *p = SCM_NEW_ATOMIC2(char *,sizex + sizey + 1);
 
     memcpy(p, x->start, sizex);
@@ -348,8 +340,7 @@ ScmObj Scm_StringAppend2(ScmString *x, ScmString *y)
     } else {
         lenz = lenx + leny;
     }
-    INITSTR(z, lenz, sizex + sizey, p);
-    return SCM_OBJ(z);
+    return SCM_OBJ(make_str(lenz, sizex+sizey, p));
 }
 
 ScmObj Scm_StringAppendC(ScmString *x, const char *str, int sizey, int leny)
@@ -357,7 +348,6 @@ ScmObj Scm_StringAppendC(ScmString *x, const char *str, int sizey, int leny)
     int sizex = SCM_STRING_SIZE(x), lenx = SCM_STRING_LENGTH(x);
     int lenz;
     char *p;
-    ScmString *z;
 
     if (sizey < 0) count_size_and_length(str, &sizey, &leny);
     else if (leny < 0) leny = count_length(str, sizey);
@@ -372,8 +362,7 @@ ScmObj Scm_StringAppendC(ScmString *x, const char *str, int sizey, int leny)
     } else {
         lenz = lenx + leny;
     }
-    INITSTR(z, lenz, sizex + sizey, p);
-    return SCM_OBJ(z);
+    return SCM_OBJ(make_str(lenz, sizex + sizey, p));
 }
 
 ScmObj Scm_StringAppend(ScmObj strs)
@@ -381,8 +370,6 @@ ScmObj Scm_StringAppend(ScmObj strs)
     ScmObj cp;
     int size = 0, len = 0;
     char *buf, *bufp;
-    ScmString *z;
-
     SCM_FOR_EACH(cp, strs) {
         ScmObj str = SCM_CAR(cp);
         if (!SCM_STRINGP(str)) Scm_Error("string required, but got %S\n", str);
@@ -399,9 +386,7 @@ ScmObj Scm_StringAppend(ScmObj strs)
         bufp += SCM_STRING_SIZE(str);
     }
     *bufp = '\0';
-    
-    INITSTR(z, len, size, buf);
-    return SCM_OBJ(z);
+    return SCM_OBJ(make_str(len, size, buf));
 }
 
 ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim)
@@ -410,7 +395,6 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim)
     int size = 0, len = 0, nstrs = 0;
     int dsize = SCM_STRING_SIZE(delim), dlen = SCM_STRING_LENGTH(delim);
     char *buf, *bufp;
-    ScmString *z;
 
     if (SCM_NULLP(strs)) return SCM_MAKE_STR("");
     
@@ -437,9 +421,7 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim)
         }
     }
     *bufp = '\0';
-    
-    INITSTR(z, len, size, buf);
-    return SCM_OBJ(z);
+    return SCM_OBJ(make_str(len, size, buf));
 }
 
 /*----------------------------------------------------------------
@@ -534,7 +516,6 @@ ScmObj Scm_StringByteSet(ScmString *x, int k, ScmByte b)
 
 ScmObj Scm_Substring(ScmString *x, int start, int end)
 {
-    ScmString *z;
     const char *s, *e;
     int lenx = SCM_STRING_LENGTH(x);
     
@@ -547,9 +528,7 @@ ScmObj Scm_Substring(ScmString *x, int start, int end)
     /* TODO: incomplete string case? */
     if (start) s = forward_pos(x->start, start); else s = x->start;
     e = forward_pos(s, end - start);
-
-    INITSTR(z, end - start, e - s, s);
-    return SCM_OBJ(z);
+    return SCM_OBJ(make_str(end - start, e - s, s));
 }
 
 /* Auxiliary procedure to support optional start/end parameter specified
@@ -892,15 +871,13 @@ void Scm__DStringRealloc(ScmDString *dstr, int minincr)
  */
 ScmObj Scm_DStringGet(ScmDString *dstr)
 {
-    ScmString *z;
     int len = dstr->length;
     int size = dstr->current - dstr->start;
     
     if (len < 0) {
         len = count_length(dstr->start, size);
     }
-    INITSTR(z, len, size, dstr->start);
-    return SCM_OBJ(z);
+    return SCM_OBJ(make_str(len, size, dstr->start));
 }
 
 /* For conveninence.   Note that dstr may already contain NUL byte in it,
