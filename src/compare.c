@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compare.c,v 1.7 2002-05-27 12:46:44 shirok Exp $
+ *  $Id: compare.c,v 1.8 2002-05-27 22:09:27 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -111,8 +111,7 @@ static void sort_h(ScmObj *elts, int nelts,
 static void sort_q(ScmObj *elts, int lo, int hi, int depth, int limit,
                    int (*cmp)(ScmObj, ScmObj, ScmObj), ScmObj data)
 {
-    for (;;) {
-        if (lo >= hi) return;
+    while (lo < hi) {
         if (depth >= limit) {
             sort_h(elts+lo, (hi-lo+1), cmp, data);
             break;
@@ -127,7 +126,7 @@ static void sort_q(ScmObj *elts, int lo, int hi, int depth, int limit,
                 l++;
                 r--;
             }
-            sort_q(elts, lo, r, depth+1, limit, cmp, data);
+            if (lo < r) sort_q(elts, lo, r, depth+1, limit, cmp, data);
             /* tail call to
                sort_q(elts, l, hi, depth+1, limit, cmp, data); */
             lo = l;
