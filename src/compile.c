@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.113 2004-07-13 21:14:06 shirok Exp $
+ *  $Id: compile.c,v 1.114 2004-07-13 21:26:34 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -1046,6 +1046,14 @@ static ScmObj compile_body(ScmObj form, ScmObj env,
         SCM_APPEND(body, bodytail, x);
         MAXDEPTH(maxdepth, subdepth);
         formtail = SCM_CDR(formtail);
+    }
+
+    if (!body_started) {
+        if (SCM_NULLP(idef_vars)) {
+            Scm_Error("empty body: %S", form);
+        } else {
+            Scm_Error("a body consists of only internal definitions (after expanding macros) is not allowed: %S", form);
+        }
     }
 
     *depth += maxdepth;
