@@ -6,13 +6,14 @@
  *  I tried to put mingw-specific stuff here as much as possible,
  *  instead of scattering #ifdefs around the sources.
  *
- *  $Id: mingw-compat.h,v 1.1 2004-07-15 07:10:07 shirok Exp $
+ *  $Id: mingw-compat.h,v 1.2 2004-07-16 06:03:20 shirok Exp $
  */
 
 #ifndef GAUCHE_MINGW_COMPAT_H
 #define GAUCHE_MINGW_COMPAT_H
 
 #include <windows.h>
+#include <shlwapi.h>
 
 /* MinGW's sys/types.h doesn't define these.
    It appearse that _BSDTYPES_DEFINED is the symbol commonly used

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.87 2004-07-16 03:16:49 shirok Exp $
+ *  $Id: load.c,v 1.88 2004-07-16 06:03:19 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -1007,19 +1007,21 @@ ScmObj get_program_dir(void)
 {
     static ScmObj dir = SCM_FALSE;
     if (SCM_FALSEP(dir)) {
+	HMODULE mod;
 	DWORD r;
-	char path[1024], *lastdelim;
+	char path[MAX_PATH];
 
-	r = GetModuleFileName(NULL, path, 1024);
+	mod = GetModuleHandle("libgauche.dll");
+	if (mod == NULL) {
+	    Scm_Error("GetModuleHandle failed");
+	}
+	r = GetModuleFileName(mod, path, MAX_PATH);
 	if (r == 0) {
 	    Scm_Error("GetModuleFileName failed");
 	}
-	lastdelim = strrchr(path, '\\');
-	if (lastdelim == NULL) {
-	    Scm_Error("GetModuleFileName returned non-directory name: %s",
-		      path);
+	if (!PathRemoveFileSpec(path)) {
+	    Scm_Error("PathRemoveFileSpec failed on %s", path);
 	}
-	*lastdelim = '\0';
 	dir = SCM_MAKE_STR_COPYING(path);
     }
     return dir;

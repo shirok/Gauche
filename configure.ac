@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.35 2004-07-15 07:09:25 shirok Exp $
+dnl $Id: configure.ac,v 1.36 2004-07-16 06:02:46 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8, shiro@acm.org)
-AC_REVISION($Revision: 1.35 $)
+AC_REVISION($Revision: 1.36 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -287,7 +287,7 @@ AC_CHECK_LIB(m, sin) dnl needed to check trunc and rint below
 
 dnl For Windows/MinGW, manually adds several libraries
 case "$target" in
-  *mingw*) LIBS="$LIBS -lnetapi32";;
+  *mingw*) LIBS="$LIBS -lnetapi32 -lshlwapi";;
   *) ;;
 esac
 
