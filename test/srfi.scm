@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.6 2001-04-06 11:16:19 shiro Exp $
+;; $Id: srfi.scm,v 1.7 2001-04-06 19:39:54 shiro Exp $
 
 (add-load-path "../lib")
 (use gauche.test)
@@ -83,7 +83,61 @@
 (test "drop-right" '(1)       (lambda () (drop-right '(1 2 3 . d) 2)))
 (test "take-right" 'd         (lambda () (take-right '(1 2 3 . d) 0)))
 (test "drop-right" '(1 2 3)   (lambda () (drop-right '(1 2 3 . d) 0)))
-(test "take!" '(1 3) (lambda() (take! (circular-list 1 3 5) 8)))
+(test "take!"      '(1 2)     (lambda () (take! '(1 2 3 . d) 2)))
+(test "drop-right!" '(1 2)    (lambda () (drop-right! '(1 2 3 . d) 1)))
+(test "split-at" '((a b c) (d e f g h))
+      (lambda () (call-with-values
+                     (lambda () (split-at '(a b c d e f g h) 3))
+                   list)))
+(test "split-at!" '((a b c) (d e f g h))
+      (lambda () (call-with-values
+                     (lambda () (split-at! (list 'a 'b 'c 'd 'e 'f 'g 'h) 3))
+                   list)))
+(test "last" 'c (lambda () (last '(a b c))))
+(test "last-pair" '(c) (lambda () (last-pair '(a b c))))
+(test "length+" '(5 #f)
+      (lambda () (list (length+ '(1 2 3 4 5))
+                       (length+ (circular-list 1 2 3 4 5)))))
+; append append!
+; concatenate concatenate!
+; reverse reverse!
+; append-reverse append-reverse!
+(test "zip" '((one 1 odd) (two 2 even) (three 3 odd))
+      (lambda () (zip '(one two three) '(1 2 3)
+                      '(odd even odd even odd even))))
+(test "zip" '((1) (2) (3)) (lambda () (zip '(1 2 3))))
+(test "zip" '((3 #f) (1 #t) (4 #f) (1 #t))
+      (lambda () (zip '(3 1 4 1) (circular-list #f #t))))
+(test "zip" '() (lambda () (zip '(a b) '() '(c d))))
+(define unzip-data '((1 2 3 4 5 6 7 8)
+                     (a b c d e)
+                     (#\a #\b #\c #\d #\e)
+                     ("a" "b" "c" "d" "e")))
+(test "unzip1" '(1 a #\a "a") (lambda () (unzip1 unzip-data)))
+(test "unzip2" '((1 a #\a "a") (2 b #\b "b"))
+      (lambda () (call-with-values (lambda () (unzip2 unzip-data)) list)))
+(test "unzip3" '((1 a #\a "a") (2 b #\b "b") (3 c #\c "c"))
+      (lambda () (call-with-values (lambda () (unzip3 unzip-data)) list)))
+(test "unzip4" '((1 a #\a "a") (2 b #\b "b") (3 c #\c "c") (4 d #\d "d"))
+      (lambda () (call-with-values (lambda () (unzip4 unzip-data)) list)))
+(test "unzip5"
+      '((1 a #\a "a") (2 b #\b "b") (3 c #\c "c") (4 d #\d "d") (5 e #\e "e"))
+      (lambda () (call-with-values (lambda () (unzip5 unzip-data)) list)))
+(test "count" 3 (lambda () (count even? '(3 1 4 1 5 9 2 6 5))))
+(test "count" 3
+      (lambda () (count < '(1 2 4 8) '(2 4 6 8 10 12 14 16))))
+(test "count" 2
+      (lambda () (count < '(3 1 4 1) (circular-list 1 10))))
+(test "fold" 55
+      (lambda () (fold + 0 '(1 2 3 4 5 6 7 8 9 10))))
+(test "fold" '(e d c b a)
+      (lambda () (fold cons '() '(a b c d e))))
+(test "fold" 3
+      (lambda () (fold (lambda (x c) (if (symbol? x) (+ c 1) c))
+                       0
+                       '(a 3 b 8 c 9))))
+;(test "fold" '(c 3 b 2 a 1)
+;      (lambda () (fold cons* '() '(a b c) '(1 2 3 4 5))))
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-2")
