@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.36 2002-11-10 21:22:07 shirok Exp $
+ *  $Id: charconv.c,v 1.37 2002-11-11 05:41:13 shirok Exp $
  */
 
 #include <string.h>
@@ -131,8 +131,8 @@ static int conv_input_filler(ScmPort *port, int mincnt)
     const char *inbuf = info->buf;
     char *outbuf = port->src.buf.end;
 
-    if (info->eofread) return 0;
-
+    if (info->remoteClosed) return 0;
+    
     /* Fill the input buffer.  There may be some remaining bytes in the
        inbuf from the last conversion (insize), so we try to fill the
        rest. */
@@ -140,7 +140,6 @@ static int conv_input_filler(ScmPort *port, int mincnt)
     nread = Scm_Getz(info->ptr, info->bufsiz - insize, info->remote);
     if (nread <= 0) {
         /* input reached EOF.  finish the output state */
-        info->eofread = TRUE;
         if (insize == 0) {
             outroom = SCM_PORT_BUFFER_ROOM(port);
             result = jconv_reset(info, outbuf, outroom);
@@ -152,8 +151,11 @@ static int conv_input_filler(ScmPort *port, int mincnt)
                    We signal an error. */
                 Scm_Error("couldn't flush the ending escape sequence in the character encoding conversion port (%s -> %s).  possibly an implementation error",
                           info->fromCode, info->toCode);
+                }
+            if (info->ownerp) {
+                Scm_ClosePort(info->remote);
+                info->remoteClosed = TRUE;
             }
-            if (info->ownerp) Scm_ClosePort(info->remote);
 #ifdef JCONV_DEBUG
             fprintf(stderr, "<= r=%d (reset), out(%p)%d\n",
                     result, outbuf, outroom);
@@ -256,7 +258,7 @@ ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,
     cinfo->remote = fromPort;
     cinfo->ownerp = ownerp;
     cinfo->bufsiz = bufsiz;
-    cinfo->eofread = FALSE;
+    cinfo->remoteClosed = FALSE;
     if (preread > 0) {
         cinfo->buf = inbuf;
         cinfo->ptr = inbuf + preread;
@@ -321,7 +323,10 @@ static int conv_output_closer(ScmPort *port)
     }
     /* flush remove port */
     Scm_Flush(info->remote);
-    if (info->ownerp) Scm_ClosePort(info->remote);
+    if (info->ownerp) {
+        Scm_ClosePort(info->remote);
+        info->remoteClosed = TRUE;
+    }
     return jconv_close(info);
 }
 
@@ -411,7 +416,7 @@ ScmObj Scm_MakeOutputConversionPort(ScmPort *toPort,
     cinfo->remote = toPort;
     cinfo->ownerp = ownerp;
     cinfo->bufsiz = (bufsiz > 0)? bufsiz : DEFAULT_CONVERSION_BUFFER_SIZE;
-    cinfo->eofread = FALSE;
+    cinfo->remoteClosed = FALSE;
     cinfo->buf = SCM_NEW_ATOMIC2(char *, cinfo->bufsiz);
     cinfo->ptr = cinfo->buf;
     
