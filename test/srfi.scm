@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.15 2001-05-19 11:04:35 shirok Exp $
+;; $Id: srfi.scm,v 1.16 2001-07-08 19:16:49 shirok Exp $
 
 (use gauche.test)
 
@@ -357,6 +357,31 @@
           (and-let* (((positive? x))
                      (y x))
                     y))))
+
+;;-----------------------------------------------------------------------
+(test-section "srfi-9")
+(use srfi-9)
+
+(define-record-type pare
+  (kons x y)
+  pare?
+  (x kar set-kar!)
+  (y kdr))
+
+(test "pare kons" #t (lambda () (pare? (kons 1 2))))
+(test "pare kons" #f (lambda () (pare? (cons 1 2))))
+(test "pare kar" 1 (lambda () (kar (kons 1 2))))
+(test "pare kdr" 2 (lambda () (kdr (kons 1 2))))
+(test "pare set-kar!" 3 (lambda () (let ((k (kons 1 2))) (set-kar! k 3) (kar k))))
+
+(define-record-type xpare
+  (xkons y x)
+  xpare?
+  (x kar)
+  (y kdr))
+
+(test "xpare kons" '(1 . 2)
+      (lambda () (let ((k (xkons 2 1))) (cons (kar k) (kdr k)))))
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-13")
