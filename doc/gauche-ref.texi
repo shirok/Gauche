@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.8 2001-05-26 09:48:16 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.9 2001-05-26 21:48:46 shirok Exp $
 
 @c module and class index
 @defcodeindex mo
@@ -2088,50 +2088,56 @@ function signals an error.
 @defunx sys-getppid
 @end defun
 
-
-
+@defun sys-times
+@end defun
 
 @node Time
 @subsection Time
 
-@defun sys-times
-@end defun
-
-@deftp {Builtin Class} <sys-time>
-@clindex sys-time
-@end deftp
-
 @deftp {Builtin Class} <sys-tm>
 @clindex sys-tm
+Represents @code{struct tm}.
 @end deftp
 
 @defun sys-time
+[POSIX] Returns the time since Epoch (00:00:00 UTC, January 1, 1970),
+measured in seconds.  It may be a non-integral number, depending on
+the architecture.
+
+Note that POSIX's definition of ``seconds since the Epoch'' doesn't
+take leap seconds into acount.
 @end defun
 
 @defun sys-gmtime time
+[POSIX]
 @end defun
 
 @defun sys-localtime time
+[POSIX]
 @end defun
 
 @defun sys-ctime time
+[POSIX]
 @end defun
 
 @defun sys-difftime time1 time0
+[POSIX]
 @end defun
 
 @defun sys-asctime tm
+[POSIX]
 @end defun
 
 @defun sys-strftime format tm
+[POSIX]
 @end defun
 
 @defun sys-mktime tm
+[POSIX]
 @end defun
 
 @defun sys-tm->alist tm
 @end defun
-
 
 @node Unix process management
 @subsection Unix process management
