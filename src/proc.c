@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.31 2002-09-11 03:19:40 shirok Exp $
+ *  $Id: proc.c,v 1.32 2002-09-18 05:55:10 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -29,18 +29,19 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ProcedureClass, proc_print);
 
 static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
+    ScmObj info = SCM_PROCEDURE_INFO(obj);
     if (SCM_PROCEDURE_TYPE(obj) == SCM_PROC_SUBR) {
         ScmSubr *subr = SCM_SUBR(obj);
         SCM_PUTZ("#<subr", -1, port);
-        if (SCM_PROCEDURE_INFO(subr)) {
-            Scm_Printf(port, " %A", SCM_PROCEDURE_INFO(subr));
+        if (!SCM_FALSEP(info)) {
+            Scm_Printf(port, " %A", info);
         }
         if (ctx->mode == SCM_WRITE_DEBUG) {
             Scm_Printf(port, " %p", subr);
         }
         SCM_PUTC('>', port);
     } else {
-        Scm_Printf(port, "#<closure %p%S>", obj, SCM_PROCEDURE_INFO(obj));
+        Scm_Printf(port, "#<closure %p%S>", obj, Scm_VMGetBindInfo(info));
     }
 }
 

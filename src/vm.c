@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.176 2002-09-17 09:42:06 shirok Exp $
+ *  $Id: vm.c,v 1.177 2002-09-18 05:55:10 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -835,11 +835,8 @@ static void run_loop()
                 continue;
             }
             CASE(SCM_VM_LAMBDA) {
-                ScmObj info, body;
+                ScmObj body;
                 
-                VM_ASSERT(SCM_PAIRP(pc));
-                info = SCM_CAR(pc);
-                pc = SCM_CDR(pc);
                 VM_ASSERT(SCM_PAIRP(pc));
                 body = SCM_CAR(pc);
                 pc = SCM_CDR(pc);
@@ -849,7 +846,7 @@ static void run_loop()
                 val0 = Scm_MakeClosure(SCM_VM_INSN_ARG0(code),
                                        SCM_VM_INSN_ARG1(code),
                                        body,
-                                       info);
+                                       prevpc);
                 RESTORE_REGS();
                 continue;
             }
@@ -910,6 +907,7 @@ static void run_loop()
                 POP_ARG(ca);
                 SAVE_REGS();
                 val0 = Scm_Cons(ca, val0);
+                vm->numVals = 1;
                 continue;
             }
             CASE(SCM_VM_CAR) {
@@ -2315,14 +2313,14 @@ ScmObj Scm_VMGetStackLite(ScmVM *vm)
     ScmObj info;
 
     if (SCM_PAIRP(vm->pc)) {
-        info = Scm_Assq(SCM_SYM_SOURCE_INFO, SCM_PAIR_ATTR(vm->pc));
-        if (SCM_PAIRP(info)) SCM_APPEND1(stack, tail, SCM_CDR(info));
+        info = Scm_VMGetSourceInfo(vm->pc);
+        if (!SCM_FALSEP(info)) SCM_APPEND1(stack, tail, info);
     }
     
     while (c) {
         if (SCM_PAIRP(c->info)) {
-            info = Scm_Assq(SCM_SYM_SOURCE_INFO, SCM_PAIR_ATTR(c->info));
-            if (SCM_PAIRP(info)) SCM_APPEND1(stack, tail, SCM_CDR(info));
+            info = Scm_VMGetSourceInfo(c->info);
+            if (!SCM_FALSEP(info)) SCM_APPEND1(stack, tail, info);
         }
         c = c->prev;
     }
@@ -2352,7 +2350,7 @@ static ScmObj env2vec(ScmEnvFrame *env, struct EnvTab *etab)
     }
     vec = Scm_MakeVector(env->size+2, SCM_FALSE);
     SCM_VECTOR_ELEMENT(vec, 0) = env2vec(env->up, etab);
-    SCM_VECTOR_ELEMENT(vec, 1) = env->info;
+    SCM_VECTOR_ELEMENT(vec, 1) = Scm_VMGetBindInfo(env->info);
     for (i=0; i<env->size; i++) {
         SCM_VECTOR_ELEMENT(vec, i+2) = ENV_DATA(env, i);
     }
@@ -2373,15 +2371,13 @@ ScmObj Scm_VMGetStack(ScmVM *vm)
 
     envTab.numEntries = 0;
     if (SCM_PAIRP(vm->pc)) {
-        info = Scm_Assq(SCM_SYM_SOURCE_INFO, SCM_PAIR_ATTR(vm->pc));
-        if (SCM_PAIRP(info)) info = SCM_CDR(info);
+        info = Scm_VMGetSourceInfo(vm->pc);
         SCM_APPEND1(stack, tail, Scm_Cons(info, env2vec(vm->env, &envTab)));
     }
     
     for (; c; c = c->prev) {
         if (!SCM_PAIRP(c->info)) continue;
-        info = Scm_Assq(SCM_SYM_SOURCE_INFO, SCM_PAIR_ATTR(c->info));
-        if (SCM_PAIRP(info)) info = SCM_CDR(info);
+        info = Scm_VMGetSourceInfo(c->info);
         evec = env2vec(c->env, &envTab);
         SCM_APPEND1(stack, tail, Scm_Cons(info, evec));
     }
@@ -2469,10 +2465,28 @@ ScmObj Scm_VMInsnInspect(ScmObj obj)
  * Dump VM internal state.
  */
 
+ScmObj Scm_VMGetSourceInfo(ScmObj program)
+{
+    if (SCM_PAIRP(program)) {
+        ScmObj p = Scm_Assq(SCM_SYM_SOURCE_INFO, SCM_PAIR_ATTR(program));
+        if (SCM_PAIRP(p)) return SCM_CDR(p);
+    }
+    return SCM_FALSE;
+}
+
+ScmObj Scm_VMGetBindInfo(ScmObj program)
+{
+    if (SCM_PAIRP(program)) {
+        ScmObj p = Scm_Assq(SCM_SYM_BIND_INFO, SCM_PAIR_ATTR(program));
+        if (SCM_PAIRP(p)) return SCM_CDR(p);
+    }
+    return SCM_FALSE;
+}
+
 static void dump_env(ScmEnvFrame *env, ScmPort *out)
 {
     int i;
-    Scm_Printf(out, "   %p %55.1S\n", env, env->info);
+    Scm_Printf(out, "   %p %55.1S\n", env, Scm_VMGetBindInfo(env->info));
     Scm_Printf(out, "       up=%p size=%d\n", env->up, env->size);
     Scm_Printf(out, "       [");
     for (i=0; i<env->size; i++) {

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.76 2002-09-12 03:26:08 shirok Exp $
+ *  $Id: vm.h,v 1.77 2002-09-18 05:55:10 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -261,8 +261,10 @@ struct ScmVMRec {
 };
 
 SCM_EXTERN ScmVM *Scm_NewVM(ScmVM *base, ScmModule *module, ScmObj name);
-SCM_EXTERN void Scm_VMDump(ScmVM *vm);
-SCM_EXTERN void Scm_VMDefaultExceptionHandler(ScmObj);
+SCM_EXTERN void   Scm_VMDump(ScmVM *vm);
+SCM_EXTERN void   Scm_VMDefaultExceptionHandler(ScmObj);
+SCM_EXTERN ScmObj Scm_VMGetSourceInfo(ScmObj program);
+SCM_EXTERN ScmObj Scm_VMGetBindInfo(ScmObj program);
 
 SCM_CLASS_DECL(Scm_VMClass);
 #define SCM_CLASS_VM              (&Scm_VMClass)

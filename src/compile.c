@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.84 2002-09-17 09:42:06 shirok Exp $
+ *  $Id: compile.c,v 1.85 2002-09-18 05:55:10 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -879,8 +879,9 @@ static ScmObj compile_lambda_family(ScmObj form, ScmObj args, ScmObj body,
     bodycode = Scm_Cons(SCM_VM_INSN1(SCM_VM_CHECK_STACK, 20), bodycode);
 #endif
     SCM_APPEND(code, codetail, 
-               SCM_LIST3(SCM_VM_INSN2(SCM_VM_LAMBDA, nargs, restarg),
-                         SCM_CAR(newenv), bodycode));
+               add_bindinfo(SCM_LIST2(SCM_VM_INSN2(SCM_VM_LAMBDA, nargs, restarg),
+                                      bodycode),
+                            SCM_CAR(newenv)));
     return code;
 }
 
