@@ -1,10 +1,10 @@
-module system$B$K4X$9$k3P=q(B
+module system¤Ë´Ø¤¹¤ë³Ð½ñ
 
 
-[module system$B$N(Bsemantics]
+[module system¤Îsemantics]
 
-CommonLisp$B$N(Bpackage$B$O!"I=5-L>$+$i%7%s%\%k$N<BBN$X$N%^%C%T%s%0$G$"$k!#(B
-$B%7%s%\%k$N!VCM!W$O%7%s%\%k$N<BBN$H7k$SIU$$$F$$$k!#(B
+CommonLisp¤Îpackage¤Ï¡¢É½µ­Ì¾¤«¤é¥·¥ó¥Ü¥ë¤Î¼ÂÂÎ¤Ø¤Î¥Þ¥Ã¥Ô¥ó¥°¤Ç¤¢¤ë¡£
+¥·¥ó¥Ü¥ë¤Î¡ÖÃÍ¡×¤Ï¥·¥ó¥Ü¥ë¤Î¼ÂÂÎ¤È·ë¤ÓÉÕ¤¤¤Æ¤¤¤ë¡£
 
 
  (in-package "FOO")
@@ -13,61 +13,61 @@ CommonLisp$B$N(Bpackage$B$O!"I=5-L>$+$i%7%s%\%k$N<BBN$X$N%^%C%T%s%0$G$"$k!#(
  (defvar x 1)
 
     package "foo"
-  x -----------> [symbol name=x value=0]
+  x -----------> [symbol foo::x value=0]
 
     package "bar"
-  x -----------> [symbol name=x value=1]
+  x -----------> [symbol bar::x value=1]
 
 
-Lisp$B%G!<%?$r(Bread$B$7$?>l9g!#F1$8$h$&$K8+$($k%7%s%\%k$,(Beq$B$G$J$$$N$G$O$^$k>l9g$,$"$k!#(B
+Lisp¥Ç¡¼¥¿¤òread¤·¤¿¾ì¹ç¡£Æ±¤¸¤è¤¦¤Ë¸«¤¨¤ë¥·¥ó¥Ü¥ë¤¬eq¤Ç¤Ê¤¤¤Î¤Ç¤Ï¤Þ¤ë¾ì¹ç¤¬¤¢¤ë¡£
 
-$B0lJ}!"(BGauche$B$N(Bmodule$B$O!"%7%s%\%k$N<BBN$+$iCM$r3JG<$9$k>l=j(B(global location, gloc)
-$B$X$N%^%C%T%s%0$H$J$k!#I=5-L>$+$i%7%s%\%k$N<BBN$X$N%^%C%T%s%0$OFbIt$N(Bobtable$B$K$h$j(B
-$B>o$K0l0U$KDj$^$k!#(B
+°ìÊý¡¢Gauche¤Îmodule¤Ï¡¢¥·¥ó¥Ü¥ë¤Î¼ÂÂÎ¤«¤éÃÍ¤ò³ÊÇ¼¤¹¤ë¾ì½ê(global location, gloc)
+¤Ø¤Î¥Þ¥Ã¥Ô¥ó¥°¤È¤Ê¤ë¡£É½µ­Ì¾¤«¤é¥·¥ó¥Ü¥ë¤Î¼ÂÂÎ¤Ø¤Î¥Þ¥Ã¥Ô¥ó¥°¤ÏÆâÉô¤Îobtable¤Ë¤è¤ê
+¾ï¤Ë°ì°Õ¤ËÄê¤Þ¤ë¡£
 
  (define-module foo
    (define x 0))
  (define-module bar
    (define x 1))
 
-     (obtable)                     module foo
-  x -----------> [symbol name=x] -------------> [gloc value=0]
+     (obtable)                module foo
+  x -----------> [symbol x] -------------> [gloc value=0]
 
-     (obtable)                     module bar
-  x -----------> [symbol name=x] -------------> [gloc value=1]
-
-
-$BF1$8I=5-$N%7%s%\%k$O>o$K(Beq$B!#(B
-$B%7%s%\%k$H(Bmodule$B$N4X78$O%3%s%Q%$%k;~$K@EE*$K2r<a2DG=!#$h$C$F%*!<%P%X%C%I$O@8$8$J$$!#(B
+     (obtable)                module bar
+  x -----------> [symbol x] -------------> [gloc value=1]
 
 
-[module$B$O%3%s%Q%$%k;~$K2r<a$5$l$k(B]
+Æ±¤¸É½µ­¤Î¥·¥ó¥Ü¥ë¤Ï¾ï¤Ëeq¡£
+¥·¥ó¥Ü¥ë¤Èmodule¤Î´Ø·¸¤Ï¥³¥ó¥Ñ¥¤¥ë»þ¤ËÀÅÅª¤Ë²ò¼á²ÄÇ½¡£¤è¤Ã¤Æ¥ª¡¼¥Ð¥Ø¥Ã¥É¤ÏÀ¸¤¸¤Ê¤¤¡£
 
-module$B$O%3%s%Q%$%k;~$N4D6-$G$"$k!#(Bdefine-module, select-module, with-module,
-current-module$B$O$9$Y$F(Bsyntax$B!#Cm0U$7$?$$$N$O!'(B
+
+[module¤Ï¥³¥ó¥Ñ¥¤¥ë»þ¤Ë²ò¼á¤µ¤ì¤ë]
+
+module¤Ï¥³¥ó¥Ñ¥¤¥ë»þ¤Î´Ä¶­¤Ç¤¢¤ë¡£define-module, select-module, with-module,
+current-module¤Ï¤¹¤Ù¤Æsyntax¡£Ãí°Õ¤·¤¿¤¤¤Î¤Ï¡§
 
   (define-module foo
     (define (get-current-module)
       (current-module)))
 
   (define-module bar
-    (show-current-module)) ==> foo $B$K$J$k!#(B
+    (show-current-module)) ==> foo ¤Ë¤Ê¤ë¡£
 
 
-$B<B9T;~$N4D6-$H%3%s%Q%$%k;~$N4D6-$,0lCW$9$k$H$O8B$i$J$$!#$3$l$O%G%P%C%0;~$K(B
-$B:.Mp$9$k$+$b!#$7$+$7!"N><T$r0lCW$5$;$k$?$a$K$O!"(Bwith-module$B$NEY$K(B
-dynamic-wind$B$,I,MW$K$J$j!"8zN($,0-$$!#(B
+¼Â¹Ô»þ¤Î´Ä¶­¤È¥³¥ó¥Ñ¥¤¥ë»þ¤Î´Ä¶­¤¬°ìÃ×¤¹¤ë¤È¤Ï¸Â¤é¤Ê¤¤¡£¤³¤ì¤Ï¥Ç¥Ð¥Ã¥°»þ¤Ë
+º®Íð¤¹¤ë¤«¤â¡£¤·¤«¤·¡¢Î¾¼Ô¤ò°ìÃ×¤µ¤»¤ë¤¿¤á¤Ë¤Ï¡¢with-module¤ÎÅÙ¤Ë
+dynamic-wind¤¬É¬Í×¤Ë¤Ê¤ê¡¢¸úÎ¨¤¬°­¤¤¡£
 
 
-[hygienic macro$B$H(Bmodule]
+[hygienic macro¤Èmodule]
 
-$B4pK\E*$K!"7rA4@-$O%b%8%e!<%k$r1[$($F@.N)$9$k!#$D$^$j!"(B
+´ðËÜÅª¤Ë¡¢·òÁ´À­¤Ï¥â¥¸¥å¡¼¥ë¤ò±Û¤¨¤ÆÀ®Î©¤¹¤ë¡£¤Ä¤Þ¤ê¡¢
 
- * $B%^%/%mDj5A;~$KF3F~$5$l$?(Bfree variable$B$O!"Dj5A;~$N%b%8%e!<%kFb$G(B
-   $B2r<a$5$l$k!#(B
+ * ¥Þ¥¯¥íÄêµÁ»þ¤ËÆ³Æþ¤µ¤ì¤¿free variable¤Ï¡¢ÄêµÁ»þ¤Î¥â¥¸¥å¡¼¥ëÆâ¤Ç
+   ²ò¼á¤µ¤ì¤ë¡£
 
- * $B%^%/%m<B9T;~$KEO$5$l$k(Bfree variable$B$O!"<B9T;~$N%b%8%e!<%k$G(B
-   $B2r<a$5$l$k!#(B
+ * ¥Þ¥¯¥í¼Â¹Ô»þ¤ËÅÏ¤µ¤ì¤ëfree variable¤Ï¡¢¼Â¹Ô»þ¤Î¥â¥¸¥å¡¼¥ë¤Ç
+   ²ò¼á¤µ¤ì¤ë¡£
 
 
  (define-module foo
@@ -82,17 +82,17 @@ dynamic-wind$B$,I,MW$K$J$j!"8zN($,0-$$!#(B
    (zz 1)  ==> 4, not 10
  )
 
-$BC"$7!"8=:_$N<BAu$G$O%^%/%mE83+7k2L$K(Bmodule$B$r07$&9=J8(B(with-module$B$J$I(B)$B$,(B
-$BF~$k$H$&$^$/$$$+$J$$!#(B
+Ã¢¤·¡¢¸½ºß¤Î¼ÂÁõ¤Ç¤Ï¥Þ¥¯¥íÅ¸³«·ë²Ì¤Ëmodule¤ò°·¤¦¹½Ê¸(with-module¤Ê¤É)¤¬
+Æþ¤ë¤È¤¦¤Þ¤¯¤¤¤«¤Ê¤¤¡£
 
 
-[require$B$H(Bimport$B$H(Buse]
+[require¤Èimport¤Èuse]
 
-$B%U%!%$%k$H(Bmodule$B$OFHN)$7$?35G0$@$,!"<BMQ>e!"5!G=$r%0%k!<%T%s%0$9$k<jCJ$H$7$F(B
-$B9g$o$;$F;H$o$l$k$3$H$,B?$$!#(B
+¥Õ¥¡¥¤¥ë¤Èmodule¤ÏÆÈÎ©¤·¤¿³µÇ°¤À¤¬¡¢¼ÂÍÑ¾å¡¢µ¡Ç½¤ò¥°¥ë¡¼¥Ô¥ó¥°¤¹¤ë¼êÃÊ¤È¤·¤Æ
+¹ç¤ï¤»¤Æ»È¤ï¤ì¤ë¤³¤È¤¬Â¿¤¤¡£
 
-$B8D!9$N%U%!%$%k$rFI$_9~$`<jCJ$H$7$F9=J8(Brequire$B$,!"(Bmodule$B$r;HMQ$9$kJ}K!$H$7$F(B
-$B9=J8(Bimport$B$,$"$k!#(B
+¸Ä¡¹¤Î¥Õ¥¡¥¤¥ë¤òÆÉ¤ß¹þ¤à¼êÃÊ¤È¤·¤Æ¹½Ê¸require¤¬¡¢module¤ò»ÈÍÑ¤¹¤ëÊýË¡¤È¤·¤Æ
+¹½Ê¸import¤¬¤¢¤ë¡£
 
   foo.scm:
 
@@ -108,22 +108,22 @@ dynamic-wind$B$,I,MW$K$J$j!"8zN($,0-$$!#(B
 
     ...
 
-$B<BMQ>e!"(Brequire$B$H(Bimport$B$r$3$N$h$&$KJB$Y$F;H$&5!2q$OB?$/!"FI$_9~$`$Y$-(B
-$B%U%!%$%k!?%b%8%e!<%k$,B?$/$J$k$HHQ$o$7$$!#(B
+¼ÂÍÑ¾å¡¢require¤Èimport¤ò¤³¤Î¤è¤¦¤ËÊÂ¤Ù¤Æ»È¤¦µ¡²ñ¤ÏÂ¿¤¯¡¢ÆÉ¤ß¹þ¤à¤Ù¤­
+¥Õ¥¡¥¤¥ë¡¿¥â¥¸¥å¡¼¥ë¤¬Â¿¤¯¤Ê¤ë¤ÈÈÑ¤ï¤·¤¤¡£
 
-$BB>$N8@8l(B (Perl, Python, Java, etc...) $B$G$OL>A06u4V$N@Z$jJ,$1$H(B
-$B%U%!%$%k$N@Z$jJ,$1$,E}9g$5$l$F$$$k!#(B
+Â¾¤Î¸À¸ì (Perl, Python, Java, etc...) ¤Ç¤ÏÌ¾Á°¶õ´Ö¤ÎÀÚ¤êÊ¬¤±¤È
+¥Õ¥¡¥¤¥ë¤ÎÀÚ¤êÊ¬¤±¤¬Åý¹ç¤µ¤ì¤Æ¤¤¤ë¡£
 
-use$B%^%/%m$O(Brequire/import$B$N>e$K<BAu$5$l!"(BPerl/Python/Java/...$B%i%$%/$J(B
-$BI=5-$r2DG=$K$9$k!#(B
+use¥Þ¥¯¥í¤Ïrequire/import¤Î¾å¤Ë¼ÂÁõ¤µ¤ì¡¢Perl/Python/Java/...¥é¥¤¥¯¤Ê
+É½µ­¤ò²ÄÇ½¤Ë¤¹¤ë¡£
 
     (use foo)  === (require "foo") (import foo)
 
     (use a.b.c) === (require "a/b/c") (import a.b.c)
 
-$B$J$*!"(BGauche$B$G$O(Brequire$B$O9=J8$H$7$F!"%3%s%Q%$%k;~$K2r<a$5$l$k!#0lJ}(Bload$B$O4X?t$G!"(B
-$B<B9T;~$K2r<a$5$l$k!#(Bfoo.scm$B$,%^%/%mDj5A(Bzz$B$r4^$s$G$$$?>l9g!"8e<T$O%(%i!<$K$J$k$3$H$K(B
-$BCm0U!#(B
+¤Ê¤ª¡¢Gauche¤Ç¤Ïrequire¤Ï¹½Ê¸¤È¤·¤Æ¡¢¥³¥ó¥Ñ¥¤¥ë»þ¤Ë²ò¼á¤µ¤ì¤ë¡£°ìÊýload¤Ï´Ø¿ô¤Ç¡¢
+¼Â¹Ô»þ¤Ë²ò¼á¤µ¤ì¤ë¡£foo.scm¤¬¥Þ¥¯¥íÄêµÁzz¤ò´Þ¤ó¤Ç¤¤¤¿¾ì¹ç¡¢¸å¼Ô¤Ï¥¨¥é¡¼¤Ë¤Ê¤ë¤³¤È¤Ë
+Ãí°Õ¡£
 
    in foo.scm:
 
