@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.235 2002-07-03 01:18:39 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.236 2002-07-06 23:22:47 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -16024,13 +16024,15 @@ The socket is bound to a unix domain socket with a name @var{path}.
 @item (make-server-socket 'inet @var{port} [:reuse-addr? @var{flag}])
 @c EN
 The socket is bound to an inet domain TCP socket, listening
-port @var{port}, which is a positive exact integer.
+port @var{port}, which must be a non-negative exact integer.
+If @var{port} is zero, the system assigns one of available port numbers.
 If a keyword argument @var{reuse-addr?} is given and true,
 @code{SO_REUSEADDR} option is set to the socket before bound to
 the port.  This allows the process to bind the server socket
 immediately after other process releases the port.
 @c JP
 ポート@var{port}にて接続を待つInetドメインのTCPソケットが作成されます。
+@var{port}が0の場合はシステムが適当なポート番号を割り当てます。
 キーワード引数@var{reuse-addr?}に真の値が与えられた場合は、
 ソケットに@code{SO_REUSEADDR}オプションがセットされます。
 このオプションをセットすると、他のプロセスがそのポートを使わなくなったら直ちに
@@ -16048,11 +16050,13 @@ with STk's @code{make-server-socket}.
 
 @example
 (make-server-socket 'inet 8080)
-  @result{} ;@r{a TCP socket listening port 8080}
+  @result{} #<socket (listen "0.0.0.0:8080")>
 (make-server-socket 8080)
-  @result{} ;@r{a TCP socket listening port 8080}
+  @result{} #<socket (listen "0.0.0.0:8080")>
+(make-server-socket 'inet 0)
+  @result{} #<socket (listen "0.0.0.0:35628")>
 (make-server-socket 'unix "/tmp/.sock")
-  @result{} ;@r{a socket listening unix socket /tmp/.sock}
+  @result{} #<socket (listen "/tmp/.sock")>
 @end example
 @end defun
 
@@ -16218,6 +16222,10 @@ Binds @var{socket} to the local network address @var{address}.
 It is usually used to associate specific address to the server port.
 If binding failed, an error is signalled (most likely the address is
 already in use).
+
+For the inet domain address, you can pass @var{address} with port=0;
+the system assigns the port number and sets the actual address to
+the @code{address} slot of @var{socket}.
 @end defun
 
 @defun socket-listen socket backlog
