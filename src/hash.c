@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: hash.c,v 1.6 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: hash.c,v 1.7 2001-03-15 06:48:07 shiro Exp $
  */
 
 #include "gauche.h"
@@ -458,6 +458,34 @@ ScmHashEntry *Scm_HashTablePut(ScmHashTable *table,
 ScmHashEntry *Scm_HashTableDelete(ScmHashTable *table, ScmObj key)
 {
     return table->accessfn(table, key, HASH_DELETE, SCM_FALSE);
+}
+
+/*
+ * Utility
+ */
+
+ScmObj Scm_HashTableKeys(ScmHashTable *table)
+{
+    ScmHashIter iter;
+    ScmHashEntry *e;
+    ScmObj h = SCM_NIL, t;
+    Scm_HashIterInit(table, &iter);
+    while ((e = Scm_HashIterNext(&iter)) != NULL) {
+        SCM_APPEND1(h, t, e->key);
+    }
+    return h;
+}
+
+ScmObj Scm_HashTableValues(ScmHashTable *table)
+{
+    ScmHashIter iter;
+    ScmHashEntry *e;
+    ScmObj h = SCM_NIL, t;
+    Scm_HashIterInit(table, &iter);
+    while ((e = Scm_HashIterNext(&iter)) != NULL) {
+        SCM_APPEND1(h, t, e->value);
+    }
+    return h;
 }
 
 /*

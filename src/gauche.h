@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.76 2001-03-14 09:18:59 shiro Exp $
+ *  $Id: gauche.h,v 1.77 2001-03-15 06:48:41 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -295,7 +295,7 @@ struct ScmClassRec {
     int (*equal)(ScmObj x, ScmObj y);
     int (*compare)(ScmObj x, ScmObj y);
     int (*serialize)(ScmObj obj, ScmPort *sink, ScmObj context);
-    ScmObj (*make)(ScmObj initargs);
+    ScmObj (*allocate)(ScmClass *klass, ScmObj initargs);
     ScmObj (*apply)(ScmObj obj, ScmObj args);
     struct ScmClassRec **cpa;
     unsigned int flags;
@@ -303,6 +303,8 @@ struct ScmClassRec {
     ScmObj cpl;
     ScmObj directSlots;
     ScmObj effectiveSlots;
+    ScmObj directMethods;
+#define SCM_CLASS_PREDEFINED_SLOTS 5
 };
 
 #define SCM_CLASS(obj)        ((ScmClass*)(obj))
@@ -359,11 +361,11 @@ extern ScmClass *Scm_ObjectCPL[];
 #define SCM_CLASS_SEQUENCE_CPL    (Scm_SequenceCPL)
 #define SCM_CLASS_OBJECT_CPL      (Scm_ObjectCPL)
     
-/* define built-in class statically */
-#define SCM_DEFCLASS(cname, sname, printer, cpa)                            \
-    ScmClass cname = {                                                      \
-        SCM_CLASS_CLASS, sname, printer, NULL, NULL, NULL, NULL, NULL, cpa, \
-        0, SCM_FALSE, SCM_FALSE, SCM_NIL, SCM_NIL                           \
+/* define built-in class statically. */
+#define SCM_DEFCLASS(cname, sname, printer, cpa)                             \
+    ScmClass cname = {                                                       \
+        SCM_CLASS_CLASS, sname, printer, NULL, NULL, NULL, NULL, NULL, cpa,  \
+        0, SCM_FALSE, SCM_FALSE, SCM_NIL, SCM_NIL, SCM_NIL                   \
     }
 
 /*--------------------------------------------------------
@@ -1106,6 +1108,8 @@ extern ScmHashEntry *Scm_HashTableAdd(ScmHashTable *hash,
 extern ScmHashEntry *Scm_HashTablePut(ScmHashTable *hash,
                                       ScmObj key, ScmObj value);
 extern ScmHashEntry *Scm_HashTableDelete(ScmHashTable *hash, ScmObj key);
+extern ScmObj Scm_HashTableKeys(ScmHashTable *table);
+extern ScmObj Scm_HashTableValues(ScmHashTable *table);
 
 extern void Scm_HashIterInit(ScmHashTable *hash, ScmHashIter *iter);
 extern ScmHashEntry *Scm_HashIterNext(ScmHashIter *iter);

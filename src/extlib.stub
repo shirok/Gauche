@@ -12,10 +12,11 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.45 2001-03-13 08:34:10 shiro Exp $
+;;; $Id: extlib.stub,v 1.46 2001-03-15 06:48:27 shiro Exp $
 ;;;
 
 "
+#include <gauche/class.h>
 #include <gauche/arch.h>
 "
 
@@ -399,6 +400,14 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   Scm_VMPushCC(hash_table_for_each_cc, data, 2);
   SCM_RETURN(SCM_UNDEFINED);")
 
+(define-cproc hash-table-keys (hash)
+  (assert (hash-table? hash))
+  "  SCM_RETURN(Scm_HashTableKeys(hash));")
+
+(define-cproc hash-table-values (hash)
+  (assert (hash-table? hash))
+  "  SCM_RETURN(Scm_HashTableValues(hash));")
+
 ;;
 ;; Modules
 ;;
@@ -448,6 +457,30 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc class-cpl (cls)
   (assert (class? cls))
   "  SCM_RETURN(Scm_ClassCPL(cls));")
+
+;; MOP stuff --- move to moblib.stub someday
+(define-cproc %allocate-instance (cls initargs)
+  (assert (class? cls))
+  "  SCM_RETURN(Scm_AllocateInstance(cls, initargs));")
+
+(define-cproc %class-direct-supers (cls)
+  (assert (class? cls))
+  "  SCM_RETURN(Scm_ClassDirectSupers(cls));")
+
+(define-cproc %class-direct-slots (cls)
+  (assert (class? cls))
+  "  SCM_RETURN(Scm_ClassDirectSlots(cls));")
+
+(define-cproc %class-effective-slots (cls)
+  (assert (class? cls))
+  "  SCM_RETURN(Scm_ClassEffectiveSlots(cls));")
+;; truly internal in the boot-up process.
+(define-cproc %%class-direct-slots-set! (cls slots)
+  (assert (class? cls))
+  "  cls->directSlots = slots; SCM_RETURN(SCM_UNDEFINED);")
+(define-cproc %%class-effective-slots-set! (cls slots)
+  (assert (class? cls))
+  "  cls->directSlots = slots; SCM_RETURN(SCM_UNDEFINED);")
 
 ;; Utility procedure
 (define-cproc format (port fmt &rest args)
