@@ -1,0 +1,13 @@
+Gauche/CVS
+Gauche/DIST
+Gauche/DIST_EXCLUDE
+Gauche/gc/CVS
+Gauche/gc/cord/CVS
+Gauche/gc/include/CVS
+Gauche/gc/Mac_files/CVS
+Gauche/src/CVS
+Gauche/src/gauche/CVS
+Gauche/doc/CVS
+Gauche/test/CVS
+Gauche/lib/CVS
+Gauche/lib/vm/CVS

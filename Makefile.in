@@ -8,6 +8,7 @@ src/gosh : gc/libgc.a
 	cd src; $(MAKE)
 
 clean :
+	rm -rf core *~
 	cd gc; $(MAKE) clean
 	cd src; $(MAKE) clean
 
@@ -16,3 +17,7 @@ allclean : clean
 
 install :
 	cd src; $(MAKE) install
+
+realclean : allclean
+	rm -rf configure
+
