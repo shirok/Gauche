@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.64 2001-12-01 10:26:24 shirok Exp $
+ *  $Id: class.c,v 1.65 2001-12-01 21:40:35 shirok Exp $
  */
 
 #include "gauche.h"
@@ -101,25 +101,13 @@ SCM_DEFINE_GENERIC(Scm_GenericSlotBoundUsingClassP, Scm_NoNextMethod, NULL);
 
 /* Some frequently-used pointers */
 static ScmObj key_allocation;
-static ScmObj key_instance;
-static ScmObj key_accessor;
 static ScmObj key_slot_accessor;
 static ScmObj key_builtin;
-static ScmObj key_class;
 static ScmObj key_name;
-static ScmObj key_supers;
-static ScmObj key_slots;
-static ScmObj key_metaclass;
 static ScmObj key_lambda_list;
 static ScmObj key_generic;
 static ScmObj key_specializers;
 static ScmObj key_body;
-static ScmObj key_init_keyword;
-static ScmObj key_init_thunk;
-static ScmObj key_init_value;
-static ScmObj key_slot_num;
-static ScmObj key_slot_set;
-static ScmObj key_slot_ref;
 
 /*=====================================================================
  * Auxiliary utilities
@@ -721,9 +709,8 @@ static ScmObj slot_initialize(ScmObj obj, ScmObj acc, ScmObj initargs)
         if (!SCM_UNDEFINEDP(v)) return Scm_VMSlotSet(obj, slot, v);
         v = SCM_UNBOUND;
     }
-    /* (2) use init-value or init-thunk.  this only applies to the      
-       instance-allocated slot. */
-    if (ca->slotNumber >= 0) {
+    /* (2) use init-value or init-thunk, if this slot is initializable. */
+    if (ca->initializable) {
         if (!SCM_UNBOUNDP(ca->initValue))
             return Scm_VMSlotSet(obj, slot, ca->initValue);
         if (SCM_PROCEDUREP(ca->initThunk)) {
@@ -933,33 +920,17 @@ static ScmObj slot_accessor_allocate(ScmClass *klass, ScmObj initargs)
     ScmObj parentklass, slotnum, slotget, slotset;
 
     SCM_SET_CLASS(sa, klass);
-    parentklass = Scm_GetKeyword(key_class, initargs, SCM_FALSE);
-    if (!Scm_TypeP(parentklass, SCM_CLASS_CLASS)) {
-        Scm_Error(":class argument must be a class metaobject, but got %S",
-                  parentklass);
-    }
-    sa->klass = SCM_CLASS(parentklass);
-    sa->name = Scm_GetKeyword(key_name, initargs, SCM_FALSE);
+    sa->klass = SCM_CLASS_TOP;  /* sets bogus class now; initializer takes
+                                   care of it. */
+    sa->name = SCM_FALSE;
     sa->getter = NULL;
     sa->setter = NULL;
-    sa->initValue =   Scm_GetKeyword(key_init_value, initargs, SCM_UNDEFINED);
-    if (sa->initValue == SCM_UNDEFINED) sa->initValue = SCM_UNBOUND;
-    sa->initKeyword = Scm_GetKeyword(key_init_keyword, initargs, SCM_FALSE);
-    sa->initThunk =   Scm_GetKeyword(key_init_thunk, initargs, SCM_FALSE);
-
-    slotnum = Scm_GetKeyword(key_slot_num, initargs, SCM_FALSE);
-    if (SCM_INTP(slotnum) && SCM_INT_VALUE(slotnum) >= 0) {
-        sa->slotNumber = SCM_INT_VALUE(slotnum);
-    } else {
-        sa->slotNumber = -1;
-    }
-    slotget = Scm_GetKeyword(key_slot_ref, initargs, SCM_FALSE);
-    slotset = Scm_GetKeyword(key_slot_set, initargs, SCM_FALSE);
-    if (SCM_PROCEDUREP(slotget) && SCM_PROCEDUREP(slotset)) {
-        sa->schemeAccessor = Scm_Cons(slotget, slotset);
-    } else {
-        sa->schemeAccessor = SCM_FALSE;
-    }
+    sa->initValue = SCM_UNBOUND;
+    sa->initKeyword = SCM_FALSE;
+    sa->initThunk = SCM_FALSE;
+    sa->initializable = FALSE;
+    sa->slotNumber = -1;
+    sa->schemeAccessor = SCM_FALSE;
     return SCM_OBJ(sa);
 }
 
@@ -980,9 +951,37 @@ static void slot_accessor_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 }
 
 /* some information is visible from Scheme world */
+static ScmObj slot_accessor_class(ScmSlotAccessor *sa)
+{
+    return SCM_OBJ(sa->klass);
+}
+
+static void slot_accessor_class_set(ScmSlotAccessor *sa, ScmObj v)
+{
+    if (!Scm_TypeP(v, SCM_CLASS_CLASS)) {
+        Scm_Error(":class argument must be a class metaobject, but got %S", v);
+    }
+    sa->klass = SCM_CLASS(v);
+}
+
+static ScmObj slot_accessor_name(ScmSlotAccessor *sa)
+{
+    return sa->name;
+}
+
+static ScmObj slot_accessor_name_set(ScmSlotAccessor *sa, ScmObj v)
+{
+    sa->name = v;
+}
+
 static ScmObj slot_accessor_init_value(ScmSlotAccessor *sa)
 {
     return sa->initValue;
+}
+
+static void slot_accessor_init_value_set(ScmSlotAccessor *sa, ScmObj v)
+{
+    sa->initValue = v;
 }
 
 static ScmObj slot_accessor_init_keyword(ScmSlotAccessor *sa)
@@ -990,9 +989,19 @@ static ScmObj slot_accessor_init_keyword(ScmSlotAccessor *sa)
     return sa->initKeyword;
 }
 
+static ScmObj slot_accessor_init_keyword_set(ScmSlotAccessor *sa, ScmObj v)
+{
+    sa->initKeyword = v;
+}
+
 static ScmObj slot_accessor_init_thunk(ScmSlotAccessor *sa)
 {
     return sa->initThunk;
+}
+
+static ScmObj slot_accessor_init_thunk_set(ScmSlotAccessor *sa, ScmObj v)
+{
+    sa->initThunk = v;
 }
 
 static ScmObj slot_accessor_slot_number(ScmSlotAccessor *sa)
@@ -1006,6 +1015,16 @@ static void slot_accessor_slot_number_set(ScmSlotAccessor *sa, ScmObj val)
     if (!SCM_INTP(val) || ((n = SCM_INT_VALUE(val)) < 0))
         Scm_Error("small positive integer required, but got %S", val);
     sa->slotNumber = n;
+}
+
+static ScmObj slot_accessor_initializable(ScmSlotAccessor *sa)
+{
+    return SCM_MAKE_BOOL(sa->initializable);
+}
+
+static void slot_accessor_initializable_set(ScmSlotAccessor *sa, ScmObj v)
+{
+    sa->initializable = SCM_FALSEP(v)? FALSE : TRUE;
 }
 
 static ScmObj slot_accessor_scheme_accessor(ScmSlotAccessor *sa)
@@ -1547,11 +1566,22 @@ static ScmClassStaticSlotSpec method_slots[] = {
 };
 
 static ScmClassStaticSlotSpec slot_accessor_slots[] = {
-    SCM_CLASS_SLOT_SPEC("init-value", slot_accessor_init_value, NULL),
-    SCM_CLASS_SLOT_SPEC("init-keyword", slot_accessor_init_keyword, NULL),
-    SCM_CLASS_SLOT_SPEC("init-thunk", slot_accessor_init_thunk, NULL),
-    SCM_CLASS_SLOT_SPEC("slot-number", slot_accessor_slot_number, slot_accessor_slot_number_set),
-    SCM_CLASS_SLOT_SPEC("getter-n-setter", slot_accessor_scheme_accessor, slot_accessor_scheme_accessor_set),
+    SCM_CLASS_SLOT_SPEC("class", slot_accessor_class,
+                        slot_accessor_class_set),
+    SCM_CLASS_SLOT_SPEC("name", slot_accessor_name,
+                        slot_accessor_name_set),
+    SCM_CLASS_SLOT_SPEC("init-value", slot_accessor_init_value,
+                        slot_accessor_init_value_set),
+    SCM_CLASS_SLOT_SPEC("init-keyword", slot_accessor_init_keyword,
+                        slot_accessor_init_keyword_set),
+    SCM_CLASS_SLOT_SPEC("init-thunk", slot_accessor_init_thunk,
+                        slot_accessor_init_thunk_set),
+    SCM_CLASS_SLOT_SPEC("initializable", slot_accessor_initializable,
+                        slot_accessor_initializable_set),
+    SCM_CLASS_SLOT_SPEC("slot-number", slot_accessor_slot_number,
+                        slot_accessor_slot_number_set),
+    SCM_CLASS_SLOT_SPEC("getter-n-setter", slot_accessor_scheme_accessor,
+                        slot_accessor_scheme_accessor_set),
     { NULL }
 };
 
@@ -1649,25 +1679,13 @@ void Scm__InitClass(void)
     static ScmClass *nullcpa[] = { NULL }; /* for <top> */
 
     key_allocation = SCM_MAKE_KEYWORD("allocation");
-    key_instance = SCM_MAKE_KEYWORD("instance");
     key_builtin = SCM_MAKE_KEYWORD("builtin");
-    key_accessor = SCM_MAKE_KEYWORD("accessor");
     key_slot_accessor = SCM_MAKE_KEYWORD("slot-accessor");
-    key_class = SCM_MAKE_KEYWORD("class");
     key_name = SCM_MAKE_KEYWORD("name");
-    key_supers = SCM_MAKE_KEYWORD("supers");
-    key_slots = SCM_MAKE_KEYWORD("slots");
-    key_metaclass = SCM_MAKE_KEYWORD("metaclass");
     key_lambda_list = SCM_MAKE_KEYWORD("lambda-list");
     key_generic = SCM_MAKE_KEYWORD("generic");
     key_specializers = SCM_MAKE_KEYWORD("specializers");
     key_body = SCM_MAKE_KEYWORD("body");
-    key_init_keyword = SCM_MAKE_KEYWORD("init-keyword");
-    key_init_thunk = SCM_MAKE_KEYWORD("init-thunk");
-    key_init_value = SCM_MAKE_KEYWORD("init-value");
-    key_slot_num = SCM_MAKE_KEYWORD("slot-number");
-    key_slot_ref = SCM_MAKE_KEYWORD("slot-ref");
-    key_slot_set = SCM_MAKE_KEYWORD("slot-set!");
 
     /* booting class metaobject */
     Scm_TopClass.cpa = nullcpa;
