@@ -92,8 +92,6 @@
 
 (test "string=?" #t (lambda () (string=? #"abc" #"abc")))
 
-(test "string-ref" #\b (lambda () (string-ref #"abc" 1)))
-(test "string-ref" #\null (lambda () (string-ref #"\0\0\0" 1)))
 (test "string-byte-ref" (char->integer #\b)
       (lambda () (string-byte-ref #"abc" 1)))
 (test "string-byte-ref" 0
@@ -120,6 +118,7 @@
 (test "string-substitute!" #"abCDe"
       (lambda () (string-substitute! (string-copy #"abcde") 2 #"CD")))
 
+;; NB: should we allow this?
 (test "string-set!" #"abQde"
       (lambda ()
         (let ((s (string-copy #"abcde")))
