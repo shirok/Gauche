@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.67 2001-09-21 10:01:32 shirok Exp $
+;;; $Id: stdlib.stub,v 1.68 2001-09-24 11:55:28 shirok Exp $
 ;;;
 
 
@@ -473,6 +473,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   (setter (obj value)       "CXR_SETTER(D, d, ddd);"))
 
 (define-cproc null? (obj)
+  (inliner "SCM_VM_NULLP")
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_NULLP(obj)));")
 
 (define-cproc list? (obj)
