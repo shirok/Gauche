@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.224 2002-06-20 10:06:00 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.225 2002-06-22 11:11:13 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -19176,6 +19176,25 @@ The destructive version reuses @var{vec} to store the result.
 @c COMMON
 @end deftp
 
+@deftp {Function} @var{TAG}vector-dot @r{@var{vec0} @var{vec1}}
+@findex s8vector-dot
+@findex s16vector-dot
+@findex s32vector-dot
+@findex s64vector-dot
+@findex u8vector-dot
+@findex u16vector-dot
+@findex u32vector-dot
+@findex u64vector-dot
+@findex f32vector-dot
+@findex f64vector-dot
+@c EN
+Calculates the dot product of two @var{TAG}vectors.
+The length of @var{vec0} and @var{vec1} must be the same.
+@c JP
+ふたつの@var{TAG}vectorの内積を計算します。
+@var{vec0}と@var{vec1}の長さは等しくなければなりません。
+@c COMMON
+@end deftp
 
 @c ----------------------------------------------------------------------
 @node SRFI String ports, Syntax to receive multiple values, Homogeneous Vectors, Library modules
