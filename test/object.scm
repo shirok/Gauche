@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.8 2001-04-02 10:24:47 shiro Exp $
+;; $Id: object.scm,v 1.9 2001-04-03 10:30:34 shiro Exp $
 
 (add-load-path "../lib")
 (use gauche.test)
@@ -201,7 +201,6 @@
   )
 
 (define-method initialize ((class <listing-class>) initargs)
-    (format #t "~s\n" next-method)
   (next-method)
   (set! (classes-of class) (cons (class-name class) (classes-of class))))
 
@@ -215,30 +214,75 @@
 (test "metaclass" '(<yy> <xx>)
       (lambda () (class-slot-ref <listing-class> 'classes)))
 
-;(define-class <auto-accessor-class> (<class>)
-;  ())
+(define-class <auto-accessor-class> (<class>)
+  ())
 
-;(define-method initialize ((class <auto-accessor-class>) initargs)
-;  (let ((slots (get-keyword :slots initargs '())))
-;    (for-each (lambda (slot)
-;                (unless (get-keyword :accessor (cdr slot) #f)
-;                  (set-cdr! slot (list :accessor
-;                                       (string->symbol
-;                                        (format #f "~a-of" (car slot)))
-;                                       (cdr slot)))))
-;              slots)
-;    (next-method)))
+(define-method initialize ((class <auto-accessor-class>) initargs)
+  (let ((slots (get-keyword :slots initargs '())))
+    (for-each (lambda (slot)
+                (unless (get-keyword :accessor (cdr slot) #f)
+                  (set-cdr! slot (list* :accessor
+                                        (string->symbol
+                                         (format #f "~a-of" (car slot)))
+                                        (cdr slot)))))
+              slots)
+    (next-method)))
 
-;(define-class <zz> ()
-;  (a b c)
-;  :metaclass <auto-accessor-class>)
+(define-class <zz> ()
+  (a b c)
+  :metaclass <auto-accessor-class>)
 
-;(test "metaclass" '(1 2 3)
-;      (lambda ()
-;        (let ((zz (make <zz>)))
-;          (set! (a-of zz) 1)
-;          (set! (b-of zz) 2)
-;          (set! (c-of zz) 3)
-;          (map (lambda (s) (slot-ref zz s)) '(a b c)))))
+(test "metaclass" '(1 2 3)
+      (lambda ()
+        (let ((zz (make <zz>)))
+          (set! (a-of zz) 1)
+          (set! (b-of zz) 2)
+          (set! (c-of zz) 3)
+          (map (lambda (s) (slot-ref zz s)) '(a b c)))))
+
+(define-class <uu> (<zz>)
+  (d e f))
+
+(test "metaclass" '(1 2 3 4 5 6)
+      (lambda ()
+        (let ((uu (make <uu>)))
+          (set! (a-of uu) 1)
+          (set! (b-of uu) 2)
+          (set! (c-of uu) 3)
+          (set! (d-of uu) 4)
+          (set! (e-of uu) 5)
+          (set! (f-of uu) 6)
+          (map (lambda (s) (slot-ref uu s)) '(a b c d e f)))))
+
+(define-class <vv> (<zz> <xx>)
+  ())
+
+(test "metaclass" '(1 2 3)
+      (lambda ()
+        (let ((vv (make <vv>)))
+          (set! (a-of vv) 1)
+          (set! (b-of vv) 2)
+          (set! (c-of vv) 3)
+          (map (lambda (s) (slot-ref vv s)) '(a b c)))))
+(test "metaclass" '(<vv> <yy> <xx>)
+      (lambda () (class-slot-ref <listing-class> 'classes)))
+      
+(define-class <ww> (<uu> <yy>)
+  ())
+
+(test "metaclass" #t
+      (lambda () (eq? (class-of <ww>) (class-of <vv>))))
+(test "metaclass" '(1 2 3 4 5 6)
+      (lambda ()
+        (let ((ww (make <ww>)))
+          (set! (a-of ww) 1)
+          (set! (b-of ww) 2)
+          (set! (c-of ww) 3)
+          (set! (d-of ww) 4)
+          (set! (e-of ww) 5)
+          (set! (f-of ww) 6)
+          (map (lambda (s) (slot-ref ww s)) '(a b c d e f)))))
+(test "metaclass" '(<ww> <vv> <yy> <xx>)
+      (lambda () (class-slot-ref <listing-class> 'classes)))
 
 (test-end)
