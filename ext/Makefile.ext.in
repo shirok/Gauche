@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions
-## $Id: Makefile.ext.in,v 1.14 2003-08-26 10:00:59 shirok Exp $
+## $Id: Makefile.ext.in,v 1.15 2003-10-05 02:09:55 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -43,6 +43,10 @@ EXT_LIBGAUCHE = -L$(top_builddir)/src @EXT_LIBGAUCHE@
 GAUCHE_INCDIR  = $(DESTDIR)`$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
 GAUCHE_LIBDIR  = $(DESTDIR)`$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
 GAUCHE_ARCHDIR = $(DESTDIR)`$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
+
+LIB_INSTALL_DIR  = @libdir@
+BIN_INSTALL_DIR  = @bindir@
+DATA_INSTALL_DIR = @datadir@
 
 CLEANFILES = core *~ test.log
 

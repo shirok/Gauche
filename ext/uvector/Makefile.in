@@ -46,7 +46,7 @@ uvlib.stub : uvlib.stub.sh
 	sh ./uvlib.stub.sh > uvlib.stub
 
 install : install-std
-	@case `$(GAUCHE_CONFIG) --arch` in *-cygwin*) \
+	@case `$(GAUCHE_CONFIG) --arch` in *cygwin*) \
 	  $(INSTALL) $(LIBFILES) $(DESTDIR)$(BIN_INSTALL_DIR);;\
 	esac
 

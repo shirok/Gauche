@@ -1,3 +1,15 @@
+2003-10-04  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/Makefile.in : install libgauche-uvector.dll to bindir
+	  under cygwin.
+	
+	* src/gauche-config.in : records OBJEXT and EXEEXT.
+
+	* aclocal.m4, acinclude.m4 : added adjustment of OBJEXT and EXEEXT
+	  in AC_GAUCHE_CC macro.
+	
+	* ext/Makefile.ext.in : expose BIN_INSTALL_DIR etc.
+
 2003-10-03  Shiro Kawai  <shiro@acm.org>
 
 	* ext/fcntl/fcntl.scm: added missing F_SETFD to the export list

@@ -1,5 +1,5 @@
 dnl Gauche-specific aucotonf macros.
-dnl $Id: acinclude.m4,v 1.4 2003-04-22 10:36:15 shirok Exp $
+dnl $Id: acinclude.m4,v 1.5 2003-10-05 02:09:45 shirok Exp $
 
 dnl AC_GAUCHE_INIT_EXT
 dnl   Sets some parameters about installed Gauche package. 
@@ -49,6 +49,15 @@ AC_SUBST(CC)
 ac_gauche_CFLAGS=${CFLAGS+set}
 if test -z "$ac_gauche_CFLAGS"; then
   CFLAGS="`$GAUCHE_CONFIG --default-cflags`"
+fi
+# adds default OBJEXT if it has not been set.
+ac_gauche_OBJEXT=${OBJEXT+set}
+if test -z "$ac_gauche_OBJEXT"; then
+  OBJEXT="`$GAUCHE_CONFIG --object-suffix`"
+fi
+ac_gauche_EXEEXT=${EXEEXT+set}
+if test -z "$ac_gauche_EXEEXT"; then
+  EXEEXT="`$GAUCHE_CONFIG --executable-suffix`"
 fi
 ])
 
