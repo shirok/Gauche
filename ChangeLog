@@ -1,3 +1,24 @@
+2002-07-12  Shiro Kawai  <shiro@acm.org>
+
+	* configure.in, src/gauche/config.h.in : set proper thread-supporting
+	  #defines accodring to the platform.
+
+2002-07-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c : added error flag to ScmPort and mark the port that
+	  raised an error.  Avoid calling flush to close such ports.
+	* lib/gauche/process.cm (call-with-input-process) : avoid sending
+	  SIGTERM in call-with-input-process, for it may not succeed.
+	  Instead, it counts on that closing pipe causes termination of
+	  the source process.
+	* configure.in : check -lpthread by AC_CHECK_LIB.  For FreeBSD,
+	  check -lc_r as well.
+	* doc/Makefile.in : 
+	* lib/gauche/interactive/info.scm : added gauche.interactive.info,
+	  on-line info viewer (experimental).
+	* lib/file/util.scm (find-file-in-paths) : fixed keyword argument
+	  spec to match the document.
+
 2002-07-10  Shiro Kawai  <shiro@acm.org>
 
 	* doc/Makefile.in : added rule to create gzipped info files
