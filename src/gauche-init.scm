@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.25 2001-04-23 07:10:35 shiro Exp $
+;;;  $Id: gauche-init.scm,v 1.26 2001-04-25 07:30:49 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -93,10 +93,17 @@
     ((_ ?arg () . ?body) (begin . ?body))
     ((_ ?arg ((?var ?default) . ?more) . ?body)
      (receive (?var next-arg)
-              (if (pair? ?arg)
-                  (values (car ?arg) (cdr ?arg))
-                  (values ?default '()))
-        (let-optional* next-arg ?more . ?body)))))
+         (if (pair? ?arg)
+             (values (car ?arg) (cdr ?arg))
+             (values ?default '()))
+       (let-optional* next-arg ?more . ?body)))
+    ((_ ?arg (?var . ?more) . ?body)
+     (receive (?var next-arg)
+         (if (pair? ?arg)
+             (values (car ?arg) (cdr ?arg))
+             (values (undefined) '()))
+       (let-optional* next-arg ?more . ?body)))
+    ))
 
 ;;
 ;; Load object system
