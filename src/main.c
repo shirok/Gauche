@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.41 2002-01-11 11:35:00 shirok Exp $
+ *  $Id: main.c,v 1.42 2002-01-15 21:05:22 shirok Exp $
  */
 
 #include <unistd.h>
@@ -167,6 +167,7 @@ int main(int argc, char **argv)
         SCM_DEFINE(Scm_UserModule(), "*argv*", av);
         SCM_DEFINE(Scm_UserModule(), "*program-name*",
                    SCM_MAKE_STR_IMMUTABLE(argv[optind]));
+
         Scm_Load(argv[optind], TRUE);
 
         /* if symbol 'main is bound to a procedure in the user module,

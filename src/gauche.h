@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.204 2002-01-15 11:38:19 shirok Exp $
+ *  $Id: gauche.h,v 1.205 2002-01-15 21:05:22 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -24,6 +24,7 @@
 #include <stdarg.h>
 #include <setjmp.h>
 #include <limits.h>
+#include <signal.h>
 #include <gc.h>
 
 #ifdef __cplusplus
@@ -1798,6 +1799,11 @@ extern void Scm_RegMatchDump(ScmRegMatch *match);
 #define SCM_ARGREF(count)           (SCM_FP[count])
 #define SCM_RETURN(value)           return value
 #define SCM_CURRENT_MODULE()        (Scm_VM()->module)
+
+/*---------------------------------------------------
+ * SIGNAL
+ */
+extern void   Scm_SigCheck(ScmVM *vm);
 
 /*---------------------------------------------------
  * SYSTEM

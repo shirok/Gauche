@@ -12,13 +12,14 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.51 2002-01-11 11:35:03 shirok Exp $
+ *  $Id: vm.h,v 1.52 2002-01-15 21:05:26 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
 #define GAUCHE_VM_H
 
 #define SCM_VM_MAX_VALUES      20
+#define SCM_VM_SIGQ_SIZE       32
 
 /* Local variable access:
  *   Regardless of frame allocation scheme, local variables are always
@@ -215,9 +216,18 @@ struct ScmVMRec {
     ScmObj defaultEscapeHandler;
 
     /* Program information */
-    ScmObj load_next;
-    ScmObj load_history;
-    ScmObj load_port;
+    ScmObj load_next;           /* list of the directories to be searched */
+    ScmObj load_history;        /* history of the nested load */
+    ScmObj load_port;           /* current port from which we are loading */
+
+    /* Signal information */
+    int sigQueue[SCM_VM_SIGQ_SIZE];/* Ring buffer for pending signals */
+    unsigned int sigQueueHead;  /* points to the queue head */
+    unsigned int sigQueueTail;  /* points to the queue tail */
+    unsigned int sigOverflow;   /* flag to indicate queue overflow */
+    ScmObj sigHandlers;         /* assoc list of signal handlers */
+    ScmObj sigPending;          /* pending signal handlers */
+    sigset_t sigMask;           /* current signal mask */
 };
 
 extern ScmVM *Scm_SetVM(ScmVM *vm);
