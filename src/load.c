@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.43 2001-09-17 01:36:39 shirok Exp $
+ *  $Id: load.c,v 1.44 2001-10-29 00:35:03 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -482,53 +482,42 @@ ScmObj Scm_ProvidedP(ScmObj feature)
  * Autoload
  */
 
-struct autoload_data {
-    ScmSymbol *name;
-    ScmModule *module;
-    ScmString *path;
-    ScmObj args;
-    int loaded;
-};
-
-static ScmObj autoload_cc(ScmObj result, void *data[])
+static void autoload_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 {
-    struct autoload_data *a = (struct autoload_data *)data[0];
-    ScmGloc *g = Scm_FindBinding(a->module, a->name, FALSE);
-    SCM_ASSERT(g != NULL && !SCM_UNBOUNDP(g->value));
-    return Scm_VMApply(g->value, a->args);
+    Scm_Printf(out, "#<autoload %A::%A (%A)>",
+               SCM_AUTOLOAD(obj)->module->name,
+               SCM_AUTOLOAD(obj)->name, SCM_AUTOLOAD(obj)->path);
 }
 
-static ScmObj autoload_sub(ScmObj *argv, int nargs, void *data)
-{
-    struct autoload_data *adata = (struct autoload_data *)data;
-    if (adata->loaded) {
-        /* If we're here, the autoloader procedure hasn't properly
-           overwritten by loading. */
-        Scm_Error("symbol %S is not redefined by autoloading %S",
-                  adata->name, adata->path);
-    }
-    adata->loaded = TRUE;
-    SCM_ASSERT(nargs == 1);
-    adata->args = argv[0];
-    Scm_VMPushCC(autoload_cc, (void **)&adata, 1);
-    return Scm_VMLoad(adata->path, TRUE);
-}
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_AutoloadClass, autoload_print);
 
 ScmObj Scm_MakeAutoload(ScmSymbol *name, ScmString *path)
 {
-    struct autoload_data *adata = SCM_NEW(struct autoload_data);
     ScmObj p;
+    ScmAutoload *adata = SCM_NEW(ScmAutoload);
+    SCM_SET_CLASS(adata, SCM_CLASS_AUTOLOAD);
     adata->name = name;
     adata->module = SCM_CURRENT_MODULE();
     adata->path = path;
-    adata->args = SCM_NIL;
     adata->loaded = FALSE;
+    return SCM_OBJ(adata);
+}
 
-    p = Scm_MakeOutputStringPort();
-    Scm_Printf(SCM_PORT(p), "autoload %A::%A (%A)",
-               adata->module->name, adata->name, adata->path);
-    return Scm_MakeSubr(autoload_sub, (void*)adata, 0, 1,
-                        Scm_GetOutputString(SCM_PORT(p)));
+ScmObj Scm_LoadAutoload(ScmAutoload *adata)
+{
+    ScmObj r;
+    ScmGloc *g;
+    
+    if (adata->loaded) Scm_Error("Autoload is not working? %S", adata);
+    adata->loaded = TRUE;
+    Scm_Load(Scm_GetStringConst(adata->path), TRUE);
+    g = Scm_FindBinding(adata->module, adata->name, FALSE);
+    SCM_ASSERT(g != NULL);
+    if (SCM_UNBOUNDP(g->value) || SCM_AUTOLOADP(g->value)) {
+        Scm_Error("Autoloaded symbol %S is not defined in the file %S",
+                  adata->name, adata->path);
+    }
+    return g->value;
 }
 
 /*------------------------------------------------------------------

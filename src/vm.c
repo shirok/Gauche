@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.113 2001-10-11 09:28:48 shirok Exp $
+ *  $Id: vm.c,v 1.114 2001-10-29 00:35:03 shirok Exp $
  */
 
 #include "gauche.h"
@@ -601,35 +601,34 @@ static void run_loop()
                 continue;
             }
             CASE(SCM_VM_GREF) {
-                ScmObj sym;
+                ScmGloc *gloc;
                 
                 VM_ASSERT(SCM_PAIRP(pc));
-                sym = SCM_CAR(pc);
+                val0 = SCM_CAR(pc);
 
-                if (SCM_GLOCP(sym)) {
-                    val0 = SCM_GLOC(sym)->value;
-                    if (val0 == SCM_UNBOUND) {
-                        VM_ERR(("unbound variable: %S",
-                                SCM_OBJ(SCM_GLOC(sym)->name)));
-                    }
-                } else {
-                    ScmGloc *gloc;
-                    SCM_ASSERT(SCM_IDENTIFIERP(sym));
-                    gloc = Scm_FindBinding(SCM_IDENTIFIER(sym)->module,
-                                           SCM_IDENTIFIER(sym)->name,
+                if (!SCM_GLOCP(val0)) {
+                    VM_ASSERT(SCM_IDENTIFIERP(val0));
+                    gloc = Scm_FindBinding(SCM_IDENTIFIER(val0)->module,
+                                           SCM_IDENTIFIER(val0)->name,
                                            FALSE);
                     if (gloc == NULL) {
                         VM_ERR(("unbound variable: %S",
-                                SCM_IDENTIFIER(sym)->name));
-                    }
-                    val0 = gloc->value;
-                    if (val0 == SCM_UNBOUND) {
-                        VM_ERR(("unbound variable: %S",
-                                SCM_IDENTIFIER(sym)->name));
+                                SCM_IDENTIFIER(val0)->name));
                     }
                     /* memorize gloc */
                     /* TODO: make it MT safe! */
                     SCM_SET_CAR(pc, SCM_OBJ(gloc));
+                } else {
+                    gloc = SCM_GLOC(val0);
+                }
+                val0 = gloc->value;
+                if (val0 == SCM_UNBOUND) {
+                    VM_ERR(("unbound variable: %S",
+                            SCM_OBJ(gloc->name)));
+                } else if (SCM_AUTOLOADP(val0)) {
+                    SAVE_REGS();
+                    val0 = Scm_LoadAutoload(SCM_AUTOLOAD(val0));
+                    RESTORE_REGS();
                 }
                 pc = SCM_CDR(pc);
                 continue;
@@ -713,7 +712,7 @@ static void run_loop()
                     SCM_GLOC(loc)->value = val0;
                 } else {
                     ScmGloc *gloc;
-                    SCM_ASSERT(SCM_IDENTIFIERP(loc));
+                    VM_ASSERT(SCM_IDENTIFIERP(loc));
                     /* The third arg of this call should be TRUE
                        (stay_in_module).  See the discussion about modules
                        in compile.c.  For now, this one is more convenient. */

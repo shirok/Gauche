@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.185 2001-10-28 22:39:27 shirok Exp $
+ *  $Id: gauche.h,v 1.186 2001-10-29 00:35:03 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1890,7 +1890,21 @@ extern ScmObj Scm_Require(ScmObj feature);
 extern ScmObj Scm_Provide(ScmObj feature);
 extern ScmObj Scm_ProvidedP(ScmObj feature);
     
+typedef struct ScmAutoloadRec {
+    SCM_HEADER;
+    ScmSymbol *name;
+    ScmModule *module;
+    ScmString *path;
+    int loaded;
+} ScmAutoload;
+
+extern ScmClass Scm_AutoloadClass;
+#define SCM_CLASS_AUTOLOAD      (&Scm_AutoloadClass)
+#define SCM_AUTOLOADP(obj)      SCM_XTYPEP(obj, SCM_CLASS_AUTOLOAD)
+#define SCM_AUTOLOAD(obj)       ((ScmAutoload*)(obj))
+
 extern ScmObj Scm_MakeAutoload(ScmSymbol *name, ScmString *path);
+extern ScmObj Scm_LoadAutoload(ScmAutoload *autoload);
 
 /*---------------------------------------------------
  * UTILITY STUFF
