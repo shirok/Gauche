@@ -17,12 +17,12 @@ dnl Process this file with autoconf to produce configure.
 # Initialization
 # ==============
 
-AC_INIT(gc,6.2,Hans.Boehm@hp.com) 
+AC_INIT(gc,6.3,Hans.Boehm@hp.com) 
     ## version must conform to [0-9]+[.][0-9]+(alpha[0-9]+)?
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.12 $)
+AC_REVISION($Revision: 1.13 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE
 
@@ -45,7 +45,7 @@ AM_MAINTAINER_MODE
 GC_CFLAGS=${gc_cflags}
 AC_SUBST(GC_CFLAGS)
 
-dnl [SK: changed from original so that the thread flag is in sync with
+dnl[SK: changed from original so that the thread flag is in sync with
 dnl  whatever given to the toplevel configure]
 AC_ARG_ENABLE(threads, [  --enable-threads=TYPE   choose threading package],
   THREADS=$enableval, THREADS=no)
@@ -150,7 +150,7 @@ dnl	  AC_DEFINE(THREAD_LOCAL_ALLOC)
     ;;
  dgux386)
     THREADS=dgux386
-AC_MSG_RESULT($THREADLIBS)
+    AC_MSG_RESULT($THREADLIBS)
     # Use pthread GCC  switch
     THREADLIBS=-pthread
     if test "${enable_parallel_mark}" = yes; then
@@ -279,7 +279,7 @@ case "$host" in
  alpha*-*-linux*)
     machdep="alpha_mach_dep.lo"
     ;;
- i?86-*-solaris2.[[89]]*)
+ i?86-*-solaris2.[[89]] | i?86-*-solaris2.1?)
     AC_DEFINE(SOLARIS25_PROC_VDB_BUG_FIXED)
     ;;
  mipstx39-*-elf*)
@@ -301,7 +301,7 @@ case "$host" in
  sparc-*-netbsd*)
     machdep="sparc_netbsd_mach_dep.lo"
     ;;
- sparc-sun-solaris2.3*)
+ sparc-sun-solaris2.3)
     machdep="sparc_mach_dep.lo"
     AC_DEFINE(SUNOS53_SHARED_LIB)
     ;;
@@ -327,12 +327,10 @@ AC_PROG_LIBTOOL
 #
 # Check for AViiON Machines running DGUX
 #
-AC_MSG_CHECKING(if host is AViiON running DGUX)
 ac_is_dgux=no
 AC_CHECK_HEADER(sys/dg_sys_info.h,
 [ac_is_dgux=yes;])
 
-AC_MSG_RESULT($ac_is_dgux) 
     ## :GOTCHA: we do not check anything but sys/dg_sys_info.h
 if test $ac_is_dgux = yes; then
     if test "$enable_full_debug" = "yes"; then
@@ -369,7 +367,7 @@ dnl built with gcc and -O.  So we remove -O in the appropriate case.
 dnl
 AC_MSG_CHECKING(whether Solaris gcc optimization fix is necessary)
 case "$host" in
- sparc-sun-solaris2*)
+ sparc-sun-solaris2*|*aix*)
     if test "$GCC" = yes; then
        AC_MSG_RESULT(yes)
        new_CFLAGS=
@@ -409,7 +407,7 @@ dnl AC_DEFINE(HANDLE_FORK)
 
 dnl By default, make the library as general as possible.
 AC_DEFINE(JAVA_FINALIZATION)
-dnl AC_DEFINE(GC_GCJ_SUPPORT)
+AC_DEFINE(GC_GCJ_SUPPORT)
 AC_DEFINE(ATOMIC_UNCOLLECTABLE)
 
 dnl This is something of a hack.  When cross-compiling we turn off
@@ -422,15 +420,22 @@ if test -n "${with_cross_host}"; then
    AC_DEFINE(NO_DEBUGGING)
 fi
 
+UNWINDLIBS=
 AC_ARG_ENABLE(full-debug,
 [  --enable-full-debug	include full support for pointer backtracing etc.],
 [ if test "$enable_full_debug" = "yes"; then
-    AC_MSG_WARN("Must define GC_DEBUG and use debug alloc. in clients.")
+    AC_MSG_WARN("Should define GC_DEBUG and use debug alloc. in clients.")
     AC_DEFINE(KEEP_BACK_PTRS)
     AC_DEFINE(DBG_HDRS_ALL)
     case $host in
       ia64-*-linux* )
 	AC_DEFINE(MAKE_BACK_GRAPH)
+	AC_DEFINE(SAVE_CALL_COUNT, 8)
+        AC_CHECK_LIB(unwind, backtrace, [
+	  AC_DEFINE(GC_HAVE_BUILTIN_BACKTRACE)
+	  UNWINDLIBS=-lunwind
+	  AC_MSG_WARN("Client code may need to link against libunwind.")
+	])
       ;;
       x86-*-linux* | i586-*-linux* | i686-*-linux* | x86_64-*-linux* )
 	AC_DEFINE(MAKE_BACK_GRAPH)
@@ -442,6 +447,8 @@ AC_ARG_ENABLE(full-debug,
       ;;
     esac ]
   fi)
+
+AC_SUBST(UNWINDLIBS)
 
 AC_ARG_ENABLE(redirect-malloc,
 [  --enable-redirect-malloc  redirect malloc and friends to GC routines])

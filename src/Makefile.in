@@ -136,7 +136,7 @@ gosh$(EXEEXT) : libgauche.$(SOEXT) $(gosh_OBJECTS)
 	$(LINK) $(gosh_LDFLAGS) -o gosh$(EXEEXT) $(gosh_OBJECTS) $(gosh_LDADD) $(LIBS)
 
 relink :
-	$(RELINK) $(libgauche_LDFLAGS) libgauche.$(SOEXT) $(libgauche_OBJECTS) ../gc/.libs/*.o $(LIBS)
+	$(RELINK) $(libgauche_LDFLAGS) libgauche.$(SOEXT) $(libgauche_OBJECTS) ../gc/*.$(OBJEXT) $(LIBS)
 	$(RELINK) $(gosh_LDFLAGS) -o gosh$(EXEEXT)  $(gosh_OBJECTS) $(gosh_LDADD) $(LIBS)
 
 $(OBJECTS) : $(HEADERS)
@@ -160,7 +160,7 @@ port.$(OBJEXT) : port.c portapi.c
 load.$(OBJEXT) : dl_dlopen.c dl_dummy.c dl_win.c dl_darwin.c
 
 libgauche.$(SOEXT) : $(libgauche_OBJECTS) $(GCLIB)
-	$(LINK) $(libgauche_LDFLAGS) libgauche.$(SOEXT) $(libgauche_OBJECTS) ../gc/.libs/*.o $(LIBS)
+	$(LINK) $(libgauche_LDFLAGS) libgauche.$(SOEXT) $(libgauche_OBJECTS) ../gc/*.$(OBJEXT) $(LIBS)
 	$(POSTBUILD)
 
 gauche/arch.h :

@@ -448,7 +448,19 @@ extern GC_warn_proc GC_current_warn_proc;
 
 /* Get environment entry */
 #if !defined(NO_GETENV)
-#   define GETENV(name) getenv(name)
+#   if defined(EMPTY_GETENV_RESULTS)
+	/* Workaround for a reputed Wine bug.	*/
+	static inline char * fixed_getenv(const char *name)
+	{
+	  char * tmp = getenv(name);
+	  if (tmp == 0 || strlen(tmp) == 0)
+	    return 0;
+	  return tmp;
+	}
+#       define GETENV(name) fixed_getenv(name)
+#   else
+#       define GETENV(name) getenv(name)
+#   endif
 #else
 #   define GETENV(name) 0
 #endif
@@ -538,7 +550,7 @@ extern GC_warn_proc GC_current_warn_proc;
 
 #define CPP_MAXOBJBYTES (CPP_HBLKSIZE/2)
 #define MAXOBJBYTES ((word)CPP_MAXOBJBYTES)
-#define CPP_MAXOBJSZ    BYTES_TO_WORDS(CPP_HBLKSIZE/2)
+#define CPP_MAXOBJSZ    BYTES_TO_WORDS(CPP_MAXOBJBYTES)
 #define MAXOBJSZ ((word)CPP_MAXOBJSZ)
 		
 # define divHBLKSZ(n) ((n) >> LOG_HBLKSIZE)
@@ -566,7 +578,7 @@ extern GC_warn_proc GC_current_warn_proc;
 # else
 #       define ALIGNED_WORDS(n) ROUNDED_UP_WORDS(n)
 # endif
-# define SMALL_OBJ(bytes) ((bytes) < (MAXOBJBYTES - EXTRA_BYTES))
+# define SMALL_OBJ(bytes) ((bytes) <= (MAXOBJBYTES - EXTRA_BYTES))
 # define ADD_SLOP(bytes) ((bytes) + EXTRA_BYTES)
 # ifndef MIN_WORDS
     /* MIN_WORDS is the size of the smallest allocated object.	*/
@@ -603,6 +615,10 @@ extern GC_warn_proc GC_current_warn_proc;
 #     define LOG_PHT_ENTRIES  16 /* Collisions are likely if heap grows	*/
 				 /* to more than 64K hblks >= 256MB.	*/
 				 /* Each hash table occupies 8K bytes.  */
+				 /* Even for somewhat smaller heaps, 	*/
+				 /* say half that, collisions may be an	*/
+				 /* issue because we blacklist 		*/
+				 /* addresses outside the heap.		*/
 #   endif
 # endif
 # define PHT_ENTRIES ((word)1 << LOG_PHT_ENTRIES)
@@ -922,11 +938,11 @@ struct _GC_arrays {
   	char _valid_offsets[VALID_OFFSET_SZ];
 				/* GC_valid_offsets[i] == TRUE ==> i 	*/
 				/* is registered as a displacement.	*/
-#	define OFFSET_VALID(displ) \
-	  (GC_all_interior_pointers || GC_valid_offsets[displ])
   	char _modws_valid_offsets[sizeof(word)];
 				/* GC_valid_offsets[i] ==>		  */
 				/* GC_modws_valid_offsets[i%sizeof(word)] */
+#   define OFFSET_VALID(displ) \
+	  (GC_all_interior_pointers || GC_valid_offsets[displ])
 # ifdef STUBBORN_ALLOC
     page_hash_table _changed_pages;
         /* Stubborn object pages that were changes since last call to	*/
@@ -954,7 +970,7 @@ struct _GC_arrays {
 #   endif
 # else
 #   ifdef SMALL_CONFIG
-#     define MAX_HEAP_SECTS 128		/* Roughly 1GB			*/
+#     define MAX_HEAP_SECTS 128		/* Roughly 256MB (128*2048*1K)	*/
 #   else
 #     define MAX_HEAP_SECTS 384		/* Roughly 3GB			*/
 #   endif
@@ -1599,7 +1615,7 @@ void GC_collect_a_little_inner GC_PROTO((int n));
   				/* collection work, if appropriate.	*/
   				/* A unit is an amount appropriate for  */
   				/* HBLKSIZE bytes of allocation.	*/
-ptr_t GC_generic_malloc GC_PROTO((word lb, int k));
+/* ptr_t GC_generic_malloc GC_PROTO((word lb, int k)); */
   				/* Allocate an object of the given	*/
   				/* kind.  By default, there are only	*/
   				/* a few kinds: composite(pointerfree), */
@@ -1609,6 +1625,7 @@ ptr_t GC_generic_malloc GC_PROTO((word lb, int k));
 				/* internals to add more, e.g. to	*/
 				/* communicate object layout info	*/
 				/* to the collector.			*/
+				/* The actual decl is in gc_mark.h.	*/
 ptr_t GC_generic_malloc_ignore_off_page GC_PROTO((size_t b, int k));
   				/* As above, but pointers past the 	*/
   				/* first page of the resulting object	*/
@@ -1704,6 +1721,10 @@ extern GC_bool GC_print_stats;	/* Produce at least some logging output	*/
 # define COND_DUMP if (GC_dump_regularly) GC_dump();
 #else
 # define COND_DUMP
+#endif
+
+#ifdef KEEP_BACK_PTRS
+  extern long GC_backtraces;
 #endif
 
 /* Macros used for collector internal allocation.	*/

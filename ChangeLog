@@ -1,5 +1,8 @@
 2004-09-13  Shiro Kawai  <shiro@acm.org>
 
+	* gc/* : updated to gc6.3
+	* src/Makefile.in : ditto
+
 	* ext/uvector/array.scm (gauche.array): added exported symbols.
 
 2004-09-12  Shiro Kawai  <shiro@acm.org>
