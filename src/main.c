@@ -12,19 +12,12 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.24 2001-06-13 06:39:35 shirok Exp $
+ *  $Id: main.c,v 1.25 2001-06-23 07:13:26 shirok Exp $
  */
 
 #include <unistd.h>
 #include <string.h>
 #include <sys/stat.h>
-#ifdef HAVE_SYSEXITS_H
-#include <sys/exits.h>
-#else
-/* SRFI-22 requires these values. */
-#define EX_USAGE    64
-#define EX_SOFTWARE 70
-#endif
 #include "gauche.h"
 
 int load_initfile = TRUE;
@@ -152,14 +145,7 @@ int main(int argc, char **argv)
         mainproc = Scm_SymbolValue(Scm_UserModule(),
                                    SCM_SYMBOL(SCM_INTERN("main")));
         if (SCM_PROCEDUREP(mainproc)) {
-            if (   (SCM_PROCEDURE_OPTIONAL(mainproc)
-                    && argc-optind-1 < SCM_PROCEDURE_REQUIRED(mainproc))
-                || (!SCM_PROCEDURE_OPTIONAL(mainproc)
-                    && argc-optind-1 != SCM_PROCEDURE_REQUIRED(mainproc))) {
-                fprintf(stderr, "%s: bad number of arguments\n", argv[optind]);
-                exit(EX_USAGE);
-            }
-            Scm_Apply(mainproc, av);
+            Scm_Apply(mainproc, SCM_LIST1(av));
         }
         exit(0);
     } else {
