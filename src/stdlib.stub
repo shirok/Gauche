@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.47 2001-05-05 10:07:57 shirok Exp $
+;;; $Id: stdlib.stub,v 1.48 2001-05-05 20:43:12 shirok Exp $
 ;;;
 
 
@@ -51,7 +51,7 @@
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_INTEGERP(obj)));")
 (define-cproc integer? (obj)
   "  if (!SCM_NUMBERP(obj)) SCM_RETURN(SCM_FALSE);
-  else SCM_RETURN(Scm_IntegerP(obj));")
+  else SCM_RETURN(SCM_MAKE_BOOL(Scm_IntegerP(obj)));")
 
 (define-cproc exact? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_EXACTP(obj)));")
@@ -105,13 +105,9 @@
 (define-cproc negative? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(Scm_Sign(obj) < 0));")
 (define-cproc odd? (obj)
-  (assert (exact? obj))
-  ;; TODO: bignum
-  "  SCM_RETURN(SCM_MAKE_BOOL(obj&1));")
+  "  SCM_RETURN(SCM_MAKE_BOOL(Scm_OddP(obj)));")
 (define-cproc even? (obj)
-  (assert (exact? obj))
-  ;; TODO: bignum
-  "  SCM_RETURN(SCM_MAKE_BOOL(!(obj&1)));")
+  "  SCM_RETURN(SCM_MAKE_BOOL(!Scm_OddP(obj)));")
 
 (define-cproc max (arg0 &rest args)
   "  SCM_RETURN(Scm_Max(arg0, args));")
