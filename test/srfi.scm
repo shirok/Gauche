@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.17 2001-09-17 01:37:08 shirok Exp $
+;; $Id: srfi.scm,v 1.18 2001-10-28 22:41:41 shirok Exp $
 
 (use gauche.test)
 
@@ -540,17 +540,21 @@
 (test "string-suffix-ci?" #f (lambda () (string-suffix-ci? "aefg" "aBCDEfg")))
 
 (test "string-index" 4
-      (lambda () (string-index "abcd:efgh;ijkl" #\:)))
+      (lambda () (string-index "abcd:efgh:ijkl" #\:)))
 (test "string-index" 4
       (lambda () (string-index "abcd:efgh;ijkl" #[\W])))
 (test "string-index" #f
       (lambda () (string-index "abcd:efgh;ijkl" #[\d])))
+(test "string-index" 9
+      (lambda () (string-index "abcd:efgh:ijkl" #\: 5)))
 (test "string-index-right" 4
       (lambda () (string-index-right "abcd:efgh;ijkl" #\:)))
 (test "string-index-right" 9
       (lambda () (string-index-right "abcd:efgh;ijkl" #[\W])))
 (test "string-index-right" #f
       (lambda () (string-index-right "abcd:efgh;ijkl" #[\d])))
+(test "string-index-right" 4
+      (lambda () (string-index-right "abcd:efgh;ijkl" #[\W] 2 5)))
 
 (test "string-count" 2
       (lambda () (string-count "abc def\tghi jkl" #\space)))
