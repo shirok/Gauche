@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: object.scm,v 1.52 2004-05-21 07:19:51 shirok Exp $
+;;;  $Id: object.scm,v 1.53 2004-05-21 08:38:13 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -71,11 +71,13 @@
 
 (define-macro (define-generic name . opts)
   (receive (true-name getter-name) (%check-setter-name name)
-    (if getter-name
+    (let ((class (get-keyword :class opts <generic>))
+          (other (delete-keyword :class opts)))
+      (if getter-name
         `(begin
-           (define ,true-name (make <generic> :name ',true-name))
+           (define ,true-name (make ,class :name ',true-name ,@other))
            (set! (setter ,getter-name) ,true-name))
-        `(define ,true-name (make <generic> :name ',true-name)))))
+        `(define ,true-name (make ,class :name ',true-name ,@other))))))
 
 ;; allow (setter name) type declaration
 (define (%check-setter-name name)

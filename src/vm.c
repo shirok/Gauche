@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.210 2004-05-20 04:50:33 shirok Exp $
+ *  $Id: vm.c,v 1.211 2004-05-21 08:38:14 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -599,30 +599,34 @@ static void run_loop()
                 /* First, compute methods */
                 nm = SCM_FALSE;
                 if (proctype == SCM_PROC_GENERIC) {
-                    if (SCM_GENERICP(val0)) {
-                      generic:
-                        /* pure generic application */
-                        mm = Scm_ComputeApplicableMethods(SCM_GENERIC(val0),
-                                                          argp, argc);
-                        if (!SCM_NULLP(mm)) {
-                            mm = Scm_SortMethods(mm, argp, argc);
-                            nm = Scm_MakeNextMethod(SCM_GENERIC(val0),
-                                                    SCM_CDR(mm),
-                                                    argp, argc, TRUE);
-                            val0 = SCM_CAR(mm);
-                            proctype = SCM_PROC_METHOD;
-                        }
-                    } else {
-                        /* use scheme-defined MOP */
+                    if (!SCM_GENERICP(val0)) {
+                        /* use scheme-defined MOP.  we modify the stack frame
+                           so that it is converted to an application of
+                           pure generic fn apply-generic. */
                         ScmObj args = SCM_NIL, arg;
                         int i;
                         for (i=0; i<argc; i++) {
                             POP_ARG(arg);
                             args = Scm_Cons(arg, args);
                         }
-                        Scm_VMApply2(SCM_OBJ(&Scm_GenericApplyGeneric),
-                                     val0, args);
-                        NEXT;
+                        argp = sp;
+                        argc = 2;
+                        CHECK_STACK(2);
+                        PUSH_ARG(val0);
+                        PUSH_ARG(args);
+                        val0 = SCM_OBJ(&Scm_GenericApplyGeneric);
+                    }
+                  generic:
+                    /* pure generic application */
+                    mm = Scm_ComputeApplicableMethods(SCM_GENERIC(val0),
+                                                      argp, argc);
+                    if (!SCM_NULLP(mm)) {   
+                        mm = Scm_SortMethods(mm, argp, argc);
+                        nm = Scm_MakeNextMethod(SCM_GENERIC(val0),
+                                                SCM_CDR(mm),
+                                                argp, argc, TRUE);
+                        val0 = SCM_CAR(mm);
+                        proctype = SCM_PROC_METHOD;
                     }
                 } else if (proctype == SCM_PROC_NEXT_METHOD) {
                     ScmNextMethod *n = SCM_NEXT_METHOD(val0);

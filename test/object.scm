@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.33 2004-02-26 07:48:14 shirok Exp $
+;; $Id: object.scm,v 1.34 2004-05-21 08:38:15 shirok Exp $
 
 (use gauche.test)
 
@@ -1168,6 +1168,51 @@
                                   unknown "alan")
        (map (cut slot-ref *member-ted* <>)
             '(full-name occupation sex cname)))
+
+;;----------------------------------------------------------------
+(test-section "method application customization")
+
+;; The original example of <wrapper-generic> is presented by Alex Shinn.
+
+(define-class <wrapper-generic> (<generic>) ())
+
+(define-method write-object ((obj <wrapper-generic>) port)
+  (format port "#<wrapper-generic ~a>" (ref obj 'name)))
+
+(define-method object-unwrap (obj pass fail)
+  (fail))
+
+(define-method apply-generic ((gf <wrapper-generic>) args)
+  (let ((methods (compute-applicable-methods gf args)))
+    (if (pair? methods)
+      (apply-methods gf (sort-applicable-methods gf methods args) args)
+      (let loop ((ls args) (rev '()))
+        (if (null? ls)
+          (errorf "no applicable method for ~S with arguments ~S" gf args)
+          (object-unwrap
+           (car ls)
+           (lambda (obj)
+             (apply-generic gf (append (reverse rev) (list obj) (cdr ls))))
+           (lambda () (loop (cdr ls) (cons (car ls) rev)))))))))
+
+(define-class <ci-string> ()
+  ((value :init-keyword :value)))
+
+(define (ci-string str) (make <ci-string> :value str))
+
+(define-method object-unwrap ((obj <ci-string>) pass fail)
+  (pass (ref obj 'value)))
+
+(define-generic concat :class <wrapper-generic>)
+(define-method concat () "")
+(define-method concat ((a <string>)) a)
+(define-method concat ((a <string>) (b <string>))
+  (string-append a b))
+(define-method concat ((a <string>) (b <string>) c . rest)
+  (string-append a b (apply concat c rest)))
+
+(test* "concat" "aBciIiXyZ"
+       (concat (ci-string "aBc") "iIi" (ci-string "XyZ")))
 
 (test-end)
 

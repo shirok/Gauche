@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.111 2004-02-26 07:48:14 shirok Exp $
+ *  $Id: class.c,v 1.112 2004-05-21 08:38:14 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -515,7 +515,7 @@ static ScmObj class_cpl(ScmClass *klass)
 static void class_cpl_set(ScmClass *klass, ScmObj val)
 {
     /* have to make sure things are consistent */
-    int len, object_inherited = FALSE;
+    int len, object_inherited = FALSE, applicable = FALSE;
     ScmObj cp;
     ScmClass **p;
 
@@ -543,6 +543,9 @@ static void class_cpl_set(ScmClass *klass, ScmObj val)
                 object_inherited = TRUE;
             }
         }
+        if ((*p)->flags & SCM_CLASS_APPLICABLE) {
+            applicable = TRUE;
+        }
     }
     if (!object_inherited) {
         Scm_Error("class precedence list doesn't have a base class: %S", val);
@@ -550,6 +553,9 @@ static void class_cpl_set(ScmClass *klass, ScmObj val)
     if (!klass->allocate) {
         klass->allocate = object_allocate; /* default */
         klass->coreSize = sizeof(ScmInstance);
+    }
+    if (applicable) {
+        klass->flags |= SCM_CLASS_APPLICABLE;
     }
     return;
   err:
