@@ -142,7 +142,7 @@ dnl	AC_DEFINE(THREAD_LOCAL_ALLOC)
 	;;
      *-*-darwin*)
 	AC_DEFINE(GC_DARWIN_THREADS)
-	AC_DEFINE(GC_PTHREADS)
+	AC_DEFINE(GC_PTHREADS, 1)
 	INCLUDES="$INCLUDES -I/sw/include"
 	;;
     esac
@@ -202,6 +202,19 @@ case "$TARGET_ECOS" in
       ;;
 esac
 AC_SUBST(CXX)
+
+dnl [SK] propagate toplevel --with-local flag here.
+AC_ARG_WITH(local, [  --with-local=PATH:PATH...:  For each PATH, add PATH/include
+                          to the include search paths and PATH/lib to the
+                          library search paths.  Useful if you have some
+                          libraries installed in non-standard places. ], [
+  case $with_local in
+    yes|no|"") ;;  #no effect
+    *) paths=`echo $with_local | tr ':' ' '`
+       LOCAL_INC=`for p in $paths; do echo "-I$p/include"; done`
+       INCLUDES="$INCLUDES $LOCAL_INC"
+  esac
+])
 
 AC_SUBST(INCLUDES)
 AC_SUBST(CXXINCLUDES)
