@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.14 2001-02-03 09:50:53 shiro Exp $
+ *  $Id: vm.h,v 1.15 2001-02-05 00:37:34 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -101,9 +101,6 @@ typedef struct ScmErrorHandlerRec {
 
 /*
  * VM structure
- *
- *  Some of the VM "registers" are not in ScmVM, but declared as a
- *  local variable in the vm loop (run_loop).  They are only saved
  */
 
 struct ScmVMRec {
@@ -123,17 +120,16 @@ struct ScmVMRec {
 
     /* Registers */
     ScmObj pc;                  /* Program pointer.  Points list of
-                                   instructions to be executed.  */
-    ScmEnvFrame *env;           /* Current environment. */
-    ScmContFrame *cont;         /* Current continuation. */
+                                   instructions to be executed.              */
+    ScmEnvFrame *env;           /* Current environment.                      */
+    ScmContFrame *cont;         /* Current continuation.                     */
     ScmEnvFrame *argp;          /* Current argument pointer.  Points
                                    to the incomplete environment frame
                                    being accumulated.  This is a part of
-                                   continuation.
-                                 */
-    ScmObj val0;                /* Value register. */
+                                   continuation.                             */
+    ScmObj val0;                /* Value register.                           */
 
-    ScmObj handlers;            /* chain of active dynamic handlers */
+    ScmObj handlers;            /* chain of active dynamic handlers          */
 
     ScmObj *sp;
     ScmObj *stack;
@@ -177,18 +173,25 @@ extern int Scm__VMInsnWrite(ScmObj insn, ScmPort *port, int mode);
 extern ScmObj Scm_VMInsnInspect(ScmObj obj);
 
 /*
- * Error handling 
+ * Error handling
+ *
+ *  These macros interacts with VM internals, so must be used
+ *  with care.
  */
 
-#define SCM_PUSH_ERROR_HANDLER                    \
-    do {                                          \
-       ScmErrorHandler handler;                   \
-       handler.prev = Scm_VM()->escape;           \
-       Scm_VM()->escape = &handler;               \
+#define SCM_PUSH_ERROR_HANDLER                  \
+    do {                                        \
+       ScmErrorHandler handler;                 \
+       handler.prev = Scm_VM()->escape;         \
+       Scm_VM()->escape = &handler;             \
        if (setjmp(handler.jbuf) == 0) {
            
-#define SCM_WHEN_ERROR \
+#define SCM_WHEN_ERROR                          \
        } else {
+
+#define SCM_PROPAGATE_ERROR                             \
+           Scm_VM()->escape = Scm_VM()->escape->prev;   \
+           longjmp(Scm_VM()->escape->jbuf, 1)
 
 #define SCM_POP_ERROR_HANDLER                     \
        }                                          \
