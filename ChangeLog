@@ -1,3 +1,13 @@
+2001-11-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/io.c, src/port.c, src/gauche-init.scm, lib/gauche/with.scm :
+	  defined call-with-*-file and with-*-file procedures in Scheme
+	  instead of C.  io.c is removed.
+
+2001-11-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/queue.scm : added
+
 2001-10-31  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.4.8
