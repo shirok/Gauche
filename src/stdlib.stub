@@ -204,6 +204,7 @@
 ;;
 
 (define-cproc not (obj)
+  (inliner "SCM_VM_NOT")
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_FALSEP(obj)));")
 
 (define-cproc boolean? (obj)
@@ -221,10 +222,12 @@
   "  SCM_RETURN(Scm_Cons(obj1, obj2));")
 
 (define-cproc car (obj)
+  (inliner "SCM_VM_CAR")
   (assert (pair? obj))
   "  SCM_RETURN(SCM_CAR(obj));")
 
 (define-cproc cdr (obj)
+  (inliner "SCM_VM_CDR")
   (assert (pair? obj))
   "  SCM_RETURN(SCM_CDR(obj));")
 
@@ -275,6 +278,7 @@
 
 (define-cproc list (&rest args)
   (inliner "SCM_VM_LIST")
+  ;; TODO: check to see if we don't need to copy args?
   "  SCM_RETURN(args);")
 
 (define-cproc length (list)
@@ -283,6 +287,7 @@
   SCM_RETURN(Scm_MakeInteger(i));")
 
 (define-cproc append (&rest lists)
+  (inliner "SCM_VM_APPEND")
   "  SCM_RETURN(Scm_Append(lists));")
 
 (define-cproc reverse (list)
