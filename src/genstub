@@ -2,6 +2,9 @@
 ;;; simple stub generator
 ;;;
 
+;;; $Id: genstub,v 1.24 2001-03-11 10:14:32 shiro Exp $
+
+(add-load-path "../lib")
 
 ;; (define-cproc scheme-name (argspec)
 ;;   assertions ...
@@ -25,13 +28,60 @@
 (define (ensure-string stuff)
   (cond ((string? stuff) stuff)
         ((symbol? stuff) (symbol->string stuff))
-        (else (write-to-string stuff))))
+        (else (with-output-to-string (lambda () (write stuff))))))
+
+(define (file-exists? file) #t)         ;fake stub
+
+;;-----------------------------------------------------------------
+;; poor man's fake object system
+;;   These are only here to make the rest of program, originally written
+;;   for STk, work under the current gosh.
+;;   I'll remove them once Gauche has a proper OO.
+
+(use srfi-17)                           ;generalized set!
+
+(define-syntax define-klass
+  (syntax-rules ()
+    ((_ ?name () ((?slot ?spec ...) ...))
+     (begin
+       (define ?name
+         (lambda ()
+           (let ((slots (list (cons '?slot (slot-initform ?spec ...)) ...)))
+             (cons '?name slots))))
+       (define-slots (?slot ?spec ...) ...)))
+    ))
+
+(define-syntax define-slots
+  (syntax-rules ()
+    ((_) '())
+    ((_ (?slot) ?more ...)
+     (define-slots ?more ...))
+    ((_ (?slot :accessor ?acc ?spec ...) ?more ...)
+     (begin
+       (define ?acc
+         (getter-with-setter
+          (lambda (obj) (cdr (assq '?slot (cdr obj))))
+          (lambda (obj value)
+            (set-cdr! (assq '?slot (cdr obj)) value))))
+       (define-slots ?more ...)))
+    ((_ (?slot ?key ?val ?spec ...) ?more ...)
+     (define-slots (?slot ?spec ...) ?more ...))
+    ))
+
+(define-syntax slot-initform
+  (syntax-rules ()
+    ((_) #f)
+    ((_ :initform ?val ?spec ...) ?val)
+    ((_ ?spec ?val ?spec2 ...) (slot-initform ?spec2 ...))))
+
+(define (make klass)
+  (klass))
 
 ;;-----------------------------------------------------------------
 ;; Procedure
 ;;
 
-(define-class <cproc> ()
+(define-klass <cproc> ()
   ((scheme-name     :init-keyword :scheme-name :accessor scheme-name-of)
    (args            :initform '() :accessor args-of)
    (num-reqargs     :initform 0   :accessor num-reqargs-of)
@@ -44,6 +94,14 @@
    (inline-insn     :initform #f  :accessor inline-insn-of)
    (c-name          :accessor c-name-of)
    ))
+
+;(define (make-cproc scheme-name)
+;  (make <cproc> :scheme-name scheme-name))
+
+(define (make-cproc scheme-name)
+  (let ((cproc (make <cproc>)))
+    (set! (scheme-name-of cproc) scheme-name)
+    cproc))
 
 (define (push-arg! cproc arg)
   (let* ((argname   (car arg))
@@ -74,17 +132,27 @@
 
 (define *type-table* '())
 
-(define-class <type> ()
-  ((name        :init-keyword :name        :getter name-of)
-   (predicate   :init-keyword :predicate   :getter predicate-of)
-   (c-type      :init-keyword :c-type      :getter c-type-of)
-   (c-predicate :init-keyword :c-predicate :getter c-predicate-of)
-   (unboxer     :init-keyword :unboxer     :getter unboxer-of)
+(define-klass <type> ()
+  ((name        :init-keyword :name        :accessor name-of)
+   (predicate   :init-keyword :predicate   :accessor predicate-of)
+   (c-type      :init-keyword :c-type      :accessor c-type-of)
+   (c-predicate :init-keyword :c-predicate :accessor c-predicate-of)
+   (unboxer     :init-keyword :unboxer     :accessor unboxer-of)
    ))
 
+;(define (make-type name predicate c-type c-predicate unboxer)
+;  (let ((i (make <type> :name name :predicate predicate
+;                 :c-type c-type :c-predicate c-predicate :unboxer unboxer)))
+;    (set! *type-table* (cons i *type-table*))
+;    i))
+
 (define (make-type name predicate c-type c-predicate unboxer)
-  (let ((i (make <type> :name name :predicate predicate
-                 :c-type c-type :c-predicate c-predicate :unboxer unboxer)))
+  (let ((i (make <type>)))
+    (set! (name-of i) name)
+    (set! (predicate-of i) predicate)
+    (set! (c-type-of i) c-type)
+    (set! (c-predicate-of i) c-predicate)
+    (set! (unboxer-of i) unboxer)
     (set! *type-table* (cons i *type-table*))
     i))
 
@@ -132,14 +200,14 @@
 ;; C structure
 ;;
 
-(define-class <cslot> ()
-  ((name :init-keyword :name :getter name-of)
-   (type :init-keyword :type :getter type-of)))
+;(define-class <cslot> ()
+;  ((name :init-keyword :name :getter name-of)
+;   (type :init-keyword :type :getter type-of)))
 
-(define-class <cstruct> ()
-  ((name  :init-keyword :name :getter name-of)
-   (c-name  :init-keyword :c-name :getter c-name-of)
-   (slots :init-keyword :slots :getter slots-of)))
+;(define-class <cstruct> ()
+;  ((name  :init-keyword :name :getter name-of)
+;   (c-name  :init-keyword :c-name :getter c-name-of)
+;   (slots :init-keyword :slots :getter slots-of)))
 
 ;;--------------------------------------------------------------------
 ;; Symbol definition
@@ -170,7 +238,7 @@
                (symbol? (cadr form))
                (list? (caddr form)))
     (error "malformed define-cproc: ~s" form))
-  (let ((cproc (make <cproc> :scheme-name (cadr form))))
+  (let ((cproc (make-cproc (cadr form))))
     (set! (c-name-of cproc)
           (get-c-name *file-prefix* (scheme-name-of cproc)))
     (process-args cproc (caddr form))
@@ -180,7 +248,7 @@
     (emit-inliner cproc)
     (emit-record cproc)))
 
-(define-method process-args ((cproc <cproc>) argspec)
+(define (process-args cproc argspec)
   (define (push-mandatory-arg! arg)
     (set! (num-reqargs-of cproc) (+ (num-reqargs-of cproc) 1))
     (push-arg! cproc (list arg :category :required)))
@@ -242,7 +310,7 @@
         ))
   )
 
-(define-method process-body ((cproc <cproc>) body)
+(define (process-body cproc body)
   (let loop ((body body))
     (if (null? body)
         (set! (stmts-of cproc) (reverse (stmts-of cproc)))
@@ -267,7 +335,7 @@
                 (else
                  (error "unknown body form: ~s" form)))))))
 
-(define-method process-assert ((cproc <cproc>) form)
+(define (process-assert cproc form)
   (let* ((op  (car form))
          (arg (cadr form)))
     (unless (get-arg cproc arg) (error "assertion for unknown arg: ~s" form))
@@ -275,7 +343,7 @@
 
 ;;; emit code
 
-(define-method emit-definition ((cproc <cproc>))
+(define (emit-definition cproc)
   (println "static ScmObj ~a(ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)"
            (c-name-of cproc))
   (println "{")
@@ -366,7 +434,7 @@
         (else
          (error "Scheme constant ~s can't be used" value))))
 
-(define-method emit-inliner ((cproc <cproc>))
+(define (emit-inliner cproc)
   (let* ((insn (inline-insn-of cproc)))
     (when insn
       (let ((inliner (string-append (c-name-of cproc) "_inline"))
@@ -399,7 +467,7 @@
         ))
     ))
 
-(define-method emit-inliner-header ((cproc <cproc>))
+(define (emit-inliner-header cproc)
   (let ((inliner (inliner-of cproc))
         (name (scheme-name-of cproc))
         (req  (num-reqargs-of cproc))
@@ -510,7 +578,7 @@
   (exit 1))
 
 (let* ((file (car *argv*))
-       (base (basename file))
+       (base (sys-basename file))
        (filelen (string-length file))
        (baselen (string-length base))
        (prefix (substring base 0 (- baselen 5)))
