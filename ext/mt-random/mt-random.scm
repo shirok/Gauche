@@ -1,7 +1,7 @@
 ;;;
 ;;; mt-random - Mersenne Twister interface
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: mt-random.scm,v 1.9 2003-07-05 03:29:10 shirok Exp $
+;;;  $Id: mt-random.scm,v 1.10 2005-01-05 23:15:45 shirok Exp $
 ;;;
 
 (define-module math.mt-random
@@ -67,8 +67,6 @@
         (let loop ((r (%get-nword-random-int mt siz)))
           (if (< r qn)
               (quotient r q)
-              (loop #(%get-nword-random-int mt siz)))))))
-
-
+              (loop (%get-nword-random-int mt siz)))))))
 
 (provide "math/mt-random")

@@ -1,3 +1,8 @@
+2005-01-05  Shiro Kawai  <shiro@acm.org>
+
+	* ext/mt-random/mt-random.scm (mt-random-integer): fixed a bug in
+	  rarely-executed branch of the code.
+
 2004-12-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/arith_i386.h (UMULOV, SMULOV): use "g" constraint to
