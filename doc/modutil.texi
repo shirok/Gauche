@@ -3185,57 +3185,108 @@ in an incomplete string.
 @c ----------------------------------------------------------------------
 @node rfc.mime - MIME message handling, rfc.quoted-printable - Quoted-printable encoding/decoding, rfc.md5 - MD5 message digest, Library modules - Utilities
 @section @code{rfc.mime} - MIME message handling
+@c NODE rfc.mime - MIMEメッセージ処理, @code{rfc.mime} - MIMEメッセージ処理
 
 @deftp {Module} rfc.mime
 @mdindex rfc.mime
+@c EN
 This module provides utility procedures to handle
 Multipurpose Internet Mail Extensions (MIME) messages,
 defined in RFC2045 thorough RFC2049.
+@c JP
+RFC2045からRFC2049で定義されている、
+多目的インターネットメール拡張(Multipurpose Internet Mail Extensions; MIME)
+メッセージを扱う便利な手続きです。
 
+@c EN
 This module is supposed to be used with @code{rfc.822} module
 (@xref{rfc.822 - RFC822 message parsing}).
+@c JP
+このモジュールは、@code{rfc.822}モジュールと一緒に使うことを
+想定しています(@ref{rfc.822 - RFC822 message parsing}参照)。
+@c COMMON
 @end deftp
 
 @subheading Utilities for header fields
 
+@c EN
 A few utility procedures to parse MIME-specific header fields.
+@c JP
+MIME特有のヘッダフィールドをパーズする便利な手続き。
+@c COMMON
 
 @defun mime-parse-version field
+@c EN
 If @var{field} is a valid header field for MIME-Version, returns
 its major and minor versions in a list.  Otherwise, returns @code{#f}.
 It is allowed to pass @code{#f} to @var{field}, so that 
 you can directly pass the result of @code{rfc822-header-ref} to it.
-Given parsed header list by @code{rfc822-header->list}, you gan
+Given parsed header list by @code{rfc822-header->list}, you can
 get mime version (currently, it should be @code{(1 0)}) by the
 following code.
+@c JP
+@var{field}がそのMIMEバージョンのヘッダフィールドとして有効であれば、
+そのメジャーバージョン番号とマイナーバージョン番号をリストにして
+返します。そうでなければ、@code{#f}を返します。
+@var{field}には@code{#f}を渡せるので、@code{rfc822-header-ref}の
+戻り値を直接渡すこともできます。@code{rfc822-header->list}により
+返されるパーズ済みヘッダのリストを渡すことで、以下のように
+MIMEのバージョンを得ることができます。(現在は、@code{(1 0)}です。)
+@c COMMON
 @example
 (mime-parse-version (rfc822-header-ref headers "mime-version"))
 @end example
 
+@c EN
 Note: simple regexp such as @code{#/\d+\.\d+/} doesn't do this job,
 for @var{field} may contain comments between tokens.
+@c JP
+注意: @var{field}はトークンの間にコメントを含むかもしれないので、
+@code{#/\d+\.\d+/}のような単純な正規表現では実現できません。
+@c COMMON
 @end defun
 
 @defun mime-parse-content-type field
+@c EN
 Parses the "content-type" header field, and returns a list such as:
+@c JP
+``content-type''ヘッダフィールドをパーズし、次のようなリストを
+返します。
+@c COMMON
 @example
 (@i{type} @i{subtype} (@i{attribute} . @i{value}) @dots{})
 @end example
+@c EN
 where @i{type} and @i{subtype} are MIME media type and
 subtype in a string, respectively
+@c JP
+ここで、@i{type}と@i{subtype}はそれぞれ、MIMEメディアタイプと
+サブタイプを文字列で表したものになります。
+@c COMMON
 
 @example
 (mime-parse-content-type "text/html; charset=iso-2022-jp")
  @result{} ("text" "html" ("charset" . "iso-2022-jp"))
 @end example
 
+@c EN
 If @var{field} is not a valid content-type field, @code{#f} is
 returned.
+@c JP
+@var{field}が有効なcontent-typeフィールドでない場合は、
+@code{#f}が返ります。
+@c COMMON
 @end defun
 
 @defun mime-decode-word word
+@c EN
 Decodes RFC2047-encoded word.  If @var{word} isn't an encoded word,
 it is returned as is.
+@c JP
+RFC2047でエンコードされた@var{word}をデコードします。
+@var{word}がRFC2047でエンコードされたものでない場合は、そのまま
+返されます。
+@c COMMON
 
 @example
 (mime-decode-word "=?iso-8859-1?q?this=20is=20some=20text?=")
@@ -3245,15 +3296,29 @@ it is returned as is.
 
 @subheading Streaming parser
 
+@c EN
 The streaming parser is designed so that you can decide how
 to do with the message body before the entire message is read.
+@c JP
+メッセージ全体が読み込まれる前にメッセージボディをどのように
+扱うかをコントロールできるように、ストリームパーザが用意されて
+います。
+@c COMMON
 
 @defun mime-parse-message port headers handler
+@c EN
 The fundamental streaming parser.  @var{Port} is an input port
 from where the mssage is read.  @var{Headers} is a list of headers
 parsed by @code{rfc822-header->list}; that is, this procedure
 is supposed to be called after the header part of the message
 is parsed from @var{port}:
+@c JP
+基本的なストリームパーザです。@var{port}は、メッセージを読み込む
+入力ポートです。@var{headers}は@code{rfc822-header->list}により
+パーズされたヘッダのリストです。つまり、この手続きは、
+@var{port}から読み込まれたメッセージのヘッダ部分がパーズされた
+後に使われることを想定しています。
+@c COMMON
 @example
 (let* ((headers (rfc822-header->list port)))
   (if (mime-parse-version (rfc822-header-ref headers "mime-version"))
@@ -3263,19 +3328,34 @@ is parsed from @var{port}:
      ...))
 @end example
 
+@c EN
 @code{Mime-parse-message} analyzes @var{headers}, and calls
 @var{handler} on each message body with two arguments:
+@c JP
+@code{mime-parse-message}は@var{headers}を解析し、
+メッセージボディのそれぞれについて、2引数をもって
+@var{handler}を呼び出します。
+@c COMMON
 
 @example
 (handler @var{part-info} @var{line-reader})
 @end example
 
+@c EN
 When @var{handler} is called, @var{port} points to the beginning of
 the message body of the part.
+@c JP
+@var{handler}が呼ばれると、@var{port}はそのパートのメッセージボディの
+最初を指します。
 
+@c EN
 @var{Part-Info} is a @code{<mime-part>} structure described below
 that encapsulates the information of this part of the message.
+@c JP
+@var{part-info}は、以下で説明するような、メッセージのこのパートの
+情報をカプセル化した@code{<mime-part>}ストラクチャです。
 
+@c EN
 @var{Line-reader} is a procedure that takes an input port, and
 reads a line at a time.   It's like @code{read-line}, except that
 it returns EOF when it reaches MIME part boundary.  So, @var{handler}
@@ -3283,72 +3363,151 @@ can read from @var{port} using @var{line-reader} until it gets EOF,
 without worrying about MIME part boundary.
 (Note: make sure you read from @var{line-reader} and not directly
 from @var{port}, or you'll miss MIME boundary).
+@c JP
+@var{line-reader}は、入力ポートを引数に取り、一度に一行を読み込む
+手続きです。これは@code{read-line}に似ていますが、MIMEパート
+バウンダリを見つけるとEOFを返します。したがって、@var{handler}は
+MIMEパートバウンダリについて心配せずに、@var{port}から@var{line-reader}
+を使って読み込むことができます。
+(注意: @var{port}から直接読み込まずに、必ず@var{line-reader}から
+読み込むようにして下さい。そうしないとMIMEバウンダリを補足できません。)
 
+@c EN
 @var{Handler} can read the part into the memory, or
 save it to the disk, or even discard the part.
 
 The return value of @var{handler} will be set in
 the @code{content} slot of @var{part-info}.
+@c JP
+@var{handler}は、パートをメモリに読み込んだり、ディスクに保存したり、
+あるいはそのパートを無視したりできます。
 
+@var{handler}の戻り値は、@var{part-info}の@code{content}スロットに
+セットされます。
+
+@c EN
 If the message has nested multipart messages, @var{handler} is
 called for each "leaf" part, in depth-first order.  @var{Handler}
 can know its nesting level by examining @var{part-info} structure.
+@c JP
+メッセージが、ネストしたマルチパートメッセージを含んでいる場合は、
+@var{handler}は深さ優先でそれぞれの``葉''のパートに対して呼ばれます。
+@var{handler}は、@var{part-info}ストラクチャを調べることで、
+そのネストのレベルを知ることができます。
 
+@c EN
 The message doesn't need to be a multipart type; if it is a
 MIME @code{message} type, @var{handler} is called on the body
 of enclosed message.  If it is other media types such as @code{text}
 or @code{application}, @var{handler} is called on the (only) message body.
+@c JP
+メッセージはマルチパートである必要はありません。メッセージが
+MIME @code{mesasge}タイプである場合は、@var{handler}は囲まれたメッセージの
+ボディに対して呼ばれます。メッセージが、@code{text}や@code{application}
+などの他のメディアタイプの場合は、@var{handler}は単にメッセージボディに
+対して呼ばれます。
+@c COMMON
 @end defun
 
 @deftp {Class} <mime-part>
 @clindex mime-message
+@c EN
 A structure that encloses metainformation about a MIME part.
 It is constructed when the header of the part is read, and
 passed to the handler that reads the body of the part.
 
 It has the following slots:
+@c JP
+MIMEパートのメタ情報を含むストラクチャです。
+これは、そのパートのヘッダが読み込まれた時点で構築され、
+そのパートのボディを読み込むハンドラに渡されます。
+
+以下のスロットを持ちます。
+@c COMMON
 
 @defivar {<mime-part>} type
+@c EN
 MIME media type string.  If @code{content-type} header is omitted
 to the part, an appropriate default value is set.
+@c JP
+MIMEメディアタイプの文字列。そのパートの@code{content-type}ヘッダが
+省略された場合は、適切なデフォルト値がセットされます。
+@c COMMON
 @end defivar
 
 @defivar {<mime-part>} subtype
+@c EN
 MIME media subtype string.  If @code{content-type} header is omitted
 to the part, an appropriate default value is set.
+@c JP
+MIMEメディアのサブタイプの文字列。そのパートの@code{content-type}
+ヘッダが省略された場合は、適切なデフォルト値がセットされます。
+@c COMMON
 @end defivar
 
 @defivar {<mime-part>} parameters
+@c EN
 Associative list of parameters given to @code{content-type} header field.
+@c JP
+@code{content-type}ヘッダフィールドに渡されるパラメータの連想リスト。
+@c COMMON
 @end defivar
 
 @defivar {<mime-part>} transfer-encoding
+@c EN
 The value of @code{content-transfer-encoding} header field.
 If the header field is omitted, an appropriate default value is set.
+@c JP
+@code{content-transfer-encoding}ヘッダフィールドの値。
+このヘッダフィールドが省略された場合は、適切なデフォルト値が
+セットされます。
+@c COMMON
 @end defivar
 
 @defivar {<mime-part>} headers
+@c EN
 The list of header fields, as parsed by @code{rfc822-header->list}.
+@c JP
+@code{rfc822-header->list}によりパーズされた、ヘッダフィールドのリスト。
+@c COMMON
 @end defivar
 
 @defivar {<mime-part>} parent
+@c EN
 If this is a part of multipart message or encapsulated message,
 points to the enclosing part's @code{<mime-part>} structure.
 Otherwise @code{#f}.
+@c JP
+それがマルチパートメッセージあるいはカプセル化されたメッセージの
+パートである場合は、それを含んでいるパートの@code{<mime-part>}
+ストラクチャを指します。そうでなければ@code{#f}を返します。
+@c COMMON
 @end defivar
 
 @defivar {<mime-part>} index
+@c EN
 Sequence number of this part within the same parent.
+@c JP
+同じ親を持つパートの中でのそのパートのシーケンス番号。
+@c COMMON
 @end defivar
 
 @defivar {<mime-part>} content
+@c EN
 If this part is multipart/* or message/* media type,
 this slot contains a list of parts within it.
 Otherwise, the return value of @var{handler} is stored.
+@c JP
+そのパートのメディアタイプがmultipart/*あるいはmessage/*で
+ある場合は、このスロットにはそれに含まれるパートのリストが
+入っています。そうでなければ、@var{handler}の戻り値が
+格納されています。
+@c COMMON
 @end defivar
 @end deftp
 
 @defun mime-retrieve-body part-info reader inp outp
+@c EN
 A procedure to retrieve message body.  It is intended to
 to be a building block of @var{handler} to be passed to
 @code{mime-parse-message}.
@@ -3356,7 +3515,17 @@ to be a building block of @var{handler} to be passed to
 @var{Part-info} is a @code{<mime-part>} object.  @var{Reader}
 is the line reader passed to the handler, and 
 @var{inp} must be an input port from which the body will be read.
+@c JP
+メッセージボディを取得するための手続きです。
+@code{mime-parse-message}へ渡される、@var{handler}の
+ビルディングブロックとなることを意図しています。
 
+@var{part-info}は、@code{<mime-part>}のオブジェクトです。
+@var{reader}はハンドラに渡されるラインリーダで、
+@var{inp}はそこからボディが読み込まれる入力ポートで
+なければなりません。
+
+@c EN
 This procedure applies @var{reader} to @var{inp} repeatedly,
 until it returns EOF (note that @var{reader} may return EOF
 when it reads MIME part boundary).  It also looks at the
@@ -3367,18 +3536,46 @@ quoted-printable encoding is handled.
 This procedure does not handle charset conversion.
 The caller must use CES conversion port as @var{outp}
 (@xref{gauche.charconv - Character code conversion}) if desired.
+@c JP
+この手続きは、@var{reader}がEOFを返すまで、@var{inp}に@var{reader}を
+繰り返し適用します(@var{reader}はMIMEパートバウンダリを読み込むと
+EOFを返すことを思い出して下さい)。この手続きはまた、
+@var{part-info}の@code{transfer-encoding}も見て、
+ボディを適切にデコードします。つまり、base64やquoted-printable
+のエンコーディングは適切に処理されます。
+
+この手続きは文字セットの変換は扱いません。
+必要であれば、呼び出し側が@var{outp}としてCES変換ポートを
+使う必要があります(@ref{gauche.charconv - Character code conversion}参照)。
+
+@c COMMON
 @end defun
 
+@c EN
 A couple of convenience procedures are defined for typical
 cases on top of @code{mime-retrieve-body}.
+@c JP
+典型的なケースのために、いくつかの便利な手続きが@code{mime-retrieve-body}
+の上に定義されています。
+@c COMMON
 
 @defun mime-body->string part-info reader inp
 @defunx mime-body->file part-info reader inp filename
+@c EN
 Reads in the body of mime message, decoding transfer encoding,
 and returns it as a string or writes it to a file, respectively.
+@c JP
+MIMEメッセージのボディを読み込み、転送(transfer)エンコーディングを
+デコードし、それぞれ文字列として返すか、ファイルへ書き出します。
+@c COMMON
 @end defun
 
+@c EN
 The simplest form of MIME message parser would be like this:
+@c JP
+MIMEメッセージパーザの最もシンプルな使い方は次のように
+なります。
+@c COMMON
 
 @example
 (let ((headers (rfc822-header->list port)))
@@ -3386,6 +3583,7 @@ The simplest form of MIME message parser would be like this:
                       (cut mime-body->string <> <> port)))
 @end example
 
+@c EN
 This reads all the message on memory (i.e. the "leaf" @code{<mime-part>}
 objects' @code{content} field would hold the part's body as a string),
 and returns the top @code{<mime-part>} object.  Content transfer encoding
@@ -3396,6 +3594,20 @@ or even want to skip some body according to mime media types and/or
 other header information.  Then you can put the logic in the handler
 closure.  That's the reason that this module provides building
 blocks, instead of all-in-one procedure.
+@c JP
+これは、メッセージの全てをメモリに読み込み、
+一番上層の@code{<mime-part>}オブジェクトを返します。
+(``葉''である@code{<mime-part>}オブジェクトの@code{content}フィールドは、
+そのパートのボディを文字列として保持しています。)
+内容の転送エンコーディング(content transfer encoding)は認識され処理
+されますが、文字セットの変換は行われません。
+
+メッセージボディを直接ファイルに書き出したり、MIMEメディアタイプや
+他のヘッダ情報に基づいていくつかのボディをスキップしたいかもしれません。
+その場合は、ロジックをハンドラのクロージャに入れることができます。
+それが、このモジュールが、オールインワンの手続きではなく、
+ビルディングブロックを提供している理由です。
+@c COMMON
 
 
 @c ----------------------------------------------------------------------
