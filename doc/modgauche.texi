@@ -10928,15 +10928,17 @@ prior to @var{rel2}, @var{rel1} is the same as @var{rel2}, or
 @deftp {Module} gauche.vport
 @mdindex gauche.vport
 @emph{Virtual ports}, or procedural ports, are the ports
-whose behavior can be written in Scheme.  You can customize
-the behavior of a port by wrapping the port by virtual ports.
+whose behavior can be programmed in Scheme.
 
-This module provides two kind of virtual ports:
+This module provides two kinds of virtual ports:
 Fully virtual ports, in which every I/O operation invokes
 user-provided procedures, and virtual buffered ports,
 in which I/O operations are done on an internal buffer and
-user-provided procddures are called only when the buffer
+user-provided procedures are called only when the buffer
 needs to be filled or flushed.
+
+This module also provides virtual buffered ports backed up
+by a uniform vector, as an example of the feature.
 @end deftp
 
 @subsubheading Fully virtual ports
@@ -10949,8 +10951,8 @@ appropriate slots with procedures.
 @deftp {Class} <virtual-input-port>
 @clindex virtual-input-port
 An instance of this class can be used as an input port.
-The behavior of the port depends on the settings of those
-slot values.
+The behavior of the port depends on the settings of the
+instance slot values.
 
 To work as a meaningful input port, at least either one of
 @code{getb} or @code{getc} slot must be set.  Otherwise,
@@ -10966,7 +10968,7 @@ integer, it becomes the value read from the port.  If it returns
 other values, the port returns EOF.
 
 If the port is requested a character input and it doesn't have
-@code{getc} slot, the port calls this procedure, possibly
+the @code{getc} procedure, the port calls this procedure, possibly
 multiple times, to construct a whole character.
 @end defivar
 
@@ -10980,7 +10982,7 @@ it becomes the value read from the port.  If it returns
 other values, the port returns EOF.
 
 If the port is requested a binary input and it doesn't have
-@code{getb} slot, the port calls this procedure, then converts
+the @code{getb} procedure, the port calls this procedure, then converts
 a character into a byte sequence, and use it as the binary
 value(s) read from the port.
 @end defivar
@@ -11019,8 +11021,8 @@ It is called when the port is closed.  Return value is discarded.
 You can leave this unset
 if you don't need to take an action when the port is closed.
 
-This procedure may be called from a finalizer.  See the note about
-finalizing below.
+This procedure may be called from a finalizer, so you have to be
+careful to write it.   See the note on finalization below.
 @end defivar
 
 @defivar {<virtual-input-port>} seek
@@ -11045,6 +11047,242 @@ position for such queries and returns @code{#f} for other arguments.
 @end deftp
 
 
+@deftp {Class} <virtual-output-port>
+@clindex virtual-output-port
+An instance of this class can be used as an output port.
+The behavior of the port depends on the settings of the
+instance slot values.
+
+To work as an output port, at least either one of @code{putb} or
+@code{putc} slot has to be set.
+
+@defivar {<virtual-output-port>} putb
+If set, the value must be a procedure that takes one argument,
+a byte value (exact integer between 0 and 255, inclusive).
+Every time binary output is required, the procedure is called.
+The return value of the procedure is ignored.
+
+If this slot is not set and binary output is requested,
+the port may signal an @code{<io-unit-error>} error.
+@end defivar
+
+@defivar {<virtual-output-port>} putc
+If set, the value must be a procedure that takes one argument,
+a character.
+Every time character output is required, the procedure is called.
+The return value of the procedure is ignored.
+
+If this slot is not set but @code{putb} slot is set,
+the virtual port decomposes the character into a sequence of bytes
+then calls @code{putb} procedures.
+@end defivar
+
+@defivar {<virtual-output-port>} puts
+If set, the value must be a procedure that takes a
+(possibly incomplete) string.
+The return value of the procedure is ignored.
+
+This is for efficiency.  If this slot is not set, the virtual port
+calls @code{putb} or @code{putc} repeatedly to output a chunk of data.
+But if your code can perform chunked output efficiently, 
+you can provide this procedure.
+@end defivar
+
+@defivar {<virtual-output-port>} flush
+If set, the value must be a procedure that takes no arguments.
+It is called when flushing a port is required (e.g. @code{flush}
+is called on the port, or the port is being closed).
+
+This procedure is useful that your port does some sort of buffering,
+or needs to keep some state.  If your port doesn't do stateful operation,
+you can leave this unset.
+
+This procedure may be called from a finalizer, and needs a special
+care.  See notes on finalizers below.
+@end defivar
+
+@defivar {<virtual-output-port>} close
+The same as @code{<virtual-input-port>}'s @code{close} slot.
+@end defivar
+
+@defivar {<virtual-output-port>} seek
+The same as @code{<virtual-input-port>}'s @code{seek} slot.
+@end defivar
+
+@end deftp
+
+
 @subsubheading Virtual buffered ports
+
+This type of virtual ports are realized by classes
+@code{<buffered-input-port>} and @code{<buffered-output-port>}.
+You can customize the port behavior by setting 
+appropriate slots with procedures.
+
+Those ports have internal buffer and only calls Scheme procedures
+when the buffer needs to be filled or flushed.  Generally it is 
+far more efficient than calling Scheme procedures for every
+I/O operation.   Actually, the internal buffering mechanism is
+the same as Gauche's file I/O ports.
+
+These ports uses @code{u8vector} as a buffer.  See @ref{Uniform vectors}
+for the details.
+
+@deftp {Class} <buffered-input-port>
+@clindex buffered-input-port
+
+An instance of this class behaves as an input port.
+It has the following instance slots.  For a meaningful input
+port, you have to set at least @code{fill} slot.
+
+@defivar {<buffered-input-port>} fill
+If set, it must be a procedure that takes one argument,
+a @code{u8vector}.  It must fill the data from the
+beginning of the vector.  It doesn't need to fill the entire
+vector if there's not so many data.  However, if there are remaining
+data, it must fill at least one byte; if the data isn't readily
+available, it has to wait until some data becomes available.
+
+The procedure must return a number of bytes it actually filled.
+It may return 0 or an EOF object to indicate the port has reached EOF.
+@end defivar
+
+@defivar {<buffered-input-port>} ready
+If set, it must be a procedure that takes no arguments.
+The procedure must return a true value if there are some data
+readily available to read, or @code{#f} otherwise.
+Unlike fully virtual ports, you don't need to distinguish
+binary and character I/O.
+
+If this slot is not set, the port is regarded as it always has data ready.
+@end defivar
+
+@defivar {<buffered-input-port>} close
+If set, it must be a procedure that takes no arguments.
+The procedure is called when the virtual buffered port is closed.
+You don't need to set this slot unless you need some cleaning up
+when the port is closed.
+
+This procedure may be called from a finalizer, and
+needs special care.  See the note on finalization below.
+@end defivar
+
+@defivar {<buffered-input-port>} filenum
+If set, it must be a procedure that returns underlying
+file descriptor number (exact nonnegative integer).
+The procedure is called when @code{port-file-number} is called
+on the port.
+
+If there's no such underlying file descriptor, you can
+return @code{#f}, or you can leave this slot unset.
+@end defivar
+
+@defivar {<buffered-input-port>} seek
+If set, it must be a procedure that takes two arguments,
+@var{offset} and @var{whence}.
+It works the same way as @code{<virtual-input-port>}'s seek procedure;
+see above.
+
+This procedure may be called from a finalizer, and
+needs special care.  See the note on finalization below.
+@end defivar
+
+@end deftp
+
+@deftp {Class} <buffered-output-port>
+@clindex buffered-output-port
+
+An instance of this class behaves as an output port.
+It has the following instance slots.
+You have to set at least @code{flush} slot.
+
+@defivar {<buffered-output-port>} flush
+If set, it must be a procedure that takes two arguments,
+an @code{u8vector} buffer and a flag.
+The procedure must output data in the buffer to somewhere,
+and returns the number of bytes actually output.
+
+If the flag is false, the procedure may output less
+than entire buffer (but at least one byte).  If the flag
+is true, the procedure must output entire buffer.
+@end defivar
+
+@defivar {<buffered-output-port>} close
+Same as @code{<buffered-input-port>}'s @code{close} slot.
+@end defivar
+
+@defivar {<buffered-output-port>} filenum
+Same as @code{<buffered-input-port>}'s @code{filenum} slot.
+@end defivar
+
+@defivar {<buffered-output-port>} seek
+Same as @code{<buffered-input-port>}'s @code{seek} slot.
+@end defivar
+
+@end deftp
+
+
+@subsubheading Uniform vector ports
+
+The following two procedures returns a bufferd input/output port
+backed up by a uniform vector.    The source or destination vector
+can be any type of uniform vector, but they are aliased
+to @code{u8vector} (see @code{uvector-alias} in
+@ref{Uvector conversion operations}).
+
+If used together with @code{pack}/@code{unpack} 
+(see @ref{Packing Binary Data}), it is useful to parse
+or construct binary data structure.  It is also an
+example of using virtual ports; read @file{gauche/vport.scm}
+(or @file{ext/vport/vport.scm} in the source tree) if you're
+curious about the implementation.
+
+
+@defun open-input-uvector uvector
+Returns an input port that reads the content of the given
+uniform vector @var{uvector} from its beginning.  If reading
+operation reaches the end of @var{uvector}, EOF is returned.
+Seek operation is also implemented.
+@end defun
+
+@defun open-output-uvector uvector
+Returns an output port that fills the given uvector by the
+data output to the port.  If @var{uvector} is completely
+filled, more data are silently discarded.
+Seek operation is also implemented.
+@end defun
+
+
+@subsubheading Note on finalization
+
+If an unclosed virtual port is garbage collected, its close procedure
+is called (in case of virtual buffered ports, its flush procedure
+may also be called before close procedure).  It is done by
+a finalizer of the port.  Since it is a part of garbage-collection
+process (although the Scheme procedure itself is called outside of
+the garbage collector main part), it requires special care.
+
+@itemize @bullet
+@item
+It is possible that the object the virtual port has a reference
+may already be finalized.  For example, if a virtual port @var{X} 
+holds the only reference to a @emph{sink} port @var{Y}, to which
+the output goes.  @var{X}'s @code{flush} procedure sends its output to
+@var{Y}.  However, if @code{flush} procedure can be called from a
+finalizer, it may be possible that @var{Y}'s finalizer has already been
+called and @var{Y} is closed.   So @var{X}'s @code{flush} procedure
+has to check if @var{Y} has not been closed.
+
+@item
+You cannot know when and in which thread the finalizer runs.  
+So if the procedure like @code{close} or @code{flush} of virtual ports
+need to lock or access the global resource, it needs to take
+extra care of avoiding dead lock or conflict of access.
+
+Even in single thread programs, the finalizer can run anywhere
+in Scheme programs, so effectively it should be considered as
+running in a different thread.
+@end itemize
+
 
 

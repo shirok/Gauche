@@ -6627,16 +6627,24 @@ Gaucheではさらに次のような操作がportに対して可能になっています。
 
 @table @asis
 @c EN
-@item Byte I/O
-You can read/write one byte at a time, instead of a character.
+@item Binary I/O
+You can read/write one octet at a time, instead of a character.
 (Remember, Gauche handles multibyte characters, so a character
 may be consisted from more than one bytes).
-Most ports allow you to mix byte I/O and character I/O, if needed.
+Most ports allow you to mix binary I/O and character I/O, if needed.
+
+The most basic binary I/O primitives are @code{read-byte} and
+@code{write-byte}.  You can also use higher-level functionality,
+such as @code{pack} and @code{unpack} in @ref{Packing Binary Data}.
 @c JP
-@item バイトI/O
-キャラクタ毎でなく、バイト毎のI/Oが可能です(Gaucheではマルチバイト文字を
+@item バイナリI/O
+キャラクタ毎でなく、オクテット毎のI/Oが可能です(Gaucheではマルチバイト文字を
 扱うので、この２つが異なることに注意して下さい)。大抵のポートでは
-キャラクタI/OとバイトI/Oを混ぜて使うことができます。
+キャラクタI/OとバイナリI/Oを混ぜて使うことができます。
+
+最も基本的なバイナリI/Oプリミティブは@code{read-byte}と@code{write-byte}です。
+また、より高機能な@code{pack}や@code{unpack}といった手続きが
+@ref{Packing Binary Data} で提供されています。
 @c COMMON
 
 @c EN
@@ -6644,8 +6652,7 @@ Most ports allow you to mix byte I/O and character I/O, if needed.
 You can read/write a specified number of byte sequences.
 This can be an efficient way of moving block of data,
 if the port's underlying implementation supports block I/O
-operation (for example, if the underyling port is a unix buffered
-stream, this operation uses @code{fread} or @code{fwrite}).
+operation.
 @c JP
 @item ブロックI/O
 ポートから指定した数のバイト列を読んだり、ポートへ書いたりできます。
@@ -6659,14 +6666,29 @@ Some ports can be used to convert a data stream from one format
 to another; one of such applications is character code conversion
 ports, provided by @code{gauche.charconv} module
 (@xref{Character code conversion}, for details).
-You can define a procedural ports, in both Scheme and C, 
-to implement other functionality.
 @c JP
 @item 変換
 ポートはまた、データストリームを変換するのにも使えます。例えば@code{gauche.charconv}
 モジュールでは、文字コード間の変換を行うポートを提供しています
 (詳しくは@ref{Character code conversion}を参照)。
-プロシージャルなポートを定義することにより、様々な機能を実装できます。
+@c COMMON
+
+@c EN
+@item Extra features
+There are also a ports with special functionality.
+A coding-aware port (@xref{Coding-aware ports}) recognizes a special
+"magic comment" in the file to know which character encoding the
+file is written.
+Virtual ports (@xref{Virtual ports}) allows you to program the
+behavior of the port in Scheme.
+@c JP
+@item 追加機能
+また、特殊な機能を実現するポートもあります。
+コーディング認識ポート(@ref{Coding-aware ports}参照)は
+ファイル中の特殊なコメントを認識して、そのファイルがどの文字エンコーディング
+で書かれているかを検出します。
+仮想ポート(@ref{Virtual ports}参照)はSchemeでふるまいをプログラムできる
+ポートを提供します。
 @c COMMON
 @end table
 

@@ -431,6 +431,16 @@ packはその文字列を入力とします。
 (unpack "C/a*" :from-string "\x05hello")
  @result{} '("hello")
 @end example
+
+@c EN
+@emph{Note:} in the current version, @code{@@} in @code{unpack}
+template has a bug and does not work as supposed.  It will
+be fixed in the future verson.
+@c JP
+@emph{註:} 現在のバージョンには、@code{unpack}のテンプレートの
+@code{@@}が想定したように動かないというバグがあります。
+将来のバージョンでfixされます。
+@c COMMON
 @end defun
 
 @defun unpack-skip template &keyword :input
@@ -9928,13 +9938,14 @@ This module is a port of Andrew Wright's pattern matching macro library.
 It is widely used in Scheme world, and ported to various Scheme
 implementations, including Chez Scheme, PLT Scheme, Scheme48, Chicken,
 and SLIB.
-It provides a similar feature of Common Lisp's @code{destructuring-bind}.
+It is similar to, but more powerful than
+Common Lisp's @code{destructuring-bind}.
 @c JP
 このモジュールは Andrew Wright のパターンマッチングマクロライブラリを
 ポートしたものです。このライブラリは Scheme 界では広くつかわれており、
 Chez Scheme、PLT Scheme、Scheme48、Chicken および SLIB を含む、様々な
-Scheme の実装にポートされています。このライブラリは Common Lisp の
-@code{destructuring-bind} に似た機能を提供します。
+Scheme の実装にポートされています。この機能は Common Lisp の
+@code{destructuring-bind} に似ていますがより強力です。
 @c COMMON
 
 @c EN
@@ -10404,11 +10415,20 @@ called, it returns the matched value.
 
 @item
 @c EN
-@code{`qp} works like a quasiquote.  You can insert patterns within
-@code{qp} by unquote and unquote-splicing.
+@code{`qp} is a quasipattern.  @var{qp} is quoted, in the sense
+that it matches itself, @emph{except} the pattern that is unquoted.
+(Don't confuse quasipatern to quasiquote, though the functions are
+similar.  Quasiquote turns off evaluation except unquoted subtree.
+Quasiquote turns off the special pattern syntax except unquoted subtree.
+See the examples below).
 @c JP
-@code{`qp} は擬似クウォートと似た働きをします。アンクウォートや
-アンクウォートスプライシングを使って、@code{qp} 内部にパターンを挿入できます。
+@code{`qp}はquasipatternです。@var{qp}は、クオートされたパターンと同様、
+それそのものにマッチしますが、その中にアンクオートされているパターンがあると、
+その部分だけは通常のパターンとして解釈されます。
+(準クオート(quasiquote)とquasipatternを混同しないようにしてください。
+機能的に両者は似ていますが、準クオートがアンクオートされた部分木以外の
+部分の評価をoffにするのに対し、quasipatternはアンクオートされた部分木
+以外の部分のパターン構文を無効にします。下の例も参照して下さい。)
 @c COMMON
 @end itemize
 
@@ -10484,6 +10504,41 @@ is matched to the result of application of the regular expression.
    (format "base=~a suffix=~a" (m 1) (m 2))))
  @result{} "base=gauche-ref suffix=texi"
 @end example
+
+@c EN
+An example of quasipattern.   In the first expression, the
+pattern except @code{value} is quoted, so the symbols @code{the},
+@code{answer}, and @code{is} are not pattern variables but literal
+symbols.   The second expression shows that; input symbol @code{was} 
+does not match the literal symbol @code{is} in the pattern.
+If we don't use quasiquote, all symbols in the pattern are pattern
+variables, so any four-element list matches as the third expression shows.
+@c JP
+quasipatternの例です。最初の式では、パターンのうち@code{value}以外の
+部分がクオートされたことになり、従ってシンボル@code{the}, @code{answer},
+@code{is}はパターン変数ではなくリテラルシンボルとなります。
+2番目の式がそのことを示しています。入力にあるシンボル@code{was}は
+パターンの@code{is}とマッチしません。もしクオートを行わないと、
+全てのシンボルはパターン変数となるので、3番目の例に示すように
+任意の4つの要素を持つリストとマッチしてしまいます。
+@c COMMON
+@example
+(match '(the answer is 42)
+  (`(the answer is ,value) value)
+  (else #f))
+ @result{} 42
+
+(match '(the answer was 42)
+  (`(the answer is ,value) value)
+  (else #f))
+ @result{} #f
+
+(match '(a b c d)
+  ((the answer is value) value)
+  (else #f))
+ @result{} d
+@end example
+
 
 @c ----------------------------------------------------------------------
 @node Queue, SLIB-compatible record type, Pattern matching, Library modules - Utilities
