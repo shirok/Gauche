@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.149 2001-06-01 21:05:10 shirok Exp $
+ *  $Id: gauche.h,v 1.150 2001-06-02 09:01:46 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -761,7 +761,7 @@ struct ScmDStringRec {
 extern void        Scm_DStringInit(ScmDString *dstr);
 extern ScmObj      Scm_DStringGet(ScmDString *dstr);
 extern const char *Scm_DStringGetz(ScmDString *dstr);
-extern void        Scm_DStringPutz(ScmDString *dstr, const char *str);
+extern void        Scm_DStringPutz(ScmDString *dstr, const char *str, int siz);
 extern void        Scm_DStringAdd(ScmDString *dstr, ScmString *str);
 extern void        Scm_DStringPutb(ScmDString *dstr, char byte);
 extern void        Scm_DStringPutc(ScmDString *dstr, ScmChar ch);

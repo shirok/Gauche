@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: portmacros.h,v 1.6 2001-06-01 21:05:10 shirok Exp $
+ *  $Id: portmacros.h,v 1.7 2001-06-02 09:01:46 shirok Exp $
  */
 
 #ifndef GAUCHE_PORT_MACROS_H
@@ -63,8 +63,8 @@
 #define SCM__OSTR_PUTC(c, port)                         \
     SCM_DSTRING_PUTC(&SCM_PORT(port)->src.ostr, c)
 
-#define SCM__OSTR_PUTZ(s, len, port)                    \
-    Scm_DStringPutz(&SCM_PORT(port)->src.ostr, s)
+#define SCM__OSTR_PUTZ(s, siz, port)                    \
+    Scm_DStringPutz(&SCM_PORT(port)->src.ostr, s, siz)
 
 #define SCM__OSTR_PUTS(s, port)                         \
     Scm_DStringAdd(&SCM_PORT(port)->src.ostr, SCM_STRING(s))
