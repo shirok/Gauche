@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.42 2001-05-10 19:29:22 shirok Exp $
+ *  $Id: number.c,v 1.43 2001-05-11 09:50:06 shirok Exp $
  */
 
 #include <math.h>
@@ -34,7 +34,7 @@
 #ifdef HAVE_ISINF
 #define SCM_IS_INF(x)  isinf(x)
 #else
-#define SCM_IS_INF(x)  ((x) == (x)+1)
+#define SCM_IS_INF(x)  ((x) != 0 && (x) == (x)/2.0)
 #endif
 
 /* Linux gcc have those, but the declarations aren't included unless
@@ -586,7 +586,7 @@ ScmObj Scm_Subtract(ScmObj arg0, ScmObj arg1, ScmObj args)
             args = SCM_CDR(args);
         }
     }
-    Scm_Error("number required: %S", arg1);
+    Scm_Error("number required: %S", arg0);
     return SCM_UNDEFINED;       /* NOTREACHED */
 }
 
@@ -1167,8 +1167,10 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
     /* TODO: Look at the algorithm of Burger & Dybvig :"Priting Floating-Point
        Numbers Quickly and Accurately", PLDI '96, pp108--116. */
     if (SCM_IS_INF(val)) {
+        if (plus_sign) *buf++ = '+';
         strcpy(buf, "#<inf>");
     } else if (SCM_IS_NAN(val)) {
+        if (plus_sign) *buf++ = '+';
         strcpy(buf, "#<nan>");
     } else {
         if (plus_sign && val > 0) { *buf++ = '+'; buflen--; }
