@@ -1,5 +1,11 @@
 2002-06-17  Shiro Kawai  <shiro@acm.org>
 
+	* ext/uvector/* : adding uniform vector utility functions (not
+	  finished yet)
+	* src/bignum.c, src/gauche/arith.h, src/test-arith.c : separated
+	  basic integer arithmetic macros to arith.h, for there will be
+	  machine-dependent optimizations.  Added C test program for
+	  arith.h macros.
 	* src/read.c : added reader syntax for UCS characters: #\uXXXX
 	  for character literal,  and \uXXXX escape sequence in string literal.
 
