@@ -1,3 +1,8 @@
+2004-07-10  Shiro Kawai  <shiro@acm.org>
+
+	* examples/spigot/configure.in: removed AC_PROG_INSTALL and commented
+	  out AC_CANONICAL_SYSTEM, since they are not really necessary.
+
 2004-07-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/uri.scm (uri-parse): added.

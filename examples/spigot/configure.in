@@ -2,12 +2,15 @@ dnl
 dnl Configuring spigot
 dnl  process this file with "autoconf -I `gauche-config --ac`" to
 dnl  generate 'configure'.
-dnl $Id: configure.in,v 1.2 2004-04-23 10:17:47 shirok Exp $
+dnl $Id: configure.in,v 1.3 2004-07-11 06:20:47 shirok Exp $
 dnl
 
 AC_PREREQ(2.54)
 AC_INIT(spigot, 1.0, shiro@acm.org)
-AC_CANONICAL_SYSTEM
+dnl If you want to use the system name (OS, architecture, etc) in the
+dnl configure, uncomment the following line.  In such a case, you need
+dnl to copy config.guess and config.sub from automake distribution.
+dnl AC_CANONICAL_SYSTEM
 
 dnl Sets several Gauche-specific parameters.
 AC_GAUCHE_INIT_EXT
@@ -26,7 +29,7 @@ AC_GAUCHE_CC
 AC_GAUCHE_FLAGS
 
 dnl Check for other programs.
-AC_PROG_INSTALL
+dnl Add your macro calls to check existence of programs, if you have any.
 
 dnl Check for libraries
 dnl Add your macro calls to check required libraries, if you have any.
