@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: mime.scm,v 1.2 2003-12-13 03:12:19 shirok Exp $
+;;;  $Id: mime.scm,v 1.3 2003-12-15 10:07:23 shirok Exp $
 ;;;
 
 ;; RFC2045 Multipurpose Internet Mail Extensions (MIME)
@@ -51,6 +51,9 @@
   (use util.list)
   (export mime-parse-version mime-parse-content-type
           mime-decode-word
+          <mime-part>
+          mime-parse-message mime-retrieve-body
+          mime-body->string mime-body->file
           )
   )
 (select-module rfc.mime)
@@ -127,46 +130,59 @@
 (define-constant *eof-object* (read-from-string ""))
 
 ;; message information packet
-(define-class <mime-message> ()
+(define-class <mime-part> ()
   ((type     :init-keyword :type)
    (subtype  :init-keyword :subtype)
    (parameters :init-keyword :parameters)
    (transfer-encoding :init-keyword :transfer-encoding)
    (headers  :init-keyword :headers)
-   (parent-headers :init-keyword :parent-headers)
-   (contents :init-value #f) ;; up to the <proc>
+   (parent   :init-keyword :parent :init-value #f)
+   (index    :init-keyword :index :init-value 0)
+   (content  :init-value #f)
    ))
 
-(define (mime-port-fold port headers proc seed)
+(define (mime-parse-message port headers handler)
+  (internal-parse port headers handler (cut read-line <> #t) #f 0
+                  '("text" "plain" ("charset" . "us-ascii"))))
+
+(define (internal-parse port headers handler reader parent index default-type)
   (let* ((ctype (or (mime-parse-content-type
                      (rfc822-header-ref headers "content-type"))
-                    '("text" "plain" ("charset" . "us-ascii"))))
+                    default-type))
          (enc   (rfc822-header-ref headers "content-transfer-encoding" "7bit"))
-         (packet (make <mime-message>
+         (packet (make <mime-part>
                    :type (car ctype)
                    :subtype (cadr ctype)
-                   :parameter (cddr ctype)
+                   :parameters (cddr ctype)
                    :transfer-encoding enc
+                   :parent parent
+                   :index index
                    :headers headers))
          )
+    (when parent (slot-push! parent 'parent packet))
     (cond
      ((equal? (car ctype) "multipart")
-      (multipart-fold port packet proc seed))
+      (multipart-parse port packet handler reader))
      ((equal? (car ctype) "message")
-      (message-fold port packet proc seed))
+      (message-parse port packet handler reader))
      (else
       ;; normal body
-      (proc port packet read-line seed))
+      (slot-set! packet 'content (handler packet reader))
+      packet)
      )))
 
-(define (multipart-fold port packet proc seed)
-  (let* ((boundary (or (assoc-ref (ref message 'parameters) "boundary")
+(define (multipart-parse port packet handler reader)
+  (let* ((boundary (or (assoc-ref (ref packet 'parameters) "boundary")
                        (error "No boundary given for multipart message")))
          (--boundary   (string-append "--" boundary))
          (--boundary-- (string-append --boundary "--"))
-         (state 'prologue))
+         (state 'prologue)
+         (default-type (if (equal? (ref packet 'subtype) "digest")
+                         '("message" "rfc822")
+                         '("text" "plain" ("charset" . "us-ascii"))))
+         )
     (define (line-reader port)
-      (let1 l (read-line port #t)
+      (let1 l (reader port)
         (cond ((eof-object? l)
                (set! state 'eof) *eof-object*)
               ((equal? l --boundary)
@@ -178,15 +194,69 @@
     (do ()
         ((not (eq? state 'prologue)))
       (line-reader port))
-    (let loop ((seed seed))
+    (let loop ((index 0)
+               (contents '()))
       (let* ((headers (rfc822-header->list port :reader line-reader))
-             (r (mime-port-fold port headers proc seed)))
-        (if (eq? state 'epilogue)
-          r
-          (loop r))))
+             (r (internal-parse port headers handler
+                                line-reader packet index
+                                default-type))
+             )
+        (if (not (memq state '(epilogue eof)))
+          (loop (+ index 1) (cons r contents))
+          (begin
+            (set! (ref packet 'content) (reverse! (cons r contents)))
+            packet))))
     ))
 
-;(define (message-fold port packet proc seed)
-;  (
+(define (message-parse port packet handler reader)
+  (let* ((headers (rfc822-header->list port)))
+    (internal-parse port headers handler reader packet 0
+                    '("text" "plain" ("charset" . "us-ascii")))))
+
+;;===============================================================
+;; Body readers
+;;
+
+(define (mime-retrieve-body packet reader inp outp)
+
+  (define (read-text decoder)
+    (let loop ((line (reader inp))
+               (crlf #f))
+      (unless (eof-object? line)
+        (when crlf (newline outp))
+        (display (decoder line) outp)
+        (loop (reader inp) #t))))
+
+  (define (read-base64)
+    (let ((lines (port->list reader inp)))
+      (with-output-to-port outp
+        (lambda ()
+          (with-input-from-string (string-concatenate lines)
+            (lambda ()
+              (with-port-locking (current-input-port)
+                base64-decode)))))))
+
+  (with-port-locking inp
+    (lambda ()
+      (let ((enc (ref packet 'transfer-encoding)))
+        (cond
+         ((string-ci=? enc "base64") (read-base64))
+         ((string-ci=? enc "quoted-printable")
+          (read-text quoted-printable-decode-string))
+         ((member enc '("7bit" "8bit" "binary"))
+          (read-text identity))))))
+  )
+
+(define (mime-body->string packet reader inp)
+  (let ((s (open-output-string/private)))
+    (mime-retrieve-body packet reader inp s)
+    (get-output-string s)))
+
+(define (mime-body->file packet reader inp filename)
+  (call-with-output-file filename
+    (lambda (outp)
+      (with-port-locking outp
+        (cut mime-retrieve-body packet reader inp outp))))
+  filename)
 
 (provide "rfc/mime")

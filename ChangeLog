@@ -1,3 +1,7 @@
+2003-12-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/mime.scm (mime-parse-message, etc): revised API.
+
 2003-12-13  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/redefutil.scm, lib/gauche/object.scm : Oops. 
