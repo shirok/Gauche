@@ -1589,6 +1589,20 @@ of the user cannot be determined, @code{#f} is returned.
 @c COMMON
 @end defun
 
+@defun temporary-directory
+@c EN
+Returns the name of the directory that can be used
+to create a temporary files.   Currently it always returns
+@file{/tmp}, but in future it will take platform or system specific
+settings into account.
+@c JP
+一時ファイルを作るのに適したディレクトリ名を返します。
+現在のところ、この手続きは常に@file{/tmp}を返しますが、
+将来はプラットフォームやシステム特有の設定を反映しするように
+なるかもしれません。
+@c COMMON
+@end defun
+
 @defun directory-list path &keyword children? add-path? filter filter-add-path?
 @c EN
 Returns a list of entries in the directory @var{path}.

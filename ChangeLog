@@ -1,5 +1,6 @@
 2004-07-26  Shiro Kawai  <shiro@acm.org>
 
+	* lib/file/util.scm (temporary-directory): added.
 	* src/module.c (Scm_FindBinding): fixed meaningless if-condition.
 	* lib/gauche/package/fetch.scm (gauche-package-ensure): typo fix.
 

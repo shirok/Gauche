@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.26 2004-07-24 10:35:37 shirok Exp $
+;;;  $Id: util.scm,v 1.27 2004-07-26 20:50:57 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -45,7 +45,7 @@
   (use srfi-13)
   (use util.list)
   (export current-directory directory-list directory-list2 directory-fold
-          home-directory
+          home-directory temporary-directory
           make-directory* create-directory* remove-directory* delete-directory*
           build-path resolve-path expand-path simplify-path
           absolute-path? relative-path? find-file-in-paths
@@ -85,6 +85,9 @@
                           ((string? user)  (sys-getpwnam user))
                           (else (error "bad user" user)))))
       (slot-ref ent 'dir))))
+
+(define (temporary-directory)
+  "/tmp")  ;; would be more smarter
 
 ;; utility for directory-list and directory-list2
 (define (%directory-filter dir pred filter-add-path?)
