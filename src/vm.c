@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.69 2001-04-01 09:19:29 shiro Exp $
+ *  $Id: vm.c,v 1.70 2001-04-01 22:07:12 shiro Exp $
  */
 
 #include "gauche.h"
@@ -444,17 +444,32 @@ static void run_loop()
                  */
                 proctype = SCM_PROCEDURE_TYPE(val0);
                 if (proctype == SCM_PROC_GENERIC) {
-                    ScmObj mm
-                        = Scm_ComputeApplicableMethods(SCM_GENERIC(val0),
-                                                       argp->data, nargs);
-                    if (!SCM_NULLP(mm)) {
-                        ScmObj *argv = SCM_NEW2(ScmObj*, sizeof(ScmObj)*nargs);
-                        memcpy(argv, argp->data, sizeof(ScmObj)*nargs);
-                        mm = Scm_SortMethods(mm, argv, nargs);
-                        nm = Scm_MakeNextMethod(SCM_GENERIC(val0),
-                                                SCM_CDR(mm), argv, nargs);
-                        val0 = SCM_CAR(mm);
-                        proctype = SCM_PROC_METHOD;
+                    if (SCM_GENERICP(val0)) {
+                        /* pure generic application */
+                        ScmObj mm
+                            = Scm_ComputeApplicableMethods(SCM_GENERIC(val0),
+                                                           argp->data, nargs);
+                        if (!SCM_NULLP(mm)) {
+                            ScmObj *argv = SCM_NEW2(ScmObj*,
+                                                    sizeof(ScmObj)*nargs);
+                            memcpy(argv, argp->data, sizeof(ScmObj)*nargs);
+                            mm = Scm_SortMethods(mm, argv, nargs);
+                            nm = Scm_MakeNextMethod(SCM_GENERIC(val0),
+                                                    SCM_CDR(mm), argv, nargs);
+                            val0 = SCM_CAR(mm);
+                            proctype = SCM_PROC_METHOD;
+                        }
+                    } else {
+                        /* use scheme-defined MOP */
+                        ScmObj args = SCM_NIL, arg;
+                        int i;
+                        for (i=0; i<nargs; i++) {
+                            POP_ARG(arg);
+                            args = Scm_Cons(arg, args);
+                        }
+                        Scm_VMApply2(SCM_OBJ(&Scm_GenericApplyGeneric),
+                                     val0, args);
+                        continue;
                     }
                 } else if (proctype == SCM_PROC_NEXT_METHOD) {
                     ScmNextMethod *n = SCM_NEXT_METHOD(val0);
