@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.67 2001-03-31 08:38:21 shiro Exp $
+ *  $Id: vm.c,v 1.68 2001-03-31 21:40:13 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1028,6 +1028,39 @@ static void run_loop()
                 } else {
                     val0 = Scm_Add(SCM_LIST2(SCM_MAKE_INT(imm), val0));
                 }
+                continue;
+            }
+            CASE(SCM_VM_READ_CHAR) {
+                int nargs = SCM_VM_INSN_ARG(code), ch;
+                ScmPort *port;
+                if (nargs == 1) {
+                    if (!SCM_IPORTP(val0))
+                        Scm_Error("read-char: input port required: %S", val0);
+                    port = SCM_PORT(val0);
+                } else {
+                    port = SCM_CURIN;
+                }
+                SCM_GETC(ch, port);
+                val0 = (ch < 0)? SCM_EOF : SCM_MAKE_CHAR(ch);
+                continue;
+            }
+            CASE(SCM_VM_WRITE_CHAR) {
+                int nargs = SCM_VM_INSN_ARG(code);
+                ScmObj ch;
+                ScmPort *port;
+                if (nargs == 2) {
+                    if (!SCM_OPORTP(val0))
+                        Scm_Error("write-char: output port required: %S", val0);
+                    port = SCM_PORT(val0);
+                    POP_ARG(ch);
+                } else {
+                    port = SCM_CUROUT;
+                    ch = val0;
+                }
+                if (!SCM_CHARP(ch))
+                    Scm_Error("write-char: character required: %S", ch);
+                SCM_PUTC(SCM_CHAR_VALUE(ch), port);
+                val0 = SCM_MAKE_INT(1);
                 continue;
             }
             CASE(SCM_VM_SLOT_REF) {
