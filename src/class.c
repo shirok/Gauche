@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.117.2.1 2004-12-27 01:17:05 shirok Exp $
+ *  $Id: class.c,v 1.117.2.2 2004-12-27 23:52:36 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -102,6 +102,8 @@ SCM_DEFINE_ABSTRACT_CLASS(Scm_SequenceClass, SCM_CLASS_COLLECTION_CPL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_BoolClass, NULL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_CharClass, NULL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_UnknownClass, NULL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_EOFObjectClass, NULL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_UndefinedObjectClass, NULL);
 
 SCM_DEFINE_BASE_CLASS(Scm_ObjectClass, ScmInstance,
                       NULL, NULL, NULL, Scm_ObjectAllocate,
@@ -430,6 +432,8 @@ ScmClass *Scm_ClassOf(ScmObj obj)
         if (SCM_NULLP(obj)) return SCM_CLASS_NULL;
         if (SCM_CHARP(obj)) return SCM_CLASS_CHAR;
         if (SCM_INTP(obj))  return SCM_CLASS_INTEGER;
+        if (SCM_EOFP(obj))  return SCM_CLASS_EOF_OBJECT;
+        if (SCM_UNDEFINEDP(obj)) return SCM_CLASS_UNDEFINED_OBJECT;
         else return SCM_CLASS_UNKNOWN;
     } else if (SCM_PAIRP(obj)) {
         return SCM_CLASS_PAIR;
@@ -2825,6 +2829,8 @@ void Scm__InitClass(void)
     BINIT(SCM_CLASS_TOP,    "<top>",     NULL);
     CINIT(SCM_CLASS_BOOL,   "<boolean>");
     CINIT(SCM_CLASS_CHAR,   "<char>");
+    BINIT(SCM_CLASS_EOF_OBJECT,"<eof-object>", NULL);
+    BINIT(SCM_CLASS_UNDEFINED_OBJECT,"<undefined-object>", NULL);
     BINIT(SCM_CLASS_UNKNOWN,"<unknown>", NULL);
     BINIT(SCM_CLASS_OBJECT, "<object>",  NULL);
     BINIT(SCM_CLASS_GENERIC,"<generic>", generic_slots);

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.403.2.3 2004-12-27 02:27:45 shirok Exp $
+ *  $Id: gauche.h,v 1.403.2.4 2004-12-27 23:52:36 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -570,19 +570,25 @@ SCM_CLASS_DECL(Scm_TopClass);
 SCM_CLASS_DECL(Scm_BoolClass);
 SCM_CLASS_DECL(Scm_CharClass);
 SCM_CLASS_DECL(Scm_ClassClass);
+SCM_CLASS_DECL(Scm_EOFObjectClass);
+SCM_CLASS_DECL(Scm_UndefinedObjectClass);
 SCM_CLASS_DECL(Scm_UnknownClass);
 SCM_CLASS_DECL(Scm_CollectionClass);
 SCM_CLASS_DECL(Scm_SequenceClass);
 SCM_CLASS_DECL(Scm_ObjectClass); /* base of Scheme-defined objects */
 
-#define SCM_CLASS_TOP          (&Scm_TopClass)
-#define SCM_CLASS_BOOL         (&Scm_BoolClass)
-#define SCM_CLASS_CHAR         (&Scm_CharClass)
-#define SCM_CLASS_CLASS        (&Scm_ClassClass)
-#define SCM_CLASS_UNKNOWN      (&Scm_UnknownClass)
-#define SCM_CLASS_COLLECTION   (&Scm_CollectionClass)
-#define SCM_CLASS_SEQUENCE     (&Scm_SequenceClass)
-#define SCM_CLASS_OBJECT       (&Scm_ObjectClass)
+
+
+#define SCM_CLASS_TOP              (&Scm_TopClass)
+#define SCM_CLASS_BOOL             (&Scm_BoolClass)
+#define SCM_CLASS_CHAR             (&Scm_CharClass)
+#define SCM_CLASS_CLASS            (&Scm_ClassClass)
+#define SCM_CLASS_EOF_OBJECT       (&Scm_EOFObjectClass)
+#define SCM_CLASS_UNDEFINED_OBJECT (&Scm_UndefinedObjectClass)
+#define SCM_CLASS_UNKNOWN          (&Scm_UnknownClass)
+#define SCM_CLASS_COLLECTION       (&Scm_CollectionClass)
+#define SCM_CLASS_SEQUENCE         (&Scm_SequenceClass)
+#define SCM_CLASS_OBJECT           (&Scm_ObjectClass)
 
 SCM_EXTERN ScmClass *Scm_DefaultCPL[];
 SCM_EXTERN ScmClass *Scm_CollectionCPL[];
