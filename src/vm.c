@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.98 2001-09-06 11:15:07 shirok Exp $
+ *  $Id: vm.c,v 1.99 2001-09-08 10:49:06 shirok Exp $
  */
 
 #include "gauche.h"
@@ -37,6 +37,14 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_VMClass, NULL);
 static ScmVM *theVM;    /* this must be thread specific in MT version */
 
 static void save_stack(ScmVM *vm);
+
+struct cont_data {
+    ScmContFrame *cont;
+    ScmObj handlers;
+    ScmEscapePoint *escape;
+};
+
+static ScmObj throw_cont_body(ScmObj, ScmObj, struct cont_data*, ScmObj);
 
 /*
  * Constructor
@@ -77,7 +85,7 @@ ScmVM *Scm_NewVM(ScmVM *base,
     
     v->handlers = SCM_NIL;
 
-    v->escapeReason = 0;
+    v->escapeReason = SCM_VM_ESCAPE_NONE;
     v->escapeData[0] = NULL;
     v->escapeData[1] = NULL;
 
@@ -782,7 +790,6 @@ static void run_loop()
                 int size = CONT_FRAME_SIZE + ENV_SIZE(reqargs + restarg);
                 int i = 0, argsize;
                 ScmObj rest = SCM_NIL, tail = SCM_NIL, info, body;
-                ScmEnvFrame *argpsave;
 
 #ifdef ENABLE_STACK_CHECK
 #if !defined(FUNCTION_STACK_CHECK)
@@ -1245,7 +1252,7 @@ static inline ScmEnvFrame *save_env(ScmVM *vm,
                                     ScmContFrame *cont_begin)
 {
     ScmEnvFrame *e = env_begin, *prev = NULL, *head = env_begin, *s;
-    ScmContFrame *c = cont_begin, *hc;
+    ScmContFrame *c = cont_begin;
     ScmEscapePoint *esc;
     
     int size;
@@ -1429,30 +1436,56 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
 static ScmObj user_eval_inner(ScmObj program)
 {
     DECL_REGS_VOLATILE;
+    volatile int restarted = FALSE;
+    ScmEscapePoint escape;
 
     /* Push extra continuation to preserve vm state.
        TODO: this won't be necessary if we're called directly
        from a subr */
     CHECK_STACK(CONT_FRAME_SIZE);
     PUSH_CONT(pc);
+    pc = program;
     SAVE_REGS();
+
+    escape.prev = vm->escape;
+    escape.cont = vm->cont;
+    vm->escape = &escape;
     
-    SCM_PUSH_ERROR_HANDLER {
-        vm->pc = program;
+  restart:
+    vm->escapeReason = SCM_VM_ESCAPE_NONE;
+    if (setjmp(escape.jbuf) == 0) {
         run_loop();
-        val0 = vm->val0;
-        RESTORE_REGS();
-        POP_CONT();
-        SAVE_REGS();
-    }
-    SCM_WHEN_ERROR {
+        if (!restarted) {
+            val0 = vm->val0;
+            RESTORE_REGS();
+            POP_CONT();
+            SAVE_REGS();
+        }
+    } else {
+        if (vm->escapeReason == SCM_VM_ESCAPE_CONT) {
+            struct cont_data *cd = (struct cont_data*)vm->escapeData[0];
+            if (cd->escape == vm->escape) {
+                val0 = throw_cont_body(vm->handlers,
+                                       cd->handlers,
+                                       cd,
+                                       vm->escapeData[1]);
+                RESTORE_REGS();
+                POP_CONT();
+                SAVE_REGS();
+                restarted = TRUE;
+                goto restart;
+            }
+        } else if (vm->escapeReason == SCM_VM_ESCAPE_ERROR) {
+            Scm_Panic("why am I here?");
+        } else {
+            Scm_Panic("invalid longjmp");
+        }
         vm->cont = escape.cont;
-        RESTORE_REGS();
-        POP_CONT();
-        SAVE_REGS();
-        SCM_PROPAGATE_ERROR;
+        SCM_ASSERT(vm->escape->prev);
+        vm->escape = vm->escape->prev;
+        longjmp(vm->escape->jbuf, 1);
     }
-    SCM_POP_ERROR_HANDLER;
+    vm->escape = vm->escape->prev;
     return vm->val0;
 }
 
@@ -1647,12 +1680,6 @@ ScmObj Scm_VMThrowException(ScmObj exception)
  * Call With Current Continuation
  */
 
-struct cont_data {
-    ScmContFrame *cont;
-    ScmObj handlers;
-    ScmEscapePoint *escape;
-};
-
 static ScmObj throw_cont_cc(ScmObj, void **);
 
 static ScmObj throw_cont_body(ScmObj cur_handlers, /* dynamic handlers of
@@ -1762,14 +1789,10 @@ static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
                       cd);
         } else {
             /* Rewind C stack */
-            Scm_Error("a continuation is thrown across C stack boundary: %p",
-                      cd);
-            /*
             vm->escapeReason = SCM_VM_ESCAPE_CONT;
             vm->escapeData[0] = cd;
             vm->escapeData[1] = args;
             longjmp(vm->escape->jbuf, 1);
-            */
         }
     }
     return throw_cont_body(current, handlers, cd, args);

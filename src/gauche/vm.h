@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.40 2001-09-06 11:15:08 shirok Exp $
+ *  $Id: vm.h,v 1.41 2001-09-08 10:49:06 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -150,8 +150,9 @@ typedef struct ScmEscapePointRec {
 } ScmEscapePoint;
 
 /* Escape types */
-#define SCM_VM_ESCAPE_ERROR  0
-#define SCM_VM_ESCAPE_CONT   1
+#define SCM_VM_ESCAPE_NONE   0
+#define SCM_VM_ESCAPE_ERROR  1
+#define SCM_VM_ESCAPE_CONT   2
 
 /*
  * VM structure
