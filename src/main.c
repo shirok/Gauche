@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.31 2001-10-02 10:55:19 shirok Exp $
+ *  $Id: main.c,v 1.32 2001-11-16 09:38:58 shirok Exp $
  */
 
 #include <unistd.h>
@@ -40,7 +40,7 @@ void usage(void)
             "  -V       print version and exit.\n"
             "  -b       batch mode.  don't print prompts.  supersedes -i.\n"
             "  -i       interactive mode.  force to print prompts.\n"
-            "  -q       don't read the default initiailzation file.\n"
+            "  -q       don't read the default initialization file.\n"
             "  -I<path> add <path> to the head of load path.\n"
             "  -u<module> (use) load and import <module>\n"
             );
