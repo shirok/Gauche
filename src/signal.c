@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.4 2002-01-16 20:57:29 shirok Exp $
+ *  $Id: signal.c,v 1.5 2002-01-21 10:34:10 shirok Exp $
  */
 
 #include <signal.h>
@@ -36,12 +36,129 @@
  *  thread-private data.
  */
 
+/* Master set of signals that the Gauche traps.  Need to be MT safe. */
+static sigset_t masterSigset;
+
+/* Table of signals and its name, to display sigset content. */
+#define SIGDEF(x)  { #x, x }
+
+static struct sigdesc {
+    const char *name;
+    int num;
+} sigDesc[] = {
+    SIGDEF(SIGHUP),	/* Hangup (POSIX).  */
+    SIGDEF(SIGINT),	/* Interrupt (ANSI).  */
+    SIGDEF(SIGQUIT),	/* Quit (POSIX).  */
+    SIGDEF(SIGILL),	/* Illegal instruction (ANSI).  */
+    SIGDEF(SIGTRAP),	/* Trace trap (POSIX).  */
+    SIGDEF(SIGABRT),	/* Abort (ANSI).  */
+    SIGDEF(SIGIOT),	/* IOT trap (4.2 BSD).  */
+    SIGDEF(SIGBUS),	/* BUS error (4.2 BSD).  */
+    SIGDEF(SIGFPE),	/* Floating-point exception (ANSI).  */
+    SIGDEF(SIGKILL),	/* Kill, unblockable (POSIX).  */
+    SIGDEF(SIGUSR1),	/* User-defined signal 1 (POSIX).  */
+    SIGDEF(SIGSEGV),	/* Segmentation violation (ANSI).  */
+    SIGDEF(SIGUSR2),	/* User-defined signal 2 (POSIX).  */
+    SIGDEF(SIGPIPE),	/* Broken pipe (POSIX).  */
+    SIGDEF(SIGALRM),	/* Alarm clock (POSIX).  */
+    SIGDEF(SIGTERM),	/* Termination (ANSI).  */
+    SIGDEF(SIGSTKFLT),	/* Stack fault.  */
+    SIGDEF(SIGCHLD),	/* Child status has changed (POSIX).  */
+    SIGDEF(SIGCONT),	/* Continue (POSIX).  */
+    SIGDEF(SIGSTOP),	/* Stop, unblockable (POSIX).  */
+    SIGDEF(SIGTSTP),	/* Keyboard stop (POSIX).  */
+    SIGDEF(SIGTTIN),	/* Background read from tty (POSIX).  */
+    SIGDEF(SIGTTOU),	/* Background write to tty (POSIX).  */
+    SIGDEF(SIGURG),	/* Urgent condition on socket (4.2 BSD).  */
+    SIGDEF(SIGXCPU),	/* CPU limit exceeded (4.2 BSD).  */
+    SIGDEF(SIGXFSZ),	/* File size limit exceeded (4.2 BSD).  */
+    SIGDEF(SIGVTALRM),	/* Virtual alarm clock (4.2 BSD).  */
+    SIGDEF(SIGPROF),	/* Profiling alarm clock (4.2 BSD).  */
+    SIGDEF(SIGWINCH),	/* Window size change (4.3 BSD, Sun).  */
+    SIGDEF(SIGPOLL),	/* Pollable event occurred (System V).  */
+    SIGDEF(SIGIO),	/* I/O now possible (4.2 BSD).  */
+    SIGDEF(SIGPWR),	/* Power failure restart (System V).  */
+    { NULL, -1 }
+};
+
+/*
+ * utilities for sigset
+ */
+static void display_sigset(sigset_t *set, ScmPort *port)
+{
+    struct sigdesc *desc = sigDesc;
+    int cnt = 0;
+    for (; desc->name; desc++) {
+        if (sigismember(set, desc->num)) {
+            if (cnt++) Scm_Putc('|', port);
+            Scm_Putz(desc->name+3, -1, port);
+        }
+    }
+}
+
+static int validsigp(int signum)
+{
+    if (signum > 0) {
+        struct sigdesc *desc = sigDesc;
+        for (; desc->name; desc++) {
+            if (desc->num == signum) return TRUE;
+        }
+    }
+    return FALSE;
+}
+
 /*
  * sigset class
  */
 
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysSigsetClass, NULL);
+static void sigset_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx);
+static ScmObj sigset_allocate(ScmClass *klass, ScmObj initargs);
 
+SCM_DEFINE_BUILTIN_CLASS(Scm_SysSigsetClass, sigset_print,
+                         NULL, NULL, sigset_allocate, SCM_CLASS_DEFAULT_CPL);
+
+void sigset_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
+{
+    Scm_Printf(out, "#<sys-sigset [");
+    display_sigset(&SCM_SYS_SIGSET(obj)->set, out);
+    Scm_Printf(out, "]>");
+}
+
+ScmObj sigset_allocate(ScmClass *klass, ScmObj initargs)
+{
+    ScmSysSigset *s = SCM_ALLOCATE(ScmSysSigset, klass);
+    SCM_SET_CLASS(s, klass);
+    sigemptyset(&s->set);
+    return SCM_OBJ(s);
+}
+
+/* multifunction on sigset
+    if delp == FALSE, signals are added to set.
+    else, signals are removed from set.
+    signal is either integer or #t (all signals)
+*/
+ScmObj Scm_SysSigsetOp(ScmSysSigset *set, ScmObj signals, int delp)
+{
+    ScmObj cp;
+    
+    if (!SCM_PAIRP(signals)) {
+        Scm_Error("list of signals required, but got %S", signals);
+    }
+    SCM_FOR_EACH(cp, signals) {
+        ScmObj s = SCM_CAR(cp);
+        if (SCM_TRUEP(s)) {
+            if (!delp) sigfillset(&set->set);
+            else       sigemptyset(&set->set);
+            break;
+        }
+        if (!SCM_INTP(s) || !validsigp(SCM_INT_VALUE(s))) {
+                Scm_Error("bad signal number %S", s);
+        }
+        if (!delp) sigaddset(&set->set, SCM_INT_VALUE(s));
+        else       sigdelset(&set->set, SCM_INT_VALUE(s));
+    }
+    return SCM_OBJ(set);
+}
 
 /*
  * System's signal handler - just enqueue the signal
@@ -112,14 +229,19 @@ void Scm_SigCheck(ScmVM *vm)
 }
 
 /*
- * with-signal-handlers 
- */
-
-/*
  * initialize
  */
 
 void Scm__InitSignal(void)
 {
+    ScmModule *mod = Scm_GaucheModule();
+    struct sigdesc *desc;
+    
+    Scm_InitBuiltinClass(&Scm_SysSigsetClass, "<sys-sigset>", NULL,
+                         sizeof(ScmSysSigset), mod);
+
+    for (desc = sigDesc; desc->name; desc++) {
+        SCM_DEFINE(mod, desc->name, SCM_MAKE_INT(desc->num));
+    }
 }
     

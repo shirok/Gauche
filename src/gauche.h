@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.206 2002-01-16 20:57:28 shirok Exp $
+ *  $Id: gauche.h,v 1.207 2002-01-21 10:34:10 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1815,6 +1815,7 @@ extern ScmClass Scm_SysSigsetClass;
 #define SCM_SYS_SIGSET_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_SYS_SIGSET)
 
 extern void   Scm_SigCheck(ScmVM *vm);
+extern ScmObj Scm_SysSigsetOp(ScmSysSigset*, ScmObj, int);
 
 /*---------------------------------------------------
  * SYSTEM
