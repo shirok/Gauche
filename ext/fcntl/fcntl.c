@@ -12,12 +12,13 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: fcntl.c,v 1.6 2002-02-08 09:10:57 shirok Exp $
+ *  $Id: fcntl.c,v 1.7 2002-02-10 05:40:05 shirok Exp $
  */
 
 #include <errno.h>
 #include <gauche.h>
 #include <gauche/class.h>
+#include <gauche/extend.h>
 
 #undef SCM_EXTERN
 #define SCM_EXTERN  extern
@@ -30,7 +31,7 @@ static ScmObj flock_allocate(ScmClass *klass, ScmObj initargs);
 SCM_DEFINE_BUILTIN_CLASS(Scm_SysFlockClass,
                          NULL, NULL, NULL,
                          flock_allocate,
-                         SCM_CLASS_DEFAULT_CPL);
+                         NULL);
 
 static ScmObj flock_allocate(ScmClass *klass, ScmObj initargs)
 {
@@ -136,8 +137,10 @@ extern void Scm_Init_fcntlib(ScmModule *mod);
 
 void Scm_Init_fcntl(void)
 {
-    ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE("gauche.fcntl", TRUE));
+    ScmModule *mod;
 
+    SCM_INIT_EXTENSION(fcntl);
+    mod = SCM_MODULE(SCM_FIND_MODULE("gauche.fcntl", TRUE));
     Scm_InitBuiltinClass(&Scm_SysFlockClass, "<sys-flock>",
                          flock_slots, sizeof(ScmSysFlock), mod);
     Scm_Init_fcntlib(mod);

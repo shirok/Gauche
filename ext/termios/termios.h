@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: termios.h,v 1.1 2001-09-07 11:35:30 shirok Exp $
+ *  $Id: termios.h,v 1.2 2002-02-10 05:40:06 shirok Exp $
  */
 
 #ifndef GAUCHE_TERMIOS_H
@@ -26,7 +26,7 @@ typedef struct ScmSysTermiosRec {
     struct termios term;
 } ScmSysTermios;
 
-extern ScmClass Scm_SysTermiosClass;
+SCM_CLASS_DECL(Scm_SysTermiosClass);
 #define SCM_CLASS_SYS_TERMIOS   (&Scm_SysTermiosClass)
 #define SCM_SYS_TERMIOS(obj)    ((ScmSysTermios*)(obj))
 #define SCM_SYS_TERMIOS_P(obj)  (SCM_XTYPEP(obj, SCM_CLASS_SYS_TERMIOS))

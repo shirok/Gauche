@@ -12,10 +12,11 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.c,v 1.14 2002-01-26 10:00:11 shirok Exp $
+ *  $Id: net.c,v 1.15 2002-02-10 05:40:05 shirok Exp $
  */
 
 #include "net.h"
+#include <gauche/extend.h>
 
 /*==================================================================
  * Socket
@@ -271,10 +272,14 @@ extern void Scm_Init_NetAddr(ScmModule *mod);
 extern void Scm_Init_NetDB(ScmModule *mod);
 extern void Scm_Init_netlib(ScmModule *mod);
 
+extern void *Scm_DataHead, *Scm_DataEnd;
+
 void Scm_Init_libnet(void)
 {
-    ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE("gauche.net", TRUE));
+    ScmModule *mod;
 
+    SCM_INIT_EXTENSION(net);
+    mod = SCM_MODULE(SCM_FIND_MODULE("gauche.net", TRUE));
     Scm_InitBuiltinClass(&Scm_SocketClass, "<socket>", NULL,
                          sizeof(ScmSocket), mod);
     Scm_Init_NetAddr(mod);

@@ -3,6 +3,7 @@
  */
 
 #include <gauche.h>
+#include <gauche/extend.h>
 
 static ScmObj example(ScmObj *args, int nargs, void *data)
 {
@@ -11,8 +12,11 @@ static ScmObj example(ScmObj *args, int nargs, void *data)
 
 void Scm_Init_example(void)
 {
-    ScmModule *module = SCM_MODULE(SCM_FIND_MODULE("example", TRUE));
-    ScmObj subr = Scm_MakeSubr(example, NULL, 0, 1, SCM_MAKE_STR("example"));
+    ScmModule *module;
+    ScmObj subr;
+    SCM_INIT_EXTENSION(example);
+    module = SCM_MODULE(SCM_FIND_MODULE("example", TRUE));
+    subr = Scm_MakeSubr(example, NULL, 0, 1, SCM_MAKE_STR("example"));
     SCM_DEFINE(module, "example", subr);
 }
 

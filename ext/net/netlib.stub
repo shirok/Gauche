@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: netlib.stub,v 1.11 2001-09-29 09:27:45 shirok Exp $
+;;  $Id: netlib.stub,v 1.12 2002-02-10 05:40:05 shirok Exp $
 ;;
 
 "#include \"net.h\"
@@ -34,22 +34,22 @@
 (define-symbol inet "sym_inet")
 (define-symbol unknown "sym_unknown")
 
-(define-cmethod sockaddr-name ((addr "SCM_CLASS_SOCKADDR"))
+(define-cmethod sockaddr-name ((addr "Scm_SockAddrClass"))
   "  SCM_RETURN(SCM_MAKE_STR(\"unknown\"));")
 
-(define-cmethod sockaddr-family ((addr "SCM_CLASS_SOCKADDR"))
+(define-cmethod sockaddr-family ((addr "Scm_SockAddrClass"))
   "  SCM_RETURN(sym_unknown);")
 
-(define-cmethod sockaddr-name ((addr "SCM_CLASS_SOCKADDR_UN"))
+(define-cmethod sockaddr-name ((addr "Scm_SockAddrUnClass"))
   "  SCM_RETURN(SCM_MAKE_STR(((ScmSockAddrUn*)addr)->addr.sun_path));")
 
-(define-cmethod sockaddr-family ((addr "SCM_CLASS_SOCKADDR_UN"))
+(define-cmethod sockaddr-family ((addr "Scm_SockAddrUnClass"))
   "  SCM_RETURN(sym_unix);")
 
-(define-cmethod sockaddr-name ((addr "SCM_CLASS_SOCKADDR_IN"))
+(define-cmethod sockaddr-name ((addr "Scm_SockAddrInClass"))
   "  ScmSockAddrIn *a = (ScmSockAddrIn*)addr;
     ScmPort *out = SCM_PORT(Scm_MakeOutputStringPort());
-    uint32_t inaddr = htonl(a->addr.sin_addr.s_addr);
+    unsigned long inaddr = htonl(a->addr.sin_addr.s_addr);
 
     /* NB: avoid using inet_ntoa(), which uses static buffer */
     Scm_Printf(out, \"%d.%d.%d.%d:%d\",
@@ -60,7 +60,7 @@
                ntohs(a->addr.sin_port));
     SCM_RETURN(Scm_GetOutputString(out));")
 
-(define-cmethod sockaddr-family ((addr "SCM_CLASS_SOCKADDR_IN"))
+(define-cmethod sockaddr-family ((addr "Scm_SockAddrInClass"))
   "  SCM_RETURN(sym_inet);")
 
 ;;----------------------------------------------------------

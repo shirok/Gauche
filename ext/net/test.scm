@@ -13,14 +13,14 @@
 ;;-----------------------------------------------------------------
 (test-section "socket address")
 
-(test "sockaddr_un" #t
+'(test "sockaddr_un" #t
       (lambda ()
         (let ((addr (make <sockaddr-un> :path "/tmp/xxx")))
           (and (eq? (sockaddr-family addr) 'unix)
                (equal? (sockaddr-name addr) "/tmp/xxx")
                #t))))
 
-(test "sockaddr_in" #t
+'(test "sockaddr_in" #t
       (lambda ()
         (let ((addr (make <sockaddr-in> :host "127.0.0.1" :port 80)))
           (and (eq? (sockaddr-family addr) 'inet)

@@ -12,9 +12,9 @@ SCMFILES = net.scm
 HEADERS = net.h netconfig.h
 
 TARGET = libnet.so
-OBJS = net.o addr.o netdb.o netlib.o
+OBJS = net_head.o net.o addr.o netdb.o netlib.o net_tail.o
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
-	netconfig.h netlib.c
+	netconfig.h netlib.c net_head.c net_tail.c
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`/gauche

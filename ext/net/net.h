@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.h,v 1.9 2001-08-09 09:43:30 shirok Exp $
+ *  $Id: net.h,v 1.10 2002-02-10 05:40:05 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -51,7 +51,7 @@ typedef struct ScmSockAddrRec {
     struct sockaddr addr;
 } ScmSockAddr;
 
-extern ScmClass Scm_SockAddrClass;
+SCM_CLASS_DECL(Scm_SockAddrClass);
 #define SCM_CLASS_SOCKADDR    (&Scm_SockAddrClass)
 #define SCM_SOCKADDR(obj)     ((ScmSockAddr*)(obj))
 #define SCM_SOCKADDRP(obj)    SCM_XTYPEP(obj, SCM_CLASS_SOCKADDR)
@@ -72,7 +72,7 @@ typedef struct ScmSockAddrUnRec {
     struct sockaddr_un addr;
 } ScmSockAddrUn;
 
-extern ScmClass Scm_SockAddrUnClass;
+SCM_CLASS_DECL(Scm_SockAddrUnClass);
 #define SCM_CLASS_SOCKADDR_UN   (&Scm_SockAddrUnClass)
 
 typedef struct ScmSockAddrInRec {
@@ -81,7 +81,7 @@ typedef struct ScmSockAddrInRec {
     struct sockaddr_in addr;
 } ScmSockAddrIn;
 
-extern ScmClass Scm_SockAddrInClass;
+SCM_CLASS_DECL(Scm_SockAddrInClass);
 #define SCM_CLASS_SOCKADDR_IN   (&Scm_SockAddrInClass)
 
 #define SCM_SOCKADDR_MAXLEN    128
@@ -109,7 +109,7 @@ enum {
     SCM_SOCKET_STATUS_CLOSED
 };
 
-extern ScmClass Scm_SocketClass;
+SCM_CLASS_DECL(Scm_SocketClass);
 #define SCM_CLASS_SOCKET   (&Scm_SocketClass)
 #define SCM_SOCKET(obj)    ((ScmSocket*)obj)
 #define SCM_SOCKETP(obj)   SCM_XTYPEP(obj, SCM_CLASS_SOCKET)
@@ -145,7 +145,7 @@ typedef struct ScmSysHostentRec {
     ScmObj addresses;           /* list of addresses */
 } ScmSysHostent;
 
-extern ScmClass Scm_SysHostentClass;
+SCM_CLASS_DECL(Scm_SysHostentClass);
 #define SCM_CLASS_SYS_HOSTENT  (&Scm_SysHostentClass)
 #define SCM_SYS_HOSTENT        ((ScmHostent*)obj)
 #define SCM_SYS_HOSTENT_P      SCM_XTYPEP(obj, SCM_CLASS_SYS_HOSTENT)
@@ -165,7 +165,7 @@ typedef struct ScmSysProtoentRec {
     ScmObj proto;
 } ScmSysProtoent;
 
-extern ScmClass Scm_SysProtoentClass;
+SCM_CLASS_DECL(Scm_SysProtoentClass);
 #define SCM_CLASS_SYS_PROTOENT  (&Scm_SysProtoentClass)
 #define SCM_SYS_PROTOENT(obj)   ((ScmSysProtoent*)obj)
 #define SCM_SYS_PROTOENT_P(obj) SCM_XTYPEP(obj, SCM_CLASS_SYS_PROTOENT)
@@ -185,7 +185,7 @@ typedef struct ScmSysServentRec {
     ScmObj proto;
 } ScmSysServent;
 
-extern ScmClass Scm_SysServentClass;
+SCM_CLASS_DECL(Scm_SysServentClass);
 #define SCM_CLASS_SYS_SERVENT  (&Scm_SysServentClass)
 #define SCM_SYS_SERVENT(obj)   ((ScmSysServent*)obj)
 #define SCM_SYS_SERVENT_P(obj) SCM_XTYPEP(obj, SCM_CLASS_SYS_SERVENT)

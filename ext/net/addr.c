@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: addr.c,v 1.9 2001-11-07 09:33:00 shirok Exp $
+ *  $Id: addr.c,v 1.10 2002-02-10 05:40:05 shirok Exp $
  */
 
 #include "net.h"
@@ -32,11 +32,15 @@ static ScmObj key_loopback;
 static void sockaddr_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static ScmObj sockaddr_allocate(ScmClass *, ScmObj);
 
-ScmClass *Scm_SockAddrCPL[] = { &Scm_SockAddrClass, &Scm_TopClass, NULL };
+ScmClass *Scm_SockAddrCPL[] = {
+    SCM_CLASS_STATIC_PTR(Scm_SockAddrClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+    NULL
+};
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrClass, sockaddr_print,
                          NULL, NULL, sockaddr_allocate,
-                         SCM_CLASS_DEFAULT_CPL);
+                         NULL);
 
 void sockaddr_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {

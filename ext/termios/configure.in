@@ -1,51 +1,23 @@
 dnl
 dnl configure termios extension
-dnl
-dnl $Id: configure.in,v 1.4 2001-11-09 08:28:40 shirok Exp $
+dnl  process this file with "autoconf -l ../.." to generate 'configure'.
+dnl $Id: configure.in,v 1.5 2002-02-10 05:40:06 shirok Exp $
 AC_INIT(termios.c)
+AC_GAUCHE_INIT_EXT
 
-dnl Determine if we're configuring inside of Gauche main source tree or not.
-if test -f ../../src/gauche.h; then
-  GAUCHE_CONFIG="sh ../../src/gauche-config"
-  GAUCHE_TOP='../../'
-  GAUCHE_INC="-I../../src -I../../gc/include  `$GAUCHE_CONFIG --local-incdir`"
-  GOSH="../../src/gosh -I../../src -I../../lib"
-else
-  GAUCHE_CONFIG=gauche-config
-  GAUCHE_TOP=
-  GAUCHE_INC=`gauche-config -I`
-  GOSH=gosh
-fi
-AC_SUBST(GAUCHE_CONFIG)
-AC_SUBST(GAUCHE_TOP)
-AC_SUBST(GAUCHE_INC)
-AC_SUBST(GOSH)
+# Sets the default value of INSTALL_TYPE macro.
+AC_GAUCHE_INSTALL_TYPE(sys)
 
-dnl A user has a choice to install the module into Gauche system directory
-dnl or site local directory, by setting environment variable INSTALL_TYPE
-dnl to either 'sys' or 'site'.   The variable can be overridden at make time.
-: ${INSTALL_TYPE=sys}  dnl This sets the default.
-AC_SUBST(INSTALL_TYPE)
+# Get compiler parameters which Gauche has been compiled with.
+AC_GAUCHE_CC
+AC_GAUCHE_FLAGS
 
-dnl Get compiler parameters which Gauche has been compiled with.
-CC="`$GAUCHE_CONFIG --cc`"
-AC_SUBST(CC)
-
-CFLAGS="$CFLAGS $GAUCHE_INC `$GAUCHE_CONFIG --so-cflags`"
-AC_SUBST(CFLAGS)
-CPPFLAGS="$GAUCHE_INC"       # some test requires this
-LDFLAGS="$LDFLAGS `$GAUCHE_CONFIG --local-libdir`"
-
-dnl Check for other programs.
+# Check for other programs.
 AC_PROG_INSTALL
 
-dnl Add more test
+# Set LDFLAGS to generate shared library.
+AC_GAUCHE_FIX_LIBS
 
-dnl Set LDFLAGS to generate shared library.
-dnl This has to come after all the tests that requre linking, or those test
-dnl will fail because they can't generate stand-alone executable.
-LDFLAGS="$LDFLAGS `$GAUCHE_CONFIG --so-ldflags`"
-AC_SUBST(LDFLAGS)
-
-dnl Output
+# Output
+AC_GAUCHE_EXT_FIXUP(termios)
 AC_OUTPUT(Makefile)

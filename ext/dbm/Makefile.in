@@ -14,8 +14,14 @@ SCMFILES = @SCMFILES@
 HEADERS = 
 
 TARGET = @ARCHFILES@
-CONFIG_GENERATED = Makefile config.cache config.log config.status dbmconfig.h
+CONFIG_GENERATED = Makefile config.cache config.log config.status dbmconfig.h \
+		   gdbm_head.c gdbm_tail.c ndbm_head.c ndbm_tail.c \
+                   odbm_head.c odbm_tail.c
 GENERATED = gdbm.c ndbm.c odbm.c
+
+GDBM_OBJS = gdbm_head.o gdbm.o gdbm_tail.o
+NDBM_OBJS = ndbm_head.o ndbm.o ndbm_tail.o
+ODBM_OBJS = odbm_head.o odbm.o odbm_tail.o
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
@@ -27,14 +33,14 @@ all : $(TARGET)
 .stub.c :
 	$(GOSH) genstub $<
 
-gdbm.so : gdbm.o
-	$(CC) $(LDFLAGS) gdbm.so gdbm.o @GDBMLIB@ $(LIBS)
+gdbm.so : $(GDBM_OBJS)
+	$(CC) $(LDFLAGS) gdbm.so $(GDBM_OBJS) @GDBMLIB@ $(LIBS)
 
-ndbm.so : ndbm.o
-	$(CC) $(LDFLAGS) ndbm.so ndbm.o @NDBMLIB@ $(LIBS)
+ndbm.so : $(NDBM_OBJS)
+	$(CC) $(LDFLAGS) ndbm.so $(NDBM_OBJS) @NDBMLIB@ $(LIBS)
 
-odbm.so : odbm.o
-	$(CC) $(LDFLAGS) odbm.so odbm.o @ODBMLIB@ $(LIBS)
+odbm.so : $(ODBM_OBJS)
+	$(CC) $(LDFLAGS) odbm.so $(ODBM_OBJS) @ODBMLIB@ $(LIBS)
 
 #bdbm.so : bdbm.o bsddb.o
 #	$(CC) $(LDFLAGS) bdbm.so bdbm.o bsddb.o @BDBMLIB@ $(LIBS)

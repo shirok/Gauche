@@ -12,11 +12,12 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: odbm.stub,v 1.6 2001-11-17 22:45:06 shirok Exp $
+;;  $Id: odbm.stub,v 1.7 2002-02-10 05:40:05 shirok Exp $
 ;;
 
 "
  #include \"dbmconfig.h\"
+ #include <gauche/extend.h>
 
  #if HAVE_DBM_H
  #include <dbm.h>
@@ -31,6 +32,7 @@
 
  void Scm_Init_odbm(void)
  {
+    SCM_INIT_EXTENSION(odbm);
     internal_init(SCM_MODULE(SCM_FIND_MODULE(\"dbm.odbm\", TRUE)));
  }
  #define Scm_Init_odbm  internal_init

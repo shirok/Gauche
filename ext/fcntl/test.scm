@@ -12,6 +12,8 @@
 ;; It is difficult to compose a full test that works on every situation.
 ;; Here I provide tests for some common features.
 
+(test-section "F_GETFL")
+
 (sys-unlink "test.o")
 
 (test "F_GETFL" |O_WRONLY|

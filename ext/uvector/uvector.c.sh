@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.12 2001-12-02 06:07:32 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.13 2002-02-10 05:40:06 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -27,12 +27,20 @@ cat <<EOF
 #include <limits.h>
 #include <string.h>  /* for memcpy() */
 #include <gauche.h>
+#include <gauche/extend.h>
 #include "gauche/uvector.h"
 #include "uvectorP.h"
 
 #ifndef EPSILON
 #define EPSILON  10e-5
 #endif /*EPSILON*/
+
+static ScmClass *sequence_cpl[] = {
+    SCM_CLASS_STATIC_PTR(Scm_SequenceClass),
+    SCM_CLASS_STATIC_PTR(Scm_CollectionClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+    NULL
+};
 EOF
 
 # template ------------------------------------------------------------
@@ -81,7 +89,7 @@ static int compare_${vecttype}(ScmObj x, ScmObj y)
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_${vecttype}Class,
                          print_${vecttype}, compare_${vecttype}, NULL, NULL,
-                         SCM_CLASS_SEQUENCE_CPL);
+                         sequence_cpl);
 
 /*
  * Constructor
@@ -264,11 +272,13 @@ static ScmObj read_uvector(ScmPort *port, const char *tag)
  * Initialization
  */
 extern void Scm_Init_uvlib(ScmModule *);
-extern ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag);
+SCM_EXTERN ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag);
  
 void Scm_Init_libuvector(void)
 {
-    ScmModule *m = SCM_MODULE(SCM_FIND_MODULE("srfi-4", TRUE));
+    ScmModule *m;
+    SCM_INIT_EXTENSION(uvector);
+    m = SCM_MODULE(SCM_FIND_MODULE("srfi-4", TRUE));
     Scm_InitBuiltinClass(&Scm_S8VectorClass,  "<s8vector>",  NULL, 0, m);
     Scm_InitBuiltinClass(&Scm_U8VectorClass,  "<u8vector>",  NULL, 0, m);
     Scm_InitBuiltinClass(&Scm_S16VectorClass, "<s16vector>", NULL, 0, m);
