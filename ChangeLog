@@ -1,5 +1,8 @@
 2003-12-15  Shiro Kawai  <shiro@acm.org>
 
+	* ext/charconv/jconv.c (jconv_open): conversion to/from "none"
+	  should always be allowed, and it should be just pass-through.
+
 	* src/autoloads.scm : added missing #define LIBGAUCHE_BODY --- it
 	  matters on cygwin.
 

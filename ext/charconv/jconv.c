@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: jconv.c,v 1.17 2003-10-23 03:13:29 fuyuki Exp $
+ *  $Id: jconv.c,v 1.18 2003-12-16 09:25:09 shirok Exp $
  */
 
 /* Some iconv() implementations don't support japanese character encodings,
@@ -1364,8 +1364,13 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode)
 
     incode  = conv_name_find(fromCode);
     outcode = conv_name_find(toCode);
-    
-    if (incode < 0 || outcode < 0) {
+
+    if (incode == JCODE_NONE || outcode == JCODE_NONE) {
+        /* conversion to/from none means no conversion */
+        handler = jconv_ident;
+        convproc[0] = convproc[1] = NULL;
+        reset = NULL;
+    } else if (incode < 0 || outcode < 0) {
 #ifdef HAVE_ICONV_H        
         /* try iconv */
         handle = iconv_open(toCode, fromCode);
@@ -1376,7 +1381,7 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode)
 #else /*!HAVE_ICONV_H*/
         return NULL;
 #endif
-    } else if (incode == outcode || incode == JCODE_NONE || outcode == JCODE_NONE) {
+    } else if (incode == outcode) {
         /* pattern (1) */
         handler = jconv_ident;
         convproc[0] = convproc[1] = NULL;
