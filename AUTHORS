@@ -1,0 +1,16 @@
+Shiro Kawai (shiro@acm.org) - maintainer
+
+Contributed from:
+Kimura Fuyuki (fuyuki@hadaly.org) - ext/digest/* etc.
+Alex Shinn (foof@synthcode.com) - lib/gauche/reload.scm etc.
+Makoto Satoh (makotosato2@yahoo.co.jp) - document translation
+
+Patches from:
+John Kilburg
+Hiroshi INAMURA
+ODA Hideo
+Shin-ichi Hirata
+Abe Hiroshi
+MINOURA Makoto
+KIMURA Shigenobu
+Yuuki Takahashi
