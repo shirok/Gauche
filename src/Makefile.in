@@ -57,6 +57,7 @@ TESTFILES = ../test/primsyn.scm \
 	    ../test/dynwind.scm \
 	    ../test/srfi.scm \
 	    ../test/object.scm \
+	    ../test/colseq.scm \
 	    ../test/regexp.scm \
 	    ../test/mb-chars.scm \
 	    ../test/system.scm \
