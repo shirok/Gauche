@@ -1,3 +1,9 @@
+2003-09-28  Shiro Kawai  <shiro@acm.org>
+
+	* ext/mt-random/mt-random.c : fixed a bug that
+	  (random-integer (expt 2 16)) generates a value larger than 2^16.
+	  Patch provided by Alex Shinn.
+
 2003-09-27  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/net.scm : added make-server-sockets and make-sockaddrs

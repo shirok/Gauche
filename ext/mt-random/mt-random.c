@@ -10,7 +10,7 @@
  *     the allocated memory for random number generator object.
  *   - changed the names of the functions
  *   - added stuff to make it as a Gauche extension module.
- * $Id: mt-random.c,v 1.9 2002-05-27 22:57:56 shirok Exp $
+ * $Id: mt-random.c,v 1.10 2003-09-28 12:52:01 shirok Exp $
  *
  * The original copyright notice follows.
  */
@@ -197,13 +197,13 @@ static inline int xlog2(unsigned long n)
 
     if (n < m) {
         do {
-            m >> 1;
+            m >>= 1;
             e--;
             if (n == m) return e;
         } while (e >= 0 && n < m);
     } else if (n > m) {
         do {
-            m << 1;
+            m <<= 1;
             e++;
             if (n == m) return e;
         } while (e < MAX_BIT && n > m);
@@ -225,7 +225,7 @@ static ScmObj genrand_int_small(ScmMersenneTwister *mt, unsigned long n)
         /* optimize for 2^e case */
         r = Scm_MTGenrandU32(mt);
         if (e == 32) return Scm_MakeIntegerFromUI(r);
-        else return Scm_MakeIntegerFromUI(r >> (31-e));
+        else return Scm_MakeIntegerFromUI(r >> (32-e));
     } else {
         double q = floor((double)0xffffffff / (double)n);
         double qn = q * n;
