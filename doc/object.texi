@@ -1144,7 +1144,8 @@ evaluated when @code{define-class} is evaluated.
 Like @code{init-value}, but the value given is wrapped in a thunk,
 and evaluated each time when the value is required.
 If both @code{init-value} and @code{init-form} are given, @code{init-form}
-is ignored.
+is ignored.   Actually, @code{:init-form @var{expr}} is converted
+to @code{:init-thunk (lambda () @var{expr})} by @code{define-class} macro.
 
 @item :initform
 A synonym of @code{init-form}.  This is kept for compatibility to
@@ -1565,7 +1566,7 @@ class redefinition protocol at a time.
 
 If a thread tries to redefine a class while another thread is in
 the redefinition protocol, the thread is blocked, even if
-it is redefining a different class with the one that are
+it is redefining a class different from the one that are
 being redefined; because redefinition affects all the
 subclasses, and all the methods and generic functions that
 are related to the class and subclasses, it is not trivial
@@ -1811,7 +1812,7 @@ newly created instance.
 @end deffn
 
 Typically you specialize @code{initialize} method for
-your class customize how the instance is initialized.
+your class to customize how the instance is initialized.
 
 It is not common to specialize @code{allocate-instance} method.
 However, knowing that how @code{make} works, you can specialize
