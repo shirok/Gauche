@@ -76,6 +76,11 @@
             (nest3 ((a b c d e) (f g h i)) ((j) (k l m n) (o p)) () ((q r))))
 
 
+(define-syntax hygiene (syntax-rules ()
+                         ((_ ?a) (+ ?a 1))))
+(test "hygiene" 3
+      (lambda () (let ((+ *)) (hygiene 2))))
+
 ;;----------------------------------------------------------------------
 ;; cond, taken from R5RS section 7.3
 (define-syntax %cond
@@ -216,5 +221,90 @@
                       ((>= x 10) y)
                       (set! y (* y 2)))))
 
+;;----------------------------------------------------------------------
+;; local syntactic bindings.
 
-(newline)
+(test "let-syntax"                      ; R5RS 4.3.1
+      'now
+      (lambda ()
+        (let-syntax ((%when (syntax-rules ()
+                             ((_ test stmt1 stmt2 ...)
+                              (if test (begin stmt1 stmt2 ...))))))
+          (let ((if #t))
+            (%when if (set! if 'now))
+            if))))
+
+(test "let-syntax"                      ; R5RS 4.3.1
+      'outer
+      (lambda ()
+        (let ((x 'outer))
+          (let-syntax ((m (syntax-rules () ((m) x))))
+            (let ((x 'inner))
+              (m))))))
+
+(test "let-syntax (multi)"
+      81
+      (lambda ()
+        (let ((+ *))
+          (let-syntax ((a (syntax-rules () ((_ ?x) (+ ?x ?x))))
+                       (b (syntax-rules () ((_ ?x) (* ?x ?x)))))
+            (let ((* -)
+                  (+ /))
+              (a (b 3)))))))
+
+(test "let-syntax (nest)"
+      19
+      (lambda ()
+        (let-syntax ((a (syntax-rules () ((_ ?x ...) (+ ?x ...)))))
+          (let-syntax ((a (syntax-rules ()
+                            ((_ ?x ?y ...) (a ?y ...))
+                            ((_) 2))))
+            (a 8 9 10)))))
+
+(test "let-syntax (nest)"
+      '(-6 11)
+      (lambda ()
+        (let-syntax ((a (syntax-rules () ((_ ?x) (+ ?x 8))))
+                     (b (syntax-rules () ((_ ?x) (- ?x 8)))))
+          (let-syntax ((a (syntax-rules () ((_ ?x) (b 2))))
+                       (b (syntax-rules () ((_ ?x) (a 3)))))
+            (list (a 7) (b 8))))))
+
+(test "letrec-syntax"                   ; R5RS 4.3.1
+      7
+      (lambda ()
+        (letrec-syntax ((%or (syntax-rules ()
+                               ((_) #f)
+                               ((_ e) e)
+                               ((_ e f ...)
+                                (let ((temp e))
+                                  (if temp temp (%or f ...)))))))
+           (let ((x #f)
+                 (y 7)
+                 (temp 8)
+                 (let odd?)
+                 (if even?))
+             (%or x (let temp) (if y) y)))))
+
+(test "letrec-syntax (nest)"
+      2
+      (lambda ()
+        (letrec-syntax ((a (syntax-rules () ((_ ?x ...) (+ ?x ...)))))
+          (letrec-syntax ((a (syntax-rules ()
+                               ((_ ?x ?y ...) (a ?y ...))
+                               ((_) 2))))
+            (a 8 9 10)))))
+      
+(test "letrec-syntax (nest)"
+      '(9 11)
+      (lambda ()
+        (letrec-syntax ((a (syntax-rules () ((_ ?x) (+ ?x 8))))
+                        (b (syntax-rules () ((_ ?x) (- ?x 8)))))
+          (letrec-syntax ((a (syntax-rules ()
+                               ((_ ?x)    (b ?x 2))
+                               ((_ ?x ?y) (+ ?x ?y))))
+                          (b (syntax-rules ()
+                               ((_ ?x)    (a ?x 3))
+                               ((_ ?x ?y) (+ ?x ?y)))))
+            (list (a 7) (b 8))))))
+
