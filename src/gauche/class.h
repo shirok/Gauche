@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.h,v 1.21 2001-12-01 21:36:25 shirok Exp $
+ *  $Id: class.h,v 1.22 2002-01-02 21:16:14 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -69,6 +69,10 @@ struct ScmClassStaticSlotSpecRec {
              } }
 
 #define SCM_CLASS_SLOT_SPEC_END()   { NULL }
+
+/* cliche in allocate method */
+#define SCM_ALLOCATE(klassname, klass) \
+    SCM_NEW2(klassname*, sizeof(klassname) + sizeof(ScmObj)*((klass)->numInstanceSlots))
 
 /* some internal methods */
     

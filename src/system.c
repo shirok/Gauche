@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.28 2001-11-07 09:33:00 shirok Exp $
+ *  $Id: system.c,v 1.29 2002-01-02 21:16:12 shirok Exp $
  */
 
 #include <stdio.h>
@@ -253,7 +253,7 @@ ScmObj Scm_DirName(ScmString *filename)
 
 static ScmObj stat_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmSysStat *s = SCM_NEW(ScmSysStat);
+    ScmSysStat *s = SCM_ALLOCATE(ScmSysStat, klass);
     SCM_SET_CLASS(s, SCM_CLASS_SYS_STAT);
     return SCM_OBJ(s);
 }
@@ -299,7 +299,7 @@ time_t Scm_GetSysTime(ScmObj val)
 
 static ScmObj tm_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmSysTm *st = SCM_NEW(ScmSysTm);
+    ScmSysTm *st = SCM_ALLOCATE(ScmSysTm, klass);
     SCM_SET_CLASS(st, SCM_CLASS_SYS_TM);
     return SCM_OBJ(st);
 }
@@ -567,7 +567,7 @@ void Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap)
 #ifdef HAVE_SELECT
 static ScmObj fdset_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmSysFdset *set = SCM_NEW(ScmSysFdset);
+    ScmSysFdset *set = SCM_ALLOCATE(ScmSysFdset, klass);
     SCM_SET_CLASS(set, SCM_CLASS_SYS_FDSET);
     set->maxfd = -1;
     FD_ZERO(&set->fdset);

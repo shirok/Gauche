@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.25 2002-01-02 06:24:45 shirok Exp $
+ *  $Id: error.c,v 1.26 2002-01-02 21:16:12 shirok Exp $
  */
 
 #include <errno.h>
@@ -89,10 +89,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_ReaderErrorClass,
 
 static ScmObj error_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmError *e;
-    int nslots = klass->numInstanceSlots;
-    e = SCM_NEW2(ScmError*,
-                 sizeof(ScmError) + sizeof(ScmObj)*nslots);
+    ScmError *e = SCM_ALLOCATE(ScmError, klass);
     SCM_SET_CLASS(e, klass);
     e->message = SCM_FALSE;
     return SCM_OBJ(e);
@@ -108,10 +105,7 @@ ScmObj Scm_MakeError(ScmObj message)
 
 static ScmObj sys_error_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmSystemError *e;
-    int nslots = klass->numInstanceSlots;
-    e = SCM_NEW2(ScmSystemError*,
-                 sizeof(ScmSystemError) + sizeof(ScmObj)*nslots);
+    ScmSystemError *e = SCM_ALLOCATE(ScmSystemError, klass);
     SCM_SET_CLASS(e, klass);
     e->common.message = SCM_FALSE;
     e->error_number = 0;
@@ -129,10 +123,7 @@ ScmObj Scm_MakeSystemError(ScmObj message, int en)
 
 static ScmObj dom_error_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmDomainError *e;
-    int nslots = klass->numInstanceSlots;
-    e = SCM_NEW2(ScmDomainError*,
-                 sizeof(ScmDomainError) + sizeof(ScmObj)*nslots);
+    ScmDomainError *e = SCM_ALLOCATE(ScmDomainError, klass);
     SCM_SET_CLASS(e, klass);
     e->common.message = SCM_FALSE;
     e->argument = NULL;
@@ -142,10 +133,7 @@ static ScmObj dom_error_allocate(ScmClass *klass, ScmObj initargs)
 
 static ScmObj read_error_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmReaderError *e;
-    int nslots = klass->numInstanceSlots;
-    e = SCM_NEW2(ScmReaderError*,
-                 sizeof(ScmReaderError) + sizeof(ScmObj)*nslots);
+    ScmReaderError *e = SCM_ALLOCATE(ScmReaderError, klass);
     SCM_SET_CLASS(e, klass);
     e->common.message = SCM_FALSE;
     e->port = NULL;

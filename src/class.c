@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.67 2001-12-23 01:36:38 shirok Exp $
+ *  $Id: class.c,v 1.68 2002-01-02 21:16:12 shirok Exp $
  */
 
 #include "gauche.h"
@@ -265,10 +265,7 @@ static ScmObj class_array_to_names(ScmClass **array, int len)
 /* Allocate class structure.  klass is a metaclass. */
 static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmClass *instance;
-    int nslots = klass->numInstanceSlots;
-    instance = SCM_NEW2(ScmClass*,
-                        sizeof(ScmClass) + sizeof(ScmObj)*nslots);
+    ScmClass *instance = SCM_ALLOCATE(ScmClass, klass);
     SCM_SET_CLASS(instance, klass);
     
     instance->allocate = NULL;  /* will be set when CPL is set */
@@ -1096,10 +1093,7 @@ static SCM_DEFINE_METHOD(object_initialize_rec,
 
 static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmGeneric *instance;
-    int nslots = klass->numInstanceSlots;
-    instance = SCM_NEW2(ScmGeneric*,
-                        sizeof(ScmGeneric) + sizeof(ScmObj)*nslots);
+    ScmGeneric *instance = SCM_ALLOCATE(ScmGeneric, klass);
     SCM_SET_CLASS(instance, klass);
     SCM_PROCEDURE_INIT(instance, 0, 0, SCM_PROC_GENERIC, SCM_FALSE);
     instance->methods = SCM_NIL;
@@ -1342,10 +1336,7 @@ ScmObj Scm_SortMethods(ScmObj methods, ScmObj *args, int nargs)
 
 static ScmObj method_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmMethod *instance;
-    int nslots = klass->numInstanceSlots;
-    instance = SCM_NEW2(ScmMethod*,
-                        sizeof(ScmMethod) + sizeof(ScmObj)*nslots);
+    ScmMethod *instance = SCM_ALLOCATE(ScmMethod, klass);
     SCM_SET_CLASS(instance, klass);
     SCM_PROCEDURE_INIT(instance, 0, 0, SCM_PROC_METHOD, SCM_FALSE);
     instance->generic = NULL;
