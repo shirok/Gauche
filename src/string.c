@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.36 2001-05-19 11:03:56 shirok Exp $
+ *  $Id: string.c,v 1.37 2001-05-19 20:54:03 shirok Exp $
  */
 
 #include <stdio.h>
@@ -323,9 +323,8 @@ int Scm_StringCiCmp(ScmString *x, ScmString *y)
     int sizx, lenx, sizy, leny;
     const char *px, *py;
     
-    if ((SCM_STRING_INCOMPLETE_P(x) && !SCM_STRING_INCOMPLETE_P(y))
-        || (!SCM_STRING_INCOMPLETE_P(x) && SCM_STRING_INCOMPLETE_P(y))){
-        Scm_Error("cannot compare incomplete vs complete string: %S, %S",
+    if (SCM_STRING_INCOMPLETE_P(x) || SCM_STRING_INCOMPLETE_P(y)) {
+        Scm_Error("cannot compare incomplete strings in case-insensitive way: %S, %S",
                   SCM_OBJ(x), SCM_OBJ(y));
     }
     sizx = SCM_STRING_SIZE(x); lenx = SCM_STRING_SIZE(x);
