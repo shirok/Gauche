@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.98 2004-02-02 10:43:37 shirok Exp $
+ *  $Id: port.c,v 1.99 2004-02-17 13:22:58 shirok Exp $
  */
 
 #include <unistd.h>
@@ -855,7 +855,7 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
       NAME  - used for the name of the port.
       DIRECTION - either SCM_PORT_INPUT or SCM_PORT_OUTPUT
       FD - the opened file descriptor.
-      BUFFERED - if TRUE, the port will be buffered (using fdopen).
+      BUFMODE - buffering mode (ScmPortBufferMode)
       OWNERP - if TRUE, fd will be closed when this port is closed.
  */
 ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
