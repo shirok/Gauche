@@ -1,7 +1,7 @@
 ;;;
 ;;; srfi-27.scm - Sources of Random Bits
 ;;;
-;;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2002 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: srfi-27.scm,v 1.1 2002-06-05 22:38:02 shirok Exp $
+;;;  $Id: srfi-27.scm,v 1.2 2002-06-16 00:26:44 shirok Exp $
 ;;;
 
 ;; Implements SRFI-27 interface on top of math.mt-random module.
