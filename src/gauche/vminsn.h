@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.23 2001-06-24 23:49:20 shirok Exp $
+ *  $Id: vminsn.h,v 1.24 2001-07-02 08:49:51 shirok Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -42,17 +42,23 @@ DEFINSN(SCM_VM_POP, "POP", 0)
  */
 DEFINSN(SCM_VM_DUP, "DUP", 0)
 
-/* PRE-CALL <preparation>
+/* PRE-CALL(nargs)
  *
- *  Prepair for a normal call.
+ *  Prepare for a normal call.
  */
 DEFINSN(SCM_VM_PRE_CALL, "PRE-CALL", 1)
 
-/* PRE-TAIL
+/* PRE-TAIL(nargs)
  *
- *  Prepair for a tail call.
+ *  Prepare for a tail call.
  */
-DEFINSN(SCM_VM_PRE_TAIL, "PRE-TAIL", 0)
+DEFINSN(SCM_VM_PRE_TAIL, "PRE-TAIL", 1)
+
+/* PRE-INLINE(nargs)
+ *
+ *  Prepare for an inline call
+ */
+DEFINSN(SCM_VM_PRE_INLINE, "PRE-INLINE", 1)
 
 /* CALL(NARGS)
  *

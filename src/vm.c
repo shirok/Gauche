@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.87 2001-06-30 20:43:29 shirok Exp $
+ *  $Id: vm.c,v 1.88 2001-07-02 08:49:50 shirok Exp $
  */
 
 #include "gauche.h"
@@ -35,6 +35,8 @@
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_VMClass, NULL);
 
 static ScmVM *theVM;    /* this must be thread specific in MT version */
+
+static void save_cont(ScmVM*);
 
 /* base can be NULL iff called from Scm_Init. */
 
@@ -183,8 +185,14 @@ ScmVM *Scm_SetVM(ScmVM *vm)
     } while (0)
 
 /* Check if stack has room at least size bytes. */
-#define CHECK_STACK(size) \
-   if (sp >= vm->stackEnd - size) Scm_Panic("vm stack overflow");
+#define CHECK_STACK(size)                       \
+    do {                                        \
+        if (sp >= vm->stackEnd - size) {        \
+            SAVE_REGS();                        \
+            save_cont(vm);                      \
+            RESTORE_REGS();                     \
+        }                                       \
+    } while (0)
 
 /* Push a continuation frame.  next_pc is the PC from where execution
    will be resumed.  */
@@ -434,6 +442,9 @@ static void run_loop()
             }
             CASE(SCM_VM_PRE_TAIL) {
                 PUSH_ENV_HDR();
+                continue;
+            }
+            CASE(SCM_VM_PRE_INLINE) {
                 continue;
             }
             CASE(SCM_VM_TAIL_CALL) ; /* FALLTHROUGH */
@@ -1329,7 +1340,7 @@ ScmObj Scm_Apply(ScmObj proc, ScmObj args)
     }
     SCM_APPEND1(code, tail, proc);
     SCM_APPEND1(code, tail, SCM_VM_INSN1(SCM_VM_CALL, nargs));
-    return user_eval_inner(SCM_LIST2(SCM_VM_INSN(SCM_VM_PRE_CALL),code));
+    return user_eval_inner(SCM_LIST2(SCM_VM_INSN1(SCM_VM_PRE_CALL, nargs),code));
 }
 
 /* Arrange C function AFTER to be called after the procedure returns.
@@ -1606,6 +1617,40 @@ static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
     return throw_cont_body(current, handlers, cd, args);
 }
 
+/* Copy the continuation to the heap.   I'd like to try non-copying
+   method later, but for now, I copy the continuation here.
+   Note that the naive copy of the stack won't work, since
+   - Environment frame in it may be moved later, and corresponding
+     pointers must be adjusted, and
+   - The stack frame contains a pointer value to other frames,
+     which will be invalid if the continuation is resumed by
+     the different thread.
+   Copying frame-by-frame will be terribly slow, but I don't know
+   how to improve it. */
+static void save_cont(ScmVM *vm)
+{
+    ScmContFrame *c = vm->cont, *prev = NULL;
+    for (; IN_STACK_P((ScmObj*)c); c = c->prev) {
+        ScmEnvFrame *e = save_env(vm, c->env, c);
+        int size = (CONT_FRAME_SIZE + c->size) * sizeof(ScmObj);
+        ScmContFrame *csave = SCM_NEW2(ScmContFrame*, size);
+
+        if (c->env == vm->env) vm->env = e;
+        if (c == vm->cont) vm->cont = csave;
+        if (c->argp) {
+            memcpy(csave, c, CONT_FRAME_SIZE * sizeof(ScmObj));
+            memcpy((void**)csave + CONT_FRAME_SIZE,
+                   c->argp, c->size * sizeof(ScmObj));
+            csave->argp =(ScmEnvFrame*)((void **)csave + CONT_FRAME_SIZE);
+        } else {
+            /* C continuation */
+            memcpy(csave, c, (CONT_FRAME_SIZE + c->size) * sizeof(ScmObj));
+        }
+        if (prev) prev->prev = csave;
+        prev = csave;
+    }
+}
+
 ScmObj Scm_VMCallCC(ScmObj proc)
 {
     ScmObj contproc;
@@ -1616,39 +1661,7 @@ ScmObj Scm_VMCallCC(ScmObj proc)
         Scm_Error("Procedure taking one argument is required, but got: %S",
                   proc);
 
-    /* Copy the continuation to the heap.   I'd like to try non-copying
-       method later, but for now, I copy the continuation here.
-       Note that the naive copy of the stack won't work, since
-        - Environment frame in it may be moved later, and corresponding
-          pointers must be adjusted, and
-        - The stack frame contains a pointer value to other frames,
-          which will be invalid if the continuation is resumed by
-          the different thread.
-       Copying frame-by-frame will be terribly slow.  I'd like to fix
-       it asap. */
-    {
-        ScmContFrame *c = vm->cont, *prev = NULL;
-        for (; IN_STACK_P((ScmObj*)c); c = c->prev) {
-            ScmEnvFrame *e = save_env(vm, c->env, c);
-            int size = (CONT_FRAME_SIZE + c->size) * sizeof(ScmObj);
-            ScmContFrame *csave = SCM_NEW2(ScmContFrame*, size);
-
-            if (c->env == vm->env) vm->env = e;
-            if (c == vm->cont) vm->cont = csave;
-            if (c->argp) {
-                memcpy(csave, c, CONT_FRAME_SIZE * sizeof(ScmObj));
-                memcpy((void**)csave + CONT_FRAME_SIZE,
-                       c->argp, c->size * sizeof(ScmObj));
-                csave->argp =(ScmEnvFrame*)((void **)csave + CONT_FRAME_SIZE);
-            } else {
-                /* C continuation */
-                memcpy(csave, c,
-                       (CONT_FRAME_SIZE + c->size) * sizeof(ScmObj));
-            }
-            if (prev) prev->prev = csave;
-            prev = csave;
-        }
-    }
+    save_cont(vm);
     data = SCM_NEW(struct cont_data);
     data->cont = vm->cont;
     data->handlers = vm->handlers;

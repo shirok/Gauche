@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.51 2001-06-17 22:05:20 shirok Exp $
+ *  $Id: compile.c,v 1.52 2001-07-02 08:49:50 shirok Exp $
  */
 
 #include "gauche.h"
@@ -425,9 +425,9 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                 ADDCODE1(Scm_MakeSourceInfo(form, NULL));
 
             if (ctx == SCM_COMPILE_TAIL) {
-                code = Scm_Cons(SCM_VM_INSN(SCM_VM_PRE_TAIL), code);
+                code = Scm_Cons(SCM_VM_INSN1(SCM_VM_PRE_TAIL, nargs), code);
             } else {
-                code = SCM_LIST2(SCM_VM_INSN(SCM_VM_PRE_CALL), code);
+                code = SCM_LIST2(SCM_VM_INSN1(SCM_VM_PRE_CALL, nargs), code);
             }
             return code;
         }
@@ -620,9 +620,9 @@ static ScmObj compile_set(ScmObj form,
             ADDCODE1(Scm_MakeSourceInfo(form, NULL));
 
         if (ctx == SCM_COMPILE_TAIL) {
-            code = Scm_Cons(SCM_VM_INSN(SCM_VM_PRE_TAIL), code);
+            code = Scm_Cons(SCM_VM_INSN1(SCM_VM_PRE_TAIL, nargs), code);
         } else {
-            code = SCM_LIST2(SCM_VM_INSN(SCM_VM_PRE_CALL), code);
+            code = SCM_LIST2(SCM_VM_INSN1(SCM_VM_PRE_CALL, nargs), code);
         }
         return code;
     }
@@ -1044,10 +1044,10 @@ static ScmObj compile_cond_int(ScmObj form, ScmObj clauses, ScmObj merger,
         if (ctx == SCM_COMPILE_TAIL) {
             SCM_APPEND1(xcode, xtail, SCM_VM_INSN1(SCM_VM_TAIL_CALL, 1));
             SCM_APPEND(xcode, xtail, merger);
-            ADDCODE(Scm_Cons(SCM_VM_INSN(SCM_VM_PRE_TAIL), xcode));
+            ADDCODE(Scm_Cons(SCM_VM_INSN1(SCM_VM_PRE_TAIL, 1), xcode));
         } else {
             SCM_APPEND1(xcode, xtail, SCM_VM_INSN1(SCM_VM_CALL, 1));
-            ADDCODE1(SCM_VM_INSN(SCM_VM_PRE_CALL));
+            ADDCODE1(SCM_VM_INSN1(SCM_VM_PRE_CALL, 1));
             ADDCODE1(xcode);
             ADDCODE(merger);
         }
@@ -1289,14 +1289,14 @@ static ScmObj compile_do_body(ScmObj body, ScmObj env, int ctx)
     varcnt = 0;
     /* Compile updates.  We need to calculate all the updates first,
        discard current env, allocates new env then put the updates. */
-    SCM_APPEND1(bodycode, bodytail, SCM_VM_INSN(SCM_VM_PRE_CALL));
-    
     SCM_FOR_EACH(updtsp, updts) {
         SCM_APPEND(updcode, updtail,
                    compile_int(SCM_CAR(updtsp), env, SCM_COMPILE_NORMAL));
         SCM_APPEND1(updcode, updtail, SCM_VM_INSN(SCM_VM_PUSH));
         varcnt++;
     }
+
+    SCM_APPEND1(bodycode, bodytail, SCM_VM_INSN1(SCM_VM_PRE_CALL, varcnt));
     SCM_APPEND1(updcode, updtail, SCM_VM_INSN1(SCM_VM_TAILBIND, varcnt));
     SCM_APPEND1(updcode, updtail, SCM_NIL); /* dbg info */
     SCM_APPEND1(bodycode, bodytail, updcode);
