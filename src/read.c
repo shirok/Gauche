@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.16 2001-05-19 11:04:56 shirok Exp $
+ *  $Id: read.c,v 1.17 2001-05-19 11:35:47 shirok Exp $
  */
 
 #include <stdio.h>
@@ -26,7 +26,7 @@
 
 static ScmObj read_internal(ScmPort *port);
 static ScmObj read_list(ScmPort *port, ScmChar closer);
-static ScmObj read_string(ScmPort *port);
+static ScmObj read_string(ScmPort *port, int incompletep);
 static ScmObj read_quoted(ScmPort *port, ScmObj quoter);
 static ScmObj read_char(ScmPort *port);
 static ScmObj read_word(ScmPort *port, ScmChar initial);
@@ -122,7 +122,7 @@ ScmObj read_internal(ScmPort *port)
     case '(':
         return read_list(port, ')');
     case '"':
-        return read_string(port);
+        return read_string(port, FALSE);
     case '#':
         {
             int c1 = 0;
@@ -159,6 +159,9 @@ ScmObj read_internal(ScmPort *port)
             case '[':
                 /* #[...] literal charset */
                 return read_charset(port);
+            case '"':
+                /* #"..." explicit incomplete string */
+                return read_string(port, TRUE);
             default:
                 read_error(port, "unsupported #-syntax: #%C", c1);
             }
@@ -267,35 +270,78 @@ static ScmObj read_quoted(ScmPort *port, ScmObj quoter)
  * String
  */
 
-static ScmObj read_string(ScmPort *port)
+static int xdigit2int(int xdigit)
+{
+    /* assuming isxdigit(xdigit) is true */
+    if (xdigit >= 'a') return ((xdigit-'a')+10)&0x0f;
+    if (xdigit >= 'A') return ((xdigit-'A')+10)&0x0f;
+    return (xdigit-'0')&0x0f;
+}
+
+static ScmObj read_string(ScmPort *port, int incompletep)
 {
     int c = 0;
     ScmDString ds;
-
     Scm_DStringInit(&ds);
 
+#define FETCH(var)                              \
+    if (incompletep) { SCM_GETB(var, port); }   \
+    else             { SCM_GETC(var, port); }
+#define ACCUMULATE(var)                                 \
+    if (incompletep) { SCM_DSTRING_PUTB(&ds, var); }    \
+    else             { SCM_DSTRING_PUTC(&ds, var); }
+
     for (;;) {
-        SCM_GETC(c, port);
+        FETCH(c);
         switch (c) {
           case EOF: goto eof_exit;
-          case '"': return Scm_StringMakeImmutable(SCM_STRING(Scm_DStringGet(&ds)));
+          case '"': {
+              ScmString *s = SCM_STRING(Scm_DStringGet(&ds));
+              if (incompletep) {
+                  s = SCM_STRING(Scm_StringCompleteToIncompleteX(s));
+              }
+              return Scm_StringMakeImmutable(s);
+          }
           case '\\': {
             int c1 = 0;
             SCM_GETC(c1, port);
             switch (c1) {
               case EOF: goto eof_exit;
-              case 'n': SCM_DSTRING_PUTC(&ds, '\n'); break;
-              case 'r': SCM_DSTRING_PUTC(&ds, '\r'); break;
-              case 'f': SCM_DSTRING_PUTC(&ds, '\f'); break;
-              case 't': SCM_DSTRING_PUTC(&ds, '\t'); break;
-              case '\\': SCM_DSTRING_PUTC(&ds, '\\'); break;
+              case 'n': ACCUMULATE('\n'); break;
+              case 'r': ACCUMULATE('\r'); break;
+              case 'f': ACCUMULATE('\f'); break;
+              case 't': ACCUMULATE('\t'); break;
+              case '\\': ACCUMULATE('\\'); break;
+              case '0': ACCUMULATE(0); break;
+              case 'x': {
+                  int c2, c3;
+                  SCM_GETC(c2, port);
+                  if (c2 == EOF) goto eof_exit;
+                  if (SCM_CHAR_ASCII_P(c2) && isxdigit(c2)) {
+                      SCM_GETC(c3, port);
+                      if (c3 == EOF) goto eof_exit;
+                      if (SCM_CHAR_ASCII_P(c2) && isxdigit(c3)) {
+                          int cc = (xdigit2int(c2)<<4)+xdigit2int(c3);
+                          ACCUMULATE(cc);
+                      } else {
+                          ACCUMULATE('\\');
+                          ACCUMULATE('x');
+                          ACCUMULATE(c2);
+                          ACCUMULATE(c3);
+                      }
+                  } else {
+                      ACCUMULATE('\\');
+                      ACCUMULATE('x');
+                      ACCUMULATE(c2);
+                  }
+                  break;
+              }
               default:
-                /* TODO: recognize octal/hex char code */
-                SCM_DSTRING_PUTC(&ds, c1); break;
+                ACCUMULATE(c1); break;
             }
             break;
           }
-          default: SCM_DSTRING_PUTC(&ds, c); break;
+          default: ACCUMULATE(c); break;
         }
     }
  eof_exit:
