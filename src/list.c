@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.9 2001-02-21 13:31:13 shiro Exp $
+ *  $Id: list.c,v 1.10 2001-02-22 19:46:37 shiro Exp $
  */
 
 #include "gauche.h"
@@ -43,6 +43,22 @@ ScmObj Scm_Cons(ScmObj car, ScmObj cdr)
     SCM_SET_CAR(z, car);
     SCM_SET_CDR(z, cdr);
     z->attributes = SCM_NIL;
+    return SCM_OBJ(z);
+}
+
+ScmObj Scm_Acons(ScmObj caar, ScmObj cdar, ScmObj cdr)
+{
+    ScmPair *y, *z;
+    SCM_MALLOC_WORDS(y, sizeof(ScmPair)/sizeof(GC_word), ScmPair*);
+    SCM_MALLOC_WORDS(z, sizeof(ScmPair)/sizeof(GC_word), ScmPair*);
+    SCM_SET_CLASS(y, SCM_CLASS_PAIR);
+    y->attributes = SCM_NIL;
+    SCM_SET_CLASS(z, SCM_CLASS_PAIR);
+    z->attributes = SCM_NIL;
+    SCM_SET_CAR(y, caar);
+    SCM_SET_CDR(y, cdar);
+    SCM_SET_CAR(z, SCM_OBJ(y));
+    SCM_SET_CDR(z, cdr);
     return SCM_OBJ(z);
 }
 

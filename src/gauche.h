@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.50 2001-02-22 06:48:04 shiro Exp $
+ *  $Id: gauche.h,v 1.51 2001-02-22 19:46:51 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -391,6 +391,7 @@ extern ScmClass Scm_NullClass;
 #define SCM_LIST5(a,b,c,d,e)     Scm_Cons(a, SCM_LIST4(b, c, d, e))
 
 extern ScmObj Scm_Cons(ScmObj car, ScmObj cdr);
+extern ScmObj Scm_Acons(ScmObj caar, ScmObj cdar, ScmObj cdr);
 extern ScmObj Scm_List(ScmObj elt, ...);
 extern ScmObj Scm_Conses(ScmObj elt, ...);
 extern ScmObj Scm_VaList(va_list elts);
