@@ -2,7 +2,7 @@
  *
  * Configuration parmateres
  *  
- * $Id: config.h.in,v 1.14 2001-06-14 09:06:32 shirok Exp $
+ * $Id: config.h.in,v 1.15 2001-06-26 09:44:09 shirok Exp $
  */
 
 #undef STDC_HEADERS
@@ -42,6 +42,12 @@
 
 /* Define if the system has rint */
 #undef HAVE_RINT
+
+/* Define if the system has those fns */
+#undef HAVE_RANDOM
+#undef HAVE_SRANDOM
+#undef HAVE_LRAND48
+#undef HAVE_SRAND48
 
 /* Define if the system has symlink */
 #undef HAVE_SYMLINK
