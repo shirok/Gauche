@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: extract,v 1.8 2003-02-07 02:42:38 shirok Exp $
+;;;  $Id: extract,v 1.9 2003-02-11 08:50:32 shirok Exp $
 ;;;
 
 (use gauche.regexp)
@@ -28,7 +28,8 @@
 
 (define *outfile* #f)
 (define *lang* 'en)
-(define *version* (gauche-version))
+(define *version*
+  (string-trim-both (call-with-input-file "../VERSION" port->string)))
 (define *node-table* '())
 (define *header-table* '())
 
