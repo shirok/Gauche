@@ -1,3 +1,19 @@
+2001-11-07  Shiro Kawai  <shiro@acm.org>
+
+	* lib/slib.scm.in : fixed a bug that made building a new catalog
+	  fail.  Thanks to Hiroshi INAMURA for the patch.
+
+2001-11-06  Shiro Kawai  <shiro@acm.org>
+
+	* various files : fixed a bug that didn't instantiate metaobjects
+	  defined in Scheme sublassing a C-defined class.  It changed
+	  the interface of Scm_InitBuiltinClass, and several files were
+	  updated accordingly.
+
+2001-11-05  Shiro Kawai  <shiro@acm.org>
+
+	* ext/fcntl : added some test methods.
+
 2001-11-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c : guaranteed to return #t on successful load
