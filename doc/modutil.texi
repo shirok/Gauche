@@ -1822,7 +1822,11 @@ it to @var{dst}, then removes @var{src}.
 
 @deftp {Module} math.const
 @mdindex math.const
+@c EN
 This module defines several commonly-used mathematic constants.
+@c JP
+いくつかの一般的に用いられる数学定数を定義しています。
+@c COMMON
 @end deftp
 
 @defvr {Constant} pi
@@ -2536,14 +2540,22 @@ without allocating (potentially very big) string buffer.
 
 @deftp {Module} rfc.md5
 @mdindex rfc.md5
+@c EN
 This module implements MD5 message digest algorithm, defined in
 RFC 1321 (@ref{rfc1321, [RFC1321], RFC1321}).
 The module extends util.digest 
 (@xref{util.digest - Message digester framework}).
+@c JP
+このモジュールは、RFC 1321(@ref{rfc1321, [RFC1321], RFC1321}参照)で
+定義されている、MD5メッセージダイジェストアルゴリズムを実装しています。
+このモジュールは、util.digest (@ref{util.digest - Message digester framework}参照)
+を拡張しています。
+@c COMMON
 @end deftp
 
 @deftp {Class} <md5>
 @clindex md5
+@c EN
 The instance of this class keeps internal state of MD5 digest algorithm.
 
 This class implements @code{util.digest} framework interface,
@@ -2551,19 +2563,44 @@ This class implements @code{util.digest} framework interface,
 @code{digest}, and @code{digest-string}.
 @xref{util.digest - Message digester framework}, for detailed explanation
 of these methods.
+@c JP
+このクラスのインスタンスは、MD5ダイジェストアルゴリズムの内部状態を
+保持しています。
+
+このクラスは、@code{util.digest}フレームワークのインターフェースである、
+@code{digest-update!}、@code{digest-final!}、@code{digest}、
+@code{digest-string}を実装しています。
+これらのメソッドの詳細な説明は、@ref{util.digest - Message digester framework}
+を参照して下さい。
+@c COMMON
 @end deftp
 
+@c EN
 Besides the digester framework, this module provides to 
 short-cut procedures.
+@c JP
+ダイジェスタフレームワークに加えて、このモジュールはショートカット手続きを
+提供します。
+@c COMMON
 
 @defun md5-digest
+@c EN
 Reads data from the current input port until EOF, and returns
 its digest in an incomplete string.
+@c JP
+現在の入力ポートからEOFまで読み込み、そのダイジェストを不完全文字列で
+返します。
+@c COMMON
 @end defun
 
 @defun md5-digest-string string
+@c EN
 Digest the data in @var{string}, and returns the result 
 in an incomplete string.
+@c JP
+@var{string}にあるデータをダイジェストし、その結果を不完全文字列で
+返します。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -2573,34 +2610,66 @@ in an incomplete string.
 
 @deftp {Module} rfc.quoted-printable
 @mdindex rfc.quoted-printable
+@c EN
 This module defines a few functions to encode/decode Quoted-printable format,
 defined in RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}), section 6.7.
+@c JP
+このモジュールでは、RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}参照)の
+セクション6.7で定義されている、Quoted-printableフォーマットにエンコード/から
+デコードするためのいくつかの関数を定義しています。
+@c COMMON
 @end deftp
 
 @defun quoted-printable-encode
+@c EN
 Reads byte stream from the current input port, encodes it in Quoted-printable
 format and writes the result character stream to the current output port.
 The conversion ends when it reads EOF from the current input port.
+@c JP
+現在の入力ポートからバイトストリームを読み込み、それをQuoted-printable
+フォーマットにエンコードし、現在の出力ポートへ結果の文字ストリームを
+書き出します。この変換は、現在の入力ポートからEOFを読み出すと終了します。
+@c COMMON
 @end defun
 
 @defun quoted-printable-encode-string string
+@c EN
 Converts contents of @var{string} to Quoted-printable encoded format.
 Input string can be either complete or incomplete string;
 it is always interpreted as a byte sequence.
+@c JP
+@var{string}の内容をQuoted-printableエンコードされたフォーマットに
+変換します。入力の文字列は、完全文字列でも不完全文字列でも構いません。
+常にバイトシーケンスとして処理されます。
+@c COMMON
 @end defun
 
 @defun quoted-printable-decode
+@c EN
 Reads character stream from the current input port,
 decodes it from Quoted-printable
 format and writes the result byte stream to the current output port.
 The conversion ends when it reads EOF.
 If it encounters illegal character sequence (such as '=' followed 
 by non-hexadecimal characters), it copies them literally to the output.
+@c JP
+現在の入力ポートから文字ストリームを読み込み、それをQuoted-printable
+フォーマットからデコードし、結果のバイトストリームを現在の出力ポートへ
+書き出します。
+この変換は、EOFを読み出すと終了します。
+不正なシーケンス('='の後に16進文字が続かない、など)に出会うと、それらを
+リテラルのまま出力へコピーします。
+@c COMMON
 @end defun
 
 @defun quoted-printable-decode-string string
+@c EN
 Decodes a Quoted-printable encoded string @var{string} and returns
 the result as a string.
+@c JP
+Quoted-printableエンコードされた文字列@var{string}をデコードし、
+その結果を文字列で返します。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -2610,14 +2679,22 @@ the result as a string.
 
 @deftp {Module} rfc.sha1
 @mdindex rfc.sha1
+@c EN
 This module implements US Secure Hash Algorithm 1 (SHA1), 
 defined in RFC 3174 (@ref{rfc3174, [RFC3174], RFC3174}).
 The module extends util.digest 
 (@xref{util.digest - Message digester framework}).
+@c JP
+このモジュールは、RFC 3174 (@ref{rfc3174, [RFC3174], RFC3174}参照)で
+定義されている、US Secure Hash Algorithm 1 (SHA1)を実装しています。
+このモジュールは、util.digest (@ref{util.digest - Message digester framework}参照)
+を拡張しています。
+@c COMMON
 @end deftp
 
 @deftp {Class} <sha1>
 @clindex sha1
+@c EN
 The instance of this class keeps internal state of SHA1 digest algorithm.
 
 This class implements @code{util.digest} framework interface,
@@ -2625,19 +2702,44 @@ This class implements @code{util.digest} framework interface,
 @code{digest}, and @code{digest-string}.
 @xref{util.digest - Message digester framework}, for detailed explanation
 of these methods.
+@c JP
+このクラスのインスタンスは、SHA1ダイジェストアルゴリズムの内部状態を
+保持しています。
+
+このクラスは、@code{util.digest}フレームワークのインターフェース、
+@code{digest-update!}、@code{digest-final!}、@code{digest}、
+@code{digest-string}を実装しています。
+これらのメソッドの詳細な説明は、@ref{util.digest - Message digester framework}を
+参照して下さい。
+@c COMMON
 @end deftp
 
+@c EN
 Besides the digester framework, this module provides to 
 short-cut procedures.
+@c JP
+ダイジェスタフレームワークに加えて、このモジュールはショートカット
+手続きを提供します。
+@c COMMON
 
 @defun sha1-digest
+@c EN
 Reads data from the current input port until EOF, and returns
 its digest in an incomplete string.
+@c JP
+現在の入力ポートからデータをEOFまで読み込み、そのダイジェストを
+不完全文字列で返します。
+@c COMMON
 @end defun
 
 @defun sha1-digest-string string
+@c EN
 Digest the data in @var{string}, and returns the result 
 in an incomplete string.
+@c JP
+@var{string}のデータをダイジェストし、その結果を不完全文字列で
+返します。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -4024,49 +4126,97 @@ Returns a cartesian product of sets in @var{list-of-sets}.
 
 @deftp {Module} util.digest
 @mdindex util.digest
+@c EN
 This module provides a base class and common interface for 
 message digest algorithms, such as MD5 (@xref{rfc.md5 - MD5 message digest})
 and SHA1 (@xref{rfc.sha1 - SHA1 message digest}).
+@c JP
+このモジュールは、MD5 (@ref{rfc.md5 - MD5 message digest}参照)や
+SHA1 (@ref{rfc.sha1 - SHA1 message digest}参照)などの、メッセージ
+ダイジェストアルゴリズムのためのベースクラスと一般的なインターフェースを
+提供します。
+@c COMMON
 @end deftp
 
 @deftp {Class} <message-digest-algorithm-meta>
 @clindex message-digest-algorithm-meta
+@c EN
 A metaclass of message digest algorithm implementation.
+@c JP
+メッセージダイジェストアルゴリズムの実装のメタクラスです。
+@c COMMON
 @end deftp
 
 @deftp {Class} <message-digest-algorithm>
 @clindex message-digest-algorithm
+@c EN
 A base class of message digest algorithm implementation.
+@c JP
+メッセージダイジェストアルゴリズムの実装のベースクラスです。
+@c COMMON
 @end deftp
 
+@c EN
 The concrete subclass of message digest algorithm has to
 implement the following methods.
+@c JP
+メッセージダイジェストアルゴリズムの具体サブクラスは、以下のメソッドを
+実装しなければなりません。
+@c COMMON
 
 @deffn {Generic function} digest-update! algorithm data
+@c EN
 Takes the instance of massage-digest algorithm, and updates it
 with the data @var{data}, represented in a (possibly incomplete) string.
+@c JP
+メッセージダイジェストアルゴリズムのインスタンスを取り、
+それを(不完全な可能性のある)文字列で表されるデータ@var{data}で
+更新します。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} digest-final! algorithm
+@c EN
 Finalizes the instance of message-digest algorithm, and
 returns the digest result in an incomplete string.
+@c JP
+メッセージダイジェストアルゴリズムのインスタンスを終了させ、
+そのダイジェストの結果を不完全文字列で返します。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} digest class
+@c EN
 A wrapper of digest routines.  Given message-digest algorithm @var{class},
 this function reads the input data from current input port until EOF,
 and returns the digest result in an incomplete string.
+@c JP
+ダイジェストルーチンのラッパです。メッセージダイジェストアルゴリズム
+@var{class}を与え、現在の入力ポートから入力データをEOFまで読み込み、
+そのダイジェストの結果を不完全文字列で返します。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} digest-string class string
+@c EN
 A wrapper of digest routines.  Given message-digest algorithm @var{class},
 this function reads the input data from @var{string},
 and returns the digest result in an incomplete string.
+@c JP
+ダイジェストルーチンのラッパです。メッセージダイジェストアルゴリズム
+@var{class}を与え、入力データを@var{string}から読み込み、
+そのダイジェストの結果を不完全文字列で返します。
+@c COMMON
 @end deffn
 
 @defun digest-hexify digest-result
+@c EN
 An utility procedure.  Given the result of digest, @var{digest-result},
 converts it to a hexified string.
+@c JP
+ユーティリティ手続きです。ダイジェストの結果、@var{digest-result}を
+与えると、それを16進文字列に変換します。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -4339,6 +4489,7 @@ returns.
 
 @deftp {Module} util.list
 @mdindex util.list
+@c EN
 This module provides list utility functions which are not in srfi-1
 (@xref{srfi-1 - List library}) but generally useful.
 
@@ -4346,9 +4497,18 @@ See also @ref{gauche.collection - Collection framework}
 and @ref{gauche.sequence - Sequence framework}, for
 these modules also defines useful generic functions that can
 be used for lists.
+@c JP
+このモジュールは、srfi-1 (@ref{srfi-1 - List library}参照)にはないが、
+一般的に便利なリストユーティリティ関数を提供します。
+
+リストに対して用いることができる便利なジェネリック関数を定義している
+@ref{gauche.collection - Collection framework}と@ref{gauche.sequence - Sequence framework}も
+見て下さい。
+@c COMMON
 @end deftp
 
 @defun take* list k &optional fill? padding
+@c EN
 Returns a list that consists of the first @var{k} elements in
 @var{list}, like SRFI-1's @code{take}, except this procedure
 is more tolerant.  That is, if @var{list}
@@ -4357,6 +4517,15 @@ Instead, it returns a copy of @var{list} by default (or the optional
 argument @var{fill?} is @code{#f}).   If @var{fill?} is true,
 @var{padding} is added to the result to make its length @var{k}.
 The default value of @var{padding} is @code{#f}.
+@c JP
+@var{list}の最初の@var{k}個の要素で構成されるリストを返します。
+これは、SRFI-1の@code{take}に似ていますが、この手続きのほうが
+慣用です。つまり、@var{list}が@var{k}よりも短いとき、@code{take*}は
+エラーを通知しません。その代わり、デフォルトで(あるいは、オプショナル
+引数@var{fill?}が@code{#f}の場合)@var{list}のコピーを返します。
+@var{fill?}が真の場合、その長さを@var{k}にするために、@var{padding}が
+その結果に追加されます。@var{padding}のデフォルト値は@code{#f}です。
+@c COMMON
 
 @example
 (take* '(a b c d) 3)       @result{} (a b c)
@@ -4365,15 +4534,26 @@ The default value of @var{padding} is @code{#f}.
 (take* '(a b c d) 6 #t 'z) @result{} (a b c d z z)
 @end example
 
-Note: For generic subsequence extranction from any sequence, 
+@c EN
+Note: For generic subsequence extraction from any sequence, 
 see @code{subseq} in @ref{Slicing sequence}.
+@c JP
+注意: 一般的な、いかなるシーケンスからのサブシーケンスの抽出については、
+@ref{Slicing sequence}の@code{subseq}を見て下さい。
+@c COMMON
 @end defun
 
 @defun drop* list k
+@c EN
 Returns a list that the first @var{k} elements of @var{list} is
 dropped, like SRFI-1's @code{drop}, except this procedure
 is more tolerant.  If @var{list} is shorter than @var{k},
 an empty list is returned.
+@c JP
+@var{list}の最初の@var{k}個の要素が削除されたリストを返します。
+これは、SRFI-1の@code{drop}に似ていますが、この手続きのほうが
+慣用です。@var{list}が@var{k}よりも短い場合、空リストが返されます。
+@c COMMON
 
 @example
 (drop* '(a b c d) 3)       @result{} (d)
@@ -4382,17 +4562,31 @@ an empty list is returned.
 @end defun
 
 @defun take-right* list k &optional fill? padding
+@c EN
 Like @code{take*}, but counts from right of @var{list}.
 If needed, @var{padding} is added on left of the result.
+@c JP
+@code{take*}と同じですが、@var{list}の右端からカウントします。
+必要ならば、結果の左に@var{padding}が追加されます。
+@c COMMON
 @end defun
 
 @defun drop-right* list k
+@c EN
 Like @code{drop*}, but counts from right of @var{list}.
+@c JP
+@code{drop*}と同じですが、@var{list}の右端からカウントします。
+@c COMMON
 @end defun
 
 @defun split-at* list k &optional fill? padding
+@c EN
 More tolerant version of SRFI-1's @code{split-at}.
 Returns the results of @code{take*} and @var{drop*}.
+@c JP
+SRFI-1の@code{split-at}の寛容なバージョンです。
+@code{take*}と@var{drop*}の結果を返します。
+@c COMMON
 
 @example
 (split-at* '(a b c d) 6 #t 'z)
@@ -4401,12 +4595,20 @@ Returns the results of @code{take*} and @var{drop*}.
 @end defun
 
 @defun slices list k &optional fill? padding
+@c EN
 Splits @var{list} into the sublists (slices) where the length of
 each slice is @var{k}.
 If the length of @var{list} is not a multiple of @var{k},
 the last slice is dealt in the same way as @code{take*}; that is,
 it is shorter than @var{k} by default, or added @var{padding} if
 @var{fill?} is true.
+@c JP
+@var{list}を、それぞれの長さが@var{k}であるようなサブリスト(スライス)に
+分割します。
+@var{list}の長さが@var{k}の整数倍でない場合は、最後のスライスは
+@code{take*}と同じ方法で扱われます。つまり、デフォルトでは@var{k}より
+短いもの、あるいは@var{fill?}が真ならば@var{padding}が追加されます。
+@c COMMON
 
 @example
 (slices '(a b c d e f g) 3)
@@ -4417,8 +4619,13 @@ it is shorter than @var{k} by default, or added @var{padding} if
 @end defun
 
 @defun intersperse item list
+@c EN
 Inserts @var{item} between elements in the @var{list}.
 (The order of arguments is taken from Haskell's intersperse).
+@c JP
+@var{list}の要素の間に@var{item}を挿入します。
+(引数の順番は、Haskellのintersperseと同じです。)
+@c COMMON
 
 @example
 (intersperse '+ '(1 2 3))  @result{} (1 + 2 + 3)
@@ -4428,12 +4635,20 @@ Inserts @var{item} between elements in the @var{list}.
 @end defun
 
 @defmac cond-list clause @dots{}
+@c EN
 Construct a list by conditionally adding entries.
 Each @var{clause} has a test and expressions.  When its test
 yields true, the result of associated expression is used to
 construct the resulting list.  When the
 test yields false, nothing is inserted.
+@c JP
+条件によりエントリを追加することによりリストを構築します。
+それぞれの@var{clause}は条件と式を持ちます。
+条件が真であれば、関連する式の結果が結果のリストの構築に使われます。
+条件が偽であれば、何も挿入されません。
+@c COMMON
 
+@c EN
 @var{Clause} must be either one of the following form:
 @table @code
 @item (@var{test} @var{expr} @dots{})
@@ -4446,6 +4661,18 @@ the result of @var{test} is used if it is not false.
 @var{proc} is called with the value, and the return
 value is used to construct the result.
 @end table
+@c JP
+@var{clause}は、以下のフォームのうちの1つでなければなりません。
+@table @code
+@item (@var{test} @var{expr} @dots{})
+@var{test}が評価され、それが真ならば@var{expr} @dots{}が評価され、
+戻り値が結果の一部となります。@var{expr}が与えられなければ、
+@var{test}の結果が偽でなければその結果が使われます。
+@item (@var{test} => @var{proc})
+@var{test}が評価され、それが真ならば@var{proc}がその値とともに
+呼ばれ、その戻り値が結果を構築するために使われます。
+@end table
+@c COMMON
 
 @example
 (let ((alist '((x 3) (y -1) (z 6))))
@@ -4457,12 +4684,20 @@ value is used to construct the result.
 @end defmac
 
 @defun alist->hash-table alist &optional cmp
+@c EN
 Creates and returns a hash table that has entries of
 each element in alist, using its car as the key and
 its cdr as the value.  @var{Cmp} is a symbol specifying
 the comparison function of the created hash table;
 currently @code{eq?}, @code{eqv?}, @code{equal?} and @code{string=?}
 are supported.
+@c JP
+alistに含まれるそれぞれの要素をエントリとして持つハッシュテーブルを
+作成して返します。その時、要素のcarがキーとして、要素のcdrが値として
+使われます。@var{cmp}は作成されたハッシュテーブルの比較関数を
+指定するシンボルで、現在は@code{eq?}、@code{eqv?}、@code{equal?}、
+@code{string=?}がサポートされています。
+@c COMMON
 @end defun
 
 @defun hash-table->alist hash-table
@@ -4474,20 +4709,35 @@ are supported.
 @defun rassoc key alist &optional eq-fn
 @defunx rassq key alist
 @defunx rassv key alist
+@c EN
 Reverse associations---given @var{key} is matched to the @emph{cdr}
 of each element in @var{alist}, instead of the @emph{car}.
 Handy to realize bidirectional associative list.
 @code{Rassoc} takes an optional comparison function, whose default is
-@code{equal?}.  @code{Rassq} and @var{rassv} uses @code{eq?} and @var{eqv?}.
+@code{equal?}.  @code{Rassq} and @code{rassv} uses @var{eq?} and @var{eqv?}.
+@c JP
+与えられる@var{key}が@var{alist}のそれぞれの要素で、@emph{car}の代わりに
+@emph{cdr}にマッチするような逆になった連想リストです。
+両方向の連想リストと理解すると簡単です。
+@code{rassoc}は、そのデフォルトが@code{equal?}である、オプションの
+比較関数を取ります。@code{rassq}は@var{eq?}、@code{rassv}は@var{eqv?}を
+使います。
+@c COMMON
 @end defun
 
 
 @defun assoc-ref alist key &optional default eq-fn
 @defunx assq-ref alist key &optional default
 @defunx assv-ref alist key &optional default
+@c EN
 These procedures provide the access to the assoc list
 symmetric with other *-ref procedures.
 This captures the common pattern of alist access:
+@c JP
+これらの手続きは、他の*-ref手続きと対照的な連想リストへの
+アクセスを提供します。これは、一般的な連想リストアクセスのパターン
+です。
+@c COMMON
 @example
 (assoc-ref alist key default eq-fn)
  @equiv{}
@@ -4495,29 +4745,46 @@ This captures the common pattern of alist access:
         (else default))))
 @end example
 
+@c EN
 If @var{default} is omitted, @code{#f} is used.
 
 @code{Assoc-ref} takes an optional comparison function @var{eq-fn},
 whose default is @code{equal?}.  @code{Assq-ref} and @code{assv-ref}
 uses @code{eq?} and @code{eqv?}, respectively.
+@c JP
+@var{default}が省略されると、@code{#f}が使われます。
+
+@code{assoc-ref}は、そのデフォルトが@code{equal?}である、オプションの
+比較関数@var{eq-fn}を取ります。@code{assq-ref}は@code{eq?}を、
+@code{assv-ref}は@code{eqv?}をそれぞれ使います。
+@c COMMON
 @end defun
 
 @defun rassoc-ref alist key &optional default eq-fn
 @defunx rassq-ref alist key &optional default
 @defunx rassv-ref alist key &optional default
+@c EN
 Reverse association version of @code{assoc-ref}.
+@c JP
+@code{assoc-ref}の逆連想リストバージョンです。
+@c COMMON
 @example
 (rassoc-ref alist key default eq-fn)
  @equiv{}
   (cond ((rassoc key alist eq-fn) => car)
         (else default))))
 @end example
+@c EN
 The meanings of optional arguments are the same as @code{assoc-ref}.
+@c JP
+オプショナル引数の意味は、@code{assoc-ref}と同じです。
+@c COMMON
 @end defun
 
 @defun assoc-set! alist key val &optional eq-fn
 @defunx assq-set! alist key val
 @defunx assv-set! alist key val
+@c EN
 Returns an alist who has @code{(key . val)} pair added to the @code{alist}.
 If @code{alist} already has an element with @var{key}, the element's
 @emph{cdr} is destructively modified for @var{val}.
@@ -4528,6 +4795,19 @@ the return value to guarantee @var{key}-@var{val} pair is added.
 @code{Assoc-set!} takes optional comparison function @var{eq-fn},
 whose default is @code{equal?}.  @code{Assq-set!} and @code{assv-set!}
 uses @code{eq?} and @code{eqv?}, respectively.
+@c JP
+@code{alist}に@code{(key . val)}のペアが追加された連想リストを返します。
+@code{alist}がすでに@var{key}をキーとする要素を持っている場合、
+その要素の@emph{cdr}は破壊的に@var{val}に変更されます。
+@var{alist}が@var{key}をキーとする要素を持っていない場合は、
+新しいペアが作成され、@var{alist}の一番前に追加されます。
+したがって、@var{key}-@var{val}ペアが追加されたことを保証するために
+その戻り値を使うべきです。
+
+@code{assoc-set!}は、そのデフォルトが@code{equal?}である、オプションの
+比較関数@var{eq-fn}を取ります。@code{assq-set!}は@code{eq?}を、
+@code{assv-set!}は@code{eqv?}を、それぞれ使います。
+@c COMMON
 @end defun
 
 
