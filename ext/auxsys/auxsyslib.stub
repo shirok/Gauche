@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: auxsyslib.stub,v 1.12 2002-12-13 13:17:55 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.13 2003-01-17 02:53:56 shirok Exp $
 ;;;
 
 "
@@ -214,13 +214,22 @@
          SCM_RETURN(SCM_MAKE_STR_COPYING(buf));"))
 
 ;; putenv
+;;  Assume name and value doesn't contain NUL character.
+;;  We need to call system malloc to prevent the passed string from
+;;  being GCed.  That memory might be leaked when putenv is called
+;;  again for the same variable, but it's the same case as in C programs.
 (if "defined HAVE_PUTENV"
     (define-cproc %sys-putenv (name::<string> value::<string>)
-      "  ScmObj s;
- s  = Scm_StringAppend(SCM_LIST3(SCM_OBJ(name),
-                                 SCM_MAKE_STR(\"=\"),
-                                 SCM_OBJ(value)));
- putenv(Scm_GetString(SCM_STRING(s)));
+      "  ScmObj s; char *buf; int namelen, valuelen, len;
+ namelen = SCM_STRING_SIZE(name);
+ valuelen = SCM_STRING_SIZE(value);
+ len = namelen + valuelen + 2;
+ buf = (char*)malloc(len);
+ memcpy(buf, SCM_STRING_START(name), namelen);
+ buf[namelen] = '=';
+ memcpy(buf+namelen+1, SCM_STRING_START(value), valuelen);
+ buf[len-1] = '\\0';
+ putenv(buf);
  SCM_RETURN(SCM_UNDEFINED);")
 )
 
