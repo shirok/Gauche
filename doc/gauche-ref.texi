@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.109 2001-10-29 09:42:29 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.110 2001-10-30 10:17:21 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -6922,7 +6922,6 @@ of descendants of @var{class}.
 * GDBM interface::              
 * NDBM interface::              
 * Original DBM interface::      
-* Pseudo DBM interface::        
 * Character code conversion::   
 * Low-level file operations::   
 * Interactive session::         
@@ -6983,6 +6982,12 @@ Generic data structures.
 @c JP
 汎用的なデータ構造。
 @c COMMON
+@item dbm.*
+@c EN
+DBM interface
+@c JP
+DBMインタフェース
+@c COMMON
 @item file.*
 @c EN
 Manipulating files and directories.
@@ -7039,55 +7044,95 @@ Generic implementations of various algorithms.
 @section @code{dbm} - Generic DBM interface
 @c NODE 汎用DBMインタフェース, @code{dbm} - 汎用DBMインタフェース
 
+@deftp {Module} dbm
+@mdindex dbm
+@c EN
 DBM-like libraries provides an easy way to store values to a file,
 indexed by keys.  You can think it as a persistent associative memory.
 This module provides a generic interface to the various dbm-like 
 libraries.
+@c JP
+DBM系のライブラリはキーでインデックスされた値をファイルに格納する簡単な方法を
+提供します。一種の永続的な連想記憶と言えるでしょう。このモジュールは各種のDBM系
+ライブラリへのインタフェースを提供します。
+@c COMMON
 
-The @code{<dbm>} abstract class defines a common interface
-to use various DBM-type database packages.
+@c EN
+This modules defines @code{<dbm>} abstract class, which has
+a common interface to use various DBM-type database packages.
+As far as you operate on the already opened database,
+importing @code{dbm} module is enough.
+@c JP
+このモジュールが定義する抽象クラス@code{<dbm>}は、DBM系ライブラリへの
+統一されたインタフェースを提供します。@code{dbm}モジュールだけをインポートすれば、
+既にオープンされたデータベースを操作することができます。
+@c COMMON
 
-Just to operate on the already created and opened database,
-use @code{dbm} module.
+@c EN
+To create or open a database, you need a concrete implementation
+of the database.  Gauche currently has the following impelentations.
+Each module defines its own low-level accessing functions
+as well as the common interface.
+Note that your system may not have one or more of those DBM libraries;
+Gauche defines only what the system provides.
+@c JP
+データベースをオープンしたり作成したりするには、dbmインタフェースを実装した
+モジュールが必要になります。今のところGaucheでは以下の実装が使えます。
+それぞれのモジュールは、dbmインタフェース共通の手続きの他に、
+直接実装を操作できる低レベルの手続きも提供します。
+システムによっては以下のインタフェースの全てが実装されているわけではないことに
+注意してください。Gaucheではシステムが提供する実装のみを定義します。
+@c COMMON
 
-To create or open a database, you need to load at lease one of
-the following modules.   Each module defines its own low-level
-accessing functions as well as the common interface.
+@table @code
+@item dbm.gdbm
+@c EN
+GDBM library (@xref{GDBM interface}).
+@c JP
+GDBMライブラリ (@xref{GDBM interface}).
+@c COMMON
 
-@table @asis
-@item gdbm
+@item dbm.ndbm
+@c EN
+NDBM library (@xref{NDBM interface}).
+@c JP
+NDBMライブラリ (@xref{NDBM interface}).
+@c COMMON
 
-GDBM library.  Besides the common interface, all of the options
-GDBM provides are available.   (@xref{GDBM interface}).
-
-@item ndbm
-
-NDBM library.
-
-@item odbm
-
-DBM library.
+@item dbm.odbm
+@c EN
+DBM library  (@xref{Original DBM interface}).
+@c JP
+DBMライブラリ  (@xref{Original DBM interface}).
+@c COMMON
 @end table
-
-By default, only strings are allowed to keys and values.
-You can use other Scheme types for keys and values, however, 
-by providing a conversion methods.
+@end deftp
 
 @menu
-* Opening a database::          
-* Accessing a database::        
+* Opening and closing a dbm database::  
+* Accessing a dbm database::    
 * Iterating on a database::     
-* To close a database::         
 * Object serialization::        
 @end menu
 
-@node Opening a database, Accessing a database, Generic DBM interface, Generic DBM interface
-@subsection Opening a database
+@node Opening and closing a dbm database, Accessing a dbm database, Generic DBM interface, Generic DBM interface
+@subsection Opening and closing a dbm database
+
+@deftp {Class} <dbm>
+@clindex dbm
+@end deftp
+
+@deffn {Method} dbm-open (dbm <dbm>)
+@end deffn
+
+@deffn {Method} dbm-open (dbm-class <class>) options @dots{}
+@end deffn
+
 
 By instantiating a subclass of the @code{<dbm>} class, you can
 either open an existing database or create a new database.
 
-@deffn {Generic method} make class &key :path :rw-mode :file-mode :serializer
+@deffn {Generic method} make class &key :path :rw-mode :file-mode
 Create a new dbm object associated to the database file @var{path}
 if @var{class} is one of subclasses of the class @code{<dbm>}.
 
@@ -7124,9 +7169,22 @@ a serializer instance of the class is used to convert Scheme objects.
 If it is @code{#t}, the standard external representation is used.
 @end deffn
 
+Database file is closed when it is garbage collected.
+However, to ensure the modification is properly synchornized,
+you may want to close the database explicitly
 
-@node Accessing a database, Iterating on a database, Opening a database, Generic DBM interface
-@subsection Accessing a database
+@deffn {Generic method} dbm-close (dbm @code{<dbm>})
+Closes a database @var{dbm}.  Once the database is closed, any
+operation to access the database content raises an error.
+@end deffn
+
+
+@deffn {Generic method} dbm-closed? (dbm @code{<dbm>})
+Returns true if a database @var{dbm} is already closed, false otherwise.
+@end deffn
+
+@node Accessing a dbm database, Iterating on a database, Opening and closing a dbm database, Generic DBM interface
+@subsection Accessing a dbm database
 
 Once a database object is created, you can use the following methods
 to access individual key/value pairs.   Note that, unless you specify
@@ -7153,9 +7211,8 @@ Delete a value associated with @var{key}.
 @end deffn
 
 
-
-@node Iterating on a database, To close a database, Accessing a database, Generic DBM interface
-@subsection Iterating on a database
+@node Iterating on a database, Object serialization, Accessing a dbm database, Generic DBM interface
+@subsection Iterating on a dbm database
 
 To walk over the entire database, following methos are provided.
 
@@ -7174,25 +7231,8 @@ which is returned as a result of @code{dbm-map}.
 @end deffn
 
 
-@node To close a database, Object serialization, Iterating on a database, Generic DBM interface
-@subsection To close a database
-
-Database file is closed when it is garbage collected.
-However, to ensure the modification is properly synchornized,
-you may want to close the database explicitly
-
-@deffn {Generic method} dbm-close (dbm @code{<dbm>})
-Closes a database @var{dbm}.  Once the database is closed, any
-operation to access the database content raises an error.
-@end deffn
-
-
-@deffn {Generic method} dbm-closed? (dbm @code{<dbm>})
-Returns true if a database @var{dbm} is already closed, false otherwise.
-@end deffn
-
-@node Object serialization,  , To close a database, Generic DBM interface
-@subsection Object serialization
+@node Object serialization,  , Iterating on a database, Generic DBM interface
+@subsection Converting keys and values for dbm
 
 The low-level interface to the dbm libraries only deals with
 strings.   If you want to store general Scheme objects, you need
@@ -7240,6 +7280,10 @@ your choice.
 @c ----------------------------------------------------------------------
 @node GDBM interface, NDBM interface, Generic DBM interface, Library modules
 @section @code{dbm.gdbm} - GDBM interface
+
+@deftp {Module} dbm.gdbm
+@mdindex dbm.gdbm
+@end deftp
 
 @menu
 * GDBM-specific options::       
@@ -7364,6 +7408,10 @@ See gdbm manpage for
 @node NDBM interface, Original DBM interface, GDBM interface, Library modules
 @section @code{dbm.ndbm} - NDBM interface
 
+@deftp {Module} dbm.ndbm
+@mdindex dbm.ndbm
+@end deftp
+
 @menu
 * NDBM-specific options::       
 * NDBM low-level::              
@@ -7408,8 +7456,12 @@ See gdbm manpage for
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Original DBM interface, Pseudo DBM interface, NDBM interface, Library modules
+@node Original DBM interface, Character code conversion, NDBM interface, Library modules
 @section @code{dbm.odbm} - Original DBM interface
+
+@deftp {Module} dbm.odbm
+@mdindex dbm.odbm
+@end deftp
 
 @menu
 * DBM-specific options::        
@@ -7445,12 +7497,12 @@ See gdbm manpage for
 
 
 @c ----------------------------------------------------------------------
-@node Pseudo DBM interface, Character code conversion, Original DBM interface, Library modules
-@section @code{dbm.pdbm} - Pseudo DBM interface
+@c @node Pseudo DBM interface, Character code conversion, Original DBM interface, Library modules
+@c @section @code{dbm.pdbm} - Pseudo DBM interface
 
 
 @c ----------------------------------------------------------------------
-@node Character code conversion, Low-level file operations, Pseudo DBM interface, Library modules
+@node Character code conversion, Low-level file operations, Original DBM interface, Library modules
 @section @code{gauche.charconv} - Character Code Conversion
 @c NODE 文字コード変換, @code{gauche.charconv} - 文字コード変換
 
