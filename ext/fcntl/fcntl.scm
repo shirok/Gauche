@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: fcntl.scm,v 1.1 2001-09-16 06:50:43 shirok Exp $
+;;;  $Id: fcntl.scm,v 1.2 2001-11-06 09:36:37 shirok Exp $
 ;;;
 
 
@@ -24,7 +24,7 @@
           |F_GETLK|  |F_SETLK|  |F_SETLKW|
           |F_RDLCK|  |F_WRLCK|  |F_UNLCK|  |FD_CLOEXEC|
           |O_RDONLY| |O_WRONLY| |O_RDWR|   |O_APPEND| |O_CREAT|
-          |O_EXCL|   |O_NOCTTY| |O_NONBLOCK| |O_TRUNC|
+          |O_EXCL|   |O_NOCTTY| |O_NONBLOCK| |O_TRUNC| |O_ACCMODE|
           )
   )
 
