@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.65 2002-05-05 05:00:50 shirok Exp $
+ *  $Id: port.c,v 1.66 2002-06-14 02:34:35 shirok Exp $
  */
 
 #include <unistd.h>
@@ -892,19 +892,31 @@ int Scm_Getc(ScmPort *p)
                 /* The buffer doesn't have enough bytes to consist a char.
                    move the incomplete char to the scratch buffer and try
                    to fetch the rest of the char. */
-                int rest;
+                int rest, filled = 0; 
                 p->scrcnt = (unsigned char)(p->src.buf.end - p->src.buf.current + 1);
                 memcpy(p->scratch, p->src.buf.current-1, p->scrcnt);
                 p->src.buf.current = p->src.buf.end;
                 rest = nb + 1 - p->scrcnt;
-                if (bufport_fill(p, rest, FALSE) < rest) {
-                    /* TODO: make this behavior customizable */
-                    Scm_Error("encountered EOF in middle of a multibyte character from port %S", p);
+                for (;;) {
+                    filled = bufport_fill(p, rest, FALSE);
+                    if (filled <= 0) {
+                        /* TODO: make this behavior customizable */
+                        Scm_Error("encountered EOF in middle of a multibyte character from port %S", p);
+                    }
+                    if (filled >= rest) {
+                        memcpy(p->scratch+p->scrcnt, p->src.buf.current, rest);
+                        p->scrcnt += rest;
+                        p->src.buf.current += rest;
+                        break;
+                    } else {
+                        memcpy(p->scratch+p->scrcnt, p->src.buf.current, filled);
+                        p->scrcnt += filled;
+                        p->src.buf.current = p->src.buf.end;
+                        rest -= filled;
+                    }
                 }
-                memcpy(p->scratch+p->scrcnt, p->src.buf.current, rest);
                 SCM_CHAR_GET(p->scratch, c);
                 p->scrcnt = 0;
-                p->src.buf.current += rest;
             } else {
                 SCM_CHAR_GET(p->src.buf.current-1, c);
                 p->src.buf.current += nb;
