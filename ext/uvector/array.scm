@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: array.scm,v 1.9 2003-04-12 06:29:27 foof Exp $
+;;;  $Id: array.scm,v 1.10 2003-04-25 03:38:45 foof Exp $
 ;;;
 
 ;; Conceptually, an array is a backing storage and a procedure to
@@ -27,9 +27,12 @@
   (export <array-meta> <array>
           array? make-array shape array array-rank
           array-start array-end array-ref array-set!
-          share-array
+          share-array subarray
+          array-valid-index?  shape-valid-index?
           array-shape array-length array-size
           array-for-each-index shape-for-each
+          array-for-each-index-by-dimension
+          array-for-each array-every array-any
           tabulate-array array-retabulate!
           array-map array-map! array->vector array->list
           )
@@ -144,6 +147,31 @@
             (else
              (s32vector-dot Vc (s32vector-add -Vb Vi)))))))
 
+;; shape index tests
+
+(define-method shape-valid-index? ((sh <array>) (ind <s32vector>))
+  (let*-values (((Vb Ve) (shape->start/end-vector sh)))
+    (and
+     (= (s32vector-length ind) (s32vector-length Vb))
+     (not (s32vector-range-check ind Vb (s32vector-sub Ve 1))))))
+
+(define-method shape-valid-index? ((sh <array>) (ind <vector>))
+  (shape-valid-index? sh (vector->s32vector ind)))
+(define-method shape-valid-index? ((sh <array>) (ind <pair>))
+  (shape-valid-index? sh (list->s32vector ind)))
+(define-method shape-valid-index? ((sh <array>) (ind <array>))
+  (shape-valid-index? sh (vector->s32vector (array->vector ind))))
+(define-method shape-valid-index? ((sh <array>) (ind <integer>) . more-index)
+  (shape-valid-index? sh (list->s32vector (cons ind more-index))))
+(define-method shape-valid-index? ((sh <array>))
+  ;; special case - zero dimensional array
+  (null? (array->list sh)))
+
+;; array index tests
+
+(define (array-valid-index? ar . args)
+  (apply shape-valid-index? (array-shape ar) args))
+
 ;;---------------------------------------------------------------
 ;; Shape
 ;;   ... is a special array that has a few constraints;
@@ -183,6 +211,13 @@
     (values (map-to <s32vector> (lambda (i) (array-ref shape i 0)) cnt)
             (map-to <s32vector> (lambda (i) (array-ref shape i 1)) cnt))))
 
+(define (start/end-vector->shape Vb Ve)
+  (define (interleave a b)
+    (cond ((null? a) b)
+          ((null? b) a)
+          (else (cons (car a) (interleave b (cdr a))))))
+  (apply shape (interleave (s32vector->list Vb) (s32vector->list Ve))))
+
 ;;---------------------------------------------------------------
 ;; Make general array
 ;;
@@ -208,6 +243,18 @@
          (inits inits (cdr inits)))
         ((= i len) a)
       (vector-set! bv i (car inits)))))
+
+(define (subarray ar sh)
+  (let*-values (((Vb Ve) (shape->start/end-vector sh)))
+    (let* ((rank (s32vector-length Vb))
+           (Vb2 (make-s32vector rank 0))
+           (Ve2 (s32vector-sub Ve Vb))
+           (new-shape (start/end-vector->shape Vb2 Ve2)))
+      (tabulate-array new-shape
+                      (lambda (ind)
+                        (array-ref ar (s32vector->vector
+                                       (s32vector-add Vb ind))))
+                      (make-vector rank)))))
 
 (define (array? obj)
   (is-a? obj <array-base>))
@@ -357,54 +404,104 @@
     (else (lambda (proc vec)
             (apply proc (vector->list vec))))))
 
+(define (array-for-each proc ar)
+  (for-each proc (backing-storage-of ar)))
+
+(define (array-any pred ar)
+  (call/cc
+   (lambda (found)
+     (for-each
+      (lambda (x)
+        (if (pred x) (found #t)))
+      (backing-storage-of ar))
+     #f)))
+
+(define (array-every pred ar)
+  (call/cc
+   (lambda (found)
+     (for-each
+      (lambda (x)
+        (if (not (pred x)) (found #f)))
+      (backing-storage-of ar))
+     #t)))
+
 ;; repeat construct
 
-(define (array-for-each-int proc rank Vb Ve ind)
-  (define (list-loop dim vi applier)
-    (if (= dim rank)
-        (applier proc vi)
-        (let1 e (s32vector-ref Ve dim)
-          (do ((k (s32vector-ref Vb dim) (+ k 1)))
-              ((= k e))
-            (vector-set! vi dim k)
-            (list-loop (+ dim 1) vi applier)))))
+(define (array-for-each-int proc keep Vb Ve ind)
 
-  (define (vec-loop dim vi)
-    (if (= dim rank)
-        (proc vi)
-        (let1 e (s32vector-ref Ve dim)
-          (do ((k (s32vector-ref Vb dim) (+ k 1)))
-              ((= k e))
-            (vector-set! vi dim k)
-            (vec-loop (+ dim 1) vi)))))
+  (define i (if (pair? ind) (car ind) (make-vector (s32vector-length Vb))))
+  (define applier #f)
 
-  (define (arr-loop dim ai)
-    (if (= dim rank)
-        (proc ai)
-        (let1 e (s32vector-ref Ve dim)
+  (define (list-loop dim k)
+    (if (= dim (car k))
+      (let ((e (s32vector-ref Ve dim))
+            (rest (cdr k)))
+        (if (null? rest)
           (do ((k (s32vector-ref Vb dim) (+ k 1)))
               ((= k e))
-            (array-set! ai dim k)
-            (arr-loop (+ dim 1) ai)))))
-  
-  (cond ((null? ind) (list-loop 0 (make-vector rank)
-                                (array-index-applier rank)))
-        ((vector? (car ind)) (vec-loop 0 (car ind)))
-        ((array? (car ind)) (arr-loop 0 (car ind)))
-        (else "bad index object (vector or array required)" (car ind))))
+            (vector-set! i dim k)
+            ;; use an applier
+            (applier proc i))
+          (do ((k (s32vector-ref Vb dim) (+ k 1)))
+              ((= k e))
+            (vector-set! i dim k)
+            (list-loop (+ dim 1) rest))))
+      (list-loop (+ dim 1) k)))
+
+  (define (helper-loop setter dimensions keep-ls)
+    (let loop ((dim dimensions)
+               (k keep-ls))
+      (if (= dim (car k))
+        ;; we loop over this dimension
+        (let ((e (s32vector-ref Ve dim))
+              (rest (cdr k)))
+          (if (null? rest)
+            ;; inline last loop to avoid excess procedure calls
+            (do ((k (s32vector-ref Vb dim) (+ k 1)))
+                ((= k e))
+              (setter i dim k)
+              (proc i))
+            ;; set the index for this dimension and loop
+            (do ((k (s32vector-ref Vb dim) (+ k 1)))
+                ((= k e))
+              (setter i dim k)
+              (loop (+ dim 1) rest))))
+        ;; skip this dimension
+        (loop (+ dim 1) k))))
+
+  (unless (null? keep)
+    (cond
+      ((null? ind)
+       (set! applier (array-index-applier (s32vector-length Vb)))
+       (list-loop 0 keep))
+      ((vector? i)      (helper-loop vector-set! 0 keep))
+      ((array? i)       (helper-loop array-set! 0 keep))
+      ((s8vector? i)    (helper-loop s8vector-set! 0 keep))
+      ((s16vector? i)   (helper-loop s16vector-set! 0 keep))
+      ((s32vector? i)   (helper-loop s32vector-set! 0 keep))
+      (else "bad index object (vector or array required)" (car ind)))))
 
 (define (array-for-each-index ar proc . o)
-  (array-for-each-int proc
-                      (array-rank ar)
-                      (start-vector-of ar)
-                      (end-vector-of ar)
-                      o))
+  (array-for-each-int
+   proc
+   (iota (array-rank ar))
+   (start-vector-of ar)
+   (end-vector-of ar)
+   o))
+
+(define (array-for-each-index-by-dimension ar keep proc . o)
+  (array-for-each-int
+   proc
+   keep
+   (start-vector-of ar)
+   (end-vector-of ar)
+   o))
 
 (define (shape-for-each sh proc . o)
   (let* ((rank (array-end sh 0))
          (ser  (iota rank)))
     (array-for-each-int proc
-                        rank
+                        ser
                         (map-to <s32vector> (cut array-ref sh <> 0) ser)
                         (map-to <s32vector> (cut array-ref sh <> 1) ser)
                         o)))
