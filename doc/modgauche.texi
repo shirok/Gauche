@@ -2350,7 +2350,7 @@ An integer process id that holding the lock; used only by @code{F_GETLK}.
 @c ----------------------------------------------------------------------
 @node gauche.hook - Hooks, gauche.interactive - Interactive session, gauche.fcntl - Low-level file operations, Library modules - Gauche extensions
 @section @code{gauche.hook} - Hooks
-@c NODE gauche.hook - フック
+@c NODE gauche.hook - フック, @code{gauche.hook} - フック
 
 @deftp {Module} gauche.hook
 @mdindex gauche.hook
@@ -5303,17 +5303,24 @@ the process object by @code{run-process} procedure described below.
 @c EN
 Run @var{command} with @var{arg} in a subprocess, and returns a
 @code{<process>} object.   @var{command} is searched from the
-command search path.
+command search path.  
 
 Command line arguments @var{arg}s can include the following keyword
-arguments which specify special handling of the child process:
+arguments which specify special handling of the child process, as
+listed below.
+
+Other than such keyword arguments, @var{command} and @var{arg}s
+are converted to strings by @code{x->string}.
 @c JP
 サブプロセスで、@var{arg} を引数として @var{command} を実行し、
 @code{<process>} オブジェクトを返します。@var{command} は、
 コマンドサーチパスから探されます。
 
-コマンドライン引数 @var{arg}s は、子プロセスを特別に扱うための
-キーワード引数を含むことができます。
+コマンドライン引数 @var{arg} は、下に示す、
+子プロセスを特別に扱うためのキーワード引数を含むことができます。
+
+それらのキーワード引数を除いては、@var{command}と@var{arg}は
+@code{x->string}を用いて文字列に変換されます。
 @c COMMON
 @table @code
 @item :input @var{file}
@@ -5495,23 +5502,82 @@ Sends SIGKILL, SIGSTOP and SIGCONT to @var{process}, respectively.
 @node Process ports,  , Process object, gauche.process - High Level Process Interface
 @subsection Process ports
 
-@defun open-input-process-port command
+@defun open-input-process-port command &keyword output error encoding conversion-buffer-size
 @c EN
-Runs @var{command} via @code{/bin/sh} asynchronously.
-An input port is returned, which is connected to the
-stdout of @var{command}.   The stdin and stderr of @var{command}
-is redirected from/to @code{/dev/null}.  If you need to get
-an error output, you can use shell's redirection.
+Runs @var{command} asynchronously in a subprocess.  Returns
+two values, an input port which is connected to the stdout of the
+running subprocess, and a process object.  
 @c JP
-@var{command} を @code{/bin/sh} 経由で非同期に実行します。
-@var{command} の標準出力に接続された入力ポートが返されます。
-@var{command} の標準入力と標準出力はそれぞれ @code{/dev/null} に
-リダイレクトされます。エラー出力が必要な場合は、シェルのリダイレクションを
-使うことができます。
+@var{command} を子プロセスで非同期に実行します。
+走らせた子プロセスの標準出力につながれた入力ポートと、
+プロセスオブジェクトの二つの値を返します。
+@c COMMON
+
+@c EN
+@var{Command} can be a string or a list.
+If it is a string, it is passed to @code{/bin/sh}.
+You can use shell metacharacters in this form, such as
+environment variable interpolation, globbing, and redirections.
+@c JP
+@var{command}は文字列かリストです。
+文字列の場合、それは@code{/bin/sh}に渡されます。
+環境変数の置換やグロブパターン、リダイレクトなどのシェルの機能が
+文字列中で使えます。
+@c COMMON
+
+@c EN
+If @var{command} is a list, each element is converted to a
+string by @code{x->string} and then passed directly to @code{sys-exec}
+(the @code{car} of the list is used as both the command path
+and the first element of argv, i.e. @code{argv[0]}).
+Use this form if you want to avoid the shell from interfering.
+@c JP
+@var{command}がリストの場合は、各要素が@code{x->string}で文字列に
+変換された後に、@code{sys-exec}を使って直接コマンドを起動します
+(リストの@code{car}がコマンドのパス名と@code{argv[0]}の両方に使われます)。
+シェルの介入を避けたい場合はこの形式を使うと良いでしょう。
+@c COMMON
+
+@c EN
+The subprocess's stdout is redirected to @code{/dev/null} by default,
+and its stderr shares the calling process's stderr.
+You can change these by giving file pathnames to @var{output} and
+@var{error} keyword arguments, respectively.
+@c JP
+デフォルトでは、子プロセスの標準出力は@code{/dev/null}にリダイレクトされ、
+標準エラー出力は呼び出したプロセスと共有されます。
+@var{output}と@var{error}キーワード引数にパス名を与えることで、
+これらの出力をリダイレクトすることができます。
+@c COMMON
+
+@c EN
+You can also give the @var{encoding} keyword argument
+to specify character encoding of the process output.  If it differs
+from the Gauche's internal encoding format,
+@code{open-input-process-port} inserts a character encoding
+conversion port.  
+If @var{encoding} is given, the @var{conversion-buffer-size} keyword
+argument can control the conversion buffer size.
+See @ref{gauche.charconv - Character code conversion}, for
+the details of character encoding conversions.
+@c JP
+また、プロセスの出力の文字エンコーディングを指定するために
+@var{encoding}キーワード引数を与えることもできます。
+それがGaucheの内部エンコーディングと異なっていた場合、
+@code{open-input-process-port}は文字コード変換ポートを挿入します。
+@var{encoding}が与えられた場合、@var{conversion-buffer-size}キーワード引数で
+変換バッファの大きさを指定することも可能です。文字コード変換の詳細については
+@ref{gauche.charconv - Character code conversion}を参照して下さい。
 @c COMMON
 @example
-(define port (open-input-process-port "ls -l Makefile"))
-(read-line port)
+(receive (port process) (open-input-process-port "ls -l Makefile")
+  (begin0 (read-line port)
+          (process-wait process)))
+ @result{} "-rw-r--r--   1 shiro    users        1013 Jun 22 21:09 Makefile"
+
+(receive (port process) (open-input-process-port '(ls -l "Makefile"))
+  (begin0 (read-line port)
+          (process-wait process)))
  @result{} "-rw-r--r--   1 shiro    users        1013 Jun 22 21:09 Makefile"
 
 (open-input-process-port "command 2>&1")
@@ -5521,18 +5587,11 @@ an error output, you can use shell's redirection.
  @result{} ;@r{the port reads stderr}
 @end example
 @c EN
-Metacharacters are interpreted by shell.
-You have to be careful if you pass the string provided from
-the outside world, for it may make a security flaw.
-
 The exit status of subprocess is not automatically collected.
 It is the caller's responsibility to issue @code{process-wait},
 or the subprocess remains in a zombie state.  If it bothers you,
 you can use one of the following functions.
 @c JP
-メタキャラクタはシェルによって展開されます。外部から与えられた文字列を
-渡す場合には、セキュリティ上の問題が起こるので気を付けて下さい。
-
 サブプロセスの終了ステータスは自動的に回収されません。
 @code{process-wait} を呼ぶことは呼び出し側の責任であり、これを怠ると
 サブプロセスはゾンビプロセスになります。それが面倒であれば、以下の
@@ -5540,19 +5599,25 @@ you can use one of the following functions.
 @c COMMON
 @end defun
 
-@defun call-with-input-process command proc
+@defun call-with-input-process command proc &keyword output error encoding conversion-buffer-size
 @c EN
-Runs @var{command} via @code{/bin/sh} and pipes its stdout
+Runs @var{command} in a subprocess and pipes its stdout
 to an input port, then call @var{proc} with the port as an argument.
 When @var{proc} returns, it collects its exit status,
 then returns the result @var{proc} returned.
 The cleanup is done even if @var{proc} raises an error.
+
+The semantics of @var{command} and keyword arguments are the same
+as @code{open-input-process-port} above.
 @c JP
-@code{/bin/sh} 経由で @var{command} を実行し、その標準出力と入力ポートを
+子プロセスで@var{command} を実行し、その標準出力と入力ポートを
 パイプで繋ぎ、そのポートを引数として @var{proc} を呼び出します。
 @var{proc} が返るとその終了ステータスを回収し、@var{proc} が返した
 結果を返します。@var{proc} がエラーを通知しても、クリーンアップは
 行われます。
+
+@var{command}およびキーワード引数の意味は@code{open-input-process-port}と
+同じです。
 @c COMMON
 @example
 (call-with-input-process "ls -l *"
@@ -5560,36 +5625,59 @@ The cleanup is done even if @var{proc} raises an error.
 @end example
 @end defun
 
-@defun with-input-from-process command thunk
+@defun with-input-from-process command thunk &keyword output error encoding conversion-buffer-size
 @c EN
-Runs @var{command} via @code{/bin/sh}, and calls @var{thunk}
+Runs @var{command} in a subprocess, and calls @var{thunk}
 with its current input port connected to the command's stdout.
-The command is terminated and its exit status is collected
-when @var{thunk} returns, or it raises an error.
+The command is terminated and its exit status is collected,
+after @var{thunk} returns or raises an error.
+
+The semantics of @var{command} and keyword arguments are the same
+as @code{open-input-process-port} above.
 @c JP
-@code{/bin/sh} 経由で @var{command} を実行し、コマンドの標準出力に
+子プロセスで @var{command} を実行し、コマンドの標準出力に
 接続された現在の入力ポートとともに @var{thunk} を呼び出します。
-コマンドが終了すると、@var{thunk} が返った時点で終了ステータスが
-回収されますが、そうでない場合はエラーを通知します。
+@var{thunk}が終了するかエラーを投げた後に、コマンドの終了ステータスが
+回収されます。
+
+@var{command}およびキーワード引数の意味は@code{open-input-process-port}と
+同じです。
 @c COMMON
 @example
 (with-input-from-process "ls -l *" read-line)
 @end example
 @end defun
 
-@defun open-output-process-port command
+@defun open-output-process-port command &keyword input error encoding conversion-buffer-size
 @c EN
-Runs @code{command} via @code{/bin/sh}, and returns an output
-port which is connected to the stdin of the command.
-The stdout and stderr of the command is redirected to @var{/dev/null}.
+Runs @code{command} in a subprocess asynchronously.  Returns two values,
+an output port which is connected to the stdin of the subprocess.
+and the process object.
+
+The subprocess's stdin is redirected from @code{/dev/null}, 
+and its stderr shares the calling process's stderr by default.
+You can change these by giving file pathnames to @var{input} and
+@var{error} keyword arguments, respectively.
+
+The semantics of @var{command} is the same as
+@code{open-input-process-port}.  The semantics of
+@var{encoding} and @var{conversion-buffer-size} are also the same.
 
 The exit status of the subprocess is not automatically collected.
 The caller should call @code{process-wait} on the subprocess
 at appropriate time.
 @c JP
-@code{/bin/sh} 経由で @code{command} を実行し、コマンドの標準入力に
-接続された出力ポートを返します。
-コマンドの標準出力と標準エラーは @var{/dev/null} へリダイレクトされます。
+子プロセスで @code{command} を非同期に実行します。
+子プロセスの標準入力に接続された出力ポートと、
+プロセスオブジェクトの二つの値を返します。
+
+デフォルトでは、子プロセスの標準入力は@code{/dev/null}にリダイレクトされ、
+標準エラー出力は呼び出したプロセスと共有されます。
+@var{input}と@var{error}キーワード引数にパス名を与えることで、
+これらの出力をリダイレクトすることができます。
+
+@var{command}引数、および@var{encoding}と@var{conversion-buffer-size}の
+意味は、@code{open-input-process-port}と同じです。
 
 サブプロセスの終了ステータスは自動的には回収されません。
 適切なタイミングで、サブプロセスに対して @code{process-wait} を呼ぶ
@@ -5597,17 +5685,22 @@ at appropriate time.
 @c COMMON
 @end defun
 
-@defun call-with-output-process command proc
+@defun call-with-output-process command proc &keyword input error encoding conversion-buffer-size
 @c EN
-Runs @code{command} via @code{/bin/sh}, and calls @var{proc} 
+Runs @code{command} in a subprocess, and calls @var{proc} 
 with an output port which is connected to the stdin of the command.
-The exit status of the command is collected after @var{proc}
-returns, or it raises an error.
+The exit status of the command is collected after either @var{proc}
+returns or raises an error.
+
+The semantics of keyword arguments are the same as
+@code{open-input-process-port}.
 @c JP
-@code{/bin/sh} 経由で @code{command} を実行し、コマンドの標準入力に
+@code{command} を子プロセスで実行し、コマンドの標準入力に
 接続された出力ポートとともに @var{proc} を呼び出します。
-コマンドの終了ステータスは、@var{proc} が返ると回収されますが、
-そうでない場合はエラーが通知されます。
+コマンドの終了ステータスは、@var{proc} が返るかエラーを通知した
+後に回収されます。
+
+キーワード引数の意味は@var{open-input-process-port}と同じです。
 @c COMMON
 @example
 (call-with-output-process "/usr/sbin/sendmail"
@@ -5615,7 +5708,7 @@ returns, or it raises an error.
 @end example
 @end defun
 
-@defun with-output-to-process command thunk
+@defun with-output-to-process command thunk &keyword input error encoding conversion-buffer-size
 @c EN
 Same as @code{call-with-output-process}, except that the
 output port which is connected to the stdin of the command
@@ -5627,29 +5720,33 @@ is set to the current output port while executing @var{thunk}.
 @c COMMON
 @end defun
 
-@defun call-with-process-io command proc
+@defun call-with-process-io command proc &keyword error encoding conversion-buffer-size
 @c EN
-Runs @var{command} via @code{/bin/sh}, and calls @var{proc}
+Runs @var{command} in a subprocess, and calls @var{proc}
 with two arguments; the first argument is an input port which
 is connected to the command's stdout, and the second is an output
 port connected to the command's stdin.  The error output from
-the command is redirected to @code{/dev/null}.
+the command is shared by the calling process's, unless
+an alternative pathname is given to the @var{error} keyword argument.
 
 The exit status of the command is collected when @var{proc}
 returns or raises an error.
 @c JP
-@code{/bin/sh} 経由で @var{command} を実行し、@var{proc} を2つの引数と
+@var{command} をサブプロセスで実行し、@var{proc} を2つの引数と
 ともに呼び出します。最初の引数は入力ポートで、コマンドの標準出力に
 接続されたものです。2番目の引数は出力ポートでコマンドの標準入力に
-接続されたものです。コマンドからのエラー出力は、@code{/dev/null} へ
-リダイレクトされます。
+接続されたものです。コマンドからのエラー出力は、@var{error}キーワード
+引数でパス名が指定されない限り、呼び出したプロセスのエラー出力が共有されます。
+
+コマンドの終了ステータスは、@var{proc}が戻るかエラーを投げた場合に
+回収されます。
 @c COMMON
 @end defun
 
 @defun process-output->string command
 @defunx process-output->string-list command
 @c EN
-Runs @var{command} and collects its output (to stdout) to return them.
+Runs @var{command} and collects its output (to stdout) and returns them.
 @code{process-output->string} concatenates all the output from @var{command}
 to one string, replacing any sequence of whitespace characters to
 single space.   The action is similar to ``command substitution''
@@ -5660,7 +5757,7 @@ characters are stripped.
 
 Internally, @var{command} is run by @code{call-with-input-process}.
 @c JP
-@var{command} を実行し、その(標準出力への)出力を返すために回収します。
+@var{command} を実行し、その(標準出力への)出力を回収して返します。
 @code{process-output->string} は @var{command} からの全ての出力を連結し
 1つの文字列とします。その際、空白文字からなるシーケンスは1つの空白に
 置換されます。このアクションは、シェルスクリプトにおける「コマンド置換」
