@@ -48,7 +48,8 @@ OBJS = core.o vm.o compile.o macro.o error.o class.o boolean.o char.o \
 TESTFILES = ../test/primsyn.scm \
 	    ../test/module.scm  \
 	    ../test/macro.scm   \
-	    ../test/dynwind.scm
+	    ../test/dynwind.scm \
+	    ../test/srfi.scm
 
 .SUFFIXES: .stub
 
