@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.14 2001-01-31 07:29:13 shiro Exp $
+ *  $Id: vm.c,v 1.15 2001-01-31 11:55:17 shiro Exp $
  */
 
 #include "gauche.h"
@@ -82,6 +82,7 @@ static void vm_reset()
 {
     theVM->sp = theVM->stack;
     theVM->env = NULL; /*topenv(theVM->module);*/
+    theVM->argp = (ScmEnvFrame*)theVM->stack;
     theVM->cont = NULL;
     theVM->pc = SCM_NIL;
     theVM->val0 = SCM_UNDEFINED;
@@ -139,6 +140,7 @@ ScmVM *Scm_SetVM(ScmVM *vm)
     ScmObj pc = vm->pc;                         \
     ScmContFrame *cont = vm->cont;              \
     ScmEnvFrame *env = vm->env;                 \
+    ScmEnvFrame *argp = vm->argp;               \
     ScmObj *sp = vm->sp;                        \
     ScmObj val0 = vm->val0
 
@@ -147,6 +149,7 @@ ScmVM *Scm_SetVM(ScmVM *vm)
     do {                                        \
         vm->pc = pc;                            \
         vm->env = env;                          \
+        vm->argp = argp;                        \
         vm->cont = cont;                        \
         vm->sp = sp;                            \
         vm->val0 = val0;                        \
@@ -156,6 +159,7 @@ ScmVM *Scm_SetVM(ScmVM *vm)
     do {                                        \
         pc = vm->pc;                            \
         env = vm->env;                          \
+        argp = vm->argp;                        \
         cont = vm->cont;                        \
         sp = vm->sp;                            \
     } while (0)
@@ -165,19 +169,22 @@ ScmVM *Scm_SetVM(ScmVM *vm)
 #define PUSH_CONT(next_pc)                              \
     do {                                                \
         ScmContFrame *newcont = (ScmContFrame*)sp;      \
-        sp += CONT_FRAME_SIZE;                          \
         newcont->prev = cont;                           \
         newcont->env = env;                             \
+        newcont->argp = argp;                           \
+        newcont->size = sp - (ScmObj*)argp;             \
         newcont->pc = next_pc;                          \
         cont = newcont;                                 \
+        sp += CONT_FRAME_SIZE;                          \
     } while (0)
 
 /* pop a continuation frame, i.e. return from a procedure.
    env is assumed to point the argument frame.  */
 #define POP_CONT()                                      \
     do {                                                \
-        sp  -= CONT_FRAME_SIZE + ENV_SIZE(env->size);   \
+        sp   = (ScmObj*)cont->argp + cont->size;        \
         env  = cont->env;                               \
+        argp = cont->argp;                              \
         pc   = cont->pc;                                \
         cont = cont->prev;                              \
     } while (0)
@@ -187,9 +194,9 @@ ScmVM *Scm_SetVM(ScmVM *vm)
    the call, by adjust_argument_frame(). */
 #define PUSH_ENV_HDR()                          \
     do {                                        \
-        ScmEnvFrame *newenv = (ScmEnvFrame*)sp; \
-        newenv->info = SCM_FALSE;               \
-        newenv->size = 0;     /*patched later*/ \
+        argp = (ScmEnvFrame*)sp;                \
+        argp->info = SCM_FALSE;                 \
+        argp->size = 0;     /*patched later*/   \
         sp += ENV_HDR_SIZE;                     \
     } while (0)
 
@@ -271,10 +278,10 @@ static ScmEnvFrame *save_env(ScmVM *vm)
 inline
 #endif
 static int adjust_argument_frame(ScmVM *vm,
-                                 ScmObj proc, int caller_args,
-                                 ScmEnvFrame *newenv)
+                                 ScmObj proc, int caller_args)
 {
     int i, reqargs, restarg, callee_args;
+    
     if (!SCM_PROCEDUREP(proc)) Scm_Error("bad procedure: %S", proc);
 
     reqargs = SCM_PROCEDURE_REQUIRED(proc);
@@ -293,16 +300,16 @@ static int adjust_argument_frame(ScmVM *vm,
             POP_ARG(a);
             p = Scm_Cons(a, p);
         }
-        newenv->data[reqargs] = p;
-        vm->sp = (ScmObj*)newenv + ENV_SIZE(callee_args);
+        vm->argp->data[reqargs] = p;
+        vm->sp = (ScmObj*)vm->argp + ENV_SIZE(callee_args);
     } else {
         if (caller_args != reqargs) {
             Scm_Error("wrong number of arguments for %S (required %d, got %d)",
                       proc, reqargs, caller_args);
         }
     }
-    newenv->info = SCM_PROCEDURE_INFO(proc);
-    newenv->size = callee_args;
+    vm->argp->info = SCM_PROCEDURE_INFO(proc);
+    vm->argp->size = callee_args;
     return callee_args;
 }
 
@@ -393,6 +400,39 @@ static void run_loop()
                 PUSH_ENV_HDR();
                 continue;
             }
+        case SCM_VM_TAIL_CALL:;
+        case SCM_VM_CALL:
+            {
+                int nargs = SCM_VM_INSN_ARG(code);
+                int tailp = (SCM_VM_INSN_CODE(code)==SCM_VM_TAIL_CALL);
+                int argcnt;
+
+                SAVE_REGS();
+                argcnt = adjust_argument_frame(vm, val0, nargs);
+                RESTORE_REGS();
+                if (tailp) {
+                    /* discard the caller's argument frame, and shift
+                       the callee's argument frame there. */
+                    ScmObj *to = (ScmObj*)argp - ENV_SIZE(env->size);
+                    memmove(to, argp, ENV_SIZE(argcnt)*sizeof(ScmObj));
+                    argp = (ScmEnvFrame*)to;
+                    sp = to + ENV_SIZE(argcnt);
+                }
+                
+                if (SCM_SUBRP(val0)) {
+                    env = argp;
+                    SAVE_REGS();
+                    val0 = SCM_SUBR(val0)->func(argp->data, argcnt,
+                                                SCM_SUBR(val0)->data);
+                    RESTORE_REGS();
+                    pc = SCM_NIL;
+                } else {
+                    env = argp;
+                    env->up = SCM_CLOSURE(val0)->env;
+                    pc = SCM_CLOSURE(val0)->code;
+                }
+                continue;
+            }
         case SCM_VM_GREF:
             {
                 ScmObj sym;
@@ -436,40 +476,6 @@ static void run_loop()
                 VM_ASSERT(e != NULL);
                 VM_ASSERT(e->size > off);
                 val0 = e->data[off];
-                continue;
-            }
-        case SCM_VM_TAIL_CALL:;
-        case SCM_VM_CALL:
-            {
-                int nargs = SCM_VM_INSN_ARG(code);
-                int tailp = (SCM_VM_INSN_CODE(code)==SCM_VM_TAIL_CALL);
-                ScmEnvFrame *argframe = (ScmEnvFrame *)(sp - ENV_SIZE(nargs));
-                int argcnt;
-
-                SAVE_REGS();
-                argcnt = adjust_argument_frame(vm, val0, nargs, argframe);
-                RESTORE_REGS();
-                if (tailp) {
-                    /* discard the caller's argument frame, and shift
-                       the callee's argument frame there. */
-                    ScmObj *to = (ScmObj*)argframe - ENV_SIZE(env->size);
-                    memmove(to, argframe, ENV_SIZE(argcnt)*sizeof(ScmObj));
-                    argframe = (ScmEnvFrame*)to;
-                    sp = to + ENV_SIZE(argcnt);
-                }
-                
-                if (SCM_SUBRP(val0)) {
-                    env = argframe;
-                    SAVE_REGS();
-                    val0 = SCM_SUBR(val0)->func(argframe->data, argcnt,
-                                                SCM_SUBR(val0)->data);
-                    RESTORE_REGS();
-                    POP_CONT();
-                } else {
-                    env = argframe;
-                    env->up = SCM_CLOSURE(val0)->env;
-                    pc = SCM_CLOSURE(val0)->code;
-                }
                 continue;
             }
         case SCM_VM_TAILBIND:
@@ -657,15 +663,18 @@ static void run_loop()
 static void arrange_application(ScmObj proc, ScmObj args, int numargs)
 {
     DECL_REGS;
-    ScmObj cp, next;
+    ScmObj cp, code = SCM_NIL, tail;
 
-    POP_CONT();
-    next = Scm_Cons(SCM_VM_INSN1(SCM_VM_CALL, numargs), pc);
-    PUSH_CONT(next);
-    PUSH_ENV_HDR();
-    SCM_FOR_EACH(cp, args) PUSH_ARG(SCM_CAR(cp));
+    /* This is inefficient, but for now ... */
+    SCM_APPEND1(code, tail, SCM_VM_INSN(SCM_VM_PRE_TAIL));
+    SCM_FOR_EACH(cp, args) {
+        SCM_APPEND1(code, tail, SCM_CAR(cp));
+        SCM_APPEND1(code, tail, SCM_VM_INSN(SCM_VM_PUSH));
+    }
+    SCM_APPEND1(code, tail, proc);
+    SCM_APPEND1(code, tail, SCM_VM_INSN1(SCM_VM_CALL, numargs));
+    PUSH_CONT(code);
     SAVE_REGS();
-    Scm_VMDump(theVM);
 }
 
 /* The Scm_VMApply family is supposed to be called in SUBR.  It doesn't really
@@ -711,14 +720,13 @@ ScmObj Scm_VMApply2(ScmObj proc, ScmObj arg1, ScmObj arg2)
 ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
 {
     DECL_REGS;
-    ScmObj v = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_TAIL);
-    ScmEnvFrame *topenv;        /* dummy env.  later, we need to derive
-                                   this from ScmObj */
-    topenv = (ScmEnvFrame *)sp;
+    ScmObj v = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_NORMAL);
+    /* push dummy continuation and env, to be popped up on
+       return of the current subr.
+       TODO: need to think out clearer control. */
+    PUSH_CONT(v);
     PUSH_ENV_HDR();
-    topenv->size = 0;
-    PUSH_CONT(SCM_NIL);
-    pc = v;
+    env = argp = (ScmEnvFrame *)(sp - ENV_HDR_SIZE);
     SAVE_REGS();
     return SCM_UNDEFINED;
 }
@@ -1145,6 +1153,7 @@ void Scm_VMDump(ScmVM *vm)
     Scm_Printf(out, "VM %p -----------------------------------------------------------\n", vm);
     Scm_Printf(out, "   pc: %65.1S\n", vm->pc);
     Scm_Printf(out, "   sp: %p\n", vm->sp);
+    Scm_Printf(out, " argp: %p\n", vm->argp);
     Scm_Printf(out, "  btm: %p\n", vm->stack);
     Scm_Printf(out, " val0: %65.1S\n", vm->val0);
 
@@ -1158,6 +1167,7 @@ void Scm_VMDump(ScmVM *vm)
     while (cont) {
         Scm_Printf(out, "   %p\n", cont);
         Scm_Printf(out, "              env = %p\n", cont->env);
+        Scm_Printf(out, "             argp = %p[%d]\n", cont->argp, cont->size);
         Scm_Printf(out, "               pc = %50.1S\n", cont->pc);
         cont = cont->prev;
     }

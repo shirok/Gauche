@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.10 2001-01-31 07:29:13 shiro Exp $
+ *  $Id: vm.h,v 1.11 2001-01-31 11:55:17 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -67,12 +67,13 @@ typedef struct ScmEnvFrameRec {
 
 typedef struct ScmContFrameRec {
     struct ScmContFrameRec *prev; /* previous frame */
-    ScmEnvFrame *env;             /* current environment */
+    ScmEnvFrame *env;             /* saved environment */
+    ScmEnvFrame *argp;            /* saved argument pointer */
+    int size;                     /* size of argument frame */
     ScmObj pc;                    /* next PC */
-    int size;                     /* size of extra data */
 } ScmContFrame;
 
-#define CONT_FRAME_SIZE  4
+#define CONT_FRAME_SIZE  5
 
 extern void Scm_CallCC(ScmObj body);
 
@@ -127,10 +128,17 @@ struct ScmVMRec {
     ScmPort *curout;            /* current output port */
     ScmPort *curerr;            /* current error port */
 
-    ScmObj pc;                  /* program pointer. */
-    ScmEnvFrame *env;           /* environment */
-    ScmContFrame *cont;         /* continuation */
-    ScmObj val0;
+    /* Registers */
+    ScmObj pc;                  /* Program pointer.  Points list of
+                                   instructions to be executed.  */
+    ScmEnvFrame *env;           /* Current environment. */
+    ScmContFrame *cont;         /* Current continuation. */
+    ScmEnvFrame *argp;          /* Current argument pointer.  Points
+                                   to the incomplete environment frame
+                                   being accumulated.  This is a part of
+                                   continuation.
+                                 */
+    ScmObj val0;                /* Value register. */
 
     ScmObj handlers;            /* chain of active dynamic handlers */
 

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.11 2001-01-31 07:29:13 shiro Exp $
+ *  $Id: compile.c,v 1.12 2001-01-31 11:55:17 shiro Exp $
  */
 
 #include "gauche.h"
@@ -169,11 +169,6 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
     ScmObj code = SCM_NIL, codetail;
     ScmVM *vm = Scm_VM();
 
-    if (!SCM_PTRP(form)) {  /* immediate value */
-        if (ctx == SCM_COMPILE_STMT) return SCM_NIL;
-        else return SCM_LIST1(form);
-    }
-    
     if (SCM_PAIRP(form)) {
         /* we have a pair.  This is either a special form
            or a function call */
