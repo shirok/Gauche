@@ -9841,7 +9841,6 @@ If @var{start} and/or @var{end} are given, they limit the range of
 @findex u64vector-copy!
 @findex f32vector-copy!
 @findex f64vector-copy!
-@c EN
 Both @var{target} and @var{source} must be @i{TAG}vectors, and
 @var{target} must be mutable.
 This procedure copies the elements of @var{start}, beginning from index
@@ -9849,14 +9848,6 @@ This procedure copies the elements of @var{start}, beginning from index
 beginning from index @var{tstart}.  @var{Sstart} and @var{tstart}
 may be omitted, and in that case 0 and the length of @var{source}
 are assumed, respectively.
-@c JP
-@var{target} および @var{source} はともに @i{TAG}vector でなければ
-なりません。さらに、@var{target} は変更可能でなければなりません。
-この手続きは、@var{start}の要素を、インデックス@var{sstart}から(これを含み)
-@var{send} までを、@var{target} へインデックス @var{tstart}からコピーします。
-@var{sstart}および@var{tstart}は省略可能で、その場合には、それぞれ、
-0 および @var{source}の長さが仮定されます。
-@c COMMON
 
 @example
 (let ((target (u8vector 0 1 2 3 4 5 6)))
@@ -9865,17 +9856,10 @@ are assumed, respectively.
  @result{} #u8(0 1 11 12 13 6)
 @end example
 
-@c EN
 If the number of elements in the source vector between @var{sstart}
-and @var{send} is larger than the target vector beginning from @var{tstart},
+and @var{send} is larger than the target vector beginning from @code{tstart},
 the excess elements are silently discarded.
-@c JP
-もし、コピー元のベクタの @var{sstart} と @var{send} の間にある要素の
-数がコピー先のベクタの@var{tstart}以降の部分よりも大きければ、超過分の
-ベクタはだまって捨てられます。
-@c COMMON
 
-@c EN
 @emph{Note:} This procedure used to take just two uniform vectors, @var{target}
 and @var{source}, and just copies contents of @var{source} to @var{target}.
 Both vectors had to be the same type and same length.  The API is revised
@@ -9883,15 +9867,6 @@ to the current form to make it parallel with @code{string-copy!} (SRFI-13)
 and @code{vector-copy!} (SRFI-43).  The old interface is still supported
 for the backward compatibility, but it is deprecated and will be gone
 in the future releases.
-@c JP
-@emph{注意事項:} この手続きは以前はユニフォームベクタ @var{target} および
-@var{source} のみを引数としてとり、@var{source} の内容を @var{target} へ
-コピーするためだけに使われました。両方のベクタは同じ型で、同じ長さでなけ
-ればなりませんでした。この API は @code{string-copy!} (SRFI-13) および
-@code{vector-copy!} (SRFI-43)にあわせて現在の形式に改訂されています。
-旧来のインタフェースもバックワードコンパチビリティのためにサポートされて
-いますが、これは廃止予定で、将来のリリースではサポートされなくなります。
-@c COMMON
 @end deftp
 
 @c EN
@@ -10094,23 +10069,12 @@ u8vectorを返します。省略可能な範囲引数@var{start}、@var{end}は、
 
 @defun string->s8vector! target tstart string &optional start end
 @defunx string->u8vector! target tstart string &optional start end
-@c EN
 @var{Target} must be an s8vector or a u8vector, respectively.
 @var{Target} must be mutable.
 Like copies the raw byte representation of @var{string}
 into @var{target} beginning from index @var{tstart}.
-@c JP
-@var{target} は、それぞれ s8vector あるいは u8vector でなければなりません。
-@var{target} は、変更可能でなければなりません。
-@var{string} の生バイト表現を @var{target} へインデックス @var{tstart}
-からコピーします。
-@c COMMON
 
-@c EN
 Returns @var{target}.
-@c JP
-@var{target} を返します。
-@c COMMON
 
 @example
 (let ((target (make-u8vector 10 0)))
@@ -10963,230 +10927,105 @@ prior to @var{rel2}, @var{rel1} is the same as @var{rel2}, or
 
 @deftp {Module} gauche.vport
 @mdindex gauche.vport
-@c EN
 @emph{Virtual ports}, or procedural ports, are the ports
 whose behavior can be programmed in Scheme.
-@c JP
-@emph{仮想ポート}あるいは手続き的ポートは Scheme でプログラム可能な振舞い
-をするポートです。
-@c COMMON
 
-@c EN
 This module provides two kinds of virtual ports:
 Fully virtual ports, in which every I/O operation invokes
 user-provided procedures, and virtual buffered ports,
 in which I/O operations are done on an internal buffer and
 user-provided procedures are called only when the buffer
 needs to be filled or flushed.
-@c JP
-このモジュールは 2 種類の仮想ポートを提供します。ひとつは、
-完全仮想ポートで、すべての I/O 操作でユーザが提供する手続きが
-呼出されるものです。もうひとつは、仮想バッファポートで、
-I/O 操作は内部バッファ上で行われ、ユーザが提供する手続きは
-バッファを一杯にするかフラッシュする必要がある場合にのみ
-呼出されます。
-@c COMMON
 
-@c EN
 This module also provides virtual buffered ports backed up
 by a uniform vector, as an example of the feature.
-@c JP
-このモジュールはさらに、機能の例にあるような、ユニフォームベクタにより
-バックアップされる仮想バッファポートも提供します。
-@c COMMON
 @end deftp
 
-@c EN
 @subsubheading Fully virtual ports
-@c JP
-@subsubheading 完全仮想ポート
-@c COMMON
 
-@c EN
 This type of virtual ports are realized by classes
 @code{<virtual-input-port>} and @code{<virtual-output-port>}.
 You can customize the port behavior by setting 
 appropriate slots with procedures.
-@c JP
-このタイプの仮想ポートは、@code{<virtual-input-port>} クラス
-および @code{<virtual-output-port>} クラスで実現されています。
-適切なスロットに手続きをセットすることでポートの振舞いをカスタマイズ
-可能です。
-@c COMMON
 
 @deftp {Class} <virtual-input-port>
 @clindex virtual-input-port
-@c EN
 An instance of this class can be used as an input port.
 The behavior of the port depends on the settings of the
 instance slot values.
-@c JP
-このクラスのインスタンスは入力ポートとして使えます。
-このポートの振舞いはインスタンスのスロットに設定された値に依存します。
-@c COMMON
 
-@c EN
 To work as a meaningful input port, at least either one of
 @code{getb} or @code{getc} slot must be set.  Otherwise,
 the port returns EOF for all input requests.
-@c JP
-まともな入力ポートとして動かすためには、少くとも、@code{getb} スロット
-あるいは @code{getc} スロットのどちらか一方は設定しなければなりません。
-さもなければ、このポートはすべての入力要求に対して EOF を返します。
-@c COMMON
 
 @defivar {<virtual-input-port>} getb
-@c EN
 If set, the value must be a proceture that takes no arguments.
 Every time binary input is required, the procedure is called.
-@c JP
-設定されているのなら、その値は、引数を取らない手続きでなければなりません。
-バイナリ入力の要求のたびに、この手続きが呼ばれます。
-@c COMMON
 
-@c EN
 The procedure must return an exact integer between 0 and 255
 inclusive, or @code{#f} or an EOF object.  If it returns an
 integer, it becomes the value read from the port.  If it returns
 other values, the port returns EOF.
-@c JP
-この手続きは、0 から 255 までの正確な整数を返すか、@code{#f}あるいは
-EOF オブジェクトを返さなければなりません。整数を返す場合には、
-それがこのポートから読みとられる値となります。それ以外の値を返す
-場合は、このポートは EOF を返します。
-@c COMMON
 
-@c EN
 If the port is requested a character input and it doesn't have
 the @code{getc} procedure, the port calls this procedure, possibly
 multiple times, to construct a whole character.
-@c JP
-このポートが文字入力を要求され、かつ、@code{getc} 手続きを持たない場合、
-このポートはこの手続きを呼び(複数回の可能性もある)文字全体を構築します。
-@c COMMON
 @end defivar
 
 @defivar {<virtual-input-port>} getc
-@c EN
 If set, the value must be a proceture that takes no arguments.
 Every time character input is required, the procedure is called.
-@c JP
-設定されているのなら、その値は、引数を取らない手続きでなければなりません。
-文字入力の要求のたびに、この手続きが呼ばれます。
-@c COMMON
 
-@c EN
 The procedure must return a character,
 @code{#f} or an EOF object.  If it returns a character,
 it becomes the value read from the port.  If it returns
 other values, the port returns EOF.
-@c JP
-この手続きは文字返すか、または@code{#f}あるいEOFオブジェクトを返さなければ
-なりません。文字が返す場合には、それがこのポートから読みとられる値と
-なります。それ以外の値を返す場合は、このポートは EOF を返します。
-@c COMMON
 
-@c EN
 If the port is requested a binary input and it doesn't have
 the @code{getb} procedure, the port calls this procedure, then converts
 a character into a byte sequence, and use it as the binary
 value(s) read from the port.
-@c JP
-このポートがバイナリ入力を要求され、かつ、@code{getb} 手続きを持たない場合、
-このポートはこの手続きを呼び、文字をバイト列に変換し、それをこのポートから
-読みだされる値としてつかいます。
-@c COMMON
 @end defivar
 
 @defivar {<virtual-input-port>} gets
-@c EN
 If set, the value must be a procedure that takes one argument,
 a positive exact integer.  It is called when the block binary
 input, such as @code{read-block}, is requested.
-@c JP
-設定されているなら、その値は、正の正確は整数の引数をひとつだけとる手続き
-でなければなりません。ブロックバイナリ入力、たとえば、
-@code{read-block}などが要求された場合に、呼出されます。
-@c COMMON
 
-@c EN
 The reason of this procedure is efficiency; if this procedure
 is not provided, the port calls @code{getb} procedure repeatedly
 to prepare the block of data.  In some cases, providing block input
 can be much more efficient (e.g. suppose you're reading from
 a block of memory chunk).
-@c JP
-この手続きは効率をかせぐためにあります。もし、この手続きが用意されて
-いなければ、このポートは、データブロックを準備するのに @code{getb}を
-繰り返し呼びます。場合によっては、ブロック入力を用意するほうが
-はるかに効率的です。(たとえば、メモリチャンクのブロックからの読みだし
-を行なるような場合です。)
-@c COMMON
 
-@c EN
 You can leave this slot unset if you don't need to take such
 advantage.
-@c JP
-こうした利点を必要としないのなら、このスロットは未設定のままにして
-おいてもかまいません。
-@c COMMON
 @end defivar
 
 @defivar {<virtual-input-port>} ready
-@c EN
 If set, the value must be a procedure that takes one boolean argument.
 It is called when @code{char-ready?} or @code{byte-ready?} is
 called on the port.   The value returned from your procedure will
 be the result of these procedures.
-@c JP
-設定されているなら、その値は、真偽値をひとつだけとる手続きでなければ
-なりません。この手続きは、このポートに対して、@code{char-ready?}
-あるいは @code{byte-ready?} が呼ばれたときに呼出されます。設定した手続き
-が返す値が、これらの手続きの結果になります。
-@c COMMON
 
-@c EN
 The boolean argument is @code{#t} if
 @code{char-ready?} is called, or @code{#f} if @code{byte-ready?} is called.
-@c JP
-@code{char-ready?} が呼ばれたのなら、真偽値引数は @code{#t} です。
-@code{byte-ready?} が呼ばれたのなら、真偽値引数は @code{#f} になります。
-@c COMMON
 
-@c EN
 If unset, @code{char-ready?} and @code{byte-ready?}
 always return @code{#t} on the port
-@c JP
-未設定なら、@code{char-ready?} および @code{byte-ready?} は
-このポートに対して常に、@code{#t} を返します。
-@c COMMON
 @end defivar
 
 @defivar {<virtual-input-port>} close
-@c EN
 If set, the value must be a procedure that takes no arguments.
 It is called when the port is closed.  Return value is discarded.
 You can leave this unset
 if you don't need to take an action when the port is closed.
-@c JP
-設定されているのなら、その値は引数を取らない手続きでなければなりません。
-その手続きはこのポートがクローズされるときに呼びだされ、返り値は
-破棄されます。このポートをクローズするときになんらかのアクションが
-必要でないのなら、未設定にしておけます。
-@c COMMON
 
-@c EN
 This procedure may be called from a finalizer, so you have to be
 careful to write it.   See the note on finalization below.
-@c JP
-この手続きはファイナライザから呼ばれることになるでしょう。したがって、
-これを書くときには慎重にやる必要があります。後述のファイナライズに
-関する注意書きを参照してください。
-@c COMMON
 @end defivar
 
 @defivar {<virtual-input-port>} seek
-@c EN
 If set, the value must be a procedure that takes two arguments,
 offset and whence.  The meaning of them is the same as the arguments
 to @code{port-seek} (@xref{Common port operations}).
@@ -11194,38 +11033,15 @@ The procedure must adjust the port's internal read pointer
 so that the next read begins from the new pointer.
 It should return the updated pointer (the byte offset from the
 beginning of the port).
-@c JP
-設定されているのなら、その値は、オフセット引数とそれがどこからかを示す引数
-の 2つの引数をとる手続きでなければなりません。これらの引数の意味は、
-@code{port-seek} (@ref{Common port operations} 参照) のそれと同じです。
-この手続きは、次の読み出しが新しい位置から始められるように
-内部のリードポインタを調整しなければなりません。それは
-(そのポートの最初から指定したバイトオフセット分)更新された
-ポインタを返すようにすべきです。)
-@c COMMON
 
-@c EN
 If unset, call of @code{port-seek} and @code{port-tell} on this
 port will return @code{#f}.
-@c JP
-未設定なら、このポートに対する @code{port-seek} および @code{port-tell}
-の呼び出しは @code{#f} になります。
-@c COMMON
 
-@c EN
 Note that this procedure may be called for the purpose of merely
 querying the current position, with 0 as @code{offset} and @code{SEEK_CUR}
 as @code{whence}.  If your port knows the read pointer but cannot move it,
 you can still provide this procedure, which returns the current pointer
 position for such queries and returns @code{#f} for other arguments.
-@c JP
-この手続きは単に現在の位置を問合せるために、
-@code{offset} として 0 を、@code{whence} として @code{SEEK_CUR} を与えて
-呼び出すこともあることに注意してください。リードポインタの位置は知って
-いるが、動かすことができないという場合にも、この手続きを提供することが
-できます。上のような問合せには、現在位置を返し、そうでない場合には、
-@code{#f} を返します。
-@c COMMON
 @end defivar
 
 @end deftp
@@ -11233,305 +11049,142 @@ position for such queries and returns @code{#f} for other arguments.
 
 @deftp {Class} <virtual-output-port>
 @clindex virtual-output-port
-@c EN
 An instance of this class can be used as an output port.
 The behavior of the port depends on the settings of the
 instance slot values.
-@c JP
-このクラスインスタンスは出力ポートとして使えます。
-このポートの振舞いはインスタンスのスロットに設定された値に依存します。
-@c COMMON
 
-@c EN
 To work as an output port, at least either one of @code{putb} or
 @code{putc} slot has to be set.
-@c JP
-まともな出力ポートとして動かすためには、少くとも、@code{putb} スロット
-あるいは @code{putc} スロットのどちらか一方は設定しなければなりません。
-@c COMMON
 
 @defivar {<virtual-output-port>} putb
-@c EN
 If set, the value must be a procedure that takes one argument,
 a byte value (exact integer between 0 and 255, inclusive).
 Every time binary output is required, the procedure is called.
 The return value of the procedure is ignored.
-@c JP
-設定されているなら、その値は、バイト値(0 から 255までの正確な整数)を
-ひとつだけ引数としてとる手続きでなければなりません。バイナリ出力
-の要求のたびに、この手続きが呼ばれます。この手続きの返り値は無視
-されます。
-@c COMMON
 
-@c EN
 If this slot is not set and binary output is requested,
 the port may signal an @code{<io-unit-error>} error.
-@c JP
-このスロットが未設定の場合、バイナリ出力を要求されると、このポートは
-@code{<io-unit-error>} エラーを発生させることがあります。
-@c COMMON
 @end defivar
 
 @defivar {<virtual-output-port>} putc
-@c EN
 If set, the value must be a procedure that takes one argument,
 a character.
 Every time character output is required, the procedure is called.
 The return value of the procedure is ignored.
-@c JP
-設定されているなら、それは文字をひとつ引数にとる手続きでなければなりません。
-文字出力の要求があるたびにこの手続きがよばれます。この手続きの返り値は
-無視されます。
-@c COMMON
 
-@c EN
 If this slot is not set but @code{putb} slot is set,
 the virtual port decomposes the character into a sequence of bytes
 then calls @code{putb} procedures.
-@c JP
-このスロットが未設定であっても、@code{putb} スロットが設定されていれば、
-この仮想ポートは文字をバイト列に展開してから、@code{putb} を呼びだします。
-@c COMMON
 @end defivar
 
 @defivar {<virtual-output-port>} puts
-@c EN
 If set, the value must be a procedure that takes a
 (possibly incomplete) string.
 The return value of the procedure is ignored.
-@c JP
-設定されていれば、その値は、文字列(不完全なものである可能性もある)を
-ひとつ引数としてとる手続きでなければなりません。この手続きの返り値は
-無視されます。
-@c COMMON
 
-@c EN
 This is for efficiency.  If this slot is not set, the virtual port
 calls @code{putb} or @code{putc} repeatedly to output a chunk of data.
 But if your code can perform chunked output efficiently, 
 you can provide this procedure.
-@c JP
-これは、効率のためにあります。このスロットが未設定であれば、この
-仮想ポートは、データのかたまりを出力するために、@code{putb} 
-あるいは @code{putc} を繰り返し呼びます。もし、ひとかたまりの
-出力を効率的に実行可能なコードであれば、この手続きを提供できます。
-@c COMMON
 @end defivar
 
 @defivar {<virtual-output-port>} flush
-@c EN
 If set, the value must be a procedure that takes no arguments.
 It is called when flushing a port is required (e.g. @code{flush}
 is called on the port, or the port is being closed).
-@c JP
-設定されていれば、その値は引数をとらない手続きでなければなりません。
-ポートのフラッシュを要求されたときに呼ばれます(たとえば、@code{flush}
-がこのポートに対して呼ばれたとき、あるいは、このポートがクローズ
-されるとき)。
-@c COMMON
 
-@c EN
 This procedure is useful that your port does some sort of buffering,
 or needs to keep some state.  If your port doesn't do stateful operation,
 you can leave this unset.
-@c JP
-この手続きは、ポートが何らかのバッファリングをおこなうか、なんらかの
-状態を持つような場合に便利です。ポートが状態をともなう操作を行わない
-のなら、これは未設定にしておけます。
-@c COMMON
 
-@c EN
 This procedure may be called from a finalizer, and needs a special
 care.  See notes on finalizers below.
-@c JP
-この手続きはファイナライザから呼ばれることがあります。したがって、
-特別な注意が必要です。後述のファイナライザに関する注意書きを
-参照してください。
-@c COMMON
-
 @end defivar
 
 @defivar {<virtual-output-port>} close
-@c EN
 The same as @code{<virtual-input-port>}'s @code{close} slot.
-@c JP
-@code{<virtual-input-port>} の @code{close} スロットと同様です。
-@c COMMON
 @end defivar
 
 @defivar {<virtual-output-port>} seek
-@c EN
 The same as @code{<virtual-input-port>}'s @code{seek} slot.
-@c JP
-@code{<virtual-input-port>} の @code{seek} スロットと同様です。
-@c COMMON
 @end defivar
 
 @end deftp
 
-@c EN
-@subsubheading Virtual buffered ports
-@c JP
-@subsubheading 仮想バッファポート
-@c COMMON
 
-@c EN
+@subsubheading Virtual buffered ports
+
 This type of virtual ports are realized by classes
 @code{<buffered-input-port>} and @code{<buffered-output-port>}.
 You can customize the port behavior by setting 
 appropriate slots with procedures.
-@c JP
-このタイプの仮想ポートは @code{<buffered-input-port>} クラス
-および @code{<buffered-output-port>} クラスで実現されています。
-適切なスロットに手続きを設定するこでポートの振舞いをカスタマイズ
-することができます。
-@c COMMON
 
-@c EN
 Those ports have internal buffer and only calls Scheme procedures
 when the buffer needs to be filled or flushed.  Generally it is 
 far more efficient than calling Scheme procedures for every
 I/O operation.   Actually, the internal buffering mechanism is
 the same as Gauche's file I/O ports.
-@c JP
-これらのポートは、内部バッファをもっており、そのバッファを満たすか
-フラッシュするかの必要があるときにのみ、Scheme の手続きが呼ばれます。
-通常、I/O毎に Scheme の手続きを呼ぶよりも遥かに効率がいいものです。
-実際の内部バッファリング機構は、GaucheのファイルI/Oポートと同じです。
-@c COMMON
 
-@c EN
 These ports uses @code{u8vector} as a buffer.  See @ref{Uniform vectors}
 for the details.
-@c JP
-これらのポートはバッファとして @code{u8vector} を使います。詳細は、
-@ref{Uniform vectors} を参照してください。
-@c COMMON
 
 @deftp {Class} <buffered-input-port>
 @clindex buffered-input-port
 
-@c EN
 An instance of this class behaves as an input port.
 It has the following instance slots.  For a meaningful input
 port, you have to set at least @code{fill} slot.
-@c JP
-このクラスのインスタンスは、入力ポートとして振舞います。
-これは以下のようなインスタンススロットを持ちます。
-意味のある入力ポートとして使うには少くとも、@code{fill} スロットを
-設定しなければなりません。
-@c COMMON
 
 @defivar {<buffered-input-port>} fill
-@c EN
 If set, it must be a procedure that takes one argument,
 a @code{u8vector}.  It must fill the data from the
 beginning of the vector.  It doesn't need to fill the entire
 vector if there's not so many data.  However, if there are remaining
 data, it must fill at least one byte; if the data isn't readily
 available, it has to wait until some data becomes available.
-@c JP
-設定されているなら、@code{u8vector} の引数を一つとる手続きでなければ
-なりません。そのベクタの最初からデータを満さなければなりません。
-データが少い場合には、ベクタ全体を満す必要はありません。しかしながら、
-データが残っている場合には少くとも1バイトは満されていなければなりません。
-もしデータがまだ利用可能になっていなければ、なにがしかのデータが利用可能に
-なるまで待たなければなりません。
-@c COMMON
 
-@c EN
 The procedure must return a number of bytes it actually filled.
 It may return 0 or an EOF object to indicate the port has reached EOF.
-@c JP
-この手続きは実際に満されたバイト数を返さなければなりません。ポートが
-EOFに達したことを示すために、0 または EOFオブジェクトを返すこともできます。
-@c COMMON
 @end defivar
 
 @defivar {<buffered-input-port>} ready
-@c EN
 If set, it must be a procedure that takes no arguments.
 The procedure must return a true value if there are some data
 readily available to read, or @code{#f} otherwise.
 Unlike fully virtual ports, you don't need to distinguish
 binary and character I/O.
-@c JP
-設定されているなら、引数をとらない手続きでなければなりません。
-この手続きは、なにがしかの読み込み用データが利用可能になっていれば
-真の値を返し、そうでなければ、@code{#f}を返す。完全仮想ポートとはちがい、
-バイナリI/Oと文字I/Oを区別する必要はありません。
-@c COMMON
 
-@c EN
 If this slot is not set, the port is regarded as it always has data ready.
-@c JP
-このスロットが未定義の場合、このポートは常にデータが利用可能になっている
-とみなされます。
-@c COMMON
 @end defivar
 
 @defivar {<buffered-input-port>} close
-@c EN
 If set, it must be a procedure that takes no arguments.
 The procedure is called when the virtual buffered port is closed.
 You don't need to set this slot unless you need some cleaning up
 when the port is closed.
-@c JP
-設定されていれば、引数をとらない手続きでなければなりません。この手続きは
-仮想バッファポートがクローズされるときに呼出されます。ポートがクローズ
-されるときに、なにがしかのクリーンアップを行うのでなければ、設定する必要
-はありません。
-@c COMMON
 
-@c EN
 This procedure may be called from a finalizer, and
 needs special care.  See the note on finalization below.
-@c JP
-この手続きは、ファイナライザから呼ばれる可能性がありますので、特別な
-注意が必要です。後述のファイナライズに関する注意書きを参照してください。
-@c COMMON
 @end defivar
 
 @defivar {<buffered-input-port>} filenum
-@c EN
 If set, it must be a procedure that returns underlying
 file descriptor number (exact nonnegative integer).
 The procedure is called when @code{port-file-number} is called
 on the port.
-@c JP
-設定されているなら、裏にあるファイルディスクリプタ番号(正確な非負整数)
-を返す手続きでなければなりません。この手続きは @code{port-file-number}
-をこのポートに対して呼出したときに呼ばれます。
-@c COMMON
 
-@c EN
 If there's no such underlying file descriptor, you can
 return @code{#f}, or you can leave this slot unset.
-@c JP
-裏にファイルディスクリプタが存在していなければ、@code{#f} 返してもかまいません
-あるいは、このスロットを未設定にしておくこともできます。
-@c COMMON
 @end defivar
 
 @defivar {<buffered-input-port>} seek
-@c EN
 If set, it must be a procedure that takes two arguments,
 @var{offset} and @var{whence}.
 It works the same way as @code{<virtual-input-port>}'s seek procedure;
 see above.
-@c JP
-設定されているなら、オフセット引数とどこからかを示す引数の2つをとる
-手続きでなければなりません。これは、前述の
-@code{<virtual-input-port>}のseek 手続きと同じように動作します。
-@c COMMON
 
-@c EN
 This procedure may be called from a finalizer, and
 needs special care.  See the note on finalization below.
-@c JP
-この手続きはファイナライザから呼ばれる可能性があり、特別な注意が
-必要です。後述のファイナライズに関する注意書きを参照してください。
-@c COMMON
 @end defivar
 
 @end deftp
@@ -11539,151 +11192,78 @@ needs special care.  See the note on finalization below.
 @deftp {Class} <buffered-output-port>
 @clindex buffered-output-port
 
-@c EN
 An instance of this class behaves as an output port.
 It has the following instance slots.
 You have to set at least @code{flush} slot.
-@c JP
-このクラスのインスタンスは出力ポートして振舞います。これは、以下のような
-インスタンススロットを持ちます。少くとも @code{flush} は設定しなければ
-なりません。
-@c COMMON
 
 @defivar {<buffered-output-port>} flush
-@c EN
 If set, it must be a procedure that takes two arguments,
 an @code{u8vector} buffer and a flag.
 The procedure must output data in the buffer to somewhere,
 and returns the number of bytes actually output.
-@c JP
-設定されているなら、@code{u8vector}のバッファとフラグという2つの
-引数をとる手続きでなければなりません。手続きはバッファ内のデータを
-どこかへ出力しなければならず、実際に出力したバイト数を返します。
-@c COMMON
 
-@c EN
 If the flag is false, the procedure may output less
 than entire buffer (but at least one byte).  If the flag
 is true, the procedure must output entire buffer.
-@c JP
-フラグが偽なら、この手続きはバッファ全体よりも少い(ただし、最低でも
-1バイト)の出力を行ってもかまいません。もしフラグが真ならば、この手続きは、
-バッファの内容をすべて出力しなければなりません。
-@c COMMON
 @end defivar
 
 @defivar {<buffered-output-port>} close
-@c EN
 Same as @code{<buffered-input-port>}'s @code{close} slot.
-@c JP
-@code{<buffered-input-port>} の @code{close} スロットと同様です。
-@c COMMON
 @end defivar
 
 @defivar {<buffered-output-port>} filenum
-@c EN
 Same as @code{<buffered-input-port>}'s @code{filenum} slot.
-@c JP
-@code{<buffered-input-port>} の @code{filenum} スロットと同様です。
-@c COMMON
 @end defivar
 
 @defivar {<buffered-output-port>} seek
-@c EN
 Same as @code{<buffered-input-port>}'s @code{seek} slot.
-@c JP
-@code{<buffered-input-port>} の @code{seek} スロットと同様です。
-@c COMMON
 @end defivar
 
 @end deftp
 
-@c EN
-@subsubheading Uniform vector ports
-@c JP
-@subsubheading ユニフォームベクタポート
-@c COMMON
 
-@c EN
+@subsubheading Uniform vector ports
+
 The following two procedures returns a bufferd input/output port
 backed up by a uniform vector.    The source or destination vector
 can be any type of uniform vector, but they are aliased
 to @code{u8vector} (see @code{uvector-alias} in
 @ref{Uvector conversion operations}).
-@c JP
-以下の 2つの手続きは、ユニフォームベクタでバックアップされた、
-バッファ入/出力ポートを返します。読み込み元のベクタあるいは
-書き出し相手のベクタはどのようなユニフォームベクタであってもかまいません。
-しかし、@code{u8vector} の別名になります
-(@ref{Uvector conversion operations} の @code{uvector-alias} 参照)。
-@c COMMON
 
-@c EN
 If used together with @code{pack}/@code{unpack} 
 (see @ref{Packing Binary Data}), it is useful to parse
 or construct binary data structure.  It is also an
 example of using virtual ports; read @file{gauche/vport.scm}
 (or @file{ext/vport/vport.scm} in the source tree) if you're
 curious about the implementation.
-@c JP
-@code{pack}/@code{unpack}(@ref{Packing Binary Data}参照) と一緒につかうと
-バイナリのデータ構造をパースしたり、構築したりするのに便利です。
-また、仮想ポートの使い方の例もあります。実装法に興味のあるむきは、
-ソースツリーの @file{gauche/vport.scm}(あるいは @file{ext/vport/vport.scm})
-を読んでください。 
-@c COMMON
+
 
 @defun open-input-uvector uvector
-@c EN
 Returns an input port that reads the content of the given
 uniform vector @var{uvector} from its beginning.  If reading
 operation reaches the end of @var{uvector}, EOF is returned.
 Seek operation is also implemented.
-@c JP
-与えられたユニフォームベクタ @var{uvector}の最初からその内容を読む
-入力ポートを返します。読み込み動作が、@var{uvector}の終端に到達したら
-EOFが返されます。シーク操作も実装されています。
-@c COMMON
 @end defun
 
 @defun open-output-uvector uvector
-@c EN
 Returns an output port that fills the given uvector by the
 data output to the port.  If @var{uvector} is completely
 filled, more data are silently discarded.
 Seek operation is also implemented.
-@c JP
-与えられた uvector をポートへのデータ出力で満す出力ポートを返します。
-@var{uvector}が満杯になれば、それ以上のデータは黙って廃棄されます。
-シーク操作も実装されています。
-@c COMMON
 @end defun
 
-@c EN
-@subsubheading Note on finalization
-@c JP
-@subsubheading ファイナライズに関する注意書き
-@c COMMON
 
-@c EN
+@subsubheading Note on finalization
+
 If an unclosed virtual port is garbage collected, its close procedure
 is called (in case of virtual buffered ports, its flush procedure
 may also be called before close procedure).  It is done by
 a finalizer of the port.  Since it is a part of garbage-collection
 process (although the Scheme procedure itself is called outside of
 the garbage collector main part), it requires special care.
-@c JP
-クローズされていない仮想ポートがガーベッジ・コレクションされると、
-クローズ手続きが呼ばれます(仮想バッファポートの場合は、
-フラッシュ手続きがクローズ手続きの前に呼ばれます)。これは、
-そのポートのファイナライザによって行われます。これはガーベッジ・コレクション
-処理の一部ですから(その Scheme 手続きそのものがガーベッジ・コレクタの
-メインパートの外側で呼ばれたとしても)特別な注意が必要です。
-@c COMMON
 
 @itemize @bullet
 @item
-@c EN
 It is possible that the object the virtual port has a reference
 may already be finalized.  For example, if a virtual port @var{X} 
 holds the only reference to a @emph{sink} port @var{Y}, to which
@@ -11692,39 +11272,17 @@ the output goes.  @var{X}'s @code{flush} procedure sends its output to
 finalizer, it may be possible that @var{Y}'s finalizer has already been
 called and @var{Y} is closed.   So @var{X}'s @code{flush} procedure
 has to check if @var{Y} has not been closed.
-@c JP
-当該の仮想ポートが参照しているオブジェクトが既にファイナライズされて
-しまっているということはありえることです。たとえば、仮想ポート @var{X}
-は、@emph{流し込み用}のポート @var{Y} への参照のみを保持しており、それに
-出力するものとします。@var{X}の @code{flush} 手続きは、その出力を
-@var{Y}へ送ります。しかしながら、@code{flush} 手続きがファイナライザから
-呼ばれることがありえます。そして、@var{Y} のファイナライザが既に
-呼ばれていて、@var{Y} がクローズしてしまっていることがありえます。
-それゆえ、@var{X} の @code{flush} 手続きは、@var{Y} が既にクローズして
-いるかどうかをチェックする必要があります。
-@c COMMON
 
 @item
-@c EN
 You cannot know when and in which thread the finalizer runs.  
 So if the procedure like @code{close} or @code{flush} of virtual ports
 need to lock or access the global resource, it needs to take
 extra care of avoiding dead lock or conflict of access.
-@c JP
-いつ、どのスレッドでファイナライザが走るかを知ることはできません。
-それゆえ、仮想ポートの @code{close} あるいは @code{flush} などの
-手続きが、グローバルなリソースをロックしたり、アクセスしたりする
-必要のある場合には、デッドロックやアクセスの衝突を回避するために
-特に注意する必要があります。
-@c COMMON
 
-@c EN
 Even in single thread programs, the finalizer can run anywhere
 in Scheme programs, so effectively it should be considered as
 running in a different thread.
-@c JP
-単一スレッドのプログラムにおいても、ファイナライザは、Schemeの
-プログラムのいたるところで走る可能性があります。したがって、事実上は
-別々のスレッドで走っていると考えておくべきです。
-@c COMMON
 @end itemize
+
+
+
