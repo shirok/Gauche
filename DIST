@@ -5,38 +5,34 @@ DOC_DEST="../test"
 RPMDIR="$HOME/rpm"
 CHANGELOG_DEST="$HOME/shiro.dreamhost.com/scheme/gauche/ChangeLog.txt"
 XTRA_TEST_DIR="$HOME/src/test"
-CONFIG_H_IN="src/gauche-config.h.in"
 
 while [ $# -gt 0 ]; do
   case $1 in
     gen) gen=yes; shift ;;
     doc) doc=yes; shift ;;
     docs) doc=yes; docs=yes; shift ;;
-    tgz) tgz=yes; shift ;;
+    tgz) gen=yes; tgz=yes; shift ;;
     test) test=yes; shift ;;
     testcode) testcode=yes; shift ;;
     testclean) testclean=yes; shift ;;
+    libtool-update) libtool_update=yes; shift ;;
     rpm)  rpm=yes; shift;;
     *) echo "DIST [doc][docs][tgz][test][testclean][rpm]"; exit 0;;
   esac
 done
 
 if [ "$gen" = "yes" ]; then
-  if [ ! -d libltdl ]; then libtoolize --ltdl --copy --force; fi
-  aclocal
-  if [ $CONFIG_H_IN -ot configure.in ]; then
-    autoheader
-  fi
-  automake -a -c
-  (cd gc; automake)
   autoconf
   (cd gc; autoconf)
-  (cd libltdl; autoconf)
+fi
+
+# should be used rarely
+if [ "$libtool_update" = "yes" ]; then
+  libtoolize --copy --force
 fi
 
 if [ "$tgz" = "yes" ]; then
   if [ -f Makefile ]; then make realclean; fi
-  ./AUTOCONF
   ./configure --enable-threads=pthreads
   (cd src; for stub in *.stub; do make `echo $stub | sed 's/\.stub/.c/'` ; done)
   (cd ext/charconv/; make GOSH=/usr/local/bin/gosh eucj2ucs.c)

@@ -1,0 +1,104 @@
+## Common stuff used in Makefiles of extensions
+## $Id: Makefile.ext.in,v 1.1 2003-04-21 21:58:13 shirok Exp $
+## 
+
+SHELL       = @SHELL@
+prefix      = @prefix@
+exec_prefix = @exec_prefix@
+bindir      = @bindir@
+libdir      = @libdir@
+VPATH       = $(srcdir)
+
+# These may be overridden by make invocators
+DESTDIR  =
+CC       = @CC@
+AR       = @AR@
+LIBS     = @LIBS@
+CFLAGS   = @CFLAGS@ 
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS  = @LDFLAGS@
+
+
+# These are set by configure
+LIBTOOL  = @LIBTOOL@
+DEFS     = @DEFS@
+OPTFLAGS = @OPTFLAGS@
+INCLUDES = -I$(srcdir) -I$(top_srcdir)/src -I$(top_srcdir)/gc/include @LOCAL_INC@ $(EXTRA_INCLUDES)
+RANLIB   = @RANLIB@
+OBJEXT   = @OBJEXT@
+EXEEXT   = @EXEEXT@
+
+# Main definition of compilation commands
+COMPILE   = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(OPTFLAGS)
+LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(OPTFLAGS)
+CCLD      = $(CC)
+LINK      = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@ -rpath $(GAUCHE_ARCHDIR)
+MODLINK   = $(LIBTOOL) --mode=link $(CCLD) $(CFLAGS) $(LDFLAGS) $(MOD_LDFLAGS) -o $@ -rpath $(GAUCHE_ARCHDIR)
+INSTALL   = $(LIBTOOL) --mode=install @INSTALL@
+
+GOSH = $(top_srcdir)/src/gosh -ftest
+GAUCHE_CONFIG = $(SHELL) $(top_srcdir)/src/gauche-config
+INSTALL_TYPE = sys
+
+MOD_LDFLAGS  = -no-undefined -module -avoid-version
+LIBGAUCHE = $(top_builddir)/src/libgauche.la
+
+GAUCHE_INCDIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
+GAUCHE_LIBDIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
+GAUCHE_ARCHDIR = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
+
+CLEANFILES = core *~ test.log
+
+.SUFFIXES:
+.SUFFIXES: .S .c .lo .o .obj .s .stub
+
+.c.obj:
+	$(COMPILE) -c `cygpath -w $<`
+
+.c.lo:
+	$(LTCOMPILE) -c $<
+
+.c.o:
+	$(COMPILE) -c $<
+
+.s.o:
+	$(COMPILE) -c $<
+
+.S.o:
+	$(COMPILE) -c $<
+
+.s.lo:
+	$(LIBTOOL) --mode=compile $(COMPILE) -c $<
+
+.S.lo:
+	$(LIBTOOL) --mode=compile $(COMPILE) -c $<
+
+.stub.c :
+	$(GOSH) genstub $<
+
+check :
+	@rm -f test.log
+	$(GOSH) -I. test.scm > test.log
+
+clean : 
+	rm -rf $(CLEANFILES) .libs *.lo *.o *.la
+
+distclean : clean
+	rm -rf $(GENERATED)
+
+maintainer-clean : clean
+	rm -rf $(GENERATED)
+
+install-std : all
+	@INSTALL@ -d $(GAUCHE_LIBDIR)/$(SCM_CATEGORY)
+	@if test ! -z "$(HDRFILES)"; then \
+	  $(INSTALL) -m 444 $(HDRFILES) $(GAUCHE_INCDIR)/gauche; \
+	fi
+	@if test ! -z "$(SCMFILES)"; then \
+	  $(INSTALL) -m 444 $(SCMFILES) $(GAUCHE_LIBDIR)/$(SCM_CATEGORY); \
+	fi
+	if test ! -z "$(LIBFILES)"; then \
+	  $(INSTALL) -m 555 $(LIBFILES) $(GAUCHE_ARCHDIR); \
+	fi
+
+uninstall :

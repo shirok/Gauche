@@ -1,3 +1,17 @@
+2003-04-21  Shiro Kawai  <shiro@acm.org>
+
+	* Makefile.am's, Makefile.in's, ext/Makefile.ext.in, DIST:
+	  Removed automake dependency.
+	* ltmain.sh, config.guess, config.sub, aclocal.m4 : added to
+	  CVS, so that the developer can build from CVS without having
+	  the same version of libtool on his/her machine.  Requires
+	  autoconf 2.54 or higher, though.
+	* src/load.c : removed libltdl dependency.  libltdl is nice,
+	  but it has a subtle problem when libgauche is linked with other
+	  libraries that embeds libltdl.
+	* src/gauche-config.in : added -lgauche-uvector -lgauche to
+	  "gauche-config -l" output.
+
 2003-04-16  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/parseopt.scm (let-args): added Alex Shinn's let-args

@@ -1,0 +1,61 @@
+# Top Makefle for Gauche
+# $Id: Makefile.in,v 1.34 2003-04-21 21:57:41 shirok Exp $
+#  Run 'configure' script to generate Makefile
+
+@SET_MAKE@
+SHELL       = @SHELL@
+prefix      = @prefix@
+exec_prefix = @exec_prefix@
+bindir      = @bindir@
+libdir      = @libdir@
+srcdir      = @srcdir@
+
+SUBDIRS = gc lib src ext doc
+INSTALL = @INSTALL@
+GAUCHE_VERSION  = @GAUCHE_VERSION@
+GAUCHE_DATA_DIR = @datadir@/gauche
+
+CONFIG_GENERATED = Makefile config.cache config.log config.status libtool
+AUTOCONF_GENERATED = $(CONFIG_GENERATED) configure autom4* \
+		     gc/autom4*
+
+all:
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) all); done
+
+test : check
+
+check:
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) check); done
+
+install:
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) install); done
+	$(INSTALL) -m 444 acinclude.m4 $(GAUCHE_DATA_DIR)/$(GAUCHE_VERSION)/aclocal.m4
+
+uninstall:
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) uninstall); done
+
+clean:
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) clean); done
+	rm -rf core *~
+
+distclean: clean
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) clean); done
+	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean: clean
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) maintainer-clean); done
+	rm -rf $(AUTOCONF_GENERATED)
+
+dist:
+	@echo "To create a distribution tarball, use DIST script."
+
+distcheck:
+	@echo "To create a distribution tarball, use DIST script."
+
+# NB: I intentionally make aclocal.m4 not depend on acinclude.m4, to
+# prevent aclocal from running accidentally; if the developer uses
+# different versions of libtool/automake, rebuilding aclocal.m4 may
+# leat to incomprehensive errors.   Use CVS version of aclocal.m4,
+# unless you edited acinclude.m4 on purpose.
+aclocal.m4 :
+	aclocal

@@ -1,0 +1,33 @@
+
+@SET_MAKE@
+SUBDIRS= auxsys threads uvector charconv net termios fcntl syslog dbm mt-random digest
+
+CONFIG_GENERATED = Makefile Makefile.ext
+
+all:
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) all); done
+
+test : check
+
+check:
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) check); done
+
+install:
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) install); done
+
+uninstall:
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) uninstall); done
+
+clean:
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) clean); done
+	rm -rf core *~
+
+distclean: clean
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) clean); done
+	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean: clean
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) maintainer-clean); done
+	rm -rf $(CONFIG_GENERATED)
+
+

@@ -2,16 +2,9 @@ This file is for those who wants to hack the cutting-edge
 Gauche sources in CVS repository.  If you just want to
 compile from the distribution, you don't need to read any further.
 
-Gauche has adopted automake and libtool.
 In order to build Gauche from CVS sources, instead of from
-distribution, you need to have the following tools:
-
-  automake 1.4-p5
-  libtool 1.4.2
-  autoconf 2.53
-
-Greater versions might work, although automake is known
-to have compatibility issues around 1.5.
+distribution, you need to have autoconf 2.54 or higher.
+The author using autoconf 2.57.
 
 CVS source tree doesn't include some files that comes with
 autotools.  Run the "DIST" script in the toplevel directory
