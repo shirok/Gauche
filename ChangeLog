@@ -1,3 +1,10 @@
+2002-08-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub : added fixnum? and bignum?
+	* src/string.c, src/extlib.stub : added string-pointer-copy,
+	  string-pointer-byte-index and string-pointer-dump (under
+	  SCM_DEBUG_HELPER), as suggested by Alex Shinn.
+
 2002-08-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche-init.scm, src/module.c : made them more robust for
