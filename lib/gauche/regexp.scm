@@ -12,12 +12,14 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: regexp.scm,v 1.5 2001-06-30 09:42:38 shirok Exp $
+;;;  $Id: regexp.scm,v 1.6 2001-09-23 11:34:17 shirok Exp $
 ;;;
 
 (define-module gauche.regexp
-  (export rxmatch-let rxmatch-if rxmatch-cond rxmatch-case))
-(select-module gauche)
+  (use srfi-13)
+  (export rxmatch-let rxmatch-if rxmatch-cond rxmatch-case
+          regexp-replace regexp-replace-all))
+(select-module gauche.regexp)
 
 (define-syntax rxmatch-bind*
   (syntax-rules ()
@@ -85,6 +87,59 @@
             (strp (string? temp)))
        (rxmatch-case #t temp strp ?clause ...)))
     ))
+
+;; aux routine for regexp-replace[-all]
+;; "abc\\1de\\3" => '("abc" 1 "de" 3)
+(define (regexp-parse-subpattern sub)
+  (let loop ((sub sub) (r '()))
+    (receive (head rest) (string-scan sub #\\ 'both)
+      (if (not head)
+          (reverse (cons sub r))
+          (let ((i (string-skip rest #[\d])))
+            (cond ((not i) (reverse (list* (string->number rest) head r)))
+                  ((= i 0) (loop rest (list* head r)))
+                  (else
+                   (loop (string-drop rest i)
+                         (list* (string->number (string-take rest i)) head r)))
+                  ))))
+    ))
+
+(define (regexp-replace-rec match subpat out rec)
+  (display (rxmatch-before match) out)
+  (for-each (lambda (pat)
+              (display (if (number? pat)
+                           (rxmatch-substring match pat)
+                           pat)
+                       out))
+            subpat)
+  (rec (rxmatch-after match)))
+
+(define (regexp-replace rx string sub)
+  (let ((subpat (regexp-parse-subpattern sub))
+        (match  (rxmatch rx string)))
+    (if match
+        (call-with-output-string
+          (lambda (out)
+            (regexp-replace-rec match subpat out
+                                (lambda (str) (display str out)))))
+        string)))
+
+;; The inner call is redundant to avoid creation of output string
+;; when no match at all.
+(define (regexp-replace-all rx string sub)
+  (let ((subpat (regexp-parse-subpattern sub))
+        (match  (rxmatch rx string)))
+    (if match
+        (call-with-output-string
+          (lambda (out)
+            (define (loop str)
+              (unless (string-null? str)
+                (cond ((rxmatch rx str)
+                       => (lambda (match)
+                            (regexp-replace-rec match subpat out loop)))
+                      (else (display str out)))))
+            (regexp-replace-rec match subpat out loop)))
+        string)))
 
 ;;; scsh compatibility
 
