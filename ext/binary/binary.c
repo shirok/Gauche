@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: binary.c,v 1.2 2004-02-05 03:01:23 shirok Exp $
+ *  $Id: binary.c,v 1.3 2005-02-02 10:16:53 shirok Exp $
  */
 
 #include <gauche.h>
@@ -134,14 +134,43 @@ static inline int getbytes(char *buf, int len, ScmObj sport)
   do { char z; if (SWAP_REQUIRED(endian)) CSWAP(v.buf, z, 0, 1); } while (0)
 
 #define SWAP4()                                 \
-  do { char z;                                  \
-       if (SWAP_REQUIRED(endian)) {             \
-         CSWAP(v.buf, z, 0, 3);                 \
-         CSWAP(v.buf, z, 1, 2);                 \
-       }                                        \
-  } while (0)
+    do { char z;                                \
+        if (SWAP_REQUIRED(endian)) {            \
+            CSWAP(v.buf, z, 0, 3);              \
+            CSWAP(v.buf, z, 1, 2);              \
+        }                                       \
+    } while (0)
 
 #define SWAP8()                                 \
+    do { char z;                                \
+        if (SWAP_REQUIRED(endian)) {            \
+            CSWAP(v.buf, z, 0, 7);              \
+            CSWAP(v.buf, z, 1, 6);              \
+            CSWAP(v.buf, z, 2, 5);              \
+            CSWAP(v.buf, z, 3, 4);              \
+        }                                       \
+    } while (0)
+
+/* ARM uses mixed endian for double.  [01234567] -> [32107654].
+   For the time being, we won't support I/O for native ARM format.
+   Bytes are swaped either for pure big-endian or pure little-endian. */
+#ifdef DOUBLE_ARMENDIAN
+#define SWAPD()                                 \
+    do { char z;                                \
+        if (endian == SCM_BE) {                 \
+            CSWAP(v.buf, z, 0, 3);              \
+            CSWAP(v.buf, z, 1, 2);              \
+            CSWAP(v.buf, z, 4, 7);              \
+            CSWAP(v.buf, z, 5, 6);              \
+        } else {                                \
+            CSWAP(v.buf, z, 0, 4);              \
+            CSWAP(v.buf, z, 1, 5);              \
+            CSWAP(v.buf, z, 2, 6);              \
+            CSWAP(v.buf, z, 3, 7);              \
+        }                                       \
+  } while (0)
+#else  /*!DOUBLE_ARMENDIAN*/
+#define SWAPD()                                 \
   do { char z;                                  \
        if (SWAP_REQUIRED(endian)) {             \
          CSWAP(v.buf, z, 0, 7);                 \
@@ -150,6 +179,9 @@ static inline int getbytes(char *buf, int len, ScmObj sport)
          CSWAP(v.buf, z, 3, 4);                 \
        }                                        \
   } while (0)
+#endif /*!DOUBLE_ARMENDIAN*/
+
+
 
 ScmObj Scm_ReadBinaryUint16(ScmObj sport, Endian endian)
 {
@@ -211,7 +243,7 @@ ScmObj Scm_ReadBinaryDouble(ScmObj sport, Endian endian)
 {
     union { char buf[8]; double val;} v;
     if (getbytes(v.buf, 8, sport) == EOF) return SCM_EOF;
-    SWAP8();
+    SWAPD();
     return Scm_MakeFlonum(v.val);
 }
 
@@ -307,7 +339,7 @@ void Scm_WriteBinaryDouble(ScmObj sval, ScmObj sport, Endian endian)
     ScmPort *oport;
     OPORT(oport, sport);
     v.val = Scm_GetDouble(sval);
-    SWAP8();
+    SWAPD();
     Scm_Putz(v.buf, 8, oport);
 }
 

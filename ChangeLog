@@ -1,3 +1,12 @@
+2005-02-02  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac, src/gauche/config.h.in (DOUBLE_ARMENDIAN):
+	  added check to support ARM processor.
+	* src/number.c (union ieee_double), ext/binary/binary.c (SWAPD):
+	  support ARM's mixed endian
+	* ext/uvector/uvectorP.h (s8unbox): ensure return type is signed
+	  char.
+
 2005-01-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/condutil.scm (extract-condition): fixed a bug that

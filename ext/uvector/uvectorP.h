@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvectorP.h,v 1.20 2004-11-14 03:16:30 shirok Exp $
+ *  $Id: uvectorP.h,v 1.21 2005-02-02 10:16:54 shirok Exp $
  */
 
 #ifndef GAUCHE_UVECTOR_P_H
@@ -212,7 +212,7 @@ static inline ScmUInt64 range_u64lo(ScmUInt64 val, int clamp)
 /*
  * boxing, unboxing
  */
-static inline char s8unbox(ScmObj obj, int clamp)
+static inline signed char s8unbox(ScmObj obj, int clamp)
 {
     long val;
     if (!SCM_INTP(obj)) val = Scm_GetInteger(obj); /* clamped to long */

@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.49 2004-12-02 23:46:22 shirok Exp $
+dnl $Id: configure.ac,v 1.50 2005-02-02 10:16:12 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.3, shiro@acm.org)
-AC_REVISION($Revision: 1.49 $)
+AC_REVISION($Revision: 1.50 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -210,7 +210,10 @@ case $target in
   i?86-*)
     AC_DEFINE(SCM_TARGET_I386,1,[Define if uses i386 optimizations]) ;;
   alpha*)
-    CFLAGS="$CFLAGS -mieee"
+    CFLAGS="$CFLAGS -mieee" ;;
+  armv*)
+    # ARM processor uses a special mixed endian for doubles.
+    AC_DEFINE(DOUBLE_ARMENDIAN,1) ;;
 esac
 
 dnl ===========================================================

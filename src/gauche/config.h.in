@@ -293,6 +293,10 @@
    first (like Motorola and SPARC, unlike Intel and VAX). */
 #undef WORDS_BIGENDIAN
 
+/* Define if endian of double is ARM style (each 32bit word is little endian,
+   but the lower 32bit word comes after the upper 32bit word. ) */
+#undef DOUBLE_ARMENDIAN
+
 /* Define POSIX C version */
 #undef _POSIX_C_SOURCE
 

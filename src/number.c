@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.116 2004-12-02 12:14:12 shirok Exp $
+ *  $Id: number.c,v 1.117 2005-02-02 10:16:54 shirok Exp $
  */
 
 #include <math.h>
@@ -170,6 +170,13 @@ ScmObj Scm_MakeFlonumToNumber(double d, int exact)
 union ieee_double {
     double d;
     struct {
+#ifdef DOUBLE_ARMENDIAN
+        /* ARM's mixed endian.  TODO: what if we have LP64 ARM? */
+        unsigned long mant0:20;
+        unsigned int exp:11;
+        unsigned int sign:1;
+        unsigned long mant1:32;
+#else  /*!DOUBLE_ARMENDIAN*/
 #ifdef WORDS_BIGENDIAN
 #if SIZEOF_LONG >= 8
         unsigned int sign:1;
@@ -193,6 +200,7 @@ union ieee_double {
         unsigned int  sign:1;
 #endif /*SIZEOF_LONG < 8*/
 #endif /*!WORDS_BIGENDIAN*/
+#endif /*!DOUBLE_ARMENDIAN*/
     } components;
 };
 
