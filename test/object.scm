@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.7 2001-03-28 08:46:15 shiro Exp $
+;; $Id: object.scm,v 1.8 2001-04-02 10:24:47 shiro Exp $
 
 (add-load-path "../lib")
 (use gauche.test)
@@ -192,5 +192,53 @@
 (test "next-method"
       '(w2-in (y-in (x-in (z-in fallback z-out) x-out) y-out) w2-out)
       (lambda () (nm (make <w2>))))
+
+;;----------------------------------------------------------------
+(test-section "metaclass")
+
+(define-class <listing-class> (<class>)
+  ((classes :allocation :class :init-value '() :accessor classes-of))
+  )
+
+(define-method initialize ((class <listing-class>) initargs)
+    (format #t "~s\n" next-method)
+  (next-method)
+  (set! (classes-of class) (cons (class-name class) (classes-of class))))
+
+(define-class <xx> ()
+  ()
+  :metaclass <listing-class>)
+
+(define-class <yy> (<xx>)
+  ())
+
+(test "metaclass" '(<yy> <xx>)
+      (lambda () (class-slot-ref <listing-class> 'classes)))
+
+;(define-class <auto-accessor-class> (<class>)
+;  ())
+
+;(define-method initialize ((class <auto-accessor-class>) initargs)
+;  (let ((slots (get-keyword :slots initargs '())))
+;    (for-each (lambda (slot)
+;                (unless (get-keyword :accessor (cdr slot) #f)
+;                  (set-cdr! slot (list :accessor
+;                                       (string->symbol
+;                                        (format #f "~a-of" (car slot)))
+;                                       (cdr slot)))))
+;              slots)
+;    (next-method)))
+
+;(define-class <zz> ()
+;  (a b c)
+;  :metaclass <auto-accessor-class>)
+
+;(test "metaclass" '(1 2 3)
+;      (lambda ()
+;        (let ((zz (make <zz>)))
+;          (set! (a-of zz) 1)
+;          (set! (b-of zz) 2)
+;          (set! (c-of zz) 3)
+;          (map (lambda (s) (slot-ref zz s)) '(a b c)))))
 
 (test-end)
