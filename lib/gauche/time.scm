@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: time.scm,v 1.3 2002-10-13 07:36:34 shirok Exp $
+;;;  $Id: time.scm,v 1.4 2002-12-06 00:37:11 shirok Exp $
 ;;;
 
 (define-module gauche.time
@@ -61,7 +61,7 @@
 ;; Timers ---------------------------------------------
 
 (define-class <time-counter> ()
-  ((vlaue   :init-value 0)    ;accured time, in seconds
+  ((value   :init-value 0)    ;accured time, in seconds
    (start   :init-value #f)   ;start time.  format depends on the subclass.
    (nesting :init-value 0))   ;nesting level.
   )
