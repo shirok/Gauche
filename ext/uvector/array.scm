@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: array.scm,v 1.3 2002-06-27 00:10:16 shirok Exp $
+;;;  $Id: array.scm,v 1.1 2002-06-27 11:30:09 shirok Exp $
 ;;;
 
 ;; Conceptually, an array is a backing storage and a procedure to
@@ -20,8 +20,8 @@
 
 (define-module gauche.array
   (use srfi-1)
-  (use srfi-4)
   (use srfi-11)
+  (use gauche.uvector)
   (use gauche.collection)
   (use gauche.sequence)
   (use gauche.let-opt)
