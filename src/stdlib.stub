@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.54 2001-05-09 10:26:33 shirok Exp $
+;;; $Id: stdlib.stub,v 1.55 2001-05-09 20:03:28 shirok Exp $
 ;;;
 
 
@@ -225,9 +225,11 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-cproc round (v)
   "  SCM_RETURN(Scm_Round(v, SCM_ROUND_ROUND));")
 
-;; rationalize
+;; rationalize - not implemented
 
-;; Transcedentals.  Complex numbers are handled in Scheme
+
+;; Transcedental functions.  Complex numbers are handled in Scheme.
+
 (define-cproc %exp (x)
   "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
   SCM_RETURN(Scm_MakeFlonum(exp(Scm_GetDouble(x))));")
@@ -250,10 +252,16 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
   SCM_RETURN(Scm_MakeFlonum(tan(Scm_GetDouble(x))));")
 (define-cproc %asin (x)
-  "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
-  SCM_RETURN(Scm_MakeFlonum(asin(Scm_GetDouble(x))));")
+  "  double v;
+  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
+  v = Scm_GetDouble(x);
+  if (v < -1.0 || v > 1.0) Scm_Error(\"domain error for asin: %S\", x);
+  SCM_RETURN(Scm_MakeFlonum(asin(v)));")
 (define-cproc %acos (x)
-  "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
+  "  double v;
+  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
+  v = Scm_GetDouble(x);
+  if (v < -1.0 || v > 1.0) Scm_Error(\"domain error for acos: %S\", x);
   SCM_RETURN(Scm_MakeFlonum(acos(Scm_GetDouble(x))));")
 
 (define-cproc %atan (z &optional x)
@@ -274,12 +282,13 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-cproc %tanh (x)
   "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
   SCM_RETURN(Scm_MakeFlonum(tanh(Scm_GetDouble(x))));")
-(define-cproc %asinh (x)
-  "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
-  SCM_RETURN(Scm_MakeFlonum(asinh(Scm_GetDouble(x))));")
-(define-cproc %acosh (x)
-  "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
-  SCM_RETURN(Scm_MakeFlonum(acosh(Scm_GetDouble(x))));")
+;; asinh and acosh are not in POSIX.
+;(define-cproc %asinh (x)
+;  "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
+;  SCM_RETURN(Scm_MakeFlonum(asinh(Scm_GetDouble(x))));")
+;(define-cproc %acosh (x)
+;  "  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
+;  SCM_RETURN(Scm_MakeFlonum(acosh(Scm_GetDouble(x))));")
 
 (define-cproc %sqrt (x)
   "  double vx;
