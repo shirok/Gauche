@@ -6792,9 +6792,13 @@ bitmasks corresponding to the @var{level} argument of @code{sys-syslog}.
 You can use @code{sys-logmask} below to obtain a bitmask
 from the level.
 @c JP
-@c COMMON
 どの @code{sys-syslog}への呼び出しを記録できるかを決める、プロセスのログ
 優先度マスクを設定します。
+優先度マスク@var{mask}は@code{sys-syslog}の@var{level}引数に
+対応するビットマスクを@code{logior}することで作成できます。
+レベルに対応するビットマスクは下の@code{sys-logmask}から
+取得することができます。
+@c COMMON
 @end defun
 
 @defun sys-logmask level
@@ -6804,7 +6808,7 @@ Returns an integer bitmask for @code{sys-setlogmask} from
 the log level @var{level}.
 @c JP
 ログレベル @var{level} から @code{sys-setlogmask} に対する
-ビットマスク整数を返す。
+ビットマスク整数を返します。
 @c COMMON
 @end defun
 
