@@ -1,5 +1,8 @@
 2004-09-12  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/regexp.scm (regexp-replace-all): detect the case when
+	  regexp matched to null string, and raises an error to avoid infinite
+	  loop.
 	* lib/dbm/fsdbm.scm : allow binary data to be stored.
 
 2004-09-11  Shiro Kawai  <shiro@acm.org>

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: regexp.scm,v 1.12 2003-09-06 22:33:06 shirok Exp $
+;;;  $Id: regexp.scm,v 1.13 2004-09-12 21:42:41 shirok Exp $
 ;;;
 
 (define-module gauche.regexp
@@ -136,13 +136,13 @@
 (define (regexp-replace-rec match subpat out rec)
   (display (rxmatch-before match) out)
   (if (procedure? subpat)
-      (display (subpat match) out)
-      (for-each (lambda (pat)
-                  (display (if (number? pat)
-                               (rxmatch-substring match pat)
-                               pat)
-                           out))
-                subpat))
+    (display (subpat match) out)
+    (for-each (lambda (pat)
+                (display (if (number? pat)
+                           (rxmatch-substring match pat)
+                           pat)
+                         out))
+              subpat))
   (rec (rxmatch-after match)))
 
 (define (regexp-replace rx string sub)
@@ -167,6 +167,8 @@
             (unless (equal? str "")
               (cond ((rxmatch rx str)
                      => (lambda (match)
+                          (when (= (rxmatch-start match) (rxmatch-end match))
+                            (error "regexp-replace-all: matching zero-length string causes infinite loop:" rx))
                           (regexp-replace-rec match subpat out loop)))
                     (else (display str out)))))
           (regexp-replace-rec match subpat out loop)))
