@@ -97,6 +97,46 @@
             (close-input-port i)
             s))))
 
+;;-------------------------------------------------------------------
+(test-section "input ports")
+
+(with-output-to-file "tmp1.o"
+  (lambda ()
+    (display "a b c \"d e\" f g\n(0 1 2\n3 4 5)\n")))
+
+(test "port->string" "a b c \"d e\" f g\n(0 1 2\n3 4 5)\n"
+      (lambda ()
+        (call-with-input-file "tmp1.o" port->string)))
+(test "port->list" '(a b c "d e" f g (0 1 2 3 4 5))
+      (lambda ()
+        (call-with-input-file "tmp1.o" (lambda (p) (port->list read p)))))
+(test "port->list" '("a b c \"d e\" f g" "(0 1 2" "3 4 5)")
+      (lambda ()
+        (call-with-input-file "tmp1.o" (lambda (p) (port->list read-line p)))))
+(test "port->string-list" '("a b c \"d e\" f g" "(0 1 2" "3 4 5)")
+      (lambda ()
+        (call-with-input-file "tmp1.o" port->string-list)))
+(test "port->sexp-list" '(a b c "d e" f g (0 1 2 3 4 5))
+      (lambda ()
+        (call-with-input-file "tmp1.o" port->sexp-list)))
+
+(test "port-fold" '((0 1 2 3 4 5) g f "d e" c b a)
+      (lambda ()
+        (with-input-from-file "tmp1.o"
+          (lambda () (port-fold cons '() read)))))
+(test "port-fold" '("3 4 5)" "(0 1 2" "a b c \"d e\" f g")
+      (lambda ()
+        (with-input-from-file "tmp1.o"
+          (lambda () (port-fold cons '() read-line)))))
+(test "port-fold-right" '(a b c "d e" f g (0 1 2 3 4 5))
+      (lambda ()
+        (with-input-from-file "tmp1.o"
+          (lambda () (port-fold-right cons '() read)))))
+
+(test "port-map" '(a b c "d e" f g (0 1 2 3 4 5))
+      (lambda ()
+        (with-input-from-file "tmp1.o"
+          (lambda () (port-map (lambda (x) x) read)))))
 
 ;;-------------------------------------------------------------------
 (test-section "format")
