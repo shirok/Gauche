@@ -1,5 +1,7 @@
 2004-11-29  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.8.2
+
 	* src/error.c (porterror_cpl): added missing terminating NULL of CPA.
 	  (porterror_allocate): added missing initialization of 'message slot.
 	* src/gauche/vm.h (SCM_SIGPENDING): recovered, for some extensions
