@@ -76,14 +76,14 @@ AC_CHECK_FUNCS(symlink)
 dnl Checks if crypt() exists and whether it's in libc or libcrypt.
 AC_CHECK_FUNC(crypt, HAVE_CRYPT=yes, HAVE_CRYPT=no)
 if test $HAVE_CRYPT = no; then
-AC_CHECK_LIB(crypt, crypt, HAVE_CRYPT=yes, HAVE_CRYPT=no)
+AC_CHECK_LIB(crypt, crypt, HAVE_CRYPT=yes; LIBS="-lcrypt $LIBS", HAVE_CRYPT=no)
 fi
 AC_DEFINE(HAVE_CRYPT)
 
 dnl Checs if dlopen exists, and if it's in libc or libdl.
 AC_CHECK_FUNC(dlopen, HAVE_DLOPEN=yes, HAVE_DLOPEN=no)
 if test $HAVE_DLOPEN = no; then
-AC_CHECK_LIB(dl, dlopen, HAVE_DLOPEN=yes, HAVE_DLOPEN=no)
+AC_CHECK_LIB(dl, dlopen, HAVE_DLOPEN=yes; LIBS="-ldl $LIBS", HAVE_DLOPEN=no)
 fi
 AC_DEFINE(HAVE_DLOPEN)
 
