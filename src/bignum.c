@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.10 2001-04-20 08:46:33 shiro Exp $
+ *  $Id: bignum.c,v 1.11 2001-04-22 09:01:40 shiro Exp $
  */
 
 #include <math.h>
@@ -27,6 +27,7 @@
 #define SCM_ULONG_MAX      ((u_long)(-1L)) /* to be configured */
 #define WORD_BITS          (SIZEOF_LONG * 8)
 #define HALF_BITS          (WORD_BITS/2)
+#define HALF_WORD          (1L<<HALF_BITS)
 
 #ifndef LONG_MIN
 #define LONG_MIN           ((long)(1L<<(WORD_BITS-1)))
@@ -35,7 +36,7 @@
 #define LONG_MAX           (-(LONG_MIN+1))
 #endif
 
-#define LOMASK             ((1L<<HALF_BITS)-1)
+#define LOMASK             (HALF_WORD-1)
 #define LO(word)           ((word) & LOMASK)
 #define HI(word)           (((word) >> HALF_BITS)&LOMASK)
 
@@ -45,20 +46,21 @@ static ScmBignum *bignum_lshift(ScmBignum *br, ScmBignum *bx, int amount);
 /*---------------------------------------------------------------------
  * Constructor
  */
+static ScmBignum *bignum_clear(ScmBignum *b)
+{
+    int i;
+    for (i=0; i<b->size; i++) b->values[i] = 0;
+    return b;
+}
+
 static ScmBignum *make_bignum(int size)
 {
     ScmBignum *b = SCM_NEW_ATOMIC2(ScmBignum*,
                                    sizeof(ScmBignum)+(size-1)*sizeof(long));
     SCM_SET_CLASS(b, SCM_CLASS_INTEGER);
     b->size = size;
-    return b;
-}
-
-static ScmBignum *bignum_clear(ScmBignum *b)
-{
-    int i;
-    for (i=0; i<b->size; i++) b->values[i] = 0;
-    return b;
+    b->sign = 1;
+    return bignum_clear(b);
 }
 
 ScmObj Scm_MakeBignumFromSI(long val)
@@ -92,7 +94,7 @@ ScmObj Scm_MakeBignumFromUI(u_long val)
 ScmObj Scm_MakeBignumFromDouble(double val)
 {
     double absval, fraction, fbit;
-    int exponent, i, nwords;
+    int exponent, nwords;
     u_long lval = 0, mask;
     ScmBignum *b;
 
@@ -104,7 +106,7 @@ ScmObj Scm_MakeBignumFromDouble(double val)
        explicitly. */
     absval = fabs(val);
     fraction = frexp(absval, &exponent);
-    fprintf(stderr, "fraction=%f, exponent=%d, ", fraction, exponent);
+/*    fprintf(stderr, "fraction=%f, exponent=%d, ", fraction, exponent);*/
     for (mask = (1L<<(WORD_BITS-1)), fbit = 0.5;
          mask != 0 && fbit > 0.0 && fraction > 0;
          mask>>=1, fbit /= 2) {
@@ -114,9 +116,8 @@ ScmObj Scm_MakeBignumFromDouble(double val)
         }
     }
     nwords = (exponent + WORD_BITS - 1)/WORD_BITS;
-    fprintf(stderr, "nwords=%d, lval=%08x\n", nwords, lval);
+/*    fprintf(stderr, "nwords=%d, lval=%08lx\n", nwords, lval);*/
     b = make_bignum(nwords);
-    bignum_clear(b);
     b->sign = (val < 0)? -1 : 1;
     b->values[0] = lval;
     SCM_ASSERT(exponent >= WORD_BITS);
@@ -368,7 +369,7 @@ static ScmBignum *bignum_sub(ScmBignum *bx, ScmBignum *by)
 /* returns bx + y, not nomalized */
 static ScmBignum *bignum_add_si(ScmBignum *bx, long y)
 {
-    long r, c;
+    long c;
     int i, rsize = bx->size+1;
     int yabs = ((y < 0)? -y : y);
     int ysign = ((y < 0)? -1 : 1);
@@ -473,7 +474,7 @@ static ScmBignum *bignum_rshift(ScmBignum *br, ScmBignum *bx, int amount)
         br->size = 0; br->values[0] = 0;
     } else {
         u_long prev = 0, x;
-        for (i = nwords; i < bx->size; i--) {
+        for (i = nwords; i < bx->size; i++) {
             x = (bx->values[i] >> nbits) | prev;
             prev = (bx->values[i] << (WORD_BITS - nbits));
             br->values[i-nwords] = x;
@@ -491,14 +492,6 @@ static ScmBignum *bignum_lshift(ScmBignum *br, ScmBignum *bx, int amount)
     int nwords, nbits, i;
     u_long prev = 0, x, mask;
     
-    if (amount == 0) {
-        if (br != bx) {
-            /* copy it */
-            br->size = bx->size;
-        }
-        return br;
-    }
-
     nwords = amount / WORD_BITS;
     nbits = amount % WORD_BITS;
     if (nbits == 0) {
@@ -518,7 +511,6 @@ static ScmBignum *bignum_lshift(ScmBignum *br, ScmBignum *bx, int amount)
         for (i = nwords-1; i>=0; i--) br->values[i] = 0;
     }
     if (br != bx) {
-        br->size = bx->size + nwords;
         br->sign = bx->sign;
     }
     return br;
@@ -540,7 +532,7 @@ static ScmBignum *bignum_lshift(ScmBignum *br, ScmBignum *bx, int amount)
         t2_ = xh_ * yl_;                                                \
         hi = xh_ * yh_;                                                 \
         t3_ = t1_ + t2_;                                                \
-        if (t3_ < t1_) hi += (1L<<HALF_BITS);                           \
+        if (t3_ < t1_) hi += HALF_WORD;                                 \
         hi += HI(t3_);                                                  \
         t4_ = LO(t3_) << HALF_BITS;                                     \
         lo += t4_;                                                      \
@@ -581,7 +573,6 @@ static ScmBignum *bignum_mul(ScmBignum *bx, ScmBignum *by)
 {
     int i;
     ScmBignum *br = make_bignum(bx->size + by->size);
-    bignum_clear(br);
     for (i=0; i<by->size; i++) {
         bignum_mul_word(br, bx, by->values[i], i);
     }
@@ -608,7 +599,6 @@ static ScmBignum *bignum_mul_si(ScmBignum *bx, long y)
     }
     /* TODO: optimize for 2^n case !*/
     br = make_bignum(bx->size + 1); /* TODO: more accurate estimation */
-    bignum_clear(br);
     yabs = (y<0)? -y:y;
     br->sign = bx->sign;
     bignum_mul_word(br, bx, yabs, 0);
@@ -657,7 +647,7 @@ ScmObj Scm_BignumMulN(ScmBignum *bx, ScmObj args)
 /* returns # of bits in the leftmost '1' in the word, counting from MSB. */
 static inline int div_normalization_factor(u_long w)
 {
-    int b = (1L<<(WORD_BITS-1)), c = 0;
+    u_long b = (1L<<(WORD_BITS-1)), c = 0;
     for (; b > 0; b>>=1, c++) {
         if (w & b) return c;
     }
@@ -674,14 +664,14 @@ static void bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
 {
     ScmBignum *u, *v;
     int d = div_normalization_factor(divisor->values[divisor->size-1]);
-    int j, k, l, n, m, cy;
-    u_long vn_1, vn_2, vv, uj;
+    int j, k, n, m, cy;
+    u_long vn_1, vn_2, vv, uj, uj2;
 
-#define DIGIT(num, n) ((n%2)? LO((num)->values[n/2]) : HI((num)->values[n/2]))
+#define DIGIT(num, n) (((n)%2)? HI((num)->values[(n)/2]) : LO((num)->values[(n)/2]))
 #define SETDIGIT(num, n, v) \
-    ((n%2)? \
-     (num->values[n/2] = (num->values[n/2] & ~LOMASK)|(v & LOMASK)) : \
-     (num->values[n/2] = (num->values[n/2] & LOMASK)|(v << HALF_BITS)))
+    (((n)%2)? \
+     (num->values[(n)/2] = (num->values[(n)/2] & LOMASK)|((v) << HALF_BITS)) :\
+     (num->values[(n)/2] = (num->values[(n)/2] & ~LOMASK)|((v) & LOMASK)))\
 
     /* normalize */
     u = make_bignum(dividend->size + 1);
@@ -699,24 +689,35 @@ static void bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
     vn_1 = DIGIT(v, n-1);
     vn_2 = DIGIT(v, n-2);
 
-    for (j = m; j >= 0; j++) {
+    printf("shift=%d, vn_1=%08lx, vn_2=%08lx\n", d, vn_1, vn_2);
+    printf("u="); Scm_DumpBignum(u, SCM_CUROUT); printf("\n");
+    printf("v="); Scm_DumpBignum(v, SCM_CUROUT); printf("\n");
+
+    for (j = m; j >= 0; j--) {
         u_long uu = (DIGIT(u, j+n) << HALF_BITS) + DIGIT(u, j+n-1);
         u_long qq = uu/vn_1;
         u_long rr = uu%vn_1;
-        if (qq == (1L<<HALF_BITS)) { qq--; rr += vn_1; }
-        while ((qq*vn_2 > (rr<<HALF_BITS)+vn_2) && (rr < (1L<<HALF_BITS))) {
+        printf("j=%d, uu=%08lx, qq=%08lx, rr=%08lx\n", j, uu, qq, rr);
+        if (qq == HALF_WORD) { qq--; rr += vn_1; }
+        while ((qq*vn_2 > (rr<<HALF_BITS)+DIGIT(u, j+n-2)) && (rr < HALF_WORD)) {
             qq--; rr += vn_1;
         }
+        printf("j=%d, uu=%08lx, qq=%08lx, rr=%08lx\n", j, uu, qq, rr);
         cy = 0;
         for (k = 0; k < n; k++) {
             vv = qq * DIGIT(v, k);
-            uj = DIGIT(u, j+k) - vv - cy;
-            cy =  (uj > (1L<<HALF_BITS))? -1 : 0;
-            SETDIGIT(u, j+k, uj);
+            uj = (DIGIT(u, j+k+1)<<HALF_BITS) + DIGIT(u, j+k);
+            uj2 = uj - vv - cy;
+            cy =  (uj2 > uj)? -1 : 0;
+            SETDIGIT(u, j+k, LO(uj2));
+            SETDIGIT(u, j+k+1, HI(uj2));
         }
         uj = DIGIT(u, j+n) - cy;
         cy = (uj > DIGIT(u, j+n))? -1 : 0;
         SETDIGIT(u, j+n, uj);
+
+        printf("cy = %d, ", cy);
+        printf("u="); Scm_DumpBignum(u, SCM_CUROUT); printf("\n");
         
         if (cy < 0) {
             qq--;
@@ -724,11 +725,13 @@ static void bignum_gdiv(ScmBignum *dividend, ScmBignum *divisor,
             for (k = 0; k < n; k++) {
                 vv = DIGIT(v, k);
                 uj = DIGIT(u, j+k) + vv + cy;
-                cy = (uj > (1L<<HALF_BITS))? 1 : 0;
+                cy = (uj > HALF_WORD)? 1 : 0;
                 SETDIGIT(u, j+k, uj);
             }
             uj = DIGIT(u, j+n) + cy;
             SETDIGIT(u, j+n, uj);
+
+            printf("u="); Scm_DumpBignum(u, SCM_CUROUT); printf("\n");
         }
         SETDIGIT(quotient, j, qq);
         SETDIGIT(remainder, j, rr);
@@ -762,14 +765,22 @@ ScmObj Scm_BignumDivSI(ScmBignum *dividend, long divisor, long *remainder)
 {
     u_long dd = (divisor < 0)? -divisor : divisor;
     u_long rr;
-    ScmBignum *q = SCM_BIGNUM(Scm_BignumCopy(dividend));
+    int d_sign = (divisor < 0)? -1 : 1;
+    ScmBignum *q;
 
-    if (dd < (1L<<HALF_BITS)) {
+    if (dd < HALF_WORD) {
+        q = SCM_BIGNUM(Scm_BignumCopy(dividend));
         rr = bignum_sdiv(q, dd);
     } else {
-        Scm_Error("sorry, not supported\n");
+        ScmBignum *bv = SCM_BIGNUM(Scm_MakeBignumFromSI(dd));
+        ScmBignum *br = make_bignum(2);
+        q = make_bignum(dividend->size + 1);
+        printf("%d\n", br->size);
+        bignum_gdiv(dividend, bv, q, br);
+        rr = br->values[0];
     }
-    if (remainder) *remainder = (q->sign < 0)? -rr : rr;
+    if (remainder) *remainder = (dividend->sign * d_sign < 0)? -rr : rr;
+    q->sign = dividend->sign * d_sign;
     return Scm_NormalizeBignum(q);
 }
 
