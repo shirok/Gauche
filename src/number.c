@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.45 2001-05-12 21:20:31 shirok Exp $
+ *  $Id: number.c,v 1.46 2001-05-12 21:28:44 shirok Exp $
  */
 
 #include <math.h>
@@ -1212,6 +1212,8 @@ static inline double expt10(u_int k)
     while (l-- > 0) v *= 1.0e8;
     return v;
 }
+
+/** more to come **/
 #endif
 
 static void double_print(char *buf, int buflen, double val, int plus_sign)
@@ -1226,7 +1228,7 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
         strcpy(buf, "#<nan>");
     } else {
         if (plus_sign && val > 0) { *buf++ = '+'; buflen--; }
-        snprintf(buf, buflen - 3, "%.17g", val);
+        snprintf(buf, buflen - 3, "%.15g", val);
         if (strchr(buf, '.') == NULL && strchr(buf, 'e') == NULL)
             strcat(buf, ".0");
     }
