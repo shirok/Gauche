@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.297 2002-11-12 02:22:52 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.298 2002-11-12 04:53:17 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -16027,6 +16027,51 @@ invalid character name, unregistered SRFI-10 tag, etc.).
 This procedure may raise an error if the input contains
 '@code{#<}' character sequence.
 @end defun
+
+The following code snippet opens a server socket, and opens
+a Scheme interactive session when a client is connected.
+(Note: this code is just for demonstration.  Do not run
+this program on the machine accessible from outside network!)
+
+@example
+(use gauche.net)
+(use gauche.selector)
+(use gauche.listener)
+
+(define (scheme-server port)
+  (let ((selector (make <selector>))
+        (server   (make-server-socket 'inet port :reuse-addr? #t))
+        (cid      0))
+
+    (define (accept-handler sock flag)
+      (let* ((client (socket-accept server))
+             (id     cid)
+             (input  (socket-input-port client :buffering :none))
+             (output (socket-output-port client))
+             (finalize (lambda ()
+                         (selector-delete! selector input #f #f)
+                         (socket-close client)
+                         (format #t "client #~a disconnected\n" id)))
+             (listener (make <listener>
+                         :input-port input
+                         :output-port output
+                         :error-port output
+                         :prompter (lambda () (format #t "client[~a]> " id))
+                         :finalizer finalize))
+             (handler (listener-read-handler listener))
+             )
+        (format #t "client #~a from ~a\n" cid (socket-address client))
+        (inc! cid)
+        (listener-show-prompt listener)
+        (selector-add! selector input (lambda _ (handler)) '(r))))
+
+    (selector-add! selector
+                   (socket-fd server)
+                   accept-handler
+                   '(r))
+    (format #t "scheme server started on port ~s\n" port)
+    (do () (#f) (selector-select selector))))
+@end example
 
 @c ----------------------------------------------------------------------
 @node User-level logging, Networking, Listener, Library modules - Gauche extensions
