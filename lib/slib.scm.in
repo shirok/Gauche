@@ -6,6 +6,7 @@
 
 ;; SLIB module exports all symbols for compatibility.
 (define-module slib
+  (use srfi-0)
   (export-all))
 (select-module slib)
 
@@ -123,6 +124,7 @@
 ;	termcap				;terminal description package
 ;	terminfo			;sysV terminal description
 	current-time			;returns time in seconds since 1/1/1970
+        srfi
 	))
 
 ;;; (OUTPUT-PORT-WIDTH <port>)
@@ -193,33 +195,8 @@
   (syntax-rules ()
     ((_ name params . body) (define-macro (name . params) . body))))
 
-;(define *defmacros*
-;  (list (cons 'defmacro
-;	      (lambda (name parms . body)
-;		`(set! *defmacros* (cons (cons ',name (lambda ,parms ,@body))
-;					 *defmacros*))))))
-;(define (defmacro? m) (and (assq m *defmacros*) #t))
-
-(define (macroexpand-1 e)
-  (eval `(%macro-expand-1 ,e) (interaction-environment)))
-
-;(define (macroexpand-1 e)
-;  (if (pair? e) (let ((a (car e)))
-;		  (cond ((symbol? a) (set! a (assq a *defmacros*))
-;				     (if a (apply (cdr a) (cdr e)) e))
-;			(else e)))
-;      e))
-
-(define (macroexpand e)
-  (eval `(%macro-expand ,e) (interaction-environment)))
-
-;(define (macroexpand e)
-;  (if (pair? e) (let ((a (car e)))
-;		  (cond ((symbol? a)
-;			 (set! a (assq a *defmacros*))
-;			 (if a (macroexpand (apply (cdr a) (cdr e))) e))
-;			(else e)))
-;      e))
+; macroexpand-1
+; macroexpand
 
 (define gentemp gensym)
 

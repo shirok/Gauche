@@ -1,3 +1,10 @@
+2002-03-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche-init.scm, lib/slib.scm.in : fixed a problem with
+	  slib2d3 which was caused because cond-expand in slib's
+	  require.scm expanded to a form that referred slib's require
+	  instead of gauche's.
+
 2002-03-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c, src/vm.h : adding more thread support.

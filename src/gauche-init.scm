@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.66 2002-03-11 00:43:02 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.67 2002-04-01 10:33:25 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -47,9 +47,8 @@
                      ((identifier? module) (identifier->symbol module))
                      (else (error "use: symbol required:" module))))
          (path (string-join (string-split (symbol->string mod) #\.) "/")))
-    `(begin
-       (require ,path)
-       (import ,mod)))
+    `(begin (with-module gauche (require ,path))
+            (import ,mod)))
   )
 
 ;; Inter-version compatibility.
