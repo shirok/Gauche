@@ -10887,6 +10887,12 @@ CGIスクリプトを手軽に書くにはこのモジュールの他に、
 @c COMMON
 @end deftp
 
+@c EN
+@subheading Metavariables
+@c JP
+@subheading メタ変数
+@c COMMON
+
 @deffn {Parameter} cgi-metavariables &optional metavariables
 @c EN
 Normally, httpd passes a cgi progam various information
@@ -10948,7 +10954,13 @@ CGIスクリプトは、なるべく@code{sys-getenv}を直接呼ぶのではなく
 @c COMMON
 @end defun
 
-@defun cgi-parse-parameters &keyword :query-string :merge-cookies
+@c EN
+@subheading Parameter extraction
+@c JP
+@subheading パラメータの取得
+@c COMMON
+
+@defun cgi-parse-parameters &keyword :query-string :merge-cookies :part-handlers
 @c EN
 Parses query string and returns associative list of parameters.
 When a keyword argument @var{query-string} is given, it is used
@@ -10956,9 +10968,9 @@ as a source query string.  Otherwise, the function checks the
 metavariable @code{REQUEST_METHOD} and obtain the query string
 depending on the value (either from stdin or from the
 metavariable @code{QUERY_STRING}).
-If such an metavariable is not defined and
+If such a metavariable is not defined and
 the current input port is a terminal, the function prompts the user
-to type parameters; useful for interactive debugging.
+to type parameters; it is useful for interactive debugging.
 @c JP
 CGIプログラムに渡されたquery stringをパーズして、パラメータの連想リストにして
 返します。文字列がキーワード引数@var{query-string}に与えられればそれがパーズすべき
@@ -10968,6 +10980,33 @@ query stringとなります。その引数が渡されなければこの手続きは
 そのようなメタ変数が定義されておらず、かつ現在の入力ポートが端末である場合、
 インタラクティブにデバッグをしているものと考えて、
 この手続きはプロンプトを出してユーザにパラメータの入力を促します。
+@c COMMON
+
+@c EN
+If @code{REQUEST_METHOD} is @code{POST}, this procedure can handle
+both @code{application/x-www-from-urlencoded} and 
+@code{multipart/form-data} as the enctype.  The latter is usually
+used if the form has file-uploading capability.
+
+When the post data is sent by @code{multipart/form-data}, 
+each content of the part is treated as a value of the parameter.
+That is, the content of uploaded file will be seen as one big 
+chunk of a string.  The other information, such as the original file
+name, is discarded.   If it is not desirable to read entire file
+into a string, you can customize the behavior by the @var{part-handler}
+argument.  The details are explaned in the "Handling file uploads"
+section below.
+@c JP
+@code{REQUEST_METHOD}が@code{POST}の場合、この手続きはenctypeとして
+@code{application/x-www-from-urlencoded}と@code{multipart/form-data}の
+両方を処理できます。後者は通常、ファイルアップロード機能を持つフォームに使われます。
+
+POSTデータが@code{multipart/form-data}で送られて来た場合、
+各パートの内容がパラメータの値となります。すなわち、アップロードされた
+ファイルはその内容がひとつの文字列として得られることになります。
+元のファイル名のようなその他の情報は捨てられます。これが望ましい動作で
+ない場合は、@var{part-handlers}引数によって動作をカスタマイズすることができます。
+詳しくは下の「ファイルアップロードの処理」で説明します。
 @c COMMON
 
 @c EN
@@ -10996,6 +11035,7 @@ See the following example:
  @result{} (("foo" "123") ("bar "\"??\"" "zz") ("buzz" #t))
 @end example
 @end defun
+
 
 @defun cgi-get-parameter name params &keyword :default :list :convert
 @c EN
@@ -11042,6 +11082,13 @@ is @code{#f} if @var{list} is false, or @code{()} otherwise.
 真であれば@code{()}が返されます。
 @c COMMON
 @end defun
+
+@c EN
+@subheading Output generation
+@c JP
+@subheading 出力の生成
+@c COMMON
+
 
 @defun cgi-header &keyword content-type location cookies
 @c EN
@@ -11099,7 +11146,14 @@ encoding by @code{gauche.charconv} module
 @c COMMON
 @end deffn
 
-@defun cgi-main proc &keyword on-error merge-cookies output-proc
+
+@c EN
+@subheading Convenience procedures
+@c JP
+@subheading 便利な手続き
+@c COMMON
+
+@defun cgi-main proc &keyword on-error merge-cookies output-proc part-handlers
 @c EN
 A convenient wrapper function for CGI script.
 This function calls @code{cgi-parse-parameters}, then calls
@@ -11169,6 +11223,27 @@ output port, including character conversions, if necessary.
 @c COMMON
 
 @c EN
+The keyword argument @var{part-handlers} are simply passed to
+@code{cgi-parse-parameters}, by which you can customize
+how the file uploads should be handled.  See the "Handling file
+uploads" section below for the details.
+
+If you specify to use temporary file(s) by it, @code{cgi-main}
+makes sure to clean up them whenever @var{proc} exits,
+even by error.   See @code{cgi-add-temporary-file} below
+to utilize this feature for other purpose.
+@c JP
+キーワード引数@var{part-handlers}は、そのまま@code{cgi-parse-parameters}
+に渡されます。この引数によって、ファイルアップロードの際の動作をカスタマイズ
+できます。詳しくは下の「ファイルアップロードの処理」の項を参照して下さい。
+
+この引数で、一時ファイルを使うように指定した場合、@code{cgi-main}は
+@var{proc}から抜ける際に(エラーでも正常終了でも)一時ファイルを
+消去します。この機能を他でも利用するには@code{cgi-add-temporary-file}の項を
+参考にして下さい。
+@c COMMON
+
+@c EN
 The following example shows the parameters given to the CGI program.
 @c JP
 以下の例はCGIに渡されたパラメータ全てをテーブルにして表示します。
@@ -11199,6 +11274,267 @@ The following example shows the parameters given to the CGI program.
        ))))
 @end example
 @end defun
+
+
+@defun cgi-add-temporary-file filename
+@c EN
+This is supposed to be called inside @var{proc} of @code{cgi-main}.
+It registers @var{filename} as a temporary file, which should be
+unlinked when @var{proc} exits.  It is a convenient way to ensure
+that your cgi script won't leave garbages even if it throws an error.
+It is OK in @var{proc} to unlink or rename @var{filename} after
+calling this procedure.
+@c JP
+この手続きは@code{cgi-main}に渡される@var{proc}中で呼ばれることを
+想定しています。
+この手続きは、@var{filename}を一時ファイルとして登録し、@var{proc}が
+終了する際に消去されるようにします。cgiスクリプトがエラー終了した場合
+などでもごみを残さないようにする便利な方法です。
+この手続きを呼んだ後で、@var{proc}が@var{filename}を消去したり
+名前を変えたりしても構いません。
+@c COMMON
+@end defun
+
+@deffn {Parameter} cgi-temporary-files
+@c EN
+Keeps a list of filenames registered by @code{cgi-add-temorary-file}.
+@c JP
+@code{cgi-add-temporary-file}で登録された一時ファイルを保持するパラメータです。
+@c COMMON
+@end defun
+
+@c EN
+@subheading Handling file uploads
+@c JP
+@subheading ファイルアップロードの処理
+@c COMMON
+
+@c EN
+As explained in @code{cgi-parse-parameters} above, file uploads
+are handled transparently by default, taking the file content
+as the value of the parameter.   Sometimes you might want to change this
+behavior, for the file might be quite big and you don't want 
+to keep around a huge chunk of a string in memory.  It is possible to
+customize handling of file uploads of @code{cgi-parse-parameters}
+and @code{cgi-main} by @var{part-handlers} argument.
+(The argument is only effective for the form data submitted by
+@code{multipart/form-data} enctype)
+@c JP
+@code{cgi-parse-parameters}の項で説明したように、ファイルアップロードは
+デフォルトでは透過的に扱われます。すなわち、アップロードされた
+ファイルの内容がパラメータの値となります。
+これは望みの動作ではないかもしれません。例えばアップロードされるファイルが
+巨大であることが予想されるなら、それを全てメモリに読み込んで持ち回りたくは
+ないかもしれません。@code{cgi-parse-parameters}や@code{cgi-main}の
+@var{part-handlers}引数によって、ファイルアップロードの
+処理をカスタマイズすることが可能です。
+(この引数は、@code{multipart/form-data} enctypeで
+送られるフォームデータにのみ適用されます)。
+@c COMMON
+
+@c EN
+The @var{part-handlers} argument is, if given, a list of lists;
+each inner list is a form of @code{(@var{name-pattern} @var{action})}.
+Each uploaded file with a matching parameter name with @var{name-pattern} is
+handled according to @var{action}.  (Here, a parameter name
+is the 'name' attribute given to the @code{input} element in the
+submitted form, not the name of the uploaded file).
+@c JP
+@var{part-handlers}引数が与えられている場合、それはリストのリストで、
+ならず、内部のリストは@code{(@var{name-pattern} @var{action})} の形式で
+なければなりません。
+アップロードされたファイルは、そのパラメータ名が@var{name-pattern}に
+マッチした場合に@var{action}で指示されるように処理されます。
+(ここで、パラメータ名とはsubmitされたフォームの@code{input}要素に与えられた
+'name'属性のことです。アップロードされたファイルの名前ではありません)。
+@c COMMON
+
+@c EN
+@var{Name-pattern} must be either a list of string (matches one of them),
+a regexp, or @code{#t} (matches anything).
+@c JP
+@var{name-pattern}は文字列のリストか、正規表現か、@code{#t}です。
+文字列のリストの場合はそれのいずれかとパラメータ名が等しければマッチと
+みなされます。@code{#t}は全てのものにマッチします。
+@c COMMON
+
+@c EN
+@var{Action} must be either one of the followings:
+@table @code
+@item #f
+Default action, i.e. the content of the uploaded file is turned into
+a string and becomes the value of the parameter.
+@item ignore
+The uploaded content is discarded.
+@item file
+The uploaded content is saved in a temporary file.  The value of
+the parameter is the pathname of the temporary file.
+
+For this action, you can write an entry like
+@code{(@var{name-pattern} file @var{prefix})}, to specify the
+prefix of the pathname of the temporary file.  For example, if you
+specify @code{("image" file "/var/mycgi/incoming/img")}, 
+the file uploaded as @code{"image"} parameter will be stored as
+something like @file{/var/mycgi/incoming/img49g2Ua}.
+
+The application should move the temporary file to appropriate
+location; if you're using @code{cgi-main}, the temporary files
+created by this action will be unlinked when @code{cgi-main} exits.
+
+@item @var{procedure}
+In this case, @var{procedure} is called to handle the uploaded
+contents.  It is called with five arguments:
+@code{(procedure @var{name} @var{filename} @var{part-info} @var{reader} @var{iport})}.
+
+@var{Name} is the name of the parameter.  @var{Filename} is
+the name of the original file (pathname in the client).
+@var{Part-info} is a @code{<mime-part>} object that keeps information
+about this mime part, @var{reader} is a line-reading procedure with
+recognizing MIME boundary, and @var{iport} is where the body can be
+read from.  For the details about these arguments, 
+see @ref{MIME message handling}; you might be able to
+use procedures provided by @code{rfc.mime}, such as @code{mime-retrieve-body},
+to construct your own procedure.
+
+If you create a temporary file in @var{procedure}, you can call
+@code{cgi-add-temporary-file} to make sure it is removed even if
+an error occurs during cgi processing.
+@end table
+@c JP
+@code{action}は次のいずれかの値でなければなりません。
+@table @code
+@item #f
+デフォルトのアクションです。すなわち、アップロードされたファイルの内容が
+文字列として読み込まれ、パラメータの値となります。
+@item ignore
+アップロードされたファイルの内容を無視します。
+@item file
+アップロードされたファイルの内容は一時ファイルへと格納されます。
+パラメータの値は、一時ファイルの名前となります。
+
+このアクションを使う場合は、エントリを
+@code{(@var{name-pattern} file @var{prefix})} のように書くことも
+でき、その場合は@var{prefix}が一時ファイルのパス名のプリフィクスとして
+使われます。例えば@code{("image" file "/var/mycgi/incoming/img")}
+のようにしておくと、@code{"image"}パラメータとしてアップロードされた
+ファイルが@file{/var/mycgi/incoming/img49g2Ua}のような一時ファイルに
+格納されることになります。
+
+アプリケーションは、この一時ファイルを(必要ならば)適切な場所に
+移動しなければなりません。@code{cgi-main}を用いている場合は、
+一時ファイルは@code{cgi-main}を抜ける際に(まだあれば)unlinkされます。
+
+@item @var{procedure}
+この場合、アップロードされた内容を処理するために、手続き@var{procedure}が
+呼ばれます。手続きは5つの引数を伴って呼ばれます：
+@code{(procedure @var{name} @var{filename} @var{part-info} @var{reader} @var{iport})}.
+
+@var{name}はパラメータの名前、@var{filename}はオリジナルファイルの名前
+(クライアント側でのパス名)です。@var{part-info}は@code{<mime-part>}オブジェクトで、
+このMIMEパートの情報を保持しており、@var{reader}はMIME境界を認識する
+行読み込み手続き、そして@var{iport}は内容を読むための入力ポートです。
+これらの引数の詳しい意味については@ref{MIME message handling}を
+参照して下さい。独自の@var{procedure}を書く際に、@code{rfc.mime}の
+@code{mime-retrieve-body}のような手続きが使えるかもしれません。
+
+@var{procedure}内で一時ファイルを作る場合は、それを
+@code{cgi-add-temporary-file}で登録しておけば、cgi処理中に
+エラーが起きた場合でも一時ファイルが消去されるようにすることができます。
+@end table
+@c COMMON
+
+@c EN
+Note that the parameters that are not file uploads are not the subject
+of @var{part-handlers}; such parameter values are always turned into a string.
+@c JP
+ファイルアップロード以外のパラメータは@var{part-handlers}の対象外である
+ことに注意して下さい。それらのパラメータの値は常に文字列へと変換されます。
+@c COMMON
+
+
+@c EN
+Here's a short example.  Suppose you have a form like this:
+@c JP
+簡単な例を示します。例えば次のようなフォームがあったとします。
+@c COMMON
+
+@example
+<form enctype="multipart/form-data" method="POST" action="mycgi.cgi">
+<input type="file" name="imagefile" />
+<input type="text" name="description" />
+<input type="hidden" name="mode" value="normal" />
+</form>
+@end example
+
+@c EN
+If you use @code{cgi-parse-parameters} in @file{mycgi.cgi}
+without @var{part-handlers} argument,
+you'll get something like the following as the result.
+(The actual values depend on how the web client filled the form).
+@c JP
+@file{mycgi.cgi}内で、@code{cgi-parse-parameters}を
+@var{part-handlers}引数なしで使った場合は、
+例えば次のようなリストがパラメータパージングの結果として得られるでしょう。
+(実際の値は、webクライアントがどのようにフォームを埋めたかに依存します)。
+@c COMMON
+
+@example
+(("imagefile" #*".....(image file content as a string)....")
+ ("description" "my image")
+ ("mode" "normal"))
+@end example
+
+@c EN
+If you pass @code{'(("imagefile" file "/tmp/mycgi"))} to @var{part-handlers} 
+instead,
+you might get something like the following, with the
+content of uploaded file saved in @file{/tmp/mycgi7gq0B}
+@c JP
+ここでもし、@code{'(("imagefile" file "/tmp/mycgi"))}を@var{part-handlers}に
+渡したなら、替わりに次のような結果が得られるでしょう。
+ここで、アップロードされたファイルは@file{/tmp/mycgi7gq0B}にセーブ
+されていることになります。
+@c COMMON
+
+@example
+(("imagefile" "/tmp/mycgi7gq0B")
+ ("description" "my image")
+ ("mode" "normal"))
+@end example
+
+@c @c EN
+@c Now, you pass the following structure to @var{part-handlers}:
+@c @c JP
+@c 次のような構造を@var{part-handlers}に渡した場合：
+@c @c COMMON
+
+@c @example
+@c `(("imagefile" 
+@c    ,(lambda (name fname info reader iport)
+@c       (receive (outp tmpfile) (sys-mkstemp "/var/log/mycgi/tmp")
+@c         (mime-retrieve-body info reader iport outp)
+@c         (close-output-port outp)
+@c         (cgi-add-temporary-file tmpfile)
+@c         (string-append fname ":" tmpfile))))
+@c   )
+@c @end example
+
+@c @c EN
+@c You'll get something like the following; i.e. the cgi application
+@c can see the client-side file name as well as the temporary file name.
+@c @c JP
+@c 例えば次のようなパーズ結果が得られるでしょう。つまり、
+@c cgiアプリケーションは一時ファイル名と同時に
+@c クライアント側でのファイル名も参照することができます。
+@c @c COMMON
+
+@c @example
+@c (("imagefile" "/home/foo/images/logo.jpg:/var/log/mycgi/tmp820iQj")
+@c  ("description" "my image")
+@c  ("mode" "normal"))
+@c @end example
+
+
 
 @c ----------------------------------------------------------------------
 @node CGI testing,  , CGI Utility, Library modules - Utilities

@@ -1,3 +1,8 @@
+2004-07-29  Shiro Kawai  <shiro@acm.org>
+
+	* lib/www/cgi.scm (cgi-add-temporary-file, cgi-main): added capability
+	  to clean up temporary files upon exit of cgi-main.
+
 2004-07-28  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/match.scm (gen) : fixed a bug that reused a temporary

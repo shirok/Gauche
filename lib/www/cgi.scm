@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.16 2004-07-26 20:53:22 shirok Exp $
+;;;  $Id: cgi.scm,v 1.17 2004-07-31 08:46:09 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -58,6 +58,8 @@
           cgi-parse-parameters
           cgi-get-parameter
           cgi-header
+          cgi-temporary-files
+          cgi-add-temporary-file 
           cgi-main)
   )
 (select-module www.cgi)
@@ -84,6 +86,16 @@
 
 (define cgi-output-character-encoding
   (make-parameter (gauche-character-encoding)))
+
+;;----------------------------------------------------------------
+;; The list of temporary files created to save uploaded files.
+;; The files will be unlinked when cgi-main exits.
+
+(define cgi-temporary-files
+  (make-parameter '()))
+
+(define (cgi-add-temporary-file path)
+  (cgi-temporary-files (cons path (cgi-temporary-files))))
 
 ;;----------------------------------------------------------------
 ;; Get query string. (internal)
@@ -173,6 +185,7 @@
   (define (make-file-handler prefix)
     (lambda (name filename part-info reader inp)
       (receive (outp tmpfile) (sys-mkstemp prefix)
+        (cgi-add-temporary-file tmpfile)
         (mime-retrieve-body part-info reader inp outp)
         (close-output-port outp)
         tmpfile)))
@@ -284,6 +297,8 @@
            (cgi-parse-parameters :merge-cookies merge-cookies
                                  :part-handlers part-handlers)
          (output-proc (proc params)))))
+    ;; remove any temporary files
+    (for-each sys-unlink (cgi-temporary-files))
     ))
 
 ;; aux fns
