@@ -62,7 +62,8 @@ TESTFILES = ../test/primsyn.scm \
 	    ../test/mb-chars.scm \
 	    ../test/system.scm \
 	    ../test/rfc.scm \
-	    ../test/parseopt.scm
+	    ../test/parseopt.scm \
+	    ../test/text.scm
 
 .SUFFIXES: .stub
 
