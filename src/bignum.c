@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.30 2002-04-05 00:49:43 shirok Exp $
+ *  $Id: bignum.c,v 1.31 2002-04-12 00:45:16 shirok Exp $
  */
 
 #include <math.h>
@@ -580,6 +580,18 @@ static ScmBignum *bignum_lshift(ScmBignum *br, ScmBignum *bx, int amount)
         lo += t4_;                                                      \
         if (lo < t4_) hi++;                                             \
     } while (0)
+
+#if 0
+#undef UMUL
+/* example of processor-specific optimization */
+#define UMUL(hi, lo, x, y)                                              \
+    do {                                                                \
+        asm("movl %2, %%eax; mull %3; movl %%edx, %0; movl %%eax, %1"   \
+            : "=g" (hi), "=g" (lo)                                      \
+            : "g" (x), "g" (y)                                          \
+            : "%eax", "%edx");                                          \
+    } while (0)
+#endif
 
 /* br += bx * y << off*WORD_BITS.   br must have enough size. */
 static ScmBignum *bignum_mul_word(ScmBignum *br, ScmBignum *bx,
