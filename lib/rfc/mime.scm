@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: mime.scm,v 1.3 2003-12-15 10:07:23 shirok Exp $
+;;;  $Id: mime.scm,v 1.4 2003-12-16 05:31:12 shirok Exp $
 ;;;
 
 ;; RFC2045 Multipurpose Internet Mail Extensions (MIME)
@@ -59,7 +59,7 @@
 (select-module rfc.mime)
 
 (autoload rfc.quoted-printable quoted-printable-decode-string)
-(autoload rfc.base64 base64-decode-string)
+(autoload rfc.base64 base64-decode-string base64-decode)
 (autoload gauche.charconv ces-conversion-supported? ces-convert)
 
 ;;===============================================================
@@ -159,7 +159,6 @@
                    :index index
                    :headers headers))
          )
-    (when parent (slot-push! parent 'parent packet))
     (cond
      ((equal? (car ctype) "multipart")
       (multipart-parse port packet handler reader))
@@ -191,9 +190,8 @@
                (set! state 'epilogue) *eof-object*)
               (else l))))
     ;; skip prologue
-    (do ()
-        ((not (eq? state 'prologue)))
-      (line-reader port))
+    (do () ((not (eq? state 'prologue))) (line-reader port))
+    ;; main part
     (let loop ((index 0)
                (contents '()))
       (let* ((headers (rfc822-header->list port :reader line-reader))
@@ -201,17 +199,27 @@
                                 line-reader packet index
                                 default-type))
              )
-        (if (not (memq state '(epilogue eof)))
-          (loop (+ index 1) (cons r contents))
-          (begin
-            (set! (ref packet 'content) (reverse! (cons r contents)))
-            packet))))
+        (case state
+          ((epilogue)
+           ;; skip epilogue
+           (do () ((eq? state 'eof)) (line-reader port))
+           (set! (ref packet 'content) (reverse! (cons r contents)))
+           packet)
+          ((eof)
+           ;; this level of multipart body is incomplete
+           (set! (ref packet 'content) (reverse! (cons r contents)))
+           packet)
+          (else
+           (loop (+ index 1) (cons r contents))))))
     ))
 
 (define (message-parse port packet handler reader)
   (let* ((headers (rfc822-header->list port)))
-    (internal-parse port headers handler reader packet 0
-                    '("text" "plain" ("charset" . "us-ascii")))))
+    (set! (ref packet 'content)
+          (list
+           (internal-parse port headers handler reader packet 0
+                           '("text" "plain" ("charset" . "us-ascii")))))
+    packet))
 
 ;;===============================================================
 ;; Body readers

@@ -266,139 +266,43 @@ Content-Length: 4349
        (mime-decode-word "=?iso-8859-1?q?this=20is=20some=20text?="))
 (test* "mime-decode-word" "Keith_Moore"
        (mime-decode-word "=?US-ASCII?Q?Keith_Moore?="))
-;; NB: the following tests depends on internal encodings
 (when (memq (gauche-character-encoding) '(euc-jp sjis utf8))
   (test* "mime-decode-word" "\u5ddd\u5408 \u53f2\u6717"
          (mime-decode-word "=?ISO-2022-JP?B?GyRCQG45ZxsoQiAbJEI7S08vGyhC?="))
   )
 
-(use util.list)
+;; NB: this assumes the test is run either under src/ or test/
+(define (mime-message-tester num)
+  (let ((src #`"../test/data/rfc-mime-,|num|.txt")
+        (res (call-with-input-file #`"../test/data/rfc-mime-,|num|.res.txt"
+               read)))
+    (call-with-input-file src
+      (lambda (inp)
+        (let* ((title (read-line inp)) ;; test title
+               (expl  (read-line inp)) ;; explanation (ignored)
+               (headers (rfc822-header->list inp)))
+          (test* #`"mime-parse-message (,|num| - ,|title|)"
+                 res
+                 (and (equal? (mime-parse-version
+                               (rfc822-header-ref headers "mime-version"))
+                              '(1 0))
+                      (mime-message-resolver
+                       (mime-parse-message inp headers
+                                           (cut mime-body->string <> <> inp))
+                       #f)
+                      )))))
+    ))
 
-(let* ((mesg (string-append
-              "From: Nathaniel Borenstein <nsb@bellcore.com>\n"
-              "To: Ned Freed <ned@innosoft.com>\n"
-              "Date: Sun, 21 Mar 1993 23:56:48 -0800 (PST)\n"
-              "Subject: Sample message\n"
-              "MIME-Version: 1.0\n"
-              "Content-type: multipart/mixed; boundary=\"simple boundary\"\n"
-              "\n"
-              "This is the preamble.  It is to be ignored, though it\n"
-              "is a handy place for composition agents to include an\n"
-              "explanatory note to non-MIME conformant readers.\n"
-              "\n"
-              "--simple boundary\n"
-              "\n"
-              "This is implicitly typed plain US-ASCII text.\n"
-              "It does NOT end with a linebreak.\n"
-              "--simple boundary\n"
-              "Content-type: text/plain; charset=us-ascii\n"
-              "\n"
-              "This is explicitly typed plain US-ASCII text.\n"
-              "It DOES end with a linebreak.\n"
-              "\n"
-              "--simple boundary--\n"
-              "\n"
-              "This is the epilogue.  It is also to be ignored.\n"))
-       )
-  (test* "mime-parse-message"
-         '("This is implicitly typed plain US-ASCII text.\nIt does NOT end with a linebreak."
-           "This is explicitly typed plain US-ASCII text.\nIt DOES end with a linebreak.\n")
-         (let* ((p (open-input-string mesg))
-                (headers (rfc822-header->list p)))
-           (define (handler packet reader)
-             (apply string-append (intersperse "\n" (port->list reader p))))
-           (let ((result (mime-parse-message p headers handler)))
-             (map (cut ref <> 'content) (ref result 'content)))))
-  )
+(define (mime-message-resolver mesg parent)
+  (unless (eqv? (ref mesg 'parent) parent) (error "parent link broken"))
+  (list* (string-append (ref mesg 'type) "/" (ref mesg 'subtype))
+         (ref mesg 'index)
+         (if (string? (ref mesg 'content))
+           (list (ref mesg 'content))
+           (map (cut mime-message-resolver <> mesg) (ref mesg 'content)))))
 
-(let* ((mesg (string-append
-              "From: Nathaniel Borenstein <nsb@bellcore.com>\n"
-              "To: Ned Freed <ned@innosoft.com>\n"
-              "Date: Mon, 22 Mar 1993 09:41:09 -0800 (PST)\n"
-              "Subject: Formatted text mail\n"
-              "MIME-Version: 1.0\n"
-              "Content-Type: multipart/alternative; boundary=boundary42\n"
-              "\n"
-              "--boundary42\n"
-              "Content-Type: text/plain; charset=us-ascii\n"
-              "\n"
-              "... plain text version of message goes here ...\n"
-              "\n"
-              "--boundary42\n"
-              "Content-Type: text/enriched\n"
-              "\n"
-              "... RFC 1896 text/enriched version of same message\n"
-              "goes here ...\n"
-              "\n"
-              "--boundary42\n"
-              "Content-Type: application/x-whatever\n"
-              "\n"
-              "... fanciest version of same message goes here ...\n"
-              "\n"
-              "--boundary42--\n"))
-       (result '("... plain text version of message goes here ...\n"
-                 "... RFC 1896 text/enriched version of same message\ngoes here ...\n"
-                 "... fanciest version of same message goes here ...\n")))
-  (test* "mime-parse-message" result
-         (let* ((p (open-input-string mesg))
-                (headers (rfc822-header->list p))
-                (r (mime-parse-message p headers
-                                       (cut mime-body->string <> <> p))))
-           (map (cut ref <> 'content) (ref r 'content))))
-  )
-             
-              
-(let* ((mesg (string-append
-              "From: Moderator-Address\n"
-              "To: Recipient-List\n"
-              "Date: Mon, 22 Mar 1994 13:34:51 +0000\n"
-              "Subject: Internet Digest, volume 42\n"
-              "MIME-Version: 1.0\n"
-              "Content-Type: multipart/mixed;\n"
-              "   boundary=\"---- main boundary ----\"\n"
-              "\n"
-              "------ main boundary ----\n"
-              "\n"
-              "...Introductory text or table of contents...\n"
-              "\n"
-              "------ main boundary ----\n"
-              "Content-Type: multipart/digest;\n"
-              "   boundary=\"---- next message ----\"\n"
-              "\n"
-              "------ next message ----\n"
-              "\n"
-              "From: someone-else\n"
-              "Date: Fri, 26 Mar 1993 11:13:32 +0200\n"
-              "Subject: my opinion\n"
-              "\n"
-              "...body goes here ...\n"
-              "\n"
-              "------ next message ----\n"
-              "\n"
-              "From: someone-else-again\n"
-              "Date: Fri, 26 Mar 1993 10:07:13 -0500\n"
-              "Subject: my different opinion\n"
-              "\n"
-              "... another body goes here ...\n"
-              "\n"
-              "------ next message ------\n"
-              "\n"
-              "------ main boundary ------\n"
-              "\n"))
-       (result '("...Introductory text or table of contents...\n"
-                 "...body goes here ...\n"
-                 "... another body goes here ...\n"))
-       )
-  (test* "mime-parse-message" result
-         (let* ((p (open-input-string mesg))
-                (headers (rfc822-header->list p))
-                (r (mime-parse-message p headers
-                                       (cut mime-body->string <> <> p)))
-                (c (ref r 'content)))
-           (cons (ref (car c) 'content)
-                 (map (cut ref <> 'content) (ref (cadr c) 'content)))
-           ))
-  )
+(dotimes (n 4)
+  (mime-message-tester n))
 
 ;;--------------------------------------------------------------------
 (test-section "rfc.uri")

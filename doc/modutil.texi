@@ -21,6 +21,7 @@
 * rfc.hmac - HMAC keyed-hashing::  
 * rfc.http - HTTP::             
 * rfc.md5 - MD5 message digest::  
+* rfc.mime - MIME message handling::  
 * rfc.quoted-printable - Quoted-printable encoding/decoding::  
 * rfc.sha1 - SHA1 message digest::  
 * rfc.uri - URI parsing and construction::  
@@ -3112,7 +3113,7 @@ without allocating (potentially very big) string buffer.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node rfc.md5 - MD5 message digest, rfc.quoted-printable - Quoted-printable encoding/decoding, rfc.http - HTTP, Library modules - Utilities
+@node rfc.md5 - MD5 message digest, rfc.mime - MIME message handling, rfc.http - HTTP, Library modules - Utilities
 @section @code{rfc.md5} - MD5 message digest
 @c NODE rfc.md5 - MD5メッセージダイジェスト, @code{rfc.md5} - MD5メッセージダイジェスト
 
@@ -3182,7 +3183,178 @@ in an incomplete string.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node rfc.quoted-printable - Quoted-printable encoding/decoding, rfc.sha1 - SHA1 message digest, rfc.md5 - MD5 message digest, Library modules - Utilities
+@node rfc.mime - MIME message handling, rfc.quoted-printable - Quoted-printable encoding/decoding, rfc.md5 - MD5 message digest, Library modules - Utilities
+@section @code{rfc.mime} - MIME message handling
+
+@deftp {Module} rfc.mime
+@mdindex rfc.mime
+This module provides utility procedures to handle
+Multipurpose Internet Mail Extensions (MIME) messages,
+defined in RFC2045 thorough RFC2049.
+
+This module is supposed to be used with @code{rfc.822} module
+(@xref{rfc.822 - RFC822 message parsing}).
+@end deftp
+
+@subheading Utilities for header fields
+
+A few utility procedures to parse MIME-specific header fields.
+
+@defun mime-parse-version field
+If @var{field} is a valid header field for MIME-Version, returns
+its major and minor versions in a list.  Otherwise, returns @code{#f}.
+It is allowed to pass @code{#f} to @var{field}, so that 
+you can directly pass the result of @code{rfc822-header-ref} to it.
+Given parsed header list by @code{rfc822-header->list}, you gan
+get mime version (currently, it should be @code{(1 0)}) by the
+following code.
+@example
+(mime-parse-version (rfc822-header-ref headers "mime-version"))
+@end example
+
+Note: simple regexp such as @code{#/\d+\.\d+/} doesn't do this job,
+for @var{field} may contain comments between tokens.
+@end defun
+
+@defun mime-parse-content-type field
+Parses the "content-type" header field, and returns a list such as:
+@example
+(@i{type} @i{subtype} (@i{attribute} . @i{value}) @dots{})
+@end example
+where @i{type} and @i{subtype} are MIME media type and
+subtype in a string, respectively
+
+@example
+(mime-parse-content-type "text/html; charset=iso-2022-jp")
+ @result{} ("text" "html" ("charset" . "iso-2022-jp"))
+@end example
+
+If @var{field} is not a valid content-type field, @code{#f} is
+returned.
+@end defun
+
+@defun mime-decode-word word
+Decodes RFC2047-encoded word.  If @var{word} isn't an encoded word,
+it is returned as is.
+
+@example
+(mime-decode-word "=?iso-8859-1?q?this=20is=20some=20text?=")
+ @result{} "this is some text"
+@end example
+@end defun
+
+@subheading Streaming parser
+
+The streaming parser is designed so that you can decide how
+to do with the message body before the entire message is read.
+
+@defun mime-parse-message port headers handler
+The fundamental streaming parser.  @var{Port} is an input port
+from where the mssage is read.  @var{Headers} is a list of headers
+parsed by @code{rfc822-header->list}; that is, this procedure
+is supposed to be called after the header part of the message
+is parsed from @var{port}:
+@example
+(let* ((headers (rfc822-header->list port)))
+  (if (mime-parse-version (rfc822-header-ref headers "mime-version"))
+     ;; parse MIME message
+     (mime-parse-message port headers handler)
+     ;; retrieve a non-MIME body
+     ...))
+@end example
+
+@code{Mime-parse-message} analyzes @var{headers}, and calls
+@var{handler} on each message body with two arguments:
+
+@example
+(handler @var{part-info} @var{line-reader})
+@end example
+
+When @var{handler} is called, @var{port} points to the beginning of
+the message body of the part.
+
+@var{Part-Info} is a @code{<mime-part>} structure described below
+that encapsulates the information of this part of the message.
+
+@var{Line-reader} is a procedure that takes an input port, and
+reads a line at a time.   It's like @code{read-line}, except that
+it returns EOF when it reaches MIME part boundary.  So, @var{handler}
+can read from @var{port} using @var{line-reader} until it gets EOF,
+without worrying about MIME part boundary.
+(Note: make sure you read from @var{line-reader} and not directly
+from @var{port}, or you'll miss MIME boundary).
+
+@var{Handler} can read the part into the memory, or
+save it to the disk, or even discard the part.
+
+The return value of @var{handler} will be set in
+the @code{content} slot of @var{part-info}.
+
+If the message has nested multipart messages, @var{handler} is
+called for each "leaf" part, in depth-first order.  @var{Handler}
+can know its nesting level by examining @var{part-info} structure.
+
+The message doesn't need to be a multipart type; if it is a
+MIME @code{message} type, @var{handler} is called on the body
+of enclosed message.  If it is other media types such as @code{text}
+or @code{application}, @var{handler} is called on the (only) message body.
+@end defun
+
+@deftp {Class} <mime-part>
+@clindex mime-message
+A structure that encloses metainformation about a MIME part.
+It is constructed when the header of the part is read, and
+passed to the handler that reads the body of the part.
+
+It has the following slots:
+
+@defivar {<mime-part>} type
+MIME media type string.  If @code{content-type} header is omitted
+to the part, an appropriate default value is set.
+@end defivar
+
+@defivar {<mime-part>} subtype
+MIME media subtype string.  If @code{content-type} header is omitted
+to the part, an appropriate default value is set.
+@end defivar
+
+@defivar {<mime-part>} parameters
+Associative list of parameters given to @code{content-type} header field.
+@end defivar
+
+@defivar {<mime-part>} transfer-encoding
+The value of @code{content-transfer-encoding} header field.
+If the header field is omitted, an appropriate default value is set.
+@end defivar
+
+@defivar {<mime-part>} headers
+The list of header fields, as parsed by @code{rfc822-header->list}.
+@end defivar
+
+@defivar {<mime-part>} parent
+If this is a part of multipart message or encapsulated message,
+points to the enclosing part's @code{<mime-part>} structure.
+Otherwise @code{#f}.
+@end defivar
+
+@defivar {<mime-part>} index
+Sequence number of this part within the same parent.
+@end defivar
+
+@defivar {<mime-part>} content
+If this part is multipart/* or message/* media type,
+this slot contains a list of parts within it.
+Otherwise, the return value of @var{handler} is stored.
+@end defivar
+@end deftp
+
+@defun mime-body->string packet reader inp
+@end defun
+
+
+
+@c ----------------------------------------------------------------------
+@node rfc.quoted-printable - Quoted-printable encoding/decoding, rfc.sha1 - SHA1 message digest, rfc.mime - MIME message handling, Library modules - Utilities
 @section @code{rfc.quoted-printable} - Quoted-printable encoding/decoding
 @c NODE rfc.quoted-printable - Quoted-printableエンコーディング, @code{rfc.quoted-printable} - Quoted-printableエンコーディング
 
