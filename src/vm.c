@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.151 2002-05-22 00:52:03 shirok Exp $
+ *  $Id: vm.c,v 1.152 2002-05-23 06:21:56 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -532,15 +532,7 @@ static void run_loop()
         SWITCH(SCM_VM_INSN_CODE(code)) {
 
             CASE(SCM_VM_PUSH) {
-#ifdef ENABLE_STACK_CHECK
-#if !defined(EXPLICIT_STACK_CHECK) && !defined(FUNCTION_STACK_CHECK)
-                if (sp >= vm->stackEnd) {
-                    SAVE_REGS();
-                    save_stack(vm);
-                    RESTORE_REGS();
-                }
-#endif
-#endif
+                CHECK_STACK(0);
                 PUSH_ARG(val0);
                 continue;
             }
@@ -550,28 +542,16 @@ static void run_loop()
             }
             CASE(SCM_VM_DUP) {
                 ScmObj arg = *(sp-1);
-#ifdef ENABLE_STACK_CHECK
-#if !defined(EXPLICIT_STACK_CHECK) && !defined(FUNCTION_STACK_CHECK)
-                if (sp >= vm->stackEnd) {
-                    SAVE_REGS();
-                    save_stack(vm);
-                    RESTORE_REGS();
-                }
-#endif
-#endif
+                CHECK_STACK(0);
                 PUSH_ARG(arg);
                 continue;
             }
             CASE(SCM_VM_PRE_CALL) {
                 ScmObj prep = SCM_CAR(pc), next = SCM_CDR(pc);
-#ifdef ENABLE_STACK_CHECK
-#if !defined(FUNCTION_STACK_CHECK)
                 /* Note: The call instruction will push extra word for
                    next-method, hence +1 */
                 int reqstack = CONT_FRAME_SIZE+ENV_SIZE(SCM_VM_INSN_ARG(code))+1;
                 CHECK_STACK(reqstack);
-#endif
-#endif
                 if (!SCM_NULLP(next)) {
                     PUSH_CONT(prevpc, next);
                 }
@@ -580,22 +560,16 @@ static void run_loop()
                 continue;
             }
             CASE(SCM_VM_PRE_TAIL) {
-#ifdef ENABLE_STACK_CHECK
-#if !defined(FUNCTION_STACK_CHECK)
                 /* Note: The call instruction will push extra word for
                    next-method, hence +1 */
                 int reqstack = ENV_SIZE(SCM_VM_INSN_ARG(code))+1;
                 CHECK_STACK(reqstack);
-#endif
-#endif
                 PUSH_ENV_HDR();
                 continue;
             }
             CASE(SCM_VM_CHECK_STACK) {
-#ifdef ENABLE_STACK_CHECK
                 int reqstack = SCM_VM_INSN_ARG(code);
                 CHECK_STACK(reqstack);
-#endif
                 continue;
             }
             CASE(SCM_VM_TAIL_CALL) ; /* FALLTHROUGH */
@@ -638,9 +612,7 @@ static void run_loop()
                 } else if (proctype == SCM_PROC_NEXT_METHOD) {
                     ScmNextMethod *n = SCM_NEXT_METHOD(val0);
                     if (nargs == 0) {
-#ifdef ENABLE_STACK_CHECK
                         CHECK_STACK(n->nargs+1);
-#endif
                         memcpy(sp, n->args, sizeof(ScmObj)*n->nargs);
                         sp += n->nargs;
                         nargs = n->nargs;
@@ -812,11 +784,7 @@ static void run_loop()
                 int nlocals = SCM_VM_INSN_ARG(code);
                 int size = CONT_FRAME_SIZE + ENV_SIZE(nlocals);
                 ScmObj info, body;
-#ifdef ENABLE_STACK_CHECK
-#if !defined(FUNCTION_STACK_CHECK)
                 CHECK_STACK(size);
-#endif
-#endif
                 VM_ASSERT(SCM_PAIRP(pc));
                 FETCH_INSN(info);
                 VM_ASSERT(SCM_PAIRP(pc));
@@ -934,11 +902,7 @@ static void run_loop()
                 int i = 0, argsize;
                 ScmObj rest = SCM_NIL, tail = SCM_NIL, info, body;
 
-#ifdef ENABLE_STACK_CHECK
-#if !defined(FUNCTION_STACK_CHECK)
                 CHECK_STACK(size);
-#endif
-#endif
                 FETCH_INSN(info);
                 if (vm->numVals < reqargs) {
                     VM_ERR(("received fewer values than expected"));
@@ -1351,11 +1315,7 @@ static void run_loop()
             CASE(SCM_VM_SLOT_REF) {
                 ScmObj obj;
                 POP_ARG(obj);
-#ifdef ENABLE_STACK_CHECK
-#if !defined(FUNCTION_STACK_CHECK)
                 CHECK_STACK(CONT_FRAME_SIZE);
-#endif
-#endif
                 PUSH_CONT(prevpc, pc);
                 SAVE_REGS();
                 val0 = Scm_VMSlotRef(obj, val0, FALSE);
@@ -1367,11 +1327,7 @@ static void run_loop()
                 ScmObj obj, slot;
                 POP_ARG(slot);
                 POP_ARG(obj);
-#ifdef ENABLE_STACK_CHECK
-#if !defined(FUNCTION_STACK_CHECK)
                 CHECK_STACK(CONT_FRAME_SIZE);
-#endif
-#endif
                 PUSH_CONT(prevpc, pc);
                 SAVE_REGS();
                 val0 = Scm_VMSlotSet(obj, slot, val0);
@@ -1509,6 +1465,63 @@ ScmEnvFrame *Scm_GetCurrentEnv(void)
  * Function application from C
  */
 
+/* Called from VM loop, by SCM_VM_APPLY instruction.
+   At this point, VM state is as follows
+   (suppose we're called as (apply proc arg0 arg1 argN)
+
+       |           |
+    sp>|           |
+       +-----------+
+       |   arg1    |
+       |   arg0    |          +-----------+
+       |   proc    |     val0 |   argN    |
+       +-----------+          +-----------+
+       |    :      |
+       |   (env)   |
+   env>|    :      |
+       +-----------+
+       |   (cont)  |
+       |    :      |
+
+   This procedure has to arrange VM so that it would ready to call
+   proc with argument (arg0 arg1 . argN).   Specifically, this procedure
+   rearranges the stack to be like this: (suppose argN == (arg2 arg3) )
+
+
+    sp>|           |
+       +-----------+
+       |   arg3    |
+       |   arg2    |
+       |   arg1    |
+       |   arg0    |
+       +-----------+
+  argp>| <env-hdr> |
+       +-----------+          +-----------+
+  cont>|   <cont>  |     val0 |   proc    |
+       +-----------+          +-----------+
+       |    :      |
+       |   (env)   |
+   env>|    :      |
+       +-----------+
+       |   (cont)  |
+       |    :      |
+
+*/
+
+#if 0
+static ScmObj inlined_apply(ScmVM *vm, int nargs)
+{
+    ScmObj proc = *(vm->sp - nargs + 1);
+    ScmObj argN = vm->val0;
+    int argc = (nargs-1) + Scm_Length(argN);
+    
+    
+}
+#endif
+
+/* called from Scm_VMApply, this effectively generates the VM code
+   to call proc with args, and sets up the continuation so that
+   the code will be executed after the current executing subr returns. */
 static void arrange_application(ScmObj proc, ScmObj args, int numargs)
 {
     DECL_REGS;
@@ -1732,9 +1745,9 @@ ScmObj Scm_Apply(ScmObj proc, ScmObj args)
 {
     ScmObj code = SCM_NIL, tail = SCM_NIL, cp;
     int nargs = 0;
-#ifdef ENABLE_STACK_CHECK
+
+    /*TODO: need this?*/
     SCM_APPEND1(code, tail, SCM_VM_INSN1(SCM_VM_CHECK_STACK, Scm_Length(args)));
-#endif
     SCM_FOR_EACH(cp, args) {
         SCM_APPEND1(code, tail, SCM_CAR(cp));
         SCM_APPEND1(code, tail, SCM_VM_INSN(SCM_VM_PUSH));
@@ -1754,9 +1767,8 @@ void Scm_VMPushCC(ScmObj (*after)(ScmObj result, void **data),
     DECL_REGS;
     int i;
     ScmContFrame *cc;
-#ifdef ENABLE_STACK_CHECK
+
     CHECK_STACK(CONT_FRAME_SIZE+datasize);
-#endif
     cc = (ScmContFrame*)sp;
     sp += CONT_FRAME_SIZE;
     cc->prev = cont;
