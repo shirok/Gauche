@@ -3,6 +3,8 @@
 	* lib/gauche/mop/* : added <singleton-mixin> and <validator-mixin>
 	  classes, to use the features of <singleton-meta> and
 	  <validator-meta> conveniently.
+	* lib/gauche/listener.scm : added.  working, but error handling
+	  is not completed.
 
 2002-10-20  Shiro Kawai  <shiro@acm.org>
 
