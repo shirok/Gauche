@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.37 2001-06-15 07:52:28 shirok Exp $
+;;;  $Id: genstub,v 1.38 2001-06-15 10:35:22 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -522,10 +522,11 @@
 (define-method emit-definition ((self <cgeneric>))
   (unless (extern? self) (print "static "))
   (println "SCM_DEFINE_GENERIC(~a, ~a, NULL);"
-           (c-name-of self) (fallback-of self)))
+           (c-name-of self) (fallback-of self))
+  (newline))
 
 (define-method emit-initializer ((self <cgeneric>))
-  (println "  Scm_InitBuiltinGeneric(module, &~a, ~s);"
+  (println "  Scm_InitBuiltinGeneric(&~a, ~s, module);"
            (c-name-of self) (symbol->string (scheme-name-of self))))
 
 (define (process-define-cgeneric form)
@@ -555,7 +556,7 @@
   (let ((scheme-name (cadr form))
         (c-generic   (caddr form))
         (arglist     (cadddr form))
-        (body        (cdddr form)))
+        (body        (cddddr form)))
     (unless (and (symbol? scheme-name) (string? c-generic))
       (error "malformed define-cmethod: ~s" form))
     (receive (args specializers numargs have-optarg?)
@@ -566,16 +567,15 @@
                                               (gensym (symbol->string scheme-name)))
                           :specializers specializers
                           :num-reqargs numargs
+                          :args args
                           :have-rest-arg? have-optarg?
                           :c-generic c-generic
                           )))
-        (for-each (lambda (arg) (push-arg! method arg)) args)
         (for-each (lambda (stmt) (push-stmt! method stmt)) body)
         (emit-definition method)))
     ))
 
 (define-method emit-definition ((method <cmethod>))
-  (newline)
   (println "static ScmObj ~a(ScmNextMethod *nm_, ScmObj *SCM_FP, int SCM_ARGCNT, void *d_)"
            (c-name-of method))
   (println "{")
@@ -588,15 +588,20 @@
   (for-each println (stmts-of method))
   (println "  }")
   (println "}")
-  (print "static ScmClass *~a_SPEC[] = { ")
-  (for-each (lambda (spec) (print "&~a, " spec))
+  (newline)
+  (print "static ScmClass *~a_SPEC[] = { " (c-name-of method))
+  (for-each (lambda (spec) (print "~a, " spec))
             (reverse (specializers-of method)))
   (println "};")
-  (println "static SCM_DEFINE_METHOD(~a_rec, &~a, ~a, ~a, ~a_SPEC, ~a, NULL);"
+  (println "static SCM_DEFINE_METHOD(~a_STUB, &~a, ~a, ~a, ~a_SPEC, ~a, NULL);"
            (c-name-of method) (c-generic-of method)
            (num-reqargs-of method) (if (have-rest-arg? method) "1" "0")
            (c-name-of method) (c-name-of method))
+  (newline)
   )
+
+(define-method emit-initializer ((method <cmethod>))
+  (println "  Scm_InitBuiltinMethod(&~a_STUB);" (c-name-of method)))
 
 ;; returns four values: args, specializers, numreqargs, have-optarg?
 (define (parse-specialized-args arglist)
@@ -607,13 +612,17 @@
     (cond ((null? arglist)
            (values args specs (length args) #f))
           ((symbol? arglist)
-           (values (cons (list arglist :category :rest) args)
+           (values (cons (make <arg> :name arglist :count (length args)
+                               :category :rest)
+                         args)
                    (cons "SCM_CLASS_LIST" specs)
                    (length args) #t))
           ((not (pair? arglist)) (badlist))
           ((symbol? (car arglist))
            (loop (cdr arglist)
-                 (cons (list (car arglist) :category :required) args)
+                 (cons (make <arg> :name (car arglist) :count (length args)
+                             :category :required)
+                       args)
                  (cons "SCM_CLASS_TOP" specs)))
           ((not (and (pair? (car arglist))
                      (= (length (car arglist)) 2)
@@ -621,7 +630,10 @@
                      (string? (cadar arglist))))
            (badlist))
           (else (loop (cdr arglist)
-                      (cons (list (caar arglist) :category :required) args)
+                      (cons (make <arg> :name (caar arglist)
+                                  :count (length args)
+                                  :category :required)
+                            args)
                       (cons (cadar arglist) specs)))
           )))
 
@@ -694,6 +706,7 @@
   (for-each emit-initializer (get-stubs <cproc>))
   (for-each emit-initializer (get-stubs <csymbol>))
   (for-each emit-initializer (get-stubs <cgeneric>))
+  (for-each emit-initializer (get-stubs <cmethod>))
   (println "}")
   )
 
@@ -734,6 +747,8 @@
                        (process-define-type form))
                       ((eq? (car form) 'define-cgeneric)
                        (process-define-cgeneric form))
+                      ((eq? (car form) 'define-cmethod)
+                       (process-define-cmethod form))
                       (else (error "bad form: ~s" form)))
                 (loop (read))))))
         (emit-initializer (get-c-name "" prefix))
