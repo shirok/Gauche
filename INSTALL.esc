@@ -26,7 +26,7 @@
                       Compiling and Installing Gauche
 <? ) !>
 
-$Id: INSTALL.esc,v 1.19 2002-07-17 10:24:52 shirok Exp $
+$Id: INSTALL.esc,v 1.20 2002-07-18 19:22:19 shirok Exp $
 <? (if-lang japanese? !>
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:<? else !>
@@ -324,6 +324,13 @@ The files are installed in those locations:
      Machine-independent Scheme files.
 <? ) !>
 
+  $PREFIX/share/info/*
+<? (if-lang japanese? !>
+     infoファイル
+<? else !>
+     info files.
+<? ) !>
+
   $EXEC_PREFIX/lib/gauche/VERSION/ARCHITECTURE/*
 <? (if-lang japanese? !>
      マシンに依存するファイル (.so, gosh, gauche-config, libgauche.a)
@@ -345,15 +352,15 @@ The files are installed in those locations:
 
 <? (if-lang japanese? !>
 Make時に、makeマクロOPTFLAGSを用いて追加のコンパイルオプションを指定すること
-ができます。例えばi686アーキテクチャでgccを使う場合、次のオプションは多少
-性能を改善するようです。
+ができます。configureが設定するOPTFLAGS以外のオプションを試したい場合は
+次のようにmakeを走らせて下さい。
 <? else !>
 You can pass extra options at make time, using make macro OPTFLAGS.
-For example, the following may produce a bit faster code on i686
-architecture using gcc.
+'Configure' sets a default, but if you want to explore different
+options, just run 'make' as follows:
 <? ) !>
 
-  make OPTFLAGS="-march=i686 -fomit-frame-pointer -DUSE_I686_PREFETCH"
+  make OPTFLAGS="--some-compiler-option --other-option"
 
 
 <? (header "アンインストール" "Uninstallation") !>
