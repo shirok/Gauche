@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.76 2002-04-06 19:52:48 shirok Exp $
+ *  $Id: number.c,v 1.77 2002-04-06 22:48:00 shirok Exp $
  */
 
 #include <math.h>
@@ -1618,10 +1618,13 @@ enum { /* used in the exactness flag */
     NOEXACT, EXACT, INEXACT
 };
 
-/*
- * Max digits D such that all D-digit radix R integers fit in signed
+/* Max digits D such that all D-digit radix R integers fit in signed
    long, i.e. R^(D+1)-1 <= LONG_MAX */
 static long longdigs[RADIX_MAX-RADIX_MIN+1];
+
+/* Max integer I such that reading next digit (in radix R) will overflow
+   long integer.   floor(LONG_MAX/R - R). */
+static long longlimit[RADIX_MAX-RADIX_MIN+1];
 
 /* An integer table of R^D, which is a "big digit" to be added
    into bignum. */
@@ -1638,21 +1641,35 @@ static inline long ipow(int r, int n)
 }
 
 /* Returns either small integer or bignum.
+   initval may be a Scheme integer that will be 'concatenated' before
+   the integer to be read; it is used to read floating-point number.
    Note that value_big may keep denormalized bignum. */
 static ScmObj read_uint(const char **strp, int *lenp,
                         struct numread_packet *ctx,
-                        int fractpart)
+                        ScmObj initval)
 {
     const char *str = *strp;
     int len = *lenp;
     int radix = ctx->radix;
-    int digits = 0, diglimit = longdigs[radix - RADIX_MIN];
-    long bdig = bigdig[radix - RADIX_MIN];
+    int digits = 0, diglimit = longdigs[radix-RADIX_MIN];
+    long limit = longlimit[radix-RADIX_MIN], bdig = bigdig[radix-RADIX_MIN];
     long value_int = 0;
     ScmObj value_big = SCM_FALSE;
     char c;
     static const char tab[] = "0123456789abcdefghijklmnopqrstuvwxyz";
     const char *ptab;
+
+    if (!SCM_FALSEP(initval)) {
+        if (SCM_INTP(initval)) {
+            if (SCM_INT_VALUE(initval) > limit) {
+                value_big = Scm_MakeBignumFromSI(SCM_INT_VALUE(initval));
+            } else {
+                value_int = SCM_INT_VALUE(initval);
+            }
+        } else if (SCM_BIGNUMP(initval)) {
+            value_big = initval;
+        }
+    }
 
     /* Ignore leading 0's, to avoid unnecessary bignum operations. */
     while (len > 0 && *str == '0') { str++; len--; }
@@ -1663,24 +1680,16 @@ static ScmObj read_uint(const char **strp, int *lenp,
             if (c == *ptab) {
                 value_int = value_int * radix + (ptab-tab);
                 digits++;
-                if (digits > diglimit) {
-                    if (SCM_FALSEP(value_big)) {
-                        /* TODO: In some cases, we can read one more digit
-                         * before switching to bignum.  The condition is
-                         *   value_int < LONG_MAX/radix - radix
-                         * It'll speed up reading integers close to LONG_MAX.
-                         * A benchmark of reading random integer uniformly 
-                         * distributed between 0 and LONG_MAX showed this
-                         * premature switching makes the reader 6% slower.
-                         */
+                if (SCM_FALSEP(value_big)) {
+                    if (value_int >= limit) {
                         value_big = Scm_MakeBignumFromSI(value_int);
                         value_int = digits = 0;
-                    } else {
-                        value_big = Scm_BignumMulSI(SCM_BIGNUM(value_big), bdig);
-                        SCM_ASSERT(SCM_BIGNUMP(value_big));
-                        value_big = Scm_BignumAddSI(SCM_BIGNUM(value_big), value_int);
-                        value_int = digits = 0;
                     }
+                } else if (digits > diglimit) {
+                    value_big = Scm_BignumMulSI(SCM_BIGNUM(value_big), bdig);
+                    SCM_ASSERT(SCM_BIGNUMP(value_big));
+                    value_big = Scm_BignumAddSI(SCM_BIGNUM(value_big), value_int);
+                    value_int = digits = 0;
                 }
                 break;
             }
@@ -1722,7 +1731,7 @@ static ScmObj read_real(const char **strp, int *lenp,
 
     /* Read integral part */
     if (**strp != '.') {
-        intpart = read_uint(strp, lenp, ctx, FALSE);
+        intpart = read_uint(strp, lenp, ctx, SCM_FALSE);
         if ((*lenp) <= 0) {
             if (minusp) intpart = Scm_Negate(intpart);
             if (ctx->exactness == INEXACT) {
@@ -1739,7 +1748,7 @@ static ScmObj read_real(const char **strp, int *lenp,
             if ((*lenp) <= 1) return SCM_FALSE;
             (*strp)++; (*lenp)--;
             lensave = *lenp;
-            denom = read_uint(strp, lenp, ctx, FALSE);
+            denom = read_uint(strp, lenp, ctx, SCM_FALSE);
             if (SCM_FALSEP(denom)) return SCM_FALSE;
             if (denom == SCM_MAKE_INT(0)) {
                 if (lensave > *lenp) {
@@ -1777,7 +1786,7 @@ static ScmObj read_real(const char **strp, int *lenp,
         }
         (*strp)++; (*lenp)--;
         lensave = *lenp;
-        fraction = read_uint(strp, lenp, ctx, TRUE);
+        fraction = read_uint(strp, lenp, ctx, SCM_FALSE/*for now*/);
         fracdigs = lensave - *lenp;
     } else {
         fraction = SCM_MAKE_INT(0);
@@ -1833,6 +1842,7 @@ static ScmObj read_real(const char **strp, int *lenp,
          * pow(10.0, exponent-fracdigs) causes underflow, and floating
          * point addition suffers loss of precision.
          */
+        /*Scm_Printf(SCM_CURERR, "intpart=%S, fraction=%S, fracdigs=%d, exponent=%d\n", intpart, fraction, fracdigs, exponent);*/
         if (exponent > DBL_MIN_10_EXP) {
             if (intpart != SCM_MAKE_INT(0)) {
                 realnum = Scm_GetDouble(intpart) * pow(10.0, exponent);
@@ -2017,6 +2027,8 @@ void Scm__InitNumber(void)
 {
     int radix, n, i;
     for (radix = RADIX_MIN; radix <= RADIX_MAX; radix++) {
+        longlimit[radix-RADIX_MIN] =
+            (int)floor((double)LONG_MAX/radix - radix);
         /* Find max D where R^(D+1)-1 <= LONG_MAX */
         for (i = 0, n = 1; ; i++, n *= radix) {
             if (n >= LONG_MAX/radix) {
