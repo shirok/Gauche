@@ -224,7 +224,13 @@
 (define (test-guess file code scheme)
   (let ((infostr (format #f "guess ~a from ~a.~a" scheme file code))
         (infile  (format #f "~a.~a" file code)))
-    (test infostr code
+    ;; TODO: fix the kluge of CES name
+    (test infostr
+          (cond
+           ((string=? code "EUCJP") "EUC-JP")
+           ((string=? code "SJIS") "Shift_JIS")
+           ((string=? code "ISO2022JP") "ISO-2022-JP")
+           (else code))
           (lambda ()
             (ces-guess-from-string (file->string infile) scheme)))))
 

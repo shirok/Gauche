@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: guess.c,v 1.2 2003-07-05 03:29:10 shirok Exp $
+ *  $Id: guess.c,v 1.3 2004-03-14 05:30:37 shirok Exp $
  */
 
 #include <gauche.h>
@@ -86,16 +86,16 @@ static const char *guess_jp(const char *buf, int buflen, void *data)
         if (c == 0x1b) {
             if (i < buflen-1) {
                 c = (unsigned char)buf[++i];
-                if (c == '$' || c == '(') return "ISO2022JP";
+                if (c == '$' || c == '(') return "ISO-2022-JP";
             }
         }
         
         if (DFA_ALIVE(eucj)) {
-            if (!DFA_ALIVE(sjis) && !DFA_ALIVE(utf8)) return "EUCJP";
+            if (!DFA_ALIVE(sjis) && !DFA_ALIVE(utf8)) return "EUC-JP";
             DFA_NEXT(eucj, c);
         }
         if (DFA_ALIVE(sjis)) {
-            if (!DFA_ALIVE(eucj) && !DFA_ALIVE(utf8)) return "SJIS";
+            if (!DFA_ALIVE(eucj) && !DFA_ALIVE(utf8)) return "Shift_JIS";
             DFA_NEXT(sjis, c);
         }
         if (DFA_ALIVE(utf8)) {
@@ -135,9 +135,9 @@ static const char *guess_jp(const char *buf, int buflen, void *data)
         }
     }
 
-    if (top == &eucj) return "EUCJP";
+    if (top == &eucj) return "EUC-JP";
     if (top == &utf8) return "UTF-8";
-    if (top == &sjis) return "SJIS";
+    if (top == &sjis) return "Shift_JIS";
     return NULL;
 }
 
