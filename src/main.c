@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.57 2002-07-16 23:18:27 shirok Exp $
+ *  $Id: main.c,v 1.58 2002-07-18 11:25:36 shirok Exp $
  */
 
 #include <unistd.h>
@@ -280,11 +280,11 @@ int main(int argc, char **argv)
         if (SCM_PROCEDUREP(mainproc)) {
             if (srfi22_mode) {
                 result = Scm_Apply(mainproc, SCM_LIST1(av));
-                if (SCM_INTP(result)) exit(SCM_INT_VALUE(result));
-                else exit(70);  /* EX_SOFTWARE, see SRFI-22. */
+                if (SCM_INTP(result)) Scm_Exit(SCM_INT_VALUE(result));
+                else Scm_Exit(70);  /* EX_SOFTWARE, see SRFI-22. */
             } else {
                 result = Scm_Apply(mainproc, SCM_LIST1(SCM_CDR(av)));
-                if (SCM_INTP(result)) exit(SCM_INT_VALUE(result));
+                if (SCM_INTP(result)) Scm_Exit(SCM_INT_VALUE(result));
             }
         }
         Scm_Exit(0);
