@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.36 2002-01-11 11:35:00 shirok Exp $
+ *  $Id: read.c,v 1.37 2002-01-28 03:15:57 shirok Exp $
  */
 
 #include <stdio.h>
@@ -25,6 +25,7 @@
  * READ
  */
 
+static void   read_context_init(ScmReadContext *ctx);
 static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx);
 static ScmObj read_string(ScmPort *port, int incompletep);
@@ -39,7 +40,18 @@ static ScmObj read_keyword(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_regexp(ScmPort *port);
 static ScmObj read_charset(ScmPort *port);
 static ScmObj read_sharp_comma(ScmPort *port, ScmObj form);
+static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx);
+static ScmObj register_reference(ScmReadContext *ctx, ScmObj obj);
 static ScmObj maybe_uvector(ScmPort *port, char c, ScmReadContext *ctx);
+
+/* Trick: a form can be referenced before the form itself is fully read,
+   e.g. #0=#(1 2 3 . #0#).  Thus registering to the reference table
+   should be done _before_ the form after #digit= is read.
+   read_reference doesn't know how to parse the form after it,
+   so it delegates the responsibility of registration to the
+   each form reader. */
+#define REFCHK(ctx, obj) \
+    ((ctx->table)? register_reference(ctx, (obj)) : (obj))
 
 /* Special hook for SRFI-4 syntax */
 ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag);
@@ -54,13 +66,9 @@ static ScmHashTable *read_ctor_table;
 ScmObj Scm_Read(ScmObj port)
 {
     ScmReadContext ctx;
-    ctx.flags = SCM_READ_SOURCE_INFO;
-    ctx.table = NULL;
+    read_context_init(&ctx);
     if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
         Scm_Error("input port required: %S", port);
-    }
-    if (Scm_VM()->runtimeFlags & SCM_CASE_FOLD) {
-        ctx.flags |= SCM_READ_CASE_FOLD;
     }
     return read_internal(SCM_PORT(port), &ctx);
 }
@@ -68,13 +76,9 @@ ScmObj Scm_Read(ScmObj port)
 ScmObj Scm_ReadList(ScmObj port, ScmChar closer)
 {
     ScmReadContext ctx;
-    ctx.flags = SCM_READ_SOURCE_INFO;
-    ctx.table = NULL;
+    read_context_init(&ctx);
     if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
         Scm_Error("input port required: %S", port);
-    }
-    if (Scm_VM()->runtimeFlags & SCM_CASE_FOLD) {
-        ctx.flags |= SCM_READ_CASE_FOLD;
     }
     return read_list(SCM_PORT(port), closer, &ctx);
 }
@@ -91,6 +95,15 @@ ScmObj Scm_ReadFromCString(const char *cstr)
     ScmObj s = SCM_MAKE_STR_IMMUTABLE(cstr);
     ScmObj inp = Scm_MakeInputStringPort(SCM_STRING(s));
     return Scm_Read(inp);
+}
+
+static void read_context_init(ScmReadContext *ctx)
+{
+    ctx->flags = SCM_READ_SOURCE_INFO;
+    ctx->table = NULL;
+    if (Scm_VM()->runtimeFlags & SCM_CASE_FOLD) {
+        ctx->flags |= SCM_READ_CASE_FOLD;
+    }
 }
 
 /*----------------------------------------------------------------
@@ -187,7 +200,7 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             switch (c1) {
             case EOF:
                 Scm_ReadError(port, "premature #-sequence at EOF");
-            case 't':; case 'T': return SCM_TRUE;
+            case 't':; case 'T': return REFCHK(ctx,SCM_TRUE);
             case 'f':; case 'F': return maybe_uvector(port, 'f', ctx);
             case 's':; case 'S': return maybe_uvector(port, 's', ctx);
             case 'u':; case 'U': return maybe_uvector(port, 'u', ctx);
@@ -231,6 +244,10 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                     ScmObj form = read_internal(port, ctx);
                     return SCM_LIST2(SCM_INTERN("debug-print"), form);
                 }
+            case '0': case '1': case '2': case '3': case '4':
+            case '5': case '6': case '7': case '8': case '9':
+                /* #N# or #N= form */
+                return read_reference(port, c1, ctx);
             default:
                 Scm_ReadError(port, "unsupported #-syntax: #%C", c1);
             }
@@ -610,6 +627,61 @@ static ScmObj read_regexp(ScmPort *port)
 static ScmObj read_charset(ScmPort *port)
 {
     return Scm_CharSetRead(port, NULL, TRUE, FALSE);
+}
+
+/*----------------------------------------------------------------
+ * Back reference (#N# and #N=)
+ */
+
+static ScmObj register_reference(ScmReadContext *ctx, ScmObj obj)
+{
+    SCM_ASSERT(ctx->table);
+    if (ctx->reference >= 0) {
+        Scm_HashTablePut(ctx->table, Scm_MakeInteger(ctx->reference), obj);
+        ctx->reference = -1;
+    }
+    return obj;
+}
+
+static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
+{
+    ScmHashEntry *e;
+    int refnum = Scm_DigitToInt(ch, 10);
+
+    for (;;) {
+        SCM_GETC(ch, port);
+        if (ch == EOF) {
+            Scm_ReadError(port, "unterminated reference form (#digits)");
+        }
+        if (SCM_CHAR_ASCII_P(ch) && isdigit(ch)) {
+            refnum = refnum*10+Scm_DigitToInt(ch, 10);
+            if (refnum < 0) Scm_ReadError(port, "reference number overflow");
+            continue;
+        }
+        if (ch != '#' && ch != '=') {
+            Scm_ReadError(port, "invalid reference form (must be either #digits# or #digits=) : #%d%A", refnum, SCM_MAKE_CHAR(ch));
+        }
+        break;
+    }
+    if (ch == '#') {
+        /* #digit# - back reference */
+        if (ctx->table == NULL
+            || (e = Scm_HashTableGet(ctx->table, Scm_MakeInteger(refnum))) == NULL) {
+            Scm_ReadError(port, "invalid reference number in #%d#", refnum);
+        }
+        return e->value;
+    } else {
+        /* #digit= - register */
+        ScmObj z;
+        if (ctx->table == NULL) {
+            ctx->table = SCM_HASHTABLE(Scm_MakeHashTable((ScmHashProc)SCM_HASH_EQV, NULL, 0));
+        }
+        if (Scm_HashTableGet(ctx->table, Scm_MakeInteger(refnum)) != NULL) {
+            Scm_ReadError(port, "duplicate back-reference number in #%d=", refnum);
+        }
+        ctx->reference = refnum;
+        return read_internal(port, ctx);
+    }
 }
 
 /*----------------------------------------------------------------

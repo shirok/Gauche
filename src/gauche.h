@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.211 2002-01-25 09:37:05 shirok Exp $
+ *  $Id: gauche.h,v 1.212 2002-01-28 03:15:57 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1121,6 +1121,7 @@ extern void Scm_Vprintf(ScmPort *port, const char *fmt, va_list args);
 
 typedef struct ScmReadContextRec {
     int flags;
+    int reference;
     ScmHashTable *table;
 } ScmReadContext;
 
