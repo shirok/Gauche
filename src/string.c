@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.35 2001-05-19 10:56:28 shirok Exp $
+ *  $Id: string.c,v 1.36 2001-05-19 11:03:56 shirok Exp $
  */
 
 #include <stdio.h>
@@ -223,6 +223,13 @@ ScmObj Scm_CopyString(ScmString *x)
         return SCM_OBJ(make_str(SCM_STRING_LENGTH(x), SCM_STRING_SIZE(x),
                                 SCM_STRING_START(x)));
     }
+}
+
+/* mark the string immutable */
+ScmObj Scm_StringMakeImmutable(ScmString *x)
+{
+    x->immutable = TRUE;
+    return SCM_OBJ(x);
 }
 
 /* string-complete->incomplete! */

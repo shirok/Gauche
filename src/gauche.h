@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.138 2001-05-19 10:56:28 shirok Exp $
+ *  $Id: gauche.h,v 1.139 2001-05-19 11:03:56 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -701,6 +701,7 @@ extern ScmObj  Scm_CopyString(ScmString *str);
 extern char*   Scm_GetString(ScmString *str);
 extern const char* Scm_GetStringConst(ScmString *str);
 
+extern ScmObj  Scm_StringMakeImmutable(ScmString *str);
 extern ScmObj  Scm_StringCompleteToIncompleteX(ScmString *str);
 extern ScmObj  Scm_StringIncompleteToCompleteX(ScmString *str);
 extern ScmObj  Scm_StringCompleteToIncomplete(ScmString *str);
