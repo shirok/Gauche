@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.45 2001-09-06 07:07:58 shirok Exp $
+;;;  $Id: genstub,v 1.46 2001-09-16 23:00:42 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -157,7 +157,7 @@
                    (class-slot-ref <stub> 'all-stubs))))
 
 ;;--------------------------------------------------------------------
-;; Symbol definition
+;; Symbol and keyword definition
 ;;
 
 ;; (define-symbol scheme-name c-name [init])
@@ -191,6 +191,35 @@
                   :scheme-name (cadr form) :c-name (caddr form)
                   :initializer (if (pair? (cdddr form)) (cadddr form) #f))))
     (emit-definition symbol)
+    ))
+
+;; (define-keyword scheme-name c-name)
+
+(define-class <ckeyword> (<stub>)
+  ()
+  )
+
+(define-method emit-definition ((self <ckeyword>))
+  (let* ((scheme-name (scheme-name-of self))
+         (c-name (c-name-of self))
+         (scheme-name-len (string-length (symbol->string scheme-name))))
+    (println "static SCM_DEFINE_STRING_CONST(~a_NAME, \"~a\", ~a, ~a);"
+             c-name scheme-name scheme-name-len scheme-name-len)
+    (println "static ScmObj ~a;" c-name)
+    (newline)))
+
+(define-method emit-initializer ((self <ckeyword>))
+  (println "  ~a = Scm_MakeKeyword(&~a_NAME);"
+           (c-name-of self) (c-name-of self)))
+
+(define (process-define-keyword form)
+  (unless (and (= (length form) 3)
+               (symbol? (cadr form))
+               (string? (caddr form)))
+    (error "malformed define-keyword:" form))
+  (let ((keyword (make <ckeyword>
+                   :scheme-name (cadr form) :c-name (caddr form))))
+    (emit-definition keyword)
     ))
 
 ;;-----------------------------------------------------------------
@@ -768,6 +797,8 @@
          (format #f "Scm_MakeInteger(~a)" value))
         ((string? value)
          (format #f "SCM_MAKE_STR(~s)" value))
+        ((keyword? value)
+         (format #f "SCM_MAKE_KEYWORD(\"~a\")" value))
         ((eq? value *unbound*)
          "SCM_UNBOUND")
         ((equal? value '(current-input-port))
@@ -776,6 +807,8 @@
          (format #f "SCM_OBJ(SCM_CUROUT)"))
         ((equal? value '(current-error-port))
          (format #f "SCM_OBJ(SCM_CURERR)"))
+        ((and (pair? value) (eq? (car value) 'c))
+         (format #f "~a" (cadr value)))
         (else
          (errorf "Scheme constant ~s can't be used" value))))
 
@@ -839,6 +872,7 @@
 (define *syntax-table*
   `((define-cproc     . ,process-define-cproc)
     (define-symbol    . ,process-define-symbol)
+    (define-keyword   . ,process-define-keyword)
     (define-type      . ,process-define-type)
     (define-cgeneric  . ,process-define-cgeneric)
     (define-cmethod   . ,process-define-cmethod)
@@ -863,6 +897,7 @@
   (println "{")
   (for-each emit-initializer (get-stubs <cproc>))
   (for-each emit-initializer (get-stubs <csymbol>))
+  (for-each emit-initializer (get-stubs <ckeyword>))
   (for-each emit-initializer (get-stubs <cgeneric>))
   (for-each emit-initializer (get-stubs <cmethod>))
   (println "}")
