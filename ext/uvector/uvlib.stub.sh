@@ -13,7 +13,7 @@ cat << EOF
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; \$Id: uvlib.stub.sh,v 1.20 2002-10-15 02:21:27 shirok Exp $
+;;; \$Id: uvlib.stub.sh,v 1.21 2002-10-17 08:49:16 shirok Exp $
 ;;;
 
 "
@@ -305,7 +305,7 @@ cat <<EOF
   }
   if (reqalign >= srcalign) dstsize = (end-start) / (reqalign/srcalign);
   else dstsize = (end-start) * (srcalign/reqalign);
-  SCM_RETURN(Scm_MakeUVector(SCM_CLASS(klass), dstsize, v->elements + start*srcalign));
+  SCM_RETURN(Scm_MakeUVector(SCM_CLASS(klass), dstsize, (char*)v->elements + start*srcalign));
   ")
 EOF
 
@@ -322,7 +322,7 @@ cat <<EOF
   SCM_CHECK_START_END(start, end, len);
   eltsize = Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
   SCM_ASSERT(eltsize >= 1);
-  r = Scm_Getz(v->elements + start*eltsize, (end-start)*eltsize, port);
+  r = Scm_Getz((char*)v->elements + start*eltsize, (end-start)*eltsize, port);
   if (r == EOF) SCM_RETURN(SCM_EOF);
   else SCM_RETURN(Scm_MakeInteger((r+eltsize-1)/eltsize));")
 
@@ -334,7 +334,7 @@ cat <<EOF
   SCM_CHECK_START_END(start, end, len);
   eltsize = Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
   SCM_ASSERT(eltsize >= 1);
-  Scm_Putz(v->elements + start*eltsize, (end-start)*eltsize, port);
+  Scm_Putz((char*)v->elements + start*eltsize, (end-start)*eltsize, port);
   SCM_RETURN(SCM_UNDEFINED);")
   
 EOF
