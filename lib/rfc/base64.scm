@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: base64.scm,v 1.5 2001-06-02 21:56:08 shirok Exp $
+;;;  $Id: base64.scm,v 1.6 2001-06-02 22:00:30 shirok Exp $
 ;;;
 
 ;; Implements Base64 encoding/decoding routine
@@ -108,15 +108,15 @@
     (define (e1 c hi cnt)
       (if (eof-object? c)
           (begin (emit (* hi 16))
-                 (write-byte #\=)
-                 (write-byte #\=))
+                 (write-char #\=)
+                 (write-char #\=))
           (begin (emit (+ (* hi 16) (quotient c 16)))
                  (e2 (read-byte) (modulo c 16) cnt))))
 
     (define (e2 c hi cnt)
       (if (eof-object? c)
           (begin (emit (* hi 4))
-                 (write-byte #\=))
+                 (write-char #\=))
           (begin (emit (+ (* hi 4) (quotient c 64)))
                  (emit (modulo c 64))
                  (if (= cnt 17)
