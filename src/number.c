@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.56 2001-10-09 19:42:26 shirok Exp $
+ *  $Id: number.c,v 1.57 2001-10-11 08:48:49 shirok Exp $
  */
 
 #include <math.h>
@@ -1011,7 +1011,7 @@ ScmObj Scm_Expt(ScmObj x, ScmObj y)
     if (!SCM_REALP(y)) Scm_Error("real number required, but got %S", y);
     dx = Scm_GetDouble(x);
     dy = Scm_GetDouble(y);
-    if (dx == 0.0) {
+    if (dy == 0.0) {
         return Scm_MakeFlonum(1.0);
     } else if (dx < 0 && !Scm_IntegerP(y)) {
         /* x^y == exp(y * log(x)) = exp(y*log(|x|))*exp(y*arg(x)*i)
