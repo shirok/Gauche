@@ -1,3 +1,9 @@
+2001-09-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c and other files: implemented stack garbage collector.
+	  however, somehow it slows down things significantly; need to
+	  redesign.
+
 2001-08-05  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.4.3
