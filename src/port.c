@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.73 2002-07-12 06:44:56 shirok Exp $
+ *  $Id: port.c,v 1.74 2002-07-14 05:07:19 shirok Exp $
  */
 
 #include <unistd.h>
@@ -81,8 +81,8 @@
         if (--p->lockCount <= 0) {                      \
             p->lockOwner = NULL;                        \
             (void)SCM_INTERNAL_COND_SIGNAL(p->cv);      \
-            (void)SCM_INTERNAL_MUTEX_UNLOCK(p->mutex);  \
         }                                               \
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(p->mutex);      \
     } while (0) 
 
 #define PORT_SAFE_CALL(p, call)                         \
@@ -95,6 +95,7 @@
             PORT_UNLOCK(p);                             \
             SCM_NEXT_HANDLER;                           \
         } SCM_END_PROTECT;                              \
+        (void)SCM_INTERNAL_MUTEX_LOCK(p->mutex);        \
     } while (0)
 
 /*================================================================
@@ -201,6 +202,20 @@ ScmObj Scm_ClosePort(ScmPort *port)
                    } while (0));
     PORT_UNLOCK(port);
     return result? SCM_FALSE : SCM_TRUE;
+}
+
+/*
+ * External routine to access port exclusively
+ */
+ScmObj Scm_WithPortLocking(ScmPort *port, ScmObj (*proc)(ScmPort*, void*),
+                           void *data)
+{
+    ScmVM *vm = Scm_VM();
+    ScmObj r;
+    PORT_LOCK(port, vm);
+    PORT_SAFE_CALL(port, r = proc(port, data));
+    PORT_UNLOCK(port);
+    return r;
 }
 
 /*===============================================================
