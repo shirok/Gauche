@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.103 2001-09-28 10:00:13 shirok Exp $
+;;; $Id: extlib.stub,v 1.104 2001-10-01 09:42:00 shirok Exp $
 ;;;
 
 "
@@ -44,10 +44,24 @@
   "  SCM_RETURN(Scm_Ash(num, cnt));")
 (define-cproc lognot (x)
   "  SCM_RETURN(Scm_LogNot(x));")
-(define-cproc logand (x y)
-  "  SCM_RETURN(Scm_LogAnd(x, y));")
-(define-cproc logior (x y)
-  "  SCM_RETURN(Scm_LogIor(x, y));")
+(define-cproc logand (x y &rest args)
+  "  ScmObj cp, r = Scm_LogAnd(x, y);
+  SCM_FOR_EACH(cp, args) {
+    r = Scm_LogAnd(r, SCM_CAR(cp));
+  }
+  SCM_RETURN(r);")
+(define-cproc logior (x y &rest args)
+  "  ScmObj cp, r = Scm_LogIor(x, y);
+  SCM_FOR_EACH(cp, args) {
+    r = Scm_LogIor(r, SCM_CAR(cp));
+  }
+  SCM_RETURN(r);")
+(define-cproc logxor (x y &rest args)
+  "  ScmObj cp, r = Scm_LogXor(x, y);
+  SCM_FOR_EACH(cp, args) {
+    r = Scm_LogXor(r, SCM_CAR(cp));
+  }
+  SCM_RETURN(r);")
 
 ;; just for debug...
 (define-cproc %bignum-dump (obj)
