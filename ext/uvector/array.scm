@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: array.scm,v 1.7 2002-10-26 09:02:40 shirok Exp $
+;;;  $Id: array.scm,v 1.8 2003-04-01 04:06:41 shirok Exp $
 ;;;
 
 ;; Conceptually, an array is a backing storage and a procedure to
@@ -415,11 +415,11 @@
      ((null? o)
       (let ((iv (make-vector (array-end sh 0)))
             (applier (array-index-applier (array-end sh 0))))
-        (shape-for-each-index sh (lambda (ind)
+        (shape-for-each sh (lambda (ind)
                                    (array-set! ar ind (applier proc ind)))
                               iv)))
      ((or (vector? (car o)) (array? (car o)))
-      (shape-for-each-index sh (lambda (ind)
+      (shape-for-each sh (lambda (ind)
                                  (array-set! ar ind (proc ind)))
                             (car o)))
      (else "bad index object (vector or array required)" (car o)))
