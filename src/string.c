@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.51 2001-09-23 04:56:52 shirok Exp $
+ *  $Id: string.c,v 1.52 2001-09-23 05:05:43 shirok Exp $
  */
 
 #include <stdio.h>
@@ -784,7 +784,7 @@ ScmObj Scm_StringScan(ScmString *s1, ScmString *s2, int retmode)
         for (i=0; i<=siz1-siz2; i++) {
             if (memcmp(ss2, ss1+i, siz2) == 0) break;
         }
-        if (i == siz1-siz2) goto failed;
+        if (i == siz1-siz2+1) goto failed;
     } else {
         i = boyer_moore(ss1, siz1, ss2, siz2);
         if (i < 0) goto failed;
