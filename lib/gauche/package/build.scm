@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: build.scm,v 1.6 2004-05-16 20:40:27 shirok Exp $
+;;;  $Id: build.scm,v 1.7 2004-05-22 19:02:40 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -146,6 +146,7 @@
              (dir       (build-path build-dir basename))
              (packname  (package-name basename)))
         (unless install-only?
+          (clean config dir)
           (untar config tarball)
           (configure config dir packname
                      (or configure-options
