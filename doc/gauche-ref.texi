@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.300 2002-11-13 12:13:34 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.301 2002-11-14 02:01:58 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -24865,8 +24865,8 @@ Some examples:
              :path* "/cgi-bin/query.cgi?keyword=foo")
   @result{} "http://foo.net/cgi-bin/query.cgi?keyword=foo"
 
-(uri-compose :scheme "mailto" :specific "a@foo.org")
-  @result{} "mailto:a@foo.org"
+(uri-compose :scheme "mailto" :specific "a@@foo.org")
+  @result{} "mailto:a@@foo.org"
 
 (receive (authority path query fragment)
    (uri-decompose-hierarchical "//foo.jp/index.html#whatsnew")
