@@ -12,33 +12,98 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.15 2001-03-15 06:47:21 shiro Exp $
+ *  $Id: main.c,v 1.16 2001-03-25 03:10:13 shiro Exp $
  */
 
 #include <unistd.h>
+#include <string.h>
+#include <sys/stat.h>
 #include "gauche.h"
 
-int debug = FALSE;
-int enable_inline = TRUE;
 int load_initfile = TRUE;
+ScmObj extra_load_paths = SCM_NIL;
 
+void usage(void)
+{
+    fprintf(stderr,
+            "Usage: gosh [-qV][-I<path>] [--] [file]\n"
+            "options:\n"
+            "  -V       print version and exit.\n"
+            "  -q       don't read the default initiailzation file.\n"
+            "  -I<path> add <path> to the head of load path (multiple -I is allowed).\n"
+        );
+    exit(1);
+}
+
+void version(void)
+{
+    printf("Gauche scheme interpreter, version %s\n", GAUCHE_VERSION);
+    exit(0);
+}
+
+void further_options(const char *optarg)
+{
+    if (strcmp(optarg, "no-inline") == 0) {
+        Scm_VM()->enableInline = FALSE;        
+    }
+    else if (strcmp(optarg, "debug-compiler") == 0) {
+        Scm_VM()->debugCompile = TRUE;
+    }
+    else {
+        fprintf(stderr, "unknown -f option: %s\n", optarg);
+        fprintf(stderr, "supported options are: -fno-inine, -fdebug-compiler\n");
+        exit(1);
+    }
+}
+
+/*-----------------------------------------------------------------
+ * MAIN
+ */
 int main(int argc, char **argv)
 {
     int c;
-    
-    while ((c = getopt(argc, argv, "gqi")) >= 0) {
+    ScmObj cp;
+
+    Scm_Init();
+    while ((c = getopt(argc, argv, "qVf:I:-")) >= 0) {
         switch (c) {
-        case 'g': debug = TRUE; break;
         case 'q': load_initfile = FALSE; break;
-        case 'i': enable_inline = FALSE; break; /* temporary */
+        case 'V': version(); break;
+        case 'f': further_options(optarg); break;
+        case 'I':
+            extra_load_paths = Scm_Cons(Scm_MakeString(optarg, -1, -1),
+                                        extra_load_paths);
+            break;
+        case '-': break;
+        case '?': usage(); break;
         }
     }
-    Scm_Init(load_initfile ? "gauche-init.scm" : NULL);
     SCM_DEFINE(Scm_UserModule(), "*program-name*",
                Scm_MakeString(argv[0], -1, -1));
+    SCM_FOR_EACH(cp, Scm_ReverseX(extra_load_paths)) {
+        Scm_AddLoadPath(Scm_GetStringConst(SCM_STRING(SCM_CAR(cp))), FALSE);
+    }
 
-    if (debug) Scm_VM()->debugCompile = TRUE;
-    if (!enable_inline) Scm_VM()->enableInline = FALSE;
+    if (geteuid() != 0) {     /* don't add extra paths when run by root */
+        struct stat statbuf;
+        if (stat("../lib/gauche", &statbuf) >= 0
+            && S_ISDIR(statbuf.st_mode)) {
+            /* This is the case that the interpreter is invoked in place
+               of the compilation. */
+            Scm_AddLoadPath("../lib", FALSE);
+        }
+        Scm_AddLoadPath(".", FALSE);
+        
+    }
+    if (load_initfile) {
+        SCM_PUSH_ERROR_HANDLER {
+            Scm_Load("gauche-init.scm");
+        }
+        SCM_WHEN_ERROR {
+            fprintf(stderr, "Error in initialization file.\n");
+        }
+        SCM_POP_ERROR_HANDLER;
+    }
 
     if (optind < argc) {
         ScmObj av = SCM_NIL, at;
