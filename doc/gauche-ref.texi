@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.266 2002-09-19 21:31:06 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.267 2002-09-21 05:16:22 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -7110,12 +7110,24 @@ regmatchオブジェクトはマッチの内部状態を保持しており、
 @end deftp
 
 @deftp {Reader Syntax} @code{#/@i{regexp-spec}/}
+@deftpx {Reader Syntax} @code{#/@i{regexp-spec}/i}
 @c EN
 Denotes literal regular expression object.  When read, it becomes
 an instance of @code{<regexp>}.
 @c JP
 リテラルの正規表現オブジェクトを表記します。読まれた際に@code{<regexp>}の
 インスタンスとなります。
+@c COMMON
+
+@c EN
+If a letter '@code{i}' is given at the end, the created regexp
+becomes @emph{case-folding regexp}, i.e. it matches in the case-insensitive
+way.  (The current version only cares ASCII characters for case-folding---
+beyond ASCII characters, the match is done in the same way as normal match.)
+@c JP
+末尾に文字@code{i}が与えられた場合は、マッチ時に大文字小文字を区別しない
+正規表現オブジェクトとなります。(現在のバージョンでは、大文字小文字の
+同一視はASCII文字のみに対して行われます。それ以外の文字は通常の方法でマッチします)。
 @c COMMON
 
 @c EN
@@ -7238,13 +7250,23 @@ there should be appropriate tools rather than regular expressions.
 @c COMMON
 @end deftp
 
-@defun string->regexp string
+@defun string->regexp string &keyword case-fold
 @c EN
 Takes @var{string} as a regexp specification, and constructs
 an instance of @code{<regexp>} object.
 @c JP
 文字列@var{string}を正規表現とみなして、@code{<regexp>}のインスタンスを
 作成して返します。
+@c COMMON
+
+@c EN
+If a true value is given to the keyword argument @var{case-fold},
+the created regexp object becomes case-folding regexp.
+(See the above explanation about case-folding regexp).
+@c JP
+キーワード引数@var{case-fold}に真の値が与えられた場合、作成される正規表現は
+大文字小文字を区別しないものとなります。
+(大文字小文字を区別しない正規表現に関しては上の説明を参照して下さい)。
 @c COMMON
 @end defun
 
@@ -8069,6 +8091,8 @@ Otherwise returns @code{#f}.
 @c EN
 Gauche has a special hook to make an arbitrary object @emph{applicable}.
 @c JP
+Gaucheでは、特別な組み込みの機構によって任意のオブジェクトを
+「適用可能」にすることができます。
 @c COMMON
 
 @deffn {Generic Function} object-apply @var{object} @var{arg} @dots{}
@@ -8149,6 +8173,20 @@ This mechanism works on almost all occasions where a procedure is allowed.
 (apply "abcde" '(1))   @result{} (#\b)
 (map "abcde" '(3 2 1)) @result{} (#\d #\c #\b)
 @end example
+
+@deffn {Generic Function} {(setter object-apply)} @var{object} @var{arg} @dots{} @var{value}
+@c EN
+If a form of applying an applicable object appears in the first position
+of @code{set!} form, this method is called, that is:
+@c JP
+適用可能オブジェクトを適用するフォームが@code{set!}フォームの第一ポジションに
+現れた場合、そのフォームは下に示すように展開され、このメソッドが呼ばれます。
+@c COMMON
+@example
+(set! (@var{object} @var{arg} @dots{}) @var{value})
+ @result{} ((setter object-apply) @var{object} @var{arg} @dots{} @var{value})
+@end example
+@end deffn
 
 
 
