@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.47 2002-10-14 12:20:24 shirok Exp $
+ *  $Id: bignum.c,v 1.48 2003-03-01 22:50:48 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -90,7 +90,13 @@ static ScmBignum *bignum_clear(ScmBignum *b)
 
 static ScmBignum *make_bignum(int size)
 {
-    ScmBignum *b = SCM_NEW_ATOMIC2(ScmBignum*, BIGNUM_SIZE(size));
+    ScmBignum *b;
+    if (size < 0) Scm_Error("invalid bignum size (internal error): %d", size);
+    if (size > SCM_BIGNUM_MAX_DIGITS) {
+        Scm_Error("too large bignum (> 2^%d-1)",
+                  SCM_BIGNUM_MAX_DIGITS*(SIZEOF_LONG*CHAR_BIT));
+    }
+    b = SCM_NEW_ATOMIC2(ScmBignum*, BIGNUM_SIZE(size));
     SCM_SET_CLASS(b, SCM_CLASS_INTEGER);
     b->size = size;
     b->sign = 1;
@@ -948,7 +954,7 @@ ScmObj Scm_BignumDivRem(ScmBignum *dividend, ScmBignum *divisor)
 
 ScmObj Scm_BignumAsh(ScmBignum *x, int cnt)
 {
-    if (cnt == 0) return SCM_OBJ(x);
+    if (cnt == 0) return Scm_NormalizeBignum(x);
     if (cnt > 0) {
         int rsize = SCM_BIGNUM_SIZE(x) + (cnt+WORD_BITS-1)/WORD_BITS;
         ScmBignum *r = make_bignum(rsize);

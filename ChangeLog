@@ -1,3 +1,8 @@
+2003-03-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h, src/bignum.c: takes more bits for bignum size,
+	  and checks vailidity of bignum size in make_bignum.
+
 2003-02-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (Scm_VMEval): resets numVals before evaluating the

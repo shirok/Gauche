@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.328 2003-02-16 01:02:54 shirok Exp $
+ *  $Id: gauche.h,v 1.329 2003-03-01 22:50:48 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1592,15 +1592,17 @@ SCM_CLASS_DECL(Scm_IntegerClass);
 
 struct ScmBignumRec {
     SCM_HEADER;
-    short sign;
-    u_short size;
-    u_long values[1];           /* variable length */
+    int sign : 2;
+    unsigned int size : (SIZEOF_INT*CHAR_BIT-2);
+    unsigned long values[1];           /* variable length */
 };
 
 #define SCM_BIGNUM(obj)        ((ScmBignum*)(obj))
 #define SCM_BIGNUMP(obj)       SCM_XTYPEP(obj, SCM_CLASS_INTEGER)
 #define SCM_BIGNUM_SIZE(obj)   SCM_BIGNUM(obj)->size
 #define SCM_BIGNUM_SIGN(obj)   SCM_BIGNUM(obj)->sign
+
+#define SCM_BIGNUM_MAX_DIGITS  ((1UL<<(SIZEOF_INT*CHAR_BIT-2))-1)
 
 SCM_EXTERN ScmObj Scm_MakeBignumFromSI(long val);
 SCM_EXTERN ScmObj Scm_MakeBignumFromUI(u_long val);
