@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.18 2001-06-05 19:55:39 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.19 2001-06-07 20:26:06 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2689,23 +2689,74 @@ of descendants of @var{class}.
 This module defines a set of functions that converts character encoding
 of the given data stream.
 
-Internally it uses @code{iconv(3)} character code conversion library.
+Internally, charconv module uses @code{iconv(3)} character code
+conversion library.
 The supported character encoding schemes (CES) are limited to what
-the underlying @code{iconv} supports.
+the underlying @code{iconv} supports.   Unfortunately, there is no
+standard way to query supported CES's from the system.  You have to
+check the manual of your iconv system (try @code{man iconv}) to find
+out what CES's are supported.
+
+A CES is represented by its name as a string (case insignificant).
+There may be several aliases defined for a single encoding.
+For example, both @code{"EUC-JP"} and @code{"EUCJP"} may work on the EUC-JP
+encoding.  The iconv in glibc 2.1 or later recognizes following
+names for the typical Japanese CES.
+
+@table @code
+@item "EUC-JP", "EUCJP"
+EUC-JP
+@item "SJIS", "SHIFT-JIS"
+Shift JIS
+@item "UTF-8"
+UTF-8
+@item "CSISO2022JP"
+ISO-2022-JP
+@end table
+
+There are cases that you know the input is encoded in one of
+several possible encodings.  The charconv module has a mechanism
+to guess the input encoding. 
 @end deftp
+
+You can check whether the specific conversion is supported on
+your system or not, by the following function.
 
 @defun ces-conversion-supported? from-ces to-ces
 Returns @code{#t} if conversion from the character encoding scheme
 (CES) @var{from-ces} to @var{to-ces} is supported in this system.
 @end defun
 
-@defun open-input-conversion-port source from-ces &optional to-ces buffer-size
-Takes an input port @var{source}, which feeds characters
-encoded in @var{from-ces}, and returns another input port,
-from which you can read characters encoded in @var{to-ces}.
+@defun ces-guess-from-string string scheme
 @end defun
 
-@defun open-output-conversion-port sink to-ces &optional from-ces buffer-size
+@defun open-input-conversion-port source from-code &keyword to-code buffer-size owner?
+Takes an input port @var{source}, which feeds characters
+encoded in @var{from-code}, and returns another input port,
+from which you can read characters encoded in @var{to-code}.
+
+@var{buffer-size} is used to allocate internal buffer size for
+conversion.  The default size is about 1 kilobytes.
+
+If you don't know the @var{source}'s CES, you can specify
+CES guessing scheme, such as @code{"*JP"}, in place of @var{from-code}.
+The conversion port tries to guess the encoding, by prefetching
+the data from @var{source} up to the buffer size.  It signals an error
+if the code guessing routine finds no appropriate CES.
+If the guessing routine finds ambiguous input, however, it silently
+assume one of possible CES's, in favor of the native CES.
+Hence it is possible that the guessing is wrong if the buffer
+size is too small.  The default size is usually enough for most
+text documents, but it may fail if the large text contains mostly ASCII
+characters and multibyte characters appear only at the very end of
+the document.
+
+By default, @code{open-input-conversion-port} leaves @var{source} open.
+If you specify true value to @var{owner?}, the function closes
+@var{source} after it reads EOF from the port.
+@end defun
+
+@defun open-output-conversion-port sink to-code &keyword from-code buffer-size owner?
 @end defun
 
 @c ----------------------------------------------------------------------
