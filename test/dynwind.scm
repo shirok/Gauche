@@ -2,7 +2,7 @@
 ;; Test dynamic-wind, call/cc and related stuff
 ;;
 
-;; $Id: dynwind.scm,v 1.6 2001-03-24 10:09:37 shiro Exp $
+;; $Id: dynwind.scm,v 1.7 2001-04-07 06:37:40 shiro Exp $
 
 (add-load-path "../lib")
 (use gauche.test)
@@ -59,6 +59,13 @@
 
 (test "call/cc" '(2048 1024 512 256 128 64 32 16 8 4 2)
       callcc-test1)
+
+;; continuation with multiple values
+
+(test "call/cc" '(1 2 3)
+      (lambda () (receive x (call-with-current-continuation
+                             (lambda (c) (c 1 2 3)))
+                          x)))
 
 ;;-----------------------------------------------------------------------
 ;; See if port stuff is cleaned up properly
