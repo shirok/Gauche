@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.168 2001-09-07 09:59:20 shirok Exp $
+ *  $Id: gauche.h,v 1.169 2001-09-07 11:35:53 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -24,7 +24,6 @@
 #include <stdarg.h>
 #include <setjmp.h>
 #include <limits.h>
-#include <termios.h>
 #include <gc.h>
 
 #ifdef __cplusplus
@@ -1829,18 +1828,6 @@ typedef struct ScmHeaderRec ScmSysFdset;
 #define SCM_SYS_FDSET(obj)      (obj)
 #define SCM_SYS_FDSET_P(obj)    (FALSE)
 #endif /*!HAVE_SELECT*/
-
-typedef struct ScmSysTermiosRec {
-    SCM_HEADER;
-    struct termios term;
-} ScmSysTermios;
-
-extern ScmClass Scm_SysTermiosClass;
-#define SCM_CLASS_SYS_TERMIOS   (&Scm_SysTermiosClass)
-#define SCM_SYS_TERMIOS(obj)    ((ScmSysTermios*)(obj))
-#define SCM_SYS_TERMIOS_P(obj)  (SCM_XTYPEP(obj, SCM_CLASS_SYS_TERMIOS))
-
-extern ScmObj Scm_MakeSysTermios(void);
 
 /*---------------------------------------------------
  * LOAD AND DYNAMIC LINK
