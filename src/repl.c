@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: repl.c,v 1.25 2002-08-30 00:18:21 shirok Exp $
+ *  $Id: repl.c,v 1.26 2002-09-01 23:43:43 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -28,12 +28,14 @@
  *        (with-error-handler
  *          (lambda (e) (print-error e) #t)
  *          (lambda ()
- *            (display (prompter)) (flush)
+ *            (prompter)
  *            (let loop2 ((exp (reader)))
  *              (if (eof-object? loop2)
  *                  #f
  *                  (begin
- *                    (call-with-values (lambda () (evaluator exp)) printer)
+ *                    (call-with-values
+ *                      (lambda () (evaluator exp (current-module)))
+ *                      printer)
  *                    (loop2 (reader)))))))
  *        (loop1))))
  *
@@ -86,7 +88,7 @@ static ScmObj repl_read_cc(ScmObj result, void **data)
         return SCM_FALSE;
     } else if (SCM_PROCEDUREP(evaluator)) {
         Scm_VMPushCC(repl_eval_cc, data, 4);
-        return Scm_VMApply1(evaluator, result);
+        return Scm_VMApply2(evaluator, result, SCM_OBJ(SCM_CURRENT_MODULE()));
     } else {
         Scm_VMPushCC(repl_eval_cc, data, 4);
         return Scm_VMEval(result, SCM_UNBOUND);
@@ -97,8 +99,6 @@ static ScmObj repl_prompt_cc(ScmObj result, void **data)
 {
     ScmObj *closure = (ScmObj*)data;
     ScmObj reader = closure[0];
-    Scm_Write(result, SCM_OBJ(SCM_CUROUT), SCM_WRITE_DISPLAY);
-    Scm_Flush(SCM_CUROUT);
     if (SCM_PROCEDUREP(reader)) {
         Scm_VMPushCC(repl_read_cc, data, 4);
         return Scm_VMApply0(reader);
@@ -116,7 +116,10 @@ static ScmObj repl_main(ScmObj *args, int nargs, void *data)
         Scm_VMPushCC(repl_prompt_cc, data, 4);
         return Scm_VMApply0(prompter);
     } else {
-        return repl_prompt_cc(SCM_MAKE_STR("gosh> "), (void**)data);
+        Scm_Write(SCM_MAKE_STR("gosh> "),
+                  SCM_OBJ(SCM_CUROUT), SCM_WRITE_DISPLAY);
+        Scm_Flush(SCM_CUROUT);
+        return repl_prompt_cc(SCM_UNDEFINED, (void**)data);
     }
 }
 
