@@ -119,13 +119,13 @@ is---think it as a special type of function, just for now).
 これでこのクラスの継承を指定します。これについては後で説明します。
 
 @code{define-class}の第三引数は@emph{スロット}のリストです。
-スロットはなにかを格納しおく場所で、通常は各オブジェクトで、値を格納できます。
+スロットはなにかを格納しておく場所で、通常は各オブジェクトに対して、値を格納できます。
 これは、他のオジェクト指向言語では、フィールドとかインスタンス変数などと
 呼ばれているものに似たものです。しかし、スロットは単なる各オブジェクト毎の
 格納スペース以上の使い方ができます。
 
 さて、2 次元の点のクラスを定義しましたので、点のインスタンスを生成できます。
-クラスをジェネリック関数 @{make} に渡してインスタンスを生成します。
+クラスをジェネリック関数 @code{make} に渡してインスタンスを生成します。
 (ジェネリック関数がどんなものであるかは気にしないで下さい。今はある特殊な
 タイプの関数とだけ考えておいてください。)
 
@@ -147,7 +147,7 @@ for the details).
 @c JP
 対話モードで @code{gosh} を使っているなら、ジェネリック関数 @code{describe} を
 使って、インスタンスの内部を点検できます。
-@code{d} は利便のために定義されている、その省略形です。
+便利なので、省略形として@code{d}という名前も定義されています。
 (詳細については、@ref{gauche.interactive - Interactive session}参照)
 
 @c COMMON
@@ -207,7 +207,7 @@ srfi-17 の一般化された @code{set!} の構文が使えます。
 @c EN
 Now you can see slot values are set.
 @c JP
-ここで、設定されたスロットの値を見られます。
+スロットの値が設定されていることを見てみましょう。
 @c COMMON
 @example
 gosh> (d a-point)
@@ -256,7 +256,7 @@ initialized by the default values.
 であることに注意してください。
 こんどは、リストの car 部分がスロット名の指定で、cdr 部分にいろいろな情報が
 はいります。@code{:init-value} のうしろの値はそのスロットのデフォルト値を
-定義しています。@{:init-keyword}のうしろのキーワードは、生成時にスロットを
+定義しています。@code{:init-keyword}のうしろのキーワードは、生成時にスロットを
 初期化するために @code{make} に渡すことのできるキーワード引数を定義しています。
 キーワード @code{:accessor} のうしろの名前は、スロットへのアクセス/変更の
 ために使えるジェネリック関数に束縛されます。これは
@@ -328,10 +328,10 @@ We can also have @code{<2d-vector>} class in similar fashion.
 利用可能な全スロットオプションのリストは@ref{Defining class}にあります。
 ちょっと見ると、これらのスロットオプションの宣言は冗長に見えるかもしれません。
 システム側で初期化キーワードやアクセス名を自動的に定義する静的な仕組を
-用意すべきかもしれません。しかしながら、CLOS 風のシステムでは柔軟性の
-方がより好ましいのです。
+用意することもできたかもしれません。
+しかしながら、CLOS 風のシステムでは柔軟性の方をより重視します。
 メタオブジェクトプロトコルと呼ばれる機構をもちいて、これらの
-スロットオプションがどのゆに解釈されるかをカスタマイズすることができます。
+スロットオプションがどのように解釈されるかをカスタマイズすることができます。
 また、自分用のスロットオプションを追加することもできます。
 詳しくは @ref{Metaobject protocol} を見てください。
 
@@ -355,13 +355,14 @@ three arguments, @var{pt}, @var{dy}, @var{dy}, where @var{pt} is
 an instance of @code{<2d-point>}.
 
 @c JP
-そうです。同じアクセサ名を @code{x-of} のように使うことができるのです。
-これは有効に多重定義されています。
+そうです。同じアクセサ名を @code{x-of} のように使うことができるます。
+これは事実上、多重定義されます。
 
-オジェクト指向言語の主流に慣れていると、メソッドはどこにあるのだと
-思うかもしれません。それは、ここです。以下のフォームは、3 つの引数
-@var{pt}、@var{dy}、@var{dy} をとるメソッド @code{move-by!} を定義
-しています。ここで、@var{pt} は @code{<2d-point>} のインスタンスです。
+主流のオブジェクト指向言語に慣れた方は、そろそろ、メソッドはどこにあるのだと
+思い始めているかもしれません。いよいよメソッドの登場です。以下のフォームは、3 つの引数
+@var{pt}、@var{dy}、@var{dy} をとり、
+しかも@var{pt} は @code{<2d-point>} のインスタンスであるような
+メソッド @code{move-by!} を定義するものです。
 
 @c COMMON
 @example
@@ -381,7 +382,7 @@ the one to call an ordinary function.
 @code{define-method} マクロの第二引数は@emph{メソッド特定化子リスト}を
 指定しています。これは、第一引数が @code{<2d-point>} のインスタンスで
 なければならないことを示し、第二、第三引数は任意の型でよいことを
-示しています。メソッド呼びだしの構文は通常関数の呼出しと同じです。
+示しています。メソッド呼び出しの構文は通常関数の呼び出しと同じです。
 
 @c COMMON
 @example
@@ -422,7 +423,7 @@ Gauche の組み込み型を使ってメソッドを特定化することもできます。
 @c EN
 And here's the example session:
 @c JP
-以下は例のセッションです。
+以下はセッション例です。
 @c COMMON
 @example
 gosh> (define d-vector (make <2d-vector> :x -9.0 :y 7.25))
@@ -456,14 +457,14 @@ reveals that it is an instance of @code{<generic>}, a generic function.
 slot for the sake of readability).
 @c JP
 メソッドがその主レシーバ @code{<2d-point>} によってのみディスパッチされる
-のではなく、その他の引数によってもディスパッチされるのをみました。
-実際、第一引数がのこりの引数よりも特別であるということはありません。
+のではなく、その他の引数によってもディスパッチされているのがわかると思います。
+実は、第一引数は残りの引数に比べて何ら特別ではありません。
 CLOS 風のシステムではメソッドは特定のクラスに属するものではないのです。
 
 ではメソッドとはいったいなんでしょう。@code{move-by!} を点検してみると
 それが @code{<generic>} のインスタンスであり、ジェネリック関数であると
 わかります。(@code{describe} は可読性のために @code{methods} スロットの
-値の印字を丸めてだしていることに注意してください。)
+値の印字を途中で切っていることに注意してください。)
 
 @c COMMON
 @example
@@ -495,13 +496,14 @@ The accessors are also generic functions, created implicitly by the
 @code{define-class} macro.
 @c JP
 ジェネリック関数は特別なタイプの関数だと言いましたが、Gauche ではこれは
-適用可能オブジェクトとして認識されます。しかし、適用されるとその引数に
-対応して適切なメソッドが選択され、その選択されたメソッドが呼びだされます。
+適用可能オブジェクトとして認識されます。それは、適用されるとその引数に
+対応して適切なメソッドを選択して、その選択されたメソッドを呼び出すという動作を
+行います。
 
 実際 @code{define-method} マクロがやっていることは、(1)もし与えられた
 名前のジェネリック関数がまだ存在していなければ、これを生成し、(2)与えられた
 特定化子と本体とでメソッドオブジェクトを生成し、(3)ジェネリック関数に
-そのメソッドオブジェクトを追加する、です。
+そのメソッドオブジェクトを追加する、ということです。
 
 アクセサも同様にジェネリック関数で、@code{define-class} マクロが暗黙のうちに
 生成します。
@@ -529,7 +531,7 @@ they don't know how to print.  You can define its method
 specialized to your class to customize how the instance is
 printed.
 @c JP
-動的オジェクト指向言語の主流では、クラスには多くの役割があります。
+主流の動的オジェクト指向言語では、クラスには多くの役割があります。
 クラスは構造と型を定義し、スロットとメソッドの名前空間を生成し、
 メソッドのディスパッチに責任をもちます。Gaucheでは、名前空間は
 モジュールによって管理し、メソッドのディスパッチはジェネリック関数で
@@ -646,12 +648,12 @@ since we still need the init-keywords to be handled.
   (push! *shapes* self)) ;; record myself to the global list
 @end example
 @c JP
-インスタンスを生成する際、@code{make} はジェネリック関数 @coed{initialize}
+インスタンスを生成する際、@code{make} はジェネリック関数 @code{initialize}
 を呼びます。この関数は init-keyword や init-value を処理するようなスロットの
 面倒を見ます。この @code{initialize} メソッドを特定化することによって、初期化
-の振舞いをカスタマイズすることがきます。@code{initialize} メソッドは二つの
+の振舞いをカスタマイズすることができます。@code{initialize} メソッドは二つの
 引数とともに呼ばれます。ひとつは新しく生成されたインスタンス、もうひとつは
-@code{make} にわたされる引数のリストです。
+@code{make} にわたされた引数のリストです。
 
 @code{initialize} メソッドを @code{<shape>} クラス用に定義し、生成された
 shape が自動的にグローバルなリストに登録されるようにしましょう。
@@ -700,8 +702,8 @@ shape.  Now we define some concrete drawable shapes, by
 @emph{subclassing} the @code{<shape>} class.
 @c JP
 仕掛けは、特別なメソッド @code{next-method} にあります。これは
-メソッド本体のなかでしか使えません。同じジェネリック関数の
-@emph{特定化の度合がより低いメソッド}を呼びます。これは、典型的な
+メソッド本体の中でしか使えません。同じジェネリック関数の
+@emph{特定化の度合がより低いメソッド}を呼びます。これは、典型的には
 スーパークラスの同じメソッドを呼ぶということを意味します。
 ほとんどのオジェクト指向言語には、スーパークラスのメソッドを呼ぶという
 概念があります。多重引数ディスパッチと多重継承のために @code{next-method}
@@ -713,7 +715,7 @@ shape.  Now we define some concrete drawable shapes, by
 初期化メソッドなのです。自分で定義した @code{initialize} メソッド中で
 @code{next-method} を呼びだしたあとでは、すべてのスロットが
 正しくイニシャライズされたとみなせます。というわけで、自分で定義した
-@code{initialize} のなかで最初にすべきことは @code{next-method}
+@code{initialize} のなかで通常、最初にすべきことは @code{next-method}
 を呼ぶことです。
 
 上のコードを点検してみましょう。@code{(make <shape> args @dots{})} を呼ぶと、
@@ -800,7 +802,7 @@ method polymorphic, we define a postscript output device class,
 経験則からいうとサブタイプが必要なときにサブクラスを作るのがよいようです。
 スロットの継承は付随するなにかではありますが、サブクラス化のための
 主要な理由にしてはいけません。@code{<point-shape>} クラスでやったように
-サブストラクチャを「インクルード」するとは常にできるのです。
+サブストラクチャを「インクルード」することは常にできるのです。
 
 @code{<point-shape>} クラスに新しいスロットオプションがあらわれました。
 @code{:init-form} というスロットオプションは、init-keyword が
@@ -812,8 +814,8 @@ method polymorphic, we define a postscript output device class,
 わたされずに生成されたときにのみ、デフォルトの @code{<2d-point>} 
 インスタンスが生成されます。
 
-shape は別のデバイスに別の方法で描画されえます。いまのところは、
-PostScript 出力しか考慮しません。@code{draw} メソッドに多相性を持たせる
+shape は別のデバイスに別の方法で描画され得ます。いまのところは、
+PostScript 出力だけを考慮しましょう。@code{draw} メソッドに多相性を持たせる
 ために、PostScript 出力デバイス @code{<ps-device>} を定義します。
 
 @c COMMON
