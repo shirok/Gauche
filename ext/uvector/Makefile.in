@@ -17,7 +17,7 @@ CONFIG_GENERATED = Makefile config.cache config.log config.status
 GENERATED = uvector.h uvector.c uvlib.c uvlib.stub
 
 INSTALL_TYPE = @INSTALL_TYPE@
-HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
+HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`/gauche
 SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
 ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 
