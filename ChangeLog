@@ -1,3 +1,10 @@
+2001-05-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/slib.scm : added SLIB initialization file for Gauche.
+	  Say (require "slib") and you can use slib.
+	* src/string.c (count_length): fixed a bug that didn't recognize
+	  an incomplete character at the end of a string.
+
 2001-05-20  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.3.11
