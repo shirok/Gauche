@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.31 2001-02-06 08:46:02 shiro Exp $
+ *  $Id: gauche.h,v 1.32 2001-02-06 11:38:26 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -241,8 +241,6 @@ typedef struct ScmExceptionRec ScmException;
 #define SCM_VM_CURRENT_OUTPUT_PORT(vm)  (SCM_VM(vm)->curout)
 #define SCM_VM_CURRENT_ERROR_PORT(vm)   (SCM_VM(vm)->curerr)
 
-#define SCM_VM_ERRSTR(vm)               (SCM_VM(vm)->errstr)
-
 extern ScmVM *Scm_VM(void);     /* Returns the current VM */
 
 extern ScmObj Scm_Compile(ScmObj form, ScmObj env, int context);
@@ -253,7 +251,6 @@ extern ScmObj Scm_MakeMacroTransformer(ScmSymbol *name,
                                        ScmProcedure *proc);
 
 extern ScmObj Scm_VMGetResult(ScmVM *vm);
-extern ScmObj Scm_VMGetErrorString(ScmVM *vm);
 extern ScmObj Scm_VMGetStack(ScmVM *vm);
 
 extern ScmObj Scm_VMApply(ScmObj proc, ScmObj args);

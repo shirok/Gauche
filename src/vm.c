@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.27 2001-02-06 07:01:03 shiro Exp $
+ *  $Id: vm.c,v 1.28 2001-02-06 11:38:26 shiro Exp $
  */
 
 #include "gauche.h"
@@ -146,6 +146,10 @@ ScmVM *Scm_SetVM(ScmVM *vm)
         vm->val0 = val0;                        \
     } while (0)
 
+/* return true if ptr points into the stack area */
+#define IN_STACK_P(ptr)                         \
+    ((ptr) >= vm->stack && (ptr) < vm->stack + vm->stackSize)
+
 #define RESTORE_REGS()                          \
     do {                                        \
         pc = vm->pc;                            \
@@ -231,15 +235,6 @@ ScmVM *Scm_SetVM(ScmVM *vm)
 
 #define VM_ERR(errargs) do { SAVE_REGS(); Scm_Error errargs; } while (0)
 
-/* return true if ptr points into the stack area */
-#ifdef __GNUC__
-inline
-#endif
-static int in_stack(ScmVM *vm, ScmObj *ptr)
-{
-    return (ptr >= vm->stack && ptr < vm->stack+vm->stackSize);
-}
-
 /* move the current chain of environments from the stack to the heap.
    if there're continuation frames which point to the moved env, those
    pointers are adjusted as well. */
@@ -250,7 +245,7 @@ static ScmEnvFrame *save_env(ScmVM *vm)
 {
     ScmEnvFrame *e = vm->env, *prev = NULL;
     ScmContFrame *c = vm->cont;
-    for (; in_stack(vm, (ScmObj*)e); e = e->up) {
+    for (; IN_STACK_P((ScmObj*)e); e = e->up) {
         int size = sizeof(ScmEnvFrame) + (e->size-1)*sizeof(ScmObj);
         ScmEnvFrame *s = SCM_NEW2(ScmEnvFrame*, size);
         memcpy(s, e, size);
@@ -334,7 +329,7 @@ static void run_loop()
     int nvals;                  /* # of values */
     
     for (;;) {
-/*        VM_DUMP("");*/
+        VM_DUMP("");
         
         if (!SCM_PAIRP(pc)) {
             /* We are at the end of procedure.  Activate the most recent
@@ -489,15 +484,20 @@ static void run_loop()
             }
         case SCM_VM_TAILBIND:
             {
-                /* TODO: concrete implementation of frame shifting */
                 int nlocals = SCM_VM_INSN_ARG(code);
+                ScmObj *newenv;
                 ScmObj info;
-
-                FETCH_INSN(info); /* discard it */
+                FETCH_INSN(info); /* dummy info. discard it for now. */
+                
+                /* shift env frame. */
                 argp->size = env->size;
                 argp->up = env->up;
                 argp->info = env->info;
-                env = argp;
+                newenv = (ScmObj*)argp - ENV_SIZE(argp->size);
+
+                memmove(newenv, argp, ENV_SIZE(argp->size) * sizeof(ScmObj *));
+                env = argp = (ScmEnvFrame *)newenv;
+                sp = newenv + ENV_SIZE(argp->size);
                 continue;
             }
         case SCM_VM_LET:
