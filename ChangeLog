@@ -1,3 +1,12 @@
+2002-10-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/mop/propagate-slot.scm : added
+	* lib/gauche/validator.scm, lib/gauche/mop/validator.scm :
+	  moved gauche.validator to gauche.mop.validator.
+	  keep gauche.validator as an alias of gauche.mop.validator.
+	* test/logger.scm ("log-open"): fixed test case that failed when
+	  the day of month was between 1 and 9.
+
 2002-09-26  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvlib.stub.sh : added conversion routines between

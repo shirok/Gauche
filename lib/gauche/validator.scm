@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche/validator.scm - validator slot option
 ;;;
-;;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,29 +12,13 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: validator.scm,v 1.4 2001-12-01 21:44:36 shirok Exp $
+;;;  $Id: validator.scm,v 1.5 2002-10-07 08:59:43 shirok Exp $
 ;;;
 
+;; NB: validator is moved to gauche.mop.validator.
+;; This file provides backward compatibility.
+
 (define-module gauche.validator
-  (export <validator-meta>)
-  )
-(select-module gauche.validator)
-
-(define-class <validator-meta> (<class>)
-  ())
-
-(define-method compute-get-n-set ((class <validator-meta>) slot)
-  (cond ((slot-definition-option slot :validator #f)
-         => (lambda (validator)
-              (unless (procedure? validator)
-                (error "a procedure required for validator, but got"
-                       validator))
-              (let ((acc (compute-slot-accessor class slot (next-method))))
-                (list (lambda (o) (slot-ref-using-accessor o acc))
-                      (lambda (o v)
-                        (slot-set-using-accessor o acc (validator o v)))
-                      ;; the last #t enables initialization by :initform etc.
-                      #t))))
-        (else (next-method))))
+  (extend gauche.mop.validator))
 
 (provide "gauche/validator")
