@@ -24,7 +24,7 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19.scm,v 1.12 2003-02-26 06:48:49 shirok Exp $
+;;; $Id: srfi-19.scm,v 1.13 2004-02-04 22:41:10 shirok Exp $
 
 (define-module srfi-19
   (use srfi-1)
@@ -57,7 +57,7 @@
           time-tai->modified-julian-day
           time-tai->time-monotonic time-tai->time-monotonic!
           time-tai->time-utc time-tai->time-utc!
-          date->string string->date
+          date->string string->date <date>
           )
   )
 (select-module srfi-19)
