@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.75 2002-07-09 03:47:00 shirok Exp $
+;;; $Id: syslib.stub,v 1.76 2002-07-09 09:46:50 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -209,6 +209,14 @@
   (assert (sys-sigset? set))
   "SCM_RETURN(Scm_SysSigsetOp(set, sigs, TRUE));")
 
+(define-cproc sys-sigset-fill! (set)
+  (assert (sys-sigset? set))
+  "SCM_RETURN(Scm_SysSigsetFill(set, FALSE));")
+
+(define-cproc sys-sigset-empty! (set)
+  (assert (sys-sigset? set))
+  "SCM_RETURN(Scm_SysSigsetFill(set, TRUE));")
+
 (define-cproc sys-signal-name (sig)
   (assert (small-integer? sig))
   "SCM_RETURN(Scm_SignalName(sig));")
@@ -229,6 +237,15 @@
 
 (define-cproc get-signal-handlers ()
   "SCM_RETURN(Scm_GetSignalHandlers());")
+
+(define-symbol SIG_SETMASK "sym_sig_setmask" "Scm_MakeInteger(SIG_SETMASK)")
+(define-symbol SIG_BLOCK   "sym_sig_block"   "Scm_MakeInteger(SIG_BLOCK)")
+(define-symbol SIG_UNBLOCK "sym_sig_unblock" "Scm_MakeInteger(SIG_UNBLOCK)")
+
+(define-cproc sys-sigmask (how mask)
+  (assert (small-integer? how))
+  (assert (sys-sigset? mask))
+  "SCM_RETURN(Scm_SysSigmask(how, mask));")
 
 ;(define-cproc %with-signal-handlers (handlers thunk)
 ;  (assert (procedure? thunk))

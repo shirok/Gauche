@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.280 2002-07-09 03:45:19 shirok Exp $
+ *  $Id: gauche.h,v 1.281 2002-07-09 09:48:51 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2114,9 +2114,11 @@ SCM_CLASS_DECL(Scm_SysSigsetClass);
 
 SCM_EXTERN void   Scm_SigCheck(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_SysSigsetOp(ScmSysSigset*, ScmObj, int);
+SCM_EXTERN ScmObj Scm_SysSigsetFill(ScmSysSigset*, int);
 SCM_EXTERN ScmObj Scm_GetSignalHandler(int);
 SCM_EXTERN ScmObj Scm_GetSignalHandlers(void);
 SCM_EXTERN ScmObj Scm_SetSignalHandler(ScmObj, ScmObj);
+SCM_EXTERN ScmObj Scm_SysSigmask(int how, ScmSysSigset *newmask);
 SCM_EXTERN sigset_t Scm_GetMasterSigmask(void);
 SCM_EXTERN void   Scm_SetMasterSigmask(sigset_t *set);
 SCM_EXTERN ScmObj Scm_SignalName(int signum);

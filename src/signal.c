@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.17 2002-07-09 05:02:38 shirok Exp $
+ *  $Id: signal.c,v 1.18 2002-07-09 09:46:50 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -230,6 +230,11 @@ ScmObj sigset_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(s);
 }
 
+ScmSysSigset *make_sigset(void)
+{
+    return SCM_SYS_SIGSET(sigset_allocate(SCM_CLASS_SYS_SIGSET, SCM_NIL));
+}
+
 /* multifunction on sigset
     if delp == FALSE, signals are added to set.
     else, signals are removed from set.
@@ -259,6 +264,14 @@ ScmObj Scm_SysSigsetOp(ScmSysSigset *set, ScmObj signals, int delp)
         if (!delp) sigaddset(&set->set, SCM_INT_VALUE(s));
         else       sigdelset(&set->set, SCM_INT_VALUE(s));
     }
+    return SCM_OBJ(set);
+}
+
+/* fill or empty sigset. */
+ScmObj Scm_SysSigsetFill(ScmSysSigset *set, int emptyp)
+{
+    if (emptyp) sigemptyset(&(set->set));
+    else        sigfillset(&(set->set));
     return SCM_OBJ(set);
 }
 
@@ -427,9 +440,9 @@ ScmObj Scm_GetSignalHandlers(void)
             }
         }
         if (SCM_NULLP(hp)) {
-            ScmObj set = sigset_allocate(SCM_CLASS_SYS_SIGSET, SCM_NIL);
-            sigaddset(&(SCM_SYS_SIGSET(set)->set), desc->num);
-            h = Scm_Acons(set, handlers[desc->num], h);
+            ScmSysSigset *set = make_sigset();
+            sigaddset(&(set->set), desc->num);
+            h = Scm_Acons(SCM_OBJ(set), handlers[desc->num], h);
         }
     }
     return h;
@@ -483,6 +496,23 @@ void Scm_SetMasterSigmask(sigset_t *set)
  * set signal mask
  */
 
+ScmObj Scm_SysSigmask(int how, ScmSysSigset *newmask)
+{
+    ScmSysSigset *oldmask = make_sigset();
+    if (how != SIG_SETMASK && how != SIG_BLOCK && how != SIG_UNBLOCK) {
+        Scm_Error("bad 'how' argument for signal mask action: %d", how);
+    }
+#ifdef GAUCHE_USE_PTHREAD
+    if (pthread_sigmask(how, &(newmask->set), &(oldmask->set)) != 0) {
+        Scm_Error("pthread_sigmask failed");
+    }
+#else  /*!GAUCHE_USE_PTHREAD*/
+    if (sigprocmask(how, &(newmask->set), &(oldmask->set)) != 0) {
+        Scm_SysError("sigprocmask failed");
+    }
+#endif /*!GAUCHE_USE_PTHREAD*/
+    return SCM_OBJ(oldmask);
+}
 
 /*
  * initialize
