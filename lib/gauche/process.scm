@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: process.scm,v 1.18 2004-02-02 12:48:55 shirok Exp $
+;;;  $Id: process.scm,v 1.19 2004-04-28 06:42:11 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -41,7 +41,7 @@
   (use srfi-2)
   (use srfi-13)
   (export <process> run-process process? process-alive? process-pid
-          process-input process-output process-error
+          process-command process-input process-output process-error
           process-wait process-wait-any process-exit-status
           process-send-signal process-kill process-stop process-continue
           process-list

@@ -1,3 +1,7 @@
+2004-04-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/process.scm (gauche.process): export process-command.
+
 2004-04-24  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/package/build.scm, src/gauche-package: added --sudo
