@@ -1,3 +1,12 @@
+2003-12-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/slib.scm.in : added system -> sys-system alias (Patch from
+	  KIMURA Fuyuki).
+	* src/error.c (Scm_SError) : allow non-string as a first arg.
+	  This is only for supporting third-party code without obscuring
+	  where an error occurred.  New code should pass a string there
+	  specified SRFI-23.  Suggestion and patch from Kimura Fuyuki.
+
 2003-12-03  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/tr.scm (build-transliterator) : changed it to

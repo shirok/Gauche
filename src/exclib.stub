@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: exclib.stub,v 1.9 2003-07-05 03:29:12 shirok Exp $
+;;; $Id: exclib.stub,v 1.10 2003-12-05 01:11:12 shirok Exp $
 ;;;
 
 "
@@ -42,7 +42,7 @@
 ;; Exception procedures
 ;;
 
-(define-cproc error (reason::<string> &rest args)
+(define-cproc error (reason &rest args)
   (return "Scm_SError"))
 
 (define-cproc errorf (fmt &rest args)

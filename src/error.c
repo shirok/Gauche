@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.41 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: error.c,v 1.42 2003-12-05 01:11:12 shirok Exp $
  */
 
 #include <errno.h>
@@ -204,15 +204,19 @@ void Scm_Warn(const char *msg, ...)
  * Those versions are called from Scheme.  Do not use them from C.
  */
 
-/* SRFI-23 compatible error */
-ScmObj Scm_SError(ScmString *reason, ScmObj args)
+/* SRFI-23 compatible error.
+   We tolerate reason not to be a string.  It is not encouraged,
+   but some third-party code may use different error API, and
+   signaling an error as the first arg isn't a string would obscure
+   the problem. */
+ScmObj Scm_SError(ScmObj reason, ScmObj args)
 {
     volatile ScmObj e;
 
     SCM_UNWIND_PROTECT {
         ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
         ScmObj ap;
-        Scm_Write(SCM_OBJ(reason), ostr, SCM_WRITE_DISPLAY);
+        Scm_Write(reason, ostr, SCM_WRITE_DISPLAY);
         SCM_FOR_EACH(ap, args) {
             SCM_PUTC(' ', ostr);
             Scm_Write(SCM_CAR(ap), ostr, SCM_WRITE_WRITE);
