@@ -1,3 +1,11 @@
+2003-06-11  Shiro Kawai  <shiro@acm.org>
+
+	* doc/gauche-ref.texi : splitted chapters into separate texi files.
+
+2003-06-10  Shiro Kawai  <shiro@acm.org>
+
+	* example/spigot/* : added example of an extension module.
+
 2003-06-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche-init.scm, lib/gauche/common-macros.scm : added fluid-let
