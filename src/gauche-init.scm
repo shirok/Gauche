@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.54 2001-12-15 09:45:30 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.55 2001-12-15 10:59:05 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -149,6 +149,9 @@
           (:macro rxmatch-cond) (:macro rxmatch-case)
           regexp-replace regexp-replace-all)
 
+(autoload gauche.vm.debugger
+          enable-debug disable-debug (:macro debug-print))
+
 ;; these are so useful that I couldn't resist to add...
 (define (file-exists? path)
   (sys-access path |F_OK|))
@@ -233,17 +236,6 @@
     (receive (k v) (i)
       (unless (eof-object? k)
         (proc k v) (loop i)))))
-
-;; *** temporary ***
-(define-syntax debug-print
-  (syntax-rules ()
-    ((_ ?form)
-     (receive (tmp . more) ?form
-       (format (current-error-port) "@@@ ~s\n" tmp)
-       (for-each (lambda (elt)
-                   (format (current-error-port) "@.. ~s\n" elt))
-                 more)
-       (apply values tmp more)))))
 
 ;; srfi-17
 (define (getter-with-setter get set)
