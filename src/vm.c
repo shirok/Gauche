@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.211 2004-05-21 08:38:14 shirok Exp $
+ *  $Id: vm.c,v 1.212 2004-10-09 11:46:52 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2166,7 +2166,7 @@ ScmObj Scm_VMThrowException(ScmObj exception)
 
     if (vm->exceptionHandler != DEFAULT_EXCEPTION_HANDLER) {
         vm->val0 = Scm_Apply(vm->exceptionHandler, SCM_LIST1(exception));
-        if (SCM_ERRORP(exception)) {
+        if (SCM_SERIOUS_CONDITION_P(exception)) {
             /* the user-installed exception handler returned while it
                shouldn't.  In order to prevent infinite loop, we should
                pop the erroneous handler.  For now, we just reset
@@ -2175,7 +2175,7 @@ ScmObj Scm_VMThrowException(ScmObj exception)
             Scm_Error("user-defined exception handler returned on non-continuable exception %S", exception);
         }
         return vm->val0;
-    } else if (!SCM_ERRORP(exception)) {
+    } else if (!SCM_SERIOUS_CONDITION_P(exception)) {
         /* The system's default handler does't care about
            continuable exception.  See if there's a user-defined
            exception handler in the chain.  */
