@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: parse.scm,v 1.1 2001-10-05 08:06:05 shirok Exp $
+;;;  $Id: parse.scm,v 1.2 2001-10-05 08:13:46 shirok Exp $
 ;;;
 
 ;; This module implements the input parsing utilities described in Oleg's site
@@ -162,7 +162,7 @@
                        (unless eof-ok?
                          (errorf "~aunexpacted EOF" (port-position-prefix port))))
                       ((char-set-contains? cs c)
-                       (display (read-char))
+                       (display (read-char port))
                        (loop (peek-char port)))
                       (else #f))))))
         )))
