@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.74 2001-04-19 09:54:54 shiro Exp $
+ *  $Id: vm.c,v 1.75 2001-04-22 07:21:50 shiro Exp $
  */
 
 #include "gauche.h"
@@ -352,7 +352,7 @@ inline static ScmEnvFrame *save_env(ScmVM *vm,
 static void run_loop()
 {
     DECL_REGS;
-    ScmObj code;
+    ScmObj code = SCM_NIL;
 
 #ifdef __GNUC__
     static void *dispatch_table[256] = {
@@ -746,7 +746,7 @@ static void run_loop()
                 int reqargs = SCM_VM_INSN_ARG0(code);
                 int restarg = SCM_VM_INSN_ARG1(code);
                 int i = 0, argsize;
-                ScmObj rest = SCM_NIL, tail, info;
+                ScmObj rest = SCM_NIL, tail = SCM_NIL, info;
                 ScmEnvFrame *argpsave;
 
                 FETCH_INSN(info);
@@ -1042,7 +1042,7 @@ static void run_loop()
                 continue;
             }
             CASE(SCM_VM_READ_CHAR) {
-                int nargs = SCM_VM_INSN_ARG(code), ch;
+                int nargs = SCM_VM_INSN_ARG(code), ch = 0;
                 ScmPort *port;
                 if (nargs == 1) {
                     if (!SCM_IPORTP(val0))
@@ -1095,9 +1095,11 @@ static void run_loop()
                 pc = SCM_NIL;
                 continue;
             }
+#ifndef __GNUC__
             DEFAULT
                 Scm_Panic("Illegal vm instruction: %08x",
                           SCM_VM_INSN_CODE(code));
+#endif
         }
     }
 }
@@ -1242,7 +1244,7 @@ ScmObj Scm_Eval(ScmObj expr, ScmObj e)
 
 ScmObj Scm_Apply(ScmObj proc, ScmObj args)
 {
-    ScmObj code = SCM_NIL, tail, cp;
+    ScmObj code = SCM_NIL, tail = SCM_NIL, cp;
     int nargs = 0;
     SCM_FOR_EACH(cp, args) {
         SCM_APPEND1(code, tail, SCM_CAR(cp));
@@ -1517,7 +1519,6 @@ static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
     struct cont_data *cd = (struct cont_data*)data;
     ScmObj handlers = cd->handlers;
     ScmObj current = theVM->handlers;
-    ScmContFrame *cont = cd->cont;
     ScmObj args = argframe[0];
     ScmVMActivationHistory *h;
 
@@ -1620,7 +1621,7 @@ ScmObj Scm_VMGetStack(ScmVM *vm)
     ScmContFrame *c = vm->cont;
     ScmEnvFrame *e = vm->env;
     ScmObj pc = vm->pc;
-    ScmObj stack = SCM_NIL, stacktail;
+    ScmObj stack = SCM_NIL, stacktail = SCM_NIL;
 
     for (;;) {
         SCM_FOR_EACH(pc, pc) {
