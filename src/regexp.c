@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.4 2001-04-13 10:27:52 shiro Exp $
+ *  $Id: regexp.c,v 1.5 2001-04-13 10:36:50 shiro Exp $
  */
 
 #include "gauche.h"
@@ -86,18 +86,27 @@ ScmObj sym_any;                 /* any */
 
 static ScmRegexp *make_regexp(void)
 {
-    ScmRegexp *re = SCM_NEW(ScmRegexp);
-    SCM_SET_CLASS(re, SCM_CLASS_REGEXP);
-    re->code = NULL;
-    re->numCodes = 0;
-    re->numGroups = 0;
-    re->numSets = 0;
-    re->sets = NULL;
-    return re;
+    ScmRegexp *rx = SCM_NEW(ScmRegexp);
+    SCM_SET_CLASS(rx, SCM_CLASS_REGEXP);
+    rx->code = NULL;
+    rx->numCodes = 0;
+    rx->numGroups = 0;
+    rx->numSets = 0;
+    rx->sets = NULL;
+    rx->mustMatch = NULL;
+    rx->mustMatchLen = 0;
+    return rx;
 }
 
 /*=======================================================================
  * Compiler
+ */
+
+/* Two-pass compiler.
+ *
+ *  pass 1: parse pattern, generating parse tree and also counting sizes
+ *          of necessary storage.
+ *  pass 2: byte code generation.
  */
 
 /* compiler state information */
@@ -152,7 +161,7 @@ static ScmObj last_item(struct comp_ctx *ctx, ScmObj head, ScmObj tail,
 }
 
 /* pass1 - parser */
-ScmObj re_compile_pass1(ScmRegexp *re, struct comp_ctx *ctx)
+ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
 {
     ScmObj head = SCM_NIL, tail = SCM_NIL, elt, cell, sym;
     ScmObj grpstack;            /* group stack. */
@@ -188,10 +197,9 @@ ScmObj re_compile_pass1(ScmRegexp *re, struct comp_ctx *ctx)
             continue;
         case '|':
             elt = last_item(ctx, head, tail, grpstack, ch);
-            sym = sym_alt;
             elt = last_item(ctx, head, tail, grpstack, ch);
             cell = Scm_Cons(SCM_CAR(elt), SCM_CDR(elt));
-            SCM_SET_CAR(elt, Scm_Cons(sym, cell));
+            SCM_SET_CAR(elt, Scm_Cons(sym_alt, cell));
             SCM_SET_CDR(elt, SCM_NIL);
             tail = elt;
             insncount++;
@@ -200,6 +208,9 @@ ScmObj re_compile_pass1(ScmRegexp *re, struct comp_ctx *ctx)
             elt = Scm_CopyList(last_item(ctx, head, tail, grpstack, ch));
             SCM_APPEND1(head, tail, Scm_Cons(sym_rep, elt));
             insncount++;
+            continue;
+        case '?':  /* x? === (x|) */
+            /* not yet */
             continue;
         case '*':
             elt = last_item(ctx, head, tail, grpstack, ch);
@@ -214,7 +225,7 @@ ScmObj re_compile_pass1(ScmRegexp *re, struct comp_ctx *ctx)
             insncount++;
             continue;
         case '[':
-            SCM_APPEND1(head, tail, re_compile_charset(re, ctx));
+            SCM_APPEND1(head, tail, re_compile_charset(rx, ctx));
             insncount++;
             continue;
         default:
@@ -227,12 +238,13 @@ ScmObj re_compile_pass1(ScmRegexp *re, struct comp_ctx *ctx)
     if (!SCM_NULLP(SCM_CDR(grpstack)))
         Scm_Error("extra open parenthesis in regexp: %S", ctx->pattern);
 
-    re->numGroups = grpcount+1;
-    re->numCodes = insncount;
+    rx->numGroups = grpcount+1;
+    rx->numCodes = insncount;
     return head;
 }
 
 /* character range */
+/* TODO:  [:class:] and other posix weird stuff. */
 static ScmObj re_compile_charset(ScmRegexp *rx, struct comp_ctx *ctx)
 {
     int begin = TRUE, complement = FALSE;
@@ -470,7 +482,7 @@ void re_dump(ScmRegexp *rx)
 
 ScmObj re_compile(ScmString *pattern)
 {
-    ScmRegexp *re = make_regexp();
+    ScmRegexp *rx = make_regexp();
     ScmObj compiled;
     struct comp_ctx cctx;
     cctx.pattern = pattern;
@@ -478,10 +490,10 @@ ScmObj re_compile(ScmString *pattern)
     cctx.rxlen = SCM_STRING_LENGTH(pattern);
     cctx.sets = SCM_NIL;
     
-    compiled = re_compile_pass1(re, &cctx);
-    re_compile_setup_charsets(re, &cctx);
-    re_compile_pass2(compiled, re);
-    re_dump(re);
+    compiled = re_compile_pass1(rx, &cctx);
+    re_compile_setup_charsets(rx, &cctx);
+    re_compile_pass2(compiled, rx);
+    re_dump(rx);
     return compiled;
 }
 

@@ -1,20 +1,25 @@
-2001-04-09  Shiro Kawai  <shiro@scherzo>
+2001-04-12  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.3.4
+	* src/regexp.c: started to write this one.
+
+2001-04-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/list.c, src/extlib.c, lib/srfi-1.scm: added %assoc-delete[!]
 	  and rewrite assoc-delete[!] to use them if possible.
 
-2001-04-08  Shiro Kawai  <shiro@scherzo>
+2001-04-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.c (compile_body): body of "begin" is correctly spliced
 	  into it's surrounding body.
 
-2001-04-07  Shiro Kawai  <shiro@scherzo>
+2001-04-07  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.3.3
 	* lib/Makefile.in: oops, forgot to install with.scm
 	* test/srfi.scm: more tests for srfi-1 functions.
 
-2001-04-06  Shiro Kawai  <shiro@scherzo>
+2001-04-06  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.3.2
 	* src/gauche-init.scm: moved some functions into library, and
@@ -24,7 +29,7 @@
 	  multiple value handling.
 	* test/srfi.scm: added tests for srfi-1 functions.
 
-2001-04-05  Shiro Kawai  <shiro@scherzo>
+2001-04-05  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.3.1
 	* lib/srfi-1.scm, lib/srfi-1/*: splitted srfi-1.scm into a bunch of
@@ -33,7 +38,7 @@
 	* src/load.c: use stat() instead of access() to check existence of
 	  the file, in order to rule out a directory with the same name.
 
-2001-04-04  Shiro Kawai  <shiro@scherzo>
+2001-04-04  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.3
 	* src/*.[ch]: changed object write protocol.  Object writers receive
@@ -43,14 +48,14 @@
 	* lib/srfi-14.scm, src/char.c: finished working version of char-set
 	  srfi (although the UCS support is limited).
 
-2001-04-03  Shiro Kawai  <shiro@scherzo>
+2001-04-03  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.2.20:
 	* src/char.c, src/extlib.stub: added more charset stuff.
 	* src/syslib.stub (sys-tmpnam): use mkstemp() instead of tmpnam()
 	  if possible.
 
-2001-04-02  Shiro Kawai  <shiro@scherzo>
+2001-04-02  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.2.19:
 	* gauche/serializer.scm, gauche/serializer/aserializer.scm: ports
@@ -62,7 +67,7 @@
 	* src/vm.c (run_loop): fixed a bug that didn't adjust argument
 	  frame size upon calling a method.
 
-2001-04-01  Shiro Kawai  <shiro@scherzo>
+2001-04-01  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.2.18
 	* lib/gauche/object.scm: finishing metaclass stuff (not well tested
@@ -78,7 +83,7 @@
 	* src/number.c (Scm_NumCmp): fixed a bug that didn't work properly
 	  for flonums.
 
-2001-03-31  Shiro Kawai  <shiro@scherzo>
+2001-03-31  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.2.17
 	* src/class.c: implement default method of compute-applicable-methods
@@ -98,7 +103,7 @@
 	* src/genstub (emit-inliner-header): fixed a bug in the case of
 	  optional arg.  Start using the object system.
 
-2001-03-30  Shiro Kawai  <shiro@scherzo>
+2001-03-30  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.2.16
 	* src/vm.c, src/compile.c, src/gauche/vminsn.h, src/stdlib.stub:
@@ -111,7 +116,7 @@
 	* lib/gauche/object.scm: added slot-exists? and
 	  slot-exists-using-class?
 
-2001-03-29  Shiro Kawai  <shiro@scherzo>
+2001-03-29  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.2.15
 	* src/*.c: removed "equal" protocol from class definition.  clean up
@@ -124,7 +129,7 @@
 	  execvp() with taking care of file discriptors.  Changed sys-exec
 	  accordingly.
 
-2001-03-28  Shiro Kawai  <shiro@scherzo>
+2001-03-28  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.2.14
 	* src/class.c: added generic function write-object.
@@ -132,7 +137,7 @@
 	  and use SCM_ERROR_BEING_HANDLED flag to avoid inifinite loop
 	  of calling error function.
 
-2001-03-27  Shiro Kawai  <shiro@scherzo>
+2001-03-27  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.2.13
 	* src/vm.c, src/compile.c: finally deals with let-family, do and
@@ -144,7 +149,7 @@
 	* lib/gauche/vm/disasm.scm: more reasonable output format.
 	* lib/gauche/object.scm: added class-slot-ref and class-slot-set!
 
-2001-03-26  Shiro Kawai  <shiro@scherzo>
+2001-03-26  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.2.12
 	* lib/gauche/object.scm (compute-get-n-set): implemented class,
@@ -160,7 +165,7 @@
 	* src/vm.c: fixed a bug with inlined slot-ref and slot-set!, that
 	  broke VM stack when Scm_VMApply was called internally.
 
-2001-03-25  Shiro Kawai  <shiro@scherzo>
+2001-03-25  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.2.11
 	* lib/gauche/object.scm: support :getter, :setter and :accessor
@@ -170,7 +175,7 @@
 	* src/vm.c (ADJUST_ARGUMENT_FRAME): fixed a bug that didn't saved
 	  VM regs before calling Scm_Error.
 
-2001-03-24  Shiro Kawai  <shiro@scherzo>
+2001-03-24  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.2.10
 	* test/object.scm: test file for object system.
@@ -188,7 +193,7 @@
 	  initfile is up to the application.
 	* src/list.c: Scm_Delete added.
 
-2001-03-23  Shiro Kawai  <shiro@scherzo>
+2001-03-23  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.2.9
 	* lib/*: reorganized library structure.  gauche-specific stuff
@@ -203,7 +208,7 @@
 	  the stack by quasiquoted forms with unquote and unquote-splicing
 	  intertwined.
 
-2001-03-21  Shiro Kawai  <shiro@scherzo>
+2001-03-21  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.2.8
 	* src/class.c, lib/object.scm: (initialize <method> <list>) is
@@ -219,7 +224,7 @@
 	  generic functions / methods.
 	* src/vm.c: integration of method invocation.
 
-2001-03-19  Shiro Kawai  <shiro@scherzo>
+2001-03-19  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.2.6
 	* src/gauche.h, src/proc.c, src/class.c: changed procedure
@@ -233,7 +238,7 @@
 	* src/vector.c: rewrote Scm_VectorToList using Scm_ArrayToList.
 	* src/system.c (Scm_NormalizePathname): fix bug in expanding "~".
 
-2001-03-18  Shiro Kawai  <shiro@scherzo>
+2001-03-18  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.2.5
 	* src/gauche.h, src/proc.c: applicable objects (including subrs
@@ -243,7 +248,7 @@
 	* src/vm.c, src/compile.c, src/gauche/vminsn.h: optimization by
 	  adding shortcut operation of LREF/LSET.
 
-2001-03-17  Shiro Kawai  <shiro@scherzo>
+2001-03-17  Shiro Kawai  <shiro@acm.org>
 
 	* doc/Makefile: added.
 	* src/gauche.h, src/gauche/class.h: ScmGeneric and ScmMethod
@@ -251,7 +256,7 @@
 	  as applicable objects.
 	* src/vm.c: a bit of optimization.
 
-2001-03-16  Shiro Kawai  <shiro@scherzo>
+2001-03-16  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.2.4
 	* src/*: restructured defining scheme of builtin classes.  Macro
@@ -263,7 +268,7 @@
 	* src/hash.c: fixed bug in string hash function.  added
 	  hash-table-stat.
 
-2001-03-15  Shiro Kawai  <shiro@scherzo>
+2001-03-15  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.2.3
 	* src/class.c, src/gauche/class.h, src/moplib.stub, lib/object.scm:
@@ -271,7 +276,7 @@
 	  protocol.
 	* src/repl.c: fixed a bug that didn't let repl exit when EOF read.
 
-2001-03-14  Shiro Kawai  <shiro@scherzo>
+2001-03-14  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.2.2
 	* COPYING: clearify the copyright and distributing condition.
@@ -284,14 +289,14 @@
 	* configure.in, src/system.c, src/syslib.stub: include time.h and
 	  sys/time.h, depending on the system configuration.
 
-2001-03-13  Shiro Kawai  <shiro@scherzo>
+2001-03-13  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.2.1
 	* src/gauche.h, src/class.c: further designing.  not much code yet.
         * configure.in: made to work on sparc-sun-solaris2.6
 	* ext/example/Makefile.in: install rule was broken.  fixed.
 	
-2001-03-12  Shiro Kawai  <shiro@scherzo>
+2001-03-12  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.2
 	* src/class.c: start implementing core protocol of metaobjects.
@@ -299,7 +304,7 @@
 	  installation process as well.
 	* src/syslib.stub: added a part of signal stuff and exec().
 	
-2001-03-11  Shiro Kawai  <shiro@scherzo>
+2001-03-11  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.1.8
 	* src/srfi-2.scm: rewrote completely using define-syntax.
@@ -315,7 +320,7 @@
 	  and implement sys-pipe using it.
 	* src/port.c, src/extlib.stub: Added read-line.
 
-2001-03-10  Shiro Kawai  <shiro@scherzo>
+2001-03-10  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.1.7
 	* src/genstub: Now the stub generator runs under gosh itself; no need
@@ -330,7 +335,7 @@
 	* lib/srfi-17.scm: added srfi-17, generalized set!
 	* test/srfi.scm: test file for srfi's.  not completed yet.
 
-2001-03-09  Shiro Kawai  <shiro@scherzo>
+2001-03-09  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.1.6
 	* configure.in etc.: revised configuration process.  fixed protocol
@@ -343,7 +348,7 @@
 	  require and import.  Changed library and test files accordingly.
 	* src/genstub: added define-symbol directive to pre-create symbols.
 
-2001-03-08  Shiro Kawai  <shiro@scherzo>
+2001-03-08  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.1.5
 	* configure.in, src/Makefile.in: start putting configuration stuff
@@ -359,7 +364,7 @@
 	  fixed.
 	* lib/srfi-11.scm: srfi-11 support added.
 
-2001-03-07  Shiro Kawai  <shiro@scherzo>
+2001-03-07  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.1.4
 	* configure.in: changed installation directory of architecture
@@ -375,7 +380,7 @@
 	* src/load.c: changed *load-filename* to *load-port*, since it's more
 	  general.  implemented *load-history*.
 
-2001-03-06  Shiro Kawai  <shiro@scherzo>
+2001-03-06  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.1.3
 	* various files: clean up the testing and installation scheme.  Now
@@ -393,7 +398,7 @@
 	  between gid/pid and group/user name.
 	* configure.in, src/syslib.stub: added check for existence of symlink.
 
-2001-03-05  Shiro Kawai  <shiro@scherzo>
+2001-03-05  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.1.2
 	* src/macro.c, src/gauche-init.scm: define-macro and define-syntax
@@ -407,7 +412,7 @@
 	  from Yuuki Takahashi (t.yuuki@mbc.nifty.com) to check existence
 	  of trunc() and rint().
 
-2001-03-04  Shiro Kawai  <shiro@scherzo>
+2001-03-04  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.1.1
 	* src/module.c, src/compile.c: implemented module selection
@@ -421,7 +426,7 @@
 	* src/list.c: added topological sort function and some more list
 	  manipulaton functions, generally useful from C.
 
-2001-03-03  Shiro Kawai  <shiro@scherzo>
+2001-03-03  Shiro Kawai  <shiro@acm.org>
 	
 	* release 0.1: almost covered R5RS
 	* src/compile.c: fixed lookup_env to lookup identifiers with
@@ -436,27 +441,27 @@
 	  into obtable without copying.
 	* src/number.c: revised string->number algorithm
 
-2001-03-02  Shiro Kawai  <shiro@scherzo>
+2001-03-02  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.0.20
 	* src/macro.c: fixed problem with nested repeat patterns.
 	* test/macrotest.scm: added more tests to cover various cases.
 
-2001-02-28  Shiro Kawai  <shiro@scherzo>
+2001-02-28  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.0.19
 	* src/macro.c: fixed to handle templates like (?a ... ?b ...)
 	  correctly.
 	* lib/srfi-0.scm: srfi-0 added.
 
-2001-02-27  Shiro Kawai  <shiro@scherzo>
+2001-02-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/extlib.stub: added some nonstandard procedures (identifier?,
 	  identifier->symbol, flush)
         * lib/test.scm: added to support simple self-testing.
 	* test/macrotest.scm: more tests.
 
-2001-02-26  Shiro Kawai  <shiro@scherzo>
+2001-02-26  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.0.18
 	* src/macro.c: almost finished implementing syntax-rules.  not tested
@@ -467,13 +472,13 @@
 	  to write arbitrary inliner function in C.  Inliner functions
 	  for immediate integer addition/subtraction is added to stdlib.stub.
 
-2001-02-23  Shiro Kawai  <shiro@scherzo>
+2001-02-23  Shiro Kawai  <shiro@acm.org>
 
         * release 0.0.17
 	* src/macro.c, src/gauche/macro.h: pattern language compiler and
 	  matcher test code.
 
-2001-02-21  Shiro Kawai  <shiro@scherzo>
+2001-02-21  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.0.16
 	* src/macro.c, src/compile.c: more code for r5rs macro system (not
@@ -482,7 +487,7 @@
 	  symbols instead of identifiers.
 	* src/list.c, src/extlib.stub: added acons
 
-2001-02-20  Shiro Kawai  <shiro@scherzo>
+2001-02-20  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.0.15
 	* src/compile.c, src/gauche/vm.h: changed the compile-time
@@ -492,7 +497,7 @@
 	  reference instead of bare symbols.   fixed a bug in VALUES_BIND
 	  which messed up argp.
 
-2001-02-19  Shiro Kawai  <shiro@scherzo>
+2001-02-19  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.0.14
         * configure.in, src/gauche/config.h.in: start using config.h instead
@@ -501,14 +506,14 @@
 	* src/compile.c: compile toplevel begin properly.  fix bug in
 	  compile_receive to handle an improper list as a binding list.
 
-2001-02-18  Shiro Kawai  <shiro@scherzo>
+2001-02-18  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.0.13
 	* src/bignum.c, src/number.c: bignum support added (partly)
 	* src/load.c: dynamic link loader starts working
 	* ext/uvector/*: uvector extention module added (not working yet)
 
-2001-02-16  Shiro Kawai  <shiro@scherzo>
+2001-02-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c: fix bug in Scm_NormalizePathname for "~user" expansion
 	* src/proc.c: added Scm_NullProc.
@@ -516,14 +521,14 @@
 	  dynamic-wind.
 	* src/module.c: Scm_Define returns Gloc object instead of symbol
 
-2001-02-15  Shiro Kawai  <shiro@scherzo>
+2001-02-15  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.0.12
 	* src/vm.c, src/compile.c: implemented receive and values.
 	* src/extlib.stub: added string port functions.
 	* src/load.c: added some code to support dynamic linking
 
-2001-02-14  Shiro Kawai  <shiro@scherzo>
+2001-02-14  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.0.11
 	* src/vm.c: Fix problem of user_eval_inner.  Complete call/cc
@@ -534,7 +539,7 @@
 	  because of lack of multiple values.
 	* lib/srfi-2.scm: SRFI-2 support added.
 	
-2001-02-13  Shiro Kawai  <shiro@scherzo>
+2001-02-13  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.0.10
 	* src/vm.c: added REVERSE instruction.  added code to support
@@ -543,39 +548,39 @@
 	* src/system.c, src/syslib.stub: avoid using PATH_MAX
 	* src/string.c, src/extlib.stub: added string-split
 
-2001-02-12  Shiro Kawai  <shiro@scherzo>
+2001-02-12  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.0.9
 	* src/file.c: removed.  pathname functions are moved to system.c
 	* src/system.c: added pathname functions (dirname, basename,
 	  normalize-pathname)
 
-2001-02-11  Shiro Kawai  <shiro@scherzo>
+2001-02-11  Shiro Kawai  <shiro@acm.org>
 
 	* sys/string.c: fix to handle the case that c-string's length is
 	  unknown but size is given.
 
-2001-02-10  Shiro Kawai  <shiro@scherzo>
+2001-02-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/genstub: allow &keyword args
 	* src/system.c, src/syslib.stub: added system interface.
 
-2001-02-09  Shiro Kawai  <shiro@scherzo>
+2001-02-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/vm.h: fix bug in SCM_PROPAGATE_ERROR
 
-2001-02-08  Shiro Kawai  <shiro@scherzo>
+2001-02-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c: use label address feature of gcc to dispatch instructions
 	* src/read.c: allow "#!"-line in the script file
 
-2001-02-06  Shiro Kawai  <shiro@scherzo>
+2001-02-06  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.0.6
 	* src/string.c: added a few new functions following SRFI-13.
 	* src/repl.c: the caller can specify the prompt now.
 
-2001-02-05  Shiro Kawai  <shiro@scherzo>
+2001-02-05  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.0.5
 	* src/core.c, src/main.c, src/gauche-init.scm: now Scm_Init() takes
@@ -586,7 +591,7 @@
 	* src/load.c: added *load-path*
 	* src/keyword.c: added
 
-2001-02-04  Shiro Kawai  <shiro@scherzo>
+2001-02-04  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.0.4
 	* src/vm.c: clearify interaction between user-level eval/apply and
@@ -595,7 +600,7 @@
 	* src/class.c, et.al.: code cleanup around statically defined
 	  built-in classes
 
-2001-02-02  Shiro Kawai  <shiro@scherzo>
+2001-02-02  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.0.3
 	* src/vm.c, src/gauche/vminsn.h, src/stdlib.stub: inline several
@@ -604,14 +609,14 @@
 	* make installation procedure clearer.
 	* src/gauche-config.in: added
 
-2001-02-01  Shiro Kawai  <shiro@scherzo>
+2001-02-01  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.0.2
 	* src/class.c: added Scm_MakeBuiltinClass.
 	* src/string.c, extlib.stub: added string-append, string-join
 	* src/file.c: added
 	
-2001-01-31  Shiro Kawai  <shiro@scherzo>
+2001-01-31  Shiro Kawai  <shiro@acm.org>
 
 	* internal release 0.0.1
 
