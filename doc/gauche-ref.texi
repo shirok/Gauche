@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.31 2001-06-24 20:48:25 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.32 2001-06-24 22:41:51 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2508,12 +2508,15 @@ signals an error of "feature not supported".
 @subsubsection Directory manipulation
 
 @defun sys-remove filenmae
-[POSIX]
-Remove @var{filename}.
+[POSIX] If @var{filename} is a file, or an empty directory,
+it is removed.   An error is signaled if @var{filename} doesn't
+exist, or is a non-empty directory.
 @end defun
 
 @defun sys-rename old new
-[POSIX]
+[POSIX] Renames a file @var{old} to @var{new}.  The new name
+can be in different directory from the old name, but both paths
+must be on the same device.
 @end defun
 
 @defun sys-tmpnam
@@ -2521,26 +2524,34 @@ Remove @var{filename}.
 @end defun
 
 @defun sys-link existing new
-[POSIX]
+[POSIX] Creates a hard link named @var{new} to the existing file
+@var{existing}.
 @end defun
 
 @defun sys-unlink pathname
-[POSIX]
+[POSIX] Removes @var{pathname}.  It can't be a directory.
+Returns @code{#t} if it is successfully removed, or
+@var{#f} if @var{pathname} doesn't exist.
 @end defun
 
 @defun sys-symlink existing new
+Creates a symbolic link named @var{new} to the existing file @var{existing}.
+If the underlying system doesn't support symbolic links, this function
+raises an error ``feature not supported''.
 @end defun
 
 @defun sys-mkdir pathname mode
-[POSIX]
+[POSIX] Makes a directory @var{pathname} with mode @var{mode}.
 @end defun
 
 @defun sys-rmdir pathname
-[POSIX]
+[POSIX] Removes a directory @var{pathname}.  The directory must 
+be empty.
 @end defun
 
 @defun sys-umask mode
-[POSIX]
+[POSIX] Sets umask setting to @var{mode}.  Returns previous umask setting.
+See @code{man umask} for more details.
 @end defun
 
 @node Pathnames, File stats, Directory manipulation, Filesystems
@@ -2611,18 +2622,27 @@ may return @code{"/"} for the argument @code{"/"}, and
 
 @deftp {Builtin Class} <sys-stat>
 @clindex sys-stat
-An object that represents @code{struct stat}.
+An object that represents @code{struct stat}, attributes of an
+entry in the filesystem.
 @end deftp
 
 @defun sys-stat path
-[POSIX]
+[POSIX] Returns a @code{<sys-stat>} object of @var{path}.
+If @var{path} is a symbolic link, a stat of the file the link points
+to is returned.
 @end defun
 
 @defun sys-lstat path
+Like @code{sys-stat}, but it returns a stat of a symbolic link
+if @var{path} is a symbolic link.
 @end defun
 
-@defun sys-fstat fd
-[POSIX]
+@defun sys-fstat port-or-fd
+[POSIX] @code{port-or-fd} may be a port or a positive exact integer
+file descriptor.
+Returns a @code{<sys-stat>} object of the underlying file of
+@var{port-or-fd}.  If a port is given, and the port is not
+associated to a file, @code{#f} is returned.
 @end defun
 
 @defun sys-stat->mode stat
@@ -2630,6 +2650,7 @@ An object that represents @code{struct stat}.
 @defunx sys-stat->dev stat
 @defunx sys-stat->rdev stat
 @defunx sys-stat->nlink stat
+@defunx sys-stat->size stat
 @defunx sys-stat->uid stat
 @defunx sys-stat->gid stat
 @defunx sys-stat->atime stat
@@ -2690,16 +2711,38 @@ working directory to @var{dir}.   An error is signalled if
 access @var{dir}.
 @end defun
 
-@defun sys-pipe &keyword name buffered?
-[POSIX]
+@defun sys-pipe &keyword (buffered? @code{#t})
+[POSIX] Creates a pipe, and returns two ports.
+The first returned port is an input port and the second is an output port.
+The data put to the output port can be read from the input port.
+
+By default, the returned port is buffered using stdio interface,
+i.e. you may want to call @code{flush} for the output port to make sure
+the data can be read from the input port.  If the keyword argument
+@var{buffered?} is false, however, the ports uses low-level
+system calls (@code{read(2)} and @code{write(2)}.
+
+@example
+(receive (in out) (sys-pipe)
+  (display "abc\n" out)
+  (flush out)
+  (read-line in)) @result{} "abc"
+@end example
+
+Note: the returned value is changed from version 0.3.15, in which
+@code{sys-pipe} returned a list of two ports.
 @end defun
 
 @defun sys-isatty port-or-fd
-[POSIX]
+[POSIX] @var{port-or-fd} may be a port or an integer file descriptor.
+Returns @code{#t} if the port is connected to the console, @code{#f}
+otherwise.
 @end defun
 
 @defun sys-ttyname port-or-fd
-[POSIX]
+[POSIX] @var{port-or-fd} may be a port or an integer file descriptor.
+Returns the name of the terminal connected to the port,
+or @code{#f} if the port is not connected to a terminal.
 @end defun
 
 @node Unix groups and passwords, Locale, Filesystems, System interface
