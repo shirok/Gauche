@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.171 2002-09-10 21:57:14 shirok Exp $
+ *  $Id: vm.c,v 1.172 2002-09-11 03:18:50 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -609,7 +609,10 @@ static void run_loop()
                     ScmObj *fp = argp;
                     switch (proctype) {
                     case SCM_PROC_SUBR:
-                        FINISH_ENV(SCM_PROCEDURE_INFO(val0), NULL);
+                        /* We don't need to complete environment frame.
+                           Just need to adjust spp, so that stack-operating
+                           procs called from subr won't be confused. */
+                        sp = argp;
                         SAVE_REGS();
                         val0 = SCM_SUBR(val0)->func(fp, argcnt,
                                                     SCM_SUBR(val0)->data);
@@ -1440,6 +1443,8 @@ ScmEnvFrame *Scm_GetCurrentEnv(void)
    returns to the VM.   The return value of Scm_VMApply is just a PROC,
    but it should be returned as the return value of SUBR, which will be
    used by the VM.
+   NB: we don't check proc is a procedure or not.  It can be a non-procedure
+   object, because of the object-apply hook.
  */
 ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
 {
@@ -1449,7 +1454,6 @@ ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
     int reqstack;
     
     SCM_ASSERT(SCM_NULLP(pc));
-    if (!SCM_PROCEDUREP(proc)) Scm_Error("procedure required, but got %S", proc);
     if (numargs < 0) Scm_Error("improper list not allowed: %S", args);
     reqstack = ENV_SIZE(numargs) + 1;
     CHECK_STACK(reqstack);
