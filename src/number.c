@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.46 2001-05-12 21:28:44 shirok Exp $
+ *  $Id: number.c,v 1.47 2001-05-14 19:08:31 shirok Exp $
  */
 
 #include <math.h>
@@ -985,7 +985,7 @@ static ScmObj exact_expt(ScmObj x, ScmObj y)
 
     if (sign == 0) return r;
     if (x == SCM_MAKE_INT(1)) return r;
-    if (x == SCM_MAKE_INT(-1)) return Scm_OddP(r)? SCM_MAKE_INT(-1) : r;
+    if (x == SCM_MAKE_INT(-1)) return Scm_OddP(y)? SCM_MAKE_INT(-1) : r;
     /* TODO: optimization when x is power of two */
     if (SCM_INTP(y)) {
         int iy = SCM_INT_VALUE(y);
@@ -1182,6 +1182,68 @@ ScmObj Scm_Round(ScmObj num, int mode)
     default: Scm_Panic("something screwed up");
     }
     return Scm_MakeFlonum(r);
+}
+
+/*===============================================================
+ * Logical (bitwise) operations
+ */
+
+ScmObj Scm_Ash(ScmObj x, int cnt)
+{
+    if (SCM_INTP(x)) {
+        long ix = SCM_INT_VALUE(x);
+        if (cnt <= -(SIZEOF_LONG * 8)) {
+            ix = (ix < 0)? -1 : 0;
+            return Scm_MakeInteger(ix);
+        } else if (cnt < 0) {
+            if (ix < 0) {
+                ix = ~((~ix) >> (-cnt));
+            } else {
+                ix >>= -cnt;
+            }
+            return Scm_MakeInteger(ix);
+        } else if (cnt < (SIZEOF_LONG*8-3)) {
+            if (ix < 0) {
+                if (-ix < (SCM_SMALL_INT_MAX >> cnt)) {
+                    ix <<= cnt;
+                    return Scm_MakeInteger(ix);
+                } 
+            } else {
+                if (ix < (SCM_SMALL_INT_MAX >> cnt)) {
+                    ix <<= cnt;
+                    return Scm_MakeInteger(ix);
+                } 
+            }
+        }
+        /* Here, we know the result must be a bignum. */
+        {
+            ScmObj big = Scm_MakeBignumFromSI(ix);
+            return Scm_BignumAsh(SCM_BIGNUM(big), cnt);
+        }
+    } else if (SCM_BIGNUMP(x)) {
+        return Scm_BignumAsh(SCM_BIGNUM(x), cnt);
+    }
+    Scm_Error("exact integer required, but got %S", x);
+    return SCM_UNDEFINED;
+}
+
+ScmObj Scm_LogAnd(ScmObj x, ScmObj y)
+{
+    if (!SCM_EXACTP(x)) Scm_Error("exact integer required, but got %S", x);
+    if (!SCM_EXACTP(y)) Scm_Error("exact integer required, but got %S", y);
+    if (SCM_INTP(x)) {
+        if (SCM_INTP(y)) {
+            return SCM_MAKE_INT(SCM_INT_VALUE(x) & SCM_INT_VALUE(y));
+        } else {
+            return Scm_BignumLogAndSI(SCM_BIGNUM(y), SCM_INT_VALUE(x));
+        }
+    } else {
+        if (SCM_INTP(y)) {
+            return Scm_BignumLogAndSI(SCM_BIGNUM(x), SCM_INT_VALUE(y));
+        } else {
+            return Scm_BignumLogAnd(SCM_BIGNUM(x), SCM_BIGNUM(y));
+        }
+    }
 }
 
 /*===============================================================
