@@ -6740,7 +6740,7 @@ Gauche組み込みクラスのうち、リスト、ベクター、そして文字列は
 @subsection Fundamental sequence accessors
 @c NODE 基本的なシーケンスのアクセサ
 
-@deffn {Generic function} ref (seq <sequence>) index &optional fallback
+@deffn {Method} ref (seq <sequence>) index &optional fallback
 @c EN
 Returns @var{index}-th element of the sequence @var{seq}.
 This method enables uniform access for any sequence types.
@@ -6764,7 +6764,7 @@ an error is signalled if not.
 @end example
 @end deffn
 
-@deffn {Generic function} {(setter ref)} (seq <sequence>) index value
+@deffn {Method} {(setter ref)} (seq <sequence>) index value
 @c EN
 Sets @var{value} to the @var{index}-th element of the sequence @var{seq}.
 This is the uniform sequence modifier.
@@ -6788,17 +6788,17 @@ This is the uniform sequence modifier.
 @end example
 @end deffn
 
-@deffn {Generic function} referencer (seq <sequence>)
+@deffn {Method} referencer (seq <sequence>)
 @end deffn
 
-@deffn {Generic function} modifier (seq <sequence>)
+@deffn {Method} modifier (seq <sequence>)
 @end deffn
 
 @node Slicing sequence, Mapping over sequences, Fundamental sequence accessors, gauche.sequence - Sequence framework
 @subsection Slicing sequence
 @c NODE シーケンスのスライス
 
-@deffn {Generic function} subseq (seq <sequence>) &optional start end
+@deffn {Method} subseq (seq <sequence>) &optional start end
 @c EN
 Retrieve a subsequence of the sequence @var{seq}, from
 @var{start}-th element (inclusive) to @var{end}-th element (exclusive).
@@ -6819,8 +6819,8 @@ The type of the returned sequence is the same as @var{seq}.
 @end example
 @end deffn
 
-@deffn {Generic function} {(setter subseq)} (seq <sequence>) start end value-seq
-@deffnx {Generic function} {(setter subseq)} (seq <sequence>) start value-seq
+@deffn {Method} {(setter subseq)} (seq <sequence>) start end value-seq
+@deffnx {Method} {(setter subseq)} (seq <sequence>) start value-seq
 @c EN
 Sets the elements of @var{value-seq} from the @var{start}-th element
 (inclusive) to the @var{end}-th element (exclusive) of the sequence @var{seq}.
@@ -6838,7 +6838,7 @@ In the second form, @var{end} is figured out by the length of @var{value-seq}.
 @c COMMON
 
 @example
-(define s '#(a b c d e))
+(define s (vector 'a 'b 'c 'd 'e))
 (set! (subseq s 1 4) '(4 5 6))
 s @result{} #(a 4 5 6 e)
 (set! (subseq s 0)   "ab")
@@ -6863,7 +6863,7 @@ during iteration.   There are several generic functions for it.
 いくつかあります。
 @c COMMON
 
-@deffn {Generic function} fold-with-index kons knil (seq <sequence>) @dots{}
+@deffn {Method} fold-with-index kons knil (seq <sequence>) @dots{}
 @c EN
 Like generic @code{fold}, except @var{kons} is given
 the index within @var{seq}, as the first argument,
@@ -6880,9 +6880,9 @@ as well as each element from @var{seq}s and the accrued value.
 @end example
 @end deffn
 
-@deffn {Generic function} map-with-index proc (seq <sequence>) @dots{}
-@deffnx {Generic function} map-to-with-index class proc (seq <sequence>) @dots{}
-@deffnx {Generic function} for-each-with-index proc (seq <sequence>) @dots{}
+@deffn {Method} map-with-index proc (seq <sequence>) @dots{}
+@deffnx {Method} map-to-with-index class proc (seq <sequence>) @dots{}
+@deffnx {Method} for-each-with-index proc (seq <sequence>) @dots{}
 @c EN
 Like @code{map}, @code{map-to} and @code{for-each}, except @var{proc}
 receives the index as the first argument.
@@ -6900,7 +6900,7 @@ receives the index as the first argument.
 @end example
 @end deffn
 
-@deffn {Generic function} find-with-index pred (seq <sequence>)
+@deffn {Method} find-with-index pred (seq <sequence>)
 @c EN
 Finds the first element in @var{seq} that satisfies @var{pred}
 like @code{find}, but returns two values, the index of the element
@@ -6921,7 +6921,7 @@ two @code{#f}'s are returned.
 @end example
 @end deffn
 
-@deffn {Generic function} find-index pred (seq <sequence>)
+@deffn {Method} find-index pred (seq <sequence>)
 @c EN
 Like @code{find}, but returns the index of the first element
 that satisfies @var{pred} in @var{seq}, instead of the element itself.
