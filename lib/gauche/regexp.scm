@@ -12,12 +12,12 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: regexp.scm,v 1.8 2001-09-23 22:37:42 shirok Exp $
+;;;  $Id: regexp.scm,v 1.9 2002-12-06 05:26:16 shirok Exp $
 ;;;
 
 (define-module gauche.regexp
   (export rxmatch-let rxmatch-if rxmatch-cond rxmatch-case
-          regexp-replace regexp-replace-all))
+          regexp-replace regexp-replace-all regexp-quote))
 (select-module gauche.regexp)
 
 (define-syntax rxmatch-bind*
@@ -152,6 +152,17 @@
             (regexp-replace-rec match subpat out loop)))
         string)))
 
+;; Contributed from Alex Shinn; modified a bit by shiro
+(define (regexp-quote str)
+  (with-string-io
+   str
+   (lambda ()
+     (let loop ((c (read-char)))
+       (unless (eof-object? c)
+         (when (char-set-contains? #[\\|\[\](){}.*+?^$] c) (write-char #\\))
+         (write-char c)
+         (loop (read-char)))))))
+       
 ;;; scsh compatibility
 
 ;(define regexp-search rxmatch)
