@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.19 2001-03-21 19:31:50 shiro Exp $
+ *  $Id: class.c,v 1.20 2001-03-22 08:21:23 shiro Exp $
  */
 
 #include "gauche.h"
@@ -80,6 +80,9 @@ static ScmObj key_allocation;
 static ScmObj key_instance;
 static ScmObj key_builtin;
 static ScmObj key_name;
+static ScmObj key_supers;
+static ScmObj key_slots;
+static ScmObj key_metaclass;
 static ScmObj key_lambda_list;
 static ScmObj key_generic;
 static ScmObj key_specializers;
@@ -108,6 +111,14 @@ static ScmObj class_array_to_list(ScmClass **array, int len)
 {
     ScmObj h = SCM_NIL, t;
     if (array) while (len-- > 0) SCM_APPEND1(h, t, SCM_OBJ(*array++));
+    return h;
+}
+
+static ScmObj class_array_to_names(ScmClass **array, int len)
+{
+    ScmObj h = SCM_NIL, t;
+    int i;
+    for (i=0; i<len; i++, array++) SCM_APPEND1(h, t, (*array)->name);
     return h;
 }
 
@@ -224,6 +235,7 @@ static ScmObj class_allocate(ScmClass *klass)
     instance->flags = 0;        /* ?? */
     instance->name = SCM_FALSE;
     instance->directSupers = SCM_NIL;
+    instance->accessors = SCM_NIL;
     instance->cpl = SCM_NIL;
     instance->directSlots = SCM_NIL;
     instance->slots = SCM_NIL;
@@ -247,17 +259,7 @@ static int class_print(ScmObj obj, ScmPort *port, int mode)
  * (make <class> ...)   - default method to make a class instance.
  */
 
-static ScmObj class_make(ScmNextMethod *nm, ScmObj *args, int nargs,
-                         void *data)
-{
-    Scm_Printf(SCM_CURERR, "class_make(%S, %S)\n",
-               nm, Scm_ArrayToList(args, nargs));
-    return SCM_FALSE;
-}
-
-static ScmClass *class_make_SPEC[] = { SCM_CLASS_CLASS };
-static SCM_DEFINE_METHOD(class_make_rec, &Scm_GenericMake, 1, 1,
-                         class_make_SPEC, class_make, NULL);
+/* defined in Scheme */
 
 /*
  * (allocate-instance <class> initargs)
@@ -670,8 +672,8 @@ static int method_print(ScmObj obj, ScmPort *port, int mode)
 static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
                                 void *data)
 {
-#if 0 /* not finished yet */
     ScmMethod *m = SCM_METHOD(args[0]);
+    ScmGeneric *g;
     ScmObj initargs = args[1];
     ScmObj llist = Scm_GetKeyword(key_lambda_list, initargs, SCM_FALSE);
     ScmObj generic = Scm_GetKeyword(key_generic, initargs, SCM_FALSE);
@@ -684,6 +686,7 @@ static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
     if (!Scm_TypeP(generic, SCM_CLASS_GENERIC))
         Scm_Error("generic function required for :generic argument: %S",
                   generic);
+    g = SCM_GENERIC(generic);
     if (!SCM_CLOSUREP(body))
         Scm_Error("closure required for :body argument: %S", body);
     if (!SCM_PAIRP(specs) ||(speclen = Scm_Length(specs)) < 0)
@@ -695,12 +698,20 @@ static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
     if (!SCM_NULLP(lp)) opt++;
 
     if (SCM_PROCEDURE_REQUIRED(body) != req + opt + 1)
-        Scm_Error("body doesn't match with specified lambda list: %S", body);
-#endif
-
-    Scm_Printf(SCM_CURERR, "method_initialize(%S, %S)\n",
-               nm, Scm_ArrayToList(args, nargs));
-    return SCM_FALSE;
+        Scm_Error("body doesn't match with lambda list: %S", body);
+    if (speclen != req)
+        Scm_Error("specializer list doesn't match with lambda list: %S",specs);
+    
+    m->common.required = req;
+    m->common.optional = opt;
+    m->common.info = Scm_Cons(g->common.info,
+                              class_array_to_names(specarray, speclen));
+    m->generic = g;
+    m->specializers = specarray;
+    m->func = NULL;
+    m->data = SCM_CLOSURE(body)->code;
+    m->env = SCM_CLOSURE(body)->env;
+    return SCM_OBJ(m);
 }
 
 static ScmClass *method_initialize_SPEC[] = {
@@ -874,16 +885,9 @@ void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod)
 
 void Scm_InitBuiltinMethod(ScmMethod *m)
 {
-    ScmObj info = SCM_NIL, t;
-    ScmClass **cp;
-    int i;
-
-    /* build info */
-    SCM_APPEND1(info, t, m->generic->common.info);
-    for (i=0, cp=m->specializers; i<m->common.required; i++, cp++) {
-        SCM_APPEND1(info, t, (*cp)->name);
-    }
-    m->common.info = info;
+    m->common.info = Scm_Cons(m->generic->common.info,
+                              class_array_to_names(m->specializers,
+                                                   m->common.required));
     Scm_AddMethod(m->generic, m);
 }
 
@@ -896,6 +900,9 @@ void Scm__InitClass(void)
     key_instance = SCM_MAKE_KEYWORD("instance");
     key_builtin = SCM_MAKE_KEYWORD("builtin");
     key_name = SCM_MAKE_KEYWORD("name");
+    key_supers = SCM_MAKE_KEYWORD("supers");
+    key_slots = SCM_MAKE_KEYWORD("slots");
+    key_metaclass = SCM_MAKE_KEYWORD("metaclass");
     key_lambda_list = SCM_MAKE_KEYWORD("lambda-list");
     key_generic = SCM_MAKE_KEYWORD("generic");
     key_specializers = SCM_MAKE_KEYWORD("specializers");
@@ -993,7 +1000,6 @@ void Scm__InitClass(void)
     Scm_InitBuiltinGeneric(&Scm_GenericInitialize, "initialize", mod);
     Scm_InitBuiltinGeneric(&Scm_GenericAddMethod, "add-method!", mod);
 
-    Scm_InitBuiltinMethod(&class_make_rec);
     Scm_InitBuiltinMethod(&class_allocate_rec);
     Scm_InitBuiltinMethod(&generic_initialize_rec);
     Scm_InitBuiltinMethod(&generic_addmethod_rec);
