@@ -1,3 +1,9 @@
+2003-07-18  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac, src/gauche-config.in, ext/Makefile.ext.in :
+	  revised some compiler options.  removed spurious -lgauche-uvector
+	  flag from gauche-config.
+
 2003-07-16  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sxml : integrated Oleg Kiselyov's SXML.  Just incorporated

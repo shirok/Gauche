@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.4 2003-07-16 11:57:54 shirok Exp $
+dnl $Id: configure.ac,v 1.5 2003-07-19 11:47:30 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.7.1_pre1, shiro@acm.org)
-AC_REVISION($Revision: 1.4 $)
+AC_REVISION($Revision: 1.5 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h)
 
@@ -355,7 +355,7 @@ ext_use_libgauche=yes
 # that refers to uvector.  It is required if we want to resolve all symbols,
 # and although it's the usual case, we can't add it on MacOS X, on which
 # we only build the static version of libgauche.
-ext_use_uvector=yes
+ext_use_uvector=no
 
 case $target in
   *freebsd2*)
@@ -397,8 +397,6 @@ case $target in
     SHLIB_MAIN_LDFLAGS=""
     SHLIB_OK=ok
     ext_use_libgauche=no
-    ext_use_uvector=no
-    ext_require_no_undefined=no
     ;;
   mips-sgi-irix*)
     if test "$CC" = gcc; then
@@ -443,6 +441,8 @@ case $target in
     SHLIB_MAIN_LDFLAGS="-Wl,--enable-auto-import"
     SHLIB_OK=ok
     GOSH_USE_SHLIB=yes
+    ext_use_uvector=yes
+    ext_use_libgauche=yes
     ;;
   *)
     SHLIB_SO_CFLAGS=""
@@ -473,11 +473,6 @@ if test "$ext_use_uvector" = yes; then
 else
   EXT_UVECTOR=
 fi
-if test "$ext_require_no_undefined" = yes; then
-  EXT_NO_UNDEFINED=-no-undefined
-else
-  EXT_NO_UNDEFINED=
-fi
 
 AC_SUBST(SHLIB_SO_CFLAGS)
 AC_SUBST(SHLIB_SO_LDFLAGS)
@@ -488,7 +483,6 @@ AC_SUBST(SHLIB_DYLIB_SUFFIX)
 AC_SUBST(SHLIB_MAIN_LDFLAGS)
 AC_SUBST(EXT_LIBGAUCHE)
 AC_SUBST(EXT_UVECTOR)
-AC_SUBST(EXT_NO_UNDEFINED)
 AC_SUBST(LIBGAUCHE_SO)
 AC_SUBST(GOSH_USE_SHLIB)
 AC_DEFINE_UNQUOTED(SHLIB_SO_SUFFIX, "$SHLIB_SO_SUFFIX",[Define to the suffix of dynamic loadable object])
