@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.23 2001-10-30 09:00:30 shirok Exp $
+ *  $Id: char.c,v 1.24 2001-11-03 21:15:46 shirok Exp $
  */
 
 #include <ctype.h>
@@ -435,15 +435,21 @@ void Scm_CharSetDump(ScmCharSet *cs, ScmPort *port)
 
    If the input syntax is invalid, either signals an error or returns
    #f, depending error_p flag.
+
+   If bracket_syntax is TRUE, the first closing bracket ']' in the
+   charset (except the complimenting caret) is takes as a literal
+   character, instead of terminating the charset.  It should be TRUE
+   during reading the regexp syntax for compatibility to POSIX regexp.
    
    If complement_p is not NULL, the location get a boolean value of
    whether complement character (caret in the beginning) appeared or not.
    In that case, the returned charset is not complemented. */
 /* TODO:  [:class:] and other posix weird stuff. */
-ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p, int error_p)
+ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
+                       int error_p, int bracket_syntax)
 {
-#define REAL_BEGIN 2
-#define CARET_BEGIN 1
+#define REAL_BEGIN 1
+#define CARET_BEGIN 2
     int begin = REAL_BEGIN, complement = FALSE;
     int lastchar = -1, inrange = FALSE, moreset_complement = FALSE;
     ScmCharSet *set = SCM_CHARSET(Scm_MakeEmptyCharSet());
@@ -461,7 +467,7 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p, int error_p)
             begin = CARET_BEGIN;
             continue;
         }
-        if (begin >= CARET_BEGIN && ch == ']') {
+        if (bracket_syntax && begin && ch == ']') {
             Scm_CharSetAddRange(set, ch, ch);
             lastchar = ch;
             begin = FALSE;
@@ -501,19 +507,12 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p, int error_p)
                 SCM_GETC(ch, input);
                 if (ch == SCM_CHAR_INVALID) goto err;
                 chars = Scm_Cons(SCM_MAKE_CHAR(ch), chars);
-                if (ch > 127 || !isxdigit(ch)) goto err;
-                if (ch >= 'a') ch -= 'a' - 10;
-                else if (ch >= 'A') ch -= 'A' - 10;
-                else ch -= '0';
-                val = ch * 16;
+                val = Scm_DigitToInt(ch, 16) * 16;
                 SCM_GETC(ch, input);
                 if (ch == SCM_CHAR_INVALID) goto err;
                 chars = Scm_Cons(SCM_MAKE_CHAR(ch), chars);
-                if (ch > 127 || !isxdigit(ch)) goto err;
-                if (ch >= 'a') ch -= 'a' - 10;
-                else if (ch >= 'A') ch -= 'A' - 10;
-                else ch -= '0';
-                ch += val;
+                val += Scm_DigitToInt(ch, 16);
+                ch = val;
                 goto ordchar;
             }
             case 'd':

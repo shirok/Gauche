@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.27 2001-09-26 19:53:48 shirok Exp $
+ *  $Id: read.c,v 1.28 2001-11-03 21:15:48 shirok Exp $
  */
 
 #include <stdio.h>
@@ -538,7 +538,7 @@ static ScmObj read_regexp(ScmPort *port)
 /* gauche extension :  #[charset] */
 static ScmObj read_charset(ScmPort *port)
 {
-    return Scm_CharSetRead(port, NULL, TRUE);
+    return Scm_CharSetRead(port, NULL, TRUE, FALSE);
 }
 
 /*----------------------------------------------------------------

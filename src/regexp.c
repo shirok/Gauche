@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.19 2001-10-12 20:33:09 shirok Exp $
+ *  $Id: regexp.c,v 1.20 2001-11-03 21:15:48 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -377,7 +377,7 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
 static ScmObj re_compile_charset(ScmRegexp *rx, struct comp_ctx *ctx)
 {
     int complement;
-    ScmObj set = Scm_CharSetRead(ctx->ipat, &complement, FALSE);
+    ScmObj set = Scm_CharSetRead(ctx->ipat, &complement, FALSE, TRUE);
     if (!SCM_CHARSETP(set))
         Scm_Error("bad charset spec in pattern: %S", ctx->pattern);
     

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.188 2001-11-03 09:56:35 shirok Exp $
+ *  $Id: gauche.h,v 1.189 2001-11-03 21:15:47 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -643,7 +643,8 @@ ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to);
 ScmObj Scm_CharSetAdd(ScmCharSet *dest, ScmCharSet *src);
 ScmObj Scm_CharSetComplement(ScmCharSet *cs);
 ScmObj Scm_CharSetRanges(ScmCharSet *cs);
-ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p, int error_p);
+ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
+                       int error_p, int bracket_syntax);
 
 int    Scm_CharSetContains(ScmCharSet *cs, ScmChar c);
 
