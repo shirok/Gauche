@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.22 2001-08-04 11:24:06 shirok Exp $
+ *  $Id: read.c,v 1.23 2001-08-31 08:34:09 shirok Exp $
  */
 
 #include <stdio.h>
@@ -317,7 +317,7 @@ static ScmObj read_string(ScmPort *port, int incompletep)
               case '\\': ACCUMULATE('\\'); break;
               case '0': ACCUMULATE(0); break;
               case 'x': {
-                  int c2, c3;
+                  int c2 = 0, c3 = 0;
                   SCM_GETC(c2, port);
                   if (c2 == EOF) goto eof_exit;
                   if (SCM_CHAR_ASCII_P(c2) && isxdigit(c2)) {
@@ -481,7 +481,7 @@ static ScmObj read_keyword(ScmPort *port)
 
 static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim)
 {
-    int c;
+    int c = 0;
     ScmDString ds;
     Scm_DStringInit(&ds);
     

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.49 2001-08-30 06:43:03 shirok Exp $
+ *  $Id: string.c,v 1.50 2001-08-31 08:36:11 shirok Exp $
  */
 
 #include <stdio.h>
@@ -54,7 +54,7 @@ void Scm_StringDump(FILE *out, ScmObj str)
     int s = SCM_STRING_SIZE(str);
     const char *p = SCM_STRING_START(str);
 
-    fprintf(out, "STR(len=%ld,siz=%d) \"", SCM_STRING_LENGTH(str), s);
+    fprintf(out, "STR(len=%d,siz=%d) \"", SCM_STRING_LENGTH(str), s);
     for (i=0; i < DUMP_LENGTH && s > 0;) {
         int n = SCM_CHAR_NFOLLOWS(*p) + 1;
         for (; n > 0 && s > 0; p++, n--, s--, i++) {
@@ -647,7 +647,7 @@ ScmObj Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end)
 ScmObj Scm_StringSplitByChar(ScmString *str, ScmChar ch)
 {
     int size = SCM_STRING_SIZE(str), sizecnt = 0;
-    int len = SCM_STRING_LENGTH(str), lencnt = 0;
+    int lencnt = 0;
     const char *s = SCM_STRING_START(str), *p = s, *e = s + size;
     ScmObj head = SCM_NIL, tail = SCM_NIL;
 
