@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.38 2003-02-28 01:07:07 shirok Exp $
+ *  $Id: regexp.c,v 1.39 2003-03-06 23:27:36 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -160,6 +160,7 @@ struct comp_ctx {
 
 static ScmObj re_compile_charset(ScmRegexp *rx, struct comp_ctx *ctx);
 static void re_compile_register_charset(struct comp_ctx *ctx, ScmCharSet *cs);
+static ScmObj re_compile_minmax(struct comp_ctx *ctx, ScmObj last_elt);
 
 /* Util function in pass1.  look back the parser tree to find out
    the last branch of the parse tree. */
@@ -360,6 +361,10 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
                marker or just a '$' char. */
             SCM_APPEND1(head, tail, sym_eol);
             break;
+        case '{':
+            elt = last_item(ctx, head, tail, grpstack, ch);
+            SCM_APPEND1(head, tail, re_compile_minmax(ctx, elt));
+            break;
         case '\\':
             /* TODO: handle special escape sequences */
             ch = Scm_GetcUnsafe(ctx->ipat);
@@ -477,6 +482,50 @@ static void re_compile_setup_charsets(ScmRegexp *rx, struct comp_ctx *ctx)
     for (i=0, cp = Scm_Reverse(ctx->sets); !SCM_NULLP(cp); cp = SCM_CDR(cp)) {
         rx->sets[i++] = SCM_CHARSET(SCM_CAR(cp));
     }
+}
+
+/* Reads {n,m}-type repeat syntax in pass 1 */
+static ScmObj re_compile_minmax(struct comp_ctx *ctx, ScmObj last_elt)
+{
+    int rep_min = -1, rep_max = -1, exact = FALSE, ch;
+    for (;;) {
+        ch = Scm_GetcUnsafe(ctx->ipat);
+        if (SCM_CHAR_ASCII_P(ch) && isdigit(ch)) {
+            if (rep_min < 0) {
+                rep_min = (ch - '0');
+            } else {
+                rep_min = rep_min*10 + (ch - '0');
+            }
+        } else if (ch == ',') {
+            break;
+        } else if (ch == '}') {
+            exact = TRUE;
+            break;
+        } else {
+            goto bad_min_max;
+        }
+    }
+    if (rep_min < 0) goto bad_min_max;
+    if (!exact) {
+        for (;;) {
+            ch = Scm_GetcUnsafe(ctx->ipat);
+            if (SCM_CHAR_ASCII_P(ch) && isdigit(ch)) {
+                if (rep_max < 0) {
+                    rep_max = (ch - '0');
+                } else {
+                    rep_max = rep_max*10 + (ch - '0');
+                }
+            } else if (ch == '}') {
+                break;
+            } else {
+                goto bad_min_max;
+            }
+        }
+    }
+    return last_elt;
+  bad_min_max:
+    Scm_Error("invalid '{n,m}' directive in the pattern; %S\n", ctx->pattern);
+    return SCM_UNDEFINED;       /* dummy */
 }
 
 /* Util function for pass2, to get an index of the charset vector
@@ -831,6 +880,9 @@ ScmObj Scm_RegComp(ScmString *pattern, int flags)
     /* pass 1 : parse regexp spec */
     compiled = re_compile_pass1(rx, &cctx);
     re_compile_setup_charsets(rx, &cctx);
+#ifdef SCM_DEBUG_HELPER
+    rx->ast = compiled;         /* when debugging, save AST */
+#endif
 
     /* pass 2.1 : count required bytecode size */
     cctx.codemax = 1;
@@ -843,6 +895,7 @@ ScmObj Scm_RegComp(ScmString *pattern, int flags)
     re_compile_emit(&cctx, RE_SUCCESS, TRUE);
     rx->code = cctx.code;
     rx->numCodes = cctx.codep;
+
     return SCM_OBJ(rx);
 }
 

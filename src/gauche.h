@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.329 2003-03-01 22:50:48 shirok Exp $
+ *  $Id: gauche.h,v 1.330 2003-03-06 23:27:36 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2029,6 +2029,9 @@ struct ScmRegexpRec {
     int numSets;
     int flags;
     ScmString *mustMatch;
+#ifdef SCM_DEBUG_HELPER
+    ScmObj ast;      /* intermediate parser result (for debug only)*/
+#endif
 };
 
 SCM_CLASS_DECL(Scm_RegexpClass);
