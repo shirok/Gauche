@@ -12,6 +12,22 @@ MKINSTDIR = $(top_srcdir)/mkinstalldirs
 MAKEINFO = @MAKEINFO@
 GZIP_PROGRAM = @GZIP_PROGRAM@
 
+TEXIS = concepts.texi      \
+	corelib.texi       \
+	coresyn.texi       \
+	gauche-ref.texi    \
+	intro.texi         \
+	libgauche-ref.texi \
+	macro.texi         \
+	mapping.texi       \
+	modgauche.texi     \
+	modintro.texi      \
+	modsrfi.texi       \
+	modutil.texi       \
+	object.texi        \
+	program.texi       \
+	references.texi
+
 # Manual page destination.  Default @mandir@ doesn't include 'share'
 # in the path, so I redefine it---a user can still override it by
 # make mandir=wherever

@@ -1,0 +1,174 @@
+@node Library modules - Overview, Library modules - Gauche extensions, Object system, Top
+@chapter Library modules - Overview
+@c NODE ライブラリモジュール - 概要
+
+@c EN
+In the following chapters, the library modules bundled with the Gauche
+distribution are explained.
+Those modules should generally be loaded and imported (usually using @code{use}
+- @xref{Using modules}, for details), unless otherwise noted.
+@c JP
+続くいくつかの章で、Gaucheのディストリビューションに含まれる
+ライブラリモジュールを解説します。
+これらのモジュールを使うにあたっては、特に断りのない限り、
+モジュールをロードしてimportすることが必要です
+(通常は@code{use}マクロが使えます。@ref{Using modules}参照)。
+@c COMMON
+
+@c EN
+@ref{Library modules - Gauche extensions} describes
+@code{gauche.*} modules, which are more or less considered
+the core features of Gauche but separated since less frequently used.
+(Some modules are rather ad-hoc, but here for historically reasons).
+The modules in this category include system APIs
+(e.g. @code{gauche.fcntl}, @code{gauche.termios}),
+networking (@code{gauche.net}), thread APIs (@code{gauche.threads}),
+and some high-level routines that are built on top of Gauche
+low-level core APIs (e.g. @code{gauche.process}, @code{gauche.regexp}).
+@c JP
+@ref{Library modules - Gauche extensions}では、
+@code{gauche.*}モジュールを解説します。
+これらのモジュールはGaucheのコアの機能ですが、使用頻度が少ないために
+モジュールとして分離されたものです。
+(一部のモジュールはそれほど重要ではありませんが、
+歴史的な理由からこのカテゴリに含まれています)。
+このカテゴリに含まれるモジュールには、システムAPI (@code{gauche.fcntl}、
+@code{gauche.termios}等)、ネットワーキング(@code{gauche.net})、
+スレッドAPI (@code{gauche.threads})、
+それからGaucheの低レベルのコアAPIの上に実装された高レベルなルーチン
+(@code{gauche.process}、@code{gauche.regexp}等) があります。
+@c COMMON
+
+@c EN
+@ref{Library modules - SRFIs} describes the modules that
+provides SRFI functionalities.
+Note that some of SRFI features are built in Gauche core and
+not listed here.  @xref{Standard conformance}, for entire list
+of supported SRFIs.
+@c JP
+@ref{Library modules - SRFIs}では、SRFIの機能を提供するモジュールを
+解説します。一部のSRFIはGaucheのコアに組み込まれており、
+この章には挙げられていないことに注意して下さい。
+サポートされている全てのSRFIのリストは@ref{Standard conformance}にあります。
+@c COMMON
+
+@c EN
+@ref{Library modules - Utilities} describes the modules
+provides miscellaneous utility functions---including
+dbm-style database interface, filesystem utilities,
+network protocol utilities, and more.
+@c JP
+@ref{Library modules - Utilities} ではその他のさまざまなユーティリティ
+関数を提供するモジュールを解説します。dbmスタイルのデータベース
+インタフェース、ファイルシステムユーティリティ、ネットワークプロトコルユーティリティ
+等があります。
+@c COMMON
+
+@c EN
+The following table summarizes naming categories of the modules,
+including external ones and planned ones.
+@c JP
+下の表は、モジュールの名前付けの分類を示します。
+外部モジュール、及び将来予定されているモジュールも含みます。
+@c COMMON
+
+@table @code
+@item data.*
+@c EN
+Generic data structures (planned).
+@c JP
+汎用的なデータ構造。(予定)
+@c COMMON
+
+@item dbm.*
+@c EN
+DBM interface
+@c JP
+DBMインタフェース
+@c COMMON
+
+@item gauche.*
+@c EN
+Stuffs more or less considered as Gauche core features.
+@c JP
+Gauche本体の一部として考えられている機能。
+@c COMMON
+
+@item gl.*
+@c EN
+OpenGL binding and related libraries (external package).
+@c JP
+OpenGLバインディングと関連するライブラリ (外部パッケージ)。
+@c COMMON
+
+@item gtk.*
+@c EN
+GTk+ binding and related libraries (external package).
+@c JP
+GTk+バインディングと関連するライブラリ (外部パッケージ)。
+@c COMMON
+
+@item file.*
+@c EN
+Manipulating files and directories.
+@c JP
+ファイルとディレクトリの操作。
+@c COMMON
+
+@item lang.*
+@c EN
+Language-related libraries, artificial and/or natural (planned).
+@c JP
+言語に関するライブラリ(人工的なものも自然言語関連も)。(予定)
+@c COMMON
+
+@item math.*
+@c EN
+Mathematics.
+@c JP
+数学。
+@c COMMON
+
+@item compat.*
+@c EN
+Compatibility libraries
+@c JP
+他の実装とのコンパチビリティに関するライブラリ。 (予定)
+@c COMMON
+
+@item rfc.*
+@c EN
+Implementations of net protocols defined in RFC's.
+@c JP
+RFCで定義されているデータフォーマットやネットワークプロトコルの実装。
+@c COMMON
+
+@item srfi-*
+@c EN
+SRFI implementations.
+@c JP
+SRFIの実装
+@c COMMON
+
+@item text.*
+@c EN
+Libraries dealing with text data.
+@c JP
+テキストデータを扱うライブラリ
+@c COMMON
+
+@item util.*
+@c EN
+Generic implementations of various algorithms.
+@c JP
+汎用的なアルゴリズムの実装。
+@c COMMON
+
+@item www.*
+@c EN
+Implementations of various protocols and formats mainly used in WWW.
+@c JP
+WWWで主として使われるプロトコルやデータフォーマットの実装。
+@c COMMON
+@end table
+

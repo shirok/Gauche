@@ -1,0 +1,806 @@
+@node Programming in Gauche, Core syntax, Concepts, Top
+@chapter  Programming in Gauche
+@c NODE Gaucheでのプログラミング
+
+@menu
+* Invoking Gosh::               
+* Interactive development::     
+* Debugging::                   
+* Writing Scheme scripts::      
+* Writing Gauche modules::      
+@end menu
+
+@node Invoking Gosh, Interactive development, Programming in Gauche, Programming in Gauche
+@section Invoking Gosh
+@c NODE Gaucheを起動する
+
+@c EN
+Gauche can be used either as an independent Scheme interpreter
+or as an embedded Scheme library.   The interpreter
+which comes with Gauche distribution is a program named @code{gosh}.
+@c JP
+Gaucheは独立したSchemeインタプリタとしても、組み込みのSchemeライブラリとしても
+使うことができます。Gaucheのディストリビューションには、@code{gosh}という
+インタプリタが附属しています。
+@c COMMON
+
+@deftp {Program} gosh [options] [scheme-file arg @dots{}]
+@c EN
+Gauche's interpreter.   Without @var{scheme-file}, @code{gosh} works
+interactively, i.e. it reads a Scheme expression from the standard input,
+evaluates it, and prints the result, and repeat that until it reads EOF or
+is terminated.
+@c JP
+Gaucheのインタプリタです。  @var{scheme-file}が与えられなければ、
+@code{gosh}はインタラクティブに動作します。すなわち、標準入力からScheme式を読み込み、
+それを評価して結果をプリントするという動作を、EOFを読むか明示的に終了させられるまで
+続けます。
+@c COMMON
+
+@c EN
+If @code{gosh} is invoked without @var{scheme-file}, but the input
+is not a terminal, it enters read-eval-print loop but not writes
+out a prompt while waiting input form.  This is useful when you
+pipe Scheme program into @code{gosh}.  You can force this behavior
+or suppress this behavior by @code{-b} and @code{-i} options.
+@c JP
+もし@var{scheme-file}が与えられておらず、しかし入力が端末でない場合、
+@code{gosh}はread-eval-printループに入りますが、入力待ちの際にプロンプトを
+表示しません。これはScheme式をパイプで@var{gosh}に処理させる場合に便利です。
+@code{-b}または@code{-i}オプションでこの動作を強制的にonまたはoffできます。
+@c COMMON
+
+@c EN
+If @var{scheme-file} is specified, @code{gosh} runs it as a
+Scheme program and exit.
+@xref{Writing Scheme scripts}, for details.
+@c JP
+@var{scheme-file}が与えられた場合、@code{gosh}はそれをSchemeプログラムとして
+ロードし、終了します。この動作に関しては@ref{Writing Scheme scripts}を参照して
+下さい。
+@c COMMON
+@end deftp
+
+@c EN
+The following command line options are recognized by @code{gosh}.
+The first command line argument which doesn't begin with `@minus{}'
+is recognized as the script file.  If you want to specify a file
+that begins with a minus sign, use a dummy option `@code{--}'.
+@c JP
+以下のコマンドラインオプションが@code{gosh}に認識されます。
+`@minus{}' で始まらない最初のコマンドライン引数がスクリプトファイルと認識されます。
+スクリプトファイル名が `@minus{}' で始まっている可能性がある場合は、ダミーオプション
+`@code{--}' をスクリプトファイル名の前に置いて下さい。
+@c COMMON
+
+@deftp {Command Option} -I path
+@c EN
+Prepends @var{path} to the load path list.
+You can specify this option more than once to add multiple paths.
+@c JP
+@var{path}をロードパスのリストの最初に加えます。このオプションは複数指定できます。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -A path
+@c EN
+Appends @var{path} to the tail of the load path list.
+You can specify this option more than once to add multiple paths.
+@c JP
+@var{path}をロードパスのリストの末尾に加えます。このオプションは複数指定できます。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -q
+@c EN
+Makes @code{gosh} not to load the default initialization file.
+@c JP
+@code{gosh}が起動時にシステムの初期化ファイルを読まないようにします。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -V
+@c EN
+Prints the @code{gosh} version and exits.
+@c JP
+@code{gosh}のバージョンを表示して終了します。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -u module
+@c EN
+Use @var{module}.  Before starting execution of @var{scheme-file} or entering
+the read-eval-print loop, the specified module is @var{use}d, i.e.
+it is loaded and imported (@xref{Defining and selecting modules}, for details of @code{use}).
+You can specify this option more than once to use multiple modules.
+@c JP
+起動後、インタラクティブなread-eval-printループに入る前、もしくは@var{scheme-file}
+をロードする前に@var{module}を``use''します。つまりそのモジュールがロードされ
+インポートされます。(@code{use}の詳細については@ref{Defining and selecting modules}を参照して下さい)。
+このオプションは複数回指定できます。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -l file
+@c EN
+Load @var{file} before starting execution of @var{scheme-file} or entering
+the read-eval-print loop.   The file is loaded in the same way as
+@code{load} (@xref{Loading Scheme file}).
+You can specify this option more than once to load multiple files.
+@c JP
+起動後、インタラクティブなread-eval-printループに入る前、もしくは@var{scheme-file}
+をロードする前に@var{file}をロードします(ロードの詳細については@ref{Loading Scheme file}
+を参照して下さい)。このオプションは複数回指定できます。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -e scheme-expression
+@c EN
+Evaluate @var{scheme-expression}
+before starting execution of @var{scheme-file} or entering
+the read-eval-print loop.   Evaluation is done in the
+@var{interaction-environment} (@xref{Eval and repl}).
+You can specify this option more than once to evaluate multiple experssions.
+@c JP
+起動後、インタラクティブなread-eval-printループに入る前、もしくは@var{scheme-file}
+をロードする前に@var{scheme-expression}を評価します。評価は
+@var{interaction-environment}中で行われます(@ref{Eval and repl}参照)。
+このオプションは複数回指定できます。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -E scheme-expression
+@c EN
+Same as -e, except the @var{scheme-experssion} is read
+as if it is surrounded by parenthesis.  For example:
+@c JP
+オプション-eとほぼ同じですが、@var{scheme-expression}は
+それが括弧で囲まれているかのように読まれます。
+このオプションは複数回指定できます。例：
+@c COMMON
+@example
+% gosh -umath.const -E"print (sin (* pi/180 15))" -Eexit
+0.25881904510252074
+@end example
+@end deftp
+
+@deftp {Command Option} -b
+@c EN
+Batch. Does not print prompts in read-eval-print loop even if
+the input is a terminal.
+@c JP
+バッチ。入力が端末であっても、read-eval-printループがプロンプトを出さないようにします。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -i
+@c EN
+Interactive. Print prompts in read-eval-print loop even if
+the input is not a terminal.
+@c JP
+インタラクティブ。入力が端末で無くても、read-eval-printループが
+プロンプトを出すようにします。
+@c COMMON
+@end deftp
+
+@deftp {Command Option} -f compiler-option
+@c EN
+This option controls compiler and runtime behavior.  For now we have
+following options available:
+@table @asis
+@item no-inline
+Prohibits the compiler from inilining primitive Scheme procedures.
+@item no-source-info
+Don't keep source information for debugging.  Consumes less memory.
+@item load-verbose
+Reports whenever a file is loaded.
+@item case-fold
+Ignore case for symbols as specified in R5RS.
+(It is distinguished by default).  @xref{Case-sensitivity}.
+@item test
+Adds "@code{../src}" and "@code{../lib}" to the load path before loading 
+initialization file.  This is useful when you want to test the
+compiled @code{gosh} interpreter inside source tree, without installing it.
+@end table
+@c JP
+このオプションはコンパイラとランタイムの動作に影響を与えます。
+今のところ、次のオプションのみが@var{compiler-option}として有効です。
+@table @asis
+@item no-inline
+Schemeの基本関数のインライン展開を行いません。
+@item no-source-info
+デバッグのためのソースファイル情報を保持しません。メモリの使用量は小さくなります。
+@item load-verbose
+ファイルがロードされる時にそれを報告します。
+@item case-fold
+R5RSに示される通り、シンボルの大文字小文字を区別しません。
+(デフォルトではこれらは区別されます)。 @ref{Case-sensitivity} を参照して下さい。
+@item test
+"@code{../src}" と "@code{../lib}" を、初期化ファイルを読む前に
+ロードパスに加えます。これは、作成された@code{gosh}をインストールせずに
+ソースツリーの中で実行してみるのに便利です。
+@end table
+@c COMMON
+@end deftp
+
+@deftp {Command Option} @code{--}
+@c EN
+When @code{gosh} sees this option, it stops processing the options
+and takes next command line argument as a script file.  It is useful
+in case if you have a script file that begins with a minus sign,
+although it is not generally recommended.
+@c JP
+このオプションに出会うと、@code{gosh}はオプションの解析を止めて、その次の引数を
+無条件に@var{scheme-file}であると見倣します。@var{scheme-file}がマイナス記号で
+始まっている場合に必要です。
+@c COMMON
+@end deftp
+
+@c EN
+The options -I, -A, -l, -u, -e and -E are processes in the order
+of appearance.  For example, adding a load path by -I affects the
+-l and -u option after it but not before it.
+@c JP
+オプション-I, -A, -l, -u, -e 及び -E は、それらがコマンドライン引数として
+出現した順に処理されます。例えば、-Iにより追加されるロードパスは
+それ以降の-lや-uオプションに影響を与えますが、それ以前のものには影響を
+与えません。
+@c COMMON
+
+@c ----------------------------------------------------------------------
+@node Interactive development, Debugging, Invoking Gosh, Programming in Gauche
+@section Interactive development
+@c NODE  インタラクティブな開発
+
+@c EN
+When @code{gosh} is invoked without any script files,
+it goes into interactive read-eval-print loop.
+@c JP
+スクリプトファイルが与えられなかった場合、
+@code{gosh}はインタラクティブなread-eval-printループに入ります。
+@c COMMON
+
+@c EN
+To exit the interpreter, type EOF (usually Control-D in Unix termials)
+or evaluate @code{(exit)}.
+@c JP
+インタプリタを終了するには、EOF文字(Unix端末では通常Control-D)をタイプするか、
+@code{(exit)}を評価します。
+@c COMMON
+
+@c EN
+I recommend you to run @code{gosh} inside Emacs, for it has
+rich features useful to interact with internal Scheme process.
+Put the following line to your @file{.emacs} file:
+@example
+(setq scheme-program-name "gosh")
+@end example
+And you can run @code{gosh} by @key{M-x run-scheme}.
+@c JP
+@code{gosh}をEmacs内部で走らせることをお勧めします。
+EmacsはSchemeサブプロセスを操作するための豊富な機能を持っています。
+次の行を@file{.emacs}に加えておくと、@key{M-x run-scheme} で
+Emacsのバッファ内で@code{gosh}が走ります。
+@example
+(setq scheme-program-name "gosh")
+@end example
+@c COMMON
+
+@c EN
+If you want to use multibyte characters in the interaction,
+make sure your terminal's settings is in sync with @code{gosh}'s
+internal character encodings.
+@c JP
+対話環境でマルチバイト文字を使う場合は、端末の文字エンコーディングを@code{gosh}の
+内部エンコーディングと合わせるようにして下さい。
+@c COMMON
+
+@c EN
+Currently @code{gosh} has no fancy features such as
+line-editing or command history.   They'll be added in future.
+@c JP
+今のところ、@code{gosh}は行編集やコマンドヒストリなどの便利な機能を
+備えていません。将来はこのへんも充実してゆくでしょう。
+@c COMMON
+
+@c EN
+@xref{gauche.interactive - Interactive session}, for some procedures useful in
+interactive session.
+@c JP
+インタラクティブセッションで便利な手続きが@ref{gauche.interactive - Interactive session}で定義されています。
+@c COMMON
+
+@c ----------------------------------------------------------------------
+@node Debugging, Writing Scheme scripts, Interactive development, Programming in Gauche
+@section Debugging
+@c NODE デバッグ
+
+@c EN
+Gauche doesn't have much support for debugging yet.
+The idea of good debugging interfaces are welcome.
+@c JP
+Gaucheにはまだデバッグをサポートする機能があまり実装されていません。
+デバッギングのインタフェースに関して良いアイディアがあればお寄せください。
+@c COMMON
+
+@c EN
+For now, the author uses the classic 'debug print stub' technique
+when necessary.  A special reader syntax @code{#?=@var{expr}} is
+defined, which is read as @code{(debug-print @var{expr})}.
+The macro @code{debug-print} evaluates and returns the result(s),
+printing messages before and after evaluation of @var{expr}.
+@c JP
+今のところ、作者は必要な時は古典的な「プリントスタブ」方式を使っています。
+そのためのリーダーマクロ @code{#?=@var{expr}} が定義されています。
+これは @code{(debug-print @var{expr})} のように読まれ、
+マクロ @code{debug-print} は@var{expr}を評価してその値を返しますが、
+評価前と評価後にメッセージを出力します。
+@c COMMON
+
+@example
+gosh> #?=(+ 2 3)
+#?="(stdin)":1:(+ 2 3)
+#?-    5
+5
+gosh> #?=(begin (print "foo") (values 'a 'b 'c))
+#?="(stdin)":2:(begin (print "foo") (values 'a 'b 'c))
+foo
+#?-    a
+#?+    b
+#?+    c
+a
+b
+c
+gosh> (define (fact n)
+        (if (zero? n)
+            1
+            (* n #?=(fact (- n 1)))))
+fact
+gosh> (fact 5)
+#?="(stdin)":6:(fact (- n 1))
+#?="(stdin)":6:(fact (- n 1))
+#?="(stdin)":6:(fact (- n 1))
+#?="(stdin)":6:(fact (- n 1))
+#?="(stdin)":6:(fact (- n 1))
+#?-    1
+#?-    1
+#?-    2
+#?-    6
+#?-    24
+120
+@end example
+
+@c EN
+You can also use trace/untrace macros in Gauche, written by Shigenobu Kimura:
+@url{http://homepage.mac.com/skimu/ggc/}.
+@c JP
+また、木村栄伸さんがGauche用のtrace/untraceマクロを書いてくれました：
+@url{http://homepage.mac.com/skimu/ggc/}.
+@c COMMON
+
+@c ----------------------------------------------------------------------
+@node Writing Scheme scripts, Writing Gauche modules, Debugging, Programming in Gauche
+@section Writing Scheme scripts
+@c NODE Schemeスクリプトを書く
+
+@c EN
+When a Scheme program file is given to @code{gosh}, it
+bounds a global varialbe @code{*argv*} to the list of the remaining
+command-line arguments, then loads the Scheme program.
+If the first line of @var{scheme-file} begins with two character
+sequence ``@code{#!}'', the entire line is ignored by @code{gosh}.
+This is useful to write a Scheme program that works as an executable
+script in unix-like systems.
+@c JP
+@code{gosh}のコマンドラインにSchemeプログラムのファイル名が渡された場合、
+@code{gosh}はそれ以降のコマンドライン引数のリストをグローバル変数@code{*argv*}に束縛し、
+Schemeプログラムをロードします。もし@var{scheme-file}の最初の行が``@code{#!}''で始まって
+いたら、その行は無視されます。これにより、Unix系のシステムで実行可能なSchemeスクリプト
+を書くことが出来ます。
+@c COMMON
+
+@c EN
+Typical Gauche script has the first
+line like these
+@example
+#!/usr/local/bin/gosh
+  @r{or,}
+#!/usr/bin/env gosh
+  @r{or,}
+#!/bin/sh
+:; exec gosh -- $0 "$@@"
+@end example
+The second and third form uses a ``shell trampoline'' technique
+so that the script works as far as @code{gosh} is in the PATH.
+The third form is useful when you want to pass extra arguments
+to @code{gosh}, for typically @code{#!}-magic of executable scripts
+has limitations for the number of arguments to pass the interpreter.
+@c JP
+典型的なGaucheスクリプトの最初の行は次のようなものです。
+@example
+#!/usr/local/bin/gosh
+  @r{または,}
+#!/usr/bin/env gosh
+  @r{または,}
+#!/bin/sh
+:; exec gosh -- $0 "$@@"
+@end example
+後の2つは「シェルトランポリン」テクニックを用いて、@code{gosh}がPATHにあるディレクトリの
+どこかにあれば起動できるようにしています。3番目の方法は、
+@code{gosh}にいくつかコマンドラインオプションを渡したい時に便利です。
+@c COMMON
+
+@c EN
+After the file is successfully loaded, @code{gosh} calls a
+procedure named `@code{main}' if it is defined in the user module.
+@code{Main} receives a single argument, a list of command line
+arguments.  Its first element is the script name itself.
+
+When @code{main} returns, and its value is an integer, @code{gosh}
+uses it for exit code of the program.
+Otherwise, @code{gosh} exits with exit code 70 (@code{EX_SOFTWARE}).
+This behavior is compatible with the SRFI-22.
+
+(@emph{Note: this interface has been changed from Gauche release 0.5
+in incompatible way.   @xref{Script compatibility before release 0.5},
+for details.})
+
+If the @code{main} procedure is not defined, @code{gosh} exits
+after loading the script file.
+@c JP
+ファイルが正常にロードされたら、@code{gosh}は
+userモジュールに `@code{main}' という手続きが定義されているかどうか調べ、
+定義されていればそれを呼びます。@code{main}には、スクリプトへの引数のリストが
+唯一の引数として渡されます。リストの最初の要素はスクリプトファイル名です。
+
+@code{main}が整数の値を返したら、@code{gosh}はその値を終了ステータスとして終了します。
+@code{main}が整数以外の値を返した場合は@code{gosh}は終了ステータス70
+(@code{EX_SOFTWARE})で終了します。このふるまいはSRFI-22と互換です。
+
+(@emph{注：このインタフェースはGauche release 0.5から非互換な形で
+変更されました。@ref{Script compatibility before release 0.5}を参照して下さい。})
+
+@code{main}が定義されていなければ@code{gosh}はロード後にそのままステータス0で
+終了します。
+@c COMMON
+
+@c EN
+Although you can still write the program
+main body as toplevel expressions, like shell scripts or Perl scripts,
+it is much convenient to use this `@code{main}' convention, for
+you can load the script file interactively to debug.
+@c JP
+シェルスクリプトやPerlスクリプトと同じように、スクリプトのボディに直接
+実行される式を書くこともできますが、なるべく `@code{main}' を使った方法を
+使うことをお薦めします。そうすると、スクリプトをインタプリタにインタラクティブに
+ロードしてデバッグすることもできます。
+@c COMMON
+
+
+@defvar *argv*
+@c EN
+The program arguments passed to the Scheme script is bound to this
+variable.  If @code{gosh} is invoked in an interactive mode, this
+variable always contains @code{()}.
+
+STk uses this variable to pass the command line argument as well,
+but other Scheme implementations use different ways.  It is better
+to define @code{main} procedure and uses its argument to receive
+command line arguments, for it is expected to be more portable.
+@c JP
+Schemeスクリプト以降のコマンドライン引数のリストは、スクリプトのロードの前に
+この変数に束縛されます。@code{gosh}がインタラクティブモードで起動された場合は
+この変数は@code{()}となります。
+
+この変数はSTkと互換性がありますが、他のScheme実装は違った方法を使ってコマンドライン
+引数を得ます。ポータブルなスクリプトを書くには、@code{main}手続きを使う方法を
+お薦めします。
+@c COMMON
+@end defvar
+
+@defvar *program-name*
+@c EN
+This variable is bound to the script file name passed to @code{gosh}.
+If @code{gosh} is invoked in the interactive mode, this variable
+contains the pathname of @code{gosh} itself.
+
+STk uses the same variable to access the program/script name.
+Other Scheme implementations use different ways.
+@c JP
+この変数はスクリプトファイル名に束縛されます。インタラクティブモードでは
+この変数は@code{gosh}自身の名前を持っています。
+
+この変数はSTkと互換性がありますが、他の実装は違った方法を使います。
+@c COMMON
+@end defvar
+
+@c EN
+Now I show several simple examples below.
+First, this script works like @code{cat(1)}, without any command-line
+option processing and error handling.
+@c JP
+いくつか簡単な例を示します。最初の例はUnixの@code{cat(1)}コマンドを模するものです。
+エラー処理やコマンドラインオプションの処理は行っていません。
+@c COMMON
+
+@example
+#!/usr/bin/env gosh
+
+(define (main args)   ;@r{entry point}
+  (if (null? (cdr args))
+      (copy-port (current-input-port) (current-output-port))
+      (for-each (lambda (file)
+                  (call-with-input-file file
+                    (lambda (in)
+                      (copy-port in (current-output-port)))))
+                (cdr args)))
+  0)
+@end example
+
+@c EN
+The following script is a simple grep command.
+@c JP
+次のスクリプトは簡単なgrepコマンドです。
+@c COMMON
+
+@example
+#!/usr/bin/env gosh
+
+(define (usage)
+  (format (current-error-port)
+          "Usage: ~a regexp file ...\n" *program-name*)
+  (exit 2))
+
+(define (grep rx port)
+  (with-input-from-port port
+    (lambda ()
+      (port-for-each
+       (lambda (line)
+         (when (rxmatch rx line)
+           (format #t "~a:~a: ~a\n"
+                   (port-name port)
+                   (- (port-current-line port) 1)
+                   line)))
+       read-line))))
+
+(define (main args)
+  (if (null? (cdr args))
+      (usage)
+      (let ((rx (string->regexp (cadr args))))
+        (if (null? (cddr args))
+            (grep rx (current-input-port))
+            (for-each (lambda (f)
+                        (call-with-input-file f
+                          (lambda (p) (grep rx p))))
+                      (cddr args)))))
+  0)
+@end example
+
+@c EN
+See also @ref{gauche.parseopt - Parsing command-line options}, for a convenient way to
+parse command-line options.
+@c JP
+コマンドライン引数を処理するモジュールがあります。
+@ref{gauche.parseopt - Parsing command-line options}を参照してください。
+@c COMMON
+
+@menu
+* Script compatibility before release 0.5::  
+@end menu
+
+@node Script compatibility before release 0.5,  , Writing Scheme scripts, Writing Scheme scripts
+@subsection Script compatibility before release 0.5
+@c NODE リリース0.5以前とのスクリプトの互換性
+
+@c EN
+In order to conform final SRFI-22,
+Gauche release 0.5.1 changes the way @code{main} is called.
+Unfortunately, this makes the Scheme scripts that is written for older
+Gauche no longer work.
+I decided to take this change now, in the early stage of Gauche,
+rather than keeping incomatibility to the standard (srfi).
+@c JP
+SRFI-22に準拠するために、Gaucheはリリース0.5.1から@code{main}の呼ばれ方を
+変更しました。残念ながら、この変更によりそれ以前のGaucheのために書かれたスクリプトは
+動作しなくなります。
+標準(srfi)との非互換性を後々まで引きずるよりは、まだ開発の早い段階の今の時点で
+変更をしておいたほうが良いと判断しました。
+@c COMMON
+
+@c EN
+The incompatible changes are these two points.
+@c JP
+非互換な変更は以下の2点です。
+@c COMMON
+@itemize @bullet
+@item
+@c EN
+The argument list passed to @code{main} now includes the script
+name itself as the first element.  In older version, only the
+arguments after the script file name are passed.
+@c JP
+@code{main}に渡されるコマンドライン引数リストは、その第一要素にスクリプトファイル名を
+持つようになります。古いバージョンではスクリプトファイル名以降のコマンドライン引数だけが
+渡されていました。
+@c COMMON
+@item
+@c EN
+When @code{main} returns non-integral value, @code{gosh} exits
+with code 70.  In older version, @code{gosh} exits with code 0
+in such case.
+@c JP
+@code{main}が整数でない値を返した場合、@code{gosh}は終了ステータス70で終了します。
+古いバージョンではこのような場合、終了ステータス0で終了していました。
+@c COMMON
+@end itemize
+
+@c ----------------------------------------------------------------------
+@node Writing Gauche modules,  , Writing Scheme scripts, Programming in Gauche
+@section Writing Gauche modules
+@c NODE Gaucheのモジュールを書く
+
+@c EN
+Gauche's libraries are organized by modules.   Although Gauche
+can load any valid Scheme programs, there is a convention that
+Gauche library follows.    When you write a chunk of Scheme
+code for Gauche, it is convenient to make it a module,
+so that it can be shared and/or reused.
+@c JP
+Gaucheのライブラリはモジュール毎に整理されています。Gaucheはどんな形式でも、
+有効なScheme式が書かれてさえいればロードすることができますが、
+Gaucheのライブラリは一定の形式を保って書かれています。
+Gauche用にまとまったSchemeコードを書いたら、それをモジュール形式にしておくと
+再利用がしやすくなるでしょう。
+@c COMMON
+
+@c EN
+Usually a module is contained in a file, but you can make
+a multi-file module.   
+First I explain the structure of a single-file module.
+The following template is the convention used in Gauche's libraries.
+@c JP
+通常ひとつのファイルで
+ひとつのモジュールを定義しますが、モジュールを複数のファイルに分けることもできます。
+まずひとつのファイルでモジュールを定義する方法を説明します。
+Gaucheのライブラリで使われているテンプレートは次のような形式です。
+@c COMMON
+
+@example
+@c EN
+;; Define the module interface
+@c JP
+;; モジュールのインタフェースの定義
+@c COMMON
+(define-module foo
+  (use xxx)
+  (use yyy)
+  (export foo1 foo2 foo3)
+  )
+@c EN
+;; Enter the module
+@c JP
+;; モジュール本体
+@c COMMON
+(select-module foo)
+
+@dots{} module body @dots{}
+
+@c EN
+;; Make `require' happy
+@c JP
+;; `require' に対応するprovide
+@c COMMON
+(provide "foo")
+@end example
+
+@c EN
+This file must be saved as ``foo.scm'' in some directory in the
+@code{*load-path*}.
+@c JP
+このファイルは``foo.scm''という名で、@code{*load-path*}にあるディレクトリの
+いずれかに置かれなければなりません。
+@c COMMON
+
+@c EN
+The @code{define-module} form creates a module @code{foo}.
+It also loads and imports some other modules by `@code{use}' macros,
+and declares which symbols the @code{foo} module exports, by `@code{export}'
+syntax.
+(See section @ref{Defining and selecting modules}, for detailed specification of those
+syntaxes).
+@c JP
+まず、@code{define-module}フォームがモジュール@code{foo}を作成します。
+@code{define-module}フォーム内で、このモジュールが依存している他のモジュール
+を `@code{use}' マクロを使ってロードし、このモジュールがエクスポートするシンボルを
+`@code{export}' 構文を使って指定します。(これらの構文の詳細は@ref{Defining and selecting modules}を
+参照して下さい)。
+@c COMMON
+
+@c EN
+Those @code{use} forms or @code{export} forms are not required to appeare
+in the @code{define-module} form, but it is a good convention to keep
+them in there at the head of the file so that it is visually recognizable
+which modules @code{foo} depends and which symbols it exports.
+@c JP
+これらの@code{use}フォームや@code{export}フォームは必ずしも@code{define-module}
+フォームの先頭に置く必要はありませんが、このようにファイルの最初の方に固めておくことで、
+@code{foo}が依存しているモジュール群や@code{foo}が提供するシンボル等が
+一覧しやすくなります。
+@c COMMON
+
+@c EN
+The second form, `@code{select-module}', 
+specifies the rest of the file is evaluated in the
+module @code{foo} you just defined.   Again, this is just a
+convention; you can write entire module body inside @code{define-module}.
+However, I think it is error-prone, for the closing parenthesis
+can be easily forgotten or the automatic indentation mechanism of
+editor will be confused.
+@c JP
+次の、`@code{select-module}' フォームにより、それ以降のScheme式が
+モジュール@code{foo}の中で評価されます。モジュールの内容を全て@code{define-module}の中に
+書いてしまうことも出来ますが、最後の括弧を閉じ忘れやすいことや、エディタのインデントが
+狂うことなどから、あまりお薦めしません。
+@c COMMON
+
+@c EN
+After @code{select-module} you can write whatever Scheme expression.
+It is evaluated in the selected module, @code{foo}.   Only the bindings
+of the exported symbols will be directly accessible from outside.
+@c JP
+@code{select-module}フォームの後には、モジュールの内容であるScheme式を自由に書けます。
+それらはモジュール@code{foo}の中で評価されます。モジュール内で定義するトップレベルの
+束縛のうち、明示的に`export'で指定されたシンボルのみが、このモジュールをインポートする他の
+モジュールから見えます。
+@c COMMON
+
+@c EN
+The last @code{provide} form is just a cliche.  It is needed since
+the `use' mechanism uses traditional require-provide mechanism (if you
+don't know about it, it's ok--just put it as a magic spell).
+@c JP
+最後の@code{provide}は一種の定型句です。`use'がrequire-provideメカニズムを
+利用しているために必要です。
+@c COMMON
+
+@c EN
+So, that's it.   Other programs can use your module by just saying
+`@code{(use foo)}'.   If you want to make your module available on your site,
+you can put it to the site library location, which can be obtained by
+@example
+(gauche-site-library-directory)
+@end example
+in gosh, or
+@example
+gauche-config --sitelibdir
+@end example
+from shell.
+@c JP
+これで、他のプログラムは `@code{(use foo)}' とするだけでこのモジュールの機能が
+利用可能になります。もしモジュールをサイト全体で利用できるようにしたければ、@code{gosh}内で
+@example
+(gauche-site-library-directory)
+@end example
+を評価して得られるディレクトリに@code{foo.scm}を置いて下さい。
+@c COMMON
+
+@c EN
+If you feel like to conserve global module name space, you can organize
+modules hierarchically.   Some Gauche libraries already does so.
+@xref{Library modules - Overview}, for examples.
+For example, @code{text.tr} module is implemented in ``text/tr.scm'' file.
+Note that the pathname separator `/' in the file becomes a period in the
+module name.
+@c JP
+モジュールの名前空間のトップに新たなモジュールを追加するのに気が引ける場合は、
+モジュールを階層的に構成することもできます。Gaucheのモジュールの多くは既に階層的に
+構成されています。具体的なモジュール例は@ref{Library modules - Overview}を参照して下さい。
+例えば、@code{text.tr}モジュールは ``@code{text/tr.scm}'' ファイルに
+実装されています。パス名の区切り文字`/'がモジュール名ではピリオドになることに
+注意して下さい。
+@c COMMON
+
+@c EN
+@c JP
+@c COMMON
+

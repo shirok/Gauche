@@ -1,0 +1,2103 @@
+@node Core syntax, Macros, Programming in Gauche, Top
+@chapter Core syntax
+@c NODE 基本的な構文
+
+@c ----------------------------------------------------------------------
+@menu
+* Lexical structure::           
+* Literals::                    
+* Making Procedures::           
+* Assignments::                 
+* Conditionals::                
+* Binding constructs::          
+* Sequencing::                  
+* Iteration::                   
+* Quasiquotation::              
+* Definitions::                 
+* Modules::                     
+@end menu
+
+@node Lexical structure, Literals, Core syntax, Core syntax
+@section Lexical structure
+@c NODE 字句構造
+
+@c EN
+Gauche extends R5RS Scheme parser in some ways:
+@c JP
+GaucheはR5RS Schemeのパーザをいくつかの点で拡張しています。
+@c COMMON
+
+@table @emph
+@c EN
+@item Nested block comments (SRFI-30)
+A text surrounded by '@code{#|}' and '@code{|#}' becomes a comment.
+It can be nested.
+@c JP
+@item ネスト可能なブロックコメント (SRFI-30)
+'@code{#|}' と '@code{|#}' で囲まれたテキストはコメントになります。
+ネスト可能です。
+@c COMMON
+
+@c EN
+@item Numeric literals
+Either integral part or fraction part of inexact real numbers can be omitted
+if it is zero, i.e. @code{30.}, @code{.25}, @code{-.4} are read as 
+real numbers.   Using '@code{#}' as insignificant digits is not supported.
+Rational number syntax is recognized (e.g. @code{1/3}), but read as 
+an inexact real number.
+Complex numbers can be written both in the rectangular format
+(e.g. @code{1+0.3i}) and in the polar format (e.g. 3.0@@1.57).
+@c JP
+@item 数値リテラル
+不正確な実数の整数部または小数部のいずれかが0の場合、それを省略することが
+できます。例：@code{30.}, @code{.25}, @code{-.4}。
+不正確な桁を '@code{#}' で表現する構文はサポートされていません。
+有理数表記 (例：@code{1/3}) は認識されますが、読み込み時に不正確な実数へと
+変換されます。
+複素数表記は直交座標形 (例：@code{1+0.3i}) でも極座標形 (例：3.0@@1.57) でも
+認識されます。
+@c COMMON
+
+@c EN
+@item Symbol names
+Symbol names are case sensitive by default (@xref{Case-sensitivity}).
+Symbol name can begin with digits, '@code{+}' or '@code{-}', as long as
+the entire token doesn't consist valid number syntax.
+Other weird characters can be included in a symbol name by surrounding
+it with '|', e.g. '@code{|this is a symbol|}'.
+@xref{Symbols}, for details.
+@c JP
+@item シンボル名
+シンボル名はデフォルトで大文字小文字を区別します (@ref{Case-sensitivity}参照)。
+数字や'@code{+}', '@code{-}' で始まるシンボル名も、
+トークンが有効な数値リテラルを構成しない限り許されます。
+また、他の変な文字も '|' でシンボルを囲むことによってシンボル名に含めることが
+できます (例：'@code{|this is a symbol|}')。
+@ref{Symbols}も参照して下さい。
+@c COMMON
+
+@c EN
+@item Character literal by character code
+Character literals can be written using its code, 
+by @code{#\x@var{NN}} (Gauche internal code) or @code{#\u@var{NN}} (Unicode).
+@xref{Characters}, for details.
+@c JP
+@item 文字コードによる文字リテラル
+文字リテラルを文字コードにより表記することができます。
+Gauche内部コードを使う @code{#\x@var{NN}} と、
+Unicodeを使う @code{#\u@var{NN}}という表記があります。
+@ref{Characters}を参照して下さい。
+@c COMMON
+
+@c EN
+@item Extended sharp syntax
+Many more special tokens begins with '@code{#}' are defined.
+See the table below.
+@c JP
+@item 拡張された#構文
+'@code{#}' で始まる特殊構文がたくさん定義されています。
+下の表を参照して下さい。
+@c COMMON
+@end table
+
+The table below lists sharp-syntaxes.
+
+@multitable {aaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@item @code{#!}
+ @tab [SRFI-22] Specifies interpreter at the beginning of file.
+      Scheme loader ignores the line.
+@item @code{#"}, @code{##}, @code{#$}, @code{#%}, @code{#&}, @code{#'}
+ @tab Unused.
+@item @code{#(}
+ @tab [R5RS] Introduces a vector.
+@item @code{#)}
+ @tab Unused.
+@item @code{#*}
+ @tab If followed by a double quote, denotes an incomplete string.  @xref{Strings}.
+@item @code{#+}
+ @tab Unused.
+@item @code{#,}
+ @tab [SRFI-10] Introduces reader constructor syntax.
+@item @code{#-}, @code{#.}
+ @tab Unused.
+@item @code{#/}
+ @tab Introduces a literal regular expression.  @xref{Regular expression}.
+@item @code{#0} @dots{} @code{#9}
+ @tab Reserved for shared structure reference.
+@item @code{#:}, @code{#;}
+ @tab Unused
+@item @code{#<}
+ @tab Introduces an unreadable object.
+@item @code{#=}, @code{#>}
+ @tab Unused.
+@item @code{#?}
+ @tab Introduces debug macros.  @xref{Debugging}.
+@item @code{#@@}
+ @tab Unused.
+@item @code{#a}
+ @tab Unused.
+@item @code{#b}
+ @tab [R5RS] Binary number prefix.
+@item @code{#c}
+ @tab Unused.
+@item @code{#d}
+ @tab [R5RS] Decimal number prefix.
+@item @code{#e}
+ @tab [R5RS] Exact number prefix.
+@item @code{#f}
+ @tab [R5RS] Boolean false, or
+      introducing SRFI-4 uniform vector.  @xref{gauche.uvector - Uniform vectors}.
+@item @code{#g}, @code{#h}
+ @tab Unused.
+@item @code{#i}
+ @tab [R5RS] Inxact number prefix.
+@item @code{#j}, @code{#k}, @code{#l}, @code{#m}, @code{#n}
+ @tab Unused.
+@item @code{#o}
+ @tab [R5RS] Octal number prefix.
+@item @code{#p}, @code{#q}, @code{#r}
+ @tab Unused.
+@item @code{#s}
+ @tab [SRFI-4] introducing SRFI-4 uniform vector.  @xref{gauche.uvector - Uniform vectors}.
+@item @code{#t}
+ @tab [R5RS] Boolean true.
+@item @code{#u}
+ @tab [SRFI-4] introducing SRFI-4 uniform vector.  @xref{gauche.uvector - Uniform vectors}.
+@item @code{#v}, @code{#w}
+ @tab Unused.
+@item @code{#x}
+ @tab [R5RS] Hexadecimal number prefix.
+@item @code{#y}, @code{#z}
+ @tab Unused.
+@item @code{#[}
+ @tab Introduces a literal character set.  @xref{Character set}.
+@item @code{#\}
+ @tab [R5RS] Introduces a literal character.  @xref{Characters}.
+@item @code{#]}, @code{#^}, @code{#_}
+ @tab Unused.
+@item @code{#`}
+ @tab Introduces an interpolated string.  @xref{String interpolation}.
+@item @code{#@{}
+ @tab Unused.
+@item @code{#|}
+ @tab [SRFI-30] Introduces a block comment.  Comment ends by matching '@code{|#}'.
+@item @code{#@}}, @code{#~}
+ @tab Unused.
+@end multitable
+
+@c ----------------------------------------------------------------------
+@node Literals, Making Procedures, Lexical structure, Core syntax
+@section Literals
+@c NODE リテラル
+
+@defspec quote datum
+[R5RS]
+@c EN
+Evaluates to @var{datum}.
+@c JP
+@var{datum}それ自身を返します。
+@c COMMON
+@example
+(quote x) @result{} x
+(quote (1 2 3)) @result{} (1 2 3)
+@end example
+@end defspec
+
+@deftp {Reader Syntax} @code{'@var{datum}}
+[R5RS]
+@c EN
+Equivalent to @code{(quote datum)}.
+@c JP
+@code{(quote datum)}の略記です。
+@c COMMON
+@example
+'x @result{} x
+'(1 2 3) @result{} (1 2 3)
+@end example
+@end deftp
+
+@c EN
+@emph{Note:}  R5RS says it is an error to alter the value of
+a literal expression.
+Gauche doesn't check constant-ness of pairs and vectors, so you can
+alter them using the destructive procedures such as @code{set-car!}
+and @code{vector-set!}.  Doing so will cause unexpected results.
+Gauche does check constant-ness of strings, and signals an error
+if you try to alter a constant string.
+@c JP
+@emph{注:} R5RSは、リテラル式の値を変更するのはエラーであるとしています。
+しかしGaucheはペアとベクタについてはそれが定数であるかどうかをチェックしておらず、
+@code{set-car!}や@code{vector-set!}等の破壊的手続きによってそれらの値を
+変更できてしまいます。そうした場合の動作は不定です。
+文字列に関しては定数かどうかのチェックを行っており、定数文字列を変更しようとすると
+エラーが報告されます。
+@c COMMON
+
+@c ----------------------------------------------------------------------
+@node Making Procedures, Assignments, Literals, Core syntax
+@section Making Procedures
+@c NODE  手続きを作る
+
+@defspec lambda formals body @dots{}
+[R5RS]
+@c EN
+Evaluates to a procedure.  The environment in effect when this expression
+is evaluated is stored in the procedure.   When the procedure
+is called, @var{body} is evaluated sequentially in the
+stored environment extended by the bindings of the formal arguments,
+and returns the value(s) of the last expression in the body.
+@c JP
+この式は評価されると手続きを生成します。この式が評価された時点の環境が手続き中に保持されます。
+手続きが呼ばれると、記憶された環境に引数の束縛を追加した環境中で@var{body} が順に評価され、
+最後の式の値が返されます。
+@c COMMON
+
+@c EN
+@var{Formals} should have one of the following forms:
+@itemize @bullet
+@item
+@code{(@var{variable} @dots{})} : The procedure takes a fixed number of
+arguments.  The actual arguments are bound to the corresponding
+variables.
+@item
+@code{@var{variable}} : The procedure takes any number of argumnets.
+The actual arguments are collected to form a new list and bound to
+the variable.
+@item
+@code{(@var{variable_0} @dots{} @var{variable_N-1}. @var{variable_N})} : 
+The procedure takes at least @var{N} arguments.  The actual arguments
+up to @var{N} is bound to the corresponding varibles.
+If more than @var{N} arguments are given, the rest arguments are
+collected to form a new list and bound to @var{variable_N}.
+@end itemize
+@c JP
+@var{Formals} は以下のいずれかの形でなければなりません。
+@itemize @bullet
+@item
+@code{(@var{variable} @dots{})} : 手続きは決まった数の引数を取ります。
+実引数がそれぞれ対応する@var{variable}に束縛されます。
+@item
+@code{@var{variable}} : 手続きは不定個の引数を取ります。
+実引数は新しいリストに集められて、そのリストが@var{varible}に束縛されます。
+@item
+@code{(@var{variable_0} @dots{} @var{variable_N-1}. @var{variable_N})} :
+手続きは少なくとも@var{N}個の引数を取ります。@var{N}個までの実引数は対応する@var{variable}
+に束縛されます。@var{N}個を越えた実引数は新しいリストに集められて
+@var{variable_N}に束縛されます。
+@end itemize
+@c COMMON
+
+@example
+(lambda (a b) (+ a b))
+@c EN
+  @result{} @r{procedure that adds two arguments}
+@c JP
+  @result{} @r{二つの引数を加算する手続き}
+@c COMMON
+
+((lambda (a b) (+ a b)) 1 2)
+  @result{} 3
+@end example
+@end defspec
+
+@c EN
+@emph{Note:} Some Scheme implementations extend the syntax of @var{formals}
+to have notation of optional arguments or keyword arguments, similar to
+CommonLisp's.  Gauche doesn't have such extensions now.
+@c JP
+@emph{注:} いくつかのSchemeの実装では@var{formals}の構文を拡張して、
+CommonLispのように省略可能引数やキーワード引数などの表記を可能にしているものが
+あります。Gaucheには今のところそのような拡張はありません。
+@c COMMON
+
+@defmac cut expr-or-slot expr-or-slot2 @dots{}
+@defmacx cute expr-or-slot expr-or-slot2 @dots{}
+[SRFI-26]
+@c EN
+Convenience macros to notate a procedure compactly.
+This form can be used to realize partial application, 
+a.k.a sectioning or projection.
+@c JP
+手続きを簡潔に書ける便利なマクロです。
+いわゆる部分適用を実現するために使えます。
+@c COMMON
+
+@c EN
+Each @var{expr-or-slot} must be either an expression or a symbol @code{<>},
+indicating a 'slot'.
+The last @var{expr-or-slot} can be a symbol @code{<...>},
+indicating a 'rest-slot'.
+@code{Cut} expands into a @code{lambda} form that takes as many arguments
+as the number of slots in the given form, and 
+whose body is an expression
+@example
+  (@var{expr-or-slot} @var{expr-or-slot2} @dots{})
+@end example
+where each occurrence of @code{<>} is replaced to the corresponding
+argument.
+In case there is a rest-slot symbol, the resulting procedure is also
+of variable arity, and all the extra arguments are passed
+to the call of @var{expr-or-slot}.  See the fourth example below.
+@c JP
+各@var{expr-or-slot}は式またはシンボル@code{<>}でなければなりません。
+最後の@var{expr-or-slot}はシンボル@code{<...>}であっても構いません。
+@code{cut}は、そのフォーム中にある@code{<>}と同じ数の引数を取る
+@code{lambda}フォームに展開されます。そのフォームのボディには次の式が置かれます。
+@example
+  (@var{expr-or-slot} @var{expr-or-slot2} @dots{})
+@end example
+但し、各@code{<>}は対応する仮引数に置き換えられます。
+もしシンボル@code{<...>}が与えられていた場合、展開された@code{lambda}フォームは
+可変長引数を取る手続きとなり、作成される手続きに与えられたすべての引数が
+@var{expr-or-slot}を呼び出すのに使われます(下の4番目の例を参照のこと)。
+@c COMMON
+
+@example
+(cut cons (+ a 1) <>)  @equiv{} (lambda (x2) (cons (+ a 1) x2))
+(cut list 1 <> 3 <> 5) @equiv{} (lambda (x2 x4) (list 1 x2 3 x4 5))
+(cut list)             @equiv{} (lambda () (list))
+(cut list 1 <> 3 <...>)
+   @equiv{} (lambda (x2 . xs) (apply list 1 x2 3 xs))
+(cut <> a b)           @equiv{} (lambda (f) (f a b))
+
+;; Usage
+(map (cut * 2 <>) '(1 2 3 4))
+(for-each (cut write <> port) exprs)
+@end example
+
+@c EN
+@code{Cute} is a variation of @code{cut} that evaluates @code{expr-or-slot}s
+before creating the procedure.
+@c JP
+@code{cute}は@code{cut}とほぼ同じですが、@code{expr-or-slot}に与えられた
+フォームが手続きを作る前に評価される点が異なります。
+@c COMMON
+
+@example
+(cute cons (+ a 1) <>)
+   @equiv{} (let ((xa (+ a 1))) (lambda (x2 (cons xa x2))))
+@end example
+
+@c EN
+Gauche also has a built-in procedure @code{pa$} for partial application
+(@xref{Combinators}).
+@c JP
+Gaucheはまた、部分適用を行う@code{pa$}という組み込み手続きを持っています
+(@xref{Combinators}参照)。
+@c COMMON
+@end defmac
+
+
+@c ----------------------------------------------------------------------
+@node Assignments, Conditionals, Making Procedures, Core syntax
+@section Assignments
+@c NODE  代入
+
+@defspec set! symbol expression
+@defspecx set! (proc arg @dots{}) expression
+[R5RS][SRFI-17]
+@c EN
+First, @var{expression} is evaluated.
+In the first form, the binding of @var{symbol} is modified
+so that next reference of @var{symbol} will return
+the result of @var{expression}.
+If @var{symbol} is not locally bound, the global variable named @var{symbol}
+must already exist, or an error is signalled.
+@c JP
+まず@var{expression}が評価されます。最初の形式では、@var{symbol}への束縛が
+@var{expression}の結果を指すように変更されます。
+もし@var{symbol}がローカルに束縛されていない場合は、グローバルな変数@var{symbol}が
+存在していなければなりません。そうでなければエラーが報告されます。
+@c COMMON
+
+@c EN
+The second form is a ``generalized set!'' specified in SRFI-17.
+It is a syntactic sugar of the following form.
+@example
+((setter @var{proc}) @var{arg} @dots{} @var{expression})
+@end example
+Note the order of the arguments of the setter method
+differs from CommonLisp's @code{setf}.
+
+Some examples:
+@c JP
+2番目の形式はSRFI-17に定義されている「一般化されたset!」です。
+これは構文的な装飾であり、実際は以下のように解釈されます。
+@example
+((setter @var{proc}) @var{arg} @dots{} @var{expression})
+@end example
+CommonLispの@code{setf}とは、setter手続きに渡される引数の順序が異なることに注意して下さい。
+
+例：
+@c COMMON
+
+@example
+(define x 3)
+(set! x (list 1 2))  @result{} @r{undefined}
+x                    @result{} (1 2)
+
+(set! (car x) 5)     @result{} @r{undefined}
+x                    @result{} (5 2)
+@end example
+@end defspec
+
+@defmac set!-values (var @dots{}) expr
+@c EN
+Sets values of multiple variables at once.  @var{Expr} must yield
+as many values as @var{var} @dots{}.  Each value is set to
+the corresponding @var{var}.
+@c JP
+複数の変数を同時に更新します。@var{Expr}は与えられた変数と同じ
+数だけの値を生成しなけばなりません。各値が対応する@var{var}に
+セットされます。
+@c COMMON
+@example
+(define a 0)
+(define b 1)
+(set!-values (a b) (values 3 4)) @result{} @r{undefined}
+a @result{} 3
+b @result{} 4
+(set!-values (a b) (values b a)) @result{} @r{undefined}
+a @result{} 4
+b @result{} 3
+@end example
+@end defmac
+
+@defun setter proc
+[SRFI-17]
+@c EN
+Returns a setter procedure associated to the procedure @var{proc}.
+If no setter is associated to @var{proc}, its behavior is undefined.
+
+A setter procedure @var{g} of a procedure @var{f} is such that when used
+as @code{(g a b @dots{} v)}, the next evaluation of @code{(f a b @dots{})}
+returns @var{v}.
+
+To associate a setter procedure to another procedure, you can use
+the setter of @code{setter}, like this:
+@example
+(set! (setter @var{f}) @var{g})
+@end example
+
+A procedure's setter can be ``locked'' to it.  System default setters,
+like @code{set-car!} for @code{car}, is locked and can't be set by
+the above way.   In order to lock a setter to a user defined procedure,
+use @code{getter-with-setter} below.
+
+If @var{proc} is not a procedure, a setter generic function
+of @code{object-apply} is returned;
+it allows the applicable object extension to work
+seamlessly with the generalized @code{set!}.
+@xref{Applicable objects}, for the details.
+@c JP
+手続き@var{proc}のsetter手続きを返します。
+@var{proc}がsetter手続きを持たない場合の動作は不定です。
+
+ある関数@var{f}のsetter手続き@var{g}とは、もし@code{(g a b @dots{} v)}のように
+呼ばれた場合、次の@code{(f a b @dots{})}が@var{v}を返すようになる手続きのことです。
+
+ある手続きにsetter手続きを関連付けるには、@code{setter}自身のsetter手続きを使うことが
+できます。
+@example
+(set! (setter @var{f}) @var{g})
+@end example
+
+特定の手続きにsetter手続きを「ロック」することができます。システム既定のsetter手続き、
+例えば@code{car}に対する@code{set-car!}等はロックされていて、上記のような方法で
+変更することは出来ません。ユーザ定義手続きにsetter手続きをロックするには下記の
+@code{getter-with-setter}を使います。
+
+@var{proc}が手続きでない場合は、@code{object-apply}ジェネリックファンクションの
+setterが返されます。これにより、適用可能オブジェクトが一般化された@code{set!}
+でもうまく動作します。詳しくは@ref{Applicable objects}を参照して下さい。
+@c COMMON
+@end defun
+
+@defun has-setter? proc
+@c EN
+Returns @code{#t} if a setter is associated to @var{proc}.
+@c JP
+@var{proc}がsetter手続きを持っている場合は@code{#t}を返します。
+@c COMMON
+@end defun
+
+@defun getter-with-setter get set
+[SRFI-17]
+@c EN
+Takes two procedure @var{get} and @var{set}.  Returns a new
+procedure which does the same thing as @var{get}, and its setter is
+locked to @var{set}.
+
+The intention of this procedure is, according to the SRFI-17 document,
+to allow implementations to inline setters efficiently.  Gauche
+hasn't implement such optimization yet.
+@c JP
+2つの手続き、@var{get}と@var{set}を取り、新しい手続きを返します。
+新しい手続きは@var{get}と同じ動作をし、そのsetter手続きは@var{set}にロックされて
+います。
+
+この手続きは、SRFI-17によれば、setter手続きのインライン展開を可能にするための
+ものですが、Gaucheではまだそのような最適化は実装されていません。
+@c COMMON
+@end defun
+
+@c EN
+A few macros that adopts the same semantics of generalized @code{set!}
+are also provided.  They are built on top of @code{set!}.
+@c JP
+Gaucheでは、一般化された@code{set!}と同じセマンティクスを持ついくつかのマクロが定義
+されています。これらは@var{set!}を使った形に展開されます。
+@c COMMON
+
+@defmac push! place item
+@c EN
+Conses @var{item}
+and the value of @var{place}, then sets the result to @var{place}.
+@var{place} is either a variable or a form @var{(proc arg @dots{})}, 
+as the second argument of @code{set!}.   The result of this form
+is undefined.
+@c JP
+@var{item}と@var{place}の値をコンスし、その結果を再び@var{place}にセットします。
+@var{place}は@code{set!}と同様に、
+変数か@var{(proc arg @dots{})}という形式でなければなりません。このマクロの戻り値は
+未定義です。
+@c COMMON
+
+@example
+(define x (list 2))
+(push! x 3) @result{} @r{undefined}
+x @result{} (3 2)
+
+(push! (cdr x) 4) @result{} @r{undefined}
+x @result{} (3 4 2)
+@end example
+
+@c EN
+When @var{place} is a list, it roughly expands like the following.
+@c JP
+@var{place}がリストの場合、だいたいこんなふうに展開されます。
+@c COMMON
+
+@example
+(push! (foo x y) item)
+ @equiv{}
+ (let ((tfoo foo)
+       (tx x)
+       (ty y))
+   ((setter tfoo) tx ty (cons item (tfoo tx ty))))
+@end example
+
+@c EN
+Note: Common Lisp's @code{push} macro takes its argument reverse
+order.   I adopted this order since it is consistent with other
+destructive operations.  Perl's @code{push} function takes the same
+argument order, but it appends @var{item} at the end of the array
+(Perl's @code{unshift} is closer to @code{push!}).
+You can use a queue (@xref{util.queue - Queue}) if you need a behavior of Perl's
+@code{push}.
+@c JP
+註：Common Lispの@code{push}マクロは引数を逆の順番で取ります。
+@code{push!}は他の副作用を持つ形式との互換性を考えてこの順番としました。
+Perlの@code{push}関数は@code{push!}マクロと同じ引数順ですが、
+@var{item}はシーケンスの末尾に追加されます (Perlの@code{unshift}の方が
+@code{push!}の動作に近いです)。
+Perlのpushオペレータの動作が必要ならQueueが使えます (@ref{util.queue - Queue}参照)。
+@c COMMON
+@end defmac
+
+@defmac pop! place
+@c EN
+Retrieves the value of @var{place}, sets its cdr back to @var{place}
+and returns its car.
+@c JP
+@var{place}の値を取り出し、その@code{cdr}を@var{place}にセットします。
+元の値の@code{car}を返します。
+@c COMMON
+
+@example
+(define x (list 1 2 3))
+(pop! x) @result{} 1
+x @result{} (2 3)
+
+(define x (vector (list 1 2 3)))
+x @result{} #((1 2 3))
+(pop! (vector-ref x 0)) @result{} 1
+x @result{} #((2 3))
+@end example
+
+@c EN
+Note: This works the same as Common Lisp's @code{pop}.
+Perl's @code{pop} pops value from the end of the sequence;
+its @code{shift} does the same thing as @code{pop!}.
+@c JP
+註：この動作はCommon Lispの@code{pop}と同じです。
+Perlの@code{pop}はシーケンスの末尾から値を取ります。
+Perlなら@code{shift}が@code{pop!}の動作に近いです。
+@c COMMON
+@end defmac
+
+
+@defmac inc! place &optional delta
+@defmacx dec! place &optional delta
+@c EN
+Evaluates the value of @var{place}.  It should be a number.
+Adds (@code{inc!}) or subtracts (@code{dec!}) @var{delta} to/from it,
+and then stores the result to @var{place}.  The default value of
+@var{delta} is 1.
+
+This is Common Lisp's @code{incf} and @code{decf}.
+@c JP
+@var{place}の値を評価します。それは数値にならなければなりません。
+その値に@var{delta}が加算(@code{inc!})もしくは減算(@code{dec!})され、
+結果が@var{place}に格納されます。@var{delta}の既定値は1です。
+
+Common Lispの@code{incf}と@code{decf}に当たります。
+@c COMMON
+@end defmac
+
+@defmac update! place proc
+@c EN
+Generalized form of @code{push!} etc.  @var{Proc} must be a procedure
+which takes one argument and returns one value.   The original value of
+@var{place} is passed to the @var{proc}, then its result is set to
+@var{place}.
+@c JP
+@code{push!}等のマクロの一般化された形式です。
+@var{proc}は一つの引数を取り、一つの値を返す手続きでなければなりません。
+@var{place}の値が@var{proc}に渡され、@var{proc}の結果が@var{place}に格納されます。
+@c COMMON
+@example
+(define a (cons 2 3))
+(update! (car a) (lambda (v) (* v 3))) @result{} @r{undefined}
+a @result{} (6 . 3)
+
+(update! (cdr a) (cut - <> 3))
+a @result{} (6 . 0)
+@end example
+@end defmac
+
+@c ----------------------------------------------------------------------
+@node Conditionals, Binding constructs, Assignments, Core syntax
+@section Conditionals
+@c NODE 条件式
+
+@defspec if test consequent alternative
+@defspecx if test consequent
+[R5RS]
+@c EN
+@var{Test} is evaluated.  If it yields a true value,
+@var{consequent} is evaluated.  Otherwise, @var{alternative} is
+evaluated.  If @var{alternative} is not provided, it results undefined value.
+@c JP
+まず@code{test}を評価し、それが真の値を返したら@var{consequent}を評価します。
+そうでなければ@var{alternative}を評価します。もし@var{alternative}が与えられて
+いなければ未定義の値を返します。
+@c COMMON
+
+@example
+(if (number? 3) 'yes 'no) @result{} yes
+(if (number? #f) 'yes 'no) @result{} no
+
+(let ((x '(1 . 2)))
+  (if (pair? x)
+      (values (car x) (cdr x))
+      (values #f #f)))
+  @result{} 1 @r{and} 2
+@end example
+@end defspec
+
+@defspec cond clause1 clause2 @dots{}
+[R5RS]
+@c EN
+Each @code{clause} must be the form
+@example
+(@var{test} @var{expr} @dots{})
+(@var{test} => @var{expr})
+(else @var{expr} @var{expr2} @dots{})
+@end example
+The last form can appear only as the last clause.
+
+@code{cond} evaluates @var{test} of each clauses in order, until
+it yields a true value.   Once it yields true, if the clause
+is the first form,  the corresponding @var{expr}s are evaluated
+and the result(s) of last @var{expr} is(are) returned; if the clause
+is the second form, the @var{expr} is evaluated and it must yield
+a procedure that takes one argument.  Then the result of @var{test}
+is passed to it, and the result(s) it returns will be returned.
+If no test yields true, and the last clause is not the third form
+(else clause), an undefined value is returned.
+
+If the last clause is else clause and all tests are failed,
+@var{expr}s in the else clause are evaluated, and its last
+@var{expr}'s result(s) is(are) returned.
+@c JP
+各@code{clause}節は次のいずれかの形式でなければなりません。
+@example
+(@var{test} @var{expr} @dots{})
+(@var{test} => @var{expr})
+(else @var{expr} @var{expr2} @dots{})
+@end example
+最後の形式は最後の節のみに許されます。
+
+最初の節から順に@var{test}が評価され、それが真の値を返すまで次の節の@var{test}が
+評価されます。@var{test}が真の値を返したら、それが最初の形式であれば
+その節の@var{expr}が順に評価され、最後の評価値が戻り値となります。
+それが2番目の形式であれば、@var{expr}がまず評価されます。
+@var{expr}は引数をひとつ取る手続きを返さねばなりません。
+続いて、@var{test}の結果がその手続きに渡され、その手続きの戻り値が@code{cond}形式の
+評価値となります。
+もし全てのテストが偽の値を返し、最後の節が3番目の形式(else節)でなければ、未定義の値が返されます。
+
+最後の節が@code{else}節で、他の全てのテストが失敗した場合、@code{else}節の@var{expr}
+が順に評価され、その最後の値が@code{cond}形式の値となります。
+@c COMMON
+
+@example
+(cond ((> 3 2) 'greater)
+      ((< 3 2) 'less)) @result{} greater
+(cond ((> 3 3) 'greater)
+      ((< 3 3) 'less)
+      (else 'equal)) @result{} equal
+(cond ((assv 'b '((a 1) (b 2))) => cadr)
+      (else #f)) @result{} 2
+@end example
+@end defspec
+
+
+@defspec case key clause1 clause2 @dots{}
+[R5RS]
+@c EN
+@var{Key} may be any expression. 
+Each @var{clause} should have the form 
+@example
+((@var{datum} ...) @var{expr} @var{expr2} @dots{})
+@end example
+where each @var{datum} is an external representation of some object.
+All the @var{datum}s must be distinct. The last @var{clause}
+may be an ``else clause,'' which has the form 
+@example
+(else @var{expr} @var{expr2} @dots{})
+@end example
+
+First, @var{key} is evaluated and its result is compared against each
+@var{datum}.  If the result of evaluating @var{datum} is equivalent
+(using @code{eqv?}, @xref{Equivalence}), to a @var{datum},
+then the expressions in the corresponding clause are evaluated
+sequentially, and the result(s) of the last expression in the
+@var{clause} is(are) returned from the case expression.
+If the result of evaluating @var{key} is different from every @var{datum},
+then if there is an else clause its expressions are evaluated and
+the result(s) of the last is(are) the result(s) of the case expression;
+otherwise the result of the case expression is unspecified.
+@c JP
+@var{key}は任意の式です。@var{clause}は以下の形式でなければなりません。
+@example
+((@var{datum} ...) @var{expr} @var{expr2} @dots{})
+@end example
+ここで、各@var{datum}はSchemeオブジェクトの外部表現であり、全ての@var{datum}は
+異なっていなければなりません。最後の@var{clause}には次の形式を持つelse節が許されます。
+@example
+(else @var{expr} @var{expr2} @dots{})
+@end example
+
+まず@var{key}が評価され、その結果がそれぞれの@var{datum}と比較されます。
+@var{key}の値と@code{eqv?}(@ref{Equivalence}参照)を使って一致する@var{datum}
+が見つかれば、対応する@var{expr}が順に評価され、その最後の値が@code{case}の
+値となります。もし一致する@var{datum}が見つからない場合、else節が与えられていれば
+その@var{expr}が順に評価され、最後の値が返されます。else節がなければ@code{case}節
+の値は未定義です。
+@c COMMON
+@example
+(case (* 2 3)
+  ((2 3 5 7) 'prime)
+  ((1 4 6 8 9) 'composite)) @result{} composite
+(case (car '(c d))
+  ((a) 'a)
+  ((b) 'b)) @result{} @r{undefined}
+(case (car '(c d))
+  ((a e i o u) 'vowel)
+  ((w y) 'semivowel)
+  (else 'consonant)) @result{} consonant
+@end example
+@end defspec
+
+
+@defspec and test @dots{}
+[R5RS] 
+@c EN
+The @var{test} expressions are evaluated from left to right,
+and the value of the first expression that evaluates to a false
+value is returned.
+Any remaining expressions are not evaluated.
+If all the expressions evaluate to true values,
+the value of the last expression is returned.
+If there are no expressions then @code{#t} is returned.
+@c JP
+@var{test}式が順に評価されます。最初に偽の値を返したところで評価が止まり、
+偽の値が返されます。残りの式は評価されません。
+もし全ての式が真の値を返した場合は、最後の式の値が返されます。
+式が与えれない場合は@code{#t}が返されます。
+@c COMMON
+
+@example
+(and (= 2 2) (> 2 1)) @result{} #t
+(and (= 2 2) (< 2 1)) @result{} #f
+(and 1 2 'c '(f g))   @result{} (f g)
+(and)                 @result{} #t
+@end example
+@end defspec
+
+
+@defspec or test @dots{}
+[R5RS]
+@c EN
+The @var{test} expressions are evaluated from left to right,
+and the value of the first expression that evaluates to a true
+value is returned. Any remaining expressions are not evaluated.
+If all expressions evaluate to false values, the value of the
+last expression is returned. If there are no expressions then
+@code{#f} is returned.
+@c JP
+@var{test}式が順に評価されます。最初に真の値を返したところで評価が止まり、
+その値が返されます。残りの式は評価されません。
+もし全ての式が偽の値を返した場合は、偽の値が返されます。
+式が与えれない場合は@code{#f}が返されます。
+@c COMMON
+
+@example
+(or (= 2 2) (> 2 1)) @result{} #t
+(or (= 2 2) (< 2 1)) @result{} #t
+(or #f #f #f)        @result{} #f
+(or (memq 'b '(a b c)) 
+    (/ 3 0)) @result{} (b c)
+@end example
+@end defspec
+
+@defspec when test body @dots{}
+@defspecx unless test body @dots{}
+@c EN
+Evaluates @var{test}.  If it yields true value (or false in case of
+@code{unless}), @var{body} @dots{} are evaluated sequentially, and
+the result(s) of the last evaluation is(are) returned.  Otherwise, undefined
+value is returned.
+@c JP
+まず@var{test}が評価されます。それが真の値(@code{unless}の場合は偽の値)を返した場合、
+引続き@var{body}が順に評価され、最後の@var{body}の評価値が返されます。
+そうでなければ、未定義の値が返されます。
+@c COMMON
+@end defspec
+
+@node Binding constructs, Sequencing, Conditionals, Core syntax
+@section Binding constructs
+@c NODE 変数束縛
+
+@defspec let ((var expr) @dots{}) body @dots{}
+@defspecx let* ((var expr) @dots{}) body @dots{}
+@defspecx letrec ((var expr) @dots{}) body @dots{}
+[R5RS]
+@c EN
+Creates a local scope where @var{var} @dots{} are bound to the
+value of @var{expr} @dots{}, then evaluates @var{body} @dots{}.
+@var{var}s must be symbols, and there shouldn't be a duplication.
+The value(s) of the last expression of @var{body} @dots{} becomes
+the value(s) of this form.
+@c JP
+各変数@var{var}が@var{expr}の値に束縛されているローカルな環境を作成し、
+その中で@var{body} @dots{}を評価します。@var{var}はシンボルでなければ
+ならず、重複があってはなりません。@var{body} @dots{}の最後の式の値が
+このフォームの値となります。
+@c COMMON
+
+@c EN
+The three forms differ in terms of the scope @var{expr}s are evaluated.
+@code{Let} evaluates @var{expr}s before (outside of) @code{let} form.
+@code{Let*} evaluates @var{expr}s in the scope where @var{var}s before
+it are bound.   @code{Letrec} evaluates @var{expr}s in the environment
+where @var{var}s are already bound (to an undefined value, initially).
+@code{letrec} is necessary to define mutually recursive local procedures.
+@c JP
+これらの3つのフォームの違いは、@var{expr}が評価される時点のスコープにあります。
+@code{let}は@var{expr}を@var{let}フォームに入る前の環境において評価します。
+@code{let*}は@var{expr}を順に、それ以前の@var{var}が束縛された環境において評価して
+ゆきます。@var{letrec}は全ての@var{var}が仮想的に不定の値に束縛された環境において
+各@var{expr}を評価します。@var{letrec}は相互再帰的なローカル関数を定義する場合に
+必要です。
+@c COMMON
+@example
+(define x 'top-x)
+
+(let  ((x 3) (y x)) (cons x y)) @result{} (3 . top-x)
+(let* ((x 3) (y x)) (cons x y)) @result{} (3 . 3)
+
+(let ((cons (lambda (a b) (+ a b)))
+      (list (lambda (a b) (cons a (cons b 0)))))
+  (list 1 2))  @result{} (1 2 . 0)
+
+(letrec ((cons (lambda (a b) (+ a b)))
+         (list (lambda (a b) (cons a (cons b 0)))))
+  (list 1 2))  @result{} 3
+@end example
+@end defspec
+
+@defmac let1 var expr body @dots{}
+@c EN
+A convenient macro when you have only one variable.
+Expanded as follows.
+@c JP
+変数が一つしか無い場合の便利なマクロです。次のように展開されます。
+@c COMMON
+
+@example
+(let ((@var{var} @var{expr})) @var{body} @dots{})
+@end example
+@end defmac
+
+@defmac fluid-let ((var val) @dots{}) body @dots{}
+@c EN
+A macro that emulates dynamic scoped variables.
+@var{Var}s must be variables bound in the scope including
+@code{fluid-let} form.  @var{Val}s are expressions.
+@code{Fluid-let} first evaluates @var{val}s, then 
+evaluates @var{body} @dots{}, with binding 
+@var{var}s to the corresponding values during the dynamic
+scope of @var{body} @dots{}.
+
+Note that, in multithreaded environment,
+the change of the value of @var{var}s are visible from
+all the threads.   This form is provided mainly for
+the porting convenience.   Use parameter objects instead
+(@xref{gauche.parameter - Parameters}) for thread-local dynamic state.
+@c JP
+動的スコープの変数をエミュレートするマクロです。
+@var{var}は@code{fluid-let}フォームを含むスコープで定義されている
+変数でなければなりません。@var{val}は式です。
+@code{fluid-let}はまず@var{val}を評価し、
+@var{val}を@var{var}に動的スコープで束縛して@var{body} @dots{} を評価します。
+
+マルチスレッド環境下では、@var{var}の値の変化は全てのスレッドから見えます。
+このフォームは主として他の処理系のコードを移植する際の利便性のために
+追加されました。スレッドローカルな動的状態を実現するには、
+パラメータオブジェクト(@ref{gauche.parameter - Parameters}参照)を
+使って下さい。
+@c COMMON
+@example
+(define x 0)
+
+(define (print-x) (print x))
+
+(fluid-let ((x 1))
+  (print-x))  @result{} ;; prints 1
+@end example
+@end defmac
+
+@defspec receive formals expression body @dots{}
+[SRFI-8]
+@c EN
+This is the way to receive multiple values.
+@var{Formals} can be a (maybe-improper) list of symbols.
+@var{Expression} is evaluated, and the returned value(s)
+are bound to @var{formals} like the binding of lambda formals,
+then @var{body} @dots{} are evaluated.
+@c JP
+この構文により、多値を受け取ることができます。
+@var{formals}はシンボルのリストです。不完全なリストであっても構いません。
+@var{expression}が評価され、返された値がlambda形式の引数の束縛と
+同じようにして@var{formals}内の変数と束縛され、その環境下で@var{body} @dots{}が
+評価されます。
+@c COMMON
+
+@example
+(define (divrem n m)
+  (values (quotient n m) (remainder n m)))
+
+(receive (q r) (divrem 13 4) (list q r))
+  @result{} (3 1)
+
+(receive all (divrem 13 4) all)
+  @result{} (3 1)
+
+(receive (q . rest) (divrem 13 4) (list q rest)
+  @result{} (3 (1))
+@end example
+
+@c EN
+See also @code{call-with-values} in @ref{Multiple values}
+which is the procedural equivalent of @code{receive}.
+You can use @code{define-values} (@xref{Definitions}) to
+bind multiple values to the toplevel variables simultaneously.
+Also @code{let-values} and @code{let*-values} 
+in SRFI-11 (@ref{srfi-11 - Let-values}) provides
+@code{let}-like syntax with multiple values.
+@c JP
+なお、@ref{Multiple values}の@code{call-with-values}は
+@code{receive}と等価な手続き的インタフェースです。
+多値を複数のトップレベル変数に束縛するには、@code{define-values}
+(@ref{Definitions}参照) が使えます。
+また、SRFI-11 (@ref{srfi-11 - Let-values}) の@code{let-values}と
+@code{let*-values}は@code{let}のような形式で多値を扱うことができます。
+@c COMMON
+@end defspec
+
+@defmac rec var expr
+@defmacx rec (name . vars) expr @dots{}
+[SRFI-31]
+@c EN
+A macro to evaluate an expression with recursive reference.
+
+In the first form, evaluates expr while @var{var} in @var{expr} is
+bound to the result of @var{expr}.
+The second form is equivalent to the followings.
+@c JP
+再帰的な参照のある式の評価を行うマクロです。
+
+最初の形式は、@var{var}が@var{expr}の結果に束縛される状態で@var{expr}を
+評価します。
+2番目の形式は以下の形式と等価です。
+@c COMMON
+@example
+(rec @var{name} (lambda @var{vars} @var{expr} @dots{}))
+@end example
+
+@c EN
+Some examples:
+@c JP
+例：
+@c COMMON
+
+@example
+;; constant infinite stream
+(rec s (cons 1 (delay s)))
+
+;; factorial function
+(rec (f n) 
+  (if (zero? n)
+      1 
+      (* n (f (- n 1)))))
+@end example
+@end defmac
+
+@node Sequencing, Iteration, Binding constructs, Core syntax
+@section Sequencing
+@c NODE 順次実行
+
+
+@defspec begin form @dots{}
+[R5RS]
+@c EN
+Evaluates @var{form}s sequentially, and returns the last result(s).
+@c JP
+@var{form}を順に評価し、最後の値を返します。
+@c COMMON
+
+@c EN
+@code{Begin} doesn't introduce new "block" like @code{let}, that is,
+you can't place "internal define" at the beginning of @var{form}s
+generally.   Semantically @code{begin} behaves as if @var{form}s
+are spliced into the surrounding context.
+For example, topleve expression like the following is the same
+as two toplevel definitions:
+@c JP
+@code{Begin}は@code{let}のような「ブロック」を作成するわけではありません。
+すなわち、一般的には@var{form} @dots{}の先頭に「内部のdefine (internal define)」を
+置くことはできません。意味的には、@code{begin}はまるで@var{form} @dots{}が
+@code{begin}を囲むコンテクスト中に展開されているかのように振舞います。
+例えば、トップレベルに次のような式があった場合、それは2つのトップレベルのdefineと
+同等です。
+@c COMMON
+
+@example
+(begin (define x 1) (define y 2))
+@end example
+
+@c EN
+Here's a trickier example:
+@c JP
+よりトリッキーな例:
+@c COMMON
+
+@example
+(let ()
+  (begin 
+    (define x 2)
+    (begin
+      (define y 3)
+    ))
+  (+ x y))
+
+  @equiv{}
+
+(let ()
+  (define x 2)
+  (define y 3)
+  (+ x y))
+@end example
+@end defspec
+
+@defmac begin0 exp0 exp1 @dots{}
+@c EN
+Evaluates @var{exp0}, @var{exp1}, @dots{}, then returns the result(s)
+of @var{exp0}.   The name is taken from MzScheme.
+This is called @code{prog1} in CommonLisp.   
+
+Unlike @code{begin}, this @emph{does} creates a "block",
+for the @code{begin0} form is expanded as follows.
+@c JP
+@var{exp0}, @var{exp1}, @dots{} を評価し、@var{exp0}の結果を返します。
+この名前はMzSchemeから取られました。これはCommonLispで
+@code{prog1}と呼ばれているものです。
+
+@code{begin}と違って、これは「ブロック」を構成します。
+@code{begin1}フォームは次のように展開されるからです。
+@c COMMON
+
+@example
+(receive tmp @var{exp0}
+  @var{exp1} @dots{}
+  (apply values tmp))
+@end example
+@end defmac
+
+
+@node Iteration, Quasiquotation, Sequencing, Core syntax
+@section Iteration
+@c NODE 繰り返し
+
+@defspec do ((variable init [step]) @dots{}) (test expr @dots{}) body @dots{}
+[R5RS]
+@end defspec
+
+
+@defspec let name bindings body @dots{}
+[R5RS]
+@end defspec
+
+
+
+@defmac dotimes (variable limit [result]) body @dots{}
+@defmacx dolist (variable lexpr [result]) body @dots{}
+@c EN
+Imported from Common Lisp.  These are equivalent to the following forms,
+respectively.
+@c JP
+Common Lispからの輸入です。それぞれ以下のように展開されます。
+@c COMMON
+@example
+(dotimes (variable limit result) body @dots{})
+==>
+(do ((tlimit limit)
+     (variable 0 (+ variable 1)))
+    ((>= variable tlimit) result)
+  body @dots{})
+
+(dolist (variable lexpr result) body @dots{})
+==>
+(begin
+  (for-each (lambda (variable) body @dots{}) lexpr)
+  (let ((variable '())) result))
+@end example
+@end defmac
+
+@c ----------------------------------------------------------------------
+@node Quasiquotation, Definitions, Iteration, Core syntax
+@section Quasiquotation
+@c NODE 準クオート, 準クオート(Quasiquote)
+
+@defspec quasiquote template
+[R5RS]
+@end defspec
+
+
+@c ----------------------------------------------------------------------
+@node Definitions, Modules, Quasiquotation, Core syntax
+@section Definitions
+@c NODE 定義
+
+@defspec define variable expression
+@defspecx define (variable . formals) body @dots{}
+[R5RS]
+@c EN
+This form has different meanings in the toplevel (without no
+local bindings) or inside a local scope.
+
+On toplevel, it defines a global binding to a symbol @var{variable}.
+In the first form, it globally binds a symbol @var{variable}
+to the value of @var{expression}, in the current module.
+@c JP
+この形式はトップレベル (ローカルな束縛が無い状態) とローカルスコープがある状態とで
+別の意味を持ちます。
+
+トップレベルでは、この形式は変数@var{variable}に対するグローバルな束縛を定義します。
+最初の形式では、@var{expression}が評価され、その結果が変数@var{variable}の値となります。
+@c COMMON
+@example
+(define x (+ 1 2))
+x @result{} 3
+(define y (lambda (a) (* a 2)))
+(y 8) @result{} 16
+@end example
+
+@c EN
+The second form is a syntactic sugar of defining a procedure.
+It is equivalent to the following form.
+@c JP
+2番目の形式は手続きを定義するための構文的な修飾で、以下の形式と同じです。
+@c COMMON
+@example
+(define (@var{name} . @var{args}) @var{body} @dots{})
+  @equiv{} (define @var{name} (lambda @var{args} @var{body} @dots{}))
+@end example
+
+@c EN
+If the form appears inside a local scope (internal define),
+this introduce a local binding of the variable.
+
+@c explanation of internal define here
+@c JP
+このフォームがローカルスコープの中に現われた場合、ローカル変数の束縛となります。
+@c COMMON
+
+@c EN
+Note that @code{begin} (@xref{Sequencing}) doesn't introduce a new scope.
+@code{Define}s in the @code{begin} act as if @code{begin} and surrounding
+parenthesis are not there.  Thus these two forms are equivalent.
+@c JP
+@code{begin}は新しいスコープを作らないことに注意してください(@ref{Sequencing}参照)。
+@code{begin}の中に現われる@code{define}は、あたかも@code{begin}とそれを囲む
+括弧な無いかのように振舞います。すなわち、以下の2つの形式は等価です。
+@c COMMON
+@example
+(let ((x 0))
+  (begin
+    (define (foo y) (+ x y)))
+  (foo 3))
+ @equiv{}
+(let ((x 0))
+  (define (foo y) (+ x y))
+  (foo 3))
+@end example
+@end defspec
+
+@defmac define-values (var @dots{}) expr
+@c EN
+@var{Expr} is evaluated, and it should return as many values as
+@var{var}s.  Then each value of the results are
+bound to each variable in @var{var} @dots{}.
+@xref{srfi-11 - Let-values}.
+@c JP
+まず@var{expr}が評価されます。それは与えられた@var{var}と同数の値を
+返さなければなりません。続いて各値が@var{var}に順に束縛されます。
+@ref{srfi-11 - Let-values}も参照してください。
+@c COMMON
+@example
+(define-values (lo hi) (min&max 3 -1 15 2))
+
+lo @result{} -1
+hi @result{} 15
+@end example
+@end defmac
+
+@defspec define-constant variable expression
+@defspecx define-constant (variable . formals) body @dots{}
+@c EN
+Like @code{define}, but that the compiler assumes
+the value of @var{variable} won't change and generates 
+optimized code.
+
+An error is signalled when you use @code{set!} to change the value
+of @var{variable}.   It is allowed to redefine @var{variable},
+but a warning is printed.
+@c JP
+@code{define}と同じように動作しますが、
+コンパイラは@var{variable}の値が今後変更されないものとして
+最適化されたコードを生成します。
+
+@var{variable}の値を@code{set!}で変更しようとするとエラーとなります。
+@var{variable}を再定義することは許されますが、警告が表示されます。
+@c COMMON
+@end defspec
+
+@defspec define-in-module module variable expression
+@defspecx define-in-module module (variable . formals) body @dots{}
+@c EN
+This form creates a global binding of @var{variable} in
+@var{module}, which must be either a symbol of the module name or
+a module object.  If @var{module} is a symbol, the named module
+must exist.
+
+@var{Expression} is evaluated in the current module.
+
+The second form is merely a syntactic sugar of:
+@c JP
+この形式は@var{variable}のグローバルな束縛を@var{module}中に作成します。
+@var{module}はモジュール名を表すシンボルか、モジュールオブジェクトで
+なければなりません。@var{module}がシンボルの場合、その名前を持つ
+モジュールが既に存在している必要があります。
+
+@var{expression}は現在のモジュール中で評価されます。
+
+2番目の形式は次の形式の構文的修飾です。
+@c COMMON
+@example
+(define-in-module module variable (lambda formals body @dots{}))
+@end example
+@end defspec
+
+@c EN
+Note: to find out if a symbol has definition (global binding) in
+the current module, you can use @code{symbol-bound?}
+(@xref{Module introspection}).
+@c JP
+註: シンボルが現在のモジュール中で定義されているか(グローバルな束縛を持つか)
+を調べるには、@code{symbol-bound?}が使えます
+(@ref{Module introspection}参照)。
+@c COMMON
+
+@c ----------------------------------------------------------------------
+@node Modules,  , Definitions, Core syntax
+@section Modules
+@c NODE モジュール
+
+@c EN
+This section describes the semantics of Gauche modules and its API.
+See also @ref{Writing Gauche modules}, for the conventions
+Gauche is using for its modules.
+@c JP
+この章では、GaucheのモジュールのセマンティクスとAPIを述べます。
+Gaucheで使われているモジュールの書法については@ref{Writing Gauche modules}も
+併せて参照して下さい。
+@c COMMON
+
+@menu
+* Module semantics::            
+* Defining and selecting modules::  
+* Using modules::               
+* Module inheritance::          
+* Module introspection::        
+* Predefined modules::          
+@end menu
+
+@node Module semantics, Defining and selecting modules, Modules, Modules
+@subsection Module semantics
+@c NODE モジュールのセマンティクス
+
+@c EN
+Module is an object that maps symbols onto @emph{bindings},
+and affects the resolution of global variable reference.
+@c JP
+モジュールは、シンボルを束縛へとマップするオブジェクトで、
+グローバル変数の解決に影響を与えます。
+@c COMMON
+
+@c EN
+Unlike CommonLisp's packages, which map names to symbols,
+in Gauche symbols are always @code{eq?} if two have the
+same name.  However, Gauche's symbol doesn't have a 'value'
+slot in it.  Given symbol, a module finds its binding that
+keeps a value.
+Different modules can associate different bindings
+to the same symbol, that yield different values.
+@c JP
+CommonLispのパッケージは名前からシンボルへのマッピングを行いますが、
+Gaucheでは同じ名前を持つシンボルは常に@code{eq?}です。しかし、
+Gaucheのシンボルは「値」のスロットを持っていません。
+モジュールによってシンボルに対応する束縛が見付けられ、値はそこに
+格納されています。
+モジュールが違えば同じシンボルは別々の束縛へとマップされ、違う値を
+返します。
+@c COMMON
+
+@example
+@c EN
+;; Makes two modules A and B, and defines a global variable 'x' in them
+@c JP
+;; 二つのモジュールAとBを作成し、グローバル変数'x'をその中で定義
+@c COMMON
+(define-module A (define x 3))
+(define-module B (define x 4))
+
+;;  #<symbol 'x'> ---[module A]--> #<binding that has 3>
+(with-module A x) @result{} 3
+
+;;  #<symbol 'x'> ---[module B]--> #<binding that has 4>
+(with-module B x) @result{} 4
+@end example
+
+@c EN
+A module can @emph{export} a part or all of its bindings
+for other module to use.
+A module can @emph{import} other modules, and their exported
+bindings become visible to the module.
+A module can import any number of modules.
+@c JP
+モジュールは、自身が持つ一部または全ての束縛を他のモジュールからも
+使えるように@emph{export}することができます。モジュールが他の
+モジュールを@emph{import}すると、それらのモジュールでexportされている
+束縛が元もモジュールから見えるようになります。
+モジュールはいくつでも他のモジュールをimportすることができます。
+@c COMMON
+
+@example
+(define-module A
+  (export pi)
+  (define pi 3.1416))
+
+(define-module B
+  (export e)
+  (define e 2.71828))
+
+(define-module C
+  (import A B))
+
+(select-module C)
+(* pi e) @result{} 8.539748448
+@end example
+
+@c EN
+A module can also be @emph{inherited}, that is, you can extend
+the existing module by inheriting it and adding new bindings
+and exports.   From the new module, all ancestor's bindings (including
+non-exported bindings) are visible.
+(A new module inherits the @code{gauche} module by default, which is why
+the built-in procedures and syntax of @code{gauche} are available
+in the new module).
+From outside, the new module looks like having
+all exported bindings of the original module plus the newly
+defined and exported bindings.
+@c JP
+また、モジュールは継承することもできます。
+既存のモジュールを継承したモジュールに新しい束縛を足してexportすることにより、
+既存のモジュールを拡張することができます。新しいモジュールの内部からは、
+継承元のモジュールの束縛が(exportされていないものも含め)全て見えます。
+(新しく作られるモジュールはデフォルトで@code{gauche}モジュールを継承しています。
+新しいモジュールから@code{gauche}の組込み手続き等が使えるのはそのためです)。
+外からは、新しいモジュールには元のモジュールの全てのexportされた束縛と
+新たに追加されexportされた束縛が見えます。
+@c COMMON
+
+@example
+;; Module A defines and exports deg->rad.
+;; A binding of pi is not exported.
+(define-module A
+  (export deg->rad)
+  (define pi 3.1416)   ;; not exported
+  (define (deg->rad deg) (* deg (/ pi 180))))
+
+;; Module Aprime defines and exports rad->deg.
+;; The binding of pi is visible from inside Aprime.
+(define-module Aprime
+  (extend A)
+  (export rad->deg)
+  (define (rad->deg rad) (* rad (/ 180 pi))))
+
+;; Module C imports Aprime.
+(define-module C
+  (import Aprime)
+  ;; Here, both deg->rad and rad->deg are visible,
+  ;; but pi is not visible.
+  )
+@end example
+
+@c EN
+At any moment of the compilation, there is one "current module" available,
+and the global variable reference is looked for from the module.
+If there is a visible binding of the variable, the variable
+reference is compiled to the access of the binding.
+If the compiler can't find a visible binding,
+it marks the variable reference with the current module, and
+delays the resolution of binding at the time the variable is
+actually used.  That is, when the variable is referenced
+at run time, the binding is again looked for from the marked module
+(@emph{not} the current module at the run time) and if found,
+the variable reference code is replaced for the the code to
+access the binding.  If the variable reference is not found even
+at run time, an 'undefined variable' error is signalled.
+@c JP
+コンパイル中のどの時点でも、「カレントモジュール」が一意に決定され、
+グローバル変数の束縛はそのカレントモジュールを起点に探されます。
+その変数の束縛が見付かれば、変数参照の式はその束縛へアクセスするコードとして
+コンパイルされます。もしコンパイラが束縛を見付けられなかった場合、
+変数参照の式はカレントモジュールでマークされ、束縛の解決はランタイムへと
+先送りされます。すなわち、ランタイムにその変数が使われる時点で
+再びマークされていたモジュールから束縛の探索が行われます
+(ランタイムでのカレントモジュールからでは無いことに注意)。
+束縛が見付かれば、束縛へアクセスするコードがコンパイルされたコード列に
+挿入されます。見付からなければ'undefined variable'エラーが報告されます。
+@c COMMON
+
+@c EN
+Once the appropriate binding is found for the global variable,
+the access to the binding is hard-wired in the compiled code
+and the global variable resolution will never take place again.
+@c JP
+グローバル変数に対して適切な束縛がひとたび発見されれば、
+その束縛へのアクセスはコンパイルされたコードに埋め込まれ、
+その変数の束縛の探索は二度と行われません。
+@c COMMON
+
+@c EN
+The definition special form such as @code{define} and @code{define-syntax}
+inserts the binding to the current module.   Thus it may shadow
+the binding of imported or inherited modules.
+@c JP
+@code{define}や@code{define-syntax}等の定義を行う特殊形式は
+カレントモジュールに束縛を挿入します。これは、importしたり継承したりしている
+モジュールの同名の束縛をシャドウします。
+@c COMMON
+
+@c EN
+The resolution of binding of a global variable happens like this.
+First, the current module is searched.  Then, each
+imported module is taken in the order of import, and searched,
+including each module's ancestors.
+Note that import is not transitive; imported module list is not
+chased recursively.
+Finally, ancestors of the current module are searched in order.
+@c JP
+グローバル変数の束縛の解決は次の手順で行われます。
+まずカレントモジュールが探されます。次に、importしているモジュールが
+importの順番に並べられ、それぞれについてそのモジュールおよびそのモジュールの先祖
+(継承されているモジュール)が順に探されます。
+importは遷移的ではありません；importされたモジュールがimportしているモジュール…
+というふうに再帰的に辿ることはしません。
+最後に、カレントモジュールの先祖が順に探されます。
+@c COMMON
+
+@node Defining and selecting modules, Using modules, Module semantics, Modules
+@subsection Defining and selecting modules
+@c NODE モジュールの定義と選択
+
+@defspec define-module name body @dots{}
+@c EN
+@var{Name} must be a symbol.
+If a module named @var{name} does not exist, create one.
+Then evaluates @var{body} sequentially in the module.
+@c JP
+@var{name}はシンボルでなければなりません。
+名前@var{name}を持つモジュールが存在しなければまず作成します。
+それから、@var{body} @dots{} をモジュール@var{name}中で評価します。
+@c COMMON
+@end defspec
+
+@defspec select-module name
+@c EN
+Makes a module named @var{name} as the current module.
+It is an error if no module named @var{name} exists.
+
+If @code{select-module} is used in the Scheme file, its effect is
+limited inside the file, i.e. even if you load/require a file that uses
+@code{select-module} internallly, the current module of requirer is
+not affected.
+@c JP
+名前@var{name}を持つモジュールをカレントモジュールとします。
+その名前を持つモジュールが無ければエラーとなります。
+
+@code{select-module}がSchemeファイルの中で用いられた場合、
+その効果はそのファイルの終了までに限られます。@code{select-module}を中で呼んでいる
+ファイルをloadやrequireしても、呼んだ側のカレントモジュールは影響を受けません。
+@c COMMON
+@end defspec
+
+@defspec with-module name body @dots{}
+@c EN
+Evaluates @var{body} sequentially in the module
+named @var{name}.  Returns the last result(s).
+If no moudle named @var{name}, an error is signalled.
+@c JP
+名前@var{name}を持つモジュールをカレントモジュールとした状態で@var{body} @dots{}
+を順に評価し、最後の結果を返します。該当するモジュールが存在しなければエラーとなります。
+@c COMMON
+@end defspec
+
+@defspec current-module
+@c EN
+Evaluates to the current module in the compile context.
+Note that this is a special form, not a function.
+Module in Gauche is statically determined at compile time.
+@c JP
+コンパイル時点でのカレントモジュールに評価されます。
+これは手続きではなく特殊形式です。
+Gaucheではモジュールはコンパイル時に静的に決定されます。
+@c COMMON
+@lisp
+(define-module foo
+  (export get-current-module)
+  (define (get-current-module) (module-name (current-module))))
+
+(define-module bar
+  (import foo)
+  (get-current-module)) @result{} foo @r{; not bar}
+@end lisp
+@end defspec
+
+
+@node Using modules, Module inheritance, Defining and selecting modules, Modules
+@subsection Using modules
+@c NODE モジュールの使用
+
+@defspec export symbol @dots{}
+@c EN
+Makes bindings of @var{symbol}s in the current module available
+to modules that imports the current module.
+@c JP
+カレントモジュールの中で、シンボル@var{symbol}に対応する束縛をexportします。
+exportされた束縛は、カレントモジュールをimportしたモジュール中で見えるようになります。
+@c COMMON
+@end defspec
+
+@defspec export-all
+@c EN
+Makes all bindings in the current module available to modules
+that imports it.
+@c JP
+カレントモジュール中の全ての束縛をexportします。
+@c COMMON
+@end defspec
+
+@defspec import module-name @dots{}
+@c EN
+Makes all exported bindings in the module named @var{module-name}
+available in the current module.   The named modules should exist
+when the compiler sees this special form.
+
+Note that imports are not transitive.  The modules that @var{module-name}s
+are importing are not automatically imported to the current module.
+This keeps modules' modularity; a library module can import whatever
+modules it needs without worring about polluting the namespace of
+the user of the module.
+@c JP
+名前@var{module-name}を持つモジュールがexportしている束縛を
+カレントモジュール中で使えるようにします。該当するモジュールが既に定義されて
+いなければなりません。
+
+モジュールのimportは遷移的でないことに注意してください。
+@code{module-name}で指定されるモジュール内でimportしているモジュールは、
+カレントモジュールにはimportされません。
+これはモジュールのモジュラリティを保つために必要です；
+例えば、ライブラリモジュールは内部で使用するためにいくつも他のモジュールを
+importするかもしれませんが、それがそのライブラリモジュールを使用するモジュールの
+名前空間に影響することはないわけです。
+@c COMMON
+@end defspec
+
+@defmac use name
+@c EN
+A convenience macro that combines module imports and on-demand
+file loading.  Basically, @code{(use foo)} is equivalent
+to the following two forms:
+@example
+(require "foo")
+(import foo)
+@end example
+That is, it loads the library file named ``@code{foo}'' (if not yet
+loaded) which defines a module named @code{foo} in it,
+and then import the module
+@code{foo} into the current module.
+@c JP
+モジュールのインポートとオンデマンドのファイルのロードを合わせて行う、
+便利なマクロです。基本的に、@code{(use foo)} は以下のふたつのフォームと
+等価です。
+@example
+(require "foo")
+(import foo)
+@end example
+すなわち、まず名前``@code{foo}''を持つライブラリファイルが(まだロードされて
+いなければ)ロードされ、その中で定義されているモジュール@code{foo}をカレントモジュールに
+インポートします。
+@c COMMON
+
+@c EN
+Although the files and modules are orthogonal concept,
+it is practically convenient to separate files by modules.
+Gauche doesn't force you to do so, and you can always use
+@code{require} and @code{import} separately.  However, all
+modules provided with Gauche are arranged so that they can be
+used by @code{use} macro.
+@c JP
+ファイルのロードとモジュールとは直交する概念ですが、
+現実にはモジュール毎にファイルを分割するのが便利です。
+必ずしもそうする必要は無く、@code{require} と @code{import} を別々に
+使っても構いません。が、Gaucheに附属してくるライブラリはすべて、
+@code{use} マクロで使えるように書かれています。
+@c COMMON
+
+@c EN
+If a module is too big to fit in one file, you can split them
+into several subfiles and one main file.  The main file defines
+the module, and either loads, requires, or autoloads subfiles.
+@c JP
+もしモジュールが一つのファイルに収めるには大きすぎる場合、一つのメインファイルと
+いくつかのサブファイルに分けることも出来ます。メインファイルの中でモジュールを
+定義し、サブファイルをまとめてロードするか、オートロードを設定します。
+@c COMMON
+
+@c EN
+If @var{name} contains periods `@code{.}', it is replaced to `@code{/}'
+in the file name.to be @code{require}d, for example,
+@code{(use foo.bar.baz)} is expanded to:
+@example
+(require "foo/bar/baz")
+(import foo.bar.baz)
+@end example
+This is not very Scheme-ish way, but nevertheless convenient.
+(The alternative design is to use a list of symbols to represent
+hierarchical file/module configuration, as in Guile.)
+@c JP
+もし@var{name}がピリオド`@code{.}'を含んでいる場合、@code{require}するファイル名
+ではそれが`@code{/}'に置換されます。例えば@code{(use foo.bar.baz)}は
+@example
+(require "foo/bar/baz")
+(import foo.bar.baz)
+@end example
+となります。これはあまりScheme風ではありませんが、便利ではあります。
+(別の設計方針として、Gaucheでは採用していませんが、
+例えばGuileで用いられているような、シンボルのリストを
+階層的なモジュールに使用することも考えられます。)
+@c COMMON
+@end defmac
+
+@node Module inheritance, Module introspection, Using modules, Modules
+@subsection Module inheritance
+@c NODE モジュールの継承
+
+@c EN
+The export-import mechanism doesn't work well in some cases, such as:
+@c JP
+export-importメカニズムは、次のような場合をうまく処理できません。
+@c COMMON
+
+@itemize @bullet
+@c EN
+@item You want to create a module that is mostly the same as the
+existing one, but adding or altering some definitions.
+@c JP
+@item 既存のモジュールとほぼ同等の機能を持つが、若干定義を足したり変更したり
+したモジュールを作りたい。
+@c COMMON
+@c EN
+@item You wrote a bunch of related modules that are often used together,
+and not want your users to repeat a bunch of 'use' forms every time
+they use your module.
+@c JP
+@item 相互に関連するいくつものモジュールを作成した。
+ユーザがこれらのモジュールを使う時に毎回いくつも 'use' を並べないで済むように
+一つにまとめたい。
+@c COMMON
+@end itemize
+
+@c EN
+You can use module inheritance in these cases.
+@c JP
+このような場合にモジュールの継承が使えます。
+@c COMMON
+
+@defmac extend module-name @dots{}
+@c EN
+Makes the current module inherit from named modules.
+The current inheritance information is altered by the
+inheritance information calculated from given modules.
+@c JP
+カレントモジュールが、@var{module-name} @dots{}に挙げられたモジュールを
+継承するようにします。それまでの継承の情報は捨てられ、@var{module-name} @dots{}
+から計算される継承情報が有効になります。
+@c COMMON
+
+@c EN
+A new module inherits from @code{gauche} module when created.
+If you put @code{(extend scheme)} in that module, for example,
+the module resets to inherit directly from @code{scheme} module
+that has only bindings defined in R5RS, hence, after the export
+form, you can't use 'import' or any other @code{gauche}-specific
+bindings in the module.
+@c JP
+新たに作られるモジュールはデフォルトで@code{gauche}モジュールを継承しています。
+例えばそのモジュールに@code{(extend scheme)}というフォームを入れた場合、
+その時点でそのモジュールは@code{scheme}モジュール(R5RSで定義された束縛
+のみを含む)を直接継承するようになります。したがって、そのフォームの後で
+'import' やその他@code{gauche}特有の束縛はそのモジュール内では
+使えなくなります。
+@c COMMON
+
+@c EN
+If a named module is not defined yet, @code{extend}
+tries to load it, using the same convention @code{use} macro does.
+@c JP
+@var{module-name}に挙げられたモジュールがまだ存在しなかった場合、
+@code{extend}は@code{use}と同じメカニズムを使ってファイルをロードすることを
+試みます。
+@c COMMON
+
+@c EN
+A module can inherit multiple modules, exactly the same way as
+a class can inherit from multiple classes.  The resolution of
+order of inheritance needs to be explained a bit.
+@c JP
+モジュールは複数のモジュールを継承することができます。
+丁度、クラスが複数のクラスを継承できるのと同じようにです。
+多重継承の場合、次のようにしてモジュール間の優先順位が決められます。
+@c COMMON
+
+@c EN
+Each module has a @emph{module precedence list}, which lists
+modules in the order of how they are searched.  When the module
+inherits multiple modules, module precedence lists of inherited
+modules are merged into a single list, keeping the constraints
+that: (1) if a module A appears before module B in some module
+precedence list, A has to appear before B in the resulting module
+precedence list; and (2) if a module A appears before module B
+in @code{extend} form, A has to appear before B in the resulting
+module precedence list.   If no precedence list can be constructed
+with these constraints, an error is signalled.
+@c JP
+各モジュールは@emph{module precedence list}というモジュールのリストを
+持っています。そこにリストされた順に束縛が探されます。
+モジュールが複数のモジュールを多重継承した場合、継承される各モジュールの
+module precedence listを、次に挙げる制約を満たすようにマージ
+したものが新たなmodule precedence listとなります：
+(1) あるmodule precedence listでモジュールAがモジュールBより前に現れていたら、
+結果のmodule precedence listでもAはBより前に現れる：
+(2) モジュールAがモジュールBより@code{extend}フォームで前に現れていたら、
+結果のmodule precedence listでもAはBより前に現れる。
+この条件を満たすようなmodule precedence listが構成できない場合はエラーとなります。
+@c COMMON
+@end defmac
+
+@c EN
+For example, suppose you wrote a library in modules
+@code{mylib.base}, @code{mylib.util} and @code{mylib.system}.
+You can bundle those modules into one module by creating
+a module @code{mylib}, as follows:
+@c JP
+例えばあなたがライブラリを3つのモジュール、
+@code{mylib.base}、@code{mylib.util}、@code{mylib.system}に分けて
+書いたとしましょう。次のように書けば、これらのモジュールを
+一つの@code{mylib}モジュールに見せることができます。
+@c COMMON
+
+@example
+(define-module mylib
+  (extend mylib.system mylib.util mylib.base))
+@end example
+
+@c EN
+The user of your module just says @code{(use mylib)} and
+all exported symbols from three submodules become available.
+@c JP
+このライブラリモジュールのユーザは @code{(use mylib)} とするだけで
+全てのサブモジュールのexportされた束縛を利用することができるようになります。
+@c COMMON
+
+@node Module introspection, Predefined modules, Module inheritance, Modules
+@subsection Module introspection
+@c NODE モジュールイントロスペクション
+
+@deftp {Builtin Class} <module>
+@clindex module
+@c EN
+A module class.
+@c JP
+モジュールクラスです。
+@c COMMON
+@end deftp
+
+@defun module? obj
+@c EN
+Returns true if @var{obj} is a module.
+@c JP
+@var{obj}がモジュールなら真の値を返します。
+@c COMMON
+@end defun
+
+@defun find-module name
+@c EN
+Returns a module object whose name is a symbol @var{name}.
+If the named module doesn't exist, @code{#f} is returned.
+@c JP
+名前がシンボル@var{name}であるようなモジュールを返します。
+その名前をもつモジュールが存在しなければ、@code{#f}を返します。
+@c COMMON
+@end defun
+
+@defun make-module name &keyword if-exists
+@c EN
+Creates and returns a module that has symbol @var{name}.
+If the named module already exists, the behavior is specified by
+@var{if-exists} keyword argument.  If it is @code{:error} (default),
+an error is signalled.  If it is @code{#f}, @code{#f} is returned.
+@c JP
+シンボルの名前@var{name}を持つモジュールを作成して返します。
+その名前を持つモジュールが既に存在していた場合、その動作は
+@var{if-exists}キーワード引数で指定されます。
+@var{if-exists}引数が@code{:error}である場合（デフォルト）、
+エラーが報告されます。それが@code{#f}である場合は単に@code{#f}が返されます。
+@c COMMON
+
+@c EN
+Note that creating modules on-the-fly isn't usually necessary
+for ordinal scripts, since to execute already written program requires modules
+to be specified by name, i.e. syntax @code{define-module}, @code{import},
+@code{extend}, @code{with-module} all takes module names, not
+modules.  It is because module are inherently compile-time structure.
+However, there are some cases that dynamically created modules
+are useful, especially the program itself is dynamically created.
+You can pass a module to @code{eval} to compile and
+evaluate such dynamically created
+programs in it (@xref{Eval and repl}).
+@c JP
+モジュールを実行時に動的に生成することは、通常のスクリプトでは
+あまり必要とはされません。既に書かれたプログラムの解釈においては、
+モジュールは名前で指定されている必要があるからです。
+構文@code{define-module}、@code{import}、@code{extend}、@code{with-module}
+等はモジュールそのものではなくモジュール名を取ります。
+これは、モジュールが本質的にコンパイル時の構造であるためです。
+しかし、動的に作られるモジュールが有用な場合もあります---プログラムそのものが、
+動的に作られる場合です。@code{eval}にモジュールを渡して、
+そのような動的に作られたプログラムがそのモジュールの中で
+コンパイルされ評価されるようにできます。
+@c COMMON
+
+@c EN
+You can also pass @code{#f} to @var{name} to create
+@emph{anonymous} module.   Anonymous modules can't be
+looked up by @code{find-module}, nor can be imported
+or inherited (since @code{import} and @code{extend} take
+module names, not modules). 
+It is useful when you want to have a temporary, segregated namespace
+dynamically---for example, you can create an anonymous module
+to evaluate code fragments sent from other program, and
+discards the module when the connection is terminated.
+Anonymous modules are not registered in the system dictionary
+and are garbage collected when nobody keeps reference to it.
+@c JP
+また、@var{name}に@code{#f}を渡すことで無名のモジュールを作ることもできます。
+無名のモジュールは@code{find-module}で探すことはできませんし、
+他のモジュールから@code{import}することも@code{extend}されることも
+できません（@code{import}や@code{extend}はモジュール名を必要とするからです）。
+無名のモジュールは、一時的に隔離された名前空間を動的に作りたい時に
+便利です。例えばネットワークで接続されたプログラムから送られた式を
+その中で評価して、コネクションが終了したら名前空間ごと捨ててしまうという
+ような場合です。無名のモジュールはシステムの内部辞書に登録されないので、
+モジュールへの参照が無くなればガベージコレクトされます。
+@c COMMON
+@end defun
+
+@defun all-modules
+@c EN
+Returns a list of all named modules.
+Anonymous modules are not included.
+@c JP
+現在存在する全ての名前付きモジュールのリストを返します。
+無名のモジュールは含まれません。
+@c COMMON
+@end defun
+
+@defun module-name module
+@defunx module-imports module
+@defunx module-exports module
+@defunx module-table module
+@c EN
+Accessors of a module object.  Returns the name of the module (a symbol),
+list of imported modules, list of exported symbols, and a hash table
+that maps symbols to bindings, of the @var{module} are returned,
+respectively.
+@c JP
+モジュールオブジェクトのアクセスメソッドです。
+@var{module}の名前(シンボル)、@var{module}がインポートしているモジュールのリスト、
+エクスポートしているシンボルのリスト、そして
+シンボルから束縛へのマップを行うハッシュテーブルを返します。
+@c COMMON
+
+@c EN
+If the @var{module} exports all symbols, @code{module-exports} returns
+@code{#t}.
+@c JP
+もし@var{module}が全てのシンボルをエクスポートしている場合は、@code{module-exports}
+は@code{#t}を返します。
+@c COMMON
+
+@c EN
+It is an error to pass a non-module object.
+@c JP
+モジュールオブジェクト以外が渡された場合はエラーになります。
+@c COMMON
+@end defun
+
+@defun module-parents module
+@defunx module-precedence-list module
+@c EN
+Returns the information of module inheritance.
+@code{Module-parents} returns the modules @var{module} directly inherits
+from.  @code{Module-precedence-list} returns the module precedence
+list of @var{module} (@xref{Module inheritance}).
+@c JP
+モジュールの継承に関する情報を返します。
+@code{module-parents}は@var{module}が直接継承しているモジュールのリストを
+返します。@code{module-precedence-list}は@var{module}のmodule precedence
+list (@ref{Module inheritance}参照) を返します。
+@c COMMON
+@end defun
+
+@defun symbol-bound? symbol &optional module
+Returns true iff @var{symbol}'s global binding is visible
+from @var{module}.  If @var{module} is omitted, the current module
+is used.
+@end defun
+
+@node Predefined modules,  , Module introspection, Modules
+@subsection Predefined modules
+@c NODE 組み込みモジュール
+
+@c EN
+Several modules are predefined in Gauche.
+@c JP
+Gauche起動時にいくつかのモジュールがあらかじめ定義されています。
+@c COMMON
+
+@deftp {Builtin Module} null
+@mdindex null
+@c EN
+This module corresponds to the null environment referred in R5RS.
+This module contains only syntactic bindings of R5RS syntax.
+(With one exception in the current implementation:
+Syntax @code{with-module} is in this module, since Gauche needed it
+for certain internal setup.  It'll be removed in future.)
+@c JP
+このモジュールはR5RSで述べられている"null environment"に相当します。
+R5RSの構文要素への束縛だけを含んだモジュールです。
+(但し現在の実装では一つだけ例外があります：Gaucheが内部処理に必要とするために、
+構文@code{with-module}がこのモジュールに含まれています。
+将来これは除かれます。)
+@c COMMON
+@end deftp
+
+@deftp {Builtin Module} scheme
+@mdindex scheme
+@c EN
+This module contains all the binding of @code{null} module,
+and the binding of procedures defined in R5RS.
+@c JP
+このモジュールは@code{null}モジュール内の束縛全てに加えて、
+R5RSで定義されている全ての手続きの束縛を含みます。
+@c COMMON
+@end deftp
+
+@deftp {Builtin Module} gauche
+@mdindex gauche
+@c EN
+This module contains all the bindings of @code{scheme} module,
+plus Gauche specific built-in procedures.
+@c JP
+このモジュールは@code{scheme}モジュール内の全ての束縛に加え、
+Gaucheの組込み手続きや構文が含まれています。
+@c COMMON
+@end deftp
+
+@deftp {Builtin Module} user
+@mdindex user
+@c EN
+This module is the default module the user code is compiled.
+all the bindings of @code{gauche} module is imported.
+@c JP
+このモジュールはユーザコードがコンパイルされる既定のモジュールです。
+@code{gauche}モジュール内の全ての束縛がインポートされています。
+@c COMMON
+@end deftp

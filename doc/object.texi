@@ -1,0 +1,373 @@
+@node Object system, Library modules - Overview, Core library, Top
+@chapter Object system
+@c NODE オブジェクトシステム
+
+Gauche's object system design is largely inspired by
+STklos, whose design has come from TinyCLOS.
+It supports multiple inheritance, multimethods,
+and metaobject protocol.
+
+The type system is integrated to the object system,
+that is, a string is an instance of the class @code{<string>},
+and so on.
+
+@c ----------------------------------------------------------------------
+@menu
+* General Inquiry::             
+* Defining class::              
+* Defining methods::            
+* Creating Instance::           
+* Accessing Instance::          
+* Metaobject protocol::         
+@end menu
+
+@node General Inquiry, Defining class, Object system, Object system
+@section  General Inquiry
+@c NODE 一般的な問い合わせ
+
+@defun class-of obj
+Returns a class metaobject of @var{obj}.
+
+@example
+(class-of 3)     @result{} #<class <integer>>
+(class-of "foo") @result{} #<class <string>>
+@end example
+@end defun
+
+@defun is-a? obj class
+Returns true if @var{obj} is an instance of @var{class} or an instance
+of descendants of @var{class}.
+
+@example
+(is-a? 3 <integer>)   @result{} #t
+(is-a? 3 <real>)      @result{} #t
+(is-a? 5+3i <real>)   @result{} #f
+(is-a? :foo <symbol>) @result{} #f
+@end example
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Defining class, Defining methods, General Inquiry, Object system
+@section Defining class
+@c NODE クラスの定義
+
+@c EN
+A class is a first-class object in Gauche and you can create it
+on the fly at run-time using procedure calls.
+However, for convenience, a macro is defined to create a class
+and bind it globally.
+@c JP
+クラスは、Gaucheではファーストクラスのオブジェクトなので、
+手続き呼び出しを使って実行時に動的に作成することができます。
+簡便のため、グローバルに束縛されたクラスを生成するマクロが
+定義されています。
+@c COMMON
+
+@defmac define-class name supers (slot-spec @dots{}) option @dots{}
+@c EN
+Creates a class object according to the arguments, and globally
+bind it to a variable @var{name}.   This macro should be used at toplevel.
+
+@var{Supers} is a list of direct superclasses from which this class
+inherits.   You can use multiple inheritance.
+See @ref{Multiple inheritance}  below, for the rule that determines
+precedence of inheritance chain.
+
+@var{Slot-spec} is a specification of a "slot", sometimes known as 
+a "field" or an "instance variable" (but you can specify "class variable"
+in @var{slot-spec} as well). 
+The simplest form of @var{slot-spec} is just a symbol, which names
+the slot.  Or you can give a list, whose first element is a symbol
+and whose rest is an interleaved list of keywords and values.
+The list form not only defines a name of the slot but specifies
+behavior of the slot.  See @ref{Slot specification}, for details.
+
+Finally, @var{option} @dots{} is an interleaved list of keywords
+and values, specifies how class object should be created.
+This macro recognizes one keyword, @code{:metaclass}, whose
+corresponding value is used for metaclass (class that instantiates
+another class).   Other options are passed to the @code{make}
+method to create the class object.  @xref{Class instantiation},
+for the usage of metaclass.
+@c JP
+引数によって指定されたクラスオブジェクトを作成し、それを @var{name} に
+グローバルに束縛します。このマクロはトップレベルでのみ使うことができます。
+
+@var{Supers} はそのクラスが継承する直接のスーパークラスのリストです。
+多重継承も使えます。継承関係の優先についてのルールについては、
+@ref{多重継承} を参照して下さい。
+
+@var{Slot-spec} は「スロット」の仕様で、「フィールド」や「インスタンス
+変数」と呼ばれるものです (@var{slot-spec} を使って「クラス変数」
+を指定することもできます)。
+@var{slot-spec} の最も単純なフォームはシンボルそのもので、その名前が
+スロットであるものです。あるいは、最初の要素がシンボルで残りの要素が
+キーワードと値が交互に来るリストを渡すこともできます。
+
+このリストフォームは、スロットの名前を定義するだけでなく、そのスロットの
+振る舞いも定義します。詳細は、@ref{Slot specification} を参照して下さい。
+
+最後に、@var{option} @dots{} は、クラスオブジェクトがどのように
+作られるかを指定する、キーワードと値が交互に来るリストです。
+
+このマクロでは1つのキーワード引数、@code{:metaclass} により、
+メタクラス(他のクラスをインスタンス化するクラス)を指定できます。
+他のオプションはクラスオブジェクトを作成するために、@code{make}
+メソッドに渡されます。メタクラスの使用方法については、
+@ref{Class instantiation}を参照。
+
+@c COMMON
+@end defmac
+
+@menu
+* Multiple inheritance::        
+* Slot specification::          
+@end menu
+
+@node Multiple inheritance, Slot specification, Defining class, Defining class
+@subsection Multiple inheritance
+@c NODE 多重継承
+
+@node Slot specification,  , Multiple inheritance, Defining class
+@subsection Slot specification
+@c NODE スロットの記述
+
+
+@c ----------------------------------------------------------------------
+@node Defining methods, Creating Instance, Defining class, Object system
+@section Defining methods
+@c NODE メソッドの定義
+
+@defmac define-generic name
+@end defmac
+
+@defmac define-method name specs body
+@end defmac
+
+@c ----------------------------------------------------------------------
+@node Creating Instance, Accessing Instance, Defining methods, Object system
+@section Creating Instance
+@c NODE インスタンスの作成
+
+@deffn {Generic Function} make class arg @dots{}
+@end deffn
+
+@deffn {Method} make (class <class>) arg @dots{}
+@end deffn
+
+@deffn {Method} make (class <method>)  arg @dots{}
+@deffnx {Method} make (class <generic>)  arg @dots{}
+@end deffn
+
+@deffn {Method} initialize (class <class>) initargs
+@end deffn
+
+@c ----------------------------------------------------------------------
+@node Accessing Instance, Metaobject protocol, Creating Instance, Object system
+@section Accessing Instance
+@c NODE インスタンスへのアクセス
+
+@defun slot-ref obj slot
+Returns a value of the slot @var{slot} of object @var{object}.
+
+If the specified slot is not bound to any value, a generic function
+@code{slot-unbound} is called with three arguments, @var{obj}'s class,
+@var{obj}, and @var{slot}.  The default behavior of @code{slot-unbound}
+is to signal an error.
+
+If the object doesn't have the specified slot,
+a generic function @code{slot-missing} is called with three
+arguments, @var{obj}'s class,
+@var{obj}, and @var{slot}.  The default behavior of @code{slot-missing}
+is to signal an error.
+@end defun
+
+@defun slot-set! obj slot value
+Alters the value of the slot @var{slot} of object @var{object} to
+the value @var{value}.
+
+If the object doesn't have the specified slot, a generic function
+@code{slot-missing} is called with four arguments,
+@var{obj}'s class, @var{obj}, @var{slot}, @var{value}.
+@end defun
+
+@defun slot-bound? obj slot
+Returns true if object @var{obj}'s slot @var{slot} is bound, 
+otherwise returns false.
+
+If the object doesn't have the specified slot, a generic function
+@code{slot-missing} is called with four arguments,
+@var{obj}'s class, @var{obj}, @var{slot}.
+
+@end defun
+
+@defun slot-exists? obj slot
+Returns true iff @var{obj} has the slot named @var{slot}.
+@end defun
+
+@defun slot-push! obj slot value
+This function implements the common idiom.
+It can be defined like the following code
+(but it may be optimized in the future versions).
+@example
+(define (slot-push! obj slot value)
+  (slot-set! obj slot (cons value (slot-ref obj slot))))
+@end example
+@end defun
+
+@deffn {Method} slot-unbound (class <class>) obj slot
+@end deffn
+
+@deffn {Method} slot-missing (class <class>) obj slot &optional value
+@end deffn
+
+
+@defun class-slot-ref class slot-name
+@defunx class-slot-set! class slot-name obj
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Metaobject protocol,  , Accessing Instance, Object system
+@section Metaobject procotol
+@c NODE メタオブジェクトプロトコル
+
+@menu
+* System metaclasses::          
+* Class introspection::         
+* Class instantiation::         
+* Customizing slot access::     
+* Method instantiation::        
+* Customizing method application::  
+@end menu
+
+@node System metaclasses, Class introspection, Metaobject protocol, Metaobject protocol
+@subsection System metaclasses
+@c NODE システムメタクラス
+
+@deftp {Class} <top>
+@clindex top
+@end deftp
+
+@deftp {Class} <class>
+@clindex class
+@end deftp
+
+@deftp {Class} <generic>
+@clindex generic
+@end deftp
+
+@deftp {Class} <method>
+@clindex method
+@end deftp
+
+@deftp {Class} <object>
+@clindex object
+@end deftp
+
+
+@node Class introspection, Class instantiation, System metaclasses, Metaobject protocol
+@subsection Class introspection
+@c NODE クラスのイントロスペクション
+
+@menu
+* Class metaobject::            
+* Slot definition::             
+@end menu
+
+@node Class metaobject, Slot definition, Class introspection, Class introspection
+@subsubsection Class metaobject
+@c NODE クラスメタオブジェクト
+
+@defun class-name class
+@end defun
+
+@defun class-precedence-list class
+@end defun
+
+@defun class-direct-supers class
+@end defun
+
+@defun class-direct-slots class
+@end defun
+
+@defun class-slots
+@end defun
+
+@node Slot definition,  , Class metaobject, Class introspection
+@subsubsection Slot definition
+@c NODE スロット定義
+
+@deftp {Class} <slot-accessor>
+@clindex slot-accessor
+@end deftp
+
+
+@defun class-slot-definition class slot-name
+@end defun
+
+@defun class-slot-accessor class slot-name
+@end defun
+
+@defun slot-definition-name slot-def
+@end defun
+@defun slot-definition-allocation slot
+@end defun
+
+@defun slot-definition-getter slot
+@defunx slot-defininion-setter slot
+@defunx slot-definition-accessor slot
+@end defun
+
+@defun slot-definition-options slot-def
+@defunx slot-definition-option slot-def key &optional default
+@end defun
+
+@node Class instantiation, Customizing slot access, Class introspection, Metaobject protocol
+@subsection Class instantiation
+@c NODE クラスのインスタンシエーション
+
+@deffn {Method} make (class <class>) &rest initargs
+@end deffn
+
+
+@node Customizing slot access, Method instantiation, Class instantiation, Metaobject protocol
+@subsection Customizing slot access
+@c NODE スロットアクセスのカスタマイズ
+
+
+@deffn {Generic Function} compute-slots
+@end deffn
+
+@deffn {Generic Function} compute-get-n-set
+@end deffn
+
+@defun slot-ref-using-accessor obj slot-accessor
+@defunx slot-set-using-accessor obj slot-accessor value
+@end defun
+
+@node Method instantiation, Customizing method application, Customizing slot access, Metaobject protocol
+@subsection Method instantiation
+@c NODE メソッドのインスタンシエーション
+
+@deffn {Method} make (class <method>) &rest initargs
+@end deffn
+
+@node Customizing method application,  , Method instantiation, Metaobject protocol
+@subsection Customizing method application
+@c NODE メソッド適用のカスタマイズ
+
+@deffn {Generic Function} apply-generic gf args
+@end deffn
+
+@deffn {Generic Function} sort-applicable-methods gf methods args
+@end deffn
+
+@deffn {Generic Function} method-more-specific? method1 method2 classes
+@end deffn
+
+@deffn {Generic Function} apply-methods gf methods args
+@end deffn
+
+@deffn {Generic Function} apply-method gf method build-next args
+@end deffn
+

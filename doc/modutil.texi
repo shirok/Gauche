@@ -1,0 +1,4985 @@
+@node Library modules - Utilities, References, Library modules - SRFIs, Top
+@chapter Library modules - Utilities
+@c NODE ライブラリモジュール - ユーティリティ
+
+
+@c ----------------------------------------------------------------------
+@menu
+* binary.pack - Packing Binary Data::  
+* dbm - Generic DBM interface::  
+* dbm.gdbm - GDBM interface::   
+* dbm.ndbm - NDBM interface::   
+* dbm.odbm - Original DBM interface::  
+* file.filter - Filtering file content::  
+* file.util - Filesystem utilities::  
+* math.const - Mathematic constants::  
+* math.mt-random - Mersenne-Twister random number generator::  
+* rfc.822 - RFC822 message parsing::  
+* rfc.base64 - Base64 encoding/decoding::  
+* rfc.cookie - HTTP cookie handling::  
+* rfc.hmac - HMAC keyed-hashing::  
+* rfc.http - HTTP::             
+* rfc.md5 - MD5 message digest::  
+* rfc.quoted-printable - Quoted-printable encoding/decoding::  
+* rfc.sha1 - SHA1 message digest::  
+* rfc.uri - URI parsing and construction::  
+* slib - SLIB::                 
+* text.csv - CSV tables::       
+* text.diff - Calculate difference of text streams::  
+* text.html-lite - Simple HTML document construction::  
+* text.parse - Parsing input stream::  
+* text.tr - Transliterate characters::  
+* text.tree - Lazy text construction::  
+* util.combinations - Combination library::  
+* util.digest - Message digester framework::  
+* util.isomorph - Determine isomorphism::  
+* util.lcs - The longest common subsequence::  
+* util.list - Additional list library::  
+* util.queue - Queue::          
+* util.toposort - Topological sort::  
+* www.cgi - CGI Utility::       
+@end menu
+
+@c ----------------------------------------------------------------------
+@node binary.pack - Packing Binary Data, dbm - Generic DBM interface, Library modules - Utilities, Library modules - Utilities
+@section @code{binary.pack} - Packing Binary Data
+
+@deftp {Module} binary.pack
+@mdindex binary.pack
+This module provides an interface for packing and unpacking (writing
+and reading) binary data with templates.  The functionality was
+inspired largely by the Perl pack/unpack functions, with comparison of
+similar features from other languages, however an effort was made to
+make it more general and more efficient, to be usable for
+database-like processing.  To that end, the most notable differences
+are that any packable value is unpackable (and vice versa), and the
+default behavior is to pack and unpack using port I/O, so you can seek
+in a large file and unpack from it.  Also, templates may be stored as
+dispatch closures to pack, unpack or even skip over values without
+re-parsing the template.
+
+@c See also binary.io - Binary I/O for utilities to read and write
+@c individual binary values.
+@end deftp
+
+@defun pack template list &keyword :output :to-string?
+Writes the values in @var{list} to the current output port, according
+to the format specified by the string @var{template}.  The template
+string is a series of single character codes, optionally followed by a
+numeric count (which defaults to 1).
+
+The format characters can generally be divided into string types,
+which interpret the count as a string byte size, and object types,
+which treat the count as a repetition indicator.  The count may be
+specified as the character @code{*}, which means to use the full
+size of the string for string types, and use all remaining values for
+object types.
+
+Counts may also be specified as a template enclosed in brackets, which
+means the count is the byte size of the enclosed template.  For
+example, @code{x[L]} skips a long.
+
+The special format character @code{/} may be used to indicate a
+structure where the packed data contains a dynamic count followed by
+the value itself.  The template is written as
+@code{<count-item>/<value-item>}, where @code{<count-item>} is any
+template character to be interpreted as a numeric count, and
+@code{<value-item>} is any other template character to use this count.
+If a normal count is given after @code{<value-item>} it is ignored.
+
+The format character @code{@@} may be used with a count to pad to an
+absolute position since the start of the template.
+
+Sub-templates may be grouped inside parentheses.  If angle-brackets
+are used, then they also behave as group operators but recursively
+operate on nested lists.
+
+The string types:
+
+@table @code
+@item a
+An arbitrary incomplete string, null padded.
+
+@item A
+A text string, space padded.
+
+@item Z
+A null terminated (ASCIZ) string, null padded.
+
+@item b
+A bit string (ascending bit order inside each byte).
+
+@item B
+A bit string (decending bit order inside each byte).
+
+@item h
+A hex string (low nybble first).
+
+@item H
+A hex string (high nybble first).
+@end table
+
+The object types:
+
+@table @code
+@item c
+A single char value.
+
+@item C
+An unsigned char value, single-byte only.
+
+@item s
+A signed short (16 bit) value.
+
+@item S
+An unsigned short (16 bit) value.
+
+@item i
+A signed integer (>= 32 bit) value.
+
+@item I
+An unsigned integer (>= 32 bit) value.
+
+@item l
+A signed long (32 bit) value.
+
+@item L
+An unsigned long (32 bit) value.
+
+@item n
+An unsigned short (16 bit) in "network" (big-endian) order.
+
+@item N
+An unsigned long (32 bit) in "network" (big-endian) order.
+
+@item v
+An unsigned short (16 bit) in "VAX" (little-endian) order.
+
+@item V
+An unsigned long (32 bit) in "VAX" (little-endian) order.
+
+@item q
+A signed quad (64 bit) value.
+
+@item Q
+An unsigned quad (64 bit) value.
+
+@item f
+A single-precision float in the native format.
+
+@item d
+A double-precision float in the native format.
+
+@item w
+A BER compressed integer.  An unsigned integer in base 128, most
+significant digit first, where the high bit is set on all but the
+final (least significant) byte.  Thus any size integer can be encoded,
+but the encoding is efficient and small integers don't take up any
+more space than they would in normal char/short/int encodings.
+
+@item x
+A null byte.
+
+@item o
+An sexp, handled with @code{read} and @code{write}.
+
+@end table
+
+If the optional keyword @var{:output} is given that port is used
+instead of the current output port.  If @var{:to-string?} is given and
+true, then pack accumulates and returns the output as a string.
+
+Note that the returned string may be an incomplete string
+if the packed string contains a byte sequence invalid as
+a character sequence.
+
+@example
+(pack "CCCC" '(65 66 67 68) :to-string? #t)
+ @result{} "ABCD"
+
+(pack "C/a*" '("hello") :to-string? #t)
+ @result{} "\x05hello"
+@end example
+@end defun
+
+@defun unpack template &keyword :input :from-string
+The complement of pack, unpack reads values from the current input
+port assuming they've been packed according to the string template and
+returns the values as a list.  unpack accepts the same format strings
+as pack.  Further, the following tautology holds:
+
+@example
+(equal? x (unpack fmt :from-string (pack fmt x :to-string? #t)))
+@end example
+
+for any list @var{x} and format string @var{fmt}.  The only exceptions
+to this are when the template includes a @code{*} and when the
+@code{o} template is used, since Scheme numeric literals cannot be
+reliably delimited (though future versions of @code{pack} may
+circumvent this by registering a new read syntax).
+
+If the optional keyword @var{:input} is given that port is used
+instead of the current input port.  If @var{:from-string} is given,
+then pack reads input from that string.
+
+@example
+(unpack "CCCC" :from-string "ABCD")
+ @result{} '(65 66 67 68)
+
+(unpack "C/a*" :from-string "\x05hello")
+ @result{} '("hello")
+@end example
+@end defun
+
+@defun unpack-skip template &keyword :input
+unpack-skip is the same as unpack except it does not return the
+values.  In some cases, particulary with fixed-size templates, this
+can be much more efficient when you just want to skip over a value.
+@end defun
+
+@defun make-packer template
+The low-level interface.  This function returns a disptach closure
+that can be used to pack, unpack and skip over the same cached
+template.  The dispatch closure accepts symbol methods as follows:
+
+@table @code
+@item 'pack list
+pack the items in list to the current output port.
+
+@item 'unpack
+unpack items from the current input port.
+
+@item 'skip
+skip items from the current input port.
+
+@item 'packer
+return the cached 'pack closure
+
+@item 'unpacker
+return the cached 'unpack closure.
+
+@item 'skipper
+return the cached 'skip closure.
+
+@item 'length
+return the known fixed length of the template.
+
+@item 'variable-length?
+return #t iff the template has variable length elements.
+@end table
+@end defun
+@c ----------------------------------------------------------------------
+
+
+@node dbm - Generic DBM interface, dbm.gdbm - GDBM interface, binary.pack - Packing Binary Data, Library modules - Utilities
+@section @code{dbm} - Generic DBM interface
+@c NODE dbm - 汎用DBMインタフェース, @code{dbm} - 汎用DBMインタフェース
+
+@deftp {Module} dbm
+@mdindex dbm
+@c EN
+DBM-like libraries provides an easy way to store values to a file,
+indexed by keys.  You can think it as a persistent associative memory.
+@c JP
+DBM系のライブラリはキーでインデックスされた値をファイルに格納する簡単な方法を
+提供します。一種の永続的な連想記憶と言えるでしょう。
+@c COMMON
+
+@c EN
+This modules defines @code{<dbm>} abstract class, which has
+a common interface to use various DBM-type database packages.
+As far as you operate on the already opened database,
+importing @code{dbm} module is enough.
+@c JP
+このモジュールが定義する抽象クラス@code{<dbm>}は、DBM系ライブラリへの
+統一されたインタフェースを提供します。@code{dbm}モジュールだけをインポートすれば、
+既にオープンされたデータベースを操作することができます。
+@c COMMON
+
+@c EN
+To create or open a database, you need a concrete implementation
+of the database.  Gauche currently has the following impelentations.
+Each module defines its own low-level accessing functions
+as well as the common interface.
+Note that your system may not have one or more of those DBM libraries;
+Gauche defines only what the system provides.
+@c JP
+データベースをオープンしたり作成したりするには、dbmインタフェースを実装した
+モジュールが必要になります。今のところGaucheでは以下の実装が使えます。
+それぞれのモジュールは、dbmインタフェース共通の手続きの他に、
+直接実装を操作できる低レベルの手続きも提供します。
+システムによっては以下のインタフェースの全てが実装されているわけではないことに
+注意してください。Gaucheではシステムが提供する実装のみを定義します。
+@c COMMON
+
+@table @code
+@item dbm.gdbm
+@c EN
+GDBM library (@xref{dbm.gdbm - GDBM interface}).
+@c JP
+GDBMライブラリ (@ref{dbm.gdbm - GDBM interface}参照).
+@c COMMON
+
+@item dbm.ndbm
+@c EN
+NDBM library (@xref{dbm.ndbm - NDBM interface}).
+@c JP
+NDBMライブラリ (@ref{dbm.ndbm - NDBM interface}参照).
+@c COMMON
+
+@item dbm.odbm
+@c EN
+DBM library  (@xref{dbm.odbm - Original DBM interface}).
+@c JP
+DBMライブラリ  (@ref{dbm.odbm - Original DBM interface}参照).
+@c COMMON
+@end table
+@end deftp
+
+@c EN
+The following code shows a typical usage of the database.
+@c JP
+以下にdbmデータベースの使用例を示します。
+@c COMMON
+
+@example
+(use dbm)         ; @r{dbm abstract interface}
+(use dbm.gdbm)    ; @r{dbm concrete interface}
+
+; @r{open the database}
+(define *db* (dbm-open <gdbm> :path "mydb" :rw-mode :write))
+
+; @r{put the value to the database}
+(dbm-put! *db* "key1" "value1")
+
+; @r{get the value from the database}
+(define val (dbm-get *db* "key1"))
+
+; @r{iterate over the database}
+(dbm-for-each *db* (lambda (key val) (foo key val)))
+
+; @r{close the database}
+(dbm-close *db*)
+@end example
+
+@menu
+* Opening and closing a dbm database::  
+* Accessing a dbm database::    
+* Iterating on a database::     
+@end menu
+
+@node Opening and closing a dbm database, Accessing a dbm database, dbm - Generic DBM interface, dbm - Generic DBM interface
+@subsection Opening and closing a dbm database
+@c NODE DBMデータベースのオープンとクローズ
+
+@deftp {Class} <dbm>
+@clindex dbm
+@c EN
+An abstract class for dbm-style database.  Defindes the common
+database operations.   This class has the following instance slots.
+They must be set before the database is actually opened by
+@code{dbm-open}.
+
+The concrete class may add more slots for finer control on the database,
+such as locking.
+@c JP
+DBM系のデータベースのための抽象クラスです。データベースへの共通のオペレーションを
+定義します。以下のインスタンススロットを持ちます。これらのスロットの値は
+@code{dbm-open}によってデータベースがオープンされる前にセットされて
+いなければなりません。
+
+具体クラスは、データベースの操作をより細かく行うための追加のスロット(例えばロックを
+行うかどうか)を持つかもしれません。
+@c COMMON
+
+@defivar <dbm> path
+@c EN
+Pathname of the dbm database.  Some dbm implementation may append
+suffixes to this.
+@c JP
+データベースファイルのパス名。dbmの実装によっては、このパスにサフィックスが追加されます。
+@c COMMON
+@end defivar
+
+@defivar <dbm> rw-mode
+@c EN
+Specifies read/write mode.  Can be either one of the following keywords:
+@table @code
+@item :read
+The database will be opened in read-only mode.  The database file must
+exist when @code{dbm-open} is called.  This is the default value.
+@item :write
+The database will be opened in Read-write mode.
+If the database file does not exist, @code{dbm-open} creates one.
+@item :create
+The database will be created and opened in Read-write mode.
+If the database file exists, @code{dbm-open} truncates it.
+@end table
+@c JP
+読み書きのモードを指定します。以下の値のいずれかを取ります。
+@table @code
+@item :read
+データベースは@code{dbm-open}によって読みだし専用モードでオープンされます。
+オープンされる時点でデータベースは存在していなければなりません。
+@item :write
+データベースは@code{dbm-open}によって読み書き可能なモードでオープンされます。
+データベースが存在しなければ、@code{dbm-open}は新しいデータベースを作成します。
+@item :create
+@code{dbm-open}によって新しいデータベースが作成され、読み書き可能なモードでオープンされます。
+既にデータベースが存在していた場合、その内容はクリアされます。
+@end table
+@c COMMON
+@end defivar
+
+@defivar <dbm> file-mode
+@c EN
+Specifies the file permissions (as @code{sys-chmod}) to create the
+database.  The default value is @code{#o664}.
+@c JP
+データベースが作成されるときのファイルパーミッションを指定します。
+デフォルトは@code{#o664}です。
+@c COMMON
+@end defivar
+
+@defivar <dbm> key-convert
+@defivarx <dbm> value-convert
+@c EN
+By default, you can use only strings for both key and values.  With this
+option, however, you can specify how to convert other Scheme values to/from
+string to be stored in the database.   The possible values are the
+followings:
+@table @asis
+@item @code{#f}
+The default value.  Keys (values) are not converted.  They must be
+a string.
+@item @code{#t}
+Keys (values) are converted to its string representation, using 
+@code{write}, to store in the database, and converted
+back to Scheme values, using @code{read}, to retrieve from the database.
+The data must have an external representation that can be read back.
+(But it is not checked when the data is written; you'll get an error
+when you read the data).  The key comparison is done in the string
+level, so the external representation of the same key must match.
+@item a list of two procedures
+Both procedure must take a single argument.  The first procedure must
+receive a Scheme object and returns a string.  It is used to convert
+the keys (values) to store in the database.  The second procedure
+must receive a string and returns a Scheme object.  It is used to
+convert the stored data in the database to a Scheme object.
+The key comparison is done in the string
+level, so the external representation of the same key must match.
+@end table
+@c JP
+デフォルトでは、dbmデータベースはキーにも値にも文字列しか使うことはできません。
+これらのスロットによって、それ以外のSchemeオブジェクトを取り扱う方法を指定することが
+できます。以下の値のいずれかが可能です。
+@table @asis
+@item @code{#f}
+デフォルトの値です。キーあるいは値は変換されません。それらは文字列でなければなりません。
+@item @code{#t}
+キーあるいは値は@code{write}を使って文字列に変換されデータベースに格納されます。
+そして@code{read}を使って文字列からSchemeオブジェクトへと変換されます。
+後で@code{read}で読みこめるようなキーあるいは値のみを扱うことができます。
+(但し、dbmライブラリは書き込み時にそれが後で読み込めるかどうかのチェックは行いません)。
+キーの比較は文字列に変換された後で行われるので、同じ値となるキーは同じ文字列表現を
+持つ必要があります。
+@item 二つの手続きのリスト
+どちらの手続きも一つの引数を取ります。最初の手続きはSchemeオブジェクトを受け取り、
+文字列を返します。キーあるいは値をデータベースに格納する時に呼ばれます。
+二つ目の手続きは文字列を受け取りSchemeオブジェクトを返します。データベースから
+キーあるいは値を取り出す時に呼ばれます。
+キーの比較は文字列に変換された後で行われるので、同じ値となるキーは同じ文字列に
+変換される必要があります。
+@end table
+@c COMMON
+@end defivar
+@end deftp
+
+@deftp {Metaclass} <dbm-meta>
+@clindex dbm-meta
+@c EN
+A metaclass of @code{<dbm>} and its subclasses.
+@c JP
+@var{<dbm>}クラス及びそのサブクラスのメタクラスです。
+@c COMMON
+@end deftp
+
+@deffn {Method} dbm-open (dbm <dbm>)
+@c EN
+Opens a dbm database.  @var{dbm} must be an instance of
+one of the concrete classes that derived from the @code{<dbm>} class,
+and its slots must be set appropriately.   On success, it returns
+the @var{dbm} itself.  On failure, it signals an error.
+@c JP
+DBMデータベースをオープンします。@var{dbm}は、@code{<dbm>}クラスを継承した
+具体クラスのインスタンスでなければなりません。また、そのスロットには適切な値が
+セットされている必要があります。オープンに成功したら@var{dbm}自身が返されます。
+失敗した場合はエラーが報告されます。
+@c COMMON
+@end deffn
+
+@deffn {Method} dbm-open (dbm-class <dbm-meta>) options @dots{}
+@c EN
+A convenient method that creates dbm instance and opens it.
+It is defined as follows.
+@c JP
+DBMインスタンスを作成してオープンするための便利なメソッドです。
+次のように定義されます。
+@c COMMON
+@example
+(define-method dbm-open ((class <class>) . initargs)
+  (dbm-open (apply make class initargs)))
+@end example
+@end deffn
+
+@c EN
+Database file is closed when it is garbage collected.
+However, to ensure the modification is properly synchornized,
+you should close the database explicitly.
+@c JP
+データベースファイルはガベージコレクトされる際にクローズされますが、
+変更を正しくデータベースに反映するには、明示的にクローズした方が良いでしょう。
+@c COMMON
+
+@deffn {Method} dbm-close (dbm @code{<dbm>})
+@c EN
+Closes a database @var{dbm}.  Once the database is closed, any
+operation to access the database content raises an error.
+@c JP
+データベース@var{dbm}をクローズします。データベースがクローズされると、
+それ以降のアクセスオペレーションはエラーとなります。
+@c COMMON
+@end deffn
+
+@deffn {Method} dbm-closed? (dbm @code{<dbm>})
+@c EN
+Returns true if a database @var{dbm} is already closed, false otherwise.
+@c JP
+データベース@var{dbm}が既にクローズされていたら@code{#t}を返します。
+@c COMMON
+@end deffn
+
+@node Accessing a dbm database, Iterating on a database, Opening and closing a dbm database, dbm - Generic DBM interface
+@subsection Accessing a dbm database
+@c NODE DBMデータベースのアクセス
+
+@c EN
+Once a database is opened, you can use the following methods
+to access individual key/value pairs.
+@c JP
+データベースがオープンされたら、以下のアクセスメソッドが使えます。
+@c COMMON
+
+@deffn {Method} dbm-put! (dbm @code{<dbm>}) key value
+@c EN
+Put a @var{value} with @var{key}.
+@c JP
+値@var{value}をキー@var{key}と関連付けて保存します。
+@c COMMON
+@end deffn
+
+@deffn {Method} dbm-get (dbm @code{<dbm>}) key &optional default
+@c EN
+Get a value associated with @var{key}.  If no value exists for @var{key}
+and @var{default} is specified, it is returned.  If no value exists for
+@var{key} and @var{default} is not specified, an error is signalled.
+@c JP
+キー@var{key}に関連付けられた値を返します。もし値が存在しなければ、@var{default}が
+与えられていればそれを返し、そうでなければエラーを報告します。
+@c COMMON
+@end deffn
+
+@deffn {Method} dbm-exists? (dbm @code{<dbm>}) key
+@c EN
+Return true if a value exists for @var{key}, false otherwise.
+@c JP
+キー@var{key}に関連付けられた値が存在すれば@code{#t}を返します。
+@c COMMON
+@end deffn
+
+@deffn {Method} dbm-delete! (dbm @code{<dbm>}) key
+@c EN
+Delete a value associated with @var{key}.  
+@c JP
+キー@var{key}に関連付けられた値を消去します。値が存在しない場合は何もしません。
+@c COMMON
+@end deffn
+
+
+@node Iterating on a database,  , Accessing a dbm database, dbm - Generic DBM interface
+@subsection Iterating on a dbm database
+@c NODE DBMデータベース上の繰り返し処理
+
+@c EN
+To walk over the entire database, following methos are provided.
+@c JP
+全データベースを渡り歩く処理のために、以下のメソッドが用意されています。
+@c COMMON
+
+@deffn {Method} dbm-fold (dbm @code{<dbm>}) procedure knil
+@c EN
+The basic iterator.
+For each key/value pair, @var{procedure} is called as
+@code{(@var{procedure} @var{key} @var{value} @var{r})},
+where @var{r} is @var{knil} for the fist call of @var{procedure},
+and the return value of the previous call for subsequent calls.
+Returns the result of the last call of @var{procedure}.
+If no data is in the database, @var{knil} is returned.
+
+The following method returns the sum of all the integer values.
+@c JP
+基本的な繰り返し処理です。データベース内の各キー／値のペアに関して、手続き
+@var{procedure}が @code{(@var{procedure} @var{key} @var{value} @var{r})},
+のように呼ばれます。ここで@var{r}は、最初の@var{procedure}の呼び出しの時には@var{knil}
+が、以降の呼び出しの時にはその直前の@var{procedure}が返した値が渡されます。
+最後の@var{procedure}の戻り値が@code{dbm-fold}の戻り値となります。
+データベース中にデータがひとつもなければ@var{knil}がそのまま返されます。
+
+次の例は、データベース中の整数の値を全て加算します。
+@c COMMON
+@example
+(dbm-fold dbm (lambda (k v r) (if (integer? v) (+ v r) r) 0))
+@end example
+@end deffn
+
+@deffn {Method} dbm-for-each (dbm @code{<dbm>}) procedure
+@c EN
+For each key/value pair in the database @var{dbm}, @var{procedure}
+is called.  Two arguments are passed to @var{procedure}---a key and
+a value.   The result of @var{procedure} is discarded.
+@c JP
+データベース内の各キー／値のペアに関して、手続き@var{procedure}を呼び出します。
+@var{procedure}にはキーと値が渡されます。@var{procedure}の戻り値は捨てられます。
+@c COMMON
+@end deffn
+
+@deffn {Method} dbm-map (dbm @code{<dbm>}) procedure
+@c EN
+For each key/value pair in the database @var{dbm}, @var{procedure}
+is called.  Two arguments are passed to @var{procedure}---a key and
+a value.   The result of @var{procedure} is accumulated to a list
+which is returned as a result of @code{dbm-map}.
+@c JP
+データベース内の各キー／値のペアに関して、手続き@var{procedure}を呼び出します。
+@var{procedure}にはキーと値が渡されます。@var{procedure}の戻り値はリストに
+集められて@code{dbm-map}の戻り値となります。
+@c COMMON
+@end deffn
+
+
+@c ----------------------------------------------------------------------
+@node dbm.gdbm - GDBM interface, dbm.ndbm - NDBM interface, dbm - Generic DBM interface, Library modules - Utilities
+@section @code{dbm.gdbm} - GDBM interface
+
+@deftp {Module} dbm.gdbm
+@mdindex dbm.gdbm
+@end deftp
+
+@deftp {Class} <gdbm>
+@clindex gdbm
+@c EN
+Inherits @code{<dbm>}.  Provides an implementation for GDBM library.
+This module is only installed when your system already has GDBM
+(1.8.0 is preferred, but works with older 1.7.x with some limitations).
+@c JP
+@code{<dbm>} を継承します。GDBM ライブラリのための実装を提供します。
+このモジュールは、すでにあなたのシステムにすでに GDBM がある場合にのみ
+インストールされます(バージョン 1.8.0 が推奨されますが、いくつかの制限が
+あるだけで古い 1.7.x でも動作します)。
+@c COMMON
+
+@defivar <gdbm> sync
+@end defivar
+@defivar <gdbm> nolock
+@end defivar
+@defivar <gdbm> bsize
+@end defivar
+@end deftp
+
+@c EN
+Besides the unified DBM interface (@xref{dbm - Generic DBM interface}),
+this module provides the following low-level functions that provides
+direct access to the gdbm API.  See gdbm manual for details of these
+APIs.
+@c JP
+統合された DBM インターフェース (@xref{dbm - Generic DBM interface}) の
+他に、このモジュールでは GDBM API への直接のアクセスを提供する以下の
+低レベルな手続きを提供しています。これらの API の詳細については GDBM の
+マニュアルを見て下さい。
+@c COMMON
+
+@defun gdbm-open path &optional size rwmode fmode error-callback
+
+@defvar GDBM_READER
+@end defvar
+
+@defvar GDBM_WRITER
+@end defvar
+
+@defvar GDBM_WRCREAT
+@end defvar
+
+@defvar GDBM_NEWDB
+@end defvar
+
+@defvar GDBM_FAST
+@end defvar
+
+@defvar GDBM_SYNC
+@end defvar
+
+@defvar GDBM_NOLOCK
+@end defvar
+@end defun
+
+@defun gdbm-close gdbm-object
+@end defun
+
+@defun gdbm-closed? gdbm-object
+@end defun
+
+@defun gdbm-store key value &optional flag
+
+
+@defvar GDBM_INSERT
+@end defvar
+
+@defvar GDBM_REPLACE
+@end defvar
+
+@end defun
+
+
+@defun gdbm-fetch gdbm-object key
+@end defun
+
+
+@defun gdbm-delete gdbm-object key
+@end defun
+
+
+@defun gdbm-firstkey gdbm-object
+@end defun
+
+
+@defun gdbm-nextkey gdbm-object key
+@end defun
+
+
+@defun gdbm-reorganize gdbm-object
+@end defun
+
+
+@defun gdbm-sync gdbm-object
+@end defun
+
+
+@defun gdbm-exists gdbm-object key
+@end defun
+
+
+@defun gdbm-strerror errno
+@end defun
+
+
+@defun gdbm-setopt gdbm-object option value
+
+@defvar GDBM_CACHESIZE
+@end defvar
+
+@defvar GDBM_FASTMODE
+@end defvar
+
+@defvar GDBM_SYNCMODE
+@end defvar
+
+@defvar GDBM_CENTFREE
+@end defvar
+
+@defvar GDBM_COALESCEBLKS
+@end defvar
+@end defun
+
+@defun gdbm-version
+@end defun
+
+@defun gdbm-errno
+@end defun
+
+@c ----------------------------------------------------------------------
+@node dbm.ndbm - NDBM interface, dbm.odbm - Original DBM interface, dbm.gdbm - GDBM interface, Library modules - Utilities
+@section @code{dbm.ndbm} - NDBM interface
+
+@deftp {Module} dbm.ndbm
+@mdindex dbm.ndbm
+@end deftp
+
+@deftp {Class} <ndbm>
+@clindex ndbm
+@c EN
+Inherits @code{<dbm>}.  Provides an implementation for NDBM library.
+This module is only installed when your system already has NDBM.
+@c JP
+@code{<dbm>} を継承します。NDBM ライブラリのための実装を提供します。
+このモジュールはあなたのシステムにすでに NDBM がある場合にのみ
+インストールされます。
+@c COMMON
+@end deftp
+
+@c EN
+Besides the unified DBM interface (@xref{dbm - Generic DBM interface}),
+this module provides the following low-level functions that provides
+direct access to the ndbm API.  See ndbm manual for details of these
+APIs.
+@c JP
+統合された DBM インターフェース (@xref{dbm - Generic DBM interface}) の
+他に、このモジュールでは NDBM API への直接のアクセスを提供する以下の
+低レベルな手続きを提供しています。これらの API の詳細については NDBM の
+マニュアルを見て下さい。
+@c COMMON
+
+@defun ndbm-open path flags mode
+@end defun
+
+@defun ndbm-close ndbm-object
+@end defun
+
+@defun ndbm-closed? ndbm-object
+@end defun
+
+@defun ndbm-store ndbm-object key content &optional flag
+@end defun
+
+@defun ndbm-fetch ndbm-object key
+@end defun
+
+@defun ndbm-delete ndbm-object key
+@end defun
+
+@defun ndbm-firstkey ndbm-object
+@end defun
+
+@defun ndbm-nextkey ndbm-object
+@end defun
+
+@defun ndbm-error ndbm-object
+@end defun
+
+@defun ndbm-clear-error ndbm-object
+@end defun
+
+@c ----------------------------------------------------------------------
+@node dbm.odbm - Original DBM interface, file.filter - Filtering file content, dbm.ndbm - NDBM interface, Library modules - Utilities
+@section @code{dbm.odbm} - Original DBM interface
+
+@deftp {Module} dbm.odbm
+@mdindex dbm.odbm
+@end deftp
+
+@deftp {Class} <odbm>
+@clindex odbm
+@c EN
+Inherits @code{<dbm>}.  Provides an implementation for legacy DBM
+library.
+This module is only installed when your system already has DBM.
+
+The biggest limitation of the legacy DBM is that you can only open
+one database at a time.  You can create a multiple @code{<odbm>}
+instances, but you can open at most one of it at a time, or
+you'll get an error.
+@c JP
+@code{<dbm>} を継承しています。レガシーな DBM ライブラリのための実装を
+提供します。このモジュールは、あなたのシステムにすでに DBM がある場合にのみ
+インストールされます。
+
+レガシー DBM の最大の制限は、データベースを一時に一つしか開けないことです。
+複数の @code{<odbm>} のインスタンスを作ることができますが、一時に一つしか
+開くことが出来ず、一つ以上開こうとするとエラーになります。
+@c COMMON
+@end deftp
+
+@c EN
+Besides the unified DBM interface (@xref{dbm - Generic DBM interface}),
+this module provides the following low-level functions that provides
+direct access to the dbm API.  See dbm manual for details of these
+APIs.
+@c JP
+統合された DBM インターフェース (@xref{dbm - Generic DBM interface}) の
+他に、このモジュールでは DBM API への直接のアクセスを提供する以下の
+低レベルな手続きを提供しています。これらの API の詳細については DBM の
+マニュアルを見て下さい。
+@c COMMON
+
+@defun odbm-init path
+@end defun
+
+@defun odbm-close
+@end defun
+
+@defun odbm-store key value
+@end defun
+
+@defun odbm-fetch key
+@end defun
+
+@defun odbm-delete key
+@end defun
+
+@defun odbm-firstkey
+@end defun
+
+@defun odbm-nextkey key
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@c @node Pseudo DBM interface, gauche.charconv - Character code conversion, Original DBM interface, Library modules
+@c @section @code{dbm.pdbm} - Pseudo DBM interface
+
+@c ----------------------------------------------------------------------
+@node file.filter - Filtering file content, file.util - Filesystem utilities, dbm.odbm - Original DBM interface, Library modules - Utilities
+@section @code{file.filter} - Filtering file content
+@c NODE file.filter - ファイルのフィルタ, @code{file.filter} - ファイルのフィルタ
+
+@deftp {Module} file.filter
+@mdindex file.filter
+@c EN
+This module provides utilities for a common pattern in
+filter-type commands, that is, to take an input, to process
+the content, and to write the result.   The common occurring
+pattern is:
+
+@itemize @bullet
+@item
+Input may be a specified file, or an input port
+(the current input port by default).
+@item
+Output may be a specified file, or an output port
+(the current output port by default).
+@item
+Output may be a temporary file, which will be renamed
+upon completion of the processing.
+@item
+Output file may be removed when an error occurs
+in the processing.
+@end itemize
+@c JP
+このモジュールは、フィルター型のコマンド、
+すなわち入力を読み込み、処理をして結果を書き出すような場合に
+共通するパターンに使えるユーティリティ手続きを提供します。
+共通するパターンとは：
+
+@itemize @bullet
+@item
+入力は指定されたファイルかポートで、デフォルトはカレント入力ポート。
+@item
+出力は指定されたファイルかポートで、デフォルトはカレント出力ポート。
+@item
+出力は一時ファイルに書き出すこともできて、
+その場合は処理が終了した時点で指定されたファイルにリネーム。
+@item
+処理途中でエラーが起こった場合に出力ファイルを削除
+@end itemize
+@c COMMON
+@end deftp
+
+@defun file-filter proc &keyword input output temporary-file keep-output?
+@c EN
+Calls @var{proc} with two arguments, an input port and 
+an output port.   Returns the result(s) of @var{proc}.
+The input port and output port are chosen depending on the keyword arguments.
+@c JP
+二つの引数、入力ポートと出力ポートを引数として@var{proc}を呼び出し、
+その結果を返します。
+入力ポートと出力ポートはキーワード引数により決定されます。
+@c COMMON
+
+@table @code
+@item input
+@c EN
+The argument must be either an input port or a string
+that specifies a file name.
+If it's an input port, it is passed to @var{proc} as is.
+If it's a string, the named file is opened for input and the resulting
+port is passed to @var{proc}, and the port is closed when @var{proc}
+returns.
+If this argument is omitted, the current input port is passed.
+@c JP
+この引数は入力ポートかファイル名を示す文字列でなければなりません。
+入力ポートの場合、それはそのまま@var{proc}に渡されます。
+文字列が渡された場合は、そのファイル名を持つファイルを入力用にオープンし、
+そのポートが@var{proc}に渡され、またこのポートは@var{proc}が戻った時に閉じられます。
+この引数が省略された場合は、現在の入力ポートが渡されます。
+@c COMMON
+@item output
+@c EN
+The argument must be either an output port or a string
+that specifies a file name.
+If it's an output port, it is passed to @var{proc} as is.
+If it's a string, the named file is opened for output
+(unless @var{temporary-file} is given, in that case
+a temporary file is opened instead), and the resulting port
+is passed to @var{proc}.  This port is closed when @var{proc} returns.
+If this argument is omitted, the current output port is passed.
+@c JP
+この引数は入力ポートかファイル名を示す文字列でなければなりません。
+出力ポートの場合、それはそのまま@var{proc}に渡されます。
+文字列が渡された場合は、そのファイル名を持つファイルを出力用にオープンし、
+そのポートが@var{proc}に渡されます (但し、@var{temporary-file}
+引数が渡された時はそれに指定されるファイルが一時ファイルとしてオープンされます)。
+オープンされたポートは@var{proc}が戻った時に閉じられます。
+この引数が省略された場合は、現在の出力ポートが渡されます。
+@c COMMON
+@item temporary-file
+@c EN
+If a string file name is given to this argument, the named file
+is opened for output during the processing, instead of the file
+name as @var{output}.   The output port @var{proc} receives
+is connected to this file.  When @var{proc}
+returns normally, the file is renamed to the name given to @var{output}
+keyword argument.
+
+If the given file name begins with characters except @code{"/"}, @code{"./"}
+or @code{"../"}, the directory of the file name given to @var{output} argument
+is attached before it.
+Furthermore, a unique name is attached to the temporary file name
+(the temporary file is opened by @code{sys-mkstemp}.)
+
+This argument is ignored when @var{output} argument is not a string
+file name.
+@c JP
+文字列でファイル名が渡された場合、処理の間の出力先として@var{output}に指定された
+ファイルのかわりにそのファイルがオープンされます。
+@var{proc}にはその一時ファイルへの出力ポートが渡されます。
+@var{proc}が正常に返って来た時点で、一時ファイルは@var{output}に指定された
+ファイルへとリネームされます。
+
+もし一時ファイル名が@code{"/"}、@code{"./"}、@code{"../"}以外の
+文字で始まっていた場合は、@var{output}に与えられたファイル名のディレクトリが
+一時ファイルの前に追加されます。さらに、ユニークなサフィックスが一時ファイルの後に
+追加されます(一時ファイルは@code{sys-mkstemp}を使ってオープンされます)。
+
+この引数は、@var{output}にファイル名が与えられなかった場合は無視されます。
+@c COMMON
+@item keep-output?
+@c EN
+If a true value is given, the output is not deleted even
+when @var{proc} signals an error.
+By default, the output (or the temporary file when
+@var{temporary-file} is given) will be deleted on error.
+@c JP
+真の値が与えられた場合、@var{proc}がエラーになった場合でも出力ファイルを削除しません。
+デフォルトでは、出力ファイル(もしくは@var{temporary-file}が与えられた場合は
+そのファイル)はエラーの場合には削除されます。
+@c COMMON
+@end table
+@end defun
+
+@c ----------------------------------------------------------------------
+@node file.util - Filesystem utilities, math.const - Mathematic constants, file.filter - Filtering file content, Library modules - Utilities
+@section @code{file.util} - Filesystem utilities
+@c NODE file.util - ファイルシステムユーティリティ, @code{file.util} - ファイルシステムユーティリティ
+
+@deftp {Module} file.util
+@mdindex file.util
+@c EN
+Provides convenient utility functions handling files and directories.
+Those functions are built on top of the primitive system
+procedures described in @ref{Filesystems}.
+@c JP
+ファイルやディレクトリを扱う便利な手続き群を提供します。
+これらの手続きは@ref{Filesystems}で述べられたプリミティブなシステム手続きの上に
+構築されています。
+@c COMMON
+
+@c EN
+Many procedures in this module takes a keyword argument @var{follow-link?},
+which specifies the behavior when the procedure sees a symbolic link.
+If true value is given to @var{follow-link?} (which is the default),
+the procedure operates on the file referenced by the link; if false is 
+given, it operates on the link itself.
+@c JP
+このモジュール内の多くの手続きは@var{follow-link?}というキーワード引数を取ります。
+これは手続きがシンボリックリンクに出会ったときの動作を指定します。@var{follow-link?}が
+真であれば、手続きはリンクの指す先のファイルに作用します。これがデフォルトの振舞いです。
+@var{follow-link?}に@code{#f}が渡された場合は手続きはリンクそのものに作用します。
+@c COMMON
+@end deftp
+
+@c EN
+Note on the naming convention: Some Scheme implementations "create"
+new directories and files, while the others "make" them.
+Some implementations "delete" them, while the others "remove" them.
+It seems that both conventions are equally popular.
+So Gauche provides @emph{both}.
+@c JP
+名前つけ規則に関する注記：ファイルやディレクトリを
+作成するのに@code{"create"}という語を使う処理系と@code{"make"}を
+使う処理系があります。ファイルやディレクトリを削除するのにも@code{"remove"}と
+@code{"delete"}の流派があります。どちらも同じくらい広く使われているようなので、
+Gaucheでは@emph{両方の}名前を提供することにしました。
+@c COMMON
+
+@menu
+* Directory utilities::         
+* Pathname utilities::          
+* File attribute utilities::    
+* File operations::             
+@end menu
+
+@node Directory utilities, Pathname utilities, file.util - Filesystem utilities, file.util - Filesystem utilities
+@subsection Directory utilities
+@c NODE ディレクトリユーティリティ
+
+@defun current-directory &optional new-directory
+@c EN
+When called with no argument, this returns the pathname of the current
+working directory.  When called with a string argument @var{new-directory},
+this sets the current working directory of the process to it.
+If the process can't change directory to @var{new-directory}, an error is
+signalled.
+
+This function is in ChezScheme, MzScheme and some other Scheme
+implementations.
+@c JP
+引数無しで呼ばれた場合、カレントディレクトリを返します。
+文字列@var{new-directory}が与えられた場合はプロセスのカレントディレクトリを
+@var{new-directory}に変更します。変更が出来なかった場合はエラーとなります。
+
+この関数はChezSchemeやMzSchemeなどいくつかのScheme処理系に見られます。
+@c COMMON
+@end defun
+
+@defun home-directory &optional user
+@c EN
+Returns the home directory of the given @var{user},
+which may be a string user name or an integer user id.
+If @var{user} is omitted, the current user is assumed.
+If the given user cannot be found, or the home directory
+of the user cannot be determined, @code{#f} is returned.
+@c JP
+名前または整数のユーザidで与えられたユーザ@var{user}のホームディレクトリを
+返します。@var{user}が省略された場合はカレントユーザが使われます。
+与えられたユーザが見付けられないか、ホームディレクトリを決定できなかった場合は
+@code{#f}が返されます。
+@c COMMON
+@end defun
+
+@defun directory-list path &keyword children? add-path? filter filter-add-path?
+@c EN
+Returns a list of entries in the directory @var{path}.
+The result is sorted by dictionary order.
+
+By default, only the basename (the last component) of the entries
+returned.   If @var{add-path?} is given and true, @var{path} is appended
+to each entry.  If @var{children?} is given and true, @code{"."} and 
+@code{".."} are excluded from the result.  
+
+If @var{filter} is given, it must be a predicate that takes one argument.  
+It is called on every element of the directory entry,
+and only the entries on which
+@var{filter} returns true are included in the result.
+The argument passed to @var{filter} is a basename of the directory entry
+by default, but when @var{filter-add-path?} is true, @var{path} is 
+appended to the entry.
+
+If @var{path} is not a directory, an error is signalled.
+@c JP
+ディレクトリ@var{path}中のエントリのリストを返します。
+リストは文字列順にソートされます。
+
+デフォルトではエントリのベースネーム(パスの最後のコンポーネント)のみが
+返されますが、キーワード引数@var{add-path?}に真の値が与えられた時は
+@var{path}が各エントリの前に追加されます。
+@var{children?}に真の値が与えられた時は、カレントディレクトリと親ディレクトリが
+リストから除かれます。
+
+@var{filter}引数は、もし与えられれば、一つの引数を取る
+手続きでなければなりません。ディレクトリ中の各エントリを引数としてその手続きが呼ばれ、
+真を返したエントリのみが結果に含まれます。
+@var{filter}に与えられるエントリはデフォルトではベース名のみですが、
+引数@var{filter-add-path?}が真ならば@var{path}が前に追加された名前となります。
+
+@var{path}がディレクトリでない場合はエラーが報告されます。
+@c COMMON
+
+@example
+(directory-list "test")
+ @result{} ("." ".." "test.scm" "test.scm~")
+
+(directory-list "test" :add-path? #t)
+ @result{} ("test/." "test/.." "test/test.scm" "test/test.scm~")
+
+(directory-list "test" :children? #t)
+ @result{} ("test.scm" "test.scm~")
+
+(directory-list "test" :children? #t :add-path? #t
+   :filter (lambda (e) (not (string-suffix? "~" e))))
+ @result{} ("test/test.scm")
+@end example
+@end defun
+
+@defun directory-list2 path &keyword children? add-path? filter follow-link?
+@c EN
+Like @code{directory-list}, but returns two values; the first one is a list
+of subdirectories, and the second one is a list of the rest.
+The keyword arguments @var{children?}, @code{add-path?} and @var{filter}
+are the same as @code{directory-list}.
+
+Giving false value to @var{follow-link?} makes @code{directory-list2}
+not follow the symbolic links; if the @var{path} contains a
+symlink to a directory,
+it will be included in the first list if @var{follow-link?}
+is omitted or true,
+while it will be in the second list if @var{follow-link?} is false.
+@c JP
+@code{directory-list}に似ていますが、ふたつの値を返します。最初の値は
+@var{path}内にあるサブディレクトリのリストで、次の値はそれ以外のエントリのリストです。
+キーワード引数@var{children?}、@code{add-path?}、@var{filter}は
+@code{directory-list}と同じ意味をもちます。
+
+偽の値を@var{follow-link?}に与えると、@var{path}内のシンボリックリンクを
+辿りません；すなわち、@var{path}内にディレクトリへのシンボリックリンクがあった場合、
+デフォルト、もしくは@var{follow-link?}に真の値が与えられた場合は
+それは最初のリスト(サブディレクトリ)に入りますが、@var{follow-link?}
+に偽の値が与えられた場合は後者のリスト(その他のエントリ)に入ります。
+@c COMMON
+@end defun
+
+@defun directory-fold path proc knil &keyword lister follow-link?
+@c EN
+A fundamental directory traverser.
+Conceptually it works as follows, in recursive way.
+@c JP
+ディレクトリ探索の最も基本的な手続きです。基本的な動作は以下に示すような再帰的なものです。
+@c COMMON
+
+@c EN
+@itemize @bullet
+@item
+If @var{path} is not a directory, calls 
+@code{(@var{proc} @var{path} @var{knil})} and returns the result.
+@item
+If @var{path} is a directory, calls
+@code{(@var{lister} @var{path} @var{knil})}.  The procedure @var{lister}
+is expected to return a list of pathnames.  Then
+@code{directory-fold} is called on each returned pathname.
+Each result of @code{directory-fold} is passed as the @var{knil}
+argument of the next recursive invocation.
+Returns the result of the last recursive call.
+@end itemize
+@c JP
+@itemize @bullet
+@item
+@var{path}がディレクトリでない場合は@code{(@var{proc} @var{path} @var{knil})} を
+評価し、結果を返します。
+@item
+@var{path}がディレクトリであった場合、まず
+@var{(@var{lister} @var{path} @var{knil})} を評価します。
+手続き@var{lister}はパス名のリストを返さなければなりません。
+続いて、@code{directory-fold}が各パス名に対して再帰的に呼ばれます。
+各呼び出しの結果が次の再帰呼び出しの@var{knil}の値に使われます。
+@end itemize
+@c COMMON
+
+@c EN
+The default procedure of @var{lister} is just a call to @code{directory-list},
+as follows.
+@c JP
+デフォルトの@var{lister}は@code{directory-list}を次のように呼び出すものです。
+@c COMMON
+@example
+(lambda (path knil)
+  (directory-list path :add-path? #t :children? #t)))))
+@end example
+
+@c EN
+Note that @var{lister} shouldn't return the given path itself (@code{"."})
+nor the parent directory (@code{".."}), or the recursion wouldn't
+terminate.  Also note @var{lister} is expected to return a path accesible
+from the current directory, i.e. if @var{path} is @code{"/usr/lib/foo"} and
+it contains @code{"libfoo.a"} and @code{"libfoo.so"}, @var{lister} should
+return @code{'("/usr/lib/foo/libfoo.a" "/usr/lib/foo/libfoo.so")}.
+@c JP
+@var{lister}は@var{path}自身への参照 (@code{"."}) やその親ディレクトリへの参照を
+返してはなりません。また、@var{lister}の戻り値は現在のディレクトリからアクセス可能な
+パス名でなければなりません。例えば@var{path}が@code{"/usr/lib/foo"}であり、
+そのディレクトリが@code{"libfoo.a"}と@code{"libfoo.so"}を含んでいた場合、
+@var{lister}は@code{'("/usr/lib/foo/libfoo.a" "/usr/lib/foo/libfoo.so")}
+のようなリストを返す必要があります。
+@c COMMON
+
+@c EN
+The keyword argument @var{follow-link?} is used to determine whether
+@var{lister} should be called on a symbolic link pointing to a directory.
+When @var{follow-link?} is true (default), @var{lister} is called
+with the symbolic link if it points to a directory.
+When @var{follow-link?} is false, @var{proc} is not called.
+@c JP
+キーワード引数@var{follow-link?}はディレクトリを指しているシンボリックリンクに対して
+@var{lister}を呼ぶかどうかを決定します。@var{follow-link?}が真(デフォルト値)である
+場合はそのようなシンボリックリンクに対しても@var{lister}が呼ばれます。
+一方、@var{follow-link?}が偽であればシンボリックリンクに対しては@var{proc}が呼ばれます。
+@c COMMON
+
+@c EN
+The following examble returns a list of pathnames of the emacs backup files
+(whose name ends with "~") under the given path.
+@c JP
+次の例は、与えられたpath以下からemacsのバックアップファイル ("~"で終る名を持つファイル)
+のリストを返します。
+@c COMMON
+@example
+(use srfi-13) ;; for string-suffix?
+(directory-fold path
+                (lambda (entry result) 
+                  (if (string-suffix? "~" entry)
+                      (cons entry result)
+                      result))
+                '())
+@end example
+
+@end defun
+
+@defun make-directory* name &optional perm
+@defunx create-directory* name &optional perm
+@c EN
+Creates a directory @var{name}.  If the intermediate path to the
+directory doesn't exist, they are also created
+(like @code{mkdir -p} command on Unix).   If the directory
+@var{name} already exist, these procedure does nothing.
+@var{Perm} specifies the integer flag for permission bits of the
+directory.
+@c JP
+ディレクトリ@var{name}を作成します。@var{name}に至るパスが存在しない
+場合は必要なディレクトリが作成されます (Unixの@code{mkdir -p}コマンドと
+同様です)。ディレクトリ@var{name}が既に存在していた場合は何もしません。
+@var{perm}は作成されるディレクトリのパーミッションビットを指定します。
+@c COMMON
+@end defun
+
+
+@defun remove-directory* name
+@defunx delete-directory* name 
+@c EN
+Deletes directory @var{name} and its content recursively 
+(like @code{rm -r} command on Unix).   Symbolic links are not
+followed.
+@c JP
+ディレクトリ@var{name}とその内容を再帰的に消去します
+(Unixの@code{rm -r}コマンドと同様です)。シンボリックリンクは辿られません。
+@c COMMON
+@end defun
+
+
+@node Pathname utilities, File attribute utilities, Directory utilities, file.util - Filesystem utilities
+@subsection Pathname utilities
+@c NODE パスネームユーティリティ
+
+@defun build-path base-path component @dots{}
+@c EN
+Appends pathname components @var{component} to the @var{base-path}.
+@var{Component} can be a symbol @code{up} or @code{same};
+in Unix, they are synonym to @code{".."} and @code{"."}.
+This API is taken from MzScheme.
+@c JP
+パス名のコンポーネント@var{component}を@var{base-path}に追加します。
+@var{Component}はシンボル@code{up}または@code{same}であっても
+構いません; Unixではそれらは@code{".."}または@code{"."}と等価です。
+このAPIはMzSchemeから採られました。
+@c COMMON
+@end defun
+
+@defun absolute-path? path
+@defunx relative-path? path
+@c EN
+Returns @code{#t} if @var{path} is absolute or relative, respectively.
+@c JP
+@var{path}がそれぞれ絶対パスまたは相対パスならば@code{#t}を返します。
+@c COMMON
+@end defun
+
+@defun expand-path path
+@c EN
+Expands tilda-notation of @var{path} if it contains one.
+Otherwise, @var{path} is returned.  This function does not
+check if @var{path} exists and/or readable.
+@c JP
+@var{path}がチルダ表記を含んでいたらそれを展開したものを返します。
+そうでなければ@var{path}そのものを返します。この手続きは@var{path}が
+存在しアクセス可能であるかどうかはチェックしません。
+@c COMMON
+@end defun
+
+@defun resolve-path path
+@c EN
+Expands @var{path} like @code{expand-path},
+then resolve symbolic links for every components
+of the path.  If @var{path} does not exist, or contains dangling link,
+or contains unreadable directory, an error is signalled.
+@c JP
+@var{path}を@code{expand-path}と同様に展開し、
+続いて@var{path}の各コンポーネントに対してそれがシンボリックリンクであればリンク先の
+ものに置き換えてゆきます。@var{path}が存在しないパスを指していたり、
+シンボリックリンクの先が存在しなかったり、読み出せないディレクトリがあった場合は
+エラーとなります。
+@c COMMON
+@end defun
+
+@defun simplify-path path
+@c EN
+Remove 'up' (@code{".."}) components and 'same' (@code{"."}) components
+from @var{path} as much as possible.
+This function does not access the filesystem.
+@c JP
+@var{path}から、親ディレクトリへの参照(@code{".."})と自分自身への参照(@code{"."})を
+出来る限り取り除きます。この手続きはファイルシステムへはアクセスしません。
+@c COMMON
+@end defun
+
+@defun find-file-in-paths name &keyword paths pred
+@c EN
+Looks for a file that has name @var{name} in the given list of pathnames
+@var{paths} and that satisfies a predicate @var{pred}.  If found,
+the absolute pathname of the file is returned.  Otherwise, @code{#f}
+is returned.
+
+If @var{name} is an absolute path, only the existence of @var{name}
+and whether it satisfies @var{pred} are checked.
+
+The default value of @var{paths} is taken from the environment variable
+@code{PATH}, and the default value of @var{pred} is @code{file-is-executable?}
+(@xref{File attribute utilities}).  That is, @code{find-file-in-paths}
+searches the named executable file in the command search paths
+by default.
+@c JP
+名前@var{name}を持ち、述語@var{pred}を満たすファイルをパス名のリスト@var{paths}
+から探します。見つかった場合はファイルの絶対パス名を、見つからなかった場合は
+@code{#f}を返します。
+
+@var{name}が絶対パス名で与えられた場合はそれが存在するかどうかと
+@var{pred}を満たすかどうかのみがチェックされます。
+
+@var{paths}のデフォルト値は環境変数@code{PATH}から取られます。また、
+@var{pred}のデフォルト値は@code{file-is-executable?}
+(@ref{File attribute utilities}参照)です。すなわち、デフォルトでは
+この手続きはコマンドサーチパスから実行可能ファイルを探すのに使えます。
+@c COMMON
+
+@example
+(find-file-in-paths "ls")
+  @result{} "/bin/ls"
+
+@c EN
+;; @r{example of searchin user preference file of my application}
+@c JP
+;; @r{アプリケーション"myapp"のユーザプレファレンスファイルを探す例}
+@c COMMON
+(find-file-in-paths "userpref"
+  :paths `(,(expand-path "~/.myapp")
+           "/usr/local/share/myapp"
+           "/usr/share/myapp")
+  :pred  file-is-readable?)
+@end example
+@end defun
+
+@node File attribute utilities, File operations, Pathname utilities, file.util - Filesystem utilities
+@subsection File attibute utilities
+@c NODE ファイル属性ユーティリティ
+
+@defun file-type path &keyword follow-link?
+@defunx file-perm path &keyword follow-link?
+@defunx file-mode path &keyword follow-link?
+@defunx file-ino path &keyword follow-link?
+@defunx file-dev path &keyword follow-link?
+@defunx file-rdev path &keyword follow-link?
+@defunx file-nlink path &keyword follow-link?
+@defunx file-uid path &keyword follow-link?
+@defunx file-gid path &keyword follow-link?
+@defunx file-size path &keyword follow-link?
+@defunx file-atime path &keyword follow-link?
+@defunx file-mtime path &keyword follow-link?
+@defunx file-ctime path &keyword follow-link?
+@c EN
+These functions return the attribute of file/directory specified by
+@var{path}.  The attribute name corresponds to the slot name of
+@code{<sys-stat>} class (@xref{File stats}).
+If the named path doesn't exist, @code{#f} is returned.
+
+If @var{path} is a symbolic link, these functions queries the
+attributes of the file pointed by the link, unless
+an optional argument @var{follow-link?} is given and false.
+
+MzScheme and Chicken have @code{file-size}.  Chicken also has
+@code{file-modification-time}, which is @code{file-mtime}.
+@c JP
+これらの手続きは@var{path}で示されるファイルやディレクトリのアトリビュートを
+返します。アトリビュート名は@code{<sys-stat>}のスロット名に対応しています。
+@ref{File stats}を参照して下さい。@var{path}で示されるファイルが
+存在しなければ@code{#f}が返されます。
+
+@var{path}がシンボリックリンクだった場合、オプショナルな引数
+@var{follow-link?} に偽の値が与えられていない限り、これらの手続きは
+リンクの指す先のファイルに関する情報を返します。
+
+MzSchemeとChickenには@code{file-size}があります。
+Chickenには@code{file-modification-time}があり、これは@code{file-mtime}と
+同じです。
+@c COMMON
+@end defun
+
+@defun file-is-readable? path
+@defunx file-is-writable? path
+@defunx file-is-executable? path
+@c EN
+Returns @code{#t} if @var{path} exists and readable/writable/executable
+by the current effective user, respectively.
+This API is taken from STk.
+@c JP
+@var{path}が存在して、現在の実効ユーザがそれぞれ読み取り/書き込み/実行可能なら@code{#t}を
+返します。
+このAPIはSTkから取られました。
+@c COMMON
+@end defun
+
+@defun file-eq? path1 path2
+@defunx file-eqv? path1 path2
+@defunx file-equal? path1 path2
+@c EN
+Compares two files specified by @var{path1} and @var{path2}.
+@code{file-eq?} and @code{file-eqv?} checks if @var{path1} and @var{path2}
+refers to the identical file, that is, whether they are on the same
+device and have the identical inode number.  The only difference is
+when the last component of @var{path1} and/or @var{path2} is a symbolic
+link, @code{file-eq?} doesn't resolve the link (so compares the links
+themselves) while @var{file-eqv?} resolves the link and compares the
+files referred by the link(s).
+@c JP
+@var{path1}と@var{path2}で示されるファイルを比較します。
+@code{file-eq?}と@code{file-eqv?}は@var{path1}と@var{path2}が
+全く同一のファイルを参照しているかどうか、すなわち、同じデバイス上にあり同じ
+inode番号を持つかどうかをチェックします。二つの手続きの違いは、
+@code{path1}や@var{path2}の最後のコンポーネントがシンボリックリンクで
+あった場合に、@var{file-eq?}はリンクそのものの比較をするが
+@code{file-eqv?}はリンクを辿った先のファイルの比較をする、という点です。
+@c COMMON
+
+@c EN
+@code{file-equal?} compares @var{path1} and @var{path2} considering their
+content, that is, when two are not the identical file in the sense of
+@code{file-eqv?}, @code{file-equal?} compares their content and returns
+@code{#t} if all the bytes match.
+@c JP
+@code{file-equal?}は@var{path1}と@var{path2}をその内容まで考慮して比較します。
+すなわち、二つのファイルが@code{file-eqv?}の意味で同一でなかった場合、
+@code{file-equal?}はファイルの内容を比較し、全てが一致した場合に@code{#t}を返します。
+@c COMMON
+
+@c EN
+The behavior of @code{file-equal?} is undefined
+when @var{path1} and @var{path2} are both directories.
+Later, it may be extended to scan the directory contents.
+@c JP
+@var{path1}と@var{path2}ともにディレクトリが与えられた場合の
+@code{file-equal?}の動作は未定義です。将来、ディレクトリ内容を
+スキャンするような拡張が加えられるかもしれません。
+@c COMMON
+@end defun
+
+@deffn {Generic Function} file-mtime=? f1 f2
+@deffnx {Generic Function} file-mtime<? f1 f2
+@deffnx {Generic Function} file-mtime<=? f1 f2
+@deffnx {Generic Function} file-mtime>? f1 f2
+@deffnx {Generic Function} file-mtime>=? f1 f2
+@c EN
+Compares file modification time stamps.  There are a bunch of methods defined,
+so each argument can be either one of the followings.
+
+@itemize @bullet
+@item
+String pathname.   The mtime of the specified path is used.
+@item
+@code{<sys-stat>} object (@xref{File stats}).
+The mtime is taken from the stat structure.
+@item
+@code{<time>} object.  The time is used as the mtime.
+@item
+Number.  It is considered as the number of seconds since Unix Epoch, and
+used as mtime.
+@end itemize
+@c JP
+二つのファイルの変更時間を比較します。それぞれの引数に対して、
+次のような型のオブジェクトが渡せるようなメソッドが定義されています。
+
+@itemize @bullet
+@item
+文字列のパス名。そのパス名で示されるファイルから変更時間が取られます。
+@item
+@code{<sys-stat>}オブジェクト (@xref{File stats})。
+stat構造体から変更時間が取られます。
+@item
+@code{<time>}オブジェクト。その示す時間が変更時間と考えられます。
+@item
+数値。変更時間をUnix Epochからの秒数で表したものと見なされます。
+@end itemize
+@c COMMON
+
+@example
+@c EN
+;; @r{compare "foo.c" is newer than "foo.o"}
+@c JP
+;; @r{"foo.c" より "foo.o" が新しいかどうか調べる}
+@c COMMON
+(file-mtime>? "foo.c" "foo.o")
+
+@c EN
+;; @r{see if "foo.log" is updated within last 24 hours}
+@c JP
+;; @r{"foo.log"が過去24時間以内に更新されたかどうかを調べる}
+@c COMMON
+(file-mtime>? "foo.c" (- (sys-time) 86400))
+@end example
+@end deffn
+
+@deffn {Generic Function} file-ctime=? f1 f2
+@deffnx {Generic Function} file-atime=? f1 f2
+@findex file-ctime<?
+@findex file-ctime<=?
+@findex file-ctime>?
+@findex file-ctime>=?
+@findex file-atime<?
+@findex file-atime<=?
+@findex file-atime>?
+@findex file-atime>=?
+@c EN
+Same as @code{file-mtime=?}, except these checks file's change time
+and access time, respectively.
+All the variants of @code{<}, @code{<=}, @code{>}, @code{>=} are also
+defined.
+@c JP
+@code{file-mtime=?}と同じですが、ファイルの属性変更時間とアクセス時間に
+関して比較します。
+@code{<}, @code{<=}, @code{>}, @code{>=}を使う関数も同様に定義されています。
+@c COMMON
+@end deffn
+
+@node File operations,  , File attribute utilities, file.util - Filesystem utilities
+@subsection File operations
+@c NODE ファイル操作
+
+@defun touch-file path
+@c EN
+Updates timestamp of @var{path} to the current time.  If @var{path} 
+doesn't exist, a new file with size zero is created.
+See also @code{sys-utime} (@xref{File stats}).
+@c JP
+@var{path}のタイムスタンプを現在の時刻に更新します。
+@var{path}が存在しなかった場合はそのファイルを作成します。
+@ref{File stats}の@code{sys-utime}も参照して下さい。
+@c COMMON
+@end defun
+
+@defun copy-file src dst &keyword if-exists backup-suffix safe keep-timestamp
+@c EN
+Copies file from @var{src} to @var{dst}.  The source file @var{src} must exist.
+The behavior when the destination @var{dst} exists varies by the keyword
+argument @var{if-exists};
+
+@table @code
+@item :error
+(Default) Signals an error when @var{dst} exists.
+@item :supersede
+Replaces @var{dst} to the copy of @code{src}. 
+@item :backup
+Keeps @var{dst} by renaming it.
+@item #f
+Doesn't copy and returns @code{#f} when @var{dst} exists.
+@end table
+@c JP
+ファイル@var{src}を@var{dst}へコピーします。コピー元ファイル@var{src}は
+存在していなければなりません。コピー先ファイル@var{dst}が存在していた場合の
+ふるまいはキーワード引数@var{if-exists}によって以下のように指定されます。
+
+@table @code
+@item :error
+(デフォルト) @var{dst}が存在していたらエラーを通知する。
+@item :supersede
+@var{dst}を@code{src}のコピーで置き換える。
+@item :backup
+@var{dst}の名前を変えてキープする。
+@item #f
+@var{dst}が存在していたらコピーをせず@code{#f}を返す。
+@end table
+@c COMMON
+
+@c EN
+@code{Copy-file} returns @code{#t} after completion.
+@c JP
+@code{copy-file}はコピーが完了したら@code{#t}を返します。
+@c COMMON
+
+@c EN
+If @var{if-exists} is @code{:backup}, the keyword argument @var{backup-suffix}
+specifies the suffix attached to the @var{dst} to be renamed.
+The default value is @code{".orig"}.
+@c JP
+@var{if-exists}が@code{:backup}である場合、
+@var{dst}がリネームされる名前は
+@var{dst}にキーワード引数@var{backup-suffix}で指定されるサフィックスを
+付けたものとなります。デフォルト値は@code{".orig"}です。
+@c COMMON
+
+@c EN
+By default, @code{copy-file} starts copying to @var{dst} directly.
+However, if the keyword argument @var{safe} is a true value,
+it copies the file to a temporary file in the same directory of @var{dst},
+then renames it to @var{dst} when copy is completed.
+If copy is interrupted for some reason, the filesystem is "rolled back"
+properly.
+@c JP
+デフォルトでは@code{copy-file}は直接@var{dst}にコピーを行いますが、
+キーワード引数@var{safe}に真の値が与えられた場合は、@var{dst}と同じディレクトリ
+内の一時ファイルにまずコピーし、それが完了した時点で@var{dst}へとリネームします。
+コピーが何らかの理由で中断された場合、ファイルシステムはコピー前の状態へと
+「ロールバック」されます。
+@c COMMON
+
+@c EN
+If the keyword argument @var{keep-timestamp} is true, @code{copy-file}
+sets the destination's timestamp to the same as the source's timestamp
+after copying.
+@c JP
+キーワード引数@var{keep-timestamp}に真の値が与えられた場合は、
+@code{copy-file}はコピー後にコピー先のファイルのタイムスタンプを
+コピー元のタイムスタンプに合わせます。
+@c COMMON
+@end defun
+
+@defun move-file src dst &keyword if-exists backup-suffix
+@c EN
+Moves file @var{src} to @var{dst}.   The source @var{src} must exist.
+The behavior when @var{dst} exists varies by the keyword argument
+@var{if-exists}, as follows.
+@table @code
+@item :error
+(Default) Signals an error when @var{dst} exists.
+@item :supersede
+Replaces @var{dst} by @code{src}. 
+@item :backup
+Keeps @var{dst} by renaming it.
+@item #f
+Doesn't move and returns @code{#f} when @var{dst} exists.
+@end table
+@c JP
+ファイル@var{src}を@var{dst}へ移動します。移動元ファイル@var{src}は
+存在していなければなりません。移動先ファイル@var{dst}が存在した場合の
+ふるまいはキーワード引数@var{if-exists}によって以下のように指定されます。
+@table @code
+@item :error
+(デフォルト) @var{dst}が存在していたらエラーを通知する。
+@item :supersede
+@var{dst}を@code{src}で置き換える。
+@item :backup
+@var{dst}の名前を変えてキープする。
+@item #f
+@var{dst}が存在していたら移動をせず@code{#f}を返す。
+@end table
+@c COMMON
+
+@c EN
+@code{Move-file} returns @code{#t} after completion.
+@c JP
+@code{move-file}は移動が完了したら@code{#t}を返します。
+@c COMMON
+
+@c EN
+If @var{if-exists} is @code{:backup}, the keyword argument @var{backup-suffix}
+specifies the suffix attached to the @var{dst} to be renamed.
+The default value is @code{".orig"}.
+@c JP
+@var{if-exists}が@code{:backup}である場合、@var{dst}がリネームされる
+名前は@var{dst}にキーワード引数@var{backup-suffix}で指定されるサフィックスを
+付けたものとなります。デフォルト値は@code{".orig"}です。
+@c COMMON
+
+@c EN
+The file @var{src} and @var{dst} can be on the different filesystem.
+In such a case, @code{move-file} first copies @var{src} to the
+temporary file on the same directory as @var{dst}, then renames
+it to @var{dst}, then removes @var{src}.
+@c JP
+ファイル@var{src}と@var{dst}は別のファイルシステム上にあっても構いません。
+その場合、@code{move-file}はまず@var{src}を@var{dst}と同じディレクトリの
+一時ファイルにコピーし、それを@var{dst}にリネームし、それから
+@var{src}を消去します。
+@c COMMON
+@end defun
+
+@c ----------------------------------------------------------------------
+@node math.const - Mathematic constants, math.mt-random - Mersenne-Twister random number generator, file.util - Filesystem utilities, Library modules - Utilities
+@section @code{math.const} - Mathematic constants
+@c NODE math.const - 定数, @code{math.const} - 定数
+
+@deftp {Module} math.const
+@mdindex math.const
+This module defines several commonly-used mathematic constants.
+@end deftp
+
+@defvr {Constant} pi
+@defvrx {Constant} pi/2
+@defvrx {Constant} pi/4
+@defvrx {Constant} pi/180
+@defvrx {Constant} 1/pi
+@defvrx {Constant} 180/pi
+@c EN
+Bound to pi, pi/2, pi/4, pi/180, 1/pi and 180/pi, respectively.
+@c JP
+それぞれ、π、π/2、π/4、π/180、1/π、180/πです。
+@c COMMON
+@end defvr
+
+@defvr {Constant} e
+e.
+@end defvr
+
+@c ----------------------------------------------------------------------
+@node math.mt-random - Mersenne-Twister random number generator, rfc.822 - RFC822 message parsing, math.const - Mathematic constants, Library modules - Utilities
+@section @code{math.mt-random} - Mersenne Twister Random number generator
+@c NODE math.mt-random - Mersenne Twister乱数発生器, @code{math.mt-random} - Mersenne Twister乱数発生器
+
+@deftp {Module} math.mt-random
+@mdindex math.mt-random
+Provides a pseudo random number generator (RNG) based on 
+"Mersenne Twister" algorithm developed by Makoto Matsumoto and
+Takuji Nishimura.   It is fast, and has huge period of 2^19937-1.
+See @ref{MT,,MT}, for details about the algorithm.
+@end deftp
+
+@deftp {Class} <mersenne-twister>
+@clindex mersenne-twister
+A class to encapsulate the state of Mersenne Twister RNG.
+Each instance of this class has its own state, and can be used
+as an independent source of random bits if initialized
+by individual seed.
+
+The random seed value can be given at the instantiation time
+by @code{:seed} initialization argument, or by using
+@code{mt-random-set-seed!} described below.
+
+@example
+(define m (make <mersenne-twister> :seed (sys-time)))
+
+(mt-random-real m) @result{} 0.10284287848537865
+(mt-random-real m) @result{} 0.463227748348805
+(mt-random-real m) @result{} 0.8628500643709712
+@dots{}
+@end example
+@end deftp
+
+@defun mt-random-set-seed! mt seed
+Sets random seed value @var{seed} to the Mersenne Twister RNG @var{mt}.
+@var{Seed} can be an arbitrary positive exact integer,
+or arbitrary length of u32vector (@xref{srfi-4 - Homogeneous vectors}).
+If it is an integer, the lower 32bits are used for initialization.
+If it is a u32vector, up to 624 elements are used for initialization.
+@end defun
+
+@defun mt-random-get-state mt
+@defunx mt-random-set-state! mt state
+Retrieves and reinstalls the state of Mersenne Twister RNG @var{mt}.
+The state is represented by a u32vector of 625 elements.  The state
+can be stored elsewhere, and then restored to an instance of
+@code{<mersenne-twister>} to continue to generate the pseudo random
+sequence.
+@end defun
+
+@defun mt-random-real mt
+@defunx mt-random-real0 mt
+Returns a random real number between 0.0 and 1.0.
+1.0 is not included in the range.  @code{Mt-random-real} doesn't
+include 0.0 either, while @code{mt-random-real0} does.
+Excluding 0.0 is from the draft SRFI-27.
+@end defun
+
+@defun mt-random-integer mt range
+Returns a random exact positive integer between 0 and @var{range}-1.
+@var{Range} can be any positive exact integer.
+@end defun
+
+@defun mt-random-fill-u32vector! mt u32vector
+@defunx mt-random-fill-f32vector! mt f32vector
+@defunx mt-random-fill-f64vector! mt f64vector
+Fills the given uniform vector by the random numbers.
+For @code{mt-random-fill-u32vector!}, the elements are filled
+by exact positive integers between 0 and 2^32-1.
+For @code{mt-random-fill-f32vector!} and
+@code{mt-random-fill-f64vector!}, it is filled by an inexact
+real number between 0.0 and 1.0, exclusive.
+
+If you need a bunch of random numbers at once, these are much
+faster than getting one by one.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node rfc.822 - RFC822 message parsing, rfc.base64 - Base64 encoding/decoding, math.mt-random - Mersenne-Twister random number generator, Library modules - Utilities
+@section @code{rfc.822} - RFC822 message parsing
+@c NODE rfc.822 - RFC822メッセージ形式, @code{rfc.822} - RFC822メッセージ形式
+
+@deftp {Module} rfc.822
+@mdindex rfc.822
+@c EN
+Defines a set of functions that parses and constructs the ``Internet
+Message Format'', a text format used to exchange e-mails.
+The most recent specification can be found in
+RFC2822 (@ref{rfc2822,[RFC2822],RFC2822}).
+The format was originally defined in RFC 822, and people still 
+call it ``RFC822 format'', hence I named this module.
+In the following document, I also refer to the format as ``RFC822 format''.
+
+Say @code{(use rfc.822)} to use this module.
+@c JP
+電子メールを交換する際に使用されるテキストのフォーマット、"インターネット・
+メッセージ・フォーマット" をパーズ/生成する手続きを定義しています。
+最新の仕様は、RFC2822 (@ref{rfc2822,[RFC2822],RFC2822}) にあります。
+このフォーマットは最初 RFC 822 で定義されたため、未だに"RFC822形式"と
+呼ばれています。それがこのモジュール名の由来です。
+以下では、このフォーマットを"RFC822形式"と呼んでいます。
+
+このモジュールを使うためには、@code{(use rfc.822)} として下さい。
+@c COMMON
+@end deftp
+
+@defun rfc822-header->list iport &optional strict?
+@c EN
+Reads RFC822 format message from an input port @var{iport},
+until it reaches the end of the message header.
+The header fields are unfolded, and broken into a list of the following
+format:
+@c JP
+入力ポート @var{iport} から、メッセージ・ヘッダの終わりに達するまで、
+RFC822 形式のメッセージを読み込みます。
+ヘッダ・フィールドは以下のフォーマットのリストに展開、分離されます。
+@c COMMON
+@example
+((name body) @dots{})
+@end example
+@c EN
+@var{Name} @dots{} are the field names, and @var{body} @dots{} are
+the corresponding field body, both as strings.
+Field names are converted to lower-case characters.
+Field bodies are not modified, except the folded line is concatenated,
+CRLFs removed.
+The order of fields are preserved.
+@c JP
+@var{Name} @dots{} はフィールド名で、@var{body} @dots{} は対応するフィールドの
+ボディ、ともに文字列です。
+フィールド名は小文字に変換されます。フィールドのボディは、たたまれている
+行が連結され CRLF が削除される以外は変更されません。
+フィールドの順番は保存されます。
+@c COMMON
+@end defun
+
+@defun rfc822-parse-date string
+@c EN
+Takes RFC-822 type date string, and returns eight values:
+@c JP
+RFC822 形式の日付文字列を取り、8つの値を返します。
+@c COMMON
+@example
+year, month, day-of-month, hour, minutes, seconds, timezone, day-of-week.
+@end example
+
+@c EN
+@emph{Timezone} is an offset from UT in minutes.
+@emph{Day-of-week} is a day from sunday,
+and may be #f if that information is not available.
+If the string is not parsable, all the elements are #f.
+
+Note: This function follows the new definition of date format in RFC2822,
+but may fail to recognize "obsolete" format, which allows arbitrary
+comments appear between words.
+@c JP
+@emph{Timezone} は UT(グリニッジ標準時)からの分単位のオフセットです。
+@emph{Day-of-week} は日曜日から数えた曜日で、情報が不足している場合は #f です。
+文字列がパーズ不可能ならば、全ての要素が #f になります。
+
+注意: この手続きは、RFC2822 の新しい日付形式の定義に従っています。
+ワードの間に任意のコメントが許されている「旧式の」フォーマットは
+認識しそこねるかもしれません。
+@c COMMON
+@end defun
+
+@c ----------------------------------------------------------------------
+@node rfc.base64 - Base64 encoding/decoding, rfc.cookie - HTTP cookie handling, rfc.822 - RFC822 message parsing, Library modules - Utilities
+@section @code{rfc.base64} - Base64 encoding/decoding
+@c NODE rfc.base64 - Base64エンコーディング, @code{rfc.base64} - Base64エンコーディング
+
+@deftp {Module} rfc.base64
+@mdindex rfc.base64
+@c EN
+This module defines a few functions to encode/decode Base64 format,
+defined in RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}), section 6.3.
+@c JP
+このモジュールでは、RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}) で
+定義されている Base64 フォーマットへエンコード/デコードするいくつかの
+手続きを定義しています。
+@c COMMON
+@end deftp
+
+@defun base64-encode
+@c EN
+Reads byte stream from the current input port, encodes it in Base64
+format and writes the result character stream to the current output port.
+The conversion ends when it reads EOF from the current input port.
+@c JP
+現在の入力ポートからバイト・ストリームを読み込み、それを Base64 フォーマットに
+エンコードし、現在の出力ポートに文字ストリームとして書き出します。
+現在の入力ポートから EOF を読み込むと変換を終了します。
+@c COMMON
+@end defun
+
+@defun base64-encode-string string
+@c EN
+Converts contents of @var{string} to Base64 encoded format.
+Input string can be either complete or incomplete string;
+it is always interpreted as a byte sequence.
+@c JP
+@var{string} の内容を Base64 でエンコードされたフォーマットに変換します。
+入力となる文字列は、完全文字列でも不完全文字列でも良いです。
+常にバイト・シーケンスとして扱われます。
+@c COMMON
+@end defun
+
+@defun base64-decode
+@c EN
+Reads character stream from the current input port, decodes it from Base64
+format and writes the result byte stream to the current output port.
+The conversion ends when it reads EOF or the termination character
+(@code{=}).  The characters which does not in legal Base64 encoded character
+set are silently ignored.
+@c JP
+現在の入力ポートから文字ストリームを読み込み、それを Base64 フォーマットとして
+デコードし、現在の出力ポートにバイトストリームとして書き出します。
+変換は EOF か、終端文字 (@code{=}) を読み込むと終了します。
+Base64 でエンコードされた文字として適当でない文字は沈黙のまま無視されます。
+@c COMMON
+@end defun
+
+@defun base64-decode-string string
+@c EN
+Decodes a Base64 encoded string @var{string} and returns
+the result as a string.
+The conversion terminates at the end of @var{string} or
+the termination character (@code{=}).
+The characters which does not in legal Base64 encoded character
+set are silently ignored.
+@c JP
+Base64 でエンコードされた文字列 @var{string} をデコードして文字列を返します。
+変換は @var{string} の終わりか、終端文字 (@code{=}) で終了します。
+Base64 でエンコードされた文字として適当でない文字は沈黙のまま無視されます。
+@c COMMON
+@end defun
+
+@c ----------------------------------------------------------------------
+@node rfc.cookie - HTTP cookie handling, rfc.hmac - HMAC keyed-hashing, rfc.base64 - Base64 encoding/decoding, Library modules - Utilities
+@section @code{rfc.cookie} - HTTP cookie handling
+@c NODE rfc.cookie - HTTPクッキー, @code{rfc.cookie} - HTTPクッキー
+
+@deftp {Module} rfc.cookie
+@mdindex rfc.cookie
+@c EN
+Defines a set of functions to parse and construct a ``cookie'' information
+defined in RFC 2965 (@ref{rfc2965,,RFC2965}).
+@c JP
+RFC 2965 (@ref{rfc2965,,RFC2965}) で定義されている「クッキー」情報を
+パースしたり構築したりするための手続きを定義しています。
+@c COMMON
+@end deftp
+
+@defun parse-cookie-string string &optional version
+@c EN
+Parse a cookie string @var{string}, which is the value of ``Cookie''
+request header.  Usually, the same information is available to CGI
+program via the environemnt variable @code{HTTP_COOKIE}.
+
+If the cookie version is known, via ``Cookie2'' request header,
+the integer version must be passed to @var{version}.  Otherwise,
+@code{parse-cookie} figures out the version from @var{string}.
+
+The result has the following format.
+@c JP
+リクエスト・ヘッダの Cookie の値のクッキー文字列 @var{string} を
+パースします。通常、CGI プログラムでは、同じ情報は環境変数
+@var{HTTP_COOKIE} を通して利用できます。
+
+リクエスト・ヘッダ Cookie2 を通してクッキーのバージョンが分かる
+場合は、@var{version} へ整数のバージョンとして渡されなければなりません。
+そうでなければ、@code{parse-cookie} は @var{string} からバージョンを
+取り出します。
+
+結果は以下のフォーマットを持ちます。
+@c COMMON
+@example
+((<name> <value> [:path <path>] [:domain <domain>] [:port <port>])
+ @dots{})
+@end example
+@c EN
+where @var{<name>} is the attribute name, and @var{<value>} is
+the corresponding value.  If the attribute doesn't have value,
+@var{<value>} is @code{#f}.  (Note that it differs from the attribute
+having null value, @code{""}.)
+If the attribute has path, domain or port options, it is given
+as a form of keyword-value pair.
+@c JP
+@var{<name>} は属性名で、@var{<value>} は対応する値です。
+属性が値を持たない場合、@var{<value>} は @code{#f} になります。
+(属性が NULL 値を持つ場合は、@code{""} となることに注意。)
+属性がパスやドメイン、ポート番号のオプションを持つ場合は、
+キーワード-値のペアの形式で与えられます。
+@c COMMON
+@end defun
+
+@defun construct-cookie-string specs &optional version
+@c EN
+Given list of cookie specs, creates a cookie string suitable for
+@code{Set-cookie2} or @code{Set-cookie} header.
+
+Optional @var{version} argument specifies cookie protocol version.
+0 for the old Netscape style format, and 1 for RFC2965 style format.
+When omitted, version 1 is assumed.
+
+Each cookie spec has the following format.
+@c JP
+与えられたクッキーの仕様のリストから、@code{Set-cookie2} か
+@code{Set-cookie} ヘッダに適切なクッキー文字列を作ります。
+
+オプションの @var{version} 引数は、クッキー・プロトコルのバージョンを
+指定するものです。0 は古い Netscape スタイルのフォーマットで、1 は
+RFC2965 スタイルのフォーマットです。省略された場合、1 が指定されたものと
+されます。
+
+クッキーの仕様は以下のフォーマットを持ちます。
+@c COMMON
+@example
+(<name> <value> [:comment <comment>] [:comment-url <url>]
+                [:discard <bool>] [:domain <domain>]
+                [:max-age <age>] [:path <path>]
+                [:port <port-list>] [:secure <bool>]
+                [:version <version>] [:expires <date>])
+@end example
+@c EN
+Where,
+@table @code
+@item <name>
+A string.  Name of the cookie.
+@item <value>
+Value of the cookie.  May be a string, or @code{#f} if no value is needed.
+@item <comment> <url> <domain> <path> <port-list>
+Strings.
+@item <bool>
+Boolean value
+@item <age> <version>
+Integers
+@item <date>
+Either an integer (seconds since Epoch) or a formatted date string
+following the netscape cookie specification.
+@end table
+@c JP
+@table @code
+@item <name>
+文字列。クッキーの名前。
+@item <value>
+クッキーの値。文字列か、値が必要なければ @code{#f} 。
+@item <comment> <url> <domain> <path> <port-list>
+文字列。
+@item <bool>
+真偽値。
+@item <age> <version>
+整数。
+@item <date>
+整数(エポックからの秒数)か、Netscape のクッキー仕様に従うフォーマットされた
+日付文字列。
+@end table
+@c COMMON
+
+@c EN
+The attribute values are quoted appropriately.  If the specified attribute
+is irrelevant for the @var{version}, it is ignored.  So you can pass
+the same specs to generate both old-style and new-style cookie strings.
+
+Return value is a list of cookie strings, each of which stands for
+each cookie.  For old-style protocol (using @code{Set-cookie} header)
+you must send each of them by individual header.  For new-style
+protocol (using @code{Set-cookie2} header), you can join them
+with comma and send it at once.  See RFC2965 for further details.
+
+Some examples:
+@c JP
+属性値は適切にクォートされます。指定された属性が @var{version} に不適切な
+場合は無視されます。古いスタイルと新しいスタイルの両方のクッキー文字列を
+作るために同じ仕様を渡すことができます。
+
+戻り値はそれぞれのクッキー文字列のリストです。(@code{Set-cookie} を使う)
+古いスタイルのプロトコルでは、それぞれを独立したヘッダとして送らなければ
+なりません。(@code{Set-cookie2} ヘッダを使う)新しいプロトコルでは、
+それらをカンマで繋ぎ、一度に送ることができます。詳細は RFC2965 を見て下さい。
+
+いくつかの例を示します。
+@c COMMON
+@example
+(construct-cookie-string
+   `(("name" "foo" :domain "foo.com" :path "/"
+                   :expires ,(+ (sys-time) 86400) :max-age 86400)))
+ @result{} ("name=foo;Domain=foo.com;Path=/;Max-age=86400")
+
+(construct-cookie-string
+   `(("name" "foo" :domain "foo.com" :path "/"
+                   :expires ,(+ (sys-time) 86400) :max-age 86400))
+   0)
+ @result{}
+ ("name=foo;Domain=foo.com;Path=/;Expires=Sun, 09-Sep-2001 01:46:40 GMT")
+@end example
+@end defun
+
+@c ----------------------------------------------------------------------
+@node rfc.hmac - HMAC keyed-hashing, rfc.http - HTTP, rfc.cookie - HTTP cookie handling, Library modules - Utilities
+@section @code{rfc.hmac} - HMAC keyed-hashing
+
+@deftp {Module} rfc.hmac
+@mdindex rfc.hmac
+This module implements HMAC algorithm,
+Keyed-hashing for message authentication, defined in RFC 2104.
+
+For simple batched keyed hashing, you can use high-level API 
+@code{hmac-digest} and @code{hmac-digest-string}.
+Or you can create @code{<hmac>} object and update its state
+as the data coming in.
+@end deftp
+
+@deftp {Class} <hmac>
+@clindex hmac
+Keeps state informatoin of HMAC algorithm.
+Key and the hashing algorithm should be given at the construction
+time, using @code{:key} and @code{:hasher} keyword-arguments respectively.
+You can pass any class object that implements message digest 
+interface (@xref{util.digest - Message digester framework}),
+such as @code{<md5>} (@xref{rfc.md5 - MD5 message digest})
+or @code{<sha1>} (@xref{rfc.sha1 - SHA1 message digest}).
+
+Example:
+@example
+(make <hmac> :key (make-byte-string 16 #x0b) :hasher <md5>)
+@end example
+@end deftp
+
+@deffn {Method} hmac-update! (hmac <hmac>) data
+Updates the internal state of @var{hmac} by @var{data},
+which must be represented by a (possibly incomplete) string.
+@end deffn
+
+@deffn {Method} hmac-final! (hmac <hmac>)
+Finalizes the internal state of @var{hmac} and returns the
+hashed string in incomplete string.
+You can use @code{digest-hexify}
+(@xref{util.digest - Message digester framework}) to obtain "hexified"
+result.
+Once finalized, you can't call @code{hmac-update!} or @code{hmac-final!}
+on @var{hmac}.
+@end deffn
+
+@deffn {Method} hmac-digest &keyword key hasher
+Creates an @code{<hmac>} object and hash the data stream
+from the current input port, then returns the hashed result
+in an incomplete string.
+@end deffn
+
+@deffn {Method} hmac-digest-string string &keyword key hasher
+Creates an @code{<hmac>} object and hash the data in @var{string},
+then returns the hashed result in an incomplete string.
+@end deffn
+
+@c ----------------------------------------------------------------------
+@node rfc.http - HTTP, rfc.md5 - MD5 message digest, rfc.hmac - HMAC keyed-hashing, Library modules - Utilities
+@section @code{rfc.http} - HTTP
+
+@deftp {Module} rfc.http
+@mdindex rfc.http
+@c EN
+This module provides a simple client API for
+HTTP/1.1, defined in RFC2616, "Hypertext Transfer Protocol -- HTTP/1.1"
+@c JP
+このモジュールは、RFC2616 "Hypertext Transfer Protocol -- HTTP/1.1"
+で定義されているHTTP/1.1に対する簡単なクライアントAPIを提供します。
+@c COMMON
+(@ref{rfc2616, [RFC2616], RFC2616}).
+
+@c EN
+Current API implements only a part of the protocol.
+Only GET, HEAD, and POST requests are supported,
+it doesn't talk with HTTP/1.0 server yet,
+and it doesn't support HTTP/1.1 advanced features
+such as persistent connection.
+Support for those features may be added in the future versions.
+@c JP
+現在のAPIは、プロトコルの一部のみ実装されています。
+GET、HEAD、POSTリクエストのみがサポートされており、
+HTTP/1.0のサーバーとはうまく通信できません。
+また、HTTP/1.1の先進的機能、例えば永続的接続などはサポートしていません。
+これらの機能は、将来のバージョンで追加されるでしょう。
+@c COMMON
+@end deftp
+
+@defun http-get server request-uri &keyword sink flusher no-redirect @dots{}
+@defunx http-head server request-uri &keyword no-redirect @dots{}
+@defunx http-post server request-uri body &keyword sink flusher no-redirect @dots{}
+
+@c EN
+Send http GET, HEAD and POST requests to the http @var{server},
+respectively, and returns the server's reply.
+
+If the server returns "3xx" redirection reply, these procedures
+try to follow the URI returned in the "location" reply message header
+by default.  See the "keyword arguments" heading below to suppress
+redirection following.
+@c JP
+@var{server}に、それぞれHTTPのGET、HEAD、POSTリクエストを送り、
+サーバの応答を返します。
+
+サーバが "3xx" のリダイレクトを指示する応答を返した場合、これらの手続きは
+デフォルトで、応答のメッセージヘッダの "location" で返されるURIに従うよう
+試みます。リダイレクションを抑制するには、下の"キーワード引数"を参照してください。
+@c COMMON
+
+@c EN
+@strong{Required arguments:}
+The @var{server} argument specifies http server name in a string.
+A server name can be optionally followed by colon and a port number.
+@c JP
+@strong{必須の引数:}
+@var{server}引数では、文字列でHTTPサーバ名を指定します。
+サーバ名は、オプションでコロンに続いてポート番号を付加できます。
+@c COMMON
+Examples: @code{"w3c.org"}, @code{"mycompany.com:8080"}.
+
+@c EN
+The @var{request-uri} argument is the request-uri specified in
+RFC2616; usually, this is the path part of http url.
+
+@code{Http-post} takes the third argument, @var{body}, which is
+a string to be posted to the server.   The body is sent "as is";
+the caller has to take care of necessary escaping or encoding.
+
+So, the most simple form of retrieving the content will be
+something like this:
+@c JP
+@var{request-uri}引数は、RFC2616で規定されているリクエストURIで、通常これは
+HTTP URLのパス部分です。
+
+@code{http-post}は、サーバへポストされる文字列、@var{body}を第3引数として
+取ります。ボディは"そのまま"送られるので、呼び出し側は必要なエスケープや
+エンコーディングを行う必要があります。
+
+あるURLのコンテンツを取得する最もシンプルなフォームは次のようになるでしょう。
+@c COMMON
+@example
+(http-get "www.shiro.dreamhost.com" "/scheme/index.html")
+@end example
+
+@c EN
+Access via proxy can be done by specifying proxy server to @var{server}
+and passing the entire URI to @var{request-uri}, but the author
+haven't tested yet.
+@c JP
+プロクシを通してのアクセスは、@var{server}にプロクシ・サーバを指定し、
+@var{request-uri}に完全なURIを渡すことで行えますが、まだテストされていません。
+@c COMMON
+
+@c EN
+@strong{Return values:}
+All procedures return three values.
+
+The first value is the status code defined in RFC2616
+in a string (such as "200" for success, "404" for "not found").
+@c JP
+@strong{戻り値:}
+全ての手続きは3つの値を返します。
+
+1つ目は、RFC2616で定義されているステータスコードの文字列値(例えば、成功時の
+200、"Not found"の404など)です。
+@c COMMON
+
+@c EN
+The second value is a list of parsed headers---each element of list
+is a list of @code{(@var{header-name} @var{value} @dots{})}, 
+where @var{header-name} is a string name of the header
+(such as "content-type" or "location"), and @var{value} is
+the corresponding value in a string.  The header name is converted
+to lowercase letters.  The value is untouched except that "soft line breaks"
+are removed, as defined in RFC2822.   If the server returns
+more than one headers with the same name, their values are
+consolidated to one list.  Except that, the order of the header list
+in the second return value is the same as the order in the server's reply.
+@c JP
+2つ目は、パーズされたヘッダのリストで、リストの要素は@code{(@var{header-name}
+@var{value} @dots{})}です。@var{header-name}はヘッダの文字列名(例えば、
+"content-type"や"location"など)で、@var{value}は対応する値の文字列値です。
+ヘッダ名は小文字に変換されます。値は、RFC2822で定義されている無指定行区切
+(ソフト・ライン・ブレイク)が除かれる以外はそのままです。
+サーバが同じ名前のヘッダを1つ以上返した場合は、
+1つのリストに統合されます。それ以外では、2つ目の戻り値に
+おけるヘッダのリストの順番は、サーバの応答での順番と同じです。
+@c COMMON
+
+@c EN
+The third value is for the message body of the server's reply.
+By default, it is a message body itself in a string.   If the server's
+reply doesn't have a body, the third value is @code{#f}.  You can
+change how the message body is handled by keyword arguments; for example,
+you can directly store the returned message body to a file without
+creating intermediate string.  The details are explained below.
+@c JP
+3つ目の戻り値は、サーバの応答におけるメッセージボディです。
+デフォルトでは、文字列で表現されたメッセージボディそのものです。
+サーバの応答がボディを持たない場合、3つ目の戻り値は@code{#f}です。
+キーワード引数によって、メッセージボディがどのように扱われるかを制御できます。
+例えば、中間的な文字列を作らずに、返されたメッセージボディを直接ファイルに
+格納することが出来ます。詳細は以下で説明しています。
+@c COMMON
+
+@c EN
+@strong{Keyword arguments:}
+By default, these procedures only attaches @code{"Host"} header
+field to the request message.  You can give keyword arguments
+to add more header fields.
+@c JP
+@strong{キーワード引数:}
+デフォルトで、これらの手続きはリクエストメッセージに@code{"Host"}ヘッダ・フィールドを
+追加するだけです。他のヘッダ・フィールドを追加するためにキーワード引数を
+与えることができます。
+@c COMMON
+@example
+(http-get "foo.bar.com" "/index.html"
+  :accept-language "ja"
+  :user-agent "My Scheme Program/1.0")
+@end example
+
+@c EN
+The following keyword arguments are recognized by the procedure
+and do not appear in the request headers.
+@c JP
+以下のキーワード引数は手続きによって解釈され、リクエストヘッダには現れません。
+@c COMMON
+
+@table @var
+@item no-redirect
+@c EN
+If a true value is given, suppress the redirection tracking;
+i.e. the procedures return "3xx" message as is.
+@c JP
+真の値が与えられた場合、リダイレクションには従わなくなります。すなわち、
+手続きは"3xx"のメッセージをそのまま返します。
+@c COMMON
+@item sink, flusher
+@c EN
+You can customize how the message body is handled by these
+keyword arguments.  You have to pass an output port to @var{sink},
+and a procedure that takes two arguments to @var{flusher}.
+
+When the procedure starts receiving the message body, it
+feeds the received chunk to @var{sink}.  When the procedure
+receives entire message body, @var{flusher} method is called
+with @var{sink} and a list of message header fields (in the
+same format to be returned in the second value from the procedure).
+The return value of @var{flusher} becomes the third return value
+from the procedure.
+
+So, the default value of @var{sink} is a newly opened string
+port and the default value of @var{flusher} is
+@code{(lambda (sink headers) (get-output-string sink))}.
+
+The following example saves the message body directly to a file,
+without allocating (potentially very big) string buffer.
+@c JP
+これらのキーワード引数によりメッセージ・ボディがどのように扱われるかを
+カスタマイズできます。@var{sink}には出力ポートを、@var{flusher}には2引数を
+取る手続きを渡さなければなりません。
+
+手続きがメッセージ・ボディを受信し始めると、@var{sink}へ受け取った
+データ片をフィードします。手続きがメッセージ・ボディを受信し終わると、
+@var{flusher}に与えられた手続きが、@var{sink}と(手続きからの2つ目の
+戻り値と同じフォーマットの)メッセージ・ヘッダ・フィールドのリストとともに
+呼び出されます。@var{flusher}の戻り値が、手続きからの3つ目の戻り値と
+なります。
+
+したがって、@var{sink}のデフォルト値は、新しく開かれた文字列ポートで、
+@var{flusher}のデフォルト値は@code{(lambda (sink headers) (get-output-string sink))}
+とも言えます。
+
+以下のサンプルは、(とても大きい可能性のある)文字列バッファを作らずに、
+メッセージ・ボディを直接ファイルに保存します。
+@c COMMON
+@example
+(call-with-output-file "page.html"
+  (lambda (out)
+    (http-get "www.schemers.org" "/"
+       :sink out :flusher (lambda _ #t))))
+@end example
+
+@end table
+
+@end defun
+
+@c ----------------------------------------------------------------------
+@node rfc.md5 - MD5 message digest, rfc.quoted-printable - Quoted-printable encoding/decoding, rfc.http - HTTP, Library modules - Utilities
+@section @code{rfc.md5} - MD5 message digest
+@c NODE rfc.md5 - MD5メッセージダイジェスト, @code{rfc.md5} - MD5メッセージダイジェスト
+
+@deftp {Module} rfc.md5
+@mdindex rfc.md5
+This module implements MD5 message digest algorithm, defined in
+RFC 1321 (@ref{rfc1321, [RFC1321], RFC1321}).
+The module extends util.digest 
+(@xref{util.digest - Message digester framework}).
+@end deftp
+
+@deftp {Class} <md5>
+@clindex md5
+The instance of this class keeps internal state of MD5 digest algorithm.
+
+This class implements @code{util.digest} framework interface,
+@code{digest-update!}, @code{digest-final!}, 
+@code{digest}, and @code{digest-string}.
+@xref{util.digest - Message digester framework}, for detailed explanation
+of these methods.
+@end deftp
+
+Besides the digester framework, this module provides to 
+short-cut procedures.
+
+@defun md5-digest
+Reads data from the current input port until EOF, and returns
+its digest in an incomplete string.
+@end defun
+
+@defun md5-digest-string string
+Digest the data in @var{string}, and returns the result 
+in an incomplete string.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node rfc.quoted-printable - Quoted-printable encoding/decoding, rfc.sha1 - SHA1 message digest, rfc.md5 - MD5 message digest, Library modules - Utilities
+@section @code{rfc.quoted-printable} - Quoted-printable encoding/decoding
+@c NODE rfc.quoted-printable - Quoted-printableエンコーディング, @code{rfc.quoted-printable} - Quoted-printableエンコーディング
+
+@deftp {Module} rfc.quoted-printable
+@mdindex rfc.quoted-printable
+This module defines a few functions to encode/decode Quoted-printable format,
+defined in RFC 2045 (@ref{rfc2045, [RFC2045], RFC2045}), section 6.7.
+@end deftp
+
+@defun quoted-printable-encode
+Reads byte stream from the current input port, encodes it in Quoted-printable
+format and writes the result character stream to the current output port.
+The conversion ends when it reads EOF from the current input port.
+@end defun
+
+@defun quoted-printable-encode-string string
+Converts contents of @var{string} to Quoted-printable encoded format.
+Input string can be either complete or incomplete string;
+it is always interpreted as a byte sequence.
+@end defun
+
+@defun quoted-printable-decode
+Reads character stream from the current input port,
+decodes it from Quoted-printable
+format and writes the result byte stream to the current output port.
+The conversion ends when it reads EOF.
+If it encounters illegal character sequence (such as '=' followed 
+by non-hexadecimal characters), it copies them literally to the output.
+@end defun
+
+@defun quoted-printable-decode-string string
+Decodes a Quoted-printable encoded string @var{string} and returns
+the result as a string.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node rfc.sha1 - SHA1 message digest, rfc.uri - URI parsing and construction, rfc.quoted-printable - Quoted-printable encoding/decoding, Library modules - Utilities
+@section @code{rfc.sha1} - SHA1 message digest
+@c NODE rfc.sha1 - SHA1メッセージダイジェスト, @code{rfc.sha1} - SHA1メッセージダイジェスト
+
+@deftp {Module} rfc.sha1
+@mdindex rfc.sha1
+This module implements US Secure Hash Algorithm 1 (SHA1), 
+defined in RFC 3174 (@ref{rfc3174, [RFC3174], RFC3174}).
+The module extends util.digest 
+(@xref{util.digest - Message digester framework}).
+@end deftp
+
+@deftp {Class} <sha1>
+@clindex sha1
+The instance of this class keeps internal state of SHA1 digest algorithm.
+
+This class implements @code{util.digest} framework interface,
+@code{digest-update!}, @code{digest-final!}, 
+@code{digest}, and @code{digest-string}.
+@xref{util.digest - Message digester framework}, for detailed explanation
+of these methods.
+@end deftp
+
+Besides the digester framework, this module provides to 
+short-cut procedures.
+
+@defun sha1-digest
+Reads data from the current input port until EOF, and returns
+its digest in an incomplete string.
+@end defun
+
+@defun sha1-digest-string string
+Digest the data in @var{string}, and returns the result 
+in an incomplete string.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node rfc.uri - URI parsing and construction, slib - SLIB, rfc.sha1 - SHA1 message digest, Library modules - Utilities
+@section @code{rfc.uri} - URI parsing and construction
+@c NODE URIの解析と作成, @code{rfc.uri} - URIの解析と作成
+
+@deftp {Module} rfc.uri
+@mdindex rfc.uri
+@c EN
+Provides a set of functions to parse Uniform Resource Identifiers
+defined in RFC 2396 (@ref{rfc2396, [RFC2396], RFC2396}).
+@c JP
+RFC 2396 (@ref{rfc2396, [RFC2396], RFC2396})で定義されている
+Uniform Resource Identifiers をパーズする関数を提供します。
+@c COMMON
+@end deftp
+
+@defun uri-scheme&specific uri
+@defunx uri-decompose-hierarchical specific
+@defunx uri-decompose-authority authority
+@c EN
+General parser of URI.  These functions does not decode
+URI encoding.
+
+@code{uri-scheme&specific} takes a URI @var{uri}, and
+returns two values, its scheme part and its scheme-specific part.
+If @var{uri} doesn't have a scheme part, @var{#f} is returned for it.
+@c JP
+URIの一般的なパーザです。これらの関数はURIエンコーディングを
+デコードしません。
+
+@code{uri-scheme&specific} は URI @var{uri} を引数に取り、
+スキーム部分と、そのスキーム特有の部分を表す2つの値を返します。
+@var{uri} がスキーム部分を持たない場合、@var{#f} を返します。
+@c COMMON
+@example
+(uri-scheme&specific "mailto:sclaus@@north.pole")
+  @result{} "mailto" @r{and} "sclaus@@north.pole"
+(uri-scheme&specific "/icons/new.gif")
+  @result{} #f @r{and} "/icons/new.gif"
+@end example
+
+@c EN
+If the URI scheme uses hierarchical notation, i.e.
+``@code{//@var{authority}/@var{path}?@var{query}#@var{fragment}}'',
+you can pass
+the scheme-specific part to @code{uri-decompose-hierarchical}
+and it returns four values, @var{authority}, @var{path}, @var{query}
+and @var{fragment}.
+@c JP
+URI が階層的な記法を用いている場合、すなわち、
+``@code{//@var{authority}/@var{path}?@var{query}#@var{fragment}}''
+のような場合、スキーム特有の部分を @code{uri-decompose-hierarchical}
+に渡すと、@var{authority}、@var{path}、@var{query}、@var{fragment}
+の4つの値が返ります。
+@c COMMON
+@example
+(uri-decompose-hierarchical "//www.foo.com/about/company.html")
+  @result{} "www.foo.com"@r{,} "/about/company.html"@r{,} #f @r{and} #f
+(uri-decompose-hierarchical "//zzz.org/search?key=%3fhelp")
+  @result{} "zzz.org"@r{,} "/search"@r{,} "key=%3fhelp" @r{and} #f
+(uri-decompose-hierarchical "//jjj.jp/index.html#whatsnew")
+  @result{} "jjj.jp"@r{,} "/index.html"@r{,} #f @r{and} "whatsnew"
+(uri-decompose-hierarchical "my@@address")
+  @result{} #f@r{,} #f@r{,} #f @r{and} #f
+@end example
+
+@c EN
+Furthermore, you can parse @var{authority} part of the
+hierarchical URI by @code{uri-decompose-authority}.
+It returns @var{userinfo}, @var{host} and @var{port}.
+@c JP
+さらに、階層的 URI の @var{authority} の部分を
+@code{uri-decompose-authority} に渡すと、@var{userinfo}、
+@var{host}、@var{port} が返ります。
+@c COMMON
+@example
+(uri-decompose-authority "yyy.jp:8080")
+  @result{} #f@r{,} "yyy.jp" @r{and} "8080"
+(uri-decompose-authority "mylogin@@yyy.jp")
+  @result{} "mylogin"@r{,} "yyy.jp" @r{and} #f
+@end example
+@end defun
+
+@defun uri-compose &keyword scheme userinfo host port authority path path* query fragment specific
+@c EN
+Compose a URI from given components.
+There can be various combinations of components to create a valid
+URI---the following diagram shows the possible 'paths' of
+combinations:
+@c JP
+与えられたコンポーネントから URI を構成します。
+妥当な URI を作成するためのコンポーネントの組み合わせはたくさんあります。
+以下のダイアグラムは、考え得る組み合わせの方法を示しています。
+@c COMMON
+
+@example
+        /-----------------specific-------------------\
+        |                                            |
+ scheme-+------authority-----+-+-------path*---------+-
+        |                    | |                     |
+        \-userinfo-host-port-/ \-path-query-fragment-/
+@end example
+
+@c EN
+If @code{#f} is given to a keyword argument, it is
+equivalent to the absense of that keyword argument.
+It is particulary useful to pass the results of
+parsed uri.
+
+If a component contains a character that is not appropriate
+for that component, it must be properly escaped before
+being passed to @code{url-compose}.
+
+Some examples:
+@c JP
+キーワード引数に @code{#f} が与えられた場合、それはキーワード引数が
+指定されないことと等価です。これは URI をパーズした結果を渡す場合に
+特に有用です。
+
+コンポーネントに適切でない文字が含まれている場合は、
+@code{url-compose} に渡す前に正しくエスケープされなければなりません。
+
+いくつかの例を示します。
+@c COMMON
+@example
+(uri-compose :scheme "http" :host "foo.com" :port 80
+             :path "/index.html" :fragment "top")
+  @result{} "http://foo.com:80/index.html#top"
+
+(uri-compose :scheme "http" :host "foo.net"
+             :path* "/cgi-bin/query.cgi?keyword=foo")
+  @result{} "http://foo.net/cgi-bin/query.cgi?keyword=foo"
+
+(uri-compose :scheme "mailto" :specific "a@@foo.org")
+  @result{} "mailto:a@@foo.org"
+
+(receive (authority path query fragment)
+   (uri-decompose-hierarchical "//foo.jp/index.html#whatsnew")
+ (uri-compose :authority authority :path path
+              :query query :fragment fragment))
+  @result{} "//foo.jp/index.html#whatsnew"
+@end example
+@end defun
+
+@defun uri-decode &keyword :cgi-decode
+@defunx uri-decode-string string &keyword :cgi-decode
+@c EN
+Decodes ``URI encoding'', i.e. @code{%}-escapes.
+@code{uri-decode} takes input from the current input port,
+and writes decoded result to the current output port.
+@code{uri-decode-string} takes input from @var{string} and
+returns decoded string.
+
+If @var{cgi-decode} is true, also replaces @code{+} to a space character.
+@c JP
+URI エンコーディング、すなわち、@code{%}でエスケープされた URI 文字列を
+デコードします。@code{uri-decode} は現在の入力ポートから入力を受け取り、
+デコードした結果を現在の出力ポートに書き出します。
+@code{uri-decode-string} は @var{string} を入力とし、デコードした
+文字列を返します。
+
+@var{cgi-decode} が真の場合は、@code{+} がスペース文字に置換されます。
+@c COMMON
+@end defun
+
+@defun uri-encode &keyword :noescape
+@defunx uri-encode-string string &keyword :noescape
+@c EN
+Encodes unsafe characters by @code{%}-escape.  @code{uri-encode}
+takes input from the current input port and writes the result to
+the current output port.  @code{uri-encode-string} takes input
+from @var{string} and returns the encoded string.
+
+By default, characters that are not specified ``unreserved'' in
+RFC2396 are escaped.  You can pass different character set
+to @var{noescape} argument to keep from being encoded.
+
+The multibyte characters are encoded as the octed stream of Gauche's
+native multibyte representation.
+@c JP
+安全でない文字を、@code{%}によるエスケープでエンコードします。
+@code{uri-encode} は現在の入力ポートから入力を受け取り、
+結果を現在の出力ポートに書き出します。
+@code{uri-encode-string} は @var{string} を入力とし、エンコードした
+文字列を返します。
+
+デフォルトでは、RFC2396 で"非予約文字"として規定されていない文字は
+エスケープされます。@var{noescape} 引数に異なる文字セットを渡すことで、
+それらがエンコードされるのを抑止することができます。
+
+マルチバイト文字は、Gauche のネイティブなマルチバイト表現の
+オクテット・ストリームとしてエンコードされます。
+@c COMMON
+@end defun
+
+@c ----------------------------------------------------------------------
+@node slib - SLIB, text.csv - CSV tables, rfc.uri - URI parsing and construction, Library modules - Utilities
+@section @code{slib} - SLIB interface
+
+@deftp {Module} slib
+@mdindex slib
+@c EN
+This module is the interface to the Aubrey Jaffer's SLIB.
+To use SLIB, say @code{(use slib)}.   SLIB itself is not included
+in Gauche distribution.   If you don't have it on your system,
+get it from @uref{http://www-swiss.ai.mit.edu/~jaffer/SLIB.html}.
+@c JP
+このモジュールはAubrey Jaffer氏のSLIBへのインタフェースです。
+SLIBがインストールされている場合、@code{(use slib)} とすれば
+SLIBの機能が使えるようになります。
+SLIBそのものはGaucheのディストリビューションには含まれていません。
+あなたのシステムにまだインストールされていない場合は
+@uref{http://www-swiss.ai.mit.edu/~jaffer/SLIB.html}から入手することができます。
+@c COMMON
+
+@c EN
+This module redefines @code{require}, shadowing the Gauche's original
+@code{require}.  If it gets a symbol as an argument, it works as
+SLIB's @code{require}, while if it gets a string, it works as
+Gauche's @code{require}.   The same applies to @code{provide} and
+@code{provided?}.
+@c JP
+このモジュールは@code{require}を再定義し、Gaucheオリジナルの@code{require}を
+シャドウします。@code{require}にシンボルが渡された場合はSLIBの@code{require}
+のように動作します。@code{require}に文字列が渡された場合はGaucheの@code{require}
+のように動作します。@code{provide}と@code{provided?}についても同様です。
+@c COMMON
+
+@c EN
+All SLIB symbol bindings, loaded by @code{require}, stay in the
+module @code{slib}.
+@c JP
+@code{require}でロードされる、SLIBで導入されるすべての定義は、
+@code{slib}モジュール内で行われます。
+@c COMMON
+@end deftp
+
+@example
+(use slib)         ; @r{load and set up slib}
+(require 'getopt)  ; @r{load SLIB's getopt module}
+(require "foo")    ; @r{load Gauche's foo module}
+@end example
+
+@c ----------------------------------------------------------------------
+@node text.csv - CSV tables, text.diff - Calculate difference of text streams, slib - SLIB, Library modules - Utilities
+@section @code{text.csv} - CSV tables
+
+@deftp {Module} text.csv
+@mdindex text.csv
+@c EN
+Provides a function to parse/generate CSV (comma separated value) tables.
+Actually, the separater is not limited to comma; you can customize it.
+
+CSV format is widely used to exchange table-type data in plain text,
+although there are apparently no ``formal'' specification.
+
+CSV table is consisted by a series of @var{records}, separated by
+a newline.  Each record contains number of @var{fields}, separated
+by a separator character (by default, a comma).  A field can contain
+comma or newline if quoted, i.e. surrounded by double-quote characters.
+To include double-quote character in a quoted field, use two
+consecutive double-quote character.   Usually, the whitespaces around
+the field are ignored.
+@c JP
+CSV (カンマ区切りの値) の表をパーズ/生成するための手続きを提供します。
+実際には、区切り文字はカンマに制限されず、カスタマイズできます。
+
+CSV 形式は、「正式な」仕様が無さそうなのにも関わらず、プレーン・テキストで
+表形式のデータを交換するために広く使われています。
+
+CSV の表は、改行で区切られた @var{record} の連続で構成されます。
+それぞれのレコードは、区切り文字(デフォルトではカンマ)で区切られた
+複数の @var{field} を含みます。フィールドは、クォートされている
+(二重引用符で囲まれている)場合は、カンマや改行を含むことができます。
+クォートされたフィールドに二重引用符を含めるには、2つの連続する
+二重引用符を使います。通常、フィールドの前後の空白は無視されます。
+@c COMMON
+@c example here
+
+@end deftp
+
+@c EN
+Right now, the following two low-level procedures are exported.
+A plan is to provide higher features, such as labelling fields
+and automatic conversions.
+@c JP
+現時点では、以下の2つの低レベルな手続きが提供されています。
+フィールドにラベル付けをしたり、自動的に変換するなどの
+より高レベルな機能の提供を計画しています。
+@c COMMON
+
+@defun make-csv-reader separator
+@c EN
+Returns a procedure with one argument, input port.
+When the procedure is called, it reads one record from the port,
+and returns a list of fields.
+If input reaches EOF, it returns EOF.
+@c JP
+入力ポートを唯一の引数として取る手続きを返します。
+手続きが呼ばれると、ポートからレコードを1つ読み込み、フィールドの
+リストを返します。入力ポートが EOF に達すると、EOF を返します。
+@c COMMON
+@end defun
+
+@defun make-csv-writer separator &optional newline
+@c EN
+Returns a procedure with two arguments, output port and
+a list of fields.  When the procedure is called, it
+outputs a @var{separator}-separated fields with proper escapes,
+to the output port.   You can also specify the record delimiter
+string by @var{newline}; for example, you can pass @code{"\r\n"}
+to prepare a file to be read by Windows programs.
+@c JP
+出力ポートとフィールドのリストの2つの引数を取る手続きを返します。
+手続きが呼ばれると、@var{separator} で区切られたフィールドを
+正しくエスケープして出力ポートに出力します。レコードの区切り文字列を
+@var{newline} で指定することもできます。例えば、ファイルが Windows の
+プログラムでも読めるように、@code{"\r\n"} を渡すことができます。
+@c COMMON
+@end defun
+
+@c ----------------------------------------------------------------------
+@node text.diff - Calculate difference of text streams, text.html-lite - Simple HTML document construction, text.csv - CSV tables, Library modules - Utilities
+@section @code{text.diff} - Calculate difference of text streams
+
+@deftp {Module} text.diff
+@mdindex text.diff
+This module calculates the difference of two text streams or strings,
+using @code{util.lcs} (@xref{util.lcs - The longest common subsequence}).
+@end deftp
+
+@defun diff src-a src-b &keyword reader eq-fn
+Generates an "edit list" from text sources @var{src-a} and @var{src-b}.
+
+Each of text sources, @var{src-a} and @var{src-b}, can be either an input
+port or a string.  If it is a string, it is converted to a string input
+port internally.  Then, the text streams from both sources are converted
+to sequences by calling @var{reader} repeatedly on them; the default
+of @var{reader} is @code{read-line}, and those sequences are
+passed to @code{lcs-edit-list} to calculate the edit list.
+The equality function @var{eq-fn} is also passed to @code{lcs-edit-list}.
+
+An edit list is a set of commands that turn the text sequence
+from @code{src-a} to the one from @code{src-b}.
+See the description of @code{lcs-edit-list} for
+the detailed explanation of the edit list.
+
+@example
+(diff "a\nb\nc\nd\n" "b\ne\nd\nf\n")
+@result{}
+  (((- 0 "a"))
+   ((- 2 "c") (+ 1 "e"))
+   ((+ 3 "f")))
+@end example
+@end defun
+
+@defun diff-report src-a src-b &keyword reader eq-fn writer
+A convenience procedure to take the diff of two text sources
+and display the result nicely.  This procedure calls @code{lcs-fold}
+to calculate the difference of two text sources.  The meanings of
+@var{src-a}, @var{src-b}, @var{reader} and @var{eq-fn} are the
+same as @code{diff}'s.
+
+@var{Writer} is a procedure that takes two arguments, the text element
+and a type, which is either a symbol @code{+}, 
+a symbol @code{-}, or @code{#f}.   If the text element is only
+in @var{src-a}, @var{writer} is called with the element and
+@code{-}.  If the text element is only in @var{src-b}, 
+it is called with the element and @code{+}.  If the text element
+is in both sources, it is called with the element and
+@code{#f}.   The default procedure of @var{writer} prints
+the passed text element to the current output port
+in unified-diff-like format:
+@example
+(diff-report "a\nb\nc\nd\n" "b\ne\nd\nf\n")
+@end example
+displays: 
+@example
+- a
+  b
+- c
++ e
+  d
++ f
+@end example
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@c @node text.gettext - Dealing with localized messages
+@c @section @code{text.gettext} - Dealing with localized messages
+
+@c @deftp {Module} text.gettext
+@c @mdindex text.gettext
+@c A module that provides a utility to deal with localized messages.
+@c The API is pretty similar to GNU's gettext, and the messages
+@c are read from @file{*.po} file, so that you can use the GNU texttext
+@c toolchain to prepare localized messages.
+@c However, the code is written from scratch by Alex Shinn and
+@c doesn't depend on GNU's gettext library.
+
+@c This implementation extends GNU's gettext API in the following ways:
+@c @itemize @bullet
+@c @item It can read from multiple message files in cascaded way,
+@c       allowing applications to share a part of message files.
+@c @item It supports multiple locale/domain simultaneously.
+@c @end itemize
+@c @end deftp
+
+@c The following procedures are gettext-like APIs.
+
+@c @defun textdomain domain-name
+@c Selects the domain named by @var{domain-name} as the default domain.
+
+@c Returns an @emph{accessor procedure} which packages information of
+@c the domain, instead of just a domain name.
+
+@c You can pass @code{#f} as @var{domain-name} just to get the default
+@c domain accessor procedure.
+@c @end defun
+
+@c @defun gettext msg-id
+@c Returns a translated message of @var{msg-id}.  If there's no
+@c translated message, @var{msg-id} itself is returned.
+@c @end defun
+
+@c @defun bindtextdomain domain dirs
+@c Sets the search path of domain @var{domain} to @var{dirs}, which 
+@c may be just a single directory name or a list of directory names.
+@c @end defun
+
+@c @defun dgettext domain msg-id
+@c @defunx dcgettext domain msg-id locale
+@c Returns a translated message of @var{msg-id} in @var{domain}.
+@c @code{Dcgettext} takes @var{locale} as well.
+@c @end defun
+
+@c The following procedure is more flexible interface, on top of which
+@c the above APIs.
+
+@c @defun make-gettext &optional domain locale dirs gettext-cached? lookup-cached?
+@c Returns a @emph{access procedure}, which can be called like this:
+@c @end defun
+
+@c ----------------------------------------------------------------------
+@node text.html-lite - Simple HTML document construction, text.parse - Parsing input stream, text.diff - Calculate difference of text streams, Library modules - Utilities
+@section @code{text.html-lite} - Simple HTML document construction
+
+@deftp {Module} text.html-lite
+@mdindex text.html-lite
+@c EN
+Provides procedures to construct an HTML document easily.
+For example, you can construct an HTML table by the following code:
+@c JP
+HTML ドキュメントを簡単に構築するための手続きを提供します。
+例えば、以下のコードは HTML のテーブルを構築します。
+@c COMMON
+@example
+(html:table
+  (html:tr (html:th "Item No") (html:th "Quantity"))
+  (html:tr (html:td 1) (html:td 120))
+  (html:tr (html:td 2) (html:td 30))
+  (html:tr (html:td 3) (html:td 215)))
+@end example
+@c EN
+See the description of @code{html:@var{element}} below for details.
+
+This module does little check for the constructed html documents,
+such as whether the attributes are valid, and whether the content
+of the element matches DTD.  It does not provide a feature to parse
+the html document neither.  Hence the name `lite'.
+@c JP
+詳細については、以下の @code{html:@var{element}} の説明を見てください。
+
+このモジュールでは生成されたHTMLドキュメントに関して、
+例えばアトリビュートに有効な値が入っているか、要素の内容はDTDを満たしているか、
+等のチェックをほとんど行いません。また、HTMLをパーズする関数も提供されません。
+それが「lite」の名の由来です。
+@c COMMON
+@end deftp
+
+@defun html-escape
+@defunx html-escape-string string
+@c EN
+Escapes the ``unsafe'' characters in HTML.  @code{html-escape}
+reads input string from the current input port and writes the result
+to the current output port.   @code{html-escape-string} takes the
+input from @var{string} and returns the result in a string.
+@c JP
+HTML に含まれる"安全でない"文字をエスケープします。
+@code{html-escape} は、現在の入力ポートから文字列を読み込み、
+結果を現在の出力ポートへ書き出します。@code{html-escape-string} は
+@var{string} を入力とし、文字列を返します。
+@c COMMON
+@end defun
+
+@defun html-doctype &keyword type
+@c EN
+Returns a doctype declaration for an HTML document.
+@var{type} can be either one of @code{:strict}, @code{:transitional},
+or @code{:frameset}, corresponding HTML4.01 strict, transitional or
+frameset DTD, respectively.
+@c JP
+HTML ドキュメントの文書型宣言を返します。
+@var{type} は、@code{:strict}、@code{:transitional}、@code{:frameset}
+のいずれかで、それぞれ HTML 4.01 strict、transitional、frameset の
+DTD に対応します。
+@c COMMON
+@end defun
+
+@deftp {Function} html:@var{element} @var{args} @dots{}
+@findex html:a
+@findex html:abbr
+@findex html:acronym
+@findex html:address
+@findex html:area
+@findex html:b
+@findex html:base
+@findex html:bdo
+@findex html:big
+@findex html:blockquote
+@findex html:body
+@findex html:br
+@findex html:button
+@findex html:caption
+@findex html:cite
+@findex html:code
+@findex html:col
+@findex html:colgroup
+@findex html:dd
+@findex html:del
+@findex html:dfn
+@findex html:div
+@findex html:dl
+@findex html:dt
+@findex html:em
+@findex html:fieldset
+@findex html:form
+@findex html:h1
+@findex html:h2
+@findex html:h3
+@findex html:h4
+@findex html:h5
+@findex html:h6
+@findex html:head
+@findex html:hr
+@findex html:html
+@findex html:i
+@findex html:img
+@findex html:input
+@findex html:ins
+@findex html:kbd
+@findex html:label
+@findex html:legend
+@findex html:li
+@findex html:link
+@findex html:map
+@findex html:meta
+@findex html:noscript
+@findex html:object
+@findex html:ol
+@findex html:optgroup
+@findex html:option
+@findex html:p
+@findex html:param
+@findex html:pre
+@findex html:q
+@findex html:samp
+@findex html:script
+@findex html:select
+@findex html:small
+@findex html:span
+@findex html:strong
+@findex html:style
+@findex html:sub
+@findex html:sup
+@findex html:table
+@findex html:tbody
+@findex html:td
+@findex html:textarea
+@findex html:tfoot
+@findex html:th
+@findex html:thead
+@findex html:title
+@findex html:tr
+@findex html:tt
+@findex html:ul
+@findex html:var
+@c EN
+Construct an HTML element @var{element}.  Right now,
+the following elements are provided.
+(The elements defined in HTML 4.01 DTD,
+@uref{http://www.w3.org/TR/html4/sgml/dtd.html}).
+@c JP
+@var{element} の HTML 要素を構築します。現時点では以下の要素が
+サポートされています。
+(HTML 4.01 DTD @uref{http://www.w3.org/TR/html4/sgml/dtd.html}
+に定義されている要素です)。
+@c COMMON
+@example
+a        abbr       acronym    address     area      b
+base     bdo        big        blockquote  body      br
+button   caption    cite       code        col       colgroup
+dd       del        dfn        div         dl        dt
+em       fieldset   form       h1          h2        h3
+h4       h5         h6         head        hr        html
+i        img        input      ins         kbd       label
+legend   li         link       map         meta      noscript
+object   ol         optgroup   option      p         param
+pre      q          samp       script      select    small
+span     strong     style      sub         sup       table
+tbody    td         textarea   tfoot       th        thead
+title    tr         tt         ul          var
+@end example
+
+@c EN
+The result of these functions is a tree of text segments,
+which can be written out to a port by @code{write-tree} or
+can be converted to a string by @code{tree->string}
+(@xref{text.tree - Lazy text construction}).
+
+You can specify attributes of the element by using a keyword-value
+notation before the actual content.
+@c JP
+これらの手続きは、テキスト・セグメントのツリーを返すので、
+@code{write-tree} でポートに書き出したり、@code{tree->string} で
+文字列に変換したりできます
+(@ref{text.tree - Lazy text construction}参照)。
+
+要素のアトリビュートは要素の内容に先立つキーワード-値の表記で指定することができます。
+@c COMMON
+@example
+(tree->string (html:a :href "http://foo/bar" "foobar"))
+  @result{}
+  "<a href=\"http://foo/bar\">foobar</a>\n"
+
+(tree->string
+  (html:table :width "100%" :cellpading 0 "content here"))
+  @result{}
+  "<table width=\"100%\" cellpadding=\"0\">content here</table>\n"
+@end example
+
+@c EN
+The boolean value given to the attribute has a special meaning.
+If @code{#t} is given, the attribute is rendered without a value.
+If @code{#f} is given, the attribute is not rendered.
+@c JP
+属性に与える真偽値は特別な意味を持ちます。
+@code{#t} が与えられると、属性は値なしでレンダリングされます。
+@code{#f} が与えられると、属性それ自体がレンダリングされません。
+@c COMMON
+@example
+(tree->string (html:table :border #t))
+  @result{} "<table border></table>\n"
+
+(tree->string (html:table :border #f))
+  @result{} "<table></table>\n"
+@end example
+
+@c EN
+Special characters in attribute values are escaped by the function,
+but the ones in the content are not.  It is caller's responsibility
+to escape them.
+
+The functions signal an error if a content is given to the
+HTML element that doesn't take a content.   They do not
+check if the given attribute is valid, neither
+if the given content is valid for the element.
+@c JP
+属性の値における特別な文字は、手続きによってエスケープされますが、
+要素の内容にある特別な文字はエスケープされません。それをエスケープ
+するのは呼び出し側の責任です。
+
+内容を持たない HTML 要素に内容を与えると手続きはエラーを通知します。
+手続きは、与えられた属性が妥当であるか、与えられた内容がその要素に
+とって妥当であるかのチェックはしません。
+@c COMMON
+@end deftp
+
+@c ----------------------------------------------------------------------
+@node text.parse - Parsing input stream, text.tr - Transliterate characters, text.html-lite - Simple HTML document construction, Library modules - Utilities
+@section @code{text.parse} - Parsing input stream
+
+@deftp {Module} text.parse
+@mdindex text.parse
+@c EN
+A collection of utilities that does simple parsing from
+the input port.   The API is inspired, and compatible with
+Oleg Kiselyov's input parsing library (@ref{oleg1,,OLEG1}).
+His library is used in lots of other libraries, notably,
+a full-Scheme XML parser/generator SSAX (@ref{ssax,,SSAX}).
+
+You can use this module in place of his
+@code{input-parse.scm} and @code{look-for-str.scm}.
+
+I reimplemented the functions to be efficient on Gauche.
+Especially, usage of @code{string-set!} is totally avoided.
+I extended the interface a bit so that they can deal with character sets
+and predicates, as well as a list of characters.
+
+These functions work sequentially on the given input port,
+that is, they read from the port as much as they need, without
+buffering extra characters.
+@c JP
+入力ポートに対して単純な解析を行うユーティリティのコレクションです。
+API は Oleg Kiselyov 氏の入力解析ライブラリ (@ref{oleg1,,OLEG1}) に
+触発され、互換性を持つものです。氏のライブラリは、他のたくさんの
+ライブラリで使われています。特に、Scheme のみで書かれたパーサ/ジェネレータ
+である SSAX (@ref{ssax,,SSAX}) が挙げられます。
+
+このモジュールは、氏の @code{input-parse.scm} や @code{look-for-str.scm}
+の代わりに使うことができます。
+
+Gauche で効果的になるように手続きを再実装しました。特に、@code{string-set!}
+の使用は完全に取り除きました。インターフェースを少し拡張したので、
+文字セットや述語、文字のリストにも使うことができます。
+
+これらの手続きは、与えられた入力ポートに対してシーケンシャルに動作します。
+それは、ポートから必要なだけ読み、余分な文字をバッファリングしないということです。
+@c COMMON
+@end deftp
+
+@defun find-string-from-port? str in-port &optional max-no-chars
+@c EN
+Looks for a string @var{str} from the input port @var{in-port}.
+The optional argument @var{max-no-chars} limits the maximum number of
+characters to be read from the port; if omitted, the search span is
+until EOF.
+
+If @var{str} is found, this function returns the number of characters
+it has read.   The next read from @var{in-port} returns the next char
+of @var{str}.  If @var{str} is not found, it returns @code{#f}.
+
+Note: Although this procedure has `@code{?}' in its name,
+it may return non-boolean value, contrary to the Scheme convention.
+@c JP
+入力ポート @var{in-port} から、文字列 @var{str} を探します。
+オプショナル引数 @var{max-no-chars} は、ポートから読み込まれる最大文字数を
+制限します。省略されると、検索する範囲は EOF までとなります。
+
+@var{str} が見つかると、手続きはすでに読み込んだ文字の数を返します。
+@var{in-port} の次回の読み込みは、@var{str} の次の文字を返します。
+@var{str} が見つからない場合、@code{#f} が返ります。
+
+注意: この手続きはその名前に「@code{?}」がつきますが、Scheme の慣習に反し、
+真偽値ではない値を返すことがあります。
+@c COMMON
+@end defun
+
+@defun peek-next-char &optional port
+@c EN
+Discards the current character and peeks the next character from @var{port}.
+Useful to look ahead one character.
+If @var{port} is omitted, the current input port is used.
+@c JP
+現在の文字を破棄し、@var{port} から次の文字を読みます。一文字先読みするのに
+便利です。@var{port} が省略されると、現在の入力ポートが使われます。
+@c COMMON
+@end defun
+
+@c EN
+In the following functions, @var{char-list} refers to one of the
+followings:
+@itemize @bullet
+@item
+A character set.
+@item
+A list of characters, character sets and/or symbol @code{*eof*}.
+@end itemize
+That denotes a set of characters.  If a symbol @code{*eof*} is
+included, the EOF condition is also included.  Without @code{*eof*},
+the EOF condition is regarded as an error.
+@c JP
+以下の手続きでは、@var{char-list} は次のどれかを意味します。
+@itemize @bullet
+@item
+文字セット。
+@item
+文字、文字セット、シンボル @code{*eof*} の任意の組み合わせのリスト。
+@end itemize
+[That denotes a set of characters.] シンボル @code{*eof*} が含まれる場合、
+EOF の条件もまた含まれます。@code{*eof*} が含まれない場合、EOF の条件は
+エラーとして扱われます。
+@c COMMON
+
+@defun assert-curr-char char-list string &optional port
+@c EN
+Reads a character from @var{port}.  If it is included in @var{char-list},
+returns the character.  Otherwise, signals an error with a message
+containing @var{string}.
+If @var{port} is omitted, the current input port is used.
+@c JP
+@var{port} から文字を読みます。その文字が @var{char-list} に含まれている場合は
+その文字を返します。そうでなければ、@var{string} を含むメッセージとともに
+エラーを通知します。
+@c COMMON
+@end defun
+
+@defun skip-until char-list/number &optional port
+@c EN
+@var{char-list/number} is either a char-list or a number.
+If it is a number; it reads that many characters and returns @code{#f}.
+If the input is not long enough, an error is signalled.
+If @var{char-list/number} is a char-list, it reads from @var{port}
+until it sees a character that belongs to the char-list.
+Then the character is returned.
+If @var{port} is omitted, the current input port is used.
+@c JP
+@var{char-list/number} は、文字のリストか数です。
+数の場合、たくさんの文字を読んで、@code{#f} を返します。
+入力が十分に長くない場合は、エラーが通知されます。
+@var{char-list/number} が文字のリストの場合、その文字リストに属する文字に
+出会うまで @var{port} を読み込み、その文字を返します。
+@var{port} が省略された場合、現在の入力ポートが使われます。
+@c COMMON
+@end defun
+
+@defun skip-while char-list &optional port
+@c EN
+Reads from @var{port} until it sees a character that does not
+belong to @var{char-list}.  The character remains in the stream.
+If it reaches EOF, an EOF is returned.
+If @var{port} is omitted, the current input port is used.
+
+This example skips whitespaces from input.  Next read from
+port returns the first non-whitespace character.
+@c JP
+@var{char-list} に属しない文字に出会うまで、@var{port} を読み込みます。
+文字はストリームに残されます。EOF に達したら EOF が返されます。
+@var{port} が省略された場合、現在の入力ポートが使われます。
+
+この例では、入力から空白スペースをスキップしています。ポートからの次の
+読み込みは、最初の空白スペースでない文字を返します。
+@c COMMON
+@example
+(skip-while #[\s] port)
+@end example
+@end defun
+
+@defun next-token prefix-char-list break-char-list &optional comment port
+@c EN
+Skips any number of characters in @var{prefix-char-list},
+then collects the characters until it sees @var{break-char-list}.
+The collected characters are returned as a string.
+The break character remains in the @var{port}.
+
+If the function encounters EOF and @code{*eof*} is not included in
+@var{break-char-list}, an error is signalled with @var{comment} is
+included in the message.
+@c JP
+@var{prefix-char-list} に含まれる文字はいくつでもスキップします。
+そして、@var{break-char-list} に含まれる文字に出会うまで、文字を
+蓄積します。蓄積された文字群は文字列として返されます。
+中断文字は @var{port} に残されます。
+
+手続きが EOF に達し、@code{*eof*} が @var{break-char-list} に含まれていない
+場合、@var{comment} が含まれたメッセージとともにエラーが通知されます。
+@c COMMON
+@end defun
+
+@defun next-token-of char-list/pred &optional port
+@c EN
+Reads and collects the characters as far as
+it belongs to @var{char-list/pred}, then returns them as a string.
+The first character that doesn't belong to @var{char-list/pred} remains
+on the port.
+
+@var{char-list/pred} may be a char-list or a predicate that takes
+a character.   If it is a predicate, each character is passed to it,
+and the character is regarded to ``belong to'' @var{char-list/pred}
+when it returns a true value.
+@c JP
+読み込んだ文字が @var{char-list/pred} にある限り蓄積し、文字列として
+返します。@var{char-list/pred} に含まれない最初の文字はポートに残されます。
+
+@var{char-list/pred} は文字のリストか文字を取る述語です。述語の場合、
+それぞれの文字がその述語に渡され、真の値が返る場合はその文字は
+@var{char-list/pred} に属するとみなされます。
+@c COMMON
+@end defun
+
+@defun read-string n &optional port
+@c EN
+Reads up to @var{n} characters, collects them into a string, and returns it.
+If the input stream contains less characters, the returns string contains
+as many characters available.
+@c JP
+@var{n} 文字まで読み込み、文字列として蓄積しそれを返します。
+入力ストリームに含まれる文字のほうが少ない場合、有効な文字を可能な限り
+含む文字列が返ります。
+@c COMMON
+@end defun
+
+@c ----------------------------------------------------------------------
+@node text.tr - Transliterate characters, text.tree - Lazy text construction, text.parse - Parsing input stream, Library modules - Utilities
+@section @code{text.tr} - Transliterate characters
+@c NODE text.tr - 文字変換, @code{text.tr} - 文字変換
+
+@deftp {Module} text.tr
+@mdindex text.tr
+@c EN
+This module implements a transliterate function,
+that substitutes characters of the input string.
+This functionality is realized in Unix @code{tr(1)} command,
+and incorporated in various programs such as @code{sed(1)}
+and @code{perl}.
+
+Gauche's @code{tr} is aware of multibyte characters.
+@c JP
+このモジュールは、入力ストリームから指定の文字を置き換えて出力する、
+文字変換(transliterate)機能を提供します。
+Unixの@code{tr(1)}コマンドで実装され、@code{sed}や@code{perl}にも
+採り入れられている機能です。
+
+Gaucheの@code{tr}はマルチバイト文字／文字列を正しく扱います。
+@c COMMON
+@end deftp
+
+@defun tr from-list to-list &keyword :complement :delete :squeeze :table-size :input :output
+@c EN
+Reads from @var{input} and writes to @var{output},
+with transliterating characters in @var{from-list} to the
+corresponding ones in @var{to-list}.  Characters that doesn't
+appear in @var{from-list} are passed through.
+@c JP
+@var{input}から文字を読み込み、その文字が@var{from-list}内にあれば
+対応する@var{to-list}内の文字に置き換えて、@var{output}へと書き出します。
+@var{from-list}に無い文字はそのまま@var{output}へと渡されます。
+@c COMMON
+
+@c EN
+The default values of @var{input} and @var{output} are
+current input port and current output port, respectively.
+@c JP
+@var{input}と@var{output}の既定値はそれぞれ現在の入力ポートと
+出力ポートです。
+@c COMMON
+
+@c EN
+Both @var{from-list} and @var{to-list} must be strings.
+They may contain the following special syntax.
+Other characters that doesn't fits in the syntax are taken as they are.
+@c JP
+@var{from-list}と@var{to-list}は文字列でなければなりません。
+その中には次のような表記を使うことができます。それ以外の文字はそのまま使われます。
+@c COMMON
+
+@table @code
+@item @b{x-y}
+@c EN
+Expanded to the increasing sequence of characters from @code{x} to @code{y},
+inclusive.  The order is determined by the internal character
+encoding system; generally it is safer to limit use of this within
+the range of the same character class.   The character @code{x}
+must be before @code{y}.
+@c JP
+文字@code{x}から文字@code{y}までの文字の昇順の並びと解釈されます。
+@code{x}と@code{y}は含まれます。文字の並びはGaucheの内部文字エンコーディングに
+よって決定されるので、一般には@code{x}と@code{y}は同じキャラクタクラスの中に
+止めておいた方が安全でしょう。@code{x}は@code{y}より小さくなければなりません。
+@c COMMON
+
+@item @b{x*n}
+@c EN
+Repeat @code{x} for @code{n} times.  @code{n} is a decimal number notation.
+Meaningful only in
+@var{to-list}; it is an error to use this form in @var{from-list}.
+If @code{n} is omitted or zero, @code{x} is repeated until @var{to-list}
+matches the length of @var{from-list} (any character after it is ignored).
+@c JP
+文字@code{x}の@code{n}個の並び。@code{n}は10進数で表記された数値です。
+これは@var{to-list}でのみ有効で、@var{from-list}で使うとエラーになります。
+@code{n}が省略されるか0の場合、@code{x}は@var{to-list}の長さが@var{from-list}
+の長さに達するまで繰り返されます(その場合、@var{to-list}の残りは無視されます)。
+@c COMMON
+
+@item @b{@code{\}x}
+@c EN
+Represents @code{x} itself.  Use this escape to avoid a special
+character to be interpreted as itself.   Note that if you place
+a backslash in a string, you must write @code{\\}, for the Scheme
+reader also interprets backslash as a special character.
+
+There's no special sequence to represent non-graphical characters,
+for you can put such characters by the string syntax.
+@c JP
+文字@code{x}それ自身。特殊文字そのものを埋め込みたい場合に使います。
+文字列のリーダも@code{\}を解釈するので、@code{\\}と書かねばならないことに注意
+して下さい。
+
+グラフィカルでない文字のための構文はありません。文字列リーダの構文を使って
+そのような文字を文字列に含めることができます。
+@c COMMON
+@end table
+
+@c EN
+Here's some basic examples.
+@example
+;; @r{swaps case of input}
+(tr "A-Za-z" "a-zA-Z")
+
+;; @r{replaces 7-bit non-graphical characters to `?'}
+(tr "\x00-\x19\x7f" "?*")
+@end example
+@c JP
+いくつか例を挙げます。
+@example
+;; @r{大文字と小文字を交換します}
+(tr "A-Za-z" "a-zA-Z")
+
+;; @r{ひらがなとかたかなを交換します}
+(tr "ぁ-んァ-ン" "ァ-ンぁ-ん")
+
+;; @r{7ビットのノングラフィカルな文字を`?'に変換します}
+(tr "\x00-\x19\x7f" "?*")
+@end example
+@c COMMON
+
+@c EN
+If @var{to-list} is shorter than @var{from-list}, the behavior
+depends on the keyword argument @var{delete}.  If a true value is
+given,  characters that appear in @var{from-list} but not
+in @var{to-list} are deleted.   Otherwise, 
+the extra characters in @var{from-list} are just passed through.
+@c JP
+@var{to-list}が@var{from-list}より短い場合、動作はキーワード引数@var{delete}に
+依存します。もし真の値が@var{delete}に与えられれば、@var{from-list}に現われて
+@var{to-list}に対応するものがない文字は入力から取り除かれます。そうでなければ
+そのような文字はそのまま出力されます。
+@c COMMON
+
+@c EN
+When a true value is specified to @var{complement},
+the character set in @var{from-list} is complemented.
+Note that it implies @emph{huge} set of characters,
+so it is not very useful unless either output character
+set is a single character (using `*') or used with
+@code{delete} keyword.
+@c JP
+真の値が@var{complement}に与えられた場合、@var{from-list}の文字の
+補集合が@var{from-list}として使われます。この文字集合は極めて大きくなる
+可能性があることに注意してください。従って、一般にこのオプションは
+@var{to-list}に`*'を使ってそれらの文字を一文字にマッピングするか、
+@code{delete}オプションと併用するかしないとあまり意味がありません。
+@c COMMON
+
+@c EN
+When a true value is specified to @var{squeeze},
+the sequence of the same replaced characters is squeezed to one.
+If @var{to-list} is empty, the sequence of the same characters
+in @var{from-list} is squeezed.
+@c JP
+真の値が@var{squeeze}に与えられた場合、同じ文字への置換が2つ以上並ぶ場合に
+2つめ以降の文字が削除されます。@var{to-list}が空の場合は、@var{from-list}
+に含まれる文字で同一文字が並んだ場合に2つめ以降の文字が削除されます。
+@c COMMON
+
+@c EN
+Internally, @code{tr} builds a table to map the characters for
+efficiency.  Since Gauche can deal with potentially huge set
+of characters, it limits the use of the table for only smaller
+characters (<256 by default).  If you want to transliterate
+multibyte characters on the large text, however, you might want 
+to use larger table, trading off the memory usage.  You can specify
+the internal table size by @var{table-size} keyword argument.
+For example, if you transliterate lots of EUC-JP hiragana text
+to katakana, you may want to set table size greater than 42483
+(the character code of the last katakana).
+@c JP
+内部的に、@code{tr}はキャラクタのマッピングのためにテーブルを使用します。
+但し、Gaucheでは極めて大きな文字セットを扱うため、テーブルはキャラクタコードの
+小さい文字のみに対して使われます(デフォルトではコード255以下の文字)。
+もし、より大きな文字を頻繁に変換することが分かっていて、メモリを余分に使っても
+速度を上げたい場合は、このテーブルの大きさを@var{table-size}キーワード引数で
+指定することができます。例えばEUC-JPコードで大量の平仮名と片仮名を変換する場合は、
+@var{table-size}を42483以上にすると、全ての変換がテーブルルックアップで
+行われます。
+@c COMMON
+
+@c EN
+Note that the pre-calculation to build the transliterate table
+needs some overhead.  If you want to call @code{tr} many times
+inside loop, consider to use @code{build-transliterator} described below.
+@c JP
+@code{tr}が変換テーブルを計算するのにいくらかオーバーヘッドがあることに
+注意して下さい。内側のループで@code{tr}を繰り返し呼ぶような場合は
+下に示す@code{build-transliterator}を使った方が良いでしょう。
+@c COMMON
+@end defun
+
+@defun string-tr string from-list to-list &keyword :complement :delete :squeeze :table-size
+@c EN
+Works like @code{tr}, except that input is taken from a string @var{string}.
+@c JP
+入力を@var{string}から取って変換結果を文字列で返す以外は@code{tr}と同じです。
+@c COMMON
+@end defun
+
+@defun build-transliterator from-list to-list &keyword :complement :delete :squeeze :table-size :input :output
+@c EN
+Returns a procedure that does the actual transliteration.  This effectively
+``pre-compiles'' the internal data structure.   If you want to run
+@code{tr} with the same sets repeatedly, you may build the procedure
+once and apply it repeatedly, saving the overhead of initialization.
+@c JP
+実際の変換動作をする手続きを作成して返します。内部データのセットアップを済ませるため、
+同じ文字変換セットに対して@code{tr}を繰り返し呼ぶような場合は、この手続きを用いることで
+初期化のオーバヘッドを軽減することができます。
+@c COMMON
+
+@example
+(with-input-from-file "huge-file.txt"
+  (lambda ()
+    (let loop ((line (read-line)))
+      (unless (eof-object? line) (tr "A-Za-z" "a-zA-Z")))))
+
+@c EN
+;; @r{runs more efficiently...}
+@c JP
+;; @r{以下の方が効率良く動作します...}
+@c COMMON
+
+(with-input-from-file "huge-file.txt"
+  (lambda ()
+    (let ((ptr (build-transliterator "A-Za-z" "a-zA-Z")))
+      (let loop ((line (read-line)))
+        (unless (eof-object? line) (ptr))))))
+@end example
+
+@end defun
+
+@c ----------------------------------------------------------------------
+@node text.tree - Lazy text construction, util.combinations - Combination library, text.tr - Transliterate characters, Library modules - Utilities
+@section @code{text.tree} - Lazy text construction
+
+@deftp {Module} text.tree
+@mdindex text.tree
+@c EN
+Defines simple but commonly used functions for a text construction.
+
+When you generate a text by a program, 
+It is a very common operation to concatenate text segments.
+However, using string-append repeatedly causes unnecessary
+copying of intermediate strings, and sometimes such intermediate
+strings are discarded due to the error situation (for example,
+think about constucting an HTML document in the CGI script).
+
+The efficient technique is to delay concatenation of those
+text segments until it is needed.  In Scheme it is done very
+easily by just consing the text segments together, thus forming
+a tree of text, and then traverse the tree to construct a text.
+You can even directly writes out the text during traversal,
+avoiding intermediate string buffer.
+(Hans Boehm's ``cord'' library, which comes with his garbage
+collector library, uses this technique and proves it is very
+efficient for editor-type application).
+
+Although the traversal of the tree can be written in a
+few lines of Scheme, I provide this module in the spirits
+of OnceAndOnlyOnce.   Also it's easier if we have a common interface.
+@c JP
+テキストを生成する場合によく使われるシンプルな手続きを定義します。
+
+プログラムでテキストを生成する場合、テキストの断片をつなぎ合わせて行く操作が
+非常に多く現われます。しかし単純に@code{string-append}を繰り返し
+呼んでしまうと、中間結果の文字列を保持するためだけにメモリアロケーションが多発しますし、
+途中でエラーが発生した場合にその中間結果は結局捨てられてしまうかもしれません
+(例えば、CGIスクリプト中でHTMLドキュメントを構築してゆくような場合を考えてみて下さい)。
+
+よく知られた効率の良い方法は、テキストの断片をつなぎ合わせるのを本当に必要に
+なるまで遅らせることです。Schemeではそれは非常に簡単です。単に断片をコンス
+していって木構造を作り、最後にそれをトラバースしてテキストを作成するのです。
+場合によっては、トラバースしながらテキストを出力すれば事足りてしまうので、
+中間結果のバッファを持つ必要さえありません。
+(Hans Boehmのガベージコレクションライブラリに附属している ``cord'' ライブラリ
+はこのテクニックを実装したもので、エディタ等のアプリケーションで非常に効率良く
+動作することが知られています)。
+
+木構造をトラバースする手続きなどほんの2〜3行で書けてしまいますが、
+「一度、そして一度だけ」の精神の下に、このモジュールを提供します。
+インタフェースが統一されてたほうが便利ですしね。
+@c COMMON
+@end deftp
+
+@deffn {Generic Function} write-tree tree &optional out
+@c EN
+Writes out an @var{tree} as a tree of text, to the output port @var{out}.
+If @var{out} is omitted, the current output port is used.
+
+Two methods are defined for this generic function, as shown below.
+If you have more complex behavior, you can define more methods
+to customize the behavior.
+@c JP
+@var{tree}をテキストの木構造とみなして、出力ポート@var{out}に出力します。
+@var{out}が省略された場合は現在の出力ポートが使われます。
+
+下に示す2つのメソッドが定義されています。より複雑な動作をさせたい場合は、
+単純なリストの替わりにノードとなるクラスを定義して、それにメソッドを定義するようにすれば
+動作をカスタマイズできます。
+@c COMMON
+@end deffn
+
+@deffn {Method} write-tree ((tree <list>) out)
+@deffnx {Method} write-tree ((tree <top>) out)
+@c EN
+Default methods.  For a list, @code{write-tree} is recursively
+called for each element.  Any objects other than list is written out
+using @code{display}.
+@c JP
+@code{write-tree}の既定の動作です。@var{tree}がリストなら、その要素それぞれに
+ついて@code{write-tree}を呼び出します。それ以外のオブジェクトに関しては
+@code{display}を呼んで出力します。
+@c COMMON
+@end deffn
+
+@defun tree->string tree
+@c EN
+Just calls the @code{write-tree} method for @var{tree} using
+an output string port, and returns the result string.
+@c JP
+出力文字列ポートを作成して@code{write-tree}を呼び、生成された文字列を返します。
+@c COMMON
+@end defun
+
+@c ----------------------------------------------------------------------
+@node util.combinations - Combination library, util.digest - Message digester framework, text.tree - Lazy text construction, Library modules - Utilities
+@section @code{util.combinations} - Combination library
+
+@deftp {Module} util.combinations
+@mdindex util.combinations
+This module implements several useful procedures of
+combinations, permutations and related operations.
+
+Most procedures in the module have two variants: a procedure without
+star (e.g. @code{permutations}) treats all elements in the given
+set distinct, while a procedure with star (e.g. @code{permutations*})
+considers duplication.  The procedures with star take optional @var{eq}
+argument that is used to test equality, which defaults to @code{eqv?}.
+@end deftp
+
+@defun permutations set
+@defunx permutations* set &optional eq
+Returns a list of all permutations of a list @var{set}.
+
+@example
+(permutations '(a b c))
+  @result{} ((a b c) (a c b) (b a c) (b c a) (c a b) (c b a))
+
+(permutations '(a a b))
+  @result{} ((a a b) (a b a) (a a b) (a b a) (b a a) (b a a))
+
+(permutations* '(a a b))
+  @result{} ((a a b) (a b a) (b a a))
+@end example
+
+The number of possible permutations explodes if @var{set} has
+more than several elements.  Use with care.  If you want to process
+each permutation at a time, consider @code{permutations-for-each} below.
+@end defun
+
+@defun permutations-for-each proc set
+@defunx permutations*-for-each proc set &optional eq
+For each permutation of a list @var{set}, calls @var{proc}.
+Returns an undefined value.
+@end defun
+
+@defun combinations set n
+@defunx combinations* set n &optional eq
+Returns a list of all possible combinations of @var{n} elements out
+of a list @var{set}.
+
+@example
+(combinations '(a b c) 2)
+  @result{} ((a b) (a c) (b c))
+
+(combinations '(a a b) 2)
+  @result{} ((a a) (a b) (a b))
+
+(combinations* '(a a b) 2)
+  @result{} ((a a) (a b))
+@end example
+
+Watch out the explosion of combinations when @var{set} is large.
+@end defun
+
+@defun combinations-for-each proc set n
+@defunx combinations*-for-each proc set n &optional eq
+Calls @var{proc} for each combination of @var{n} elements out of @var{set}.
+Returns an undefined value.
+@end defun
+
+@defun power-set set
+@defunx power-set* set &optional eq
+Returns power set (all subsets) of a list @var{set}.
+
+@example
+(power-set '(a b c))
+  @result{} (() (a) (b) (c) (a b) (a c) (b c) (a b c))
+
+(power-set* '(a a b)
+  @result{} (() (a) (b) (a a) (a b) (a a b))
+@end example
+@end defun
+
+@defun power-set-for-each proc set
+@defunx power-set*-for-each proc set &optional eq
+Calls @var{proc} for each subset of @var{set}.
+@end defun
+
+@defun power-set-binary set
+Returns power set of @var{set}, like @code{power-set}, but in different order.
+@code{Power-set-binary} traverses subset space in depth-first order,
+while @code{power-set} in breadth-first order.
+
+@example
+(power-set-binary '(a b c))
+  @result{} (() (c) (b) (b c) (a) (a c) (a b) (a b c))
+@end example
+@end defun
+
+@defun cartesian-product list-of-sets
+@defunx cartesian-product-right list-of-sets
+Returns a cartesian product of sets in @var{list-of-sets}.
+@code{Cartesian-product} construct the result in left fixed order
+(the rightmost element varies first), while 
+@code{cartesian-product-right} in right fixed order
+(the leftmost element varies first).
+
+@example
+(cartesian-product '((a b c) (0 1)))
+  @result{} ((a 0) (a 1) (b 0) (b 1) (c 0) (c 1))
+
+(cartesian-product-right '((a b c) (0 1)))
+  @result{} ((a 0) (b 0) (c 0) (a 1) (b 1) (c 1))
+@end example
+@end defun
+
+@c ----------------------------------------------------------------------
+@node util.digest - Message digester framework, util.isomorph - Determine isomorphism, util.combinations - Combination library, Library modules - Utilities
+@section @code{util.digest} - Message digester framework
+@c NODE util.digest - メッセージダイジェストフレームワーク, @code{util.digest} - メッセージダイジェストフレームワーク
+
+@deftp {Module} util.digest
+@mdindex util.digest
+This module provides a base class and common interface for 
+message digest algorithms, such as MD5 (@xref{rfc.md5 - MD5 message digest})
+and SHA1 (@xref{rfc.sha1 - SHA1 message digest}).
+@end deftp
+
+@deftp {Class} <message-digest-algorithm-meta>
+@clindex message-digest-algorithm-meta
+A metaclass of message digest algorithm implementation.
+@end deftp
+
+@deftp {Class} <message-digest-algorithm>
+@clindex message-digest-algorithm
+A base class of message digest algorithm implementation.
+@end deftp
+
+The concrete subclass of message digest algorithm has to
+implement the following methods.
+
+@deffn {Generic function} digest-update! algorithm data
+Takes the instance of massage-digest algorithm, and updates it
+with the data @var{data}, represented in a (possibly incomplete) string.
+@end deffn
+
+@deffn {Generic function} digest-final! algorithm
+Finalizes the instance of message-digest algorithm, and
+returns the digest result in an incomplete string.
+@end deffn
+
+@deffn {Generic function} digest class
+A wrapper of digest routines.  Given message-digest algorithm @var{class},
+this function reads the input data from current input port until EOF,
+and returns the digest result in an incomplete string.
+@end deffn
+
+@deffn {Generic function} digest-string class string
+A wrapper of digest routines.  Given message-digest algorithm @var{class},
+this function reads the input data from @var{string},
+and returns the digest result in an incomplete string.
+@end deffn
+
+@defun digest-hexify digest-result
+An utility procedure.  Given the result of digest, @var{digest-result},
+converts it to a hexified string.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node util.isomorph - Determine isomorphism, util.lcs - The longest common subsequence, util.digest - Message digester framework, Library modules - Utilities
+@section @code{util.isomorph} - Determine isomorphism
+@c NODE util.isomorph - 同型判定, @code{util.isomorph} - 同型判定
+
+@deftp {Module} util.isomorph
+@mdindex util.isomorph
+@c EN
+Provides a procedure that determines whether two structures are
+isomorphic.
+@c JP
+二つの構造が同型かどうかを判定する手続きを提供するモジュールです。
+@c COMMON
+@end deftp
+
+@defun isomorphic? obj1 obj2 &optional context
+@c EN
+Returns @code{#t} if @var{obj1} and @var{obj2} are isomorphic.
+
+@var{context} is used if you want to call @code{isomorphic?}
+recursively inside @code{object-isomorphic?} described below.
+@c JP
+@var{obj1}と@var{obj2}が同型であれば@code{#t}を返します。
+
+省略可能な引数@var{context}は、下で説明する@code{object-isomorphic?}
+の中から@code{isomorphic?}を再帰的に呼び出す場合に使います。
+@c COMMON
+
+@example
+(isomorphic? '(a b) '(a b)) @result{} #t
+
+(define x (cons 0 0))
+(define y (cons 0 0))
+(isomorphic? (cons x x)
+             (cons x y))
+ @result{} #f
+(isomorphic? (cons x x)
+             (cons y y))
+ @result{} #t
+@end example
+@end defun
+
+@deffn {Generic Function} object-isomorphic? obj1 obj2 context
+@c EN
+With this method, you can customize how to determine isomorphism of
+two objects.  Basically, you will call @code{isomorphic?} recursively
+for each slots of object you want to traverse; the method should return
+@code{#t} if all of the test succeeds, or return @code{#f} otherwise.
+@var{context} is an opaque structure
+that keeps the traversal context, and you should pass it to
+@code{isomorphic?} as is.
+
+The default method returns @code{#t} if @var{obj1} and @var{obj2} are
+equal (in the sense of @code{equal?}).
+@c JP
+このメソッドで、二つのオブジェクトの同型判定処理をカスタマイズできます。
+基本的には、オブジェクトのトラバースしたいスロットに対して@code{isomorphic?}を順に適用し、
+全てが成功すれば@code{#t}を、一つでも失敗すれば@code{#f}を返すようにします。
+@var{context}はトラバースのコンテクストを保持しているオブジェクトです。そのまま
+@code{isomorphic?}に渡して下さい。
+
+デフォルトメソッドは、@var{obj1}と@var{obj2}が@code{equal?}の意味で等しければ
+@code{#t}を返します。
+@c COMMON
+@end deffn
+
+@c ----------------------------------------------------------------------
+@node util.lcs - The longest common subsequence, util.list - Additional list library, util.isomorph - Determine isomorphism, Library modules - Utilities
+@section @code{util.lcs} - The longest common subsequence
+
+@deftp {Module} util.lcs
+@mdindex util.lcs
+This module implements the algorithm to find the longest common subsequence
+of two given sequences.
+
+One of the applications of this algorithm is to calculate
+the difference of two text streams;
+see @ref{text.diff - Calculate difference of text streams}.
+@end deftp
+
+@defun lcs seq-a seq-b &optional eq-fn
+Calculates and returns the longest common sequence of
+two lists, @var{seq-a} and @var{seq-b}.
+Optional @var{eq-fn} specifies
+the comparison predicate; if omitted, @code{equal?} is used.
+
+@example
+(lcs '(x a b y) '(p a q b))
+ @result{} (a b)
+@end example
+@end defun
+
+@defun lcs-with-positions seq-a seq-b &optional eq-fn
+This is the detailed version of @code{lcs}.
+The arguments are the same.
+
+Returns a list of the following structure:
+@example
+(@var{length} ((@var{elt} @var{a-pos} @var{b-pos}) @dots{}))
+@end example
+
+@var{Length} is an integer showing the length of the found LCS.
+What follows is a list of elements of LCS; each sublist
+consists of the element, the integer position of the element
+in @var{seq-a}, then the integer position of the element in @var{seq-b}.
+
+@example
+(lcs-with-positions '(a) '(a))
+ @result{} (1 ((a 0 0)))
+
+(lcs-with-positions '(x a b y) '(p q a b))
+ @result{} (2 ((a 1 2) (b 2 3)))
+
+(lcs-with-positions '(x a b y) '(p a q b))
+ @result{} (2 ((a 1 1) (b 2 3)))
+
+(lcs-with-positions '(x y) '(p q))
+ @result{} (0 ())
+@end example
+@end defun
+
+@defun lcs-fold a-proc b-proc both-proc seed a b &optional eq-fn
+A fundamental iterator over the "edit list" derived from
+two lists @var{a} and @var{b}.
+
+@var{A-proc}, @var{b-proc}, @var{both-proc} are all procedures
+that take two arguments.   The second argument is a intermediate
+state value of the calculation.  The first value is an element
+only in @var{a} for @var{a-proc}, or an element only in @var{b}
+for @var{b-proc}, or an element in both @var{a} and @var{b}
+for @var{both-proc}.  The return value of each procedure is used
+as the state value of the next call of either one of the procedures.
+@var{Seed} is used as the initial value of the state value.
+The last state value is returned from @code{lcs-fold}.
+
+The three procedures are called in the following order: Suppose the sequence
+@var{a} consists of @var{a'}@var{c}@var{a''}, and @var{b} consists of 
+@var{b'}@var{c}@var{b''}, where @var{a'}, @var{b'}, @var{a''}, and @var{b''}
+are subsequences, and @var{c} is the head of the 
+LCS of @var{a} and @var{b}.   Then @var{a-proc} is called first on
+each element in @var{a'}, @var{b-proc} is called second on
+each element in @var{b'}, then @var{both-proc} is called on @var{c}.
+Afterwards, the process is repeated using @var{a''} and @var{b''}.
+@end defun
+
+@defun lcs-edit-list a b &optional eq-fn
+Calculates 'edit-list' from two lists @var{a} and @var{b}, which is
+the smallest set of commands (additions and deletions) that changes
+@var{a} into @var{b}.
+This procedure is built on top of @code{lcs-fold} above.
+
+Returns a list of @emph{hunk}s, which is a contigous section of
+additions and deletions.  Each hunk consists of a list of
+directives, which is a form of:
+@example
+(@var{+}|@var{-} @var{position} @var{element})
+@end example
+
+Here's an example.  Suppose @var{a} and @var{b} are the following
+lists, respectively.
+@example
+@var{a} @equiv{} ("A" "B" "C" "E" "H" "J" "L" "M" "N" "P")
+@var{b} @equiv{} ("B" "C" "D" "E" "F" "J" "K" "L" "M" "R" "S" "T")
+@end example
+
+Then, @code{(lcs-edit-list a b equal?)} returns the following list.
+@example
+(((- 0 "A"))
+ ((+ 2 "D"))
+ ((- 4 "H") (+ 4 "F"))
+ ((+ 6 "K"))
+ ((- 8 "N") (- 9 "P") (+ 9 "R") (+ 10 "S") (+ 11 "T"))
+)
+@end example
+
+The result consists of five hunks.  The first hunk consists of
+one directive, @code{(- 0 "A")}, which means the element @code{"A"}
+at the position 0 of list @var{a} has to be deleted.
+The second hunk also consists of one directive, @code{(+ 2 "D")},
+meaning the element @code{"D"} at the position 2 of list @var{b}
+has to be added.  The third hunk means @code{"H"} at the position
+4 of list @var{a} should be removed and @code{"F"} at the position
+4 of list @var{b} should be added, and so on.
+
+If you are familiar with Perl's Algorithm::Diff module, you may 
+notice that this is the same structure that its @code{diff} procedure
+returns.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node util.list - Additional list library, util.queue - Queue, util.lcs - The longest common subsequence, Library modules - Utilities
+@section @code{util.list} - Additional list library
+
+@deftp {Module} util.list
+@mdindex util.list
+This module provides list utility functions which are not in srfi-1
+(@xref{srfi-1 - List library}) but generally useful.
+
+See also @ref{gauche.collection - Collection framework}
+and @ref{gauche.sequence - Sequence framework}, for
+these modules also defines useful generic functions that can
+be used for lists.
+@end deftp
+
+@defun take* list k &optional fill? padding
+Returns a list that consists of the first @var{k} elements in
+@var{list}, like SRFI-1's @code{take}, except this procedure
+is more tolerant.  That is, if @var{list}
+is shorter than @var{k}, @code{take*} doesn't signals an error.
+Instead, it returns a copy of @var{list} by default (or the optional
+argument @var{fill?} is @code{#f}).   If @var{fill?} is true,
+@var{padding} is added to the result to make its length @var{k}.
+The default value of @var{padding} is @code{#f}.
+
+@example
+(take* '(a b c d) 3)       @result{} (a b c)
+(take* '(a b c d) 6)       @result{} (a b c d)
+(take* '(a b c d) 6 #t)    @result{} (a b c d #f #f)
+(take* '(a b c d) 6 #t 'z) @result{} (a b c d z z)
+@end example
+
+Note: For generic subsequence extranction from any sequence, 
+see @code{subseq} in @ref{Slicing sequence}.
+@end defun
+
+@defun drop* list k
+Returns a list that the first @var{k} elements of @var{list} is
+dropped, like SRFI-1's @code{drop}, except this procedure
+is more tolerant.  If @var{list} is shorter than @var{k},
+an empty list is returned.
+
+@example
+(drop* '(a b c d) 3)       @result{} (d)
+(drop* '(a b c d) 5)       @result{} ()
+@end example
+@end defun
+
+@defun take-right* list k &optional fill? padding
+Like @code{take*}, but counts from right of @var{list}.
+If needed, @var{padding} is added on left of the result.
+@end defun
+
+@defun drop-right* list k
+Like @code{drop*}, but counts from right of @var{list}.
+@end defun
+
+@defun split-at* list k &optional fill? padding
+More tolerant version of SRFI-1's @code{split-at}.
+Returns the results of @code{take*} and @var{drop*}.
+
+@example
+(split-at* '(a b c d) 6 #t 'z)
+  @result{} (a b c d z z) @r{and} ()
+@end example
+@end defun
+
+@defun slices list k &optional fill? padding
+Splits @var{list} into the sublists (slices) where the length of
+each slice is @var{k}.
+If the length of @var{list} is not a multiple of @var{k},
+the last slice is dealt in the same way as @code{take*}; that is,
+it is shorter than @var{k} by default, or added @var{padding} if
+@var{fill?} is true.
+
+@example
+(slices '(a b c d e f g) 3)
+  @result{} ((a b c) (d e f) (g))
+(slices '(a b c d e f g) 3 #t 'z)
+  @result{} ((a b c) (d e f) (g z z))
+@end example
+@end defun
+
+@defun intersperse item list
+Inserts @var{item} between elements in the @var{list}.
+(The order of arguments is taken from Haskell's intersperse).
+
+@example
+(intersperse '+ '(1 2 3))  @result{} (1 + 2 + 3)
+(intersperse '+ '(1))      @result{} (1)
+(intersperse '+ '())       @result{} ()
+@end example
+@end defun
+
+@defmac cond-list clause @dots{}
+Construct a list by conditionally adding entries.
+Each @var{clause} has a test and expressions.  When its test
+yields true, the result of associated expression is used to
+construct the resulting list.  When the
+test yields false, nothing is inserted.
+
+@var{Clause} must be either one of the following form:
+@table @code
+@item (@var{test} @var{expr} @dots{})
+@var{Test} is evaluated, and when it is true,
+@var{expr} @dots{} are evaluated, and the return value
+becomes a part of the result.  If no @var{expr} is given,
+the result of @var{test} is used if it is not false.
+@item (@var{test} => @var{proc})
+@var{Test} is evaluated, and when it is true,
+@var{proc} is called with the value, and the return
+value is used to construct the result.
+@end table
+
+@example
+(let ((alist '((x 3) (y -1) (z 6))))
+ (cond-list ((assoc 'x alist) 'have-x)
+            ((assoc 'w alist) 'have-w)
+            ((assoc 'z alist) => cadr)))
+  @result{} (have-x 6)
+@end example
+@end defmac
+
+@defun alist->hash-table alist &optional cmp
+Creates and returns a hash table that has entries of
+each element in alist, using its car as the key and
+its cdr as the value.  @var{Cmp} is a symbol specifying
+the comparison function of the created hash table;
+currently @code{eq?}, @code{eqv?}, @code{equal?} and @code{string=?}
+are supported.
+@end defun
+
+@defun hash-table->alist hash-table
+@example
+  (hash-table-map h cons)
+@end example
+@end defun
+
+@defun rassoc key alist &optional eq-fn
+@defunx rassq key alist
+@defunx rassv key alist
+Reverse associations---given @var{key} is matched to the @emph{cdr}
+of each element in @var{alist}, instead of the @emph{car}.
+Handy to realize bidirectional associative list.
+@code{Rassoc} takes an optional comparison function, whose default is
+@code{equal?}.  @code{Rassq} and @var{rassv} uses @code{eq?} and @var{eqv?}.
+@end defun
+
+
+@defun assoc-ref alist key &optional default eq-fn
+@defunx assq-ref alist key &optional default
+@defunx assv-ref alist key &optional default
+These procedures provide the access to the assoc list
+symmetric with other *-ref procedures.
+This captures the common pattern of alist access:
+@example
+(assoc-ref alist key default eq-fn)
+ @equiv{}
+  (cond ((assoc key alist eq-fn) => cdr)
+        (else default))))
+@end example
+
+If @var{default} is omitted, @code{#f} is used.
+
+@code{Assoc-ref} takes an optional comparison function @var{eq-fn},
+whose default is @code{equal?}.  @code{Assq-ref} and @code{assv-ref}
+uses @code{eq?} and @code{eqv?}, respectively.
+@end defun
+
+@defun rassoc-ref alist key &optional default eq-fn
+@defunx rassq-ref alist key &optional default
+@defunx rassv-ref alist key &optional default
+Reverse association version of @code{assoc-ref}.
+@example
+(rassoc-ref alist key default eq-fn)
+ @equiv{}
+  (cond ((rassoc key alist eq-fn) => car)
+        (else default))))
+@end example
+The meanings of optional arguments are the same as @code{assoc-ref}.
+@end defun
+
+@defun assoc-set! alist key val &optional eq-fn
+@defunx assq-set! alist key val
+@defunx assv-set! alist key val
+Returns an alist who has @code{(key . val)} pair added to the @code{alist}.
+If @code{alist} already has an element with @var{key}, the element's
+@emph{cdr} is destructively modified for @var{val}.
+If @var{alist} doesn't have an element with @var{key}, a new pair
+is created and appended in front of @var{alist}; so you should use
+the return value to guarantee @var{key}-@var{val} pair is added.
+
+@code{Assoc-set!} takes optional comparison function @var{eq-fn},
+whose default is @code{equal?}.  @code{Assq-set!} and @code{assv-set!}
+uses @code{eq?} and @code{eqv?}, respectively.
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node util.queue - Queue, util.toposort - Topological sort, util.list - Additional list library, Library modules - Utilities
+@section @code{util.queue} - Queue
+@c NODE util.queue - キュー, @code{util.queue} - キュー
+
+@deftp {Module} util.queue
+@mdindex util.queue
+@c EN
+Provides a queue (FIFO).   This implementation is tuned for speed
+than safety; a queue is simply a pair that keeps head and tail of
+the queue, and minimal check is done in most of the operations.
+
+SLIB (@xref{slib - SLIB}) provides the queue library that is safer.
+This API is upper compatible to the SLIB's.
+The idea is that this queue is used inside other procedure or
+structure that you know you don't need the strict checks.
+Use either one depending on your requirement.
+@c JP
+キュー(FIFO)機能を提供します。この実装は安全さよりスピードに重点を置いています。
+キューは単に先頭と末尾のpairで表現され、多くのオペレーションでキューが正しいかどうかは
+チェックされません。
+
+SLIB (@ref{slib - SLIB}参照)にはより安全なキューの実装があります。
+このAPIはSLIBの実装の上位互換です。特定の手続きや構造体の中だけで使うため、
+厳しいチェックが必要でない場合にはこのモジュールを使うのが良く、そうでない場合は
+SLIBのものが良いでしょう。要求仕様によって使い分けて下さい。
+@c COMMON
+@end deftp
+
+@defun make-queue
+@c EN
+Creates and returns an empty queue.
+@c JP
+空のキューを作って返します。
+@c COMMON
+@end defun
+
+@defun queue? obj
+@c EN
+Returns @code{#t} if @var{obj} is a queue.  This operation checks
+@var{obj} is really in a shape of the queue.
+@c JP
+@var{obj}がキューであれば@code{#t}を返します。この操作に限り、@var{obj}が
+本当にキューの構造をしているかどうかのチェックがなされます。
+@c COMMON
+@end defun
+
+@defun queue-empty? queue
+@c EN
+Returns @code{#t} if @var{obj} is an empty queue.
+@c JP
+@var{obj}が空のキューであれば@code{#t}を返します。
+@c COMMON
+@end defun
+
+@defun queue-length queue
+@c EN
+Returns the number of the items in the queue.
+@c JP
+キューの中にあるアイテムの数を返します。
+@c COMMON
+@end defun
+
+@defun enqueue! queue obj &optional more-objs @dots{}
+@c EN
+Add @var{obj} to the end of @var{queue}.  You may give more than
+one object, and each of them are enqueued in order.
+(Note: SLIB version doesn't take the optional arguments).
+@c JP
+@var{obj}をキュー@var{queue}の末尾に追加します。
+一つ以上の@var{obj}を与えることができ、その場合はそれらが順にenqueueされます。
+(註：SLIBの@code{enqueue!}はオプショナルな引数を取りません)。
+@c COMMON
+@end defun
+
+@defun queue-push! queue obj &optional more-objs @dots{}
+@c EN
+Add @var{obj} in front of @var{queue}.  You may give more than
+one object, and each of them are pushed in order.
+(Note: SLIB version doesn't take the optional arguments).
+@c JP
+@var{obj}をキュー@var{queue}の先頭に追加します。
+一つ以上の@var{obj}を与えることができ、その場合はそれらが順にpushされます。
+(註：SLIBの@code{queue-push!}はオプショナルな引数を取りません)。
+@c COMMON
+@end defun
+
+@defun dequeue! queue
+@defunx queue-pop! queue
+@c EN
+Take one object from the front of the queue @var{queue} and returns it.
+Both function works the same, but @code{queue-pop!} may be used to
+emphasize it works with @code{queue-push!}.  An error is signalled
+if @var{queue} is empty.
+@c JP
+キュー@var{queue}の先頭からひとつ要素を取って返します。
+二つの手続きは全く同じ動作をします。@code{queue-pop!}は@code{queue-push!}と
+ペアで使われていることを強調したいときに使うと良いでしょう。キューが空の場合は
+エラーが報告されます。
+@c COMMON
+@end defun
+
+@defun dequeue-all! queue
+@c EN
+Returns the whole content of the queue by a list, with emptying
+@var{queue}.   If @var{queue} is already empty, returns an empty list.
+See also @code{queue->list} below.
+@c JP
+キューの全ての内容をリストにして返します。キューそのものは空になります。
+キューが既に空の場合は空リストが返されます。
+下の@code{queue->list}も参照してください。
+@c COMMON
+@end defun
+
+@defun queue-front queue
+@defunx queue-rear queue
+@c EN
+Peek the head or the tail of the queue and returns the object, respectively.
+@var{util.queue - Queue} is not modified.  An error is signalled
+if @var{queue} is empty.
+@c JP
+キュー@var{queue}の先頭もしくは末尾の要素を返します。キューそのものは変更されません。
+キューが空の場合はエラーが報告されます。
+@c COMMON
+@end defun
+
+@defun list->queue list
+@c EN
+Returns a new queue whose content is the elements in @var{list},
+in the given order.
+@c JP
+与えられたリスト@var{list}の各要素をその順で持つようなキューを作成して返します。
+@c COMMON
+@end defun
+
+@defun queue->list queue
+@c EN
+Returns a list whose content is the items in the queue in order.
+Unlike @code{dequeue-all!}, the content of @var{queue} remains intact.
+
+In Gauche, @code{queue->list} copies the content of the queue to a
+freshly allocated list, while @code{dequeue-all!} doesn't copy but
+directly returns the queue's internal list.   There are some Scheme
+systems that has @code{queue->list} but doesn't guarantee the content
+is copied, so if you're planning to share the code among these
+implementations, it's better not to rely on the fact that
+@code{queue->list} copies the content.
+@c JP
+キュー@var{queue}の内容をリストにして返します。
+@code{dequeue-all!}と異なり、キューそのものの内容は変化しません。
+
+Gaucheでは@code{queue->list}は新しいリストをアロケートしてキューの
+内容をコピーします (@code{dequeue-all!}はコピーをせずにキューの内部の
+リストをそのまま返します)。組込みで@code{queue->list}を持っているScheme
+実装がいくつかありますが、その中には@code{queue->list}がキューの
+内容をコピーすることを保証していないものがあるので、それらの処理系と
+共有するコードでは@code{queue->list}がリストをコピーすることを
+あてにしない方が良いでしょう。
+@c COMMON
+@end defun
+
+@defun find-in-queue pred queue
+@c EN
+Returns the first item in @var{queue} that satisfies a
+predicate @var{pred}.  The order of arguments follows
+@code{find} in SRFI-1 (@xref{SRFI-1 Searching}).
+@c JP
+キュー内の要素のうち述語@var{pred}を満たす最初の要素を返します。
+引数の順序はSRFI-1の@code{find}に揃えました (@ref{SRFI-1 Searching}参照)。
+@c COMMON
+@end defun
+
+@defun remove-from-queue! pred queue
+@c EN
+Removes all items in the queue that satisfies @var{pred}.
+Returns @code{#t} if any item is removed.  Otherwise returns @code{#f}.
+The order of arguments follows
+@code{remove} in SRFI-1 (@xref{SRFI-1 Filtering & Partitioning}).
+@c JP
+キューから、述語@var{pred}を満たす要素を全て取り除きます。
+要素が削除された場合は@code{#t}が、そうでなければ@code{#f}が返されます。
+引数の順序はSRFI-1の@code{remove}に揃えました (@ref{SRFI-1 Filtering & Partitioning}参照)。
+@c COMMON
+@end defun
+
+@c EN
+Note on portability:
+Scheme48 has @code{delete-from-queue!}, which takes object to remove
+rather than predicate, and also takes arguments in reversed order
+(i.e. queue comes first).   Avoid conflicting with that I intentionally
+left out @code{delete-from-queue!}; it's easy to write one in either
+Scheme48 compatible way or consistent to SRFI-1 argument order.
+@c JP
+移植性に関する註：Scheme48には、述語ではなく削除するオブジェクトそのものを取る
+@code{delete-from-queue!}がありますが、引数の順序が逆(キューが先)になっています。
+まぎらわしい衝突を避けるため、敢えて@code{delete-from-queue!}は
+提供しませんでした。@code{remove-from-queue!}を使えば、Scheme48互換の方法でも、
+あるいはSRFI-1と一貫性のある方法でも@code{delete-from-queue!}をすぐ書けるでしょう。
+@c COMMON
+
+@c ----------------------------------------------------------------------
+@node util.toposort - Topological sort, www.cgi - CGI Utility, util.queue - Queue, Library modules - Utilities
+@section @code{util.toposort} - Topological sort
+@c NODE util.toposort - トポロジカルソート, @code{util.toposort} - トポロジカルソート
+
+@deftp {Module} util.toposort
+@mdindex util.toposort
+@c EN
+Implements topological sort algorithm.
+@c JP
+トポロジカルソートのアルゴリズムを実装します。
+@c COMMON
+@end deftp
+
+@defun topological-sort graph &optional eqproc
+@c EN
+@var{Graph} represents a directed acyclic graph (DAG) by a list
+of connections, where each connection is the form
+@example
+(<node> <downstream> <downstream2> ...)
+@end example
+that means a node @code{<node>} is connected to other nodes
+@code{<downstream>} etc.   @code{<node>} can be arbitrary
+object, as far as it can be compared by the procedure @var{eqproc},
+which is @var{eqv?} by default (@xref{Equivalence}).
+Returns a list of @code{<node>}s sorted topologically.
+
+If the graph contains circular reference, an error is signalled.
+@c JP
+@var{Graph}は有向非循環グラフ(DAG)を表現するリストです。
+リストの各要素は次の形をしています。
+@example
+(<node> <downstream> <downstream2> ...)
+@end example
+これで、ノード@code{<node>}から別のノード@code{<downstream>}等への接続が
+あることを表現します。@code{<node>}はどんなオブジェクトであっても構いませんが、
+同一性の判定が@var{eqproc}で行えなければなりません。@var{eqproc}の既定値は
+@code{eqv?}です (@ref{Equivalence}参照)。
+トポロジカルにソートされたノードのリストを返します。
+
+グラフに循環が検出された場合はエラーとなります。
+@c COMMON
+@end defun
+
+@c ----------------------------------------------------------------------
+@node www.cgi - CGI Utility,  , util.toposort - Topological sort, Library modules - Utilities
+@section @code{www.cgi} - CGI utility
+@c NODE www.cgi - CGIユーティリティ, @code{www.cgi} - CGIユーティリティ
+
+@deftp {Module} www.cgi
+@mdindex www.cgi
+@c EN
+Provides a few basic functions useful to write a CGI script.
+
+In order to write CGI script easily, you may want to use
+other modules, such as @code{rfc.uri} (@xref{rfc.uri - URI parsing and construction}),
+@code{text.html-lite} (@xref{text.html-lite - Simple HTML document construction}) and
+@code{text.tree} (@xref{text.tree - Lazy text construction}).
+
+Note: it seems that there is no active formal specification for CGI.
+See @uref{http://w3c.org/CGI/} for more information.
+@c JP
+CGIスクリプトを書くのに便利ないくつかの基本的な手続きを提供します。
+
+CGIスクリプトを手軽に書くにはこのモジュールの他に、
+@code{rfc.uri} (@ref{rfc.uri - URI parsing and construction})、
+@code{text.html-lite} (@ref{text.html-lite - Simple HTML document construction})、
+@code{text.tree} (@ref{text.tree - Lazy text construction}) 等のモジュールを併せて
+使うとよいでしょう。
+
+注：現在有効な、CGIに関する「正式な」仕様というのはどうも無いようです。
+@uref{http://w3c.org/CGI/}あたりを参照して下さい。
+@c COMMON
+@end deftp
+
+@deffn {Parameter} cgi-metavariables &optional metavariables
+@c EN
+Normally, httpd passes a cgi progam various information
+via environment variables.
+Most procedures in @code{www.cgi} refer to them (meta-variables). 
+However, it is sometimes inconvenient to require environment variable access
+while you're developing cgi-related programs.
+With this parameter, you can overrides the information of meta-variables.
+
+@var{Metavariables} should be a list of two-element lists.
+Car of each inner list names the variable, and its cadr gives the
+value of the variable by string.
+
+For example, the following code overrides @code{REQUEST_METHOD}
+and @code{QUERY_STRING} meta-variables during execution of
+@code{my-cgi-procedure}.  (@xref{gauche.parameter - Parameters},
+for the details of @code{parameterize}).
+@c JP
+通常、httpdはcgiプログラムに様々な情報を環境変数経由で渡します。
+@code{www.cgi}中の多くの手続きはその情報(メタ変数)を参照します。
+しかし、cgiに関連するプログラムを開発中に環境変数にアクセスするのは
+不便な場合もあります。
+このパラメータを使うと、メタ変数をオーバライドすることができます。
+
+@var{Metavariables}は2要素のリストのリストです。
+内側のリストは、最初の要素が変数名を、2つめの要素がその値を、それぞれ
+文字列で与えます。
+
+例えば次のコードは@code{REQUEST_METHOD}と
+@code{QUERY_STRING}のメタ変数を@code{my-cgi-procedure}の実行期間中に
+上書きします。(@code{parameterize}の詳細については
+@ref{gauche.parameter - Parameters}を参照して下さい)。
+@c COMMON
+
+@example
+(parameterize ((cgi-metavariables (("REQUEST_METHOD" "GET")
+                                   ("QUERY_STRING" "x=foo"))))
+  (my-cgi-procedure))
+@end example
+@end deffn
+
+@defun cgi-parse-parameters &keyword :query-string :merge-cookies
+@c EN
+Parses query string and returns associative list of parameters.
+When a keyword argument @var{query-string} is given, it is used
+as a source query string.  Otherwise, the function checks the 
+metavariable @code{REQUEST_METHOD} and obtain the query string
+depending on the value (either from stdin or from the
+metavariable @code{QUERY_STRING}).
+If such an metavariable is not defined and
+the current input port is a terminal, the function prompts the user
+to type parameters; useful for interactive debugging.
+@c JP
+CGIプログラムに渡されたquery stringをパーズして、パラメータの連想リストにして
+返します。文字列がキーワード引数@var{query-string}に与えられればそれがパーズすべき
+query stringとなります。その引数が渡されなければこの手続きは
+メタ変数@code{REQUEST_METHOD}を参照し、その値によって標準入力もしくは
+メタ変数@code{QUERY_STRING}からquery stringが取られます。
+そのようなメタ変数が定義されておらず、かつ現在の入力ポートが端末である場合、
+インタラクティブにデバッグをしているものと考えて、
+この手続きはプロンプトを出してユーザにパラメータの入力を促します。
+@c COMMON
+
+@c EN
+When a true value is given to @var{merge-cookies}, the cookie
+values obtained from the metavariable @code{HTTP_COOKIE}
+are appended to the result.
+@c JP
+キーワード引数@var{merge-cookies}に真の値が与えられた場合は、
+メタ変数@code{HTTP_COOKIE}からクッキーの値が読まれ、解析されて
+結果に追加されます。
+@c COMMON
+
+@c EN
+Note that the query parameter may have multiple values,
+so @code{cdr} of each element in the result is a list, not an atom.
+If no value is given to the parameter, @code{#t} is placed as its value.
+See the following example:
+@c JP
+パラメータは複数の値を取り得るため、結果のパラメータに対応する値は常にリストになります。
+パラメータに値が与えられていなければ、結果のパラメータに対する値には@code{#t}が置かれます。
+次の例を参照して下さい。
+@c COMMON
+@example
+(cgi-parse-parameters
+  :query-string "foo=123&bar=%22%3f%3f%22&bar=zz&buzz")
+ @result{} (("foo" "123") ("bar "\"??\"" "zz") ("buzz #t))
+@end example
+@end defun
+
+@defun cgi-get-parameter name params &keyword :default :list :convert
+@c EN
+A convenient function to obtain a value of the parameter @var{name} from
+parsed query string @var{params}, which is the value
+@code{cgi-parse-parameters} returns.
+@c JP
+@code{cgi-parse-parameters}が返す、パーズされたQuery文字列@var{params}から、
+名前@var{name}を持つパラメータの値を簡単に取り出すための手続きです。
+@c COMMON
+
+@c EN
+Unless true value is given to @var{list}, the returned value is
+a scalar value.  If more than one value is associated to @var{name},
+only the first value is returned.  If @var{list} is true, the
+returned value is always a list, even @var{name} has only one value.
+@c JP
+キーワード引数@var{list}に真の値が与えられていなければ、
+返される値はスカラー値です。パラメータ@var{name}に複数の値が与えられた場合でも、
+最初の値のみが返されます。@var{list}に真の値が与えられれば、返されるのは
+常に値のリストとなります。
+@c COMMON
+
+@c EN
+After the value is retrieved, you can apply a procedure to
+convert the string value to the appropriate type by giving
+a procedure to the @var{convert} argument.  The procedure must
+take one string argument.  If @var{list} is true, the convert
+procedure is applied to each values.
+@c JP
+キーワード引数@var{convert}に手続きを与えると、対応する値が取り出された後でその
+手続きが値を引数として呼ばれます。これによって値を文字列から必要な型へと変換することが
+できます。@var{list}に真の値が与えられている場合、変換手続きは各値に対して呼ばれ、
+その結果のリストが@var{cgi-get-parameter}から返されます。
+@c COMMON
+
+@c EN
+If no value is defined for @var{name}, a value given to the keyword
+argument @var{default} is returned; the default value of @var{default}
+is @code{#f} if @var{list} is false, or @code{()} otherwise.
+@c JP
+パラメータ@var{name}に対応する値が無ければ、@var{default}に与えられた値がそのまま
+返されます。@var{default}が省略された場合、@var{list}が偽であれば@code{#f}が、
+真であれば@code{()}が返されます。
+@c COMMON
+@end defun
+
+@defun cgi-header &keyword content-type location cookies
+@c EN
+Creates a text tree (@xref{text.tree - Lazy text construction}) for the
+HTTP header of the reply message.  The most simple form is
+like this:
+@c JP
+HTTPリプライメッセージのヘッダを、テキストツリー形式(@ref{text.tree - Lazy text construction}参照)
+で作成して返します。最も簡単な呼び出しでは次のようになります。
+@c COMMON
+@example
+(tree->string (cgi-header))
+  @result{} "Content-type: text/html\r\n\r\n"
+@end example
+
+@c EN
+You can specify alternative content-type by the keyword argument
+@var{content-type}.   If you want to set cookies to the client,
+specify a list of cookie strings to the keyword argument @var{cookies}.
+You can use @code{construct-cookie-string} (@xref{rfc.cookie - HTTP cookie handling})
+to build such a list of cookie strings.
+@c JP
+キーワード引数@var{content-type}によってContent typeを指定できます。
+また、@var{cookies}にクッキー文字列のリストを渡すことにより、
+クライアントにクッキーを設定できます。クッキー文字列を構築するには手続き
+@code{construct-cookie-string} (@ref{rfc.cookie - HTTP cookie handling}参照)
+が使えます。
+@c COMMON
+
+@c EN
+The keyword argument @var{location} may be used to generate
+a @code{Location:} header to redirect the client to the specified URI.
+@c JP
+キーワード引数@var{location}は、@code{Location}ヘッダを作成して
+クライアントを別のURIに誘導するのに使えます。
+@c COMMON
+@end defun
+
+@deffn {Parameter} cgi-output-character-encoding &optional encoding
+@c EN
+The value of this parameter specifies the character encoding scheme (CES)
+used for CGI output by @code{cgi-main} defined below.
+The default value is Gauche's native encoding.
+If the parameter is set other than the native encoding, @code{cgi-main}
+converts the output
+encoding by @code{gauche.charconv} module
+(@xref{gauche.charconv - Character code conversion}).
+@c JP
+このパラメータの値は次に説明する@code{cgi-main}が出力するデータの
+文字符合化法(CES)を指定します。デフォルトの値はGaucheのネイティブエンコーディング
+です。それ以外の値がセットされている場合、@code{cgi-main}は
+@code{gauche.charconv}モジュールを用いて出力のエンコーディングの変換を
+行います。
+(@ref{gauche.charconv - Character code conversion}参照)。
+@c COMMON
+@end deffn
+
+@defun cgi-main proc &keyword on-error merge-cookies output-proc
+@c EN
+A convenient wrapper function for CGI script.
+This function calls @code{cgi-parse-parameters}, then calls
+@var{proc} with the result of @code{cgi-parse-parameters}.
+The keyword argument @var{merge-cookies} is passed to
+@code{cgi-parse-parameters}.
+@c JP
+CGIスクリプトのための便利なラッパー手続きです。
+この手続きは、まず@code{cgi-parse-parameters}を呼び出してCGIスクリプトに
+渡されたパラメータを解析し、続いてその結果を引数として@var{proc}を呼び出します。
+キーワード引数@var{merge-cookies}は、与えられればそのまま
+@code{cgi-parse-parameters}に渡されます。
+@c COMMON
+
+@c EN
+@var{proc} has to return a tree of strings
+(@xref{text.tree - Lazy text construction}), including the HTTP header.
+@code{cgi-main} outputs the returned tree to the current output port
+by @code{write-tree}, then returns zero.
+@c JP
+手続き@var{proc}はHTTPヘッダを含むドキュメントを
+テキストツリー構造(@ref{text.tree - Lazy text construction}参照)で
+返さなければなりません。@code{cgi-main}はそれを@code{write-tree}を使って
+現在の出力ポートに書き出し、0を返します。
+@c COMMON
+
+@c EN
+If an error is signalled in @var{proc}, it is caught and an HTML
+page reporting the error is generated.  You can customize the
+error page by providing a procedure to the @var{on-error} keyword argument.
+The procedure takes an @code{<exception>} object (@xref{Exception object}),
+and has to return a tree of string for the error reporting HTML
+page, including an HTTP header.
+@c JP
+もし@var{proc}内でエラーが起こった場合、そのエラーは捕捉されて、エラーを報告する
+HTMLページが作成されて出力されます。このエラーページは、@var{on-error}キーワード引数に
+手続きを渡すことでカスタマイズできます。@var{on-error}に渡された手続きは
+エラー発生時に@code{<exception>}オブジェクト(@ref{Exception object}参照)
+を引数として呼ばれ、HTTPヘッダを含むドキュメントをテキストツリー構造で返さねばなりません。
+@c COMMON
+
+@c EN
+When output the result, @code{cgi-main} refers to
+the value of the parameter @code{cgi-output-character-encoding}, 
+and converts the character encoding if necessary.
+@c JP
+@code{cgi-main}は最終的な結果を出力を書き出す時に
+パラメータ@code{cgi-output-character-encoding}を参照し、
+必要ならば出力の文字エンコーディングを変換します。
+@c COMMON
+
+@c EN
+The output behavior of @code{cgi-main} can be customized
+by a keyword argument @var{output-proc}; if it is given,
+the text tree (either the normal return value of @var{proc},
+or an error page constructed by ther error handler) is passed
+to the procedure given to @var{output-proc}.  The procedure
+is responsible to format and output a text to the current
+output port, including character conversions, if necessary.
+@c JP
+@code{cgi-main}の出力のふるまいはキーワード引数@var{output-proc}で
+カスタマイズできます。@var{output-proc}が渡された場合、それは
+@var{proc}の戻り値、あるいはエラーハンドラが作成したテキストツリー構造を
+受け取る手続きでなければなりません。その手続きはテキストツリーを
+フォーマットして現在の出力ポートに出力しなければなりません。
+必要ならば文字エンコーディングの変換もその手続き内で行います。
+@c COMMON
+
+@c EN
+The following example shows the parameters given to the CGI program.
+@c JP
+以下の例はCGIに渡されたパラメータ全てをテーブルにして表示します。
+@c COMMON
+
+@example
+#!/usr/local/bin/gosh
+
+(use text.html-lite)
+(use www.cgi)
+
+(define (main args)
+  (cgi-main
+    (lambda (params)
+      `(,(cgi-header)
+        ,(html-doctype)
+        ,(html:html
+          (html:head (html:title "Example"))
+          (html:body
+           (html:table
+            :border 1
+            (html:tr (html:th "Name") (html:th "Value"))
+            (map (lambda (p)
+                   (html:tr
+                    (html:td (html-escape-string (car p)))
+                    (html:td (html-escape-string (x->string (cdr p))))))
+                 params))))
+       ))))
+@end example
+@end defun
