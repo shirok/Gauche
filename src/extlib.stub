@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.83 2001-05-26 09:50:26 shirok Exp $
+;;; $Id: extlib.stub,v 1.84 2001-05-31 10:10:41 shirok Exp $
 ;;;
 
 "
@@ -493,6 +493,24 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   "  if (SCM_PORT_TYPE(oport) != SCM_PORT_OSTR)
         Scm_Error(\"output string port required, but got: %S\", oport);
   SCM_RETURN(Scm_GetOutputString(oport));")
+ 
+"static int bufport_filler(char *buf, int siz, void *data)
+ {
+    /* no need to use VMApply; we're in the C callback */
+    ScmObj r = Scm_Apply(SCM_OBJ(data), SCM_LIST1(Scm_MakeInteger(siz)));
+    if (SCM_EOFP(r) || SCM_FALSEP(r)) {
+       return -1;
+    } else if (!SCM_STRINGP(r)) {
+       Scm_Error(\"buffered port callback procedure returned non-string: %S\", r);
+    }
+    memcpy(buf, SCM_STRING_START(r), SCM_STRING_SIZE(r));
+    return SCM_STRING_SIZE(r);
+ }"
+
+(define-cproc open-input-buffered-port (filler buffer-size)
+  (assert (procedure? filler))
+  (assert (small-integer? buffer-size))
+  "  SCM_RETURN(Scm_MakeBufferedPort(SCM_PORT_INPUT, buffer_size, 0, NULL, bufport_filler, filler));")
 
 (define-cproc flush (&optional (oport (current-output-port)))
   (assert (output-port? oport))
