@@ -1,3 +1,14 @@
+2001-10-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/list.c, etc. : merged safe version of accessors (*-ref+)
+	  to the normal version (*-ref).  Now normal version takes an
+	  optinal argument.
+	* src/extlib.stub : added standard-input-port, standard-output-port
+	  and standard-error-port.
+	* lib/gauche/port.scm : added.  implements several useful
+	  utilities for port input to be autoloaded.   some functions are
+	  moved from with.scm.
+
 2001-10-02  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/common-macros.scm : added several useful macros,
