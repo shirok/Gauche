@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.82 2001-05-22 20:27:59 shirok Exp $
+;;; $Id: extlib.stub,v 1.83 2001-05-26 09:50:26 shirok Exp $
 ;;;
 
 "
@@ -552,6 +552,19 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc read-line (&optional (port (current-input-port)))
   (assert (input-port? port))
   "  SCM_RETURN(Scm_ReadLine(port));")
+
+(define-cproc read-block (bytes &optional (port (current-input-port)))
+  (assert (input-port? port))
+  (assert (small-integer? bytes))
+  "  char *buf; int nread;
+  if (bytes <= 0) Scm_Error(\"bytes must be non-zero positive integer: %d\", bytes);
+  buf = SCM_NEW_ATOMIC2(char*, bytes);
+  nread = Scm_Getz(port, buf, bytes);
+  if (nread <= 0) {
+    SCM_RETURN(SCM_EOF);
+  } else {
+    SCM_RETURN(Scm_MakeString(buf, nread, nread, SCM_MAKSTR_INCOMPLETE));
+  }")
 
 ;;
 ;; 6.6.3  Output
