@@ -999,10 +999,10 @@ Returns @code{#t} if @var{index}-th bit of integer @var{n} is 1,
 
 @defun bit-field n start end
 @c EN
-Extracts (@var{start}+1)-th bit to @var{end}-th bit (inclusive) from
+Extracts @var{start}-th bit (inclusive) to @var{end}-th bit (exclusive) from
 an exact integer @var{n}, where @var{start} < @var{end}.
 @c JP
-整数@var{n}の@var{start}+1ビット目から@var{end}ビット目(両端含む)までを
+整数@var{n}の@var{start}ビット目(含む)から@var{end}ビット目(含まない)までを
 取り出した数値を返します。@var{start} < @var{end} でなければなりません。
 @c COMMON
 @end defun
