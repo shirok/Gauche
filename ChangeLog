@@ -1,5 +1,8 @@
 2004-11-25  Shiro Kawai  <shiro@acm.org>
 
+	* src/core.c (Scm_Init): setting of GC_finalize_on_demand was
+	  reversed.  fixed.
+
 	* lib/rfc/mime.scm (make-mime-port): fixed a bug that incorrectly
 	  treated CR-CR-LF sequence just before a boundary.
 

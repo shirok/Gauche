@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.60 2004-11-23 13:10:00 shirok Exp $
+ *  $Id: core.c,v 1.61 2004-11-26 01:45:39 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -104,7 +104,7 @@ void Scm_Init(const char *signature)
        point of VM loop, so we disable auto finalizer invocation, and
        ask GC to call us back when finalizers are queued. */
     GC_oom_fn = oom_handler;
-    GC_finalize_on_demand = FALSE;
+    GC_finalize_on_demand = TRUE;
     GC_finalizer_notifier = finalizable;
 
     /* Initialize components.  The order is important, for some components
