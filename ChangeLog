@@ -3,6 +3,11 @@
 	* src/macro.c : enable autoloading macros.  define-macro can now
 	  take either transformer or autoload object.  fixed define-macro
 	  to check valid transformer.
+	* src/gauche-init.scm : made common-macros.scm be autoloaded.
+	* src/load.c, src/main.c, src/gauche/vm.h : added LOAD_VERBOSE flag.
+	* src/main.c, various Makefile.in's : INCOMPATIBLE CHANGE: excluded
+	  the current directory from the load-path by default.  changed
+	  test target of Makefiles to include the current dir explicitly.
 
 2001-12-04  Shiro Kawai  <shiro@acm.org>
 
