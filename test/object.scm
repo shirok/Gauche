@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.32 2003-12-14 00:55:51 shirok Exp $
+;; $Id: object.scm,v 1.33 2004-02-26 07:48:14 shirok Exp $
 
 (use gauche.test)
 
@@ -360,13 +360,14 @@
 
 ;; check link consistency between class-direct-methods and method-specializer.x
 (define (method-link-check gf class)
-  (let loop ((dmeths (class-direct-methods class)))
-    (cond ((null? dmeths) #t)
-          ((memq (car dmeths) (slot-ref gf 'methods))
-           => (lambda (meth)
-                (and (memq class (slot-ref meth 'specializers))
-                     (loop (cdr dmeths)))))
-          (else #f))))
+  (and (not (null? (class-direct-methods class)))
+       (let loop ((dmeths (class-direct-methods class)))
+         (cond ((null? dmeths) #t)
+               ((memq (car dmeths) (slot-ref gf 'methods))
+                => (lambda (meth)
+                     (and (memq class (slot-ref (car meth) 'specializers))
+                          (loop (cdr dmeths)))))
+               (else (loop (cdr dmeths)))))))
 
 (test* "method link fix"
        '(#t #t #t #t #t #t #t)

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.110 2004-02-02 10:43:37 shirok Exp $
+ *  $Id: class.c,v 1.111 2004-02-26 07:48:14 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2276,8 +2276,12 @@ ScmObj Scm_UpdateDirectMethod(ScmMethod *m, ScmClass *old, ScmClass *new)
 {
     int i, rec = SCM_PROCEDURE_REQUIRED(m);
     ScmClass **sp = m->specializers;
+    ScmObj dmeths;
     for (i=0; i<rec; i++) {
         if (sp[i] == old) sp[i] = new;
+    }
+    if (SCM_FALSEP(Scm_Memq(SCM_OBJ(m), new->directMethods))) {
+        new->directMethods = Scm_Cons(SCM_OBJ(m), new->directMethods);
     }
     return SCM_OBJ(m);
 }

@@ -1,5 +1,8 @@
 2004-02-25  Shiro Kawai  <shiro@acm.org>
 
+	* src/class.c (Scm_UpdateDirectMethod): updates the new class'
+	  direct-method as well.
+
 	* ext/threads/threads.c (thread_entry): displays thread's stack trace
 	  when non-handled error is thrown and the thread is about to die
 	  (by unhandled-exception).  It will help debugging, and won't be
