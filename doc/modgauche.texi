@@ -40,13 +40,19 @@
 @mdindex gauche.array
 @c EN
 This module provides multi-dimensional array data type and operations.
-The primitive API follows SRFI-25.  This module also defines several
-useful operations.   This module also implements an external
-representation of arrays, using SRFI-10 mechanism.
+The primitive API follows SRFI-25. 
+Besides a generic srfi-25 array that can store any Scheme objects,
+this module also provides array classes that stores numeric objects
+efficiently, backed up by
+homogeneous numeric vectors (@xref{Uniform vectors}).
+An external representation of arrays, using SRFI-10 mechanism,
+is also provided.
 @c JP
 このモジュールは多次元配列のデータタイプとそれに関する操作を提供します。
 プリミティブなAPIはSRFI-25で定義されているものに従います。
-さらにいくつかの便利な操作も定義されています。
+任意のSchemeオブジェクトを保持できるSRFI-25の汎用配列の他に、
+均一な数値ベクタ(@ref{Uniform vectors}参照)を使って
+数値要素を効率良く保持する配列型も提供されます。
 また、SRFI-10を使った配列の外部表現も実装されます。
 @c COMMON
 
@@ -78,11 +84,11 @@ Shapeはそれ自体が [ @var{D} x 2 ] の配列です。
 @c COMMON
 
 @c EN
-You can pass index to array access primitives in a few ways;
+You can pass index(es) to array access primitives in a few ways;
 each index can be passed as individual argument,
 or can be 'packed' in a vector or one-dimensional array.
 In the latter case, such a vector or an array is called an "index object".
-Using vector is efficient in Gauche when you iterate over the elements
+Using a vector is efficient in Gauche when you iterate over the elements
 by changing the vector elements, for it won't involve memory allocation.
 @c JP
 配列のプリミティブに対しインデックスを渡すにはいくつか方法があります。
@@ -117,21 +123,73 @@ returns a scalar index into the backing storage.
 @c COMMON
 @end deftp
 
-@deftp {Class} <array>
-@clindex array
-
+@deftp {Class} <array-base>
+@clindex array-base
+@c EN
+An abstract base class of array types, that implements generic operations
+on the array.   To create an array instance,
+you should use one of the following concrete array classes.
+@c JP
+配列に関する汎用操作を実装している、抽象ベースクラスです。
+実際に配列のインスタンスを作るには、以下のいずれかの具体クラスを使って下さい。
+@c COMMON
 @end deftp
+
+@deftp {Class} <array>
+@deftpx {Class} <u8array>
+@deftpx {Class} <s8array>
+@deftpx {Class} <u16array>
+@deftpx {Class} <s16array>
+@deftpx {Class} <u32array>
+@deftpx {Class} <s32array>
+@deftpx {Class} <u64array>
+@deftpx {Class} <s64array>
+@deftpx {Class} <f32array>
+@deftpx {Class} <f64array>
+@clindex array
+@clindex u8array
+@clindex s8array
+@clindex u16array
+@clindex s16array
+@clindex u32array
+@clindex s32array
+@clindex u64array
+@clindex s64array
+@clindex f32array
+@clindex f64array
+@c EN
+Concrete array classes.  The @code{<array>} class implements srfi-25
+compatible array, i.e. an array that can store any Scheme objects.
+The @code{<u8array>} class through @code{<f64array>} classes uses
+a @code{<u8vector} through @code{<f64vector>} as a backing stroage,
+and can only store a limited range of integers or inexact real numbers,
+but they are space efficient.
+@c JP
+具体配列クラスです。@code{<array>}クラスはsrfi-25互換の配列、
+すなわち、任意のSchemeオブジェクトを格納できる配列を実装します。
+@code{<u8array>}から@code{<f64array>}までは、
+それぞれ@code{<u8vector>}から@code{<f64vector>}をバッキングストレージとして
+用いる配列を実装し、制限された範囲の整数もしくは不正確な実数のみを
+効率良く格納することができます。
+@c COMMON
+@end deftp
+
 
 @deftp {Reader syntax} @code{#,(<array> @var{shape} @var{obj} @dots{})}
 @c EN
-An array is written out in this format.  @var{shape} is a list
+An array is written out in this format.  (Substitute @code{<array>} for
+@code{<u8array>} if the array is @code{<u8array>}, etc.)
+@var{shape} is a list
 of even number of integers, and each 2@var{n}-th integer
 and 2@var{n}+1-th integer specifies the
 inclusive lower-bound and exclusive upper-bound of @var{n}-th dimension,
 respectively.  The following @var{obj} @dots{} are the values in the array
 listed in row-major order.
 @c JP
-配列をこの形式で書き出されます。@var{shape}は偶数個の整数のリストで、
+配列はこの形式で書き出されます。
+(配列が例えば@code{<u8array>}であるなら、@code{<array>}の部分は@code{<u8array>}
+となります。)
+@var{shape}は偶数個の整数のリストで、
 2@var{n}番目の整数が@var{n}次元目のインデックスの下限を、2@var{n}+1番目の
 整数が@var{n}次元目のインデックスの上限(+1)を表します。
 その後に、配列の要素がrow-majorの順で書き出されます。
@@ -168,8 +226,10 @@ and content, so it is @code{equal?} to the original array.
 [SRFI-25]
 @c EN
 Returns @code{#t} if @var{obj} is an array, @var{#f} otherwise.
+It is equivalent to @code{(is-a? obj <array-base>)}.
 @c JP
 @var{obj}が配列であれば@var{#t}が、そうでなければ@var{#f}が返されます。
+@code{(is-a? obj <array-base>)}と等価です。
 @c COMMON
 @end defun
 
@@ -195,6 +255,25 @@ Shapeが@var{shape}である配列を作成します。
 (make-array (shape 0 2 0 2 0 2) 5)
  @result{} #,(<array> (0 2 0 2 0 2) 5 5 5 5 5 5 5 5)
 @end example
+@end defun
+
+@defun make-u8array shape &optional init
+@defunx make-s8array shape &optional init
+@findex make-u16array
+@findex make-s16array
+@findex make-u32array
+@findex make-s32array
+@findex make-u64array
+@findex make-s64array
+@dots{}
+@end defun
+@defun make-f32array shape &optional init
+@defunx make-f64array shape &optional init
+@c EN
+Like @code{make-array}, but creates and returns an uniform numeric array.
+@c JP
+@code{make-array}と似ていますが、均一な数値配列を返します。
+@c COMMON
 @end defun
 
 @defun shape bound @dots{}
@@ -381,6 +460,51 @@ Shapeが@var{shape}であり、与えられた配列@var{array}とバッキングストレージを
 
 @defun array->vector array
 @defunx array->list array
+@end defun
+
+@defun array-concatenate a b &optional dimension
+@end defun
+
+@defun array-transpose array &optional dim1 dim2
+@end defun
+
+@defun array-rotate-90 array &optional dim1 dim2
+@end defun
+
+@defun array-flip array &optional dimension
+@defunx array-flip! array &optional dimension
+@end defun
+
+@defun identity-array dimension &optional class
+@end defun
+
+@defun array-inverse array
+@end defun
+
+@defun determinant array
+@defunx determinant! array
+@end defun
+
+@defun array-mul a b
+@end defun
+
+@defun array-expt array pow
+@end defun
+
+@defun array-div-left a b
+@defunx array-div-right a b
+@end defun
+
+@defun array-add-elements array array-or-scalar @dots{}
+@defunx array-add-elements! array array-or-scalar @dots{}
+@end defun
+
+@defun array-sub-elements array array-or-scalar @dots{}
+@defunx array-sub-elements! array array-or-scalar @dots{}
+@defunx array-mul-elements array array-or-scalar @dots{}
+@defunx array-mul-elements! array array-or-scalar @dots{}
+@defunx array-div-elements array array-or-scalar @dots{}
+@defunx array-div-elements! array array-or-scalar @dots{}
 @end defun
 
 @c ----------------------------------------------------------------------

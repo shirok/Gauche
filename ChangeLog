@@ -3,6 +3,7 @@
 	* doc/modgauche.texi (Low-level socket interface): added descrption
 	  of socket-getsockname, socket-getpeername, socket-send,
 	  socket-sendto, socket-recv, and socket-recvfrom.
+	  (Array): added description of uniform numeric arrays.
 
 	* src/compile.c (compile_define): added check to prevent non-toplevel
 	  use of define family ('internal' defines should be resolved
