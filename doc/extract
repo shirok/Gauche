@@ -13,28 +13,93 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: extract,v 1.3 2001-10-12 11:29:03 shirok Exp $
+;;;  $Id: extract,v 1.4 2001-10-13 09:31:39 shirok Exp $
 ;;;
 
 (use gauche.regexp)
 (use gauche.parseopt)
+(use srfi-13)
 
 (define *outfile* #f)
 (define *lang* 'en)
+(define *node-table* '())
+(define *header-table* '())
+
+(define (scan-nodes)
+  (let ((current-node #f)
+        (current-header #f))
+    (port-for-each
+     (lambda (line)
+       (rxmatch-case line
+         (#/^@node\s+([^,]+)/ (#f node)
+          (set! current-node (string-trim-right node)))
+         (#/^@(chapter|(sub)*section|unnumbered)\s+(.*)/ (#f #f #f header)
+          (set! current-header (string-trim-right header)))
+         (#/^@c NODE\s+([^,]*)(,(.*))?/ (#f jnode #f jheader)
+          (let* ((jn (string-trim-right jnode))
+                 (jh (if jheader (string-trim-both jheader) jn)))
+            (push! *node-table* (cons current-node jn))
+            (push! *header-table* (cons current-header jh))))
+         ))
+     read-line)))
 
 (define (filter pattern-in pattern-out)
   (define (in line)
     (rxmatch-case line
       (test eof-object?)
+      (pattern-in () (in (read-line)))
       (pattern-out () (out (read-line)))
-      (else (display line) (newline) (in (read-line)))))
+      (#/^@c COMMON$/ () (in (read-line)))
+      (test (lambda _ (eq? *lang* 'en))
+            (display line) (newline) (in (read-line)))
+      (#/^@node\s+(.*)$/ (#f nodedesc)
+        (process-node nodedesc) (in (read-line)))
+      (#/^@(chapter|(sub)*section|unnumbered)\s+(.*)/ (#f cmd #f header)
+        (process-header cmd header) (in (read-line)))
+      (#/^\* ([^:]+)::/ (#f menu)
+        (process-menu menu) (in (read-line)))
+      (else (display (regexp-replace #/(@x?ref){([^\}]+)}/ line process-ref))
+            (newline)
+            (in (read-line)))))
+
   (define (out line)
     (rxmatch-case line
       (test eof-object?)
       (pattern-in ()  (in (read-line)))
       (#/^@c COMMON$/ () (in (read-line)))
       (else (out (read-line)))))
+
   (in (read-line)))
+
+(define (process-node nodedesc)
+  (display "@node ")
+  (display
+   (string-join
+    (map (lambda (name)
+           (cond ((assoc (string-trim-both name) *node-table*) => cdr)
+                 (else name)))
+         (string-split nodedesc #\,))
+    ", "))
+  (newline))
+
+(define (process-header cmd header)
+  (format #t "@~a ~a\n"
+          cmd
+          (cond ((assoc (string-trim-both header) *header-table*) => cdr)
+                (else header))))
+
+(define (process-menu menu)
+  (format #t "* ~a::\n"
+          (cond ((assoc (string-trim-both menu) *node-table*) => cdr)
+                (else menu))))
+
+(define (process-ref match)
+  (let ((cmd  (rxmatch-substring match 1))
+        (node (rxmatch-substring match 2)))
+    (format #f "~a{~a}"
+            cmd
+            (cond ((assoc (string-trim-both node) *node-table*) => cdr)
+                  (else node)))))
 
 (define (usage)
   (display "Usage: extract [-en|-jp][-o outfile] infile\n")
@@ -53,6 +118,10 @@
         ((jp) (filter #/^@c JP$/ #/^@c EN$/))))
     
     (unless (= (length a) 1) (usage))
+
+    (when (eq? *lang* 'jp)
+      (with-input-from-file (car a) scan-nodes))
+    
     (with-input-from-file (car a)
       (lambda ()
         (if *outfile*
