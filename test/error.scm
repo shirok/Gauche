@@ -2,7 +2,7 @@
 ;; test error handlers
 ;;
 
-;;  $Id: error.scm,v 1.8 2002-11-29 04:30:23 shirok Exp $
+;;  $Id: error.scm,v 1.9 2003-01-07 13:28:04 shirok Exp $
 
 (use gauche.test)
 (test-start "error and exception handlers")
@@ -10,11 +10,11 @@
 ;;----------------------------------------------------------------
 (test-section "with-error-handler")
 
-(test "basic" '(1 . 2)
+(prim-test "basic" '(1 . 2)
       (lambda ()
         (cons 1 (with-error-handler (lambda (e) 2)
                                     (lambda () (car 2))))))
-(test "basic" '(1 2 3)
+(prim-test "basic" '(1 2 3)
       (lambda ()
         (list (with-error-handler (lambda (e) 1)
                                   (lambda () (car 2)))
@@ -23,13 +23,13 @@
               (with-error-handler (lambda (e) 3)
                                   (lambda () (car 3))))))
 
-(test "with let" 1
+(prim-test "with let" 1
       (lambda ()
         (let ((x 1))
           (with-error-handler (lambda (e) x)
                               (lambda () (car 0))))))
 
-(test "with let" 1
+(prim-test "with let" 1
       (lambda ()
         (let ((x 1))
           (with-error-handler (lambda (e) x)
@@ -37,7 +37,7 @@
                                 (let ((x 2))
                                   (car x)))))))
 
-(test "cascade" 3
+(prim-test "cascade" 3
       (lambda ()
         (with-error-handler
          (lambda (e) 3)
@@ -47,7 +47,7 @@
             (lambda ()
               (car 4)))))))
 
-(test "over c stack" '(1 . 2)
+(prim-test "over c stack" '(1 . 2)
       (lambda ()
         (cons 1
               (with-error-handler
@@ -56,7 +56,7 @@
                  (sort '(1 8 3 7 4)
                        (lambda (a b) (car a))))))))
 
-(test "with dynamic wind" '(a b c)
+(prim-test "with dynamic wind" '(a b c)
       (lambda ()
         (let ((x '()))
           (with-error-handler
@@ -68,7 +68,7 @@
               (lambda () (set! x (cons 'a x))))))
           x)))
 
-(test "with dynamic wind" '(a b e c d f)
+(prim-test "with dynamic wind" '(a b e c d f)
       (lambda ()
         (let ((x '()))
           (dynamic-wind
@@ -85,7 +85,7 @@
            (lambda () (push! x 'f)))
           (reverse x))))
 
-(test "repeat" 10
+(prim-test "repeat" 10
       (lambda ()
         (let loop ((i 0))
           (if (< i 10)
@@ -101,7 +101,7 @@
 ;; tests various interactions with with-error-handler and dynamic-wind
 ;; when an error is raised from error handler.
 
-(test "cascading error" '(a b c e d)
+(prim-test "cascading error" '(a b c e d)
       (lambda ()
         (let ((x '()))
           (with-error-handler
@@ -119,7 +119,7 @@
               (lambda () (push! x 'd)))))
           (reverse x))))
 
-(test "cascading error 2" '(a b c d e f g)
+(prim-test "cascading error 2" '(a b c d e f g)
       (lambda ()
         (let ((x '()))
           (dynamic-wind
@@ -138,7 +138,7 @@
            (lambda () (push! x 'g)))
           (reverse x))))
 
-(test "cascading error 3" '(a b c d f g)
+(prim-test "cascading error 3" '(a b c d f g)
       (lambda ()
         (let ((x '()))
           (dynamic-wind
@@ -157,7 +157,7 @@
            (lambda () (push! x 'g)))
           (reverse x))))
 
-(test "cascading error 4" '(a b c d e f g h i j)
+(prim-test "cascading error 4" '(a b c d e f g h i j)
       (lambda ()
         (let ((x '()))
           (dynamic-wind
@@ -183,7 +183,7 @@
            (lambda () (push! x 'j)))
           (reverse x))))
 
-(test "cascading error 5" '(a b c d e f g)
+(prim-test "cascading error 5" '(a b c d e f g)
       (lambda ()
         (let ((x '()))
           (dynamic-wind
@@ -202,7 +202,7 @@
            (lambda () (push! x 'g)))
           (reverse x))))
 
-(test "cascading error 6" '(a b c d e f g)
+(prim-test "cascading error 6" '(a b c d e f g)
       (lambda ()
         (let ((x '()))
           (with-error-handler
@@ -224,7 +224,7 @@
 ;;----------------------------------------------------------------
 (test-section "error in before/after thunk")
 
-(test "error in before thunk" '(a c)
+(prim-test "error in before thunk" '(a c)
       (lambda ()
         (let ((x '()))
           (with-error-handler
@@ -236,7 +236,7 @@
               (lambda () (push! x 'c)))))
           (reverse x))))
 
-(test "error in after thunk" '(a b c d)
+(prim-test "error in after thunk" '(a b c d)
       (lambda ()
         (let ((x '()))
           (with-error-handler
@@ -248,7 +248,7 @@
               (lambda () (push! x 'c) (car 3) (push! x 'z)))))
           (reverse x))))
 
-(test "error in before thunk (nested)" '(a b c d)
+(prim-test "error in before thunk (nested)" '(a b c d)
       (lambda ()
         (let ((x '()))
           (dynamic-wind
@@ -264,7 +264,7 @@
            (lambda () (push! x 'd)))
           (reverse x))))
 
-(test "error in after thunk (nested)" '(a b c d e f)
+(prim-test "error in after thunk (nested)" '(a b c d e f)
       (lambda ()
         (let ((x '()))
           (dynamic-wind
@@ -280,7 +280,7 @@
            (lambda () (push! x 'f)))
           (reverse x))))
 
-(test "error in before thunk (cascaded)" '(a b c d e)
+(prim-test "error in before thunk (cascaded)" '(a b c d e)
       (lambda ()
         (let ((x '()))
           (with-error-handler
@@ -299,7 +299,7 @@
               (lambda () (push! x 'e)))))
           (reverse x))))
 
-(test "error in after thunk (cascaded)" '(a b c d e f g)
+(prim-test "error in after thunk (cascaded)" '(a b c d e f g)
       (lambda ()
         (let ((x '()))
           (with-error-handler
@@ -321,7 +321,7 @@
 ;;----------------------------------------------------------------
 (test-section "restart and error handler")
 
-(test "restart" '(a b x b x)
+(prim-test "restart" '(a b x b x)
       (lambda ()
         (let ((x '())
               (c #f))
@@ -336,7 +336,7 @@
           (when c (c #f))
           (reverse x))))
 
-(test "restart & dynamic-wind" '(a b c x e f z a b x e f z)
+(prim-test "restart & dynamic-wind" '(a b c x e f z a b x e f z)
       (lambda ()
         (let ((x '())
               (c #f))
@@ -362,7 +362,7 @@
 ;;----------------------------------------------------------------
 (test-section "with-exception-handler")
 
-(test "simple" '(a b c)
+(prim-test "simple" '(a b c)
       (lambda ()
         (let ((x '()))
           (with-exception-handler
@@ -373,7 +373,7 @@
              (push! x 'c)))
           (reverse x))))
 
-(test "w/dynamic-wind" '(a b c d e f g)
+(prim-test "w/dynamic-wind" '(a b c d e f g)
       (lambda ()
         (let ((x '()))
           (dynamic-wind
@@ -389,7 +389,7 @@
            (lambda () (push! x 'g)))
           (reverse x))))
 
-(test "manual restart (simple)" '(a b c)
+(prim-test "manual restart (simple)" '(a b c)
       (lambda ()
         (let ((x '()))
           (push! x
@@ -402,7 +402,7 @@
                      (lambda () (push! x 'a) (car 3))))))
           (reverse x))))
 
-(test "manual restart (w/ dynamic-wind)" '(a b c e d)
+(prim-test "manual restart (w/ dynamic-wind)" '(a b c e d)
       (lambda ()
         (let ((x '()))
           (push! x
@@ -419,7 +419,7 @@
                      (lambda () (push! x 'e))))))
           (reverse x))))
 
-(test "noncontinuable error" '(a b c g y)
+(prim-test "noncontinuable error" '(a b c g y)
       (lambda ()
         (let ((x '()))
           (with-error-handler
@@ -437,7 +437,7 @@
 ;;----------------------------------------------------------------
 (test-section "nesting exception/error handlers")
 
-(test "propagating continuable exception" '(a b c)
+(prim-test "propagating continuable exception" '(a b c)
       (lambda ()
         (let ((x '()))
           (with-exception-handler
@@ -451,7 +451,7 @@
                 (push! x 'c)))))
           (reverse x))))
 
-(test "propagating continuable exception" '(a b c d e f g h)
+(prim-test "propagating continuable exception" '(a b c d e f g h)
       (lambda ()
         (let ((x '()))
           (with-exception-handler
@@ -481,7 +481,7 @@
 ;;----------------------------------------------------------------
 (test-section "interaction with empty environment frame")
 
-(test "empty do" 'ok
+(prim-test "empty do" 'ok
       (lambda ()
         (let ((x 0))
           (do () ((> x 0) 'ok)
@@ -490,7 +490,7 @@
               (lambda () (car x)))))))
 
 
-(test "empty let" 'ok
+(prim-test "empty let" 'ok
       (lambda ()
         (let ((x 0))
           (let loop ()

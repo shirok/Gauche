@@ -46,25 +46,25 @@
           (add-hook! x (lambda (y) (display y)))
           (with-output-to-string (lambda () (run-hook x 'a))))))
 
-(test-error "arity check" 
-            (lambda ()
-              (let ((x (make-hook 1)))
-                (run-hook x))))
+(test "arity check" *test-error*
+      (lambda ()
+        (let ((x (make-hook 1)))
+          (run-hook x))))
 
-(test-error "arity check"
-            (lambda ()
-              (let ((x (make-hook 1)))
-                (run-hook x 1 2))))
+(test "arity check" *test-error*
+      (lambda ()
+        (let ((x (make-hook 1)))
+          (run-hook x 1 2))))
 
-(test-error "arity check"
-            (lambda ()
-              (let ((x (make-hook 1)))
-                (add-hook! x (lambda (a b) #f)))))
+(test "arity check" *test-error*
+      (lambda ()
+        (let ((x (make-hook 1)))
+          (add-hook! x (lambda (a b) #f)))))
 
-(test-error "arity check"
-            (lambda ()
-              (let ((x (make-hook 2)))
-                (add-hook! x (lambda (a) #f)))))
+(test "arity check" *test-error*
+      (lambda ()
+        (let ((x (make-hook 2)))
+          (add-hook! x (lambda (a) #f)))))
 
 (test "arity check" 'ok
       (lambda ()

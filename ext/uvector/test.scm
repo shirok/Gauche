@@ -12,60 +12,60 @@
 ;;-------------------------------------------------------------------
 (test-section "reader syntax")
 
-(test "#s8()" #t (lambda () (s8vector? '#s8(0 1 2 3 4))))
-(test "#s8()" #f (lambda () (s8vector? '#(0 1 2 3 4))))
-(test "#u8()" #t (lambda () (u8vector? '#u8(0 1 2 3 4))))
-(test "#u8()" #f (lambda () (u8vector? '#(0 1 2 3 4))))
-(test "#s16()" #t (lambda () (s16vector? '#s16(0 1 2 3 4))))
-(test "#s16()" #f (lambda () (s16vector? '#(0 1 2 3 4))))
-(test "#u16()" #t (lambda () (u16vector? '#u16(0 1 2 3 4))))
-(test "#u16()" #f (lambda () (u16vector? '#(0 1 2 3 4))))
-(test "#s32()" #t (lambda () (s32vector? '#s32(0 1 2 3 4))))
-(test "#s32()" #f (lambda () (s32vector? '#(0 1 2 3 4))))
-(test "#u32()" #t (lambda () (u32vector? '#u32(0 1 2 3 4))))
-(test "#u32()" #f (lambda () (u32vector? '#(0 1 2 3 4))))
-(test "#s64()" #t (lambda () (s64vector? '#s64(0 1 2 3 4))))
-(test "#s64()" #f (lambda () (s64vector? '#(0 1 2 3 4))))
-(test "#u64()" #t (lambda () (u64vector? '#u64(0 1 2 3 4))))
-(test "#u64()" #f (lambda () (u64vector? '#(0 1 2 3 4))))
-(test "#f32()" #t (lambda () (f32vector? '#f32(0.0 1.0 2.0 3.0 4.0))))
-(test "#f32()" #f (lambda () (f32vector? '#(0.0 1.0 2.0 3.0 4.0))))
-(test "#f64()" #t (lambda () (f64vector? '#f64(0.0 1.0 2.0 3.0 4.0))))
-(test "#f64()" #f (lambda () (f64vector? '#(0.0 1.0 2.0 3.0 4.0))))
+(test* "#s8()" #t (s8vector? '#s8(0 1 2 3 4)))
+(test* "#s8()" #f (s8vector? '#(0 1 2 3 4)))
+(test* "#u8()" #t (u8vector? '#u8(0 1 2 3 4)))
+(test* "#u8()" #f (u8vector? '#(0 1 2 3 4)))
+(test* "#s16()" #t (s16vector? '#s16(0 1 2 3 4)))
+(test* "#s16()" #f (s16vector? '#(0 1 2 3 4)))
+(test* "#u16()" #t (u16vector? '#u16(0 1 2 3 4)))
+(test* "#u16()" #f (u16vector? '#(0 1 2 3 4)))
+(test* "#s32()" #t (s32vector? '#s32(0 1 2 3 4)))
+(test* "#s32()" #f (s32vector? '#(0 1 2 3 4)))
+(test* "#u32()" #t (u32vector? '#u32(0 1 2 3 4)))
+(test* "#u32()" #f (u32vector? '#(0 1 2 3 4)))
+(test* "#s64()" #t (s64vector? '#s64(0 1 2 3 4)))
+(test* "#s64()" #f (s64vector? '#(0 1 2 3 4)))
+(test* "#u64()" #t (u64vector? '#u64(0 1 2 3 4)))
+(test* "#u64()" #f (u64vector? '#(0 1 2 3 4)))
+(test* "#f32()" #t (f32vector? '#f32(0.0 1.0 2.0 3.0 4.0)))
+(test* "#f32()" #f (f32vector? '#(0.0 1.0 2.0 3.0 4.0)))
+(test* "#f64()" #t (f64vector? '#f64(0.0 1.0 2.0 3.0 4.0)))
+(test* "#f64()" #f (f64vector? '#(0.0 1.0 2.0 3.0 4.0)))
 
 ;;-------------------------------------------------------------------
 (test-section "writer syntax")
 
-(test "#s8()" "#s8(0 1 2 3 4)"
-      (lambda () (with-output-to-string
-                   (lambda () (write (apply s8vector (iota 5)))))))
-(test "#u8()" "#u8(0 1 2 3 4)"
-      (lambda () (with-output-to-string
-                   (lambda () (write (apply u8vector (iota 5)))))))
-(test "#s16()" "#s16(0 1 2 3 4)"
-      (lambda () (with-output-to-string
-                   (lambda () (write (apply s16vector (iota 5)))))))
-(test "#u16()" "#u16(0 1 2 3 4)"
-      (lambda () (with-output-to-string
-                   (lambda () (write (apply u16vector (iota 5)))))))
-(test "#s32()" "#s32(0 1 2 3 4)"
-      (lambda () (with-output-to-string
-                   (lambda () (write (apply s32vector (iota 5)))))))
-(test "#u32()" "#u32(0 1 2 3 4)"
-      (lambda () (with-output-to-string
-                   (lambda () (write (apply u32vector (iota 5)))))))
-(test "#s64()" "#s64(0 1 2 3 4)"
-      (lambda () (with-output-to-string
-                   (lambda () (write (apply s64vector (iota 5)))))))
-(test "#u64()" "#u64(0 1 2 3 4)"
-      (lambda () (with-output-to-string
-                   (lambda () (write (apply u64vector (iota 5)))))))
-(test "#f32()" "#f32()"
-      (lambda () (with-output-to-string
-                   (lambda () (write (f32vector))))))
-(test "#f64()" "#f64()"
-      (lambda () (with-output-to-string
-                   (lambda () (write (f64vector))))))
+(test* "#s8()" "#s8(0 1 2 3 4)"
+       (with-output-to-string
+         (lambda () (write (apply s8vector (iota 5))))))
+(test* "#u8()" "#u8(0 1 2 3 4)"
+       (with-output-to-string
+         (lambda () (write (apply u8vector (iota 5))))))
+(test* "#s16()" "#s16(0 1 2 3 4)"
+       (with-output-to-string
+         (lambda () (write (apply s16vector (iota 5))))))
+(test* "#u16()" "#u16(0 1 2 3 4)"
+       (with-output-to-string
+         (lambda () (write (apply u16vector (iota 5))))))
+(test* "#s32()" "#s32(0 1 2 3 4)"
+       (with-output-to-string
+         (lambda () (write (apply s32vector (iota 5))))))
+(test* "#u32()" "#u32(0 1 2 3 4)"
+       (with-output-to-string
+         (lambda () (write (apply u32vector (iota 5))))))
+(test* "#s64()" "#s64(0 1 2 3 4)"
+       (with-output-to-string
+         (lambda () (write (apply s64vector (iota 5))))))
+(test* "#u64()" "#u64(0 1 2 3 4)"
+       (with-output-to-string
+         (lambda () (write (apply u64vector (iota 5))))))
+(test* "#f32()" "#f32()"
+       (with-output-to-string
+         (lambda () (write (f32vector)))))
+(test* "#f64()" "#f64()"
+       (with-output-to-string
+         (lambda () (write (f64vector)))))
 
 ;;-------------------------------------------------------------------
 (test-section "ref and set")
@@ -77,117 +77,101 @@
     (and (equal? expvec vec)
          (equal? numlist (map (lambda (i) (ref vec i)) seq)))))
 
-(test "s8vector-ref|set!" #t
-      (lambda () (uvrefset-tester make-s8vector s8vector-ref s8vector-set!
-                                  '(0 -1 1 -128 127)
-                                  '#s8(0 -1 1 -128 127))))
-(test "u8vector-ref|set!" #t
-      (lambda () (uvrefset-tester make-u8vector u8vector-ref u8vector-set!
-                                  '(0 1 2 3 255)
-                                  '#u8(0 1 2 3 255))))
-(test "s16vector-ref|set!" #t
-      (lambda () (uvrefset-tester make-s16vector s16vector-ref s16vector-set!
-                                  '(0 -1 1 -32768 32767)
-                                  '#s16(0 -1 1 -32768 32767))))
-(test "u16vector-ref|set!" #t
-      (lambda () (uvrefset-tester make-u16vector u16vector-ref u16vector-set!
-                                  '(0 1 2 3 65535)
-                                  '#u16(0 1 2 3 65535))))
-(test "s32vector-ref|set!" #t
-      (lambda () (uvrefset-tester make-s32vector s32vector-ref s32vector-set!
-                                      '(0 -1 1 #x-80000000 #x7fffffff)
-                                  '#s32(0 -1 1 #x-80000000 #x7fffffff))))
-(test "u32vector-ref|set!" #t
-      (lambda () (uvrefset-tester make-u32vector u32vector-ref u32vector-set!
-                                      '(0 1 2 #xffffffff)
-                                  '#u32(0 1 2 #xffffffff))))
-(test "s64vector-ref|set!" #t
-      (lambda () (uvrefset-tester make-s64vector s64vector-ref s64vector-set!
-                                  '(0 -1 1 #x-8000000000000000 #x7fffffffffffffff)
-                                  '#s64(0 -1 1 #x-8000000000000000 #x7fffffffffffffff))))
-(test "u64vector-ref|set!" #t
-      (lambda () (uvrefset-tester make-u64vector u64vector-ref u64vector-set!
-                                  '(0 1 2 #xffffffffffffffff)
-                                  '#u64(0 1 2 #xffffffffffffffff))))
-(test "f32vector-ref|set!" #t
-      (lambda () (uvrefset-tester make-f32vector f32vector-ref f32vector-set!
-                                  '(0.0 -1.0 1.0)
-                                  '#f32(0.0 -1.0 1.0))))
-(test "f64vector-ref|set!" #t
-      (lambda () (uvrefset-tester make-f64vector f64vector-ref f64vector-set!
-                                  '(0.0 -1.0 1.0)
-                                  '#f64(0.0 -1.0 1.0))))
+(test* "s8vector-ref|set!" #t
+       (uvrefset-tester make-s8vector s8vector-ref s8vector-set!
+                        '(0 -1 1 -128 127)
+                        '#s8(0 -1 1 -128 127)))
+(test* "u8vector-ref|set!" #t
+       (uvrefset-tester make-u8vector u8vector-ref u8vector-set!
+                        '(0 1 2 3 255)
+                        '#u8(0 1 2 3 255)))
+(test* "s16vector-ref|set!" #t
+       (uvrefset-tester make-s16vector s16vector-ref s16vector-set!
+                        '(0 -1 1 -32768 32767)
+                        '#s16(0 -1 1 -32768 32767)))
+(test* "u16vector-ref|set!" #t
+       (uvrefset-tester make-u16vector u16vector-ref u16vector-set!
+                        '(0 1 2 3 65535)
+                        '#u16(0 1 2 3 65535)))
+(test* "s32vector-ref|set!" #t
+       (uvrefset-tester make-s32vector s32vector-ref s32vector-set!
+                        '(0 -1 1 #x-80000000 #x7fffffff)
+                        '#s32(0 -1 1 #x-80000000 #x7fffffff)))
+(test* "u32vector-ref|set!" #t
+       (uvrefset-tester make-u32vector u32vector-ref u32vector-set!
+                        '(0 1 2 #xffffffff)
+                        '#u32(0 1 2 #xffffffff)))
+(test* "s64vector-ref|set!" #t
+       (uvrefset-tester make-s64vector s64vector-ref s64vector-set!
+                        '(0 -1 1 #x-8000000000000000 #x7fffffffffffffff)
+                        '#s64(0 -1 1 #x-8000000000000000 #x7fffffffffffffff)))
+(test* "u64vector-ref|set!" #t
+       (uvrefset-tester make-u64vector u64vector-ref u64vector-set!
+                        '(0 1 2 #xffffffffffffffff)
+                        '#u64(0 1 2 #xffffffffffffffff)))
+(test* "f32vector-ref|set!" #t
+       (uvrefset-tester make-f32vector f32vector-ref f32vector-set!
+                        '(0.0 -1.0 1.0)
+                        '#f32(0.0 -1.0 1.0)))
+(test* "f64vector-ref|set!" #t
+       (uvrefset-tester make-f64vector f64vector-ref f64vector-set!
+                        '(0.0 -1.0 1.0)
+                        '#f64(0.0 -1.0 1.0)))
 
 (define (uvset-clamp-tester make ref set value)
   (let ((v (make 1)))
     (list (with-error-handler
-           (lambda (e) 'error)
-           (lambda () (set v 0 value) (ref v 0)))
+              (lambda (e) 'error)
+            (lambda () (set v 0 value) (ref v 0)))
           (with-error-handler
-           (lambda (e) 'error)
-           (lambda () (set v 0 value 'low) (ref v 0)))
+              (lambda (e) 'error)
+            (lambda () (set v 0 value 'low) (ref v 0)))
           (with-error-handler
-           (lambda (e) 'error)
-           (lambda () (set v 0 value 'high) (ref v 0)))
+              (lambda (e) 'error)
+            (lambda () (set v 0 value 'high) (ref v 0)))
           (with-error-handler
-           (lambda (e) 'error)
-           (lambda () (set v 0 value 'both) (ref v 0))))))
+              (lambda (e) 'error)
+            (lambda () (set v 0 value 'both) (ref v 0))))))
 
-(test "s8vector-set! clamp" '(error -128 error -128)
-      (lambda ()
-        (uvset-clamp-tester make-s8vector s8vector-ref s8vector-set! -129)))
-(test "s8vector-set! clamp" '(error error 127 127)
-      (lambda ()
-        (uvset-clamp-tester make-s8vector s8vector-ref s8vector-set! 128)))
+(test* "s8vector-set! clamp" '(error -128 error -128)
+       (uvset-clamp-tester make-s8vector s8vector-ref s8vector-set! -129))
+(test* "s8vector-set! clamp" '(error error 127 127)
+       (uvset-clamp-tester make-s8vector s8vector-ref s8vector-set! 128))
 
-(test "u8vector-set! clamp" '(error 0 error 0)
-      (lambda ()
-        (uvset-clamp-tester make-u8vector u8vector-ref u8vector-set! -1)))
-(test "u8vector-set! clamp" '(error error 255 255)
-      (lambda ()
-        (uvset-clamp-tester make-u8vector u8vector-ref u8vector-set! 256)))
+(test* "u8vector-set! clamp" '(error 0 error 0)
+       (uvset-clamp-tester make-u8vector u8vector-ref u8vector-set! -1))
+(test* "u8vector-set! clamp" '(error error 255 255)
+       (uvset-clamp-tester make-u8vector u8vector-ref u8vector-set! 256))
 
-(test "s16vector-set! clamp" '(error -32768 error -32768)
-      (lambda ()
-        (uvset-clamp-tester make-s16vector s16vector-ref s16vector-set! -32769)))
-(test "s16vector-set! clamp" '(error error 32767 32767)
-      (lambda ()
-        (uvset-clamp-tester make-s16vector s16vector-ref s16vector-set! 32768)))
+(test* "s16vector-set! clamp" '(error -32768 error -32768)
+       (uvset-clamp-tester make-s16vector s16vector-ref s16vector-set! -32769))
+(test* "s16vector-set! clamp" '(error error 32767 32767)
+       (uvset-clamp-tester make-s16vector s16vector-ref s16vector-set! 32768))
 
-(test "u16vector-set! clamp" '(error 0 error 0)
-      (lambda ()
-        (uvset-clamp-tester make-u16vector u16vector-ref u16vector-set! -1)))
-(test "u16vector-set! clamp" '(error error 65535 65535)
-      (lambda ()
-        (uvset-clamp-tester make-u16vector u16vector-ref u16vector-set! 65536)))
+(test* "u16vector-set! clamp" '(error 0 error 0)
+       (uvset-clamp-tester make-u16vector u16vector-ref u16vector-set! -1))
+(test* "u16vector-set! clamp" '(error error 65535 65535)
+       (uvset-clamp-tester make-u16vector u16vector-ref u16vector-set! 65536))
 
-(test "s32vector-set! clamp" '(error -2147483648 error -2147483648)
-      (lambda ()
-        (uvset-clamp-tester make-s32vector s32vector-ref s32vector-set! -2147483649)))
-(test "s32vector-set! clamp" '(error error 2147483647 2147483647)
-      (lambda ()
-        (uvset-clamp-tester make-s32vector s32vector-ref s32vector-set! 2147483648)))
+(test* "s32vector-set! clamp" '(error -2147483648 error -2147483648)
+       (uvset-clamp-tester make-s32vector s32vector-ref s32vector-set! -2147483649))
+(test* "s32vector-set! clamp" '(error error 2147483647 2147483647)
+       (uvset-clamp-tester make-s32vector s32vector-ref s32vector-set! 2147483648))
 
-(test "u32vector-set! clamp" '(error 0 error 0)
-      (lambda ()
-        (uvset-clamp-tester make-u32vector u32vector-ref u32vector-set! -1)))
-(test "u32vector-set! clamp" '(error error 4294967295 4294967295)
-      (lambda ()
-        (uvset-clamp-tester make-u32vector u32vector-ref u32vector-set! 4294967296)))
+(test* "u32vector-set! clamp" '(error 0 error 0)
+       (uvset-clamp-tester make-u32vector u32vector-ref u32vector-set! -1))
+(test* "u32vector-set! clamp" '(error error 4294967295 4294967295)
+       (uvset-clamp-tester make-u32vector u32vector-ref u32vector-set! 4294967296))
 
-(test "s64vector-set! clamp" '(error -9223372036854775808 error -9223372036854775808)
-      (lambda ()
-        (uvset-clamp-tester make-s64vector s64vector-ref s64vector-set! -9223372036854775809)))
-(test "s64vector-set! clamp" '(error error 9223372036854775807 9223372036854775807)
-      (lambda ()
-        (uvset-clamp-tester make-s64vector s64vector-ref s64vector-set! 9223372036854775808)))
+(test* "s64vector-set! clamp" '(error -9223372036854775808 error -9223372036854775808)
+       (uvset-clamp-tester make-s64vector s64vector-ref s64vector-set! -9223372036854775809))
+(test* "s64vector-set! clamp" '(error error 9223372036854775807 9223372036854775807)
+       (uvset-clamp-tester make-s64vector s64vector-ref s64vector-set! 9223372036854775808))
 
-(test "u64vector-set! clamp" '(error 0 error 0)
-      (lambda ()
-        (uvset-clamp-tester make-u64vector u64vector-ref u64vector-set! -1)))
-(test "u64vector-set! clamp" '(error error 18446744073709551615 18446744073709551615)
-      (lambda ()
-        (uvset-clamp-tester make-u64vector u64vector-ref u64vector-set! 18446744073709551616)))
+(test* "u64vector-set! clamp" '(error 0 error 0)
+       (uvset-clamp-tester make-u64vector u64vector-ref u64vector-set! -1))
+(test* "u64vector-set! clamp" '(error error 18446744073709551615 18446744073709551615)
+       (uvset-clamp-tester make-u64vector u64vector-ref u64vector-set! 18446744073709551616))
 
 ;;-------------------------------------------------------------------
 (test-section "conversions")
@@ -202,62 +186,52 @@
          (equal? vec (list->vector nums))
          (equal? uv3 uvec))))
 
-(test "s8vector conversion" #t
-      (lambda ()
-        (uvconv-tester s8vector->list list->s8vector
-                       s8vector->vector vector->s8vector
-                       '#s8(0 -1 1 -128 127) '(0 -1 1 -128 127))))
-(test "u8vector conversion" #t
-      (lambda ()
-        (uvconv-tester u8vector->list list->u8vector
-                       u8vector->vector vector->u8vector
-                       '#u8(0 1 254 255) '(0 1 254 255))))
-(test "s16vector conversion" #t
-      (lambda ()
-        (uvconv-tester s16vector->list list->s16vector
-                       s16vector->vector vector->s16vector
-                       '#s16(0 -1 1 -32768 32767) '(0 -1 1 -32768 32767))))
-(test "u16vector conversion" #t
-      (lambda ()
-        (uvconv-tester u16vector->list list->u16vector
-                       u16vector->vector vector->u16vector
-                       '#u16(0 1 65534 65535) '(0 1 65534 65535))))
-(test "s32vector conversion" #t
-      (lambda ()
-        (uvconv-tester s32vector->list list->s32vector
-                       s32vector->vector vector->s32vector
-                       '#s32(0 -1 1 #x-80000000 #x7fffffff)
-                       '(0 -1 1 #x-80000000 #x7fffffff))))
-(test "u32vector conversion" #t
-      (lambda ()
-        (uvconv-tester u32vector->list list->u32vector
-                       u32vector->vector vector->u32vector
-                       '#u32(0 1 #xfffffffe #xffffffff)
-                       '(0 1 #xfffffffe #xffffffff))))
-(test "s64vector conversion" #t
-      (lambda ()
-        (uvconv-tester s64vector->list list->s64vector
-                       s64vector->vector vector->s64vector
-                       '#s64(0 -1 1 #x-8000000000000000 #x7fffffffffffffff)
-                       '(0 -1 1 #x-8000000000000000 #x7fffffffffffffff))))
-(test "u64vector conversion" #t
-      (lambda ()
-        (uvconv-tester u64vector->list list->u64vector
-                       u64vector->vector vector->u64vector
-                       '#u64(0 1 #xffffffffffffffff)
-                       '(0 1 #xffffffffffffffff))))
-(test "f32vector conversion" #t
-      (lambda ()
-        (uvconv-tester f32vector->list list->f32vector
-                       f32vector->vector vector->f32vector
-                       '#f32(0.0 -1.0 1.0)
-                       '(0.0 -1.0 1.0))))
-(test "f64vector conversion" #t
-      (lambda ()
-        (uvconv-tester f64vector->list list->f64vector
-                       f64vector->vector vector->f64vector
-                       '#f64(0.0 -1.0 1.0)
-                       '(0.0 -1.0 1.0))))
+(test* "s8vector conversion" #t
+       (uvconv-tester s8vector->list list->s8vector
+                      s8vector->vector vector->s8vector
+                      '#s8(0 -1 1 -128 127) '(0 -1 1 -128 127)))
+(test* "u8vector conversion" #t
+       (uvconv-tester u8vector->list list->u8vector
+                      u8vector->vector vector->u8vector
+                      '#u8(0 1 254 255) '(0 1 254 255)))
+(test* "s16vector conversion" #t
+       (uvconv-tester s16vector->list list->s16vector
+                      s16vector->vector vector->s16vector
+                      '#s16(0 -1 1 -32768 32767) '(0 -1 1 -32768 32767)))
+(test* "u16vector conversion" #t
+       (uvconv-tester u16vector->list list->u16vector
+                      u16vector->vector vector->u16vector
+                      '#u16(0 1 65534 65535) '(0 1 65534 65535)))
+(test* "s32vector conversion" #t
+       (uvconv-tester s32vector->list list->s32vector
+                      s32vector->vector vector->s32vector
+                      '#s32(0 -1 1 #x-80000000 #x7fffffff)
+                      '(0 -1 1 #x-80000000 #x7fffffff)))
+(test* "u32vector conversion" #t
+       (uvconv-tester u32vector->list list->u32vector
+                      u32vector->vector vector->u32vector
+                      '#u32(0 1 #xfffffffe #xffffffff)
+                      '(0 1 #xfffffffe #xffffffff)))
+(test* "s64vector conversion" #t
+       (uvconv-tester s64vector->list list->s64vector
+                      s64vector->vector vector->s64vector
+                      '#s64(0 -1 1 #x-8000000000000000 #x7fffffffffffffff)
+                      '(0 -1 1 #x-8000000000000000 #x7fffffffffffffff)))
+(test* "u64vector conversion" #t
+       (uvconv-tester u64vector->list list->u64vector
+                      u64vector->vector vector->u64vector
+                      '#u64(0 1 #xffffffffffffffff)
+                      '(0 1 #xffffffffffffffff)))
+(test* "f32vector conversion" #t
+       (uvconv-tester f32vector->list list->f32vector
+                      f32vector->vector vector->f32vector
+                      '#f32(0.0 -1.0 1.0)
+                      '(0.0 -1.0 1.0)))
+(test* "f64vector conversion" #t
+       (uvconv-tester f64vector->list list->f64vector
+                      f64vector->vector vector->f64vector
+                      '#f64(0.0 -1.0 1.0)
+                      '(0.0 -1.0 1.0)))
 
 ;;-------------------------------------------------------------------
 (test-section "copying and filling")
@@ -272,66 +246,55 @@
                      (begin (copy! c1 uvec)
                             (equal? c1 c0)))))))
 
-(test "s8vector copy|fill!" #t
-      (lambda ()
-        (uvcopy-tester s8vector-copy s8vector-copy! s8vector-fill!
-                       s8vector->list list->s8vector
-                       '#s8(0 -1 1 -128 127) -128)))
-(test "u8vector copy|fill!" #t
-      (lambda ()
-        (uvcopy-tester u8vector-copy u8vector-copy! u8vector-fill!
-                       u8vector->list list->u8vector
-                       '#u8(0 1 255) 255)))
-(test "s16vector copy|fill!" #t
-      (lambda ()
-        (uvcopy-tester s16vector-copy s16vector-copy! s16vector-fill!
-                       s16vector->list list->s16vector
-                       '#s16(0 -1 1 -32768 32767) -32768)))
-(test "u16vector copy|fill!" #t
-      (lambda ()
-        (uvcopy-tester u16vector-copy u16vector-copy! u16vector-fill!
-                       u16vector->list list->u16vector
-                       '#u16(0 1 65535) 32768)))
-(test "s32vector copy|fill!" #t
-      (lambda ()
-        (uvcopy-tester s32vector-copy s32vector-copy! s32vector-fill!
-                       s32vector->list list->s32vector
-                       '#s32(0 -1 1 #x-80000000 #x7fffffff) #x7fffffff)))
-(test "u32vector copy|fill!" #t
-      (lambda ()
-        (uvcopy-tester u32vector-copy u32vector-copy! u32vector-fill!
-                       u32vector->list list->u32vector
-                       '#u32(0 1 #xffffffff) #x80000000)))
-(test "s64vector copy|fill!" #t
-      (lambda ()
-        (uvcopy-tester s64vector-copy s64vector-copy! s64vector-fill!
-                       s64vector->list list->s64vector
-                       '#s64(0 -1 1 #x-8000000000000000 #x7fffffffffffffff)
-                       #x7fffffffffffffff)))
-(test "u64vector copy|fill!" #t
-      (lambda ()
-        (uvcopy-tester u64vector-copy u64vector-copy! u64vector-fill!
-                       u64vector->list list->u64vector
-                       '#u64(0 1 #xffffffffffffffff) #x8000000000000000)))
+(test* "s8vector copy|fill!" #t
+       (uvcopy-tester s8vector-copy s8vector-copy! s8vector-fill!
+                      s8vector->list list->s8vector
+                      '#s8(0 -1 1 -128 127) -128))
+(test* "u8vector copy|fill!" #t
+       (uvcopy-tester u8vector-copy u8vector-copy! u8vector-fill!
+                      u8vector->list list->u8vector
+                      '#u8(0 1 255) 255))
+(test* "s16vector copy|fill!" #t
+       (uvcopy-tester s16vector-copy s16vector-copy! s16vector-fill!
+                      s16vector->list list->s16vector
+                      '#s16(0 -1 1 -32768 32767) -32768))
+(test* "u16vector copy|fill!" #t
+       (uvcopy-tester u16vector-copy u16vector-copy! u16vector-fill!
+                      u16vector->list list->u16vector
+                      '#u16(0 1 65535) 32768))
+(test* "s32vector copy|fill!" #t
+       (uvcopy-tester s32vector-copy s32vector-copy! s32vector-fill!
+                      s32vector->list list->s32vector
+                      '#s32(0 -1 1 #x-80000000 #x7fffffff) #x7fffffff))
+(test* "u32vector copy|fill!" #t
+       (uvcopy-tester u32vector-copy u32vector-copy! u32vector-fill!
+                      u32vector->list list->u32vector
+                      '#u32(0 1 #xffffffff) #x80000000))
+(test* "s64vector copy|fill!" #t
+       (uvcopy-tester s64vector-copy s64vector-copy! s64vector-fill!
+                      s64vector->list list->s64vector
+                      '#s64(0 -1 1 #x-8000000000000000 #x7fffffffffffffff)
+                      #x7fffffffffffffff))
+(test* "u64vector copy|fill!" #t
+       (uvcopy-tester u64vector-copy u64vector-copy! u64vector-fill!
+                      u64vector->list list->u64vector
+                      '#u64(0 1 #xffffffffffffffff) #x8000000000000000))
 
-(test "f32vector copy|fill!" #t
-      (lambda ()
-        (uvcopy-tester f32vector-copy f32vector-copy! f32vector-fill!
-                       f32vector->list list->f32vector
-                       '#f32(0 -1.0 1.0) 1.0)))
-(test "f64vector copy|fill!" #t
-      (lambda ()
-        (uvcopy-tester f64vector-copy f64vector-copy! f64vector-fill!
-                       f64vector->list list->f64vector
-                       '#f64(0 -1.0 1.0) 1.0e64)))
+(test* "f32vector copy|fill!" #t
+       (uvcopy-tester f32vector-copy f32vector-copy! f32vector-fill!
+                      f32vector->list list->f32vector
+                      '#f32(0 -1.0 1.0) 1.0))
+(test* "f64vector copy|fill!" #t
+       (uvcopy-tester f64vector-copy f64vector-copy! f64vector-fill!
+                      f64vector->list list->f64vector
+                      '#f64(0 -1.0 1.0) 1.0e64))
 
 (define (uvcopy-startend-test msg make copy fill)
-  (test msg (list (make 1 2 3) (make 1 2) (make 0 9 9 3))
-        (lambda ()
-          (let1 v (make 0 1 2 3)
-            (list (copy v 1)
-                  (copy v 1 3)
-                  (fill v 9 1 3))))))
+  (test* msg (list (make 1 2 3) (make 1 2) (make 0 9 9 3))
+         (let1 v (make 0 1 2 3)
+           (list (copy v 1)
+                 (copy v 1 3)
+                 (fill v 9 1 3)))))
 
 (uvcopy-startend-test "uvcopy-startend s8vector"
                       s8vector s8vector-copy s8vector-fill!)
@@ -388,26 +351,26 @@
                    '(1 0 3 4))
        (num-equal? (coerce-to <vector> (subseq vec 1 3)) '#(0 3))))
 
-(test "s8vector collection interface" #t
-      (lambda () (collection-tester <s8vector> (s8vector 1 2 3 4))))
-(test "u8vector collection interface" #t
-      (lambda () (collection-tester <u8vector> (u8vector 1 2 3 4))))
-(test "s16vector collection interface" #t
-      (lambda () (collection-tester <s16vector> (s16vector 1 2 3 4))))
-(test "u16vector collection interface" #t
-      (lambda () (collection-tester <u16vector> (u16vector 1 2 3 4))))
-(test "s32vector collection interface" #t
-      (lambda () (collection-tester <s32vector> (s32vector 1 2 3 4))))
-(test "u32vector collection interface" #t
-      (lambda () (collection-tester <u32vector> (u32vector 1 2 3 4))))
-(test "s64vector collection interface" #t
-      (lambda () (collection-tester <s64vector> (s64vector 1 2 3 4))))
-(test "u64vector collection interface" #t
-      (lambda () (collection-tester <u64vector> (u64vector 1 2 3 4))))
-(test "f32vector collection interface" #t
-      (lambda () (collection-tester <f32vector> (f32vector 1 2 3 4))))
-(test "f64vector collection interface" #t
-      (lambda () (collection-tester <f64vector> (f64vector 1 2 3 4))))
+(test* "s8vector collection interface" #t
+       (collection-tester <s8vector> (s8vector 1 2 3 4)))
+(test* "u8vector collection interface" #t
+       (collection-tester <u8vector> (u8vector 1 2 3 4)))
+(test* "s16vector collection interface" #t
+       (collection-tester <s16vector> (s16vector 1 2 3 4)))
+(test* "u16vector collection interface" #t
+       (collection-tester <u16vector> (u16vector 1 2 3 4)))
+(test* "s32vector collection interface" #t
+       (collection-tester <s32vector> (s32vector 1 2 3 4)))
+(test* "u32vector collection interface" #t
+       (collection-tester <u32vector> (u32vector 1 2 3 4)))
+(test* "s64vector collection interface" #t
+       (collection-tester <s64vector> (s64vector 1 2 3 4)))
+(test* "u64vector collection interface" #t
+       (collection-tester <u64vector> (u64vector 1 2 3 4)))
+(test* "f32vector collection interface" #t
+       (collection-tester <f32vector> (f32vector 1 2 3 4)))
+(test* "f64vector collection interface" #t
+       (collection-tester <f64vector> (f64vector 1 2 3 4)))
 
 ;;-------------------------------------------------------------------
 (test-section "arithmetic operations")
@@ -470,8 +433,8 @@
   (define (gen-tester op v0 v1)
     (define (safe-test clamp-flag)
       (with-error-handler
-       (lambda (e) 'error)
-       (lambda () (op v0 v1 clamp-flag))))
+          (lambda (e) 'error)
+        (lambda () (op v0 v1 clamp-flag))))
     (lambda ()
       (list (safe-test #f)
             (safe-test 'high)
@@ -582,7 +545,7 @@
           (else (result-lo-ok  (make 0 min min min))))
         (gen-tester mul v0 (- big32)))
   )
-  
+
 (arith-test-generate s8)
 (arith-test-generate u8)
 (arith-test-generate s16)
@@ -603,30 +566,30 @@
                       ))
 
 (define (flonum-arith-test tag make add sub mul div)
-  (test (format #f "~svector-add (v+v)" tag)
-        (make 4.0 6.0 8.0 10.0)
-        (lambda () (add (make 0.0 1.0 2.0 3.0) (make 4.0 5.0 6.0 7.0))))
-  (test (format #f "~svector-add (v+s)" tag)
-        (make 4.0 5.0 6.0 7.0)
-        (lambda () (add (make 0.0 1.0 2.0 3.0) 4.0)))
-  (test (format #f "~svector-sub (v-v)" tag)
-        (make -4.0 -4.0 -4.0 -4.0)
-        (lambda () (sub (make 0.0 1.0 2.0 3.0) (make 4.0 5.0 6.0 7.0))))
-  (test (format #f "~svector-sub (v-s)" tag)
-        (make -4.0 -3.0 -2.0 -1.0)
-        (lambda () (sub (make 0.0 1.0 2.0 3.0) 4.0)))
-  (test (format #f "~svector-mul (v*v)" tag)
-        (make 0.0 5.0 12.0 21.0)
-        (lambda () (mul (make 0.0 1.0 2.0 3.0) (make 4.0 5.0 6.0 7.0))))
-  (test (format #f "~svector-mul (v*s)" tag)
-        (make 0.0 5.0 10.0 15.0)
-        (lambda () (mul (make 0.0 1.0 2.0 3.0) 5.0)))
-  (test (format #f "~svector-div (v/v)" tag)
-        (make 0.0 0.5 0.5 0.375)
-        (lambda () (div (make 0.0 1.0 2.0 3.0) (make 1.0 2.0 4.0 8.0))))
-  (test (format #f "~svector-div (v/v)" tag)
-        (make 0.0 0.5 1.0 1.5)
-        (lambda () (div (make 0.0 1.0 2.0 3.0) 2.0)))
+  (test* (format #f "~svector-add (v+v)" tag)
+         (make 4.0 6.0 8.0 10.0)
+         (add (make 0.0 1.0 2.0 3.0) (make 4.0 5.0 6.0 7.0)))
+  (test* (format #f "~svector-add (v+s)" tag)
+         (make 4.0 5.0 6.0 7.0)
+         (add (make 0.0 1.0 2.0 3.0) 4.0))
+  (test* (format #f "~svector-sub (v-v)" tag)
+         (make -4.0 -4.0 -4.0 -4.0)
+         (sub (make 0.0 1.0 2.0 3.0) (make 4.0 5.0 6.0 7.0)))
+  (test* (format #f "~svector-sub (v-s)" tag)
+         (make -4.0 -3.0 -2.0 -1.0)
+         (sub (make 0.0 1.0 2.0 3.0) 4.0))
+  (test* (format #f "~svector-mul (v*v)" tag)
+         (make 0.0 5.0 12.0 21.0)
+         (mul (make 0.0 1.0 2.0 3.0) (make 4.0 5.0 6.0 7.0)))
+  (test* (format #f "~svector-mul (v*s)" tag)
+         (make 0.0 5.0 10.0 15.0)
+         (mul (make 0.0 1.0 2.0 3.0) 5.0))
+  (test* (format #f "~svector-div (v/v)" tag)
+         (make 0.0 0.5 0.5 0.375)
+         (div (make 0.0 1.0 2.0 3.0) (make 1.0 2.0 4.0 8.0)))
+  (test* (format #f "~svector-div (v/v)" tag)
+         (make 0.0 0.5 1.0 1.5)
+         (div (make 0.0 1.0 2.0 3.0) 2.0))
   )
 
 (flonum-arith-test-generate f32)
@@ -637,15 +600,15 @@
 
 (define (bit-test tag v0 v1 s0 s1 ->list list-> and ior xor)
   (define (tests opname op logop)
-    (test (format #f "~svector-~s ~s ~s" tag opname v0 v1)
-          (list-> (map logop (->list v0) (->list v1)))
-          (lambda () (op v0 v1)))
-    (test (format #f "~svector-~s ~s ~s" tag opname v0 s0)
-          (list-> (map (pa$ logop s0) (->list v0)))
-          (lambda () (op v0 s0)))
-    (test (format #f "~svector-~s ~s ~s" tag opname v0 s1)
-          (list-> (map (pa$ logop s1) (->list v0)))
-          (lambda () (op v0 s1))))
+    (test* (format #f "~svector-~s ~s ~s" tag opname v0 v1)
+           (list-> (map logop (->list v0) (->list v1)))
+           (op v0 v1))
+    (test* (format #f "~svector-~s ~s ~s" tag opname v0 s0)
+           (list-> (map (pa$ logop s0) (->list v0)))
+           (op v0 s0))
+    (test* (format #f "~svector-~s ~s ~s" tag opname v0 s1)
+           (list-> (map (pa$ logop s1) (->list v0)))
+           (op v0 s1)))
   (tests 'and and logand)
   (tests 'ior ior logior)
   (tests 'xor xor logxor))
@@ -690,16 +653,16 @@
                    #x96966969)
 (bit-test-generate s64
                    #s64(#x0fffffffffffffff #x7070707007070707
-                        #x-0fffffffffffffff #x-7070707007070707)
+                                           #x-0fffffffffffffff #x-7070707007070707)
                    #s64(#x3c3c3c3cc3c3c3c3 #x-43c3c3c33c3c3c3c
-                        #x43c3c3c3c3c3c3c3 #x-3c3c3c3c3c3c3c3c)
+                                           #x43c3c3c3c3c3c3c3 #x-3c3c3c3c3c3c3c3c)
                    #x55aa55aa55aa55aa
                    #x-55aa55aa55aa55aa)
 (bit-test-generate u64
                    #u64(#x0fffffffffffffff #x70707070f0f0f0f0
-                        #xff00ff00ff00ff00 #xc0c0c0c003030303)
+                                           #xff00ff00ff00ff00 #xc0c0c0c003030303)
                    #u64(#x3c3c3c3c3c3c3c3c #xc3c3c3c3c3c3c3c3
-                        #x55aa55aa55aa55aa #xaa55aa55aa55aa55)
+                                           #x55aa55aa55aa55aa #xaa55aa55aa55aa55)
                    #x55aa55aa5a5a5a5a
                    #x9696696988778877)
 
@@ -712,15 +675,15 @@
                      0
                      (coerce-to <list> v0)
                      (coerce-to <list> v1))
-    (test (format #f "~svector-dot(~s, ~s)" tag v0 v1)
-          result
-          (lambda () (dot v0 v1)))
-    (test (format #f "~svector-dot(~s, ~s)" tag v0 (coerce-to <list> v1))
-          result
-          (lambda () (dot v0 (coerce-to <list> v1))))
-    (test (format #f "~svector-dot(~s, ~s)" tag v0 (coerce-to <vector> v1))
-          result
-          (lambda () (dot v0 (coerce-to <vector> v1))))
+    (test* (format #f "~svector-dot(~s, ~s)" tag v0 v1)
+           result
+           (dot v0 v1))
+    (test* (format #f "~svector-dot(~s, ~s)" tag v0 (coerce-to <list> v1))
+           result
+           (dot v0 (coerce-to <list> v1)))
+    (test* (format #f "~svector-dot(~s, ~s)" tag v0 (coerce-to <vector> v1))
+           result
+           (dot v0 (coerce-to <vector> v1)))
     ))
 
 (define-macro (dotprod-test-generate tag v0 v1)
@@ -1017,28 +980,29 @@
                        (lambda (i)
                          (clamp-min i (clamp-max i (tagvector-ref v i))))
                        (iota (tagvector-length v)))
-    (test (format #f "~svector-clamp" tag)
-          result
-          (lambda () (clamp v minv maxv)))
+    (test* (format #f "~svector-clamp" tag)
+           result
+           (clamp v minv maxv))
     (when (or (tagvector? minv) (tagvector? maxv))
-      (test (format #f "~svector-clamp (list)" tag)
-            result
-            (lambda () (clamp v
-                              (if (tagvector? minv)
-                                  (coerce-to <list> minv)
-                                  minv)
-                              (if (tagvector? maxv)
-                                  (coerce-to <list> maxv)
-                                  maxv))))
-      (test (format #f "~svector-clamp (vector)" tag)
-            result
-            (lambda () (clamp v
-                              (if (tagvector? minv)
-                                  (coerce-to <vector> minv)
-                                  minv)
-                              (if (tagvector? maxv)
-                                  (coerce-to <vector> maxv)
-                                  maxv)))))
+      (test* (format #f "~svector-clamp (list)" tag)
+             result
+             (clamp v
+                    (if (tagvector? minv)
+                        (coerce-to <list> minv)
+                        minv)
+                    (if (tagvector? maxv)
+                        (coerce-to <list> maxv)
+                        maxv)))
+      (test* (format #f "~svector-clamp (vector)" tag)
+             result
+             (clamp v
+                    (if (tagvector? minv)
+                        (coerce-to <vector> minv)
+                        minv)
+                    (if (tagvector? maxv)
+                        (coerce-to <vector> maxv)
+                        maxv)))
+      )
     ))
 
 (define-macro (clamp-test-generate tag v minv maxv)
@@ -1168,125 +1132,93 @@
 ;;-------------------------------------------------------------------
 (test-section "string <-> uvector")
 
-(test "string->u8vector" '#u8(64 65 66 67 68)
-      (lambda () (string->u8vector "@ABCD")))
-(test "string->u8vector (start)" '#u8(66 67 68)
-      (lambda () (string->u8vector "@ABCD" 2)))
-(test "string->u8vector (start, end)" '#u8(65 66 67)
-      (lambda () (string->u8vector "@ABCD" 1 4)))
-(test "string->u8vector (start, end)" '#u8(64 65 66 67 68)
-      (lambda () (string->u8vector "@ABCD" 0 5)))
-(test "string->u8vector (OOB)" 'error
-      (lambda ()
-        (with-error-handler
-            (lambda (e) 'error)
-          (lambda ()
-            (string->u8vector "abcde" 2 6)))))
+(test* "string->u8vector" '#u8(64 65 66 67 68)
+       (string->u8vector "@ABCD"))
+(test* "string->u8vector (start)" '#u8(66 67 68)
+       (string->u8vector "@ABCD" 2))
+(test* "string->u8vector (start, end)" '#u8(65 66 67)
+       (string->u8vector "@ABCD" 1 4))
+(test* "string->u8vector (start, end)" '#u8(64 65 66 67 68)
+       (string->u8vector "@ABCD" 0 5))
+(test* "string->u8vector (OOB)" *test-error*
+       (string->u8vector "abcde" 2 6))
 
-(test "u8vector->string" "@ABCD"
-      (lambda () (u8vector->string '#u8(64 65 66 67 68))))
-(test "u8vector->string (start)" "ABCD"
-      (lambda () (u8vector->string '#u8(64 65 66 67 68) 1)))
-(test "u8vector->string (start, end)" "BC"
-      (lambda () (u8vector->string '#u8(64 65 66 67 68) 2 4)))
-(test "u8vector->string (start, end)" "@ABCD"
-      (lambda () (u8vector->string '#u8(64 65 66 67 68) 0 5)))
-(test "u8vector->string (OOB)" 'error
-      (lambda ()
-        (with-error-handler
-            (lambda (e) 'error)
-          (lambda ()
-            (u8vector->string '#u8(64 65 66 67 68) 0 8)))))
+(test* "u8vector->string" "@ABCD"
+       (u8vector->string '#u8(64 65 66 67 68)))
+(test* "u8vector->string (start)" "ABCD"
+       (u8vector->string '#u8(64 65 66 67 68) 1))
+(test* "u8vector->string (start, end)" "BC"
+       (u8vector->string '#u8(64 65 66 67 68) 2 4))
+(test* "u8vector->string (start, end)" "@ABCD"
+       (u8vector->string '#u8(64 65 66 67 68) 0 5))
+(test* "u8vector->string (OOB)" *test-error*
+       (u8vector->string '#u8(64 65 66 67 68) 0 8))
 
-(test "string->s8vector" '#s8(64 65 66 67 68)
-      (lambda () (string->s8vector "@ABCD")))
-(test "string->s8vector (start)" '#s8(66 67 68)
-      (lambda () (string->s8vector "@ABCD" 2)))
-(test "string->s8vector (start, end)" '#s8(65 66 67)
-      (lambda () (string->s8vector "@ABCD" 1 4)))
-(test "string->s8vector (start, end)" '#s8(64 65 66 67 68)
-      (lambda () (string->s8vector "@ABCD" 0 5)))
-(test "string->s8vector (OOB)" 'error
-      (lambda ()
-        (with-error-handler
-            (lambda (e) 'error)
-          (lambda ()
-            (string->s8vector "abcde" 2 6)))))
+(test* "string->s8vector" '#s8(64 65 66 67 68)
+       (string->s8vector "@ABCD"))
+(test* "string->s8vector (start)" '#s8(66 67 68)
+       (string->s8vector "@ABCD" 2))
+(test* "string->s8vector (start, end)" '#s8(65 66 67)
+       (string->s8vector "@ABCD" 1 4))
+(test* "string->s8vector (start, end)" '#s8(64 65 66 67 68)
+       (string->s8vector "@ABCD" 0 5))
+(test* "string->s8vector (OOB)" *test-error*
+       (string->s8vector "abcde" 2 6))
 
-(test "s8vector->string" "@ABCD"
-      (lambda () (s8vector->string '#s8(64 65 66 67 68))))
-(test "s8vector->string (start)" "ABCD"
-      (lambda () (s8vector->string '#s8(64 65 66 67 68) 1)))
-(test "s8vector->string (start, end)" "BC"
-      (lambda () (s8vector->string '#s8(64 65 66 67 68) 2 4)))
-(test "s8vector->string (start, end)" "@ABCD"
-      (lambda () (s8vector->string '#s8(64 65 66 67 68) 0 5)))
-(test "s8vector->string (OOB)" 'error
-      (lambda ()
-        (with-error-handler
-            (lambda (e) 'error)
-          (lambda ()
-            (s8vector->string '#s8(64 65 66 67 68) 0 8)))))
+(test* "s8vector->string" "@ABCD"
+       (s8vector->string '#s8(64 65 66 67 68)))
+(test* "s8vector->string (start)" "ABCD"
+       (s8vector->string '#s8(64 65 66 67 68) 1))
+(test* "s8vector->string (start, end)" "BC"
+       (s8vector->string '#s8(64 65 66 67 68) 2 4))
+(test* "s8vector->string (start, end)" "@ABCD"
+       (s8vector->string '#s8(64 65 66 67 68) 0 5))
+(test* "s8vector->string (OOB)" *test-error*
+       (s8vector->string '#s8(64 65 66 67 68) 0 8))
 
-(test "string->u32vector" '#u32(64 65 66 67 68)
-      (lambda () (string->u32vector "@ABCD")))
-(test "string->u32vector (start)" '#u32(66 67 68)
-      (lambda () (string->u32vector "@ABCD" 2)))
-(test "string->u32vector (start, end)" '#u32(65 66 67)
-      (lambda () (string->u32vector "@ABCD" 1 4)))
-(test "string->u32vector (start, end)" '#u32(64 65 66 67 68)
-      (lambda () (string->u32vector "@ABCD" 0 5)))
-(test "string->u32vector (OOB)" 'error
-      (lambda ()
-        (with-error-handler
-            (lambda (e) 'error)
-          (lambda ()
-            (string->u32vector "abcde" 2 6)))))
+(test* "string->u32vector" '#u32(64 65 66 67 68)
+       (string->u32vector "@ABCD"))
+(test* "string->u32vector (start)" '#u32(66 67 68)
+       (string->u32vector "@ABCD" 2))
+(test* "string->u32vector (start, end)" '#u32(65 66 67)
+       (string->u32vector "@ABCD" 1 4))
+(test* "string->u32vector (start, end)" '#u32(64 65 66 67 68)
+       (string->u32vector "@ABCD" 0 5))
+(test* "string->u32vector (OOB)" *test-error*
+       (string->u32vector "abcde" 2 6))
 
-(test "u32vector->string" "@ABCD"
-      (lambda () (u32vector->string '#u32(64 65 66 67 68))))
-(test "u32vector->string (start)" "ABCD"
-      (lambda () (u32vector->string '#u32(64 65 66 67 68) 1)))
-(test "u32vector->string (start, end)" "BC"
-      (lambda () (u32vector->string '#u32(64 65 66 67 68) 2 4)))
-(test "u32vector->string (start, end)" "@ABCD"
-      (lambda () (u32vector->string '#u32(64 65 66 67 68) 0 5)))
-(test "u32vector->string (OOB)" 'error
-      (lambda ()
-        (with-error-handler
-            (lambda (e) 'error)
-          (lambda ()
-            (u32vector->string '#u32(64 65 66 67 68) 0 8)))))
+(test* "u32vector->string" "@ABCD"
+       (u32vector->string '#u32(64 65 66 67 68)))
+(test* "u32vector->string (start)" "ABCD"
+       (u32vector->string '#u32(64 65 66 67 68) 1))
+(test* "u32vector->string (start, end)" "BC"
+       (u32vector->string '#u32(64 65 66 67 68) 2 4))
+(test* "u32vector->string (start, end)" "@ABCD"
+       (u32vector->string '#u32(64 65 66 67 68) 0 5))
+(test* "u32vector->string (OOB)" *test-error*
+       (u32vector->string '#u32(64 65 66 67 68) 0 8))
 
-(test "string->s32vector" '#s32(64 65 66 67 68)
-      (lambda () (string->s32vector "@ABCD")))
-(test "string->s32vector (start)" '#s32(66 67 68)
-      (lambda () (string->s32vector "@ABCD" 2)))
-(test "string->s32vector (start, end)" '#s32(65 66 67)
-      (lambda () (string->s32vector "@ABCD" 1 4)))
-(test "string->s32vector (start, end)" '#s32(64 65 66 67 68)
-      (lambda () (string->s32vector "@ABCD" 0 5)))
-(test "string->s32vector (OOB)" 'error
-      (lambda ()
-        (with-error-handler
-            (lambda (e) 'error)
-          (lambda ()
-            (string->s32vector "abcde" 2 6)))))
+(test* "string->s32vector" '#s32(64 65 66 67 68)
+       (string->s32vector "@ABCD"))
+(test* "string->s32vector (start)" '#s32(66 67 68)
+       (string->s32vector "@ABCD" 2))
+(test* "string->s32vector (start, end)" '#s32(65 66 67)
+       (string->s32vector "@ABCD" 1 4))
+(test* "string->s32vector (start, end)" '#s32(64 65 66 67 68)
+       (string->s32vector "@ABCD" 0 5))
+(test* "string->s32vector (OOB)" *test-error*
+       (string->s32vector "abcde" 2 6))
 
-(test "s32vector->string" "@ABCD"
-      (lambda () (s32vector->string '#s32(64 65 66 67 68))))
-(test "s32vector->string (start)" "ABCD"
-      (lambda () (s32vector->string '#s32(64 65 66 67 68) 1)))
-(test "s32vector->string (start, end)" "BC"
-      (lambda () (s32vector->string '#s32(64 65 66 67 68) 2 4)))
-(test "s32vector->string (start, end)" "@ABCD"
-      (lambda () (s32vector->string '#s32(64 65 66 67 68) 0 5)))
-(test "s32vector->string (OOB)" 'error
-      (lambda ()
-        (with-error-handler
-            (lambda (e) 'error)
-          (lambda ()
-            (s32vector->string '#s32(64 65 66 67 68) 0 8)))))
+(test* "s32vector->string" "@ABCD"
+       (s32vector->string '#s32(64 65 66 67 68)))
+(test* "s32vector->string (start)" "ABCD"
+       (s32vector->string '#s32(64 65 66 67 68) 1))
+(test* "s32vector->string (start, end)" "BC"
+       (s32vector->string '#s32(64 65 66 67 68) 2 4))
+(test* "s32vector->string (start, end)" "@ABCD"
+       (s32vector->string '#s32(64 65 66 67 68) 0 5))
+(test* "s32vector->string (OOB)" *test-error*
+       (s32vector->string '#s32(64 65 66 67 68) 0 8))
 
 ;; test for multibyte chars
 (case (gauche-character-encoding)
@@ -1298,81 +1230,71 @@
 ;;-------------------------------------------------------------------
 (test-section "uvector alias")
 
-(test "alias u8 u8" #u8(0 1 2 3)
-      (lambda ()
-        (let* ((src (u8vector 0 1 2 0))
-               (dst (uvector-alias <u8vector> src)))
-          (u8vector-set! src 3 3)
-          dst)))
-(test "alias u8 u8 (range)" #u8(1 2)
-      (lambda ()
-        (let* ((src (u8vector 0 1 0 1))
-               (dst (uvector-alias <u8vector> src 1 3)))
-          (u8vector-set! src 2 2)
-          dst)))
-(test "alias s8 u8" #s8(1 -1)
-      (lambda ()
-        (let* ((src (u8vector 0 0 0 0))
-               (dst (uvector-alias <s8vector> src 1 3)))
-          (s8vector-set! dst 0 1)
-          (u8vector-set! src 2 255)
-          dst)))
+(test* "alias u8 u8" #u8(0 1 2 3)
+       (let* ((src (u8vector 0 1 2 0))
+              (dst (uvector-alias <u8vector> src)))
+         (u8vector-set! src 3 3)
+         dst))
+(test* "alias u8 u8 (range)" #u8(1 2)
+       (let* ((src (u8vector 0 1 0 1))
+              (dst (uvector-alias <u8vector> src 1 3)))
+         (u8vector-set! src 2 2)
+         dst))
+(test* "alias s8 u8" #s8(1 -1)
+       (let* ((src (u8vector 0 0 0 0))
+              (dst (uvector-alias <s8vector> src 1 3)))
+         (s8vector-set! dst 0 1)
+         (u8vector-set! src 2 255)
+         dst))
 ;; the following test cases avoid endian complexity
-(test "alias s8 u16" '(#s8(#x11 #x11 #x22 #x22) #x1111)
-      (lambda ()
-        (let* ((src (u16vector 0 0 0))
-               (dst (uvector-alias <s8vector> src 1)))
-          (u16vector-set! src 2 #x2222)
-          (s8vector-set! dst 0 #x11)
-          (s8vector-set! dst 1 #x11)
-          (list dst (u16vector-ref src 1)))))
-(test "alias u32 u8" #u32(#xaaaaaaaa #xbbbbbbbb)
-      (lambda ()
-        (let* ((src (make-u8vector 8 #xaa))
-               (ali (uvector-alias <u8vector> src 4))
-               (dst (uvector-alias <u32vector> src)))
-          (u8vector-fill! ali #xbb)
-          dst)))
+(test* "alias s8 u16" '(#s8(#x11 #x11 #x22 #x22) #x1111)
+       (let* ((src (u16vector 0 0 0))
+              (dst (uvector-alias <s8vector> src 1)))
+         (u16vector-set! src 2 #x2222)
+         (s8vector-set! dst 0 #x11)
+         (s8vector-set! dst 1 #x11)
+         (list dst (u16vector-ref src 1))))
+(test* "alias u32 u8" #u32(#xaaaaaaaa #xbbbbbbbb)
+       (let* ((src (make-u8vector 8 #xaa))
+              (ali (uvector-alias <u8vector> src 4))
+              (dst (uvector-alias <u32vector> src)))
+         (u8vector-fill! ali #xbb)
+         dst))
 
 ;; tricky, but should work on IEEE754 compiant floats
-(test "alias u32 f32" #u32(0)
-      (lambda () (uvector-alias <u32vector> #f32(0.0))))
-(test "alias u32 f64" #u32(0 0)
-      (lambda () (uvector-alias <u32vector> #f64(0.0))))
-(test "alias f64 u32" #f64(0.0)
-      (lambda () (uvector-alias <f64vector> #u32(1 1 0 0) 2)))
-(test "alias u64 f64" #u64(0)
-      (lambda () (uvector-alias <u64vector> #f64(0.0))))
+(test* "alias u32 f32" #u32(0)
+       (uvector-alias <u32vector> #f32(0.0)))
+(test* "alias u32 f64" #u32(0 0)
+       (uvector-alias <u32vector> #f64(0.0)))
+(test* "alias f64 u32" #f64(0.0)
+       (uvector-alias <f64vector> #u32(1 1 0 0) 2))
+(test* "alias u64 f64" #u64(0)
+       (uvector-alias <u64vector> #f64(0.0)))
 
-(test "alias turn-around" #f32(1.5)
-      (lambda ()
-        (uvector-alias <f32vector>
-                       (uvector-alias <u8vector> #f32(1.0 1.5 2.0))
-                       4 8)))
+(test* "alias turn-around" #f32(1.5)
+       (uvector-alias <f32vector>
+                      (uvector-alias <u8vector> #f32(1.0 1.5 2.0))
+                      4 8))
 
 ;; test alignment check
-(test-error "alias u32 u8 (alignment violation)" 
-            (lambda ()
-              (let* ((src (make-u8vector 9))
-                     (dst (uvector-alias <u32vector>)))
-                dst)))
-(test-error "alias u32 u8 (alignment violation)"
-            (lambda ()
-              (let* ((src (make-u8vector 32))
-                     (dst (uvector-alias <u32vector> 2)))
-                dst)))
-(test-error "alias u32 u8 (alignment violation)"
-            (lambda ()
-              (let* ((src (make-u8vector 32))
-                     (dst (uvector-alias <u32vector> 4 5)))
-                dst)))
+(test* "alias u32 u8 (alignment violation)" *test-error*
+       (let* ((src (make-u8vector 9))
+              (dst (uvector-alias <u32vector>)))
+         dst))
+(test* "alias u32 u8 (alignment violation)" *test-error*
+       (let* ((src (make-u8vector 32))
+              (dst (uvector-alias <u32vector> 2)))
+         dst))
+(test* "alias u32 u8 (alignment violation)" *test-error*
+       (let* ((src (make-u8vector 32))
+              (dst (uvector-alias <u32vector> 4 5)))
+         dst))
 
 ;; test if immutable property propagates
-(test-error "immutability violation"
-            (lambda ()
-              (let* ((src '#u8(0 1 2 3))
-                     (dst (uvector-alias <u8vector> src)))
-                (u8vector-set! dst 0 1))))
+(test* "immutability violation" *test-error*
+       (let* ((src '#u8(0 1 2 3))
+              (dst (uvector-alias <u8vector> src)))
+         (u8vector-set! dst 0 1)))
 
 ;;-------------------------------------------------------------------
 ; (use gauche.array)
@@ -1381,215 +1303,194 @@
 
 (test-section "simple array op")
 
-(test "shape" #t
-      (lambda ()
-        (and (shape)
-             (shape -1 -1)
-             (shape -1 0)
-             (shape -1 1)
-             (shape 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8)
-             #t)))
+(test* "shape" #t
+       (and (shape)
+            (shape -1 -1)
+            (shape -1 0)
+            (shape -1 1)
+            (shape 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8)
+            #t))
 
-(test "shape" 'error
-      (lambda ()
-        (with-error-handler (lambda (e) 'error)
-          (lambda () (shape 1)))))
-(test "shape" 'error
-      (lambda ()
-        (with-error-handler (lambda (e) 'error)
-          (lambda () (shape 1 2 3)))))
-(test "shape" 'error
-      (lambda ()
-        (with-error-handler (lambda (e) 'error)
-          (lambda () (shape 3 1)))))
+(test* "shape" *test-error* (shape 1))
+(test* "shape" *test-error* (shape 1 2 3))
+(test* "shape" *test-error* (shape 3 1))
 
-(test "make-array" #t
-      (lambda ()
-        (and (make-array (shape))
-             (make-array (shape) *)
-             (make-array (shape -1 -1))
-             (make-array (shape -1 -1) *)
-             (make-array (shape -1 1))
-             (make-array (shape 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4) *)
-             #t)))
+(test* "make-array" #t
+       (and (make-array (shape))
+            (make-array (shape) *)
+            (make-array (shape -1 -1))
+            (make-array (shape -1 -1) *)
+            (make-array (shape -1 1))
+            (make-array (shape 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4) *)
+            #t))
 
-(test "array" #t
-      (lambda ()
-        (and (array (shape) *)
-             (array (shape -1 -1))
-             (array (shape -1 1) * *)
-             (array (shape 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8) *)
-             #t)))
+(test* "array" #t
+       (and (array (shape) *)
+            (array (shape -1 -1))
+            (array (shape -1 1) * *)
+            (array (shape 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8) *)
+            #t))
 
 (test-section "array-rank")
-(test "array-rank (shape)" 2
-      (lambda () (array-rank (shape))))
-(test "array-rank (shape)" 2
-      (lambda () (array-rank (shape -1 -1))))
-(test "array-rank (shape)" 2
-      (lambda () (array-rank (shape 1 2 3 4 5 6 7 8))))
+(test* "array-rank (shape)" 2
+       (array-rank (shape)))
+(test* "array-rank (shape)" 2
+       (array-rank (shape -1 -1)))
+(test* "array-rank (shape)" 2
+       (array-rank (shape 1 2 3 4 5 6 7 8)))
 
-(test "array-rank (make-array)" 0
-      (lambda () (array-rank (make-array (shape)))))
-(test "array-rank (make-array)" 1
-      (lambda () (array-rank (make-array (shape -1 -1)))))
-(test "array-rank (make-array)" 1
-      (lambda () (array-rank (make-array (shape -1 1)))))
-(test "array-rank (make-array)" 4
-      (lambda () (array-rank (make-array (shape 1 2 3 4 5 6 7 8)))))
+(test* "array-rank (make-array)" 0
+       (array-rank (make-array (shape))))
+(test* "array-rank (make-array)" 1
+       (array-rank (make-array (shape -1 -1))))
+(test* "array-rank (make-array)" 1
+       (array-rank (make-array (shape -1 1))))
+(test* "array-rank (make-array)" 4
+       (array-rank (make-array (shape 1 2 3 4 5 6 7 8))))
 
-(test "array-rank (array)" 0
-      (lambda () (array-rank (array (shape) *))))
-(test "array-rank (array)" 1
-      (lambda () (array-rank (array (shape -1 -1)))))
-(test "array-rank (array)" 1
-      (lambda () (array-rank (array (shape -1 1) * *))))
-(test "array-rank (array)" 4
-      (lambda () (array-rank (array (shape 1 2 3 4 5 6 7 8) *))))
+(test* "array-rank (array)" 0
+       (array-rank (array (shape) *)))
+(test* "array-rank (array)" 1
+       (array-rank (array (shape -1 -1))))
+(test* "array-rank (array)" 1
+       (array-rank (array (shape -1 1) * *)))
+(test* "array-rank (array)" 4
+       (array-rank (array (shape 1 2 3 4 5 6 7 8) *)))
 
 (test-section "array-start and array-end")
-(test "array-start (shape)" 0
-      (lambda () (array-start (shape -1 -1) 0)))
-(test "array-start (shape)" 0
-      (lambda () (array-start (shape -1 -1) 1)))
-(test "array-start (shape)" 0
-      (lambda () (array-start (shape -1 1) 0)))
-(test "array-start (shape)" 0
-      (lambda () (array-start (shape -1 1) 1)))
-(test "array-start (shape)" 0
-      (lambda () (array-start (shape 1 2 3 4 5 6 7 8) 0)))
-(test "array-start (shape)" 0
-      (lambda () (array-start (shape 1 2 3 4 5 6 7 8) 1)))
+(test* "array-start (shape)" 0
+       (array-start (shape -1 -1) 0))
+(test* "array-start (shape)" 0
+       (array-start (shape -1 -1) 1))
+(test* "array-start (shape)" 0
+       (array-start (shape -1 1) 0))
+(test* "array-start (shape)" 0
+       (array-start (shape -1 1) 1))
+(test* "array-start (shape)" 0
+       (array-start (shape 1 2 3 4 5 6 7 8) 0))
+(test* "array-start (shape)" 0
+       (array-start (shape 1 2 3 4 5 6 7 8) 1))
 
-(test "array-end (shape)" 1
-      (lambda () (array-end (shape -1 -1) 0)))
-(test "array-end (shape)" 2
-      (lambda () (array-end (shape -1 -1) 1)))
-(test "array-end (shape)" 1
-      (lambda () (array-end (shape -1 1) 0)))
-(test "array-end (shape)" 2
-      (lambda () (array-end (shape -1 1) 1)))
-(test "array-end (shape)" 4
-      (lambda () (array-end (shape 1 2 3 4 5 6 7 8) 0)))
-(test "array-end (shape)" 2
-      (lambda () (array-end (shape 1 2 3 4 5 6 7 8) 1)))
+(test* "array-end (shape)" 1
+       (array-end (shape -1 -1) 0))
+(test* "array-end (shape)" 2
+       (array-end (shape -1 -1) 1))
+(test* "array-end (shape)" 1
+       (array-end (shape -1 1) 0))
+(test* "array-end (shape)" 2
+       (array-end (shape -1 1) 1))
+(test* "array-end (shape)" 4
+       (array-end (shape 1 2 3 4 5 6 7 8) 0))
+(test* "array-end (shape)" 2
+       (array-end (shape 1 2 3 4 5 6 7 8) 1))
 
-(test "array-start (make-array)" -1
-      (lambda () (array-start (make-array (shape -1 -1)) 0)))
-(test "array-start (make-array)" -1
-      (lambda () (array-start (make-array (shape -1 1)) 0)))
-(test "array-start (make-array)" '(1 3 5 7)
-      (lambda () (map (pa$ array-start (make-array (shape 1 2 3 4 5 6 7 8)))
-                      '(0 1 2 3))))
+(test* "array-start (make-array)" -1
+       (array-start (make-array (shape -1 -1)) 0))
+(test* "array-start (make-array)" -1
+       (array-start (make-array (shape -1 1)) 0))
+(test* "array-start (make-array)" '(1 3 5 7)
+       (map (pa$ array-start (make-array (shape 1 2 3 4 5 6 7 8)))
+            '(0 1 2 3)))
 
-(test "array-end (make-array)" -1
-      (lambda () (array-end (make-array (shape -1 -1)) 0)))
-(test "array-end (make-array)" 1
-      (lambda () (array-end (make-array (shape -1 1)) 0)))
-(test "array-end (make-array)" '(2 4 6 8)
-      (lambda () (map (pa$ array-end (make-array (shape 1 2 3 4 5 6 7 8)))
-                      '(0 1 2 3))))
+(test* "array-end (make-array)" -1
+       (array-end (make-array (shape -1 -1)) 0))
+(test* "array-end (make-array)" 1
+       (array-end (make-array (shape -1 1)) 0))
+(test* "array-end (make-array)" '(2 4 6 8)
+       (map (pa$ array-end (make-array (shape 1 2 3 4 5 6 7 8)))
+            '(0 1 2 3)))
 
-(test "array-start (array)" -1
-      (lambda () (array-start (array (shape -1 -1)) 0)))
-(test "array-start (array)" -1
-      (lambda () (array-start (array (shape -1 1) * *) 0)))
-(test "array-start (array)" '(1 3 5 7)
-      (lambda () (map (pa$ array-start (array (shape 1 2 3 4 5 6 7 8) *))
-                      '(0 1 2 3))))
-                                                          
-(test "array-end (array)" -1
-      (lambda () (array-end (array (shape -1 -1)) 0)))
-(test "array-end (array)" 1
-      (lambda () (array-end (array (shape -1 1) * *) 0)))
-(test "array-end (array)" '(2 4 6 8)
-      (lambda () (map (pa$ array-end (array (shape 1 2 3 4 5 6 7 8) *))
-                      '(0 1 2 3))))
-                                                          
+(test* "array-start (array)" -1
+       (array-start (array (shape -1 -1)) 0))
+(test* "array-start (array)" -1
+       (array-start (array (shape -1 1) * *) 0))
+(test* "array-start (array)" '(1 3 5 7)
+       (map (pa$ array-start (array (shape 1 2 3 4 5 6 7 8) *))
+            '(0 1 2 3)))
+
+(test* "array-end (array)" -1
+       (array-end (array (shape -1 -1)) 0))
+(test* "array-end (array)" 1
+       (array-end (array (shape -1 1) * *) 0))
+(test* "array-end (array)" '(2 4 6 8)
+       (map (pa$ array-end (array (shape 1 2 3 4 5 6 7 8) *))
+            '(0 1 2 3)))
+
 (test-section "array-ref")
-(test "array-ref (list)" 'a
-      (lambda () (array-ref (make-array (shape) 'a))))
-(test "array-ref (list)" 'b
-      (lambda () (array-ref (make-array (shape -1 1) 'b) -1)))
-(test "array-ref (list)" 'c
-      (lambda () (array-ref (make-array (shape -1 1) 'c) 0)))
-(test "array-ref (list)" 'd
-      (lambda () (array-ref (make-array (shape 1 2 3 4 5 6 7 8) 'd) 1 3 5 7)))
+(test* "array-ref (list)" 'a
+       (array-ref (make-array (shape) 'a)))
+(test* "array-ref (list)" 'b
+       (array-ref (make-array (shape -1 1) 'b) -1))
+(test* "array-ref (list)" 'c
+       (array-ref (make-array (shape -1 1) 'c) 0))
+(test* "array-ref (list)" 'd
+       (array-ref (make-array (shape 1 2 3 4 5 6 7 8) 'd) 1 3 5 7))
 
-(test "array-ref (vector)" 'a
-      (lambda () (array-ref (make-array (shape) 'a) '#())))
-(test "array-ref (vector)" 'b
-      (lambda () (array-ref (make-array (shape -1 1) 'b) '#(-1))))
-(test "array-ref (vector)" 'c
-      (lambda () (array-ref (make-array (shape -1 1) 'c) '#(0))))
-(test "array-ref (vector)" 'd
-      (lambda () (array-ref (make-array (shape 1 2 3 4 5 6 7 8) 'd)
-                            '#(1 3 5 7))))
+(test* "array-ref (vector)" 'a
+       (array-ref (make-array (shape) 'a) '#()))
+(test* "array-ref (vector)" 'b
+       (array-ref (make-array (shape -1 1) 'b) '#(-1)))
+(test* "array-ref (vector)" 'c
+       (array-ref (make-array (shape -1 1) 'c) '#(0)))
+(test* "array-ref (vector)" 'd
+       (array-ref (make-array (shape 1 2 3 4 5 6 7 8) 'd)
+                  '#(1 3 5 7)))
 
-(test "array-ref (array)" 'a
-      (lambda () (array-ref (make-array (shape) 'a)
-                            (array (shape 0 0)))))
-(test "array-ref (array)" 'b
-      (lambda () (array-ref (make-array (shape -1 1) 'b)
-                            (array (shape 0 1) -1))))
-(test "array-ref (array)" 'c
-      (lambda () (array-ref (make-array (shape -1 1) 'c)
-                            (array (shape 0 1) 0))))
-(test "array-ref (array)" 'd
-      (lambda () (array-ref (make-array (shape 1 2 3 4 5 6 7 8) 'd)
-                            (array (shape 0 4) 1 3 5 7))))
+(test* "array-ref (array)" 'a
+       (array-ref (make-array (shape) 'a)
+                  (array (shape 0 0))))
+(test* "array-ref (array)" 'b
+       (array-ref (make-array (shape -1 1) 'b)
+                  (array (shape 0 1) -1)))
+(test* "array-ref (array)" 'c
+       (array-ref (make-array (shape -1 1) 'c)
+                  (array (shape 0 1) 0)))
+(test* "array-ref (array)" 'd
+       (array-ref (make-array (shape 1 2 3 4 5 6 7 8) 'd)
+                  (array (shape 0 4) 1 3 5 7)))
 
 (test-section "array-set!")
-(test "array-set! (list)" 'a
-      (lambda ()
-        (let ((arr (make-array (shape) 'o)))
-          (array-set! arr 'a)
-          (array-ref arr))))
-(test "array-set! (list)" '(b c)
-      (lambda ()
-        (let ((arr (make-array (shape -1 1) 'o)))
-          (array-set! arr -1 'b)
-          (array-set! arr 0 'c)
-          (list (array-ref arr -1) (array-ref arr 0)))))
-(test "array-set! (list)" 'd
-      (lambda ()
-        (let ((arr (make-array (shape 1 2 3 4 5 6 7 8) 'o)))
-          (array-set! arr 1 3 5 7 'd)
-          (array-ref arr 1 3 5 7))))
+(test* "array-set! (list)" 'a
+       (let ((arr (make-array (shape) 'o)))
+         (array-set! arr 'a)
+         (array-ref arr)))
+(test* "array-set! (list)" '(b c)
+       (let ((arr (make-array (shape -1 1) 'o)))
+         (array-set! arr -1 'b)
+         (array-set! arr 0 'c)
+         (list (array-ref arr -1) (array-ref arr 0))))
+(test* "array-set! (list)" 'd
+       (let ((arr (make-array (shape 1 2 3 4 5 6 7 8) 'o)))
+         (array-set! arr 1 3 5 7 'd)
+         (array-ref arr 1 3 5 7)))
 
-(test "array-set! (vector)" 'a
-      (lambda ()
-        (let ((arr (make-array (shape) 'o)))
-          (array-set! arr '#() 'a)
-          (array-ref arr))))
-(test "array-set! (vector)" '(b c)
-      (lambda ()
-        (let ((arr (make-array (shape -1 1) 'o)))
-          (array-set! arr '#(-1) 'b)
-          (array-set! arr '#(0) 'c)
-          (list (array-ref arr -1) (array-ref arr 0)))))
-(test "array-set! (vector)" 'd
-      (lambda ()
-        (let ((arr (make-array (shape 1 2 3 4 5 6 7 8) 'o)))
-          (array-set! arr '#(1 3 5 7) 'd)
-          (array-ref arr 1 3 5 7))))
+(test* "array-set! (vector)" 'a
+       (let ((arr (make-array (shape) 'o)))
+         (array-set! arr '#() 'a)
+         (array-ref arr)))
+(test* "array-set! (vector)" '(b c)
+       (let ((arr (make-array (shape -1 1) 'o)))
+         (array-set! arr '#(-1) 'b)
+         (array-set! arr '#(0) 'c)
+         (list (array-ref arr -1) (array-ref arr 0))))
+(test* "array-set! (vector)" 'd
+       (let ((arr (make-array (shape 1 2 3 4 5 6 7 8) 'o)))
+         (array-set! arr '#(1 3 5 7) 'd)
+         (array-ref arr 1 3 5 7)))
 
-(test "array-set! (array)" 'a
-      (lambda ()
-        (let ((arr (make-array (shape) 'o)))
-          (array-set! arr 'a)
-          (array-ref arr))))
-(test "array-set! (array)" '(b c)
-      (lambda ()
-        (let ((arr (make-array (shape -1 1) 'o)))
-          (array-set! arr (array (shape 0 1) -1) 'b)
-          (array-set! arr (array (shape 0 1) 0) 'c)
-          (list (array-ref arr -1)  (array-ref arr 0)))))
-(test "array-set! (array)" 'd
-      (lambda ()
-        (let ((arr (make-array (shape 1 2 3 4 5 6 7 8) 'o)))
-          (array-set! arr (array (shape 0 4) 1 3 5 7) 'd)
-          (array-ref arr 1 3 5 7))))
+(test* "array-set! (array)" 'a
+       (let ((arr (make-array (shape) 'o)))
+         (array-set! arr 'a)
+         (array-ref arr)))
+(test* "array-set! (array)" '(b c)
+       (let ((arr (make-array (shape -1 1) 'o)))
+         (array-set! arr (array (shape 0 1) -1) 'b)
+         (array-set! arr (array (shape 0 1) 0) 'c)
+         (list (array-ref arr -1)  (array-ref arr 0))))
+(test* "array-set! (array)" 'd
+       (let ((arr (make-array (shape 1 2 3 4 5 6 7 8) 'o)))
+         (array-set! arr (array (shape 0 4) 1 3 5 7) 'd)
+         (array-ref arr 1 3 5 7)))
 
 ;;; Share and change:
 ;;;
@@ -1669,26 +1570,25 @@
         (art (share-array (make-array shp) shp (lambda (k) k))))
     (array-set! shp 0 0 '?)
     (array-set! shp 0 1 '!)
-    (test "modifying array shape"
-          '(2 0 1 0 2 ? ! 1 10 12 1 10 12 1 10 12)
-          (lambda ()
-            (list (array-rank shp)
-                  (array-start shp 0)
-                  (array-end shp 0)
-                  (array-start shp 1)
-                  (array-end shp 1)
-                  (array-ref shp 0 0)
-                  (array-ref shp 0 1)
-                  (array-rank arr)
-                  (array-start arr 0)
-                  (array-end arr 0)
-                  (array-rank ars)
-                  (array-start ars 0)
-                  (array-end ars 0)
-                  (array-rank art)
-                  (array-start art 0)
-                  (array-end art 0))))))
-
+    (test* "modifying array shape"
+           '(2 0 1 0 2 ? ! 1 10 12 1 10 12 1 10 12)
+           (list (array-rank shp)
+                 (array-start shp 0)
+                 (array-end shp 0)
+                 (array-start shp 1)
+                 (array-end shp 1)
+                 (array-ref shp 0 0)
+                 (array-ref shp 0 1)
+                 (array-rank arr)
+                 (array-start arr 0)
+                 (array-end arr 0)
+                 (array-rank ars)
+                 (array-start ars 0)
+                 (array-end ars 0)
+                 (array-rank art)
+                 (array-start art 0)
+                 (array-end art 0)))
+    ))
 ;;; Check that index arrays work even when they share
 ;;;
 ;;; arr       ixn
@@ -1726,28 +1626,27 @@
               (shape 0 2)
               (lambda (k)
                 (values 1 0)))))
-    (test "array-ref before change"
-          '(nw ne nw se sw)
-          (lambda ()
-            (list (array-ref arr col0)
-                  (array-ref arr row0)
-                  (array-ref arr wor1)
-                  (array-ref arr cod)
-                  (array-ref arr box))))
+    (test* "array-ref before change"
+           '(nw ne nw se sw)
+           (list (array-ref arr col0)
+                 (array-ref arr row0)
+                 (array-ref arr wor1)
+                 (array-ref arr cod)
+                 (array-ref arr box)))
     (array-set! arr col0 'ul)
     (array-set! arr row0 'ur)
     (array-set! arr cod 'lr)
     (array-set! arr box 'll)
-    (test "array-ref after change"
-          '(ul ur ll lr)
-          (lambda ()
-            (list (array-ref arr 4 5)
-                  (array-ref arr 4 6)
-                  (array-ref arr 5 5)
-                  (array-ref arr 5 6))))
+    (test* "array-ref after change"
+           '(ul ur ll lr)
+           (list (array-ref arr 4 5)
+                 (array-ref arr 4 6)
+                 (array-ref arr 5 5)
+                 (array-ref arr 5 6)))
     (array-set! arr wor1 'xx)
-    (test "array-ref after change" 'xx
-          (lambda () (array-ref arr 4 5)))))
+    (test* "array-ref after change" 'xx
+           (array-ref arr 4 5))
+    ))
 
 ;;; Check that shape arrays work even when they share
 ;;;
@@ -1780,49 +1679,46 @@
               (shape 0 2 0 2)
               (lambda (r k)
                 (values 2 3)))))
-    (test "using make-array shp"
-          '(2 10 12 10 11)
-          (lambda ()
-            (let ((arr-p (make-array shp)))
-              (list (array-rank arr-p)
-                    (array-start arr-p 0)
-                    (array-end arr-p 0)
-                    (array-start arr-p 1)
-                    (array-end arr-p 1)))))
-    (test "using array shq"
-          '(2 12 20 11 13)
-          (lambda ()
-            (let ((arr-q (array shq * * * *  * * * *  * * * *  * * * *)))
-              (list (array-rank arr-q)
-                    (array-start arr-q 0)
-                    (array-end arr-q 0)
-                    (array-start arr-q 1)
-                    (array-end arr-q 1)))))
-    (test "using share-array"
-          '(4 10 10 11 12 12 16 13 20)
-          (lambda ()
-            (let ((arr-r (share-array
-                          (array (shape) *)
-                          shr
-                          (lambda _ (values)))))
-              (list (array-rank arr-r)
-                    (array-start arr-r 0)
-                    (array-end arr-r 0)
-                    (array-start arr-r 1)
-                    (array-end arr-r 1) 
-                    (array-start arr-r 2)
-                    (array-end arr-r 2)
-                    (array-start arr-r 3)
-                    (array-end arr-r 3)))))
-    (test "using make-array shs"
-          '(2 12 12 12 12)
-          (lambda ()
-            (let ((arr-s (make-array shs)))
-              (list (array-rank arr-s)
-                    (array-start arr-s 0)
-                    (array-end arr-s 0)
-                    (array-start arr-s 1)
-                    (array-end arr-s 1)))))))
+    (test* "using make-array shp"
+           '(2 10 12 10 11)
+           (let ((arr-p (make-array shp)))
+             (list (array-rank arr-p)
+                   (array-start arr-p 0)
+                   (array-end arr-p 0)
+                   (array-start arr-p 1)
+                   (array-end arr-p 1))))
+    (test* "using array shq"
+           '(2 12 20 11 13)
+           (let ((arr-q (array shq * * * *  * * * *  * * * *  * * * *)))
+             (list (array-rank arr-q)
+                   (array-start arr-q 0)
+                   (array-end arr-q 0)
+                   (array-start arr-q 1)
+                   (array-end arr-q 1))))
+    (test* "using share-array"
+           '(4 10 10 11 12 12 16 13 20)
+           (let ((arr-r (share-array
+                         (array (shape) *)
+                         shr
+                         (lambda _ (values)))))
+             (list (array-rank arr-r)
+                   (array-start arr-r 0)
+                   (array-end arr-r 0)
+                   (array-start arr-r 1)
+                   (array-end arr-r 1) 
+                   (array-start arr-r 2)
+                   (array-end arr-r 2)
+                   (array-start arr-r 3)
+                   (array-end arr-r 3))))
+    (test* "using make-array shs"
+           '(2 12 12 12 12)
+           (let ((arr-s (make-array shs)))
+             (list (array-rank arr-s)
+                   (array-start arr-s 0)
+                   (array-end arr-s 0)
+                   (array-start arr-s 1)
+                   (array-end arr-s 1))))
+    ))
 
 (test-section "sharing with sharing subshape")
 (let ((super (array (shape 4 7 4 7)
@@ -1837,27 +1733,25 @@
                  (lambda (r k)
                    (values k 1)))))
   (let ((sub (share-array super subshape (lambda (k) (values k k)))))
-    (test "subshape check" #t
-          (lambda () (equal? subshape (shape 4 7))))
-    (test "sharing subshape" '(2 0 1 0 2 4 7)
-          (lambda ()
-            (list (array-rank subshape)
-                  (array-start subshape 0)
-                  (array-end subshape 0)
-                  (array-start subshape 1)
-                  (array-end subshape 1)
-                  (array-ref subshape 0 0)
-                  (array-ref subshape 0 1))))
-    (test "sub check" #t
-          (lambda () (equal? sub (array (shape 4 7) 1 2 3))))
-    (test "sharing with sharing subshape" '(1 4 7 1 2 3)
-          (lambda ()
-            (list (array-rank sub)
-                  (array-start sub 0)
-                  (array-end sub 0)
-                  (array-ref sub 4)
-                  (array-ref sub 5)
-                  (array-ref sub 6))))
+    (test* "subshape check" #t
+           (equal? subshape (shape 4 7)))
+    (test* "sharing subshape" '(2 0 1 0 2 4 7)
+           (list (array-rank subshape)
+                 (array-start subshape 0)
+                 (array-end subshape 0)
+                 (array-start subshape 1)
+                 (array-end subshape 1)
+                 (array-ref subshape 0 0)
+                 (array-ref subshape 0 1)))
+    (test* "sub check" #t
+           (equal? sub (array (shape 4 7) 1 2 3)))
+    (test* "sharing with sharing subshape" '(1 4 7 1 2 3)
+           (list (array-rank sub)
+                 (array-start sub 0)
+                 (array-end sub 0)
+                 (array-ref sub 4)
+                 (array-ref sub 5)
+                 (array-ref sub 6)))
     ))
 
 

@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.336 2003-01-06 04:06:06 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.337 2003-01-07 13:28:03 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -19408,6 +19408,7 @@ A test script will look like this:
 (test-section "feature group 2")
 (define test-data ...)
 (test "feature 2-1" EXPECT (lambda () TEST-BODY))
+(test "feature 2-2" *test-error* (lambda () TEST-THAT-SIGNALS-ERROR))
  @dots{}
 
 (test-end)
@@ -19429,6 +19430,7 @@ A test script will look like this:
 (test-section "feature group 2")
 (define test-data ...)
 (test "feature 2-1" EXPECT (lambda () TEST-BODY))
+(test "feature 2-2" *test-error* (lambda () TEST-THAT-SIGNALS-ERROR))
  @dots{}
 
 (test-end)
@@ -19468,18 +19470,58 @@ test :
 
 @end deftp
 
-@defun test name expected thunk &optional =
+@defun test name expected thunk &optional compare
 @c EN
 Calls @var{thunk}, and compares its result with @var{expected}.
 The comparison predicate is @code{equal?} by default, but you can
-specify your own predicate by the argument @var{=}.
+specify your own predicate by the argument @var{compare}.
 @var{Name} is a name of the test, for logging purpose.
+
+If @var{thunk} signals an uncaptured error, it is catched and
+yields a special error object.  A global variable @code{*test-error*}
+is bound to the error object, so that you can test an expected error.
 @c JP
 @var{thunk}を呼び、その結果を@var{expected}と比較します。
-比較手続きには、引数@var{=}が与えられていればそれを用い、そうでなければ@code{equal?}
+比較手続きには、引数@var{compare}が与えられていればそれを用い、
+そうでなければ@code{equal?}
 を用います。@var{name}はログに残すためのテストの名前です。
+
+@var{thunk}内で捕捉されないエラーが発生した場合、それは捕捉され、
+特別なエラーオブジェクトに置き換えられます。グローバル変数@code{*test-error*}
+がエラーオブジェクトに束縛されており、エラーが期待される状況もテストすることが
+できます。
 @c COMMON
 @end defun
+
+@defvar *test-error*
+@c EN
+Bound to a special error object, which can be used as an expected
+value if the test thunk is supposed to signal an error.
+@c JP
+特別なエラーオブジェクトに束縛されています。
+テストのthunkがエラーを起こすことが期待されている状況で、
+エラーオブジェクトを@var{expected}引数に渡すことができます。
+@c COMMON
+
+@example
+(test "test if car signals an error" *test-error*
+      (lambda () (car 5)))
+@end example
+@end defvar
+
+@defmac test* name expected expr &optional compare
+@c EN
+A convenience macro that wraps @var{expr} by lambda.
+@c JP
+@var{expr}をlambdaでくるんでくれる便利なマクロです。
+@c COMMON
+
+@example
+(test* name expected expr)
+  @equiv{} (test name expected (lambda () expr))
+@end example
+@end defmac
+
 
 @defun test-start module-name
 @c EN

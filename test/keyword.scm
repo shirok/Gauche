@@ -29,17 +29,17 @@
       (lambda () (get-keyword :a *key-value-list*)))
 (test "get-keyword" 'ook
       (lambda () (get-keyword :d *key-value-list*)))
-(test-error "get-keyword"
-            (lambda () (get-keyword :z *key-value-list*)))
+(test "get-keyword" *test-error*
+      (lambda () (get-keyword :z *key-value-list*)))
 (test "get-keyword" 88
       (lambda ()
         (with-error-handler
             (lambda (e) 'error)
           (lambda ()
             (get-keyword :z *key-value-list* 88)))))
-(test-error "get-keyword"
-            (lambda ()
-              (get-keyword :z (cdr *key-value-list*))))
+(test "get-keyword" *test-error*
+      (lambda ()
+        (get-keyword :z (cdr *key-value-list*))))
 
 (test "get-keyword*" "foo"
       (lambda () (get-keyword* :b *key-value-list*)))
@@ -49,17 +49,17 @@
       (lambda () (get-keyword* :d *key-value-list*)))
 (test "get-keyword*" 'ook
       (lambda () (get-keyword* :d *key-value-list* (error "oops"))))
-(test-error "get-keyword*"
-            (lambda ()
-              (get-keyword* :z *key-value-list*)))
+(test "get-keyword*" *test-error*
+      (lambda ()
+        (get-keyword* :z *key-value-list*)))
 (test "get-keyword*" 88
       (lambda ()
         (with-error-handler
             (lambda (e) 'error)
           (lambda ()
             (get-keyword* :z *key-value-list* 88)))))
-(test-error "get-keyword*"
-            (lambda ()
-              (get-keyword* :z (cdr *key-value-list*))))
+(test "get-keyword*" *test-error*
+      (lambda ()
+        (get-keyword* :z (cdr *key-value-list*))))
 
 (test-end)

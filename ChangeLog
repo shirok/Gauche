@@ -1,3 +1,11 @@
+2003-01-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/test.scm : Made default 'test' procedure catch an error.
+	  The *test-error* variable is introduced to hold the "error value".
+	  Introduced test* macro.  The original primitive 'test' is renamed
+	  to 'prim-test', and used to test primitive syntaxes before
+	  error handler is tested.
+
 2003-01-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/extlib.stub, lib/gauche/hashutil.scm : fixed the problem that
