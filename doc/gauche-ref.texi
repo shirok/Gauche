@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.164 2002-02-23 07:39:55 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.165 2002-02-26 09:05:02 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -6891,8 +6891,8 @@ Gaucheでは、@code{open-input-file}と@code{open-output-file}は
 @c EN
 Opens a file specified by @var{string} for input/output,
 and call @var{proc} with one argument, the file port.  When @var{proc}
-returns, or a control exits @var{proc}'s dynamic scope, the file
-is closed.
+returns, or an error is signalled from @var{proc} that is not captured
+within @var{proc}, the file is closed.
 
 The keyword arguments have the same meanings of
 @code{open-input-file} and @code{open-output-file}'s.  Note that
@@ -6904,8 +6904,8 @@ Returns the value(s) @code{proc} returned.
 @c JP
 @var{string}で示されるファイルを入力または出力用にオープンし、
 作成されたポートを引数として手続き@var{proc}を呼び出します。
-@var{proc}が正常終了するか、その他の要因によって制御が@var{proc}の
-動的スコープから抜け出す際にファイルはクローズされます。
+@var{proc}が正常終了するか、@var{proc}無いで捕捉されないエラーが起きた場合に
+ファイルはクローズされます。
 
 キーワード引数は
 @code{open-input-file}及び@code{open-output-file}のものと同じ意味を持ちます。
@@ -6923,9 +6923,9 @@ Returns the value(s) @code{proc} returned.
 @c EN
 Opens a file specified by @var{string} for input or output
 and makes the opened port as the current input or output port,
-then calls @var{thunk}.  The file is closed and the current port
-is restored when @var{thunk} returns or the control exits from
-the scope of @var{thunk}.
+then calls @var{thunk}.  The file is closed when @var{thunk}
+returns or an error is signalled from @var{thunk} that is not
+captured within @var{thunk}.
 
 The keyword arguments have the same
 meanings of @code{open-input-file} and @code{open-output-file}'s,
@@ -6937,8 +6937,7 @@ Returns the value(s) @code{thunk} returned.
 @c JP
 @var{string}で示されるファイルを入力または出力用にオープンし、オープンされた
 ポートを現在の入力または出力ポートに設定して、@var{thunk}を呼び出します。
-@var{thunk}が戻るか、その他の要因によって制御が@var{thunk}の外側に移った
-際にファイルは閉じられ、現在のポートには元の値が戻されます。
+@var{thunk}が戻るか、@var{thunk}内で捕捉されないエラーが生じた際にファイルは閉じられます。
 
 キーワード引数は
 @code{open-input-file}及び@code{open-output-file}のものと同じ意味を持ちます。
@@ -6949,6 +6948,52 @@ Returns the value(s) @code{thunk} returned.
 @c COMMON
 @end defun
 
+@c EN
+@emph{Notes on semantics of closing file ports:}
+R5RS states, in the description of @code{call-with-input-file} et al., 
+that @emph{"If @emph{proc} does not return, then the port will
+not be closed automatically unless it is possible
+to prove that the port will never again be used for read or write
+operation."}
+@c JP
+@emph{ポートを閉じるセマンティクスについて:} 
+R5RSは@code{call-with-input-file}等の説明において、次のように述べています。
+「@emph{procが戻って来なかった場合、今後ポートが読み書きに一切使われないことが
+証明できない限りは、ポートは自動的には閉じられない}」。
+@c COMMON
+
+@c EN
+Gauche's implementation slightly misses this criteria; the mere fact
+that an uncaptured error is thrown in @var{proc} does not prove
+the port will never be used.  Nevertheless, it is very diffcult
+to think the situation that you can do meaningful operation on
+the port after such an error is signalled; you'd have no idea
+what kind of state the port is in.  In practical programs, you
+should capture error explicitly inside @var{proc} if you still want
+to do some meaningful operation with the port.
+@c JP
+Gaucheの実装は若干この条件には反しています。ただ捕捉されないエラーが@var{proc}から
+発せられたというだけでは、そのポートが今後一切使われないかどうかはわかりません。
+しかし実際には、そのようなエラーが発せられた後でポートに対して意味のある操作をするのは
+非現実的です。ポートがどのような状態にあるかわからないわけですから。
+現実的なプログラムでは、ポートに対して意味のある操作をしつづけたいのなら、
+@var{proc}の中で明示的にエラーをハンドルすべきでしょう。
+@c COMMON
+
+@c EN
+Note that if a continuation captured outside @code{call-with-input-file}
+et al. is invoked inside @var{proc}, the port is not closed.
+It is possible that the control returns later into the @var{proc},
+if a continuation is captured in it (e.g. coroutines).
+The low-level exceptions 
+(@xref{Low-level exception mechanism}) also doesn't ensure closing 
+the port.
+@c JP
+@code{call-with-input-file}の外で捕捉された継続を@var{proc}内で呼んだ場合には
+ポートは閉じられないことに注意して下さい。後で@var{proc}へと制御が戻ってくるかも
+しれないからです (コルーチン等)。低レベルの例外メカニズム(@ref{Low-level exception mechanism}
+参照)もポートに関する操作は行いません。
+@c COMMON
 
 @node String ports, Procedural ports, File ports, Input and output
 @subsection String ports
