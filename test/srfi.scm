@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.31 2004-01-17 01:34:49 shirok Exp $
+;; $Id: srfi.scm,v 1.32 2004-01-19 23:13:04 shirok Exp $
 
 (use gauche.test)
 
@@ -434,6 +434,51 @@
          (and-let* (((positive? x))
                     (y x))
            y)))
+
+;;-----------------------------------------------------------------------
+(test-section "srfi-5")
+;; NB: srfi-5 replaces the binding of 'let'.  We don't want it to interfere
+;; with the rest of file, so we segregate it within a dummy module.
+
+(define-module srfi-5-test
+  (use gauche.test)
+  (use srfi-5)
+  (test-module 'srfi-5)
+
+  (test* "let - standard" 3
+         (let ((x 1) (y 2))
+           (let ()
+             (+ x y))))
+
+  (test* "let - standard" 1
+         (let ((x 1) (y 2))
+           (let ((y x) (x y))
+             (- x y))))
+
+  (test* "let - standard" 1
+         (let ()
+           (define x 1)
+           (* x x)))
+
+  (test* "let - standard, named" 55
+         (let loop ((x 1) (sum 0))
+           (if (> x 10) sum (loop (+ x 1) (+ sum x)))))
+
+  (test* "let - signature style" 55
+         (let (loop (x 1) (sum 0))
+           (if (> x 10) sum (loop (+ x 1) (+ sum x)))))
+
+  (test* "let - signature style" #t
+         (let (loop)
+           (procedure? loop)))
+
+  (test* "let - rest binding" '(0 1 (2 3 4))
+         (let ((x 0) (y 1) . (z 2 3 4)) (list x y z)))
+
+  (test* "let - rest binding, named" '((2 3 4) 0 (1))
+         (let loop ((x 0) (y 1) . (z 2 3 4))
+           (if (list? x) (list x y z) (loop z x y))))
+  )
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-9")
@@ -1149,6 +1194,35 @@
          (lambda (d i)
            (and (char-set= d (->char-set "0123456789"))
                 (char-set= i (->char-set "abcdefABCDEF"))))))
+
+;;-----------------------------------------------------------------------
+(test-section "srfi-16")
+
+(test* "case-lambda (plus)" '(0 1 3 6 10)
+       (let ()
+         (define plus
+           (case-lambda 
+            (() 0)
+            ((x) x)
+            ((x y) (+ x y))
+            ((x y z) (+ (+ x y) z))
+            (args (apply + args))))
+         (list (plus) (plus 1) (plus 1 2) (plus 1 2 3) (plus 1 2 3 4))))
+
+(test* "case-lambda (mul2)" *test-error*
+       (let ()
+         (define mul2
+           (case-lambda 
+            (() 1)
+            ((x) x)
+            ((x y) (* x y))))
+         (mul2 1 2 3)))
+
+(test* "case-lambda (matching order)" '(1 (2))
+       ((case-lambda
+         ((x . y) (list x y))
+         ((x y) (list x y)))
+        1 2))
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-17")
