@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.103 2001-10-20 11:31:33 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.104 2001-10-20 21:52:49 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -6763,6 +6763,13 @@ of descendants of @var{class}.
 @c ----------------------------------------------------------------------
 @menu
 * Library modules overview::    
+* Determine isomorphism::       
+* Topological sort::            
+* Generic DBM interface::       
+* GDBM interface::              
+* NDBM interface::              
+* Original DBM interface::      
+* Pseudo DBM interface::        
 * Character code conversion::   
 * Low-level file operations::   
 * Interactive session::         
@@ -6796,7 +6803,7 @@ of descendants of @var{class}.
 * CGI::                         
 @end menu
 
-@node Library modules overview, Character code conversion, Library modules, Library modules
+@node Library modules overview, Determine isomorphism, Library modules, Library modules
 @section Library modules overview
 @c NODE ライブラリモジュールの概要
 
@@ -6806,6 +6813,8 @@ Here's a table of general guideline.
 @table @code
 @item gauche.*
 Stuffs more or less considered as Gauche core features.
+@item algorithm.*
+Generic implementations of various algorithms.
 @item data.*
 Generic data structures.
 @item file.*
@@ -6818,14 +6827,438 @@ Language-related libraries (artificial and/or natural).
 Libraries dealing with text data.
 @item rfc.*
 Implementations of net protocols defined in RFC's.
-@item w3c.*
-Implementations of various protocols and formats defined by W3C.
+@item www.*
+Implementations of various protocols and formats mainly used in WWW.
 @item srfi-*
 SRFI implementations.
 @end table
+@c ----------------------------------------------------------------------
+@node Determine isomorphism, Topological sort, Library modules overview, Library modules
+@section @code{algorithm.isomorph} - Determine isomorphism
 
 @c ----------------------------------------------------------------------
-@node Character code conversion, Low-level file operations, Library modules overview, Library modules
+@node Topological sort, Generic DBM interface, Determine isomorphism, Library modules
+@section @code{algorithm.toposort} - Topological sort
+@c NODE トポロジカルソート, @code{algorithm.toposort} - トポロジカルソート
+
+
+@c ----------------------------------------------------------------------
+@node Generic DBM interface, GDBM interface, Topological sort, Library modules
+@section @code{dbm} - Generic DBM interface
+@c NODE 汎用DBMインタフェース, @code{dbm} - 汎用DBMインタフェース
+
+DBM-like libraries provides an easy way to store values to a file,
+indexed by keys.  You can think it as a persistent associative memory.
+This module provides a generic interface to the various dbm-like 
+libraries.
+
+The @code{<dbm>} abstract class defines a common interface
+to use various DBM-type database packages.
+
+Just to operate on the already created and opened database,
+use @code{dbm} module.
+
+To create or open a database, you need to load at lease one of
+the following modules.   Each module defines its own low-level
+accessing functions as well as the common interface.
+
+@table @asis
+@item gdbm
+
+GDBM library.  Besides the common interface, all of the options
+GDBM provides are available.   (@xref{GDBM interface}).
+
+@item ndbm
+
+NDBM library.
+
+@item odbm
+
+DBM library.
+@end table
+
+By default, only strings are allowed to keys and values.
+You can use other Scheme types for keys and values, however, 
+by providing a conversion methods.
+
+@menu
+* Opening a database::          
+* Accessing a database::        
+* Iterating on a database::     
+* To close a database::         
+* Object serialization::        
+@end menu
+
+@node Opening a database, Accessing a database, Generic DBM interface, Generic DBM interface
+@subsection Opening a database
+
+By instantiating a subclass of the @code{<dbm>} class, you can
+either open an existing database or create a new database.
+
+@deffn {Generic method} make class &key :path :rw-mode :file-mode :serializer
+Create a new dbm object associated to the database file @var{path}
+if @var{class} is one of subclasses of the class @code{<dbm>}.
+
+Depending on the actual implementation, @var{path} may be used literally
+as a database filename (gdbm) or some suffixes are added (odbm, ndbm).
+
+The keyword argument @var{rw-mode} takes one of the following values:
+@table @code
+@item :read
+Opens a database for read-only.  If the specified database file does
+not exist, an error is signalled.
+
+@item :write
+Opens a database for read and write.  If the specified database file
+does not exist, a new empty database is created.  This is the default.
+
+@item :create
+Creates a database for read and write.  If the specified database file
+already exists, its content is cleared.
+@end table
+
+The keyword argument @var{file-mode} takes a number representing
+unix file mode to be used when @code{make} needs to create a new
+database.   The default is #o664.  This value may be masked by
+the user's umask setting.
+
+DBM interface only takes strings for keys and values by default.
+If you need to store other types of objects to the database,
+you need to tell the DBM instance how to convert those objects
+by @var{serializer} keyword argument.
+It may take a class object which is a subclass of @code{<serializer>},
+or a value @code{#t}.  If it is a subclass of @code{<serializer>},
+a serializer instance of the class is used to convert Scheme objects.
+If it is @code{#t}, the standard external representation is used.
+@end deffn
+
+
+@node Accessing a database, Iterating on a database, Opening a database, Generic DBM interface
+@subsection Accessing a database
+
+Once a database object is created, you can use the following methods
+to access individual key/value pairs.   Note that, unless you specify
+@var{serializer} argument when you create the dbm object, keys and
+values must be strings.
+
+@deffn {Generic method} dbm-put! (dbm @code{<dbm>}) key value
+Put a @var{value} with @var{key}.
+@end deffn
+
+@deffn {Generic method} dbm-get (dbm @code{<dbm>}) key &optional default
+Get a value associated with @var{key}.  If no value exists for @var{key}
+and @var{default} is specified, it is returned.  If no value exists for
+@var{key} and @var{default} is not specified, an error is signalled.
+@end deffn
+
+
+@deffn {Generic method} dbm-exists? (dbm @code{<dbm>}) key
+Return true if a value exists for @var{key}, false otherwise.
+@end deffn
+
+@deffn {Generic method} dbm-delete! (dbm @code{<dbm>}) key
+Delete a value associated with @var{key}.  
+@end deffn
+
+
+
+@node Iterating on a database, To close a database, Accessing a database, Generic DBM interface
+@subsection Iterating on a database
+
+To walk over the entire database, following methos are provided.
+
+@deffn {Generic method} dbm-for-each (dbm @code{<dbm>}) procedure
+For each key/value pair in the database @var{dbm}, @var{procedure}
+is called.  Two arguments are passed to @var{procedure}---a key and
+a value.   The result of @var{procedure} is discarded.
+@end deffn
+
+
+@deffn {Generic method} dbm-map (dbm @code{<dbm>}) procedure
+For each key/value pair in the database @var{dbm}, @var{procedure}
+is called.  Two arguments are passed to @var{procedure}---a key and
+a value.   The result of @var{procedure} is accumulated to a list
+which is returned as a result of @code{dbm-map}.
+@end deffn
+
+
+@node To close a database, Object serialization, Iterating on a database, Generic DBM interface
+@subsection To close a database
+
+Database file is closed when it is garbage collected.
+However, to ensure the modification is properly synchornized,
+you may want to close the database explicitly
+
+@deffn {Generic method} dbm-close (dbm @code{<dbm>})
+Closes a database @var{dbm}.  Once the database is closed, any
+operation to access the database content raises an error.
+@end deffn
+
+
+@deffn {Generic method} dbm-closed? (dbm @code{<dbm>})
+Returns true if a database @var{dbm} is already closed, false otherwise.
+@end deffn
+
+@node Object serialization,  , To close a database, Generic DBM interface
+@subsection Object serialization
+
+The low-level interface to the dbm libraries only deals with
+strings.   If you want to store general Scheme objects, you need
+to specify how to convert back and forth between objects and strings.
+Different applications need different requirements, so it's not
+good to implement one specific way in this library.
+
+With @code{:serializer} parameter in the constructor of dbm class,
+you can specify your serialization scheme.
+
+@table @asis
+@item @code{#f}
+
+No conversion is done.  You must pass a string as a key or a value.
+Keys are effectively compared by @code{string=?}.
+
+
+@item @code{#t}
+
+DBM interface applies @code{write*} to get a string representation of
+the object, and @code{read} to get the original object back.  This means:
+@itemize @bullet
+@item
+You can use only use primitive Scheme types, such as numbers, booleans,
+characters, symbols, strings, and lists and vectors of those types.
+
+@item
+No check is done if the object is representable by string.  If you
+pass the object whose external representation can't be read back,
+no error is signalled in @code{dbm-put!}, but you'll have a trouble
+when you try to retrieve the data later.
+
+@item
+Keys are effectively compared by @code{equal?}
+@end itemize
+
+@item a class derived from @code{<serializer>}
+
+An abstract base class @code{<serializer>} defines a common interface
+for object serialization.  You can pass a serializer implemenation of 
+your choice.
+@end table
+
+
+@c ----------------------------------------------------------------------
+@node GDBM interface, NDBM interface, Generic DBM interface, Library modules
+@section @code{dbm.gdbm} - GDBM interface
+
+@menu
+* GDBM-specific options::       
+* GDBM low-level::              
+@end menu
+
+@node GDBM-specific options, GDBM low-level, GDBM interface, GDBM interface
+@subsection GDBM-specific options
+
+The GDBM module defines a class @code{<gdbm>}.
+
+
+
+@node GDBM low-level,  , GDBM-specific options, GDBM interface
+@subsection GDBM low-level interface
+
+These functions are direct interface to the gdbm library.
+See gdbm manpage for 
+
+@defun gdbm-open path &optional size rwmode fmode error-callback
+
+@defvr Constant @code{|GDBM_READERT|}
+@end defvr
+
+@defvr Constant @code{|GDBM_WRITER|}
+@end defvr
+
+@defvr Constant @code{|GDBM_WRCREAT|}
+@end defvr
+
+@defvr Constant @code{|GDBM_NEWDB|}
+@end defvr
+
+@defvr Constant @code{|GDBM_FAST|}
+@end defvr
+
+@defvr Constant @code{|GDBM_SYNC|}
+@end defvr
+
+@defvr Constant @code{|GDBM_NOLOCK|}
+@end defvr
+@end defun
+
+@defun gdbm-close gdbm-object
+@end defun
+
+@defun gdbm-closed? gdbm-object
+@end defun
+
+@defun gdbm-store key value &optional flag
+
+@defvr Constant @code{|GDBM_INSERT|}
+@end defvr
+
+@defvr Constant @code{|GDBM_REPLACE|}
+@end defvr
+
+@end defun
+
+
+@defun gdbm-fetch gdbm-object key
+@end defun
+
+
+@defun gdbm-delete gdbm-object key
+@end defun
+
+
+@defun gdbm-firstkey gdbm-object
+@end defun
+
+
+@defun gdbm-nextkey gdbm-object key
+@end defun
+
+
+@defun gdbm-reorganize gdbm-object
+@end defun
+
+
+@defun gdbm-sync gdbm-object
+@end defun
+
+
+@defun gdbm-exists gdbm-object key
+@end defun
+
+
+@defun gdbm-strerror errno
+@end defun
+
+
+@defun gdbm-setopt gdbm-object option value
+
+@defvr Constant @code{|GDBM_CACHESIZE|}
+@end defvr
+
+@defvr Constant @code{|GDBM_FASTMODE|}
+@end defvr
+
+@defvr Constant @code{|GDBM_SYNCMODE|}
+@end defvr
+
+@defvr Constant @code{|GDBM_CENTFREE|}
+@end defvr
+
+@defvr Constant @code{|GDBM_COALESCEBLKS|}
+@end defvr
+@end defun
+
+
+@defun gdbm-version
+@end defun
+
+
+@defvar *gdbm-errno*
+@end defvar
+
+
+
+@c ----------------------------------------------------------------------
+@node NDBM interface, Original DBM interface, GDBM interface, Library modules
+@section @code{dbm.ndbm} - NDBM interface
+
+@menu
+* NDBM-specific options::       
+* NDBM low-level::              
+@end menu
+
+@node NDBM-specific options, NDBM low-level, NDBM interface, NDBM interface
+@subsection NDBM-specific options
+
+@node NDBM low-level,  , NDBM-specific options, NDBM interface
+@subsection NDBM low-level interface
+
+@defun ndbm-open path flags mode
+@end defun
+
+@defun ndbm-close ndbm-object
+@end defun
+
+@defun ndbm-closed? ndbm-object
+@end defun
+
+@defun ndbm-store ndbm-object key content &optional flag
+@end defun
+
+
+@defun ndbm-fetch ndbm-object key
+@end defun
+
+@defun ndbm-delete ndbm-object key
+@end defun
+
+@defun ndbm-firstkey ndbm-object
+@end defun
+
+@defun ndbm-nextkey ndbm-object
+@end defun
+
+@defun ndbm-error ndbm-object
+@end defun
+
+
+@defun ndbm-clear-error ndbm-object
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Original DBM interface, Pseudo DBM interface, NDBM interface, Library modules
+@section @code{dbm.odbm} - Original DBM interface
+
+@menu
+* DBM-specific options::        
+* DBM low-level::               
+@end menu
+
+@node DBM-specific options, DBM low-level, Original DBM interface, Original DBM interface
+@subsection DBM-specific options
+
+@node DBM low-level,  , DBM-specific options, Original DBM interface
+@subsection DBM low-level interface
+
+@defun odbm-init path
+@end defun
+
+@defun odbm-close
+@end defun
+
+@defun odbm-store key value
+@end defun
+
+@defun odbm-fetch key
+@end defun
+
+@defun odbm-delete key
+@end defun
+
+@defun odbm-firstkey
+@end defun
+
+@defun odbm-nextkey key
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Pseudo DBM interface, Character code conversion, Original DBM interface, Library modules
+@section @code{dbm.pdbm} - Pseudo DBM interface
+
+
+@c ----------------------------------------------------------------------
+@node Character code conversion, Low-level file operations, Pseudo DBM interface, Library modules
 @section @code{gauche.charconv} - Character Code Conversion
 @c NODE 文字コード変換, @code{gauche.charconv} - 文字コード変換
 
