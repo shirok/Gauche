@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.92 2002-11-07 11:44:49 shirok Exp $
+ *  $Id: compile.c,v 1.93 2002-11-08 13:13:40 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -35,6 +35,10 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx);
 static ScmObj compile_lambda_family(ScmObj form, ScmObj args, ScmObj body,
                                     ScmObj env, int ctx);
 static ScmObj compile_body(ScmObj form, ScmObj env, int ctx);
+
+#ifdef GAUCHE_USE_NVM
+static ScmObj graph2ivector(ScmObj code);
+#endif
 
 #define LIST1_P(obj) \
     (SCM_PAIRP(obj) && SCM_NULLP(SCM_CDR(obj)))
@@ -246,12 +250,20 @@ enum {
 /* entry point. */
 ScmObj Scm_Compile(ScmObj form, ScmObj env, int context)
 {
+#ifdef GAUCHE_USE_NVM
+    return graph2ivector(compile_int(form, env, context));
+#else
     return compile_int(form, env, context);
+#endif
 }
 
 ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context)
 {
+#ifdef GAUCHE_USE_NVM
+    return graph2ivector(compile_body(form, env, context));
+#else
     return compile_body(form, env, context);
+#endif
 }
 
 /* Notes on compiler environment:
@@ -1942,7 +1954,7 @@ ScmObj Scm_CompileInliner(ScmObj form, ScmObj env,
         }
     }
     SCM_FOR_EACH(cp, cp) {
-        ADDCODE(Scm_Compile(SCM_CAR(cp), env, SCM_COMPILE_NORMAL));
+        ADDCODE(compile_int(SCM_CAR(cp), env, SCM_COMPILE_NORMAL));
         if (SCM_PAIRP(SCM_CDR(cp))) ADDPUSH();
     }
     if (optargs) {
@@ -1958,9 +1970,7 @@ ScmObj Scm_CompileInliner(ScmObj form, ScmObj env,
  *   This is an experimental code for the new VM.
  */
 
-#if defined(GAUCHE_USE_NVM) || defined(GAUCHE_TEST_NVM)
-
-ScmObj Scm_CompileNVM(ScmObj code);
+#if defined(GAUCHE_USE_NVM)
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_IVectorClass, NULL);
 
@@ -1976,6 +1986,11 @@ static ScmIVector *make_ivec(int size)
     iv->info = SCM_NIL;
     for (i=0; i<size; i++) iv->insn[i] = SCM_FALSE;
     return iv;
+}
+
+ScmObj Scm_MakeIVector(int size)
+{
+    return SCM_OBJ(make_ivec(size));
 }
 
 /*
@@ -2082,6 +2097,7 @@ static void serialize_graph(ScmObj graph, ScmCompileContext *ctx)
             graph = next_path;
             break;
         }
+        case SCM_VM_VALUES_BIND: ;
         case SCM_VM_LET: {
             ScmObj body = SCM_CADR(graph), next_path = SCM_CDDR(graph);
             emit(item, ctx);
@@ -2104,7 +2120,7 @@ static void serialize_graph(ScmObj graph, ScmCompileContext *ctx)
             break;
         case SCM_VM_LAMBDA:
             emit(item, ctx);
-            emit(Scm_CompileNVM(SCM_CADR(graph)), ctx);
+            emit(graph2ivector(SCM_CADR(graph)), ctx);
             graph = SCM_CDDR(graph);
             break;
         default:
@@ -2139,7 +2155,7 @@ static ScmObj vectorize_code(ScmCompileContext *ctx)
     return SCM_OBJ(ivec);
 }
 
-ScmObj Scm_CompileNVM(ScmObj code)
+static ScmObj graph2ivector(ScmObj code)
 {
     ScmCompileContext ctx;
     ctx.insnCount = 0;
@@ -2159,6 +2175,26 @@ ScmObj Scm_IVectorToVector(ScmIVector *ivec)
         SCM_VECTOR_ELEMENTS(v)[i+1] = ivec->insn[i];
     }
     return SCM_OBJ(v);
+}
+
+static void dump_ivector_rec(ScmIVector *ivec, int indent, ScmPort *out)
+{
+    int i, j, size = ivec->size;
+    for (i=0; i<size; i++) {
+        for (j=0; j<indent; j++) Scm_Printf(out, "    ");
+        Scm_Printf(out, "%3d  %S\n", ivec->insn[i]);
+        if (SCM_VM_INSNP(ivec->insn[i])
+            && SCM_VM_INSN_CODE(ivec->insn[i]) == SCM_VM_LAMBDA) {
+            SCM_ASSERT(SCM_IVECTORP(ivec->insn[i+1]));
+            dump_ivector_rec(SCM_IVECTOR(ivec->insn[i+1]), indent+1, out);
+            i++;
+        }
+    }
+}
+
+void Scm_DumpIVector(ScmIVector *ivec, ScmPort *out)
+{
+    dump_ivector_rec(ivec, 0, out);
 }
 #endif /*GAUCHE_USE_NVM*/
 
@@ -2210,7 +2246,7 @@ void Scm__InitCompiler(void)
     DEFSYN_G(SCM_SYM_IMPORT,       syntax_import);
     DEFSYN_G(SCM_SYM_EXPORT,       syntax_export);
 
-#if defined(GAUCHE_USE_NVM) || defined(GAUCHE_TEST_NVM)
+#if defined(GAUCHE_USE_NVM)
     Scm_InitBuiltinClass(SCM_CLASS_IVECTOR, "<ivector>", NULL, 0,
                          Scm_GaucheModule());
 #endif

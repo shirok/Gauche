@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.81 2002-11-07 00:05:36 shirok Exp $
+ *  $Id: vm.h,v 1.82 2002-11-08 13:13:51 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -30,7 +30,7 @@
 #define PCTYPE ScmObj
 #endif
 
-#if defined(GAUCHE_USE_NVM) || defined(GAUCHE_TEST_NVM)
+#if defined(GAUCHE_USE_NVM)
 /*
  * Instruction vector (only for "new VM")
  */
@@ -82,9 +82,6 @@ SCM_EXTERN ScmEnvFrame *Scm_GetCurrentEnv(void);
  *
  *  Continuation is represented as a chain of ScmContFrames.
  *  If argp == NULL && size >= 0, the frame is C continuation.
- *  If info == SCM_FALSE, it is a boundary frame (a dummy frame inserted by
- *  Scm_Eval or Scm_Apply to indicate the continuation has to "return" to
- *  C stack).
  */
 
 typedef struct ScmContFrameRec {
@@ -93,10 +90,11 @@ typedef struct ScmContFrameRec {
     ScmObj *argp;                 /* saved argument pointer */
     int size;                     /* size of argument frame */
     PCTYPE pc;                    /* next PC */
+#ifndef GAUCHE_USE_NVM
     ScmObj info;                  /* debug info */
-#ifdef GAUCHE_USE_NVM
+#else  /*GAUCHE_USE_NVM*/
     ScmIVector *ivec;
-#endif
+#endif /*GAUCHE_USE_NVM*/
 } ScmContFrame;
 
 #define CONT_FRAME_SIZE  (sizeof(ScmContFrame)/sizeof(ScmObj))

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminsn.h,v 1.34 2002-11-07 00:05:36 shirok Exp $
+ *  $Id: vminsn.h,v 1.35 2002-11-08 13:13:51 shirok Exp $
  */
 
 /* DEFINSN(symbol, name, # of parameters) */
@@ -188,15 +188,17 @@ DEFINSN(SCM_VM_GREF, "GREF", 0)
  */
 DEFINSN(SCM_VM_PROMISE, "PROMISE", 0)
 
+#ifndef GAUCHE_USE_NVM
 /* QUOTE-INSN <INSN>
  *
  *  Quote the next VM instruction.  Needs to load VM insn to val0.
  *  It occurs when VM insn is passed to apply.
  */
 DEFINSN(SCM_VM_QUOTE_INSN, "QUOTE-INSN", 0)
+#endif /*!GAUCHE_USE_NVM*/
 
 /* Only used in NVM code */
-#if defined(GAUCHE_USE_NVM) || defined(GAUCHE_TEST_NVM)
+#if defined(GAUCHE_USE_NVM)
 /* CONST <VALUE>
  *   Load <VALUE> to the register.
  */

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.33 2002-09-19 05:22:42 shirok Exp $
+ *  $Id: proc.c,v 1.34 2002-11-08 13:13:41 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -56,7 +56,12 @@ ScmObj Scm_MakeClosure(int required, int optional,
     
     SCM_SET_CLASS(c, SCM_CLASS_PROCEDURE);
     SCM_PROCEDURE_INIT(c, required, optional, SCM_PROC_CLOSURE, info);
+#ifndef GAUCHE_USE_NVM
     c->code = code;
+#else   /*GAUCHE_USE_NVM*/
+    SCM_ASSERT(SCM_IVECTORP(code));
+    c->code = SCM_IVECTOR(code);
+#endif  /*GAUCHE_USE_NVM*/
     c->env = Scm_GetCurrentEnv();
     return SCM_OBJ(c);
 }

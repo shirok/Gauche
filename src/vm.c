@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.187 2002-11-07 11:44:49 shirok Exp $
+ *  $Id: vm.c,v 1.188 2002-11-08 13:13:41 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -31,11 +31,16 @@
 #define EX_SOFTWARE 70
 #endif
 
+/* marking the boundary frame */
+#ifndef GAUCHE_USE_NVM
 /* An object to mark the boundary frame */
 static ScmObj boundaryFrameMark;
 
 /* return true if cont is a boundary continuation frame */
 #define BOUNDARY_FRAME_P(cont) (SCM_EQ((cont)->info, boundaryFrameMark))
+#else   /*GAUCHE_USE_NVM*/
+#define BOUNDARY_FRAME_P(cont) ((cont)->info == NULL)
+#endif  /*GAUCHE_USE_NVM*/
 
 /*
  * The VM. 
@@ -179,7 +184,9 @@ pthread_key_t Scm_VMKey(void)
  */
 void Scm__InitVM(void)
 {
+#ifndef GAUCHE_USE_NVM
     boundaryFrameMark = SCM_MAKE_STR("boundary-frame");
+#endif
 
     /* Create root VM */
 #ifdef GAUCHE_USE_PTHREADS
@@ -205,9 +212,8 @@ void Scm__InitVM(void)
  *  Interprets intermediate code CODE on VM.
  */
 
-/* Micro-operations
- *   These macros concerning a primitive operations involving updating
- *   one or more registers.
+/*
+ * Micro-operations
  */
 
 /* push OBJ to the top of the stack */
@@ -217,7 +223,11 @@ void Scm__InitVM(void)
 #define POP_ARG(var)       ((var) = *--sp)
 
 /* fetch an instruction */
+#ifdef GAUCHE_USE_NVM
+#define FETCH_INSN(var)    ((var) = *pc++)
+#else  /*!GAUCHE_USE_NVM*/
 #define FETCH_INSN(var)    ((var) = SCM_CAR(pc), pc = SCM_CDR(pc))
+#endif /*!GAUCHE_USE_NVM*/
 
 /* declare local variables for registers, and copy the current VM regs
    to them. */
@@ -267,6 +277,7 @@ void Scm__InitVM(void)
         }                                       \
     } while (0)
 
+#ifndef GAUCHE_USE_NVM
 /* Push a continuation frame.  next_pc is the PC from where execution
    will be resumed.  */
 #define PUSH_CONT(old_pc, next_pc)                      \
@@ -282,6 +293,37 @@ void Scm__InitVM(void)
         sp += CONT_FRAME_SIZE;                          \
         argp = sp;                                      \
     } while (0)
+#else  /* GAUCHE_USE_NVM */
+/* In NVM version, next_pc should be a pointer to the instruction
+   array where execution will resume.  */
+#define PUSH_CONT(next_pc)                              \
+    do {                                                \
+        ScmContFrame *newcont = (ScmContFrame*)sp;      \
+        newcont->prev = cont;                           \
+        newcont->env = env;                             \
+        newcont->argp = argp;                           \
+        newcont->size = sp - argp;                      \
+        newcont->pc = next_pc;                          \
+        newcont->ivec = vm->ivec;                       \
+        cont = newcont;                                 \
+        sp += CONT_FRAME_SIZE;                          \
+        argp = sp;                                      \
+    } while (0)
+
+/* furthermore, this macro would be used to calculate insn pointer
+   from the offset value */
+#define OFFSET_TO_PC(offset)  (&vm->ivec->insn[SCM_INT_VALUE(offset)])
+#endif /* GAUCHE_USE_NVM */
+
+
+#ifdef GAUCHE_USE_NVM
+static ScmObj code_to_return[] = { SCM_VM_INSN(SCM_VM_RET) };
+#define PC_TO_RETURN  code_to_return
+#define RECOVER_IVEC  vm->ivec = cont->ivec
+#else  /*!GAUCHE_USE_NVM*/
+#define PC_TO_RETURN  SCM_NIL
+#define RECOVER_IVEC  /*nothing*/
+#endif /*!GAUCHE_USE_NVM*/
 
 /* pop a continuation frame, i.e. return from a procedure. */
 #define POP_CONT()                                                      \
@@ -295,7 +337,7 @@ void Scm__InitVM(void)
             if (IN_STACK_P((ScmObj*)cont)) sp = (ScmObj*)cont;          \
             env = cont->env;                                            \
             argp = sp;                                                  \
-            pc = SCM_NIL;                                               \
+            pc = PC_TO_RETURN;                                          \
             cont = cont->prev;                                          \
             SAVE_REGS();                                                \
             val0 = after__(val0, data__);                               \
@@ -317,6 +359,7 @@ void Scm__InitVM(void)
             }                                                           \
             cont = cont->prev;                                          \
         }                                                               \
+        RECOVER_IVEC;                                                   \
     } while (0)
 
 /* push environment header to finish the environment frame.
@@ -368,12 +411,20 @@ void Scm__InitVM(void)
         }                                                               \
     } while (0)
 
+#ifndef GAUCHE_USE_NVM
 #define VM_ERR(errargs)                         \
    do {                                         \
       pc = prevpc;                              \
       SAVE_REGS();                              \
       Scm_Error errargs;                        \
    } while (0)
+#else  /*GAUCHE_USE_NVM*/
+#define VM_ERR(errargs)                         \
+   do {                                         \
+      SAVE_REGS();                              \
+      Scm_Error errargs;                        \
+   } while (0)
+#endif /*GAUCHE_USE_NVM*/
 
 /* check the argument count is OK for call to PROC.  if PROC takes &rest
  * args, fold those arguments to the list.  Returns adjusted size of
@@ -421,7 +472,7 @@ void Scm__InitVM(void)
 #endif /* !GAUCHE_USE_NVM */
 
 #ifdef GAUCHE_USE_NVM
-static void *vmInsnAddressTable = NULL;
+static void **vmInsnAddressTable = NULL;
 
 void *Scm_VMInsnAddress(int insn)
 {
@@ -478,11 +529,10 @@ static void run_loop()
             vm->numVals = 1;
             continue;
         }
-
 #else  /* GAUCHE_USE_NVM */
-        SCM_ASSERT(pc < vm->ivec->insn[vm->ivec->size]);
         code = *pc++;
 #endif /* GAUCHE_USE_NVM */
+
         /* VM instructions */
         SWITCH(SCM_VM_INSN_CODE(code)) {
 
@@ -514,8 +564,10 @@ static void run_loop()
                 pc = prep;
                 NEXT;
 #else  /* GAUCHE_USE_NVM */
+                ScmObj offset = *pc++;
                 int reqstack = CONT_FRAME_SIZE+ENV_SIZE(SCM_VM_INSN_ARG(code))+1;
                 CHECK_STACK(reqstack);
+                PUSH_CONT(OFFSET_TO_PC(offset));
 #endif
             }
             CASE(SCM_VM_PRE_TAIL) {
@@ -604,7 +656,12 @@ static void run_loop()
                         env = SCM_CLOSURE(val0)->env;
                         argp = sp;
                     }
+#ifndef GAUCHE_USE_NVM
                     pc = SCM_CLOSURE(val0)->code;
+#else
+                    vm->ivec = SCM_CLOSURE(val0)->code;
+                    pc = vm->ivec->insn;
+#endif
                     NEXT;
                 }
                 /*
@@ -694,7 +751,12 @@ static void run_loop()
                     PUSH_ARG(SCM_OBJ(nm));
                     FINISH_ENV(SCM_PROCEDURE_INFO(val0),
                                SCM_METHOD(val0)->env);
+#ifndef GAUCHE_USE_NVM
                     pc = SCM_OBJ(SCM_METHOD(val0)->data);
+#else  /*GAUCHE_USE_NVM*/
+                    vm->ivec = SCM_IVECTOR(SCM_METHOD(val0)->data);
+                    pc = vm->ivec->insn;
+#endif /*GAUCHE_USE_NVM*/
                 }
                 NEXT;
                 /*
@@ -706,9 +768,12 @@ static void run_loop()
             }
             CASE(SCM_VM_GREF) {
                 ScmGloc *gloc;
-                
+#ifndef GAUCHE_USE_NVM
                 VM_ASSERT(SCM_PAIRP(pc));
                 val0 = SCM_CAR(pc);
+#else   /*GAUCHE_USE_NVM*/
+                val0 = *pc++;
+#endif  /*GAUCHE_USE_NVM*/
 
                 if (!SCM_GLOCP(val0)) {
                     VM_ASSERT(SCM_IDENTIFIERP(val0));
@@ -733,7 +798,9 @@ static void run_loop()
                     val0 = Scm_LoadAutoload(SCM_AUTOLOAD(val0));
                     RESTORE_REGS();
                 }
+#ifndef GAUCHE_USE_NVM
                 pc = SCM_CDR(pc);
+#endif /*!GAUCHE_USE_NVM*/
                 NEXT;
             }
             CASE(SCM_VM_LREF0) { val0 = ENV_DATA(env, 0); NEXT; }
@@ -831,6 +898,7 @@ static void run_loop()
             CASE(SCM_VM_LET) {
                 int nlocals = SCM_VM_INSN_ARG(code);
                 int size = CONT_FRAME_SIZE + ENV_SIZE(nlocals);
+#ifndef GAUCHE_USE_NVM
                 ScmObj body;
                 CHECK_STACK(size);
                 VM_ASSERT(SCM_PAIRP(pc));
@@ -840,13 +908,23 @@ static void run_loop()
                 }
                 PUSH_LOCAL_ENV(nlocals, prevpc);
                 pc = body;
+#else /*GAUCHE_USE_NVM*/
+                ScmObj offset = *pc++;
+                CHECK_STACK(size);
+                PUSH_CONT(OFFSET_TO_PC(offset));
+                PUSH_LOCAL_ENV(nlocals, prevpc);
+#endif
                 NEXT;
             }
             CASE(SCM_VM_GSET) {
                 ScmObj loc;
                 VM_ASSERT(SCM_PAIRP(pc));
-                
+
+#ifndef GAUCHE_USE_NVM
                 loc = SCM_CAR(pc);
+#else   /*GAUCHE_USE_NVM*/
+                loc = *pc;
+#endif
                 if (SCM_GLOCP(loc)) {
                     SCM_GLOC_SET(SCM_GLOC(loc), val0);
                 } else {
@@ -864,7 +942,11 @@ static void run_loop()
                     /* TODO: make it MT safe! */
                     SCM_SET_CAR(pc, SCM_OBJ(gloc));
                 }
+#ifndef GAUCHE_USE_NVM
                 pc = SCM_CDR(pc);
+#else   /*GAUCHE_USE_NVM*/
+                pc++;
+#endif
                 NEXT;
             }
             CASE(SCM_VM_LSET0) { ENV_DATA(env, 0) = val0; NEXT; }
@@ -891,10 +973,15 @@ static void run_loop()
             }
             CASE(SCM_VM_DEFINE) {
                 ScmObj var; ScmSymbol *name;
+#ifndef GAUCHE_USE_NVM
                 VM_ASSERT(SCM_PAIRP(pc));
                 var = SCM_CAR(pc);
                 VM_ASSERT(SCM_IDENTIFIERP(var));
                 pc = SCM_CDR(pc);
+#else   /*GAUCHE_USE_NVM*/
+                var = *pc++;
+                VM_ASSERT(SCM_IDENTIFIERP(var));
+#endif  /*GAUCHE_USE_NVM*/
                 Scm_Define(SCM_IDENTIFIER(var)->module,
                            (name = SCM_IDENTIFIER(var)->name), val0);
                 val0 = SCM_OBJ(name);
@@ -902,26 +989,43 @@ static void run_loop()
             }
             CASE(SCM_VM_DEFINE_CONST) {
                 ScmObj var; ScmSymbol *name;
+#ifndef GAUCHE_USE_NVM
                 VM_ASSERT(SCM_PAIRP(pc));
                 var = SCM_CAR(pc);
                 VM_ASSERT(SCM_IDENTIFIERP(var));
                 pc = SCM_CDR(pc);
+#else   /*GAUCHE_USE_NVM*/
+                var = *pc++;
+                VM_ASSERT(SCM_IDENTIFIERP(var));
+#endif  /*GAUCHE_USE_NVM*/
                 Scm_DefineConst(SCM_IDENTIFIER(var)->module,
                                 (name = SCM_IDENTIFIER(var)->name), val0);
                 val0 = SCM_OBJ(name);
                 NEXT;
             }
             CASE(SCM_VM_IF) {
+#ifndef GAUCHE_USE_NVM
                 if (SCM_FALSEP(val0)) { pc = SCM_CDR(pc); }
                 else                  { pc = SCM_CAR(pc); }
+#else   /*GAUCHE_USE_NVM*/
+                if (SCM_FALSEP(val0)) {
+                    ScmObj next = *pc++;
+                    pc = &vm->ivec->insn[SCM_INT_VALUE(next)];
+                } else {
+                    pc++;
+                }
+#endif  /*GAUCHE_USE_NVM*/
                 NEXT;
             }
             CASE(SCM_VM_LAMBDA) {
                 ScmObj body;
-                
+#ifndef GAUCHE_USE_NVM                
                 VM_ASSERT(SCM_PAIRP(pc));
                 body = SCM_CAR(pc);
                 pc = SCM_CDR(pc);
+#else   /*GAUCHE_USE_NVM*/
+                body = *pc++;
+#endif  /*GAUCHE_USE_NVM*/
 
                 /* preserve environment */
                 SAVE_REGS();
@@ -949,9 +1053,16 @@ static void run_loop()
                 argsize = reqargs + (restarg? 1 : 0);
                 FETCH_INSN(body);
 
+#ifndef GAUCHE_USE_NVM
                 if (!SCM_NULLP(pc)) {
                     PUSH_CONT(prevpc, pc);
                 }
+#else   /*GAUCHE_USE_NVM*/
+                {
+                    ScmObj offset = *pc++;
+                    PUSH_CONT(OFFSET_TO_PC(offset));
+                }
+#endif  /*GAUCHE_USE_NVM*/
 
                 if (reqargs > 0) {
                     PUSH_ARG(val0);
@@ -972,16 +1083,19 @@ static void run_loop()
                 vm->numVals = 1;
 
                 FINISH_ENV(prevpc, env);
+#ifndef GAUCHE_USE_NVM
                 pc = body;
+#endif
                 NEXT;
             }
+#ifndef GAUCHE_USE_NVM
             CASE(SCM_VM_QUOTE_INSN) {
                 VM_ASSERT(SCM_PAIRP(pc));
                 val0 = SCM_CAR(pc);
                 pc = SCM_CDR(pc);
                 NEXT;
             }
-
+#endif  /*!GAUCHE_USE_NVM*/
             /* combined push immediate */
             CASE(SCM_VM_PUSHI) {
                 long imm = SCM_VM_INSN_ARG(code);
@@ -995,7 +1109,7 @@ static void run_loop()
                 NEXT;
             }
 
-#if defined(GAUCHE_USE_NVM) || defined(GAUCHE_TEST_NVM)
+#if defined(GAUCHE_USE_NVM)
             CASE(SCM_VM_CONST);
             CASE(SCM_VM_JUMP);
             CASE(SCM_VM_RET);
@@ -1192,11 +1306,17 @@ static void run_loop()
                 }
                 cp = val0;     /* now cp has arg list */
                 POP_ARG(val0); /* get proc */
+#ifndef GAUCHE_USE_NVM
                 if (!SCM_NULLP(pc)) {
                     CHECK_STACK(CONT_FRAME_SIZE);
                     PUSH_CONT(prevpc, pc);
                     pc = SCM_NIL;
                 }
+#else   /*GAUCHE_USE_NVM*/
+                CHECK_STACK(CONT_FRAME_SIZE);
+                PUSH_CONT(pc);
+                pc = PC_TO_RETURN;
+#endif  /*GAUCHE_USE_NVM*/
                 SAVE_REGS();
                 val0 = Scm_VMApply(val0, cp);
                 RESTORE_REGS();
@@ -1443,8 +1563,12 @@ static void run_loop()
                 ScmObj obj;
                 POP_ARG(obj);
                 CHECK_STACK(CONT_FRAME_SIZE);
+#ifndef GAUCHE_USE_NVM
                 PUSH_CONT(prevpc, pc);
-                pc = SCM_NIL;
+#else   /*GAUCHE_USE_NVM*/
+                PUSH_CONT(pc);
+#endif  /*GAUCHE_USE_NVM*/
+                pc = PC_TO_RETURN;
                 SAVE_REGS();
                 val0 = Scm_VMSlotRef(obj, val0, FALSE);
                 vm->numVals = 1;
@@ -1456,8 +1580,12 @@ static void run_loop()
                 POP_ARG(slot);
                 POP_ARG(obj);
                 CHECK_STACK(CONT_FRAME_SIZE);
+#ifndef GAUCHE_USE_NVM
                 PUSH_CONT(prevpc, pc);
-                pc = SCM_NIL;
+#else   /*GAUCHE_USE_NVM*/
+                PUSH_CONT(pc);
+#endif  /*GAUCHE_USE_NVM*/
+                pc = PC_TO_RETURN;
                 SAVE_REGS();
                 val0 = Scm_VMSlotSet(obj, slot, val0);
                 vm->numVals = 1;
@@ -1597,6 +1725,15 @@ ScmEnvFrame *Scm_GetCurrentEnv(void)
  * Function application from C
  */
 
+#ifdef GAUCHE_USE_NVM
+static ScmObj *tail_call_code(int nargs)
+{
+    ScmObj *ary = SCM_NEW(ScmObj);
+    ary[0] = SCM_VM_INSN1(SCM_VM_TAIL_CALL, nargs);
+    return ary;
+}
+#endif
+
 /* The Scm_VMApply family is supposed to be called in SUBR.  It doesn't really
    applies the function in it.  Instead, it modifies the VM state so that
    the specified function will be called immediately after this SUBR
@@ -1612,15 +1749,22 @@ ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
     ScmObj cp;
     int numargs = Scm_Length(args);
     int reqstack;
-    
+
+#ifndef GAUCHE_USE_NVM    
     SCM_ASSERT(SCM_NULLP(pc));
+#endif
     if (numargs < 0) Scm_Error("improper list not allowed: %S", args);
     reqstack = ENV_SIZE(numargs) + 1;
     CHECK_STACK(reqstack);
     SCM_FOR_EACH(cp, args) {
         PUSH_ARG(SCM_CAR(cp));
     }
+#ifndef GAUCHE_USE_NVM
     pc = SCM_LIST1(SCM_VM_INSN1(SCM_VM_TAIL_CALL, numargs));
+#else  /*GAUCHE_USE_NVM*/
+    vm->ivec = NULL;
+    pc = tail_call_code(numargs);
+#endif /*GAUCHE_USE_NVM*/
     SAVE_REGS();
     return proc;
 }
@@ -1629,18 +1773,28 @@ ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
 ScmObj Scm_VMApply0(ScmObj proc)
 {
     ScmVM *vm = theVM;
+#ifndef GAUCHE_USE_NVM
     SCM_ASSERT(SCM_NULLP(vm->pc));
     vm->pc = SCM_LIST1(SCM_VM_INSN1(SCM_VM_TAIL_CALL, 0));
+#else  /*GAUCHE_USE_NVM*/
+    vm->ivec = NULL;
+    vm->pc = tail_call_code(0);
+#endif /*GAUCHE_USE_NVM*/
     return proc;
 }
 
 ScmObj Scm_VMApply1(ScmObj proc, ScmObj arg)
 {
     DECL_REGS;
-    SCM_ASSERT(SCM_NULLP(pc));
     CHECK_STACK(1);
     PUSH_ARG(arg);
+#ifndef GAUCHE_USE_NVM
+    SCM_ASSERT(SCM_NULLP(pc));
     pc = SCM_LIST1(SCM_VM_INSN1(SCM_VM_TAIL_CALL, 1));
+#else  /*GAUCHE_USE_NVM*/
+    vm->ivec = NULL;
+    vm->pc = tail_call_code(0);
+#endif /*GAUCHE_USE_NVM*/
     SAVE_REGS();
     return proc;
 }
@@ -1648,11 +1802,16 @@ ScmObj Scm_VMApply1(ScmObj proc, ScmObj arg)
 ScmObj Scm_VMApply2(ScmObj proc, ScmObj arg1, ScmObj arg2)
 {
     DECL_REGS;
-    SCM_ASSERT(SCM_NULLP(pc));
     CHECK_STACK(2);
     PUSH_ARG(arg1);
     PUSH_ARG(arg2);
+#ifndef GAUCHE_USE_NVM
+    SCM_ASSERT(SCM_NULLP(pc));
     pc = SCM_LIST1(SCM_VM_INSN1(SCM_VM_TAIL_CALL, 2));
+#else  /*GAUCHE_USE_NVM*/
+    vm->ivec = NULL;
+    vm->pc = tail_call_code(0);
+#endif /*GAUCHE_USE_NVM*/
     SAVE_REGS();
     return proc;
 }
@@ -1695,7 +1854,13 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
         Scm_Printf(theVM->curerr, "== %#S\n", v);
     }
     argp = sp;
+#ifndef GAUCHE_USE_NVM
     PUSH_CONT(v, v);
+#else /*GAUCHE_USE_NVM*/
+    SCM_ASSERT(SCM_IVECTORP(v));
+    PUSH_CONT(SCM_IVECTOR(v)->insn);
+    vm->ivec = SCM_IVECTOR(v);
+#endif
     vm->numVals = 1;
     SAVE_REGS();
     return SCM_UNDEFINED;
@@ -1731,8 +1896,15 @@ static ScmObj user_eval_inner(ScmObj program)
        A boundary frame also keeps the unfinished argument frame at
        the point when Scm_Eval or Scm_Apply is called. */
     CHECK_STACK(CONT_FRAME_SIZE);
+#ifndef GAUCHE_USE_NVM
     PUSH_CONT(boundaryFrameMark, pc);
     pc = program;
+#else   /*GAUCHE_USE_NVM*/
+    SCM_ASSERT(SCM_IVECTORP(program));
+    PUSH_CONT(SCM_IVECTOR(program)->insn);
+    cont->ivec = NULL;
+    pc = SCM_IVECTOR(program)->insn;
+#endif  /*GAUCHE_USE_NVM*/
     SAVE_REGS();
 
     cstack.prev = vm->cstack;
@@ -1820,6 +1992,7 @@ ScmObj Scm_Eval(ScmObj expr, ScmObj e)
 
 ScmObj Scm_Apply(ScmObj proc, ScmObj args)
 {
+#ifndef GAUCHE_USE_NVM
     ScmObj code = SCM_NIL, tail = SCM_NIL, cp;
     int nargs = 0;
 
@@ -1833,6 +2006,24 @@ ScmObj Scm_Apply(ScmObj proc, ScmObj args)
     SCM_APPEND1(code, tail, proc);
     SCM_APPEND1(code, tail, SCM_VM_INSN1(SCM_VM_CALL, nargs));
     return user_eval_inner(SCM_LIST2(SCM_VM_INSN1(SCM_VM_PRE_CALL, nargs),code));
+#else  /*GAUCHE_USE_NVM*/
+    ScmIVector *ivec;
+    ScmObj cp;
+    int nargs = Scm_Length(args);
+    int codesize = nargs*2+4;
+    int i;
+    
+    ivec = SCM_IVECTOR(Scm_MakeIVector(codesize));
+    ivec->insn[0] = SCM_VM_INSN1(SCM_VM_PRE_CALL, nargs);
+    ivec->insn[1] = SCM_MAKE_INT(nargs*2+3);
+    for (i=0, cp=args; i<nargs; i++, cp=SCM_CDR(cp)) {
+        ivec->insn[i*2+2] = SCM_VM_INSN(SCM_VM_CONST);
+        ivec->insn[i*2+3] = SCM_CAR(cp);
+    }
+    ivec->insn[nargs*2+2] = SCM_VM_INSN1(SCM_VM_CALL, nargs);
+    ivec->insn[nargs*2+3] = SCM_VM_INSN(SCM_VM_RET);
+    return user_eval_inner(SCM_OBJ(ivec));
+#endif /*GAUCHE_USE_NVM*/
 }
 
 /* Arrange C function AFTER to be called after the procedure returns.
@@ -1851,7 +2042,11 @@ void Scm_VMPushCC(ScmObj (*after)(ScmObj result, void **data),
     cc->prev = cont;
     cc->argp = NULL;
     cc->size = datasize;
+#ifndef GAUCHE_USE_NVM
     cc->pc = SCM_OBJ(after);
+#else   /*GAUCHE_USE_NVM*/
+    cc->pc = (ScmObj*)(after);
+#endif  /*GAUCHE_USE_NVM*/
     cc->env = env;
     cc->info = SCM_NIL;
     for (i=0; i<datasize; i++) {
