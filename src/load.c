@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.32 2001-04-14 23:07:28 shiro Exp $
+ *  $Id: load.c,v 1.33 2001-04-14 23:52:39 shiro Exp $
  */
 
 #include <stdlib.h>
@@ -225,11 +225,16 @@ ScmObj Scm_VMLoad(ScmString *filename, int errorp)
     return Scm_VMLoadFromPort(SCM_PORT(port));
 }
 
-void Scm_Load(const char *cpath)
+void Scm_Load(const char *cpath, int errorp)
 {
     ScmObj f = Scm_MakeString(cpath, -1, -1);
     ScmObj l = SCM_INTERN("load");
-    Scm_Eval(SCM_LIST2(l, f), SCM_NIL);
+    if (errorp) {
+        Scm_Eval(SCM_LIST2(l, f), SCM_NIL);
+    } else {
+        ScmObj k = SCM_MAKE_KEYWORD("error-if-not-found");
+        Scm_Eval(SCM_LIST4(l, f, k, SCM_TRUE), SCM_NIL);
+    }
 }
 
 /*
@@ -434,7 +439,7 @@ ScmObj Scm_Require(ScmObj feature)
         Scm_Error("require: string expected, but got %S\n", feature);
     if (SCM_FALSEP(Scm_Member(feature, provided, SCM_CMP_EQUAL))) {
         ScmObj filename = Scm_StringAppendC(SCM_STRING(feature), ".scm", 4, 4);
-        Scm_Load(Scm_GetStringConst(SCM_STRING(filename)));
+        Scm_Load(Scm_GetStringConst(SCM_STRING(filename)), TRUE);
     }
     return SCM_TRUE;
 }
