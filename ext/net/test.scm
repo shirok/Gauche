@@ -169,7 +169,8 @@
         (call-with-client-socket (make-client-socket 'unix "sock.o")
           (lambda (in out)
             (display "END\n" out) (flush out)
-            (sys-wait-exit-status (cdr (sys-wait)))))))
+            (receive (pid code) (sys-wait)
+              (sys-wait-exit-status code))))))
 
 (sys-unlink "sock.o")
 
@@ -205,6 +206,7 @@
         (call-with-client-socket (make-client-socket 'inet "localhost" *inet-port*)
           (lambda (in out)
             (display "END\n" out) (flush out)
-            (sys-wait-exit-status (cdr (sys-wait)))))))
+            (receive (pid code) (sys-wait)
+              (sys-wait-exit-status code))))))
 
 (test-end)

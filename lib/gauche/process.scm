@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: process.scm,v 1.4 2001-06-24 22:02:33 shirok Exp $
+;;;  $Id: process.scm,v 1.5 2001-06-25 08:09:08 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -136,7 +136,7 @@
                    toclose)
               (when wait
                 (slot-set! proc 'status
-                           (cdr (sys-waitpid pid))))
+                           (receive (p code) (sys-waitpid pid) code)))
               proc)))
       (sys-exec (car argv) argv iomap)))
 
@@ -150,8 +150,8 @@
 ;; wait
 (define (process-wait process)
   (if (process-alive? process)
-      (let ((result (sys-waitpid (process-pid process))))
-        (slot-set! process 'status (cdr result))
+      (receive (p code) (sys-waitpid (process-pid process))
+        (slot-set! process 'status code)
         (slot-set! process 'processes
                    (delete process (slot-ref process 'processes)))
         #t)
