@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.31 2003-12-14 00:52:15 shirok Exp $
+;; $Id: object.scm,v 1.32 2003-12-14 00:55:51 shirok Exp $
 
 (use gauche.test)
 
@@ -1167,28 +1167,6 @@
                                   unknown "alan")
        (map (cut slot-ref *member-ted* <>)
             '(full-name occupation sex cname)))
-
-#|
-;; Another scenario.  Using customized slot spec
-
-(define <old-member> <member>)
-
-(define-class <member> ()
-  ((full-name :init-keyword :full-name)
-   (gender    :init-keyword :gender)
-   (job       :init-keyword :job)
-   (cname     :allocation :class) 
-   ))
-
-(define-method change-class ((obj <old-member>) new-class)
-  (next-method obj new-class
-               '(full-name (sex . gender) (occupation . job) cname)))
-
-(test* "using transfer slot spec" '("Alan Pangborn" "County Sheriff"
-                                    unknown "alan")
-       (map (cut slot-ref *member-alan* <>)
-            '(full-name job gender cname)))
-|#
 
 (test-end)
 
