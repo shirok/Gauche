@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.73 2001-05-06 23:59:56 shirok Exp $
+;;; $Id: extlib.stub,v 1.74 2001-05-14 18:42:22 shirok Exp $
 ;;;
 
 "
@@ -38,6 +38,13 @@
 ;;
 ;; 6.2  Numbers
 ;;
+
+(define-cproc ash (num cnt)
+  (assert (small-integer? cnt))
+  "  SCM_RETURN(Scm_Ash(num, cnt));")
+
+(define-cproc logand (x y)
+  "  SCM_RETURN(Scm_LogAnd(x, y));")
 
 ;; just for debug...
 (define-cproc %bignum-dump (obj)
