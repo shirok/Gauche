@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.20 2001-02-02 12:17:12 shiro Exp $
+ *  $Id: vm.c,v 1.21 2001-02-03 09:16:35 shiro Exp $
  */
 
 #include "gauche.h"
@@ -596,11 +596,6 @@ static void run_loop()
             }
 
             /* Inlined procedures */
-        case SCM_VM_NOT:
-            {
-                val0 = SCM_MAKE_BOOL(SCM_FALSEP(val0));
-                continue;
-            }
         case SCM_VM_CONS:
             {
                 ScmObj ca;
@@ -639,6 +634,27 @@ static void run_loop()
             }
         case SCM_VM_LIST_STAR:
             {
+                int nargs = SCM_VM_INSN_ARG(code);
+                ScmObj cp = SCM_NIL;
+                if (nargs > 0) {
+                    ScmObj arg;
+                    cp = val0;
+                    while (--nargs > 0) {
+                        POP_ARG(arg);
+                        cp = Scm_Cons(arg, cp);
+                    }
+                }
+                val0 = cp;
+                continue;
+            }
+        case SCM_VM_NOT:
+            {
+                val0 = SCM_MAKE_BOOL(SCM_FALSEP(val0));
+                continue;
+            }
+        case SCM_VM_NULLP:
+            {
+                val0 = SCM_MAKE_BOOL(SCM_NULLP(val0));
                 continue;
             }
         case SCM_VM_EQ:
@@ -664,6 +680,18 @@ static void run_loop()
             }
         case SCM_VM_APPEND:
             {
+                int nargs = SCM_VM_INSN_ARG(code);
+                ScmObj cp = SCM_NIL, arg;
+                if (nargs > 0) {
+                    cp = val0;
+                    while (--nargs > 0) {
+                        POP_ARG(arg);
+                        if (Scm_Length(arg) < 0)
+                            Scm_Error("list required, but got %S\n", arg);
+                        cp = Scm_Append2(arg, cp);
+                    }
+                }
+                val0 = cp;
                 continue;
             }
         case SCM_VM_PROMISE: 
