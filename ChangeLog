@@ -1,3 +1,13 @@
+2003-01-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c : added :environment keyword argument to load and
+	  load-from-port; this is necessary to force a specific file to
+	  be loaded in the environment specified by the caller.  (Since
+	  'load' form itself is evaluated at run time, even
+	  (eval '(load "foo") module) doesn't work, for the module
+	  given to 'eval' is only effective during compiling the form
+	  (load "foo").)
+
 2002-12-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c, src/read.c, ext/uvector/uvector.c.sh : added

@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.332 2002-12-26 09:07:06 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.333 2003-01-01 13:33:22 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -10938,7 +10938,7 @@ absolute position of the arguments, starting from 0.
 @subsection Loading Scheme file
 @c NODE Schemeファイルのロード
 
-@defun load file &keyword paths (error-if-not-found #t)
+@defun load file &keyword paths (error-if-not-found #t) environment
 [R5RS+]
 @c EN
 Loads @var{file}, that is, read Scheme expressions in @var{file} and
@@ -10953,8 +10953,12 @@ a list of directory names to the keyword argument @var{paths}.
 
 On success, @code{load} returns @code{#t}.
 If the specified file is not found, an error is signalled unless
-the keyword argument @code{error-if-not-found} is @code{#f}, in
+the keyword argument @var{error-if-not-found} is @code{#f}, in
 which case @code{load} returns @code{#f}.
+
+If a module is given to the keyword argument @var{environment},
+@code{load} works as if the given module is selected at the beginning
+of the loaded file.
 
 The current module is preserved; even @code{select-module} is
 called in @var{file}, the module in which @code{load} is called
@@ -10976,6 +10980,10 @@ If you want to load a library file, it's better to use `@code{use}'
 指定ファイルがみつからない場合はエラーとなりますが、もしキーワード引数
 @code{error-if-not-found}に@code{#f}が与えられていれば単に@code{load}から
 @code{#f}が返されます。
+
+キーワード引数@var{environment}にモジュールが渡された場合は、
+あたかもそのモジュールがファイルの先頭でselectされたかのように
+@code{load}されます。
 
 カレントモジュールは保存されます。つまり、@var{file}中で@code{select-module}によって
 カレントモジュールを変更しても、@code{load}が終わったら@code{load}を読んだ時点の

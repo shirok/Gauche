@@ -69,6 +69,19 @@
         (eval '(require "test.o/d") (interaction-environment))
         (eval 'z (interaction-environment))))
 
+;; :environment arg -------------------------------------
+(with-output-to-file "test.o/d.scm"
+  (lambda ()
+    (display "(define foo 3)")))
+(define-module load.test )
+(define foo 8)
+
+(test ":environment argument"
+      3
+      (lambda ()
+        (load "test.o/d" :environment (find-module 'load.test))
+        (with-module load.test foo)))
+
 (sys-system "rm -rf test.o")
 
 (test-end)
