@@ -1,7 +1,7 @@
 dnl
 dnl Example of configuring Gauche extension
 dnl
-dnl $Id: configure.in,v 1.10 2002-01-03 07:54:21 shirok Exp $
+dnl $Id: configure.in,v 1.11 2002-01-07 20:29:45 shirok Exp $
 AC_INIT(charconv.c)
 
 dnl Determine if we're configuring inside of Gauche main source tree or not.
@@ -28,6 +28,7 @@ dnl to either 'sys' or 'site'.   The variable can be overridden at make time.
 AC_SUBST(INSTALL_TYPE)
 
 dnl Process extra configure argument
+ICONV_NAME=iconv
 AC_ARG_WITH(iconv, , [
   case $with_iconv in
     no|yes) iconv_lib="" ;;
@@ -35,7 +36,8 @@ AC_ARG_WITH(iconv, , [
          LDFLAGS="$LDFLAGS -L$with_iconv/lib";
          iconv_lib="-liconv";;
   esac], [with_iconv=yes])
-AC_ARG_WITH(iconv-lib, , [ iconv_lib="-l$with_iconv_lib" ])
+AC_ARG_WITH(iconv-lib, , [ ICONV_NAME="$with_iconv_lib"; iconv_lib="-l$with_iconv_lib" ])
+AC_SUBST(ICONV_NAME)
 LIBS="$LIBS $iconv_lib"
 
 dnl Get compiler parameters which Gauche has been compiled with.
@@ -52,12 +54,13 @@ AC_PROG_INSTALL
 
 dnl Add more test
 if test $with_iconv != no; then
-  AC_CHECK_HEADERS(iconv.h)
+  AC_CHECK_HEADER($ICONV_NAME.h, AC_DEFINE(HAVE_ICONV_H))
 fi
 
 dnl Check the iconv() prototype
+ichdr="#include <$ICONV_NAME.h>"
 AC_CACHE_CHECK(iconv takes const char **input, ac_cv_iconv_const_input, [
-AC_TRY_COMPILE([#include <iconv.h>],[
+AC_TRY_COMPILE($ichdr, [
 const char *inbuf;
 char *outbuf;
 int inroom, outroom;
@@ -75,4 +78,4 @@ LDFLAGS="$LDFLAGS `$GAUCHE_CONFIG --so-ldflags`"
 AC_SUBST(LDFLAGS)
 
 dnl Output
-AC_OUTPUT(Makefile)
+AC_OUTPUT(Makefile charconv.h)

@@ -12,22 +12,13 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.18 2001-12-23 03:29:23 shirok Exp $
+ *  $Id: charconv.c,v 1.19 2002-01-07 20:29:45 shirok Exp $
  */
 
 #include <string.h>
 #include <errno.h>
 #include <gauche.h>
 #include "charconv.h"
-
-#ifdef HAVE_ICONV_H
-#include <iconv.h>
-#else
-typedef void *iconv_t;
-iconv_t iconv_open(const char *tocode, const char *fromcode);
-int iconv_close(iconv_t handle);
-int iconv(iconv_t handle, char **inbuf, size_t *inroom, char **outbuf, size_t *outroom);
-#endif /* !HAVE_ICONV_H */
 
 #ifdef ICONV_CONST_INPUT
 #define INBUFCAST /*none*/
