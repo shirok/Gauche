@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: reload.scm,v 1.5 2003-09-07 12:37:58 shirok Exp $
+;;;  $Id: reload.scm,v 1.6 2003-09-11 19:57:54 shirok Exp $
 ;;;
 
 ;;; Created:    <2002-11-06 16:02:55 foof>
@@ -123,7 +123,7 @@
          (lambda (mod)
            (and-let* ((name (module-name mod))
                       (last-load (hash-table-get mod-times name init))
-                      (p1 (string-append (%module-name->path name) ".scm"))
+                      (p1 (string-append (module-name->path name) ".scm"))
                       (path (find-in-path p1 *load-path*))
                       (last-mod (slot-ref (sys-stat path) 'mtime))
                       (rule (find-rule (symbol->string name) rules)))
