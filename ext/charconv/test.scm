@@ -218,5 +218,48 @@
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP")
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 
+;;--------------------------------------------------------------------
+(test-section "ucs <-> char")
+
+;; this test is here since it requires gauche.charconv to be loaded.
+
+(test "ucs <-> char" #x61
+      (lambda () (char->ucs (ucs->char #x61))))
+(test "ucs <-> char" #xa1
+      (lambda () (char->ucs (ucs->char #xa1))))
+
+(case (gauche-character-encoding)
+  ((euc-jp sjis utf-8)
+   (test "ucs <-> char" #x0391
+         (lambda () (char->ucs (ucs->char #x0391))))
+   (test "ucs <-> char" #x3042
+         (lambda () (char->ucs (ucs->char #x3042))))
+   ))
+
+(test "ucs char syntax" #\a
+      (lambda () (read-from-string "#\\u0061")))
+(test "ucs char syntax" #\b
+      (lambda () (read-from-string "#\\u00000062")))
+(test "ucs char syntax" #xa1
+      (lambda () (char->ucs (read-from-string "#\\u00a1"))))
+(case (gauche-character-encoding)
+  ((euc-jp sjis utf-8)
+   (test "usc char syntax" #x0391
+         (lambda () (char->ucs (read-from-string "#\\u0391"))))
+   (test "ucs char syntax" #x3042
+         (lambda () (char->ucs (read-from-string "#\\u3042"))))
+   ))
+
+(test "ucs string syntax" "abcde"
+      (lambda () (read-from-string "\"\\u0061bcde\"")))
+(test "ucs string syntax" "abcde"
+      (lambda () (read-from-string "\"\\U00000061bcde\"")))
+(case (gauche-character-encoding)
+  ((euc-jp sjis utf-8)
+   (test "usc string syntax" #x0391
+         (lambda () (char->ucs (string-ref (read-from-string "\"\\u03911\"") 0))))
+   (test "ucs string syntax" #x3042
+         (lambda () (char->ucs (string-ref (read-from-string "\"\\u30421\"") 0))))
+   ))
 
 (test-end)
