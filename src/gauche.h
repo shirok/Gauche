@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.122 2001-04-26 07:06:00 shiro Exp $
+ *  $Id: gauche.h,v 1.123 2001-04-26 08:23:00 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -763,6 +763,24 @@ extern void        Scm_DStringPutc(ScmDString *dstr, ScmChar ch);
 
 extern void Scm__DStringRealloc(ScmDString *dstr, int min_incr);
 
+/* Efficient way to access string from Scheme */
+typedef struct ScmStringPointerRec {
+    SCM_HEADER;
+    int length;
+    int size;
+    const char *start;
+    const char *current;
+} ScmStringPointer;
+
+extern ScmClass Scm_StringPointerClass;
+#define SCM_CLASS_STRING_POINTER  (&Scm_StringPointerClass)
+#define SCM_STRING_POINTERP(obj)  SCM_XTYPEP(obj, SCM_CLASS_STRING_POINTER)
+#define SCM_STRING_POINTER(obj)   ((ScmStringPointer*)obj)
+
+extern ScmObj Scm_MakeStringPointer(ScmString *src, int index);
+extern ScmChar Scm_StringPointerNext(ScmStringPointer *sp);
+extern ScmChar Scm_StringPointerPrev(ScmStringPointer *sp);
+extern void Scm_StringPointerSet(ScmStringPointer *sp, int index);
 
 /*--------------------------------------------------------
  * VECTOR

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.27 2001-04-26 07:06:00 shiro Exp $
+ *  $Id: string.c,v 1.28 2001-04-26 08:23:00 shiro Exp $
  */
 
 #include <stdio.h>
@@ -832,6 +832,22 @@ static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         SCM_PUTC('"', port);
     }
 }
+
+/*==================================================================
+ *
+ * String pointer
+ *
+ */
+
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_StringPointerClass, NULL);
+
+ScmObj Scm_MakeStringPointer(ScmString *src, int index)
+{
+    const char *ptr;
+    return SCM_NIL;             /* writeme */
+}
+
+
 
 /*==================================================================
  *
