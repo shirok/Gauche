@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.174 2002-04-20 07:48:02 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.175 2002-04-21 21:57:44 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -7483,6 +7483,16 @@ an output port, and when omitted, the current output port is assumed.
 @c COMMON
 @end defun
 
+@defun print expr @dots{}
+@c EN
+Displays @var{expr}s (using @code{display}) to the current output port,
+then writes a newline.
+@c JP
+@var{expr} @dots{} ¤ò@code{display}¤ò»È¤Ã¤Æ¸½ºß¤Î½ÐÎÏ¥Ý¡¼¥È¤ËÉ½¼¨¤·¡¢
+ºÇ¸å¤Ë²þ¹Ô¤ò½ñ¤­½Ð¤·¤Þ¤¹¡£
+@c COMMON
+@end defun
+
 @deffn {Method} write-object (obj <object>) port
 You can customize how the object is printed out by this method.
 @end deffn
@@ -8295,17 +8305,33 @@ Gauche¤ÏPOSIX.1¤ÎÂ¿¤¯¤Î´Ø¿ô¤È¡¢¤µ¤Þ¤¶¤Þ¤ÊUnix¤Ç¶¦ÄÌ¤·¤Æ»È¤ï¤ì¤Æ¤¤¤ë¥·¥¹¥Æ¥à´Ø¿ô¤
 @c COMMON
 
 @c EN
-The procedures with name @code{sys-}@var{name} usually correspond to the
-system call @var{name}.  I tried to keep the interface similar
-whenever reasonable.  Sometimes Gauche has other routines that
-are higher level than system calls, nevertheless I try to
-provide lower level routines as well.
+Lots of Scheme implementations provide some sort of system interface
+under various APIs.  Some are just called by different names
+(e.g, @code{delete-file} or @code{remove-file} or @code{unlink} to delete
+a file), some do more abstraction introducing new Scheme objects.
+Instead of just picking one of such interfaces, I decided to implement
+Gauche's system interface API in two layers; the lower level layer,
+described in this section, follows the operating system's API
+as much as possible.  On top of that, the higher-level APIs are
+provided, with considering compatibility to the existing systems.
+@c JP
+Â¿¤¯¤ÎScheme¼ÂÁõ¤Ï¤¤¤í¤¤¤í¤Ê·Á¤Ç²¿¤é¤«¤Î¥·¥¹¥Æ¥à¥¤¥ó¥¿¥Õ¥§¡¼¥¹¤òÄó¶¡
+¤·¤Æ¤¤¤Þ¤¹¡£Ì¾Á°¤À¤±¤¬°ã¤¦¤â¤Î(Îã¡§@code{delete-file}¡¢@code{remove-file}
+¡¢@code{unlink}) ¤â¤¢¤ì¤Ð¡¢¿·¤·¤¤Scheme¥ª¥Ö¥¸¥§¥¯¥È¤òÆ³Æþ¤·¤Æ
+Ãê¾Ý²½¤ò¹Ô¤Ã¤Æ¤¤¤ë¤â¤Î¤â¤¢¤ê¤Þ¤¹¡£Gauche¤Ç¤Ï¡¢´ûÂ¸¤ÎAPI¤Î¤É¤ì¤«¤ò
+¤½¤Î¤Þ¤Þ¿¿»÷¤ë¤Î¤Ç¤Ï¤Ê¤¯¡¢2¤Ä¤Î¥ì¥¤¥ä¤òÄó¶¡¤¹¤ë¤³¤È¤Ë¤·¤Þ¤·¤¿¡£
+¤³¤Î¾Ï¤Ç½Ò¤Ù¤é¤ì¤ëÄã¥ì¥Ù¥ë¥ì¥¤¥ä¤Ï¡¢OS¤Î¥¤¥ó¥¿¥Õ¥§¡¼¥¹¤Ë»÷¤»¤¿¤â¤Î¤ò¼ÂÁõ¤·¤Þ¤¹¡£
+¤½¤Î¾å¤Ë¡¢´ûÂ¸¤Î¥·¥¹¥Æ¥à¤È¸ß´¹À­¤Î¤¢¤ë¹â¥ì¥Ù¥ë¤Î¥¤¥ó¥¿¥Õ¥§¡¼¥¹¤¬¼ÂÁõ¤µ¤ì¤Þ¤¹¡£
+@c COMMON
+
+@c EN
+The low level system interface has the name @code{sys-}@var{name}
+and usually correspond to the system call @var{name}.
+I tried to keep the interface similar whenever reasonable.
 @c JP
 @code{sys-}@var{name}¤È¤¤¤¦Ì¾Á°¤ò»ý¤Ä¼êÂ³¤­¤Ï¡¢Â¿¤¯¤Î¾ì¹ç¡¢
 ¥·¥¹¥Æ¥à¥³¡¼¥ë@var{name}¤ËÂÐ±þ¤·¤Æ¤¤¤Þ¤¹¡£
 ²ÄÇ½¤Ê¸Â¤ê¡¢¥¤¥ó¥¿¥Õ¥§¡¼¥¹¤¬»÷¤ë¤è¤¦¤Ë¤·¤Þ¤·¤¿¡£
-¤·¤Ð¤·¤ÐGauche¤Ï¥·¥¹¥Æ¥à¥³¡¼¥ë¤è¤ê¤â¹âµ¡Ç½¤Î¼êÂ³¤­¤òÄó¶¡¤·¤Æ¤¤¤Þ¤¹¤¬¡¢
-¤½¤Î¾ì¹ç¤Ç¤â¤Ê¤ë¤Ù¤¯Äã¥ì¥Ù¥ë¤Î¥ë¡¼¥Á¥ó¤âÄó¶¡¤¹¤ë¤è¤¦¤Ë¤·¤Æ¤¤¤Þ¤¹¡£
 @c COMMON
 
 @c EN
@@ -10640,7 +10666,7 @@ APIs.
 @section @code{file.filter} - Filtering file content
 @c NODE ¥Õ¥¡¥¤¥ë¤Î¥Õ¥£¥ë¥¿, @code{file.filter} - ¥Õ¥¡¥¤¥ë¤Î¥Õ¥£¥ë¥¿
 
-@defun {Module} file.filter
+@deftp {Module} file.filter
 @mdindex file.filter
 @c EN
 This module provides utilities for a common pattern in
@@ -10680,7 +10706,7 @@ in the processing.
 ½èÍýÅÓÃæ¤Ç¥¨¥é¡¼¤¬µ¯¤³¤Ã¤¿¾ì¹ç¤Ë½ÐÎÏ¥Õ¥¡¥¤¥ë¤òºï½ü
 @end itemize
 @c COMMON
-@end defun
+@end deftp
 
 @defun file-filter proc &keyword input output temporary-file keep-output?
 @c EN
@@ -10773,6 +10799,16 @@ By default, the output (or the temporary file when
 @c COMMON
 @end table
 @end defun
+
+@c ----------------------------------------------------------------------
+@node Filesystem utilities
+@section @code{file.util} - Filesystem utilities
+@c NODE ¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥æ¡¼¥Æ¥£¥ê¥Æ¥£, @code{file.util} - ¥Õ¥¡¥¤¥ë¥·¥¹¥Æ¥à¥æ¡¼¥Æ¥£¥ê¥Æ¥£
+
+@deftp {Module} file.util
+@mdindex file.util
+Provides convenient utilities handling files and directories.
+@end deftp
 
 @c ----------------------------------------------------------------------
 @node Character code conversion, Collection framework, Filtering file content, Library modules
