@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.14 2001-02-01 09:28:48 shiro Exp $
+ *  $Id: compile.c,v 1.15 2001-02-01 10:58:57 shiro Exp $
  */
 
 #include "gauche.h"
@@ -186,7 +186,6 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                         void *data = SCM_SYNTAX(g->value)->data;
                         return cmpl(form, env, ctx, data);
                     }
-#if 0
                     if (vm->enableInline &&
                         SCM_SUBRP(g->value) && SCM_SUBR_INLINER(g->value)) {
                         ScmObj inlined =
@@ -194,7 +193,6 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                                                        form, env, ctx);
                         if (!SCM_FALSEP(inlined)) return inlined;
                     }
-#endif
                 }
                 
                 /* Symbol doesn't have syntactic bindings.  It must be

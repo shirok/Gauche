@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.12 2001-02-01 08:17:35 shiro Exp $
+ *  $Id: vm.h,v 1.13 2001-02-01 10:58:57 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -226,7 +226,5 @@ enum {
     SCM_COMPILE_TAIL,           /* This is a tail expression. */
     SCM_COMPILE_NORMAL          /* Normal calling sequence. */
 };
-
-#include "vminline.h"
 
 #endif /* GAUCHE_VM_H */

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.17 2001-02-01 09:29:16 shiro Exp $
+ *  $Id: vm.c,v 1.18 2001-02-01 10:58:57 shiro Exp $
  */
 
 #include "gauche.h"
@@ -675,6 +675,17 @@ static void run_loop()
             }
         case SCM_VM_VEC:
             {
+                int nargs = SCM_VM_INSN_ARG(code), i;
+                ScmObj vec = Scm_MakeVector(nargs, SCM_UNDEFINED);
+                if (nargs > 0) {
+                    ScmObj arg = val0;
+                    for (i=nargs-1; i > 0; i--) {
+                        SCM_VECTOR_ELEMENT(vec, i) = arg;
+                        POP_ARG(arg);
+                    }
+                    SCM_VECTOR_ELEMENT(vec, 0) = arg;
+                }
+                val0 = vec;
                 continue;
             }
         case SCM_VM_APP_VEC:
@@ -683,15 +694,45 @@ static void run_loop()
             }
         case SCM_VM_VEC_LEN:
             {
+                int siz;
+                if (!SCM_VECTORP(val0))
+                    VM_ERR(("vector expected, but got %S\n", val0));
+                siz = SCM_VECTOR_SIZE(val0);
+                val0 = SCM_MAKE_INT(siz);
                 continue;
             }
         case SCM_VM_VEC_REF:
             {
+                ScmObj vec;
+                int k;
+                POP_ARG(vec);
+                if (!SCM_VECTORP(vec))
+                    VM_ERR(("vector expected, but got %S\n", vec));
+                if (!SCM_INTP(val0))
+                    VM_ERR(("integer expected, but got %S\n", val0));
+                k = SCM_INT_VALUE(val0);
+                if (k < 0 || k >= SCM_VECTOR_SIZE(vec))
+                    VM_ERR(("index out of range: %d\n", k));
+                val0 = SCM_VECTOR_ELEMENT(vec, k);
                 continue;
             }
         case SCM_VM_VEC_SET:
             {
+                ScmObj vec, ind;
+                int k;
+                POP_ARG(ind);
+                POP_ARG(vec);
+                if (!SCM_VECTORP(vec))
+                    VM_ERR(("vector expected, but got %S\n", vec));
+                if (!SCM_INTP(ind))
+                    VM_ERR(("integer expected, but got %S\n", ind));
+                k = SCM_INT_VALUE(ind);
+                if (k < 0 || k >= SCM_VECTOR_SIZE(vec))
+                    VM_ERR(("index out of range: %d\n", k));
+                SCM_VECTOR_ELEMENT(vec, k) = val0;
+                val0 = SCM_UNDEFINED;
                 continue;
+
             }
         default:
             Scm_Panic("Illegal vm instruction: %08x",  SCM_VM_INSN_CODE(code));

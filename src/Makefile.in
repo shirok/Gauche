@@ -1,6 +1,6 @@
 SCM = snow
 CC = @CC@
-CFLAGS = -g -I. -I../gc -I../gc/include
+CFLAGS = -g -O2 -I. -I../gc -I../gc/include
 #CFLAGS = -O2 -I. -I../gc -I../gc/include
 LIBS = @LIBS@
 LDFLAGS = -lm
@@ -23,7 +23,7 @@ INSTALL_LIBS = libgauche.a
 
 GCLIB = ../gc/gc.a
 
-OBJS = core.o vm.o compile.o error.o inline.o class.o boolean.o char.o \
+OBJS = core.o vm.o compile.o error.o class.o boolean.o char.o \
        string.o list.o port.o hash.o write.o read.o vector.o symbol.o \
        module.o proc.o number.o io.o load.o promise.o repl.o stdlib.o extlib.o
 

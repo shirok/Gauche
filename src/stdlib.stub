@@ -215,7 +215,7 @@
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_PAIRP(obj)));")
 
 (define-cproc cons (obj1 obj2)
-  (inliner "Scm_inline_cons")
+  (inliner "SCM_VM_CONS")
   "  SCM_RETURN(Scm_Cons(obj1, obj2));")
 
 (define-cproc car (obj)
@@ -300,7 +300,7 @@
 
 (define-cproc memv (obj list)
   (assert (list? list))
-  (inliner "Scm_inline_memv")
+  (inliner "SCM_VM_MEMV")
   "  SCM_RETURN(Scm_Memv(obj, list));")
 
 (define-cproc member (obj list)
@@ -548,22 +548,22 @@
   "  SCM_RETURN(Scm_MakeVector(k, fill));")
 
 (define-cproc vector (&rest args)
-  (inliner "Scm_inline_vector")
+  (inliner "SCM_VM_VEC")
   "  SCM_RETURN(Scm_ListToVector(args));")
 
 (define-cproc vector-length (vec)
-  (inliner "Scm_inline_vector_length")
+  (inliner "SCM_VM_VEC_LEN")
   (assert (vector? vec))
   "  SCM_RETURN(Scm_MakeInteger(SCM_VECTOR_SIZE(vec)));")
 
 (define-cproc vector-ref (vec k)
-  (inliner "Scm_inline_vector_ref")
+  (inliner "SCM_VM_VEC_REF")
   (assert (vector? vec))
   (assert (small-integer? k))
   "  SCM_RETURN(Scm_VectorRef(vec, k));")
 
 (define-cproc vector-set! (vec k obj)
-  (inliner "Scm_inline_vector_set")
+  (inliner "SCM_VM_VEC_SET")
   (assert (vector? vec))
   (assert (small-integer? k))
   "  Scm_VectorSet(vec, k, obj);
