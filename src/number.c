@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.82 2002-04-11 06:26:03 shirok Exp $
+ *  $Id: number.c,v 1.83 2002-04-11 08:43:00 shirok Exp $
  */
 
 #include <math.h>
@@ -1075,29 +1075,62 @@ ScmObj Scm_Modulo(ScmObj x, ScmObj y, int remp)
  * Expt
  */
 
+/* Integer power of 10.  It is extensively used during string->number
+   and number->string operations.
+   IEXPT10_TABLESIZ is ceil(-log10(ldexp(1.0, -1022-52))) + 2 */
+#define IEXPT10_TABLESIZ  326
+static ScmObj iexpt10_n[IEXPT10_TABLESIZ];
+static int    iexpt10_initialized = FALSE;
+
+static void iexpt10_init(void)
+{
+    int i;
+    iexpt10_n[0] = SCM_MAKE_INT(1);
+    iexpt10_n[1] = SCM_MAKE_INT(10);
+    iexpt10_n[2] = SCM_MAKE_INT(100);
+    iexpt10_n[3] = SCM_MAKE_INT(1000);
+    iexpt10_n[4] = SCM_MAKE_INT(10000);
+    iexpt10_n[5] = SCM_MAKE_INT(100000);
+    iexpt10_n[6] = SCM_MAKE_INT(1000000);
+    for (i=7; i<IEXPT10_TABLESIZ; i++) {
+        iexpt10_n[i] = Scm_Multiply2(iexpt10_n[i-1], SCM_MAKE_INT(10));
+    }
+    iexpt10_initialized = TRUE;
+}
+
+#define IEXPT10_INIT() \
+    do { if (!iexpt10_initialized) iexpt10_init(); } while (0)
+
 /* short cut for exact numbers */
 static ScmObj exact_expt(ScmObj x, ScmObj y)
 {
-    int sign = Scm_Sign(y);
+    int sign = Scm_Sign(y), iy;
     ScmObj r = SCM_MAKE_INT(1);
 
     if (sign == 0) return r;
     if (x == SCM_MAKE_INT(1)) return r;
     if (x == SCM_MAKE_INT(-1)) return Scm_OddP(y)? SCM_MAKE_INT(-1) : r;
-    /* TODO: optimization when x is power of two */
-    if (SCM_INTP(y)) {
-        int iy = SCM_INT_VALUE(y);
+
+    if (!SCM_INTP(y)) {
+        /* who wants such a heavy calculation? */
+        Scm_Error("exponent too big: %S", y);
+    }
+    iy = SCM_INT_VALUE(y);
+    /* Shortcut for special cases */
+    if (x == SCM_MAKE_INT(10) && iy > 0 && iy < IEXPT10_TABLESIZ) {
+        IEXPT10_INIT();
+        r = iexpt10_n[iy];
+    } else if (x == SCM_MAKE_INT(2) && iy > 0) {
+        r = Scm_Ash(SCM_MAKE_INT(1), iy);
+    } else {
         if (iy < 0) iy = -iy;
         for (;;) {
             if (iy == 0) break;
-            if (iy == 1) { r = Scm_Multiply(r, x, SCM_NIL); break; }
-            if (iy & 0x01) r = Scm_Multiply(r, x, SCM_NIL);
-            x = Scm_Multiply(x, x, SCM_NIL);
+            if (iy == 1) { r = Scm_Multiply2(r, x); break; }
+            if (iy & 0x01) r = Scm_Multiply2(r, x);
+            x = Scm_Multiply2(x, x);
             iy >>= 1;
         }
-    } else {
-        /* who wants such a heavy calculation? */
-        Scm_Error("exponent too big: %S", y);
     }
     return (sign < 0)? Scm_Reciprocal(r) : r;
 }
@@ -1372,6 +1405,52 @@ ScmObj Scm_LogXor(ScmObj x, ScmObj y)
  * Number I/O
  */
 
+/* contants frequently used in number I/O */
+static ScmObj iexpt2_52;  /* 2^52 */
+static ScmObj iexpt2_53;  /* 2^53 */
+static double dexpt2_minus_52;  /* 2.0^-52 */
+static double dexpt2_minus_53;  /* 2.0^-53 */
+
+/* max N where 10.0^N can be representable exactly in double.
+   it is max N where N * log2(5) < 53. */
+#define MAX_EXACT_10_EXP  23
+
+/* fast 10^n for limited cases */
+static inline ScmObj iexpt10(int e)
+{
+    SCM_ASSERT(e < IEXPT10_TABLESIZ);
+    return iexpt10_n[e];
+}
+
+/* integer power of R by N, N is rather small.
+   Assuming everything is in range. */
+static inline long ipow(int r, int n)
+{
+    int k;
+    for (k=1; n>0; n--) k *= r;
+    return k;
+}
+
+/* X * 10.0^N by double. */
+static double raise_pow10(double x, int n)
+{
+    static double dpow10[] = { 1.0, 1.0e1, 1.0e2, 1.0e3, 1.0e4,
+                               1.0e5, 1.0e6, 1.0e7};
+    if (n >= 0) {
+        while (n > 7) {
+            x *= 1e8;
+            n -= 8;
+        }
+        return x*dpow10[n];
+    } else {
+        while (n < -7) {
+            x /= 1e8;
+            n += 8;
+        }
+        return x/dpow10[-n];
+    }
+}
+
 /*
  * Number Printer
  *
@@ -1393,25 +1472,6 @@ ScmObj Scm_LogXor(ScmObj x, ScmObj y)
  * the intermediate result is kept in extended precision and works without
  * loss of precision.
  */
-
-static double dpow10[] = { 1.0, 1.0e1, 1.0e2, 1.0e3, 1.0e4, 1.0e5, 1.0e6, 1.0e7};
-
-static double raise_pow10(double x, int n)
-{
-    if (n >= 0) {
-        while (n > 7) {
-            x *= 1e8;
-            n -= 8;
-        }
-        return x*dpow10[n];
-    } else {
-        while (n < -7) {
-            x /= 1e8;
-            n += 8;
-        }
-        return x/dpow10[-n];
-    }
-}
 
 static void double_print(char *buf, int buflen, double val, int plus_sign)
 {
@@ -1647,14 +1707,6 @@ static long bigdig[RADIX_MAX-RADIX_MIN+1];
 
 static ScmObj numread_error(const char *msg, struct numread_packet *context);
 
-/* integer power of R by N.  assuming everything is in range. */
-static inline long ipow(int r, int n)
-{
-    int k;
-    for (k=1; n>0; n--) k *= r;
-    return k;
-}
-
 /* Returns either small integer or bignum.
    initval may be a Scheme integer that will be 'concatenated' before
    the integer to be read; it is used to read floating-point number.
@@ -1729,60 +1781,57 @@ static ScmObj read_uint(const char **strp, int *lenp,
     }
 }
 
-static ScmObj expt_two_52;
-static double expt_two_minus_52, expt_two_minus_53;
-
-static ScmObj expt10big[330];
-
-static inline ScmObj expt10(int e)
-{
-    SCM_ASSERT(e < 330);
-    return expt10big[e];
-}
-
-static double fixup(ScmObj f, int e, double z)
+/*
+ * Find a double number closest to f * 10^e, using z as the starting
+ * approximation.  The algorithm (and its name) is taken from Will Clinger's
+ * paper "How to Read Floating Point Numbers Accurately", in the ACM
+ * SIGPLAN '90, pp.92--101.
+ * The algorithm is modified to take advantage of coherency between loops.
+ */
+static double algorithmR(ScmObj f, int e, double z)
 {
     ScmObj m, x, y, d, d2;
     double ff;
     int k, s, ee;
+    m = Scm_DecodeFlonum(z, &k, &s);
+    IEXPT10_INIT();
     for (;;) {
-        m = Scm_DecodeFlonum(z, &k, &s);
         if (e >= 0) {
             if (k >= 0) {
-                x = Scm_Multiply(f, expt10(e), SCM_NIL);
+                x = Scm_Multiply2(f, iexpt10(e));
                 y = Scm_Ash(m, k);
             } else {
-                x = Scm_Ash(Scm_Multiply(f, expt10(e), SCM_NIL), -k);
+                x = Scm_Ash(Scm_Multiply2(f, iexpt10(e)), -k);
                 y = m;
             }
         } else {
             if (k >= 0) {
                 x = f;
-                y = Scm_Ash(Scm_Multiply(m, expt10(-e), SCM_NIL), k);
+                y = Scm_Ash(Scm_Multiply2(m, iexpt10(-e)), k);
             } else {
                 x = Scm_Ash(f, -k);
-                y = Scm_Multiply(m, expt10(-e), SCM_NIL);
+                y = Scm_Multiply2(m, iexpt10(-e));
             }
         }
         /*Scm_Printf(SCM_CURERR, "z=%.20lg,\nx=%S,\ny=%S\nf=%S\nm=%S\ne=%d, k=%d\n", z, x, y, f, m, e, k);*/
         /* compare */
-        d = Scm_Subtract(x, y, SCM_NIL);
-        d2 = Scm_Ash(Scm_Multiply(m, Scm_Abs(d), SCM_NIL), 1);
+        d = Scm_Subtract2(x, y);
+        d2 = Scm_Ash(Scm_Multiply2(m, Scm_Abs(d)), 1);
         if (Scm_NumCmp(d2, y) < 0) {
-            if (Scm_NumCmp(m, expt_two_52) == 0
+            if (Scm_NumCmp(m, iexpt2_52) == 0
                 && Scm_Sign(d) < 0
                 && Scm_NumCmp(Scm_Ash(d2, 1), y) > 0) {
                 goto prevfloat;
             } else {
-                return z;
+                return ldexp(Scm_GetDouble(m), k);
             }
         } else if (Scm_NumCmp(d2, y) == 0) {
             if (!Scm_OddP(m)) {
-                if (Scm_NumCmp(m, expt_two_52) == 0
+                if (Scm_NumCmp(m, iexpt2_52) == 0
                     && Scm_Sign(d) < 0) {
                     goto prevfloat;
                 } else {
-                    return z;
+                    return ldexp(Scm_GetDouble(m), k);
                 }
             } else if (Scm_Sign(d) < 0) {
                 goto prevfloat;
@@ -1795,21 +1844,17 @@ static double fixup(ScmObj f, int e, double z)
             goto nextfloat;
         }
       prevfloat:
-        ff = frexp(z, &ee);
-        if (ee > -1022) {
-            if (ff == 0.5) z = ldexp(ff - expt_two_minus_53, ee);
-            else          z = ldexp(ff - expt_two_minus_52, ee);
-        } else {
-            z -= ldexp(1.0, -1074);
+        m = Scm_Subtract2(m, SCM_MAKE_INT(1));
+        if (k > -1074 && Scm_NumCmp(m, iexpt2_52) < 0) {
+            m = Scm_Ash(m, 1);
+            k--;
         }
         continue;
       nextfloat:
-        ff = frexp(z, &ee);
-        if (ee > -1022) {
-            if (ff == 1.0-expt_two_minus_53) z = ldexp(0.5, ee+1);
-            else                          z = ldexp(ff + expt_two_minus_53, ee);
-        } else {
-            z += ldexp(1.0, -1074);
+        m = Scm_Add2(m, SCM_MAKE_INT(1));
+        if (Scm_NumCmp(m, iexpt2_53) >= 0) {
+            m = Scm_Ash(m, -1);
+            k++;
         }
         continue;
     }
@@ -1861,7 +1906,7 @@ static ScmObj read_real(const char **strp, int *lenp,
                 }
             }
             if (minusp) intpart = Scm_Negate(intpart);
-            ratval = Scm_Divide(intpart, denom, SCM_NIL);
+            ratval = Scm_Divide2(intpart, denom);
 
             if (ctx->exactness == EXACT && !Scm_IntegerP(ratval)) {
                 return numread_error("(exact non-integral rational number is not supported)",
@@ -1926,29 +1971,16 @@ static ScmObj read_real(const char **strp, int *lenp,
     }
 
     /*Scm_Printf(SCM_CURERR, "fraction=%S, exponent=%d\n", fraction, exponent);*/
-    /* Compose flonum.
-       It is known that double-precision arithmetic is not enough to
-       find the best approximation of the given external
-       represenation (Cf. William D Clinger, "How to Read Floating
-       Point Numbers Accurately", in the ACM SIGPLAN '90 Conference
-       on Programming Language Design and Implementation, 1990.)
-       For now, we trade accuracy for simplicity. */
+    /* Compose flonum.*/
     {
         double realnum = Scm_GetDouble(fraction);
 
-        if (exponent - fracdigs >= 0) {
-            realnum *= pow(10.0, exponent-fracdigs);
-        } else if (exponent - fracdigs > -DBL_MAX_10_EXP) {
-            realnum /= pow(10.0, -(exponent-fracdigs));
-        } else if (exponent > -DBL_MAX_10_EXP) {
-            realnum = realnum / pow(10.0, -exponent) / pow(10.0, fracdigs);
-        } else {
-            realnum = realnum / pow(10.0, -DBL_MAX_10_EXP-(exponent-fracdigs)) / pow(10.0, DBL_MAX_10_EXP);
-        }
-        if (Scm_NumCmp(fraction, Scm_Ash(SCM_MAKE_INT(1), 52)) > 0
-            || exponent-fracdigs > 15
-            || exponent-fracdigs < 15) {
-            realnum = fixup(fraction, exponent-fracdigs, realnum);
+        realnum = raise_pow10(realnum, exponent-fracdigs);
+        if (realnum > 0.0
+            && (Scm_NumCmp(fraction, Scm_Ash(SCM_MAKE_INT(1), 52)) > 0
+                || exponent-fracdigs > MAX_EXACT_10_EXP
+                || exponent-fracdigs < MAX_EXACT_10_EXP)) {
+            realnum = algorithmR(fraction, exponent-fracdigs, realnum);
         }
         if (minusp) realnum = -realnum;
         /* check exactness */
@@ -2123,10 +2155,8 @@ void Scm__InitNumber(void)
             }
         }
     }
-    expt_two_52 = Scm_Ash(SCM_MAKE_INT(1), 52);
-    expt_two_minus_52 = ldexp(1.0, -52);
-    expt_two_minus_53 = ldexp(1.0, -53);
-    for (i=0; i<330; i++) {
-        expt10big[i] = Scm_Expt(SCM_MAKE_INT(10), SCM_MAKE_INT(i));
-    }
+    iexpt2_52 = Scm_Ash(SCM_MAKE_INT(1), 52);
+    iexpt2_53 = Scm_Ash(SCM_MAKE_INT(1), 53);
+    dexpt2_minus_52 = ldexp(1.0, -52);
+    dexpt2_minus_53 = ldexp(1.0, -53);
 }
