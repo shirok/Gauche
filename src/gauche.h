@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.231 2002-04-14 01:53:24 shirok Exp $
+ *  $Id: gauche.h,v 1.232 2002-04-14 02:57:05 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1449,6 +1449,7 @@ SCM_EXTERN ScmObj Scm_NormalizeBignum(ScmBignum *b);
 SCM_EXTERN ScmObj Scm_BignumNegate(ScmBignum *b);
 SCM_EXTERN int    Scm_BignumCmp(ScmBignum *bx, ScmBignum *by);
 SCM_EXTERN int    Scm_BignumAbsCmp(ScmBignum *bx, ScmBignum *by);
+SCM_EXTERN int    Scm_BignumCmp3U(ScmBignum *bx, ScmBignum *off, ScmBignum *by);
 
 SCM_EXTERN ScmObj Scm_BignumAdd(ScmBignum *bx, ScmBignum *by);
 SCM_EXTERN ScmObj Scm_BignumAddSI(ScmBignum *bx, long y);

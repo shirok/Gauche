@@ -1,7 +1,7 @@
 ;;;
 ;;; stdlib.stub - r5rs scheme procedures
 ;;;
-;;;   Copyright (c) 2000-2001 Shiro Kawai (shiro@acm.org)
+;;;   Copyright (c) 2000-2002 Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;   Permission to use, copy, modify, distribute this software and
 ;;;   accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.79 2002-04-13 09:44:20 shirok Exp $
+;;; $Id: stdlib.stub,v 1.80 2002-04-14 02:57:05 shirok Exp $
 ;;;
 
 
@@ -222,7 +222,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   "  SCM_RETURN(Scm_Abs(obj));")
 
 (define-cproc quotient (n1 n2)
-  "  SCM_RETURN(Scm_Quotient(n1, n2));")
+  "  SCM_RETURN(Scm_Quotient(n1, n2, NULL));")
 (define-cproc remainder (n1 n2)
   "  SCM_RETURN(Scm_Modulo(n1, n2, TRUE));")
 (define-cproc modulo (n1 n2)

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.35 2002-04-13 23:08:29 shirok Exp $
+ *  $Id: bignum.c,v 1.36 2002-04-14 02:57:05 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -70,6 +70,14 @@ char *alloca ();
 #define LO(word)           ((word) & LOMASK)
 #define HI(word)           (((word) >> HALF_BITS)&LOMASK)
 
+#define UADD(r, c, x, y)                        \
+    r = x + y + c;                              \
+    c = (r<x || (r==x && (y>0||c>0)))? 1 : 0
+
+#define USUB(r, c, x, y)                        \
+    r = x - y - c;                              \
+    c = (r>x || (r==x && (y>0||c>0)))? 1 : 0
+
 #undef min
 #define min(x, y)   (((x) < (y))? (x) : (y))
 #undef max
@@ -77,6 +85,8 @@ char *alloca ();
 
 static ScmBignum *bignum_rshift(ScmBignum *br, ScmBignum *bx, int amount);
 static ScmBignum *bignum_lshift(ScmBignum *br, ScmBignum *bx, int amount);
+static int bignum_safe_size_for_add(ScmBignum *x, ScmBignum *y);
+static ScmBignum *bignum_add_int(ScmBignum *br, ScmBignum *bx, ScmBignum *by);
 
 int Scm_DumpBignum(ScmBignum *b, ScmPort *out);
 
@@ -304,6 +314,57 @@ int Scm_BignumAbsCmp(ScmBignum *bx, ScmBignum *by)
     return 0;
 }
 
+/* Compare bx + off and by.  All arguments must be positive.  bx and by
+   must be normalized.  off may be denormalized if it is created directly
+   by Scm_MakeBignumFromUI call.
+   Expect bx >> off for most cases.
+   Screen out the obvious case without actually calculating bx+off.
+   Experimentary, the following set of conditions avoid 93% of cases from
+   doing actual bignum addition. */
+int Scm_BignumCmp3U(ScmBignum *bx, ScmBignum *off, ScmBignum *by)
+{
+    int xsize = SCM_BIGNUM_SIZE(bx), ysize = SCM_BIGNUM_SIZE(by);
+    int osize = SCM_BIGNUM_SIZE(off);
+    int tsize, i;
+    ScmBignum *br;
+    if (xsize > ysize) return 1;
+    if (xsize < ysize) {
+        if (osize < ysize && by->values[ysize-1] > 1) {
+            return -1;
+        }
+        if (osize == ysize) {
+            if (off->values[osize-1] > by->values[ysize-1]) return 1;
+            if (off->values[osize-1] < by->values[ysize-1]-1) return -1;
+        }
+        /* fallthrough */
+    } else {
+        /* xsize == ysize */
+        u_long w; int c = 0;
+        if (osize > ysize) return 1;
+        if (bx->values[xsize-1] > by->values[ysize-1]) return 1;
+        if (osize < xsize) {
+            if (bx->values[xsize-1] < by->values[ysize-1]-1) return -1;
+        } else {
+            /* osize == xsize */
+            UADD(w, c, bx->values[xsize-1], off->values[osize-1]);
+            if (c > 0 || w > by->values[ysize-1]) return 1;
+            if (w < by->values[ysize-1] - 1) return -1;
+        }
+        /* fallthrough */
+    }
+    tsize = bignum_safe_size_for_add(bx, off);
+    ALLOC_TEMP_BIGNUM(br, tsize);
+    bignum_add_int(br, bx, off);
+    
+    if (br->size < by->size) return -1;
+    for (i=br->size-1; i>=0; i--) {
+        if (br->values[i] && i > by->size) return 1;
+        if (br->values[i] < by->values[i]) return -1;
+        if (br->values[i] > by->values[i]) return 1;
+    }
+    return 0;
+}
+
 /*-----------------------------------------------------------------------
  * Add & subtract
  */
@@ -321,14 +382,6 @@ static int bignum_safe_size_for_add(ScmBignum *x, ScmBignum *y)
         return xsize+1;
     }
 }
-
-#define UADD(r, c, x, y)                        \
-    r = x + y + c;                              \
-    c = (r<x || (r==x && (y>0||c>0)))? 1 : 0
-
-#define USUB(r, c, x, y)                        \
-    r = x - y - c;                              \
-    c = (r>x || (r==x && (y>0||c>0)))? 1 : 0
 
 /* take 2's complement */
 static ScmBignum *bignum_2scmpl(ScmBignum *br)
@@ -932,7 +985,8 @@ ScmObj Scm_BignumAsh(ScmBignum *x, int cnt)
                 /* painful way */
                 ScmObj r = Scm_Quotient(Scm_Add(SCM_OBJ(x), SCM_MAKE_INT(1),
                                                 SCM_NIL),
-                                        Scm_Ash(SCM_MAKE_INT(1), -cnt));
+                                        Scm_Ash(SCM_MAKE_INT(1), -cnt),
+                                        NULL);
                 return Scm_Add(r, SCM_MAKE_INT(-1), SCM_NIL);
             } else {
                 ScmBignum *r = make_bignum(rsize);

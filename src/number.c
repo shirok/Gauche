@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.91 2002-04-14 01:53:44 shirok Exp $
+ *  $Id: number.c,v 1.92 2002-04-14 02:57:05 shirok Exp $
  */
 
 #include <math.h>
@@ -1505,6 +1505,15 @@ static double raise_pow10(double x, int n)
  * Accurately", PLDI '96, pp.108--116, 1996).
  */
 
+/* compare x+d and y */
+static inline int numcmp3(ScmObj x, ScmObj d, ScmObj y)
+{
+    ScmObj bx = SCM_BIGNUMP(x)? x : Scm_MakeBignumFromSI(SCM_INT_VALUE(x));
+    ScmObj bd = SCM_BIGNUMP(d)? d : Scm_MakeBignumFromSI(SCM_INT_VALUE(d));
+    ScmObj by = SCM_BIGNUMP(y)? y : Scm_MakeBignumFromSI(SCM_INT_VALUE(y));
+    return Scm_BignumCmp3U(SCM_BIGNUM(bx), SCM_BIGNUM(bd), SCM_BIGNUM(by));
+}
+
 static void double_print(char *buf, int buflen, double val, int plus_sign)
 {
     if (val < 0.0) *buf++ = '-', buflen--;
@@ -1571,11 +1580,12 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
         if (Scm_NumCmp(r, s) >= 0) {
             fixup = TRUE;
         } else {
-            ScmObj rmp;
             mp = (mp2? Scm_Ash(mm, 1) : mm);
-            rmp = Scm_Add2(r, mp);
-            fixup = ((round && Scm_NumCmp(rmp, s) >= 0)
-                     || (!round && Scm_NumCmp(rmp, s) > 0));
+            if (round) {
+                fixup = (numcmp3(r, mp, s) >= 0);
+            } else {
+                fixup = (numcmp3(r, mp, s) > 0);
+            }
         }
         if (fixup) {
             s = Scm_Multiply2(s, SCM_MAKE_INT(10));
@@ -1598,12 +1608,10 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
             SCM_ASSERT(SCM_INTP(q));
             if (round) {
                 tc1 = (Scm_NumCmp(r, mm) <= 0);
-                tc2 = (Scm_NumCmp(r, s) >= 0
-                       || Scm_NumCmp(Scm_Add2(r, mp), s) >= 0);
+                tc2 = (numcmp3(r, mp, s) >= 0);
             } else {
                 tc1 = (Scm_NumCmp(r, mm) < 0);
-                tc2 = (Scm_NumCmp(r, s) >= 0
-                       || Scm_NumCmp(Scm_Add2(r, mp), s) > 0);
+                tc2 = (numcmp3(r, mp, s) > 0);
             }
             if (!tc1) {
                 if (!tc2) {
@@ -1619,7 +1627,7 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
                     *buf++ = SCM_INT_VALUE(q) + '0';
                     break;
                 } else {
-                    tc3 = Scm_NumCmp(Scm_Ash(r, 1), s);
+                    tc3 = numcmp3(r, r, s); /* r*2 <=> s */
                     if ((round && tc3 <= 0) || (!round && tc3 < 0)) {
                         *buf++ = SCM_INT_VALUE(q) + '0';
                         break;
