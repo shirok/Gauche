@@ -12,13 +12,13 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: odbm.stub,v 1.4 2001-10-28 11:38:14 shirok Exp $
+;;  $Id: odbm.stub,v 1.5 2001-11-14 10:12:59 shirok Exp $
 ;;
 
 "
  #include \"dbmconfig.h\"
 
- #ifdef HAVE_DBM_H
+ #if HAVE_DBM_H
  #include <dbm.h>
  #elif HAVE_GDBM_DBM_H
  #include <gdbm/dbm.h>

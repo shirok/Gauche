@@ -12,14 +12,14 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: ndbm.stub,v 1.9 2001-11-07 09:33:00 shirok Exp $
+;;  $Id: ndbm.stub,v 1.10 2001-11-14 10:12:59 shirok Exp $
 ;;
 
 "
  #include \"dbmconfig.h\"
  #include \"fcntl.h\"
 
- #ifdef HAVE_NDBM_H
+ #if HAVE_NDBM_H
  #include <ndbm.h>
  #elif HAVE_GDBM_NDBM_H
  #include <gdbm/ndbm.h>
