@@ -2,11 +2,31 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.18 2001-10-28 22:41:41 shirok Exp $
+;; $Id: srfi.scm,v 1.19 2002-02-14 09:37:24 shirok Exp $
 
 (use gauche.test)
 
 (test-start "SRFIs")
+
+;;-----------------------------------------------------------------------
+(test-section "srfi-0")
+
+(test "cond-expand" 0
+      (lambda () (cond-expand (srfi-0 0) (else 1))))
+(test "cond-expand" 1
+      (lambda () (cond-expand (hogehoge 0) (else 1))))
+(test "cond-expand" 0
+      (lambda () (cond-expand ((and srfi-0 srfi-1) 0) (else 1))))
+(test "cond-expand" 0
+      (lambda () (cond-expand ((or hogehoge srfi-1) 0) (else 1))))
+(test "cond-expand" 0
+      (lambda () (cond-expand ((or srfi-1 hogehoge) 0) (else 1))))
+(test "cond-expand" 1
+      (lambda () (cond-expand ((or (not srfi-1) hogehoge) 0) (else 1))))
+(test "cond-expand" 0
+      (lambda () (cond-expand (gauche 0) (else 1))))
+(test "cond-expand" 0
+      (lambda () (cond-expand (scm -1) (gauche 0) (else 1))))
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-1")
