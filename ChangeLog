@@ -1,7 +1,22 @@
+2001-02-28  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.0.19
+	* src/macro.c: fixed to handle templates like (?a ... ?b ...)
+	  correctly.
+	* lib/srfi-0.scm: srfi-0 added.
+
+2001-02-27  Shiro Kawai  <shiro@scherzo>
+
+	* src/extlib.stub: added some nonstandard procedures (identifier?,
+	  identifier->symbol, flush)
+        * lib/test.scm: added to support simple self-testing.
+	* test/macrotest.scm: more tests.
+
 2001-02-26  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.0.18
-	* src/macro.c: finished implementing syntax-rules
+	* src/macro.c: almost finished implementing syntax-rules.  not tested
+	  well yet.
 	* src/vm.c: added immediate integer arithmetic instructions
 	  (NUMADDI and NUMSUBI)
 	* src/genstub, src/stdlib.stub: experimentally added a feature
