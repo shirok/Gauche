@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.85 2001-10-05 20:24:28 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.86 2001-10-06 10:40:05 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1609,15 +1609,28 @@ this function diverges.
 
 @defun car pair
 @defunx cdr pair
-[R5RS] Returns car and cdr of @var{pair}, respectively.
+[R5RS] 
+@c EN
+Returns car and cdr of @var{pair}, respectively.
+@c JP
+それぞれ@var{pair}のcarとcdrを返します。
+@c COMMON
 @end defun
 
 @defun set-car! pair obj
 @defunx set-cdr! pair obj
-[R5RS] Modifies car and cdr of @var{pair}, by @var{obj}, respectively.
+[R5RS] 
+@c EN
+Modifies car and cdr of @var{pair}, by @var{obj}, respectively.
 
 Note: @code{(setter car)} @equiv{} @code{set-car!}, and
 @code{(setter cdr)} @equiv{} @code{set-cdr!}.
+@c JP
+@var{pair}のcarもしくはcdrを@var{obj}で置き換えます。
+
+注： @code{(setter car)} @equiv{} @code{set-car!} であり、
+@code{(setter cdr)} @equiv{} @code{set-cdr!} です。
+@c COMMON
 @end defun
 
 @defun caar pair
@@ -1648,10 +1661,18 @@ Note: @code{(setter car)} @equiv{} @code{set-car!}, and
 @defunx cddadr pair
 @defunx cdddar pair
 @defunx cddddr pair
-[R5RS] @code{caar} @equiv{} @code{(car (car x))},
+[R5RS]
+@c EN
+@code{caar} @equiv{} @code{(car (car x))},
 @code{cadr} @equiv{} @code{(car (cdr x))}, and so on.
 
 The corresponding setters are also defined.
+@c JP
+@code{caar} @equiv{} @code{(car (car x))},
+@code{cadr} @equiv{} @code{(car (cdr x))}, 等々。
+
+対応するsetterも定義されています。
+@c COMMON
 @example
 (let ((x (list 1 2 3 4 5)))
   (set! (caddr x) -1)
@@ -1661,59 +1682,124 @@ The corresponding setters are also defined.
 @end defun
 
 @defun length list
-[R5RS] Returns the length of a proper list @var{list}.
+[R5RS]
+@c EN
+Returns the length of a proper list @var{list}.
 If @var{list} is a dotted list, an error is signalled.
 If @var{list} is a circular list, this function diverges.
 
 If you want to handle circular lists as well, 
 See @code{length+} in @ref{SRFI-1 List miscellaneous routines}.
+@c JP
+正規のリスト@var{list}の長さを返します。
+@var{list}がドットリストならばエラーが起きます。
+@var{list}が循環リストの場合、この関数は無限ループします。
+
+循環リストも取り扱う場合は、SRFI-1の@code{length+}を使って下さい
+(@ref{SRFI-1 List miscellaneous routines}参照)。
+@c COMMON
 @end defun
 
 @defun list-tail list k
-[R5RS] Returns @var{k}-th cdr of @var{list}.
+[R5RS]
+@c EN
+Returns @var{k}-th cdr of @var{list}.
 @var{list} can be a proper, dotted or circular list.
+@c JP
+@var{list}の@var{k}番目のcdrを返します。@var{list}は
+正規のリストでもドットリストでも循環リストでも構いません。
+@c COMMON
 @end defun
 
 @defun list-ref list k &optional fallback
-[R5RS+] Returns @var{k}-th element of @var{list}.
+[R5RS+]
+@c EN
+Returns @var{k}-th element of @var{list}.
 @var{list} can be a proper, dotted or circular list.
 
 By default, @code{list-ref} signals an error if @var{k} is
 negative, or greater than or equal to the length of @var{list}.
 However, if an optional argument @var{fallback} is given,
 it is returned for such case.  This is an extension of Gauche.
+@c JP
+@var{list}の@var{k}番目の要素を返します。@var{list}は
+正規のリストでもドットリストでも循環リストでも構いません。
+
+もし@var{k}がリストの長さを超えていたり、負数であった場合は通常はエラーが起こります。
+しかし、オプショナルな引数@var{fallback}が与えられていた場合は、エラーは起きず
+@var{fallback}が返されます。これはGaucheの拡張です。
+@c COMMON
 @end defun
 
 @defun last-pair list
-[SRFI-1] Returns the last pair of @var{list}.
+[SRFI-1]
+@c EN
+Returns the last pair of @var{list}.
 @var{list} can be a proper or dotted list.
+@c JP
+@var{list}の最後のペアを返します。@var{list}は
+正規のリストかドットリストです。
+@c COMMON
 @end defun
-
 
 @node Other list procedures,  , List accessors and modifiers, Pairs and Lists
 @subsection Other list procedures
 
 @defun append list @dots{}
 [R5RS]
+@c EN
+Returns a list consisting of the elements of the first @var{list} followed by
+the elements of the other lists.  The resulting list is always newly
+allocated, except that it shares structure with the last list argument.
+The last argument may actually be any object; an improper list results
+if the last argument is not a proper list. 
+@c JP
+渡されたリストの要素を繋げたリストを返します。最後の引数の部分以外は新しいセルがアロケート
+されて使われます。最後の引数は正規のリストである必要がありません。その場合、結果は正規でない
+リストとなります。
+@c COMMON
 @end defun
 
 @defun append! list @dots{}
 [SRFI-1]
+@c EN
+Returns a list consisting of the elements of the first @var{list} followed by
+the elements of the other lists.  The cells in the lists except the last
+one may be reused to construct the result.   The last argument may be
+any object.
+@c JP
+渡されたリストの要素を繋げたリストを返します。最後の引数以外のリストのセルは、結果を
+作成するために再利用されるかもしれません。
+最後の引数は正規のリストである必要はありません。
+@c COMMON
 @end defun
 
 
 @defun reverse list
 [R5RS]
+@c EN
+Returns a newly allocated list consisting of the elements of @var{list}
+in reverse order.
+@c JP
+@var{list}の各要素を逆順に持つリストを新しく作成して返します。
+@c COMMON
 @end defun
 
 @defun reverse! list
 [SRFI-1]
+@c EN
+Returns a list consisting of the elements of @var{list} in reverse order.
+The cells of @var{list} may be reused to construct the returned list.
+@c JP
+@var{list}の各要素を逆順に持つリストを返します。結果を作成するために、
+@var{list}のセルは再利用されるかもしれません。
+@c COMMON
 @end defun
-
 
 @defun memq obj list
 @defunx memv obj list
 [R5RS]
+
 @end defun
 
 @defun member obj list [=]
@@ -3528,11 +3614,40 @@ must be on the same device.
 
 @defun sys-tmpnam
 [POSIX]
+@c EN
+Creates a file name which is supposedly unique, and returns it.
+This is in POSIX, but its use is discouraged because of potential
+security risk.  Use @code{sys-mkstemp} below if possible.
+@c JP
+ユニークなファイル名を作成して返します。この関数はPOSIXに含まれていますが、
+セキュリティ上の問題が指摘されており、使わない方が良いとされています。
+可能なら下にあげる@code{sys-mkstemp}を使って下さい。
+@c COMMON
+@end defun
+
+@defun sys-mkstemp template
+@c EN
+Creates and opens a file that has unique name, and returns two values;
+opened port and the created filename.  The file is created exclusively,
+avoiding race conditions.   @var{tmpname} is used as the prefix
+of the file.  Unlinke Unix's mkstemp, you don't need padding characters.
+The file is opened for writing, and its permission is set to 600.
+@c JP
+ユニークな名前を持つファイルを作成してオープンし、オープンされたポートとファイル名の
+二つの値を返します。ファイルは排他的に作成されるため、レースコンディションは起こりません。
+@var{tmpname}はファイル名のプレフィックスに使われます。Unixのmkstempと違って、
+パディングキャラクタをつける必要はありません。ファイルは書き込み用としてオープンされ、
+パーミッションは600にセットされます。
+@c COMMON
 @end defun
 
 @defun sys-link existing new
-[POSIX] Creates a hard link named @var{new} to the existing file
-@var{existing}.
+[POSIX] 
+@c EN
+Creates a hard link named @var{new} to the existing file @var{existing}.
+@c JP
+既存のファイル@var{existing}に対し、@var{new}という名のハードリンクを作成します。
+@c COMMON
 @end defun
 
 @defun sys-unlink pathname
