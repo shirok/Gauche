@@ -11101,7 +11101,7 @@ interface to @code{random(3)}.  If the underlying system doesn't have
 擬似的な乱数ジェネレータです。
 @code{sys-random}は0から@var{rand_max}(それ自体を含む)までの間で乱数を
 返します。これは@code{random(3)}への直接的なインターフェースです。
-システムにで@code{random(3)}がない場合、@code{lrand48(3)}が使われます。
+システムに@code{random(3)}がない場合、@code{lrand48(3)}が使われます。
 @c COMMON
 
 @c EN
