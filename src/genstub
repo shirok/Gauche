@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.63 2002-05-20 09:21:40 shirok Exp $
+;;;  $Id: genstub,v 1.64 2002-05-20 10:39:59 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -67,10 +67,6 @@
   (slot-set! self 'predicate (string->symbol #`",(scheme-name-of self)?"))
   (slot-push! self 'all-types self))
 
-(define (make-type name predicate c-type c-predicate unboxer)
-  (make <type> :name name :predicate predicate
-        :c-type c-type :c-predicate c-predicate :unboxer unboxer))
-
 ;; Builtin types
 (for-each
  (lambda (data)
@@ -117,7 +113,12 @@
 (define (predicate->type pred)
   (or (find (lambda (type) (eq? (predicate-of type) pred))
             (class-slot-ref <type> 'all-types))
-      (error "unknown predicate to assert:" pred)))
+      (error "unknown predicate to assert" pred)))
+
+(define (scheme-name->type name)
+  (or (find (lambda (type) (eq? (scheme-name-of type) name))
+            (class-slot-ref <type> 'all-types))
+      (error "unknown type" name)))
 
 ;; process type definition in stub file
 ;; (this keeps backward compatibility)
@@ -805,8 +806,10 @@
    ))
 
 (define-class <cslot> ()
-  ((scheme-name :init-keyword :scheme-name :accessor scheme-name-of)
+  ((cclass      :init-keyword :cclass :accessor cclass-of)
+   (scheme-name :init-keyword :scheme-name :accessor scheme-name-of)
    (c-name      :init-keyword :c-name :accessor c-name-of)
+   (type        :init-keyword :type   :accessor type-of :init-value 'scheme-object)
    (getter      :init-keyword :getter :accessor getter-of :init-value #t)
    (setter      :init-keyword :setter :accessor setter-of :init-value #t)
    ))
@@ -822,8 +825,8 @@
            (cclass (make <cclass>
                      :scheme-name scm-name :c-name c-name
                      :c-class-name c-class-name :cpa cpa
-                     :slot-spec (process-cclass-slots slot-spec)
                      :allocator allocator :printer printer)))
+      (set! (slot-spec-of cclass) (process-cclass-slots cclass slot-spec))
       (unless (null? (slot-spec-of cclass))
         (set! (c-slot-spec-name-of cclass) #`",|c-name|_SLOTS"))
       (when (string? printer)
@@ -848,6 +851,7 @@
   (print #`"SCM_DEFINE_BUILTIN_CLASS(,(c-class-name-of self), ,(c-printer-name-of self), NULL, NULL, ,(c-allocator-name-of self), NULL);")
   (newline)
   (when (pair? (slot-spec-of self))
+    (for-each emit-getter-n-setter (slot-spec-of self))
     (print #`"static ScmClassStaticSlotSpec ,(c-slot-spec-name-of self)[] = {")
     (for-each emit-spec-definition (slot-spec-of self))
     (print "  { NULL }")
@@ -862,16 +866,60 @@
              #`"                       NULL, module);"))
   )
 
-(define (process-cclass-slots slot-spec)
+;; slot
+
+(define (process-cclass-slots cclass slot-spec)
   (map (lambda (spec)
          (unless (list? spec) (error "bad slot spec" spec))
-         (let ((name (car spec))
-               (getter (get-keyword :getter (cdr spec) #t))
-               (setter (get-keyword :setter (cdr spec) #t)))
-           (make <cslot> :scheme-name name :getter getter :setter setter)))
+         (let* ((name (car spec))
+                (type   (get-keyword :type (cdr spec) 'scheme-object))
+                (c-name (get-keyword :c-name (cdr spec) (get-c-name "" name)))
+                (getter (get-keyword :getter (cdr spec) #t))
+                (setter (get-keyword :setter (cdr spec) #t)))
+           (make <cslot>
+             :cclass cclass :scheme-name name :c-name c-name
+             :type (scheme-name->type type)
+             :getter getter :setter setter)))
        slot-spec))
 
+(define-method slot-getter-name ((slot <cslot>))
+  #`",(c-name-of (cclass-of slot))_,(c-name-of slot)_GET")
 
+(define-method slot-setter-name ((slot <cslot>))
+  (if (setter-of slot)
+      #`",(c-name-of (cclass-of slot))_,(c-name-of slot)_SET"
+      "NULL"))
+
+(define-method emit-getter-n-setter ((slot <cslot>))
+  (emit-getter slot)
+  (when (setter-of slot) (emit-setter slot)))
+
+(define-method emit-getter ((slot <cslot>))
+  (let ((type (type-of slot)))
+    (print #`"static ScmObj ,(slot-getter-name slot)(,(c-name-of (cclass-of slot)) *obj)")
+    (print "{")
+    (if (string? (getter-of slot))
+        (print (getter-of slot))
+        (f "  return ~a(obj->~a);" (boxer-of type) (c-name-of slot)))
+    (print "}")
+    (newline)))
+
+(define-method emit-setter ((slot <cslot>))
+  (let ((type (type-of slot)))
+    (print #`"static void ,(slot-setter-name slot)(,(c-name-of (cclass-of slot)) *obj, ScmObj value)")
+    (print "{")
+    (if (string? (setter-of slot))
+        (print (setter-of slot))
+        (begin
+          (unless (eq? type *scm-type*)
+            (f "  if (!~a(obj)) Scm_Error(\"~a required, but got %S\", obj);"
+               (c-predicate-of type) (c-name-of type)))
+          (f "  obj->~a = ~a(value);" (c-name-of slot) (unboxer-of type))))
+    (print "}")
+    (newline)))
+
+(define-method emit-spec-definition ((slot <cslot>))
+  (print #`"  SCM_CLASS_SLOT_SPEC(\",(scheme-name-of slot)\", ,(slot-getter-name slot), ,(slot-setter-name slot)),"))
 
 ;;-----------------------------------------------------------------
 ;; Extra initializers
