@@ -2,30 +2,27 @@
 ;; Test gauche.version
 ;;
 
-;; $Id: version.scm,v 1.1 2002-02-14 07:38:28 shirok Exp $
+;; $Id: version.scm,v 1.2 2003-01-08 03:19:46 shirok Exp $
 
 (use gauche.test)
 (test-start "gauche.version")
 
 (use gauche.version)
 
-(test "relnum-compare" '(-1 0 1)
-      (lambda ()
-        (list (relnum-compare "1" "3")
-              (relnum-compare "1" "1")
-              (relnum-compare "3" "1"))))
+(test* "relnum-compare" '(-1 0 1)
+       (list (relnum-compare "1" "3")
+             (relnum-compare "1" "1")
+             (relnum-compare "3" "1")))
 
-(test "relnum-compare" '(-1 0 1)
-      (lambda ()
-        (list (relnum-compare "1b" "2a")
-              (relnum-compare "1b" "1b")
-              (relnum-compare "3a" "1b"))))
+(test* "relnum-compare" '(-1 0 1)
+       (list (relnum-compare "1b" "2a")
+             (relnum-compare "1b" "1b")
+             (relnum-compare "3a" "1b")))
 
-(test "relnum-compare" '(-1 0 1)
-      (lambda ()
-        (list (relnum-compare "b" "1")
-              (relnum-compare "b" "b")
-              (relnum-compare "1" "b"))))
+(test* "relnum-compare" '(-1 0 1)
+       (list (relnum-compare "b" "1")
+             (relnum-compare "b" "b")
+             (relnum-compare "1" "b")))
 
 (define (vercmp x y r)
   (test (format #f "version-compare ~a ~a" x y)
@@ -70,20 +67,20 @@
 (vercmp "20011213-1.12_alpha0" "20011213-1.12" -1)
 (vercmp "20011213-1.12_alpha0" "20011213-1.12.1" -1)
 
-(test "version=?"  #t (lambda () (version=? "1.1.12" "1.1.12")))
-(test "version=?"  #f (lambda () (version=? "1.1.12" "1.1.21")))
-(test "version<?"  #t (lambda () (version<? "1.1.12" "1.2")))
-(test "version<?"  #f (lambda () (version<? "1.1.12" "1.1.12")))
-(test "version<?"  #f (lambda () (version<? "1.1.2" "1.1.1")))
-(test "version<=?" #t (lambda () (version<=? "1.1.12" "1.2")))
-(test "version<=?" #t (lambda () (version<=? "1.1.12" "1.1.12")))
-(test "version<=?" #f (lambda () (version<=? "1.1.2" "1.1.1")))
-(test "version>?"  #f (lambda () (version>? "1.1.12" "1.2")))
-(test "version>?"  #f (lambda () (version>? "1.1.12" "1.1.12")))
-(test "version>?"  #t (lambda () (version>? "1.1.2" "1.1.1")))
-(test "version>=?" #f (lambda () (version>=? "1.1.12" "1.2")))
-(test "version>=?" #t (lambda () (version>=? "1.1.12" "1.1.12")))
-(test "version>=?" #t (lambda () (version>=? "1.1.2" "1.1.1")))
+(test* "version=?"  #t (version=? "1.1.12" "1.1.12"))
+(test* "version=?"  #f (version=? "1.1.12" "1.1.21"))
+(test* "version<?"  #t (version<? "1.1.12" "1.2"))
+(test* "version<?"  #f (version<? "1.1.12" "1.1.12"))
+(test* "version<?"  #f (version<? "1.1.2" "1.1.1"))
+(test* "version<=?" #t (version<=? "1.1.12" "1.2"))
+(test* "version<=?" #t (version<=? "1.1.12" "1.1.12"))
+(test* "version<=?" #f (version<=? "1.1.2" "1.1.1"))
+(test* "version>?"  #f (version>? "1.1.12" "1.2"))
+(test* "version>?"  #f (version>? "1.1.12" "1.1.12"))
+(test* "version>?"  #t (version>? "1.1.2" "1.1.1"))
+(test* "version>=?" #f (version>=? "1.1.12" "1.2"))
+(test* "version>=?" #t (version>=? "1.1.12" "1.1.12"))
+(test* "version>=?" #t (version>=? "1.1.2" "1.1.1"))
 
 (test-end)
 
