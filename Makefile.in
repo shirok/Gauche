@@ -1,5 +1,5 @@
 # Top Makefle for Gauche
-# $Id: Makefile.in,v 1.43 2003-08-08 08:57:10 shirok Exp $
+# $Id: Makefile.in,v 1.44 2003-08-26 09:57:02 shirok Exp $
 #  Run 'configure' script to generate Makefile
 
 .PHONY: all test check install uninstall clean distclean maintainer-clean install-check
@@ -12,7 +12,8 @@ bindir      = @bindir@
 libdir      = @libdir@
 srcdir      = @srcdir@
 
-SUBDIRS = gc lib src ext doc
+SUBDIRS = gc src lib ext doc
+SRIDBUS = doc ext lib src gc
 INSTALL = @INSTALL@
 GAUCHE_VERSION  = @GAUCHE_VERSION@
 GAUCHE_DATA_DIR = @datadir@/gauche
@@ -50,14 +51,14 @@ uninstall:
 
 clean:
 	rm -rf test.log core *~
-	for d in $(SUBDIRS); do (cd $$d; $(MAKE) clean); done
+	for d in $(SRIDBUS); do (cd $$d; $(MAKE) clean); done
 
 distclean: clean
-	for d in $(SUBDIRS); do (cd $$d; $(MAKE) distclean); done
+	for d in $(SRIDBUS); do (cd $$d; $(MAKE) distclean); done
 	rm -rf $(CONFIG_GENERATED)
 
 maintainer-clean: clean
-	for d in $(SUBDIRS); do (cd $$d; $(MAKE) maintainer-clean); done
+	for d in $(SRIDBUS); do (cd $$d; $(MAKE) maintainer-clean); done
 	rm -rf $(AUTOCONF_GENERATED) VERSION INSTALL INSTALL.eucjp DIST_EXCLUDE_X gc/configure
 
 dist:

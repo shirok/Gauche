@@ -1,10 +1,10 @@
 ;; A tool to create symlinks from main source tree to extension modules,
 ;; or to remove them.  This is useful to test gosh in the source tree,
 ;; without installing them.
-;; Such links are only interest of developers; they must be cleaned out
+;; Such links are only of developers' interest; they must be cleaned out
 ;; to create a distribution tarball.
 ;;
-;; $Id: xlink,v 1.3 2002-06-17 04:57:19 shirok Exp $
+;; $Id: xlink,v 1.4 2003-08-26 09:57:09 shirok Exp $
 ;;
 
 (use gauche.parseopt)
@@ -13,55 +13,45 @@
 (use file.util)
 
 (define (usage)
-  (print "Usage: gosh xlink [-l|-u][-d dir] <scm-or-so-file> ...\n"
-         "  -d dir - specifies extra level of directory in library path."
-         "  -l     - creates symlinks from the source tree to the given\n"
-         "           files.  If the given file is a Scheme file, the link\n"
-         "           is created in $(TOPDIR)/lib/$(dir)/.  If the given\n"
-         "           file is a compiled DSO, the link is created in\n"
-         "           $(TOPDIR)/src.\n"
-         "  -u     - removes symlinks created by -l option.")
+  (print "Usage: gosh xlink [-l|-u][-g group][-b top_builddir][-s top_srcdir] <scm-or-so-file> ...\n"
+         "  -l creates symlinks from the source tree to the given\n"
+         "     files.  If the given file is a Scheme file, the link\n"
+         "     is created in $(top_srcdir)/lib/$(group)/.  If the given\n"
+         "     file is a compiled DSO, the link is created in\n"
+         "     $(top_builddir)/src.\n"
+         "  -u removes symlinks created by -l option.\n"
+         "  -g group - extra category of library path.\n"
+         "  -b top_builddir - $(top_builddir) passed from Makefile.\n"
+         "  -s top_srcdir - $(top_builddir) passed from Makefile."
+         )
   (exit 1))
 
 (define (main args)
-  (let* ((dir   #f)
-         (cmd   #f)
-         (mydir (last (string-split (sys-getcwd) #\/)))
-         (files (parse-options (cdr args)
-                  (("d=s" (d) (set! dir d))
-                   ("l" () (set! cmd 'link))
-                   ("u" () (set! cmd 'unlink))
-                   (else _ (usage))))))
-    (unless cmd (usage))
+  (let-args (cdr args)
+      ((link     "l")
+       (unlink   "u")
+       (group    "g=s")
+       (builddir "b=s")
+       (srcdir   "s=s")
+       (else     _ (usage))
+       . files)
+    (unless (or link unlink) (usage))
     (for-each (lambda (file)
-                (receive (name target)
-                    (if (string-suffix? ".scm" file)
-                        (process-scm mydir dir file)
-                        (process-so  mydir file))
-                  (if (eq? cmd 'unlink)
-                      (sys-unlink name)
-                      (unless (file-exists? name)
-                        (sys-symlink target name)))))
+                (let ((path   (build-path (sys-getcwd) file))
+                      (target (if (string-suffix? ".scm" file)
+                                (build-path srcdir "lib" group file)
+                                (build-path builddir "src" file))))
+                  (if unlink
+                    (sys-unlink target)
+                    (make-link path target))))
               files))
   0)
 
-(define (process-scm mydir dir file)
-  (let* ((name   #`"../../lib/,(or dir \"\")/,|file|")
-         (target-path (if dir
-                          (string-join
-                           (make-list (length (string-split dir #\/))
-                                      "..")
-                           "/" 'suffix)
-                          ""))
-         (target #`"../,|target-path|ext/,|mydir|/,|file|"))
-    (when (and dir (not (file-exists? #`"../../lib/,|dir|")))
-      (make-directory* #`"../../lib/,|dir|"))
-    (values name target)))
-
-(define (process-so mydir file)
-  (let* ((name   #`"../../src/,|file|")
-         (target #`"../ext/,|mydir|/,|file|"))
-    (values name target)))
+(define (make-link file target)
+  (make-directory* (sys-dirname target))
+  (sys-unlink target)
+  (print "link "file" <- "target)
+  (sys-symlink file target))
 
 ;; Local variables:
 ;; mode: scheme

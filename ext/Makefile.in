@@ -5,7 +5,7 @@ SUBDIRS= auxsys threads uvector charconv net termios fcntl sxml syslog dbm mt-ra
 CONFIG_GENERATED = Makefile Makefile.ext
 
 all:
-	for d in $(SUBDIRS); do (cd $$d; $(MAKE) all); done
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) default); done
 
 test : check
 
@@ -21,6 +21,12 @@ uninstall:
 clean:
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) clean); done
 	rm -rf core *~
+
+link :
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) link); done
+
+unlink :
+	for d in $(SUBDIRS); do (cd $$d; $(MAKE) unlink); done
 
 distclean: clean
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) distclean); done

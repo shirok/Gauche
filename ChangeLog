@@ -1,3 +1,9 @@
+2003-08-25  Shiro Kawai  <shiro@acm.org>
+
+	* ext/Makefile.ext.in, ext/xlink : let each 'make' in exit/$dir
+	  to create appropriate links in the source tree, so that the
+	  newly built gosh can run without installation.
+
 2003-08-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.c (Scm__InitCompiler): moved with-module and

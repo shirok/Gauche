@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions
-## $Id: Makefile.ext.in,v 1.12 2003-07-23 03:42:39 shirok Exp $
+## $Id: Makefile.ext.in,v 1.13 2003-08-26 09:57:09 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -18,12 +18,11 @@ CFLAGS   = @CFLAGS@ @SHLIB_SO_CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS  = @LOCAL_LIB@ @SHLIB_SO_LDFLAGS@
 
-
 # These are set by configure
 DEFS     = @DEFS@
 OPTFLAGS = @OPTFLAGS@
 INCLUDES = -I$(srcdir) -I$(top_srcdir)/src -I$(top_srcdir)/gc/include @LOCAL_INC@ $(EXTRA_INCLUDES)
-RANLIB   = @RANLIB@
+LN_S     = @LN_S@
 OBJEXT   = @OBJEXT@
 EXEEXT   = @EXEEXT@
 SOEXT    = @SHLIB_SO_SUFFIX@
@@ -51,6 +50,9 @@ CLEANFILES = core *~ test.log
 .SUFFIXES:
 .SUFFIXES: .S .c .o .obj .s .stub
 
+.PHONY: default all check install install-check clean distclean \
+        maintainer-clean install-std uninstall link unlink
+
 .c.obj:
 	$(COMPILE) -c `cygpath -w $<`
 
@@ -66,7 +68,7 @@ CLEANFILES = core *~ test.log
 .stub.c :
 	$(GOSH) genstub $<
 
-default : all
+default : all link
 
 check : all
 	@rm -f test.log
@@ -75,7 +77,7 @@ check : all
 install-check :
 	${bindir}/gosh test.scm
 
-clean : 
+clean : unlink
 	rm -rf $(CLEANFILES) *.$(OBJEXT) *.$(SOEXT)
 
 distclean : clean
@@ -97,3 +99,11 @@ install-std : all
 	fi
 
 uninstall :
+
+link :
+	-$(GOSH) ../xlink -l -g "$(SCM_CATEGORY)" \
+	  -b $(top_builddir) -s $(top_srcdir) $(LIBFILES) $(SCMFILES)
+
+unlink :
+	-$(GOSH) ../xlink -u -g "$(SCM_CATEGORY)" \
+	  -b $(top_builddir) -s $(top_srcdir) $(LIBFILES) $(SCMFILES)
