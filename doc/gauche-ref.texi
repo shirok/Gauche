@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.16 2001-06-03 08:57:09 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.17 2001-06-04 19:32:12 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1260,6 +1260,12 @@ Shift JIS
 No multibyte character support (8-bit fixed-length character).
 @end table
 @end defun
+
+@defun supported-character-encodings
+Returns a list of names of character encoding schemes
+that are supported in the native multibyte encoding scheme.
+@end defun
+
 
 
 @c ----------------------------------------------------------------------
@@ -2676,13 +2682,26 @@ of descendants of @var{class}.
 
 @deftp {Module} gauche.charconv
 @mdindex gauche.charconv
-@emph{--- NOT IMPLEMENTED ---}
+This module defines a set of functions that converts character encoding
+of the given data stream.
+
+Internally it uses @code{iconv(3)} character code conversion library.
+The supported character encoding schemes (CES) are limited to what
+the underlying @code{iconv} supports.
 @end deftp
 
-@defun open-input-conversion-port from-port from-code &optional to-code
+@defun ces-conversion-supported? from-ces to-ces
+Returns @code{#t} if conversion from the character encoding scheme
+(CES) @var{from-ces} to @var{to-ces} is supported in this system.
 @end defun
 
-@defun open-output-conversion-port to-port to-code &optional from-code
+@defun open-input-conversion-port source from-ces &optional to-ces buffer-size
+Takes an input port @var{source}, which feeds characters
+encoded in @var{from-ces}, and returns another input port,
+from which you can read characters encoded in @var{to-ces}.
+@end defun
+
+@defun open-output-conversion-port sink to-ces &optional from-ces buffer-size
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -2970,6 +2989,20 @@ and the result of the last @var{form} becomes the result of
 If no @code{else} clause exists, and no other clause matched the
 @var{string-expr}, an undefined value is returned.
 
+The @code{parse-date} example above becomes simpler if you use
+@code{rxmatch-case}
+@example
+(define (parse-date2 str)
+  (rxmatch-case str
+    (test (lambda (s) (not (string? s))) #f)
+    (#/^(\d\d?)\/(\d\d?)\/(\d\d\d\d)$/ (#f mm dd yyyy)
+     (map string->number (list yyyy mm dd)))
+    (#/^(\d\d\d\d)\/(\d\d?)\/(\d\d?)$/ (#f yyyy mm dd)
+     (map string->number (list yyyy mm dd)))
+    (#/^\d+\/\d+\/\d+$/                (#f)
+     (error "ambiguous: ~s" str))
+    (else (error "bogus: ~s" str))))
+@end example
 @end defmac
 
 
