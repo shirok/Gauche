@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.45 2001-11-14 11:13:37 shirok Exp $
+dnl $Id: configure.in,v 1.46 2002-01-22 10:59:32 shirok Exp $
 AC_INIT(src/gauche.h)
 AC_CONFIG_HEADER(src/gauche/config.h)
 AC_CANONICAL_SYSTEM
@@ -178,7 +178,7 @@ if test "$ac_cv_type_time_t_integral" = yes; then
 AC_DEFINE(INTEGRAL_TIME_T)
 fi
 
-dnl if we build for i686, take advantage of
+dnl if we build for i686, take advantage of USE_I686_PREFETCH
 if test $target_cpu = "i686"; then
   I686OPT=-DUSE_I686_PREFETCH
 fi
