@@ -1,3 +1,12 @@
+2001-10-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/algorithm/isomorph.scm : added
+	* lib/algorithm/toposort.scm : added
+	
+2001-10-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/w3c/cgi.scm : renamed to lib/www/cgi.scm
+
 2001-10-16  Shiro Kawai  <shiro@acm.org>
 
 	* lib/port/stk.scm : added.
