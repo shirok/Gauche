@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.157 2002-05-22 09:20:59 shirok Exp $
+;;; $Id: extlib.stub,v 1.158 2002-06-14 01:42:42 shirok Exp $
 ;;;
 
 "
@@ -1000,6 +1000,10 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 
 (define-cproc undefined? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_UNDEFINEDP(obj)));")
+
+(define-cproc warn (fmt &rest args)
+  (assert (string? fmt))
+  "  Scm_FWarn(fmt, args); SCM_RETURN(SCM_UNDEFINED);")
 
 ;;
 ;; Hashtable

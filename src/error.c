@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.34 2002-06-11 09:24:55 shirok Exp $
+ *  $Id: error.c,v 1.35 2002-06-14 01:42:42 shirok Exp $
  */
 
 #include <errno.h>
@@ -176,11 +176,9 @@ void Scm_Warn(const char *msg, ...)
     va_start(args, msg);
     Scm_Vprintf(SCM_PORT(ostr), msg, args);
     va_end(args);
-    Scm_Printf(SCM_CURERR, "WARNING: ~A\n",
-               Scm_GetOutputString(SCM_PORT(ostr)));
+    Scm_Printf(SCM_CURERR, "WARNING: %A\n", Scm_GetOutputString(SCM_PORT(ostr)));
     Scm_Flush(SCM_CURERR);
 }
-
 
 /*
  * Those versions are called from Scheme.  Do not use them from C.
@@ -231,4 +229,14 @@ ScmObj Scm_FError(ScmObj fmt, ScmObj args)
     SCM_END_PROTECT;
     return Scm_VMThrowException(e);
 }
+
+/* format & warn */
+void Scm_FWarn(ScmString *fmt, ScmObj args)
+{
+    ScmObj ostr = Scm_MakeOutputStringPort();
+    Scm_Format(ostr, fmt, args);
+    Scm_Printf(SCM_CURERR, "WARNING: %A\n", Scm_GetOutputString(SCM_PORT(ostr)));
+    Scm_Flush(SCM_CURERR);
+}
+
 
