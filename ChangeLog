@@ -1,3 +1,8 @@
+2002-10-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/gauche/vm.h : start adding experimental new VM
+	  code under USE_NVM cpp flag.  not working yet.
+
 2002-10-25  Shiro Kawai  <shiro@acm.org>
 
 	* various files: removed obsoleted macro l_ and reference to

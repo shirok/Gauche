@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.182 2002-10-18 05:00:19 shirok Exp $
+ *  $Id: vm.c,v 1.183 2002-11-02 02:50:42 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -105,7 +105,12 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->env = NULL;
     v->argp = v->stack;
     v->cont = NULL;
+#ifdef USE_NVM
+    v->pc = NULL;
+    v->ivec = NULL;
+#else
     v->pc = SCM_NIL;
+#endif
     v->val0 = SCM_UNDEFINED;
     for (i=0; i<SCM_VM_MAX_VALUES; i++) v->vals[i] = SCM_UNDEFINED;
     v->numVals = 1;
@@ -221,7 +226,7 @@ void Scm__InitVM(void)
 
 #define DECL_REGS_INT(VOLATILE)                 \
     ScmVM *VOLATILE vm = theVM;                 \
-    VOLATILE ScmObj pc = vm->pc;                \
+    VOLATILE PCTYPE pc = vm->pc;                \
     ScmContFrame *VOLATILE cont = vm->cont;     \
     ScmEnvFrame *VOLATILE env = vm->env;        \
     ScmObj *VOLATILE argp = vm->argp;           \

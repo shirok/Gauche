@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.77 2002-09-18 05:55:10 shirok Exp $
+ *  $Id: vm.h,v 1.78 2002-11-02 02:50:42 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -20,6 +20,15 @@
 
 #define SCM_VM_MAX_VALUES      20
 #define SCM_VM_SIGQ_SIZE       32
+
+/*#define USE_NVM 1*/
+
+/* NB: experment of 'new VM' implementation */
+#ifdef USE_NVM
+#define PCTYPE ScmObj*
+#else
+#define PCTYPE ScmObj
+#endif
 
 /*
  * Environment frame
@@ -51,7 +60,7 @@ typedef struct ScmEnvFrameRec {
 SCM_EXTERN ScmEnvFrame *Scm_GetCurrentEnv(void);
 
 /*
- * Continuation
+ * Continuation frame
  *
  *  Continuation is represented as a chain of ScmContFrames.
  *  If argp == NULL && size >= 0, the frame is C continuation.
@@ -65,13 +74,23 @@ typedef struct ScmContFrameRec {
     ScmEnvFrame *env;             /* saved environment */
     ScmObj *argp;                 /* saved argument pointer */
     int size;                     /* size of argument frame */
-    ScmObj pc;                    /* next PC */
+    PCTYPE pc;                    /* next PC */
     ScmObj info;                  /* debug info */
 } ScmContFrame;
 
 #define CONT_FRAME_SIZE  (sizeof(ScmContFrame)/sizeof(ScmObj))
 
 SCM_EXTERN void Scm_CallCC(ScmObj body);
+
+#ifdef USE_NVM
+/*
+ * Instruction vector (only for "new VM")
+ */
+typedef struct ScmIVectorRec {
+    ScmObj info;
+    ScmObj insn[1];             /* variable length */
+} ScmIVector;
+#endif /*USE_NVM*/
 
 /*
  * Identifier
@@ -100,30 +119,6 @@ SCM_EXTERN ScmObj Scm_CopyIdentifier(ScmIdentifier *id);
 SCM_EXTERN int    Scm_IdentifierBindingEqv(ScmIdentifier *id, ScmSymbol *sym,
 					   ScmObj env);
 SCM_EXTERN int    Scm_FreeVariableEqv(ScmObj var, ScmObj sym, ScmObj env);
-
-/*
- * Source info
- *
- *   It is inserted in the compiled code by the compiler, and used
- *   by error handlers to obtain debugging information.  See compile.c
- *   for details.
- *
- *   Will be obsoleted.
- */
-
-typedef struct ScmSourceInfoRec {
-    SCM_HEADER;
-    ScmObj info;
-    struct ScmSourceInfoRec *up;
-} ScmSourceInfo;
-
-SCM_CLASS_DECL(Scm_SourceInfoClass);
-#define SCM_CLASS_SOURCE_INFO    (&Scm_SourceInfoClass)
-
-#define SCM_SOURCE_INFO(obj)     ((ScmSourceInfo*)(obj))
-#define SCM_SOURCE_INFOP(obj)    SCM_XTYPEP(obj, SCM_CLASS_SOURCE_INFO)
-
-SCM_EXTERN ScmObj Scm_MakeSourceInfo(ScmObj info, ScmSourceInfo *up);
 
 /*
  * Escape handling
@@ -211,8 +206,12 @@ struct ScmVMRec {
     ScmPort *curout;            /* current output port */
     ScmPort *curerr;            /* current error port */
 
+#ifdef USE_NVM
+    ScmIVector *ivec;           /* current instruction vector */
+#endif
+
     /* Registers */
-    ScmObj pc;                  /* Program pointer.  Points list of
+    PCTYPE pc;                  /* Program pointer.  Points list of
                                    instructions to be executed.              */
     ScmEnvFrame *env;           /* Current environment.                      */
     ScmContFrame *cont;         /* Current continuation.                     */
