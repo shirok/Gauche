@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: with.scm,v 1.4 2001-10-04 10:41:13 shirok Exp $
+;;;  $Id: with.scm,v 1.5 2001-10-25 10:34:18 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -46,3 +46,9 @@
       (with-input-from-string str
         thunk))))
 
+(define (write-to-string obj . args)
+  (with-output-to-string
+    (lambda () ((if (pair? args) (car args) write) obj))))
+
+(define (read-from-string string . args)
+  (with-input-from-string string (if (pair? args) (car args) read)))
