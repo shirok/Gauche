@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.37 2002-07-31 22:09:11 shirok Exp $
+ *  $Id: error.c,v 1.38 2002-09-20 12:28:22 shirok Exp $
  */
 
 #include <errno.h>
@@ -294,7 +294,7 @@ void Scm_ReportError(ScmObj e)
     if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED)) {
         /* An _uncaptured_ error occurred during reporting an error.
            We can't proceed, for it will cause infinite loop.
-           Note that tt is OK for an error to occur inside the error
+           Note that it is OK for an error to occur inside the error
            reporter, as far as the error is handled by user-installed
            handler.   The user-installed handler can even invoke a
            continuation that is captured outside; the flag is reset
