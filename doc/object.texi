@@ -37,6 +37,7 @@ and so on.
 @section  Introduction to the object system
 @c NODE オブジェクトシステムの紹介
 
+@c EN
 This section briefly explains the basic structure of
 Gauche's object system.   It is strongly influenced
 by CLOS (Common-Lisp Object System).
@@ -57,10 +58,30 @@ x and y coordinates.
 A point class can be defined using @code{define-class} macro.
 In the shortest form, it can be defined like this:
 
+@c JP
+この節では Gauche のオブジェクトシステムの基本的構造について手短かに
+説明します。Gauche のオブジェクトシステムは CLOS (Common-Listp Object System)
+に強く影響されています。CLOS やそれにかかわりのある TinyCLOS、STklos、
+あるいは Guile のオブジェクトシステムの経験がある方は、この節を飛ばして、
+次の節にいってもよいでしょう。
+
+CLOS 風のオブジェクトシステムでは 3 つの概念が中心的な役割をはたします。
+@emph{クラス}、@emph{ジェネリック関数}、それに@emph{メソッド}です。
+
+@emph{クラス}はオブジェクトの構造を指定します。また、データ型も定義します
+(厳密にいうと、データ型とはちがうものですが、難しいところは今は
+おいておきましょう)。
+
+たとえば、2 次元空間の点は x 座標と y 座標で表現できます。点のクラスは
+@code{define-class} マクロを使って定義できます。もっとも手短かには、
+次のように定義できます。
+
+@c COMMON
 @example
 (define-class <2d-point> () (x y))
 @end example
 
+@c EN
 (You can find the code of definitions in the examples of this section
 in @code{examples/oointro.scm} of Gauche's source distribution.)
 
@@ -84,12 +105,38 @@ Now we defined a 2D point class, so we can create an instance
 of a point.  You can pass a class to a generic function @code{make}
 to create an instance.  (Don't worry about what generic function
 is---think it as a special type of function, just for now).
+
+@c JP
+(この節の例の定義コードは Gauche ソース配布物のなかの 
+@code{examples/oointro.scm} にあります。)
+
+シンボル @code{<2d-point>} はクラスの名前です。グローバル変数
+@code{<2d-point>}はクラスオブジェクトに束縛されています。クラス名を
+@code{<} と @code{>} で囲むのは慣習にすぎません。@code{define-class}
+には任意のシンボルを渡すことができます。
+
+@code{define-class}の第二引数は、直接のスーパークラスのリストです。
+これでこのクラスの継承を指定します。これについては後で説明します。
+
+@code{define-class}の第三引数は@emph{スロット}のリストです。
+スロットはなにかを格納しおく場所で、通常は各オブジェクトで、値を格納できます。
+これは、他のオジェクト指向言語では、フィールドとかインスタンス変数などと
+呼ばれているものに似たものです。しかし、スロットは単なる各オブジェクト毎の
+格納スペース以上の使い方ができます。
+
+さて、2 次元の点のクラスを定義しましたので、点のインスタンスを生成できます。
+クラスをジェネリック関数 @{make} に渡してインスタンスを生成します。
+(ジェネリック関数がどんなものであるかは気にしないで下さい。今はある特殊な
+タイプの関数とだけ考えておいてください。)
+
+@c COMMON
 @example
 (define a-point (make <2d-point>))
 
 a-point  @result{} #<<2d-point> 0x8117570>
 @end example
 
+@c EN
 If you are using @code{gosh} interactively, you can use
 a generic function @code{describe} to inspect the internal
 of an instance.
@@ -97,6 +144,13 @@ A short alias, @code{d}, is defined to @code{describe} for
 the convenience.  (See @ref{gauche.interactive - Interactive session}
 for the details).
 
+@c JP
+対話モードで @code{gosh} を使っているなら、ジェネリック関数 @code{describe} を
+使って、インスタンスの内部を点検できます。
+@code{d} は利便のために定義されている、その省略形です。
+(詳細については、@ref{gauche.interactive - Interactive session}参照)
+
+@c COMMON
 @example
 gosh> (d a-point)
 #<<2d-point> 0x8117570> is an instance of class <2d-point>
@@ -105,9 +159,11 @@ slots:
   y         : #<unbound>
 @end example
 
+@c EN
 In order to access or modify the value of the slot, you can use
 @code{slot-ref} and @code{slot-set!}, respectively.
 These names are taken from STklos.
+
 @example
 (slot-ref a-point 'x)  ;; access to the slot x of a-point
   @result{} @r{error, since slot 'x doesn't have a value yet}
@@ -118,8 +174,28 @@ These names are taken from STklos.
   @result{} 10.0
 @end example
 
+@c JP
+スロットの値にアクセスあるいは値を変更するためには、それぞれ、
+@code{slot-ref} および @code{slot-set!} が使えます。これらの名前は
+STklos からとりました。
+
+@example
+(slot-ref a-point 'x)  ;; a-point のスロット x にアクセス
+  @result{} @r{error, since slot 'x doesn't have a value yet}
+
+(slot-set! a-point 'x 10.0)  ;; a-point のスロット x を 10.0 に設定
+
+(slot-ref a-point 'x)
+  @result{} 10.0
+@end example
+
+@c EN
 Gauche also provides a shorter name, @code{ref}, which can also
 be used in srfi-17's generalized @code{set!} syntax:
+@c JP
+Gauche では、より短かい名前 @code{ref} も使えます。これを使えば
+srfi-17 の一般化された @code{set!} の構文が使えます。
+@c COMMON
 @example
 (ref a-point 'x) @result{} 10.0
 
@@ -128,7 +204,11 @@ be used in srfi-17's generalized @code{set!} syntax:
 (ref a-point 'y) @result{} 20.0
 @end example
 
+@c EN
 Now you can see slot values are set.
+@c JP
+ここで、設定されたスロットの値を見られます。
+@c COMMON
 @example
 gosh> (d a-point)
 #<<2d-point> 0x8117570> is an instance of class <2d-point>
@@ -137,17 +217,26 @@ slots:
   y         : 20.0
 @end example
 
+@c EN
 In practice, it is usually convenient if you can specify the default
 value for a slot, or give values for slots when you create an instance.
 Such information can be specified by @emph{slot options}.
 Let's modify the definition of @code{<2d-point>} like this:
 
+@c JP
+実際には、スロットにデフォルト値を設定できたり、インスタンス生成時に
+スロットに値を設定できると便利なことが多いです。このような情報は、
+@emph{スロットオプション}で指定できます。@code{<2d-point>}の定義を
+次のように変更してみましょう。
+
+@c COMMON
 @example
 (define-class <2d-point> ()
   ((x :init-value 0.0 :init-keyword :x :accessor x-of)
    (y :init-value 0.0 :init-keyword :y :accessor y-of)))
 @end example
 
+@c EN
 Note that each slot specification is now a list, instead of just
 a symbol as in the previous example.
 The list's car now specifies the slot name, and its cdr
@@ -162,6 +251,21 @@ using @code{slot-ref}/@code{slot-set!}.
 Let's see some interactive session.  You create an instance
 of the new @code{<2d-point>} class, and you can see the slots are
 initialized by the default values.
+@c JP
+各スロットの指定は、前の例では一つのシンボルでしたが、こんどはリスト
+であることに注意してください。
+こんどは、リストの car 部分がスロット名の指定で、cdr 部分にいろいろな情報が
+はいります。@code{:init-value} のうしろの値はそのスロットのデフォルト値を
+定義しています。@{:init-keyword}のうしろのキーワードは、生成時にスロットを
+初期化するために @code{make} に渡すことのできるキーワード引数を定義しています。
+キーワード @code{:accessor} のうしろの名前は、スロットへのアクセス/変更の
+ために使えるジェネリック関数に束縛されます。これは
+@code{slot-ref}/@code{slot-set!} のかわりに使います。
+
+ちょっとした対話セッションをみてみましょう。新しい @code{<2d-point>} クラスの
+インスタンスをつくります。スロットがデフォルト値で初期化されているのがわかり
+ますね。
+@c COMMON
 @example
 gosh> (define a-point (make <2d-point>))
 a-point
@@ -172,8 +276,12 @@ slots:
   y         : 0.0
 @end example
 
+@c EN
 You create another instance, this time giving initialization values
 by keyword arguments.
+@c JP
+こんどは、キーワード引数で初期値を与えて、別のインスタンスを作ります。
+@c COMMON
 @example
 gosh> (define b-point (make <2d-point> :x 50.0 :y -10.0))
 b-point
@@ -184,8 +292,13 @@ slots:
   y         : -10.0
 @end example
 
+@c EN
 Accessors are less verbose than @code{slot-ref}/@code{slot-set!}, thus
 convenient.
+@c JP
+アクセサは @code{slot-ref}/@code{slot-set!} より短かくなって便利に
+なりましたね。
+@c COMMON
 @example
 gosh> (x-of a-point)
 0.0
@@ -197,6 +310,7 @@ gosh> (y-of a-point)
 3.33
 @end example
 
+@c EN
 The full list of available slot options is described in 
 @ref{Defining class}.  At a first grance,
 the declarations of such slot options may look verbose.
@@ -210,12 +324,27 @@ See @ref{Metaobject protocol}, for details.
 
 We can also have @code{<2d-vector>} class in similar fashion.
 
+@c JP
+利用可能な全スロットオプションのリストは@ref{Defining class}にあります。
+ちょっと見ると、これらのスロットオプションの宣言は冗長に見えるかもしれません。
+システム側で初期化キーワードやアクセス名を自動的に定義する静的な仕組を
+用意すべきかもしれません。しかしながら、CLOS 風のシステムでは柔軟性の
+方がより好ましいのです。
+メタオブジェクトプロトコルと呼ばれる機構をもちいて、これらの
+スロットオプションがどのゆに解釈されるかをカスタマイズすることができます。
+また、自分用のスロットオプションを追加することもできます。
+詳しくは @ref{Metaobject protocol} を見てください。
+
+また、似たような流儀で @code{<2d-vector>} クラスを定義できます。
+
+@c COMMON
 @example
 (define-class <2d-vector> ()
   ((x :init-value 0.0 :init-keyword :x :accessor x-of)
    (y :init-value 0.0 :init-keyword :y :accessor y-of)))
 @end example
 
+@c EN
 Yes, we can use the same accessor name like @code{x-of}, and
 it is effectively overloaded.
 
@@ -225,18 +354,36 @@ The following form defines a method @code{move-by!} of
 three arguments, @var{pt}, @var{dy}, @var{dy}, where @var{pt} is
 an instance of @code{<2d-point>}.
 
+@c JP
+そうです。同じアクセサ名を @code{x-of} のように使うことができるのです。
+これは有効に多重定義されています。
+
+オジェクト指向言語の主流に慣れていると、メソッドはどこにあるのだと
+思うかもしれません。それは、ここです。以下のフォームは、3 つの引数
+@var{pt}、@var{dy}、@var{dy} をとるメソッド @code{move-by!} を定義
+しています。ここで、@var{pt} は @code{<2d-point>} のインスタンスです。
+
+@c COMMON
 @example
 (define-method move-by! ((pt <2d-point>) dx dy)
   (inc! (x-of pt) dx)
   (inc! (y-of pt) dy))
 @end example
 
+@c EN
 The second argument of @code{define-method} macro specifies a
 @emph{method specializer list}.  It indicates the first argument must be
 an instance of @code{<2d-point>}, and the second and third
 can be any type.   The syntax to call a method is just like
 the one to call an ordinary function.
 
+@c JP
+@code{define-method} マクロの第二引数は@emph{メソッド特定化子リスト}を
+指定しています。これは、第一引数が @code{<2d-point>} のインスタンスで
+なければならないことを示し、第二、第三引数は任意の型でよいことを
+示しています。メソッド呼びだしの構文は通常関数の呼出しと同じです。
+
+@c COMMON
 @example
 gosh> (move-by! b-point 1.4 2.5)
 #<undef>
@@ -247,23 +394,36 @@ slots:
   y         : -7.5
 @end example
 
+@c EN
 You can overload the method by different specializers; here
 you can move a point using a vector.
-
+@c JP
+別の特定化子によりこのメソッドを多重定義することが可能です。以下のように
+ベクタを使って点を動かすこともできます。
+@c COMMON
 @example
 (define-method move-by! ((pt <2d-point>) (delta <2d-vector>))
   (move-by pt (x-of delta) (y-of delta)))
 @end example
 
+@c EN
 Specialization isn't limited to a user-defined classes.
 You can also specialize a method using Gauche's built-in type.
+@c JP
+特定化はユーザ定義のクラスにだけ限定されているわけではありません。
+Gauche の組み込み型を使ってメソッドを特定化することもできます。
 
+@c COMMON
 @example
 (define-method move-by! ((pt <2d-point>) (c <complex>))
   (move-by! pt (real-part c) (imag-part c)))
 @end example
 
+@c EN
 And here's the example session:
+@c JP
+以下は例のセッションです。
+@c COMMON
 @example
 gosh> (define d-vector (make <2d-vector> :x -9.0 :y 7.25))
 d-vector
@@ -283,6 +443,7 @@ slots:
   y         : -2.25
 @end example
 
+@c EN
 You see that a method is dispached not only by its primary
 receiver (@code{<2d-point>}), but also other arguments.
 In fact, the first argument is no more special than the rest.
@@ -293,7 +454,18 @@ So what is actually a method?  Inspecting @code{move-by!}
 reveals that it is an instance of @code{<generic>}, a generic function.
 (Note that @code{describe} truncates the printed value in @code{methods}
 slot for the sake of readability).
+@c JP
+メソッドがその主レシーバ @code{<2d-point>} によってのみディスパッチされる
+のではなく、その他の引数によってもディスパッチされるのをみました。
+実際、第一引数がのこりの引数よりも特別であるということはありません。
+CLOS 風のシステムではメソッドは特定のクラスに属するものではないのです。
 
+ではメソッドとはいったいなんでしょう。@code{move-by!} を点検してみると
+それが @code{<generic>} のインスタンスであり、ジェネリック関数であると
+わかります。(@code{describe} は可読性のために @code{methods} スロットの
+値の印字を丸めてだしていることに注意してください。)
+
+@c COMMON
 @example
 gosh> move-by!
 #<generic move-by! (3)>
@@ -308,6 +480,7 @@ gosh> (ref move-by! 'methods)
  #<method (move-by! <2d-point> <top> <top>)>)
 @end example
 
+@c EN
 I said a generic function is a special type of function.
 It is recognized by Gauche as an applicable object, but
 when applied, it selects appropriate method(s) according to
@@ -320,6 +493,20 @@ and the body, and (3) to add the method object to the generic function.
 
 The accessors are also generic functions, created implicitly by the
 @code{define-class} macro.
+@c JP
+ジェネリック関数は特別なタイプの関数だと言いましたが、Gauche ではこれは
+適用可能オブジェクトとして認識されます。しかし、適用されるとその引数に
+対応して適切なメソッドが選択され、その選択されたメソッドが呼びだされます。
+
+実際 @code{define-method} マクロがやっていることは、(1)もし与えられた
+名前のジェネリック関数がまだ存在していなければ、これを生成し、(2)与えられた
+特定化子と本体とでメソッドオブジェクトを生成し、(3)ジェネリック関数に
+そのメソッドオブジェクトを追加する、です。
+
+アクセサも同様にジェネリック関数で、@code{define-class} マクロが暗黙のうちに
+生成します。
+
+@c COMMON
 @example
 gosh> (d x-of)
 #<generic x-of (2)> is an instance of class <generic>
@@ -328,6 +515,7 @@ slots:
   methods   : (#<method (x-of <2d-vector>)> #<method (x-of <2d-point>)>)
 @end example
 
+@c EN
 In the mainstream dynamic object-oriented languages, a class
 has many roles; it defines a structure and a type, creates a
 namespace for its slots and methods, and is responsible for
@@ -340,7 +528,20 @@ function @code{write-object} when they encounter an instance
 they don't know how to print.  You can define its method
 specialized to your class to customize how the instance is
 printed.
+@c JP
+動的オジェクト指向言語の主流では、クラスには多くの役割があります。
+クラスは構造と型を定義し、スロットとメソッドの名前空間を生成し、
+メソッドのディスパッチに責任をもちます。Gaucheでは、名前空間は
+モジュールによって管理し、メソッドのディスパッチはジェネリック関数で
+あつかいます。
 
+オブジェクトの印字表現は、デフォルトでは、あまりユーザにやさしくありません。
+Gauche の @code{write} および @code{display} 関数は、どのように印字して
+よいかわからないインスタンスにであうと、ジェネリック関数 @code{write-object}
+を呼びます。定義したクラスのインスタンスをどのように印字するかを
+カスタマイズするために、そのクラスに特定したメソッドを定義することができます。
+
+@c COMMON
 @example
 (define-method write-object ((pt <2d-point>) port)
   (format port "[[~a, ~a]]" (x-of pt) (y-of pt)))
@@ -349,7 +550,11 @@ printed.
   (format port "<<~a, ~a>>" (x-of vec) (y-of vec)))
 @end example
 
+@c EN
 And what you'll get is:
+@c JP
+で、どうなったかというと、
+@c COMMON
 @example
 gosh> a-point
 [[0.0, 3.33]]
@@ -357,6 +562,7 @@ gosh> d-vector
 <<-9.0, 7.25>>
 @end example
 
+@c EN
 If you customize the printed representation to conform srfi-10
 format, and define a corresponding read-time constructor,
 you can make your instances to be written-out and read-back
@@ -367,7 +573,17 @@ Several built-in functions have similar way to extend their
 functionality for user-defined objects.  For example, if
 you specialize a generic function @code{object-equal?}, 
 you can compare the instances by @code{equal?}:
+@c JP
+srfi-10 のフォーマットを満すように印字表現をカスタマイズし、読み込み時
+構築子を定義すれば、自分の定義したクラスのインスタンスを、組み込み
+オブジェクトと同様に書き出し、読み戻しできます。詳しくは
+@ref{Read-time constructor} を見てください。
 
+いくつかの組み込み関数はユーザ定義オブジェクトに対して同様の方法で
+機能拡張できます。たとえば、@code{object-equal?} を特定化すれば、
+@code{equal?} を使ってインスタンスの比較ができます。
+
+@c COMMON
 @example
 (define-method object-equal? ((a <2d-point>) (b <2d-point>))
   (and (equal? (x-of a) (x-of b))
@@ -389,18 +605,25 @@ you can compare the instances by @code{equal?}:
   @result{} #t
 @end example
 
+@c EN
 Let's proceed to more interesting examples.
 Think of a class @code{<shape>}, 
 which is an entity that can be drawn.
 As a base class, it keeps
 common attributes such as a color and line thickness in its slots.
+@c JP
+もっとおもしろい例を見てみましょう。描画可能な @code{<shape>} というクラス
+を考えます。
+基本クラスとして、色や線の太さといった共通属性をスロットに持たせます。
 
+@c COMMON
 @example
 (define-class <shape> ()
   ((color     :init-value '(0 0 0) :init-keyword :color)
    (thickness :init-value 2 init-keyword :thickness)))
 @end example
 
+@c EN
 When an instance is created, @code{make} calls a generic function
 @code{initialize}, which takes care of initializing slots
 such as processing init-keywords and init-values.
@@ -422,7 +645,28 @@ since we still need the init-keywords to be handled.
   (next-method)  ;; let the system to handle slot initialization
   (push! *shapes* self)) ;; record myself to the global list
 @end example
+@c JP
+インスタンスを生成する際、@code{make} はジェネリック関数 @coed{initialize}
+を呼びます。この関数は init-keyword や init-value を処理するようなスロットの
+面倒を見ます。この @code{initialize} メソッドを特定化することによって、初期化
+の振舞いをカスタマイズすることがきます。@code{initialize} メソッドは二つの
+引数とともに呼ばれます。ひとつは新しく生成されたインスタンス、もうひとつは
+@code{make} にわたされる引数のリストです。
 
+@code{initialize} メソッドを @code{<shape>} クラス用に定義し、生成された
+shape が自動的にグローバルなリストに登録されるようにしましょう。
+システムのもつ @code{initialize} の振舞いを完全に置き換えたくはないという
+ことに注意してください。init-keyword は相変わらず扱う必要があるからです。
+
+@example
+(define *shapes* '())  ;; グローバルな shape のリスト
+
+(define-method initialize ((self <shape>) initargs)
+  (next-method)  ;; このシステムがスロットの初期化処理をするようにする
+  (push! *shapes* self)) ;; 自分自身をグローバルなリストに登録する
+@end example
+
+@c EN
 The trick is a special method, @code{next-method}.  It can only be
 used inside a method body, and calls @emph{less specific method}
 of the same generic function---typically, it means you call the
@@ -454,7 +698,39 @@ to the global shape list @code{*shapes*}.
 The @code{<shape>} class represents just an abstract concept of
 shape.  Now we define some concrete drawable shapes, by
 @emph{subclassing} the @code{<shape>} class.
+@c JP
+仕掛けは、特別なメソッド @code{next-method} にあります。これは
+メソッド本体のなかでしか使えません。同じジェネリック関数の
+@emph{特定化の度合がより低いメソッド}を呼びます。これは、典型的な
+スーパークラスの同じメソッドを呼ぶということを意味します。
+ほとんどのオジェクト指向言語には、スーパークラスのメソッドを呼ぶという
+概念があります。多重引数ディスパッチと多重継承のために @code{next-method}
+は少し複雑にはなっていますが、基本的なアイディアは同じです。
 
+さて、では @code{<shape>} のスーパークラスはなんでしょう。実は、
+すべての Scheme で定義されたクラスは @code{<object>} というクラスを
+継承します。スロットのめんどうを見ているのは、@code{<object>} の
+初期化メソッドなのです。自分で定義した @code{initialize} メソッド中で
+@code{next-method} を呼びだしたあとでは、すべてのスロットが
+正しくイニシャライズされたとみなせます。というわけで、自分で定義した
+@code{initialize} のなかで最初にすべきことは @code{next-method}
+を呼ぶことです。
+
+上のコードを点検してみましょう。@code{(make <shape> args @dots{})} を呼ぶと、
+システムは @code{<shape>} のインスタンスのためのメモリを確保し、
+@code{initialize} ジェネリック関数を、そのインスタンスと @code{args @dots{}}
+で呼びます。これは、いま自分で定義した @code{initialize} にディスパッチ
+されます。その中で @code{next-method} よび、それがこんどは @code{<object>}
+クラスの @code{initialize} メソッドをよびます。これでこのインスタンスは
+init-value と init-keyword で初期化されます。@code{next-method} からもどった
+あと、新しい @code{<shape>} インスタンスをグローバルの shape リストに
+@code{*shapes*} に登録します。
+
+この @code{<shape>} クラスは shape の抽象的概念を表現しているにすぎません。
+では、いくつかの具体的な描画可能な shape を @code{<shape>} の
+@emph{サブクラス化}によって定義しましょう。
+
+@c COMMON
 @example
 (define-class <point-shape> (<shape>)
   ((point  :init-form (make <2d-point>) :init-keyword :point)))
@@ -464,6 +740,7 @@ shape.  Now we define some concrete drawable shapes, by
    (closed :init-value #f  :init-keyword :closed)))
 @end example
 
+@c EN
 Note the second argument passed to @code{define-class}.
 It indicates that @code{<point-shape>} and @code{<polyline-shape>}
 inherit slots of @code{<shape>} class, and also instances of
@@ -503,13 +780,55 @@ For now, we just consider a PostScript output.  To make the @code{draw}
 method polymorphic, we define a postscript output device class,
 @code{<ps-device>}.
 
+@c JP
+@code{define-class} の第二引数に注目してください。これは
+@code{<point-shape>} および @code{<polyline-shape>} が @code{<shape>}
+クラスのスロットを継承していることを示しています。そして @code{<shape>}
+クラスが受け入れるものはすべて、それらのサブクラスでも受け入れらること
+も示しています。
+
+@code{<point-shape>} には @code{point} というスロットがひとつ追加
+されています。このスロットはこの節の最初で定義した、@code{<2d-point>} の
+インスタンスを持ちます。@code{<polyline-shape>} クラスは点のリスト、
+フラグを格納します。フラグは多角形のラインが終点と始点つないでいるか
+どうかを指定します。
+
+継承はとりあつかいに注意が必要な強力な機構です。うっかりするとすぐに
+追跡不能なコードができあがります。(Paul Graham は『百年の言語』という
+記事のなかで、「オブジェクト指向プログラミングはスパゲッティコードを
+書くための持続的な方法を提供してくれる。」と言っているように。)
+経験則からいうとサブタイプが必要なときにサブクラスを作るのがよいようです。
+スロットの継承は付随するなにかではありますが、サブクラス化のための
+主要な理由にしてはいけません。@code{<point-shape>} クラスでやったように
+サブストラクチャを「インクルード」するとは常にできるのです。
+
+@code{<point-shape>} クラスに新しいスロットオプションがあらわれました。
+@code{:init-form} というスロットオプションは、init-keyword が
+@code{make} に与えられなかったときのそのスロットのデフォルト値を指定します。
+しかし、クラス定義時に評価される @code{:init-value} の値とはちがって、
+この @code{:init-form} をともなう値はシステムが実際のその値を必要とした
+ときに評価されます。したがって、@code{<point-shape>} のインスタンス
+では、@code{<point-shape>} インスタンスが @code{:point} キーワード引数を
+わたされずに生成されたときにのみ、デフォルトの @code{<2d-point>} 
+インスタンスが生成されます。
+
+shape は別のデバイスに別の方法で描画されえます。いまのところは、
+PostScript 出力しか考慮しません。@code{draw} メソッドに多相性を持たせる
+ために、PostScript 出力デバイス @code{<ps-device>} を定義します。
+
+@c COMMON
 @example
 (define-class <ps-device> () ())
 @end example
 
+@c EN
 Then we can write a @code{draw} method, specialized for
 both @code{<shape>} and @code{<ps-device>}.
+@c JP
+こうすると、@code{<shape>} および @code{<ps-device>} の両方に特定化した
+@code{draw} メソッドを書くことができます。
 
+@c COMMON
 @example
 (define-method draw ((self <shape>) (device <ps-device>))
   (format #t "gsave\n")
@@ -520,6 +839,7 @@ both @code{<shape>} and @code{<ps-device>}.
   (format #t "grestore\n"))
 @end example
 
+@c EN
 In this code, the @var{device} argument isn't
 used within the method body.  It is just used for method dispatching.
 If we eventually have different output devices, we can add
@@ -527,7 +847,16 @@ a @code{draw} method that is specialized for such devices.
 
 The above @code{draw} method does the common work, but actual
 drawing must be done in specialized way for each subclasses.
+@c JP
+このコードでは @var{device} 引数はメソッド本体内では使われていません。
+メソッドディスパッチのためのみに使われます。いずれ別の出力デバイス
+を必要になったら、そのデバイスに特定化した @code{draw} メソッドを
+追加することができます。
 
+上の @code{draw} メソッドは共通の仕事をしますが、実際の描画は
+それぞれのサブクラス用に特定化された方法で行わなければなりません。
+
+@c COMMON
 @example
 (define-method draw-path ((self <point-shape>) (device <ps-device>))
   (apply format #t "newpath ~a ~a 1 0 360 arc closepath\n"
@@ -546,10 +875,16 @@ drawing must be done in specialized way for each subclasses.
       (format #t "closepath\n"))))
 @end example
 
+@c EN
 Finally, we do a little hack.  Let @code{draw} method work on
 the list of shapes, so that we can draw multiple shapes within a page
 in batch.
+@c JP
+最後にもう少しだけ、ハックしましょう。@code{draw} メソッドを
+shape のリストに対しても動作するようにします。こうすれば、
+同一ページ内で複数の shape をひつまとめで描画できます。
 
+@c COMMON
 @example
 (define-method draw ((shapes <list>) (device <ps-device>))
   (format #t "%%\n")
@@ -557,8 +892,12 @@ in batch.
   (format #t "showpage\n"))
 @end example
 
+@c EN
 Then we can write some simple figures @dots{}.
+@c JP
+これで簡単な図を書けるようになります。
 
+@c COMMON
 @example
 (use srfi-1)      ;; for iota
 (use math.const)  ;; for constant pi
@@ -596,11 +935,17 @@ Then we can write some simple figures @dots{}.
   )
 @end example
 
+@c EN
 The function @code{shape-sample} writes out a PostScript code of
 simple drawing to the current output port.  You can write it out
 to file by the following expression, and then view the result
 by PostScript viewer such as GhostScript.
+@c JP
+関数 @code{shape-sample} は現在の出力ポートに簡単な PostScript の描画コード
+を書き出します。これを以下のような式でファイルに出力し、GhostScriptなどの
+PostScriptビューワで結果を見てください。
 
+@c COMMON
 @example
 (with-output-to-file "oointro.ps" shape-sampe)
 @end example
