@@ -1,3 +1,17 @@
+2001-06-23  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.3.15
+	* doc/gauche-ref.texi : added description of process ports.
+
+2001-06-22  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/net.scm : cleaned up the API of make-client-socket and
+	  make-server-socket.
+	* ext/* : fixed installation location of extension modules.
+	* lib/gauche/process.scm : added process ports.
+	* src/main.c : fixed the calling scheme of ``main'' procedure,
+	  according to the change of SRFI-22 draft.
+
 2001-06-21  Shiro Kawai  <shiro@acm.org>
 
 	* sys/class.c : changed API of Scm_InitBuiltinClass to allow
