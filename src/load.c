@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.89 2004-07-21 07:25:17 shirok Exp $
+ *  $Id: load.c,v 1.90 2004-07-26 09:51:41 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -57,7 +57,8 @@ static struct {
     /* Load path list */
     ScmGloc *load_path_rec;     /* *load-path*         */
     ScmGloc *dynload_path_rec;  /* *dynamic-load-path* */
-    ScmGloc *load_suffixes_rec; /* *load-suffixes* */
+    ScmGloc *load_suffixes_rec; /* *load-suffixes*     */
+    ScmGloc *cond_features_rec; /* *cond-features*     */
     ScmInternalMutex path_mutex;
 
     /* Provided features */
@@ -1054,7 +1055,8 @@ ScmObj get_scmdir(void)
 void Scm__InitLoad(void)
 {
     ScmModule *m = Scm_SchemeModule();
-    ScmObj init_load_path, init_dynload_path, init_load_suffixes, t;
+    ScmObj init_load_path, init_dynload_path, init_load_suffixes,
+        init_cond_features, t;
 
     init_load_path = t = SCM_NIL;
     SCM_APPEND(init_load_path, t, break_env_paths("GAUCHE_LOAD_PATH"));
@@ -1077,6 +1079,21 @@ void Scm__InitLoad(void)
     init_load_suffixes = t = SCM_NIL;
     SCM_APPEND1(init_load_suffixes, t, SCM_MAKE_STR(LOAD_SUFFIX));
 
+    init_cond_features = t = SCM_NIL;
+    SCM_APPEND1(init_cond_features, t, SCM_LIST1(SCM_SYM_GAUCHE));
+#ifdef __MINGW32__
+    SCM_APPEND1(init_cond_features, t, SCM_LIST1(SCM_SYM_GAUCHE_WINDOWS));
+#endif /*__MINGW32__*/
+#if defined(GAUCHE_CHAR_ENCODING_EUC_JP)
+    SCM_APPEND1(init_cond_features, t, SCM_LIST1(SCM_SYM_GAUCHE_EUCJP));
+#elif defined(GAUCHE_CHAR_ENCODING_SJIS)
+    SCM_APPEND1(init_cond_features, t, SCM_LIST1(SCM_SYM_GAUCHE_SJIS));
+#elif defnied(GAUCHE_CHAR_ENCODING_UTF8)
+    SCM_APPEND1(init_cond_features, t, SCM_LIST1(SCM_SYM_GAUCHE_UTF8));
+#else
+    SCM_APPEND1(init_cond_features, t, SCM_LIST1(SCM_SYM_GAUCHE_NONE));
+#endif
+
     (void)SCM_INTERNAL_MUTEX_INIT(ldinfo.path_mutex);
     (void)SCM_INTERNAL_MUTEX_INIT(ldinfo.prov_mutex);
     (void)SCM_INTERNAL_COND_INIT(ldinfo.prov_cv);
@@ -1096,6 +1113,7 @@ void Scm__InitLoad(void)
     DEF(ldinfo.load_path_rec,    SCM_SYM_LOAD_PATH, init_load_path);
     DEF(ldinfo.dynload_path_rec, SCM_SYM_DYNAMIC_LOAD_PATH, init_dynload_path);
     DEF(ldinfo.load_suffixes_rec, SCM_SYM_LOAD_SUFFIXES, init_load_suffixes);
+    DEF(ldinfo.cond_features_rec, SCM_SYM_COND_FEATURES, init_cond_features);
 
     ldinfo.provided = SCM_LIST4(SCM_MAKE_STR("srfi-6"), /* string ports (builtin) */
                                 SCM_MAKE_STR("srfi-8"), /* receive (builtin) */

@@ -1,3 +1,13 @@
+2004-07-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-0.scm (cond-expand) : changed to a legacy macro, in order
+	  to use different feature ids depending compiler options.
+	* src/load.c (Scm__InitLoad) : initialize *cond-features* list
+	  with compiler-options specific values.
+	* src/buildin-syms.scm : added some symbols for pre-defined feature
+	  ids for *cond-features*.
+	* test/srfi.scm : added more srfi-0 tests.
+
 2004-07-24  Shiro Kawai  <shiro@acm.org>
 
 	* lib/file/util.scm (make-directory*) : remove trailing '/' if any,

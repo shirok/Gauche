@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.36 2004-03-14 05:28:13 shirok Exp $
+;; $Id: srfi.scm,v 1.37 2004-07-26 09:51:42 shirok Exp $
 
 (use gauche.test)
 
@@ -17,6 +17,8 @@
        (cond-expand (hogehoge 0) (else 1)))
 (test* "cond-expand" 0
        (cond-expand ((and srfi-0 srfi-1) 0) (else 1)))
+(test* "cond-expand" #t
+       (cond-expand ((and srfi-2 srfi-1) (procedure? xcons)) (else #f)))
 (test* "cond-expand" 0
        (cond-expand ((or hogehoge srfi-1) 0) (else 1)))
 (test* "cond-expand" 0
