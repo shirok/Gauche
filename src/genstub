@@ -7,13 +7,13 @@
 ;;   assertions ...
 ;;   body)
 ;;
-;;
+;; (define-symbol scheme-name c-name [value])
 
 (require "textutils")
-(require "hashutils")
 
 (define *file-prefix* "")
 (define *cprocs* '())
+(define *symbols* '())
 
 (define *unbound* (cons #f #f))         ;placeholder for unbound value
 
@@ -133,6 +133,26 @@
   ((name  :init-keyword :name :getter name-of)
    (c-name  :init-keyword :c-name :getter c-name-of)
    (slots :init-keyword :slots :getter slots-of)))
+
+;;--------------------------------------------------------------------
+;; Symbol definition
+;;
+
+(define (process-define-symbol form)
+  (unless (and (<= 3 (length form) 4)
+               (symbol? (cadr form))
+               (string? (caddr form)))
+    (error "malformed define-symbol: ~s" form))
+  (let* ((scheme-name (cadr form))
+         (c-name (caddr form))
+         (value  (cdddr form))
+         (scheme-name-len (string-length (symbol->string scheme-name))))
+    (println "static ScmString ~a_NAME = { SCM_CLASS_STRING, ~a, ~a, \"~a\" };"
+             c-name scheme-name-len scheme-name-len scheme-name)
+    (println "static ScmObj ~a;" c-name)
+    (linebreak)
+    (set! *symbols* (cons (cdr form) *symbols*))
+    ))
 
 ;;--------------------------------------------------------------------
 ;; Parse definition
@@ -431,6 +451,13 @@
                        (symbol->string (scheme-name-of cproc))
                        (c-name-of cproc)))
             (reverse *cprocs*))
+  (for-each (lambda (symdef)
+              (println "  ~a = Scm_Intern(&~a_NAME);"
+                       (cadr symdef) (cadr symdef))
+              (unless (null? (cddr symdef))
+                (println "  Scm_Define(module, SCM_SYMBOL(~a), SCM_OBJ(~a));"
+                         (cadr symdef) (caddr symdef))))
+            (reverse *symbols*))
   (println "}")
   )
 
@@ -493,9 +520,14 @@
         (lambda ()
           (let loop ((form (read)))
             (unless (eof-object? form)
-              (if (pair? form)
-                  (process-define-cproc form)
-                  (print form))
+              (cond ((string? form) (println form))
+                    ((not (pair? form))
+                     (error "bad form: ~s" form))
+                    ((eq? (car form) 'define-cproc)
+                     (process-define-cproc form))
+                    ((eq? (car form) 'define-symbol)
+                     (process-define-symbol form))
+                    (else (error "bad form: ~s" form)))
               (loop (read))))))
       (emit-initializer (get-c-name "" prefix))
       ))
