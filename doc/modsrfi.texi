@@ -1537,15 +1537,24 @@ SRFI-4は、@code{gauche.uvector}モジュールとして実装されています。
 
 @deftp {Module} srfi-5
 @mdindex srfi-5
+@c EN
 This module provides srfi-5's extended @code{let} syntax.
+@c JP
+このモジュールは SRFI-5 の拡張 @code{let} 構文を提供します。
+@c COMMON
 @end deftp
 
 @defmac let ((var val) @dots{} [. (rest val @dots{})]) body @dots{}
 @defmacx let name ((var val) @dots{} [. (rest val @dots{})]) body @dots{}
 @defmacx let (name (var val) @dots{} [. (rest val @dots{})]) body @dots{}
 [SRFI-5]
+@c EN
 The @code{let} syntax is extended in two ways.
+@c JP
+@code{let} 構文は 2通りの拡張がされています。
+@c COMMON
 
+@c EN
 @itemize @bullet
 @item 
 The extended @code{let} syntax accepts the @var{name} identifier (for
@@ -1557,39 +1566,80 @@ which works like the rest paremter in the @code{lambda} syntax.
 @end itemize
 
 See SRFI-5 document for rationale of this extension.
+@c JP
+@itemize @bullet
+@item 
+拡張 @code{let} 構文は、@var{name} 束縛リスト中で(名前付き let 構文用の)
+識別子を許します(上の3つめの構文)。
+@item
+拡張 @code{let} 構文は、@code{lambda} 構文の rest パラメータと同様の
+働きをする rest パラメータ束縛を許します。
+@end itemize
+
+この拡張に関する理論的根拠については SRFI-5 のドキュメントを参照してください。
+@c COMMON
 @end defmac
 
 @c ----------------------------------------------------------------------
 @node Feature-based program configuration language, Record types, A compatible let form with signatures and rest arguments, Library modules - SRFIs
 @section @code{srfi-7} - Feature-based program configuration language
+@c NODE 機能ベースプログラム設定言語, @code{srfi-7} - 機能ベースプログラム設定言語
 
 @deftp {Module} srfi-7
 @mdindex srfi-7
+@c EN
 This module provides a program configuration metalanguage
 (@code{program} form) defined in srfi-7.
+@c JP
+このモジュールは、SRFI-7 で定義されている
+プログラム設定メタ言語(@code{program} フォーム)を提供します。
 
+@c EN
 Gauche autoloads srfi-7 module, so you don't need
 to say @code{(use srfi-7)} explicitly.
+@c JP
+Gauche は srfi-7 モジュールを autoload しますので、@code{(use srfi-7)} と
+明示的に書く必要はありません。
 
+@c EN
 Note that the @code{program} form isn't necessary to be a
 Scheme expression.  Srfi-7 allows an implementation to preprocess
 the @code{program} form to produce a Scheme program, then
 executes it with different means.
+@c JP
+@code{program} フォームは Scheme の式である必要がないことに注意してください。
+SRFI-7 では、この @code{program}フォームを処理して Scheme プログラムを
+生成してから、それを別の方法で実行するような実装を許しています。
 
+@c EN
 Gauche implements @code{program} form as a macro, so it can
 evaluates the form directly.  Nonetheless, it doesn't make sense
 to mix @code{program} form and other forms in one file,
 or expecting a return value of @code{program} form.
+@c JP
+Gauche @code{program} フォームをマクロとして実装しています。それゆえ、
+そのフォームを直接、評価することができます。とはいえ、@code{program}
+フォームと他のフォームを一つのファイル中で混在させたり、@code{program}
+フォームの返り値を期待するのは、よいことではありません。
 
+@c EN
 A typical usage of @code{program} form is to prepare a single
 file which just contains @code{program} form.  (It can load
 other files using @code{files} clause (see below) within the
 @code{program} form.)   To execute such a program file in Gauche,
 you can just load it.
+@c JP
+@code{program}フォームの典型的な使い方は、@code{program} フォームのみを
+含む単一のファイルを用意することです。(@code{program}フォーム中で 
+@code{files} 節(後述)を用いて他のファイルをロードするとが可能です。)
+このようなプログラムファイルを Gauche で実行するには、単にそれを
+ロードするだけです。
+@c COMMON
 @end deftp
 
 @deffn {Configuration Language} program program-clause program-clause2 @dots{}
 [SRFI-7] 
+@c EN
 This is a configuration language to structure a Scheme program,
 based on availability of the features.
 
@@ -1597,39 +1647,74 @@ A Scheme program is constructed from the @code{program} form.
 Gauche evaluates the constructed Scheme program on-the-fly.
 
 Each @var{program-clause} needs to be one of the "Program Clauses" below.
+@c JP
+これは Scheme プログラムを構成する設定言語で、機能の利用可能性に基づいて
+います。
+
+Scheme のプログラムは、この @code{program}フォームから構築されます。
+Gauche は構築された Scheme のプログラムをそのまま実行します。
+
+各 @var{program-clause} は以下の "Program Clause" のどれか一つである
+必要があります。
+@c COMMON
 @end deffn
 
 @deffn {Program Clause} requires feature-id feature-id2 @dots{}
 [SRFI-7] 
+@c EN
 The @var{feature-id}'s are the same as @code{srfi-0}'s
 (@xref{Feature conditional}).
 It tells that the following code requires these @var{feature-id}'s.
 
 If a feature-id which is not supported in Gauche is given,
 an error is signaled.
+@c JP
+@var{feature-id} は @code{srfi-0} のものと同じです
+(@xref{Feature conditional})。
+あとに続くコードが @var{feature-id} を必要とすることを教えます。
+
+Gauche ではサポートされていない feature-id が与えられた場合には、
+エラーシグナルが発生します。
+@c COMMON
 @end deffn
 
 @deffn {Program Clause} files filename @dots{}
 [SRFI-7] 
+@c EN
 Inserts the content of the @var{filename}s into a program.
 In Gauche, this clause just causes @var{filename}s to be loaded
 into the current module.
+@c JP
+プログラムに @var{filename}の内容を挿入します。Gauche では
+単に、現在のモジュール中への @var{filename} のロードをひきおこします。
+@c COMMON
 @end deffn
 
 @deffn {Program Clause} code scheme-expression @dots{}
 [SRFI-7] 
+@c EN
 The @var{scheme-expression}s are inserted into a program.
+@c JP
+@var{scheme-expression} がプログラムに挿入されます。
+@c COMMON
 @end deffn
 
 @deffn {Program Clause} feature-cond clause clause2 @dots{}
 [SRFI-7] 
+@c EN
 @var{Clause} is a following form:
-
+@c JP
+@var{clause} は以下のようなフォームです。
+@c COMMON
 @example
 (@var{requirement} @var{program-clause} @var{program-clause2} @dots{})
 @end example
 
+@c EN
 Where @var{requirement} should be one of the following:
+@c JP
+ここでは、@var{requirement} は以下のもののどれかひとつでなければなりません。
+@c COMMON
 @itemize @bullet
 @item
 @var{feature-id}
@@ -1641,11 +1726,19 @@ Where @var{requirement} should be one of the following:
 @code{(not @var{requirement})}
 @end itemize
 
-The requirement of the last @var{clause} may be @code{else}.
+@c EN
+The @var{requirement} of the last @var{clause} may be @code{else}.
 
 Gauche checks each @var{requirement} one by one, and if it finds
 a fulfilled @var{requirement}, inserts the @var{program-clause}s
 in that @var{clause} into the program.
+@c JP
+最後の @var{clause} の @var{requirement} は @code{else} になるでしょう。
+
+Gauche はそれぞれの @var{requirement} をひとつずつチェックし、
+満された @var{requirement} が見つかると、その@var{clause}中の
+@var{program-clause} をプログラムに挿入します。
+@c COMMON
 @end deffn
 
 @c ----------------------------------------------------------------------
