@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.33 2004-01-25 11:11:56 shirok Exp $
+;; $Id: srfi.scm,v 1.34 2004-02-26 07:41:41 shirok Exp $
 
 (use gauche.test)
 
@@ -860,6 +860,13 @@
 (test* "string-concatenate-reverse" #f
        (let ((s "test"))
          (eq? s (string-concatenate-reverse (list s)))))
+(test* "string-concatenate-reverse (optarg)"
+       "Hello, I must be going.XXXXX"
+       (string-concatenate-reverse '(" must be" "Hello, I") " going.XXXXX"))
+(test* "string-concatenate-reverse (optarg)"
+       "Hello, I must be going."
+       (string-concatenate-reverse '(" must be" "Hello, I") " going.XXXXX" 7))
+
 (test* "string-concatenate-reverse/shared" "zyxwvutsrqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA"
        (string-concatenate-reverse/shared
         '("A" "B" "C" "D" "E" "F" "G" "H"
