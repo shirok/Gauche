@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.16 2001-05-03 09:37:47 shirok Exp $
+ *  $Id: bignum.c,v 1.17 2001-05-12 21:25:49 shirok Exp $
  */
 
 #include <math.h>
@@ -445,7 +445,7 @@ ScmObj Scm_BignumAddN(ScmBignum *bx, ScmObj args)
         }
         if (SCM_FLONUMP(v) || SCM_COMPLEXP(v)) {
             ScmObj z = Scm_MakeFlonum(Scm_BignumToDouble(r));
-            return Scm_Add(Scm_Cons(z, args));
+            return Scm_Add(z, v, SCM_CDR(args));
         }
         Scm_Error("number expected, but got %S", v);
     }
@@ -658,7 +658,7 @@ ScmObj Scm_BignumMulN(ScmBignum *bx, ScmObj args)
         }
         if (SCM_FLONUMP(v) || SCM_COMPLEXP(v)) {
             ScmObj f = Scm_MakeFlonum(Scm_BignumToDouble(r));
-            return Scm_Multiply(Scm_Cons(f, args));
+            return Scm_Multiply(f, v, SCM_CDR(args));
         }
         Scm_Error("number expected, but got %S", v);
     }
