@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.357 2003-02-05 11:45:38 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.358 2003-02-05 22:01:37 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -14976,10 +14976,10 @@ UTF-8 (Unicode 3.2))間の変換を自前で持つようになりました。
 @c NODE サポートされる文字エンコーディング
 
 @c EN
-A CES is represented by its name as a string.
+A CES is represented by its name as a string or a symbol.
 Case is ignored.  There may be several aliases defined for a single encoding.
 @c JP
-CESの名前は文字列で指定します。大文字小文字の違いは無視されます。
+CESの名前は文字列またはシンボルで指定します。大文字小文字の違いは無視されます。
 同じCESにいくつかの別名がついていることがあります。
 @c COMMON
 
@@ -27603,7 +27603,7 @@ may be just a single directory name or a list of directory names.
 @end defun
 
 @defun dgettext domain msg-id
-@defunc dcgettext domain msg-id locale
+@defunx dcgettext domain msg-id locale
 Returns a translated message of @var{msg-id} in @var{domain}.
 @code{Dcgettext} takes @var{locale} as well.
 @end defun

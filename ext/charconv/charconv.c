@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.c,v 1.39 2003-02-05 01:44:34 shirok Exp $
+ *  $Id: charconv.c,v 1.40 2003-02-05 22:02:13 shirok Exp $
  */
 
 #include <string.h>
@@ -53,11 +53,13 @@ const char* Scm_GetCESName(ScmObj code, const char *argname)
     const char *c = NULL;
     if (SCM_UNBOUNDP(code) || SCM_FALSEP(code)) {
         c = Scm_SupportedCharacterEncodings()[0];
-    } else if (!SCM_STRINGP(code)) {
-        Scm_Error("string or #f is required for %s, but got %S",
-                  argname, code);
-    } else {
+    } else if (SCM_STRINGP(code)) {
         c = Scm_GetStringConst(SCM_STRING(code));
+    } else if (SCM_SYMBOLP(code)) {
+        c = Scm_GetStringConst(SCM_SYMBOL_NAME(code));
+    } else {
+        Scm_Error("string, symbol or #f is required for %s, but got %S",
+                  argname, code);
     }
     return c;
 }
