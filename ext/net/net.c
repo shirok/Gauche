@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.c,v 1.3 2001-06-12 10:20:45 shirok Exp $
+ *  $Id: net.c,v 1.4 2001-06-12 10:25:09 shirok Exp $
  */
 
 #include "net.h"
@@ -224,7 +224,7 @@ ScmObj Scm_SocketConnect(ScmSocket *sock, ScmSockAddr *addr)
 extern void Scm_Init_NetAddr(ScmModule *mod);
 extern void Scm_Init_netlib(ScmModule *mod);
 
-void Scm_Init_net(void)
+void Scm_Init_libnet(void)
 {
     ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE("gauche.net", TRUE));
 

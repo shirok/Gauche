@@ -11,7 +11,7 @@ ARCHFILES = net.so
 SCMFILES = net.scm
 HEADERS = 
 
-TARGET = net.so
+TARGET = libnet.so
 OBJS = net.o addr.o netlib.o
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
 	netconfig.h netlib.c
@@ -23,8 +23,8 @@ ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 
 all : $(TARGET)
 
-net.so : $(OBJS)
-	$(CC) $(LDFLAGS) net.so $(OBJS) $(LIBS)
+libnet.so : $(OBJS)
+	$(CC) $(LDFLAGS) libnet.so $(OBJS) $(LIBS)
 
 netlib.c : netlib.stub
 	$(GOSH) genstub netlib.stub
