@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.45 2001-09-22 07:25:06 shirok Exp $
+;;; $Id: syslib.stub,v 1.46 2001-09-24 19:57:38 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -329,7 +329,7 @@
  s  = Scm_StringAppend(SCM_LIST3(SCM_OBJ(name),
                                  SCM_MAKE_STR(\"=\"),
                                  SCM_OBJ(value)));
- putenv(Scm_GetStringConst(s));
+ putenv(Scm_GetStringConst(SCM_STRING(s)));
  SCM_RETURN(SCM_UNDEFINED);")
 )
 
