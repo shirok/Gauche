@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.198 2002-01-02 06:24:45 shirok Exp $
+ *  $Id: gauche.h,v 1.199 2002-01-04 16:10:06 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1678,17 +1678,12 @@ extern ScmObj Scm_Force(ScmObj p);
  *  choice of how to interpret them.  However, there are some
  *  predefined objects that the Gauche system throws.
  *
- *  <debug-break>
- *  <signal>
  *  <exception>
+ *    +- <debug-break>
+ *    +- <signal>
  *    +- <application-exit>
  *    +- <error>
- *         +- <domain-error>
  *         +- <system-error>
- *         +- <reader-error>
- *
- *  The class <exception> is a root of hierarchy of object that
- *  the entity cannot continue it's normal execution.
  */
 
 /* <exception> class is just a virtual class */
@@ -1718,28 +1713,6 @@ extern ScmClass Scm_SystemErrorClass;
 #define SCM_CLASS_SYSTEM_ERROR     (&Scm_SystemErrorClass)
 #define SCM_SYSTEM_ERROR_P(obj)    Scm_TypeP(obj, SCM_CLASS_SYSTEM_ERROR)
 
-/* <domain-error> : "bad type of argument" stuff */
-typedef struct ScmDomainErrorRec {
-    ScmError common;
-    const char *argument;       /* name of the argument */
-    ScmObj value;               /* given value */
-} ScmDomainError;
-    
-extern ScmClass Scm_DomainErrorClass;
-#define SCM_CLASS_DOMAIN_ERROR     (&Scm_DomainErrorClass)
-#define SCM_DOMAIN_ERROR_P(obj)    Scm_TypeP(obj, SCM_CLASS_DOMAIN_ERROR)
-
-/* <reader-error> */
-typedef struct ScmReaderErrorRec {
-    ScmError common;
-    ScmPort *port;              /* input port */
-    int line;                   /* the line number where error happened */
-} ScmReaderError;
-
-extern ScmClass Scm_ReaderErrorClass;
-#define SCM_CLASS_READER_ERROR     (&Scm_ReaderErrorClass)
-#define SCM_READER_ERROR_P(obj)    Scm_TypeP(obj, SCM_CLASS_READER_ERROR)
-
 /* Throwing error */
 extern void Scm_Error(const char *msg, ...);
 extern void Scm_SysError(const char *msg, ...);
@@ -1755,6 +1728,8 @@ typedef struct ScmApplicationExitRec {
 extern ScmClass Scm_ApplicationExitClass;
 #define SCM_CLASS_APPLICATION_EXIT   (&Scm_ApplicationExitClass)
 #define SCM_APPLICATION_EXIT_P(obj)  Scm_TypeP(obj, SCM_CLASS_APPLICATION_EXIT)
+
+ScmObj Scm_MakeApplicationExit(int);
 
 /* <signal> */
 typedef struct ScmSignalRec {

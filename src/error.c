@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.26 2002-01-02 21:16:12 shirok Exp $
+ *  $Id: error.c,v 1.27 2002-01-04 16:10:05 shirok Exp $
  */
 
 #include <errno.h>
@@ -60,8 +60,6 @@ static void error_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 
 static ScmObj error_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj sys_error_allocate(ScmClass *klass, ScmObj initargs);
-static ScmObj dom_error_allocate(ScmClass *klass, ScmObj initargs);
-static ScmObj read_error_allocate(ScmClass *klass, ScmObj initargs);
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_ErrorClass,
                          error_print, NULL, NULL,
@@ -73,16 +71,20 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_SystemErrorClass,
                          sys_error_allocate,
                          exception_cpl);
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_DomainErrorClass,
-                         error_print, NULL, NULL,
-                         dom_error_allocate,
-                         exception_cpl);
+/* Application-exit is not exactly an error, but implemented here. */
+static void appexit_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+{
+    ScmApplicationExit *e = (ScmApplicationExit*)(obj);
+    Scm_Printf(port, "#<application-exit %d>", e->code);
+}
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_ReaderErrorClass,
-                         error_print, NULL, NULL,
-                         read_error_allocate,
-                         exception_cpl);
+static ScmObj appexit_allocate(ScmClass *, ScmObj);
 
+SCM_DEFINE_BUILTIN_CLASS(Scm_ApplicationExitClass,
+                         appexit_print, NULL, NULL,
+                         appexit_allocate,
+                         exception_cpl+1);
+                         
 /*
  * Constructors
  */
@@ -121,23 +123,19 @@ ScmObj Scm_MakeSystemError(ScmObj message, int en)
     return SCM_OBJ(e);
 }
 
-static ScmObj dom_error_allocate(ScmClass *klass, ScmObj initargs)
+static ScmObj appexit_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ScmDomainError *e = SCM_ALLOCATE(ScmDomainError, klass);
+    ScmApplicationExit *e = SCM_ALLOCATE(ScmApplicationExit, klass);
     SCM_SET_CLASS(e, klass);
-    e->common.message = SCM_FALSE;
-    e->argument = NULL;
-    e->value = SCM_FALSE;
+    e->code = 0;
     return SCM_OBJ(e);
 }
 
-static ScmObj read_error_allocate(ScmClass *klass, ScmObj initargs)
+ScmObj Scm_MakeApplicationExit(int code)
 {
-    ScmReaderError *e = SCM_ALLOCATE(ScmReaderError, klass);
-    SCM_SET_CLASS(e, klass);
-    e->common.message = SCM_FALSE;
-    e->port = NULL;
-    e->line = 0;
+    ScmApplicationExit *e = SCM_NEW(ScmApplicationExit);
+    SCM_SET_CLASS(e, SCM_CLASS_APPLICATION_EXIT);
+    e->code = code;
     return SCM_OBJ(e);
 }
 
@@ -166,25 +164,15 @@ static void sys_error_errno_set(ScmSystemError *err, ScmObj num)
     err->error_number = SCM_INT_VALUE(num);
 }
 
-static ScmObj dom_error_argument_get(ScmDomainError *err)
+static ScmObj appexit_code_get(ScmApplicationExit *e)
 {
-    return SCM_MAKE_STR_IMMUTABLE(err->argument);
+    return Scm_MakeInteger(e->code);
 }
 
-static void dom_error_argument_set(ScmDomainError *err, ScmObj arg)
+static void appexit_code_set(ScmApplicationExit *e, ScmObj num)
 {
-    if (!SCM_STRINGP(arg)) Scm_Error("string required, but got %S", arg);
-    err->argument = Scm_GetStringConst(SCM_STRING(arg));
-}
-
-static ScmObj dom_error_value_get(ScmDomainError *err)
-{
-    return err->value;
-}
-
-static void dom_error_value_set(ScmDomainError *err, ScmObj value)
-{
-    err->value = value;
+    if (!SCM_INTP(num)) Scm_Error("integer required, but got %S", num);
+    e->code = SCM_INT_VALUE(num);
 }
 
 static ScmClassStaticSlotSpec error_slots[] = {
@@ -204,18 +192,13 @@ static ScmClassStaticSlotSpec sys_error_slots[] = {
     { NULL }
 };
 
-static ScmClassStaticSlotSpec dom_error_slots[] = {
-    SCM_CLASS_SLOT_SPEC("message",
-                        error_message_get,
-                        error_message_set),
-    SCM_CLASS_SLOT_SPEC("argument",
-                        dom_error_argument_get,
-                        dom_error_argument_set),
-    SCM_CLASS_SLOT_SPEC("value",
-                        dom_error_value_get,
-                        dom_error_value_set),
+static ScmClassStaticSlotSpec appexit_slots[] = {
+    SCM_CLASS_SLOT_SPEC("code",
+                        appexit_code_get,
+                        appexit_code_set),
     { NULL }
 };
+
 
 /*
  * Initializing
@@ -229,10 +212,8 @@ void Scm__InitExceptions(void)
                          error_slots, sizeof(ScmError), mod);
     Scm_InitBuiltinClass(&Scm_SystemErrorClass, "<system-error>",
                          sys_error_slots, sizeof(ScmSystemError), mod);
-    Scm_InitBuiltinClass(&Scm_DomainErrorClass, "<domain-error>",
-                         dom_error_slots, sizeof(ScmDomainError), mod);
-    Scm_InitBuiltinClass(&Scm_ReaderErrorClass, "<reader-error>",
-                         NULL, sizeof(ScmReaderError), mod);
+    Scm_InitBuiltinClass(&Scm_ApplicationExitClass, "<application-exit>",
+                         appexit_slots, sizeof(ScmApplicationExit), mod);
 }
 
 /*================================================================
