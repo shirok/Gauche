@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.34 2004-05-21 08:38:15 shirok Exp $
+;; $Id: object.scm,v 1.35 2004-05-21 10:06:22 shirok Exp $
 
 (use gauche.test)
 
@@ -1211,8 +1211,56 @@
 (define-method concat ((a <string>) (b <string>) c . rest)
   (string-append a b (apply concat c rest)))
 
-(test* "concat" "aBciIiXyZ"
+(test* "<wrapper-generic>" "aBciIiXyZ"
        (concat (ci-string "aBc") "iIi" (ci-string "XyZ")))
+
+(define-class <coercer-generic> (<generic>) ())
+
+(define-method apply-generic ((gf <coercer-generic>) args)
+  (let ((applicable-methods (compute-applicable-methods gf args)))
+    (if (pair? applicable-methods)
+      (apply-methods gf (sort-applicable-methods gf applicable-methods args) args)
+      (let loop1 ((methods (slot-ref gf 'methods)))
+        (if (null? methods)
+          (error "no applicable method for ~S with arguments ~S" gf args)
+          (let ((method (car methods)))
+            (let loop2 ((specs (slot-ref method 'specializers))
+                        (a args)
+                        (rev '()))
+              (if (null? specs)
+                (if (null? a)
+                  (apply-methods gf (list method) (reverse rev))
+                  (if (slot-ref method 'optional)
+                    (apply-methods gf (list method) (append (reverse rev) a))
+                    (loop1 (cdr methods))))
+                (if (null? a)
+                  (loop1 (cdr methods))
+                  (let ((class (car specs)) (arg (car a)))
+                    (if (is-a? arg class)
+                      (loop2 (cdr specs) (cdr a) (cons arg rev))
+                      (coerce-to
+                       class arg
+                       (lambda (obj)
+                         (loop2 (cdr specs) (cdr a) (cons obj rev)))
+                       (lambda ()
+                         (loop1 (cdr methods)))))))))))))))
+
+(define-method coerce-to (class obj pass fail)
+  (fail))
+
+(define-method coerce-to (<string> obj pass fail)
+  (pass (x->string obj)))
+
+(define-method coerce-to (<number> (str <string>) pass fail)
+  (cond ((string->number str) => pass) (else (fail))))
+
+(define-generic add :class <coercer-generic>)
+
+(define-method add ((a <number>) (b <number>))
+  (+ a b))
+
+(test* "<coercer-generic>" 3
+       (add 1 "2"))
 
 (test-end)
 
