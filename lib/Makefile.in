@@ -1,6 +1,9 @@
 #
 # Makefile.in for Gauche/lib
-#  $Id: Makefile.in,v 1.96 2003-08-06 09:37:27 shirok Exp $
+#  $Id: Makefile.in,v 1.97 2003-08-08 04:32:29 shirok Exp $
+
+.PHONY: all check install uninstall slibcat slibcat-in-place clean distclean \
+        maintainer-clean
 
 DESTDIR =
 
@@ -79,20 +82,31 @@ install:
 	for p in $(SCMFILES); do \
 	  $(INSTALL) -m 444 $$p $(DESTDIR)$(SCM_INSTALL_DIR)/$$p; \
 	done
+	if test -f slibcat; then \
+	  $(INSTALL) -m 444 slibcat $(DESTDIR)$(SCM_INSTALL_DIR)/slibcat; \
+	done
 
 uninstall:
 
 # If we have slib, creates catalog file for Gauche.   This should be called
 # after everything is installed.
-# For RPM, this has to be called in the postprocess script instead of
+# For RPM, this has to be called in the postinstall script instead of
 # installation script.
 slibcat : 
 	if test -f $(SLIB_DIR)/require.scm; then \
-	  $(exec_prefix)/bin/gosh -ftest -uslib -e "(load (in-vicinity (library-vicinity) \"mklibcat\"))" -e "(exit 0)";\
+	  $(exec_prefix)/bin/gosh -ftest -uslib -E"require 'new-catalog" -Eexit;\
+	fi
+
+# Some package systems don't allow to run postinstall commands.  For such
+# systems, this target tries to create "slibcat" within this directory
+# before installing gosh.
+slibcat-in-place :
+	if test -f $(SLIB_DIR)/require.scm; then \
+	  $(SHELL) ./mklibcat $(exec_prefix)/bin/gosh ; \
 	fi
 
 clean:
-	rm -f core *~
+	rm -f core slibcat *~
 	for d in $(SUBDIRS); do (cd $$d; rm -f core *~); done
 
 distclean: clean
