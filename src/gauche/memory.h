@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: memory.h,v 1.1 2001-01-18 19:41:39 shiro Exp $
+ *  $Id: memory.h,v 1.2 2001-02-02 09:30:44 shiro Exp $
  */
 
 #ifndef GAUCHE_MEM_H
@@ -35,6 +35,11 @@
 #define SMALL_CONFIG
 #define DONT_ADD_BYTE_AT_END
 #define ALL_INTERIOR_POINTERS
+
+/* gc_priv.h included by gc_inline.h redefines FALSE and TRUE without
+   checking prior definition.  This is a workaround. */
+#undef TRUE
+#undef FALSE
 #include "gc_inline.h"
 
 /* Basic macros.  Allocate N words obj.  N must be smaller than MAXOBJSZ. */
