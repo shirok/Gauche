@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.50 2004-05-22 07:21:42 shirok Exp $
+ *  $Id: module.c,v 1.51 2004-07-26 20:16:08 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -210,7 +210,7 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
                 for (i=0; i<num_searched; i++) {
                     if (SCM_EQ(SCM_CAR(mp), searched[i])) goto skip;
                 }
-                if (i == num_searched) {
+                if (!SCM_NULLP(more_searched)) {
                     if (!SCM_FALSEP(Scm_Memq(SCM_CAR(mp), more_searched))) {
                         goto skip;
                     }
