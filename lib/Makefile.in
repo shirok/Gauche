@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/lib
-#  $Id: Makefile.in,v 1.91 2003-05-21 10:01:00 shirok Exp $
+#  $Id: Makefile.in,v 1.92 2003-05-28 11:51:01 shirok Exp $
 
 DESTDIR =
 
@@ -20,7 +20,7 @@ INSTALL         = @INSTALL@
 CONFIG_GENERATED = Makefile slib.scm
 
 SUBDIRS  = gauche gauche/vm gauche/serializer gauche/interactive gauche/mop \
-           srfi-1 srfi-13 srfi-14 srfi-19 math util compat \
+           srfi-1 srfi-13 srfi-14 srfi-19 binary math util compat \
 	   file rfc text www
 
 SCMFILES = srfi-0.scm \
