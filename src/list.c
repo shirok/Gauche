@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.16 2001-03-17 09:17:51 shiro Exp $
+ *  $Id: list.c,v 1.17 2001-03-20 07:09:20 shiro Exp $
  */
 
 #include "gauche.h"
@@ -129,6 +129,16 @@ ScmObj Scm_VaCons(va_list pvar)
 {
     Scm_Panic("Scm_VaCons: not implemented");
     return SCM_UNDEFINED;
+}
+
+ScmObj Scm_ArrayToList(ScmObj *elts, int nelts)
+{
+    ScmObj h = SCM_NIL, t;
+    int i;
+    for (i=0; i<nelts; i++) {
+        SCM_APPEND1(h, t, *elts++);
+    }
+    return h;
 }
 
 /* Procedures intended to be used from Scheme */
