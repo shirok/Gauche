@@ -1,3 +1,8 @@
+2004-11-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/vm.h (SCM_SIGPENDING): recovered, for some extensions
+	  use this macro.  Should be considered deprecated.
+
 2004-11-28  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/condutil.scm (define-condition-type): extended to

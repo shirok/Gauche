@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.97 2004-11-23 13:10:01 shirok Exp $
+ *  $Id: vm.h,v 1.98 2004-11-29 21:54:23 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -223,6 +223,11 @@ typedef struct ScmSignalQueueRec {
 } ScmSignalQueue;
 
 SCM_EXTERN void Scm_SignalQueueInit(ScmSignalQueue* q);
+
+/* NB: Obsoleted macro, but kept for backward compatibility.
+   Better API should be provided in future. */
+#define SCM_SIGPENDING(vm) \
+    ((vm)->queueNotEmpty&SCM_VM_SIGQ_MASK)
 
 #define SCM_SIGCHECK(vm) \
     do { if (vm->queueNotEmpty&SCM_VM_SIGQ_MASK) Scm_SigCheck(vm); } while (0)
