@@ -80,22 +80,31 @@
 ;; module inheritance
 
 (define-module P
+  (export a b)
   (define a 'alpha)
   (define b 'beta))
 (define-module Q
+  (export a b d)
   (define a 'ei)
-  (define b 'bee))
+  (define b 'bee)
+  (define d 'dee))
 (define-module R
+  (export c)
   (extend P)
   (define c 'gamma))
 (define-module S
+  (export c)
   (extend Q P)
   (define c 'delta))
 (define-module T
+  (export c)
   (extend Q)
   (define c 'delta))
 (define-module U
   (extend R T)
+  )
+(define-module V
+  (import U)
   )
 
 (test "module inheritance" 'alpha (lambda () (with-module R a)))
@@ -103,6 +112,9 @@
 (test "module inheritance" '(gamma beta)
       (lambda ()
         (with-module U (list c b))))
+(test "module inheritance" '(alpha beta gamma dee)
+      (lambda ()
+        (with-module V (list a b c d))))
 
 
 (test-end)

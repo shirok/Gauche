@@ -12,13 +12,12 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: srfi-4.scm,v 1.5 2002-08-24 02:12:49 shirok Exp $
+;;;  $Id: srfi-4.scm,v 1.6 2002-08-30 00:18:53 shirok Exp $
 ;;;
 
 ;; Procedures of SRFI-4 are now defined in gauche.uvector.
 
 (define-module srfi-4
-  (require "gauche/uvector")
   (extend gauche.uvector)
   )
 

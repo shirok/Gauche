@@ -1,3 +1,12 @@
+2002-08-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.c (Scm_FindBinding): searches parent modules of imported
+	  modules as well.
+	* src/gauche-init.scm (extend) : if specified module is not found,
+	  try %require.
+	* src/repl.c (repl_proc): fixed a bug that didn't treat arguments
+	  correctly.
+
 2002-08-28  Shiro Kawai  <shiro@acm.org>
 
 	* genstub : renamed the stub directive define-const to define-constant

@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.89 2002-08-24 01:51:29 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.90 2002-08-30 00:18:53 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -53,6 +53,9 @@
 (define-macro (extend . modules)
   `',(%extend (map (lambda (m)
                      (or (find-module m)
+                         (begin
+                           (%require (%module-name->path m))
+                           (find-module m))
                          (error "undefined module" m)))
                    modules)))
 
