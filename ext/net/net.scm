@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: net.scm,v 1.22 2003-09-28 12:27:27 shirok Exp $
+;;;  $Id: net.scm,v 1.23 2003-10-01 12:30:51 shirok Exp $
 ;;;
 
 (define-module gauche.net
@@ -132,23 +132,18 @@
     socket))
 
 (define (make-client-socket-inet host port)
-  (cond (ipv6-capable
-         (let1 err #f
-           (define (try-connect address)
-             (with-error-handler (lambda (e) (set! err e) #f)
-               (lambda ()
-                 (let1 socket (make-socket (address->protocol-family address)
-					   |SOCK_STREAM|)
-                   (socket-connect socket address)))))
-           (let1 socket (any try-connect (make-sockaddrs host port))
-             (unless socket (raise err))
-             socket)))
-        (else
-         (let ((address (car (make-sockaddrs host port)))
-               (socket (make-socket |PF_INET| |SOCK_STREAM|)))
-           (socket-connect socket address)
-           socket))
-        ))
+  (let1 err #f
+    (define (try-connect address)
+      (with-error-handler
+	  (lambda (e) (set! err e) #f)
+	(lambda ()
+	  (let1 socket (make-socket (address->protocol-family address)
+				    |SOCK_STREAM|)
+	    (socket-connect socket address)
+	    socket))))
+    (let1 socket (any try-connect (make-sockaddrs host port))
+      (unless socket (raise err))
+      socket)))
 
 (define (make-server-socket proto . args)
   (cond ((eq? proto 'unix)
@@ -185,49 +180,41 @@
     (socket-listen socket 5)))
 
 (define (make-server-socket-inet port . args)
-  (let1 reuse-addr? (get-keyword :reuse-addr? args #f)
-    (define (bind-listen socket address)
-      (when reuse-addr?
-        (socket-setsockopt socket |SOL_SOCKET| |SO_REUSEADDR| 1))
-      (socket-bind socket address)
-      (socket-listen socket 5))
-    (cond (ipv6-capable
-           (let1 err #f
-             (define (try-bind-listen address)
-               (with-error-handler (lambda (e) (set! err e) #f)
-                 (lambda ()
-		   (let1 socket (make-socket (address->protocol-family address)
-					     |SOCK_STREAM|)
-		     (bind-listen socket address)))))
-             (let1 socket (any try-bind-listen (make-sockaddrs #f port))
-               (unless socket (raise err))
-               socket)))
-          (else
-           (let ((address (car (make-sockaddrs #f port)))
-                 (socket (make-socket |PF_INET| |SOCK_STREAM|)))
-             (bind-listen socket address))))
-    ))
+  (let* ((reuse-addr? (get-keyword :reuse-addr? args #f))
+	 (address (car (make-sockaddrs #f port)))
+	 (socket (make-socket (address->protocol-family address)
+			      |SOCK_STREAM|)))
+    (when reuse-addr?
+      (socket-setsockopt socket |SOL_SOCKET| |SO_REUSEADDR| 1))
+    (socket-bind socket address)
+    (socket-listen socket 5)))
 
 (define (make-server-sockets host port . args)
   (map (lambda (sockaddr) (apply make-server-socket sockaddr args))
        (make-sockaddrs host port)))
 
-(define (make-sockaddrs host port)
-  (cond (ipv6-capable
-	 (let ((port (x->string port))
-	       (hints (make-sys-addrinfo :flags |AI_PASSIVE|
-					 :socktype |SOCK_STREAM|)))
-	   (map (lambda (ai) (slot-ref ai 'addr))
-		(sys-getaddrinfo host port hints))))
-	(else
-	 (let1 port (if (number? port)
-			port
-			(slot-ref (sys-getservbyname port "tcp") 'port))
-	   (if host
-	       (map (lambda (host)
-		      (make <sockaddr-in> :host host :port port))
-		    (slot-ref (sys-gethostbyname host) 'addresses))
-	       (list (make <sockaddr-in> :host :any :port port)))))))
+(define (make-sockaddrs host port . maybe-proto)
+  (let1 proto (get-optional maybe-proto 'tcp)
+    (cond (ipv6-capable
+	   (let* ((socktype (case proto
+			      ((tcp) |SOCK_STREAM|)
+			      ((udp) |SOCK_DGRAM|)
+			      (else (error "unsupported protocol:" proto))))
+		  (port (x->string port))
+		  (hints (make-sys-addrinfo :flags |AI_PASSIVE|
+					    :socktype socktype)))
+	     (map (lambda (ai) (slot-ref ai 'addr))
+		  (sys-getaddrinfo host port hints))))
+	  (else
+	   (let* ((proto (symbol->string proto))
+		  (port (if (number? port)
+			    port
+			    (slot-ref (sys-getservbyname port proto) 'port))))
+	     (if host
+		 (map (lambda (host)
+			(make <sockaddr-in> :host host :port port))
+		      (slot-ref (sys-gethostbyname host) 'addresses))
+		 (list (make <sockaddr-in> :host :any :port port))))))))
 
 (define (call-with-client-socket socket proc)
   (with-error-handler

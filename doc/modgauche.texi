@@ -3617,6 +3617,10 @@ Gaucheは@code{gethostbyname(3)}を使って実際のIPアドレスを得ます。
 @c JP
 @var{port}はポート番号を示す正の整数です。
 @c COMMON
+
+See also @code{make-sockaddrs} below, to create multiple
+socket addresses on the machine which may have more than one
+protocol stack.
 @end deftp
 
 @deffn {Method} sockaddr-family (addr <sockaddr-in>)
@@ -3684,7 +3688,31 @@ AF_INET6ファミリのソケットアドレスです。
 このクラスはgaucheが--enable-ipv6つきでconfigureされている場合に使えます。
 コンストラクタとスロットは@code{<sockaddr-in>}と同じです。
 @c COMMON
+
+See also @code{make-sockaddrs} below, to create multiple
+socket addresses on the machine which may have more than one
+protocol stack.
 @end deftp
+
+@defun make-sockaddrs host port &optional proto
+This is a higher-level utility procedure to create all possible
+inet domain socket addresses that point to @code{@var{host}:@var{port}}
+of protocol @var{proto}.  Particularly, if the specified host has
+both IPv4 and IPv6 addresses, and the running system supports both,
+then both IPv4 and IPv6 socket addresses are returned.   If @var{host} has
+multiple IP addresses, socket addresses are created for each of these
+IP address.   You can make your network application much more portable
+among different network stack configurations.
+
+Passing @code{#f} to @var{host} creates the local
+(server) address.  You can also pass a service name (e.g. @code{"http"})
+instead of an integer, to the @var{port} argument.
+The value of @var{proto} can be either a symbol @code{tcp} or @code{udp},
+and the default is @code{tcp}.
+
+It always returns a list of socket addresses.  If the lookup of @var{host}
+is failed, null list is returned.
+@end defun
 
 
 @node High-level network functions, Low-level socket interface, Socket address, gauche.net - Networking
@@ -3747,7 +3775,8 @@ with hostname @var{host} and port @var{port}.   TCP protocol is
 assumed.   @var{host} can be either a hostname, or
 a dotted decimal notation of IPv4 address.
 If gauche is compiled with --enable-ipv6, IPv6 address notation
-can also be used.  @var{Port} must be an exact integer.
+can also be used.  @var{Port} must be an exact integer specifying
+a port number, or a string service name (e.g. @code{"http"}).
 
 If gauche is compiled with --enable-ipv6, and the hostname is given,
 and the hostname has both IPv6 and IPv4 addresses, then
@@ -3757,7 +3786,8 @@ IPv6 connection is tried first, and IPv4 is used when IPv6 fails.
 TCPを使って接続します。@var{host}はIPアドレスのドット表記でもホスト名でも
 構いません。Gaucheが--enable-ipv6でコンパイルされていれば、IPv6形式のアドレス
 表記も受け付けます。
-@var{port}は正確な整数でなければなりません。
+@var{port}はポート番号を指定する正確な整数か、文字列のサービス名
+(@code{"http"}等)でなければなりません。
 
 Gaucheが--enable-ipv6でコンパイルされており、ホスト名が渡されて、
 そのホストがIPv6とIPv4の両方のアドレスを持っていた場合は、
@@ -3816,7 +3846,8 @@ The socket is bound to a unix domain socket with a name @var{path}.
 @item (make-server-socket 'inet @var{port} [:reuse-addr? @var{flag}])
 @c EN
 The socket is bound to an inet domain TCP socket, listening
-port @var{port}, which must be a non-negative exact integer.
+port @var{port}, which must be a non-negative exact integer
+or a string service name (e.g. @code{"http"}).
 If @var{port} is zero, the system assigns one of available port numbers.
 If a keyword argument @var{reuse-addr?} is given and true,
 @code{SO_REUSEADDR} option is set to the socket before bound to
@@ -3824,6 +3855,7 @@ the port.  This allows the process to bind the server socket
 immediately after other process releases the port.
 @c JP
 ポート@var{port}にて接続を待つInetドメインのTCPソケットが作成されます。
+@var{port}は非負の整数か、文字列のサービス名(@code{"http"}等)でなければなりません。
 @var{port}が0の場合はシステムが適当なポート番号を割り当てます。
 キーワード引数@var{reuse-addr?}に真の値が与えられた場合は、
 ソケットに@code{SO_REUSEADDR}オプションがセットされます。
@@ -3832,10 +3864,12 @@ immediately after other process releases the port.
 @c COMMON
 @item (make-server-socket @var{port} [:reuse-addr? @var{flag}])
 @c EN
-This is a synonym to the above form.  This form is backward-compatible
+This is a synonym to the above form (except @var{port} must be 
+an integer).  This form is backward-compatible
 with STk's @code{make-server-socket}.
 @c JP
-これは上の形式と同じ動作をします。STkの@code{make-server-socket}との
+これは、@var{port}が整数でなければならないことを除けば、
+上の形式と同じ動作をします。STkの@code{make-server-socket}との
 互換性のために提供されています。
 @c COMMON
 @item (make-server-socket @var{sockaddr} [:reuse-addr? @var{flag}])

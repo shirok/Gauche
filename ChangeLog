@@ -1,3 +1,9 @@
+2003-09-29  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/net.scm, example/scheme-server.scm : added 'proto' optional
+	  argument to make-sockaddrs, and refactored make-server|client-socket
+	  using make-sockaddrs (Patch provided by Kimura Fuyuki).
+
 2003-09-28  Shiro Kawai  <shiro@acm.org>
 
 	* ext/mt-random/mt-random.c : fixed a bug that
