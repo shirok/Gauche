@@ -1,9 +1,12 @@
 2002-03-07  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.5.2
 	* Gauche.spec : added.
 	* src/Makefile.in, src/gauche-config.in : changed the installaion
 	  directory of header files from share to lib --- header files contain
 	  configured information that may be architecture specific.
+	* aclocal.m4: further workaround for cygwin.
+	  "rm -f foo; echo ... > foo" still sometimes failed, so removed rm.
 
 2002-03-06  Shiro Kawai  <shiro@acm.org>
 
