@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.33 2001-06-20 18:49:20 shirok Exp $
+;;; $Id: syslib.stub,v 1.34 2001-06-21 11:55:33 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -323,6 +323,10 @@
 ;;---------------------------------------------------------------------
 ;; stdlib.h
 
+(define-cproc sys-exit (code)
+  (assert (small-integer? code))
+  "  _exit(code); SCM_RETURN(SCM_FALSE);")
+
 (define-cproc sys-getenv (name)
   (assert (string? name))
   "  const char *p = getenv(Scm_GetStringConst(name));
@@ -401,6 +405,29 @@
 (define-cproc sys-stat->ctime (stat)
   (assert (sys-stat? stat))
   "  SCM_RETURN(Scm_MakeSysTime(stat->statrec.st_ctime));")
+
+(define-symbol directory "sym_directory")
+(define-symbol regular   "sym_regular")
+(define-symbol character "sym_character")
+(define-symbol block     "sym_block")
+(define-symbol fifo      "sym_fifo")
+(define-symbol symlink   "sym_symlink")
+(define-symbol socket    "sym_socket")
+
+(define-cproc sys-stat->file-type (stat)
+  (assert (sys-stat? stat))
+  "  if (S_ISDIR(stat->statrec.st_mode)) SCM_RETURN(sym_directory);
+  if (S_ISREG(stat->statrec.st_mode)) SCM_RETURN(sym_regular);
+  if (S_ISCHR(stat->statrec.st_mode)) SCM_RETURN(sym_character);
+  if (S_ISBLK(stat->statrec.st_mode)) SCM_RETURN(sym_block);
+  if (S_ISFIFO(stat->statrec.st_mode)) SCM_RETURN(sym_fifo);
+#ifdef S_ISLNK
+  if (S_ISLNK(stat->statrec.st_mode)) SCM_RETURN(sym_symlink);
+#endif
+#ifdef S_ISSOCK
+  if (S_ISSOCK(stat->statrec.st_mode)) SCM_RETURN(sym_socket);
+#endif
+  SCM_RETURN(SCM_FALSE);")
 
 ;;---------------------------------------------------------------------
 ;; sys/times.h
@@ -604,10 +631,10 @@
   SCM_RETURN(SCM_UNDEFINED); /* dummy */")
 
 (define-cproc sys-getcwd ()
-  "  char *p; ScmObj s;
-  if ((p = getcwd(NULL, -1)) == NULL) Scm_SysError(\"getcwd failed\");
+  "#define GETCWD_PATH_MAX 1024  /* needs to be configured */
+  char p[GETCWD_PATH_MAX]; ScmObj s;
+  if (getcwd(p, GETCWD_PATH_MAX-1) == NULL) Scm_SysError(\"getcwd failed\");
   s = SCM_MAKE_STR_COPYING(p);
-  free(p); /* allocated by getcwd() */
   SCM_RETURN(s);")
 
 (define-cproc sys-getegid ()
@@ -704,7 +731,7 @@
 
 (define-cproc sys-unlink (pathname)
   (assert (string? pathname))
-  "  if (unlink(Scm_GetStringConst(pathname)) < 0) }
+  "  if (unlink(Scm_GetStringConst(pathname)) < 0) {
      if (errno == ENOENT) { SCM_RETURN(SCM_FALSE); }
      else Scm_SysError(\"unlink failed\");
   }
@@ -780,7 +807,7 @@
   (assert (boolean? flag))
   "#ifdef HAVE_SELECT
   int fd = get_port_or_fd(pf, FALSE);
-  if (fd > 0) {
+  if (fd >= 0) {
     if (flag) {
       FD_SET(fd, &fdset->fdset);
       if (fdset->maxfd < fd) fdset->maxfd = fd;
