@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.21 2001-04-05 10:01:27 shiro Exp $
+ *  $Id: number.c,v 1.22 2001-04-18 07:52:53 shiro Exp $
  */
 
 #include <math.h>
@@ -75,8 +75,11 @@ ScmObj Scm_MakeFlonumToNumber(double d, int exact)
         double i, f;
         f = modf(d, &i);
         if (f == 0.0) {
-            /* TODO: range check */
-            return SCM_MAKE_INT((int)i);
+            if (i > SCM_SMALL_INT_MAX || i < SCM_SMALL_INT_MIN) {
+                return Scm_MakeBignumFromDouble(i);
+            } else {
+                return SCM_MAKE_INT((int)i);
+            }
         }
     }
     return Scm_MakeFlonum(d);
@@ -713,6 +716,10 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
         result_real = (double)SCM_INT_VALUE(arg0);
         goto DO_FLONUM;
     }
+    if (SCM_BIGNUMP(arg0)) {
+        result_real = Scm_BignumToDouble(SCM_BIGNUM(arg0));
+        goto DO_FLONUM;
+    }
     if (SCM_FLONUMP(arg0)) {
         result_real = SCM_FLONUM_VALUE(arg0);
         exact = 0;
@@ -720,6 +727,8 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
         for (;;) {
             if (SCM_INTP(arg1)) {
                 div_real = (double)SCM_INT_VALUE(arg1);
+            } else if (SCM_BIGNUMP(arg1)) {
+                div_real = Scm_BignumToDouble(SCM_BIGNUM(arg1));
             } else if (SCM_FLONUMP(arg1)) {
                 div_real = SCM_FLONUM_VALUE(arg1);
                 exact = 0;
@@ -746,6 +755,8 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
         for (;;) {
             if (SCM_INTP(arg1)) {
                 div_real = (double)SCM_INT_VALUE(arg1);
+            } else if (SCM_BIGNUMP(arg1)) {
+                div_real = Scm_BignumToDouble(SCM_BIGNUM(arg1));
             } else if (SCM_FLONUMP(arg1)) {
                 div_real = SCM_FLONUM_VALUE(arg1);
             } else if (SCM_COMPLEXP(arg1)) {
@@ -1206,7 +1217,7 @@ static double read_real(const char *str, int len, const char **next)
         case '+':; case '-':; case 'i':
             break;
         default:
-            *next == NULL;
+            *next = NULL;
             return 0.0;
         }
         break;
