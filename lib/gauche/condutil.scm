@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: condutil.scm,v 1.3 2004-10-11 10:30:13 shirok Exp $
+;;;  $Id: condutil.scm,v 1.4 2004-10-11 10:53:04 shirok Exp $
 ;;;
 
 ;; Defines some condition-related primitives.
@@ -38,7 +38,11 @@
 (define-module gauche.condutil
   (export make-condition-type condition-type?
           make-condition condition-ref extract-condition
-          define-condition-type condition)
+          define-condition-type condition
+          &condition &message &serious &error
+          &i/o-error &i/o-port-error
+          &i/o-read-error &i/o-write-error &i/o-closed-error
+          &read-error)
   )
 (select-module gauche.condutil)
 
@@ -144,5 +148,17 @@
 ;; A trick to let a condition type behave its own predicate
 (define-method object-apply ((type <condition-meta>) obj)
   (condition-has-type? obj type))
+
+;; Aliases for srfi-35/srfi-36 compatibility
+(define &condition   <condition>)
+(define &message     <message-condition>)
+(define &serious     <serious-condition>)
+(define &error       <error>)
+(define &i/o-error   <io-error>)
+(define &i/o-port-error <port-error>)
+(define &i/o-read-error <io-read-error>)
+(define &i/o-write-error <io-write-error>)
+(define &i/o-closed-error <io-closed-error>)
+(define &read-error  <read-error>)
 
 (provide "gauche/condutil")

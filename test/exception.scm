@@ -1,6 +1,6 @@
 ;; test exception handling system 
 ;; this must come after primsyn, error, macro and object tests.
-;; $Id: exception.scm,v 1.7 2004-10-11 10:30:36 shirok Exp $
+;; $Id: exception.scm,v 1.8 2004-10-11 10:53:18 shirok Exp $
 
 (use gauche.test)
 (test-start "exceptions")
@@ -118,7 +118,7 @@
 ;;--------------------------------------------------------------------
 (test-section "srfi-35 style condition definitions")
 
-(define-condition-type &c <condition>
+(define-condition-type &c &condition
   c?
   (x c-x))
 
