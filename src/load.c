@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.5 2001-01-31 11:55:17 shiro Exp $
+ *  $Id: load.c,v 1.6 2001-02-01 09:28:24 shiro Exp $
  */
 
 #include "gauche.h"
@@ -68,11 +68,10 @@ ScmObj Scm_VMLoad(const char *s)
 
 void Scm_Load(const char *s)
 {
-    ScmObj p = Scm_OpenFilePort(s, "r");
-    if (SCM_FALSEP(p)) {
-        Scm_Error("cannot open file: %s", s);
-    }
-    Scm_VMLoadFromPort(SCM_PORT(p));
+    ScmObj f = SCM_MAKE_STR(s);
+    ScmObj l = SCM_INTERN("load");
+    ScmObj v = Scm_Compile(SCM_LIST2(l, f), SCM_NIL, SCM_COMPILE_NORMAL);
+    Scm_Run(v);
 }
 
 
