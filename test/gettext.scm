@@ -1,7 +1,21 @@
 #! /usr/bin/env gosh
 
+(use gauche.test)
+(use gauche.charconv)
+(use util.list)
+(use srfi-1)
+
 (add-load-path "../test")
 (define *test-locale-dirs* '("../test/data/locale"))
+
+;; This hack is to avoid conversion errors due to supported encodings.
+;; If you compile Gauche with utf8, most encodings should be OK.
+(define *available-locales*
+  (filter-map (lambda (p)
+                (and (ces-conversion-supported? (car p) #f)
+                     (cdr p)))
+              '(("ISO-8859-15" . "en")
+                ("eucJP" . "ja"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; load test data.  this defines *tests*
@@ -12,19 +26,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; run the tests
 
-(use gauche.test)
-(use util.list)
-
 (test-start "gettext")
 (use text.gettext)
 (test-module 'text.gettext)
+
 
 (dolist (domain '("test" "motest"))
   (test-section domain)
 
   (bindtextdomain (list domain) *test-locale-dirs*)
 
-  (dolist (locale '("en" "ja"))
+  (dolist (locale *available-locales*)
     (let* ((gettext-dispatch (make-gettext domain locale))
            (get (gettext-dispatch 'getter)))
       (for-each
@@ -34,7 +46,7 @@
        (assoc-ref *tests* locale)))) 
 
   ;; plural forms
-  (dolist (locale '("en" "ja"))
+  (dolist (locale *available-locales*)
     (let* ((gettext-dispatch (make-gettext domain locale))
            (nget (gettext-dispatch 'ngetter)))
       (for-each
@@ -48,7 +60,7 @@
        (assoc-ref *plural-tests* locale))))
 
   ;; using the GNU gettext interface
-  (dolist (locale '("en" "ja"))
+  (dolist (locale *available-locales*)
     (textdomain domain locale)
     (for-each
      (lambda (t)
