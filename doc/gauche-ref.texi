@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.110 2001-10-30 10:17:21 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.111 2001-10-31 11:35:19 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1013,23 +1013,10 @@ However, I think it is error-prone, for the closing parenthesis
 can be easily forgotten or the automatic indentation mechanism of
 editor will be confused.
 @c JP
-次の、`@code{select-module}' フォームにより、、それ以降のScheme式が
+次の、`@code{select-module}' フォームにより、それ以降のScheme式が
 モジュール@code{foo}の中で評価されます。モジュールの内容を全て@code{define-module}の中に
 書いてしまうことも出来ますが、最後の括弧を閉じ忘れやすいことや、エディタのインデントが
 狂うことなどから、あまりお薦めしません。
-@c COMMON
-
-@c EN
-If you don't place @code{select-module}, the rest of the body
-is evaluated in the module that loads your file.   In some tricky cases
-you may want to utilize such a behavior, or even switch modules in the
-module body.   In general, it is a good custom just to follow the above
-template.
-@c JP
-もし@code{select-module}フォームがなければ、
-書かれた式はこのモジュールをロードしたモジュール内で評価されます。
-そのような振舞いを利用する特殊な場合もあり得ますが、
-通常は上のテンプレートにしたがっておくのが無難です。
 @c COMMON
 
 @c EN
@@ -1039,7 +1026,8 @@ of the exported symbols will be directly accessible from outside.
 @c JP
 @code{select-module}フォームの後には、モジュールの内容であるScheme式を自由に書けます。
 それらはモジュール@code{foo}の中で評価されます。モジュール内で定義するトップレベルの
-束縛のうち、明示的に`export'
+束縛のうち、明示的に`export'で指定されたシンボルのみが、このモジュールをインポートする他の
+モジュールから見えます。
 @c COMMON
 
 @c EN
@@ -1047,6 +1035,8 @@ The last @code{provide} form is just a cliche.  It is needed since
 the `use' mechanism uses traditional require-provide mechanism (if you
 don't know about it, it's ok--just put it as a magic spell).
 @c JP
+最後の@code{provide}は一種の定型句です。`use'がrequire-provideメカニズムを
+利用しているために必要です。
 @c COMMON
 
 @c EN
@@ -1062,17 +1052,31 @@ gauche-config --sitelibdir
 @end example
 from shell.
 @c JP
+これで、他のプログラムは `@code{(use foo)}' とするだけでこのモジュールの機能が
+利用可能になります。もしモジュールをサイト全体で利用できるようにしたければ、@code{gosh}内で
+@example
+(gauche-site-library-directory)
+@end example
+を評価して得られるディレクトリに@code{foo.scm}を置いて下さい。
 @c COMMON
 
 @c EN
 If you feel like to conserve global module name space, you can organize
 modules hierarchically.   Some Gauche libraries already does so.
-For example, @code{text.tr} module is implemented in "text/tr.scm" file.
+@xref{Library modules}, for examples.
+For example, @code{text.tr} module is implemented in ``text/tr.scm'' file.
+Note that the pathname separator `/' in the file becomes a period in the
+module name.
 @c JP
+モジュールの名前空間のトップに新たなモジュールを追加するのに気が引ける場合は、
+モジュールを階層的に構成することもできます。Gaucheのモジュールの多くは既に階層的に
+構成されています。具体的なモジュール例は@ref{Library modules}を参照して下さい。
+例えば、@code{text.tr}モジュールは ``@code{text/tr.scm}'' ファイルに
+実装されています。パス名の区切り文字`/'がモジュール名ではピリオドになることに
+注意して下さい。
 @c COMMON
 
 @c EN
-Now, suppose your module gets too big to be in a single file.  
 @c JP
 @c COMMON
 
@@ -6931,7 +6935,6 @@ of descendants of @var{class}.
 * High Level Process Interface::  
 * Regular expression utilities::  
 * Simple dispatcher::           
-* Serializer::                  
 * Termios::                     
 * Unit Testing::                
 * RFC822 Message parsing::      
@@ -7108,173 +7111,247 @@ DBMライブラリ  (@xref{Original DBM interface}).
 @end table
 @end deftp
 
+The following code shows a typical usage of the database.
+
+@example
+(use dbm)         ; @r{dbm abstract interface}
+(use dbm.gdbm)    ; @r{dbm concrete interface}
+
+; @r{open the database}
+(define *db* (dbm-open <gdbm> :path "mydb" :rw-mode :write))
+
+; @r{put the value to the database}
+(dbm-put! *db* "key1" "value1")
+
+; @r{get the value from the database}
+(define val (dbm-get *db* "key1"))
+
+; @r{iterate over the database}
+(dbm-for-each *db* (lambda (key val) (foo key val)))
+
+; @r{close the database}
+(dbm-close *db*)
+@end example
+
 @menu
 * Opening and closing a dbm database::  
 * Accessing a dbm database::    
 * Iterating on a database::     
-* Object serialization::        
 @end menu
 
 @node Opening and closing a dbm database, Accessing a dbm database, Generic DBM interface, Generic DBM interface
 @subsection Opening and closing a dbm database
+@c NODE DBMデータベースのオープンとクローズ
 
 @deftp {Class} <dbm>
 @clindex dbm
+@c EN
+An abstract class for dbm-style database.  Defindes the common
+database operations.   This class has the following instance slots.
+They must be set before the database is actually opened by
+@code{dbm-open}.
+@c JP
+DBM系のデータベースのための抽象クラスです。データベースへの共通のオペレーションを
+定義します。以下のインスタンススロットを持ちます。これらのスロットの値は
+@code{dbm-open}によってデータベースがオープンされる前にセットされて
+いなければなりません。
+@c COMMON
+
+@defivar <dbm> path
+@c EN
+Pathname of the dbm database.  Some dbm implementation may append
+suffixes to this.
+@c JP
+データベースファイルのパス名。dbmの実装によっては、このパスにサフィックスが追加されます。
+@c COMMON
+@end defivar
+
+@defivar <dbm> rw-mode
+@c EN
+Specifies read/write mode.  Can be either one of the following keywords:
+@table @code
+@item :read
+The database will be opened in read-only mode.  The database file must
+exist when @code{dbm-open} is called.  This is the default value.
+@item :write
+The database will be opened in Read-write mode.
+If the database file does not exist, @code{dbm-open} creates one.
+@item :create
+The database will be created and opened in Read-write mode.
+If the database file exists, @code{dbm-open} truncates it.
+@end table
+@c JP
+読み書きのモードを指定します。以下の値のいずれかを取ります。
+@table @code
+@item :read
+データベースは@code{dbm-open}によって読みだし専用モードでオープンされます。
+オープンされる時点でデータベースは存在していなければなりません。
+@item :write
+データベースは@code{dbm-open}によって読み書き可能なモードでオープンされます。
+データベースが存在しなければ、@code{dbm-open}は新しいデータベースを作成します。
+@item :create
+@code{dbm-open}によって新しいデータベースが作成され、読み書き可能なモードでオープンされます。
+既にデータベースが存在していた場合、その内容はクリアされます。
+@end table
+@c COMMON
+@end defivar
+
+@defivar <dbm> file-mode
+@c EN
+Specifies the file permissions (as @code{sys-chmod}) to create the
+database.  The default value is @code{#o664}.
+@c JP
+データベースが作成されるときのファイルパーミッションを指定します。
+デフォルトは@code{#o664}です。
+@c COMMON
+@end defivar
+
+@defivar <dbm> key-convert
+@defivarx <dbm> value-convert
+@c EN
+By default, you can use only strings for both key and values.  With this
+option, however, you can specify how to convert other Scheme values to/from
+string to be stored in the database.   The possible values are the
+followings:
+@table @asis
+@item @code{#f}
+The default value.  Keys (values) are not converted.  They must be
+a string.
+@item @code{#t}
+Keys (values) are converted to its string representation, using 
+@code{write}, to store in the database, and converted
+back to Scheme values, using @code{read}, to retrieve from the database.
+The data must have an external representation that can be read back.
+(But it is not checked when the data is written; you'll get an error
+when you read the data).  The key comparison is done in the string
+level, so the external representation of the same key must match.
+@item a list of two procedures
+Both procedure must take a single argument.  The first procedure must
+receive a Scheme object and returns a string.  It is used to convert
+the keys (values) to store in the database.  The second procedure
+must receive a string and returns a Scheme object.  It is used to
+convert the stored data in the database to a Scheme object.
+The key comparison is done in the string
+level, so the external representation of the same key must match.
+@end table
+@c JP
+デフォルトでは、dbmデータベースはキーにも値にも文字列しか使うことはできません。
+これらのスロットによって、それ以外のSchemeオブジェクトを取り扱う方法を指定することが
+できます。以下の値のいずれかが可能です。
+@table @asis
+@item @code{#f}
+デフォルトの値です。キーあるいは値は変換されません。それらは文字列でなければなりません。
+@item @code{#t}
+キーあるいは値は@code{write}を使って文字列に変換されデータベースに格納されます。
+そして@code{read}を使って文字列からSchemeオブジェクトへと変換されます。
+後で@code{read}で読みこめるようなキーあるいは値のみを扱うことができます。
+(但し、dbmライブラリは書き込み時にそれが後で読み込めるかどうかのチェックは行いません)。
+キーの比較は文字列に変換された後で行われるので、同じ値となるキーは同じ文字列表現を
+持つ必要があります。
+@item 二つの手続きのリスト
+どちらの手続きも一つの引数を取ります。最初の手続きはSchemeオブジェクトを受け取り、
+文字列を返します。キーあるいは値をデータベースに格納する時に呼ばれます。
+二つ目の手続きは文字列を受け取りSchemeオブジェクトを返します。データベースから
+キーあるいは値を取り出す時に呼ばれます。
+キーの比較は文字列に変換された後で行われるので、同じ値となるキーは同じ文字列に
+変換される必要があります。
+@end table
+@c COMMON
+@end defivar
 @end deftp
 
 @deffn {Method} dbm-open (dbm <dbm>)
+@c EN
+Opens a dbm database.  @var{dbm} must be an instance of
+one of the concrete classes that derived from the @code{<dbm>} class,
+and its slots must be set appropriately.   On success, it returns
+the @var{dbm} itself.  On failure, it signals an error.
+@c JP
+DBMデータベースをオープンします。@var{dbm}は、@code{<dbm>}クラスを継承した
+具体クラスのインスタンスでなければなりません。また、そのスロットには適切な値が
+セットされている必要があります。オープンに成功したら@var{dbm}自身が返されます。
+失敗した場合はエラーが報告されます。
+@c COMMON
 @end deffn
 
 @deffn {Method} dbm-open (dbm-class <class>) options @dots{}
-@end deffn
-
-
-By instantiating a subclass of the @code{<dbm>} class, you can
-either open an existing database or create a new database.
-
-@deffn {Generic method} make class &key :path :rw-mode :file-mode
-Create a new dbm object associated to the database file @var{path}
-if @var{class} is one of subclasses of the class @code{<dbm>}.
-
-Depending on the actual implementation, @var{path} may be used literally
-as a database filename (gdbm) or some suffixes are added (odbm, ndbm).
-
-The keyword argument @var{rw-mode} takes one of the following values:
-@table @code
-@item :read
-Opens a database for read-only.  If the specified database file does
-not exist, an error is signalled.
-
-@item :write
-Opens a database for read and write.  If the specified database file
-does not exist, a new empty database is created.  This is the default.
-
-@item :create
-Creates a database for read and write.  If the specified database file
-already exists, its content is cleared.
-@end table
-
-The keyword argument @var{file-mode} takes a number representing
-unix file mode to be used when @code{make} needs to create a new
-database.   The default is #o664.  This value may be masked by
-the user's umask setting.
-
-DBM interface only takes strings for keys and values by default.
-If you need to store other types of objects to the database,
-you need to tell the DBM instance how to convert those objects
-by @var{serializer} keyword argument.
-It may take a class object which is a subclass of @code{<serializer>},
-or a value @code{#t}.  If it is a subclass of @code{<serializer>},
-a serializer instance of the class is used to convert Scheme objects.
-If it is @code{#t}, the standard external representation is used.
+@c EN
+A convenient method that creates dbm instance and opens it.
+It is defined as follows.
+@c JP
+DBMインスタンスを作成してオープンするための便利なメソッドです。
+次のように定義されます。
+@c COMMON
+@example
+(define-method dbm-open ((class <class>) . initargs)
+  (dbm-open (apply make class initargs)))
+@end example
 @end deffn
 
 Database file is closed when it is garbage collected.
 However, to ensure the modification is properly synchornized,
-you may want to close the database explicitly
+you should close the database explicitly.
 
-@deffn {Generic method} dbm-close (dbm @code{<dbm>})
+@deffn {Method} dbm-close (dbm @code{<dbm>})
 Closes a database @var{dbm}.  Once the database is closed, any
 operation to access the database content raises an error.
 @end deffn
 
-
-@deffn {Generic method} dbm-closed? (dbm @code{<dbm>})
+@deffn {Method} dbm-closed? (dbm @code{<dbm>})
 Returns true if a database @var{dbm} is already closed, false otherwise.
 @end deffn
 
 @node Accessing a dbm database, Iterating on a database, Opening and closing a dbm database, Generic DBM interface
 @subsection Accessing a dbm database
 
-Once a database object is created, you can use the following methods
-to access individual key/value pairs.   Note that, unless you specify
-@var{serializer} argument when you create the dbm object, keys and
-values must be strings.
+Once a database is opened, you can use the following methods
+to access individual key/value pairs.
 
-@deffn {Generic method} dbm-put! (dbm @code{<dbm>}) key value
+@deffn {Method} dbm-put! (dbm @code{<dbm>}) key value
 Put a @var{value} with @var{key}.
 @end deffn
 
-@deffn {Generic method} dbm-get (dbm @code{<dbm>}) key &optional default
+@deffn {Method} dbm-get (dbm @code{<dbm>}) key &optional default
 Get a value associated with @var{key}.  If no value exists for @var{key}
 and @var{default} is specified, it is returned.  If no value exists for
 @var{key} and @var{default} is not specified, an error is signalled.
 @end deffn
 
-
-@deffn {Generic method} dbm-exists? (dbm @code{<dbm>}) key
+@deffn {Method} dbm-exists? (dbm @code{<dbm>}) key
 Return true if a value exists for @var{key}, false otherwise.
 @end deffn
 
-@deffn {Generic method} dbm-delete! (dbm @code{<dbm>}) key
+@deffn {Method} dbm-delete! (dbm @code{<dbm>}) key
 Delete a value associated with @var{key}.  
 @end deffn
 
 
-@node Iterating on a database, Object serialization, Accessing a dbm database, Generic DBM interface
+@node Iterating on a database,  , Accessing a dbm database, Generic DBM interface
 @subsection Iterating on a dbm database
 
 To walk over the entire database, following methos are provided.
 
-@deffn {Generic method} dbm-for-each (dbm @code{<dbm>}) procedure
+@deffn {Method} dbm-fold (dbm @code{<dbm>}) procedure knil
+The basic iterator.
+For each key/value pair, @var{procedure} is called as
+@code{(@var{procedure} @var{key} @var{value} @code{r})},
+where @var{r} is @var{knil} for the fist call of @var{procedure},
+and the return value of the previous call for subsequent calls.
+Returns the result of the last call of @var{procedure}.
+@end deffn
+
+@deffn {Method} dbm-for-each (dbm @code{<dbm>}) procedure
 For each key/value pair in the database @var{dbm}, @var{procedure}
 is called.  Two arguments are passed to @var{procedure}---a key and
 a value.   The result of @var{procedure} is discarded.
 @end deffn
 
-
-@deffn {Generic method} dbm-map (dbm @code{<dbm>}) procedure
+@deffn {Method} dbm-map (dbm @code{<dbm>}) procedure
 For each key/value pair in the database @var{dbm}, @var{procedure}
 is called.  Two arguments are passed to @var{procedure}---a key and
 a value.   The result of @var{procedure} is accumulated to a list
 which is returned as a result of @code{dbm-map}.
 @end deffn
-
-
-@node Object serialization,  , Iterating on a database, Generic DBM interface
-@subsection Converting keys and values for dbm
-
-The low-level interface to the dbm libraries only deals with
-strings.   If you want to store general Scheme objects, you need
-to specify how to convert back and forth between objects and strings.
-Different applications need different requirements, so it's not
-good to implement one specific way in this library.
-
-With @code{:serializer} parameter in the constructor of dbm class,
-you can specify your serialization scheme.
-
-@table @asis
-@item @code{#f}
-
-No conversion is done.  You must pass a string as a key or a value.
-Keys are effectively compared by @code{string=?}.
-
-
-@item @code{#t}
-
-DBM interface applies @code{write*} to get a string representation of
-the object, and @code{read} to get the original object back.  This means:
-@itemize @bullet
-@item
-You can use only use primitive Scheme types, such as numbers, booleans,
-characters, symbols, strings, and lists and vectors of those types.
-
-@item
-No check is done if the object is representable by string.  If you
-pass the object whose external representation can't be read back,
-no error is signalled in @code{dbm-put!}, but you'll have a trouble
-when you try to retrieve the data later.
-
-@item
-Keys are effectively compared by @code{equal?}
-@end itemize
-
-@item a class derived from @code{<serializer>}
-
-An abstract base class @code{<serializer>} defines a common interface
-for object serialization.  You can pass a serializer implemenation of 
-your choice.
-@end table
 
 
 @c ----------------------------------------------------------------------
@@ -9163,7 +9240,7 @@ value from the procedure is inserted to the output string using
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Simple dispatcher, Serializer, Regular expression utilities, Library modules
+@node Simple dispatcher, Termios, Regular expression utilities, Library modules
 @section @code{gauche.selector} - Simple dispatcher
 @c NODE 簡単なディスパッチャ, @code{gauche.selector} - 簡単なディスパッチャ
 
@@ -9270,15 +9347,15 @@ This is a simple example of "echo" server:
 
 
 @c ----------------------------------------------------------------------
-@node Serializer, Termios, Simple dispatcher, Library modules
-@section @code{gauche.serializer} - Serializer
+@c @node Serializer, Termios, Simple dispatcher, Library modules
+@c @section @code{gauche.serializer} - Serializer
 
-@deftp {Module} gauche.serializer
-@mdindex gauche.serializer
-@end deftp
+@c @deftp {Module} gauche.serializer
+@c @mdindex gauche.serializer
+@c @end deftp
 
 @c ----------------------------------------------------------------------
-@node Termios, Unit Testing, Serializer, Library modules
+@node Termios, Unit Testing, Simple dispatcher, Library modules
 @section @code{gauche.termios} - Termios
 @c NODE Termios, @code{gauche.termios} - Termios
 
@@ -11682,11 +11759,11 @@ equal (in the sense of @code{equal?}).
 
 @deftp {Module} util.toposort
 @mdindex util.toposort
-
+Implements topological sort algorithm.
 @end deftp
 
-
-
+@defun topological-sort graph &optional =
+@end defun
 
 @c ----------------------------------------------------------------------
 @node CGI,  , Topological sort, Library modules
@@ -11749,6 +11826,7 @@ is @code{#f} if @var{list} is false, or @code{()} otherwise.
 @c ======================================================================
 @node References, C to Scheme mapping, Library modules, Top
 @unnumbered References
+@c NODE 参考文献
 
 @table @asis
 @anchor{r5rs}
