@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.24 2001-06-16 18:41:59 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.25 2001-06-20 08:51:59 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -294,18 +294,51 @@ class, Gauche methods don't
 
 
 @c ======================================================================
-@node Invoking Gosh
-@chapter Invoking Gosh
+@node Writing Scheme program using Gauche
+@chapter  Writing Scheme program using Gauche
 
-@deftp {Program} gosh [options] [--] [file arg @dots{}]
-@code{Gosh} is Gauche's interpreter.   Without @var{file}s,
-it reads a Scheme expression from the standard input, evaluates it,
-and prints the result, and repeat that until it reads EOF or
+Gauche can be used either as an independent Scheme interpreter
+or as an embedded Scheme library.   The interpreter
+which comes with Gauche distribution is a program named @code{gosh}.
+
+@deftp {Program} gosh [options] [scheme-file arg @dots{}]
+Gauche's interpreter.   Without @var{scheme-file}, @code{gosh} works
+interactively, i.e. it reads a Scheme expression from the standard input,
+evaluates it, and prints the result, and repeat that until it reads EOF or
 is terminated.
 
-If @var{file} is specified, @code{gosh} loads the file as a Scheme
-program and exits.  The command line arguments following @var{file}
-is passed to the Scheme program as program arguments.
+If @var{scheme-file} is specified, @code{gosh} bounds a global varialbe
+@code{*argv*} to the list of the remaining command-line arguments,
+then loads @var{scheme-file} as a Scheme program.
+If the first line of @var{scheme-file} begins with two character
+sequence ``@code{#!}'', the entire line is ignored by @code{gosh}.
+This is useful to write a Scheme program that works as an executable
+script in unix-like systems.  Typical Gauche script has the first
+line like these
+@example
+#!/usr/local/bin/gosh
+  @r{or,}
+#!/usr/bin/env gosh
+@end example
+The latter uses a ``shell trampoline'' technique so that the script
+works as far as @code{gosh} is in the PATH.
+
+After the file is successfully loaded, @code{gosh} calls a
+procedure named `@code{main}' with the list of the remaining
+command-line arguments, if it is defined in the user module.
+This behavior is compatible with
+the draft SRFI-22.  Although you can still write the program
+main body as toplevel expressions, like shell scripts or Perl scripts,
+it is much convenient to use this @code{main} convention, for
+you can load the script file interactively to debug.
+
+If the @code{main} procedure is not defined, @code{gosh} exits
+after loading @var{script-file}.
+
+The following command line options are recognized by @code{gosh}.
+The first command line argument which doesn't begin with `@minus{}'
+is recognized as the script file.  If you want to specify a file
+that begins with a minus sign, use a dummy option `@code{--}'.
 @end deftp
 
 @deftp {Command Option} -I path
@@ -335,9 +368,31 @@ following options available:
 @item no-inline
 Prohibits the compiler to iniline primitive Scheme procedures.
 @end table
-
 @end deftp
 
+@deftp {Command Option} --
+When @code{gosh} sees this option, it stops processing the options
+and takes next command line argument as a script file.  It is useful
+in case if you have a script file that begins with a minus sign,
+although it is not generally recommended.
+@end deftp
+
+I show several simple examples below.
+
+This script works like @code{cat(1)}, without any command-line
+option processing and error handling.
+
+@example
+#!/usr/bin/env gosh
+
+(define (main . args)   ;@r{entry point}
+  (if (null? args)
+      (copy-port (current-input-port) (current-output-port))
+      (for-each (lambda (file)
+                  (call-with-input-file file
+                    (lambda (in) (copy-port in (current-output-port)))))
+                args)))
+@end example
 
 @c ======================================================================
 @node Core Syntax
@@ -364,9 +419,6 @@ Prohibits the compiler to iniline primitive Scheme procedures.
 @node Assignments
 @section Assignments
 
-Gauche adopts the concept of generalized @code{set!}
-specified in SRFI-17.
-
 @defspec set! symbol expression
 @defspecx set! (proc arg @dots{}) expression
 [R5RS][SRFI-17] First, @var{expression} is evaluated.
@@ -376,18 +428,36 @@ the result of @var{expression}.
 If @var{symbol} is not locally bound, the global variable named @var{symbol}
 must already exist, or an error is signalled.
 
-The second form is equivalent to
+The second form is a ``generalized set!'' specified in SRFI-17.
+It is a syntactic sugar of the following form.
 @example
 ((setter @var{proc}) @var{arg} @dots{} @var{expression})
+@end example
+Note the order of the arguments differs from CommonLisp's @code{setf}.
+
+@example
+(define x 3)
+(set! x (list 1 2))  @result{} @r{undefined}
+x                    @result{} (1 2)
+
+(set! (car x) 5)     @result{} @r{undefined}
+x                    @result{} (5 2)
 @end example
 @end defspec
 
 @defun setter proc
-[SRFI-17]
+[SRFI-17] Returns a setter procedure associated to the procedure @var{proc}.
+If no setter is associated to @var{proc}, an error is signalled.
+
+To associate a setter procedure to another procedure, you can use
+the setter of @code{setter}, like this:
+@example
+(set! (setter @var{get}) @var{set})
+@end example
 @end defun
 
 @defun getter-with-setter get set
-[SRFI-17]
+[SRFI-17] 
 @end defun
 
 
@@ -1541,6 +1611,10 @@ These functions correspond to scsh's @code{match:start}, @code{match:end}
 and @code{match:substring}.
 @end defun
 
+@defun rxmatch-after match &optional (i 0)
+@defunx rxmatch-before match &optional (i 0)
+@end defun
+
 Seel also @ref{Regular expression utilities}, which defines
 useful macros to deal with regular expression matching.
 
@@ -2110,15 +2184,23 @@ Remove @var{filename}.
 [POSIX]
 @end defun
 
-@defun sys-rmdir pathname
-[POSIX]
-@end defun
-
 @defun sys-unlink pathname
 [POSIX]
 @end defun
 
 @defun sys-symlink existing new
+@end defun
+
+@defun sys-mkdir pathname mode
+[POSIX]
+@end defun
+
+@defun sys-rmdir pathname
+[POSIX]
+@end defun
+
+@defun sys-umask mode
+[POSIX]
 @end defun
 
 @node Pathnames
@@ -2458,6 +2540,7 @@ interpret the returned value in a portable way.
 @end defun
 
 @defun sys-fork
+[POSIX]
 Fork the current process.  Returns 0 if you're in the child process,
 and a child process' pid if you're in the parent process.
 All the opened file descriptors are shared between the parent and
@@ -2465,6 +2548,7 @@ the child.
 @end defun
 
 @defun sys-exec command args &optional iomap
+[POSIX+]
 Execute @var{command} with @var{args}, a list of arguments.
 The current process image is replaced by @var{command},
 so this function never returns.
@@ -2509,21 +2593,84 @@ more convenient process handling on top of above primitives.
 @subsubsection Wait
 
 @defun sys-wait
+[POSIX] Calls system's @code{wait(2)}.  The process suspends its execution
+until one of the child terminates.  Returns a cons of two exact
+integers, one is the child's process id, and another is a status code.
+The status code can be interpreted by the following functions.
 @end defun
 
 @defun sys-waitpid pid &keyword nohang untraced
+[POSIX] This is an interface to @code{waitpid(3)}, an extended version of
+wait.
+
+@var{pid} is an exact integer specifying which child(ren) it's waiting.
+If it is a positive integer,
+it waits fot that specific child.  If it is zero, it waits for any
+member of this process group.  If it is -1, it waits for any child process.
+If it is less than -1, it waits for any child process whose process group
+id is equal to the absolute value of @var{pid}.
+
+The calling process suspends until one of those child process is terminated,
+unless true is specified to the keyword argument @var{nohang}.
+
+If true is specified to the keyword argument @var{untraced},
+the status of stopped child process can be also returned.
+
+The return value is a cons of two exact integers, one is the child
+process id, and another is a status code.  If @var{nohang} is true and
+no child process status is available, the returned pair's car is zero.
 @end defun
 
 @defun sys-wait-exited? status
 @defunx sys-wait-exit-status status
+[POSIX]
+The argument is a number in cdr of the value returned from @code{sys-wait}
+or @code{sys-waitpid}.
+@code{sys-wait-exited?} returns @code{#t} if the child process is 
+terminated normally.   @code{sys-wait-exit-status} returns the exit
+code the child process passed to @code{exit(2)}, or the return value
+of @code{main()}.
 @end defun
 
 @defun sys-wait-signaled? status
 @defunx sys-wait-termsig status
+[POSIX]
+The argument is a number in cdr of the value returned from @code{sys-wait}
+or @code{sys-waitpid}.
+@code{sys-wait-signaled?} returns @code{#t} if the child process
+is termintaed by an uncaught signal.
+@code{sys-wait-termsig} returns the signal number that terminted the child.
 @end defun
 
 @defun sys-wait-stopped? status
 @defunx sys-wait-stopsig status
+[POSIX]
+The argument is a number in cdr of the value returned from @code{sys-waitpid}.
+@code{sys-wait-stopped?} returns @code{#t} if the child process is
+stopped.   This status can be caught only by @code{sys-waitpid} with
+true @var{untraced} argument.  @code{sys-wait-stopsig} returns the
+signum number that stopped the child.
+@end defun
+
+@node I/O multiplexing
+@subsection I/O multiplexing
+
+The interface functions for @code{select(2)}.
+
+@deftp {Builtin Class} <sys-fdset>
+@clindex sys-fdset
+Represents @code{fd_set}, a set of file descriptors.
+@end deftp
+
+@defun sys-fdset-ref fdset port-or-fd
+@defunx sys-fdset-set! fdset port-or-fd flag
+@end defun
+
+@defun sys-fdset-max-fd fdset
+@end defun
+
+@defun sys-select readfds writefds exceptfds &optional timeout
+@defunx sys-select! readfds writefds exceptfds &optional timeout
 @end defun
 
 
@@ -2531,9 +2678,19 @@ more convenient process handling on top of above primitives.
 @subsection Miscellaneous
 
 @defun sys-pause
+[POSIX] Suspends the process until it receives a signal whose
+action is to either execute a signal-catching function or to terminate
+the process.  This function only returns when the signal-catching
+function returns.  The returned value is undefined.
 @end defun
 
 @defun sys-sleep seconds
+[POSIX] Suspends the process until the specified number of seconds elapses,
+or the process receives a signal.  Returns zero if it sleeps well,
+or the number of unslept seconds if it is woke up by a signal.
+
+To be porable across POSIX implementation, keep @var{seconds} less than
+65536.
 @end defun
 
 @c ======================================================================
@@ -2747,7 +2904,7 @@ to guess the input encoding.  There can be multiple algorithms,
 and each algorithm has the name.  Right now, there's only one
 algorithm implemented:
 @table @code
-@item *JP
+@item "*JP"
 To guess the character encoding from japanese text, among either
 ISO-2022-JP, EUC-JP, ShiftJIS or UTF-8.
 @end table
