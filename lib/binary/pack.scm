@@ -15,6 +15,7 @@
 ;;   "vlp" references would be gone.
 
 (define-module binary.pack
+  (use srfi-1)
   (use srfi-2)    ;; and-let*
   (use srfi-11)   ;; let-values
   (use srfi-13)   ;; string library
