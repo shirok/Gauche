@@ -5,7 +5,7 @@
 ;;;  Public Domain..  I guess lots of Scheme programmers have already
 ;;;  written similar code.
 ;;;
-;;;  $Id: queue.scm,v 1.5 2002-08-27 08:03:37 shirok Exp $
+;;;  $Id: queue.scm,v 1.6 2002-08-27 10:24:37 shirok Exp $
 ;;;
 
 ;; This queue implementation is tuned for speed.  A queue is simply
@@ -121,17 +121,18 @@
           (else (loop (cdr lis))))))
 
 (define (remove-from-queue! pred q)
-  (let1 head
-      (let rec ((lis (car q)))
-        (cond ((null? lis) '())
-              ((pred (car lis)) (rec (cdr lis)))
-              (else (let1 tail (rec (cdr lis))
-                      (if (eq? (cdr lis) tail)
-                          lis
-                          (cons (car lis) tail))))
-              ))
+  (let* ((head (let rec ((lis (car q)))
+                 (cond ((null? lis) '())
+                       ((pred (car lis)) (rec (cdr lis)))
+                       (else (let1 tail (rec (cdr lis))
+                               (if (eq? (cdr lis) tail)
+                                   lis
+                                   (cons (car lis) tail))))
+                       )))
+         (removed? (not (eq? (car q) head))))
     (set-car! q head)
-    (set-cdr! q (last-pair head))))
+    (set-cdr! q (last-pair head))
+    removed?))
 
 ;; NB: Scheme48 has delete-from-queue!, which has reversed order
 ;; of arguments of delete in SRFI-1.   I leave it undefined here.
