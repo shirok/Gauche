@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.71 2002-04-04 10:13:20 shirok Exp $
+ *  $Id: number.c,v 1.72 2002-04-04 10:28:06 shirok Exp $
  */
 
 #include <math.h>
@@ -1451,6 +1451,14 @@ static ScmObj read_uint(const char **strp, int *lenp,
                 digits++;
                 if (digits > diglimit) {
                     if (SCM_FALSEP(value_big)) {
+                        /* TODO: In some cases, we can read one more digit
+                         * before switching to bignum.  The condition is
+                         *   value_int < LONG_MAX/radix - radix
+                         * It'll speed up reading integers close to LONG_MAX.
+                         * A benchmark of reading random integer uniformly 
+                         * distributed between 0 and LONG_MAX showed this
+                         * premature switching makes the reader 6% slower.
+                         */
                         value_big = Scm_MakeBignumFromSI(value_int);
                         value_int = digits = 0;
                     } else {
