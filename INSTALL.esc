@@ -26,7 +26,7 @@
                       Compiling and Installing Gauche
 <? ) !>
 
-$Id: INSTALL.esc,v 1.23 2004-01-19 21:54:53 fuyuki Exp $
+$Id: INSTALL.esc,v 1.24 2004-12-17 21:51:53 shirok Exp $
 <? (if-lang japanese? !>
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:<? else !>
@@ -412,9 +412,11 @@ on top of the source tree.
       http://fink.sourceforge.netからダウンロードできます。システム標準の
       場所以外にdlcompatライブラリをインストールした場合は、configureの
       --with-localオプションで場所を指定して下さい。
+      また、GCがpthreadsを要求するようになったので、--enable-threads=pthreads
+      も必要です。
       (例：$HOME/include に dlfcn.h が、 $HOME/lib に libdl.aがある場合は
 
-         ./configure --with-local=$HOME
+         ./configure --with-local=$HOME --enable-threads=pthreads
 
        とする)
 <? else !>
@@ -422,10 +424,13 @@ on top of the source tree.
        Fink project (http://fink.sourceforge.net) before configuring
        Gauche.   If the dlcompat library is installed in non-standard
        location, you have to tell configure the place by --with-local.
+       Besides, GC now requires pthreads on MacOS X, so you need
+       --enable-threads=pthreads.
+
        For example, if you have dlfcn.h in $HOME/include and libdl.a
        in $HOME/lib, you should do:
 
-         ./configure --with-local=$HOME
+         ./configure --with-local=$HOME --enable-threads=pthreads
 <? ) !>
 <? (if-lang japanese? !>
 * IRIX with 64bit binary - デフォルトの32bit ABIではなく64bit ABIでコンパイル
