@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.402 2003-06-06 06:23:51 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.403 2003-06-06 06:39:33 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -24700,22 +24700,41 @@ that works from right to left.
 @subsection String predicates
 
 @defun string-null? s
+@c EN
 [SRFI-13] Returns @code{#t} if @var{s} is an empty string, @code{""}.
+@c JP
+[SRFI-13] @var{s}が空文字列、@code{""}なら、@code{#t}を返します。
+@c COMMON
 @end defun
 
 @defun string-every char/char-set/pred s &optional start end
+@c EN
 [SRFI-13] Sees if every character in @var{s} satisfies
 @var{char/char-set/pred}.  If so, @code{string-every} returns
 the value that is returned at the last application of @var{char/char-set/pred}.
 If any of the application returns @code{#f}, @code{string-every}
 returns @code{#f} immediately.
+@c JP
+[SRFI-13] @var{s}に含まれる全ての文字が@var{char/char-set/pred}を
+満足するかを検査します。満足するならば、@code{string-every}は
+最後に適用された@var{char/char-set/pred}が返した値を戻り値とします。
+どの適用も@code{#f}を返した場合は、@code{string-every}はすぐに
+@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun string-any char/char-set/pred s &optional start end
+@c EN
 [SRFI-13] Sees if any character in @var{s} satisfies
 @var{char/char-set/pred}.  If so, @code{string-any} returns
 the value that is returned by the application.   If no character
 satisfies @var{char/char-set/pred}, @code{#f} is returned.
+@c JP
+[SRFI-13] @var{s}に含まれるいずれかの文字が@var{char/char-set/pred}
+を満足するかを検査します。いずれかの文字が満足するならば、
+@code{string-any}はその適用が返した値を戻り値とします。
+どの文字も@var{char/char-set/pred}を満たさなければ、@code{#f}が返ります。
+@c COMMON
 @end defun
 
 @node SRFI-13 String Constructors, SRFI-13 String Selection, SRFI-13 String predicates, srfi-13 - String library
