@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.59 2001-03-21 19:31:50 shiro Exp $
+ *  $Id: vm.c,v 1.60 2001-03-24 08:13:40 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1049,7 +1049,6 @@ static void arrange_application(ScmObj proc, ScmObj args, int numargs)
     }
     SCM_APPEND1(code, tail, proc);
     SCM_APPEND1(code, tail, SCM_VM_INSN1(SCM_VM_CALL, numargs));
-    argp = (ScmEnvFrame *)sp;
     PUSH_CONT(code);
     SAVE_REGS();
 }
