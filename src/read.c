@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.67 2004-01-20 05:10:25 shirok Exp $
+ *  $Id: read.c,v 1.68 2004-01-28 00:54:16 shirok Exp $
  */
 
 #include <stdio.h>
@@ -882,15 +882,23 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim)
     for (;;) {
         c = Scm_GetcUnsafe(port);
         if (c == EOF) {
-            Scm_ReadError(port, "unterminated escaped symbol: |%s ...",
-                       Scm_DStringGetz(&ds));
+            goto err;
         } else if (c == delim) {
             ScmString *s = SCM_STRING(Scm_DStringGet(&ds));
             return Scm_Intern(s);
+        } else if (c == '\\') {
+            /* CL-style single escape */
+            c = Scm_GetcUnsafe(port);
+            if (c == EOF) goto err;
+            SCM_DSTRING_PUTC(&ds, c);
         } else {
             SCM_DSTRING_PUTC(&ds, c);
         }
     }
+  err:
+    Scm_ReadError(port, "unterminated escaped symbol: |%s ...",
+                  Scm_DStringGetz(&ds));
+    return SCM_UNDEFINED; /* dummy */
 }
 
 /*----------------------------------------------------------------

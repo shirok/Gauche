@@ -6,6 +6,11 @@
 
 2004-01-27  Shiro Kawai  <shiro@acm.org>
 
+	* src/read.c (read_escaped_symbol): recognize single escape '\'
+	  within multiple escapes '|' while reading symbol name.  This
+	  is CL compatible.  I haven't decided how to treat a single escape
+	  outside of multipe escapes.
+
 	* src/gauche.h, src/number.c, src/bignum.c, src/gauche/int64.h,
 	  src/gauche/scmconst.h : fixup for 64bit integer support.
 	* ext/uvector/*, ext/digest/sha.* : changed accordingly.
