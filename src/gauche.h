@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.43 2001-02-19 14:06:30 shiro Exp $
+ *  $Id: gauche.h,v 1.44 2001-02-19 14:44:17 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -225,7 +225,7 @@ typedef struct ScmSubrRec      ScmSubr;
 typedef struct ScmSyntaxRec    ScmSyntax;
 typedef struct ScmPromiseRec   ScmPromise;
 typedef struct ScmExceptionRec ScmException;
-typedef struct ScmDLObjRec     ScmDLObj;
+typedef struct ScmAutoloadRec  ScmAutoload;
 
 /*---------------------------------------------------------
  * VM STUFF
@@ -1440,6 +1440,21 @@ extern ScmObj Scm_GetLoadPath(void);
 extern ScmObj Scm_AddLoadPath(const char *cpath, int afterp);
 
 extern ScmObj Scm_DynLoad(ScmString *path, ScmObj initfn);
+
+struct ScmAutoloadRec {
+    ScmSymbol *name;
+    ScmString *path;
+    ScmModule *module;
+};
+
+extern ScmClass Scm_AutoloadClass;
+#define SCM_CLASS_AUTOLOAD      (&Scm_AutoloadClass)
+
+#define SCM_AUTOLOAD(obj)       ((ScmAutoload*)(obj))
+#define SCM_AUTOLOADP(obj)      SCM_XTYPEP(obj, SCM_CLASS_AUTOLOAD)
+
+extern ScmObj Scm_MakeAutoload(ScmSymbol *name, ScmString *path);
+extern ScmObj Scm_ResolveAutoload(ScmAutoload *autoload);
 
 /*---------------------------------------------------
  * UTILITY STUFF
