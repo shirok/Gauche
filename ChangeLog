@@ -1,3 +1,13 @@
+2002-01-07  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.4.12
+	* ext/charconv/* : made the name of iconv.h header file configurable
+	  as well as the library name through --with-iconv-lib
+	  configuration option.
+	  charconv.h is now generated from charconv.h.in.
+	* src/main.c : display internal encoding name for gosh -V
+	* INSTALL.esc : added notes on FreeBSD iconv problem.
+
 2002-01-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c, src/repl.c : fixed the bug of VM stack rewinding problem.
