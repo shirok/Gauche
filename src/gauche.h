@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.376 2004-07-21 07:25:17 shirok Exp $
+ *  $Id: gauche.h,v 1.377 2004-08-01 05:41:22 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -403,6 +403,8 @@ SCM_EXTERN ScmObj Scm_MakeMacroTransformer(ScmSymbol *name,
 					   ScmProcedure *proc);
 SCM_EXTERN ScmObj Scm_MakeMacroAutoload(ScmSymbol *name,
                                         ScmAutoload *al);
+
+SCM_EXTERN ScmObj Scm_UnwrapSyntax(ScmObj form);
 
 SCM_EXTERN ScmObj Scm_VMGetResult(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMGetStackLite(ScmVM *vm);
@@ -2151,6 +2153,16 @@ SCM_EXTERN ScmObj Scm_FError(ScmObj fmt, ScmObj args);
 
 SCM_EXTERN void Scm_Warn(const char *msg, ...);
 SCM_EXTERN void Scm_FWarn(ScmString *fmt, ScmObj args);
+
+enum {
+    /* predefined stack trace formats.  EXPERIMENTAL. */
+    SCM_STACK_TRACE_FORMAT_ORIGINAL, /* original format */
+    SCM_STACK_TRACE_FORMAT_CC        /* compiler-message-like format */
+};
+
+SCM_EXTERN void Scm_ShowStackTrace(ScmPort *out, ScmObj stacklite,
+                                   int maxdepth, int skip, int offset,
+                                   int format);
 
 SCM_EXTERN void Scm_ReportError(ScmObj e);
 

@@ -1,3 +1,12 @@
+2004-07-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.c (Scm_UnwrapSyntax): expose this as an API.
+	* src/extlib.c (unwrap-syntax): made it a subr.
+	* lib/gauche/common-macros.scm (unwrap-syntax): made it a subr.
+	* src/error.c (Scm_ShowStackTrace): a bit of cleanup.
+	* src/gauche/char_euc_jp.h (SCM_CHAR_GET): tighten the rules to
+	  accept euc-jp sequence.
+
 2004-07-29  Shiro Kawai  <shiro@acm.org>
 
 	* lib/www/cgi.scm (cgi-add-temporary-file, cgi-main): added capability

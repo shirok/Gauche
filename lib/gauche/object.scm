@@ -1,7 +1,7 @@
 ;;;
 ;;; object.scm - object system
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: object.scm,v 1.54 2004-05-21 20:05:54 shirok Exp $
+;;;  $Id: object.scm,v 1.55 2004-08-01 05:41:21 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide

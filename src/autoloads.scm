@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.13 2004-07-05 20:29:22 shirok Exp $
+;;; $Id: autoloads.scm,v 1.14 2004-08-01 05:41:22 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.13 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.14 $.  DO NOT EDIT */"
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
 
@@ -128,7 +128,7 @@
           integer-length)
 
 (autoload "gauche/common-macros"
-          (:macro syntax-error) (:macro syntax-errorf) unwrap-syntax
+          (:macro syntax-error) (:macro syntax-errorf)
           (:macro push!) (:macro pop!) (:macro inc!) (:macro dec!)
           (:macro update!)
           (:macro check-arg) (:macro get-keyword*)

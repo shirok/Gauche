@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.115 2004-07-14 09:43:48 shirok Exp $
+ *  $Id: compile.c,v 1.116 2004-08-01 05:41:22 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -761,11 +761,11 @@ static ScmSyntax syntax_define_in_module = {
 
 /* Convert all identifiers in form into a symbol.
    Avoid extra allocation as much as possible. */
-static ScmObj unwrap_identifier(ScmObj form)
+ScmObj Scm_UnwrapSyntax(ScmObj form)
 {
     if (SCM_PAIRP(form)) {
-        ScmObj ca = unwrap_identifier(SCM_CAR(form));
-        ScmObj cd = unwrap_identifier(SCM_CDR(form));
+        ScmObj ca = Scm_UnwrapSyntax(SCM_CAR(form));
+        ScmObj cd = Scm_UnwrapSyntax(SCM_CDR(form));
         if (ca == SCM_CAR(form) && cd == SCM_CDR(form)) {
             return form;
         } else {
@@ -779,7 +779,7 @@ static ScmObj unwrap_identifier(ScmObj form)
         int i, j, len = SCM_VECTOR_SIZE(form);
         ScmObj elt, *pelt = SCM_VECTOR_ELEMENTS(form);
         for (i=0; i<len; i++, pelt++) {
-            elt = unwrap_identifier(*pelt);
+            elt = Scm_UnwrapSyntax(*pelt);
             if (elt != *pelt) {
                 ScmObj newvec = Scm_MakeVector(len, SCM_FALSE);
                 pelt = SCM_VECTOR_ELEMENTS(form);
@@ -788,7 +788,7 @@ static ScmObj unwrap_identifier(ScmObj form)
                 }
                 SCM_VECTOR_ELEMENT(newvec, i) = elt;
                 for (; j<len; j++, pelt++) {
-                    SCM_VECTOR_ELEMENT(newvec, j) = unwrap_identifier(*pelt);
+                    SCM_VECTOR_ELEMENT(newvec, j) = Scm_UnwrapSyntax(*pelt);
                 }
                 return newvec;
             }
@@ -805,9 +805,9 @@ static ScmObj compile_quote(ScmObj form, ScmObj env, int ctx,
     *depth = 0;
     if (!LIST1_P(tail)) Scm_Error("syntax error: %S", form);
     if (ctx == SCM_COMPILE_STMT) return SCM_NIL;
-    /* Kludge!  We don't want to call unwrap_identifier if the literal
+    /* Kludge!  We don't want to call Scm_UnwrapSyntax if the literal
        quote form contains circle, e.g. '#0=(1 . #0#).
-       Unwrap_identifier is needed only if the form is created by
+       Scm_UnwrapSyntax is needed only if the form is created by
        macro; so, for the time being, we just check if the form is
        a literal form or not.   This still has a problem if the circular
        form is introduced within a macro definition, but we'll get into
@@ -817,7 +817,7 @@ static ScmObj compile_quote(ScmObj form, ScmObj env, int ctx,
        we need another strategy. */
     info = Scm_PairAttrGet(SCM_PAIR(form), SCM_SYM_SOURCE_INFO, SCM_FALSE);
     if (SCM_FALSEP(info)) {
-        return SCM_LIST1(unwrap_identifier(SCM_CAR(tail)));
+        return SCM_LIST1(Scm_UnwrapSyntax(SCM_CAR(tail)));
     } else {
         return SCM_LIST1(SCM_CAR(tail));
     }
@@ -1682,7 +1682,7 @@ static ScmObj compile_qq(ScmObj form, ScmObj env, int level, int *depth)
     } else if (SCM_VECTORP(form)) {
         return compile_qq_vec(form, env, level, depth);
     } else {
-        return SCM_LIST1(unwrap_identifier(form));
+        return SCM_LIST1(Scm_UnwrapSyntax(form));
     }
 }
 
@@ -1822,13 +1822,13 @@ static ScmObj compile_qq_vec(ScmObj form, ScmObj env, int level, int *depth)
                 alen++;
             } else {
                 if (i > 0) ADDPUSH();
-                ADDCODE1(unwrap_identifier(p));
+                ADDCODE1(Scm_UnwrapSyntax(p));
                 last_spliced = FALSE;
                 alen++;
             }
         } else {
             if (i > 0) ADDPUSH();
-            ADDCODE1(unwrap_identifier(p));
+            ADDCODE1(Scm_UnwrapSyntax(p));
             last_spliced = FALSE;
             alen++;
         }

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.49 2004-07-16 11:11:41 shirok Exp $
+ *  $Id: error.c,v 1.50 2004-08-01 05:41:22 shirok Exp $
  */
 
 #include <errno.h>
@@ -402,10 +402,83 @@ void Scm_FWarn(ScmString *fmt, ScmObj args)
 }
 
 /*
- * Default error reporter
+ * Show stack trace.
+ *   stacklite - return value of Scm_GetStackLite
+ *   maxdepth - maximum # of stacks to be shown.
+ *              0 to use the default.  -1 for unlimited.
+ *   skip     - ignore this number of frames.  Useful to call this from
+ *              a Scheme error handling routine, in order to skip the
+ *              frames of the handler itself.
+ *   offset   - add this to the frame number.  Useful to show a middle part
+ *              of frames only, by combining the skip parameter.
+ *   format   - SCM_STACK_TRACE_FORMAT_* enum value.  EXPERIMENTAL.
  */
 
 #define STACK_DEPTH_LIMIT 30
+
+#define FMT_ORIG SCM_STACK_TRACE_FORMAT_ORIGINAL
+#define FMT_CC   SCM_STACK_TRACE_FORMAT_CC
+
+#define SHOW_EXPR(depth, expr) \
+    Scm_Printf(out, "%3d  %66.1S\n", (depth), Scm_UnwrapSyntax(expr));
+
+void Scm_ShowStackTrace(ScmPort *out, ScmObj stacklite,
+                        int maxdepth, int skip, int offset, int format)
+{
+    ScmObj cp;
+    int depth = offset;
+    
+    if (maxdepth == 0) maxdepth = STACK_DEPTH_LIMIT;
+    
+    SCM_FOR_EACH(cp, stacklite) {
+        if (skip-- > 0) continue;
+        if (format == FMT_ORIG) {
+            SHOW_EXPR(depth++, SCM_CAR(cp));
+        }
+        if (SCM_PAIRP(SCM_CAR(cp))) {
+            ScmObj srci = Scm_PairAttrGet(SCM_PAIR(SCM_CAR(cp)),
+                                          SCM_SYM_SOURCE_INFO, SCM_FALSE);
+            if (SCM_PAIRP(srci) && SCM_PAIRP(SCM_CDR(srci))) {
+                switch (format) {
+                case FMT_ORIG:
+                    Scm_Printf(out, "        At line %S of %S\n",
+                               SCM_CADR(srci), SCM_CAR(srci));
+                    break;
+                case FMT_CC:
+                    Scm_Printf(out, "%A:%S:\n",
+                               SCM_CAR(srci), SCM_CADR(srci));
+                    break;
+                }
+            } else {
+                switch (format) {
+                case FMT_ORIG:
+                    Scm_Printf(out, "        [unknown location]\n");
+                    break;
+                case FMT_CC:
+                    Scm_Printf(out, "[unknown location]:\n");
+                    break;
+                }
+            }
+        } else {
+            Scm_Printf(out, "\n");
+        }
+        if (format == FMT_CC) {
+            SHOW_EXPR(depth++, SCM_CAR(cp));
+        }
+
+        if (maxdepth >= 0 && depth >= STACK_DEPTH_LIMIT) {
+            Scm_Printf(out, "... (more stack dump truncated)\n");
+            break;
+        }
+    }
+}
+
+#undef SHOW_EXPR
+
+
+/*
+ * Default error reporter
+ */
 
 static void report_error_inner(ScmVM *vm, ScmObj e)
 {
@@ -423,25 +496,7 @@ static void report_error_inner(ScmVM *vm, ScmObj e)
     }
     SCM_PUTZ("Stack Trace:\n", -1, err);
     SCM_PUTZ("_______________________________________\n", -1, err);
-    SCM_FOR_EACH(cp, stack) {
-        Scm_Printf(SCM_PORT(err), "%3d  %66.1S\n", depth++, SCM_CAR(cp));
-        if (SCM_PAIRP(SCM_CAR(cp))) {
-            ScmObj srci = Scm_PairAttrGet(SCM_PAIR(SCM_CAR(cp)),
-                                          SCM_SYM_SOURCE_INFO, SCM_FALSE);
-            if (SCM_PAIRP(srci) && SCM_PAIRP(SCM_CDR(srci))) {
-                Scm_Printf(SCM_PORT(err), "        At line %S of %S\n",
-                           SCM_CADR(srci), SCM_CAR(srci));
-            } else {
-                Scm_Printf(SCM_PORT(err), "        [unknown location]\n");
-            }
-        } else {
-            Scm_Printf(SCM_PORT(err), "\n");
-        }
-        if (depth >= STACK_DEPTH_LIMIT) {
-            Scm_Printf(SCM_PORT(err), "... (more stack dump truncated)\n");
-            break;
-        }
-    }
+    Scm_ShowStackTrace(err, stack, 0, 0, 0, FMT_ORIG);
     /* NB: stderr is autoflushed by default, but in case err is replaced
        by some other port, we explicitly flush it. */
     SCM_FLUSH(err);

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: common-macros.scm,v 1.18 2004-05-20 04:50:33 shirok Exp $
+;;;  $Id: common-macros.scm,v 1.19 2004-08-01 05:41:21 shirok Exp $
 ;;;
 
 ;;; Defines number of useful macros.  This file is loaded by
@@ -47,16 +47,6 @@
 
 (define-macro (syntax-errorf . args)
   (apply errorf (map unwrap-syntax args)))
-
-;; strip off syntactic information from identifiers in the macro output.
-(define (unwrap-syntax form)
-  (cond
-   ((identifier? form) (identifier->symbol form))
-   ((pair? form) (cons (unwrap-syntax (car form))
-                       (unwrap-syntax (cdr form))))
-   ((vector? form)
-    (list->vector (map unwrap-syntax (vector->list form))))
-   (else form)))
 
 ;;;-------------------------------------------------------------
 ;;; generalized set! family
