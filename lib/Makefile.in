@@ -1,14 +1,14 @@
 #
 # Makefile.in for Gauche/lib
 #
-#  $Id: Makefile.in,v 1.1 2001-02-14 10:08:51 shiro Exp $
+#  $Id: Makefile.in,v 1.2 2001-02-14 20:44:30 shiro Exp $
 #
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 SCM_INSTALL_DIR = @libdir@/gauche/@GAUCHE_VERSION@/lib
 
-SCMS = srfi-1.scm
+SCMS = srfi-1.scm srfi-2.scm
 
 INSTALL=@INSTALL@
 
