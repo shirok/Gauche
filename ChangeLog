@@ -1,3 +1,11 @@
+2004-02-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c (skipws): comment may contain unexpected character
+	  encoding, so using getb to skip the comment after semicolon.
+	  (We can't do that for srfi-30 nested comment, since the second
+	  byte of shift_jis code can be '|', so we can't determine the end
+	  of the srfi-30 comment without knowing the encoding.)
+
 2004-02-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/hash.c (delete_entry): fixed a bug that didn't decrement

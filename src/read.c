@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.69 2004-02-03 13:12:28 shirok Exp $
+ *  $Id: read.c,v 1.70 2004-02-24 09:08:46 shirok Exp $
  */
 
 #include <stdio.h>
@@ -376,7 +376,9 @@ static int skipws(ScmPort *port, ScmReadContext *ctx)
         if (c <= 256 && isspace(c)) continue;
         if (c == ';') {
             for (;;) {
-                c = Scm_GetcUnsafe(port);
+                /* NB: comment may contain unexpected character code.
+                   for the safety, we read bytes here. */
+                c = Scm_GetbUnsafe(port);
                 if (c == '\n') break;
                 if (c == EOF) return EOF;
             }
