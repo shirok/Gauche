@@ -2267,10 +2267,172 @@ system behaviors.
 
 Every class is an instance of a group of special classes.
 A class that can be a class of another class is called @emph{metaclass}.
-(
+In Gauche, only the @code{<class>} class or its subclasses
+can be a metaclass.
+
+@subsubheading Expansion of @code{define-class}
+
+The @code{define-class} macro is basically a wrapper of
+the code that creates an instance of @code{<class>} 
+(or specified metaclass) and bind it to the given name.
+Suppose you have the following @code{define-class} form.
+@example
+(define-class @var{name} (@var{supers})
+  @var{slot-specs}
+  @var{options} @dots{})
+@end example
+
+It is expanded into a form like this (you can see the exact form 
+by looking at the definition of @code{define-class} macro in
+@file{`gauche-config --syslibdir`/gauche/object.scm}).
+@example
+(define @var{name}
+  (let ((tmp1 (make @var{metaclass} 
+                 :name '@var{name} :supers (list @var{supers})
+                 :slots (map @var{process-slot-definitions}
+                             @var{slot-specs})
+                 :defined-modules (list (current-module))
+                 @var{options} @dots{})))
+    @dots{} @var{check class redefinition} @dots{}
+    @dots{} @var{registering accessor methods} @dots{}
+    tmp1))
+@end example
+
+The created class's class, i.e. @var{metaclass}, 
+is determined by the following rules.
+
+@enumerate
+@item
+If @code{:metaclass} option is given to the @code{define-class}
+macro, its value is used.  The value must be the @code{<class>}
+class or its descendants.
+@item
+Otherwise, the metaclasses of the classes in the class precedence list
+is examined.
+@itemize @bullet
+@item
+If all the metaclasses are @code{<class>}, then
+the created class's metaclass is also @code{<class>}. 
+@item
+If all the metaclasses are either @code{<class>} or another metaclass
+@code{A}, then the created class' metaclass is @code{A}.
+@item
+If the set of metaclasses contains more than one metaclass
+(@code{A}, @code{B}, @code{C} @dots{}) other than @code{<class>},
+then the created class' metaclass
+is a metaclass that inherits all of those metaclasses
+@code{A}, @code{B}, @code{C} @dots{}.
+@end itemize
+@end enumerate
+
+The class's name, superclasses, and slot definitions are passed
+as the initialization arguments to the @code{make} generic function,
+with other arguments passed to @code{define-class}.
+The initialization argument @code{defined-modules} is passed to
+remember which module the class is defined, for the redefinition of
+this class.
+
+The slot specifications @var{slot-specs} are processed
+by internal method @var{process-slot-definitions}
+(which can't be directly called) to be turned
+into slot definitions.  Specifically, an @code{:init-form} slot
+option is turned into an @code{:init-thunk} option, and
+@code{:getter}, @code{:setter} and @code{:accessor} slot
+options are quoted.
+
+After the class (an instance of @var{metaclass}) is created,
+the global binding of @var{name} is checked.  If it is bound
+to a class, then the class redefinition protocol is invoked
+(see @ref{Class redefinition}).
+
+Then, the methods given to @code{:getter}, @code{:setter} 
+and @code{:accessor} slot options in @var{slot-spec} are
+collected and registered to the corresponding generic functions.
+
+@subsubheading Class structure
+
+@deftp {Class} <class>
+@clindex class
+The base class of all metaclasses, @code{<class>}, has
+the following slots.  Note that these slots are for internal management,
+and users shouldn't change their values after
+the class is initialized.  It is recommended to obtain information
+about a class by procedures described in @ref{Class object}, instead
+of directly accessing those slots.
+
+@defivar <class> name
+The name of the class; the symbol given to @code{define-class} macro.
+@code{class-name} returns this value.
+@end defivar
+
+@defivar <class> cpl
+Class precedence list.  @code{class-precedence-list} returns this value.
+@end defivar
+
+@defivar <class> direct-supers
+The list of direct superclasses.
+@code{class-direct-supers} returns this value.
+@end defivar
+
+@defivar <class> accessors
+An assoc list of slot accessors---it encapsulates how each slot
+should be accessed.
+@end defivar
+
+@defivar <class> slots
+A list of slot definitions.  @code{class-slots} returns this value.
+See @ref{Slot definition object}, for the details of slot definitions.
+@end defivar
+
+@defivar <class> direct-slots
+A list of slot definitions that is directly specified in this
+class definition (i.e. not inherited).
+@code{class-direct-slots} returns this value.
+@end defivar
+
+@defivar <class> num-instance-slots
+The number of instance allocated slots.
+@end defivar
+
+@defivar <class> direct-subclasses
+A list of classes that directly inherits this class.
+@code{class-direct-subclasses} returns this value.
+@end defivar
+
+@defivar <class> direct-methods
+A list of methods that has this class in its specializer list.
+@code{class-direct-methods} returns this value.
+@end defivar
+
+@defivar <class> initargs
+The initialization argument list when this class is created.
+The information is used to initialize redefined class
+(see @ref{Class redefinition}).
+@end defivar
+
+@defivar <class> defined-modules
+A list of modules where this class has a global binding.
+@end defivar
+
+@defivar <class> redefined
+If this class has been redefined, this slot contains a reference
+to the new class.  Otherwise, this slot has @code{#f}.
+@end defivar
+
+@defivar <class> category
+The value of this slot indicates how this class is created.
+Scheme defined class has a symbol @code{scheme}.  Other values
+are for internal use.
+@end defivar
+@end deftp
+
+@subsubheading The make method for @code{<class>}
 
 @deffn {Method} make (class <class>) &rest initargs
 @end deffn
+
+
+
 
 
 @node Customizing slot access, Method instantiation, Class instantiation, Metaobject protocol
