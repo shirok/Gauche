@@ -1,5 +1,6 @@
 2003-12-04  Shiro Kawai  <shiro@acm.org>
 
+	* src/genstub : updated according to Scm_InitBuiltinClass change.
 	* lib/text/html-lite.scm (html-doctype):  added missing dtd url.
 	  handles XHTML doctypes as well.
 	* lib/slib.scm.in : added system -> sys-system alias (Patch from

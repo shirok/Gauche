@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.95 2003-10-23 14:06:02 shirok Exp $
+;;;  $Id: genstub,v 1.96 2003-12-05 03:01:16 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -39,6 +39,7 @@
 (use gauche.let-opt)
 (use gauche.parseopt)
 (use gauche.parameter)
+(use gauche.mop.instance-pool)
 (use text.tr)
 
 (define *file-prefix* "")
@@ -104,56 +105,6 @@
 ;;      Insert <c-code> literally in the initialization function
 ;;
 
-;; 'instance pool' metaclass trick.  this should go to the library,
-;; but for now, we embed it.
-
-(define-class <instance-pool-meta> (<class>)
-  ((instance-pool:pool  :accessor instance-pool-of :init-value #f)
-   (instance-pool:pools :accessor instance-pools-of)
-   ))
-
-(define-method instance-pool-of (obj) #f) ; fallback
-
-(define-class <instance-pool-mixin> ()
-  ()
-  :metaclass <instance-pool-meta>)
-
-(define-method instance-pool-create-pool ((class <instance-pool-meta>))
-  (let ((pool '()))
-    (lambda args
-      (if (null? args)
-          pool
-          (push! pool (car args))))))
-
-(define-method instance-pool-compute-pools ((class <instance-pool-meta>))
-  (filter-map instance-pool-of (class-precedence-list class)))
-
-(define-method initialize ((class <instance-pool-meta>) initargs)
-  (next-method)
-  (when (memq <instance-pool-mixin> (class-direct-supers class))
-    (set! (instance-pool-of class)
-          (instance-pool-create-pool class)))
-  (set! (instance-pools-of class)
-        (instance-pool-compute-pools class))
-  )
-
-(define-method initialize ((self <instance-pool-mixin>) initargs)
-  (next-method)
-  (for-each (lambda (pool) (pool self))
-            (instance-pools-of (class-of self))))
-
-(define-method get-all-instances ((class <instance-pool-meta>))
-  (cond ((instance-pool-of class)
-         => (lambda (pool) (pool)))
-        (else
-         (apply lset-union eq?
-                (map (lambda (pool) (pool))
-                     (instance-pools-of class))))
-        ))
-
-(define-method get-all-instances ((self <instance-pool-mixin>))
-  (get-all-instances (class-of self)))
-
 ;;===================================================================
 ;; Form parsers
 ;;
@@ -191,7 +142,7 @@
         ((not (pair? form))
          (error "bad form:" form))
         ((find (lambda (p) (eq? (car form) (name-of p)))
-               (get-all-instances <form-parser>))
+               (instance-pool->list <form-parser>))
          => (cut invoke <> form))
         (else (error "bad form:" form))))
 
@@ -293,7 +244,7 @@
                  type-name))))
   (let1 cname (canon-type-name name)
     (find (lambda (type) (eq? (canon-type-name (name-of type)) cname))
-          (get-all-instances <type>))))
+          (instance-pool->list <type>))))
 
 (define (name->type name)
   (or (find-type-by-name name) (error "unknown type" name)))
@@ -454,7 +405,7 @@
 ;; DEPRECATED: for backward compatibility
 (define (predicate->type pred)
   (or (find (lambda (type) (eq? (predicate-of type) pred))
-            (get-all-instances <type>))
+            (instance-pool->list <type>))
       (error "unknown predicate to assert" pred)))
 
 ;;===================================================================
@@ -480,7 +431,7 @@
 
 (define (get-stubs class)
   (reverse (filter (lambda (s) (is-a? s class))
-                   (get-all-instances <stub>))))
+                   (instance-pool->list <stub>))))
 
 (define-syntax with-cpp-condition
   (syntax-rules ()
@@ -1424,7 +1375,7 @@
   )
 
 (define-method emit-initializer ((self <cclass>))
-  (print #`"  Scm_InitBuiltinClass(&,(c-name-of self), \",(scheme-name-of self)\", ,(c-slot-spec-name-of self), ,(c-type-size-of self), module);")
+  (print #`"  Scm_InitBuiltinClass(&,(c-name-of self), \",(scheme-name-of self)\", ,(c-slot-spec-name-of self), TRUE, module);")
   ;; adjust direct-supers if necessary
   (let1 ds (direct-supers-of self)
     (when (not (null? ds))
@@ -1636,7 +1587,7 @@
   (print "{")
   (for-each (lambda (stub)
               (with-cpp-condition stub (emit-initializer stub)))
-            (reverse (get-all-instances <stub>)))
+            (reverse (instance-pool->list <stub>)))
   (print "}")
   )
 
