@@ -1,3 +1,19 @@
+2001-12-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub: added GC interface, gc and gc-stat (experimentally)
+	* src/vm.c, src/load.c : made loading program info (*load-history*
+	  etc.) VM-local.
+
+2001-12-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c, src/gauche.h : added the read context to the internal
+	  reader, although it doesn't do anything now.
+
+2001-12-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c : removed -fin-place option, for its usage is very
+	  limited.
+
 2001-12-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/macro.c : enable autoloading macros.  define-macro can now
