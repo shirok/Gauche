@@ -201,6 +201,24 @@
          (lambda (e) #t)
          (lambda () (eval '(car '(3 2)) (null-environment 5))))))
 
+;; check interaction w/ modules
+(define-module primsyn.test (define foo 'a))
+(define foo '(x y))
+
+(test "eval (module)" '(a b (x y))
+      (lambda ()
+        (let* ((m (find-module 'primsyn.test))
+               (a (eval 'foo m))
+               (b (eval '(begin (set! foo 'b) foo) m)))
+          (list a b foo))))
+
+(test "eval (module)" '(x y)
+      (lambda ()
+        (with-error-handler
+            (lambda (e) foo)
+          (lambda ()
+            (eval '(apply car foo '()) (find-module 'primsyn.test))))))
+
 ;;----------------------------------------------------------------
 (test-section "delay & force")
 

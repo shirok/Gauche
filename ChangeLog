@@ -1,5 +1,11 @@
 2003-01-01  Shiro Kawai  <shiro@acm.org>
 
+	* src/vm.c : fixed Scm_VMEval to set the module to the specified
+	  one during _executing_ the code, not only _compiling_ the code.
+	  It involves dynamic-wind to restore the original module when
+	  and error occurs.  If the given module is the current module,
+	  however, we skip the dynamic-wind (the previous version pushed
+	  extra continuation, but it seems we don't need it).
 	* src/load.c : added :environment keyword argument to load and
 	  load-from-port; this is necessary to force a specific file to
 	  be loaded in the environment specified by the caller.  (Since

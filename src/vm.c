@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.194 2002-12-14 12:32:59 shirok Exp $
+ *  $Id: vm.c,v 1.195 2003-01-01 14:05:17 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1632,11 +1632,18 @@ static ScmObj compile_for_eval(ScmObj expr,
     return v;
 }
 
+static ScmObj eval_restore_env(ScmObj *args, int argc, void *data)
+{
+    Scm_VM()->module = SCM_MODULE(data);
+    return SCM_UNDEFINED;
+}
+
 /* For now, we only supports a module as the evaluation environment */
 ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
 {
-    DECL_REGS;
     ScmObj v = SCM_NIL;
+    int restore_module = FALSE;
+        
     if (SCM_UNBOUNDP(e)) {
         /* if env is not given, just use the current env */
         v = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_NORMAL);
@@ -1644,15 +1651,27 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
         Scm_Error("module required, but got %S", e);
     } else {
         v = compile_for_eval(expr, SCM_MODULE(e), theVM->module);
+        restore_module = TRUE;
     }
     if (SCM_VM_COMPILER_FLAG_IS_SET(theVM, SCM_COMPILE_SHOWRESULT)) {
         Scm_Printf(theVM->curerr, "== %#S\n", v);
     }
-    argp = sp;
-    PUSH_CONT(v, v);
-    vm->numVals = 1;
-    SAVE_REGS();
-    return SCM_UNDEFINED;
+
+    if (restore_module) {
+        /* if we swap the module, we need to make sure it is recovered
+           after eval */
+        ScmVM *vm = Scm_VM();
+        ScmObj body = Scm_MakeClosure(0, 0, v, SCM_FALSE);
+        ScmObj after = Scm_MakeSubr(eval_restore_env, (void*)vm->module,
+                                    0, 0, SCM_FALSE);
+        return Scm_VMDynamicWind(Scm_NullProc(), body, after);
+    } else {
+        /* shortcut */
+        ScmVM *vm = Scm_VM();
+        SCM_ASSERT(SCM_NULLP(vm->pc));
+        vm->pc = v;
+        return SCM_UNDEFINED;
+    }
 }
 
 /*-------------------------------------------------------------
