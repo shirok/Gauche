@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.20 2001-05-18 09:06:44 shirok Exp $
+ *  $Id: bignum.c,v 1.21 2001-05-18 09:33:17 shirok Exp $
  */
 
 #include <math.h>
@@ -900,29 +900,28 @@ ScmObj Scm_BignumLogAnd(ScmBignum *x, ScmBignum *y)
 {
     int xsize = SCM_BIGNUM_SIZE(x), xsign = SCM_BIGNUM_SIGN(x);
     int ysize = SCM_BIGNUM_SIZE(y), ysign = SCM_BIGNUM_SIGN(y);
-    int zsize, i;
+    int zsize, i, minsize = min(xsize, ysize);
     ScmBignum *xx, *yy, *z;
 
     if (xsign > 0) {
         if (ysign > 0) {
-            zsize = min(xsize, ysize);
-            z = bignum_and(make_bignum(zsize), x, y, zsize, 0, 0);
+            z = bignum_and(make_bignum(minsize), x, y, minsize, 0, 0);
             return Scm_NormalizeBignum(z);
         } else {
             yy = SCM_BIGNUM(Scm_BignumComplement(y));
-            z = bignum_and(make_bignum(xsize), x, yy, min(xsize, ysize), xsize, 0);
+            z = bignum_and(make_bignum(xsize), x, yy, minsize, xsize, 0);
             return Scm_NormalizeBignum(z);
         }
     } else {
         if (ysign > 0) {
             xx = SCM_BIGNUM(Scm_BignumComplement(x));
-            z = bignum_and(make_bignum(ysize), xx, y, min(xsize, ysize), 0, ysize);
+            z = bignum_and(make_bignum(ysize), xx, y, minsize, 0, ysize);
             return Scm_NormalizeBignum(z);
         } else {
             xx = SCM_BIGNUM(Scm_BignumComplement(x));
             yy = SCM_BIGNUM(Scm_BignumComplement(y));
             zsize = max(xsize, ysize);
-            z = bignum_and(make_bignum(zsize), xx, yy, min(xsize, ysize), xsize, ysize);
+            z = bignum_and(make_bignum(zsize), xx, yy, minsize, xsize, ysize);
             SCM_BIGNUM_SIGN(z) = -1;
             bignum_2scmpl(z);
             return Scm_NormalizeBignum(z);
@@ -930,10 +929,59 @@ ScmObj Scm_BignumLogAnd(ScmBignum *x, ScmBignum *y)
     }
 }
 
+/* internal routine for logior.  z = x | y.  assumes z has enough size.
+ * assumes x and y are in 2's complement form (sign is ignored).
+ */
+static ScmBignum *bignum_ior(ScmBignum *z, ScmBignum *x, ScmBignum *y,
+                             int commsize, int xsize, int ysize)
+{
+    int i;
+    for (i = 0; i < commsize; i++) {
+        z->values[i] = x->values[i] | y->values[i];
+    }
+    if (i < xsize) {
+        for (; i < xsize; i++) z->values[i] = x->values[i];
+    } else if (i < ysize) {
+        for (; i < ysize; i++) z->values[i] = y->values[i];
+    }
+    return z;
+}
+
 ScmObj Scm_BignumLogIor(ScmBignum *x, ScmBignum *y)
 {
-    /*WRITEME*/
-    return SCM_UNDEFINED;
+    int xsize = SCM_BIGNUM_SIZE(x), xsign = SCM_BIGNUM_SIGN(x);
+    int ysize = SCM_BIGNUM_SIZE(y), ysign = SCM_BIGNUM_SIGN(y);
+    int zsize, i, minsize = min(xsize, ysize);
+    ScmBignum *xx, *yy, *z;
+
+    if (xsign >= 0) {
+        if (ysign >= 0) {
+            zsize = max(xsize, ysize);
+            z = bignum_ior(make_bignum(zsize), x, y, minsize, xsize, ysize);
+            return Scm_NormalizeBignum(z);
+        } else {
+            yy = SCM_BIGNUM(Scm_BignumComplement(y));
+            z = bignum_ior(make_bignum(ysize), x, yy, minsize, 0, ysize);
+            SCM_BIGNUM_SIGN(z) = -1;
+            bignum_2scmpl(z);
+            return Scm_NormalizeBignum(z);
+        }
+    } else {
+        if (ysign >= 0) {
+            xx = SCM_BIGNUM(Scm_BignumComplement(x));
+            z = bignum_ior(make_bignum(xsize), xx, y, minsize, xsize, 0);
+            SCM_BIGNUM_SIGN(z) = -1;
+            bignum_2scmpl(z);
+            return Scm_NormalizeBignum(z);
+        } else {
+            xx = SCM_BIGNUM(Scm_BignumComplement(x));
+            yy = SCM_BIGNUM(Scm_BignumComplement(y));
+            z = bignum_ior(make_bignum(minsize), xx, yy, minsize, 0, 0);
+            SCM_BIGNUM_SIGN(z) = -1;
+            bignum_2scmpl(z);
+            return Scm_NormalizeBignum(z);
+        }
+    }
 }
 
 ScmObj Scm_BignumLogXor(ScmBignum *x, ScmBignum *y)
