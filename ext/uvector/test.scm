@@ -1608,7 +1608,7 @@
                    (values k 1)))))
   (let ((sub (share-array super subshape (lambda (k) (values k k)))))
     (test "subshape check" #t
-          (lambda () (array-equal? subshape (shape 4 7))))
+          (lambda () (equal? subshape (shape 4 7))))
     (test "sharing subshape" '(2 0 1 0 2 4 7)
           (lambda ()
             (list (array-rank subshape)
@@ -1619,7 +1619,7 @@
                   (array-ref subshape 0 0)
                   (array-ref subshape 0 1))))
     (test "sub check" #t
-          (lambda () (array-equal? sub (array (shape 4 7) 1 2 3))))
+          (lambda () (equal? sub (array (shape 4 7) 1 2 3))))
     (test "sharing with sharing subshape" '(1 4 7 1 2 3)
           (lambda ()
             (list (array-rank sub)

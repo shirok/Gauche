@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: array.scm,v 1.5 2002-06-30 23:13:58 shirok Exp $
+;;;  $Id: array.scm,v 1.6 2002-07-01 00:57:38 shirok Exp $
 ;;;
 
 ;; Conceptually, an array is a backing storage and a procedure to
@@ -29,7 +29,7 @@
           array? make-array shape array array-rank
           array-start array-end array-ref array-set!
           share-array
-          array-shape array-length array-size array-equal?
+          array-shape array-length array-size
           array-for-each-index shape-for-each
           tabulate-array array-retabulate!
           array-map array-map! array->vector array->list
@@ -329,7 +329,7 @@
 (define (array-size ar)
   (reduce * 1 (map (cute array-length ar <>) (iota (array-rank ar)))))
 
-(define (array-equal? a b)
+(define-method object-equal? ((a <array>) (b <array>))
   (let ((r   (array-rank a)))
     (and (= r (array-rank b))
          (every (lambda (dim)
