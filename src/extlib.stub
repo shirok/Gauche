@@ -124,6 +124,12 @@
   (assert (string? delim))
   "  SCM_RETURN(Scm_StringJoin(strs, delim));")
 
+;; TODO: allow string/charset/regexp in ch
+(define-cproc string-split (s ch)
+  (assert (string? s))
+  (assert (char? ch))
+  "  SCM_RETURN(Scm_StringSplitByChar(s, ch));")
+
 ;; SRFI-13
 (define-cproc string-take (s nchars)
   (assert (string? s))
