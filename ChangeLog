@@ -1,5 +1,6 @@
 2001-07-07  Shiro Kawai  <shiro@acm.org>
-	
+
+	* release 0.4.1
 	* src/vm.c, src/compile.c, src/gauche/vm.h : refined and tested
 	  stack oevrflow handling.
 	* configure.in, src/gauche/config.h.in, src/gauche-config.in,

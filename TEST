@@ -11,7 +11,7 @@ if [ "$1" != "clean" ]; then
   make test
   make install
   cd ..
-  for tt in primsyn module macro number dynwind object string srfi regexp system; do
+  for tt in primsyn module macro number dynwind object string srfi regexp system rfc parseopt; do
     gosh Gauche/test/$tt.scm >> test.log
   done
 else
