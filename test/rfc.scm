@@ -296,7 +296,7 @@ Content-Length: 4349
                               '(1 0))
                       (mime-message-resolver
                        (mime-parse-message inp headers
-                                           (cut mime-body->string <> <> inp))
+                                           (cut mime-body->string <> <>))
                        #f)
                       )))))
     ))

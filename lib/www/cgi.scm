@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.18 2004-09-14 21:18:05 shirok Exp $
+;;;  $Id: cgi.scm,v 1.19 2004-11-13 09:57:06 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -176,26 +176,26 @@
 ;;                                  ;;   returns filename.
 ;;              : ignore            ;; discard the value.
 ;;              : <procedure>       ;; calls <procedure> with
-;;                                  ;;   name, part-info, reader, input-port.
+;;                                  ;;   name, part-info, input-port.
 ;;
 (define (get-mime-parts part-handlers)
   (define (part-ref info name)
     (rfc822-header-ref (ref info 'headers) name))
 
   (define (make-file-handler prefix)
-    (lambda (name filename part-info reader inp)
+    (lambda (name filename part-info inp)
       (receive (outp tmpfile) (sys-mkstemp prefix)
         (cgi-add-temporary-file tmpfile)
-        (mime-retrieve-body part-info reader inp outp)
+        (mime-retrieve-body part-info inp outp)
         (close-output-port outp)
         tmpfile)))
 
-  (define (string-handler name filename part-info reader inp)
-    (mime-body->string part-info reader inp))
+  (define (string-handler name filename part-info inp)
+    (mime-body->string part-info inp))
 
-  (define (ignore-handler name filename part-info reader inp)
-    (let loop ((ignore (reader inp)))
-      (if (eof-object? ignore) #f (loop (reader inp)))))
+  (define (ignore-handler name filename part-info inp)
+    (let loop ((ignore (read-line inp #t)))
+      (if (eof-object? ignore) #f (loop (read-line inp #t)))))
 
   (define (get-handler part-name)
     (let* ((handler (find (lambda (entry)
@@ -222,7 +222,7 @@
        (else
         (car action)))))
 
-  (define (handle-part part-info reader)
+  (define (handle-part part-info inp)
     (let* ((cd   (part-ref part-info "content-disposition"))
            (opts (rfc822-field->tokens cd))
            (name (cond ((member "name=" opts) => cadr) (else #f)))
@@ -231,8 +231,8 @@
                           ((not filename) string-handler)
                           ((string-null? filename) ignore-handler)
                           (else  (get-handler name))))
-           (result (handler name filename part-info reader
-                            (current-input-port))))
+           (result (handler name filename part-info inp))
+           )
       (if name (list name result) #f)))
 
   (let* ((ctype (get-meta "CONTENT_TYPE"))

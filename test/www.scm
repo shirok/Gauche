@@ -71,11 +71,11 @@ VGhpcyBpcyBhIHRlc3Qgc2VudGVuY2Uu
            (lambda ()
              (cgi-parse-parameters
               :part-handlers
-              `((#t ,(lambda (name filename info reader inp)
-                       (let loop ((line (reader inp)))
+              `((#t ,(lambda (name filename info inp)
+                       (let loop ((line (read-line inp)))
                          (if (eof-object? line)
                            filename
-                           (loop (reader inp))))))))))
+                           (loop (read-line inp))))))))))
          ))
 
 (test* "cgi-parse-parameters (multipart, custom handler 2)" "abc\ndef\nghi\n"

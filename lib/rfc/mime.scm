@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: mime.scm,v 1.8 2004-02-02 10:43:37 shirok Exp $
+;;;  $Id: mime.scm,v 1.9 2004-11-13 09:57:05 shirok Exp $
 ;;;
 
 ;; RFC2045 Multipurpose Internet Mail Extensions (MIME)
@@ -43,11 +43,14 @@
 ;; RFC2049 
 
 (define-module rfc.mime
+  (use gauche.vport)
+  (use gauche.uvector)
   (use srfi-1)
   (use srfi-2)
   (use srfi-13)
   (use srfi-14)
   (use rfc.822)
+  (use util.queue)
   (use util.list)
   (export mime-parse-version mime-parse-content-type
           mime-decode-word
@@ -128,6 +131,133 @@
     (else word)))
 
 ;;===============================================================
+;; Virtual port to recognize mime boundary
+;;
+
+(define-class <mime-port> (<buffered-input-port>)
+  ((state :init-form 'prologue)
+   ;; prologue -> boundary <-> body -> eof
+   ))
+
+;; Creates a procedural port, which reads from SRCPORT until it reaches
+;; either EOF or MIME boundary.  Basically it runs a DFA.
+(define (make-mime-port boundary srcport)
+  (define q (make-queue))
+  (define --boundary (string->u8vector #`"--,boundary"))
+
+  (define port (make <mime-port>))
+
+  (define eof (read-from-string ""))
+
+  (define (deq! q)
+    (if (queue-empty? q) eof (dequeue! q)))
+  
+  (define (fifo! q b)
+    (enqueue! q b) (dequeue! q))
+
+  (define (getb)
+    (if (queue-empty? q)
+      (case (ref port 'state)
+        ((prologue) (skip-prologue))
+        ((boundary eof) eof)
+        (else (newb)))
+      (dequeue! q)))
+
+  (define (newb)
+    (let1 b (read-byte srcport)
+      (cond
+       ((eof-object? b)
+        (set! (ref port 'state) 'eof)
+        eof)
+       (else
+        (case b
+          ((#x0d) ;; CR, check to see LF
+           (let1 b2 (read-byte srcport)
+             (if (eqv? b2 #x0a)
+               (begin (enqueue! q b b2) (check-boundary))
+               (begin (enqueue! q b2) b))))
+          ((#x0a) ;; LF, check boundary
+           (enqueue! q b) (check-boundary))
+          (else b))))))
+
+  (define (check-boundary)
+    (let loop ((b   (peek-byte srcport))
+               (ind 0)
+               (max (u8vector-length --boundary)))
+      (cond ((eof-object? b)
+             (deq! q))
+            ((= ind max)
+             (cond ((memv b '(#x0d #x0a)) ;;found boundary
+                    (read-byte srcport)   ;;consume LF or CRLF
+                    (when (and (eqv? b #x0d) 
+                               (eqv? b (peek-byte srcport)))
+                      (read-byte srcport))
+                    (dequeue-all! q)
+                    (set! (ref port 'state) 'boundary)
+                    eof)
+                   ((eqv? b #x2d) ;; maybe end boundary
+                    (enqueue! q (read-byte srcport))
+                    (cond ((eqv? (peek-byte srcport) #x2d);; yes, end boundary
+                           (read-byte srcport)
+                           (dequeue-all! q)
+                           (skip-epilogue))
+                          (else
+                           (deq! q))))
+                   (else
+                    (deq! q))))
+            ((= b (u8vector-ref --boundary ind))
+             (enqueue! q (read-byte srcport))
+             (loop (peek-byte srcport) (+ ind 1) max))
+            ((queue-empty? q)
+             (newb))
+            (else
+             (dequeue! q)))))
+
+  ;; Reads past the first boundary.  The first boundary may appear
+  ;; at the beginning of the message (instead of after CRLF), so
+  ;; we need slightly different handling than the normal getb.
+  (define (skip-prologue)
+    (let loop ((b (check-boundary)))
+      (cond
+       ((eof-object? b)
+        (cond ((eq? (ref port 'state) 'boundary) ; we've found the boundary
+               (set! (ref port 'state) 'body)
+               (getb))
+              (else                              ; no boundary found
+               (set! (ref port 'state) 'eof)
+               eof)))
+       ((queue-empty? q)
+        (loop (newb)))
+       (else
+        (dequeue-all! q)
+        (loop (newb))))))
+
+  (define (skip-epilogue)
+    (let loop ((b (read-byte srcport)))
+      (if (eof-object? b)
+        (begin (set! (ref port 'state) 'eof)
+               b)
+        (loop (read-byte srcport)))))
+  
+  ;; fills vector, until it sees either
+  ;;   (1) vec got full
+  ;;   (2) srcport reaches EOF
+  ;;   (3) mime-boundary is read
+  (define (fill vec)
+    (let1 len (u8vector-length vec)
+      (let loop ((ind 0))
+        (if (= ind len)
+          len
+          (let1 b (getb)
+            (if (eof-object? b)
+              ind
+              (begin (u8vector-set! vec ind b)
+                     (loop (+ ind 1)))))))))
+
+  (set! (ref port 'fill) fill)
+  port)
+
+;;===============================================================
 ;; Basic streaming parser
 ;;
 
@@ -146,10 +276,10 @@
    ))
 
 (define (mime-parse-message port headers handler)
-  (internal-parse port headers handler (cut read-line <> #t) #f 0
+  (internal-parse port headers handler #f 0
                   '("text" "plain" ("charset" . "us-ascii"))))
 
-(define (internal-parse port headers handler reader parent index default-type)
+(define (internal-parse port headers handler parent index default-type)
   (let* ((ctype (or (mime-parse-content-type
                      (rfc822-header-ref headers "content-type"))
                     default-type))
@@ -165,88 +295,80 @@
          )
     (cond
      ((equal? (car ctype) "multipart")
-      (multipart-parse port packet handler reader))
+      (multipart-parse port packet handler))
      ((equal? (car ctype) "message")
-      (message-parse port packet handler reader))
+      (message-parse port packet handler))
      (else
       ;; normal body
-      (slot-set! packet 'content (handler packet reader))
+      (slot-set! packet 'content (handler packet port))
       packet)
      )))
 
-(define (multipart-parse port packet handler reader)
+(define (multipart-parse port packet handler)
   (let* ((boundary (or (assoc-ref (ref packet 'parameters) "boundary")
                        (error "No boundary given for multipart message")))
-         (--boundary   (string-append "--" boundary))
-         (--boundary-- (string-append --boundary "--"))
-         (state 'prologue)
          (default-type (if (equal? (ref packet 'subtype) "digest")
                          '("message" "rfc822")
                          '("text" "plain" ("charset" . "us-ascii"))))
+         (mime-port (make-mime-port boundary port))
          )
-    (define (line-reader port)
-      (if (eq? state 'eof)
-        *eof-object*
-        (let1 l (reader port)
-          (cond ((eof-object? l)
-                 (set! state 'eof) *eof-object*)
-                ((equal? l --boundary)
-                 (set! state 'body) *eof-object*)
-                ((equal? l --boundary--)
-                 (set! state 'epilogue) *eof-object*)
-                (else l)))))
-    ;; skip prologue
-    (do () ((not (eq? state 'prologue))) (line-reader port))
-    ;; main part
     (let loop ((index 0)
                (contents '()))
-      (let* ((headers (rfc822-header->list port :reader line-reader))
-             (r (internal-parse port headers handler
-                                line-reader packet index
+      (let* ((headers (rfc822-header->list mime-port))
+             (r (internal-parse mime-port headers handler
+                                packet index
                                 default-type)))
-        (case state
-          ((epilogue)
-           ;; skip epilogue
-           (do () ((eq? state 'eof)) (line-reader port))
-           (set! (ref packet 'content) (reverse! (cons r contents)))
-           packet)
+        (case (ref mime-port 'state)
+          ((boundary)
+           (set! (ref mime-port 'state) 'body)
+           (loop (+ index 1) (cons r contents)))
           ((eof)
-           ;; this level of multipart body is incomplete
            (set! (ref packet 'content) (reverse! (cons r contents)))
            packet)
-          (else
-           (loop (+ index 1) (cons r contents))))))
+          (else ;; parser returned without readling entire part.
+           ;; discard the rest of the part.
+           (let loop ((b (read-byte port)))
+             (unless (eof-object? b)
+               (loop (read-byte port))))
+           packet))))
     ))
 
-(define (message-parse port packet handler reader)
-  (let ((state 'body))
-    ;; we need to detect premature end of headers,
-    ;; to avoid reading body past the boundary.
-    (define (line-reader port)
-      (if (eq? state 'eof)
-        *eof-object*
-        (let1 l (reader port)
-          (cond ((eof-object? l) (set! state 'eof) *eof-object*)
-                (else l)))))
-    (let* ((headers (rfc822-header->list port :reader line-reader))
-           (r (internal-parse port headers handler line-reader packet 0
-                              '("text" "plain" ("charset" . "us-ascii")))))
-      (set! (ref packet 'content) (list r)))
-    packet))
+(define (message-parse port packet handler)
+  (let* ((headers (rfc822-header->list port))
+         (r (internal-parse port headers handler packet 0
+                            '("text" "plain" ("charset" . "us-ascii")))))
+    (set! (ref packet 'content) (list r)))
+  packet)
 
 ;;===============================================================
 ;; Body readers
 ;;
 
-(define (mime-retrieve-body packet reader inp outp)
+(define (mime-retrieve-body packet inp outp)
 
+  (define (read-line/nl)
+    (let loop ((c (read-char inp))
+               (chars '()))
+      (cond ((eof-object? c)
+             (if (null? chars)
+               c
+               (list->string (reverse! chars))))
+            ((char=? c #\newline)
+             (list->string (reverse! (cons c chars))))
+            ((char=? c #\return)
+             (let1 c (peek-char inp)
+               (if (char=? c #\newline)
+                 (list->string (reverse! (list* (read-char inp)
+                                                #\return
+                                                chars)))
+                 (list->string (reverse! (cons #\return chars))))))
+            (else (loop (read-char inp) (cons c chars))))))
+  
   (define (read-text decoder)
-    (let loop ((line (reader inp))
-               (crlf #f))
+    (let loop ((line (read-line/nl)))
       (unless (eof-object? line)
-        (when crlf (newline outp))
         (display (decoder line) outp)
-        (loop (reader inp) #t))))
+        (loop (read-line/nl)))))
 
   (define (read-base64)
     (define (base64-output string out)
@@ -254,10 +376,10 @@
         (cut with-port-locking (current-input-port)
              (cut with-output-to-port out base64-decode))))
     (let ((buf (open-output-string :private? #t)))
-      (let loop ((line (reader inp)))
+      (let loop ((line (read-line inp)))
 	(unless (eof-object? line)
           (display line buf)
-          (loop (reader inp))))
+          (loop (read-line inp))))
       (base64-output (get-output-string buf) outp))
     )
 
@@ -269,19 +391,23 @@
          ((string-ci=? enc "quoted-printable")
           (read-text quoted-printable-decode-string))
          ((member enc '("7bit" "8bit" "binary"))
-          (read-text identity))))))
+          (let loop ((b (read-byte inp)))
+            (unless (eof-object? b)
+              (write-byte b outp)
+              (loop (read-byte inp)))))
+         ))))
   )
 
-(define (mime-body->string packet reader inp)
+(define (mime-body->string packet inp)
   (let ((s (open-output-string :private? #t)))
-    (mime-retrieve-body packet reader inp s)
+    (mime-retrieve-body packet inp s)
     (get-output-string s)))
 
-(define (mime-body->file packet reader inp filename)
+(define (mime-body->file packet inp filename)
   (call-with-output-file filename
     (lambda (outp)
       (with-port-locking outp
-        (cut mime-retrieve-body packet reader inp outp))))
+        (cut mime-retrieve-body packet inp outp))))
   filename)
 
 (provide "rfc/mime")

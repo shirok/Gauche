@@ -1,3 +1,13 @@
+2004-11-12  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/mime.scm (mime-parse-message etc.):
+	  INCOMPATIBLE CHANGE: Re-implemented MIME body parser to use 
+	  procedural port to recognize MIME boundary.  The previous approach
+	  turned not to work if the body contains raw binary data.
+	  This change make the 'READER' argument for handlers unnecessary,
+	  and the API has been changed accordingly.
+	* lib/www/cgi.scm : Adjusted to the above API change.
+
 2004-11-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/procedure.scm (let-keywords*): fixed a bug that corrupts
