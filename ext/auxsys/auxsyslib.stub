@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: auxsyslib.stub,v 1.13 2003-01-17 02:53:56 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.14 2003-04-14 02:42:48 shirok Exp $
 ;;;
 
 "
@@ -35,7 +35,6 @@
 #include <unistd.h>
 #include <sys/utsname.h>
 #include <utime.h>
-#include \"auxsysconf.h\"
 "
 
 ;; stdlib.h

@@ -1,0 +1,16 @@
+## Common stuff used in Makefiles of extensions
+
+AUTOMAKE_OPTIONS = foreign no-dependencies
+
+GOSH = $(top_srcdir)/src/gosh -q -I$(top_srcdir)/src -I$(top_srcdir)/lib -lgauche-init
+GAUCHE_CONFIG = $(SHELL) $(top_srcdir)/src/gauche-config
+
+GAUCHE_ARCHDIR = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
+GAUCHE_LIBDIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
+
+INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/gc/include
+
+SUFFIXES = .stub
+
+.stub.c :
+	$(GOSH) genstub $<
