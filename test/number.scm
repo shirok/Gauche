@@ -282,6 +282,27 @@
 (test "NUMSUBI" #x-100000003 (lambda () (- -3 x)))
 (test "NUMSUBI" #x100000003 (lambda () (- x -3)))
 
+(test "NUMADDI" 30 (lambda () (+ 10 (if #t 20 25))))
+(test "NUMADDI" 30 (lambda () (+ (if #t 20 25) 10)))
+(test "NUMADDI" 35 (lambda () (+ 10 (if #f 20 25))))
+(test "NUMADDI" 35 (lambda () (+ (if #f 20 25) 10)))
+(test "NUMADDI" 30 (lambda () (let ((x #t)) (+ 10 (if x 20 25)))))
+(test "NUMADDI" 30 (lambda () (let ((x #t)) (+ (if x 20 25) 10))))
+(test "NUMADDI" 35 (lambda () (let ((x #f)) (+ 10 (if x 20 25)))))
+(test "NUMADDI" 35 (lambda () (let ((x #f)) (+ (if x 20 25) 10))))
+(test "NUMADDI" 21 (lambda () (+ 10 (do ((x 0 (+ x 1))) ((> x 10) x)))))
+(test "NUMADDI" 21 (lambda () (+ (do ((x 0 (+ x 1))) ((> x 10) x)) 10)))
+(test "NUMSUBI" -10 (lambda () (- 10 (if #t 20 25))))
+(test "NUMSUBI" 10 (lambda () (- (if #t 20 25) 10)))
+(test "NUMSUBI" -15 (lambda () (- 10 (if #f 20 25))))
+(test "NUMSUBI" 15 (lambda () (- (if #f 20 25) 10)))
+(test "NUMSUBI" -10 (lambda () (let ((x #t)) (- 10 (if x 20 25)))))
+(test "NUMSUBI" 10 (lambda () (let ((x #t)) (- (if x 20 25) 10))))
+(test "NUMSUBI" -15 (lambda () (let ((x #f)) (- 10 (if x 20 25)))))
+(test "NUMSUBI" 15 (lambda () (let ((x #f)) (- (if x 20 25) 10))))
+(test "NUMSUBI" -1 (lambda () (- 10 (do ((x 0 (+ x 1))) ((> x 10) x)))))
+(test "NUMSUBI" 1 (lambda () (- (do ((x 0 (+ x 1))) ((> x 10) x)) 10)))
+
 ;;------------------------------------------------------------------
 (test-section "promotions in addition")
 
