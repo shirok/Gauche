@@ -695,7 +695,10 @@ bind it to a variable @var{name}.   This macro should be used at toplevel.
 
 @var{Supers} is a list of direct superclasses from which this class
 inherits.   You can use multiple inheritance.
-See @ref{Inheritance}  below, for the details abount inheritance.
+All Scheme-defined classes implicitly inherits @code{<object>}.
+It is implicitly added to the right of @var{supers} list, so you
+don't need to specify it.
+See @ref{Inheritance}, for the details abount inheritance.
 
 @var{Slot-spec} is a specification of a "slot", sometimes known as 
 a "field" or an "instance variable" (but you can specify "class variable"
@@ -749,6 +752,7 @@ If a slot specification is a list, it should be in the following form:
 
 Each keyword (@code{option1} etc.) gives a @emph{slot option}.
 By default, the following slot options are recognized.
+You can add more slot options by defining metaclass.
 
 @table @code
 
@@ -854,6 +858,79 @@ its return value is @code{#<undef>} or not.
 @node Inheritance, Class redefinition, define-class macro, Defining class
 @subsection Inheritance
 @c NODE ·Ñ¾µ
+
+Inheritance has two roles.  First, you can @emph{extend} the existing
+class by adding more slots.  Second, you can @emph{specialize} the
+methods related to the existing class so that those methods will
+do a little more specific task than the original methods.
+
+Let's define some terms.  When a class @code{<T>} inherits a 
+class @code{<S>}, we call @code{<T>} a @emph{subclass} of @code{<S>},
+and @code{<S>} a @emph{superclass} of @code{<T>}.  This relation
+is transitive: @code{<T>}'s subclasses are also @code{<S>}'s subclasses,
+and @code{<S>}'s superclasses are also @code{<T>}'s superclasses.
+Specifically, if @code{<T>} directly inherits @code{<S>}, that is,
+@code{<S>} appeared in the superclass list when @code{<T>} is defined,
+then @code{<S>} is a @emph{direct superclass} of @code{<T>}, 
+and @code{<T>} is a @emph{direct subclass} of @code{<S>}.
+
+When a class is defined, it and its superclasses are ordered from
+subclasses to superclasses, and a list of classes is created in such
+order.   It is called @emph{class precedence list}, or CPL.
+A CPL of a class always begins with the class, and end with
+@code{(<object> <top>)}.   @code{<object>} is a superclass of
+all Scheme-defined classes, and @code{<top>} is a superclass of
+all classes (including built-in classes).
+If there's only single inheritance, CPL is straightforward:
+you can just follow the class's super, its super's super, its
+super's super's super, @dots{}, until you reach @code{<top>}.
+When multiple inheritance is involved, a story becomes a bit
+complicated.   I'll explain it later, but for now, you can
+just assume you always have a linear list, not like a general graph
+with branches and merges.
+You can get a CPL of a class object using @code{class-precedence-list}
+function.
+
+The slots of defined class is calculated as follows:
+the slot definitions are collected in the direction from superclasss
+to subclass in CPL.  If a subclass has a slot definition of the same
+name of the one in superclass, then the slot defintion of the subclass
+is taken and superclass's is discarded.    Suppose a class @code{<S>}
+defines slots @code{a}, @code{b}, and @code{c}, a class @code{<T>}
+defines slots @code{c}, @code{d}, and @code{e}, and a class @code{<U>}
+defines slots @code{b} and @code{e}.  When @code{<U>}'s CPL is
+@code{(<U> <T> <S> <object> <top>)}, then @code{<U>}'s slots is
+calculated as the chart below; that is, @code{<U>} gets five slots,
+of which @code{b} and @code{e}'s definitions come from @code{<U>}'s
+definitions, @code{c} and @code{d}'s come from @code{<T>}, and
+@code{a}'s comes from @code{<S>}.
+
+@example
+   CPL      | slot definitions
+            |  () indicates shadowed slot
+ -----------+-------------------
+   <top>    |
+   <object> |
+   <S>      | a  (b) (c)
+   <T>      |         c   d  (e)
+   <U>      |     b           e
+ -----------+--------------------
+ <U>'s slots| a   b   c   d   e
+@end example
+
+Note that this is a default behavior.
+You can also be customized by defining metaclass.
+
+You can get a list of slot definitions of a class object using
+@code{class-slots} function.
+
+Now, suppose you create an instance @code{u} from the class @code{<U>};
+
+
+
+
+
+
 
 @node Class redefinition,  , Inheritance, Defining class
 @subsection Class redefinition
