@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.227 2002-06-29 04:12:26 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.228 2002-06-30 04:20:32 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -4929,7 +4929,27 @@ SRFI-1 (@ref{List library}) を使うと、@code{member}は
 @defunx assoc obj list
 [R5RS]
 @c EN
+Each element in @var{list} must be a pair.
+These procedures search a pair whose car matches @var{obj}
+(in the sense of @code{eq?} for @code{assq},
+@code{eqv?} for @code{assv}, and @code{equal?} for @code{assoc})
+from left to right, and return the leftmost matched pair if any.
+If no pair matches, these return @code{#f}.
 @c JP
+@var{list}の各要素はペアでなければなりません。
+これらの手続きは、@var{list}の要素であるペアのうち、そのcarが
+@var{obj}と一致するペアを左から探して行きます。もし見付かればそのペアが、
+見付からなければ@code{#f}が返されます。
+@code{assq}は比較関数に@code{eq?}を、@code{assv}は@var{eqv?}を、
+@code{assoc}は@var{equal?}をそれぞれ用います。
+@c COMMON
+
+@c EN
+If you use SRFI-1 (@xref{List library}), @code{assoc} is extended
+to take optional argument for a equality procedure.
+@c JP
+SRFI-1 (@ref{List library}) を使うと、@code{assoc}は
+オプショナルな同一性判定手続きを取るように拡張されます。
 @c COMMON
 @end defun
 
@@ -13346,12 +13366,36 @@ it to @var{dst}, then removes @var{src}.
 @deftp {Module} gauche.array
 @mdindex gauche.array
 @c EN
+This module provides multi-dimensional array data type and operations.
+The primitive API follows SRFI-25.  This module also defines several
+useful operations.   This module also implements an external
+representation of arrays, using SRFI-10 mechanism.
+@c JP
+このモジュールは多次元配列のデータタイプとそれに関する操作を提供します。
+プリミティブなAPIはSRFI-25で定義されているものに従います。
+さらにいくつかの便利な操作も定義されています。
+また、SRFI-10を使った配列の外部表現も実装されます。
+@c COMMON
+
+@c EN
+An array can take 
+@c JP
+@c COMMON
+
+@c EN
+Internally, an array consists of a backing storage and a mapping procedure.
+A backing storage is an object of aggregate type that can be accessed
+by integer index.  A mapping procedure is a procedure that takes
+multi-dimensional indices (or index object; see below) and 
 @c JP
 @c COMMON
 @end deftp
 
-@deftp {Builtin Class} <array>
+@deftp {Class} <array>
 @clindex array
+@end deftp
+
+@deftp {Reader syntax} @code{#,(<array> @var{shape} @var{obj} @dots{})}
 @end deftp
 
 @defun array? obj
@@ -18242,8 +18286,37 @@ that is out of range is returned.
 @findex f32vector-clamp!
 @findex f64vector-clamp!
 @c EN
+@var{Vec} must be a @var{TAG}vector, and each of @var{min} and @var{max}
+must be either a @var{TAG}vector, a vector or a list of the same length
+as @var{vec}, or a number, or @code{#f}.
+
+Like @var{TAG}vector-range-check, these procedures check if
+each element of @var{vec} are within the range between @var{minval}
+and @var{maxval} inclusive, which are defived from @var{min} and @var{max}.
+If the value is less than @var{minval}, it is replaced by @var{minval}.
+If the value is grater than @var{maxval}, it is replaced by @var{maxval}.
+
+@var{TAG}vector-clamp creates a copy of @var{vec} and do clamp
+operation on it, while @var{TAG}vector-clamp! modifies @var{vec}.
+Both return the clamped vector.
 @c JP
+@var{vec}は@var{TAG}vectorでなければなりません。
+@var{min}と@var{max}はそれぞれ、@var{vec}と同じ長さの@var{TAG}vector、
+ベクタ、リストのいずれかか、実数もしくは@code{#f}でなければなりません。
+
+@var{TAG}vector-range-checkと同じように、この手続きは@var{vec}の各要素が
+@var{min}および@var{max}で指定される最小値と最大値の間にあるかどうかを
+検査します。要素が最小値より小さかった場合はそれが最小値に置き換えられます。
+要素が最大値より大きかった場合はそれが最大値に置き換えられます。
+
+@var{TAG}vector-clampは@var{vec}のコピーを作ってそれに対して
+クランプ操作を行います。@var{TAG}vector-clamp!は@var{vec}を直接
+変更します。どちらもクランプ操作が行われた後の@var{TAG}vectorを返します。
 @c COMMON
+
+@example
+(s8vector-clamp '#s8(8 14 -3 -22 0) -10 10) @result{} #s8(8 10 -3 -10 0)
+@end example
 @end deftp
 
 
