@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.18 2001-09-18 06:56:28 shirok Exp $
+ *  $Id: regexp.c,v 1.19 2001-10-12 20:33:09 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -833,8 +833,11 @@ void re_exec_rec(const char *code,
             if ((unsigned char)*input < 128) {
                 param = (unsigned char)*code++;
                 if (Scm_CharSetContains(ctx->rx->sets[param], *input)) return;
+                input++;
+            } else {
+                code++;
+                input += SCM_CHAR_NBYTES((unsigned char)*input);
             }
-            input++;
             continue;
         case RE_SET:
             if (ctx->stop == input) return;
