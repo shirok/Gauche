@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.46 2002-06-17 02:28:37 shirok Exp $
+ *  $Id: read.c,v 1.47 2002-06-17 17:41:22 shirok Exp $
  */
 
 #include <stdio.h>
@@ -392,6 +392,38 @@ static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx)
  * String
  */
 
+/* Aux routine to read \xXX, \uXXXX and \UXXXXXXXX hexdigit sequences.
+   on error, throws an error. */
+static int read_string_xdigits(ScmPort *port, int len, char key)
+{
+    int i = 0, c, val = 0, dig;
+    int buf[8];
+    SCM_ASSERT(len <= 8);
+    
+    while (i < len) {
+        SCM_GETC(c, port);
+        if (c == EOF) break;
+        buf[i++] = c;
+        dig = Scm_DigitToInt(c, 16);
+        if (dig < 0) break;
+        val = val * 16 + dig;
+    }
+    if (i < len) { /* error */
+        ScmDString ds;
+        int j;
+        Scm_DStringInit(&ds);
+        SCM_DSTRING_PUTC(&ds, '\\');
+        SCM_DSTRING_PUTC(&ds, key);
+        for (j=0; j<i; j++) {
+            SCM_DSTRING_PUTC(&ds, buf[j]);
+        }
+        Scm_ReadError(port, "Bad '\\%c' escape sequence in a string literal: %s",
+                      key, Scm_DStringGetz(&ds));
+    }
+    return val;
+}
+
+/* Main string reader */
 static ScmObj read_string(ScmPort *port, int incompletep)
 {
     int c = 0;
@@ -428,27 +460,18 @@ static ScmObj read_string(ScmPort *port, int incompletep)
               case '\\': ACCUMULATE('\\'); break;
               case '0': ACCUMULATE(0); break;
               case 'x': {
-                  int c2 = 0, c3 = 0;
-                  SCM_GETC(c2, port);
-                  if (c2 == EOF) goto eof_exit;
-                  if (SCM_CHAR_ASCII_P(c2) && isxdigit(c2)) {
-                      SCM_GETC(c3, port);
-                      if (c3 == EOF) goto eof_exit;
-                      if (SCM_CHAR_ASCII_P(c2) && isxdigit(c3)) {
-                          int cc = ((Scm_DigitToInt(c2, 16)<<4)
-                                    + Scm_DigitToInt(c3, 16));
-                          ACCUMULATE(cc);
-                      } else {
-                          ACCUMULATE('\\');
-                          ACCUMULATE('x');
-                          ACCUMULATE(c2);
-                          ACCUMULATE(c3);
-                      }
-                  } else {
-                      ACCUMULATE('\\');
-                      ACCUMULATE('x');
-                      ACCUMULATE(c2);
-                  }
+                  int cc = read_string_xdigits(port, 2, 'x');
+                  ACCUMULATE(cc);
+                  break;
+              }
+              case 'u': {
+                  int cc = read_string_xdigits(port, 4, 'u');
+                  ACCUMULATE(Scm_UcsToChar(cc));
+                  break;
+              }
+              case 'U': {
+                  int cc = read_string_xdigits(port, 8, 'U');
+                  ACCUMULATE(Scm_UcsToChar(cc));
                   break;
               }
               default:
@@ -490,6 +513,16 @@ static struct char_name {
     { NULL, 0 }
 };
 
+static int read_char_xdigits(const char *buf, int len)
+{
+    int i, val = 0;
+    for (i=0; i<len; i++) {
+        if (!isxdigit(buf[i])) return -1;
+        val = val * 16 + Scm_DigitToInt(buf[i], 16);
+    }
+    return val;
+}
+
 static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
 {
     int c = 0;
@@ -511,22 +544,33 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
             return SCM_MAKE_CHAR(c);
         }
         cname = Scm_GetStringConst(name);
+        if (SCM_STRING_LENGTH(name) != SCM_STRING_SIZE(name)) {
+            /* no character name contains multibyte chars */
+            goto unknown;
+        }
 
         /* handle #\x1f etc. */
         if (cname[0] == 'x' && isxdigit(cname[1])) {
-            int i = 1, cc;
-            unsigned long code = 0;
-            do {
-                cc = Scm_DigitToInt(cname[i], 16);
-                code = code * 16 + cc; /* TODO: check overflow */
-                if (cname[++i] == '\0') return SCM_MAKE_CHAR(code);
-            } while (isxdigit(cname[i]));
+            int code = read_char_xdigits(cname+1, SCM_STRING_SIZE(name)-1);
+            if (code < 0) goto unknown;
+            return SCM_MAKE_CHAR(code);
         }
-        
+        /* handle #\uxxxx or #\uxxxxxxxx*/
+        if ((cname[0] == 'u') && isxdigit(cname[1])) {
+            int code;
+            if (SCM_STRING_SIZE(name) == 5 || SCM_STRING_SIZE(name) == 9) {
+                code = read_char_xdigits(cname+1, SCM_STRING_SIZE(name)-1);
+                if (code >= 0) return SCM_MAKE_CHAR(Scm_UcsToChar(code));
+            }
+            /* if we come here, it's an error. */
+            Scm_ReadError(port, "Bad UCS character code: #\\%s", cname);
+        }
+
         while (cntab->name) {
             if (strcmp(cntab->name, cname) == 0) return cntab->ch;
             cntab++;
         }
+      unknown:
         Scm_ReadError(port, "Unknown character name: #\\%s", cname);
     }
     return SCM_UNDEFINED;       /* dummy */
