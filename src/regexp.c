@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.17 2001-08-31 08:34:49 shirok Exp $
+ *  $Id: regexp.c,v 1.18 2001-09-18 06:56:28 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -64,7 +64,7 @@ enum {
     RE_MATCH1,                  /* followed by 1 byte to match */
     RE_MATCH,                   /* followed by length, and bytes to match */
     RE_ANY,                     /* match any char */
-    RE_TRY,                     /* followed by offset.  try matching
+    RE_TRY,                     /* followed by offset (2 bytes). try matching
                                    the following sequence, and if fails,
                                    jump to offset. */
     RE_SET,                     /* followed by charset #.  match any char in
@@ -77,7 +77,7 @@ enum {
     RE_NSET1,                   /* followed by charset #.  match any char
                                    but the ones in the charset.  guaranteed
                                    that the charset holds only range 0-127. */
-    RE_JUMP,                    /* followed by offset.  jump to that
+    RE_JUMP,                    /* followed by offset (2 bytes).  jump to that
                                    bytecode. */
     RE_FAIL,                    /* fail */
     RE_SUCCESS,                 /* success */
@@ -225,6 +225,7 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
     ScmChar ch = 0;
     int grpcount = 0;
     int insncount = 0;
+    int open_alternative = FALSE;
 
     /* default group == entire match*/
     SCM_APPEND1(head, tail, SCM_MAKE_INT(0));
@@ -264,13 +265,16 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
                 SCM_SET_CAR(elt, SCM_LIST2(sym_alt, cell));
                 SCM_SET_CDR(elt, SCM_NIL);
                 tail = elt;
+                if (SCM_CAAR(grpstack) == SCM_MAKE_INT(0)) {
+                    open_alternative = TRUE;
+                }
             }
-            insncount += 4;
+            insncount += 6;
             continue;
         case '+':  /* x+ === xx* */
             elt = Scm_CopyList(last_item(ctx, head, tail, grpstack, ch));
             SCM_APPEND1(head, tail, Scm_Cons(sym_rep, elt));
-            insncount += 4;
+            insncount += 6;
             continue;
         case '?':  /* x? === (x|) */
             elt = last_item(ctx, head, tail, grpstack, ch);
@@ -278,7 +282,7 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
             SCM_SET_CAR(elt, SCM_LIST3(sym_alt, cell, SCM_NIL));
             SCM_SET_CDR(elt, SCM_NIL);
             tail = elt;
-            insncount += 5;
+            insncount += 7;
             continue;
         case '*':
             elt = last_item(ctx, head, tail, grpstack, ch);
@@ -286,7 +290,7 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
             SCM_SET_CAR(elt, Scm_Cons(sym_rep, cell));
             SCM_SET_CDR(elt, SCM_NIL);
             tail = elt;
-            insncount += 3;
+            insncount += 5;
             continue;
         case '.':
             SCM_APPEND1(head, tail, sym_any);
@@ -359,7 +363,7 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
         }
     }
 
-    tail = fold_alternatives(head, tail, SCM_MAKE_INT(0));
+    if (open_alternative) tail = fold_alternatives(head, tail, SCM_MAKE_INT(0));
     SCM_ASSERT(SCM_PAIRP(grpstack));
     if (!SCM_NULLP(SCM_CDR(grpstack)))
         Scm_Error("extra open parenthesis in regexp: %S", ctx->pattern);
@@ -538,10 +542,13 @@ void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
                 ocodep = ctx->codep;
                 re_compile_emit(ctx, RE_TRY);
                 re_compile_emit(ctx, 0); /* will be patched */
+                re_compile_emit(ctx, 0); /* will be patched */
                 re_compile_pass2(SCM_CDR(item), rx, ctx, FALSE);
                 re_compile_emit(ctx, RE_JUMP);
-                re_compile_emit(ctx, ocodep);
-                ctx->code[ocodep+1] = ctx->codep;
+                re_compile_emit(ctx, (ocodep>>8));
+                re_compile_emit(ctx, (ocodep&0xff));
+                ctx->code[ocodep+1] = (ctx->codep>>8);
+                ctx->code[ocodep+2] = (ctx->codep&0xff);
                 continue;
             }
             if (car == sym_alt) {
@@ -555,17 +562,22 @@ void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
                     re_compile_emit(ctx, RE_TRY);
                     patchp = ctx->codep;
                     re_compile_emit(ctx, 0); /* will be patched */
+                    re_compile_emit(ctx, 0); /* will be patched */
                     re_compile_pass2(SCM_CAR(clause), rx, ctx,
                                      can_be_eol(SCM_CDR(cp)));
                     re_compile_emit(ctx, RE_JUMP);
                     jumps = Scm_Cons(SCM_MAKE_INT(ctx->codep), jumps);
                     re_compile_emit(ctx, 0); /* will be patched */
-                    ctx->code[patchp] = ctx->codep;
+                    re_compile_emit(ctx, 0); /* will be patched */
+                    ctx->code[patchp] = (ctx->codep>>8);
+                    ctx->code[patchp+1] = (ctx->codep&0xff);
                 }
                 re_compile_pass2(SCM_CAR(clause), rx, ctx,
                                  can_be_eol(SCM_CDR(cp)));
                 SCM_FOR_EACH(jumps, jumps) {
-                    ctx->code[SCM_INT_VALUE(SCM_CAR(jumps))] = ctx->codep;
+                    patchp = SCM_INT_VALUE(SCM_CAR(jumps));
+                    ctx->code[patchp] = ctx->codep >> 8;
+                    ctx->code[patchp+1] = ctx->codep & 0xff;
                 }
                 continue;
             }
@@ -597,81 +609,89 @@ void Scm_RegDump(ScmRegexp *rx)
 {
     int end = rx->numCodes, codep;
 
-    printf("Regexp %p:\n", rx);
-    printf("  must = ");
+    Scm_Printf(SCM_CUROUT, "Regexp %p:\n", rx);
+    Scm_Printf(SCM_CUROUT, "  must = ");
     if (rx->mustMatchLen > 0) {
         int i;
-        printf("'");
+        Scm_Printf(SCM_CUROUT, "'");
         for (i=0; i<rx->mustMatchLen; i++) printf("%c", rx->mustMatch[i]);
-        printf("'\n");
+        Scm_Printf(SCM_CUROUT, "'\n");
     } else {
-        printf("(none)\n");
+        Scm_Printf(SCM_CUROUT, "(none)\n");
     }
 
     for (codep = 0; codep < end; codep++) {
         switch (rx->code[codep]) {
         case RE_MATCH1:
             codep++;
-            printf("%4d  MATCH1  0x%02x  '%c'\n",
-                   codep-1, rx->code[codep], rx->code[codep]);
+            Scm_Printf(SCM_CUROUT, "%4d  MATCH1  0x%02x  '%c'\n",
+                       codep-1, rx->code[codep], rx->code[codep]);
             continue;
         case RE_MATCH:
             codep++;
             {
                 u_int numchars = (u_int)rx->code[codep];
                 int i;
-                printf("%4d  MATCH(%3d) '", codep-1, numchars);
+                Scm_Printf(SCM_CUROUT, "%4d  MATCH(%3d) '", codep-1, numchars);
                 for (i=0; i< numchars; i++)
-                    printf("%c", rx->code[++codep]);
-                printf("'\n");
+                    Scm_Printf(SCM_CUROUT, "%c", rx->code[++codep]);
+                Scm_Printf(SCM_CUROUT, "'\n");
             }
             continue;
         case RE_ANY:
-            printf("%4d  ANY\n", codep);
+            Scm_Printf(SCM_CUROUT, "%4d  ANY\n", codep);
             continue;
         case RE_TRY:
             codep++;
-            printf("%4d  TRY  %d\n", codep-1, rx->code[codep]);
+            Scm_Printf(SCM_CUROUT, "%4d  TRY  %d\n", codep-1,
+                       rx->code[codep]*256 + rx->code[codep+1]);
+            codep++;
             continue;
         case RE_SET:
             codep++;
-            printf("%4d  SET  %d\n", codep-1, rx->code[codep]);
+            Scm_Printf(SCM_CUROUT, "%4d  SET  %d    %S\n",
+                       codep-1, rx->code[codep], rx->sets[rx->code[codep]]);
             continue;
         case RE_NSET:
             codep++;
-            printf("%4d  NSET  %d\n", codep-1, rx->code[codep]);
+            Scm_Printf(SCM_CUROUT, "%4d  NSET  %d    %S\n",
+                       codep-1, rx->code[codep], rx->sets[rx->code[codep]]);
             continue;
         case RE_SET1:
             codep++;
-            printf("%4d  SET1 %d\n", codep-1, rx->code[codep]);
+            Scm_Printf(SCM_CUROUT, "%4d  SET1 %d    %S\n",
+                       codep-1, rx->code[codep], rx->sets[rx->code[codep]]);
             continue;
         case RE_NSET1:
             codep++;
-            printf("%4d  NSET1 %d\n", codep-1, rx->code[codep]);
+            Scm_Printf(SCM_CUROUT, "%4d  NSET1 %d    %S\n",
+                       codep-1, rx->code[codep], rx->sets[rx->code[codep]]);
             continue;
         case RE_JUMP:
             codep++;
-            printf("%4d  JUMP %d\n", codep-1, rx->code[codep]);
+            Scm_Printf(SCM_CUROUT, "%4d  JUMP %d\n", codep-1,
+                       rx->code[codep]*256+rx->code[codep+1]);
+            codep++;
             continue;
         case RE_FAIL:
-            printf("%4d  FAIL\n", codep);
+            Scm_Printf(SCM_CUROUT, "%4d  FAIL\n", codep);
             continue;
         case RE_SUCCESS:
-            printf("%4d  SUCCESS\n", codep);
+            Scm_Printf(SCM_CUROUT, "%4d  SUCCESS\n", codep);
             continue;
         case RE_BEGIN:
             codep++;
-            printf("%4d  BEGIN %d\n", codep-1, rx->code[codep]);
+            Scm_Printf(SCM_CUROUT, "%4d  BEGIN %d\n", codep-1, rx->code[codep]);
             continue;
         case RE_END:
             codep++;
-            printf("%4d  END %d\n", codep-1, rx->code[codep]);
+            Scm_Printf(SCM_CUROUT, "%4d  END %d\n", codep-1, rx->code[codep]);
             continue;
         case RE_BOL:
-            printf("%4d  BOL\n", codep);
+            Scm_Printf(SCM_CUROUT, "%4d  BOL\n", codep);
             continue;
         case RE_EOL:
-            printf("%4d  EOL\n", codep);
+            Scm_Printf(SCM_CUROUT, "%4d  EOL\n", codep);
             continue;
         default:
             Scm_Error("regexp screwed up\n");
@@ -763,7 +783,7 @@ void re_exec_rec(const char *code,
                  struct match_ctx *ctx,                 
                  struct match_list *mlist)
 {
-    register int param;
+    register int param, param2;
     register ScmChar ch;
     ScmCharSet *cset;
 
@@ -792,12 +812,14 @@ void re_exec_rec(const char *code,
             continue;
         case RE_TRY:
             param = (unsigned char)*code++;
+            param2 = (unsigned char)*code++;
             re_exec_rec(code, input, ctx, mlist);
-            code = ctx->codehead + param;
+            code = ctx->codehead + param*256 + param2;
             continue;
         case RE_JUMP:
             param = (unsigned char)*code++;
-            code = ctx->codehead + param;
+            param2 = (unsigned char)*code++;
+            code = ctx->codehead + param*256 + param2;
             continue;
         case RE_SET1:
             if (ctx->stop == input) return;
