@@ -5,6 +5,7 @@
 ;;; Author:     Alex Shinn <foof@synthcode.com>
 
 ;;; Modified a bit by Shiro Kawai
+;;; $Id: lcs.scm,v 1.5 2003-09-03 15:36:16 shirok Exp $
 
 (define-module util.lcs
   (use gauche.sequence)
@@ -13,15 +14,15 @@
   (export lcs lcs-with-positions lcs-fold lcs-edit-list))
 (select-module util.lcs)
 
-;; The base algorithm.   This algorithm implements
+;; The base algorithm.   This code implements
 ;; Eugene Myers, "An O(ND) Difference Algorithm and Its Variations",
 ;; Algorithmica Vol. 1 No. 2, 1986, pp. 251-266.
-;; It takes O((M+N)D) time and space, where N = (length a) and N = (length b)
+;; It takes O((M+N)D) time and space, where N = (length a) and M = (length b)
 ;; and D is the length of the smallest edit sequence.  In most applications
 ;; the difference is small, so it is much better than DP algorithm
 ;; that is generally O(MN).  The worst case where a and b totally differ
 ;; is O((M+N)^2).  The Myers's paper gives refinement of the algorithm
-;; that improves worst case behavior, but I don't implement it --[SK]
+;; that improves worst case behavior, but I don't implement it yet. --[SK]
 
 (define (lcs-with-positions a-ls b-ls . opt-eq)
   (let* ((eq (get-optional opt-eq equal?))
