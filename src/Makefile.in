@@ -109,7 +109,7 @@ libgauche_OBJECTS = \
 	load.$(OBJEXT) promise.$(OBJEXT) repl.$(OBJEXT) \
 	system.$(OBJEXT) stdlib.$(OBJEXT) extlib.$(OBJEXT) exclib.$(OBJEXT) \
 	syslib.$(OBJEXT) moplib.$(OBJEXT)
-libgauche_LDFLAGS = @SHLIB_SO_LDFLAGS@
+libgauche_LDFLAGS = @SHLIB_DYLIB_LDFLAGS@
 
 HEADERS = gauche.h $(INSTALL_SUBHEADERS)
 
