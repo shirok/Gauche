@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.27 2001-02-20 01:09:55 shiro Exp $
+ *  $Id: compile.c,v 1.28 2001-02-20 06:01:51 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1273,18 +1273,26 @@ static ScmSyntax syntax_delay = {
 static ScmObj compile_receive(ScmObj form, ScmObj env, int ctx, void *data)
 {
     ScmObj code = SCM_NIL, codetail, vars, expr, body;
-    int nvals;
+    ScmObj bind = SCM_NIL, bindtail, vp;
+    int nvars, restvars, nvals;
     
     if (Scm_Length(form) < 4) Scm_Error("badly formed receive: %S", form);
     vars = SCM_CADR(form);
     expr = SCM_CAR(SCM_CDDR(form));
     body = SCM_CDR(SCM_CDDR(form));
 
+    nvars = restvars = 0;
+    SCM_FOR_EACH(vp, vars) {
+        nvars++;
+        SCM_APPEND1(bind, bindtail, SCM_CAR(vp));
+    }
+    if (!SCM_NULLP(vp)) { restvars=1; SCM_APPEND1(bind, bindtail, vp); }
+    
     /* TODO: this implementation doens't take advantage of tail call. */
     ADDCODE(compile_int(expr, env, SCM_COMPILE_NORMAL));
-    ADDCODE1(SCM_VM_INSN2(SCM_VM_VALUES_BIND, Scm_Length(vars), 0));
+    ADDCODE1(SCM_VM_INSN2(SCM_VM_VALUES_BIND, nvars, restvars));
     ADDCODE1(form);             /* info; should be source-inro? */
-    ADDCODE(compile_body(body, Scm_Cons(vars, env), SCM_COMPILE_NORMAL));
+    ADDCODE(compile_body(body, Scm_Cons(bind, env), SCM_COMPILE_NORMAL));
     ADDCODE1(SCM_VM_INSN(SCM_VM_POPENV));
     return code;
 }
