@@ -14,7 +14,7 @@ AR = @AR@
 RANLIB = @RANLIB@
 
 GENERATED = stdlib.c extlib.c exclib.c syslib.c moplib.c thrlib.c
-CONFIG_GENERATED = Makefile gauche-config gauche/config.h gauche/arch.h ldwrap.sh
+CONFIG_GENERATED = Makefile gauche-config gauche/config.h ldwrap.sh
 
 LIB_INSTALL_DIR = @libdir@
 BIN_INSTALL_DIR = @bindir@
@@ -122,7 +122,7 @@ test-arith.o : gauche/arith.h
 clean :
 	rm -rf core core.[0-9]* gosh test-vmstack test-arith   \
 	       @LIBGAUCHE_SO@ *.o *~ *.a *.t *.def *.exp *.exe \
-	       .lo GCOBJS test.log test.dir so_locations gauche/*~
+	       .lo GCOBJS test.log test.dir so_locations gauche/*~ gauche/arch.h
 
 distclean : clean
 	rm -f $(CONFIG_GENERATED)
