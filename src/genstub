@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.42 2001-06-17 22:05:20 shirok Exp $
+;;;  $Id: genstub,v 1.43 2001-06-19 19:46:50 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -68,6 +68,7 @@
 (make-type "symbol"  'symbol?      "ScmSymbol*"   "SCM_SYMBOLP" "SCM_SYMBOL")
 (make-type "keyword" 'keyword?     "ScmKeyword*"  "SCM_KEYWORDP" "SCM_KEYWORD")
 (make-type "identifier" 'identifier? "ScmIdentifier*" "SCM_IDENTIFIERP" "SCM_IDENTIFIER")
+(make-type "boolean" 'boolean?     "int"          "SCM_BOOLP"   "!SCM_FALSEP")
 (make-type "small integer" 'small-integer? "int" "SCM_INTP"    "SCM_INT_VALUE")
 ;; TODO: bignum!
 (make-type "exact integer" 'exact? "int"          "SCM_EXACTP"  "Scm_GetInteger")
@@ -166,14 +167,17 @@
 
 ;; Common stuff for cproc and cmethod
 
-(define-class <procstub> (<stub>)
+(define-class <setter-mixin> ()
+  ((setter          :initform #f  :accessor setter-of)
+   (setter-c-name   :initform #f  :accessor setter-c-name-of)
+   ))
+
+(define-class <procstub> (<setter-mixin> <stub>)
   ((args            :initform '() :accessor args-of :init-keyword :args)
    (num-reqargs     :initform 0   :accessor num-reqargs-of :init-keyword :num-reqargs)
    (have-rest-arg?  :initform #f  :accessor have-rest-arg? :init-keyword :have-rest-arg?)
    (decls           :initform '() :accessor decls-of)
    (stmts           :initform '() :accessor stmts-of)
-   (setter          :initform #f  :accessor setter-of)
-   (setter-c-name   :initform #f  :accessor setter-c-name-of)
    ))
 
 ;; argument
@@ -417,11 +421,14 @@
     (println "  SCM_DEFINE(module, ~s, SCM_OBJ(&~a_STUB));"
              (symbol->string (scheme-name-of cproc))
              (c-name-of cproc)))
+  (next-method)
+  )
+
+(define-method emit-initializer ((cproc <setter-mixin>))
   (when (setter-of cproc)
     (println "  Scm_SetterSet(SCM_PROCEDURE(&~a_STUB), SCM_PROCEDURE(&~a_STUB), TRUE);"
              (c-name-of cproc)
-             (setter-c-name-of cproc)))
-  )
+             (setter-c-name-of cproc))))
 
 (define (emit-arg-decl arg)
   (println "  ScmObj ~a;" (scm-name-of arg))
@@ -545,9 +552,12 @@
 ;; Generic function
 ;;
 
-;; (define-cgeneric scheme-name c-name &keyword extern? fallback)
+;; (define-cgeneric scheme-name c-name
+;;    [(extern)]
+;;    [(fallback "fallback")]
+;;    [(setter setter-desc)])
 
-(define-class <cgeneric> (<stub>)
+(define-class <cgeneric> (<setter-mixin> <stub>)
   ((extern?  :initform #f :init-keyword :extern? :accessor extern?)
    (fallback :initform "Scm_NoNextMethod" :init-keyword :fallback
              :accessor fallback-of)
@@ -561,16 +571,38 @@
 
 (define-method emit-initializer ((self <cgeneric>))
   (println "  Scm_InitBuiltinGeneric(&~a, ~s, module);"
-           (c-name-of self) (symbol->string (scheme-name-of self))))
+           (c-name-of self) (symbol->string (scheme-name-of self)))
+  (next-method))
 
 (define (process-define-cgeneric form)
   (unless (and (>= (length form) 3)
                (symbol? (cadr form))
                (string? (caddr form)))
     (error "malformed define-cgeneric"))
-  (emit-definition
-   (apply make <cgeneric> :scheme-name (cadr form) :c-name (caddr form)
-          (cdddr form))))
+  (let ((gf (make <cgeneric> :scheme-name (cadr form) :c-name (caddr form))))
+    (for-each (lambda (form)
+                (cond ((not (pair? form))
+                       (error "bad gf form: ~s" form))
+                      ((eq? (car form) 'extern)  (set! (extern? gf) #t))
+                      ((eq? (car form) 'fallback)
+                       (if (and (pair? (cdr form)) (string? (cadr form)))
+                           (set! (fallback-of gf) (cadr form))
+                           (error "bad fallback form: ~s" form)))
+                      ((eq? (car form) 'setter)
+                       (unless (pair? (cdr form))
+                         (error "bad setter form in ~s" form))
+                       (process-setter gf (cdr form)))
+                      (else (error "bad gf form: ~s" form))))
+              (cdddr form))
+    (emit-definition gf)))
+
+(define-method process-setter ((gf <cgeneric>) setter)
+  (cond
+   ((symbol? (car decl))
+    (set! (setter-of cproc) (car decl))
+    (set! (setter-c-name-of cproc) (get-c-name *file-prefix* (car decl))))
+   (else
+    (error "bad form of anonymous setter: ~s" `(setter ,decl)))))
 
 (define (get-c-generic-name name)
   (cond ((find (lambda (x) (eq? (scheme-name-of x) name))
