@@ -1,6 +1,6 @@
 ;;
 ;; A compiler.
-;;  $Id: comp.scm,v 1.1.2.7 2005-01-02 12:20:13 shirok Exp $
+;;  $Id: comp.scm,v 1.1.2.8 2005-01-03 01:08:33 shirok Exp $
 
 (define-module gauche.internal
   (use util.match)
@@ -22,7 +22,8 @@
 (define (compile-int program env ctx)
   (match program
     ((op . args)
-     (if (variable? op)
+     (cond
+      ((variable? op)
        (let1 local (lookup-env op env #t)
          (cond
           ((vm-insn? local) ;; LREF
@@ -47,8 +48,11 @@
                    (else
                     (compile-call (compile-varref op '()) program env ctx))))))
           (else
-           (compile-call (compile-varref op '()) program env ctx))))
-       (compile-call (compile-int op env 'normal) program env ctx)))
+           (compile-call (compile-varref op '()) program env ctx)))))
+      ((is-a? op <syntax>)
+       (call-syntax-compiler op program env ctx))
+      (else
+       (compile-call (compile-int op env 'normal) program env ctx))))
     ((? variable?)
      (compile-varref program env))
     (else
@@ -98,7 +102,7 @@
 ;; Returns an insn list of executing EXPRS in sequence.
 (define (compile-seq exprs env ctx)
   (match exprs
-    (() (list (undefined)))
+    (() '())
     ((expr) (compile-int expr env ctx))
     ((expr . exprs)
      (append! (compile-int expr env 'stmt)
@@ -139,7 +143,7 @@
           (outer (cdr env) depth)))
       ;; binding not found in local env.  returns an identifier.
       (if (and (symbol? var) (not syntax?))
-        (make-identifier var '())
+        (make-identifier-old var '())
         var))))
 
 (define (find-local-macro frame var)
@@ -185,7 +189,7 @@
                (list (vm-insn-make 'IF) (append! then-code merger))
                (append! else-code merger)))))
 
-(define-primitive-syntax (@if form env ctx)
+(define-primitive-syntax (if@ form env ctx)
   (match form
     ((_ test then else)
      (compile-if-family (compile-int test env 'normal)
@@ -193,14 +197,11 @@
                         (compile-int else env ctx)
                         env ctx))
     ((_ test then)
-     (compile-if-family (compile-int test env 'normal)
-                        (compile-int then env ctx)
-                        (list (undefined))
-                        env ctx))
+     (compile-int `(,if@ ,test ,then ,(undefined)) env ctx))
     (else
      (error "malformed if:" form))))
 
-(define-primitive-syntax (@when form env ctx)
+(define-primitive-syntax (when@ form env ctx)
   (match form
     ((_ test . body)
      (compile-if-family (compile-int test env 'normal)
@@ -210,7 +211,7 @@
     (else
      (error "malformed when:" form))))
 
-(define-primitive-syntax (@unless form env ctx)
+(define-primitive-syntax (unless@ form env ctx)
   (match form
     ((_ test . body)
      (compile-if-family (compile-int test env 'normal)
@@ -220,7 +221,7 @@
     (else
      (error "malformed unless:" form))))
 
-(define-primitive-syntax (@and form env ctx)
+(define-primitive-syntax (and@ form env ctx)
   (let1 merger (if (eq? ctx 'tail) '() (list (vm-insn-make 'MNOP)))
     (define (and-rec exprs)
       (match exprs
@@ -233,7 +234,7 @@
                   merger))))
     (and-rec (cdr form))))
 
-(define-primitive-syntax (@or form env ctx)
+(define-primitive-syntax (or@ form env ctx)
   (let1 merger (if (eq? ctx 'tail) '() (list (vm-insn-make 'MNOP)))
     (define (or-rec exprs)
       (match exprs
@@ -245,12 +246,106 @@
                   (or-rec other)))))
     (or-rec (cdr form))))
 
-                                                     
-                                      
-
-         
-
+;;------------------------------------------------------------
 ;; BEGIN
+;;
+
+;; NB: begins in the beginning of lambda bodies are handled
+;; within lambda-family compiler.
+
+(define-primitive-syntax (begin@ form env ctx)
+  (compile-seq (cdr form) env ctx))
+
+;;------------------------------------------------------------
+;; LAMBDA family  (lambda, let, let*, letrec, receive)
+;;
+
+
+;;============================================================
+;; Some experiment
+;;
+
+;; NB: for the time being, we use simple vector and manually
+;; defined accessors/modifiers.  We can't use define-class stuff
+;; here until we can compile gauche/object.scm into C.
+
+;; Local variables (lvar)
+;;
+;;   Slots:
+;;     name  - name of the variable (symbol)
+;;     ref-count - in how many places this variable is referefnced?
+;;     set-count - in how many places this variable is set!
+;;
+
+(define (make-lvar name) (vector name 0 0))
+
+(define (lvar-name var)      (vector-ref var 0))
+(define (lvar-ref-count var) (vector-ref var 1))
+(define (lvar-set-count var) (vector-ref var 2))
+
+(define (lvar-ref++! var)
+  (vector-set! var 1 (+ 1 (vector-ref var 1))))
+(define (lvar-set++! var)
+  (vector-set! var 2 (+ 1 (vector-ref var 2))))
+
+;; Compile-time environment (cenv)
+;;
+;;   Slots:
+;;     module   - The 'current-module' to resolve global binding.
+;;     frames   - List of local frames.  Each local frame has a form:
+;;                (<syntax?> (<name> . <obj>) ...)
+;;                where <syntax?> is #t for the local macro frames,
+;;                and #f for the local binding frames.  <obj> is
+;;                a <macro> object for the local macro frames, and
+;;                lvar object for the local binding frames.
+
+(define (make-cenv module frames)
+  (vector module frames))
+
+(define (cenv-module cenv)   (vector-ref var 0))
+(define (cenv-frames cenv)   (vector-ref var 1))
+
+(define (make-bottom-cenv)
+  (make-cenv (vm-current-module) '()))
+
+(define (cenv-extend cenv frame syntax?)
+  (make-cenv (cenv-module cenv)
+             (acons syntax? frame (cenv-frames cenv))))
+
+;(define (cenv-lookup cenv sym-or-id syntax?)
+;  (let ((frames (cenv-frames cenv)))
+;    (let loop ((frames frames))
+;      (cond ((null? frames) 
+
+
+;; Intermediate form
+;;
+;; <top-expr> :=
+;;    <expr>
+;;    ($define <id> <expr>)
+;;    ($define-macro <id> <expr>)
+;;
+;; <expr> :=
+;;    ($lref <lvar>)        ;; local variable reference
+;;    ($lset <lvar> <expr>) ;; local variable modification
+;;    ($gref <id>)          ;; global variable reference
+;;    ($gset <id> <expr>)   ;; global variable modification
+;;    ($if <expr> <expr> <expr>) ;; branch
+;;    ($const <obj>)        ;; constant literal
+;;    ($let (<lvar> ...) (<expr> ...) <expr>) ;; local binding
+;;    ($receive <formal> (<lvar> ...) <expr> <expr>) ;; local binding (mv)
+;;    ($lambda <formal> (<lvar> ...) <expr>)  ;; closure
+;;    ($seq <expr> ...)     ;; sequencing
+;;    ($call <proc-expr> <arg-expr> ...) ;; procedure call
+
+
+;; Pass 1
+;;   - Expand macros
+;;   - Resolve variable reference
+;;   - Convert special forms into a few number of primitive
+;;     operators
+
+
 
 
 
@@ -332,9 +427,11 @@
   (let ((N (find-module 'null))
         (G (find-module 'gauche)))
     
-    (inject N 'if              @if)
-    (inject G 'when            @when)
-    (inject G 'unless          @unless)
-    (inject N 'and             @and)
-    (inject N 'or              @or)
+    (inject N 'if              if@)
+    (inject G 'when            when@)
+    (inject G 'unless          unless@)
+    (inject N 'and             and@)
+    (inject N 'or              or@)
+
+    (inject N 'begin           begin@)
     ))

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.121.2.8 2005-01-02 02:01:22 shirok Exp $
+ *  $Id: compile.c,v 1.121.2.9 2005-01-03 01:08:33 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -548,6 +548,17 @@ ScmObj Scm_MakeIdentifier(ScmSymbol *name, ScmObj env)
     id->name = name;
     id->module = SCM_CURRENT_MODULE();
     id->env = (env == SCM_NIL)? SCM_NIL : get_binding_frame(SCM_OBJ(name), env);
+    return SCM_OBJ(id);
+}
+
+/* Temporary: for the new compiler */
+ScmObj Scm_MakeIdentifierWithModule(ScmSymbol *name, ScmObj env, ScmModule *mod)
+{
+    ScmIdentifier *id = SCM_NEW(ScmIdentifier);
+    SCM_SET_CLASS(id, SCM_CLASS_IDENTIFIER);
+    id->name = name;
+    id->module = mod;
+    id->env = env;
     return SCM_OBJ(id);
 }
 
