@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.380 2003-03-28 05:57:24 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.381 2003-03-30 12:54:40 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -6590,9 +6590,10 @@ Decimal digit characters.
 @item \D
 Complement of decimal digit characters.
 @item \w
-Alphanumeric characters.
+Word constituent characters.  Currently, it is alphanumeric characters
+and underscore.
 @item \W
-Complement of alphanumeric characters.
+Complement of word constituent characters.
 @item \\
 A backslash character.
 @item \-
@@ -6640,9 +6641,9 @@ UnicodeのUCS-4で@var{NNNNNNNN}(16進数表記8桁)の文字。
 @item \D
 @code{\d}の補集合
 @item \w
-アルファベットと数字
+単語を構成する文字の集合(アルファベット、数字、アンダースコア)
 @item \W
-@code{\w}の補集合
+@code{\W}の補集合
 @item \\
 バックスラッシュ文字
 @item \-
@@ -18823,7 +18824,7 @@ and its action.
 how the option takes the arguments.  An alphanumeric characters, underscore,
 plus and minus sign is allowed for option's names, except that
 minus sign can't be the first character, i.e. the valid option name
-matches a regexp @code{#/[\w_+][-\w_+]*/}.
+matches a regexp @code{#/[\w+][-\w+]*/}.
 If the option takes argument(s), it can be specified by attaching 
 equal character and the type of the argument after the name.  The option
 can take more than one arguments.
@@ -18831,7 +18832,7 @@ can take more than one arguments.
 @var{option-spec} は、オプションの名前とそのオプションがどのように引数を取るか
 を指定する文字列です。オプションの名前には、アルファベット文字、数字、
 アンダースコア、プラス記号、ハイフンが許されますが、ハイフンは最初の文字としては
-使えません。すなわち、有効なオプションの名前は、@code{#/[\w_+][-\w_+]*/} という
+使えません。すなわち、有効なオプションの名前は、@code{#/[\w+][-\w+]*/} という
 正規表現にマッチするものです。
 オプションが引数を取る場合、名前の後ろに等号文字と引数の型を付けることで指定
 できます。オプションは一つ以上の引数を取ることができます。

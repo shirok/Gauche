@@ -12,7 +12,7 @@
 
 2003-03-23  Shiro Kawai  <shiro@acm.org>
 
-	* src/charset.c (Scm_CharSetLE): implemented to-arg char-set<= in C,
+	* src/charset.c (Scm_CharSetLE): implemented two-arg char-set<= in C,
 	  for it is used in regexp optimizer.  Available as %char-set<=?
 	  from Scheme.
 	* lib/srfi-14.scm (char-set<=): revised to use the native %char-set<=?.
