@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: moplib.stub,v 1.13 2001-11-29 11:39:44 shirok Exp $
+;;; $Id: moplib.stub,v 1.14 2002-06-11 11:24:20 shirok Exp $
 ;;;
 
 "
@@ -84,6 +84,7 @@
 
 (define-cproc slot-ref (obj slot)
   (inliner "SCM_VM_SLOT_REF")
+  (setter slot-set!)
   "  SCM_RETURN(Scm_VMSlotRef(obj, slot, FALSE));")
 
 (define-cproc slot-set! (obj slot value)
