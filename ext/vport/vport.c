@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vport.c,v 1.9 2004-11-14 08:58:20 shirok Exp $
+ *  $Id: vport.c,v 1.10 2004-11-20 09:48:30 shirok Exp $
  */
 
 #include "gauche/vport.h"
@@ -693,6 +693,7 @@ static ScmClassStaticSlotSpec boport_slots[] = {
 void Scm_Init_vport(void)
 {
     ScmModule *mod;
+    SCM_INIT_EXTENSION(vport);
     mod = SCM_MODULE(SCM_FIND_MODULE("gauche.vport", TRUE));
     Scm_InitStaticClass(&Scm_VirtualInputPortClass,
                         "<virtual-input-port>", mod, viport_slots, 0);

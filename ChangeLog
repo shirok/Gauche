@@ -1,3 +1,7 @@
+2004-11-19  Shiro Kawai  <shiro@acm.org>
+
+	* ext/vport/vport.c (Scm_Init_vport): added missing SCM_INIT_EXTENSION
+
 2004-11-13  Shiro Kawai  <shiro@acm.org>
 
 	* ext/binary/test.scm: exclude denormalized 32-bit floating point 
