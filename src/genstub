@@ -128,7 +128,8 @@
                  (unless (and (pair? (cdr form))
                               (string? (cadr form)))
                    (error "bad `inliner' spec: ~s" form))
-                 (set! (inliner-of cproc) (cadr form)))
+                 (set! (inliner-of cproc) (cadr form))
+                 (loop next))
                 (else
                  (error "unknown body form: ~s" form)))))))
 
