@@ -12,16 +12,20 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: convlib.stub,v 1.1 2001-05-23 09:53:32 shirok Exp $
+;;; $Id: convlib.stub,v 1.2 2001-05-26 09:55:53 shirok Exp $
 ;;;
 
 "#include \"charconv.h\""
 
-(define-cproc make-conversion-input-port (from-code to-code from-port)
+(define-cproc make-input-conversion-port (from-port from-code
+                                          to-code &optional (buffer-size 0))
+  (assert (input-port? from-port))
   (assert (string? from-code))
   (assert (string? to-code))
-  (assert (input-port? from-port))
-  "  SCM_RETURN(Scm_MakeConversionInputPort(from_code, to_code, from_port));")
+  (assert (small-integer? buffer-size))
+  " 
+  SCM_RETURN(Scm_MakeInputConversionPort(from_port, from_code,
+                                         to_code, buffer_size));")
 
 
 ;;; Local variables:
