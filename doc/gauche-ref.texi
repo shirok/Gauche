@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.296 2002-11-10 07:17:14 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.297 2002-11-12 02:22:52 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -9968,10 +9968,29 @@ but the entire data is not available immediately.
 @end itemize
 
 @c EN
-Note: if you want to write a chunk of bytes (incomplete string) to a port,
-use @code{display}.
+@code{Read-block} returns newly allocated string every time.
+If you want to avoid allocation and read the data into a pre-allocated
+fixed-length buffer, you can use @code{read-block!}
+in @code{gauche.uvector} module (@xref{Uvector block I/O}).
+It uses a uniform vector as the buffer.
 @c JP
-注：データブロックをポートに書き出すには@code{display}が使えます。
+@code{read-block}は呼ばれるたびに新たな文字列をアロケートします。
+アロケーションを避け、あらかじめ用意された固定長のバッファにデータを読み込みたい
+場合は、@code{gauche.uvector}モジュールの@code{read-block!}
+を使って下さい (@ref{Uvector block I/O}参照)。
+@code{Read-block!}はuniform vectorをバッファとして用います。
+@c COMMON
+
+@c EN
+If you want to write a chunk of bytes to a port,
+you can use either @code{display} if the data is in string,
+or @code{write-block} in @code{gauche.uvector} (@xref{Uvector block I/O})
+if the data is in uniform vector.
+@c JP
+データブロックをポートに書き出すには、データが文字列で表現されている
+場合は単純に@code{display}が使えます。データがuniform vectorで表現されている
+場合は@code{gauche.uvector}モジュールの@code{write-block}が
+使えます (@ref{Uvector block I/O}参照)。
 @c COMMON
 @end defun
 
@@ -26673,7 +26692,8 @@ Not supported directly, but on most platforms a better RNG is available
 as @code{sys-random}.  @xref{Miscellaneous system calls}.
 @item read
 Not supported directly, but you may be able to use
-@code{read-block}.  @xref{Input}.
+@code{read-block} (@xref{Input}) or
+@code{read-block!} (@xref{Uvector block I/O}).
 @item readdir
 Not supported directly.   Gauche's @code{sys-readdir} reads
 the directly at once.  @xref{Directories}.
@@ -26904,7 +26924,8 @@ always returns a number of characters for a string in supported
 encoding.   If you want to convert the character encoding,
 see @ref{Character code conversion}.
 @item write
-R5RS @code{display}.   @xref{Output}.
+R5RS @code{display} (@xref{Output}).
+Or @code{write-block} (@xref{Uvector block I/O}).
 @end table
 
 @c Appendix : Common Lisp to Scheme mapping
