@@ -1,3 +1,10 @@
+2002-02-15  Shiro Kawai  <shiro@acm.org>
+
+	* aclocal.m4 : the rule to generate *_head.c and *_tail.c in
+	  configure sometimes fails on cygwin, where the timing of
+	  "rm" and following "echo" seems to create a race condition.
+	  Fixed to guarantee "rm" is executed before "echo".
+
 2002-02-14  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.5.1
