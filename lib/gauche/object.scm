@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.11 2001-04-01 07:27:01 shiro Exp $
+;;;  $Id: object.scm,v 1.12 2001-04-01 10:22:46 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -312,6 +312,31 @@
 (define-method slot-exists-using-class? (class obj slot)
   (not (not (assq slot (class-slots class)))))
 
+;;----------------------------------------------------------------
+;; Method application
+;;
+
+;; Like stklos or goops, we don't use the following protocol for
+;; native generic function.
+;;
+;; apply-generic [GF]
+;;   compute-applicable-methods [GF, default defined in C]
+;;   sort-applicable-methods [GF]
+;;     method-more-specific? [GF, default defined in C]
+;;   apply-methods [GF]
+;;     apply-method [GF]
+;;     no-applicable-method [GF, default defined in C]
+;;     no-next-method [GF, default defined in C]
+
+
+;(define-method apply-generic ((gf <generic>) args)
+;  (let ((methods (compute-applicable-methods gf args)))
+;    (apply-methods gf (sort-applicable-methods gf methods args) args)))
+
+;(define-method apply-methods ((gf <generic>) methods args)
+;  (if (null? methods)
+;      (no-applicable-method gf args)
+      
 ;;----------------------------------------------------------------
 ;; Introspection routines
 ;;
