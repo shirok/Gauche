@@ -35,6 +35,9 @@ jconv.c : eucj2ucs.c ucs2eucj.c
 
 $(OBJS) : charconv.h
 
+charconv.h : charconv.h.in
+	./config.status
+
 eucj2ucs.c ucs2eucj.c : cvt.scm euc-jp-2000-std.txt
 	$(GOSH) cvt.scm
 

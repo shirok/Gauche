@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.h.in,v 1.4 2002-06-05 10:40:41 shirok Exp $
+ *  $Id: charconv.h.in,v 1.5 2002-06-06 11:11:20 shirok Exp $
  */
 
 #ifndef GAUCHE_CHARCONV_H
@@ -24,10 +24,7 @@
 #include <@ICONV_NAME@.h>
 #else
 /* Dummy definitions */
-typedef void *iconv_t;
-iconv_t iconv_open(const char *tocode, const char *fromcode);
-int iconv_close(iconv_t handle);
-int iconv(iconv_t handle, char **inbuf, size_t *inroom, char **outbuf, size_t *outroom);
+typedef int iconv_t;
 #endif /* !HAVE_ICONV_H */
 
 
@@ -35,19 +32,26 @@ int iconv(iconv_t handle, char **inbuf, size_t *inroom, char **outbuf, size_t *o
 extern "C" {
 #endif
 
+struct ScmConvInfoRec;
+
+typedef int (*ScmConvProc)(struct ScmConvInfoRec*, const char*, int,
+                           char*, int, int*);
+typedef int (*ScmConvHandler)(struct ScmConvInfoRec*, const char **, int*,
+                              char**, int*);
+
 /* Packaging conversion context info.*/
 typedef struct ScmConvInfoRec {
-    int inconv;                 /* input conversion type */
-    int outconv;                /* output conversion type */
+    ScmConvHandler jconv;       /* jconv handler */
+    ScmConvProc convproc[2];    /* conversion routine */
     iconv_t handle;             /* iconv handle, if the conversion is
                                    handled by iconv */
+    const char *fromCode;       /* convert from ... */
+    const char *toCode;         /* conver to ... */
     ScmPort *remote;            /* source or drain port */
     int ownerp;                 /* do I own remote port? */
     int bufsiz;                 /* size of conversion buffer */
     char *buf;                  /* internal conversion buffer */
     char *ptr;                  /* current ptr in the internal conv buf */
-    const char *fromCode;       /* convert from ... */
-    const char *toCode;         /* conver to ... */
 } ScmConvInfo;
 
 /* Constants for internal conversion routine */
