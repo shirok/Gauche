@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.258 2002-09-02 11:01:42 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.259 2002-09-02 11:08:38 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2210,7 +2210,7 @@ it with '|', e.g. '@code{|this is a symbol|}'.
 @c EN
 @item Character literal by character code
 Character literals can be written using its code, 
-by @code{#\x@var{NN}} (Gauche internal code) or @code{#\u{NN}} (Unicode).
+by @code{#\x@var{NN}} (Gauche internal code) or @code{#\u@var{NN}} (Unicode).
 @xref{Characters}, for details.
 @c JP
 @item 文字コードによる文字リテラル
