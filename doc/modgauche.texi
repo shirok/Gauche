@@ -5262,8 +5262,8 @@ The command is terminated and its exit status is collected
 when @var{thunk} returns, or it raises an error.
 @c JP
 @code{/bin/sh} 経由で @var{command} を実行し、コマンドの標準出力に
-接続された現在の入力ポートとともに @var{think} を呼び出します。
-コマンドが終了すると、@var{think} が返った時点で終了ステータスが
+接続された現在の入力ポートとともに @var{thunk} を呼び出します。
+コマンドが終了すると、@var{thunk} が返った時点で終了ステータスが
 回収されますが、そうでない場合はエラーを通知します。
 @c COMMON
 @example
@@ -5315,7 +5315,7 @@ Same as @code{call-with-output-process}, except that the
 output port which is connected to the stdin of the command
 is set to the current output port while executing @var{thunk}.
 @c JP
-コマンドの標準入力に接続された出力ポートが、@var{think} の実行中は
+コマンドの標準入力に接続された出力ポートが、@var{thunk} の実行中は
 現在の出力ポートにセットされることを除いて、@code{call-with-output-process}
 と同じです。
 @c COMMON
