@@ -1,17 +1,16 @@
 This file is for those who wants to hack the cutting-edge
-Gauche sources in CVS repository.  If you just want to
+Gauche sources from the CVS repository.  If you just want to
 compile from the distribution, you don't need to read any further.
 
-In order to build Gauche from CVS sources, instead of from
-distribution, you need to have autoconf 2.54 or higher.
+In order to build Gauche from the CVS sources, instead of from
+the distribution, you need to have autoconf 2.54 or higher.
 The author using autoconf 2.57.
 
 You also need to have the latest Gauche installed on your
-machine, for it is required to run a stub generator to create
-some C files.
+machine, for it is required to generate some C files.
 
-CVS source tree doesn't include "configure" scripts.  You can use
-the DIST script like the following to generate them.
+The CVS source tree doesn't include "configure" scripts.
+You can use the DIST script like the following to generate them.
 
   % ./DIST gen
 
