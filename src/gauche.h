@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.378 2004-08-12 20:39:50 shirok Exp $
+ *  $Id: gauche.h,v 1.379 2004-08-16 02:33:57 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1845,19 +1845,18 @@ SCM_EXTERN ScmObj Scm_StringToNumber(ScmString *str, int radix, int strict);
  * PROCEDURE (APPLICABLE OBJECT)
  */
 
-/* Packet for inliner */
-typedef ScmObj (*ScmInlinerProc)(ScmObj proc, ScmObj form, ScmObj env,
-                                 int ctx, void *data);
 
+typedef ScmObj (*ScmTransformerProc)(ScmObj self, ScmObj form, ScmObj env,
+                                     void *data);
+
+/* Packet for inliner */
 typedef struct ScmInlinerRec {
-    ScmInlinerProc proc;
+    ScmTransformerProc proc;
     void *data;
 } ScmInliner;
 
 #define SCM_DEFINE_INLINER(name, proc, data)     \
     ScmInliner name = { (proc), (data) }
-
-
 
 /* Base structure */
 struct ScmProcedureRec {
@@ -2069,12 +2068,10 @@ SCM_EXTERN ScmObj Scm_MakeSyntax(ScmSymbol *name,
 				 ScmCompileProc compiler, void *data);
 
 /* Macro */
-typedef ScmObj (*ScmTransformerProc)(ScmObj form, ScmObj env, void *data);
-
 struct ScmMacroRec {
     SCM_HEADER;
     ScmSymbol *name;            /* for debug */
-    ScmTransformerProc transformer; /* (Sexpr, Env) -> Sexpr */
+    ScmTransformerProc transformer; /* (Self, Sexpr, Env) -> Sexpr */
     void *data;
 };
 

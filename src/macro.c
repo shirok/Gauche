@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.50 2004-08-12 20:39:50 shirok Exp $
+ *  $Id: macro.c,v 1.51 2004-08-16 02:33:58 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -147,7 +147,7 @@ ScmSyntaxRules *make_syntax_rules(int nr)
 /* TODO: better error message on syntax error (macro invocation with
    bad number of arguments) */
 
-static ScmObj macro_transform(ScmObj form, ScmObj env, void *data)
+static ScmObj macro_transform(ScmObj self, ScmObj form, ScmObj env, void *data)
 {
     ScmObj proc = SCM_OBJ(data);
     SCM_ASSERT(SCM_PAIRP(form));
@@ -168,10 +168,10 @@ static ScmMacro *resolve_macro_autoload(ScmAutoload *adata)
     return SCM_MACRO(mac);
 }
 
-static ScmObj macro_autoload(ScmObj form, ScmObj env, void *data)
+static ScmObj macro_autoload(ScmObj self, ScmObj form, ScmObj env, void *data)
 {
     ScmMacro *mac = resolve_macro_autoload(SCM_AUTOLOAD(data));
-    return mac->transformer(form, env, mac->data);
+    return mac->transformer(SCM_OBJ(mac), form, env, mac->data);
 }
 
 ScmObj Scm_MakeMacroAutoload(ScmSymbol *name, ScmAutoload *adata)
@@ -889,7 +889,8 @@ static ScmObj synrule_expand(ScmObj form, ScmObj env, ScmSyntaxRules *sr)
     return SCM_NIL;
 }
 
-static ScmObj synrule_transform(ScmObj form, ScmObj env, void *data)
+static ScmObj synrule_transform(ScmObj self, ScmObj form, ScmObj env,
+                                void *data)
 {
     ScmSyntaxRules *sr = (ScmSyntaxRules *)data;
     return synrule_expand(form, env, sr);
@@ -1078,7 +1079,7 @@ ScmObj Scm_MacroExpand(ScmObj expr, ScmObj env, int oncep)
             }
         }
         if (mac) {
-            expr = mac->transformer(expr, env, mac->data);
+            expr = mac->transformer(SCM_OBJ(mac), expr, env, mac->data);
             if (!oncep) continue;
         }
         break;

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.98 2004-08-12 20:39:50 shirok Exp $
+;;;  $Id: genstub,v 1.99 2004-08-16 02:33:58 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -1037,7 +1037,7 @@
         (req  (num-reqargs-of cproc))
         (opt  (num-optargs-of cproc))
         )
-    (f "static ScmObj ~a(ScmObj subr, ScmObj form, ScmObj env, int ctx, void *data)"
+    (f "static ScmObj ~a(ScmObj subr, ScmObj form, ScmObj env, void *data)"
        inliner)
     ))
 

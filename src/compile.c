@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compile.c,v 1.117 2004-08-12 20:39:50 shirok Exp $
+ *  $Id: compile.c,v 1.118 2004-08-16 02:33:57 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -535,7 +535,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
             } else if (SCM_MACROP(var)) {
                 trns = SCM_MACRO(var)->transformer;
                 data = SCM_MACRO(var)->data;
-                form = trns(form, env, data);
+                form = trns(var, form, env, data);
                 goto recompile;
             } else {
                 /* it's a global variable.   Let's see if the symbol is
@@ -552,15 +552,15 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                     if (SCM_MACROP(gv)) {
                         trns = SCM_MACRO(gv)->transformer;
                         data = SCM_MACRO(gv)->data;
-                        form = trns(form, env, data);
+                        form = trns(gv, form, env, data);
                         goto recompile;
                     }
-                    if (!NOINLINEP(vm) && SCM_PROCEDUREP(g->value)
+                    if (!NOINLINEP(vm) && SCM_PROCEDUREP(gv)
                         && SCM_PROCEDURE_INLINER(gv)) {
                         ScmInliner *inliner = SCM_PROCEDURE_INLINER(gv);
-                        ScmObj inlined
-                            = inliner->proc(g->value, form, env,
-                                            ctx, inliner->data);
+                        trns = inliner->proc;
+                        data = inliner->data;
+                        ScmObj inlined = trns(gv, form, env, data);
                         if (!SCM_FALSEP(inlined)) {
                             add_srcinfo(Scm_LastPair(inlined), form);
                             return inlined;
