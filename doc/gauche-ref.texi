@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.159 2002-02-16 09:46:16 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.160 2002-02-18 20:52:00 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3056,8 +3056,21 @@ form, and compile it again.
 @section Macro expansion
 @c NODE マクロの展開
 
+@defun macro-expand form
+@defunx macro-expand-1 form
+If @var{form} is a list and its first element is a variable
+globally bound to a macro, @code{macro-expand-1}
+invokes its macro transformer and
+returns the expanded form.  Otherwise, returns @var{form} as is.
+
+@code{macro-expand} repeats @code{macro-expand-1} until the
+@var{form} can't be expanded.
+
+These procedures can be used to expand globally defined macros.
+@end defspec
+
 @defspec %macro-expand form
-@defspecx %macro-expand1 form
+@defspecx %macro-expand-1 form
 @end defspec
 
 @node Macro utilities,  , Macro expansion, Macros
@@ -5030,6 +5043,11 @@ Other class may provide a method to customize the behavior.
 @c COMMON
 @end deffn
 
+@node String Interpolation
+@subsection String Interpolation
+@c NODE 文字列の補間
+
+The term "string interpolation" is used in the Perl
 
 @node String Accessors & Modifiers, String Comparison, String Constructors, Strings
 @subsection String Accessors & Modifiers

@@ -1,3 +1,16 @@
+2002-02-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/macro.c, src/extlib.stub : added procedure version of
+	  macro-expand and macro-expand-1.
+
+2002-02-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/macro.c (compile_macro_expand) : bug fix for expanding
+	  traditional macros.
+	* src/read.c, lib/gauche/interpolate.scm  : added special syntax
+	  #`"..." for string interpolation.
+	* src/extlib.stub : added read-list.
+
 2002-02-16  Shiro Kawai  <shiro@acm.org>
 
 	* gc/dyn_load.c, src/core.c : fix required to link dyn_load.o
