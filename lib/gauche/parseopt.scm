@@ -1,7 +1,7 @@
 ;;;
 ;;; parseopt.scm - yet another command-line argument parser
 ;;;
-;;;  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2000-2003 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,13 +12,13 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: parseopt.scm,v 1.1 2001-07-02 00:25:32 shirok Exp $
+;;;  $Id: parseopt.scm,v 1.2 2003-04-17 07:44:31 shirok Exp $
 ;;;
 
 (define-module gauche.parseopt
   (use gauche.regexp)
   (use srfi-2)
-  (export make-option-parser parse-options))
+  (export make-option-parser parse-options let-args))
 (select-module gauche.parseopt)
 
 ;; Help functions
@@ -144,5 +144,124 @@
   (syntax-rules ()
     ((_ args clauses)
      ((make-option-parser clauses) args))))
+
+;;;
+;;; The alternative way : let-args
+;;;   Based on Alex Shinn's implementation.
+;;;
+
+;; (let-args args (varspec ...) body ...)
+;;  where varspec can be
+;;   (var spec [default])
+;;  or
+;;   (var spec => callback)
+;;
+;;  varspec can be an improper list, as
+;;
+;; (let-args args (varspec ... . rest) body ...)
+;;
+;;  then, rest is bound to the rest of the args.
+
+
+;; Auxiliary macro.
+;; Collects parse-options optspec (opts) and variable bindings (binds).
+(define-syntax let-args-internal
+  (syntax-rules (else =>)
+    ;;
+    ;; Handle var == #f case first.  This is only useful for side-effects
+    ;; or recognizing option (and then discard).
+    ;;
+    ((_ args binds (opts ...) ((#f spec1 => callback) . varspecs) body)
+     (let-args-internal args
+        binds
+        (opts ... (spec1 => callback))
+        varspecs
+        body))
+    ((_ args binds opts ((#f spec1 ignore) . varspecs) body)
+     (let-args-internal args
+        binds
+        opts
+        ((#f spec1 => (lambda _ #f)) . varspecs)
+        body))
+    ((_ args binds opts ((#f spec1) . varspecs) body)
+     (let-args-internal args
+        binds
+        opts
+        ((#f spec1 => (lambda _ #f)) . varspecs)
+        body))
+    ;;
+    ;; Handle else clause
+    ;; The contents of clause must evaluated outside of binding scope.
+    ;;
+    ((_ args binds (opts ...) ((else => else-cb) . varspecs) body)
+     (let-args-internal args
+         ((e else-cb) . binds)
+         (opts ... (else f (e f)))
+         varspecs
+         body))
+    ((_ args binds (opts ...) ((else formals . forms) . varspecs) body)
+     (let-args-internal args
+         ((e (lambda formals . forms)) . binds)
+         (opts ... (else f (e f)))
+         varspecs
+         body))
+    ;;
+    ;; Handle explicit callbacks.
+    ;;
+    ((_ args binds (opts ...) ((var1 spec1 => callback) . varspecs) body)
+     (let-args-internal args
+         ((var1 #f) (cb1 callback) . binds)
+         (opts ... (spec1 => (lambda x (set! var1 (apply cb1 x)))))
+         varspecs
+         body))
+    ;;
+    ;; Normal case.
+    ;; Transform base form into a let w/ a callback to set its value
+    ;; we don't know # of values to receive unless we parse the optspec,
+    ;; so the callback needs extra trick.  (Ugly... needs rework).
+    ;;
+    ((_ args binds (opts ...) ((var1 spec1 default1) . varspecs) body)
+     (let-args-internal args
+         ((var1 default1) . binds)
+         (opts ... (spec1 => (lambda x
+                               (set! var1
+                                     (cond ((null? x) #t) ;; no arg
+                                           ((null? (cdr x)) (car x))
+                                           (else x))))))
+         varspecs
+         body))
+    ;;
+    ;; No default means #f
+    ;;
+    ((_ args binds (opts ...) ((var1 spec1) . varspecs) body)
+     (let-args-internal args
+         binds
+         (opts ...)
+         ((var1 spec1 #f) . varspecs)
+         body))
+    ;;
+    ;; Capture invalid clause
+    ;;
+    ((_ args binds (opts ...) (other . varspecs) body)
+     (syntax-error "let-args: invalid clause:" other))
+    ;;
+    ;; Finish
+    ;; Extra let() allows body contains internal defines.
+    ;;
+    ((_ args binds opts () body)
+     (let binds (parse-options args opts) (let () . body)))
+    ((_ args binds opts rest body)
+     (let binds (let ((rest (parse-options args opts))) (let () . body))))
+    ))
+
+(define-syntax let-args
+  (syntax-rules ()
+    ;; transfer to let-args-internal which collects the parse-options
+    ;; form
+    ((_ args varspecs . body)
+     (let-args-internal args () () varspecs body))
+    ((_ . otherwise)
+     (syntax-error "malformed let-args:" (let-args . otherwise)))
+    ))
 
 (provide "gauche/parseopt")

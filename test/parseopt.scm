@@ -7,7 +7,7 @@
 (test-start "parseopt")
 (use gauche.parseopt)
 (test-module 'gauche.parseopt)
-
+#|
 (define (help) (display "Help message"))
 
 (define parser
@@ -80,5 +80,123 @@
       (tester "-bb" "x" "-what" "-eee" "3" "x" "y"))
 (test "else" '("bb=x,?=what," "q" "-eee" "3" "x" "y")
       (tester "-bb" "x" "-what=q" "-eee" "3" "x" "y"))
+|#
+(test* "let-args (foo)" 9
+       (let-args '() ((foo "foo=n" 9)) foo))
+
+(test* "let-args (foo)" #f
+       (let-args '() ((foo "foo=n")) foo))
+
+(test* "let-args (foo)" 3
+       (let-args '("--foo" "3") ((foo "foo=n" 9)) foo))
+
+(test* "let-args (foo)" *test-error*
+       (let-args '("--foof" "3") ((foo "foo=n" 9)) foo))
+
+(test* "let-args (foo)" 3
+       (let-args '("--foo" "3") ((bar "bar") (foo "foo=n" 9)) foo))
+
+(test* "let-args (bar)" #t
+       (let-args '("--bar") ((bar "bar") (foo "foo=n" 9)) bar))
+
+(test* "let-args (bar)" #t
+       (let-args '("--bar") ((foo "foo=n" 9) (bar "bar")) bar))
+
+(test* "let-args (bar)" #f
+       (let-args '("--foo" "3") ((foo "foo=n" 9) (bar "bar")) bar))
+
+(test* "let-args (baz)" '("4" 2)
+       (let-args '("--foo" "3" "--baz" "4" "2")
+                 ((foo "foo=n" 9)
+                  (bar "bar")
+                  (baz "baz=si"))
+                  baz))
+
+(test* "let-args (baz)" *test-error*
+       (let-args '("--foo" "3" "--baz" "4")
+                 ((foo "foo=n" 9)
+                  (bar "bar")
+                  (baz "baz=si"))
+                  baz))
+
+(test* "let-args (baz)" #f
+       (let-args '("--foo" "3" "--bar")
+                 ((foo "foo=n" 9)
+                  (bar "bar")
+                  (baz "baz=si"))
+                  baz))
+
+(test* "let-args (rest)" '("bunga" "bonga")
+       (let-args '("--foo" "3" "--bar" "bunga" "bonga")
+                 ((foo "foo=n" 9)
+                  (bar "bar")
+                  (baz "baz=si")
+                  . rest)
+                 rest))
+
+(test* "let-args (rest)" '("bunga" "bonga")
+       (let-args '("bunga" "bonga")
+                 ((foo "foo=n" 9)
+                  (bar "bar")
+                  (baz "baz=si")
+                  . rest)
+                 rest))
+
+(test* "let-args (rest)" '()
+       (let-args '()
+                 ((foo "foo=n" 9)
+                  (bar "bar")
+                  (baz "baz=si")
+                  . rest)
+                 rest))
+
+(test* "let-args (callback)" 25
+       (let-args '("-foo" "5")
+                  ((foo "foo=n" => (lambda (x) (* x x)))
+                   (bar "bar"))
+                  foo))
+
+(test* "let-args (callback)" #f
+       (let-args '()
+                  ((foo "foo=n" => (lambda (x) (* x x)))
+                   (bar "bar"))
+                  foo))
+
+(test* "let-args (side-effect)" 5
+       (let ((boo 0))
+         (let-args '("-foo" "5")
+                    ((#f "foo=n" => (lambda (x) (set! boo x)))
+                     (bar "bar"))
+                    boo)))
+
+(test* "let-args (side-effect)" 0
+       (let ((boo 0))
+         (let-args '("-bar")
+                    ((#f "foo=n" => (lambda (x) (set! boo x)))
+                     (#f "bar"))
+                    boo)))
+
+(test* "let-args (scope)" 7
+       (let ((foo 7))
+         (let-args '("-foo" "6")
+                    ((foo "foo=n")
+                     (bar "bar=n" foo))
+                    bar)))
+
+(test* "let-args (scope)" 8
+       (let ((x 8))
+         (let-args '("-foo")
+                   ((x   "x")
+                    (foo "foo" => (lambda () x)))
+                   foo)))
+
+(test* "let-args (scope)" 9
+       (let ((x 9))
+         (call/cc
+          (lambda (ret)
+            (let-args '("-foo")
+                      ((x  "x")
+                       (else _ (ret x)))
+                      11)))))
 
 (test-end)

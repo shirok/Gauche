@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.382 2003-04-16 23:03:10 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.383 2003-04-17 07:45:10 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -19017,6 +19017,109 @@ and continues parsing:
      (continue args))))
 @end example
 
+@end defmac
+
+@defmac let-args args (bind-spec @dots{} [. rest]) body @dots{}
+@c EN
+This macro wraps @code{parse-options} to make it look more
+like ordinary Scheme construct.
+@var{Bind-spec} must be one of the following forms.
+@c JP
+このマクロは@code{parse-options}のラッパーで、
+より通常のScheme構文に近い形式を提供します。
+@var{Bind-spec}は次のいずれかの形式でなければなりません。
+@c COMMON
+
+@example
+1. (@var{var} @var{option-spec})
+2. (@var{var} @var{option-spec} @var{default})
+3. (@var{var} @var{option-spec} => @var{callback})
+
+4. (else @var{formals} @var{form} ...)
+@end example
+
+@c EN
+A list of command-line arguments passed to @var{args} are parsed
+according to @var{option-spec}s.  If the corresponding option
+is given, a variable @var{var} is bound to a value as follows:
+@example
+(a) If the @var{bind-spec} is 1. or 2., then
+  (a1) If @var{option-spec} doesn't require an argument, then @code{#t}:
+  (a2) If @var{option-spec} requires one argument, then the value of
+       the argument:
+  (a3) If @var{option-spec} requires more than one argument,
+       the list of the values of the arguments.
+(b) If the @var{bind-spec} is 3., then @var{callback} is called with
+  the value(s) of arguments, and its return value.
+@end example
+@c JP
+コマンドライン引数のリストが@var{args}に渡されると、それが
+@var{option-spec}に基づいてパーズされます。該当するオプションが見付かれば、
+変数@var{var}が次に述べる値に束縛されます：
+@example
+(a) @var{bind-spec}の形式が上の1. または2. の場合：
+  (a1) @var{option-spec}が引数を要求しない場合は、@code{#t}。
+  (a2) @var{option-spec}がひとつの引数を要求する場合は、その引数の値。
+  (a3) @var{option-spec}がそれ以上の引数を要求する場合は、引数の値のリスト。
+(b) @var{bind-spec}の形式が上の3. の場合、@var{callback}を
+  引数の値を伴って呼び出し、その戻り値。
+@end example
+@c COMMON
+
+@c EN
+As a special case, @var{var} can be @code{#f}, in which case
+the value is ignored.  It is only useful for side effects in
+@var{callback}.
+@c JP
+特別な場合として、@var{var}を@code{#f}とすることもできます。
+その場合、値は無視されます。
+@var{callback}での副作用だけに関心がある場合に使えるでしょう。
+@c COMMON
+
+@c EN
+If the corresponding option is not given in @var{args},
+@var{var} is bound to @var{default} in the form 2., or
+@code{#f} in the form 1 and 3.
+@c JP
+対応するオプションが@var{args}に与えられなかった場合、
+@var{var}は2.形式の場合は@var{default}の値に、
+そうでなければ@code{#f}に束縛されます。
+@c COMMON
+
+@c EN
+The last @var{bind-spec} may be the form 4. in which case
+it is treated in the same way as @code{else} clause
+of @code{parse-options}.
+@c JP
+最後の@var{bind-spec}は4.の形式であっても良く、
+その場合は@code{parse-options}の@code{else}節と同様に処理されます。
+@c COMMON
+
+@c EN
+The @var{bind-spec} list can be an improper list, whose last @code{cdr} is
+a symbol.  In which case, a list of the rest of the command-line arguments
+is bound to the variable named by the symbol.
+@c JP
+束縛リストは、最後の@code{car}にシンボルを持つ不完全なリストであっても良く、
+その場合はコマンドライン引数の残りのリストがその変数にと束縛されます。
+@c COMMON
+
+@c EN
+Note that the @var{default}, @var{callback}, and forms in @code{else}
+clause is evaluated outside of the scope of binding of @var{var}s
+(as the name @code{let-args} implies).
+@c JP
+@var{default}、@var{callback}、@code{else}節のフォーム等は
+@var{var}の束縛の外側のスコープで評価されることに注意して下さい。
+@c COMMON
+
+@c EN
+After all the bindings is done, @var{body} @dots{} are evaluated.
+@var{Body} may began with internal define forms.
+@c JP
+全ての束縛が終了した後、@var{body} @dots{} が評価されます。
+@var{body}は内部defineで始まっていても構いません。
+@c COMMON
 @end defmac
 
 @defmac make-option-parser (option-clause @dots{})
