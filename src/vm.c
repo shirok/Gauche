@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.86 2001-06-30 20:04:52 shirok Exp $
+ *  $Id: vm.c,v 1.87 2001-06-30 20:43:29 shirok Exp $
  */
 
 #include "gauche.h"
@@ -48,7 +48,8 @@ ScmVM *Scm_NewVM(ScmVM *base,
     v->parent = base;
     v->module = module ? module : base->module;
     v->escape = base ? base->escape : NULL;
-    v->errorHandler = SCM_FALSE;
+    v->errorHandler = NULL;
+    v->errorHandlerData = NULL;
     v->history = NULL;
     
     v->curin  = SCM_PORT(Scm_Stdin());
@@ -1432,12 +1433,12 @@ ScmObj Scm_VMDynamicWindC(ScmObj (*before)(ScmObj *args, int nargs, void *data),
  * Exception handling
  */
 
-void default_exception_handler(ScmObj e)
+void Scm_VMDefaultExceptionHandler(ScmObj e, void *data)
 {
     ScmObj stack = Scm_VMGetStack(theVM), cp;
     ScmPort *err = SCM_VM_CURRENT_ERROR_PORT(theVM);
     int depth = 0;
-    
+
     if (SCM_EXCEPTIONP(e) && SCM_STRINGP(SCM_EXCEPTION_DATA(e))) {
         SCM_PUTZ("*** ERROR: ", -1, err);
         SCM_PUTS(SCM_STRING(SCM_EXCEPTION_DATA(e)), err);
@@ -1464,10 +1465,10 @@ ScmObj Scm_VMThrowException(ScmObj exception)
 {
     ScmObj handlers = theVM->handlers, hp;
 
-    if (SCM_PROCEDUREP(theVM->errorHandler)) {
-        Scm_Apply(theVM->errorHandler, SCM_LIST1(exception));
+    if (theVM->errorHandler) {
+        theVM->errorHandler(exception, theVM->errorHandlerData);
     } else {
-        default_exception_handler(exception);
+        Scm_VMDefaultExceptionHandler(exception, NULL);
     }
 
     /* unwind the dynamic handlers */
