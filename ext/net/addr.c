@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: addr.c,v 1.18 2004-01-28 00:28:22 fuyuki Exp $
+ *  $Id: addr.c,v 1.19 2004-07-15 09:18:10 shirok Exp $
  */
 
 #include "net.h"
@@ -153,7 +153,7 @@ static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
     ScmObj host = Scm_GetKeyword(key_host, initargs, key_any);
     ScmObj port = Scm_GetKeyword(key_port, initargs, SCM_MAKE_INT(0));
     ScmSockAddrIn *addr;
-    
+
     if (!SCM_INTP(port)) {
         Scm_Error(":port parameter must be a small exact integer, but got %S",
                   port);

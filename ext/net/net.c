@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.31 2004-07-15 07:10:05 shirok Exp $
+ *  $Id: net.c,v 1.32 2004-07-15 09:18:10 shirok Exp $
  */
 
 #include "net.h"
@@ -416,10 +416,10 @@ int inet_aton(const char *cp, struct in_addr *inp)
 {
     unsigned long r = inet_addr(cp);
     if (r == (unsigned long)-1) {
-	return -1;
+	return 0;
     } else {
 	inp->s_addr = r;
-	return 0;
+	return 1;
     }
 }
 
