@@ -1,5 +1,5 @@
 ;;; srfi-19/format.scm - excerpt from SRFI-19 for date formatting routine.
-;;; $Id: format.scm,v 1.5 2003-02-05 02:55:10 shirok Exp $
+;;; $Id: format.scm,v 1.6 2003-02-26 07:02:06 shirok Exp $
 
 ;; SRFI-19: Time Data Types and Procedures.
 ;; 
@@ -81,16 +81,16 @@
   (vector-ref tm:locale-long-month-vector n))
 
 (define (tm:locale-abbr-weekday->index string)
-  (find-index (pa$ string=? string) tm:locale-abbr-weekday-vector))
+  (find-index (cut string=? string <>) tm:locale-abbr-weekday-vector))
 
 (define (tm:locale-long-weekday->index string)
-  (find-index (pa$ string=? string) tm:locale-long-weekday-vector))
+  (find-index (cut string=? string <>) tm:locale-long-weekday-vector))
 
 (define (tm:locale-abbr-month->index string)
-  (find-index (pa$ string=? string) tm:locale-abbr-month-vector))
+  (find-index (cut string=? string <>) tm:locale-abbr-month-vector))
 
 (define (tm:locale-long-month->index string)
-  (find-index (pa$ string=? string) tm:locale-long-month-vector string=?))
+  (find-index (cut string=? string <>) tm:locale-long-month-vector string=?))
 
 ;; do nothing. 
 ;; Your implementation might want to do something...
@@ -221,59 +221,47 @@
   (let ( (associated (assoc char tm:directives)) )
     (if associated (cdr associated) #f)))
 
-(define (tm:date-printer date index format-string str-len)
-  (define (bad i) 
+(define (tm:date-printer date fmtstr)
+
+  (define (bad i)
     (errorf "tm:date-printer: bad date format string: \"~a >>>~a<<< ~a\""
             (string-take format-string i)
             (substring format-string i (+ i 1))
             (string-drop format-string (+ i 1))))
-  (if (>= index str-len)
-      (values)
-      (let ( (current-char (string-ref format-string index)) )
-	(if (not (char=? current-char #\~))
-	    (begin
-	      (display current-char)
-	      (tm:date-printer date (+ index 1) format-string str-len))
-	    (if (= (+ index 1) str-len) ; bad format string.
-                (bad index)
-                (let ( (pad-char? (string-ref format-string (+ index 1))) )
-                  (cond
-                   ((char=? pad-char? #\-)
-                    (when (= (+ index 2) str-len) ; bad format string.
-                      (bad (+ index 1)))
-                    (let ( (formatter (tm:get-formatter 
-                                       (string-ref format-string
-                                                   (+ index 2)))) )
-                      (unless formatter (bad (+ index 1)))
-                      (formatter date #f)
-                      (tm:date-printer date (+ index 3)
-                                       format-string str-len)))
 
-                   ((char=? pad-char? #\_)
-                    (when (= (+ index 2) str-len) ; bad format string.
-                      (bad (+ index 1)))
-                    (let ( (formatter (tm:get-formatter 
-                                       (string-ref format-string
-                                                   (+ index 2)))) )
-                      (unless formatter (bad (+ index 1)))
-                      (formatter date #\Space)
-                      (tm:date-printer date (+ index 3)
-                                       format-string str-len)))
+  (define (call-formatter ch pad ind)
+    (cond ((assv ch tm:directives) =>
+           (lambda (fn) ((cdr fn) date pad) (rec (read-char) (+ ind 1))))
+          (else (bad ind))))
+  
+  (define (rec ch ind)
+    (cond
+     ((eof-object? ch))
+     ((not (char=? ch #\~))
+      (write-char ch) (rec (read-char) (+ ind 1)))
+     (else
+      (let1 ch2 (read-char)
+        (cond
+         ((eof-object? ch2) (write-char ch))
+         ((char=? ch2 #\-)
+          (call-formatter (read-char) #f (+ ind 2)))
+         ((char=? ch2 #\_)
+          (call-formatter (read-char) #\space (+ ind 2)))
+         (else
+          (call-formatter ch2 #\0 (+ ind 1))))))
+     ))
 
-                   (else
-                    (let ( (formatter (tm:get-formatter 
-                                       (string-ref format-string
-                                                   (+ index 1)))) )
-                      (unless formatter (bad (+ index 1)))
-                      (formatter date #\0)
-                      (tm:date-printer date (+ index 2)
-                                       format-string str-len))))))))))
+  ;; tm:date-printer body
+  (with-input-from-string fmtstr
+    (cut rec (read-char) 0))
+  )
 
 (define (date->string date .  format-string)
   (let-optionals* format-string ((fmt-str "~c"))
     (with-output-to-string
       (lambda () 
-        (tm:date-printer date 0 fmt-str (string-length fmt-str))))))
+        (tm:date-printer date fmt-str)
+        ))))
 	
 (define (tm:char->int ch)
   (or (digit->integer ch) 
@@ -317,7 +305,6 @@
           (errorf "string->date: Non-numeric characters in integer read."))
          )))
     (accum-int port 0 0)))
-
 
 (define (tm:make-integer-exact-reader n)
   (lambda (port)
