@@ -27,3 +27,4 @@ version.scm
 file.scm
 listener.scm
 www.scm
+binary.scm
