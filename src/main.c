@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.50 2002-04-24 23:18:15 shirok Exp $
+ *  $Id: main.c,v 1.51 2002-06-08 11:00:38 shirok Exp $
  */
 
 #include <unistd.h>
@@ -49,11 +49,11 @@ void usage(void)
             "  -I<path> add <path> to the head of load path.\n"
             "  -u<module> (use) load and import <module>\n"
             "  -f<flag> sets various flags\n"
-            "      no-inline       don't inline primitive procedures\n"
-            "      no-source-info  don't preserve source information for debug\n"
-            "      load-verbose    report while loading files\n"
             "      case-fold       uses case-insensitive reader (as in R5RS)\n"
             "      compat-0.5      'main' behaves backward-compatible for 0.5 and before\n"
+            "      load-verbose    report while loading files\n"
+            "      no-inline       don't inline primitive procedures\n"
+            "      no-source-info  don't preserve source information for debug\n"
             );
     exit(1);
 }
@@ -87,7 +87,7 @@ void further_options(const char *optarg)
     }
     else {
         fprintf(stderr, "unknown -f option: %s\n", optarg);
-        fprintf(stderr, "supported options are: -fno-inine, -fdebug-compiler, -fno-source-info, -fload-verbose, -fcase-fold or -fcompat-0.5\n");
+        fprintf(stderr, "supported options are: -fcase-fold or -fcompat-0.5, -fload-verbose, -fno-inline, -fno-source-info\n");
         exit(1);
     }
 }
@@ -133,6 +133,9 @@ static void sig_setup(void)
     sigdelset(&set, SIGSTOP);
     sigdelset(&set, SIGSEGV);
     sigdelset(&set, SIGCHLD); /* for now */
+#ifdef SIGWINCH
+    sigdelset(&set, SIGWINCH); /* for now */
+#endif
     Scm_SetMasterSigmask(&set);
 }
 
