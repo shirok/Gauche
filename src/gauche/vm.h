@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.89 2004-03-05 05:26:09 shirok Exp $
+ *  $Id: vm.h,v 1.90 2004-07-15 23:16:13 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -176,14 +176,15 @@ typedef struct ScmVMParameterTableRec {
     int numParameters;
     int numAllocated;
     ScmObj *vector;
+    int *ids;
 } ScmVMParameterTable;
 
 SCM_EXTERN void Scm_ParameterTableInit(ScmVMParameterTable *table,
                                        ScmVM *base);
 
-SCM_EXTERN int Scm_MakeParameterSlot(ScmVM *vm);
-SCM_EXTERN ScmObj Scm_ParameterRef(ScmVM *vm, int index);
-SCM_EXTERN ScmObj Scm_ParameterSet(ScmVM *vm, int index, ScmObj value);
+SCM_EXTERN int Scm_MakeParameterSlot(ScmVM *vm, int *newid);
+SCM_EXTERN ScmObj Scm_ParameterRef(ScmVM *vm, int index, int id);
+SCM_EXTERN ScmObj Scm_ParameterSet(ScmVM *vm, int index, int id, ScmObj value);
 
 /*
  * VM structure

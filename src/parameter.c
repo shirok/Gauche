@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: parameter.c,v 1.5 2003-12-08 21:13:17 shirok Exp $
+ *  $Id: parameter.c,v 1.6 2004-07-15 23:16:13 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -60,6 +60,13 @@
 #define PARAMETER_INIT_SIZE 64
 #define PARAMETER_GROW      16
 
+/* Every time a new parameter is created (in any thread), it is
+ * given an unique ID in the process.  It prevents a thread from
+ * dereferencnig a parameter created by an unrelated thread.
+ */
+static int next_parameter_id = 0;
+ScmInternalMutex parameter_mutex;
+
 /* Init table.  For primordial thread, base == NULL.  For non-primordial
  * thread, base is the current thread (this must be called from the
  * creator thread).
@@ -71,13 +78,16 @@ void Scm_ParameterTableInit(ScmVMParameterTable *table,
 
     if (base) {
         table->vector = SCM_NEW_ARRAY(ScmObj, base->parameters.numAllocated);
+        table->ids = SCM_NEW_ATOMIC2(int*, PARAMETER_INIT_SIZE*sizeof(int));
         table->numAllocated = base->parameters.numAllocated;
         table->numParameters = base->parameters.numParameters;
         for (i=0; i<table->numParameters; i++) {
             table->vector[i] = base->parameters.vector[i];
+            table->ids[i] = base->parameters.ids[i];
         }
     } else {
         table->vector = SCM_NEW_ARRAY(ScmObj, PARAMETER_INIT_SIZE);
+        table->ids = SCM_NEW_ATOMIC2(int*, PARAMETER_INIT_SIZE*sizeof(int));
         table->numParameters = 0;
         table->numAllocated = PARAMETER_INIT_SIZE;
     }
@@ -86,20 +96,27 @@ void Scm_ParameterTableInit(ScmVMParameterTable *table,
 /*
  * Allocate new parameter slot
  */
-int Scm_MakeParameterSlot(ScmVM *vm)
+int Scm_MakeParameterSlot(ScmVM *vm, int *newid)
 {
     ScmVMParameterTable *p = &(vm->parameters);
     if (p->numParameters == p->numAllocated) {
-        int i;
-        ScmObj *newvec = SCM_NEW_ARRAY(ScmObj, p->numAllocated + PARAMETER_GROW);
+        int i, newsiz = p->numAllocated + PARAMETER_GROW;
+        ScmObj *newvec = SCM_NEW_ARRAY(ScmObj, newsiz);
+        int *newids = SCM_NEW_ATOMIC2(int*, newsiz*sizeof(int));
+        
         for (i=0; i<p->numParameters; i++) {
             newvec[i] = p->vector[i];
             p->vector[i] = SCM_FALSE; /*GC friendly*/
+            newids[i] = p->ids[i];
         }
         p->vector = newvec;
+        p->ids = newids;
         p->numAllocated += PARAMETER_GROW;
     }
     p->vector[p->numParameters] = SCM_UNDEFINED;
+    SCM_INTERNAL_MUTEX_LOCK(parameter_mutex);
+    p->ids[p->numParameters] = *newid = next_parameter_id++;
+    SCM_INTERNAL_MUTEX_UNLOCK(parameter_mutex);
     return p->numParameters++;
 }
 
@@ -107,22 +124,34 @@ int Scm_MakeParameterSlot(ScmVM *vm)
  * Accessor & modifier
  */
 
-ScmObj Scm_ParameterRef(ScmVM *vm, int index)
+ScmObj Scm_ParameterRef(ScmVM *vm, int index, int id)
 {
     ScmVMParameterTable *p = &(vm->parameters);
-    SCM_ASSERT(0 <= index && index < p->numParameters);
+    SCM_ASSERT(index >= 0);
+    if (index >= p->numParameters || p->ids[index] != id) {
+        Scm_Error("the thread %S doesn't have parameter (%d:%d)",
+                  vm, index, id);
+    }
     SCM_ASSERT(p->vector[index] != NULL);
     return p->vector[index];
 }
 
-ScmObj Scm_ParameterSet(ScmVM *vm, int index, ScmObj value)
+ScmObj Scm_ParameterSet(ScmVM *vm, int index, int id, ScmObj value)
 {
     ScmVMParameterTable *p = &(vm->parameters);
-    SCM_ASSERT(0 <= index && index < p->numParameters);
-    SCM_ASSERT(p->vector[index] != NULL);
+    SCM_ASSERT(index >= 0);
+    if (index >= p->numParameters || p->ids[index] != id) {
+        Scm_Error("the thread %S doesn't have parameter (%d:%d)",
+                  vm, index, id);
+    }
     p->vector[index] = value;
     return value;
 }
 
-
-
+/*
+ * Initialization
+ */
+void Scm__InitParameter(void)
+{
+    SCM_INTERNAL_MUTEX_INIT(parameter_mutex);
+}

@@ -1,3 +1,13 @@
+2004-07-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/parameter.c (Scm_ParameterTableInit etc.): fixed a problem that
+	  a thread may inadvertently refer to wrong parameter which the thread
+	  does not have.
+	* lib/gauche/parameter.scm: ditto
+	* src/gauche/vm.h: ditto
+	* src/core.c: ditto
+	* ext/threads/test.scm: ditto
+
 2004-07-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-19.scm (tm:time-difference): fixed bad args for error

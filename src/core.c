@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.54 2004-07-15 07:10:06 shirok Exp $
+ *  $Id: core.c,v 1.55 2004-07-15 23:16:13 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -72,6 +72,7 @@ extern void Scm__InitSignal(void);
 extern void Scm__InitSystem(void);
 extern void Scm__InitVM(void);
 extern void Scm__InitRepl(void);
+extern void Scm__InitParameter(void);
 extern void Scm__InitAutoloads(void);
 
 extern void Scm_Init_stdlib(ScmModule *);
@@ -112,6 +113,7 @@ void Scm_Init(const char *signature)
     Scm__InitWrite();
     Scm__InitVM();
     Scm__InitCompiler();
+    Scm__InitParameter();
     Scm__InitMacro();
     Scm__InitLoad();
     Scm__InitRegexp();

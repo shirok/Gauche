@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.220 2004-07-05 20:29:22 shirok Exp $
+;;; $Id: extlib.stub,v 1.221 2004-07-15 23:16:13 shirok Exp $
 ;;;
 
 "
@@ -1286,11 +1286,13 @@
 
 ;; parameter
 (define-cproc %vm-make-parameter-slot ()
-  "  SCM_RETURN(SCM_MAKE_INT(Scm_MakeParameterSlot(Scm_VM())));")
-(define-cproc %vm-parameter-ref (index::<int>)
-  "  SCM_RETURN(Scm_ParameterRef(Scm_VM(), index));")
-(define-cproc %vm-parameter-set! (index::<int> value)
-  "  SCM_RETURN(Scm_ParameterSet(Scm_VM(), index, value));")
+  "int newid, num;
+   num = Scm_MakeParameterSlot(Scm_VM(), &newid);
+   SCM_RETURN(Scm_Values2(SCM_MAKE_INT(num), SCM_MAKE_INT(newid)));")
+(define-cproc %vm-parameter-ref (index::<int> id::<int>)
+  "  SCM_RETURN(Scm_ParameterRef(Scm_VM(), index, id));")
+(define-cproc %vm-parameter-set! (index::<int> id::<int> value)
+  "  SCM_RETURN(Scm_ParameterSet(Scm_VM(), index, id, value));")
 
 ;;
 ;; Inspecting feature

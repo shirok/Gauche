@@ -19,28 +19,25 @@
 ;;---------------------------------------------------------------------
 (test-section "basic thread API")
 
-(test "current-thread" #t
-      (lambda () (eq? (current-thread) (current-thread)) ))
-(test "thread?" '(#t #f)
-      (lambda ()
-        (list (thread? (current-thread))
-              (thread? 'foo))))
-(test "make-thread" #t
-      (lambda ()
-        (thread? (make-thread (lambda () #f)))))
-(test "thread-name" 'foo
-      (lambda ()
-        (thread-name (make-thread (lambda () #f) 'foo))))
-(test "thread-specific" "hello"
-      (lambda ()
-        (thread-specific-set! (current-thread) "hello")
-        (thread-specific (current-thread))))
-(test "thread-start!" "hello"
-      (lambda ()
-        (call-with-output-string
-          (lambda (p)
-            (let1 t (thread-start! (make-thread (lambda () (display "hello" p))))
-              (thread-join! t))))))
+(test* "current-thread" #t
+       (eq? (current-thread) (current-thread)))
+(test* "thread?" '(#t #f)
+       (list (thread? (current-thread))
+             (thread? 'foo)))
+(test* "make-thread" #t
+       (thread? (make-thread (lambda () #f))))
+(test* "thread-name" 'foo
+       (thread-name (make-thread (lambda () #f) 'foo)))
+(test* "thread-specific" "hello"
+       (begin
+         (thread-specific-set! (current-thread) "hello")
+         (thread-specific (current-thread))))
+(test* "thread-start!" "hello"
+       (call-with-output-string
+         (lambda (p)
+           (let1 t
+               (thread-start! (make-thread (lambda () (display "hello" p))))
+             (thread-join! t)))))
 
 ;; calculate fibonacchi in awful way
 (define (mt-fib n)
@@ -57,7 +54,7 @@
     (dotimes (i n)
       (thread-start! (ref threads (- n i 1))))
     (thread-join! (ref threads (- n 1)))))
-(test "thread-join!" 1346269 (lambda () (mt-fib 31)))
+(test* "thread-join!" 1346269 (mt-fib 31))
 
 ;; NB: the result of the following test is not guaranteed.
 ;; There can be indefinite delay between thread-start! and the execution
@@ -82,123 +79,113 @@
 ;;---------------------------------------------------------------------
 (test-section "thread and error")
 
-(test "uncaught-exception" #t
-      (lambda ()
-        (let ((t (make-thread (lambda () (error "foo")))))
-          (thread-start! t)
-          (with-error-handler
-              (lambda (e)
-                (and (uncaught-exception? e)
-                     (is-a? (uncaught-exception-reason e) <error>)))
-            (lambda () (thread-join! t))))))
+(test* "uncaught-exception" #t
+       (let ((t (make-thread (lambda () (error "foo")))))
+         (thread-start! t)
+         (with-error-handler
+             (lambda (e)
+               (and (uncaught-exception? e)
+                    (is-a? (uncaught-exception-reason e) <error>)))
+           (lambda () (thread-join! t)))))
 
-(test "uncaught-exception" #t
-      (lambda ()
-        (let ((t (make-thread (lambda () (raise 4)))))
-          (thread-start! t)
-          (with-error-handler
-              (lambda (e)
-                (and (uncaught-exception? e)
-                     (eqv? (uncaught-exception-reason e) 4)))
-            (lambda () (thread-join! t))))))
+(test* "uncaught-exception" #t
+       (let ((t (make-thread (lambda () (raise 4)))))
+         (thread-start! t)
+         (with-error-handler
+             (lambda (e)
+               (and (uncaught-exception? e)
+                    (eqv? (uncaught-exception-reason e) 4)))
+           (lambda () (thread-join! t)))))
 
-(test "uncaught-exception" #t
-      (lambda ()
-        (let ((t (make-thread (lambda ()
-                                (with-error-handler
-                                    (lambda (e) e)
-                                  (lambda () (error "foo")))))))
-          (thread-start! t)
-          (with-error-handler
-              (lambda (e) e)
-            (lambda () (is-a? (thread-join! t) <error>))))))
+(test* "uncaught-exception" #t
+       (let ((t (make-thread (lambda ()
+                               (with-error-handler
+                                   (lambda (e) e)
+                                 (lambda () (error "foo")))))))
+         (thread-start! t)
+         (with-error-handler
+             (lambda (e) e)
+           (lambda () (is-a? (thread-join! t) <error>)))))
 
 ;;---------------------------------------------------------------------
 (test-section "basic mutex API")
 
-(test "make-mutex" #t
-      (lambda () (mutex? (make-mutex))))
+(test* "make-mutex" #t (mutex? (make-mutex)))
+(test* "mutex-name" 'foo (mutex-name (make-mutex 'foo)))
 
-(test "mutex-name" 'foo
-      (lambda () (mutex-name (make-mutex 'foo))))
+(test* "mutex-specific" "hoge"
+       (let ((m (make-mutex 'bar)))
+         (mutex-specific-set! m "hoge")
+         (mutex-specific m)))
 
-(test "mutex-specific" "hoge"
-      (lambda ()
-        (let ((m (make-mutex 'bar)))
-          (mutex-specific-set! m "hoge")
-          (mutex-specific m))))
+(test* "lock and unlock - no blocking" #t
+       (let ((m (make-mutex)))
+         (mutex-lock! m)
+         (mutex-unlock! m)))
 
-(test "lock and unlock - no blocking" #t
-      (lambda ()
-        (let ((m (make-mutex)))
-          (mutex-lock! m)
-          (mutex-unlock! m))))
-
-(test "mutex-state" (list 'not-abandoned (current-thread) 'not-owned 'not-abandoned)
-      (lambda ()
-        (let ((m (make-mutex))
-              (r '()))
-          (push! r (mutex-state m))
-          (mutex-lock! m)
-          (push! r (mutex-state m))
-          (mutex-unlock! m)
-          (mutex-lock! m #f #f)
-          (push! r (mutex-state m))
-          (mutex-unlock! m)
-          (push! r (mutex-state m))
-          (reverse r))))
+(test* "mutex-state"
+       (list 'not-abandoned (current-thread) 'not-owned 'not-abandoned)
+       (let ((m (make-mutex))
+             (r '()))
+         (push! r (mutex-state m))
+         (mutex-lock! m)
+         (push! r (mutex-state m))
+         (mutex-unlock! m)
+         (mutex-lock! m #f #f)
+         (push! r (mutex-state m))
+         (mutex-unlock! m)
+         (push! r (mutex-state m))
+         (reverse r)))
 
 ;; This test uses simple-minded spin lock, without using mutex timeouts
 ;; nor condition variables.   Not recommended way for real code.
-(test "lock and unlock - blocking (simple spin-lock)" 
-      '((put a) (get a) (put b) (get b) (put c) (get c))
-      (lambda ()
-        (let ((log '())
-              (cell #f)
-              (m (make-mutex)))
-          (define (put! msg)
-            (mutex-lock! m)
-            (if cell
-                (begin (mutex-unlock! m) (put! msg))
-                (begin (set! cell msg)
-                       (push! log `(put ,msg))
-                       (mutex-unlock! m))))
-          (define (get!)
-            (mutex-lock! m)
-            (if cell
-                (let1 r cell
-                  (set! cell #f)
-                  (push! log `(get ,r))
-                  (mutex-unlock! m)
-                  r)
-                (begin (mutex-unlock! m) (get!))))
-          (define (producer)
-            (put! 'a)
-            (put! 'b)
-            (put! 'c))
-          (define (consumer)
-            (get!)
-            (get!)
-            (get!))
-          (let ((tp (thread-start! (make-thread producer 'producer)))
-                (tc (thread-start! (make-thread consumer 'consumer))))
-            (thread-join! tp)
-            (thread-join! tc)
-            (reverse log)))))
+(test* "lock and unlock - blocking (simple spin-lock)" 
+       '((put a) (get a) (put b) (get b) (put c) (get c))
+       (let ((log '())
+             (cell #f)
+             (m (make-mutex)))
+         (define (put! msg)
+           (mutex-lock! m)
+           (if cell
+             (begin (mutex-unlock! m) (put! msg))
+             (begin (set! cell msg)
+                    (push! log `(put ,msg))
+                    (mutex-unlock! m))))
+         (define (get!)
+           (mutex-lock! m)
+           (if cell
+             (let1 r cell
+               (set! cell #f)
+               (push! log `(get ,r))
+               (mutex-unlock! m)
+               r)
+             (begin (mutex-unlock! m) (get!))))
+         (define (producer)
+           (put! 'a)
+           (put! 'b)
+           (put! 'c))
+         (define (consumer)
+           (get!)
+           (get!)
+           (get!))
+         (let ((tp (thread-start! (make-thread producer 'producer)))
+               (tc (thread-start! (make-thread consumer 'consumer))))
+           (thread-join! tp)
+           (thread-join! tc)
+           (reverse log))))
 
-(test "lock with timeout"
+(test* "lock with timeout"
       '(#t #f #f #f #f #t #t)
-      (lambda ()
-        (let ((m (make-mutex)))
-          (let* ((r0 (mutex-lock! m))
-                 (r1 (mutex-lock! m 0))
-                 (r2 (mutex-lock! m 0.05))
-                 (r3 (mutex-lock! m (seconds->time (+ (time->seconds (current-time)) 0.05))))
-                 (r4 (mutex-lock! m (seconds->time (- (time->seconds (current-time)) 0.05))))
-                 (r5 (mutex-unlock! m))
-                 (r6 (mutex-lock! m 0)))
-            (mutex-unlock! m)
-            (list r0 r1 r2 r3 r4 r5 r6)))))
+      (let ((m (make-mutex)))
+        (let* ((r0 (mutex-lock! m))
+               (r1 (mutex-lock! m 0))
+               (r2 (mutex-lock! m 0.05))
+               (r3 (mutex-lock! m (seconds->time (+ (time->seconds (current-time)) 0.05))))
+               (r4 (mutex-lock! m (seconds->time (- (time->seconds (current-time)) 0.05))))
+               (r5 (mutex-unlock! m))
+               (r6 (mutex-lock! m 0)))
+          (mutex-unlock! m)
+          (list r0 r1 r2 r3 r4 r5 r6))))
 
 ;; recursive mutex code taken from an example in SRFI-18
 (test "recursive mutex"
@@ -232,61 +219,57 @@
 ;;---------------------------------------------------------------------
 (test-section "condition variables")
 
-(test "make-condition-variable" #t
-      (lambda ()
-        (condition-variable? (make-condition-variable))))
+(test* "make-condition-variable" #t
+       (condition-variable? (make-condition-variable)))
 
-(test "condition-varaible-name" 'foo
-      (lambda ()
-        (condition-variable-name (make-condition-variable 'foo))))
+(test* "condition-varaible-name" 'foo
+       (condition-variable-name (make-condition-variable 'foo)))
 
-(test "condition-variable-specific" "hello"
-      (lambda ()
-        (let1 c (make-condition-variable 'foo)
-          (condition-variable-specific-set! c "hello")
-          (condition-variable-specific c))))
+(test* "condition-variable-specific" "hello"
+       (let1 c (make-condition-variable 'foo)
+         (condition-variable-specific-set! c "hello")
+         (condition-variable-specific c)))
 
 ;; Producer-consumer model using condition variable.
-(test "condition-variable-signal!"
-      '((put a) (get a) (put b) (get b) (put c) (get c))
-      (lambda ()
-        (let ((log '())
-              (cell #f)
-              (m  (make-mutex))
-              (put-cv (make-condition-variable))
-              (get-cv (make-condition-variable)))
-          (define (put! msg)
-            (mutex-lock! m)
-            (if cell
-                (begin (mutex-unlock! m put-cv) (put! msg))
-                (begin (set! cell msg)
-                       (push! log `(put ,msg))
-                       (condition-variable-signal! get-cv)
-                       (mutex-unlock! m))))
-          (define (get!)
-            (mutex-lock! m)
-            (if cell
-                (let1 r cell
-                  (set! cell #f)
-                  (push! log `(get ,r))
-                  (condition-variable-signal! put-cv)
-                  (mutex-unlock! m)
-                  r)
-                (begin
-                  (mutex-unlock! m get-cv) (get!))))
-          (define (producer)
-            (put! 'a)
-            (put! 'b)
-            (put! 'c))
-          (define (consumer)
-            (get!)
-            (get!)
-            (get!))
-          (let ((tp (thread-start! (make-thread producer 'producer)))
-                (tc (thread-start! (make-thread consumer 'consumer))))
-            (thread-join! tp)
-            (thread-join! tc)
-            (reverse log)))))
+(test* "condition-variable-signal!"
+       '((put a) (get a) (put b) (get b) (put c) (get c))
+       (let ((log '())
+             (cell #f)
+             (m  (make-mutex))
+             (put-cv (make-condition-variable))
+             (get-cv (make-condition-variable)))
+         (define (put! msg)
+           (mutex-lock! m)
+           (if cell
+             (begin (mutex-unlock! m put-cv) (put! msg))
+             (begin (set! cell msg)
+                    (push! log `(put ,msg))
+                    (condition-variable-signal! get-cv)
+                    (mutex-unlock! m))))
+         (define (get!)
+           (mutex-lock! m)
+           (if cell
+             (let1 r cell
+               (set! cell #f)
+               (push! log `(get ,r))
+               (condition-variable-signal! put-cv)
+               (mutex-unlock! m)
+               r)
+             (begin
+               (mutex-unlock! m get-cv) (get!))))
+         (define (producer)
+           (put! 'a)
+           (put! 'b)
+           (put! 'c))
+         (define (consumer)
+           (get!)
+           (get!)
+           (get!))
+         (let ((tp (thread-start! (make-thread producer 'producer)))
+               (tc (thread-start! (make-thread consumer 'consumer))))
+           (thread-join! tp)
+           (thread-join! tc)
+           (reverse log))))
 
 ;;---------------------------------------------------------------------
 (test-section "port access serialization")
@@ -350,35 +333,32 @@
 
 (sys-system "rm -rf test.out")
 
-(test "write to file, buffered" #t
-      (lambda ()
-        (receive (confirmer generators)
-            (port-test-testers 160 8 20 #f)
-          (call-with-output-file "test.out"
-            (lambda (outp) (port-test-kick-threads generators outp)))
-          (call-with-input-file "test.out" confirmer))))
+(test* "write to file, buffered" #t
+       (receive (confirmer generators)
+           (port-test-testers 160 8 20 #f)
+         (call-with-output-file "test.out"
+           (lambda (outp) (port-test-kick-threads generators outp)))
+         (call-with-input-file "test.out" confirmer)))
 
 (sys-system "rm -rf test.out")
 
-(test "write to file, line-buffered" #t
-      (lambda ()
-        (receive (confirmer generators)
-            (port-test-testers 160 8 20 #t)
-          (call-with-output-file "test.out"
-            (lambda (outp) (port-test-kick-threads generators outp))
-            :bufferling 'line)
-          (call-with-input-file "test.out" confirmer))))
+(test* "write to file, line-buffered" #t
+       (receive (confirmer generators)
+           (port-test-testers 160 8 20 #t)
+         (call-with-output-file "test.out"
+           (lambda (outp) (port-test-kick-threads generators outp))
+           :bufferling 'line)
+         (call-with-input-file "test.out" confirmer)))
 
 
 (sys-system "rm -rf test.out")
 
-(test "write to string" #t
-      (lambda ()
-        (receive (confirmer generators)
-            (port-test-testers 160 8 20 #f)
-          (let1 s (call-with-output-string
-                    (lambda (outp) (port-test-kick-threads generators outp)))
-            (call-with-input-string s confirmer)))))
+(test* "write to string" #t
+       (receive (confirmer generators)
+           (port-test-testers 160 8 20 #f)
+         (let1 s (call-with-output-string
+                   (lambda (outp) (port-test-kick-threads generators outp)))
+           (call-with-input-string s confirmer))))
 
 ;; Check if port is properly unlocked when an error is signalled
 ;; inside the port processing routine.
@@ -418,26 +398,24 @@
     (thread-join! th2)
     (close-output-port p)))
 
-(test "check if port is unlocked on error" "aaaaaAAAAAAbbbbbbbb"
-      (lambda ()
-        (call-with-output-string (cut port-test-on-error <> #f))))
-(test "check if port is unlocked on error" "aaaaaAAAAAAbbbbbbbb"
-      (lambda ()
-        (call-with-output-string (cut port-test-on-error <> #t))))
+(test* "check if port is unlocked on error" "aaaaaAAAAAAbbbbbbbb"
+       (call-with-output-string (cut port-test-on-error <> #f)))
+(test* "check if port is unlocked on error" "aaaaaAAAAAAbbbbbbbb"
+       (call-with-output-string (cut port-test-on-error <> #t)))
 
 (sys-system "rm -f test.out")
-(test "check if port is unlocked on error (use file)" "aaaaaAAAAAAbbbbbbbb"
-      (lambda ()
-        (call-with-output-file "test.out"
-          (cut port-test-on-error <> #f))
-        (call-with-input-file "test.out" port->string)))
+(test* "check if port is unlocked on error (use file)" "aaaaaAAAAAAbbbbbbbb"
+       (begin
+         (call-with-output-file "test.out"
+           (cut port-test-on-error <> #f))
+         (call-with-input-file "test.out" port->string)))
 
 (sys-system "rm -f test.out")
-(test "check if port is unlocked on error (use file)" "aaaaaAAAAAAbbbbbbbb"
-      (lambda ()
-        (call-with-output-file "test.out"
-          (cut port-test-on-error <> #t))
-        (call-with-input-file "test.out" port->string)))
+(test* "check if port is unlocked on error (use file)" "aaaaaAAAAAAbbbbbbbb"
+       (begin
+         (call-with-output-file "test.out"
+           (cut port-test-on-error <> #t))
+         (call-with-input-file "test.out" port->string)))
 
 ;;---------------------------------------------------------------------
 ;(test-section "thread and signal")
@@ -454,21 +432,34 @@
 
 (define p (make-parameter 3))
 
-(test "check locality of parameters" '(3 4 5)
-      (lambda ()
-        (let ((th1 (make-thread
-                    (lambda ()
-                      (p 4)
-                      (set! *thr1-val* (p)))))
-              (th2 (make-thread
-                    (lambda ()
-                      (p 5)
-                      (set! *thr2-val* (p))))))
-          (thread-start! th1)
-          (thread-start! th2)
-          (thread-join! th1)
-          (thread-join! th2)
-          (list (p) *thr1-val* *thr2-val*))))
+(test* "check locality of parameters" '(3 4 5)
+       (let ((th1 (make-thread
+                   (lambda ()
+                     (p 4)
+                     (set! *thr1-val* (p)))))
+             (th2 (make-thread
+                   (lambda ()
+                     (p 5)
+                     (set! *thr2-val* (p))))))
+         (thread-start! th1)
+         (thread-start! th2)
+         (thread-join! th1)
+         (thread-join! th2)
+         (list (p) *thr1-val* *thr2-val*)))
 
+(test* "check parameter identification"
+       *test-error*
+       (let* ((local #f))
+         (thread-join!
+          (thread-start!
+           (make-thread
+            (lambda ()
+              (set! local (make-parameter 1))))))
+         (thread-join!
+          (thread-start!
+           (make-thread
+            (lambda ()
+              (local)))))))
+         
 (test-end)
 
