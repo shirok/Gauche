@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.38 2001-07-01 02:33:11 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.39 2001-07-02 03:04:46 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3458,6 +3458,7 @@ of descendants of @var{class}.
 @menu
 * Character code conversion::   
 * Networking::                  
+* Parsing command-line options::  
 * High Level Process Interface::  
 * Regular expression utilities::  
 * Serializer::                  
@@ -3610,7 +3611,7 @@ usually in favor of the native CES.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Networking, High Level Process Interface, Character code conversion, Libarary Modules
+@node Networking, Parsing command-line options, Character code conversion, Libarary Modules
 @section @code{gauche.net} - Networking
 
 @deftp {Module} gauche.net
@@ -4176,7 +4177,168 @@ Otherwise, @code{#f} is returned.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node High Level Process Interface, Regular expression utilities, Networking, Libarary Modules
+@node Parsing command-line options, High Level Process Interface, Networking, Libarary Modules
+@section @code{gauche.parseopt} - Parsing command-line options
+
+@deftp {Module} gauche.parseopt
+@mdindex gauche.parseopt
+This module defines a convenient way to parse command-line options.
+The interface is hinted by Perl, and conveniently handles long-format
+options with mutiple option arguments.
+
+Note that you can use the standard @code{getopt} interface by SLIB,
+if you prefer.
+@end deftp
+
+@defmac parse-options args (option-clause @dots{})
+@var{args} is an expression that contains a list of command-line arguments.
+This macro scans the command-line options (an argument that begins with
+`@code{-}') and processes it as specified in @var{option-clause}s, then
+returns the remaining arguments.
+
+Unlike typical @code{getopt} or @code{getopt_long} implementation in C,
+@code{parse-options} does not permute the given command-line arguments.
+It stops parsing when it encounters a non-option argument (argument without
+starting with a minus sign).
+
+If the parser encounters an argument with only two minus signs `@code{--}',
+it stops argument parsing and returns a list of arguments after `@code{--}'.
+
+Each @var{option-clause} is consisted by a pair of @var{option-spec}
+and its action.
+
+@var{option-spec} is a string that specifies the name of the option and
+how the option takes the arguments.  An alphanumeric characters, underscore,
+plus and minus sign is allowed for option's names, except that
+minus sign can't be the first character, i.e. the valid option name
+matches a regexp @code{#/[\w_+][-\w_+]*/}.
+If the option takes argument(s), it can be specified by attaching 
+equal character and the type of the argument after the name.  The option
+can take more than one arguments.
+
+@table @code
+@item "@var{name}"
+Specifies option @var{name}, that doesn't take any argument.
+
+@item "@var{name}=s"
+Option @var{name} takes one argument, and it is passed as a string.
+
+@item "@var{name}=i"
+Option @var{name} takes one argument, and it is passed as an exact integer.
+If the given argument is not valid string for an exact integer,
+an error is signalled.
+
+@item "@var{name}=f"
+Option @var{name} takes one argument, and it is passed as a real number.
+If the given argument is not valid string for a real number,
+an error is signalled.
+
+@item "@var{name}=ss"
+Option @var{name} takes two arguments, both string.
+
+@item "@var{name}=iii"
+Option @var{name} takes three integer arguments.
+
+@item "@var{name}=sf"
+Option @var{name} takes two arguments, the first is a string and the
+second is a number.
+@end table
+
+In the command line, the option may appear with preceding
+single or double minus signs.  The option's argument may be comibined
+by the option itself with an equal sign.  For example, all the following
+command line arguments match an option spec @code{"prefix=s"}.
+@example
+-prefix /home/shiro
+-prefix=/home/shiro
+--prefix /home/shiro
+--prefix=/home/shiro
+@end example
+
+If a given command-line option matches one of @var{option-spec}, then
+the associated action is evaluated.  An action can be one of the
+following forms.
+
+@table @code
+@item @var{bind-spec} @var{body} @dots{}
+@var{bind-spec} is a proper or dotted list of variables like lambda-list.
+The option's arguments are bound to @var{bind-spec}, then
+then @var{body} @dots{} is evaluated. 
+
+@item => @var{proc}
+If a command-line option matches @var{option-spec}, calls a procedure
+@var{proc} with a list of the option's arguments.
+@end table
+
+Examples:
+@example
+(parse-options '("-file" "foo")
+  (("-file=s" (file)
+     (format #t "file is ~s\n"))))
+ @result{} ;@r{``@code{file is "foo"}'' is printed}
+
+(parse-options '("-scale" "1.5" "2.2")
+  (("-scale=ff" (xscale yscale)
+     (format #t "scale is ~sx~s\n" xscale yscale)
+ @result{} ;@r{``@code{scale is 1.5x2.2}'' is printed}
+
+(parse-options '("-scale" "1.5" "2.2")
+  (("-scale=ff" scales
+     (format #t "scale is ~s\n" scales))))
+ @result{} ;@r{``@code{scale is (1.5 2.2)}'' is printed}
+
+(define (scales x y)
+  (format #t "scale is ~sx~s\n" x y))
+
+(parse-options '("-scale" "1.5" "2.2")
+  (("-scale=ff" => scales)))
+ @result{} ;@r{``@code{scale is 1.5x2.2}'' is printed}
+@end example
+
+If a symbol @code{else} is at the position of @var{option-spec},
+the clause is selected when no other option clause matches a given
+command-line option.  Three ``arguments'' are associated to
+the clause; the unmatched option, the rest of arguments, and
+a procedure that represents the option parser.
+
+@example
+(parse-options args
+  (("-file=s" => process-file)
+   (else (option . _)  (error "unrecognized option:" option))))
+@end example
+
+Unlike other clause, the else clause returns to the caller of
+@code{parse-options}, without looping further.  In order to
+continue looping, you have to call the third argument of the else
+clause with the remaining arguments.  This can be used
+to implement your own sub-parser.  The following example
+just skips unrecognized option, with printing a warning,
+and continues parsing:
+
+@example
+(parse-options args
+  (("-file=s" => process-file)
+   (else (option args continue)
+     (format #t "warning: ignoring unrecognized option: ~a" option)
+     (continue args))))
+@end example
+
+@end defmac
+
+@defmac make-option-parser (option-clause @dots{})
+This is a lower-level interface.  @var{option-clause}s are the
+same as @code{parse-options}.  This macro returns a procedure
+that can be used later to parse the command line options.
+
+The returned procedure takes one required argument and one
+optional argument.  The required argument is a list of strings,
+for given command-line arguments.  The optional argument may
+be a procedure that takes more than three arguments, and if given,
+the procedure is used as if it is the body of @code{else} option clause.
+@end defmac
+
+@c ----------------------------------------------------------------------
+@node High Level Process Interface, Regular expression utilities, Parsing command-line options, Libarary Modules
 @section @code{gauche.process} - High Level Process Interface
 
 @deftp {Module} gauche.process
