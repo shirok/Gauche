@@ -12,10 +12,11 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: repl.c,v 1.14 2001-12-18 11:02:29 shirok Exp $
+ *  $Id: repl.c,v 1.15 2001-12-22 06:27:55 shirok Exp $
  */
 
 #include "gauche.h"
+#include "gauche/vm.h"
 
 void Scm_Repl(ScmObj prompt, ScmPort *in, ScmPort *out)
 {
@@ -41,6 +42,12 @@ void Scm_Repl(ScmObj prompt, ScmPort *in, ScmPort *out)
             default:
                 Scm_Panic("unknown escape");
             case SCM_VM_ESCAPE_ERROR:
+                /* quick hack */
+                Scm_VM()->sp = Scm_VM()->stack;
+                Scm_VM()->argp = (ScmEnvFrame*)Scm_VM()->sp;
+                Scm_VM()->cont = NULL;
+                Scm_VM()->env = NULL;
+                Scm_VM()->pc = SCM_NIL;
                 break;
             }
         }
