@@ -3611,6 +3611,38 @@ and @code{match:substring}.
 @c COMMON
 @end defun
 
+@defun rxmatch-num-matches match
+@c EN
+Returns the number of matches in @var{match}.
+The number includes the "whole match", so it is always a positive
+integer for a @code{<regmatch>} object.  The number also includes
+the submatches that don't have value (see the examples below).
+
+For the convenience, @code{rxmatch-num-matches} returns 0
+if @var{match} is @code{#f}.
+@c JP
+@var{match}の持つマッチの数を返します。この数には
+「マッチ全体」も含まれるので、@code{<regmatch>}オブジェクトに対しては
+常に正の整数が返ることになります。また、値を持たないマッチもカウントされます
+(下の例を参照)。
+
+簡便のために、@var{match}に@code{#f}を渡すこともできます。
+その場合は0が返ります。
+@c COMMON
+
+@example
+(rxmatch-num-matches (rxmatch #/abc/ "abc"))
+  @result{} 1
+
+(rxmatch-num-matches (rxmatch #/(a(.))|(b(.))/ "ba"))
+  @result{} 5
+
+(rxmatch-num-matches #f)
+  @result{} 0
+@end example
+
+@end defun
+
 @defun rxmatch-after match &optional (i 0)
 @defunx rxmatch-before match &optional (i 0)
 @c EN
