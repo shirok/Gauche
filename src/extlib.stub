@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.115 2001-11-14 11:30:49 shirok Exp $
+;;; $Id: extlib.stub,v 1.116 2001-11-16 11:24:16 shirok Exp $
 ;;;
 
 "
@@ -879,6 +879,13 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (hash-table? hash))
   "  Scm_HashTablePut(hash, key, value);
   SCM_RETURN(SCM_UNDEFINED);")
+
+;; this is hash-table-remove! in STk.  I use `delete' for
+;; it's consistent with SRFI-1 and dbm-delete!.
+(define-cproc hash-table-delete! (hash key)
+  (assert (hash-table? hash))
+  "ScmHashEntry *e = Scm_HashTableDelete(hash, key);
+  SCM_RETURN(SCM_MAKE_BOOL(e != NULL));")
 
 (define-cproc hash-table-exists? (hash key)
   (assert (hash-table? hash))
