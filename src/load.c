@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.24 2001-03-09 08:37:48 shiro Exp $
+ *  $Id: load.c,v 1.25 2001-03-10 05:35:33 shiro Exp $
  */
 
 #include <unistd.h>
@@ -43,6 +43,9 @@ static ScmGloc *load_port_rec;       /* *load-port*         */
 
 /* List of provided features.  Must be protected in MT. */
 static ScmObj provided;
+
+/* List of dynamically loaded objects.  Must be protected in MT. */
+static ScmObj dso_list;
 
 /*--------------------------------------------------------------------
  * Scm_LoadFromPort
@@ -318,7 +321,7 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
  * one time.
  */
 
-#ifdef HAVE_DLFCN_H
+#ifdef HAVE_DLOPEN
 static const char *get_dynload_initfn(const char *filename)
 {
     const char *head, *tail, *s;
@@ -331,28 +334,34 @@ static const char *get_dynload_initfn(const char *filename)
     tail = strchr(head, '.');
     if (tail == NULL) tail = filename + strlen(filename);
 
-    name = SCM_NEW_ATOMIC2(char *, sizeof(prefix) + tail-head+1);
+    name = SCM_NEW_ATOMIC2(char *, sizeof(prefix) + tail - head);
     strcpy(name, prefix);
-    for (s = head, d = name + sizeof(prefix); s < tail; s++, d++) {
+    for (s = head, d = name + sizeof(prefix) - 1; s < tail; s++, d++) {
         if (isalnum(*s)) *d = tolower(*s);
         else *d = '_';
     }
     *d = '\0';
     return name;
 }
-#endif /* HAVE_DLFCN_H */
+#endif /* HAVE_DLOPEN */
 
-/* TODO: keep catalog of loaded object to avoid loading the same object
-   more than once */
+/* Dynamically load the specified object by FILENAME.
+   FILENAME must not contain the system's suffix (.so, for example).
+*/
 ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn)
 {
-#ifdef HAVE_DLFCN_H
+#ifdef HAVE_DLOPEN
     ScmObj truename, load_paths = Scm_GetDynLoadPath();
     void *handle;
     void (*func)(void);
     const char *cpath, *initname;
 
+    filename = SCM_STRING(Scm_StringAppendC(filename, "." SHLIB_SO_SUFFIX, -1, -1));
     truename = Scm_FindFile(filename, &load_paths, TRUE);
+
+    if (!SCM_FALSEP(Scm_Member(truename, dso_list, SCM_CMP_EQUAL)))
+        return SCM_FALSE;
+    
     cpath = Scm_GetStringConst(SCM_STRING(truename));
     handle = dlopen(cpath, RTLD_LAZY);
     if (handle == NULL) {
@@ -373,9 +382,10 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn)
     func = (void(*)(void))dlsym(handle, initname);
     if (func == NULL) {
         dlclose(handle);
-        Scm_Error("dynamic linking of %S failed: couldn't find initialization function", truename);
+        Scm_Error("dynamic linking of %S failed: couldn't find initialization function %s", truename, initname);
     }
     func();
+    dso_list = Scm_Cons(truename, dso_list);
     return SCM_TRUE;
 #else
     Scm_Error("dynamic linking is not supported on this architecture");
@@ -514,4 +524,5 @@ void Scm__InitLoad(void)
     provided = SCM_LIST2(SCM_MAKE_STR("srfi-6"), /* string ports (builtin) */
                          SCM_MAKE_STR("srfi-8")  /* receive (builtin) */
                          );
+    dso_list = SCM_NIL;
 }
