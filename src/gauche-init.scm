@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-init.scm,v 1.110 2003-09-14 12:41:56 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.111 2003-10-22 01:38:05 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -284,4 +284,4 @@
 
 (let ((dotfile (sys-normalize-pathname "~/.gaucherc" :expand #t)))
   (when (sys-access dotfile |F_OK|)
-    (load dotfile)))
+    (load dotfile :environment (find-module 'user))))

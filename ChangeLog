@@ -1,3 +1,9 @@
+2003-10-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche-init.scm : evaluates "~/.gaucherc" in the user module.
+	  NB: this is still not an official feature, and might be moved to
+	  gauche.interactive in future.
+
 2003-10-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c, src/portapi.c, ext/charconv/charconv.c : changed the
