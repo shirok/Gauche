@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.115 2001-11-04 04:36:50 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.116 2001-11-05 04:07:39 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -879,14 +879,15 @@ The following script is a simple grep command.
 
 (define (grep rx port)
   (with-input-from-port port
-    (port-for-each
-      (lambda (line)
-        (when (rxmatch rx line)
-          (format #t "~a:~a: ~a\n"
-                  (port-name port)
-                  (- (port-current-line port) 1)
-                  line)))
-      port)))
+    (lambda ()
+      (port-for-each
+       (lambda (line)
+         (when (rxmatch rx line)
+           (format #t "~a:~a: ~a\n"
+                   (port-name port)
+                   (- (port-current-line port) 1)
+                   line)))
+       read-line))))
 
 (define (main args)
   (if (null? args)
@@ -897,8 +898,8 @@ The following script is a simple grep command.
             (for-each (lambda (f)
                         (call-with-input-file f
                           (lambda (p) (grep rx p))))
-                      (cdr args))))
-        0))
+                      (cdr args)))))
+  0)
 @end cartouche
 @end example
 
