@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.346 2003-01-18 14:23:09 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.347 2003-01-27 03:51:32 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -18413,6 +18413,7 @@ the procedure is used as if it is the body of @code{else} option clause.
 
 @deftp {Module} gauche.process
 @mdindex gauche.process
+@c EN
 This module provides a higher-level API of Unix process control,
 implemented on top of low-level system calls such as @code{sys-fork}
 and @code{sys-exec}.  The interface is mostly compatible with
@@ -18420,6 +18421,15 @@ STk's process library.  This module also provides ``process ports'',
 a convenient way to send/receive information to/from subprocesses.
 
 To use this module, say @code{(use gauche.process)}.
+@c JP
+このモジュールは、@code{sys-fork} や @code{sys-exec} などの低レベルな
+システムコールの上に実装された、Unix プロセス制御の高レベル API を提供します。
+インターフェースは、STk のプロセスライブラリとほとんどの点で互換性があります。
+また、このモジュールは、サブプロセスに情報を送ったり、サブプロセスから
+情報を受け取ったりするのに便利な「プロセスポート」を提供します。
+
+このモジュールを使うためには、@code{(use gauche.process)} として下さい。
+@c COMMON
 @end deftp
 
 @menu
@@ -18432,41 +18442,78 @@ To use this module, say @code{(use gauche.process)}.
 
 @deftp {Class} <process>
 @clindex process
+@c EN
 An object to keep the status of a child process.  You can create
 the process object by @code{run-process} procedure described below.
+@c JP
+子プロセスの状態を保持するためのオブジェクト。以下で説明される
+@code{run-process} 手続きにより、プロセスを作ることができます。
+@c COMMON
 @end deftp
 
 @defun run-process command arg @dots{}
+@c EN
 Run @var{command} with @var{arg} in a subprocess, and returns a
 @code{<process>} object.   @var{command} is searched from the
 command search path.
 
 Command line arguments @var{arg}s can include the following keyword
 arguments which specify special handling of the child process:
+@c JP
+サブプロセスで、@var{arg} を引数として @var{command} を実行し、
+@code{<process>} オブジェクトを返します。@var{command} は、
+コマンドサーチパスから探されます。
+
+コマンドライン引数 @var{arg}s は、子プロセスを特別に扱うための
+キーワード引数を含むことができます。
+@c COMMON
 @table @code
 @item :input @var{file}
 @itemx :output @var{file}
 @itemx :error @var{file}
+@c EN
 These arguments controls the subprocess' standard i/o.
 @var{file} may be either a string or a keyword @code{:pipe}.
 If it is a string, the process' standard input, output, or error goes
 to the named file.   If it is @code{:pipe}, the process'
 corresponding standard i/o is connected to a pipe, 
 and the other side of the pipe is available for the calling process.
+@c JP
+これらの引数は、サブプロセスの標準入出力を制御します。
+@var{file} は文字列かキーワード @code{:pipe} です。
+文字列の場合は、プロセスの標準入力、標準出力、標準エラーはそのファイルに
+なります。@code{:pipe} の場合は、プロセスの対応する標準入出力はパイプに
+結び付けられ、そのパイプのもう一方はプロセスの呼び出し側で利用できます。
+@c COMMON
 
 @item :wait @var{flag}
+@c EN
 If @var{flag} is true, @code{run-process} waits until the
 subprocess terminates.  Othewise the subprocess runs asynchronously
 and @code{run-process} returns immediately, which is the default behavior.
 Note that if the subprocess is running asynchronously, it is the
 caller's responsibility to call @code{process-wait} at certain
-timing to correct its exit status.
+timing to collect its exit status.
+@c JP
+@var{flag} が真の場合、@code{run-process} はサブプロセスが終了するまで待ちます。
+そうでなければ、サブプロセスは非同期に実行され、@code{run-process} は
+すぐに返ります。これがデフォルトの振る舞いになります。
+サブプロセスが非同期に実行している場合、その終了ステータスを回収するために
+適切なタイミングで @code{process-wait} を呼ぶことは、呼び出し側の責任であることに
+注意してください。
+@c COMMON
 
 @item :fork @var{flag}
+@c EN
 If @var{flag} is true, @code{run-process} forks to run
 the subprocess, which is the default behavior.  If @var{flag} is
 false, @code{run-process} directly calls @code{sys-exec}, so
 it never returns.
+@c JP
+@var{flag} が真の場合、@code{run-process} はサブプロセスをじっこうするために
+フォークします。これはデフォルトの振る舞いです。@var{flag} が偽の場合、
+@code{run-process} は直接 @code{sys-exec} を呼ぶので、それは返りません。
+@c COMMON
 @end table
 
 @end defun
@@ -18476,24 +18523,42 @@ it never returns.
 @end defun
 
 @deffn {Method} process-pid (process <process>)
+@c EN
 Returns the process ID of the subprocess @var{process}.
+@c JP
+サブプロセス @var{process} のプロセスIDを返します。
+@c COMMON
 @end deffn
 
 @deffn {Method} process-command (process <process>)
+@c EN
 Returns the command invoked in the subprocess @var{process}.
+@c JP
+サブプロセス @var{process} 内で起動されたコマンドを返します。
+@c COMMON
 @end deffn
 
 @deffn {Method} process-input (process <process>)
 @deffnx {Method} process-output (process <process>)
 @deffnx {Method} process-error (process <process>)
+@c EN
 If the process' standard input, output or error is connected to
 a pipe, returns another end of the pipe, i.e. @code{process-input}
 returns an output port that can feed data to @var{process}' stdin,
-@code{process-output} an input port that can read data from
-@var{process}' stdout, and @code{process-error} an input port that
+@code{process-output} returns an input port that can read data from
+@var{process}' stdout, and @code{process-error} returns an input port that
 can read data from @code{process}' stderr.
 If the corresponding i/o is not connected to the pipe,
 the function returns @code{#f}.
+@c JP
+プロセスの標準入力、標準出力、標準エラーがパイプに接続されている場合は、
+パイプのもう一方の終端を返します。例えば、@code{process-input} は、
+@var{process} の標準入力へデータを送ることができる出力ポートを返します。
+@code{process-output} は @var{process} の標準出力からデータを読み込むことの
+できる入力ポートを返します。そして、@code{process-error} は、@code{process}
+の標準エラーからデータを読み込むことのできる入力ポートを返します。
+対応する入出力がパイプに接続されていない場合、手続きは @code{#f} を返します。
+@c COMMON
 
 @example
 (let* ((process (run-process "date" :output :pipe))
@@ -18505,31 +18570,58 @@ the function returns @code{#f}.
 @end deffn
 
 @defun process-alive? process
+@c EN
 Returns true if @var{process} is alive.  Note that Gauche can't
 know the subprocess' status until it is explicitly checked by
 @code{process-wait}.
+@c JP
+@var{process} が生きている場合は真を返します。@code{process-wait} によって
+明示的にチェックされない限り、Gauche はサブプロセスのステータスを知ることが
+できないことに注意してください。
+@c COMMON
 @end defun
 
 @defun process-list
+@c EN
 Returns a list of active processes.  The process remains active
 until its exit status is explicitly collected by @code{process-wait}.
+@c JP
+アクティブなプロセスのリストを返します。プロセスは、その終了ステータスが
+@code{process-wait} によって明示的に回収されない場合は、アクティブなまま
+残ります。
+@c COMMON
 @end defun
 
 @defun process-wait process
+@c EN
 Obtains exit status of the subprocess @var{process}.
 This suspends execution until @var{process} exits.
+@c JP
+サブプロセス @var{process} の終了ステータスを取得します。
+これは、@var{process} が終了するまで実行を一時停止します。
+@c COMMON
 @end defun
 
 @defun process-send-signal process signal
+@c EN
 Sends a signal @var{signal} to the subprocess @var{process}.
 @var{signal} must be an exact integer for signal number.
 @xref{Signal}, for predefined variables of signals.
+@c JP
+サブプロセス @var{process} にシグナル @var{signal} を送ります。
+@var{signal} は正確整数のシグナルナンバーでなければなりません。
+シグナルの定義済み変数については、@ref{Signal}を参照して下さい。
+@c COMMON
 @end defun
 
 @defun process-kill process
 @defunx process-stop process
 @defunx process-continue process
+@c EN
 Sends SIGKILL, SIGSTOP and SIGCONT to @var{process}, respectively.
+@c JP
+それぞれ、@var{process} に、SIGKILL、SIGSTOP、SIGCONT を送ります。
+@c COMMON
 @end defun
 
 @node Process ports,  , Process object, gauche.process - High Level Process Interface
