@@ -16,7 +16,7 @@
    (else form)))
 
 (define-macro (test-macro msg expect form)
-  `(test ,msg ',expect (lambda () (unident (%macro-expand ,form)))))
+  `(test ,msg ',expect (lambda () (unident (%macroexpand ,form)))))
 
 ;;----------------------------------------------------------------------
 ;; basic tests
@@ -186,9 +186,9 @@
 
 ;; test for higiene
 (test "%cond" '(if a (begin => b))
-      (lambda () (let ((=> #f)) (unident (%macro-expand (%cond (a => b)))))))
+      (lambda () (let ((=> #f)) (unident (%macroexpand (%cond (a => b)))))))
 (test "%cond" '(if else (begin z))
-      (lambda () (let ((else #t)) (unident (%macro-expand (%cond (else z)))))))
+      (lambda () (let ((else #t)) (unident (%macroexpand (%cond (else z)))))))
 
 ;;----------------------------------------------------------------------
 ;; letrec, taken from R5RS section 7.3
@@ -491,14 +491,14 @@
 ;;----------------------------------------------------------------------
 ;; macro-expand
 
-(test-section "macro-expand")
+(test-section "macroexpand")
 
 (define-macro (foo x)   `(bar ,x ,x))
 (define-macro (bar x y) `(list ,x ,x ,y ,y))
 
-(test "macro-expand" '(list 1 1 1 1)
-      (lambda () (macro-expand '(foo 1))))
-(test "macro-expand-1" '(bar 1 1)
-      (lambda () (macro-expand-1 '(foo 1))))
+(test "macroexpand" '(list 1 1 1 1)
+      (lambda () (macroexpand '(foo 1))))
+(test "macroexpand-1" '(bar 1 1)
+      (lambda () (macroexpand-1 '(foo 1))))
 
 (test-end)
