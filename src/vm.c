@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.218.2.8 2004-12-24 12:50:35 shirok Exp $
+ *  $Id: vm.c,v 1.218.2.9 2004-12-24 21:25:58 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -200,32 +200,6 @@ pthread_key_t Scm_VMKey(void)
     return vm_key;
 }
 #endif /*GAUCHE_USE_PTHREADS*/
-
-/*
- * Initialization.  This should be called after modules are initialized.
- */
-void Scm__InitVM(void)
-{
-    /* Create root VM */
-#ifdef GAUCHE_USE_PTHREADS
-    if (pthread_key_create(&vm_key, NULL) != 0) {
-        Scm_Panic("pthread_key_create failed.");
-    }
-    rootVM = Scm_NewVM(NULL, Scm_SchemeModule(),
-                       SCM_MAKE_STR_IMMUTABLE("root"));
-    if (pthread_setspecific(vm_key, rootVM) != 0) {
-        Scm_Panic("pthread_setspecific failed.");
-    }
-    rootVM->thread = pthread_self();
-#else   /* !GAUCHE_USE_PTHREADS */
-    rootVM = theVM = Scm_NewVM(NULL, Scm_SchemeModule(),
-                               SCM_MAKE_STR_IMMUTABLE("root"));
-#endif  /* !GAUCHE_USE_PTHREADS */
-    rootVM->state = SCM_VM_RUNNABLE;
-
-    /* TEMPORARY */
-    Scm_InitStaticClass(SCM_CLASS_COMPILED_CODE, "<compiled-code>", Scm_GaucheModule(), NULL, 0);
-}
 
 /*====================================================================
  * VM interpreter
@@ -2089,7 +2063,7 @@ ScmObj Scm_Eval(ScmObj expr, ScmObj e)
     }
     if (SCM_VM_COMPILER_FLAG_IS_SET(theVM, SCM_COMPILE_SHOWRESULT)) {
         Scm_Printf(theVM->curerr, "==\n");
-        Scm_CompiledCodeDump(v);
+        Scm_CompiledCodeDump(SCM_COMPILED_CODE(v));
     }
     return user_eval_inner(v);
 }
@@ -3454,18 +3428,13 @@ ScmObj Scm_PackCode(ScmObj compiled)
     return SCM_OBJ(cc);
 }
 
-void Scm_CompiledCodeDump(ScmObj obj)
+void Scm_CompiledCodeDump(ScmCompiledCode *cc)
 {
     int i;
     ScmWord *p;
-    ScmCompiledCode *cc;
     ScmObj closures = SCM_NIL, arginfo;
     int clonum = 0;
 
-    if (!SCM_COMPILED_CODE_P(obj)) {
-        Scm_Error("compiled-code required, but got %S", obj);
-    }
-    cc = SCM_COMPILED_CODE(obj);
     Scm_Printf(SCM_CUROUT, "main_code (size=%d, const=%d):\n",
                cc->codeSize, cc->constantSize);
     do {
@@ -3550,4 +3519,103 @@ void Scm_CompiledCodeDump(ScmObj obj)
 }
 
 /* CompiledCode - Scheme interface */
+
+/* Converts the code vector into a list.
+   Instruction -> (<insn-symbol> [<arg0> <arg1>])
+   Obj/Code operand -> as is
+   Addr operand -> integer offset from the beginning of the code */
+ScmObj Scm_CompiledCodeToList(ScmCompiledCode *cc)
+{
+    int i, off;
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    
+    for (i=0; i<cc->codeSize; i++) {
+        ScmWord insn = cc->code[i];
+        int code = SCM_NVM_INSN_CODE(insn);
+        const char *name = Scm_VMInsnName(code);
+        
+        switch (Scm_VMInsnNumParams(code)) {
+        case 0: 
+            SCM_APPEND1(h, t, SCM_LIST1(SCM_INTERN(name)));
+            break;
+        case 1:
+            SCM_APPEND1(h, t, SCM_LIST2(SCM_INTERN(name),
+                                        SCM_MAKE_INT(SCM_NVM_INSN_ARG(insn))));
+            break;
+        case 2:
+            SCM_APPEND1(h, t, SCM_LIST3(SCM_INTERN(name),
+                                        SCM_MAKE_INT(SCM_NVM_INSN_ARG0(insn)),
+                                        SCM_MAKE_INT(SCM_NVM_INSN_ARG1(insn))));
+            break;
+        }
+
+        switch (Scm_VMInsnOperandType(code)) {
+        case SCM_VM_OPERAND_OBJ:;
+        case SCM_VM_OPERAND_CODE:
+            SCM_APPEND1(h, t, SCM_OBJ(cc->code[++i]));
+            break;
+        case SCM_VM_OPERAND_ADDR:
+            off = (ScmWord*)cc->code[++i] - cc->code;
+            SCM_APPEND1(h, t, SCM_MAKE_INT(off));
+            break;
+        }
+    }
+    return h;
+}
+
+static ScmObj code_maxstack_get(ScmObj cc)
+{
+    return SCM_MAKE_INT(SCM_COMPILED_CODE(cc)->maxstack);
+}
+
+static ScmObj code_info_get(ScmObj cc)
+{
+    return SCM_COMPILED_CODE(cc)->info;
+}
+
+static ScmObj code_arginfo_get(ScmObj cc)
+{
+    return SCM_COMPILED_CODE(cc)->argInfo;
+}
+
+static ScmObj code_parent_get(ScmObj cc)
+{
+    return SCM_COMPILED_CODE(cc)->parent;
+}
+
+static ScmClassStaticSlotSpec code_slots[] = {
+    SCM_CLASS_SLOT_SPEC("parent", code_parent_get, NULL),
+    SCM_CLASS_SLOT_SPEC("arg-info", code_arginfo_get, NULL),
+    SCM_CLASS_SLOT_SPEC("info", code_info_get, NULL),
+    SCM_CLASS_SLOT_SPEC("max-stack", code_maxstack_get, NULL),
+    { NULL }
+};
+    
+/*===============================================================
+ * Initialization
+ */
+
+void Scm__InitVM(void)
+{
+    /* Create root VM */
+#ifdef GAUCHE_USE_PTHREADS
+    if (pthread_key_create(&vm_key, NULL) != 0) {
+        Scm_Panic("pthread_key_create failed.");
+    }
+    rootVM = Scm_NewVM(NULL, Scm_SchemeModule(),
+                       SCM_MAKE_STR_IMMUTABLE("root"));
+    if (pthread_setspecific(vm_key, rootVM) != 0) {
+        Scm_Panic("pthread_setspecific failed.");
+    }
+    rootVM->thread = pthread_self();
+#else   /* !GAUCHE_USE_PTHREADS */
+    rootVM = theVM = Scm_NewVM(NULL, Scm_SchemeModule(),
+                               SCM_MAKE_STR_IMMUTABLE("root"));
+#endif  /* !GAUCHE_USE_PTHREADS */
+    rootVM->state = SCM_VM_RUNNABLE;
+
+    /* TEMPORARY */
+    Scm_InitStaticClass(SCM_CLASS_COMPILED_CODE, "<compiled-code>",
+                        Scm_GaucheModule(), code_slots, 0);
+}
 

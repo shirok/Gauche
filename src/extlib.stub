@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.230.2.2 2004-12-24 12:50:35 shirok Exp $
+;;; $Id: extlib.stub,v 1.230.2.3 2004-12-24 21:25:48 shirok Exp $
 ;;;
 
 "
@@ -1286,8 +1286,10 @@
 ;; temporary
 (define-cproc vm-pack-code (code)
   (return "Scm_PackCode"))
-(define-cproc vm-dump-code (code)
+(define-cproc vm-dump-code (code::<compiled-code>)
   (return <void> "Scm_CompiledCodeDump"))
+(define-cproc vm-code->list (code::<compiled-code>)
+  (return "Scm_CompiledCodeToList"))
 
 (define-cproc current-load-history ()
   "  SCM_RETURN(Scm_VM()->load_history);")
