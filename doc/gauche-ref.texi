@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.20 2001-06-08 10:11:59 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.21 2001-06-13 10:08:09 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -17,7 +17,7 @@
 
 @titlepage
 @title Gauche Reference Manual
-@subtitle version 0.3.13
+@subtitle version 0.3.15
 @author Shiro Kawai (shiro@@acm.org)
 
 @page
@@ -2819,51 +2819,265 @@ usually in favor of the native CES.
 
 @deftp {Module} gauche.net
 @mdindex gauche.net
-@emph{--- NOT IMPLEMENTED ---}
+Provides a set of functions necessary for network communications
+based on BSD socket interface.
+
+The API is provided in two different levels.  Lower level routines
+reflect traditional BSD socket interface, such as @code{bind(2)}.
+Higher level routines provides more convenient way to create
+typical connection-oriented server/client sockets.
+
+This module also provides APIs to obtain various information
+about hostnames, service ports, and protocols.
 @end deftp
+
+
+@node Socket address
+@subsection Socket address
+
+@deftp {Builtin Class} <sockaddr>
+@clindex sockaddr
+An abstract base class of socket addresses.  Each socket address family
+is implemented as a subclass of this class.
+
+Although socket addresses are built-in classes, you can use
+@code{make} method to create an instance of a
+specific socket address family.
+@end deftp
+
+@deffn {Generic Function} sockaddr-family addr
+Returns a keyword which indicates the family of the socket address
+@var{addr}.
+@end deffn
+
+@deffn {Generic Function} sockaddr-name addr
+Returns a string which represents the content of the socket address
+@var{addr}.
+@end deffn
+
+@deftp {Builtin Class} <sockaddr-in>
+@clindex sockaddr-in
+AF_INET family socket address.  To create an instance of this class,
+use @code{make} method as follows:
+@example
+(make <sockaddr-in> :host @var{host} :port @var{port})
+@end example
+@var{host} can be a string, or one of the keywords
+@code{:any}, @code{:broadcast}, @code{:none} or @code{:loopback}.
+If it is a string, it is either a host name or a dotted IP notation.
+Gauche uses @code{gethostbyname(3)} to obtain the actual IP address from
+@var{host} parameter.  If it is a keyword @code{:any}, 
+@code{:broadcast} or @code{:none}, the address
+uses @code{INADDR_ANY}, @code{INADDR_BROADCAST} or @code{INADDR_NONE},
+respectively.  The keyword @code{:loopback} is a synonym to the
+IPv4 loopback address "127.0.0.1".
+
+@var{port} must be a positive integer indicating the port number.
+@end deftp
+
+@deffn {Method} sockaddr-family (addr <sockaddr-in>)
+Returns @code{:inet}.
+@end deffn
+
+@deffn {Method} sockaddr-name (addr <sockaddr-in>)
+Returns a string in the form "@var{a}.@var{b}.@var{c}.@var{d}:@var{port}",
+ where "@var{a}.@var{b}.@var{c}.@var{d}" is dotted decimal notion of
+the IP address and @var{port} is the port number.
+@end deffn
+
+@deftp {Builtin Class} <sockaddr-un>
+@clindex sockaddr-un
+AF_UNIX family socket address.  To create an instance of this class,
+use @code{make} method as follows:
+@example
+(make <sockaddr-un> :path @var{path})
+@end example
+@var{path} must be a string specifying pathname of the socket.
+@end deftp
+
+@deffn {Method} sockaddr-family (addr <sockaddr-un>)
+Returns @code{:unix}.
+@end deffn
+
+@deffn {Method} sockaddr-name (addr <sockaddr-un>)
+Returns a pathname of the socket address.
+@end deffn
+
 
 @node High-level functions
 @subsection High-level functions
 
-@defun make-client-socket address &optional port
+@deftp {Builtin Class} <socket>
+@clindex socket
+Abstracts a socket, a communication endpoint.
+
+For a connection-oriented socket, you can access the communication
+channel by two ports associated to the socket, one for input and
+another for output.  @code{socket-input-port} and @code{socket-output-port}
+returns those ports, respectively.
+@end deftp
+
+The following two functions are convenient ways to create
+a connection-oriented socket.  Those functions
+are to provide an easy methods for typical cases,
+but have less control.  If you need more than these functions
+provide, use low-level interface.
+
+@defun make-client-socket address-spec &optional port
+Creates and returns a client socket, connected to the address
+specified by @var{address-spec}, which may be either one of
+the followings:
+@table @asis
+@item a socket address object
+If @var{address-spec} is an object of subclasses of @code{<sockaddr>},
+it is used as a remote socket address.
+@item a string, begins with "unix:"
+This specifies unix-domain socket.  The string following "unix:"
+is taken as a pathname of the socket.
+@item a string, begins with "inet:"
+This specifies inet-domain TCP socket.  The string following "inet:"
+must be a form of "@var{hostname}:@var{port}", where @var{hostname}
+is a domain name or a dotted decimal notation of IP address of
+the remote host, and @var{port} is a decimal port number.
+@item a string that doesn't fit the above patterns
+This is for compatibility with STk.  In this case, the socket
+is assumed to be an inet-domain, and the @var{address-spec}
+is taken as a remote host name or an IP address.  The second
+argument @var{port} is required to specify the remote port number.
+@end table
+
+The second argument @var{port} is just for STk compatibility mode.
+It is an error to specify @var{port} argument except the last pattern
+of @var{address-spec}.
+
+This function raises an error if it cannot create a socket,
+or cannot connect to the specified address.
+
+@example
+(make-client-socket "inet:www.yahoo.com:80")
+  @result{} ;@r{a socket connected to www.yahoo.com, port 80}
+(make-client-socket "inet:127.0.0.1:23")
+  @result{} ;@r{a socket connected to localhost, port 23}
+(make-client-socket "127.0.0.1" 23)
+  @result{} ;@r{a socket connected to localhost, port 23}
+(make-client-socket "unix:/tmp/.sock"
+  @result{} ;@r{a socket connected to a unix domain socket "/tmp/.sock"}
+@end example
 @end defun
 
-@defun make-server-socket address &optional port reuse-addr?
+@defun make-server-socket address-spec &keyword reuse-addr?
+Creates and returns a server socket, listening the address
+@var{address-spec}, which may be either one of the followings:
+@table @asis
+@item a socket address object
+It is used as the local socket address.
+@item a string, begins with "unix:"
+This specifies unix-domain socket.  The string following "unix:"
+is taken as a pathname of the socket.
+@item a string, begins with "inet:"
+This specifies inet-domain TCP socket.  The string following "inet:"
+is a decimal number which is a port number to listen.
+@item an exact integer
+This specifies inet-domain socket, and the number is used
+as a port number to listen.  This behavior is the same as STk.
+@end table
+
+If the keyword argument @var{reuse-addr?} is given with true value,
+the socket option @code{SO_REUSEADDR} is also set, which allows
+the server process to bind TCP port immediately after it is released
+by another process.
+
+@example
+(make-server-socket "inet:8080")
+  @result{} ;@r{a TCP socket listening port 8080}
+(make-server-socket 8080)
+  @result{} ;@r{a TCP socket listening port 8080}
+(make-server-socket "unix:/tmp/.sock")
+  @result{} ;@r{a socket listening unix socket /tmp/.sock}
+@end example
 @end defun
+
+Several accessors are available on the returned socket object.
+
+@defun socket-address socket
+Returns a socket address associated with @var{socket}.
+If no address has been associated to the socket, @code{#f} is returned.
+@end defun
+
+@defun socket-input-port socket
+Returns an input port associated with @var{socket}.
+The port can be used to send information to the remote process
+connected to the socket.
+@end defun
+
+@defun socket-output-port socket
+Returns an output port associated with @var{socket}.
+The port can be used to receive information from the remote process
+connected to the socket.
+@end defun
+
 
 @node Low-level socket interface
 @subsection Low-level socket interface
 
-@deftp {Builtin Class} <socket-address>
-@clindex socket-address
-@end deftp
+These functions provide APIs similar to the system calls.
+Those who are familiar to programming with socket APIs will
+find these functions useful for detailed control over
+communications.
 
-@defun make-socket-address-unix pathname
+@defun make-socket domain type &optional protocol
+Returns a socket with specified parameters.
 @end defun
 
-@defun make-socket-address-inet host port
-@end defun
+@defvar pf_unix
+@defvarx pf_inet
+These variables are bound to @code{PF_UNIX} and @code{PF_INET}.
+@end defvar
 
-@defun make-socket domain family protocol
+@defvar sock_stream
+@defvarx sock_dgram
+@defvarx sock_raw
+These variables are bound to @code{SOCK_STREAM}, @code{SOCK_DGRAM}
+and @code{SOCK_RAW}.
+@end defvar
+
+@defun socket-status socket
+Returns a internal status of @var{socket}, by one of the following
+symbols.
+@table @code
+@item none
+The socket is just created.
+@item bound
+The socket is bound to an address by @code{socket-bind}
+@item listening
+The socket is listening a connection by @code{socket-listen}
+@item connected
+The socket is connected by @code{socket-connect} or @code{socket-accept}.
+@item shutdown
+The socket is shutdown by @code{socket-shutdown}
+@item closed
+The socket is closed by @code{socket-close}.
+@end table
 @end defun
 
 @defun socket-bind socket address
 @end defun
 
-@defun socket-listen
+@defun socket-listen socket backlog
 @end defun
 
-@defun socket-accept
+@defun socket-accept socket
 @end defun
 
-@defun socket-connect
+@defun socket-connect socket address
 @end defun
 
-@defun socket-sendto
+@defun socket-shutdown socket how
 @end defun
 
-@defun socket-recvfrom
+@defun socket-close socket
 @end defun
+
 
 @node Netdb interface
 @subsection  Netdb interface
