@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fetch.scm,v 1.2 2004-04-23 06:03:01 shirok Exp $
+;;;  $Id: fetch.scm,v 1.3 2004-04-23 06:17:46 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -47,6 +47,7 @@
   (use file.util)
   (use util.list)
   (use gauche.package.util)
+  (use gauche.parameter)
   (export gauche-package-ensure))
 (select-module gauche.package.fetch)
 
@@ -56,22 +57,23 @@
 
 (define (gauche-package-ensure uri . opts)
   (let-keywords* opts ((config '()))
-    (let ((build-dir (assq-ref config 'build-dir "."))
-          (wget      (assq-ref config 'wget *wget-program*))
-          (ncftpget  (assq-ref config 'ncfptget *ncftpget-program*)))
+    (let* ((build-dir (assq-ref config 'build-dir "."))
+           (wget      (assq-ref config 'wget *wget-program*))
+           (ncftpget  (assq-ref config 'ncfptget *ncftpget-program*))
+           (dest      (build-path build-dir (sys-basename uri))))
       (rxmatch-case uri
         (#/^https?:/ (#f)
+         (sys-unlink dest)
          (run #`",wget -P \",build-dir\" \",uri\"")
-         (build-path build-dir (sys-basename uri)))
+         dest)
         (#/^ftp:/ (#f)
-         (let ((dest (build-path build-dir (sys-basename uri))))
-           (with-error-handler
-               (lambda (e)
-                 (sys-unlink dest)
-                 (raise e))
-             (lambda ()
-               (run #`",ncftpget -c \",uri\" > \",dest\"")))
-           dest))
+         (with-error-handler
+             (lambda (e)
+               (sys-unlink dest)
+               (raise e))
+           (lambda ()
+             (run #`",ncftpget -c \",uri\" > \",dest\"")))
+           dest)
         (else
          (unless (file-is-readable? uri)
            (error "can't read the package: " uri))

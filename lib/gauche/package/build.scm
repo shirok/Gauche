@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: build.scm,v 1.2 2004-04-23 06:01:27 shirok Exp $
+;;;  $Id: build.scm,v 1.3 2004-04-23 06:17:46 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -42,6 +42,7 @@
   (use srfi-2)
   (use gauche.package)
   (use gauche.package.util)
+  (use gauche.package.fetch)
   (use gauche.parameter)
   (use file.util)
   (use util.list)
@@ -119,7 +120,7 @@
 ;;; Driver
 ;;;
 
-(define (gauche-package-build tarball . opts)
+(define (gauche-package-build uri . opts)
   (let-keywords* opts ((config  '())
                        (configure-options #f)
                        (install-only? :install-only #f)
@@ -129,7 +130,8 @@
                        (install?     :install #f)
                        (clean?       :clean #f))
     (parameterize ((dry-run dry?))
-      (let* ((build-dir (assq-ref config 'build-dir "."))
+      (let* ((tarball   (gauche-package-ensure uri :config config))
+             (build-dir (assq-ref config 'build-dir "."))
              (basename  (tarball->package-directory tarball))
              (dir       (build-path build-dir basename))
              (packname  (package-name basename)))

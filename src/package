@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: package,v 1.3 2004-04-23 06:01:27 shirok Exp $
+;;;  $Id: package,v 1.4 2004-04-23 06:17:53 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -80,7 +80,7 @@
                   (clean   "clean")
                   . args)
     (unless (= (length args) 1) (usage))
-    (gauche-package-build (gauche-package-ensure (car args) :config *config*)
+    (gauche-package-build (car args)
                           :config *config*
                           :dry-run dry-run :install #t :clean clean
                           :configure-options copts)))
@@ -90,7 +90,7 @@
                   (copts   "C|configure-options=s" #f)
                   . args)
     (unless (= (length args) 1) (usage))
-    (gauche-package-build (gauche-package-ensure (car args) :config *config*)
+    (gauche-package-build (car args)
                           :config *config*
                           :dry-run dry-run
                           :configure-options copts)))
