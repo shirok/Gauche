@@ -17,6 +17,7 @@ system.scm
 rfc.scm
 parseopt.scm
 parameter.scm
+logger.scm
 text.scm
 util.scm
 version.scm
