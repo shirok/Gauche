@@ -1,7 +1,7 @@
 ;;;
 ;;; Adapt SSAX to Gauche
 ;;;
-;;; $Id: adaptor.scm,v 1.6 2003-07-23 12:45:49 shirok Exp $
+;;; $Id: adaptor.scm,v 1.7 2003-11-10 08:50:02 shirok Exp $
 ;;;
 
 (define-module sxml.adaptor
@@ -19,7 +19,7 @@
 (define char-newline #\newline)
 
 ;; make-char-quotator, used in sxml.to-html and sxml.tools
-(define (make-char-quotator . rules)
+(define (make-char-quotator rules)
   (lambda (s)
     (with-string-io s
       (lambda ()

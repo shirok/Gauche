@@ -1,3 +1,8 @@
+2003-11-09  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sxml/adaptor.scm (make-char-quotator) : the signature didn't
+	  match with usage.  Patch from Nobuo YAMASHITA.
+
 2003-11-08  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/process.scm (process-wait-any) : avoid calling
