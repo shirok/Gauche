@@ -9971,7 +9971,7 @@ This form installs @var{proc} as the signal handler for @var{signals}.
 @c EN
 When the control exits from @var{thunk}, the signal handler setting
 before @code{with-signal-handlers} are recovered.
-o@c JP
+@c JP
 @var{thunk}から制御が抜けた時に、@code{with-signal-handlers}が呼ばれた時点での
 シグナルハンドラが再設定されます。
 @c COMMON
