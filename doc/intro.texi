@@ -71,7 +71,7 @@ recent version on the web:
 
 @c JP
 ¤Ê¤ª¡¢ËÜ¥Þ¥Ë¥å¥¢¥ë¤ÎÆüËÜ¸ìÈÇÀ½ºî¤Ë¤Ï¡¢
-º´Æ£ ¿® »á¡¢»³²¼ ¿­É× »á¤Î¶¨ÎÏ¤òÄº¤­¤Þ¤·¤¿¡£
+º´Æ£ À¿ »á¡¢»³²¼ ¿­É× »á¤Î¶¨ÎÏ¤òÄº¤­¤Þ¤·¤¿¡£
 @c COMMON
 
 @menu
