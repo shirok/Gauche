@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.43 2002-06-18 06:06:14 shirok Exp $
+ *  $Id: bignum.c,v 1.44 2002-07-14 05:51:53 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -96,6 +96,7 @@ static ScmBignum *make_bignum(int size)
     return bignum_clear(b);
 }
 
+
 /* Allocate temporary bignum in the current function's stack frame
    if alloca() is available. */
 #ifdef HAVE_ALLOCA
@@ -106,8 +107,7 @@ static ScmBignum *make_bignum(int size)
     (var_)->sign = 1;                                   \
     bignum_clear(var_)
 #else  /*!HAVE_ALLOCA*/
-#define ALLOC_TEMP_BIGNUM(var_, size)           \
-    (var_) = make_bignum(size_);
+#define ALLOC_TEMP_BIGNUM(var_, size_) (var_) = make_bignum(size_);
 #endif /*!HAVE_ALLOCA*/
 
 ScmObj Scm_MakeBignumFromSI(long val)
