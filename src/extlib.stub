@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.122 2001-12-19 20:12:01 shirok Exp $
+;;; $Id: extlib.stub,v 1.123 2002-01-06 22:34:46 shirok Exp $
 ;;;
 
 "
@@ -701,6 +701,20 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   (assert (port? port))
   "  int i = Scm_PortFileNo(port);
   SCM_RETURN((i < 0)? SCM_FALSE : Scm_MakeInteger(i));")
+
+(define-symbol file "sym_file")
+(define-symbol string "sym_string")
+(define-symbol proc "sym_proc")
+(define-cproc port-type (port)
+  (assert (port? port))
+  "ScmObj type = SCM_FALSE;
+   switch (SCM_PORT_TYPE(port)) {
+     case SCM_PORT_FILE: type = sym_file; break;
+     case SCM_PORT_PROC: type = sym_proc; break;
+     case SCM_PORT_OSTR:;
+     case SCM_PORT_ISTR: type = sym_string; break;
+   }
+   SCM_RETURN(type);")
 
 ;; transfer units for copy-port
 (define-symbol char "sym_char")
