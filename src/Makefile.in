@@ -60,7 +60,7 @@ HDRS = gauche.h gauche/arch.h
 all : gosh @SHLIB_LIBGAUCHE@
 
 gosh : libgauche.a main.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o gosh main.o -L. -lgauche $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o gosh main.o libgauche.a $(LIBS)
 
 $(OBJS) main.o : $(HDRS)
 
