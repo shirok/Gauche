@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.213 2004-01-25 11:11:40 shirok Exp $
+;;; $Id: extlib.stub,v 1.214 2004-01-27 23:52:14 shirok Exp $
 ;;;
 
 "
@@ -482,7 +482,7 @@
   "  unsigned long modulo = 0;
   if (SCM_UNDEFINEDP(bound)) modulo = SCM_SMALL_INT_MAX;
   else if (SCM_INTP(bound)) modulo = SCM_INT_VALUE(bound);
-  else if (SCM_BIGNUMP(bound)) modulo = Scm_BignumToUI(SCM_BIGNUM(bound));
+  else if (SCM_BIGNUMP(bound)) modulo = Scm_BignumToUI(SCM_BIGNUM(bound), TRUE, TRUE);
   if (modulo == 0) Scm_Error(\"argument out of domain: %S\", bound);
   SCM_RETURN(Scm_MakeInteger(Scm_HashString(str, modulo)));")
 

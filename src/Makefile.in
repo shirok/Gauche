@@ -84,11 +84,11 @@ INSTALL_HEADERS = gauche.h \
 	../gc/include/gc.h \
 	../gc/include/gc_config_macros.h \
 	../gc/include/gc_pthread_redirects.h
-INSTALL_SUBHEADERS = gauche/config.h gauche/vm.h gauche/vminsn.h \
-                     gauche/char_euc_jp.h gauche/char_utf_8.h    \
-                     gauche/char_sjis.h gauche/char_none.h       \
-                     gauche/extend.h        \
-                     gauche/class.h gauche/exception.h           \
+INSTALL_SUBHEADERS = gauche/config.h gauche/vm.h gauche/vminsn.h      \
+                     gauche/char_euc_jp.h gauche/char_utf_8.h         \
+                     gauche/char_sjis.h gauche/char_none.h            \
+                     gauche/extend.h gauche/int64.h gauche/scmconst.h \
+                     gauche/class.h gauche/exception.h                \
                      gauche/pthread.h gauche/uthread.h gauche/arch.h
 INSTALL_LIBS = libgauche.$(SOEXT)
 INSTALL_BINS = gosh gauche-config

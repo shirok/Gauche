@@ -1,3 +1,12 @@
+2004-01-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h, src/number.c, src/bignum.c, src/gauche/int64.h,
+	  src/gauche/scmconst.h : fixup for 64bit integer support.
+	* ext/uvector/*, ext/digest/sha.* : changed accordingly.
+	  uvector isn't rewritten to use the new API, but just renamed
+	  some typedefs to avoid conflict.   it will be revised to use
+	  the new API soon.
+
 2004-01-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/mime.scm (mime-decode-word): capture the error from

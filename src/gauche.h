@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.362 2004-01-25 11:11:41 shirok Exp $
+ *  $Id: gauche.h,v 1.363 2004-01-27 23:52:14 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -46,6 +46,7 @@
 #include <string.h>
 #include <errno.h>
 #include <gauche/config.h>  /* read config.h _before_ gc.h */
+#include <gauche/int64.h>
 #define GC_DLL
 #include <gc.h>
 
@@ -1672,10 +1673,15 @@ SCM_EXTERN ScmObj Scm_MakeBignumFromDouble(double val);
 SCM_EXTERN ScmObj Scm_BignumCopy(ScmBignum *b);
 SCM_EXTERN ScmObj Scm_BignumToString(ScmBignum *b, int radix, int use_upper);
 
-SCM_EXTERN long   Scm_BignumToSI(ScmBignum *b);
-SCM_EXTERN u_long Scm_BignumToUI(ScmBignum *b);
-SCM_EXTERN long   Scm_BignumToSICheck(ScmBignum *b);
-SCM_EXTERN u_long Scm_BignumToUICheck(ScmBignum *b);
+SCM_EXTERN long   Scm_BignumToSI(ScmBignum *b, int clamphi, int clamplo);
+SCM_EXTERN u_long Scm_BignumToUI(ScmBignum *b, int clamphi, int clamplo);
+#if SIZEOF_LONG == 4
+SCM_EXTERN ScmInt64  Scm_BignumToSI64(ScmBignum *b, int hi, int lo);
+SCM_EXTERN ScmUInt64 Scm_BignumToUI64(ScmBignum *b, int hi, int lo);
+#else  /* SIZEOF_LONG >= 8 */
+#define Scm_BignumToSI64       Scm_BignumToSI
+#define Scm_BignumToUI64       Scm_BignumToUI
+#endif /* SIZEOF_LONG >= 8 */
 SCM_EXTERN double Scm_BignumToDouble(ScmBignum *b);
 SCM_EXTERN ScmObj Scm_NormalizeBignum(ScmBignum *b);
 SCM_EXTERN ScmObj Scm_BignumNegate(ScmBignum *b);
@@ -1729,11 +1735,12 @@ struct ScmComplexRec {
 #define SCM_COMPLEX_IMAG(obj)      SCM_COMPLEX(obj)->imag
 
 SCM_EXTERN ScmObj Scm_MakeInteger(long i);
-SCM_EXTERN ScmObj Scm_MakeIntegerFromUI(u_long i);
-SCM_EXTERN long   Scm_GetInteger(ScmObj obj);
-SCM_EXTERN u_long Scm_GetUInteger(ScmObj obj);
-SCM_EXTERN long   Scm_GetIntegerCheck(ScmObj obj);
-SCM_EXTERN u_long Scm_GetUIntegerCheck(ScmObj obj);
+SCM_EXTERN ScmObj Scm_MakeIntegerU(u_long i);
+
+SCM_EXTERN long   Scm_GetIntegerClamp(ScmObj obj, int clamphi, int clamplo);
+SCM_EXTERN u_long Scm_GetIntegerUClamp(ScmObj obj, int clamphi, int clamplo);
+#define Scm_GetInteger(x)  Scm_GetIntegerClamp(x, TRUE, TRUE)
+#define Scm_GetIntegerU(x) Scm_GetIntegerUClamp(x, TRUE, TRUE)
 
 SCM_EXTERN ScmObj Scm_MakeFlonum(double d);
 SCM_EXTERN double Scm_GetDouble(ScmObj obj);
@@ -1741,6 +1748,25 @@ SCM_EXTERN ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign);
 
 SCM_EXTERN ScmObj Scm_MakeComplex(double real, double imag);
 SCM_EXTERN ScmObj Scm_MakeComplexPolar(double magnitude, double angle);
+
+/* 64bit integer stuff */
+#if SIZEOF_LONG == 4
+SCM_EXTERN ScmObj Scm_MakeInteger64(ScmInt64 i);
+SCM_EXTERN ScmObj Scm_MakeIntegerU64(ScmUInt64 i);
+SCM_EXTERN ScmInt64  Scm_GetInteger64Clamp(ScmObj obj, int hi, int lo);
+SCM_EXTERN ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int hi, int lo);
+#else  /* SIZEOF_LONG >= 8 */
+#define Scm_MakeInteger64      Scm_MakeInteger
+#define Scm_MakeIntegerU64     Scm_MakeIntegerU
+#define Scm_GetInteger64Clamp  Scm_GetIntegerClamp
+#define Scm_GetIntegerU64Clamp Scm_GetIntegerUClamp
+#endif /* SIZEOF_LONG >= 8 */
+#define Scm_GetInteger64(x)    Scm_GetInteger64Clamp(x, TRUE, TRUE)
+#define Scm_GetIntegerU64(x)   Scm_GetIntegerU64Clamp(x, TRUE, TRUE)
+
+/* for backward compatibility -- will be gone soon */
+#define Scm_MakeIntegerFromUI Scm_MakeIntegerU
+#define Scm_GetUInteger       Scm_GetIntegerU
 
 SCM_EXTERN int    Scm_IntegerP(ScmObj obj);
 SCM_EXTERN int    Scm_OddP(ScmObj obj);

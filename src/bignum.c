@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bignum.c,v 1.53 2004-01-25 11:11:37 shirok Exp $
+ *  $Id: bignum.c,v 1.54 2004-01-27 23:52:14 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -244,67 +244,146 @@ ScmObj Scm_NormalizeBignum(ScmBignum *b)
     return SCM_OBJ(b);
 }
 
-/* b must be normalized.  result is clipped between [LONG_MIN, LONG_MAX] */
-long Scm_BignumToSI(ScmBignum *b) 
+/* b must be normalized.  */
+long Scm_BignumToSI(ScmBignum *b, int clamphi, int clamplo)
 {
     if (b->sign >= 0) {
         if (b->values[0] > LONG_MAX || b->size >= 2) {
-            return LONG_MAX;
+            if (clamphi) return LONG_MAX;
+            else goto err;
         } else {
             return (long)b->values[0];
         }
     } else {
         if (b->values[0] > (u_long)LONG_MAX+1 || b->size >= 2) {
-            return LONG_MIN;
+            if (clamplo) return LONG_MIN;
+            else goto err;
         } else {
             return -(long)b->values[0];
         }
     }
-}
-
-/* ... with check */
-long Scm_BignumToSICheck(ScmBignum *b) 
-{
-    if (b->sign >= 0) {
-        if (b->size <= 1 && b->values[0] < LONG_MAX) {
-            return (long)b->values[0];
-        }
-    } else {
-        if (b->size <= 1 && b->values[0] < (u_long)LONG_MAX+1) {
-            return -(long)b->values[0];
-        }
-    }
+  err:
     Scm_Error("argument out of range: %S", SCM_OBJ(b));
-    return 0; /* dummy */
+    return 0; /*dummy*/
 }
 
-/* b must be normalized.  result is rounded between [0, ULONG_MAX] */
-u_long Scm_BignumToUI(ScmBignum *b) 
+/* b must be normalized. */
+u_long Scm_BignumToUI(ScmBignum *b, int clamphi, int clamplo)
 {
     if (b->sign >= 0) {
         if (b->size >= 2) {
-            return SCM_ULONG_MAX;
+            if (clamphi) return SCM_ULONG_MAX;
+            else goto err;
         } else {
             return b->values[0];
         }
     } else {
-        return 0;
+        if (clamplo) return 0;
+        else goto err;
     }
+  err:
+    Scm_Error("argument out of range: %S", SCM_OBJ(b));
+    return 0; /*dummy*/
 }
 
-/* ... with check */
-u_long Scm_BignumToUICheck(ScmBignum *b) 
+#if SIZEOF_LONG == 4
+/* we need special routines for int64 */
+ScmInt64 Scm_BignumToSI64(ScmBignum *b, int clamphi, int clamplo)
 {
-    if (b->sign >= 0) {
-        if (b->size <= 1) {
-            return b->values[0];
+#if SCM_EMULATE_INT64
+    ScmInt64 r = {0, 0};
+    if (b->sign > 0) {
+        if (b->size > 2 || b->values[1] > LONG_MAX) {
+            if (!clamphi) goto err;
+            SCM_SET_INT64_MAX(r);
+        } else {
+            r.lo = b->values[0];
+            if (b->size == 2) r.hi = b->values[1];
+        }
+    } else if (b->sign < 0) {
+        if (b->size > 2 || b->values[1] > (u_long)LONG_MAX + 1) {
+            if (!clamplo) goto err;
+            SCM_SET_INT64_MIN(r);
+        } else {
+            b = SCM_BIGNUM(Scm_BignumComplement(b));
+            r.lo = b->values[0];
+            if (b->size == 2) r.hi = b->values[1];
+            else              r.hi = -1;
         }
     }
+    return r;
+  err:
     Scm_Error("argument out of range: %S", SCM_OBJ(b));
-    return 0; /* dummy */
+    return r; /*dummy*/
+#else  /*!SCM_EMULATE_INT64*/
+    int64_t r = 0;
+    if (b->sign > 0) {
+        if (b->size > 2 || b->values[1] > LONG_MAX) {
+            if (!clamphi) goto err;
+            SCM_SET_INT64_MAX(r);
+        } else {
+            r = ((int64_t)b->values[1] << 32) + (uint64_t)b->values[0];
+        }
+    } else { /* b->sign < 0 */
+        if (b->size > 2 || b->values[1] > (u_long)LONG_MAX + 1) {
+            if (!clamplo) goto err;
+            SCM_SET_INT64_MIN(r);
+        } else {
+            b = SCM_BIGNUM(Scm_BignumComplement(b));
+            r = ((int64_t)b->values[1] << 32) + (uint64_t)b->values[0];
+        }
+    }
+    return r;
+  err:
+    Scm_Error("argument out of range: %S", SCM_OBJ(b));
+    return 0; /*dummy*/
+#endif /*!SCM_EMULATE_INT64*/
 }
 
-double Scm_BignumToDouble(ScmBignum *b) /* b must be normalized */
+ScmUInt64 Scm_BignumToUI64(ScmBignum *b, int clamphi, int clamplo)
+{
+#if SCM_EMULATE_INT64
+    ScmInt64 r = {0, 0};
+    if (b->sign > 0) {
+        if (b->size > 2) {
+            if (!clamphi) goto err;
+            SCM_SET_UINT64_MAX(r);
+        } else {
+            r.lo = b->values[0];
+            if (b->size == 2) r.hi = b->values[1];
+        }
+    } else if (b->sign < 0) {
+        if (!clamplo) goto err;
+    }
+    return r;
+  err:
+    Scm_Error("argument out of range: %S", SCM_OBJ(b));
+    return r; /*dummy*/
+#else  /*!SCM_EMULATE_INT64*/
+    uint64_t r = 0;
+    if (b->sign > 0) {
+        if (b->size > 2) {
+            if (!clamphi) goto err;
+            r = SCM_SET_UINT64_MAX(r);
+        } else if (b->size == 2) {
+            r = ((uint64_t)b->values[1] << 32) + (uint64_t)b->values[0];
+        } else {
+            r = (uint64_t)b->values[0];
+        }
+    } else { /* b->sign < 0 */
+        if (!clamplo) goto err;
+    }
+    return r;
+  err:
+    Scm_Error("argument out of range: %S", SCM_OBJ(b));
+    return 0; /*dummy*/
+#endif /*!SCM_EMULATE_INT64*/
+}
+#endif /* SIZEOF_LONG == 4 */
+
+
+/* b must be normalized */
+double Scm_BignumToDouble(ScmBignum *b)
 {
     double r;
     switch (b->size) {

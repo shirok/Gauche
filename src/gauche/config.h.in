@@ -104,9 +104,6 @@
 /* Define if you have iconv.h and want to use it */
 #undef HAVE_ICONV_H
 
-/* Define to 1 if you have the <inttypes.h> header file. */
-#undef HAVE_INTTYPES_H
-
 /* Define if you have IPv6 support */
 #undef HAVE_IPV6
 
@@ -227,14 +224,11 @@
 /* Define to 1 if you have the `trunc' function. */
 #undef HAVE_TRUNC
 
-/* Define to 1 if the system has the type `uint32_t'. */
+/* Define to 1 if the system has these types. */
+#undef HAVE_INT32_T
+#undef HAVE_INT64_T
 #undef HAVE_UINT32_T
-
-/* Define to 1 if the system has the type `uint64_t'. */
 #undef HAVE_UINT64_T
-
-/* Define to 1 if the system has the type `uint8_t'. */
-#undef HAVE_UINT8_T
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
@@ -244,15 +238,6 @@
 
 /* Define to 1 if you have the <util.h> header file. */
 #undef HAVE_UTIL_H
-
-/* Define to 1 if the system has the type `u_int32_t'. */
-#undef HAVE_U_INT32_T
-
-/* Define to 1 if the system has the type `u_int64_t'. */
-#undef HAVE_U_INT64_T
-
-/* Define to 1 if the system has the type `u_int8_t'. */
-#undef HAVE_U_INT8_T
 
 /* Define if iconv takes const char **input */
 #undef ICONV_CONST_INPUT

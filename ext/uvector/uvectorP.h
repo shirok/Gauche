@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvectorP.h,v 1.16 2003-07-05 03:29:11 shirok Exp $
+ *  $Id: uvectorP.h,v 1.17 2004-01-27 23:52:14 shirok Exp $
  */
 
 #ifndef GAUCHE_UVECTOR_P_H
@@ -334,7 +334,7 @@
         if (CLAMP_HI) (elt) = S32MAX;                                   \
         else TOOLARGEOBJ(obj);                                          \
       } else {                                                          \
-        (elt) = (SCM_UVECTOR_INT32)Scm_BignumToSI(SCM_BIGNUM(obj));     \
+        (elt) = (S32ELTTYPE)Scm_BignumToSI(SCM_BIGNUM(obj),TRUE,TRUE);  \
       }                                                                 \
     } else BADOBJ(obj);                                                 \
   } while (0)
@@ -362,7 +362,7 @@
         if (CLAMP_HI) (elt) = S32MAX;                                   \
         else TOOLARGEOBJ(obj);                                          \
       } else {                                                          \
-        (elt) = (SCM_UVECTOR_INT32)Scm_BignumToSI(SCM_BIGNUM(obj));     \
+        (elt) = (S32ELTTYPE)Scm_BignumToSI(SCM_BIGNUM(obj),TRUE,TRUE);  \
       }                                                                 \
     } else BADOBJ(obj);                                                 \
   } while (0)
@@ -412,7 +412,7 @@
         if (CLAMP_HI) (elt) = U32MAX;                                   \
         else TOOLARGEOBJ(obj);                                          \
       } else {                                                          \
-        (elt) = (SCM_UVECTOR_UINT32)Scm_BignumToUI(SCM_BIGNUM(obj));    \
+        (elt) = (U32ELTTYPE)Scm_BignumToUI(SCM_BIGNUM(obj),TRUE,TRUE);  \
       }                                                                 \
     } else BADOBJ(obj);                                                 \
   } while (0)
@@ -440,7 +440,7 @@
         if (CLAMP_HI) (elt) = U32MAX;                                   \
         else TOOLARGEOBJ(obj);                                          \
       } else {                                                          \
-        (elt) = (SCM_UVECTOR_UINT32)Scm_BignumToSI(SCM_BIGNUM(obj));    \
+        (elt) = (U32ELTTYPE)Scm_BignumToUI(SCM_BIGNUM(obj),TRUE,TRUE);  \
       }                                                                 \
     } else BADOBJ(obj);                                                 \
   } while (0)

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.104 2004-01-25 11:11:43 shirok Exp $
+ *  $Id: number.c,v 1.105 2004-01-27 23:52:14 shirok Exp $
  */
 
 #include <math.h>
@@ -40,6 +40,7 @@
 #include <float.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/scmconst.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -315,57 +316,225 @@ ScmObj Scm_MakeInteger(long i)
     }
 }
 
-ScmObj Scm_MakeIntegerFromUI(u_long i)
+ScmObj Scm_MakeIntegerU(u_long i)
 {
     if (i <= (u_long)SCM_SMALL_INT_MAX) return SCM_MAKE_INT(i);
     else return Scm_MakeBignumFromUI(i);
 }
 
-/* Convert scheme integer to C integer. Overflow is neglected. */
-long Scm_GetInteger(ScmObj obj)
+/* Convert scheme integer to C integer */
+long Scm_GetIntegerClamp(ScmObj obj, int clamphi, int clamplo)
 {
     if (SCM_INTP(obj)) return SCM_INT_VALUE(obj);
-    else if (SCM_BIGNUMP(obj)) return Scm_BignumToSI(SCM_BIGNUM(obj));
-    else if (SCM_FLONUMP(obj)) return (long)SCM_FLONUM_VALUE(obj);
-    else return 0;
-}
-
-u_long Scm_GetUInteger(ScmObj obj)
-{
-    if (SCM_INTP(obj)) return SCM_INT_VALUE(obj);
-    else if (SCM_BIGNUMP(obj)) return Scm_BignumToUI(SCM_BIGNUM(obj));
-    else if (SCM_FLONUMP(obj)) return (u_long)SCM_FLONUM_VALUE(obj);
-    else return 0;
-}
-
-/* Convert scheme integer to C integer, checking overflow */
-long Scm_GetIntegerCheck(ScmObj obj)
-{
-    if (SCM_INTP(obj)) return SCM_INT_VALUE(obj);
-    else if (SCM_BIGNUMP(obj)) return Scm_BignumToSICheck(SCM_BIGNUM(obj));
+    else if (SCM_BIGNUMP(obj)) {
+        return Scm_BignumToSI(SCM_BIGNUM(obj), clamphi, clamplo);
+    }
     else if (SCM_FLONUMP(obj)) {
         double v = SCM_FLONUM_VALUE(obj);
-        if (v < (double)LONG_MAX && v >= (double)LONG_MIN) {
+        if (v > (double)LONG_MAX) {
+            if (clamphi) return LONG_MAX;
+            else goto err;
+        }
+        if (v < (double)LONG_MIN) {
+            if (clamplo) return LONG_MIN;
+            else goto err;
+        }
+        return (long)v;
+    }
+  err:
+    Scm_Error("argument out of range: %S", obj);
+    return 0; /* dummy */
+}
+
+u_long Scm_GetIntegerUClamp(ScmObj obj, int clamphi, int clamplo)
+{
+    if (SCM_INTP(obj) && SCM_INT_VALUE(obj) >= 0) return SCM_INT_VALUE(obj);
+    else if (SCM_BIGNUMP(obj)) {
+        return Scm_BignumToUI(SCM_BIGNUM(obj), clamphi, clamplo);
+    }
+    else if (SCM_FLONUMP(obj)) {
+        double v = SCM_FLONUM_VALUE(obj);
+        if (v > (double)ULONG_MAX) {
+            if (clamphi) return ULONG_MAX;
+            else goto err;
+        }
+        if (v < 0.0) {
+            if (clamplo) return 0;
+            else goto err;
+        }
+        return (u_long)v;
+    }
+  err:
+    Scm_Error("argument out of range: %S", obj);
+    return 0; /* dummy */
+}
+
+#if SIZEOF_LONG == 4
+/* we need special routines */
+ScmObj Scm_MakeInteger64(ScmInt64 i)
+{
+#if SCM_EMULATE_INT64
+    u_long val[2];
+    if (i.hi == 0) return Scm_MakeInteger(i.lo);
+    if (i.hi == ULONG_MAX) return Scm_MakeInteger((long)i.lo);
+    val[0] = i.lo;
+    val[1] = i.hi;
+    return Scm_MakeBignumFromUIArray(0, val, 2); /* bignum checks sign */
+#else /*SCM_EMULATE_INT64*/
+    u_long val[2];
+    val[0] = (uint64_t)i & ULONG_MAX;
+    val[1] = (uint64_t)i >> 32;
+    if (val[1] == 0) return Scm_MakeInteger(val[0]);
+    if (val[1] == ULONG_MAX) return Scm_MakeInteger((long)val[0]);
+    return Scm_MakeBignumFromUIArray(0, val, 2);
+#endif
+}
+
+ScmObj Scm_MakeIntegerU64(ScmUInt64 i)
+{
+#if SCM_EMULATE_INT64
+    u_long val[2];
+    if (i.hi == 0) return Scm_MakeIntegerU(i.lo);
+    val[0] = i.lo;
+    val[1] = i.hi;
+    return Scm_MakeBignumFromUIArray(1, val 2);
+#else /*SCM_EMULATE_INT64*/
+    u_long val[2];
+    val[0] = (uint64_t)i & ULONG_MAX;
+    val[1] = (uint64_t)i >> 32;
+    if (val[1] == 0) return Scm_MakeIntegerU(val[0]);
+    return Scm_MakeBignumFromUIArray(1, val, 2);
+#endif
+}
+
+ScmInt64 Scm_GetInteger64Clamp(ScmObj obj, int clamphi, int clamplo)
+{
+#if SCM_EMULATE_INT64
+    ScmInt64 r = {0, 0};
+
+    if (SCM_INTP(obj)) {
+        long v = SCM_INT_VALUE(obj);
+        r.lo = v;
+        if (v < 0) r.hi = ULONG_MAX;
+        return r;
+    }
+    if (SCM_BIGNUMP(obj)) {
+        return Scm_BignumToSI64(SCM_BIGNUM(obj), clamphi, clamplo);
+    }
+    if (SCM_FLONUMP(obj)) {
+        if (Scm_NumCmp(obj, SCM_2_63) > 0) {
+            if (!clamphi) goto err;
+            SCM_SET_INT64_MAX(r);
+            return r;
+        } else if (Scm_NumCmp(obj, SCM_MINUS_2_63) < 0) {
+            if (!clamplo) goto err;
+            SCM_SET_INT64_MIN(r);
+            return r;
+        } else {
+            ScmObj b = Scm_MakeBignumFromDouble(SCM_FLONUM_VALUE(obj));
+            return Scm_BignumToSI64(SCM_BIGNUM(b), clamphi, clamplo);
+        }
+    }
+  err:
+    Scm_Error("argument out of range: %S", obj);
+    return r; /* dummy */
+#else /*SCM_EMULATE_INT64*/
+    if (SCM_INTP(obj)) return (ScmInt64)SCM_INT_VALUE(obj);
+    if (SCM_BIGNUMP(obj)) {
+        return Scm_BignumToUI64(SCM_BIGNUM(obj), clamphi, clamplo);
+    }
+    if (SCM_FLONUMP(obj)) {
+        int64_t maxval, minval;
+        double v;
+        
+        SCM_SET_INT64_MAX(maxval);
+        SCM_SET_INT64_MIN(minval);
+        v = SCM_FLONUM_VALUE(obj);
+        if (v > (double)maxval) {
+            if (!clamphi) goto err;
+            return maxval;
+        } else if (v < (double)minval) {
+            if (!clamplo) goto err;
+            return minval;
+        } else {
             return (long)v;
         }
     }
+  err:
     Scm_Error("argument out of range: %S", obj);
     return 0; /* dummy */
+#endif
 }
-
-u_long Scm_GetUIntegerCheck(ScmObj obj)
+                               
+ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamphi, int clamplo)
 {
-    if (SCM_INTP(obj) && SCM_INT_VALUE(obj) >= 0) return SCM_INT_VALUE(obj);
-    else if (SCM_BIGNUMP(obj)) return Scm_BignumToUICheck(SCM_BIGNUM(obj));
-    else if (SCM_FLONUMP(obj)) {
-        double v = SCM_FLONUM_VALUE(obj);
-        if (v < (double)ULONG_MAX && v >= 0.0) {
-            return (u_long)v;
+#if SCM_EMULATE_INT64
+    ScmUInt64 r = {0, 0};
+
+    if (SCM_INTP(obj)) {
+        long v = SCM_INT_VALUE(obj);
+        if (v < 0) {
+            if (!clamplo) goto err;
+        } else {
+            r.lo = v;
+        }
+        return r;
+    }
+    if (SCM_BIGNUMP(obj)) {
+        return Scm_BignumToUI64(SCM_BIGNUM(obj), clamphi, clamplo);
+    }
+    if (SCM_FLONUMP(obj)) {
+        if (Scm_NumCmp(obj, SCM_2_64) > 0) {
+            if (!clamphi) goto err;
+            SCM_SET_UINT64_MAX(r);
+            return r;
+        } else if (SCM_FLONUM_VALUE(obj) < 0) {
+            if (!clamplo) goto err;
+            return r;
+        } else {
+            ScmObj b = Scm_MakeBignumFromDouble(SCM_FLONUM_VALUE(obj));
+            return Scm_BignumToUI64(SCM_BIGNUM(b), clamphi, clamplo);
         }
     }
+  err:
+    Scm_Error("argument out of range: %S", obj);
+    return r; /* dummy */
+#else /*SCM_EMULATE_INT64*/
+    if (SCM_INTP(obj)) {
+        long v = SCM_INT_VALUE(obj);
+        if (v < 0) {
+            if (!clamplo) goto err;
+            return 0;
+        } else {
+            return (ScmUInt64)v;
+        }
+    }
+    if (SCM_BIGNUMP(obj)) {
+        return Scm_BignumToUI64(SCM_BIGNUM(obj), clamphi, clamplo);
+    }
+    if (SCM_FLONUMP(obj)) {
+        double v = SCM_FLONUM_VALUE(obj);
+        uint64_t maxval;
+
+        if (v < 0) {
+            if (!clamplo) goto err;
+            return 0;
+        }
+        SCM_SET_UINT64_MAX(maxval);
+        if (v > (double)maxval) {
+            if (!clamphi) goto err;
+            return maxval;
+        } else {
+            return (uint32_t)v;
+        }
+    }
+  err:
     Scm_Error("argument out of range: %S", obj);
     return 0; /* dummy */
+#endif
 }
+                               
+#endif /* SIZEOF_LONG == 4 */
 
 double Scm_GetDouble(ScmObj obj)
 {
@@ -1587,8 +1756,6 @@ ScmObj Scm_LogXor(ScmObj x, ScmObj y)
  */
 
 /* contants frequently used in number I/O */
-static ScmObj iexpt2_52        = SCM_UNBOUND;  /* 2^52 */
-static ScmObj iexpt2_53        = SCM_UNBOUND;  /* 2^53 */
 static double dexpt2_minus_52  = 0.0;  /* 2.0^-52 */
 static double dexpt2_minus_53  = 0.0;  /* 2.0^-53 */
 
@@ -1683,7 +1850,7 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
         round = !Scm_OddP(f);
         if (exp >= 0) {
             ScmObj be = Scm_Ash(SCM_MAKE_INT(1), exp);
-            if (Scm_NumCmp(f, iexpt2_52) != 0) {
+            if (Scm_NumCmp(f, SCM_2_52) != 0) {
                 r = Scm_Ash(f, exp+1);
                 s = SCM_MAKE_INT(2);
                 mp2= FALSE;
@@ -1695,7 +1862,7 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
                 mm = be;
             }
         } else {
-            if (exp == -1023 || Scm_NumCmp(f, iexpt2_52) != 0) {
+            if (exp == -1023 || Scm_NumCmp(f, SCM_2_52) != 0) {
                 r = Scm_Ash(f, 1);
                 s = Scm_Ash(SCM_MAKE_INT(1), -exp+1);
                 mp2 = FALSE;
@@ -2057,7 +2224,7 @@ static double algorithmR(ScmObj f, int e, double z)
         d2 = Scm_Ash(Scm_Multiply2(m, abs_d), 1);
         switch (Scm_NumCmp(d2, y)) {
         case -1: /* d2 < y */
-            if (Scm_NumCmp(m, iexpt2_52) == 0
+            if (Scm_NumCmp(m, SCM_2_52) == 0
                 && sign_d < 0
                 && Scm_NumCmp(Scm_Ash(d2, 1), y) > 0) {
                 goto prevfloat;
@@ -2066,7 +2233,7 @@ static double algorithmR(ScmObj f, int e, double z)
             }
         case 0: /* d2 == y */
             if (!Scm_OddP(m)) {
-                if (Scm_NumCmp(m, iexpt2_52) == 0
+                if (Scm_NumCmp(m, SCM_2_52) == 0
                     && sign_d < 0) {
                     goto prevfloat;
                 } else {
@@ -2083,14 +2250,14 @@ static double algorithmR(ScmObj f, int e, double z)
         }
       prevfloat:
         m = Scm_Subtract2(m, SCM_MAKE_INT(1));
-        if (k > -1074 && Scm_NumCmp(m, iexpt2_52) < 0) {
+        if (k > -1074 && Scm_NumCmp(m, SCM_2_52) < 0) {
             m = Scm_Ash(m, 1);
             k--;
         }
         goto next;
       nextfloat:
         m = Scm_Add2(m, SCM_MAKE_INT(1));
-        if (Scm_NumCmp(m, iexpt2_53) >= 0) {
+        if (Scm_NumCmp(m, SCM_2_53) >= 0) {
             m = Scm_Ash(m, -1);
             k++;
         }
@@ -2244,7 +2411,7 @@ static ScmObj read_real(const char **strp, int *lenp,
 
         realnum = raise_pow10(realnum, exponent-fracdigs);
         if (realnum > 0.0
-            && (Scm_NumCmp(fraction, iexpt2_52) > 0
+            && (Scm_NumCmp(fraction, SCM_2_52) > 0
                 || exponent-fracdigs > MAX_EXACT_10_EXP
                 || exponent-fracdigs < -MAX_EXACT_10_EXP)) {
             realnum = algorithmR(fraction, exponent-fracdigs, realnum);
@@ -2406,6 +2573,8 @@ ScmObj Scm_StringToNumber(ScmString *str, int radix, int strict)
  * Initialization
  */
 
+ScmObj Scm__ConstObjs[SCM_NUM_CONST_OBJS] = { SCM_FALSE };
+
 void Scm__InitNumber(void)
 {
     ScmModule *mod = Scm_GaucheModule();
@@ -2424,8 +2593,16 @@ void Scm__InitNumber(void)
             }
         }
     }
-    iexpt2_52 = Scm_Ash(SCM_MAKE_INT(1), 52);
-    iexpt2_53 = Scm_Ash(SCM_MAKE_INT(1), 53);
+    
+    SCM_2_63 = Scm_Ash(SCM_MAKE_INT(1), 63);
+    SCM_2_64 = Scm_Ash(SCM_MAKE_INT(1), 64);
+    SCM_2_52 = Scm_Ash(SCM_MAKE_INT(1), 52);
+    SCM_2_53 = Scm_Ash(SCM_MAKE_INT(1), 53);
+    SCM_MINUS_2_63 = Scm_Negate(SCM_2_63);
+    SCM_2_32 = Scm_Ash(SCM_MAKE_INT(1), 32);
+    SCM_2_31 = Scm_Ash(SCM_MAKE_INT(1), 31);
+    SCM_MINUS_2_31 = Scm_Negate(SCM_2_31);
+    
     dexpt2_minus_52 = ldexp(1.0, -52);
     dexpt2_minus_53 = ldexp(1.0, -53);
 

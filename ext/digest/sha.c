@@ -23,10 +23,10 @@
 #if defined(WORDS_BIGENDIAN)
 /* On big-endian machines, we can use memcpy. */
 static void
-shaByteSwap (u_int32_t * dest, u_int8_t const *src, unsigned int words)
+shaByteSwap (uint32_t * dest, u_char const *src, unsigned int words)
 {
     if ((const void *)dest != (const void*)src) {
-        memcpy(dest, src, words*sizeof(u_int32_t));
+        memcpy(dest, src, words*sizeof(uint32_t));
     }
 }
 #else
@@ -35,11 +35,11 @@ shaByteSwap (u_int32_t * dest, u_int8_t const *src, unsigned int words)
    SHA spec.
  */
 static void
-shaByteSwap (u_int32_t * dest, u_int8_t const *src, unsigned int words)
+shaByteSwap (uint32_t * dest, u_char const *src, unsigned int words)
 {
   do
     {
-      *dest++ = (u_int32_t) ((unsigned) src[0] << 8 | src[1]) << 16 |
+      *dest++ = (uint32_t) ((unsigned) src[0] << 8 | src[1]) << 16 |
 	((unsigned) src[2] << 8 | src[3]);
       src += 4;
     }
@@ -150,9 +150,9 @@ SHAInit (SHA_CTX * ctx)
 static void
 SHATransform (struct SHAContext *sha)
 {
-  register u_int32_t A, B, C, D, E;
+  register uint32_t A, B, C, D, E;
 #if SHA_VERSION
-  register u_int32_t t;
+  register uint32_t t;
 #endif
 
   /* Set up first buffer */
@@ -267,7 +267,7 @@ SHAUpdate (SHA_CTX * ctx, const unsigned char *buf, unsigned int len)
   i = (unsigned) ctx->bytes % SHA_BLOCKBYTES;
   ctx->bytes += len;
 #else
-  u_int32_t t = ctx->bytesLo;
+  uint32_t t = ctx->bytesLo;
   if ((ctx->bytesLo = t + len) < t)
     ctx->bytesHi++;		/* Carry from low to high */
 
@@ -277,14 +277,14 @@ SHAUpdate (SHA_CTX * ctx, const unsigned char *buf, unsigned int len)
   /* i is always less than SHA_BLOCKBYTES. */
   if (SHA_BLOCKBYTES - i > len)
     {
-      memcpy ((u_int8_t *) ctx->key + i, buf, len);
+      memcpy ((u_char *) ctx->key + i, buf, len);
       return;
     }
 
   if (i)
     {				/* First chunk is an odd size */
-      memcpy ((u_int8_t *) ctx->key + i, buf, SHA_BLOCKBYTES - i);
-      shaByteSwap (ctx->key, (u_int8_t *) ctx->key, SHA_BLOCKWORDS);
+      memcpy ((u_char *) ctx->key + i, buf, SHA_BLOCKBYTES - i);
+      shaByteSwap (ctx->key, (u_char *) ctx->key, SHA_BLOCKWORDS);
       SHATransform (ctx);
       buf += SHA_BLOCKBYTES - i;
       len -= SHA_BLOCKBYTES - i;
@@ -317,8 +317,8 @@ SHAFinal (unsigned char digest[20], SHA_CTX * ctx)
 #else
   unsigned i = (unsigned) ctx->bytesLo % SHA_BLOCKBYTES;
 #endif
-  u_int8_t *p = (u_int8_t *) ctx->key + i;	/* First unused byte */
-  u_int32_t t;
+  u_char *p = (u_char *) ctx->key + i;	/* First unused byte */
+  uint32_t t;
 
   /* Set the first char of padding to 0x80. There is always room. */
   *p++ = 0x80;
@@ -329,18 +329,18 @@ SHAFinal (unsigned char digest[20], SHA_CTX * ctx)
   if (i < 8)
     {				/* Padding forces an extra block */
       memset (p, 0, i);
-      shaByteSwap (ctx->key, (u_int8_t *) ctx->key, 16);
+      shaByteSwap (ctx->key, (u_char *) ctx->key, 16);
       SHATransform (ctx);
-      p = (u_int8_t *) ctx->key;
+      p = (u_char *) ctx->key;
       i = 64;
     }
   memset (p, 0, i - 8);
-  shaByteSwap (ctx->key, (u_int8_t *) ctx->key, 14);
+  shaByteSwap (ctx->key, (u_char *) ctx->key, 14);
 
   /* Append length in bits and transform */
 #if HAVE64
-  ctx->key[14] = (u_int32_t) (ctx->bytes >> 29);
-  ctx->key[15] = (u_int32_t) ctx->bytes << 3;
+  ctx->key[14] = (uint32_t) (ctx->bytes >> 29);
+  ctx->key[15] = (uint32_t) ctx->bytes << 3;
 #else
   ctx->key[14] = ctx->bytesHi << 3 | ctx->bytesLo >> 29;
   ctx->key[15] = ctx->bytesLo << 3;
@@ -351,10 +351,10 @@ SHAFinal (unsigned char digest[20], SHA_CTX * ctx)
   for (i = 0; i < SHA_HASHWORDS; i++)
     {
       t = ctx->iv[i];
-      digest[i * 4 + 0] = (u_int8_t) (t >> 24);
-      digest[i * 4 + 1] = (u_int8_t) (t >> 16);
-      digest[i * 4 + 2] = (u_int8_t) (t >> 8);
-      digest[i * 4 + 3] = (u_int8_t) t;
+      digest[i * 4 + 0] = (u_char) (t >> 24);
+      digest[i * 4 + 1] = (u_char) (t >> 16);
+      digest[i * 4 + 2] = (u_char) (t >> 8);
+      digest[i * 4 + 3] = (u_char) t;
     }
   
  memset(ctx, 0, sizeof(ctx)); 			/* In case it's sensitive */
