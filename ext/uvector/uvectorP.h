@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: uvectorP.h,v 1.9 2002-06-20 06:53:34 shirok Exp $
+ *  $Id: uvectorP.h,v 1.10 2002-06-20 08:49:26 shirok Exp $
  */
 
 #ifndef GAUCHE_UVECTOR_P_H
@@ -165,6 +165,7 @@
   SMALL_BINOP_CLAMP(dst, x, y, -, S8MIN, S8MAX, clamp)
 #define S8MUL(dst, x, y, clamp) \
   SMALL_BINOP_CLAMP(dst, x, y, *, S8MIN, S8MAX, clamp)
+#define S8DIV(dst, x, y) dst = 0
 #define S8AND(dst, x, y) SMALL_BINOP(dst, x, y, &)
 #define S8IOR(dst, x, y) SMALL_BINOP(dst, x, y, |)
 #define S8XOR(dst, x, y) SMALL_BINOP(dst, x, y, ^)
@@ -175,6 +176,7 @@
   dst = ssubobj_small(x, y, S8MIN, S8MAX, clamp)
 #define S8MULOBJ(dst, x, y, clamp) \
   dst = smulobj_small(x, y, S8MIN, S8MAX, clamp)
+#define S8DIVOBJ(dst, x, y) dst = 0
 #define S8ANDOBJ(dst, x, y) SMALL_BITOP_SIGNED(dst, x, y, &)
 #define S8IOROBJ(dst, x, y) SMALL_BITOP_SIGNED(dst, x, y, |)
 #define S8XOROBJ(dst, x, y) SMALL_BITOP_SIGNED(dst, x, y, ^)
@@ -205,6 +207,7 @@
   SMALL_BINOP_CLAMP(dst, x, y, -, U8MIN, U8MAX, clamp)
 #define U8MUL(dst, x, y, clamp) \
   SMALL_BINOP_CLAMP(dst, x, y, *, U8MIN, U8MAX, clamp)
+#define U8DIV(dst, x, y) dst = 0
 #define U8AND(dst, x, y) SMALL_BINOP(dst, x, y, &)
 #define U8IOR(dst, x, y) SMALL_BINOP(dst, x, y, |)
 #define U8XOR(dst, x, y) SMALL_BINOP(dst, x, y, ^)
@@ -215,6 +218,7 @@
   dst = usubobj_small(x, y, U8MIN, U8MAX, clamp)
 #define U8MULOBJ(dst, x, y, clamp) \
   dst = umulobj_small(x, y, U8MIN, U8MAX, clamp)
+#define U8DIVOBJ(dst, x, y) dst = 0
 #define U8ANDOBJ(dst, x, y) SMALL_BITOP_UNSIGNED(dst, x, y, &)
 #define U8IOROBJ(dst, x, y) SMALL_BITOP_UNSIGNED(dst, x, y, |)
 #define U8XOROBJ(dst, x, y) SMALL_BITOP_UNSIGNED(dst, x, y, ^)
@@ -245,6 +249,7 @@
   SMALL_BINOP_CLAMP(dst, x, y, -, S16MIN, S16MAX, clamp)
 #define S16MUL(dst, x, y, clamp) \
   SMALL_BINOP_CLAMP(dst, x, y, *, S16MIN, S16MAX, clamp)
+#define S16DIV(dst, x, y) dst = 0
 #define S16AND(dst, x, y) SMALL_BINOP(dst, x, y, &)
 #define S16IOR(dst, x, y) SMALL_BINOP(dst, x, y, |)
 #define S16XOR(dst, x, y) SMALL_BINOP(dst, x, y, ^)
@@ -255,6 +260,7 @@
   dst = ssubobj_small(x, y, S16MIN, S16MAX, clamp)
 #define S16MULOBJ(dst, x, y, clamp) \
   dst = smulobj_small(x, y, S16MIN, S16MAX, clamp)
+#define S16DIVOBJ(dst, x, y) dst = 0
 #define S16ANDOBJ(dst, x, y) SMALL_BITOP_SIGNED(dst, x, y, &)
 #define S16IOROBJ(dst, x, y) SMALL_BITOP_SIGNED(dst, x, y, |)
 #define S16XOROBJ(dst, x, y) SMALL_BITOP_SIGNED(dst, x, y, ^)
@@ -285,6 +291,7 @@
   SMALL_BINOP_CLAMP(dst, x, y, -, U16MIN, U16MAX, clamp)
 #define U16MUL(dst, x, y, clamp) \
   SMALL_BINOP_CLAMP(dst, x, y, *, U16MIN, U16MAX, clamp)
+#define U16DIV(dst, x, y) dst = 0
 #define U16AND(dst, x, y) SMALL_BINOP(dst, x, y, &)
 #define U16IOR(dst, x, y) SMALL_BINOP(dst, x, y, |)
 #define U16XOR(dst, x, y) SMALL_BINOP(dst, x, y, ^)
@@ -295,6 +302,7 @@
   dst = usubobj_small(x, y, U16MIN, U16MAX, clamp)
 #define U16MULOBJ(dst, x, y, clamp) \
   dst = umulobj_small(x, y, U16MIN, U16MAX, clamp)
+#define U16DIVOBJ(dst, x, y) dst = 0
 #define U16ANDOBJ(dst, x, y) SMALL_BITOP_UNSIGNED(dst, x, y, &)
 #define U16IOROBJ(dst, x, y) SMALL_BITOP_UNSIGNED(dst, x, y, |)
 #define U16XOROBJ(dst, x, y) SMALL_BITOP_UNSIGNED(dst, x, y, ^)
@@ -355,6 +363,7 @@
 #endif /* SIZEOF_LONG >= 8 */
 #define S32ELTPRINT(out, elt)  Scm_Printf(out, "%d", elt)
 #define S32ELTEQ(x, y)         ((x)==(y))
+#define S32DIV(dst, x, y) dst = 0
 #define S32AND(dst, x, y) SMALL_BINOP(dst, x, y, &)
 #define S32IOR(dst, x, y) SMALL_BINOP(dst, x, y, |)
 #define S32XOR(dst, x, y) SMALL_BINOP(dst, x, y, ^)
@@ -365,6 +374,7 @@
   dst = ssubobj(x, y, Scm_UvectorS32Min, Scm_UvectorS32Max, clamp)
 #define S32MULOBJ(dst, x, y, clamp) \
   dst = smulobj(x, y, Scm_UvectorS32Min, Scm_UvectorS32Max, clamp)
+#define S32DIVOBJ(dst, x, y) dst = 0
 #define S32ANDOBJ(dst, x, y) SMALL_BITOP_SIGNED(dst, x, y, &)
 #define S32IOROBJ(dst, x, y) SMALL_BITOP_SIGNED(dst, x, y, |)
 #define S32XOROBJ(dst, x, y) SMALL_BITOP_SIGNED(dst, x, y, ^)
@@ -430,6 +440,7 @@
 #endif /* SIZEOF_LONG >= 8 */
 #define U32ELTPRINT(out, elt)  Scm_Printf(out, "%u", elt)
 #define U32ELTEQ(x, y)         ((x)==(y))
+#define U32DIV(dst, x, y) dst = 0
 #define U32AND(dst, x, y) SMALL_BINOP(dst, x, y, &)
 #define U32IOR(dst, x, y) SMALL_BINOP(dst, x, y, |)
 #define U32XOR(dst, x, y) SMALL_BINOP(dst, x, y, ^)
@@ -440,6 +451,7 @@
   dst = usubobj(x, y, Scm_UvectorU32Min, Scm_UvectorU32Max, clamp)
 #define U32MULOBJ(dst, x, y, clamp) \
   dst = umulobj(x, y, Scm_UvectorU32Min, Scm_UvectorU32Max, clamp)
+#define U32DIVOBJ(dst, x, y) dst = 0
 #define U32ANDOBJ(dst, x, y) SMALL_BITOP_UNSIGNED(dst, x, y, &)
 #define U32IOROBJ(dst, x, y) SMALL_BITOP_UNSIGNED(dst, x, y, |)
 #define U32XOROBJ(dst, x, y) SMALL_BITOP_UNSIGNED(dst, x, y, ^)
@@ -479,6 +491,7 @@
 #define S64MUL(dst, x, y, clamp)                                        \
     BIG_BINOP_CLAMP(dst, x, y, Scm_Multiply2,                           \
                     Scm_UvectorS64Min, Scm_UvectorS64Max, clamp)
+#define S64DIV(dst, x, y)  dst = SCM_FALSE
 #define S64AND(dst, x, y)  dst = Scm_LogAnd(x, y)
 #define S64IOR(dst, x, y)  dst = Scm_LogIor(x, y)
 #define S64XOR(dst, x, y)  dst = Scm_LogXor(x, y)
@@ -486,6 +499,7 @@
 #define S64ADDOBJ(dst, x, y, clamp) S64ADD(dst, x, y, clamp)
 #define S64SUBOBJ(dst, x, y, clamp) S64SUB(dst, x, y, clamp)
 #define S64MULOBJ(dst, x, y, clamp) S64MUL(dst, x, y, clamp)
+#define S64DIVOBJ(dst, x, y) dst = SCM_FALSE
 #define S64ANDOBJ(dst, x, y) S64AND(dst, x, y)
 #define S64IOROBJ(dst, x, y) S64IOR(dst, x, y)
 #define S64XOROBJ(dst, x, y) S64XOR(dst, x, y)
@@ -516,6 +530,7 @@
 #define S64ADD(dst, x, y, clamp) dst = sadd(x, y, clamp)
 #define S64SUB(dst, x, y, clamp) dst = ssub(x, y, clamp)
 #define S64MUL(dst, x, y, clamp) dst = smul(x, y, clamp)
+#define S64DIV(dst, x, y) dst = 0
 #define S64AND(dst, x, y) SMALL_BINOP(dst, x, y, &)
 #define S64IOR(dst, x, y) SMALL_BINOP(dst, x, y, |)
 #define S64XOR(dst, x, y) SMALL_BINOP(dst, x, y, ^)
@@ -526,6 +541,7 @@
     dst = ssubobj(x, y, Scm_UvectorS64Min, Scm_UvectorS64Max, clamp)
 #define S64MULOBJ(dst, x, y, clamp) \
     dst = smulobj(x, y, Scm_UvectorS64Min, Scm_UvectorS64Max, clamp)
+#define S64DIVOBJ(dst, x, y) dst = 0
 #define S64ANDOBJ(dst, x, y) SMALL_BITOP_SIGNED(dst, x, y, &)
 #define S64IOROBJ(dst, x, y) SMALL_BITOP_SIGNED(dst, x, y, |)
 #define S64XOROBJ(dst, x, y) SMALL_BITOP_SIGNED(dst, x, y, ^)
@@ -573,6 +589,7 @@
 #define U64MUL(dst, x, y, clamp)                                        \
     BIG_BINOP_CLAMP(dst, x, y, Scm_Multiply2,                           \
                     Scm_UvectorU64Min, Scm_UvectorU64Max, clamp)
+#define U64DIV(dst, x, y)  dst = SCM_FALSE
 #define U64AND(dst, x, y)  dst = Scm_LogAnd(x, y)
 #define U64IOR(dst, x, y)  dst = Scm_LogIor(x, y)
 #define U64XOR(dst, x, y)  dst = Scm_LogXor(x, y)
@@ -580,6 +597,7 @@
 #define U64ADDOBJ(dst, x, y, clamp) U64ADD(dst, x, y, clamp)
 #define U64SUBOBJ(dst, x, y, clamp) U64SUB(dst, x, y, clamp)
 #define U64MULOBJ(dst, x, y, clamp) U64MUL(dst, x, y, clamp)
+#define U64DIVOBJ(dst, x, y) dst = SCM_FALSE
 #define U64ANDOBJ(dst, x, y) U64AND(dst, x, y)
 #define U64IOROBJ(dst, x, y) U64IOR(dst, x, y)
 #define U64XOROBJ(dst, x, y) U64XOR(dst, x, y)
@@ -616,6 +634,7 @@
 #define U64ADD(dst, x, y, clamp) dst = uadd(x, y, clamp)
 #define U64SUB(dst, x, y, clamp) dst = usub(x, y, clamp)
 #define U64MUL(dst, x, y, clamp) dst = umul(x, y, clamp)
+#define U64DIV(dst, x, y) dst = 0
 #define U64AND(dst, x, y) SMALL_BINOP(dst, x, y, &)
 #define U64IOR(dst, x, y) SMALL_BINOP(dst, x, y, |)
 #define U64XOR(dst, x, y) SMALL_BINOP(dst, x, y, ^)
@@ -626,6 +645,7 @@
     dst = ssubobj(x, y, Scm_UvectorU64Min, Scm_UvectorU64Max, clamp)
 #define U64MULOBJ(dst, x, y, clamp) \
     dst = smulobj(x, y, Scm_UvectorU64Min, Scm_UvectorU64Max, clamp)
+#define U64DIVOBJ(dst, x, y) dst = 0
 #define U64ANDOBJ(dst, x, y) SMALL_BITOP_UNSIGNED(dst, x, y, &)
 #define U64IOROBJ(dst, x, y) SMALL_BITOP_UNSIGNED(dst, x, y, |)
 #define U64XOROBJ(dst, x, y) SMALL_BITOP_UNSIGNED(dst, x, y, ^)
@@ -634,8 +654,17 @@
 /*
  * Common float macros
  */
-#define FLT_BINOP_OBJ(type, dst, x, y, op) \
+#define FLONUM_BINOP_OBJ(type, dst, x, y, op) \
   dst = x op (type)Scm_GetDouble(y)
+
+#define FLONUM_DIV(dst, x, y)                           \
+  do { if (y == 0.0) Scm_Error("divide by zero");       \
+       dst = x / y; } while (0)
+
+#define FLONUM_DIV_OBJ(type, dst, x, y)                 \
+  do { type V__ = (type)Scm_GetDouble(y);               \
+       if (V__ == 0.0) Scm_Error("divide by zero");     \
+       dst = x / V__; } while (0)
         
 /*
  * F32Vector
@@ -660,13 +689,15 @@
 #define F32ADD(dst, x, y, clamp)  dst = x + y
 #define F32SUB(dst, x, y, clamp)  dst = x - y
 #define F32MUL(dst, x, y, clamp)  dst = x * y
+#define F32DIV(dst, x, y)  FLONUM_DIV(dst, x, y)
 #define F32AND(dst, x, y)  dst = 0 /* dummy */
 #define F32IOR(dst, x, y)  dst = 0 /* dummy */
 #define F32XOR(dst, x, y)  dst = 0 /* dummy */
 
-#define F32ADDOBJ(dst, x, y, clamp)  FLT_BINOP_OBJ(float, dst, x, y, +)
-#define F32SUBOBJ(dst, x, y, clamp)  FLT_BINOP_OBJ(float, dst, x, y, -)
-#define F32MULOBJ(dst, x, y, clamp)  FLT_BINOP_OBJ(float, dst, x, y, *)
+#define F32ADDOBJ(dst, x, y, clamp)  FLONUM_BINOP_OBJ(float, dst, x, y, +)
+#define F32SUBOBJ(dst, x, y, clamp)  FLONUM_BINOP_OBJ(float, dst, x, y, -)
+#define F32MULOBJ(dst, x, y, clamp)  FLONUM_BINOP_OBJ(float, dst, x, y, *)
+#define F32DIVOBJ(dst, x, y)  FLONUM_DIV_OBJ(float, dst, x, y)
 #define F32ANDOBJ(dst, x, y)  dst = 0 /* dummy */
 #define F32IOROBJ(dst, x, y)  dst = 0 /* dummy */
 #define F32XOROBJ(dst, x, y)  dst = 0 /* dummy */
@@ -695,13 +726,15 @@
 #define F64ADD(dst, x, y, clamp)  dst = x + y
 #define F64SUB(dst, x, y, clamp)  dst = x - y
 #define F64MUL(dst, x, y, clamp)  dst = x * y
+#define F64DIV(dst, x, y)  FLONUM_DIV(dst, x, y)
 #define F64AND(dst, x, y)  dst = 0 /* dummy */
 #define F64IOR(dst, x, y)  dst = 0 /* dummy */
 #define F64XOR(dst, x, y)  dst = 0 /* dummy */
 
-#define F64ADDOBJ(dst, x, y, clamp)  FLT_BINOP_OBJ(double, dst, x, y, +)
-#define F64SUBOBJ(dst, x, y, clamp)  FLT_BINOP_OBJ(double, dst, x, y, -)
-#define F64MULOBJ(dst, x, y, clamp)  FLT_BINOP_OBJ(double, dst, x, y, *)
+#define F64ADDOBJ(dst, x, y, clamp)  FLONUM_BINOP_OBJ(double, dst, x, y, +)
+#define F64SUBOBJ(dst, x, y, clamp)  FLONUM_BINOP_OBJ(double, dst, x, y, -)
+#define F64MULOBJ(dst, x, y, clamp)  FLONUM_BINOP_OBJ(double, dst, x, y, *)
+#define F64DIVOBJ(dst, x, y)  FLONUM_DIV_OBJ(double, dst, x, y)
 #define F64ANDOBJ(dst, x, y)  dst = 0 /* dummy */
 #define F64IOROBJ(dst, x, y)  dst = 0 /* dummy */
 #define F64XOROBJ(dst, x, y)  dst = 0 /* dummy */
