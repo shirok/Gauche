@@ -1,5 +1,10 @@
 2002-05-24  Shiro Kawai  <shiro@acm.org>
 
+	* src/load.c : finished the routine to detect require dependency loop.
+	* lib/srfi-1* : added partial-application version of some list
+	  procedures: count$, fold$, fold-right$, reduce$, reduce-right$,
+	  filter$, partition$, remove$, member$, find$, find-tail$,
+	  any$, every$, delete$, assoc$.
 	* src/gauche.h : fixed a bug of uninitialized ScmProcedure field.
 	* lib/gauche/procedure.scm, lib/gauche/collection.scm : added map$,
 	  for-each$, apply$.
