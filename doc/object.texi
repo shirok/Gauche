@@ -1365,11 +1365,19 @@ thunk を与えます。もし、当該スロットが生成時にキーワード引数によって
 @subsection Inheritance
 @c NODE 継承
 
+@c EN
 Inheritance has two roles.  First, you can @emph{extend} the existing
 class by adding more slots.  Second, you can @emph{specialize} the
 methods related to the existing class so that those methods will
 do a little more specific task than the original methods.
+@c JP
+継承にはふたつの役割があります。第一に、スロットを追加することで
+既存のクラスを@emph{拡張}できます。第二には、既存のクラス
+関連するメソッドを@emph{特定化}して、元々のメソッドよりもすこし
+特定化した仕事をやらせるようにできます。
+@c COMMON
 
+@c EN
 Let's define some terms.  When a class @code{<T>} inherits a 
 class @code{<S>}, we call @code{<T>} a @emph{subclass} of @code{<S>},
 and @code{<S>} a @emph{superclass} of @code{<T>}.  This relation
@@ -1379,7 +1387,21 @@ Specifically, if @code{<T>} directly inherits @code{<S>}, that is,
 @code{<S>} appeared in the superclass list when @code{<T>} is defined,
 then @code{<S>} is a @emph{direct superclass} of @code{<T>}, 
 and @code{<T>} is a @emph{direct subclass} of @code{<S>}.
+@c JP
+いくつかの用語を定義しておきましょう。クラス @code{<T>} がクラス
+@code{<S>}を継承しているとき、@code{<T>} を @code{<S>} の
+@emph{サブクラス}といい、@code{<S>} を @code{<T>} の
+@emph{スーパークラス}といいます。この関係は推移的です。すなわち、
+@code{<T>} のサブクラスは、やはり @code{<S>} のサブクラスであり、
+@code{<S>} のスーパークラスは、やはり @code{<T>} のスーパークラスです。
+特に、@code{<T>} が @code{<S>} を直接継承している場合、すなわち、
+@code{<S>} が @code{<T>} を定義する際のスーパークラスリストに
+現われている場合には @code{<S>} を @code{<T>} の
+@emph{直接スーパークラス}といい、@code{<T>} を @code{<S>} の
+@emph{直接サブクラス}といいます。
+@c COMMON
 
+@c EN
 When a class is defined, it and its superclasses are ordered from
 subclasses to superclasses, and a list of classes is created in such
 order.   It is called @emph{class precedence list}, or CPL.
@@ -1388,6 +1410,16 @@ A CPL of a class always begins with the class itself, and ends with
 @code{<top>}.
 
 You can query a class's CPL by a procedure @code{class-precedence-list}:
+@c JP
+クラスを定義したとき、そのクラスとそのスーパークラスは、サブクラスから
+スーパークラスという順序になり、クラスのリストがその順で生成されます。
+このリストのことを@emph{クラス順位リスト}、あるいは CPL といいます。
+すべてのクラスはそれぞれ自身の CPL を持っています。
+クラスの CPL は常に自分自身からはじまり、@code{<top>} で終ります。
+
+手続き @code{class-precedence-list} を用いてクラスの CPL を問い合わせ
+ることができます。
+@c COMMON
 
 @example
 gosh> (class-precedence-list <boolean>)
@@ -1396,11 +1428,20 @@ gosh> (class-precedence-list <string>)
 (#<class <string>> #<class <sequence>> #<class <collection>> #<class <top>>)
 @end example
 
+@c EN
 As you see, all classes inherits a class named @code{<top>}.
 Some built-in classes have several abstract classes in its CPL
 between itself and @code{<top>}; the above example shows @code{<string>}
 class inherits @code{<sequence>} and @code{<collection>}.
 That means a string can behave both as a sequence and a collection.
+@c JP
+見るとわかるように、すべてのクラスは @code{<top>} という名前のクラスを
+継承しています。組み込みクラスには、いくつかの抽象クラスを CPL 中で
+自分自身と @code{<top>} の間に連ねているものもあります。上の例では
+@code{<string>} クラスは @code{<sequence>} と @code{<collection>} を
+継承しています。これは、文字列がシーケンスとしても、コレクションとして
+も振舞うことができるということです。
+@c COMMON
 
 @example
 gosh> (is-a? "abc" <string>)
@@ -1411,11 +1452,19 @@ gosh> (is-a? "abc" <collection>)
 #t
 @end example
 
+@c EN
 How about inheritance of Scheme-defined classes?
 If there's only single inheritance, its CPL is straightforward:
 you can just follow the class's super, its super's super, its
 super's super's super, @dots{}, until you reach @code{<top>}.
 See the example:
+@c JP
+Schemeで定義したクラスの継承についてはどうでしょう。
+単一継承なら、CPL は直截的です。そのクラスのスーパークラス、
+スーパークラスのスーパークラス、
+スーパークラスのスーパークラスのスーパークラス、@dots{} と
+@code{<top>} に到達するまで、たどっていけます。例を見てください。
+@c COMMON
 
 @example
 gosh> (define-class <a> () ())
@@ -1426,6 +1475,7 @@ gosh> (class-precedence-list <b>)
 (#<class <b>> #<class <a>> #<class <object>> #<class <top>>)
 @end example
 
+@c EN
 Scheme-defined class always inherits @code{<object>}.
 It is automatically inserted by the system.
 
@@ -1448,6 +1498,25 @@ If a class inherits superclasses in a way that its CPL can't
 be constructed with satisfying consistencies, an error is reported.
 
 Here's a simple example of multiple inheritance.
+@c JP
+Scheme定義のクラスは常に @code{<object>} を継承します。
+システムが自動的に挿入します。
+
+多重継承が使われる場合には話はすこし複雑になります。複数のスーパークラスの
+複数の CPL をひとつの CPL にマージしなければなりません。このことを
+@emph{線形化}といい、いくつかの線形化戦略が知られています。Gauche では
+デフォルトで @emph{C3 線形化}と呼ばれているアルゴリズムを使います。
+このアルゴリズムは局所的な順位、単調性、拡張順位グラフと整合性のとれた
+ものです。ここでは詳細に立ち入りませんが、一般的なルールとして、
+CPL 中のスーパークラスの順序は、つねにそのクラスの直接スーパークラスの
+順序、それぞれのスーパークラスの CPL の順序、および、各スーパークラス
+の直接スーパークラスの順序、などと整合性をもちます。正確な説明について
+は@ref{dylan,[Dylan],Dylan}を参照してください。
+
+もしクラスが、整合性を満した CPL を構築できないようなやり方で
+複数のスーパークラスを継承すると、エラーになります。以下は多重継承の
+単純な例です。
+@c COMMON
 
 @example
 (define-class <grid-layout> () ())
@@ -1463,10 +1532,17 @@ Here's a simple example of multiple inheritance.
      <grid-layout> <object> <top>)
 @end example
 
+@c EN
 Note that the order of direct superclasses of @code{<hv-grid>}
 (@code{<horizontal-grid>} and @code{<vertical-grid>}) is kept.
 
 The following is a little twisted example:
+@c JP
+@code{<hv-grid>} の直接スーパークラス(@code{<horizontal-grid>}と
+@code{<vertical-grid>})の順序が保存されていることに注意してください。
+
+以下は、すこしひねくれた例です。
+@c COMMON
 
 @example
 (define-class <pane> () ())
@@ -1488,6 +1564,7 @@ The following is a little twisted example:
      <object> <top>)
 @end example
 
+@c EN
 Once the class precedence order is determined,
 the slots of defined class is calculated as follows:
 the slot definitions are collected in the direction from superclasss
@@ -1502,7 +1579,24 @@ calculated as the chart below; that is, @code{<U>} gets five slots,
 of which @code{b} and @code{e}'s definitions come from @code{<U>}'s
 definitions, @code{c} and @code{d}'s come from @code{<T>}, and
 @code{a}'s comes from @code{<S>}.
+@c JP
+いったんクラス順位が決まると、定義されたクラスのスロットが以下の手順で
+計算されます。スロットの定義が CPL 中のスーパークラスからサブクラスへの
+順で集められます。サブクラスにスーパークラスと同じ名前のスロット定義が
+あった場合には、サブクラスのそのスロット定義が採用され、スーパークラス
+の方の定義は捨てられます。あるクラス @code{<S>} がスロット @code{a}、
+@code{b}、および @code{c} を定義しており、あるクラス @code{<T>} が
+スロット @code{c}、@code{d}、および @code{e} を定義し、さらに、
+あるクラス @code{<U>} がスロット @code{b} および @code{e} を定義していると
+しよう。@code{<U>} の CPL が @code{(<U> <T> <S> <object> <top>)} と
+なっている場合、@code{<U>} のスロットが下の図のように計算されます。
+すなわち、@code{<U>} は 5つのスロットは 5 つのスロットをもち、
+@code{b} および @code{e} の定義は @code{<U>} のものを、@code{c}
+および @code{d} の定義は @code{<T>} 由来のものを、そして、@code{a}
+の定義は @code{<S>} 由来のものとなります。
+@c COMMON
 
+@c EN
 @example
    CPL      | slot definitions
             |  () indicates shadowed slot
@@ -1515,7 +1609,22 @@ definitions, @code{c} and @code{d}'s come from @code{<T>}, and
  -----------+--------------------
  <U>'s slots| a   b   c   d   e
 @end example
+@c JP
+@example
+   CPL         | スロットの定義
+               |  () はシャドウされたスロットを表す
+ --------------+-------------------
+   <top>       |
+   <object>    |
+   <S>         | a  (b) (c)
+   <T>         |         c   d  (e)
+   <U>         |     b           e
+ --------------+--------------------
+ <U>のスロット | a   b   c   d   e
+@end example
+@c COMMON
 
+@c EN
 You can get a list of slot definitions of a class object using
 @code{class-slots} function.
 
@@ -1526,11 +1635,24 @@ you can write a metaclass that allows you to merge slot options
 of the same slot names, instead of the one shadowing the other.
 Or you can write a metaclass that forbids a subclass shadows
 the superclass's slot.
+@c JP
+@code{class-slots} 関数を使ってクラスオブジェクトのスロット定義の
+リストを得ることができます。
+
+上述の振舞いはデフォルトの振舞いにすぎないことに注意してください。
+CPL の計算方法あるいはスロット定義の継承方法は、メタクラスを
+定義することでカスタマイズ可能です。たとえば、同じスロット名の
+スロットオプションはどれかが他のものをシャドウしますが、これを
+マージすることができるようにメタクラスを書くことができます。
+あるいは、サブクラスがスーパークラスのスロットをシャドウするのを
+禁止するようにメタクラスを書くことができます。
+@c COMMON
 
 @node Class object, Slot definition object, Inheritance, Class
 @subsection Class object
 @c NODE クラスオブジェクト
 
+@c EN
 What is a class?  In Gauche, a class is just an object that implements
 a specific feature: to instantiate an object.
 Because of that, you can introspect the class by just
@@ -1538,9 +1660,21 @@ looking into the slot values.  There are some procedures provided
 for the convenience of such introspection.
 Note that if those procedures return a list, it belongs to
 the class and you shouldn't modify it.
+@c JP
+クラスとは何か。Gauche ではクラスはオブジェクトをインスタンス化して
+ある特定の機能を実装するようなオブジェクトにすぎません。
+そうなので、スロットの値を見るだけで、クラス内部を覗けます。
+このように内部を覗くのに便利な手続きがいくつか用意されています。
+これらの手続きがリストを返す場合、それはクラスに所属するもので、
+変更してはいけないということに注意してください。
+@c COMMON
 
 @defun class-name class
+@c EN
 Returns the name of @var{class}.
+@c JP
+@var{class} の名前を返します。
+@c COMMON
 
 @example
 (class-name <string>) @result{} <string>
@@ -1548,7 +1682,11 @@ Returns the name of @var{class}.
 @end defun
 
 @defun class-precedence-list class
+@c EN
 Returns the class precedence list of @var{class}.
+@c JP
+@var{class} のクラス順位リストを返します。
+@c COMMON
 
 @example
 (class-precedence-list <string>)
@@ -1560,9 +1698,14 @@ Returns the class precedence list of @var{class}.
 @end defun
 
 @defun class-direct-supers class
+@c EN
 Returns a list of direct superclasses of @var{class}.
 A direct superclass is a class from which
 @var{class} inherits directly.
+@c JP
+@var{class} の直接スーパークラスのリストを返します。
+直接スーパークラスは @var{class} が直接継承しているクラスです。
+@c COMMON
 
 @example
 (class-direct-supers <string>)
@@ -1571,41 +1714,76 @@ A direct superclass is a class from which
 @end defun
 
 @defun class-direct-subclasses class
+@c EN
 Returns a list of direct subclasses of @var{class}.
 A direct subclass is a class that directly inherits
 @var{class}.  If @code{<T>} is a direct subclass of @code{<S>},
 then @code{<S>} is a direct superclass of @code{<T>}.
+@c JP
+@var{class} の直接サブクラスのリストを返します。
+直接サブクラスは @var{class} を直接継承しているクラスです。
+@code{<T>} が @code{<S>} の直接サブクラスであれば、
+@code{<S>} は @code{<T>} の直接スーパークラスです。
+@c COMMON
 @end defun
 
 @defun class-slots class
+@c EN
 Returns a list of @emph{slot definitions} of @var{class}.
 A slot definition is a list whose car is the name of the slot
-adn whose cdr is a keyword-value list that specifies slot options.
+and whose cdr is a keyword-value list that specifies slot options.
 You can further inspect a slot definition to know what characteristics
 the slot has.  See @ref{Slot definition object} for the details.
 
 The standard way to get a list of slot names of a given class
 is @code{(map slot-definition-name (class-slots class))}.
+@c JP
+@var{class} の @emph{スロット定義} のリストを返します。スロット定義は
+リストで、その car 部はスロット名、cdr 部はスロットオプションを指定する
+キーワード値のリストです。スロット定義内部を覗いてスロットのもつ性格を
+知ることができます。詳しくは @ref{Slot definition object} を
+参照してください。
+
+与えられたクラスのスロット名のリストを得るための標準的な方法は、
+@code{(map slot-definition-name (class-slots class))} です。
+@c COMMON
 @end defun
 
 @defun class-slot-definition class slot-name
+@c EN
 Returns a slot definition of a slot specified by @var{slot-name} in
 a class @var{class}.  If @var{class} doesn't have a named slot,
 @code{#f} is returned.
+@c JP
+クラス @var{class} 中の @var{slot-name} で指定されたスロットの
+スロット定義を返します。@var{class} が指定した名前のスロットを
+持たなければ @code{#f} が返ります。
+@c COMMON
 @end defun
 
 @defun class-direct-slots class
+@c EN
 Returns a list of slot definitions that are directly defined
 in this class (i.e. not inherited from superclasses).
 This information is used to calculate slot inheritance
 during class initialization.
+@c JP
+当該クラスで直接定義されている(つまりスーパークラスから継承された
+ものではない)スロット定義のリストを返します。この情報は、クラスの
+初期化の際にスロットの継承を処理するために利用されます。
+@c COMMON
 @end defun
 
 @defun class-direct-methods class
+@c EN
 Returns a list of methods that has @var{class} in its specializer.
+@c JP
+@var{class}を特定化子中にもつメソッドのリストを返します。
+@c COMMON
 @end defun
 
 @defun class-slot-accessor class slot-name
+@c EN
 Returns a slot accessor object of the slot specified by @var{slot-name}
 in @var{class}.
 A slot accessor object is an internal object that encapsulates
@@ -1613,12 +1791,22 @@ the information how to access, modify, and initialize the given slot.
 
 You don't usually need to deal with slot accessor objects unless
 you are defining some special slots using metaobject protocol.
+@c JP
+@var{class} で @var{slot-name} で指定したスロットの
+スロットアクセサオブジェクトを返します。
+スロットアクセサオブジェクトは内部オブジェクトで与えられたスロットへの
+アクセス方法、変更方法、初期化の方法という情報をカプセル化しています。
+
+メタオブジェクトプロトコルを使って特別なスロットを定義するのでなければ、
+通常スロットアクセサオブジェクトを扱う必要はありません。
+@c COMMON
 @end defun
 
 @node Slot definition object, Class redefinition, Class object, Class
 @subsection Slot definition object
 @c NODE スロット定義オブジェクト
 
+@c EN
 A slot definition object, returned by @code{class-slots},
 @code{class-direct-slots} and @code{class-slot-definition},
 keeps information about a slot.
@@ -1627,32 +1815,64 @@ as STklos and TinyCLOS do.  However, it is not guaranteed that
 Gauche keeps such a structure in future; you should use the
 following dedicated accessor method to obtain information
 of a slot definition object.
+@c JP
+@code{class-slots} が返すスロットの定義オブジェクト
+@code{class-direct-slots} および @code{class-slot-definition}
+はスロットに関する情報を保持しています。
+現時点では Gauche はスロット定義を表現するのにリストを使っています。これは
+STklos や TinyCLOS と同じです。しかし、Gauche が将来にわたって、この構造を
+保持するかどうかは保証のかぎりではありません。スロット定義オブジェクトの
+情報を得るには以下のそれ専用のアクセサメソッドを使うべきです。
+@c COMMON
 
 @defun slot-definition-name slot-def
+@c EN
 Returns the name of a slot given by a slot definition object @var{slot-def}.
+@c JP
+スロット定義オブジェクト @var{slot-def} で与えられたスロットの名前を
+返します。
+@c COMMON
 @end defun
 
 @defun slot-definition-options slot-def
+@c EN
 Returns a keyword-value list of slot options of @var{slot-def}.
+@c JP
+@var{slot-def} のスロットオプションのキーワード値リストを返します。
+@c COMMON
 @end defun
 
 @defun slot-definition-allocation slot-def
+@c EN
 Returns the value of @code{:allocation} option of @var{slot-def}.
+@c JP
+@var{slot-def} の @code{:allocation} オプションの値を返します。
+@c COMMON
 @end defun
 
 @defun slot-definition-getter slot-def
 @defunx slot-defininion-setter slot-def
 @defunx slot-definition-accessor slot-def
+@c EN
 Returns the value of @code{:getter}, @code{:setter} and @code{:accessor}
 slot options of @var{slot-def}, respectively.
+@c JP
+それぞれ、@var{slot-def} の @code{:getter}、@code{:setter} および
+@code{:accessor} スロットオプションの値を返します。
+@c COMMON
 @end defun
 
 @defun slot-definition-option slot-def option &optional default
+@c EN
 Returns the value of slot option @var{option} of @var{slot-def}.
 If there's no such an option, @var{default} is returned
 if given, or an error is signalled otherwise.
+@c JP
+@var{slot-def} のスロットオプション @var{option} の値を返します。
+そのようなオプションがない場合には、@var{default} が与えられていれば
+それを返し、さもなければ、エラーシグナルがあがります。
+@c COMMON
 @end defun
-
 
 @node Class redefinition, Class definition examples, Slot definition object, Class
 @subsection Class redefinition
