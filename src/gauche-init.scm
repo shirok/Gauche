@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche-init.scm - initialize standard environment
 ;;;
-;;;  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.60 2002-02-18 20:45:46 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.61 2002-02-23 07:40:32 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -98,7 +98,7 @@
 (define-macro (%autoload-scheme file . vars)
   `(with-module scheme
      ,@(map (lambda (v)
-              `(define ,v ((with-module gauche %make-autoload) ',v ,file)))
+              `(define ,v (with-module gauche (%make-autoload ',v ,file))))
             vars)))
 
 ;;
