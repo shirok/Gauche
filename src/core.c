@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.43 2002-07-14 09:53:38 shirok Exp $
+ *  $Id: core.c,v 1.44 2002-07-17 07:16:00 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -59,6 +59,11 @@ extern void Scm_Init_extlib(ScmModule *);
 extern void Scm_Init_syslib(ScmModule *);
 extern void Scm_Init_moplib(ScmModule *);
 
+#ifdef GAUCHE_USE_PTHREADS
+/* a trick to make sure the gc thread object is linked */
+static int (*ptr_pthread_create)(void) = NULL;
+#endif
+
 void Scm_Init(void)
 {
     GC_oom_fn = oom_handler;
@@ -89,6 +94,10 @@ void Scm_Init(void)
     Scm_Init_syslib(Scm_GaucheModule());
     Scm_Init_moplib(Scm_GaucheModule());
     Scm_SelectModule(Scm_UserModule());
+#ifdef GAUCHE_USE_PTHREADS
+    /* a trick to make sure the gc thread object is linked */
+    ptr_pthread_create = (int (*)(void))GC_pthread_create;
+#endif
 }
 
 void Scm_RegisterDL(void *data_start, void *data_end,
