@@ -1,3 +1,7 @@
+2002-07-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/Makefile (INSTALL_SUBHEADERS): gauche/class.h to be installed.
+
 2002-07-18  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.6
