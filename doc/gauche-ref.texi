@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.391 2003-05-22 10:55:15 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.392 2003-05-26 11:05:05 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -29922,6 +29922,73 @@ in @var{seq-a}, then the integer position of the element in @var{seq-b}.
 @end example
 @end defun
 
+@defun lcs-fold a-proc b-proc both-proc seed a b &optional eq-fn
+A fundamental iterator over the "edit list" derived from
+two lists @var{a} and @var{b}.
+
+@var{A-proc}, @var{b-proc}, @var{both-proc} are all procedures
+that take two arguments.   The second argument is a intermediate
+state value of the calculation.  The first value is an element
+only in @var{a} for @var{a-proc}, or an element only in @var{b}
+for @var{b-proc}, or an element in both @var{a} and @var{b}
+for @var{both-proc}.  The return value of each procedure is used
+as the state value of the next call of either one of the procedures.
+@var{Seed} is used as the initial value of the state value.
+The last state value is returned from @code{lcs-fold}.
+
+The three procedures are called in the following order; if the sequence
+@var{a} consists of @var{a'}@var{c}@var{a''}, and @var{b} consists of 
+@var{b'}@var{c}@var{b''}, where @var{a'}, @var{b'}, @var{a''}, and @var{b''}
+are subsequences, and @var{c} is the head of the 
+LCS of @var{a} and @var{b}.   Then @var{a-proc} is called first on
+each element in @var{a'}, @var{b-proc} is called second on
+each element in @var{b'}, then @var{both-proc} is called on @var{c}.
+Afterwards, the process is repeated using @var{a''} and @var{b''}.
+@end defun
+
+@defun lcs-edit-list a b &optional eq-fn
+Calculates 'edit-list' from two lists @var{a} and @var{b}, which is
+the smallest set of commands (additions and deletions) that changes
+@var{a} into @var{b}.
+This procedure is built on top of @code{lcs-fold} above.
+
+Returns a list of @emph{hunk}s, which is a contigous section of
+additions and deletions.  Each hunk consists of a list of
+directives, which is a form of:
+@example
+(@var{+}|@var{-} @var{position} @var{element})
+@end example
+
+Here's an example.  Suppose @var{a} and @var{b} are the following
+lists, respectively.
+@example
+@var{a} @equiv{} ("A" "B" "C" "E" "H" "J" "L" "M" "N" "P")
+@var{b} @equiv{} ("B" "C" "D" "E" "F" "J" "K" "L" "M" "R" "S" "T")
+@end example
+
+Then, @code{(lcs-edit-list a b equal?)} returns the following list.
+@example
+(((- 0 "A"))
+ ((+ 2 "D"))
+ ((- 4 "H") (+ 4 "F"))
+ ((+ 6 "K"))
+ ((- 8 "N") (- 9 "P") (+ 9 "R") (+ 10 "S") (+ 11 "T"))
+)
+@end example
+
+The result consists of five hunks.  The first hunk consists of
+one directive, @code{(- 0 "A")}, which means the element @code{"A"}
+at the position 0 of list @var{a} has to be deleted.
+The second hunk also consists of one directive, @code{(+ 2 "D")},
+meaning the element @code{"D"} at the position 2 of list @var{b}
+has to be added.  The third hunk means @code{"H"} at the position
+4 of list @var{a} should be removed and @code{"F"} at the position
+4 of list @var{b} should be added, and so on.
+
+If you are familiar with Perl's Algorithm::Diff module, you may 
+notice that this is the same structure that its @code{diff} procedure
+returns.
+@end defun
 
 @c ----------------------------------------------------------------------
 @node util.list - Additional list library, util.queue - Queue, util.lcs - The longest common subsequence, Library modules - Utilities
