@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.132 2002-04-11 07:11:54 shirok Exp $
+;;; $Id: extlib.stub,v 1.133 2002-04-13 09:43:44 shirok Exp $
 ;;;
 
 "
@@ -123,6 +123,11 @@
 (define-cproc %bignum-dump (obj)
   "  if (SCM_BIGNUMP(obj)) Scm_DumpBignum(SCM_BIGNUM(obj), SCM_CUROUT);
   SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc min&max (arg0 &rest args)
+  "ScmObj min, max;
+   Scm_MinMax(arg0, args, &min, &max);
+   SCM_RETURN(Scm_Values2(min, max));")
 
 ;;
 ;; 6.3.1  Booleans
