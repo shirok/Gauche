@@ -1,3 +1,10 @@
+2002-02-02  Shiro Kawai  <shiro@acm.org>
+
+	* various files: added support for cygwin (not finished yet).
+	  gosh is now built using libgauche.so, instead of statically
+	  linking libgauche.a.  The link is done in a shell script
+	  src/ldwrap.sh.
+
 2002-01-30  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.5
