@@ -12,9 +12,10 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.25 2001-03-10 05:35:33 shiro Exp $
+ *  $Id: load.c,v 1.26 2001-03-10 09:57:42 shiro Exp $
  */
 
+#include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -240,6 +241,14 @@ ScmObj Scm_GetLoadPath(void)
 ScmObj Scm_GetDynLoadPath(void)
 {
     return dynload_path_rec->value;
+}
+
+static ScmObj break_env_paths(const char *envname)
+{
+    const char *e = getenv(envname);
+    if (e == NULL) return SCM_NIL;
+    else return Scm_StringSplitByChar(SCM_STRING(Scm_MakeString(e, -1, -1)),
+                                      ':');
 }
 
 /* Add CPATH to the current list of load path.  The path is
@@ -503,20 +512,28 @@ ScmObj Scm_MakeAutoload(ScmSymbol *name, ScmString *path)
 
 void Scm__InitLoad(void)
 {
-    ScmObj libdir = SCM_MAKE_STR(GAUCHE_LIB_DIR);
-    ScmObj archdir = SCM_MAKE_STR(GAUCHE_ARCH_DIR);
-    ScmObj sitelibdir = SCM_MAKE_STR(GAUCHE_SITE_LIB_DIR);
-    ScmObj sitearchdir = SCM_MAKE_STR(GAUCHE_SITE_ARCH_DIR);
     ScmObj curdir = SCM_MAKE_STR(".");
     ScmModule *m = Scm_SchemeModule();
+    ScmObj init_load_path, init_dynload_path, t;
+    const char *pathvar;
 
+    init_load_path = t = SCM_NIL;
+    SCM_APPEND1(init_load_path, t, curdir);
+    SCM_APPEND(init_load_path, t, break_env_paths("GAUCHE_LOAD_PATH"));
+    SCM_APPEND1(init_load_path, t, SCM_MAKE_STR(GAUCHE_SITE_LIB_DIR));
+    SCM_APPEND1(init_load_path, t, SCM_MAKE_STR(GAUCHE_LIB_DIR));
+
+    init_dynload_path = t = SCM_NIL;
+    SCM_APPEND1(init_dynload_path, t, curdir);
+    SCM_APPEND(init_dynload_path, t, break_env_paths("GAUCHE_DYNLOAD_PATH"));
+    SCM_APPEND1(init_dynload_path, t, SCM_MAKE_STR(GAUCHE_SITE_ARCH_DIR));
+    SCM_APPEND1(init_dynload_path, t, SCM_MAKE_STR(GAUCHE_ARCH_DIR));
+    
 #define DEF(rec, sym, val) \
     rec = SCM_GLOC(Scm_Define(m, SCM_SYMBOL(sym), val))
 
-    DEF(load_path_rec,    SCM_SYM_LOAD_PATH,
-        SCM_LIST3(curdir, sitelibdir, libdir));
-    DEF(dynload_path_rec, SCM_SYM_DYNAMIC_LOAD_PATH,
-        SCM_LIST3(curdir, sitearchdir, archdir));
+    DEF(load_path_rec,    SCM_SYM_LOAD_PATH, init_load_path);
+    DEF(dynload_path_rec, SCM_SYM_DYNAMIC_LOAD_PATH, init_dynload_path);
     DEF(load_history_rec, SCM_SYM_LOAD_HISTORY, SCM_NIL);
     DEF(load_next_rec,    SCM_SYM_LOAD_NEXT, SCM_NIL);
     DEF(load_port_rec,    SCM_SYM_LOAD_PORT, SCM_FALSE);

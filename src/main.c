@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.12 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: main.c,v 1.13 2001-03-10 09:57:42 shiro Exp $
  */
 
 #include <unistd.h>
@@ -26,11 +26,11 @@ int main(int argc, char **argv)
 {
     int c;
     
-    while ((c = getopt(argc, argv, "gqI")) >= 0) {
+    while ((c = getopt(argc, argv, "gqi")) >= 0) {
         switch (c) {
         case 'g': debug = TRUE; break;
         case 'q': load_initfile = FALSE; break;
-        case 'I': enable_inline = FALSE; break;
+        case 'i': enable_inline = FALSE; break; /* temporary */
         }
     }
     Scm_Init(load_initfile ? "gauche-init.scm" : NULL);
