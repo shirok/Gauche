@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.116 2004-11-23 13:10:00 shirok Exp $
+ *  $Id: port.c,v 1.117 2004-12-02 09:04:49 shirok Exp $
  */
 
 #include <unistd.h>
@@ -1126,7 +1126,6 @@ static void coding_port_recognize_encoding(ScmPort *port,
             cr_seen = TRUE;
         } else if (c == '\n' || cr_seen) {
             if (++num_newlines >= CODING_MAGIC_COMMENT_LINES) {
-                if (cr_seen) Scm_UngetbUnsafe(c, data->source);
                 break;
             }
         } else {

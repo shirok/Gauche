@@ -1,3 +1,8 @@
+2004-12-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c (coding_port_recognize_encoding): fixed a bug that
+	  caused misbehavior of coding-aware ports with CRLF line terminators.
+
 2004-11-29  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.8.2

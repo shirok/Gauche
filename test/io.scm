@@ -611,6 +611,8 @@
 
 (let ((tdata '("abc" "abc\n" "\nabc" "abc\ndef\n"
                "abc\ndef\nghi" "abc\ndef\nghi\n"
+               "abc\r\ndef\r\nghi" "abc\r\ndef\r\nghi\r\n"
+               "abc\rdef\rghi" "abc\rdef\rghi\r"
                "abc\ndef\nghi\njkl" "abc\ndef\nghi\njkl\n")))
   (test* "read from simple contents"
          tdata
@@ -627,11 +629,20 @@
 
 (let ((tdata '("coding: abcde\naa"
                ";coding:\nabcdef\naa"
+               ";coding:\r\nabcdef\r\naa"
+               ";coding:\rabcdef\raa"
                "coding: coding: coding:; abcde\naa"
+               "coding: coding: coding:; abcde\r\naa"
                ";; co\nding: foobar\naa"
+               ";; co\r\nding: foobar\r\naa"
+               ";; co\rding: foobar\raa"
                ";; coding:\n;; foobar\naa"
                ";; coding : foobar\naa"
+               ";; coding : foobar\r\naa"
+               ";; coding : foobar\raa"
                "\n\n;; coding: foobar\naa"
+               "\r\n\r\n;; coding: foobar\r\naa"
+               "\r\r;; coding: foobar\raa"
                "\n;;    codincodincoding:\naa")))
   (test* "to confuse DFA"
          tdata
