@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.71 2001-09-27 09:25:55 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.72 2001-09-27 20:15:11 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3298,14 +3298,14 @@ Returns a boolean value of indicating whether @var{pathname} is allowed
 in @var{amode}.  @var{amode} can be a combinations (logical or) of
 following predefined flags.
 @table @code
-@item r_ok
+@item |R_OK|
 Checks whether @var{pathname} is readable by the current user.
-@item w_ok
+@item |W_OK
 Checks whether @var{pathname} is writable by the current user.
-@item x_ok
+@item |X_OK|
 Checks whether @var{pathname} is executable (or searchable in case
 @var{pathname} is a directory) by the current user.
-@item f_ok
+@item |F_OK|
 Checks whether @var{pathname} exists or not, regardless of
 the access permissions of @var{pathname}.  (But you need to have
 access permissions of the directories containing @var{pathname}).
@@ -3430,25 +3430,25 @@ function signals an error.
 @node Signal, System Inquiry, Locale, System interface
 @subsection Signal
 
-@defvar SIGABRT
-@defvarx SIGALRM
-@defvarx SIGCHLD
-@defvarx SIGCONT
-@defvarx SIGFPE
-@defvarx SIGHUP
-@defvarx SIGILL
-@defvarx SIGINT
-@defvarx SIGKILL
-@defvarx SIGPIPE
-@defvarx SIGQUIT
-@defvarx SIGSEGV
-@defvarx SIGSTOP
-@defvarx SIGTERM
-@defvarx SIGTSTP
-@defvarx SIGTTIN
-@defvarx SIGTTOU
-@defvarx SIGUSR1
-@defvarx SIGUSR2
+@defvar |SIGABRT|
+@defvarx |SIGALRM|
+@defvarx |SIGCHLD|
+@defvarx |SIGCONT|
+@defvarx |SIGFPE|
+@defvarx |SIGHUP|
+@defvarx |SIGILL|
+@defvarx |SIGINT|
+@defvarx |SIGKILL|
+@defvarx |SIGPIPE|
+@defvarx |SIGQUIT|
+@defvarx |SIGSEGV|
+@defvarx |SIGSTOP|
+@defvarx |SIGTERM|
+@defvarx |SIGTSTP|
+@defvarx |SIGTTIN|
+@defvarx |SIGTTOU|
+@defvarx |SIGUSR1|
+@defvarx |SIGUSR2|
 These variables are bound to the corresponding signal numbers.
 @end defvar
 
