@@ -14,7 +14,7 @@ HEADERS = termios.h termconfig.h
 TARGET = termios.so
 OBJS = termios_head.o termios.o termiolib.o termios_tail.o
 CONFIG_GENERATED = Makefile config.cache config.log config.status termiolib.c \
-		   autom4te.cache termios_head.c termios_tail.c
+		   autom4te.cache termios_head.c termios_tail.c termconfig.h
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`/gauche
