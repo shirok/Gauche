@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.43 2001-09-10 19:59:54 shirok Exp $
+ *  $Id: vm.h,v 1.44 2001-09-26 10:56:26 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -67,9 +67,10 @@ typedef struct ScmContFrameRec {
     ScmEnvFrame *argp;            /* saved argument pointer */
     int size;                     /* size of argument frame */
     ScmObj pc;                    /* next PC */
+    ScmObj info;                  /* debug info */
 } ScmContFrame;
 
-#define CONT_FRAME_SIZE  5
+#define CONT_FRAME_SIZE  (sizeof(ScmContFrame)/sizeof(ScmObj))
 
 extern void Scm_CallCC(ScmObj body);
 
