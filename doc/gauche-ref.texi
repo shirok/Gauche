@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.106 2001-10-24 10:17:43 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.107 2001-10-25 11:04:26 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -4903,6 +4903,28 @@ if not, an incomplete string is returned.
 @defun with-output-to-string thunk
 @end defun
 
+@defun write-to-string obj &optional writer
+@defunx read-from-string string &optional reader
+@c EN
+These convenience functions implicitly uses string ports.
+@code{Write-to-string} writes out @var{obj} into
+a string port using a procedure @var{writer} and returns the result
+string.  The default writer is @code{write}.  @code{Read-from-string}
+creates an input string port from @var{string}, and let @var{reader}
+read from the port.  The default reader is @code{read}.
+
+Note: STk has @code{read-from-string} without optional argument.
+@c JP
+文字列ポートを内部で使った便利な手続きです。
+@code{Write-to-string}は、手続き@var{writer}を使って@var{obj}を
+出力文字列ポートに書き出し、結果の文字列を返します。@var{writer}のデフォルトは
+@code{write}です。@code{read-from-string}は文字列@var{string}から
+入力文字列ポートを作成し、@var{reader}を使ってそこから読み込んだオブジェクトを
+返します。@var{reader}のデフォルトは@code{read}です。
+
+註：STkには@code{read-from-string}がありますが、省略可能な引数は取りません。
+@c COMMON
+@end defun
 
 @node Procedural ports, Input, String ports, Input and output
 @subsection Procedural ports
