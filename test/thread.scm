@@ -73,6 +73,147 @@
           (push! r (mutex-state m))
           (reverse r))))
 
+;; This test uses simple-minded spin lock, without using mutex timeouts
+;; nor condition variables.   Not recommended way for real code.
+(test "lock and unlock - blocking (simple spin-lock)" 
+      '((put a) (get a) (put b) (get b) (put c) (get c))
+      (lambda ()
+        (let ((log '())
+              (cell #f)
+              (m (make-mutex)))
+          (define (put! msg)
+            (mutex-lock! m)
+            (if cell
+                (begin (mutex-unlock! m) (put! msg))
+                (begin (set! cell msg)
+                       (push! log `(put ,msg))
+                       (mutex-unlock! m))))
+          (define (get!)
+            (mutex-lock! m)
+            (if cell
+                (let1 r cell
+                  (set! cell #f)
+                  (push! log `(get ,r))
+                  (mutex-unlock! m)
+                  r)
+                (begin (mutex-unlock! m) (get!))))
+          (define (producer)
+            (put! 'a)
+            (put! 'b)
+            (put! 'c))
+          (define (consumer)
+            (get!)
+            (get!)
+            (get!))
+          (let ((tp (thread-start! (make-thread producer 'producer)))
+                (tc (thread-start! (make-thread consumer 'consumer))))
+            (thread-join! tp)
+            (thread-join! tc)
+            (reverse log)))))
+
+(test "lock with timeout"
+      '(#t #f #f #f #f #t #t)
+      (lambda ()
+        (let ((m (make-mutex)))
+          (let* ((r0 (mutex-lock! m))
+                 (r1 (mutex-lock! m 0))
+                 (r2 (mutex-lock! m 0.05))
+                 (r3 (mutex-lock! m (seconds->time (+ (time->seconds (current-time)) 0.05))))
+                 (r4 (mutex-lock! m (seconds->time (- (time->seconds (current-time)) 0.05))))
+                 (r5 (mutex-unlock! m))
+                 (r6 (mutex-lock! m 0)))
+            (mutex-unlock! m)
+            (list r0 r1 r2 r3 r4 r5 r6)))))
+
+;; recursive mutex code taken from an example in SRFI-18
+(test "recursive mutex"
+      (list (current-thread) 0 'not-abandoned)
+      (lambda ()
+        (define (mutex-lock-recursively! mutex)
+          (if (eq? (mutex-state mutex) (current-thread))
+              (let ((n (mutex-specific mutex)))
+                (mutex-specific-set! mutex (+ n 1)))
+              (begin
+                (mutex-lock! mutex)
+                (mutex-specific-set! mutex 0))))
+        (define (mutex-unlock-recursively! mutex)
+          (let ((n (mutex-specific mutex)))
+            (if (= n 0)
+                (mutex-unlock! mutex)
+                (mutex-specific-set! mutex (- n 1)))))
+        (let1 m (make-mutex)
+          (mutex-specific-set! m 0)
+          (mutex-lock-recursively! m)
+          (mutex-lock-recursively! m)
+          (mutex-lock-recursively! m)
+          (let1 r0 (mutex-state m)
+            (mutex-unlock-recursively! m)
+            (mutex-unlock-recursively! m)
+            (let1 r1 (mutex-specific m)
+              (mutex-unlock-recursively! m)
+              (list r0 r1 (mutex-state m)))))
+        ))
+
+;;---------------------------------------------------------------------
+(test-section "condition variables")
+
+(test "make-condition-variable" #t
+      (lambda ()
+        (condition-variable? (make-condition-variable))))
+
+(test "condition-varaible-name" 'foo
+      (lambda ()
+        (condition-variable-name (make-condition-variable 'foo))))
+
+(test "condition-variable-specific" "hello"
+      (lambda ()
+        (let1 c (make-condition-variable 'foo)
+          (condition-variable-specific-set! c "hello")
+          (condition-variable-specific c))))
+
+;; Producer-consumer model using condition variable.
+(test "condition-variable-signal!"
+      '((put a) (get a) (put b) (get b) (put c) (get c))
+      (lambda ()
+        (let ((log '())
+              (cell #f)
+              (m  (make-mutex))
+              (put-cv (make-condition-variable))
+              (get-cv (make-condition-variable)))
+          (define (put! msg)
+            (mutex-lock! m)
+            (if cell
+                (begin (mutex-unlock! m put-cv) (put! msg))
+                (begin (set! cell msg)
+                       (push! log `(put ,msg))
+                       (condition-variable-signal! get-cv)
+                       (mutex-unlock! m))))
+          (define (get!)
+            (mutex-lock! m)
+            (if cell
+                (let1 r cell
+                  (set! cell #f)
+                  (push! log `(get ,r))
+                  (condition-variable-signal! put-cv)
+                  (mutex-unlock! m)
+                  r)
+                (begin
+                  (mutex-unlock! m get-cv) (get!))))
+          (define (producer)
+            (put! 'a)
+            (put! 'b)
+            (put! 'c))
+          (define (consumer)
+            (get!)
+            (get!)
+            (get!))
+          (let ((tp (thread-start! (make-thread producer 'producer)))
+                (tc (thread-start! (make-thread consumer 'consumer))))
+            (thread-join! tp)
+            (thread-join! tc)
+            (reverse log)))))
+
+
 ;; calculate fibonacchi in awful way
 (define (mt-fib n)
   (let ((threads (make-vector n)))
