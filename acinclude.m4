@@ -1,20 +1,19 @@
-#
-# Gauche-specific aucotonf macros.
-# $Id: acinclude.m4,v 1.1 2003-04-12 03:40:52 shirok Exp $
+dnl Gauche-specific aucotonf macros.
+dnl $Id: acinclude.m4,v 1.2 2003-04-12 05:17:22 shirok Exp $
 
-# AC_GAUCHE_INIT_EXT
-#   Sets some parameters about installed Gauche package.  This macro checks
-#   if you're configuring within Gauche source tree or as an individual
-#   extension package, and sets up the following macros appropriately.
-#
-#    GAUCHE_CONFIG   - Name of gauche-config script
-#    GAUCHE_TOP      - Directory prefix where Gauche is installed, or
-#                      empty if this is an individual extension.
-#    GAUCHE_INC      - '-I' macros required to compile extensions.
-#    GAUCHE_LIB      - '-L' macros required to link extensions.
-#    GOSH            - Name of gosh executable, possibly including
-#                      options to run it from the extension directory.
-#    GAUCHE_VERSION  - The version of Gauche.
+dnl AC_GAUCHE_INIT_EXT
+dnl   Sets some parameters about installed Gauche package.  This macro checks
+dnl   if you're configuring within Gauche source tree or as an individual
+dnl   extension package, and sets up the following macros appropriately.
+dnl
+dnl    GAUCHE_CONFIG   - Name of gauche-config script
+dnl    GAUCHE_TOP      - Directory prefix where Gauche is installed, or
+dnl                      empty if this is an individual extension.
+dnl    GAUCHE_INC      - '-I' macros required to compile extensions.
+dnl    GAUCHE_LIB      - '-L' macros required to link extensions.
+dnl    GOSH            - Name of gosh executable, possibly including
+dnl                      options to run it from the extension directory.
+dnl    GAUCHE_VERSION  - The version of Gauche.
 AC_DEFUN([AC_GAUCHE_INIT_EXT],
          [
 if test -f ../../src/gauche.h; then
@@ -40,9 +39,9 @@ AC_SUBST(GAUCHE_VERSION)
 AC_DEFINE_UNQUOTED(GAUCHE_VERSION, "$GAUCHE_VERSION")
 ])
 
-# AC_GAUCHE_INSTALL_TYPE(TYPE)
-#   Sets the default value of INSTALL_TYPE macro.  TYPE must be either
-#   sys or site.
+dnl AC_GAUCHE_INSTALL_TYPE(TYPE)
+dnl   Sets the default value of INSTALL_TYPE macro.  TYPE must be either
+dnl   sys or site.
 AC_DEFUN([AC_GAUCHE_INSTALL_TYPE],
          [
 : ${INSTALL_TYPE=$1}
@@ -52,8 +51,8 @@ fi
 AC_SUBST(INSTALL_TYPE)
 ])
 
-# AC_GAUCHE_CC
-#   Gets compiler parameters which Gauche has been compiled with.
+dnl AC_GAUCHE_CC
+dnl   Gets compiler parameters which Gauche has been compiled with.
 AC_DEFUN([AC_GAUCHE_CC],
          [
 CC="`$GAUCHE_CONFIG --cc`"
@@ -65,9 +64,9 @@ if test -z "$ac_gauche_CFLAGS"; then
 fi
 ])
 
-# AC_GAUCHE_FLAGS
-#   Sets CFLAGS, CPPFLAGS and LDFLAGS appropriate for furthre testing.
-#   This should come before any testings that requires those flags to be set.
+dnl AC_GAUCHE_FLAGS
+dnl   Sets CFLAGS, CPPFLAGS and LDFLAGS appropriate for furthre testing.
+dnl   This should come before any testings that requires those flags to be set.
 AC_DEFUN([AC_GAUCHE_FLAGS],
          [
 CFLAGS="$CFLAGS $GAUCHE_INC `$GAUCHE_CONFIG --so-cflags`"
@@ -77,10 +76,10 @@ LDFLAGS="$LDFLAGS `$GAUCHE_CONFIG --local-libdir`"
 AC_GAUCHE_OPTFLAGS
 ])
 
-# AC_GAUCHE_OPTFLAGS
-#   Sets OPTFLAGS with some optimization flags using heuristics.
-#   If you use AC_GAUCHE_FLAGS, this test is included.
-#   The main configure and gc's configure also use this.
+dnl AC_GAUCHE_OPTFLAGS
+dnl   Sets OPTFLAGS with some optimization flags using heuristics.
+dnl   If you use AC_GAUCHE_FLAGS, this test is included.
+dnl   The main configure and gc's configure also use this.
 AC_DEFUN([AC_GAUCHE_OPTFLAGS],
          [
 case "$host" in
@@ -97,10 +96,10 @@ OPTFLAGS="$GCCOPT $I686OPT"
 AC_SUBST(OPTFLAGS)
 ])
 
-# AC_GAUCHE_FIX_LIBS
-#   Sets LDFLAGS and LIBS to generate shared library.
-#   This has to come after all the tests that requre linking, or those test
-#   will fail because they can't generate stand-alone executable.
+dnl AC_GAUCHE_FIX_LIBS
+dnl   Sets LDFLAGS and LIBS to generate shared library.
+dnl   This has to come after all the tests that requre linking, or those test
+dnl   will fail because they can't generate stand-alone executable.
 AC_DEFUN([AC_GAUCHE_FIX_LIBS],
          [
 LDFLAGS="$LDFLAGS `$GAUCHE_CONFIG --so-ldflags`"
@@ -108,12 +107,12 @@ LIBS="$GAUCHE_LIB `$GAUCHE_CONFIG -l` $LIBS"
 AC_SUBST(LDFLAGS)
 ])
 
-# AC_GAUCHE_EXT_FIXUP(FILE [, MODULE])
-#   Sets the shell command to generate 'FILE_head.c' and 'FILE_tail.c',
-#   needed by some platforms for GC.  MODULE must be the extension
-#   module's name, and has to match the name given to the SCM_INIT_EXTENSION
-#   macro in the extension initialization code.   If MODULE is omitted
-#   FILE is used as the module's name.
+dnl AC_GAUCHE_EXT_FIXUP(FILE [, MODULE])
+dnl   Sets the shell command to generate 'FILE_head.c' and 'FILE_tail.c',
+dnl   needed by some platforms for GC.  MODULE must be the extension
+dnl   module's name, and has to match the name given to the SCM_INIT_EXTENSION
+dnl   macro in the extension initialization code.   If MODULE is omitted
+dnl   FILE is used as the module's name.
 AC_DEFUN([AC_GAUCHE_EXT_FIXUP],
          [AC_CONFIG_COMMANDS("$1_head_n_tail",
                              [
