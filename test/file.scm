@@ -4,6 +4,7 @@
 
 (use gauche.test)
 (test-start "file utilities")
+(use srfi-1)
 (use srfi-13)
 
 ;;------------------------------------------------------------------
@@ -37,33 +38,36 @@
 
 (if (symbol-bound? 'sys-symlink)
     (begin
-      (sys-symlink "test.out/test1.o" "test.out/test6.o")
-      (sys-symlink "test.out/test6.o" "test.out/test7.o"))
+      (sys-symlink "test1.o" "test.out/test6.o")
+      (sys-symlink "test6.o" "test.out/test7.o")
+      (sys-symlink "test.d" "test.out/test2.d"))
     (begin
       (with-output-to-file "test.out/test6.o" (lambda () (newline)))
-      (with-output-to-file "test.out/test7.o" (lambda () (newline)))))
+      (with-output-to-file "test.out/test7.o" (lambda () (newline)))
+      (sys-mkdir "test.out/test2.d")))
 
 (sys-system "mkdir test.out/test.d")
 (with-output-to-file "test.out/test.d/test10.o"
   (lambda () (display (make-string 100 #\o))))
 (if (symbol-bound? 'sys-symlink)
-    (sys-symlink "test.out/test1.o" "test.out/test.d/test11.o")
+    (sys-symlink "../test1.o" "test.out/test.d/test11.o")
     (with-output-to-file "test.out/test.d/test11.o" (lambda () (newline))))
 
 (test "directory-list"
-      '("." ".." "test.d" "test1.o" "test2.o"
+      '("." ".." "test.d" "test1.o" "test2.d" "test2.o"
         "test3.o" "test4.o" "test5.o" "test6.o" "test7.o" )
       (lambda () (directory-list "test.out")))
 
 (test "directory-list :children?"
-      '("test.d" "test1.o" "test2.o"
+      '("test.d" "test1.o" "test2.d" "test2.o"
         "test3.o" "test4.o" "test5.o" "test6.o" "test7.o" )
       (lambda () (directory-list "test.out" :children? #t)))
 
 (test "directory-list :add-path?"
       '("test.out/." "test.out/.." "test.out/test.d" "test.out/test1.o"
-        "test.out/test2.o"  "test.out/test3.o" "test.out/test4.o"
-        "test.out/test5.o" "test.out/test6.o" "test.out/test7.o" )
+        "test.out/test2.d" "test.out/test2.o"  "test.out/test3.o"
+        "test.out/test4.o" "test.out/test5.o" "test.out/test6.o"
+        "test.out/test7.o" )
       (lambda () (directory-list "test.out/" :add-path? #t)))
 
 (test "directory-list :filter"
@@ -75,27 +79,27 @@
                         :filter (lambda (p) (string-suffix? "o" p)))))
 
 (test "directory-list2"
-      '(("." ".." "test.d")
+      '(("." ".." "test.d" "test2.d")
         ("test1.o" "test2.o" "test3.o" "test4.o"
          "test5.o" "test6.o" "test7.o" ))
       (lambda () (receive x (directory-list2 "test.out") x)))
 
 (test "directory-list2 :add-path"
-      '(("test.out/." "test.out/.." "test.out/test.d")
+      '(("test.out/." "test.out/.." "test.out/test.d" "test.out/test2.d")
         ("test.out/test1.o" "test.out/test2.o"  "test.out/test3.o"
          "test.out/test4.o" "test.out/test5.o" "test.out/test6.o"
          "test.out/test7.o"))
       (lambda () (receive x (directory-list2 "test.out" :add-path? #t) x)))
         
 (test "directory-list2 :children"
-      '(("test.out/test.d")
+      '(("test.out/test.d" "test.out/test2.d")
         ("test.out/test1.o" "test.out/test2.o"  "test.out/test3.o"
          "test.out/test4.o" "test.out/test5.o" "test.out/test6.o"
          "test.out/test7.o"))
       (lambda () (receive x (directory-list2 "test.out" :add-path? #t :children? #t) x)))
         
 (test "directory-list2 :filter"
-      '(("test.d")
+      '(("test.d" "test2.d")
         ("test1.o" "test2.o" "test3.o" "test4.o"
          "test5.o" "test6.o" "test7.o" ))
       (lambda ()
@@ -104,7 +108,134 @@
                              :filter (lambda (p) (string-contains p "test")))
           x)))
 
-(sys-system "rm -rf test.out")
+(when (symbol-bound? 'sys-symlink)
+  (test "directory-list2 :follow-link? #f"
+      '(("test.d")
+        ("test1.o" "test2.d" "test2.o" "test3.o" "test4.o"
+         "test5.o" "test6.o" "test7.o" ))
+      (lambda ()
+        (receive x (directory-list2 "test.out" :follow-link? #f :children? #t)
+          x))
+      ))
+
+(test "directory-fold"
+      (if (symbol-bound? 'sys-symlink)
+          '("test.out/test.d/test10.o" "test.out/test.d/test11.o"
+            "test.out/test1.o"
+            "test.out/test2.d/test10.o" "test.out/test2.d/test11.o"
+            "test.out/test2.o" "test.out/test3.o"
+            "test.out/test6.o" "test.out/test7.o")
+          '("test.out/test.d/test10.o" "test.out/test.d/test11.o"
+            "test.out/test1.o"
+            "test.out/test2.o" "test.out/test3.o"
+            "test.out/test6.o" "test.out/test7.o"))
+      (lambda ()
+        (reverse
+         (directory-fold "test.out"
+                         (lambda (path result)
+                           (if (= (file-size path) 100)
+                               (cons path result)
+                               result))
+                         '())))
+      )
+
+(when (symbol-bound? 'sys-symlink)
+  (test "directory-fold :follow-link? #f"
+        '("test.out/test.d/test10.o" "test.out/test.d/test11.o"
+          "test.out/test1.o"
+          "test.out/test2.o" "test.out/test3.o"
+          "test.out/test6.o" "test.out/test7.o")
+        (lambda ()
+          (reverse 
+           (directory-fold "test.out"
+                           (lambda (path result)
+                             (if (= (file-size path) 100)
+                                 (cons path result)
+                                 result))
+                           '()
+                           :follow-link? #f))))
+  )
+
+(test "directory-fold :lister"
+      '("test.out/test.d/test10.o" "test.out/test.d/test11.o" "test.out/test1.o")
+      (lambda ()
+        (reverse
+         (directory-fold "test.out" cons '()
+                         :follow-link? #f
+                         :lister (lambda (dir knil)
+                                   (receive (dirs files)
+                                       (directory-list2 dir :add-path? #t :children? #t :follow-link? #f)
+                                     (append dirs
+                                             (filter (l_ (string-contains _ "test1"))
+                                                     files)))))))
+      )
+
+(test "build-path" "" (lambda () (build-path "")))
+(test "build-path" "." (lambda () (build-path ".")))
+(test "build-path" "/" (lambda () (build-path "/")))
+(test "build-path" "a/b/c" (lambda () (build-path "a" "b" "c")))
+(test "build-path" "a/b/c" (lambda () (build-path "a/" "b/" "c")))
+(test "build-path" "/a/b/c" (lambda () (build-path "/" "a/b" "c")))
+(test "build-path" "./a/b/c" (lambda () (build-path "." "a/b" "c")))
+(test "build-path" #t
+      (lambda ()
+        (with-error-handler
+         (lambda (e) #t)
+         (lambda () (build-path "." "/a/b")))))
+
+(test "resolve-path" "/" (lambda () (resolve-path "/")))
+(test "resolve-path" "." (lambda () (resolve-path ".")))
+(test "resolve-path" "test.out" (lambda () (resolve-path "test.out")))
+(when (symbol-bound? 'sys-symlink)
+  (test "resolve-path" "test.out/test1.o"
+        (lambda () (resolve-path "test.out/test6.o")))
+  (test "resolve-path" "test.out/test1.o"
+        (lambda () (resolve-path "test.out/test7.o")))
+  (test "resolve-path" "test.out/test1.o"
+        (lambda () (resolve-path "test.out/test2.d/test11.o")))
+  (test "resolve-path" "test.out/test1.o"
+        (lambda () (resolve-path "test.out/test2.d/../test.d/test11.o")))
+  (test "resolve-path" "test.out/test1.o"
+        (lambda () (resolve-path "test.out/test.d/../test2.d/test11.o")))
+  )
+
+(test "file-type" #f
+      (lambda () (file-type "nonexistent/file")))
+(test "file-type" '(directory directory regular)
+      (lambda () (map file-type
+                      '("test.out/test.d" "test.out/test2.d" "test.out/test1.o"))))
+(when (symbol-bound? 'sys-symlink)
+  (test "file-type :follow-link? #f" '(directory symlink regular)
+        (lambda () (map (l_ (file-type _ :follow-link? #f))
+                        '("test.out/test.d" "test.out/test2.d" "test.out/test1.o"))))
+  )
+
+(test "file-eq?" #t
+      (lambda () (file-eq? "test.out/test1.o" "test.out/test1.o")))
+(when (symbol-bound? 'sys-symlink)
+  (test "file-eq? (symlink)" #f
+        (lambda () (file-eq? "test.out/test1.o" "test.out/test7.o"))))
+(test "file-eq?" #f
+      (lambda () (file-eq? "test.out/test1.o" "test.out/test2.o")))
+(test "file-eqv?" #t
+      (lambda () (file-eqv? "test.out/test1.o" "test.out/test1.o")))
+(when (symbol-bound? 'sys-symlink)
+  (test "file-eqv? (symlink)" #t
+        (lambda () (file-eqv? "test.out/test1.o" "test.out/test7.o")))
+  (test "file-eqv? (symlink)" #t
+        (lambda () (file-eqv? "test.out/test1.o" "test.out/test.d/test11.o"))))
+(test "file-eqv?" #f
+      (lambda () (file-eqv? "test.out/test1.o" "test.out/test2.o")))
+(test "file-equal?" #t      
+      (lambda () (file-equal? "test.out/test1.o" "test.out/test1.o")))
+(test "file-equal?" #t      
+      (lambda () (file-equal? "test.out/test1.o" "test.out/test2.o")))
+(test "file-equal?" #f
+      (lambda () (file-equal? "test.out/test1.o" "test.out/test4.o")))
+(test "file-equal?" #t
+      (lambda () (file-equal? "test.out/test4.o" "test.out/test5.o")))
+
+;(sys-system "rm -rf test.out")
 
 ;;------------------------------------------------------------------
 (test-section "file.filter")

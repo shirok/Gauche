@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: util.scm,v 1.4 2002-05-03 13:18:57 shirok Exp $
+;;;  $Id: util.scm,v 1.5 2002-05-03 22:20:49 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -38,6 +38,10 @@
           file-ctime=? file-ctime<? file-ctime<=? file-ctime>? file-ctime>=?
           ))
 (select-module file.util)
+
+;; common util
+(define (%stat opts)
+  (if (get-keyword :follow-link? opts #t) sys-stat sys-lstat))
 
 ;;;=============================================================
 ;;; Directory entries
@@ -79,9 +83,7 @@
 (define (directory-list2 dir . opts)
   (let* ((add-path? (get-keyword :add-path? opts #f))
          (filters   (%directory-filter-compose opts))
-         (selector  (let1 stat
-                        (if (get-keyword :follow-link? opts #t)
-                            sys-lstat sys-stat)
+         (selector  (let1 stat (%stat opts)
                       (lambda (e)
                         (eq? (slot-ref (stat e) 'type) 'directory)))))
     (let1 entries (sort (%directory-filter dir filters))
@@ -94,14 +96,17 @@
 ;; directory-fold DIR PROC KNIL &keyword LISTER FOLLOW-LINK?
 (define (directory-fold dir proc knil . opts)
   (let* ((follow (get-keyword :follow-link? opts #t))
-         (lister (get-keyword :walker opts
+         (lister (get-keyword :lister opts
                               (lambda (path knil)
                                 (directory-list path
                                                 :add-path? #t
-                                                :children? #t)))))
+                                                :children? #t))))
+         (selector (let1 stat (%stat opts)
+                     (lambda (e)
+                       (eq? (slot-ref (stat e) 'type) 'directory)))))
     (define (rec path knil)
-      (if (eq? (file-type path :follow-link? follow) 'directory)
-          (fold rec knil (lister path))
+      (if (selector path)
+          (fold rec knil (lister path knil))
           (proc path knil)))
     (rec dir knil)))
 
@@ -129,19 +134,26 @@
   (sys-normalize-pathname path :expand #t))
 
 (define (resolve-path path)
+  (define (pathcat dir base) (simplify-path (build-path dir base)))
   (define (rec pat)
-    (let* ((dir  (sys-dirname pat))
-           (base (sys-basename pat))
-           (ndir (if (or (string=? dir "/") (string=? dir "."))
-                     dir
-                     (rec dir)))
-           (p    (build-path ndir base)))
+    (let*-values (((dir)  (sys-dirname pat))
+                  ((base) (sys-basename pat))
+                  ((ndir p)
+                   (if (or (string=? dir "/")  (string=? dir "."))
+                       (values dir pat)
+                       (let1 nd (rec dir)
+                         (values nd (pathcat nd base))))))
       (unless (sys-access p |F_OK|)
         (error "path doesn't exist" path))
-      (if (eq? (file-type p :follow-link #f) 'symlink)
-          (let1 np (sys-readlink p)
-            (if (absolute-path? np) np (build-path ndir np)))
-          p)))
+      (let loop ((count 0) (p p))
+        (cond ((>= count 8) ;; arbitrary upper bound to avoid infinite loop
+               (error "possibly looping symlink" pat))
+              ((eq? (file-type p :follow-link? #f) 'symlink)
+               (loop (+ count 1)
+                     (let1 np (sys-readlink p)
+                       (if (absolute-path? np) np (pathcat ndir np)))))
+              (else p)))
+      ))
   (rec (expand-path path)))
 
 (define (simplify-path path)
@@ -163,11 +175,8 @@
   (syntax-rules ()
     ((_ name slot)
      (define (name path . opts)
-       (and-let* (((sys-access path F_OK))
-                  (stat (if (get-keyword :follow-link opts #t)
-                            sys-stat sys-lstat))
-                  (s (stat path)))
-         (slot-ref s slot))))))
+       (and (sys-access path F_OK)
+            (slot-ref ((%stat opts) path) slot))))))
 
 (define-stat-accessor file-type 'type)
 (define-stat-accessor file-perm 'perm)
@@ -213,11 +222,11 @@
     (cond ((and (eqv? (slot-ref s1 'dev) (slot-ref s2 'dev))
                 (eqv? (slot-ref s1 'ino) (slot-ref s2 'ino)))
            #t)
-          ((not (= (slot-ref s1 'type) (slot-ref s2 'type)))
+          ((not (eq? (slot-ref s1 'type) (slot-ref s2 'type)))
            #f)
           ((not (= (slot-ref s1 'size) (slot-ref s2 'size)))
            #f)
-          ((= (slot-ref s1 'type) 'directory)
+          ((eq? (slot-ref s1 'type) 'directory)
            (error "directory comparison is not supported yet" s1))
           (else
            (call-with-input-file f1
