@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: parameter.c,v 1.1 2002-12-10 12:39:25 shirok Exp $
+ *  $Id: parameter.c,v 1.2 2002-12-10 13:16:26 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -81,8 +81,8 @@ int Scm_MakeParameterSlot(ScmVM *vm)
         p->vector = newvec;
         p->numAllocated += PARAMETER_GROW;
     }
-    p->vector[p->numAllocated] = SCM_UNDEFINED;
-    return p->numAllocated++;
+    p->vector[p->numParameters] = SCM_UNDEFINED;
+    return p->numParameters++;
 }
 
 /*

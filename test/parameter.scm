@@ -5,9 +5,10 @@
 (use gauche.test)
 (test-start "parameters")
 
-;;-------------------------------------------------------------------
-(test-section "parameter")
 (use gauche.parameter)
+
+;;-------------------------------------------------------------------
+(test-section "basics")
 
 (define a #f)
 (define b #f)
@@ -53,5 +54,48 @@
             (push! z (list (a) (b)))
             (if k (k #f)))
           (reverse z))))
+
+;;-------------------------------------------------------------------
+(test-section "observers")
+
+(test "observers" '((pre1 4 3) (pre2 4 3) (post2 4 4) (post1 4 4))
+      (lambda ()
+        (let ((p (make-parameter 3))
+              (r '()))
+          (parameter-observer-add! p (lambda (v)
+                                       (push! r `(pre1 ,v ,(p))))
+                                   'before)
+          (parameter-observer-add! p (lambda (v)
+                                       (push! r `(post1 ,v ,(p))))
+                                   'after)
+          (parameter-observer-add! p (lambda (v)
+                                       (push! r `(pre2 ,v ,(p))))
+                                   'before 'append)
+          (parameter-observer-add! p (lambda (v)
+                                       (push! r `(post2 ,v ,(p))))
+                                   'after 'prepend)
+          (p 4)
+          (reverse r))))
+          
+(test "observers" '((pre1 4 3) (post1 4 4))
+      (lambda ()
+        (let ((p (make-parameter 3))
+              (r '())
+              (pre2 (lambda (v) (push! r `(pre2 ,v ,(p)))))
+              (post2  (lambda (v) (push! r `(post2 ,v ,(p)))))
+              )
+          (parameter-observer-add! p (lambda (v)
+                                       (push! r `(pre1 ,v ,(p))))
+                                   'before)
+          (parameter-observer-add! p pre2 'before 'append)
+          (parameter-observer-add! p (lambda (v)
+                                       (push! r `(post1 ,v ,(p))))
+                                   'after)
+          (parameter-observer-add! p post2 'after 'prepend)
+          (parameter-observer-delete! p pre2 'before)
+          (parameter-observer-delete! p post2 'after)
+          (p 4)
+          (reverse r))))
+          
 
 (test-end)
