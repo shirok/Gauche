@@ -1,6 +1,6 @@
 ;; test exception handling system 
 ;; this must come after primsyn, error, macro and object tests.
-;; $Id: exception.scm,v 1.4 2004-10-10 09:52:10 shirok Exp $
+;; $Id: exception.scm,v 1.5 2004-10-11 05:52:14 shirok Exp $
 
 (use gauche.test)
 (test-start "exceptions")
@@ -20,6 +20,51 @@
 (test* "make <system-error>" '("oops" 12)
        (let ((e (make <system-error> :message "oops" :errno 12)))
          (map (cut ref e <>) '(message errno))))
+
+;;--------------------------------------------------------------------
+(test-section "srfi-35 style condition definitions")
+
+(define-condition-type &c <condition>
+  c?
+  (x c-x))
+
+(define-condition-type &c1 &c
+  c1?
+  (a c1-a))
+
+(define-condition-type &c2 &c
+  c2?
+  (b c2-b))
+
+(let ((v1 #f) (v2 #f) (v3 #f) (v4 #f) (v5 #f))
+  (set! v1 (make-condition &c1 'x "V1" 'a "a1"))
+
+  (test* "v1" '(#t #t #f "V1" "a1")
+         (list (c? v1) (c1? v1) (c2? v1) (c-x v1) (c1-a v1)))
+
+  (set! v2 (condition (&c2
+                       (x "V2")
+                       (b "b2"))))
+
+  (test* "v2" '(#t #f #t "V2" "b2")
+         (list (c? v2) (c1? v2) (c2? v2) (c-x v2) (c2-b v2)))
+
+  (set! v3 (condition (&c1
+                       (x "V3/1")
+                       (a "a3"))
+                      (&c2
+                       (b "b3"))))
+  (test* "v3" '(#t #t #t "V3/1" "a3" "b3")
+         (list (c? v3) (c1? v3) (c2? v3) (c-x v3) (c1-a v3) (c2-b v3)))
+
+  (set! v4 (make-compound-condition v1 v2))
+  (test* "v4" '(#t #t #t "V1" "a1" "b2")
+         (list (c? v4) (c1? v4) (c2? v4) (c-x v4) (c1-a v4) (c2-b v4)))
+
+  (set! v5 (make-compound-condition v2 v3))
+  (test* "v5" '(#t #t #t "V2" "a3" "b2")
+         (list (c? v5) (c1? v5) (c2? v5) (c-x v5) (c1-a v5) (c2-b v5)))
+  )
 
 ;;--------------------------------------------------------------------
 (test-section "guard")

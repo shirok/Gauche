@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: condutil.scm,v 1.1 2004-10-11 04:38:59 shirok Exp $
+;;;  $Id: condutil.scm,v 1.2 2004-10-11 05:52:03 shirok Exp $
 ;;;
 
 ;; Defines some condition-related primitives.
@@ -93,24 +93,24 @@
 (define-syntax define-condition-type
   (syntax-rules ()
     ((define-condition-type name super pred . field-spec)
-     (define-condition-type-rec name super pred () (field-spec)))
+     (begin
+       (define-condition-type-rec name super () field-spec)
+       (define (pred obj) (condition-has-type? obj name))))
     ((_ . other)
      (syntax-error "malformed define-condition-type:"
                    (define-condition-type . other)))))
 
 (define-syntax define-condition-type-rec
   (syntax-rules ()
-    ((define-condition-type-rec name super pred slots ())
-     (begin
-       (define-class name (super) slots :metaclass <condition-meta>)
-       (define (pred obj) (condition-has-type? obj name))))
-    ((define-condition-type-rec name super pred
-       (slot ...)
+    ((define-condition-type-rec name super slots ())
+     (define-class name (super) slots :metaclass <condition-meta>))
+    ((define-condition-type-rec name super (slot ...)
        ((field reader) . more-fields))
-     (define-condition-type-rec name super pred
-       (slot ... (field :getter reader))
-       more-fields))
-    ((_ name super pred slots (badfield . more))
+     (begin
+       (define (reader obj) (condition-ref obj 'field))
+       (define-condition-type-rec name super (slot ... field)
+         more-fields)))
+    ((_ name super slots (badfield . more))
      (syntax-error "bad field spec for define-condition-type:" badfield))
     ))
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.56 2004-10-11 04:38:59 shirok Exp $
+ *  $Id: error.c,v 1.57 2004-10-11 05:52:14 shirok Exp $
  */
 
 #include <errno.h>
@@ -287,7 +287,7 @@ ScmObj Scm_MakeCompoundCondition(ScmObj conditions)
     ScmObj h = SCM_NIL, t = SCM_NIL, cp, cond;
     int serious = FALSE;
     int nconds = Scm_Length(conditions);
-    
+
     /* some boundary cases */
     if (nconds < 0) {
         Scm_Error("Scm_MakeCompoundCondition: list required, but got %S",
@@ -297,10 +297,10 @@ ScmObj Scm_MakeCompoundCondition(ScmObj conditions)
         return compound_allocate(SCM_CLASS_COMPOUND_CONDITION, SCM_NIL);
     }
     if (nconds == 1) {
-        if (!SCM_CONDITIONP(SCM_CAR(cp))) {
+        if (!SCM_CONDITIONP(SCM_CAR(conditions))) {
             Scm_Error("make-compound-condition: given non-condition object: %S", SCM_CAR(cp));
         }
-        return SCM_CAR(cp);
+        return SCM_CAR(conditions);
     }
 
     /* collect conditions and creates compound one */
