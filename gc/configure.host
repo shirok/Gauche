@@ -25,7 +25,9 @@ case "$host" in
     gc_cflags=-fexceptions
     ;;
     *-*-hpux* )
-    gc_cflags=+ESdbgasm
+# NB: This causes a problem in certain versions of gcc (at least gcc-3.2
+# doesn't work).
+#   gc_cflags=+ESdbgasm
     ;;
 esac
 
