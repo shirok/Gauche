@@ -1,7 +1,7 @@
 /*
  * compile.c - compile the given form to an intermediate form
  *
- *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2003 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.95 2002-11-29 04:05:13 shirok Exp $
+ *  $Id: compile.c,v 1.96 2003-01-12 13:07:13 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -235,7 +235,7 @@ enum {
  *      x  ==> yields 2
  *
  *   One way to address this problem is to prohibit the assignment to
- *   the variable from outside the module, described in Tung: "Interative
+ *   the variable from outside the module, described in Tung: "Interactive
  *   Modular Programming in Scheme", Proc. of the conf. on Lisp and
  *   functional programming, 1992, pp.86-95.  Unfortunately, such
  *   restriction may conflict with the tradition of exporting some

@@ -1,7 +1,7 @@
 /*
  * main.c - interpreter main program
  *
- *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2003 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.64 2002-11-21 05:21:00 shirok Exp $
+ *  $Id: main.c,v 1.65 2003-01-12 13:07:13 shirok Exp $
  */
 
 #include <unistd.h>
@@ -98,6 +98,10 @@ void further_options(const char *optarg)
     }
     else if (strcmp(optarg, "test") == 0) {
         test_mode = TRUE;
+    }
+    /* Experimental */
+    else if (strcmp(optarg, "limit-module-mutation") == 0) {
+        SCM_VM_RUNTIME_FLAG_SET(vm, SCM_LIMIT_MODULE_MUTATION);
     }
     else {
         fprintf(stderr, "unknown -f option: %s\n", optarg);

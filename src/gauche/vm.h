@@ -1,7 +1,7 @@
 /*
  * vm.h - Virtual machine
  *
- *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2003 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.83 2002-12-10 12:39:25 shirok Exp $
+ *  $Id: vm.h,v 1.84 2003-01-12 13:07:13 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -386,7 +386,10 @@ enum {
     SCM_ERROR_BEING_HANDLED  = (1L<<0), /* we're in an error handler */
     SCM_ERROR_BEING_REPORTED = (1L<<1), /* we're in an error reporter */
     SCM_LOAD_VERBOSE         = (1L<<2), /* report loading files */
-    SCM_CASE_FOLD            = (1L<<3)  /* symbols are case insensitive */
+    SCM_CASE_FOLD            = (1L<<3), /* symbols are case insensitive */
+    SCM_LIMIT_MODULE_MUTATION = (1L<<4) /* disable set! to modify the
+                                           global binding in the other
+                                           module */
 };
 
 #define SCM_VM_RUNTIME_FLAG_IS_SET(vm, flag) ((vm)->runtimeFlags & (flag))
@@ -433,7 +436,7 @@ enum {
 enum {
     SCM_COMPILE_NOINLINE = (1L<<0), /* Do not inline procedures */
     SCM_COMPILE_NOSOURCE = (1L<<1), /* Do not insert source info */
-    SCM_COMPILE_SHOWRESULT = (1L<<2) /* Display each result of compilation */
+    SCM_COMPILE_SHOWRESULT = (1L<<2), /* Display each result of compilation */
 };
 
 #define SCM_VM_COMPILER_FLAG_IS_SET(vm, flag) ((vm)->compilerFlags & (flag))

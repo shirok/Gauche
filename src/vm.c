@@ -1,7 +1,7 @@
 /*
  * vm.c - evaluator
  *
- *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2003 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.196 2003-01-01 14:12:38 shirok Exp $
+ *  $Id: vm.c,v 1.197 2003-01-12 13:07:13 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -95,8 +95,8 @@ ScmVM *Scm_NewVM(ScmVM *base,
 
     Scm_ParameterTableInit(&(v->parameters), base);
 
-    v->compilerFlags = 0;
-    v->runtimeFlags = 0;
+    v->compilerFlags = base? base->compilerFlags : 0;
+    v->runtimeFlags = base? base->runtimeFlags : 0;
 
     v->stack = SCM_NEW2(ScmObj*, SCM_VM_STACK_SIZE * sizeof(ScmObj));
     v->sp = v->stack;
@@ -795,14 +795,26 @@ static void run_loop()
                     SCM_GLOC_SET(SCM_GLOC(loc), val0);
                 } else {
                     ScmGloc *gloc;
+                    ScmIdentifier *id;
                     VM_ASSERT(SCM_IDENTIFIERP(loc));
-                    /* The third arg of this call should be TRUE
-                       (stay_in_module).  See the discussion about modules
-                       in compile.c.  For now, this one is more convenient. */
-                    gloc = Scm_FindBinding(SCM_IDENTIFIER(loc)->module,
-                                           SCM_IDENTIFIER(loc)->name,
-                                           FALSE);
-                    if (gloc == NULL) VM_ERR(("symbol not defined: %S", loc));
+                    id = SCM_IDENTIFIER(loc);
+                    /* If runtime flag LIMIT_MODULE_MUTATION is set,
+                       we search only for the id's module, so that set! won't
+                       mutate bindings in the other module. */
+                    gloc = Scm_FindBinding(id->module, id->name,
+                                           SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_LIMIT_MODULE_MUTATION));
+                    if (gloc == NULL) {
+                        /* Do search again for meaningful error message */
+                        if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_LIMIT_MODULE_MUTATION)) {
+                            gloc = Scm_FindBinding(id->module, id->name, FALSE);
+                            if (gloc != NULL) {
+                                VM_ERR(("can't mutate binding of %S, which is in another module",
+                                        id->name));
+                            }
+                            /*FALLTHROUGH*/
+                        }
+                        VM_ERR(("symbol not defined: %S", loc));
+                    }
                     SCM_GLOC_SET(gloc, val0);
                     /* memorize gloc */
                     /* TODO: make it MT safe! */

@@ -1,3 +1,8 @@
+2003-01-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c : added experimental runtime flag that disables mutation
+	  of binding from outside of the definining module.
+
 2003-01-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c, src/extlib.stub : added make-module, and allow
