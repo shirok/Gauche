@@ -17,6 +17,12 @@
 (test "make-string" "aaaaa" (lambda () (make-string 5 #\a)))
 (test "make-string" "" (lambda () (make-string 0 #\a)))
 
+(test "immutable" #t (lambda () (string-immutable? "abcde")))
+(test "immutable" #t (lambda () (string-immutable? "")))
+(test "immutable" #f (lambda () (string-immutable? (string-copy "abcde"))))
+(test "immutable" #f (lambda () (string-immutable? (string #\a #\b))))
+(test "immutable" #f (lambda () (string-immutable? (string))))
+
 (test "string->list" '(#\a #\b #\c #\d #\e #\f #\g)
       (lambda () (string->list "abcdefg")))
 (test "string->list" '(#\c #\d #\e #\f #\g)
