@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.57 2002-01-25 09:37:06 shirok Exp $
+;;; $Id: syslib.stub,v 1.58 2002-02-11 09:23:35 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -647,11 +647,23 @@
 (define-symbol |X_OK| "sym_x_ok" "Scm_MakeInteger(X_OK)")
 (define-symbol |F_OK| "sym_f_ok" "Scm_MakeInteger(F_OK)")
 
+;; FREEBSD's access(2) implementation is not quite reliable.
 (define-cproc sys-access (pathname amode)
   (assert (string? pathname))
   (assert (exact? amode))
-  "  int r = Scm_SysCall(access(Scm_GetStringConst(pathname), amode));
-  SCM_RETURN((r == 0)? SCM_TRUE : SCM_FALSE);")
+  "
+#if defined(FREEBSD)
+  struct stat statbuf;
+  int r = Scm_SysCall(stat(Scm_GetStringConst(pathname), &statbuf));
+  if (r < 0) SCM_RETURN(SCM_FALSE);
+  if ((amode & R_OK) && !(statbuf.st_mode & S_IRUSR)) SCM_RETURN(SCM_FALSE);
+  if ((amode & W_OK) && !(statbuf.st_mode & S_IWUSR)) SCM_RETURN(SCM_FALSE);
+  if ((amode & X_OK) && !(statbuf.st_mode & S_IXUSR)) SCM_RETURN(SCM_FALSE);
+  SCM_RETURN(SCM_TRUE);
+#else
+  int r = Scm_SysCall(access(Scm_GetStringConst(pathname), amode));
+  SCM_RETURN((r == 0)? SCM_TRUE : SCM_FALSE);
+#endif")
 
 (define-cproc sys-chdir (pathname)
   (assert (string? pathname))
