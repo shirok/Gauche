@@ -143,4 +143,40 @@
 (test* "let-keywords*" 1 (oef+ 0 :c 1))
 (test* "let-keywords*" 1 (oef+ 0 :c 3 :bb 2 :a 1))
 
+;; let-keywords* combined with syntax rules
+(define-syntax lambda++
+  (syntax-rules ()
+    ((lambda++ "sub" () (margs ...) kargs . body)
+     (lambda (margs ... . rest)
+       (let-keywords* rest kargs
+         . body)))
+    ((lambda++ "sub" (:key) margs kargs . body)
+     (lambda++ "sub" () margs kargs . body))
+    ((lambda++ "sub" (:key (arg1 def1) args ...) margs (kargs ...) . body)
+     (lambda++ "sub" (:key args ...) margs (kargs ... (arg1 def1)) . body))
+    ((lambda++ "sub" (:key arg1 args ...) margs (kargs ...) . body)
+     (lambda++ "sub" (:key args ...) margs (kargs ... (arg1 #f)) . body))
+    ((lambda++ "sub" (arg1 args ...) (margs ...) kargs . body)
+     (lambda++ "sub" (args ...) (margs ... arg1) kargs . body))
+    ((lambda++ args . body)
+     (lambda++ "sub" args () () . body))
+    ))
+
+(test* "macro + let-keywords*" '(1 2 3 #f 5)
+       ((lambda++ (a b c :key d e) (list a b c d e))
+        1 2 3 :e 5))
+
+(test* "macro + let-keywords*" *test-error*
+       ((lambda++ (a b c :key d e) (list a b c d e))
+        1 2 :d 3))
+
+(test* "macro + let-keywords*" '(1 2 3 4 #f)
+       ((lambda++ (a b c :key d e) (list a b c d e))
+        1 2 3 :d 4))
+
+(test* "macro + let-keywords*" '(1 2 3 0 1)
+       ((lambda++ (a b c :key (d 0) (e 1)) (list a b c d e))
+        1 2 3))
+                  
+
 (test-end)

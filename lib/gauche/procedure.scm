@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: procedure.scm,v 1.10 2004-01-19 22:30:26 shirok Exp $
+;;;  $Id: procedure.scm,v 1.11 2004-11-12 07:07:42 shirok Exp $
 ;;;
 
 (define-module gauche.procedure
@@ -134,11 +134,12 @@
                                 (var (unwrap-syntax (car var&default)))
                                 ((symbol? var)))
                        (case (length var&default)
-                         ((2) `(,var
+                         ((2) `(,(car var&default)
                                 ,(make-keyword var)
                                 ,(cadr var&default)))
-                         ((3) `(,var ,(unwrap-syntax (cadr var&default))
-                                     ,(caddr var&default)))
+                         ((3) `(,(car var&default)
+                                ,(unwrap-syntax (cadr var&default))
+                                ,(caddr var&default)))
                          (else #f)))
                      (error "bad binding form in let-keywords*" var&default)))
                vars)))

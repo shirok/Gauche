@@ -1,5 +1,8 @@
 2004-11-11  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/procedure.scm (let-keywords*): fixed a bug that corrupts
+	  expansion when used in r5rs macro.
+
 	* src/builtin-syms.scm: added SCM_SYM_BIG_ENDIAN and
 	  SCM_SYM_LITTLE_ENDIAN.
 	* ext/binary/binarylib.stub: changed accordingly.
