@@ -1,6 +1,6 @@
 ;;
 ;; testing binary.io
-;; $Id: test.scm,v 1.1 2004-01-28 09:34:55 shirok Exp $
+;; $Id: test.scm,v 1.2 2004-11-14 08:25:53 shirok Exp $
 
 (use gauche.test)
 (use gauche.uvector)
@@ -172,28 +172,34 @@
             bytes-list))
 
 ;; f32 - ieee single float
+;; NB: Alpha chip doesn't support denormalized floats, so we exclude
+;; them from the test.
 (test-flonum-rw-driver
  test-flonum-rw-f32
- '((#x00 #x00 #x00 #x00)   ;; 0.0
-   (#x00 #x00 #x00 #x01)   ;; denormalized
-   (#x00 #x00 #x00 #x02)
-   (#x00 #x00 #x00 #x03)
-   (#x00 #x80 #x00 #x00)   ;; normalized
-   (#x00 #x80 #x00 #x01)
-   (#x00 #x80 #x00 #x02)
-   (#x3f #x80 #x00 #x00)   ;; 1.0
-   (#x7f #x7f #xff #xff)
-   (#x7f #x80 #x00 #x00)   ;; +inf
+ (append
+  '((#x00 #x00 #x00 #x00)   ;; 0.0
+    (#x00 #x80 #x00 #x00)   ;; normalized
+    (#x00 #x80 #x00 #x01)
+    (#x00 #x80 #x00 #x02)
+    (#x3f #x80 #x00 #x00)   ;; 1.0
+    (#x7f #x7f #xff #xff)
+    (#x7f #x80 #x00 #x00)   ;; +inf
 
-   (#x80 #x00 #x00 #x00)   ;;-0.0
-   (#x80 #x00 #x00 #x01)   ;; denormalized
-   (#x80 #x00 #x00 #x02)
-   (#x80 #x00 #x00 #x03)
-   (#x80 #x00 #x00 #x00)   ;; normalized
-   (#xbf #x80 #x00 #x00)   ;; -1.0
-   (#xff #x7f #xff #xff)
-   (#xff #x80 #x00 #x00)   ;; -inf
-   ))
+    (#x80 #x00 #x00 #x00)   ;;-0.0
+    (#x80 #x00 #x00 #x00)   ;; normalized
+    (#xbf #x80 #x00 #x00)   ;; -1.0
+    (#xff #x7f #xff #xff)
+    (#xff #x80 #x00 #x00)   ;; -inf
+    )
+  (if (#/alpha/ (gauche-architecture))
+    '()
+    '((#x00 #x00 #x00 #x01)   ;; +denormalized
+      (#x00 #x00 #x00 #x02)
+      (#x00 #x00 #x00 #x03)
+      (#x80 #x00 #x00 #x01)   ;; -denormalized
+      (#x80 #x00 #x00 #x02)
+      (#x80 #x00 #x00 #x03)
+      ))))
 
 (test-flonum-rw-driver
  test-flonum-rw-f64

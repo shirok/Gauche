@@ -1,3 +1,10 @@
+2004-11-13  Shiro Kawai  <shiro@acm.org>
+
+	* ext/binary/test.scm: exclude denormalized 32-bit floating point 
+	  test on Alpha, since they're not precisely supported on that
+	  architecture.
+	* src/number.c, ext/uvector/*: various fixed on LP64 architecture.
+
 2004-11-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/mime.scm (mime-parse-message etc.):
