@@ -1,6 +1,6 @@
 SCM = snow
 CC = @CC@
-CFLAGS = -g -O2 -I. -I../gc -I../gc/include
+CFLAGS = -DSCM_INSTALL_DIR=\"$(SCM_INSTALL_DIR)\" -g -O2 -I. -I../gc -I../gc/include
 #CFLAGS = -O2 -I. -I../gc -I../gc/include
 LIBS = @LIBS@
 LDFLAGS = -lm
@@ -18,7 +18,8 @@ BIN_INSTALL_DIR = @bindir@
 SCM_INSTALL_DIR = @libdir@/gauche/@GAUCHE_VERSION@/lib
 
 INSTALL_HEADERS = gauche.h ../gc/gc.h 
-INSTALL_SUBHEADERS = gauche/char_euc_jp.h gauche/vm.h gauche/vminsn.h
+INSTALL_SUBHEADERS = gauche/char_euc_jp.h gauche/vm.h gauche/vminsn.h \
+	             gauche/predef-syms.h
 INSTALL_LIBS = libgauche.a
 INSTALL_BINS = gosh gauche-config
 INSTALL_SCMS = genstub
@@ -28,7 +29,8 @@ INSTALL=@INSTALL@
 GCLIB = ../gc/gc.a
 
 OBJS = core.o vm.o compile.o error.o class.o boolean.o char.o \
-       string.o list.o port.o hash.o write.o read.o vector.o symbol.o \
+       string.o list.o port.o hash.o write.o read.o vector.o \
+       symbol.o keyword.o \
        module.o proc.o number.o io.o load.o file.o promise.o repl.o \
        stdlib.o extlib.o
 
