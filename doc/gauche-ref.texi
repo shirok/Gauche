@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.6 2001-05-23 09:19:09 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.7 2001-05-25 09:08:30 shirok Exp $
 
 @c module and class index
 @defcodeindex mo
@@ -111,7 +111,7 @@ Gauche has several mechanisms to realize this framework.
 The simple and clean module system, a powerful CLOS-like object
 syste with a metaobject protocol, and feature based on-demand
 file loading system are the elements.
-@xref{Module System} for details.
+@xref{Module System}, for details.
 
 @item Multibyte strings
 
@@ -123,7 +123,7 @@ multibyte (wide) characters in some way.
 
 Gauche supports multibyte strings natively, providing robust and
 consistent support than @i{ad hoc} library-level implementation.
-@xref{Multibyte Strings} for details.
+@xref{Multibyte Strings}, for details.
 
 @item System interface
 
@@ -244,12 +244,22 @@ convenient when used together.
 @node Assignments
 @section Assignments
 
-Gauche adopts the concept of "generalized set!"
+Gauche adopts the concept of generalized @code{set!}
 specified in SRFI-17.
 
-@defspec set! variable expression
-@defspecx set! location expression
-[R5RS][SRFI-17]
+@defspec set! symbol expression
+@defspecx set! (proc arg @dots{}) expression
+[R5RS][SRFI-17] First, @var{expression} is evaluated.
+In the first form, the binding of @var{symbol} is modified
+so that next reference of @var{symbol} will return
+the result of @var{expression}.
+If @var{symbol} is not locally bound, the global variable named @var{symbol}
+must already exist, or an error is signalled.
+
+The second form is equivalent to
+@example
+((setter @var{proc}) @var{arg} @dots{} @var{expression})
+@end example
 @end defspec
 
 @defun setter proc
@@ -293,10 +303,13 @@ evaluated.  If @var{alternative} is not provided, it results undefined value.
 [R5RS]
 @end defspec
 
-@defspec when test . body
-@defspecx unless test . body
+@defspec when test body @dots{}
+@defspecx unless test body @dots{}
+Evaluates @var{test}.  If it yields true value (or false in case of
+@code{unless}), @var{body} @dots{} are evaluated sequentially, and
+the result of the last evaluation is returned.  Otherwise, undefined
+value is returned.
 @end defspec
-
 
 @node Binding constructs
 @section Binding constructs
@@ -397,10 +410,12 @@ named @var{name}.  If no moudle named @var{name}, an error is signalled.
 
 @defspec export symbol @dots{}
 Makes bindings of @var{symbol}s in the current module available
-from modules that imports the current module.
+to modules that imports the current module.
 @end defspec
 
 @defspec export-all
+Makes all bindings in the current module available to modules
+that imports it.
 @end defspec
 
 @defspec import module-name @dots{}
@@ -493,7 +508,7 @@ file loading.
 @node Traditional Macros
 @section Traditional Macros
 
-@defspec define-macro (name formals) body
+@defspec define-macro (name formals) body @dots{}
 @end defspec
 
 @node Macro Expansion
@@ -546,7 +561,7 @@ only exact integers are the instances of the @code{<integer>}
 class.  That is,
 @lisp
 (integer? 1) @result{} #t
-(is-a? 1 <integer>) @result {} #t
+(is-a? 1 <integer>) @result{} #t
 
 (integer? 1.0) @result{} #t
 (is-a? 1.0 <integer>) @result{} #f
@@ -938,23 +953,27 @@ this function diverges.
 
 @deftp {Builtin Class} <symbol>
 @clindex symbol
+A builting class for symbols.
 @end  deftp
 
 @defun symbol? obj
-[R5RS]
+[R5RS] Returns true if and only if @var{obj} is a symbol.
+In Gauche, all symbols are @emph{interned}, i.e. two symbols with
+the same print name are always @code{eq?}.
 @end defun
 
 @defun symbol->string symbol
-[R5RS]
+[R5RS] Returns the name of @var{symbol} in a string.  Returned
+string is immutable.
 @end defun
 
 @defun string->symbol string
-[R5RS]
+[R5RS] Returns a symbol whose name is @var{string}.
+If the named symbol hasn't existed, this function creates one.
 @end defun
 
-@defun gensym [prefix]
+@defun gensym &optional prefix
 @end defun
-
 
 @c ----------------------------------------------------------------------
 @node Keywords
@@ -996,6 +1015,18 @@ this function diverges.
 @clindex char
 @end  deftp
 
+@deftp {Reader Syntax} #\@i{charname}
+Denotes a literal character.
+
+When the reader reads @code{#\}, it fetches a sbusequent character.
+If it is one of @code{()[]@{@}" \|;#}, this is a character literal of itself.
+Otherwise, the reader reads subsequent characters until it sees
+a non word-constituent character.  If only one character is read,
+it is the character.  Otherwise, the reader matches the read characters
+with predefined character names.  If it doesn't match any, an error
+is signalled.
+@end deftp
+
 @defun char? obj
 [R5RS]
 @end defun
@@ -1020,7 +1051,7 @@ this function diverges.
 @defunx char-numeric? char
 @defunx char-whitespace? char
 @defunx char-upper-case? char
-@defunx char-loser-case? char
+@defunx char-lower-case? char
 [R5RS]
 @end defun
 
@@ -1044,24 +1075,33 @@ this function diverges.
 
 @deftp {Builtin Class} <char-set>
 @clindex char-set
+Character set class.  Character set object represents a set of characters.
+Gauche provides built-in support of character set creation and
+a predicate that tests whether a character is in the set or not.
+
+Further operations, such as set algebra, is defined in SRFI-14
+module (See @ref{Character-set library}).
+@end deftp
+
+@deftp {Reader Syntax} #\[@i{char-set-spec}]
 @end deftp
 
 @defun char-set? obj
-[SRFI-14]
+[SRFI-14] Returns true if and only if @var{obj} is a character set object.
 @end defun
 
 @defun char-set-contains? char-set char
-[SRFI-14]
+[SRFI-14] Returns true if and only if a character set object
+@var{char-set} contains a character @var{char}.
 @end defun
 
 @defun char-set char @dots{}
-[SRFI-14]
+[SRFI-14] Creates a character set that contains @var{char} @dots{}.
 @end defun
 
 @defun char-set-copy char-set
-[SRFI-14]
+[SRFI-14] Copies a character set @var{char-set}.
 @end defun
-
 
 
 @c ----------------------------------------------------------------------
@@ -1070,16 +1110,19 @@ this function diverges.
 
 @deftp {Builtin Class} <string>
 @clindex string
+A string class.   In Gauche, a string can be viewed in two ways:
+a sequence of characters, or a sequence of bytes.
 @end deftp
 
 @node String Predicates
 @subsection String Predicates
 
 @defun string? obj
-[R5RS]
+[R5RS] Returns if and only if @var{obj} is a string.
 @end defun
 
 @defun string-immutable? obj
+Returns true if and only if @var{obj} is an immutable string.
 @end defun
 
 @defun string-incomplete? obj
@@ -1088,8 +1131,17 @@ this function diverges.
 @node String Constructors
 @subsection String Constructors
 
-@defun make-string k [char]
-[R5RS]
+@defun make-string k &optional char
+[R5RS] Returns a string of length @var{k}.  If optional @var{char} is given,
+the new string is filled with it.  Otherwise, the string is filled with
+a whitespace.  The result string is always complete.
+
+Note that the algorithm to allocate a string by @code{make-string} and
+then fills it one character at a time is @emph{extremely} inefficient
+in Gauche, and should be avoided.   You can use an output string port
+for a string construction.   Even creating a list of characters and
+using @code{list->string} is faster than using @code{make-string} and
+@code{string-set!}.
 @end defun
 
 @defun string char @dots{}
@@ -1232,18 +1284,21 @@ This corresponds to scsh's @code{regexp-search}.
 @defun rxmatch-substring match &optional (i 0)
 @defunx rxmatch-start match &optional (i 0)
 @defunx rxmatch-end match &optional (i 0)
-@code{MATCH} is a match object returned by @code{rxmatch}.
-If @code{I} equals to zero, the functions return
+@var{Match} is a match object returned by @code{rxmatch}.
+If @var{i} equals to zero, the functions return
 start, end or the substring of entire match, respectively.
-With positive integer @code{I}, it returns those of @code{I}-th
-submatches.  It is an error to pass other values to @code{I}.
+With positive integer @var{I}, it returns those of @var{I}-th
+submatches.  It is an error to pass other values to @var{I}.
 
-It is allowed to pass @code{#f} to @code{MATCH} for convenience.
+It is allowed to pass @code{#f} to @var{match} for convenience.
 The functions return @code{#f} in such case.
 
 These functions correspond to scsh's @code{match:start}, @code{match:end}
 and @code{match:substring}.
 @end defun
+
+Seel also @ref{Regular expression library}, which defines
+useful macros to deal with regular expression matching.
 
 @c ----------------------------------------------------------------------
 @node Vectors
@@ -1401,6 +1456,44 @@ and @code{match:substring}.
 @node Input and Output
 @section Input and Output
 
+@node Ports
+@subsection Ports
+
+@deftp {Builtin Class} <port>
+@clindex port
+A port class.   A port is Scheme's way of abstraction of I/O channel.
+Gauche extends a port in number of ways so that it can be used
+in wide range of applications.
+
+Standard Scheme (R5RS) essentially defines a port as an entity that
+you can fetch a character at a time and
+look one character ahead from an input port, 
+and put a character at a time to an output port.
+Other R5RS I/O routines can be built on top of them.
+
+Besides this basics, Gauche's port can handle the following
+opertaions.
+
+@table @asis
+@item Byte I/O
+You can read/write one byte at a time, instead of a character.
+Some ports even allow you to mix byte I/O and character I/O;
+you can set the policy of handling such cases.
+
+@item Block I/O
+You can read/write a specified number of byte sequences.
+This can be an efficient way of moving block of data,
+if the port's underlying implementation supports block I/O
+operation (for example, if the underyling port is a unix buffered
+stream, this operation uses @code{fread} or @code{fwrite}).
+
+@end table
+
+
+
+@end deftp
+
+
 @defun input-port? obj
 @defunx output-port? obj
 [R5RS]
@@ -1412,10 +1505,12 @@ and @code{match:substring}.
 
 @defun current-input-port
 @defunx current-output-port
-[R5RS]
+[R5RS] Returns the current input port and the current output port, 
+respectively.
 @end defun
 
 @defun current-error-port
+Returns the current output port.
 @end defun
 
 @defun with-input-from-port port thunk
@@ -1493,22 +1588,28 @@ and @code{match:substring}.
 @node Input
 @subsection Input 
 
-@defun read &optional port
+@defun read &optional iport
 [R5RS]
 @end defun
 
-@defun read-char &optional port
+@defun read-char &optional iport
 [R5RS]
 @end defun
 
-@defun peek-char &optional port
+@defun peek-char &optional iport
 [R5RS]
 @end defun
 
-@defun read-byte &optional port
+@defun read-byte &optional iport
+Read one byte from an input port @var{iport}, and returns an integer
+in the range between 0 and 255.
+
+If the port doesn't support bytewise input, an error is signalled.
+You can use @code{port-byte-io-capable?} to find if the port supports
+byte I/O.
 @end defun
 
-@defun read-line &optional port
+@defun read-line &optional iport
 @end defun
 
 @defun eof-object? obj
@@ -2490,28 +2591,9 @@ handle all finite lists, both proper and dotted.
 [SRFI-1] Determines list equality, given an element-equality procedure.
 Proper list A equals proper list B if they are of the
 same length, and their corresponding elements are equal, as determined
-by @var{elt=}. If the element-comparison
-procedure's first argument is from list A, then its second argument is
-from list B, i.e. it is always called as @code{(elt= a b)} for @code{a}
-an element of list A, and @code{b} an element of list B. 
-
-In the n-ary case, every list(i) is compared to list(i+1) (as opposed,
-for example, to comparing list1 to every listi, for
-i>1). If there are no list arguments at all, @code{list=} simply returns true. 
+by @var{elt=}.
 
 It is an error to apply @code{list=} to anything except proper lists.
-While implementations may choose to extend it to
-circular lists, note that it cannot reasonably be extended to
-dotted lists, as it provides no way to specify an equality
-procedure for comparing the list terminators. 
-
-Note that the dynamic order in which the @var{elt=} procedure
-is applied to pairs of elements is not specified. For
-example, if @code{list=} is applied to three lists, A, B, and C,
-it may first completely compare A to B, then compare B to C,
-or it may compare the first elements of A and B,
-then the first elements of B and C, then the second elements of A and B,
-and so forth. 
 
 The equality procedure must be consistent with @code{eq?}. That is,
 it must be the case that
@@ -2542,8 +2624,155 @@ it must be the case that
 
 @defun take x i
 @defunx drop x i
-[SRFI-1] 
+[SRFI-1] @code{take} returns the first i elements of list x.
+@code{drop} returns all but the first i elements of list x. 
+@example
+(take '(a b c d e)  2) => (a b)
+(drop '(a b c d e)  2) => (c d e)
+@end example
+@var{x} may be any value -- a proper, circular, or dotted list: 
+@example
+(take '(1 2 3 . d) 2) => (1 2)
+(drop '(1 2 3 . d) 2) => (3 . d)
+(drop '(1 2 3 . d) 3) => d
+@end example
+@code{drop} is exactly equivalent to performing @var{i} cdr operations
+on @var{x}; the returned value shares a common tail with @var{x}. If the
+argument is a list of non-zero length, take is guaranteed to return a
+freshly-allocated list, even in the case where the
+entire list is taken.
 @end defun
+
+@defun take-right flist i
+@defunx drop-right flist i
+[SRFI-1] @code{take-right} returns the last @var{i} elements of @var{flist}.
+@code{drop-right} returns all but the last @var{i} elements of @var{flist}. 
+@example
+(take-right '(a b c d e) 2) => (d e)
+(drop-right '(a b c d e) 2) => (a b c)
+@end example
+@var{flist} may be any finite list, either proper or dotted: 
+@example
+(take-right '(1 2 3 . d) 2) => (2 3 . d)
+(drop-right '(1 2 3 . d) 2) => (1)
+(take-right '(1 2 3 . d) 0) => d
+(drop-right '(1 2 3 . d) 0) => (1 2 3)
+@end example
+@code{take-right}'s return value is guaranteed to share a common
+tail with @var{flist}. If the argument is a list of non-zero
+length, @code{drop-right} is guaranteed to return a freshly-allocated
+list, even in the case where nothing is dropped.
+@end defun
+
+@defun take! x i
+@defunx drop-right! x i
+@code{take!} and @code{drop-right!} are "linear-update" variants of
+[SRFI-1] take and drop-right: the procedure is allowed, but not
+required, to alter the argument list to produce the result. 
+
+If @var{x} is circular, @code{take!} may return a shorter-than-expected list.
+@end defun
+
+@defun split-at x i
+@defunx split-at! x i
+[SRFI-1] @code{split-at} splits the list @var{x} at index @var{i},
+returning a list of the first @var{i} elements, and the remaining tail.
+@example
+(split-at '(a b c d e) 2) @result{} (a b) @r{and} (c d e)
+@end example
+@code{split-at!} is the linear-update variant. It is allowed,
+but not required, to alter the argument list to produce the result. 
+@end defun
+
+@defun last pair
+[SRFI-1] Returns the last element of the non-empty, finite list @var{pair}.
+It is equivalent to @code{(car (last-pair pair))}.
+Note that @code{last-pair} is Gauche built-in procedure.
+@end defun
+
+@node SRFI-1 List miscellaneous routines
+@subsection SRFI-1 List miscellaneous routines
+
+@defun length+ x
+[SRFI-1] If @var{x} is a finite, proper list, returns its length.
+Otherwise, returns @code{#f}.
+@end defun
+
+@defun concatenate list-of-lists
+@defunx concatenate! list-of-lists!
+[SRFI-1] Equivalent to @code{(apply append @var{list-of-lists})} and
+@code{(apply append! @var{list-of-lists})}, respectively.
+@end defun
+
+@defun append-reverse rev-head tail
+@defunx append-reverse! rev-head tail
+[SRFI-1] @code{append-reverse} returns @code{(append (reverse rev-head) tail)}.
+@code{append-reverse!} is just the linear-update variant.
+@end defun
+
+@defun zip clist1 clist2 @dots{}
+[SRFI-1] Equivalent to @code{(map list clist1 clist2 @dots{})}.
+If @code{zip} is passed @var{n} lists, it returns a list as long as
+the shortest of these lists, each element of which is an @var{n}-element list
+comprised of the corresponding elements from the parameter lists. 
+@example
+(zip '(one two three) 
+     '(1 2 3)
+     '(odd even odd even odd even odd even))
+     @result{} ((one 1 odd) (two 2 even) (three 3 odd))
+
+(zip '(1 2 3)) @result{} ((1) (2) (3))
+@end example
+At least one of the argument lists must be finite: 
+@example
+(zip '(3 1 4 1) (circular-list #f #t)) 
+     @result{} ((3 #f) (1 #t) (4 #f) (1 #t))
+@end example
+@end defun
+
+@defun unzip1 list
+@defunx unzip2 list
+@defunx unzip3 list
+@defunx unzip4 list
+@defunx unzip5 list
+[SRFI-1] @code{unzip1} takes a list of lists, where every list must
+contain at least one element, and returns a list containing the
+initial element of each such list. That is, it returns
+@code{(map car lists)}. @code{unzip2} takes a list of lists, where every list
+must contain at least two elements, and returns two values:
+a list of the first elements, and a list of the second
+elements. @code{unzip3} does the same for the first
+three elements of the lists, and so forth. 
+@example
+(unzip2 '((1 one) (2 two) (3 three))) @result{}
+   (1 2 3) @r{and}
+   (one two three)
+@end example
+@end defun
+
+@defun count pred clist1 clist2 @dots{}
+[SRFI-1] @var{pred} is a procedure taking as many arguments as
+there are lists and returning a single value. It is applied element-wise
+to the elements of the lists, and a count is tallied of the number
+of elements that produce a true value. This count is
+returned. count is "iterative" in that it is guaranteed to
+apply pred to the list elements in a left-to-right order. The
+counting stops when the shortest list expires.
+@example
+(count even? '(3 1 4 1 5 9 2 5 6)) @result{} 3
+(count < '(1 2 4 8) '(2 4 6 8 10 12 14 16)) @result{} 3
+@end example
+At least one of the argument lists must be finite: 
+@example
+(count < '(3 1 4 1) (circular-list 1 10)) @result{} 2
+@end example
+@end defun
+
+@node SRFI-1 Fold, unfold & map
+@subsection SRFI-1 Fold, unfold & map
+
+
+
 
 @c ----------------------------------------------------------------------
 @node And-let*
@@ -2734,22 +2963,20 @@ it must be the case that
 @node SRFI String ports
 @section @code{srfi-6} - String ports
 
-String ports, defined in SRFI-6, are builtin feature of Gauche.
-The form @code{(use srfi-6)} doesn't do anything.
-
 @deftp {Module} srfi-6
 @moindex srfi-6
+String ports, defined in SRFI-6, are builtin feature of Gauche.
+The form @code{(use srfi-6)} doesn't do anything.
 @end deftp
 
 @c ----------------------------------------------------------------------
 @node Syntax to receive multiple values
 @section @code{srfi-8} - Syntax to receive multiple values
 
-Syntax @code{receive}, defined in SRFI-8, is builtin feature of Gauche.
-The form @code{(use srfi-8)} doesn't do anything.
-
 @deftp {Module} srfi-8
 @moindex srfi-8
+Syntax @code{receive}, defined in SRFI-8, is builtin feature of Gauche.
+The form @code{(use srfi-8)} doesn't do anything.
 @end deftp
 
 
