@@ -1,9 +1,12 @@
 #
 # Makefile.in for Gauche/src
-#  $ID$
+#  $Id: Makefile.in,v 1.134.2.2 2004-12-25 00:34:55 shirok Exp $
 #
 
 # prelude ---------------------------------------------
+
+.PHONY: all test check pre-package install uninstall \
+	clean distclean maintainer-clean install-check
 
 .SUFFIXES:
 .SUFFIXES: .S .c .o .obj .s .stub .bat .in
@@ -228,7 +231,7 @@ install-check :
 	done
 
 # clean ------------------------------------------------
-GENERATED = stdlib.c extlib.c exclib.c syslib.c moplib.c thrlib.c \
+GENERATED = stdlib.c extlib.c exclib.c syslib.c moplib.c \
 	    autoloads.c builtin-syms.c gauche/builtin-syms.h \
             vminsn.c gauche/vminsn.h
 CONFIG_GENERATED = Makefile gauche-config gauche/config.h
@@ -274,6 +277,8 @@ uninstall :
 	for f in $(INSTALL_BINS); do rm -f $(BIN_INSTALL_DIR)/$$f; done
 	for f in $(INSTALL_LIBS); do rm -f $(LIB_INSTALL_DIR)/$$f; done
 	rm -rf $(GAUCHE_ARCH_DIR)/@GAUCHE_VERSION@ $(GAUCHE_DATA_DIR)/@GAUCHE_VERSION@ $(GAUCHE_ARCH_DIR)/site/@GAUCHE_VERSION@
+
+pre-package : $(GENERATED)
 
 # MinGW specific stuff --------------------------------
 .in.bat:
