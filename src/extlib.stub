@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.75 2001-05-16 08:46:22 shirok Exp $
+;;; $Id: extlib.stub,v 1.76 2001-05-16 09:27:06 shirok Exp $
 ;;;
 
 "
@@ -310,6 +310,9 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 ;; 6.3.5 Strings
 ;;
 
+(define-cproc string-complete? (obj)    ;gauche specific
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_STRINGP(obj)&&SCM_STRING_COMPLETE_P(obj)));")
+
 (define-cproc string-size (str)         ;gauche specific
   (assert (string? str))
   "  SCM_RETURN(SCM_MAKE_INT(SCM_STRING_SIZE(str)));")
@@ -320,11 +323,11 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   "  int r = Scm_StringByteRef(str, k);
   SCM_RETURN(SCM_MAKE_INT(r));")
 
-(define-cproc string-byte-set! (str k c) ;gauche specific
+(define-cproc string-byte-set! (str k b) ;gauche specific
   (assert (string? str))
   (assert (small-integer? k))
-  (assert (char? c))
-  "  SCM_RETURN(Scm_StringByteSet(str, k, c));")
+  (assert (small-integer? b))
+  "  SCM_RETURN(Scm_StringByteSet(str, k, b));")
 
 (define-cproc string-substitute! (target start str)
   (assert (string? target))
