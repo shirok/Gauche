@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compare.c,v 1.5 2002-02-07 10:33:51 shirok Exp $
+ *  $Id: compare.c,v 1.6 2002-05-27 06:12:59 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -48,7 +48,7 @@ int Scm_Compare(ScmObj x, ScmObj y)
  * Basic function for sort family.  An array pointed by elts will be
  * destructively sorted.  Cmpfn can be either an applicable Scheme
  * object or #f.  If it's an applicable object, two arguments x and y
- * will be passed to it, and the it must return an integer or a boolean
+ * will be passed to it, and it must return an integer or a boolean
  * value, such that:
  *
  *  if (x < y), it may return a negative integer or #t.
@@ -56,12 +56,66 @@ int Scm_Compare(ScmObj x, ScmObj y)
  *  if (x > y), it may return a positive integer or #f.
  *
  * If cmpfn is #f, the first object's default compare method is used.
+ *
+ * Some notes:
+ *  - We can't use libc's qsort, since it doesn't pass closure to cmpfn.
+ *  - The naive Quicksort behaves too badly in the worst case.
+ *  - The comparison operation is far more costly than exchange.
+ *
+ * The current implementation is hybrid of Quicksort and Heapsort.  First
+ * the algorithm proceeds by Quicksort, but when it detects the recursion
+ * is too deep, it switches to Heapsort.  See Knuth, The Art of Computer
+ * Programming Second Edition, Section 5.2.2, p.122.
  */
 
-static void sort_rec(ScmObj *elts, int lo, int hi,
-                     int (*cmp)(ScmObj, ScmObj, ScmObj), ScmObj data)
+/* Heap sort */
+static inline void shift_up(ScmObj *elts, int root, int nelts,
+                            int (*cmp)(ScmObj, ScmObj, ScmObj), ScmObj data)
 {
-    if (lo < hi) {
+    int l = root+1, maxchild;
+    while (l*2 <= nelts) {
+        if (l*2 == nelts) {
+            maxchild = nelts-1;
+        } else if (cmp(elts[l*2-1], elts[l*2], data) < 0) {
+            maxchild = l*2;
+        } else {
+            maxchild = l*2-1;
+        }
+        if (cmp(elts[l-1], elts[maxchild], data) < 0) {
+            ScmObj tmp = elts[maxchild];
+            elts[maxchild] = elts[l-1];
+            elts[l-1] = tmp;
+            l = maxchild+1;
+        } else {
+            break;
+        }
+    }
+}
+
+static void sort_h(ScmObj *elts, int nelts,
+                   int (*cmp)(ScmObj, ScmObj, ScmObj), ScmObj data)
+{
+    int l, r;
+    for (l=nelts/2-1; l>=0; l--) {
+        shift_up(elts, l, nelts, cmp, data);
+    }
+    for (r=nelts-1; r>=1; r--) {
+        ScmObj tmp = elts[r];
+        elts[r] = elts[0];
+        elts[0] = tmp;
+        shift_up(elts, 0, r, cmp, data);
+    }
+}
+
+/* Quick sort */
+static void sort_q(ScmObj *elts, int lo, int hi, int depth, int limit,
+                   int (*cmp)(ScmObj, ScmObj, ScmObj), ScmObj data)
+{
+    if (lo >= hi) return;
+    
+    if (depth >= limit) {
+        sort_h(elts+lo, (hi-lo+1), cmp, data);
+    } else {
         int l = lo, r = hi;
         ScmObj pivot = elts[lo], tmp;
         while (l <= r) {
@@ -72,8 +126,8 @@ static void sort_rec(ScmObj *elts, int lo, int hi,
             l++;
             r--;
         }
-        sort_rec(elts, lo, r, cmp, data);
-        sort_rec(elts, l, hi, cmp, data);
+        sort_q(elts, lo, r, depth+1, limit, cmp, data);
+        sort_q(elts, l, hi, depth+1, limit, cmp, data);
     }
 }
 
@@ -93,11 +147,14 @@ static int cmp_int(ScmObj x, ScmObj y, ScmObj dummy)
 
 void Scm_SortArray(ScmObj *elts, int nelts, ScmObj cmpfn)
 {
+    int limit, i;
     if (nelts <= 1) return;
+    /* approximate 2*log2(nelts) */
+    for (i=nelts,limit=1; i > 0; limit++) {i>>=1;}
     if (SCM_PROCEDUREP(cmpfn)) {
-        sort_rec(elts, 0, nelts-1, cmp_scm, cmpfn);
+        sort_q(elts, 0, nelts-1, 0, limit, cmp_scm, cmpfn);
     } else {
-        sort_rec(elts, 0, nelts-1, cmp_int, NULL);
+        sort_q(elts, 0, nelts-1, 0, limit, cmp_int, NULL);
     }
 }
 
