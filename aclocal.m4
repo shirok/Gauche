@@ -1,6 +1,6 @@
 #
 # Gauche-specific aucotonf macros.
-# $Id: aclocal.m4,v 1.5 2002-02-16 09:46:54 shirok Exp $
+# $Id: aclocal.m4,v 1.6 2002-03-07 19:22:35 shirok Exp $
 
 # AC_GAUCHE_INIT_EXT
 #   Sets some parameters about installed Gauche package.  This macro checks
@@ -92,8 +92,8 @@ else
   ac_gauche_ext_fixup_name="$2"
 fi
 AC_MSG_NOTICE(generating $1_head.c and $1_tail.c);
-rm -f $1_head.c; echo "void *Scm__datastart_$ac_gauche_ext_fixup_name = (void*)&Scm__datastart_$ac_gauche_ext_fixup_name;" > $1_head.c
-rm -f $1_tail.c; echo "void *Scm__dataend_$ac_gauche_ext_fixup_name = (void*)&Scm__dataend_$ac_gauche_ext_fixup_name;" > $1_tail.c
+echo "void *Scm__datastart_$ac_gauche_ext_fixup_name = (void*)&Scm__datastart_$ac_gauche_ext_fixup_name;" > $1_head.c
+echo "void *Scm__dataend_$ac_gauche_ext_fixup_name = (void*)&Scm__dataend_$ac_gauche_ext_fixup_name;" > $1_tail.c
 ])])
 
 
