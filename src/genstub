@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.76 2002-08-25 13:37:52 shirok Exp $
+;;;  $Id: genstub,v 1.77 2002-08-26 02:40:46 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -489,26 +489,28 @@
 
 (define-method initialize ((self <literal>) initargs)
   (next-method)
-  (set! (c-name-of self)
-        #`"genstub__literal_,(slot-ref self 'next-serial)")
+  (unless (slot-bound? self 'c-name)
+    (set! (c-name-of self)
+          #`"genstub__literal_,(slot-ref self 'next-serial)"))
   (inc! (slot-ref self 'next-serial)))
 
-(define-method make-literal (obj)       ;falback
+(define-method make-literal (obj . opts)       ;falback
   (errorf "can't use Scheme object ~s as a literal value" obj))
 (define-method emit-definition ((obj <literal>)) #f) ;fallback
 (define-method emit-initializer ((obj <literal>)) #f);fallback
 (define-method value-getter-of ((obj <literal>))
   ;; this is the most common way
   #`"SCM_OBJ(,(c-name-of obj))")
+(define-macro (define-literal-binding class literal-class)
+  `(define-method make-literal ((obj ,class) . opts)
+     (apply make ,literal-class :value obj opts)))
 
 ;; integer literals
-(define-method make-literal ((obj <integer>))
-  (make (if (fixnum? obj) <fixnum-literal> <bignum-literal>) :value obj))
-
+(define-literal-binding <integer>
+  (if (fixnum? obj) <fixnum-literal> <bignum-literal>))
 (define-class <fixnum-literal> (<literal>) ())
 (define-method value-getter-of ((self <fixnum-literal>))
   #`"SCM_MAKE_INT(,(value-of self))")
-
 (define-class <bignum-literal> (<literal>) ())
 (define-method emit-definition ((self <bignum-literal>))
   (f #`"static ScmObj ,(c-name-of self) = SCM_UNBOUND;"))
@@ -519,15 +521,13 @@
      (value-of a)))
 
 ;; string literals
-(define-method make-literal ((obj <string>))
-  (make <string-literal> :value obj))
+(define-literal-binding <string> <string-literal>)
 (define-class <string-literal> (<literal>) ())
 (define-method emit-definition ((self <string-literal>))
   (emit-static-string (c-name-of self) (value-of self)))
 
 ;; symbol literals
-(define-method make-literal ((obj <symbol>))
-  (make <symbol-literal> :value obj))
+(define-literal-binding <symbol> <symbol-literal>)
 (define-class <symbol-literal> (<literal>) ())
 (define-method emit-definition ((self <symbol-literal>))
   (emit-static-string (c-name-of self) (value-of self))
@@ -536,15 +536,37 @@
   (f "  ~a = Scm_Intern(&~:*~a__NAME);" (c-name-of self)))
 
 ;; keyword literals
-(define-method make-literal ((obj <keyword>))
-  (make <keyword-literal> :value obj))
+(define-literal-binding <keyword> <keyword-literal>)
 (define-class <keyword-literal> (<literal>) ())
 (define-method emit-definition ((self <keyword-literal>))
   (emit-static-string (c-name-of self)
                       (write-to-string keyword display))
   (f "static ScmObj ~a = SCM_UNBOUND;" (c-name-of self)))
 (define-method emit-initializer ((self <keyword-literal>))
-  (f "  ~a = Scm_MAkeKeyword(&~:*~a__NAME);" (c-name-of self)))
+  (f "  ~a = Scm_MakeKeyword(&~:*~a__NAME);" (c-name-of self)))
+
+;; some special literals
+;;  (c "...")              - embedding C code
+;;  (current-...-port)     - current ports (these are not literal, but
+;;                           can be used as the default value of optional
+;;                           and keyword arguments).
+(define-literal-binding <list> <special-literal>)
+(define-class <special-literal> (<literal>) ())
+(define-method initialize ((self <special-literal>) initargs)
+  (define (badval)
+    (errorf "bad initializer ~s" (value-of self)))
+  (next-method)
+  (receive (sig val) (car+cdr (value-of self))
+    (case sig
+      ((c)
+       (set! (c-name-of self) (car val)))
+      ((current-input-port)
+       (set! (c-name-of self) "SCM_CURIN"))
+      ((current-output-port)
+       (set! (c-name-of self) "SCM_CUROUT"))
+      ((current-error-port)
+       (set! (c-name-of self) "SCM_CURERR"))
+      (else (badval)))))
 
 ;;===================================================================
 ;; Arg
@@ -592,13 +614,10 @@
    ))
   
 (define-method emit-definition ((self <csymbol>))
-  (with-cpp-condition self
-    (emit-static-string (c-name-of self) (scheme-name-of self))
-    (f "static ScmObj ~a = SCM_FALSE;" (c-name-of self))
-    (newline)))
+  (emit-definition (symbol-of self)))
 
 (define-method emit-initializer ((self <csymbol>))
-  (f "  ~a = Scm_Intern(&~:*~a__NAME);" (c-name-of self)))
+  (emit-initializer (symbol-of self)))
 
 (define-form-parser define-symbol (name c-name . maybe-init)
   (check-arg symbol? name)
@@ -606,24 +625,28 @@
   (unless (null? maybe-init)
     (warn "using initializer value in define-symbol is deprecated.  use define-variable instead.")
     (parse-form `(define-variable ,name ,@maybe-init)))
-  (let ((symbol (make <csymbol> :scheme-name name :c-name c-name)))
-    (emit-definition symbol)
+  (let* ((literal (make-literal name :c-name c-name))
+         (symbol  (make <csymbol> :symbol literal)))
+    (with-cpp-condition symbol (emit-definition symbol))
     ))
 
 ;;-------------------------------------------------------------------
 ;; (define-variable scheme-name init &keyword c-name)
+;; (define-const scheme-name init &keyword c-name)
 
 (define-class <cvariable> (<stub>)
-  ((initializer    :init-keyword :initializer :accessor initializer-of)
-   ;; - <literal> : constant value to be initialized
+  ((constant?      :init-keyword :constant? :accessor constant?)
    (symbol         :init-keyword :symbol :accessor symbol-of)
    ;; - <literal> : symbol object
+   (initializer    :init-keyword :initializer :accessor initializer-of)
+   ;; - <literal> : constant value to be initialized
    ))
 
 (define-method emit-initializer ((self <cvariable>))
   (emit-initializer (symbol-of self))
   (emit-initializer (initializer-of self))
-  (f "  Scm_Define(module, ~a, ~a);"
+  (f "  ~a(module, ~a, ~a);"
+     (if (constant? self) "Scm_DefineConst" "Scm_Define")
      (value-getter-of (symbol-of self))
      (value-getter-of (initializer-of self))))
 
@@ -631,61 +654,41 @@
   (emit-definition (symbol-of self))
   (emit-definition (initializer-of self)))
 
-(define-form-parser define-variable (name init)
+(define (variable-parser-common const? name init opts)
+  (let* ((c-name (get-keyword :c-name opts #`",(get-c-name *file-prefix* name)__VAR"))
+         (symbol (make <cvariable>
+                   :constant? const?
+                   :symbol (make-literal name :c-name c-name)
+                   :initializer (make-literal init))))
+    (with-cpp-condition symbol (emit-definition symbol))))
+
+(define-form-parser define-variable (name init . opts)
   (check-arg symbol? name)
-  (let ((symbol (make <cvariable>
-                  :scheme-name name
-                  :symbol (make-literal name)
-                  :initializer (make-literal init))))
-    (emit-definition symbol)
-    ))
+  (variable-parser-common #f name init opts))
+
+(define-form-parser define-const (name init . opts)
+  (check-arg symbol? name)
+  ;; hack to detect obsoleted syntax
+  (if (and (pair? opts) (null? (cdr opts)) (string? init))
+      (errorf "(define-const ~a ...) : using obsoleted syntax" name)
+      (variable-parser-common #t name init opts)))
 
 ;;-------------------------------------------------------------------
-;; (define-const scheme-name c-name init)
+;; (define-enum name) - a special case of define-const
 
-(define-class <cconst> (<csymbol>)
-  ((initializer :init-keyword :initializer :accessor initializer-of)
-   ))
-
-(define-method emit-initializer ((self <cconst>))
-  (f "  ~a = Scm_Intern(&~:*~a__NAME);" (c-name-of self))
-  (f "  Scm_DefineConst(module, SCM_SYMBOL(~a), SCM_OBJ(~a));"
-     (c-name-of self) (initializer-of self)))
-
-(define-form-parser define-const (name c-name init)
-  (check-arg symbol? name)
-  (check-arg string? c-name)
-  (let ((const (make <cconst>
-                 :scheme-name name :c-name c-name
-                 :initializer init)))
-    (emit-definition const)
-    ))
-
-;;-------------------------------------------------------------------
-;; (define-enum name)
-
-(define-class <cenum> (<csymbol>)
-  ()
-  )
-
-(define-method emit-initializer ((self <cenum>))
-  (f "  ~a = Scm_Intern(&~:*~a__NAME);" (c-name-of self))
-  (f "  Scm_DefineConst(module, SCM_SYMBOL(~a), SCM_OBJ(Scm_MakeInteger(~a)));"
-     (c-name-of self) (scheme-name-of self)))
+(define-class <cenum> (<cvariable>)
+  ())
 
 (define-form-parser define-enum (name)
   (check-arg symbol? name)
-  (let ((enum (make <cenum>
-                :scheme-name name
-                :c-name (string->symbol #`"sym_,|name|"))))
-    (emit-definition enum)
-    ))
+  (variable-parser-common #t name (list 'c #`"Scm_MakeInteger(,name)") '()))
 
 ;;-------------------------------------------------------------------
 ;; (define-keyword scheme-name c-name)
 
 (define-class <ckeyword> (<stub>)
-  ()
+  ((keyword :init-keyword :keyword :accessor keyword-of)
+   ;; - <literal> : literal keyword
   )
 
 (define (get-ckeyword key)
@@ -766,9 +769,10 @@
       (set! (keyword-args-of cproc)
             (filter (lambda (x) (eq? (class-of x) <keyword-arg>)) args))
       (process-body cproc body)
-      (emit-definition cproc)
-      (emit-inliner cproc)
-      (emit-record cproc))))
+      (with-cpp-condition cproc
+        (emit-definition cproc)
+        (emit-inliner cproc)
+        (emit-record cproc)))))
 
 ;; create arg object.  used in cproc and cmethod
 (define (make-arg class argname count . rest)
@@ -911,9 +915,10 @@
         (set! (keyword-args-of setter)
               (filter (lambda (x) (eq? (class-of x) <keyword-arg>)) args))
         (process-body setter (cdr decl))
-        (emit-definition setter)
-        (emit-inliner setter)
-        (emit-record setter)))
+        (with-cpp-condition cproc
+          (emit-definition setter)
+          (emit-inliner setter)
+          (emit-record setter))))
     )))
 
 (define-method process-return-spec ((cproc <cproc>) form)
@@ -934,39 +939,37 @@
 ;;; emit code
 
 (define-method emit-definition ((cproc <cproc>))
-  (with-cpp-condition cproc
-    (for-each ensure-keyword-arg (keyword-args-of cproc))
-    (f "static ScmObj ~a(ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)"
-       (c-name-of cproc))
-    (print "{")
-    ;; argument decl
-    (for-each emit-arg-decl (args-of cproc))
-    (when (> (num-optargs-of cproc) 0)
-      (print "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
-    (f "  SCM_ENTER_SUBR(\"~a\");" (scheme-name-of cproc))
-    ;; argument count check (for optargs)
-    (when (and (> (num-optargs-of cproc) 0)
-               (null? (keyword-args-of cproc))
-               (not (have-rest-arg? cproc)))
-      (print #`"  if (Scm_Length(SCM_OPTARGS) > ,(num-optargs-of cproc))")
-      (print #`"    Scm_Error(\"too many arguments: up to ,(num-optargs-of cproc) is expected, %d given.\",, Scm_Length(SCM_OPTARGS));"))
-    ;; argument assertions & unbox op.
-    (for-each emit-arg-unbox (args-of cproc))
-    ;; body
-    (print "  {")
-    (for-each print (reverse (stmts-of cproc)))
-    (print "  }")
-    (print "}")
-    (newline)
-    ))
+  (for-each ensure-keyword-arg (keyword-args-of cproc))
+  (f "static ScmObj ~a(ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)"
+     (c-name-of cproc))
+  (print "{")
+  ;; argument decl
+  (for-each emit-arg-decl (args-of cproc))
+  (when (> (num-optargs-of cproc) 0)
+    (print "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
+  (f "  SCM_ENTER_SUBR(\"~a\");" (scheme-name-of cproc))
+  ;; argument count check (for optargs)
+  (when (and (> (num-optargs-of cproc) 0)
+             (null? (keyword-args-of cproc))
+             (not (have-rest-arg? cproc)))
+    (print #`"  if (Scm_Length(SCM_OPTARGS) > ,(num-optargs-of cproc))")
+    (print #`"    Scm_Error(\"too many arguments: up to ,(num-optargs-of cproc) is expected, %d given.\",, Scm_Length(SCM_OPTARGS));"))
+  ;; argument assertions & unbox op.
+  (for-each emit-arg-unbox (args-of cproc))
+  ;; body
+  (print "  {")
+  (for-each print (reverse (stmts-of cproc)))
+  (print "  }")
+  (print "}")
+  (newline)
+  )
 
 (define-method emit-initializer ((cproc <cproc>))
-  (with-cpp-condition cproc
-    (when (symbol? (scheme-name-of cproc))
-      (f "  SCM_DEFINE(module, ~s, SCM_OBJ(&~a__STUB));"
-         (symbol->string (scheme-name-of cproc)) (c-name-of cproc)))
-    (next-method)
-    ))
+  (when (symbol? (scheme-name-of cproc))
+    (f "  SCM_DEFINE(module, ~s, SCM_OBJ(&~a__STUB));"
+       (symbol->string (scheme-name-of cproc)) (c-name-of cproc)))
+  (next-method)
+  )
 
 (define-method emit-initializer ((cproc <setter-mixin>))
   (when (setter-of cproc)
@@ -1064,17 +1067,16 @@
      (scheme-name-of cproc)))
 
 (define (emit-record cproc)
-  (with-cpp-condition cproc
-    (let1 c-func-name (c-name-of cproc)
-      (emit-static-string c-func-name (scheme-name-of cproc))
-      (f "static SCM_DEFINE_SUBR(~a__STUB, ~a, ~a, SCM_OBJ(&~a__NAME), ~:*~a, ~a, NULL);"
-         c-func-name
-         (num-reqargs-of cproc)
-         (if (or (have-rest-arg? cproc) (> (num-optargs-of cproc) 0)) 1 0)
-         c-func-name
-         (or (inliner-of cproc) "NULL")
-         )
-      (newline))))
+  (let1 c-func-name (c-name-of cproc)
+    (emit-static-string c-func-name (scheme-name-of cproc))
+    (f "static SCM_DEFINE_SUBR(~a__STUB, ~a, ~a, SCM_OBJ(&~a__NAME), ~:*~a, ~a, NULL);"
+       c-func-name
+       (num-reqargs-of cproc)
+       (if (or (have-rest-arg? cproc) (> (num-optargs-of cproc) 0)) 1 0)
+       c-func-name
+       (or (inliner-of cproc) "NULL")
+       )
+    (newline)))
 
 ;;-----------------------------------------------------------------
 ;; Generic function
@@ -1092,16 +1094,14 @@
    ))
 
 (define-method emit-definition ((self <cgeneric>))
-  (with-cpp-condition self
-   (unless (extern? self) (display "static "))
-   (f "SCM_DEFINE_GENERIC(~a, ~a, NULL);" (c-name-of self) (fallback-of self))
-   (newline)))
+  (unless (extern? self) (display "static "))
+  (f "SCM_DEFINE_GENERIC(~a, ~a, NULL);" (c-name-of self) (fallback-of self))
+  (newline))
 
 (define-method emit-initializer ((self <cgeneric>))
-  (with-cpp-condition self
-    (f "  Scm_InitBuiltinGeneric(&~a, ~s, module);"
-       (c-name-of self) (symbol->string (scheme-name-of self)))
-    (next-method)))
+  (f "  Scm_InitBuiltinGeneric(&~a, ~s, module);"
+     (c-name-of self) (symbol->string (scheme-name-of self)))
+  (next-method))
 
 (define-form-parser define-cgeneric (scheme-name c-name . body)
   (check-arg symbol? scheme-name)
@@ -1121,7 +1121,8 @@
                        (process-setter gf (cdr form)))
                       (else (error "bad gf form:" form))))
               body)
-    (emit-definition gf)))
+    (with-cpp-condition gf
+      (emit-definition gf))))
 
 (define-method process-setter ((gf <cgeneric>) setter)
   (cond
@@ -1178,38 +1179,37 @@
         (set! (c-generic-of method)
               (or (get-c-generic-name scheme-name)
                   (error "method can't find C name of the generic function:" scheme-name))))
-      (emit-definition method)))
+      (with-cpp-condition method
+        (emit-definition method))))
   )
 
 (define-method emit-definition ((method <cmethod>))
-  (with-cpp-condition method
-    (f "static ScmObj ~a(ScmNextMethod *nm_, ScmObj *SCM_FP, int SCM_ARGCNT, void *d_)"
-       (c-name-of method))
-    (print "{")
-    (for-each emit-arg-decl (args-of method))
-    (when (have-rest-arg? method)
-      (print "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
-    (for-each emit-arg-unbox (args-of method))
-    ;; body
-    (print "  {")
-    (for-each print (stmts-of method))
-    (print "  }")
-    (print "}")
-    (newline)
-    (display #`"static ScmClass *,(c-name-of method)__SPEC[] = { ")
-    (for-each (lambda (spec) (display #`"SCM_CLASS_STATIC_PTR(,|spec|), "))
-              (reverse (specializers-of method)))
-    (print "};")
-    (f "static SCM_DEFINE_METHOD(~a__STUB, &~a, ~a, ~a, ~a__SPEC, ~:*~a, NULL);"
-       (c-name-of method) (c-generic-of method)
-       (num-reqargs-of method) (if (have-rest-arg? method) "1" "0")
-       (c-name-of method))
-    (newline)
-    ))
+  (f "static ScmObj ~a(ScmNextMethod *nm_, ScmObj *SCM_FP, int SCM_ARGCNT, void *d_)"
+     (c-name-of method))
+  (print "{")
+  (for-each emit-arg-decl (args-of method))
+  (when (have-rest-arg? method)
+    (print "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
+  (for-each emit-arg-unbox (args-of method))
+  ;; body
+  (print "  {")
+  (for-each print (stmts-of method))
+  (print "  }")
+  (print "}")
+  (newline)
+  (display #`"static ScmClass *,(c-name-of method)__SPEC[] = { ")
+  (for-each (lambda (spec) (display #`"SCM_CLASS_STATIC_PTR(,|spec|), "))
+            (reverse (specializers-of method)))
+  (print "};")
+  (f "static SCM_DEFINE_METHOD(~a__STUB, &~a, ~a, ~a, ~a__SPEC, ~:*~a, NULL);"
+     (c-name-of method) (c-generic-of method)
+     (num-reqargs-of method) (if (have-rest-arg? method) "1" "0")
+     (c-name-of method))
+  (newline)
+  )
 
 (define-method emit-initializer ((method <cmethod>))
-  (with-cpp-condition method
-    (f "  Scm_InitBuiltinMethod(&~a__STUB);" (c-name-of method))))
+  (f "  Scm_InitBuiltinMethod(&~a__STUB);" (c-name-of method)))
 
 ;; returns four values: args, specializers, numreqargs, have-optarg?
 (define (parse-specialized-args arglist)
@@ -1465,8 +1465,7 @@
 (define-method emit-defintion ((self <initcode>))
   #f)
 (define-method emit-initializer ((self <initcode>))
-  (with-cpp-condition self
-    (for-each display (code-of self))))
+  (for-each display (code-of self)))
 
 (define-form-parser process-initcode (code)
   (make <initcode> :code code))
@@ -1568,7 +1567,7 @@
   (print "{")
   (for-each (lambda (stub)
               (with-cpp-condition stub (emit-initializer stub)))
-            (get-all-instances <stub>))
+            (reverse (get-all-instances <stub>)))
   (print "}")
   )
 
