@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: termios.h,v 1.4 2002-04-30 01:52:32 shirok Exp $
+ *  $Id: termios.h,v 1.5 2002-05-04 04:39:52 shirok Exp $
  */
 
 #ifndef GAUCHE_TERMIOS_H
@@ -41,13 +41,13 @@ SCM_CLASS_DECL(Scm_SysTermiosClass);
 #define SCM_SYS_TERMIOS(obj)    ((ScmSysTermios*)(obj))
 #define SCM_SYS_TERMIOS_P(obj)  (SCM_XTYPEP(obj, SCM_CLASS_SYS_TERMIOS))
 
-SCM_EXTERN ScmObj Scm_MakeSysTermios(void);
+ScmObj Scm_MakeSysTermios(void);
 
 #ifdef HAVE_OPENPTY
-SCM_EXTERN ScmObj Scm_Openpty(ScmObj slaveterm);
+ScmObj Scm_Openpty(ScmObj slaveterm);
 #endif
 #ifdef HAVE_FORKPTY
-SCM_EXTERN ScmObj Scm_Forkpty(ScmObj slaveterm);
+ScmObj Scm_Forkpty(ScmObj slaveterm);
 #endif
 
 #endif /* GAUCHE_TERMIOS_H */
