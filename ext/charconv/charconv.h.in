@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: charconv.h.in,v 1.2 2002-05-26 01:06:13 shirok Exp $
+ *  $Id: charconv.h.in,v 1.3 2002-06-04 05:42:53 shirok Exp $
  */
 
 #ifndef GAUCHE_CHARCONV_H
@@ -34,6 +34,18 @@ int iconv(iconv_t handle, char **inbuf, size_t *inroom, char **outbuf, size_t *o
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* Packaging conversion context info.*/
+typedef struct ScmConvInfoRec {
+    iconv_t handle;             /* iconv handle */
+    ScmPort *remote;            /* source or drain port */
+    int ownerp;                 /* do I own remote port? */
+    int bufsiz;                 /* size of conversion buffer */
+    char *buf;                  /* internal conversion buffer */
+    char *ptr;                  /* current ptr in the internal conv buf */
+    const char *fromCode;       /* convert from ... */
+    const char *toCode;         /* conver to ... */
+} ScmConvInfo;
 
 extern ScmObj Scm_MakeInputConversionPort(ScmPort *source,
                                           const char *fromCode,
@@ -67,3 +79,9 @@ extern const char *Scm_GuessCES(const char *code,
 #endif
 
 #endif /*GAUCHE_CHARCONV_H*/
+
+/*
+ * Local variables:
+ * mode: c
+ * end:
+ */
