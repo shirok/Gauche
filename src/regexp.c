@@ -1,7 +1,7 @@
 /*
  * regexp.c - regular expression
  *
- *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.34 2002-11-28 11:09:26 shirok Exp $
+ *  $Id: regexp.c,v 1.35 2002-12-06 05:25:16 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -101,6 +101,7 @@ ScmObj sym_alt;                 /* alt */
 ScmObj sym_rep;                 /* rep */
 ScmObj sym_any;                 /* any */
 ScmObj sym_bol;                 /* bol */
+ScmObj sym_eol;                 /* eol */
 ScmObj sym_comp;                /* complement charset */
 
 static ScmRegexp *make_regexp(void)
@@ -213,8 +214,7 @@ static ScmObj fold_alternatives(ScmObj head, ScmObj tail, ScmObj grpnum)
     return tail;
 }
 
-/* Are we at the place where '^' can be a BOL assertion?
-   NB: EOL marker '$' is treated at pass 2. */
+/* Are we at the place where '^' can be a BOL assertion? */
 static int can_be_bol(ScmObj head)
 {
     ScmObj cp;
@@ -273,7 +273,7 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
     grpstack = Scm_Cons(tail, SCM_NIL);
     
     for (;;) {
-        SCM_GETC(ch, ctx->ipat);
+        ch = Scm_GetcUnsafe(ctx->ipat);
         if (ch == SCM_CHAR_INVALID) break;
 
         switch (ch) {
@@ -340,12 +340,20 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
             } else {
                 goto ordchar;
             }
+        case '$':
+            /* This can potentially be an EOL (we don't know for sure
+               until the entire expression is parsed).  For now, we mark
+               it as sym_eol.  Pass 2 determines it is actually an EOL
+               marker or just a '$' char. */
+            SCM_APPEND1(head, tail, sym_eol);
+            break;
         case '\\':
             /* TODO: handle special escape sequences */
-            SCM_GETC(ch, ctx->ipat);
-            if (ch == SCM_CHAR_INVALID)
+            ch = Scm_GetcUnsafe(ctx->ipat);
+            if (ch == SCM_CHAR_INVALID) {
                 Scm_Error("stray backslash at the end of pattern: %S\n",
                           ctx->pattern);
+            }
             switch (ch) {
             case 'a': SCM_APPEND1(head, tail, SCM_MAKE_CHAR(0x07)); break;
             case 'n': SCM_APPEND1(head, tail, SCM_MAKE_CHAR('\n')); break;
@@ -490,15 +498,6 @@ static int can_be_eol(ScmObj cp)
     return TRUE;
 }
 
-/* check for special case of EOL marker */
-static int eol_marker_p(ScmObj cp, int lastp, ScmObj item) 
-{
-    return (SCM_CHARP(item)
-            && SCM_CHAR_VALUE(item) == '$'
-            && can_be_eol(SCM_CDR(cp))
-            && lastp);
-}
-
 /*-------------------------------------------------------------
  * pass 2 - code generation
  *          This pass actually called twice; the first run counts
@@ -524,12 +523,6 @@ static void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
         if (SCM_CHARP(item)) {
             int nrun = 0, ocodep = ctx->codep, nb, i;
 
-            /* check for the special case for EOL handling */
-            if (eol_marker_p(cp, lastp, item)) {
-                re_compile_emit(ctx, RE_EOL, emitp);
-                continue;
-            }
-            
             /* find out the longest run of bytes */
             re_compile_emit(ctx, (CASEFOLDP(rx)? RE_MATCH_CI:RE_MATCH), emitp);
             re_compile_emit(ctx, 0, emitp); /* patched later */
@@ -542,9 +535,7 @@ static void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
                 cp = SCM_CDR(cp);
                 if (SCM_NULLP(cp)) break;
                 item = SCM_CAR(cp);
-            } while (SCM_CHARP(item)
-                     && !eol_marker_p(cp, lastp, item)
-                     && nrun < CHAR_MAX);
+            } while (SCM_CHARP(item) && nrun < CHAR_MAX);
             if (emitp) {
                 /* patches the jump offset.  if we are matching to a
                    single byte char, use MATCH1 insn. */
@@ -597,6 +588,15 @@ static void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
             }
             if (item == sym_bol) {
                 re_compile_emit(ctx, RE_BOL, emitp);
+                continue;
+            }
+            if (item == sym_eol) {
+                if (lastp && can_be_eol(SCM_CDR(cp))) {
+                    re_compile_emit(ctx, RE_EOL, emitp);
+                } else {
+                    re_compile_emit(ctx, RE_MATCH1, emitp);
+                    re_compile_emit(ctx, '$', emitp);
+                }
                 continue;
             }
             /* fallback to error */
@@ -1223,5 +1223,6 @@ void Scm__InitRegexp(void)
     sym_rep = SCM_INTERN("rep");
     sym_any = SCM_INTERN("any");
     sym_bol = SCM_INTERN("bol");
+    sym_eol = SCM_INTERN("eol");
     sym_comp = SCM_INTERN("comp");
 }
