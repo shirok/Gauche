@@ -9,7 +9,7 @@ INSTALL = @INSTALL@
 
 ARCHFILES = libnet.so
 SCMFILES = net.scm
-HEADERS = 
+HEADERS = net.h netconfig.h
 
 TARGET = libnet.so
 OBJS = net.o addr.o netdb.o netlib.o
@@ -17,8 +17,8 @@ CONFIG_GENERATED = Makefile config.cache config.log config.status \
 	netconfig.h netlib.c
 
 INSTALL_TYPE = @INSTALL_TYPE@
-HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
-SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`
+HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`/gauche
+SCM_INSTALL_DIR     = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)libdir`/gauche
 ARCH_INSTALL_DIR    = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)archdir`
 
 all : $(TARGET)
