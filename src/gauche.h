@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.72 2001-03-12 04:40:14 shiro Exp $
+ *  $Id: gauche.h,v 1.73 2001-03-12 06:15:46 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -691,6 +691,7 @@ typedef struct ScmPortVTableRec {
     int       (*Putb)(ScmPort *p, ScmByte b);
     int       (*Putc)(ScmPort *p, ScmChar c);
     int       (*Puts)(ScmPort *p, const char *buf, int size, int len);
+    int       (*Flush)(ScmPort *p);
     int       (*Close)(ScmPort *p);
     ScmProcPortInfo *(*Info)(ScmPort *p);
 } ScmPortVTable;
@@ -810,6 +811,8 @@ extern ScmObj Scm_ReadLine(ScmPort *port);
                                           SCM_STRING_START(s),  \
                                           SCM_STRING_SIZE(s),   \
                                           SCM_STRING_LENGTH(s))
+#define SCM__PROC_FLUSH(port) \
+    SCM_PORT(port)->src.proc.vtable->Flush(SCM_PORT(port))
 
 #define SCM_PUTB(byte, port)                                            \
     do {                                                                \
@@ -864,7 +867,7 @@ extern ScmObj Scm_ReadLine(ScmPort *port);
         switch (SCM_PORT_TYPE(port)) {                                  \
           case SCM_PORT_FILE: SCM__FILE_FLUSH(port); break;             \
           case SCM_PORT_OSTR: break;                                    \
-          case SCM_PORT_PROC: break;                                    \
+          case SCM_PORT_PROC: SCM__PROC_FLUSH(port); break;             \
           case SCM_PORT_CLOSED: break;                                  \
           default: Scm_Panic("SCM_FLUSH: something screwed up");        \
         }                                                               \
