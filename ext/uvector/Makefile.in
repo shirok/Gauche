@@ -8,7 +8,7 @@ GAUCHE_TOP = @GAUCHE_TOP@
 INSTALL = @INSTALL@
 
 ARCHFILES = libuvector.so
-SCMFILES  = uvector.scm
+SCMFILES  = srfi-4.scm
 HEADERS   = uvector.h
 
 TARGET    = libuvector.so
