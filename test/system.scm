@@ -160,7 +160,7 @@
         (sys-link "test.dir/zzZzz" "test.dir/xyzzy")
         (sort (sys-readdir "test.dir"))))
 
-(test "link" '("." ".." "xyzzy")
+(test "unlink" '("." ".." "xyzzy")
       (lambda ()
         (sys-unlink "test.dir/zzZzz")
         (sort (sys-readdir "test.dir"))))
@@ -177,7 +177,49 @@
         (sys-access "test.dir" f_ok)))
 
 ;;-------------------------------------------------------------------
-'(test-section "fork&exec")
+(test-section "stat")
+
+(sys-system "rm -rf test.dir > /dev/null")
+(with-output-to-file "test.dir" (lambda () (display "01234")))
+(sys-chmod "test.dir" #o654)
+
+(test "stat" '(#o654 regular 5)
+      (lambda ()
+        (let ((s (sys-stat "test.dir")))
+          (list (logand #o777 (sys-stat->mode s))
+                (sys-stat->file-type s)
+                (sys-stat->size s)))))
+
+(test "fstat" '(#o654 regular 5)
+      (lambda ()
+        (call-with-input-file "test.dir"
+          (lambda (p)
+            (let ((s (sys-fstat p)))
+              (list (logand #o777 (sys-stat->mode s))
+                    (sys-stat->file-type s)
+                    (sys-stat->size s)))))))
+
+(sys-unlink "test.dir")
+(sys-mkdir "test.dir" #o700)
+
+(test "stat" '(#o700 directory)
+      (lambda ()
+        (let ((s (sys-stat "test.dir")))
+          (list (logand #o777 (sys-stat->mode s))
+                (sys-stat->file-type s)))))
+
+(test "fstat" '(#o700 directory)
+      (lambda ()
+        (call-with-input-file "test.dir"
+          (lambda (p)
+            (let ((s (sys-fstat p)))
+              (list (logand #o777 (sys-stat->mode s))
+                    (sys-stat->file-type s)))))))
+
+(sys-remove "test.dir")
+
+;;-------------------------------------------------------------------
+(test-section "fork&exec")
 
 (test "fork & wait" #t
       (lambda ()
