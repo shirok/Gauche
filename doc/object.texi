@@ -1522,7 +1522,7 @@ they are defined on the new class.
 
 @item
 The direct-subclasses link of the direct superclasses of the
-original class is modified so that they points to the new class.
+original class is modified so that they will point to the new class.
 
 @item
 All the subclasses of the original class are redefined recursively
@@ -1551,11 +1551,11 @@ via @code{class-of}, @code{is-a?}, @code{slot-ref},
 
 Updating an instance means that the class of the instance
 is changed (from the old class to the new class).
-By default, the slot values that are common in the original
+By default, the values of the slots that are common in the original
 class and the new class are carried over, and the slots added
 by the new class are initialized according to the slot specification
-of the new class, and the slot values removed from the original class
-are discarded.
+of the new class, and the values of the slots that are
+removed from the original class are discarded.
 You can customize this behavior by writing the @code{change-class} method.
 See @ref{Changing classes}, for the details.
 
@@ -1579,12 +1579,12 @@ If a thread tries to access an instance whose class
 is being redefined by another thread, also the thread
 is blocked until the redefinition is finished.
 
-Note that instance update protocol isn't serialized.
-If two threads tries to access to an instance whose
+Note that the instance update protocol isn't serialized.
+If two threads try to access an instance whose
 class has been redefined, both trigger the instance
 update protocol, which would cause an undesired race condition.
-It is application's responsibility to ensure
-such case won't happen.  It is natural since the
+It is the application's responsibility to ensure
+such a case won't happen.  It is natural since the
 instance access isn't serialized by the system anyway.
 However, an extra care is required to have mutex within
 an instance; just accessing the mutex in it may trigger
