@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.24 2001-04-06 10:01:48 shiro Exp $
+ *  $Id: list.c,v 1.25 2001-04-10 06:58:17 shiro Exp $
  */
 
 #include "gauche.h"
@@ -525,6 +525,22 @@ ScmObj Scm_Assoc(ScmObj obj, ScmObj alist, int cmpmode)
 }
 
 /* Assoc-delete */
+ScmObj Scm_AssocDelete(ScmObj elt, ScmObj alist, int cmpmode)
+{
+    ScmObj p;
+    for (;;) {
+        if (SCM_NULLP(alist)) return SCM_NIL;
+        p = SCM_CAR(alist);
+        if (SCM_PAIRP(p) && Scm_EqualM(elt, SCM_CAR(p), cmpmode)) {
+            alist = SCM_CDR(alist);
+            continue;
+        } else {
+            ScmObj tail = Scm_AssocDelete(elt, SCM_CDR(alist), cmpmode);
+            if (tail == SCM_CDR(alist)) return alist;
+            else return Scm_Cons(p, tail);
+        }
+    }
+}
 
 ScmObj Scm_AssocDeleteX(ScmObj elt, ScmObj alist, int cmpmode)
 {
