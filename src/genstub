@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.61 2002-05-19 09:57:35 shirok Exp $
+;;;  $Id: genstub,v 1.62 2002-05-19 12:43:38 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -148,13 +148,9 @@
 
 (define-method emit-definition ((self <csymbol>))
   (with-cpp-condition self
-    (let* ((scheme-name (scheme-name-of self))
-           (c-name (c-name-of self))
-           (scheme-name-len (string-length (symbol->string scheme-name))))
-      (f "static SCM_DEFINE_STRING_CONST(~a_NAME, \"~a\", ~a, ~a);"
-         c-name scheme-name scheme-name-len scheme-name-len)
-      (f "static ScmObj ~a;" c-name)
-      (newline))))
+    (emit-static-string (c-name-of self) (scheme-name-of self))
+    (f "static ScmObj ~a;" (c-name-of self))
+    (newline)))
 
 (define-method emit-initializer ((self <csymbol>))
   (with-cpp-condition self
@@ -186,13 +182,9 @@
 
 (define-method emit-definition ((self <ckeyword>))
   (with-cpp-condition self
-    (let* ((scheme-name (scheme-name-of self))
-           (c-name (c-name-of self))
-           (scheme-name-len (string-length (symbol->string scheme-name))))
-      (f "static SCM_DEFINE_STRING_CONST(~a_NAME, \"~a\", ~a, ~a);"
-         c-name scheme-name scheme-name-len scheme-name-len)
-      (f "static ScmObj ~a;" c-name)
-      (newline))))
+    (emit-static-string (c-name-of self) (scheme-name-of self))
+    (f "static ScmObj ~a;" (c-name-of self))
+    (newline)))
 
 (define-method emit-initializer ((self <ckeyword>))
   (with-cpp-condition self
@@ -203,10 +195,9 @@
                (symbol? (cadr form))
                (string? (caddr form)))
     (error "malformed define-keyword:" form))
-  (let ((keyword (make <ckeyword>
-                   :scheme-name (cadr form) :c-name (caddr form))))
-    (emit-definition keyword)
-    ))
+  (emit-definition (make <ckeyword>
+                     :scheme-name (cadr form) :c-name (caddr form))))
+    
 
 ;;-----------------------------------------------------------------
 ;; Procedure
@@ -378,8 +369,7 @@
   (let loop ((body body))
     (if (null? body)
         (set! (stmts-of cproc) (reverse (stmts-of cproc)))
-        (let ((form (car body))
-              (next (cdr body)))
+        (receive (form next) (car+cdr body)
           (cond ((string? form) (push-stmt! cproc form) (loop next))
                 ((not (pair? form)) (error "bad form in body:" form))
                 ((eq? (car form) 'assert)
@@ -564,13 +554,8 @@
 
 (define (emit-record cproc)
   (with-cpp-condition cproc
-    (let* ((scm-func-name (x->string (scheme-name-of cproc)))
-           (c-func-name (c-name-of cproc)))
-      (f "static SCM_DEFINE_STRING_CONST(~a_NAME, \"~a\", ~a, ~a);"
-         c-func-name
-         scm-func-name
-         (string-length scm-func-name)
-         (string-length scm-func-name))
+    (let1 c-func-name (c-name-of cproc)
+      (emit-static-string c-func-name (scheme-name-of cproc))
       (f "static SCM_DEFINE_SUBR(~a_STUB, ~a, ~a, SCM_OBJ(&~a_NAME), ~a, ~a, NULL);"
          c-func-name
          (num-reqargs-of cproc)
@@ -930,6 +915,12 @@
       )
     )
   )
+
+;; Emit static ScmString
+(define (emit-static-string c-name scm-name)
+  (let1 len (string-length (x->string scm-name))
+    (f "static SCM_DEFINE_STRING_CONST(~a_NAME, \"~a\", ~a, ~a);"
+       c-name scm-name len len)))
 
 ;;===================================================================
 ;; Main parser
