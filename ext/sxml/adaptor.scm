@@ -1,21 +1,34 @@
 ;;;
 ;;; Adapt SSAX to Gauche
 ;;;
-;;; $Id: adaptor.scm,v 1.4 2003-07-21 20:19:19 shirok Exp $
+;;; $Id: adaptor.scm,v 1.5 2003-07-22 11:22:07 shirok Exp $
 ;;;
 
 (define-module sxml.adaptor
   (use srfi-1)
   (export ascii->char ucscode->char char-return char-tab char-newline
-          assert |--| parser-error))
+          make-char-quotator assert |--| parser-error))
 (select-module sxml.adaptor)
 
+;; Charcode related stuff, used in ssax.scm
 (define ascii->char integer->char)
 (define ucscode->char ucs->char)
 
 (define char-return  #\return)
 (define char-tab     #\tab)
 (define char-newline #\newline)
+
+;; make-char-quotator, used in sxml.to-html and sxml.tools
+(define (make-char-quotator . rules)
+  (lambda (s)
+    (with-string-io s
+      (lambda ()
+        (let loop ((ch (read-char)))
+          (cond ((eof-object? ch))
+                ((assv ch rules)
+                 => (lambda (p) (display (cdr p)) (loop (read-char))))
+                (else (display ch) (loop (read-char)))))))
+    ))
 
 ;; Derived from Oleg's myenv.scm -----------------------------
 

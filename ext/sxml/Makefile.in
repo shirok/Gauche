@@ -11,7 +11,7 @@ include ../Makefile.ext
 .scm.in.scm :
 	$(GOSH) ./trans.scm $<
 
-GENERATED_TARGET = ssax.scm sxpath.scm tree-trans.scm to-html.scm
+GENERATED_TARGET = ssax.scm sxpath.scm tools.scm tree-trans.scm to-html.scm
 GENERATED_TEST = ssax-test.scm tree-trans-test.scm to-html-test.scm
 CLEANFILES += $(GENERATED_TARGET) $(GENERATED_TEST)
 GENERATED = Makefile
@@ -20,8 +20,10 @@ SCMFILES = $(GENERATED_TARGET) adaptor.scm
 all : $(GENERATED_TARGET)
 
 ssax.scm : src/SSAX.scm
-
-
+sxpath.scm : src/SXPath.scm
+tools.scm : src/sxml-tools.scm
+tree-trans.scm : src/SXML-tree-trans.scm
+to-html.scm : src/SXML-to-HTML.scm
 
 check : $(GENERATED_TEST)
 

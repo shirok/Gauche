@@ -1,7 +1,7 @@
 ;;;
 ;;; convert the original SSAX.scm into Gauche's preferable format.
 ;;;
-;;; $Id: trans.scm,v 1.3 2003-07-21 12:19:39 shirok Exp $
+;;; $Id: trans.scm,v 1.4 2003-07-22 11:22:07 shirok Exp $
 ;;;
 
 (use srfi-13)
@@ -35,6 +35,10 @@
      (define (string-whitespace? str) (string-every #[\s] str)))
     ((define (fold-right ...) ...))
     ((define (fold ...) ...))
+    ;; These forms are in sxml-tools.
+    ;; We have Gauche-specific versions for them
+    ((define-macro (sxml:find-name-separator ...) ...))
+    ((define (sxml:error ...) ...))
     ))
 
 (define (prelude file)
