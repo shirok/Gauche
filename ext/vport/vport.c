@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vport.c,v 1.1 2004-10-07 12:12:49 shirok Exp $
+ *  $Id: vport.c,v 1.2 2004-10-08 10:28:03 shirok Exp $
  */
 
 #include "gauche/vport.h"
@@ -59,7 +59,7 @@ typedef struct vport_rec {
     ScmObj getc_proc;           /* () -> Maybe Char   */
     ScmObj gets_proc;           /* (Size) -> Maybe String */
     ScmObj getline_proc;        /* () -> Maybe String */
-    ScmObj ready_proc;          /* () -> Bool */
+    ScmObj ready_proc;          /* (Bool) -> Bool */
     ScmObj putb_proc;           /* (Byte) -> () */
     ScmObj putc_proc;           /* (Char) -> () */
     ScmObj puts_proc;           /* (String) -> () */
@@ -193,14 +193,15 @@ static ScmObj vport_getline(ScmPort *p)
 /*------------------------------------------------------------
  * Vport Ready
  */
-static int vport_ready(ScmPort *p)
+static int vport_ready(ScmPort *p, int charp)
 {
     vport *data = (vport*)p->src.vt.data;
     SCM_ASSERT(data != NULL);
 
     if (!SCM_FALSEP(data->ready_proc)) {
         int size;
-        ScmObj s = Scm_Apply(data->ready_proc, SCM_NIL);
+        ScmObj s = Scm_Apply(data->ready_proc,
+                             SCM_LIST1(SCM_MAKE_BOOL(charp)));
         return !SCM_FALSEP(s);
     } else {
         /* if no method is given, always return #t */
@@ -213,7 +214,12 @@ static int vport_ready(ScmPort *p)
  */
 static int vport_putb(ScmByte b, ScmPort *p)
 {
-    
+    vport *data = (vport*)p->src.vt.data;
+    SCM_ASSERT(data != NULL);
+
+    if (!SCM_FALSEP(data->putb_proc)) {
+        /* what shall I do? */
+    }
 }
 
 /*================================================================
