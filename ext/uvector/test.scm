@@ -313,6 +313,28 @@
 (uvcopy-startend-test "uvcopy-startend u64vector"
                       u64vector u64vector-copy u64vector-fill!)
 
+(define (uvcopy!-newapi-test msg make copy!)
+  (test* #`",msg /tstart" (make 0 7 8 9)
+         (copy! (make 0 1 2 3) 1 (make 7 8 9 10)))
+  (test* #`",msg /tstart(over)" (make 0 1 2 3)
+         (copy! (make 0 1 2 3) 4 (make 7 8 9 10)))
+  (test* #`",msg /tstart,,sstart" (make 0 9 10 3)
+         (copy! (make 0 1 2 3) 1 (make 7 8 9 10) 2))
+  (test* #`",msg /tstart,,sstart,,send" (make 0 1 2 9)
+         (copy! (make 0 1 2 3) 3 (make 7 8 9 10) 2 3))
+  )
+
+(uvcopy!-newapi-test "s8vector-copy! newapi" s8vector s8vector-copy!)
+(uvcopy!-newapi-test "u8vector-copy! newapi" u8vector u8vector-copy!)
+(uvcopy!-newapi-test "s16vector-copy! newapi" s16vector s16vector-copy!)
+(uvcopy!-newapi-test "u16vector-copy! newapi" u16vector u16vector-copy!)
+(uvcopy!-newapi-test "s32vector-copy! newapi" s32vector s32vector-copy!)
+(uvcopy!-newapi-test "u32vector-copy! newapi" u32vector u32vector-copy!)
+(uvcopy!-newapi-test "s64vector-copy! newapi" s64vector s64vector-copy!)
+(uvcopy!-newapi-test "u64vector-copy! newapi" u64vector u64vector-copy!)
+(uvcopy!-newapi-test "f32vector-copy! newapi" f32vector f32vector-copy!)
+(uvcopy!-newapi-test "f64vector-copy! newapi" f64vector f64vector-copy!)
+
 ;;-------------------------------------------------------------------
 (test-section "collection interface")
 

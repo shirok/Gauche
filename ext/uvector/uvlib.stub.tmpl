@@ -35,7 +35,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; \$Id: uvlib.stub.tmpl,v 1.2 2004-11-05 11:11:34 shirok Exp $
+;;; \$Id: uvlib.stub.tmpl,v 1.3 2004-11-05 12:02:01 shirok Exp $
 ;;;
 
 "
@@ -100,9 +100,34 @@
                                          (end::<fixnum> -1))
   (return "Scm_${T}VectorCopy"))
 
-(define-cproc ${t}vector-copy! (dst::<${t}vector> 
-                                src::<${t}vector>)
-  (return "Scm_${T}VectorCopyX"))
+;; NB: this function accomodates to two APIs.
+;; The 'modern' API, compatible to srfi-13 and srfi-43, takes arguments:
+;;    (dst dstart src &optional sstart send)
+;; The old API only takes:
+;;    (dst src)
+;; We dispatch by the second argument.  The old API is deprecated, but
+;; kept for the existing code.
+(define-cproc ${t}vector-copy! (dst::<${t}vector>
+                                dstart
+                                &optional 
+                                src
+                                (sstart::<int> 0)
+                                (send::<int> -1))
+  "if (SCM_INTEGERP(dstart)) {
+     /* new API */
+     if (!SCM_${T}VECTORP(src)) {
+       Scm_Error(\"${t}vector-copy!: argument is not a matching uvector: %S\",
+                 src);
+     }
+     SCM_RETURN(Scm_${T}VectorCopyX(dst, Scm_GetInteger(dstart), 
+                                    SCM_${T}VECTOR(src), sstart, send));
+  } else if (SCM_${T}VECTORP(dstart)) {
+    /* old API */
+    SCM_RETURN(Scm_${T}VectorCopyX(dst, 0, SCM_${T}VECTOR(dstart), 0, -1));
+  } else {
+    Scm_Error(\"integer required, but got %S\", dstart);
+    SCM_RETURN(SCM_UNDEFINED);
+  }")
 
 (define-cproc ${t}vector->list (v::<${t}vector>
                                 &optional (start::<fixnum> 0)

@@ -35,7 +35,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvector.c.tmpl,v 1.1 2004-11-05 10:34:25 shirok Exp $
+ *  $Id: uvector.c.tmpl,v 1.2 2004-11-05 12:02:01 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -427,15 +427,26 @@ ScmObj Scm_${T}VectorCopy(Scm${T}Vector *vec, int start, int end)
                                      SCM_${T}VECTOR_ELEMENTS(vec)+start);
 }
 
-ScmObj Scm_${T}VectorCopyX(Scm${T}Vector *dst, Scm${T}Vector *src)
+ScmObj Scm_${T}VectorCopyX(Scm${T}Vector *dst,
+                           int dstart,
+                           Scm${T}Vector *src,
+                           int sstart,
+                           int send)
 {
-    int len = SCM_${T}VECTOR_SIZE(src);
-    if (SCM_${T}VECTOR_SIZE(dst) != len) {
-        Scm_Error("same size of vectors are required: %S, %S", dst, src);
-    }
+    int dlen = SCM_${T}VECTOR_SIZE(dst);
+    int slen = SCM_${T}VECTOR_SIZE(src);
+    int size;
+    
     SCM_UVECTOR_CHECK_MUTABLE(dst);
-    memcpy(SCM_${T}VECTOR_ELEMENTS(dst), SCM_${T}VECTOR_ELEMENTS(src),
-           len * sizeof(${etype}));
+    SCM_CHECK_START_END(sstart, send, slen);
+
+    if (dstart < 0 || dstart >= dlen) return SCM_OBJ(dst);
+    if (dlen - dstart > send - sstart)  size = send - sstart;
+    else size = dlen - dstart;
+
+    memcpy(SCM_${T}VECTOR_ELEMENTS(dst) + dstart,
+           SCM_${T}VECTOR_ELEMENTS(src) + sstart,
+           size * sizeof(${etype}));
     return SCM_OBJ(dst);
 }
 

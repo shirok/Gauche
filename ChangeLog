@@ -15,6 +15,11 @@
 	  cleaned up a lot, particularly the humble task of conversions
 	  and clamping between Scheme integers and 32/64-bit C integers 
 	  are integrated to the Gauche core.
+	- also added string->[su]8vector!
+	- also changed the API of TAGvector-copy! to be parallel with
+	  srfi-13(string-copy!) and srfi-43(vector-copy!).  The old API
+	  is still supported, dispatched by the argument type, but will
+	  be deprecated.
 
 	* ext/mt-random/*: changed according to the modification of uvector.
 
