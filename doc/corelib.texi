@@ -3928,7 +3928,7 @@ a generic function @code{object-hash} to calculate the hash value.
 以下の二つの性質があります。
 @itemize
 @item
-もし、@var{a} および @var{b} の型について、@code{has} が定義されているなら、
+もし、@var{a} および @var{b} の型について、@code{hash} が定義されているなら、
 あらゆるオブジェクト @var{a} および  @var{b} に対して、
 @code{(equal? @var{a} @var{b})} と @code{(= (hash @var{a}) (hash @var{b}))}
 とは同等です。
