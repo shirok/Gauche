@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.40 2001-04-14 23:07:58 shiro Exp $
+;;; $Id: stdlib.stub,v 1.41 2001-04-14 23:52:30 shiro Exp $
 ;;;
 
 
@@ -865,9 +865,9 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 ;; 6.6.4  System Interface
 ;;
 
-(define-cproc load (file)
+(define-cproc load (file &keyword (error-if-not-found #t))
   (assert (string? file))
-  "  SCM_RETURN(Scm_VMLoad(file, TRUE));")
+  "  SCM_RETURN(Scm_VMLoad(file, !SCM_FALSEP(error_if_not_found)));")
 
 ; transcript-on
 ; transcript-off
