@@ -1,3 +1,8 @@
+2005-03-15  Shiro Kawai  <shiro@acm.org>
+
+	* prefix.scm (%string-suffix-int): fixed a bug that returned wrong
+	  character count.
+
 2005-02-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h (SCM_STRING_CONST_INITIALIZER): back-ported this macro

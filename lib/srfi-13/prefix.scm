@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: prefix.scm,v 1.4 2003-07-05 03:29:12 shirok Exp $
+;;;  $Id: prefix.scm,v 1.5 2005-03-15 11:44:46 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -87,12 +87,14 @@
   (let ((sp1 (make-string-pointer str1 -1))
         (sp2 (make-string-pointer str2 -1)))
     (let loop ((ch1 (string-pointer-prev! sp1))
-               (ch2 (string-pointer-prev! sp2)))
-      (cond ((eof-object? ch1) (action (string-pointer-index sp1) #t))
-            ((eof-object? ch2) (action (string-pointer-index sp1) #f))
+               (ch2 (string-pointer-prev! sp2))
+               (count 0))
+      (cond ((eof-object? ch1) (action count #t))
+            ((eof-object? ch2) (action count #f))
             ((= ch1 ch2) (loop (string-pointer-prev! sp1)
-                               (string-pointer-prev! sp2)))
-            (else (action (+ (string-pointer-index sp1) 1) #f)))
+                               (string-pointer-prev! sp2)
+                               (+ count 1)))
+            (else (action count #f)))
       )))
 
 (define (string-suffix-length s1 s2 . args)

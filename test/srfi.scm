@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.39 2004-11-01 21:51:05 shirok Exp $
+;; $Id: srfi.scm,v 1.40 2005-03-15 11:44:46 shirok Exp $
 
 (use gauche.test)
 
@@ -736,9 +736,9 @@
        (string-prefix-length "cancaNCAM" "cancancan"))
 (test* "string-prefix-length-ci" 8
        (string-prefix-length-ci "cancaNCAM" "cancancan"))
-(test* "string-suffix-length" 4
+(test* "string-suffix-length" 2
        (string-suffix-length "CanCan" "cankancan"))
-(test* "string-suffix-length-ci" 1
+(test* "string-suffix-length-ci" 5
        (string-suffix-length-ci "CanCan" "cankancan"))
 
 (test* "string-prefix?" #t    (string-prefix? "abcd" "abcdefg"))
