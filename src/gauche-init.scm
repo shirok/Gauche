@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.27 2001-05-06 07:46:26 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.28 2001-05-07 09:06:29 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -79,6 +79,7 @@
   (autoload "gauche/numerical" gcd lcm numerator denominator
                                make-polar real-part imag-part
                                %complex-exp %complex-log %complex-sqrt
+                               %complex-expt
                                %complex-cos %complex-sin %complex-tan
                                %complex-acos %complex-asin %complex-atan
                                %complex-sinh %complex-cosh %complex-tanh
@@ -102,18 +103,25 @@
 (define-trans tan   %tan   %complex-tan)
 (define-trans asin  %asin  %complex-asin)
 (define-trans acos  %acos  %complex-acos)
-(define (atan z . x)
-  (if (null? x)
-      (cond ((real? z) (%atan z))
-            ((number? x) (%complex-atan z))
-            (else (error "number required, but got ~s" z)))
-      (%atan z (car x))))
 (define-trans sinh  %sinh  %complex-sinh)
 (define-trans cosh  %cosh  %complex-cosh)
 (define-trans tanh  %tanh  %complex-tanh)
 (define-trans asinh %asinh %complex-asinh)
 (define-trans acosh %acosh %complex-acosh)
 (define-trans atanh %atanh %complex-atanh)
+
+(define (atan z . x)
+  (if (null? x)
+      (cond ((real? z) (%atan z))
+            ((number? x) (%complex-atan z))
+            (else (error "number required, but got ~s" z)))
+      (%atan z (car x))))
+
+(define (expt x y)
+  (cond ((and (real? x) (real? y)) (%expt x y))
+        ((and (number? x) (number? y)) (%complex-expt x y))
+        (else (error "number required, but got ~s"
+                     (if (number? x) y x)))))
 
 (with-module scheme
   (define exp (with-module gauche exp))
@@ -123,7 +131,8 @@
   (define tan (with-module gauche tan))
   (define asin (with-module gauche asin))
   (define acos (with-module gauche acos))
-  (define atan (with-module gauche atan)))
+  (define atan (with-module gauche atan))
+  (define expt (with-module gauche expt)))
 
 ;; useful stuff
 (define-syntax check-arg
