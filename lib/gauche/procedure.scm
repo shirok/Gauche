@@ -12,10 +12,11 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: procedure.scm,v 1.1 2002-05-07 07:33:53 shirok Exp $
+;;;  $Id: procedure.scm,v 1.2 2002-05-07 08:52:16 shirok Exp $
 ;;;
 
 (define-module gauche.procedure
+  (use srfi-1)
   (export arity procedure-arity-includes?
           <arity-at-least> arity-at-least? arity-at-least-value
           compose
@@ -48,6 +49,16 @@
    (else
     (errorf "cannot get arity of ~s" proc))))
 
+(define (procedure-arity-includes? proc k)
+  (let1 a (arity proc)
+    (define (check a)
+      (cond ((integer? a) (= a k))
+            ((arity-at-least? a) (>= k (arity-at-least-value a)))
+            (else (errorf "implementation error in (procedure-arity-includes? ~s ~s)" proc k))))
+    (if (list? a)
+        (any check a)
+        (check a))))
+
 ;; other utilities
 
 (define (compose f g . more)
@@ -55,7 +66,5 @@
       (lambda args
         (call-with-values (lambda () (apply g args)) f))
       (compose f (apply compose g more))))
-
-
 
 (provide "gauche/procedure")
