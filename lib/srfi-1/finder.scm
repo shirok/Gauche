@@ -2,7 +2,7 @@
 ;;; Find and alike of SRFI-1
 ;;;
 
-;; $Id: finder.scm,v 1.1 2001-04-06 09:53:46 shiro Exp $
+;; $Id: finder.scm,v 1.2 2002-05-25 05:39:01 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -17,12 +17,16 @@
   (cond ((find-tail pred list) => car)
 	(else #f)))
 
+(define (find$ pred) (pa$ find pred))
+
 (define (find-tail pred list)
   (check-arg procedure? pred)
   (let lp ((list list))
     (and (not (null-list? list))
 	 (if (pred (car list)) list
 	     (lp (cdr list))))))
+
+(define (find-tail$ pred) (pa$ find-tail pred))
 
 (define (take-while pred lis)
   (check-arg procedure? pred)
@@ -96,6 +100,8 @@
 		 (pred head)		; Last PRED app is tail call.
 		 (or (pred head) (lp (car tail) (cdr tail))))))))
 
+(define (any$ pred) (pa$ any pred))
+
 (define (every pred lis1 . lists)
   (check-arg procedure? pred)
   (if (pair? lists)
@@ -115,6 +121,8 @@
 	    (if (null-list? tail)
 		(pred head)	; Last PRED app is tail call.
 		(and (pred head) (lp (car tail) (cdr tail))))))))
+
+(define (every$ pred) (pa$ every pred))
 
 (define (list-index pred lis1 . lists)
   (check-arg procedure? pred)

@@ -2,7 +2,7 @@
 ;;; Filters of SRFI-1
 ;;;
 
-;; $Id: filter.scm,v 1.1 2001-04-06 09:53:46 shiro Exp $
+;; $Id: filter.scm,v 1.2 2002-05-25 05:39:01 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -23,6 +23,8 @@
 		(if (eq? tail new-tail) lis
 		    (cons head new-tail)))
 	      (recur tail))))))			; this one can be a tail call.
+
+(define (filter$ pred) (pa$ filter pred))
 
 (define (filter! pred lis)
   (check-arg procedure? pred)
@@ -67,6 +69,8 @@
 	    (if (pred elt)
 		(values (if (pair? out) (cons elt in) lis) out)
 		(values in (if (pair? in) (cons elt out) lis))))))))
+
+(define (partition$ pred) (pa$ partition pred))
 
 (define (partition! pred lis)
   (check-arg procedure? pred)
@@ -113,3 +117,5 @@
 
 (define (remove! pred l) (filter! (lambda (x) (not (pred x))) l))
 (define (remove  pred l) (filter  (lambda (x) (not (pred x))) l))
+
+(define (remove$ pred) (pa$ remvoe pred))

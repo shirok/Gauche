@@ -2,7 +2,7 @@
 ;;; Folders of SRFI-1
 ;;;
 
-;; $Id: folder.scm,v 1.1 2001-04-06 09:53:46 shiro Exp $
+;; $Id: folder.scm,v 1.2 2002-05-25 05:39:01 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -28,6 +28,8 @@
       (let lp ((lis list1) (i 0))
 	(if (null-list? lis) i
 	    (lp (cdr lis) (if (pred (car lis)) (+ i 1) i))))))
+
+(define (count$ pred) (pa$ count pred))
 
 (define (unfold-right p f g seed . maybe-tail)
   (check-arg procedure? p)
@@ -70,6 +72,8 @@
 	(if (null-list? lis) ans
 	    (lp (cdr lis) (kons (car lis) ans))))))
 
+(define (fold$ kons . maybe-knil)
+  (lambda lists (apply fold kons (append maybe-knil lists))))
 
 (define (fold-right kons knil lis1 . lists)
   (check-arg procedure? kons)
@@ -84,6 +88,8 @@
 	    (let ((head (car lis)))
 	      (kons head (recur (cdr lis))))))))
 
+(define (fold-right$ kons . maybe-knil)
+  (lambda lists (apply fold-right kons (append maybe-knil lists))))
 
 (define (pair-fold-right f zero lis1 . lists)
   (check-arg procedure? f)
@@ -119,6 +125,9 @@
   (if (null-list? lis) ridentity
       (fold f (car lis) (cdr lis))))
 
+(define (reduce$ f . maybe-ridentity)
+  (lambda args (apply reduce f (append maybe-ridentity args))))
+
 (define (reduce-right f ridentity lis)
   (check-arg procedure? f)
   (if (null-list? lis) ridentity
@@ -126,3 +135,6 @@
 	(if (pair? lis)
 	    (f head (recur (car lis) (cdr lis)))
 	    head))))
+
+(define (reduce-right$ f . maybe-ridentity)
+  (lambda args (apply reduce-right f (append maybe-ridentity args))))
