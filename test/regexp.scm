@@ -2,7 +2,7 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.8 2001-09-23 21:57:39 shirok Exp $
+;; $Id: regexp.scm,v 1.9 2001-09-23 22:47:47 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -403,6 +403,11 @@
 (test "rxmatch-case" #f
       (lambda () (test-parse-date2 'abc)))
 
+(test "regexp-replace" "abc|def|ghi"
+      (lambda () (regexp-replace #/def|DEF/ "abcdefghi" "|\\0|")))
+
+(test "regexp-replace" "abc|\\0|ghi"
+      (lambda () (regexp-replace #/def|DEF/ "abcdefghi" "|\\\\0|")))
 
 (test "regexp-replace" "abraabra**brabra**brabrabracadabrabrabra"
       (lambda ()
@@ -415,6 +420,14 @@
         (regexp-replace-all #/a((bra)+)cadabra/
                             "abraabraabrabracadabrabrabrabracadabrabrabra"
                             "**\\1**")))
+
+(test "regexp-replace" "abfedhi"
+      (lambda ()
+        (regexp-replace #/c(.*)g/ "abcdefghi" 
+                        (lambda (m)
+                          (list->string
+                           (reverse
+                            (string->list (rxmatch-substring m 1))))))))
 
 (test "regexp-replace-all" "abraabra(bra^2)br(bra^2)brabra"
       (lambda ()
