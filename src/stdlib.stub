@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.35 2001-03-31 08:45:04 shiro Exp $
+;;; $Id: stdlib.stub,v 1.36 2001-03-31 21:44:07 shiro Exp $
 ;;;
 
 
@@ -795,6 +795,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 
 (define-cproc read-char (&optional (port (current-input-port)))
   (assert (input-port? port))
+  (inliner "SCM_VM_READ_CHAR")
   "  int ch;
   SCM_GETC(ch, port);
   if (ch == EOF) SCM_RETURN(SCM_EOF);
@@ -837,6 +838,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 (define-cproc write-char (ch &optional (port (current-output-port)))
   (assert (char? ch))
   (assert (output-port? port))
+  (inliner "SCM_VM_WRITE_CHAR")
   "  SCM_PUTC(ch, port);
   SCM_RETURN(SCM_MAKE_INT(1));")
 
