@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: uri.scm,v 1.6 2001-08-29 11:28:31 shirok Exp $
+;;;  $Id: uri.scm,v 1.7 2001-09-13 20:31:56 shirok Exp $
 ;;;
 
 ;; Main reference:
@@ -84,7 +84,8 @@
 ;;  the semantics of specific URI scheme.
 ;;  These procedures provides basic building components.
 
-(define (uri-decode)
+(define (uri-decode . args)
+  (define cgi-decode (get-keyword :cgi-decode args #f))
   (define (hex c)
     (cond ((not (char? c)) #f)
           ((char<?  c #\0) #f)
@@ -110,19 +111,22 @@
                                        (loop c2))))))
                    (else (write-char c)
                          (loop c1)))))
+          ((char=? c #\+)
+           (if cgi-decode (write-char #\space) (write-char #\+))
+           (loop (read-char)))
           (else (write-char c)
                 (loop (read-char)))
           )))
 
-(define (uri-decode-string string)
-  (with-string-io string uri-decode))
+(define (uri-decode-string string . args)
+  (with-string-io string (lambda () (apply uri-decode args))))
 
 ;; Default set of characters to be escaped
 ;; See 2.4.3 "Excluded US-ASCII characters" of RFC 2396
 (define *uri-special-char-set* #[\x00-\x20<>#%\"{}|\\^\`\[\]])
 
 (define (uri-encode . args)
-  (let-optionals* args ((echars *uri-special-char-set*))
+  (let ((echars (get-keyword :escaped-char-set args *url-special-char-set*)))
     (let loop ((c (read-char)))
       (cond ((eof-object? c))
             ((char-set-contains? echars c)
