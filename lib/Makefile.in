@@ -1,9 +1,9 @@
 #
 # Makefile.in for Gauche/lib
-#  $Id: Makefile.in,v 1.118.2.1 2004-12-23 07:12:21 shirok Exp $
+#  $Id: Makefile.in,v 1.118.2.2 2004-12-24 23:52:41 shirok Exp $
 
-.PHONY: all check install uninstall slibcat slibcat-in-place clean distclean \
-        maintainer-clean
+.PHONY: all check package install uninstall slibcat slibcat-in-place \
+	clean distclean maintainer-clean
 
 DESTDIR =
 
@@ -22,6 +22,7 @@ INSTALL         = @INSTALL@
 MKINSTDIR       = $(top_srcdir)/mkinstalldirs
 SLIB_DIR        = @SLIB_DIR@
 
+GENERATED   = gauche/vm/insn.scm
 CONFIG_GENERATED = Makefile slib.scm
 
 SUBDIRS  = gauche gauche/vm gauche/serializer gauche/interactive gauche/mop \
@@ -51,7 +52,7 @@ SCMFILES = srfi-0.scm \
        gauche/condutil.scm \
        gauche/with.scm gauche/regexp.scm gauche/process.scm gauche/signal.scm \
        gauche/numerical.scm gauche/let-opt.scm gauche/logical.scm \
-       gauche/vm/debugger.scm gauche/procedure.scm \
+       gauche/vm/insn.scm gauche/procedure.scm \
        gauche/serializer.scm gauche/serializer/aserializer.scm \
        gauche/parseopt.scm gauche/interactive.scm gauche/interactive/info.scm \
        gauche/selector.scm gauche/logger.scm gauche/portutil.scm \
@@ -80,9 +81,11 @@ SCMFILES = srfi-0.scm \
        text/html-lite.scm text/info.scm text/gettext.scm text/diff.scm \
        www/cgi.scm www/cgi-test.scm
 
-all:
+all: $(GENERATED)
 
 check:
+
+package: $(GENERATED)
 
 install:
 	for d in $(SUBDIRS); do \
@@ -114,8 +117,13 @@ slibcat-in-place :
 	  $(SHELL) ./mklibcat $(top_builddir)/src/gosh ; \
 	fi
 
+# Generates insn.scm.  NOTE: this must be called at packaging time,
+# so that the build process doesn't need to call gosh being built.
+gauche/vm/insn.scm : gauche/vm/insn.scm.src
+	gosh ./gauche/vm/insn.scm.src
+
 clean:
-	rm -f core slibcat *~
+	rm -f core slibcat $(GENERATED) *~
 	for d in $(SUBDIRS); do (cd $$d; rm -f core *~); done
 
 distclean: clean

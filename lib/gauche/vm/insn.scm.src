@@ -1,0 +1,105 @@
+;; -*-mode:scheme-*-
+;; NB: process this file to generate insn.scm.
+
+(use srfi-13)
+(use file.filter)
+(use file.util)
+(use util.match)
+
+(define (process in out insn-defs)
+  (define (preamble line)
+    (cond ((eof-object? line) (error "Huh?"))
+          ((string-prefix? ";; THE FOLLOWING CODE" line) (body (read-line in)))
+          (else (preamble (read-line in)))))
+  (define (body line)
+    (cond ((eof-object? line))
+          ((string-prefix? ";; INSERT INSN DEF" line) (insert))
+          (else (display line out) (newline out) (body (read-line in)))))
+  (define (insert)
+    (dolist (def insn-defs)
+      (match-let1 (_ name num-params optype) def
+        (write `(make <vm-insn> :name ,name :num-params ,num-params
+                      :operand-type ,optype)
+               out)
+        (newline out)))
+    (body (read-line in)))
+  (preamble (read-line in)))
+
+(let* ((lp (port-name (current-load-port)))
+       (insn-def (build-path (sys-dirname lp) "../../../src/vminsn.scm"))
+       (outfile  (build-path (sys-dirname lp) "insn.scm"))
+       (insns (file->sexp-list insn-def))
+       )
+  (file-filter (cut process <> <> insns) :input lp :output outfile))
+
+(exit 0)
+
+;; THE FOLLOWING CODE WILL BE THE PART OF INSN.SCM
+;;;
+;;; gauche.vm.insn - VM instruction introspection
+;;; (This file is generated automatically; DO NOT EDIT)
+;;;  
+;;;   Copyright (c) 2004 Shiro Kawai, All rights reserved.
+;;;   
+;;;   Redistribution and use in source and binary forms, with or without
+;;;   modification, are permitted provided that the following conditions
+;;;   are met:
+;;;   
+;;;   1. Redistributions of source code must retain the above copyright
+;;;      notice, this list of conditions and the following disclaimer.
+;;;  
+;;;   2. Redistributions in binary form must reproduce the above copyright
+;;;      notice, this list of conditions and the following disclaimer in the
+;;;      documentation and/or other materials provided with the distribution.
+;;;  
+;;;   3. Neither the name of the authors nor the names of its contributors
+;;;      may be used to endorse or promote products derived from this
+;;;      software without specific prior written permission.
+;;;  
+;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+;;;   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+;;;   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+;;;   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+;;;   TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+;;;   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;;;  
+;;;  $Id: insn.scm.src,v 1.1.2.1 2004-12-24 23:53:02 shirok Exp $
+;;;
+
+(define-module gauche.vm.insn
+  (export <vm-insn>
+          vm-find-insn)
+  )
+(select-module gauche.vm.insn)
+
+(define-class <vm-insn> ()
+  ((name   :init-keyword :name)           ; name of insn (symbol)
+   (code   :init-keyword :code)           ; code of insn (integer)
+   (num-params :init-keyword :num-params) ; # of parameters
+   (operand-type :init-keyword :operand-type) ; operand type
+   
+   (all-insns :allocation :class          ; alist of all instructions,
+              :init-keyword :all-insns)   ;   keyed by name.
+   ))
+
+(define-method initialize ((self <vm-insn>) initargs)
+  (next-method)
+  (set! (ref self 'code) (length (ref self 'all-insns)))
+  (push! (ref self 'all-insns)
+         (cons (ref self 'name) self)))
+
+(define (vm-find-insn name)
+  (cond ((assq name (class-slot-ref <vm-insn> 'all-insns)) => cdr)
+        (else (error "No such VM instruction:" name))))
+
+;; INSERT INSN DEFINITION HERE
+
+(provide "gauche/vm/insn")
+
+
+
