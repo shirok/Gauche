@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: condutil.scm,v 1.6 2004-11-29 22:13:59 shirok Exp $
+;;;  $Id: condutil.scm,v 1.6.2.1 2004-12-27 07:33:04 shirok Exp $
 ;;;
 
 ;; Defines some condition-related primitives.
@@ -161,10 +161,6 @@
           ((slot-exists? (car members) slot)
            (slot-ref (car members) slot))
           (else (loop (cdr members))))))
-
-;; A trick to let a condition type behave its own predicate
-(define-method object-apply ((type <condition-meta>) obj)
-  (condition-has-type? obj type))
 
 ;; Aliases for srfi-35/srfi-36 compatibility
 (define &condition   <condition>)
