@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.317 2002-12-14 12:32:59 shirok Exp $
+ *  $Id: gauche.h,v 1.318 2002-12-23 00:04:09 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -188,6 +188,7 @@ SCM_EXTERN int Scm_EqP(ScmObj x, ScmObj y);
 SCM_EXTERN int Scm_EqvP(ScmObj x, ScmObj y);
 SCM_EXTERN int Scm_EqualP(ScmObj x, ScmObj y);
 
+/* comparison mode */
 enum {
     SCM_CMP_EQ,
     SCM_CMP_EQV,
@@ -815,6 +816,7 @@ SCM_EXTERN ScmObj  Scm_StringIncompleteToCompleteX(ScmString *str);
 SCM_EXTERN ScmObj  Scm_StringCompleteToIncomplete(ScmString *str);
 SCM_EXTERN ScmObj  Scm_StringIncompleteToComplete(ScmString *str);
 
+SCM_EXTERN int     Scm_StringEqual(ScmString *x, ScmString *y);
 SCM_EXTERN int     Scm_StringCmp(ScmString *x, ScmString *y);
 SCM_EXTERN int     Scm_StringCiCmp(ScmString *x, ScmString *y);
 

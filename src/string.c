@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.70 2002-12-06 12:47:06 shirok Exp $
+ *  $Id: string.c,v 1.71 2002-12-23 00:04:09 shirok Exp $
  */
 
 #include <stdio.h>
@@ -274,6 +274,19 @@ ScmObj Scm_StringIncompleteToComplete(ScmString *x)
 /*----------------------------------------------------------------
  * Comparison
  */
+
+/* TODO: merge Equal and Cmp API; required generic comparison protocol */
+int Scm_StringEqual(ScmString *x, ScmString *y)
+{
+    if ((SCM_STRING_INCOMPLETE_P(x) && !SCM_STRING_INCOMPLETE_P(y))
+        || (!SCM_STRING_INCOMPLETE_P(x) && SCM_STRING_INCOMPLETE_P(y))) {
+        return FALSE;
+    }
+    if (SCM_STRING_SIZE(x) != SCM_STRING_SIZE(y)) {
+        return FALSE;
+    }
+    return (memcmp(SCM_STRING_START(x), SCM_STRING_START(y), SCM_STRING_SIZE(x)) == 0? TRUE : FALSE);
+}
 
 int Scm_StringCmp(ScmString *x, ScmString *y)
 {

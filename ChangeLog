@@ -1,5 +1,8 @@
 2002-12-22  Shiro Kawai  <shiro@acm.org>
 
+	* src/string.c : made string equality be tested by separate function
+	  from comparison, so that a complete string and incomplete string
+	  can be tested.
 	* src/class.c, src/gauche/class.h : made generic allocation macro
 	  SCM_ALLOCATE to call Scm_AllocateInstance, which initializes
 	  Scheme-slots defined in Scheme subclasses safely.  The task used

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: boolean.c,v 1.17 2002-07-01 10:43:48 shirok Exp $
+ *  $Id: boolean.c,v 1.18 2002-12-23 00:04:09 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -51,7 +51,7 @@ int Scm_EqualP(ScmObj x, ScmObj y)
     }
     if (SCM_STRINGP(x)) {
         if (SCM_STRINGP(y)) {
-            return (Scm_StringCmp(SCM_STRING(x), SCM_STRING(y)) == 0);
+            return Scm_StringEqual(SCM_STRING(x), SCM_STRING(y));
         }
         return FALSE;
     }

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.97 2002-12-13 11:41:41 shirok Exp $
+;;; $Id: stdlib.stub,v 1.98 2002-12-23 00:04:09 shirok Exp $
 ;;;
 
 
@@ -549,7 +549,7 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc string=? (s1::<string> s2::<string>)
-  "  SCM_RETURN(SCM_MAKE_BOOL(Scm_StringCmp(s1, s2) == 0));")
+  "  SCM_RETURN(SCM_MAKE_BOOL(Scm_StringEqual(s1, s2)));")
 (define-cproc string<? (s1::<string> s2::<string>)
   "  SCM_RETURN(SCM_MAKE_BOOL(Scm_StringCmp(s1, s2) < 0));")
 (define-cproc string<=? (s1::<string> s2::<string>)
