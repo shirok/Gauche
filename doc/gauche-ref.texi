@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.45 2001-07-25 10:48:23 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.46 2001-08-09 09:44:24 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2348,6 +2348,26 @@ string consisted by those bytes.  The size of returned string may
 shorter than @var{nbytes} when @var{iport} doesn't have enough bytes
 to fill.  If @var{iport} has already reached EOF, an eof object is returned.
 
+When the available data in @var{iport} is less than @var{nbytes},
+the behavior of this function differs by the underlying port mechanism.
+@table @bullet
+@item
+If the input port is a buffered port, this function uses @code{fread(3)},
+and usually it suspends until either the requested bytes becomes available
+or the EOF is read.
+@item
+If the input port is an unbuffered port, this function uses @code{read(2)},
+and usually returns after reading as many bytes as avaialble, which may
+less than @var{nbytes}.   This is critical when you're communicating
+with some other entity (e.g. a person via interactive session, or an other
+process over the network) through the port; you can specify big @var{nbytes}
+and retrieve small size of packet.   Note that, however, the function
+does suspend when no data is immediately available from @var{iport}.
+@item
+If the input port is based on the in-core source (e.g. an input string),
+the function never suspends.
+@end table
+
 Note: if you want to write a chunk of bytes (incomplete string) to a port,
 use @code{display}.
 @end defun
@@ -3954,16 +3974,26 @@ Returns a socket address associated with @var{socket}.
 If no address has been associated to the socket, @code{#f} is returned.
 @end defun
 
-@defun socket-input-port socket
+@defun socket-input-port socket &keyword (buffered? #t)
 Returns an input port associated with @var{socket}.
 The port can be used to receive information from the remote process
 connected to the socket.
+
+If the keyword argument @var{buffered?} is given and false,
+the input port is created as an unbuffered input port
+(i.e. it uses @code{read(2)}, instead of @code{fread(3)} family, to 
+read from the socket).
 @end defun
 
-@defun socket-output-port socket
+@defun socket-output-port socket &keyword (buffered? #t)
 Returns an output port associated with @var{socket}.
 The port can be used to send information to the remote process
 connected to the socket.
+
+If the keyword argument @var{buffered?} is given and false,
+the output port is created as an unbuffered output port
+(i.e. it uses @code{write(2)}, instead of @code{fwrite(3)} family, to 
+write to the socket).
 @end defun
 
 @defun socket-close socket
