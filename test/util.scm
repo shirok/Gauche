@@ -358,6 +358,15 @@
        '(6 ((a 0 0) (x 1 4) (b 2 5) (y 3 6) (c 4 7) (z 5 8)))
        (lcs-with-positions '(a x b y c z p d q) '(a b c a x b y c z)))
 
+(let1 z (iota 200)
+  (test* "lcs (long, same)" #t (equal? z (lcs z z)))
+  (test* "lcs (long, none)" '(199) (lcs (reverse z) z))
+  (test* "lcs (long)" '(0 1 2 3 4 5 6 7 8 9)
+         (lcs z (apply append (make-list 10 (iota 10)))))
+  (test* "lcs (long)" '(0 1 2 3 4 5 6 7 8 9)
+         (lcs z (apply append (make-list 10 (iota 10 9 -1)))))
+  )
+
 (test* "lcs edit-list"
        '(((- 0 a))
          ((+ 2 d))
@@ -384,7 +393,7 @@
        (lcs-edit-list '() '(a b c d)))
       
 (test* "lcs edit-list"
-       '(((- 0 a)) ((+ 1 a)))
+       '(((+ 0 b)) ((- 1 b)))
        (lcs-edit-list '(a b) '(b a)))
 
 (test* "lcs edit-list"
