@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.157 2002-02-15 08:41:10 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.158 2002-02-15 10:51:29 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -9196,7 +9196,7 @@ extention module of Mersenne Twister RNG soon.
 
 @defvar RAND_MAX
 Bound to a positive integer that @code{sys-random} may return.
-@end deftp
+@end defvar
 
 @c ======================================================================
 @node Object system, Library modules, Core library, Top
