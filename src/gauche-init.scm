@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.93 2002-10-26 09:02:44 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.94 2002-11-13 07:16:22 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -131,9 +131,9 @@
 (autoload "gauche/signal"
           (:macro with-signal-handlers))
 
-(autoload "gauche/port"
+(autoload gauche.portutil
           port->string port->list port->string-list port->sexp-list
-          port-fold port-fold-right port-for-each port-map
+          copy-port port-fold port-fold-right port-for-each port-map 
           port-position-prefix)
 
 (%autoload-scheme "gauche/numerical"

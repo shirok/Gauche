@@ -1,3 +1,10 @@
+2002-11-12  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/portutil.scm, src/gauche/extlib.stub : Renamed
+	  gauche/port.scm to gauche/portutil.scm.  Implemented copy-port
+	  in Scheme instead of C (actually, it became faster by
+	  locking the port during copying).
+
 2002-11-10  Shiro Kawai  <shiro@acm.org>
 
 	* ext/charconv/charconv.c (conv_input_filler): fixed a bug
