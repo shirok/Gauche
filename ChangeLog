@@ -1,3 +1,7 @@
+2004-10-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h: avoid using 'template' as an argument name.
+
 2004-10-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/condutil.scm : added.  defines miscellaneous srfi-35
