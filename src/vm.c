@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.30 2001-02-07 20:45:45 shiro Exp $
+ *  $Id: vm.c,v 1.31 2001-02-08 08:48:26 shiro Exp $
  */
 
 #include "gauche.h"
@@ -233,6 +233,19 @@ ScmVM *Scm_SetVM(ScmVM *vm)
 
 #define VM_ERR(errargs) do { SAVE_REGS(); Scm_Error errargs; } while (0)
 
+/* to take advantage of GCC's `computed goto' feature
+   (see gcc.info, "Labels as Values") */
+#ifdef __GNUC__
+#define SWITCH(val) goto *dispatch_table[val];
+#define CAT2(a, b)  a##b
+#define CASE(insn)  CAT2(LABEL_, insn) :
+#define DEFAULT     LABEL_DEFAULT :
+#else /* !__GNUC__ */
+#define SWITCH(val) switch (val)
+#define CASE(insn)  case insn :
+#define DEFAULT     default :
+#endif
+
 /* move the current chain of environments from the stack to the heap.
    if there're continuation frames which point to the moved env, those
    pointers are adjusted as well. */
@@ -320,8 +333,14 @@ static void run_loop()
 {
     DECL_REGS;
     ScmObj code;
-    ScmObj val1, val2, val3, valn; /* values registers */
-    int nvals;                  /* # of values */
+
+#ifdef __GNUC__
+    static void *dispatch_table[256] = {
+#define DEFINSN(insn, name, nargs)   && CAT2(LABEL_, insn),
+#include "gauche/vminsn.h"
+#undef DEFINSN
+    };
+#endif /* __GNUC__ */    
     
     for (;;) {
         /*VM_DUMP("");*/
@@ -369,40 +388,34 @@ static void run_loop()
         }
 
         /* VM instructions */
-        switch(SCM_VM_INSN_CODE(code)) {
+        SWITCH(SCM_VM_INSN_CODE(code)) {
 
-        case SCM_VM_PUSH:
-            {
+            CASE(SCM_VM_PUSH) {
                 PUSH_ARG(val0);
                 continue;
             }
-        case SCM_VM_POP:
-            {
+            CASE(SCM_VM_POP) {
                 POP_ARG(val0);
                 continue;
             }
-        case SCM_VM_DUP:
-            {
+            CASE(SCM_VM_DUP) {
                 ScmObj arg = *(sp-1);
                 PUSH_ARG(arg);
                 continue;
             }
-        case SCM_VM_PRE_CALL:
-            {
+            CASE(SCM_VM_PRE_CALL) {
                 ScmObj prep = SCM_CAR(pc), next = SCM_CDR(pc);
                 PUSH_CONT(next);
                 PUSH_ENV_HDR();
                 pc = prep;
                 continue;
             }
-        case SCM_VM_PRE_TAIL:
-            {
+            CASE(SCM_VM_PRE_TAIL) {
                 PUSH_ENV_HDR();
                 continue;
             }
-        case SCM_VM_TAIL_CALL:;
-        case SCM_VM_CALL:
-            {
+            CASE(SCM_VM_TAIL_CALL) ;
+            CASE(SCM_VM_CALL) {
                 int nargs = SCM_VM_INSN_ARG(code);
                 int tailp = (SCM_VM_INSN_CODE(code)==SCM_VM_TAIL_CALL);
                 int argcnt;
@@ -432,8 +445,7 @@ static void run_loop()
                 }
                 continue;
             }
-        case SCM_VM_GREF:
-            {
+            CASE(SCM_VM_GREF) {
                 ScmObj sym;
                 
                 VM_ASSERT(SCM_PAIRP(pc));
@@ -462,13 +474,12 @@ static void run_loop()
                 pc = SCM_CDR(pc);
                 continue;
             }
-        case SCM_VM_LREF:
-            {
+            CASE(SCM_VM_LREF) {
                 int dep = SCM_VM_INSN_ARG0(code);
                 int off = SCM_VM_INSN_ARG1(code);
                 ScmEnvFrame *e = env;
-                
-                while (dep-- > 0) {
+
+                for (; dep > 0; dep--) {
                     VM_ASSERT(e != NULL);
                     e = e->up;
                 }
@@ -477,8 +488,7 @@ static void run_loop()
                 val0 = e->data[off];
                 continue;
             }
-        case SCM_VM_TAILBIND:
-            {
+            CASE(SCM_VM_TAILBIND) {
                 int nlocals = SCM_VM_INSN_ARG(code);
                 ScmObj *to, *from;
                 ScmObj info;
@@ -499,8 +509,7 @@ static void run_loop()
                 sp = to + ENV_SIZE(env_size);
                 continue;
             }
-        case SCM_VM_LET:
-            {
+            CASE(SCM_VM_LET) {
                 int nlocals = SCM_VM_INSN_ARG(code), i;
                 ScmObj info;
 
@@ -509,14 +518,12 @@ static void run_loop()
                 PUSH_LOCAL_ENV(nlocals, info);
                 continue;
             }
-        case SCM_VM_POPENV:
-            {
+            CASE(SCM_VM_POPENV) {
                 VM_ASSERT(env != NULL);
                 POP_LOCAL_ENV();
                 continue;
             }
-        case SCM_VM_GSET:
-            {
+            CASE(SCM_VM_GSET) {
                 ScmObj location, val;
                 VM_ASSERT(SCM_PAIRP(pc));
                 
@@ -542,13 +549,12 @@ static void run_loop()
                 pc = SCM_CDR(pc);
                 continue;
             }
-        case SCM_VM_LSET:
-            {
+            CASE(SCM_VM_LSET) {
                 int dep = SCM_VM_INSN_ARG0(code);
                 int off = SCM_VM_INSN_ARG1(code);
                 ScmEnvFrame *e = env;
-                
-                while (dep-- > 0) {
+
+                for (; dep > 0; dep--) {
                     VM_ASSERT(e != NULL);
                     e = e->up;
                 }
@@ -557,12 +563,10 @@ static void run_loop()
                 e->data[off] = val0;
                 continue;
             }
-        case SCM_VM_NOP:
-            {
+            CASE(SCM_VM_NOP) {
                 continue;
             }
-        case SCM_VM_DEFINE:
-            {
+            CASE(SCM_VM_DEFINE) {
                 ScmObj var;
 
                 VM_ASSERT(SCM_PAIRP(pc));
@@ -573,14 +577,12 @@ static void run_loop()
                 val0 = var;
                 continue;
             }
-        case SCM_VM_IF:
-            {
+            CASE(SCM_VM_IF) {
                 if (SCM_FALSEP(val0)) { pc = SCM_CDR(pc); }
                 else                  { pc = SCM_CAR(pc); }
                 continue;
             }
-        case SCM_VM_LAMBDA:
-            {
+            CASE(SCM_VM_LAMBDA) {
                 ScmObj info, body;
                 
                 VM_ASSERT(SCM_PAIRP(pc));
@@ -603,29 +605,25 @@ static void run_loop()
             }
 
             /* Inlined procedures */
-        case SCM_VM_CONS:
-            {
+            CASE(SCM_VM_CONS) {
                 ScmObj ca;
                 POP_ARG(ca);
                 val0 = Scm_Cons(ca, val0);
                 continue;
             }
-        case SCM_VM_CAR:
-            {
+            CASE(SCM_VM_CAR) {
                 if (!SCM_PAIRP(val0))
                     VM_ERR(("pair required, but got %S", val0));
                 val0 = SCM_CAR(val0);
                 continue;
             }
-        case SCM_VM_CDR:
-            {
+            CASE(SCM_VM_CDR) {
                 if (!SCM_PAIRP(val0))
                     VM_ERR(("pair required, but got %S", val0));
                 val0 = SCM_CDR(val0);
                 continue;
             }
-        case SCM_VM_LIST:
-            {
+            CASE(SCM_VM_LIST) {
                 int nargs = SCM_VM_INSN_ARG(code);
                 ScmObj cp = SCM_NIL;
                 if (nargs > 0) {
@@ -639,8 +637,7 @@ static void run_loop()
                 val0 = cp;
                 continue;
             }
-        case SCM_VM_LIST_STAR:
-            {
+            CASE(SCM_VM_LIST_STAR) {
                 int nargs = SCM_VM_INSN_ARG(code);
                 ScmObj cp = SCM_NIL;
                 if (nargs > 0) {
@@ -654,39 +651,33 @@ static void run_loop()
                 val0 = cp;
                 continue;
             }
-        case SCM_VM_NOT:
-            {
+            CASE(SCM_VM_NOT) {
                 val0 = SCM_MAKE_BOOL(SCM_FALSEP(val0));
                 continue;
             }
-        case SCM_VM_NULLP:
-            {
+            CASE(SCM_VM_NULLP) {
                 val0 = SCM_MAKE_BOOL(SCM_NULLP(val0));
                 continue;
             }
-        case SCM_VM_EQ:
-            {
+            CASE(SCM_VM_EQ) {
                 ScmObj item;
                 POP_ARG(item);
                 val0 = SCM_MAKE_BOOL(item == val0);
                 continue;
             }
-        case SCM_VM_EQV:
-            {
+            CASE(SCM_VM_EQV) {
                 ScmObj item;
                 POP_ARG(item);
                 val0 = Scm_EqvP(item, val0);
                 continue;
             }
-        case SCM_VM_MEMV:
-            {
+            CASE(SCM_VM_MEMV) {
                 ScmObj item;
                 POP_ARG(item);
                 val0 = Scm_Memv(item, val0);
                 continue;
             }
-        case SCM_VM_APPEND:
-            {
+            CASE(SCM_VM_APPEND) {
                 int nargs = SCM_VM_INSN_ARG(code);
                 ScmObj cp = SCM_NIL, arg;
                 if (nargs > 0) {
@@ -701,13 +692,11 @@ static void run_loop()
                 val0 = cp;
                 continue;
             }
-        case SCM_VM_PROMISE: 
-            {
+            CASE(SCM_VM_PROMISE) {
                 val0 = Scm_MakePromise(val0);
                 continue;
             }
-        case SCM_VM_VEC:
-            {
+            CASE(SCM_VM_VEC) {
                 int nargs = SCM_VM_INSN_ARG(code), i;
                 ScmObj vec = Scm_MakeVector(nargs, SCM_UNDEFINED);
                 if (nargs > 0) {
@@ -721,8 +710,7 @@ static void run_loop()
                 val0 = vec;
                 continue;
             }
-        case SCM_VM_APP_VEC:
-            {
+            CASE(SCM_VM_APP_VEC) {
                 int nargs = SCM_VM_INSN_ARG(code);
                 ScmObj cp = SCM_NIL, arg;
                 if (nargs > 0) {
@@ -737,8 +725,7 @@ static void run_loop()
                 val0 = Scm_ListToVector(cp);
                 continue;
             }
-        case SCM_VM_VEC_LEN:
-            {
+            CASE(SCM_VM_VEC_LEN) {
                 int siz;
                 if (!SCM_VECTORP(val0))
                     VM_ERR(("vector expected, but got %S\n", val0));
@@ -746,8 +733,7 @@ static void run_loop()
                 val0 = SCM_MAKE_INT(siz);
                 continue;
             }
-        case SCM_VM_VEC_REF:
-            {
+            CASE(SCM_VM_VEC_REF) {
                 ScmObj vec;
                 int k;
                 POP_ARG(vec);
@@ -761,8 +747,7 @@ static void run_loop()
                 val0 = SCM_VECTOR_ELEMENT(vec, k);
                 continue;
             }
-        case SCM_VM_VEC_SET:
-            {
+            CASE(SCM_VM_VEC_SET) {
                 ScmObj vec, ind;
                 int k;
                 POP_ARG(ind);
@@ -779,57 +764,51 @@ static void run_loop()
                 continue;
 
             }
-        case SCM_VM_NUMEQ2:
-            {
+            CASE(SCM_VM_NUMEQ2) {
                 ScmObj arg;
                 POP_ARG(arg);
                 val0 = Scm_NumEq(arg, val0, SCM_NIL);
                 continue;
             }
-        case SCM_VM_NUMLT2:
-            {
+            CASE(SCM_VM_NUMLT2) {
                 ScmObj arg;
                 POP_ARG(arg);
                 val0 = Scm_NumLt(arg, val0, SCM_NIL);
                 continue;
             }
-        case SCM_VM_NUMLE2:
-            {
+            CASE(SCM_VM_NUMLE2) {
                 ScmObj arg;
                 POP_ARG(arg);
                 val0 = Scm_NumLe(arg, val0, SCM_NIL);
                 continue;
             }
-        case SCM_VM_NUMGT2:
-            {
+            CASE(SCM_VM_NUMGT2) {
                 ScmObj arg;
                 POP_ARG(arg);
                 val0 = Scm_NumGt(arg, val0, SCM_NIL);
                 continue;
             }
-        case SCM_VM_NUMGE2:
-            {
+            CASE(SCM_VM_NUMGE2) {
                 ScmObj arg;
                 POP_ARG(arg);
                 val0 = Scm_NumGe(arg, val0, SCM_NIL);
                 continue;
             }
-        case SCM_VM_NUMADD2:
-            {
+            CASE(SCM_VM_NUMADD2) {
                 ScmObj arg;
                 POP_ARG(arg);
                 val0 = Scm_Add(SCM_LIST2(arg, val0));
                 continue;
             }
-        case SCM_VM_NUMSUB2:
-            {
+            CASE(SCM_VM_NUMSUB2) {
                 ScmObj arg;
                 POP_ARG(arg);
                 val0 = Scm_Subtract(arg, val0, SCM_NIL);
                 continue;
             }
-        default:
-            Scm_Panic("Illegal vm instruction: %08x",  SCM_VM_INSN_CODE(code));
+            DEFAULT
+                Scm_Panic("Illegal vm instruction: %08x",
+                          SCM_VM_INSN_CODE(code));
         }
     }
 }
