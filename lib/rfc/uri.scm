@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: uri.scm,v 1.4 2001-07-08 22:09:30 shirok Exp $
+;;;  $Id: uri.scm,v 1.5 2001-07-09 10:38:20 shirok Exp $
 ;;;
 
 ;; Main reference:
@@ -30,6 +30,7 @@
 (define-module rfc.uri
   (use srfi-13)
   (use gauche.regexp)
+  (use gauche.let-opt)
   )
 (select-module rfc.uri)
 
@@ -74,6 +75,9 @@
 ;;==============================================================
 ;; Encoding & decoding
 ;;
+;;  NB. Which character to encode, and when to encode/decode depend on
+;;  the semantics of specific URI scheme.
+;;  These procedures provides basic building components.
 
 (define (uri-decode)
   (define (hex c)
@@ -107,5 +111,29 @@
 
 (define (uri-decode-string string)
   (with-string-io string uri-decode))
+
+;; Default set of characters to be escaped
+;; See 2.4.3 "Excluded US-ASCII characters" of RFC 2396
+(define *uri-special-char-set* #[\x00-\x20<>#%\"{}|\\^\`\[\]])
+
+(define (uri-encode . args)
+  (let-optionals* args ((echars *uri-special-char-set*))
+    (let loop ((c (read-char)))
+      (cond ((eof-object? c))
+            ((char-set-contains? echars c)
+             (format #t "%~2,'0x" (char->integer c))
+             (loop (read-char)))
+            ((char>=? c #\del)
+             (let loop1 ((i (char->integer c)))
+               (if (< i #x100)
+                   (format #t "%~2,'0x" i)
+                   (begin
+                     (loop1 (quotient i 16))
+                     (format #t "%~2,'0x" (modulo i 16)))))
+             (loop (read-char)))
+            (else (write-char c) (loop (read-char)))))))
+
+(define (uri-encode-string string . args)
+  (with-string-io string (lambda () (apply uri-encode args))))
 
 (provide "rfc/uri")
