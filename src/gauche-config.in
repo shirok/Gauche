@@ -1,0 +1,41 @@
+#! /bin/sh
+
+#
+# Retrieve configuration parameters
+#
+# $Id: gauche-config.in,v 1.1 2001-02-03 09:17:58 shiro Exp $
+#
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+gauche_basedir=@libdir@/gauche/@GAUCHE_VERSION@/
+gauche_incdir="-I @includedir@"
+gauche_libdir="-L @libdir@"
+gauche_version=@GAUCHE_VERSION@
+gauche_libs="@LIBS@"
+
+usage () {
+    echo "Usage: gauche-config [-ILlVP]"
+    echo "  -I   Shows include paths required compile programs using gauche"
+    echo "  -L   Shows library paths required to link programs using gauche"
+    echo "  -B   Shows gauche library base directory"
+    echo "  -l   Shows libraries required link programs using gauche"
+    echo "  -V   Shows the current gauche version"
+    echo "  -P   Shows the directory the auxiliary programs are installed"
+    exit 1
+}
+
+if [ $# != 1 ]; then usage; fi;
+
+case $1 in
+  -V) echo $gauche_version;;
+  -I) echo $gauche_incdir;;
+  -L) echo $gauche_libdir;;
+  -B) echo $gauche_basedir;;
+  -l) echo $gauche_libs;;
+  *)  usage;;
+esac
+
+# Local variables:
+# mode: shell-script
+# end:
