@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.41 2001-03-19 10:53:09 shiro Exp $
+ *  $Id: compile.c,v 1.42 2001-03-24 08:12:43 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1377,6 +1377,7 @@ static ScmObj compile_qq_list(ScmObj form, ScmObj env, int level)
             if (!VALID_QUOTE_SYNTAX_P(car))
                 Scm_Error("badly formed quasiquote: %S\n", form);
             if (level == 0) {
+                if (cp != form) ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
                 ADDCODE1(SCM_VM_INSN1(SCM_VM_LIST, len));
                 ADDCODE1(SCM_VM_INSN(SCM_VM_PUSH));
                 len = 0;
