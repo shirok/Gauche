@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.25 2002-04-09 10:27:44 shirok Exp $
+ *  $Id: write.c,v 1.26 2002-04-18 08:14:53 shirok Exp $
  */
 
 #include <stdio.h>
@@ -63,7 +63,7 @@ static inline int outlen(ScmPort *out)
 {
     SCM_ASSERT(SCM_PORT_TYPE(out) == SCM_PORT_OSTR);
     if (out->src.ostr.length < 0) {
-        return (int)(out->src.ostr.current - out->src.ostr.start);
+        return Scm_DStringSize(&out->src.ostr);
     } else {
         return out->src.ostr.length;
     }

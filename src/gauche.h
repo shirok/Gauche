@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.233 2002-04-15 22:04:59 shirok Exp $
+ *  $Id: gauche.h,v 1.234 2002-04-18 08:14:52 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -277,7 +277,6 @@ typedef struct ScmHeaderRec {
 
 #define SCM_MALLOC(size)          GC_MALLOC(size)
 #define SCM_MALLOC_ATOMIC(size)   GC_MALLOC_ATOMIC(size)
-#define SCM_REALLOC(ptr, size)    GC_REALLOC(ptr, size)
 
 #define SCM_NEW(type)         ((type*)(SCM_MALLOC(sizeof(type))))
 #define SCM_NEW2(type, size)  ((type)(SCM_MALLOC(size)))
@@ -859,15 +858,34 @@ SCM_EXTERN ScmObj Scm_CStringArrayToList(char **array, int size);
         (len), (siz), (str)					\
     }
 
-/* Auxiliary structure to construct a string.  This is not an ScmObj. */
+/* Auxiliary structure to construct a string of unknown length.
+   This is not an ScmObj.   See string.c for details. */
+#define SCM_DSTRING_INIT_CHUNK_SIZE 32
+
+typedef struct ScmDStringChunkRec {
+    int bytes;                  /* actual bytes stored in this chunk.
+                                   Note that this is set when the next
+                                   chunk is allocated. */
+    char data[SCM_DSTRING_INIT_CHUNK_SIZE]; /* variable length, indeed. */
+} ScmDStringChunk;
+
+typedef struct ScmDStringChainRec {
+    struct ScmDStringChainRec *next;
+    ScmDStringChunk *chunk;
+} ScmDStringChain;
+
 struct ScmDStringRec {
-    char *start;
-    char *end;
-    char *current;
-    int length;
+    ScmDStringChunk init;       /* initial chunk */
+    ScmDStringChain *anchor;    /* chain of extra chunks */
+    ScmDStringChain *tail;      /* current chunk */
+    char *current;              /* current ptr */
+    char *end;                  /* end of current chunk */
+    int lastChunkSize;          /* size of the last chunk */
+    int length;                 /* # of chars written */
 };
 
 SCM_EXTERN void        Scm_DStringInit(ScmDString *dstr);
+SCM_EXTERN int         Scm_DStringSize(ScmDString *dstr);
 SCM_EXTERN ScmObj      Scm_DStringGet(ScmDString *dstr);
 SCM_EXTERN const char *Scm_DStringGetz(ScmDString *dstr);
 SCM_EXTERN void        Scm_DStringPutz(ScmDString *dstr, const char *str,
@@ -876,8 +894,7 @@ SCM_EXTERN void        Scm_DStringAdd(ScmDString *dstr, ScmString *str);
 SCM_EXTERN void        Scm_DStringPutb(ScmDString *dstr, char byte);
 SCM_EXTERN void        Scm_DStringPutc(ScmDString *dstr, ScmChar ch);
 
-#define SCM_DSTRING_START(dstr)   ((dstr)->start)
-#define SCM_DSTRING_SIZE(dstr)    ((dstr)->end - (dstr)->start)
+#define SCM_DSTRING_SIZE(dstr)    Scm_DStringSize(dstr);
 
 #define SCM_DSTRING_PUTB(dstr, byte)                                     \
     do {                                                                 \
@@ -891,21 +908,11 @@ SCM_EXTERN void        Scm_DStringPutc(ScmDString *dstr, ScmChar ch);
         ScmChar ch_DSTR = (ch);                         \
         ScmDString *d_DSTR = (dstr);                    \
         int siz_DSTR = SCM_CHAR_NBYTES(ch_DSTR);        \
-        if (d_DSTR->current + siz_DSTR >= d_DSTR->end)  \
+        if (d_DSTR->current + siz_DSTR > d_DSTR->end)   \
             Scm__DStringRealloc(d_DSTR, siz_DSTR);      \
         SCM_CHAR_PUT(d_DSTR->current, ch_DSTR);         \
         d_DSTR->current += siz_DSTR;                    \
         if (d_DSTR->length >= 0) d_DSTR->length++;      \
-    } while (0)
-
-#define SCM_DSTRING_PUTS(dstr, str, size, len)          \
-    do {                                                \
-        if ((dstr)->current + (size) >= (dstr)->end)    \
-            Scm__DStringRealloc(dstr, size);            \
-        memcpy((dstr)->current, (str), (size));         \
-        if ((len) >= 0 && (dstr)->length >= 0)          \
-            (dstr)->length += (len);                    \
-        else (dstr)->length = -1;                       \
     } while (0)
 
 SCM_EXTERN void Scm__DStringRealloc(ScmDString *dstr, int min_incr);

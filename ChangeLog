@@ -1,3 +1,9 @@
+2002-04-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/string.c, src/gauche.h: a snapshot of improving dynamic string
+	  handling by avoiding realloc.   NB: this version contains a nasty
+	  memory bug.
+
 2002-04-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c : adds "." and "../lib" to the *load-path* if gosh is

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.58 2002-04-15 22:04:59 shirok Exp $
+ *  $Id: string.c,v 1.59 2002-04-18 08:14:53 shirok Exp $
  */
 
 #include <stdio.h>
@@ -21,6 +21,8 @@
 #include <string.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+
+void Scm_DStringDump(FILE *out, ScmDString *dstr);
 
 static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *);
 SCM_DEFINE_BUILTIN_CLASS(Scm_StringClass, string_print, NULL, NULL, NULL,
@@ -1139,57 +1141,140 @@ ScmObj Scm_StringPointerSubstring(ScmStringPointer *sp, int afterp)
  *
  */
 
-#define DSTRING_CHUNK_SIZE 16
-#define DSTRING_CHUNK_ROUND_UP(siz) \
-    ((siz+DSTRING_CHUNK_SIZE-1)&~(DSTRING_CHUNK_SIZE-1))
+/* I used to use realloc() to grow the storage; now I avoid it, for
+   Boehm GC's realloc almost always copies the original content and
+   we don't get any benefit.
+   The growing string is kept in the chained chunks.  The size of
+   chunk getting bigger as the string grows, until a certain threshold.
+   The memory for actual chunks and the chain is allocated separately,
+   in order to use SCM_NEW_ATOMIC.
+ */
+
+/* maximum chunk size */
+#define DSTRING_MAX_CHUNK_SIZE  8180
 
 void Scm_DStringInit(ScmDString *dstr)
 {
-    dstr->start = SCM_NEW_ATOMIC2(char *, DSTRING_CHUNK_SIZE);
-    dstr->end = dstr->start + DSTRING_CHUNK_SIZE;
-    dstr->current = dstr->start;
+    dstr->init.bytes = 0;
+    dstr->anchor = dstr->tail = NULL;
+    dstr->current = dstr->init.data;
+    dstr->end = dstr->current + SCM_DSTRING_INIT_CHUNK_SIZE;
+    dstr->lastChunkSize = SCM_DSTRING_INIT_CHUNK_SIZE;
     dstr->length = 0;
+}
+
+inline int Scm_DStringSize(ScmDString *dstr)
+{
+    ScmDStringChain *chain;
+    int size;
+    if (dstr->tail) {
+        size = dstr->init.bytes;
+        dstr->tail->chunk->bytes = (int)(dstr->current - dstr->tail->chunk->data);
+        for (chain = dstr->anchor; chain; chain = chain->next) {
+            size += chain->chunk->bytes;
+        }
+    } else {
+        size = (int)(dstr->current - dstr->init.data);
+    }
+    return size;
 }
 
 void Scm__DStringRealloc(ScmDString *dstr, int minincr)
 {
     char *p;
-    int newsize = dstr->end - dstr->start + DSTRING_CHUNK_ROUND_UP(minincr);
-    int cursize = dstr->current - dstr->start;
+    ScmDStringChunk *newchunk;
+    ScmDStringChain *newchain;
+    int newsize;
 
-    p = (char *)SCM_REALLOC(dstr->start, newsize);
-    dstr->start = p;
-    dstr->end = p + newsize;
-    dstr->current = p + cursize;
+    /* sets the byte count of the last chunk */
+    if (dstr->tail) {
+        dstr->tail->chunk->bytes = (int)(dstr->current - dstr->tail->chunk->data);
+    } else {
+        dstr->init.bytes = (int)(dstr->current - dstr->init.data);
+    }
+
+    /* determine the size of the new chunk.  the increase factor 3 is
+       somewhat arbitrary, determined by rudimental benchmarking. */
+    newsize = dstr->lastChunkSize * 3;
+    if (newsize > DSTRING_MAX_CHUNK_SIZE) {
+        newsize = DSTRING_MAX_CHUNK_SIZE;
+    }
+    if (newsize < minincr) {
+        newsize = minincr;
+    }
+
+    newchunk = SCM_NEW_ATOMIC2(ScmDStringChunk*,
+                               sizeof(ScmDStringChunk)+newsize-SCM_DSTRING_INIT_CHUNK_SIZE);
+    newchunk->bytes = 0;
+    
+    newchain = SCM_NEW(ScmDStringChain);
+    
+    newchain->next = NULL;
+    newchain->chunk = newchunk;
+    if (dstr->tail) {
+        dstr->tail->next = newchain;
+        dstr->tail = newchain;
+    } else {
+        dstr->anchor = dstr->tail = newchain;
+    }
+    dstr->current = newchunk->data;
+    dstr->end = newchunk->data + newsize;
+    dstr->lastChunkSize = newsize;
 }
 
-/* We don't need to copy the string, thanks to GC.
- * If the dynamic string is not reused, unused part of allocated buffer
- * (between dstr->current and dstr->end) will remain unused, but it
- * won't matter since it is small (< DSTRING_CHUNK_SIZE) and such unused
- * hole happens anyway in memory allocation level.
- */
+/* Retrieve accumulated string. */
+static const char *dstring_getz(ScmDString *dstr, int *plen, int *psiz)
+{
+    int size, len;
+    char *buf;
+    if (dstr->anchor == NULL) {
+        /* we only have one chunk */
+        size = (int)(dstr->current - dstr->init.data);
+        len = dstr->length;
+        buf = SCM_NEW_ATOMIC2(char*, size+1);
+        memcpy(buf, dstr->init.data, size);
+        buf[size] = '\0';
+    } else {
+        ScmDStringChain *chain = dstr->anchor;
+        char *bptr;
+        
+        size = Scm_DStringSize(dstr);
+        len = dstr->length;
+        bptr = buf = SCM_NEW_ATOMIC2(char*, size+1);
+
+        memcpy(bptr, dstr->init.data, dstr->init.bytes);
+        bptr += dstr->init.bytes;
+        for (; chain; chain = chain->next) {
+            memcpy(bptr, chain->chunk->data, chain->chunk->bytes);
+            bptr += chain->chunk->bytes;
+        }
+        *bptr = '\0';
+    }
+    if (len < 0) len = count_length(buf, size);
+    *plen = len;
+    *psiz = size;
+    return buf;
+}
+
 ScmObj Scm_DStringGet(ScmDString *dstr)
 {
-    int len = dstr->length;
-    int size = dstr->current - dstr->start;
-    
-    if (len < 0) len = count_length(dstr->start, size);
-    return SCM_OBJ(make_str(len, size, dstr->start));
+    int len, size;
+    const char *str = dstring_getz(dstr, &len, &size);
+    return SCM_OBJ(make_str(len, size, str));
 }
 
 /* For conveninence.   Note that dstr may already contain NUL byte in it,
    in that case you'll get chopped string. */
 const char *Scm_DStringGetz(ScmDString *dstr)
 {
-    SCM_DSTRING_PUTB(dstr, '\0');
-    return dstr->start;
+    int len, size;
+    return dstring_getz(dstr, &len, &size);
 }
 
 void Scm_DStringPutz(ScmDString *dstr, const char *str, int size)
 {
     if (size < 0) size = strlen(str);
-    while (dstr->current + size >= dstr->end) {
+    if (dstr->current + size > dstr->end) {
         Scm__DStringRealloc(dstr, size);
     }
     memcpy(dstr->current, str, size);
@@ -1205,7 +1290,7 @@ void Scm_DStringAdd(ScmDString *dstr, ScmString *str)
 {
     int size = SCM_STRING_SIZE(str);
     if (size == 0) return;
-    if (dstr->current + size >= dstr->end) {
+    if (dstr->current + size > dstr->end) {
         Scm__DStringRealloc(dstr, size);
     }
     memcpy(dstr->current, SCM_STRING_START(str), size);
@@ -1231,7 +1316,23 @@ void Scm_DStringPutc(ScmDString *ds, ScmChar ch)
 /* for debug */
 void Scm_DStringDump(FILE *out, ScmDString *dstr)
 {
-    fprintf(out, "DSTR %p-%p (%p)  len=%d\n",
-            dstr->start, dstr->end, dstr->current, dstr->length);
+    fprintf(out, "DString %p\n", dstr);
+    if (dstr->anchor) {
+        ScmDStringChain *chain; int i;
+        fprintf(out, "  chunk0[%3d] = \"", dstr->init.bytes);
+        fwrite(dstr->init.data, 1, dstr->init.bytes, out);
+        fprintf(out, "\"\n");
+        for (i=1, chain = dstr->anchor; chain; chain = chain->next, i++) {
+            int size = (chain->next? chain->chunk->bytes : (int)(dstr->current - dstr->tail->chunk->data));
+            fprintf(out, "  chunk%d[%3d] = \"", i, size);
+            fwrite(chain->chunk->data, 1, size, out);
+            fprintf(out, "\"\n");
+        }
+    } else {
+        int size = (int)(dstr->current - dstr->init.data);
+        fprintf(out, "  chunk0[%3d] = \"", size);
+        fwrite(dstr->init.data, 1, size, out);
+        fprintf(out, "\"\n");
+    }
 }
 
