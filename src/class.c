@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.38 2001-04-01 09:49:42 shiro Exp $
+ *  $Id: class.c,v 1.39 2001-04-01 10:07:35 shiro Exp $
  */
 
 #include "gauche.h"
@@ -78,6 +78,7 @@ SCM_DEFINE_GENERIC(Scm_GenericComputeCPL, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeSlots, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeGetNSet, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericComputeApplicableMethods, Scm_NoNextMethod, NULL);
+SCM_DEFINE_GENERIC(Scm_GenericMethodMoreSpecificP, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotMissing, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotUnbound, Scm_NoNextMethod, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericSlotBoundUsingClassP, Scm_NoNextMethod, NULL);
@@ -1155,14 +1156,9 @@ static SCM_DEFINE_METHOD(compute_applicable_methods_rec,
                          compute_applicable_methods_SPEC,
                          compute_applicable_methods, NULL);
 
-
-/* sort-methods
- *  This is a naive implementation just to make things work.
- * TODO: can't we carry around the method list in array
- * instead of list, at least internally?
- */
+/* method-more-specific? */
 static inline int method_more_specific(ScmMethod *x, ScmMethod *y,
-                                       ScmObj *args, int nargs)
+                                       ScmClass **targs, int nargs)
 {
     ScmClass **xs = x->specializers;
     ScmClass **ys = y->specializers;
@@ -1171,7 +1167,7 @@ static inline int method_more_specific(ScmMethod *x, ScmMethod *y,
     SCM_ASSERT(SCM_PROCEDURE_REQUIRED(x) == SCM_PROCEDURE_REQUIRED(y));
     for (i=0; i < SCM_PROCEDURE_REQUIRED(x); i++) {
         if (xs[i] != ys[i]) {
-            ac = Scm_ClassOf(args[i]);
+            ac = targs[i];
             if (xs[i] == ac) return TRUE;
             if (ys[i] == ac) return FALSE;
             for (acpl = ac->cpa; *acpl; acpl++) {
@@ -1186,16 +1182,51 @@ static inline int method_more_specific(ScmMethod *x, ScmMethod *y,
     else return FALSE;
 }
 
+static ScmObj method_more_specific_p(ScmNextMethod *nm, ScmObj *args,
+                                     int nargs, void *data)
+{
+    ScmMethod *x = SCM_METHOD(args[0]);
+    ScmMethod *y = SCM_METHOD(args[1]);
+    ScmObj targlist = args[2], tp;
+    ScmClass **targs;
+    int ntargs = Scm_Length(targlist), i;
+    if (ntargs < 0) Scm_Error("bad targ list: %S", targlist);
+    targs = SCM_NEW2(ScmClass**, sizeof(ScmObj)*ntargs);
+    i = 0;
+    SCM_FOR_EACH(tp, targlist) {
+        if (!Scm_TypeP(SCM_CAR(tp), SCM_CLASS_CLASS))
+            Scm_Error("bad class object in type list: %S", SCM_CAR(tp));
+        targs[i++] = SCM_CLASS(SCM_CAR(tp));
+    }
+    return SCM_MAKE_BOOL(method_more_specific(x, y, targs, ntargs));
+}
+static ScmClass *method_more_specific_p_SPEC[] = {
+    SCM_CLASS_METHOD, SCM_CLASS_METHOD, SCM_CLASS_LIST
+};
+static SCM_DEFINE_METHOD(method_more_specific_p_rec,
+                         &Scm_GenericMethodMoreSpecificP,
+                         3, 0,
+                         method_more_specific_p_SPEC,
+                         method_more_specific_p, NULL);
+
+/* sort-methods
+ *  This is a naive implementation just to make things work.
+ * TODO: can't we carry around the method list in array
+ * instead of list, at least internally?
+ */
 #define STATIC_SORT_ARRAY_SIZE  32
 
 ScmObj Scm_SortMethods(ScmObj methods, ScmObj *args, int nargs)
 {
     ScmObj starray[STATIC_SORT_ARRAY_SIZE], *array = starray;
+    ScmClass *sttargs[STATIC_SORT_ARRAY_SIZE], **targs = sttargs;
     int cnt = 0, len = Scm_Length(methods), step, i, j;
     ScmObj mp;
 
     if (len >= STATIC_SORT_ARRAY_SIZE)
         array = SCM_NEW2(ScmObj*, sizeof(ScmObj)*len);
+    if (nargs >= STATIC_SORT_ARRAY_SIZE)
+        targs = SCM_NEW2(ScmClass**, sizeof(ScmObj)*nargs);
 
     SCM_FOR_EACH(mp, methods) {
         if (!Scm_TypeP(SCM_CAR(mp), SCM_CLASS_METHOD))
@@ -1203,13 +1234,14 @@ ScmObj Scm_SortMethods(ScmObj methods, ScmObj *args, int nargs)
         array[cnt] = SCM_CAR(mp);
         cnt++;
     }
+    for (i=0; i<nargs; i++) targs[i] = Scm_ClassOf(args[i]);
 
     for (step = len/2; step > 0; step /= 2) {
         for (i=step; i<len; i++) {
             for (j=i-step; j >= 0; j -= step) {
                 if (method_more_specific(SCM_METHOD(array[j]),
                                          SCM_METHOD(array[j+step]),
-                                         args, nargs)) {
+                                         targs, nargs)) {
                     break;
                 } else {
                     ScmObj tmp = array[j+step];
@@ -1644,6 +1676,7 @@ void Scm__InitClass(void)
     GINIT(&Scm_GenericComputeSlots, "compute-slots");
     GINIT(&Scm_GenericComputeGetNSet, "compute-get-n-set");
     GINIT(&Scm_GenericComputeApplicableMethods, "compute-applicable-methods");
+    GINIT(&Scm_GenericMethodMoreSpecificP, "method-more-specific?");
     GINIT(&Scm_GenericSlotMissing, "slot-missing");
     GINIT(&Scm_GenericSlotUnbound, "slot-unbound");
     GINIT(&Scm_GenericSlotBoundUsingClassP, "slot-bound-using-class?");
@@ -1656,4 +1689,5 @@ void Scm__InitClass(void)
     Scm_InitBuiltinMethod(&generic_addmethod_rec);
     Scm_InitBuiltinMethod(&method_initialize_rec);
     Scm_InitBuiltinMethod(&compute_applicable_methods_rec);
+    Scm_InitBuiltinMethod(&method_more_specific_p_rec);
 }
