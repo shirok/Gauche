@@ -5,6 +5,8 @@
 (use gauche.test)
 (use srfi-1)
 
+(test-start "dbm")
+
 (load "dbm")
 (import dbm)
 
