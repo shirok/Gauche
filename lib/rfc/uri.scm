@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: uri.scm,v 1.5 2001-07-09 10:38:20 shirok Exp $
+;;;  $Id: uri.scm,v 1.6 2001-08-29 11:28:31 shirok Exp $
 ;;;
 
 ;; Main reference:
@@ -31,6 +31,11 @@
   (use srfi-13)
   (use gauche.regexp)
   (use gauche.let-opt)
+  (export uri-scheme&specific uri-decompose-hierarchical
+          uri-decompose-authority
+          uri-decode uri-decode-string
+          uri-encode uri-encode-string
+          )
   )
 (select-module rfc.uri)
 
