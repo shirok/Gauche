@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.341 2003-01-15 05:08:47 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.342 2003-01-15 07:15:55 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -6014,33 +6014,61 @@ Returns a symbol whose name is a string @var{string}.
 
 @deftp {Builtin Class} <keyword>
 @clindex keyword
+@c EN
 A keyword is a sort of a special symbol that is automatically quoted.
 It is extensively used in pass-by-name arguments (keyword arguments),
-and keyword-value list
+and keyword-value list.
 Unlike CommonLisp, keywords and symbols are distinct types.
 
 See also @code{let-keywords*} macro (@ref{Optional argument parsing})
 for keyword argument processing.
+@c JP
+キーワードは特別なシンボルの一種で、自動的にクォートされます。
+名前で渡す引数(キーワード引数)や、キーワード-値のリストで広く使われて
+います。
+CommonLisp とは異なり、キーワードとシンボルは明確に区別される型です。
+
+キーワード引数の処理については、@code{let-keywords*} マクロ
+(@ref{Optional argument parsing}) を参照して下さい。
+@c COMMON
 @end  deftp
 
 @deftp {Reader syntax} @code{:@var{name}}
+@c EN
 Read to a keyword whose name is @var{name}.
 (Note that the preceding ':' is not a part of the keyword's name.)
+@c JP
+名前が @var{name} であるキーワードと読まれます。
+(先行する ':' は、キーワードの名前の一部ではないことに注意してください。)
+@c COMMON
 @end deftp
 
 @defun keyword? obj
-Returns @code{#t} iff @var{obj} is a keyword.
+@c EN
+Returns @code{#t} if @var{obj} is a keyword.
+@c JP
+@var{obj} がキーワードであれば、@code{#t} を返します。
+@c COMMON
 @end defun
 
 @defun make-keyword name
+@c EN
 Returns a keyword whose name is @var{name}.
+@c JP
+名前が @var{name} であるキーワードを返します。
+@c COMMON
 @end defun
 
 @defun keyword->string keyword
+@c EN
 Returns the name of the keyword @var{keyword}.
+@c JP
+キーワード @var{keyword} の名前を返します。
+@c COMMON
 @end defun
 
 @defun get-keyword key list &optional fallback
+@c EN
 A useful procedure to extract a value from key-value list.
 A key-value list @var{list} must contains even number of elements;
 the first, third, fifth @dots{} elements are regarded as keys,
@@ -6060,11 +6088,38 @@ need not be a keyword---it can be any Scheme object.  Key comparison
 is done by @code{eq?}.
 
 This procedure is taken from STk.
+@c JP
+キー-値のリストから値を取り出すのに便利な手続きです。
+キー-値のリスト @var{list} は偶数個の要素を持たなければなりません。
+1つ目、3つ目、5つ目、@dots{} の要素はキーとして扱われ、
+2つ目、4つ目、6つ目、@dots{} の要素は、その前の要素をキーとした値と
+なります。
+
+個の手続きは、キーの集合から @var{key} を探して、それが見つかれば、
+対応する値を返します。
+2つ以上のキーにマッチしたら、最左のものとなります。
+マッチするキーがない場合、@var{fallback} が与えられていればそれを
+返し、さもなければエラーを通知します。
+
+@var{list} が正しい偶数個の要素を持つリストでない場合は、エラーに
+なります。
+
+キーワード-値リストの `キーワード' と、@var{key} 引数は、実際には
+キーワードである必要はありません。いかなる Scheme オブジェクトで
+あっても良いです。キーの比較は、@code{eq?} によって行われます。
+
+この手続きは、STk から導入しました。
+@c COMMON
 @end defun
 
 @defmac get-keyword* key list &optional fallback
+@c EN
 Like @code{get-keyword}, but @var{fallback} is evaluated only
 if @var{list} does not have @var{key}.
+@c JP
+@code{get-keyword} と同様ですが、@var{list} が @var{key} を
+含まない場合にのみ @var{fallback} が評価されることだけが違います。
+@c COMMON
 @end defmac
 
 @c ----------------------------------------------------------------------
