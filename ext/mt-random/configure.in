@@ -1,7 +1,7 @@
 dnl
 dnl Configuring ext/mt-random
 dnl
-dnl $Id: configure.in,v 1.1 2002-05-10 10:57:48 shirok Exp $
+dnl $Id: configure.in,v 1.2 2002-05-27 12:22:25 shirok Exp $
 AC_INIT(mt-random.c)
 AC_GAUCHE_INIT_EXT
 
@@ -21,5 +21,5 @@ AC_PROG_INSTALL
 AC_GAUCHE_FIX_LIBS
 
 # Output
-AC_GAUCHE_EXT_FIXUP(mt-random)
+AC_GAUCHE_EXT_FIXUP(mt-random, mtrandom)
 AC_OUTPUT(Makefile)

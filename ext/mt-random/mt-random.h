@@ -2,7 +2,7 @@
  * mt-random.h - implements MT19937 random number generation algorithm
  * This code is based on Makoto Matsumoto & Takuji Nishimura's mt18837ar.c
  * See mt-random.c for details.
- * $Id: mt-random.h,v 1.3 2002-05-12 02:21:48 shirok Exp $
+ * $Id: mt-random.h,v 1.4 2002-05-27 12:22:25 shirok Exp $
  * The original copyright notice follows.
  */
 /*
@@ -50,6 +50,7 @@
 
 #include "gauche.h"
 #include "gauche/uvector.h"
+#include "gauche/extend.h"
 
 #define N 624
 
