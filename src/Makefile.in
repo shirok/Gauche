@@ -1,4 +1,3 @@
-SCM = snow
 CC = @CC@
 LIBS = @LIBS@
 DEFS = @DEFS@
@@ -54,7 +53,7 @@ TESTFILES = ../test/primsyn.scm \
 .SUFFIXES: .stub
 
 .stub.c:
-	$(SCM) genstub $<
+	gosh genstub $<
 
 HDRS = gauche.h gauche/arch.h
 
