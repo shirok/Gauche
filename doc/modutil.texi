@@ -3604,15 +3604,8 @@ is parsed from @var{port}:
 @c COMMON
 
 @example
-(handler @var{part-info} @var{line-reader})
+(handler @var{part-info} @var{xport})
 @end example
-
-@c EN
-When @var{handler} is called, @var{port} points to the beginning of
-the message body of the part.
-@c JP
-@var{handler}が呼ばれると、@var{port}はそのパートのメッセージボディの
-最初を指します。
 
 @c EN
 @var{Part-Info} is a @code{<mime-part>} structure described below
@@ -3622,31 +3615,34 @@ that encapsulates the information of this part of the message.
 情報をカプセル化した@code{<mime-part>}ストラクチャです。
 
 @c EN
-@var{Line-reader} is a procedure that takes an input port, and
-reads a line at a time.   It's like @code{read-line}, except that
-it returns EOF when it reaches MIME part boundary.  So, @var{handler}
-can read from @var{port} using @var{line-reader} until it gets EOF,
-without worrying about MIME part boundary.
-(Note: make sure you read from @var{line-reader} and not directly
-from @var{port}, or you'll miss MIME boundary).
+@var{Xport} is an input port, initially points to the beginning
+of the body of message.  The handler can read from the port
+as if it is reading from the original @var{port}.  However,
+@var{xport} recognizes MIME boundary internally, and returns EOF
+when it reaches the end of the part.
+(Do not read from the original @var{port} directly, or it will mess up
+the internal state of @var{vport}).
 @c JP
-@var{line-reader}は、入力ポートを引数に取り、一度に一行を読み込む
-手続きです。これは@code{read-line}に似ていますが、MIMEパート
-バウンダリを見つけるとEOFを返します。したがって、@var{handler}は
-MIMEパートバウンダリについて心配せずに、@var{port}から@var{line-reader}
-を使って読み込むことができます。
-(注意: @var{port}から直接読み込まずに、必ず@var{line-reader}から
-読み込むようにして下さい。そうしないとMIMEバウンダリを補足できません。)
+@var{xport}は入力ポートで、最初はメッセージボディの先頭を指しています。
+ハンドラはこのポートからメッセージボディを読み込むことが出来ます。
+@var{xport}はMIMEバウンダリを認識し、パートの最後に到達したら
+EOFを返します。
+(元の@var{port}から直接読み込まないようにして下さい。
+そうしてしまうと、@var{vport}の内部状態がおかしくなります)。
+@c COMMON
 
 @c EN
 @var{Handler} can read the part into the memory, or
 save it to the disk, or even discard the part.
+Whatever it does, it has to read from @var{vport} until it
+returns EOF.
 
 The return value of @var{handler} will be set in
 the @code{content} slot of @var{part-info}.
 @c JP
 @var{handler}は、パートをメモリに読み込んだり、ディスクに保存したり、
-あるいはそのパートを無視したりできます。
+あるいはそのパートを無視したりできます。ただ、何をするにせよ、
+@var{vport}がEOFを返すまでデータを読まなければなりません。
 
 @var{handler}の戻り値は、@var{part-info}の@code{content}スロットに
 セットされます。
@@ -3772,43 +3768,41 @@ Otherwise, the return value of @var{handler} is stored.
 @end defivar
 @end deftp
 
-@defun mime-retrieve-body part-info reader inp outp
+@defun mime-retrieve-body part-info xport outp
 @c EN
 A procedure to retrieve message body.  It is intended to
 to be a building block of @var{handler} to be passed to
 @code{mime-parse-message}.
 
-@var{Part-info} is a @code{<mime-part>} object.  @var{Reader}
-is the line reader passed to the handler, and 
-@var{inp} must be an input port from which the body will be read.
+@var{Part-info} is a @code{<mime-part>} object.
+@var{Xport} is an input port passed to the handler,
+from which the MIME part can be read.
 @c JP
 メッセージボディを取得するための手続きです。
 @code{mime-parse-message}へ渡される、@var{handler}の
 ビルディングブロックとなることを意図しています。
 
 @var{part-info}は、@code{<mime-part>}のオブジェクトです。
-@var{reader}はハンドラに渡されるラインリーダで、
-@var{inp}はそこからボディが読み込まれる入力ポートで
-なければなりません。
+@var{xport}はハンドラに渡された入力ポートで、
+そこからMIMEパートが読みこまれるものです。
 
 @c EN
-This procedure applies @var{reader} to @var{inp} repeatedly,
-until it returns EOF (note that @var{reader} may return EOF
-when it reads MIME part boundary).  It also looks at the
+This procedure read from @var{xport}
+until it returns EOF.  It also looks at the
 @code{transfer-encoding} of @var{part-info}, and decodes
 the body accordingly; that is, base64 encoding and
-quoted-printable encoding is handled.
+quoted-printable encoding is handled.  The result is
+written out to an output port @var{outp}.
 
 This procedure does not handle charset conversion.
 The caller must use CES conversion port as @var{outp}
 (@xref{Character code conversion}) if desired.
 @c JP
-この手続きは、@var{reader}がEOFを返すまで、@var{inp}に@var{reader}を
-繰り返し適用します(@var{reader}はMIMEパートバウンダリを読み込むと
-EOFを返すことを思い出して下さい)。この手続きはまた、
+この手続きは、@var{xport}からEOFに達するまで読み込み、
 @var{part-info}の@code{transfer-encoding}も見て、
 ボディを適切にデコードします。つまり、base64やquoted-printable
-のエンコーディングは適切に処理されます。
+のエンコーディングは適切に処理されます。結果が出力ポート@var{outp}へと
+出力されます。
 
 この手続きは文字セットの変換は扱いません。
 必要であれば、呼び出し側が@var{outp}としてCES変換ポートを
@@ -3825,8 +3819,8 @@ cases on top of @code{mime-retrieve-body}.
 の上に定義されています。
 @c COMMON
 
-@defun mime-body->string part-info reader inp
-@defunx mime-body->file part-info reader inp filename
+@defun mime-body->string part-info xport
+@defunx mime-body->file part-info xport filename
 @c EN
 Reads in the body of mime message, decoding transfer encoding,
 and returns it as a string or writes it to a file, respectively.
@@ -3846,7 +3840,7 @@ MIMEメッセージパーザの最もシンプルな使い方は次のように
 @example
 (let ((headers (rfc822-header->list port)))
   (mime-parse-message port headers
-                      (cut mime-body->string <> <> port)))
+                      (cut mime-body->string <> <>)))
 @end example
 
 @c EN
@@ -11450,15 +11444,15 @@ created by this action will be unlinked when @code{cgi-main} exits.
 
 @item @var{procedure}
 In this case, @var{procedure} is called to handle the uploaded
-contents.  It is called with five arguments:
-@code{(procedure @var{name} @var{filename} @var{part-info} @var{reader} @var{iport})}.
+contents.  It is called with four arguments:
+@code{(procedure @var{name} @var{filename} @var{part-info} @var{iport})}.
 
 @var{Name} is the name of the parameter.  @var{Filename} is
 the name of the original file (pathname in the client).
 @var{Part-info} is a @code{<mime-part>} object that keeps information
-about this mime part, @var{reader} is a line-reading procedure with
-recognizing MIME boundary, and @var{iport} is where the body can be
-read from.  For the details about these arguments, 
+about this mime part,  and @var{iport} is where the body can be
+read from.
+For the details about these arguments, 
 see @ref{MIME message handling}; you might be able to
 use procedures provided by @code{rfc.mime}, such as @code{mime-retrieve-body},
 to construct your own procedure.
@@ -11493,13 +11487,12 @@ an error occurs during cgi processing.
 
 @item @var{procedure}
 この場合、アップロードされた内容を処理するために、手続き@var{procedure}が
-呼ばれます。手続きは5つの引数を伴って呼ばれます：
-@code{(procedure @var{name} @var{filename} @var{part-info} @var{reader} @var{iport})}.
+呼ばれます。手続きは4つの引数を伴って呼ばれます：
+@code{(procedure @var{name} @var{filename} @var{part-info} @var{iport})}.
 
 @var{name}はパラメータの名前、@var{filename}はオリジナルファイルの名前
 (クライアント側でのパス名)です。@var{part-info}は@code{<mime-part>}オブジェクトで、
-このMIMEパートの情報を保持しており、@var{reader}はMIME境界を認識する
-行読み込み手続き、そして@var{iport}は内容を読むための入力ポートです。
+このMIMEパートの情報を保持しており、そして@var{iport}は内容を読むための入力ポートです。
 これらの引数の詳しい意味については@ref{MIME message handling}を
 参照して下さい。独自の@var{procedure}を書く際に、@code{rfc.mime}の
 @code{mime-retrieve-body}のような手続きが使えるかもしれません。
@@ -11569,38 +11562,37 @@ content of uploaded file saved in @file{/tmp/mycgi7gq0B}
  ("mode" "normal"))
 @end example
 
-@c @c EN
-@c Now, you pass the following structure to @var{part-handlers}:
-@c @c JP
-@c 次のような構造を@var{part-handlers}に渡した場合：
-@c @c COMMON
+@c EN
+Now, you pass the following structure to @var{part-handlers}:
+@c JP
+次のような構造を@var{part-handlers}に渡した場合：
+@c COMMON
 
-@c @example
-@c `(("imagefile" 
-@c    ,(lambda (name fname info reader iport)
-@c       (receive (outp tmpfile) (sys-mkstemp "/var/log/mycgi/tmp")
-@c         (mime-retrieve-body info reader iport outp)
-@c         (close-output-port outp)
-@c         (cgi-add-temporary-file tmpfile)
-@c         (string-append fname ":" tmpfile))))
-@c   )
-@c @end example
+@example
+`(("imagefile" 
+  ,(lambda (name fname info iport)
+     (receive (outp tmpfile) (sys-mkstemp "/var/log/mycgi/tmp")
+       (mime-retrieve-body info iport outp)
+       (close-output-port outp)
+       (cgi-add-temporary-file tmpfile)
+       (string-append fname ":" tmpfile))))
+ )
+@end example
 
-@c @c EN
-@c You'll get something like the following; i.e. the cgi application
-@c can see the client-side file name as well as the temporary file name.
-@c @c JP
-@c 例えば次のようなパーズ結果が得られるでしょう。つまり、
-@c cgiアプリケーションは一時ファイル名と同時に
-@c クライアント側でのファイル名も参照することができます。
-@c @c COMMON
+@c EN
+You'll get something like the following; i.e. the cgi application
+can see the client-side file name as well as the temporary file name.
+@c JP
+例えば次のようなパーズ結果が得られるでしょう。つまり、
+cgiアプリケーションは一時ファイル名と同時に
+クライアント側でのファイル名も参照することができます。
+@c COMMON
 
-@c @example
-@c (("imagefile" "/home/foo/images/logo.jpg:/var/log/mycgi/tmp820iQj")
-@c  ("description" "my image")
-@c  ("mode" "normal"))
-@c @end example
-
+@example
+(("imagefile" "/home/foo/images/logo.jpg:/var/log/mycgi/tmp820iQj")
+ ("description" "my image")
+ ("mode" "normal"))
+@end example
 
 
 @c ----------------------------------------------------------------------
