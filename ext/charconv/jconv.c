@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: jconv.c,v 1.16 2003-10-19 08:07:19 shirok Exp $
+ *  $Id: jconv.c,v 1.17 2003-10-23 03:13:29 fuyuki Exp $
  */
 
 /* Some iconv() implementations don't support japanese character encodings,
@@ -1312,7 +1312,7 @@ static size_t jconv_2tier(ScmConvInfo *info, const char **iptr, size_t *iroom,
  * we're sure in default status (JIS_ASCII) or not (we use JIS_UNKNOWN for it).
  * It's because jconv_iconv_reset will be called twice if there is any
  * reset sequence; the first call should emit the sequence, but the second
- * call shoudn't.
+ * call shouldn't.
  */
 static size_t jconv_iconv(ScmConvInfo *info, const char **iptr, size_t *iroom,
                           char **optr, size_t *oroom)

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.92 2003-10-21 14:13:09 shirok Exp $
+ *  $Id: port.c,v 1.93 2003-10-23 03:13:29 fuyuki Exp $
  */
 
 #include <unistd.h>
@@ -308,7 +308,7 @@ int Scm_FdReady(int fd, int dir)
  *    The flusher must be aware that the port p is locked by the current
  *    thread when called.
  *
- *    The flusher shoudn't change the buffer's internal state.
+ *    The flusher shouldn't change the buffer's internal state.
  *
  *    After the flusher returns, bufport_flush shifts the unflushed data
  *    (if any), so the buffer becomes like this:

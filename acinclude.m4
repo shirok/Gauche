@@ -1,5 +1,5 @@
 dnl Gauche-specific aucotonf macros.
-dnl $Id: acinclude.m4,v 1.7 2003-10-05 03:30:11 shirok Exp $
+dnl $Id: acinclude.m4,v 1.8 2003-10-23 03:13:26 fuyuki Exp $
 
 dnl AC_GAUCHE_INIT_EXT
 dnl   Sets some parameters about installed Gauche package. 
@@ -105,7 +105,7 @@ AC_SUBST(OPTFLAGS)
 
 dnl AC_GAUCHE_FIX_LIBS
 dnl   Sets LDFLAGS and LIBS to generate shared library.
-dnl   This has to come after all the tests that requre linking, or those test
+dnl   This has to come after all the tests that require linking, or those test
 dnl   will fail because they can't generate stand-alone executable.
 AC_DEFUN([AC_GAUCHE_FIX_LIBS],
          [
