@@ -1,5 +1,5 @@
 ;; Tests Andrew Wright's match package in Gauche
-;; $Id: match.scm,v 1.3 2004-05-14 01:41:00 shirok Exp $
+;; $Id: match.scm,v 1.4 2004-07-28 23:13:17 shirok Exp $
 
 (use gauche.test)
 
@@ -75,6 +75,11 @@
 (test* "nested pattern" '((1 4) (2 5) (3 6))
        (match '((1 (2 3)) (4 (5 6)))
          (((a (b c)) ...) (list a b c))))
+
+;; a bug pointed by Hira
+(test* "nested pattern, conditional" 'a
+       (match '((1 a b) (4 e) (6 q u e r))
+         ((((? number?) (? symbol?) ...) ...) 'a)))
 
 ;; examples shown in Wright&Duba
 (test* "xmap" '(2 4 6)

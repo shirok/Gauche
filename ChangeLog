@@ -1,3 +1,9 @@
+2004-07-28  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/match.scm (gen) : fixed a bug that reused a temporary
+	  variable for intermediate match, which confused the match optimizer.
+	  (Pointed out by HIRAUCHI Hideyuki).
+
 2004-07-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-0.scm: typo fix

@@ -5,7 +5,7 @@
 ;;   Modified to work with Gauche's object system instead of the original
 ;;   structure model.
 ;;
-;; $Id: match.scm,v 1.3 2004-05-14 01:41:00 shirok Exp $
+;; $Id: match.scm,v 1.4 2004-07-28 23:13:17 shirok Exp $
 
 (define-module util.match
   (use srfi-1)
@@ -740,7 +740,8 @@
                                  (cond
                                   ((eq? (car p) '_) (ks sf))
                                   ((null? bound)
-                                   (let* ((ptst (next (car p) eta sf
+                                   (let* ((eta (gensym))
+                                          (ptst (next (car p) eta sf
                                                       (lambda (sf) #f)
                                                       (lambda (sf) #t)))
                                           (tst (if (and (pair? ptst)
