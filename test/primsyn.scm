@@ -147,5 +147,27 @@
 (test "call-with-values" '()
       (lambda ()  (call-with-values (lambda () (values)) list)))
 
+;;----------------------------------------------------------------
+(test-section "eval")
+
+(test "eval" '(1 . 2)
+      (lambda () (eval '(cons 1 2) (interaction-environment))))
+
+(define (vector-ref x y) 'foo)
+
+(test "eval" '(foo foo 3)
+      (lambda ()
+        (list (vector-ref '#(3) 0)
+              (eval '(vector-ref '#(3) 0) (interaction-environment))
+              (eval '(vector-ref '#(3) 0) (scheme-report-environment 5)))))
+
+(define vector-ref (with-module scheme vector-ref))
+
+(test "eval" #t
+      (lambda ()
+        (with-error-handler
+         (lambda (e) #t)
+         (lambda () (eval '(car '(3 2)) (null-environment 5))))))
+
 (test-end)
 
