@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.106 2001-10-04 10:33:00 shirok Exp $
+;;; $Id: extlib.stub,v 1.107 2001-10-13 11:44:42 shirok Exp $
 ;;;
 
 "
@@ -27,6 +27,8 @@
 (define-symbol eq?    "sym_eq")
 (define-symbol eqv?   "sym_eqv")
 (define-symbol equal? "sym_equal")
+
+(define-symbol string=? "sym_string_eq") ; used for make-hash-table
 
 "static int getcmpmode(ScmObj opt)
  { if (SCM_UNBOUNDP(opt) || opt == sym_equal) return SCM_CMP_EQUAL;
@@ -814,9 +816,17 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 ;;
 
 ;; TODO: support user-defined hashfn and cmpfn
-;;  for now, we just support eq?-type hash
-(define-cproc make-hash-table (&rest args)
-  "  SCM_RETURN(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 0));")
+(define-cproc make-hash-table (&optional (type (c "sym_eq")))
+  (assert (symbol? type))
+  "  ScmHashProc htype = 0;
+  if (SCM_OBJ(type) == sym_eq)             htype = SCM_HASH_ADDRESS;
+  else if (SCM_OBJ(type) == sym_eqv)       htype = SCM_HASH_EQV;
+  else if (SCM_OBJ(type) == sym_equal)     htype = SCM_HASH_EQUAL;
+  else if (SCM_OBJ(type) == sym_string_eq) htype = SCM_HASH_STRING;
+  else {
+    Scm_Error(\"unsupported hash type: %S\", type);
+  }
+  SCM_RETURN(Scm_MakeHashTable(htype, NULL, 0));")
 
 (define-cproc hash-table? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_HASHTABLEP(obj)));")
