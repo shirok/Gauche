@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: portmacros.h,v 1.3 2001-05-21 09:14:54 shirok Exp $
+ *  $Id: portmacros.h,v 1.4 2001-05-24 08:55:12 shirok Exp $
  */
 
 #ifndef GAUCHE_PORT_MACROS_H
@@ -33,11 +33,11 @@
 #define SCM__FILE_PUTB(b, port) \
     putc(b, SCM_PORT(port)->src.file.fp)
 
-#define SCM__FILE_PUTC(c, port)                         \
-    do { char buf_PORT[SCM_CHAR_MAX_BYTES];             \
-         SCM_CHAR_PUT(buf_PORT, c);                     \
-         fwrite(buf_PORT, 1, SCM_CHAR_NBYTES(c),        \
-                SCM_PORT(port)->src.file.fp);           \
+#define SCM__FILE_PUTC(c, port)                                 \
+    do {                                                        \
+         SCM_CHAR_PUT(SCM_PORT(port)->scratch, c);              \
+         fwrite(SCM_PORT(port)->scratch, 1, SCM_CHAR_NBYTES(c), \
+                SCM_PORT(port)->src.file.fp);                   \
     } while(0)
 
 #define SCM__FILE_PUTZ(s, port) \
@@ -163,6 +163,13 @@
 /* only one-char unget is supported */
 #define SCM_UNGETC(c, port)      (SCM_PORT(port)->ungotten = (c))
 
+#define SCM_PORT_UNGOTTEN_P(port) \
+    (SCM_PORT(port)->ungotten != SCM_CHAR_INVALID)
+
+/* scratch pad */
+#define SCM_PORT_SCRATCH_EMPTY_P(port) \
+    (SCM_PORT(port)->scrcnt == 0)
+
 /*--------------------------------------------------------------------
  * File input
  */
@@ -199,7 +206,7 @@ extern int Scm__PortFileGetc(int prefetch, ScmPort *port);
 #define SCM__ISTR_GETB(b, port)                         \
     do {                                                \
         if (SCM_PORT(port)->src.istr.rest <= 0) {       \
-            (b) = Scm__PortIstrGetb(port);              \
+            (b) = EOF;                                  \
         } else {                                        \
             SCM_PORT(port)->src.istr.rest--;            \
             (b) = *SCM_PORT(port)->src.istr.current++;  \
@@ -209,13 +216,13 @@ extern int Scm__PortFileGetc(int prefetch, ScmPort *port);
 #define SCM__ISTR_GETC(c, port)                                         \
     do {                                                                \
        if (SCM_PORT(port)->src.istr.rest <= 0) {                        \
-           (c) = Scm__PortIstrGetc(-1, SCM_PORT(port));                 \
+           (c) = EOF;                                                   \
        } else {                                                         \
            const char *cp__ISTR = SCM_PORT(port)->src.istr.current;     \
            unsigned char uc__ISTR = (unsigned char)*cp__ISTR;           \
            int siz__ISTR = SCM_CHAR_NFOLLOWS(uc__ISTR);                 \
            if (SCM_PORT(port)->src.istr.rest < siz__ISTR) {             \
-               (c) = Scm__PortIstrGetc(uc__ISTR, SCM_PORT(port));       \
+               (c) = EOF;                                               \
            } else {                                                     \
                SCM_CHAR_GET(cp__ISTR, c);                               \
            }                                                            \
@@ -223,9 +230,6 @@ extern int Scm__PortFileGetc(int prefetch, ScmPort *port);
            SCM_PORT(port)->src.istr.rest -= siz__ISTR + 1;              \
        }                                                                \
     } while (0)
-
-extern int Scm__PortIstrGetb(ScmPort *port);
-extern ScmChar Scm__PortIstrGetc(int prefetch, ScmPort *port);
 
 /*--------------------------------------------------------------------
  * Procedural input
@@ -243,8 +247,8 @@ extern ScmChar Scm__PortIstrGetc(int prefetch, ScmPort *port);
 
 #define SCM_GETB(var, port)                                             \
     do {                                                                \
-        if (SCM_PORT(port)->ungotten != SCM_CHAR_INVALID                \
-            || SCM_PORT(port)->bufcnt != 0) {                           \
+        if (SCM_PORT_UNGOTTEN_P(port) ||                                \
+            !SCM_PORT_SCRATCH_EMPTY_P(port)) {                          \
             (var) = Scm__PortGetbInternal(SCM_PORT(port));              \
         } else {                                                        \
             switch (SCM_PORT_TYPE(port)) {                              \
@@ -263,11 +267,11 @@ extern int Scm__PortGetbInternal(ScmPort *port);
 
 #define SCM_GETC(var, port)                                             \
     do {                                                                \
-        if (SCM_PORT(port)->ungotten != SCM_CHAR_INVALID) {             \
-            var = SCM_PORT(port)->ungotten;                             \
+        if (SCM_PORT_UNGOTTEN_P(port)) {                                \
+            (var) = SCM_PORT(port)->ungotten;                           \
             SCM_PORT(port)->ungotten = SCM_CHAR_INVALID;                \
-        } else if (SCM_PORT(port)->bufcnt != 0) {                       \
-            var = Scm__PortGetcInternal(SCM_PORT(port));                \
+        } else if (!SCM_PORT_SCRATCH_EMPTY_P(port)) {                   \
+            (var) = Scm__PortGetcInternal(SCM_PORT(port));              \
         } else {                                                        \
             switch (SCM_PORT_TYPE(port)) {                              \
               case SCM_PORT_FILE: SCM__FILE_GETC(var, port); break;     \
