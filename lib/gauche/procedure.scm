@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: procedure.scm,v 1.5 2002-05-24 22:53:31 shirok Exp $
+;;;  $Id: procedure.scm,v 1.6 2002-10-18 05:02:35 shirok Exp $
 ;;;
 
 (define-module gauche.procedure
@@ -35,7 +35,7 @@
 (define (arity-at-least? x) (is-a? x <arity-at-least>))
 
 (define (arity-at-least-value x)
-  (check-arg? arity-at-least? x)
+  (check-arg arity-at-least? x)
   (ref x 'value))
 
 (define (arity proc)
