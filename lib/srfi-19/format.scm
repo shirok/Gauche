@@ -1,5 +1,5 @@
 ;;; srfi-19/format.scm - excerpt from SRFI-19 for date formatting routine.
-;;; $Id: format.scm,v 1.3 2002-05-24 10:21:26 shirok Exp $
+;;; $Id: format.scm,v 1.4 2002-12-03 02:13:52 shirok Exp $
 
 ;; SRFI-19: Time Data Types and Procedures.
 ;; 
@@ -27,6 +27,7 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 (select-module srfi-19)
+(use gauche.sequence)
 (use srfi-13)
 (use gauche.collection)
 
@@ -78,17 +79,25 @@
 (define (tm:locale-long-month n)
   (vector-ref tm:locale-long-month-vector n))
 
+(define (find-index pred seq)
+  (let loop ((size (size-of seq))
+             (i 0))
+    (cond ((>= i size) #f)
+          ((pred (ref seq i)) i)
+          (else (loop size (+ i 1))))
+    ))
+
 (define (tm:locale-abbr-weekday->index string)
-  (find (pa$ string=? string) tm:locale-abbr-weekday-vector))
+  (find-index (pa$ string=? string) tm:locale-abbr-weekday-vector))
 
 (define (tm:locale-long-weekday->index string)
-  (find (pa$ string=? string) tm:locale-long-weekday-vector))
+  (find-index (pa$ string=? string) tm:locale-long-weekday-vector))
 
 (define (tm:locale-abbr-month->index string)
-  (find (pa$ string=? string) tm:locale-abbr-month-vector))
+  (find-index (pa$ string=? string) tm:locale-abbr-month-vector))
 
 (define (tm:locale-long-month->index string)
-  (find (pa$ string=? string) tm:locale-long-month-vector string=?))
+  (find-index (pa$ string=? string) tm:locale-long-month-vector string=?))
 
 ;; do nothing. 
 ;; Your implementation might want to do something...

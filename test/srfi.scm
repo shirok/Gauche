@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.22 2002-11-29 10:23:12 shirok Exp $
+;; $Id: srfi.scm,v 1.23 2002-12-03 02:13:52 shirok Exp $
 
 (use gauche.test)
 
@@ -1382,6 +1382,15 @@
       (lambda ()
         (let1 d (string->date "2002/5/15 12:34:56 (-1000)"
                               "~Y/~m/~d ~H:~M:~S (~z)")
+          (map (lambda (s) (slot-ref d s))
+               '(year month day hour minute second zone-offset)))))
+
+;; NB: this test will fail when locale-dependent date name is supported.
+(test "string->date"
+      '(2002 11 2 7 14 11 32400)
+      (lambda ()
+        (let1 d (string->date "02/Nov/2002:07:14:11 +0900"
+                              "~d~b~Y~H~M~S~z")
           (map (lambda (s) (slot-ref d s))
                '(year month day hour minute second zone-offset)))))
                

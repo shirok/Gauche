@@ -1,5 +1,7 @@
 2002-12-02  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-19/format.scm : fixed a bug in locale-dependent date
+	  reader (Thanks to Shin-ichi Hirata for a patch).
 	* ext/digest/*, lib/util/digest.scm, lib/rfc/hmac.scm : integrated
 	  Kimura Fuyuki's message digesting packages.
 
