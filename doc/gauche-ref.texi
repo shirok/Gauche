@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.385 2003-04-17 21:28:44 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.386 2003-04-22 08:44:30 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -25674,7 +25674,7 @@ Returns @code{#t} if @var{obj} is an option object,
 @code{#f} otherwise.
 @end defun
 
-@defun option-name option
+@defun option-names option
 @defunx option-required-arg? option
 @defunx option-optional-arg? option
 @defunx option-processor
