@@ -138,6 +138,11 @@
 (test-macro "dot2" ((2 3) . 1) (dot2 1 2 3))
 (test-macro "dot2" #f          (dot2))
 
+;; pattern to yield (. x) => x
+(define-syntax dot3 (syntax-rules ()
+                      ((_ (?a ...) ?b) (?a ... . ?b))))
+(test-macro "dot3" (1 2 . 3)   (dot3 (1 2) 3))
+(test-macro "dot3" 3           (dot3 () 3))
 
 ;;----------------------------------------------------------------------
 ;; cond, taken from R5RS section 7.3
