@@ -2,6 +2,11 @@
 	
 	* src/vm.c, src/compile.c, src/gauche/vm.h : refined and tested
 	  stack oevrflow handling.
+	* configure.in, src/gauche/config.h.in, src/gauche-config.in,
+	  ext/net/net.h : added checks for sysint.h, and removed spaces
+	  after -I and -L options, in order to make MacOS X happy
+	  (thanks to Shigenobu KIMURA skimu @ mac.com for pointing
+	  this out.)
 
 2001-07-04  Shiro Kawai  <shiro@acm.org>
 
