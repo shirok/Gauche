@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.117 2001-04-18 09:30:31 shiro Exp $
+ *  $Id: gauche.h,v 1.118 2001-04-20 08:33:00 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -597,7 +597,7 @@ extern ScmObj Scm_ListP(ScmObj obj);
 
 #define SCM_CHARSET_MASK_CHARS 128
 #define SCM_CHARSET_MASK_SIZE  (SCM_CHARSET_MASK_CHARS/(SIZEOF_LONG*8))
-    
+
 struct ScmCharSetRec {
     SCM_HEADER;
     unsigned long mask[SCM_CHARSET_MASK_SIZE];
@@ -622,8 +622,27 @@ ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to);
 ScmObj Scm_CharSetAdd(ScmCharSet *dest, ScmCharSet *src);
 ScmObj Scm_CharSetComplement(ScmCharSet *cs);
 ScmObj Scm_CharSetRanges(ScmCharSet *cs);
+ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p, int error_p);
 
 int    Scm_CharSetContains(ScmCharSet *cs, ScmChar c);
+
+/* predefined character set API */
+enum {
+    SCM_CHARSET_ALNUM,
+    SCM_CHARSET_ALPHA,
+    SCM_CHARSET_BLANK,
+    SCM_CHARSET_CNTRL,
+    SCM_CHARSET_DIGIT,
+    SCM_CHARSET_GRAPH,
+    SCM_CHARSET_LOWER,
+    SCM_CHARSET_PRINT,
+    SCM_CHARSET_PUNCT,
+    SCM_CHARSET_SPACE,
+    SCM_CHARSET_UPPER,
+    SCM_CHARSET_XDIGIT,
+    SCM_CHARSET_NUM_PREDEFINED_SETS
+};
+ScmObj Scm_GetStandardCharSet(int id);
     
 /*--------------------------------------------------------
  * STRING
