@@ -130,11 +130,13 @@ install : all
 	for f in $(INSTALL_SUBHEADERS); do \
 	  $(INSTALL) -m 444 $$f $(SUBHEADER_INSTALL_DIR); \
 	done
+	$(INSTALL) -d $(LIB_INSTALL_DIR)
 	$(INSTALL) -d $(ARCH_INSTALL_DIR)
 	for f in $(INSTALL_LIBS); do \
 	  $(INSTALL) -m 444 $$f $(LIB_INSTALL_DIR); \
 	  $(INSTALL) -m 555 $$f $(ARCH_INSTALL_DIR); \
 	done
+	$(INSTALL) -d $(BIN_INSTALL_DIR)
 	for f in $(INSTALL_BINS); do \
 	  $(INSTALL) -m 555 $$f $(BIN_INSTALL_DIR); \
 	  $(INSTALL) -m 555 $$f $(ARCH_INSTALL_DIR); \
