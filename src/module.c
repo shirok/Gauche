@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.10 2001-03-05 06:31:02 shiro Exp $
+ *  $Id: module.c,v 1.11 2001-03-05 09:29:38 shiro Exp $
  */
 
 #include "gauche.h"
@@ -20,7 +20,10 @@
 /*
  * Modules
  *
- *   A module maps symbols to global locations.
+ *  A module maps symbols to global locations.
+ *  Note that the mapping is resolved at the compile time.
+ *  Scheme's current-module is therefore a syntax, instead of
+ *  a procedure, to capture compile-time information.
  */
 
 static int module_print(ScmObj obj, ScmPort *port, int mode)
@@ -156,7 +159,7 @@ ScmObj Scm_GlobalSet(ScmModule *module, ScmSymbol *symbol, ScmObj value)
 }
 
 /*----------------------------------------------------------------------
- * Switching modules
+ * Finding modules
  */
 
 ScmObj Scm_FindModule(ScmSymbol *name)
