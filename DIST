@@ -188,8 +188,14 @@ if [ "$rpm" = "yes" ]; then
 #  mv $RPMDIR/SRPMS/Gauche-*.rpm $TGZ_DEST
 fi
 
+#
+# MinGW specific packager
+#
 if [ "$mingw" = "yes" ]; then
-  # create a MinGW distribution
+  mingwdir=${MINGWDIR:-/cygdrive/c/mingw}
+  cyggosh=${CYGGOSH:-/usr/local/bin/gosh}
+
+  PATH=$mingwdir/bin:$PATH
   case `gcc --version` in
     *mingw*) ;;
     *) echo "Set PATH to have MinGW bin directory first"
@@ -199,15 +205,23 @@ if [ "$mingw" = "yes" ]; then
   if [ -f examples/spigot/Makefile ]; then 
     (cd examples/spigot; make maintainer-clean);
   fi
-  tempdir=/cygdrive/c/temp
-  rm -rf $tempdir/mingw-dist
+  distdir=`pwd`/../Gauche-mingw-dist
+  rm -rf $distdir
   ./DIST gen
-  ./configure --build=i686-pc-mingw32 --prefix=$tempdir/mingw-dist
+  ./configure --build=i686-pc-mingw32 --prefix=$distdir/Gauche
   if [ ! -f VERSION ]; then echo "No VERSION; something wrong?"; exit 1; fi
   VERSION=`cat VERSION`
   make
-  make install
-  rm -rf $tempdir/mingw-dist/lib/libgauche.dll*
-  rm -rf $tempdir/mingw-dist/lib/gauche/$VERSION/*/gosh.exe
-  rm -rf $tempdir/mingw-dist/lib/gauche/$VERSION/*/libgauche.dll
+  # use Cygwin's gosh to install stuff
+  make GOSH=$cyggosh install
+  (cd src; make GOSH=$cyggosh install-mingw)
+  rm -rf $distdir/Gauche/bin/gauche-install
+  rm -rf $distdir/Gauche/bin/gauche-package
+  rm -rf $distdir/Gauche/bin/gauche-config
+  rm -rf $distdir/Gauche/bin/gauche-cesconv
+  rm -rf $distdir/Gauche/lib/libgauche.dll*
+  rm -rf $distdir/Gauche/lib/gauche/$VERSION/*/gosh.exe
+  rm -rf $distdir/Gauche/lib/gauche/$VERSION/*/libgauche.dll
+  cp $mingwdir/bin/mingwm10.dll $distdir/Gauche/bin
+  (cd $distdir; zip -r Gauche-mingw-$VERSION.zip Gauche)
 fi

@@ -6,7 +6,7 @@
 # prelude ---------------------------------------------
 
 .SUFFIXES:
-.SUFFIXES: .S .c .o .obj .s .stub
+.SUFFIXES: .S .c .o .obj .s .stub .bat .in
 
 .c.obj:
 	$(COMPILE) -c `cygpath -w $<`
@@ -93,8 +93,10 @@ INSTALL_SUBHEADERS = gauche/config.h gauche/vm.h gauche/vminsn.h      \
                      gauche/builtin-syms.h                            \
                      gauche/pthread.h gauche/uthread.h gauche/arch.h
 INSTALL_LIBS = libgauche.$(SOEXT)
-INSTALL_BINS = gosh gauche-config gauche-install gauche-package \
+INSTALL_BINS = gosh$(EXEEXT) gauche-config gauche-install gauche-package \
                gauche-cesconv
+INSTALL_BATS = gauche-config.bat gauche-install.bat gauche-package.bat \
+               gauche-cesconv.bat
 INSTALL_SCMS = gauche-init.scm genstub cesconv
 
 GENERATED_SCRIPTS = gauche-install gauche-package gauche-cesconv
@@ -228,7 +230,7 @@ CONFIG_GENERATED = Makefile gauche-config gauche/config.h
 clean :
 	rm -rf core core.[0-9]* gosh$(EXEEXT) \
 	       test-vmstack$(EXEEXT) test-arith$(EXEEXT)   \
-	       $(GENERATED_SCRIPTS) \
+	       $(GENERATED_SCRIPTS) $(INSTALL_BATS) \
 	       libgauche.$(SOEXT)* *.$(OBJEXT) *~ *.a *.t *.def *.exp \
 	       test.log test.dir so_locations gauche/*~ gauche/arch.h
 
@@ -266,3 +268,16 @@ uninstall :
 	for f in $(INSTALL_BINS); do rm -f $(BIN_INSTALL_DIR)/$$f; done
 	for f in $(INSTALL_LIBS); do rm -f $(LIB_INSTALL_DIR)/$$f; done
 	rm -rf $(GAUCHE_ARCH_DIR)/@GAUCHE_VERSION@ $(GAUCHE_DATA_DIR)/@GAUCHE_VERSION@ $(GAUCHE_ARCH_DIR)/site/@GAUCHE_VERSION@
+
+# MinGW specific stuff --------------------------------
+.in.bat:
+	@rm -f $@
+	echo ";echo off" > $@
+	echo ";gosh $@ %1 %2 %3 %4 %5 %6 %7 %8 %9" >> $@
+	echo ";goto end_batfile" >> $@
+	cat $< >> $@
+	echo ":end_batfile" >> $@
+	@chmod -w $@
+
+install-mingw: $(INSTALL_BATS)
+	$(INSTALL) -m 555 $(INSTALL_BATS) $(DESTDIR)$(BIN_INSTALL_DIR)
