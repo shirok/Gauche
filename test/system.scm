@@ -260,11 +260,11 @@
           (if (= pid 0)
               (begin (sys-pause) (sys-exit 0))
               (begin 
-                (sys-kill pid |SIGINT|)
+                (sys-kill pid |SIGKILL|)
                 (receive (rpid code) (sys-wait)
                   (and (= rpid pid)
                        (sys-wait-signaled? code)
-                       (= (sys-wait-termsig code) |SIGINT|))))))))
+                       (= (sys-wait-termsig code) |SIGKILL|))))))))
 
 (test "fork, wait, kill & sleep" #t
       (lambda ()
