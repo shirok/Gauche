@@ -22,7 +22,7 @@ AC_INIT(gc,6.2,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.10 $)
+AC_REVISION($Revision: 1.11 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE
 
@@ -402,6 +402,10 @@ AC_DEFINE(NO_EXECUTE_PERMISSION)
 AC_DEFINE(ALL_INTERIOR_POINTERS)
 dnl [SK] this is _required_ to make Gauche work correctly.
 AC_DEFINE(DONT_ADD_BYTE_AT_END)
+dnl [SK] this may also needed to use sys-fork safely in multithreaded
+dnl Gauche, but this seems to hang on some platforms.  So I don't put
+dnl it in by default.
+dnl AC_DEFINE(HANDLE_FORK)
 
 dnl By default, make the library as general as possible.
 AC_DEFINE(JAVA_FINALIZATION)
