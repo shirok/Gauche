@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.24 2001-09-18 07:50:28 shirok Exp $
+ *  $Id: bignum.c,v 1.25 2001-09-20 06:56:01 shirok Exp $
  */
 
 #include <math.h>
@@ -985,8 +985,10 @@ ScmObj Scm_BignumLogIor(ScmBignum *x, ScmBignum *y)
 
 ScmObj Scm_BignumLogXor(ScmBignum *x, ScmBignum *y)
 {
-    /*WRITEME*/
-    return SCM_UNDEFINED;
+    /* TODO: more efficient implementation */
+    ScmObj xandy = Scm_BignumLogAnd(x, y);
+    ScmObj xory  = Scm_BignumLogIor(x, y);
+    return Scm_LogAnd(xory, Scm_LogNot(xandy));
 }
 
 /*-----------------------------------------------------------------------
