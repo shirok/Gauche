@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.118 2001-12-05 10:34:33 shirok Exp $
+;;; $Id: extlib.stub,v 1.119 2001-12-10 09:33:50 shirok Exp $
 ;;;
 
 "
@@ -1075,6 +1075,28 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc vm-insn-inspect (obj)
   "  SCM_RETURN(Scm_VMInsnInspect(obj));")
 
+;; GC stuff
+(define-cproc gc ()
+  "  GC_gcollect();  SCM_RETURN(SCM_UNDEFINED);")
+
+(define-keyword total-heap-size "key_total_heap_size")
+(define-keyword free-bytes      "key_free_bytes")
+(define-keyword bytes-since-gc  "key_bytes_since_gc")
+(define-keyword total-bytes     "key_total_bytes")
+
+(define-cproc gc-stat ()
+  "  ScmObj h = SCM_NIL, t = SCM_NIL;
+  SCM_APPEND(h, t, SCM_LIST2(key_total_heap_size,
+                             Scm_MakeIntegerFromUI(GC_get_heap_size())));
+  SCM_APPEND(h, t, SCM_LIST2(key_free_bytes,
+                             Scm_MakeIntegerFromUI(GC_get_free_bytes())));
+  SCM_APPEND(h, t, SCM_LIST2(key_bytes_since_gc,
+                             Scm_MakeIntegerFromUI(GC_get_bytes_since_gc())));
+  SCM_APPEND(h, t, SCM_LIST2(key_total_bytes,
+                             Scm_MakeIntegerFromUI(GC_get_total_bytes())));
+  SCM_RETURN(h);")
+
+;; Misc.  WARNING: API may change
 (define-cproc closure-code (clo)
   (assert (closure? clo))
   "  SCM_RETURN(clo->code);")
@@ -1082,6 +1104,8 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 (define-cproc procedure-info (proc)
   (assert (procedure? proc))
   "  SCM_RETURN(SCM_PROCEDURE_INFO(proc));")
+
+
 
 ;; Local variables:
 ;; mode: scheme
