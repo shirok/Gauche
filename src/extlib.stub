@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.173 2002-09-20 06:54:13 shirok Exp $
+;;; $Id: extlib.stub,v 1.174 2002-09-20 12:31:12 shirok Exp $
 ;;;
 
 "
@@ -530,6 +530,9 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
     )
 
 ;; Regexp
+(define-cproc regexp? (obj)    (return <boolean> "SCM_REGEXPP"))
+(define-cproc regmatch? (obj)  (return <boolean> "SCM_REGMATCHP"))
+
 (define-cproc string->regexp (str::<string>)
   (return "Scm_RegComp"))
 (define-cproc regexp->string (regexp::<regexp>)
