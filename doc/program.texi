@@ -284,11 +284,11 @@ You can specify additional load paths for dynamically loaded
 objects by this environment variable, delimiting the paths by '@code{:}'.
 The paths are appended before the system default load paths.
 @c JP
-@c COMMON
 この変数によって、動的にロードするオブジェクト用の追加ロードパスを
 指定できます。パスは '@code{:}' で区切ります。
 この変数によって指定されたパスはシステムのデフォルトのロードパスの前に
 連結されます。
+@c COMMON
 @end deftp
 
 @c ----------------------------------------------------------------------

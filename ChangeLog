@@ -1,5 +1,7 @@
 2004-05-04  Kimura Fuyuki  <fuyuki@hadaly.org>
 
+	* doc/gosh.1.in: added the ENVIRONMENT section.
+
 	* src/load.c (break_env_paths): Don't trust environment variables
 	  only if setugid'd. This change allows the superuser to set his
 	  own GAUCHE_LOAD_PATH or GAUCHE_DYNLOAD_PATH.

@@ -1,4 +1,4 @@
-.\" $Id: gosh.1.in,v 1.2 2002-10-13 23:32:39 shirok Exp $ -*-nroff-*-
+.\" $Id: gosh.1.in,v 1.3 2004-05-04 05:16:38 fuyuki Exp $ -*-nroff-*-
 .TH GOSH "version @GAUCHE_VERSION@"
 .UC 4
 .SH NAME
@@ -133,6 +133,19 @@ Sets various flags.
 Specifies that there are no more options.  If there are more
 arguments after this, they are taken as script file name and
 its arguments.
+
+.SH ENVIRONMENT
+.TP
+.B GAUCHE_LOAD_PATH
+.TQ
+A colon separated list of the load paths.
+The paths are appended before the system default load paths.
+.TP
+.B GAUCHE_DYNLOAD_PATH
+.TQ
+A colon separated list of the load paths for dynamically loaded
+objects.
+The paths are appended before the system default load paths.
 
 .SH AUTHORS
 Shiro Kawai (shiro @ acm . org)
