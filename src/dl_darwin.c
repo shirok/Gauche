@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: dl_darwin.c,v 1.1 2003-05-15 11:32:54 shirok Exp $
+ *  $Id: dl_darwin.c,v 1.2 2003-05-16 07:45:14 shirok Exp $
  */
 
 /* Cf: Technical Note TN2071 "Porting Command Line Unix Tools to MacOS X"
@@ -22,6 +22,8 @@
 */
 
 /* This file is included in load.c */
+
+#include <mach-o/dyld.h>
 
 /* we can store the error message in static variable, because
    the caller guarantees dl_open() and subsequent dl_error()
