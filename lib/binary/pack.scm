@@ -386,7 +386,7 @@
                   (read-block n)))))))
       (else
        (make-pack-dispatch
-        (quotient size 8) #f vlp
+        (* count (quotient size 8)) #f vlp
         (lambda (v)
           (let-values (((consume tail) (splitter v)))
             (for-each writer consume)
