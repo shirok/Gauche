@@ -96,6 +96,8 @@ gauche/arch.h :
 
 test : gosh
 	@rm -f test.log
+	$(MAKE) test-vmstack
+	$(MAKE) test-arith
 	@for testfile in $(TESTFILES); do \
 	  ./gosh -I. -I../lib -I../test $$testfile >> test.log; \
 	done
