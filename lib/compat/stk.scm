@@ -1,7 +1,7 @@
 ;;;
 ;;; port.stk - stk compatibility interface
 ;;;
-;;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,10 +12,10 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: stk.scm,v 1.3 2002-10-26 09:02:42 shirok Exp $
+;;;  $Id: stk.scm,v 1.1 2002-11-13 19:04:51 shirok Exp $
 ;;;
 
-(define-module port.stk
+(define-module compat.stk
   (use srfi-1)
   (use srfi-13)
   (use srfi-14)
@@ -57,7 +57,7 @@
           posix-host-name posix-domain-name 
           )
   )
-(select-module port.stk)
+(select-module compat.stk)
 
 ;(define *argc* (length *argv*))
 
@@ -224,5 +224,5 @@
 (define posix-host-name sys-gethostname)
 (define posix-domain-name sys-getdomainname)
 
-(provide "port/stk")
+(provide "compat/stk")
 

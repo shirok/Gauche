@@ -1,7 +1,7 @@
 ;;;
-;;; port.jfilter - jfilter compatibility interface
+;;; compat.jfilter - jfilter compatibility interface
 ;;;
-;;;  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2000-2002 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: jfilter.scm,v 1.5 2002-10-26 09:02:42 shirok Exp $
+;;;  $Id: jfilter.scm,v 1.1 2002-11-13 19:04:51 shirok Exp $
 ;;;
 
 ;; This file defines a set of character-code conversion routine with
@@ -26,14 +26,14 @@
 ;; Scheme implementation, and most of lower-level routines in Jfilter
 ;; is irrelevant.  I only implement the higher-level routines.
 
-(define-module port.jfilter
+(define-module compat.jfilter
   (use gauche.charconv)
   (use srfi-13)
   (export cv-file
           cv-string
           judge-file))
 
-(select-module port.jfilter)
+(select-module compat.jfilter)
 
 (define (ces-name->symbol name)
   (let ((n (string-upcase (string-delete name #[-_]))))
@@ -113,4 +113,4 @@
                   input))
       )))
 
-(provide "port/jfilter")
+(provide "compat/jfilter")

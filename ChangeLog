@@ -1,3 +1,8 @@
+2002-11-13  Shiro Kawai  <shiro@acm.org>
+
+	* lib/port/* -> lib/compat/* : moved.  port.* is obsoleted.
+	* lib/japanize-euc.scm : moved to test/japanize-euc.scm
+
 2002-11-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/uri.scm (uri-compose) : added uri-compose.

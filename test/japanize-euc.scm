@@ -3,7 +3,7 @@
 ;;; You need to compile Gauche in EUC-JP code.
 ;;;
 
-;; $Id: japanize-euc.scm,v 1.1 2001-03-07 06:21:01 shiro Exp $
+;; $Id: japanize-euc.scm,v 1.1 2002-11-13 19:04:52 shirok Exp $
 
 (define-syntax ¦Ë
   (syntax-rules () ((_ args body ...) (lambda args body ...))))
