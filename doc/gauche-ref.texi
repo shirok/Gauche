@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.27 2001-06-22 08:42:14 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.28 2001-06-23 08:14:49 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -27,14 +27,28 @@ Copyright @copyright{} 2001 Shiro Kawai (shiro@@acm.org)
 @end titlepage
 
 @node Top, Introduction, (dir), (dir)
-@top
 
 @ifnottex
 This is a reference manual of Gauche, an R5RS Scheme implementation.
 @end ifnottex
 
+@menu
+* Introduction::                
+* Concepts::                    
+* Writing Scheme program using Gauche::  
+* Core Syntax::                 
+* Macros::                      
+* Core library::                
+* Object System::               
+* Libarary Modules::            
+* References::                  
+* Function and Syntax Index::   
+* Module Index::                
+* Class Index::                 
+* Variable Index::              
+@end menu
 
-@node Introduction
+@node Introduction, Concepts, Top, Top
 @chapter Introduction
 
 This is a programmers' guide and reference manual of
@@ -48,29 +62,38 @@ For those who are new to Scheme, it'll be easier to start
 from some kind of tutorial.  I'm planning to write one.
 
 This manual only deals with Scheme side of things.  Gauche has
-another face, a C interface.   Details of it is discussed
-in a separate document I'm planning.
+another face, a C interface.   Details of it will be discussed
+in a separate document to be written.
 Those who wants to use Gauche as an embedded language, or wants
 to write an extension, need that volume.
 
-For the Scheme side, I tried to make this manual self-contained,
-i.e. as far as you want to look up Gauche's features you don't
-need to refer to other documents, for reader's convenience.
+For the Scheme side, I tried to make this manual self-contained
+for reader's convenience, i.e. as far as you want to look up
+Gauche's features you don't need to refer to other documents, 
 For example, description of functions defined in the standard
 documents are included in this manual, instead of saying
-"see this document".   However, this document is not a verbatim
-copy of the standard document; sometimes I omit detailed
-discussions in the standard documents, for brevity.
-I put pointers to the original documents, so consult them if you
+``see the standard document''.   However, this document is not a verbatim
+copy of the standard documents; sometimes I omit detailed
+discussions in the standard documents for brevity.
+I put pointers to the original documents, so please consult them if you
 need to refer to the standards.
 
 If you're reading this document off-line, you may find the most
-recent version on the web @uref{http://www.shiro.dreamhost.com/scheme/gauche/}.
+recent version on the web:
+@example
+@uref{http://www.shiro.dreamhost.com/scheme/gauche/}.
+@end example
 
-@node Overview of Gauche
+@menu
+* Overview of Gauche::          
+* Notations::                   
+* Structure of this document::  
+@end menu
+
+@node Overview of Gauche, Notations, Introduction, Introduction
 @section Overview of Gauche
 
-Gauche is a script interpreter, based on Scheme.
+Gauche is a script interpreter based on Scheme.
 Gauche conforms the language standard
 "Revised^5 Report on the Algorithmic Language Scheme"
 (@uref{http://www.schemers.org/Documents/Standards/R5RS/HTML/}),
@@ -80,6 +103,10 @@ and supports various common libraries defined in SRFIs
 The goal of Gauche is to provide a handy tool for
 programmers and system administrators to handle
 daily works conveniently and efficiently in the production environment.
+
+There are lots of Scheme implementations available, and each
+of them has its design emphasis and weeknesses.  Gauche is
+designed with emphasis on the following criteria.
 
 @table @b
 @item Quick startup
@@ -139,20 +166,33 @@ both high-level abstract interface and low-level interface.
 
 No real application can be written without dealing with I/O.
 Scheme neatly abstracts I/O as a port, but defines least operations on it.
-Gauche uses a port object as a unified abstraction, but 
 
-
-@item Clean C API
-
-
+Gauche uses a port object as a unified abstraction, providing
+utility functions to operate on the underlying I/O system.
+@xref{Input and output}, for the basic I/O support.
 
 @end table
 
+On the other hand, Gauche is @emph{not} designed for the following
+type of applications:
+
+@table @asis
+@item Number cruncher
+Gauche is useful for arithmetic operations, since it supports wide
+range of numbers like bignums and complex numbers.  However, it is not
+designed to do fast calculation.  Use C, Fortran, or whatever you like.
+
+@item Very high performance
+Gauche is a script interpreter, and can't be comparable with compiled
+programs in execution speed.  Gauche does compiles programs into
+intermediate code internally, so it has performance comparable to
+similar script interpreters.
+
+@item 
+@end table
 
 
-
-
-@node Notations
+@node Notations, Structure of this document, Overview of Gauche, Introduction
 @section Notations
 
 In this manual, each entry is represented like this:
@@ -164,20 +204,24 @@ In this manual, each entry is represented like this:
 @var{Category} denotes the category of the entry @b{foo}.
 The following category will appear in this manual:
 
-@table @asis
+@multitable @columnfractions .4 .6
 @item Function
-A Scheme function.
+@tab A Scheme function.
 @item Special Form
-A special form (in the R5RS term, ``syntax'').
+@tab A special form (in the R5RS term, ``syntax'').
 @item Macro
-A macro.
+@tab A macro.
 @item Module
-A module
+@tab A module
 @item Class
-A class.
+@tab A class.
+@item Generic Function
+@tab A generic function
+@item Method
+@tab A method
 @item Reader Syntax
-A lexical syntax that is interpreted by the reader.
-@end table
+@tab A lexical syntax that is interpreted by the reader.
+@end multitable
 
 For functions, special forms and macros, the entry may followed
 by one or more arguments.  In the argument list, the following notations
@@ -223,20 +267,30 @@ The API of the entry reflects the API specified in POSIX.
 @end table
 
 
-@node Structure of this document
+@node Structure of this document,  , Notations, Introduction
 @section Structure of this document
 
 
 
 
+
+
+
 @c ======================================================================
-@node Concepts
+@node Concepts, Writing Scheme program using Gauche, Introduction, Top
 @chapter Concepts
 
 In this chapter I describe a few Gauche's design concepts
 that help you to understand how Gauche works.
 
-@node Compilation
+@menu
+* Compilation::                 
+* Module System::               
+* Objects::                     
+* Multibyte Strings::           
+@end menu
+
+@node Compilation, Module System, Concepts, Concepts
 @section Compilation
 
 Gauche is a Scheme interpreter, in the sense that it reads
@@ -246,7 +300,7 @@ before executing.
 
 
 
-@node Module System
+@node Module System, Objects, Compilation, Concepts
 @section Module System
 
 Gauche adopts a simple module system that allows
@@ -266,7 +320,7 @@ Those two can be used separately, although it is much more
 convenient when used together.
 
 
-@node Objects
+@node Objects, Multibyte Strings, Module System, Concepts
 @section Objects
 
 Gauche has a CLOS-style object system, with metaobject protocol.
@@ -289,12 +343,12 @@ class, Gauche methods don't
 
 @end table
 
-@node Multibyte Strings
+@node Multibyte Strings,  , Objects, Concepts
 @section Multibyte Strings
 
 
 @c ======================================================================
-@node Writing Scheme program using Gauche
+@node Writing Scheme program using Gauche, Core Syntax, Concepts, Top
 @chapter  Writing Scheme program using Gauche
 
 Gauche can be used either as an independent Scheme interpreter
@@ -370,36 +424,107 @@ Prohibits the compiler to iniline primitive Scheme procedures.
 @end table
 @end deftp
 
-@deftp {Command Option} --
+@deftp {Command Option} @code{--}
 When @code{gosh} sees this option, it stops processing the options
 and takes next command line argument as a script file.  It is useful
 in case if you have a script file that begins with a minus sign,
 although it is not generally recommended.
 @end deftp
 
-I show several simple examples below.
+@defvar *argv*
+The program arguments passed to the Scheme script is bound to this
+variable.  If @code{gosh} is invoked in an interactive mode, this
+variable always contains @code{()}.
 
-This script works like @code{cat(1)}, without any command-line
+STk uses this variable to pass the command line argument as well,
+but other Scheme implementations use different ways.  It is better
+to define @code{main} procedure and uses its argument to receive
+command line arguments, for it is expected to be more portable.
+@end defvar
+
+@defvar *program-name*
+This variable is bound to the script file name passed to @code{gosh}.
+If @code{gosh} is invoked in the interactive mode, this variable
+contains the pathname of @code{gosh} itself.
+
+STk uses the same variable to access the program/script name.
+Other Scheme implementations use different ways.
+@end defvar
+
+Now I show several simple examples below.
+First, this script works like @code{cat(1)}, without any command-line
 option processing and error handling.
 
 @example
+@cartouche
 #!/usr/bin/env gosh
 
-(define (main . args)   ;@r{entry point}
+(define (main args)   ;@r{entry point}
   (if (null? args)
       (copy-port (current-input-port) (current-output-port))
       (for-each (lambda (file)
                   (call-with-input-file file
-                    (lambda (in) (copy-port in (current-output-port)))))
+                    (lambda (in)
+                      (copy-port in (current-output-port)))))
                 args)))
+@end cartouche
 @end example
 
+The following script is a simple grep command.
+
+@example
+@cartouche
+#!/usr/bin/env gosh
+
+(define (usage)
+  (format (current-error-port)
+          "Usage: ~a regexp file ...\n" *program-name*)
+  (exit 2))
+
+(define (grep rx port)
+  (let loop ((line (read-line port)))
+    (cond ((eof-object? line))
+          ((rxmatch rx line)
+           (format #t "~a:~a: ~a\n"
+                   (port-name port)
+                   (- (port-current-line port) 1)
+                   line)
+           (loop (read-line port)))
+          (else (loop (read-line port))))))
+
+(define (main args)
+  (if (null? args)
+      (usage)
+      (let ((rx (string->regexp (car args))))
+        (if (null? (cdr args))
+            (grep rx (current-input-port))
+            (for-each (lambda (f)
+                        (call-with-input-file f
+                          (lambda (p) (grep rx p))))
+                      (cdr args))))))
+@end cartouche
+@end example
+
+
 @c ======================================================================
-@node Core Syntax
+@node Core Syntax, Macros, Writing Scheme program using Gauche, Top
 @chapter Core Syntax
 
 @c ----------------------------------------------------------------------
-@node Literals
+@menu
+* Literals::                    
+* Making Procedures::           
+* Assignments::                 
+* Conditionals::                
+* Binding constructs::          
+* Sequencing::                  
+* Iteration::                   
+* Quasiquotation::              
+* Definitions::                 
+* Modules::                     
+@end menu
+
+@node Literals, Making Procedures, Core Syntax, Core Syntax
 @section Literals
 
 @defspec quote datum
@@ -407,7 +532,7 @@ option processing and error handling.
 @end defspec
 
 @c ----------------------------------------------------------------------
-@node Making Procedures
+@node Making Procedures, Assignments, Literals, Core Syntax
 @section Making Procedures
 
 @defspec lambda formals body @dots{}
@@ -416,7 +541,7 @@ option processing and error handling.
 
 
 @c ----------------------------------------------------------------------
-@node Assignments
+@node Assignments, Conditionals, Making Procedures, Core Syntax
 @section Assignments
 
 @defspec set! symbol expression
@@ -454,17 +579,26 @@ the setter of @code{setter}, like this:
 @example
 (set! (setter @var{get}) @var{set})
 @end example
+
+A procedure's setter can be ``locked'' to it.  System default setters,
+like @code{set-car!} for @code{car}, is locked and can't be set by
+the above way.   In order to lock a setter to a user defined procedure,
+use @code{getter-with-setter} below.
 @end defun
 
 @defun getter-with-setter get set
-[SRFI-17] 
+[SRFI-17] Takes two procedure @var{get} and @var{set}.  Returns a new
+procedure which does the same thing as @var{get}, and its setter is
+locked to @var{set}.
+
+The intention of this procedure is, according to the SRFI-17 document,
+to allow implementations to inline setters efficiently.  Gauche
+hasn't implement such optimization yet.
 @end defun
 
-
 @c ----------------------------------------------------------------------
-@node Conditionals
+@node Conditionals, Binding constructs, Assignments, Core Syntax
 @section Conditionals
-
 
 @defspec if test consequent alternate
 @defspecx if test consequent
@@ -501,7 +635,7 @@ the result of the last evaluation is returned.  Otherwise, undefined
 value is returned.
 @end defspec
 
-@node Binding constructs
+@node Binding constructs, Sequencing, Conditionals, Core Syntax
 @section Binding constructs
 
 @defspec let bindings body
@@ -521,7 +655,7 @@ value is returned.
 [SRFI-8]
 @end defspec
 
-@node Sequencing
+@node Sequencing, Iteration, Binding constructs, Core Syntax
 @section Sequencing
 
 
@@ -530,7 +664,7 @@ value is returned.
 @end defspec
 
 
-@node Iteration
+@node Iteration, Quasiquotation, Sequencing, Core Syntax
 @section Iteration
 
 @defspec do ((variable init step) @dots{}) (test expr @dots{}) body
@@ -544,7 +678,7 @@ value is returned.
 
 
 @c ----------------------------------------------------------------------
-@node Quasiquotation
+@node Quasiquotation, Definitions, Iteration, Core Syntax
 @section Quasiquotation
 
 @defspec quasiquote template
@@ -553,16 +687,29 @@ value is returned.
 
 
 @c ----------------------------------------------------------------------
-@node Definitions
+@node Definitions, Modules, Quasiquotation, Core Syntax
 @section Definitions
 
 @defspec define variable expression
-@defspecx define (variable formals) body
-[R5RS]
+@defspecx define (variable formals) body @dots{}
+[R5RS] In the first form, it globally binds a symbol @var{variable}
+to the value of @var{expression}, in the current module.
+@example
+(define x (+ 1 2))
+x @result{} 3
+(define y (lambda (a) (* a 2)))
+(y 8) @result{} 16
+@end example
+
+The second form is a syntactic sugar of defining a procedure.
+@example
+(define (@var{name} . @var{args}) @var{body} @dots{})
+  @equiv{} (define @var{name} (lambda @var{args} @var{body} @dots{}))
+@end example
 @end defspec
 
 @c ----------------------------------------------------------------------
-@node Modules
+@node Modules,  , Definitions, Core Syntax
 @section Modules
 
 Module is an object that maps symbols onto @emph{bindings}.
@@ -575,7 +722,13 @@ to the same symbol, that yield different values.
 
 
 
-@node Module syntax
+@menu
+* Module syntax::               
+* Module introspection::        
+* Predefined modules::          
+@end menu
+
+@node Module syntax, Module introspection, Modules, Modules
 @subsection Module syntax
 
 @defspec define-module name body @dots{}
@@ -664,7 +817,7 @@ This is not very Scheme-ish way, but nevertheless practical.
 hierarchical file/module configuration, as in Guile.)
 @end defmac
 
-@node Module introspection
+@node Module introspection, Predefined modules, Module syntax, Modules
 @subsection Module introspection
 
 @deftp {Builtin Class} <module>
@@ -697,10 +850,10 @@ respectively.
 If the @var{module} exports all symbols, @code{module-exports} returns
 @code{#t}.
 
-It is an error to pass non-module object.
+It is an error to pass a non-module object.
 @end defun
 
-@node Predefined modules
+@node Predefined modules,  , Module introspection, Modules
 @subsection Predefined modules
 
 Several modules are predefined in Gauche.
@@ -731,13 +884,19 @@ all the bindings of @code{gauche} module is imported.
 @end deftp
 
 @c ======================================================================
-@node Macros
+@node Macros, Core library, Core Syntax, Top
 @chapter Macros
 
 Gauche supports both R5RS hygienic macros and
 traditional macros.
 
-@node Hygienic Macros
+@menu
+* Hygienic Macros::             
+* Traditional Macros::          
+* Macro Expansion::             
+@end menu
+
+@node Hygienic Macros, Traditional Macros, Macros, Macros
 @section Hygienic Macros
 
 @defspec define-syntax name transformer-spec
@@ -754,14 +913,14 @@ traditional macros.
 @end defspec
 
 
-@node Traditional Macros
+@node Traditional Macros, Macro Expansion, Hygienic Macros, Macros
 @section Traditional Macros
 
 @defspec define-macro (name formals) body @dots{}
 
 @end defspec
 
-@node Macro Expansion
+@node Macro Expansion,  , Traditional Macros, Macros
 @section Macro Expansion
 
 @defspec %macro-expand form
@@ -770,11 +929,33 @@ traditional macros.
 
 
 @c ======================================================================
-@node Core library
+@node Core library, Object System, Macros, Top
 @chapter Core library
 
 @c ----------------------------------------------------------------------
-@node Equivalence
+@menu
+* Equivalence::                 
+* Numbers::                     
+* Booleans::                    
+* Pairs and Lists::             
+* Symbols::                     
+* Keywords::                    
+* Identifiers::                 
+* Characters::                  
+* Character Set::               
+* Strings::                     
+* Regular Expression::          
+* Vectors::                     
+* Hashtables::                  
+* Control features::            
+* Eval::                        
+* Input and output::            
+* Loading Programs::            
+* Comparison and sorting::      
+* System interface::            
+@end menu
+
+@node Equivalence, Numbers, Core library, Core library
 @section Equivalence
 
 @defun eq? obj1 obj2
@@ -790,10 +971,19 @@ traditional macros.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Numbers
+@node Numbers, Booleans, Equivalence, Core library
 @section Numbers
 
-@node Number classes
+@menu
+* Number classes::              
+* Numerical predicates::        
+* Numerical comparison::        
+* Arithmetics::                 
+* Numericaln conversions::      
+* Logical operations::          
+@end menu
+
+@node Number classes, Numerical predicates, Numbers, Numbers
 @subsection Number classes
 
 @deftp {Builtin Class} <number>
@@ -818,7 +1008,7 @@ class.  That is,
 @end lisp
 @end deftp
 
-@node Numerical predicates
+@node Numerical predicates, Numerical comparison, Number classes, Numbers
 @subsection Numerical predicates
 
 @defun number? obj
@@ -848,7 +1038,7 @@ class.  That is,
 [R5RS]
 @end defun
 
-@node Numerical comparison
+@node Numerical comparison, Arithmetics, Numerical predicates, Numbers
 @subsection Numerical comparison
 
 @defun @code{=} z1 z2 z3 @dots{}
@@ -865,7 +1055,7 @@ class.  That is,
 [R5RS]
 @end defun
 
-@node Arithmetics
+@node Arithmetics, Numericaln conversions, Numerical comparison, Numbers
 @subsection Arithmetics
 
 @defun @code{+} z @dots{}
@@ -938,7 +1128,7 @@ Hyperbolic trigonometric functions.
 [R5RS]
 @end defun
 
-@node Numericaln conversions
+@node Numericaln conversions, Logical operations, Arithmetics, Numbers
 @subsection Numerical conversions
 
 @defun make-rectangular x1 x2
@@ -960,7 +1150,7 @@ Hyperbolic trigonometric functions.
 [R5RS]
 @end defun
 
-@node Logical operations
+@node Logical operations,  , Numericaln conversions, Numbers
 @subsection Logical operations
 
 @defun ash n count
@@ -982,7 +1172,7 @@ of two integers @var{n1} and @var{n2}.
 Returns bitwise not of an integer @var{n}.
 @end defun
 
-@node Booleans
+@node Booleans, Pairs and Lists, Numbers, Core library
 @section Booleans
 
 @deftp {Builtin Class} <boolean>
@@ -1001,10 +1191,18 @@ value, and returns @code{#f} otherwise.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Pairs and Lists
+@node Pairs and Lists, Symbols, Booleans, Core library
 @section Pairs and Lists
 
-@node Pair and null class
+@menu
+* Pair and null class::         
+* List predicates::             
+* List constructors::           
+* List accessors and modifiers::  
+* Other list procedures::       
+@end menu
+
+@node Pair and null class, List predicates, Pairs and Lists, Pairs and Lists
 @subsection Pair and null class
 
 @deftp {Builtin Class} <list>
@@ -1031,7 +1229,7 @@ A class of empty list.  @code{()} is the only instance.
 A class of pairs.
 @end deftp
 
-@node List predicates
+@node List predicates, List constructors, Pair and null class, Pairs and Lists
 @subsection List predicates
 
 @defun pair? obj
@@ -1046,7 +1244,7 @@ A class of pairs.
 [R5RS]
 @end defun
 
-@node List constructors
+@node List constructors, List accessors and modifiers, List predicates, Pairs and Lists
 @subsection List constructors
 
 @defun cons obj1 obj2
@@ -1096,7 +1294,7 @@ this function diverges.
 @end defun
 
 
-@node List accessors and modifiers
+@node List accessors and modifiers, Other list procedures, List constructors, Pairs and Lists
 @subsection List accessors and modifiers
 
 @defun car pair
@@ -1157,7 +1355,7 @@ this function diverges.
 @end defun
 
 
-@node Other list procedures
+@node Other list procedures,  , List accessors and modifiers, Pairs and Lists
 @subsection Other list procedures
 
 @defun append list @dots{}
@@ -1198,7 +1396,7 @@ this function diverges.
 
 
 @c ----------------------------------------------------------------------
-@node Symbols
+@node Symbols, Keywords, Pairs and Lists, Core library
 @section Symbols
 
 @deftp {Builtin Class} <symbol>
@@ -1226,7 +1424,7 @@ If the named symbol hasn't existed, this function creates one.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Keywords
+@node Keywords, Identifiers, Symbols, Core library
 @section Keywords
 
 @deftp {Builtin Class} <keyword>
@@ -1243,7 +1441,7 @@ If the named symbol hasn't existed, this function creates one.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Identifiers
+@node Identifiers, Characters, Keywords, Core library
 @section Identifiers
 
 @deftp {Builtin Class} <identifier>
@@ -1258,7 +1456,7 @@ If the named symbol hasn't existed, this function creates one.
 
 
 @c ----------------------------------------------------------------------
-@node Characters
+@node Characters, Character Set, Identifiers, Core library
 @section Characters
 
 @deftp {Builtin Class} <char>
@@ -1339,7 +1537,7 @@ that are supported in the native multibyte encoding scheme.
 
 
 @c ----------------------------------------------------------------------
-@node Character Set
+@node Character Set, Strings, Characters, Core library
 @section Character Set
 
 @deftp {Builtin Class} <char-set>
@@ -1374,7 +1572,7 @@ module (See @ref{Character-set library}).
 
 
 @c ----------------------------------------------------------------------
-@node Strings
+@node Strings, Regular Expression, Character Set, Core library
 @section Strings
 
 @deftp {Builtin Class} <string>
@@ -1387,7 +1585,17 @@ R5RS string operations are very minimal.  Gauche supports some
 extra built-in operations, and also a rich string library
 defined in SRFI-13.   @xref{String library}, for details.
 
-@node String Predicates
+@menu
+* String Predicates::           
+* String Constructors::         
+* String Accessors & Modifiers::  
+* String Comparison::           
+* String Utilities::            
+* String Pointers::             
+* Incomplete strings::          
+@end menu
+
+@node String Predicates, String Constructors, Strings, Strings
 @subsection String Predicates
 
 @defun string? obj
@@ -1402,7 +1610,7 @@ Returns @code{#t} if @var{obj} is an immutable string, @code{#f} otherwise
 Returns @code{#t} if @var{obj} is an incomplete string, @code{#f} otherwise
 @end defun
 
-@node String Constructors
+@node String Constructors, String Accessors & Modifiers, String Predicates, Strings
 @subsection String Constructors
 
 @defun make-string k &optional char
@@ -1422,7 +1630,7 @@ using @code{list->string} is faster than using @code{make-string} and
 [R5RS] Returns a string consisted by @var{char} @dots{}.
 @end defun
 
-@node String Accessors & Modifiers
+@node String Accessors & Modifiers, String Comparison, String Constructors, Strings
 @subsection String Accessors & Modifiers
 
 @defun string-length string
@@ -1475,7 +1683,7 @@ by this operation.
 Return value is undefined.
 @end defun
 
-@node String Comparison
+@node String Comparison, String Utilities, String Accessors & Modifiers, Strings
 @subsection String Comparison
 
 @defun string=? string1 string2
@@ -1494,7 +1702,7 @@ Return value is undefined.
 [R5RS]
 @end defun
 
-@node String Utilities
+@node String Utilities, String Pointers, String Comparison, Strings
 @subsection String Utilities
 
 @defun substring string start end
@@ -1526,7 +1734,7 @@ Return value is undefined.
 @end defun
 
 
-@node String Pointers
+@node String Pointers, Incomplete strings, String Utilities, Strings
 @subsection String Pointers
 
 @deftp {Builtin Class} <string-pointer>
@@ -1559,7 +1767,7 @@ string pointer objects, for portability.
 @defun string-pointer-index sp
 @end defun
 
-@node Incomplete strings
+@node Incomplete strings,  , String Pointers, Strings
 @subsection Incomplete strings
 
 @defun string-complete->incomplete str
@@ -1569,7 +1777,7 @@ string pointer objects, for portability.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Regular Expression
+@node Regular Expression, Vectors, Strings, Core library
 @section Regular Expression
 
 @deftp {Builtin Class} <regexp>
@@ -1619,7 +1827,7 @@ Seel also @ref{Regular expression utilities}, which defines
 useful macros to deal with regular expression matching.
 
 @c ----------------------------------------------------------------------
-@node Vectors
+@node Vectors, Hashtables, Regular Expression, Core library
 @section Vectors
 
 @deftp {Builtin Class} <vector>
@@ -1660,7 +1868,7 @@ useful macros to deal with regular expression matching.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Hashtables
+@node Hashtables, Control features, Vectors, Core library
 @section Hashtables
 
 @deftp {Builtin Class} <hash-table>
@@ -1694,10 +1902,17 @@ useful macros to deal with regular expression matching.
 
 
 @c ----------------------------------------------------------------------
-@node Control features
+@node Control features, Eval, Hashtables, Core library
 @section Control features
 
-@node Procedures
+@menu
+* Procedures::                  
+* Continuation and escaping::   
+* Multiple values::             
+* Delayed Evaludation::         
+@end menu
+
+@node Procedures, Continuation and escaping, Control features, Control features
 @subsection Procedures
 
 @deftp {Builtin Class} <procedure>
@@ -1720,7 +1935,7 @@ useful macros to deal with regular expression matching.
 [R5RS]
 @end defun
 
-@node Continuation and escaping
+@node Continuation and escaping, Multiple values, Procedures, Control features
 @subsection Continuation and escaping
 
 
@@ -1733,7 +1948,7 @@ useful macros to deal with regular expression matching.
 [R5RS]
 @end defun
 
-@node Multiple values
+@node Multiple values, Delayed Evaludation, Continuation and escaping, Control features
 @subsection Multiple values
 
 @defun values obj @dots{}
@@ -1745,7 +1960,7 @@ useful macros to deal with regular expression matching.
 @end defun
 
 
-@node Delayed Evaludation
+@node Delayed Evaludation,  , Multiple values, Control features
 @subsection  Delayed Evaludation
 
 @defspec delay expression
@@ -1757,7 +1972,7 @@ useful macros to deal with regular expression matching.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Eval
+@node Eval, Input and output, Control features, Core library
 @section Eval
 
 @defun eval expr env
@@ -1771,10 +1986,20 @@ useful macros to deal with regular expression matching.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Input and Output
+@node Input and output, Loading Programs, Eval, Core library
 @section Input and Output
 
-@node Ports
+@menu
+* Ports::                       
+* Common port operations::      
+* File ports::                  
+* String ports::                
+* Procedural ports::            
+* Input::                       
+* Output::                      
+@end menu
+
+@node Ports, Common port operations, Input and output, Input and output
 @subsection Ports
 
 @deftp {Builtin Class} <port>
@@ -1816,7 +2041,7 @@ to implement other functionality.
 
 @end deftp
 
-@node Common port operations
+@node Common port operations, File ports, Ports, Input and output
 @subsection Common port operations
 
 @defun input-port? obj
@@ -1876,7 +2101,7 @@ the copying is done character by character, using C-version of
 @end defun
 
 
-@node File ports
+@node File ports, String ports, Common port operations, Input and output
 @subsection File ports
 
 @defun open-input-file filename
@@ -1898,7 +2123,7 @@ the copying is done character by character, using C-version of
 @end defun
 
 
-@node String ports
+@node String ports, Procedural ports, File ports, Input and output
 @subsection String ports
 
 @defun open-input-string string
@@ -1926,7 +2151,7 @@ the copying is done character by character, using C-version of
 @end defun
 
 
-@node Procedural ports
+@node Procedural ports, Input, String ports, Input and output
 @subsection Procedural ports
 
 The underlying mechanism of procedural ports is very flexible,
@@ -1965,7 +2190,7 @@ remaining in the buffer, then it is called again with argument @code{#f},
 indicating that the port is closed.
 @end defun
 
-@node Input
+@node Input, Output, Procedural ports, Input and output
 @subsection Input 
 
 @defun read &optional iport
@@ -2011,7 +2236,7 @@ use @code{display}.
 @end defun
 
 
-@node Output
+@node Output,  , Input, Input and output
 @subsection Output
 
 @defun write obj &optional port
@@ -2045,7 +2270,7 @@ You can customize how the object is printed out by this method.
 
 
 @c ----------------------------------------------------------------------
-@node Loading Programs
+@node Loading Programs, Comparison and sorting, Input and output, Core library
 @section Loading Programs
 
 @defun load file &keyword (error-if-not-found #t)
@@ -2075,7 +2300,7 @@ You can customize how the object is printed out by this method.
 
 
 @c ----------------------------------------------------------------------
-@node Comparison and sorting
+@node Comparison and sorting, System interface, Loading Programs, Core library
 @section Comparison and sorting
 
 @defun sort list &optional cmfpn
@@ -2102,7 +2327,7 @@ if @code{cmpfn} is omitted.
 
 
 @c ----------------------------------------------------------------------
-@node System interface
+@node System interface,  , Comparison and sorting, Core library
 @section System interface
 
 Gauche supports most of POSIX.1 functions and other system functions
@@ -2114,7 +2339,21 @@ whenever reasonable.  Sometimes Gauche has other routines that
 are higher level than system calls, nevertheless I try to
 provide lower level routines as well.
 
-@node Program termination
+@menu
+* Program termination::         
+* Environment Inquiry::         
+* Filesystems::                 
+* Unix groups and passwords::   
+* Locale::                      
+* Signal::                      
+* System Inquiry::              
+* Time::                        
+* Unix process management::     
+* I/O multiplexing::            
+* Miscellaneous::               
+@end menu
+
+@node Program termination, Environment Inquiry, System interface, System interface
 @subsection Program termination
 
 @defun exit &optional (code 0)
@@ -2139,7 +2378,7 @@ and no reasonable clean up can be done.  You should use this function
 to terminate a forked process; @ref{Fork and exec} for details.
 @end defun
 
-@node Environment Inquiry
+@node Environment Inquiry, Filesystems, Program termination, System interface
 @subsection Environment Inquiry
 
 @defun sys-getenv name
@@ -2158,10 +2397,18 @@ These functions returns a string that tells information about Gauche
 interpreter itself.
 @end defun
 
-@node Filesystems
+@node Filesystems, Unix groups and passwords, Environment Inquiry, System interface
 @subsection Filesystems
 
-@node Directories
+@menu
+* Directories::                 
+* Directory manipulation::      
+* Pathnames::                   
+* File stats::                  
+* Other file operations::       
+@end menu
+
+@node Directories, Directory manipulation, Filesystems, Filesystems
 @subsubsection Directories
 
 @defun sys-readdir path
@@ -2182,7 +2429,7 @@ If the undelying platform doesn't have @code{glob()}, this function
 signals an error of "feature not supported".
 @end defun
 
-@node Directory manipulation
+@node Directory manipulation, Pathnames, Directories, Filesystems
 @subsubsection Directory manipulation
 
 @defun sys-remove filenmae
@@ -2221,7 +2468,7 @@ Remove @var{filename}.
 [POSIX]
 @end defun
 
-@node Pathnames
+@node Pathnames, File stats, Directory manipulation, Filesystems
 @subsubsection Pathnames
 
 @defun sys-normalize-pathname pathname &keyword absolute expand canonicalize
@@ -2284,7 +2531,7 @@ may return @code{"/"} for the argument @code{"/"}, and
 @code{"."} for the argument @code{"."}.
 @end defun
 
-@node File stats
+@node File stats, Other file operations, Pathnames, Filesystems
 @subsubsection File stats
 
 @deftp {Builtin Class} <sys-stat>
@@ -2357,7 +2604,7 @@ of directories containing @var{pathname} prevents you from cheking
 @var{pathname} itself.
 @end defun
 
-@node Other file operations
+@node Other file operations,  , File stats, Filesystems
 @subsubsection Other file operations
 
 @defun sys-chdir dir
@@ -2380,10 +2627,16 @@ access @var{dir}.
 [POSIX]
 @end defun
 
-@node Unix groups and passwords
+@node Unix groups and passwords, Locale, Filesystems, System interface
 @subsection Unix groups and passwords
 
-@node Unix Group
+@menu
+* Unix Group::                  
+* Unix Password::               
+* Password encryption::         
+@end menu
+
+@node Unix Group, Unix Password, Unix groups and passwords, Unix groups and passwords
 @subsubsection Unix Group
 
 @deftp {Builtin Class} <sys-group>
@@ -2399,7 +2652,7 @@ access @var{dir}.
 @defunx sys-group-name->gid name
 @end defun
 
-@node Unix Password
+@node Unix Password, Password encryption, Unix Group, Unix groups and passwords
 @subsubsection Unix Password
 
 @deftp {Builtin Class} <sys-passwd>
@@ -2416,7 +2669,7 @@ access @var{dir}.
 @end defun
 
 
-@node Password encryption
+@node Password encryption,  , Unix Password, Unix groups and passwords
 @subsubsection Password encryption
 
 @defun sys-crypt key salt
@@ -2426,7 +2679,7 @@ On systems where @code{crypt(3)} is not available, call to this
 function signals an error.
 @end defun
 
-@node Locale
+@node Locale, Signal, Unix groups and passwords, System interface
 @subsection Locale
 
 @defun sys-setlocate category locale
@@ -2434,7 +2687,7 @@ function signals an error.
 @end defun
 
 
-@node Signal
+@node Signal, System Inquiry, Locale, System interface
 @subsection Signal
 
 @defvar SIGABRT
@@ -2475,7 +2728,7 @@ the process group @var{-pid}.
 @end defun
 
 
-@node System Inquiry
+@node System Inquiry, Time, Signal, System interface
 @subsection System Inquiry
 
 @defun sys-uname
@@ -2523,7 +2776,7 @@ If the system can't determine the information, @code{#f} is returned.
 [POSIX]
 @end defun
 
-@node Time
+@node Time, Unix process management, System Inquiry, System interface
 @subsection Time
 
 @deftp {Builtin Class} <sys-tm>
@@ -2574,10 +2827,15 @@ local time.
 @defun sys-tm->alist tm
 @end defun
 
-@node Unix process management
+@node Unix process management, I/O multiplexing, Time, System interface
 @subsection Unix process management
 
-@node Fork and exec
+@menu
+* Fork and exec::               
+* Wait::                        
+@end menu
+
+@node Fork and exec, Wait, Unix process management, Unix process management
 @subsubsection Fork and exec
 
 @defun sys-system command
@@ -2645,7 +2903,7 @@ available!), so Gauche simply exits on the error.
 See also @ref{High Level Process Interface}, which provides
 more convenient process handling on top of above primitives.
 
-@node Wait
+@node Wait,  , Fork and exec, Unix process management
 @subsubsection Wait
 
 @defun sys-wait
@@ -2708,7 +2966,7 @@ true @var{untraced} argument.  @code{sys-wait-stopsig} returns the
 signum number that stopped the child.
 @end defun
 
-@node I/O multiplexing
+@node I/O multiplexing, Miscellaneous, Unix process management, System interface
 @subsection I/O multiplexing
 
 The interface functions for @code{select(2)}.
@@ -2747,7 +3005,7 @@ Returns the maximum file descriptor number in @var{fdset}.
 @end defun
 
 
-@node Miscellaneous
+@node Miscellaneous,  , I/O multiplexing, System interface
 @subsection Miscellaneous
 
 @defun sys-pause
@@ -2767,11 +3025,20 @@ To be porable across POSIX implementation, keep @var{seconds} less than
 @end defun
 
 @c ======================================================================
-@node Object System
+@node Object System, Libarary Modules, Core library, Top
 @chapter Object System
 
 @c ----------------------------------------------------------------------
-@node General Inquiry
+@menu
+* General Inquiry::             
+* Defining class::              
+* Defining methods::            
+* Creating Instance::           
+* Accessing Instance::          
+* Metaobject protocol::         
+@end menu
+
+@node General Inquiry, Defining class, Object System, Object System
 @section  General Inquiry
 
 @defun class-of obj
@@ -2784,7 +3051,7 @@ of descendants of @var{class}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Defining class
+@node Defining class, Defining methods, General Inquiry, Object System
 @section Defining class
 
 @defmac define-class name supers (slot-spec @dots{}) option @dots{}
@@ -2792,7 +3059,7 @@ of descendants of @var{class}.
 
 
 @c ----------------------------------------------------------------------
-@node Defining methods
+@node Defining methods, Creating Instance, Defining class, Object System
 @section Defining methods
 
 @defmac define-generic name
@@ -2802,7 +3069,7 @@ of descendants of @var{class}.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Creating Instance
+@node Creating Instance, Accessing Instance, Defining methods, Object System
 @section Creating Instance
 
 @deffn {Generic Function} make class arg @dots{}
@@ -2819,7 +3086,7 @@ of descendants of @var{class}.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Accessing Instance
+@node Accessing Instance, Metaobject protocol, Creating Instance, Object System
 @section Accessing Instance
 
 @defun slot-ref obj slot
@@ -2852,10 +3119,19 @@ of descendants of @var{class}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Metaobject protocol
+@node Metaobject protocol,  , Accessing Instance, Object System
 @section Metaobject procotol
 
-@node System metaclasses
+@menu
+* System metaclasses::          
+* Class introspection::         
+* Class instantiation::         
+* Customizing slot access::     
+* Method instantiation::        
+* Customizing method application::  
+@end menu
+
+@node System metaclasses, Class introspection, Metaobject protocol, Metaobject protocol
 @subsection System metaclasses
 
 @deftp {Class} <class>
@@ -2875,10 +3151,15 @@ of descendants of @var{class}.
 @end deftp
 
 
-@node Class introspection
+@node Class introspection, Class instantiation, System metaclasses, Metaobject protocol
 @subsection Class introspection
 
-@node Class metaobject
+@menu
+* Class metaobject::            
+* Slot definition::             
+@end menu
+
+@node Class metaobject, Slot definition, Class introspection, Class introspection
 @subsubsection Class metaobject
 
 @defun class-name class
@@ -2896,7 +3177,7 @@ of descendants of @var{class}.
 @defun class-slots
 @end defun
 
-@node Slot definition
+@node Slot definition,  , Class metaobject, Class introspection
 @subsubsection Slot definition
 
 @defun class-slot-definition class slot-name
@@ -2919,26 +3200,47 @@ of descendants of @var{class}.
 @defunx slot-definition-option slot-def key &optional default
 @end defun
 
-@node Class instantiation
+@node Class instantiation, Customizing slot access, Class introspection, Metaobject protocol
 @subsection Class instantiation
 
-@node Customizing slot access
+@node Customizing slot access, Method instantiation, Class instantiation, Metaobject protocol
 @subsection Customizing slot access
 
-@node Method instantiation
+@node Method instantiation, Customizing method application, Customizing slot access, Metaobject protocol
 @subsection Method instantiation
 
-@node Customizing method application
+@node Customizing method application,  , Method instantiation, Metaobject protocol
 @subsection Customizing method application
 
 
 
 @c ======================================================================
-@node Libarary Modules
+@node Libarary Modules, References, Object System, Top
 @chapter Library Modules
 
 @c ----------------------------------------------------------------------
-@node Character code conversion
+@menu
+* Character code conversion::   
+* Networking::                  
+* High Level Process Interface::  
+* Regular expression utilities::  
+* Serializer::                  
+* Unit Testing::                
+* RFC822 Message parsing::      
+* Base64 encoding/decoding::    
+* SLIB::                        
+* Feature Conditional::         
+* List library::                
+* And-let*::                    
+* Homogeneous Vectors::         
+* SRFI String ports::           
+* Syntax to receive multiple values::  
+* Let-values::                  
+* String library::              
+* Character-set library::       
+@end menu
+
+@node Character code conversion, Networking, Libarary Modules, Libarary Modules
 @section @code{gauche.charconv} - Character Code Conversion
 
 @deftp {Module} gauche.charconv
@@ -3071,7 +3373,7 @@ usually in favor of the native CES.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Networking
+@node Networking, High Level Process Interface, Character code conversion, Libarary Modules
 @section @code{gauche.net} - Networking
 
 @deftp {Module} gauche.net
@@ -3089,7 +3391,14 @@ about hostnames, service ports, and protocols.
 @end deftp
 
 
-@node Socket address
+@menu
+* Socket address::              
+* High-level functions::        
+* Low-level socket interface::  
+* Netdb interface::             
+@end menu
+
+@node Socket address, High-level functions, Networking, Networking
 @subsection Socket address
 
 @deftp {Builtin Class} <sockaddr>
@@ -3161,7 +3470,7 @@ Returns a pathname of the socket address.
 @end deffn
 
 
-@node High-level functions
+@node High-level functions, Low-level socket interface, Socket address, Networking
 @subsection High-level functions
 
 @deftp {Builtin Class} <socket>
@@ -3180,76 +3489,61 @@ are to provide an easy methods for typical cases,
 but have less control.  If you need more than these functions
 provide, use low-level interface.
 
-@defun make-client-socket address-spec &optional port
+@defun make-client-socket &optional address-spec @dots{}
 Creates and returns a client socket, connected to the address
-specified by @var{address-spec}, which may be either one of
-the followings:
-@table @asis
-@item a socket address object
-If @var{address-spec} is an object of subclasses of @code{<sockaddr>},
-it is used as a remote socket address.
-@item a string, begins with "unix:"
-This specifies unix-domain socket.  The string following "unix:"
-is taken as a pathname of the socket.
-@item a string, begins with "inet:"
-This specifies inet-domain TCP socket.  The string following "inet:"
-must be a form of "@var{hostname}:@var{port}", where @var{hostname}
-is a domain name or a dotted decimal notation of IP address of
-the remote host, and @var{port} is a decimal port number.
-@item a string that doesn't fit the above patterns
-This is for compatibility with STk.  In this case, the socket
-is assumed to be an inet-domain, and the @var{address-spec}
-is taken as a remote host name or an IP address.  The second
-argument @var{port} is required to specify the remote port number.
-@end table
+specified by @var{address-spec} @dots{}.
 
-The second argument @var{port} is just for STk compatibility mode.
-It is an error to specify @var{port} argument except the last pattern
-of @var{address-spec}.
+@table @code
+@item (make-client-socket 'unix @var{path})
+The client socket is connected to the unix domain server socket
+of addreess @var{path}.
+@item (make-client-socket 'inet @var{host} @var{port})
+The client socket is connected to the inet domain server socket
+with hostname @var{host} and port @var{port}.   TCP protocol is
+assumed.   @var{host} can be either a dotted decimal notation of
+IPv4 address, or a hostname.  @var{port} must be an exact integer.
+@item (make-client-socket @var{host} @var{port})
+This works the same as above.  This form is for compatibility with STk.
+@end table
 
 This function raises an error if it cannot create a socket,
 or cannot connect to the specified address.
 
 @example
-(make-client-socket "inet:www.yahoo.com:80")
-  @result{} ;@r{a socket connected to www.yahoo.com, port 80}
-(make-client-socket "inet:127.0.0.1:23")
-  @result{} ;@r{a socket connected to localhost, port 23}
+(make-client-socket 'inet "www.w3.com" 80)
+  @result{} ;@r{a socket connected to www.w3.com, port 80}
 (make-client-socket "127.0.0.1" 23)
   @result{} ;@r{a socket connected to localhost, port 23}
-(make-client-socket "unix:/tmp/.sock"
+(make-client-socket 'unix "/tmp/.sock"
   @result{} ;@r{a socket connected to a unix domain socket "/tmp/.sock"}
 @end example
 @end defun
 
-@defun make-server-socket address-spec &keyword reuse-addr?
+@defun make-server-socket &optional address-spec @dots{}
 Creates and returns a server socket, listening the address
-@var{address-spec}, which may be either one of the followings:
-@table @asis
-@item a socket address object
-It is used as the local socket address.
-@item a string, begins with "unix:"
-This specifies unix-domain socket.  The string following "unix:"
-is taken as a pathname of the socket.
-@item a string, begins with "inet:"
-This specifies inet-domain TCP socket.  The string following "inet:"
-is a decimal number which is a port number to listen.
-@item an exact integer
-This specifies inet-domain socket, and the number is used
-as a port number to listen.  This behavior is the same as STk.
+specified by @var{address-spec}.
+
+@table @code
+@item (make-server-socket 'unix @var{path})
+The socket is bound to a unix domain socket with a name @var{path}.
+@item (make-server-socket 'inet @var{port} [:reuse-addr? @var{flag}])
+The socket is bound to an inet domain TCP socket, listening
+port @var{port}, which is a positive exact integer.
+If a keyword argument @var{reuse-addr?} is given and true,
+@code{so_reuseaddr} option is set to the socket before bound to
+the port.  This allows the process to bind the server socket
+immediately after other process releases the port.
+@item (make-server-socket @var{port} [:reuse-addr? @var{flag}])
+This is a synonym to the above form.  This form is backward-compatible
+with STk's @code{make-server-socket}.
 @end table
 
-If the keyword argument @var{reuse-addr?} is given with true value,
-the socket option @code{SO_REUSEADDR} is also set, which allows
-the server process to bind TCP port immediately after it is released
-by another process.
-
 @example
-(make-server-socket "inet:8080")
+(make-server-socket 'inet 8080)
   @result{} ;@r{a TCP socket listening port 8080}
 (make-server-socket 8080)
   @result{} ;@r{a TCP socket listening port 8080}
-(make-server-socket "unix:/tmp/.sock")
+(make-server-socket 'unix "/tmp/.sock")
   @result{} ;@r{a socket listening unix socket /tmp/.sock}
 @end example
 @end defun
@@ -3263,18 +3557,23 @@ If no address has been associated to the socket, @code{#f} is returned.
 
 @defun socket-input-port socket
 Returns an input port associated with @var{socket}.
-The port can be used to send information to the remote process
+The port can be used to receive information from the remote process
 connected to the socket.
 @end defun
 
 @defun socket-output-port socket
 Returns an output port associated with @var{socket}.
-The port can be used to receive information from the remote process
+The port can be used to send information to the remote process
 connected to the socket.
 @end defun
 
+@defun socket-close socket
+Closes @var{socket}.  All the ports associated to
+@var{socket} are closed as well.   If the socket is connected,
+it is shut down before closing.
+@end defun
 
-@node Low-level socket interface
+@node Low-level socket interface, Netdb interface, High-level functions, Networking
 @subsection Low-level socket interface
 
 These functions provide APIs similar to the system calls.
@@ -3323,7 +3622,10 @@ symbols.
 @end defun
 
 @defun socket-bind socket address
-Binds @var{socket} to the network address @var{address}.
+Binds @var{socket} to the local network address @var{address}.
+It is usually used to associate specific address to the server port.
+If binding failed, an error is signalled (most likely the address is
+already in use).
 @end defun
 
 @defun socket-listen socket backlog
@@ -3343,12 +3645,23 @@ request.
 @end defun
 
 @defun socket-connect socket address
+Connects @var{socket} to the remote address @var{address}.
+This is the way for a client socket to connect to the remote entity.
 @end defun
 
 @defun socket-shutdown socket how
-@end defun
+Shuts down connection of @var{socket}.  If @var{how} is 0, the receive
+channel of @var{socket} is disallowed.  If @var{how} is 1, the send
+channel of @var{socket} is disallowed.  If @var{how} is 2, both
+receive and send channels are disallowed.
+It is an error to call this function on a non-connected socket.
 
-@defun socket-close socket
+If you shut down the send channel of the socket, the remote peer
+sees EOF from its receive channel.  This is useful if the remote peer
+expects EOF before sending something back to you.
+
+Other than this kind of special cases, you don't usually need to
+call @code{socket-shutdown} explicitly; @code{socket-close} calls it anyway.
 @end defun
 
 Further control over sockets and protocol layers is possible
@@ -3437,7 +3750,7 @@ Gets and clears the pending socket error as an integer.
 Can be only used with @code{socket-getsockopt}.
 @end defvar
 
-@node Netdb interface
+@node Netdb interface,  , Low-level socket interface, Networking
 @subsection  Netdb interface
 
 @deftp {Builtin Class} <sys-hostent>
@@ -3489,14 +3802,100 @@ Otherwise, returns @code{#f}.
 
 @deftp {Builtin Class} <sys-servent>
 @clindex sys-servent
+An entry of the network service database.  Corresponding to
+@code{struct servent}.  The following slots are available read-only.
+
+@defivar {<sys-servent>} name
+The formal name of the service (string).
+@end defivar
+@defivar {<sys-servent>} aliases
+A list of alias names of the service (list of strings).
+@end defivar
+@defivar {<sys-servent>} port
+A port number registered for this service (exact integer).
+@end defivar
+@defivar {<sys-servent>} proto
+A protocol name for this service (string).
+@end defivar
 @end deftp
+
+@defun sys-getservbyname name proto
+Looks up the network service database with a service name @var{name} and
+a protocol @var{proto}.  Both @var{name} and @var{proto} must be a string.
+If a service is found, an instance of @code{<sys-servent>} is returned.
+Otherwise, @code{#f} is returned.
+@example
+(let ((serv (sys-getservbyname "http" "tcp")))
+  (list (slot-ref host 'name)
+        (slot-ref host 'aliases)
+        (slot-ref host 'port)
+        (slot-ref host 'proto)))
+  @result{} ("http" () 80 "tcp")
+@end example
+@end defun
+
+@defun sys-getservbyport port proto
+Looks up the network service database with a service port @var{port} and
+a protocol @var{proto}.  @var{port} must be an exact integer, and
+@var{proto} must be a string.
+If a service is found, an instance of @code{<sys-servent>} is returned.
+Otherwise, @code{#f} is returned.
+@example
+(let ((serv (sys-getservbyport 6000 "tcp")))
+  (list (slot-ref host 'name)
+        (slot-ref host 'aliases)
+        (slot-ref host 'port)
+        (slot-ref host 'proto)))
+  @result{} ("x-server" () 6000 "tcp")
+@end example
+@end defun
 
 @deftp {Builtin Class} <sys-protoent>
 @clindex sys-protoent
+An entry of the protocol database.   Corresponds to @code{struct protoent}
+in C.   The following slots are available read-only.
+
+@defivar {<sys-servent>} name
+The formal name of the protocol (string).
+@end defivar
+@defivar {<sys-servent>} aliases
+A list of alias names of the protocol (list of strings).
+@end defivar
+@defivar {<sys-servent>} proto
+A protocol number (exact integer).
+@end defivar
 @end deftp
 
+@defun sys-getprotobyname name
+Looks up the network protocol database with a name @var{name},
+which must be a string.
+If a protocol is found, an instance of @code{<sys-protoent>} is returned.
+Otherwise, @code{#f} is returned.
+@example
+(let ((proto (sys-getprotobyname "icmp")))
+  (list (slot-ref host 'name)
+        (slot-ref host 'aliases)
+        (slot-ref host 'proto)))
+  @result{} ("icmp" ("ICMP") 1)
+@end example
+@end defun
+
+@defun sys-getprotobynumber number
+Looks up the network protoice database with a protocol number @var{number},
+which must be an exact integer.
+If a protocol is found, an instance of @code{<sys-protoent>} is returned.
+Otherwise, @code{#f} is returned.
+@example
+(let ((proto (sys-getprotobynumber 17)))
+  (list (slot-ref host 'name)
+        (slot-ref host 'aliases)
+        (slot-ref host 'proto)))
+  @result{} ("udp" ("UDP") 17)
+@end example
+@end defun
+
 @c ----------------------------------------------------------------------
-@node High Level Process Interface
+@node High Level Process Interface, Regular expression utilities, Networking, Libarary Modules
 @section @code{gauche.process} - High Level Process Interface
 
 @deftp {Module} gauche.process
@@ -3504,55 +3903,148 @@ Otherwise, returns @code{#f}.
 This module provides a higher-level API of Unix process control,
 implemented on top of low-level system calls such as @code{sys-fork}
 and @code{sys-exec}.  The interface is mostly compatible with
-STk's process library.
+STk's process library.  This module also provides ``process ports'', 
+a convenient way to send/receive information to/from subprocesses.
 
 To use this module, say @code{(use gauche.process)}.
 @end deftp
 
+@menu
+* Process object::              
+* Process ports::               
+@end menu
+
+@node Process object, Process ports, High Level Process Interface, High Level Process Interface
+@subsection Process object
+
 @deftp {Class} <process>
 @clindex process
-An object to keep the status of a child process.
+An object to keep the status of a child process.  You can create
+the process object by @code{run-process} procedure described below.
 @end deftp
 
 @defun run-process command arg @dots{}
+Run @var{command} with @var{arg} in a subprocess, and returns a
+@code{<process>} object.   @var{command} is searched from the
+command search path.
+
+Command line arguments @var{arg}s can include the following keyword
+arguments which specify special handling of the child process:
+@table @code
+@item :input @var{file}
+@itemx :output @var{file}
+@itemx :error @var{file}
+These arguments controls the subprocess' standard i/o.
+@var{file} may be either a string or a keyword @code{:pipe}.
+If it is a string, the process' standard input, output, or error goes
+to the named file.   If it is @code{:pipe}, the process'
+corresponding standard i/o is connected to a pipe, 
+and the other side of the pipe is available for the calling process.
+
+@item :wait @var{flag}
+If @var{flag} is true, @code{run-process} waits until the
+subprocess terminates.  Othewise the subprocess runs asynchronously
+and @code{run-process} returns immediately, which is the default behavior.
+Note that if the subprocess is running asynchronously, it is the
+caller's responsibility to call @code{process-wait} at certain
+timing to correct its exit status.
+
+@item :fork @var{flag}
+If @var{flag} is true, @code{run-process} forks to run
+the subprocess, which is the default behavior.  If @var{flag} is
+false, @code{run-process} directly calls @code{sys-exec}, so
+it never returns.
+@end table
+
 @end defun
 
 @defun process? obj
+@equiv{} @code{(is-a? @var{obj} <process>)}
 @end defun
 
 @deffn {Method} process-pid (process <process>)
+Returns the process ID of the subprocess @var{process}.
 @end deffn
 
 @deffn {Method} process-command (process <process>)
-@end deffn
-
-@deffn {Method} process-status (process <process>)
+Returns the command invoked in the subprocess @var{process}.
 @end deffn
 
 @deffn {Method} process-input (process <process>)
 @deffnx {Method} process-output (process <process>)
 @deffnx {Method} process-error (process <process>)
+If the process' standard input, output or error is connected to
+a pipe, returns another end of the pipe, i.e. @code{process-input}
+returns an output port that can feed data to @var{process}' stdin,
+@code{process-output} an input port that can read data from
+@var{process}' stdout, and @code{process-error} an input port that
+can read data from @code{process}' stderr.
+If the corresponding i/o is not connected to the pipe,
+the function returns @code{#f}.
+
+@example
+(let ((process (run-process "date" :output :pipe)))
+  (read-line (process-output process)))
+ @result{} "Fri Jun 22 22:22:22 HST 2001"
+@end example
 @end deffn
 
 @defun process-alive? process
+Returns true if @var{process} is alive.  Note that Gauche can't
+know the subprocess' status until it is explicitly checked by
+@code{process-wait}.
 @end defun
 
 @defun process-list
+Returns a list of active processes.  The process remains active
+until its exit status is explicitly collected by @code{process-wait}.
 @end defun
 
 @defun process-wait process
+Obtains exit status of the subprocess @var{process}.
+This suspends execution until @var{process} exits.
 @end defun
 
 @defun process-send-signal process signal
+Sends a signal @var{signal} to the subprocess @var{process}.
+@var{signal} must be an exact integer for signal number.
+@xref{Signal}, for predefined variables of signals.
 @end defun
 
 @defun process-kill process
 @defunx process-stop process
 @defunx process-continue process
+Sends SIGKILL, SIGSTOP and SIGCONT to @var{process}, respectively.
 @end defun
 
+@node Process ports,  , Process object, High Level Process Interface
+@subsection Process ports
+
+@defun open-input-process-port command
+@end defun
+
+@defun call-with-input-process command proc
+@end defun
+
+@defun with-input-from-process command thunk
+@end defun
+
+
+@defun open-output-process-port command
+@end defun
+
+@defun call-with-output-process command proc
+@end defun
+
+@defun with-output-to-process command thunk
+@end defun
+
+@defun call-with-io-process command proc
+@end defun
+
+
 @c ----------------------------------------------------------------------
-@node Regular expression utilities
+@node Regular expression utilities, Serializer, High Level Process Interface, Libarary Modules
 @section @code{gauche.regexp} - Regular expression utilities
 
 @deftp {Module} gauche.regexp
@@ -3731,7 +4223,7 @@ The @code{parse-date} example above becomes simpler if you use
 
 
 @c ----------------------------------------------------------------------
-@node Serializer
+@node Serializer, Unit Testing, Regular expression utilities, Libarary Modules
 @section @code{gauche.serializer} - Serializer
 
 @deftp {Module} gauche.serializer
@@ -3740,7 +4232,7 @@ The @code{parse-date} example above becomes simpler if you use
 
 
 @c ----------------------------------------------------------------------
-@node Unit Testing
+@node Unit Testing, RFC822 Message parsing, Serializer, Libarary Modules
 @section @code{gauche.test} - Unit Testing
 
 @deftp {Module} gauche.test
@@ -3807,7 +4299,7 @@ Prints out list of failed tests.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node RFC822 Message parsing
+@node RFC822 Message parsing, Base64 encoding/decoding, Unit Testing, Libarary Modules
 @section @code{rfc.822} - RFC822 message parsing
 
 @deftp {Module} rfc.822
@@ -3841,7 +4333,7 @@ The order of fields are preserved.
 
 
 @c ----------------------------------------------------------------------
-@node Base64 encoding/decoding
+@node Base64 encoding/decoding, SLIB, RFC822 Message parsing, Libarary Modules
 @section @code{rfc.base64} - Base64 encoding/decoding
 
 @deftp {Module} rfc.base64
@@ -3882,7 +4374,7 @@ set are silently ignored.
 
 
 @c ----------------------------------------------------------------------
-@node SLIB
+@node SLIB, Feature Conditional, Base64 encoding/decoding, Libarary Modules
 @section @code{slib} - SLIB interface
 
 @deftp {Module} slib
@@ -3903,7 +4395,7 @@ module @code{slib}.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Feature Conditional
+@node Feature Conditional, List library, SLIB, Libarary Modules
 @section @code{srfi-0} - Feature Conditional
 
 @deftp {Module} srfi-0
@@ -3915,7 +4407,7 @@ module @code{slib}.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node List library
+@node List library, And-let*, Feature Conditional, Libarary Modules
 @section @code{srfi-1} - List library
 
 @deftp {Module} srfi-1
@@ -3929,7 +4421,20 @@ Detailed specificaion of SRFI-1 is available at
 @uref{http://srfi.schemers.org/srfi-1/srfi-1.html}.
 @end deftp
 
-@node SRFI-1 List constructors
+@menu
+* SRFI-1 List constructors::    
+* SRFI-1 List predicates::      
+* SRFI-1 List selectors::       
+* SRFI-1 List miscellaneous routines::  
+* SRFI-1 Fold::                 
+* SRFI-1 Filterling & partitioning::  
+* SRFI-1 Searching::            
+* SRFI-1 Deletion::             
+* SRFI-1 Association lists::    
+* SRFI-1 set operations::       
+@end menu
+
+@node SRFI-1 List constructors, SRFI-1 List predicates, List library, List library
 @subsection List constructors
 
 @defun xcons cd ca
@@ -3979,7 +4484,7 @@ This procedure takes its name from the APL primitive.
 @end example
 @end defun
 
-@node SRFI-1 List predicates
+@node SRFI-1 List predicates, SRFI-1 List selectors, SRFI-1 List constructors, List library
 @subsection List predicates
 
 @defun proper-list? x
@@ -4028,7 +4533,7 @@ it must be the case that
 @end example
 @end defun
 
-@node SRFI-1 List selectors
+@node SRFI-1 List selectors, SRFI-1 List miscellaneous routines, SRFI-1 List predicates, List library
 @subsection List selectors
 
 @defun  first pair
@@ -4116,7 +4621,7 @@ It is equivalent to @code{(car (last-pair pair))}.
 Note that @code{last-pair} is Gauche built-in procedure.
 @end defun
 
-@node SRFI-1 List miscellaneous routines
+@node SRFI-1 List miscellaneous routines, SRFI-1 Fold, SRFI-1 List selectors, List library
 @subsection List miscellaneous routines
 
 @defun length+ x
@@ -4194,7 +4699,7 @@ At least one of the argument lists must be finite:
 @end example
 @end defun
 
-@node SRFI-1 Fold, unfold & map
+@node SRFI-1 Fold, SRFI-1 Filterling & partitioning, SRFI-1 List miscellaneous routines, List library
 @subsection List fold, unfold & map
 
 @defun fold kons knil clist1 clist2 @dots{}
@@ -4293,7 +4798,7 @@ this function is just a synonym of @code{map}.
 [SRIF-1]
 @end defun
 
-@node SRFI-1 Filterling & partitioning
+@node SRFI-1 Filterling & partitioning, SRFI-1 Searching, SRFI-1 Fold, List library
 @subsection List filtering & partitioning
 
 @defun filter pred list
@@ -4314,7 +4819,7 @@ this function is just a synonym of @code{map}.
 [SRFI-1]
 @end defun
 
-@node SRFI-1 Searching
+@node SRFI-1 Searching, SRFI-1 Deletion, SRFI-1 Filterling & partitioning, List library
 @subsection List searching
 
 @defun find pred clist
@@ -4353,7 +4858,7 @@ this function is just a synonym of @code{map}.
 [SRFI-1]
 @end defun
 
-@node SRFI-1 Deletion
+@node SRFI-1 Deletion, SRFI-1 Association lists, SRFI-1 Searching, List library
 @subsection List deletion
 
 @defun delete x list &optional elt=
@@ -4366,7 +4871,7 @@ this function is just a synonym of @code{map}.
 [SRFI-1]
 @end defun
 
-@node SRFI-1 Association lists
+@node SRFI-1 Association lists, SRFI-1 set operations, SRFI-1 Deletion, List library
 @subsection Association lists
 
 @defun alist-cons key datum alist
@@ -4383,7 +4888,7 @@ This is an alias of the Gauche builtin procedure @code{acons}.
 [SRFI-1]
 @end defun
 
-@node SRFI-1 set operations
+@node SRFI-1 set operations,  , SRFI-1 Association lists, List library
 @subsection Lists as sets
 
 @defun lset@code{<=} elt= list1 @dots{}
@@ -4427,7 +4932,7 @@ This is an alias of the Gauche builtin procedure @code{acons}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node And-let*
+@node And-let*, Homogeneous Vectors, List library, Libarary Modules
 @section @code{srfi-2} - And-let*
 
 @deftp {Module} srfi-2
@@ -4438,7 +4943,7 @@ This is an alias of the Gauche builtin procedure @code{acons}.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Homogeneous Vectors
+@node Homogeneous Vectors, SRFI String ports, And-let*, Libarary Modules
 @section @code{srfi-4} - Homogeneous Vectors
 
 @deftp {Module} srfi-4
@@ -4610,7 +5115,7 @@ This is an alias of the Gauche builtin procedure @code{acons}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SRFI String ports
+@node SRFI String ports, Syntax to receive multiple values, Homogeneous Vectors, Libarary Modules
 @section @code{srfi-6} - String ports
 
 @deftp {Module} srfi-6
@@ -4620,7 +5125,7 @@ The form @code{(use srfi-6)} doesn't do anything.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Syntax to receive multiple values
+@node Syntax to receive multiple values, Let-values, SRFI String ports, Libarary Modules
 @section @code{srfi-8} - Syntax to receive multiple values
 
 @deftp {Module} srfi-8
@@ -4631,7 +5136,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 
 
 @c ----------------------------------------------------------------------
-@node Let-values
+@node Let-values, String library, Syntax to receive multiple values, Libarary Modules
 @section @code{srfi-11} - Let-values
 
 @deftp {Module} srfi-11
@@ -4640,14 +5145,30 @@ The form @code{(use srfi-8)} doesn't do anything.
 
 
 @c ----------------------------------------------------------------------
-@node String library
+@node String library, Character-set library, Let-values, Libarary Modules
 @section @code{srfi-13} - String library
 
 @deftp {Module} srfi-13
 @mdindex srfi-13
 @end deftp
 
-@node SRFI-13 String predicates
+@menu
+* SRFI-13 String predicates::   
+* SRFI-13 String Constructors::  
+* SRFI-13 String Selection::    
+* SRFI-13 String Comparison::   
+* SRFI-13 String Prefixes & Suffixes::  
+* SRFI-13 String searching::    
+* SRFI-13 String case mapping::  
+* SRFI-13 String reverse & append::  
+* SRFI-13 String mapping::      
+* SRFI-13 String rotation::     
+* SRFI-13 other string operations::  
+* SRFI-13 String filtering::    
+* SRFI-13 Low-level string procedures::  
+@end menu
+
+@node SRFI-13 String predicates, SRFI-13 String Constructors, String library, String library
 @subsection String predicates
 
 @defun string-null? s
@@ -4662,7 +5183,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 [SRFI-13]
 @end defun
 
-@node SRFI-13 String Constructors
+@node SRFI-13 String Constructors, SRFI-13 String Selection, SRFI-13 String predicates, String library
 @subsection String Constructors
 
 @defun string-tabulate proc len
@@ -4673,7 +5194,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 [SRFI-13]
 @end defun
 
-@node SRFI-13 String Selection
+@node SRFI-13 String Selection, SRFI-13 String Comparison, SRFI-13 String Constructors, String library
 @subsection String selection
 
 @defun substring/shared s start &optional end
@@ -4702,7 +5223,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 [SRFI-13]
 @end defun
 
-@node SRFI-13 String Comparison
+@node SRFI-13 String Comparison, SRFI-13 String Prefixes & Suffixes, SRFI-13 String Selection, String library
 @subsection String comparison
 
 @defun string-compare s1 s2 proc< proc= proc> &optional start1 end1 start2 end2
@@ -4733,7 +5254,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 [SRFI-13]
 @end defun
 
-@node SRFI-13 String Prefixes & Suffixes
+@node SRFI-13 String Prefixes & Suffixes, SRFI-13 String searching, SRFI-13 String Comparison, String library
 @subsection String Prefixes & Suffixes
 
 @defun string-prefix-length s1 s2 &optional start1 end1 start2 end2
@@ -4750,7 +5271,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 [SRFI-13]
 @end defun
 
-@node SRFI-13 String searching
+@node SRFI-13 String searching, SRFI-13 String case mapping, SRFI-13 String Prefixes & Suffixes, String library
 @subsection String searching
 
 @defun string-index s char/char-set/pred &optional start end
@@ -4769,7 +5290,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 [SRFI-13]
 @end defun
 
-@node SRFI-13 String case mapping
+@node SRFI-13 String case mapping, SRFI-13 String reverse & append, SRFI-13 String searching, String library
 @subsection String case mapping
 
 @defun string-titlecase s &optional start end
@@ -4787,7 +5308,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 [SRFI-13]
 @end defun
 
-@node SRFI-13 String reverse & append
+@node SRFI-13 String reverse & append, SRFI-13 String mapping, SRFI-13 String case mapping, String library
 @subsection String reverse & append
 
 @defun string-reverse s &optional start end
@@ -4809,7 +5330,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 [SRFI-13]
 @end defun
 
-@node SRFI-13 String mapping
+@node SRFI-13 String mapping, SRFI-13 String rotation, SRFI-13 String reverse & append, String library
 @subsection String mapping
 
 @defun string-map proc s &optional start end
@@ -4838,7 +5359,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 [SRFI-13]
 @end defun
 
-@node SRFI-13 String rotation
+@node SRFI-13 String rotation, SRFI-13 other string operations, SRFI-13 String mapping, String library
 @subsection String rotation
 
 @defun xsubstring s from &optional to start end
@@ -4849,7 +5370,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 [SRFI-13]
 @end defun
 
-@node SRFI-13 other string operations
+@node SRFI-13 other string operations, SRFI-13 String filtering, SRFI-13 String rotation, String library
 @subsection Other string operations
 
 @defun string-replace s1 s2 start1 end2 &optional start2 end2
@@ -4860,7 +5381,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 [SRFI-13]
 @end defun
 
-@node SRFI-13 String filtering
+@node SRFI-13 String filtering, SRFI-13 Low-level string procedures, SRFI-13 other string operations, String library
 @subsection String filtering
 
 @defun string-filter s char/char-set/pred &optional start end
@@ -4868,7 +5389,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 [SRFI-13]
 @end defun
 
-@node SRFI-13 Low-level string procedures
+@node SRFI-13 Low-level string procedures,  , SRFI-13 String filtering, String library
 @subsection Low-level string procedures
 
 @defun string-parse-start+end proc s args
@@ -4898,14 +5419,23 @@ The form @code{(use srfi-8)} doesn't do anything.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Character-set library
+@node Character-set library,  , String library, Libarary Modules
 @section @code{srfi-14} - Character-set library
 
 @deftp {Module} srfi-14
 @mdindex srfi-14
 @end deftp
 
-@node SRFI-14 Character-set constructors
+@menu
+* SRFI-14 Character-set constructors::  
+* SRFI-14 Character-set Comparison::  
+* SRFI-14 Character-set iteration::  
+* SRFI-14 Character-set query::  
+* SRFI-14 Character-set algebra::  
+* SRFI-14 Predefined character-set::  
+@end menu
+
+@node SRFI-14 Character-set constructors, SRFI-14 Character-set Comparison, Character-set library, Character-set library
 @subsection Character-set constructors
 
 @defun list->char-set char-list &optional base-cs
@@ -4936,7 +5466,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 [SRFI-14]
 @end defun
 
-@node SRFI-14 Character-set Comparison
+@node SRFI-14 Character-set Comparison, SRFI-14 Character-set iteration, SRFI-14 Character-set constructors, Character-set library
 @subsection Character-set comparison
 
 @defun char-set= char-set1 @dots{}
@@ -4951,7 +5481,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 [SRFI-14]
 @end defun
 
-@node SRFI-14 Character-set iteration
+@node SRFI-14 Character-set iteration, SRFI-14 Character-set query, SRFI-14 Character-set Comparison, Character-set library
 @subsection Character-set iteration
 
 @defun char-set-cursor char-set
@@ -4987,7 +5517,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 [SRFI-14]
 @end defun
 
-@node SRFI-14 Character-set query
+@node SRFI-14 Character-set query, SRFI-14 Character-set algebra, SRFI-14 Character-set iteration, Character-set library
 @subsection Character-set query
 
 @defun char-set-size char-set
@@ -5014,7 +5544,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 [SRFI-14]
 @end defun
 
-@node SRFI-14 Character-set algebra
+@node SRFI-14 Character-set algebra, SRFI-14 Predefined character-set, SRFI-14 Character-set query, Character-set library
 @subsection Character-set algebra
 
 @defun char-set-adjoin char-set char1 @dots{}
@@ -5059,7 +5589,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 
 
 
-@node SRFI-14 Predefined character-set
+@node SRFI-14 Predefined character-set,  , SRFI-14 Character-set algebra, Character-set library
 @subsection Predefined character-set
 
 @defvar char-set:letter
@@ -5119,7 +5649,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 
 
 @c ======================================================================
-@node References
+@node References, Function and Syntax Index, Libarary Modules, Top
 @unnumbered References
 
 
@@ -5129,23 +5659,23 @@ The form @code{(use srfi-8)} doesn't do anything.
 @c Appendix : Python to Scheme mapping?
 
 @c ======================================================================
-@node Function and Syntax Index
+@node Function and Syntax Index, Module Index, References, Top
 @unnumbered Function and Syntax Index
 @printindex fn
 
-@node Module Index
+@node Module Index, Class Index, Function and Syntax Index, Top
 @unnumbered Module Index
 @printindex md
 
 
-@node Class Index
+@node Class Index, Variable Index, Module Index, Top
 @unnumbered Class Index
 
 For readability, the surrounding @code{<} and @code{>} are stripped off.
 
 @printindex cl
 
-@node Variable Index
+@node Variable Index,  , Class Index, Top
 @unnumbered Variable Index
 @printindex vr
 
