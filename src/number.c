@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.24 2001-04-19 08:57:29 shiro Exp $
+ *  $Id: number.c,v 1.25 2001-04-22 06:36:08 shiro Exp $
  */
 
 #include <math.h>
@@ -805,6 +805,18 @@ ScmObj Scm_Quotient(ScmObj x, ScmObj y)
             goto DO_FLONUM;
         }
         goto BADARGY;
+    } else if (SCM_BIGNUMP(x)) {
+        if (SCM_INTP(y)) {
+            return Scm_BignumDivSI(SCM_BIGNUM(x), SCM_INT_VALUE(y), NULL);
+        } else if (SCM_BIGNUMP(y)) {
+            Scm_Error("not supported yet\n");
+        } else if (SCM_FLONUMP(y)) {
+            rx = Scm_BignumToDouble(SCM_BIGNUM(x));
+            ry = SCM_FLONUM_VALUE(y);
+            if (ry != floor(ry)) goto BADARGY;
+            goto DO_FLONUM;
+        }
+        goto BADARGY;
     } else if (SCM_FLONUMP(x)) {
         rx = SCM_FLONUM_VALUE(x);
         if (rx != floor(rx)) goto BADARG;
@@ -1151,11 +1163,11 @@ static ScmObj read_integer(const char *str, int len, int radix)
         for (ptab = tab; ptab < tab+radix; ptab++) {
             if (c == *ptab) {
                 if (SCM_FALSEP(value_big)) {
-                    t = value_int*radix + (ptab-tab);
-                    if (t >= value_int) {
-                        value_int = t;
+                    if (value_int < (LONG_MAX/radix - radix)) {
+                        value_int = value_int * radix + (ptab-tab);
                         break;
-                    } else {    /* overflow */
+                    } else {
+                        /* will overflow */
                         value_big = Scm_MakeBignumFromSI(value_int);
                     }
                 }
