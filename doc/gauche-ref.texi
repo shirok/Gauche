@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.15 2001-06-02 22:17:24 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.16 2001-06-03 08:57:09 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1196,7 +1196,7 @@ If the named symbol hasn't existed, this function creates one.
 @end  deftp
 
 @deftp {Reader Syntax} @code{#\@i{charname}}
-Denotes a literal character.
+[R5RS] Denotes a literal character.
 
 When the reader reads @code{#\}, it fetches a sbusequent character.
 If it is one of @code{()[]@{@}" \|;#}, this is a character literal of itself.
@@ -1208,7 +1208,7 @@ is signalled.
 @end deftp
 
 @defun char? obj
-[R5RS]
+[R5RS] Returns @code{#t} if @var{obj} is a character, @code{#f} otherwise.
 @end defun
 
 @defun char@code{=}? char1 char2
@@ -1246,6 +1246,19 @@ is signalled.
 @end defun
 
 @defun gauche-character-encoding
+Returns a symbol designates the native character encoding, selected
+at the compile time.
+The possible return values are those:
+@table @code
+@item euc-jp
+EUC-JP
+@item utf-8
+UTF-8
+@item sjis
+Shift JIS
+@item none
+No multibyte character support (8-bit fixed-length character).
+@end table
 @end defun
 
 
@@ -3099,16 +3112,15 @@ format and writes the result byte stream to the current output port.
 The conversion ends when it reads EOF or the termination character
 (@code{=}).  The characters which does not in legal Base64 encoded character
 set are silently ignored.
-Output string is always an incomplete string.
 @end defun
 
 @defun base64-decode-string string
 Decodes a Base64 encoded string @var{string} and returns
-a result string.  The conversion terminates at the end of @var{string} or
+the result as a string.
+The conversion terminates at the end of @var{string} or
 the termination character (@code{=}).
 The characters which does not in legal Base64 encoded character
 set are silently ignored.
-Output string is always an incomplete string.
 @end defun
 
 
