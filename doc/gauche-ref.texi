@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.295 2002-11-02 23:15:49 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.296 2002-11-10 07:17:14 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -21612,9 +21612,8 @@ lambda parameters.
   x) @result{} (1 2 3 4)
 @end example
 
-If @var{expr} returns less values than specified in @var{vars},
-an error is signalled.  If @var{expr} returns more values than
-specified in @var{vars}, the unused values are discarded.
+If the number of values returned by @var{expr} doesn't match
+what @var{vars} expects, an error is signalled.
 @end defmac
 
 @defmac let*-values ((vars expr) @dots{}) body @dots{}
