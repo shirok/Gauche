@@ -357,6 +357,7 @@
                   (let1 r (string-size (read-block toread in))
                     (if (>= (+ nread r) 70000)
                         (begin (sys-kill pid SIGTERM)
+                               (sys-waitpid pid)
                                (+ nread r))
                         (loop (- toread r) (+ nread r)))))
                 )))))
@@ -410,11 +411,15 @@
                     (sys-select rfds #f #f 0)
                   (receive (bn br bw be)
                       (sys-select! rfds #f #f #f)
-                    (list an (eq? ar rfds) aw ae
-                          (sys-fdset-ref ar in)
-                          bn (eq? br rfds) bw be
-                          (sys-fdset-ref rfds in)
-                          (read-char in)))))))))
+                    (begin0
+                     (list an (eq? ar rfds) aw ae
+                           (sys-fdset-ref ar in)
+                           bn (eq? br rfds) bw be
+                           (sys-fdset-ref rfds in)
+                           (read-char in))
+                     (sys-waitpid pid)))))
+              )))
+      )
 
 ;;-------------------------------------------------------------------
 (test-section "signal handling")
@@ -455,27 +460,32 @@
                  (sys-alarm 1)
                  (sys-pause)))))))))
 
-(test "fork & sigint" SIGINT
+(test "fork & sigint" #t
       (lambda ()
         (let ((pid (sys-fork))
-              (r   0))
+              (sigint  #f)
+              (sigchld #f))
           (if (= pid 0)
               (let ((parent (sys-getppid)))
                 (sys-sleep 1)
                 (sys-kill parent SIGINT)
                 (sys-exit 0))
               (with-signal-handlers
-               (((list SIGINT SIGUSR1) => (lambda (sig) (inc! r sig))))
+               ((SIGINT  (set! sigint #t))
+                (SIGCHLD (sys-waitpid pid) (set! sigchld #t)))
                (lambda ()
-                 (sys-sleep 2)
-                 r))))))
+                 (let loop ()
+                   (if (and sigint sigchld)
+                       #t
+                       (begin (sys-pause) (loop))))))
+              ))))
 
 (test "sigchld" SIGCHLD
       (lambda ()
         (call/cc
          (lambda (k)
            (with-signal-handlers
-            ((SIGCHLD => k))
+            ((SIGCHLD (sys-wait) (k SIGCHLD)))
             (lambda ()
               (let ((pid (sys-fork)))
                 (if (= pid 0)
@@ -501,11 +511,11 @@
                         (sys-exit 0))
                       (begin
                         (let loop ()
-                          (when (null? r) (loop)))
+                          (when (null? r) (sys-pause) (loop)))
                         (sys-sigmask SIG_UNBLOCK mask1)
                         (let loop ()
-                          (when (< (length r) 2) (loop)))
-                        r))))))))))
+                          (when (< (length r) 2) (sys-pause) (loop)))
+                        (reverse r)))))))))))
 
 (test-end)
 
