@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.22 2001-04-01 21:59:12 shiro Exp $
+ *  $Id: list.c,v 1.23 2001-04-06 08:48:08 shiro Exp $
  */
 
 #include "gauche.h"
@@ -466,6 +466,24 @@ ScmObj Scm_Delete(ScmObj obj, ScmObj list, int cmpmode)
         else return Scm_Cons(SCM_CAR(list), tail);
     }
 }
+
+ScmObj Scm_DeleteX(ScmObj obj, ScmObj list, int cmpmode)
+{
+    ScmObj cp, prev = SCM_NIL;
+    SCM_FOR_EACH(cp, list) {
+        if (Scm_EqualM(obj, SCM_CAR(cp), cmpmode)) {
+            if (SCM_NULLP(prev)) {
+                list = SCM_CDR(cp);
+            } else {
+                SCM_SET_CDR(prev, SCM_CDR(cp));
+            }
+        } else {
+            prev = cp;
+        }
+    }
+    return list;
+}
+
 
 /*
  * assq, assv, assoc
