@@ -1369,6 +1369,7 @@ Gaucheで使われているモジュールの書法については@ref{Writing Gauche modules}も
 
 @menu
 * Module semantics::            
+* Modules and libraries::       
 * Defining and selecting modules::  
 * Using modules::               
 * Module inheritance::          
@@ -1376,7 +1377,7 @@ Gaucheで使われているモジュールの書法については@ref{Writing Gauche modules}も
 * Predefined modules::          
 @end menu
 
-@node Module semantics, Defining and selecting modules, Modules, Modules
+@node Module semantics, Modules and libraries, Modules, Modules
 @subsection Module semantics
 @c NODE モジュールのセマンティクス
 
@@ -1562,7 +1563,43 @@ importは遷移的ではありません；importされたモジュールがimportしているモジュール…
 最後に、カレントモジュールの先祖が順に探されます。
 @c COMMON
 
-@node Defining and selecting modules, Using modules, Module semantics, Modules
+@node Modules and libraries, Defining and selecting modules, Module semantics, Modules
+@subsection Modules and libraries
+@c NODE モジュールとライブラリ
+
+Modules are run-time data structure; you can procedurally
+create modules with arbitrary names at run-time.
+
+However, most libraries use modules to create their own
+namespace, so that they can control which bindings to be
+visible from library users.
+
+Usually a library is provided in the form of one or more Scheme
+source file(s), so it is convenient to have a convention to map 
+module names to file names, and vice versa; then, you can load a
+library file and import its module by one action with @code{use}
+macro, for example.
+
+For the time being, Gauche uses a simple rules for this mapping:
+Module names are organized hierarchically, using period `@code{.}'
+for separator, e.g. @code{gauche.mop.validator}.  If such a
+module is requested and doesn't exist in the current running
+environment, Gauche maps the module name to a pathname by
+replacing periods to directory separator, i.e.
+@code{gauche/mop/validator}, and look for
+@code{gauche/mop/validator.scm} in the load paths.
+
+Note that this is just a default behavior.
+Theoretically, one Scheme source file may contain multiple
+modules, or one module implementation may span to multiple files.
+In future, there may be some hook to customize this mapping
+for special cases.  So, when you are writing routines that
+deal with modules and library files, do not apply the above
+default rule blindly.   Gauche provides two procedures,
+@code{module-name->path} and @code{path->module-name},
+to do mapping for you (see @ref{Using modules}, for details).
+
+@node Defining and selecting modules, Using modules, Modules and libraries, Modules
 @subsection Defining and selecting modules
 @c NODE モジュールの定義と選択
 
@@ -1731,29 +1768,39 @@ the module, and either loads, requires, or autoloads subfiles.
 @c COMMON
 
 @c EN
-If @var{name} contains periods `@code{.}', it is replaced to `@code{/}'
-in the file name.to be @code{require}d, for example,
+Actually, the file pathname of the given module name is
+obtained by the procedure @code{module-name->path} below.
+The default rule is to replace periods `@code{.}' in the @var{name}
+for `@code{/}';  for example,
 @code{(use foo.bar.baz)} is expanded to:
 @example
 (require "foo/bar/baz")
 (import foo.bar.baz)
 @end example
 This is not very Scheme-ish way, but nevertheless convenient.
-(The alternative design is to use a list of symbols to represent
-hierarchical file/module configuration, as in Guile.)
+In future, there may be some mechanism to customize this mapping.
 @c JP
-もし@var{name}がピリオド`@code{.}'を含んでいる場合、@code{require}するファイル名
-ではそれが`@code{/}'に置換されます。例えば@code{(use foo.bar.baz)}は
+実際は、与えられたモジュール名からファイルのパス名を得るのに
+手続き@code{module-name->path}が使われます。デフォルトの変換規則は、
+モジュール名@var{name}中のピリオド`@code{.}'を`@code{/}'に置換
+するというものです。例えば@code{(use foo.bar.baz)}は
 @example
 (require "foo/bar/baz")
 (import foo.bar.baz)
 @end example
 となります。これはあまりScheme風ではありませんが、便利ではあります。
-(別の設計方針として、Gaucheでは採用していませんが、
-例えばGuileで用いられているような、シンボルのリストを
-階層的なモジュールに使用することも考えられます。)
+将来、このマッピングルールをカスタマイズする機構が導入されるかもしれません。
 @c COMMON
 @end defmac
+
+@defun module-name->path symbol
+Converts a module name @var{symbol} to a fragment of pathname string.
+@end defun
+
+@defun path->module-name string
+Reverse function of @code{module-name->path}.
+@end defun
+
 
 @node Module inheritance, Module introspection, Using modules, Modules
 @subsection Module inheritance
