@@ -46,3 +46,4 @@ uvlib.stub : uvlib.stub.sh
 	sh ./uvlib.stub.sh > uvlib.stub
 
 install : install-std
+

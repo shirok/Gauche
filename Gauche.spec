@@ -1,5 +1,5 @@
 # Spec file to build Gauche RPM package
-# $Id: Gauche.spec,v 1.24 2003-07-23 14:27:11 shirok Exp $
+# $Id: Gauche.spec,v 1.25 2003-10-05 09:34:35 shirok Exp $
 #
 # In order to build different encoding-specific packages (like
 # Gauche-euc-jp, etc) from a single source rpm, the actual package
@@ -12,7 +12,7 @@
 #    Gauche-ENC-VERS.ARCH.rpm     ;; binary package with encoding ENC
 #    Gauche-VERS.src.rpm          ;; source package
 
-%define version  0.7.1
+%define version  0.7.2
 %define encoding eucjp
 %define threads  pthreads
 
@@ -21,7 +21,7 @@ Name: Gauche
 Version: %{version}
 Release: 1
 Source: Gauche-%{version}.tgz
-Copyright: BSD
+CopyRight: modBSD
 Group: Development/Languages
 Packager: Shiro Kawai (shiro@acm.org)
 Buildroot: %{_tmppath}/rpm
@@ -39,12 +39,34 @@ It can handle multibyte character strings natively.
 Summary: Scheme script interpreter with multibyte character handling
 Group: Development/Languages
 Provides: Gauche libgauche.so
+CopyRight: modBSD
 %description %{encoding}
 Gauche is a Scheme interpreter conforming Revised^5 Report on
 Algorithmic Language Scheme.  It is designed for rapid development
 of daily tools like system management and text processing.
 It can handle multibyte character strings natively.
 This package is compiled with %{encoding} as the native character encoding.
+
+%package common
+Summary: Scheme script interpreter with multibyte character handling
+Group: Development/Languages
+Copyright: modBSD
+%description common
+Gauche is a Scheme interpreter conforming Revised^5 Report on
+Algorithmic Language Scheme.  It is designed for rapid development
+of daily tools like system management and text processing.
+It can handle multibyte character strings natively.
+This package includes common part that is independent from any
+native character encoding.  You need either Gauche-eucjp or Gauche-utf8
+package as well.
+
+%package gdbm-%{encoding}
+Summary: gdbm binding for Gauche Scheme system
+Group: Development/Languages
+Copyright: LGPL
+Provides: Gauche-gdbm
+%description gdbm-%{encoding}
+This package adds gdbm binding to the Gauche Scheme system.
 
 %prep
 %setup
@@ -76,23 +98,31 @@ make prefix=${RPM_BUILD_ROOT}/usr install-doc
 # creates slib catalog, if possible.
 /usr/bin/gosh -u slib -e "(require 'logical)" -e "(exit 0)" > /dev/null 2>&1 || echo
 
-%files
-
-%files %{encoding}
+%files common -f rpmfiles.common
 %defattr(-,root,root)
 %doc COPYING ChangeLog INSTALL INSTALL.eucjp Gauche.spec
+/usr/share/info/
+/usr/share/man/man1/
+/usr/share/gauche/site
+
+%files %{encoding} -f rpmfiles.encoding
+%defattr(-,root,root)
 /usr/bin/gosh
 /usr/bin/gauche-config
 #/usr/lib/libgauche.a
 /usr/lib/libgauche.so
 /usr/lib/libgauche.so.0
 /usr/lib/libgauche.so.0.0.0
-/usr/lib/gauche/
-/usr/share/info/
-/usr/share/gauche/
-/usr/share/man/man1/
+/usr/lib/gauche/site/
+
+%files gdbm-%{encoding} -f rpmfiles.gdbm
+%defattr(-,root,root)
 
 %changelog
+* Sat Oct  4 2003 Shiro Kawai
+- Gauche release 0.7.2.
+Splitted into common, encoding-dependent part, and gdbm package.
+
 * Wed Jul 23 2003 Shiro Kawai
 - Gauche release 0.7.1
 

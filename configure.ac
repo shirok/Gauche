@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.12 2003-10-03 10:59:46 shirok Exp $
+dnl $Id: configure.ac,v 1.13 2003-10-05 09:34:35 shirok Exp $
 AC_PREREQ(2.54)
-AC_INIT(Gauche, 0.7.2_pre1, shiro@acm.org)
-AC_REVISION($Revision: 1.12 $)
+AC_INIT(Gauche, 0.7.2, shiro@acm.org)
+AC_REVISION($Revision: 1.13 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h)
 

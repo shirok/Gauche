@@ -1,5 +1,7 @@
 2003-10-04  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.7.2
+
 	* src/gauche-config.in : records OBJEXT and EXEEXT.
 
 	* aclocal.m4, acinclude.m4 : added adjustment of OBJEXT, EXEEXT,
