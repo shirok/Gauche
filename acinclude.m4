@@ -1,5 +1,5 @@
 dnl Gauche-specific autoconf macros.
-dnl $Id: acinclude.m4,v 1.10 2003-11-02 05:06:27 fuyuki Exp $
+dnl $Id: acinclude.m4,v 1.11 2003-11-21 21:27:11 shirok Exp $
 
 dnl AC_GAUCHE_INIT_EXT
 dnl   Sets some parameters about installed Gauche package. 
@@ -67,6 +67,8 @@ ac_gauche_DYLIBEXT=${DYLIBEXT+set}
 if test -z "$ac_gauche_DYLIBEXT"; then
   DYLIBEXT="`$GAUCHE_CONFIG --dylib-suffix`"
 fi
+AC_SUBST(OBJEXT)
+AC_SUBST(EXEEXT)
 AC_SUBST(SOEXT)
 AC_SUBST(DYLIBEXT)
 ])

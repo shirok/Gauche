@@ -1,5 +1,9 @@
 2003-11-21  Shiro Kawai  <shiro@acm.org>
 
+	* acinclude.m4, aclocal.m4 : make sure OBJEXT and EXEEXT are
+	  substituted.
+	* examples/spigot/Makefile.in : parameterize OBJEXT and DSOEXT.
+
 	* src/number.c (read_uint): Now the number reader recognizes
 	  '#'-padded numeric literal format.
 

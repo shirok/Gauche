@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.in,v 1.5 2003-10-27 00:29:51 fuyuki Exp $
+# $Id: Makefile.in,v 1.6 2003-11-21 21:27:17 shirok Exp $
 #
 
 SHELL       = @SHELL@
@@ -22,10 +22,8 @@ INSTALL_TYPE = @INSTALL_TYPE@
 # Set by configure
 GOSH     = @GOSH@
 GAUCHE_CONFIG = @GAUCHE_CONFIG@
-
-# NB: this should also be set by configure
-OBJEXT   = o
-DSOEXT   = so
+OBJEXT   = @OBJEXT@
+DSOEXT   = @SOEXT@
 
 MODULE   = spigot
 
