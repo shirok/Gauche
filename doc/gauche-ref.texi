@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.91 2001-10-10 20:38:53 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.92 2001-10-12 11:29:03 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -183,30 +183,16 @@ Gaucheが長所とするべく重点を置いているのは次のようなポイントです。
 @c COMMON
 
 @c EN
-In the production environment, there are situations that 
-you write a ten-line Scheme script which does a simple but useful thing,
-and others invoke it from 
-from their shell scripts (or Perl, Python, Tcl, whatever) very frequently.
-You don't want to use a big fat scripting engine that takes half a second
-to start up for this kind of scripts, or people start writing their own
-libraries in their own favorite languages.
-Sharing scripts, not only code, is very important in the practical
-situation, and you want to have a reasonably lightweight interpreter
-to populate your scripts.
-@c JP
-プロダクション環境では、よくほんの10数行のスクリプトをちょいと書いたら、それが
-他の人のシェルスクリプト(あるいはPerlでもPythonでも)から頻繁に呼ばれるようになった、
-ということが起こります。ちょっとした処理を行うのに、毎回立上りに1秒もかかる
-インタプリタを使っていたら、他の人はあなたのスクリプトを呼ぶのを嫌って
-自分の言語で同等の機能を書いてしまうでしょう。こんな環境では、とにかく軽く立ち上がって
-くれることが重要になります。
-@c COMMON
-
-@c EN
+One of the situation Gauche is aiming at is in the production
+environment, where you write ten-lines throw-away script that
+may invoked very frequently.  This includes CGI scripts as well.
 Gauche includes a set of most common features in its executable,
 while splits less common stuffs into libraries which are to be loaded
 on demand, to make itself start quickly.
 @c JP
+Gaucheが想定している用途のひとつは、プロダクション環境でちょろっと
+10行スクリプトをでっちあげて、それが非常に頻繁に呼ばれるようなケースです。
+CGIスクリプトなどもそうです。
 Gaucheでは、言語のコアとスクリプトとして良く使いそうな機能に絞って
 実行ファイルにコンパイルインし、使う分野が特定される機能は必要に応じて
 読み込むようにしています。
@@ -220,10 +206,8 @@ Gaucheでは、言語のコアとスクリプトとして良く使いそうな機能に絞って
 
 @c EN
 We can no longer live happily in ASCII-only or 1-byte-per-character world.
-Nowadays you have to exchange text information in various encodings,
-some of them have much more characters than 256 (or, in fact, more than 65536).
 The practical language implementations are required to handle
-multibyte (wide) characters in some way.
+multibyte (wide) characters.
 
 Gauche supports multibyte strings natively, providing robust and
 consistent support than @i{ad hoc} library-level implementation.
@@ -245,19 +229,15 @@ Gaucheは内部的に文字列を全て、コンパイル時に選択したエンコーディングの
 @item モジュラー開発
 @c COMMON
 
-Richness of libraries is one of the criteria on which
-people choose scripting language, so you want to include as many
-libraries as possible.  You cannot, however, write everything by
-your own.   The key to enrich the libraries are the framework to
-allow and to encourage people to write reusable, modulalized code.
+@c EN
+@c JP
+@c COMMON
 
-Gauche has several mechanisms to realize this framework.
-The simple and clean module system, a powerful CLOS-like object
-syste with a metaobject protocol, and feature based on-demand
-file loading system are the elements.
-@xref{Module System}, for details.
-
+@c EN
 @item System interface
+@c JP
+@item システムインタフェース
+@c COMMON
 
 Although Scheme abstracts lots of details of the machine,
 sometimes you have to bypass these high-level layers and
@@ -267,7 +247,11 @@ Gauche has built-in support of most of POSIX.1 system calls.
 Other modules, such as networking module, usually provide
 both high-level abstract interface and low-level interface.
 
-@item Powerful I/O
+@c EN
+@item Enhanced I/O
+@c JP
+@item 強化された入出力
+@c COMMON
 
 No real application can be written without dealing with I/O.
 Scheme neatly abstracts I/O as a port, but defines least operations on it.
@@ -278,23 +262,14 @@ utility functions to operate on the underlying I/O system.
 
 @end table
 
-On the other hand, Gauche is @emph{not} designed for the following
-type of applications:
-
-@table @asis
-@item Number cruncher
-Gauche is useful for arithmetic operations, since it supports wide
-range of numbers like bignums and complex numbers.  However, it is not
-designed to do fast calculation.  Use C, Fortran, or whatever you like.
-
-@item Very high performance
-Gauche is a script interpreter, and can't be comparable with compiled
-programs in execution speed.  Gauche does compiles programs into
-intermediate code internally, so it has performance comparable to
-similar script interpreters.
-
-@item 
-@end table
+@c EN
+On the other hand, Gauche is @emph{not} designed for 
+applications such like high-performance number cruncher or
+very large scale database handling.  It is an interpreter, after all.
+@c JP
+一方、Gaucheは所詮インタプリタですから、高速に大量の計算をこなしたり
+巨大なデータセットを扱ったりするのは苦手です。
+@c COMMON
 
 
 @node Notations, Structure of this document, Overview of Gauche, Introduction
@@ -511,13 +486,12 @@ of view.   When you want to use the features provided by module
 @code{foo}, you just need to say @code{(use foo)} in your code.
 This form is a macro and interpreted at compile time.
 
-
-
-
 The @code{use} mechanism is built on top of two independent
 mechanisms, namespace separation and file loading mechanism.
 Those two can be used separately, although it is much more
 convenient when used together.
+
+
 
 
 @node Objects, Multibyte Strings, Module System, Concepts
@@ -596,6 +570,18 @@ Scheme program and exit.
 @c COMMON
 @end deftp
 
+@c EN
+The following command line options are recognized by @code{gosh}.
+The first command line argument which doesn't begin with `@minus{}'
+is recognized as the script file.  If you want to specify a file
+that begins with a minus sign, use a dummy option `@code{--}'.
+@c JP
+以下のコマンドラインオプションが@code{gosh}に認識されます。
+`@minus{}' で始まらない最初のコマンドライン引数がスクリプトファイルと認識されます。
+スクリプトファイル名が `@minus{}' で始まっている可能性がある場合は、ダミーオプション
+`@code{--}' をスクリプトファイル名の前に置いて下さい。
+@c COMMON
+
 @deftp {Command Option} -I path
 @c EN
 Prepends @var{path} to the load path list.
@@ -673,7 +659,7 @@ although it is not generally recommended.
 
 @c ----------------------------------------------------------------------
 @node Debugger, Writing Scheme scripts, Interactive development, Programming in Gauche
-@section Deubgger
+@section Debugger
 
 
 
@@ -682,57 +668,91 @@ although it is not generally recommended.
 @section Writing Scheme scripts
 
 @c EN
- bounds a global varialbe
-@code{*argv*} to the list of the remaining command-line arguments,
-then loads @var{scheme-file} as a Scheme program.
+When a Scheme program file is given to @code{gosh}, it
+bounds a global varialbe @code{*argv*} to the list of the remaining
+command-line arguments, then loads the Scheme program.
 If the first line of @var{scheme-file} begins with two character
 sequence ``@code{#!}'', the entire line is ignored by @code{gosh}.
 This is useful to write a Scheme program that works as an executable
-script in unix-like systems.  Typical Gauche script has the first
+script in unix-like systems.
+@c JP
+@code{gosh}のコマンドラインにSchemeプログラムのファイル名が渡された場合、
+@code{gosh}はそれ以降のコマンドライン引数のリストをグローバル変数@code{*argv*}に束縛し、
+Schemeプログラムをロードします。もし@var{scheme-file}の最初の行が``@code{#!}''で始まって
+いたら、その行は無視されます。これにより、Unix系のシステムで実行可能なSchemeスクリプト
+を書くことが出来ます。
+@c COMMON
+
+@c EN
+Typical Gauche script has the first
 line like these
 @example
 #!/usr/local/bin/gosh
   @r{or,}
 #!/usr/bin/env gosh
+  @r{or,}
+#!/bin/sh
+:; exec gosh -- $0 "$@@"
 @end example
-The latter uses a ``shell trampoline'' technique so that the script
-works as far as @code{gosh} is in the PATH.
+The second and third form uses a ``shell trampoline'' technique
+so that the script works as far as @code{gosh} is in the PATH.
+The third form is useful when you want to pass extra arguments
+to @code{gosh}, for typically @code{#!}-magic of executable scripts
+has limitations for the number of arguments to pass the interpreter.
 @c JP
-それ以降のコマンドライン引数の
-リストをグローバル変数@code{*argv*}に束縛し、@var{scheme-file}をSchemeプログラム
-としてロードします。もし@var{scheme-file}の最初の行が``@code{#!}''で始まって
-いたら、その行は無視されます。これにより、Unix系のシステムで実行可能なSchemeスクリプト
-を書くことが出来ます。典型的なGaucheスクリプトの最初の行は次のようなものです。
+典型的なGaucheスクリプトの最初の行は次のようなものです。
 @example
 #!/usr/local/bin/gosh
   @r{または,}
 #!/usr/bin/env gosh
+  @r{または,}
+#!/bin/sh
+:; exec gosh -- $0 "$@@"
 @end example
-後者は「シェルトランポリン」テクニックを用いて、@code{gosh}がPATHにあるディレクトリの
-どこかにあれば起動できるようにしています。
+後の2つは「シェルトランポリン」テクニックを用いて、@code{gosh}がPATHにあるディレクトリの
+どこかにあれば起動できるようにしています。3番目の方法は、
+@code{gosh}にいくつかコマンドラインオプションを渡したい時に便利です。
 @c COMMON
 
+@c EN
 After the file is successfully loaded, @code{gosh} calls a
 procedure named `@code{main}' with the list of the remaining
 command-line arguments, if it is defined in the user module.
 When @code{main} returns, and its value is an integer, @code{gosh}
 uses it for exit code of the program.  Otherwise, @code{gosh} exits
 with value 0.
-This behavior is compatible with
-the draft SRFI-22.  Although you can still write the program
-main body as toplevel expressions, like shell scripts or Perl scripts,
-it is much convenient to use this @code{main} convention, for
-you can load the script file interactively to debug.
+This behavior is compatible with the draft SRFI-22.
 
 If the @code{main} procedure is not defined, @code{gosh} exits
-after loading @var{script-file}.
+after loading the script file.
+@c JP
+ファイルが正常にロードされたら、@code{gosh}は
+userモジュールに `@code{main}' という手続きが定義されているかどうか調べます。
+定義されていれば、コマンドライン引数のリストを唯一の引数としてそれを呼び出します。
+@code{main}が呼ばれ、それが整数の値を返したら、@code{gosh}はその値を
+終了ステータスとして終了します。@code{main}が整数以外の値を返した場合は
+@code{gosh}は終了ステータス0で終了します。
+このふるまいはSRFI-22(案)と互換です。
 
-The following command line options are recognized by @code{gosh}.
-The first command line argument which doesn't begin with `@minus{}'
-is recognized as the script file.  If you want to specify a file
-that begins with a minus sign, use a dummy option `@code{--}'.
+@code{main}が定義されていなければ@code{gosh}はロード後にそのままステータス0で
+終了します。
+@c COMMON
+
+@c EN
+Although you can still write the program
+main body as toplevel expressions, like shell scripts or Perl scripts,
+it is much convenient to use this `@code{main}' convention, for
+you can load the script file interactively to debug.
+@c JP
+シェルスクリプトやPerlスクリプトと同じように、スクリプトのボディに直接
+実行される式を書くこともできますが、なるべく `@code{main}' を使った方法を
+使うことをお薦めします。そうすると、スクリプトをインタプリタにインタラクティブに
+ロードしてデバッグすることもできます。
+@c COMMON
+
 
 @defvar *argv*
+@c EN
 The program arguments passed to the Scheme script is bound to this
 variable.  If @code{gosh} is invoked in an interactive mode, this
 variable always contains @code{()}.
@@ -741,21 +761,41 @@ STk uses this variable to pass the command line argument as well,
 but other Scheme implementations use different ways.  It is better
 to define @code{main} procedure and uses its argument to receive
 command line arguments, for it is expected to be more portable.
+@c JP
+Schemeスクリプト以降のコマンドライン引数のリストは、スクリプトのロードの前に
+この変数に束縛されます。@code{gosh}がインタラクティブモードで起動された場合は
+この変数は@code{()}となります。
+
+この変数はSTkと互換性がありますが、他のScheme実装は違った方法を使ってコマンドライン
+引数を得ます。ポータブルなスクリプトを書くには、@code{main}手続きを使う方法を
+お薦めします。
+@c COMMON
 @end defvar
 
 @defvar *program-name*
+@c EN
 This variable is bound to the script file name passed to @code{gosh}.
 If @code{gosh} is invoked in the interactive mode, this variable
 contains the pathname of @code{gosh} itself.
 
 STk uses the same variable to access the program/script name.
 Other Scheme implementations use different ways.
+@c JP
+この変数はスクリプトファイル名に束縛されます。インタラクティブモードでは
+この変数は@code{gosh}自身の名前を持っています。
+
+この変数はSTkと互換性がありますが、他の実装は違った方法を使います。
+@c COMMON
 @end defvar
 
-
+@c EN
 Now I show several simple examples below.
 First, this script works like @code{cat(1)}, without any command-line
 option processing and error handling.
+@c JP
+いくつか簡単な例を示します。最初の例はUnixの@code{cat(1)}コマンドを模するものです。
+エラー処理やコマンドラインオプションの処理は行っていません。
+@c COMMON
 
 @example
 @cartouche
@@ -773,7 +813,11 @@ option processing and error handling.
 @end cartouche
 @end example
 
+@c EN
 The following script is a simple grep command.
+@c JP
+次のスクリプトは簡単なgrepコマンドです。
+@c COMMON
 
 @example
 @cartouche
@@ -785,15 +829,15 @@ The following script is a simple grep command.
   (exit 2))
 
 (define (grep rx port)
-  (let loop ((line (read-line port)))
-    (cond ((eof-object? line))
-          ((rxmatch rx line)
-           (format #t "~a:~a: ~a\n"
-                   (port-name port)
-                   (- (port-current-line port) 1)
-                   line)
-           (loop (read-line port)))
-          (else (loop (read-line port))))))
+  (with-input-from-port port
+    (port-for-each
+      (lambda (line)
+        (when (rxmatch rx line)
+          (format #t "~a:~a: ~a\n"
+                  (port-name port)
+                  (- (port-current-line port) 1)
+                  line)))
+      port)))
 
 (define (main args)
   (if (null? args)
@@ -809,8 +853,13 @@ The following script is a simple grep command.
 @end cartouche
 @end example
 
+@c EN
 See also @ref{Parsing command-line options}, for a convenient way to
 parse command-line options.
+@c JP
+コマンドライン引数を処理するモジュールがあります。
+@ref{Parsing command-line options}を参照してください。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Writing Gauche modules,  , Writing Scheme scripts, Programming in Gauche
@@ -1075,6 +1124,20 @@ Perlなら@code{shift}が@code{pop!}の動作に近いです。
 
 @defmac inc! place &optional delta
 @defmacx dec! place &optional delta
+@c EN
+Evaluates the value of @var{place}.  It should be a number.
+Adds (@code{inc!}) or subtracts (@code{dec!}) @var{delta} to/from it,
+and then stores the result to @var{place}.  The default value of
+@var{delta} is 1.
+
+This is Common Lisp's @code{incf} and @code{decf}.
+@c JP
+@var{place}の値を評価します。それは数値にならなければなりません。
+その値に@var{delta}が加算(@code{inc!})もしくは減算(@code{dec!})され、
+結果が@var{place}に格納されます。@var{delta}の既定値は1です。
+
+Common Lispの@code{incf}と@code{decf}に当たります。
+@c COMMON
 @end defmac
 
 @c ----------------------------------------------------------------------
@@ -1375,7 +1438,11 @@ On toplevel, it defines a global binding to a symbol @var{variable}.
 In the first form, it globally binds a symbol @var{variable}
 to the value of @var{expression}, in the current module.
 @c JP
-最初の形式では、@var{variable}
+この形式はトップレベル (ローカルな束縛が無い状態) とローカルスコープがある状態とで
+別の意味を持ちます。
+
+トップレベルでは、この形式は変数@var{variable}に対するグローバルな束縛を定義します。
+最初の形式では、@var{expression}が評価され、その結果が変数@var{variable}の値となります。
 @c COMMON
 @example
 (define x (+ 1 2))
@@ -1386,7 +1453,9 @@ x @result{} 3
 
 @c EN
 The second form is a syntactic sugar of defining a procedure.
+It is equivalent to the following form.
 @c JP
+2番目の形式は手続きを定義するための構文的な修飾で、以下の形式と同じです。
 @c COMMON
 @example
 (define (@var{name} . @var{args}) @var{body} @dots{})
@@ -1428,12 +1497,21 @@ parenthesis are not there.  Thus these two forms are equivalent.
 @node Modules,  , Definitions, Core Syntax
 @section Modules
 
+@c EN
 Module is an object that maps symbols onto @emph{bindings}.
 
 Unlike CommonLisp's packages, which map names to symbols,
 in Gauche symbols are always @code{eq?} if two have the
 same name.  However, different bindings can be associated
 to the same symbol, that yield different values.
+@c JP
+モジュールは、シンボルを束縛へとマップするオブジェクトです。
+
+CommonLispのパッケージは名前からシンボルへのマッピングを行いますが、
+Gaucheでは同じ名前を持つシンボルは常に@code{eq?}です。しかし、
+モジュールが違えば同じシンボルは別々の束縛へとマップされ、違う値を
+返します。
+@c COMMON
 
 @menu
 * Module syntax::               
@@ -1445,11 +1523,19 @@ to the same symbol, that yield different values.
 @subsection Module syntax
 
 @defspec define-module name body @dots{}
+@c EN
+@var{Name} must be a symbol
 If a module named @var{name} does not exist, create one.
-Then compiles and evaluates @var{body} sequentially in the module.
+Then evaluates @var{body} sequentially in the module.
+@c JP
+@var{name}はシンボルでなければなりません。
+名前@var{name}を持つモジュールが存在しなければまず作成します。
+それから、@var{body} @dots{} をモジュール@var{name}中で評価します。
+@c COMMON
 @end defspec
 
 @defspec select-module name
+@c EN
 Makes a module named @var{name} as the current module.
 It is an error if no module named @var{name} exists.
 
@@ -1457,33 +1543,68 @@ If @code{select-module} is used in the Scheme file, its effect is
 limited inside the file, i.e. even if you load/require a file that uses
 @code{select-module} internallly, the current module of requirer is
 not affected.
+@c JP
+名前@var{name}を持つモジュールをカレントモジュールとします。
+その名前を持つモジュールが無ければエラーとなります。
+
+@code{select-module}がSchemeファイルの中で用いられた場合、
+その効果はそのファイルの終了までに限られます。@code{select-module}を中で呼んでいる
+ファイルをloadやrequireしても、呼んだ側のカレントモジュールは影響を受けません。
+@c COMMON
 @end defspec
 
 @defspec with-module name body @dots{}
-Compiles and evaluates @var{body} sequentially in the module
-named @var{name}.  If no moudle named @var{name}, an error is signalled.
+@c EN
+Evaluates @var{body} sequentially in the module
+named @var{name}.  Returns the last result(s).
+If no moudle named @var{name}, an error is signalled.
+@c JP
+名前@var{name}を持つモジュールをカレントモジュールとした状態で@var{body} @dots{}
+を順に評価し、最後の結果を返します。該当するモジュールが存在しなければエラーとなります。
+@c COMMON
 @end defspec
 
 @defspec export symbol @dots{}
+@c EN
 Makes bindings of @var{symbol}s in the current module available
 to modules that imports the current module.
+@c JP
+カレントモジュールの中で、シンボル@var{symbol}に対応する束縛をエクスポートします。
+エクスポートされた束縛は、カレントモジュールをインポートしたモジュール中で見えるようになります。
+@c COMMON
 @end defspec
 
 @defspec export-all
+@c EN
 Makes all bindings in the current module available to modules
 that imports it.
+@c JP
+カレントモジュール中の全ての束縛をエクスポートします。
+@c COMMON
 @end defspec
 
 @defspec import module-name @dots{}
+@c EN
 Makes all exported bindings in the module named @var{module-name}
 available in the current module.   The named modules should exist
 when the compiler sees this special form.
+@c JP
+名前@var{module-name}を持つモジュールがエクスポートしている束縛を
+カレントモジュール中で使えるようにします。該当するモジュールが既に定義されて
+いなければなりません。
+@c COMMON
 @end defspec
 
 @defspec current-module
+@c EN
 Evaluates to the current module in the compile context.
 Note that this is a special form, not a function.
 Module in Gauche is statically determined at compile time.
+@c JP
+コンパイル時点でのカレントモジュールに評価されます。
+これは手続きではなく特殊形式です。
+Gaucheではモジュールはコンパイル時に静的に決定されます。
+@c COMMON
 @lisp
 (define-module foo
   (export get-current-module)
@@ -1496,6 +1617,7 @@ Module in Gauche is statically determined at compile time.
 @end defspec
 
 @defmac use name
+@c EN
 A convenience macro that combines module imports and on-demand
 file loading.  Basically, @code{(use foo)} is equivalent
 to the following two forms:
@@ -1503,21 +1625,49 @@ to the following two forms:
 (require "foo")
 (import foo)
 @end example
-That is, it loads the library file named ``@code{foo}'' which
-defines a module named @code{foo} init, and then import the module
+That is, it loads the library file named ``@code{foo}'' (if not yet
+loaded) which defines a module named @code{foo} in it,
+and then import the module
 @code{foo} into the current module.
+@c JP
+モジュールのインポートとオンデマンドのファイルのロードを合わせて行う、
+便利なマクロです。基本的に、@code{(use foo)} は以下のふたつのフォームと
+等価です。
+@example
+(require "foo")
+(import foo)
+@end example
+すなわち、まず名前``@code{foo}''を持つライブラリファイルが(まだロードされて
+いなければ)ロードされ、その中で定義されているモジュール@code{foo}をカレントモジュールに
+インポートします。
+@c COMMON
 
+@c EN
 Although the files and modules are orthogonal concept,
 it is practically convenient to separate files by modules.
 Gauche doesn't force you to do so, and you can always use
 @code{require} and @code{import} separately.  However, all
 modules provided with Gauche are arranged so that they can be
 used by @code{use} macro.
+@c JP
+ファイルのロードとモジュールとは直交する概念ですが、
+現実にはモジュール毎にファイルを分割するのが便利です。
+必ずしもそうする必要は無く、@code{require} と @code{import} を別々に
+使っても構いません。が、Gaucheに附属してくるライブラリはすべて、
+@code{use} マクロで使えるように書かれています。
+@c COMMON
 
+@c EN
 If a module is too big to fit in one file, you can split them
 into several subfiles and one main file.  The main file defines
 the module, and either loads, requires, or autoloads subfiles.
+@c JP
+もしモジュールが一つのファイルに収めるには大きすぎる場合、一つのメインファイルと
+いくつかのサブファイルに分けることも出来ます。メインファイルの中でモジュールを
+定義し、サブファイルをまとめてロードするか、オートロードを設定します。
+@c COMMON
 
+@c EN
 If @var{name} contains periods `@code{.}', it is replaced to `@code{/}'
 in the file name.to be @code{require}d, for example,
 @code{(use foo.bar.baz)} is expanded to:
@@ -1525,9 +1675,21 @@ in the file name.to be @code{require}d, for example,
 (require "foo/bar/baz")
 (import foo.bar.baz)
 @end example
-This is not very Scheme-ish way, but nevertheless practical.
+This is not very Scheme-ish way, but nevertheless convenient.
 (The alternative design is to use a list of symbols to represent
 hierarchical file/module configuration, as in Guile.)
+@c JP
+もし@var{name}がピリオド`@code{.}'を含んでいる場合、@code{require}するファイル名
+ではそれが`@code{/}'に置換されます。例えば@code{(use foo.bar.baz)}は
+@example
+(require "foo/bar/baz")
+(import foo.bar.baz)
+@end example
+となります。これはあまりScheme風ではありませんが、便利ではあります。
+(別の設計方針として、Gaucheでは採用していませんが、
+例えばGuileで用いられているような、シンボルのリストを
+階層的なモジュールに使用することも考えられます。)
+@c COMMON
 @end defmac
 
 @node Module introspection, Predefined modules, Module syntax, Modules
@@ -2187,17 +2349,31 @@ Returns bitwise not of an integer @var{n}.
 
 @deftp {Builtin Class} <boolean>
 @clindex boolean
-A boolean class.  Only @code{#t} and @var{#f} belong to this class.
+@c EN
+A boolean class.  Only @code{#t} and @code{#f} belong to this class.
+@c JP
+論理値のクラスです。@code{#t}と@code{#f}のみがこのクラスのインスタンスです。
+@c COMMON
 @end deftp
 
 @defun not obj
-[R5RS] Returns @code{#t} if and only if @var{obj} is @code{#t},
+[R5RS]
+@c EN
+Returns @code{#t} if and only if @var{obj} is @code{#t},
 and returns @code{#f} otherwise.
+@c JP
+@var{obj}が@code{#f}の時のみ@code{#t}を返し、それ以外の場合は@code{#f}を
+返します。
+@c COMMON
 @end defun
 
 @defun boolean? obj
-[R5RS] Returns @code{#t} if and only if @var{obj} is a boolean
-value, and returns @code{#f} otherwise.
+[R5RS]
+@c EN
+Returns @code{#t} if @var{obj} is a boolean value.
+@c JP
+@var{obj}が論理値である場合に@code{#t}を返します。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -2262,31 +2438,52 @@ See also @code{proper-list?}, @code{circular-list?} and
 @subsection List constructors
 
 @defun cons obj1 obj2
-[R5RS] Constructs a pair of @var{obj1} and @var{obj2} and returns it.
+[R5RS] 
+@c EN
+Constructs a pair of @var{obj1} and @var{obj2} and returns it.
+@c JP
+@var{obj1}と@var{obj2}のペアを作成します。
+@c COMMON
 @lisp
 (cons 'a 'b) @result{} (a . b)
 @end lisp
 @end defun
 
 @defun acons obj1 obj2 obj3
+@c EN
 Returns @code{(cons (cons @var{obj1} @var{obj2}) @var{obj3})}.
 Useful to put an entry at the head of an associative list.
+@c JP
+@code{(cons (cons @var{obj1} @var{obj2}) @var{obj3})} を返します。
+連想リストの先頭に新しいエントリを加えるのに便利です。
+@c COMMON
 @lisp
 (acons 'a 'b '((c . d))) @result{} ((a . b) (c . d))
 @end lisp
 @end defun
 
 @defun make-list len &optional fill
-[SRFI-1] Makes a proper list of length @var{len}.  If optional argument
+[SRFI-1]
+@c EN
+Makes a proper list of length @var{len}.  If optional argument
 @var{fill} is provided, each element is initialized by it.  Otherwise
 each element is undefined.
+@c JP
+長さ@var{len}の正規のリストを返します。引数@var{fill}が与えられていれば、各要素は
+@var{fill}になります。そうでなければ各要素の値は不定です。
+@c COMMON
 @lisp
 (make-list 5 #t) @result{} (#t #t #t #t #t)
 @end lisp
 @end defun
 
 @defun list obj @dots{}
-[R5RS] Makes a list, whose elements are @var{obj} @dots{}.
+[R5RS]
+@c EN
+Makes a list, whose elements are @var{obj} @dots{}.
+@c JP
+要素が@var{obj} @dots{}であるリストを作成します。
+@c COMMON
 @lisp
 (list 1 2 3) @result{} (1 2 3)
 (list) @result{} ()
@@ -2294,8 +2491,13 @@ each element is undefined.
 @end defun
 
 @defun list* obj1 obj2 @dots{}
+@c EN
 Like @code{list}, but the last argument becomes cdr of the last pair.
-SRFI-1 defines the same function with the name @var{cons*}.
+SRFI-1 defines the same function with the name @code{cons*}.
+@c JP
+@code{list}とほぼ同じですが、最後の引数が作成されるリストの最後のペアのcdrになります。
+SRFI-1ではこの手続きが@code{cons*}という名で定義されています。
+@c COMMON
 @lisp
 (list* 1 2 3) @result{} (1 2 . 3)
 (list* 1) @result{} 1
@@ -2303,8 +2505,14 @@ SRFI-1 defines the same function with the name @var{cons*}.
 @end defun
 
 @defun list-copy list
-[SRFI-1] Shallow copies @var{list}.  If @var{list} is circular,
+[SRFI-1]
+@c EN
+Shallow copies @var{list}.  If @var{list} is circular,
 this function diverges.
+@c JP
+@var{list}の浅いコピーを行います。
+@var{list}が循環リストの場合、この手続きは停止しません。
+@c COMMON
 @end defun
 
 
@@ -2616,7 +2824,9 @@ If the named symbol hasn't existed, this function creates one.
 @end  deftp
 
 @deftp {Reader Syntax} @code{#\@i{charname}}
-[R5RS] Denotes a literal character.
+[R5RS]
+@c EN
+Denotes a literal character.
 
 When the reader reads @code{#\}, it fetches a sbusequent character.
 If it is one of @code{()[]@{@}" \|;#}, this is a character literal of itself.
@@ -2625,6 +2835,26 @@ a non word-constituent character.  If only one character is read,
 it is the character.  Otherwise, the reader matches the read characters
 with predefined character names.  If it doesn't match any, an error
 is signalled.
+
+You can denote multibyte characters with this syntax if
+the program text is written in the same encoding as the internal
+character encoding.
+@c JP
+リテラルの文字オブジェクトを表現します。
+
+リーダーは@code{#\}に出会うと、まず次の文字を読み込みます。それが文字
+@code{()[]@{@}" \|;#} のいずれかならば、その文字自身となります。
+そうでなければ、単語を構成しない文字に出会うまで文字が続けて読み込まれます。
+もし一文字しか読まれなければ、その文字自身となります。そうでなければ
+その単語が文字の名前として解釈されます。
+それが有効な文字の名前でなければエラーとなります。
+
+プログラムテキストがGaucheの内部エンコーディングと同じエンコーディングで
+書かれていれば、マルチバイト文字を直接表記することもできます。
+@example
+#\あ @result{} ; @r{文字「あ」}
+@end example
+@c COMMON
 @end deftp
 
 @defun char? obj
