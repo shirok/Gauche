@@ -3656,11 +3656,13 @@ generates will be quantized by the given @var{unit}, where
 @c ----------------------------------------------------------------------
 @node Localization, A program argument processor, Sources of random bits, Library modules - SRFIs
 @section @code{srfi-29} - Localization
+@c NODE 地域化, @code{srfi-29} - 地域化
 
 @deftp {Module} srfi-29
 @mdindex srfi-29
 @mdindex srfi-29.bundle
 @mdindex srfi-29.format
+@c EN
 This module implements the message localization mechanism
 defined in SRFI-29.
 
@@ -3668,7 +3670,7 @@ In fact, this module consists of two submodules,
 @code{srfi-29.bundle} and @code{srfi-29.format}.
 The module @code{srfi-29} extends both submodules.
 It is because srfi-29's definition of the @code{format}
-procedure is incompabile to Gauche's native @code{format}
+procedure is incompatible to Gauche's native @code{format}
 (thus Common Lisp's @code{format}) in the handling of 
 @code{~@@*} directive.
 
@@ -3686,26 +3688,67 @@ A localization feature is also provided by @code{text.gettext} module
 which is a preferable way of message localization in Gauche.
 This module is provided mainly for porting code that uses
 srfi-29 features.
+@c JP
+このモジュールは SRFI-29 で定義されたメッセージの地域化機構を実装したものです。
+
+実際には、このモジュールは2つのサブモジュール、@code{srfi-29.bundle}
+および @code{srfi-29.format} で構成されています。@code{srfi-29}モジュールは
+このふたつのモジュールを拡張しています。このようにしているのは、
+SRFI-29 での @code{format} 手続きの定義が Gauche ネイティヴの(すなわち
+Common Lisp の) @code{format} とでは @code{~@@*} 指令の扱い
+において互換性がないからです。
+
+そんなわけで、SRFI-29 の @code{format} を含む @code{srfi-29.format} と
+それ以外(「バンドル」API)を含む @code{srfi-29.bundle} に分離しました。
+プログラムを SRFI-29 と完全に互換性のあるものにしたければ、@code{srfi-29}
+モジュールを使って下さい。こうすると Gauche ネイティヴの
+@code{format} が上書きされます。SRFI-29 の「バンドル」API を使いたいだけで、
+Gauche の @code{format} をそのままにしておきたいなら、@code{srfi-29.bundle}
+を使って下さい。
+
+地域化機能は @code{text.gettext} モジュールによっても提供され
+(@xref{Localized messages})、Gauche でメッセージの地域化をするのなら
+@code{text.gettext} を使うのが好ましい方法です。@code{srfi-29} モジュールは
+主として SRFI-29 の機能を使っているコードをポーティングするためにあります。
+@c COMMON
 @end deftp
 
+@c EN
 @subheading Bundle specifier
+@c JP
+@subheading バンドル指定子
+@c COMMON
 
+@c EN
 A @emph{bundle specifier} is an arbitrary list of symbols,
 but typically it takes the form like:
+@c JP
+@emph{バンドル指定子}はシンボルを要素とする任意のリストです。しかし
+典型的には以下のようなフォームになります。
+@c COMMON
 @example
 @code{(@var{package} @var{language} @var{country} @var{details} @dots{})}
 @end example
+@c EN
 Where @var{package} specifies the software package,
 @var{language} and @var{country} specifies language and country code,
 and @var{details} gives other informations like encoding.
 
 The values for the default bundle specifier can be obtained
 by the following parameters.
+@c JP
+ここで、@var{package} はソフトウェアパッケージを指定し、
+@var{language} および @var{country} は言語と国コードを指定、そして、
+@var{details} はエンコーディングのようなそのほかの情報を指定します。
+
+デフォルトのバンドル指定子の値は以下のようなパラメータで取得可能です。
+@c COMMON
 
 @deffn {Parameter} current-language
 @deffnx {Parameter} current-country
 @deffnx {Parameter} current-locale-details
 [SRFI-29]
+@c EN
 The @code{current-language} and @code{current-country} parameters
 keep the ISO 639-1 language code and ISO 3166-1 country code
 respectively, both as symbols.
@@ -3718,41 +3761,90 @@ For example, if the @code{LANG} setting is @code{ja_JP.eucJP},
 those parameters are @code{ja}, @code{jp}, and @code{(eucjp)}, 
 respectively.   If @code{LANG} is @code{C} or undefined,
 the default values are @code{en}, @code{us}, and @code{()}, respectively.
+@c JP
+@code{current-language} および @code{current-country} パラメータは
+ISO 639-1 の言語コードと ISO 3166-1 の国コードをそれぞれシンボルで
+保持しています。@code{current-locale-details} はエンコーディングのような
+補助的な地域情報のリストを保持しています。
+
+これらのパラメータは、環境変数 @code{LANG} が @code{lang_country.encoding}
+フォーマットの形式で設定されていれば、初期化されます。たとえば、
+@code{LANG} が @code{ja_JP.eucJP} に設定されていれば、それらの
+パラメータはそれぞれ @code{ja}、@code{jp}、@code{(eucjp)} に設定されます。
+@code{LANG} が @code{C} であるかあるいは定義されていなければ、
+デフォルト値は、それぞれ @code{en}、@code{us}、@code{()} です。
+@c COMMON
 @end deffn
 
+@c EN
 @subheading Bundle preparation
+@c JP
+@subheading バンドル準備
+@c COMMON
 
 @defun declare-bundle! bundle-specifier association-list
 [SRFI-29]
+@c EN
 Put the association list of template key (symbol) and the locale-specific
 message (string) into the bundle database, with @var{bundle-specifier}
 as the key.
+@c JP
+テンプレートキー(シンボル)と特定ロケールのメッセージ(文字列)の連想リストを
+@var{bundle-specifier} をキーとして、バンドルデータベースに入れます。
+@c COMMON
 @end defun
 
+@c EN
 Gauche currently supports only in-memory bundle database.
 That is, you have to call @code{declare-bundle!} within the application
 in order to lookup the localized messages.
+@c JP
+Gauche は現在のところメモリ上のバンドルデータベースのみサポートしています。
+つまり、地域化されてメッセージを探しあてるには、そのアプリケーション内で
+@code{declare-bundle!} を呼ぶ必要があるということです。
+@c COMMON
 
 @defun save-bundle! bundle-specifier
 @defunx load-bundle! bundle-specifier
 [SRFI-29]
+@c EN
 Since Gauche doesn't support persistent bundle database yet,
 these procedures does nothing and returns @code{#f}.
 (It is still conforming behavior of srfi-29).
+@c JP
+Gauche は今のところ永続バンドルデータベースをサポートしていないので、
+これらの手続きはなにもせず @code{#f} を返します
+(これはいまのところ srfi-29 の振舞いと適合しています)。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Retrieving localized message
+@c JP
+@subheading 地域化されたメッセージの検索
+@c COMMON
 
 @defun localized-template package-name message-template-name
 [SRFI-29]
+@c EN
 Retrieves localized message, associated with a symbol
 @var{message-template-name} in the package @var{package-name}.
+@c JP
+地域化されたメッセージを検索します。当該メッセージは 
+@var{package-name} パッケージの中で、@var{message-template-name}
+シンボルと関連つけられています。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Extended format procedure
+@c JP
+@subheading 拡張された format 手続き
+@c COMMON
 
 @defun format format-string args
 [SRFI-29]
+@c EN
 SRFI-29 extends SRFI-28's @code{format} procedure spec
 (which supports @code{~a}, @code{~s}, @code{~%} and @code{~~} directives),
 in order to support argument repositioning.  
@@ -3775,8 +3867,29 @@ which extends @code{srfi-29.bundle} and @code{srfi-29.format},
 the @code{format} procedure will be overriden by srfi-29's @code{format}
 in your module.  If you want to keep Gauche's native @code{format},
 use @code{srfi-29.bundle} only.
-@end defun
+@c JP
+SRFI-29 は SRFI-28 の @code{format} 手続きの仕様(これは @code{~a}、
+@code{~s}、@code{~%} および @code{~~} 指令をサポートしている)を
+引数再配置をサポートするために拡張しています。
 
+@code{~N@@*} 指令は @var{N}-番目のオプション引数から値を引き出す次の
+指令の契機となります。参照された値が消費されることはありません。また、
+参照された値がその後につづく指令の処理に影響を与えることはありません。
+
+SRFI-28 の仕様は Gauche ネイティヴの @code{format} (@xref{Output}) と
+互換性がありますが、この SRFI-29 の拡張には互換性がありません。
+具体的には、Gauche ネイティヴの @code{format} の @code{~N@@*} 指定は
+引数ポインタを @var{N}-番目のオプション引数を指すように変更します。
+それゆえ、そのあとに続くすべての引数に影響をあたえます。
+
+この非互換性があるために、この関数は、分離したモジュール
+@code{srfi-29.format} で定義されています。@code{srfi-29.bundle} と
+@code{srfi-29.format} を拡張する @code{srfi-29} を使うと、@code{format}
+手続きは SRFI-29 の @code{format} でそのモジュール内で上書きされます。
+Gauche ネイティヴの @code{format} を使いたければ、@code{srfi-29.bundle}
+だけを使うようにしてください。
+@c COMMON
+@end defun
 
 @c ----------------------------------------------------------------------
 @node A program argument processor,  , Localization, Library modules - SRFIs
