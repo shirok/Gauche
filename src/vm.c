@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.95 2001-09-02 07:58:47 shirok Exp $
+ *  $Id: vm.c,v 1.96 2001-09-02 21:43:45 shirok Exp $
  */
 
 #include "gauche.h"
@@ -37,8 +37,7 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_VMClass, NULL);
 static ScmVM *theVM;    /* this must be thread specific in MT version */
 
 static void stack_gc(ScmVM*);
-static ScmObj *frame_index2ptr(ScmVM *, ScmFrameIndex);
-static ScmFrameIndex frame_ptr2index(ScmVM *, ScmObj *, char);
+static void frame_ptr2index(ScmVM *, ScmFramePointer *, char);
 
 /*
  * Constructor
@@ -567,7 +566,7 @@ static void run_loop()
                                                 SCM_SUBR(val0)->data);
                     RESTORE_REGS();
                 } else if (proctype == SCM_PROC_CLOSURE) {
-                    env->up = (ScmEnvFrame*)frame_index2ptr(vm, SCM_CLOSURE(val0)->env);
+                    env->up = (ScmEnvFrame*)SCM_CLOSURE(val0)->env.ptr;
                     pc = SCM_CLOSURE(val0)->code;
                 } else if (proctype == SCM_PROC_GENERIC) {
                     /* we have no applicable methods.  call fallback fn. */
@@ -592,7 +591,7 @@ static void run_loop()
                            as the last arg (note that rest arg is already
                            folded. */
                         PUSH_ARG(SCM_OBJ(nm));
-                        env->up = (ScmEnvFrame*)frame_index2ptr(vm, m->env);
+                        env->up = (ScmEnvFrame*)m->env.ptr;
                         env->size++; /* for next-method */
                         pc = SCM_OBJ(m->data);
                     }
@@ -786,7 +785,6 @@ static void run_loop()
                 val0 = Scm_MakeClosure(SCM_VM_INSN_ARG0(code),
                                        SCM_VM_INSN_ARG1(code),
                                        body,
-                                       Scm_VMSaveCurrentEnv(),
                                        info);
                 RESTORE_REGS();
                 continue;
@@ -1261,9 +1259,8 @@ static void run_loop()
 #define FRAME_TABLE_MASK  (FRAME_TABLE_SIZE-1)
 
 struct ScmVMFrameTableRec {
-    struct ScmVMFrameTableRec *next;
     char flags[FRAME_TABLE_SIZE];
-    ScmObj *pointers[FRAME_TABLE_SIZE];
+    ScmFramePointer *pointers[FRAME_TABLE_SIZE];
 };
 
 #define FRAME_TYPE_MASK  0x03
@@ -1273,106 +1270,91 @@ struct ScmVMFrameTableRec {
 
 static ScmVMFrameTable *frame_table_new(void)
 {
-    ScmVMFrameTable *tab = SCM_NEW(ScmVMFrameTable);
+    ScmVMFrameTable *tab = SCM_NEW_ATOMIC(ScmVMFrameTable);
     int i;
     for (i=0; i<FRAME_TABLE_SIZE; i++) {
         tab->pointers[i] = NULL;
         tab->flags[i] = 0;
     }
-    tab->next = NULL;
-    return tab;
-}
-
-static void frame_table_realloc(ScmVM *vm)
-{
-    if (vm->frameTable == NULL) {
-        vm->frameTable = frame_table_new();
-        vm->frameTableSize = FRAME_TABLE_SIZE;
-    } else {
-        /* double the table size */
-        ScmVMFrameTable *tab = vm->frameTable;
-        int i = 1;
-        while (tab->next) {
-            tab = tab->next;
-            i++;
-        }
-        while (i-- > 0) {
-            tab->next = frame_table_new();
-            tab = tab->next;
-        }
-        vm->frameTableSize *= 2;
-    }
-}
-
-static ScmVMFrameTable *frame_index2table(ScmVM *vm, ScmFrameIndex index)
-{
-    int count = (index >> FRAME_TABLE_SHIFT);
-    ScmVMFrameTable *tab = vm->frameTable;
-    while (count-- > 0) {
-        SCM_ASSERT(tab);
-        tab = tab->next;
-    }
-    SCM_ASSERT(tab);
     return tab;
 }
 
 #define FRAME_INDEX2PTR(vm, index) \
-   (frame_index2table(vm, index)->pointers[(index)&FRAME_TABLE_MASK])
+   (vm->frameTable->pointers[(index)&FRAME_TABLE_MASK])
 #define FRAME_INDEX2FLAG(vm, index) \
-   (frame_index2table(vm, index)->flags[(index)&FRAME_TABLE_MASK])
+   (vm->frameTable->flags[(index)&FRAME_TABLE_MASK])
+
+#define FRAME_POINTER_RELEASE(vm, fp)                   \
+    do {                                                \
+        if ((fp).index && *(fp).index >= 0) {           \
+            FRAME_INDEX2PTR(vm, *(fp).index) = NULL;    \
+            vm->frameTableEntries--;                    \
+            *(fp).index = -1;                            \
+            (fp).index = NULL;                          \
+        }                                               \
+    } while (0)
+
+static void fp_finalize(GC_PTR obj, GC_PTR data)
+{
+    int *pindex = (int *)obj;
+    ScmVM *vm = theVM;
+    //printf("fp finalize\n");
+    if (*pindex >= 0) {
+        FRAME_INDEX2PTR(vm, *pindex) = NULL;
+        vm->frameTableEntries--;
+    }
+}
 
 /* allocates a slot for a pointer pointing into the stack, and returns
  * its table index.
  */
-static ScmFrameIndex frame_ptr2index(ScmVM *vm, ScmObj *ptr, char flag)
+static void frame_ptr2index(ScmVM *vm, ScmFramePointer *fp, char flag)
 {
     unsigned long k, j, p;
+    ScmVMFrameTable *tab = vm->frameTable;
+    GC_finalization_proc ofn; GC_PTR ocd;
 
-    if (ptr == NULL) return 0;
-    if (theVM->frameTable == NULL) frame_table_realloc(theVM);
+    if (fp->ptr == NULL || vm->stack > fp->ptr || vm->stackEnd <= fp->ptr) {
+        fp->index = NULL;
+        return;
+    }
+    fp->index = SCM_NEW_ATOMIC(int);
+    GC_REGISTER_FINALIZER(fp->index, fp_finalize, NULL, &ofn, &ocd);
+    
+    if (theVM->frameTable == NULL) {
+        theVM->frameTable = frame_table_new();
+        theVM->frameTableSize = FRAME_TABLE_SIZE;
+    }
+    tab = theVM->frameTable;
 
     /* Use quadratic hash to find the empty slot.
        Cf. Hopgood and Davenport: "The quadratic hash method when the table
        size is a power of 2", The computer journal, 15(4) pp314-315, 1972.
     */
-    k = (((unsigned long)ptr >> 3) * 2654435761UL) % vm->frameTableSize;
+    k = (((unsigned long)fp->ptr >> 3) * 2654435761UL) % vm->frameTableSize;
     j = 1;
     p = vm->frameTableSize;
     do {
-        ScmVMFrameTable *tab = frame_index2table(vm, k);
         if (tab->pointers[k & FRAME_TABLE_MASK] == NULL) {
-            tab->pointers[k & FRAME_TABLE_MASK] = ptr;
+            tab->pointers[k & FRAME_TABLE_MASK] = fp;
             tab->flags[k & FRAME_TABLE_MASK] = flag;
             vm->frameTableEntries++;
-            return (k+1);
+            *fp->index = k;
+            return;
         }
         p = k;
         k = (k + j) % vm->frameTableSize;
         j++;
     } while (p != k);
-    /* table is full */
-    frame_table_realloc(vm);
-    return frame_ptr2index(vm, ptr, flag);
+    /* table is full.  for now, we just give up. */
+    Scm_Panic("frame table full");
+    return;
 }
 
-void Scm_FrameIndexRelease(ScmFrameIndex index)
+void Scm_FramePointerRelease(ScmFramePointer *fp)
 {
-    if (index > 0) {
-        ScmVM *vm = theVM;
-        FRAME_INDEX2PTR(vm, index-1) = NULL;
-        vm->frameTableEntries--;
-        SCM_ASSERT(vm->frameTableEntries >= 0);
-    }
-}
-
-static ScmObj *frame_index2ptr(ScmVM *vm, ScmFrameIndex index)
-{
-    ScmObj *p;
-
-    if (index == 0) return NULL;
-    p = FRAME_INDEX2PTR(vm, index-1);
-    SCM_ASSERT(p != NULL);
-    return p;
+    ScmVM *vm = theVM;
+    FRAME_POINTER_RELEASE(vm, *fp);
 }
 
 /* GC
@@ -1471,25 +1453,25 @@ static void stack_gc(ScmVM *vm)
 //    gettimeofday(&t0, NULL);
     
 //    fprintf(stderr, "stack_gc\n");
+    
 //    Scm_VMDump(vm);
 
 //    printf("tabsiz = %d\n", vm->frameTableEntries);
     /* move frames to heap */
     save_env(vm, vm->env);
     save_cont(vm, vm->cont);
-    for (tab = vm->frameTable; tab; tab = tab->next) {
-        for (i=0; i < FRAME_TABLE_SIZE; i++) {
-            ScmObj *frame = tab->pointers[i];
+    tab = vm->frameTable;
+    for (i=0; i < FRAME_TABLE_SIZE; i++) {
+        ScmFramePointer *frame = tab->pointers[i];
+        if (frame) {
             char flag = tab->flags[i];
-            if (frame) {
-                switch (flag & FRAME_TYPE_MASK) {
-                case FRAME_TYPE_ENV:
-                    save_env(vm, (ScmEnvFrame*)frame);
-                    break;
-                case FRAME_TYPE_CONT:
-                    save_cont(vm, (ScmContFrame*)frame);
-                    break;
-                }
+            switch (flag & FRAME_TYPE_MASK) {
+            case FRAME_TYPE_ENV:
+                save_env(vm, (ScmEnvFrame*)frame->ptr);
+                break;
+            case FRAME_TYPE_CONT:
+                save_cont(vm, (ScmContFrame*)frame->ptr);
+                break;
             }
         }
     }
@@ -1501,12 +1483,12 @@ static void stack_gc(ScmVM *vm)
     if (vm->cont && FORWARDED_FRAME_P(vm->cont)) {
         vm->cont = (ScmContFrame*)FORWARDED_FRAME(vm->cont);
     }
-    for (tab = vm->frameTable; tab; tab = tab->next) {
-        for (i=0; i < FRAME_TABLE_SIZE; i++) {
-            ScmObj *frame = tab->pointers[i];
-            if (frame && FORWARDED_FRAME_P(frame)) {
-                tab->pointers[i] = FORWARDED_FRAME(frame);
-            }
+    tab = vm->frameTable;
+    for (i=0; i < FRAME_TABLE_SIZE; i++) {
+        ScmFramePointer *frame = tab->pointers[i];
+        if (frame && frame->ptr && FORWARDED_FRAME_P(frame->ptr)) {
+            frame->ptr = FORWARDED_FRAME(frame->ptr);
+            FRAME_POINTER_RELEASE(vm, *frame);
         }
     }
 
@@ -1606,12 +1588,16 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
 /* Saves the current environment chain to heap, adjusting all related
    pointers.  Needed for the user to create their own closure in local
    scope. */
-ScmFrameIndex Scm_VMSaveCurrentEnv(void)
+void Scm_FramePointerSet(ScmFramePointer *fp)
 {
     ScmVM *vm = theVM;
-    /* preserve environment */
-    vm->stackBase = vm->sp;
-    return frame_ptr2index(vm, (ScmObj*)vm->env, FRAME_TYPE_ENV);
+    fp->ptr = (ScmObj*)vm->env;
+    fp->index = NULL;
+    if (vm->stack <= fp->ptr && vm->stackEnd > fp->ptr) {
+        /* preserve environment */
+        vm->stackBase = vm->sp;
+        frame_ptr2index(vm, fp, FRAME_TYPE_ENV);
+    }
 }
 
 /*-------------------------------------------------------------
@@ -1634,7 +1620,7 @@ static ScmObj user_eval_inner(ScmObj program)
 {
     ScmVM *vm = theVM;
     volatile ScmObj result = SCM_UNDEFINED, pc = vm->pc;
-    volatile ScmFrameIndex conti, envi;
+    volatile ScmFramePointer conti, envi;
 
     /* Keep activation history in heap.  It can be on the C stack,
        since it is discarded when this routine returns.  However,
@@ -1646,8 +1632,10 @@ static ScmObj user_eval_inner(ScmObj program)
     h->cont = theVM->cont;
     vm->history = h;
     vm->numVals = 1;
-    conti = frame_ptr2index(vm, (ScmObj*)vm->cont, FRAME_TYPE_CONT);
-    envi  = frame_ptr2index(vm, (ScmObj*)vm->env, FRAME_TYPE_ENV);
+    conti.ptr = (ScmObj*)vm->cont;
+    frame_ptr2index(vm, &conti, FRAME_TYPE_CONT);
+    envi.ptr = (ScmObj*)vm->env;
+    frame_ptr2index(vm, &envi, FRAME_TYPE_ENV);
     
     SCM_PUSH_ERROR_HANDLER {
         vm->cont = NULL;
@@ -1656,19 +1644,19 @@ static ScmObj user_eval_inner(ScmObj program)
         result = vm->val0;
         vm->history = vm->history->prev;
         vm->pc = pc;
-        vm->cont = (ScmContFrame*)frame_index2ptr(vm, conti);
-        vm->env  = (ScmEnvFrame*)frame_index2ptr(vm, envi);
-        Scm_FrameIndexRelease(conti);
-        Scm_FrameIndexRelease(envi);
+        vm->cont = (ScmContFrame*)conti.ptr;
+        vm->env  = (ScmEnvFrame*)envi.ptr;
+        FRAME_POINTER_RELEASE(vm, conti);
+        FRAME_POINTER_RELEASE(vm, envi);
     }
     SCM_WHEN_ERROR {
         ScmVM *vm = theVM;
         vm->history = vm->history->prev;
         vm->pc = pc;
-        vm->cont = (ScmContFrame*)frame_index2ptr(vm, conti);
-        vm->env  = (ScmEnvFrame*)frame_index2ptr(vm, envi);
-        Scm_FrameIndexRelease(conti);
-        Scm_FrameIndexRelease(envi);
+        vm->cont = (ScmContFrame*)conti.ptr;
+        vm->env  = (ScmEnvFrame*)envi.ptr;
+        FRAME_POINTER_RELEASE(vm, conti);
+        FRAME_POINTER_RELEASE(vm, envi);
         SCM_PROPAGATE_ERROR;
     }
     SCM_POP_ERROR_HANDLER;
@@ -1867,7 +1855,7 @@ ScmObj Scm_VMThrowException(ScmObj exception)
  */
 
 struct cont_data {
-    ScmFrameIndex conti;
+    ScmFramePointer conti;
     ScmObj handlers;
     ScmVMActivationHistory *history;
 };
@@ -1933,7 +1921,7 @@ static ScmObj throw_cont_body(ScmObj cur_handlers, /* dynamic handlers of
      * now, install the target continuation
      */
     vm->pc = SCM_NIL;
-    vm->cont = (ScmContFrame*)frame_index2ptr(vm, cd->conti);
+    vm->cont = (ScmContFrame*)cd->conti.ptr;
     vm->handlers = dest_handlers;
     vm->history = cd->history;
 
@@ -1997,7 +1985,8 @@ ScmObj Scm_VMCallCC(ScmObj proc)
 
     vm->stackBase = vm->sp;
     data = SCM_NEW(struct cont_data);
-    data->conti = frame_ptr2index(vm, (ScmObj*)vm->cont, FRAME_TYPE_CONT);
+    data->conti.ptr = (ScmObj*)vm->cont;
+    frame_ptr2index(vm, &data->conti, FRAME_TYPE_CONT);
     data->handlers = vm->handlers;
     data->history = vm->history;
 

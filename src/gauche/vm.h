@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.37 2001-08-31 08:37:29 shirok Exp $
+ *  $Id: vm.h,v 1.38 2001-09-02 21:43:46 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -73,15 +73,17 @@ extern void Scm_CallCC(ScmObj body);
 
 /*
  * Frame table
- *   Since the frames in the stack may be moved during stack GC, other
- *   objects such as closures can't directly point to the stack.
  */
 
 typedef struct ScmVMFrameTableRec ScmVMFrameTable;
-typedef unsigned int ScmFrameIndex;
 
-extern void Scm_FrameIndexRelease(ScmFrameIndex indeX);
-extern ScmFrameIndex Scm_VMSaveCurrentEnv(void);
+typedef struct ScmFramePointerRec {
+    ScmObj *ptr;
+    int *index;                 /* -1 if ptr doesn't point stack */
+} ScmFramePointer;
+
+extern void Scm_FramePointerRelease(ScmFramePointer *fp);
+extern void Scm_FramePointerSet(ScmFramePointer *fp);
 
 /*
  * VM activation history

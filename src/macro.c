@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.27 2001-08-30 06:41:44 shirok Exp $
+ *  $Id: macro.c,v 1.28 2001-09-02 21:43:45 shirok Exp $
  */
 
 #include "gauche.h"
@@ -138,7 +138,6 @@ static ScmObj compile_define_macro(ScmObj form, ScmObj env, int ctx,
     proc = Scm_MakeClosure(SCM_VM_INSN_ARG0(SCM_CAR(code)),
                            SCM_VM_INSN_ARG1(SCM_CAR(code)),
                            SCM_CAR(SCM_CDDR(code)),
-                           Scm_VMSaveCurrentEnv(),
                            SCM_CADR(code));
     mt = Scm_MakeMacroTransformer(SCM_SYMBOL(name), SCM_PROCEDURE(proc));
 
