@@ -1,5 +1,5 @@
 # Spec file to build Gauche RPM package
-# $Id: Gauche.spec,v 1.12 2002-08-01 08:17:39 shirok Exp $
+# $Id: Gauche.spec,v 1.13 2002-08-01 09:04:05 shirok Exp $
 #
 # In order to build different encoding-specific packages (like
 # Gauche-euc-jp, etc) from a single source rpm, the actual package
@@ -83,8 +83,8 @@ make prefix=${RPM_BUILD_ROOT}/usr install-doc
 %doc COPYING ChangeLog INSTALL INSTALL.eucjp Gauche.spec
 /usr/bin/gosh
 /usr/bin/gauche-config
-/usr/lib/libgauche.a
-/usr/lib/libgauche.so
+#/usr/lib/libgauche.a
+#/usr/lib/libgauche.so
 /usr/lib/gauche/
 /usr/share/info/
 /usr/share/gauche/
