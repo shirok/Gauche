@@ -9795,7 +9795,7 @@ function signals an error.
 @subsection Locale
 @c NODE ロケール
 
-@defun sys-setlocate category locale
+@defun sys-setlocale category locale
 [POSIX]
 @c EN
 Sets the locale of the category @var{category} to the locale @var{locale}.
