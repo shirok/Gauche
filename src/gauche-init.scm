@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.74 2002-05-02 12:44:37 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.75 2002-05-07 07:33:53 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -151,6 +151,11 @@
           (:macro rxmatch-cond) (:macro rxmatch-case)
           regexp-replace regexp-replace-all)
 
+(autoload gauche.procedure
+          arity procedure-arity-includes?
+          <arity-at-least> arity-at-least? arity-at-least-value
+          compose)
+
 (autoload gauche.vm.debugger
           enable-debug disable-debug (:macro debug-print))
 
@@ -184,12 +189,6 @@
        (unless (?test tmp)
          (errorf "bad type of argument for ~s: ~s" '?arg tmp))))
     ))
-
-(define (compose f g . more)
-  (if (null? more)
-      (lambda args
-        (call-with-values (lambda () (apply g args)) f))
-      (compose f (apply compose g more))))
 
 ;; hash table iterators
 (define (hash-table-map hash proc)

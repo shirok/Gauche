@@ -1,7 +1,7 @@
 #
 # Makefile.in for Gauche/lib
 #
-#  $Id: Makefile.in,v 1.51 2002-05-01 04:49:30 shirok Exp $
+#  $Id: Makefile.in,v 1.52 2002-05-07 07:33:53 shirok Exp $
 #
 
 prefix = @prefix@
@@ -25,7 +25,7 @@ SCMS = srfi-0.scm \
        gauche/object.scm gauche/test.scm gauche/macroutil.scm \
        gauche/regexp.scm gauche/process.scm gauche/with.scm gauche/signal.scm \
        gauche/numerical.scm gauche/let-opt.scm gauche/logical.scm \
-       gauche/vm/disasm.scm gauche/vm/debugger.scm \
+       gauche/vm/disasm.scm gauche/vm/debugger.scm gauche/procedure.scm \
        gauche/serializer.scm gauche/serializer/aserializer.scm \
        gauche/parseopt.scm gauche/interactive.scm gauche/selector.scm \
        gauche/logger.scm gauche/port.scm gauche/common-macros.scm \
