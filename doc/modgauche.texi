@@ -6048,9 +6048,11 @@ Returns a string with the characters that are special to regexp escaped.
 @c ----------------------------------------------------------------------
 @node gauche.reload - Reloading modules, gauche.selector - Simple dispatcher, gauche.regexp - Regular expression utilities, Library modules - Gauche extensions
 @section @code{gauche.reload} - Reloading modules
+@c NODE gauche.reload - モジュールの再ロード, @code{gauche.reload} - モジュールの再ロード
 
 @deftp {Module} gauche.reload
 @mdindex gauche.reload
+@c EN
 In the development cycle, you often have to reload modules frequently.
 This module supports it.
 
@@ -6058,7 +6060,17 @@ Note that some part of semantics of the program depends on
 the order of loading modules, so reloading arbitrary modules
 may change the program behavior unexpectedly.  This module
 is for developers who knows what they are doing.
+@c JP
+開発のサイクルのなかで、モジュールを再ロードしなければならないことは
+頻繁におこります。このモジュールはそれを支援するものです。
 
+プログラムのいくつかの部分のセマンティクスはモジュールのロードの順に
+依存します。それで、任意のモジュールを再ロードすることはプログラムの
+ふるまいを予期せぬものに変えてしまう可能性があります。このモジュールは
+自分がなにをしようとしているか判っている開発者向けのものです。
+@c COMMON
+
+@c EN
 @strong{Redefinition rules}: Reloading a module resets all
 the binding in the module by default.
 Sometimes it is not desirable, however.  For example,
@@ -6067,6 +6079,16 @@ You can specify rules for the reloading procedure to determine
 which binding to keep.
 
 The rule is described in the following syntax.
+@c JP
+@strong{再定義ルール}: モジュールを再ロードすると、デフォルトでは、その
+モジュール内のすべての束縛はリセットされます。
+しかしながら、場合によってこれは望ましいことではありません。たとえば、
+再構築するのに時間のかかるオブジェクトの大きなリストをもつような場合です。
+再ロード手続きにどの束縛を保存するかを決めるためのルールを指定することが
+できます。
+
+このルールは以下の構文で記述します。
+@c COMMON
 @example
   <module-rules> : (<module-rule> @dots{})
   <module-rule>  : (<module-pattern> <rule> @dots{})
@@ -6077,6 +6099,7 @@ The rule is described in the following syntax.
                  | (not <rule>)
 @end example
 
+@c EN
 @code{<module-rules>} is the global rule to determine per-module
 rules.  @code{<module-pattern>} is either a symbol module name
 or a symbol that contains glob pattern (e.g. @code{mylib.*}).
@@ -6090,35 +6113,78 @@ regexp are kept.
 Note that the mechanism to prevent redefinition is kind of ad-hoc
 hack and semantically unclean.  It's just for your convenience.
 Take a look at the code if you want to know the exact behavior.
+@c JP
+@code{<module-rules>} はモジュールごとのルールをきめるグローバルルール
+です。@code{<module-pattern>} はモジュール名シンボルまたは(@code{mylib.*}
+のような)グロブパターンを含むシンボルのどちらかです。@code{<rule>} が
+手続きであれば、述語として使われ、この述語を満す値の束縛は再定義から
+保護されます。@code{<rule>} がシンボルであれば、それと同じ名前の
+変数の束縛は保護されます。@code{<rule>} が正規表現の場合、この正規表現に
+マッチする名前の変数は保護されます。
+
+再定義からの保護機構は、ばあたりなもので、セマンティクスとしても
+不透明なものであることに注意してください。利便のためだけのものです。
+正確な振舞いをしれたければ、コードを満てください。
+@c COMMON
 @end deftp
 
 @defun reload module-name &optional rule @dots{}
+@c EN
 Reloads the specified module.   You can optionally specify
 redefinition rules by @var{rule} @dots{},
 where each @var{rule} is the term @code{<rule>} defined above.
+@c JP
+指定されたモジュールを再ロードします。オプションで
+@var{rule} @dots{} をつかって再定義ルールを指定することができます。
+ここで、それぞれの @var{rule} は上の @code{<rule>} で定義されたものです。
+@c COMMON
 @end defun
 
 @defun reload-modified-modules &optional module-rules
+@c EN
 Reloads module(s) that have been modified since they are loaded
 last time.  If optional @var{module-rules} is given, it is
 used to determine the redefinition rules for reloaded modules.
 If @var{module-rules} is omitted, the current rules are used.
 The default of current rules is empty.   You can set the current
 rules by @code{module-reload-rules}.
+@c JP
+前回ロードしたときより変更のあったモジュールを再ロードします。
+オプション引数 @var{module-rules} が与えられていれば、再ロードした
+モジュールに適用する再定義ルールを決定するために使います。
+@var{module-rules}が省略された場合、現在のルールが適用されます。
+デフォルトの現在のルールは空です。現在のルールは
+@code{module-reload-rules}をつかって設定できます。
+
+@c COMMON
 @end defun
 
 @defun module-reload-rules &optional module-rules
+@c EN
 This is a parameter (@xref{gauche.parameter - Parameters}) that keeps
 the default module rules for @code{reload-modified-modules}.
 If called without arguments, returns the current module rules.
 If called with @var{module-rules}, sets the argument to the
 current module rules.
+@c JP
+これは一種の「パラメータ」(@ref{gauche.parameter - Parameters}参照)で、
+@code{reload-modified-modules}に対応するデフォルトのモジュールルールを
+保持しています。引数なしで呼ばれたときには、現在のモジュールルールを
+返します。@var{module-rules}とともに呼ばれたきにはその引数を
+現在のモジュールルールにします。
+@c COMMON
 @end defun
 
 @defun reload-verbose &optional flag
+@c EN
 This is a parameter to control verbosity of the reloading procedures.
 If called without arguments, returns the current verbosity flag.
 If called with @var{flag}, it is set to the current verbosity flag.
+@c JP
+これは再ロード手続きのメッセージ出力レベルを制御するパラメータです。
+引数なしで呼ばれると現在の出力レベルフラグを返します。@var{flag}と
+ともに呼ばれると現在の出力レベルをこれに設定します。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
