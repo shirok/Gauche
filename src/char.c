@@ -12,12 +12,8 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.4 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: char.c,v 1.5 2001-03-30 10:11:23 shiro Exp $
  */
 
 #include "gauche.h"
-
-/* Character case ... for now, I only care about ASCII chars. */
-
-
 
