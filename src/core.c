@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.35 2002-03-13 10:45:53 shirok Exp $
+ *  $Id: core.c,v 1.36 2002-04-03 22:31:22 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -36,6 +36,7 @@ static GC_PTR oom_handler(size_t bytes)
 extern void Scm__InitModule(void);
 extern void Scm__InitSymbol(void);
 extern void Scm__InitKeyword(void);
+extern void Scm__InitNumber(void);
 extern void Scm__InitClass(void);
 extern void Scm__InitExceptions(void);
 extern void Scm__InitPort(void);
@@ -64,6 +65,7 @@ void Scm_Init(void)
     Scm__InitSymbol();
     Scm__InitModule();
     Scm__InitKeyword();
+    Scm__InitNumber();
     Scm__InitClass();
     Scm__InitExceptions();
     Scm__InitProc();

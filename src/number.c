@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.66 2002-04-03 10:38:34 shirok Exp $
+ *  $Id: number.c,v 1.67 2002-04-03 22:31:22 shirok Exp $
  */
 
 #include <math.h>
@@ -38,6 +38,9 @@
 #else
 #define SCM_IS_INF(x)  ((x) != 0 && (x) == (x)/2.0)
 #endif
+
+#define RADIX_MIN 2
+#define RADIX_MAX 36
 
 /* Linux gcc have those, but the declarations aren't included unless
    __USE_ISOC9X is defined.  Just in case. */
@@ -1420,7 +1423,30 @@ enum { /* used in the exactness flag */
     NOEXACT, EXACT, INEXACT
 };
 
+/* An integer table of limit value V for each radix R that V fits in
+   signed long but V*R doesn't.  */
+static long intlimits[RADIX_MAX-RADIX_MIN+1];
+/* An integer table of 10^n.  The size of the table is
+   ceiling(log10(LONG_MAX)) < LONG_BITS/3+1, since log10(2) ~ 0.30103. */
+static long ipow10[(SIZEOF_LONG*8)/3+1];
+
 static ScmObj numread_error(const char *msg, struct numread_packet *context);
+
+/* integer power of R by N.  assuming everything is in range. */
+static inline long ipow(int r, int n)
+{
+    int k;
+    
+    switch (r) {
+    case 10: return ipow10[n];
+    case 2:  return 1L<<n;
+    case 8:  return 1L<<(n*3);
+    case 16: return 1L<<(n*4);
+    default:
+        for (k=1; n>0; n--) k *= r;
+        return k;
+    }
+}
 
 /* Returns either small integer or bignum. */
 static ScmObj read_uint(const char **strp, int *lenp,
@@ -1430,8 +1456,9 @@ static ScmObj read_uint(const char **strp, int *lenp,
     const char *str = *strp;
     int len = *lenp;
     int radix = ctx->radix;
+    int digits = 0;
     int padseen = FALSE;
-    long value_int = 0;
+    long value_int = 0, limit = intlimits[radix - RADIX_MIN];
     ScmObj value_big = SCM_FALSE;
     char c;
     static const char tab[] = "0123456789abcdefghijklmnopqrstuvwxyz";
@@ -1441,17 +1468,20 @@ static ScmObj read_uint(const char **strp, int *lenp,
         c = tolower(*str++);
         for (ptab = tab; ptab < tab+radix; ptab++) {
             if (c == *ptab) {
-                if (SCM_FALSEP(value_big)) {
-                    if (value_int < (LONG_MAX/radix - radix)) {
-                        value_int = value_int * radix + (ptab-tab);
-                        break;
-                    } else {
-                        /* will overflow */
+                value_int = value_int * radix + (ptab-tab);
+                digits++;
+                if (value_int >= limit) {
+                    if (SCM_FALSEP(value_big)) {
                         value_big = Scm_MakeBignumFromSI(value_int);
+                        value_int = digits = 0;
+                    } else {
+                        value_big = Scm_BignumMulSI(SCM_BIGNUM(value_big),
+                                                    ipow(radix, digits));
+                        value_big = Scm_BignumAddSI(SCM_BIGNUM(value_big),
+                                                    value_int);
+                        value_int = digits = 0;
                     }
                 }
-                value_big = Scm_BignumMulSI(SCM_BIGNUM(value_big), radix);
-                value_big = Scm_BignumAddSI(SCM_BIGNUM(value_big), ptab-tab);
                 break;
             }
         }
@@ -1459,8 +1489,14 @@ static ScmObj read_uint(const char **strp, int *lenp,
     }
     *strp = str-1;
     *lenp = len+1;
+    
     if (SCM_FALSEP(value_big)) return Scm_MakeInteger(value_int);
-    else                       return value_big;
+    if (digits > 0) {
+        value_big = Scm_BignumMulSI(SCM_BIGNUM(value_big),
+                                    ipow(radix, digits));
+        value_big = Scm_BignumAddSI(SCM_BIGNUM(value_big), value_int);
+    }
+    return value_big;
 }
 
 static ScmObj read_real(const char **strp, int *lenp,
@@ -1732,5 +1768,21 @@ ScmObj Scm_StringToNumber(ScmString *str, int radix, int strict)
     } else {
         return read_number(SCM_STRING_START(str), SCM_STRING_SIZE(str),
                            radix, strict);
+    }
+}
+
+/*
+ * Initialization
+ */
+
+void Scm__InitNumber(void)
+{
+    int radix, n;
+    long pow10;
+    for (radix = RADIX_MIN; radix <= RADIX_MAX; radix++) {
+        intlimits[radix-RADIX_MIN] = LONG_MAX/radix - radix;
+    }
+    for (pow10 = 1, n = 0; pow10 < intlimits[10]; n++, pow10 *= 10) {
+        ipow10[n] = pow10;
     }
 }
