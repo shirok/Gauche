@@ -2,12 +2,16 @@ EXTENSIONS=@EXTENSIONS@
 INSTALL=@INSTALL@
 CONFIG_GENERATED=Makefile config.cache config.log config.status \
                  autom4te*.cache gc/Makefile
-.PHONY: test clean install
+.PHONY: all nodoc test clean install install-nodoc link unlink \
+	distclean realclean uninstall
 
 
 all : gc/libgc.a src/gosh
 	cd ext; $(MAKE) all
 	cd doc; $(MAKE) all
+
+nodoc : gc/libgc.a src/gosh
+	cd ext; $(MAKE) all
 
 gc/libgc.a :
 	cd gc; $(MAKE) 
@@ -15,7 +19,7 @@ gc/libgc.a :
 src/gosh : gc/libgc.a
 	cd src; $(MAKE) 
 
-test : src/gosh
+test : gc/libgc.a src/gosh
 	cd src; $(MAKE) test
 	cd ext; $(MAKE) test
 
@@ -42,8 +46,6 @@ distclean : clean
 	cd ext; $(MAKE) distclean
 	rm -rf $(CONFIG_GENERATED)
 
-install-all : install install-doc
-
 install :
 	cd src; $(MAKE) install
 	cd lib; $(MAKE) install
@@ -52,8 +54,12 @@ install :
 	cd doc; $(MAKE) install
 	cd lib; $(MAKE) slibcat
 
-install-doc :
-	cd doc; $(MAKE) install
+install-nodoc :
+	cd src; $(MAKE) install
+	cd lib; $(MAKE) install
+	cd ext; $(MAKE) install
+	$(INSTALL) -m 444 aclocal.m4 `sh src/gauche-config --ac`/aclocal.m4
+	cd lib; $(MAKE) slibcat
 
 install-rpm :
 	cd src; $(MAKE) install
