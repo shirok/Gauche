@@ -3045,7 +3045,7 @@ For simple batched keyed hashing, you can use high-level API
 Or you can create @code{<hmac>} object and update its state
 as the data coming in.
 @c JP
-個のモジュールは、RFC 2104で定義されている、メッセージ認証のための
+このモジュールは、RFC 2104で定義されている、メッセージ認証のための
 鍵付きハッシングのHMACアルゴリズムを実装しています。
 
 シンプルなバッチ処理での鍵付きハッシングでは、高レベルなAPIである
