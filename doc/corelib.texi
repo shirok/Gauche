@@ -3888,13 +3888,20 @@ Keys are compared by @code{string=?}.  Key must be a string.
 @end table
 
 @c EN
-An internal hash function is used for @code{eq?}, @code{eqv?} and
-@code{string=?}-type hash tables.  On the other hand, @code{equal?}-type
+Hash functions used for @code{eq?}, @code{eqv?} and
+@code{string=?}-type hash tables are built in the system;
+they can be called from Scheme as @code{eq-hash}, @code{eqv-hash},
+and @code{string-hash} (SRFI-13).  Those functions can't be extended
+for user-defined objects.   On the other hand, @code{equal?}-type
 hash tables uses @code{hash} function below, with which you
 define hash functions for user-defined objects.
 @c JP
 @code{eq?}、@code{eqv?}、@code{string=?}タイプのハッシュテーブルでは、
-内部のハッシュ関数が使われます。一方、@code{equal?}タイプのハッシュテーブルは
+システム組み込みのハッシュ関数が使われます。Schemeからは、
+それらのハッシュ関数はそれぞれ@code{eq-hash}、@code{eqv-hash}、
+そしてSRFI-13の@code{string-hash}として呼ぶことができます。
+これらの関数はユーザ定義型に対応するように拡張することはできません。
+一方、@code{equal?}タイプのハッシュテーブルは
 下に述べる@code{hash}関数を使います。後者では、ユーザ定義型に対するハッシュ関数を
 独自に定義することができます。
 @c COMMON
@@ -3984,6 +3991,19 @@ For the hashing of primitive objects are done in @code{hash}.
   (hash (list (ref a 'x) (ref a 'y))))
 @end example
 @end deffn
+
+@defun eq-hash obj
+@defunx eqv-hash obj
+These are hash functions used for @code{eq?}-type and @code{eqv?}-type
+hash tables.  Returns a non-negative integer up to 2^@em{n}-1, where
+@em{n} is system-dependent value no less than 32.
+The returned hash value is system- and process-dependent,
+and can't be carried over the boundary of the running process.
+
+Note: don't hash numbers by @code{eq-hash}.  Two numbers (including integers)
+are not guaranteed to be @code{eq?} even if they are numerically equal,
+so it is not supposed to be used as a key in @code{eq?}-type hash table.
+@end defun
 
 @defun hash-table? obj
 @c EN
