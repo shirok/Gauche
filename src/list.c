@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.28 2001-10-03 10:42:40 shirok Exp $
+ *  $Id: list.c,v 1.29 2001-10-03 19:55:59 shirok Exp $
  */
 
 #include "gauche.h"
@@ -158,13 +158,6 @@ ScmObj *Scm_ListToArray(ScmObj list, int *nelts, ScmObj *store, int alloc)
     }
     *nelts = len;
     return array;
-}
-
-/* Procedures intended to be used from Scheme */
-
-ScmObj Scm_PairP(ScmObj obj)
-{
-    return SCM_PAIRP(obj)? SCM_TRUE : SCM_FALSE;
 }
 
 /* cXr stuff */
@@ -598,7 +591,7 @@ ScmObj Scm_DeleteDuplicatesX(ScmObj list, int cmpmode)
     return list;
 }
 
-
+#if 0 /* SRFI-1 has this in Scheme.  Do we need C version? */
 /* Return union of two lists.
    Comparison is done by `eq?'.
  */
@@ -619,6 +612,7 @@ ScmObj Scm_Union(ScmObj list1, ScmObj list2)
     }
     return list2;
 }
+#endif
 
 /* Return intersection of two lists. */
 
@@ -786,17 +780,4 @@ ScmObj Scm_PairAttrSet(ScmPair *pair, ScmObj key, ScmObj value)
     return SCM_UNDEFINED;
 }
 
-/*
- * Other utilities.
- */
-
-ScmObj Scm_NullP(ScmObj obj)
-{
-    return SCM_NULLP(obj)? SCM_TRUE : SCM_FALSE;
-}
-
-ScmObj Scm_ListP(ScmObj obj)
-{
-    return (Scm_Length(obj) >= 0) ? SCM_TRUE : SCM_FALSE;
-}
 
