@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.334 2003-01-04 10:23:18 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.335 2003-01-04 23:50:34 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -13593,6 +13593,13 @@ Bound to a positive integer that @code{sys-random} may return.
 @node Object system, Library modules - Overview, Core library, Top
 @chapter Object system
 @c NODE オブジェクトシステム
+
+Gauche's object system design is largely inspired by
+STklos, whose design has come from TinyCLOS.
+
+
+
+
 
 @c ----------------------------------------------------------------------
 @menu
