@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.25 2001-11-14 10:47:41 shirok Exp $
+;;;  $Id: object.scm,v 1.26 2001-11-21 10:49:49 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -209,32 +209,18 @@
         (gns  (compute-get-n-set class slot)))
     (if (is-a? gns <slot-accessor>)
         (cons name gns)
-        (let* ((unbound "unbound")
-               (initval (get-keyword :init-value (cdr slot) unbound))
-               (initkey (get-keyword :init-keyword (cdr slot) unbound))
-               (inittnk (get-keyword :init-thunk (cdr slot) unbound)))
-          (cons name
-                (apply make <slot-accessor>
-                       :class class :name slot
-                       `(,@(if (eq? initval unbound)
-                               '()
-                               (list :init-value initval))
-                         ,@(if (eq? initkey unbound)
-                               '()
-                               (list :init-keyword initkey))
-                         ,@(if (eq? inittnk unbound)
-                               '()
-                               (list :init-thunk inittnk))
-                         ,@(cond ((integer? gns)
-                                  (list :slot-number gns))
-                                 ((pair? gns)
-                                  (list :slot-ref (car gns)
-                                        :slot-set! (cdr gns)))
-                                 (else
-                                  (errorf "bad getter-and-setter returned by compute-get-n-set for ~s: ~s"
-                                          class gns)))
-                         )))
-          )
+        (cons name
+              (apply make <slot-accessor>
+                     :class class :name slot
+                     `(,@(cond ((integer? gns)
+                                (list :slot-number gns))
+                               ((pair? gns)
+                                (list :slot-ref (car gns)
+                                      :slot-set! (cadr gns)))
+                               (else
+                                (errorf "bad getter-and-setter returned by compute-get-n-set for ~s: ~s"
+                                        class gns)))
+                       ,@(cdr slot))))
         ))
   )
 
@@ -298,7 +284,7 @@
     (let ((cell (undefined))
           (init-value (slot-definition-option slot :init-value (undefined)))
           (init-thunk (slot-definition-option slot :init-thunk #f)))
-      (cons (lambda (o)
+      (list (lambda (o)
               (when (undefined? cell)
                 (cond ((not (undefined? init-value)) (set! cell init-value))
                       ((procedure? init-thunk) (set! cell (init-thunk)))))
@@ -330,7 +316,7 @@
          (unless (and (procedure? getter) (procedure? setter))
            (error "virtual slot requires both :slot-ref and :slot-set!:"
                   slot))
-         (cons getter setter)))
+         (list getter setter)))
       ((:builtin)
        (or (slot-definition-option slot :slot-accessor #f)
            (errorf "builtin slot ~s of class ~s doesn't have associated slot accessor"
