@@ -1,3 +1,8 @@
+2004-07-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_GlobDirectory): fixed potential memory leak on
+	  error of glob() call.
+
 2004-07-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/www/cgi.scm (cgi-parse-parameters): added support for

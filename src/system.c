@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.59 2004-07-21 07:25:17 shirok Exp $
+ *  $Id: system.c,v 1.60 2004-07-27 10:23:47 shirok Exp $
  */
 
 #include <stdio.h>
@@ -191,12 +191,13 @@ ScmObj Scm_GlobDirectory(ScmString *pattern)
     ScmObj head = SCM_NIL, tail = SCM_NIL;
     int i, r;
     SCM_SYSCALL(r, glob(Scm_GetStringConst(pattern), 0, NULL, &globbed));
+    if (r) {
+        globfree(&globbed);
 #ifdef GLOB_NOMATCH
-    if (r == GLOB_NOMATCH) return SCM_NIL;
-#else  /*!GLOB_NOMATCH*/
-    if (r == 0 && globbed.gl_pathc == 0) return SCM_NIL;
+        if (r == GLOB_NOMATCH) return SCM_NIL;
 #endif /*!GLOB_NOMATCH*/
-    if (r) Scm_Error("Couldn't glob %S", pattern);
+        Scm_Error("Couldn't glob %S", pattern);
+    }
     for (i = 0; i < globbed.gl_pathc; i++) {
         ScmObj path = SCM_MAKE_STR_COPYING(globbed.gl_pathv[i]);
         SCM_APPEND1(head, tail, path);
