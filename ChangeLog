@@ -1,3 +1,10 @@
+2002-09-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c : fixed a bug that compiled a regexp like #/a|(b)|c/
+	  incorrectly.  (Thanks to Alex Shinn for pointing it out).
+	* src/repl.c : changed API of read-eval-print-loop.
+	* src/main.c (usage): added explanation of -l and -e options.
+
 2002-08-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c (Scm_FindBinding): searches parent modules of imported
