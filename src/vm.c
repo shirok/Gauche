@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.155 2002-06-05 22:02:42 shirok Exp $
+ *  $Id: vm.c,v 1.156 2002-07-02 23:11:32 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2196,7 +2196,9 @@ ScmObj Scm_VMCallCC(ScmObj proc)
     ScmEscapePoint *ep;
     ScmVM *vm = theVM;
 
-    if (!SCM_PROCEDUREP(proc) || SCM_PROCEDURE_REQUIRED(proc) != 1)
+    if (!SCM_PROCEDUREP(proc)
+        || (!SCM_PROCEDURE_OPTIONAL(proc) && SCM_PROCEDURE_REQUIRED(proc) != 1)
+        || (SCM_PROCEDURE_OPTIONAL(proc) && SCM_PROCEDURE_REQUIRED(proc) > 1))
         Scm_Error("Procedure taking one argument is required, but got: %S",
                   proc);
 
