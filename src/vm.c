@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.100 2001-09-08 13:13:45 shirok Exp $
+ *  $Id: vm.c,v 1.101 2001-09-10 19:59:53 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1249,6 +1249,7 @@ static inline ScmEnvFrame *save_env(ScmVM *vm,
     ScmEnvFrame *e = env_begin, *prev = NULL, *head = env_begin, *s;
     ScmContFrame *c = cont_begin;
     ScmCStack *cstk;
+    ScmEscapePoint *eh;
     
     int size;
     for (; IN_STACK_P((ScmObj*)e); e = e->up) {
@@ -1262,6 +1263,12 @@ static inline ScmEnvFrame *save_env(ScmVM *vm,
         }
         for (cstk = vm->cstack; cstk; cstk = cstk->prev) {
             for (c = cstk->cont; c; c = c->prev) {
+                if (!IN_STACK_P((ScmObj*)c)) break;
+                if (c->env == e) c->env = s;
+            }
+        }
+        for (eh = vm->escapePoint; eh; eh = eh->prev) {
+            for (c = eh->cont; c; c = c->prev) {
                 if (!IN_STACK_P((ScmObj*)c)) break;
                 if (c->env == e) c->env = s;
             }
@@ -1285,6 +1292,7 @@ static void save_cont(ScmVM *vm, ScmContFrame *cont_begin)
 {
     ScmContFrame *c = cont_begin, *prev = NULL;
     ScmCStack *cstk;
+    ScmEscapePoint *ep;
     
     for (; IN_STACK_P((ScmObj*)c); c = c->prev) {
         ScmEnvFrame *e = save_env(vm, c->env, c);
@@ -1304,6 +1312,9 @@ static void save_cont(ScmVM *vm, ScmContFrame *cont_begin)
         }
         for (cstk = vm->cstack; cstk; cstk = cstk->prev) {
             if (cstk->cont == c) cstk->cont = csave;
+        }
+        for (ep = vm->escapePoint; ep; ep = ep->prev) {
+            if (ep->cont == c) ep->cont = csave;
         }
         if (prev) prev->prev = csave;
         prev = csave;
@@ -1471,13 +1482,19 @@ static ScmObj user_eval_inner(ScmObj program)
                 goto restart;
             }
         } else if (vm->escapeReason == SCM_VM_ESCAPE_ERROR) {
-            Scm_Panic("why am I here?");
+            printf("Zut zut\n");
         } else {
             Scm_Panic("invalid longjmp");
         }
         vm->cont = cstack.cont;
+        if (!restarted) {
+            RESTORE_REGS();
+            POP_CONT();
+            SAVE_REGS();
+        }
         SCM_ASSERT(vm->cstack->prev);
         vm->cstack = vm->cstack->prev;
+        Scm_VMDump(vm);
         longjmp(vm->cstack->jbuf, 1);
     }
     vm->cstack = vm->cstack->prev;
@@ -1611,11 +1628,60 @@ ScmObj Scm_VMDynamicWindC(ScmObj (*before)(ScmObj *args, int nargs, void *data),
 
 
 /*=================================================================
- * Escape handling
+ * Exception handling
  */
 
-/* When escape condition 
+/* Exception handling is an issue that Scheme community hasn't quite
+ * fully agreed, although there have been a few ideas floating around
+ * for years.
  *
+ * One of the mechanism described in SRFI-18 uses the following primitives:
+ *
+ *  current-exception-handler
+ *  with-exception-handler
+ *  raise
+ *
+ * Cf. discussion of withdrawn SRFI-12.
+ * The original proposal of these can be found at 
+ * http://www.cs.indiana.edu/scheme-repository/doc.proposals.exceptions.html
+ * which defines with-handlers, more high-level derived syntax.
+ * See also the notes of Scheme Workshop at ICFP 98
+ * http://www.schemers.org/Events/Workshops/Sep1998/minutes
+ *
+ * Some Scheme implementations use catch and throw.  It can be implemented
+ * easily with call/cc and the above primitives.
+ *
+ * In Gauche, I provide a function that is in middle of high-level
+ * catch/throw and low-level stuff.
+ *
+ * (with-error-handler handler thunk)
+ *
+ * It is conceptually equivalent to:
+ *
+ * (call/cc
+ *   (lambda (cont)
+ *     (let ((prev-handler *error-handler*))
+ *       (dynamic-wind
+ *         (lambda ()
+ *           (set! *error-handler*
+ *             (lambda (exception)
+ *               (set! *error-handler prev-handler)
+ *               (call-with-values (handler exception) cont))))
+ *         thunk
+ *         (lambda ()
+ *           (set! *error-handler* prev-handler))))))
+ *
+ * In the actual implementation,
+ *
+ *  - No "real" continuation procedure is created, but a lightweight
+ *    mechanism is used.  The lightweight mechanism is similar to
+ *    "one-shot" callback (call/1cc in Chez Scheme).
+ *  - The error handler chain is kept in vm->escapePoint
+ *  - There are messy lonjmp/setjmp stuff involved to keep C stack sane.
+ */
+
+/*
+ * Default exception handler
  */
 
 void Scm_VMDefaultExceptionHandler(ScmObj e, void *data)
@@ -1645,23 +1711,35 @@ void Scm_VMDefaultExceptionHandler(ScmObj e, void *data)
  * TODO: need to think over the specification of "continuable" exception.
  *       so far I assume all the exception is uncontinuable, so this routine
  *       never returns.
+ *
+ * Exception handler is handled on the same C stack where the handler is
+ * defined.  
  */
 ScmObj Scm_VMThrowException(ScmObj exception)
 {
-    ScmObj handlers = theVM->handlers, hp;
+    ScmVM *vm = theVM;
+    ScmObj handlers = vm->handlers, hp;
+    ScmEscapePoint *ep = vm->escapePoint;
+    ScmObj handler
 
-    Scm_VMDefaultExceptionHandler(exception, NULL);
+    if (ep) {
+        vm->escapePoint = ep->prev;
+        Scm_Apply(ep->ehandler, SCM_LIST1(exception));
+    } else {
+        Scm_VMDefaultExceptionHandler(exception, NULL);
+    }
 
     /* unwind the dynamic handlers */
     SCM_FOR_EACH(hp, handlers) {
         ScmObj proc = SCM_CDAR(hp);
-        theVM->handlers = SCM_CDR(hp); /* prevent infinite loop */
+        vm->handlers = SCM_CDR(hp); /* prevent infinite loop */
         Scm_Apply(proc, SCM_NIL);
     }
 
-    Scm_VM()->errorFlags &= ~SCM_ERROR_BEING_HANDLED;
-    if (theVM->cstack) {
-        longjmp(theVM->cstack->jbuf, 1);
+    vm->errorFlags &= ~SCM_ERROR_BEING_HANDLED;
+    vm->escapeReason = SCM_VM_ESCAPE_ERROR;
+    if (vm->cstack) {
+        longjmp(vm->cstack->jbuf, 1);
     } else {
         /* No escape point.  Returns EX_SOFTWARE as specified in SRFI-22. */
         exit(EX_SOFTWARE);
@@ -1669,6 +1747,38 @@ ScmObj Scm_VMThrowException(ScmObj exception)
 
     /* NOTREACHED */
     return SCM_UNDEFINED;
+}
+
+/*
+ *
+ */
+static ScmObj install_ehandler(ScmObj *args, int nargs, void *data)
+{
+    ScmObj handler = (ScmObj)data;
+    ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
+    ScmVM *vm = theVM;
+    ep->prev = vm->escapePoint;
+    ep->ehandler = handler;
+    ep->cont = vm->cont;
+    ep->handlers = vm->handlers;
+    ep->cstack = vm->cstack;
+    vm->escapePoint = ep;
+    return SCM_UNDEFINED;
+}
+
+static ScmObj discard_ehandler(ScmObj *args, int nargs, void *data)
+{
+    ScmEscapePoint *ep = (ScmEscapePoint *)data;
+    theVM->escapePoint = ep;
+    return SCM_UNDEFINED;
+}
+
+ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk)
+{
+    ScmEscapePoint *ep = theVM->escapePoint;
+    ScmObj before = Scm_MakeSubr(install_ehandler, handler, 0, 0, SCM_FALSE);
+    ScmObj after  = Scm_MakeSubr(discard_ehandler, ep, 0, 0, SCM_FALSE);
+    return Scm_VMDynamicWind(before, thunk, after);
 }
 
 /*==============================================================
@@ -1805,6 +1915,7 @@ ScmObj Scm_VMCallCC(ScmObj proc)
 
     save_cont(vm, vm->cont);
     ep = SCM_NEW(ScmEscapePoint);
+    ep->prev = NULL;
     ep->ehandler = SCM_FALSE;
     ep->cont = vm->cont;
     ep->handlers = vm->handlers;
@@ -2009,6 +2120,7 @@ void Scm_VMDump(ScmVM *vm)
     ScmEnvFrame *env = vm->env;
     ScmContFrame *cont = vm->cont;
     ScmCStack *cstk = vm->cstack;
+    ScmEscapePoint *ep = vm->escapePoint;
 
     Scm_Printf(out, "VM %p -----------------------------------------------------------\n", vm);
     Scm_Printf(out, "   pc: %#65.1S\n", vm->pc);
@@ -2041,6 +2153,12 @@ void Scm_VMDump(ScmVM *vm)
         Scm_Printf(out, "  %p: prev=%p, cont=%p\n",
                    cstk, cstk->prev, cstk->cont);
         cstk = cstk->prev;
+    }
+    Scm_Printf(out, "Escape points:\n");
+    while (ep) {
+        Scm_Printf(out, "  %p: cont=%p, handler=%#20.1S\n",
+                   ep, ep->cont, ep->ehandler);
+        ep = ep->prev;
     }
     Scm_Printf(out, "dynenv: %S\n", vm->handlers);
 }

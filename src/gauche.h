@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.169 2001-09-07 11:35:53 shirok Exp $
+ *  $Id: gauche.h,v 1.170 2001-09-10 19:59:53 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -307,6 +307,7 @@ extern ScmObj Scm_VMDynamicWindC(ScmObj (*before)(ScmObj *, int, void *),
                                  ScmObj (*after)(ScmObj *, int, void *),
                                  void *data);
 
+extern ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk);
 extern ScmObj Scm_VMThrowException(ScmObj exception);
 
 /*---------------------------------------------------------

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.42 2001-09-08 13:13:45 shirok Exp $
+ *  $Id: vm.h,v 1.43 2001-09-10 19:59:54 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -138,7 +138,11 @@ typedef struct ScmCStackRec {
 } ScmCStack;
 
 /*
- * Escape handler
+ * Escape point
+ *
+ *  EscapePoint structure keeps certain point of continuation chain
+ *  where control can be transferred.   This structure is used for
+ *  saved continuations, as well as error handlers.
  */
 typedef struct ScmEscapePointRec {
     struct ScmEscapePointRec *prev;

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.95 2001-08-06 07:20:04 shirok Exp $
+;;; $Id: extlib.stub,v 1.96 2001-09-10 19:59:52 shirok Exp $
 ;;;
 
 "
@@ -892,6 +892,16 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
 
 (define-cproc errorf (fmt &rest args)
   "  SCM_RETURN(Scm_FError(fmt, args));")
+
+(define-cproc with-error-handler (handler thunk)
+  "  if (!SCM_PROCEDURE_TAKE_NARG_P(handler, 1)) {
+    Scm_Error(\"error handler must take at least 1 argument, but got %S\",
+              handler);
+  }
+  if (!SCM_PROCEDURE_TAKE_NARG_P(thunk, 0)) {
+    Scm_Error(\"thunk required, but got %S\", thunk);
+  }
+  SCM_RETURN(Scm_VMWithErrorHandler(handler, thunk));")
 
 ;;
 ;; Inspecting feature
