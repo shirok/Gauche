@@ -8,7 +8,7 @@
 (test-start "thread")
 
 (unless (eq? (gauche-thread-type) 'pthread)
-  (format #t "thread not supported")
+  (format #t "thread not supported\n")
   (test-end)
   (exit 0))
 
@@ -38,6 +38,40 @@
             (let1 t (thread-start! (make-thread (lambda () (display "hello" p))))
               (thread-join! t))))))
 
+;;---------------------------------------------------------------------
+(test-section "basic mutex API")
+
+(test "make-mutex" #t
+      (lambda () (mutex? (make-mutex))))
+
+(test "mutex-name" 'foo
+      (lambda () (mutex-name (make-mutex 'foo))))
+
+(test "mutex-specific" "hoge"
+      (lambda ()
+        (let ((m (make-mutex 'bar)))
+          (mutex-specific-set! m "hoge")
+          (mutex-specific m))))
+
+(test "lock and unlock - no blocking" #t
+      (lambda ()
+        (let ((m (make-mutex)))
+          (mutex-lock! m)
+          (mutex-unlock! m))))
+
+(test "mutex-state" (list 'not-abandoned (current-thread) 'not-owned 'not-abandoned)
+      (lambda ()
+        (let ((m (make-mutex))
+              (r '()))
+          (push! r (mutex-state m))
+          (mutex-lock! m)
+          (push! r (mutex-state m))
+          (mutex-unlock! m)
+          (mutex-lock! m #f #f)
+          (push! r (mutex-state m))
+          (mutex-unlock! m)
+          (push! r (mutex-state m))
+          (reverse r))))
 
 ;; calculate fibonacchi in awful way
 (define (mt-fib n)
