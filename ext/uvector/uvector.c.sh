@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.1 2001-02-18 01:28:11 shiro Exp $
+ *  \$Id: uvector.c.sh,v 1.2 2001-02-19 14:13:10 shiro Exp $
  */
 
 #include <stdlib.h>
@@ -282,7 +282,7 @@ cat <<EOF
         int v;                                                             \
         if (!SCM_INT_P(obj)) Scm_Error("argument out of domain: %S", obj); \
         v = SCM_INT_VALUE(obj);                                            \
-        if (v < 0 || v > 32768)                                            \
+        if (v < 0 || v > 65536)                                            \
             Scm_Error("argument out of bound: %d", v);                     \
         elt = (unsigned short)v;                                           \
     } while (0)
