@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.9 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: read.c,v 1.10 2001-04-15 08:03:29 shiro Exp $
  */
 
 #include <stdio.h>
@@ -34,13 +34,28 @@ static ScmObj read_symbol(ScmPort *port, ScmChar initial);
 static ScmObj read_number(ScmPort *port, ScmChar initial);
 static ScmObj read_symbol_or_number(ScmPort *port, ScmChar initial);
 static ScmObj read_keyword(ScmPort *port);
+static ScmObj maybe_uvector(ScmPort *port, char c);
 
+/* Special hook for SRFI-4 syntax */
+ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag);
+
+/*----------------------------------------------------------------
+ * Entry point
+ */
 ScmObj Scm_Read(ScmObj port)
 {
     if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
         Scm_Error("input port required: %S", port);
     }
     return read_internal(SCM_PORT(port));
+}
+
+ScmObj Scm_ReadList(ScmObj port, ScmChar closer)
+{
+    if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
+        Scm_Error("input port required: %S", port);
+    }
+    return read_list(SCM_PORT(port), closer);
 }
 
 /*----------------------------------------------------------------
@@ -114,7 +129,9 @@ ScmObj read_internal(ScmPort *port)
             case EOF:
                 read_error(port, "premature #-sequence at EOF");
             case 't':; case 'T': return SCM_TRUE;
-            case 'f':; case 'F': return SCM_FALSE;
+            case 'f':; case 'F': return maybe_uvector(port, 'f');
+            case 's':; case 'S': return maybe_uvector(port, 's');
+            case 'u':; case 'U': return maybe_uvector(port, 'u');
             case '(':
                 {
                     ScmObj v = read_list(port, ')');
@@ -393,3 +410,61 @@ static ScmObj read_keyword(ScmPort *port)
     ScmString *s = SCM_STRING(read_word(port, SCM_CHAR_INVALID));
     return Scm_MakeKeyword(s);
 }
+
+/*----------------------------------------------------------------
+ * Uvector
+ */
+
+/* Uvector support is implemented by extention.  When the extention
+   is loaded, it sets up the pointer Scm_ReadUvectorHook. */
+
+static ScmObj maybe_uvector(ScmPort *port, char ch)
+{
+    ScmChar c1, c2 = SCM_CHAR_INVALID;
+    char *tag;
+
+    SCM_GETC(c1, port);
+    if (ch == 'f') {
+        if (c1 != '3' && c1 != '6') {
+            SCM_UNGETC(c1, port);
+            return SCM_FALSE;
+        }
+        SCM_GETC(c2, port);
+        if (c1 == '3' && c2 == '2') tag = "f32";
+        else if (c1 == '6' && c2 == '4') tag = "f64";
+    } else {
+        if (c1 == '8') tag = (ch == 's')? "s8" : "u8";
+        else if (c1 == '1') {
+            SCM_GETC(c2, port);
+            if (c2 == '6') tag = (ch == 's')? "s16" : "u16";
+        }
+        else if (c1 == '3') {
+            SCM_GETC(c2, port);
+            if (c2 == '2') tag = (ch == 's')? "s32" : "u32";
+        }
+        else if (c1 == '6') {
+            SCM_GETC(c2, port);
+            if (c2 == '4') tag = (ch == 's')? "s64" : "u64";
+        }
+    }
+    if (tag == NULL) {
+        char buf[SCM_CHAR_MAX_BYTES*4], *bufp = buf;
+        *bufp++ = ch;
+        SCM_STR_PUTC(bufp, c1);
+        bufp += SCM_CHAR_NBYTES(c1);
+        if (c2 != SCM_CHAR_INVALID) {
+            SCM_STR_PUTC(bufp, c2);
+            bufp += SCM_CHAR_NBYTES(c2);
+        }
+        *bufp = '\0';
+        read_error(port, "invalid uniform vector tag: %s", buf);
+    }
+    if (Scm_ReadUvectorHook == NULL) {
+        /* load srfi-4. */
+        Scm_Load("srfi-4", FALSE);
+        if (Scm_ReadUvectorHook == NULL)
+            Scm_Error("couldn't load srfi-4 module");
+    }
+    return Scm_ReadUvectorHook(port, tag);
+}
+
