@@ -1,3 +1,23 @@
+2001-03-31  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.2.17
+	* src/class.c: implement default method of compute-applicable-methods
+	  and method-more-specific?
+	* src/string.c, src/stdlib.stub: consolidated string comparison
+	  routines to Scm_StringCmp and Scm_StringCiCmp.
+	* src/number.c, src/stdlib.stub, src/vm.c: consolidated number
+	  comparison routines to a single function, Scm_NumCmp.
+	* lib/srfi-17.scm, lib/gauche/object.scm: srfi-17 (generalized set!)
+	  is now a part of Gauche module.  No need to say "(use srfi-17)"
+	  anymore.
+	* src/load.c: allow filename without default suffix.
+	* lib/rfc/base64.scm: added.  Base64 encode/decode routine.
+	* src/gauche.h: fixed a bug in SCM_GETB.
+	* src/stdlib.stub, src/vm.c, src/gauche/vminsn.h : inline
+	  read-char and write-char.
+	* src/genstub (emit-inliner-header): fixed a bug in the case of
+	  optional arg.  Start using the object system.
+
 2001-03-30  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.2.16
