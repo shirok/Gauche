@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.14 2001-05-19 10:56:28 shirok Exp $
+ *  $Id: regexp.c,v 1.15 2001-06-07 07:09:12 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -867,7 +867,12 @@ static ScmObj make_match(ScmRegexp *rx, ScmString *orig,
     rm->numMatches = rx->numGroups;
     rm->matches = SCM_NEW2(struct ScmRegMatchSub*,
                            sizeof(struct ScmRegMatchSub)*rx->numGroups);
+    /* we keep information of original string separately, instead of
+       keeping a pointer to orig; For orig may be destructively modified,
+       but its elements are not. */
     rm->input = SCM_STRING_START(orig);
+    rm->inputLen = SCM_STRING_LENGTH(orig);
+    rm->inputSize = SCM_STRING_SIZE(orig);
     for (i=0; i<rx->numGroups; i++) {
         rm->matches[i].start = -1;
         rm->matches[i].length = -1;
@@ -887,8 +892,9 @@ static ScmObj make_match(ScmRegexp *rx, ScmString *orig,
 
     /* sanity check (not necessary, but for now...) */
     for (i=0; i<rx->numGroups; i++) {
-        if (!rm->matches[i].startp || !rm->matches[i].endp) {
-            Scm_Panic("discrepancy in regexp match!");
+        if ((rm->matches[i].startp && !rm->matches[i].endp)
+            || (!rm->matches[i].startp && rm->matches[i].endp)) {
+            Scm_Panic("implementation error: discrepancy in regexp match #%d!", i);
         }
     }
     return SCM_OBJ(rm);
@@ -944,7 +950,9 @@ ScmObj Scm_RegMatchSubstr(ScmRegMatch *rm, int i)
     if (i < 0 || i >= rm->numMatches)
         Scm_Error("submatch index out of range: %d", i);
     sub = &rm->matches[i];
-    if (sub->length >= 0) {
+    if (sub->startp == NULL) {
+        return SCM_FALSE;
+    } else if (sub->length >= 0) {
         return Scm_MakeString(sub->startp, sub->endp - sub->startp,
                               sub->length, 0);
     } else {
@@ -960,7 +968,9 @@ ScmObj Scm_RegMatchStart(ScmRegMatch *rm, int i)
     if (i < 0 || i >= rm->numMatches)
         Scm_Error("submatch index out of range: %d", i);
     sub = &rm->matches[i];
-    if (sub->start < 0) {
+    if (sub->startp == NULL) {
+        return SCM_FALSE;
+    } else if (sub->start < 0) {
         sub->start = Scm_MBLen(rm->input, sub->startp);
     }
     return Scm_MakeInteger(sub->start);
@@ -972,13 +982,36 @@ ScmObj Scm_RegMatchEnd(ScmRegMatch *rm, int i)
     if (i < 0 || i >= rm->numMatches)
         Scm_Error("submatch index out of range: %d", i);
     sub = &rm->matches[i];
-    if (sub->start < 0) {
+    if (sub->startp == NULL) {
+        return SCM_FALSE;
+    } else if (sub->start < 0) {
         sub->start = Scm_MBLen(rm->input, sub->startp);
     }
     if (sub->length < 0) {
         sub->length = Scm_MBLen(sub->startp, sub->endp);
     }
     return Scm_MakeInteger(sub->start + sub->length);
+}
+
+ScmObj Scm_RegMatchBefore(ScmRegMatch *rm, int i)
+{
+    struct ScmRegMatchSub *sub;
+    if (i < 0 || i >= rm->numMatches)
+        Scm_Error("submatch index out of range: %d", i);
+    sub = &rm->matches[i];
+    if (sub->startp == NULL) return SCM_FALSE;
+    return Scm_MakeString(rm->input, sub->startp - rm->input, -1, 0);
+}
+
+ScmObj Scm_RegMatchAfter(ScmRegMatch *rm, int i)
+{
+    struct ScmRegMatchSub *sub;
+    if (i < 0 || i >= rm->numMatches)
+        Scm_Error("submatch index out of range: %d", i);
+    sub = &rm->matches[i];
+    if (sub->startp == NULL) return SCM_FALSE;
+    return Scm_MakeString(sub->endp,
+                          rm->input + rm->inputSize - sub->endp, -1, 0);
 }
 
 /* for debug */
@@ -991,10 +1024,15 @@ void Scm_RegMatchDump(ScmRegMatch *rm)
     Scm_Printf(SCM_CUROUT, "  input = %S\n", rm->input);
     for (i=0; i<rm->numMatches; i++) {
         struct ScmRegMatchSub *sub = &rm->matches[i];
-        Scm_Printf(SCM_CUROUT, "[%3d-%3d]  %S\n",
-                   sub->startp - rm->input,
-                   sub->endp - rm->input,
-                   Scm_MakeString(sub->startp, sub->endp-sub->startp, -1, 0));
+        if (sub->startp) {
+            Scm_Printf(SCM_CUROUT, "[%3d-%3d]  %S\n",
+                       sub->startp - rm->input,
+                       sub->endp - rm->input,
+                       Scm_MakeString(sub->startp, sub->endp-sub->startp,
+                                      -1, 0));
+        } else {
+            Scm_Printf(SCM_CUROUT, "[---] #f\n");
+        }
     }
 }
 
