@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.30 2001-05-04 20:18:50 shirok Exp $
+ *  $Id: number.c,v 1.31 2001-05-05 20:42:42 shirok Exp $
  */
 
 #include <math.h>
@@ -181,30 +181,34 @@ double Scm_GetDouble(ScmObj obj)
 
 /* Predicates */
 
-ScmObj Scm_NumberP(ScmObj obj)
+int Scm_IntegerP(ScmObj obj)
 {
-    return SCM_NUMBERP(obj)? SCM_TRUE : SCM_FALSE;
-}
-
-ScmObj Scm_IntegerP(ScmObj obj)
-{
-    if (SCM_INTP(obj) || SCM_BIGNUMP(obj)) return SCM_TRUE;
+    if (SCM_INTP(obj) || SCM_BIGNUMP(obj)) return TRUE;
     if (SCM_FLONUMP(obj)) {
         double d = SCM_FLONUM_VALUE(obj);
         double f, i;
-        if ((f = modf(d, &i)) == 0.0) return SCM_TRUE;
-        return SCM_FALSE;
+        if ((f = modf(d, &i)) == 0.0) return TRUE;
+        return FALSE;
     }
-    if (SCM_COMPLEXP(obj)) {
-        if (SCM_COMPLEX_IMAG(obj) == 0.0) {
-            double d = SCM_FLONUM_VALUE(obj);
-            double f, i;
-            if ((f = modf(d, &i)) == 0.0) return SCM_TRUE;
-        }
-        return SCM_FALSE;
-    }
+    if (SCM_COMPLEXP(obj)) return FALSE;
     Scm_Error("number required, but got %S", obj);
-    return SCM_FALSE;           /* dummy */
+    return FALSE;           /* dummy */
+}
+
+int Scm_OddP(ScmObj obj)
+{
+    if (SCM_INTP(obj)) {
+        return (SCM_INT_VALUE(obj)&1);
+    }
+    if (SCM_BIGNUMP(obj)) {
+        return (SCM_BIGNUM(obj)->values[0] & 1);
+    }
+    if (SCM_FLONUMP(obj) && Scm_IntegerP(obj)) {
+        return (fmod(SCM_FLONUM_VALUE(obj), 2.0) != 0.0);
+    }
+    Scm_Error("integer required, but got %S", obj);
+    return FALSE;       /* dummy */
+    
 }
 
 /* Unary Operator */
