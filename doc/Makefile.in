@@ -30,6 +30,8 @@ dvi : gauche-refe.dvi
 
 pdf : gauche-refe.pdf
 
+info : gauche-refe.info gauche-refj.info
+
 gauche-refe.html : gauche-refe.texi
 	texi2html -number gauche-refe.texi
 
@@ -45,6 +47,9 @@ gauche-refe.pdf : gauche-refe.texi
 gauche-refe.texi : gauche-ref.texi extract
 	$(GOSH) ./extract -en -o gauche-refe.texi gauche-ref.texi
 
+gauche-refe.info : gauche-refe.texi
+	makeinfo gauche-refe.texi
+
 gauche-refj.html : gauche-refj.texi
 	texi2html -number gauche-refj.texi
 
@@ -59,6 +64,9 @@ gauche-refj.pdf : gauche-refj.texi
 
 gauche-refj.texi : gauche-ref.texi extract
 	$(GOSH) ./extract -jp -o gauche-refj.texi gauche-ref.texi
+
+gauche-refj.info : gauche-refj.texi
+	makeinfo gauche-refj.texi
 
 clean:
 	rm -rf core *~ *.aux *.cl *.cls *.cp *.fn *.fns *.ky *.log *.md *.mds \
