@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.57 2001-09-24 11:32:00 shirok Exp $
+ *  $Id: class.c,v 1.58 2001-10-11 09:08:05 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1227,8 +1227,7 @@ static inline int method_more_specific(ScmMethod *x, ScmMethod *y,
     ScmClass **ys = y->specializers;
     ScmClass *ac, **acpl;
     int i;
-    SCM_ASSERT(SCM_PROCEDURE_REQUIRED(x) == SCM_PROCEDURE_REQUIRED(y));
-    for (i=0; i < SCM_PROCEDURE_REQUIRED(x); i++) {
+    for (i=0; i<SCM_PROCEDURE_REQUIRED(x) && i<SCM_PROCEDURE_REQUIRED(y); i++) {
         if (xs[i] != ys[i]) {
             ac = targs[i];
             if (xs[i] == ac) return TRUE;
@@ -1241,7 +1240,7 @@ static inline int method_more_specific(ScmMethod *x, ScmMethod *y,
         }
     }
     /* all specializers match.  the one without optional arg is more special.*/
-    if (SCM_PROCEDURE_OPTIONAL(x)) return TRUE;
+    if (SCM_PROCEDURE_OPTIONAL(y)) return TRUE;
     else return FALSE;
 }
 
