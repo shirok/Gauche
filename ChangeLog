@@ -1,3 +1,11 @@
+2003-09-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/srfi-1/filter.scm : fixed typo, and changed (not (pair? ...))
+	  to (null-list? ...).  The latter change makes the code check an
+	  improper list more strictly, and the original srfi-1 reference
+	  implmentation uses null-list? consistently, but "not pair?" sneaked
+	  in when I tuned some procedures.  (Patch from Grzegorz Chrupala)
+
 2003-09-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (Scm_Quotient, Scm_Modulo): fixed a bug that yielded

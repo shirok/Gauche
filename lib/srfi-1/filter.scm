@@ -2,7 +2,7 @@
 ;;; Filters of SRFI-1
 ;;;
 
-;; $Id: filter.scm,v 1.3 2002-10-13 09:03:00 shirok Exp $
+;; $Id: filter.scm,v 1.4 2003-09-23 10:29:57 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -21,7 +21,7 @@
 (define (filter pred lis)
   (let loop ((lis lis) (r '()))
     (cond
-     ((not (pair? lis)) (reverse! r))
+     ((null-list? lis) (reverse! r))
      ((pred (car lis))
       (loop (cdr lis) (cons (car lis) r)))
      (else
@@ -31,7 +31,7 @@
 
 (define (filter! pred lis)
   (let lp ((ans lis))
-    (cond ((not (pair? ans)) ans)			; Scan looking for
+    (cond ((null-list? ans) ans)			; Scan looking for
 	  ((not (pred (car ans))) (lp (cdr ans)))	; first cons of result.
 
 	  ;; ANS is the eventual answer.
@@ -64,7 +64,7 @@
   (let recur ((lis lis)
               (in  '())
               (out '()))
-    (if (not (pair? lis))
+    (if (null-list? lis)
         (values (reverse! in) (reverse! out))
         (if (pred (car lis))
             (recur (cdr lis) (cons (car lis) in) out)
@@ -102,14 +102,14 @@
 	(if (pred (car lis))
 	    ;; LIS begins in-list. Search for out-list's first pair.
 	    (let lp ((prev-l lis) (l (cdr lis)))
-	      (cond ((not (pair? l)) (values lis l))
+	      (cond ((null-list? l) (values lis l))
 		    ((pred (car l)) (lp l (cdr l)))
 		    (else (scan-out prev-l l (cdr l))
 			  (values lis l))))	; Done.
 
 	    ;; LIS begins out-list. Search for in-list's first pair.
 	    (let lp ((prev-l lis) (l (cdr lis)))
-	      (cond ((not (pair? l)) (values l lis))
+	      (cond ((null-list? l) (values l lis))
 		    ((pred (car l))
 		     (scan-in l prev-l (cdr l))
 		     (values l lis))		; Done.
@@ -118,4 +118,4 @@
 (define (remove! pred l) (filter! (lambda (x) (not (pred x))) l))
 (define (remove  pred l) (filter  (lambda (x) (not (pred x))) l))
 
-(define (remove$ pred) (pa$ remvoe pred))
+(define (remove$ pred) (pa$ remove pred))
