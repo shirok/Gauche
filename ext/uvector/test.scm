@@ -557,6 +557,12 @@
 (arith-test-generate s64)
 (arith-test-generate u64)
 
+;; flonum vectors; no clamping, so it's a bit simple
+(test "f32vector-add (v+v)" #f32(4.0 6.0 8.0 10.0)
+      (lambda () (f32vector-add '#f32(0.0 1.0 2.0 3.0)
+                                '#f32(4.0 5.0 6.0 7.0))))
+
+
 ;;-------------------------------------------------------------------
 (test-section "bitwise operations")
 

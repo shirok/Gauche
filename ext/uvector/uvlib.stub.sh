@@ -13,7 +13,7 @@ cat << EOF
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; \$Id: uvlib.stub.sh,v 1.10 2002-06-20 02:57:06 shirok Exp $
+;;; \$Id: uvlib.stub.sh,v 1.11 2002-06-20 06:53:34 shirok Exp $
 ;;;
 
 "
@@ -121,11 +121,7 @@ emit() {
   (assert (small-integer? end))
   "  SCM_RETURN(Scm_VectorTo${vecttype}(v, start, end, clamp_arg(clamp)));")
 
-; Arithmetic operations
-EOF
-
-    if [ "$integer" = 1 ]; then
-    cat <<EOF
+;; Common arithmetic operations
 (define-cproc ${vecttag}vector-add! (v0 v1 &optional clamp)
   (assert (${vecttag}vector? v0))
   "SCM_RETURN(Scm_${vecttype}Op(v0, v0, v1, SCM_UVECTOR_ADD, clamp_arg(clamp)));")
@@ -153,6 +149,11 @@ EOF
   " Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), 0));
   SCM_RETURN(Scm_${vecttype}Op(dst, v0, v1, SCM_UVECTOR_MUL, clamp_arg(clamp)));")
 
+EOF
+
+    if [ "$integer" = 1 ]; then
+    cat <<EOF
+;; Integer-only arithmetic operations
 (define-cproc ${vecttag}vector-and! (v0 v1 &optional clamp)
   (assert (${vecttag}vector? v0))
   "SCM_RETURN(Scm_${vecttype}Op(v0, v0, v1, SCM_UVECTOR_AND, clamp_arg(clamp)));")
@@ -179,6 +180,10 @@ EOF
   (assert (${vecttag}vector? v0))
   " Scm${vecttype} *dst = SCM_${VECTTYPE}(Scm_Make${vecttype}(SCM_${VECTTYPE}_SIZE(v0), 0));
   SCM_RETURN(Scm_${vecttype}Op(dst, v0, v1, SCM_UVECTOR_XOR, clamp_arg(clamp)));")
+EOF
+    else
+    cat <<EOF
+    ;; flonum only operations
 EOF
     fi
 }
