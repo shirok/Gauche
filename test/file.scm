@@ -198,11 +198,7 @@
 (test "build-path" "a/b/c" (lambda () (build-path "a/" "b/" "c")))
 (test "build-path" "/a/b/c" (lambda () (build-path "/" "a/b" "c")))
 (test "build-path" "./a/b/c" (lambda () (build-path "." "a/b" "c")))
-(test "build-path" #t
-      (lambda ()
-        (with-error-handler
-         (lambda (e) #t)
-         (lambda () (build-path "." "/a/b")))))
+(test-error "build-path" (lambda () (build-path "." "/a/b")))
 
 (test "resolve-path" "/" (lambda () (resolve-path "/")))
 (test "resolve-path" "." (lambda () (resolve-path ".")))
@@ -268,11 +264,8 @@
              (not (file-eq? "test.out/test5.o" "test.out/test.copy"))
              (file-equal? "test.out/test5.o" "test.out/test.copy"))))
 
-(test "copy-file (:if-exists :error)" 'error
-      (lambda ()
-        (with-error-handler
-         (lambda (e) 'error)
-         (lambda () (copy-file "test.out/test5.o" "test.out/test.copy")))))
+(test-error "copy-file (:if-exists :error)" 
+            (lambda () (copy-file "test.out/test5.o" "test.out/test.copy")))
 
 (test "copy-file (:if-exists #f)" #f
       (lambda ()
@@ -309,11 +302,8 @@
              (not (file-eq? "test.out/test5.o" "test.out/test.copy"))
              (file-equal? "test.out/test5.o" "test.out/test.copy"))))
 
-(test "copy-file (:if-exists :error, safe)" 'error
-      (lambda ()
-        (with-error-handler
-         (lambda (e) 'error)
-         (lambda () (copy-file "test.out/test5.o" "test.out/test.copy" :safe #t)))))
+(test-error "copy-file (:if-exists :error, safe)"
+            (lambda () (copy-file "test.out/test5.o" "test.out/test.copy" :safe #t)))
 
 (test "copy-file (:if-exists #f, safe)" #f
       (lambda ()
@@ -340,12 +330,9 @@
              (file-equal? "test.out/test1.o" "test.out/test.copy")
              (file-equal? "test.out/test5.o" "test.out/test.copy~"))))
 
-(test "copy-file (same file)" 'error
-      (lambda ()
-        (with-error-handler
-         (lambda (e) 'error)
-         (lambda () (copy-file "test.out/test.copy" "test.out/test.copy"
-                               :if-exists :supersede)))))
+(test-error "copy-file (same file)"
+            (lambda () (copy-file "test.out/test.copy" "test.out/test.copy"
+                                  :if-exists :supersede)))
 
 (test "move-file (normal)" #t
       (lambda ()
@@ -353,11 +340,8 @@
              (not (file-exists? "test.out/test.copy"))
              (file-equal? "test.out/test1.o" "test.out/test.move"))))
 
-(test "move-file (:if-exists :error)" 'error
-      (lambda ()
-        (with-error-handler
-         (lambda (e) 'error)
-         (lambda () (move-file "test.out/test5.o" "test.out/test.move")))))
+(test-error "move-file (:if-exists :error)"
+            (lambda () (move-file "test.out/test5.o" "test.out/test.move")))
 
 (test "move-file (:if-exists :supersede)" #t
       (lambda ()
@@ -374,12 +358,9 @@
              (file-equal? "test.out/test2.o" "test.out/test.move")
              (file-equal? "test.out/test4.o" "test.out/test.move.orig"))))
 
-(test "move-file (same file)" 'error
-      (lambda ()
-        (with-error-handler
-         (lambda (e) 'error)
-         (lambda () (move-file "test.out/test.move" "test.out/test.move"
-                               :if-exists :supersede)))))
+(test-error "move-file (same file)"
+            (lambda () (move-file "test.out/test.move" "test.out/test.move"
+                                  :if-exists :supersede)))
 
 (test "remove-directory*" #f
       (lambda ()

@@ -19,6 +19,7 @@ system.scm
 rfc.scm
 parseopt.scm
 parameter.scm
+hook.scm
 logger.scm
 text.scm
 util.scm

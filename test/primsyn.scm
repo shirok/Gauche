@@ -23,11 +23,11 @@
 (test "or"  3  (lambda ()  (or #f 3 unbound-var)))
 
 (test "when" 4          (lambda ()  (when 3 5 4)))
-(test "when" (test-undef)    (lambda ()  (when #f 5 4)))
-(test "unless" (test-undef)  (lambda ()  (unless 3 5 4)))
+(test "when" (undefined)    (lambda ()  (when #f 5 4)))
+(test "unless" (undefined)  (lambda ()  (unless 3 5 4)))
 (test "unless" 4        (lambda ()  (unless #f 5 4)))
 
-(test "cond" (test-undef)  (lambda ()  (cond (#f 2))))
+(test "cond" (undefined)  (lambda ()  (cond (#f 2))))
 (test "cond" 5        (lambda ()  (cond (#f 2) (else 5))))
 (test "cond" 2        (lambda ()  (cond (1 2) (else 5))))
 (test "cond" 8        (lambda ()  (cond (#f 2) (1 8) (else 5))))

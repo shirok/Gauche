@@ -2,7 +2,7 @@
 ;;; Simple test routine
 ;;;
 
-;;; $Id: test.scm,v 1.5 2002-05-13 04:33:24 shirok Exp $
+;;; $Id: test.scm,v 1.6 2002-12-13 04:24:04 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -35,13 +35,11 @@
 ;; there, and only a small amount of messages go to stderr.
 ;;
 
-(define-module gauche.test)
+(define-module gauche.test
+  (export test test-start test-end test-section test-error))
 (select-module gauche.test)
-(export test test-start test-end test-section test-undef)
 
 (define *discrepancy-list* '())
-
-(define (test-undef) (when #f #t))
 
 (define (test-section msg)
   (let ((msglen (string-length msg)))
@@ -58,6 +56,20 @@
             (format #t "ERROR: GOT ~S\n" r)
             (set! *discrepancy-list*
                   (cons (list msg expect r) *discrepancy-list*))))
+      (flush)
+      )))
+
+(define (test-error msg thunk)
+  (let ((errorval "ErrorVal"))
+    (format #t "test ~a, expects an error ==> " msg)
+    (flush)
+    (let ((r (with-error-handler (lambda (e) errorval) thunk)))
+      (if (eq? r errorval)
+          (format #t "ok\n")
+          (begin
+            (format #t "ERROR: GOT ~S\n" r)
+            (set! *discrepancy-list*
+                  (cons (list msg 'error r) *discrepancy-list*))))
       (flush)
       )))
 

@@ -145,11 +145,8 @@
       (lambda () (string-split "--aa--bbb---c-c-" #/\w+/)))
 (test "string-split (regexp)" '("--aa--bbb---c-c-")
       (lambda () (string-split "--aa--bbb---c-c-" #/z+/)))
-(test "string-split (regexp)" 'error ;; test detection of infinite loop
-      (lambda ()
-        (with-error-handler
-            (lambda (e) 'error)
-          (lambda () (string-split "--aa--bbb---c-c-" #/-*/)))))
+(test-error "string-split (regexp)" ;; test detection of infinite loop
+            (lambda () (string-split "--aa--bbb---c-c-" #/-*/)))
 
 (test "string-split (charset)" '("aa" "bbb" "c" "d")
       (lambda () (string-split "aa---bbb***c&d" #[\W])))

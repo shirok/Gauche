@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.19 2002-10-15 04:06:48 shirok Exp $
+;; $Id: object.scm,v 1.20 2002-12-13 04:24:12 shirok Exp $
 
 (use gauche.test)
 
@@ -261,18 +261,12 @@
 (test "object-compare" -1 (lambda () (compare #\a #\b)))
 (test "object-compare" 0  (lambda () (compare #\a #\a)))
 (test "object-compare" 1  (lambda () (compare #\b #\a)))
-(test "object-compare" 'error
-      (lambda () (with-error-handler
-                     (lambda (e) 'error)
-                   (lambda () (compare #\b 4)))))
-(test "object-compare" 'error
-      (lambda () (with-error-handler
-                     (lambda (e) 'error)
-                   (lambda () (compare "zzz" 4)))))
-(test "object-compare" 'error
-      (lambda () (with-error-handler
-                     (lambda (e) 'error)
-                   (lambda () (compare 2+i 3+i)))))
+(test-error "object-compare"
+            (lambda () (compare #\b 4)))
+(test-error "object-compare"
+            (lambda () (compare "zzz" 4)))
+(test-error "object-compare"
+            (lambda () (compare 2+i 3+i)))
 (test "object-compare" -1
       (lambda () (compare (make <cmp> :x 3) (make <cmp> :x 4))))
 (test "object-compare" 0

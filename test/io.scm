@@ -1,5 +1,5 @@
 ;;
-;; test for string related functions
+;; test for port I/O functions
 ;;
 
 (use gauche.test)
