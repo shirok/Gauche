@@ -1,7 +1,7 @@
 ;;;
 ;;; extlib.stub - extra built-ins
 ;;;
-;;;   Copyright (c) 2000-2001 Shiro Kawai (shiro@acm.org)
+;;;   Copyright (c) 2000-2002 Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;   Permission to use, copy, modify, distribute this software and
 ;;;   accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.131 2002-04-05 00:49:43 shirok Exp $
+;;; $Id: extlib.stub,v 1.132 2002-04-11 07:11:54 shirok Exp $
 ;;;
 
 "
@@ -112,7 +112,7 @@
      ScmObj v = Scm_MakeVector(3, SCM_FALSE);
      SCM_VECTOR_ELEMENT(v, 0) = Scm_Abs(num);
      SCM_VECTOR_ELEMENT(v, 1) = Scm_MakeInteger(0);
-     SCM_VECTOR_ELEMENT(v, 2) = Scm_Sign(num);
+     SCM_VECTOR_ELEMENT(v, 2) = Scm_MakeInteger(Scm_Sign(num));
      SCM_RETURN(v);
   } else {
      Scm_Error(\"real number required, but got %S\", num);
