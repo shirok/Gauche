@@ -950,7 +950,7 @@ Gauche の @code{ldexp}。
 @c COMMON
 @item ldiv
 @c EN
-Use R5RS @code{quotient} and @code {remainder}.
+Use R5RS @code{quotient} and @code{remainder}.
 @xref{Arithmetics}.
 @c JP
 R5RS の @code{quotient} および @code{remainder} を使いましょう。
