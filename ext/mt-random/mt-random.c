@@ -10,7 +10,7 @@
  *     the allocated memory for random number generator object.
  *   - changed the names of the functions
  *   - added stuff to make it as a Gauche extension module.
- * $Id: mt-random.c,v 1.13 2004-10-09 11:36:36 shirok Exp $
+ * $Id: mt-random.c,v 1.14 2004-11-05 10:35:47 shirok Exp $
  *
  * The original copyright notice follows.
  */
@@ -88,7 +88,7 @@ void Scm_MTInitByUI(ScmMersenneTwister *mt, unsigned long s)
 /* init_key is the array for initializing keys */
 /* key_length is its length */
 void Scm_MTInitByArray(ScmMersenneTwister *mt,
-                       SCM_UVECTOR_INT32 init_key[],
+                       ScmInt32 init_key[],
                        unsigned long key_length)
 {
     int i, j, k;

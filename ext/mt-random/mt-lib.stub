@@ -58,7 +58,7 @@
 
 (define-cproc mt-random-fill-u32vector! (mt::<mersenne-twister> v::<u32vector>)
   " int len = SCM_U32VECTOR_SIZE(v), i;
-  SCM_UVECTOR_UINT32 *p = SCM_U32VECTOR_ELEMENTS(v);
+  ScmUInt32 *p = SCM_U32VECTOR_ELEMENTS(v);
   for (i=0; i<len; i++) *p++ = Scm_MTGenrandU32(mt);
   SCM_RETURN(SCM_OBJ(v));")
 
