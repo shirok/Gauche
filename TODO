@@ -1,0 +1,59 @@
+List of things I'm planning to do.
+
+  * - soon
+  o - later
+
+
+Runtime library
+---------------
+
+* port.c: add character count that keeps # of chars input/output from/to the
+          port.  This allows print protocol keep simple.
+* write.c and object print protocol: change the third arg from integer to
+          context object, and integrate write-limited and write* nicely.
+* read.c: finish character reader, symbol reader, and circular list reader.
+
+* serial.c: realize native serializer.
+
+Compiler and VM
+---------------
+
+* Allow to define inlinable procedure (maybe in conjunction with case-lambda)
+
+* better inliner definition for genstub
+
+* Get rid of source-info stuff.  That affects performance too much.
+  Instead, add a mechanism to keep source information in a table, attached
+  to each procedure.
+
+* Fix stack trace.
+
+* Check stack overflow.
+
+o Stack garbage collection.
+  
+
+Modules
+-------
+
+* module net & ext/net/net.so : socket and network communication extention
+
+* module gauche.regexp : regexp interface (first in Scheme, then part of
+      it will be moved to the core)
+
+* extension dbm : dbm interface
+
+* module dbi/* : unified DB interface
+
+* module rfc/url : url parsing
+
+* module rfc/http : http parsing
+
+* module rfc/smtp : smtp interface
+
+* module rfc/ftp : ftp interface
+
+* moudle rfc/822 : rfc-822 type message parsing
+
+o module xml/* : xml parsing
+
