@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.13 2001-02-01 08:16:41 shiro Exp $
+ *  $Id: compile.c,v 1.14 2001-02-01 09:28:48 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1032,6 +1032,7 @@ static ScmObj compile_do_body(ScmObj body, ScmObj env, int ctx)
     SCM_FOR_EACH(updtsp, updts) {
         SCM_APPEND(bodycode, bodytail,
                    compile_int(SCM_CAR(updtsp), env, SCM_COMPILE_NORMAL));
+        SCM_APPEND1(bodycode, bodytail, SCM_VM_INSN(SCM_VM_PUSH));
         varcnt++;
     }
     SCM_APPEND1(bodycode, bodytail, SCM_VM_INSN1(SCM_VM_TAILBIND, varcnt));
