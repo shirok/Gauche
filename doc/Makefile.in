@@ -23,7 +23,7 @@ install: all
 	  $(INSTALL) -m 444 $$m $(mandir); \
 	done
 	if test -f gauche-refe.info.gz -o -f gauche-refj.info.gz; then \
-	  for info in *.info *.info-*; do \
+	  for info in *.info*; do \
 	    $(INSTALL) -m 444 $$info $(infodir); \
 	  done; \
 	fi
