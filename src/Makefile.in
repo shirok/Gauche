@@ -46,25 +46,7 @@ OBJS = core.o vm.o compile.o macro.o error.o class.o boolean.o char.o \
        module.o proc.o number.o bignum.o load.o promise.o repl.o \
        system.o stdlib.o extlib.o syslib.o moplib.o
 
-TESTFILES = ../test/primsyn.scm \
-	    ../test/error.scm \
-	    ../test/module.scm  \
-	    ../test/macro.scm   \
-	    ../test/number.scm \
-	    ../test/string.scm \
-	    ../test/hash.scm \
-	    ../test/io.scm \
-	    ../test/dynwind.scm \
-	    ../test/srfi.scm \
-	    ../test/object.scm \
-	    ../test/colseq.scm \
-	    ../test/regexp.scm \
-	    ../test/mb-chars.scm \
-	    ../test/system.scm \
-	    ../test/rfc.scm \
-	    ../test/parseopt.scm \
-	    ../test/text.scm \
-	    ../test/util.scm
+TESTFILES = `cat ../test/TESTS`
 
 .SUFFIXES: .stub
 
@@ -105,7 +87,7 @@ gauche/arch.h : Makefile
 test : gosh
 	@rm -f test.log
 	@for testfile in $(TESTFILES); do \
-	  ./gosh -I. -I../lib $$testfile >> test.log; \
+	  ./gosh -I. -I../lib -I../test $$testfile >> test.log; \
 	done
 	@echo "See test.log for details."
 
