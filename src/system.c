@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.25 2001-09-16 07:00:09 shirok Exp $
+ *  $Id: system.c,v 1.26 2001-09-18 06:59:55 shirok Exp $
  */
 
 #include <stdio.h>
@@ -251,13 +251,21 @@ ScmObj Scm_DirName(ScmString *filename)
  * Stat (sys/stat.h)
  */
 
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysStatClass, NULL);
-
-ScmObj Scm_MakeSysStat(void)
+static ScmObj stat_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmSysStat *s = SCM_NEW(ScmSysStat);
     SCM_SET_CLASS(s, SCM_CLASS_SYS_STAT);
     return SCM_OBJ(s);
+}
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_SysStatClass,
+                         NULL, NULL, NULL,
+                         stat_allocate,
+                         SCM_CLASS_DEFAULT_CPL);
+
+ScmObj Scm_MakeSysStat(void)
+{
+    return stat_allocate(&Scm_SysStatClass, SCM_NIL);
 }
 
 /*
@@ -289,7 +297,26 @@ time_t Scm_GetSysTime(ScmObj val)
 #endif
 }
 
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysTmClass, NULL);
+static ScmObj tm_allocate(ScmClass *klass, ScmObj initargs)
+{
+    ScmSysTm *st = SCM_NEW(ScmSysTm);
+    SCM_SET_CLASS(st, SCM_CLASS_SYS_TM);
+    return SCM_OBJ(st);
+}
+
+static void tm_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+{
+#define TM_BUFSIZ 50
+    char buf[TM_BUFSIZ];
+    ScmSysTm *st = SCM_SYS_TM(obj);
+    strftime(buf, TM_BUFSIZ, "%a %b %e %T %Y", &st->tm);
+    Scm_Printf(port, "#<sys-tm \"%s\">", buf);
+#undef TM_BUFSIZ
+}
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_SysTmClass,
+                         tm_print, NULL, NULL,
+                         tm_allocate, SCM_CLASS_DEFAULT_CPL);
 
 ScmObj Scm_MakeSysTm(struct tm *tm)
 {
@@ -298,6 +325,39 @@ ScmObj Scm_MakeSysTm(struct tm *tm)
     st->tm = *tm;               /* copy */
     return SCM_OBJ(st);
 }
+
+#define TM_ACCESSOR(name)                                               \
+  static ScmObj SCM_CPP_CAT(name, _get)(ScmSysTm *tm) {                 \
+    return Scm_MakeInteger(tm->tm.name);                                \
+  }                                                                     \
+  static void SCM_CPP_CAT(name, _set)(ScmSysTm *tm, ScmObj val) {       \
+    if (!SCM_EXACTP(val))                                               \
+      Scm_Error("exact integer required, but got %S", val);             \
+    tm->tm.name = Scm_GetInteger(val);                                  \
+  }
+
+TM_ACCESSOR(tm_sec)
+TM_ACCESSOR(tm_min)
+TM_ACCESSOR(tm_hour)
+TM_ACCESSOR(tm_mday)
+TM_ACCESSOR(tm_mon)
+TM_ACCESSOR(tm_year)
+TM_ACCESSOR(tm_wday)
+TM_ACCESSOR(tm_yday)
+TM_ACCESSOR(tm_isdst)
+
+static ScmClassStaticSlotSpec tm_slots[] = {
+    SCM_CLASS_SLOT_SPEC("sec", tm_sec_get, tm_sec_set),
+    SCM_CLASS_SLOT_SPEC("min", tm_min_get, tm_min_set),
+    SCM_CLASS_SLOT_SPEC("hour", tm_hour_get, tm_hour_set),
+    SCM_CLASS_SLOT_SPEC("mday", tm_mday_get, tm_mday_set),
+    SCM_CLASS_SLOT_SPEC("mon", tm_mon_get, tm_mon_set),
+    SCM_CLASS_SLOT_SPEC("year", tm_year_get, tm_year_set),
+    SCM_CLASS_SLOT_SPEC("wday", tm_wday_get, tm_wday_set),
+    SCM_CLASS_SLOT_SPEC("yday", tm_yday_get, tm_yday_set),
+    SCM_CLASS_SLOT_SPEC("isdst", tm_isdst_get, tm_isdst_set),
+    { NULL }
+};
 
 /*
  * Groups (grp.h)
@@ -617,3 +677,11 @@ ScmObj Scm_SysSelectX(ScmObj rfds, ScmObj wfds, ScmObj efds, ScmObj timeout)
 
 #endif /* HAVE_SELECT */
 
+/*
+ * Initialization
+ */
+void Scm__InitSystem(void)
+{
+    ScmModule *mod = Scm_GaucheModule();
+    Scm_InitBuiltinClass(&Scm_SysTmClass, "<sys-tm>", tm_slots, mod);
+}
