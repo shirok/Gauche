@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.39 2001-06-15 20:09:55 shirok Exp $
+;;;  $Id: genstub,v 1.40 2001-06-17 06:53:33 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -140,8 +140,8 @@
   (let* ((scheme-name (scheme-name-of self))
          (c-name (c-name-of self))
          (scheme-name-len (string-length (symbol->string scheme-name))))
-    (println "static ScmString ~a_NAME = { {SCM_CLASS_STRING}, 0, 1, ~a, ~a, \"~a\" };"
-             c-name scheme-name-len scheme-name-len scheme-name)
+    (println "static SCM_DEFINE_STRING_CONST(~a_NAME, \"~a\", ~a, ~a);"
+             c-name scheme-name scheme-name-len scheme-name-len)
     (println "static ScmObj ~a;" c-name)
     (newline)))
 
@@ -490,21 +490,18 @@
 (define (emit-record cproc)
   (let* ((scm-func-name (symbol->string (scheme-name-of cproc)))
          (c-func-name (c-name-of cproc)))
-    (println "static ScmString ~a_NAME = { { SCM_CLASS_STRING }, 0, 1, ~a, ~a, \"~a\" };"
+    (println "static SCM_DEFINE_STRING_CONST(~a_NAME, \"~a\", ~a, ~a);"
              c-func-name
+             scm-func-name
              (string-length scm-func-name)
-             (string-length scm-func-name)
-             scm-func-name)
-    (println "static ScmSubr ~a_STUB = {" c-func-name)
-    (println "  {{SCM_CLASS_PROCEDURE},")
-    (println "  ~a, ~a, SCM_PROC_SUBR,"
+             (string-length scm-func-name))
+    (println "static SCM_DEFINE_SUBR(~a_STUB, ~a, ~a, SCM_OBJ(&~a_NAME), ~a, ~a, NULL);"
+             c-func-name
              (num-reqargs-of cproc)
-             (if (or (have-rest-arg? cproc) (> (num-optargs-of cproc) 0)) 1 0))
-    (println "  SCM_OBJ(&~a_NAME)}," c-func-name)
-    (println "  ~a," c-func-name)
-    (println "  ~a, " (or (inliner-of cproc) "NULL"))
-    (println "  NULL")
-    (println "};")
+             (if (or (have-rest-arg? cproc) (> (num-optargs-of cproc) 0)) 1 0)
+             c-func-name
+             c-func-name
+             (or (inliner-of cproc) "NULL"))
     (newline)))
 
 ;;-----------------------------------------------------------------
