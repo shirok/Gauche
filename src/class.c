@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.94 2003-09-09 12:21:26 shirok Exp $
+ *  $Id: class.c,v 1.95 2003-09-29 12:47:51 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1906,8 +1906,10 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_PAIR,             "<pair>");
     CINIT(SCM_CLASS_NULL,             "<null>");
 
-    /* macro.c */
+    /* load.c */
     CINIT(SCM_CLASS_AUTOLOAD,         "<autoload>");
+
+    /* macro.c */
     CINIT(SCM_CLASS_SYNTAX,           "<syntax>");
     CINIT(SCM_CLASS_SYNTAX_PATTERN,   "<syntax-pattern>");
     CINIT(SCM_CLASS_SYNTAX_RULES,     "<syntax-rules>");
