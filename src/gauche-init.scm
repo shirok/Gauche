@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.101 2002-12-13 13:17:55 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.102 2003-01-06 04:06:08 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -197,6 +197,9 @@
 
 (autoload gauche.stringutil string-split)
 
+(autoload gauche.hashutil hash-table hash-table-fold
+                          hash-table-for-each hash-table-map)
+
 ;; these are so useful that I couldn't resist to add...
 (define (file-exists? path)
   (sys-access path |F_OK|))
@@ -226,23 +229,6 @@
                ((eq? key (car l)) (cadr l))
                (else (loop (cddr l)))))))
     ((_ key lis) (get-keyword key lis))))
-
-;; hash table iterators
-(define (hash-table-map hash proc)
-  (check-arg hash-table? hash)
-  (let loop ((r '())
-             (i (%hash-table-iter hash)))
-    (receive (k v) (i)
-      (if (eof-object? k)
-          r
-          (loop (cons (proc k v) r) i)))))
-
-(define (hash-table-for-each hash proc)
-  (check-arg hash-table? hash)
-  (let loop ((i (%hash-table-iter hash)))
-    (receive (k v) (i)
-      (unless (eof-object? k)
-        (proc k v) (loop i)))))
 
 ;; srfi-17
 (define (getter-with-setter get set)

@@ -1,3 +1,9 @@
+2003-01-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub, lib/gauche/hashutil.scm : fixed the problem that
+	  #<eof> in hash key stopped iteration.  Also added hash-table
+	  and hash-table-fold.
+
 2003-01-04  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/net.[ch]: applied a patch from John Kilburg to support

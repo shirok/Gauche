@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.335 2003-01-04 23:50:34 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.336 2003-01-06 04:06:06 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -7887,6 +7887,29 @@ Returns @code{#t} if @var{obj} is a hash table.
 @c COMMON
 @end defun
 
+@defun hash-table type key&value @dots{}
+@c EN
+Constructs and returns a hash table of type @var{type} from given
+list of arguments.
+@var{Type} is the same as of @code{make-hash-table}.
+Each @var{key&value} must be a pair, and its car is used as a key
+and its cdr is used as a value.
+@c JP
+与えられたキーと値の列からタイプが@var{type}であるハッシュテーブルを構築して
+返します。@var{type}の意味は@code{make-hash-table}と同じです。
+各@var{key&value}はペアでなければならず。そのcarがキー、cdrが値として使われます。
+@c COMMON
+
+@example
+(hash-table 'eq? '(a . 1) '(b . 2))
+  @equiv{}
+  (let ((h (make-hash-table 'eq?)))
+     (hash-table-put! h 'a 1)
+     (hash-table-put! h 'b 2)
+     h)
+@end example
+@end defun
+
 @defun hash-table-get hash key &optional default
 @c EN
 Search @var{key} from a hash table @var{hash}, and returns its value
@@ -7977,11 +8000,28 @@ efficiently.
 @defun hash-table-for-each hash proc
 @defunx hash-table-map hash proc
 @c EN
-A procedure @var{proc} is called with two arguments, a key and associated
+A procedure @var{proc} is called with two arguments, a key and its associated
 value, over all the entries in the hash table @var{hash}.
 @c JP
 ハッシュテーブル@var{hash}内の全てのエントリについて、各エントリのキーと値を
 2つの引数として手続き@var{proc}を呼びます。
+@c COMMON
+@end defun
+
+@defun hash-table-fold hash kons knil
+@c EN
+For all entries in the hash table @var{hash},
+a procedure @var{kons} is called with three arguments;
+a key, its associated value, and the previous return value of @var{proc}.
+The first call of @var{proc} receives @var{knil} as the third argument.
+The return value of the last call of @var{proc} is returned
+from @code{hash-table-fold}.
+@c JP
+ハッシュテーブル@var{hash}内の全てのエントリについて@var{proc}を呼びます。
+@var{proc}には3つの引数が渡されます。
+各エントリのキーと値、および一つ前の@var{proc}の返り値です。
+最初の@var{proc}の呼び出しの時には、第3引数に@var{knil}が渡されます。
+最後の@var{proc}の返り値が@code{hash-table-fold}の返り値となります。
 @c COMMON
 @end defun
 
@@ -13596,10 +13636,12 @@ Bound to a positive integer that @code{sys-random} may return.
 
 Gauche's object system design is largely inspired by
 STklos, whose design has come from TinyCLOS.
+It supports multiple inheritance, multimethods,
+and metaobject protocol.
 
-
-
-
+The type system is integrated to the object system,
+that is, a string is an instance of the class @code{<string>},
+and so on.
 
 @c ----------------------------------------------------------------------
 @menu
@@ -13617,11 +13659,23 @@ STklos, whose design has come from TinyCLOS.
 
 @defun class-of obj
 Returns a class metaobject of @var{obj}.
+
+@example
+(class-of 3)     @result{} #<class <integer>>
+(class-of "foo") @result{} #<class <string>>
+@end example
 @end defun
 
 @defun is-a? obj class
 Returns true if @var{obj} is an instance of @var{class} or an instance
 of descendants of @var{class}.
+
+@example
+(is-a? 3 <integer>)   @result{} #t
+(is-a? 3 <real>)      @result{} #t
+(is-a? 5+3i <real>)   @result{} #f
+(is-a? :foo <symbol>) @result{} #f
+@end example
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -13710,24 +13764,54 @@ for the usage of metaclass.
 @c NODE インスタンスへのアクセス
 
 @defun slot-ref obj slot
+Returns a value of the slot @var{slot} of object @var{object}.
+
+If the specified slot is not bound to any value, a generic function
+@code{slot-unbound} is called with three arguments, @var{obj}'s class,
+@var{obj}, and @var{slot}.  The default behavior of @code{slot-unbound}
+is to signal an error.
+
+If the object doesn't have the specified slot,
+a generic function @code{slot-missing} is called with three
+arguments, @var{obj}'s class,
+@var{obj}, and @var{slot}.  The default behavior of @code{slot-missing}
+is to signal an error.
 @end defun
 
-@defun slot-set! obj slot
+@defun slot-set! obj slot value
+Alters the value of the slot @var{slot} of object @var{object} to
+the value @var{value}.
+
+If the object doesn't have the specified slot, a generic function
+@code{slot-missing} is called with four arguments,
+@var{obj}'s class, @var{obj}, @var{slot}, @var{value}.
 @end defun
 
 @defun slot-bound? obj slot
+Returns true if object @var{obj}'s slot @var{slot} is bount, 
+otherwise returns false.
+
+If the object doesn't have the specified slot, a generic function
+@code{slot-missing} is called with four arguments,
+@var{obj}'s class, @var{obj}, @var{slot}.
+
 @end defun
 
-@defun slot-exists? slot
+@defun slot-exists? obj slot
+Returns true iff @var{obj} has the slot named @var{slot}.
 @end defun
 
-@deffn {Generic Function} slot-unbound
-@end deffn
+@defun slot-push! obj slot value
+This function implements the common idiom.  It is equivalent
+to the following code (except @var{obj} and @var{slot} is not
+evaluated twice, of course).
+@example
+(slot-set! @var{obj} @var{slot}
+           (cons @var{value} (slot-ref @var{obj} @var{slot})))
+@end example
+@end defun
 
 @deffn {Method} slot-unbound (class <class>) obj slot
-@end deffn
-
-@deffn {Generic Function} slot-missing
 @end deffn
 
 @deffn {Method} slot-missing (class <class>) obj slot &optional value

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.188 2002-12-13 11:41:39 shirok Exp $
+;;; $Id: extlib.stub,v 1.189 2003-01-06 04:06:07 shirok Exp $
 ;;;
 
 "
@@ -999,14 +999,15 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
  {
    ScmHashIter *iter = (ScmHashIter*)data;
    ScmHashEntry *e = Scm_HashIterNext(iter);
-   if (e == NULL) SCM_RETURN(Scm_Values2(SCM_EOF, SCM_EOF));
+   ScmObj eofval = args[0];
+   if (e == NULL) SCM_RETURN(Scm_Values2(eofval, eofval));
    else SCM_RETURN(Scm_Values2(e->key, e->value));
  }"
 
 (define-cproc %hash-table-iter (hash::<hash-table>)
   "ScmHashIter *iter = SCM_NEW(ScmHashIter);
   Scm_HashIterInit(hash, iter);
-  SCM_RETURN(Scm_MakeSubr(hash_table_iter, iter, 0, 0, SCM_MAKE_STR(\"hash-table-iterator\")));")
+  SCM_RETURN(Scm_MakeSubr(hash_table_iter, iter, 1, 0, SCM_MAKE_STR(\"hash-table-iterator\")));")
 
 (define-cproc hash-table-keys (hash::<hash-table>)
   (return "Scm_HashTableKeys"))
