@@ -3094,14 +3094,11 @@ character in @var{string}, and the consecutive characters that caused
 @end example
 
 @c EN
-Note: When @var{splitter} is a char-set, @code{string-split} is
-equivalent to @code{string-tokenize} except the meaning of the
-char-set is reversed
+See also @code{string-tokenize} in
 (@xref{SRFI-13 other string operations}).
 @c JP
-注意: @var{splitter} が文字セットの場合、@code{string-split} は、
-文字セットが反転されることを除いて、@code{string-tokenize} と
-等価です。(@ref{SRFI-13 other string operations}参照)
+@code{string-tokenize} (@ref{SRFI-13 other string operations})
+も参照して下さい。
 @c COMMON
 @end defun
 
