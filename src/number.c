@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.93 2002-04-15 22:04:59 shirok Exp $
+ *  $Id: number.c,v 1.94 2002-04-15 23:03:54 shirok Exp $
  */
 
 #include <math.h>
@@ -1478,21 +1478,28 @@ static inline u_long ipow(int r, int n)
     return k;
 }
 
-/* X * 10.0^N by double. */
+/* X * 10.0^N by double.
+   10.0^N can be represented _exactly_ in double-precision floating point
+   number in the range 0 <= N <= 23.
+   If N is out of this range, a rounding error occurs, which will be
+   corrected in the algorithmR routine below. */
 static double raise_pow10(double x, int n)
 {
     static double dpow10[] = { 1.0, 1.0e1, 1.0e2, 1.0e3, 1.0e4,
-                               1.0e5, 1.0e6, 1.0e7};
+                               1.0e5, 1.0e6, 1.0e7, 1.0e8, 1.0e9,
+                               1.0e10, 1.0e11, 1.0e12, 1.0e13, 1.0e14,
+                               1.0e15, 1.0e16, 1.0e17, 1.0e18, 1.0e19,
+                               1.0e20, 1.0e21, 1.0e22, 1.0e23 };
     if (n >= 0) {
-        while (n > 7) {
-            x *= 1e8;
-            n -= 8;
+        while (n > 23) {
+            x *= 1.0e24;
+            n -= 24;
         }
         return x*dpow10[n];
     } else {
-        while (n < -7) {
-            x /= 1e8;
-            n += 8;
+        while (n < -23) {
+            x /= 1.0e24;
+            n += 24;
         }
         return x/dpow10[-n];
     }
@@ -1596,8 +1603,24 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
         /* Scm_Printf(SCM_CURERR, "est=%d, r=%S, s=%S, mp=%S, mm=%S\n",
            est, r, s, mp, mm); */
 
+        /* determine position of decimal point.  we avoid exponential
+           notation if exponent is small, i.e. 0.9 and 30.0 instead of
+           9.0e-1 and 3.0e1.   The magic number 10 is arbitrary. */
+        if (est < 10 && est > -3) {
+            point = est; est = 1;
+        } else {
+            point = 1;
+        }
+
         /* generate */
-        for (digs=0;;digs++) {
+        if (point <= 0) {
+            *buf++ = '0'; buflen--;
+            *buf++ = '.', buflen--;
+            for (digs=point;digs<0 && buflen>5;digs++) {
+                *buf++ = '0'; buflen--;
+            }
+        }
+        for (digs=1;buflen>5;digs++) {
             ScmObj r10 = Scm_Multiply2(r, SCM_MAKE_INT(10));
             q = Scm_Quotient(r10, s, &r);
             mm = Scm_Multiply2(mm, SCM_MAKE_INT(10));
@@ -1617,7 +1640,7 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
             if (!tc1) {
                 if (!tc2) {
                     *buf++ = SCM_INT_VALUE(q) + '0';
-                    if (digs == 0) *buf++ = '.';
+                    if (digs == point) *buf++ = '.', buflen--;
                     continue;
                 } else {
                     *buf++ = SCM_INT_VALUE(q) + '1';
@@ -1640,11 +1663,14 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
             }
         }
 
-        if (digs == 0) {
+        if (digs <= point) {
+            for (;digs<point&&buflen>5;digs++) {
+                *buf++ = '0', buflen--;
+            }
             *buf++ = '.';
             *buf++ = '0';
         }
-        
+
         /* prints exponent.  we shifted decimal point, so -1. */
         est--;
         if (est != 0) {
