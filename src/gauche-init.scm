@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.46 2001-10-23 09:43:56 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.47 2001-10-25 10:35:05 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -90,7 +90,8 @@
 (with-module gauche
   (autoload "gauche/with" with-output-to-string call-with-output-string
                           with-input-from-string call-with-input-string
-                          with-string-io call-with-string-io))
+                          with-string-io call-with-string-io
+                          write-to-string read-from-string))
 
 (with-module gauche
   (autoload "gauche/port" port->string port->list
