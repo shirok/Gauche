@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.9 2001-02-19 14:48:49 shiro Exp $
+ *  $Id: write.c,v 1.10 2001-03-04 09:17:21 shiro Exp $
  */
 
 #include <stdio.h>
@@ -84,16 +84,21 @@ static int write_internal(ScmObj obj, ScmPort *out, int mode,
         }
         else if (SCM_CHARP(obj)) {
             ScmChar ch = SCM_CHAR_VALUE(obj);
-            SCM_PUTCSTR("#\\", out);  nc += 2;
-            if (ch <= 0x20) {
-                SCM_PUTCSTR(char_names[ch], out);
-                nc += strlen(char_names[ch]);
-            } else if (ch == 0x7f) {
-                SCM_PUTCSTR("del", out);
-                nc += 3;
-            } else {
+            if (SCM_PRINT_MODE(mode) == SCM_PRINT_DISPLAY) {
                 SCM_PUTC(ch, out);
-                nc++;
+                nc += SCM_CHAR_NBYTES(ch);
+            } else {
+                SCM_PUTCSTR("#\\", out);  nc += 2;
+                if (ch <= 0x20) {
+                    SCM_PUTCSTR(char_names[ch], out);
+                    nc += strlen(char_names[ch]);
+                } else if (ch == 0x7f) {
+                    SCM_PUTCSTR("del", out);
+                    nc += 3;
+                } else {
+                    SCM_PUTC(ch, out);
+                    nc++;
+                }
             }
         }
         else if (SCM_VM_INSNP(obj)) {
