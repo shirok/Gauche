@@ -8,7 +8,7 @@ GAUCHE_TOP = @GAUCHE_TOP@
 INSTALL = @INSTALL@
 
 ARCHFILES = charconv.so
-SCMFILES = charconv.scm
+SCMFILES =
 HEADERS = 
 
 TARGET = charconv.so
