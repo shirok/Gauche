@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.32 2001-12-04 19:27:58 shirok Exp $
+ *  $Id: macro.c,v 1.33 2001-12-06 19:31:37 shirok Exp $
  */
 
 #include "gauche.h"
@@ -117,21 +117,40 @@ ScmObj Scm_MakeMacroTransformer(ScmSymbol *name, ScmProcedure *proc)
     return Scm_MakeSyntax(name, macro_transform, (void*)proc);
 }
 
+static ScmObj macro_autoload(ScmObj form, ScmObj env, int ctx, void *data)
+{
+    ScmAutoload *adata = SCM_AUTOLOAD(data);
+    ScmObj syn = Scm_LoadAutoload(adata);
+    if (!SCM_SYNTAXP(syn)) {
+        Scm_Error("tried to autoload macro %S, but it yields non-macro object: %S", adata->name, syn);
+    }
+    return SCM_SYNTAX(syn)->compiler(form, env, ctx, SCM_SYNTAX(syn)->data);
+}
+
+ScmObj Scm_MakeMacroAutoload(ScmSymbol *name, ScmAutoload *adata)
+{
+    return Scm_MakeSyntax(name, macro_autoload, (void*)adata);
+}
+
 static ScmObj compile_define_macro(ScmObj form, ScmObj env, int ctx,
                                    void *data)
 {
-    ScmObj name, args, body, proc, mt, code;
+    ScmObj name, trans, mt;
     int len;
     
     if ((len = Scm_Length(form)) < 3)  goto badsyn;
     name = SCM_CADR(form);
+    if (!SCM_NULLP(env)) {
+        Scm_Error("define-macro can be used only at the toplevel: %S", form);
+    }
     if (SCM_SYMBOLP(name) || SCM_IDENTIFIERP(name)) {
         /* (define-macro foo (lambda (..) ...)) */
         if (len != 3) goto badsyn;
         if (SCM_IDENTIFIERP(name)) name = SCM_OBJ(SCM_IDENTIFIER(name)->name);
-        code = Scm_Compile(SCM_CAR(SCM_CDDR(form)), env, SCM_COMPILE_NORMAL);
+        trans = SCM_CAR(SCM_CDDR(form));
     } else {
         /* (define-macro (foo ..) ... */
+        ScmObj args, body;
         if (!SCM_PAIRP(name)) goto badsyn;
         name = SCM_CAR(name);
         args = SCM_CADR(form);
@@ -140,16 +159,16 @@ static ScmObj compile_define_macro(ScmObj form, ScmObj env, int ctx,
         /* TODO: think more about the case that name is an identifier */
         if (SCM_IDENTIFIERP(name)) name = SCM_OBJ(SCM_IDENTIFIER(name)->name);
         else if (!SCM_SYMBOLP(name)) goto badsyn;
-
-        code = Scm_Compile(Scm_Cons(SCM_SYM_LAMBDA, Scm_Cons(args, body)),
-                           env, SCM_COMPILE_NORMAL);
+        trans = Scm_Cons(SCM_SYM_LAMBDA, Scm_Cons(args, body));
     }
-    proc = Scm_MakeClosure(SCM_VM_INSN_ARG0(SCM_CAR(code)),
-                           SCM_VM_INSN_ARG1(SCM_CAR(code)),
-                           SCM_CAR(SCM_CDDR(code)),
-                           SCM_CADR(code));
-    mt = Scm_MakeMacroTransformer(SCM_SYMBOL(name), SCM_PROCEDURE(proc));
-
+    trans = Scm_Eval(trans, SCM_OBJ(SCM_CURRENT_MODULE()));
+    if (SCM_PROCEDUREP(trans)) {
+        mt = Scm_MakeMacroTransformer(SCM_SYMBOL(name), SCM_PROCEDURE(trans));
+    } else if (SCM_AUTOLOADP(trans)) {
+        mt = Scm_MakeMacroAutoload(SCM_SYMBOL(name), SCM_AUTOLOAD(trans));
+    } else {
+        Scm_Error("bad define-macro form.  second arg of define-macro must be lambda form: %S", form);
+    }
     Scm_Define(SCM_CURRENT_MODULE(), SCM_SYMBOL(name), mt);
     return SCM_LIST1(mt);
 
