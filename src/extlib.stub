@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.63 2001-04-15 12:36:46 shiro Exp $
+;;; $Id: extlib.stub,v 1.64 2001-04-15 21:46:30 shiro Exp $
 ;;;
 
 "
@@ -364,6 +364,27 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   else if (SCM_REGEXPP(regexp)) rx = SCM_REGEXP(regexp);
   else Scm_Error(\"regexp required, but got %S\", regexp);
   SCM_RETURN(Scm_RegExec(rx, str));")
+
+(define-cproc rxmatch-substring (match &optional (i 0))
+  (assert (small-integer? i))
+  "  if (SCM_FALSEP(match)) SCM_RETURN(SCM_FALSE);
+  if (!SCM_REGMATCHP(match))
+    Scm_Error(\"regexp match object required, but got %S\", match);
+  SCM_RETURN(Scm_RegMatchSubstr(SCM_REGMATCH(match), i));")
+
+(define-cproc rxmatch-start (match &optional (i 0))
+  (assert (small-integer? i))
+  "  if (SCM_FALSEP(match)) SCM_RETURN(SCM_FALSE);
+  if (!SCM_REGMATCHP(match))
+    Scm_Error(\"regexp match object required, but got %S\", match);
+  SCM_RETURN(Scm_RegMatchStart(SCM_REGMATCH(match), i));")
+
+(define-cproc rxmatch-end (match &optional (i 0))
+  (assert (small-integer? i))
+  "  if (SCM_FALSEP(match)) SCM_RETURN(SCM_FALSE);
+  if (!SCM_REGMATCHP(match))
+    Scm_Error(\"regexp match object required, but got %S\", match);
+  SCM_RETURN(Scm_RegMatchEnd(SCM_REGMATCH(match), i));")
 
 (define-cproc %regexp-dump (rx)
   "  if (!SCM_REGEXPP(rx)) Scm_Error(\"regexp required, but got %S\", rx);
