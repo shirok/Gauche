@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.h,v 1.5 2001-06-13 19:56:53 shirok Exp $
+ *  $Id: net.h,v 1.6 2001-06-15 20:10:31 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -58,6 +58,27 @@ int    Scm_SockAddrP(ScmObj obj);
 ScmObj Scm_SockAddrName(ScmSockAddr *addr);
 ScmObj Scm_SockAddrFamily(ScmSockAddr *addr);
 ScmObj Scm_MakeSockAddr(ScmClass *klass, struct sockaddr *addr, int len);
+
+extern ScmGeneric Scm_GenericSockAddrName;
+extern ScmGeneric Scm_GenericSockAddrFamily;
+
+typedef struct ScmSockAddrUnRec {
+    SCM_HEADER;
+    int addrlen;
+    struct sockaddr_un addr;
+} ScmSockAddrUn;
+
+extern ScmClass Scm_SockAddrUnClass;
+#define SCM_CLASS_SOCKADDR_UN   (&Scm_SockAddrUnClass)
+
+typedef struct ScmSockAddrInRec {
+    SCM_HEADER;
+    int addrlen;
+    struct sockaddr_in addr;
+} ScmSockAddrIn;
+
+extern ScmClass Scm_SockAddrInClass;
+#define SCM_CLASS_SOCKADDR_IN   (&Scm_SockAddrInClass)
 
 #define SCM_SOCKADDR_MAXLEN    128
 

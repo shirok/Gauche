@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: addr.c,v 1.5 2001-06-14 09:07:14 shirok Exp $
+ *  $Id: addr.c,v 1.6 2001-06-15 20:10:31 shirok Exp $
  */
 
 #include "net.h"
@@ -34,16 +34,12 @@ static ScmObj key_loopback;
 
 static void sockaddr_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static ScmObj sockaddr_allocate(ScmClass *, ScmObj);
-static ScmObj sockaddr_family(ScmNextMethod *, ScmObj *, int, void *);
 
 ScmClass *Scm_SockAddrCPL[] = { &Scm_SockAddrClass, &Scm_TopClass, NULL };
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrClass, sockaddr_print,
                          NULL, NULL, sockaddr_allocate,
                          SCM_CLASS_DEFAULT_CPL);
-
-SCM_DEFINE_GENERIC(Scm_GenericSockAddrName, Scm_NoNextMethod, NULL);
-SCM_DEFINE_GENERIC(Scm_GenericSockAddrFamily, Scm_NoNextMethod, NULL);
 
 void sockaddr_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
@@ -70,31 +66,6 @@ ScmObj Scm_SockAddrFamily(ScmSockAddr *addr)
                      SCM_LIST1(SCM_OBJ(addr)));
 }
 
-/* Fallback of sockaddr-name */
-static ScmObj sockaddr_name(ScmNextMethod *nm, ScmObj *args, int nargs,
-                            void *d)
-{
-    return SCM_MAKE_STR("unknown");
-    
-}
-
-static ScmClass *sockaddr_name_SPEC[] = { &Scm_SockAddrClass };
-static SCM_DEFINE_METHOD(sockaddr_name_rec, &Scm_GenericSockAddrName,
-                         1, 0, sockaddr_name_SPEC,
-                         sockaddr_name, NULL);
-
-/* Fallback of sockaddr-family */
-static ScmObj sockaddr_family(ScmNextMethod *nm, ScmObj *args, int nargs,
-                              void *d)
-{
-    return key_unknown;
-}
-
-static ScmClass *sockaddr_family_SPEC[] = { &Scm_SockAddrClass };
-static SCM_DEFINE_METHOD(sockaddr_family_rec, &Scm_GenericSockAddrFamily,
-                         1, 0, sockaddr_family_SPEC,
-                         sockaddr_family, NULL);
-
 /* Fallback of allocation method */
 static ScmObj sockaddr_allocate(ScmClass *klass, ScmObj initargs)
 {
@@ -116,28 +87,22 @@ ScmObj Scm_MakeSockAddr(ScmClass *klass, struct sockaddr *saddr, int len)
  * Unix domain socket
  */
 
-typedef struct {
-    SCM_HEADER;
-    int addrlen;
-    struct sockaddr_un addr;
-} scm_sockaddr_un;
-
 #define UNIX_ADDRESS_PATH_MAX  108
 static ScmObj sockaddr_un_allocate(ScmClass *klass, ScmObj initargs);
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrUnixClass, sockaddr_print,
+SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrUnClass, sockaddr_print,
                          NULL, NULL, sockaddr_un_allocate, Scm_SockAddrCPL);
 
 static ScmObj sockaddr_un_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmObj path = Scm_GetKeyword(key_path, initargs, SCM_FALSE);
-    scm_sockaddr_un *addr;
+    ScmSockAddrUn *addr;
     
     if (!SCM_FALSEP(path) && !SCM_STRINGP(path)) {
         Scm_Error(":path parameter must be a string, but got %S", path);
     }
-    addr = SCM_NEW(scm_sockaddr_un);
-    SCM_SET_CLASS(addr, &Scm_SockAddrUnixClass);
+    addr = SCM_NEW(ScmSockAddrUn);
+    SCM_SET_CLASS(addr, &Scm_SockAddrUnClass);
     memset(&addr->addr, sizeof(struct sockaddr_un), 0);
     addr->addr.sun_family = AF_UNIX;
     if (SCM_STRINGP(path)) {
@@ -152,58 +117,27 @@ static ScmObj sockaddr_un_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(addr);
 }
 
-/* (define-method sockaddr-name ((self <sockaddr-un>)) */
-static ScmObj sockaddr_un_name(ScmNextMethod *nm, ScmObj *args, int nargs,
-                                 void *d)
-{
-    scm_sockaddr_un *addr = (scm_sockaddr_un*)args[0];
-    return SCM_MAKE_STR(addr->addr.sun_path);
-}
-
-static ScmClass *sockaddr_un_name_SPEC[] = { &Scm_SockAddrUnixClass };
-static SCM_DEFINE_METHOD(sockaddr_un_name_rec, &Scm_GenericSockAddrName,
-                         1, 0, sockaddr_un_name_SPEC,
-                         sockaddr_un_name, NULL);
-
-/* (define-method sockaddr-family ((self <sockaddr-un>)) */
-static ScmObj sockaddr_un_family(ScmNextMethod *nm, ScmObj *args, int nargs,
-                                 void *d)
-{
-    return key_unix;
-}
-
-static ScmClass *sockaddr_un_family_SPEC[] = { &Scm_SockAddrUnixClass };
-static SCM_DEFINE_METHOD(sockaddr_un_family_rec, &Scm_GenericSockAddrFamily,
-                         1, 0, sockaddr_un_family_SPEC,
-                         sockaddr_un_family, NULL);
-
 /*==================================================================
  * Inet domain socket
  */
 
-typedef struct {
-    SCM_HEADER;
-    int addrlen;
-    struct sockaddr_in addr;
-} scm_sockaddr_in;
-
 static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs);
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrInetClass, sockaddr_print,
+SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrInClass, sockaddr_print,
                          NULL, NULL, sockaddr_in_allocate, Scm_SockAddrCPL);
 
 static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmObj host = Scm_GetKeyword(key_host, initargs, key_any);
     ScmObj port = Scm_GetKeyword(key_port, initargs, SCM_MAKE_INT(0));
-    scm_sockaddr_in *addr;
+    ScmSockAddrIn *addr;
     
     if (!SCM_INTP(port)) {
         Scm_Error(":port parameter must be a small exact integer, but got %S",
                   port);
     }
-    addr = SCM_NEW(scm_sockaddr_in);
-    SCM_SET_CLASS(addr, &Scm_SockAddrInetClass);
+    addr = SCM_NEW(ScmSockAddrIn);
+    SCM_SET_CLASS(addr, &Scm_SockAddrInClass);
     memset(&addr->addr, sizeof(struct sockaddr_in), 0);
     addr->addr.sin_family = AF_INET;
     addr->addr.sin_port = htons(SCM_INT_VALUE(port));
@@ -228,41 +162,6 @@ static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(addr);
 }
 
-/* (define-method sockaddr-name ((self <sockaddr-in>)) */
-static ScmObj sockaddr_in_name(ScmNextMethod *nm, ScmObj *args, int nargs,
-                               void *d)
-{
-    scm_sockaddr_in *addr = (scm_sockaddr_in*)args[0];
-    ScmPort *out = SCM_PORT(Scm_MakeOutputStringPort());
-    uint32_t inaddr = htonl(addr->addr.sin_addr.s_addr);
-
-    /* NB: avoid using inet_ntoa(), which uses static buffer */
-    Scm_Printf(out, "%d.%d.%d.%d:%d",
-               ((inaddr>>24)&0xff),
-               ((inaddr>>16)&0xff),
-               ((inaddr>>8)&0xff),
-               ((inaddr>>0)&0xff),
-               ntohs(addr->addr.sin_port));
-    return Scm_GetOutputString(out);
-}
-
-static ScmClass *sockaddr_in_name_SPEC[] = { &Scm_SockAddrInetClass };
-static SCM_DEFINE_METHOD(sockaddr_in_name_rec, &Scm_GenericSockAddrName,
-                         1, 0, sockaddr_in_name_SPEC,
-                         sockaddr_in_name, NULL);
-
-/* (define-method sockaddr-family ((self <sockaddr-in>)) */
-static ScmObj sockaddr_in_family(ScmNextMethod *nm, ScmObj *args, int nargs,
-                                 void *d)
-{
-    return key_inet;
-}
-
-static ScmClass *sockaddr_in_family_SPEC[] = { &Scm_SockAddrInetClass };
-static SCM_DEFINE_METHOD(sockaddr_in_family_rec, &Scm_GenericSockAddrFamily,
-                         1, 0, sockaddr_in_family_SPEC,
-                         sockaddr_in_family, NULL);
-
 /*==================================================================
  * Initialization stuff
  */
@@ -280,19 +179,7 @@ void Scm_Init_NetAddr(ScmModule *mod)
     key_loopback  = SCM_MAKE_KEYWORD("loopback");
 
     Scm_InitBuiltinClass(&Scm_SockAddrClass, "<sockaddr>", mod);
-    Scm_InitBuiltinGeneric(&Scm_GenericSockAddrName,
-                           "sockaddr-name", mod);
-    Scm_InitBuiltinGeneric(&Scm_GenericSockAddrFamily,
-                           "sockaddr-family", mod);
-    Scm_InitBuiltinMethod(&sockaddr_name_rec);
-    Scm_InitBuiltinMethod(&sockaddr_family_rec);
-    
-    Scm_InitBuiltinClass(&Scm_SockAddrUnixClass, "<sockaddr-un>", mod);
-    Scm_InitBuiltinMethod(&sockaddr_un_name_rec);
-    Scm_InitBuiltinMethod(&sockaddr_un_family_rec);
-    
-    Scm_InitBuiltinClass(&Scm_SockAddrInetClass, "<sockaddr-in>", mod);
-    Scm_InitBuiltinMethod(&sockaddr_in_name_rec);
-    Scm_InitBuiltinMethod(&sockaddr_in_family_rec);
+    Scm_InitBuiltinClass(&Scm_SockAddrUnClass, "<sockaddr-un>", mod);
+    Scm_InitBuiltinClass(&Scm_SockAddrInClass, "<sockaddr-in>", mod);
 }
 
