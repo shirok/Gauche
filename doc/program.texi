@@ -8,6 +8,7 @@
 * Debugging::                   
 * Writing Scheme scripts::      
 * Writing Gauche modules::      
+* Using extension packages::    
 @end menu
 
 @node Invoking Gosh, Interactive development, Programming in Gauche, Programming in Gauche
@@ -635,7 +636,7 @@ parse command-line options.
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Writing Gauche modules,  , Writing Scheme scripts, Programming in Gauche
+@node Writing Gauche modules, Using extension packages, Writing Scheme scripts, Programming in Gauche
 @section Writing Gauche modules
 @c NODE Gaucheのモジュールを書く
 
@@ -800,7 +801,122 @@ module name.
 注意して下さい。
 @c COMMON
 
-@c EN
-@c JP
-@c COMMON
+@c ----------------------------------------------------------------------
+@node Using extension packages,  , Writing Gauche modules, Programming in Gauche
+@section Using extension packages
+@c NODE 拡張パッケージの使用
+
+@subheading Building and installing packages
+
+Gauche comes with some amount of libraries, but they aren't 
+enough at all to use Gauche in the production environment. 
+There are number of additional libraries available.   We call them 
+@emph{extention packages}, or simply packages.  Each package
+usually provides one or more modules that adds extra
+functionality.   Most of the packages provide
+binding to other C libraries, such as graphics libraries
+or database clients.   If the package has some C code,
+it is likely that you need to compile it on your machine with
+the installed Gauche system.
+
+Usually a package is in the form of compressed tarball, and the standard
+"ungzip + untar + configure + make + make install" sequence does the job.
+Read the package's document, for you may be able to tailor
+the library for your own needs by giving command-line options
+to the @code{configure} script.
+
+From Gauche 0.8, an utility script called @code{gauche-package} is
+installed for the convenience.  It automates the build and install
+process of packages.
+
+Suppose you have downloaded a package @file{Package-1.0.tar.gz}.
+If the package follows the convention, all you have to do is
+to type this:
+
+@example
+$ gauche-package install Package-1.0.tar.gz
+@end example
+
+It ungzips and untars the package, @code{cd} into the @file{Package-1.0}
+subdirectory, run configure, make, and make install.
+By default, @code{gauche-package} untars the tarball in the current
+working directory.  You can change it by a customization file; see below.
+
+If you need a special priviledge to install the files, you can
+use @code{--install-as} option which runs @code{make install} part via
+the @code{sudo} program.
+
+@example
+$ gauche-package install --install-as=root Package-1.0.tar.gz
+@end example
+
+If it doesn't work for you, you can just build the package
+by @code{gauche-package build Package-1.0.tar.gz}, then
+manually cd to the @file{Package-1.0} directory and run 
+@code{make install}.
+
+You can give configuration optoins via @code{-C} or @code{--configure-options}
+command-line argument, like this:
+
+@example
+$ gauche-package install -C "--prefix=/usr/local" Package-1.0.tar.gz
+@end example
+
+If the package has adopted the new package description file, 
+it can remember the configuration options you have specified, and
+it will automatically reuse them when you install the package
+again.  (If you're a package developer, check out 
+@file{examples/spigot/README} file in the Gauche source tree
+to see how to cooperate with Gauche's package management system.)
+
+If you don't have a tarball in your local directory, but you know
+the URL where you can download it, you can directly give the URL
+to @code{gauche-package}.  It understands @code{http} and @code{ftp},
+and uses either @code{wget} or @code{ncftpget} to download the tarball,
+then runs configure and make.
+
+@example
+$ gauche-package install http://www.example.com/download/Package-1.0.tar.gz
+@end example
+
+@subheading Customizing @code{gauche-package}
+
+The @code{gauche-package} program reads @file{~/.gauche-package} if
+it exists.  It must contain an associative list of parameters.
+It may look like this:
+
+@example
+(
+ (build-dir . "/home/shiro/tmp")
+ (gzip      . "/usr/local/bin/gzip")
+ (bzip2     . "/usr/local/bin/bzip2")
+ (tar       . "/usr/local/bin/gtar")
+)
+@end example
+
+The following is a list of recognized parameters.
+If the program isn't given in the configuration file, @code{gauche-package}
+searches @code{PATH} to find one.
+
+@table @code
+@item build-dir
+A directory where the tarball is extracted.  If URL is given,
+the downloaded file is also placed in this directory.
+@item bzip2
+Path to the program @code{bzip2}.
+@item cat
+Path to the program @code{cat}.
+@item make
+Path to the program @code{make}.
+@item ncftpget
+Path to the program @code{ncftpget}.
+@item rm
+Path to the program @code{rm}.
+@item sudo
+Path to the program @code{sudo}.
+@item tar
+Path to the program @code{tar}.
+@item wget
+Path to the program @code{wget}.
+@end table
 
