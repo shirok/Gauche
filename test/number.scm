@@ -564,6 +564,21 @@
       (lambda () (m-tester 3735928559.0 27353.0)))
 
 ;;------------------------------------------------------------------
+(test-section "expt")
+
+(test "exact expt" 1 (lambda () (expt 5 0)))
+(test "exact expt" 9765625 (lambda () (expt 5 10)))
+(test "exact expt" 1220703125 (lambda () (expt 5 13)))
+(test "exact expt" 94039548065783000637498922977779654225493244541767001720700136502273380756378173828125 (lambda () (expt 5 123)))
+(test "exact expt" 1 (lambda () (expt -5 0)))
+(test "exact expt" 9765625 (lambda () (expt -5 10)))
+(test "exact expt" -1220703125 (lambda () (expt -5 13)))
+(test "exact expt" -94039548065783000637498922977779654225493244541767001720700136502273380756378173828125 (lambda () (expt -5 123)))
+(test "exact expt" 1 (lambda () (expt 1 720000)))
+(test "exact expt" 1 (lambda () (expt -1 720000)))
+(test "exact expt" -1 (lambda () (expt -1 720001)))
+
+;;------------------------------------------------------------------
 (test-section "logical operations")
 
 (test "ash (fixnum)" #x408000           ;fixnum
