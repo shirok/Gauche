@@ -14,7 +14,7 @@ SCMFILES = dbm.scm @SCMFILES@
 HEADERS = 
 
 TARGET = @ARCHFILES@
-CONFIG_GENERATED = Makefile config.cache config.log config.status
+CONFIG_GENERATED = Makefile config.cache config.log config.status dbmconfig.h
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`
