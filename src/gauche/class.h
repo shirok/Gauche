@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.h,v 1.9 2001-03-22 10:32:14 shiro Exp $
+ *  $Id: class.h,v 1.10 2001-03-24 09:45:40 shiro Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -22,45 +22,53 @@
 extern "C" {
 #endif
 
-/* internal object to couple C-written getter & setter */
-typedef struct ScmClassAccessorRec {
+/* keep class initialization & access info */
+typedef struct ScmSlotAccessorRec {
     SCM_HEADER;
-    ScmClass *klass;
     ScmObj (*getter)(ScmObj instance);
     void (*setter)(ScmObj instance, ScmObj value);
-} ScmClassAccessor;
+    ScmObj initValue;
+    ScmObj initKeyword;
+    ScmObj initThunk;
+    int slotNumber;             /* for :instance slot access */
+    ScmObj schemeAccessor;      /* for :virtual slot (getter . setter) */
+} ScmSlotAccessor;
 
 typedef ScmObj (*ScmNativeGetterProc)(ScmObj);
 typedef void   (*ScmNativeSetterProc)(ScmObj, ScmObj);
 
-extern ScmClass Scm_ClassAccessorClass;
-#define SCM_CLASS_CLASS_ACCESSOR    (&Scm_ClassAccessorClass)
-#define SCM_CLASS_ACCESSOR(obj)     ((ScmClassAccessor*)obj)
+extern ScmClass Scm_SlotAccessorClass;
+#define SCM_CLASS_SLOT_ACCESSOR    (&Scm_SlotAccessorClass)
+#define SCM_SLOT_ACCESSOR(obj)     ((ScmSlotAccessor*)obj)
 
 /* for static declaration of fields */
 typedef struct ScmClassStaticSlotSpecRec {
     const char *name;
-    ScmClassAccessor accessor;
+    ScmSlotAccessor accessor;
 } ScmClassStaticSlotSpec;
 
-#define SCM_CLASS_SLOT_SPEC(name, klass, getter, setter)        \
-    { name, { SCM_CLASS_CLASS_ACCESSOR,                         \
-              klass,                                            \
+#define SCM_CLASS_SLOT_SPEC(name, getter, setter, initkey)      \
+    { name, { SCM_CLASS_SLOT_ACCESSOR,                          \
               (ScmNativeGetterProc)getter,                      \
-              (ScmNativeSetterProc)setter }}
-              
-/* object system base classes */
+              (ScmNativeSetterProc)setter,                      \
+              SCM_UNBOUND,                                      \
+              initkey,                                          \
+              SCM_FALSE,                                        \
+              0,                                                \
+              SCM_FALSE } }
 
+#define SCM_CLASS_SLOT_SPEC_END()   { NULL }
 
-/* for subclassing */
-typedef struct ScmSubClassRec {
-    ScmClass klassrec;
+/* base of scheme-defined objects */
+
+typedef struct ScmObjectRec {
+    SCM_HEADER;
     ScmObj slots[1];
-} ScmSubClass;
+} ScmObject;
 
-
+/* some internal methods */
+    
 extern ScmObj Scm_ClassAllocate(ScmClass *klass, int nslots);
-
 extern ScmObj Scm_GetSlotAllocation(ScmObj slot);
 extern ScmObj Scm_ComputeCPL(ScmClass *klass);
 extern ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf,
