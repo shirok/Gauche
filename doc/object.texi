@@ -1709,13 +1709,7 @@ take a look at @code{test/object.scm}.
 @section Generic function and method
 @c NODE ジェネリックファンクションとメソッド
 
-@menu
-* Defining methods::            
-* Applying generic function::   
-@end menu
-
-@node Defining methods, Applying generic function, Generic function and method, Generic function and method
-@subsection Defining methods
+@subheading Defining methods
 
 @defmac define-generic name
 Creates a generic function and bind it to @var{name}.
@@ -1731,12 +1725,105 @@ method is added to the generic function.  If @var{name} is unbound,
 or bound to an object except a generic function, then a new generic
 function is created, bound to @var{name}, then a new method is
 added to it.
+
+@var{Specs} specifies the arguments and their types for this method.
+It's like the argument list of lambda form, except you can specify
+the type of each argument.
+
+@example
+@i{specs} : ( @i{arg} @dots{} )
+      | ( @i{arg} @dots{} . @i{symbol} )
+      | @i{symbol}
+
+@i{arg}   : ( @i{symbol} @i{class} )
+      | @i{symbol}
+@end example
+
+@i{Class} specifies the class that the argument has to belong to.
+If @code{@i{arg}} is just a symbol, it is equivalent to 
+@code{(@i{arg} <top>)}.  You can't specify the type for
+the "rest" argument, for it is always bound to a list.
+
+The list of classes of the argument list is called
+@emph{method specializer list}, based on which the generic
+function will select appropriate methods(s).
+Here are some examples of @var{specs} and corresponding 
+specializers list:
+
+@example
+specs:        ((self <myclass>) (index <integer>) value)
+specializers: (<myclas> <integer> <top>)
+
+specs:        ((self <myclass>) obj . options)
+specializers: (<myclas> <top> . <top>)
+
+specs:        (obj (attr <string>))
+specializers: (<top> <string>)
+
+specs:        args
+specializers: <top>
+@end example
+
+If you define a method on @var{name} whose specializer list matches with
+one in the generic function's method, then the existing method is
+replaced by the newly defined one.
 @end defmac
 
+@subheading Applying generic function
 
-@node Applying generic function,  , Defining methods, Generic function and method
-@subsection Applying generic function
+When a generic function is applied, first it selects
+methods whose specializer list matches the given arguments.
+For example, suppose a generic function @code{foo} has
+three methods, whose specializer list are 
+@code{(<string> <top>)}, @code{(<string> <string>)}, 
+and @code{(<top> <top>)}, respectively.
+When @code{foo} is applied like @code{(foo "abc" 3)},
+the first and the third method will be selected.
 
+Then the selected methods are sorted from the most
+@emph{specific} method to the least specific method.
+It is calculated as follows:
+
+@itemize
+@item
+Suppose we have a method @code{a} that has 
+specializers @code{(A1 A2 @dots{})}, and
+a method @code{b} that has @code{(B1 B2 @dots{})}.
+
+@item
+Find the minimum @var{n} where the classes @code{An} and @code{Bn}
+differ.   Then the class of @var{n}-th argument is taken,
+and its class precedence list is checked.
+If @code{An} comes before @code{Bn} in the CPL, then
+method @code{a} is more specific than @code{b}.
+Otherwise, @code{b} is more specific than @code{a}.
+
+@item
+If all the specializers of @code{a} and @code{b} are the same,
+except that one has an improper tail ("rest" argument)
+and another doesn't, then the method that doesn't have an improper
+tail is more specific than the one that has.
+@end itemize
+
+Once methods are sorted, the body of the first method is
+called with the actual argument.
+
+Within the method body, a special local variable @code{next-method}
+is bound implicitly.
+
+@deffn {Next method} next-method 
+@deffnx {Next method} next-method args @dots{}
+This variable is bound within a method body
+to a special object that encapsulates
+the next method in the sorted method list.
+
+Calling without arguments invokes the next method with
+the same arguments as this method is called with.
+Passing @var{args} @dots{} explicitly invokes the next method
+with the passed arguments.
+
+If there's no next method, an error is signalled.
+@end deffn
 
 @c ----------------------------------------------------------------------
 @node Metaobject protocol,  , Generic function and method, Object system
