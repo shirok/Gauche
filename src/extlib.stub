@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.51 2001-03-31 09:32:05 shiro Exp $
+;;; $Id: extlib.stub,v 1.52 2001-04-01 20:18:08 shiro Exp $
 ;;;
 
 "
@@ -71,6 +71,12 @@
 
 (define-cproc reverse! (list)
   "  SCM_RETURN(Scm_ReverseX(list));")
+
+(define-cproc sort (list &optional (fn #f))
+  "  SCM_RETURN(Scm_SortList(list, fn));")
+
+(define-cproc sort! (list &optional (fn #f))
+  "  SCM_RETURN(Scm_SortListX(list, fn));")
 
 ;(define-cproc topological-sort (edges)
 ;  (assert (list? edges))
