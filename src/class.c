@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.90 2003-03-25 06:18:38 shirok Exp $
+ *  $Id: class.c,v 1.91 2003-04-30 20:24:06 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -124,14 +124,14 @@ SCM_DEFINE_GENERIC(Scm_GenericObjectApply, Scm_InvalidApply, NULL);
 SCM_DEFINE_GENERIC(Scm_GenericObjectSetter, Scm_InvalidApply, NULL);
 
 /* Some frequently-used pointers */
-static ScmObj key_allocation;
-static ScmObj key_slot_accessor;
-static ScmObj key_builtin;
-static ScmObj key_name;
-static ScmObj key_lambda_list;
-static ScmObj key_generic;
-static ScmObj key_specializers;
-static ScmObj key_body;
+static ScmObj key_allocation     = SCM_FALSE;
+static ScmObj key_slot_accessor  = SCM_FALSE;
+static ScmObj key_builtin        = SCM_FALSE;
+static ScmObj key_name           = SCM_FALSE;
+static ScmObj key_lambda_list    = SCM_FALSE;
+static ScmObj key_generic        = SCM_FALSE;
+static ScmObj key_specializers   = SCM_FALSE;
+static ScmObj key_body           = SCM_FALSE;
 
 /*=====================================================================
  * Auxiliary utilities

@@ -104,15 +104,13 @@ gosh_LDADD   = libgauche.la
 gosh_LDFLAGS = 
 
 libgauche_la_LTLIBRARIES = libgauche.la
-libgauche_la_SOURCES     = \
-       core.c vm.c compile.c macro.c error.c class.c boolean.c char.c \
-       string.c list.c port.c hash.c write.c read.c vector.c weak.c \
-       symbol.c keyword.c compare.c regexp.c signal.c parameter.c \
-       module.c proc.c number.c bignum.c load.c promise.c repl.c \
-       system.c stdlib.c extlib.c exclib.c syslib.c moplib.c
-libgauche_la_OBJECTS     = $(libgauche_la_SOURCES:.c=.lo)
+libgauche_la_OBJECTS     = \
+       core.lo vm.lo compile.lo macro.lo error.lo class.lo boolean.lo char.lo \
+       string.lo list.lo port.lo hash.lo write.lo read.lo vector.lo weak.lo \
+       symbol.lo keyword.lo compare.lo regexp.lo signal.lo parameter.lo \
+       module.lo proc.lo number.lo bignum.lo load.lo promise.lo repl.lo \
+       system.lo stdlib.lo extlib.lo exclib.lo syslib.lo moplib.lo
 libgauche_la_LDFLAGS     = -no-undefined -version-info 0:0:0
-libgauche_la_LIBADD      = $(GCLIB)
 
 HEADERS = gauche.h $(INSTALL_SUBHEADERS)
 
@@ -135,7 +133,7 @@ moplib.c : moplib.stub genstub
 port.$(OBJEXT) : port.c portapi.c
 
 libgauche.la : $(libgauche_la_OBJECTS) $(GCLIB)
-	$(LINK) -rpath $(libdir) $(libgauche_la_LDFLAGS) $(libgauche_la_OBJECTS) $(libgauche_la_LIBADD) $(LIBS)
+	$(LINK) -rpath $(libdir) $(libgauche_la_LDFLAGS) $(libgauche_la_OBJECTS) $(GCLIB) $(LIBS)
 
 gauche/arch.h :
 	@rm -f gauche/arch.h

@@ -1,3 +1,33 @@
+2003-04-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/*.c: avoid having uninitialized variables.  On some platforms,
+	  gc doesn't scan bss area of DSO modules, which causes a problem
+	  when libgauche is used as a DSO.   (Note that in dlopen-ed
+	  extensions gc is properly informed to scan bss area, by
+	  SCM_INIT_EXTENSION).
+
+	* src/load.c (Scm_DynLoad): use requested library name to derive
+	  init function name, instead of the one given in libtool .la library
+	  when the requested name is libtool library.  On some platforms
+	  (e.g. cygwin) a different name is used for actual DLL and
+	  libtool library).
+
+	* ext/mt-random/* : enabled functinality that uses uvector on cygwin,
+	  which has been disabled because of link problem on cygwin.
+
+2003-04-29  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/Makefile.in, ext/mt-random/Makefile.in : avoid
+	  making separate libgauche-uvector - this causes libtool
+	  to issue warning, but the separate library doesn't work well
+	  on cygwin.
+
+	* configure.in: fixes to support cygwin and darwin
+
+	* gc/configure.in: let the toplevel --with-local argument propagate
+	  to gc compilation.   Define GC_PTHREADS to 1 on darwin to make
+	  it parallel with toplevel config.h.
+
 2003-04-25  Shiro Kawai  <shiro@acm.org>
 
 	* ext/Makefile.ext.in (check): make 'check' depend on 'all' (Patch

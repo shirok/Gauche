@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.42 2003-03-29 21:13:31 shirok Exp $
+ *  $Id: regexp.c,v 1.43 2003-04-30 20:24:13 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -150,24 +150,24 @@ enum {
  * case-folded.
  */
    
-ScmObj sym_seq;                 /* seq */
-ScmObj sym_seq_uncase;          /* seq-uncase */
-ScmObj sym_seq_case;            /* seq-case */
-ScmObj sym_alt;                 /* alt */
-ScmObj sym_rep;                 /* rep */
-ScmObj sym_rep_bound;           /* rep-bound */
-ScmObj sym_rep_while;           /* rep-while */
-ScmObj sym_any;                 /* any */
-ScmObj sym_bol;                 /* bol */
-ScmObj sym_eol;                 /* eol */
-ScmObj sym_wb;                  /* wb */
-ScmObj sym_nwb;                 /* nwb */
-ScmObj sym_comp;                /* complement charset */
-ScmObj sym_star;                /* '*' */
-ScmObj sym_plus;                /* '+' */
-ScmObj sym_question;            /* '?' */
-ScmObj sym_open;                /* '(' */
-ScmObj sym_close;               /* ')' */
+ScmObj sym_seq        = SCM_UNBOUND; /* seq */
+ScmObj sym_seq_uncase = SCM_UNBOUND; /* seq-uncase */
+ScmObj sym_seq_case   = SCM_UNBOUND; /* seq-case */
+ScmObj sym_alt        = SCM_UNBOUND; /* alt */
+ScmObj sym_rep        = SCM_UNBOUND; /* rep */
+ScmObj sym_rep_bound  = SCM_UNBOUND; /* rep-bound */
+ScmObj sym_rep_while  = SCM_UNBOUND; /* rep-while */
+ScmObj sym_any        = SCM_UNBOUND; /* any */
+ScmObj sym_bol        = SCM_UNBOUND; /* bol */
+ScmObj sym_eol        = SCM_UNBOUND; /* eol */
+ScmObj sym_wb         = SCM_UNBOUND; /* wb */
+ScmObj sym_nwb        = SCM_UNBOUND; /* nwb */
+ScmObj sym_comp       = SCM_UNBOUND; /* complement charset */
+ScmObj sym_star       = SCM_UNBOUND; /* '*' */
+ScmObj sym_plus       = SCM_UNBOUND; /* '+' */
+ScmObj sym_question   = SCM_UNBOUND; /* '?' */
+ScmObj sym_open       = SCM_UNBOUND; /* '(' */
+ScmObj sym_close      = SCM_UNBOUND; /* ')' */
 
 
 static void regexp_print(ScmObj obj, ScmPort *port, ScmWriteContext *c);

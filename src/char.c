@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char.c,v 1.36 2003-03-29 21:13:30 shirok Exp $
+ *  $Id: char.c,v 1.37 2003-04-30 20:24:06 shirok Exp $
  */
 
 #include <ctype.h>
@@ -809,8 +809,7 @@ ScmObj read_predef_charset(ScmPort *input, ScmObj *chars)
  * ASCII range, that all character sets agree on.
  */
 
-/* !!!MT WARNING!!! */
-static ScmCharSet *predef_charsets[SCM_CHARSET_NUM_PREDEFINED_SETS];
+static ScmCharSet *predef_charsets[SCM_CHARSET_NUM_PREDEFINED_SETS] = {NULL};
 static ScmInternalMutex predef_charsets_mutex;
 
 static void install_charsets(void)

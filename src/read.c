@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.63 2003-02-05 01:44:34 shirok Exp $
+ *  $Id: read.c,v 1.64 2003-04-30 20:24:12 shirok Exp $
  */
 
 #include <stdio.h>
@@ -51,7 +51,7 @@ static ScmObj maybe_uvector(ScmPort *port, char c, ScmReadContext *ctx);
 
 /* Special hook for SRFI-4 syntax */
 ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag,
-                              ScmReadContext *ctx);
+                              ScmReadContext *ctx) = NULL;
 
 /* A symbol to look up string interpolator */
 ScmObj sym_string_interpolate = SCM_NIL;

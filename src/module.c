@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: module.c,v 1.41 2003-03-25 06:18:39 shirok Exp $
+ *  $Id: module.c,v 1.42 2003-04-30 20:24:10 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -36,7 +36,7 @@
  *  The anonymous namespace will be garbage-collected if nobody references
  *  it, recovering its resouces.
  */
-static ScmObj anon_module_name = SCM_FALSE; /* symbol '#', set by init */
+static ScmObj anon_module_name = SCM_UNBOUND; /* symbol '#', set by init */
 
 static void module_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
@@ -52,7 +52,7 @@ static struct {
     ScmHashTable *table;    /* Maps name -> module. */
     ScmInternalMutex mutex; /* Lock for table.  Only register_module and
                                lookup_module may hold the lock. */
-} modules;
+} modules = { NULL };
 
 /* Predefined modules - slots will be initialized by Scm__InitModule */
 #define DEFINE_STATIC_MODULE(cname) \
@@ -65,7 +65,7 @@ DEFINE_STATIC_MODULE(gfModule);
 DEFINE_STATIC_MODULE(userModule);
 
 static ScmObj defaultParents = SCM_NIL; /* will be initialized */
-static ScmObj defaultMpl = SCM_NIL;     /* will be initialized */
+static ScmObj defaultMpl =     SCM_NIL; /* will be initialized */
 
 /*----------------------------------------------------------------------
  * Constructor

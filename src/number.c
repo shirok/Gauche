@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: number.c,v 1.98 2003-02-05 01:44:34 shirok Exp $
+ *  $Id: number.c,v 1.99 2003-04-30 20:24:11 shirok Exp $
  */
 
 #include <math.h>
@@ -1175,7 +1175,7 @@ ScmObj Scm_Modulo(ScmObj x, ScmObj y, int remp)
    and number->string operations.
    IEXPT10_TABLESIZ is ceil(-log10(ldexp(1.0, -1022-52))) + 2 */
 #define IEXPT10_TABLESIZ  326
-static ScmObj iexpt10_n[IEXPT10_TABLESIZ];
+static ScmObj iexpt10_n[IEXPT10_TABLESIZ] = { NULL };
 static int    iexpt10_initialized = FALSE;
 
 static void iexpt10_init(void)
@@ -1528,10 +1528,10 @@ ScmObj Scm_LogXor(ScmObj x, ScmObj y)
  */
 
 /* contants frequently used in number I/O */
-static ScmObj iexpt2_52;  /* 2^52 */
-static ScmObj iexpt2_53;  /* 2^53 */
-static double dexpt2_minus_52;  /* 2.0^-52 */
-static double dexpt2_minus_53;  /* 2.0^-53 */
+static ScmObj iexpt2_52        = SCM_UNBOUND;  /* 2^52 */
+static ScmObj iexpt2_53        = SCM_UNBOUND;  /* 2^53 */
+static double dexpt2_minus_52  = 0.0;  /* 2.0^-52 */
+static double dexpt2_minus_53  = 0.0;  /* 2.0^-53 */
 
 /* max N where 10.0^N can be representable exactly in double.
    it is max N where N * log2(5) < 53. */
@@ -1862,15 +1862,15 @@ enum { /* used in the exactness flag */
 
 /* Max digits D such that all D-digit radix R integers fit in signed
    long, i.e. R^(D+1)-1 <= LONG_MAX */
-static long longdigs[RADIX_MAX-RADIX_MIN+1];
+static long longdigs[RADIX_MAX-RADIX_MIN+1] = { 0 };
 
 /* Max integer I such that reading next digit (in radix R) will overflow
    long integer.   floor(LONG_MAX/R - R). */
-static u_long longlimit[RADIX_MAX-RADIX_MIN+1];
+static u_long longlimit[RADIX_MAX-RADIX_MIN+1] = { 0 };
 
 /* An integer table of R^D, which is a "big digit" to be added
    into bignum. */
-static u_long bigdig[RADIX_MAX-RADIX_MIN+1];
+static u_long bigdig[RADIX_MAX-RADIX_MIN+1] = { 0 };
 
 static ScmObj numread_error(const char *msg, struct numread_packet *context);
 

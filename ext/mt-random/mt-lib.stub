@@ -5,11 +5,6 @@
 #include \"mt-random.h\"
 "
 
-;;; NB: Windows/Cygwin can't handle the reference from this module to
-;;; libuvector.   I tried to tame it, only to find it requires large
-;;; change of current DLL build process.   For now, I omit the use
-;;; of uvector if defined(__CYGWIN__).
-
 (define-type <mersenne-twister> "ScmMersenneTwister*")
 (define-type <u32vector> "ScmU32Vector*")
 (define-type <f32vector> "ScmF32Vector*")
@@ -24,10 +19,8 @@
       s ^= SCM_BIGNUM(init)->values[i];
     }
     Scm_MTInitByUI(mt, s);
-#if !defined(__CYGWIN__)
   } else if (SCM_U32VECTORP(init)) {
     Scm_MTInitByArray(mt, SCM_U32VECTOR_ELEMENTS(init), SCM_U32VECTOR_SIZE(init));
-#endif /*!__CYGWIN__*/
   } else {
     Scm_Error(\"bad random seed: must be an exact integer or u32vector, but got %S\", init);
   }
@@ -35,18 +28,13 @@
 
 (define-cproc mt-random-get-state (mt::<mersenne-twister>)
   "
-#if !defined(__CYGWIN__)
    ScmObj v = Scm_MakeU32Vector(N+1, 0);
    int i;
    for (i=0; i<N; i++) SCM_U32VECTOR_ELEMENTS(v)[i] = mt->mt[i];
    SCM_U32VECTOR_ELEMENTS(v)[N] = mt->mti;
    SCM_RETURN(v);
-#else /* __CYGWIN__ */
-   Scm_Error(\"mt-random-get-state is not supported on cygwin (for now)\");
-#endif /*__CYGWIN__*/
    ")
 
-(if "!defined(__CYGWIN__)"
 (define-cproc mt-random-set-state! (mt::<mersenne-twister> state::<u32vector>)
   "int i;
   if (SCM_U32VECTOR_SIZE(state) != N+1) {
@@ -55,10 +43,6 @@
   for (i=0; i<N; i++) mt->mt[i] = SCM_U32VECTOR_ELEMENTS(state)[i];
   mt->mti = SCM_U32VECTOR_ELEMENTS(state)[N];
   SCM_RETURN(SCM_UNDEFINED);")
-;; defined(__CYGWIN__)
-;;(define-cproc mt-random-set-state! (mt state)
-;;  "Scm_Error(\"mt-random-set-state is not supported on cygwin (for now)\");")
-) ;; if !defined(__CYGWIN__)
 
 (define-cproc mt-random-real (mt::<mersenne-twister>)
   "SCM_RETURN(Scm_MakeFlonum(Scm_MTGenrandF64(mt, TRUE)));")
@@ -72,36 +56,20 @@
 (define-cproc %mt-random-uint32 (mt::<mersenne-twister>)
   "SCM_RETURN(Scm_MakeIntegerFromUI(Scm_MTGenrandU32(mt)));")
 
-(if "!defined(__CYGWIN__)"
 (define-cproc mt-random-fill-u32vector! (mt::<mersenne-twister> v::<u32vector>)
   " int len = SCM_U32VECTOR_SIZE(v), i;
   SCM_UVECTOR_UINT32 *p = SCM_U32VECTOR_ELEMENTS(v);
   for (i=0; i<len; i++) *p++ = Scm_MTGenrandU32(mt);
   SCM_RETURN(SCM_OBJ(v));")
-;; defined(__CYGWIN__)
-;;(define-cproc mt-random-fill-u32vector! (mt v)
-;;  "Scm_Error(\"mt-random-fill-u32vector! is not supported on cygwin (for now)\");")
-) ;; if !defined(__CYGWIN__)
 
-(if "!defined(__CYGWIN__)"
 (define-cproc mt-random-fill-f32vector! (mt::<mersenne-twister> v::<f32vector>)
   " int len = SCM_F32VECTOR_SIZE(v), i;
   float *p = SCM_F32VECTOR_ELEMENTS(v);
   for (i=0; i<len; i++) *p++ = Scm_MTGenrandF32(mt, TRUE);
   SCM_RETURN(SCM_OBJ(v));")
-;; defined(__CYGWIN__)
-;;(define-cproc mt-random-fill-f32vector! (mt v)
-;;  "Scm_Error(\"mt-random-fill-f32vector! is not supported on cygwin (for now)\");")
-) ;; if !defined(__CYGWIN__)
 
-(if "!defined(__CYGWIN__)"
 (define-cproc mt-random-fill-f64vector! (mt::<mersenne-twister> v::<f64vector>)
   " int len = SCM_F64VECTOR_SIZE(v), i;
   double *p = SCM_F64VECTOR_ELEMENTS(v);
   for (i=0; i<len; i++) *p++ = Scm_MTGenrandF64(mt, TRUE);
   SCM_RETURN(SCM_OBJ(v));")
-;; defined(__CYGWIN__)
-;;(define-cproc mt-random-fill-f64vector! (mt v)
-;;  "Scm_Error(\"mt-random-fill-f64vector! is not supported on cygwin (for now)\");")
-) ;; if !defined(__CYGWIN__)
-

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: symbol.c,v 1.28 2002-05-12 10:39:42 shirok Exp $
+ *  $Id: symbol.c,v 1.29 2003-04-30 20:24:15 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -31,7 +31,7 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SymbolClass, symbol_print);
     sym->name = SCM_STRING(nam)
 
 /* These two are global resource.  Must be protected in MT environment. */
-static ScmHashTable *obtable;   /* name -> symbol mapper */
+static ScmHashTable *obtable = NULL;   /* name -> symbol mapper */
 static int gensym_count = 0;
 
 /* Intern */

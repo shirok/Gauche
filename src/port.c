@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.88 2003-02-05 01:44:34 shirok Exp $
+ *  $Id: port.c,v 1.89 2003-04-30 20:24:11 shirok Exp $
  */
 
 #include <unistd.h>
@@ -554,9 +554,9 @@ static int bufport_read(ScmPort *p, char *dst, int siz)
 #define PORT_VECTOR_SIZE 256    /* need to be 2^n */
 
 static struct {
-    ScmInternalMutex mutex;
     ScmWeakVector   *ports;
-} active_buffered_ports;
+    ScmInternalMutex mutex;
+} active_buffered_ports = { NULL };
 
 #define PORT_HASH(port)  \
     ((((SCM_WORD(port)>>3) * 2654435761UL)>>16) % PORT_VECTOR_SIZE)
@@ -643,7 +643,10 @@ void Scm_FlushAllPorts(int exitting)
 }
 
 /* Utility procedure to translate Scheme arg into buffering mode */
-static ScmObj key_full, key_modest, key_line, key_none;
+static ScmObj key_full   = SCM_UNBOUND;
+static ScmObj key_modest = SCM_UNBOUND;
+static ScmObj key_line   = SCM_UNBOUND;
+static ScmObj key_none   = SCM_UNBOUND;
 
 int Scm_BufferingMode(ScmObj flag, int direction, int fallback)
 {
@@ -1021,9 +1024,9 @@ ScmObj Scm_WithPort(ScmPort *port[], ScmObj thunk, int mask, int closep)
  * Standard ports
  */
 
-static ScmObj scm_stdin;
-static ScmObj scm_stdout;
-static ScmObj scm_stderr;
+static ScmObj scm_stdin  = SCM_UNBOUND;
+static ScmObj scm_stdout = SCM_UNBOUND;
+static ScmObj scm_stderr = SCM_UNBOUND;
 
 ScmObj Scm_Stdin(void)
 {

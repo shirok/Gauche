@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.47 2003-04-25 01:50:19 shirok Exp $
+ *  $Id: system.c,v 1.48 2003-04-30 20:24:16 shirok Exp $
  */
 
 #include <stdio.h>
@@ -346,7 +346,13 @@ ScmObj Scm_MakeSysStat(void)
     return stat_allocate(&Scm_SysStatClass, SCM_NIL);
 }
 
-static ScmObj sym_directory, sym_regular, sym_character, sym_block, sym_fifo, sym_symlink, sym_socket;
+static ScmObj sym_directory = SCM_UNBOUND;
+static ScmObj sym_regular   = SCM_UNBOUND;
+static ScmObj sym_character = SCM_UNBOUND;
+static ScmObj sym_block     = SCM_UNBOUND;
+static ScmObj sym_fifo      = SCM_UNBOUND;
+static ScmObj sym_symlink   = SCM_UNBOUND;
+static ScmObj sym_socket    = SCM_UNBOUND;
 
 static ScmObj stat_type_get(ScmSysStat *stat)
 {

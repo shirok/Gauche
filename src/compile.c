@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.98 2003-02-10 07:40:49 shirok Exp $
+ *  $Id: compile.c,v 1.99 2003-04-30 20:24:07 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -23,15 +23,15 @@
 
 /* global id to be inserted during transformation.
    initialized by Init routine. */
-static ScmObj id_lambda = SCM_NIL;
-static ScmObj id_if = SCM_NIL;
-static ScmObj id_begin = SCM_NIL;
-static ScmObj id_letrec = SCM_NIL;
+static ScmObj id_lambda = SCM_UNBOUND;
+static ScmObj id_if     = SCM_UNBOUND;
+static ScmObj id_begin  = SCM_UNBOUND;
+static ScmObj id_letrec = SCM_UNBOUND;
 
 /*#define GAUCHE_USE_NVM*/
 
 #ifdef GAUCHE_USE_NVM
-static ScmObj sym_merger;
+static ScmObj sym_merger = SCM_NIL;
 
 static ScmObj mark_merger_cell(ScmObj cell)
 {

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.25 2002-10-15 10:28:00 shirok Exp $
+ *  $Id: signal.c,v 1.26 2003-04-30 20:24:15 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -54,6 +54,7 @@
 
 /* Master signal handler vector. */
 static struct sigHandlersRec {
+    ScmObj handlers[NSIG];      /* Scheme signal handlers */
     sigset_t masterSigset;      /* The signals Gauche is _allowed_ to handle.
                                    set by Scm_SetMasterSigset.
                                    For some signals in this set Gauche sets
@@ -61,9 +62,8 @@ static struct sigHandlersRec {
                                    signals in this set Gauche leaves them
                                    for the system to handle.  These can be
                                    overridden by Scm_SetSignalHandler. */
-    ScmObj handlers[NSIG];      /* Scheme signal handlers */
     ScmInternalMutex mutex;
-} sigHandlers;
+} sigHandlers = {{NULL}};
 
 /* Table of signals and its initial behavior. */
 #define SIGDEF_NOHANDLE 0       /* Gauche doesn't install a signal handler,

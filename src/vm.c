@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.199 2003-03-01 02:30:23 shirok Exp $
+ *  $Id: vm.c,v 1.200 2003-04-30 20:24:17 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -32,7 +32,7 @@
 #endif
 
 /* An object to mark the boundary frame */
-static ScmObj boundaryFrameMark;
+static ScmObj boundaryFrameMark = SCM_UNBOUND;
 
 /* return true if cont is a boundary continuation frame */
 #define BOUNDARY_FRAME_P(cont) (SCM_EQ((cont)->info, boundaryFrameMark))

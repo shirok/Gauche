@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: keyword.c,v 1.11 2002-05-07 08:15:31 shirok Exp $
+ *  $Id: keyword.c,v 1.12 2003-04-30 20:24:09 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -37,7 +37,7 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_KeywordClass, keyword_print);
 static struct {
     ScmHashTable *table;
     ScmInternalMutex mutex;
-} keywords;
+} keywords = { NULL };
 
 /* Returns a keyword whose name is NAME.  Note that preceding ':' is not
  * a part of the keyword name.

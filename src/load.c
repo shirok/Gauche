@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.70 2003-04-21 23:07:28 shirok Exp $
+ *  $Id: load.c,v 1.71 2003-04-30 20:24:09 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -59,12 +59,12 @@ static struct {
     ScmObj dso_suffixes;
     ScmObj dso_list;              /* List of dynamically loaded objects. */
     ScmInternalMutex dso_mutex;
-} ldinfo;
+} ldinfo = { NULL, };
 
 /* keywords used for load and load-from-port surbs */
-static ScmObj key_paths = SCM_FALSE;
-static ScmObj key_error_if_not_found = SCM_FALSE;
-static ScmObj key_environment = SCM_FALSE;
+static ScmObj key_paths              = SCM_UNBOUND;
+static ScmObj key_error_if_not_found = SCM_UNBOUND;
+static ScmObj key_environment        = SCM_UNBOUND;
 
 /*--------------------------------------------------------------------
  * Scm_LoadFromPort
@@ -452,7 +452,7 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
  * one time.
  */
 
-#ifdef HAVE_DLOPEN
+#if defined(HAVE_DLOPEN)
 #if defined(__NetBSD__)
 #define DYNLOAD_PREFIX   ___STRING(_C_LABEL(Scm_Init_))
 #elif defined(__ppc__) && defined(__APPLE__) && defined(__MACH__)
@@ -487,9 +487,7 @@ static const char *get_dynload_initfn(const char *filename)
     *d = '\0';
     return name;
 }
-#endif /* HAVE_DLOPEN */
 
-#ifdef HAVE_DLOPEN
 /* Aux fn to get a parameter value from *.la file line */
 static const char *get_la_val(const char *start)
 {
@@ -563,8 +561,8 @@ static ScmObj find_so_from_la(ScmString *lafile)
 */
 ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
 {
-#ifdef HAVE_DLOPEN
-    ScmObj truename, load_paths = Scm_GetDynLoadPath();
+#if defined(HAVE_DLOPEN)
+    ScmObj reqname, truename, load_paths = Scm_GetDynLoadPath();
     void *handle;
     void (*func)(void);
     const char *cpath, *initname, *err = NULL, *suff;
@@ -579,6 +577,7 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
     if (SCM_FALSEP(truename)) {
         Scm_Error("can't find dlopen-able module %S", filename);
     }
+    reqname = truename;         /* save requested name */
     cpath = Scm_GetStringConst(SCM_STRING(truename));
 
     if ((suff = strrchr(cpath, '.')) && strcmp(suff, ".la") == 0) {
@@ -592,7 +591,12 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
     if (SCM_STRINGP(initfn)) {
         initname = Scm_GetStringConst(SCM_STRING(initfn));
     } else {
-        initname = get_dynload_initfn(cpath);
+        /* NB: we use requested name to derive initfn name, instead of
+           the one given in libtool .la file.  For example, on cygwin,
+           the actual DLL that libtool library libfoo.la points to is
+           named cygfoo.dll; we still want Scm_Init_libfoo in that case,
+           not Scm_Init_cygfoo. */
+        initname = get_dynload_initfn(Scm_GetStringConst(reqname));
     }
 
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
@@ -640,10 +644,10 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export)
         /*NOTREACHED*/
     }
     return SCM_TRUE;
-#else
+#else  /* !HAVE_DLOPEN */
     Scm_Error("dynamic linking is not supported on this architecture");
     return SCM_FALSE;           /* dummy */
-#endif
+#endif /* !HAVE_DLOPEN */
 }
 
 /*------------------------------------------------------------------
