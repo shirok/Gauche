@@ -12,25 +12,11 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: bsddb.stub,v 1.1 2001-11-17 23:04:36 shirok Exp $
+;;  $Id: bsddb.stub,v 1.2 2001-12-03 09:46:53 shirok Exp $
 ;;
 
 "
  #include \"bsddb.h\"
-
- static void bsddb_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
- {
-     char *type;
-     switch (SCM_BSD_DB_TYPE(obj)) {
-     case DB_BTREE: type = \"btree\"; break;
-     case DB_HASH:  type = \"hash\"; break;
-     case DB_RECNO: type = \"recno\"; break;
-     default: type = \"unknown\"; break;
-     }
-     Scm_Printf(port, \"#<bsd-%s \\\"%s\\\">\", type, SCM_BSD_DB(obj)->file);
- }
-
- SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_BsdDbClass, bsddb_print, NULL);
 
  #define TO_DBT(dbt_, scm_)             \\
    do {                                 \\
@@ -60,14 +46,14 @@
                                 (btree-file-name 0))
   "")
 
-(define-cproc bsd-db-close (db)
+(define-cproc bsd-db-close (d)
   (assert (bsd-db? d))
   "CHECK_DB(d);
    if (d->db->close(d->db) == -1) Scm_SysError(\"closing %S\", d);
    SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc bsd-db-delete! (db key &optional (flags 0))
-  (assert (bsd-db? db))
+(define-cproc bsd-db-delete! (d key &optional (flags 0))
+  (assert (bsd-db? d))
   (assert (string? key))
   (assert (small-integer? flags))
   "DBT dkey;
@@ -77,13 +63,13 @@
     Scm_SysError(\"deleteing key %S from %S\", key, d);
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc bsd-db-fd (db)
-  (assert (bsd-db? db))
+(define-cproc bsd-db-fd (d)
+  (assert (bsd-db? d))
   "CHECK_DB(d);
   SCM_RETURN(SCM_MAKE_INT(d->db->fd(d->db)));")
 
-(define-cproc bsd-db-get (db key &optional (flags 0))
-  (assert (bsd-db? db))
+(define-cproc bsd-db-get (d key &optional (flags 0))
+  (assert (bsd-db? d))
   (assert (string? key))
   (assert (small-integer? flags))
   "DBT dkey, ddata; ScmObj data;
