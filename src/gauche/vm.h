@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.35 2001-07-27 19:17:03 shirok Exp $
+ *  $Id: vm.h,v 1.36 2001-07-28 11:23:54 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -143,10 +143,22 @@ extern ScmObj Scm_MakeSourceInfo(ScmObj info, ScmSourceInfo *up);
  */
 
 /*
+ * Escape record
+ */
+typedef struct ScmEscapeHandlerRec {
+    struct ScmEscapeHandlerRec *prev;
+    ScmObj ehandler;
+    ScmEnvFrame *env;
+    ScmContFrame *cont;
+    ScmObj dhandlers;
+} ScmEscapeHandler;
+
+/*
  * C stack record
  */
 typedef struct ScmEscapePointRec {
     struct ScmEscapePointRec *prev;
+    ScmEscapeHandler *handlers;
     jmp_buf jbuf;
 } ScmEscapePoint;
 
@@ -159,8 +171,6 @@ struct ScmVMRec {
     ScmVM *parent;
     ScmModule *module;          /* current global namespace */
     ScmEscapePoint *escape;     /* current escape point */
-    void (*errorHandler)(ScmObj, void*); /* error handler */
-    void *errorHandlerData;     /* error handler data */
     ScmVMActivationHistory *history; /* activation history */
 
     unsigned int compilerFlags; /* Compiler flags */
