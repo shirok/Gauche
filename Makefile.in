@@ -2,7 +2,7 @@
 all : gc/libgc.a src/gosh
 
 gc/libgc.a :
-	cd gc; $(MAKE) CC=@CC@
+	cd gc; $(MAKE) CC=@CC@ SHLIB_DSO_CCFLAGS=@SHLIB_DSO_CCFLAGS@
 
 src/gosh : gc/libgc.a
 	cd src; $(MAKE)

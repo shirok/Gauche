@@ -5,7 +5,6 @@ AC_CANONICAL_SYSTEM
 
 dnl Checks for programs.
 AC_PROG_CC
-AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_RANLIB
 AC_PROG_INSTALL
@@ -78,15 +77,63 @@ AC_MSG_RESULT($ac_cv_struct_pw_class)
 dnl Checks for library functions.
 AC_PROG_GCC_TRADITIONAL
 
+dnl Checks compiler options for dynamic link.
+dnl
+dnl  SHLIB_DSO_SUFFIX    suffix of dynamic loadable module, e.g. ".so"
+dnl  SHLIB_DSO_CCFLAGS   flags to compile files which is dynamically loadable,
+dnl                      e.g. "-fpic"
+dnl  SHLIB_DSO_LDFLAGS   flags to link files to create dynamically loadable
+dnl                      module, e.g. "-shared -o"
+dnl  SHLIB_MAIN_LDFLAGS  flags required to compile a main program which
+dnl                      exposes symbols to be referred by the dynamically
+dnl                      loaded module, e.g. "-rdynamic"
+dnl  SHLIB_LIBGAUCHE     defined as "libgauche.$(SHLIB_DSO_SUFFIX)" if
+dnl                      system supports dso.  empty otherwise.
+
+AC_MSG_CHECKING(how to make dynamic loadable module)
+case $host in
+  *-linux-gnu)
+    SHLIB_DSO_CCFLAGS="-fpic"
+    SHLIB_DSO_LDFLAGS="-shared -o"
+    SHLIB_DSO_SUFFIX="so"
+    SHLIB_MAIN_LDFLAGS="-rdynamic"
+    SHLIB_OK=ok
+    ;;
+  mips-sgi-irix*)
+    if test X$CC = Xgcc; then
+      SHLIB_DSO_CCFLAGS="-fpic"
+    else
+      SHLIB_DSO_CCFLAGS="-KPIC"
+    fi
+    SHLIB_DSO_LDFLAGS="-shared -o"
+    SHLIB_DSO_SUFFIX="so"
+    SHLIB_MAIN_LDFLAGS=""
+    SHLIB_OK=ok
+    ;;
+  *)
+    SHLIB_DSO_CCFLAGS=""
+    SHLIB_DSO_LDFLAGS=""
+    SHLIB_DSO_SUFFIX=""
+    SHLIB_MAIN_LDFLAGS=""
+    SHLIB_OK=unknown
+    ;;
+esac
+if test X$SHLIB_OK = Xok; then
+  SHLIB_LIBGAUCHE="libgauche.$SHLIB_DSO_SUFFIX"
+fi
+AC_SUBST(SHLIB_DSO_CCFLAGS)
+AC_SUBST(SHLIB_DSO_LDFLAGS)
+AC_SUBST(SHLIB_DSO_SUFFIX)
+AC_SUBST(SHLIB_MAIN_LDFLAGS)
+AC_SUBST(SHLIB_LIBGAUCHE)
+AC_MSG_RESULT($SHLIB_OK)
+
 dnl Add version macro
 GAUCHE_VERSION=`cat VERSION`
 AC_SUBST(GAUCHE_VERSION)
-dnl Hack to make this variable visible from config.h.  I don't know
-dnl the proper way to do it.
-cat >> confdefs.h <<EOF
-#define GAUCHE_VERSION "$GAUCHE_VERSION"
-EOF
+AC_DEFINE_UNQUOTED(GAUCHE_VERSION, "$GAUCHE_VERSION")
 
+dnl Create output files
 AC_OUTPUT(src/Makefile src/gauche-config lib/Makefile 
           ext/uvector/Makefile
           Makefile)
