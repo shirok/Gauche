@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: util.scm,v 1.3 2002-05-03 04:27:00 shirok Exp $
+;;;  $Id: util.scm,v 1.4 2002-05-03 13:18:57 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -72,7 +72,7 @@
          (filters   (%directory-filter-compose opts)))
     (let1 entries (sort (%directory-filter dir filters))
       (if add-path?
-          (map (l_ (string-append dir "/" _)) entries)
+          (map (l_ (build-path dir _)) entries)
           entries))))
 
 ;; directory-list2 DIR &optional ADD-DIR? CHILDREN? FILTER FOLLOW-LINK?
@@ -87,8 +87,8 @@
     (let1 entries (sort (%directory-filter dir filters))
       (if add-path?
           (partition selector
-                     (map (l_ (string-append dir "/" _)) entries))
-          (partition (l_ (selector (string-append dir "/" _)))
+                     (map (l_ (build-path dir _)) entries))
+          (partition (l_ (selector (build-path dir _)))
                      entries)))))
 
 ;; directory-fold DIR PROC KNIL &keyword LISTER FOLLOW-LINK?
@@ -218,7 +218,7 @@
           ((not (= (slot-ref s1 'size) (slot-ref s2 'size)))
            #f)
           ((= (slot-ref s1 'type) 'directory)
-           (directory-equal? f1 f2))
+           (error "directory comparison is not supported yet" s1))
           (else
            (call-with-input-file f1
              (lambda (p1)
@@ -231,22 +231,6 @@
                             (loop (read-block 8192 p1) (read-block 8192 p2)))
                            (else #f))))))))
           )))
-
-;(define (directory-equal? d1 d2 . opts)
-;  (check-arg file-is-directory? d1)
-;  (check-arg file-is-directory? d2)
-;  (let ((recursive? (get-keyword :recursive? opts #f))
-;        (nameonly   (get-keyword :name-only? opts #f)))
-;    (define (contents dir)
-;      (partition file-is-directory?
-;                 (map (l_ (string-append dir "/" _))
-;;                      (sort (sys-readdir dir)))))
-;    (define (cmp-nameonly dir1 dir2)
-;      (let-values (((dirs1 files1) (contents dir1))
-;                   ((dirs2 files2) (contents dir2)))
-;        (and (equal? files1 files2)
-;             (if recursive?
-;                 (map (
 
 ;; see if two files or directories exist on the same device.
 (define (file-device=? f1 f2)
