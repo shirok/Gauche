@@ -50,7 +50,8 @@ TESTFILES = ../test/primsyn.scm \
 	    ../test/macro.scm   \
 	    ../test/dynwind.scm \
 	    ../test/srfi.scm \
-	    ../test/object.scm
+	    ../test/object.scm \
+	    ../test/regexp.scm 
 
 .SUFFIXES: .stub
 
