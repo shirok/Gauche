@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.7 2001-06-14 09:07:14 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.8 2001-06-22 08:39:03 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -269,14 +269,14 @@ extern ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag);
 void Scm_Init_libuvector(void)
 {
     ScmModule *m = Scm_SchemeModule();
-    Scm_InitBuiltinClass(&Scm_S8VectorClass,  "<s8vector>",  m);
-    Scm_InitBuiltinClass(&Scm_U8VectorClass,  "<u8vector>",  m);
-    Scm_InitBuiltinClass(&Scm_S16VectorClass, "<s16vector>", m);
-    Scm_InitBuiltinClass(&Scm_U16VectorClass, "<u16vector>", m);
-    Scm_InitBuiltinClass(&Scm_S32VectorClass, "<s32vector>", m);
-    Scm_InitBuiltinClass(&Scm_U32VectorClass, "<u32vector>", m);
-    Scm_InitBuiltinClass(&Scm_F32VectorClass, "<f32vector>", m);
-    Scm_InitBuiltinClass(&Scm_F64VectorClass, "<f64vector>", m);
+    Scm_InitBuiltinClass(&Scm_S8VectorClass,  "<s8vector>",  NULL, m);
+    Scm_InitBuiltinClass(&Scm_U8VectorClass,  "<u8vector>",  NULL, m);
+    Scm_InitBuiltinClass(&Scm_S16VectorClass, "<s16vector>", NULL, m);
+    Scm_InitBuiltinClass(&Scm_U16VectorClass, "<u16vector>", NULL, m);
+    Scm_InitBuiltinClass(&Scm_S32VectorClass, "<s32vector>", NULL, m);
+    Scm_InitBuiltinClass(&Scm_U32VectorClass, "<u32vector>", NULL, m);
+    Scm_InitBuiltinClass(&Scm_F32VectorClass, "<f32vector>", NULL, m);
+    Scm_InitBuiltinClass(&Scm_F64VectorClass, "<f64vector>", NULL, m);
     Scm_Init_uvlib(m);
     Scm_ReadUvectorHook = read_uvector;
 }
