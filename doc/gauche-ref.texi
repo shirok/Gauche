@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.349 2003-01-27 05:25:04 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.350 2003-01-27 05:30:34 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -26567,6 +26567,7 @@ following the netscape cookie specification.
 @item <date>
 整数(エポックからの秒数)か、Netscape のクッキー仕様に従うフォーマットされた
 日付文字列。
+@end table
 @c COMMON
 
 @c EN
