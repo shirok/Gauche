@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.22 2001-06-13 19:46:00 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.23 2001-06-14 09:04:18 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2867,8 +2867,8 @@ use @code{make} method as follows:
 If it is a string, it is either a host name or a dotted IP notation.
 Gauche uses @code{gethostbyname(3)} to obtain the actual IP address from
 @var{host} parameter.  If it is a keyword @code{:any}, 
-@code{:broadcast} or @code{:none}, the address
-uses @code{INADDR_ANY}, @code{INADDR_BROADCAST} or @code{INADDR_NONE},
+or @code{:broadcast}, the address
+uses @code{INADDR_ANY}, or @code{INADDR_BROADCAST}
 respectively.  The keyword @code{:loopback} is a synonym to the
 IPv4 loopback address "127.0.0.1".
 
