@@ -30,14 +30,15 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: dbm.scm,v 1.3 2003-10-18 05:28:37 shirok Exp $
+;;;  $Id: dbm.scm,v 1.4 2003-11-25 04:39:05 shirok Exp $
 ;;;
 
 (define-module dbm
   (export <dbm> <dbm-meta>
           dbm-open    dbm-close   dbm-closed? dbm-get
           dbm-put!    dbm-delete! dbm-exists?
-          dbm-fold    dbm-for-each  dbm-map)
+          dbm-fold    dbm-for-each  dbm-map
+          dbm-db-exists? dbm-db-remove dbm-db-copy dbm-db-rename)
   )
 (select-module dbm)
 

@@ -1,3 +1,13 @@
+2003-11-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/dbm.scm : added dbm-db-* to the export list.  (Pointed out
+	  by Hosaka Y).
+
+2003-11-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c (Scm_GetRemainingInputString), src/extlib.stub,
+	  src/gauche.h, test/string.scm : Added get-remaining-input-string.
+
 2003-11-21  Shiro Kawai  <shiro@acm.org>
 
 	* acinclude.m4, aclocal.m4 : make sure OBJEXT and EXEEXT are
