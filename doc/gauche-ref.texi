@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.7 2001-05-25 09:08:30 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.8 2001-05-26 09:48:16 shirok Exp $
 
 @c module and class index
 @defcodeindex mo
@@ -201,13 +201,28 @@ Those two can be used separately, although it is much more
 convenient when used together.
 
 
-
-
-
-
 @node Objects
 @section Objects
 
+Gauche has a CLOS-style object system, with metaobject protocol.
+For those who are familiar with SmallTalk style object system,
+the CLOS-style multimethod may look strange.  I describe several
+characteristics of Gauche object system here.
+@xref{Object System} for details.
+
+@table @emph
+@item Everything is an object.
+In Gauche, everything is an object in the sense that you can
+query its class, and various meta information of the object
+at run time.
+
+@item Method is dispatched by all of its arguments.
+Unlike other object-oriented languages such as C++, Objective-C,
+Python, Ruby, etc., in which a method always belong to a single
+class, Gauche methods don't 
+
+
+@end table
 
 @node Multibyte Strings
 @section Multibyte Strings
@@ -420,7 +435,8 @@ that imports it.
 
 @defspec import module-name @dots{}
 Makes all exported bindings in the module named @var{module-name}
-available in the current module.
+available in the current module.   The named modules should exist
+when the compiler sees this special form.
 @end defspec
 
 @defspec current-module
@@ -440,7 +456,37 @@ Module in Gauche is statically determined at compile time.
 
 @defmac use name
 A convenience macro that combines module imports and on-demand
-file loading.
+file loading.  Basically, @code{(use foo)} is equivalent
+to the following two forms:
+@example
+(require "foo")
+(import foo)
+@end example
+That is, it loads the library file named ``@code{foo}'' which
+defines a module named @code{foo} init, and then import the module
+@code{foo} into the current module.
+
+Although the files and modules are orthogonal concept,
+it is practically convenient to separate files by modules.
+Gauche doesn't force you to do so, and you can always use
+@code{require} and @code{import} separately.  However, all
+modules provided with Gauche are arranged so that they can be
+used by @code{use} macro.
+
+If a module is too big to fit in one file, you can split them
+into several subfiles and one main file.  The main file defines
+the module, and either loads, requires, or autoloads subfiles.
+
+If @var{name} contains periods `@code{.}', it is replaced to `@code{/}'
+in the file name.to be @code{require}d, for example,
+@code{(use foo.bar.baz)} is expanded to:
+@example
+(require "foo/bar/baz")
+(import foo.bar.baz)
+@end example
+This is not very Scheme-ish way, but nevertheless practical.
+(The alternative design is to use a list of symbols to represent
+hierarchical file/module configuration, as in Guile.)
 @end defmac
 
 @node Module introspection
@@ -448,45 +494,73 @@ file loading.
 
 @deftp {Builtin Class} <module>
 @clindex module
+A module class.
 @end deftp
 
 @defun module? obj
+Returns true if @var{obj} is a module.
+@end defun
+
+@defun find-module name
+Returns a module object whose name is a symbol @var{name}.
+If the named module doesn't exist, @code{#f} is returned.
+@end defun
+
+@defun all-modules
+Returns a list of modules currently known to the system.
 @end defun
 
 @defun module-name module
 @defunx module-imports module
 @defunx module-exports module
 @defunx module-table module
-@end defun
+Accessors of a module object.  Returns the name of the module (a symbol),
+list of imported modules, list of exported symbols, and a hash table
+that maps symbols to bindings, of the @var{module} are returned,
+respectively.
 
-@defun find-module name
-@end defun
+If the @var{module} exports all symbols, @code{module-exports} returns
+@code{#t}.
 
-@defun all-modules
+It is an error to pass non-module object.
 @end defun
 
 @node Predefined modules
 @subsection Predefined modules
 
+Several modules are predefined in Gauche.
+
 @deftp {Builtin Module} null
 @moindex null
+This module corresponds to the null environment referred in R5RS.
+This module contains only syntactic bindings of built-in Gauche
+special forms.
 @end deftp
 
 @deftp {Builtin Module} scheme
 @moindex scheme
+This module contains all the binding of @code{null} module,
+and the binding of procedures defined in R5RS.
 @end deftp
 
 @deftp {Builtin Module} gauche
 @moindex gauche
+This module contains all the bindings of @code{scheme} module,
+plus Gauche specific built-in procedures.
 @end deftp
 
 @deftp {Builtin Module} user
 @moindex user
+This module is the default module the user code is compiled.
+all the bindings of @code{gauche} module is imported.
 @end deftp
 
 @c ======================================================================
 @node Macros
 @chapter Macros
+
+Gauche supports both R5RS hygienic macros and
+traditional macros.
 
 @node Hygienic Macros
 @section Hygienic Macros
@@ -807,7 +881,7 @@ A class of pairs.
 @end defun
 
 @defun acons obj1 obj2 obj3
-[SRFI-1] Returns @code{(cons (cons @var{obj1} @var{obj2}) @var{obj3})}.
+Returns @code{(cons (cons @var{obj1} @var{obj2}) @var{obj3})}.
 Useful to put an entry at the head of an associative list.
 @lisp
 (acons 'a 'b '((c . d))) @result{} ((a . b) (c . d))
@@ -1226,7 +1300,7 @@ using @code{list->string} is faster than using @code{make-string} and
 @node String Pointers
 @subsection String Pointers
 
-@defun make-string-pointer str [index]
+@defun make-string-pointer str &optional index
 @end defun
 
 @defun string-pointer? obj
@@ -1535,7 +1609,7 @@ Returns the current output port.
 @node File ports
 @subsection File ports
 
-@defun open-inupt-file filename
+@defun open-input-file filename
 [R5RS]
 @end defun
 
@@ -1601,19 +1675,26 @@ Returns the current output port.
 @end defun
 
 @defun read-byte &optional iport
-Read one byte from an input port @var{iport}, and returns an integer
+Reads one byte from an input port @var{iport}, and returns an integer
 in the range between 0 and 255.
-
-If the port doesn't support bytewise input, an error is signalled.
-You can use @code{port-byte-io-capable?} to find if the port supports
-byte I/O.
+If @var{iport} has already reached EOF, an eof object is returned.
 @end defun
 
 @defun read-line &optional iport
+Reads one line (a sequence of bytes terminated by a newline character or EOF)
+and returns a string.  The terminating newline is not included.
+If @var{iport} has already reached EOF, an eof object is returned.
+@end defun
+
+@defun read-block nbytes &optional iport
+Reads @var{nbytes} bytes from @var{iport}, and returns an incomplete
+string consisted by those bytes.  The size of returned string may
+shorter than @var{nbytes} when @var{iport} doesn't have enough bytes
+to fill.  If @var{iport} has already reached EOF, an eof object is returned.
 @end defun
 
 @defun eof-object? obj
-[R5RS]
+[R5RS] Returns true if @var{obj} is an EOF object.
 @end defun
 
 @defun char-ready? port
@@ -1676,7 +1757,7 @@ byte I/O.
 @defun provided? feature
 @end defun
 
-@defmac autoload file var @dots{}
+@defmac autoload file symbol @dots{}
 @end defmac
 
 
@@ -1684,6 +1765,14 @@ byte I/O.
 @node System interface
 @section System interface
 
+Gauche supports most of POSIX.1 functions and other system functions
+popular among Unix variants as built-in procedures.
+
+The procedures with name @code{sys-}@var{name} usually correspond to the
+system call @var{name}.  I tried to keep the interface similar
+whenever reasonable.  Sometimes Gauche has other routines that
+are higher level than system calls, nevertheless I try to
+provide lower level routines as well.
 
 @node Program termination
 @subsection Program termination
@@ -1705,6 +1794,8 @@ or @code{#f} if the environment variable is not defined.
 @defunx gauche-architecture-directory
 @defunx gauche-site-library-directory
 @defunx gauche-site-architecture-directory
+These functions returns a string that tells information about Gauche
+interpreter itself.
 @end defun
 
 @node Filesystems
@@ -1713,16 +1804,29 @@ or @code{#f} if the environment variable is not defined.
 @node Directories
 @subsubsection Directories
 
-@defun sys-readdir
+@defun sys-readdir path
+@var{path} must be a string that denotes valid pathname of an existing
+directory.  This function returns a list of strings of the directory
+entries.  The returned list is not sorted.  An error is signalled
+if @var{path} doesn't exists or is not a directory.
 @end defun
 
-@defun sys-glob
+@defun sys-glob pattern
+An interface to @code{glob(3)} function.  @var{pattern} is a file pattern
+like sh(1): a character `@code{?}' matches any single character, 
+`@code{*}' matches zero or more characters, `@code{[abc]}' matches
+either `@code{a}', `@code{b}' or `@code{c}'.  If no pathname matches
+@var{pattern}, an empty list is returned.
+
+If the undelying platform doesn't have @code{glob()}, this function
+signals an error of "feature not supported".
 @end defun
 
 @node Directory manipulation
 @subsubsection Directory manipulation
 
 @defun sys-remove filenmae
+Remove @var{filename}.
 @end defun
 
 @defun sys-rename old new
@@ -1747,10 +1851,57 @@ or @code{#f} if the environment variable is not defined.
 @subsubsection Pathnames
 
 @defun sys-normalize-pathname pathname &keyword absolute expand canonicalize
+Converts @var{pathname} according to the way specified by keyword arguments.
+@table @code
+@item absolute
+  If this keyword arugment is given and true, and @var{pathname} is not
+  an absolute pathname, it is converted to an absolute pathname by
+  appending the current working directory in front of @var{pathname}.
+@item expand
+  If this keyword argument is given and true, and @var{pathname} begins
+  with `@code{~}', it is expanded as follows:
+@itemize @bullet
+@item
+    If @var{pathname} is consisted entirely by ``@code{~}'', or begins
+    with ``@code{~/}'', then the character ``@code{~}'' is replaced
+    for the pathname of the current user's home directory.
+@item
+    Otherwise, characters following `@code{~}' until either `@code{/}' or
+    the end of @var{pathname} are taken as a user name, and the user's
+    home directory is replaced in place of it.  If there's no such
+    user, an error is signalled.
+@end itemize
+@item canonicalize
+  Tries to remove pathname components ``@code{.}'' and ``@code{..}''.
+  The pathname interpretation is done purely in textural level, i.e.
+  it doesn't access filesystem to see the conversion reflects the
+  real files.  It may be a problem if there's a symbolic links to
+  other directory in the path.
+@end table
 @end defun
 
-@defun sys-basename
-@defunx sys-dirname
+@defun sys-basename pathname
+@defunx sys-dirname pathname
+@code{sys-basename} returns a basename, that is the last component of
+@var{pathname}.  @code{sys-dirname} returns the components of @var{pathname}
+but the last one.   If @var{pathname} has a trailing `@code{/}', 
+it is simply ignored.
+@example
+(sys-basename "foo/bar/bar.z") @result{} "bar.z"
+(sys-basename "coo.scm") @result{} "coo.scm"
+(sys-dirname "foo/bar/bar.z") @result{} "foo/bar/"
+(sys-dirname "coo.scm") @result{} "."
+@end example
+These functions doesn't check if @var{pathname} really exists.
+
+Some boundary cases:
+@example
+(sys-basename "") @result{} ""
+(sys-dirname "") @result{} "."
+
+(sys-basename "/") @result{} ""
+(sys-dirname "/") @result{} "/"
+@end example
 @end defun
 
 @node File stats
@@ -1758,6 +1909,7 @@ or @code{#f} if the environment variable is not defined.
 
 @deftp {Builtin Class} <sys-stat>
 @clindex sys-stat
+An object that represents @code{struct stat}.
 @end deftp
 
 @defun sys-stat path
@@ -1769,13 +1921,52 @@ or @code{#f} if the environment variable is not defined.
 @defun sys-fstat fd
 @end defun
 
+@defun sys-stat->mode stat
+@defunx sys-stat->ino stat
+@defunx sys-stat->dev stat
+@defunx sys-stat->rdev stat
+@defunx sys-stat->nlink stat
+@defunx sys-stat->uid stat
+@defunx sys-stat->gid stat
+@defunx sys-stat->atime stat
+@defunx sys-stat->mtime stat
+@defunx sys-stat->ctime stat
+Accessors of @code{<sys-stat>} objects.  @code{sys-stat->mode} through
+@code{sys-stat->gid} returns an exact integer.  @code{sys-stat->atime}
+to @code{sys-stat->ctime} returns a @code{<sys-time>} object.
+@end defun
+
 @defun sys-access pathname amode
+An interface to @code{access(2)}.
+Returns a boolean value of indicating whether @var{pathname} is allowed
+in @var{amode}.  @var{amode} can be a combinations (logical or) of
+following predefined flags.
+@table @code
+@item r_ok
+Checks whether @var{pathname} is readable by the current user.
+@item w_ok
+Checks whether @var{pathname} is writable by the current user.
+@item x_ok
+Checks whether @var{pathname} is executable (or searchable in case
+@var{pathname} is a directory) by the current user.
+@item f_ok
+Checks whether @var{pathname} exists or not, regardless of
+the access permissions of @var{pathname}.  (But you need to have
+access permissions of the directories containing @var{pathname}).
+@end table
+An error is signalled if @var{pathname} does not exist, or the permissions
+of directories containing @var{pathname} prevents you from cheking
+@var{pathname} itself.
 @end defun
 
 @node Other file operations
 @subsubsection Other file operations
 
 @defun sys-chdir dir
+An interface to @code{chdir(2)}.  Change the process's current
+working directory to @var{dir}.   An error is signalled if
+@var{dir} doesn't exist, or you don't have enough permission to
+access @var{dir}.
 @end defun
 
 @defun sys-pipe &keyword name buffered?
@@ -2044,9 +2235,12 @@ more convenient process handling on top of above primitives.
 @section  General Inquiry
 
 @defun class-of obj
+Returns a class metaobject of @var{obj}.
 @end defun
 
 @defun is-a? obj class
+Returns true if @var{obj} is an instance of @var{class} or an instance
+of descendants of @var{class}.
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -2204,6 +2398,21 @@ more convenient process handling on top of above primitives.
 @chapter Library Modules
 
 @c ----------------------------------------------------------------------
+@node Character Code Conversion
+@section @code{gauche.charconv} - Character Code Conversion
+
+@deftp {Module} gauche.charconv
+@moindex gauche.charconv
+
+@end deftp
+
+@defun open-input-conversion-port from-port from-code &optional to-code
+@end defun
+
+@defun open-output-conversion-port to-port to-code &optional from-code
+@end defun
+
+@c ----------------------------------------------------------------------
 @node Networking
 @section @code{gauche.net} - Networking
 
@@ -2211,6 +2420,63 @@ more convenient process handling on top of above primitives.
 @moindex gauche.net
 @end deftp
 
+@node High-level functions
+@subsection High-level functions
+
+@defun make-client-socket address &optional port
+@end defun
+
+@defun make-server-socket address &optional port reuse-addr?
+@end defun
+
+@node Low-level socket interface
+@subsection Low-level socket interface
+
+@deftp {Builtin Class} <socket-address>
+@clindex socket-address
+@end deftp
+
+@defun make-socket-address-unix pathname
+@end defun
+
+@defun make-socket-address-inet host port
+@end defun
+
+@defun make-socket domain family protocol
+@end defun
+
+@defun socket-bind socket address
+@end defun
+
+@defun socket-listen
+@end defun
+
+@defun socket-accept
+@end defun
+
+@defun socket-connect
+@end defun
+
+@defun socket-sendto
+@end defun
+
+@defun socket-recvfrom
+@end defun
+
+@node Netdb interface
+@subsection Socket interface
+
+@deftp {Builtin Class} <sys-hostent>
+@clindex sys-hostent
+@end deftp
+
+@deftp {Builtin Class} <sys-servent>
+@clindex sys-servent
+@end deftp
+
+@deftp {Builtin Class} <sys-protoent>
+@clindex sys-protoent
+@end deftp
 
 @c ----------------------------------------------------------------------
 @node High Level Process Interface
@@ -2504,7 +2770,7 @@ Detailed specificaion of SRFI-1 is available at
 @end deftp
 
 @node SRFI-1 List constructors
-@subsection SRFI-1 List constructors
+@subsection List constructors
 
 @defun xcons cd ca
 [SRFI-1] Equivalent to @code{(cons ca cd)}.  Useful to pass to
@@ -2554,7 +2820,7 @@ This procedure takes its name from the APL primitive.
 @end defun
 
 @node SRFI-1 List predicates
-@subsection SRFI-1 List predicates
+@subsection List predicates
 
 @defun proper-list? x
 [SRFI-1] Returns true iff x is a proper list -- a finite, nil-terminated list.
@@ -2603,7 +2869,7 @@ it must be the case that
 @end defun
 
 @node SRFI-1 List selectors
-@subsection SRFI-1 List selectors
+@subsection List selectors
 
 @defun  first pair
 @defunx second pair
@@ -2691,7 +2957,7 @@ Note that @code{last-pair} is Gauche built-in procedure.
 @end defun
 
 @node SRFI-1 List miscellaneous routines
-@subsection SRFI-1 List miscellaneous routines
+@subsection List miscellaneous routines
 
 @defun length+ x
 [SRFI-1] If @var{x} is a finite, proper list, returns its length.
@@ -2769,10 +3035,236 @@ At least one of the argument lists must be finite:
 @end defun
 
 @node SRFI-1 Fold, unfold & map
-@subsection SRFI-1 Fold, unfold & map
+@subsection List fold, unfold & map
 
+@defun fold kons knil clist1 clist2 @dots{}
+[SRFI-1] The fundamental list iterator.
+When it is given a single list
+@var{clist1} = (@var{e1} @var{e2} @dots{} @var{en}),
+then this procedure returns
+@example
+(@var{kons} @var{en} @dots{} (@var{kons} @var{e2} (@var{kons} @var{e1} @var{knil})) @dots{} ) 
+@end example
 
+If @var{n} list arguments are provided, then the @var{kons}
+function must take @var{n}+1 parameters: one element from each list, and
+the "seed" or fold state, which is initially @var{knil}.
+The fold operation terminates when the shortest list runs out of values.
+At least one of the list arguments must be finite. 
 
+Examples:
+@example
+(fold + 0 '(3 1 4 1 5 9)) @result{} 23 ;@r{sum up the elements}
+(fold cons '() '(a b c d e)) @result{} (e d c b a) ;@r{reverse}
+(fold cons* '() '(a b c) '(1 2 3 4 5))
+    @result{} (c 3 b 2 a 1) ;@r{n-ary case}
+@end example
+@end defun
+
+@defun fold-right kons knil clist1 clist2 @dots{}
+[SRFI-1] The fundamental list recursion operator.
+When it is given a single list
+@var{clist1} = (@var{e1} @var{e2} @dots{} @var{en}),
+then this procedure returns
+@example
+(@var{kons} @var{e1} (@var{kons} @var{e2} @dots{} (@var{kons} @var{en} @var{knil})))
+@end example
+
+If @var{n} list arguments are provided, then the @var{kons} function
+must take @var{n}+1 parameters: one element from each list, and
+the "seed" or fold state, which is initially @var{knil}.
+The fold operation terminates when the shortest list runs out of values.
+At least one of the list arguments must be finite. 
+
+Examples: 
+@example
+(fold-right cons '() '(a b c d e))
+   @result{} (a b c d e) ;@r{copy list}
+(fold-right cons* '() '(a b c) '(1 2 3 4 5))
+   @result{} (a 1 b 2 c 3) ;@r{n-ary case}
+@end example
+@end defun
+
+@defun pair-fold kons knil clist1 clist2 @dots{}
+[SRFI-1]
+@end defun
+
+@defun pair-fold-right kons knil clist1 clist2 @dots{}
+[SRFI-1]
+@end defun
+
+@defun reduce f ridentity list
+[SRFI-1]
+@end defun
+
+@defun reduce-right f ridentity list
+[SRFI-1]
+@end defun
+
+@defun unfold p f g seed &optional tail-gen
+[SRFI-1]
+@end defun
+
+@defun unfold-right p f g seed &optional tail
+[SRFI-1]
+@end defun
+
+@defun append-map f clist1 clist2 @dots{}
+@defunx append-map! f clist1 clist2 @dots{}
+[SRFI-1]
+@end defun
+
+@defun map! f list1 clist2 @dots{}
+[SRFI-1]
+@end defun
+
+@defun map-in-order f clist1 clist2 @dots{}
+[SRFI-1] A variant of @code{map}, but it guarantees to apply @var{f}
+on each elements of arguments in a left-to-right order.
+Since Gauche's @code{map} implementation follows the same order,
+this function is just a synonym of @code{map}.
+@end defun
+
+@defun pair-for-each f clist1 clist2 @dots{}
+[SRFI-1]
+@end defun
+
+@defun filter-map  f clist1 clist2 @dots{}
+[SRIF-1]
+@end defun
+
+@node SRFI-1 Filterling & partitioning
+@subsection List filtering & partitioning
+
+@defun filter pred list
+[SRFI-1]
+@end defun
+
+@defun partition pred list
+[SRFI-1]
+@end defun
+
+@defun remove pred list
+[SRFI-1]
+@end defun
+
+@defun filter! pred list
+@defunx partition! pred list
+@defunx remove! pred list
+[SRFI-1]
+@end defun
+
+@node SRFI-1 Searching
+@subsection List searching
+
+@defun find pred clist
+[SRFI-1]
+@end defun
+
+@defun find-tail pred clist
+[SRFI-1]
+@end defun
+
+@defun take-while pred clist
+@defunx take-while! pred list
+[SRFI-1]
+@end defun
+
+@defun drop-while pred clist
+[SRFI-1]
+@end defun
+
+@defun span pred clist
+@defunx span! pred list
+@defunx break pred clist
+@defunx break! pred list
+[SRFI-1]
+@end defun
+
+@defun any pred clist1 clist2 @dots{}
+[SRFI-1]
+@end defun
+
+@defun every pred clist1 clist2 @dots{}
+[SRFI-1]
+@end defun
+
+@defun list-index pred clist1 clist2 @dots{}
+[SRFI-1]
+@end defun
+
+@node SRFI-1 Deletion
+@subsection List deletion
+
+@defun delete x list &optional elt=
+@defunx delete x list &optional elt=
+[SRFI-1]
+@end defun
+
+@defun delete-duplicates list &optional elt=
+@defunx delete-duplicates! list &optional elt=
+[SRFI-1]
+@end defun
+
+@node SRFI-1 Association lists
+@subsection Association lists
+
+@defun alist-cons key datum alist
+[SRFI-1] Returns @code{(cons (cons @var{obj1} @var{obj2}) @var{obj3})}.
+This is an alias of the Gauche builtin procedure @code{acons}.
+@end defun
+
+@defun alist-copy alist
+[SRFI-1] Returns a fresh copy of @var{alist}.
+@end defun
+
+@defun alist-delete key alist &optional =
+@defunx alist-delete! key alist &optional =
+[SRFI-1]
+@end defun
+
+@node SRFI-1 set operations
+@subsection Lists as sets
+
+@defun lset<= elt= list1 @dots{}
+[SRFI-1]
+@end defun
+
+@defun lset= elt= list1 list2 @dots{}
+[SRFI-1]
+@end defun
+
+@defun lset-adjoin elt= list elt @dots{}
+[SRFI-1]
+@end defun
+
+@defun lset-union elt= list1 @dots{}
+[SRFI-1]
+@end defun
+
+@defun lset-intersection elt= list1 list2 @dots{}
+[SRFI-1]
+@end defun
+
+@defun lset-difference elt= list1 list2 @dots{}
+[SRFI-1]
+@end defun
+
+@defun lset-xor elt= list1 @dots{}
+[SRFI-1]
+@end defun
+
+@defun lset-diff+intersection elt= list1 list2 @dots{}
+[SRFI-1]
+@end defun
+
+@defun lset-union! elt= list @dots{}
+@defunx lset-intersection! elt= list1 list2 @dots{}
+@defunx lset-difference! elt= list1 list2 @dots{}
+@defunx lset-xor! elt= list1 @dots{}
+@defunx lset-diff+intersection! elt= list1 list2 @dots{}
+[SRFI-1]
+@end defun
 
 @c ----------------------------------------------------------------------
 @node And-let*
@@ -2930,7 +3422,6 @@ At least one of the argument lists must be finite:
 @defunx u64vector->vector vec
 @defunx f32vector->vector vec
 @defunx f64vector->vector vec
-[SRFI-4]
 @end defun
 
 @defun  list->s8vector list
@@ -2956,7 +3447,6 @@ At least one of the argument lists must be finite:
 @defunx vector->u64vector vec
 @defunx vector->f32vector vec
 @defunx vector->f64vector vec
-[SRFI-4]
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -2996,6 +3486,7 @@ The form @code{(use srfi-8)} doesn't do anything.
 @deftp {Module} srfi-13
 @moindex srfi-13
 @end deftp
+
 
 
 @c ----------------------------------------------------------------------
