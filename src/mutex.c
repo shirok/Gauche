@@ -12,13 +12,14 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: mutex.c,v 1.9 2002-05-17 10:36:29 shirok Exp $
+ *  $Id: mutex.c,v 1.10 2002-05-21 10:56:41 shirok Exp $
  */
 
 #include <math.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/class.h"
+#include "gauche/exception.h"
 
 /*=====================================================
  * Mutex
@@ -92,6 +93,58 @@ static void mutex_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 }
 
 /*
+ * Accessors
+ */
+static ScmObj sym_not_owned;
+static ScmObj sym_abandoned;
+static ScmObj sym_not_abandoned;
+
+static ScmObj mutex_state_get(ScmMutex *mutex)
+{
+    ScmObj r;
+    (void)SCM_INTERNAL_MUTEX_LOCK(mutex->mutex);
+    if (mutex->locked) {
+        if (mutex->owner) {
+            if (mutex->owner->state == SCM_VM_TERMINATED) r = sym_abandoned;
+            else r = SCM_OBJ(mutex->owner);
+        } else {
+            r = sym_not_owned;
+        }
+    } else {
+        r = sym_not_abandoned;
+    }
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(mutex->mutex);
+    return r;
+}
+
+static ScmObj mutex_name_get(ScmMutex *mutex)
+{
+    return mutex->name;
+}
+
+static void mutex_name_set(ScmMutex *mutex, ScmObj name)
+{
+    mutex->name = name;
+}
+
+static ScmObj mutex_specific_get(ScmMutex *mutex)
+{
+    return mutex->specific;
+}
+
+static ScmObj mutex_specific_set(ScmMutex *mutex, ScmObj value)
+{
+    mutex->specific = value;
+}
+
+static ScmClassStaticSlotSpec mutex_slots[] = {
+    SCM_CLASS_SLOT_SPEC("name", mutex_name_get, mutex_name_set),
+    SCM_CLASS_SLOT_SPEC("state", mutex_state_get, NULL),
+    SCM_CLASS_SLOT_SPEC("specific", mutex_specific_get, mutex_specific_set),
+    { NULL }
+};
+
+/*
  * Make mutex
  */
 ScmObj Scm_MakeMutex(ScmObj name)
@@ -110,7 +163,8 @@ ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
 #ifdef GAUCHE_USE_PTHREAD
     struct timespec ts, *pts;
     ScmObj r = SCM_TRUE;
-    int intr = FALSE, abandoned = FALSE;
+    ScmVM *abandoned = NULL;
+    int intr = FALSE;
     
     pts = Scm_GetTimeSpec(timeout, &ts);
     if (SCM_INTERNAL_MUTEX_LOCK(mutex->mutex) != 0) {
@@ -118,7 +172,9 @@ ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
     }
     while (mutex->locked) {
         if (mutex->owner && mutex->owner->state == SCM_VM_TERMINATED) {
-            abandoned = TRUE;
+            abandoned = mutex->owner;
+            mutex->locked = FALSE;
+            break;
         }
         if (pts) {
             int tr = pthread_cond_timedwait(&(mutex->cv), &(mutex->mutex), pts);
@@ -134,8 +190,11 @@ ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(mutex->mutex);
     if (intr) Scm_SigCheck(Scm_VM());
-    /*TODO: need to throw abandoned mutex exception */
-    if (abandoned) Scm_Error("abandoned mutex exception");
+    if (abandoned) {
+        ScmObj exc = Scm_MakeThreadException(SCM_CLASS_ABANDONED_MUTEX_EXCEPTION, abandoned);
+        SCM_THREAD_EXCEPTION(exc)->data = SCM_OBJ(mutex);
+        r = Scm_VMThrowException(exc);
+    }
     return r;
 #else  /* !GAUCHE_USE_PTHREAD */
     return SCM_TRUE;            /* dummy */
@@ -218,6 +277,36 @@ static void cv_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 }
 
 /*
+ * Accessors
+ */
+
+static ScmObj cv_name_get(ScmConditionVariable *cv)
+{
+    return cv->name;
+}
+
+static void cv_name_set(ScmConditionVariable *cv, ScmObj name)
+{
+    cv->name = name;
+}
+
+static ScmObj cv_specific_get(ScmConditionVariable *cv)
+{
+    return cv->specific;
+}
+
+static ScmObj cv_specific_set(ScmConditionVariable *cv, ScmObj val)
+{
+    cv->specific = val;
+}
+
+static ScmClassStaticSlotSpec cv_slots[] = {
+    SCM_CLASS_SLOT_SPEC("name", cv_name_get, cv_name_set),
+    SCM_CLASS_SLOT_SPEC("specific", cv_specific_get, cv_specific_set),
+    { NULL }
+};
+
+/*
  * Make condition variable
  */
 ScmObj Scm_MakeConditionVariable(ScmObj name)
@@ -241,6 +330,23 @@ ScmObj Scm_ConditionVariableBroadcast(ScmConditionVariable *cond)
     pthread_cond_broadcast(&(cond->cv));
 #endif
     return SCM_UNDEFINED;
+}
+
+/*
+ * Initialization
+ */
+
+extern void Scm_Init_thrlib(ScmModule *mod);
+
+void Scm__InitMutex(void)
+{
+    ScmModule *mod = Scm_GaucheModule();
+    sym_not_owned     = SCM_INTERN("not-owned");
+    sym_abandoned     = SCM_INTERN("abandoned");
+    sym_not_abandoned = SCM_INTERN("not-abandoned");
+    Scm_InitBuiltinClass(&Scm_MutexClass, "<mutex>", mutex_slots, sizeof(ScmMutex), mod);
+    Scm_InitBuiltinClass(&Scm_ConditionVariableClass, "<condition-variable>", cv_slots, sizeof(ScmConditionVariable), mod);
+    Scm_Init_thrlib(mod);
 }
 
 

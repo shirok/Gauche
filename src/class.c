@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.80 2002-05-19 10:37:07 shirok Exp $
+ *  $Id: class.c,v 1.81 2002-05-21 10:56:41 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1825,9 +1825,6 @@ void Scm__InitClass(void)
     /* module.c */
     CINIT(SCM_CLASS_MODULE,           "<module>");
 
-    /* mutex.c */
-    CINIT(SCM_CLASS_MUTEX,            "<mutex>");
-
     /* number.c */
     CINIT(SCM_CLASS_NUMBER,           "<number>");
     CINIT(SCM_CLASS_COMPLEX,          "<complex>");
@@ -1861,9 +1858,6 @@ void Scm__InitClass(void)
     /* vector.c */
     CINIT(SCM_CLASS_VECTOR,           "<vector>");
     
-    /* vm.c */
-    CINIT(SCM_CLASS_VM,               "<vm>");
-
     /* weak.c */
     CINIT(SCM_CLASS_WEAKVECTOR,       "<weak-vector>");
 

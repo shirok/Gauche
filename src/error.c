@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.32 2002-05-21 04:47:15 shirok Exp $
+ *  $Id: error.c,v 1.33 2002-05-21 10:56:41 shirok Exp $
  */
 
 #include <errno.h>
@@ -61,7 +61,7 @@
 ScmObj Scm_MakeThreadException(ScmClass *klass, ScmVM *thread)
 {
     ScmThreadException *e = SCM_NEW(ScmThreadException);
-    SCM_SET_CLASS(e, SCM_CLASS_THREAD_EXCEPTION);
+    SCM_SET_CLASS(e, klass);
     e->thread = thread;
     e->data = SCM_UNDEFINED;
     return SCM_OBJ(e);

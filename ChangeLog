@@ -4,6 +4,9 @@
 	  change.
 	* src/exclib.stub, src/error.c : moved exception class hierarchy
 	  definition to exclib.stub from error.c
+	* src/thrlib.stub, src/mutex.c, lib/gauche/thread.scm : made basic
+	  thread primitives as builtin classes, and autoload SRFI-18
+	  procedural APIs.
 
 2002-05-19  Shiro Kawai  <shiro@acm.org>
 

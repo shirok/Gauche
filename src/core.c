@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.37 2002-04-24 23:18:15 shirok Exp $
+ *  $Id: core.c,v 1.38 2002-05-21 10:56:41 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -52,6 +52,7 @@ extern void Scm__InitRead(void);
 extern void Scm__InitSignal(void);
 extern void Scm__InitSystem(void);
 extern void Scm__InitVM(void);
+extern void Scm__InitMutex(void);
 
 extern void Scm_Init_stdlib(ScmModule *);
 extern void Scm_Init_extlib(ScmModule *);
@@ -81,7 +82,8 @@ void Scm_Init(void)
     Scm__InitSignal();
     Scm__InitSystem();
     Scm__InitVM();
-
+    Scm__InitMutex();
+    
     /* This is required in some platforms in order to link
        dyn_load.o properly. */
     GC_register_dlopen_data(NULL, NULL);

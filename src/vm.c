@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.149 2002-05-19 10:37:07 shirok Exp $
+ *  $Id: vm.c,v 1.150 2002-05-21 10:56:41 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -40,11 +40,10 @@
  *
  *   All the VMs are chained to a global list vmList.  It is necessary
  *   since GC may not be able to see the thread specific data.
+ *
+ *   From Scheme, VM is viewed as <thread> object.  The class definition
+ *   is in thrlib.stub.
  */
-
-static void vm_print(ScmObj vm, ScmPort *port, ScmWriteContext *ctx);
-
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_VMClass, vm_print);
 
 static ScmVM *rootVM;           /* VM for primodial thread */
 static ScmObj vmList;           /* list of all VMs */
@@ -149,20 +148,6 @@ void Scm_VMSetResult(ScmObj obj)
     ScmVM *vm = theVM;
     vm->val0 = obj;
     vm->numVals = 1;
-}
-
-void vm_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
-{
-    ScmVM *vm = SCM_VM(obj);
-    const char *state;
-    switch (vm->state) {
-    case SCM_VM_NEW:        state = "new"; break;
-    case SCM_VM_RUNNABLE:   state = "runnable"; break;
-    case SCM_VM_BLOCKED:    state = "blocked"; break;
-    case SCM_VM_TERMINATED: state = "terminated"; break;
-    default: state = "(unknown state)";
-    }
-    Scm_Printf(port, "#<thread %S %s %p>", vm->name, state, vm);
 }
 
 /*
@@ -1954,7 +1939,8 @@ static void report_error(ScmObj e)
         SCM_PUTS(SCM_STRING(SCM_ERROR_MESSAGE(e)), err);
         SCM_PUTNL(err);
     } else {
-        SCM_PUTZ("*** ERROR: unhandled exception\n", -1, err);
+        SCM_PUTZ("*** ERROR: unhandled exception: ", -1, err);
+        Scm_Printf(SCM_PORT(err), "%S\n", e);
     }
     
     SCM_PUTZ("Stack Trace:\n", -1, err);
@@ -2402,6 +2388,7 @@ static void *thread_entry(void *vm)
     SCM_UNWIND_PROTECT {
         SCM_VM(vm)->result = Scm_Apply(SCM_OBJ(SCM_VM(vm)->thunk), SCM_NIL);
     } SCM_WHEN_ERROR {
+        ScmObj exc;
         switch (SCM_VM(vm)->escapeReason) {
         case SCM_VM_ESCAPE_CONT:
             /* TODO: sets appropriate exception to resultException
@@ -2410,7 +2397,9 @@ static void *thread_entry(void *vm)
         default:
             Scm_Panic("unknown escape");
         case SCM_VM_ESCAPE_ERROR:
-            SCM_VM(vm)->resultException = SCM_OBJ(SCM_VM(vm)->escapeData[1]);
+            exc = Scm_MakeThreadException(SCM_CLASS_UNCAUGHT_EXCEPTION, SCM_VM(vm));
+            SCM_THREAD_EXCEPTION(exc)->data = SCM_OBJ(SCM_VM(vm)->escapeData[1]);
+            SCM_VM(vm)->resultException = exc;
         }
     } SCM_END_PROTECT;
     return NULL;
@@ -2450,7 +2439,7 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
 {
 #ifdef GAUCHE_USE_PTHREAD
     struct timespec ts, *pts;
-    ScmObj result = SCM_FALSE;
+    ScmObj result = SCM_FALSE, resultx = SCM_FALSE;
     int intr = FALSE, tout = FALSE;
     
     pts = Scm_GetTimeSpec(timeout, &ts);
@@ -2464,19 +2453,18 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
             pthread_cond_wait(&(target->cond), &(target->vmlock));
         }
     }
-    if (!tout) result = target->result;
+    if (!tout) { result = target->result; resultx = target->resultException; }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(target->vmlock);
     if (intr) Scm_SigCheck(theVM);
     if (tout) {
         if (SCM_UNBOUNDP(timeoutval)) {
-            /*
             ScmObj e = Scm_MakeThreadException(SCM_CLASS_JOIN_TIMEOUT_EXCEPTION, target);
             result = Scm_VMThrowException(e);
-            */
-            result = SCM_FALSE;
         } else {
             result = timeoutval;
         }
+    } else if (SCM_EXCEPTIONP(resultx)) {
+        result = Scm_VMThrowException(resultx);
     }
     return result;
 #else  /*!GAUCHE_USE_PTHREAD*/

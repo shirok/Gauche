@@ -1,0 +1,233 @@
+;;;
+;;; thrlib.stub - thread interface functions
+;;;
+;;;   Copyright (c) 2002 Shiro Kawai (shiro@acm.org)
+;;;
+;;;   Permission to use, copy, modify, distribute this software and
+;;;   accompanying documentation for any purpose is hereby granted,
+;;;   provided that existing copyright notices are retained in all
+;;;   copies and that this notice is included verbatim in all
+;;;   distributions.
+;;;   This software is provided as is, without express or implied
+;;;   warranty.  In no circumstances the author(s) shall be liable
+;;;   for any damages arising out of the use of this software.
+;;;
+;;; $Id: thrlib.stub,v 1.1 2002-05-21 10:56:41 shirok Exp $
+;;;
+
+"
+#include \"gauche/class.h\"
+#include \"gauche/exception.h\"
+"
+
+;;===============================================================
+;; System query
+;;
+
+(define-symbol pthread "sym_pthread")
+(define-symbol uthread "sym_uthread")
+
+(define-cproc gauche-thread-type ()
+  "#ifdef GAUCHE_USE_PTHREAD
+  SCM_RETURN(sym_pthread);
+#else
+  SCM_RETURN(sym_uthread);
+#endif")
+
+;;===============================================================
+;; Basic thread interface
+;;
+
+(define-cproc current-thread ()
+  "SCM_RETURN(SCM_OBJ(Scm_VM()));")
+
+(define-cproc thread? (obj)
+  "SCM_RETURN(SCM_MAKE_BOOL(SCM_VMP(obj)));")
+
+(define-cproc thread-name (vm)
+  (assert (thread? vm))
+  "SCM_RETURN(vm->name);")
+
+(define-cproc thread-specific (vm)
+  (assert (thread? vm))
+  "SCM_RETURN(vm->specific);")
+
+(define-cproc thread-specific-set! (vm obj)
+  (assert (thread? vm))
+  "vm->specific = obj; SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc make-thread (thunk &optional (name #f))
+  (assert (procedure? thunk))
+  "SCM_RETURN(Scm_MakeThread(thunk, name));")
+
+(define-cproc thread-start! (vm)
+  (assert (thread? vm))
+  "SCM_RETURN(Scm_ThreadStart(vm));")
+
+(define-cproc thread-yield! ()
+  "SCM_RETURN(Scm_ThreadYield());")
+
+(define-cproc thread-sleep! (timeout)
+  "SCM_RETURN(Scm_ThreadSleep(timeout));")
+
+(define-cproc thread-join! (vm &optional (timeout #f) timeout-val)
+  (assert (thread? vm))
+  "SCM_RETURN(Scm_ThreadJoin(vm, timeout, timeout_val));")
+
+(define-cproc thread-terminate! (vm)
+  (assert (thread? vm))
+  "SCM_RETURN(Scm_ThreadTerminate(vm));")
+
+;; external view of VM.
+(define-cclass <thread> "ScmVM" "Scm_VMClass"
+  ()
+  ((name)
+   (specific)
+   )
+  (printer
+   "ScmVM *vm = SCM_VM(obj);
+    const char *state;
+    switch (vm->state) {
+    case SCM_VM_NEW:        state = \"new\"; break;
+    case SCM_VM_RUNNABLE:   state = \"runnable\"; break;
+    case SCM_VM_BLOCKED:    state = \"blocked\"; break;
+    case SCM_VM_TERMINATED: state = \"terminated\"; break;
+    default: state = \"(unknown state)\";
+    }
+    Scm_Printf(port, \"#<thread %S %s %p>\", vm->name, state, vm);")
+  )
+
+;;===============================================================
+;; Mutex
+;;
+
+(define-cproc make-mutex (&optional (name #f))
+  "SCM_RETURN(Scm_MakeMutex(name));")
+
+(define-cproc mutex? (obj)
+  "SCM_RETURN(SCM_MAKE_BOOL(SCM_MUTEXP(obj)));")
+
+(define-symbol not-owned "sym_not_owned")
+(define-symbol abandoned "sym_abandoned")
+(define-symbol not-abandoned "sym_not_abandoned")
+
+(define-cproc mutex-state (mutex)
+  (assert (mutex? mutex))
+  "ScmObj r;
+  (void)SCM_INTERNAL_MUTEX_LOCK(mutex->mutex);
+  if (mutex->locked) {
+    if (mutex->owner) {
+      if (mutex->owner->state == SCM_VM_TERMINATED) r = sym_abandoned;
+      else r = SCM_OBJ(mutex->owner);
+    } else {
+      r = sym_not_owned;
+    }
+  } else {
+    r = sym_not_abandoned;
+  }
+  (void)SCM_INTERNAL_MUTEX_UNLOCK(mutex->mutex);
+  SCM_RETURN(r);")
+
+(define-cproc mutex-lock! (mutex &optional (timeout #f) thread)
+  (assert (mutex? mutex))
+  "ScmVM *owner = NULL;
+  if (SCM_VMP(thread)) owner = SCM_VM(thread);
+  else if (SCM_UNBOUNDP(thread)) owner = Scm_VM();
+  else if (!SCM_FALSEP(thread)) Scm_Error(\"thread or #f required, but got %S\", thread);
+  SCM_RETURN(Scm_MutexLock(mutex, timeout, owner));")
+  
+(define-cproc mutex-unlock! (mutex &optional (cv #f) (timeout #f))
+  (assert (mutex? mutex))
+  "ScmConditionVariable *cond = NULL;
+  if (SCM_CONDITION_VARIABLE_P(cv)) cond = SCM_CONDITION_VARIABLE(cv);
+  else if (!SCM_FALSEP(cv)) Scm_Error(\"condition variable or #f required, but got %S\", cv);
+  SCM_RETURN(Scm_MutexUnlock(mutex, cond, timeout));")
+
+(define-cproc mutex-specific (mutex)
+  (assert (mutex? mutex))
+  "SCM_RETURN(mutex->specific);")
+
+(define-cproc mutex-specific-set! (mutex obj)
+  (assert (mutex? mutex))
+  "mutex->specific = obj; SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc mutex-name (mutex)
+  (assert (mutex? mutex))
+  "SCM_RETURN(mutex->name);")
+
+;;===============================================================
+;; Condition variable
+;;
+
+(define-cproc make-condition-variable (&optional (name #f))
+  "SCM_RETURN(Scm_MakeConditionVariable(name));")
+
+(define-cproc condition-variable? (obj)
+  "SCM_RETURN(SCM_MAKE_BOOL(SCM_CONDITION_VARIABLE_P(obj)));")
+
+(define-cproc condition-variable-name (cv)
+  (assert (condition-variable? cv))
+  "SCM_RETURN(cv->name);")
+
+(define-cproc condition-variable-specific (cv)
+  (assert (condition-variable? cv))
+  "SCM_RETURN(cv->specific);")
+
+(define-cproc condition-variable-specific-set! (cv obj)
+  (assert (condition-variable? cv))
+  "cv->specific = obj; SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc condition-variable-signal! (cv)
+  (assert (condition-variable? cv))
+  "SCM_RETURN(Scm_ConditionVariableSignal(cv));")
+
+(define-cproc condition-variable-broadcast! (cv)
+  (assert (condition-variable? cv))
+  "SCM_RETURN(Scm_ConditionVariableBroadcast(cv));")
+
+;;===============================================================
+;; VM inspection (temporary; may be changed later)
+;;
+
+(define-cproc vm-dump (&optional vm)
+  " if (vm == SCM_UNBOUND) vm = SCM_OBJ(Scm_VM());
+  else if (!SCM_VMP(vm)) Scm_Error(\"VM object required, got %S\", vm);
+  Scm_VMDump(SCM_VM(vm));
+  SCM_RETURN(SCM_UNDEFINED); ")
+
+(define-cproc vm-get-stack-trace (&optional vm)
+  " if (vm == SCM_UNBOUND) vm = SCM_OBJ(Scm_VM());
+  else if (!SCM_VMP(vm)) Scm_Error(\"VM object required, got %S\", vm);
+  SCM_RETURN(Scm_VMGetStack(SCM_VM(vm)));")
+
+(define-cproc vm-get-stack-trace-lite (&optional vm)
+  " if (vm == SCM_UNBOUND) vm = SCM_OBJ(Scm_VM());
+  else if (!SCM_VMP(vm)) Scm_Error(\"VM object required, got %S\", vm);
+  SCM_RETURN(Scm_VMGetStackLite(SCM_VM(vm)));")
+
+(define-cproc vm-set-default-exception-handler (vm handler)
+  "  if (!SCM_VMP(vm)) Scm_Error(\"VM object required, got %S\", vm);
+  if (!SCM_FALSEP(handler) && !SCM_PROCEDUREP(handler)) {
+    Scm_Error(\"a procedure or #f required, but got %S\", handler);
+  }
+  SCM_VM(vm)->defaultEscapeHandler = handler;
+  SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc vm-instruction? (obj)
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_VM_INSNP(obj)));")
+
+(define-cproc vm-insn-inspect (obj)
+  "  SCM_RETURN(Scm_VMInsnInspect(obj));")
+
+(define-cproc current-load-history ()
+  "  SCM_RETURN(Scm_VM()->load_history);")
+(define-cproc current-load-next ()
+  "  SCM_RETURN(Scm_VM()->load_next);")
+(define-cproc current-load-port ()
+  "  SCM_RETURN(Scm_VM()->load_port);")
+
+
+
+;; Local variables:
+;; mode: scheme
+;; end:
