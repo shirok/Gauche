@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.29 2002-05-19 20:29:36 shirok Exp $
+ *  $Id: write.c,v 1.30 2002-06-03 23:45:49 shirok Exp $
  */
 
 #include <stdio.h>
@@ -528,6 +528,7 @@ ScmObj Scm_Format(ScmObj out, ScmString *fmt, ScmObj args)
     ScmChar ch = 0;
     ScmObj arg, oargs = args;
     int out_to_str = 0;
+    int backtracked = FALSE;    /* true if ~:* is used */
     int arglen, argcnt;
 
     if (out == SCM_FALSE) {
@@ -549,8 +550,9 @@ ScmObj Scm_Format(ScmObj out, ScmString *fmt, ScmObj args)
         
         SCM_GETC(ch, fmtstr);
         if (ch == EOF) {
-            if (!SCM_NULLP(args))
+            if (!SCM_NULLP(args) && !backtracked) {
                 Scm_Error("too many arguments for format string: %S", fmt);
+            }
             if (out_to_str) {
                 return Scm_GetOutputString(SCM_PORT(out));
             } else {
@@ -655,8 +657,11 @@ ScmObj Scm_Format(ScmObj out, ScmString *fmt, ScmObj args)
                     if (colonflag) {
                         if (atflag) goto badfmt;
                         argindex = argcnt - argindex;
+                        backtracked = TRUE;
                     } else if (!atflag) {
                         argindex = argcnt + argindex;
+                    } else {
+                        backtracked = TRUE;
                     }
                     if (argindex < 0 || argindex >= arglen) {
                         Scm_Error("'~*' format directive refers outside of argument list in %S", fmt);
