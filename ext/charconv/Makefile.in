@@ -13,7 +13,7 @@ HEADERS =
 
 TARGET = libcharconv.so
 OBJS = charconv.o convlib.o
-CONFIG_GENERATED = Makefile config.cache config.log config.status
+CONFIG_GENERATED = Makefile charconv.h config.cache config.log config.status
 
 INSTALL_TYPE = @INSTALL_TYPE@
 HEADER_INSTALL_DIR  = `$(GAUCHE_CONFIG) --$(INSTALL_TYPE)incdir`/gauche
