@@ -1,3 +1,10 @@
+2001-03-13  Shiro Kawai  <shiro@scherzo>
+
+	* release 0.2.1
+	* src/gauche.h, src/class.c: further designing.  not much code yet.
+        * configure.in: made to work on sparc-sun-solaris2.6
+	* ext/example/Makefile.in: install rule was broken.  fixed.
+	
 2001-03-12  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.2
