@@ -2,7 +2,7 @@
  *
  * Configuration parmateres
  *  
- * $Id: config.h.in,v 1.11 2001-05-19 10:56:28 shirok Exp $
+ * $Id: config.h.in,v 1.12 2001-05-26 21:14:51 shirok Exp $
  */
 
 #undef STDC_HEADERS
@@ -54,6 +54,9 @@
 
 /* Define if the system has pw_class defined in struct passwd */
 #undef HAVE_PW_CLASS
+
+/* Define if time_t is typedef'ed to an integral type */
+#undef INTEGRAL_TIME_T
 
 /* Define if the system has dlopen() */
 #undef HAVE_DLOPEN
