@@ -1,7 +1,16 @@
 2001-09-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/selector.scm : added
+	* lib/gauche/interactive.scm : added describe
 	* ext/net : added socket-fd
+	* src/genstub : added a feature to read config.h and to generate
+	  stubs conditionally depending on the defined preprocessor symbols.
+	* src/syslib.stub : added sys-ctermid and sys-readlink.  Adapted
+	  to the new genstub.
+	* doc/gauche-ref.texi : added a chapter of describing mappings
+	  from C library functions to Scheme functions.
+	* src/vm.c (use_eval_inner) : cleaned up interaction between C
+	  stack and Scheme stack.
 	
 2001-09-04  Shiro Kawai  <shiro@acm.org>
 
