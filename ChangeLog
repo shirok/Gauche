@@ -1,6 +1,8 @@
 2002-05-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/write.c (Scm_Format): added ~* directive.
+	* src/genstub : reorganized <type> class to handle types more
+	  generally.
 
 2002-05-18  Shiro Kawai  <shiro@acm.org>
 

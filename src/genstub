@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.64 2002-05-20 10:39:59 shirok Exp $
+;;;  $Id: genstub,v 1.65 2002-05-20 22:11:56 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -793,6 +793,7 @@
 (define-class <cclass> (<stub>)
   ((cpa       :init-keyword :cpa       :init-value '()
               :accessor cpa-of)
+   (c-type    :init-keyword :c-type    :accessor c-type-of)
    (allocator :init-keyword :allocator :init-value #f
               :accessor allocator-of)
    (c-allocator-name :accessor c-allocator-name-of :init-value "NULL")
@@ -801,7 +802,6 @@
    (c-printer-name :accessor c-printer-name-of :init-value "NULL")
    (slot-spec :init-keyword :slot-spec :init-value '()
               :accessor slot-spec-of)
-   (c-class-name :init-keyword :c-class-name :accessor c-class-name-of)
    (c-slot-spec-name :init-value "NULL" :accessor c-slot-spec-name-of)
    ))
 
@@ -817,22 +817,22 @@
 (define (process-define-cclass form)
   (unless (>= (length form) 6)
     (error "malformed define-cclass" form))
-  (receive (_ scm-name c-name c-class-name cpa slot-spec . more) (apply values form)
-    (unless (and (symbol? scm-name) (string? c-class-name) (list? cpa) (list? slot-spec))
+  (receive (_ scm-name c-type c-name cpa slot-spec . more) (apply values form)
+    (unless (and (symbol? scm-name) (string? c-name) (list? cpa) (list? slot-spec))
       (error "malformed define-cclass" form))
     (let* ((allocator (cond ((assq 'allocator more) => cadr) (else #f)))
            (printer   (cond ((assq 'printer more) => cadr) (else #f)))
            (cclass (make <cclass>
-                     :scheme-name scm-name :c-name c-name
-                     :c-class-name c-class-name :cpa cpa
+                     :scheme-name scm-name :c-type c-type :c-name c-name 
+                     :cpa cpa
                      :allocator allocator :printer printer)))
       (set! (slot-spec-of cclass) (process-cclass-slots cclass slot-spec))
       (unless (null? (slot-spec-of cclass))
-        (set! (c-slot-spec-name-of cclass) #`",|c-name|_SLOTS"))
+        (set! (c-slot-spec-name-of cclass) #`",|c-type|_SLOTS"))
       (when (string? printer)
-        (set! (c-printer-name-of cclass) #`",|c-class-name|_PRINT"))
+        (set! (c-printer-name-of cclass) #`",|c-type|_PRINT"))
       (when (string? allocator)
-        (set! (c-allocator-name-of cclass) #`",|c-class-name|_ALLOCATE"))
+        (set! (c-allocator-name-of cclass) #`",|c-type|_ALLOCATE"))
       (emit-definition cclass))))
 
 (define-method emit-definition ((self <cclass>))
@@ -848,7 +848,7 @@
     (print (printer-of self))
     (print "}")
     (newline))
-  (print #`"SCM_DEFINE_BUILTIN_CLASS(,(c-class-name-of self), ,(c-printer-name-of self), NULL, NULL, ,(c-allocator-name-of self), NULL);")
+  (print #`"SCM_DEFINE_BUILTIN_CLASS(,(c-name-of self), ,(c-printer-name-of self), NULL, NULL, ,(c-allocator-name-of self), NULL);")
   (newline)
   (when (pair? (slot-spec-of self))
     (for-each emit-getter-n-setter (slot-spec-of self))
@@ -860,9 +860,9 @@
   )
 
 (define-method emit-initializer ((self <cclass>))
-  (print #`"  Scm_InitBuiltinClass(,(c-class-name-of self), \",(scheme-name-of self)\", ,(c-slot-spec-name-of self),")
-  (print (if (c-name-of self)
-             #`"                       sizeof(,(c-name-of self)), module);"
+  (print #`"  Scm_InitBuiltinClass(,(c-name-of self), \",(scheme-name-of self)\", ,(c-slot-spec-name-of self),")
+  (print (if (c-type-of self)
+             #`"                       sizeof(,(c-type-of self)), module);"
              #`"                       NULL, module);"))
   )
 
@@ -883,11 +883,11 @@
        slot-spec))
 
 (define-method slot-getter-name ((slot <cslot>))
-  #`",(c-name-of (cclass-of slot))_,(c-name-of slot)_GET")
+  #`",(c-type-of (cclass-of slot))_,(c-name-of slot)_GET")
 
 (define-method slot-setter-name ((slot <cslot>))
   (if (setter-of slot)
-      #`",(c-name-of (cclass-of slot))_,(c-name-of slot)_SET"
+      #`",(c-type-of (cclass-of slot))_,(c-name-of slot)_SET"
       "NULL"))
 
 (define-method emit-getter-n-setter ((slot <cslot>))
@@ -896,7 +896,7 @@
 
 (define-method emit-getter ((slot <cslot>))
   (let ((type (type-of slot)))
-    (print #`"static ScmObj ,(slot-getter-name slot)(,(c-name-of (cclass-of slot)) *obj)")
+    (print #`"static ScmObj ,(slot-getter-name slot)(,(c-type-of (cclass-of slot)) *obj)")
     (print "{")
     (if (string? (getter-of slot))
         (print (getter-of slot))
@@ -906,14 +906,14 @@
 
 (define-method emit-setter ((slot <cslot>))
   (let ((type (type-of slot)))
-    (print #`"static void ,(slot-setter-name slot)(,(c-name-of (cclass-of slot)) *obj, ScmObj value)")
+    (print #`"static void ,(slot-setter-name slot)(,(c-type-of (cclass-of slot)) *obj, ScmObj value)")
     (print "{")
     (if (string? (setter-of slot))
         (print (setter-of slot))
         (begin
           (unless (eq? type *scm-type*)
             (f "  if (!~a(obj)) Scm_Error(\"~a required, but got %S\", obj);"
-               (c-predicate-of type) (c-name-of type)))
+               (c-predicate-of type) (c-type-of type)))
           (f "  obj->~a = ~a(value);" (c-name-of slot) (unboxer-of type))))
     (print "}")
     (newline)))

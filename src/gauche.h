@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.257 2002-05-18 04:08:20 shirok Exp $
+ *  $Id: gauche.h,v 1.258 2002-05-20 22:11:56 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -192,6 +192,8 @@ SCM_EXTERN int Scm_EqualM(ScmObj x, ScmObj y, int mode);
 #define SCM_INTP(obj)        (SCM_TAG(obj) == 1)
 #define SCM_INT_VALUE(obj)   (((signed long int)(obj)) >> 2)
 #define SCM_MAKE_INT(obj)    SCM_OBJ(((long)(obj) << 2) + 1)
+
+#define SCM_UINTP(obj)       (SCM_INTP(obj)&&((signed long int)(obj)>=0))
 
 /*
  * CHARACTERS
@@ -1499,6 +1501,9 @@ SCM_EXTERN ScmObj Scm_GetKeyword(ScmObj key, ScmObj list, ScmObj fallback);
 #define SCM_NUMBERP(obj)           (SCM_REALP(obj)||SCM_COMPLEXP(obj))
 #define SCM_EXACTP(obj)            SCM_INTEGERP(obj)
 #define SCM_INEXACTP(obj)          (SCM_FLONUMP(obj)||SCM_COMPLEXP(obj))
+
+#define SCM_UINTEGERP(obj) \
+    (SCM_UINTP(obj) || (SCM_BIGNUMP(obj)&&SCM_BIGNUM_SIGN(obj)>=0))
 
 SCM_CLASS_DECL( Scm_NumberClass);
 SCM_CLASS_DECL( Scm_ComplexClass);
