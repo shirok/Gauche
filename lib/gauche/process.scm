@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: process.scm,v 1.6 2001-06-26 09:29:43 shirok Exp $
+;;;  $Id: process.scm,v 1.7 2001-06-26 09:38:06 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -29,7 +29,7 @@
           open-input-process-port   open-output-process-port
           call-with-input-process   call-with-output-process
           with-input-from-process   with-output-to-process
-          call-with-io-process))
+          call-with-process-io))
 (select-module gauche.process)
 
 (define-class <process> ()
