@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.154 2002-02-13 06:15:49 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.155 2002-02-14 07:40:00 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -792,11 +792,21 @@ inside the intepreter; an API will be provided in the later versions.
 @section Integrated Object System
 @c NODE 統合されたオブジェクトシステム
 
+@c EN
 Gauche has a STklos-style object system, similar to CLOS.
 If you have used some kind of object oriented (OO) languages,
 you'll find it easy to understand the basic usage:
+@c JP
+GaucheはCLOSに類似した、STklosスタイルのオブジェクトシステムを持っています。
+あなたが何らかのオブジェクト指向(OO)言語を使ったことがあれば、
+基本的な使い方は簡単にわかるでしょう。
+@c COMMON
 @example
+@c EN
 ;; @r{Defines a class point, that has x and y coordinate}
+@c JP
+;; @r{x, y座標を持つpointクラスを定義}
+@c COMMON
 (define-class point ()
   ((x :init-value 0)
    (y :init-value 0))
@@ -812,25 +822,44 @@ you'll find it easy to understand the basic usage:
           (slot-ref p 'y)))
 @end example
 
+@c EN
 However, if you are familiar with mainstream OO langauges but new to CLOS-style
 object system, Gauche's object system may look strange
 when you look deeper into it.
-I describe several characteristics of Gauche object system here.
+Here I describe several characteristics of Gauche object system quickly.
 @xref{Object system}, for details.
+@c JP
+しかし、主流のオブジェクト指向言語に慣れてはいるがCLOSスタイルのオブジェクトシステムに
+慣れていないプログラマは、Gaucheのオブジェクトシステムの詳細を見てゆくと
+奇妙に感じることがあるのではないかと思います。
+ここではGaucheのオブジェクトシステムの代表的な性質を簡単に述べておきます。
+詳しくは@ref{Object system}の章を参照して下さい。
+@c COMMON
 
 @table @emph
+@c EN
 @item Everything is an object (if you care)
 You have seen this tagline for the other languages.
 And yes, in Gauche, everything is an object in the sense that you can
 query its class, and get various meta information of
-the object at run time.  You can define a method
-on any class, although you can't subclass nor modify behavior 
-of some built-in classes.
+the object at run time.  You can also define a new method
+on any class including built-in classes.
 
 Note that, however, in CLOS-like paradigm it doesn't really matter
 whether everything is an object or not, because of the following
 characteristics:
+@c JP
+@item 全てはオブジェクトである (それが気になる人には)
+このような主張は他のOO言語でも見たことがあるでしょう。
+Gaucheもその例にもれず、実行時にクラスを得たりメソッドを呼び出したりといった
+操作が任意のオブジェクトに対して出来るという意味で、全てはオブジェクトです。
+また組込みクラスを含めたどんなクラスに対しても新しいメソッドを定義することができます。
 
+しかし、CLOS系のパラダイムでは、全てがオブジェクトかどうかという議論はあまり
+問題ではありません。というのは次のような性質があるからです。
+@c COMMON
+
+@c EN
 @item Method is dispatched by all of its arguments.
 Unlike other object-oriented languages such as C++, Objective-C,
 Python, Ruby, etc., in which a method always belong to a single
@@ -840,6 +869,16 @@ For example, suppose you define a numeric vector class
 @code{<num-vector>} and a numeric matrix class @code{<num-matrix>}.
 You can define a method @code{product} with all possible combinations
 of those type of arguments:
+@c JP
+@item メソッドは全ての引数によってディスパッチされる
+C++、Objective C、Python、RubyなどのOO言語では、メソッドは特定のクラスに
+所属しています。Gaucheではメソッドはクラスに従属しません。
+
+例えば、数値だけを要素に持つベクタークラス@code{<num-vector>}と
+行列クラス@code{<num-matrix>}を定義したとします。
+プログラマは、以下のようなあらゆる場合についてメソッド@code{product}を
+別々に定義することができます。
+@c COMMON
 
 @example
   (product <num-vector> <num-matrix>)
@@ -851,8 +890,9 @@ of those type of arguments:
   (product <number>     <number>)
 @end example
 
-Each method does not belong to a specific class.  It rather belongs 
-to a @emph{generic function} ``@code{product}''.
+@c EN
+Each method belongs to neither @code{<num-vector>} class nor
+@code{<num-matrix>} class.
 
 Since a method is not owned by a class, you can always define your
 own method on the existing class (except a few cases
@@ -861,7 +901,19 @@ example already shows it; you can make @code{product} method work
 on the built-in class @code{<number>}.   That is why I said
 it doesn't make much sense to discuss whether everything is object
 or not in CLOS-style object system.
+@c JP
+これらの各メソッドは、@code{<num-vector>}クラスや@code{<num-matrix>}
+クラスに所属するわけではありません。
 
+メソッドがクラスに所有されているわけではないので、既に存在するクラスに対していつでも
+独自のメソッドを定義することができます(但し、いくつかの組込みクラスの既定のメソッドには
+変更できないものがあります)。上の例で既にこれは示されています。プログラマは
+メソッド@code{product}を組込みクラス@code{<number>}に対して定義することが
+できます。これが、全てはオブジェクトであるかどうかはCLOSスタイルのオブジェクトシステム
+では問題にならないと言った理由です。
+@c COMMON
+
+@c EN
 @item Class is also an instance.
 By default, a class is also an instance of class
 @code{<class>}, and a generic function is an instance of class
@@ -878,7 +930,25 @@ To find examples, see the files @code{lib/gauche/singleton.scm} and
 You can also read @code{lib/gauche/object.scm}, which actually
 defines how a class is defined in Gauche.
 For more details about metaobject protocol, see @ref{mop,[MOP],MOP}.
+@c JP
+@item クラスはインスタンスでもある
+デフォルトでは、クラスは@code{<class>}というクラスのインスタンスであり、
+ジェネリック関数は@code{<generic>}というクラスのインスタンスです。
+しかし、@code{<class>}を継承したクラスを定義することにより、
+オブジェクトの初期化がどのように行われるかとか、スロットがどのように
+アクセスされるかといった動作をカスタマイズすることができます。
+また、@code{<generic>}を継承したクラスを定義することにより、
+適用可能なメソッドがどのように選択されて、どのような順序で適用されるか
+といったことがカスタマイズ可能です。このメカニズムは@emph{メタオブジェクトプロトコル}
+と呼ばれています。メタオブジェクトプロトコルは、言語をその言語そのもので拡張する方法と
+言えるでしょう。
 
+例として、ディストリビューションに含まれる@code{lib/gauche/singleton.scm}や
+@code{lib/gauche/validator}等があります。@code{lib/gauche/object.scm}を
+読めば、クラス自身がGaucheでどのように定義されているかがわかります。
+メタオブジェクトプロトコルの更に詳しいことについては、
+@ref{mop,[MOP],MOP}が参考になります。
+@c COMMON
 @end table
 
 @node Module System,  , Integerated Object System, Concepts
@@ -1205,23 +1275,33 @@ has limitations for the number of arguments to pass the interpreter.
 
 @c EN
 After the file is successfully loaded, @code{gosh} calls a
-procedure named `@code{main}' with the list of the remaining
-command-line arguments, if it is defined in the user module.
+procedure named `@code{main}' if it is defined in the user module.
+@code{Main} receives a single argument, a list of command line
+arguments.  Its first element is the script name itself.
+
 When @code{main} returns, and its value is an integer, @code{gosh}
-uses it for exit code of the program.  Otherwise, @code{gosh} exits
-with value 0.
-This behavior is compatible with the draft SRFI-22.
+uses it for exit code of the program.
+Otherwise, @code{gosh} exits with exit code 70 (@code{EX_SOFTWARE}).
+This behavior is compatible with the SRFI-22.
+
+(@emph{Note: this interface has been changed from Gauche release 0.5
+in incompatible way.   @xref{Script compatibility before release 0.5},
+for details.})
 
 If the @code{main} procedure is not defined, @code{gosh} exits
 after loading the script file.
 @c JP
 ファイルが正常にロードされたら、@code{gosh}は
-userモジュールに `@code{main}' という手続きが定義されているかどうか調べます。
-定義されていれば、コマンドライン引数のリストを唯一の引数としてそれを呼び出します。
-@code{main}が呼ばれ、それが整数の値を返したら、@code{gosh}はその値を
-終了ステータスとして終了します。@code{main}が整数以外の値を返した場合は
-@code{gosh}は終了ステータス0で終了します。
-このふるまいはSRFI-22(案)と互換です。
+userモジュールに `@code{main}' という手続きが定義されているかどうか調べ、
+定義されていればそれを呼びます。@code{main}には、スクリプトへの引数のリストが
+唯一の引数として渡されます。リストの最初の要素はスクリプトファイル名です。
+
+@code{main}が整数の値を返したら、@code{gosh}はその値を終了ステータスとして終了します。
+@code{main}が整数以外の値を返した場合は@code{gosh}は終了ステータス70
+(@code{EX_SOFTWARE})で終了します。このふるまいはSRFI-22と互換です。
+
+(@emph{注：このインタフェースはGauche release 0.5から非互換な形で
+変更されました。@ref{Script compatibility before release 0.5}を参照して下さい。})
 
 @code{main}が定義されていなければ@code{gosh}はロード後にそのままステータス0で
 終了します。
@@ -1291,13 +1371,13 @@ option processing and error handling.
 #!/usr/bin/env gosh
 
 (define (main args)   ;@r{entry point}
-  (if (null? args)
+  (if (null? (cdr args))
       (copy-port (current-input-port) (current-output-port))
       (for-each (lambda (file)
                   (call-with-input-file file
                     (lambda (in)
                       (copy-port in (current-output-port)))))
-                args))
+                (cdr args)))
   0)
 @end cartouche
 @end example
@@ -1330,15 +1410,15 @@ The following script is a simple grep command.
        read-line))))
 
 (define (main args)
-  (if (null? args)
+  (if (null? (cdr args))
       (usage)
-      (let ((rx (string->regexp (car args))))
-        (if (null? (cdr args))
+      (let ((rx (string->regexp (cadr args))))
+        (if (null? (cddr args))
             (grep rx (current-input-port))
             (for-each (lambda (f)
                         (call-with-input-file f
                           (lambda (p) (grep rx p))))
-                      (cdr args)))))
+                      (cddr args)))))
   0)
 @end cartouche
 @end example
@@ -1350,6 +1430,40 @@ parse command-line options.
 コマンドライン引数を処理するモジュールがあります。
 @ref{Parsing command-line options}を参照してください。
 @c COMMON
+
+@menu
+* Script compatibility before release 0.5::  
+@end menu
+
+@node Script compatibility before release 0.5,  , Writing Scheme scripts, Writing Scheme scripts
+@subsection Script compatibility before release 0.5
+@c NODE リリース0.5以前とのスクリプトの互換性
+
+In order to conform final SRFI-22,
+Gauche release 0.5.1 changes the way @code{main} is called.
+Unfortunately, this makes the Scheme scripts that is written for older
+Gauche no longer work.
+
+The incompatible changes are these two points.
+@itemize @bullet
+@item
+The argument list passed to @code{main} now includes the script
+name itself as the first element.  In older version, only the
+arguments after the script file name are passed.
+@item
+When @code{main} returns non-integral value, @code{gosh} exits
+with code 70.  In older version, @code{gosh} exits with code 0
+in such case.
+@end itemize
+
+To help transition, Gauche keeps the previous behavior if
+either (a) command line argument @code{-fcompat-0.5} is given,
+or (b) an environment variable @code{GAUCHE_COMPAT_0_5} is defined.
+You can run the Scheme scripts written for previous Gauche
+unchanged using either of these methods.
+
+This backward compatibility feature is a temporary solution,
+and will be removed after a few releases.
 
 @c ----------------------------------------------------------------------
 @node Writing Gauche modules,  , Writing Scheme scripts, Programming in Gauche
@@ -8954,6 +9068,7 @@ of descendants of @var{class}.
 * Termios::                     
 * Unit Testing::                
 * Slot with validator::         
+* Comparing version numbers::   
 * RFC822 Message parsing::      
 * Base64 encoding/decoding::    
 * HTTP cookie handling::        
@@ -11120,40 +11235,79 @@ An integer process id that holding the lock; used only by @code{F_GETLK}.
 
 @deftp {Module} gauche.interactive
 @mdindex gauche.interactive
+@c EN
 Provides useful utilities for the interactive session.
 
 This module is automatically loaded when you run @code{gosh}
 interactively.
+@c JP
+インタラクティブセッションで便利なユーティリティ手続きを提供します。
+
+@code{gosh}をインタラクティブモードで起動した場合、このモジュールは自動的にロードされます。
+@c COMMON
 @end deftp
 
 @defmac apropos pattern &optional module
-Show a list of variables whose name matches @var{pattern}.
+@c EN
+Show a list of defined variables whose name matches @var{pattern}.
 If you give a module or a module name @var{module}, only the variables
 defined in that module are listed.  Without @var{module},
 the variables "visible" from the current module are listed.
+@c JP
+名前が@var{pattern}にマッチするような定義された変数のリストを表示します。
+@var{module}にモジュールオブジェクトまたはモジュール名を与えた場合は、
+そのモジュール内で定義されている変数のみが表示されます。@var{module}が
+省略された場合は、カレントモジュールから「見える」変数が全て表示されます。
+@c COMMON
 
+@c EN
 @var{pattern} may be a symbol or a regexp object.
 If it is a symbol, the variables whose name contains the
 substring that matches the symbol's name are listed.
 If it is a regexp object, the variables whose name matches
 the regexp are listed.
+@c JP
+@var{pattern}はシンボルか正規表現オブジェクトでなければなりません。
+シンボルの場合、そのシンボル名を部分文字列として名前に含むような変数が
+リストされます。正規表現オブジェクトの場合は、その正規表現にマッチする
+名前を持つ変数がリストされます。
+@c COMMON
 
+@c EN
 Some examples:
+@c JP
+いくつか例を示します。
+@c COMMON
 @example
+@c EN
 ;; @r{List variables that contains "string" in their name}
+@c JP
+;; @r{"string"を名前に含む変数を表示}
+@c COMMON
 (apropos 'string)
 
+@c EN
 ;; @r{Search in srfi-14 module}
+@c JP
+;; @r{srfi-14モジュールの中のみを検索}
+@c COMMON
 (apropos 'char 'srfi-14)
 @end example
 @end defmac
 
 @deffn {Generic Function} describe obj
 @deffnx {Generic Function} d obj
+@c EN
 Prints the detail information about a Scheme object @var{obj}.
 The default method shows @var{obj}'s class, and if it has
 any slots, the list of slot names and their values.
 You can specialize this method for customized display.
+@c JP
+Schemeオブジェクト@var{obj}の詳細情報を表示します。
+既定メソッドは@var{obj}のクラスを表示し、さらに@var{obj}がスロットを
+持っていればその名前と内容をリストします。
+このメソッドをスペシャライズすることによりクラス毎に表示をカスタマイズできます。
+@c COMMON
 @end deffn
 
 @c ----------------------------------------------------------------------
@@ -12982,7 +13136,7 @@ Prints out list of failed tests.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Slot with validator, RFC822 Message parsing, Unit Testing, Library modules
+@node Slot with validator, Comparing version numbers, Unit Testing, Library modules
 @section @code{gauche.validator} - Slot with validator
 @c NODE Validator付きスロット, @code{gauche.validator} - Validator付きスロット
 
@@ -13089,7 +13243,181 @@ only a dozen lines of code.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node RFC822 Message parsing, Base64 encoding/decoding, Slot with validator, Library modules
+@node Comparing version numbers, RFC822 Message parsing, Slot with validator, Library modules
+@section @code{gauche.version} - Comparing version numbers
+@c NODE バージョン番号の比較, @code{gauche.version} - バージョン番号の比較
+
+@deftp {Module} gauche.version
+@mdindex gauche.version
+@c EN
+This module provides a convenient procedure to compare
+@emph{version numbers} or @emph{revision numbers},
+such as "@code{0.5.1}", "@code{3.2-3}" or "@code{8.2pl1}".
+Usually each release of software component has
+a version number, and you can define order between them.
+For example, version "1.2.3" is newer than "1.2" and
+older than "2.1".   You can compare those version numbers like this:
+@c JP
+このモジュールは、バージョン番号(リリース番号)を比較する便利な手続きを提供します。
+ここでのバージョン番号とはソフトウェアのリリースにつけられる
+"@code{0.5.1}"、"@code{3.2-3}"、"@code{8.2pl1}"といった文字列で、
+通常これらの番号間には順序関係が定義できます。
+例えば "1.2.3" は "1.2" より新しいが "2.1" より古い、といった具合です。
+以下のようにこれらの文字列の順序を比較することができるようになります。
+@c COMMON
+
+@example
+(version<? "2.2.3" "2.2.11")     @result{} #t
+(version<? "2.3.1" "2.3")        @result{} #f
+(version<? "2.3.1-1" "2.3.1-10") @result{} #t
+(version<? "13a" "5b")           @result{} #f
+@end example
+
+@c EN
+There are no standard way to name versions, so I chose
+one convention.   This won't work for all possible
+variations, but I think it covers typical cases.
+@c JP
+バージョン番号の付け方には特に標準というものはありませんが、
+よく使われている方法を採用しました。全ての場合に使えるとはいきませんが、
+大抵の場合はカバーできるのではないかと思います。
+@c COMMON
+
+@c EN
+Strictly speaking, you can only define partial order between
+version numbers, for there can be branches.   This module
+uses simple measure and just assumes the version numbers
+can be fully ordered.
+@c JP
+厳密に言えば、分岐などの場合があるのでバージョン番号間の関係は半順序関係にしかなりません。
+このモジュールでは単純な定義を使って、全順序関係があるものとして扱います。
+@c COMMON
+
+@c EN
+The version number here is defined by the following syntax.
+@c JP
+まず、ここでのバージョン番号は以下の構文に従うものとします。
+@c COMMON
+@example
+ <version> : <principal-release>
+           | <version> <post-subrelease>
+           | <version> <pre-subrelease>
+ <principal-release> : <relnum>
+ <post-subrelease>   : [.-] <relnum>
+ <pre-subrelease>    : _ <relnum>
+ <relnum>            : [0-9A-Za-z]+
+@end example
+
+@c EN
+Typically @code{<relnum>} is composed by numeric part and extension part.
+For example, "23a" is composed by an integer 23 and extension "a".
+If @code{<relnum>} doesn't begins with digits, we assume its
+numeric part is -1.
+@c JP
+通常@code{<relnum>}は数字部分と、それに続く省略可能な拡張部分とからなります。
+例えば "@code{23a}" は数字部分23と拡張部分"@code{a}"からなります。
+もし@code{<relnum>}が数字で始まらない場合、その数字部分は-1であると考えることにします。
+@c COMMON
+
+@c EN
+Then, the order of @code{<relnum>} is defined as follows:
+@c JP
+@code{<relnum>}の順序関係を次のように定義します。
+@c COMMON
+@enumerate
+@item
+@c EN
+If relnum A and relnum B have different numeric part, we ignore the
+extension and order them numerically, e.g.  "@code{3b}" < "@code{4a}".
+@c JP
+relnum Aとrelnum Bが異なる数字部分を持っている場合、拡張部分を無視して
+数字部分を数値として比較します。例："@code{3b}" < "@code{4a}"。
+@c COMMON
+@item
+@c EN
+If relnum A and relnum B have the same numeric part, we compare
+extension by alphabetically, e.g.  "@code{4c}" < "@code{4d}"
+and "@code{5}" < "@code{5a}".
+@c JP
+relnum Aとrelnum Bの数字部分が等しい場合、拡張部分を辞書順に比較します。
+例："@code{4c}" < "@code{4d}"、"@code{5}" < "@code{5a}"。
+@c COMMON
+@end enumerate
+
+@c EN
+Given the order of @code{<relnum>}, the order of version numbers
+are defined as follows:
+@c JP
+@code{<relnum>}間の順序が定義できたところで、バージョン番号の順序を次のように定義します。
+@c COMMON
+@enumerate
+@item
+Decompose each version number into a list of @code{<principal-release>} and
+subsequence subrelease components.   We call each element of
+the list "release components".
+@item
+If the first release component of both lists are the same,
+remove it from both.  Repeat this until the head of the lists differ.
+@item
+Now we have the following cases.
+@enumerate
+@item
+Both lists are empty: versions are the same.
+@item
+One list (A) is empty and the other list (B) has post-subrelease
+at head: A is prior to B
+@item
+One list (A) is empty and the other list (B) has pre-subrelease
+at head: B is prior to A
+@item
+List A's head is post-subrelease and list B's head is
+pre-subrelease: B is prior to A
+@item
+Both lists have post-subrelease or pre-subrelease at head:
+compare their relnums.
+@end enumerate
+@end enumerate
+
+Here are some examples:
+@example
+"1" < "1.0" < "1.1" < "1.1.1" < "1.1.2" < "1.2" < "1.11"
+"1.2.3" < "1.2.3-1" < "1.2.4"
+"1.2.3" < "1.2.3a" < "1.2.3b"
+"1.2_rc0" < "1.2_rc1" < "1.2" < "1.2-pl1" < "1.2-pl2"
+"1.1-patch112" < "1.2_alpha"
+@end example
+
+The reason of having @code{<pre-subrelease>} is to allow
+"release candidate" or "pre-release" version.
+@end deftp
+
+@defun version=? ver1 ver2
+@defunx version<? ver1 ver2
+@defunx version<=? ver1 ver2
+@defunx version>? ver1 ver2
+@defunx version>=? ver1 ver2
+Returns a boolean value depending on the order of two version number
+string @var{ver1} and @var{ver2}.  If the arguments contain invalid
+strings as the defined version number, an error is signalled.
+@end defun
+
+@defun version-compare ver1 ver2
+Compares two version number strings @var{ver1} and @var{ver2},
+and returns either -1, 0, or 1, depending whether @var{ver1} is
+prior to @var{ver2}, @var{ver1} is the same as @var{ver2}, or
+@var{ver1} is after @var{ver2}, respectively.
+@end defun
+
+@defun relnum-compare rel1 rel2
+This is lower-level procedure of @code{version-compare}.  Compares
+two release numbers (relnums) @var{rel1} and @var{rel2}, 
+and returns either -1, 0, or 1 depending whether  @var{rel1} is
+prior to @var{rel2}, @var{rel1} is the same as @var{rel2}, or
+@var{rel1} is after @var{rel2}, respectively.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node RFC822 Message parsing, Base64 encoding/decoding, Comparing version numbers, Library modules
 @section @code{rfc.822} - RFC822 message parsing
 @c NODE RFC822メッセージ形式, @code{rfc.822} - RFC822メッセージ形式
 
