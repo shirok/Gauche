@@ -1,5 +1,13 @@
 2004-05-31  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/net.ac: avoid checking getprotobyname_r etc on NetBSD,
+	  since these are not supposed to be used by user programs on the
+	  current NetBSD.  (Patch from MINOURA Makoto)
+	* ext/net/netdb.c (Scm_GetHostByAddr): fix for referring a wrong
+	  preprocessor symbol (Patch from MINOURA Makoto)
+	* doc/extract (filter pattern-in pattern-out): fix for breaking
+	  dirs entry (Patch from MINOURA Makoto).
+
 	* ext/Makefile.ext.in (install-std): use gauche-install to install
 	  extension files instead of @INSTALL@.  It can be
 	  $(top_srcdir)/install-sh as a fallback, but $(top_srcdir) isn't
