@@ -1,7 +1,7 @@
 /*
  * net.c - network interface
  *
- *  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
  *
  *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: net.c,v 1.17 2002-04-26 10:26:08 shirok Exp $
+ *  $Id: net.c,v 1.18 2002-04-29 03:07:38 shirok Exp $
  */
 
 #include "net.h"
@@ -119,7 +119,7 @@ ScmObj Scm_SocketClose(ScmSocket *s)
     return SCM_TRUE;
 }
 
-ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffered)
+ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffering)
 {
     if (sock->inPort == NULL) {
         if (sock->status < SCM_SOCKET_STATUS_CONNECTED) {
@@ -128,13 +128,12 @@ ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffered)
         }
         sock->inPort = SCM_PORT(Scm_MakePortWithFd(SCM_MAKE_STR("(socket input)"),
                                                    SCM_PORT_INPUT,
-                                                   sock->fd,
-                                                   buffered ? SCM_PORT_BUFFER_FULL : SCM_PORT_BUFFER_NONE, FALSE));
+                                                   sock->fd, buffering, FALSE));
     }
     return SCM_OBJ(sock->inPort);
 }
 
-ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffered)
+ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffering)
 {
     if (sock->outPort == NULL) {
         if (sock->status < SCM_SOCKET_STATUS_CONNECTED) {
@@ -143,8 +142,7 @@ ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffered)
         }
         sock->outPort = SCM_PORT(Scm_MakePortWithFd(SCM_MAKE_STR("(socket output)"),
                                                     SCM_PORT_OUTPUT,
-                                                    sock->fd,
-                                                    buffered ? SCM_PORT_BUFFER_FULL:SCM_PORT_BUFFER_NONE, FALSE));
+                                                    sock->fd, buffering, FALSE));
     }
     return SCM_OBJ(sock->outPort);
 }

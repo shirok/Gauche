@@ -1,3 +1,10 @@
+2002-04-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c, src/extlib.stub : added buffering mode keyword argument
+	  to open-input-port and open-output-port.  added Scheme-level API
+	  to get/set port buffering mode.
+	* ext/net/* : adapted to the new port buffering mode API.
+
 2002-04-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/common-macros.scm, src/gauche-init.scm : experimentally

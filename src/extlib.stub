@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.141 2002-04-27 08:05:34 shirok Exp $
+;;; $Id: extlib.stub,v 1.142 2002-04-29 03:07:38 shirok Exp $
 ;;;
 
 "
@@ -820,6 +820,34 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
      case SCM_PORT_ISTR: type = sym_string; break;
    }
    SCM_RETURN(type);")
+
+;; NB: these are also in stdlib.stub -- can we merge them?
+(define-keyword full "key_full")
+(define-keyword line "key_line")
+(define-keyword modest "key_modest")
+(define-keyword none "key_none")
+(define-cproc port-buffering (port)
+  (assert (port? port))
+  "if (SCM_PORT_TYPE(port) != SCM_PORT_FILE) SCM_RETURN(SCM_FALSE);
+  switch (port->src.buf.mode) {
+    case SCM_PORT_BUFFER_FULL: SCM_RETURN(key_full);
+    case SCM_PORT_BUFFER_NONE: SCM_RETURN(key_none);
+    default: if (SCM_IPORTP(port)) SCM_RETURN(key_modest);
+             else SCM_RETURN(key_line);
+  }"
+  (setter (port mode)
+    (assert (port? port))
+    "if (SCM_PORT_TYPE(port) != SCM_PORT_FILE) {
+       Scm_Error(\"can't set buffering mode to non-buffered port: %S\", port);
+     }
+     if (SCM_EQ(mode, key_full)) port->src.buf.mode = SCM_PORT_BUFFER_FULL;
+     else if (SCM_EQ(mode, key_modest) || SCM_EQ(mode, key_line)) {
+       port->src.buf.mode = SCM_PORT_BUFFER_LINE;
+     }
+     else if (SCM_EQ(mode, key_none)) port->src.buf.mode = SCM_PORT_BUFFER_NONE;
+     else Scm_Error(\"buffering mode must be one of :full, :modest, :line or :none, but got %S\", mode);
+     SCM_RETURN(SCM_UNDEFINED);")
+  )
 
 ;; transfer units for copy-port
 (define-symbol char "sym_char")

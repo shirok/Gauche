@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.59 2002-04-28 01:02:38 shirok Exp $
+ *  $Id: port.c,v 1.60 2002-04-29 03:07:38 shirok Exp $
  */
 
 #include <unistd.h>
@@ -26,7 +26,7 @@
 #define MIN(a, b) ((a)<(b)? (a) : (b))
 
 /*================================================================
- * Common
+ * Class stuff
  */
 
 static void port_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
@@ -37,6 +37,10 @@ static void bufport_flush(ScmPort*, int);
 static int file_closer(ScmPort *p);
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_PortClass, port_print);
+
+/*================================================================
+ * Common
+ */
 
 /* Cleaning up:
  *   The underlying file descriptor/stream may be closed when the port
@@ -1209,7 +1213,7 @@ static int file_fileno(ScmPort *p)
     return (int)p->src.buf.data;
 }
 
-ScmObj Scm_OpenFilePort(const char *path, int flags, int mode)
+ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
 {
     int fd, dir = 0;
     ScmObj p;
@@ -1218,9 +1222,11 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int mode)
     if ((flags & O_ACCMODE) == O_RDONLY) dir = SCM_PORT_INPUT;
     else if ((flags & O_ACCMODE) == O_WRONLY) dir = SCM_PORT_OUTPUT;
     else Scm_Error("unsupported file access mode %d to open %s", flags&O_ACCMODE, path);
-    fd = open(path, flags, mode);
+    if (buffering < SCM_PORT_BUFFER_FULL || buffering > SCM_PORT_BUFFER_NONE)
+        Scm_Error("bad buffering flag: %d", buffering);
+    fd = open(path, flags, perm);
     if (fd < 0) return SCM_FALSE;
-    bufrec.mode = SCM_PORT_BUFFER_FULL;
+    bufrec.mode = buffering;
     bufrec.buffer = NULL;
     bufrec.size = 0;
     bufrec.filler = file_filler;
