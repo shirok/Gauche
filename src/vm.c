@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.165 2002-07-29 18:50:31 shirok Exp $
+ *  $Id: vm.c,v 1.166 2002-07-31 22:09:12 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1621,7 +1621,7 @@ ScmObj Scm_Eval(ScmObj expr, ScmObj e)
     } else {
         v = compile_for_eval(expr, SCM_MODULE(e), theVM->module);
     }
-    if (theVM->compilerFlags & SCM_COMPILE_SHOWRESULT) {
+    if (SCM_VM_COMPILER_FLAG_IS_SET(theVM, SCM_COMPILE_SHOWRESULT)) {
         Scm_Printf(theVM->curerr, "== %#S\n", v);
     }
     return user_eval_inner(v);
@@ -1838,6 +1838,7 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
     ScmObj hp;
 
     if (ep) {
+        /* There's a escape point defined by with-error-handler */
         ScmObj target, current;
         ScmObj result, rvals[SCM_VM_MAX_VALUES];
         int numVals, i;
@@ -1862,12 +1863,11 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
         vm->numVals = numVals;
         vm->val0 = result;
         vm->cont = ep->cont;
-    } else {
-        if (SCM_PROCEDUREP(vm->defaultEscapeHandler)) {
-            Scm_Apply(vm->defaultEscapeHandler, SCM_LIST1(e));
-        } else {
-            Scm_ReportError(e);
+        if (ep->errorReporting) {
+            SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
         }
+    } else {
+        Scm_ReportError(e);
         /* unwind the dynamic handlers */
         SCM_FOR_EACH(hp, vm->handlers) {
             ScmObj proc = SCM_CDAR(hp);
@@ -1912,8 +1912,8 @@ ScmObj Scm_VMThrowException(ScmObj exception)
 {
     ScmVM *vm = theVM;
     ScmEscapePoint *ep = vm->escapePoint;
-    
-    vm->runtimeFlags &= ~SCM_ERROR_BEING_HANDLED;
+
+    SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_HANDLED);
 
     if (vm->exceptionHandler != DEFAULT_EXCEPTION_HANDLER) {
         vm->val0 = Scm_Apply(vm->exceptionHandler, SCM_LIST1(exception));
@@ -1950,14 +1950,19 @@ static ScmObj install_ehandler(ScmObj *args, int nargs, void *data)
     ScmVM *vm = theVM;
     vm->exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
     vm->escapePoint = ep;
+    SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_REPORTED);
     return SCM_UNDEFINED;
 }
 
 static ScmObj discard_ehandler(ScmObj *args, int nargs, void *data)
 {
     ScmEscapePoint *ep = (ScmEscapePoint *)data;
-    theVM->escapePoint = ep->prev;
-    theVM->exceptionHandler = ep->xhandler;
+    ScmVM *vm = theVM;
+    vm->escapePoint = ep->prev;
+    vm->exceptionHandler = ep->xhandler;
+    if (ep->errorReporting) {
+        SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
+    }
     return SCM_UNDEFINED;
 }
 
@@ -1978,6 +1983,8 @@ ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk)
     ep->cstack = vm->cstack;
     ep->xhandler = vm->exceptionHandler;
     ep->cont = vm->cont;
+    ep->errorReporting =
+        SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED);
     
     vm->escapePoint = ep; /* This will be done in install_ehandler, but
                              make sure ep is visible from save_cont

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: error.c,v 1.36 2002-07-05 02:57:00 shirok Exp $
+ *  $Id: error.c,v 1.37 2002-07-31 22:09:11 shirok Exp $
  */
 
 #include <errno.h>
@@ -21,6 +21,7 @@
 #include "gauche.h"
 #include "gauche/class.h"
 #include "gauche/exception.h"
+#include "gauche/vm.h"
 
 /*-----------------------------------------------------------
  * Exception class hierarchy
@@ -111,13 +112,14 @@ void Scm__InitExceptions(void)
 void Scm_Error(const char *msg, ...)
 {
     ScmObj e;
+    ScmVM *vm = Scm_VM();
     va_list args;
 
-    if (Scm_VM()->runtimeFlags & SCM_ERROR_BEING_HANDLED) {
+    if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_HANDLED)) {
         e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
         Scm_VMThrowException(e);
     }
-    Scm_VM()->runtimeFlags |= SCM_ERROR_BEING_HANDLED;
+    SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_HANDLED);
     
     SCM_UNWIND_PROTECT {
         ScmObj ostr = Scm_MakeOutputStringPort();
@@ -245,9 +247,8 @@ void Scm_FWarn(ScmString *fmt, ScmObj args)
 
 #define STACK_DEPTH_LIMIT 30
 
-void Scm_ReportError(ScmObj e)
+static void report_error_inner(ScmVM *vm, ScmObj e)
 {
-    ScmVM *vm = Scm_VM();
     ScmObj stack = Scm_VMGetStackLite(vm), cp;
     ScmPort *err = SCM_VM_CURRENT_ERROR_PORT(vm);
     int depth = 0;
@@ -260,7 +261,6 @@ void Scm_ReportError(ScmObj e)
         SCM_PUTZ("*** ERROR: unhandled exception: ", -1, err);
         Scm_Printf(SCM_PORT(err), "%S\n", e);
     }
-    
     SCM_PUTZ("Stack Trace:\n", -1, err);
     SCM_PUTZ("_______________________________________\n", -1, err);
     SCM_FOR_EACH(cp, stack) {
@@ -285,5 +285,40 @@ void Scm_ReportError(ScmObj e)
     /* NB: stderr is autoflushed by default, but in case err is replaced
        by some other port, we explicitly flush it. */
     SCM_FLUSH(err);
+}
+
+void Scm_ReportError(ScmObj e)
+{
+    ScmVM *vm = Scm_VM();
+
+    if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED)) {
+        /* An _uncaptured_ error occurred during reporting an error.
+           We can't proceed, for it will cause infinite loop.
+           Note that tt is OK for an error to occur inside the error
+           reporter, as far as the error is handled by user-installed
+           handler.   The user-installed handler can even invoke a
+           continuation that is captured outside; the flag is reset
+           in such case. 
+           Be careful that it is possible that stderr is no longer
+           available here (since it may be the very cause of the
+           recursive error).  All we can do is to abort. */
+        Scm_Abort("Unhandled error occurred during reporting an error.  Process aborted.\n");
+    }
+
+    SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
+    SCM_UNWIND_PROTECT {
+        if (SCM_PROCEDUREP(vm->defaultEscapeHandler)) {
+            Scm_Apply(vm->defaultEscapeHandler, SCM_LIST1(e));
+        } else {
+            report_error_inner(vm, e);
+        }
+    }
+    SCM_WHEN_ERROR {
+        /* NB: this is called when a continuation captured outside is
+           invoked inside the error reporter.   It may be invoked by
+           the user's error handler.  */
+        SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_REPORTED);
+    }
+    SCM_END_PROTECT;
 }
 

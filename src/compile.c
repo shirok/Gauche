@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.80 2002-05-12 11:33:39 shirok Exp $
+ *  $Id: compile.c,v 1.81 2002-07-31 22:09:11 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -411,7 +411,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                         void *data = SCM_SYNTAX(gv)->data;
                         return cmpl(form, env, ctx, data);
                     }
-                    if (!(vm->compilerFlags & SCM_COMPILE_NOINLINE) &&
+                    if (!(SCM_VM_COMPILER_FLAG_IS_SET(vm, SCM_COMPILE_NOINLINE)) &&
                         SCM_SUBRP(g->value) && SCM_SUBR_INLINER(gv)) {
                         ScmObj inlined
                             = SCM_SUBR_INLINER(gv)(SCM_SUBR(g->value),

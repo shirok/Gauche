@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.33 2002-07-18 10:45:32 shirok Exp $
+ *  $Id: write.c,v 1.34 2002-07-31 22:09:12 shirok Exp $
  */
 
 #include <stdio.h>
@@ -58,7 +58,7 @@ static const char *char_names[] = {
 
 /* VM-default case mode */
 #define DEFAULT_CASE \
-   ((Scm_VM()->runtimeFlags&SCM_CASE_FOLD)? \
+   (SCM_VM_RUNTIME_FLAG_IS_SET(Scm_VM(), SCM_CASE_FOLD)? \
     SCM_WRITE_CASE_FOLD:SCM_WRITE_CASE_NOFOLD)
 
 static inline int outlen(ScmPort *out)

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.73 2002-07-09 10:39:32 shirok Exp $
+ *  $Id: vm.h,v 1.74 2002-07-31 22:09:12 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -158,6 +158,10 @@ typedef struct ScmEscapePointRec {
     ScmObj handlers;            /* saved dynamic handler chain */
     ScmCStack *cstack;          /* C stack */
     ScmObj xhandler;            /* saved exception handler */
+    int errorReporting;         /* state of SCM_VM_ERROR_REPORTING flag
+                                   when this ep is captured.  The flag status
+                                   should be restored when the control
+                                   transferred to this escape point. */
 } ScmEscapePoint;
 
 
@@ -386,10 +390,15 @@ SCM_EXTERN ScmObj Scm_VMInsnInspect(ScmObj obj);
  * Runtime flags
  */
 enum {
-    SCM_ERROR_BEING_HANDLED = (1L<<0), /* we're in an error handler */
-    SCM_LOAD_VERBOSE        = (1L<<1), /* report loading files */
-    SCM_CASE_FOLD           = (1L<<2)  /* symbols are case insensitive */
+    SCM_ERROR_BEING_HANDLED  = (1L<<0), /* we're in an error handler */
+    SCM_ERROR_BEING_REPORTED = (1L<<1), /* we're in an error reporter */
+    SCM_LOAD_VERBOSE         = (1L<<2), /* report loading files */
+    SCM_CASE_FOLD            = (1L<<3)  /* symbols are case insensitive */
 };
+
+#define SCM_VM_RUNTIME_FLAG_IS_SET(vm, flag) ((vm)->runtimeFlags & (flag))
+#define SCM_VM_RUNTIME_FLAG_SET(vm, flag)    ((vm)->runtimeFlags |= (flag))
+#define SCM_VM_RUNTIME_FLAG_CLEAR(vm, flag)  ((vm)->runtimeFlags &= ~(flag))
 
 /*
  * C-continuation
@@ -433,5 +442,9 @@ enum {
     SCM_COMPILE_NOSOURCE = (1L<<1), /* Do not insert source info */
     SCM_COMPILE_SHOWRESULT = (1L<<2) /* Display each result of compilation */
 };
+
+#define SCM_VM_COMPILER_FLAG_IS_SET(vm, flag) ((vm)->compilerFlags & (flag))
+#define SCM_VM_COMPILER_FLAG_SET(vm, flag)    ((vm)->compilerFlags |= (flag))
+#define SCM_VM_COMPILER_FLAG_CLEAR(vm, flag)  ((vm)->compilerFlags &= ~(flag))
 
 #endif /* GAUCHE_VM_H */

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.44 2002-07-17 07:16:00 shirok Exp $
+ *  $Id: core.c,v 1.45 2002-07-31 22:09:11 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -126,12 +126,6 @@ void Scm_Exit(int code)
     exit(code);
 }
 
-void Scm_Abort(const char *msg)
-{
-    fprintf(stderr, "%s\n", msg);
-    _exit(1);
-}
-
 void Scm_Panic(const char *msg, ...)
 {
     va_list args;
@@ -140,6 +134,14 @@ void Scm_Panic(const char *msg, ...)
     va_end(args);
     fputc('\n', stderr);
     fflush(stderr);
+    _exit(1);
+}
+
+/* Use this for absolute emergency.  Newline is not attached to msg. */
+void Scm_Abort(const char *msg)
+{
+    int size = strlen(msg);
+    write(2, msg, size); /* this may return an error, but we don't care */
     _exit(1);
 }
 

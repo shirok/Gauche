@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.50 2002-07-14 05:54:46 shirok Exp $
+ *  $Id: read.c,v 1.51 2002-07-31 22:09:11 shirok Exp $
  */
 
 #include <stdio.h>
@@ -107,7 +107,7 @@ static void read_context_init(ScmReadContext *ctx)
 {
     ctx->flags = SCM_READ_SOURCE_INFO;
     ctx->table = NULL;
-    if (Scm_VM()->runtimeFlags & SCM_CASE_FOLD) {
+    if (SCM_VM_RUNTIME_FLAG_IS_SET(Scm_VM(), SCM_CASE_FOLD)) {
         ctx->flags |= SCM_READ_CASE_FOLD;
     }
 }

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.58 2002-07-18 11:25:36 shirok Exp $
+ *  $Id: main.c,v 1.59 2002-07-31 22:09:11 shirok Exp $
  */
 
 #include <unistd.h>
@@ -73,20 +73,21 @@ void version(void)
 
 void further_options(const char *optarg)
 {
+    ScmVM *vm = Scm_VM();
     if (strcmp(optarg, "no-inline") == 0) {
-        Scm_VM()->compilerFlags |= SCM_COMPILE_NOINLINE;
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE);
     }
     else if (strcmp(optarg, "debug-compiler") == 0) {
-        Scm_VM()->compilerFlags |= SCM_COMPILE_SHOWRESULT;
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_SHOWRESULT);
     }
     else if (strcmp(optarg, "no-source-info") == 0) {
-        Scm_VM()->compilerFlags |= SCM_COMPILE_NOSOURCE;
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOSOURCE);
     }
     else if (strcmp(optarg, "load-verbose") == 0) {
-        Scm_VM()->runtimeFlags |= SCM_LOAD_VERBOSE;
+        SCM_VM_RUNTIME_FLAG_SET(vm, SCM_LOAD_VERBOSE);
     }
     else if (strcmp(optarg, "case-fold") == 0) {
-        Scm_VM()->runtimeFlags |= SCM_CASE_FOLD;
+        SCM_VM_RUNTIME_FLAG_SET(vm, SCM_CASE_FOLD);
     }
     else if (strcmp(optarg, "compat-0.5") == 0) {
         srfi22_mode = FALSE;
