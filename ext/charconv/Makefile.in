@@ -32,7 +32,7 @@ convlib.c : convlib.stub
 test : all
 	@cd data; $(MAKE) all
 	@rm -f test.log
-	$(GOSH) test.scm > test.log
+	$(GOSH) -I. test.scm > test.log
 
 install : all
 	@for f in $(HEADERS) _end; do \

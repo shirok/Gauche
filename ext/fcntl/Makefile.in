@@ -30,7 +30,7 @@ fcntlib.c : fcntlib.stub
 
 test : all
 	@rm -f test.log
-	$(GOSH) test.scm > test.log
+	$(GOSH) -I. test.scm > test.log
 
 install : all
 	@for f in $(HEADERS) _end; do \

@@ -105,7 +105,7 @@ gauche/arch.h : Makefile
 test : gosh
 	@rm -f test.log
 	@for testfile in $(TESTFILES); do \
-	  ./gosh $$testfile >> test.log; \
+	  ./gosh -fin-place $$testfile >> test.log; \
 	done
 	@echo "See test.log for details."
 

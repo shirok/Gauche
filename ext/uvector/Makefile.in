@@ -46,7 +46,7 @@ uvlib.stub : uvlib.stub.sh
 
 test : all
 	@rm -f test.log
-	$(GOSH) test.scm > test.log
+	$(GOSH) -I. test.scm > test.log
 
 install : all
 	@for f in gauche/$(HEADERS) _end; do \
