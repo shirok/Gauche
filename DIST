@@ -15,7 +15,6 @@ while [ $# -gt 0 ]; do
     test) test=yes; shift ;;
     testcode) testcode=yes; shift ;;
     testclean) testclean=yes; shift ;;
-    libtool-update) libtool_update=yes; shift ;;
     rpm)  rpm=yes; shift;;
     *) echo "DIST [doc][docs][tgz][test][testclean][rpm]"; exit 0;;
   esac
@@ -26,22 +25,18 @@ if [ "$gen" = "yes" ]; then
   (cd gc; autoconf)
 fi
 
-# should be used rarely
-if [ "$libtool_update" = "yes" ]; then
-  libtoolize --copy --force
-fi
-
 if [ "$tgz" = "yes" ]; then
-  if [ -f Makefile ]; then make realclean; fi
-  ./configure --enable-threads=pthreads
+  if [ -f Makefile ]; then make maintainer-clean; fi
+  ./configure --enable-threads=pthreads -C
   (cd src; for stub in *.stub; do make `echo $stub | sed 's/\.stub/.c/'` ; done)
-  (cd ext/charconv/; make GOSH=/usr/local/bin/gosh eucj2ucs.c)
-  (cd ext/charconv/; make GOSH=/usr/local/bin/gosh guess_tab.c)
+  (cd ext/charconv/; make GOSH=gosh eucj2ucs.c)
+  (cd ext/charconv/; make GOSH=gosh guess_tab.c)
   (cd ext/charconv/data; make)
   (cd doc; make texi)
   make distclean
 
   VERSION=`cat VERSION`
+  if [ -z "VERSION" ]; then echo "No VERSION; something wrong?"; exit 1; fi
   rm -rf ../Gauche-$VERSION
 
   rm -f DIST_EXCLUDE_X
@@ -54,10 +49,10 @@ if [ "$tgz" = "yes" ]; then
   mkdir ../Gauche-$VERSION
   tar cvfX - DIST_EXCLUDE_X . | (cd ../Gauche-$VERSION; tar xf -)
   (cd ..; tar cvf - Gauche-$VERSION | gzip -9 > Gauche-$VERSION.tgz)
-  if [ -d $TGZ_DEST ]; then
-    mv ../Gauche-$VERSION.tgz $TGZ_DEST
-    cp ChangeLog $CHANGELOG_DEST
-  fi
+#  if [ -d $TGZ_DEST ]; then
+#    mv ../Gauche-$VERSION.tgz $TGZ_DEST
+#    cp ChangeLog $CHANGELOG_DEST
+#  fi
 fi
 
 if [ "$doc" = "yes" ]; then

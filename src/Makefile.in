@@ -120,7 +120,7 @@ OBJECTS = $(libgauche_la_OBJECTS) $(gosh_OBJECTS)
 
 all : gosh$(EXEEXT) libgauche.la
 
-gosh$(EXEEXT) : $(gosh_OBJECTS) libgauche.la
+gosh$(EXEEXT) : libgauche.la $(gosh_OBJECTS) 
 	@rm -f gosh$(EXEEXT)
 	$(LINK) $(gosh_LDFLAGS) $(gosh_OBJECTS) $(gosh_LDADD) $(LIBS)
 

@@ -67,14 +67,10 @@ fi
 GC_CFLAGS=${gc_cflags}
 AC_SUBST(GC_CFLAGS)
 
+dnl [SK: changed from original so that the thread flag is in sync with
+dnl  whatever given to the toplevel configure]
 AC_ARG_ENABLE(threads, [  --enable-threads=TYPE   choose threading package],
-  THREADS=$enableval,
-  [ AC_MSG_CHECKING([for thread model used by GCC])
-    THREADS=`$CC -v 2>&1 | sed -n 's/^Thread model: //p'`
-    if test -z "$THREADS"; then
-      THREADS=no
-    fi
-    AC_MSG_RESULT([$THREADS])])
+  THREADS=$enableval, THREADS=no)
 
 AC_ARG_ENABLE(parallel-mark,
 [  --enable-parallel-mark	parallelize marking and free list construction],

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: core.c,v 1.48 2003-03-29 21:13:31 shirok Exp $
+ *  $Id: core.c,v 1.49 2003-04-22 10:36:42 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -180,3 +180,15 @@ void Scm_GCSentinel(void *obj, const char *name)
 {
     Scm_RegisterFinalizer(SCM_OBJ(obj), gc_sentinel, (void*)name);
 }
+
+/*
+ * When creating DLL under Cygwin, we need the following dummy main()
+ * or we get "undefined reference _WinMain@16" error.
+ * (See cygwin FAQ, http://cygwin.com/faq/)
+ */
+#ifdef __CYGWIN__
+int main(void)
+{
+    return 0;
+}
+#endif /*__CYGWIN__*/

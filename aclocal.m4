@@ -11,41 +11,29 @@ dnl even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 dnl PARTICULAR PURPOSE.
 
 dnl Gauche-specific aucotonf macros.
-dnl $Id: aclocal.m4,v 1.16 2003-04-21 21:57:41 shirok Exp $
+dnl $Id: aclocal.m4,v 1.17 2003-04-22 10:36:15 shirok Exp $
 
 dnl AC_GAUCHE_INIT_EXT
-dnl   Sets some parameters about installed Gauche package.  This macro checks
-dnl   if you're configuring within Gauche source tree or as an individual
-dnl   extension package, and sets up the following macros appropriately.
+dnl   Sets some parameters about installed Gauche package. 
 dnl
 dnl    GAUCHE_CONFIG   - Name of gauche-config script
-dnl    GAUCHE_TOP      - Directory prefix where Gauche is installed, or
-dnl                      empty if this is an individual extension.
+dnl    GAUCHE_TOP      - [OBSOLETED] Directory prefix where Gauche is
+dnl                      installed, or empty if this is an individual
+dnl                      extension.
 dnl    GAUCHE_INC      - '-I' macros required to compile extensions.
 dnl    GAUCHE_LIB      - '-L' macros required to link extensions.
-dnl    GOSH            - Name of gosh executable, possibly including
-dnl                      options to run it from the extension directory.
+dnl    GOSH            - Path of gosh executable
 dnl    GAUCHE_VERSION  - The version of Gauche.
 AC_DEFUN([AC_GAUCHE_INIT_EXT],
          [
-if test -f ../../src/gauche.h; then
-  GAUCHE_CONFIG="sh ../../src/gauche-config"
-  GAUCHE_TOP='../../'
-  GAUCHE_INC="-I../../src -I../../gc/include `$GAUCHE_CONFIG --local-incdir`"
-  GAUCHE_LIB="-L../../src"
-  GOSH="../../src/gosh -q -I../../src -I../../lib -lgauche-init"
-else
-  GAUCHE_CONFIG=gauche-config
-  GAUCHE_TOP=
-  GAUCHE_INC="`gauche-config -I`"
-  GAUCHE_LIB="`gauche-config -L`"
-  GOSH=gosh
-fi
-AC_SUBST(GAUCHE_CONFIG)
+AC_PATH_PROG([GOSH], gosh)
+AC_PATH_PROG([GAUCHE_CONFIG], gauche-config)
+GAUCHE_TOP=
+GAUCHE_INC="`gauche-config -I`"
+GAUCHE_LIB="`gauche-config -L`"
 AC_SUBST(GAUCHE_TOP)
 AC_SUBST(GAUCHE_INC)
-AC_SUBST(GOSH)
-
+AC_SUBST(GAUCHE_LIB)
 GAUCHE_VERSION=`$GAUCHE_CONFIG -V`
 AC_SUBST(GAUCHE_VERSION)
 AC_DEFINE_UNQUOTED(GAUCHE_VERSION, "$GAUCHE_VERSION")
@@ -120,6 +108,7 @@ AC_SUBST(LDFLAGS)
 ])
 
 dnl AC_GAUCHE_EXT_FIXUP(FILE [, MODULE])
+dnl   [OBSOLETED: Use gauche-config --fixup-extension instead]
 dnl   Sets the shell command to generate 'FILE_head.c' and 'FILE_tail.c',
 dnl   needed by some platforms for GC.  MODULE must be the extension
 dnl   module's name, and has to match the name given to the SCM_INIT_EXTENSION

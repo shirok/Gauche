@@ -1,5 +1,12 @@
 2003-04-21  Shiro Kawai  <shiro@acm.org>
 
+	* Makefile.in, acinclude.m4, aclocal.m4, configure.in, 
+	  gc/configure.in, ltmain.sh, gc/Makefile.am, src/Makefile.in,
+	  src/core.c : snapshot to make things work on cygwin (not quite, yet).
+
+	* doc/gauche-ref.texi : fix in srfi-37 description
+	  (patch from Grzegorz Chrupala).
+
 	* Makefile.am's, Makefile.in's, ext/Makefile.ext.in, DIST:
 	  Removed automake dependency.
 	* ltmain.sh, config.guess, config.sub, aclocal.m4 : added to

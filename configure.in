@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.85 2003-04-21 21:57:42 shirok Exp $
+dnl $Id: configure.in,v 1.86 2003-04-22 10:36:15 shirok Exp $
 AC_PREREQ(2.53)
 AC_INIT(Gauche, 0.7_pre2, shiro@acm.org)
-AC_REVISION($Revision: 1.85 $)
+AC_REVISION($Revision: 1.86 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h)
 
@@ -305,8 +305,16 @@ AC_SEARCH_LIBS(openpty, util, AC_DEFINE(HAVE_OPENPTY, 1, [Define if you have ope
 AC_SEARCH_LIBS(forkpty, util, AC_DEFINE(HAVE_FORKPTY, 1, [Define if you have forkpty]))
 
 dnl Checks if crypt() exists and whether it's in libc or libcrypt.
-AC_SEARCH_LIBS(crypt, crypt, HAVE_CRYPT=yes, HAVE_CRYPT=no)
-AC_DEFINE(HAVE_CRYPT,1,[Define if uses libcrypt])
+dnl Note: on cygwin, libcrypt is only available as a static library,
+dnl and prevents libgauche.dll from building.   We explicitly excludes it.
+dnl
+case $target in
+  *cygwin*)
+     AC_MSG_NOTICE([sys-crypt not available on cygwin]);;
+  *)
+     AC_SEARCH_LIBS(crypt, crypt, [
+        AC_DEFINE(HAVE_CRYPT,1,[Define if uses libcrypt])]);;
+esac
 
 dnl Checks if dlopen exists, and if it's in libc or libdl.
 AC_SEARCH_LIBS(dlopen, dl, HAVE_DLOPEN=yes, HAVE_DLOPEN=no)
@@ -495,13 +503,9 @@ if test $ac_cv_func_getservbyport_r != no; then
   AC_DEFINE_UNQUOTED(GETSERVBYPORT_R_NUMARGS, $ac_cv_func_getservbyport_r_nargs, [Define number of args getservbyport_r takes])
 fi
 
-
-dnl WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
-dnl This chunk of tests are kept only for backward compatbility of
-dnl pre-0.7 extensions.  Gauche main routine no longer use these.
-dnl Will disappear in a few releases.
 dnl
 dnl Checks compiler options for dynamic link and thread support.
+dnl This section will eventually replaced by libtool support.
 dnl
 dnl  SHLIB_SO_SUFFIX     Suffix of dlopen-able module.  most systems doesn't
 dnl                      have restriction for this.  default "so".
@@ -650,9 +654,6 @@ AC_SUBST(GOSH_LIBGAUCHE_FILES)
 AC_DEFINE_UNQUOTED(SHLIB_SO_SUFFIX, "$SHLIB_SO_SUFFIX",[Define to the suffix of dynamic loadable object])
 AC_MSG_RESULT($SHLIB_OK)
 
-dnl End of backward-compatibility test
-dnl WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
-
 dnl obtain some parameters from libtool
 AC_DEFINE_UNQUOTED(SCM_LIBTOOL_OBJDIR, "$objdir", [Directory where libtool places the compiled libraries])
 
@@ -665,7 +666,7 @@ GAUCHE_VERSION=$PACKAGE_VERSION
 AC_SUBST(GAUCHE_VERSION)
 AC_DEFINE_UNQUOTED(GAUCHE_VERSION, "$GAUCHE_VERSION",[Gauche version string])
 changequote(<<, >>)dnl
-GAUCHE_VERSION_TRUNC=`echo $VERSION | sed 's/[-_].*//'`
+GAUCHE_VERSION_TRUNC=`echo $GAUCHE_VERSION | sed 's/[-_].*//'`
 changequote([, ])dnl
 OLD_IFS=$IFS; IFS="."; set $GAUCHE_VERSION_TRUNC; IFS=$OLD_IFS
 GAUCHE_MAJOR_VERSION=$1
