@@ -1,6 +1,7 @@
 2004-10-03  Shiro Kawai  <shiro@acm.org>
 
-	* test/dynwind.scm : added a few tests (Patch from Ueyama Rui)
+	* src/port.c: removed dead code.
+	* test/dynwind.scm: added a few tests (Patch from Ueyama Rui)
 
 2004-09-20  Shiro Kawai  <shiro@acm.org>
 

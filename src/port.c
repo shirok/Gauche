@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.106 2004-09-20 13:27:15 shirok Exp $
+ *  $Id: port.c,v 1.107 2004-10-04 10:22:33 shirok Exp $
  */
 
 #include <unistd.h>
@@ -207,12 +207,6 @@ ScmObj Scm_PortName(ScmPort *port)
 int Scm_PortLine(ScmPort *port)
 {
     return port->line;
-}
-
-int Scm_PortPosition(ScmPort *port)
-{
-    /* TODO: WRITEME */
-    return -1;
 }
 
 static void port_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
