@@ -1,3 +1,8 @@
+2001-10-31  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.4.8
+	* doc/gauche-ref.texi : wrapping up the document.
+
 2001-10-29  Shiro Kawai  <shiro@acm.org>
 
 	* various files: adapted to LP64 architecture.
