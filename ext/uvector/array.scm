@@ -13,7 +13,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: array.scm,v 1.14 2004-11-22 10:42:01 shirok Exp $
+;;;  $Id: array.scm,v 1.15 2004-11-28 13:26:03 shirok Exp $
 ;;;
 
 ;; Conceptually, an array is a backing storage and a procedure to
@@ -488,7 +488,7 @@
                 ((constants coeffs)
                  (affine-proc->coeffs proc (size-of Vb)))
                 )
-    (make <array>
+    (make (class-of array)
       :start-vector Vb
       :end-vector   Ve
       :mapper (generate-shared-map (mapper-of array) constants coeffs)

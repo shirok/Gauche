@@ -1,3 +1,8 @@
+2004-11-27  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/array.scm (share-array): fix to support uniform arrays
+	  (pointed out by OGURISU Osamu).
+
 2004-11-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/core.c (Scm_Init): setting of GC_finalize_on_demand was
