@@ -315,6 +315,41 @@
           '("NONE" "ASCII" "EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
 
 ;;--------------------------------------------------------------------
+(test-section "call-with/conversion")
+
+(define (test-call-with file code)
+  (if (ces-conversion-supported? code (gauche-character-encoding))
+    (test* #`"call-with-input-conversion (,|code| -> ,(gauche-character-encoding))"
+           (file->string-conv/in #`",|file|.,code" code)
+           (string-complete->incomplete
+            (call-with-input-file #`",|file|.,code"
+              (lambda (p)
+                (call-with-input-conversion p port->string
+                                            :encoding code))))))
+  (if (ces-conversion-supported? (gauche-character-encoding) code)
+    (let ((s (call-with-input-file (format "~a.~a" file
+                                           (case (gauche-character-encoding)
+                                             ((euc-jp) "EUCJP")
+                                             ((sjis)   "SJIS")
+                                             ((utf-8)  "UTF-8")
+                                             ((none)   "UTF-8")))
+               port->string)))
+      (test* #`"call-with-output-conversion (,(gauche-character-encoding) -> ,|code|)"
+             (string-complete->incomplete
+              (ces-convert s (gauche-character-encoding) code))
+             (string-complete->incomplete
+              (call-with-output-string
+                (lambda (p)
+                  (call-with-output-conversion p
+                    (lambda (pp) (display s pp))
+                    :encoding code)))))))
+  )
+
+(dolist (file '("data/jp1" "data/jp2" "data/jp3" "data/jp4"))
+  (dolist (code '("EUCJP" "UTF-8" "SJIS" "ISO2022JP"))
+    (test-call-with file code)))
+
+;;--------------------------------------------------------------------
 (test-section "ucs <-> char")
 
 ;; this test is here since it requires gauche.charconv to be loaded.

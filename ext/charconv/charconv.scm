@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: charconv.scm,v 1.15 2003-07-05 03:29:10 shirok Exp $
+;;;  $Id: charconv.scm,v 1.16 2003-09-28 02:48:03 shirok Exp $
 ;;;
 
 (define-module gauche.charconv
@@ -44,6 +44,8 @@
           ces-convert
           wrap-with-input-conversion
           wrap-with-output-conversion
+          call-with-input-conversion
+          call-with-output-conversion
           open-input-file open-output-file
           call-with-input-file call-with-output-file
           with-input-from-file with-output-to-file
@@ -154,6 +156,33 @@
     (if (ces-upper-compatible? from-code to-code)
         port
         (apply open-output-conversion-port port to-code :owner? #t opts))))
+
+;; Call with conversion port
+(define (call-with-input-conversion port proc . opts)
+  (let-keywords* opts ((from-code :encoding (gauche-character-encoding))
+                       (bufsiz    :conversion-buffer-size 0))
+    (if (ces-upper-compatible? (gauche-character-encoding) from-code)
+      (proc port)
+      (let1 cvp (open-input-conversion-port port from-code
+                                            :owner? #f :buffer-size bufsiz)
+        (with-error-handler
+            (lambda (e) (close-input-port cvp) (raise e))
+          (lambda ()
+            (begin0 (proc cvp) (close-input-port cvp)))))
+      )))
+
+(define (call-with-output-conversion port proc . opts)
+  (let-keywords* opts ((to-code :encoding (gauche-character-encoding))
+                       (bufsiz  :conversion-buffer-size 0))
+    (if (ces-upper-compatible? (gauche-character-encoding) to-code)
+      (proc port)
+      (let1 cvp (open-output-conversion-port port to-code
+                                             :owner? #f :buffer-size bufsiz)
+        (with-error-handler
+            (lambda (e) (close-output-port cvp) (raise e))
+          (lambda ()
+            (begin0 (proc cvp) (close-output-port cvp)))))
+      )))
 
 ;; Replace system's open-*-file to accept :encoding option
 (define (open-input-file name . args)
