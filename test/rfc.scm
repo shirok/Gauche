@@ -83,6 +83,40 @@ Content-Length: 4349
 (test "decode" "BAR0er9" (lambda () (base64-decode-string "QkFS\r\nMGVyOQ\r\n==")))
 
 ;;--------------------------------------------------------------------
+(test-section "rfc.cookie")
+(use rfc.cookie)
+
+(test "parse, old" '(("foo" "bar")
+                     ("aaa" "bbb" :path "/a/b" :domain "a.b.com")
+                     ("x12" "Yy \"yY\" ;; Zz" :port "100, 200, 300")
+                     ("zzz" #f)
+                     ("_n_" "")
+                     ("mmm" "ppp"))
+      (lambda ()
+        (parse-cookie " foo=bar; aaa = bbb ; $Path=/a/b;$Domain =a.b.com;x12=\"Yy \\\"yY\\\" ;; Zz\"; $Port=\"100, 200, 300\";zzz ;_n_=;mmm=ppp")))
+
+(test "parse, new" '(("$Version" "1")
+                     ("foo" "bar")
+                     ("aaa" "bbb" :path "/a/b" :domain "a.b.com")
+                     ("x12" "Yy \"yY\" ;; Zz" :port "100, 200, 300")
+                     ("zzz" #f)
+                     ("_n_" "")
+                     ("mmm" "ppp"))
+      (lambda ()
+        (parse-cookie "$Version=1; foo=bar, aaa = bbb ; $Path=/a/b;$Domain =a.b.com,x12=\"Yy \\\"yY\\\" ;; Zz\"; $Port=\"100, 200, 300\",zzz ,_n_=,mmm=ppp")))
+
+(test "parse, new" '(("foo" "bar")
+                     ("aaa" "bbb" :path "/a/b" :domain "a.b.com")
+                     ("x12" "Yy \"yY\" ;; Zz" :port "100, 200, 300")
+                     ("zzz" #f)
+                     ("_n_" "")
+                     ("mmm" "ppp"))
+      (lambda ()
+        (parse-cookie " foo=bar, aaa = bbb ; $Path=/a/b;$Domain =a.b.com,x12=\"Yy \\\"yY\\\" ;; Zz\"; $Port=\"100, 200, 300\",zzz ,_n_=,mmm=ppp"
+                      1)))
+
+
+;;--------------------------------------------------------------------
 (test-section "rfc.uri")
 (use rfc.uri)
 
@@ -98,6 +132,8 @@ Content-Length: 4349
       (lambda ()
         (uri-decode-string "abc%3c+%3e+%22+%23%25%3f%7b%7c%7d%5c%5e"
                            :cgi-decode #t)))
+
+
 
 (test-end)
 
