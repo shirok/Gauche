@@ -1,3 +1,9 @@
+2003-05-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/vm/debugger.scm : removed dependency on gauche.thread
+
+	* lib/util/lcs.scm : added lcs-fold and lcs-edit-list.
+
 2003-05-23  Shiro Kawai  <shiro@acm.org>
 
 	* ext/threads/thrlib.stub, src/extlib.stub : moved current-thread
