@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.20 2002-07-16 23:18:27 shirok Exp $
+ *  $Id: signal.c,v 1.21 2002-07-17 05:35:38 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -519,6 +519,50 @@ ScmObj Scm_SysSigmask(int how, ScmSysSigset *newmask)
         Scm_Error("sigprocmask failed");
     }
     return SCM_OBJ(oldmask);
+}
+
+/*
+ * sigsuspend
+ */
+static void scm_sigsuspend(sigset_t *mask)
+{
+    sigset_t omask;
+    ScmVM *vm = Scm_VM();
+    for (;;) {
+        SIGPROCMASK(SIG_BLOCK, &sigHandlers.masterSigset, &omask);
+        if (vm->sigQueueTail != vm->sigQueueHead) {
+            SIGPROCMASK(SIG_SETMASK, &omask, NULL);
+            Scm_SigCheck(vm);
+            continue;
+        }
+        break;
+    }
+    sigsuspend(mask);
+    SIGPROCMASK(SIG_SETMASK, &omask, NULL);
+    if (vm->sigQueueTail != vm->sigQueueHead) {
+        Scm_SigCheck(vm);
+    }
+}
+
+ScmObj Scm_SigSuspend(ScmSysSigset *mask)
+{
+    scm_sigsuspend(&(mask->set));
+    return SCM_UNDEFINED;
+}
+
+/*
+ * Alternative of 'pause()'
+ * we can't use pause() reliably, since the process may miss a signal
+ * if it is delivered after the last call of Scm_SigCheck before pause();
+ * the signal is queued, but will never be processed until pause() returns
+ * by another signal.
+ */
+ScmObj Scm_Pause(void)
+{
+    sigset_t omask;
+    SIGPROCMASK(SIG_SETMASK, NULL, &omask);
+    scm_sigsuspend(&omask);
+    return SCM_UNDEFINED;
 }
 
 /*

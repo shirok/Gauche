@@ -492,30 +492,32 @@
                     (sys-exit 0)
                     (sys-pause)))))))))
           
-(test "sigmask" '(hup int)
+(test "sigmask" 'hup
       (lambda ()
-        (let ((r '())
+        (let ((sig #f)
+              (chld #f)
               (mask1 (sys-sigset-add! (make <sys-sigset>) SIGINT)))
           (call/cc
            (lambda (k)
-             (with-signal-handlers
-              ((SIGINT (push! r 'int))
-               (SIGHUP (push! r 'hup)))
-              (lambda ()
-                (sys-sigmask SIG_BLOCK mask1)
-                (let ((pid (sys-fork)))
-                  (if (= pid 0)
-                      (begin
-                        (sys-kill (sys-getppid) SIGINT)
-                        (sys-kill (sys-getppid) SIGHUP)
-                        (sys-exit 0))
-                      (begin
-                        (let loop ()
-                          (when (null? r) (sys-pause) (loop)))
-                        (sys-sigmask SIG_UNBLOCK mask1)
-                        (let loop ()
-                          (when (< (length r) 2) (sys-pause) (loop)))
-                        (reverse r)))))))))))
+             (set-signal-handler! SIGINT  k)
+             (set-signal-handler! SIGCHLD (lambda (k) (sys-wait) (set! chld #t)))
+             (set-signal-handler! SIGHUP  (lambda (k) (set! sig 'hup)))
+             (sys-sigmask SIG_BLOCK mask1)
+             (let ((pid (sys-fork)))
+               (if (= pid 0)
+                   (begin
+                     (sys-kill (sys-getppid) SIGINT)
+                     (sys-kill (sys-getppid) SIGHUP)
+                     (sys-exit 0))
+                   (begin
+                     (let loop ()
+                       (unless sig (loop)))
+                     (set-signal-handler! SIGINT #f)
+                     (sys-sigmask SIG_UNBLOCK mask1)
+                     (let loop ()
+                       (unless chld (loop)))
+                     sig))))))))
+
 
 (test-end)
 

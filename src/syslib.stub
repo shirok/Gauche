@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.76 2002-07-09 09:46:50 shirok Exp $
+;;; $Id: syslib.stub,v 1.77 2002-07-17 05:35:38 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -609,7 +609,10 @@
   SCM_RETURN(SCM_TRUE);")
 
 (define-cproc sys-pause ()
-  "  pause();  SCM_RETURN(SCM_UNDEFINED);")
+  ;; We can't simply use pause().  If a signal is delivered after the last
+  ;; Scm_SigCheck and before the call of pause(), the signal will just sit
+  ;; in a queue and pause() may not return.
+  "SCM_RETURN(Scm_Pause());")
 
 (define-cproc sys-alarm (seconds)
   (assert (small-integer? seconds))
