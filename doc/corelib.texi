@@ -1750,18 +1750,39 @@ if @var{kv-list} does not have @var{key}.
 
 @defun delete-keyword key kv-list
 @defunx delete-keyword! key kv-list
+@c EN
 Removes all the keys and values from @var{kv-list} for
 keys that are @code{eq?} to @var{key}.
+@c JP
+@var{kv-list} ¤«¤é @var{key} ¤Ë @code{eq?} ¤Ç¤¢¤ë¥­¡¼¤ò¤â¤Ä¥­¡¼¤ÈÃÍ¤ò
+ºï½ü¤·¤Þ¤¹¡£
+@c COMMON
 
+@c EN
 @code{delete-keyword} doesn't change @var{kv-list}, but the returned
 list may share the common tail of it.
+@c JP
+@code{delete-keyword} ¤Ï @var{kv-list} ¤òÊÑ¹¹¤·¤Þ¤»¤ó¡£¤·¤«¤·¡¢
+ÊÖ¤µ¤ì¤¿¥ê¥¹¥È¤Ï¶¦ÄÌ¤ÎËöÈøÉôÊ¬¤ò¶¦Í­¤·¤Þ¤¹¡£
+@c COMMON
 
+@c EN
 @code{delete-keyword!} doesn't allocate, and @emph{may} destructively
 changes @var{kv-list}.  You still have to use the returned value,
 for the original list may not be changed if its first key matches
 @var{key}.
+@c JP
+@code{delete-keyword!} ¤Ï¿·¤·¤¯¥¢¥í¥±¡¼¥È¤µ¤ì¤ë¤³¤È¤Ï¤¢¤ê¤Þ¤»¤ó¡£
+¤½¤·¤Æ¡¢ÇË²õÅª¤Ë @var{kv-list} ¤òÊÑ¹¹¤¹¤ë@emph{²ÄÇ½À­¤¬¤¢¤ê¤Þ¤¹}¡£
+ºÇ½é¤Î¥­¡¼¤¬¥Þ¥Ã¥Á¤·¤¿¾ì¹ç¸µ¤Î¥ê¥¹¥È¤ÏÊÑ¹¹¤µ¤ì¤Ê¤¤¤³¤È¤â¤¢¤ê¤¨¤Þ¤¹¤¬¡¢
+ÊÖ¤êÃÍ¤Î¥ê¥¹¥È¤ò»È¤ï¤Ê¤±¤ì¤Ð¤¤¤±¤Þ¤»¤ó¡£
+@c COMMON
 
+@c EN
 If there's no key that matches @var{key}, @var{kv-list} is returned.
+@c JP
+@var{key} ¤Ë¥Þ¥Ã¥Á¤¹¤ë¥­¡¼¤¬¤Ê¤¤¾ì¹ç @var{kv-list} ¤¬ÊÖ¤ê¤Þ¤¹¡£
+@c COMMON
 
 @example
 (delete-keyword :y '(:x 1 :y 2 :z 3 :y 4))
@@ -4282,7 +4303,7 @@ and @code{alist->hash-table} are defined.
 @c ----------------------------------------------------------------------
 @node Weak pointers, Control features, Hashtables, Core library
 @section Weak pointers
-@c NODE Weak pointer
+@c NODE Weak ¥Ý¥¤¥ó¥¿
 
 @c EN
 A weak pointer is a reference to an object that doesn't prevent
@@ -4293,11 +4314,11 @@ can be garbage collected if it is not referenced from objects
 other than weak vectors.   If the object is collected, the
 entry of the weak vector is replaced for @code{#f.}
 @c JP
-Weak pointer¤È¤Ï¡¢¤½¤ì¤¬»²¾È¤·¤Æ¤¤¤ë¥ª¥Ö¥¸¥§¥¯¥È¤¬¥¬¥Ù¡¼¥¸¥³¥ì¥¯¥È¤µ¤ì¤ë¤³¤È¤ò
+Weak ¥Ý¥¤¥ó¥¿¤È¤Ï¡¢¤½¤ì¤¬»²¾È¤·¤Æ¤¤¤ë¥ª¥Ö¥¸¥§¥¯¥È¤¬¥¬¥Ù¡¼¥¸¥³¥ì¥¯¥È¤µ¤ì¤ë¤³¤È¤ò
 µö¤¹¤è¤¦¤Ê¥Ý¥¤¥ó¥¿¤Ç¤¹¡£
-Gauche¤Ï@emph{weak vector}¥ª¥Ö¥¸¥§¥¯¥È¤Ë¤è¤Ã¤Æweak pointer¤Îµ¡Ç½¤òÄó¶¡¤·¤Þ¤¹¡£
-Weak vector¤ÏÄÌ¾ï¤Î¥Ù¥¯¥¿¤Ë»÷¤Æ¤¤¤Þ¤¹¤¬¡¢Í×ÁÇ¤Î¥ª¥Ö¥¸¥§¥¯¥È¤¬weak vector°Ê³°¤«¤é
-»²¾È¤µ¤ì¤Æ¤¤¤Ê¤¤¾ì¹ç¡¢¥ª¥Ö¥¸¥§¥¯¥È¤Ï¥¬¥Ù¡¼¥¸¥³¥ì¥¯¥È¤µ¤ì¡¢weak vector¤Î³ºÅö¤¹¤ë¥¨¥ó¥È¥ê¤Ï
+Gauche¤Ï@emph{weak ¥Ù¥¯¥¿}¥ª¥Ö¥¸¥§¥¯¥È¤Ë¤è¤Ã¤Æweak ¥Ý¥¤¥ó¥¿¤Îµ¡Ç½¤òÄó¶¡¤·¤Þ¤¹¡£
+Weak ¥Ù¥¯¥¿¤ÏÄÌ¾ï¤Î¥Ù¥¯¥¿¤Ë»÷¤Æ¤¤¤Þ¤¹¤¬¡¢Í×ÁÇ¤Î¥ª¥Ö¥¸¥§¥¯¥È¤¬weak ¥Ù¥¯¥¿°Ê³°¤«¤é
+»²¾È¤µ¤ì¤Æ¤¤¤Ê¤¤¾ì¹ç¡¢¥ª¥Ö¥¸¥§¥¯¥È¤Ï¥¬¥Ù¡¼¥¸¥³¥ì¥¯¥È¤µ¤ì¡¢weak ¥Ù¥¯¥¿¤Î³ºÅö¤¹¤ë¥¨¥ó¥È¥ê¤Ï
 @code{#f}¤ÇÃÖ¤­´¹¤¨¤é¤ì¤Þ¤¹¡£
 @c COMMON
 @example
@@ -4325,7 +4346,7 @@ so you can use
 @code{gauche.collection} (@xref{Collection framework}) and
 @code{gauche.sequence} (@xref{Sequence framework}).
 @c JP
-Weak vector¤Î¥¯¥é¥¹¤Ç¤¹¡£@code{<sequence>}¤È@code{<collection>}¤ò·Ñ¾µ¤·¤Æ¤¤¤ë¤Î¤Ç¡¢
+Weak ¥Ù¥¯¥¿¤Î¥¯¥é¥¹¤Ç¤¹¡£@code{<sequence>}¤È@code{<collection>}¤ò·Ñ¾µ¤·¤Æ¤¤¤ë¤Î¤Ç¡¢
 @code{gauche.collection} (@ref{Collection framework}»²¾È) ¤È
 @code{gauche.sequence} (@ref{Sequence framework}»²¾È) ¤â»È¤¨¤Þ¤¹¡£
 @c COMMON
@@ -4339,7 +4360,7 @@ Weak vector¤Î¥¯¥é¥¹¤Ç¤¹¡£@code{<sequence>}¤È@code{<collection>}¤ò·Ñ¾µ¤·¤Æ¤¤¤ë¤Î¤
 @c EN
 Creates and returns a weak vector of size @var{size}.
 @c JP
-Âç¤­¤µ@var{size}¤Îweak vector¤òºîÀ®¤·¤ÆÊÖ¤·¤Þ¤¹¡£
+Âç¤­¤µ@var{size}¤Îweak ¥Ù¥¯¥¿¤òºîÀ®¤·¤ÆÊÖ¤·¤Þ¤¹¡£
 @c COMMON
 @end defun
 
@@ -4347,7 +4368,7 @@ Creates and returns a weak vector of size @var{size}.
 @c EN
 Returns the length of a weak vector @var{wvec}.
 @c JP
-Weak vector @var{wvec}¤ÎÂç¤­¤µ¤òÊÖ¤·¤Þ¤¹¡£
+weak ¥Ù¥¯¥¿ @var{wvec}¤ÎÂç¤­¤µ¤òÊÖ¤·¤Þ¤¹¡£
 @c COMMON
 @end defun
 
@@ -4363,7 +4384,7 @@ it is returned for such case.
 With @code{gauche.sequence} module,
 you can also use a method @code{ref}.
 @c JP
-Weak vector @var{wvec}¤Î@var{k}ÈÖÌÜ¤ÎÍ×ÁÇ¤òÊÖ¤·¤Þ¤¹¡£
+weak ¥Ù¥¯¥¿ @var{wvec}¤Î@var{k}ÈÖÌÜ¤ÎÍ×ÁÇ¤òÊÖ¤·¤Þ¤¹¡£
 
 @code{weak-vector-ref}¤Ï@var{k}¤¬Éé¤ÎÃÍ¤Ç¤¢¤Ã¤¿¤ê¥Ù¥¯¥¿¤ÎÄ¹¤µ¤è¤ê
 Âç¤­¤«¤Ã¤¿¤ê¤·¤¿¾ì¹ç¤Ï¥¨¥é¡¼¤òÄÌÃÎ¤·¤Þ¤¹¡£Ã¢¤·¡¢¾ÊÎ¬²ÄÇ½¤Ê°ú¿ô@var{fallback}
@@ -4380,7 +4401,7 @@ Sets @var{k}-th element of the weak vector @var{wvec} to @var{obj}.
 It is an error if @var{k} is negative or greater than or equal to the
 size of @var{wec}.
 @c JP
-Weak vector @var{wvec}¤Î@var{k}ÈÖÌÜ¤ÎÍ×ÁÇ¤ò@var{obj}¤ËÊÑ¹¹¤·¤Þ¤¹¡£
+weak ¥Ù¥¯¥¿ @var{wvec}¤Î@var{k}ÈÖÌÜ¤ÎÍ×ÁÇ¤ò@var{obj}¤ËÊÑ¹¹¤·¤Þ¤¹¡£
 @var{k}¤¬Éé¿ô¤Ç¤¢¤Ã¤¿¤ê¥Ù¥¯¥¿¤ÎÄ¹¤µ¤è¤êÂç¤­¤¤¾ì¹ç¤Ï¥¨¥é¡¼¤È¤Ê¤ê¤Þ¤¹¡£
 @c COMMON
 @end defun
@@ -5471,12 +5492,22 @@ use @code{raise}.  See @ref{Low-level exception mechanism}.
 
 @defmac guard (var clause @dots{}) body @dots{}
 [SRFI-34]
+@c EN
 This is @emph{the} high-level form to handle errors in Gauche.
 It is built on top of @code{with-error-handler} function below.
+@c JP
+¤³¤ì¤Ï Gauche ¤Ç¤Ï@emph{Í£°ì}¤Î¥¨¥é¡¼½èÍý¤Î¹â¿å½à¥Õ¥©¡¼¥à¤Ç¤¹¡£
+¤³¤ì¤Ï¸å½Ò¤Î @code{with-error-handler} ´Ø¿ô¤Î¾å¤Ëºî¤ê¾å¤²¤é¤ì¤Æ¤¤¤Þ¤¹¡£
+@c COMMON
 
+@c EN
 @var{var} is a symbol, and @var{clause}s are the same form as
 @code{cond}'s clauses, i.e. each clause can be either one of
 the following forms:
+@c JP
+@var{var} ¤Ï¥·¥ó¥Ü¥ë¤Ç @var{clause} ¤Ï @code{cond} Àá¤ÈÆ±¤¸·Á¼°¤Ç¤¹¡£
+¤Ä¤Þ¤ê¡¢³ÆÀá¤Ï°Ê²¼¤Î·Á¼°¤Î¤É¤ì¤«¤Ò¤È¤Ä¤Ç¤¹¡£
+@c COMMON
 @enumerate
 @item
 @code{(@var{test} @var{expr} @dots{})}
@@ -5484,37 +5515,79 @@ the following forms:
 @code{(@var{test} => @var{proc})}
 @end enumerate
 
+@c EN
 The last @var{clause} may be @code{(else @var{expr} @dots{})}.
+@c JP
+ºÇ¸å¤Î @var{clause} ¤Ï @code{(else @var{expr} @dots{})} ¤È¤Ê¤ë¤Ç¤·¤ç¤¦¡£
+@c COMMON
 
+@c EN
 This form evaluates @var{body} @dots{} and returns the value(s) of
 the last @var{body} expression in normal case.
 If an exception is raised during the evaluation of body expressions,
 the raised exception is bound to a variable @var{var}, then
 evaluates @var{test} expression of each clause.  If one of @var{test}
-expression returns true value, then the corresponding @var{expr}s
+expressions returns true value, then the corresponding @var{expr}s
 are evaluated if the clause is the first form above, or an @var{proc}
 is evaluated and the result of @var{test} is passed to the result of
 @var{proc} which is expected to be a procedure.
+@c JP
+¤³¤Î¥Õ¥©¡¼¥à¤ÏÄÌ¾ï¤Î¾ì¹ç¤Ë¤Ï @var{body} @dots{} ¤òÉ¾²Á¤·ºÇ¸å¤Î
+@var{body} ¤Î¼°¤ÎÃÍ¤òÊÖ¤·¤Þ¤¹¡£ËÜÂÎ¤Î¼°¤òÉ¾²Á¤·¤Æ¤¤¤ëºÇÃæ¤ËÎã³°¤¬
+È¯À¸¤·¤¿¾ì¹ç¡¢È¯À¸¤·¤¿Îã³°¤òÊÑ¿ô @var{var} ¤ËÂ«Çû¤·¡¢¤½¤Î¸å
+³ÆÀá¤Î @var{test} ¼°¤òÉ¾²Á¤·¤Þ¤¹¡£¤â¤·¡¢@var{test} ¼°¤Î¤Ò¤È¤Ä¤¬
+¿¿ÃÍ¤òÊÖ¤·¤¿¤È¤­¡¢¤½¤ÎÀá¤¬¾å½Ò¤ÎºÇ½é¤Î·Á¼°¤Ç¤¢¤ì¤Ð¡¢ÂÐ±þ¤¹¤ë
+@var{expr} ¤¬É¾²Á¤µ¤ì¤Þ¤¹¡£¤¢¤ë¤¤¤Ï¡¢@var{proc} ¤¬É¾²Á¤µ¤ì¡¢
+@var{test} ¤Î·ë²Ì¤¬¡¢¼êÂ³¤­¤Ç¤¢¤ë¤³¤È¤¬´üÂÔ¤µ¤ì¤ë @var{proc} ¤Î
+·ë²Ì¤Ë°ú¤­ÅÏ¤µ¤ì¤Þ¤¹¡£
+@c COMMON
 
+@c EN
 When the @var{test}(s) and @var{expr}(s) in the clauses are evaluated,
 the exception handler that is in effect of the caller of @code{guard} are
 installed; that is, if an exception is raised again within @var{clause}s,
 it is handled by the @emph{outer} exception handler or @code{guard} form.
+@c JP
+»ØÄê¤µ¤ì¤¿Àá¤Î @var{test} ¤ª¤è¤Ó @var{expr} ¤¬É¾²Á¤µ¤ì¤ë¤È¤­¡¢
+@code{guard} ¤Î¸Æ¤Ó½Ð¤·Â¦¤Î±Æ¶Á¤ò¼õ¤±¤ëÎã³°¥Ï¥ó¥É¥é¤¬ÀßÄê¤µ¤ì¤Þ¤¹¡£¤Ä¤Þ¤ê¡¢
+@var{clause} ÆâÉô¤ÇºÆ¤ÓÎã³°¤¬È¯À¸¤·¤¿¾ì¹ç¡¢¤½¤ÎÎã³°¤Ï¡¢@emph{³°Â¦¤Î}
+Îã³°¥Ï¥ó¥É¥é¤Þ¤¿¤Ï @code{guard} ¥Õ¥©¡¼¥à¤Ç½èÍý¤µ¤ì¤Þ¤¹¡£
+@c COMMON
 
+@c EN
 If no @var{test} returns true value and the last @code{clause} is
 @code{else} clause, then the associated @var{expr}s are evaluated.
 If no @var{test} returns true value and there's no @code{else} clause,
 the raised exception is re-raised, to be handled by the outer exception
 handler.
+@c JP
+¤â¤·¡¢¤É¤Î @var{test} ¤â¿¿ÃÍ¤òÊÖ¤µ¤º¡¢ºÇ¸å¤Î @code{clause} ¤¬
+@code{else} Àá¤Ç¤¢¤ì¤Ð¡¢¤½¤ì¤Ë·ë¤Ó¤Ä¤±¤é¤ì¤¿ @var{expr} ¤¬É¾²Á¤µ¤ì¤Þ¤¹¡£
+¤â¤·¡¢¤É¤Î @var{test} ¤â¿¿ÃÍ¤òÊÖ¤µ¤º¡¢@code{else} Àá¤¬¤Ê¤±¤ì¤Ð¡¢ºÆ¤Ó
+Îã³°¤¬È¯À¸¤·¡¢³°Â¦¤ÎÎã³°¥Ï¥ó¥É¥é¤Ç½èÍý¤µ¤ì¤Þ¤¹¡£
+@c COMMON
 
+@c EN
 When the exception is handled by one of @code{clause}s, @code{guard}
 returns the value(s) of the last @var{expr} in the handling clause.
+@c JP
+Îã³°¤¬ @code{clause} ¤Î¤É¤ì¤«¤Ç½èÍý¤µ¤ì¤¿»þ¤Ë¤Ï¡¢@code{guard} ¤Ï
+¤½¤ì¤ò½èÍý¤·¤¿Àá¤ÎºÇ¸å¤Î @var{expr} ¤ÎÃÍ¤òÊÖ¤·¤Þ¤¹¡£
+@c COMMON
 
+@c EN
 The following is a pseudo example of using @code{guard} to check
 certain type of errors.  Currently, most errors Gauche raises
 are of @code{<error>} type, so it's a little bit messy
 to handle errors selectively.  The exception hierarchy will
 be refined in the future versions.
+@c JP
+°Ê²¼¤Ï @code{guard} ¤òÍÑ¤¤¤Æ¡¢ÆÃÄê¤Î·¿¤Î¥¨¥é¡¼¤ò¥Á¥§¥Ã¥¯¤¹¤ë
+µ¼»÷¥³¡¼¥ÉÎã¤Ç¤¹¡£¸½»þÅÀ¤Ç¤Ï¡¢Gauche ¤¬È¯À¸¤¹¤ë¤Û¤È¤ó¤É¤Î¥¨¥é¡¼¤Î·¿¤Ï
+@code{<error>} ¤Ç¤¹¡£¤½¤ì¤æ¤¨¡¢ÁªÂòÅª¤Ë¥¨¥é¡¼¤ò½èÍý¤¹¤ë¤³¤È¤Ï¾¯¡¹ÌÌÅÝ¤Ç¤¹¡£
+Îã³°¤Î³¬ÁØ¤Ë¤Ä¤¤¤Æ¤Ï¾­Íè¤Î¥Ð¡¼¥¸¥ç¥ó¤ÇÀ°Íý¤¹¤ëÍ½Äê¤Ç¤¹¡£
+@c COMMON
+
 @example
 (guard (exc
         ((and (is-a? exc <error>)
@@ -5620,6 +5693,7 @@ subclass it to define your own exception class.
 @end deftp
 
 @deftp {Class} <error>
+@c EN
 This class is a base class of @emph{uncontinuable} exception.
 If this type of exception is raised, the exception handler
 shouldn't return to the original place the exception was raised.
@@ -5627,56 +5701,109 @@ shouldn't return to the original place the exception was raised.
 API such as @code{guard} and @code{with-error-handler}, since
 you can't "return to the original place" anyway.  It only
 matters if you're using low-level @code{with-exception-handler}).
+@c JP
+¤³¤Î¥¯¥é¥¹¤Ï @emph{·ÑÂ³ÉÔ²ÄÇ½}Îã³°¤Î¥Ù¡¼¥¹¥¯¥é¥¹¤Ç¤¹¡£¤³¤Î¥¿¥¤¥×¤Î
+Îã³°¤¬È¯À¸¤·¤¿¾ì¹ç¤Ë¤Ï¡¢Îã³°¥Ï¥ó¥É¥é¤ÏÎã³°¤¬È¯À¸¤·¤¿¾ì½ê¤ËÌá¤Ã¤Æ¤Ï
+¤¤¤±¤Þ¤»¤ó¡£(@code{guard} ¤ä @code{with-error-handler}¤Î¤è¤¦¤Ê
+¹â¿å½à API ¤ò»È¤¦¾ì¹ç¤Ë¤Ï¤³¤ì¤òµ¤¤Ë¤¹¤ëÉ¬Í×¤Ï¤¢¤ê¤Þ¤»¤ó¡£¤Ê¤¼¤Ê¤é¡¢
+¤½¤Î¾ì¹ç¡¢¤É¤¦¤ä¤Ã¤Æ¤â¡Ö¸µ¤Î¾ì½ê¤ËÌá¤ë¤³¤È¤Ï¡×¤Ç¤­¤Ê¤¤¤«¤é¤Ç¤¹¡£
+¤³¤ì¤¬½ÅÍ×¤Ë¤Ê¤ë¤Î¤ÏÄã¿å½à¤Î @code{with-exception-handler} ¤ò
+»È¤¦¤È¤­¤À¤±¤Ç¤¹¡£)
+@c COMMON
 
+@c EN
 This class inherits @code{<exception>}.
 It has one instance slot.
+@c JP
+¤³¤Î¥¯¥é¥¹¤Ï @code{<exception>} ¤ò·Ñ¾µ¤·¡¢¥¤¥ó¥¹¥¿¥ó¥¹¥¹¥í¥Ã¥È¤ò»ý¤Á¤Þ¤¹¡£
+@c COMMON
 
 @defivar {<error>} message
+@c EN
 The error message.
+@c JP
+¥¨¥é¡¼¥á¥Ã¥»¡¼¥¸
+@c COMMON
 @end defivar
 
+@c EN
 The code:
+@c JP
+@c COMMON
 @example
 (error "something wend wrong.")
 @end example
+@c EN
 is conceptually equivalent to:
+@c JP
+¤Ï³µÇ°Åª¤Ë¤Ï¡¢
+@c COMMON
 @example
 (raise (make <error> :message "something went wrong"))
 @end example
-
+@c EN
+@c JP
+¤ÈÆ±Åù¤Ç¤¹¡£
+@c COMMON
 @end deftp
 
-
 @deftp {Class} <system-error>
+@c EN
 A subclass of @code{<error>}.
 When a system call returns an error, this type of exception is
 thrown.  The @code{message} slot usually contains the description
 of the error (like the one from @code{strerror(3)}).
 Besides that, this class has one more instance slot:
+@c JP
+@code{<error>} ¤Î¥µ¥Ö¥¯¥é¥¹¡£
+¥·¥¹¥Æ¥à¥³¡¼¥ë¤¬¥¨¥é¡¼¤òÊÖ¤·¤¿¤È¤­¡¢¤³¤Î·¿¤ÎÎã³°¤¬Åê¤²¤é¤ì¤Þ¤¹¡£
+@code{message} ¥¹¥í¥Ã¥È¤Ë¤ÏÄÌ¾ï¥¨¥é¡¼¤Î(@code{strerror(3)}¤Î¤è¤¦¤Ê)ÀâÌÀ¤¬
+´Þ¤Þ¤ì¤Æ¤¤¤Þ¤¹¡£¤½¤ì°Ê³°¤Ë¡¢¤³¤Î¥¯¥é¥¹¤Ë¤Ï¤â¤¦¤Ò¤È¤Ä¼¡¤Î¤è¤¦¤Ê
+¥¤¥ó¥¹¥¿¥ó¥¹¥¹¥í¥Ã¥È¤¬¤¢¤ê¤Þ¤¹¡£
+@c COMMON
 
 @defivar {<system-error>} errno
+@c EN
 Contains an integer value of system's error number.
+@c JP
+¥·¥¹¥Æ¥à¤Î¥¨¥é¡¼ÈÖ¹æ¤ÎÀ°¿ôÃÍ¤ò»ý¤Á¤Þ¤¹¡£
+@c COMMON
 @end defivar
 @end deftp
 
 @deftp {Class} <read-error>
+@c EN
 A subclass of @code{<error>}.
 When the reader detects a lexical or syntactic error during
 reading an S-expression, this type of exception is thrown.
 Besides the @code{message} slot that contains the description of the error,
 this class provides two other slots:
+@c JP
+@code{<error>} ¤Î¥µ¥Ö¥¯¥é¥¹¡£¥ê¡¼¥À¤¬£Ó¼°¤òÆÉ¤ß¹þ¤ßÃæ¤Ë¡¢»ú¶ç¥¨¥é¡¼
+¤Þ¤¿¤Ï¹½Ê¸¥¨¥é¡¼¤ò¸¡½Ð¤·¤¿¤È¤­¡¢¤³¤Î·¿¤ÎÎã³°¤¬Åê¤²¤é¤ì¤Þ¤¹¡£
+¥¨¥é¡¼¤ÎÀâÌÀ¤ò´Þ¤à @code{message} ¥¹¥í¥Ã¥È¤ÎÂ¾¤Ë¡¢¤³¤Î¥¯¥é¥¹¤Ë¤Ï 2¤Ä¤Î
+¥¹¥í¥Ã¥È¤¬ÍÑ°Õ¤µ¤ì¤Æ¤¤¤Þ¤¹¡£
+@c COMMON
 
 @defivar {<read-error>} port
+@c EN
 A port from which the reader is reading.
+@c JP
+¥ê¡¼¥À¤¬ÆÉ¤à¥Ý¡¼¥È¡£
+@c COMMON
 @end defivar
 
 @defivar {<read-error>} line
+@c EN
 A line count (1-base) of the input where the reader raised this error.
 It may be -1 if the reader is reading from a port that doesn't keep
 track of line count.
+@c JP
+¥ê¡¼¥À¤¬¤³¤Î¥¨¥é¡¼¤òÈ¯À¸¤µ¤»¤¿¤È¤­¤ÎÆþÎÏ¹Ô¥«¥¦¥ó¥È(1¤¬¥Ù¡¼¥¹)¡£
+¥ê¡¼¥À¤¬¹Ô¥«¥¦¥ó¥È¤òÊÝ»ý¤·¤Ê¤¤¥Ý¡¼¥È¤«¤éÆÉ¤ß¹þ¤à¤È¤­¤Ë¤Ï¡¢-1 ¤È¤Ê¤ë¡£
+@c COMMON
 @end defivar
 @end deftp
-
 
 @node Low-level exception mechanism,  , Exception object, Exceptions
 @subsection Low-level exception mechanism
@@ -5816,6 +5943,7 @@ the following conceptual Scheme code.
 @c ----------------------------------------------------------------------
 @node Eval and repl, Input and output, Exceptions, Core library
 @section Eval and repl
+@c NODE eval ¤È repl
 
 @defun eval expr env
 @c EN
@@ -8897,12 +9025,21 @@ This might be changed later.
 
 @defun stable-sort seq cmpfn
 @defunx stable-sort! seq cmpfn
+@c EN
 Sort a sequence @var{seq} (a list or a vector), using stable sort algorithm
 (currently they are using merge sort).  
 The sorting order is specified by @code{cmpfn}, which is
 a procedure takes two elements of @var{list}, and returns @code{#t}
 if the first argument strictly precedes the second.
 Unlike @code{sort}/@code{sort!}, @var{cmpfn} cannot be omitted.
+@c JP
+°ÂÄê¥½¡¼¥È¥¢¥ë¥´¥ê¥º¥à(¸½»þÅÀ¤Ç¤Ï¥Þ¡¼¥¸¥½¡¼¥È)¤ò»È¤Ã¤Æ¡¢ÊÂ¤Ó @var{seq}
+(¥ê¥¹¥È¤Þ¤¿¤Ï¥Ù¥¯¥¿)¤ò¥½¡¼¥È¤·¤Þ¤¹¡£¥½¡¼¥È½ç¤Ï @code{cmpfn} ¤Ç»ØÄê¤·¤Þ¤¹¡£
+@code{cmpfn} ¤Ï @var{list} ¤Î¤Õ¤¿¤Ä¤ÎÍ×ÁÇ¤ò°ú¿ô¤È¤·¤Æ¼è¤ë´Ø¿ô¤Ç¡¢
+¸·Ì©¤Ë¡¢ºÇ½é¤Î°ú¿ô¤¬ÂèÆó¤Î°ú¿ô¤ÎÁ°¤Ë¤¯¤ë¤â¤Î¤Ç¤¢¤ë¾ì¹ç¤Ë @code{#t}
+¤òÊÖ¤·¤Þ¤¹¡£@code{sort}/@code{sort!} ¤È°ã¤¤¡¢@var{cmpfn} ¤ò¾ÊÎ¬¤¹¤ë¤³¤È¤Ï
+¤Ç¤­¤Þ¤»¤ó¡£
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
