@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: selector.scm,v 1.4 2001-05-02 08:20:25 shirok Exp $
+;;;  $Id: selector.scm,v 1.5 2001-05-03 10:31:59 shirok Exp $
 ;;;
 
 ;; Say `(use srfi-13)' and this file will be autoloaded on demand.
@@ -29,7 +29,7 @@
          (tlen (string-length target)))
     (when (> (+ tstart slen) tlen)
       (error "copy operation runs off the target string: ~s" target))
-    (string-substitute! target tstart (+ tstart slen) str)))
+    (string-substitute! target tstart str)))
 
 (define (string-pad s len . args)
   (let-optional* args ((char #\space) start end)
