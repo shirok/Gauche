@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.27 2001-05-22 20:29:36 shirok Exp $
+ *  $Id: port.c,v 1.28 2001-05-24 08:55:46 shirok Exp $
  */
 
 #include <unistd.h>
@@ -71,7 +71,7 @@ static ScmPort *make_port(int dir, int type, int ownerp)
     SCM_SET_CLASS(port, SCM_CLASS_PORT);
     port->direction = dir;
     port->type = type;
-    port->bufcnt = 0;
+    port->scrcnt = 0;
     port->ungotten = SCM_CHAR_INVALID;
     port->ownerp = ownerp;
     port->icpolicy = SCM_PORT_IC_IGNORE; /* default */
@@ -253,68 +253,20 @@ int Scm__PortFileGetc(int prefetch, ScmPort *port)
     char *p;
     int next, nfollows, i, ch;
 
-    port->bufcnt = 0;
-    port->buf[0] = prefetch;
+    port->scrcnt = 0;
+    port->scratch[0] = prefetch;
     nfollows = SCM_CHAR_NFOLLOWS(prefetch);
     for (i=1; i<= nfollows; i++) {
         next = getc(port->src.file.fp);
         if (next == EOF) return EOF;
         if (next == '\n') port->src.file.line++;
-        port->buf[i] = next;
-        port->bufcnt++;
+        port->scratch[i] = next;
+        port->scrcnt++;
     }
-    p = port->buf;
+    p = port->scratch;
     SCM_CHAR_GET(p, ch);
-    port->bufcnt = 0;
+    port->scrcnt = 0;
     return ch;
-}
-
-/* Called from SCM_ISTR_GET{B|C}, when it reaches the end of the buffer.
-   Assuming ungotten and incomplete buffer is empty. */
-
-int Scm__PortIstrGetb(ScmPort *port)
-{
-    if (port->src.istr.fill) {
-        if (port->src.istr.fill(port, FALSE) < 0) return EOF;
-    }
-    if (port->src.istr.rest <= 0) return EOF;
-    port->src.istr.rest--;
-    return *port->src.istr.current++;
-}
-
-ScmChar Scm__PortIstrGetc(int prefetch, ScmPort *port)
-{
-    if (prefetch >= 0) {
-        /* we have small number of bytes left in the buffer.
-           move them to incomplete buffer first. */
-        SCM_ASSERT(port->src.istr.rest < SCM_CHAR_MAX_BYTES);
-        port->buf[0] = prefetch;
-        memcpy(port->buf+1, port->src.istr.current, port->src.istr.rest);
-        port->bufcnt = port->src.istr.rest+1;
-        port->src.istr.rest = 0;
-    }
-    if (port->src.istr.fill) {
-        if (port->src.istr.fill(port, TRUE) < 0) return EOF;
-    }
-    if (port->src.istr.rest <= 0) return EOF;
-    else if (prefetch >= 0) {
-        return Scm__PortGetcInternal(port);
-    }
-    else {
-        const char *cp = SCM_PORT(port)->src.istr.current;
-        unsigned char uc = (unsigned char)*cp;
-        int siz = SCM_CHAR_NFOLLOWS(uc);
-        int c;
-        
-        if (SCM_PORT(port)->src.istr.rest < siz) {
-            c = EOF;
-        } else {
-            SCM_CHAR_GET(cp, c);
-        }
-        SCM_PORT(port)->src.istr.current += siz + 1;
-        SCM_PORT(port)->src.istr.rest -= siz + 1;
-        return c;
-    }
 }
 
 /* Called from SCM_GETB, when there's an ungotten char or buffered
@@ -323,22 +275,23 @@ int Scm__PortGetbInternal(ScmPort *port)
 {
     int ch;
     
-    if ((ch = port->ungotten) != SCM_CHAR_INVALID) {
-        char *p = port->buf;
-        port->bufcnt = SCM_CHAR_NBYTES(ch);
+    if (SCM_PORT_UNGOTTEN(port)) {
+        char *p = port->scratch;
+        ch = port->ungotten;
+        port->scrcnt = SCM_CHAR_NBYTES(ch);
         SCM_CHAR_PUT(p, ch);
         port->ungotten = SCM_CHAR_INVALID;
     }
-    if (!port->bufcnt) {
+    if (!port->scrcnt) {
         /* This shouldn't happen, but just in case ... */
         SCM_GETB(ch, port);
     } else {
         int i;
-        ch = port->buf[0];
-        for (i=1; i<port->bufcnt; i++) {
-            port->buf[i-1] = port->buf[i];
+        ch = port->scratch[0];
+        for (i=1; i<port->scrcnt; i++) {
+            port->scratch[i-1] = port->scratch[i];
         }
-        port->bufcnt--;
+        port->scrcnt--;
     }
     return ch;
 }
@@ -349,13 +302,13 @@ int Scm__PortGetcInternal(ScmPort *port)
     int ch = 0, nfollows = 0;
     char *p;
     
-    if (!port->bufcnt) {
+    if (!port->scrcnt) {
         /* this shouldn't happen, but just in case ... */
         SCM_GETC(ch, port);
     } else {
         /* fill the buffer */
-        nfollows = SCM_CHAR_NFOLLOWS(port->buf[0]);
-        for (; port->bufcnt <= nfollows; port->bufcnt++) {
+        nfollows = SCM_CHAR_NFOLLOWS(port->scratch[0]);
+        for (; port->scrcnt <= nfollows; port->scrcnt++) {
             int b = 0;
             switch (SCM_PORT_TYPE(port)) {
               case SCM_PORT_FILE: SCM__FILE_GETB(b, port); break;
@@ -365,9 +318,9 @@ int Scm__PortGetcInternal(ScmPort *port)
                   /*NOTREACHED*/
             }
             if (b == EOF) return EOF;
-            port->buf[port->bufcnt] = b;
+            port->scratch[port->scrcnt] = b;
         }
-        p = port->buf;
+        p = port->scratch;
         SCM_CHAR_GET(p, ch);
     }
     return ch;
@@ -383,7 +336,6 @@ ScmObj Scm_MakeInputStringPort(ScmString *str)
     z->src.istr.start = SCM_STRING_START(str);
     z->src.istr.rest  = SCM_STRING_SIZE(str);
     z->src.istr.current = z->src.istr.start;
-    z->src.istr.fill = NULL;
     return SCM_OBJ(z);
 }
 
@@ -474,28 +426,9 @@ int Scm_Getz(ScmPort *port, char *buf, int buflen)
             port->src.istr.current += buflen;
             nread = buflen;
         } else {
-            int pre = port->src.istr.rest;
-            memcpy(buf, port->src.istr.current, pre);
+            nread = port->src.istr.rest;
+            memcpy(buf, port->src.istr.current, nread);
             port->src.istr.rest = 0;
-            if (port->src.istr.fill) {
-                while (port->src.istr.fill(port, FALSE) >= 0) {
-                    if (buflen - pre <= port->src.istr.rest) {
-                        memcpy(buf+pre, port->src.istr.current, buflen-pre);
-                        port->src.istr.rest -= buflen-pre;
-                        port->src.istr.current += buflen-pre;
-                        nread = buflen;
-                        break;
-                    } else {
-                        memcpy(buf+pre, port->src.istr.current,
-                               port->src.istr.rest);
-                        pre += port->src.istr.rest;
-                        port->src.istr.rest = 0;
-                    }
-                }
-                if (nread != buflen) nread = pre;
-            } else {
-                nread = pre;
-            }
         }
         break;
     case SCM_PORT_PROC:
