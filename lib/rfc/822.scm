@@ -1,7 +1,7 @@
 ;;;
 ;;; 822.scm - parsing RFC2822 style message
 ;;;
-;;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2001-2003 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: 822.scm,v 1.7 2002-11-20 05:21:11 shirok Exp $
+;;;  $Id: 822.scm,v 1.8 2003-01-09 11:32:57 shirok Exp $
 ;;;
 
 ;; Parser and constructor of the message defined in
@@ -25,7 +25,6 @@
   (export rfc822-header->list
           rfc822-skip-cfws
           rfc822-next-word
-          rfc822-next-phrase
           rfc822-parse-date
           )
   )
