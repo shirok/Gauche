@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: gauche-init.scm,v 1.48 2001-11-03 09:56:35 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.49 2001-11-14 11:30:49 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -185,6 +185,23 @@
        (unless (?test tmp)
          (errorf "bad type of argument for ~s: ~s" '?arg tmp))))
     ))
+
+;; hash table iterators
+(define (hash-table-map hash proc)
+  (check-arg hash-table? hash)
+  (let loop ((r '())
+             (i (%hash-table-iter hash)))
+    (receive (k v) (i)
+      (if (eof-object? k)
+          r
+          (loop (cons (proc k v) r) i)))))
+
+(define (hash-table-for-each hash proc)
+  (check-arg hash-table? hash)
+  (let loop ((i (%hash-table-iter hash)))
+    (receive (k v) (i)
+      (unless (eof-object? k)
+        (proc k v) (loop i)))))
 
 ;; srfi-17
 (define (getter-with-setter get set)
