@@ -1,5 +1,16 @@
+2002-07-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c, src/gauche.h : first attempt of protecting port access
+	  in threaded env.  Finished for putb, putc, puts and putz.
+	* src/vm.c (Scm_VMCallCC): fixed to take a procedure with variable-
+	  length arguments.
+	* configure.in: changed thread option from --with-thread to
+	  --enable-threads to match the same configuration option in GC.
+
 2002-07-01  Shiro Kawai  <shiro@acm.org>
 
+	* ext/uvector/test.scm : fixed test cases accodring to the fix
+	  of eqv? and equal?
 	* src/boolean.c (Scm_EqvP, Scm_EqualP): fixed a bug that made
 	  (eqv? 1 1.0) ==> #t and (equal? 1 1.0) ==> #t, which
 	  should return #f.
