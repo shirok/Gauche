@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.66 2001-09-24 00:27:40 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.67 2001-09-24 05:25:56 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -6130,10 +6130,79 @@ Some examples:
 
 @deftp {Module} rfc.uri
 @mdindex rfc.uri
-Defines a set of functions to parse Uniform Resource Identifiers,
+Provides a set of functions to parse Uniform Resource Identifiers
 defined in RFC 2396 (@ref{rfc2396, [RFC2396], RFC2396}).
 @end deftp
 
+@defun uri-scheme&specific uri
+@defunx uri-decompose-hierarchical specific
+@defunx uri-decompose-authority authority
+General parser of URI.  These functions does not decode
+URI encoding.
+
+@code{uri-scheme&specific} takes a URI @var{uri}, and
+returns two values, its scheme part and its scheme-specific part.
+If @var{uri} doesn't have a scheme part, @var{#f} is returned for it.
+@example
+(uri-scheme&specific "mailto:sclaus@@north.pole")
+  @result{} "mailto" @r{and} "sclaus@@north.pole"
+(uri-scheme&specific "/icons/new.gif")
+  @result{} #f @r{and} "/icons/new.gif"
+@end example
+
+If the URI scheme uses hierarchical notation, i.e.
+``@code{//@var{authority}/@var{path}?@var{query}#@var{fragment}}'',
+you can pass
+the scheme-specific part to @code{uri-decompose-hierarchical}
+and it returns four values, @var{authority}, @var{path}, @var{query}
+and @var{fragment}.
+@example
+(uri-decompose-hierarchical "//www.foo.com/about/company.html")
+  @result{} "www.foo.com"@r{,} "/about/company.html"@r{,} #f @r{and} #f
+(uri-decompose-hierarchical "//zzz.org/search?key=%3fhelp")
+  @result{} "zzz.org"@r{,} "/search"@r{,} "key=%3fhelp" @r{and} #f
+(uri-decompose-hierarchical "//jjj.jp/index.html#whatsnew")
+  @result{} "jjj.jp"@r{,} "/index.html"@r{,} #f @r{and} "whatsnew"
+(uri-decompose-hierarchical "my@@address")
+  @result{} #f@r{,} #f@r{,} #f @r{and} #f
+@end example
+
+Furthermore, you can parse @var{authority} part of the
+hierarchical URI by @code{uri-decompose-authority}.
+It returns @var{userinfo}, @var{host} and @var{port}.
+@example
+(uri-decompose-authority "yyy.jp:8080")
+  @result[] #f@r{,} "yyy.jp" @r{and} "8080"
+(uri-decompose-authority "mylogin@@yyy.jp")
+  @result[] "mylogin"@r{,} "yyy.jp" @r{and} #f
+@end example
+@end defun
+
+@defun uri-decode &keyword :cgi-decode
+@defunx uri-decode-string string &keyword :cgi-decode
+Decodes ``URI encoding'', i.e. @code{%}-escapes.
+@code{uri-decode} takes input from the current input port,
+and writes decoded result to the current output port.
+@code{uri-decode-string} takes input from @var{string} and
+returns decoded string.
+
+If @var{cgi-decode} is true, also replaces @code{+} to a space character.
+@end defun
+
+@defun uri-encode &keyword :noescape
+@defunx uri-encode-string string &keyword :noescape
+Encodes unsafe characters by @code{%}-escape.  @code{uri-encode}
+takes input from the current input port and writes the result to
+the current output port.  @code{uri-encode-string} takes input
+from @var{string} and returns the encoded string.
+
+By default, characters that are not specified ``unreserved'' in
+RFC2396 are escaped.  You can pass different character set
+to @var{noescape} argument to keep from being encoded.
+
+The multibyte characters are encoded as the octed stream of Gauche's
+native multibyte representation.
+@end defun
 
 @c ----------------------------------------------------------------------
 @node SLIB, Feature Conditional, URI parsing and construction, Libarary Modules
@@ -7168,18 +7237,42 @@ creates a string, whose @var{i}-th character is calculated by
 @subsection String selection
 
 @defun substring/shared s start &optional end
-[SRFI-13]
+[SRFI-13] In Gauche, this is the same as @code{substring}, except
+that the @var{end} argument is optional.
+@example
+(substring/shared "abcde" 2) @result{} "cde"
+@end example
 @end defun
 
 @defun string-copy! target tstart s &optional start end
-[SRFI-13]
+[SRFI-13] Copies a string @var{s} into a string
+@var{target} from the position @var{tstart}.
+Optional @var{start} and @var{end} arguments limits the range of @var{s}.
+If the copied string run over the end of @var{target}, an error is
+signalled.
+@example
+(define s (string-copy "abcde"))
+(string-copy! s 2 "ZZ")
+s @result{} "abZZe"
+@end example
 @end defun
 
 @defun string-take s nchars
 @defunx string-drop s nchars
 @defunx string-take-right s nchars
 @defunx string-drop-right s nchars
-[SRFI-13]
+[SRFI-13] Returns the first @var{nchars}-character string of @var{s}
+(@code{string-take}) or the string without first @var{nchars}
+(@code{string-drop}).  The @code{*-right} variation counts from
+the end of string.  It is guaranteed that the returned string is
+always a copy of @var{s}, even no character is dropped.
+@example
+(string-take "abcde" 2) @result{} "ab"
+(string-drop "abcde" 2) @result{} "cde"
+
+(string-take-right "abcde" 2) @result{} "cde"
+(string-drop-right "abcde" 2) @result{} "ab"
+@end example
 @end defun
 
 @defun string-pad s len &optional char start end
@@ -7394,6 +7487,9 @@ creates a string, whose @var{i}-th character is calculated by
 
 @deftp {Module} srfi-14
 @mdindex srfi-14
+Implements the character set library defined in SRFI-14
+(@ref{srfi-14,,SRFI-14}).  Note that several basic character-set
+operations are Gauche's build-in functions.  @xref{Character set}.
 @end deftp
 
 @menu
@@ -7671,7 +7767,7 @@ Repeat @code{x} for @code{n} times.   Meaningful only in
 If @code{n} is omitted or zero, @code{x} is repeated until @var{to-list}
 matches the length of @var{from-list} (any character after it is ignored).
 
-@item @b{\x}
+@item @b{@code{\}x}
 Represents @code{x} itself.  Use this escape to avoid a special
 character to be interpreted as itself.   Note that if you place
 a backslash in a string, you must write @code{\\}, for the Scheme
@@ -7757,7 +7853,7 @@ once and apply it repeatedly, saving the overhead of initialization.
 
 @deftp {Module} w3c.cgi
 @mdindex w3c.cgi
-Provides a few functions useful to write a CGI script.
+Provides a few basic functions useful to write a CGI script.
 
 Note that, although I put this module under @code{w3c} hierarchy,
 W3C doesn't formally defines CGI specification.  Actually,
@@ -7765,10 +7861,49 @@ there exists no ``formal'' specification.
 See @uref{http://w3c.org/CGI/} for more information.
 @end deftp
 
-@defun cgi-parse-parameters query-string @dots{}
+@defun cgi-parse-parameters &keyword :query-string :merge-cookies
+Parses query string and returns associative list of parameters.
+When a keyword argument @var{query-string} is given, it is used
+as a source query string.  Otherwise, the function checks the environment
+variable @code{REQUEST_METHOD} and obtain the query string
+depending on the value.  If @code{QUERY_STRING} is not defined and
+the current input port is a terminal, the function prompts the user
+to type parameters; useful for interactive debugging.
+
+When a true value is given to @var{merge-cookies}, the cookie
+values obtained from the environment variable @code{HTTP_COOKIE}
+are appended to the result.
+
+Note that the query parameter may have multiple values,
+so @code{cdr} of each element in the result is a list, not an atom.
+If no value is given to the parameter, @code{#t} is placed as its value.
+See the following example:
+@example
+(cgi-parse-parameters
+  :query-string "foo=123&bar=%22%3f%3f%22&bar=zz&buzz")
+ @result{} (("foo" "123") ("bar "\"??\"" "zz") ("buzz #t))
+@end example
 @end defun
 
-@defun cgi-get-parameter key params &keyword :default :list :convert
+@defun cgi-get-parameter name params &keyword :default :list :convert
+A convenient function to obtain a value of the parameter @var{name} from
+parsed query string @var{params}, which is the value
+@code{cgi-parse-parameters} returns.
+
+Unless true value is given to @var{list}, the returned value is
+a scalar value.  If more than one value is associated to @var{name},
+only the first value is returned.  If @var{list} is true, the
+returned value is always a list, even @var{name} has only one value.
+
+After the value is retrieved, you can apply a procedure to
+convert the string value to the appropriate type by giving
+a procedure to the @var{convert} argument.  The procedure must
+take one string argument.  If @var{list} is true, the convert
+procedure is applied to each values.
+
+If no value is defined for @var{name}, a value given to the keyword
+argument @var{default} is returned; the default value of @var{default}
+is @code{#f} if @var{list} is false, or @code{()} otherwise.
 @end defun
 
 
