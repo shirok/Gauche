@@ -588,6 +588,35 @@
 (test* "dequeue-all!" #t
        (queue-empty? q))
 
+(test* "find-in-queue" #f
+       (find-in-queue (cut eq? <> 'a) q))
+(test* "find-in-queue" 'a
+       (begin (enqueue! q 'a 'b 'c 'd 'e)
+              (find-in-queue (cut eq? <> 'a) q)))
+(test* "find-in-queue" 'c
+       (find-in-queue (cut eq? <> 'c) q))
+(test* "find-in-queue" 'e
+       (find-in-queue (cut eq? <> 'e) q))
+(test* "find-in-queue" '#f
+       (find-in-queue (cut eq? <> 'f) q))
+
+(test* "remove-from-queue!" #f
+       (remove-from-queue! (cut eq? <> 'f) q))
+(test* "remove-from-queue!" #t
+       (remove-from-queue! (cut eq? <> 'e) q))
+(test* "remove-from-queue!" #f
+       (remove-from-queue! (cut eq? <> 'e) q))
+(test* "remove-from-queue!" #t
+       (remove-from-queue! (cut eq? <> 'a) q))
+(test* "remove-from-queue!" #t
+       (remove-from-queue! (cut memq <> '(b c)) q))
+(test* "remove-from-queue!" #t
+       (remove-from-queue! (cut eq? <> 'd) q))
+(test* "remove-from-queue!" #t
+       (queue-empty? q))
+(test* "remove-from-queue!" #f
+       (remove-from-queue! (cut eq? <> 'd) q))
+
 ;;-----------------------------------------------
 (test-section "util.record")
 (use util.record)

@@ -5,7 +5,7 @@
 ;;;  Public Domain..  I guess lots of Scheme programmers have already
 ;;;  written similar code.
 ;;;
-;;;  $Id: queue.scm,v 1.6 2002-08-27 10:24:37 shirok Exp $
+;;;  $Id: queue.scm,v 1.7 2003-10-29 14:27:40 shirok Exp $
 ;;;
 
 ;; This queue implementation is tuned for speed.  A queue is simply
@@ -130,8 +130,9 @@
                                    (cons (car lis) tail))))
                        )))
          (removed? (not (eq? (car q) head))))
-    (set-car! q head)
-    (set-cdr! q (last-pair head))
+    (when removed?
+      (set-car! q head)
+      (set-cdr! q (if (null? head) head (last-pair head))))
     removed?))
 
 ;; NB: Scheme48 has delete-from-queue!, which has reversed order
