@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.13 2001-04-01 22:07:27 shiro Exp $
+;;;  $Id: object.scm,v 1.14 2001-04-02 02:26:44 shiro Exp $
 ;;;
 
 (select-module gauche)
@@ -98,7 +98,7 @@
                  (error "bad slot specification: ~s" slot))
                 (else
                  (case (car opts)
-                   ((:initform :init-form) ;former for stklos, latter for guile
+                   ((:initform :init-form)
                     (loop (cddr opts)
                           (list* `(lambda () ,(cadr opts)) :init-thunk r)))
                    ((:getter :setter :accessor)
@@ -109,7 +109,8 @@
                  )))
         `'(,slot)))
   (let ((slot-defs (map transform-slot-definition slots))
-        (metaclass (get-keyword :metaclass options '<class>))
+        (metaclass (or (get-keyword :metaclass options #f)
+                       `(%get-default-metaclass (list ,@supers))))
         (class     (gensym))
         (slot      (gensym)))
     `(define ,name
@@ -122,6 +123,38 @@
                      (%make-accessor ,class ,slot (current-module)))
                    (class-slots ,class))
          ,class))
+    ))
+
+;; Determine default metaclass, that is a class inheriting all the metaclasses
+;; of supers.  The idea is taken from stklos.
+(define %get-default-metaclass
+  (let ((generated-metas '()))
+    (define (find-metaclass metasupers)
+      (cond ((assoc metasupers generated-metas)
+             => (lambda (got) (cdr got)))
+            (else (make-metaclass metasupers))))
+    (define (make-metaclass metasupers)
+      (let ((meta (make <class>
+                    :supers metasupers :name (gensym "metaclass") :slots '())))
+        (set! generated-metas (acons metasupers meta generated-metas))
+        meta))
+
+    (lambda (supers)
+      (if (null? supers)
+          <class>
+          (let* ((all-metas (map class-of supers))
+                 (all-cpls  (apply append
+                                   (map (lambda (m)
+                                          (cdr (class-precedence-list m)))
+                                        all-metas)))
+                 (needed '()))
+            (for-each
+             (lambda (m)
+               (when (and (not (memq m all-cpls))
+                          (not (memq m needed)))
+                 (set! needed (append needed (list m)))))
+             all-metas)
+            (if (null? (cdr needed)) (car needed) (find-metaclass needed)))))
     ))
 
 ;;; Method INITIALIZE (class <class>) initargs
@@ -317,7 +350,13 @@
   (not (not (assq slot (class-slots class)))))
 
 ;;----------------------------------------------------------------
-;; Method application
+;; Class Redifinition
+;;
+
+;; Not implemented yet.
+
+;;----------------------------------------------------------------
+;; Method Application
 ;;
 
 ;; Like stklos or goops, pure generic is handled completely in C
