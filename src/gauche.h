@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.102 2001-04-01 23:17:57 shiro Exp $
+ *  $Id: gauche.h,v 1.103 2001-04-02 01:27:34 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -304,11 +304,17 @@ struct ScmClassRec {
     ScmObj name;                /* scheme name */
     ScmObj directSupers;        /* list of classes */
     ScmObj cpl;                 /* list of classes */
-    ScmObj accessors;
-    ScmObj directSlots;         /* list of slot names */
+    ScmObj accessors;           /* alist of slot-name & slot-accessor */
+    ScmObj directSlots;         /* alist of slot-name & slot-definition */
     ScmObj slots;               /* alist of slot-name & slot-definition */
-    ScmObj directSubclasses;
-    ScmObj directMethods;
+    /* The following slots are for class redefinition protocol,
+       not used yet. */
+    ScmObj directSubclasses;    /* list of direct subclasses */
+    ScmObj directMethods;       /* list of methods that has this class in
+                                   its specializer */
+    ScmObj redefined;           /* if this class is obsoleted by class
+                                   redefinition, points to the new class.
+                                   otherwise #f */
 };
 
 #define SCM_CLASS(obj)        ((ScmClass*)(obj))
@@ -397,7 +403,8 @@ extern ScmClass *Scm_ObjectCPL[];
         SCM_NIL,                                \
         SCM_NIL,                                \
         SCM_NIL,                                \
-        SCM_NIL                                 \
+        SCM_NIL,                                \
+        SCM_FALSE                               \
     }
     
 /* define built-in class statically. */
