@@ -1,8 +1,10 @@
 2001-03-21  Shiro Kawai  <shiro@scherzo>
 
 	* release 0.2.7
-	* src/gauche.h, src/class.c: further code for C-defined generic
-	  functions and methods.
+	* src/gauche.h, src/class.c, src/moplib.stub: finished protocol
+	  to define generic functions and methods only in C.  removed some
+	  stub functions from moplib.stub that are implemented genuine
+	  generic functions / methods.
 	* src/vm.c: integration of method invocation.
 
 2001-03-19  Shiro Kawai  <shiro@scherzo>
