@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: read.c,v 1.17 2001-05-19 11:35:47 shirok Exp $
+ *  $Id: read.c,v 1.18 2001-06-21 08:44:04 shirok Exp $
  */
 
 #include <stdio.h>
@@ -345,7 +345,7 @@ static ScmObj read_string(ScmPort *port, int incompletep)
         }
     }
  eof_exit:
-    read_error(port, "EOF encountered in a string literal");
+    read_error(port, "EOF encountered in a string literal: %S", Scm_DStringGet(&ds));
     /* NOTREACHED */
     return SCM_FALSE; 
 }
