@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.211 2002-06-07 11:03:13 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.212 2002-06-11 11:10:23 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -6124,12 +6124,24 @@ With @var{gauche.collection} module, you can use
 @c COMMON
 @end defun
 
-@defun vector-fill! vector fill
-[R5RS]
+@defun vector-fill! vector fill &optional start end
+[R5RS+]
 @c EN
 Sets all elements in a vector @var{vector} to @var{fill}.
+
+Optional @var{start} and @var{end} limits the range
+of effect between @var{start}-th index (inclusive) to
+@var{end}-th index (exclusive).  @var{Start} defaults to
+zero, and @var{end} defaults to the length of @var{vector}.
+These optional arguments are Gauche's extension.
 @c JP
 ベクタ@var{vector}の全ての要素を@var{fill}に変更します。
+
+省略可能な引数@var{start}と@var{end}が与えられた場合、
+@var{start}番目の要素から@var{end}-1番目の要素までのみに
+@var{fill}を格納します。@var{start}と@var{end}の既定値は
+それぞれ0と@var{vector}の大きさです。
+@var{start}, @var{end}引数はGaucheの拡張です。
 @c COMMON
 @end defun
 
