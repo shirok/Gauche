@@ -1,3 +1,8 @@
+2003-10-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/dbm.scm (dbm-open): fixed a bug when a custom accessor
+	  specification is given (Patch from Grzegorz Chrupa-B³a).$)B
+
 2003-10-08  Shiro Kawai  <shiro@acm.org>
 
 	* lib/Makefile.in (slibcat-in-place): use $(top_builddir)
