@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.63 2001-09-27 11:13:43 shirok Exp $
+ *  $Id: compile.c,v 1.64 2001-09-29 23:35:44 shirok Exp $
  */
 
 #include "gauche.h"
@@ -747,7 +747,7 @@ static ScmObj compile_body(ScmObj form,
     if (idefs > 0) {
         /* Internal defines introduced a new scope. */
         body = SCM_LIST3(SCM_VM_INSN1(SCM_VM_LET, idefs),
-                         form,
+                         idef_vars,
                          body);
     }
     return body;
@@ -789,7 +789,7 @@ static ScmObj compile_lambda_family(ScmObj form, ScmObj args, ScmObj body,
 #endif
     SCM_APPEND(code, codetail, 
                SCM_LIST3(SCM_VM_INSN2(SCM_VM_LAMBDA, nargs, restarg),
-                         form, bodycode));
+                         SCM_CAR(newenv), bodycode));
     return code;
 }
 
@@ -1166,7 +1166,7 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
     if (type == BIND_LET) newenv = Scm_Cons(vars, env);
     ADDCODE(body_compiler(body, newenv, ctx));
 
-    return add_srcinfo(SCM_LIST3(SCM_VM_INSN1(SCM_VM_LET, nvars), form, code), form);
+    return add_srcinfo(SCM_LIST3(SCM_VM_INSN1(SCM_VM_LET, nvars), vars, code), form);
 }
 
 static ScmObj compile_let(ScmObj form, ScmObj env, int ctx, void *data)
