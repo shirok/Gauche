@@ -49,7 +49,7 @@
               ((var1 init1) ...)
               body ...))
     ((_ "generate_temp_names" () (temp1 ...) ((var1 init1) ...) body ...)
-     (let ((var1 <undefined>) ...)
+     (let ((var1 :undefined) ...)
        (let ((temp1 init1) ...)
          (set! var1 temp1) ...
          body ...)))
@@ -60,9 +60,30 @@
               ((var1 init1) ...)
               body ...))))
 
+(define-syntax %do
+  (syntax-rules ()
+    ((_ ((var init step ...) ...)
+        (test expr ...)
+        command ...)
+     (letrec
+         ((loop
+           (lambda (var ...)
+             (if test
+                 (begin
+                   (if #f #f)
+                   expr ...)
+                 (begin
+                   command
+                   ...
+                   (loop (%do "step" var step ...)
+                         ...))))))
+       (loop init ...)))
+    ((_ "step" x)
+     x)
+    ((_ "step" x y)
+     y)))
+
 ;; test code
-
-
 (test-macro "%cond" (begin a) (%cond (else a)))
 (test-macro "%cond" (begin a b c) (%cond (else a b c)))
 (test-macro "%cond" (let ((temp a)) (if temp (b temp))) (%cond (a => b)))
@@ -81,5 +102,22 @@
       (lambda () (let ((=> #f)) (unident (%macro-expand (%cond (a => b)))))))
 (test "%cond" '(if else (begin z))
       (lambda () (let ((else #t)) (unident (%macro-expand (%cond (else z)))))))
+
+;; Note: if you "unident" the expansion result of %letrec, you see a symbol
+;; "newtemp" appears repeatedly in the let binding, seemingly expanding
+;; into invalid syntax.  Internally, however, those symbols are treated 
+;; as identifiers with the correct identity, so the expanded code works
+;; fine (as tested in the second test).
+(test-macro "%letrec"
+            (let ((a :undefined)
+                  (c :undefined))
+              (let ((newtemp b)
+                    (newtemp d))
+                (set! a newtemp)
+                (set! d newtemp)
+                e f g))
+            (%letrec ((a b) (c d)) e f g))
+(test "%letrec" '(1 2 3)
+      (lambda () (%letrec ((a 1) (b 2) (c 3)) (list a b c))))
 
 (newline)
