@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.16 2001-06-01 20:39:24 shirok Exp $
+ *  $Id: write.c,v 1.17 2001-07-09 09:51:12 shirok Exp $
  */
 
 #include <stdio.h>
@@ -368,6 +368,109 @@ static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf)
         args = SCM_CDR(args);                                           \
     } while (0)
 
+/* max # of parameters for a format directive */
+#define MAX_PARAMS 5
+
+/* output string with padding */
+static void format_pad(ScmObj out, ScmString *str,
+                       int mincol, int colinc, ScmChar padchar,
+                       int rightalign)
+{
+    int padcount = mincol- SCM_STRING_LENGTH(str);
+    int i;
+    
+    if (padcount > 0) {
+        if (colinc > 1) {
+            padcount = ((padcount+colinc-1)/colinc)*colinc;
+        }
+        if (rightalign) {
+            for (i=0; i<padcount; i++) SCM_PUTC(padchar, out);
+        }
+        SCM_PUTS(str, out);
+        if (!rightalign) {
+            for (i=0; i<padcount; i++) SCM_PUTC(padchar, out);
+        }
+    } else {
+        SCM_PUTS(str, out);
+    }
+}
+
+/* ~s and ~a writer */
+static void format_writer(ScmObj out, ScmObj arg,
+                          ScmObj *params, int nparams,
+                          int rightalign, int mode)
+{
+    int mincol = 0, colinc = 1, minpad = 0, i;
+    ScmChar padchar = ' ';
+    ScmObj tmpout = Scm_MakeOutputStringPort();
+    ScmString *tmpstr;
+
+    if (SCM_INTP(params[0])) mincol = SCM_INT_VALUE(params[0]);
+    if (nparams>1 && SCM_INTP(params[1])) colinc = SCM_INT_VALUE(params[1]);
+    if (nparams>2 && SCM_INTP(params[2])) minpad = SCM_INT_VALUE(params[2]);
+    if (nparams>3 && SCM_CHARP(params[3])) padchar = SCM_CHAR_VALUE(params[3]);
+    if (minpad > 0 && rightalign) {
+        for (i=0; i<minpad; i++) SCM_PUTC(padchar, tmpout);
+    }
+    Scm_Write(arg, tmpout, mode);
+    if (minpad > 0 && !rightalign) {
+        for (i=0; i<minpad; i++) SCM_PUTC(padchar, tmpout);
+    }
+    tmpstr = SCM_STRING(Scm_GetOutputString(SCM_PORT(tmpout)));
+    format_pad(out, tmpstr, mincol, colinc, padchar, rightalign);
+}
+
+/* ~d, ~b, ~o, and ~x */
+static void format_integer(ScmObj out, ScmObj arg,
+                           ScmObj *params, int nparams, int radix,
+                           int delimited, int alwayssign)
+{
+    int mincol = 0, commainterval = 3;
+    ScmChar padchar = ' ', commachar = ',';
+    ScmObj str;
+    if (!Scm_IntegerP(arg)) {
+        /* if arg is not an integer, use ~a */
+        Scm_Write(arg, out, SCM_WRITE_DISPLAY);
+        return;
+    }
+    if (SCM_FLONUMP(arg)) arg = Scm_InexactToExact(arg);
+    if (SCM_INTP(params[0])) mincol = SCM_INT_VALUE(params[0]);
+    if (nparams>1 && SCM_CHARP(params[1])) padchar = SCM_CHAR_VALUE(params[1]);
+    if (nparams>2 && SCM_CHARP(params[2])) commachar = SCM_CHAR_VALUE(params[2]);
+    if (nparams>3 && SCM_INTP(params[3])) commainterval = SCM_INT_VALUE(params[3]);
+    str = Scm_NumberToString(arg, radix);
+    if (alwayssign && SCM_STRING_START(str)[0] != '-') {
+        str = Scm_StringAppend2(SCM_STRING(SCM_MAKE_STR("+")),
+                                SCM_STRING(str));
+    }
+    if (delimited && commainterval) {
+        /* Delimited output.  We use char*, for str never contains
+           mbchar. */
+        /* NB: I think the specification of delimited behavior in CLtL2
+           contradicts its examples; it is ambiguous about what happens
+           if the number is padded. */
+        ScmDString tmpout;
+        const char *ptr = SCM_STRING_START(str);
+        int num_digits = SCM_STRING_LENGTH(str), colcnt;
+
+        Scm_DStringInit(&tmpout);
+        if (*ptr == '-' || *ptr == '+') {
+            Scm_DStringPutc(&tmpout, *ptr);
+            ptr++;
+            num_digits--;
+        }
+        colcnt = num_digits % commainterval;
+        if (colcnt != 0) Scm_DStringPutz(&tmpout, ptr, colcnt);
+        while (colcnt < num_digits) {
+            if (colcnt != 0) Scm_DStringPutc(&tmpout, commachar);
+            Scm_DStringPutz(&tmpout, ptr+colcnt, commainterval);
+            colcnt += commainterval;
+        }
+        str = Scm_DStringGet(&tmpout);
+    }
+    format_pad(out, SCM_STRING(str), mincol, 1, padchar, TRUE);
+}
+
 ScmObj Scm_Format(ScmObj out, ScmString *fmt, ScmObj args)
 {
     ScmObj fmtstr = Scm_MakeInputStringPort(fmt);
@@ -385,6 +488,10 @@ ScmObj Scm_Format(ScmObj out, ScmString *fmt, ScmObj args)
     }
     
     for (;;) {
+        int atflag, colonflag;
+        ScmObj params[MAX_PARAMS];
+        int numParams;
+        
         SCM_GETC(ch, fmtstr);
         if (ch == EOF) {
             if (!SCM_NULLP(args))
@@ -401,24 +508,159 @@ ScmObj Scm_Format(ScmObj out, ScmString *fmt, ScmObj args)
             continue;
         }
 
-        SCM_GETC(ch, fmtstr);
-        switch (ch) {
-        case '%':
-            SCM_PUTC('\n', out);
-            continue;
-        case 's':; case 'S':;
-            NEXT_ARG(arg, args);
-            Scm_Write(arg, out, SCM_WRITE_WRITE);
-            continue;
-        case 'a':; case 'A':;
-            NEXT_ARG(arg, args);
-            Scm_Write(arg, out, SCM_WRITE_DISPLAY);
-            continue;
-        default:
-            SCM_PUTC(ch, out);
-            continue;
+        numParams = 0;
+        atflag = colonflag = FALSE;
+        
+        for (;;) {
+            SCM_GETC(ch, fmtstr);
+            switch (ch) {
+            case '%':
+                SCM_PUTC('\n', out);
+                break;
+            case 's':; case 'S':;
+                NEXT_ARG(arg, args);
+                if (numParams == 0) {
+                    /* short path */
+                    Scm_Write(arg, out, SCM_WRITE_WRITE);
+                } else {
+                    format_writer(out, arg, params, numParams, atflag,
+                                  SCM_WRITE_WRITE);
+                }
+                break;
+            case 'a':; case 'A':;
+                NEXT_ARG(arg, args);
+                if (numParams == 0) {
+                    /* short path */
+                    Scm_Write(arg, out, SCM_WRITE_DISPLAY);
+                } else {
+                    format_writer(out, arg, params, numParams, atflag,
+                                  SCM_WRITE_DISPLAY);
+                }
+                break;
+            case 'd':; case 'D':;
+                NEXT_ARG(arg, args);
+                if (numParams == 0 && !atflag && !colonflag) {
+                    Scm_Write(arg, out, SCM_WRITE_DISPLAY);
+                } else {
+                    format_integer(out, arg, params, numParams, 10,
+                                   colonflag, atflag);
+                }
+                break;
+            case 'b':; case 'B':;
+                NEXT_ARG(arg, args);
+                if (numParams == 0 && !atflag && !colonflag) {
+                    if (Scm_IntegerP(arg)) {
+                        Scm_Write(Scm_NumberToString(arg, 2), out,
+                                  SCM_WRITE_DISPLAY);
+                    } else {
+                        Scm_Write(arg, out, SCM_WRITE_DISPLAY);
+                    }
+                } else {
+                    format_integer(out, arg, params, numParams, 2,
+                                   colonflag, atflag);
+                }
+                break;
+            case 'o':; case 'O':;
+                NEXT_ARG(arg, args);
+                if (numParams == 0 && !atflag && !colonflag) {
+                    if (Scm_IntegerP(arg)) {
+                        Scm_Write(Scm_NumberToString(arg, 8), out,
+                                  SCM_WRITE_DISPLAY);
+                    } else {
+                        Scm_Write(arg, out, SCM_WRITE_DISPLAY);
+                    }
+                } else {
+                    format_integer(out, arg, params, numParams, 8,
+                                   colonflag, atflag);
+                }
+                break;
+            case 'x':; case 'X':;
+                NEXT_ARG(arg, args);
+                if (numParams == 0 && !atflag && !colonflag) {
+                    if (Scm_IntegerP(arg)) {
+                        Scm_Write(Scm_NumberToString(arg, 16), out,
+                                  SCM_WRITE_DISPLAY);
+                    } else {
+                        Scm_Write(arg, out, SCM_WRITE_DISPLAY);
+                    }
+                } else {
+                    format_integer(out, arg, params, numParams, 16,
+                                   colonflag, atflag);
+                }
+                break;
+            case 'v':; case 'V':;
+                if (atflag || colonflag || numParams >= MAX_PARAMS)
+                    goto badfmt;
+                NEXT_ARG(arg, args);
+                if (!SCM_FALSEP(arg) && !SCM_INTP(arg) && !SCM_CHARP(arg)) {
+                    Scm_Error("argument for 'v' format parameter in %S should be either an integer, a character or #f, but got %S",
+                              fmt, arg);
+                }
+                params[numParams++] = arg;
+                SCM_GETC(ch, fmtstr);
+                if (ch != ',') SCM_UNGETC(ch, fmtstr);
+                continue;
+            case '@':
+                if (atflag) {
+                    Scm_Error("too many @-flag for formatting directive: %S",
+                              fmt);
+                }
+                atflag = TRUE;
+                continue;
+            case ':':
+                if (colonflag) {
+                    Scm_Error("too many :-flag for formatting directive: %S",
+                              fmt);
+                }
+                colonflag = TRUE;
+                continue;
+            case '\'':
+                if (atflag || colonflag) goto badfmt;
+                if (numParams >= MAX_PARAMS) goto badfmt;
+                SCM_GETC(ch, fmtstr);
+                if (ch == EOF) goto badfmt;
+                params[numParams++] = SCM_MAKE_CHAR(ch);
+                SCM_GETC(ch, fmtstr);
+                if (ch != ',') SCM_UNGETC(ch, fmtstr);
+                continue;
+            case '0':; case '1':; case '2':; case '3':; case '4':;
+            case '5':; case '6':; case '7':; case '8':; case '9':;
+            case '-':; case '+':;
+                if (atflag || colonflag || numParams >= MAX_PARAMS) {
+                    goto badfmt;
+                } else {
+                    int sign = (ch == '-')? -1 : 1;
+                    unsigned long value = isdigit(ch)? (ch - '0') : 0;
+                    for (;;) {
+                        SCM_GETC(ch, fmtstr);
+                        /* TODO: check valid character */
+                        if (!isdigit(ch)) {
+                            if (ch != ',') SCM_UNGETC(ch, fmtstr);
+                            params[numParams++] = Scm_MakeInteger(sign*value);
+                            break;
+                        }
+                        /* TODO: check overflow */
+                        value = value * 10 + (ch - '0');
+                    }
+                }
+                continue;
+            case ',':
+                if (atflag || colonflag || numParams >= MAX_PARAMS) {
+                    goto badfmt;
+                } else {
+                    params[numParams++] = SCM_FALSE;
+                    continue;
+                }
+            default:
+                SCM_PUTC(ch, out);
+                break;
+            }
+            break;
         }
     }
+  badfmt:
+    Scm_Error("illegal format string: %S", fmt);
+    return SCM_UNDEFINED;       /* dummy */
 }
 
 /* C version of format for convenience */
