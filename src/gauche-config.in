@@ -3,7 +3,7 @@
 #
 # Retrieve configuration parameters
 #
-# $Id: gauche-config.in,v 1.14 2002-02-10 19:28:02 shirok Exp $
+# $Id: gauche-config.in,v 1.15 2002-03-08 07:53:44 shirok Exp $
 #
 
 prefix=${prefix:-@prefix@}
@@ -14,11 +14,11 @@ cc="@CC@"
 datadir=@datadir@/gauche
 archdir=@libdir@/gauche
 
-gauche_incdir="$datadir/@GAUCHE_VERSION@/include"
+gauche_incdir="$archdir/@GAUCHE_VERSION@/include"
 gauche_libdir="$datadir/@GAUCHE_VERSION@/lib"
 gauche_aclocaldir="$datadir/@GAUCHE_VERSION@/"
 gauche_archdir="$archdir/@GAUCHE_VERSION@/@host@"
-gauche_siteincdir="$datadir/site/include"
+gauche_siteincdir="$archdir/site/include"
 gauche_sitelibdir="$datadir/site/lib"
 gauche_sitearchdir="$archdir/site/@GAUCHE_VERSION@/@host@"
 gauche_version=@GAUCHE_VERSION@
