@@ -26,7 +26,7 @@
                       Compiling and Installing Gauche
 <? ) !>
 
-$Id: INSTALL.esc,v 1.18 2002-07-01 04:30:46 shirok Exp $
+$Id: INSTALL.esc,v 1.19 2002-07-17 10:24:52 shirok Exp $
 <? (if-lang japanese? !>
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:<? else !>
@@ -37,19 +37,23 @@ Check out the latest information on the site:
 
 <? (header "簡単な方法" "Quick Start") !>
 
-   % ./configure
+   % ./configure [--enable-threads=pthreads]
    % make
    % make test
    % make install
 <? (if-lang japanese? !>
 これで、Gaucheシステムが /usr/local/bin, /usr/local/lib/gauche及び
 /usr/local/share/gauche以下にインストールされます。
+マルチスレッドサポートを使うためにはconfigureに--enable-threads=pthreadsを
+渡して下さい。このオプションはいくつかのプラットフォームでサポートされています。
 
 現在はβバージョンのため、インストールされるバイナリはデバッグ情報を含んでおり
 1MB〜2MBのサイズがあります。stripすればLinux/i686では500KB前後になります。
 <? else !>
 Things will be installed under /usr/local/bin, /usr/local/lib/gauche,
 and /usr/local/share/gauche.
+If you want to use multithread support, pass --enable-threads=pthreads
+option to configure.  It is supported on several platforms.
 
 The current status is beta, and the installed binary contains
 debug information and is 1MB-2MB in size.  You can strip it
