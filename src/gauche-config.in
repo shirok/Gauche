@@ -3,7 +3,7 @@
 #
 # Retrieve configuration parameters
 #
-# $Id: gauche-config.in,v 1.18 2002-10-23 23:37:07 shirok Exp $
+# $Id: gauche-config.in,v 1.19 2003-04-14 02:43:42 shirok Exp $
 #
 
 prefix=${prefix:-@prefix@}
@@ -30,12 +30,16 @@ arch="@host@"
 
 local_incdir="@LOCAL_INC@"
 local_libdir="@LOCAL_LIB@"
+
+default_cflags="@DEFAULT_CFLAGS@"
+
+# NB: shlib-related parameters should be handled by libtool.
+# These are kept only for backward compatibility of extensions
+# written for pre-0.7 Gauche
 shlib_so_suffix="@SHLIB_SO_SUFFIX@"
 shlib_so_cflags="@SHLIB_SO_CFLAGS@"
 shlib_so_ldflags="@SHLIB_SO_LDFLAGS@"
 shlib_so_libs="@SHLIB_LIBS_FOR_EXT@"
-default_cflags="@DEFAULT_CFLAGS@"
-
 shlib_dylib_suffix="@SHLIB_DYLIB_SUFFIX@"
 shlib_dylib_ldflags="@SHLIB_DYLIB_LDFLAGS@"
 shlib_main_ldflags="@SHLIB_MAIN_LDFLAGS@"
@@ -70,19 +74,16 @@ Parameters to install files
   --mandir/--infodir
        directories where gauche manpage and info docs are installed
 
-Parameters to compile Gauche extention
-  --so-suffix     object file suffix of the gauche extension
-  --so-cflags     flags required to compile shared object
-  --so-ldflags    flags required to link a gauche extension
-  --so-libs       libraries to be linked with a gauche extension
-  --dylib-suffix  dynamic/shared library file suffix of the system
-  --dylib-ldflags flags required to link dynamic/shared library file
-  --libgauche-so  the name of shared library of libgauche
+Parameters to help building extensions
+  --fixup-extension FILE [MODULE]
+       creates FILE_head.c and FILE_tail.c.  They are required for GC
+       to work properly on some platforms.  MODULE must be the extension
+       module's name, and has to match the name given to the
+       SCM_INIT_EXTENSION macro in the extension initialization code. 
+       If MODULE is omitted, FILE is used as the module's name.
 EOF
     exit 1
 }
-
-if [ $# != 1 ]; then usage; fi;
 
 case $1 in
   -V) echo $gauche_version;;
@@ -109,6 +110,9 @@ case $1 in
 
   --local-incdir) echo $local_incdir;;
   --local-libdir) echo $local_libdir;;
+
+  --default-cflags) echo $default_cflags;;
+
   --so-suffix) echo $shlib_so_suffix;;
   --so-cflags) echo $shlib_so_cflags;;
   --so-ldflags) echo $shlib_so_ldflags;;
@@ -116,8 +120,17 @@ case $1 in
   --dylib-suffix) echo $shlib_dylib_suffix;;
   --dylib-ldflags) echo $shlib_dylib_ldflags;;
   --libgauche-so) echo $libgauche_so;;
-  --default-cflags) echo $default_cflags;;
-      
+
+  --fixup-extension)
+     file=$2
+     module=$3
+     if test X$file = X; then usage; fi
+     if test X$module = X; then module=`echo $file | tr -c "\012A-Za-z0-9" "_"`; fi
+     echo "void *Scm__datastart_$module = (void*)&Scm__datastart_$module;" > ${file}_head.c
+     echo "void *Scm__bssstart_$module;" >> ${file}_head.c
+     echo "void *Scm__dataend_$module = (void*)&Scm__dataend_$module;" > ${file}_tail.c
+     echo "void *Scm__bssend_$module;" >> ${file}_tail.c
+     ;;
   *)  usage;;
 esac
 

@@ -3,4 +3,4 @@ autoconf
 (cd gc; autoconf)
 (cd libltdl; autoconf)
 extensions=`grep '^SUBDIRS=' ext/Makefile.am | sed -e 's/SUBDIRS=//'`
-for ext in $extensions; do (echo $ext; cd ext/$ext; autoconf -I ../..); done
+for ext in $extensions; do (if test -f ext/$ext/configure.in; then echo $ext; cd ext/$ext; autoconf -I ../..; fi); done

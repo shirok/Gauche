@@ -1,5 +1,5 @@
 dnl Gauche-specific aucotonf macros.
-dnl $Id: acinclude.m4,v 1.2 2003-04-12 05:17:22 shirok Exp $
+dnl $Id: acinclude.m4,v 1.3 2003-04-14 02:43:42 shirok Exp $
 
 dnl AC_GAUCHE_INIT_EXT
 dnl   Sets some parameters about installed Gauche package.  This macro checks
@@ -69,7 +69,7 @@ dnl   Sets CFLAGS, CPPFLAGS and LDFLAGS appropriate for furthre testing.
 dnl   This should come before any testings that requires those flags to be set.
 AC_DEFUN([AC_GAUCHE_FLAGS],
          [
-CFLAGS="$CFLAGS $GAUCHE_INC `$GAUCHE_CONFIG --so-cflags`"
+CFLAGS="$CFLAGS $GAUCHE_INC"
 AC_SUBST(CFLAGS)
 CPPFLAGS="$CPPFLAGS $GAUCHE_INC"       # some test requires this
 LDFLAGS="$LDFLAGS `$GAUCHE_CONFIG --local-libdir`"

@@ -20,5 +20,9 @@ distclean-generic:
 maintainer-clean-generic:
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -rf $(MAINTAINERCLEANFILES)
 
+## automake's "make dist" doesn't work for us.
+dist:
+	@echo "'make dist' does not work.  Use DIST script instead."
+
 ## for backward compatibility from pre-automake age of Gauche
 test : check
