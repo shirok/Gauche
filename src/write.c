@@ -1,5 +1,5 @@
 /*
- * io.c - input/output
+ * write.c - writer
  *
  *  Copyright(C) 2000 by Shiro Kawai (shiro@acm.org)
  *
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.2 2001-01-12 11:33:38 shiro Exp $
+ *  $Id: write.c,v 1.3 2001-01-14 20:02:18 shiro Exp $
  */
 
 #include <stdio.h>
