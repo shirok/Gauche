@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.78 2002-05-07 07:03:13 shirok Exp $
+ *  $Id: class.c,v 1.79 2002-05-07 07:08:29 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1441,6 +1441,16 @@ static SCM_DEFINE_METHOD(method_initialize_rec,
 /*
  * Accessors
  */
+static ScmObj method_required(ScmMethod *m)
+{
+    return SCM_MAKE_INT(m->common.required);
+}
+
+static ScmObj method_optional(ScmMethod *m)
+{
+    return SCM_MAKE_BOOL(m->common.optional);
+}
+
 static ScmObj method_generic(ScmMethod *m)
 {
     return m->generic ? SCM_OBJ(m->generic) : SCM_FALSE;
@@ -1579,6 +1589,8 @@ static ScmClassStaticSlotSpec generic_slots[] = {
 };
 
 static ScmClassStaticSlotSpec method_slots[] = {
+    SCM_CLASS_SLOT_SPEC("required", method_required, NULL),
+    SCM_CLASS_SLOT_SPEC("optional", method_optional, NULL),
     SCM_CLASS_SLOT_SPEC("generic", method_generic, method_generic_set),
     SCM_CLASS_SLOT_SPEC("specializers", method_specializers, method_specializers_set),
     { NULL }
