@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.312 2002-12-06 12:46:38 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.313 2002-12-06 13:26:31 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -7098,7 +7098,34 @@ after @var{item}.  If @var{item} is not found, returns
 @end table
 @end defun
 
-@defun string-split s char
+@defun string-split string splitter
+Splits @var{string} by @var{splitter} and returns a list of strings.
+@var{splitter} can be a character, a character set, a string,
+a regexp, or a procedure.
+
+If @var{splitter} is a character, the character is used as a delimiter.
+
+If @var{splitter} is a character set, any consecutive characters
+that are member of the character set are used as a delimiter.
+
+If a procedure is given to @var{splitter}, it is called for each
+character in @var{string}, and the consecutive characters that caused
+@var{splitter} to return a true value are used as a delimiter.
+@c COMMON
+
+@example
+(string-split "/aa/bb//cc" #\/)    @result{} ("" "aa" "bb" "" "cc")
+(string-split "/aa/bb//cc" "/")    @result{} ("" "aa" "bb" "" "cc")
+(string-split "/aa/bb//cc" "//")   @result{} ("/aa/bb" "cc")
+(string-split "/aa/bb//cc" #[/])   @result{} ("" "aa" "bb" "cc")
+(string-split "/aa/bb//cc" #/\/+/) @result{} ("" "aa" "bb" "cc")
+(string-split "/aa/bb//cc" #[\w])  @result{} ("/" "/" "//" "")
+(string-split "/aa/bb//cc" char-alphabetic?) @result{} ("/" "/" "//" "")
+
+;; some boundary cases
+(string-split "abc" #\/) @result{} ("abc")
+(string-split ""    #\/) @result{} ("")
+@end example
 @end defun
 
 
