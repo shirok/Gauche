@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: collection.scm,v 1.10 2002-12-11 04:07:12 shirok Exp $
+;;;  $Id: collection.scm,v 1.11 2003-01-06 03:19:33 shirok Exp $
 ;;;
 
 ;; Defines generic operations over collection.   A collection is
@@ -48,13 +48,13 @@
   (let ((len (vector-length coll))
         (i   (get-keyword :start args 0)))
     (proc (lambda () (>= i len))
-          (lambda () (let ((e (vector-ref coll i))) (inc! i) e)))))
+          (lambda () (begin0 (vector-ref coll i) (inc! i))))))
 
 (define-method call-with-iterator ((coll <weak-vector>) proc . args)
   (let ((len (weak-vector-length coll))
         (i   (get-keyword :start args 0)))
     (proc (lambda () (>= i len))
-          (lambda () (let ((e (weak-vector-ref coll i))) (inc! i) e)))))
+          (lambda () (begin0 (weak-vector-ref coll i) (inc! i))))))
 
 (define-method call-with-iterator ((coll <string>) proc . args)
   (let* ((start (get-keyword :start args #f))
