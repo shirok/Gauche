@@ -5,7 +5,9 @@ all:
 
 install:
 
-html : gauche-refe.html
+texi : gauche-refe.texi gauche-refj.texi
+
+html : gauche-refe.html gauche-refj.html
 
 htmls : gauche-refe_toc.html gauche-refj_toc.html
 

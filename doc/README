@@ -1,3 +1,26 @@
-This directory will contain proper texinfo documents.
-Currently, there are only a few random notes.
-Files with *.euc.txt suffix are written in Japanese, using EUC-JP code.
+This directory contains a source of texinfo document of Gauche
+reference manual.   The info file is not built by default.
+
+The source file, gauche-ref.texi,  contains English and Japanese
+version in one document.  The ``extract'' script generates
+monolingual versions.   Once you built and installed Gauche,
+
+  make texi
+
+generates both English and Japanese version of texinfo file, and
+
+  make html
+
+generates English and Japanese version of HTML documents.
+
+
+You can also browse HTML version of document on-line at
+
+ http://shiro.dreamhost.com/scheme/gauche/man/gauche-refe.html (English)
+ http://shiro.dreamhost.com/scheme/gauche/man/gauche-refj.html (Japanese)
+
+
+
+
+
+
