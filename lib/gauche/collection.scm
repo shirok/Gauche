@@ -12,39 +12,42 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: collection.scm,v 1.2 2001-10-11 20:22:02 shirok Exp $
+;;;  $Id: collection.scm,v 1.3 2001-10-15 09:04:12 shirok Exp $
 ;;;
+
+;;; NOTE: This is an experimental implementation.
+;;; API is subject to change without notification.
 
 ;; Defines generic operations over collection.   A collection is
 ;; a set of objects, possibly containing infinite objects.
 ;; A class that implements a collection generic interface must
 ;; define at least one method:
 ;;
-;;  (g-fold proc (obj <collection) knil ...)
+;;  (gen-fold proc (obj <collection) knil ...)
 ;;
 ;; The other operations are derived from the generic fold+, but
 ;; the specific collection inplementation can override some of them
 ;; for efficiency.
 
 (define-module gauche.collection
-  (export g-fold
-          g-size g-mutable? g-extendable?
-          g-map  g-for-each g-collect g-enumerate
-          g-find g-filter g-remove g-partition
-          g-any? g-every?
-          g-ref  g-set!
+  (export gen-fold
+          gen-size gen-mutable? gen-extendable?
+          gen-map  gen-for-each gen-collect gen-enumerate
+          gen-find gen-filter gen-remove gen-partition
+          gen-any? gen-every?
+          gen-ref  gen-set!
           )
   )
 (select-module gauche.collection)
 
 ;;-------------------------------------------------------------
-;; g-fold - a fundamental iterator over a collection.
+;; gen-fold - a fundamental iterator over a collection.
 ;;
-;;  (g-fold proc collection knil knil2 ...)
+;;  (gen-fold proc collection knil knil2 ...)
 ;;
 ;; Note that the order of argument is different from fold in SRFI-1.
 
-(define-generic g-fold )
+(define-generic gen-fold )
 
 ;; TODO: add fallback code to map n-ary version of fold to 1-ary version
 
@@ -52,20 +55,20 @@
 ;; collection can override any of them.
 ;; Note that the exhausive map operation may not terminate
 ;; if the collection has unlimited number of elements.
-;; You can use call/cc to break out of the loop, or use g-enumerate
+;; You can use call/cc to break out of the loop, or use gen-enumerate
 ;; generic function.
 
 ;; Returns number of items in the collection.
-(define-method g-size (coll) (g-fold + coll 0))
+(define-method gen-size (coll) (gen-fold + coll 0))
 
 ;; Map proc to each element in the collection, collecting the
 ;; results into a list.
-(define-method g-map (proc coll)
-  (reverse (g-fold (lambda (elt r) (cons (proc elt) r)) coll '())))
+(define-method gen-map (proc coll)
+  (reverse (gen-fold (lambda (elt r) (cons (proc elt) r)) coll '())))
 
 ;; Apply proc to each element in the collection.
-(define-method g-for-each (proc coll)
-  (g-fold (lambda (elt r) (proc elt)) coll '())
+(define-method gen-for-each (proc coll)
+  (gen-fold (lambda (elt r) (proc elt)) coll '())
   (undefined))
 
 
@@ -83,25 +86,25 @@
 
 ;; Like map, but the result of proc is appended to the result.
 ;; Common Lisp's mapcan.
-(define-method g-collect (proc coll)
-  (cdr (g-fold (lambda (elt r) (dlist-append! r (proc elt)))
+(define-method gen-collect (proc coll)
+  (cdr (gen-fold (lambda (elt r) (dlist-append! r (proc elt)))
                coll
                (dlist-seed))))
 
 ;; Enumerate
 ;;  Cf. http://pobox.com/~oleg/ftp/Scheme/enumerators-callcc.html
 
-(define-method g-enumerate (proc coll)
+(define-method gen-enumerate (proc coll)
   (call/cc
    (lambda (break)
-     (g-fold (lambda (elt r)
+     (gen-fold (lambda (elt r)
                (unless (proc elt) (break)))
              coll '()))))
 
-(define-method g-enumerate (proc coll arg1)
+(define-method gen-enumerate (proc coll arg1)
   (call/cc
    (lambda (break)
-     (g-fold (lambda (elt r)
+     (gen-fold (lambda (elt r)
                (receive (flag x) (proc elt r)
                  (if flag
                      x
@@ -109,10 +112,10 @@
              coll
              arg1))))
 
-(define-method g-enumerate (proc coll arg1 arg2)
+(define-method gen-enumerate (proc coll arg1 arg2)
   (call/cc
    (lambda (break)
-     (g-fold (lambda (elt r0 r1)
+     (gen-fold (lambda (elt r0 r1)
                (receive (flag x0 x1) (proc elt r0 r1)
                  (if flag
                      (values x0 x1)
@@ -120,10 +123,10 @@
              coll
              arg1 arg2))))
 
-(define-method g-enumerate (proc coll arg1 arg2 arg3)
+(define-method gen-enumerate (proc coll arg1 arg2 arg3)
   (call/cc
    (lambda (break)
-     (g-fold (lambda (elt r0 r1 r2)
+     (gen-fold (lambda (elt r0 r1 r2)
                (receive (flag x0 x1 x2) (proc elt r0 r1 r2)
                  (if flag
                      (values x0 x1 x2)
@@ -131,13 +134,12 @@
              coll
              arg1 arg2 arg3))))
 
-;; TODO g-enumerate (proc coll arg1 arg2 arg3 . rest)
+;; TODO gen-enumerate (proc coll arg1 arg2 arg3 . rest)
 
-
-(define-method g-find (pred coll)
+(define-method gen-find (pred coll)
   (call/cc
    (lambda (break)
-     (g-fold (lambda (elt r) (when (pred elt) (break elt))) coll '()))))
+     (gen-fold (lambda (elt r) (when (pred elt) (break elt))) coll '()))))
 
 
 
