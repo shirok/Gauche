@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.62 2002-05-19 12:43:38 shirok Exp $
+;;;  $Id: genstub,v 1.63 2002-05-20 09:21:40 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -35,59 +35,84 @@
 ;; Type handling
 ;;
 
-;; (define-type name assert-predicate c-type c-predicate unboxer)
+;; (define-type name assert-predicate c-type c-predicate unboxer [boxer])
+;;
+;;  name := <string>             ; used for messages
+;;  assert-predicate := <symbol> ; used in assert declaration
+;;  c-type := <string>           ; corresponding C type name when unboxed
+;;  c-predicate := <string>      ; name of C function or macro that maps
+;;                               ;   ScmObj -> C boolean
+;;  unboxer := <string>          ; name of C function or macro that maps
+;;                               ;   ScmObj -> c-type
+;;                               ;   Can be "" if no unboxing needed
+;;  boxer := <string>            ; name of C function or macro that maps
+;;                               ;   c-type -> ScmObj
+;;                               ;   Can be "" if no boxing needed
+;;                               ;   Can be #f if no boxing available
 
 (define-class <type> ()
-  ((name        :init-keyword :name        :accessor name-of)
-   (predicate   :init-keyword :predicate   :accessor predicate-of)
+  ((scheme-name :init-keyword :scheme-name :accessor scheme-name-of)
+   (c-name      :init-keyword :c-name      :accessor c-name-of)
+   (predicate   :getter predicate-of)
    (c-type      :init-keyword :c-type      :accessor c-type-of)
    (c-predicate :init-keyword :c-predicate :accessor c-predicate-of)
    (unboxer     :init-keyword :unboxer     :accessor unboxer-of)
+   (boxer       :init-keyword :boxer       :accessor boxer-of
+                :init-value "SCM_OBJ")
    (all-types   :allocation :class :initform '())
    ))
 
 (define-method initialize ((self <type>) initargs)
   (next-method)
+  (slot-set! self 'predicate (string->symbol #`",(scheme-name-of self)?"))
   (slot-push! self 'all-types self))
 
 (define (make-type name predicate c-type c-predicate unboxer)
   (make <type> :name name :predicate predicate
         :c-type c-type :c-predicate c-predicate :unboxer unboxer))
 
-;; predefined types
+;; Builtin types
+(for-each
+ (lambda (data)
+   (receive (name c-name c-type c-pred unbox . box) (apply values data)
+     (make <type> :scheme-name name :c-name c-name :c-type c-type
+           :c-predicate c-pred :unboxer unbox
+           :boxer (if (null? box) "SCM_OBJ" (car box)))))
+ '((pair "pair" "ScmObj" "SCM_PAIRP" "")
+   (list "list" "ScmObj" "SCM_LISTP" "")
+   (vector "vector" "ScmVector*" "SCM_VECTORP" "SCM_VECTOR")
+   (string "string" "ScmString*" "SCM_STRINGP" "SCM_STRING")
+   (symbol "symbol" "ScmSymbol*" "SCM_SYMBOLP" "SCM_SYMBOL")
+   (keyword "keyword" "ScmKeyword*" "SCM_KEYWORDP" "SCM_KEYWORD")
+   (identifier "identifier" "ScmIdentifier*" "SCM_IDENTIFIERP" "SCM_IDENTIFIER")
+   (boolean "boolean" "int" "SCM_BOOLP" "!SCM_FALSEP" "SCM_MAKE_BOOL")
+   (small-integer "small integer" "int" "SCM_INTP" "SCM_INT_VALUE" "SCM_MAKE_INT")
+   (small-positive-integer "small positive integer" "unsigned int" "SCM_UINTP" "(unsigned int)SCM_INT_VALUE" "SCM_MAKE_INT")
+   (exact "exact integer" "int" "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
+   (positive-exact "positive exact integer" "unsigned int" "SCM_UINTEGERP" "Scm_MakeUInteger")
+   (real "real" "double" "SCM_REALP" "Scm_GetDouble" "Scm_MakeFlonum")
+   (number "number" "ScmObj" "SCM_NUMBERP" "")
+   (char "character" "ScmChar" "SCM_CHARP" "SCM_CHAR_VALUE" "SCM_MAKE_CHAR")
+   (char-set "char-set" "ScmCharSet*" "SCM_CHARSETP" "SCM_CHARSET")
+   (port "port" "ScmPort*" "SCM_PORTP"  "SCM_PORT")
+   (input-port "input port" "ScmPort*" "SCM_IPORTP" "SCM_PORT")
+   (output-port "output port" "ScmPort*" "SCM_OPORTP" "SCM_PORT")
 
-(make-type "pair"    'pair?        "ScmObj"       "SCM_PAIRP"   #f)
-(make-type "list"    'list?        "ScmObj"       "SCM_LISTP"   #f)
-(make-type "vector"  'vector?      "ScmVector*"   "SCM_VECTORP" "SCM_VECTOR")
-(make-type "string"  'string?      "ScmString*"   "SCM_STRINGP" "SCM_STRING")
-(make-type "symbol"  'symbol?      "ScmSymbol*"   "SCM_SYMBOLP" "SCM_SYMBOL")
-(make-type "keyword" 'keyword?     "ScmKeyword*"  "SCM_KEYWORDP" "SCM_KEYWORD")
-(make-type "identifier" 'identifier? "ScmIdentifier*" "SCM_IDENTIFIERP" "SCM_IDENTIFIER")
-(make-type "boolean" 'boolean?     "int"          "SCM_BOOLP"   "!SCM_FALSEP")
-(make-type "small integer" 'small-integer? "int" "SCM_INTP"    "SCM_INT_VALUE")
-;; TODO: bignum!
-(make-type "exact integer" 'exact? "int"          "SCM_EXACTP"  "Scm_GetInteger")
-(make-type "real"      'real?      "double"       "SCM_REALP"   "Scm_GetDouble")
-(make-type "number"    'number?    "ScmObj"       "SCM_NUMBERP" #f)
-(make-type "character" 'char?      "ScmChar"      "SCM_CHARP" "SCM_CHAR_VALUE")
-(make-type "char-set"  'char-set?  "ScmCharSet*"  "SCM_CHARSETP" "SCM_CHARSET")
-(make-type "port"        'port?        "ScmPort*" "SCM_PORTP"  "SCM_PORT")
-(make-type "input port"  'input-port?  "ScmPort*" "SCM_IPORTP" "SCM_PORT")
-(make-type "output port" 'output-port? "ScmPort*" "SCM_OPORTP" "SCM_PORT")
-
-(make-type "procedure" 'procedure? "ScmProcedure*" "SCM_PROCEDUREP" "SCM_PROCEDURE")
-(make-type "closure"   'closure?   "ScmClosure*"   "SCM_CLOSUREP"   "SCM_CLOSURE")
-(make-type "hash table" 'hash-table? "ScmHashTable*" "SCM_HASHTABLEP" "SCM_HASHTABLE")
-(make-type "class"     'class?     "ScmClass*"     "SCM_CLASSP" "SCM_CLASS")
-(make-type "module"    'module?    "ScmModule*"    "SCM_MODULEP" "SCM_MODULE")
-(make-type "thread"    'thread?    "ScmVM*"        "SCM_VMP"     "SCM_VM")
-(make-type "mutex"     'mutex?     "ScmMutex*"     "SCM_MUTEXP"  "SCM_MUTEX")
-(make-type "condition variable" 'condition-variable? "ScmConditionVariable*" "SCM_CONDITION_VARIABLE_P"  "SCM_CONDITION_VARIABLE")
-(make-type "weak vector" 'weak-vector? "ScmWeakVector*" "SCM_WEAKVECTORP" "SCM_WEAKVECTOR")
+   (procedure "procedure" "ScmProcedure*" "SCM_PROCEDUREP" "SCM_PROCEDURE")
+   (closure "closure" "ScmClosure*" "SCM_CLOSUREP" "SCM_CLOSURE")
+   (hash-table "hash table" "ScmHashTable*" "SCM_HASHTABLEP" "SCM_HASHTABLE")
+   (class "class" "ScmClass*" "SCM_CLASSP" "SCM_CLASS")
+   (module "module" "ScmModule*" "SCM_MODULEP" "SCM_MODULE")
+   (thread "thread" "ScmVM*" "SCM_VMP" "SCM_VM")
+   (mutex "mutex" "ScmMutex*" "SCM_MUTEXP"  "SCM_MUTEX")
+   (condition-variable "condition variable" "ScmConditionVariable*" "SCM_CONDITION_VARIABLE_P"  "SCM_CONDITION_VARIABLE")
+   (weak-vector "weak vector" "ScmWeakVector*" "SCM_WEAKVECTORP" "SCM_WEAKVECTOR")
+   ))
 
 ;; default
 (define *scm-type*
-  (make-type "scheme object" #f     "ScmObj"       #f           #f))
+  (make <type> :scheme-name 'scheme-object :c-name "scheme object"
+        :c-predicate #f :c-type "ScmObj" :unboxer ""))
 
 (define (predicate->type pred)
   (or (find (lambda (type) (eq? (predicate-of type) pred))
@@ -95,9 +120,16 @@
       (error "unknown predicate to assert:" pred)))
 
 ;; process type definition in stub file
+;; (this keeps backward compatibility)
 (define (process-define-type form)
   (unless (= (length form) 6) (error "malformed define-type:" form))
-  (apply make-type (cdr form)))
+  (receive (name pred c-type c-pred unbox) (apply values (cdr form))
+    (make <type>
+      :scheme-name (string->symbol (string-drop-right (symbol->string pred) 1))
+      :c-name name
+      :c-type c-type
+      :c-predicate c-pred
+      :unboxer unbox)))
 
 ;;===================================================================
 ;; Stub
@@ -154,7 +186,7 @@
 
 (define-method emit-initializer ((self <csymbol>))
   (with-cpp-condition self
-    (print #`"  ,(c-name-of self) = Scm_Intern(&,(c-name-of self)_NAME);")
+    (f "  ~a = Scm_Intern(&~a_NAME);" (c-name-of self) (c-name-of self))
     (when (initializer-of self)
       (f "  Scm_Define(module, SCM_SYMBOL(~a), SCM_OBJ(~a));"
          (c-name-of self) (initializer-of self)))))
@@ -474,7 +506,7 @@
          (cname (c-name-of arg))
          (sname (scm-name-of arg))
          (count (count-of arg))
-         (tname (name-of type))
+         (tname (c-name-of type))
          (pred  (c-predicate-of type))
          (unbox (unboxer-of type)))
     (cond
@@ -751,8 +783,11 @@
 ;;   [(printer   <proc-spec>)]
 ;;   )
 ;;
-;; <slot-spec> := (slot-name [:getter <proc-spec>] [:setter <proc-spec>])
+;; <slot-spec> := slot-name
+;;             |  (slot-name [:getter <proc-spec>] [:setter <proc-spec>])
 ;; <proc-spec> := <c-code> | (cproc <c-name>)
+;;
+;; 
 
 (define-class <cclass> (<stub>)
   ((cpa       :init-keyword :cpa       :init-value '()
@@ -772,8 +807,8 @@
 (define-class <cslot> ()
   ((scheme-name :init-keyword :scheme-name :accessor scheme-name-of)
    (c-name      :init-keyword :c-name :accessor c-name-of)
-   (getter      :init-keyword :getter :accessor getter-of)
-   (setter      :init-keyword :setter :accessor setter-of :init-value #f)
+   (getter      :init-keyword :getter :accessor getter-of :init-value #t)
+   (setter      :init-keyword :setter :accessor setter-of :init-value #t)
    ))
 
 (define (process-define-cclass form)
@@ -831,10 +866,12 @@
   (map (lambda (spec)
          (unless (list? spec) (error "bad slot spec" spec))
          (let ((name (car spec))
-               (getter (get-keyword :getter (cdr spec) #f))
-               (setter (get-keyword :setter (cdr spec) #f)))
+               (getter (get-keyword :getter (cdr spec) #t))
+               (setter (get-keyword :setter (cdr spec) #t)))
            (make <cslot> :scheme-name name :getter getter :setter setter)))
        slot-spec))
+
+
 
 ;;-----------------------------------------------------------------
 ;; Extra initializers
