@@ -95,6 +95,10 @@ fuga
        "&lt;a href=&quot;http://abc/def?ghi&amp;jkl&quot;&gt;"
        (html-escape-string "<a href=\"http://abc/def?ghi&jkl\">"))
 
+(test* "html-escape-string"
+       "&lt;class&gt;"
+       (html-escape-string '<class>))
+
 (test* "html-doctype"
        "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\">\n"
        (html-doctype))

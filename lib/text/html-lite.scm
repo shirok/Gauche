@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: html-lite.scm,v 1.11 2003-07-05 08:49:51 shirok Exp $
+;;;  $Id: html-lite.scm,v 1.12 2003-12-03 17:48:10 shirok Exp $
 ;;;
 
 (define-module text.html-lite
@@ -51,7 +51,7 @@
                  read-char))
 
 (define (html-escape-string string)
-  (with-string-io string html-escape))
+  (with-string-io (x->string string) html-escape))
 
 (define (html-doctype . args)
   (let ((type (get-keyword :type args :strict)))

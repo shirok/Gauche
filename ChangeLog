@@ -1,3 +1,9 @@
+2003-12-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/html-lite.scm (html-escape-string): call x->string on
+	  the argument so that it can handle non-string argument.
+	  (Suggested by Kouhei Sutou).
+
 2003-11-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c : cleaned up internal protocols.  The fourth
