@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: logger.scm,v 1.2 2002-09-21 20:23:30 shirok Exp $
+;;;  $Id: logger.scm,v 1.3 2002-09-22 02:35:33 shirok Exp $
 ;;;
 
 (define-module gauche.logger
@@ -25,15 +25,39 @@
   )
 (select-module gauche.logger)
 
+;; delay loading of gauche.syslog until needed
+(autoload gauche.syslog sys-openlog sys-syslog LOG_PID LOG_INFO LOG_USER)
+
 (define-class <log-drain> ()
   ((path   :init-keyword :path :initform #f)
    (program-name :init-keyword :program-name
                  :initform  (sys-basename (with-module user *program-name*)))
    (retry  :init-keyword :retry :initform 5)
    (prefix :init-keyword :prefix :initform "~T ~P[~$]: ")
+   ;; The following parameters are used for syslog.
+   ;; The default values will be set when log-open is called with 'syslog.
+   (syslog-option   :init-keyword :syslog-option)
+   (syslog-facility :init-keyword :syslog-facility)
+   (syslog-priority :init-keyword :syslog-priority)
    ))
 
 (define *default-log-drain* (make <log-drain>))
+
+(define-method initialize ((self <log-drain>) initargs)
+  (next-method)
+  ;; if 'syslog is specified, we need some setup...
+  (when (eq? (slot-ref self 'path) 'syslog)
+    (unless (slot-bound? self 'syslog-option)
+      (set! (slot-ref self 'syslog-option) LOG_PID))
+    (unless (slot-bound? self 'syslog-facility)
+      (set! (slot-ref self 'syslog-facility) LOG_USER))
+    (unless (slot-bound? self 'syslog-priority)
+      (set! (slot-ref self 'syslog-priority) LOG_INFO))
+    (set! (slot-ref self 'prefix) #f)
+    (sys-openlog (slot-ref self 'program-name)
+                 (slot-ref self 'syslog-option)
+                 (slot-ref self 'syslog-facility))
+    ))
 
 ;; prefix spec
 ;;   ~T   current time as "MMM DD hh:mm:ss" where MMM is abbrev month.
@@ -98,6 +122,10 @@
            (proc (current-error-port)))
           ((eq? path #f)
            (call-with-output-string proc))
+          ((eq? path 'syslog)
+           (sys-syslog (logior (slot-ref drain 'syslog-facility)
+                               (slot-ref drain 'syslog-priority))
+                       (call-with-output-string proc)))
           (else
            #f))))
 
