@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: class.c,v 1.14 2001-03-17 09:17:50 shiro Exp $
+ *  $Id: class.c,v 1.15 2001-03-18 08:05:17 shiro Exp $
  */
 
 #include "gauche.h"
@@ -496,20 +496,23 @@ static ScmObj generic_allocate(ScmClass *klass, int nslots)
     instance = SCM_NEW2(ScmGeneric*,
                         sizeof(ScmGeneric) + sizeof(ScmObj)*nslots);
     SCM_SET_CLASS(instance, klass);
-    instance->name = SCM_FALSE;
+    instance->common.required = 0;
+    instance->common.optional = 0;
+    instance->common.info = SCM_FALSE;
     instance->methods = SCM_NIL;
+    instance->fallback = NULL;
     /* TODO: initialize extended slots */
     return SCM_OBJ(instance);
 }
 
 static ScmObj generic_name(ScmGeneric *gf)
 {
-    return gf->name;
+    return gf->common.info;
 }
 
 static void generic_name_set(ScmGeneric *gf, ScmObj val)
 {
-    gf->name = val;
+    gf->common.info = val;
 }
 
 static ScmObj generic_methods(ScmGeneric *gf)
@@ -533,21 +536,24 @@ static ScmObj method_allocate(ScmClass *klass, int nslots)
     instance = SCM_NEW2(ScmMethod*,
                         sizeof(ScmMethod) + sizeof(ScmObj)*nslots);
     SCM_SET_CLASS(instance, klass);
-    instance->generic = SCM_NIL;
+    instance->generic = NULL;
     instance->specializers = SCM_NIL;
-    instance->body = SCM_NIL;
+    instance->func = NULL;
     /* TODO: initialize extended slots */
     return SCM_OBJ(instance);
 }
 
 static ScmObj method_generic(ScmMethod *m)
 {
-    return m->generic;
+    return m->generic ? SCM_OBJ(m->generic) : SCM_FALSE;
 }
 
 static void method_generic_set(ScmMethod *m, ScmObj val)
 {
-    m->generic = val;
+    if (SCM_GENERICP(val))
+        m->generic = SCM_GENERIC(val);
+    else
+        Scm_Error("generic function required, but got %S", val);
 }
 
 static ScmObj method_specializers(ScmMethod *m)
@@ -558,16 +564,6 @@ static ScmObj method_specializers(ScmMethod *m)
 static void method_specializers_set(ScmMethod *m, ScmObj val)
 {
     m->specializers = val;
-}
-
-static ScmObj method_body(ScmMethod *m)
-{
-    return m->body;
-}
-
-static void method_body_set(ScmMethod *m, ScmObj val)
-{
-    m->body = val;
 }
 
 
@@ -612,8 +608,6 @@ static ScmClassStaticSlotSpec method_slots[] = {
                         method_generic, method_generic_set),
     SCM_CLASS_SLOT_SPEC("specializers", &Scm_MethodClass,
                         method_specializers, method_specializers_set),
-    SCM_CLASS_SLOT_SPEC("body", &Scm_MethodClass,
-                        method_body, method_body_set),
     { NULL }
 };
 
