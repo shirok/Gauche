@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.189 2002-04-30 01:32:06 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.190 2002-04-30 05:55:58 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -8861,7 +8861,7 @@ Cの標準ライブラリとGaucheの手続きとの対応が示してあります。
 * Program termination::         
 * Environment Inquiry::         
 * Filesystems::                 
-* Unix groups and passwords::   
+* Unix groups and users::       
 * Locale::                      
 * Signal::                      
 * System Inquiry::              
@@ -8881,13 +8881,14 @@ Cの標準ライブラリとGaucheの手続きとの対応が示してあります。
 Terminates the current process with the exit code @var{code}.
 @var{Code} must be zero or positive exact integer.
 This procedure first invokes the @var{after} thunks of the current dynamic
-handlers (@xref{Continuation}), then This calls @code{exit(2)}
-which does some cleaning up, like flushing the opened file buffers.
+handlers (@xref{Continuation}), then flushes opened file buffers,
+finally calls @code{exit(2)}.
 @c JP
 現在のプロセスを終了し、@var{code}を終了コードにします。
 @var{code}はゼロもしくは正の正確な整数でなければなりません。
 この手続きはまずアクティブなダイナミックハンドラの@var{after}手続きを全て呼び出し
-(@xref{Continuation})、続いて@code{exit(2)}を呼び出します。
+(@xref{Continuation})、続いてオープンされている出力ポートのバッファを
+フラッシュし、最後に@code{exit(2)}を呼び出します。
 @c COMMON
 @end defun
 
@@ -8959,7 +8960,7 @@ interpreter itself.
 @c COMMON
 @end defun
 
-@node Filesystems, Unix groups and passwords, Environment Inquiry, System interface
+@node Filesystems, Unix groups and users, Environment Inquiry, System interface
 @subsection Filesystems
 @c NODE ファイルシステム
 
@@ -9288,6 +9289,7 @@ may return @code{"/"} for the argument @code{"/"}, and
 @defun file-exists? path
 @defunx file-is-regular? path
 @defunx file-is-directory? path
+@c EN
 Returns true if @var{path} exists, is a regular file, or is a directory,
 respectively.   The latter two returns false if @var{path} doesn't
 exist at all.
@@ -9295,31 +9297,127 @@ exist at all.
 These functions are built on top of primitive
 system interfaces described below; I provide these for convenience
 and compatibility (STk has the same functions).
+@c JP
+それぞれ、@var{path}が存在するか、存在してそれがレギュラーファイルであるか、
+存在してそれがディレクトリであれば@code{#t}を返します。
+
+これらの手続きは便利であり、STkとの互換性もあるので定義されていますが、
+実体は下に説明されている低レベル手続きの上に作成されています。
+@c COMMON
 @end defun
 
 @deftp {Builtin Class} <sys-stat>
 @clindex sys-stat
+@c EN
 An object that represents @code{struct stat}, attributes of an
-entry in the filesystem.
+entry in the filesystem.   It has the following read-only slots.
+@c JP
+ファイルシステム内のエントリの属性を表す、@code{struct stat}のラッパー
+オブジェクトです。以下に示す読みだし専用のスロットを持ちます。
+@c COMMON
+
+@defivar <sys-stat> type
+@c EN
+A symbol represents the type of the file.
+@c JP
+ファイルのタイプを示すシンボルです。
+@c COMMON
+@multitable {aaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@item @code{regular} @tab a regular file
+@item @code{directory} @tab a directory
+@item @code{character} @tab a character device
+@item @code{block} @tab a block device
+@item @code{fifo} @tab a fifo
+@item @code{symlink} @tab a symbolic link
+@item @code{socket} @tab a socket
+@end multitable
+@c EN
+If the file type is none of the above, @code{#f} is returned.
+@c JP
+以上のどれにも当てはまらない場合は@code{#f}が返されます。
+@c COMMON
+
+@c EN
+Note: Some operating systems don't have the @code{socket} file type
+and returns @code{fifo} for socket files.   Portable programs should
+check both possibilities to see if the given file is a socket.
+@c JP
+注：いくつかのオペレーティングシステムでは@code{socket}ファイルタイプを
+@code{fifo}と区別せず、どちらに対しても@code{fifo}を返します。
+ポータブルなプログラムを書くときは注意して下さい。
+@c COMMON
+@end defivar
+
+@defivar <sys-stat> perm
+@c EN
+An exact integer for permission bits of @code{struct stat}.
+It is the same as lower 9-bits of "mode" slot; provided for the convenience.
+@c JP
+パーミッションビットマスク。"mode"スロットの下位9ビットと同じですが、
+便利なので独立したスロットとして提供されます。
+@c COMMON
+@end defivar
+
+@defivar <sys-stat> mode
+@defivarx <sys-stat> ino
+@defivarx <sys-stat> dev
+@defivarx <sys-stat> rdev
+@defivarx <sys-stat> nlink
+@defivarx <sys-stat> uid
+@defivarx <sys-stat> gid
+@defivarx <sys-stat> size
+@c EN
+An exact integer for those information of @code{struct stat}.
+@c JP
+@code{struct stat}の該当するフィールドの値。正確な整数です。
+@c COMMON
+@end defivar
+
+@defivar <sys-stat> atime
+@defivarx <sys-stat> mtime
+@defivarx <sys-stat> ctime
+@c EN
+A number of seconds since Unix Epoch for those information of @code{struct stat}.
+@c JP
+@code{struct stat}の該当するフィールドの値を、Unix Epochからの秒数で。
+@c COMMON
+@end defivar
 @end deftp
 
 @defun sys-stat path
-[POSIX] Returns a @code{<sys-stat>} object of @var{path}.
+@defunx sys-fstat port-or-fd
+[POSIX]
+@c EN
+Returns a @code{<sys-stat>} object of @var{path}, or
+the underlying file of @var{port-or-fd}, which 
+may be a port or a positive exact integer file descriptor, respectively.
+
 If @var{path} is a symbolic link, a stat of the file the link points
-to is returned.
+to is returned from @code{sys-stat}.
+
+If @var{port-or-fd} is not associated to a file, @code{sys-fstat} returns
+@code{#f}.
+@c JP
+与えられたパス名@var{path}、またはポートかファイルディスクリプタ
+@var{port-or-fd}で示されるファイルの情報を@code{<sys-stat>}オブジェクトで
+返します。
+
+@code{sys-stat}は、@var{path}がシンボリックリンクであった場合は
+リンクの指す先のファイルに関する情報を返します。
+
+@code{sys-fstat}は、@var{port-or-fd}がファイルに関係ないポートであった
+場合は@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun sys-lstat path
+@c EN
 Like @code{sys-stat}, but it returns a stat of a symbolic link
 if @var{path} is a symbolic link.
-@end defun
-
-@defun sys-fstat port-or-fd
-[POSIX] @code{port-or-fd} may be a port or a positive exact integer
-file descriptor.
-Returns a @code{<sys-stat>} object of the underlying file of
-@var{port-or-fd}.  If a port is given, and the port is not
-associated to a file, @code{#f} is returned.
+@c JP
+@code{sys-stat}と同じですが、@var{path}がシンボリックリンクであった
+場合はリンクそのものの情報を返します。
+@c COMMON
 @end defun
 
 @defun sys-stat->mode stat
@@ -9333,28 +9431,14 @@ associated to a file, @code{#f} is returned.
 @defunx sys-stat->atime stat
 @defunx sys-stat->mtime stat
 @defunx sys-stat->ctime stat
-Accessors of @code{<sys-stat>} objects.  @code{sys-stat->mode} through
-@code{sys-stat->gid} returns an exact integer.  @code{sys-stat->atime}
-to @code{sys-stat->ctime} returns a number of seconds since Epoch.
-@end defun
-
-@defun sys-stat->file-type stat
-@var{stat} is a @code{<sys-stat>} object.  Returns one of the following
-symbols, according to the information of the mode word of @var{stat}.
-@multitable {aaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
-@item @code{regular} @tab a regular file
-@item @code{directory} @tab a directory
-@item @code{character} @tab a character device
-@item @code{block} @tab a block device
-@item @code{fifo} @tab a fifo
-@item @code{symlink} @tab a symbolic link
-@item @code{socket} @tab a socket
-@end multitable
-If the file type is none of the above, @code{#f} is returned.
-
-Note: Some operating systems don't have the @code{socket} file type
-and returns @code{fifo} for socket files.   Portable programs should
-check both possibilities to see if the given file is a socket.
+@defunx sys-stat->file-type stat
+@strong{Deprecated}.
+@c EN
+Use @code{slot-ref} to access information of @code{<sys-stat>} object.
+@c JP
+@code{<sys-stat>}オブジェクトの情報にアクセスするには@code{slot-ref}を
+使って下さい。
+@c COMMON
 @end defun
 
 @defun sys-access pathname amode
@@ -9451,52 +9535,190 @@ Returns the name of the terminal connected to the port,
 or @code{#f} if the port is not connected to a terminal.
 @end defun
 
-@node Unix groups and passwords, Locale, Filesystems, System interface
-@subsection Unix groups and passwords
-@c NODE Unixのグループとパスワード
+@node Unix groups and users, Locale, Filesystems, System interface
+@subsection Unix groups and users
+@c NODE Unixのグループとユーザ
 
 @menu
 * Unix group::                  
-* Unix password::               
+* Unix users::                  
 * Password encryption::         
 @end menu
 
-@node Unix group, Unix password, Unix groups and passwords, Unix groups and passwords
+@node Unix group, Unix users, Unix groups and users, Unix groups and users
 @subsubsection Unix Group
 @c NODE Unixのグループ
 
 @deftp {Builtin Class} <sys-group>
 @clindex sys-group
+@c EN
+Unix group information.  Has following slots.
+@c JP
+Unixのグループの情報です。以下のスロットを持ちます。
+@c COMMON
+
+@defivar <sys-group> name
+@c EN
+Group name.
+@c JP
+グループ名。
+@c COMMON
+@end defivar
+
+@defivar <sys-group> gid
+@c EN
+Group id.
+@c JP
+グループID
+@c COMMON
+@end defivar
+
+@defivar <sys-group> passwd
+@c EN
+Group password.
+@c JP
+グループパスワード。
+@c COMMON
+@end defivar
+
+@defivar <sys-group> mem
+@c EN
+List of user names who are in this group.
+@c JP
+このグループに属するユーザ名のリスト。
+@c COMMON
+@end defivar
+
 @end deftp
 
 @defun sys-getgrgid gid
 @defunx sys-getgrnam name
 [POSIX]
+@c EN
+Returns @code{<sys-group>} object from an integer group id @var{gid}
+or a group name @var{name}, respectively.
+If the specified group doesn't exist, @code{#f} is returned.
+@c JP
+グループID@var{gid}もしくはグループ名@var{name}で示されるグループの情報を
+@code{<sys-group>}で返します。該当するグループが存在しない場合は
+@code{#f}が返されます。
+@c COMMON
 @end defun
 
 @defun sys-gid->group->name gid
 @defunx sys-group-name->gid name
+@c EN
+Convenience function to convert between group id and group name.
+@c JP
+グループIDとグループ名を相互変換する便利な手続きです。
+@c COMMON
 @end defun
 
-@node Unix password, Password encryption, Unix group, Unix groups and passwords
-@subsubsection Unix Password
-@c NODE Unixのパスワード
+@node Unix users, Password encryption, Unix group, Unix groups and users
+@subsubsection Unix users
+@c NODE Unixのユーザ
 
 @deftp {Builtin Class} <sys-passwd>
 @clindex sys-passwd
+@c EN
+Unix user information.  Has following slots.
+@c JP
+Unixのユーザの情報です。以下のスロットを持ちます。
+@c COMMON
+
+@defivar <sys-group> name
+@c EN
+User name.
+@c JP
+ユーザ名。
+@c COMMON
+@end defivar
+
+@defivar <sys-group> uid
+@c EN
+User ID.
+@c JP
+ユーザID
+@c COMMON
+@end defivar
+
+@defivar <sys-group> gid
+@c EN
+User's primary group id.
+@c JP
+ユーザのプライマリグループID。
+@c COMMON
+@end defivar
+
+@defivar <sys-group> passwd
+@c EN
+User's (encrypted) password.  If the system uses the shadow password file,
+you just get obscure string like "x".
+@c JP
+ユーザの(暗号化された)パスワード。システムがシャドウパスワードファイルを
+使っている場合は、 "x" のような無意味な文字列が入っています。
+@c COMMON
+@end defivar
+
+@defivar <sys-group> gecos
+@c EN
+Gecos field.
+@c JP
+Gecosフィールド。
+@c COMMON
+@end defivar
+
+@defivar <sys-group> dir
+@c EN
+User's home directory.
+@c JP
+ユーザのホームディレクトリ。
+@c COMMON
+@end defivar
+
+@defivar <sys-group> shell
+@c EN
+User's login shell.
+@c JP
+ユーザのログインシェル。
+@c COMMON
+@end defivar
+
+@defivar <sys-group> class
+@c EN
+User's class (only available on some systems).
+@c JP
+ユーザのクラス。(特定のシステムでのみ有効)。
+@c COMMON
+@end defivar
+
 @end deftp
 
 @defun sys-getpwuid uid
 @defunx sys-getpwnam name
 [POSIX]
+@c EN
+Returns @code{<sys-passwd>} object from an integer user id @var{uid}
+or a user name @var{name}, respectively.
+If the specified user doesn't exist, @code{#f} is returned.
+@c JP
+ユーザID@var{uid}もしくはユーザ名@var{name}で示されるユーザの情報を
+@code{<sys-passwd>}で返します。該当するユーザが存在しない場合は
+@code{#f}が返されます。
+@c COMMON
 @end defun
 
 @defun sys-uid->user-name uid
 @defunx sys-user-name->uid
+@c EN
+Convenience functions to convert between user id and user name.
+@c JP
+ユーザIDとユーザ名を相互変換する便利な手続きです。
+@c COMMON
 @end defun
 
 
-@node Password encryption,  , Unix password, Unix groups and passwords
+@node Password encryption,  , Unix users, Unix groups and users
 @subsubsection Password encryption
 @c NODE パスワードの暗号化
 
@@ -9507,14 +9729,85 @@ On systems where @code{crypt(3)} is not available, call to this
 function signals an error.
 @end defun
 
-@node Locale, Signal, Unix groups and passwords, System interface
+@node Locale, Signal, Unix groups and users, System interface
 @subsection Locale
 @c NODE ロケール
 
 @defun sys-setlocate category locale
 [POSIX]
+@c EN
+Sets the locale of the category @var{category} to the locale @var{locale}.
+@var{category} must be an exact integer; the following pre-defined
+variables are available.  @var{locale} must be a string locale name.
+Returns the locale name on success, or @code{#f} if the system
+couldn't change the locale.
+@c JP
+カテゴリー@var{category}のロケールを@var{locale}にセットします。
+@var{category}は整数でなければなりません；以下の変数が@var{category}の
+ために定義されています。@var{locale}はロケールを表す文字列です。
+成功した場合は新しいロケール名を、ロケールが変更できなかった場合は@code{#f}を
+返します。
+@c COMMON
 @end defun
 
+@defvar  LC_ALL
+@defvarx LC_COLLATE
+@defvarx LC_CTYPE
+@defvarx LC_MONETARY
+@defvarx LC_NUMERIC
+@defvarx LC_TIME
+@c EN
+Predefined variables for possible @var{category} value of
+@code{sys-setlocale}.
+@c JP
+@code{sys-setlocale}の@var{category}に渡せる数値を定義しています。
+@c COMMON
+@end defvar
+
+@defun sys-localeconv
+[POSIX]
+@c EN
+Returns an assoc list of various information for formatting numbers
+in the current locale.
+@c JP
+現在のロケールで数値をフォーマットする際に必要な様々な情報をassoc listに
+して返します。
+@c COMMON
+@end defun
+
+@c EN
+An example session.  It may differ on your system settings.
+@c JP
+例を示します。あなたのシステム設定によっては異なる結果になるかもしれません。
+@c COMMON
+@example
+(sys-localeconv)
+ @result{}
+   ((decimal_point . ".") (thousands_sep . "")
+    (grouping . "") (int_curr_symbol . "")
+    (currency_symbol . "") (mon_decimal_point . "")
+    (mon_thousands_sep . "") (mon_grouping . "")
+    (positive_sign . "") (negative_sign . "")
+    (int_frac_digits . 127) (frac_digits . 127)
+    (p_cs_precedes . #t) (p_sep_by_space . #t)
+    (n_cs_precedes . #t) (n_sep_by_space . #t)
+    (p_sign_posn . 127) (n_sign_posn . 127))
+
+(sys-setlocale LC_ALL "fr_FR")
+ @result{} "fr_FR"
+
+(sys-localeconv)
+ @result{}
+  ((decimal_point . ",") (thousands_sep . "")
+   (grouping . "") (int_curr_symbol . "FRF ")
+   (currency_symbol . "F") (mon_decimal_point . ",")
+   (mon_thousands_sep . " ") (mon_grouping . "\x03\x03")
+   (positive_sign . "") (negative_sign . "-")
+   (int_frac_digits . 2) (frac_digits . 2)
+   (p_cs_precedes . #f) (p_sep_by_space . #t)
+   (n_cs_precedes . #f) (n_sep_by_space . #t)
+   (p_sign_posn . 1) (n_sign_posn . 1))
+@end example
 
 @node Signal, System Inquiry, Locale, System interface
 @subsection Signal
@@ -14740,7 +15033,8 @@ It is more obvious in the program that you're dealing with singleton.
 @deftp {Module} gauche.termios
 @mdindex gauche.termios
 This module defines POSIX termios interface, which
-controls serial ports.
+controls terminal attributes.  This module also provides
+pseudo tty interface, if the system provides it.
 @end deftp
 
 @deftp {Builtin Class} <sys-termios>
@@ -14862,6 +15156,35 @@ Some system may support higher baud rate, such as @code{B57600},
 to check these options are defined.  @code{B0} is used to
 terminate the connection.
 @end defun
+
+@defun sys-openpty &optional term
+Openes a pair of pseudo ttys, one for master and the other for slave,
+then returns two integers which are their file descriptors.
+An optional argument @var{term} must be, if passed, a @code{<sys-termios>}
+object; it sets the slave pty's parameters.
+
+You can use @code{open-input-fd-port} and/or @code{open-output-fd-port}
+to create a port around the returned file descriptor (@xref{File ports}).
+To obtain pseudo tty's name, use @code{sys-ttyname}
+(@xref{Other file operations}).
+
+This function is available only if the system supports @code{openpty(3)}.
+@end defun
+
+@defun sys-forkpty &optional term
+Openes a pair of pseudo ttys, one for master and the other for slave,
+sets the slave pty suitable for login terminal, then fork(2).
+
+Returns two integers; the first value is a child pid for the parent process,
+and 0 for the child process.  The second value is a file descriptor
+of the master pty.
+
+An optional argument @var{term} must be, if passed, a @code{<sys-termios>}
+object; it sets the slave pty's parameters.
+
+This function is available only if the system supports @code{forkpty(3)}.
+@end defun
+
 
 The following example shows how to get a password from the user
 without echoing:
@@ -18954,6 +19277,8 @@ R5RS @code{open-input-file} or @code{open-output-file}
 corresponds to this operation.  @xref{File ports}.
 @item fork
 Gauche's @code{sys-fork}.   @xref{Fork and exec}.
+@item forkpty
+Use @code{sys-forkpty}.  @xref{Termios}.
 @item fpathconf
 Not supported.
 @item fprintf
@@ -19022,9 +19347,9 @@ Gauche's @code{sys-getpgrp}.   @xref{System Inquiry}.
 Gauche's @code{sys-getpid}.   @xref{System Inquiry}.
 @item getpwnam
 @itemx getpwuid
-Gauche's @code{sys-getpwnam} and @code{sys-getpwuid}.  @xref{Unix password}.
+Gauche's @code{sys-getpwnam} and @code{sys-getpwuid}.  @xref{Unix users}.
 @item gets
-Use @code{read-line}.  @xref{Input}.
+Use @code{read-line} or @code{read-block}.  @xref{Input}.
 @item gettimeofday
 Gauche's @code{sys-gettimeofday}.   @xref{Time}.
 @item getuid
@@ -19088,7 +19413,7 @@ Use R5RS @code{quotient} and @code{remainder}.
 @item link
 Gauche's @code{sys-link}.  @xref{Directory manipulation}.
 @item localeconv
-Gauche's @code{sys-localeconv}. 
+Gauche's @code{sys-localeconv}. @xref{Locale}.
 @item localtime
 Gauche's @code{sys-localtime}.  @xref{Time}.
 @item log
@@ -19134,6 +19459,8 @@ corresponds to this operation.  @xref{File ports}.
 Not directly supported.
 You can use @code{sys-readdir} to read the directory entries at once.
 @xref{Directories}.
+@item openpty
+Use @code{sys-openpty}.  @xref{Termios}.
 @item pathconf
 Not supported.
 @item pause
@@ -19205,13 +19532,13 @@ Gauche's @code{sys-setgid}.
 R5RS @code{call/cc} provides similar (superior) mechanism.
 @xref{Continuation}.
 @item setlocale
-Gauche's @code{sys-setlocale}.
+Gauche's @code{sys-setlocale}.  @xref{Locale}.
 @item setpgid
-Gauche's @code{sys-setpgid}.
+Gauche's @code{sys-setpgid}.  @xref{System Inquiry}.
 @item setsid
-Gauche's @code{sys-setsid}.
+Gauche's @code{sys-setsid}.  @xref{System Inquiry}.
 @item setuid
-Gauche's @code{sys-setuid}.
+Gauche's @code{sys-setuid}.  @xref{System Inquiry}.
 @item setvbuf
 Not necessary.
 @item sigaction
