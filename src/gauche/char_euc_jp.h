@@ -1,7 +1,7 @@
 /*
  * char-euc-jp.h
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char_euc_jp.h,v 1.14 2004-01-09 11:03:58 shirok Exp $
+ *  $Id: char_euc_jp.h,v 1.15 2004-08-01 05:27:11 shirok Exp $
  */
 
 #ifndef SCM_CHAR_ENCODING_BODY
@@ -66,15 +66,22 @@
  * and store it in ScmChar ch.  If cp doesn't point to valid multibyte
  * character, store SCM_CHAR_INVALID to ch.  cp is not modified.
  */
+/* The tests aren't "exact" in the sense that it accepts not-quite
+   EUC-JP sequence, but I hope they at least exclude the 'harmful'
+   sequences */
 #define SCM_CHAR_GET(cp, ch)                                    \
     do {                                                        \
         if (((ch) = (unsigned char)*(cp)) >= 0x80) {            \
-            if ((ch) == 0x8f) {                                 \
+            if ((ch) == 0x8f &&                                 \
+                (unsigned char)(cp)[1] >= 0xa1 &&               \
+                (unsigned char)(cp)[2] >= 0xa1) {               \
                  (ch) = ((ch) << 16)                            \
                      + ((unsigned char)(cp)[1] << 8)            \
                      + (unsigned char)(cp)[2];                  \
-            } else {                                            \
+            } else if ((unsigned char)(cp)[1] >= 0xa1) {        \
                 (ch) = ((ch) << 8) + (unsigned char)(cp)[1];    \
+            } else {                                            \
+                (ch) = SCM_CHAR_INVALID;                        \
             }                                                   \
         }                                                       \
     } while (0)
