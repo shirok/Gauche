@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: repl.c,v 1.15 2001-12-22 06:27:55 shirok Exp $
+ *  $Id: repl.c,v 1.16 2001-12-22 20:51:41 shirok Exp $
  */
 
 #include "gauche.h"
@@ -24,13 +24,13 @@ void Scm_Repl(ScmObj prompt, ScmPort *in, ScmPort *out)
     volatile int eofread = FALSE;
     
     for (;;) {
-        ScmObj p = Scm_Eval(prompt, SCM_NIL);
+        ScmObj p = Scm_Eval(prompt, SCM_UNBOUND);
         SCM_UNWIND_PROTECT {
             Scm_Write(p, SCM_OBJ(out), SCM_WRITE_DISPLAY);
             SCM_FLUSH(out);
             v = Scm_Read(SCM_OBJ(in));
             if (SCM_EOFP(v)) { eofread = TRUE; break; }
-            Scm_Eval(v, SCM_NIL);
+            Scm_Eval(v, SCM_UNBOUND);
             SCM_FOR_EACH(c, Scm_VMGetResult(Scm_VM())) {
                 Scm_Printf(out, "%S\n", SCM_CAR(c));
             }

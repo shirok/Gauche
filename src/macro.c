@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.33 2001-12-06 19:31:37 shirok Exp $
+ *  $Id: macro.c,v 1.34 2001-12-22 20:51:41 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1056,16 +1056,19 @@ static ScmSyntax syntax_macro_expand_1 = {
 
 void Scm__InitMacro(void)
 {
-    ScmModule *m = SCM_MODULE(Scm_SchemeModule());
+    ScmModule *n = SCM_MODULE(Scm_NullModule());   /* for r5rs syntax */
+    ScmModule *g = SCM_MODULE(Scm_GaucheModule()); /* for gauche syntax */
 
-#define DEFSYN(symbol, syntax) \
-    Scm_Define(m, SCM_SYMBOL(symbol), SCM_OBJ(&syntax))
+#define DEFSYN_N(symbol, syntax) \
+    Scm_Define(n, SCM_SYMBOL(symbol), SCM_OBJ(&syntax))
+#define DEFSYN_G(symbol, syntax) \
+    Scm_Define(g, SCM_SYMBOL(symbol), SCM_OBJ(&syntax))
 
-    DEFSYN(SCM_SYM_SYNTAX_RULES_INT, syntax_syntax_rules);
-    DEFSYN(SCM_SYM_DEFINE_SYNTAX, syntax_define_syntax);
-    DEFSYN(SCM_SYM_LET_SYNTAX, syntax_let_syntax);
-    DEFSYN(SCM_SYM_LETREC_SYNTAX, syntax_letrec_syntax);
-    DEFSYN(SCM_SYM_DEFINE_MACRO, syntax_define_macro);
-    DEFSYN(SCM_SYM_MACRO_EXPAND, syntax_macro_expand);
-    DEFSYN(SCM_SYM_MACRO_EXPAND_1, syntax_macro_expand_1);
+    DEFSYN_N(SCM_SYM_SYNTAX_RULES_INT, syntax_syntax_rules);
+    DEFSYN_N(SCM_SYM_DEFINE_SYNTAX, syntax_define_syntax);
+    DEFSYN_N(SCM_SYM_LET_SYNTAX, syntax_let_syntax);
+    DEFSYN_N(SCM_SYM_LETREC_SYNTAX, syntax_letrec_syntax);
+    DEFSYN_G(SCM_SYM_DEFINE_MACRO, syntax_define_macro);
+    DEFSYN_G(SCM_SYM_MACRO_EXPAND, syntax_macro_expand);
+    DEFSYN_G(SCM_SYM_MACRO_EXPAND_1, syntax_macro_expand_1);
 }

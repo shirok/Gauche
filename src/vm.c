@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.123 2001-12-21 07:03:39 shirok Exp $
+ *  $Id: vm.c,v 1.124 2001-12-22 20:51:41 shirok Exp $
  */
 
 #include "gauche.h"
@@ -1430,12 +1430,40 @@ ScmObj Scm_VMApply2(ScmObj proc, ScmObj arg1, ScmObj arg2)
     return Scm_VMApply(proc, SCM_LIST2(arg1, arg2));
 }
 
-/* TODO: write proper environment object!
-   for now, we ignore env argument. */
+/* support proc. for eval.  compile expr in the module nmodule,
+   ensuring the env is reset to omodule afterwards */
+static ScmObj compile_for_eval(ScmObj expr,
+                               ScmModule *nmodule,
+                               ScmModule *omodule)
+{
+    ScmObj v = SCM_NIL;
+    SCM_UNWIND_PROTECT {
+        theVM->module = nmodule;
+        v = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_NORMAL);
+    }
+    SCM_WHEN_ERROR {
+        theVM->module = omodule;
+        SCM_NEXT_HANDLER;
+        /*NOTREACHED*/
+    }
+    SCM_END_PROTECT;
+    theVM->module = omodule;
+    return v;
+}
+
+/* For now, we only supports a module as the evaluation environment */
 ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
 {
     DECL_REGS;
-    ScmObj v = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_NORMAL);
+    ScmObj v = SCM_NIL;
+    if (SCM_UNBOUNDP(e)) {
+        /* if env is not given, just use the current env */
+        v = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_NORMAL);
+    } else if (!SCM_MODULEP(e)) {
+        Scm_Error("module required, but got %S", e);
+    } else {
+        v = compile_for_eval(expr, SCM_MODULE(e), theVM->module);
+    }
     argp = (ScmEnvFrame *)sp;
     PUSH_CONT(v, v);
     vm->numVals = 1;
@@ -1532,9 +1560,18 @@ static ScmObj user_eval_inner(ScmObj program)
 
 ScmObj Scm_Eval(ScmObj expr, ScmObj e)
 {
-    ScmObj v = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_NORMAL);
-    if (theVM->compilerFlags & SCM_COMPILE_SHOWRESULT)
+    ScmObj v = SCM_NIL;
+    if (SCM_UNBOUNDP(e)) {
+        /* if env is not given, just use the current env */
+        v = Scm_Compile(expr, SCM_NIL, SCM_COMPILE_NORMAL);
+    } else if (!SCM_MODULEP(e)) {
+        Scm_Error("module required, but got %S", e);
+    } else {
+        v = compile_for_eval(expr, SCM_MODULE(e), theVM->module);
+    }
+    if (theVM->compilerFlags & SCM_COMPILE_SHOWRESULT) {
         Scm_Printf(theVM->curerr, "== %#S\n", v);
+    }
     return user_eval_inner(v);
 }
 
