@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.10 2001-04-18 07:52:11 shiro Exp $
+ *  $Id: regexp.c,v 1.11 2001-04-20 08:34:12 shiro Exp $
  */
 
 #include <setjmp.h>
@@ -49,25 +49,31 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_RegMatchClass, NULL);
 
 /*
  * The idea here is to match string without converting mb <-> char as
- * much as possible.  The conversion is inevitable anytime we have to
- * match charsets, but there are number of cases we can avoid it.
- * The engine itself will be implemented in NFA-based scheme.
+ * much as possible.  Actually, the converion is done only when we see
+ * large character sets.
+ *
+ * The engine is a sort of NFA, by keeping state information for backtrack
+ * in C stack.  It'll bust the C stack if you try to match (..)* with
+ * long input string.  A possible fix is to check if recursion level
+ * exceeds some limit, then save the C stack into heap (as in the
+ * C-stack-copying continuation does) and reuse the stack area.
  */
 
 /* Instructions */
 enum {
     RE_MATCH1,                  /* followed by 1 byte to match */
     RE_MATCH,                   /* followed by length, and bytes to match */
-    RE_ANY,                     /* match any char (maybe but newline) */
+    RE_ANY,                     /* match any char */
     RE_TRY,                     /* followed by offset.  try matching
                                    the following sequence, and if fails,
                                    jump to offset. */
     RE_SET,                     /* followed by charset #.  match any char in
                                    the charset. */
+    RE_NSET,                    /* followed by charset #.  mathc any char but
+                                   in the charset */
     RE_SET1,                    /* followed by charset #.  match any char in
                                    the charset.  guaranteed that the charset
-                                   holds only range 0-127; possible
-                                   optimization. */
+                                   holds only range 0-127 */
     RE_NSET1,                   /* followed by charset #.  match any char
                                    but the ones in the charset.  guaranteed
                                    that the charset holds only range 0-127. */
@@ -89,6 +95,7 @@ ScmObj sym_alt;                 /* alt */
 ScmObj sym_rep;                 /* rep */
 ScmObj sym_any;                 /* any */
 ScmObj sym_bol;                 /* bol */
+ScmObj sym_comp;                /* complement charset */
 
 static ScmRegexp *make_regexp(void)
 {
@@ -122,6 +129,7 @@ static ScmRegexp *make_regexp(void)
 /* compiler state information */
 struct comp_ctx {
     ScmString *pattern;         /* original pattern */
+    ScmPort *ipat;              /* [pass1] string port for pattern */
     const char *rxstr;          /* [pass1] current point being parsed */
     int rxlen;                  /* [pass1] current length */
     ScmObj sets;                /* [pass1] list of charsets */
@@ -131,15 +139,7 @@ struct comp_ctx {
 };
 
 static ScmObj re_compile_charset(ScmRegexp *rx, struct comp_ctx *ctx);
-
-static inline ScmChar fetch_pattern(struct comp_ctx *ctx)
-{
-    ScmChar ch;
-    SCM_STR_GETC(ctx->rxstr, ch);
-    ctx->rxstr += SCM_CHAR_NBYTES(ch);
-    ctx->rxlen--;
-    return ch;
-}
+static void re_compile_register_charset(struct comp_ctx *ctx, ScmCharSet *cs);
 
 /* Util function in pass1.  look back the parser tree to find out
    the last branch of the parse tree. */
@@ -219,7 +219,7 @@ static int can_be_bol(ScmObj head)
  */
 ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
 {
-    ScmObj head = SCM_NIL, tail = SCM_NIL, elt, cell, sym;
+    ScmObj head = SCM_NIL, tail = SCM_NIL, elt, cell, cs;
     ScmObj grpstack;            /* group stack. */
     ScmChar ch;
     int grpcount = 0;
@@ -229,8 +229,9 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
     SCM_APPEND1(head, tail, SCM_MAKE_INT(0));
     grpstack = Scm_Cons(tail, SCM_NIL);
     
-    while (ctx->rxlen > 0) {
-        ch = fetch_pattern(ctx);
+    for (;;) {
+        SCM_GETC(ch, ctx->ipat);
+        if (ch == SCM_CHAR_INVALID) break;
 
         switch (ch) {
         case '(':
@@ -304,11 +305,52 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
             }
         case '\\':
             /* TODO: handle special excape sequences */
-            if (ctx->rxlen <= 0)
+            SCM_GETC(ch, ctx->ipat);
+            if (ch == SCM_CHAR_INVALID)
                 Scm_Error("stray backslash at the end of pattern: %S\n",
                           ctx->pattern);
-            ch = fetch_pattern(ctx);
-            /* FALLTHROUGH */
+            switch (ch) {
+            case 'a': SCM_APPEND1(head, tail, SCM_MAKE_CHAR(0x07)); break;
+            case 'n': SCM_APPEND1(head, tail, SCM_MAKE_CHAR('\n')); break;
+            case 'r': SCM_APPEND1(head, tail, SCM_MAKE_CHAR('\r')); break;
+            case 't': SCM_APPEND1(head, tail, SCM_MAKE_CHAR('\t')); break;
+            case 'f': SCM_APPEND1(head, tail, SCM_MAKE_CHAR('\f')); break;
+            case 'e': SCM_APPEND1(head, tail, SCM_MAKE_CHAR(0x1b)); break;
+            case 'd':
+                cs = Scm_GetStandardCharSet(SCM_CHARSET_DIGIT);
+                SCM_APPEND1(head, tail, cs);
+                re_compile_register_charset(ctx, SCM_CHARSET(cs));
+                break;
+            case 'D':
+                cs = Scm_GetStandardCharSet(SCM_CHARSET_DIGIT);
+                SCM_APPEND1(head, tail, Scm_Cons(sym_comp, cs));
+                re_compile_register_charset(ctx, SCM_CHARSET(cs));
+                break;
+            case 'w':
+                cs = Scm_GetStandardCharSet(SCM_CHARSET_ALNUM);
+                SCM_APPEND1(head, tail, cs);
+                re_compile_register_charset(ctx, SCM_CHARSET(cs));
+                break;
+            case 'W':
+                cs = Scm_GetStandardCharSet(SCM_CHARSET_ALNUM);
+                SCM_APPEND1(head, tail, Scm_Cons(sym_comp, cs));
+                re_compile_register_charset(ctx, SCM_CHARSET(cs));
+                break;
+            case 's':
+                cs = Scm_GetStandardCharSet(SCM_CHARSET_SPACE);
+                SCM_APPEND1(head, tail, cs);
+                re_compile_register_charset(ctx, SCM_CHARSET(cs));
+                break;
+            case 'S':
+                cs = Scm_GetStandardCharSet(SCM_CHARSET_SPACE);
+                SCM_APPEND1(head, tail, Scm_Cons(sym_comp, cs));
+                re_compile_register_charset(ctx, SCM_CHARSET(cs));
+                break;
+            default:
+                goto ordchar;
+            }
+            insncount++;
+            continue;
         default:
         ordchar:
             insncount += SCM_CHAR_NBYTES(ch);
@@ -327,78 +369,35 @@ ScmObj re_compile_pass1(ScmRegexp *rx, struct comp_ctx *ctx)
 }
 
 /* character range */
-/* TODO:  [:class:] and other posix weird stuff. */
 static ScmObj re_compile_charset(ScmRegexp *rx, struct comp_ctx *ctx)
 {
-#define REAL_BEGIN 2
-#define CARET_BEGIN 1
+    int complement;
+    ScmObj set = Scm_CharSetRead(ctx->ipat, &complement, FALSE);
+    if (!SCM_CHARSETP(set))
+        Scm_Error("bad charset spec in pattern: %S", ctx->pattern);
     
-    int begin = REAL_BEGIN, complement = FALSE;
-    int lastchar = -1, inrange = FALSE;
-    ScmCharSet *set = SCM_CHARSET(Scm_MakeEmptyCharSet());
-    ScmChar ch;
-
-    for (;;) {
-        if (ctx->rxlen <= 0) Scm_Error("Unclosed bracket: %S", ctx->pattern);
-        ch = fetch_pattern(ctx);
-
-        if (begin == REAL_BEGIN && ch == '^') {
-            complement = TRUE;
-            begin = CARET_BEGIN;
-            continue;
-        }
-        if (begin >= CARET_BEGIN && ch == ']') {
-            Scm_CharSetAddRange(set, ch, ch);
-            lastchar = ch;
-            begin = FALSE;
-            continue;
-        }
-        begin = FALSE;
-
-        switch (ch) {
-        case '-':
-            if (inrange) goto ordchar;
-            inrange = TRUE;
-            continue;
-        case ']':
-            if (inrange) {
-                if (lastchar >= 0) {
-                    Scm_CharSetAddRange(set, lastchar, lastchar);
-                    Scm_CharSetAddRange(set, '-', '-');
-                } else {
-                    Scm_CharSetAddRange(set, '-', '-');
-                }
-            }
-            break;
-        ordchar:
-        default:
-            if (inrange) {
-                if (lastchar < 0) {
-                    Scm_Error("bad character range spec: %S", ctx->pattern);
-                }
-                Scm_CharSetAddRange(set, lastchar, ch);
-                lastchar = -1;
-                inrange = FALSE;
-            } else {
-                Scm_CharSetAddRange(set, ch, ch);
-                lastchar = ch;
-            }
-            continue;
-        }
-        break;
+    re_compile_register_charset(ctx, SCM_CHARSET(set));
+    if (complement) {
+        return Scm_Cons(sym_comp, SCM_OBJ(set));
+    } else {
+        return SCM_OBJ(set);
     }
-    if (complement) Scm_CharSetComplement(set);
-    ctx->sets = Scm_Cons(SCM_OBJ(set), ctx->sets);
-    return SCM_OBJ(set);
 }
 
 /* An interlude between pass1 and pass2.  From the information of
  * parser context, build a charset vector.
  */
+static void re_compile_register_charset(struct comp_ctx *ctx, ScmCharSet *cs)
+{
+    if (SCM_FALSEP(Scm_Memq(SCM_OBJ(cs), ctx->sets))) {
+        ctx->sets = Scm_Cons(SCM_OBJ(cs), ctx->sets);
+    }
+}
+
 static void re_compile_setup_charsets(ScmRegexp *rx, struct comp_ctx *ctx)
 {
     ScmObj cp;
-    int i;
+    int i = 0;
     rx->numSets = Scm_Length(ctx->sets);
     rx->sets = SCM_NEW2(ScmCharSet**, sizeof(ScmCharSet*)*rx->numSets);
     for (i=0, cp = Scm_Reverse(ctx->sets); !SCM_NULLP(cp); cp = SCM_CDR(cp)) {
@@ -569,6 +568,17 @@ void re_compile_pass2(ScmObj compiled, ScmRegexp *rx,
                 }
                 continue;
             }
+            if (car == sym_comp) {
+                ScmObj cs = SCM_CDR(item);
+                SCM_ASSERT(SCM_CHARSETP(cs));
+                if (SCM_CHARSET_SMALLP(cs)) {
+                    re_compile_emit(ctx, RE_NSET1);
+                } else {
+                    re_compile_emit(ctx, RE_NSET);
+                }
+                re_compile_emit(ctx, re_compile_charset_index(rx, cs));
+                continue;
+            }
             /* fallback to error */
         }
 
@@ -626,6 +636,10 @@ void Scm_RegDump(ScmRegexp *rx)
             codep++;
             printf("%4d  SET  %d\n", codep-1, rx->code[codep]);
             continue;
+        case RE_NSET:
+            codep++;
+            printf("%4d  NSET  %d\n", codep-1, rx->code[codep]);
+            continue;
         case RE_SET1:
             codep++;
             printf("%4d  SET1 %d\n", codep-1, rx->code[codep]);
@@ -677,8 +691,7 @@ ScmObj Scm_RegComp(ScmString *pattern)
         Scm_Error("incomplete string is not allowed: %S", pattern);
 
     cctx.pattern = pattern;
-    cctx.rxstr = SCM_STRING_START(pattern);
-    cctx.rxlen = SCM_STRING_LENGTH(pattern);
+    cctx.ipat = SCM_PORT(Scm_MakeInputStringPort(pattern));
     cctx.sets = SCM_NIL;
     cctx.codep = 0;
 
@@ -727,8 +740,11 @@ struct match_ctx {
     const char *stop;           /* end of input */
     const char *last;
     struct match_list *matches;
+    void *begin_stack;          /* C stack pointer the match began from. */
     jmp_buf cont;
 };
+
+#define MAX_STACK_USAGE   0x100000 /* 1MB */
 
 static inline struct match_list *push_match(struct match_list *mlist,
                                             int grpnum, const char *ptr)
@@ -745,10 +761,16 @@ void re_exec_rec(const char *code,
                  struct match_ctx *ctx,                 
                  struct match_list *mlist)
 {
-    int param;
-    ScmChar ch;
+    register int param;
+    register ScmChar ch;
     ScmCharSet *cset;
 
+    /* TODO: here we assume C-stack grows downward; need to check by
+       configure */
+    if ((void*)&cset < ctx->begin_stack - MAX_STACK_USAGE) {
+        Scm_Error("stack overrun during matching regexp %S", ctx->rx);
+    }
+    
     for (;;) {
         switch(*code++) {
         case RE_MATCH:
@@ -782,12 +804,28 @@ void re_exec_rec(const char *code,
             if (!Scm_CharSetContains(ctx->rx->sets[param], *input)) return;
             input++;
             continue;
+        case RE_NSET1:
+            if (ctx->stop == input) return;
+            if ((unsigned char)*input < 128) {
+                param = (unsigned char)*code++;
+                if (Scm_CharSetContains(ctx->rx->sets[param], *input)) return;
+            }
+            input++;
+            continue;
         case RE_SET:
             if (ctx->stop == input) return;
             param = (unsigned char)*code++;
             SCM_STR_GETC(input, ch);
             cset = ctx->rx->sets[param];
             if (!Scm_CharSetContains(cset, ch)) return;
+            input += SCM_CHAR_NBYTES(ch);
+            continue;
+        case RE_NSET:
+            if (ctx->stop == input) return;
+            param = (unsigned char)*code++;
+            SCM_STR_GETC(input, ch);
+            cset = ctx->rx->sets[param];
+            if (Scm_CharSetContains(cset, ch)) return;
             input += SCM_CHAR_NBYTES(ch);
             continue;
         case RE_BEGIN:
@@ -864,6 +902,7 @@ static ScmObj re_exec(ScmRegexp *rx, ScmString *orig,
     ctx.input = SCM_STRING_START(orig);
     ctx.stop = end;
     ctx.matches = NULL;
+    ctx.begin_stack = (void*)&ctx;
 
     if (setjmp(ctx.cont) == 0) {
         re_exec_rec(ctx.codehead, start, &ctx, NULL);
