@@ -63,7 +63,7 @@ if [ "$doc" = "yes" ]; then
   for lang in j e; do
     rm -rf $DOC_DEST/gauche-ref$lang
     mkdir $DOC_DEST/gauche-ref$lang
-    cp doc/gauche-ref$lang.texi doc/gauche-ref.texi doc/Makefile doc/extract $DOC_DEST/gauche-ref$lang/
+    cp doc/*.texi doc/gauche-ref.texi doc/Makefile doc/extract $DOC_DEST/gauche-ref$lang/
     (cd $DOC_DEST/gauche-ref$lang; make gauche-ref${lang}_toc.html; rm -f *.texi extract Makefile)
   done
 fi
