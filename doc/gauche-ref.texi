@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.125 2001-11-14 11:33:12 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.126 2001-11-15 09:01:00 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2669,6 +2669,12 @@ it is regarded in 2's complement form, and infinite number of
 負の整数の場合、数値は2の補数で表現され、左側に無限に1が続いていると見倣されます。
 @c COMMON
 
+@c EN
+The API is consisntent to SLIB's ``logical'' module.
+@c JP
+APIはSLIBの``logical''モジュールに合わせてあります。
+@c COMMON
+
 @defun ash n count
 @c EN
 Shifts integer @var{n} left with @var{count} bits.
@@ -2706,6 +2712,50 @@ of two or more integers @var{n1}, @var{n2} @dots{}.
 Returns bitwise not of an integer @var{n}.
 @c JP
 整数@var{n}のビット否定を返します。
+@c COMMON
+@end defun
+
+@defun logtest n1 n2 @dots{}
+ @equiv{} @code{(not (zero? (logand @var{n1} @var{n2} @dots{})))}
+@end defun
+
+@defun logbit? index n
+@c EN
+Returns @code{#t} if @var{index}-th bit of integer @var{n} is 1, 
+@var{#f} otherwise.
+@c JP
+整数@var{n}の@var{index}目のビットが1ならば@code{#t}を、0ならば@code{#f}を
+返します。
+@c COMMON
+@end defun
+
+@defun bit-field n start end
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun copy-bit index n bit
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun copy-bit-field n start end from
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun logcount n
+@c EN
+@c JP
+@c COMMON
+@end defun
+
+@defun integer-length n
+@c EN
+@c JP
 @c COMMON
 @end defun
 
@@ -4189,7 +4239,7 @@ efficiently.
 ハッシュテーブル@var{hash}中のキー@var{key}に対応する値が存在し、かつペアで
 あった場合に、そのエントリーを元の値のcdrで置き換え、元の値のcarを返します。
 @var{key}に対応する値が存在しないかペアではなかった場合、テーブルは変更されず、
-@var{optional}が与えられていればそれが返され、与えられていなければエラーが報告されます。
+@var{default}が与えられていればそれが返され、与えられていなければエラーが報告されます。
 
 値が置き換えれる場合でもキーの探索は一度しか行われないため効率が良いです。
 @c COMMON
@@ -4414,7 +4464,7 @@ So far, all you can do with exceptions is to signal an error.
 
 @node Signalling errors, Handling errors, Exceptions, Exceptions
 @subsection Signalling errors
-@c NODE エラーの発生
+@c NODE エラーの通知
 
 @defun error string arg @dots{}
 [SRFI-23] Signals an error.   Internally the action is realized
@@ -7411,12 +7461,9 @@ Generic implementations of various algorithms.
 @c EN
 DBM-like libraries provides an easy way to store values to a file,
 indexed by keys.  You can think it as a persistent associative memory.
-This module provides a generic interface to the various dbm-like 
-libraries.
 @c JP
 DBM系のライブラリはキーでインデックスされた値をファイルに格納する簡単な方法を
-提供します。一種の永続的な連想記憶と言えるでしょう。このモジュールは各種のDBM系
-ライブラリへのインタフェースを提供します。
+提供します。一種の永続的な連想記憶と言えるでしょう。
 @c COMMON
 
 @c EN
