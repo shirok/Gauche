@@ -1,0 +1,178 @@
+#? /usr/local/bin/gosh
+<? ;; Process this file with escm
+(define japanese? (equal? (sys-getenv "LANG") "ja_JP"))
+(define (header ja en)
+  (format #t "[~a]\n------------------------------------------"
+          (if japanese? ja en)))
+(define-syntax if-lang
+  (syntax-rules (else)
+    ((_ "collect-then" then-expr () test)
+     (if test (begin . then-expr)))
+    ((_ "collect-then" then-expr () test else body ...)
+     (if-lang "collect-else" then-expr () test body ...))
+    ((_ "collect-then" (then-expr ...) () test body1 body ...)
+     (if-lang "collect-then" (then-expr ... body1) () test body ...))
+    ((_ "collect-else" then-expr else-expr test)
+     (if test (begin . then-expr) (begin . else-expr)))
+    ((_ "collect-else" then-expr (else-expr ...) test body1 body ...)
+     (if-lang "collect-else" then-expr (else-expr ... body1) test body ...))
+    ((_ test body ...)
+     (if-lang "collect-then" () () test body ...))))
+!>
+
+<? (if-lang japanese? !>
+                         Gaucheのコンパイルとインストール
+<? else !>
+                        Compiling and Installing Gauche
+<? ) !>
+
+$Id: INSTALL.esc,v 1.1 2001-05-30 08:57:01 shirok Exp $
+<? (if-lang japanese? !>
+注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
+情報が得られます:<? else !>
+Note: The Gauche system is a work in progress and frequently updated.
+Check out the latest information on the site:
+<? ) !>
+  http://www.shiro.dreamhost.com/scheme/gauche/
+
+<? (header "簡単な方法" "Quick Start") !>
+
+   % ./configure
+   % make
+   % make test
+   % make install
+<? (if-lang japanese? !>
+これで、Gaucheシステムが /usr/local/bin, /usr/local/lib/gauche及び
+/usr/local/share/gauche以下にインストールされます。
+<? else !>
+Things will be installed under /usr/local/bin, /usr/local/lib/gauche,
+and /usr/local/share/gauche.
+<? ) !>
+
+<? (header "文字エンコーディングの選択" "Choosing Character Encoding") !>
+
+<? (if-lang japanese? !>
+デフォルトでは、Gaucheは内部文字エンコーディングとしてEUC-JPを使います。
+--enable-multibyte=ENCODING というオプションをconfigureに渡すことで、
+内部文字エンコーディングを変えることができます。
+<? else !>
+By default, Gauche is compiled with EUC-JP as a native character encoding.
+You can give a --enable-multibyte=ENCODING option to switch the native
+encoding.
+<? ) !>
+
+  ./configure --enable-encoding=euc-jp  ;; EUC-JP (default)
+  ./configure --enable-encoding=utf-8   ;; UTF-8
+  ./configure --enable-encoding=sjis    ;; Shift JIS
+  ./configure --enable-encoding=no      ;; No multibyte string
+
+
+<? (header "SLIBの場所" "Selecting SLIB location") !>
+
+<? (if-lang japanese? !>
+SLIBは、ポータブルなSchemeライブラリで、いろいろ便利な機能が
+完全にSchemeで書かれています。GaucheはSLIBがインストールされていれば
+その機能を利用することができます。
+<? else !>
+SLIB is a portable Scheme library containing various useful functions,
+entirely written in Scheme.  Gauche can use SLIB features if you have
+it on your system.
+<? ) !>
+
+<? (if-lang japanese? !>
+configureスクリプトは、/usr/local/slibなどいくつかの基本的なディレクトリ
+からSLIBを自動的に探します。もしあなたのSLIBシステムが標準的ではない場所に
+インストールされていたら、次のオプションでその場所を指定してください。
+<? else !>
+The configure script tries to find where SLIB is installed.  It looks
+for some typical directories like /usr/local/slib or /usr/share/slib.
+If you installed your SLIB in some non-standard location, you can tell
+it to the configure script as follows:
+<? ) !>
+
+   ./configure --with-slib=PATH
+
+<? (if-lang japanese? !>
+ここで、PATHはSLIBがインストールされたパスです。
+<? else !>
+where PATH is the path you installed your SLIB.
+<? ) !>
+
+<? (if-lang japanese? !>
+GauchehはSLIB無しでも動作します。SLIBを使う必要がなければ、このオプションは
+気にしなくてよいです。
+<? else !>
+Gauche works without SLIB, anyway.  If you're not interested, you
+don't need to care about this.
+<? ) !>
+
+<? (header "インストール先の指定" "Customizing install location") !>
+
+<? (if-lang japanese? !>
+次のようにconfigureスクリプトを起動することにより、インストール先の
+ディレクトリを指定できます。
+<? else !>
+Call configure with those parameters to specify where to install.
+<? ) !>
+
+   % ./configure --prefix=$PREFIX  --exec-prefix=$EXEC_PREFIX
+
+<? (if-lang japanese? !>
+--prefix オプションが指定されなければ、 /usr/local が指定されたものとみなされます。
+--exec-prefix オプションが指定されなければ、EXEC_PREFIXはPREFIXと同じものに
+なります。
+<? else !>
+If --prefix option is omitted, /usr/local is assumed as PREFIX.
+If --exec-prefix option is omitted, EXEC_PREFIX is set the same as PREFIX.
+<? ) !>
+
+<? (if-lang japanese? !>
+インストールされるファイルの内訳は以下の通りです。
+<? else !>
+The files are installed in those locations:
+<? ) !>
+
+  $EXEC_PREFIX/bin/*
+<? (if-lang japanese? !>
+     インタプリタ (gosh) とコンフィグレーションスクリプト (gauche-config)
+<? else !>
+     The interpreter (gosh) and configuration script (gauche-config).
+<? ) !>
+
+  $EXEC_PREFIX/lib/*
+<? (if-lang japanese? !>
+     ライブラリ (libgauche.a).
+<? else !>
+     Library (libgauche.a).
+<? ) !>
+
+  $PREFIX/share/gauche/VERSION/include/*
+<? (if-lang japanese? !>
+     libgaucheをリンクするアプリケーションに必要なヘッダーファイル
+<? else !>
+     Header files required to create applications using libgauche.
+<? ) !>
+
+  $PREFIX/share/gauche/VERSION/lib/*
+<? (if-lang japanese? !>
+     マシンに依存しないSchemeファイル
+<? else !>
+     Machine-independent Scheme files.
+<? ) !>
+
+  $EXEC_PREFIX/lib/gauche/VERSION/ARCHITECTURE/*
+<? (if-lang japanese? !>
+     マシンに依存するファイル (.so, gosh, gauche-config, libgauche.a)
+<? else !>
+     Machine-dependent files (.so files, gosh, gauche-config, and libgauche.a)
+<? ) !>
+
+  $PREFIX/share/gauche/site/lib/*
+  $EXEC_PREFIX/lib/gauche/site/ARCHITECTURE/*
+<? (if-lang japanese? !>
+     ユーザが独自にインストールするマシン非依存／依存ファイルのデフォルトの置き場所。
+<? else !>
+     These are default locations where user installed machine-indenpedent/
+     dependent files will go.
+<? ) !>
+
