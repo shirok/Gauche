@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.53 2001-03-17 09:17:51 shiro Exp $
+ *  $Id: vm.c,v 1.54 2001-03-17 09:33:05 shiro Exp $
  */
 
 #include "gauche.h"
@@ -304,6 +304,40 @@ inline static ScmEnvFrame *save_env(ScmVM *vm,
  * args, fold those arguments to the list.  Returns adjusted size of
  * the argument frame.
  */
+#define adjust_argument_frame(proc, caller_args, callee_args)                   \
+    do {                                                                        \
+    int i, reqargs, restarg;                                                    \
+                                                                                \
+    if (!SCM_PROCEDUREP(proc)) Scm_Error("bad procedure: %S", proc);            \
+                                                                                \
+    reqargs = SCM_PROCEDURE_REQUIRED(proc);                                     \
+    restarg = SCM_PROCEDURE_OPTIONAL(proc);                                     \
+    callee_args  = reqargs + (restarg? 1 : 0);                                  \
+                                                                                \
+    if (restarg) {                                                              \
+        ScmObj p = SCM_NIL, a;                                                  \
+        if (caller_args < reqargs) {                                            \
+            Scm_Error("wrong number of arguments for %S (required %d, got %d)", \
+                      proc, reqargs, caller_args);                              \
+        }                                                                       \
+        /* fold &rest args */                                                   \
+        for (i = reqargs; i < caller_args; i++) {                               \
+            POP_ARG(a);                                                         \
+            p = Scm_Cons(a, p);                                                 \
+        }                                                                       \
+        argp->data[reqargs] = p;                                                \
+        sp = (ScmObj*)argp + ENV_SIZE(callee_args);                             \
+    } else {                                                                    \
+        if (caller_args != reqargs) {                                           \
+            Scm_Error("wrong number of arguments for %S (required %d, got %d)", \
+                      proc, reqargs, caller_args);                              \
+        }                                                                       \
+    }                                                                           \
+    argp->info = SCM_PROCEDURE_INFO(proc);                                      \
+    argp->size = callee_args;                                                   \
+    } while (0)
+
+#if 0
 inline static int adjust_argument_frame(ScmVM *vm,
                                         ScmObj proc, int caller_args)
 {
@@ -339,7 +373,7 @@ inline static int adjust_argument_frame(ScmVM *vm,
     vm->argp->size = callee_args;
     return callee_args;
 }
-
+#endif
 
 /*
  * main loop of VM
@@ -432,9 +466,13 @@ static void run_loop()
                 int tailp = (SCM_VM_INSN_CODE(code)==SCM_VM_TAIL_CALL);
                 int argcnt;
 
+#if 0
                 SAVE_REGS();
                 argcnt = adjust_argument_frame(vm, val0, nargs);
                 RESTORE_REGS();
+#else
+                adjust_argument_frame(val0, nargs, argcnt);
+#endif
                 if (tailp) {
                     /* discard the caller's argument frame, and shift
                        the callee's argument frame there.  This argument
