@@ -1,0 +1,382 @@
+;;;
+;;; simple stub generator
+;;;
+
+
+;; (define-cproc scheme-name (argspec)
+;;   assertions ...
+;;   body)
+;;
+;;
+
+(require "textutils")
+(require "hashutils")
+
+(define *file-prefix* "")
+(define *cprocs* '())
+
+(define *unbound* (cons #f #f))         ;placeholder for unbound value
+
+;;; structure to hold procedure info
+
+(define-class <cproc> ()
+  ((scheme-name     :init-keyword :scheme-name :accessor scheme-name-of)
+   (args            :initform '() :accessor args-of)
+   (num-reqargs     :initform 0   :accessor num-reqargs-of)
+   (num-optargs     :initform 0   :accessor num-optargs-of)
+   (have-rest-arg?  :initform #f  :accessor have-rest-arg?)
+   (decls           :initform '() :accessor decls-of)
+   (stmts           :initform '() :accessor stmts-of)
+   (c-name          :accessor c-name-of)
+   ))
+
+(define (push-arg! cproc arg)
+  (let* ((argname   (car arg))
+         (argname-c (get-c-name "" argname))
+         (argname-s (string-append argname-c "_scm"))
+         (argcnt    (length (args-of cproc))))
+    (set! (args-of cproc) (cons arg (args-of cproc)))
+    (set-cdr! arg (list* :c-name argname-c :s-name argname-s
+                         :count argcnt (cdr arg)))))
+
+(define (get-arg cproc arg)
+  (assq arg (args-of cproc)))
+
+(define (arg-attr-get cproc arg key)
+  (cond ((get-arg cproc arg) => (lambda (arg) (get-keyword key (cdr arg) #f)))
+        (else #f)))
+
+(define (arg-attr-set! cproc arg key val)
+  (cond ((get-arg cproc arg)
+         => (lambda (arg) (set-cdr! arg (list* key val (cdr arg)))))))
+
+(define (push-stmt! cproc stmt)
+  (set! (stmts-of cproc) (cons stmt (stmts-of cproc))))
+
+;;; parse definition
+
+(define (process-define-cproc form)
+  (unless (and (>= (length form) 4)
+               (symbol? (cadr form))
+               (list? (caddr form)))
+    (error "malformed define-cproc: ~s" form))
+  (let ((cproc (make <cproc> :scheme-name (cadr form))))
+    (set! (c-name-of cproc)
+          (get-c-name *file-prefix* (scheme-name-of cproc)))
+    (process-args cproc (caddr form))
+    (process-body cproc (cdddr form))
+    (set! *cprocs* (cons cproc *cprocs*))
+    (emit-definition cproc)
+    (emit-record cproc)))
+
+(define-method process-args ((cproc <cproc>) argspec)
+  (define (push-mandatory-arg! arg)
+    (set! (num-reqargs-of cproc) (+ (num-reqargs-of cproc) 1))
+    (push-arg! cproc (list arg :category :required)))
+  (define (push-optional-arg! arg default)
+    (set! (num-optargs-of cproc) (+ (num-optargs-of cproc) 1))
+    (push-arg! cproc (list arg :category :optional :default default)))
+  (define (push-rest-arg! arg)
+    (set! (have-rest-arg? cproc) #t)
+    (push-arg! cproc (list arg :category :rest)))
+  
+  (let loop ((spec argspec)
+             (state 'initial))
+    (if (null? spec)
+        cproc
+        (let ((arg (car spec))
+              (next (cdr spec)))
+          (case state
+            ((initial)
+             (cond ((eq? arg '&optional)  (loop next 'optional))
+                   ((eq? arg '&rest)      (loop next 'rest))
+                   ((symbol? arg) (push-mandatory-arg! arg)
+                                  (loop next state))
+                   (else (error "bad argument in argspec: ~s" arg))))
+            ((optional)
+             (cond ((eq? arg '&optional)  (error "extra &optional parameter"))
+                   ((eq? arg '&rest)      (loop next 'rest))
+                   ((symbol? arg) (push-optional-arg! arg *unbound*)
+                                  (loop next state))
+                   ((and (list? arg)
+                         (= (length arg) 2))
+                    (push-optional-arg! (car arg) (cadr arg))
+                    (loop next state))
+                   (else (error "bad argument in argspec: ~s" arg))))
+            ((rest)
+             (cond ((have-rest-arg? cproc)
+                    (error "too many &rest args"))
+                   ((symbol? arg)
+                    (push-rest-arg! arg) (loop next state))
+                   (else (error "bad argument in argspec: ~s" arg))))))
+        ))
+  )
+
+(define-method process-body ((cproc <cproc>) body)
+  (let loop ((body body))
+    (if (null? body)
+        (set! (stmts-of cproc) (reverse (stmts-of cproc)))
+        (let ((form (car body))
+              (next (cdr body)))
+          (cond ((string? form) (push-stmt! cproc form) (loop next))
+                ((not (pair? form)) (error "bad form in body: ~s" form))
+                ((eq? (car form) 'assert)
+                 (process-assert cproc (cadr form))
+                 (loop next))
+                (else
+                 (error "unknown body form: ~s" form)))))))
+
+(define-method process-assert ((cproc <cproc>) form)
+  (let* ((op  (car form))
+         (arg (cadr form)))
+    (unless (get-arg cproc arg) (error "assertion for unknown arg: ~s" form))
+    (case op
+      ((pair?)
+       (arg-attr-set! cproc arg :type :pair))
+      ((list?)
+       (arg-attr-set! cproc arg :type :list))
+      ((string?)
+       (arg-attr-set! cproc arg :type :string))
+      ((symbol?)
+       (arg-attr-set! cproc arg :type :symbol))
+      ((small-integer?)
+       (arg-attr-set! cproc arg :type :small-integer))
+      ((char?)
+       (arg-attr-set! cproc arg :type :char))
+      ((boolean?)
+       (arg-attr-set! cproc arg :type :boolean))
+      ((vector?)
+       (arg-attr-set! cproc arg :type :vector))
+      ((port?)
+       (arg-attr-set! cproc arg :type :port))
+      ((input-port?)
+       (arg-attr-set! cproc arg :type :input-port))
+      ((output-port?)
+       (arg-attr-set! cproc arg :type :output-port))
+      ((procedure?)
+       (arg-attr-set! cproc arg :type :procedure))
+      ((closure?)
+       (arg-attr-set! cproc arg :type :closure))
+      (else
+       (error "unknown assertion: ~s" form)))
+    ))
+
+;;; emit code
+
+(define-method emit-definition ((cproc <cproc>))
+  (println "static void ~a(ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)"
+           (c-name-of cproc))
+  (println "{")
+  ;; argument decl
+  (for-each emit-arg-decl (reverse (args-of cproc)))
+  (when (> (num-optargs-of cproc) 0)
+    (println "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
+  (println "  SCM_ENTER_SUBR(\"~a\");" (scheme-name-of cproc))
+  ;; argument conut check (for optargs)
+  (when (and (> (num-optargs-of cproc) 0) (not (have-rest-arg? cproc)))
+    (println "  if (Scm_Length(SCM_OPTARGS) > ~a)" (num-optargs-of cproc))
+    (println "    Scm_Error(\"too many arguments: up to ~s is expected, %d given.\", Scm_Length(SCM_OPTARGS));"
+             (num-optargs-of cproc)))
+  ;; argument assertions & unbox op.
+  (for-each emit-arg-unbox (reverse (args-of cproc)))
+  ;; body
+  (println "  {")
+  (for-each (lambda (stmt) (println stmt)) (reverse (stmts-of cproc)))
+  (println "  }")
+  (println "}")
+  (linebreak)
+  )
+
+(define (emit-arg-decl arg)
+  (let* ((attrs (cdr arg))
+         (type  (get-keyword :type attrs :scm))
+         (cname (get-keyword :c-name attrs))
+         (sname (get-keyword :s-name attrs)))
+    (println "  ScmObj ~a;" sname)
+    (println "  ~a ~a;" (type->c-type type) cname)))
+
+(define (emit-arg-unbox arg)
+  (let* ((attrs (cdr arg))
+         (category (get-keyword :category attrs))
+         (type  (get-keyword :type attrs :scm))
+         (cname (get-keyword :c-name attrs))
+         (sname (get-keyword :s-name attrs))
+         (count (get-keyword :count attrs))
+         (tname (type->name type))
+         (pred  (type->c-predicate type))
+         (unbox (type->c-unboxer type)))
+    (case category
+      ((:required)
+       (println "  ~a = SCM_ARGREF(~a);" sname count))
+      ((:optional)
+       (println "  if (SCM_NULLP(SCM_OPTARGS)) ~a = ~a;"
+                sname
+                (scheme-constant->c-constant
+                 (get-keyword :default attrs)))
+       (println "  else {")
+       (println "    ~a = SCM_CAR(SCM_OPTARGS);" sname)
+       (println "    SCM_OPTARGS = SCM_CDR(SCM_OPTARGS);")
+       (println "  }"))
+      ((:rest)
+       (println "  ~a = SCM_ARGREF(SCM_ARGCNT-1);" sname)))
+    (when pred
+      (println "  if (!~a(~a)) Scm_Error(\"~a required, but got %S\", ~a);"
+               pred sname tname sname))
+    (if unbox
+        (println "  ~a = ~a(~a);" cname unbox sname)
+        (println "  ~a = ~a;" cname sname))))
+
+(define (scheme-constant->c-constant value)
+  (cond ((boolean? value) (if value "SCM_TRUE" "SCM_FALSE"))
+        ((null? value)    "SCM_NIL")
+        ((char? value)
+         (format #f "SCM_MAKE_CHAR(~a) /* #\\~a */"
+                 (char->integer value) value))
+        ((integer? value)
+         (format #f "Scm_MakeInteger(~a)" value))
+        ((eq? value *unbound*)
+         "SCM_UNBOUND")
+        ((equal? value '(current-input-port))
+         (format #f "SCM_OBJ(SCM_CURRENT_INPUT_PORT)"))
+        ((equal? value '(current-output-port))
+         (format #f "SCM_OBJ(SCM_CURRENT_OUTPUT_PORT)"))
+        ((equal? value '(current-error-port))
+         (format #f "SCM_OBJ(SCM_CURRENT_ERROR_PORT)"))
+        (else
+         (error "Scheme constant ~s can't be used" value))))
+
+(define (emit-record cproc)
+  (let* ((scm-func-name (symbol->string (scheme-name-of cproc)))
+         (c-func-name (c-name-of cproc)))
+    (println "static ScmString ~a_NAME = { SCM_CLASS_STRING, ~a, ~a, \"~a\" };"
+             c-func-name
+             (string-length scm-func-name)
+             (string-length scm-func-name)
+             scm-func-name)
+    (println "static ScmSubr ~a_STUB = {" c-func-name)
+    (println "  SCM_CLASS_SUBR,")
+    (println "  ~a, ~a, "
+             (num-reqargs-of cproc)
+             (if (or (have-rest-arg? cproc) (> (num-optargs-of cproc) 0)) 1 0))
+    (println "  SCM_OBJ(&~a_NAME)," c-func-name)
+    (println "  ~a," c-func-name)
+    (println "  NULL")
+    (println "};")
+    (linebreak)))
+
+(define (emit-initializer name)
+  (println "void Scm_Init_~a()" name)
+  (println "{")
+  (println "  ScmModule *module = Scm_VM()->module;")
+  (for-each (lambda (cproc)
+              (println "  SCM_DEFINE(module, ~s, SCM_OBJ(&~a_STUB));"
+                       (symbol->string (scheme-name-of cproc))
+                       (c-name-of cproc)))
+            (reverse *cprocs*))
+  (println "}")
+  )
+
+;; aux util functions
+
+(define (get-c-name prefix scheme-name)
+  (with-output-to-string
+    (lambda ()
+      (display (ensure-string prefix))
+      (with-input-from-string (ensure-string scheme-name)
+        (lambda ()
+          (let loop ((c (read-char)))
+            (unless (eof-object? c)
+              (case c
+                ((#\-) (let ((d (read-char)))
+                         (cond ((eof-object? d)
+                                (display #\_))
+                               ((eqv? d #\>)
+                                (display "_TO") (loop (read-char)))
+                               (else
+                                (display #\_) (loop d)))))
+                ((#\?) (display #\P) (loop (read-char)))
+                ((#\!) (display #\X) (loop (read-char)))
+                ((#\<) (display "_LT") (loop (read-char)))
+                ((#\>) (display "_GT") (loop (read-char)))
+                ((#\* #\> #\@ #\$ #\% #\^ #\& #\* #\+ #\=
+                  #\: #\. #\/ #\~)
+                 (display #\_)
+                 (display (number->string (char->integer c) 16))
+                 (loop (read-char)))
+                (else (display (char-downcase c)) (loop (read-char)))
+                ))))
+        )
+      )
+    )
+  )
+
+(define *type-table*
+  (hash-table
+   '()
+   :pair           '("ScmObj"     "SCM_PAIRP"   #f            "pair")
+   :list           '("ScmObj"     "SCM_LISTP"   #f            "list")
+   :vector         '("ScmVector*" "SCM_VECTORP" "SCM_VECTOR"  "vector")
+   :string         '("ScmString*" "SCM_STRINGP" "SCM_STRING"  "string")
+   :symbol         '("ScmSymbol*" "SCM_SYMBOLP" "SCM_SYMBOL"  "symbol")
+   :small-integer  '("int"        "SCM_INTP"    "SCM_INT_VALUE" "small integer")
+   :char           '("ScmChar"    "SCM_CHARP"   "SCM_CHAR_VALUE" "character")
+   :scm            '("ScmObj"     #f            #f            #f)
+   :port           '("ScmPort*"   "SCM_PORTP"   "SCM_PORT"    "port")
+   :input-port     '("ScmPort*"   "SCM_IPORTP"  "SCM_PORT"    "input port")
+   :output-port    '("ScmPort*"   "SCM_OPORTP"  "SCM_PORT"    "output port")
+   :procedure      '("ScmProcedure*" "SCM_PROCEDUREP" "SCM_PROCEDURE" "procedure")
+   :closure        '("ScmClosure*" "SCM_CLOSUREP" "SCM_CLOSURE" "closure")
+   ))
+
+(define (type->c-type type)
+  (cond ((hash-table-get *type-table* type #f) => car)
+        (else (error "unknown type keyword: ~s" type))))
+
+(define (type->c-predicate type)
+  (cond ((hash-table-get *type-table* type #f) => cadr)
+        (else #f)))
+
+(define (type->c-unboxer type)
+  (cond ((hash-table-get *type-table* type #f) => caddr)
+        (else #f)))
+
+(define (type->name type)
+  (cond ((hash-table-get *type-table* type #f) => cadddr)
+        (else (error "unknown type keyword: ~s" type))))
+
+;;; main loop ===================================================
+
+(unless (and (= (length *argv*) 1)
+             (string=? (strpad (car *argv*) -5) ".stub"))
+  (println "Usage: genstub FILE.stub")
+  (exit 1))
+
+(let* ((file (car *argv*))
+       (base (basename file))
+       (prefix (strchop base -5))
+       (outfile (string-append (strchop file -5) ".c")))
+  (unless (file-exists? file)
+    (println "Couldn't open ~a" file)
+    (exit 1))
+  (set! *file-prefix* (string-append (get-c-name "" prefix) "_"))
+  (with-output-to-file outfile
+    (lambda ()
+      (println "/* Generated by genstub.  Do not edit. */")
+      (println "/* source: ~a */" file)
+      (println "#include <gauche.h>")
+      (linebreak)
+      (with-input-from-file file
+        (lambda ()
+          (let loop ((form (read)))
+            (unless (eof-object? form)
+              (if (pair? form)
+                  (process-define-cproc form)
+                  (print form))
+              (loop (read))))))
+      (emit-initializer (get-c-name "" prefix))
+      ))
+  )
+
+;; Local variables:
+;; mode: scheme
+;; end:
