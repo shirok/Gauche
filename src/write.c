@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: write.c,v 1.20 2001-11-20 08:18:19 shirok Exp $
+ *  $Id: write.c,v 1.21 2001-12-14 10:55:57 shirok Exp $
  */
 
 #include <stdio.h>
@@ -417,9 +417,9 @@ static void format_pad(ScmObj out, ScmString *str,
 /* ~s and ~a writer */
 static void format_writer(ScmObj out, ScmObj arg,
                           ScmObj *params, int nparams,
-                          int rightalign, int mode)
+                          int rightalign, int dots, int mode)
 {
-    int mincol = 0, colinc = 1, minpad = 0, i;
+    int mincol = 0, colinc = 1, minpad = 0, maxcol = -1, nwritten = 0, i;
     ScmChar padchar = ' ';
     ScmObj tmpout = Scm_MakeOutputStringPort();
     ScmString *tmpstr;
@@ -428,15 +428,31 @@ static void format_writer(ScmObj out, ScmObj arg,
     if (nparams>1 && SCM_INTP(params[1])) colinc = SCM_INT_VALUE(params[1]);
     if (nparams>2 && SCM_INTP(params[2])) minpad = SCM_INT_VALUE(params[2]);
     if (nparams>3 && SCM_CHARP(params[3])) padchar = SCM_CHAR_VALUE(params[3]);
+    if (nparams>4 && SCM_INTP(params[4])) maxcol = SCM_INT_VALUE(params[4]);
+
     if (minpad > 0 && rightalign) {
         for (i=0; i<minpad; i++) SCM_PUTC(padchar, tmpout);
     }
-    Scm_Write(arg, tmpout, mode);
+    if (maxcol > 0) {
+        nwritten = Scm_WriteLimited(arg, tmpout, mode, maxcol);
+    } else {
+        Scm_Write(arg, tmpout, mode);
+    }
     if (minpad > 0 && !rightalign) {
         for (i=0; i<minpad; i++) SCM_PUTC(padchar, tmpout);
     }
     tmpstr = SCM_STRING(Scm_GetOutputString(SCM_PORT(tmpout)));
-    format_pad(out, tmpstr, mincol, colinc, padchar, rightalign);
+
+    if (maxcol > 0 && nwritten < 0) {
+        if (dots && maxcol > 4) {
+            SCM_PUTZ(SCM_STRING_START(tmpstr), maxcol-4, out);
+            SCM_PUTZ(" ...", 4, out);
+        } else {
+            SCM_PUTZ(SCM_STRING_START(tmpstr), maxcol, out);
+        }
+    } else {
+        format_pad(out, tmpstr, mincol, colinc, padchar, rightalign);
+    }
 }
 
 /* ~d, ~b, ~o, and ~x */
@@ -543,7 +559,7 @@ ScmObj Scm_Format(ScmObj out, ScmString *fmt, ScmObj args)
                     Scm_Write(arg, out, SCM_WRITE_WRITE);
                 } else {
                     format_writer(out, arg, params, numParams, atflag,
-                                  SCM_WRITE_WRITE);
+                                  colonflag, SCM_WRITE_WRITE);
                 }
                 break;
             case 'a':; case 'A':;
@@ -553,7 +569,7 @@ ScmObj Scm_Format(ScmObj out, ScmString *fmt, ScmObj args)
                     Scm_Write(arg, out, SCM_WRITE_DISPLAY);
                 } else {
                     format_writer(out, arg, params, numParams, atflag,
-                                  SCM_WRITE_DISPLAY);
+                                  colonflag, SCM_WRITE_DISPLAY);
                 }
                 break;
             case 'd':; case 'D':;
