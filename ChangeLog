@@ -1,3 +1,9 @@
+2001-10-16  Shiro Kawai  <shiro@acm.org>
+
+	* lib/port/stk.scm : added.
+	* lib/rfc/quoted-printable.scm : added quoted-printable-encode
+	* DIST : fixed `doc' target.
+
 2001-10-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/hash.c : fixed equal?-hash.
