@@ -1,0 +1,137 @@
+module systemに関する覚書
+
+
+[module systemのsemantics]
+
+CommonLispのpackageは、表記名からシンボルの実体へのマッピングである。
+シンボルの「値」はシンボルの実体と結び付いている。
+
+
+ (in-package "FOO")
+ (defvar x 0)
+ (in-package "BAR")
+ (defvar x 1)
+
+    package "foo"
+  x -----------> [symbol name=x value=0]
+
+    package "bar"
+  x -----------> [symbol name=x value=1]
+
+
+Lispデータをreadした場合。同じように見えるシンボルがeqでないのではまる場合がある。
+
+一方、Gaucheのmoduleは、シンボルの実体から値を格納する場所(global location, gloc)
+へのマッピングとなる。表記名からシンボルの実体へのマッピングは内部のobtableにより
+常に一意に定まる。
+
+ (define-module foo
+   (define x 0))
+ (define-module bar
+   (define x 1))
+
+     (obtable)                     module foo
+  x -----------> [symbol name=x] -------------> [gloc value=0]
+
+     (obtable)                     module bar
+  x -----------> [symbol name=x] -------------> [gloc value=1]
+
+
+同じ表記のシンボルは常にeq。
+シンボルとmoduleの関係はコンパイル時に静的に解釈可能。よってオーバヘッドは生じない。
+
+
+[moduleはコンパイル時に解釈される]
+
+moduleはコンパイル時の環境である。define-module, select-module, with-module,
+current-moduleはすべてsyntax。注意したいのは：
+
+  (define-module foo
+    (define (get-current-module)
+      (current-module)))
+
+  (define-module bar
+    (show-current-module)) ==> foo になる。
+
+
+実行時の環境とコンパイル時の環境が一致するとは限らない。これはデバッグ時に
+混乱するかも。しかし、両者を一致させるためには、with-moduleの度に
+dynamic-windが必要になり、効率が悪い。
+
+
+[hygienic macroとmodule]
+
+基本的に、健全性はモジュールを越えて成立する。つまり、
+
+ * マクロ定義時に導入されたfree variableは、定義時のモジュール内で
+   解釈される。
+
+ * マクロ実行時に渡されるfree variableは、実行時のモジュールで
+   解釈される。
+
+
+ (define-module foo
+   (export zz)
+   (define yy 3)
+   (define-syntax zz
+     (syntax-rules () ((_ ?a) (+ ?a yy)))))
+
+ (define-module bar
+   (import foo)
+   (define yy 9)
+   (zz 1)  ==> 4, not 10
+ )
+
+但し、現在の実装ではマクロ展開結果にmoduleを扱う構文(with-moduleなど)が
+入るとうまくいかない。
+
+
+[requireとimportとuse]
+
+ファイルとmoduleは独立した概念だが、実用上、機能をグルーピングする手段として
+合わせて使われることが多い。
+
+個々のファイルを読み込む手段として構文requireが、moduleを使用する方法として
+構文importがある。
+
+  foo.scm:
+
+    (define-module foo
+      (export ...)
+      ...)
+    (provide "foo")
+
+  bar.scm:
+
+    (require "foo")
+    (import foo)
+
+    ...
+
+実用上、requireとimportをこのように並べて使う機会は多く、読み込むべき
+ファイル／モジュールが多くなると煩わしい。
+
+他の言語 (Perl, Python, Java, etc...) では名前空間の切り分けと
+ファイルの切り分けが統合されている。
+
+useマクロはrequire/importの上に実装され、Perl/Python/Java/...ライクな
+表記を可能にする。
+
+    (use foo)  === (require "foo") (import foo)
+
+    (use a.b.c) === (require "a/b/c") (import a.b.c)
+
+なお、Gaucheではrequireは構文として、コンパイル時に解釈される。一方loadは関数で、
+実行時に解釈される。foo.scmがマクロ定義zzを含んでいた場合、後者はエラーになることに
+注意。
+
+   in foo.scm:
+
+      (define-syntax zz (syntax-rules () ((_ ?z) '?z)))
+
+   in bar.scm:
+
+      (begin (require "foo") (zz a))  ==> 'a
+      (begin (load "foo") (zz a)) ==> ERROR: unbound variable: a
+
+
