@@ -12,9 +12,10 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.52 2002-02-09 21:52:43 shirok Exp $
+;;;  $Id: genstub,v 1.53 2002-02-14 09:06:05 shirok Exp $
 ;;;
 
+(use srfi-0)
 (use srfi-1)
 (use srfi-13)
 (use gauche.parseopt)
@@ -906,7 +907,9 @@
 ;;
 
 (define (main args)
-  (let ((args (parse-options args
+  (let ((args (parse-options (if (string=? (gauche-version) "0.5.1")
+                                 (cdr args)
+                                 args)
                 (("config=s" (file) (push! *config-files* file))
                  ("D=s"  (sym) (push! *predef-syms* sym))
                  (else _ (usage))))))
