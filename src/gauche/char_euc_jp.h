@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char_euc_jp.h,v 1.7 2001-04-26 07:10:42 shiro Exp $
+ *  $Id: char_euc_jp.h,v 1.8 2001-04-26 20:07:13 shirok Exp $
  */
 
 /*
@@ -47,16 +47,18 @@
         }                                       \
     } while (0)
 
-#define SCM_CHAR_BACKWARD(cp, start, result)                                \
-    do {                                                                    \
-        (result) = (cp);                                                    \
-        while ((result) >= (start) && (cp)-(result)<= SCM_CHAR_MAX_BYTES) { \
-            if ((result) + SCM_CHAR_NFOLLOWS(*(result)) + 1 == (cp)) {      \
-                break;                                                      \
-            }                                                               \
-            (result)--;                                                     \
-        }                                                                   \
-        if ((result) < (start)) (result) = NULL;                            \
+#define SCM_CHAR_BACKWARD(cp, start, result)                    \
+    do {                                                        \
+        switch ((cp) - (start)) {                               \
+        default:                                                \
+            (result) = (cp) - 2;                                \
+            if (SCM_CHAR_NFOLLOWS(*(result)) == 1) break;       \
+            /* FALLTHROUGH */                                   \
+        case 1:                                                 \
+            (result) = (cp) - 1;                                \
+            if (SCM_CHAR_NFOLLOWS(*(result)) == 0) break;       \
+            (result) = NULL;                                    \
+        }                                                       \
     } while (0)
 
 #else  /* !SCM_CHAR_ENCODING_BODY */

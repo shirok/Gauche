@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: char_utf_8.h,v 1.2 2001-04-26 07:10:42 shiro Exp $
+ *  $Id: char_utf_8.h,v 1.3 2001-04-26 20:07:13 shirok Exp $
  */
 
 #ifndef SCM_CHAR_ENCODING_BODY
@@ -50,16 +50,34 @@ extern void Scm_CharUtf8Putc(char *, ScmChar);
         }                                       \
     } while (0)
 
-#define SCM_CHAR_BACKWARD(cp, start, result)                                \
-    do {                                                                    \
-        (result) = (cp);                                                    \
-        while ((result) >= (start) && (cp)-(result)<= SCM_CHAR_MAX_BYTES) { \
-            if ((result) + SCM_CHAR_NFOLLOWS(*(result)) + 1 == (cp)) {      \
-                break;                                                      \
-            }                                                               \
-            (result)--;                                                     \
-        }                                                                   \
-        if ((result) < (start)) (result) = NULL;                            \
+#define SCM_CHAR_BACKWARD(cp, start, result)                    \
+    do {                                                        \
+        switch ((cp) - (start)) {                               \
+        default:                                                \
+            (result) = (cp) - 6;                                \
+            if (SCM_CHAR_NFOLLOWS(*(result)) == 5) break;       \
+            /* FALLTHROUGH */                                   \
+        case 5:                                                 \
+            (result) = (cp) - 5;                                \
+            if (SCM_CHAR_NFOLLOWS(*(result)) == 4) break;       \
+            /* FALLTHROUGH */                                   \
+        case 4:                                                 \
+            (result) = (cp) - 4;                                \
+            if (SCM_CHAR_NFOLLOWS(*(result)) == 3) break;       \
+            /* FALLTHROUGH */                                   \
+        case 3:                                                 \
+            (result) = (cp) - 3;                                \
+            if (SCM_CHAR_NFOLLOWS(*(result)) == 2) break;       \
+            /* FALLTHROUGH */                                   \
+        case 2:                                                 \
+            (result) = (cp) - 2;                                \
+            if (SCM_CHAR_NFOLLOWS(*(result)) == 1) break;       \
+            /* FALLTHROUGH */                                   \
+        case 1:                                                 \
+            (result) = (cp) - 1;                                \
+            if (SCM_CHAR_NFOLLOWS(*(result)) == 0) break;       \
+            (result) = NULL;                                    \
+        }                                                       \
     } while (0)
 
 #else  /* !SCM_CHAR_ENCODING_BODY */
