@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.44 2001-09-26 10:56:26 shirok Exp $
+ *  $Id: vm.h,v 1.45 2001-09-28 10:00:14 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -201,6 +201,9 @@ struct ScmVMRec {
     ScmEscapePoint *escapePoint;
     int escapeReason;
     void *escapeData[2];
+
+    /* Custom debugger */
+    ScmObj defaultEscapeHandler;
 };
 
 extern ScmVM *Scm_SetVM(ScmVM *vm);
