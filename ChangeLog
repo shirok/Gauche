@@ -1,5 +1,12 @@
+2002-06-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/arith.h : added macros that checks integer arithmetic
+	  overflow.
+	* ext/uvector/uvutil.c.sh : added TAGvector-dot, dot product operator.
+
 2002-06-21  Shiro Kawai  <shiro@acm.org>
 
+	* ext/uvector/uvectorP.h : fixed bugs on LP64 architecture
 	* missing, ltmain.sh : moved from gc/* to here, so that other
 	  autoconf scripts (config.sub, config.guess and install-sh) can
 	  be shared by gc and libgauche.
