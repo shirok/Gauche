@@ -7466,6 +7466,15 @@ specify your own predicate by the argument @var{compare}.
 If @var{thunk} signals an uncaptured error, it is catched and
 yields a special error object.  A global variable @code{*test-error*}
 is bound to the error object, so that you can test an expected error.
+
+The procedure @var{compare} is called as follows:
+@example
+(@var{compare} @var{expected} @var{result-of-thunk})
+@end example
+It should return @code{#t} if the given result agrees the 
+expected value, or @code{#f} otherwise.
+One typical usage of the custom comparison
+method is to compare inexact numbers tolerating small error.
 @c JP
 @var{thunk}を呼び、その結果を@var{expected}と比較します。
 比較手続きには、引数@var{compare}が与えられていればそれを用い、
@@ -7476,7 +7485,23 @@ is bound to the error object, so that you can test an expected error.
 特別なエラーオブジェクトに置き換えられます。グローバル変数@code{*test-error*}
 がエラーオブジェクトに束縛されており、エラーが期待される状況もテストすることが
 できます。
+
+手続き@var{compare}は次のように呼び出されます。
+@example
+(@var{compare} @var{expected} @var{result-of-thunk})
+@end example
+この手続きは、渡された結果が期待する値と合致する場合に@code{#t}を、
+そうでなければ@code{#t}を返さなければなりません。
+特別な比較手続きのひとつの用法は、不正確な数値を、多少の誤差を許して
+比較するような場合です。
 @c COMMON
+
+@example
+(test "test 1" (/ 3.141592653589 4)
+      (lambda () (atan 1))
+      (lambda (expected result)
+        (< (abs (- expected result)) 1.0e-10)))
+@end example
 @end defun
 
 @defvar *test-error*
