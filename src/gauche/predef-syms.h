@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: predef-syms.h,v 1.20 2002-02-26 09:06:08 shirok Exp $
+ *  $Id: predef-syms.h,v 1.21 2002-03-06 08:44:45 shirok Exp $
  */
 
 /* DEFSYM(c-name, scheme-name) */
@@ -54,8 +54,8 @@ DEFSYM(ScmQletrecSyntax,    "letrec-syntax");
 DEFSYM(ScmQsyntaxRulesInt,  "%syntax-rules");
 DEFSYM(ScmQsyntaxRules,     "syntax-rules");
 DEFSYM(ScmQellipsis,        "...");
-DEFSYM(ScmQmacroExpand,     "%macro-expand");
-DEFSYM(ScmQmacroExpand1,    "%macro-expand-1");
+DEFSYM(ScmQmacroExpand,     "%macroexpand");
+DEFSYM(ScmQmacroExpand1,    "%macroexpand-1");
 
 DEFSYM(ScmQnull,            "null");
 DEFSYM(ScmQscheme,          "scheme");

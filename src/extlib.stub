@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.126 2002-02-18 20:46:39 shirok Exp $
+;;; $Id: extlib.stub,v 1.127 2002-03-06 08:44:45 shirok Exp $
 ;;;
 
 "
@@ -23,9 +23,9 @@
 ;; Macros
 ;;
 
-(define-cproc macro-expand (form)
+(define-cproc macroexpand (form)
   "SCM_RETURN(Scm_MacroExpand(form, SCM_NIL, FALSE));")
-(define-cproc macro-expand-1 (form)
+(define-cproc macroexpand-1 (form)
   "SCM_RETURN(Scm_MacroExpand(form, SCM_NIL, TRUE));")
 
 ;;
