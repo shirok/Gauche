@@ -1,3 +1,17 @@
+2001-12-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.c, src/macro.c : intern syntactic bindings to the
+	  appropriate modules (either null or gauche).
+	* src/vm.c : added code to honor the second argument of eval
+	* src/extlib.stub : fix a bug that null-environment didn't take
+	  version argument.
+
+2001-12-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/repl.c : quick bug fix for the problem of VM stack rewinding
+	  on error.
+	* INSTALL.esc : added note for ISO8859 encoding users
+
 2001-12-20  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.4.11
