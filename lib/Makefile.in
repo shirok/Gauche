@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/lib
-#  $Id: Makefile.in,v 1.94 2003-06-05 08:39:16 shirok Exp $
+#  $Id: Makefile.in,v 1.95 2003-07-05 03:29:11 shirok Exp $
 
 DESTDIR =
 
@@ -87,7 +87,7 @@ uninstall:
 # installation script.
 slibcat : 
 	if test -f $(SLIB_DIR)/require.scm; then \
-	  $(exec_prefix)/bin/gosh -uslib -e "(load (in-vicinity (library-vicinity) \"mklibcat\"))" -e "(exit 0)";\
+	  $(exec_prefix)/bin/gosh -ftest -uslib -e "(load (in-vicinity (library-vicinity) \"mklibcat\"))" -e "(exit 0)";\
 	fi
 
 clean:
