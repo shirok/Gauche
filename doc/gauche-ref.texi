@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.84 2001-10-05 10:56:55 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.85 2001-10-05 20:24:28 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2668,32 +2668,62 @@ For an error exception, this is the error message.
 
 @deftp {Builtin Class} <port>
 @clindex port
+@c EN
 A port class.   A port is Scheme's way of abstraction of I/O channel.
 Gauche extends a port in number of ways so that it can be used
 in wide range of applications.
+@c JP
+Portは、Schemeにおいて抽象化された入出力のインタフェースを提供します。
+Gaucheはportにいくつかの拡張を行い、いろいろなアプリケーションに対応できるようにしました。
+@c COMMON
 
+@c EN
 Standard Scheme (R5RS) essentially defines a port as an entity that
 you can fetch a character at a time and
 look one character ahead from an input port, 
 and put a character at a time to an output port.
 Other R5RS I/O routines can be built on top of them.
+@c JP
+標準のSchemeでは、portはキャラクタを一文字づつ読み込む(一文字先読み可)、
+もしくは書き出すだけのもので、他の入出力ルーチンはその上に構築されています。
+@c COMMON
 
+@c EN
 Besides this basics, Gauche's port can handle the following
 opertaions.
+@c JP
+Gaucheではさらに次のような操作がportに対して可能になっています。
+@c COMMON
 
 @table @asis
+@c EN
 @item Byte I/O
 You can read/write one byte at a time, instead of a character.
-Some ports allow you to mix byte I/O and character I/O;
-you can set the policy of handling such cases.
+(Remember, Gauche handles multibyte characters, so a character
+may be consisted from more than one bytes).
+Most ports allow you to mix byte I/O and character I/O, if needed.
+@c JP
+@item バイトI/O
+キャラクタ毎でなく、バイト毎のI/Oが可能です(Gaucheではマルチバイト文字を
+扱うので、この２つが異なることに注意して下さい)。大抵のポートでは
+キャラクタI/OとバイトI/Oを混ぜて使うことができます。
+@c COMMON
 
+@c EN
 @item Block I/O
 You can read/write a specified number of byte sequences.
 This can be an efficient way of moving block of data,
 if the port's underlying implementation supports block I/O
 operation (for example, if the underyling port is a unix buffered
 stream, this operation uses @code{fread} or @code{fwrite}).
+@c JP
+@item ブロックI/O
+ポートから指定した数のバイト列を読んだり、ポートへ書いたりできます。
+ポートがブロックI/Oを行うデバイスに接続されている場合、ある程度大きなブロック毎に
+読み書きすると効率の良いデータ転送ができます。
+@c COMMON
 
+@c EN
 @item Conversion
 Some ports can be used to convert a data stream from one format
 to another; one of such applications is character code conversion
@@ -2701,6 +2731,13 @@ ports, provided by @code{gauche.charconv} module
 (@xref{Character code conversion}, for details).
 You can define a procedural ports, in both Scheme and C, 
 to implement other functionality.
+@c JP
+@item 変換
+ポートはまた、データストリームを変換するのにも使えます。例えば@code{gauche.charconv}
+モジュールでは、文字コード間の変換を行うポートを提供しています
+(詳しくは@ref{Character code conversion}を参照)。
+プロシージャルなポートを定義することにより、様々な機能を実装できます。
+@c COMMON
 @end table
 
 @end deftp
@@ -2710,57 +2747,115 @@ to implement other functionality.
 
 @defun input-port? obj
 @defunx output-port? obj
-[R5RS] Returns true if @var{obj} is an input port and an output port,
-respectively.
+[R5RS]
+@c EN
+Returns true if @var{obj} is an input port and an output port, respectively.
+@c JP
+@var{obj} がそれぞれ入力ポートと出力ポートなら真を返します。
+@c COMMON
 @end defun
 
 @defun port-closed? port
+@c EN
 Returns true if @var{obj} is a port and it is already closed.
 A closed port can't be reopened.
+@c JP
+@var{obj}がポートであり、既に閉じられていた場合に真を返します。
+一度閉じたポートは再び開くことはできません。
+@c COMMON
 @end defun
 
 @defun current-input-port
 @defunx current-output-port
-[R5RS] Returns the current input port and the current output port, 
-respectively.
+[R5RS]
+@c EN
+Returns the current input port and the current output port, respectively.
+@c JP
+現在の入力ポートと出力ポートをそれぞれ返します。
+@c COMMON
 @end defun
 
 @defun current-error-port
+@c EN
 Returns the current output port.
+@c JP
+現在のエラーポートを返します。
+@c COMMON
 @end defun
 
 @defun standard-input-port
 @defunx standard-output-port
 @defunx standard-error-port
+@c EN
 Returns ports that are bound initially to current input, output and
 error port, respectively.
+@c JP
+プログラム開始時点の入力、出力、エラーポートをそれぞれ返します。
+@c COMMON
 @end defun
 
 @defun with-input-from-port port thunk
 @defunx with-output-to-port port thunk
 @defunx with-error-to-port port thunk
+@c EN
+Calls @var{thunk}.  During evaluation of thunk, the current input port, current
+output port and current error port are set to @var{port}, respectively.
+@c JP
+それぞれ入力、出力、エラーポートは@var{port}にセットした状態で@var{thunk}を呼び出します。
+@c COMMON
 @end defun
 
 @defun close-input-port port
 @defunx close-output-port port
 [R5RS]
+@c EN
+Closes input and output @var{port}, respectively
+@c JP
+それぞれ、入力ポートと出力ポートを閉じます。
+@c COMMON
 @end defun
 
 @defun port-name port
+@c EN
+Returns the name of @var{port}.  If the port is associated to a file,
+it is the name of the file.   Otherwise, it is some description of the port.
+@c JP
+@var{port}の名前を返します。ポートがファイルに関連付けられている場合は、ポートの名前は
+ファイル名です。そうでない場合、ポートを説明する文字列が返されます。
+@c COMMON
 @end defun
 
 @defun port-current-line port
+@c EN
+Returns the current line count of @var{port}.  This information is
+only available on file-based port, and as long as you're doing
+sequential character I/O on it.  Otherwise, this returns -1.
+@c JP
+@var{port}の現在の行番号を返します。行番号は、ファイルに関連付けられたポートで
+かつシーケンシャルなキャラクタI/Oを行っている場合のみ有効です。それ以外の場合は
+-1を返します。
+@c COMMON
 @end defun
 
 @defun port-file-number port
+@c EN
 Returns an integer file descriptor, if the @var{port} is associated
 to the system file I/O.  Returns @code{#f} otherwise.
+@c JP
+@var{port}がファイルに関連付けられている場合、そのファイルディスクリプタ番号を
+返します。それ以外の場合は@code{#f}を返します。
+@c COMMON
 @end defun
 
-@defun copy-port src dst &keyword unit
+@defun copy-port src dst &keyword (unit 0)
+@c EN
 Copies data from an input port @var{src} to an output port @var{dst},
 until eof is read from @var{src}.
+@c JP
+@var{src}からEOFまでデータを読みだし、@var{dst}へ書き出します。
+@c COMMON
 
+@c EN
 The keyword argument @var{unit} may be zero, a positive exact integer,
 a symbol @code{byte} or a symbol @code{char}, to specify the unit
 of copying.  If it is an integer, a buffer of the size
@@ -2771,6 +2866,15 @@ the copying is done byte by byte, using C-verson of @code{read-byte}
 and @code{write-byte}.  If @var{unit} is a symbol @code{char},
 the copying is done character by character, using C-version of
 @code{read-char} and @code{write-char}.
+@c JP
+キーワード引数@var{unit}は0以上の整数か、シンボル@code{byte}もしくは@code{char}
+でなければなりません。これはデータをコピーする単位を指定します。
+整数ならば、その大きさ(0の場合はシステム規定の大きさ)のバッファが確保され、
+ブロックI/Oを使って転送が行われます。通常のファイルをコピーする場合などはこれが
+速いでしょう。もし@var{unit}がシンボル@code{byte}であれば、バイト毎
+に読みだし／書き込みが行われます。@var{unit}がシンボル@code{char}であれば、
+キャラクタ毎に読みだし／書き込みが行われます。
+@c COMMON
 @end defun
 
 
@@ -8274,9 +8378,8 @@ You can use this module in place of his
 
 I reimplemented the functions to be efficient on Gauche.
 Especially, usage of @code{string-set!} is totally avoided.
-Also I use Knuth-Morris-Pratt search in @code{find-string-from-port?}.
 I extended the interface a bit so that they can deal with character sets
-as well as a list of characters.
+and predicates, as well as a list of characters.
 
 These functions work sequentially on the given input port,
 that is, they read from the port as much as they need, without
