@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.30 2001-06-14 07:07:45 shirok Exp $
+dnl $Id: configure.in,v 1.31 2001-06-14 09:06:05 shirok Exp $
 AC_INIT(src/gauche.h)
 AC_CONFIG_HEADER(src/gauche/config.h)
 AC_CANONICAL_SYSTEM
@@ -88,6 +88,7 @@ AC_CHECK_HEADERS(sys/time.h glob.h dlfcn.h sysexits.h)
 dnl ===========================================================
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
+AC_C_BIGENDIAN
 AC_STRUCT_TM
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(int)
@@ -152,21 +153,14 @@ dnl Checks for library functions.
 AC_PROG_GCC_TRADITIONAL
 
 AC_CHECK_FUNCS(isnan isinf trunc rint)
-AC_CHECK_FUNCS(symlink)
-AC_CHECK_FUNCS(mkstemp)
+AC_CHECK_FUNCS(symlink mkstemp select)
 
 dnl Checks if crypt() exists and whether it's in libc or libcrypt.
-AC_CHECK_FUNC(crypt, HAVE_CRYPT=yes, HAVE_CRYPT=no)
-if test $HAVE_CRYPT = no; then
-AC_CHECK_LIB(crypt, crypt, HAVE_CRYPT=yes; LIBS="-lcrypt $LIBS", HAVE_CRYPT=no)
-fi
+AC_SEARCH_LIBS(crypt, crypt, HAVE_CRYPT=yes, HAVE_CRYPT=no)
 AC_DEFINE(HAVE_CRYPT)
 
 dnl Checs if dlopen exists, and if it's in libc or libdl.
-AC_CHECK_FUNC(dlopen, HAVE_DLOPEN=yes, HAVE_DLOPEN=no)
-if test $HAVE_DLOPEN = no; then
-AC_CHECK_LIB(dl, dlopen, HAVE_DLOPEN=yes; LIBS="-ldl $LIBS", HAVE_DLOPEN=no)
-fi
+AC_SEARCH_LIBS(dlopen, dl, HAVE_DLOPEN=yes, HAVE_DLOPEN=no)
 AC_DEFINE(HAVE_DLOPEN)
 
 dnl Checks compiler options for dynamic link.
