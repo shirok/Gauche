@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.61 2001-09-24 19:58:11 shirok Exp $
+ *  $Id: compile.c,v 1.62 2001-09-26 10:45:47 shirok Exp $
  */
 
 #include "gauche.h"
@@ -351,12 +351,12 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
 
             if (SCM_VM_INSNP(var)) {
                 /* variable is bound locally */
-                head = SCM_LIST1(var);
+                head = add_srcinfo(SCM_LIST1(var), head);
             } else if (SCM_SYNTAXP(var)) {
                 /* variable is bound syntactically. */
                 ScmCompileProc cmpl = SCM_SYNTAX(var)->compiler;
                 void *data = SCM_SYNTAX(var)->data;
-                return add_srcinfo(cmpl(form, env, ctx, data), form);
+                return cmpl(form, env, ctx, data);
             } else {
                 /* it's a global variable.   Let's see if the symbol is
                    bound to a global syntax, or an inlinable procedure
@@ -378,7 +378,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                     if (SCM_SYNTAXP(g->value)) {
                         ScmCompileProc cmpl = SCM_SYNTAX(g->value)->compiler;
                         void *data = SCM_SYNTAX(g->value)->data;
-                        return add_srcinfo(cmpl(form, env, ctx, data), form);
+                        return cmpl(form, env, ctx, data);
                     }
                     if (!(vm->compilerFlags & SCM_COMPILE_NOINLINE) &&
                         SCM_SUBRP(g->value) && SCM_SUBR_INLINER(g->value)) {
@@ -386,7 +386,7 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
                             = SCM_SUBR_INLINER(g->value)(SCM_SUBR(g->value),
                                                          form, env, ctx);
                         if (!SCM_FALSEP(inlined)) {
-                            add_srcinfo(inlined, form);
+                            add_srcinfo(Scm_LastPair(inlined), form);
 #ifdef EXPLICIT_STACK_CHECK
                             int nargs = Scm_Length(SCM_CDR(form));
                             if (nargs >= 2) {
@@ -429,14 +429,14 @@ static ScmObj compile_int(ScmObj form, ScmObj env, int ctx)
             } else {
                 code = SCM_LIST2(SCM_VM_INSN1(SCM_VM_PRE_CALL, nargs), code);
             }
-            return code;
+            return add_srcinfo(code, form);
         }
     }
     if (VAR_P(form)) {
         /* variable reference.  even in the statement context we evaluate
            the variable, for it may raise an error. */
         ADDCODE(compile_varref(form, env));
-        return code;
+        return add_srcinfo(code, form);
     }
     else {
         /* literal object.  if it appears in the statement context,
@@ -1168,7 +1168,7 @@ static ScmObj compile_let_family(ScmObj form, ScmObj vars, ScmObj vals,
     if (type == BIND_LET) newenv = Scm_Cons(vars, env);
     ADDCODE(body_compiler(body, newenv, ctx));
 
-    return SCM_LIST3(SCM_VM_INSN1(SCM_VM_LET, nvars), form, code);
+    return add_srcinfo(SCM_LIST3(SCM_VM_INSN1(SCM_VM_LET, nvars), form, code), form);
 }
 
 static ScmObj compile_let(ScmObj form, ScmObj env, int ctx, void *data)
