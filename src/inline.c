@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: inline.c,v 1.2 2001-01-16 05:53:50 shiro Exp $
+ *  $Id: inline.c,v 1.3 2001-01-16 06:39:29 shiro Exp $
  */
 
 #include "gauche.h"
@@ -31,6 +31,7 @@
  */
 
 /* TODO: fix API to access compiler enviornment and context */
+/* TODO: put source-info as well */
 
 #define INLINE_DECLS                            \
     int nargs = Scm_Length(SCM_CDR(form));      \
