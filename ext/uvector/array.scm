@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: array.scm,v 1.4 2002-06-29 07:35:31 shirok Exp $
+;;;  $Id: array.scm,v 1.5 2002-06-30 23:13:58 shirok Exp $
 ;;;
 
 ;; Conceptually, an array is a backing storage and a procedure to
@@ -127,13 +127,14 @@
          (indices (iota rank))
          (Vs      (s32vector-sub Ve Vb))
          (-Vb     (map-to <s32vector> - Vb))
+         (Ve-1    (s32vector-sub Ve 1))
          (vcl     (fold-right (lambda (sN l) (cons (* sN (car l)) l))
                               '(1)
                               (s32vector->list Vs)))
          (Vc      (coerce-to <s32vector> (cdr vcl)))
          )
     (lambda (Vi)
-      (cond ((s32vector-range-check Ve Vi #f)
+      (cond ((s32vector-range-check Ve-1 Vi #f)
              => (lambda (i)
                   (errorf "index of dimension ~s is too big: ~s"
                           i (ref Vi i))))
