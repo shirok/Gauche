@@ -24,7 +24,7 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19.scm,v 1.1 2002-03-09 11:17:39 shirok Exp $
+;;; $Id: srfi-19.scm,v 1.2 2002-03-09 20:25:42 shirok Exp $
 
 (define-module srfi-19
   (use gauche.time)
@@ -388,6 +388,12 @@
     :nanosecond nanosecond :second second :minute minute :hour hour
     :day day :month month :year year :zone-offset zone-offset))
 
+(define-method write-object ((obj <date>) port)
+  (format port "#<date ~a/~2,'0a/~2,'0a ~2,'0a:~2,'0a:~2,'0a.~a (~a)>"
+          (date-year obj) (date-month obj) (date-day obj)
+          (date-hour obj) (date-minute obj) (date-second obj)
+          (date-nanosecond obj) (date-zone-offset obj)))
+
 ;; gives the julian day which starts at noon.
 (define (tm:encode-julian-day-number day month year)
   (let* ((a (quotient (- 14 month) 12))
@@ -402,7 +408,7 @@
        -32045)))
 
 (define (tm:split-real r)
-  (receive (frac int) (modf r) (int frac)))
+  (receive (frac int) (modf r) (values int frac)))
 
 ;; gives the seconds/date/month/year 
 (define (tm:decode-julian-day-number jdn)
@@ -421,12 +427,17 @@
      (if (>= 0 y) (- y 1) y))
     ))
 
-;; relies on the fact that we named our time zone accessor
-;; differently from MzScheme's....
-;; This should be written to be OS specific.
+;; Offset of local timezone in seconds.
+;; System-dependent.
 
 (define (tm:local-tz-offset)
-  (date-time-zone-offset (seconds->date (current-seconds))))
+  (let* ((local (sys-localtime 0))
+         (secs  (+ (* (slot-ref local 'hour) tm:sid)
+                   (* (slot-ref local 'min) 60)
+                   (slot-ref local 'sec))))
+    (if (< (slot-ref local 'year) 1970)
+        (- secs (* tm:sid 24))
+        secs)))
 
 ;; special thing -- ignores nanos
 (define (tm:time->julian-day-number seconds tz-offset)
@@ -440,17 +451,14 @@
   (and (assoc second tm:leap-second-table) #t))
 
 (define (time-utc->date time . tz-offset)
-  (if (not (eq? (time-type time) time-utc))
-      (tm:time-error 'time->date 'incompatible-time-types  time))
-  (let* ( (offset (:optional tz-offset (tm:local-tz-offset)))
-	  (is-leap-second (tm:leap-second? (+ offset (time-second time)))) )
-    (call-with-values
-	(lambda ()
+  (tm:check-time-type time 'time-utc 'time-utc->date)
+  (let-optionals* tz-offset ((offset (tm:local-tz-offset)))
+    (let ((is-leap-second (tm:leap-second? (+ offset (time-second time)))))
+      (receive (secs date month year)
 	  (if is-leap-second
 	      (tm:decode-julian-day-number (tm:time->julian-day-number (- (time-second time) 1) offset))
-	      (tm:decode-julian-day-number (tm:time->julian-day-number (time-second time) offset))))
-      (lambda (secs date month year)
-	(let* ( (hours    (quotient secs (* 60 60)))
+	      (tm:decode-julian-day-number (tm:time->julian-day-number (time-second time) offset)))
+        (let* ( (hours    (quotient secs (* 60 60)))
 		(rem      (remainder secs (* 60 60)))
 		(minutes  (quotient rem 60))
 		(seconds  (remainder rem 60)) )
@@ -464,17 +472,14 @@
 		     offset))))))
 
 (define (time-tai->date time  . tz-offset)
-  (if (not (eq? (time-type time) time-tai))
-      (tm:time-error 'time->date 'incompatible-time-types  time))
-  (let* ( (offset (:optional tz-offset (tm:local-tz-offset)))
-	  (seconds (- (time-second time) (tm:leap-second-delta (time-second time))))
+  (tm:check-time-type time 'time-tai 'time-tai->date)
+  (let-optionals* tz-offset ((offset (tm:local-tz-offset)))
+    (let ((seconds (- (time-second time) (tm:leap-second-delta (time-second time))))
 	  (is-leap-second (tm:leap-second? (+ offset seconds))) )
-    (call-with-values
-	(lambda ()
+      (receive (secs date month year)
 	  (if is-leap-second
 	      (tm:decode-julian-day-number (tm:time->julian-day-number (- seconds 1) offset))
-	      (tm:decode-julian-day-number (tm:time->julian-day-number seconds offset))) )
-      (lambda (secs date month year)
+	      (tm:decode-julian-day-number (tm:time->julian-day-number seconds offset)))
 	;; adjust for leap seconds if necessary ...
 	(let* ( (hours    (quotient secs (* 60 60)))
 		(rem      (remainder secs (* 60 60)))
@@ -491,17 +496,14 @@
 
 ;; this is the same as time-tai->date.
 (define (time-monotonic->date time . tz-offset)
-  (if (not (eq? (time-type time) time-monotonic))
-      (tm:time-error 'time->date 'incompatible-time-types  time))
-  (let* ( (offset (:optional tz-offset (tm:local-tz-offset)))
-	  (seconds (- (time-second time) (tm:leap-second-delta (time-second time))))
+  (tm:check-time-type time 'time-monotonic 'time-monotonic->date)
+  (let-optionals* tz-offset ((offset (tm:local-tz-offset)))
+    (let ((seconds (- (time-second time) (tm:leap-second-delta (time-second time))))
 	  (is-leap-second (tm:leap-second? (+ offset seconds))) )
-    (call-with-values
-	(lambda ()
+      (receive (secs date month year)
 	  (if is-leap-second
 	      (tm:decode-julian-day-number (tm:time->julian-day-number (- seconds 1) offset))
-	      (tm:decode-julian-day-number (tm:time->julian-day-number seconds offset))) )
-      (lambda (secs date month year)
+	      (tm:decode-julian-day-number (tm:time->julian-day-number seconds offset)))
 	;; adjust for leap seconds if necessary ...
 	(let* ( (hours    (quotient secs (* 60 60)))
 		(rem      (remainder secs (* 60 60)))
@@ -554,7 +556,7 @@
 (define (tm:year-day day month year)
   (let ((days-pr (assoc day tm:month-assoc)))
     (if (not days-pr)
-	(tm:error 'date-year-day 'invalid-month-specification month))
+        (errorf "date-year-day: invalid month: ~a" month))
     (if (and (tm:leap-year? year) (> month 2))
 	(+ day (cdr days-pr) 1)
 	(+ day (cdr days-pr)))))
@@ -589,9 +591,9 @@
 	       (tm:days-before-first-week  date day-of-week-starting-week))
 	    7))
     
-(define (current-date . tz-offset) 
-  (time-utc->date (current-time time-utc)
-		  (:optional tz-offset (tm:local-tz-offset))))
+(define (current-date . tz-offset)
+  (let-optionals* tz-offset ((off (tm:local-tz-offset)))
+    (time-utc->date (current-time time-utc) off)))
 
 ;; given a 'two digit' number, find the year within 50 years +/-
 (define (tm:natural-year n)
@@ -627,8 +629,7 @@
 
 
 (define (time-utc->julian-day time)
-  (if (not (eq? (time-type time) time-utc))
-      (tm:time-error 'time->date 'incompatible-time-types  time))
+  (tm:check-time-type time 'time-utc 'time-utc->julian-day)
   (+ (/ (+ (time-second time) (/ (time-nanosecond time) tm:nano))
 	tm:sid)
      tm:tai-epoch-in-jd))
@@ -638,8 +639,7 @@
        4800001/2))
 
 (define (time-tai->julian-day time)
-  (if (not (eq? (time-type time) time-tai))
-      (tm:time-error 'time->date 'incompatible-time-types  time))
+  (tm:check-time-type time 'time-tai 'time-tai->julian-day)
   (+ (/ (+ (- (time-second time) 
 	      (tm:leap-second-delta (time-second time)))
 	   (/ (time-nanosecond time) tm:nano))
@@ -652,8 +652,7 @@
 
 ;; this is the same as time-tai->julian-day
 (define (time-monotonic->julian-day time)
-  (if (not (eq? (time-type time) time-monotonic))
-      (tm:time-error 'time->date 'incompatible-time-types  time))
+  (tm:check-time-type time 'time-monotonic 'time-monotonic->julian-day)
   (+ (/ (+ (- (time-second time) 
 	      (tm:leap-second-delta (time-second time)))
 	   (/ (time-nanosecond time) tm:nano))
@@ -681,11 +680,11 @@
   (time-utc->time-monotonic! (julian-day->time-utc jdn)))
 
 (define (julian-day->date jdn . tz-offset)
-  (let ((offset (:optional tz-offset (tm:local-tz-offset))))
+  (let-optionals* tz-offset ((offset (tm:local-tz-offset)))
     (time-utc->date (julian-day->time-utc jdn) offset)))
 
 (define (modified-julian-day->date jdn . tz-offset)
-  (let ((offset (:optional tz-offset (tm:local-tz-offset))))
+  (let-optionals* tz-offset ((offset (tm:local-tz-offset)))
     (julian-day->date (+ jdn 4800001/2) offset)))
 
 (define (modified-julian-day->time-utc jdn)
@@ -703,6 +702,6 @@
 (define (current-modified-julian-day)
   (time-utc->modified-julian-day (current-time time-utc)))
 
-;; TODO: autoload setup
+(autoload "srfi-19/format" date->string string->date)
 
 (provide "srfi-19")

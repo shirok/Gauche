@@ -1,5 +1,5 @@
 ;;; srfi-19/format.scm - excerpt from SRFI-19 for date formatting routine.
-;;; $Id: format.scm,v 1.1 2002-03-09 11:17:39 shirok Exp $
+;;; $Id: format.scm,v 1.2 2002-03-09 20:25:44 shirok Exp $
 
 ;; SRFI-19: Time Data Types and Procedures.
 ;; 
@@ -62,19 +62,9 @@
 ;; if string is longer than LENGTH, it's as if number->string was used.
 
 (define (tm:padding n pad-with length)
-  (let* ( (str (number->string n))
-	  (str-len (string-length str)) )
-    (if (or (> str-len length)
-		(not pad-with))
-	str
-	(let* ( (new-str (make-string length pad-with))
-		(new-str-offset (- (string-length new-str)
-				   str-len)) )
-	  (do ((i 0 (+ i 1)))
-	      ((>= i (string-length str)))
-		(string-set! new-str (+ new-str-offset i) 
-			     (string-ref str i)))
-	  new-str))))
+  (if pad-with
+      (format #f "~v,vd" length pad-with n)
+      (number->string n)))
 
 (define (tm:last-n-digits i n)
   (abs (remainder i (expt 10 n))))
@@ -299,6 +289,8 @@
     (if associated (cdr associated) #f)))
 
 (define (tm:date-printer date index format-string str-len port)
+  (define (bad) 
+    (errorf "tm:date-printer: bad date format string: ~s" format-string))
   (if (>= index str-len)
       (values)
       (let ( (current-char (string-ref format-string index)) )
@@ -307,57 +299,46 @@
 	      (display current-char port)
 	      (tm:date-printer date (+ index 1) format-string str-len port))
 	    (if (= (+ index 1) str-len) ; bad format string.
-		(tm:time-error 'tm:date-printer 'bad-date-format-string 
-			       format-string)
-		  (let ( (pad-char? (string-ref format-string (+ index 1))) )
-		    (cond
-		     ((char=? pad-char? #\-)
-		      (if (= (+ index 2) str-len) ; bad format string.
-			  (tm:time-error 'tm:date-printer 'bad-date-format-string 
-					 format-string)
-			  (let ( (formatter (tm:get-formatter 
-					     (string-ref format-string
-							 (+ index 2)))) )
-			    (if (not formatter)
-				(tm:time-error 'tm:date-printer 'bad-date-format-string 
-					 format-string)
-				(begin
-				  (formatter date #f port)
-				  (tm:date-printer date (+ index 3)
-						   format-string str-len port))))))
-		     
-		      ((char=? pad-char? #\_)
-		      (if (= (+ index 2) str-len) ; bad format string.
-			  (tm:time-error 'tm:date-printer 'bad-date-format-string 
-					 format-string)
-			  (let ( (formatter (tm:get-formatter 
-					     (string-ref format-string
-							 (+ index 2)))) )
-			    (if (not formatter)
-				(tm:time-error 'tm:date-printer 'bad-date-format-string 
-					       format-string)
-				(begin
-				  (formatter date #\Space port)
-				  (tm:date-printer date (+ index 3)
-						   format-string str-len port))))))
-		      (else
-		       (let ( (formatter (tm:get-formatter 
-					     (string-ref format-string
-							 (+ index 1)))) )
-			    (if (not formatter)
-				(tm:time-error 'tm:date-printer 'bad-date-format-string 
-					       format-string)
-				(begin
-				  (formatter date #\0 port)
-				  (tm:date-printer date (+ index 2)
-						   format-string str-len port))))))))))))
+                (bad)
+                (let ( (pad-char? (string-ref format-string (+ index 1))) )
+                  (cond
+                   ((char=? pad-char? #\-)
+                    (when (= (+ index 2) str-len) ; bad format string.
+                      (bad))
+                    (let ( (formatter (tm:get-formatter 
+                                       (string-ref format-string
+                                                   (+ index 2)))) )
+                      (unless formatter (bad))
+                      (formatter date #f port)
+                      (tm:date-printer date (+ index 3)
+                                       format-string str-len port)))
+
+                   ((char=? pad-char? #\_)
+                    (when (= (+ index 2) str-len) ; bad format string.
+                      (bad))
+                    (let ( (formatter (tm:get-formatter 
+                                       (string-ref format-string
+                                                   (+ index 2)))) )
+                      (unless formatter (bad))
+                      (formatter date #\Space port)
+                      (tm:date-printer date (+ index 3)
+                                       format-string str-len port)))
+
+                   (else
+                    (let ( (formatter (tm:get-formatter 
+                                       (string-ref format-string
+                                                   (+ index 1)))) )
+                      (unless formatter (bad))
+                      (formatter date #\0 port)
+                      (tm:date-printer date (+ index 2)
+                                       format-string str-len port))))))))))
 
 
 (define (date->string date .  format-string)
-  (let ( (str-port (open-output-string))
-	 (fmt-str (:optional format-string "~c")) )
-    (tm:date-printer date 0 fmt-str (string-length fmt-str) str-port)
-    (get-output-string str-port)))
+  (let-optionals* format-string ((fmt-str "~c"))
+    (let ( (str-port (open-output-string)))
+      (tm:date-printer date 0 fmt-str (string-length fmt-str) str-port)
+      (get-output-string str-port))))
 	
 (define (tm:char->int ch)
   (or (digit->integer ch) 
@@ -387,9 +368,8 @@
       (let ((ch (peek-char port)))
 	(cond
 	 ((>= nchars n) accum)
-	 ((eof-object? ch) 
-	  (tm:time-error 'string->date 'bad-date-template-string 
-			 "Premature ending to integer read."))
+	 ((eof-object? ch)
+          (errorf "string->date: premature ending of integer read"))
 	 ((char-numeric? ch)
 	  (set! padding-ok #f)
 	  (accum-int port
@@ -399,8 +379,8 @@
 	  (read-ch port) ; consume padding
 	  (accum-int prot accum (+ nchars 1)))
 	 (else ; padding where it shouldn't be
-	  (tm:time-error 'string->date 'bad-date-template-string 
-			  "Non-numeric characters in integer read.")))))
+          (errorf "string->date: Non-numeric characters in integer read."))
+         )))
     (accum-int port 0 0)))
 
 
@@ -413,8 +393,7 @@
 	 (positive? #f) )
     (let ( (ch (read-char port)) )
       (if (eof-object? ch)
-	  (tm:time-error 'string->date 'bad-date-template-string
-			 (list "Invalid time zone +/-" ch)))
+          (errorf "string->date: invalid time zone +/-: ~s" ch))
       (if (or (char=? ch #\Z) (char=? ch #\z))
 	  0
 	  (begin
@@ -422,30 +401,25 @@
 	     ((char=? ch #\+) (set! positive? #t))
 	     ((char=? ch #\-) (set! positive? #f))
 	     (else
-	      (tm:time-error 'string->date 'bad-date-template-string
-			 (list "Invalid time zone +/-" ch))))
+              (errorf "string->date: invalid time zone +/-: ~s" ch)))
 	    (let ((ch (read-char port)))
 	      (if (eof-object? ch)
-		  (tm:time-error 'string->date 'bad-date-template-string
-				  (list "Invalid time zone number" ch)))
+                  (errorf "string->date: premature end of time zone number"))
 	      (set! offset (* (tm:char->int ch)
 			      10 60 60)))
 	    (let ((ch (read-char port)))
 	      (if (eof-object? ch)
-		  (tm:time-error 'string->date 'bad-date-template-string
-				 (list "Invalid time zone number" ch)))
+                  (errorf "string->date: premature end of time zone number"))
 	      (set! offset (+ offset (* (tm:char->int ch)
 					60 60))))
 	    (let ((ch (read-char port)))
 	      (if (eof-object? ch)
-		  (tm:time-error 'string->date 'bad-date-template-string
-				 (list "Invalid time zone number" ch)))
+                  (errorf "string->date: premature end of time zone number"))
 	      (set! offset (+ offset (* (tm:char->int ch)
 					10 60))))
 	    (let ((ch (read-char port)))
 	      (if (eof-object? ch)
-		  (tm:time-error 'string->date 'bad-date-template-string
-				 (list "Invalid time zone number" ch)))
+                  (errorf "string->date: premature end of time zone number"))
 	      (set! offset (+ offset (* (tm:char->int ch)
 					60))))
 	    (if positive? offset (- offset)))))))
@@ -461,9 +435,8 @@
 	    (get-output-string string-port))))
     (let* ( (str (read-char-string)) 
 	    (index (indexer str)) )
-      (if index index (tm:time-error 'string->date
-				     'bad-date-template-string
-				     (list "Invalid string for " indexer))))))
+      (or index
+          (errorf "string->date: invalid string for ~s" indexer)))))
 
 (define (tm:make-locale-reader indexer)
   (lambda (port)
@@ -473,9 +446,7 @@
   (lambda (port)
     (if (char=? char (read-char port))
 	char
-	(tm:time-error 'string->date
-		       'bad-date-template-string
-		       "Invalid character match."))))
+        (errorf "string->date: invalid character match"))))
 
 ;; A List of formatted read directives.
 ;; Each entry is a list.
@@ -551,10 +522,12 @@
    )))
 
 (define (tm:string->date date index format-string str-len port template-string)
+  (define (bad) 
+    (errorf "string->date: bad date format string: ~s" template-string))
   (define (skip-until port skipper)
     (let ((ch (peek-char port)))
       (if (eof-object? port)
-	  (tm:time-error 'string->date 'bad-date-format-string template-string)
+          (bad)
 	  (if (not (skipper ch))
 	      (begin (read-char port) (skip-until port skipper))))))
   (if (>= index str-len)
@@ -565,15 +538,15 @@
 	    (let ((port-char (read-char port)))
 	      (if (or (eof-object? port-char)
 		      (not (char=? current-char port-char)))
-		  (tm:time-error 'string->date 'bad-date-format-string template-string))
+                  (bad))
 	      (tm:string->date date (+ index 1) format-string str-len port template-string))
 	    ;; otherwise, it's an escape, we hope
 	    (if (> (+ index 1) str-len)
-		(tm:time-error 'string->date 'bad-date-format-string template-string)
+                (bad)
 		(let* ( (format-char (string-ref format-string (+ index 1)))
 			(format-info (assoc format-char tm:read-directives)) )
 		  (if (not format-info)
-		      (tm:time-error 'string->date 'bad-date-format-string template-string)
+                      (bad)
 		      (begin
 			(let ((skipper (cadr format-info))
 			      (reader  (caddr format-info))
@@ -581,7 +554,7 @@
 			  (skip-until port skipper)
 			  (let ((val (reader port)))
 			    (if (eof-object? val)
-				(tm:time-error 'string->date 'bad-date-format-string template-string)
+                                (bad)
 				(actor val date)))
 			  (tm:string->date date (+ index 2) format-string  str-len port template-string))))))))))
 
@@ -604,6 +577,7 @@
 		     template-string)
     (if (tm:date-ok? newdate)
 	newdate
-	(tm:time-error 'string->date 'bad-date-format-string (list "Incomplete date read. " newdate template-string)))))
+        (errorf "string->date: incomplete date read: ~s for ~s"
+                newdate template-string))))
 
 (provide "srfi-19/format")
