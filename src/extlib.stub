@@ -146,6 +146,13 @@
   (assert (input-port? port))
   "  SCM_RETURN(Scm_VMLoadFromPort(port));")
 
+(define-cproc parse-pathname (path &optional (absolute #f) (normalize #f))
+  (assert (string? path))
+  " ScmObj p;
+  p = Scm_ParsePathname(Scm_GetStringConst(path),
+                        !SCM_FALSEP(absolute),
+                        !SCM_FALSEP(normalize));
+  SCM_RETURN(p);")
 
 ;;
 ;; Hashtable
