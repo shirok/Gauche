@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.68 2002-07-03 08:46:33 shirok Exp $
+ *  $Id: port.c,v 1.69 2002-07-05 10:35:37 shirok Exp $
  */
 
 #include <unistd.h>
@@ -44,10 +44,9 @@
  *  cases the port operation is trivial; such as fetching some
  *  bytes from memory and incrementing a counter.   Only in some
  *  occasions the operation involves system calls or calling other
- *  Gauche C functions.  So the port functions defer CV update and
- *  setting dynamic context until they are needed.  Consequently,
- *  in most cases operations can be performed with just a pair of
- *  mutex lock/unlock.
+ *  Gauche C functions.  So the port functions defer setting dynamic
+ *  context until they are needed.  Consequently, in most cases
+ *  operations can be performed with just a pair of mutex lock/unlock.
  *
  *  Furthermore, some port functions have 'locked' mode, which 
  *  should be called when the caller is sure that the thread
@@ -1145,15 +1144,24 @@ int Scm_Getb(ScmPort *p)
  */
 
 /* handle the case that there's data in scratch area */
-static int getc_scratch(ScmPort *p)
+static int getc_scratch(ScmPort *p, int safep)
 {
     char tbuf[SCM_CHAR_MAX_BYTES];
     int nb = SCM_CHAR_NFOLLOWS(p->scratch[0]), ch, i, curr = p->scrcnt;
+    int r;
+    
     memcpy(tbuf, p->scratch, curr);
     p->scrcnt = 0;
     for (i=curr; i<=nb; i++) {
-        int r = Scm_Getb(p);
+        if (safep) {
+            PORT_SAFE_CALL(p, r = Scm_Getb(p));
+        } else {
+            r = Scm_Getb(p);
+        }
         if (r == EOF) {
+            if (safep) {
+                PORT_UNLOCK(p);
+            }
             Scm_Error("encountered EOF in middle of a multibyte character from port %S", p);
         }
         tbuf[i] = (char)r;
@@ -1162,13 +1170,14 @@ static int getc_scratch(ScmPort *p)
     return ch;
 }
 
-/* getc main body */
-int Scm_Getc(ScmPort *p)
+
+/* getc main body (unsafe) */
+int Scm_GetcUnsafe(ScmPort *p)
 {
     int first, nb, c = 0;
 
     CLOSE_CHECK(p);
-    if (p->scrcnt > 0) return getc_scratch(p);
+    if (p->scrcnt > 0) return getc_scratch(p, FALSE);
     if (p->ungotten != SCM_CHAR_INVALID) {
         c = p->ungotten;
         p->ungotten = SCM_CHAR_INVALID;
@@ -1245,15 +1254,118 @@ int Scm_Getc(ScmPort *p)
     return c;
 }
 
+/* getc body (safe) */
+int Scm_Getc(ScmPort *p)
+{
+    int first, nb, c = 0, r;
+    ScmVM *vm = Scm_VM();
+
+    PORT_LOCK(p, vm);
+    CLOSE_CHECK_SAFE(p);
+    if (p->scrcnt > 0) {
+        r = getc_scratch(p, TRUE);
+        PORT_UNLOCK(p);
+        return r;
+    }
+    if (p->ungotten != SCM_CHAR_INVALID) {
+        c = p->ungotten;
+        p->ungotten = SCM_CHAR_INVALID;
+        PORT_UNLOCK(p);
+        return c;
+    }
+
+    switch (SCM_PORT_TYPE(p)) {
+    case SCM_PORT_FILE:
+        if (p->src.buf.current >= p->src.buf.end) {
+            PORT_SAFE_CALL(p, r = bufport_fill(p, 1, FALSE));
+            if (r == 0) {
+                PORT_UNLOCK(p);
+                return EOF;
+            }
+        }
+        first = (unsigned char)*p->src.buf.current++;
+        nb = SCM_CHAR_NFOLLOWS(first);
+        if (nb > 0) {
+            if (p->src.buf.current + nb > p->src.buf.end) {
+                /* The buffer doesn't have enough bytes to consist a char.
+                   move the incomplete char to the scratch buffer and try
+                   to fetch the rest of the char. */
+                int rest, filled = 0; 
+                p->scrcnt = (unsigned char)(p->src.buf.end - p->src.buf.current + 1);
+                memcpy(p->scratch, p->src.buf.current-1, p->scrcnt);
+                p->src.buf.current = p->src.buf.end;
+                rest = nb + 1 - p->scrcnt;
+                for (;;) {
+                    PORT_SAFE_CALL(p, filled = bufport_fill(p, rest, FALSE));
+                    if (filled <= 0) {
+                        /* TODO: make this behavior customizable */
+                        PORT_UNLOCK(p);
+                        Scm_Error("encountered EOF in middle of a multibyte character from port %S", p);
+                    }
+                    if (filled >= rest) {
+                        memcpy(p->scratch+p->scrcnt, p->src.buf.current, rest);
+                        p->scrcnt += rest;
+                        p->src.buf.current += rest;
+                        break;
+                    } else {
+                        memcpy(p->scratch+p->scrcnt, p->src.buf.current, filled);
+                        p->scrcnt += filled;
+                        p->src.buf.current = p->src.buf.end;
+                        rest -= filled;
+                    }
+                }
+                SCM_CHAR_GET(p->scratch, c);
+                p->scrcnt = 0;
+            } else {
+                SCM_CHAR_GET(p->src.buf.current-1, c);
+                p->src.buf.current += nb;
+            }
+        } else {
+            c = first;
+            if (c == '\n') p->src.buf.line++;
+        }
+        PORT_UNLOCK(p);
+        return c;
+    case SCM_PORT_ISTR:
+        if (p->src.istr.current >= p->src.istr.end) {
+            PORT_UNLOCK(p);
+            return EOF;
+        }
+        first = (unsigned char)*p->src.istr.current++;
+        nb = SCM_CHAR_NFOLLOWS(first);
+        if (nb > 0) {
+            if (p->src.istr.current + nb > p->src.istr.end) {
+                /* TODO: make this behavior customizable */
+                PORT_UNLOCK(p);
+                Scm_Error("encountered EOF in middle of a multibyte character from port %S", p);
+            }
+            SCM_CHAR_GET(p->src.istr.current-1, c);
+            p->src.istr.current += nb;
+        } else {
+            c = first;
+        }
+        PORT_UNLOCK(p);
+        break;
+    case SCM_PORT_PROC:
+        PORT_SAFE_CALL(p, c = p->src.vt.Getc(p));
+        PORT_UNLOCK(p);
+        break;
+    default:
+        PORT_UNLOCK(p);
+        Scm_Error("bad port type for output: %S", p);
+    }
+    return c;
+}
+
 /*--------------------------------------------------- 
  * Getz - block read.
  *   If the buffering mode is BUFFER_FULL, this reads BUFLEN bytes
  *   unless it reaches EOF.  Otherwise, this reads less than BUFLEN
  *   if the data is not immediately available.
  */
-static int getz_scratch(char *buf, int buflen, ScmPort *p)
+static int getz_scratch(char *buf, int buflen, ScmPort *p, int safep)
 {
-    int i;
+    int i, n;
     if (p->scrcnt >= buflen) {
         memcpy(buf, p->scratch, buflen);
         p->scrcnt -= buflen;
@@ -1263,25 +1375,30 @@ static int getz_scratch(char *buf, int buflen, ScmPort *p)
         memcpy(buf, p->scratch, p->scrcnt);
         i = p->scrcnt;
         p->scrcnt = 0;
-        return i + Scm_Getz(buf+i, buflen-i, p);
+        if (safep) {
+            PORT_SAFE_CALL(p, n = Scm_Getz(buf+i, buflen-i, p));
+        } else {
+            n = Scm_Getz(buf+i, buflen-i, p);
+        }
+        return i + n;
     }
 }
 
-static int getz_ungotten(char *buf, int buflen, ScmPort *p)
+static int getz_ungotten(char *buf, int buflen, ScmPort *p, int safep)
 {
     p->scrcnt = SCM_CHAR_NBYTES(p->ungotten);
     SCM_CHAR_PUT(p->scratch, p->ungotten);
     p->ungotten = SCM_CHAR_INVALID;
-    return getz_scratch(buf, buflen, p);
+    return getz_scratch(buf, buflen, p, safep);
 }
 
-int Scm_Getz(char *buf, int buflen, ScmPort *p)
+int Scm_GetzUnsafe(char *buf, int buflen, ScmPort *p)
 {
     int siz;
     CLOSE_CHECK(p);
 
-    if (p->scrcnt) return getz_scratch(buf, buflen, p);
-    if (p->ungotten != SCM_CHAR_INVALID) return getz_ungotten(buf, buflen, p);
+    if (p->scrcnt) return getz_scratch(buf, buflen, p, FALSE);
+    if (p->ungotten != SCM_CHAR_INVALID) return getz_ungotten(buf, buflen, p, FALSE);
 
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
@@ -1304,6 +1421,59 @@ int Scm_Getz(char *buf, int buflen, ScmPort *p)
         return p->src.vt.Getz(buf, buflen, p);
         break;
     default:
+        Scm_Error("bad port type for output: %S", p);
+    }
+    return -1;                  /* dummy */
+}
+
+int Scm_Getz(char *buf, int buflen, ScmPort *p)
+{
+    int siz, r;
+    ScmVM *vm = Scm_VM();
+    PORT_LOCK(p, vm);
+    CLOSE_CHECK_SAFE(p);
+
+    if (p->scrcnt) {
+        r = getz_scratch(buf, buflen, p, TRUE);
+        PORT_UNLOCK(p);
+        return r;
+    }
+    if (p->ungotten != SCM_CHAR_INVALID) {
+        r = getz_ungotten(buf, buflen, p, TRUE);
+        PORT_UNLOCK(p);
+        return r;
+    }
+
+    switch (SCM_PORT_TYPE(p)) {
+    case SCM_PORT_FILE:
+        PORT_SAFE_CALL(p, siz = bufport_read(p, buf, buflen));
+        PORT_UNLOCK(p);
+        if (siz == 0) return EOF;
+        else return siz;
+    case SCM_PORT_ISTR:
+        if (p->src.istr.current + buflen >= p->src.istr.end) {
+            if (p->src.istr.current >= p->src.istr.end) {
+                PORT_UNLOCK(p);
+                return EOF;
+            }
+            siz = (int)(p->src.istr.end - p->src.istr.current);
+            memcpy(buf, p->src.istr.current, siz);
+            p->src.istr.current = p->src.istr.end;
+            PORT_UNLOCK(p);
+            return siz;
+        } else {
+            memcpy(buf, p->src.istr.current, buflen);
+            p->src.istr.current += buflen;
+            PORT_UNLOCK(p);
+            return buflen;
+        }
+    case SCM_PORT_PROC:
+        PORT_SAFE_CALL(p, r = p->src.vt.Getz(buf, buflen, p));
+        PORT_UNLOCK(p);
+        return r;
+        break;
+    default:
+        PORT_UNLOCK(p);
         Scm_Error("bad port type for output: %S", p);
     }
     return -1;                  /* dummy */
@@ -1465,7 +1635,7 @@ ScmObj Scm_ReadLine(ScmPort *p)
 }
 #else
 /* This is much simpler, non-optimized version. */
-ScmObj Scm_ReadLine(ScmPort *p)
+ScmObj Scm_ReadLineUnsafe(ScmPort *p)
 {
     int c1, c2;
     ScmDString ds;
@@ -1483,6 +1653,34 @@ ScmObj Scm_ReadLine(ScmPort *p)
         SCM_DSTRING_PUTC(&ds, c1);
         SCM_GETC(c1, p);
     }
+    return Scm_DStringGet(&ds);
+}
+
+ScmObj Scm_ReadLine(ScmPort *p)
+{
+    int c1, c2;
+    ScmDString ds;
+    ScmVM *vm = Scm_VM();
+
+    Scm_DStringInit(&ds);
+    PORT_LOCK(p, vm);
+    c1 = Scm_GetcUnsafe(p);
+    if (c1 == EOF) {
+        PORT_UNLOCK(p);
+        return SCM_EOF;
+    }
+    for (;;) {
+        if (c1 == EOF || c1 == '\n') break;
+        if (c1 == '\r') {
+            c2 = Scm_GetcUnsafe(p);
+            if (c2 == EOF || c2 == '\n') break;
+            Scm_UngetcUnsafe(c2, p);
+            break;
+        }
+        SCM_DSTRING_PUTC(&ds, c1);
+        c1 = Scm_GetcUnsafe(p);
+    }
+    PORT_UNLOCK(p);
     return Scm_DStringGet(&ds);
 }
 #endif
