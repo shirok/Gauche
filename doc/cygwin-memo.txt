@@ -120,12 +120,7 @@ version:
   3. For static initializers, a programmer should use
      SCM_CLASS_PTR(ScmFooClass) instead of SCM_CLASS_FOO.
 
-  4. For the Scheme objects created at run time, we need a method
-     to map ScmClass* to ScmClass** in order to fill the objects'
-     tag.   I added extra field in ScmClass structure that keeps
-     the information.
-
-  5. For class precedence array and method specializer array,
+  4. For class precedence array and method specializer array,
      Initialization methods convert ScmClass** array to 
      ScmClass* array.
 
@@ -136,10 +131,10 @@ like this after macro expansion.
    extern ScmClass *_imp__ScmFooClass;
 
    typedef ScmHeaderRec {
-       ScmClass **klass;
+       ScmClass *klass;
    } ScmHeader;
 
-   static ScmFoo foo = {{&_imp__ScmFooClass}, ... };
+   static ScmFoo foo = {{(ScmClass*)&_imp__ScmFooClass}, ... };
 
 Note that although _imp__ScmFooClass is declared as "extern", 
 its scope is actually just inside a single DLL, or a statically 
