@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.25 2001-02-22 06:48:33 shiro Exp $
+ *  $Id: vm.h,v 1.26 2001-02-27 08:15:38 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -195,7 +195,7 @@ extern ScmClass Scm_VMClass;
 
 #define SCM_VM_INSNP(obj)            ((SCM_WORD(obj)&0x0f) == SCM_VM_INSN_TAG)
 #define SCM_VM_INSN_CODE(obj)        ((SCM_WORD(obj)>>4)&0x0ff)
-#define SCM_VM_INSN_ARG(obj)         (SCM_WORD(obj) >> 12)
+#define SCM_VM_INSN_ARG(obj)         ((signed long)SCM_WORD(obj) >> 12)
 
 #define SCM_VM_INSN_ARG0(obj)        ((SCM_WORD(obj) >> 12) & 0x03ff)
 #define SCM_VM_INSN_ARG1(obj)        ((SCM_WORD(obj) >> 22) & 0x03ff)
@@ -206,6 +206,11 @@ extern ScmClass Scm_VMClass;
     SCM_OBJ(((arg) << 12) | ((code) << 4) | SCM_VM_INSN_TAG)
 #define SCM_VM_INSN2(code, arg0, arg1) \
     SCM_OBJ(((arg1) << 22) | ((arg0) << 12) | ((code) << 4) | SCM_VM_INSN_TAG)
+
+#define SCM_VM_INSN_ARG_MAX          ((1L<<((SIZEOF_LONG*8)-13))-1)
+#define SCM_VM_INSN_ARG_MIN          (-SCM_VM_INSN_ARG_MAX)
+#define SCM_VM_INSN_ARG_FITS(k) \
+    (((k)<=SCM_VM_INSN_ARG_MAX)&&((k)>=SCM_VM_INSN_ARG_MIN))
 
 enum {
 #define DEFINSN(sym, nam, nparams)  sym,
