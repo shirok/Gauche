@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: list.scm,v 1.3 2003-02-05 10:55:40 shirok Exp $
+;;;  $Id: list.scm,v 1.4 2003-02-27 08:19:34 shirok Exp $
 ;;;
 
 ;; This module adds useful list utility procedures that are not in SRFI-1.
@@ -85,6 +85,19 @@
         (reverse! r)
         (receive (h t) (apply split-at* lis k args)
           (loop t (cons h r))))))
+
+;;-----------------------------------------------------------------
+;; intersperse - insert ITEM between elements in the list.
+;; (the order of arguments is taken from Haskell's intersperse)
+
+(define (intersperse item lis)
+  (define (rec l r)
+    (if (null? l)
+        (reverse! r)
+        (rec (cdr l) (list* (car l) item r))))
+  (if (null? lis)
+      '()
+      (rec (cdr lis) (list (car lis)))))
 
 ;;-----------------------------------------------------------------
 ;; cond-list - a syntax to construct a list
