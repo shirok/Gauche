@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.47 2001-06-14 09:07:14 shirok Exp $
+ *  $Id: string.c,v 1.48 2001-06-27 08:11:55 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1096,7 +1096,8 @@ void Scm_DStringPutz(ScmDString *dstr, const char *str, int size)
 void Scm_DStringAdd(ScmDString *dstr, ScmString *str)
 {
     int size = SCM_STRING_SIZE(str);
-    while (dstr->current + size >= dstr->end) {
+    if (size == 0) return;
+    if (dstr->current + size >= dstr->end) {
         Scm__DStringRealloc(dstr, size);
     }
     memcpy(dstr->current, SCM_STRING_START(str), size);
