@@ -12,12 +12,13 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: signal.c,v 1.3 2002-01-15 21:05:22 shirok Exp $
+ *  $Id: signal.c,v 1.4 2002-01-16 20:57:29 shirok Exp $
  */
 
 #include <signal.h>
 #include "gauche.h"
 #include "gauche/vm.h"
+#include "gauche/class.h"
 
 /* Signals
  *
@@ -30,7 +31,17 @@
  *
  *  VM calls Scm_SigCheck() at the "safe" point, which flushes
  *  the signal queue and make a list of handlers to be called.
+ *
+ *  This signal handling mechanism only deals with the
+ *  thread-private data.
  */
+
+/*
+ * sigset class
+ */
+
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysSigsetClass, NULL);
+
 
 /*
  * System's signal handler - just enqueue the signal
@@ -61,7 +72,7 @@ static void sig_handle(int signum)
 void Scm_SigCheck(ScmVM *vm)
 {
     int i;
-    ScmObj sigh, tail;
+    ScmObj sp, tail;
 
     sigprocmask(SIG_BLOCK, &vm->sigMask, NULL);
     /* NB: if an error occurs during the critical section,
@@ -72,13 +83,20 @@ void Scm_SigCheck(ScmVM *vm)
         while (vm->sigQueueHead != vm->sigQueueTail) {
             int signum = vm->sigQueue[vm->sigQueueHead++];
             if (vm->sigQueueHead >= SCM_VM_SIGQ_SIZE) vm->sigQueueHead = 0;
-            sigh = Scm_Assq(SCM_MAKE_INT(signum), vm->sigHandlers);
-            if (SCM_PAIRP(sigh)) {
-                if (SCM_NULLP(tail)) {
-                    tail = Scm_Cons(SCM_CDR(sigh), SCM_NIL);
-                } else {
-                    SCM_SET_CDR(tail, Scm_Cons(SCM_CDR(sigh), SCM_NIL));
-                    tail = SCM_CDR(tail);
+
+            SCM_FOR_EACH(sp, vm->sigHandlers) {
+                ScmObj sigh = SCM_CAR(sp);
+                sigset_t *set;
+                SCM_ASSERT(SCM_PAIRP(sigh)&&SCM_SYS_SIGSET_P(SCM_CAR(sigh)));
+                set = &(SCM_SYS_SIGSET(SCM_CAR(sigh))->set);
+                if (sigismember(set, signum)) {
+                    if (SCM_NULLP(tail)) {
+                        tail = Scm_Cons(SCM_CDR(sigh), SCM_NIL);
+                    } else {
+                        SCM_SET_CDR(tail, Scm_Cons(SCM_CDR(sigh), SCM_NIL));
+                        tail = SCM_CDR(tail);
+                    }
+                    break;
                 }
             }
         }
@@ -93,4 +111,15 @@ void Scm_SigCheck(ScmVM *vm)
     sigprocmask(SIG_UNBLOCK, &vm->sigMask, NULL);
 }
 
+/*
+ * with-signal-handlers 
+ */
 
+/*
+ * initialize
+ */
+
+void Scm__InitSignal(void)
+{
+}
+    
