@@ -4,7 +4,7 @@
                         Compiling and Installing Gauche
 
 
-$Id: INSTALL,v 1.4 2001-03-14 09:13:49 shiro Exp $
+$Id: INSTALL,v 1.5 2001-05-03 19:22:26 shirok Exp $
 
 Note: The Gauche system is a work in progress and frequently updated.
 Check out the latest information on the site:
@@ -21,6 +21,18 @@ Check out the latest information on the site:
 
 Things will be installed under /usr/local/{bin,lib}, and /usr/local/lib/gauche.
 
+
+[Choosing Character Encoding]
+-----------------------------
+
+By default, Gauche is compiled with EUC-JP as a native character encoding.
+You can give a --enable-multibyte=ENCODING option to switch the native
+encoding.
+
+  ./configure --enable-encoding=euc-jp  ;; EUC-JP (default)
+  ./configure --enable-encoding=utf-8   ;; UTF-8
+  ./configure --enable-encoding=sjis    ;; Shift JIS
+  ./configure --enable-encoding=no      ;; No multibyte string
 
 
 [Customizing install location]
