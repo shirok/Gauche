@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.68 2003-07-09 11:31:54 shirok Exp $
+ *  $Id: main.c,v 1.69 2003-07-11 13:08:40 shirok Exp $
  */
 
 #include <unistd.h>
@@ -202,7 +202,7 @@ int main(int argc, char **argv)
 
     argind = parse_options(argc, argv);
 
-    /* If -ftest option is given, and we seems to be in the source
+    /* If -ftest option is given and we seem to be in the source
        tree, adds ../src and ../lib to the library path _before_
        loading init file.   This is to help development of Gauche
        itself; normal user should never need this. */
@@ -268,8 +268,6 @@ int main(int argc, char **argv)
     } else {
         av = SCM_LIST1(SCM_MAKE_STR_IMMUTABLE(argv[0]));
     }
-
-    /* define these before loading stuff specified by cmdargs. */
     SCM_DEFINE(Scm_UserModule(), "*argv*", SCM_CDR(av));
     SCM_DEFINE(Scm_UserModule(), "*program-name*", SCM_CAR(av));
 
