@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vector.c,v 1.19 2002-08-01 01:11:02 shirok Exp $
+ *  $Id: vector.c,v 1.20 2003-06-09 20:51:02 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -49,6 +49,7 @@ ScmObj Scm_MakeVector(int size, ScmObj fill)
 {
     int i;
     ScmVector *v = make_vector(size);
+    if (SCM_UNBOUNDP(fill)) fill = SCM_UNDEFINED;
     for (i=0; i<size; i++) v->elements[i] = fill;
     return SCM_OBJ(v);
 }
