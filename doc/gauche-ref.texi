@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.46 2001-08-09 09:44:24 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.47 2001-08-31 09:17:20 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3637,6 +3637,7 @@ of descendants of @var{class}.
 @c ----------------------------------------------------------------------
 @menu
 * Character code conversion::   
+* Interactive session::         
 * Networking::                  
 * Parsing command-line options::  
 * High Level Process Interface::  
@@ -3659,7 +3660,7 @@ of descendants of @var{class}.
 * Character-set library::       
 @end menu
 
-@node Character code conversion, Networking, Libarary Modules, Libarary Modules
+@node Character code conversion, Interactive session, Libarary Modules, Libarary Modules
 @section @code{gauche.charconv} - Character Code Conversion
 
 @deftp {Module} gauche.charconv
@@ -3792,7 +3793,43 @@ usually in favor of the native CES.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Networking, Parsing command-line options, Character code conversion, Libarary Modules
+@node Interactive session, Networking, Character code conversion, Libarary Modules
+@section @code{gauche.interactive} - Utilities for interactive session
+
+@deftp {Module} gauche.interactive
+@mdindex gauche.interactive
+Provides useful utilities for the interactive session.
+
+This module is automatically loaded when you run @code{gosh}
+interactively.
+
+So far, only one function is provided; will be populated later.
+@end deftp
+
+@defmac apropos pattern &optional module
+Show a list of variables whose name matches @var{pattern}.
+If you give a module or a module name @var{module}, only the variables
+defined in that module are listed.  Without @var{module},
+the variables "visible" from the current module are listed.
+
+@var{pattern} may be a symbol or a regexp object.
+If it is a symbol, the variables whose name contains the
+substring that matches the symbol's name are listed.
+If it is a regexp object, the variables whose name matches
+the regexp are listed.
+
+Some examples:
+@example
+;; @r{List variables that contains "string" in their name}
+(apropos 'string)
+
+;; @r{Search in srfi-14 module}
+(apropos 'char 'srfi-14)
+@end example
+@end defmac
+
+@c ----------------------------------------------------------------------
+@node Networking, Parsing command-line options, Interactive session, Libarary Modules
 @section @code{gauche.net} - Networking
 
 @deftp {Module} gauche.net
