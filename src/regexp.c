@@ -12,56 +12,64 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: regexp.c,v 1.1 2001-04-08 20:14:55 shiro Exp $
+ *  $Id: regexp.c,v 1.2 2001-04-11 06:20:13 shiro Exp $
  */
 
 #include "gauche.h"
 
+/* class stuff */
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_RegexpClass, NULL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_RegMatchClass, NULL);
+
 /*
- * Compiled regexp is a list of codes.
+ * We use bytecode to interpret the regexp, as opposed to a DG
+ * we're using in the main VM.  It's because the data we deal
+ * with here is a stream of bytes, instead of a general Lisp structure,
+ * and having raw byte data to match benefits performance.
  *
- *  <codelist> := <code> ...
- *  <code> := <char>                 ; matches <char>
- *            <charset>              ; matches <charset>
- *            (group <num> . <codelist>) ; if <codelist> matches, it'll be
- *                                   ;   <num>'th group.
- *            (* . <codelist>)       ; matches zero or more <codelist>
- *            (or <codelist> ...)    ; alternatives.
- *            (rep <m> . <codelist>) ; repeat at most <m> times.
+ * We match the string without decoding each character as much as
+ * possible.
  *
- * Backtrack may happen under '*', 'or' or 'rep' case.  I use recursive
- * call to process those structures, that keeps intermediate result
- * in the C stack.  Once succeeded, it longjmp()'s to the toplevel
- * (thus, if the intermediate routine returns it meands it failed)
+ * Each bytecode is always consisted by one byte opcode and one byte
+ * operand, so it's really a sequence of 16-bit code.
+ *
+ *     MATCH   <byte>         matches one byte.
+ *     ASSERT  <code>         assertion.
+ *     CHARSET <index>        matches to charset in index-th position of
+ *                            the constant vector.
+ *     JUMP    <next>         jump to the bytecode indexed by <next>*2.
+ *     TRY     <next>         try the following sequence.  if fail, jump
+ *                            to <next>*2-th bytecode.
+ *     BEGIN   <n>            start <n>-th group.
+ *     END     <n>            end <n>-th group.
  */
 
-static ScmObj re_compile_group(const char *, const char *, int, ScmObj);
-static ScmObj re_compile_range(const char *, const char *, int, ScmObj);
+enum {
+#define DEF_REG_INSN(insn)  insn,
+#include "gauche/reginsn.h"
+#undef DEF_REG_INSN(insn)
+    RX_NUM_INSN
+};
 
-static ScmObj re_compile(const char *orig, const char *ptr, int len, ScmObj r)
+/*
+ * Compilation
+ */
+
+static ScmObj re_compile(ScmString *expr)
 {
-    ScmChar ch;
-    while (len > 0) {
-        SCM_STR_GETC(ch, ptr);
-        ptr += SCM_CHAR_NBYTES(ch);
-        len--;
+    const char *rx = SCM_STRING_START(expr);
+    const char *rxp = rx;
+    int len = SCM_STRING_LENGTH(expr);
 
-        switch (ch) {
-        case '[':
-            return re_compile_range(orig, ptr, len, r);
-        case '(':
-            return re_compile_group(orig, ptr, len, r);
-        default:
-            r = Scm_Cons(SCM_MAKE_CHAR(ch), r);
-        }
-    }
-    return Scm_ReverseX(r);
+    return SCM_NIL;
 }
 
-static ScmObj re_compile_group(const char *orig, const char *ptr,
-                               int len, ScmObj r)
+/*
+ * Initialization
+ */
+void Scm__InitRegexp(void)
 {
-    ScmChar ch;
-    if (len == 0) Scm_Error("unterminated group in the regexp: %s", orig);
-    
+    ScmModule *m = Scm_GaucheModule();
+    Scm_InitBuiltinClass(&Scm_RegexpClass,   "<regexp>", m);
+    Scm_InitBuiltinClass(&Scm_RegMatchClass, "<regexp-match>", m);
 }
