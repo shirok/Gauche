@@ -5149,34 +5149,56 @@ returns.
 @end defun
 
 @defmac values-ref mv-expr k
+@c EN
 Returns @var{k}-th value of what @var{mv-expr} returns.
-Conceptually, it is the same sa the following code.
+Conceptually, it is the same as the following code.
+@c JP
+@var{mv-expr}が返す多値の@var{k}-番目の値を返します。概念としては、
+以下のコードと同じです。
+@c COMMON
 @example
 (call-with-values (lambda () mv-expr) (lambda r (list-ref r k)))
 @end example
-
+@c EN
 This macro shortcuts the typical cases like @var{k} is zero.
 
 Similar to Common Lisp's @code{nth-value}, but the argument order
 is flipped to match other Scheme's @code{*-ref} procedures.
+@c JP
+このマクロは k がゼロであるような典型的な場合にてっとりばやい方法になります。
+
+Common Lisp の @code{nth-value} に似ていますが、Scheme の他の
+@code{*-ref} 手続きとは引数の順が逆になっています。
+@c COMMON
 @end defmac
 
 @node Delayed Evaludation,  , Multiple values, Control features
 @subsection  Delayed Evaludation
 @c NODE 遅延評価
 
+@c EN
 A syntax @code{delay} and a procedure @code{force} are used
 together to implemnt @emph{lazy evaluation} semantics.
-
+@c JP
+構文@code{delay}および手続き@code{force}は共に@emph{遅延評価}のセマンティクスを
+実装するのに使います。
+@c COMMON
 @defspec delay expression
 [R5RS]
+@c EN
 Returns a @emph{promise} object that encapsulates the evaluation
 of @var{expression}.   The evaluation of @var{expression} is
 delayed until its value is explicitly requested by @code{force}.
+@c JP
+@var{expression}の評価を内包した@emph{プロミス}オブジェクトを返します。
+@var{expression}の評価はその値が@code{force}によって、明示的に要求される
+まで遅延されます。
+@c COMMON
 @end defspec
 
 @defun force promise
 [R5RS]
+@c EN
 If @var{promise} is not a promise, it is just returned.
 
 Otherwise, if @var{promise}'s value hasn't been computed,
@@ -5185,15 +5207,33 @@ be evaluated, and returns the result.
 
 Once @var{promise}'s value is computed, it is memoized in it
 so that subsequent @code{force} on it won't cause the computation.
+@c JP
+もし、@var{promise}がプロミスでなければ、それをそのまま返します。
+
+そうではない場合で、もし@var{promise}の値がまだ計算されていない場合には、
+@code{force}は@var{promise}が内包している式を評価し、その結果を返します。
+
+いったん、@var{promise}の値が計算されると、その値はメモ化され、あとで
+再び@code{force}されても、再計算がおこなわれることはありません。
+@c COMMON
 @end defun
 
 @defun promise? obj
+@c EN
 Returns @code{#t} iff @var{obj} is a promise object
 created by @code{delay}.
+@c JP
+@var{obj}が@code{delay}で生成されたプロミスオブジェクトである場合で、
+その場合に限り、@code{#t}を返します。
+@c COMMON
 @end defun
 
+@c EN
 The following example uses a simple lazy stream to calculate
 fibonacci numbers.
+@c JP
+以下は、フィボナッチ数を計算するのに単純な遅延ストリームを用いた例です。
+@c COMMON
 
 @example
 (define (lcar lis)   ;; lazy car
