@@ -61,7 +61,11 @@ Scheme program and exit.
 @c COMMON
 @end deftp
 
+@c EN
 @subheading Command-line options
+@c JP
+@subheading コマンドラインオプション
+@c COMMON
 
 @c EN
 The following command line options are recognized by @code{gosh}.
@@ -249,20 +253,42 @@ of appearance.  For example, adding a load path by -I affects the
 与えません。
 @c COMMON
 
+@c EN
 @subheading Environment variables
+@c JP
+@subheading 環境変数
+@c COMMON
 
+@c EN
 The following enviornment variables are recognized:
+@c JP
+以下の環境変数を認識します。
+@c COMMON
 
 @deftp {Environment variable} GAUCHE_LOAD_PATH
+@c EN
 You can specify additional load paths by this environment
 variable, delimiting the paths by '@code{:}'.
 The paths are appended before the system default load paths.
+@c JP
+この環境変数によって、追加するロードパスを指定できます。
+パスは '@code{:}' で区切ります。
+この変数によって指定されたパスはシステムのデフォルトのロードパスの前に
+連結されます。
+@c COMMON
 @end deftp
 
 @deftp {Environment variable} GAUCHE_DYNLOAD_PATH
+@c EN
 You can specify additional load paths for dynamically loaded
 objects by this environment variable, delimiting the paths by '@code{:}'.
 The paths are appended before the system default load paths.
+@c JP
+@c COMMON
+この変数によって、動的にロードするオブジェクト用の追加ロードパスを
+指定できます。パスは '@code{:}' で区切ります。
+この変数によって指定されたパスはシステムのデフォルトのロードパスの前に
+連結されます。
 @end deftp
 
 @c ----------------------------------------------------------------------
