@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: cookie.scm,v 1.3 2001-09-24 00:30:16 shirok Exp $
+;;;  $Id: cookie.scm,v 1.4 2001-11-14 07:58:16 shirok Exp $
 ;;;
 
 ;; Parser and constructor of http "Cookies" defined in
@@ -40,8 +40,8 @@
 (define (parse-av-pairs input version)
   (define attr-regexp
     (if (= version 0)
-        #/\s*([\w$_]+)\s*([=\;]\s*)?/
-        #/\s*([\w$_]+)\s*([=\;,]\s*)?/))
+        #/\s*([\w$_-]+)\s*([=\;]\s*)?/
+        #/\s*([\w$_-]+)\s*([=\;,]\s*)?/))
   (define attr-delim
     (if (= version 0) #\; #[,\;]))
   
