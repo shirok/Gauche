@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.283 2002-07-10 10:09:50 shirok Exp $
+ *  $Id: gauche.h,v 1.284 2002-07-12 06:44:56 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1039,8 +1039,6 @@ SCM_EXTERN ScmObj Scm_WeakVectorSet(ScmWeakVector *v, int index, ScmObj val);
  * well as character streams.  Some port may interchange byte (binary)
  * I/O versus character I/O, while some may signal an error if you
  * mix those operations.
- * (Right now, binary/character mixed I/O is not well supported and
- * contains some serious bugs).
  */
 
 /* Substructures */
@@ -1096,6 +1094,7 @@ struct ScmPortRec {
     unsigned int ownerp    : 1; /* TRUE if this port owns underlying
                                    file pointer */
     unsigned int closed    : 1; /* TRUE if this port is closed */
+    unsigned int error     : 1; /* Error has been occurred */
 
     char scratch[SCM_CHAR_MAX_BYTES]; /* incomplete buffer */
 
@@ -1173,6 +1172,7 @@ enum ScmPortICPolicy {
 
 #define SCM_PORT_CLOSED_P(obj)  (SCM_PORT(obj)->closed)
 #define SCM_PORT_OWNER_P(obj)   (SCM_PORT(obj)->ownerp)
+#define SCM_PORT_ERROR_P(obj)   (SCM_PORT(obj)->error)
 
 #define SCM_IPORTP(obj)  (SCM_PORTP(obj)&&(SCM_PORT_DIR(obj)&SCM_PORT_INPUT))
 #define SCM_OPORTP(obj)  (SCM_PORTP(obj)&&(SCM_PORT_DIR(obj)&SCM_PORT_OUTPUT))

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.72 2002-07-05 22:07:56 uid50821 Exp $
+ *  $Id: port.c,v 1.73 2002-07-12 06:44:56 shirok Exp $
  */
 
 #include <unistd.h>
@@ -127,7 +127,9 @@ static int port_cleanup(ScmPort *port)
     if (SCM_PORT_CLOSED_P(port)) return 0;
     switch (SCM_PORT_TYPE(port)) {
     case SCM_PORT_FILE:
-        if (SCM_PORT_DIR(port) == SCM_PORT_OUTPUT) bufport_flush(port, 0);
+        if (SCM_PORT_DIR(port) == SCM_PORT_OUTPUT && !SCM_PORT_ERROR_P(port)) {
+            bufport_flush(port, 0);
+        }
         if (port->ownerp && port->src.buf.closer) port->src.buf.closer(port);
         break;
     case SCM_PORT_PROC:
@@ -164,6 +166,7 @@ static ScmPort *make_port(int dir, int type, int ownerp)
     port->ungotten = SCM_CHAR_INVALID;
     port->closed = FALSE;
     port->ownerp = ownerp;
+    port->error = FALSE;
     port->name = SCM_FALSE;
     (void)SCM_INTERNAL_MUTEX_INIT(port->mutex);
     (void)SCM_INTERNAL_COND_INIT(port->cv);
@@ -663,7 +666,7 @@ void Scm_FlushAllPorts(int exitting)
         (void)SCM_INTERNAL_MUTEX_UNLOCK(active_buffered_ports.mutex);
         if (!SCM_FALSEP(p)) {
             SCM_ASSERT(SCM_PORTP(p) && SCM_PORT_TYPE(p)==SCM_PORT_FILE);
-            bufport_flush(SCM_PORT(p), 0);
+            if (!SCM_PORT_ERROR_P(SCM_PORT(p))) bufport_flush(SCM_PORT(p), 0);
         }
     }
     if (!exitting && saved) {
@@ -742,6 +745,7 @@ static int file_filler(ScmPort *p, int cnt)
                 Scm_SigCheck(Scm_VM());
                 continue;
             } else {
+                p->error = TRUE;
                 Scm_SysError("read failed on %S", p);
             }
         } else if (r == 0) {
@@ -771,6 +775,7 @@ static int file_flusher(ScmPort *p, int cnt)
                 Scm_SigCheck(Scm_VM());
                 continue;
             } else {
+                p->error = TRUE;
                 Scm_SysError("write failed on %S", p);
             }
         } else {
