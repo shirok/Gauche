@@ -9,7 +9,7 @@ INSTALL = @INSTALL@
 
 ARCHFILES = termios.so
 SCMFILES = termios.scm
-HEADERS = termios.h
+HEADERS = termios.h termconfig.h
 
 TARGET = termios.so
 OBJS = termios_head.o termios.o termiolib.o termios_tail.o
