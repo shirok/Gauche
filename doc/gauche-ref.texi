@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.169 2002-02-27 10:42:30 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.170 2002-03-06 08:47:11 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3721,6 +3721,42 @@ part, respectively.  @code{magnitude} and @code{angle} return
 @code{real-part}と@code{imag-part}は@var{z}の実数部と虚数部をそれぞれ返し、
 @code{magnitude}と@code{angle}は@var{z}の絶対値と偏角をそれぞれ返します。
 @c COMMON
+@end defun
+
+@defun fmod x y
+@defunx modf x
+@defunx frexp x
+@defunx ldexp x n
+[POSIX] 
+@c EN
+These procedures can be used to compose and decompose floating
+point numbers.  @code{Fmod} computes the remainder of dividing @var{x}
+by @var{y}, that is, it returns @var{x}-@var{n}*@var{y} where
+@var{n} is the quotient of @var{x}/@var{y} rounded towards zero
+to an integer.   @code{Modf} returns two values; a fractional
+part of @var{x} and an integral part of @var{x}.   @code{Frexp}
+returns two values, @var{fraction} and @var{exponent} of @var{x},
+where @var{x} = @var{fraction} * 2^@var{exponent}, and
+0 <= @var{fraction} <= 0.5.  @var{Ldexp} is a reverse operation of 
+@code{frexp}; it returns a real number @var{x} * 2^@var{n}.
+@c JP
+これらの手続きは、浮動少数点数を分解したり合成するのに使えます。
+@code{fmod}は実数@var{x}を実数@var{y}で割った余りを返します。すなわち、
+@var{x}/@var{y}を0に近いほうの整数に丸めた値を@var{n}とするとき、
+@var{x}-@var{n}*@var{y}を返します。
+@code{modf}は@var{x}の少数部と整数部を返します。
+@code{frexp}は実数@var{x}を、仮数部と指数部に分解して返します。すなわち、
+@var{x} = @var{fraction} * 2^@var{exponent} かつ 0 <= @var{fraction} <= 0.5
+であるところの@var{fraction}と@var{exponent}を返します。
+@code{ldexp}は@code{frexp}の逆関数で、@var{x} * 2^@var{n} を返します。
+@c COMMON
+@example
+(fmod 32.1 10.0)  @result{} 2.1
+(fmod 1.5 1.4)    @result{} 0.1
+(modf 12.5)       @result{} 0.5 @r{and} 12.0
+(frexp 3.14)      @result{} 0.785 @r{and} 2
+(ldexp 0.785 2)   @result{} 3.14
+@end example
 @end defun
 
 @defun exact->inexact z
@@ -8286,16 +8322,16 @@ No cleanup is done.  Unflushed file output is discarded.
 クリーンアップは一切行われません。
 フラッシュされてないファイルバッファの内容は捨てられます。
 @c COMMON
+@end defun
 
+@defun sys-abort
+[POSIX]
 @c EN
-You may use this procedure if you find the system is screwed up
-and no reasonable clean up can be done.  You should use this function
-to terminate a forked process; @ref{Fork and exec} for details.
+Calls POSIX abort().  This usually terminates the running process 
+and dumps core.  No cleanup is done.
 @c JP
-この手続きは、
-一切のクリーンアップに意味が無いほどシステムがどうしようもない状態になった時に使えます。
-また、forkした子プロセスを終了させる時にこの手続きが必要になることがあります。
-@ref{Fork and exec}を参照して下さい。
+POSIXのabort()を呼びます。通常、現在のプロセスは終了され、コアダンプされます。
+クリーンアップは一切行われません。
 @c COMMON
 @end defun
 
@@ -8317,11 +8353,11 @@ or @code{#f} if the environment variable is not defined.
 @defun sys-putenv name value
 @c EN
 Add environment variable @var{name} with @var{value} to the current
-process's environment.  This function is only available if the
-platform supports putenv(3).
+process's environment.  If the system doesn't support putenv(3),
+this function signals an error.
 @c JP
-プロセスの環境変数@var{name}に値@var{value}をセットします。この関数は
-putenv()がサポートされているシステムでのみ定義されています。
+プロセスの環境変数@var{name}に値@var{value}をセットします。システムが
+putenv()をサポートしていない場合はエラーが通知されます。
 @c COMMON
 @end defun
 
@@ -8771,6 +8807,13 @@ Change the mode of the file named @var{path} to @var{mode}.
 specifies POSIX style permission.
 @end defun
 
+@defun sys-chown path owner-id group-id
+Change the owner and/or group of the file named @var{path}
+to @var{owner-id} and @var{group-id} respectively.
+@var{owner-id} and @var{group-id} must be an exact integer.
+If either of them is -1, the corresponding ownership is not changed.
+@end defun
+
 
 @node Other file operations,  , File stats, Filesystems
 @subsubsection Other file operations
@@ -8804,6 +8847,12 @@ system calls (@code{read(2)} and @code{write(2)}.
 
 Note: the returned value is changed from version 0.3.15, in which
 @code{sys-pipe} returned a list of two ports.
+@end defun
+
+@defun sys-mkfifo path mode
+[POSIX] creates a fifo (named pipe) with a name @var{path} and mode
+@var{mode}.  @var{Mode} must be a positive exact integer to represent
+the file mode.
 @end defun
 
 @defun sys-isatty port-or-fd
@@ -9070,13 +9119,25 @@ restarted.
 @c NODE システムへの問い合わせ
 
 @defun sys-uname
-[POSIX]
+[POSIX] Returns a list of five elements,
+@code{(@var{sysname} @var{nodename} @var{release} @var{version} @var{machine})}.
+@end defun
+
+@defun sys-gethostname
+Returns the host name.  If the system doesn't have gethostname(),
+the second element of the list returned by @code{sys-uname} is used.
+@end defun
+
+@defun sys-getdomainname
+Returns the domain name.  If the system doesn't have getdomainname(),
+@code{"localdomain"} is returned.
 @end defun
 
 @defun sys-getcwd
 [POSIX] Returns the current working directory by a string.
 If the current working directory couldn't be obtained from the system,
-an error is signalled.
+an error is signalled.   See also @code{sys-chdir}
+ (@xref{Other file operations}).
 @end defun
 
 @defun sys-getgid
@@ -9085,10 +9146,18 @@ an error is signalled.
 current process, respectively.
 @end defun
 
+@defun sys-setgid gid
+[POSIX] Sets the effective group id of the current process.
+@end defun
+
 @defun sys-getuid
 @defunx sys-geteuid
 [POSIX] Returns integer value of real and effective user id of the
 current process, respectively.
+@end defun
+
+@defun sys-setuid uid
+[POSIX] Sets the effective user id of the current process.
 @end defun
 
 @defun sys-getgroups
@@ -9102,12 +9171,43 @@ If the system can't determine the information, @code{#f} is returned.
 @end defun
 
 @defun sys-getpgrp
-[POSIX]
+[POSIX] Returns a process group id of the current process.
+@end defun
+
+@defun sys-setpgrp
+Sets the process group id of the current process to the current
+process id.   Equivalent to @code{sys-setpgid(0, 0)}.
+@end defun
+
+@defun sys-getpgid pid
+Returns a process group id of the process specified by @var{pid}.
+If @var{pid} is zero, the current process is used.
+
+Note that @code{getpgid()} call is not in POSIX.  If the system
+doesn't have @var{getpgid()}, @var{sys-getpgid} still works if
+@var{pid} is zero (it just calls @code{sys-getpgrp}), but signals
+an error if @var{pid} is not zero.
+@end defun
+
+@defun sys-setpgid pid pgid
+[POSIX] Sets the process group id of the process @var{pid} to @var{pgid}.
+If @var{pid} is zero, the process ID of the
+current process is used.  If @var{pgid} is zero, the process ID
+of the process specified by @code{pid} is used.  (Hence
+@code{sys-setpgid(0, 0)} sets the process group id of the
+current process to the current process id, and equivalent to
+@code{setpgrp}).
+@end defun
+
+@defun sys-setsid
+[POSIX] Creates a new session if the calling process is
+not a process group leader.
 @end defun
 
 @defun sys-getpid
 @defunx sys-getppid
-[POSIX]
+[POSIX] Returns the current process id and the parent process id,
+respectively.
 @end defun
 
 @defun sys-times
@@ -9135,6 +9235,14 @@ the architecture.
 
 Note that POSIX's definition of ``seconds since the Epoch'' doesn't
 take leap seconds into acount.
+@end defun
+
+@defun sys-gettimeofday
+Returns two values.  The first value is a number of seconds,
+and the second value is a fraction in a number of microseconds,
+since 1970/1/1 0:00:00 UTC.   If the system doesn't have
+@code{gettimeofday} call, this function calls @code{time()};
+in that case, microseconds portion is always zero.
 @end defun
 
 @defun sys-gmtime time
@@ -17760,7 +17868,7 @@ R5RS procedure @code{not}.  @xref{Booleans}.
 @item !=
 No equivalent procedure.
 @item abort
-Gauche @code{sys-abort}. 
+Gauche @code{sys-abort}.   @xref{Program termination}
 @item abs
 R5RS @code{abs}.  @xref{Arithmetics}.
 @item access
@@ -17803,7 +17911,7 @@ Gauche @code{sys-chdir}.   @xref{Other file operations}.
 @item chmod
 Gauche @code{sys-chmod}.   @xref{File stats}.
 @item chown
-Not supported yet.
+Gauche @code{sys-chown}.   @xref{File stats}
 @item clearerr
 Not supported yet.
 @item clock
@@ -17890,7 +17998,7 @@ Use @code{read-line}.    @xref{Input}.
 @item floor
 R5RS @code{floor}.   @xref{Arithmetics}.
 @item fmod
-Gauche's @code{sys-fmod}.
+Gauche's @code{fmod}.
 @item fopen
 R5RS @code{open-input-file} or @code{open-output-file}
 corresponds to this operation.  @xref{File ports}.
@@ -17914,7 +18022,7 @@ You don't need this in Scheme.
 @item freopen
 Not supported.
 @item frexp
-Gauche's @code{sys-frexp}
+Gauche's @code{frexp}
 @item fscanf
 Not supported.  For general case, you have to write a parser.
 If you can keep the data in S-exp, you can use @code{read}.
@@ -17938,12 +18046,16 @@ you can simply use @code{display}.  @xref{Output}.
 Use @code{read-char} or @code{read-byte}.  @xref{Input}.
 @item getcwd
 Gauche's @code{sys-getcwd}.   @xref{System Inquiry}.
+@item getdomainname
+Gauche's @code{sys-getdomainname}.  @xref{System Inquiry}.
 @item getegid
 Gauche's @code{sys-getegid}.   @xref{System Inquiry}.
 @item getenv
 Gauche's @code{sys-getenv}.   @xref{Environment Inquiry}.
 @item geteuid
 Gauche's @code{sys-geteuid}.   @xref{System Inquiry}.
+@item gethostname
+Gauche's @code{sys-gethostname}.  @xref{System Inquiry}.
 @item getgid
 Gauche's @code{sys-getgid}.   @xref{System Inquiry}.
 @item getgrgid
@@ -17963,6 +18075,8 @@ Gauche's @code{sys-getpid}.   @xref{System Inquiry}.
 Gauche's @code{sys-getpwnam} and @code{sys-getpwuid}.  @xref{Unix password}.
 @item gets
 Use @code{read-line}.  @xref{Input}.
+@item gettimeofday
+Gauche's @code{sys-gettimeofday}.   @xref{Time}.
 @item getuid
 Gauche's @code{sys-getuid}.  @xref{System Inquiry}.
 @item gmtime
@@ -18017,7 +18131,7 @@ Gauche's @code{sys-kill}.  @xref{Signal}.
 @item labs
 R5RS @code{abs}.  @xref{Arithmetics}.
 @item ldexp
-Not directly supported.   @code{ldexp(x, n)} @equiv{} @code{(* x (expt 2 n))}.
+Gauche's @code{ldexp}.
 @item ldiv
 Use R5RS @code{quotient} and @code{remainder}.
 @xref{Arithmetics}.
@@ -18061,7 +18175,7 @@ Use this instead of tmpnam.
 @item mktime
 Gauche's @code{sys-mktime}.  @xref{Time}.
 @item modf
-Gauche's @code{sys-modf}
+Gauche's @code{modf}.
 @item open
 Not directly supported.
 R5RS @code{open-input-file} or @code{open-output-file}
@@ -18159,7 +18273,7 @@ You can use @code{with-signal-handlers} to install signal handlers.
 @itemx sigfillset
 Gauche's @code{sys-sigset-add!} and @code{sys-sigset-delete!}.
 @xref{Signals and signal sets}.
-@itemx sigismember
+@item sigismember
 Not supported yet.
 @item siglongjmp
 R5RS @code{call/cc} provides similar (superior) mechanism.
