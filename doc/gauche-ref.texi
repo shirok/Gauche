@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.79 2001-10-03 10:53:18 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.80 2001-10-04 11:06:20 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1531,15 +1531,14 @@ See @code{length+} in @ref{SRFI-1 List miscellaneous routines}.
 @var{list} can be a proper, dotted or circular list.
 @end defun
 
-@defun list-ref list k
-[R5RS] Returns @var{k}-th element of @var{list}.
+@defun list-ref list k &optional fallback
+[R5RS+] Returns @var{k}-th element of @var{list}.
 @var{list} can be a proper, dotted or circular list.
-@end defun
 
-@defun list-ref+ list k &optional (fallback @code{#f})
-Like @code{list-ref}, except when @var{k} is out of range
-(negative or greater than or equal to the length of @var{list}), this
-returns @var{fallback} rather than signalling an error.
+By default, @code{list-ref} signals an error if @var{k} is
+negative, or greater than or equal to the length of @var{list}.
+However, if an optional argument @var{fallback} is given,
+it is returned for such case.  This is an extension of Gauche.
 @end defun
 
 @defun last-pair list
@@ -1863,18 +1862,17 @@ differs.
 For incomplete string, its length and its size always match.
 @end defun
 
-@defun string-ref cstring k
-[R5RS] Returns @var{k}-th character of a complete string @var{cstring}.
+@defun string-ref cstring k &optional fallback
+[R5RS+] Returns @var{k}-th character of a complete string @var{cstring}.
 @var{k} must be greater than or equal to zero, and less than
 @code{(string-length @var{cstring})}.
 
 It is an error to pass an incomplete string.
-@end defun
 
-@defun string-ref+ cstring k &optional (fallback @code{#f})
-Like @code{string-ref}, except when @var{k} is out of range
-(negative or greater than or equal to the length of @var{cstring}),
-this returns @var{fallback} rather than signalling an error.
+By default, an error is signalled if @code{k} is out of range
+(negative, or greater than or equal to the length of @var{cstring}).
+However, if an optional argument @var{fallback} is given,
+it is returned in such case.  This is Gauche's extension.
 @end defun
 
 @defun string-byte-ref string k
@@ -2260,14 +2258,13 @@ useful macros and functions to deal with regular expression matching.
 [R5RS]
 @end defun
 
-@defun vector-ref vector k
-[R5RS]
-@end defun
+@defun vector-ref vector k &optional fallback
+[R5RS+] Returhs @var{k}-th element of vector @var{vector}.
 
-@defun vector-ref+ vector k &optional fallback
-Like @code{vector-ref}, except when @var{k} is out of range
-(negative or greater than or equal to the length of @var{vector}), this
-returns @var{fallback} rather than signalling an error.
+By default, @code{vector-ref} signals an error if @var{k} is
+negative, or greater than or equal to the length of @var{vector}.
+However, if an optional argument @var{fallback} is given,
+it is returned for such case.  This is an extension of Gauche.
 @end defun
 
 @defun vector-set! vector k obj
@@ -2589,6 +2586,13 @@ respectively.
 Returns the current output port.
 @end defun
 
+@defun standard-input-port
+@defunx standard-output-port
+@defunx standard-error-port
+Returns ports that are bound initially to current input, output and
+error port, respectively.
+@end defun
+
 @defun with-input-from-port port thunk
 @defunx with-output-to-port port thunk
 @defunx with-error-to-port port thunk
@@ -2875,6 +2879,35 @@ until EOF and returns the accumulated data as a string.
 @code{(port->list read-line port)}, and
 @code{(port->sexp-list port)} @equiv{}
 @code{(port->list read port)}.
+@end defun
+
+@defun port-fold fn knil reader
+@defunx port-fold-right fn knil reader
+@defunx port-for-each fn reader
+@defunx port-map fn reader
+Convenient iterators over the input read by @var{reader}.
+Basically, @var{reader} is called repeatedly without arguments
+and @var{fn} is called for each item it returns, until @var{reader}
+returns EOF.   Actually @var{reader} can be any thunk; it doesn't
+need to be related to input port.
+
+Suppose @var{reader} returns a series of items
+@{X0, X1, @dots{}, Xn}.
+@code{port-fold} returns the following:
+@example
+(fn Xn (fn Xn-1 @dots{} (fn X0 knil)))
+@end example
+while @var{port-fold-right} returns the following:
+@example
+(fn (fn @dots{} (fn (fn knil X0) X1) @dots{} Xn-1) Xn)
+@end example
+That is, @code{(port-fold cons '() read)} returns a reverse
+list of all the inputs, while @code{(port-fold-right cons '() read)}
+returns the same thing as @code{(port->list read port)}.
+
+On the other hand, @code{port-for-each} and @code{port-map}
+applies @var{fn} to each item.  The former discards the results
+@var{fn} returns, while the latter returns a list of results.
 @end defun
 
 @node Output,  , Input, Input and output
