@@ -513,7 +513,7 @@ is returned, whose default is @code{#f}.
 
 CES "none" works like a wild card; it is "equivalent" to any CES.
 (Thus, @code{ces-equivalent?} is not transitive.  
-The intended use of @code{ces=?}
+The intended use of @code{ces-equivalent?}
 is to compare two given CES names and see if conversion is required or not).
 @c JP
 CES @var{ces-a}と@var{ces-b}がシステムの知る限りで等価だった場合に
