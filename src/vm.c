@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.218.2.12 2004-12-28 00:01:09 shirok Exp $
+ *  $Id: vm.c,v 1.218.2.13 2004-12-28 11:13:22 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -3454,13 +3454,52 @@ ScmObj Scm_PackCode(ScmObj compiled)
 }
 
 /* An API to set up statically compiled code.  *PROVISIONAL* */
-ScmObj Scm_MakeCompiledCode(ScmWord *code, int codeSize)
+ScmObj Scm_MakeCompiledCode(ScmWord *code, int codeSize,
+                            int maxstack, ScmObj arginfo, ScmObj info)
 {
     ScmCompiledCode *cc = make_compiled_code();
     cc->code = code;
     cc->codeSize = codeSize;
+    cc->maxstack = maxstack;
+    cc->argInfo = arginfo;
+    cc->info = info;
     return SCM_OBJ(cc);
 }
+
+/* An API to execute statically compiled toplevel code.  *PROVISIONAL* */
+static ScmObj execute_toplevels(ScmObj*, int, void*);
+
+void Scm_VMExecuteToplevels(ScmCompiledCode *cs[])
+{
+    ScmObj proc = Scm_MakeSubr(execute_toplevels, cs, 0, 0, SCM_FALSE);
+    Scm_Apply(proc, SCM_NIL);
+}
+
+static ScmObj execute_toplevels_cc(ScmObj result, void **data)
+{
+    ScmCompiledCode **cs = (ScmCompiledCode **)data[0];
+    ScmVM *vm;
+
+    if (cs[0] == NULL) return SCM_UNDEFINED;
+    data[0] = cs+1;
+    Scm_VMPushCC(execute_toplevels_cc, data, 1);
+    vm = theVM;
+    vm->base = cs[0];
+    vm->pc = vm->base->code;
+    return SCM_UNDEFINED;
+}
+
+static ScmObj execute_toplevels(ScmObj *args, int nargs, void *cv)
+{
+    ScmCompiledCode **cs = (ScmCompiledCode **)cv;
+    while (*cs != NULL) {
+        fprintf(stderr, "zzp %p\n", *cs++);
+    }
+    
+    Scm_VMPushCC(execute_toplevels_cc, &cv, 1);
+    return SCM_UNDEFINED;
+}
+
 
 /* Disassembler */
 void Scm_CompiledCodeDump(ScmCompiledCode *cc)

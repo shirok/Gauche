@@ -2,6 +2,10 @@
 
 	* src/class.c (Scm_ClassOf, Scm_EOFObjectClass, Scm_UndefinedObjectClass):
 	  added classes for singleton immediate object #<eof> and #<undef>.
+	* src/vm.c : added some API needed to run pre-compiled code.
+	* src/gencomp : added initial version of a script to pre-compile
+	  the compiler.
+	* src/comp.scm : added a skeleton of the compiler.
 
 2004-12-26  Shiro Kawai  <shiro@acm.org>
 

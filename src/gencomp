@@ -1,0 +1,257 @@
+;;;
+;;; gencomp - convert compiled code into static C data
+;;;
+;;;   Copyright (c) 2004 Shiro Kawai, All rights reserved.
+;;;   
+;;;   Redistribution and use in source and binary forms, with or without
+;;;   modification, are permitted provided that the following conditions
+;;;   are met:
+;;;   
+;;;   1. Redistributions of source code must retain the above copyright
+;;;      notice, this list of conditions and the following disclaimer.
+;;;  
+;;;   2. Redistributions in binary form must reproduce the above copyright
+;;;      notice, this list of conditions and the following disclaimer in the
+;;;      documentation and/or other materials provided with the distribution.
+;;;  
+;;;   3. Neither the name of the authors nor the names of its contributors
+;;;      may be used to endorse or promote products derived from this
+;;;      software without specific prior written permission.
+;;;  
+;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+;;;   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+;;;   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+;;;   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+;;;   TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+;;;   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;;;  
+;;;  $Id: gencomp,v 1.1.2.1 2004-12-28 11:13:22 shirok Exp $
+;;;
+
+;;;
+;;; This is a hack to "compile" the Scheme-written compiler into static
+;;; C data structure, so that it can be linked into libgauche.
+;;;
+;;; Eventually this code will grow to a generic tool to create compiled
+;;; executable from Scheme; for the time being, however, we concentrate
+;;; on making just a compiler work.  So there are quite a few assumptions
+;;; in a way the source is written.   Particulary, the source can't contain
+;;; module-related syntaxes, neither can use 'use' form.
+;;;
+
+(use srfi-1)
+(use gauche.cgen)
+(use gauche.vm.insn)
+(use gauche.parameter)
+(use gauche.sequence)
+(use file.util)
+(use util.match)
+(use util.list)
+
+;; we compile things within an anonymous module to avoid interference.
+(define compile-module (make-parameter #f))
+
+;;================================================================
+;; Entry
+;;
+(define (main args)
+  (match args
+    ((_ scmfile) (do-it scmfile))
+    (else (print "Usage: gosh gencomp <file.scm>")
+          (exit 0)))
+  0)
+
+(define (do-it scmfile)
+  (parameterize ((cgen-current-unit (get-unit scmfile))
+                 (compile-module    (make-module #f)))
+    (with-input-from-file scmfile
+      (lambda ()
+        (emit-toplevel-executor
+         (reverse (port-fold compile-toplevel-form '() read)))))
+    (cgen-emit-c (cgen-current-unit))))
+
+;;================================================================
+;; Compiler stuff
+;;
+
+;; compile FORM, and conses the toplevel code (something to be
+;; executed at toplevel).
+(define (compile-toplevel-form form seed)
+  (guard (e
+          ((<error> e)
+           (format (current-error-port) "Error in compiling ~s\n" form)
+           (raise e)))
+    (match form
+      (('define-module mod . body)
+       (fold compile-toplevel-form seed body))
+      (('select-module mod)
+       (let ((sym (cgen-literal mod)))
+         (cgen-init
+          (format "  mod = SCM_MODULE(Scm_FindModule(SCM_SYMBOL(~a), TRUE));"
+                  (cgen-cexpr sym))
+          ;; force the current module to be mod
+          "  Scm_VM()->module = mod;"))
+       seed)
+      (('use mod)
+       (eval `(use ,mod) (compile-module)) seed)
+      (('export . syms)
+       (eval `(export ,@syms) (compile-module)) seed)
+      (('provide arg) seed)
+      (else
+       (cons (cgen-literal (vm-compile form (compile-module))) seed)))))
+
+;; given list of toplevel compiled codes, generate code in init
+;; that calls them.  This is assumed to be the last procedure before
+;; calling cgen-emit.
+(define (emit-toplevel-executor topcodes)
+  (cgen-decl "static ScmCompiledCode *toplevels[] = {")
+  (dolist (t topcodes) (cgen-decl "  NULL,"))
+  (cgen-decl " NULL /*termination*/" "};")
+
+  (for-each-with-index
+   (lambda (index t)
+     (cgen-init (format "  toplevels[~a] = SCM_COMPILED_CODE(~a);"
+                        index (cgen-cexpr t))))
+   topcodes)
+  (cgen-init (format "  Scm_VMExecuteToplevels(toplevels);"))
+  )
+
+(define (code-name) (gensym "code_vector_"))
+
+(define-cgen-literal <cgen-scheme-code> <compiled-code>
+  ((code-vector :init-keyword :code-vector)
+   (code-vector-cname :init-keyword :code-vector-cname)
+   (literal-vector :init-keyword :literal-vector)
+                  ;; a list of the same size as code-vector, and locations
+                  ;; where the code-vector has literals are filled by
+                  ;; corresponding <cgen-scheme-value>.
+   (arg-info    :init-keyword :arg-info)
+                  ;; literal for arg-info of the original compiled code
+   )
+  (make (value)
+    (let* ((cv  (vm-code->list value))
+           (cvn (gensym "code_vector_"))
+           (lv  (extract-literals cv)))
+      (make <cgen-scheme-code> :value value :c-name (static-obj-cname)
+            :code-vector cv :code-vector-cname cvn
+            :literal-vector lv
+            :arg-info (cgen-literal (ref value 'arg-info)))))
+  (body (self)
+    (vectorize-code self)
+    )
+  (init (self)
+    (fill-code self)
+    (let ((cname (ref self 'c-name))
+          (code-name (ref self 'code-vector-cname))
+          (code-size (length (ref self 'code-vector)))
+          (maxstack  (ref (ref self 'value) 'max-stack))
+          (arg-info  (cgen-cexpr (ref self 'arg-info))))
+      (print "  "cname" = Scm_MakeCompiledCode("code-name", "code-size
+             ", "maxstack", "arg-info", SCM_NIL);")))
+  (static (self) #f)
+  )
+
+(define (extract-literals code)
+  (let loop ((code code)
+             (lits '()))
+    (if (null? code)
+      (reverse lits)
+      (let* ((insn (car code))
+             (info (vm-find-insn-info (car insn))))
+        (case (ref info 'operand-type)
+          ((none) (loop (cdr code)  (cons #f lits)))
+          ((addr) (loop (cddr code) (list* #f #f lits)))
+          ((code) (loop (cddr code)
+                        (list* (cgen-literal (cadr code)) #f lits)))
+          ((obj)  (loop (cddr code)
+                        (list* (cgen-literal (cadr code)) #f lits)))
+          )))))
+
+(define (vectorize-code code)
+  (let ((cv   (ref code 'code-vector))
+        (cvn  (ref code 'code-vector-cname))
+        (lv   (ref code 'literal-vector)))
+    
+    (format #t "static ScmWord ~a[] = {\n" cvn)
+    (let loop ((cv cv)
+               (lv lv)
+               (count 0))
+      (unless (null? cv)
+        (let* ((insn (car cv))
+               (info (vm-find-insn-info (car insn))))
+          (format #t "  0x~8,'0x,    /* ~3d ~s */\n"
+                  (vm-insn-build insn) count insn)
+          (case (ref info 'operand-type)
+            ((none) (loop (cdr cv) (cdr lv) (+ count 1)))
+            ((addr)
+             (format #t "  SCM_WORD(&~a[~a]),  /*    ~3d */\n"
+                     cvn (cadr cv) (cadr cv))
+             (loop (cddr cv) (cddr lv) (+ count 2)))
+            ((obj code)
+             (if (cgen-literal-static? (cadr lv))
+               (format #t "  SCM_WORD(~a), /* ~a */\n"
+                       (cgen-cexpr (cadr lv)) (cadr cv))
+               (format #t "  SCM_WORD(SCM_UNDEFINED), /* ~a (to be filled) */\n"
+                       (cadr cv)))
+             (loop (cddr cv) (cddr lv) (+ count 2)))
+            ))))
+    (print "};")))
+
+(define (fill-code code)
+  (let ((cvn  (ref code 'code-vector-cname))
+        (lv   (ref code 'literal-vector)))
+    (for-each-with-index
+     (lambda (index lit)
+       (when (and lit (not (cgen-literal-static? lit)))
+         (print "  "cvn"["index"] = SCM_WORD("(cgen-cexpr lit)");")))
+     lv)
+    ))
+
+;; NB: this doesn't yet handle identifiers that are inserted by hygienic
+;; macro (so that they have different module than the current one).
+(define-cgen-literal <cgen-scheme-identifier> <identifier>
+  ((id-name   :init-keyword :id-name))
+  (make (value)
+    (let ((name (ref value 'name))
+          (env  (ref value 'env)))
+      (unless (null? env)
+        (error "identifier with compiler environment can't be compiled" value))
+      (make <cgen-scheme-identifier> :value value :c-name (static-obj-cname)
+            :id-name (cgen-literal name))))
+  (init (self)
+    (let ((name (cgen-cexpr (ref self 'id-name)))
+          (cname (ref self 'c-name)))
+      (print "  "cname" = Scm_MakeIdentifier(SCM_SYMBOL("name"), SCM_NIL);")))
+  (static (self) #f)
+  )
+
+;; NB: for now, we ignore macros (we assume they are only used within
+;; the source file).
+(define-cgen-literal <cgen-scheme-macro> <macro>
+  ()
+  (make (value)
+    (make <cgen-scheme-macro> :value value :c-name #f))
+  )
+
+(define (get-unit scmfile)
+  (make <cgen-unit>
+    :name (path-sans-extension scmfile)
+    :preamble `(,(format "/* Generated automatically from ~a.  DO NOT EDIT */"
+                         scmfile))
+    :init-prologue "void Scm__InitComp() { ScmModule *mod;"
+    ))
+
+;;================================================================
+;; Utilities
+;;
+
+        
+
+;; Local variables:
+;; mode: scheme
+;; end:
