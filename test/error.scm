@@ -2,7 +2,7 @@
 ;; test error handlers
 ;;
 
-;;  $Id: error.scm,v 1.4 2001-12-19 20:12:29 shirok Exp $
+;;  $Id: error.scm,v 1.5 2001-12-20 07:20:40 shirok Exp $
 
 (use gauche.test)
 (test-start "error and exception handlers")
@@ -96,9 +96,191 @@
               i))))
 
 ;;----------------------------------------------------------------
-(test-section "raise")
+(test-section "cascading errors")
+
+;; tests various interactions with with-error-handler and dynamic-wind
+;; when an error is raised from error handler.
 
 (test "cascading error" '(a b c e d)
+      (lambda ()
+        (let ((x '()))
+          (with-error-handler
+           (lambda (e) (push! x 'e))
+           (lambda ()
+             (dynamic-wind
+              (lambda () (push! x 'a))
+              (lambda ()
+                (with-error-handler
+                 (lambda (e) (push! x 'c) (car 9))
+                 (lambda ()
+                   (push! x 'b)
+                   (car 3)
+                   (push! x 'z))))
+              (lambda () (push! x 'd)))))
+          (reverse x))))
+
+(test "cascading error 2" '(a b c d e f g)
+      (lambda ()
+        (let ((x '()))
+          (dynamic-wind
+           (lambda () (push! x 'a))
+           (lambda ()
+             (with-error-handler
+              (lambda (e) (push! x e))
+              (lambda ()
+                (dynamic-wind
+                 (lambda () (push! x 'b))
+                 (lambda ()
+                   (with-error-handler
+                    (lambda (e) (push! x 'd) (raise 'e))
+                    (lambda ()  (push! x 'c) (car 3) (push! x 'z))))
+                 (lambda () (push! x 'f))))))
+           (lambda () (push! x 'g)))
+          (reverse x))))
+
+(test "cascading error 3" '(a b c d f g)
+      (lambda ()
+        (let ((x '()))
+          (dynamic-wind
+           (lambda () (push! x 'a))
+           (lambda ()
+             (with-error-handler
+              (lambda (e) (push! x e))
+              (lambda ()
+                (dynamic-wind
+                 (lambda () (push! x 'b))
+                 (lambda ()
+                   (with-error-handler
+                    (lambda (e) (push! x 'd))
+                    (lambda ()  (push! x 'c) (car 3) (push! x 'z))))
+                 (lambda () (push! x 'f))))))
+           (lambda () (push! x 'g)))
+          (reverse x))))
+
+(test "cascading error 4" '(a b c d e f g h i j)
+      (lambda ()
+        (let ((x '()))
+          (dynamic-wind
+           (lambda () (push! x 'a))
+           (lambda ()
+             (with-error-handler
+              (lambda (e) (push! x e))
+              (lambda ()
+                (dynamic-wind
+                 (lambda () (push! x 'b))
+                 (lambda ()
+                   (with-error-handler
+                    (lambda (e) (push! x e) (raise 'g))
+                    (lambda ()
+                      (dynamic-wind
+                       (lambda () (push! x 'c))
+                       (lambda ()
+                         (with-error-handler
+                          (lambda (e) (push! x 'e) (raise 'f))
+                          (lambda () (push! x 'd) (car 3) (push! x 'z))))
+                       (lambda () (push! x 'h))))))
+                 (lambda () (push! x 'i))))))
+           (lambda () (push! x 'j)))
+          (reverse x))))
+
+(test "cascading error 5" '(a b c d e f g)
+      (lambda ()
+        (let ((x '()))
+          (dynamic-wind
+           (lambda () (push! x 'a))
+           (lambda ()
+             (with-error-handler
+              (lambda (e) (push! x e))
+              (lambda ()
+                (with-error-handler
+                 (lambda (e) (push! x 'd) (raise 'e))
+                 (lambda ()
+                   (dynamic-wind
+                    (lambda () (push! x 'b))
+                    (lambda () (push! x 'c) (car 3) (push! x 'z))
+                    (lambda () (push! x 'f))))))))
+           (lambda () (push! x 'g)))
+          (reverse x))))
+
+(test "cascading error 6" '(a b c d e f g)
+      (lambda ()
+        (let ((x '()))
+          (with-error-handler
+           (lambda (e) (push! x e))
+           (lambda () 
+             (dynamic-wind
+              (lambda () (push! x 'a))
+              (lambda ()
+                (dynamic-wind
+                 (lambda () (push! x 'b))
+                 (lambda ()
+                   (with-error-handler
+                    (lambda (e) (push! x 'd) (raise 'e))
+                    (lambda ()  (push! x 'c) (open-input-file 3) (push! x 'z))))
+                 (lambda () (push! x 'f))))
+              (lambda () (push! x 'g)))))
+          (reverse x))))
+
+;;----------------------------------------------------------------
+(test-section "error in before/after thunk")
+
+(test "error in before thunk" '(a c)
+      (lambda ()
+        (let ((x '()))
+          (with-error-handler
+           (lambda (e) (push! x 'c))
+           (lambda ()
+             (dynamic-wind
+              (lambda () (push! x 'a) (car 3) (push! x 'z))
+              (lambda () (push! x 'b))
+              (lambda () (push! x 'c)))))
+          (reverse x))))
+
+(test "error in after thunk" '(a b c d)
+      (lambda ()
+        (let ((x '()))
+          (with-error-handler
+           (lambda (e) (push! x 'd))
+           (lambda ()
+             (dynamic-wind
+              (lambda () (push! x 'a))
+              (lambda () (push! x 'b))
+              (lambda () (push! x 'c) (car 3) (push! x 'z)))))
+          (reverse x))))
+
+(test "error in before thunk (nested)" '(a b c d)
+      (lambda ()
+        (let ((x '()))
+          (dynamic-wind
+           (lambda () (push! x 'a))
+           (lambda ()
+             (with-error-handler
+              (lambda (e) (push! x 'c))
+              (lambda ()
+                (dynamic-wind
+                 (lambda () (push! x 'b) (car 3) (push! x 'z))
+                 (lambda () (push! x 'y))
+                 (lambda () (push! x 'x))))))
+           (lambda () (push! x 'd)))
+          (reverse x))))
+
+(test "error in after thunk (nested)" '(a b c d e f)
+      (lambda ()
+        (let ((x '()))
+          (dynamic-wind
+           (lambda () (push! x 'a))
+           (lambda ()
+             (with-error-handler
+              (lambda (e) (push! x 'e))
+              (lambda ()
+                (dynamic-wind
+                 (lambda () (push! x 'b))
+                 (lambda () (push! x 'c))
+                 (lambda () (push! x 'd) (car 3) (push! x 'z))))))
+           (lambda () (push! x 'f)))
+          (reverse x))))
+
+(test "error in before thunk (cascaded)" '(a b c d e)
       (lambda ()
         (let ((x '()))
           (with-error-handler
@@ -108,12 +290,50 @@
               (lambda () (push! x 'a))
               (lambda ()
                 (with-error-handler
-                 (lambda (e) (push! x 'c) (raise 'e))
+                 (lambda (e) (push! x 'c) (raise 'd))
                  (lambda ()
-                   (push! x 'b)
-                   (car 3)
-                   (push! x 'z))))
-              (lambda () (push! x 'd)))))
+                   (dynamic-wind
+                    (lambda () (push! x 'b) (car 3) (push! x 'z))
+                    (lambda () (push! x 'y))
+                    (lambda () (push! x 'x))))))
+              (lambda () (push! x 'e)))))
+          (reverse x))))
+
+(test "error in after thunk (cascaded)" '(a b c d e f g)
+      (lambda ()
+        (let ((x '()))
+          (with-error-handler
+           (lambda (e) (push! x e))
+           (lambda ()
+             (dynamic-wind
+              (lambda () (push! x 'a))
+              (lambda ()
+                (with-error-handler
+                 (lambda (e) (push! x 'e) (raise 'f))
+                 (lambda ()
+                   (dynamic-wind
+                    (lambda () (push! x 'b))
+                    (lambda () (push! x 'c))
+                    (lambda () (push! x 'd) (car 3) (push! x 'z))))))
+              (lambda () (push! x 'g)))))
+          (reverse x))))
+
+;;----------------------------------------------------------------
+(test-section "restart and error handler")
+
+(test "restart" '(a b x b x)
+      (lambda ()
+        (let ((x '())
+              (c #f))
+          (with-error-handler
+           (lambda (e) #?(push! x 'x))
+           (lambda ()
+             #?(push! x 'a)
+             (set! c #?(call/cc (lambda (k) k)))
+             #?(push! x 'b)
+             (car 3)
+             (push! x 'z)))
+          (when c (c #f))
           (reverse x))))
 
 ;;----------------------------------------------------------------
