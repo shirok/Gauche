@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.28 2001-02-05 10:23:36 shiro Exp $
+ *  $Id: gauche.h,v 1.29 2001-02-06 07:01:50 shiro Exp $
  */
 
 #ifndef GAUCHE_H
@@ -130,7 +130,7 @@ typedef struct ScmHeaderRec *ScmObj;
 #define SCM_NULLP(obj)      ((obj) == SCM_NIL)
 #define SCM_EOFP(obj)       ((obj) == SCM_EOF)
 #define SCM_UNDEFINEDP(obj) ((obj) == SCM_UNDEFINED)
-#define SCM_UNBOUNDP(obj)   ((obj) == SCM_UNBOUNDP)
+#define SCM_UNBOUNDP(obj)   ((obj) == SCM_UNBOUND)
 
 /*
  * BOOLEAN
@@ -218,6 +218,7 @@ typedef struct ScmHashTableRec ScmHashTable;
 typedef struct ScmModuleRec    ScmModule;
 typedef struct ScmSymbolRec    ScmSymbol;
 typedef struct ScmGlocRec      ScmGloc;
+typedef struct ScmKeywordRec   ScmKeyword;
 typedef struct ScmProcedureRec ScmProcedure;
 typedef struct ScmClosureRec   ScmClosure;
 typedef struct ScmSubrRec      ScmSubr;
@@ -1091,32 +1092,10 @@ extern ScmClass Scm_SymbolClass;
 
 /* predefined symbols */
 #define DEFSYM(cname, sname)   extern ScmSymbol cname
+#define DEFSYM_DEFINES
 #include <gauche/predef-syms.h>
+#undef DEFSYM_DEFINES
 #undef DEFSYM
-
-#define SCM_SYM_QUOTE            SCM_OBJ(&ScmQquote)
-#define SCM_SYM_QUASIQUOTE       SCM_OBJ(&ScmQquasiquote)
-#define SCM_SYM_UNQUOTE          SCM_OBJ(&ScmQunquote)
-#define SCM_SYM_UNQUOTE_SPLICING SCM_OBJ(&ScmQunquoteSplicing)
-#define SCM_SYM_DEFINE           SCM_OBJ(&ScmQdefine)
-#define SCM_SYM_LAMBDA           SCM_OBJ(&ScmQlambda)
-#define SCM_SYM_IF               SCM_OBJ(&ScmQif)
-#define SCM_SYM_SET              SCM_OBJ(&ScmQset)
-#define SCM_SYM_LET              SCM_OBJ(&ScmQlet)
-#define SCM_SYM_LET_STAR         SCM_OBJ(&ScmQletStar)
-#define SCM_SYM_LETREC           SCM_OBJ(&ScmQletrec)
-#define SCM_SYM_BEGIN            SCM_OBJ(&ScmQbegin)
-#define SCM_SYM_WHEN             SCM_OBJ(&ScmQwhen)
-#define SCM_SYM_UNLESS           SCM_OBJ(&ScmQunless)
-#define SCM_SYM_AND              SCM_OBJ(&ScmQand)
-#define SCM_SYM_OR               SCM_OBJ(&ScmQor)
-#define SCM_SYM_COND             SCM_OBJ(&ScmQcond)
-#define SCM_SYM_CASE             SCM_OBJ(&ScmQcase)
-#define SCM_SYM_ELSE             SCM_OBJ(&ScmQelse)
-#define SCM_SYM_YIELDS           SCM_OBJ(&ScmQyields) /* => */
-#define SCM_SYM_DO               SCM_OBJ(&ScmQdo)
-#define SCM_SYM_DELAY            SCM_OBJ(&ScmQdelay)
-#define SCM_SYM_MACRO_EXPAND     SCM_OBJ(&ScmQmacroExpand)
 
 /* Gloc (global location) */
 struct ScmGlocRec {
@@ -1134,6 +1113,25 @@ extern void Scm__GlocPrint(ScmObj obj, ScmPort *port, int mode);
 
 extern ScmClass Scm_GlocClass;
 #define SCM_CLASS_GLOC          (&Scm_GlocClass)
+
+/*--------------------------------------------------------
+ * KEYWORD
+ */
+
+struct ScmKeywordRec {
+    SCM_HEADER;
+    ScmString *name;
+};
+
+extern ScmClass Scm_KeywordClass;
+#define SCM_CLASS_KEYWORD       (&Scm_KeywordClass)
+
+#define SCM_KEYWORD(obj)        ((ScmKeyword*)(obj))
+#define SCM_KEYWORDP(obj)       SCM_XTYPEP(obj, SCM_CLASS_KEYWORD)
+#define SCM_KEYWORD_NAME(obj)   (SCM_KEYWORD(obj)->name)
+
+ScmObj Scm_MakeKeyword(ScmString *name);
+ScmObj Scm_GetKeyword(ScmObj key, ScmObj list, ScmObj fallback);
 
 /*--------------------------------------------------------
  * NUMBER
