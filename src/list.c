@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.23 2001-04-06 08:48:08 shiro Exp $
+ *  $Id: list.c,v 1.24 2001-04-06 10:01:48 shiro Exp $
  */
 
 #include "gauche.h"
@@ -552,11 +552,24 @@ ScmObj Scm_DeleteDuplicates(ScmObj list, int cmpmode)
     ScmObj result = SCM_NIL, tail, lp;
     SCM_FOR_EACH(lp, list) {
         if (SCM_FALSEP(Scm_Member(SCM_CAR(lp), result, cmpmode))) {
-            SCM_APPEND(result, tail, SCM_CAR(lp));
+            SCM_APPEND1(result, tail, SCM_CAR(lp));
         }
     }
     return result;
 }
+
+ScmObj Scm_DeleteDuplicatesX(ScmObj list, int cmpmode)
+{
+    if (SCM_PAIRP(list)) {
+        ScmObj obj = SCM_CAR(list);
+        ScmObj tail =
+            Scm_DeleteDuplicatesX(Scm_DeleteX(obj, SCM_CDR(list), cmpmode),
+                                  cmpmode);
+        return (SCM_CDR(list) == tail)? list : Scm_Cons(obj, tail);
+    }
+    return list;
+}
+
 
 /* Return union of two lists.
    Comparison is done by `eq?'.
