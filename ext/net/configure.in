@@ -1,7 +1,7 @@
 dnl
 dnl Example of configuring Gauche extension
 dnl
-dnl $Id: configure.in,v 1.4 2001-06-14 11:04:46 shirok Exp $
+dnl $Id: configure.in,v 1.5 2001-06-21 07:34:07 shirok Exp $
 AC_INIT(net.c)
 AC_CONFIG_HEADER(netconfig.h)
 
@@ -42,8 +42,6 @@ AC_SEARCH_LIBS(shutdown, socket)
 dnl Check for reentrant version synopsis of netdb functions.
 dnl   The calling synopsis of netdb functions like gethostbyname_r differ
 dnl   among platforms.
-AC_CHECK_FUNCS(gethostbyaddr_r)
-
 AC_CACHE_CHECK(number of arguments for gethostbyname_r,
                ac_cv_func_gethostbyname_r, [
   AC_TRY_COMPILE([#include <netdb.h>], [
@@ -62,6 +60,22 @@ AC_CACHE_CHECK(number of arguments for gethostbyname_r,
 
 if test $ac_cv_func_gethostbyname_r != no; then
   AC_DEFINE_UNQUOTED(GETHOSTBYNAME_R_NUMARGS, $ac_cv_func_gethostbyname_r)
+fi
+
+AC_CACHE_CHECK(number of arguments for gethostbyaddr_r,
+               ac_cv_func_gethostbyaddr_r, [
+  AC_TRY_COMPILE([#include <netdb.h>], [
+    char *n; int addrlen, type; struct hostent *h, *r; char buf[4096]; int len=4096; int err;
+    (void)gethostbyaddr_r(n, addrlen, type, h, buf, len, &r, &err);
+    ], ac_cv_func_gethostbyaddr_r=8, [
+  AC_TRY_COMPILE([#include <netdb.h>], [
+    char *n; int addrlen, type; struct hostent *h; char buf[4096]; int len=4096; int err;
+    (void)gethostbyaddr_r(n, addrlen, type, h, buf, len, &err);
+    ], ac_cv_func_gethostbyaddr_r=7, [
+  ac_cv_func_gethostbyaddr_r=no])])])
+
+if test $ac_cv_func_gethostbyaddr_r != no; then
+  AC_DEFINE_UNQUOTED(GETHOSTBYADDR_R_NUMARGS, $ac_cv_func_gethostbyaddr_r)
 fi
 
 AC_CACHE_CHECK(number of arguments for getprotobyname_r,
