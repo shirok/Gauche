@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: inline.c,v 1.3 2001-01-16 06:39:29 shiro Exp $
+ *  $Id: inline.c,v 1.4 2001-01-16 09:08:46 shiro Exp $
  */
 
 #include "gauche.h"
@@ -84,6 +84,18 @@ ScmObj Scm_inline_memv(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 /*----------------------------------------------------------------
  * Vectors
  */
+
+ScmObj Scm_inline_vector(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
+{
+    ScmObj args = SCM_CDR(form);
+    INLINE_DECLS;
+    SCM_FOR_EACH(args, args) {
+        SCM_GROW_LIST_SPLICING(code, codetail,
+                               Scm_Compile(SCM_CAR(args), env, 1));
+    }
+    SCM_GROW_LIST(code, codetail, SCM_VM_MAKE_VEC(nargs));
+    INLINE_RETURN;
+}
 
 ScmObj Scm_inline_vector_length(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
 {

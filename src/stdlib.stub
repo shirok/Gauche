@@ -532,6 +532,7 @@
   "  SCM_RETURN(Scm_MakeVector(k, fill));")
 
 (define-cproc vector (&rest args)
+  (inliner "Scm_inline_vector")
   "  SCM_RETURN(Scm_ListToVector(args));")
 
 (define-cproc vector-length (vec)

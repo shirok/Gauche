@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.6 2001-01-16 05:53:50 shiro Exp $
+ *  $Id: vm.c,v 1.7 2001-01-16 09:08:46 shiro Exp $
  */
 
 #include "gauche.h"
@@ -596,6 +596,35 @@ static void run_loop(ScmObj program)
                 POP_ARG(code);
                 p = Scm_MakePromise(code);
                 PUSH_ARG(p);
+                continue;
+            }
+        case SCM_VM_VEC:
+            {
+                int nargs = SCM_VM_INSN_ARG(code);
+                ScmObj arg, vec;
+                CHECK_ARGCNT(nargs);
+                vec = Scm_MakeVector(nargs, SCM_FALSE);
+                while (nargs-- > 0) {
+                    POP_ARG(arg);
+                    SCM_VECTOR_ELEMENT(vec, nargs) = arg;
+                }
+                PUSH_ARG(vec);
+                continue;
+            }
+        case SCM_VM_APP_VEC:
+            {
+                int nargs = SCM_VM_INSN_ARG(code);
+                ScmObj arg, head, vec;
+                CHECK_ARGCNT(nargs);
+                if (nargs > 0) {
+                    POP_ARG(head); nargs--;
+                    while (nargs-- > 0) {
+                        POP_ARG(arg);
+                        head = Scm_Append2(arg, head);
+                    }
+                    vec = Scm_ListToVector(head);
+                    PUSH_ARG(vec);
+                }
                 continue;
             }
         case SCM_VM_VEC_LEN:

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vminline.h,v 1.2 2001-01-16 05:53:50 shiro Exp $
+ *  $Id: vminline.h,v 1.3 2001-01-16 09:08:46 shiro Exp $
  */
 
 #ifndef GAUCHE_VMINLINE_H_
@@ -25,6 +25,7 @@ extern ScmObj Scm_inline_cons(ScmSubr *, ScmObj, ScmObj, int);
 extern ScmObj Scm_inline_memv(ScmSubr *, ScmObj, ScmObj, int);
 
 
+extern ScmObj Scm_inline_vector(ScmSubr *, ScmObj, ScmObj, int);
 extern ScmObj Scm_inline_vector_length(ScmSubr *, ScmObj, ScmObj, int);
 extern ScmObj Scm_inline_vector_ref(ScmSubr *, ScmObj, ScmObj, int);
 extern ScmObj Scm_inline_vector_set(ScmSubr *, ScmObj, ScmObj, int);

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: compile.c,v 1.5 2001-01-16 05:53:50 shiro Exp $
+ *  $Id: compile.c,v 1.6 2001-01-16 09:08:46 shiro Exp $
  */
 
 #include "gauche.h"
@@ -1121,76 +1121,134 @@ static ScmSyntax syntax_do = {
 #define VALID_QUOTE_SYNTAX_P(form) \
     (SCM_PAIRP(SCM_CDR(form)) && SCM_NULLP(SCM_CDDR(form)))
 
+static ScmObj compile_qq_list(ScmObj form, ScmObj env, int level);
+static ScmObj compile_qq_vec(ScmObj form, ScmObj env, int level);
+
 static ScmObj compile_qq(ScmObj form, ScmObj env, int level)
 {
     if (!SCM_PTRP(form)) {
         return SCM_LIST1(form);
     } if (SCM_PAIRP(form)) {
-        int len = 0, splice = 0;
-        ScmObj car = SCM_CAR(form), cp;
-        ScmObj code = SCM_NIL, codetail;
-
-        if (car == SCM_SYM_UNQUOTE && FREE_VAR_P(car, env)) {
-            if (!VALID_QUOTE_SYNTAX_P(form))
-                Scm_Error("badly formed unquote: %S\n", form);
-            if (level == 0) {
-                return compile_int(SCM_CADR(form), env, 1);
-            } else {
-                return compile_qq(SCM_CADR(form), env, level-1);
-            }
-        } else if (car == SCM_SYM_UNQUOTE_SPLICING && FREE_VAR_P(car, env)) {
-            Scm_Error("unquote-splicing appeared in invalid context: %S",
-                      form);
-            return SCM_NIL;     /* dummy */
-        } else if (car == SCM_SYM_QUASIQUOTE && FREE_VAR_P(car, env)) {
-            if (!VALID_QUOTE_SYNTAX_P(form))
-                Scm_Error("badly formed quasiquote: %S\n", form);
-            return compile_qq(SCM_CADR(form), env, level+1);
-        }
-
-        /* ordinary list */
-        SCM_FOR_EACH(cp, form) {
-            car = SCM_CAR(cp);
-            if (car == SCM_SYM_UNQUOTE && FREE_VAR_P(car, env)) {
-                break;
-            } else if (car == SCM_SYM_UNQUOTE_SPLICING
-                       && FREE_VAR_P(car, env)) {
-                Scm_Error("unquote-splicing appeared in invalid context: %S",
-                          form);
-            }
-            if (SCM_PAIRP(car)
-                && SCM_CAR(car) == SCM_SYM_UNQUOTE_SPLICING
-                && FREE_VAR_P(SCM_CAR(car), env)) {
-                if (!VALID_QUOTE_SYNTAX_P(car))
-                    Scm_Error("badly formed quasiquote: %S\n", form);
-                SCM_GROW_LIST(code, codetail, SCM_VM_MAKE_LIST(len));
-                len = 0;
-                SCM_GROW_LIST_SPLICING(code, codetail,
-                                       compile_int(SCM_CADR(car), env, 1));
-                splice+=2;
-            } else {
-                SCM_GROW_LIST_SPLICING(code, codetail,
-                                       compile_qq(SCM_CAR(cp), env, level));
-                len++;
-            }
-        }
-        if (!SCM_NULLP(cp)) {
-            SCM_GROW_LIST_SPLICING(code, codetail,
-                                   compile_qq(cp, env, level));
-            SCM_GROW_LIST(code, codetail, SCM_VM_MAKE_LIST_STAR(len+1));
-        } else {
-            SCM_GROW_LIST(code, codetail, SCM_VM_MAKE_LIST(len));
-        }
-        if (splice) {
-            SCM_GROW_LIST(code, codetail, SCM_VM_MAKE_APPEND(splice+1));
-        }
-        return code;
+        return compile_qq_list(form, env, level);
     } else if (SCM_VECTORP(form)) {
-        /* TODO: support unquoting inside vectors */
-        return SCM_LIST1(form);
+        return compile_qq_vec(form, env, level);
     } else {
         return SCM_LIST1(form);
     }
+}
+
+static ScmObj compile_qq_list(ScmObj form, ScmObj env, int level)
+{
+    int len = 0, splice = 0;
+    ScmObj car = SCM_CAR(form), cp;
+    ScmObj code = SCM_NIL, codetail;
+
+    if (car == SCM_SYM_UNQUOTE && FREE_VAR_P(car, env)) {
+        if (!VALID_QUOTE_SYNTAX_P(form))
+            Scm_Error("badly formed unquote: %S\n", form);
+        if (level == 0) {
+            return compile_int(SCM_CADR(form), env, 1);
+        } else {
+            return compile_qq(SCM_CADR(form), env, level-1);
+        }
+    } else if (car == SCM_SYM_UNQUOTE_SPLICING && FREE_VAR_P(car, env)) {
+        Scm_Error("unquote-splicing appeared in invalid context: %S",
+                  form);
+        return SCM_NIL;     /* dummy */
+    } else if (car == SCM_SYM_QUASIQUOTE && FREE_VAR_P(car, env)) {
+        if (!VALID_QUOTE_SYNTAX_P(form))
+            Scm_Error("badly formed quasiquote: %S\n", form);
+        return compile_qq(SCM_CADR(form), env, level+1);
+    }
+
+    /* ordinary list */
+    SCM_FOR_EACH(cp, form) {
+        car = SCM_CAR(cp);
+        if (car == SCM_SYM_UNQUOTE && FREE_VAR_P(car, env)) {
+            break;
+        } else if (car == SCM_SYM_UNQUOTE_SPLICING
+                   && FREE_VAR_P(car, env)) {
+            Scm_Error("unquote-splicing appeared in invalid context: %S",
+                      form);
+        }
+        if (SCM_PAIRP(car)
+            && SCM_CAR(car) == SCM_SYM_UNQUOTE_SPLICING
+            && FREE_VAR_P(SCM_CAR(car), env)) {
+            if (!VALID_QUOTE_SYNTAX_P(car))
+                Scm_Error("badly formed quasiquote: %S\n", form);
+            SCM_GROW_LIST(code, codetail, SCM_VM_MAKE_LIST(len));
+            len = 0;
+            SCM_GROW_LIST_SPLICING(code, codetail,
+                                   compile_int(SCM_CADR(car), env, 1));
+            splice+=2;
+        } else {
+            SCM_GROW_LIST_SPLICING(code, codetail,
+                                   compile_qq(SCM_CAR(cp), env, level));
+            len++;
+        }
+    }
+    if (!SCM_NULLP(cp)) {
+        SCM_GROW_LIST_SPLICING(code, codetail,
+                               compile_qq(cp, env, level));
+        SCM_GROW_LIST(code, codetail, SCM_VM_MAKE_LIST_STAR(len+1));
+    } else {
+        SCM_GROW_LIST(code, codetail, SCM_VM_MAKE_LIST(len));
+    }
+    if (splice) {
+        SCM_GROW_LIST(code, codetail, SCM_VM_MAKE_APPEND(splice+1));
+    }
+    return code;
+}
+
+static ScmObj compile_qq_vec(ScmObj form, ScmObj env, int level)
+{
+    ScmObj code = SCM_NIL, codetail;
+    int vlen = SCM_VECTOR_SIZE(form), i, alen = 0, spliced = 0;
+    for (i=0; i<vlen; i++) {
+        ScmObj p = SCM_VECTOR_ELEMENT(form, i), q;
+        if (SCM_PAIRP(p)) {
+            ScmObj car = SCM_CAR(p);
+            if (car == SCM_SYM_UNQUOTE && FREE_VAR_P(car, env)) {
+                if (!VALID_QUOTE_SYNTAX_P(p))
+                    Scm_Error("badly formed unquote: %S\n", p);
+                if (level == 0) {
+                    SCM_GROW_LIST_SPLICING(code, codetail,
+                                           compile_int(SCM_CADR(p), env, 1));
+                } else {
+                    SCM_GROW_LIST_SPLICING(code, codetail,
+                                           compile_qq(SCM_CADR(p), env,
+                                                      level-1));
+                }
+                alen++;
+            } else if (car == SCM_SYM_UNQUOTE_SPLICING
+                       && FREE_VAR_P(car, env)) {
+                if (!VALID_QUOTE_SYNTAX_P(p))
+                    Scm_Error("badly formed quasiquote: %S\n", form);
+                SCM_GROW_LIST(code, codetail, SCM_VM_MAKE_LIST(alen));
+                alen = 0;
+                SCM_GROW_LIST_SPLICING(code, codetail,
+                                       compile_int(SCM_CADR(p), env, 1));
+                spliced+=2;
+            } else {
+                SCM_GROW_LIST(code, codetail, p);
+                alen++;
+            }
+        } else {
+            SCM_GROW_LIST(code, codetail, p);
+            alen++;
+        }
+    }
+
+    if (spliced == 0) {
+        SCM_GROW_LIST(code, codetail, SCM_VM_MAKE_VEC(vlen));
+    } else {
+        if (alen) {
+            SCM_GROW_LIST(code, codetail, SCM_VM_MAKE_LIST(alen));
+            spliced++;
+        }
+        SCM_GROW_LIST(code, codetail, SCM_VM_MAKE_APP_VEC(spliced));
+    }
+    return code;
 }
 
 static ScmObj compile_quasiquote(ScmObj form, ScmObj env, int ctx,
