@@ -2,7 +2,7 @@
  *
  * Configuration parmateres
  *  
- * $Id: config.h.in,v 1.16 2001-07-08 08:39:39 shirok Exp $
+ * $Id: config.h.in,v 1.17 2001-08-30 06:41:04 shirok Exp $
  */
 
 #undef STDC_HEADERS
@@ -14,6 +14,9 @@
 #undef GAUCHE_CHAR_ENCODING_EUC_JP
 #undef GAUCHE_CHAR_ENCODING_UTF_8
 #undef GAUCHE_CHAR_ENCODING_SJIS
+
+/* Define if the compiler supports __inline__ or __inline, or empty if not. */
+#undef inline
 
 /* Define if the system is big-endian machine */
 #undef WORDS_BIGENDIAN
