@@ -1,7 +1,7 @@
 dnl
 dnl configure termios extension
 dnl
-dnl $Id: configure.in,v 1.1 2001-09-07 11:35:30 shirok Exp $
+dnl $Id: configure.in,v 1.2 2001-09-07 11:39:26 shirok Exp $
 AC_INIT(termios.c)
 
 dnl Determine if we're configuring inside of Gauche main source tree or not.
@@ -24,7 +24,7 @@ AC_SUBST(GOSH)
 dnl A user has a choice to install the module into Gauche system directory
 dnl or site local directory, by setting environment variable INSTALL_TYPE
 dnl to either 'sys' or 'site'.   The variable can be overridden at make time.
-: ${INSTALL_TYPE=site}  dnl This sets the default.
+: ${INSTALL_TYPE=sys}  dnl This sets the default.
 AC_SUBST(INSTALL_TYPE)
 
 dnl Get compiler parameters which Gauche has been compiled with.
