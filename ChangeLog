@@ -1,3 +1,8 @@
+2002-10-17  Shiro Kawai  <shiro@acm.org>
+
+	* ext/auxsys/auxsyslib.stub (sys-times): fixed a bug that caused
+	  sys-times fails on some platforms (Thanks to Kimura Fuyuki).
+
 2002-10-16  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvlib.stub.sh : fixed a bug that prevents uvlib.c

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: auxsyslib.stub,v 1.10 2002-07-24 15:38:50 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.11 2002-10-17 12:44:28 shirok Exp $
 ;;;
 
 "
@@ -134,8 +134,8 @@
 (define-cproc sys-times ()
   "  struct tms info;
   ScmObj h = SCM_NIL, t;
-  int r = Scm_SysCall(times(&info));
-  if (r < 0) Scm_SysError(\"times failed\");
+  clock_t r = times(&info);
+  if (r == (clock_t)-1) Scm_SysError(\"times failed\");
   SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_utime));
   SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_stime));
   SCM_APPEND1(h, t, Scm_MakeInteger(info.tms_cutime));
