@@ -7,7 +7,7 @@ all : gc/libgc.a src/gosh
 	cd ext; $(MAKE) all
 
 gc/libgc.a :
-	cd gc; $(MAKE) CC="@CC@" SHLIB_SO_CFLAGS="@SHLIB_SO_CFLAGS@"
+	cd gc; $(MAKE)
 
 src/gosh : gc/libgc.a
 	cd src; $(MAKE)

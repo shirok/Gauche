@@ -3,7 +3,7 @@ LIBS = @LIBS@
 DEFS = @DEFS@
 CFLAGS = @CFLAGS@ @DEFS@ -I. -I../gc/include @SHLIB_SO_CFLAGS@
 LDFLAGS = @SHLIB_MAIN_LDFLAGS@
-AR = ar
+AR = @AR@
 RANLIB = @RANLIB@
 
 prefix = @prefix@

@@ -14,9 +14,9 @@
 #	 c++ interface to gc.a
 # cord/de - builds dumb editor based on cords.
 ABI_FLAG= 
-CC=cc $(ABI_FLAG)
+CC=@CC@ $(ABI_FLAG)
 CXX=g++ $(ABI_FLAG)
-AS=as $(ABI_FLAG)
+AS=@AS@ $(ABI_FLAG)
 #  The above doesn't work with gas, which doesn't run cpp.
 #  Define AS as `gcc -c -x assembler-with-cpp' instead.
 #  Under Irix 6, you will have to specify the ABI (-o32, -n32, or -64)
@@ -27,7 +27,7 @@ AS=as $(ABI_FLAG)
 srcdir= .
 VPATH= $(srcdir)
 
-CFLAGS= -O -I$(srcdir)/include -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DSILENT -DALL_INTERIOR_POINTERS -DDONT_ADD_BYTE_AT_END -DUSE_I686_PREFETCH $(SHLIB_SO_CFLAGS)
+CFLAGS= -O -I$(srcdir)/include -DATOMIC_UNCOLLECTABLE -DNO_SIGNALS -DNO_EXECUTE_PERMISSION -DSILENT -DALL_INTERIOR_POINTERS -DDONT_ADD_BYTE_AT_END -DUSE_I686_PREFETCH @SHLIB_SO_CFLAGS@
 
 # To build the parallel collector on Linux, add to the above:
 # -DGC_LINUX_THREADS -DPARALLEL_MARK -DTHREAD_LOCAL_ALLOC
@@ -219,8 +219,8 @@ HOSTCFLAGS=$(CFLAGS)
 #
 
 CXXFLAGS= $(CFLAGS) 
-AR= ar
-RANLIB= ranlib
+AR= @AR@
+RANLIB= @RANLIB@
 
 
 OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o malloc.o stubborn.o checksums.o solaris_threads.o irix_threads.o linux_threads.o typd_mlc.o ptr_chck.o mallocx.o solaris_pthreads.o gcj_mlc.o specific.o gc_dlopen.o
