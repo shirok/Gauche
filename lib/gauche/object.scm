@@ -12,19 +12,15 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.2 2001-03-24 10:45:22 shiro Exp $
+;;;  $Id: object.scm,v 1.3 2001-03-25 04:48:05 shiro Exp $
 ;;;
 
 (select-module gauche)
 
-;;;
-;;; This module is A WORK IN PROGRESS.   Don't expect this to work.
-;;;
-
 ;; Bootstrapping "make"
 ;;   We already have generic-function for "make" defined in C.  Just wanted
 ;;   to make a method specialized for <class>, i.e. the most common "make".
-;;   However, we can't say (make <method> ...) before we have make method.
+;;   However, we can't say (make <method> ...) before we have a make method.
 ;;   So we have to "hard wire" the method creation.
 
 (let ((%make (lambda (class . initargs)
@@ -60,13 +56,7 @@
     ;; main expansion
     ((_ "args" ?name () (?body ...) (?specs ...) ?lambda-list (?body-arg ...))
      (begin
-       (define ?name
-         (if (symbol-bound? '?name)
-             (if (is-a? ?name <generic>)
-                 ?name
-                 (error "define-method: ~s is not bound to a generic function"
-                        '?name))
-             (make <generic> :name '?name)))
+       (%ensure-generic-function '?name (current-module))
        (add-method! ?name
                     (make <method>
                       :generic ?name
