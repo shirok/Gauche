@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: macro.c,v 1.9 2001-02-27 05:54:33 shiro Exp $
+ *  $Id: macro.c,v 1.10 2001-02-27 08:36:37 shiro Exp $
  */
 
 #include "gauche.h"
@@ -775,8 +775,35 @@ static ScmSyntax syntax_syntax_rules = {
 static ScmObj compile_let_syntax(ScmObj form, ScmObj env, int ctx, void *data)
 {
     int letrecp = (data != NULL);
-    ScmObj vars = SCM_NIL, vars_t, rules = SCM_NIL, rules_t, body;
+    ScmObj vars = SCM_NIL, vars_t;
+    ScmObj rules = SCM_NIL, rules_t;
+    ScmObj frame = SCM_NIL, frame_t;
+    ScmObj syntax, body, synbinds, sp, newenv;
 
+    syntax = SCM_CAR(form);
+    if (Scm_Length(form) < 2) Scm_Error("malformed %S: %S", syntax, form);
+    synbinds = SCM_CADR(form);
+    body = SCM_CDDR(form);
+    SCM_APPEND1(frame, frame_t, SCM_TRUE);
+
+    if (!SCM_PAIRP(synbinds))
+        Scm_Error("%S: malformed syntaxtic bindings: %S", syntax, form);
+    
+    SCM_FOR_EACH(sp, synbinds) {
+        ScmObj synbind = SCM_CAR(sp), var, rule;
+        if (Scm_Length(synbind) != 2) 
+            Scm_Error("%S: malformed syntaxtic bindings: %S", syntax, synbind);
+        if (!SCM_SYMBOLP(var))
+            Scm_Error("%S: malformed syntaxtic bindings: %S", syntax, synbind);
+        if (!SCM_PAIRP(rule))
+            Scm_Error("%S: malformed syntaxtic bindings: %S", syntax, synbind);
+        SCM_APPEND1(vars, vars_t, var);
+        SCM_APPEND1(rules, rules_t, rule);
+        if (letrecp) SCM_APPEND1(frame, frame_t, Scm_Cons(var, SCM_NIL));
+    }
+
+    
+    
     Scm_Error("%S is not supported yet.", SCM_CAR(form));
     return SCM_NIL;
 }
