@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.93 2002-09-10 10:36:41 shirok Exp $
+;;; $Id: stdlib.stub,v 1.94 2002-09-11 03:19:40 shirok Exp $
 ;;;
 
 
@@ -678,10 +678,10 @@ static ScmObj minus_inliner(ScmSubr *subr, ScmObj form, ScmObj env, int ctx)
   }
   return Scm_VMApply(proc, head);")
 
-(define-cproc map (proc::<procedure> args::<list> &rest moreargs)
+(define-cproc map (proc args::<list> &rest moreargs)
   (return "Scm_Map"))
 
-(define-cproc for-each (proc::<procedure> args::<list> &rest moreargs)
+(define-cproc for-each (proc args::<list> &rest moreargs)
   (return "Scm_ForEach"))
           
 (define-cproc force (p)

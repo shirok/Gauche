@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.298 2002-09-10 21:57:14 shirok Exp $
+ *  $Id: gauche.h,v 1.299 2002-09-11 03:19:40 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1874,10 +1874,10 @@ SCM_CLASS_DECL(Scm_NextMethodClass);
 #define SCM_NEXT_METHOD(obj)       ((ScmNextMethod*)obj)
 
 /* Other APIs */
-SCM_EXTERN ScmObj Scm_ForEach1(ScmProcedure *proc, ScmObj args);
-SCM_EXTERN ScmObj Scm_ForEach(ScmProcedure *proc, ScmObj arg1, ScmObj args);
-SCM_EXTERN ScmObj Scm_Map1(ScmProcedure *proc, ScmObj args);
-SCM_EXTERN ScmObj Scm_Map(ScmProcedure *proc, ScmObj arg1, ScmObj args);
+SCM_EXTERN ScmObj Scm_ForEach1(ScmObj proc, ScmObj args);
+SCM_EXTERN ScmObj Scm_ForEach(ScmObj proc, ScmObj arg1, ScmObj args);
+SCM_EXTERN ScmObj Scm_Map1(ScmObj proc, ScmObj args);
+SCM_EXTERN ScmObj Scm_Map(ScmObj proc, ScmObj arg1, ScmObj args);
 
 /*--------------------------------------------------------
  * MACROS AND SYNTAX

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.30 2002-05-25 09:03:01 shirok Exp $
+ *  $Id: proc.c,v 1.31 2002-09-11 03:19:40 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -120,7 +120,7 @@ static ScmObj foreach1_cc(ScmObj result, void **data)
     }
 }
 
-ScmObj Scm_ForEach1(ScmProcedure *proc, ScmObj args)
+ScmObj Scm_ForEach1(ScmObj proc, ScmObj args)
 {
     if (!SCM_NULLP(args)) {
         void *data[2];
@@ -155,7 +155,7 @@ static ScmObj map1_cc(ScmObj result, void **data)
     }
 }
 
-ScmObj Scm_Map1(ScmProcedure *proc, ScmObj args)
+ScmObj Scm_Map1(ScmObj proc, ScmObj args)
 {
     if (!SCM_NULLP(args)) {
         void *data[4];
@@ -216,7 +216,7 @@ static ScmObj foreachN_cc(ScmObj result, void **data)
     SCM_RETURN(Scm_VMApply(proc, args));
 }
 
-ScmObj Scm_ForEach(ScmProcedure *proc, ScmObj arg1, ScmObj args)
+ScmObj Scm_ForEach(ScmObj proc, ScmObj arg1, ScmObj args)
 {
     if (SCM_NULLP(args)) {
         SCM_RETURN(Scm_ForEach1(proc, arg1)); /* shortcut */
@@ -252,7 +252,7 @@ static ScmObj mapN_cc(ScmObj result, void **data)
     SCM_RETURN(Scm_VMApply(proc, args));
 }
 
-ScmObj Scm_Map(ScmProcedure *proc, ScmObj arg1, ScmObj args)
+ScmObj Scm_Map(ScmObj proc, ScmObj arg1, ScmObj args)
 {
     if (SCM_NULLP(args)) {
         SCM_RETURN(Scm_Map1(proc, arg1)); /* shortcut */
