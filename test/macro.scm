@@ -396,6 +396,31 @@
           (push! (vector-ref a 1) 3)
           a)))
 
+(test "pop!" '((2 3) . 1)
+      (lambda ()
+        (let* ((a (list 1 2 3))
+               (b (pop! a)))
+          (cons a b))))
+
+(test "pop!" '((1 3) . 2)
+      (lambda ()
+        (let* ((a (list 1 2 3))
+               (b (pop! (cdr a))))
+          (cons a b))))
+
+(test "pop!" '(#((2)) . 1)
+      (lambda ()
+        (let* ((a (vector (list 1 2)))
+               (b (pop! (vector-ref a 0))))
+          (cons a b))))
+
+(test "push!, pop!" '((2 3) (4 1))
+      (lambda ()
+        (let ((a (list 1 2 3))
+              (b (list 4)))
+          (push! (cdr b) (pop! a))
+          (list a b))))
+
 (test "dotimes" '(0 1 2 3 4 5 6 7 8 9)
       (lambda ()
         (let ((m '()))
