@@ -24,7 +24,9 @@
 * rfc.sha1 - SHA1 message digest::  
 * rfc.uri - URI parsing and construction::  
 * slib - SLIB::                 
-* sxml.ssax::                   
+* sxml.ssax - Functional XML parser::  
+* sxml.sxpath - SXML Query Language::  
+* sxml.tools - manipulationg SXML structure::  
 * text.csv - CSV tables::       
 * text.diff - Calculate difference of text streams::  
 * text.html-lite - Simple HTML document construction::  
@@ -3284,7 +3286,7 @@ native multibyte representation.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node slib - SLIB, sxml.ssax, rfc.uri - URI parsing and construction, Library modules - Utilities
+@node slib - SLIB, sxml.ssax - Functional XML parser, rfc.uri - URI parsing and construction, Library modules - Utilities
 @section @code{slib} - SLIB interface
 @c NODE slib - SLIBインタフェース, @code{slib} - SLIBインタフェース
 
@@ -3333,8 +3335,8 @@ module @code{slib}.
 @end example
 
 @c ----------------------------------------------------------------------
-@node sxml.ssax, text.csv - CSV tables, slib - SLIB, Library modules - Utilities
-@section @code{sxml.ssax} - functional XML parser
+@node sxml.ssax - Functional XML parser, sxml.sxpath - SXML Query Language, slib - SLIB, Library modules - Utilities
+@section @code{sxml.ssax} - Functional XML parser
 
 @deftp {Module} sxml.ssax
 @mdindex sxml.ssax
@@ -3387,7 +3389,7 @@ check out @code{ssax:xml->sxml} in @ref{SSAX Highest-level parsers - XML to SXML
 * SSAX Highest-level parsers - XML to SXML::  
 @end menu
 
-@node SSAX data types, SSAX low-level parsing code, sxml.ssax, sxml.ssax
+@node SSAX data types, SSAX low-level parsing code, sxml.ssax - Functional XML parser, sxml.ssax - Functional XML parser
 @subsection SSAX data types
 
 @table @emph
@@ -3545,7 +3547,7 @@ Accessor macros of a @var{XML-TOKEN} record.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node SSAX low-level parsing code, SSAX higher-level parsers and scanners, SSAX data types, sxml.ssax
+@node SSAX low-level parsing code, SSAX higher-level parsers and scanners, SSAX data types, sxml.ssax - Functional XML parser
 @subsection SSAX low-level parsing code
 
 They deal with primitive lexical units (Names, whitespaces, tags)
@@ -3843,7 +3845,7 @@ correspondingly a @code{SYSTEM} or @code{PUBLIC} token. This procedure returns t
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SSAX higher-level parsers and scanners, SSAX Highest-level parsers - XML to SXML, SSAX low-level parsing code, sxml.ssax
+@node SSAX higher-level parsers and scanners, SSAX Highest-level parsers - XML to SXML, SSAX low-level parsing code, sxml.ssax - Functional XML parser
 @subsection SSAX higher-level parsers and scanners
 
 They parse productions corresponding to the whole (document) entity
@@ -3926,7 +3928,7 @@ The result of @var{error-cont} is returned.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SSAX Highest-level parsers - XML to SXML,  , SSAX higher-level parsers and scanners, sxml.ssax
+@node SSAX Highest-level parsers - XML to SXML,  , SSAX higher-level parsers and scanners, sxml.ssax - Functional XML parser
 @subsection SSAX Highest-level parsers - XML to SXML
 
 These parsers are a set of syntactic forms to instantiate a SSAX parser.
@@ -4123,7 +4125,1016 @@ first character after the root element.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node text.csv - CSV tables, text.diff - Calculate difference of text streams, sxml.ssax, Library modules - Utilities
+@node sxml.sxpath - SXML Query Language, sxml.tools - manipulationg SXML structure, sxml.ssax - Functional XML parser, Library modules - Utilities
+@section @code{sxml.sxpath} - SXML Query Language
+
+@deftp {Module} sxml.sxpath
+@mdindex sxml.sxpath
+SXPath is a query language for SXML, an instance of XML Information
+set (Infoset) in the form of s-expressions. 
+
+It is originally written by Oleg Kiselyov, and
+improved by Dmitry Lizorkin and Kirill Lisovsky.
+This module also incorporates
+various procedures written for SXPath by Dmitry Lizorkin and Kirill Lisovsky.
+
+Current version is based on sxpathlib.scm,v 3.915,
+sxpath.scm,v 1.1, and sxpath-ext.scm,v 1.911.
+@end deftp
+
+This manual is mostly derived from the comments in the
+original source files.
+
+The module consists of three layers.
+@enumerate
+@item
+Basic converters and applicators, which provides the means to
+access and translate SXML tree.
+@item
+High-level query language compiler,
+which takes abbreviated SXPath and
+returns a Scheme function that selects a nodeset
+that satisfies the specified path from the given nodeset.
+@item
+Extension libraries, which implements
+SXML counterparts to W3C XPath Core Functions Library.
+@end enumerate
+
+@c ----------------------------------------------------------------------
+@menu
+* SXPath basic converters and applicators::  
+* SXPath query language::       
+* SXPath extension::            
+@end menu
+
+@node SXPath basic converters and applicators, SXPath query language, sxml.sxpath - SXML Query Language, sxml.sxpath - SXML Query Language
+@subsection SXPath basic converters and applicators
+
+A converter is a function
+@example
+  type Converter = Node|Nodeset -> Nodeset
+@end example
+A converter can also play a role of a predicate: in that case, if a
+converter, applied to a node or a nodeset, yields a non-empty
+nodeset, the converter-predicate is deemed satisfied. Throughout
+this file a nil nodeset is equivalent to @code{#f} in denoting a failure.
+
+@defun nodeset? x
+Returns @code{#t} if given object is a nodeset.
+@end defun
+
+@defun as-nodeset x
+If @var{x} is a nodeset - returns it as is, otherwise wrap it in a list.
+@end defun
+
+@defun sxml:element? obj
+Predicate which returns @var{#t}
+if @var{obj} is SXML element, otherwise returns @var{#f}.
+@end defun
+
+@defun ntype-names?? crit
+The function @code{ntype-names??} takes a list of acceptable node names as a
+criterion and returns a function, which, when applied to a node, 
+will return @code{#t} if the node name is present in criterion list
+and @code{#f} othervise.
+@example
+ ntype-names?? :: ListOfNames -> Node -> Boolean
+@end example
+@end defun
+
+@defun ntype?? crit
+The function @code{ntype??} takes a type criterion and returns
+a function, which, when applied to a node, will tell if the node satisfies
+the test.
+@example
+  ntype?? :: Crit -> Node -> Boolean
+@end example
+
+The criterion @var{crit} is 
+one of the following symbols:
+@table @code
+@item id
+tests if the Node has the right name (id)
+@item @@
+tests if the Node is an @var{attributes-list}.
+@item *
+tests if the Node is an @var{Element}.
+@item *text*
+tests if the Node is a text node.
+@item *data*
+tests if the Node is a data node 
+(text, number, boolean, etc., but not pair).
+@item *PI*
+tests if the Node is a @code{PI} node.
+@item *COMMENT*
+tests if the Node is a @code{COMMENT} node.
+@item *ENTITY*
+tests if the Node is a @code{ENTITY} node.
+@item *any*
+@code{#t} for any type of Node.
+@end table
+@end defun
+
+@defun ntype-namespace-id?? ns-id
+This function takes a namespace-id, and returns a predicate
+@code{Node -> Boolean}, which is @code{#t}
+for nodes with this very namespace-id.
+@var{ns-id} is a string.
+@code{(ntype-namespace-id?? #f)} will be @code{#t}
+for nodes with non-qualified names.
+@end defun
+
+@defun sxml:invert pred
+This function takes a predicate and returns it inverted .
+That is if the given predicate yelds @code{#f} or '@code{()} the inverted one  
+yields the given node (@code{#t}) and vice versa.
+@end defun
+
+@defun node-eq? other
+@defunx node-equal? other
+Curried equivalence converter-predicates, i.e.
+@example
+  ((node-eq? a) b)    @equiv{} (eq? a b)
+  ((node-equal? a) b) @equiv{} (equal? a b)
+@end example
+@end defun
+
+@defun node-pos n
+
+@example
+ node-pos:: N -> Nodeset -> Nodeset, or
+ node-pos:: N -> Converter
+@end example
+
+Select the @var{N}'th element of a Nodeset and return as a singular Nodeset;
+Return an empty nodeset if the Nth element does not exist.
+@code{((node-pos 1) Nodeset)} selects the node at the head of the Nodeset,
+if exists;
+@code{((node-pos 2) Nodeset)} selects the Node after that, if
+exists.
+@var{N} can also be a negative number: in that case the node is picked from
+the tail of the list.
+@code{((node-pos -1) Nodeset)} selects the last node of a non-empty nodeset;
+@code{((node-pos -2) Nodeset)} selects the last but one node, if exists.
+@end defun
+
+@defun sxml:filter pred?
+
+@example
+ filter:: Converter -> Converter
+@end example
+
+A filter applicator, which introduces a filtering context. The argument
+converter is considered a predicate, with either @code{#f}
+or nil result meaning failure.
+@end defun
+
+@defun take-until pred?
+
+@example
+ take-until:: Converter -> Converter, or
+ take-until:: Pred -> Node|Nodeset -> Nodeset
+@end example
+
+Given a converter-predicate and a nodeset, apply the predicate to
+each element of the nodeset, until the predicate yields anything but
+@var{#f} or nil. Return the elements of the input nodeset that have
+been processed
+till that moment (that is, which fail the predicate).
+@code{take-until} is a variation of the filter above:
+@code{take-until} passes
+elements of an ordered input set till (but not including) the first
+element that satisfies the predicate.
+The nodeset returned by @code{((take-until (not pred)) nset)} is a subset -- 
+to be more precise, a prefix -- of the nodeset returned by
+@code{((filter pred) nset)}.
+@end defun
+
+@defun take-after pred?
+
+@example
+take-after:: Converter -> Converter, or
+take-after:: Pred -> Node|Nodeset -> Nodeset
+@end example
+
+Given a converter-predicate and a nodeset, apply the predicate to
+each element of the nodeset, until the predicate yields anything but
+@code{#f} or
+nil. Return the elements of the input nodeset that have not been processed:
+that is, return the elements of the input nodeset that follow the first
+element that satisfied the predicate.
+@code{take-after} along with @code{take-until}
+partition an input nodeset into three
+parts: the first element that satisfies a predicate, all preceding
+elements and all following elements.
+@end defun
+
+@defun map-union proc lst
+Apply proc to each element of lst and return the list of results.
+if proc returns a nodeset, splice it into the result.
+
+From another point of view,
+@code{map-union} is a function Converter->Converter,
+which places an argument-converter in a joining context.
+@end defun
+
+@defun node-reverse node-or-nodeset
+
+@example
+node-reverse :: Converter, or
+node-reverse:: Node|Nodeset -> Nodeset
+@end example
+
+Reverses the order of nodes in the nodeset
+This basic converter is needed to implement a reverse document order
+(see the XPath Recommendation).
+@end defun
+
+@defun node-trace title
+
+@example
+ node-trace:: String -> Converter
+@end example
+
+@code{(node-trace title)} is an identity converter. In addition it prints out
+a node or nodeset it is applied to, prefixed with the 'title'.
+This converter is very useful for debugging.
+@end defun
+
+
+What follow are Converter combinators,
+higher-order functions that transmogrify a converter
+or glue a sequence of converters into a single, non-trivial
+converter. The goal is to arrive at converters that correspond to
+XPath location paths.
+
+From a different point of view, a combinator is a fixed, named
+@emph{pattern} of applying converters. Given below is a complete set of
+such patterns that together implement XPath location path
+specification. As it turns out, all these combinators can be built
+from a small number of basic blocks: regular functional composition,
+map-union and filter applicators, and the nodeset union.
+
+@defun select-kids test-pred?
+
+@example
+select-kids:: Pred -> Node -> Nodeset
+@end example
+Given a Node, return an (ordered) subset its children that satisfy
+the Pred (a converter, actually).
+
+@example
+select-kids:: Pred -> Nodeset -> Nodeset
+@end example
+The same as above, but select among children of all the nodes in
+the Nodeset.
+@end defun
+
+@defun node-self pred
+
+@example
+ node-self:: Pred -> Node -> Nodeset, or
+ node-self:: Converter -> Converter
+@end example
+
+Similar to select-kids but apply to the Node itself rather
+than to its children. The resulting Nodeset will contain either one
+component, or will be empty (if the Node failed the Pred).
+@end defun
+
+@defun node-join . selectors
+
+@example
+ node-join:: [LocPath] -> Node|Nodeset -> Nodeset, or
+ node-join:: [Converter] -> Converter
+@end example
+
+join the sequence of location steps or paths as described
+in the title comments above.
+@end defun
+
+@defun node-reduce . converters
+
+@example
+ node-reduce:: [LocPath] -> Node|Nodeset -> Nodeset, or
+ node-reduce:: [Converter] -> Converter
+@end example
+
+A regular functional composition of converters.
+From a different point of view,
+@code{((apply node-reduce converters) nodeset)}
+is equivalent to
+@code{(foldl apply nodeset converters)}
+i.e., folding, or reducing, a list of converters with the nodeset
+as a seed.
+@end defun
+
+@defun node-or . converters
+
+@example
+ node-or:: [Converter] -> Converter
+@end example
+
+This combinator applies all converters to a given node and
+produces the union of their results.
+This combinator corresponds to a union, '@code{|}' operation for XPath
+location paths.
+@end defun
+
+@defun node-closure test-pred?
+
+@example
+ node-closure:: Converter -> Converter
+@end example
+
+Select all @emph{descendants} of a node that satisfy a converter-predicate.
+This combinator is similar to @code{select-kids} but applies to
+grand... children as well.
+This combinator implements the "@code{descendant::}" XPath axis.
+Conceptually, this combinator can be expressed as
+@example
+ (define (node-closure f)
+      (node-or
+        (select-kids f)
+	 (node-reduce (select-kids (ntype?? '*)) (node-closure f))))
+@end example
+
+This definition, as written, looks somewhat like a fixpoint, and it
+will run forever.  It is obvious however that sooner or later
+@code{(select-kids (ntype?? '*))} will return an empty nodeset. At
+this point further iterations will no longer affect the result and
+can be stopped.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node SXPath query language, SXPath extension, SXPath basic converters and applicators, sxml.sxpath - SXML Query Language
+@subsection SXPath query language
+
+@defun sxpath path . ns-binding
+Evaluates an abbreviated SXPath.
+
+@example
+ sxpath:: AbbrPath -> Converter, or
+ sxpath:: AbbrPath -> Node|Nodeset -> Nodeset
+@end example
+
+@var{AbbrPath} is a list. It is translated to the full SXPath according
+to the following rewriting rules:
+@example
+ (sxpath '()) -> (node-join)
+ (sxpath '(path-component ...)) ->
+                (node-join (sxpath1 path-component) (sxpath '(...)))
+ (sxpath1 '//) -> (node-or 
+                     (node-self (ntype?? '*any*))
+                     (node-closure (ntype?? '*any*)))
+ (sxpath1 '(equal? x)) -> (select-kids (node-equal? x))
+ (sxpath1 '(eq? x))    -> (select-kids (node-eq? x))
+ (sxpath1 '(or@ ...))  -> (select-kids (ntype-names??
+                                          (cdr '(or@ ...))))
+ (sxpath1 '(not@ ...)) -> (select-kids (sxml:invert 
+                                         (ntype-names??
+                                          (cdr '(not@ ...)))))
+ (sxpath1 '(ns-id:* x)) -> (select-kids 
+                                      (ntype-namespace-id?? x))
+ (sxpath1 ?symbol)     -> (select-kids (ntype?? ?symbol))
+ (sxpath1 ?string)     -> (txpath ?string)
+ (sxpath1 procedure)   -> procedure
+ (sxpath1 '(?symbol ...)) -> (sxpath1 '((?symbol) ...))
+ (sxpath1 '(path reducer ...)) ->
+                (node-reduce (sxpath path) (sxpathr reducer) ...)
+ (sxpathr number)      -> (node-pos number)
+ (sxpathr path-filter) -> (filter (sxpath path-filter))
+@end example
+@end defun
+
+Some wrapper functions around @code{sxpath}:
+
+@defun if-sxpath path
+@code{sxpath} always returns a list, which is @code{#t} in Scheme.
+@code{if-sxpath} returns @code{#f} instead of empty list.
+@end defun
+
+@defun if-car-sxpath path
+Returns first node found, if any.
+Otherwise returns @code{#f}.
+@end defun
+
+@defun car-sxpath path
+Returns first node found, if any.
+Otherwise returns empty list.
+@end defun
+
+@defun sxml:id-alist node . lpaths
+Built an index as a list of
+@code{(@var{ID_value} . @var{element})} pairs for given
+node.  @var{lpaths} are location paths for attributes of type ID.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node SXPath extension,  , SXPath query language, sxml.sxpath - SXML Query Language
+@subsection SXPath extension
+
+SXML counterparts to W3C XPath Core Functions Library.
+
+@defun sxml:string object
+The counterpart to XPath @code{string} function (section 4.2 XPath Rec.)
+Converts a given object to a string.
+NOTE:
+@enumerate
+@item
+When converting a nodeset - a document order is not preserved
+@item
+@var{number->string} function returns the result in a form which is slightly
+different from XPath Rec. specification
+@end enumerate
+@end defun
+
+@defun sxml:boolean object
+The counterpart to XPath @code{boolean} function (section 4.3 XPath Rec.)
+Converts its argument to a boolean.
+@end defun
+
+@defun sxml:number obj
+The counterpart to XPath @code{number} function (section 4.4 XPath Rec.)
+Converts its argument to a number
+NOTE:
+@enumerate
+@item
+The argument is not optional (yet?).
+@item
+@code{string->number} conversion is not IEEE 754 round-to-nearest.
+@item
+NaN is represented as 0.
+@end enumerate
+@end defun
+
+@defun sxml:string-value node
+Returns a string value for a given node in accordance to
+XPath Rec. 5.1 - 5.7 
+@end defun
+
+
+@defun sxml:node? node
+According to XPath specification 2.3, this test is true for any
+XPath node.
+For SXML auxiliary lists and lists of attributes has to be excluded.
+@end defun
+
+@defun sxml:attr-list obj
+Returns the list of attributes for a given SXML node
+Empty list is returned if the given node os not an element,
+or if it has no list of attributes
+@end defun
+
+@defun sxml:id id-index
+Select SXML element by its unique IDs.  (XPath Rec. 4.1)
+Returns a converter that takes @var{object},
+which is a nodeset or a datatype which can be converted to a string by means
+of a '@code{string}' function.
+
+@var{id-index} is @code{( (id-value . element) (id-value . element) ... )}.
+
+This index is used for selection of an element by its unique ID. 
+@end defun
+
+Comparators for XPath objects:
+
+@defun sxml:equality-cmp bool-op number-op string-op
+A helper for XPath equality operations: @code{=} , @code{!=}
+@var{bool-op}, @var{number-op} and
+@var{'string-op} are comparison operations for 
+a pair of booleans,  numbers and strings respectively.
+@end defun
+
+@defun sxml:equal? a b
+@defunx sxml:not-equal? a b
+Counterparts of XPath equality operations: @code{=} , @code{!=},
+using default equality tests.
+@end defun
+
+@defun sxml:relational-cmp op
+Creates a relational operation ( @code{<} , @code{>} , @code{<=} , @code{>=} )
+for two XPath objects.
+@code{op} is comparison procedure: @code{<} , @code{>} , @code{<=} or @code{>=}.
+@end defun
+
+XPath axises.
+An order in resulting nodeset is preserved.
+
+@defun sxml:attribute test-pred?
+Attribute axis.
+@end defun
+
+@defun sxml:child test-pred?
+Child axis.
+This function is similar to '@code{select-kids}', but it returns an empty
+child-list for PI, Comment and Entity nodes
+@end defun
+
+@defun sxml:parent test-pred?
+Parent axis.
+
+Given a predicate, it returns a function 
+@code{RootNode -> Converter}
+which yields a 
+@code{ node -> parent }
+converter then applied to a rootnode.
+
+Thus, such a converter may be constructed using
+@code{ ((sxml:parent test-pred) rootnode) }
+and returns a parent of a node it is applied to.
+If applied to a nodeset, it returns the 
+list of parents of nodes in the nodeset. The rootnode does not have
+to be the root node of the whole SXML tree -- it may be a root node
+of a branch of interest.
+The @code{parent::} axis can be used with any SXML node.
+@end defun
+
+@defun sxml:ancestor test-pred?
+Ancestor axis
+@end defun
+
+@defun sxml:ancestor-or-self test-pred?
+Ancestor-or-self axis
+@end defun
+
+@defun sxml:descendant test-pred?
+Descendant axis
+@end defun
+
+@defun sxml:descendant-or-self test-pred?
+Descendant-or-self axis
+@end defun
+
+@defun sxml:following test-pred?
+Following axis
+@end defun
+
+@defun sxml:following-sibling test-pred?
+Following-sibling axis
+@end defun
+
+@defun sxml:namespace test-pred?
+Namespace axis
+@end defun
+
+@defun sxml:preceding test-pred?
+Preceding axis
+@end defun
+
+@defun sxml:preceding-sibling test-pred?
+Preceding-sibling axis
+@end defun
+
+Popular shortcuts:
+
+@defun sxml:child-nodes nodeset
+@example
+((sxml:child sxml:node?) nodeset)
+@end example
+@end defun
+
+@defun sxml:child-elements nodeset
+@example
+((select-kids sxml:element?) nodeset)
+@end example
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node sxml.tools - manipulationg SXML structure, text.csv - CSV tables, sxml.sxpath - SXML Query Language, Library modules - Utilities
+@section @code{sxml.tools} - manipulationg SXML structure
+
+@deftp {Module} sxml.tools
+@mdindex sxml.tools
+This module is a port of Kirill Lisovsky's sxml-tools,
+a colection of convenient procedures that work on
+SXML structure.
+The current version is derived from sxml-tools CVS revision 3.13.
+
+The manual entry is mainly derived from the comments in the original
+source code.
+@end deftp
+
+@c ----------------------------------------------------------------------
+@menu
+* SXML predicates::             
+* SXML accessors::              
+* SXML modifiers::              
+* SXPath auxiliary utilities::  
+* SXML to markup conversion::   
+@end menu
+
+@c ----------------------------------------------------------------------
+@node SXML predicates, SXML accessors, sxml.tools - manipulationg SXML structure, sxml.tools - manipulationg SXML structure
+@subsection SXML predicates
+
+@defun sxml:empty-element? obj
+A predicate which returns @var{#t} if given element @var{obj} is empty. 
+Empty element has no nested elements, text nodes, @code{PI}s,
+Comments or entities
+but it may contain attributes or namespace-id.
+It is a SXML counterpart of XML @code{empty-element}.
+@end defun
+
+@defun sxml:shallow-normalized? obj
+Returns @code{#t} if the given @var{obj} is shallow-normalized SXML element.
+The element itself has to be normalized but its nested elements are not tested.
+@end defun
+
+@defun sxml:normalized? obj
+Returns @code{#t} if the given @var{obj} is normalized SXML element.
+The element itself and all its nested elements have to be normalised.
+@end defun
+
+@defun sxml:shallow-minimized? obj
+Returns @code{#t} if the given @var{obj} is shallow-minimized SXML element.
+The element itself has to be minimised but its nested elements are not tested.
+@end defun
+
+@defun sxml:minimized? obj
+Returns @code{#t} if the given @var{obj} is minimized SXML element.
+The element itself and all its nested elements have to be minimised.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node SXML accessors, SXML modifiers, SXML predicates, sxml.tools - manipulationg SXML structure
+@subsection SXML accessors
+
+@defun sxml:name obj
+Returns a name of a given SXML node.
+It's just an alias of @code{car}, but introduced for the sake of encapsulation.
+@end defun
+
+@defun sxml:element-name obj
+A version of @code{sxml:name}, which returns @code{#f}
+if the given @var{obj} is not a SXML element.
+Otherwise returns its name.
+@end defun
+
+@defun sxml:node-name obj
+Safe version of @code{sxml:name}, which returns @code{#f}
+if the given @var{obj} is not a SXML node.
+Otherwise returns its name.
+@end defun
+
+@defun sxml:ncname obj
+Returns Local Part of Qualified Name (Namespaces in XML production [6])
+for given obj, which is "@code{:}"-separated suffix of its Qualified Name
+If a name of a node given is @code{NCName} (Namespaces in XML production [4]),
+then it is returned as is.
+Please note that while SXML name is a symbol this function returns a string.
+@end defun
+
+@defun sxml:name->ns-id sxml-name
+Returns namespace-id part of given name, or @var{#f} if it's LocalName
+@end defun
+
+@defun sxml:content obj
+Returns the content of given SXML element or nodeset (just text and element
+nodes) representing it as a list of strings and nested elements in document 
+order.  This list is empty if @var{obj} is empty element or empty list.
+@end defun
+
+@defun sxml:content-raw obj
+Returns all the content of normalized SXML element except
+@var{attr-list} and @var{aux-list}.
+Thus it includes @code{PI}, @code{COMMENT} and @code{ENTITY}
+nodes as well as @code{TEXT} and @code{ELEMENT} nodes
+returned by @code{sxml:content}.
+Returns  a list of nodes in document order or empty list if @var{obj} is empty 
+element or empty list.
+This function is faster than @code{sxml:content}.
+@end defun
+
+In SXML normal form, an element is represented by a list as this:
+@example
+  (@var{name} @var{attr-list} @var{aux-list} @var{content} @dots{})
+@end example
+where @var{attr-list} is a list beginning with @code{@@},
+and @var{aux-list} is a list beginning with @code{@@@@}.
+
+In the minimized form,
+@var{Aux-list} can be omitted when it is empty.
+@var{Attr-list} can be omitted when it is empty @emph{and}
+@var{aux-list} is absent.
+
+The following procedures extract @var{attr-list} and @var{aux-list}.
+
+@defun sxml:attr-list-node obj
+Returns @var{attr-list} for a given @var{obj},
+or @code{#f} if it is absent
+@end defun
+
+@defun sxml:attr-as-list obj
+Returns @var{attr-list} wrapped in list,
+or '@code{((@@))} if it is absent and @var{aux-list} is present,
+or '@code{()} if both lists are absent.
+@end defun
+
+@defun sxml:aux-list-node obj
+Returns @var{aux-list} for a given @var{obj},
+or @code{#f} if it is absent.
+@end defun
+
+@defun sxml:aux-as-list obj
+Returns @var{aux-list} wrapped in list,
+or '@code{()} if it is absent.
+@end defun
+
+@defun sxml:attr-list-u obj
+Returns the list of attributes for given element or nodeset.
+Analog of @code{((sxpath '(@@ *)) @var{obj})}.
+Empty list is returned if there is no list of attributes.
+
+The @code{-u} suffix indicates it can be used for non-normalized
+SXML node.  ('u' stands for 'universal').
+@end defun
+
+@defun sxml:aux-list obj
+Returns the list of auxiliary nodes for given element or nodeset.
+Analog of @code{((sxpath '(@@@@ *)) @var{obj})}.
+Empty list is returned if a list of auxiliary nodes is absent.
+@end defun
+
+@defun sxml:aux-list-u obj
+Returns the list of auxiliary nodes for given element or nodeset.
+Analog of @code{((sxpath '(@@@@ *)) @var{obj})}.
+Empty list is returned if a list of auxiliary nodes is absent.
+
+The @code{-u} suffix indicates it can be used for non-normalized
+SXML node.  ('u' stands for 'universal').
+@end defun
+
+@defun sxml:aux-node obj aux-name
+Return the first aux-node with @var{aux-name}
+given in SXML element @var{obj}
+or @code{#f} is such a node is absent.
+Note: it returns just the @emph{first} node found even if multiple nodes are
+present, so it's mostly intended for nodes with unique names .
+@end defun
+
+@defun sxml:aux-nodes obj aux-name
+Return a list of aux-node with @var{aux-name}
+given in SXML element @var{obj} 
+or '@code{()} if such a node is absent.
+@end defun
+
+@defun sxml:attr obj attr-name
+Accessor for an attribute @var{attr-name} of
+given SXML element @var{obj}.
+It returns: 
+the value of the attribute if the attribute is present, or
+@var{#f} if there is no such an attribute in the given element.
+@end defun
+
+@defun sxml:num-attr obj attr-name
+Accessor for a numerical attribute @var{attr-name}
+of given SXML element @var{obj}.
+It returns: 
+a value of the attribute as the attribute as a number if the attribute 
+is present and its value may be converted to number using @code{string->number},
+or @code{#f} if there is no such an attribute in the given element or
+its value can't be converted to a number.
+@end defun
+
+@defun sxml:attr-u obj attr-name
+Accessor for an attribute @var{attr-name}
+of given SXML element @var{obj} which 
+may also be an attributes-list or nodeset (usually content of SXML element).
+
+It returns: 
+the value of the attribute if the attribute is present,
+or @code{#f} if there is no such an attribute in the given element.
+
+The @code{-u} suffix indicates it can be used for non-normalized
+SXML node.  ('u' stands for 'universal').
+@end defun
+
+@defun sxml:ns-list obj
+Returns the list of namespaces for given element.
+Analog of @code{((sxpath '(@@@@ *NAMESPACES* *)) @var{obj})}
+Empty list is returned if there is no list of namespaces.
+@end defun
+
+@defun sxml:ns-id->nodes obj namespace-id
+Returns the list of namespace-assoc's for given @var{namespace-id} in 
+SXML element @var{obj}.
+Analog of @code{((sxpath '(@@@@ *NAMESPACES* namespace-id)) @var{obj})}.
+Empty list is returned if there is no namespace-assoc with
+@var{namespace-id} given.
+@end defun
+
+@defun sxml:ns-id->uri obj namespace-id
+Returns a URI for @var{namespace-id} given, or
+@code{#f} if there is no namespace-assoc with @var{namespace-id} given.
+@end defun
+
+@defun sxml:ns-uri->id obj uri
+Returns a namespace-id for namespace URI given.
+@end defun
+
+@defun sxml:ns-id ns-assoc
+Returns namespace-id for given namespace-assoc list.
+@end defun
+
+@defun sxml:ns-uri ns-assoc
+Returns URI for given namespace-assoc list.
+@end defun
+
+@defun sxml:ns-prefix ns-assoc
+It returns namespace prefix for given namespace-assoc list.
+Original (as in XML document) prefix for namespace-id given 
+has to be strored as the third element in namespace-assoc list 
+if it is different from namespace-id.
+If original prefix is omitted in namespace-assoc then
+namespace-id is used instead.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node SXML modifiers, SXPath auxiliary utilities, SXML accessors, sxml.tools - manipulationg SXML structure
+@subsection SXML modifiers
+
+Constructors and mutators for normalized SXML data.
+These functions are optimized for normalized SXML data.
+They are not applicable to arbitrary non-normalized SXML data.
+
+Most of the functions are provided in two variants:
+@enumerate
+@item
+side-effect intended functions for linear update of given elements.
+Their names are ended with exclamation mark.
+Note that the returned value of this variant is unspecified,
+unless explicitly noted.
+An example: @code{sxml:change-content!}.
+@item
+pure functions without side-effects which return modified elements.
+An example: @code{sxml:change-content}.
+@end enumerate
+
+@defun sxml:change-content obj new-content
+@defunx sxml:change-content! obj new-content
+Change the content of given SXML element to @var{new-content}.
+If @var{new-content} is an empty list then the @var{obj} is transformed.
+to an empty element.
+The resulting SXML element is normalized.
+@end defun
+
+@defun sxml:change-attrlist obj new-attrlist
+@defunx sxml:change-attrlist! obj new-attrlist
+The resulting SXML element is normalized.
+If @var{new-attrlist} is empty,
+the cadr of @var{obj} is @code{(@@)}.
+@end defun
+
+@defun sxml:change-name obj new-name
+@defunx sxml:change-name! obj new-name
+Change a name of SXML element destructively.
+@end defun
+
+@defun sxml:add-attr obj attr
+Returns SXML element @var{obj} with attribute @var{attr} added,
+or @code{#f} if the attribute with given name already exists.
+@var{attr} is @code{(@var{attr-name} @var{attr-value})}.
+Pure functional counterpart to @code{sxml:add-attr!}.
+@end defun
+
+@defun sxml:add-attr! obj attr
+Add an attribute @var{attr} for an element @var{obj}.
+Returns @code{#f} if the attribute with given name already exists. 
+The resulting SXML node is normalized.
+Linear update counterpart to @code{sxml:add-attr}.
+@end defun
+
+@defun sxml:change-attr obj attr
+Returns SXML element @var{obj} with changed value of
+attribute @var{attr}, or @code{#f}
+if where is no attribute with given name. 
+@var{attr} is @code{(@var{attr-name} @var{attr-value})}.
+@end defun
+
+@defun sxml:change-attr! obj attr
+Change value of the attribute for element @var{obj}.
+@var{attr} is @code{(@var{attr-name} @var{attr-value})}.
+Returns @code{#f} if where is no such attribute.
+@end defun
+
+@defun sxml:set-attr obj attr
+@defunx sxml:set-attr! obj attr
+Set attribute @var{attr} of element @var{obj}.
+If there is no such attribute the new one is added.
+@end defun
+
+@defun sxml:add-aux obj aux-node
+Returns SXML element @var{obj}
+with an auxiliary node @var{aux-node} added.
+@end defun
+
+@defun sxml:add-aux! obj aux-node
+Add an auxiliary node @var{aux-node} for an element @var{obj}.
+@end defun
+
+@defun sxml:squeeze obj
+@defunx sxml:squeeze! obj
+Eliminates empty lists of attributes and aux-lists for given SXML element 
+@var{obj} and its descendants ("minimize" it).
+Returns a minimized and normalized SXML element.
+@end defun
+
+@defun sxml:clean obj
+Eliminates empty lists of attributes and all aux-lists for given SXML element 
+@var{obj} and its descendants.
+Returns a minimized and normalized SXML element.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node SXPath auxiliary utilities, SXML to markup conversion, SXML modifiers, sxml.tools - manipulationg SXML structure
+@subsection SXPath auxiliary utilities
+
+These are convenience utilities to extend SXPath functionalities.
+
+@defun sxml:add-parents obj . top-ptr
+Returns an SXML nodeset with a 'parent pointer' added.
+A parent pointer is an aux node of the form @code{(*PARENT* @var{thunk})},
+where @var{thunk} returns the parent element.
+@end defun
+
+@defun sxml:node-parent rootnode
+Returns a fast 'node-parent' function, i.e.
+a function of one argument - SXML element - which returns its parent
+node using @code{*PARENT*} pointer in aux-list.
+'@code{*TOP-PTR*} may be used as a pointer to root node.
+It return an empty list when applyed to root node.
+@end defun
+
+@defun sxml:lookup id index
+Lookup an element using its ID.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node SXML to markup conversion,  , SXPath auxiliary utilities, sxml.tools - manipulationg SXML structure
+@subsection SXML to markup conversion
+
+Procedures to generate XML or HTML marked up text from SXML.
+
+@defun sxml:clean-feed . fragments
+Filter the 'fragments'.
+The fragments are a list of strings, characters,
+numbers, thunks, @code{#f} -- and other fragments.
+The function traverses the tree depth-first, and returns a list
+of strings, characters and executed thunks,
+and ignores @code{#f} and '@code{()}.
+
+If all the meaningful fragments are strings, then
+@var{(apply string-append ... )}
+to a result of this function will return its string-value.
+
+It may be considered as a variant of Oleg Kiselyov's
+@code{SRV:send-reply}:
+While @code{SRV:send-reply} displays fragments, this function returns the list 
+of meaningful fragments and filter out the garbage.
+@end defun
+
+@defun sxml:attr->xml attr
+Creates the XML markup for attributes.
+@end defun
+
+@defun sxml:string->xml string
+Return a string or a list of strings where all the occurences of 
+characters @code{<}, @code{>},
+@code{&}, @code{"}, or @code{'} in a given string are
+replaced by corresponding 
+character entity references. See also @code{sxml:string->html}.
+@end defun
+
+@defun sxml:sxml->xml tree
+A version of dispatch-node specialized and optimized for SXML->XML
+transformation.
+@end defun
+
+@defun sxml:attr->html attr
+Creates the HTML markup for attributes.
+@end defun
+
+@defun sxml:string->html string
+Given a string, check to make sure it does not contain characters
+@var{<}, @var{>}, @var{&},
+@var{"} that require encoding.
+See also @code{html-escape-string}
+in @ref{text.html-lite - Simple HTML document construction}.
+@end defun
+
+@defun sxml:non-terminated-html-tag? tag
+This predicate yields @code{#t} for "non-terminated" HTML 4.0 tags.
+@end defun
+
+@defun sxml:sxml->html tree
+A version of dispatch-node specialized and optimized for SXML->HTML
+transformation.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node text.csv - CSV tables, text.diff - Calculate difference of text streams, sxml.tools - manipulationg SXML structure, Library modules - Utilities
 @section @code{text.csv} - CSV tables
 @c NODE text.csv - CSVテーブル, @code{text.csv} - CSVテーブル
 
