@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: object.scm,v 1.38 2002-12-06 05:29:36 shirok Exp $
+;;;  $Id: object.scm,v 1.39 2002-12-07 03:20:55 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -358,11 +358,14 @@
 (define (slot-push! obj slot value)
   (slot-set! obj slot (cons value (slot-ref obj slot))))
 
+;; default unbound slot and missing slot handlers.
+;; we avoid printing object itself in the error message, for it might
+;; cause an infinite loop (via write-object method).
 (define-method slot-unbound ((class <class>) obj slot)
-  (errorf "slot ~s of object ~s is unbound" slot obj))
+  (errorf "slot ~s of object of class ~a is unbound" slot class))
 
 (define-method slot-missing ((class <class>) obj slot . value)
-  (errorf "object ~s doesn't have such slot: ~s" obj slot))
+  (errorf "object of class ~s doesn't have such slot: ~s" class slot))
 
 (define (slot-exists? obj slot)
   (slot-exists-using-class? (class-of obj) obj slot))

@@ -11,6 +11,9 @@
 	* lib/util/digest.scm, lib/rfc/hmac.scm, ext/digest/* : renamed
 	  *-update and *-final for *-update! and *-final!, respectively.
 	* lib/srfi-31.scm : added srfi-31.
+	* src/object.scm : fixed the default method of slot-unbound and
+	  slot-missin to avoid infinite loop in formatting the error message
+	  via write-object.
 
 2002-12-05  Shiro Kawai  <shiro@acm.org>
 
