@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.370 2003-02-25 08:19:42 makotos Exp $
+@c $Id: gauche-ref.texi,v 1.371 2003-02-27 06:57:50 makotos Exp $
 
 @c module and class index
 @defcodeindex md
@@ -22821,11 +22821,20 @@ as well, by providing alternative library definitions.
 
 @deftp {Module} srfi-1
 @mdindex srfi-1
+@c EN
 SRFI-1 is a rich collection of list manipulation library
 (@ref{srfi-1,[SRFI-1],SRFI-1}).
 It is available by saying @code{(use srfi-1)}.
 The implementation is based on Olin Shivers's reference implementation.
 I splitted it into number of subfiles that will be autoloaded on demand.
+@c JP
+SRFI-1 は、リスト操作ライブラリのリッチなコレクションです
+(@ref{srfi-1,[SRFI-1],SRFI-1})。
+このライブラリを使うには、@code{(use srfi-1)} として下さい。
+Olin Shivers氏のリファレンス実装に基づいて実装されています。
+要求されたときに自動的にロードされるいくつかのサブファイルに分割して
+あります。
+@c COMMON
 @end deftp
 
 @menu
@@ -23313,60 +23322,108 @@ Partial application versions of @code{filter}, @code{remove} and
 @subsection List searching
 
 @defun find pred clist
+@c EN
 [SRFI-1] Applies @var{pred} for each element of @var{clist}, from 
 left to right, and returns the first element that @var{pred} returns
 true on.
+@c JP
+[SRFI-1] @var{clist} の各要素に対して左から右に @var{pred} を適用し、
+@var{pred} が真を返す最初の要素を返します。
+@c COMMON
 @end defun
 
 @defun find-tail pred clist
+@c EN
 [SRFI-1]
 Applies @var{pred} for each element of @var{clist}, from left to right,
 and when @var{pred} returns a true value, returns the pair whose car
 is the element.
+@c JP
+[SRFI-1]
+@var{clist} の各要素に対して左から右に @var{pred} を適用し、@var{pred} が
+真を返す場合、その car がその要素であるペアを返します。
+@c COMMON
 @end defun
 
 @defun take-while pred clist
 @defunx take-while! pred list
+@c EN
 [SRFI-1]
 Returns the longest initial prefix of @var{clist} whose elements all
 satisfy @var{pred}.
+@c JP
+[SRFI-1]
+@var{clist} の最初から、@var{pred} を満足する限りの最長部分要素を返します。
+@c COMMON
 @end defun
 
 @defun drop-while pred clist
+@c EN
 [SRFI-1]
 Drops the longest initial prefix of @var{clist} whose elements all
 satisfy @var{pred}, and returns the rest.
+@c JP
+[SRFI-1]
+@var{clist} の最初から、@var{pred} を満足する限りの最長部分要素を削除し、
+残りを返します。
+@c COMMON
 @end defun
 
 @defun span pred clist
 @defunx span! pred list
 @defunx break pred clist
 @defunx break! pred list
+@c EN
 [SRFI-1]
 @code{span} is equivalent to
 @code{(values (take-while pred clist) (drop-while pred clist))}.
 @code{break} inverts the sense of @var{pred}.
+@c JP
+[SRFI-1]
+@code{span} は @code{(values (take-while pred clist) (drop-while pred clist))} を
+等価です。@code{break} は @var{pred} の意味を反転します。
+@c COMMON
 @end defun
 
 @defun any pred clist1 clist2 @dots{}
+@c EN
 [SRFI-1]
 Applies @var{pred} across each element of @var{clist}s, and
 returns true if any application of @var{pred} returns true.
 The returned value is the true value @var{pred} returned.
+@c JP
+[SRFI-1]
+@var{clist} の各要素に @var{pred} を適用し、その @var{pred} の
+いずれかの適用が真を返した場合、真を返します。
+戻り値は、@var{pred} が返した真の値です。
+@c COMMON
 @end defun
 
 @defun every pred clist1 clist2 @dots{}
+@c EN
 [SRFI-1]
 Applies @var{pred} across each element of @var{clist}s, and
 returns true if every application of @var{pred} returns true.
 If all applications returns a true value until one of the lists
 is exhausted, @code{every} returns the value the last @var{pred}
 returned.
+@c JP
+[SRFI-1]
+@var{clist} の各要素に @var{pred} を適用し、@var{pred} の全ての
+適用が真を返した場合、真を返します。リストのうちの1つが全て
+消費されるまでの全ての適用が真を返す場合、@code{every} は最後の
+@var{pred} が返した値になります。
+@c COMMON
 @end defun
 
 @defun list-index pred clist1 clist2 @dots{}
+@c EN
 [SRFI-1]
 Returns the index of the leftmost element that satisfies @var{pred}.
+@c JP
+[SRFI-1]
+@var{pred} を満足する最も左の要素のインデックスを返します。
+@c COMMON
 @end defun
 
 @defun member$ item
@@ -23374,8 +23431,13 @@ Returns the index of the leftmost element that satisfies @var{pred}.
 @defunx find-tail$ pred
 @defunx any$ pred
 @defunx every$ pred
+@c EN
 Partial application version of @code{member}, @code{find}, @code{find-tail},
 @code{any} and @code{every}.
+@c JP
+@code{member}、@code{find}、@code{find-tail}、@code{any}、@code{every}の部分的適用
+バージョンです。
+@c COMMON
 @end defun
 
 @node SRFI-1 Deletion, SRFI-1 Association lists, SRFI-1 Searching, srfi-1 - List library
