@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.179 2002-04-25 22:22:04 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.180 2002-04-26 09:05:43 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3179,6 +3179,7 @@ symbols.
 * Regular expression::          
 * Vectors::                     
 * Hashtables::                  
+* Weak pointers::               
 * Control features::            
 * Exceptions::                  
 * Eval::                        
@@ -5852,9 +5853,9 @@ Sets @var{k}-th element of the vector @var{vector} to @var{obj}.
 It is an error if @var{k} is negative or greater than or equal to the
 length of @var{vector}.
 @c JP
-@c COMMON
 ベクタ@var{vector}の@var{k}番目の要素を@var{obj}に変更します。
 @var{k}が負数であったりベクタの長さより大きい場合はエラーとなります。
+@c COMMON
 @end defun
 
 @defun vector->list vector
@@ -5885,7 +5886,7 @@ Sets all elements in a vector @var{vector} to @var{fill}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Hashtables, Control features, Vectors, Core library
+@node Hashtables, Weak pointers, Vectors, Core library
 @section Hashtables
 @c NODE ハッシュテーブル
 
@@ -6060,9 +6061,88 @@ Returns all the keys or values of hash table @var{hash} in a list,
 @c @defun hash-table-stat hash
 @c @end defun
 
+@c ----------------------------------------------------------------------
+@node Weak pointers, Control features, Hashtables, Core library
+@section Weak pointers
+@c NODE Weak pointer
+
+@c EN
+A weak pointer is a reference to an object that doesn't prevent
+the object from being garbage-collected.
+Gauche provides weak pointers as a @emph{weak vector} object.
+A weak vector is like a vector of objects, except each object
+can be garbage collected if it is not referenced from objects
+other than weak vectors.   If the object is collected, the
+entry of the weak vector is replaced for @code{#f.}
+@c JP
+Weak pointerとは、それが参照しているオブジェクトがガベージコレクトされることを
+許すようなポインタです。
+Gaucheは@emph{weak vector}オブジェクトによってweak pointerの機能を提供します。
+Weak vectorは通常のベクタに似ていますが、要素のオブジェクトがweak vector以外から
+参照されていない場合、オブジェクトはガベージコレクトされ、weak vectorの該当するエントリは
+@code{#f}で置き換えられます。
+@c COMMON
+@example
+gosh> (define v (make-weak-vector 1))
+v
+gosh> (weak-vector-ref v 0)
+#f
+gosh> (weak-vector-set! v 0 (cons 1 1))
+#<undef>
+gosh> (weak-vector-ref v 0)
+(1 . 1)
+gosh> (gc)
+#<undef>
+gosh> (gc)
+#<undef>
+gosh> (weak-vector-ref v 0)
+#f
+@end example
+
+@defun make-weak-vector size
+@c EN
+Creates and returns a weak vector of size @var{size}.
+@c JP
+大きさ@var{size}のweak vectorを作成して返します。
+@c COMMON
+@end defun
+
+@defun weak-vector-ref wvec k &optioal fallback
+@c EN
+Returns @var{k}-th element of a weak vector @var{wvec}.
+
+By default, @code{weak-vector-ref} signals an error if @var{k} is
+negative, or greater than or equal to the size of @var{wvec}.
+However, if an optional argument @var{fallback} is given,
+it is returned for such case.
+
+With @code{gauche.sequence} module,
+you can also use a method @code{ref}.
+@c JP
+Weak vector @var{wvec}の@var{k}番目の要素を返します。
+
+@code{weak-vector-ref}は@var{k}が負の値であったりベクタの長さより
+大きかったりした場合はエラーを通知します。但し、省略可能な引数@var{fallback}
+が与えられている場合はその値が返されます。
+
+@code{gauche.sequence}モジュールをロードしていれば、
+メソッド@code{ref}も同じ目的で使えます。
+@c COMMON
+@end defun
+
+@defun weak-vector-set! wvec k obj
+@c EN
+Sets @var{k}-th element of the weak vector @var{wvec} to @var{obj}.
+It is an error if @var{k} is negative or greater than or equal to the
+size of @var{wec}.
+@c JP
+Weak vector @var{wvec}の@var{k}番目の要素を@var{obj}に変更します。
+@var{k}が負数であったりベクタの長さより大きい場合はエラーとなります。
+@c COMMON
+@end defun
 
 @c ----------------------------------------------------------------------
-@node Control features, Exceptions, Hashtables, Core library
+@node Control features, Exceptions, Weak pointers, Core library
 @section Control features
 @c NODE 制御
 
@@ -9970,6 +10050,7 @@ for the usage of metaclass.
 * NDBM interface::              
 * Original DBM interface::      
 * Filtering file content::      
+* Filesystem utilities::        
 * Character code conversion::   
 * Collection framework::        
 * Low-level file operations::   
@@ -10718,7 +10799,7 @@ APIs.
 @c @section @code{dbm.pdbm} - Pseudo DBM interface
 
 @c ----------------------------------------------------------------------
-@node Filtering file content, Character code conversion, Original DBM interface, Library modules
+@node Filtering file content, Filesystem utilities, Original DBM interface, Library modules
 @section @code{file.filter} - Filtering file content
 @c NODE ファイルのフィルタ, @code{file.filter} - ファイルのフィルタ
 
@@ -10857,7 +10938,7 @@ By default, the output (or the temporary file when
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Filesystem utilities
+@node Filesystem utilities, Character code conversion, Filtering file content, Library modules
 @section @code{file.util} - Filesystem utilities
 @c NODE ファイルシステムユーティリティ, @code{file.util} - ファイルシステムユーティリティ
 
@@ -10867,7 +10948,7 @@ Provides convenient utilities handling files and directories.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Character code conversion, Collection framework, Filtering file content, Library modules
+@node Character code conversion, Collection framework, Filesystem utilities, Library modules
 @section @code{gauche.charconv} - Character Code Conversion
 @c NODE 文字コード変換, @code{gauche.charconv} - 文字コード変換
 
