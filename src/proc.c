@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: proc.c,v 1.12 2001-03-19 11:07:14 shiro Exp $
+ *  $Id: proc.c,v 1.13 2001-03-20 07:10:42 shiro Exp $
  */
 
 #include "gauche.h"
@@ -56,6 +56,7 @@ ScmObj Scm_MakeClosure(int required, int optional,
     SCM_SET_CLASS(c, SCM_CLASS_CLOSURE);
     c->common.required = required;
     c->common.optional = optional;
+    c->common.generic = FALSE;
     c->common.info = info;
     c->code = code;
     c->env = env;
@@ -80,6 +81,7 @@ ScmObj Scm_MakeSubr(ScmObj (*func)(ScmObj*, int, void*),
     SCM_SET_CLASS(s, SCM_CLASS_SUBR);
     s->common.required = required;
     s->common.optional = optional;
+    s->common.generic = FALSE;
     s->common.info = info;
     s->func = func;
     s->inliner = NULL;
