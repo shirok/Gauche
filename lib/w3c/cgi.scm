@@ -12,13 +12,13 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: cgi.scm,v 1.2 2001-09-21 08:06:18 shirok Exp $
+;;;  $Id: cgi.scm,v 1.1 2001-09-21 09:32:17 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CG.
 ;; The most reliable document I found is in <http://CGI-Spec.Golux.Com/>
 
-(define-module cgi
+(define-module w3c.cgi
   (use srfi-1)
   (use srfi-13)
   (use rfc.uri)
@@ -26,7 +26,7 @@
           cgi-parse-parameters
           cgi-get-parameter)
   )
-(select-module cgi)
+(select-module w3c.cgi)
 
 (define (cgi-get-input)
   (let ((method (sys-getenv "REQUEST_METHOD")))
@@ -76,4 +76,4 @@
                     (convert (string-join (cdr p) " ")))))
           (else (if list? (list default) default)))))
 
-(provide "cgi")
+(provide "w3c/cgi")
