@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.80 2001-10-04 11:06:20 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.81 2001-10-04 11:13:00 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -1908,7 +1908,7 @@ Return value is undefined.
 @subsection String Comparison
 
 @defun string=? string1 string2
-@defunx string-ci=? string1 string2
+@defunx string-ci@code{=}? string1 string2
 [R5RS]
 @end defun
 
@@ -2892,7 +2892,7 @@ returns EOF.   Actually @var{reader} can be any thunk; it doesn't
 need to be related to input port.
 
 Suppose @var{reader} returns a series of items
-@{X0, X1, @dots{}, Xn}.
+@{X0, X1, @dots{}, Xn@}.
 @code{port-fold} returns the following:
 @example
 (fn Xn (fn Xn-1 @dots{} (fn X0 knil)))
