@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bignum.c,v 1.2 2001-02-19 14:06:09 shiro Exp $
+ *  $Id: bignum.c,v 1.3 2001-02-20 10:32:23 shiro Exp $
  */
 
 #include <math.h>
@@ -38,6 +38,9 @@
 #define LO(word)           ((word) & LOMASK)
 #define HI(word)           (((word) >> HALF_BITS)&LOMASK)
 
+static ScmBignum *bignum_rshift(ScmBignum *br, ScmBignum *bx, int amount);
+static ScmBignum *bignum_lshift(ScmBignum *br, ScmBignum *bx, int amount);
+
 /*---------------------------------------------------------------------
  * Constructor
  */
@@ -47,6 +50,13 @@ static ScmBignum *make_bignum(int size)
                                    sizeof(ScmBignum)+(size-1)*sizeof(long));
     SCM_SET_CLASS(b, SCM_CLASS_INTEGER);
     b->size = size;
+    return b;
+}
+
+static ScmBignum *bignum_clear(ScmBignum *b)
+{
+    int i;
+    for (i=0; i<b->size; i++) b->values[i] = 0;
     return b;
 }
 
@@ -70,6 +80,49 @@ ScmObj Scm_MakeBignumFromSI(long val)
     return SCM_OBJ(b);
 }
 
+ScmObj Scm_MakeBignumFromUI(u_long val)
+{
+    ScmBignum *b = make_bignum(1);
+    b->sign = 1;
+    b->values[0] = val;
+    return SCM_OBJ(b);
+}
+
+ScmObj Scm_MakeBignumFromDouble(double val)
+{
+    double absval, fraction, fbit;
+    int exponent, i, nwords;
+    u_long lval = 0, mask;
+    ScmBignum *b;
+
+    if (val >= LONG_MIN && val <= LONG_MAX) {
+        return Scm_MakeBignumFromSI((long)val);
+    }
+    /* NB: strangely, in all documents I saw, the behavior of frexp()
+       when it is given a negative floating point number is not documented
+       explicitly. */
+    absval = fabs(val);
+    fraction = frexp(absval, &exponent);
+    fprintf(stderr, "fraction=%f, exponent=%d, ", fraction, exponent);
+    for (mask = (1L<<(WORD_BITS-1)), fbit = 0.5;
+         mask != 0 && fbit > 0.0 && fraction > 0;
+         mask>>=1, fbit /= 2) {
+        if (fraction >= fbit) {
+            lval |= mask;
+            fraction -= fbit;
+        }
+    }
+    nwords = (exponent + WORD_BITS - 1)/WORD_BITS;
+    fprintf(stderr, "nwords=%d, lval=%08x\n", nwords, lval);
+    b = make_bignum(nwords);
+    bignum_clear(b);
+    b->sign = (val < 0)? -1 : 1;
+    b->values[0] = lval;
+    SCM_ASSERT(exponent >= WORD_BITS);
+    bignum_lshift(b, b, exponent - WORD_BITS);
+    return Scm_NormalizeBignum(b);
+}
+
 ScmObj Scm_BignumCopy(ScmBignum *b)
 {
     int i;
@@ -82,13 +135,6 @@ ScmObj Scm_BignumCopy(ScmBignum *b)
 /*-----------------------------------------------------------------------
  * Conversion
  */
-
-static ScmBignum *bignum_clear(ScmBignum *b)
-{
-    int i;
-    for (i=0; i<b->size; i++) b->values[i] = 0;
-    return b;
-}
 
 ScmObj Scm_NormalizeBignum(ScmBignum *b)
 {
@@ -431,19 +477,39 @@ static ScmBignum *bignum_rshift(ScmBignum *br, ScmBignum *bx, int amount)
    has enough size.  br and bx can be the same object. */
 static ScmBignum *bignum_lshift(ScmBignum *br, ScmBignum *bx, int amount)
 {
-    int nwords = amount / WORD_BITS;
-    int nbits = amount % WORD_BITS;
-    int i;
-    u_long prev = 0, x;
-    u_long mask = (1L<<nbits)-1;
+    int nwords, nbits, i;
+    u_long prev = 0, x, mask;
     
-    for (i = bx->size-1; i >= 0; i++) {
-        x = (bx->values[i] << nbits) | prev;
-        prev = (bx->values[i] >> (WORD_BITS - nbits)) & mask;
-        br->values[i+nwords] = x;
+    if (amount == 0) {
+        if (br != bx) {
+            /* copy it */
+            br->size = bx->size;
+        }
+        return br;
     }
-    br->size = bx->size + nwords;
-    br->sign = bx->sign;
+
+    nwords = amount / WORD_BITS;
+    nbits = amount % WORD_BITS;
+    if (nbits == 0) {
+        /* short path */
+        for (i = bx->size-1; i>=0; i--) {
+            if (br->size > i+nwords) br->values[i+nwords] = bx->values[i];
+        }
+        for (i = nwords-1; i>=0; i--) br->values[i] = 0;
+    } else {
+        mask = (1L<<nbits)-1;    
+        for (i = bx->size-1; i >= 0; i--) {
+            x = ((bx->values[i] >> (WORD_BITS - nbits)) & mask) | prev;
+            prev = (bx->values[i] << nbits);
+            if (br->size > i+nwords) br->values[i+nwords+1] = x;
+        }
+        br->values[nwords] = prev;
+        for (i = nwords-1; i>=0; i--) br->values[i] = 0;
+    }
+    if (br != bx) {
+        br->size = bx->size + nwords;
+        br->sign = bx->sign;
+    }
     return br;
 }
 
