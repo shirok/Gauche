@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: ndbm.stub,v 1.12 2002-02-10 05:40:05 shirok Exp $
+;;  $Id: ndbm.stub,v 1.13 2002-07-22 18:37:20 shirok Exp $
 ;;
 
 "
@@ -179,13 +179,13 @@
    dbm_clearerr(ndbm->dbf);
    SCM_RETURN(SCM_UNDEFINED);")
 
-(define-symbol |DBM_INSERT| "sym_DBM_INSERT" "Scm_MakeInteger(DBM_INSERT)")
-(define-symbol |DBM_REPLACE| "sym_DBM_REPLACE" "Scm_MakeInteger(DBM_REPLACE)")
-(define-symbol |O_RDONLY| "sym_O_RDONLY" "Scm_MakeInteger(O_RDONLY)")
-(define-symbol |O_WRONLY| "sym_O_WRONLY" "Scm_MakeInteger(O_WRONLY)")
-(define-symbol |O_RDWR| "sym_O_RDWR" "Scm_MakeInteger(O_RDWR)")
-(define-symbol |O_CREAT| "sym_O_CREAT" "Scm_MakeInteger(O_CREAT)")
-(define-symbol |O_TRUNC| "sym_O_TRUNC" "Scm_MakeInteger(O_TRUNC)")
+(define-enum DBM_INSERT)
+(define-enum DBM_REPLACE)
+(define-enum O_RDONLY)
+(define-enum O_WRONLY)
+(define-enum O_RDWR)
+(define-enum O_CREAT)
+(define-enum O_TRUNC)
 
 ;; Local variables:
 ;; mode: scheme

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: termiolib.stub,v 1.5 2002-04-30 01:52:32 shirok Exp $
+;;; $Id: termiolib.stub,v 1.6 2002-07-22 18:37:20 shirok Exp $
 ;;;
 
 "#include \"termios.h\""
@@ -23,33 +23,33 @@
 (define-type "sys-termios" sys-termios?
   "ScmSysTermios*"  "SCM_SYS_TERMIOS_P" "SCM_SYS_TERMIOS")
 
-(define-symbol |TCSANOW| "termios_tcsanow" "Scm_MakeIntegerFromUI(TCSANOW)")
-(define-symbol |TCSADRAIN| "termios_tcsadrain" "Scm_MakeIntegerFromUI(TCSADRAIN)")
-(define-symbol |TCSAFLUSH| "termios_tcsaflush" "Scm_MakeIntegerFromUI(TCSAFLUSH)")
-(define-symbol |TCIFLUSH| "termios_tciflush" "Scm_MakeIntegerFromUI(TCIFLUSH)")
-(define-symbol |TCOFLUSH| "termios_tcoflush" "Scm_MakeIntegerFromUI(TCOFLUSH)")
-(define-symbol |TCIOFLUSH| "termios_tcioflush" "Scm_MakeIntegerFromUI(TCIOFLUSH)")
-(define-symbol |TCOOFF| "termios_tcooff" "Scm_MakeIntegerFromUI(TCOOFF)")
-(define-symbol |TCOON|  "termios_tcoon"  "Scm_MakeIntegerFromUI(TCOON)")
-(define-symbol |TCIOFF| "termios_tcioff" "Scm_MakeIntegerFromUI(TCIOFF)")
-(define-symbol |TCION|  "termios_tcion"  "Scm_MakeIntegerFromUI(TCION)")
+(define-enum TCSANOW)
+(define-enum TCSADRAIN)
+(define-enum TCSAFLUSH)
+(define-enum TCIFLUSH)
+(define-enum TCOFLUSH)
+(define-enum TCIOFLUSH)
+(define-enum TCOOFF)
+(define-enum TCOON)
+(define-enum TCIOFF)
+(define-enum TCION)
 
-(define-symbol |B0|     "termios_b0"     "Scm_MakeIntegerFromUI(B0)")
-(define-symbol |B50|    "termios_b50"    "Scm_MakeIntegerFromUI(B50)")
-(define-symbol |B75|    "termios_b75"    "Scm_MakeIntegerFromUI(B75)")
-(define-symbol |B110|   "termios_b110"   "Scm_MakeIntegerFromUI(B110)")
-(define-symbol |B134|   "termios_b134"   "Scm_MakeIntegerFromUI(B134)")
-(define-symbol |B150|   "termios_b150"   "Scm_MakeIntegerFromUI(B150)")
-(define-symbol |B200|   "termios_b200"   "Scm_MakeIntegerFromUI(B200)")
-(define-symbol |B300|   "termios_b300"   "Scm_MakeIntegerFromUI(B300)")
-(define-symbol |B600|   "termios_b600"   "Scm_MakeIntegerFromUI(B600)")
-(define-symbol |B1200|  "termios_b1200"  "Scm_MakeIntegerFromUI(B1200)")
-(define-symbol |B1800|  "termios_b1800"  "Scm_MakeIntegerFromUI(B1800)")
-(define-symbol |B2400|  "termios_b2400"  "Scm_MakeIntegerFromUI(B2400)")
-(define-symbol |B4800|  "termios_b4800"  "Scm_MakeIntegerFromUI(B4800)")
-(define-symbol |B9600|  "termios_b9600"  "Scm_MakeIntegerFromUI(B9600)")
-(define-symbol |B19200| "termios_b19200" "Scm_MakeIntegerFromUI(B19200)")
-(define-symbol |B38400| "termios_b38400" "Scm_MakeIntegerFromUI(B38400)")
+(define-enum B0)
+(define-enum B50)
+(define-enum B75)
+(define-enum B110)
+(define-enum B134)
+(define-enum B150)
+(define-enum B200)
+(define-enum B300)
+(define-enum B600)
+(define-enum B1200)
+(define-enum B1800)
+(define-enum B2400)
+(define-enum B4800)
+(define-enum B9600)
+(define-enum B19200)
+(define-enum B38400)
 
 (define-cproc sys-tcgetattr (port-or-fd)
   "  int fd = Scm_GetPortFd(port_or_fd, TRUE);

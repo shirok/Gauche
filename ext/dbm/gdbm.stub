@@ -12,7 +12,7 @@
 ;;  warranty.  In no circumstances the author(s) shall be liable
 ;;  for any damages arising out of the use of this software.
 ;;
-;;  $Id: gdbm.stub,v 1.11 2002-02-10 05:40:05 shirok Exp $
+;;  $Id: gdbm.stub,v 1.12 2002-07-22 18:37:19 shirok Exp $
 ;;
 
 "
@@ -220,20 +220,20 @@
   gdbm_errno = 0;
   SCM_RETURN(SCM_MAKE_INT(r));")
 
-(define-symbol |GDBM_READER| "sym_GDBM_READER" "Scm_MakeInteger(GDBM_READER)")
-(define-symbol |GDBM_WRITER| "sym_GDBM_WRITER" "Scm_MakeInteger(GDBM_WRITER)")
-(define-symbol |GDBM_WRCREAT| "sym_GDBM_WRCREAT" "Scm_MakeInteger(GDBM_WRCREAT)")
-(define-symbol |GDBM_NEWDB| "sym_GDBM_NEWDB" "Scm_MakeInteger(GDBM_NEWDB)")
-(define-symbol |GDBM_FAST| "sym_GDBM_FAST" "Scm_MakeInteger(GDBM_FAST)")
-(define-symbol |GDBM_SYNC| "sym_GDBM_SYNC" "Scm_MakeInteger(GDBM_SYNC)")
-(define-symbol |GDBM_NOLOCK| "sym_GDBM_NOLOCK" "Scm_MakeInteger(GDBM_NOLOCK)")
-(define-symbol |GDBM_INSERT| "sym_GDBM_INSERT" "Scm_MakeInteger(GDBM_INSERT)")
-(define-symbol |GDBM_REPLACE| "sym_GDBM_REPLACE" "Scm_MakeInteger(GDBM_REPLACE)")
-(define-symbol |GDBM_CACHESIZE| "sym_GDBM_CACHESIZE" "Scm_MakeInteger(GDBM_CACHESIZE)")
-(define-symbol |GDBM_FASTMODE| "sym_GDBM_FASTMODE" "Scm_MakeInteger(GDBM_FASTMODE)")
-(define-symbol |GDBM_SYNCMODE| "sym_GDBM_SYNCMODE" "Scm_MakeInteger(GDBM_SYNCMODE)")
-(define-symbol |GDBM_CENTFREE| "sym_GDBM_CENTFREE" "Scm_MakeInteger(GDBM_CENTFREE)")
-(define-symbol |GDBM_COALESCEBLKS| "sym_GDBM_COALESCEBLKS" "Scm_MakeInteger(GDBM_COALESCEBLKS)")
+(define-enum GDBM_READER)
+(define-enum GDBM_WRITER)
+(define-enum GDBM_WRCREAT)
+(define-enum GDBM_NEWDB)
+(define-enum GDBM_FAST)
+(define-enum GDBM_SYNC)
+(define-enum GDBM_NOLOCK)
+(define-enum GDBM_INSERT)
+(define-enum GDBM_REPLACE)
+(define-enum GDBM_CACHESIZE)
+(define-enum GDBM_FASTMODE)
+(define-enum GDBM_SYNCMODE)
+(define-enum GDBM_CENTFREE)
+(define-enum GDBM_COALESCEBLKS)
 
 ;; Local variables:
 ;; mode: scheme

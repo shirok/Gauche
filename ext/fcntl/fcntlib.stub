@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: fcntlib.stub,v 1.2 2001-09-16 08:01:16 shirok Exp $
+;;; $Id: fcntlib.stub,v 1.3 2002-07-22 18:37:20 shirok Exp $
 ;;;
 
 "#include \"fcntl.h\""
@@ -20,31 +20,31 @@
 (define-type "sys-fcntl" sys-fcntl?
   "ScmSysFcntl" "SCM_SYS_FCNTL_P" "SCM_SYS_FCNTL")
 
-(define-symbol |F_DUPFD| "fcntl_dupfd" "Scm_MakeInteger(F_DUPFD)")
-(define-symbol |F_GETFD| "fcntl_getfd" "Scm_MakeInteger(F_GETFD)")
-(define-symbol |F_SETFD| "fcntl_setfd" "Scm_MakeInteger(F_SETFD)")
-(define-symbol |F_GETFL| "fcntl_getfl" "Scm_MakeInteger(F_GETFL)")
-(define-symbol |F_SETFL| "fcntl_setfl" "Scm_MakeInteger(F_SETFL)")
-(define-symbol |F_GETLK| "fcntl_getlk" "Scm_MakeInteger(F_GETLK)")
-(define-symbol |F_SETLK| "fcntl_setlk" "Scm_MakeInteger(F_SETLK)")
-(define-symbol |F_SETLKW| "fcntl_setlkw" "Scm_MakeInteger(F_SETLKW)")
+(define-enum F_DUPFD)
+(define-enum F_GETFD)
+(define-enum F_SETFD)
+(define-enum F_GETFL)
+(define-enum F_SETFL)
+(define-enum F_GETLK)
+(define-enum F_SETLK)
+(define-enum F_SETLKW)
 
-(define-symbol |F_RDLCK| "fcntl_rdlck" "Scm_MakeInteger(F_RDLCK)")
-(define-symbol |F_WRLCK| "fcntl_wrlck" "Scm_MakeInteger(F_WRLCK)")
-(define-symbol |F_UNLCK| "fcntl_unlck" "Scm_MakeInteger(F_UNLCK)")
+(define-enum F_RDLCK)
+(define-enum F_WRLCK)
+(define-enum F_UNLCK)
 
-(define-symbol |FD_CLOEXEC| "fcntl_cloexec" "Scm_MakeInteger(FD_CLOEXEC)")
+(define-enum FD_CLOEXEC)
 
-(define-symbol |O_ACCMODE| "fcntl_accmode" "Scm_MakeInteger(O_ACCMODE)")
-(define-symbol |O_RDONLY| "fcntl_rdonly" "Scm_MakeInteger(O_RDONLY)")
-(define-symbol |O_WRONLY| "fcntl_wronly" "Scm_MakeInteger(O_WRONLY)")
-(define-symbol |O_RDWR| "fcntl_rdwr" "Scm_MakeInteger(O_RDWR)")
-(define-symbol |O_APPEND| "fcntl_append" "Scm_MakeInteger(O_APPEND)")
-(define-symbol |O_CREAT| "fcntl_creat" "Scm_MakeInteger(O_CREAT)")
-(define-symbol |O_EXCL| "fcntl_excl" "Scm_MakeInteger(O_EXCL)")
-(define-symbol |O_NOCTTY| "fcntl_noctty" "Scm_MakeInteger(O_NOCTTY)")
-(define-symbol |O_NONBLOCK| "fcntl_nonblock" "Scm_MakeInteger(O_NONBLOCK)")
-(define-symbol |O_TRUNC| "fcntl_trunc" "Scm_MakeInteger(O_TRUNC)")
+(define-enum O_ACCMODE)
+(define-enum O_RDONLY)
+(define-enum O_WRONLY)
+(define-enum O_RDWR)
+(define-enum O_APPEND)
+(define-enum O_CREAT)
+(define-enum O_EXCL)
+(define-enum O_NOCTTY)
+(define-enum O_NONBLOCK)
+(define-enum O_TRUNC)
 
 (define-cproc sys-fcntl (port-or-fd op &optional arg)
   (assert (small-integer? op))

@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.78 2002-07-17 07:17:55 shirok Exp $
+;;; $Id: syslib.stub,v 1.79 2002-07-22 18:37:20 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -101,12 +101,12 @@
 ;;---------------------------------------------------------------------
 ;; locale.h
 
-(define-symbol |LC_ALL| "lc_all" "Scm_MakeInteger(LC_ALL)")
-(define-symbol |LC_COLLATE| "lc_collate" "Scm_MakeInteger(LC_COLLATE)")
-(define-symbol |LC_CTYPE| "lc_ctype" "Scm_MakeInteger(LC_CTYPE)")
-(define-symbol |LC_MONETARY| "lc_monetary" "Scm_MakeInteger(LC_MONETARY)")
-(define-symbol |LC_NUMERIC| "lc_numeric" "Scm_MakeInteger(LC_NUMERIC)")
-(define-symbol |LC_TIME| "lc_time" "Scm_MakeInteger(LC_TIME)")
+(define-enum LC_ALL)
+(define-enum LC_COLLATE)
+(define-enum LC_CTYPE)
+(define-enum LC_MONETARY)
+(define-enum LC_NUMERIC)
+(define-enum LC_TIME)
 
 (define-cproc sys-setlocale (category locale)
   (assert (small-integer? category))
@@ -505,10 +505,10 @@
 ;;---------------------------------------------------------------------
 ;; unistd.h - miscellaneous functions
 
-(define-symbol |R_OK| "sym_r_ok" "Scm_MakeInteger(R_OK)")
-(define-symbol |W_OK| "sym_w_ok" "Scm_MakeInteger(W_OK)")
-(define-symbol |X_OK| "sym_x_ok" "Scm_MakeInteger(X_OK)")
-(define-symbol |F_OK| "sym_f_ok" "Scm_MakeInteger(F_OK)")
+(define-enum R_OK)
+(define-enum W_OK)
+(define-enum X_OK)
+(define-enum F_OK)
 
 ;; FREEBSD's and Darwin's access(2) implementation is not quite reliable.
 (define-cproc sys-access (pathname amode)

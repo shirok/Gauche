@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.68 2002-07-12 11:11:37 shirok Exp $
+;;;  $Id: genstub,v 1.69 2002-07-22 18:37:20 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -200,6 +200,51 @@
                   :scheme-name (cadr form) :c-name (caddr form)
                   :initializer (if (pair? (cdddr form)) (cadddr form) #f))))
     (emit-definition symbol)
+    ))
+
+;; (define-const scheme-name c-name [init])
+
+(define-class <cconst> (<csymbol>)
+  ()
+  )
+
+(define-method emit-initializer ((self <cconst>))
+  (with-cpp-condition self
+    (f "  ~a = Scm_Intern(&~:*~a_NAME);" (c-name-of self))
+    (f "  Scm_DefineConst(module, SCM_SYMBOL(~a), SCM_OBJ(~a));"
+       (c-name-of self) (initializer-of self))))
+
+(define (process-define-const form)
+  (unless (and (= (length form) 4)
+               (symbol? (cadr form))
+               (string? (caddr form)))
+    (error "malformed define-const:" form))
+  (let ((const (make <cconst>
+                 :scheme-name (cadr form) :c-name (caddr form)
+                 :initializer (cadddr form))))
+    (emit-definition const)
+    ))
+
+;; (define-enum name)
+
+(define-class <cenum> (<csymbol>)
+  ()
+  )
+
+(define-method emit-initializer ((self <cenum>))
+  (with-cpp-condition self
+    (f "  ~a = Scm_Intern(&~:*~a_NAME);" (c-name-of self))
+    (f "  Scm_DefineConst(module, SCM_SYMBOL(~a), SCM_OBJ(Scm_MakeInteger(~a)));"
+       (c-name-of self) (scheme-name-of self))))
+
+(define (process-define-enum form)
+  (unless (and (= (length form) 2)
+               (symbol? (cadr form)))
+    (error "malformed define-enum:" form))
+  (let ((enum (make <cenum>
+                :scheme-name (cadr form)
+                :c-name (string->symbol #`"sym_,(cadr form)"))))
+    (emit-definition enum)
     ))
 
 ;; (define-keyword scheme-name c-name)
@@ -1066,9 +1111,21 @@
       (parse-form (car f))
       (loop (cdr f)))))
 
+(define (process-include form)
+  (unless (= 2 (length form))
+    (error "malformed include: " form))
+  (unless (file-exists? (cadr form))
+    ;; TODO: search path
+    (error "couldn't find include file: " (cadr form)))
+  (with-input-from-file (cadr form)
+    (lambda () (port-for-each parse-form read)))
+  )
+
 (define *syntax-table*
   `((define-cproc     . ,process-define-cproc)
     (define-symbol    . ,process-define-symbol)
+    (define-const     . ,process-define-const)
+    (define-enum      . ,process-define-enum)
     (define-keyword   . ,process-define-keyword)
     (define-type      . ,process-define-type)
     (define-cgeneric  . ,process-define-cgeneric)
@@ -1076,6 +1133,7 @@
     (define-cclass    . ,process-define-cclass)
     (if               . ,process-if)
     (begin            . ,process-begin)
+    (include          . ,process-include)
     (initcode         . ,process-initcode)
     ))
 
@@ -1131,11 +1189,7 @@
           (f "#include <gauche.h>")
           (newline)
           (with-input-from-file file
-            (lambda ()
-              (let loop ((form (read)))
-                (unless (eof-object? form)
-                (parse-form form)
-                (loop (read))))))
+            (lambda () (port-for-each parse-form read)))
           (emit-initializer (get-c-name "" prefix))
           )))
     )
