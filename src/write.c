@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.48 2004-11-01 10:40:01 shirok Exp $
+ *  $Id: write.c,v 1.49 2004-11-22 23:16:05 shirok Exp $
  */
 
 #include <stdio.h>
@@ -548,6 +548,7 @@ static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     
     /* pass 1 */
     write_walk(obj, walker_port, ctx);
+    Scm_ClosePort(walker_port);
 
     /* pass 2 */
     /* TODO: we need to rewind port mode */
