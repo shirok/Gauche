@@ -253,6 +253,40 @@
 (test* "flonum reader (exp)" '(314.0 #t) (flonum-test .314d3))
 (test* "flonum reader (exp)" '(314.0 #t) (flonum-test .314D3))
 
+(test* "padding" '(10.0 #t) (flonum-test '1#))
+(test* "padding" '(10.0 #t) (flonum-test '1#.))
+(test* "padding" '(10.0 #t) (flonum-test '1#.#))
+(test* "padding" '(100.0 #t) (flonum-test '10#.#))
+(test* "padding" '(100.0 #t) (flonum-test '1##.#))
+(test* "padding" '(100.0 #t) (flonum-test '100.0#))
+(test* "padding" '(1.0 #t) (flonum-test '1.#))
+
+(test* "padding" '|1#1| (flonum-test '1#1))
+(test* "padding" '|1##1| (flonum-test '1##1))
+(test* "padding" '|1#.1| (flonum-test '1#.1))
+(test* "padding" '|1.#1| (flonum-test '1.#1))
+
+(test* "padding" '|.#| (flonum-test '.#))
+(test* "padding" '(0.0 #t) (flonum-test '0.#))
+(test* "padding" '(0.0 #t) (flonum-test '.0#))
+(test* "padding" '(0.0 #t) (flonum-test '0#))
+(test* "padding" '(0.0 #t) (flonum-test '0#.#))
+(test* "padding" '|0#.0| (flonum-test '0#.0))
+
+(test* "padding" '(1000.0 #t) (flonum-test '1#e2))
+(test* "padding" '(1000.0 #t) (flonum-test '1##e1))
+(test* "padding" '(1000.0 #t) (flonum-test '1#.##e2))
+(test* "padding" '(0.0 #t) (flonum-test '0.#e2))
+(test* "padding" '(0.0 #t) (flonum-test '.0#e2))
+(test* "padding" '|.##e2| (flonum-test '.##e2))
+
+(test* "padding (exactness)" '(100 #f) (flonum-test '#e1##))
+(test* "padding (exactness)" '(120 #f) (flonum-test '#e12#))
+(test* "padding (exactness)" '(120 #f) (flonum-test '#e12#.#))
+(test* "padding (exactness)" '(100.0 #t) (flonum-test '#i1##))
+(test* "padding (exactness)" '(120.0 #t) (flonum-test '#i12#))
+(test* "padding (exactness)" '(120.0 #t) (flonum-test '#i12#.#))
+
 ;;------------------------------------------------------------------
 (test-section "complex reader")
 

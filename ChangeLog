@@ -1,9 +1,12 @@
 2003-11-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/number.c (read_uint): Now the number reader recognizes
+	  '#'-padded numeric literal format.
+
 	* src/portapi.c (Scm_ReadLine):
 	* src/extlib.stub (read-line): Added allow-byte-string parameter
-	so that read-line can be used for a port whose character encoding
-	is unknown.
+	  so that read-line can be used for a port whose character encoding
+	  is unknown.
 
 2003-11-20  Shiro Kawai  <shiro@acm.org>
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.102 2003-09-20 05:56:52 shirok Exp $
+ *  $Id: number.c,v 1.103 2003-11-21 20:22:45 shirok Exp $
  */
 
 #include <math.h>
@@ -1872,8 +1872,6 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix, int use_upper)
  * Multibyte strings are filtered out in the early stage of
  * parsing, so the subroutines assume the buffer contains
  * only ASCII chars.
- *
- * The '#' padding is not supported yet.
  */
 
 struct numread_packet {
@@ -1881,6 +1879,7 @@ struct numread_packet {
     int buflen;                 /* original length */
     int radix;                  /* radix */
     int exactness;              /* exactness; see enum below */
+    int padread;                /* '#' padding has been read */
     int strict;                 /* when true, reports an error if the
                                    input violates implementation limitation;
                                    otherwise, the routine returns #f. */
@@ -1913,6 +1912,7 @@ static ScmObj read_uint(const char **strp, int *lenp,
                         ScmObj initval)
 {
     const char *str = *strp;
+    int digread = FALSE;
     int len = *lenp;
     int radix = ctx->radix;
     int digits = 0, diglimit = longdigs[radix-RADIX_MIN];
@@ -1933,30 +1933,46 @@ static ScmObj read_uint(const char **strp, int *lenp,
         } else if (SCM_BIGNUMP(initval)) {
             value_big = SCM_BIGNUM(Scm_BignumCopy(SCM_BIGNUM(initval)));
         }
-    } else {
+        digread = TRUE;
+    } else if (*str == '0') {
         /* Ignore leading 0's, to avoid unnecessary bignum operations. */
         while (len > 0 && *str == '0') { str++; len--; }
+        digread = TRUE;
     }
 
     while (len--) {
+        int digval = -1;
         c = tolower(*str++);
-        for (ptab = tab; ptab < tab+radix; ptab++) {
-            if (c == *ptab) {
-                value_int = value_int * radix + (ptab-tab);
-                digits++;
-                if (value_big == NULL) {
-                    if (value_int >= limit) {
-                        value_big = Scm_MakeBignumWithSize(4, value_int);
-                        value_int = digits = 0;
-                    }
-                } else if (digits > diglimit) {
-                    value_big = Scm_BignumAccMultAddUI(value_big, bdig, value_int);
-                    value_int = digits = 0;
+        if (ctx->padread) {
+            if (c == '#') digval = 0;
+            else break;
+        } else if (digread && c == '#') {
+            digval = 0;
+            ctx->padread = TRUE;
+            if (ctx->exactness == NOEXACT) {
+                ctx->exactness = INEXACT;
+            }
+        } else {
+            for (ptab = tab; ptab < tab+radix; ptab++) {
+                if (c == *ptab) {
+                    digval = ptab-tab;
+                    digread = TRUE;
+                    break;
                 }
-                break;
             }
         }
-        if (ptab >= tab+radix) break;
+        if (digval < 0) break;
+        value_int = value_int * radix + digval;
+        digits++;
+        if (value_big == NULL) {
+            if (value_int >= limit) {
+                value_big = Scm_MakeBignumWithSize(4, value_int);
+                value_int = digits = 0;
+            }
+        } else if (digits > diglimit) {
+            value_big = Scm_BignumAccMultAddUI(value_big, bdig, value_int);
+            value_int = digits = 0;
+        }
     }
     *strp = str-1;
     *lenp = len+1;
@@ -2228,6 +2244,7 @@ static ScmObj read_number(const char *str, int len, int radix, int strict)
     ctx.buffer = str;
     ctx.buflen = len;
     ctx.exactness = NOEXACT;
+    ctx.padread = FALSE;
     ctx.strict = strict;
 
 #define CHK_EXACT_COMPLEX()                                                 \
