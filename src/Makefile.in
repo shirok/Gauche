@@ -2,7 +2,7 @@ SCM = snow
 CC = @CC@
 LIBS = @LIBS@ -lm
 DEFS = @DEFS@
-CFLAGS = -DSCM_INSTALL_DIR=\"$(SCM_INSTALL_DIR)\" $(DEFS) -g -O2 -I. -I../gc -I../gc/include
+CFLAGS = -DSCM_INSTALL_DIR=\"$(SCM_INSTALL_DIR)\" -g -O2 -I. -I../gc -I../gc/include
 #CFLAGS = -O2 -I. -I../gc -I../gc/include
 LDFLAGS = -rdynamic		# TODO: need to check by configure
 AR = ar
@@ -11,7 +11,7 @@ prefix = @prefix@
 exec_prefix = @exec_prefix@
 
 GENERATED = stdlib.c extlib.c syslib.c
-CONFIG_GENERATED = Makefile gauche-config
+CONFIG_GENERATED = Makefile gauche-config gauche/config.h
 
 HEADER_INSTALL_DIR = @includedir@
 SUBHEADER_INSTALL_DIR = @includedir@/gauche
@@ -20,8 +20,8 @@ BIN_INSTALL_DIR = @bindir@
 SCM_INSTALL_DIR = @libdir@/gauche/@GAUCHE_VERSION@/lib
 
 INSTALL_HEADERS = gauche.h ../gc/gc.h 
-INSTALL_SUBHEADERS = gauche/char_euc_jp.h gauche/vm.h gauche/vminsn.h \
-	             gauche/predef-syms.h
+INSTALL_SUBHEADERS = gauche/config.h gauche/char_euc_jp.h gauche/vm.h \
+                     gauche/vminsn.h gauche/predef-syms.h
 INSTALL_LIBS = libgauche.a
 INSTALL_BINS = gosh gauche-config
 INSTALL_SCMS = genstub gauche-init.scm
