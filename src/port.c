@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.7 2001-03-07 06:58:54 shiro Exp $
+ *  $Id: port.c,v 1.8 2001-03-08 10:22:00 shiro Exp $
  */
 
 #include "gauche.h"
@@ -170,8 +170,8 @@ ScmObj Scm_MakeFilePort(FILE *fp, ScmObj name, const char *mode)
     p = SCM_NEW(ScmPort);
     PORTINIT(p, dir, SCM_PORT_FILE);
     p->src.file.fp = fp;
-    p->src.file.line = 0;
-    p->src.file.column = 0;
+    p->src.file.line = 1;
+    p->src.file.column = 1;
     p->src.file.name = name;
     return SCM_OBJ(p);
 }
