@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.98 2001-10-16 12:03:25 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.99 2001-10-16 20:57:03 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2369,11 +2369,38 @@ Hyperbolic trigonometric functions.
 @c COMMON
 @end defun
 
-@defun number->string z &optional radix
+@defun number->string z &optional radix use-upper?
 @defunx string->number string &optional radix
-[R5RS]
+[R5RS+]
 @c EN
+These convert a number and its string representation in radix @var{radix}
+system.    @var{radix} must be between 2 and 36 inclusive.
+If @var{radix} is omitted, 10 is assumed.
+
+@code{Number->string} takes a number @var{z} and returns a string.
+If @var{z} is not an exact integer, @var{radix} must be 10.
+For the numbers with radix more than 10, lower case alphabet
+character is used for digits, unless the optional argument
+@var{use-upper?} is true, in that case upper case characters are used.
+The argument @var{use-upper?} is Gauche's extension.
+
+@code{String->number} takes a string @var{string} and parses it
+as a number in radix @var{radix} system.  If the number looks like
+non-exact number, only radix 10 is allowed.  If the given string
+can't be a number, @code{#f} is returned.
 @c JP
+これらの手続きは数値とそれを@var{radix}進数で表現する文字列とを変換します。
+@var{radix}は2から36の間でなければなりません。省略された場合は10進数とみなされます。
+
+@code{number->string}は数値@var{z}を取り文字列を返します。
+@var{z}が完全な整数以外の場合、@var{radix}は10でなければなりません。
+10より大きい@var{radix}に関しては、小文字のアルファベットが桁として使われます。
+但し、省略可能な引数@var{use-upper?}に真の値が与えられた場合は大文字のアルファベットが
+使われます。@var{use-upper?}引数はGaucheの拡張です。
+
+@code{string->number}は文字列@var{string}を取り数値を返します。
+不完全な数値は10進数表記しか認識されません。与えられた文字列が数値を構成しない
+場合は@code{#f}が返されます。
 @c COMMON
 @end defun
 
