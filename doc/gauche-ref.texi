@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.93 2001-10-13 09:32:27 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.94 2001-10-13 10:01:00 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -2854,7 +2854,7 @@ Returns a symbol whose name is a string @var{string}.
 @example
 (string->symbol "a") @result{} a
 (string->symbol "A") @result{} |A|
-(string->symbol "weird symbol name" @rseult{} |weird symbol name|
+(string->symbol "weird symbol name" @result{} |weird symbol name|
 @end example
 @end defun
 
