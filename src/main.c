@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: main.c,v 1.35 2001-12-07 08:42:23 shirok Exp $
+ *  $Id: main.c,v 1.36 2001-12-08 08:15:40 shirok Exp $
  */
 
 #include <unistd.h>
@@ -47,7 +47,6 @@ void usage(void)
             "      no-inline       don't inline primitive procedures\n"
             "      no-source-info  don't preserve source information for debug\n"
             "      load-verbose    report what files are loaded\n"
-            "      in-place        running gosh where built\n"
             );
     exit(1);
 }
@@ -71,12 +70,6 @@ void further_options(const char *optarg)
     }
     else if (strcmp(optarg, "load-verbose") == 0) {
         Scm_VM()->runtimeFlags |= SCM_LOAD_VERBOSE;
-    }
-    else if (strcmp(optarg, "in-place") == 0) {
-        /* Running where gosh is built.  Add appropriate directories to
-           the search paths */
-        Scm_AddLoadPath("../lib", FALSE);
-        Scm_AddLoadPath(".", FALSE);
     }
     else {
         fprintf(stderr, "unknown -f option: %s\n", optarg);
