@@ -12,20 +12,21 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: genstub,v 1.35 2001-05-19 10:56:28 shirok Exp $
+;;;  $Id: genstub,v 1.36 2001-06-14 19:31:59 shirok Exp $
 ;;;
+
+(use srfi-1)
 
 ;; (define-cproc scheme-name (argspec)
 ;;   assertions ...
 ;;   body)
 ;;
-;; (define-symbol scheme-name c-name [value])
 ;;
 ;; (define-type name assert-predicate c-type c-predicate unboxer)
 
 (define *file-prefix* "")
-(define *cprocs* '())
-(define *symbols* '())
+(define *generics* '())
+(define *methods*  '())
 (define *cclasses* '())
 (define *insert-sharp-line* #t)         ;if #t, output #line directive
 (define *unbound* (cons #f #f))         ;placeholder for unbound value
@@ -45,12 +46,64 @@
 (define (file-exists? file) (sys-access file F_OK))
 
 ;;-----------------------------------------------------------------
+;; Stub
+;;
+;;   - Each declaration makes a stub.
+;;   - Stub is used to generate three things: immediate definition,
+;;     initialization, and (optionally) declaration.
+
+(define-class <stub> ()
+  ((scheme-name     :init-keyword :scheme-name :accessor scheme-name-of)
+   (c-name          :init-keyword :c-name      :accessor c-name-of)
+   (cpp-condition   :init-keyword :cpp-condition :initform #f
+                    :accessor cpp-condition-of)
+   (all-stubs       :allocation :class :initform '())
+   ))
+
+(define-method initialize ((self <stub>) initargs)
+  (next-method)
+  (slot-set! self 'all-stubs (cons self (slot-ref self 'all-stubs))))
+
+(define (get-stubs class)
+  (reverse (filter (lambda (s) (is-a? s class))
+                   (class-slot-ref <stub> 'all-stubs))))
+
+;;--------------------------------------------------------------------
+;; Symbol definition
+;;
+
+;; (define-symbol scheme-name c-name [init])
+
+(define-class <csymbol> (<stub>)
+  ((initializer    :init-keyword :initializer :accessor initializer-of)
+   ))
+
+(define-method emit-definition ((self <csymbol>))
+  (let* ((scheme-name (scheme-name-of self))
+         (c-name (c-name-of self))
+         (scheme-name-len (string-length (symbol->string scheme-name))))
+    (println "static ScmString ~a_NAME = { {SCM_CLASS_STRING}, 0, 1, ~a, ~a, \"~a\" };"
+             c-name scheme-name-len scheme-name-len scheme-name)
+    (println "static ScmObj ~a;" c-name)
+    (newline)))
+
+(define (process-define-symbol form)
+  (unless (and (<= 3 (length form) 4)
+               (symbol? (cadr form))
+               (string? (caddr form)))
+    (error "malformed define-symbol: ~s" form))
+  (let ((symbol (make <csymbol>
+                  :scheme-name (cadr form) :c-name (caddr form)
+                  :initializer (if (pair? (cdddr form)) (cadddr form) #f))))
+    (emit-definition symbol)
+    ))
+
+;;-----------------------------------------------------------------
 ;; Procedure
 ;;
 
-(define-class <cproc> ()
-  ((scheme-name     :init-keyword :scheme-name :accessor scheme-name-of)
-   (args            :initform '() :accessor args-of)
+(define-class <cproc> (<stub>)
+  ((args            :initform '() :accessor args-of)
    (num-reqargs     :initform 0   :accessor num-reqargs-of)
    (num-optargs     :initform 0   :accessor num-optargs-of)
    (have-rest-arg?  :initform #f  :accessor have-rest-arg?)
@@ -59,7 +112,6 @@
    (stmts           :initform '() :accessor stmts-of)
    (inliner         :initform #f  :accessor inliner-of)
    (inline-insn     :initform #f  :accessor inline-insn-of)
-   (c-name          :accessor c-name-of)
    ))
 
 (define (make-cproc scheme-name)
@@ -235,26 +287,6 @@
 
 
 ;;--------------------------------------------------------------------
-;; Symbol definition
-;;
-
-(define (process-define-symbol form)
-  (unless (and (<= 3 (length form) 4)
-               (symbol? (cadr form))
-               (string? (caddr form)))
-    (error "malformed define-symbol: ~s" form))
-  (let* ((scheme-name (cadr form))
-         (c-name (caddr form))
-         (value  (cdddr form))
-         (scheme-name-len (string-length (symbol->string scheme-name))))
-    (println "static ScmString ~a_NAME = { {SCM_CLASS_STRING}, 0, 1, ~a, ~a, \"~a\" };"
-             c-name scheme-name-len scheme-name-len scheme-name)
-    (println "static ScmObj ~a;" c-name)
-    (newline)
-    (set! *symbols* (cons (cdr form) *symbols*))
-    ))
-
-;;--------------------------------------------------------------------
 ;; Cclass definition
 ;;
 
@@ -295,7 +327,6 @@
           (get-c-name *file-prefix* (scheme-name-of cproc)))
     (process-args cproc (caddr form))
     (process-body cproc (cdddr form))
-    (set! *cprocs* (cons cproc *cprocs*))
     (emit-definition cproc)
     (emit-inliner cproc)
     (emit-record cproc)))
@@ -395,7 +426,7 @@
 
 ;;; emit code
 
-(define (emit-definition cproc)
+(define-method emit-definition ((cproc <cproc>))
   (println "static ScmObj ~a(ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)"
            (c-name-of cproc))
   (println "{")
@@ -577,14 +608,14 @@
               (println "  SCM_DEFINE(module, ~s, SCM_OBJ(&~a_STUB));"
                        (symbol->string (scheme-name-of cproc))
                        (c-name-of cproc)))
-            (reverse *cprocs*))
+            (get-stubs <cproc>))
   (for-each (lambda (symdef)
               (println "  ~a = Scm_Intern(&~a_NAME);"
-                       (cadr symdef) (cadr symdef))
-              (unless (null? (cddr symdef))
+                       (c-name-of symdef) (c-name-of symdef))
+              (when (initializer-of symdef)
                 (println "  Scm_Define(module, SCM_SYMBOL(~a), SCM_OBJ(~a));"
-                         (cadr symdef) (caddr symdef))))
-            (reverse *symbols*))
+                         (c-name-of symdef) (initializer-of symdef))))
+            (get-stubs <csymbol>))
   (println "}")
   )
 
