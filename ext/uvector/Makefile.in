@@ -4,7 +4,7 @@ top_srcdir   = @top_srcdir@
 
 SCM_CATEGORY = gauche
 
-LIBFILES = libgauche-uvector.la uvector.la
+LIBFILES = uvector.la
 SCMFILES = array.scm uvector.scm
 HDRFILES = gauche/uvector.h
 
@@ -13,15 +13,11 @@ GENERATED = Makefile uvlib.c uvlib.stub uvector.c gauche/uvector.h \
 
 all : $(LIBFILES)
 
-lib_OBJECTS = uvector.lo uvutil.lo
-
-libgauche-uvector.la : $(lib_OBJECTS) 
-	$(LINK) $(lib_OBJECTS) $(LIBGAUCHE)
-
-uvector_OBJECTS = uvector_head.lo uvinit.lo uvlib.lo uvector_tail.lo
+uvector_OBJECTS = uvector_head.lo uvector.lo uvutil.lo \
+                  uvinit.lo uvlib.lo uvector_tail.lo
 
 uvector.la : $(uvector_OBJECTS) 
-	$(MODLINK) $(uvector_OBJECTS) $(LIBGAUCHE) $(top_builddir)/ext/uvector/libgauche-uvector.la
+	$(MODLINK) $(uvector_OBJECTS) $(LIBGAUCHE)
 
 uvector_head.c uvector_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension uvector
