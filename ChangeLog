@@ -1,6 +1,8 @@
 2001-03-29  Shiro Kawai  <shiro@scherzo>
 
-	
+	* release 0.2.15
+	* src/*.c: removed "equal" protocol from class definition.  clean up
+	  builtin class definition macros.
 	* src/class.c, src/write.c: moved write-object stuff from class.c
 	  to write.c
 	* lib/gauche/process.scm: added.  mostly STk-compatible process
