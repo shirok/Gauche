@@ -1,0 +1,23 @@
+/* -*-C-*-
+ *
+ * Configuration parmateres
+ *  
+ * $Id: config.h.in,v 1.1 2001-02-20 00:48:27 shiro Exp $
+ */
+
+#undef STDC_HEADERS
+
+/* Define gauche version */
+#define GAUCHE_VERSION "0.0"
+
+/* Define if the system has glob(). */
+#undef HAVE_GLOB_H
+
+/* Define if the system has dlfcn.h */
+#undef HAVE_DLFCN_H
+
+/* Define if the system needs -ldl for dynamic loading */
+#undef HAVE_LIBDL
+
+/* set sizeof(long) */
+#define SIZEOF_LONG  4
