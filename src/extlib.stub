@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: extlib.stub,v 1.94 2001-07-02 11:42:32 shirok Exp $
+;;; $Id: extlib.stub,v 1.95 2001-08-06 07:20:04 shirok Exp $
 ;;;
 
 "
@@ -185,13 +185,6 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
      SCM_RETURN(SCM_FALSE);
   else
      SCM_RETURN(SCM_TRUE);")
-
-(define-cproc apropos (subs)
-  "  ScmString *s;
-  if (SCM_STRINGP(subs)) s = SCM_STRING(subs);
-  else if (SCM_SYMBOLP(subs)) s = SCM_SYMBOL_NAME(subs);
-  else SCM_RETURN(SCM_NIL);
-  SCM_RETURN(Scm_Apropos(s));")
 
 (define-cproc gensym (&optional prefix)
   "  ScmString *p = NULL;
@@ -779,29 +772,56 @@ static ScmObj monotonic_merge_cb(ScmObj elt, void *data)
   else
     SCM_RETURN(SCM_FALSE);")
 
-"static ScmObj hash_table_for_each_cc(ScmObj result, void **data)
+"static ScmObj hash_table_iter_cc(ScmObj result, void **data)
  {
   ScmHashIter *iter = (ScmHashIter*)(data[0]);
   ScmProcedure *p = SCM_PROCEDURE(data[1]);
   ScmHashEntry *e = Scm_HashIterNext(iter);
 
   if (e) {
-    void *data[2]; data[0] = iter; data[1] = p;
-    Scm_VMPushCC(hash_table_for_each_cc, data, 2);
-    Scm_VMApply2(SCM_OBJ(p), e->key, e->value);
+    void *ndata[4]; ndata[0] = iter; ndata[1] = p; ndata[2] = data[2];
+    if (SCM_UNDEFINEDP(data[2])) {
+      /* for each */
+      Scm_VMPushCC(hash_table_iter_cc, ndata, 3);
+    } else {
+      /* map */
+      if (SCM_NULLP(data[3])) {
+        ndata[3] = data[2];
+      } else {
+        SCM_SET_CDR(data[3], SCM_LIST1(result));
+        ndata[3] = SCM_CDR(data[3]);
+      }
+      Scm_VMPushCC(hash_table_iter_cc, ndata, 4);
+    }
+    SCM_RETURN(Scm_VMApply2(SCM_OBJ(p), e->key, e->value));
+  } else {
+    /* end */
+    if (SCM_UNDEFINEDP(data[2])) {
+      SCM_RETURN(SCM_UNDEFINED);
+    } else {
+      SCM_RETURN(SCM_CDR(data[2]));
+    }
   }
-  SCM_RETURN(SCM_UNDEFINED);
  }"
 
 (define-cproc hash-table-for-each (hash proc)
   (assert (hash-table? hash))
   (assert (procedure? proc))
-  "  void *data[2];
+  "  void *data[3];
   ScmHashIter *iter = SCM_NEW(ScmHashIter);
   Scm_HashIterInit(hash, iter);
-  data[0] = iter; data[1] = proc;
-  Scm_VMPushCC(hash_table_for_each_cc, data, 2);
-  SCM_RETURN(SCM_UNDEFINED);")
+  data[0] = iter; data[1] = proc; data[2] = SCM_UNDEFINED;
+  SCM_RETURN(hash_table_iter_cc(SCM_UNDEFINED, data));")
+
+(define-cproc hash-table-map (hash proc)
+  (assert (hash-table? hash))
+  (assert (procedure? proc))
+  "  void *data[4];
+  ScmHashIter *iter = SCM_NEW(ScmHashIter);
+  Scm_HashIterInit(hash, iter);
+  data[0] = iter; data[1] = proc; data[2] = Scm_Cons(SCM_NIL, SCM_NIL);
+  data[3] = SCM_NIL;
+  SCM_RETURN(hash_table_iter_cc(SCM_NIL, data));")
 
 (define-cproc hash-table-keys (hash)
   (assert (hash-table? hash))
