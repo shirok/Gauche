@@ -3,7 +3,7 @@
  *
  *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
  *
- *  Permission to use, copy, modify, ditribute this software and
+ *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
  *  provided that existing copyright notices are retained in all
  *  copies and that this notice is included verbatim in all
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: predef-syms.h,v 1.5 2001-02-17 10:20:12 shiro Exp $
+ *  $Id: predef-syms.h,v 1.6 2001-02-19 14:48:49 shiro Exp $
  */
 
 /* DEFSYM(c-name, scheme-name) */

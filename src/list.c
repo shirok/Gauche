@@ -3,7 +3,7 @@
  *
  *  Copyright(C) 2000-2001 by Shiro Kawai (shiro@acm.org)
  *
- *  Permission to use, copy, modify, ditribute this software and
+ *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
  *  provided that existing copyright notices are retained in all
  *  copies and that this notice is included verbatim in all
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: list.c,v 1.7 2001-02-05 09:46:26 shiro Exp $
+ *  $Id: list.c,v 1.8 2001-02-19 14:48:49 shiro Exp $
  */
 
 #include "gauche.h"

@@ -3,7 +3,7 @@
  *
  *  Copyright(C) 2000 by Shiro Kawai (shiro@acm.org)
  *
- *  Permission to use, copy, modify, ditribute this software and
+ *  Permission to use, copy, modify, distribute this software and
  *  accompanying documentation for any purpose is hereby granted,
  *  provided that existing copyright notices are retained in all
  *  copies and that this notice is included verbatim in all
@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.22 2001-02-15 08:56:42 shiro Exp $
+ *  $Id: vm.h,v 1.23 2001-02-19 14:48:49 shiro Exp $
  */
 
 #ifndef GAUCHE_VM_H

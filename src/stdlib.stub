@@ -3,7 +3,7 @@
 ;;;
 ;;;   Copyright (c) 2000-2001 Shiro Kawai (shiro@acm.org)
 ;;;
-;;;   Permission to use, copy, modify, ditribute this software and
+;;;   Permission to use, copy, modify, distribute this software and
 ;;;   accompanying documentation for any purpose is hereby granted,
 ;;;   provided that existing copyright notices are retained in all
 ;;;   copies and that this notice is included verbatim in all
@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: stdlib.stub,v 1.27 2001-02-17 10:23:09 shiro Exp $
+;;; $Id: stdlib.stub,v 1.28 2001-02-19 14:48:49 shiro Exp $
 ;;;
 
 
