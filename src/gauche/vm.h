@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.h,v 1.84 2003-01-12 13:07:13 shirok Exp $
+ *  $Id: vm.h,v 1.85 2003-02-15 12:08:45 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -21,7 +21,7 @@
 #define SCM_VM_MAX_VALUES      20
 #define SCM_VM_SIGQ_SIZE       32
 
-#define PCTYPE ScmObj
+#define SCM_PCTYPE ScmObj
 
 /*
  * Environment frame
@@ -64,7 +64,7 @@ typedef struct ScmContFrameRec {
     ScmEnvFrame *env;             /* saved environment */
     ScmObj *argp;                 /* saved argument pointer */
     int size;                     /* size of argument frame */
-    PCTYPE pc;                    /* next PC */
+    SCM_PCTYPE pc;                /* next PC */
     ScmObj info;                  /* debug info */
 } ScmContFrame;
 
@@ -209,7 +209,7 @@ struct ScmVMRec {
     ScmVMParameterTable parameters; /* parameter table */
 
     /* Registers */
-    PCTYPE pc;                  /* Program pointer.  Points list of
+    SCM_PCTYPE pc;              /* Program pointer.  Points list of
                                    instructions to be executed.              */
     ScmEnvFrame *env;           /* Current environment.                      */
     ScmContFrame *cont;         /* Current continuation.                     */

@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: vm.c,v 1.197 2003-01-12 13:07:13 shirok Exp $
+ *  $Id: vm.c,v 1.198 2003-02-15 12:08:21 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -222,7 +222,7 @@ void Scm__InitVM(void)
 
 #define DECL_REGS_INT(VOLATILE)                 \
     ScmVM *VOLATILE vm = theVM;                 \
-    VOLATILE PCTYPE pc = vm->pc;                \
+    VOLATILE SCM_PCTYPE pc = vm->pc;            \
     ScmContFrame *VOLATILE cont = vm->cont;     \
     ScmEnvFrame *VOLATILE env = vm->env;        \
     ScmObj *VOLATILE argp = vm->argp;           \
