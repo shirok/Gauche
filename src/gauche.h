@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: gauche.h,v 1.172 2001-09-12 20:04:49 shirok Exp $
+ *  $Id: gauche.h,v 1.173 2001-09-16 07:00:09 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1734,6 +1734,8 @@ extern void Scm_RegMatchDump(ScmRegMatch *match);
 /*---------------------------------------------------
  * SYSTEM
  */
+
+extern int Scm_GetPortFd(ScmObj port_or_fd, int needfd);
 
 extern ScmObj Scm_ReadDirectory(ScmString *pathname);
 extern ScmObj Scm_GlobDirectory(ScmString *pattern);

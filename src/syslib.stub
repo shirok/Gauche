@@ -12,7 +12,7 @@
 ;;;   warranty.  In no circumstances the author(s) shall be liable
 ;;;   for any damages arising out of the use of this software.
 ;;;
-;;; $Id: syslib.stub,v 1.43 2001-09-07 11:35:53 shirok Exp $
+;;; $Id: syslib.stub,v 1.44 2001-09-16 07:00:09 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -40,22 +40,6 @@
 #  include <time.h>
 # endif
 #endif
-"
-
-;; a common utility function which expects file descriptor number or
-;; a port, and returns integer fd.
-
-"static int get_port_or_fd(ScmObj pf, int needfd)
- {
-   int fd = -1;
-   if (SCM_INTP(pf)) { fd = SCM_INT_VALUE(pf); }
-   else if (SCM_PORTP(pf)) { fd = Scm_PortFileNo(SCM_PORT(pf)); }
-   else Scm_Error(\"port or small integer required, but got %S\", pf);
-   if (needfd && fd < 0) {
-     Scm_Error(\"the port is not associated with a system file descriptor: %S\", pf);
-   }
-   return fd;
- }
 "
 
 ;;---------------------------------------------------------------------
@@ -394,7 +378,7 @@
 
 (define-cproc sys-fstat (port-or-fd)
   "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
-  int fd = get_port_or_fd(port_or_fd, FALSE), r;
+  int fd = Scm_GetPortFd(port_or_fd, FALSE), r;
   if (fd < 0) SCM_RETURN(SCM_FALSE);
   r = fstat(fd, &s->statrec);
   if (r < 0) Scm_SysError(\"fstat failed for %d\", fd);
@@ -765,11 +749,11 @@
   SCM_RETURN(SCM_TRUE);")
 
 (define-cproc sys-isatty (port_or_fd)
-  "  int fd = get_port_or_fd(port_or_fd, FALSE);
+  "  int fd = Scm_GetPortFd(port_or_fd, FALSE);
   SCM_RETURN(SCM_MAKE_BOOL(fd >= 0 && isatty(fd)));")
   
 (define-cproc sys-ttyname (port_or_fd)
-  "  int fd = get_port_or_fd(port_or_fd, FALSE); const char *name;
+  "  int fd = Scm_GetPortFd(port_or_fd, FALSE); const char *name;
   if (fd < 0) SCM_RETURN(SCM_FALSE);
   name = ttyname(fd);
   if (name) SCM_RETURN(SCM_MAKE_STR_COPYING(name));
@@ -835,7 +819,7 @@
 (define-cproc sys-fdset-ref (fdset pf)
   (assert (sys-fdset? fdset))
   "#ifdef HAVE_SELECT
-  int fd = get_port_or_fd(pf, FALSE);
+  int fd = Scm_GetPortFd(pf, FALSE);
   if (fd < 0) SCM_RETURN(SCM_TRUE);
   else SCM_RETURN(SCM_MAKE_BOOL(FD_ISSET(fd, &fdset->fdset)));
 #else
@@ -847,7 +831,7 @@
   (assert (sys-fdset? fdset))
   (assert (boolean? flag))
   "#ifdef HAVE_SELECT
-  int fd = get_port_or_fd(pf, FALSE);
+  int fd = Scm_GetPortFd(pf, FALSE);
   if (fd >= 0) {
     if (flag) {
       FD_SET(fd, &fdset->fdset);

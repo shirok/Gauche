@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: system.c,v 1.24 2001-09-07 11:35:53 shirok Exp $
+ *  $Id: system.c,v 1.25 2001-09-16 07:00:09 shirok Exp $
  */
 
 #include <stdio.h>
@@ -37,6 +37,29 @@
  * Auxiliary system interface functions.   See syslib.stub for
  * Scheme binding.
  */
+
+/*
+ * A utility function for the procedures that accepts either port or
+ * integer file descriptor.  Returns the file descriptor.  If port_or_fd
+ * is a port that is not associated with the system file, and needfd is
+ * true, signals error.  Otherwise it returns -1.
+ */
+int Scm_GetPortFd(ScmObj port_or_fd, int needfd)
+{
+    int fd = -1;
+    if (SCM_INTP(port_or_fd)) {
+        fd = SCM_INT_VALUE(port_or_fd);
+    } else if (SCM_PORTP(port_or_fd)) {
+        fd = Scm_PortFileNo(SCM_PORT(port_or_fd));
+        if (fd < 0 && needfd) {
+            Scm_Error("the port is not associated with a system file descriptor: %S",
+                      port_or_fd);
+        }
+    } else {
+        Scm_Error("port or small integer required, but got %S", port_or_fd);
+    }
+    return fd;
+}
 
 /*
  * Directory primitives (dirent.h)
