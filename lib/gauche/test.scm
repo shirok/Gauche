@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: test.scm,v 1.7 2003-01-07 13:28:04 shirok Exp $
+;;;  $Id: test.scm,v 1.8 2003-01-09 11:23:59 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -20,6 +20,8 @@
 ;;  (test-start "my feature")
 ;;  (load "my-feature")         ; load your program
 ;;  (select-module my-feature)  ; if your program defines a module.
+;;
+;;  (test-module 'my-feature)   ; checks if module binding is sane
 ;;
 ;;  (test-section "feature group 1")
 ;;  (test "feature 1-1" EXPECT (lambda () TEST-BODY))
@@ -46,7 +48,7 @@
 ;;
 
 (define-module gauche.test
-  (export test test* test-start test-end test-section
+  (export test test* test-start test-end test-section test-module
           *test-error* test-error? prim-test))
 (select-module gauche.test)
 
@@ -69,9 +71,7 @@
 ;; List of discrepancies
 (define *discrepancy-list* '())
 
-(define (test-section msg)
-  (let ((msglen (string-length msg)))
-    (format #t "<~a>~a\n" msg (make-string (max 5 (- 77 msglen)) #\-))))
+;; Tests ------------------------------------------------------------
 
 ;; Primitive test.  This doesn't use neither with-error-handler nor
 ;; object system, so it can be used _before_ those constructs are tested.
@@ -105,6 +105,59 @@
 ;; A convenient macro version
 (define-macro (test* msg expect form . compare)
   `(test ,msg ,expect (lambda () ,form) ,@compare))
+
+;; Toplevel binding sanity check ----------------------------------
+
+;; Try to catch careless typos.  Suggested by Kimura Fuyuki.
+
+(define (test-module module)
+  (let1 mod (cond ((module? module) module)
+                  ((symbol? module)
+                   (or (find-module module)
+                       (error "no such module" module)))
+                  (else
+                   (error "test-module requires module or symbol, but got"
+                          module)))
+    (format #t "testing bindings in ~a ... " mod) (flush)
+    (let ((bad-autoload '())
+          (bad-export '())
+          (report '()))
+      ;; 1. Check if there's no dangling autoloads.
+      (hash-table-for-each (module-table mod)
+                           (lambda (sym val)
+                             (with-error-handler
+                                 (lambda (e) (push! bad-autoload sym))
+                               (lambda () (eval sym mod)))))
+      ;; 2. Check if all exported symbols are properly defined.
+      (when (pair? (module-exports mod))
+        (for-each (lambda (sym)
+                  (with-error-handler
+                      (lambda (e) (push! bad-export sym))
+                    (lambda () (eval sym mod))))
+                  (module-exports mod)))
+      ;; report discrepancies
+      (unless (null? bad-autoload)
+        (push! report
+               (format #f "found dangling autoloads: ~a" bad-autoload)))
+      (unless (null? bad-export)
+        (unless (null? report) (push! report " AND "))
+        (push! report
+               (format #f "symbols exported but not defined: ~a" bad-export)))
+      (if (null? report)
+          (format #t "ok\n")
+          (let ((s (apply string-append report)))
+            (format #t "ERROR: ~a" s)
+            (set! *discrepancy-list*
+                  (cons (list (format #f "bindings in module ~a" (module-name mod))
+                              '() s)
+                        *discrepancy-list*))))
+      )
+    ))
+
+;; Logging and bookkeeping -----------------------------------------
+(define (test-section msg)
+  (let ((msglen (string-length msg)))
+    (format #t "<~a>~a\n" msg (make-string (max 5 (- 77 msglen)) #\-))))
 
 (define (test-start msg)
   (let* ((s (format #f "Testing ~a ... " msg))
