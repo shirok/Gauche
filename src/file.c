@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: file.c,v 1.2 2001-02-02 10:11:40 shiro Exp $
+ *  $Id: file.c,v 1.3 2001-02-02 10:32:18 shiro Exp $
  */
 
 #include <unistd.h>
@@ -152,3 +152,15 @@ ScmObj Scm_ParsePathname(const char *pathname, int makeAbsolute, int normalize)
     return path;
 }
 
+ScmObj Scm_PathToPathname(ScmObj list)
+{
+    int absolutep = SCM_NULLP(list) || SCM_STRINGP(SCM_CAR(list));
+    ScmString *delim = SCM_STRING(SCM_MAKE_STR("/"));
+    
+    if (absolutep) {
+        return Scm_StringJoin(Scm_Cons(SCM_MAKE_STR(""), Scm_Reverse(list)),
+                              delim);
+    } else {
+        return Scm_StringJoin(Scm_Reverse(SCM_CDR(list)), delim);
+    }
+}

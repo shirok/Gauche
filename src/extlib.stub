@@ -161,6 +161,10 @@
                         !SCM_FALSEP(normalize));
   SCM_RETURN(p);")
 
+(define-cproc path->pathname (path)
+  (assert (list? path))
+  "  SCM_RETURN(Scm_PathToPathname(path));")
+
 ;;
 ;; Hashtable
 ;;
