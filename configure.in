@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.in,v 1.56 2002-03-07 09:32:46 shirok Exp $
+dnl $Id: configure.in,v 1.57 2002-03-08 07:57:05 shirok Exp $
 AC_INIT(src/gauche.h)
 AC_PREREQ(2.52)
-AC_REVISION($Revision: 1.56 $)
+AC_REVISION($Revision: 1.57 $)
 AC_CONFIG_HEADER(src/gauche/config.h)
 AC_CANONICAL_SYSTEM
 
@@ -18,9 +18,9 @@ AC_ARG_ENABLE(multibyte, [  --enable-multibyte[=ENCODING]:  Enables multibyte st
                              sjis       Shift-JIS
                              no         No multibyte support ], [
  case $enable_multibyte in
-   euc-jp|yes)     AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP);;
-   utf-8|utf8)     AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8);;
-   sjis|shift-jis) AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS);;
+   euc-jp|eucjp|yes)  AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP);;
+   utf-8|utf8)        AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8);;
+   sjis|shift-jis)    AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS);;
    no|none) ;;
    *) echo "unrecognized encoding option: '$enable_multibyte'; type ./configure --help for available options"
       exit 1;;
