@@ -4,7 +4,7 @@
 @settitle Gauche Reference Manual
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.35 2001-06-25 08:15:11 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.36 2001-06-29 19:58:10 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -3192,6 +3192,29 @@ To be porable across POSIX implementation, keep @var{seconds} less than
 65536.
 @end defun
 
+@defun sys-random
+@defunx sys-srandom seed
+A pseudo random number generator.
+@code{sys-random} returns a random number between 0 and a positive
+integer @var{rand_max}, inclusive.  This is a straightforward
+interface to @code{random(3)}.  If the underlying system doesn't have
+@code{random(3)}, @code{lrand48(3)} is used.
+
+@code{sys-srandom} sets the seed of the random number generator.
+It uses either @code{srandom(3)} or @code{srand48(3)}, depending on
+the system.
+
+The intension of these functions are to provide an off-the-stock handy
+random number generator (RNG) for applications that doens't
+sensitive to the quality and/or speed of RNG.  For serious statistics
+analysis, better RNGs should be used.  Gauche will provide an
+extention module of Mersenne Twister RNG soon.
+@end defun
+
+@defvar rand_max
+Bound to a positive integer that @code{sys-random} may return.
+@end defvar
+
 @c ======================================================================
 @node Object System, Libarary Modules, Core library, Top
 @chapter Object System
@@ -3396,6 +3419,7 @@ of descendants of @var{class}.
 * Unit Testing::                
 * RFC822 Message parsing::      
 * Base64 encoding/decoding::    
+* URI parsing and construction::  
 * SLIB::                        
 * Feature Conditional::         
 * List library::                
@@ -4612,7 +4636,7 @@ The order of fields are preserved.
 
 
 @c ----------------------------------------------------------------------
-@node Base64 encoding/decoding, SLIB, RFC822 Message parsing, Libarary Modules
+@node Base64 encoding/decoding, URI parsing and construction, RFC822 Message parsing, Libarary Modules
 @section @code{rfc.base64} - Base64 encoding/decoding
 
 @deftp {Module} rfc.base64
@@ -4651,9 +4675,19 @@ The characters which does not in legal Base64 encoded character
 set are silently ignored.
 @end defun
 
+@c ----------------------------------------------------------------------
+@node URI parsing and construction, SLIB, Base64 encoding/decoding, Libarary Modules
+@section @code{rfc.uri} - URI parsing and construction
+
+@deftp {Module} rfc.uri
+@mdindex rfc.uri
+Defines a set of functions to parse Uniform Resource Identifiers,
+defined in @uref{http://www.rfc-editor.org/rfc/rfc2396.txt, RFC 2396}.
+@end deftp
+
 
 @c ----------------------------------------------------------------------
-@node SLIB, Feature Conditional, Base64 encoding/decoding, Libarary Modules
+@node SLIB, Feature Conditional, URI parsing and construction, Libarary Modules
 @section @code{slib} - SLIB interface
 
 @deftp {Module} slib
@@ -4663,7 +4697,7 @@ To use SLIB, say @code{(use slib)}.   SLIB itself is not included
 in Gauche distribution.   If you don't have it on your system,
 get it from @uref{http://www-swiss.ai.mit.edu/~jaffer/SLIB.html}.
 
-This module defines @code{require}, shadowing the Gauche's original
+This module redefines @code{require}, shadowing the Gauche's original
 @code{require}.  If it gets a symbol as an argument, it works as
 SLIB's @code{require}, while if it gets a string, it works as
 Gauche's @code{require}.   The same applies to @code{provide} and
@@ -5430,12 +5464,13 @@ They are convenient to use with multiple values.
 @end deftp
 
 @defmac let-values ((vars expr) @dots{}) body @dots{}
-@var{vars} are list of variables. @var{expr} is evaluated, and
+[SRFI-11]
+@var{vars} are a list of variables. @var{expr} is evaluated, and
 its first return value is bound to the first variable in @var{vars},
 its second return value to the second variable, and so on, then
 @var{body} is evaluated.
 The scope of @var{expr}s are the outside of @code{let-values} form,
-like primitive @code{let}.
+like @code{let}.
 
 @example
 (let-values (((a b) (values 1 2))
@@ -5449,8 +5484,7 @@ like primitive @code{let}.
 @end example
 
 @var{vars} can be a dotted list or a single symbol, like the
-lambda parameters.  The values are bound like
-bindin the procedure arguments.
+lambda parameters.
 
 @example
 (let-values (((x . y) (values 1 2 3 4)))
@@ -5466,6 +5500,7 @@ specified in @var{vars}, the unused values are discarded.
 @end defmac
 
 @defmac let*-values ((vars expr) @dots{}) body @dots{}
+[SRFI-11]
 Same as @code{let-values}, but each @var{expr}'s scope includes
 the preceding @var{vars}.
 
@@ -5483,9 +5518,23 @@ the preceding @var{vars}.
 
 @deftp {Module} srfi-13
 @mdindex srfi-13
+Defines a large set of string-related functions.
+In Gauche, those functions are splitted to number of files
+and the form @code{(use srfi-13)} merely sets up autoloading of
+those files.  So it is not likely to slow down the script startup.
+
+See the
+@uref{http://srfi.schemers.org/srfi-13/srfi-13.html, SRFI-13 document}
+for the detailed specification and discussion of design issues.
+This manual serves as a reference of function API.
+
+Note: SRFI-13 documents suggests the name of the module that
+implements these functions to be ``string-lib'' and ``string-lib-internals''.
+Gauche uses the name ``srfi-13'' for consistency.
 @end deftp
 
 @menu
+* SRFI-13 General conventions::  
 * SRFI-13 String predicates::   
 * SRFI-13 String Constructors::  
 * SRFI-13 String Selection::    
@@ -5501,11 +5550,17 @@ the preceding @var{vars}.
 * SRFI-13 Low-level string procedures::  
 @end menu
 
-@node SRFI-13 String predicates, SRFI-13 String Constructors, String library, String library
+@node SRFI-13 General conventions, SRFI-13 String predicates, String library, String library
+@subsection General conventions
+
+
+
+
+@node SRFI-13 String predicates, SRFI-13 String Constructors, SRFI-13 General conventions, String library
 @subsection String predicates
 
 @defun string-null? s
-[SRFI-13]
+[SRFI-13] Returns @code{#t} if @var{s} is an empty string, @code{""}.
 @end defun
 
 @defun string-every char/char-set/pred s &optional start end
