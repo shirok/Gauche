@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.6 2001-03-27 10:15:07 shiro Exp $
+;; $Id: object.scm,v 1.7 2001-03-28 08:46:15 shiro Exp $
 
 (add-load-path "../lib")
 (use gauche.test)
@@ -151,6 +151,26 @@
 (test "make <ss> :v"
       '((1 0 5 (1 . 0)) ("i" 0 5 ("i" . 0)))
       (lambda () (list (slot-values s4) (slot-values s3))))
+
+(test "class-slot-ref"
+      '(0 "S" 0 5)
+      (lambda ()
+        (list (class-slot-ref <s> 'c)  (class-slot-ref <s> 's)
+              (class-slot-ref <ss> 'c) (class-slot-ref <ss> 's))))
+(test "class-slot-set!"
+      '(100 99 100 5)
+      (lambda ()
+        (class-slot-set! <s> 'c 100)
+        (class-slot-set! <s> 's 99)
+        (list (class-slot-ref <s> 'c)  (class-slot-ref <s> 's)
+              (class-slot-ref <ss> 'c) (class-slot-ref <ss> 's))))
+(test "class-slot-set!"
+      '(101 99 101 55)
+      (lambda ()
+        (class-slot-set! <ss> 'c 101)
+        (class-slot-set! <ss> 's 55)
+        (list (class-slot-ref <s> 'c)  (class-slot-ref <s> 's)
+              (class-slot-ref <ss> 'c) (class-slot-ref <ss> 's))))
 
 ;;----------------------------------------------------------------
 (test-section "next method")
