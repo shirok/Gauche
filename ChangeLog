@@ -1,5 +1,9 @@
 2001-05-14  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche.h, src/gauche/portmacros.h, src/port.c : separated
+	  port macros (SCM_GETC, etc.) to a subheader.  added fill function
+	  pointer to the input string port, so that it can be a general
+	  buffered input port.
 	* src/bignum.c, src/number.c : start adding logical operations.
 	  finished ash.
 	* src/number.c (exact_expt): fixed a bug in the shortcut of -1^y.
