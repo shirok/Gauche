@@ -78,6 +78,37 @@
 ;;---------------------------------------------------------------------
 (test-section "thread and error")
 
+(test "uncaught-exception" #t
+      (lambda ()
+        (let ((t (make-thread (lambda () (error "foo")))))
+          (thread-start! t)
+          (with-error-handler
+              (lambda (e)
+                (and (uncaught-exception? e)
+                     (is-a? (uncaught-exception-reason e) <error>)))
+            (lambda () (thread-join! t))))))
+
+(test "uncaught-exception" #t
+      (lambda ()
+        (let ((t (make-thread (lambda () (raise 4)))))
+          (thread-start! t)
+          (with-error-handler
+              (lambda (e)
+                (and (uncaught-exception? e)
+                     (eqv? (uncaught-exception-reason e) 4)))
+            (lambda () (thread-join! t))))))
+
+(test "uncaught-exception" #t
+      (lambda ()
+        (let ((t (make-thread (lambda ()
+                                (with-error-handler
+                                    (lambda (e) e)
+                                  (lambda () (error "foo")))))))
+          (thread-start! t)
+          (with-error-handler
+              (lambda (e) e)
+            (lambda () (is-a? (thread-join! t) <error>))))))
+
 ;;---------------------------------------------------------------------
 (test-section "basic mutex API")
 
