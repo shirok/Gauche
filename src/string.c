@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: string.c,v 1.42 2001-05-21 09:00:48 shirok Exp $
+ *  $Id: string.c,v 1.43 2001-05-22 08:15:01 shirok Exp $
  */
 
 #include <stdio.h>
@@ -103,12 +103,10 @@ static inline int count_length(const char *str, int size)
     while (size-- > 0) {
         unsigned char c = (unsigned char)*str++;
         int i = SCM_CHAR_NFOLLOWS(c);
-        if (i < 0) return -1;
+        if (i < 0 || i > size) return -1;
         count++;
-        while (i-- > 0) {
-            str++;
-            if (size-- < 0) return -1;
-        }
+        str += i;
+        size -= i;
     }
     return count;
 }
