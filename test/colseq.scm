@@ -72,6 +72,35 @@
 (test* "fold (n-ary)" '(#\c "c" c #\b "b" b #\a "a" a)
        (fold list* '() "abc" (sseq 'a 'b 'c) '(a b c)))
 
+(test* "fold2" '(21 (6 5 4 3 2 1))
+       (receive r
+           (fold2 (lambda (n s m) (values (+ n s) (cons n m)))
+                  0 '() '(1 2 3 4 5 6))
+         r))
+(test* "fold2 (n-ary)" '(195 (5 15 25 4 14 24 3 13 23 2 12 22 1 11 21))
+       (receive r
+           (fold2 (lambda (n0 n1 n2 s m)
+                    (values (+ n0 n1 n2 s)
+                            (list* n0 n1 n2 m)))
+                  0 '() '(1 2 3 4 5 6) '(11 12 13 14 15) '(21 22 23 24 25 26))
+         r))
+
+(test* "fold3" '(21 720 (6 5 4 3 2 1))
+       (receive r
+           (fold3 (lambda (n s m l) (values (+ n s) (* n m) (cons n l)))
+                  0 1 '() '(1 2 3 4 5 6))
+         r))
+(test* "fold3 (n-ary)" '(195 275701345920000
+                         (5 15 25 4 14 24 3 13 23 2 12 22 1 11 21))
+       (receive r
+           (fold3 (lambda (n0 n1 n2 s m l)
+                    (values (+ n0 n1 n2 s)
+                            (* n0 n1 n2 m)
+                            (list* n0 n1 n2 l)))
+                  0 1 '()
+                  '(1 2 3 4 5 6) '(11 12 13 14 15) '(21 22 23 24 25 26))
+         r))
+
 (test* "map (list)" '(2 4 6 8 10)
        (map (lambda (x) (* x 2)) '(1 2 3 4 5)))
 (test* "map (vector)" '(2 4 6 8 10)
@@ -115,6 +144,24 @@
 
 (test* "map-to (nary)" '#(3 5 7 9 11)
        (map-to <vector> + '(1 2 3 4 5) '#(2 3 4 5 6)))
+
+(test* "map-accum" '((45 30 15) 5)
+       (receive r 
+           (map-accum (lambda (elt seed) (values (* elt seed) seed))
+                      5 '(9 6 3))
+         r))
+(test* "map-accum" '((10 28 88) 19)
+       (receive r
+           (map-accum (lambda (elt seed) (values (* elt seed) (+ elt seed)))
+                      5 '(2 4 8))
+         r))
+(test* "map-accum (nary)" '((10 11 16) 15)
+       (receive r
+           (map-accum (lambda (x y seed)
+                        (values (+ x y seed) (+ x seed)))
+                      1 '(2 4 8) '(7 4 1))
+         r))
+
 
 (test* "for-each (list)" '(5 4 3 2 1)
        (let ((p '()))
@@ -287,6 +334,20 @@
 (test* "coerce-to (custom->custom)" '("1" "2" "3")
        (slot-ref (coerce-to <string-seq> (sseq 1 2 3)) 'strings))
 
+(test* "group-collection" '((1 1 1) (2 2 2 2 2) (3 3 3 3))
+       (group-collection '(1 2 3 2 3 1 2 1 2 3 2 3)))
+(test* "group-collection w/test" '((1 3 3 1 1 3 3) (2 2 2 2 2))
+       (group-collection '(1 2 3 2 3 1 2 1 2 3 2 3)
+                         :test (lambda (x y) (= (modulo x 2) (modulo y 2)))))
+(test* "group-collection w/key" '(((1 a) (1 c)) ((2 b) (2 q)) ((3 c) (3 d)))
+       (group-collection '((1 a) (2 b) (3 c) (1 c) (3 d) (2 q))
+                         :key car))
+(test* "group-collection (vector)" '((1 1 1) (2 2 2 2 2) (3 3 3 3))
+       (group-collection '#(1 2 3 2 3 1 2 1 2 3 2 3)))
+(test* "group-collection (string)" '((#\a #\a #\a #\a #\a) (#\b #\b)
+                                     (#\r #\r) (#\c) (#\d))
+       (group-collection "abracadabra"))
+
 (test-section "sequence operations")
 
 (test* "ref (list)" 3     (ref '(1 2 3 4 5) 2))
@@ -456,5 +517,17 @@
        (find-index (cut eqv? #\c <>) "abcde"))
 (test* "find-index (custom)" 2
        (find-index (cut equal? "c" <>) (sseq 'a 'b 'c 'd 'e)))
+
+
+(test* "group-sequence" '((1 1 1) (2) (3) (4 4) (2 2) (3) (1 1) (3))
+       (group-sequence '(1 1 1 2 3 4 4 2 2 3 1 1 3)))
+(test* "group-sequence w/key" '((1 1 1) (2) (3) (4 4 2 2) (3 1 1 3))
+       (group-sequence '(1 1 1 2 3 4 4 2 2 3 1 1 3) :key (cut modulo <> 2)))
+(test* "group-sequence w/key" '((1 1 1 2) (3 4 4) (2 2) (3) (1 1) (3))
+       (group-sequence '(1 1 1 2 3 4 4 2 2 3 1 1 3) :key (cut < <> 3)))
+(test* "group-sequence w/test" '((1 1 1) (2) (3) (4 4 2 2) (3 1 1 3))
+       (group-sequence '(1 1 1 2 3 4 4 2 2 3 1 1 3)
+                       :test (lambda (x y)
+                               (= (modulo x 2) (modulo y 2)))))
 
 (test-end)

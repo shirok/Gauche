@@ -1,7 +1,7 @@
 ;;;
 ;;; sequence.scm - sequence operations
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: sequence.scm,v 1.7 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: sequence.scm,v 1.8 2004-12-15 11:04:28 shirok Exp $
 ;;;
 
 ;; This module defines an unified way to treat sequence-like objects
@@ -42,7 +42,7 @@
   (extend gauche.collection)
   (export referencer modifier ref subseq
           fold-with-index map-with-index map-to-with-index for-each-with-index
-          find-index find-with-index)
+          find-index find-with-index group-sequence)
   )
 (select-module gauche.sequence)
 
@@ -233,5 +233,26 @@
 (define-method find-index (pred (seq <sequence>))
   (receive (i e) (find-with-index pred seq) i))
 
+;; group-sequence ----------------------------------------------
+
+(define-method group-sequence ((seq <sequence>) . args)
+  (let-keywords* args ((key-proc  :key identity)
+                       (test-proc :test  eqv?))
+    (receive (bucket results)
+        (fold2 (lambda (elt bucket results)
+                 (let1 key (key-proc elt)
+                   (cond
+                    ((null? bucket) (values (list key elt) results))
+                    ((test-proc key (car bucket))
+                     (push! (cdr bucket) elt)
+                     (values bucket results))
+                    (else
+                     (values (list key elt)
+                             (cons (reverse! (cdr bucket)) results))))))
+               '() '() seq)
+      (if (null? bucket)
+        (reverse! results)
+        (reverse! (cons (reverse! (cdr bucket)) results)))
+      )))
 
 (provide "gauche/sequence")

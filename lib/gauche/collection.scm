@@ -1,7 +1,7 @@
 ;;;
 ;;; collection.scm - collection generics
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: collection.scm,v 1.14 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: collection.scm,v 1.15 2004-12-15 11:04:28 shirok Exp $
 ;;;
 
 ;; Defines generic operations over collection.   A collection is
@@ -41,9 +41,11 @@
   (use util.queue)
   (export call-with-iterator with-iterator call-with-iterators
           call-with-builder  with-builder
-          fold map map-to for-each fold$ map$ for-each$
+          fold fold2 fold3 map map-to map-accum for-each
+          fold$ fold2$ fold3$ map$ for-each$
           find filter filter-to remove remove-to partition partition-to
-          size-of lazy-size-of coerce-to)
+          size-of lazy-size-of coerce-to
+          group-collection)
   )
 (select-module gauche.collection)
 
@@ -171,21 +173,33 @@
 
 ;; fold -------------------------------------------------
 
+(define-syntax define-fold-k
+  (syntax-rules ()
+    ((gen-fold-k name (seed ...))
+     (define-method name (proc seed ... (coll <collection>) . more)
+       (if (null? more)
+         (with-iterator (coll end? next)
+           (let loop ((seed seed) ...)
+             (if (end?)
+               (values seed ...)
+               (receive (seed ...) (proc (next) seed ...)
+                 (loop seed ...)))))
+         (call-with-iterators
+          (cons coll more)
+          (lambda (ends? nexts)
+            (let loop ((seed seed) ...)
+              (if (any (cut <>) ends?)
+                (values seed ...)
+                (receive (seed ...)
+                    (apply proc (fold-right (lambda (p r) (cons (p) r))
+                                            (list seed ...)
+                                            nexts))
+                  (loop seed ...))))))
+         )))
+    ))
+                 
 ;; generic way.   This effectively shadows SRFI-1 fold.
-(define-method fold (proc knil (coll <collection>) . more)
-  (if (null? more)
-      (with-iterator (coll end? next)
-        (do ((r knil (proc (next) r)))
-            ((end?) r)
-          #f))
-      (call-with-iterators
-       (cons coll more)
-       (lambda (ends? nexts)
-         (do ((r knil (apply proc (fold-right (lambda (p r) (cons (p) r))
-                                              (list r)
-                                              nexts))))
-             ((any (cut <>) ends?) r)
-           #f)))))
+(define-fold-k fold (knil))
 
 ;; for list arguments, SRFI-1 implementation is slightly faster.
 (define-method fold (proc knil (coll <list>))
@@ -194,11 +208,21 @@
 (define-method fold (proc knil (coll <list>) (coll2 <list>))
   ((with-module srfi-1 fold) proc knil coll coll2))
 
+;; 2- and 3- seed values
+(define-fold-k fold2 (knil1 knil2))
+(define-fold-k fold3 (knil1 knil2 knil3))
+
 ;; partial applied version
 (define-method fold$ (proc)
   (lambda (knil . lists) (apply fold proc knil lists)))
 (define-method fold$ (proc knil)
   (lambda lists (apply fold proc knil lists)))
+
+(define-method fold2$ (proc knil1 knil2)
+  (lambda lists (apply fold2 proc knil1 knil2 lists)))
+
+(define-method fold3$ (proc knil1 knil2 knil3)
+  (lambda lists (apply fold3 proc knil1 knil2 knil3 lists)))
 
 ;; map --------------------------------------------------
 
@@ -253,6 +277,31 @@
 (define-method map-to ((class <list-meta>) proc coll . more)
   (apply map proc coll more))
 
+;; map-accum --------------------------------------------
+
+;; Like Haskell's mapAccumL, but the order of args are different.
+;; 1-ary case:  ((elt, seed) -> (res, seed)), seed, [elt] -> ([res], seed)
+
+(define-method map-accum (proc knil (coll <collection>) . more)
+  (if (null? more)
+    (receive (res knil)
+        (fold2 (lambda (elt lis knil)
+                 (receive (res knil) (proc elt knil)
+                   (values (cons res lis) knil)))
+               '() knil coll)
+      (values (reverse! res) knil))
+    (call-with-iterators
+     (cons coll more)
+     (lambda (ends? nexts)
+       (let loop ((lis '()) (knil knil))
+         (if (any (cut <>) ends?)
+           (values (reverse! lis) knil)
+           (receive (res knil)
+               (apply proc (fold-right (lambda (p r) (cons (p) r))
+                                       (list knil)
+                                       nexts))
+             (loop (cons res lis) knil))))))
+    ))
 
 ;; for-each ---------------------------------------------
 
@@ -411,5 +460,25 @@
 (define-method coerce-to ((class <string-meta>) (coll <list>))
   (list->string coll))
 
+;; group-collection---------------------------------------
+;;  gather elements with the same key value.
+;;  cf. group-sequence in gauche.sequence
+
+(define-method group-collection ((col <collection>) . args)
+  (let-keywords* args ((key-proc  :key identity)
+                       (test-proc :test  eqv?))
+    (fold (lambda (b r) (cons (reverse! (cdr b)) r))
+          '()
+          (fold (lambda (elt buckets)
+                  (let1 key (key-proc elt)
+                    (cond
+                     ((assoc key buckets test-proc)
+                      => (lambda (p)
+                           (push! (cdr p) elt)
+                           buckets))
+                     (else
+                      (cons (list key elt) buckets)))))
+                '()
+                col))))
 
 (provide "gauche/collection")

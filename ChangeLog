@@ -1,3 +1,10 @@
+2004-12-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/collection.scm (fold2, fold3, map-accum,
+	  group-collection): added these procedures.
+	* lib/gauche/sequence.scm (group-sequence): added a procedure.
+	* test/colseq.scm, doc/modgauche.texi: updated accordingly.
+
 2004-12-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/queue.scm (queue-push-unique!, enqueue-unique!): added

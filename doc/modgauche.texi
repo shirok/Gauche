@@ -1246,7 +1246,8 @@ Schemeの規格は@code{map}や@code{for-each}などの繰り返し手続きを定義しており、
 @c JP
 @item マッピング
 @c COMMON
-@code{fold}, @code{map}, @code{map-to}, @code{for-each}
+@code{fold}, @code{fold2}, @code{fold3}, 
+@code{map}, @code{map-to}, @code{map-accumf, }@code{for-each}
 @c EN
 @item Selection and searching
 @c JP
@@ -1254,6 +1255,7 @@ Schemeの規格は@code{map}や@code{for-each}などの繰り返し手続きを定義しており、
 @c COMMON
 @code{find}, @code{filter}, @code{filter-to},
 @code{remove}, @code{remove-to}, @code{partition}, @code{partition-to}
+@code{group-collection}
 @c EN
 @item Conversion
 @c JP
@@ -1451,6 +1453,40 @@ as soon as at least one of the collections exhausted.
 @c COMMON
 @end deffn
 
+@deffn {Generic function} fold2 proc knil1 knil2 coll coll2 @dots{}
+@deffnx {Generic function} fold3 proc knil1 knil2 knil3 coll coll2 @dots{}
+@c EN
+Like @code{fold}, but they can carry two and three state values
+instead of one, respectively.  The state values are
+initialized by @var{knilN}.  The procedure @var{proc} is called
+with each element of @var{collN}, and the state values.  It must return
+two (@code{fold2}) or three (@code{fold3}) values, which will be used
+as the state values of next iteration.  The values returned in the
+last iteration will be the return values of @code{fold2} and @code{fold3}.
+@c JP
+@code{fold}と似ていますが、1つではなくそれぞれ2, 3個の状態値を
+持ち回ります。状態値は@var{knilN}によって初期化されます。
+手続き@var{proc}はコレクション@var{collN}の各要素値と状態値を
+引数として取り、@code{fold2}の場合は2個、@code{fold3}の場合は3個の
+値を返さねばなりません。返された値が次の繰り返しでの状態値として
+使われます。最後に返された値が@code{fold2}, @code{fold3}の戻り値と
+なります。
+@c COMMON
+
+@example
+(fold2 (lambda (elt a b) (values (min elt a) (max elt b)))
+       256 0 '#u8(33 12 142 1 74 98 12 5 99))
+ @result{} 1 and 142  ;; find minimum and maximum values
+@end example
+
+@c EN
+See also @code{map-accum} below.
+@c JP
+下の@code{map-accum}も参照。
+@c COMMON
+@end deffn
+
+
 @deffn {Generic function} map proc coll coll2 @dots{}
 @c EN
 This extends the built-in @code{map} (@xref{Procedures}).
@@ -1530,6 +1566,60 @@ collection class and have a builder interface
   @result{} #(#f #t #f)
 @end example
 @end deffn
+
+@deffn {Generic function} map-accum proc seed coll1 coll2 @dots{}
+@c EN
+Collects results of @var{proc} over collections, while passing
+a state value.  @var{proc} is called like this:
+@c JP
+状態値を持ち回りながら@var{proc}のコレクションの各要素への呼び出しを集めます。
+@var{proc}は次のように呼ばれます。
+@c COMMON
+@example
+(@var{proc} @var{elt1} @var{elt2} @dots{} @var{seed})
+@end example
+@c EN
+Where @var{elt1} @var{elt2} @dots{} are the elements of 
+@var{coll1} @var{coll2} @dots{}.
+It must return two values; the first value is collected into
+a list (like @code{map}), while the second value is passed as
+@var{seed} to the next call of @var{proc}.  
+@c JP
+ここで@var{elt1} @var{elt2} @dots{}は
+@var{coll1} @var{coll2} @dots{}の各要素です。
+@var{proc}は2つの値を返さねばなりません。最初の値が@code{map}のように
+リストへと集められます。2つ目の値は次の@var{proc}の呼び出しの@var{seed}
+として使われます。
+@c COMMON
+
+@c EN
+When one of the collections is exhausted, @code{map-accum} returns
+two values, the list of the first return values from @var{proc},
+and the second return value of the last call of @var{proc}.
+@c JP
+いずれかのコレクションの要素を使い切った時点で、@code{map-accum}は
+2つの値を返します。最初の値は@var{proc}の最初の戻り値をリストにしたもの、
+2番目の値は@var{proc}の最後の呼び出しの2番目の戻り値です。
+@c COMMON
+
+@c EN
+If the given collections are sequences, it is guaranteed that
+@var{proc} is applied in order of the sequence.
+@c JP
+もし与えられたコレクションがシーケンスであった場合は、
+@var{proc}はシーケンスの順序通りに適用されます。
+@c COMMON
+
+@c EN
+This is similar to Haskell's @code{mapAccumL}, but note that
+the order of @code{proc}'s argument and return values are
+reversed.
+@c JP
+この手続きはHaskellの@code{mapAccumL}と似ています。但し、
+@code{proc}の引数と戻り値の順が逆転していることに注意して下さい。
+@c COMMON
+@end deffn
+
 
 @deffn {Generic function} for-each proc coll coll2 @dots{}
 @c EN
@@ -1762,6 +1852,57 @@ in the collections of class @var{class}.
   @result{} #(2 4) @r{and} #(1 3)
 @end example
 @end deffn
+
+@deffn {Generic function} group-collection coll &keyword key test
+@c EN
+Generalized @code{partition}.  Groups elements in @var{coll}
+into those who has the same key value, and returns the groups as
+of lists.  Key values are calculated by applying the procedure @var{key}
+to each element of @var{coll}.  The default value of @var{key} is
+@code{identity}.   For each element of @var{coll}, @var{key} is applied
+exactly once.
+The equal-ness of keys are compared by
+@var{test} procedure, whose default is @code{eqv?}.
+@c JP
+@code{partition}を汎化したものです。@var{coll}内の要素を同じキーを
+持つ値同士でグループ化し、リストのリストにして返します。
+キーの値は要素に手続き@var{key}を適用することで得られます。@var{key}の
+デフォルト値は@code{identity}です。@var{coll}の各要素に対して、
+@var{key}は正確に一回だけ呼ばれます。
+キーの等価性判定には手続き@var{test}が使われます。デフォルト値は@code{eqv?}です。
+@c COMMON
+
+@c EN
+If @var{coll} is a sequence, then the order of elements in each group
+of the result is the same order in @var{coll}.
+@c JP
+@var{coll}がシーケンスである場合、結果の各グループに含まれる要素の順は
+もとのシーケンス内での順と同じになります。
+@c COMMON
+
+@example
+(group-collection '(1 2 3 2 3 1 2 1 2 3 2 3))
+  @result{} ((1 1 1) (2 2 2 2 2) (3 3 3 3))
+
+(group-collection '(1 2 3 2 3 1 2 1 2 3 2 3) :key odd?)
+  @result{} ((1 3 3 1 1 3 3) (2 2 2 2 2))
+
+(group-collection '(("a" 2) ("b" 5) ("c" 1) ("b" 3) ("a" 6))
+  :key car :test string=?)
+  @result{} ((("a" 2) ("a" 6)) (("b" 5) ("b" 3)) (("c" 1)))
+@end example
+
+@c EN
+See also @code{group-sequence} in @code{gauche.sequence}
+(@xref{Selection and searching in sequence}),
+which only groups adjacent elements.
+@c JP
+@code{gauche.sequence}の@code{group-sequence}も参照して下さい
+(@ref{Selection and searching in sequence})。
+隣り合う要素同士でグループ化するものです。
+@c COMMON
+@end deffn
+
 
 @node Miscellaneous operations on collection, Fundamental iterator creators, Selection and searching in collection, Collection framework
 @subsection Miscellaneous operations on collection
@@ -7099,6 +7240,7 @@ Gauche組み込みクラスのうち、リスト、ベクター、そして文字列は
 * Fundamental sequence accessors::  
 * Slicing sequence::            
 * Mapping over sequences::      
+* Selection and searching in sequence::  
 * Implementing sequence::       
 @end menu
 
@@ -7212,7 +7354,7 @@ s @result{} #(#\a #\b 5 6 e)
 @end example
 @end deffn
 
-@node Mapping over sequences, Implementing sequence, Slicing sequence, Sequence framework
+@node Mapping over sequences, Selection and searching in sequence, Slicing sequence, Sequence framework
 @subsection Mapping over sequences
 @c NODE シーケンス上のマップ
 
@@ -7313,7 +7455,72 @@ SRFI-1 (@ref{SRFI-1 Searching}参照)の@code{list-index}も見て下さい。
 @c COMMON
 @end deffn
 
-@node Implementing sequence,  , Mapping over sequences, Sequence framework
+@node Selection and searching in sequence, Implementing sequence, Mapping over sequences, Sequence framework
+@subsection Selection and searching in sequence
+@c NODE シーケンスに対する選択と探索
+
+@c EN
+Note that selection and searching methods for collections 
+can also be applied to sequences.
+See @ref{Selection and searching in collection}.
+@c JP
+コレクションに対する選択と探索はシーケンスにも使えます。
+@ref{Selection and searching in collection}を参照して下さい。
+@c COMMON
+
+@deffn {Generic function} group-sequence seq &keyword key test
+@c EN
+Groups consecutive elements in a sequence @var{seq} which
+have the common key value.  A key value of an element is
+obtained by applying the procedure @var{key} to the element;
+the default procedure is @code{identity}.
+For each element in @var{seq}, @var{key} is applied exactly once.
+The equal-ness of keys are compared by @var{test} procedure,
+whose default is @code{eqv?}.
+@c JP
+シーケンス@var{seq}の連続する要素で、同じキー値を持つもの同士を
+グループ化します。
+キーの値は要素に手続き@var{key}を適用することで得られます。@var{key}の
+デフォルト値は@code{identity}です。@var{sedq}の各要素に対して、
+@var{key}は正確に一回だけ呼ばれます。
+キーの等価性判定には手続き@var{test}が使われます。デフォルト値は@code{eqv?}です。
+@c COMMON
+
+@example
+(group-sequence '(1 1 1 2 3 4 4 2 2 3 1 1 3))
+  @result{} ((1 1 1) (2) (3) (4 4) (2 2) (3) (1 1) (3))
+
+(group-sequence '(1 1 1 2 3 4 4 2 2 3 1 1 3) 
+                :key (cut modulo <> 2)))
+  @result{} ((1 1 1) (2) (3) (4 4 2 2) (3 1 1 3))
+
+(group-sequence '#("a" "a" "b" "b" "c" "d" "d") 
+                :test string=?)
+  @result{} (("a" "a") ("b" "b") ("c") ("d" "d"))
+
+(group-sequence "aabbcdd"
+                :test char=?)
+  @result{} ((#\a #\a) (#\b #\b) (#\c) (#\d #\d))
+@end example
+
+@c EN
+This method is similar to Haskell's @code{group}.
+If you want to group elements that are not adjacent, 
+use @code{group-collection} 
+(@xref{Selection and searching in collection}).
+@c JP
+このメソッドはHaskellの@code{group}と似ています。
+隣り合っていない要素もグループ化したい場合は、
+@code{group-collection} 
+(@ref{Selection and searching in collection}参照)を使って下さい。
+@c COMMON
+
+@end deffn
+
+
+
+
+@node Implementing sequence,  , Selection and searching in sequence, Sequence framework
 @subsection Implementing sequence
 @c NODE シーケンスを実装する
 
@@ -10967,8 +11174,8 @@ prior to @var{rel2}, @var{rel1} is the same as @var{rel2}, or
 @emph{Virtual ports}, or procedural ports, are the ports
 whose behavior can be programmed in Scheme.
 @c JP
-@emph{仮想ポート}あるいは手続き的ポートは Scheme でプログラム可能な振舞い
-をするポートです。
+@emph{仮想ポート}あるいは手続き的ポートとは、その振舞いを
+Scheme でプログラム可能なポートです。
 @c COMMON
 
 @c EN
@@ -10991,8 +11198,9 @@ I/O 操作は内部バッファ上で行われ、ユーザが提供する手続きは
 This module also provides virtual buffered ports backed up
 by a uniform vector, as an example of the feature.
 @c JP
-このモジュールはさらに、機能の例にあるような、ユニフォームベクタにより
+このモジュールはさらに、ユニフォームベクタにより
 バックアップされる仮想バッファポートも提供します。
+これは仮想ポートの使用例でもあります。
 @c COMMON
 @end deftp
 
@@ -11081,8 +11289,8 @@ The procedure must return a character,
 it becomes the value read from the port.  If it returns
 other values, the port returns EOF.
 @c JP
-この手続きは文字返すか、または@code{#f}あるいEOFオブジェクトを返さなければ
-なりません。文字が返す場合には、それがこのポートから読みとられる値と
+この手続きは文字を返すか、または@code{#f}あるいはEOFオブジェクトを返さなければ
+なりません。文字を返した場合には、それがこのポートから読みとられる値と
 なります。それ以外の値を返す場合は、このポートは EOF を返します。
 @c COMMON
 
@@ -11094,7 +11302,7 @@ value(s) read from the port.
 @c JP
 このポートがバイナリ入力を要求され、かつ、@code{getb} 手続きを持たない場合、
 このポートはこの手続きを呼び、文字をバイト列に変換し、それをこのポートから
-読みだされる値としてつかいます。
+読みだされる値として使います。
 @c COMMON
 @end defivar
 
@@ -11104,10 +11312,18 @@ If set, the value must be a procedure that takes one argument,
 a positive exact integer.  It is called when the block binary
 input, such as @code{read-block}, is requested.
 @c JP
-設定されているなら、その値は、正の正確は整数の引数をひとつだけとる手続き
+設定されているなら、その値は、正の正確な整数の引数をひとつだけとる手続き
 でなければなりません。ブロックバイナリ入力、たとえば、
 @code{read-block}などが要求された場合に、呼出されます。
 @c COMMON
+
+It must return a (maybe incomplete) string up to the specified size, 
+or @code{#f} or EOF object.  If it returns a null string, @code{#f}
+or EOF object, 
+the port thinks it reached EOF.  If it returns other string,
+it is used as the result of block read.
+It shouldn't return a string larger than the given size
+(Note: you must count size (bytes), not the number of characters).
 
 @c EN
 The reason of this procedure is efficiency; if this procedure
@@ -11116,11 +11332,11 @@ to prepare the block of data.  In some cases, providing block input
 can be much more efficient (e.g. suppose you're reading from
 a block of memory chunk).
 @c JP
-この手続きは効率をかせぐためにあります。もし、この手続きが用意されて
+この手続きは効率のためにあります。もし、この手続きが用意されて
 いなければ、このポートは、データブロックを準備するのに @code{getb}を
 繰り返し呼びます。場合によっては、ブロック入力を用意するほうが
 はるかに効率的です。(たとえば、メモリチャンクのブロックからの読みだし
-を行なるような場合です。)
+を行なうような場合です。)
 @c COMMON
 
 @c EN
@@ -11171,7 +11387,7 @@ if you don't need to take an action when the port is closed.
 @c JP
 設定されているのなら、その値は引数を取らない手続きでなければなりません。
 その手続きはこのポートがクローズされるときに呼びだされ、返り値は
-破棄されます。このポートをクローズするときになんらかのアクションが
+捨てられます。このポートをクローズするときになんらかのアクションが
 必要でないのなら、未設定にしておけます。
 @c COMMON
 
@@ -11179,9 +11395,9 @@ if you don't need to take an action when the port is closed.
 This procedure may be called from a finalizer, so you have to be
 careful to write it.   See the note on finalization below.
 @c JP
-この手続きはファイナライザから呼ばれることになるでしょう。したがって、
-これを書くときには慎重にやる必要があります。後述のファイナライズに
-関する注意書きを参照してください。
+この手続きはファイナライザから呼ばれることもあり得ます。したがって、
+この手続きは慎重に書く必要があります。後述のファイナライズに
+関する注意を参照してください。
 @c COMMON
 @end defivar
 
@@ -11199,9 +11415,9 @@ beginning of the port).
 の 2つの引数をとる手続きでなければなりません。これらの引数の意味は、
 @code{port-seek} (@ref{Common port operations} 参照) のそれと同じです。
 この手続きは、次の読み出しが新しい位置から始められるように
-内部のリードポインタを調整しなければなりません。それは
-(そのポートの最初から指定したバイトオフセット分)更新された
-ポインタを返すようにすべきです。)
+内部のリードポインタを調整しなければなりません。そして
+更新されたポインタ(ポート先頭からのバイトオフセット)
+を返さなければなりません。
 @c COMMON
 
 @c EN
@@ -11238,7 +11454,7 @@ An instance of this class can be used as an output port.
 The behavior of the port depends on the settings of the
 instance slot values.
 @c JP
-このクラスインスタンスは出力ポートとして使えます。
+このクラスのインスタンスは出力ポートとして使えます。
 このポートの振舞いはインスタンスのスロットに設定された値に依存します。
 @c COMMON
 
@@ -11345,7 +11561,7 @@ This procedure may be called from a finalizer, and needs a special
 care.  See notes on finalizers below.
 @c JP
 この手続きはファイナライザから呼ばれることがあります。したがって、
-特別な注意が必要です。後述のファイナライザに関する注意書きを
+特別な注意が必要です。後述のファイナライザに関する注意を
 参照してください。
 @c COMMON
 
@@ -11394,7 +11610,7 @@ far more efficient than calling Scheme procedures for every
 I/O operation.   Actually, the internal buffering mechanism is
 the same as Gauche's file I/O ports.
 @c JP
-これらのポートは、内部バッファをもっており、そのバッファを満たすか
+これらのポートは、内部バッファを持っており、そのバッファを満たすか
 フラッシュするかの必要があるときにのみ、Scheme の手続きが呼ばれます。
 通常、I/O毎に Scheme の手続きを呼ぶよりも遥かに効率がいいものです。
 実際の内部バッファリング機構は、GaucheのファイルI/Oポートと同じです。
@@ -11432,9 +11648,10 @@ data, it must fill at least one byte; if the data isn't readily
 available, it has to wait until some data becomes available.
 @c JP
 設定されているなら、@code{u8vector} の引数を一つとる手続きでなければ
-なりません。そのベクタの最初からデータを満さなければなりません。
-データが少い場合には、ベクタ全体を満す必要はありません。しかしながら、
-データが残っている場合には少くとも1バイトは満されていなければなりません。
+なりません。そのベクタの最初からデータを満たさなければなりません。
+要求されたものよりデータの残りが少ない場合には、
+ベクタ全体を満たす必要はありません。しかしながら、
+データが残っている場合には少くとも1バイトは満たさなければなりません。
 もしデータがまだ利用可能になっていなければ、なにがしかのデータが利用可能に
 なるまで待たなければなりません。
 @c COMMON
@@ -11458,7 +11675,7 @@ binary and character I/O.
 @c JP
 設定されているなら、引数をとらない手続きでなければなりません。
 この手続きは、なにがしかの読み込み用データが利用可能になっていれば
-真の値を返し、そうでなければ、@code{#f}を返す。完全仮想ポートとはちがい、
+真の値を返し、そうでなければ、@code{#f}を返します。完全仮想ポートとはちがい、
 バイナリI/Oと文字I/Oを区別する必要はありません。
 @c COMMON
 
@@ -11499,7 +11716,7 @@ file descriptor number (exact nonnegative integer).
 The procedure is called when @code{port-file-number} is called
 on the port.
 @c JP
-設定されているなら、裏にあるファイルディスクリプタ番号(正確な非負整数)
+設定されているなら、このポートの使っているファイルディスクリプタ番号(正確な非負整数)
 を返す手続きでなければなりません。この手続きは @code{port-file-number}
 をこのポートに対して呼出したときに呼ばれます。
 @c COMMON
@@ -11508,7 +11725,8 @@ on the port.
 If there's no such underlying file descriptor, you can
 return @code{#f}, or you can leave this slot unset.
 @c JP
-裏にファイルディスクリプタが存在していなければ、@code{#f} 返してもかまいません
+そのようなファイルディスクリプタが存在していなければ、
+@code{#f} を返すことができます。
 あるいは、このスロットを未設定にしておくこともできます。
 @c COMMON
 @end defivar
@@ -11530,7 +11748,7 @@ This procedure may be called from a finalizer, and
 needs special care.  See the note on finalization below.
 @c JP
 この手続きはファイナライザから呼ばれる可能性があり、特別な注意が
-必要です。後述のファイナライズに関する注意書きを参照してください。
+必要です。後述のファイナライズに関する注意を参照してください。
 @c COMMON
 @end defivar
 
@@ -11613,8 +11831,8 @@ to @code{u8vector} (see @code{uvector-alias} in
 @c JP
 以下の 2つの手続きは、ユニフォームベクタでバックアップされた、
 バッファ入/出力ポートを返します。読み込み元のベクタあるいは
-書き出し相手のベクタはどのようなユニフォームベクタであってもかまいません。
-しかし、@code{u8vector} の別名になります
+書き出し相手のベクタはどのようなユニフォームベクタであってもかまいませんが、
+実際の入出力時には@code{u8vector} にaliasされます
 (@ref{Uvector conversion operations} の @code{uvector-alias} 参照)。
 @c COMMON
 
@@ -11626,9 +11844,9 @@ example of using virtual ports; read @file{gauche/vport.scm}
 (or @file{ext/vport/vport.scm} in the source tree) if you're
 curious about the implementation.
 @c JP
-@code{pack}/@code{unpack}(@ref{Packing Binary Data}参照) と一緒につかうと
+@code{pack}/@code{unpack}(@ref{Packing Binary Data}参照) と一緒に使うと
 バイナリのデータ構造をパースしたり、構築したりするのに便利です。
-また、仮想ポートの使い方の例もあります。実装法に興味のあるむきは、
+また、仮想ポートの使い方の例でもあります。実装法に興味があれば、
 ソースツリーの @file{gauche/vport.scm}(あるいは @file{ext/vport/vport.scm})
 を読んでください。 
 @c COMMON
@@ -11653,7 +11871,7 @@ data output to the port.  If @var{uvector} is completely
 filled, more data are silently discarded.
 Seek operation is also implemented.
 @c JP
-与えられた uvector をポートへのデータ出力で満す出力ポートを返します。
+与えられた uvector をポートへのデータ出力で満たす出力ポートを返します。
 @var{uvector}が満杯になれば、それ以上のデータは黙って廃棄されます。
 シーク操作も実装されています。
 @c COMMON
@@ -11662,7 +11880,7 @@ Seek operation is also implemented.
 @c EN
 @subsubheading Note on finalization
 @c JP
-@subsubheading ファイナライズに関する注意書き
+@subsubheading ファイナライズに関する注意
 @c COMMON
 
 @c EN
@@ -11673,12 +11891,12 @@ a finalizer of the port.  Since it is a part of garbage-collection
 process (although the Scheme procedure itself is called outside of
 the garbage collector main part), it requires special care.
 @c JP
-クローズされていない仮想ポートがガーベッジ・コレクションされると、
+クローズされていない仮想ポートがガベージ・コレクションされると、
 クローズ手続きが呼ばれます(仮想バッファポートの場合は、
 フラッシュ手続きがクローズ手続きの前に呼ばれます)。これは、
-そのポートのファイナライザによって行われます。これはガーベッジ・コレクション
-処理の一部ですから(その Scheme 手続きそのものがガーベッジ・コレクタの
-メインパートの外側で呼ばれたとしても)特別な注意が必要です。
+そのポートのファイナライザによって行われます。これはガベージ・コレクション
+処理の一部ですから(Scheme 手続きそのものはガーベッジ・コレクタの
+メインパートの外側で呼ばれているのですが、それでも)特別な注意が必要です。
 @c COMMON
 
 @itemize @bullet
@@ -11693,14 +11911,14 @@ finalizer, it may be possible that @var{Y}'s finalizer has already been
 called and @var{Y} is closed.   So @var{X}'s @code{flush} procedure
 has to check if @var{Y} has not been closed.
 @c JP
-当該の仮想ポートが参照しているオブジェクトが既にファイナライズされて
-しまっているということはありえることです。たとえば、仮想ポート @var{X}
-は、@emph{流し込み用}のポート @var{Y} への参照のみを保持しており、それに
+仮想ポートが参照しているオブジェクトが既にファイナライズされて
+しまっているということがあり得ます。たとえば、仮想ポート @var{X}
+は、@emph{流し込み用}のポート @var{Y} への唯一の参照を保持しており、それに
 出力するものとします。@var{X}の @code{flush} 手続きは、その出力を
-@var{Y}へ送ります。しかしながら、@code{flush} 手続きがファイナライザから
-呼ばれることがありえます。そして、@var{Y} のファイナライザが既に
-呼ばれていて、@var{Y} がクローズしてしまっていることがありえます。
-それゆえ、@var{X} の @code{flush} 手続きは、@var{Y} が既にクローズして
+@var{Y}へ送ります。もし@code{flush} 手続きがファイナライザから
+呼ばれた場合、@var{Y} のファイナライザが既に
+呼ばれていて、@var{Y} がクローズしてしまっていることがあるのです。
+従って @var{X} の @code{flush} 手続きは、@var{Y} が既にクローズして
 いるかどうかをチェックする必要があります。
 @c COMMON
 
@@ -11724,7 +11942,7 @@ in Scheme programs, so effectively it should be considered as
 running in a different thread.
 @c JP
 単一スレッドのプログラムにおいても、ファイナライザは、Schemeの
-プログラムのいたるところで走る可能性があります。したがって、事実上は
-別々のスレッドで走っていると考えておくべきです。
+プログラムのいたるところで走る可能性があります。したがって、実質的に
+それは別のスレッドで走っていると考えておくべきです。
 @c COMMON
 @end itemize
