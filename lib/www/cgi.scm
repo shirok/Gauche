@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: cgi.scm,v 1.1 2001-10-18 09:56:54 shirok Exp $
+;;;  $Id: cgi.scm,v 1.2 2001-11-10 11:44:38 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CG.
@@ -24,7 +24,8 @@
   (use rfc.uri)
   (use rfc.cookie)
   (export cgi-parse-parameters
-          cgi-get-parameter)
+          cgi-get-parameter
+          cgi-header)
   )
 (select-module www.cgi)
 
@@ -81,5 +82,17 @@
                     (map convert (cdr p))
                     (convert (cadr p)))))
           (else default))))
+
+(define (cgi-header . args)
+  (let ((content-type (get-keyword :content-type args "text/html"))
+        (location     (get-keyword :location args #f))
+        (cookies      (get-keyword :cookies args '())))
+    (if location
+        (list "Location: " (x->string location) "\n\n")
+        (list "Content-type: " (x->string content-type) "\n"
+              (map (lambda (cookie)
+                     (list "Set-cookie: " cookie "\n"))
+                   cookies)
+              "\n"))))
 
 (provide "www/cgi")
