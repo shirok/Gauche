@@ -9,7 +9,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.86 2001-10-06 10:40:05 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.87 2001-10-08 20:16:22 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -213,6 +213,33 @@ Gaucheでは、言語のコアとスクリプトとして良く使いそうな機能に絞って
 @c COMMON
 
 @c EN
+@item Multibyte strings
+@c JP
+@item マルチバイト文字列
+@c COMMON
+
+@c EN
+We can no longer live happily in ASCII-only or 1-byte-per-character world.
+Nowadays you have to exchange text information in various encodings,
+some of them have much more characters than 256 (or, in fact, more than 65536).
+The practical language implementations are required to handle
+multibyte (wide) characters in some way.
+
+Gauche supports multibyte strings natively, providing robust and
+consistent support than @i{ad hoc} library-level implementation.
+@xref{Multibyte Strings}, for details.
+@c JP
+文字列が1バイトキャラクタのみを扱っていれば良かった時代は過ぎ去りました。
+現代のプログラミングシステムは、様々なエンコーディングによるマルチバイト文字／文字列を
+自然に扱える必要があります。
+
+Gaucheは内部的に文字列を全て、コンパイル時に選択したエンコーディングの
+マルチバイト文字列として扱います。後から付け足したライブラリレベルでの
+マルチバイト文字列のサポートよりも、一貫性がありロバストな文字列操作が可能になっています。
+詳しくは@ref{Multibyte Strings}を参照してください。
+@c COMMON
+
+@c EN
 @item Modular development
 @c JP
 @item モジュラー開発
@@ -229,18 +256,6 @@ The simple and clean module system, a powerful CLOS-like object
 syste with a metaobject protocol, and feature based on-demand
 file loading system are the elements.
 @xref{Module System}, for details.
-
-@item Multibyte strings
-
-We can no longer live happily in ASCII-only or 1-byte-per-character world.
-Nowadays you have to exchange text information in various encodings,
-some of them have much more characters than 256 (or, in fact, more than 65536).
-The practical language implementations are required to handle
-multibyte (wide) characters in some way.
-
-Gauche supports multibyte strings natively, providing robust and
-consistent support than @i{ad hoc} library-level implementation.
-@xref{Multibyte Strings}, for details.
 
 @item System interface
 
@@ -721,8 +736,30 @@ parse command-line options.
 @section Literals
 
 @defspec quote datum
-[R5RS] Inserts @var{datum} as a literal value.
+[R5RS]
+@c EN
+Evaluates to @var{datum}.
+@c JP
+@var{datum}それ自身を返します。
+@c COMMON
+@example
+(quote x) @result{} x
+(quote (1 2 3)) @result{} (1 2 3)
+@end example
 @end defspec
+
+@deftp {Reader Syntax} @code{'@var{datum}}
+[R5RS]
+@c EN
+Equivalent to @code{(quote datum)}.
+@c JP
+@code{(quote datum)}の略記です。
+@c COMMON
+@example
+'x @result{} x
+'(1 2 3) @result{} (1 2 3)
+@end example
+@end deftp
 
 @c ----------------------------------------------------------------------
 @node Making Procedures, Assignments, Literals, Core Syntax
@@ -739,19 +776,36 @@ parse command-line options.
 
 @defspec set! symbol expression
 @defspecx set! (proc arg @dots{}) expression
-[R5RS][SRFI-17] First, @var{expression} is evaluated.
+[R5RS][SRFI-17]
+@c EN
+First, @var{expression} is evaluated.
 In the first form, the binding of @var{symbol} is modified
 so that next reference of @var{symbol} will return
 the result of @var{expression}.
 If @var{symbol} is not locally bound, the global variable named @var{symbol}
 must already exist, or an error is signalled.
+@c JP
+まず@var{expression}が評価されます。最初の形式では、@var{symbol}への束縛が
+@var{expression}の結果を指すように変更されます。
+もし@var{symbol}がローカルに束縛されていない場合は、グローバルな変数@var{symbol}が
+存在していなければなりません。そうでなければエラーが報告されます。
+@c COMMON
 
+@c EN
 The second form is a ``generalized set!'' specified in SRFI-17.
 It is a syntactic sugar of the following form.
 @example
 ((setter @var{proc}) @var{arg} @dots{} @var{expression})
 @end example
 Note the order of the arguments differs from CommonLisp's @code{setf}.
+@c JP
+2番目の形式はSRFI-17に定義されている「一般化されたset!」です。
+これは構文的な装飾であり、実際は以下のように解釈されます。
+@example
+((setter @var{proc}) @var{arg} @dots{} @var{expression})
+@end example
+CommonLispの@code{setf}とは引数の順序が異なることに注意して下さい。
+@c COMMON
 
 @example
 (define x 3)
@@ -764,7 +818,9 @@ x                    @result{} (5 2)
 @end defspec
 
 @defun setter proc
-[SRFI-17] Returns a setter procedure associated to the procedure @var{proc}.
+[SRFI-17]
+@c EN
+Returns a setter procedure associated to the procedure @var{proc}.
 If no setter is associated to @var{proc}, an error is signalled.
 
 To associate a setter procedure to another procedure, you can use
@@ -777,6 +833,18 @@ A procedure's setter can be ``locked'' to it.  System default setters,
 like @code{set-car!} for @code{car}, is locked and can't be set by
 the above way.   In order to lock a setter to a user defined procedure,
 use @code{getter-with-setter} below.
+@c JP
+手続き@var{proc}のsetter手続きを返します。もし@var{proc}がsetter手続きを持たなければ、
+エラーが返されます。
+
+ある手続きにsetter手続きを関連付けるには、@code{setter}自身のsetter手続きを使うことが
+できます。
+@example
+(set! (setter @var{get}) @var{set})
+@end example
+
+特定の手続きにsetter手続きを「ロック」することができます。
+@c COMMON
 @end defun
 
 @defun getter-with-setter get set
