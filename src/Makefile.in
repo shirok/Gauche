@@ -33,7 +33,7 @@ ARCH = @host@
 
 GOSH_USE_SHLIB = @GOSH_USE_SHLIB@
 
-INSTALL_HEADERS = gauche.h ../gc/include/gc.h 
+INSTALL_HEADERS = gauche.h ../gc/include/gc.h ../gc/include/gc_pthread_redirects.h
 INSTALL_SUBHEADERS = gauche/config.h gauche/vm.h gauche/vminsn.h \
                      gauche/char_euc_jp.h gauche/char_utf_8.h    \
                      gauche/char_sjis.h gauche/char_none.h       \
