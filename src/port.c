@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: port.c,v 1.21 2001-04-26 07:06:00 shiro Exp $
+ *  $Id: port.c,v 1.22 2001-05-15 10:11:23 shirok Exp $
  */
 
 #include <unistd.h>
@@ -236,7 +236,11 @@ ScmObj Scm_OpenFilePort(const char *path, const char *mode)
     return Scm_MakeFilePort(fp, Scm_MakeString(path, -1, -1), mode, TRUE);
 }
 
-/* Auxiliary function for macros */
+/*
+ * Auxiliary function for macros
+ * These functions should be called only from the associated macros.
+ * Error check is omitted for better performance.
+ */
 
 /* Called from SCM_FILE_GETC, when it finds the char is multibyte. 
    Assuming ungotten and incomplete buffer is empty.
@@ -262,6 +266,42 @@ int Scm__PortFileGetc(int prefetch, ScmPort *port)
     SCM_CHAR_GET(p, ch);
     port->bufcnt = 0;
     return ch;
+}
+
+/* Called from SCM_ISTR_GET{B|C}, when it reaches the end of the buffer.
+   Assuming ungotten and incomplete buffer is empty. */
+
+int Scm__PortIstrGetb(ScmPort *port)
+{
+    if (port->src.istr.fill) {
+        if (port->src.istr.fill(port, FALSE) < 0) return EOF;
+    }
+    if (port->src.istr.rest <= 0) return EOF;
+    port->src.istr.rest--;
+    return *port->src.istr.current++;
+}
+
+int Scm__PortIstrGetc(ScmPort *port)
+{
+    if (port->src.istr.fill) {
+        if (port->src.istr.fill(port, TRUE) < 0) return EOF;
+    }
+    if (port->src.istr.rest <= 0) return EOF;
+    else {
+        const char *cp = SCM_PORT(port)->src.istr.current;
+        unsigned char uc = (unsigned char)*cp;
+        int siz = SCM_CHAR_NFOLLOWS(uc);
+        int c;
+        
+        if (SCM_PORT(port)->src.istr.rest < siz) {
+            c = EOF;
+        } else {
+            SCM_CHAR_GET(cp, c);
+        }
+        SCM_PORT(port)->src.istr.current += siz + 1;
+        SCM_PORT(port)->src.istr.rest -= siz + 1;
+        return c;
+    }
 }
 
 /* Called from SCM_GETB, when there's an ungotten char or buffered
@@ -330,6 +370,7 @@ ScmObj Scm_MakeInputStringPort(ScmString *str)
     z->src.istr.start = SCM_STRING_START(str);
     z->src.istr.rest  = SCM_STRING_SIZE(str);
     z->src.istr.current = z->src.istr.start;
+    z->src.istr.fill = NULL;
     return SCM_OBJ(z);
 }
 
