@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: load.c,v 1.38 2001-05-23 09:30:43 shirok Exp $
+ *  $Id: load.c,v 1.39 2001-05-30 07:47:16 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -386,7 +386,7 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn)
         return SCM_FALSE;
     
     cpath = Scm_GetStringConst(SCM_STRING(truename));
-    handle = dlopen(cpath, RTLD_LAZY);
+    handle = dlopen(cpath, RTLD_NOW);
     if (handle == NULL) {
         /* TODO: check if dlerror() is available on all platforms */
         const char *err = dlerror();
