@@ -482,6 +482,30 @@
                     (sys-exit 0)
                     (sys-pause)))))))))
           
+(test "sigmask" '(hup int)
+      (lambda ()
+        (let ((r '())
+              (mask1 (sys-sigset-add! (make <sys-sigset>) SIGINT)))
+          (call/cc
+           (lambda (k)
+             (with-signal-handlers
+              ((SIGINT (push! r 'int))
+               (SIGHUP (push! r 'hup)))
+              (lambda ()
+                (sys-sigmask SIG_BLOCK mask1)
+                (let ((pid (sys-fork)))
+                  (if (= pid 0)
+                      (begin
+                        (sys-kill (sys-getppid) SIGINT)
+                        (sys-kill (sys-getppid) SIGHUP)
+                        (sys-exit 0))
+                      (begin
+                        (let loop ()
+                          (when (null? r) (loop)))
+                        (sys-sigmask SIG_UNBLOCK mask1)
+                        (let loop ()
+                          (when (< (length r) 2) (loop)))
+                        r))))))))))
 
 (test-end)
 
