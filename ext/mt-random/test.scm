@@ -9,8 +9,8 @@
 
 ;; instead of (use srfi-4) ...
 (add-load-path "../uvector")
-(load "srfi-4")
-(import srfi-4)
+(load "uvector")
+(import gauche.uvector)
 
 (add-load-path ".")
 (load "mt-random")

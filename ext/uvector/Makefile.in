@@ -8,7 +8,7 @@ GAUCHE_TOP = @GAUCHE_TOP@
 INSTALL = @INSTALL@
 
 ARCHFILES = libuvector.so
-SCMFILES  = srfi-4.scm
+SCMFILES  = uvector.scm srfi-4.scm
 HEADERS   = uvector.h
 
 TARGET    = libuvector.so
@@ -59,11 +59,8 @@ install : all
 	    $(INSTALL) -m 444 $$f $(HEADER_INSTALL_DIR); \
 	  fi; \
 	done
-	@for f in $(SCMFILES) _end; do \
-	  if test $$f != _end; then \
-	    $(INSTALL) -m 444 $$f $(SCM_INSTALL_DIR); \
-	  fi; \
-	done
+	$(INSTALL) -m 444 uvector.scm $(SCM_INSTALL_DIR)/gauche
+	$(INSTALL) -m 444 srfi-4.scm $(SCM_INSTALL_DIR)
 	@for f in $(ARCHFILES) _end; do \
 	  if test $$f != _end; then \
 	    $(INSTALL) -m 555 $$f $(ARCH_INSTALL_DIR); \
@@ -84,7 +81,9 @@ realclean : clean
 # these are only for developer's.
 
 link : $(TARGET) $(SCMFILES)
-	$(GOSH) ../xlink -l $(TARGET) $(SCMFILES)
+	$(GOSH) ../xlink -l $(TARGET) 
+	$(GOSH) ../xlink -l srfi-4.scm
+	$(GOSH) ../xlink -l -d gauche uvector.scm
 
 unlink :
 	-$(GOSH) ../xlink -u $(TARGET) $(SCMFILES)

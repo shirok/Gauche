@@ -19,7 +19,7 @@ cat <<EOF
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  \$Id: uvector.c.sh,v 1.20 2002-06-25 08:32:21 shirok Exp $
+ *  \$Id: uvector.c.sh,v 1.21 2002-06-27 10:41:40 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -304,7 +304,7 @@ void Scm_Init_libuvector(void)
     ScmObj t;
 
     SCM_INIT_EXTENSION(uvector);
-    m = SCM_MODULE(SCM_FIND_MODULE("srfi-4", TRUE));
+    m = SCM_MODULE(SCM_FIND_MODULE("gauche.uvector", TRUE));
     Scm_InitBuiltinClass(&Scm_S8VectorClass,  "<s8vector>",  NULL, 0, m);
     Scm_InitBuiltinClass(&Scm_U8VectorClass,  "<u8vector>",  NULL, 0, m);
     Scm_InitBuiltinClass(&Scm_S16VectorClass, "<s16vector>", NULL, 0, m);

@@ -1,3 +1,9 @@
+2002-06-27  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/*, src/read.c : uniform vector is now supported in
+	  gauche.uvector module instead of srfi-4.  srfi-4 module is kept
+	  for compatibility.
+
 2002-06-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-26.scm, test/srfi.scm, src/gauche-init.scm : added SRFI-26

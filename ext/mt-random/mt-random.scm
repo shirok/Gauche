@@ -12,11 +12,11 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: mt-random.scm,v 1.6 2002-05-28 06:51:42 shirok Exp $
+;;;  $Id: mt-random.scm,v 1.7 2002-06-27 10:41:40 shirok Exp $
 ;;;
 
 (define-module math.mt-random
-  (use srfi-4)
+  (use gauche.uvector)
   (export <mersenne-twister>
           mt-random-set-seed!
           mt-random-get-state

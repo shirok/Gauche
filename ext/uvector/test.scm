@@ -3,7 +3,9 @@
 ;;
 
 (use gauche.test)
-(use srfi-4)
+;(use srfi-4)
+(load "uvector")
+(import gauche.uvector)
 (use srfi-1)
 
 (test-start "srfi-4")
