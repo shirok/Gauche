@@ -1,7 +1,7 @@
 ;;;
 ;;; Disassembler - print VM compiled code in (sort of) human-readable way
 ;;;
-;;;  Copyright(C) 2001 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2001-2002 by Shiro Kawai (shiro@acm.org)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
 ;;;  accompanying documentation for any purpose is hereby granted,
@@ -12,7 +12,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: disasm.scm,v 1.7 2001-09-28 10:00:55 shirok Exp $
+;;;  $Id: disasm.scm,v 1.8 2002-04-21 10:35:47 shirok Exp $
 ;;;
 
 (define-module gauche.vm.disasm
@@ -73,7 +73,7 @@
       (print-fill)
       (emit note))))
 
-(define (DISASM proc)
+(define (disasm proc)
   (disasm-code (closure-code proc)))
 
 (define (disasm-code code)
