@@ -1,3 +1,9 @@
+2002-07-18  Shiro Kawai  <shiro@acm.org>
+
+	* aclocal.m4, configure.in, src/gauche-config.in : save the default
+	  CFLAGS in gauche-config.  includes AC_GAUCHE_OPTFLAGS in
+	  AC_GAUCHE_FLAGS.
+
 2002-07-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c (main): fixed a bug that didn't flush buffered ports
