@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: lcs.scm,v 1.6 2003-09-05 20:58:29 shirok Exp $
+;;;  $Id: lcs.scm,v 1.7 2003-10-06 09:48:16 shirok Exp $
 ;;;
 
 ;;; Created:    <2002-06-21 15:36:46 foof>
@@ -92,35 +92,37 @@
                 (else
                  (loop (+ i 1) maxl r)))))
 
-      (let d-loop ((d 0))
-        (if (> d M+N)
-          (error "lcs-with-positions; something's wrong (implementation error?)")
-          (let k-loop ((k (- d)))
-            (if (> k d)
-              (d-loop (+ d 1))
-              (receive (x l r)
-                  (if (or (= k (- d))
-                          (and (not (= k d))
-                               (< (vd (- k 1)) (vd (+ k 1)))))
-                    (values (vd (+ k 1)) (vl (+ k 1)) (vr (+ k 1)))
-                    (values (+ (vd (- k 1)) 1) (vl (- k 1)) (vr (- k 1))))
-                (receive (x y l r)
-                    (let xy-loop ((x x) (y (- x k)) (l l) (r r))
-                      (cond ((>= x N) (values x y l r))
-                            ((>= y M) (values x y l r))
-                            ((eq (vector-ref A x) (vector-ref B y))
-                             (xy-loop (+ x 1) (+ y 1) (+ l 1)
-                                      (cons (list (vector-ref A x) x y)
-                                            r)))
-                            (else (values x y l r))))
-                  (vd k x)
-                  (vr k r)
-                  (vl k l)
-                  (if (and (>= x N) (>= y M))
-                    (finish)
-                    (k-loop (+ k 2))))
-                )))
-          ))
+      (if (zero? M+N)
+        '(0 ()) ;; boundary case
+        (let d-loop ((d 0))
+          (if (> d M+N)
+            (error "lcs-with-positions; something's wrong (implementation error?)")
+            (let k-loop ((k (- d)))
+              (if (> k d)
+                (d-loop (+ d 1))
+                (receive (x l r)
+                    (if (or (= k (- d))
+                            (and (not (= k d))
+                                 (< (vd (- k 1)) (vd (+ k 1)))))
+                      (values (vd (+ k 1)) (vl (+ k 1)) (vr (+ k 1)))
+                      (values (+ (vd (- k 1)) 1) (vl (- k 1)) (vr (- k 1))))
+                  (receive (x y l r)
+                      (let xy-loop ((x x) (y (- x k)) (l l) (r r))
+                        (cond ((>= x N) (values x y l r))
+                              ((>= y M) (values x y l r))
+                              ((eq (vector-ref A x) (vector-ref B y))
+                               (xy-loop (+ x 1) (+ y 1) (+ l 1)
+                                        (cons (list (vector-ref A x) x y)
+                                              r)))
+                              (else (values x y l r))))
+                    (vd k x)
+                    (vr k r)
+                    (vl k l)
+                    (if (and (>= x N) (>= y M))
+                      (finish)
+                      (k-loop (+ k 2))))
+                  )))
+            )))
       )))
 
 ;; Just returns the LCS

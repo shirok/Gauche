@@ -1,3 +1,8 @@
+2003-10-05  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/lcs.scm (lcs-with-positions) : fixed an error in
+	  the edge case, when both sequences are empty.
+
 2003-10-04  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.7.2
