@@ -1,3 +1,11 @@
+2003-12-12  Shiro Kawai  <shiro@acm.org>
+
+	* lib/slib.scm.in (home-vicinity): make sure it ends with directory
+	  separator.
+	  (slib:load): adjusted to SCM behavior.
+
+	* lib/rfc/mime.scm : added experimentally.
+
 2003-12-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/822.scm : added basic tokenizers.

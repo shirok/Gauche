@@ -53,6 +53,23 @@ Content-Length: 4349
        (equal? rfc822-header1-list
                (rfc822-header->list (open-input-string rfc822-header1))))
 
+;; token parsers
+(test* "rfc822-field->tokens (basic)"
+       '(("aa") ("bb") ("cc") ("dd") ("ee") (" a\"aa\\aa (a)"))
+       (map rfc822-field->tokens
+            '("aa"
+              "  bb   "
+              " (comment) cc(comment)"
+              " (co\\mm$$*##&$%ent) dd(com (me) nt)"
+              "\"ee\""
+              "  \" a\\\"aa\\\\aa (a)\" (comment\\))")))
+
+(test* "rfc822-field->tokens"
+       '("from" "aaaaa.aaa.org" "by" "ggg.gggg.net" "with" "ESMTP" "id" "24D50175C8")
+       (rfc822-field->tokens
+        "from aaaaa.aaa.org (aaaaa.aaa.org [192.168.0.9]) by ggg.gggg.net (Postfix) with ESMTP id 24D50175C8"))
+
+
 (test* "rfc822-parse-date" '(2003 2 4 12 34 56 -3600 2)
        (receive r (rfc822-parse-date "Tue,  4 Mar 2003 12:34:56 -3600") r))
 
@@ -211,6 +228,38 @@ Content-Length: 4349
        '("guest-id=foo123;Domain=foo.com;Path=/abc;Max-Age=864000;Discard;Comment=hogehoge;CommentURL=\"http://foo.com/hogehoge\";Port=\"80, 8080\";Version=1"
          "guest-account=87975348;Domain=zzz.com;Path=/zzz;Secure;Comment=\"ZzzZzz, OooOoo\";CommentURL=\"http://foo.com/hogehoge\"")
        (construct-cookie-string *cookie-spec* 1))
+
+;;--------------------------------------------------------------------
+(test-section "rfc.mime")
+(use rfc.mime)
+(test-module 'rfc.mime)
+
+(test* "mime-parse-version" '((1 0) (1 0) (1 0) (1 0) #f)
+       (map mime-parse-version
+            '(" 1.0"
+              " 1.0 (produced by MetaSend Vx.x) "
+              " (produced by MetaSend Vx.x) 1.0"
+              " 1.(produced by MetaSend Vx.x (beta))0"
+              " none ")))
+
+(test* "mime-parse-content-type" '("text" "plain")
+       (mime-parse-content-type " text/plain (client: foo bar)"))
+(test* "mime-parse-content-type" '("text" "plain" ("charset" . "us-ascii"))
+       (mime-parse-content-type " text/plain ;charset=\"us-ascii\""))
+(test* "mime-parse-content-type" '("text" "plain" ("charset" . "us-ascii"))
+       (mime-parse-content-type " text/plain; charset=us-ascii (Plain Text)"))
+(test* "mime-parse-content-type" '("text" "plain" ("charset" . "iso-2022-jp"))
+       (mime-parse-content-type " text/(Plain Text)plain ; (Japanese) charset=iso-2022-jp"))
+
+(test* "mime-parse-content-type"
+       '("text" "plain" ("zzz" . "yyy") ("xxx" . "www"))
+       (mime-parse-content-type " text/plain ;zzz=\"yyy\"; xxx = www (AAA)"))
+
+(test* "mime-parse-content-type"
+       '("multipart" "alternative"
+         ("boundary" . "=_alternative 006EBAA488256DF0_="))
+       (mime-parse-content-type
+        "multipart/alternative; boundary=\"=_alternative 006EBAA488256DF0_=\""))
 
 ;;--------------------------------------------------------------------
 (test-section "rfc.uri")
