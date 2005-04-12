@@ -1,0 +1,265 @@
+;;;
+;;; intlib.stub - internal built-ins
+;;;  
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+;;;   
+;;;   Redistribution and use in source and binary forms, with or without
+;;;   modification, are permitted provided that the following conditions
+;;;   are met:
+;;;   
+;;;   1. Redistributions of source code must retain the above copyright
+;;;      notice, this list of conditions and the following disclaimer.
+;;;  
+;;;   2. Redistributions in binary form must reproduce the above copyright
+;;;      notice, this list of conditions and the following disclaimer in the
+;;;      documentation and/or other materials provided with the distribution.
+;;;  
+;;;   3. Neither the name of the authors nor the names of its contributors
+;;;      may be used to endorse or promote products derived from this
+;;;      software without specific prior written permission.
+;;;  
+;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+;;;   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+;;;   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+;;;   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+;;;   TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+;;;   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;;;  
+;;; $Id: intlib.stub,v 1.2 2005-04-12 01:42:27 shirok Exp $
+;;;
+
+;; This file defines subrs that are used by Gauche internal routines
+;; (such as the compiler).  They are interned in gauche.internal module.
+;; The API in this module is still fluid.  Do not count on them.
+
+
+"
+#include <gauche/class.h>
+#include <gauche/code.h>
+#include <gauche/vminsn.h>
+#include <gauche/macro.h>
+#include <gauche/prof.h>
+"
+
+;;
+;; Pair attributes
+;;
+;;  Pair attributes are almost exclusively used to attach source-code
+;;  information to s-exprs.
+
+(define-cproc pair-attributes (pair::<pair>)
+  (return "Scm_PairAttr"))
+
+(define-cproc pair-attribute-get (pair::<pair> key &optional fallback)
+  "  SCM_RETURN(Scm_PairAttrGet(SCM_PAIR(pair), key, fallback));")
+
+(define-cproc pair-attribute-set! (pair::<pair> key value)
+  "  SCM_RETURN(Scm_PairAttrSet(SCM_PAIR(pair), key, value));")
+
+(define-cproc extended-pair? (obj)
+  (return <boolean> "SCM_EXTENDED_PAIR_P"))
+
+(define-cproc extended-cons (car cdr)
+  (return "Scm_ExtendedCons"))
+
+(define-cproc extended-list (elt &rest more)
+  "SCM_RETURN(Scm_ExtendedCons(elt, more));")
+
+;;
+;; Syntactic closure
+;;
+
+(define-cproc make-syntactic-closure (env literals expr)
+  (return "Scm_MakeSyntacticClosure"))
+
+;;
+;; Identifiers
+;;
+;;   Identifiers shouldn't be seen by programmers except they are
+;;   really aware of working with Gauche internals.  However, for
+;;   historical reasons, identifiers leak out to the Scheme world
+;;   in the expanded form of the macro.  Hence we leave identifer?
+;;   and identifier->symbol in extlib.stub.
+
+(define-cproc make-identifier-old (name::<symbol> env::<list>)
+  (return "Scm_MakeIdentifier"))
+
+(define-cproc make-identifier (name::<symbol> env::<list> mod::<module>)
+  (return "Scm_MakeIdentifierWithModule"))
+
+;;
+;; Symbol table
+;;
+
+;; Returns GLOC object or #f
+(define-cproc find-binding (mod::<module> name::<symbol>
+                            stay-in-module::<boolean>)
+  "ScmGloc *g = Scm_FindBinding(mod, name, stay_in_module);
+   if (g) SCM_RETURN(SCM_OBJ(g));
+   else   SCM_RETURN(SCM_FALSE);")
+
+(define-cproc %insert-binding (mod::<module> name::<symbol> value)
+  (return "Scm_Define"))
+
+(define-cproc %export-symbols (mod::<module> names)
+  (return "Scm_ExportSymbols"))
+
+(define-cproc %import-modules (mod::<module> mods)
+  (return "Scm_ImportModules"))
+
+(define-cproc gloc-ref (gloc)
+  "if (!SCM_GLOCP(gloc)) Scm_Error(\"GLOC required, but got %S\", gloc);
+   SCM_RETURN(SCM_GLOC_GET(SCM_GLOC(gloc)));")
+
+(define-cproc gloc-set! (gloc value)
+  "if (!SCM_GLOCP(gloc)) Scm_Error(\"GLOC required, but got %S\", gloc);
+   SCM_RETURN(SCM_GLOC_SET(SCM_GLOC(gloc), value));")
+
+(define-cproc gloc-const? (gloc)
+  "if (!SCM_GLOCP(gloc)) Scm_Error(\"GLOC required, but got %S\", gloc);
+   SCM_RETURN(SCM_MAKE_BOOL(SCM_GLOC_CONST_P(SCM_GLOC(gloc))));")
+
+;;
+;; Compiler interface (Temporary)
+;;
+
+(define-cproc cenv-lookup (cenv name lookup-as)
+  (return "Scm_CompilerEnvLookup"))
+
+(define-cproc make-toplevel-closure (code::<compiled-code>)
+  "SCM_RETURN(Scm_MakeClosure(SCM_OBJ(code), NULL));")
+
+(define-cproc call-syntax-compiler (syn form env)
+  (return "Scm_CallSyntaxCompiler"))
+
+(define-cproc make-macro-transformer (name::<symbol> proc::<procedure>)
+  (return "Scm_MakeMacroTransformerOld"))
+
+(define-cproc compile-syntax-rules (name literals rules env)
+  (return "Scm_CompileSyntaxRules"))
+
+(define-cproc call-macro-expander (mac expr env)
+  "if (!SCM_MACROP(mac)) Scm_Error(\"macro required, but got %S\", mac);
+  SCM_RETURN(Scm_CallMacroExpander(SCM_MACRO(mac), expr, env));")
+
+"static ScmObj call_compile_closure(ScmObj form, ScmObj env, int ctx,
+                                   void *data)
+ {
+    ScmObj closure = SCM_OBJ(data);
+    return Scm_Apply(closure, SCM_LIST2(form, env));
+ }"
+
+(define-cproc make-syntax (name::<symbol> proc)
+  "SCM_RETURN(Scm_MakeSyntax(name, call_compile_closure, proc));")
+
+(define-cproc %internal-macro-expand (form env once::<boolean>)
+  (return "Scm_MacroExpand"))
+
+(define-cproc make-promise (thunk)
+  (return "Scm_MakePromise"))
+
+(define-cproc %procedure-inliner (proc::<procedure>)
+  (setter (proc::<procedure> inliner)
+    "  proc->inliner = inliner; SCM_RETURN(SCM_UNDEFINED);")
+  "if (proc->inliner) SCM_RETURN(proc->inliner);
+   else SCM_RETURN(SCM_FALSE);")
+
+;;
+;; Compiled code builder interface
+;;
+
+(define-cproc make-compiled-code-builder (reqargs::<uint16> optargs::<uint16>
+                                          name parent intform)
+  (return "Scm_MakeCompiledCodeBuilder"))
+
+(define-cproc compiled-code-current-insn (cc::<compiled-code>)
+  (return "Scm_CompiledCodeCurrentInsn"))
+
+(define-cproc compiled-code-replace-insn! (cc::<compiled-code>
+                                           insn operand info)
+  (return <void> "Scm_CompiledCodeReplaceInsn"))
+
+(define-cproc compiled-code-flush-insn! (cc::<compiled-code>)
+  (return <void> "Scm_CompiledCodeFlushInsn"))
+
+(define-cproc compiled-code-put-insn! (cc::<compiled-code>
+                                       insn operand info)
+  (return <void> "Scm_CompiledCodePutInsn"))
+
+(define-cproc compiled-code-new-label (cc::<compiled-code>)
+  (return "Scm_CompiledCodeNewLabel"))
+
+(define-cproc compiled-code-set-label! (cc::<compiled-code> label)
+  (return <void> "Scm_CompiledCodeSetLabel"))
+
+(define-cproc compiled-code-finish-builder (cc::<compiled-code>
+                                            maxstack::<int>)
+  (return <void> "Scm_CompiledCodeFinishBuilder"))
+
+;; standard
+(define-constant ENV_HEADER_SIZE  (c "SCM_MAKE_INT(ENV_SIZE(0))"))
+(define-constant CONT_FRAME_SIZE (c "SCM_MAKE_INT(CONT_FRAME_SIZE)"))
+
+;;
+;; VM inspection and interface
+;;
+
+(define-cproc vm-dump-code (code::<compiled-code>)
+  (return <void> "Scm_CompiledCodeDump"))
+(define-cproc vm-code->list (code::<compiled-code>)
+  (return "Scm_CompiledCodeToList"))
+(define-cproc vm-insn-build (insn)
+  (return <ulong> "Scm_VMInsnBuild"))
+
+;; Eval situation flag (for eval-when constrcut)
+(define-cproc vm-eval-situation (&optional val)
+  "int prev;
+   if (SCM_UNBOUNDP(val)) {
+     SCM_RETURN(SCM_MAKE_INT(Scm_VM()->evalSituation));
+   } else {
+     if (!SCM_INTP(val)) Scm_Error(\"integer required, but got %S\", val);
+     prev = Scm_VM()->evalSituation;
+     Scm_VM()->evalSituation = SCM_INT_VALUE(val);
+     SCM_RETURN(SCM_MAKE_INT(prev));
+   }")
+
+(define-enum SCM_VM_EXECUTING)
+(define-enum SCM_VM_LOADING)
+(define-enum SCM_VM_COMPILING)
+
+;; Compiler flags
+(define-cproc vm-compiler-flag-is-set? (flag::<uint>)
+  "SCM_RETURN(SCM_MAKE_BOOL(SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), flag)));")
+(define-cproc vm-compiler-flag-set! (flag::<uint>)
+  "SCM_VM_COMPILER_FLAG_SET(Scm_VM(), flag); SCM_RETURN(SCM_UNDEFINED);")
+(define-cproc vm-compiler-flag-clear! (flag::<uint>)
+  "SCM_VM_COMPILER_FLAG_CLEAR(Scm_VM(), flag); SCM_RETURN(SCM_UNDEFINED);")
+
+(define-enum SCM_COMPILE_NOINLINE_GLOBALS)
+(define-enum SCM_COMPILE_NOINLINE_LOCALS)
+(define-enum SCM_COMPILE_NOINLINE_CONSTS)
+(define-enum SCM_COMPILE_NOSOURCE)
+(define-enum SCM_COMPILE_SHOWRESULT)
+
+;; Set/get VM's current module info. (temporary)
+(define-cproc vm-current-module ()
+  "  SCM_RETURN(SCM_OBJ(Scm_VM()->module));")
+(define-cproc vm-set-current-module (mod::<module>)
+  "Scm_VM()->module = mod; SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc gc-print-static-roots ()
+  (return <void> "GC_print_static_roots"))
+
+;;
+;; Profiler internal API
+;;
+(define-cproc profiler-raw-result () (return "Scm_ProfilerRawResult"))
+
+;; Local variables:
+;; mode: scheme
+;; end:

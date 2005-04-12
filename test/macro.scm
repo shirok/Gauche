@@ -166,6 +166,15 @@
 (test-macro "dot3" (1 2 . 3)   (dot3 (1 2) 3))
 (test-macro "dot3" 3           (dot3 () 3))
 
+;; see if effective quote introduced by quasiquote properly unwrap
+;; syntactic enviornment.
+(define-syntax unwrap1 (syntax-rules ()
+                         ((_ x) `(a ,x))))
+(test "unwrap1" '(a 3) (lambda () (unwrap1 3))
+      (lambda (x y) (and (eq? (car x) (car y)) (eq? (cadr x) (cadr y)))))
+(test "unwrap1" '(a 4) (lambda () (let ((a 4)) (unwrap1 a))) 
+      (lambda (x y) (and (eq? (car x) (car y)) (eq? (cadr x) (cadr y)))))
+
 ;;----------------------------------------------------------------------
 ;; cond, taken from R5RS section 7.3
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.51 2004-07-26 20:16:08 shirok Exp $
+ *  $Id: module.c,v 1.52 2005-04-12 01:42:27 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -94,11 +94,12 @@ static struct {
 #define DEFINE_STATIC_MODULE(cname) \
     static ScmModule cname = { { NULL } }
 
-DEFINE_STATIC_MODULE(nullModule);
-DEFINE_STATIC_MODULE(schemeModule);
-DEFINE_STATIC_MODULE(gaucheModule);
-DEFINE_STATIC_MODULE(gfModule);
-DEFINE_STATIC_MODULE(userModule);
+DEFINE_STATIC_MODULE(nullModule);     /* #<module null> */
+DEFINE_STATIC_MODULE(schemeModule);   /* #<module scheme> */
+DEFINE_STATIC_MODULE(gaucheModule);   /* #<module gauche> */
+DEFINE_STATIC_MODULE(internalModule); /* #<module gauche.internal> */
+DEFINE_STATIC_MODULE(gfModule);       /* #<module gauche.gf> */
+DEFINE_STATIC_MODULE(userModule);     /* #<module user> */
 
 static ScmObj defaultParents = SCM_NIL; /* will be initialized */
 static ScmObj defaultMpl =     SCM_NIL; /* will be initialized */
@@ -500,6 +501,11 @@ ScmModule *Scm_GaucheModule(void)
     return &gaucheModule;
 }
 
+ScmModule *Scm_GaucheInternalModule(void)
+{
+    return &internalModule;
+}
+
 ScmModule *Scm_UserModule(void)
 {
     return &userModule;
@@ -527,6 +533,7 @@ void Scm__InitModule(void)
     (void)SCM_INTERNAL_MUTEX_INIT(modules.mutex);
     modules.table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 64));
 
+    /* standard module chain */
     INIT_MOD(nullModule, SCM_SYM_NULL, mpl);
     INIT_MOD(schemeModule, SCM_SYM_SCHEME, mpl);
     INIT_MOD(gaucheModule, SCM_SYM_GAUCHE, mpl);
@@ -536,6 +543,9 @@ void Scm__InitModule(void)
     mpl = SCM_CDR(mpl);  /* default mpl doesn't include user module */
     defaultParents = SCM_LIST1(SCM_CAR(mpl));
     defaultMpl = mpl;
-
     modules.anon_name = SCM_SYM_SHARP;
+
+    /* other modules */
+    mpl = defaultMpl;
+    INIT_MOD(internalModule, SCM_SYM_GAUCHE_INTERNAL, mpl);
 }

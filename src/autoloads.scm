@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.17 2004-10-11 10:53:18 shirok Exp $
+;;; $Id: autoloads.scm,v 1.18 2005-04-12 01:42:25 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,8 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.17 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.18 $.  DO NOT EDIT */"
+   :pre-decl '("#define LIBGAUCHE_BODY")
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
 
@@ -28,13 +29,18 @@
 
 ;; Emit code
 (define (main args)
-  (cgen-decl "#define LIBGAUCHE_BODY"
-             "#include \"gauche.h\"")
+  ;; compatibility for transition from 0.8.3
+  (cgen-decl "#ifndef GAUCHE_H"
+             "#define LIBGAUCHE_BODY"
+             "#include <gauche.h>"
+             "#endif")
+  
   ;; init
   (cgen-init "  ScmModule *scheme = Scm_SchemeModule();"
              "  ScmModule *gauche = Scm_GaucheModule();"
              "  ScmSymbol *sym, *import_from;"
-             "  ScmObj al, path;")
+             "  ScmObj al, path, z;")
+
   ;; loop
   (dolist (al (reverse *autoloads*))
     (let* ((where     (if (eq? (car al) 'scheme) 'scheme 'gauche))
@@ -72,14 +78,6 @@
 
 
 ;;==========================================================
-(autoload-scheme "gauche/listutil"
-                 caaar caadr cadar caddr cdaar cdadr cddar cdddr
-                 caaaar caaadr caadar caaddr cadaar cadadr caddar cadddr
-                 cdaaar cdaadr cdadar cdaddr cddaar cddadr cdddar cddddr)
-(autoload-scheme "gauche/with"
-                 open-input-file open-output-file
-                 call-with-input-file call-with-output-file
-                 with-input-from-file with-output-to-file)
 (autoload-scheme "gauche/numerical"
                  exp log sqrt expt cos sin tan asin acos atan
                  gcd lcm numerator denominator
@@ -99,12 +97,6 @@
           slot-definition-setter slot-definition-accessor
           x->string x->integer x->number ref |setter of ref|)
 |#
-
-(autoload "gauche/with"
-          with-output-to-string call-with-output-string
-          with-input-from-string call-with-input-string
-          with-string-io call-with-string-io
-          write-to-string read-from-string)
 
 (autoload gauche.charconv
           %open-input-file/conv %open-output-file/conv)
@@ -147,7 +139,7 @@
           (:macro let-optionals*) (:macro let-keywords*)
           (:macro get-optional)
           arity procedure-arity-includes?
-          <arity-at-least> arity-at-least? arity-at-least-value
+          <arity-at-least> arity-at-least? arity-at-least-value disasm
           (:macro case-lambda))
 
 (autoload gauche.vm.debugger

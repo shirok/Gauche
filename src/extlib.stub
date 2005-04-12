@@ -1,7 +1,7 @@
 ;;;
 ;;; extlib.stub - extra built-ins
 ;;;  
-;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,13 +30,14 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.231 2005-01-25 02:31:28 shirok Exp $
+;;; $Id: extlib.stub,v 1.232 2005-04-12 01:42:26 shirok Exp $
 ;;;
 
 "
 #include <fcntl.h>
 #include <gauche/arch.h>
 #include <gauche/class.h>
+#include <gauche/vminsn.h>
 "
 
 ;;
@@ -99,6 +100,8 @@
   (return <boolean> "SCM_INTP"))
 (define-cproc bignum? (x)
   (return <boolean> "SCM_BIGNUMP"))
+(define-cproc flonum? (x)
+  (return <boolean> "SCM_FLONUMP"))
 
 (define-cproc clamp (x &optional (min #f) (max #f))
   " ScmObj r = x;  int maybe_exact = FALSE;
@@ -170,6 +173,15 @@
 ;; 6.3.2  Pairs and lists
 ;;
 
+(define-cproc proper-list? (obj)        ; SRFI-1
+  (return <boolean> "SCM_PROPER_LIST_P"))
+
+(define-cproc dotted-list? (obj)        ; SRFI-1
+  (return <boolean> "SCM_DOTTED_LIST_P"))
+
+(define-cproc circular-list? (obj)      ; SRFI-1
+  (return <boolean> "SCM_CIRCULAR_LIST_P"))
+
 (define-cproc make-list (len::<fixnum> &optional (fill #f)) ; SRFI-1
   (return "Scm_MakeList"))
 
@@ -183,7 +195,7 @@
   (return "Scm_CopyList"))
 
 (define-cproc list* (&rest args)
-  (inliner "SCM_VM_LIST_STAR")
+  (inliner LIST-STAR)
   "  ScmObj head = SCM_NIL, tail = SCM_NIL, cp;
   if (SCM_PAIRP(args)) {
     SCM_FOR_EACH(cp, args) {
@@ -258,15 +270,6 @@
 (define-cproc monotonic-merge (start sequences::<list>)
   (return "Scm_MonotonicMerge"))
 
-(define-cproc pair-attributes (pair::<pair>)
-  (return "Scm_PairAttr"))
-
-(define-cproc pair-attribute-get (pair::<pair> key &optional fallback)
-  "  SCM_RETURN(Scm_PairAttrGet(SCM_PAIR(pair), key, fallback));")
-
-(define-cproc pair-attribute-set! (pair::<pair> key value)
-  "  SCM_RETURN(Scm_PairAttrSet(SCM_PAIR(pair), key, value));")
-
 ;;
 ;; 6.3.3  Symbols
 ;;
@@ -315,7 +318,9 @@
   "SCM_RETURN(SCM_OBJ(SCM_KEYWORD_NAME(key)));")
 
 ;; identifiers
-(define-cproc identifier? (obj) (return <boolean> "SCM_IDENTIFIERP"))
+(define-cproc identifier? (obj)
+  (inliner IDENTIFIERP)
+  (return <boolean> "SCM_IDENTIFIERP"))
 
 (define-cproc identifier->symbol (obj::<identifier>)
   "  SCM_RETURN(SCM_OBJ(SCM_IDENTIFIER(obj)->name));")
@@ -669,7 +674,7 @@
 ;;
 
 (define-cproc setter (proc) ;SRFI-17
-  (inliner "SCM_VM_SETTER")
+  (inliner SETTER)
   (return "Scm_Setter")
   (setter (proc::<procedure> setter::<procedure>)
     "  Scm_SetterSet(proc, setter, FALSE); SCM_RETURN(SCM_UNDEFINED);"))
@@ -850,6 +855,7 @@
   (return <boolean> "SCM_PORT_CLOSED_P"))
 
 (define-cproc current-error-port ()     ;gauche extention
+  (inliner CURERR)
   "  SCM_RETURN(SCM_OBJ(SCM_CURERR));")
 
 (define-cproc standard-input-port ()
@@ -1044,6 +1050,7 @@
   (return <void> "Scm_DefineAutoload"))
 
 (define-cproc undefined ()
+  (inliner CONSTU)
   "  SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc undefined? (obj)    (return <boolean> "SCM_UNDEFINEDP"))
@@ -1283,12 +1290,6 @@
   SCM_VM(vm)->defaultEscapeHandler = handler;
   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc vm-instruction? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_VM_INSNP(obj)));")
-
-(define-cproc vm-insn-inspect (obj)
-  "  SCM_RETURN(Scm_VMInsnInspect(obj));")
-
 (define-cproc current-load-history ()
   "  SCM_RETURN(Scm_VM()->load_history);")
 (define-cproc current-load-next ()
@@ -1333,6 +1334,10 @@
 (define-cproc unwrap-syntax (form)
   (return "Scm_UnwrapSyntax"))
 
+;;
+;; Profiling
+;;
+
 ;; GC stuff
 (define-cproc gc () (return <void> "GC_gcollect"))
 
@@ -1353,7 +1358,19 @@
                              Scm_MakeIntegerFromUI(GC_get_total_bytes())));
   SCM_RETURN(h);")
 
+;; Profiler public API
+(define-cproc profiler-start () (return <void> "Scm_ProfilerStart"))
+(define-cproc profiler-stop  () (return <int>  "Scm_ProfilerStop"))
+(define-cproc profiler-reset () (return <void> "Scm_ProfilerReset"))
+
 ;; Misc.  WARNING: API may change
+(define-cproc subr? (obj)
+  (return <boolean> "SCM_SUBRP"))
+(define-cproc closure? (obj)
+  (return <boolean> "SCM_CLOSUREP"))
+(define-cproc toplevel-closure? (obj)
+  "SCM_RETURN(SCM_MAKE_BOOL(SCM_CLOSUREP(obj) && SCM_CLOSURE(obj)->env == NULL));")
+
 (define-cproc closure-code (clo::<closure>)
   "  SCM_RETURN(clo->code);")
 

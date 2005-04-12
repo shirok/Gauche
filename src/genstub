@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.100 2004-08-20 02:04:51 shirok Exp $
+;;;  $Id: genstub,v 1.101 2005-04-12 01:42:27 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -40,6 +40,7 @@
 (use gauche.parseopt)
 (use gauche.parameter)
 (use gauche.mop.instance-pool)
+(use util.match)
 (use text.tr)
 
 (define *file-prefix* "")
@@ -393,6 +394,8 @@
      "condition variable" "SCM_CONDITION_VARIABLE_P" "SCM_CONDITION_VARIABLE")
    (define-type <weak-vector> "ScmWeakVector*" "weak vector"
      "SCM_WEAKVECTORP" "SCM_WEAKVECTOR")
+   (define-type <compiled-code> "ScmCompiledCode*" "compiled code"
+     "SCM_COMPILED_CODE_P" "SCM_COMPILED_CODE")
    ))
 
 ;; default
@@ -720,14 +723,6 @@
 (define (push-stmt! cproc stmt)
   (push! (stmts-of cproc) stmt))
 
-(define (process-assert cproc form)
-  (let* ((op  (car form))
-         (arg (get-arg cproc (cadr form))))
-    (warn "~s: assert form obsoleted: use the new argument type annotation"
-          (pair-attribute-get form 'source-info))
-    (unless arg (error "assertion for unknown arg:" form))
-    (set! (type-of arg) (predicate->type op))))
-
 ;;-----------------------------------------------------------------
 ;; (define-cproc scheme-name (argspec) body)
 ;;
@@ -852,32 +847,16 @@
     (if (null? body)
         (set! (stmts-of cproc) (reverse (stmts-of cproc)))
         (receive (form next) (car+cdr body)
-          (cond ((string? form) (push-stmt! cproc form) (loop next))
-                ((not (pair? form)) (error "bad form in body:" form))
-                ((eq? (car form) 'assert)
-                 (process-assert cproc (cadr form))
-                 (loop next))
-                ((eq? (car form) 'inliner)
-                 (unless (pair? (cdr form))
-                   (error "bad `inliner' spec:" form))
-                 (if (and (pair? (cadr form))
-                          (eq? (caadr form) 'proc))
-                     (if (not (string? (cadadr form)))
-                         (error "inliner procedure name must be a string:"
-                                form)
-                         (set! (inliner-of cproc) (cadadr form)))
-                     (set! (inline-insn-of cproc) (cadr form)))
-                 (loop next))
-                ((eq? (car form) 'setter)
-                 (unless (pair? (cdr form))
-                   (error "bad 'setter' spec:" form))
-                 (process-setter cproc (cdr form))
-                 (loop next))
-                ((eq? (car form) 'return)
-                 (process-return-spec cproc form)
-                 (loop next))
-                (else
-                 (error "unknown body form:" form)))))))
+          (match form
+            ((? string?) (push-stmt! cproc form) (loop next))
+            (('inliner opcode)
+             (set! (inline-insn-of cproc) opcode) (loop next))
+            (('setter . spec)
+             (process-setter cproc spec) (loop next))
+            (('return . spec)
+             (process-return-spec cproc form) (loop next))
+            (else
+             (error "unknown body form:" form)))))))
 
 (define-method process-setter ((cproc <cproc>) decl)
   (cond
@@ -1007,45 +986,10 @@
 
 ;; TODO: arg type assertion
 (define (emit-inliner cproc)
-  (let* ((insn (inline-insn-of cproc)))
-    (cond
-     ((not insn)
-      (when (inliner-of cproc)
-        (let ((recname #`",(c-name-of cproc)__INLINER"))
-          (f "static SCM_DEFINE_INLINER(~a, ~a, NULL);"
-             recname (inliner-of cproc))
-          (set! (inliner-of cproc) recname))))
-     ((string? insn)
-      (let ((dataname #`",(c-name-of cproc)__INLINE_INSN")
-            (recname  #`",(c-name-of cproc)__INLINER"))
-        (set! (inliner-of cproc) recname)
-        (f "static int ~a[] = { ~a };" dataname insn)
-        (f "static SCM_DEFINE_INLINER(~a, Scm_SimpleAsmInliner, ~a);"
-           recname dataname)))
-     ((and (pair? insn) (eq? (car insn) 'case-nargs))
-      (let ((procname #`",(c-name-of cproc)__inline")
-            (recname  #`",(c-name-of cproc)__INLINER"))
-        (set! (inliner-of cproc) recname)
-        (emit-inliner-header cproc procname)
-        (print "{")
-        (print "  int nargs = Scm_Length(SCM_CDR(form));")
-        (for-each (lambda (clause)
-                    (let ((nargs (car clause))
-                          (insn  (cadr clause)))
-                      (if (eq? nargs 'else)
-                        (display "else ")
-                        (display #`"if (nargs == ,|nargs|) "))
-                      (print "{")
-                      (if insn
-                        (f "  return Scm_MakeInlineAsmForm(form, SCM_VM_INSN(~a), SCM_CDR(form));"
-                           insn)
-                        (print "  return SCM_FALSE;"))
-                      (print "}")))
-                  (cdr insn))
-        (print "}")
-        (f "static SCM_DEFINE_INLINER(~a, ~a, NULL);" recname procname)))
-     (else
-      (error "invalid inliner spec:" insn))))
+  (when (inline-insn-of cproc)
+    (set! (inliner-of cproc)
+          (format "SCM_MAKE_INT(SCM_VM_~a)"
+                  (string-tr (x->string (inline-insn-of cproc)) "-" "_"))))
   )
 
 (define (emit-inliner-header cproc inliner-name)
@@ -1062,7 +1006,7 @@
         (inliner-name "NULL"))
     (emit-static-string c-func-name (scheme-name-of cproc))
     (when (inliner-of cproc)
-      (set! inliner-name #`"&,(inliner-of cproc)"))
+      (set! inliner-name (inliner-of cproc)))
     (f "static SCM_DEFINE_SUBR(~a__STUB, ~a, ~a, SCM_OBJ(&~a__NAME), ~:*~a, ~a, NULL);"
        c-func-name
        (num-reqargs-of cproc)

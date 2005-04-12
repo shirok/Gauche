@@ -1,7 +1,7 @@
 /*
  * core.c - core kernel interface
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.61 2004-11-26 01:45:39 shirok Exp $
+ *  $Id: core.c,v 1.62 2005-04-12 01:42:26 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -49,8 +49,8 @@ static GC_PTR oom_handler(size_t bytes)
     return NULL;                /* dummy */
 }
 
-/*
- * Program initialization and default error handlers.
+/*=============================================================
+ * Program initialization
  */
 
 extern void Scm__InitModule(void);
@@ -62,7 +62,7 @@ extern void Scm__InitClass(void);
 extern void Scm__InitExceptions(void);
 extern void Scm__InitPort(void);
 extern void Scm__InitWrite(void);
-extern void Scm__InitCompiler(void);
+extern void Scm__InitCompaux(void);
 extern void Scm__InitMacro(void);
 extern void Scm__InitLoad(void);
 extern void Scm__InitProc(void);
@@ -70,6 +70,7 @@ extern void Scm__InitRegexp(void);
 extern void Scm__InitRead(void);
 extern void Scm__InitSignal(void);
 extern void Scm__InitSystem(void);
+extern void Scm__InitCode(void);
 extern void Scm__InitVM(void);
 extern void Scm__InitRepl(void);
 extern void Scm__InitParameter(void);
@@ -79,6 +80,10 @@ extern void Scm_Init_stdlib(ScmModule *);
 extern void Scm_Init_extlib(ScmModule *);
 extern void Scm_Init_syslib(ScmModule *);
 extern void Scm_Init_moplib(ScmModule *);
+extern void Scm_Init_intlib(ScmModule *);
+
+extern void Scm__InitScmlib(void);
+extern void Scm__InitCompile(void);
 
 static void finalizable(void);
 
@@ -88,6 +93,9 @@ static void finalizable(void);
 static int (*ptr_pthread_create)(void) = NULL;
 #endif
 
+/*
+ * Entry point of initlalizing Gauche runtime
+ */
 void Scm_Init(const char *signature)
 {
     /* make sure the main program links the same version of libgauche */
@@ -119,8 +127,8 @@ void Scm_Init(const char *signature)
     Scm__InitProc();
     Scm__InitPort();
     Scm__InitWrite();
+    Scm__InitCode();
     Scm__InitVM();
-    Scm__InitCompiler();
     Scm__InitParameter();
     Scm__InitMacro();
     Scm__InitLoad();
@@ -134,6 +142,11 @@ void Scm_Init(const char *signature)
     Scm_Init_extlib(Scm_GaucheModule());
     Scm_Init_syslib(Scm_GaucheModule());
     Scm_Init_moplib(Scm_GaucheModule());
+    Scm_Init_intlib(Scm_GaucheInternalModule());
+
+    Scm__InitScmlib();
+    Scm__InitCompile();
+    Scm__InitCompaux();
 
     Scm_SelectModule(Scm_GaucheModule());
     Scm__InitAutoloads();
@@ -146,6 +159,14 @@ void Scm_Init(const char *signature)
 #endif
 }
 
+/*=============================================================
+ * GC utilities
+ */
+
+/*
+ * External API to register root set in dynamically loaded library.
+ * Boehm GC doesn't do this automatically on some platforms.
+ */
 void Scm_RegisterDL(void *data_start, void *data_end,
                     void *bss_start, void *bss_end)
 {
@@ -154,6 +175,21 @@ void Scm_RegisterDL(void *data_start, void *data_end,
 }
 
 /*
+ * Useful routine for debugging, to check if an object is inadvertently
+ * collected.
+ */
+static void gc_sentinel(ScmObj obj, void *data)
+{
+    Scm_Printf(SCM_CURERR, "WARNING: object %s(%p) is inadvertently collected\n", (char *)data, obj);
+}
+
+void Scm_GCSentinel(void *obj, const char *name)
+{
+    Scm_RegisterFinalizer(SCM_OBJ(obj), gc_sentinel, (void*)name);
+}
+
+
+/*=============================================================
  * Finalization.  Scheme finalizers are added as NO_ORDER.
  */
 void Scm_RegisterFinalizer(ScmObj z, ScmFinalizerProc finalizer, void *data)
@@ -184,7 +220,7 @@ ScmObj Scm_VMFinalizerRun(ScmVM *vm)
     vm->queueNotEmpty &= ~SCM_VM_FINQ_MASK;
 }
 
-/*
+/*=============================================================
  * Program termination
  */
 
@@ -200,6 +236,24 @@ void Scm_Exit(int code)
         Scm_Apply(SCM_CDAR(hp), SCM_NIL);
     }
     Scm_FlushAllPorts(TRUE);
+
+    /* Print statistics.
+       TODO: this should be enabled by separately from
+       SCM_COLLECT_VM_STATS flag, so that application can cutomize
+       how to utilize the statistics data. */
+    if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_COLLECT_VM_STATS)) {
+        fprintf(stderr, "\n;; Statistics (*: main thread only):\n");
+        fprintf(stderr,
+                ";;  GC: %dbytes heap, %dbytes allocated\n",
+                GC_get_heap_size(), GC_get_total_bytes());
+        fprintf(stderr,
+                ";;  stack overflow*: %dtimes, %.2fms total/%.2fms avg\n",
+                vm->stat.sovCount,
+                vm->stat.sovTime/1000.0,
+                (vm->stat.sovCount > 0?
+                 (vm->stat.sovTime/vm->stat.sovCount)/1000.0 :
+                 0.0));
+    }
 
     exit(code);
 }
@@ -223,7 +277,7 @@ void Scm_Abort(const char *msg)
     _exit(1);
 }
 
-/*
+/*=============================================================
  * Inspect the configuration
  * For MinGW32, we don't know where things will be installed at
  * the compile time, so we don't use configure-variable GAUCHE_LIB_DIR etc.
@@ -344,21 +398,6 @@ ScmObj Scm_SiteArchitectureDirectory(void)
 #undef DEFSTR
 
 #endif /* !__MINGW32__ */
-
-/*
- * Useful routine for debugging, to check if an object is inadvertently
- * collected.
- */
-
-static void gc_sentinel(ScmObj obj, void *data)
-{
-    Scm_Printf(SCM_CURERR, "WARNING: object %s(%p) is inadvertently collected\n", (char *)data, obj);
-}
-
-void Scm_GCSentinel(void *obj, const char *name)
-{
-    Scm_RegisterFinalizer(SCM_OBJ(obj), gc_sentinel, (void*)name);
-}
 
 /*
  * When creating DLL under Cygwin, we need the following dummy main()

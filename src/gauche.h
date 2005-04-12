@@ -1,7 +1,7 @@
 /*
  * gauche.h - Gauche scheme system header
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.405 2005-02-02 11:41:39 shirok Exp $
+ *  $Id: gauche.h,v 1.406 2005-04-12 01:42:26 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -163,9 +163,9 @@ typedef struct ScmClassRec ScmClass;
  *      -------- -------- -------- ----0110
  *      #f, #t, '(), eof-object, undefined
  *
- * [VM Instructions]
+ * [Pattern variable]
  *      -------- -------- -------- ----1110
- *      Only appears in a compiled code.
+ *      Used in macro expander.
  *
  * [Heap object]
  *      -------- -------- -------- ------11
@@ -394,10 +394,6 @@ typedef struct ScmAutoloadRec  ScmAutoload;
 
 SCM_EXTERN ScmVM *Scm_VM(void);     /* Returns the current VM */
 
-SCM_EXTERN ScmObj Scm_Compile(ScmObj form, ScmObj env, int context);
-SCM_EXTERN ScmObj Scm_CompileBody(ScmObj form, ScmObj env, int context);
-SCM_EXTERN ScmObj Scm_CompileLookupEnv(ScmObj sym, ScmObj env, int op);
-
 SCM_EXTERN ScmObj Scm_Eval(ScmObj form, ScmObj env);
 SCM_EXTERN ScmObj Scm_Apply(ScmObj proc, ScmObj args);
 SCM_EXTERN ScmObj Scm_Values(ScmObj args);
@@ -409,7 +405,7 @@ SCM_EXTERN ScmObj Scm_Values5(ScmObj val0, ScmObj val1, ScmObj val2,
 			      ScmObj val3, ScmObj val4);
 
 SCM_EXTERN ScmObj Scm_MakeMacroTransformer(ScmSymbol *name,
-					   ScmProcedure *proc);
+					   ScmObj proc);
 SCM_EXTERN ScmObj Scm_MakeMacroAutoload(ScmSymbol *name,
                                         ScmAutoload *al);
 
@@ -570,19 +566,25 @@ SCM_CLASS_DECL(Scm_TopClass);
 SCM_CLASS_DECL(Scm_BoolClass);
 SCM_CLASS_DECL(Scm_CharClass);
 SCM_CLASS_DECL(Scm_ClassClass);
+SCM_CLASS_DECL(Scm_EOFObjectClass);
+SCM_CLASS_DECL(Scm_UndefinedObjectClass);
 SCM_CLASS_DECL(Scm_UnknownClass);
 SCM_CLASS_DECL(Scm_CollectionClass);
 SCM_CLASS_DECL(Scm_SequenceClass);
 SCM_CLASS_DECL(Scm_ObjectClass); /* base of Scheme-defined objects */
 
-#define SCM_CLASS_TOP          (&Scm_TopClass)
-#define SCM_CLASS_BOOL         (&Scm_BoolClass)
-#define SCM_CLASS_CHAR         (&Scm_CharClass)
-#define SCM_CLASS_CLASS        (&Scm_ClassClass)
-#define SCM_CLASS_UNKNOWN      (&Scm_UnknownClass)
-#define SCM_CLASS_COLLECTION   (&Scm_CollectionClass)
-#define SCM_CLASS_SEQUENCE     (&Scm_SequenceClass)
-#define SCM_CLASS_OBJECT       (&Scm_ObjectClass)
+
+
+#define SCM_CLASS_TOP              (&Scm_TopClass)
+#define SCM_CLASS_BOOL             (&Scm_BoolClass)
+#define SCM_CLASS_CHAR             (&Scm_CharClass)
+#define SCM_CLASS_CLASS            (&Scm_ClassClass)
+#define SCM_CLASS_EOF_OBJECT       (&Scm_EOFObjectClass)
+#define SCM_CLASS_UNDEFINED_OBJECT (&Scm_UndefinedObjectClass)
+#define SCM_CLASS_UNKNOWN          (&Scm_UnknownClass)
+#define SCM_CLASS_COLLECTION       (&Scm_CollectionClass)
+#define SCM_CLASS_SEQUENCE         (&Scm_SequenceClass)
+#define SCM_CLASS_OBJECT           (&Scm_ObjectClass)
 
 SCM_EXTERN ScmClass *Scm_DefaultCPL[];
 SCM_EXTERN ScmClass *Scm_CollectionCPL[];
@@ -733,6 +735,16 @@ SCM_CLASS_DECL(Scm_NullClass);
 #define SCM_LIST4(a,b,c,d)       Scm_Cons(a, SCM_LIST3(b, c, d))
 #define SCM_LIST5(a,b,c,d,e)     Scm_Cons(a, SCM_LIST4(b, c, d, e))
 
+/* special return value of Scm_Length */
+enum {
+    SCM_LIST_DOTTED = -1,       /* dotted list */
+    SCM_LIST_CIRCULAR = -2      /* circular list */
+};
+
+#define SCM_PROPER_LIST_P(obj)   (Scm_Length(obj) >= 0)
+#define SCM_DOTTED_LIST_P(obj)   (Scm_Length(obj) == SCM_LIST_DOTTED)
+#define SCM_CIRCULAR_LIST_P(obj) (Scm_Length(obj) == SCM_LIST_CIRCULAR)
+
 SCM_EXTERN ScmObj Scm_Cons(ScmObj car, ScmObj cdr);
 SCM_EXTERN ScmObj Scm_Acons(ScmObj caar, ScmObj cdar, ScmObj cdr);
 SCM_EXTERN ScmObj Scm_List(ScmObj elt, ...);
@@ -785,9 +797,6 @@ SCM_EXTERN ScmObj Scm_ExtendedCons(ScmObj car, ScmObj cdr);
 SCM_EXTERN ScmObj Scm_PairAttr(ScmPair *pair);
 SCM_EXTERN ScmObj Scm_PairAttrGet(ScmPair *pair, ScmObj key, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_PairAttrSet(ScmPair *pair, ScmObj key, ScmObj value);
-
-SCM_EXTERN ScmObj Scm_NullP(ScmObj obj);
-SCM_EXTERN ScmObj Scm_ListP(ScmObj obj);
 
 /*--------------------------------------------------------
  * CHAR and CHAR-SET
@@ -1528,11 +1537,16 @@ struct ScmHashTableRec {
     ScmHashCmpProc cmpfn;
 };
 
-#define SCM_HASHTABLE(obj)   ((ScmHashTable*)(obj))
-#define SCM_HASHTABLEP(obj)  SCM_XTYPEP(obj, SCM_CLASS_HASHTABLE)
+#define SCM_HASH_TABLE(obj)   ((ScmHashTable*)(obj))
+#define SCM_HASH_TABLE_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_HASH_TABLE)
 
 SCM_CLASS_DECL(Scm_HashTableClass);
-#define SCM_CLASS_HASHTABLE  (&Scm_HashTableClass)
+#define SCM_CLASS_HASH_TABLE  (&Scm_HashTableClass)
+
+/* NB: backward compatibility */
+#define SCM_HASHTABLE       SCM_HASH_TABLE
+#define SCM_HASHTABLEP      SCM_HASH_TABLE_P
+#define SCM_CLASS_HASHTABLE SCM_CLASS_HASH_TABLE
 
 #define SCM_HASH_ADDRESS   (0)  /* eq?-hash */
 #define SCM_HASH_EQV       (1)
@@ -2011,15 +2025,6 @@ SCM_EXTERN void   Scm_PrintDouble(ScmPort *port, double d, int flags);
 typedef ScmObj (*ScmTransformerProc)(ScmObj self, ScmObj form, ScmObj env,
                                      void *data);
 
-/* Packet for inliner */
-typedef struct ScmInlinerRec {
-    ScmTransformerProc proc;
-    void *data;
-} ScmInliner;
-
-#define SCM_DEFINE_INLINER(name, proc, data)     \
-    ScmInliner name = { (proc), (data) }
-
 /* Base structure */
 struct ScmProcedureRec {
     SCM_INSTANCE_HEADER;
@@ -2029,7 +2034,8 @@ struct ScmProcedureRec {
     unsigned char locked;       /* setter locked? */
     ScmObj info;                /* source code info */
     ScmObj setter;              /* setter, if exists. */
-    ScmInliner *inliner;        /* inliner */
+    ScmObj inliner;             /* inliner.  NB: for backward compatibility,
+                                   this may be initialized by NULL. */
 };
 
 /* procedure type */
@@ -2067,7 +2073,7 @@ SCM_CLASS_DECL(Scm_ProcedureClass);
     SCM_PROCEDURE(obj)->type = typ,                     \
     SCM_PROCEDURE(obj)->info = inf,                     \
     SCM_PROCEDURE(obj)->setter = SCM_FALSE,             \
-    SCM_PROCEDURE(obj)->inliner = NULL
+    SCM_PROCEDURE(obj)->inliner = SCM_FALSE
 
 #define SCM__PROCEDURE_INITIALIZER(klass, req, opt, typ, inf, inl)  \
     { { klass }, (req), (opt), (typ), FALSE, (inf), SCM_FALSE, (inl) }
@@ -2075,11 +2081,7 @@ SCM_CLASS_DECL(Scm_ProcedureClass);
 /* Closure - Scheme defined procedure */
 struct ScmClosureRec {
     ScmProcedure common;
-#ifdef GAUCHE_USE_NVM
-    ScmIVector *code;           /* compiled code */
-#else
     ScmObj code;                /* compiled code */
-#endif
     ScmEnvFrame *env;           /* environment */
 };
 
@@ -2087,8 +2089,7 @@ struct ScmClosureRec {
     (SCM_PROCEDUREP(obj)&&(SCM_PROCEDURE_TYPE(obj)==SCM_PROC_CLOSURE))
 #define SCM_CLOSURE(obj)           ((ScmClosure*)(obj))
 
-SCM_EXTERN ScmObj Scm_MakeClosure(int required, int optional,
-				  ScmObj code, ScmObj info);
+SCM_EXTERN ScmObj Scm_MakeClosure(ScmObj code, ScmEnvFrame *env);
 
 /* Subr - C defined procedure */
 struct ScmSubrRec {
@@ -2570,6 +2571,7 @@ typedef struct ScmHeaderRec ScmSysFdset;
 #endif /*!HAVE_SELECT*/
 
 /* other stuff */
+SCM_EXTERN int    Scm_Mksystemp(char *template);
 SCM_EXTERN ScmObj Scm_SysMkstemp(ScmString *tmpl);
 
 /*---------------------------------------------------
@@ -2635,6 +2637,14 @@ SCM_EXTERN ScmObj Scm_MakeAutoload(ScmModule *where,
 SCM_EXTERN void   Scm_DefineAutoload(ScmModule *where, ScmObj file_or_module,
                                      ScmObj list);
 SCM_EXTERN ScmObj Scm_LoadAutoload(ScmAutoload *autoload);
+
+/*---------------------------------------------------
+ * PROFILER INTERFACE
+ */
+
+SCM_EXTERN void   Scm_ProfilerStart(void);
+SCM_EXTERN int    Scm_ProfilerStop(void);
+SCM_EXTERN void   Scm_ProfilerReset(void);
 
 /*---------------------------------------------------
  * UTILITY STUFF

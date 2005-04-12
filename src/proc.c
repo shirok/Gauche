@@ -1,7 +1,7 @@
 /*
  * proc.c - Procedures
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,12 +30,13 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: proc.c,v 1.39 2004-10-09 11:36:37 shirok Exp $
+ *  $Id: proc.c,v 1.40 2005-04-12 01:42:27 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/class.h"
+#include "gauche/code.h"
 
 /*=================================================================
  * Classes
@@ -56,7 +57,7 @@ static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         }
         SCM_PUTC('>', port);
     } else {
-        Scm_Printf(port, "#<closure %p%S>", obj, Scm_VMGetBindInfo(info));
+        Scm_Printf(port, "#<closure %S>", info);
     }
 }
 
@@ -64,20 +65,23 @@ static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
  * Closure
  */
 
-ScmObj Scm_MakeClosure(int required, int optional,
-                       ScmObj code, ScmObj info)
+ScmObj Scm_MakeClosure(ScmObj code, ScmEnvFrame *env)
 {
     ScmClosure *c = SCM_NEW(ScmClosure);
-    
+    int req, opt;
+    ScmObj info, iform;
+
+    SCM_ASSERT(SCM_COMPILED_CODE(code));
+    info = Scm_CompiledCodeFullName(SCM_COMPILED_CODE(code));
+    req  = SCM_COMPILED_CODE_REQUIRED_ARGS(code);
+    opt  = SCM_COMPILED_CODE_OPTIONAL_ARGS(code);
+
     SCM_SET_CLASS(c, SCM_CLASS_PROCEDURE);
-    SCM_PROCEDURE_INIT(c, required, optional, SCM_PROC_CLOSURE, info);
-#ifndef GAUCHE_USE_NVM
+    SCM_PROCEDURE_INIT(c, req, opt, SCM_PROC_CLOSURE, info);
     c->code = code;
-#else   /*GAUCHE_USE_NVM*/
-    SCM_ASSERT(SCM_IVECTORP(code));
-    c->code = SCM_IVECTOR(code);
-#endif  /*GAUCHE_USE_NVM*/
-    c->env = Scm_GetCurrentEnv();
+    c->env = env;
+    SCM_PROCEDURE(c)->inliner = SCM_COMPILED_CODE(code)->intermediateForm;
+    
     return SCM_OBJ(c);
 }
 

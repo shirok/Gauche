@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.77 2004-12-18 04:11:13 shirok Exp $
+ *  $Id: main.c,v 1.78 2005-04-12 01:42:27 shirok Exp $
  */
 
 #include <unistd.h>
@@ -50,6 +50,7 @@ int load_initfile = TRUE;       /* if false, not to load init files */
 int batch_mode = FALSE;         /* force batch mode */
 int interactive_mode = FALSE;   /* force interactive mode */
 int test_mode = FALSE;          /* add . and ../lib implicitly  */
+int profiling_mode = FALSE;     /* profile the script? */
 
 ScmObj pre_cmds = SCM_NIL;      /* assoc list of commands that needs to be
                                    processed before entering repl.
@@ -77,7 +78,12 @@ void usage(void)
             "  -f<flag> Sets various flags\n"
             "      case-fold       uses case-insensitive reader (as in R5RS)\n"
             "      load-verbose    report while loading files\n"
-            "      no-inline       don't inline primitive procedures\n"
+            "      no-inline       don't inline procedures & constants (combined\n"
+            "                      no-inline-globals, no-inline-locals, and\n"
+            "                      no-inline-constants.\n"
+            "      no-inline-globals don't inline global procedures.\n"
+            "      no-inline-locals  don't inline local procedures.\n"
+            "      no-inline-constants don't inline constants.\n"
             "      no-source-info  don't preserve source information for debug\n"
             "      test            test mode, to run gosh inside the build tree\n"
             );
@@ -100,8 +106,19 @@ void version(void)
 void further_options(const char *optarg)
 {
     ScmVM *vm = Scm_VM();
-    if (strcmp(optarg, "no-inline") == 0) {
-        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE);
+    if (strcmp(optarg, "no-inline-globals") == 0) {
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_GLOBALS);
+    }
+    else if (strcmp(optarg, "no-inline-locals") == 0) {
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_LOCALS);
+    }
+    else if (strcmp(optarg, "no-inline-constants") == 0) {
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_CONSTS);
+    }
+    else if (strcmp(optarg, "no-inline") == 0) {
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_GLOBALS);
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_LOCALS);
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_CONSTS);
     }
     else if (strcmp(optarg, "debug-compiler") == 0) {
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_SHOWRESULT);
@@ -115,8 +132,15 @@ void further_options(const char *optarg)
     else if (strcmp(optarg, "case-fold") == 0) {
         SCM_VM_RUNTIME_FLAG_SET(vm, SCM_CASE_FOLD);
     }
+    else if (strcmp(optarg, "profile") == 0) {
+        profiling_mode = TRUE;
+    }
     else if (strcmp(optarg, "test") == 0) {
         test_mode = TRUE;
+    }
+    /* For development; not for public use */
+    else if (strcmp(optarg, "collect-stats") == 0) {
+        SCM_VM_RUNTIME_FLAG_SET(vm, SCM_COLLECT_VM_STATS);
     }
     /* Experimental */
     else if (strcmp(optarg, "limit-module-mutation") == 0) {
@@ -124,7 +148,7 @@ void further_options(const char *optarg)
     }
     else {
         fprintf(stderr, "unknown -f option: %s\n", optarg);
-        fprintf(stderr, "supported options are: -fcase-fold or -fload-verbose, -fno-inline, -fno-source-info, -ftest\n");
+        fprintf(stderr, "supported options are: -fcase-fold or -fload-verbose, -fno-inline, -fno-inline-globals, -fno-inline-locals, -fno-inline-constants, -fno-source-info, -fprofile, -ftest\n");
         exit(1);
     }
 }
@@ -172,9 +196,9 @@ static void sig_setup(void)
     sigdelset(&set, SIGSTOP);
 #endif
     sigdelset(&set, SIGSEGV);
-#ifdef SIGPROF
-    sigdelset(&set, SIGPROF);
-#endif /*SIGPROF*/
+//#ifdef SIGPROF
+//    sigdelset(&set, SIGPROF);
+//#endif /*SIGPROF*/
 #ifdef SIGBUS
     sigdelset(&set, SIGBUS);
 #endif /*SIGBUS*/
@@ -201,6 +225,7 @@ int main(int argc, char **argv)
     ScmObj cp;
     const char *scriptfile = NULL;
     ScmObj av = SCM_NIL;
+    int exit_code;
 
 #if defined(__CYGWIN__) || defined(__MINGW32__)
     /* Cygwin needs explicit initialization for GC module.
@@ -326,10 +351,17 @@ int main(int argc, char **argv)
         }
     }
 
-    /* If script file is specified, load it. */
+    /* Following is the main dish. */
+
+    if (profiling_mode) {
+        Scm_Require(SCM_MAKE_STR("gauche/vm/profiler"));
+        Scm_ProfilerStart();
+    }
+
     if (scriptfile != NULL) {
+        /* If script file is specified, load it. */
         ScmObj result, mainproc;
-        
+
         Scm_Load(scriptfile, 0);
 
         /* if symbol 'main is bound to a procedure in the user module,
@@ -338,30 +370,41 @@ int main(int argc, char **argv)
                                    SCM_SYMBOL(SCM_INTERN("main")));
         if (SCM_PROCEDUREP(mainproc)) {
             result = Scm_Apply(mainproc, SCM_LIST1(av));
-            if (SCM_INTP(result)) Scm_Exit(SCM_INT_VALUE(result));
-            else Scm_Exit(70);  /* EX_SOFTWARE, see SRFI-22. */
+            if (SCM_INTP(result)) exit_code = SCM_INT_VALUE(result);
+            else exit_code = 70;  /* EX_SOFTWARE, see SRFI-22. */
+        } else {
+            exit_code = 0;
         }
-        Scm_Exit(0);
+    } else {
+        /* We're in interactive mode. (use gauche.interactive) */
+        if (load_initfile) {
+            SCM_UNWIND_PROTECT {
+                Scm_Require(SCM_MAKE_STR("gauche/interactive"));
+                Scm_ImportModules(SCM_CURRENT_MODULE(),
+                                  SCM_LIST1(SCM_INTERN("gauche.interactive")));
+            }
+            SCM_WHEN_ERROR {
+                Scm_Warn("couldn't load gauche.interactive\n");
+            }
+            SCM_END_PROTECT;
+        }
+
+        if (batch_mode || (!isatty(0) && !interactive_mode)) {
+            Scm_LoadFromPort(SCM_PORT(Scm_Stdin()), 0);
+        } else {
+            Scm_Repl(SCM_FALSE, SCM_FALSE, SCM_FALSE, SCM_FALSE);
+        }
+        exit_code = 0;
     }
 
-    /* Now we're in interactive mode. (use gauche.interactive) */
-    if (load_initfile) {
-        SCM_UNWIND_PROTECT {
-            Scm_Require(SCM_MAKE_STR("gauche/interactive"));
-            Scm_ImportModules(SCM_CURRENT_MODULE(),
-                              SCM_LIST1(SCM_INTERN("gauche.interactive")));
-        }
-        SCM_WHEN_ERROR {
-            Scm_Warn("couldn't load gauche.interactive\n");
-        }
-        SCM_END_PROTECT;
+    if (profiling_mode) {
+        Scm_ProfilerStop();
+        Scm_Eval(Scm_ReadFromCString("(profiler-show)"),
+                 Scm_FindModule(SCM_SYMBOL(SCM_INTERN("gauche.vm.profiler")),
+                                FALSE));
     }
     
-    if (batch_mode || (!isatty(0) && !interactive_mode)) {
-        Scm_LoadFromPort(SCM_PORT(Scm_Stdin()), 0);
-    } else {
-        Scm_Repl(SCM_FALSE, SCM_FALSE, SCM_FALSE, SCM_FALSE);
-    }
-    Scm_Exit(0);
-    return 0;                   /* dummy */
+    /* All is done. */
+    Scm_Exit(exit_code);
+    return 0;
 }

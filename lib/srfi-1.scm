@@ -2,7 +2,7 @@
 ;;; SRFI-1 - List processing library
 ;;;
 
-;; $Id: srfi-1.scm,v 1.17 2003-11-10 13:09:46 shirok Exp $
+;; $Id: srfi-1.scm,v 1.18 2005-04-12 01:42:24 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -22,7 +22,8 @@
 (define-module srfi-1
   (export xcons cons* make-list list-tabulate list-copy circular-list iota
           proper-list? circular-list? dotted-list? not-pair?
-          null-list? list=
+          ;null-list?
+          list=
           first second third fourth fifth sixth seventh eighth
           ninth tenth car+cdr take drop take-right drop-right
           take! drop-right! split-at split-at! last
@@ -87,10 +88,10 @@
 
 (define (not-pair? x) (not (pair? x)))
 
-(define (null-list? l)
-  (cond ((pair? l) #f)
-	((null? l) #t)
-	(else (error "argument out of domain:" l))))
+;(define (null-list? l)
+;  (cond ((pair? l) #f)
+;	((null? l) #t)
+;	(else (error "argument out of domain:" l))))
 
 (define map-in-order map) ; Gauche's map is already in order
 

@@ -1,7 +1,7 @@
 ;;;
 ;;; condutil.scm - condition primitives.  autoloaded.
 ;;;  
-;;;   Copyright (c) 2004 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2004-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: condutil.scm,v 1.7 2005-01-26 06:27:24 shirok Exp $
+;;;  $Id: condutil.scm,v 1.8 2005-04-12 01:42:24 shirok Exp $
 ;;;
 
 ;; Defines some condition-related primitives.
@@ -161,10 +161,6 @@
           ((slot-exists? (car members) slot)
            (slot-ref (car members) slot))
           (else (loop (cdr members))))))
-
-;; A trick to let a condition type behave its own predicate
-(define-method object-apply ((type <condition-meta>) obj)
-  (condition-has-type? obj type))
 
 ;; Aliases for srfi-35/srfi-36 compatibility
 (define &condition   <condition>)

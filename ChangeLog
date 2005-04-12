@@ -1,14 +1,217 @@
+2005-04-11  Shiro Kawai  <shiro@acm.org>
+
+	* joined NVM0_8_3 branch to the trunc.
+	* configure.ac: version 0.8.4_pre1
+
+	* src/compile.scm, src/vm.c, src/vminsn.scm : Removed most of
+	  the new instructions in the past several days, since it turned
+	  out that they don't have much effect on the performance.  Let's
+	  keep the VM ISA simple for now; we might find more effective way
+	  later.
+
+2005-04-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm: emit BNEQC, BNEQVC, BNUMNEF, BNLTF, etc.
+
+	* src/vm.c (Scm_VMDefaultExceptionHandler), src/gauche/vm.h:
+	  fixed a bug that may cause SEGV when stack overflow occurs
+	  during error handlers.  The 'cont' pointer of currently
+	  executing escape point wasn't updated by the continuation
+	  frame relocation.  
+
+2005-04-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm : refactored.
+	* src/vminsn.c : added quite a few new instructions.
+
+2005-04-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass2): fixed closure optimizer.
+
+2005-04-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass3): calculate maximum stack depth.
+	  (pass2/$IF): more optimization.
+	* src/code.c (Scm_CompiledCodeFinish): take maximum stack depth arg.
+	* src/vm.c: now we know how much stack each closure would consume,
+	  we need to CHECK_STACK only when we enter a new closure (and some
+	  stack-manipulating places at runtime).
+	* src/vminsn.scm: renamed from EXTEND-ENV to
+	  LOCAL-ENV-CLOSURES, and removed unused insns PRE-TAIL, POP and DUP
+	  EXTEND-ENV-POP1 is also dropped for now, since it seems too
+	  kludgy (we may be resurrect it, but only after we try other
+	  optimization strategies).
+
+2005-04-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass2/$IF): optimize to omit redundant jumps.
+	* src/vminsn.scm, src/vm.c : added LOCAL-ENV-TAIL-CALL insn.
+
+2005-03-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm, src/compaux.scm, src/intlib.stub : implement the
+	  most frequently called procedure "cenv-lookup" in C to improve
+	  compiler performance.
+
+2005-03-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm, src/vminsn.scm, src/vm.c, src/code.c: start adding
+	  closure analysis.   Also cleaned up some code.
+
+2005-03-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/comp.scm -> src/compile.scm : renamd
+	* src/compile.c -> src/compaux.c : renamed
+	* src/core.c, src/Makefile.in : changed accordingly.
+
+	* src/gauche/vm.h, src/comp.scm, src/intlib.stub, src/main.c:
+	  splitted COMPILE_NOINLINE flag into three categories for the
+	  better debuggability.
+
+2005-03-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/comp.scm: more local closure inlining
+	* src/scmlib.scm: some more srfi-1 procedures implemented here
+	  to be used in comp.scm.
+
+2005-03-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/comp.scm: eliminate binding of some locally bound closures and
+	  inline it.
+
+2005-03-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/comp.scm: enable closure inlining (global inlining of
+	  define-inline'd procedures, and local inlining of directly
+	  called lambdas).
+	  NOTE: With this feature enabled, the compiled code (by gencomp)
+	  contains a literal vector of intermediate form.  If we change the
+	  IForm definition, make sure to build the bootstrap version of
+	  compiler with -fno-inline.
+	* src/gauche/code.h (ScmCompiledCode): added intermediateForm slot
+	  to keep IForm for later inlining.
+	* lib/gauche/cgen.scm : allow literal vectors to be emitted
+	  statically.
+
+2005-03-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/comp.scm: tweaked typical patterns of letrec and named let.
+	* src/vminsn.scm: added more combined instructions, and removed
+	  obsoleted ones.
+
 2005-03-15  Shiro Kawai  <shiro@acm.org>
 
 	* prefix.scm (%string-suffix-int): fixed a bug that returned wrong
 	  character count.
 
+2005-03-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/comp.scm: turned on the pass2 optimization.  added some more
+	  combined instructions.  selection of specialized instructions
+	  (e.g. NUMADDI) is pushed back to pass3/$ASM, instead of in the
+	  inliner functions, so that we can take advantage of constant
+	  folding and local variable renaming.
+	* src/vminsn.scm, src/vm.c: added CONSTx, CONSTx-PUSH, EQVI, BNEQVI,
+	  PEEK-CHAR, CURIN, CUROUT, CURERR instructions.
+
+2005-03-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/comp.scm: separate $let and $letrec intermediate forms.  emit
+	  EXTEND-ENV-CLOSURES instruction for letrec.
+	* src/vminsn.scm, src/vm.c, src/code.c:
+	  Support EXTEND-ENV-CLOSURES instruction.  Removed a few obsoleted
+	  instructions.  Made Scm_Apply more efficient.
+
+2005-03-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/vminsn.scm, src/vm.c: removed obsoleted LET and TAIL-LET
+	  instructions.
+
+2005-03-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/*: removed SCM_VM_INSN stuff.  The compiled code vector is
+	  created by compiled code builder API (in code.c), and the VM
+	  instruction themselves are no longer distinct Scheme objects.
+	  Instead, the VM instructions are dealt with simple integers.
+	  By this change, the older-style compiled program representation,
+	  i.e. a directed graph of VM instructions, is completely gone.
+
+2005-02-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/code.c, src/gauche/code.h: refactored out compiled-code stuff
+	  to separate files.
+
+2005-02-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/comp.scm: improved quasiquote handling so that it generates
+	  compile-time constant structure if the unquoted expressions are
+	  all constant (including references to the constant variables).
+	* test/primsym.scm: added more tests for quasiquotes.
+
+2005-02-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/scmlib.scm: moved some autoloaded built-ins into this, which
+	  is compiled into libgauche.
+	* src/autoload.scm, src/core.c, src/Makefile.in: changed accordingly.
+	* lib/gauche/listutil.scm, lib/gauche/with.scm: removed accordingly.
+	* src/gauche-init.scm: moved some definitions to scmlib.scm.
+
+2005-02-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c (Scm_Load): fixed a bug that treats LOAD_QUIET_NOFILE
+	  flag incorrectly.
+
+	* src/main.c: added -fprofile option to profile the script.
+	* lib/gauche/vm/profiler.scm : fix
+
+2005-02-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/vminsn.scm, src/vm.c : changed LAMBDA insn to CLOSURE insn,
+	  dropping arg # parameters (now they're in compiled code).  Also
+	  integrated DEFINE-CONST into DEFINE; two are now distinguished
+	  by its parameter.
+	* src/gauche/vm.h : added evalSituation field to ScmVMRec to support
+	  eval-when construct.
+	* src/comp.scm: added eval-when construct.
+
+2005-02-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/comp.scm (and-let* form cenv): support and-let* natively.
+	  (quasiquote): improved generated code.
+	* src/gauche-init.scm, src/load.c : provide srfi-2 by default, for
+	  and-let* is now supported natively.
+	* lib/srfi-2.scm: removed.
+
+2005-02-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c: fix positions of SCM_PROF_COUNT_CALL to properly record
+	  method invocation.  assign names to the code created internally
+	  at runtime (e.g. apply, eval) so that they can be shown in the
+	  profiler output.
+	* src/builtin-syms.scm: added some symbols for the profiling purpose
+	  described above.
+	* src/comp.scm: series of performance tuning.
+
+2005-02-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/prof.c, src/gauche/prof.h: moved experimental profiler code
+	  from core.c to here, and make the profiler buffer VM-local instead
+	  of global.
+
+2005-02-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/comp.scm: changed intermediate structure to use nested vectors.
+	  changed define-builtin-inliner to assign inliner function directly
+	  to the builtin subrs.
+
+2005-02-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/core.c: added experimental sampling profiler code.  it uses
+	  ITIMER_PROF, so it won't be available for all platforms.
+	* lib/gauche/vm/profiler.scm: profiler utilities.
+
 2005-02-02  Shiro Kawai  <shiro@acm.org>
 
-	* src/gauche.h (SCM_STRING_CONST_INITIALIZER): back-ported this macro
-	  from NVM branch so that I can package 0.8.3-p1 for testing
-	  (temporary).
-	
 	* configure.ac, src/gauche/config.h.in (DOUBLE_ARMENDIAN):
 	  added check to support ARM processor.
 	* src/number.c (union ieee_double), ext/binary/binary.c (SWAPD):
@@ -27,6 +230,43 @@
 	* extlib.stub (append!): fixed to allow non-list in the last arg,
 	  for consistency of srfi-1.
 
+2005-01-16  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/vm/insn.scm.src, src/gencomp: calculate generated code
+	  vector using the target compiler's instruction set, instead of 
+	  the host compiler's.
+	* src/vminsn.scm: rearranged.
+
+2005-01-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/comp.scm: implemented builtin procedure inlining.
+
+2005-01-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.c, src/vm.c, src/comp.scm, etc: snapshot of replacing
+	  the legacy compiler for the new compiler.  Legacy code is #ifdef-ed
+	  out.  Procedure inlining is not supported, but other functionalities
+	  work.
+
+2005-01-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/gauche/vm.h (ScmSyntacticClosure): Added syntactic
+	  closure object.  Although most functionalities that deal with
+	  syntactic closures will be written in Scheme, we need a disjoint
+	  type for this, and we need it without bootstrapping.
+
+2005-01-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/list.c (Scm_Length): changed API to return distinct values for
+	  dotted and circulare lists (SCM_LIST_DOTTED and SCM_LIST_CIRCULAR,
+	  respectively).  This shouldn't affect existing code, since they
+	  all checks if the return value is negative or not.
+	* src/gauche.h : added the enums for above change, and also added
+	  three macros, SCM_PROPER_LIST_P, SCM_DOTTED_LIST_P and
+	  SCM_CIRCULAR_LIST_P.
+	* src/extlib.stub : included srfi-1's proper-list?, dotted-list?
+	  and circular-list?.
+
 2005-01-07  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/net.scm (make-server-socket, make-server-sockets): added
@@ -36,6 +276,78 @@
 
 	* ext/mt-random/mt-random.scm (mt-random-integer): fixed a bug in
 	  rarely-executed branch of the code.
+
+2004-12-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/intlib.stub : moved some APIs from extlib which are only intended
+	  to be used by Gauche internal routines.
+
+2004-12-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (Scm_ClassOf, Scm_EOFObjectClass, Scm_UndefinedObjectClass):
+	  added classes for singleton immediate object #<eof> and #<undef>.
+	* src/vm.c : added some API needed to run pre-compiled code.
+	* src/gencomp : added initial version of a script to pre-compile
+	  the compiler.
+	* src/comp.scm : added a skeleton of the compiler.
+
+2004-12-26  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/condutil.scm, lib/gauche/object.scm (object-apply):
+	  moved object-apply of <condition-type> from condutil.scm to
+	  object.scm, so that condition-type-as-predicate works without
+	  loading condutil.scm.
+
+	* src/compile.c, src/class.c (<identifier>): expose identifier
+	  internals to Scheme.  This is temporary solution until the compiler
+	  is revised.
+
+	* lib/gauche/cgen.scm : handles static literals more wisely.
+	* src/autoloads.scm, src/builtin-syms.scm : changed accordingly.
+
+	* src/gauche.h (SCM_STRING_CONST_INITIALIZER): separated constant
+	  string initializer to an individual macro.
+
+2004-12-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/file/util.scm: added decompose-path, path-extension,
+	  path-sans-extension and path-swap-extension.
+	* Makefile.in, src/Makefile.in, lib/Makefile.in (pre-package):
+	  added a target 'pre-package', which should be run before creating
+	  distribution tarball.  It generates some files that requires
+	  pre-installed Gauche.
+	* lib/gauche/vm/insn.scm.src : added.  It generates insn.scm from
+	  src/vminsn.scm.
+	* src/compile.c (Scm_Compile): changed API to make Scm_Compile as
+	  the default gate to the compiler module.
+	* src/vm.c, src/gauche.h: changed accordingly.
+
+2004-12-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/vminsn.scm, src/geninsn: added.  manage VM insn definition
+	  in Scheme format instead of *.h and cpp trick.
+	* src/gauche/vminsn.h: removed.  Now it is generated from vminsn.scm.
+	* src/gauche/vm.h: no longer include vminsn.h.  The C files that needs
+	  vminsn symbols must include gauche/vminsn.h explicitly.
+	* src/vm.c, src/compile.c, src/macro.c, src/stdlib.stub,
+	  src/extlib.stub, src/moplib.stub: changed accordingly.
+	* src/Makefile.in: added rules to generate vminsn.[ch].
+
+2004-12-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/gauche/vm.h,
+	  src/compile.c, src/proc.c, src/builtin-syms.scm :
+	  Changed VM to use code-vector instead of directed graph.
+	  The compiled code is now converted to ScmCompiledCode before
+	  executed.  This is the first stage of the new VM/compiler
+	  architecture.
+	* src/core.c, src/main.c :
+	  Added -fcollect-stats option experimentally, to collect and
+	  display VM stats info.
+	* lib/gauche/vm/disasm.scm : removed.  the functionality is
+	  supported by core.
+	* lib/gauche/procedure.scm : the 'disasm' function (wrapper
+	  of more primitive subrs) are defined here.
 
 2004-12-21  Shiro Kawai  <shiro@acm.org>
 

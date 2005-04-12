@@ -30,11 +30,12 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.108 2004-08-20 02:04:51 shirok Exp $
+;;; $Id: stdlib.stub,v 1.109 2005-04-12 01:42:27 shirok Exp $
 ;;;
 
 
 "
+#include <gauche/vminsn.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <math.h>
@@ -49,11 +50,11 @@
 ;;
 
 (define-cproc eqv? (obj1 obj2)
-  (inliner "SCM_VM_EQV")
+  (inliner EQV)
   (return <boolean> "Scm_EqvP"))
 
 (define-cproc eq? (obj1 obj2)
-  (inliner "SCM_VM_EQ")
+  (inliner EQ)
   (return <boolean> "SCM_EQ"))
 
 (define-cproc equal? (obj1 obj2)
@@ -75,7 +76,6 @@
 (define-cproc inexact? (obj)  (return <boolean> "SCM_INEXACTP"))
 
 (define-cproc = (arg0 arg1 &rest args)
-  (inliner (case-nargs (2 "SCM_VM_NUMEQ2") (else #f)))
   "  for (;;) {
   if (!Scm_NumEq(arg0, arg1)) return SCM_FALSE;
   if (SCM_NULLP(args)) return SCM_TRUE;
@@ -83,7 +83,6 @@
   }")
 
 (define-cproc < (arg0 arg1 &rest args)
-  (inliner (case-nargs (2 "SCM_VM_NUMLT2") (else #f)))
   "  for (;;) {
   if (Scm_NumCmp(arg0, arg1) >= 0) return SCM_FALSE;
   if (SCM_NULLP(args)) return SCM_TRUE;
@@ -91,7 +90,6 @@
   }")
 
 (define-cproc <= (arg0 arg1 &rest args)
-  (inliner (case-nargs (2 "SCM_VM_NUMLE2") (else #f)))
   "  for (;;) {
   if (Scm_NumCmp(arg0, arg1) > 0) return SCM_FALSE;
   if (SCM_NULLP(args)) return SCM_TRUE;
@@ -99,7 +97,6 @@
   }")
 
 (define-cproc > (arg0 arg1 &rest args)
-  (inliner (case-nargs (2 "SCM_VM_NUMGT2") (else #f)))
   "  for (;;) {
   if (Scm_NumCmp(arg0, arg1) <= 0) return SCM_FALSE;
   if (SCM_NULLP(args)) return SCM_TRUE;
@@ -107,7 +104,6 @@
   }")
 
 (define-cproc >= (arg0 arg1 &rest args)
-  (inliner (case-nargs (2 "SCM_VM_NUMGE2") (else #f)))
   "  for (;;) {
   if (Scm_NumCmp(arg0, arg1) < 0) return SCM_FALSE;
   if (SCM_NULLP(args)) return SCM_TRUE;
@@ -130,68 +126,7 @@
 (define-cproc min (arg0 &rest args)
   "ScmObj r; Scm_MinMax(arg0, args, &r, NULL); SCM_RETURN(r);")
 
-"/* inliner for `+' */
-static ScmObj immediate_integer_inliner(long insn, long arg0, ScmObj arg1, ScmObj env)
-{
-  return Scm_MakeInlineAsmForm(SCM_NIL, SCM_VM_INSN1(insn, arg0), SCM_LIST1(arg1));
-}
-
-static ScmObj num2op_inliner(long insn, ScmObj arg0, ScmObj arg1, ScmObj env)
-{
-  ScmObj args = SCM_LIST2(arg0, arg1);
-  return Scm_MakeInlineAsmForm(Scm_Cons(SCM_FALSE, args),
-                               SCM_VM_INSN(insn), args);
-}
-
-static ScmObj plus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
-{
-  ScmObj args = SCM_CDR(form), arg0, arg1;
-  long imm;
-  if (Scm_Length(form) != 3) return SCM_FALSE;
-  arg0 = SCM_CAR(args);
-  arg1 = SCM_CADR(args);
-  if (SCM_INTP(arg0)) {
-    if (SCM_INTP(arg1)) {
-      return(Scm_MakeInteger(SCM_INT_VALUE(arg0)+SCM_INT_VALUE(arg1)));
-    }
-    imm = SCM_INT_VALUE(arg0);
-    if (SCM_VM_INSN_ARG_FITS(imm))
-      return immediate_integer_inliner(SCM_VM_NUMADDI, imm, arg1, env);
-  } else if (SCM_INTP(arg1)) {
-    imm = SCM_INT_VALUE(arg1);
-    if (SCM_VM_INSN_ARG_FITS(imm))
-      return immediate_integer_inliner(SCM_VM_NUMADDI, imm, arg0, env);
-  }
-  return num2op_inliner(SCM_VM_NUMADD2, arg0, arg1, env);
-}
-
-static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
-{
-  ScmObj args = SCM_CDR(form), arg0, arg1;
-  long imm;
-  if (Scm_Length(form) != 3) return SCM_FALSE;
-  arg0 = SCM_CAR(args);
-  arg1 = SCM_CADR(args);
-  if (SCM_INTP(arg0)) {
-    if (SCM_INTP(arg1)) {
-      return(Scm_MakeInteger(SCM_INT_VALUE(arg0)-SCM_INT_VALUE(arg1)));
-    }
-    imm = SCM_INT_VALUE(arg0);
-    if (SCM_VM_INSN_ARG_FITS(imm))
-      return immediate_integer_inliner(SCM_VM_NUMSUBI, imm, arg1, env);
-  } else if (SCM_INTP(arg1)) {
-    imm = SCM_INT_VALUE(arg1);
-    if (SCM_VM_INSN_ARG_FITS(imm))
-      return immediate_integer_inliner(SCM_VM_NUMADDI, -imm, arg0, env);
-  }
-  return num2op_inliner(SCM_VM_NUMSUB2, arg0, arg1, env);
-}
-
-"
-
 (define-cproc + (&rest args)
-;  (inliner (case-nargs (2 "SCM_VM_NUMADD2") (else #f)))
-  (inliner (proc "plus_inliner"))
   "  if (SCM_NULLP(args)) SCM_RETURN(SCM_MAKE_INT(0));
   if (!SCM_PAIRP(SCM_CDR(args))) {
     if (!SCM_NUMBERP(SCM_CAR(args)))
@@ -211,8 +146,6 @@ static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
   SCM_RETURN(Scm_Multiply(SCM_CAR(args), SCM_CADR(args), SCM_CDDR(args)));")
 
 (define-cproc - (arg1 &rest args)
-;  (inliner (case-nargs (2 "SCM_VM_NUMSUB2") (else #f)))
-  (inliner (proc "minus_inliner"))
   "  ScmObj r;
   if (SCM_NULLP(args)) r = Scm_Negate(arg1);
   else r = Scm_Subtract(arg1, SCM_CAR(args), SCM_CDR(args));
@@ -336,7 +269,7 @@ static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
 ;;
 
 (define-cproc not (obj)
-  (inliner "SCM_VM_NOT")
+  (inliner NOT)
   (return <boolean> "SCM_FALSEP"))
 
 (define-cproc boolean? (obj)
@@ -347,20 +280,20 @@ static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
 ;;
 
 (define-cproc pair? (obj)
-  (inliner "SCM_VM_PAIRP")
+  (inliner PAIRP)
   (return <boolean> "SCM_PAIRP"))
 
 (define-cproc cons (obj1 obj2)
-  (inliner "SCM_VM_CONS")
+  (inliner CONS)
   (return "Scm_Cons"))
 
 (define-cproc car (obj::<pair>)
-  (inliner "SCM_VM_CAR")
+  (inliner CAR)
   (return "SCM_CAR")
   (setter set-car!))
 
 (define-cproc cdr (obj::<pair>)
-  (inliner "SCM_VM_CDR")
+  (inliner CDR)
   (return "SCM_CDR")
   (setter set-cdr!))
 
@@ -376,62 +309,47 @@ static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
   SCM_SET_C##PRE##R(cell, value); SCM_RETURN(SCM_UNDEFINED);
 "
 
-"static ScmObj cxxr_inliner(ScmObj form, ScmObj env,
-                            const char *name, int insn1, int insn2)
- {
-   ScmObj step1;
-   if (Scm_Length(form) != 2)
-     Scm_Error(\"%s requires exactly one argument\", name);
-   step1 = Scm_MakeInlineAsmForm(form, SCM_VM_INSN(insn1), SCM_CDR(form));
-   return Scm_MakeInlineAsmForm(form, SCM_VM_INSN(insn2), SCM_LIST1(step1));
- }
- static ScmObj caar_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
- { return cxxr_inliner(form, env, \"caar\", SCM_VM_CAR, SCM_VM_CAR); }
- static ScmObj cadr_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
- { return cxxr_inliner(form, env, \"cadr\", SCM_VM_CDR, SCM_VM_CAR); }
- static ScmObj cdar_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
- { return cxxr_inliner(form, env, \"cdar\", SCM_VM_CAR, SCM_VM_CDR); }
- static ScmObj cddr_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
- { return cxxr_inliner(form, env, \"cddr\", SCM_VM_CDR, SCM_VM_CDR); }
-"
-
 (define-cproc caar (obj)
-  (inliner (proc "caar_inliner")) "SCM_RETURN(Scm_Caar(obj));"
+  (inliner CAAR)
+  (return "Scm_Caar")
   (setter (obj value) "CXR_SETTER(A, a, a);"))
 (define-cproc cadr (obj)
-  (inliner (proc "cadr_inliner")) "SCM_RETURN(Scm_Cadr(obj));"
+  (inliner CADR)
+  (return "Scm_Cadr")
   (setter (obj value) "CXR_SETTER(A, a, d);"))
 (define-cproc cdar (obj)
-  (inliner (proc "cdar_inliner")) "SCM_RETURN(Scm_Cdar(obj));"
+  (inliner CDAR)
+  (return "Scm_Cdar")
   (setter (obj value) "CXR_SETTER(D, d, a);"))
 (define-cproc cddr (obj)
-  (inliner (proc "cddr_inliner")) "SCM_RETURN(Scm_Cddr(obj));"
+  (inliner CDDR)
+  (return "Scm_Cddr")
   (setter (obj value) "CXR_SETTER(D, d, d);"))
 ;; NB: caaar ... cddddr are in autoloaded Scheme file now.
 
 (define-cproc null? (obj)
-  (inliner "SCM_VM_NULLP")
+  (inliner NULLP)
   (return <boolean> "SCM_NULLP"))
 
 (define-cproc list? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(Scm_Length(obj) >= 0));")
+  (return <boolean> "SCM_PROPER_LIST_P"))
 
 (define-cproc list (&rest args)
-  (inliner "SCM_VM_LIST")
-  ;; TODO: check to see if we don't need to copy args?
+  (inliner LIST)
   "  SCM_RETURN(args);")
 
 (define-cproc length (list)
+  (inliner LENGTH)
   "  int i = Scm_Length(list);
   if (i < 0) Scm_Error(\"bad list: %S\", list);
   SCM_RETURN(Scm_MakeInteger(i));")
 
 (define-cproc append (&rest lists)
-  (inliner "SCM_VM_APPEND")
+  (inliner APPEND)
   (return "Scm_Append"))
 
 (define-cproc reverse (list::<list>)
-  (inliner "SCM_VM_REVERSE")
+  (inliner REVERSE)
   (return "Scm_Reverse"))
 
 (define-cproc list-tail (list k::<fixnum>)
@@ -441,22 +359,22 @@ static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
   (return "Scm_ListRef"))
 
 (define-cproc memq (obj list::<list>)
-  (inliner "SCM_VM_MEMQ")
+  (inliner MEMQ)
   (return "Scm_Memq"))
 
 (define-cproc memv (obj list::<list>)
-  (inliner "SCM_VM_MEMV")
+  (inliner MEMV)
   (return "Scm_Memv"))
 
 (define-cproc member (obj list::<list>)
   "  SCM_RETURN(Scm_Member(obj, list, SCM_CMP_EQUAL));")
 
 (define-cproc assq (obj alist::<list>)
-  (inliner "SCM_VM_ASSQ")
+  (inliner ASSQ)
   (return "Scm_Assq"))
 
 (define-cproc assv (obj alist::<list>)
-  (inliner "SCM_VM_ASSV")
+  (inliner ASSV)
   (return "Scm_Assv"))
 
 (define-cproc assoc (obj alist::<list>)
@@ -467,7 +385,7 @@ static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
 ;;
 
 (define-cproc symbol? (obj)
-  (inliner "SCM_VM_SYMBOLP")
+  (inliner SYMBOLP)
   (return <boolean> "SCM_SYMBOLP"))
 
 (define-cproc symbol->string (obj::<symbol>)
@@ -481,7 +399,7 @@ static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
 ;;
 
 (define-cproc char? (obj)
-  (inliner "SCM_VM_CHARP")
+  (inliner CHARP)
   (return <boolean> "SCM_CHARP"))
 
 (define-cproc char=? (c1::<char> c2::<char>) (return <boolean> "SCM_EQ"))
@@ -533,7 +451,7 @@ static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
 ;;
 
 (define-cproc string? (obj)
-  (inliner "SCM_VM_STRINGP")
+  (inliner STRINGP)
   (return <boolean> "SCM_STRINGP"))
 
 (define-cproc make-string (len::<fixnum> &optional (c::<char> #\ ))
@@ -607,26 +525,26 @@ static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
 ;; 6.3.6  Vectors
 ;;
 
-(define-cproc vector? (obj) (return <boolean> "SCM_VECTORP"))
+(define-cproc vector? (obj)
+  (inliner VECTORP)
+  (return <boolean> "SCM_VECTORP"))
 
 (define-cproc make-vector (k::<fixnum> &optional fill)
   (return "Scm_MakeVector"))
 
 (define-cproc vector (&rest args)
-  (inliner "SCM_VM_VEC")
+  (inliner VEC)
   (return "Scm_ListToVector"))
 
 (define-cproc vector-length (vec::<vector>)
-  (inliner "SCM_VM_VEC_LEN")
+  (inliner VEC-LEN)
   (return <fixnum> "SCM_VECTOR_SIZE"))
 
 (define-cproc vector-ref (vec::<vector> k::<fixnum> &optional fallback)
-  (inliner (case-nargs (2 "SCM_VM_VEC_REF") (else #f)))
   (return "Scm_VectorRef")
   (setter vector-set!))
 
 (define-cproc vector-set! (vec::<vector> k::<fixnum> obj)
-  (inliner "SCM_VM_VEC_SET")
   (return <void> "Scm_VectorSet"))
 
 (define-cproc vector->list (vec::<vector>
@@ -647,7 +565,7 @@ static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
 (define-cproc procedure? (obj) (return <boolean> "SCM_PROCEDUREP"))
 
 (define-cproc apply (proc arg1 &rest args)
-  (inliner "SCM_VM_APPLY")
+  (inliner APPLY)
   "  ScmObj head, tail, cp;
   if (SCM_NULLP(args)) return Scm_VMApply(proc, arg1);
   else {
@@ -678,7 +596,7 @@ static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
   (return "Scm_VMCallCC"))
 
 (define-cproc values (&rest args)
-  (inliner "SCM_VM_VALUES")
+  (inliner VALUES)
   (return "Scm_Values"))
 
 ;; call-with-values - defined in gauche-init.scm
@@ -711,9 +629,11 @@ static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
 (define-cproc port? (obj)        (return <boolean> "SCM_PORTP"))
 
 (define-cproc current-input-port ()
+  (inliner CURIN)
   "  SCM_RETURN(SCM_OBJ(SCM_CURIN));")
 
 (define-cproc current-output-port ()
+  (inliner CUROUT)
   "  SCM_RETURN(SCM_OBJ(SCM_CUROUT));")
 
 (define-cproc close-input-port (port::<port>)
@@ -730,19 +650,20 @@ static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
   "  SCM_RETURN(Scm_Read(SCM_OBJ(port)));")
 
 (define-cproc read-char (&optional (port::<input-port> (current-input-port)))
-  (inliner "SCM_VM_READ_CHAR")
+  (inliner READ-CHAR)
   "  int ch = EOF;
   SCM_GETC(ch, port);
   if (ch == EOF) SCM_RETURN(SCM_EOF);
   else SCM_RETURN(SCM_MAKE_CHAR(ch));")
 
 (define-cproc peek-char (&optional (port::<input-port> (current-input-port)))
+  (inliner PEEK-CHAR)
   "  ScmChar ch = Scm_Peekc(port);
   ScmObj r = (ch == SCM_CHAR_INVALID)? SCM_EOF : SCM_MAKE_CHAR(ch);
   SCM_RETURN(r);")
 
 (define-cproc eof-object? (obj)
-  (inliner "SCM_VM_EOFP")
+  (inliner EOFP)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_EOFP(obj)));")
 
 (define-cproc char-ready? (&optional (port::<input-port> (current-input-port)))
@@ -765,7 +686,7 @@ static ScmObj minus_inliner(ScmObj subr, ScmObj form, ScmObj env, void *data)
 
 (define-cproc write-char (ch::<char>
                           &optional (port::<output-port> (current-output-port)))
-  (inliner "SCM_VM_WRITE_CHAR")
+  (inliner WRITE-CHAR)
   "  SCM_PUTC(ch, port); SCM_RETURN(SCM_UNDEFINED);")
 
 ;;

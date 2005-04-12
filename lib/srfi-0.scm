@@ -1,7 +1,7 @@
 ;;;
 ;;; SRFI-0   feature based conditional expansion construct
 ;;;
-;;; $Id: srfi-0.scm,v 1.22 2004-07-28 05:13:22 shirok Exp $
+;;; $Id: srfi-0.scm,v 1.23 2005-04-12 01:42:24 shirok Exp $
 ;;;
 
 (define-module srfi-0
@@ -73,7 +73,7 @@
   ;; by Gauche built-in features).
   (define (fulfill? req seed)
     (cond
-     ((identifier? req) (fulfill? (identifier->symbol req)))
+     ((identifier? req) (fulfill? (identifier->symbol req) seed))
      ((symbol? req)
       (let ((p (assq req *cond-features*)))
         (and p (if (null? (cdr p)) seed (cons (cadr p) seed)))))

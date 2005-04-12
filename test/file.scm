@@ -220,6 +220,48 @@
          (resolve-path "test.out/test.d/../test2.d/test11.o"))
   )
 
+(test* "decompose-path" '("/a/b/c" "d" "e")
+       (receive r (decompose-path "/a/b/c/d.e") r))
+(test* "decompose-path" '("." "d" "e")
+       (receive r (decompose-path "d.e") r))
+(test* "decompose-path" '("." "d" "")
+       (receive r (decompose-path "d.") r))
+(test* "decompose-path" '("." "d" #f)
+       (receive r (decompose-path "d") r))
+(test* "decompose-path" '("/a.b" "c" #f)
+       (receive r (decompose-path "/a.b/c") r))
+(test* "decompose-path" '("/a.b" #f #f)
+       (receive r (decompose-path "/a.b/") r))
+(test* "decompose-path" '("/a.b" "c.c" "d")
+       (receive r (decompose-path "/a.b/c.c.d") r))
+(test* "decompose-path" '("/a.b" ".d" #f)
+       (receive r (decompose-path "/a.b/.d") r))
+
+(test* "path-extension" "c" (path-extension "/a.b/c.d/e.c"))
+(test* "path-extension" "" (path-extension "/a.b/c.d/e.c."))
+(test* "path-extension" #f (path-extension "/a.b/c.d/.e"))
+(test* "path-extension" #f (path-extension "/a.b/c.d/e"))
+
+(test* "path-sans-extension" "/a.b/c.d/e"
+       (path-sans-extension "/a.b/c.d/e.c"))
+(test* "path-sans-extension" "/a.b/c.d/e.c"
+       (path-sans-extension "/a.b/c.d/e.c."))
+(test* "path-sans-extension" "/a.b/c.d/.e"
+       (path-sans-extension "/a.b/c.d/.e"))
+(test* "path-sans-extension" "/a.b/c.d/e"
+       (path-sans-extension "/a.b/c.d/e"))
+
+(test* "path-swap-extension" "/a.b/c.d/e.o"
+       (path-swap-extension "/a.b/c.d/e.c" "o"))
+(test* "path-swap-extension" "/a.b/c.d/e.c.o"
+       (path-swap-extension "/a.b/c.d/e.c." "o"))
+(test* "path-swap-extension" "/a.b/c.d/.e.o"
+       (path-swap-extension "/a.b/c.d/.e" "o"))
+(test* "path-swap-extension" "/a.b/c.d/e.o"
+       (path-swap-extension "/a.b/c.d/e" "o"))
+(test* "path-swap-extension" "/a.b/c.d/e"
+       (path-swap-extension "/a.b/c.d/e.c" #f))
+
 (test* "file-type" #f
        (file-type "nonexistent/file"))
 (test* "file-type" '(directory directory regular)

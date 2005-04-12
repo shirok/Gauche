@@ -2,18 +2,20 @@ This file is for those who wants to hack the cutting-edge
 Gauche sources from the CVS repository.  If you just want to
 compile from the distribution, you don't need to read any further.
 
+[TOOLS REQUIRED FOR BUILDING]
+
 In order to build Gauche from the CVS sources, instead of from
 the distribution, you need to have autoconf 2.54 or higher.
 The author using autoconf 2.57.
 
 You also need to have the latest Gauche installed on your
 machine, for it is required to generate some C files.
+(see also CHANGING VM INSTRUCTIONS below).
 
 The CVS source tree doesn't include "configure" scripts.
 You can use the DIST script like the following to generate them.
 
   % ./DIST gen
-
 
 Note for seasoned libtool/automake users: the CVS source tree
 includes files that are usually generated automatically by
@@ -22,4 +24,63 @@ etc.  Be careful not to clobber these files.  First, if your
 autotools version doesn't match mine, it tends to break.
 Second, those files are likely to be edited after generated,
 in order to fix some build problem on certain platform.
+
+
+[CHANGING VM INSTRUCTIONS]
+
+As of 0.8.4, Gauche's compiler is written in Scheme and should
+be compiled using the installed Gauche (host) itself.   If you
+change VM instructions of the source tree (target), you may 
+require extra step of compilation, since the host compiler's
+output may not run on the target Gauche.
+
+Generally, whenever you added new VM instructions, defined in
+src/vminsn.scm, you need to take the following steps to get
+the new version of working gosh:
+
+[1]% (cd lib; make)
+[2]% cd src
+[3]% gosh -ftest -fno-inline-globals ./gencomp compile.scm
+[4]% gosh -ftest -fno-inline-globals ./gencomp scmlib.scm
+[5]% make
+[6]% ./gosh -ftest ./gencomp compile.scm
+[7]% ./gosh -ftest ./gencomp scmlib.scm
+[8]% make
+
+The first step, [1], will update lib/gauche/vm/insn.scm, which is
+used by src/gencomp to dump the compiled code vector as C data.
+Gencomp remaps the host VM instruction code to the target VM 
+instruction code using insn.scm.
+
+The steps [3] and [4] compiles the compiler by the host Gauche,
+turning off a certain optimization.   Without -fno-inline-globals,
+host Gauche's code fragment will sneak into the compiled code and
+keeps the compiled result from running on the target Gauche.
+
+The step [5] creates a target Gauche, except its compiler isn't
+optimal because it is compiled without optimization.
+
+The steps [6] and [7] recompiles the target Gauche by the target
+Gauche itself, with all optimizations on.   Thus the step [8]
+produces the optimized target Gauche.
+
+
+Removing VM instructions is even more cumbersome.  Suppose you want to
+remove a VM instruction WHATEVER.  First, you change compile.scm
+so that it will never generate WHATEVER, then 'make' to build
+an intermediate version of Gauche.   After that, you remove WHATEVER
+from vminsn.scm and follow the above steps, but make sure you use
+the intermediate version of Gauche in the steps [3] and [4]----if you
+skip this intermediate steps, you'll get an error in the step [3]
+since the host Gauche generates WHATEVER instruction, but cannot
+dump it since it can't find the instruction in the target's
+lib/gauche/vm/insn.scm.
+
+
+Renaming VM instruction is equally cumbersome.  You have to take
+two stages: Add the new instruction under the new name, first, then
+remove the old instruction.
+
+
+Maybe I could automate these steps later, for they are error-prone.
 

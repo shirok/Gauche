@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates builtin symbols
 ;;;
-;;; $Id: builtin-syms.scm,v 1.6 2004-12-18 04:11:12 shirok Exp $
+;;; $Id: builtin-syms.scm,v 1.7 2005-04-12 01:42:25 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,8 @@
 (define *unit*
   (make <cgen-unit>
     :name "builtin-syms"
-    :preamble "/* Generated from builtin-syms.scm $Revision: 1.6 $.  DO NOT EDIT */"
+    :preamble "/* Generated from builtin-syms.scm $Revision: 1.7 $.  DO NOT EDIT */"
+    :pre-decl "#define LIBGAUCHE_BODY"
     :c-file "builtin-syms.c"
     :h-file "gauche/builtin-syms.h"
     :init-prologue "static void init_builtin_syms(void)\n{"
@@ -106,6 +107,7 @@
     (scheme                    SCM_SYM_SCHEME)
     (gauche                    SCM_SYM_GAUCHE)
     (gauche.gf                 SCM_SYM_GAUCHE_GF)
+    (gauche.internal           SCM_SYM_GAUCHE_INTERNAL)
     (user                      SCM_SYM_USER)
     (|#|                       SCM_SYM_SHARP)
 
@@ -123,14 +125,20 @@
     (gauche-utf8               SCM_SYM_GAUCHE_UTF8)     ;; for feature id
     (gauche-none               SCM_SYM_GAUCHE_NONE)     ;; for feature id
 
-    ;; reader
+    ;; reader, compiler, vm
     (source-info               SCM_SYM_SOURCE_INFO)
     (bind-info                 SCM_SYM_BIND_INFO)
+    (arg-info                  SCM_SYM_ARG_INFO)
     (debug-print               SCM_SYM_DEBUG_PRINT)
     (define-reader-ctor        SCM_SYM_DEFINE_READER_CTOR)
     (string-interpolate        SCM_SYM_STRING_INTERPOLATE)
     (big-endian                SCM_SYM_BIG_ENDIAN)    ;; for binary.io, uvector
     (little-endian             SCM_SYM_LITTLE_ENDIAN) ;; ditto
+    (%internal-eval            SCM_SYM_INTERNAL_EVAL)
+    (%internal-apply           SCM_SYM_INTERNAL_APPLY)
+    (%eval-before              SCM_SYM_EVAL_BEFORE)
+    (%eval-after               SCM_SYM_EVAL_AFTER)
+    (%toplevel                 SCM_SYM_TOPLEVEL)
 
     ;; regexp
     (seq                       SCM_SYM_SEQ)

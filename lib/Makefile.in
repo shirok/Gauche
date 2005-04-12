@@ -1,9 +1,9 @@
 #
 # Makefile.in for Gauche/lib
-#  $Id: Makefile.in,v 1.118 2004-10-11 04:38:59 shirok Exp $
+#  $Id: Makefile.in,v 1.119 2005-04-12 01:42:24 shirok Exp $
 
-.PHONY: all check install uninstall slibcat slibcat-in-place clean distclean \
-        maintainer-clean
+.PHONY: all check pre-package install uninstall slibcat slibcat-in-place \
+	clean distclean maintainer-clean
 
 DESTDIR =
 
@@ -22,6 +22,7 @@ INSTALL         = @INSTALL@
 MKINSTDIR       = $(top_srcdir)/mkinstalldirs
 SLIB_DIR        = @SLIB_DIR@
 
+GENERATED   = gauche/vm/insn.scm
 CONFIG_GENERATED = Makefile slib.scm
 
 SUBDIRS  = gauche gauche/vm gauche/serializer gauche/interactive gauche/mop \
@@ -34,7 +35,7 @@ SCMFILES = srfi-0.scm \
        srfi-1/folder.scm srfi-1/generator.scm srfi-1/mapper.scm \
        srfi-1/nary.scm srfi-1/nth.scm srfi-1/pred.scm srfi-1/selector.scm \
        srfi-1/set.scm srfi-1/zipper.scm \
-       srfi-2.scm srfi-4.scm srfi-5.scm srfi-7.scm srfi-9.scm srfi-11.scm \
+       srfi-4.scm srfi-5.scm srfi-7.scm srfi-9.scm srfi-11.scm \
        srfi-13.scm srfi-13/casemap.scm srfi-13/comparer.scm \
        srfi-13/filter.scm srfi-13/folder.scm srfi-13/generator.scm \
        srfi-13/internal.scm srfi-13/kmp.scm srfi-13/misc.scm srfi-13/hash.scm \
@@ -47,11 +48,12 @@ SCMFILES = srfi-0.scm \
        srfi-31.scm srfi-37.scm \
        slib.scm	 \
        gauche/object.scm gauche/redefutil.scm gauche/test.scm \
-       gauche/macroutil.scm gauche/listutil.scm gauche/stringutil.scm \
+       gauche/macroutil.scm gauche/stringutil.scm \
        gauche/condutil.scm \
-       gauche/with.scm gauche/regexp.scm gauche/process.scm gauche/signal.scm \
+       gauche/regexp.scm gauche/process.scm gauche/signal.scm \
        gauche/numerical.scm gauche/let-opt.scm gauche/logical.scm \
-       gauche/vm/disasm.scm gauche/vm/debugger.scm gauche/procedure.scm \
+       gauche/vm/debugger.scm gauche/vm/insn.scm gauche/vm/profiler.scm \
+       gauche/procedure.scm \
        gauche/serializer.scm gauche/serializer/aserializer.scm \
        gauche/parseopt.scm gauche/interactive.scm gauche/interactive/info.scm \
        gauche/selector.scm gauche/logger.scm gauche/portutil.scm \
@@ -80,9 +82,11 @@ SCMFILES = srfi-0.scm \
        text/html-lite.scm text/info.scm text/gettext.scm text/diff.scm \
        www/cgi.scm www/cgi-test.scm
 
-all:
+all: $(GENERATED)
 
 check:
+
+pre-package: $(GENERATED)
 
 install:
 	for d in $(SUBDIRS); do \
@@ -114,6 +118,11 @@ slibcat-in-place :
 	  $(SHELL) ./mklibcat $(top_builddir)/src/gosh ; \
 	fi
 
+# Generates insn.scm.  NOTE: this must be called at packaging time,
+# so that the build process doesn't need to call gosh being built.
+gauche/vm/insn.scm : gauche/vm/insn.scm.src $(top_srcdir)/src/vminsn.scm
+	gosh ./gauche/vm/insn.scm.src
+
 clean:
 	rm -f core slibcat *~
 	for d in $(SUBDIRS); do (cd $$d; rm -f core *~); done
@@ -122,5 +131,5 @@ distclean: clean
 	rm -f $(CONFIG_GENERATED)
 
 maintainer-clean: clean
-	rm -f $(CONFIG_GENERATED)
+	rm -f $(CONFIG_GENERATED) $(GENERATED)
 

@@ -477,6 +477,31 @@
 (test* "eqv?" #t (eqv? 20 (inexact->exact 20.0)))
 (test* "eqv?" #f (eqv? 20 20.0))
 
+;; the following tests combine instructions for comparison.
+
+(let ((zz #f))
+  (set! zz 3.14)  ;; fool the compiler to avoid optimization
+
+  (test* "NUMEQF" '(#t #t #f #f)
+         (list (= 3.14 zz) (= zz 3.14) (= 3.15 zz) (= zz 3.15)))
+  (test* "NLTF" '(#f #f #f #t #t #f)
+         (list (< 3.14 zz) (< zz 3.14)
+               (< 3.15 zz) (< zz 3.15)
+               (< 3.13 zz) (< zz 3.13)))
+  (test* "NLEF" '(#t #t #f #t #t #f)
+         (list (<= 3.14 zz) (<= zz 3.14)
+               (<= 3.15 zz) (<= zz 3.15)
+               (<= 3.13 zz) (<= zz 3.13)))
+  (test* "NGTF" '(#f #f #t #f #f #t)
+         (list (> 3.14 zz) (> zz 3.14)
+               (> 3.15 zz) (> zz 3.15)
+               (> 3.13 zz) (> zz 3.13)))
+  (test* "NGEF" '(#t #t #t #f #f #t)
+         (list (>= 3.14 zz) (>= zz 3.14)
+               (>= 3.15 zz) (>= zz 3.15)
+               (>= 3.13 zz) (>= zz 3.13)))
+  )
+
 ;;==================================================================
 ;; Arithmetics
 ;;
@@ -579,6 +604,41 @@
 (test* "NUMSUBI" -1 (- 10 (do ((x 0 (+ x 1))) ((> x 10) x))))
 (test* "NUMSUBI" 1 (- (do ((x 0 (+ x 1))) ((> x 10) x)) 10))
 
+;;------------------------------------------------------------------
+(test-section "immediate flonum integer arith")
+
+;; tests special instructions for immediate flonum integer arithmetic
+
+
+(define x 2.0)
+(test* "NUMADDF" 5.0 (+ 3 x))
+(test* "NUMADDF" 5.0 (+ x 3))
+(test* "NUMADDF" 1.0 (+ -1 x))
+(test* "NUMADDF" 1.0 (+ x -1))
+(test* "NUMADDF" 2.0+1.0i (+ +i x))
+(test* "NUMADDF" 2.0+1.0i (+ x +i))
+
+(test* "NUMSUBF" 1.0 (- 3 x))
+(test* "NUMSUBF" -1.0 (- x 3))
+(test* "NUMSUBF" -5.0 (- -3 x))
+(test* "NUMSUBF" 5.0 (- x -3))
+(test* "NUMSUBF" -2.0+1.0i (- +i x))
+(test* "NUMSUBF" 2.0-1.0i (- x +i))
+
+(test* "NUMMULF" 4.0 (* x 2))
+(test* "NUMMULF" 4.0 (* 2 x))
+(test* "NUMMULF" 3.0 (* x 1.5))
+(test* "NUMMULF" 3.0 (* 1.5 x))
+(test* "NUMMULF" 0+2.0i (* x +i))
+(test* "NUMMULF" 0+2.0i (* +i x))
+
+(test* "NUMDIVF" 0.5 (/ x 4))
+(test* "NUMDIVF" 2.0 (/ 4 x))
+(test* "NUMDIVF" 0.5 (/ x 4.0))
+(test* "NUMDIVF" 2.0 (/ 4.0 x))
+(test* "NUMDIVF" 0.0-0.5i (/ x +4i))
+(test* "NUMDIVF" 0.0+2.0i (/ +4i x))
+ 
 ;;------------------------------------------------------------------
 (test-section "promotions in addition")
 

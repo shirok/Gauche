@@ -1,7 +1,7 @@
 /*
  * macro.c - macro implementation
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,13 +30,18 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.52 2004-12-18 04:11:13 shirok Exp $
+ *  $Id: macro.c,v 1.53 2005-04-12 01:42:27 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/macro.h"
+#include "gauche/code.h"
+#include "gauche/vminsn.h"
 #include "gauche/builtin-syms.h"
+
+
+/*#define DEBUG_SYNRULE*/
 
 /*===================================================================
  * Syntax object
@@ -140,6 +145,55 @@ ScmSyntaxRules *make_syntax_rules(int nr)
 }
 
 /*===================================================================
+ * Macro for the new compiler
+ */
+
+/* In the new compiler, macro transformers for hygienic and traditional
+ * macros are integrated.
+ * The lowest-level macro transformer can be introduced by define-syntax,
+ * let-syntax and letrec-syntax (but not syntax-case or syntax-rules; they
+ * are built on top of it).
+ *
+ *   (define-syntax foo <transformer>)
+ *
+ * Where <transformer> is a procedure that takes one argument, a syntactic
+ * closure.  It must return a syntactic closure as the result of trans
+ * formation.
+ *
+ * From the point of the compiler, define-syntax triggers the following
+ * actions.
+ *
+ *  - evaluate <transformer> in the compiler environment.
+ *  - encapsulate it into <macro> object, and insert it to the compiler
+ *    environment.
+ *  - insert the binding to foo in the runtime toplevel environment.
+ *
+ * Define-macro is also built on top of define-syntax.  Concepturally,
+ * it is transformed as follows.
+ *
+ *  (define-macro foo procedure)
+ *   => (define-syntax foo
+ *        (lambda (x)
+ *          (let ((env  (slot-ref x 'env))
+ *                (form (slot-ref x 'expr)))
+ *            (make-syntactic-closure
+ *              env () (apply procedure form)))))
+ */
+
+static ScmObj macro_transform(ScmObj self, ScmObj form, ScmObj env,
+                              void *data)
+{
+    ScmObj proc = SCM_OBJ(data);
+    SCM_ASSERT(SCM_SYNTACTIC_CLOSURE_P(form));
+    return Scm_Apply(proc, SCM_LIST1(form));
+}
+
+ScmObj Scm_MakeMacroTransformer(ScmSymbol *name, ScmObj proc)
+{
+    return Scm_MakeMacro(name, macro_transform, (void*)proc);
+}
+
+/*===================================================================
  * Traditional Macro
  */
 
@@ -147,16 +201,17 @@ ScmSyntaxRules *make_syntax_rules(int nr)
 /* TODO: better error message on syntax error (macro invocation with
    bad number of arguments) */
 
-static ScmObj macro_transform(ScmObj self, ScmObj form, ScmObj env, void *data)
+static ScmObj macro_transform_old(ScmObj self, ScmObj form,
+                                  ScmObj env, void *data)
 {
     ScmObj proc = SCM_OBJ(data);
     SCM_ASSERT(SCM_PAIRP(form));
     return Scm_Apply(proc, SCM_CDR(form));
 }
 
-ScmObj Scm_MakeMacroTransformer(ScmSymbol *name, ScmProcedure *proc)
+ScmObj Scm_MakeMacroTransformerOld(ScmSymbol *name, ScmProcedure *proc)
 {
-    return Scm_MakeMacro(name, macro_transform, (void*)proc);
+    return Scm_MakeMacro(name, macro_transform_old, (void*)proc);
 }
 
 static ScmMacro *resolve_macro_autoload(ScmAutoload *adata)
@@ -178,58 +233,6 @@ ScmObj Scm_MakeMacroAutoload(ScmSymbol *name, ScmAutoload *adata)
 {
     return Scm_MakeMacro(name, macro_autoload, (void*)adata);
 }
-
-static ScmObj compile_define_macro(ScmObj form, ScmObj env, int ctx,
-                                   void *data)
-{
-    ScmObj name, trans, mt = SCM_NIL;
-    int len;
-    
-    if ((len = Scm_Length(form)) < 3)  goto badsyn;
-    name = SCM_CADR(form);
-    if (!SCM_NULLP(env)) {
-        Scm_Error("define-macro can be used only at the toplevel: %S", form);
-    }
-    if (SCM_SYMBOLP(name) || SCM_IDENTIFIERP(name)) {
-        /* (define-macro foo (lambda (..) ...)) */
-        if (len != 3) goto badsyn;
-        if (SCM_IDENTIFIERP(name)) name = SCM_OBJ(SCM_IDENTIFIER(name)->name);
-        trans = SCM_CAR(SCM_CDDR(form));
-    } else {
-        /* (define-macro (foo ..) ... */
-        ScmObj args, body;
-        if (!SCM_PAIRP(name)) goto badsyn;
-        args = SCM_CDR(name);
-        name = SCM_CAR(name);
-        body = SCM_CDDR(form);
-
-        /* TODO: think more about the case that name is an identifier */
-        if (SCM_IDENTIFIERP(name)) name = SCM_OBJ(SCM_IDENTIFIER(name)->name);
-        else if (!SCM_SYMBOLP(name)) goto badsyn;
-        trans = Scm_Cons(SCM_SYM_LAMBDA, Scm_Cons(args, body));
-    }
-    trans = Scm_Eval(trans, SCM_OBJ(SCM_CURRENT_MODULE()));
-    if (SCM_PROCEDUREP(trans)) {
-        mt = Scm_MakeMacroTransformer(SCM_SYMBOL(name), SCM_PROCEDURE(trans));
-    } else if (SCM_AUTOLOADP(trans)) {
-        mt = Scm_MakeMacroAutoload(SCM_SYMBOL(name), SCM_AUTOLOAD(trans));
-    } else {
-        Scm_Error("bad define-macro form.  second arg of define-macro must be lambda form: %S", form);
-    }
-    Scm_Define(SCM_CURRENT_MODULE(), SCM_SYMBOL(name), mt);
-    return SCM_LIST1(mt);
-
-  badsyn:
-    Scm_Error("syntax error: %S", form);
-    return SCM_NIL;             /* dummy */
-}
-
-static ScmSyntax syntax_define_macro = {
-    { SCM_CLASS2TAG(SCM_CLASS_SYNTAX) },
-    SCM_SYMBOL(SCM_SYM_DEFINE_MACRO),
-    compile_define_macro,
-    NULL
-};
 
 /*===================================================================
  * R5RS Macro
@@ -273,17 +276,16 @@ typedef struct {
     ScmObj env;                 /* compiler env of this macro definition */
 } PatternContext;
 
-#define PVREF_P(pvref) \
-    (SCM_VM_INSNP(pvref)&&(SCM_VM_INSN_CODE(pvref)==SCM_VM_LREF))
-#define PVREF_LEVEL(pvref)     SCM_VM_INSN_ARG0(pvref)
-#define PVREF_COUNT(pvref)     SCM_VM_INSN_ARG1(pvref)
+#define PVREF_P(pvref)         SCM_PVREF_P(pvref)
+#define PVREF_LEVEL(pvref)     SCM_PVREF_LEVEL(pvref)
+#define PVREF_COUNT(pvref)     SCM_PVREF_COUNT(pvref)
 
 /* add pattern variable pvar.  called when compiling a pattern */
 static inline ScmObj add_pvar(PatternContext *ctx,
                               ScmSyntaxPattern *pat,
                               ScmObj pvar)
 {
-    ScmObj pvref = SCM_VM_INSN2(SCM_VM_LREF, pat->level, ctx->pvcnt);
+    ScmObj pvref = SCM_MAKE_PVREF(pat->level, ctx->pvcnt);
     if (!SCM_FALSEP(Scm_Assq(pvar, ctx->pvars))) {
         Scm_Error("pattern variable %S appears more than once in the macro definition of %S: %S", 
                   pvar, ctx->name, ctx->form);
@@ -577,7 +579,7 @@ static ScmObj get_pvref_value(ScmObj pvref, MatchVar *mvec,
 }
 
 /* for debug */
-#if 0
+#ifdef DEBUG_SYNRULE
 static void print_matchvec(MatchVar *mvec, int numPvars, ScmPort *port)
 {
     int i;
@@ -896,156 +898,19 @@ static ScmObj synrule_transform(ScmObj self, ScmObj form, ScmObj env,
     return synrule_expand(form, env, sr);
 }
 
-/*-------------------------------------------------------------------
- * %syntax-rules
- *    Internal macro of syntax-rules.  Taking macro name as the first arg.
- */
-static ScmObj compile_syntax_rules(ScmObj form, ScmObj env,
-                                   int ctx, void *data)
+/* NB: a stub for the new compiler (TEMPORARY) */
+ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj literals, ScmObj rules,
+                              ScmObj env)
 {
-    ScmObj name, literals, rules;
     ScmSyntaxRules *sr;
 
-    if (Scm_Length(form) < 4) {
-        SCM_ASSERT(SCM_PAIRP(SCM_CDR(form)));
-        goto badform;
-    }
-    name = SCM_CADR(form);
     if (SCM_IDENTIFIERP(name)) name = SCM_OBJ(SCM_IDENTIFIER(name)->name);
-    SCM_ASSERT(SCM_SYMBOLP(name));
-    literals = SCM_CAR(SCM_CDDR(form));
-    rules = SCM_CDR(SCM_CDDR(form));
-
+    else if (!SCM_SYMBOLP(name)) {
+        Scm_Error("symbol required, but got %S", name);
+    }
     sr = compile_rules(name, literals, rules, env);
-#ifdef DEBUG_SYNRULE
-    Scm_Printf(SCM_CUROUT, "%S\n", sr);
-#endif
-    return SCM_LIST1(Scm_MakeMacro(SCM_SYMBOL(name),
-                                   synrule_transform,
-                                   (void*)sr));
-        
-  badform:
-    Scm_Error("malformed syntax-rules: ",
-              Scm_Cons(SCM_SYM_SYNTAX_RULES, SCM_CDDR(form)));
-    return SCM_NIL;
+    return Scm_MakeMacro(SCM_SYMBOL(name), synrule_transform, (void*)sr);
 }
-
-static ScmSyntax syntax_syntax_rules = {
-    { SCM_CLASS2TAG(SCM_CLASS_SYNTAX) },
-    SCM_SYMBOL(SCM_SYM_SYNTAX_RULES_INT),
-    compile_syntax_rules,
-    NULL
-};
-
-/*-------------------------------------------------------------------
- * define-syntax
- */
-
-static ScmObj compile_define_syntax(ScmObj form, ScmObj env, int ctx,
-                                    void *data)
-{
-    ScmObj var, body, synrule;
-    if (Scm_Length(form) != 3) Scm_Error("malformed define-syntax: %S", form);
-    var = SCM_CADR(form);
-    body = SCM_CAR(SCM_CDDR(form));
-
-    /* strip off syntactic wrapping.  shall we? --- need more thoughts. */
-    if (SCM_IDENTIFIERP(var)) var = SCM_OBJ(SCM_IDENTIFIER(var)->name);
-    if (!SCM_SYMBOLP(var))
-        Scm_Error("define-syntax needs a symbol, but got %S", var);
-    if (Scm_Length(body) <= 2
-        || !Scm_FreeVariableEqv(SCM_CAR(body), SCM_SYM_SYNTAX_RULES, env))
-        Scm_Error("define-syntax needs a syntax-rules form, but got %S", body);
-    synrule = compile_syntax_rules(Scm_Cons(SCM_SYM_SYNTAX_RULES_INT,
-                                            Scm_Cons(var, SCM_CDR(body))),
-                                   env, ctx, NULL);
-    SCM_ASSERT(SCM_PAIRP(synrule));
-    Scm_Define(SCM_CURRENT_MODULE(), SCM_SYMBOL(var), SCM_CAR(synrule));
-    return synrule;
-
-}
-
-static ScmSyntax syntax_define_syntax = {
-    { SCM_CLASS2TAG(SCM_CLASS_SYNTAX) },
-    SCM_SYMBOL(SCM_SYM_DEFINE_SYNTAX),
-    compile_define_syntax,
-    NULL
-};
-
-/*-------------------------------------------------------------------
- * let-syntax, letrec-syntax
- */
-
-static ScmObj compile_let_syntax(ScmObj form, ScmObj env, int ctx,
-                                 void *data)
-{
-    int letrecp = (data != NULL);
-    ScmObj var, rule, vars = SCM_NIL, vars_t = SCM_NIL;
-    ScmObj frame = SCM_NIL, frame_t;
-    ScmObj syntax, body, synbinds, sp, newenv;
-
-    syntax = SCM_CAR(form);
-    if (Scm_Length(form) < 2) Scm_Error("malformed %S: %S", syntax, form);
-    synbinds = SCM_CADR(form);
-    body = SCM_CDDR(form);
-    SCM_APPEND1(frame, frame_t, SCM_TRUE);
-
-    if (!SCM_PAIRP(synbinds))
-        Scm_Error("%S: malformed syntactic bindings: %S", syntax, form);
-    
-    SCM_FOR_EACH(sp, synbinds) {
-        ScmObj synbind = SCM_CAR(sp);
-        if (Scm_Length(synbind) != 2)
-            Scm_Error("%S: malformed syntactic binding: %S", syntax, synbind);
-        var = SCM_CAR(synbind);
-        rule = SCM_CADR(synbind);
-        if (!SCM_SYMBOLP(var) && !SCM_IDENTIFIERP(var))
-            Scm_Error("%S: symbol required in syntactic binding: %S",
-                      syntax, synbind);
-        if (!SCM_PAIRP(rule) ||
-            !Scm_FreeVariableEqv(SCM_CAR(rule), SCM_SYM_SYNTAX_RULES, env))
-            Scm_Error("%S: needs syntax-rules form, but got: %S",
-                      syntax, rule);
-        if (!SCM_FALSEP(Scm_Memq(var, vars)))
-            Scm_Error("%S: duplicate names in syntactic bindings: %S",
-                      syntax, var);
-
-        SCM_APPEND1(vars, vars_t, var);
-        SCM_APPEND1(frame, frame_t, Scm_Cons(var, rule));
-    }
-    newenv = letrecp? Scm_Cons(frame, env) : env;
-
-    /* compile rules */
-    SCM_FOR_EACH(sp, SCM_CDR(frame)) {
-        ScmObj synrule;
-        
-        var = SCM_CAAR(sp);
-        rule = SCM_CDAR(sp);
-        synrule = compile_syntax_rules(Scm_Cons(SCM_SYM_SYNTAX_RULES_INT,
-                                                Scm_Cons(var, SCM_CDR(rule))),
-                                       newenv, ctx, NULL);
-        SCM_ASSERT(SCM_PAIRP(synrule));
-        SCM_SET_CDR(SCM_CAR(sp), SCM_CAR(synrule));
-    }
-    
-    if (!letrecp) newenv = Scm_Cons(frame, env);
-
-    return Scm_CompileBody(body, newenv, ctx);
-}
-
-static ScmSyntax syntax_let_syntax = {
-    { SCM_CLASS2TAG(SCM_CLASS_SYNTAX) },
-    SCM_SYMBOL(SCM_SYM_LET_SYNTAX),
-    compile_let_syntax,
-    (void*)0
-};
-
-static ScmSyntax syntax_letrec_syntax = {
-    { SCM_CLASS2TAG(SCM_CLASS_SYNTAX) },
-    SCM_SYMBOL(SCM_SYM_LETREC_SYNTAX),
-    compile_let_syntax,
-    (void*)1
-};
 
 /*===================================================================
  * macro-expand
@@ -1053,33 +918,38 @@ static ScmSyntax syntax_letrec_syntax = {
 
 ScmObj Scm_MacroExpand(ScmObj expr, ScmObj env, int oncep)
 {
-    ScmObj sym;
+    ScmObj sym, op;
     ScmMacro *mac;
 
     for (;;) {
         if (!SCM_PAIRP(expr)) return expr;
-        if (!SCM_SYMBOLP(SCM_CAR(expr)) && !SCM_IDENTIFIERP(SCM_CAR(expr)))
+        op = SCM_CAR(expr);
+        if (SCM_MACROP(op)) {
+            mac = SCM_MACRO(op);
+        } else if (!SCM_SYMBOLP(op) && !SCM_IDENTIFIERP(op)) {
             return expr;
-
-        mac = NULL;
-        sym = Scm_CompileLookupEnv(SCM_CAR(expr), env, TRUE);
-        if (SCM_MACROP(sym)) {
-            /* local syntactic binding */
-            mac = SCM_MACRO(sym);
         } else {
-            if (SCM_IDENTIFIERP(sym)) {
-                sym = SCM_OBJ(SCM_IDENTIFIER(sym)->name);
-            }
-            if (SCM_SYMBOLP(sym)) {
-                ScmGloc *g = Scm_FindBinding(Scm_VM()->module, SCM_SYMBOL(sym), FALSE);
-                if (g) {
-                    ScmObj gv = SCM_GLOC_GET(g);
-                    if (SCM_MACROP(gv)) mac = SCM_MACRO(gv);
+            mac = NULL;
+            sym = op;
+            if (SCM_MACROP(sym)) {
+                /* local syntactic binding */
+                mac = SCM_MACRO(sym);
+            } else {
+                if (SCM_IDENTIFIERP(sym)) {
+                    sym = SCM_OBJ(SCM_IDENTIFIER(sym)->name);
+                }
+                if (SCM_SYMBOLP(sym)) {
+                    ScmGloc *g = Scm_FindBinding(Scm_VM()->module,
+                                                 SCM_SYMBOL(sym), FALSE);
+                    if (g) {
+                        ScmObj gv = SCM_GLOC_GET(g);
+                        if (SCM_MACROP(gv)) mac = SCM_MACRO(gv);
+                    }
                 }
             }
         }
         if (mac) {
-            expr = mac->transformer(SCM_OBJ(mac), expr, env, mac->data);
+            expr = Scm_CallMacroExpander(mac, expr, env);
             if (!oncep) continue;
         }
         break;
@@ -1087,32 +957,10 @@ ScmObj Scm_MacroExpand(ScmObj expr, ScmObj env, int oncep)
     return expr;
 }
 
-/*
- * To capture locally-bound macros, we need a syntax version of macro-expand.
- * From scheme, this syntax is visible as %macro-expand.
- */
-static ScmObj compile_macro_expand(ScmObj form, ScmObj env,
-                                   int ctx, void *data)
+ScmObj Scm_CallMacroExpander(ScmMacro *mac, ScmObj expr, ScmObj env)
 {
-    int oncep = (data != NULL);
-    if (!SCM_PAIRP(SCM_CDR(form)) || !SCM_NULLP(SCM_CDDR(form)))
-        Scm_Error("syntax error: %S", form);
-    return SCM_LIST1(Scm_MacroExpand(SCM_CADR(form), env, oncep));
+    return mac->transformer(SCM_OBJ(mac), expr, env, mac->data);
 }
-
-static ScmSyntax syntax_macro_expand = {
-    { SCM_CLASS2TAG(SCM_CLASS_SYNTAX) },
-    SCM_SYMBOL(SCM_SYM_MACRO_EXPAND),
-    compile_macro_expand,
-    (void*)0
-};
-
-static ScmSyntax syntax_macro_expand_1 = {
-    { SCM_CLASS2TAG(SCM_CLASS_SYNTAX) },
-    SCM_SYMBOL(SCM_SYM_MACRO_EXPAND_1),
-    compile_macro_expand,
-    (void*)1
-};
 
 /*===================================================================
  * Initializer
@@ -1120,19 +968,4 @@ static ScmSyntax syntax_macro_expand_1 = {
 
 void Scm__InitMacro(void)
 {
-    ScmModule *n = SCM_MODULE(Scm_NullModule());   /* for r5rs syntax */
-    ScmModule *g = SCM_MODULE(Scm_GaucheModule()); /* for gauche syntax */
-
-#define DEFSYN_N(symbol, syntax) \
-    Scm_Define(n, SCM_SYMBOL(symbol), SCM_OBJ(&syntax))
-#define DEFSYN_G(symbol, syntax) \
-    Scm_Define(g, SCM_SYMBOL(symbol), SCM_OBJ(&syntax))
-
-    DEFSYN_N(SCM_SYM_SYNTAX_RULES_INT, syntax_syntax_rules);
-    DEFSYN_N(SCM_SYM_DEFINE_SYNTAX, syntax_define_syntax);
-    DEFSYN_N(SCM_SYM_LET_SYNTAX, syntax_let_syntax);
-    DEFSYN_N(SCM_SYM_LETREC_SYNTAX, syntax_letrec_syntax);
-    DEFSYN_G(SCM_SYM_DEFINE_MACRO, syntax_define_macro);
-    DEFSYN_G(SCM_SYM_MACRO_EXPAND, syntax_macro_expand);
-    DEFSYN_G(SCM_SYM_MACRO_EXPAND_1, syntax_macro_expand_1);
 }

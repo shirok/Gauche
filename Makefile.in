@@ -1,8 +1,9 @@
 # Top Makefle for Gauche
-# $Id: Makefile.in,v 1.50 2004-08-02 04:14:47 shirok Exp $
+# $Id: Makefile.in,v 1.51 2005-04-12 01:42:14 shirok Exp $
 #  Run 'configure' script to generate Makefile
 
-.PHONY: all test check install uninstall clean distclean maintainer-clean install-check
+.PHONY: all test check pre-package install uninstall \
+	clean distclean maintainer-clean install-check
 
 @SET_MAKE@
 SHELL       = @SHELL@
@@ -32,6 +33,12 @@ test : check
 
 check: all
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) check); done
+
+# pre-package target should be run before creating distribution tarball.
+# it generates files that requires pre-installed gosh.
+pre-package:
+	cd lib; $(MAKE) pre-package
+	cd src; $(MAKE) pre-package
 
 install: install-pkg install-doc
 	cd lib; $(MAKE) slibcat

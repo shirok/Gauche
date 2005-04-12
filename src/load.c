@@ -1,7 +1,7 @@
 /*
  * load.c - load a program
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.95 2005-02-19 03:10:11 shirok Exp $
+ *  $Id: load.c,v 1.96 2005-04-12 01:42:27 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -109,6 +109,7 @@ struct load_packet {
     ScmObj prev_port;
     ScmObj prev_history;
     ScmObj prev_next;
+    int    prev_situation;
 };
 
 /* Clean up */
@@ -121,6 +122,7 @@ static ScmObj load_after(ScmObj *args, int nargs, void *data)
     vm->load_port = p->prev_port;
     vm->load_history = p->prev_history;
     vm->load_next = p->prev_next;
+    vm->evalSituation = p->prev_situation;
     return SCM_UNDEFINED;
 }
 
@@ -168,6 +170,7 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
     p->prev_port = vm->load_port;
     p->prev_history = vm->load_history;
     p->prev_next = vm->load_next;
+    p->prev_situation = vm->evalSituation;
 
     SCM_READ_CONTEXT_INIT(&(p->ctx));
     p->ctx.flags = SCM_READ_LITERAL_IMMUTABLE | SCM_READ_SOURCE_INFO;
@@ -178,6 +181,7 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
     vm->load_next = next_paths;
     vm->load_port = SCM_OBJ(port);
     vm->module = module;
+    vm->evalSituation = SCM_VM_LOADING;
     if (SCM_PORTP(p->prev_port)) {
         port_info = SCM_LIST2(p->prev_port,
                               Scm_MakeInteger(Scm_PortLine(SCM_PORT(p->prev_port))));
@@ -1098,11 +1102,13 @@ void Scm__InitLoad(void)
     DEF(ldinfo.load_suffixes_rec, SCM_SYM_LOAD_SUFFIXES, init_load_suffixes);
     DEF(ldinfo.cond_features_rec, SCM_SYM_COND_FEATURES, init_cond_features);
 
-    ldinfo.provided = SCM_LIST4(SCM_MAKE_STR("srfi-6"), /* string ports (builtin) */
-                                SCM_MAKE_STR("srfi-8"), /* receive (builtin) */
-                                SCM_MAKE_STR("srfi-10"), /* #, (builtin) */
-                                SCM_MAKE_STR("srfi-17")  /* set! (builtin) */
-        );
+    ldinfo.provided =
+        SCM_LIST5(SCM_MAKE_STR("srfi-2"), /* and-let* */
+                  SCM_MAKE_STR("srfi-6"), /* string ports (builtin) */
+                  SCM_MAKE_STR("srfi-8"), /* receive (builtin) */
+                  SCM_MAKE_STR("srfi-10"), /* #, (builtin) */
+                  SCM_MAKE_STR("srfi-17")  /* set! (builtin) */
+            );
     ldinfo.providing = SCM_NIL;
     ldinfo.waiting = SCM_NIL;
     ldinfo.dso_suffixes = SCM_LIST2(SCM_MAKE_STR(".la"),

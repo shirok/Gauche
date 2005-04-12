@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.61 2004-10-09 11:36:37 shirok Exp $
+ *  $Id: system.c,v 1.62 2005-04-12 01:42:27 shirok Exp $
  */
 
 #include <stdio.h>
@@ -43,6 +43,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #ifndef __MINGW32__
 #include <grp.h>
 #include <pwd.h>
@@ -50,7 +51,6 @@
 #include <windows.h>
 #include <lm.h>
 #include <tlhelp32.h>
-#include <fcntl.h>
 #endif  /*__MINGW32__*/
 
 #define LIBGAUCHE_BODY
@@ -376,6 +376,44 @@ ScmObj Scm_DirName(ScmString *filename)
 }
 
 /* Make mkstemp() work even if the system doesn't have one. */
+int Scm_Mkstemp(char *template)
+{
+    int fd = -1;
+#if defined(HAVE_MKSTEMP)
+    SCM_SYSCALL(fd, mkstemp(template));
+    if (fd < 0) Scm_SysError("mkstemp failed");
+    return fd;
+#else   /*!defined(HAVE_MKSTEMP)*/
+    /* Emulate mkstemp. */
+    int siz = strlen(template);
+    if (siz < 6) {
+        Scm_Error("mkstemp - invalid template: %s", template);
+    }
+#define MKSTEMP_MAX_TRIALS 65535   /* avoid infinite loop */
+    {
+	u_long seed = (u_long)time(NULL);
+	int numtry;
+	char suffix[7];
+	for (numtry=0; numtry<MKSTEMP_MAX_TRIALS; numtry++) {
+	    snprintf(suffix, 7, "%06x", seed&0xffffff);
+	    memcpy(template+siz-6, suffix, 7);
+#ifndef __MINGW32__
+	    SCM_SYSCALL(fd, open(template, O_CREAT|O_EXCL|O_WRONLY, 0600));
+#else  /*__MINGW32__*/
+ 	    SCM_SYSCALL(fd, open(template, _O_CREAT|_O_EXCL|_O_WRONLY, 0600));
+#endif /*__MINGW32__*/
+	    if (fd >= 0) break;
+	    seed *= 2654435761UL;
+	}
+	if (numtry == MKSTEMP_MAX_TRIALS) {
+	    Scm_Error("mkstemp failed");
+	}
+    }
+    return fd;
+#endif /*!defined(HAVE_MKSTEMP)*/
+}
+
+
 ScmObj Scm_SysMkstemp(ScmString *template)
 {
 #define MKSTEMP_PATH_MAX 1025  /* Geez, remove me */
@@ -386,42 +424,13 @@ ScmObj Scm_SysMkstemp(ScmString *template)
 	Scm_Error("pathname too long: %S", template);
     }
     memcpy(name, SCM_STRING_START(template), siz);
-#if defined(HAVE_MKSTEMP)
     memcpy(name + siz, "XXXXXX", 6);
     name[siz+6] = '\0';
-    SCM_SYSCALL(fd, mkstemp(name));
-    if (fd < 0) Scm_SysError("mkstemp failed");
+    fd = Scm_Mkstemp(name);
     sname = SCM_MAKE_STR_COPYING(name);
     SCM_RETURN(Scm_Values2(Scm_MakePortWithFd(sname, SCM_PORT_OUTPUT, fd,
 					      SCM_PORT_BUFFER_FULL, TRUE),
 			   sname));
-#else   /*!defined(HAVE_MKSTEMP)*/
-    /* Emulate mkstemp. */
-#define MKSTEMP_MAX_TRIALS 65535   /* avoid infinite loop */
-    {
-	u_long seed = (u_long)time(NULL);
-	int numtry;
-	char suffix[7];
-	for (numtry=0; numtry<MKSTEMP_MAX_TRIALS; numtry++) {
-	    snprintf(suffix, 7, "%06x", seed&0xffffff);
-	    memcpy(name+siz, suffix, 7);
-#ifndef __MINGW32__
-	    SCM_SYSCALL(fd, open(name, O_CREAT|O_EXCL|O_WRONLY, 0600));
-#else  /*__MINGW32__*/
- 	    SCM_SYSCALL(fd, open(name, _O_CREAT|_O_EXCL|_O_WRONLY, 0600));
-#endif /*__MINGW32__*/
-	    if (fd >= 0) break;
-	    seed *= 2654435761UL;
-	}
-	if (numtry == MKSTEMP_MAX_TRIALS) {
-	    Scm_Error("mkstemp failed");
-	}
-	sname = SCM_MAKE_STR_COPYING(name);
-	SCM_RETURN(Scm_Values2(Scm_MakePortWithFd(sname, SCM_PORT_OUTPUT, fd,
-						  SCM_PORT_BUFFER_FULL, TRUE),
-			       sname));
-    }
-#endif /*!defined(HAVE_MKSTEMP)*/
 }
 
 /*===============================================================

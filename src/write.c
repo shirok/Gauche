@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.49 2004-11-22 23:16:05 shirok Exp $
+ *  $Id: write.c,v 1.50 2005-04-12 01:42:28 shirok Exp $
  */
 
 #include <stdio.h>
@@ -39,6 +39,7 @@
 #include "gauche.h"
 #include "gauche/port.h"
 #include "gauche/builtin-syms.h"
+#include "gauche/code.h"        /* NB: for SCM_VM_INSNP -- remove this later */
 
 static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
@@ -435,9 +436,6 @@ static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                 else if (ch == 0x7f)  Scm_PutzUnsafe("del", -1, port);
                 else                  Scm_PutcUnsafe(ch, port);
             }
-        }
-        else if (SCM_VM_INSNP(obj)) {
-            Scm__VMInsnWrite(obj, port, ctx);
         }
         else Scm_Panic("write: got a bogus object: %08x", SCM_WORD(obj));
         return;

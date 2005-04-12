@@ -2,7 +2,7 @@
 ;; test error handlers
 ;;
 
-;;  $Id: error.scm,v 1.10 2004-10-11 04:38:59 shirok Exp $
+;;  $Id: error.scm,v 1.11 2005-04-12 01:42:29 shirok Exp $
 
 (use gauche.test)
 (test-start "error and exception handlers")
@@ -505,5 +505,44 @@
                 (if (> x 2)
                     'ok
                     (car x))))))))
+
+;;----------------------------------------------------------------
+(test-section "stack overflow inside handlers")
+
+(define (stack-buster k)
+  (if (zero? k) 1 (+ (stack-buster (- k 1)) 1)))
+
+(prim-test "stack overflow in error handler" '(4 . ok)
+           (lambda ()
+             (cons
+              4
+              (with-error-handler
+                  (lambda (e) (stack-buster 100000) 'ok)
+                (lambda () (error "foo"))))))
+
+(prim-test "stack overflow in error handler (nested)" '(4 . ok)
+           (lambda ()
+             (cons
+              4
+              (with-error-handler
+                  (lambda (e)
+                    (with-error-handler
+                        (lambda (e) 'ok)
+                      (lambda () (stack-buster 100000) (error "pop"))))
+                (lambda () (error "foo"))))))
+
+(prim-test "stack overflow in error handler (cascading error)" '(4 . ok)
+           (lambda ()
+             (cons
+              4
+              (with-error-handler
+                  (lambda (e) 'ok)
+                (lambda ()
+                  (with-error-handler
+                      (lambda (e)
+                        (with-error-handler
+                            (lambda (e) (error "bar"))
+                          (lambda () (stack-buster 100000) (error "pop"))))
+                    (lambda () (error "foo"))))))))
 
 (test-end)

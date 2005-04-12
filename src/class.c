@@ -30,13 +30,14 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.117 2004-12-18 04:11:12 shirok Exp $
+ *  $Id: class.c,v 1.118 2005-04-12 01:42:25 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/macro.h"
 #include "gauche/class.h"
+#include "gauche/code.h"
 #include "gauche/builtin-syms.h"
 
 /*===================================================================
@@ -102,6 +103,8 @@ SCM_DEFINE_ABSTRACT_CLASS(Scm_SequenceClass, SCM_CLASS_COLLECTION_CPL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_BoolClass, NULL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_CharClass, NULL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_UnknownClass, NULL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_EOFObjectClass, NULL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_UndefinedObjectClass, NULL);
 
 SCM_DEFINE_BASE_CLASS(Scm_ObjectClass, ScmInstance,
                       NULL, NULL, NULL, Scm_ObjectAllocate,
@@ -430,6 +433,8 @@ ScmClass *Scm_ClassOf(ScmObj obj)
         if (SCM_NULLP(obj)) return SCM_CLASS_NULL;
         if (SCM_CHARP(obj)) return SCM_CLASS_CHAR;
         if (SCM_INTP(obj))  return SCM_CLASS_INTEGER;
+        if (SCM_EOFP(obj))  return SCM_CLASS_EOF_OBJECT;
+        if (SCM_UNDEFINEDP(obj)) return SCM_CLASS_UNDEFINED_OBJECT;
         else return SCM_CLASS_UNKNOWN;
     } else if (SCM_PAIRP(obj)) {
         return SCM_CLASS_PAIR;
@@ -2169,7 +2174,7 @@ static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
     ScmObj specs = Scm_GetKeyword(key_specializers, initargs, SCM_FALSE);
     ScmObj body = Scm_GetKeyword(key_body, initargs, SCM_FALSE);
     ScmClass **specarray;
-    ScmObj lp;
+    ScmObj lp, h, t;
     int speclen = 0, req = 0, opt = 0, i;
 
     if (!Scm_TypeP(generic, SCM_CLASS_GENERIC))
@@ -2200,6 +2205,17 @@ static ScmObj method_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
     m->func = NULL;
     m->data = SCM_CLOSURE(body)->code;
     m->env = SCM_CLOSURE(body)->env;
+
+    /* NB: for comprehensive debugging & profiling information, we modify
+       the 'name' field of the compiled code to contain
+       (generic-name specializer-class-names ...).  It may be a hazard if
+       some existing named closure is given as BODY; as far as the standard
+       macro is used, though, altering it should be OK. */
+    h = t = SCM_NIL;
+    for (i=0; i<speclen; i++) {
+        SCM_APPEND1(h, t, specarray[i]->name);
+    }
+    SCM_COMPILED_CODE(m->data)->name = Scm_Cons(SCM_PROCEDURE_INFO(g), h);
 
     /* Register this method to all classes in the specializers.
        This has to come after the part that may throw an error. */
@@ -2825,6 +2841,8 @@ void Scm__InitClass(void)
     BINIT(SCM_CLASS_TOP,    "<top>",     NULL);
     CINIT(SCM_CLASS_BOOL,   "<boolean>");
     CINIT(SCM_CLASS_CHAR,   "<char>");
+    BINIT(SCM_CLASS_EOF_OBJECT,"<eof-object>", NULL);
+    BINIT(SCM_CLASS_UNDEFINED_OBJECT,"<undefined-object>", NULL);
     BINIT(SCM_CLASS_UNKNOWN,"<unknown>", NULL);
     BINIT(SCM_CLASS_OBJECT, "<object>",  NULL);
     BINIT(SCM_CLASS_GENERIC,"<generic>", generic_slots);
@@ -2843,7 +2861,7 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_CHARSET,          "<char-set>");
 
     /* compile.c */
-    CINIT(SCM_CLASS_IDENTIFIER,       "<identifier>");
+    /* initialized in Scm__InitCompiler */
 
     /* error.c */
     /* initialized in Scm__InitExceptions */

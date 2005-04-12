@@ -1,7 +1,7 @@
 ;;;
-;;; auxiliary list utilities.  to be autoloaded.
-;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;; geninsn - generate VM instruction related files
+;;;
+;;;   Copyright (c) 2004-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,47 +30,61 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: listutil.scm,v 1.4 2003-08-06 07:21:10 shirok Exp $
+;;;  $Id: geninsn,v 1.2 2005-04-12 01:42:27 shirok Exp $
 ;;;
 
-(define-module gauche.listutil )
-(select-module gauche.listutil)
+;; Reads vminsn.scm and generate vminsn.c and gauche/vminsn.h
 
-;; Cxxxr and cxxxxr are less frequently used, thus stripped out
-;; from the core.  Having these defined in Scheme won't be much
-;; performance loss, for cxr and cxxr in their body are both inlined.
+(use gauche.cgen)
+(use gauche.parameter)
+(use srfi-13)
+(use text.tr)
+(use file.util)
+(use util.match)
 
-(define-syntax %define-cxr
-  (syntax-rules ()
-    ((_ name a b)
-     (define-in-module scheme name
-       (getter-with-setter
-        (lambda (x) (a (b x)))
-        (lambda (x v) (set! (a (b x)) v)))))))
+(define (c-insn-name name)
+  (string-append "SCM_VM_" (string-tr (x->string name) "-" "_")))
 
-(%define-cxr caaar  car  caar)
-(%define-cxr caadr  car  cadr)
-(%define-cxr cadar  car  cdar)
-(%define-cxr caddr  car  cddr)
-(%define-cxr cdaar  cdr  caar)
-(%define-cxr cdadr  cdr  cadr)
-(%define-cxr cddar  cdr  cdar)
-(%define-cxr cdddr  cdr  cddr)
-(%define-cxr caaaar caar caar)
-(%define-cxr caaadr caar cadr)
-(%define-cxr caadar caar cdar)
-(%define-cxr caaddr caar cddr)
-(%define-cxr cadaar cadr caar)
-(%define-cxr cadadr cadr cadr)
-(%define-cxr caddar cadr cdar)
-(%define-cxr cadddr cadr cddr)
-(%define-cxr cdaaar cdar caar)
-(%define-cxr cdaadr cdar cadr)
-(%define-cxr cdadar cdar cdar)
-(%define-cxr cdaddr cdar cddr)
-(%define-cxr cddaar cddr caar)
-(%define-cxr cddadr cddr cadr)
-(%define-cxr cdddar cddr cdar)
-(%define-cxr cddddr cddr cddr)
+(define *preamble*
+  (list #`"/* Generated automatically from vminsn.scm */"
+        #`"/* DO NOT EDIT */"))
 
-(provide "gauche/listutil")
+(define *unit*
+  (make <cgen-unit>
+    :name "vminsn"
+    :preamble *preamble*
+    :c-file "vminsn.c"
+    :h-file "gauche/vminsn.h"
+    :init-prologue ""
+    :init-epilogue ""
+    ))
+
+(define (main args)
+  (let ((insns (file->sexp-list (get-optional (cdr args) "vminsn.scm"))))
+    (parameterize ((cgen-current-unit *unit*))
+      
+      (cgen-extern "enum {")
+
+      (dolist (insn insns)
+        (match insn
+          ((_ name num-params operand-type)
+           (cgen-extern #`"  ,(c-insn-name name),,")
+           (cgen-body (format "DEFINSN(~a, \"~a\", ~a, ~a)"
+                              (c-insn-name name) name
+                              num-params
+                              (string-tr (x->string operand-type)
+                                         "a-z+-" "A-Z__")))
+           )
+          (else
+           (warn "unrecognized form: ~s" insn))))
+
+      (cgen-extern "  SCM_VM_NUM_INSNS" "};")
+
+      (cgen-emit-h (cgen-current-unit))
+      (cgen-emit-c (cgen-current-unit))
+      0)))
+
+;; Local variables:
+;; mode: scheme
+;; end:
+

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: list.c,v 1.44 2004-12-18 04:11:13 shirok Exp $
+ *  $Id: list.c,v 1.45 2005-04-12 01:42:27 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -206,8 +206,9 @@ CXR(Scm_Cddr, "cddr", D D)
  */
 
 /* Scm_Length
-   return length of list in C integer.  If argment is not a proper
-   or circular list, return -1. */
+   return length of list in C integer.
+   If the argument is a dotted list, return -1.
+   If the argument is a circular list, return -2. */
 
 int Scm_Length(ScmObj obj)
 {
@@ -216,16 +217,16 @@ int Scm_Length(ScmObj obj)
 
     for (;;) {
         if (SCM_NULLP(obj)) break;
-        if (!SCM_PAIRP(obj)) return -1;
+        if (!SCM_PAIRP(obj)) return SCM_LIST_DOTTED;
 	
 	obj = SCM_CDR(obj);
 	len++;
         if (SCM_NULLP(obj)) break;
-        if (!SCM_PAIRP(obj)) return -1;
+        if (!SCM_PAIRP(obj)) return SCM_LIST_DOTTED;
 
 	obj = SCM_CDR(obj);
 	slow = SCM_CDR(slow);
-	if (obj == slow) return -1; /* circular */
+	if (obj == slow) return SCM_LIST_CIRCULAR;
 	len++;
     }
     return len;

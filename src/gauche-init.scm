@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche-init.scm - initialize standard environment
 ;;;
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-init.scm,v 1.117 2004-10-09 11:36:37 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.118 2005-04-12 01:42:26 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -67,65 +67,23 @@
      (import ,module)))
 
 ;; create built-in modules, so that (use srfi-6) won't complain, for example.
+(define-module srfi-2 )
 (define-module srfi-6 )
 (define-module srfi-8 )
 (define-module srfi-10 )
 (define-module srfi-17 )
 
+;; for backqard compatibility
+(define-module gauche.vm.debugger )
+
 ;;
 ;; Auxiliary definitions
 ;;
-
-(define-in-module scheme call/cc call-with-current-continuation)
-
-(define-in-module scheme (call-with-values producer consumer)
-  (receive vals (producer) (apply consumer vals)))
 
 (define <exception> <condition>) ;; backward compatibility
 
 (define-reader-ctor 'string-interpolate
   (lambda (s) (string-interpolate s))) ;;lambda is required to delay loading
-
-;; srfi-17
-(define (getter-with-setter get set)
-  (let ((proc (lambda x (apply get x))))
-    (set! (setter proc) set)
-    proc))
-
-;; print (as in SCM, Chicken)
-(define (print . args) (for-each display args) (newline))
-
-;; srfi-38
-(define read-with-shared-structure read)
-(define read/ss read)
-
-(define (write-with-shared-structure obj . args)
-  (write* obj (if (pair? args) (car args) (current-output-port))))
-(define write/ss write-with-shared-structure)
-
-;; format
-(define format (undefined))
-(define format/ss (undefined))
-(let ((format-int
-       (lambda (port fmt args shared?)
-         (cond ((eqv? port #f)
-                (let ((out (open-output-string :private? #t)))
-                  (%format out fmt args shared?)
-                  (get-output-string out)))
-               ((eqv? port #t)
-                (%format (current-output-port) fmt args shared?))
-               (else (%format port fmt args shared?))))))
-  (set! format
-        (lambda (fmt . args)
-          (if (string? fmt)
-            (format-int #f fmt args #f) ;; srfi-28 compatible behavior
-            (format-int fmt (car args) (cdr args) #f))))
-  (set! format/ss
-        (lambda (fmt . args)
-          (if (string? fmt)
-            (format-int #f fmt args #t) ;; srfi-28 compatible behavior
-            (format-int fmt (car args) (cdr args) #t))))
-  )
 
 ;;
 ;; Load object system

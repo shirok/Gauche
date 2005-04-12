@@ -1,7 +1,7 @@
 /*
  * vm.h - Virtual machine
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.98 2004-11-29 21:54:23 shirok Exp $
+ *  $Id: vm.h,v 1.99 2005-04-12 01:42:29 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -52,18 +52,13 @@
 #define SCM_VM_SIGQ_MASK       1
 #define SCM_VM_FINQ_MASK       2
 
-#define SCM_PCTYPE ScmObj
+#define SCM_PCTYPE ScmWord*
 
-/*
- * Compiled code packet
- */
+/* define if you want to use profiler */
+#define GAUCHE_PROFILE
 
-typedef struct ScmCompiledCodeRec {
-    ScmObj *code;               /* code vector */
-    ScmObj *constants;          /* constant vector */
-    int maxstack;               /* maximum runtime stack depth */
-    ScmObj info;                /* debug info */
-} ScmCompiledCode;
+/* Actual structure is defined in code.h */
+typedef struct ScmCompiledCodeRec ScmCompiledCode;
 
 /*
  * Environment frame
@@ -83,7 +78,7 @@ typedef struct ScmCompiledCodeRec {
 
 typedef struct ScmEnvFrameRec {
     struct ScmEnvFrameRec *up;  /* static link */
-    ScmObj info;                /* source code info for debug */
+    ScmObj info;                /* reserved */
     int size;                   /* size of the frame (excluding header) */
 } ScmEnvFrame;
 
@@ -91,8 +86,6 @@ typedef struct ScmEnvFrameRec {
 #define ENV_SIZE(size)   ((size)+ENV_HDR_SIZE)
 #define ENV_FP(env)        (((ScmObj*)(env))-((env)->size))
 #define ENV_DATA(env, num) (*(((ScmObj*)(env))-(num)-1))
-
-SCM_EXTERN ScmEnvFrame *Scm_GetCurrentEnv(void);
 
 /*
  * Continuation frame
@@ -107,12 +100,36 @@ typedef struct ScmContFrameRec {
     ScmObj *argp;                 /* saved argument pointer */
     int size;                     /* size of argument frame */
     SCM_PCTYPE pc;                /* next PC */
-    ScmObj info;                  /* debug info */
+    ScmCompiledCode *base;        /* base register value */
 } ScmContFrame;
 
 #define CONT_FRAME_SIZE  (sizeof(ScmContFrame)/sizeof(ScmObj))
 
 SCM_EXTERN void Scm_CallCC(ScmObj body);
+
+/*
+ * Syntactic closure
+ *
+ *   Syntactic closure encapsulates compile-time environment for
+ *   hygienic macro expansion.
+ *   See Bawden & Rees, Syntactic Closures, MIT AI Memo 1049, June 1988.
+ */
+
+typedef struct ScmSyntacticClosureRec {
+    ScmObj env;                 /* compile-time environment */
+    ScmObj literals;            /* literal symbols */
+    ScmObj expr;                /* expression */
+} ScmSyntacticClosure;
+
+SCM_CLASS_DECL(Scm_SyntacticClosureClass);
+#define SCM_CLASS_SYNTACTIC_CLOSURE   (&Scm_SyntacticClosureClass)
+
+#define SCM_SYNTACTIC_CLOSURE(obj)   ((ScmSyntacticClosure*)(obj))
+#define SCM_SYNTACTIC_CLOSURE_P(obj) SCM_XTYPEP(obj, SCM_CLASS_SYNTACTIC_CLOSURE)
+
+SCM_EXTERN ScmObj Scm_MakeSyntacticClosure(ScmObj env,
+                                           ScmObj literals,
+                                           ScmObj expr);
 
 /*
  * Identifier
@@ -121,6 +138,9 @@ SCM_EXTERN void Scm_CallCC(ScmObj body);
  *   object is used in hygienic macro expansion (see macro.c), and
  *   also used as a placeholder in a global variable reference/assignment
  *   (see compile.c).
+ *
+ *   NB: Identifier's API and usage will likely be changed in future.
+ *   It shouldn't be used directly from applications.
  */
 
 typedef struct ScmIdentifierRec {
@@ -142,6 +162,11 @@ SCM_EXTERN int    Scm_IdentifierBindingEqv(ScmIdentifier *id, ScmSymbol *sym,
 					   ScmObj env);
 SCM_EXTERN int    Scm_FreeVariableEqv(ScmObj var, ScmObj sym, ScmObj env);
 
+/* temporary: this should be proper Scm_MakeIdentifer after adoption of
+   the new compiler */
+SCM_EXTERN ScmObj Scm_MakeIdentifierWithModule(ScmSymbol *name, ScmObj env,
+                                               ScmModule *mod);
+
 /*
  * Escape handling
  */
@@ -158,12 +183,43 @@ typedef struct ScmCStackRec {
 /*
  * Escape point
  *
- *  EscapePoint structure keeps certain point of continuation chain
+ *  EscapePoint (EP) structure keeps certain point of continuation chain
  *  where control can be transferred.   This structure is used for
  *  saved continuations, as well as error handlers.
+ *
+ *  Normally EPs forms a single list, linked by the prev pointer.
+ *  vm->escapePoint points a 'current' EP, whose ehandler is the current
+ *  error handler.
+ *
+ *  However, this simple structure does not work in all cases.
+ *  When an error is signalled, we pop EP before executing the error
+ *  handler so that an error raised within the error handler will be
+ *  handled by the handler of outer EP.
+ *
+ *    Suppose the current EP is EP0.
+ *
+ *    (with-error-handler    ;; <- (1)this installs EP1. EP1->cont captures
+ *                           ;;        one-shot continuation of this expr.
+ *       (lambda (e) ...)    ;; <- (3)this is executed while EP0 is current
+ *      (lambda () ...)      ;; <- (2)this is executed while EP1 is current
+ *
+ *  If the error handler returns, we pass its result to the continuation of
+ *  with-error-handler, which is kept in EP1->cont.  The problem arises
+ *  if a stack overflow occurs within the error handler, continuation frames
+ *  in the stack are relocated to the heap, but EP1->cont isn't updated
+ *  since it is out of vm->escapePoint chain.
+ *
+ *  'Floating' pointer is used to catch such case.  When an EP is popped
+ *  before an error handler is ivoked, EP0's floating pointer is set to
+ *  point EP1.  When a new EP is pushed, it inherits the previous EP's
+ *  floating pointer.  With this scheme, active floating EPs are always
+ *  reachable from vm->esapePoint->floating chain.  (NB: the chain length
+ *  can be more than 1, if with-error-handler is used within an error handler
+ *  and an error is signalled in its body.
  */
 typedef struct ScmEscapePointRec {
     struct ScmEscapePointRec *prev;
+    struct ScmEscapePointRec *floating;
     ScmObj ehandler;            /* handler closure */
     ScmContFrame *cont;         /* saved continuation */
     ScmObj handlers;            /* saved dynamic handler chain */
@@ -175,6 +231,17 @@ typedef struct ScmEscapePointRec {
                                    transferred to this escape point. */
 } ScmEscapePoint;
 
+/* Link management */
+#define SCM_VM_FLOATING_EP(vm) \
+    ((vm)->escapePoint? (vm)->escapePoint->floating : vm->escapePointFloating)
+#define SCM_VM_FLOATING_EP_SET(vm, ep)          \
+    do {                                        \
+        if ((vm)->escapePoint) {                \
+            (vm)->escapePoint->floating = (ep); \
+        } else {                                \
+            (vm)->escapePointFloating = (ep);   \
+        }                                       \
+    } while (0)
 
 /* Escape types */
 #define SCM_VM_ESCAPE_NONE   0
@@ -247,6 +314,25 @@ SCM_EXTERN void   Scm_SigCheck(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMFinalizerRun(ScmVM *vm);
 
 /*
+ * Statistics
+ *
+ *  Not much stats are collected yet, but will grow in future.
+ *  Stats collections are only active if SCM_COLLECT_VM_STATS 
+ *  runtime flag is TRUE.
+ *  Stats are collected per-VM (i.e. per-thread), but currently
+ *  we don't have an API to gather them.
+ */
+
+typedef struct ScmVMStatRec {
+    /* Stack overflow handler */
+    u_long     sovCount; /* # of stack overflow */
+    double     sovTime;  /* cumulated time of stack ov handling */
+} ScmVMStat;
+
+/* The profiler structure is defined in prof.h */
+typedef struct ScmVMProfilerRec ScmVMProfiler;
+
+/*
  * VM structure
  *
  *  In Gauche, each thread has a VM.  Indeed, the Scheme object
@@ -295,8 +381,9 @@ struct ScmVMRec {
     ScmVMParameterTable parameters; /* parameter table */
 
     /* Registers */
-    SCM_PCTYPE pc;              /* Program pointer.  Points list of
-                                   instructions to be executed.              */
+    ScmCompiledCode *base;      /* Current executing closure's code packet. */
+    SCM_PCTYPE pc;              /* Program pointer.  Points into the code
+                                   vector. (base->code) */
     ScmEnvFrame *env;           /* Current environment.                      */
     ScmContFrame *cont;         /* Current continuation.                     */
     ScmObj *argp;               /* Current argument pointer.  Points
@@ -321,6 +408,10 @@ struct ScmVMRec {
                                    continuation).  used by system's default
                                    exception handler to escape from the error
                                    handlers. */
+    ScmEscapePoint *escapePointFloating;
+                                /* reverse link of escape point chain
+                                   to keep 'active' EPs.
+                                   See ScmEscapePoint definition above. */
     int escapeReason;           /* temporary storage to pass data across
                                    longjmp(). */
     void *escapeData[2];        /* ditto. */
@@ -332,17 +423,23 @@ struct ScmVMRec {
     ScmObj load_next;           /* list of the directories to be searched */
     ScmObj load_history;        /* history of the nested load */
     ScmObj load_port;           /* current port from which we are loading */
+    int    evalSituation;       /* eval situation (related to eval-when) */
 
     /* Signal information */
     ScmSignalQueue sigq;
     sigset_t sigMask;           /* current signal mask */
+
+    /* Statistics */
+    ScmVMStat stat;
+    int profilerRunning;
+    ScmVMProfiler *prof;
 };
 
 SCM_EXTERN ScmVM *Scm_NewVM(ScmVM *base, ScmModule *module, ScmObj name);
 SCM_EXTERN void   Scm_VMDump(ScmVM *vm);
 SCM_EXTERN void   Scm_VMDefaultExceptionHandler(ScmObj);
-SCM_EXTERN ScmObj Scm_VMGetSourceInfo(ScmObj program);
-SCM_EXTERN ScmObj Scm_VMGetBindInfo(ScmObj program);
+SCM_EXTERN ScmObj Scm_VMGetSourceInfo(ScmCompiledCode *code, SCM_PCTYPE pc);
+SCM_EXTERN ScmObj Scm_VMGetBindInfo(ScmCompiledCode *code, SCM_PCTYPE pc);
 
 SCM_CLASS_DECL(Scm_VMClass);
 #define SCM_CLASS_VM              (&Scm_VMClass)
@@ -366,40 +463,13 @@ enum {
                                    terminated. */
 };
 
-/*
- * VM instructions
- */
-#define SCM_VM_INSN_TAG            0x0e
-
-#define SCM_VM_INSNP(obj)            ((SCM_WORD(obj)&0x0f) == SCM_VM_INSN_TAG)
-#define SCM_VM_INSN_CODE(obj)        ((SCM_WORD(obj)>>4)&0x0ff)
-#define SCM_VM_INSN_ARG(obj)         ((signed long)SCM_WORD(obj) >> 12)
-
-#define SCM_VM_INSN_ARG0(obj)        ((SCM_WORD(obj) >> 12) & 0x03ff)
-#define SCM_VM_INSN_ARG1(obj)        ((SCM_WORD(obj) >> 22) & 0x03ff)
-
-#define SCM_VM_INSN(code) \
-    SCM_OBJ((long)((code)<<4)|SCM_VM_INSN_TAG)
-#define SCM_VM_INSN1(code, arg) \
-    SCM_OBJ((long)((arg) << 12) | ((code) << 4) | SCM_VM_INSN_TAG)
-#define SCM_VM_INSN2(code, arg0, arg1) \
-    SCM_OBJ((long)((arg1) << 22) | ((arg0) << 12) | ((code) << 4) | SCM_VM_INSN_TAG)
-
-#define SCM_VM_INSN_ARG_MAX          ((1L<<(32-13))-1)
-#define SCM_VM_INSN_ARG_MIN          (-SCM_VM_INSN_ARG_MAX)
-#define SCM_VM_INSN_ARG_FITS(k) \
-    (((k)<=SCM_VM_INSN_ARG_MAX)&&((k)>=SCM_VM_INSN_ARG_MIN))
-
+/* Value of vm->evalSituation */
 enum {
-#define DEFINSN(sym, nam, nparams)  sym,
-#include "vminsn.h"
-#undef DEFINSN
-    SCM_VM_NUM_INSNS
+    SCM_VM_EXECUTING,           /* we're evaluating the form interactively. */
+    SCM_VM_LOADING,             /* we're loading the forms */
+    SCM_VM_COMPILING            /* we're batch-compiling the forms */
 };
 
-SCM_EXTERN void   Scm__VMInsnWrite(ScmObj insn, ScmPort *port,
-				   ScmWriteContext *ctx);
-SCM_EXTERN ScmObj Scm_VMInsnInspect(ScmObj obj);
 
 /*
  * C stack rewinding
@@ -468,9 +538,11 @@ enum {
     SCM_ERROR_BEING_REPORTED = (1L<<1), /* we're in an error reporter */
     SCM_LOAD_VERBOSE         = (1L<<2), /* report loading files */
     SCM_CASE_FOLD            = (1L<<3), /* symbols are case insensitive */
-    SCM_LIMIT_MODULE_MUTATION = (1L<<4)  /* disable set! to modify the
-                                            global binding in the other
-                                            module */
+    SCM_LIMIT_MODULE_MUTATION = (1L<<4),/* disable set! to modify the
+                                           global binding in the other
+                                           module */
+    SCM_COLLECT_VM_STATS     = (1L<<5)  /* enable statistics collection
+                                           (incurs runtime overhead) */
 };
 
 #define SCM_VM_RUNTIME_FLAG_IS_SET(vm, flag) ((vm)->runtimeFlags & (flag))
@@ -500,28 +572,16 @@ SCM_EXTERN void Scm_VMPushCC(ScmObj (*func)(ScmObj value, void **data),
 			     int datasize);
 
 /*
- * Compiler context
- */
-
-enum {
-    SCM_COMPILE_STMT,           /* Statement context.  The value of this
-                                   expression will be discarded. */
-    SCM_COMPILE_TAIL,           /* This is a tail expression. */
-    SCM_COMPILE_NORMAL          /* Normal calling sequence. */
-};
-
-typedef struct ScmCompilerPacketRec {
-    ScmObj constants;
-} ScmCompilerContext;
-
-/*
  * Compiler flags
  */
 
 enum {
-    SCM_COMPILE_NOINLINE = (1L<<0), /* Do not inline procedures */
-    SCM_COMPILE_NOSOURCE = (1L<<1), /* Do not insert source info */
-    SCM_COMPILE_SHOWRESULT = (1L<<2), /* Display each result of compilation */
+    SCM_COMPILE_NOINLINE_GLOBALS = (1L<<0),/* Do not inline global procs */
+    SCM_COMPILE_NOINLINE_LOCALS = (1L<<1), /* Do not inline local procs */
+    SCM_COMPILE_NOINLINE_CONSTS = (1L<<2), /* Do not inline constants */
+    SCM_COMPILE_NOSOURCE = (1L<<3),        /* Do not insert source info */
+    SCM_COMPILE_SHOWRESULT = (1L<<4),      /* Display each result of
+                                              compilation */
 };
 
 #define SCM_VM_COMPILER_FLAG_IS_SET(vm, flag) ((vm)->compilerFlags & (flag))
@@ -529,13 +589,18 @@ enum {
 #define SCM_VM_COMPILER_FLAG_CLEAR(vm, flag)  ((vm)->compilerFlags &= ~(flag))
 
 /*
- * Inline assembler stuff
- *   These are used in Gauche core to inline VM assembly code for
- *   some built-in procedures.
+ * Compiler internal APIs
  */
 
-SCM_EXTERN ScmObj Scm_MakeInlineAsmForm(ScmObj form, ScmObj insn, ScmObj args);
-SCM_EXTERN ScmObj Scm_SimpleAsmInliner(ScmObj subr, ScmObj form, ScmObj env,
-                                       void *data);
+SCM_EXTERN ScmObj Scm_Compile(ScmObj program, ScmObj mod);
+
+SCM_EXTERN ScmObj Scm_CallSyntaxCompiler(ScmObj syn, ScmObj from, ScmObj env);
+SCM_EXTERN ScmObj Scm_CallMacroExpander(ScmMacro *mac, ScmObj expr, ScmObj env);
+SCM_EXTERN ScmObj Scm_CallMacroExpanderOld(ScmMacro *mac, ScmObj expr, ScmObj env);
+SCM_EXTERN int    Scm_HasInlinerP(ScmObj obj);
+SCM_EXTERN ScmObj Scm_CallProcedureInliner(ScmObj obj, ScmObj form, ScmObj env);
+
+/* This is in module.c, but it's not for public, so declaration is here. */
+SCM_EXTERN ScmModule* Scm_GaucheInternalModule(void);
 
 #endif /* GAUCHE_VM_H */

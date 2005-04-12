@@ -1,7 +1,7 @@
 /*
  * macro.h - structures used internally in macro expander
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.h,v 1.7 2004-09-11 01:49:23 shirok Exp $
+ *  $Id: macro.h,v 1.8 2005-04-12 01:42:28 shirok Exp $
  */
 
 #ifndef GAUCHE_MACRO_H
@@ -78,5 +78,23 @@ SCM_CLASS_DECL(Scm_SyntaxRulesClass);
 
 #define SCM_SYNTAX_RULES(obj)    ((ScmSyntaxRules*)(obj))
 #define SCM_SYNTAX_RULES_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_SYNTAX_RULES)
+
+SCM_EXTERN ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj lietrals,
+                                         ScmObj rules, ScmObj env);
+
+/*
+ * Pattern variable reference object 
+ */
+#define SCM_PVREF_TAG              0x0e
+#define SCM_PVREF_P(obj)           ((SCM_WORD(obj)&0x0f) == SCM_PVREF_TAG)
+#define SCM_PVREF_LEVEL(obj)       ((SCM_WORD(obj)>>24) & 0xff)
+#define SCM_PVREF_COUNT(obj)       ((SCM_WORD(obj)>>16) & 0xff)
+
+#define SCM_MAKE_PVREF(level, count)  \
+    SCM_OBJ((SCM_WORD(level)<<24) | (SCM_WORD(count)<<16) | SCM_PVREF_TAG)
+
+/* Temporary */
+SCM_EXTERN ScmObj Scm_MakeMacroTransformerOld(ScmSymbol *name,
+                                              ScmProcedure *proc);
 
 #endif /* GAUCHE_MACRO_H */
