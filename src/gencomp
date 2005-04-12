@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.2 2005-04-12 01:42:27 shirok Exp $
+;;;  $Id: gencomp,v 1.3 2005-04-12 08:06:14 shirok Exp $
 ;;;
 
 ;;;
@@ -49,6 +49,7 @@
 (use gauche.vm.insn)
 (use gauche.parameter)
 (use gauche.sequence)
+(use gauche.parseopt)
 (use file.util)
 (use util.match)
 (use util.list)
@@ -56,21 +57,20 @@
 ;; we compile things within an anonymous module to avoid interference.
 (define compile-module (make-parameter #f))
 
-;; compatibility kludge
-(define-macro (import-internals)
-  (when (find-module 'gauche.internal)
-    `(begin
-       (define compile       (with-module gauche.internal compile))
-       (define compile-int   (with-module gauche.internal compile-int))
-       (define compile-toplevel-lambda
-         (with-module gauche.internal compile-toplevel-lambda))
-       (define %procedure-inliner
-         (with-module gauche.internal %procedure-inliner))
-       (define vm-code->list (with-module gauche.internal vm-code->list))
-       (define vm-eval-situation
-         (with-module gauche.internal vm-eval-situation)))))
+;; set this true if we want to keep macro definition in the dumped code.
+;;  (--keep-macro option)
+(define keep-macro-definition (make-parameter #f))
 
-(import-internals)
+;; compatibility kludge
+(define compile       (with-module gauche.internal compile))
+(define compile-int   (with-module gauche.internal compile-int))
+(define compile-toplevel-lambda
+  (with-module gauche.internal compile-toplevel-lambda))
+(define %procedure-inliner
+  (with-module gauche.internal %procedure-inliner))
+(define vm-code->list (with-module gauche.internal vm-code->list))
+(define vm-eval-situation
+  (with-module gauche.internal vm-eval-situation))
 
 (define-constant SCM_VM_COMPILING 2) ;; must match with vm.h
 
@@ -78,11 +78,15 @@
 ;; Entry
 ;;
 (define (main args)
-  (match args
-    ((_ scmfile) (do-it scmfile))
-    (else (print "Usage: gosh gencomp <file.scm>")
-          (exit 0)))
-  0)
+  (let-args (cdr args)
+      ((keep-macro "keep-macro" #f)
+       . args)
+    (keep-macro-definition keep-macro)
+    (match args
+      ((scmfile) (do-it scmfile))
+      (else (print "Usage: gosh gencomp [--keep-macro] <file.scm>")
+            (exit 0)))
+    0))
 
 (define (do-it scmfile)
   (parameterize ((cgen-current-unit (get-unit scmfile))
