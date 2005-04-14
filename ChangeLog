@@ -1,5 +1,8 @@
 2005-04-13  Shiro Kawai  <shiro@acm.org>
 
+	* src/prof.c: do not use one-shot timer, for it misses too many
+	  samples.
+
 	* src/link-dylib: fix build problem on MacOS X (Patch from
 	  Tatsuya BIZENN).
 

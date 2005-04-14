@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: prof.c,v 1.2 2005-04-12 01:42:27 shirok Exp $
+ *  $Id: prof.c,v 1.3 2005-04-14 05:28:54 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -55,14 +55,16 @@
  * Interval timer operation
  */
 
-#define ITIMER_START()                          \
-    do {                                        \
-        struct itimerval tval, oval;            \
-        tval.it_interval.tv_sec = 0;            \
-        tval.it_interval.tv_usec = 0;           \
-        tval.it_value.tv_sec = 0;               \
-        tval.it_value.tv_usec = 10000;          \
-        setitimer(ITIMER_PROF, &tval, &oval);   \
+#define SAMPLING_PERIOD 10000
+
+#define ITIMER_START()                                  \
+    do {                                                \
+        struct itimerval tval, oval;                    \
+        tval.it_interval.tv_sec = 0;                    \
+        tval.it_interval.tv_usec = SAMPLING_PERIOD;     \
+        tval.it_value.tv_sec = 0;                       \
+        tval.it_value.tv_usec = SAMPLING_PERIOD;        \
+        setitimer(ITIMER_PROF, &tval, &oval);           \
     } while (0)
 
 #define ITIMER_STOP()                           \
@@ -115,7 +117,9 @@ static void sampler_sample(int sig)
     if (vm->prof->state != SCM_PROFILER_RUNNING) return;
 
     if (vm->prof->currentSample >= SCM_PROF_SAMPLES_IN_BUFFER) {
+        ITIMER_STOP();
         sampler_flush(vm);
+        ITIMER_START();
     }
 
     i = vm->prof->currentSample++;
@@ -135,7 +139,6 @@ static void sampler_sample(int sig)
         vm->prof->samples[i].pc = NULL;
     }
     vm->prof->totalSamples++;
-    ITIMER_START();
 }
 
 /* register samples into the stat table.  Called from Scm_ProfilerResult */
