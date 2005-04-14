@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.2 2005-04-12 01:42:26 shirok Exp $
+;;;  $Id: compile.scm,v 1.3 2005-04-14 02:32:10 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -2426,7 +2426,10 @@
                        (adjust-arglist reqargs optarg
                                        ($call-args (car call))
                                        name))
-      ($call-flag-set! (car call) 'local))))
+      ($call-flag-set! (car call) 'local))
+    ;; We clear the calls list, just in case if the lambda-node is
+    ;; traversed more than once.
+    ($lambda-calls-set! lambda-node '())))
 
 ;; Called when the local function (lambda-node) isn't needed to be a closure
 ;; and can be embedded.

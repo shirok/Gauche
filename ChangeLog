@@ -1,3 +1,9 @@
+2005-04-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass2/local-call-optimizer): fixed a bug that
+	  messes up argument list when the lambda node is traversed twice
+	  in pass2.
+
 2005-04-11  Shiro Kawai  <shiro@acm.org>
 
 	* joined NVM0_8_3 branch to the trunc.
