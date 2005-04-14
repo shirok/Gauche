@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.3 2005-04-14 02:32:10 shirok Exp $
+;;;  $Id: compile.scm,v 1.4 2005-04-14 06:15:19 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -3924,20 +3924,6 @@
        (exact? obj)
        (<= 0 obj #x7ffff)))
 
-(define (cons/info info ca cd)
-  (if info
-    (let1 p (extended-cons ca cd)
-      (pair-attribute-set! p 'source-info info)
-      p)
-    (cons ca cd)))
-
-(define (list/info info arg0 . args)
-  (if info
-    (let1 p (extended-cons arg0 args)
-      (pair-attribute-set! p 'source-info info)
-      p)
-    (cons arg0 args)))
-
 (define (variable-name arg)
   (cond ((symbol? arg) arg)
         ((identifier? arg) (slot-ref arg 'name))
@@ -3956,12 +3942,6 @@
 
 (define (global-eq?? sym cenv)
   (cut global-eq? <> sym cenv))
-
-(define (every pred lis)
-  (if (null? lis) #t (and (pred (car lis)) (every pred (cdr lis)))))
-
-(define (any pred lis)
-  (if (null? lis) #f (if (pred (car lis)) #t (any pred (cdr lis)))))
 
 ;;============================================================
 ;; Initialization
