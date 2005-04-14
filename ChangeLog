@@ -1,5 +1,8 @@
 2005-04-13  Shiro Kawai  <shiro@acm.org>
 
+	* src/link-dylib: fix build problem on MacOS X (Patch from
+	  Tatsuya BIZENN).
+
 	* src/compile.scm (pass2/local-call-optimizer): fixed a bug that
 	  messes up argument list when the lambda node is traversed twice
 	  in pass2.
