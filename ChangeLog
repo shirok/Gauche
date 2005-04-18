@@ -1,5 +1,7 @@
 2005-04-18  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche.h (SCM_EXTENDED_PAIR_P): fixed a bug that caused SEGV
+	  when the macor was applied to statically allocated objects.
 	* src/extlib.stub (hash-table-update!): added, based on John Kilburg's
 	  patch.
 	* test/hash.scm: added test for hash-table-update!, based on

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.406 2005-04-12 01:42:26 shirok Exp $
+ *  $Id: gauche.h,v 1.407 2005-04-18 22:28:58 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -687,7 +687,7 @@ struct ScmExtendedPairRec {
 #define SCM_SET_CDR(obj, value) (SCM_CDR(obj) = (value))
 
 #define SCM_EXTENDED_PAIR_P(obj) \
-    (SCM_PAIRP(obj)&&GC_size(obj)>=sizeof(ScmExtendedPair))
+    (SCM_PAIRP(obj)&&GC_base(obj)&&GC_size(obj)>=sizeof(ScmExtendedPair))
 #define SCM_EXTENDED_PAIR(obj)  ((ScmExtendedPair*)(obj))
 
 
