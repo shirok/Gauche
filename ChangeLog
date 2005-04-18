@@ -1,3 +1,10 @@
+2005-04-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub (hash-table-update!): added, based on John Kilburg's
+	  patch.
+	* test/hash.scm: added test for hash-table-update!, based on
+	  John Kilburg's patch.
+
 2005-04-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/prof.c: do not use one-shot timer, for it misses too many

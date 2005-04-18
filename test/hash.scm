@@ -2,10 +2,11 @@
 ;; Test hash table
 ;;
 
-;; $Id: hash.scm,v 1.6 2003-09-09 12:21:26 shirok Exp $
+;; $Id: hash.scm,v 1.7 2005-04-18 10:25:20 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
+(use srfi-13)
 
 ;; Note: this file tests basic hash table functionarity, and does not
 ;; cover the user-extended hash table (which is done by overloading
@@ -49,14 +50,21 @@
          (hash-table-put! h-eq 'c #\c)
          (hash-table-get  h-eq 'c)))
 
-(test* "eq? test" 5
+(test* "e => 10" 10
+       (begin
+         (hash-table-put! h-eq 'e 8)
+         (hash-table-update! h-eq 'e (lambda (x) (+ x 1)))
+         (hash-table-update! h-eq 'e (lambda (x) (+ x 1)))
+         (hash-table-get h-eq 'e)))
+
+(test* "eq? test" 6
        (begin
          (hash-table-put! h-eq (string #\d) 4)
          (hash-table-put! h-eq (string #\d) 5)
          (length (hash-table-keys h-eq))))
 
-(test* "hash-table-values" #t
-       (lset= equal? (hash-table-values h-eq) '(8 "b" #\c 4 5)))
+(test* "hash-table-values(1)" #t
+       (lset= equal? (hash-table-values h-eq) '(8 "b" #\c 4 5 10)))
 
 (test* "delete!" #f
        (begin
@@ -113,7 +121,7 @@
          (hash-table-put! h-eqv (string #\d) 5)
          (length (hash-table-keys h-eqv))))
 
-(test* "hash-table-values" #t
+(test* "hash-table-values(2)" #t
        (lset= equal? (hash-table-values h-eqv) '(8 "b" #\c -1 4 5)))
 
 (test* "delete!" #f
@@ -165,26 +173,32 @@
          (hash-table-put! h-equal 87592876592374659237845692374523694756 -1)
          (hash-table-get  h-equal 87592876592374659237845692374523694756)))
 
-(test* "equal? test" 5
+(test* "e => \"e\"" "E"
+       (begin
+         (hash-table-put! h-equal 'e "e")
+         (hash-table-update! h-equal 'e (lambda (x) (string-upcase x)))
+         (hash-table-get h-equal 'e)))
+
+(test* "equal? test" 6
        (begin
          (hash-table-put! h-equal (string #\d) 4)
          (hash-table-put! h-equal (string #\d) 5)
          (length (hash-table-keys h-equal))))
 
-(test* "equal? test" 6
+(test* "equal? test" 7
        (begin
          (hash-table-put! h-equal (cons 'a 'b) 6)
          (hash-table-put! h-equal (cons 'a 'b) 7)
          (length (hash-table-keys h-equal))))
 
-(test* "equal? test" 7
+(test* "equal? test" 8
        (begin
          (hash-table-put! h-equal (vector (cons 'a 'b) 3+3i) 60)
          (hash-table-put! h-equal (vector (cons 'a 'b) 3+3i) 61)
          (length (hash-table-keys h-equal))))
 
-(test* "hash-table-values" #t
-       (lset= equal? (hash-table-values h-equal) '(8 "b" #\c -1 5 7 61)))
+(test* "hash-table-values(3)" #t
+       (lset= equal? (hash-table-values h-equal) '(8 "b" #\c -1 "E" 5 7 61)))
 
 (test* "delete!" #f
        (begin
@@ -221,8 +235,14 @@
          (hash-table-put! h-string (string #\d) 5)
          (length (hash-table-keys h-string))))
 
-(test* "hash-table-values" #t
-       (lset= equal? (hash-table-values h-string) '(8 "b" 5)))
+(test* "\"e\" => 9" 9
+       (begin
+         (hash-table-put! h-string "e" 8)
+         (hash-table-update! h-string "e" (lambda (x) (+ x 1)))
+         (hash-table-get h-string "e")))
+
+(test* "hash-table-values(4)" #t
+       (lset= equal? (hash-table-values h-string) '(8 "b" 5 9)))
 
 (test* "delete!" #f
        (begin
