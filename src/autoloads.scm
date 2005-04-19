@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.18 2005-04-12 01:42:25 shirok Exp $
+;;; $Id: autoloads.scm,v 1.19 2005-04-19 06:58:12 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.18 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.19 $.  DO NOT EDIT */"
    :pre-decl '("#define LIBGAUCHE_BODY")
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
@@ -80,8 +80,7 @@
 ;;==========================================================
 (autoload-scheme "gauche/numerical"
                  exp log sqrt expt cos sin tan asin acos atan
-                 gcd lcm numerator denominator
-                 real-part imag-part)
+                 gcd lcm numerator denominator)
 
 #|
 (autoload "gauche/object"

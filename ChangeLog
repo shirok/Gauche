@@ -1,5 +1,10 @@
 2005-04-18  Shiro Kawai  <shiro@acm.org>
 
+	* src/stdlib.stub (real-part, imag-part): moved back here, for there's
+	  not much advantage to having these outside the core.
+	* lib/gauche/numerical.scm: changed accordingly.
+	* src/autoload.scm: changed accordingly.
+
 	* lib/slib.scm.in (*features*): removed slib from *features* list
 	  to avoid (use slib) to load srfi-29, which overrides builtin 'format'
 	  by the incompatible srfi-29's format.

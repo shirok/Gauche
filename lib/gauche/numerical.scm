@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: numerical.scm,v 1.16 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: numerical.scm,v 1.17 2005-04-19 06:58:11 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -109,12 +109,6 @@
 ;  (check-arg real? r)
 ;  (check-arg real? t)
 ;  (make-rectangular (* r (%cos t)) (* r (%sin t))))
-
-(define-in-module scheme (real-part z)
-  (receive (x y) (%complex->real/imag z) x))
-
-(define-in-module scheme (imag-part z)
-  (receive (x y) (%complex->real/imag z) y))
 
 ;; Transcedental functions.
 ;; The real version of these functions are built-in.

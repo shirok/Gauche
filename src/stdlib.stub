@@ -1,7 +1,7 @@
 ;;;
 ;;; stdlib.stub - r5rs scheme procedures
 ;;;  
-;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.109 2005-04-12 01:42:27 shirok Exp $
+;;; $Id: stdlib.stub,v 1.110 2005-04-19 06:58:12 shirok Exp $
 ;;;
 
 
@@ -249,7 +249,16 @@
     SCM_RETURN(SCM_UNDEFINED);
   } else { SCM_RETURN(Scm_Values2(Scm_MakeFlonum(SCM_COMPLEX_REAL(z)), Scm_MakeFlonum(SCM_COMPLEX_IMAG(z))));}")
     
-;; real-part, imag-part - defined in gauche/numeric.scm
+(define-cproc real-part (z::<number>)
+  "if (SCM_REALP(z)) SCM_RETURN(z);
+   SCM_ASSERT(SCM_COMPLEXP(z));
+   SCM_RETURN(Scm_MakeFlonum(SCM_COMPLEX_REAL(z)));")
+
+(define-cproc imag-part (z::<number>)
+  "if (SCM_EXACTP(z)) SCM_RETURN(SCM_MAKE_INT(0));
+   else if (SCM_REALP(z)) SCM_RETURN(Scm_MakeFlonum(0.0));
+   SCM_ASSERT(SCM_COMPLEXP(z));
+   SCM_RETURN(Scm_MakeFlonum(SCM_COMPLEX_IMAG(z)));")
 
 (define-cproc magnitude (z)  (return "Scm_Magnitude"))
 (define-cproc angle (z)      (return "Scm_Angle"))
