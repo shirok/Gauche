@@ -1,3 +1,11 @@
+2005-04-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/gencomp: substitute (current-module) during compilation to
+	  avoid the expanded form from containing literal modules, and from
+	  exposing temporary anonymous module used in the compilation.
+	  In the dumped code, a call to current-module becomes a call to
+	  find-module.
+
 2005-04-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/stdlib.stub (real-part, imag-part): moved back here, for there's
