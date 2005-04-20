@@ -1,5 +1,6 @@
 2005-04-19  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen.scm: define scm__staticStrings as const.
 	* src/gencomp: substitute (current-module) during compilation to
 	  avoid the expanded form from containing literal modules, and from
 	  exposing temporary anonymous module used in the compilation.
