@@ -4257,6 +4257,52 @@ efficiently.
 @c COMMON
 @end defun
 
+@defun hash-table-update! ht key proc &optional default
+@c EN
+A more general version of @code{hash-table-push!} etc.
+It works basically as the following code piece,
+except that the lookup of @var{key} is only done once.
+@c JP
+@code{hash-table-push!}等のより一般的なバージョンです。
+ハッシュテーブルの探索が一度しか行われないことを除いては、
+基本的に次のように動作します。
+@c COMMON
+@example
+(let ((tmp (proc (hash-table-get @var{ht} @var{key}))))
+  (hash-table-put! @var{ht} @var{key} tmp)
+  tmp)
+@end example
+@c EN
+When @var{ht} doesn't have the entry for @var{key}, 
+the action depends on whether @var{default} is given.
+If @var{default} is given, its value is stored to @var{ht} as 
+the entry of @var{key} (Note that @var{proc} won't be called
+in this case).   If @var{default} is not given, an error is signalled.
+@c JP
+@var{key}に対応するエントリが@var{ht}に無かった場合、動作は
+@var{default}が与えられているかどうかで異なります。
+@var{default}が与えられている場合は、それが@var{key}に対応する値として
+テーブル@var{ht}に追加されます (@var{proc}は呼ばれません)。
+@var{default}が与えられていなければ、エラーが報告されます。
+@c COMMON
+
+@c EN
+For example, when you use a hash table to count the occurrences
+of items, the following line is suffice to increment the counter
+of the item, regardless of whether @var{item} has already appeared or not.
+@c JP
+例えば、ハッシュテーブルを使ってオブジェクトの個数を数えているとしましょう。
+次の1行で、オブジェクト@var{item}が既に出現したかどうかを気にせずに
+その個数をインクリメントできます。
+@c COMMON
+
+@example
+(hash-table-update! ht item (cut + 1 <>) 0))
+@end example
+
+@end defun
+
+
 @defun hash-table-for-each ht proc
 @defunx hash-table-map ht proc
 @c EN
