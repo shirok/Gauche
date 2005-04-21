@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.4 2005-04-20 07:45:33 shirok Exp $
+;;;  $Id: gencomp,v 1.5 2005-04-21 00:25:14 shirok Exp $
 ;;;
 
 ;;;
@@ -53,6 +53,7 @@
 (use file.util)
 (use util.match)
 (use util.list)
+(use text.tr)
 
 ;; we compile things within an anonymous module to avoid interference.
 (define compile-module (make-parameter #f))
@@ -366,7 +367,9 @@
                          scmfile))
     :init-prologue (format "void Scm__Init~a() { ScmModule *mod;"
                            (string-titlecase
-                            (sys-basename (path-sans-extension scmfile))))
+                            (string-tr
+                             (sys-basename (path-sans-extension scmfile))
+                             "-+" "__")))
     ))
 
 ;;================================================================

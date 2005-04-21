@@ -1,5 +1,6 @@
 2005-04-20  Shiro Kawai  <shiro@acm.org>
 
+	* src/gencomp: allow the filename to have '+'/'-' char.
 	* src/compile.scm: fixed a few serious bugs.
 
 2005-04-19  Shiro Kawai  <shiro@acm.org>
