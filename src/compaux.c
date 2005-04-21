@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compaux.c,v 1.2 2005-04-12 01:42:26 shirok Exp $
+ *  $Id: compaux.c,v 1.3 2005-04-21 06:53:27 shirok Exp $
  */
 
 /* This file serves as a bridge to the compiler, which is implemented
@@ -130,10 +130,15 @@ static ScmClassStaticSlotSpec synclo_slots[] = {
 
 static void identifier_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    Scm_Printf(port, "#<id %p %A::%A>",
-               obj,
-               SCM_IDENTIFIER(obj)->module->name,
-               SCM_IDENTIFIER(obj)->name);
+    ScmIdentifier *id = SCM_IDENTIFIER(obj);
+    /* We may want to have an external identifier syntax, so that an
+       identifier can be written out and then read back.  It will be
+       convenient if we can embed a reference to other module's global
+       binding directly in the program.  However, it can also breaches
+       module-based sandbox implementation, so further consideration is
+       required.
+    */
+    Scm_Printf(port, "#<identifier %S#%S>", id->module->name, id->name);
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_IdentifierClass, identifier_print);
