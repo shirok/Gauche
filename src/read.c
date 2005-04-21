@@ -1,7 +1,7 @@
 /*
  * read.c - reader
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.76 2004-12-18 04:11:13 shirok Exp $
+ *  $Id: read.c,v 1.77 2005-04-21 06:47:30 shirok Exp $
  */
 
 #include <stdio.h>
@@ -435,12 +435,6 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             case '[':
                 /* #[...] literal charset */
                 return read_charset(port);
-            case '"':
-                /* #"..." explicit incomplete string */
-                /* NB: this syntax will be taken by string interpolation
-                   in future.  Use #*"..." instead. */
-                Scm_ReadError(port, "syntax #\"...\" for incomplete string is obsoleted.  use #*\"...\" instead.");
-                return SCM_UNDEFINED;
             case ',':
                 /* #,(form) - SRFI-10 read-time macro */
                 return read_sharp_comma(port, ctx);
@@ -851,6 +845,11 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
  * Symbols and Numbers
  */
 
+/* Reads a sequence of word-constituent characters from PORT, and returns
+   ScmString.  INITIAL may be a readahead character, or SCM_CHAR_INVALID
+   if there's none.  TEMP_CASE_FOLD turns on case-fold mode regardless of
+   the read context setting.
+*/
 static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx,
                         int temp_case_fold)
 {
@@ -921,6 +920,8 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim)
         } else if (c == '\\') {
             /* CL-style single escape */
             c = Scm_GetcUnsafe(port);
+            /* TODO: we should recognize \xNN, since the symbol writer
+               prints a symbol name in that syntax. */
             if (c == EOF) goto err;
             SCM_DSTRING_PUTC(&ds, c);
         } else {
