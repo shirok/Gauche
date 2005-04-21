@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.4 2005-04-14 06:15:19 shirok Exp $
+;;;  $Id: compile.scm,v 1.5 2005-04-21 00:21:00 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -942,12 +942,13 @@
                (iform-copy ($lambda-body iform) newalist)
                ($lambda-flag iform))))
    (($LABEL)
-    (cond ((assq label-alist iform) => (lambda (p) (cdr p)))
+    (cond ((assq iform label-alist) => (lambda (p) (cdr p)))
           (else
            (let1 newnode
-               ($label ($label-src iform) ($label-label iform)
-                       (iform-copy ($label-body iform)))
+               ($label ($label-src iform) ($label-label iform) #f)
              (push! label-alist (cons iform newnode))
+             ($label-body-set! newnode
+                               (iform-copy ($label-body iform) label-alist))
              newnode))))
    (($SEQ)
     ($seq (map (cut iform-copy <> lv-alist) ($seq-body iform))))
@@ -2239,7 +2240,7 @@
                          (pass2/rec ($if-else iform) penv tail?)))))
 
 (define (pass2/label-or-dup iform)
-  (if (memv (iform-tag iform) `(,$LREF ,$LSET ,$GREF ,$GSET ,$CONST ,$IT))
+  (if (memv (iform-tag iform) `(,$LREF ,$CONST ,$IT))
     (values iform (iform-copy iform '()))
     (let1 lab ($label #f #f iform)
       (values lab lab))))
