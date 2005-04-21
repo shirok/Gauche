@@ -1,5 +1,9 @@
 2005-04-20  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/interpolate.scm (%string-interpolate): insert bare symbols
+	  instead of procedures themselves.  Not hygiene, but necessary for
+	  the program that reads and writes the forms that containts #`"..."
+	  syntax.
 	* src/gencomp: allow the filename to have '+'/'-' char.
 	* src/compile.scm: fixed a few serious bugs.
 

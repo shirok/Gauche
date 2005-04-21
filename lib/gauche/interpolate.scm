@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: interpolate.scm,v 1.5 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: interpolate.scm,v 1.6 2005-04-21 04:54:28 shirok Exp $
 ;;;
 
 ;;; #`"The value is ,|foo|." => (string-append "The value is " foo ".")
@@ -70,7 +70,7 @@
              (lambda () (read))))
            (rest
             (accum (read-char) (open-output-string))))
-      (cons `(,x->string ,item) rest)))
+      (cons `(x->string ,item) rest)))
   (cons 'string-append
         (with-input-from-string str
           (lambda () (accum (read-char) (open-output-string)))))
