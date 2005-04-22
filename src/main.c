@@ -1,7 +1,7 @@
 /*
  * main.c - interpreter main program
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.78 2005-04-12 01:42:27 shirok Exp $
+ *  $Id: main.c,v 1.79 2005-04-22 04:45:50 shirok Exp $
  */
 
 #include <unistd.h>
@@ -75,6 +75,8 @@ void usage(void)
             "           the script file or entering repl.\n"
             "  -E<expr> Similar to -e, but reads <expr> as if it is surrounded\n"
             "           by parenthesis.\n"
+            "  -p<type> Turn on the profiler.  Currently <type> can only be\n"
+            "           'time'.\n"
             "  -f<flag> Sets various flags\n"
             "      case-fold       uses case-insensitive reader (as in R5RS)\n"
             "      load-verbose    report while loading files\n"
@@ -132,9 +134,6 @@ void further_options(const char *optarg)
     else if (strcmp(optarg, "case-fold") == 0) {
         SCM_VM_RUNTIME_FLAG_SET(vm, SCM_CASE_FOLD);
     }
-    else if (strcmp(optarg, "profile") == 0) {
-        profiling_mode = TRUE;
-    }
     else if (strcmp(optarg, "test") == 0) {
         test_mode = TRUE;
     }
@@ -153,16 +152,28 @@ void further_options(const char *optarg)
     }
 }
 
+void profiler_options(const char *optarg)
+{
+    if (strcmp(optarg, "time") == 0) {
+        profiling_mode = TRUE;
+    }
+    else {
+        fprintf(stderr, "unknown -p option: %s\n", optarg);
+        fprintf(stderr, "supported profiling options are: -ptime\n");
+    }
+}
+
 int parse_options(int argc, char *argv[])
 {
     int c;
-    while ((c = getopt(argc, argv, "+be:E:iql:u:Vf:I:A:-")) >= 0) {
+    while ((c = getopt(argc, argv, "+be:E:ip:ql:u:Vf:I:A:-")) >= 0) {
         switch (c) {
         case 'b': batch_mode = TRUE; break;
         case 'i': interactive_mode = TRUE; break;
         case 'q': load_initfile = FALSE; break;
         case 'V': version(); break;
         case 'f': further_options(optarg); break;
+        case 'p': profiler_options(optarg); break;
         case 'u': /*FALLTHROUGH*/;
         case 'l': /*FALLTHROUGH*/;
         case 'I': /*FALLTHROUGH*/;
