@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.219 2005-04-12 01:42:27 shirok Exp $
+ *  $Id: vm.c,v 1.220 2005-04-22 10:41:41 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2332,6 +2332,19 @@ pthread_key_t Scm_VMKey(void)
       }                                                                 \
     } while (0)
 
+/* Performance note: As of 0.8.4_pre1, each save_env call spends about
+   1us to 4us on P4 2GHz machine with several benchmark suites.  The
+   average env frames to be saved is less than 3.  The ratio of the pass1
+   (env frame save) and the pass 2 (cont pointer adjustment) is somewhere
+   around 2:1 to 1:2.  Inlining SCM_NEW call didn't help.
+
+   This is a considerable amount of time, since save_env may be called
+   the order of 10^6 times.   I'm not sure I can optimize this routine
+   further without a radical change in stack management code.
+
+   Better strategy is to put an effort in the compiler to avoid closure 
+   creation as much as possible.  */
+
 /* move the current chain of environments from the stack to the heap.
    if there're continuation frames which point to the moved env, those
    pointers are adjusted as well. */
@@ -2340,24 +2353,23 @@ static inline ScmEnvFrame *save_env(ScmVM *vm,
                                     ScmContFrame *cont_begin)
 {
     ScmEnvFrame *e = env_begin, *prev = NULL, *next, *head = env_begin, *saved;
-    ScmContFrame *c = cont_begin;
-    ScmObj *s;
-    ScmCStack *cstk;
-    ScmEscapePoint *ep;
+    ScmContFrame *c;
 
     if (!IN_STACK_P((ScmObj*)e)) return e;
-    
+
     /* First pass - move envs in stack to heap.  After env is moved,
        the location of 'up' pointer in the env frame in the stack
        contains the new location of env frame, so that the env pointers
        in continuation frames will be adjusted in the second pass.
        Such forwarded pointer is indicated by env->size == -1. */
     do {
-        int esize = e->size;
-        int bsize = ENV_SIZE(esize) * sizeof(ScmObj);
-        s = SCM_NEW2(ScmObj*, bsize);
-        memcpy(s, ENV_FP(e), bsize);
-        saved = (ScmEnvFrame*)(s + esize);
+        int esize = e->size, i;
+        ScmObj *d, *s;
+        d = SCM_NEW2(ScmObj*, ENV_SIZE(esize) * sizeof(ScmObj));
+        for (i=ENV_SIZE(esize), s = (ScmObj*)e - esize; i>0; i--) {
+            *d++ = *s++;
+        }
+        saved = (ScmEnvFrame*)(d - ENV_HDR_SIZE);
         if (prev) prev->up = saved;
         if (e == env_begin) head = saved;
         next = e->up;
@@ -2366,19 +2378,24 @@ static inline ScmEnvFrame *save_env(ScmVM *vm,
         e->info = SCM_FALSE;  /* clear pointer for GC */
         e = next;
     } while (IN_STACK_P((ScmObj*)e));
-    
+
     /* Second pass - scan continuation frames in the stack, and forwards
-       env pointers. */
+       env pointers.   Most of the time we don't need to scan cont chains
+       except the main one (from vm->cont). */
     ADJUST_CONT_ENV(c, cont_begin);
-    for (cstk = vm->cstack; cstk; cstk = cstk->prev) {
-        ADJUST_CONT_ENV(c, cstk->cont);
-    }
-    for (ep = vm->escapePoint; ep; ep = ep->prev) {
-        ADJUST_CONT_ENV(c, ep->cont);
-    }
-    ep = SCM_VM_FLOATING_EP(vm);
-    for (; ep; ep = ep->floating) {
-        ADJUST_CONT_ENV(c, ep->cont);
+    if (cont_begin != vm->cont) {
+        ScmCStack *cstk;
+        ScmEscapePoint *ep;
+        for (cstk = vm->cstack; cstk; cstk = cstk->prev) {
+            ADJUST_CONT_ENV(c, cstk->cont);
+        }
+        for (ep = vm->escapePoint; ep; ep = ep->prev) {
+            ADJUST_CONT_ENV(c, ep->cont);
+        }
+        ep = SCM_VM_FLOATING_EP(vm);
+        for (; ep; ep = ep->floating) {
+            ADJUST_CONT_ENV(c, ep->cont);
+        }
     }
     return head;
 }
