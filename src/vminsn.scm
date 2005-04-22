@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: vminsn.scm,v 1.2 2005-04-12 01:42:28 shirok Exp $
+;;;  $Id: vminsn.scm,v 1.3 2005-04-22 23:12:11 shirok Exp $
 ;;;
 
 ;;; This file is processed by geninsn to produce a couple of C files:
@@ -164,24 +164,26 @@
 ;;  operations).
 (define-insn POP-LOCAL-ENV 0 none)
 
-;; LOCAL-ENV-JUMP(NLOCALS) <addr>
+;; LOCAL-ENV-JUMP(DEPTH) <addr>
 ;;  This instruction appears when local function call is optimized.
 ;;  The stack already has NLOCALS values.  This instruction creates an
 ;;  env frame with them (just like LOCAL-ENV), then jump to <addr>.
+;;  (# of arguments can be known by SP - ARGP).
 (define-insn LOCAL-ENV-JUMP 1 addr)
 
-;; LOCAL-ENV-CALL(NLOCALS)
-;; LOCAL-ENV-TAIL-CALL(NLOCALS)
+;; LOCAL-ENV-CALL(DEPTH)
+;; LOCAL-ENV-TAIL-CALL(DEPTH)
 ;;  This instruction appears when local function call is optimized.
-;;  The stack already has NLOCALS values, and VAL0 has a closure to
-;;  call.  This instruction creates an env frame with the existing
+;;  VAL0 has a closure to call, and the stack already has the arguments.
+;;
+;;  This instruction creates an env frame with the existing
 ;;  values (just like LOCAL-ENV), then jump to the entrance point of
 ;;  the closure in VAL0.  The point is that we can bypass the generic
 ;;  CALL sequence, since the arguments are already adjusted and we
 ;;  know the called closure is not a generic function.
+;;  (# of arguments can be known by SP - ARGP).
 (define-insn LOCAL-ENV-CALL  1 none)
 (define-insn LOCAL-ENV-TAIL-CALL 1 none)
-
 
 ;; BF <else-offset>          ; branch if VAL0 is false
 ;; BT <else-offset>          ; branch if VAL0 is true

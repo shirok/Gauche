@@ -1,3 +1,9 @@
+2005-04-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (run_loop): changed LOCAL-ENV-JUMP, LOCAL-ENV-CALL, and
+	  LOCAL-ENV-TAIL-CALL to get the nargs from SP - ARGP, instead of
+	  the insn param.  The insn param will be used for other purpose.
+
 2005-04-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/vm/debugger.scm, src/autoloads.scm: removed procedures

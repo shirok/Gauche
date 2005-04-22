@@ -231,6 +231,19 @@ R5RSに示される通り、シンボルの大文字小文字を区別しません。
 @c COMMON
 @end deftp
 
+@deftp {Command Option} -p profiler-option
+@c EN
+Turn on the profiler.  Currnetly, only "@code{time}" is supported
+as @var{profiler-option}.  See @ref{Using profiler} for the details
+of the profiler.
+@c JP
+プロファイラを有効にします。現在のところ、@var{profiler-option}として
+"@code{time}" のみがサポートされています。
+詳しくは@ref{Using profiler}を参照して下さい。
+@c COMMON
+@end deftp
+
+
 @deftp {Command Option} @code{--}
 @c EN
 When @code{gosh} sees this option, it stops processing the options

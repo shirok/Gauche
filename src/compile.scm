@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.5 2005-04-21 00:21:00 shirok Exp $
+;;;  $Id: compile.scm,v 1.6 2005-04-22 23:12:10 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -400,14 +400,13 @@
 ;;      of case statement.
 ;;
 ;;  NB: The nodes are destructively modified during compilation, in order
-;;      to keep allocations minimal.  Be careful not to have a shared node
-;;      unless it is intended.   As a side effects, (1) the node vector may
-;;      be bigger than what its tag suggests, if the compiler pass has
-;;      changed its tag, and (2) there may be a $wrap node
+;;      to keep allocations minimal.   Nodes shouldn't be shared, for
+;;      side-effects may vary depends on the path to the node.  The only
+;;      exception is $label node.
 ;;
-;;  NB: $label IForm is introduced in Pass2 to mark the point where
-;;      its body is 'called' by LOCAL-ENV-JUMP.   It only appears
-;;      as the body of $let IForm.  The <label> slot of
+;;  NB: $label IForm is introduced in Pass2 to record the shared node.
+;;      It marks the destination of LOCAL-ENV-JUMP, and also is created
+;;      during $if optimization.  The <label> slot of
 ;;      $label IForm is filled in Pass3 to record the label number within
 ;;      the compiled code vector; in Pass2 it is #f.
 
@@ -453,7 +452,8 @@
   (src name reqargs optarg lvars body flag
        ;; The following slot(s) is/are used temporarily during pass2, and
        ;; need not be saved when packed.
-       (calls '()) ;; list of call sites
+       (calls '())      ;; list of call sites
+       (free-lvars '()) ;; list of free local variables
        ))
 
 (define-simple-struct $label $LABEL ($label src label body))
@@ -1006,6 +1006,113 @@
   ;; to work better.  Should be gone later.
   (cond ((assoc lvar lv-alist) => (lambda (p) (cdr p)))
         (else lvar)))
+
+;; An aux proc called during pass 2 to determine free variables of
+;; a closure.   Bounds is a list of lvars that are bound in this scope
+;; (thus can't be free).
+;(define (iform-free-lvars iform bounds)
+;  (define label-alist '()) ;; alist of old-label & new-label 
+  
+;  (case/unquote
+;   (iform-tag iform)
+;   (($DEFINE)
+;    ($define ($*-src iform) ($define-flags iform) ($define-id iform)
+;             (iform-copy ($define-expr iform) lv-alist)))
+;   (($LREF)
+;    ($lref (iform-copy-lvar ($lref-lvar iform) lv-alist)))
+;   (($LSET)
+;    ($lset ($lset-lvar iform) (iform-copy ($lset-expr iform) lv-alist)))
+;   (($GREF)
+;    ($gref ($gref-id iform)))
+;   (($GSET)
+;    ($gset ($gset-id iform) (iform-copy ($gset-expr iform) lv-alist)))
+;   (($CONST)
+;    ($const ($const-value iform)))
+;   (($IF)
+;    ($if ($*-src iform)
+;         (iform-copy ($if-test iform) lv-alist)
+;         (iform-copy ($if-then iform) lv-alist)
+;         (iform-copy ($if-else iform) lv-alist)))
+;   (($LET)
+;    (receive (newlvs newalist)
+;        (iform-copy-zip-lvs ($let-lvars iform) lv-alist)
+;      ($let ($*-src iform) ($let-type iform)
+;            newlvs
+;            (map (cute iform-copy <> (case ($let-type iform)
+;                                       ((let) lv-alist)
+;                                       ((rec) newalist)))
+;                 ($let-inits iform))
+;            (iform-copy ($let-body iform) newalist))))
+;   (($RECEIVE)
+;    (receive (newlvs newalist)
+;        (iform-copy-zip-lvs ($receive-lvars iform) lv-alist)
+;      ($receive ($*-src iform)
+;                ($receive-reqargs iform) ($receive-optarg iform)
+;                newlvs (iform-copy ($receive-expr iform) lv-alist)
+;                (iform-copy ($receive-body iform) newalist))))
+;   (($LAMBDA)
+;    (receive (newlvs newalist)
+;        (iform-copy-zip-lvs ($lambda-lvars iform) lv-alist)
+;      ($lambda ($*-src iform) ($lambda-name iform)
+;               ($lambda-reqargs iform) ($lambda-optarg iform)
+;               newlvs
+;               (iform-copy ($lambda-body iform) newalist)
+;               ($lambda-flag iform))))
+;   (($LABEL)
+;    (cond ((assq iform label-alist) => (lambda (p) (cdr p)))
+;          (else
+;           (let1 newnode
+;               ($label ($label-src iform) ($label-label iform) #f)
+;             (push! label-alist (cons iform newnode))
+;             ($label-body-set! newnode
+;                               (iform-copy ($label-body iform) label-alist))
+;             newnode))))
+;   (($SEQ)
+;    ($seq (map (cut iform-copy <> lv-alist) ($seq-body iform))))
+;   (($CALL)
+;    ($call ($*-src iform)
+;           (iform-copy ($call-proc iform) lv-alist)
+;           (map (cut iform-copy <> lv-alist) ($call-args iform))
+;           #f))
+;   (($ASM)
+;    ($asm ($*-src iform) ($asm-insn iform)
+;          (map (cut iform-copy <> lv-alist) ($asm-args iform))))
+;   (($PROMISE)
+;    ($promise ($*-src iform) (iform-copy ($promise-expr iform) lv-alist)))
+;   (($CONS)
+;    ($cons ($*-src iform)
+;           (iform-copy ($*-arg0 iform) lv-alist)
+;           (iform-copy ($*-arg1 iform) lv-alist)))
+;   (($APPEND)
+;    ($append ($*-src iform)
+;             (iform-copy ($*-arg0 iform) lv-alist)
+;             (iform-copy ($*-arg1 iform) lv-alist)))
+;   (($VECTOR)
+;    ($vector ($*-src iform)
+;             (map (cut iform-copy <> lv-alist) ($*-args iform))))
+;   (($LIST->VECTOR)
+;    ($list->vector ($*-src iform) (iform-copy ($*-arg0 iform) lv-alist)))
+;   (($LIST)
+;    ($list ($*-src iform)
+;           (map (cut iform-copy <> lv-alist) ($*-args iform))))
+;   (($LIST*)
+;    ($list* ($*-src iform)
+;            (map (cut iform-copy <> lv-alist) ($*-args iform))))
+;   (($MEMV)
+;    ($memv ($*-src iform)
+;           (iform-copy ($*-arg0 iform) lv-alist)
+;           (iform-copy ($*-arg1 iform) lv-alist)))
+;   (($EQ?)
+;    ($eq? ($*-src iform)
+;          (iform-copy ($*-arg0 iform) lv-alist)
+;          (iform-copy ($*-arg1 iform) lv-alist)))
+;   (($EQV?)
+;    ($eqv? ($*-src iform)
+;           (iform-copy ($*-arg0 iform) lv-alist)
+;           (iform-copy ($*-arg1 iform) lv-alist)))
+;   (($IT) ($it))
+;   (else iform)))
+  
 
 ;;============================================================
 ;; Entry point

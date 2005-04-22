@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.220 2005-04-22 10:41:41 shirok Exp $
+ *  $Id: vm.c,v 1.221 2005-04-22 23:12:10 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1101,7 +1101,7 @@ pthread_key_t Scm_VMKey(void)
                 FNEXT;
             }
             CASE(SCM_VM_LOCAL_ENV_JUMP) {
-                int nargs = SCM_VM_INSN_ARG(code);
+                int nargs = SP - ARGP;
                 ScmObj *to;
                 /* We can discard the existing frame by shifting the
                    current argument frame next to the top continuation
@@ -1134,7 +1134,7 @@ pthread_key_t Scm_VMKey(void)
                 NEXT;
             }
             CASE(SCM_VM_LOCAL_ENV_TAIL_CALL) {
-                int nargs = SCM_VM_INSN_ARG(code);
+                int nargs = SP - ARGP;
                 ScmObj *to;
                 VM_ASSERT(SCM_CLOSUREP(VAL0));
                 if (IN_STACK_P((ScmObj*)CONT)) {
@@ -1158,7 +1158,7 @@ pthread_key_t Scm_VMKey(void)
             }
             /*FALLTHROUGH*/
             CASE(SCM_VM_LOCAL_ENV_CALL) {
-                int nargs = SCM_VM_INSN_ARG(code);
+                int nargs = SP - ARGP;
                 VM_ASSERT(SCM_CLOSUREP(VAL0));
                 if (nargs > 0) {
                     CHECK_STACK_PARANOIA(ENV_SIZE(0));
