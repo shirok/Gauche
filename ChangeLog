@@ -1,3 +1,11 @@
+2005-04-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/vm/debugger.scm, src/autoloads.scm: removed procedures
+	  obsoleted by the new VM.
+
+	* src/main.c: changed the profiler option to '-p' from '-fprofiler',
+	  to allow future extensions.
+
 2005-04-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interpolate.scm (%string-interpolate): insert bare symbols
