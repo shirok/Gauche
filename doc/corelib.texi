@@ -25,6 +25,7 @@
 * Loading Programs::            
 * Comparison and sorting::      
 * System interface::            
+* Development helper API::      
 @end menu
 
 @node Equivalence, Numbers, Core library, Core library
@@ -9982,7 +9983,7 @@ Unlike @code{sort}/@code{sort!}, @var{cmpfn} cannot be omitted.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node System interface,  , Comparison and sorting, Core library
+@node System interface, Development helper API, Comparison and sorting, Core library
 @section System interface
 @c NODE システムインタフェース
 
@@ -12931,4 +12932,82 @@ Bound to a positive integer that @code{sys-random} may return.
 @code{sys-random}が返す正の整数に束縛されます。
 @c COMMON
 @end defvar
+
+@c ----------------------------------------------------------------------
+@node Development helper API,  , System interface, Core library
+@section Development helper API
+@c NODE 開発補助API
+
+Gauche has some basic built-in APIs to help developers
+to analyze the program.
+
+@menu
+* Debugging aid::               
+* Profiler API::                
+@end menu
+
+@node Debugging aid, Profiler API, Development helper API, Development helper API
+@subsection Debugging aid
+
+@defmac debug-print expr
+This macro prints @var{expr} in a source form, then evaluates it,
+then prints out the result(s), and returns them.
+
+The special reader syntax @code{#?=@var{expr}} is expanded into
+@code{(debug-print @var{expr})}.  See @ref{Debugging}, for the details.
+@end defmac
+
+@defun disasm closure
+Disassemble the compiled body of @var{closure} and prints it.
+Probably not very useful unless you're tracking a compile bug, 
+or trying to tune the program to its limit.
+
+If you're reading the disassembler output, keep in mind that
+the compiled code vector may have some dead code; they are produced
+by the jump optimization, but the compiler doesn't bother to eliminate them.
+@end defun
+
+
+@node Profiler API,  , Debugging aid, Development helper API
+@subsection Profiler API
+
+These are the functions to control Gauche's built-in profiler.
+See @ref{Using profiler} for the explanation of the profiler.
+
+Note that the profiler doesn't work correctly yet in multi-threaded
+program.
+
+@defun profiler-start
+Starts the sampling profiler.   If the profiler is already started,
+nothing is done.
+@end defun
+
+@defun profiler-stop
+Stop the sampling profiler, and save the sampled data into
+the internal structure.   If there are already saved sampled data,
+the newly obtained data is added to it.
+If the profiler isn't running, nothing is done.
+@end defun
+
+@defun profiler-reset
+Stop the profiler if it is running.  Then discard the
+saved sampled data.
+@end defun
+
+@defun profiler-show &keyword sort-by max-rows
+Show the saved sampled data.  
+
+The keyword argument @var{sort-by} may be one of the symbols
+@code{time}, @code{count}, or @code{time-per-call}, to specify
+how the result should be sorted.  The default is @code{time}.
+
+The keyword argument @var{max-rows} specifies the max number of
+rows to be shown.  If it is @code{#f}, all the data is shown.
+@end defun
+
+
+
+
+
+
 

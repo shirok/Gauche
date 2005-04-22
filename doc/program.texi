@@ -5,8 +5,9 @@
 @menu
 * Invoking Gosh::               
 * Interactive development::     
-* Debugging::                   
 * Writing Scheme scripts::      
+* Debugging::                   
+* Profiling and tuning::        
 * Writing Gauche modules::      
 * Using extension packages::    
 @end menu
@@ -293,7 +294,7 @@ The paths are appended before the system default load paths.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Interactive development, Debugging, Invoking Gosh, Programming in Gauche
+@node Interactive development, Writing Scheme scripts, Invoking Gosh, Programming in Gauche
 @section Interactive development
 @c NODE  インタラクティブな開発
 
@@ -369,75 +370,7 @@ line-editing or command history.   They'll be added in future.
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Debugging, Writing Scheme scripts, Interactive development, Programming in Gauche
-@section Debugging
-@c NODE デバッグ
-
-@c EN
-Gauche doesn't have much support for debugging yet.
-The idea of good debugging interfaces are welcome.
-@c JP
-Gaucheにはまだデバッグをサポートする機能があまり実装されていません。
-デバッギングのインタフェースに関して良いアイディアがあればお寄せください。
-@c COMMON
-
-@c EN
-For now, the author uses the classic 'debug print stub' technique
-when necessary.  A special reader syntax @code{#?=@var{expr}} is
-defined, which is read as @code{(debug-print @var{expr})}.
-The macro @code{debug-print} evaluates and returns the result(s),
-printing messages before and after evaluation of @var{expr}.
-@c JP
-今のところ、作者は必要な時は古典的な「プリントスタブ」方式を使っています。
-そのためのリーダーマクロ @code{#?=@var{expr}} が定義されています。
-これは @code{(debug-print @var{expr})} のように読まれ、
-マクロ @code{debug-print} は@var{expr}を評価してその値を返しますが、
-評価前と評価後にメッセージを出力します。
-@c COMMON
-
-@example
-gosh> #?=(+ 2 3)
-#?="(stdin)":1:(+ 2 3)
-#?-    5
-5
-gosh> #?=(begin (print "foo") (values 'a 'b 'c))
-#?="(stdin)":2:(begin (print "foo") (values 'a 'b 'c))
-foo
-#?-    a
-#?+    b
-#?+    c
-a
-b
-c
-gosh> (define (fact n)
-        (if (zero? n)
-            1
-            (* n #?=(fact (- n 1)))))
-fact
-gosh> (fact 5)
-#?="(stdin)":6:(fact (- n 1))
-#?="(stdin)":6:(fact (- n 1))
-#?="(stdin)":6:(fact (- n 1))
-#?="(stdin)":6:(fact (- n 1))
-#?="(stdin)":6:(fact (- n 1))
-#?-    1
-#?-    1
-#?-    2
-#?-    6
-#?-    24
-120
-@end example
-
-@c EN
-You can also use trace/untrace macros in Gauche, written by Shigenobu Kimura:
-@url{http://homepage.mac.com/skimu/ggc/}.
-@c JP
-また、木村栄伸さんがGauche用のtrace/untraceマクロを書いてくれました：
-@url{http://homepage.mac.com/skimu/ggc/}.
-@c COMMON
-
-@c ----------------------------------------------------------------------
-@node Writing Scheme scripts, Writing Gauche modules, Debugging, Programming in Gauche
+@node Writing Scheme scripts, Debugging, Interactive development, Programming in Gauche
 @section Writing Scheme scripts
 @c NODE Schemeスクリプトを書く
 
@@ -636,7 +569,187 @@ parse command-line options.
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Writing Gauche modules, Using extension packages, Writing Scheme scripts, Programming in Gauche
+@node Debugging, Profiling and tuning, Writing Scheme scripts, Programming in Gauche
+@section Debugging
+@c NODE デバッグ
+
+@c EN
+Gauche doesn't have much support for debugging yet.
+The idea of good debugging interfaces are welcome.
+@c JP
+Gaucheにはまだデバッグをサポートする機能があまり実装されていません。
+デバッギングのインタフェースに関して良いアイディアがあればお寄せください。
+@c COMMON
+
+@c EN
+For now, the author uses the classic 'debug print stub' technique
+when necessary.  A special reader syntax @code{#?=@var{expr}} is
+defined, which is read as @code{(debug-print @var{expr})}.
+The macro @code{debug-print} evaluates and returns the result(s),
+printing messages before and after evaluation of @var{expr}.
+@c JP
+今のところ、作者は必要な時は古典的な「プリントスタブ」方式を使っています。
+そのためのリーダーマクロ @code{#?=@var{expr}} が定義されています。
+これは @code{(debug-print @var{expr})} のように読まれ、
+マクロ @code{debug-print} は@var{expr}を評価してその値を返しますが、
+評価前と評価後にメッセージを出力します。
+@c COMMON
+
+@example
+gosh> #?=(+ 2 3)
+#?="(stdin)":1:(+ 2 3)
+#?-    5
+5
+gosh> #?=(begin (print "foo") (values 'a 'b 'c))
+#?="(stdin)":2:(begin (print "foo") (values 'a 'b 'c))
+foo
+#?-    a
+#?+    b
+#?+    c
+a
+b
+c
+gosh> (define (fact n)
+        (if (zero? n)
+            1
+            (* n #?=(fact (- n 1)))))
+fact
+gosh> (fact 5)
+#?="(stdin)":6:(fact (- n 1))
+#?="(stdin)":6:(fact (- n 1))
+#?="(stdin)":6:(fact (- n 1))
+#?="(stdin)":6:(fact (- n 1))
+#?="(stdin)":6:(fact (- n 1))
+#?-    1
+#?-    1
+#?-    2
+#?-    6
+#?-    24
+120
+@end example
+
+@c EN
+You can also use trace/untrace macros in Gauche, written by Shigenobu Kimura:
+@url{http://homepage.mac.com/skimu/ggc/}.
+@c JP
+また、木村栄伸さんがGauche用のtrace/untraceマクロを書いてくれました：
+@url{http://homepage.mac.com/skimu/ggc/}.
+@c COMMON
+
+@c ----------------------------------------------------------------------
+@node Profiling and tuning, Writing Gauche modules, Debugging, Programming in Gauche
+@section Profiling and tuning
+@c NODE プロファイリングとチューニング
+
+If you find your script isn't running fast enough,
+there are several possibilities to improve its performance.
+
+It is always a good idea to begin with finding which part
+of the code is consuming the execution time.   Gauche has
+a couple of basic tools to help it.  A built-in sampling profiler,
+explained in the following subsection, can show how much time
+is spent in each procedure, and how many times it is called.
+The @code{gauche.time} module (@ref{Measure timings}) also provides
+APIs to measure execution time of specific part of the code.
+
+Optimization is specialization---you look for the most common
+patterns of execution, and put a special path to support those
+patterns efficiently.  Gauche itself is no exception, so there
+are some patterns Gauche can handle very efficiently, while
+some patterns it cannot.  The next subsection, @ref{Performance tips},
+will give you some tips of how to adapt your code to fit
+the patterns Gauche can execute well.
+
+@menu
+* Using profiler::              
+* Performance tips::            
+@end menu
+
+@node Using profiler, Performance tips, Profiling and tuning, Profiling and tuning
+@subsection Using profiler
+
+As of 0.8.4, Gauche has a built-in profiler.  It is still experimental
+quality and only be tested on Linux.  It isn't available for all
+platforms.   It works only in single-thread applications for now.
+
+To use the profiler non-interactively, give @code{-ptime}
+command-line option to gosh. 
+
+@example
+% gosh -ptime your-script.scm
+@end example
+
+After the execution of @file{your-script.scm} is completed, Gauche prints
+out the table of functions with its call count and its consumed time,
+sorted by the total consumed time.
+
+@example
+Profiler statistics (total 1457 samples, 14.57 seconds)
+                                                    num    time/    total
+Name                                                calls  call(ms) samples
+---------------------------------------------------+------+-------+-----------
+combinations*                                       237351  0.0142   337( 23%)
+(lset-difference #f)                               1281837  0.0020   256( 17%)
+(make-anchor make-anchor)                          3950793  0.0005   198( 13%)
+member                                             4627246  0.0004   190( 13%)
+filter                                              273238  0.0030    81(  5%)
+every                                              1315131  0.0004    59(  4%)
+(lset-difference #f #f)                            1281837  0.0004    54(  3%)
+(make-entry make-entry)                             730916  0.0005    40(  2%)
+(clear? #f)                                         730884  0.0005    33(  2%)
+(initialize #f)                                     599292  0.0005    32(  2%)
+fold                                                237307  0.0013    30(  2%)
+acons                                               806406  0.0004    29(  1%)
+clear?                                               33294  0.0084    28(  1%)
+(combinations* #f)                                  805504  0.0002    15(  1%)
+(make-exit make-exit)                               730884  0.0002    15(  1%)
+lset-difference                                     237318  0.0006    15(  1%)
+reverse!                                            475900  0.0001     6(  0%)
+(fold <top> <top> <list>)                           237323  0.0003     6(  0%)
+procedure?                                          238723  0.0002     4(  0%)
+pair?                                               237307  0.0001     3(  0%)
+ :
+ :
+@end example
+
+Note that the time profiler uses statistic sampling.  Every 10ms
+the profiler interrupts the process and records the function that is
+executed then.   Compared to the individual execution time per
+function call, which is the order of nanoseconds, this sampilng rate
+is very sparse.  However, if we run the program long enough,
+we can expect the distribution of samples per each function 
+approximately reflects the distribution of time spent in each function.
+Keep in mind that the number is only approximation; the number
+of sample counts for a function may easily vary if the program deals
+with different data.  Yet it is helpful to know the general pattern.
+
+On the other hand, the call count is accurate since Gauche actually
+counts each call.
+
+Because all functions are basically anonymous in Scheme, the 'name' field of
+the profiler result is only a hint.  The functions bound at toplevel
+is generally printed with the global variable name it is bound at
+the first time.  Internal functions are printed as a list of names,
+reflecting the nesting of functions.  Methods are also printed as a
+list of the name and specializers.
+
+The profiler has its own overhead; generally the total
+process time will increase 20-30%.
+If you want to turn on the profiler selectively, or you're running
+a non-stop server program and want to obtain the statistics without
+exitting the server, you can call the profiler API from your program;
+see @ref{Profiler API}, for the details.
+
+
+@node Performance tips,  , Using profiler, Profiling and tuning
+@subsection Performance tips
+
+
+
+
+
+@c ----------------------------------------------------------------------
+@node Writing Gauche modules, Using extension packages, Profiling and tuning, Programming in Gauche
 @section Writing Gauche modules
 @c NODE Gaucheのモジュールを書く
 
