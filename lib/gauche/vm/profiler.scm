@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: profiler.scm,v 1.2 2005-04-12 01:42:25 shirok Exp $
+;;;  $Id: profiler.scm,v 1.3 2005-04-22 04:49:12 shirok Exp $
 ;;;
 
 ;; EXPERIMENTAL
@@ -40,7 +40,7 @@
   (use util.list)
   (use util.match)
   (extend gauche.internal)
-  (export profiler-show profiler-get-result profiler-show-results)
+  (export profiler-show profiler-get-result)
   )
 (select-module gauche.vm.profiler)
 
