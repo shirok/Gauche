@@ -1998,13 +1998,12 @@ class redefinition protocol simultaneously.   So Gauche uses
 a process-wide lock to limit only one thread to enter the
 class redefinition protocol at a time.  
 @c JP
-@subsubheading スレッド安全性についての覚書
+@subsubheading スレッド安全性について
 
-クラス再定義処理はすっかり副作用を含み、局所的な操作ではありません。
-二つのスレッドがクラス再定義プロトコルを同時に安全に走らせるというのを
-保証するのは困難です。それゆえ、Gauche では、一度にひとつのスレッドしか
-クラス再定義プロトコルに入らないように、ひとつのプロセス全体にわたる
-ロックを仕様します。
+クラス再定義処理はローカルな処理ではなく、多くの副作用を行います。
+複数のスレッドが同時にクラス再定義プロトコルを走らせた場合の
+安全性を保証するのは困難です。そこでGauche では、一度にひとつのスレッドしか
+クラス再定義プロトコルに入らないように、プロセスレベルのロックを使用します。
 @c COMMON
 
 @c EN
@@ -2053,9 +2052,9 @@ the instance update protocol.
 生じる可能性があります。このような場合がおきないようにするのは
 アプリケーションの責任です。インスタンスへのアクセスはどのみち
 システムが直列化するわけではないので、これは自然なことです。
-しかし、インスタンス内に mutex を持たせると余分な注意が必要になります。
-そのなかで、mutex にアクセスすることはインスタンス更新プロトコルを
-起動することになる可能性があります。
+インスタンス内に mutex を持たせる場合は特に注意が必要です。
+インスタンス中のmutexにアクセスするだけでインスタンス更新プロトコルを
+起動することになる可能性があるからです。
 @c COMMON
 
 @c EN
@@ -2073,7 +2072,7 @@ will turn to the redefined class.
 As far as the author knows, class redefinition is not thread-safe
 in both STklos 0.56 and Guile 1.6.4.
 @c JP
-@subsubheading 互換性に関する覚書
+@subsubheading 互換性に関して
 
 クラス再定義プロトコルは CLOS風の Scheme システムとは微妙に違います。
 Gauche のものは STklos のものによく似ていますが、STklos 0.56 は再定義
@@ -2261,11 +2260,6 @@ users, so the situation is a bit different.
 @section Instance
 @c NODE インスタンス
 
-@c EN
-In this section, we explain how to create and use an instance.
-@c JP
-この節では、インスタンスの生成のしかたと使い方について説明します。
-@c COMMON
 @c EN
 In this section, we explain how to create and use an instance.
 @c JP
@@ -2724,9 +2718,9 @@ If you desire, you can call it by your own @code{change-class} method.
 @code{Change-object-class} returns @var{obj}.
 @c JP
 オブジェクト @var{obj} のクラスを @var{orig-class} から @var{new-class}
-に変更します。これは、オブジェクトのクラスを変更するのになんらかの
-マジックが必要なジェネリック関数ではありません。この手続きは、それを
-カプセル化しています。
+に変更します。これはジェネリック関数ではありません。
+オブジェクトのクラスを変更するにはちょっとした秘密の内部的操作が必要で、
+この手続きはそれを隠蔽しています。
 
 クラスを変更する正確なステップは以下のようになっています。
 
@@ -2754,8 +2748,8 @@ If you desire, you can call it by your own @code{change-class} method.
 @end enumerate
 
 @code{initilize} メソッドは @var{obj} に対して呼ばれているわけではないことに
-注意してください。おのぞみなら、独自の @code{change-class} メソッドをで、
-それを呼ぶことができます。
+注意してください。おのぞみなら、独自の @code{change-class} メソッドを
+定義して@code{intialize}を呼ぶようにすることができます。
 
 @code{change-object-class} は @var{obj} を返します。
 @c COMMON
@@ -2767,11 +2761,11 @@ Instead, she can define a specialized @code{change-class}.  For example,
 if she wants to carry over the slot @code{x} of old class to the
 slot @code{y} of new class, she may write something like this:
 @c JP
-通常ユーザが @code{change-object-class} を直接呼ぶということは
-仮定していません。そのかわり、特定化した @code{change-class} を
-定義することができます。たとえば、旧いクラスのスロット @code{x} を
-新しいクラスのスロット @code{y} へ持ち越したいとすると、こんな風に
-書けます。
+ユーザは大抵の場合、@code{change-object-class}を直接呼ぶ必要は無いでしょう。
+そのかわり、特定化した @code{change-class} を定義するべきです。
+たとえば、旧いクラスのスロット @code{x} を
+新しいクラスのスロット @code{y} へ持ち越すことは、
+こんな風に書けば可能です。
 @c COMMON
 
 @example
@@ -2806,12 +2800,13 @@ redefining the class, and use the old class to specialize
 @c JP
 @subsubheading インスタンス更新のカスタマイズ
 
-再定義されたクラスについてインスタンスを更新は、クラス変更として
-扱われます。オブジェクトが通常のスロットアクセサ/モディファイア
-経由でアクセスされるときには、クラスは再定義されたかどうかを
-チェックされます。さらに、それが確かに再定義されていれば、
-@code{change-class} は @var{new-class} として再定義された
-クラスで呼ばれます。すなわち、インスタンスの更新はオブジェクトの
+再定義されたクラスのインスタンスが更新される場合は、それもクラス変更として
+扱われます。オブジェクトは通常のスロットアクセサ/モディファイア
+経由でアクセスされるときに、そのクラスが再定義されたかどうかを
+チェックされます。そいて再定義が行われていれば、
+再定義されたクラスを@var{new-class}として
+@code{change-class}が呼ばれます。
+すなわち、インスタンスの更新はオブジェクトの
 クラスを元々のものから再定義されたものへ変更することと看倣されます。
 
 @code{change-class} を特定化することで、インスタンスを再定義された
