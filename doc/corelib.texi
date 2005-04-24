@@ -12958,8 +12958,8 @@ The special reader syntax @code{#?=@var{expr}} is expanded into
 @end defmac
 
 @defun disasm closure
-Disassemble the compiled body of @var{closure} and prints it.
-Probably not very useful unless you're tracking a compile bug, 
+Disassemble the compiled body of @var{closure} and print it.
+It may not be very useful unless you're tracking a compiler bug, 
 or trying to tune the program to its limit.
 
 If you're reading the disassembler output, keep in mind that
