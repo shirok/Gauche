@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.7 2005-04-25 12:13:30 shirok Exp $
+;;;  $Id: compile.scm,v 1.8 2005-04-25 21:47:07 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -428,39 +428,53 @@
 
 ;; [IForm Definitions]
 
-;; $define <src> <flags> <id> <iform>
-;;   Global definition.  Binds the result of <iform> to the global
+;; $define <src> <flags> <id> <expr>
+;;   Global definition.  Binds the result of <expr> to the global
 ;;   identifier <id>.
-;;   <flags> is a list of flags.  Currently, only the following flag
-;;   is supported:
-;;
-;;      const   : the binding is constant.
-;;
-(define-simple-struct $define $DEFINE $define #f (src flags id expr))
+(define-simple-struct $define $DEFINE $define #f
+  (src       ; original source for debugging
+   flags     ; a list of flags.  Currently, only the following flag
+             ;  is supported:
+             ;      const   : the binding is constant.
+   id        ; global identifier
+   expr      ; expression IForm
+   ))
 
 ;; $lref <lvar>
 ;;   Local variable reference.
-(define-simple-struct $lref $LREF #f #f (lvar))
+(define-simple-struct $lref $LREF #f #f
+  (lvar      ; lvar struct.
+   ))
 (define-inline ($lref lvar)
   (lvar-ref++! lvar) (vector $LREF lvar))
 
-;; $lset <lvar> <iform>
-;;   Local variable assignment.  The result of <iform> is set to <lvar>.
-(define-simple-struct $lset $LSET #f #f (lvar expr))
+;; $lset <lvar> <expr>
+;;   Local variable assignment.  The result of <expr> is set to <lvar>.
+(define-simple-struct $lset $LSET #f #f
+  (lvar      ; lvar struct
+   expr      ; IForm
+   ))
 (define-inline ($lset lvar expr)
   (lvar-set++! lvar) (vector $LSET lvar expr))
 
 ;; $gref <id>
 ;;   Gloval variable reference.
-(define-simple-struct $gref $GREF $gref #f (id))
+(define-simple-struct $gref $GREF $gref #f
+  (id        ; identifier
+   ))
 
 ;; $gset <id> <iform>
 ;;   Glocal variable assignment.
-(define-simple-struct $gset $GSET $gset #f (id expr))
+(define-simple-struct $gset $GSET $gset #f
+  (id        ; identifier
+   expr      ; IForm
+   ))
 
 ;; $const <value>
-;;   Constant.  <Value> is any Scheme value.
-(define-simple-struct $const $CONST $const #f (value))
+;;   Constant.
+(define-simple-struct $const $CONST $const #f
+  (value     ; Scheme value
+   ))
 
 (define $const-undef ;; common case
   (let1 x ($const (undefined)) (lambda () x)))
@@ -468,89 +482,107 @@
   (let1 x ($const '()) (lambda () x)))
 
 ;; $if <src> <test> <then> <else>
-;;   Conditional.  <test>, <then> and <else> are IForms.
+;;   Conditional.
 ;;   A special IForm, $it, can appear in either <then> or <else>
 ;;   clause; it is no-op and indicates that the result(s) of <test>
 ;;   should be carried over.
-(define-simple-struct $if $IF $if #f (src test then else))
+(define-simple-struct $if $IF $if #f
+  (src       ; original source for debugging
+   test      ; IForm for test expression
+   then      ; IForm for then expression
+   else      ; IForm for else expression
+   ))
 
 ;; $let <src> <type> <lvars> <inits> <body>
-;;   Binding construct.  <type> can be either 'let for the normal let
-;;   or 'rec for letrec.  (let* is expanded to the nested $let in pass 1).
-;;   lvars are a list of <lvar>s, and inits are a list of IForms for
-;;   the initial values of lvars.  <body> is the body of let.
-(define-simple-struct $let $LET $let #f (src type lvars inits body))
+;;   Binding construct.  let, letrec, and inlined closure is represented
+;;   by this node (let* is expanded to the nested $let in pass 1).
+(define-simple-struct $let $LET $let #f
+  (src       ; original source for debugging
+   type      ; indicates scope: 'let for normal let, 'rec for letrec.
+   lvars     ; list of lvars
+   inits     ; list of IForms to initialize lvars
+   body      ; IForm for the body
+   ))
 
 ;; $receive <src> <reqargs> <optarg> <lvars> <expr> <body>
-;;   Multiple value binding construct.  <reqargs> is # of required local
-;;   variables, and <optarg> is either 0 (no optional variable) or
-;;   1 (has optional variable).  <lvars> is a list of <lvar>s, and
-;;   <expr> is an IForm that yields the multiple value.  <body> is
-;;   the body of receive.
-(define-simple-struct $receive $RECEIVE
-  $receive #f (src reqargs optarg lvars expr body))
+;;   Multiple value binding construct. 
+(define-simple-struct $receive $RECEIVE $receive #f
+  (src       ; original source for debugging
+   reqargs   ; # of required args
+   optarg    ; 0 or 1, # of optional arg
+   lvars     ; list of lvars
+   expr      ; IForm for the expr to yield multiple values
+   body      ; IForm for the body
+   ))
 
 ;; $lambda <src> <reqargs> <optarg> <lvars> <body> [<flag>]
-;;   Closure.  <reqargs> is # of required arguments, and <optarg> is either
-;;   0 or 1, for the # of rest argument.  <lvars> is a list of lvars
-;;   for the arguments, and <body> is the closure body.
-;;   Currently, the only valid <flag> is 'inlined, which tells that
-;;   the closure is defined with define-inline.
-;;
+;;   Closure. 
 ;;   $lambda has a couple of transient slots, which are used only
 ;;   during the optimization paths and not be saved by pack-iform.
-(define-simple-struct $lambda $LAMBDA
-  $lambda #f
-  (src name reqargs optarg lvars body flag
-       ;; The following slot(s) is/are used temporarily during pass2, and
-       ;; need not be saved when packed.
-       (calls '())      ;; list of call sites
-       (free-lvars '()) ;; list of free local variables
-       ))
+(define-simple-struct $lambda $LAMBDA $lambda #f
+  (src              ; original source for debugging
+   name             ; inferred name of this closure
+   reqargs          ; # of required args
+   optarg           ; 0 or 1, # of optional arg
+   lvars            ; list of lvars
+   body             ; IForm for the body
+   flag             ; Currently only the following flag is supported:
+                    ;   'inlinded: bound to inlinable procedure
+   ;; The following slot(s) is/are used temporarily during pass2, and
+   ;; need not be saved when packed.
+   (calls '())      ; list of call sites
+   (free-lvars '()) ; list of free local variables
+   ))
 
 ;; $label <src> <label> <body>
 ;;    This kind of IForm node is introduced in Pass2 to record a shared
 ;;    node.  It marks the destination of LOCAL-ENV-JUMP, and also is
-;;    created during $if optimization.  The <label> slot of $label IForm
-;;    is filled in Pass3 to record the label number within the compiled
-;;    code vector; in Pass2 it is #f.
-(define-simple-struct $label $LABEL $label #f (src label body))
+;;    created during $if optimization.
+(define-simple-struct $label $LABEL $label #f
+  (src       ; original source for debugging
+   label     ; label.  #f in Pass 2.  Assigned in Pass 3.
+   body      ; IForm for the body
+   ))
 
 ;; $seq <body>
 ;;    Sequensing.  <body> is a list of IForms.
 ;;    The compile tries to avoid creating $seq node if <body> has only
 ;;    one expression, but optimization paths may introduce such a $seq node.
 ;;    There can also be an empty $seq node, ($seq '()).
-(define-simple-struct $seq $SEQ #f #f (body))
+(define-simple-struct $seq $SEQ #f #f
+  (body      ; list of IForms
+   ))
+
 (define-inline ($seq exprs)
   (if (and (pair? exprs) (null? (cdr exprs)))
     (car exprs)
     (vector $SEQ exprs)))
 
 ;; $call <src> <proc> <args> [<flag>]
-;;    Call a procedure.  <proc> is an IForm that yields a procedure.
-;;    <args> is a list of IForms for arguments.
-;;    <flag> is set up during call analysis in Pass 2, and may take
-;;    one of the following values:
-;;      'local : This is a call to the locally defined procedure.
-;;               <proc> is always $lref.
-;;      'embed : This call will be inline expanded.  <proc> is
-;;               a $lambda node, whose body may be a $label node
-;;               for the target of jump nodes.
-;;      'jump  : This call will be a jump to a label.  <proc> is
-;;               a $label node.
+;;    Call a procedure.
 ;;    See the "Closure optimization" section in Pass 2 for the detailed
 ;;    description.
-(define-simple-struct $call $CALL $call #f (src proc args flag))
+(define-simple-struct $call $CALL $call #f
+  (src       ; original source for debugging
+   proc      ; IForm for the procedure to call.
+   args      ; list of IForms for arguments.
+   flag      ; #f, 'local, 'embed or 'jump.
+   ))
 
 ;; $asm <src> <insn> <args>
-;;    Inlined assembly code.  <insn> is an instruction (code & params),
-;;    and <args> is a list of IForms for the arguments.
-(define-simple-struct $asm $ASM $asm #f (src insn args))
+;;    Inlined assembly code.
+(define-simple-struct $asm $ASM $asm #f
+  (src       ; original source for debugging
+   insn      ; instruction (<code> [<param> ...])
+   args      ; list of IForms
+   ))
 
 ;; $promise <src> <expr>
 ;;    Promise.
-(define-simple-struct $promise $PROMISE $promise #f (src expr))
+(define-simple-struct $promise $PROMISE $promise #f
+  (src       ; original source for debugging
+   expr      ; IForm
+   ))
 
 ;; $it
 ;;   A special node.  See the explanation of $if above.
