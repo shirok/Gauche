@@ -1,5 +1,7 @@
 2005-04-24  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (define-simple-struct): rewrote the macro for
+	  simpler use.
 	* lib/gauche/cgen.scm: improved literal registration handling.
 	  The time for compiling compile.scm becomes a tenth of the previous
 	  version.

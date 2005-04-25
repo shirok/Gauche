@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.6 2005-04-22 23:12:10 shirok Exp $
+;;;  $Id: compile.scm,v 1.7 2005-04-25 12:13:30 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -183,47 +183,63 @@
 ;;
 ;; (define-simple-struct <name> <tag> <constructor> [<predicate> (<slot-spec>*)])
 ;;
-;; <constructor> : (<constructor-name> <slot-name> ...) | #f
+;; <constructor> : <symbol> | #f
 ;; <predicate>   : <symbol> | #f
-;; <slot-spec>   : (<slot-name> [<init-value>]) | <slot-name>
+;; <slot-spec>   : <slot-name> | (<slot-name> [<init-value>])
 ;;
 ;; For each <slot-spec>, the following accessor/modifier are automatially
+;; generated.  
 ;;
 ;;   NAME-SLOT      - accessor (macro)
 ;;   NAME-SLOT-set! - modifier (macro)
 ;;
-;; Arguments for the constructor is specified by <constructor> clause.
-;; It lists the slot names that should be given to the constructor.
-;; The slots which is not listed in INITARGS are initilialized by its
-;; INIT-VALUE, or #f if INIT-VALUE isn't specified.
-;;
-;; If <slot-spec>s are omitted, the constructor arguments are used as
-;; slot names.
-;;
+;; If a symbol is given as <constructor>, it becomes a macro to construct
+;; the structure.  It can take zero to as many arguments as the # of slots.
+;; The arguments to the constructor initializes the slots in the order of
+;; their appearance in define-simple-struct.  If not enough arguments are
+;; given to the constructor, the rest of slots are initialized by each
+;; <init-value> (or #f if <init-value> is omitted).
+
 (define-macro (define-simple-struct name tag constructor . opts)
   (let-optionals* opts ((predicate #f)
-                       (slots (cdr constructor)))
+                        (slot-defs '()))
+    (define (take l n) ; we can't use srfi-1 take, so here it is.
+      (if (zero? n)
+        '()
+        (cons (car l) (take (cdr l) (- n 1)))))
+    (define (make-constructor)
+      (let ((args (gensym))
+            (num-slots  (length slot-defs))
+            (slot-names (map (lambda (s) (if (symbol? s) s (car s)))
+                             slot-defs))
+            (init-vals  (map (lambda (s) (if (symbol? s) #f (cadr s)))
+                             slot-defs)))
+        `(define-macro (,constructor . ,args)
+           (match ,args
+             ,@(let loop ((n 0)
+                          (r '()))
+                 (if (> n num-slots)
+                   r
+                   (let1 carg (take slot-names n)
+                     (loop (+ n 1)
+                           (cons
+                            `(,carg
+                              (list 'vector
+                                    ',tag ,@carg
+                                    ,@(map (cut list 'quote <>)
+                                           (list-tail init-vals n))))
+                            r)))
+                   ))))
+        ))
     `(begin
        ,@(if constructor
-           (let ((constructor-name (car constructor))
-                 (initializer (map (lambda (s)
-                                     (receive (n v)
-                                         (if (pair? s)
-                                           (values (car s) (cdr s))
-                                           (values s '()))
-                                       (cond ((memq n (cdr constructor)) n)
-                                             ((null? v) #f)
-                                             (else (car v)))))
-                                   slots))
-                 )
-             `((define-inline (,constructor-name ,@(cdr constructor))
-                 (vector ,tag ,@initializer))))
+           `(,(make-constructor))
            '())
        ,@(if predicate
            `((define (,predicate obj)
                (and (vector? obj) (eqv? (vector-ref obj 0) ,tag))))
            '())
-       ,@(let loop ((s slots) (i 1) (r '()))
+       ,@(let loop ((s slot-defs) (i 1) (r '()))
            (if (null? s)
              (reverse! r)
              (let* ((slot-name (if (pair? (car s)) (caar s) (car s)))
@@ -252,8 +268,9 @@
 ;;
 
 (define-simple-struct lvar 'lvar
-  (make-lvar name) lvar?
-  ((name)
+  make-lvar
+  lvar?
+  (name
    (initval (undefined))
    (ref-count 0)
    (call-count 0) ;; will be gone
@@ -297,7 +314,7 @@
 ;; If you change this structure here, adjust compaux.c accordingly.
 
 (define-simple-struct cenv 'cenv
-  (make-cenv module frames exp-name) #f
+  make-cenv #f
   (module frames exp-name current-proc))
 
 (define (cenv-copy cenv) (vector-copy cenv))
@@ -351,6 +368,9 @@
 ;;   convenience node types specific to our VM.   IForm is represented
 ;;   by a nested vectors, whose first element shows the type of the node.
 ;;
+;;   The following table is an overview of the structure.  See
+;;   [IForm Definitions] section below for the detailed specification.
+;;
 ;; <top-iform> :=
 ;;    <iform>
 ;;    #($define <o> <flags> <id> <iform>)
@@ -363,20 +383,15 @@
 ;;    #($const <obj>)        ;; constant literal
 ;;    #($if <o> <iform> <iform+> <iform+>) ;; branch
 ;;    #($let <o> <type> (<lvar> ...) (<iform> ...) <iform>) ;; local binding
-;;                           ;; type : 'let | 'rec
 ;;    #($receive <o> <reqarg> <optarg> (<lvar> ...) <iform> <iform>)
 ;;                           ;; local binding (mv)
 ;;    #($lambda <o> <name> <reqarg> <optarg> (<lvar> ...) <iform> <flag>)
 ;;                           ;; closure
-;;                           ;; <flag> : #f, inlined, rec, local
 ;;    #($label <o> <label> <iform>) ;; merge point of local call.  see below.
 ;;    #($promise <o> <expr>) ;; promise
 ;;    #($seq (<iform> ...))   ;; sequencing
 ;;    #($call <o> <proc-expr> (<arg-expr> ...) <flag>) ;; procedure call
-;;                           ;; <flag> may be #f or 'tail-local
-;;
 ;;    #($asm <o> <insn> (<arg> ...)) ;; inline assembler
-;;
 ;;    #($cons <o> <ca> <cd>)       ;; used in quasiquote
 ;;    #($append <o> <ca> <cd>)     ;; ditto
 ;;    #($vector <o> (<elt> ...))   ;; ditto
@@ -403,12 +418,6 @@
 ;;      to keep allocations minimal.   Nodes shouldn't be shared, for
 ;;      side-effects may vary depends on the path to the node.  The only
 ;;      exception is $label node.
-;;
-;;  NB: $label IForm is introduced in Pass2 to record the shared node.
-;;      It marks the destination of LOCAL-ENV-JUMP, and also is created
-;;      during $if optimization.  The <label> slot of
-;;      $label IForm is filled in Pass3 to record the label number within
-;;      the compiled code vector; in Pass2 it is #f.
 
 (define-macro (iform-tag iform)
   `(vector-ref ,iform 0))
@@ -417,38 +426,81 @@
 (define-macro (has-tag? iform tag)
   `(eqv? (vector-ref ,iform 0) ,tag))
 
-;; intermediate form definitions
+;; [IForm Definitions]
 
-(define-simple-struct $define $DEFINE ($define src flags id expr))
+;; $define <src> <flags> <id> <iform>
+;;   Global definition.  Binds the result of <iform> to the global
+;;   identifier <id>.
+;;   <flags> is a list of flags.  Currently, only the following flag
+;;   is supported:
+;;
+;;      const   : the binding is constant.
+;;
+(define-simple-struct $define $DEFINE $define #f (src flags id expr))
 
+;; $lref <lvar>
+;;   Local variable reference.
 (define-simple-struct $lref $LREF #f #f (lvar))
 (define-inline ($lref lvar)
   (lvar-ref++! lvar) (vector $LREF lvar))
 
+;; $lset <lvar> <iform>
+;;   Local variable assignment.  The result of <iform> is set to <lvar>.
 (define-simple-struct $lset $LSET #f #f (lvar expr))
 (define-inline ($lset lvar expr)
   (lvar-set++! lvar) (vector $LSET lvar expr))
 
-(define-simple-struct $gref $GREF ($gref id))
+;; $gref <id>
+;;   Gloval variable reference.
+(define-simple-struct $gref $GREF $gref #f (id))
 
-(define-simple-struct $gset $GSET ($gset id expr))
+;; $gset <id> <iform>
+;;   Glocal variable assignment.
+(define-simple-struct $gset $GSET $gset #f (id expr))
 
-(define-simple-struct $const $CONST ($const value))
+;; $const <value>
+;;   Constant.  <Value> is any Scheme value.
+(define-simple-struct $const $CONST $const #f (value))
 
 (define $const-undef ;; common case
   (let1 x ($const (undefined)) (lambda () x)))
 (define $const-nil
   (let1 x ($const '()) (lambda () x)))
 
-(define-simple-struct $if $IF ($if src test then else))
+;; $if <src> <test> <then> <else>
+;;   Conditional.  <test>, <then> and <else> are IForms.
+;;   A special IForm, $it, can appear in either <then> or <else>
+;;   clause; it is no-op and indicates that the result(s) of <test>
+;;   should be carried over.
+(define-simple-struct $if $IF $if #f (src test then else))
 
-(define-simple-struct $let $LET ($let src type lvars inits body))
+;; $let <src> <type> <lvars> <inits> <body>
+;;   Binding construct.  <type> can be either 'let for the normal let
+;;   or 'rec for letrec.  (let* is expanded to the nested $let in pass 1).
+;;   lvars are a list of <lvar>s, and inits are a list of IForms for
+;;   the initial values of lvars.  <body> is the body of let.
+(define-simple-struct $let $LET $let #f (src type lvars inits body))
 
+;; $receive <src> <reqargs> <optarg> <lvars> <expr> <body>
+;;   Multiple value binding construct.  <reqargs> is # of required local
+;;   variables, and <optarg> is either 0 (no optional variable) or
+;;   1 (has optional variable).  <lvars> is a list of <lvar>s, and
+;;   <expr> is an IForm that yields the multiple value.  <body> is
+;;   the body of receive.
 (define-simple-struct $receive $RECEIVE
-  ($receive src reqargs optarg lvars expr body))
+  $receive #f (src reqargs optarg lvars expr body))
 
+;; $lambda <src> <reqargs> <optarg> <lvars> <body> [<flag>]
+;;   Closure.  <reqargs> is # of required arguments, and <optarg> is either
+;;   0 or 1, for the # of rest argument.  <lvars> is a list of lvars
+;;   for the arguments, and <body> is the closure body.
+;;   Currently, the only valid <flag> is 'inlined, which tells that
+;;   the closure is defined with define-inline.
+;;
+;;   $lambda has a couple of transient slots, which are used only
+;;   during the optimization paths and not be saved by pack-iform.
 (define-simple-struct $lambda $LAMBDA
-  ($lambda src name reqargs optarg lvars body flag) #f
+  $lambda #f
   (src name reqargs optarg lvars body flag
        ;; The following slot(s) is/are used temporarily during pass2, and
        ;; need not be saved when packed.
@@ -456,20 +508,57 @@
        (free-lvars '()) ;; list of free local variables
        ))
 
-(define-simple-struct $label $LABEL ($label src label body))
+;; $label <src> <label> <body>
+;;    This kind of IForm node is introduced in Pass2 to record a shared
+;;    node.  It marks the destination of LOCAL-ENV-JUMP, and also is
+;;    created during $if optimization.  The <label> slot of $label IForm
+;;    is filled in Pass3 to record the label number within the compiled
+;;    code vector; in Pass2 it is #f.
+(define-simple-struct $label $LABEL $label #f (src label body))
 
+;; $seq <body>
+;;    Sequensing.  <body> is a list of IForms.
+;;    The compile tries to avoid creating $seq node if <body> has only
+;;    one expression, but optimization paths may introduce such a $seq node.
+;;    There can also be an empty $seq node, ($seq '()).
 (define-simple-struct $seq $SEQ #f #f (body))
 (define-inline ($seq exprs)
   (if (and (pair? exprs) (null? (cdr exprs)))
     (car exprs)
     (vector $SEQ exprs)))
 
-(define-simple-struct $call $CALL ($call src proc args flag))
+;; $call <src> <proc> <args> [<flag>]
+;;    Call a procedure.  <proc> is an IForm that yields a procedure.
+;;    <args> is a list of IForms for arguments.
+;;    <flag> is set up during call analysis in Pass 2, and may take
+;;    one of the following values:
+;;      'local : This is a call to the locally defined procedure.
+;;               <proc> is always $lref.
+;;      'embed : This call will be inline expanded.  <proc> is
+;;               a $lambda node, whose body may be a $label node
+;;               for the target of jump nodes.
+;;      'jump  : This call will be a jump to a label.  <proc> is
+;;               a $label node.
+;;    See the "Closure optimization" section in Pass 2 for the detailed
+;;    description.
+(define-simple-struct $call $CALL $call #f (src proc args flag))
 
-(define-simple-struct $asm $ASM ($asm src insn args))
+;; $asm <src> <insn> <args>
+;;    Inlined assembly code.  <insn> is an instruction (code & params),
+;;    and <args> is a list of IForms for the arguments.
+(define-simple-struct $asm $ASM $asm #f (src insn args))
 
-(define-simple-struct $promise $PROMISE ($promise src expr))
+;; $promise <src> <expr>
+;;    Promise.
+(define-simple-struct $promise $PROMISE $promise #f (src expr))
 
+;; $it
+;;   A special node.  See the explanation of $if above.
+(define $it (let ((c `#(,$IT))) (lambda () c)))
+
+
+;; The followings are builtin version of standard procedures.
+;; 
 (define-simple-struct $cons $CONS #f #f (arg0 arg1))
 
 ;; quasiquote tends to generate nested $cons, which can be
@@ -488,16 +577,14 @@
       (values type (cons (vector-ref elt 2) elts))))
    (else (values $LIST* (list elt)))))
 
-(define-simple-struct $append $APPEND ($append src arg0 arg1))
-(define-simple-struct $memv   $MEMV   ($memv src arg0 arg1))
-(define-simple-struct $eq?    $EQ?    ($eq? src arg0 arg1))
-(define-simple-struct $eqv?   $EQV?   ($eqv? src arg0 arg1))
-(define-simple-struct $vector $VECTOR ($vector src args))
-(define-simple-struct $list   $LIST   ($list src args))
-(define-simple-struct $list*  $LIST*  ($list* src args))
-(define-simple-struct $list->vector $LIST->VECTOR  ($list->vector src arg0))
-
-(define $it (let ((c `#(,$IT))) (lambda () c)))
+(define-simple-struct $append $APPEND $append #f (src arg0 arg1))
+(define-simple-struct $memv   $MEMV   $memv #f (src arg0 arg1))
+(define-simple-struct $eq?    $EQ?    $eq? #f (src arg0 arg1))
+(define-simple-struct $eqv?   $EQV?   $eqv? #f (src arg0 arg1))
+(define-simple-struct $vector $VECTOR $vector #f (src args))
+(define-simple-struct $list   $LIST   $list #f (src args))
+(define-simple-struct $list*  $LIST*  $list* #f (src args))
+(define-simple-struct $list->vector $LIST->VECTOR $list->vector #f (src arg0))
 
 ;; common accessors
 (define-macro ($*-src  iform)  `(vector-ref ,iform 1))
@@ -1249,19 +1336,19 @@
 ;; 
 (define (pass1/call program proc args cenv)
   (case (length args)
-    ((0) ($call program proc () #f))
+    ((0) ($call program proc ()))
     ((1) ($call program proc
-                (list (pass1 (car args) (cenv-sans-name cenv))) #f))
+                (list (pass1 (car args) (cenv-sans-name cenv)))))
     ((2) (let1 cenv (cenv-sans-name cenv)
            ($call program proc (list (pass1 (car args) cenv)
-                                     (pass1 (cadr args) cenv)) #f)))
+                                     (pass1 (cadr args) cenv)))))
     ((3) (let1 cenv (cenv-sans-name cenv)
            ($call program proc (list (pass1 (car args) cenv)
                                      (pass1 (cadr args) cenv)
-                                     (pass1 (caddr args) cenv)) #f)))
+                                     (pass1 (caddr args) cenv)))))
     (else
      ($call program proc
-            (map (cute pass1 <> (cenv-sans-name cenv)) args) #f))))
+            (map (cute pass1 <> (cenv-sans-name cenv)) args)))))
 
 ;; Compiling body with internal definitions.
 ;;
@@ -1699,8 +1786,7 @@
                     ($lref tmp)
                     ($call (car cls)
                            (pass1 proc (cenv-sans-name cenv))
-                           (list ($lref tmp))
-                           #f)
+                           (list ($lref tmp)))
                     (process-clauses rest)))))
       (((test) . rest)
        ($if (car cls) (pass1 test (cenv-sans-name cenv))
@@ -1934,7 +2020,7 @@
 
 (define (pass1/lambda form formals body cenv flag)
   (receive (args reqargs optarg) (parse-lambda-args formals)
-    (let* ((lvars (map make-lvar args))
+    (let* ((lvars (map (lambda (x) (make-lvar x)) args))
            (intform ($lambda form (cenv-exp-name cenv)
                              reqargs optarg lvars #f flag))
            (newenv (cenv-extend/proc cenv (map cons args lvars)
@@ -1946,7 +2032,7 @@
   (match form
     ((_ formals expr body ...)
      (receive (args reqargs optarg) (parse-lambda-args formals)
-       (let* ((lvars (map make-lvar args))
+       (let* ((lvars (map (lambda (x) (make-lvar x)) args))
               (newenv (cenv-extend cenv (map cons args lvars) LEXICAL)))
          ($receive form reqargs optarg lvars (pass1 expr cenv)
                    (pass1/body body '() newenv)))))
@@ -1958,7 +2044,7 @@
     ((_ () body ...)
      (pass1/body body '() cenv))
     ((_ ((var expr) ...) body ...)
-     (let* ((lvars (map make-lvar var))
+     (let* ((lvars (map (lambda (x) (make-lvar x)) var))
             (newenv (cenv-extend cenv (map cons var lvars) LEXICAL)))
        ($let form 'let lvars
              (map (lambda (init lvar)
@@ -1985,18 +2071,17 @@
      ;;  The reason is that this form can be more easily spotted by
      ;;  our simple-minded closure optimizer in Pass 2.
      (let* ((lvar (make-lvar name))
-            (args (map make-lvar var))
+            (args (map (lambda (x) (make-lvar x)) var))
             (env1 (cenv-extend cenv `((,name . ,lvar)) LEXICAL))
             (env2 (cenv-extend/name env1 (map cons var args) LEXICAL name))
             (lmda ($lambda form name (length args) 0 args
-                           (pass1/body body '() env2) #f)))
+                           (pass1/body body '() env2))))
        (lvar-initval-set! lvar lmda)
        ($let form 'rec
              (list lvar)
              (list lmda)
              ($call #f ($lref lvar)
-                    (map (cute pass1 <> (cenv-sans-name cenv)) expr)
-                    #f))))
+                    (map (cute pass1 <> (cenv-sans-name cenv)) expr)))))
     (else
      (error "syntax-error: malformed let:" form))))
 
@@ -2021,7 +2106,7 @@
     ((_ () body ...)
      (pass1/body body '() cenv))
     ((_ ((var expr) ...) body ...)
-     (let* ((lvars (map make-lvar var))
+     (let* ((lvars (map (lambda (x) (make-lvar x)) var))
             (newenv (cenv-extend cenv (map cons var lvars) LEXICAL))
             )
        ($let form 'rec lvars
@@ -2039,7 +2124,7 @@
   (match form
     ((_ ((var init . update) ...) (test expr ...) body ...)
      (let* ((tmp  (make-lvar 'do-proc))
-            (args (map make-lvar var))
+            (args (map (lambda (x) (make-lvar x)) var))
             (newenv (cenv-extend/proc cenv (map cons var args) LEXICAL 'do-proc))
             (clo ($lambda
                   form 'do-body (length var) 0 args
@@ -2061,8 +2146,7 @@
                                          (else
                                           (error "bad update expr in do:"
                                                  form))))
-                                     update args)
-                                #f))))
+                                     update args)))))
                   #f))
             )
        (lvar-initval-set! tmp clo)
@@ -2071,8 +2155,7 @@
              (list clo)
              ($call form
                     ($lref tmp)
-                    (map (cute pass1 <> (cenv-sans-name cenv)) init)
-                    #f))))
+                    (map (cute pass1 <> (cenv-sans-name cenv)) init)))))
     (else
      (error "syntax-error: malformed do:" form))))
 
@@ -2087,8 +2170,7 @@
                    (list (pass1 op cenv)) #f)
             (let1 cenv (cenv-sans-name cenv)
               (append (map (cut pass1 <> cenv) args)
-                      (list (pass1 expr cenv))))
-            #f))
+                      (list (pass1 expr cenv))))))
     ((_ name expr)
      (unless (variable? name)
        (error "syntax-error: malformed set!:" form))
@@ -3869,7 +3951,7 @@
          (receive (num tree) (check-numeric-constant x cenv)
            (if num
              (or tree ($const num))
-             ($call form ($gref (ensure-identifier '+ cenv)) (list tree) #f))))
+             ($call form ($gref (ensure-identifier '+ cenv)) (list tree)))))
         ((x y . more)
          (receive (xval xtree) (check-numeric-constant x cenv)
            (receive (yval ytree) (check-numeric-constant y cenv)
@@ -3939,7 +4021,7 @@
          (receive (num tree) (check-numeric-constant x cenv)
            (if (number? num)
              (or tree ($const num))
-             ($call form ($gref (ensure-identifier '* cenv)) (list tree) #f))))
+             ($call form ($gref (ensure-identifier '* cenv)) (list tree)))))
         ((x y . more)
          (receive (xval xtree) (check-numeric-constant x cenv)
            (receive (yval ytree) (check-numeric-constant y cenv)
@@ -3969,7 +4051,7 @@
          (receive (num tree) (check-numeric-constant x cenv)
            (if (number? num)
              ($const (/ num))
-             ($call form ($gref (ensure-identifier '/ cenv)) (list tree) #f))))
+             ($call form ($gref (ensure-identifier '/ cenv)) (list tree)))))
         ((x y . more)
          (receive (xval xtree) (check-numeric-constant x cenv)
            (receive (yval ytree) (check-numeric-constant y cenv)
