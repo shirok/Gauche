@@ -1,3 +1,9 @@
+2005-04-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen.scm: improved literal registration handling.
+	  The time for compiling compile.scm becomes a tenth of the previous
+	  version.
+
 2005-04-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (run_loop): changed LOCAL-ENV-JUMP, LOCAL-ENV-CALL, and
