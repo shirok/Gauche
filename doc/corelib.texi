@@ -13025,7 +13025,7 @@ program.
 Starts the sampling profiler.   If the profiler is already started,
 nothing is done.
 @c JP
-サンプリングプロファイラを始動します．プロファイラが既に始動しいる場合
+標本化プロファイラを始動します．プロファイラが既に始動しいる場合
 には何もしません．
 @c COMMON
 @end defun
@@ -13037,9 +13037,9 @@ the internal structure.   If there are already saved sampled data,
 the newly obtained data is added to it.
 If the profiler isn't running, nothing is done.
 @c JP
-サンプリングプロファイラを停止し，収集したデータを内部データ構
-造に保存します．既に収集したデータが保存されていた場合には，新
-しく収集されたデータがその後に追加されます．もしプロファイラが動いてい
+標本化プロファイラを停止し，標本データを内部データ構
+造に保存します．既に標本データが保存されていた場合には，新
+しく収集された標本データがその後に追加されます．もしプロファイラが動いてい
 なかった場合には何もしません．
 @c COMMON
 @end defun
@@ -13049,8 +13049,9 @@ If the profiler isn't running, nothing is done.
 Stop the profiler if it is running.  Then discard the
 saved sampled data.
 @c JP
-もしプロファイラが動いていれば，それを停止し，保存されていた収集データ
+もしプロファイラが動いていれば，それを停止し，保存されていた標本データ
 を破棄します．
+
 @c COMMON
 @end defun
 
@@ -13058,7 +13059,7 @@ saved sampled data.
 @c EN
 Show the saved sampled data.  
 @c JP
-格納されている収集したデータを表示します．
+格納されている標本データを表示します．
 @c COMMON
 
 @c EN
