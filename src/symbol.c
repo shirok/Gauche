@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: symbol.c,v 1.31 2004-01-18 12:07:31 shirok Exp $
+ *  $Id: symbol.c,v 1.32 2005-04-27 02:06:44 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -182,7 +182,7 @@ static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 static void gloc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmGloc *g = SCM_GLOC(obj);
-    Scm_Printf(port, "#<gloc %A::%S>", g->module->name, g->name);
+    Scm_Printf(port, "#<gloc %S#%S>", g->module->name, g->name);
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_GlocClass, gloc_print);
@@ -208,7 +208,7 @@ ScmObj Scm_MakeConstGloc(ScmSymbol *sym, ScmModule *module)
 
 ScmObj Scm_GlocConstSetter(ScmGloc *gloc, ScmObj val)
 {
-    Scm_Error("cannot change constant value of %S::%S",
+    Scm_Error("cannot change constant value of %S#%S",
               gloc->module->name, gloc->name);
     return SCM_UNDEFINED;       /* dummy */
 }
