@@ -12942,8 +12942,7 @@ Bound to a positive integer that @code{sys-random} may return.
 Gauche has some basic built-in APIs to help developers
 to analyze the program.
 @c JP
-Gauche には開発者がプログラムを解析するための基本的な組込みAPIがありま
-す．
+Gauche には開発者がプログラムを解析するための基本的な組込みAPIがあります。
 @c COMMON
 
 @menu
@@ -12960,8 +12959,8 @@ Gauche には開発者がプログラムを解析するための基本的な組込みAPIがありま
 This macro prints @var{expr} in a source form, then evaluates it,
 then prints out the result(s), and returns them.
 @c JP
-このマクロは@var{expr}をそのフォームのまま印字してから，その式を評価し，
-評価の結果を印字し，その値を返します．
+このマクロは@var{expr}をそのフォームのまま印字してから、その式を評価し、
+評価の結果を印字し、その値を返します。
 @c COMMON
 
 @c EN
@@ -12969,9 +12968,9 @@ The special reader syntax @code{#?=@var{expr}} is expanded into
 @code{(debug-print @var{expr})}.  See @ref{Debugging}, for the
 details.
 @c JP
-特殊リーダー構文 @code{#?=@var{expr}} は code{(debug-print
-@var{expr})} に展開されます．詳細については @ref{Debugging} を参照して
-ください．
+特殊リーダー構文 @code{#?=@var{expr}} は
+@code{(debug-print @var{expr})} に展開されます。
+詳細については @ref{Debugging} を参照してください。
 @c COMMON
 @end defmac
 
@@ -12981,9 +12980,9 @@ Disassemble the compiled body of @var{closure} and print it.
 It may not be very useful unless you're tracking a compiler bug, 
 or trying to tune the program to its limit.
 @c JP
-コンパイル済の@var{closure}の本体部分をディスアセンブルし，それを印字
-します．これはコンパイラのバグをなんとかしようという場合か，限界まで
-チューンしようとしないかぎりは役には立たないでしょう．
+コンパイル済の@var{closure}の本体部分をディスアセンブルして印字します。
+これはコンパイラのバグをなんとかしようという場合か、限界まで
+チューンしようとしないかぎりは役には立たないでしょう。
 @c COMMON
 
 @c EN
@@ -12992,10 +12991,10 @@ the compiled code vector may have some dead code; they are produced
 by the jump optimization, but the compiler doesn't bother to eliminate
 them.
 @c JP
-このディスアセンブラの出力結果を読む場合には，コンパイルされたコードに
-はデッドコードが含まれている可能性があることを心してください．デッドコー
-ドはジャンプ最適化によって生成されるのですが，コンパイラはこれをわざわ
-ざ除去することはしていません．
+このディスアセンブラの出力結果を読む場合には、コンパイルされたコードに
+はデッドコードが含まれている可能性があることを心してください。デッドコー
+ドはジャンプ最適化によって生成されるのですが、コンパイラはこれをわざわ
+ざ除去することはしていません。
 @c COMMON
 @end defun
 
@@ -13007,9 +13006,9 @@ them.
 These are the functions to control Gauche's built-in profiler.
 See @ref{Using profiler} for the explanation of the profiler.
 @c JP
-ここに挙げている関数は，Gauche の組込みプロファイラを制御するためのも
-のです．プロファイラの説明については @ref{Using profiler} を参照してく
-ださい． 
+ここに挙げている関数は、Gauche の組込みプロファイラを制御するためのも
+のです。プロファイラの説明については @ref{Using profiler} を参照してく
+ださい。 
 @c COMMON
 
 @c EN
@@ -13017,7 +13016,7 @@ Note that the profiler doesn't work correctly yet in multi-threaded
 program.
 @c JP
 注意：現時点ではプロファイラはマルチスレッドプログラムでは正しく動作し
-ません．
+ません。
 @c COMMON
 
 @defun profiler-start
@@ -13025,8 +13024,8 @@ program.
 Starts the sampling profiler.   If the profiler is already started,
 nothing is done.
 @c JP
-標本化プロファイラを始動します．プロファイラが既に始動しいる場合
-には何もしません．
+標本化プロファイラを始動します。プロファイラが既に始動しいる場合
+には何もしません。
 @c COMMON
 @end defun
 
@@ -13037,10 +13036,10 @@ the internal structure.   If there are already saved sampled data,
 the newly obtained data is added to it.
 If the profiler isn't running, nothing is done.
 @c JP
-標本化プロファイラを停止し，標本データを内部データ構
-造に保存します．既に標本データが保存されていた場合には，新
-しく収集された標本データがその後に追加されます．もしプロファイラが動いてい
-なかった場合には何もしません．
+標本化プロファイラを停止し、標本データを内部データ構
+造に保存します。既に標本データが保存されていた場合には、新
+しく収集された標本データがその後に追加されます。もしプロファイラが動いてい
+なかった場合には何もしません。
 @c COMMON
 @end defun
 
@@ -13049,8 +13048,8 @@ If the profiler isn't running, nothing is done.
 Stop the profiler if it is running.  Then discard the
 saved sampled data.
 @c JP
-もしプロファイラが動いていれば，それを停止し，保存されていた標本データ
-を破棄します．
+もしプロファイラが動いていればそれを停止し、保存されていた標本データ
+を破棄します。
 
 @c COMMON
 @end defun
@@ -13059,7 +13058,7 @@ saved sampled data.
 @c EN
 Show the saved sampled data.  
 @c JP
-格納されている標本データを表示します．
+格納されている標本データを表示します。
 @c COMMON
 
 @c EN
@@ -13067,16 +13066,16 @@ The keyword argument @var{sort-by} may be one of the symbols
 @code{time}, @code{count}, or @code{time-per-call}, to specify
 how the result should be sorted.  The default is @code{time}.
 @c JP
-キーワード引数 @var{sort-by} は指定する場合は，@code{time}，
-@code{count} または @code{time-per-call} のどれかひとつです．
-これで結果の整列順を指定します．デフォルトでは @code{time}です．
+キーワード引数 @var{sort-by} は指定する場合は、@code{time}、
+@code{count} または @code{time-per-call} のどれかひとつです。
+これで結果の整列順を指定します。デフォルトでは @code{time}です。
 @c COMMON
 
 @c EN
 The keyword argument @var{max-rows} specifies the max number of
 rows to be shown.  If it is @code{#f}, all the data is shown.
 @c JP
-キーワード引数 @var{max-rows} では結果を表示する最大行数を指定します．
-この値が @code{#f} であればすべてのデータが表示されます．
+キーワード引数 @var{max-rows} では結果を表示する最大行数を指定します。
+この値が @code{#f} であればすべてのデータが表示されます。
 @c COMMON
 @end defun
