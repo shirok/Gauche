@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.221 2005-04-22 23:12:10 shirok Exp $
+ *  $Id: vm.c,v 1.222 2005-04-27 02:35:09 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -246,6 +246,13 @@ pthread_key_t Scm_VMKey(void)
 #else
 #define MOSTLY_FALSE(expr)  expr
 #endif
+
+/* Find the stack bottom next to the continuation frame.
+   This macro should be applied only if CONT is in stack. */
+#define CONT_FRAME_END(cont)                                            \
+    ((cont)->argp?                                                      \
+     ((ScmObj*)(cont) + CONT_FRAME_SIZE) :          /*Scheme continuation*/ \
+     ((ScmObj*)(cont) + CONT_FRAME_SIZE + (cont)->size)) /*C continuation*/
 
 /* check if *pc is an return instruction.  if so, some
    shortcuts are taken. */
@@ -724,12 +731,7 @@ pthread_key_t Scm_VMKey(void)
                 argc = SP - ARGP;
 
                 if (IN_STACK_P((ScmObj*)CONT)) {
-                    if (CONT->argp) {
-                        to = (ScmObj*)CONT + CONT_FRAME_SIZE;
-                    } else {
-                        /* C continuation */
-                        to = (ScmObj*)CONT + CONT_FRAME_SIZE + CONT->size;
-                    }
+                    to = CONT_FRAME_END(CONT);
                 } else {
                     /* continuation has been saved, which means the
                        stack has no longer useful information. */
@@ -1102,22 +1104,67 @@ pthread_key_t Scm_VMKey(void)
             }
             CASE(SCM_VM_LOCAL_ENV_JUMP) {
                 int nargs = SP - ARGP;
+                int env_depth = SCM_VM_INSN_ARG(code);
                 ScmObj *to;
-                /* We can discard the existing frame by shifting the
-                   current argument frame next to the top continuation
-                   frame.  See SCM_VM_TAIL_CALL for the detailed
-                   explanation. */
-                if (IN_STACK_P((ScmObj*)CONT)) {
-                    if (CONT->argp) {
-                        to = (ScmObj*)CONT + CONT_FRAME_SIZE;
+#define ENV_ADJUST 1
+#if ENV_ADJUST
+                ScmEnvFrame *tenv = ENV;
+                /* We can discard env_depth environment frames.
+                   There are several cases:
+
+                   - if the target env frame (TENV) is in stack:
+                   -- if the current cont frame is over TENV
+                       => shift argframe on top of the current cont frame
+                   -- otherwise => shift argframe on top of TENV
+                   - if TENV is in heap:
+                   -- if the current cont frame is in stack
+                       => shift argframe on top of the current cont frame
+                   -- otherwise => shift argframe at the stack base
+                */
+                //fprintf(stderr, "depth=%d ", env_depth);
+                while (env_depth-- > 0) {
+                    SCM_ASSERT(tenv);
+                    tenv = tenv->up;
+                }
+                //fprintf(stderr, "tenv=%p ", tenv);
+                if (IN_STACK_P((ScmObj*)tenv)) {
+                    if (IN_STACK_P((ScmObj*)CONT)
+                        && (ScmObj*)CONT > (ScmObj*)tenv) {
+                        //fprintf(stderr," 0 ");
+                        to = CONT_FRAME_END(CONT);
                     } else {
-                        /* C continuation */
-                        to = (ScmObj*)CONT + CONT_FRAME_SIZE + CONT->size;
+                        //fprintf(stderr," 1 ");
+                        to = (ScmObj*)tenv + ENV_HDR_SIZE;
                     }
                 } else {
-                    /* continuation has been saved */
+                    if (IN_STACK_P((ScmObj*)CONT)) {
+                        //fprintf(stderr," 2 ");
+                        to = CONT_FRAME_END(CONT);
+                    } else {
+                        /* continuation has been saved */
+                        //fprintf(stderr," 3 ");
+                        to = vm->stackBase;
+                    }
+                }
+                //fprintf(stderr, "to=%p\n", to);
+#else
+                ScmEnvFrame *tenv = ENV;
+                while (env_depth-- > 0) {
+                    if (tenv == NULL) {
+                        fprintf(stderr, "Discrepancy!\n");
+                        Scm_CompiledCodeDump(vm->base);
+                        break;
+                    }
+                    tenv = tenv->up;
+                }
+                
+                
+                if (IN_STACK_P((ScmObj*)CONT)) {
+                    to = CONT_FRAME_END(CONT);
+                } else {
                     to = vm->stackBase;
                 }
+#endif
                 if (nargs > 0 && to != ARGP) {
                     ScmObj *t = to, *a = ARGP;
                     int c;
@@ -1126,9 +1173,17 @@ pthread_key_t Scm_VMKey(void)
                 ARGP = to;
                 SP = to + nargs;
                 if (nargs > 0) {
+#if ENV_ADJUST
+                    FINISH_ENV(SCM_FALSE, tenv);
+#else
                     FINISH_ENV(SCM_FALSE, CONT->env);
+#endif
                 } else {
+#if ENV_ADJUST
+                    ENV = tenv;
+#else
                     ENV = CONT->env;
+#endif
                 }
                 FETCH_LOCATION(PC);
                 NEXT;
@@ -1138,14 +1193,8 @@ pthread_key_t Scm_VMKey(void)
                 ScmObj *to;
                 VM_ASSERT(SCM_CLOSUREP(VAL0));
                 if (IN_STACK_P((ScmObj*)CONT)) {
-                    if (CONT->argp) {
-                        to = (ScmObj*)CONT + CONT_FRAME_SIZE;
-                    } else {
-                        /* C continuation */
-                        to = (ScmObj*)CONT + CONT_FRAME_SIZE + CONT->size;
-                    }
+                    to = CONT_FRAME_END(CONT);
                 } else {
-                    /* continuation has been saved */
                     to = vm->stackBase;
                 }
                 if (nargs > 0 && to != ARGP) {

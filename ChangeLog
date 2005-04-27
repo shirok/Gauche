@@ -1,3 +1,11 @@
+2005-04-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/configure.ac: 0.8.4_pre2
+	* src/vm.c, src/compile.scm: changed sematics of LOCAL_ENV_JUMP's
+	  parameter to indicate the # of environment frame to discard.
+	  It is required to keep the correct frame adjustment.
+	  NB: you need working 0.8.4_pre2 to build this version.
+
 2005-04-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (define-simple-struct): rewrote the macro for

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.8 2005-04-25 21:47:07 shirok Exp $
+;;;  $Id: compile.scm,v 1.9 2005-04-27 02:35:09 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -373,7 +373,7 @@
 ;;
 ;; <top-iform> :=
 ;;    <iform>
-;;    #($define <o> <flags> <id> <iform>)
+;;    #($define <src> <flags> <id> <iform>)
 ;;
 ;; <iform> :=
 ;;    #($lref <lvar>)        ;; local variable reference
@@ -381,34 +381,34 @@
 ;;    #($gref <id>)          ;; global variable reference
 ;;    #($gset <id> <iform>)   ;; global variable modification
 ;;    #($const <obj>)        ;; constant literal
-;;    #($if <o> <iform> <iform+> <iform+>) ;; branch
-;;    #($let <o> <type> (<lvar> ...) (<iform> ...) <iform>) ;; local binding
-;;    #($receive <o> <reqarg> <optarg> (<lvar> ...) <iform> <iform>)
+;;    #($if <src> <iform> <iform+> <iform+>) ;; branch
+;;    #($let <src> <type> (<lvar> ...) (<iform> ...) <iform>) ;; local binding
+;;    #($receive <src> <reqarg> <optarg> (<lvar> ...) <iform> <iform>)
 ;;                           ;; local binding (mv)
-;;    #($lambda <o> <name> <reqarg> <optarg> (<lvar> ...) <iform> <flag>)
+;;    #($lambda <src> <name> <reqarg> <optarg> (<lvar> ...) <iform> <flag>)
 ;;                           ;; closure
-;;    #($label <o> <label> <iform>) ;; merge point of local call.  see below.
-;;    #($promise <o> <expr>) ;; promise
+;;    #($label <src> <label> <iform>) ;; merge point of local call.  see below.
+;;    #($promise <src> <expr>) ;; promise
 ;;    #($seq (<iform> ...))   ;; sequencing
-;;    #($call <o> <proc-expr> (<arg-expr> ...) <flag>) ;; procedure call
-;;    #($asm <o> <insn> (<arg> ...)) ;; inline assembler
-;;    #($cons <o> <ca> <cd>)       ;; used in quasiquote
-;;    #($append <o> <ca> <cd>)     ;; ditto
-;;    #($vector <o> (<elt> ...))   ;; ditto
-;;    #($list->vector <o> <list>)  ;; ditto
-;;    #($list <o> (<elt> ...))     ;; ditto
-;;    #($list* <o> (<elt> ...))    ;; ditto
-;;    #($memv <o> <obj> <list>)    ;; used in case
-;;    #($eq?  <o> <x> <y>)         ;; ditto
-;;    #($eqv? <o> <x> <y>)         ;; ditto
+;;    #($call <src> <proc-expr> (<arg-expr> ...) <flag>) ;; procedure call
+;;    #($asm <src> <insn> (<arg> ...)) ;; inline assembler
+;;    #($cons <src> <ca> <cd>)       ;; used in quasiquote
+;;    #($append <src> <ca> <cd>)     ;; ditto
+;;    #($vector <src> (<elt> ...))   ;; ditto
+;;    #($list->vector <src> <list>)  ;; ditto
+;;    #($list <src> (<elt> ...))     ;; ditto
+;;    #($list* <src> (<elt> ...))    ;; ditto
+;;    #($memv <src> <obj> <list>)    ;; used in case
+;;    #($eq?  <src> <x> <y>)         ;; ditto
+;;    #($eqv? <src> <x> <y>)         ;; ditto
 ;;
 ;; <iform+> :=
 ;;    <iform>
 ;;    #($it)                 ;; refer to the value in the last test clause.
 ;;
-;;  NB: <o> is the original form, used to generate debug info.
+;;  NB: <src> is the original form, used to generate debug info.
 ;;      if the intermediate form doesn't have corresponding original
-;;      form, it will be #f.
+;;      form, it is #f.
 ;;
 ;;  NB: the actual value of the first element is an integer instead of
 ;;      a symbol, which allows pass3/rec to use vector dispatch instead
@@ -566,7 +566,10 @@
   (src       ; original source for debugging
    proc      ; IForm for the procedure to call.
    args      ; list of IForms for arguments.
-   flag      ; #f, 'local, 'embed or 'jump.
+   flag      ; #f, 'local, 'embed, 'jump, 'rec or 'tail-rec.
+   ;; Transient slots
+   (renv '()) ; runtime env.  used in embed calls to record depth of env
+              ;   in Pass 3.
    ))
 
 ;; $asm <src> <insn> <args>
@@ -2666,18 +2669,18 @@
     (lvar-ref--! lvar)
     ($call-flag-set! call 'embed)
     ($call-proc-set! call lambda-node)
-    ;($lambda-flag-set! lambda-node 'dissolved)
+    ($lambda-flag-set! lambda-node 'dissolved)
     (unless (null? rec-calls)
       (let1 body
           ($label ($lambda-src lambda-node) #f ($lambda-body lambda-node))
         ($lambda-body-set! lambda-node body)
-        (dolist (call rec-calls)
+        (dolist (jcall rec-calls)
           (lvar-ref--! lvar)
-          ($call-args-set! call (adjust-arglist reqargs optarg
-                                                ($call-args call)
+          ($call-args-set! jcall (adjust-arglist reqargs optarg
+                                                ($call-args jcall)
                                                 name))
-          ($call-proc-set! call body)
-          ($call-flag-set! call 'jump))))))
+          ($call-proc-set! jcall call)
+          ($call-flag-set! jcall 'jump))))))
 
 ;; Called when the local function (lambda-node) doesn't have recursive
 ;; calls, can be inlined, and called from multiple places.
@@ -2698,7 +2701,7 @@
         ($seq-body-set! call-node (list inlined)))))
   
   (lvar-ref-count-set! lvar 0)
-  ;($lambda-flag-set! lambda-node 'dissolved)
+  ($lambda-flag-set! lambda-node 'dissolved)
   (let loop ((calls calls))
     (cond ((null? (cdr calls))
            (inline-it (car calls) lambda-node))
@@ -3470,10 +3473,15 @@
 ;;     The generated code is almost the same as $LET node, except that a
 ;;     label is placed just after LOCAL-ENV.
 ;;
+;;     We also record the RENV in this node, which is later used by
+;;     jump call node to determine the number of environment frames the
+;;     LOCAL-ENV-JUMP should discard.  (Here we assume an embed node always
+;;     goes through pass3 before related jump nodes.)
+;;
 ;;  3. Jump call: a $CALL node that has 'jump' flag is a control transfer
 ;;     to an inlined local procedure, and whose body is embedded in somewhere
-;;     else (by an 'embedded call' node).   The PROC slot contains a $LABEL
-;;     node.  We emit LOCAL-ENV-JUMP instruction for this type of node.
+;;     else (by an 'embedded call' node).   The PROC slot contains the embed
+;;     $CALL node.  We emit LOCAL-ENV-JUMP instruction for this type of node.
 ;;
 ;;  4. Head-heavy call: a $CALL node without any flag, and all the
 ;;     arguments are simple expressions (e.g. const or lref), but the
@@ -3532,7 +3540,6 @@
             CONT_FRAME_SIZE
             (max dinit (+ nargs ENV_HEADER_SIZE CONT_FRAME_SIZE))))))))
 
-
 ;; Embedded call
 ;;  - We need to push the continuation even if we're at the tail
 ;;    context, since there may be an env frame on top of the stack
@@ -3548,7 +3555,9 @@
                    renv
                    (cons ($lambda-lvars proc) renv)))
          (merge-label (compiled-code-new-label ccb)))
-    (pass3/emit! ccb `(,PRE-CALL ,nargs) merge-label #f)
+    ($call-renv-set! iform (reverse renv))
+    (unless (tail-context? ctx)
+      (pass3/emit! ccb `(,PRE-CALL ,nargs) merge-label #f))
     (let1 dinit
         (if (> nargs 0)
           (let1 d (pass3/prepare-args args ccb renv ctx)
@@ -3565,27 +3574,35 @@
     ))
 
 ;; Jump call
+;;   $call-proc has a $call[embed] node, whose proc slot has $lambda
+;;   node, whose proc slot has $label node.
 ;; NB: we're not sure whether we'll have non-tail jump call yet.
 (define (pass3/jump-call iform ccb renv ctx)
-  (let* ((args ($call-args iform))
-         (nargs (length args)))
-    (if (tail-context? ctx)
-      (let1 dinit (pass3/prepare-args args ccb renv ctx)
-        (pass3/emit! ccb `(,LOCAL-ENV-JUMP ,nargs)
-                     (pass3/ensure-label ccb ($call-proc iform))
-                     ($*-src iform))
-        (if (= nargs 0) 0 (max dinit (+ nargs ENV_HEADER_SIZE))))
-      (let1 merge-label (compiled-code-new-label ccb)
-        (pass3/emit! ccb `(,PRE-CALL ,nargs) merge-label #f)
+  (let ((args ($call-args iform))
+        (embed-node ($call-proc iform)))
+    (let ((nargs (length args))
+          (label ($lambda-body ($call-proc embed-node)))
+          (renv-diff (list-remove-prefix ($call-renv embed-node)
+                                         (reverse renv))))
+      (unless renv-diff
+        (error "[internal error] $call[jump] appeared out of context of related $call[embed] (~s vs ~s)" ($call-renv embed-node) renv))
+      (if (tail-context? ctx)
         (let1 dinit (pass3/prepare-args args ccb renv ctx)
-          (pass3/emit! ccb `(,LOCAL-ENV-JUMP ,nargs)
-                       (pass3/ensure-label ccb ($call-proc iform))
+          (pass3/emit! ccb `(,LOCAL-ENV-JUMP ,(length renv-diff))
+                       (pass3/ensure-label ccb label)
                        ($*-src iform))
-          (compiled-code-set-label! ccb merge-label)
-          (if (= nargs 0)
-            CONT_FRAME_SIZE
-            (max dinit (+ nargs ENV_HEADER_SIZE CONT_FRAME_SIZE)))))
-      )))
+          (if (= nargs 0) 0 (max dinit (+ nargs ENV_HEADER_SIZE))))
+        (let1 merge-label (compiled-code-new-label ccb)
+          (pass3/emit! ccb `(,PRE-CALL ,nargs) merge-label #f)
+          (let1 dinit (pass3/prepare-args args ccb renv ctx)
+            (pass3/emit! ccb `(,LOCAL-ENV-JUMP ,(length renv-diff))
+                         (pass3/ensure-label ccb label)
+                         ($*-src iform))
+            (compiled-code-set-label! ccb merge-label)
+            (if (= nargs 0)
+              CONT_FRAME_SIZE
+              (max dinit (+ nargs ENV_HEADER_SIZE CONT_FRAME_SIZE)))))
+        ))))
 
 ;; Head-heavy call
 (define (pass3/head-heavy-call iform ccb renv ctx)
@@ -3630,6 +3647,15 @@
         ((memv (iform-tag (car args)) `(,$LREF ,$CONST))
          (all-args-simple? (cdr args)))
         (else #f)))
+
+;; Returns a part of lis whose head is removed.  If HEAD is not a prefix
+;; of LIS, returns #f.
+(define (list-remove-prefix head lis)
+  (let loop ((head head) (lis lis))
+    (cond ((null? head) lis)
+          ((null? lis) #f)
+          ((eq? (car head) (car lis)) (loop (cdr head) (cdr lis)))
+          (else #f))))
 
 (define (pass3/ensure-label ccb label-node)
   (or ($label-label label-node)
@@ -3839,34 +3865,34 @@
 ;; to the toplevel.  The original versio is in the comment below.
 ;; Turn it back once we implemented tail call inliner.
 
-(define (pass3/lookup-lvar lvar renv ctx)
-  (pass3/lookup-lvar-outer lvar renv 0 ctx))
-
-(define (pass3/lookup-lvar-outer lvar renv depth ctx)
-  (if (null? renv)
-    (error "[internal error] stray local variable:" lvar)
-    (pass3/lookup-lvar-inner lvar (car renv) renv 1 depth ctx)))
-
-(define (pass3/lookup-lvar-inner lvar frame renv count depth ctx)
-  (cond
-   ((null? frame)
-    (pass3/lookup-lvar-outer lvar (cdr renv) (+ depth 1) ctx))
-   ((eq? (car frame) lvar)
-    (values depth (- (length (car renv)) count)))
-   (else
-    (pass3/lookup-lvar-inner lvar (cdr frame) renv (+ count 1) depth ctx))))
-
 ;(define (pass3/lookup-lvar lvar renv ctx)
-;  (let outer ((renv renv)
-;              (depth 0))
-;    (if (null? renv)
-;      (error "[internal error] stray local variable:" lvar)
-;      (let inner ((frame (car renv))
-;                  (count 1))
-;        (cond ((null? frame) (outer (cdr renv) (+ depth 1)))
-;              ((eq? (car frame) lvar)
-;               (values depth (- (length (car renv)) count)))
-;              (else (inner (cdr frame) (+ count 1))))))))
+;  (pass3/lookup-lvar-outer lvar renv 0 ctx))
+
+;(define (pass3/lookup-lvar-outer lvar renv depth ctx)
+;  (if (null? renv)
+;    (error "[internal error] stray local variable:" lvar)
+;    (pass3/lookup-lvar-inner lvar (car renv) renv 1 depth ctx)))
+
+;(define (pass3/lookup-lvar-inner lvar frame renv count depth ctx)
+;  (cond
+;   ((null? frame)
+;    (pass3/lookup-lvar-outer lvar (cdr renv) (+ depth 1) ctx))
+;   ((eq? (car frame) lvar)
+;    (values depth (- (length (car renv)) count)))
+;   (else
+;    (pass3/lookup-lvar-inner lvar (cdr frame) renv (+ count 1) depth ctx))))
+
+(define (pass3/lookup-lvar lvar renv ctx)
+  (let outer ((renv renv)
+              (depth 0))
+    (if (null? renv)
+      (error "[internal error] stray local variable:" lvar)
+      (let inner ((frame (car renv))
+                  (count 1))
+        (cond ((null? frame) (outer (cdr renv) (+ depth 1)))
+              ((eq? (car frame) lvar)
+               (values depth (- (length (car renv)) count)))
+              (else (inner (cdr frame) (+ count 1))))))))
 
 (define (pass3/prepare-args args ccb renv ctx)
   (if (null? args)
