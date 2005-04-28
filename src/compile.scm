@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.9 2005-04-27 02:35:09 shirok Exp $
+;;;  $Id: compile.scm,v 1.10 2005-04-28 05:45:41 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -3195,7 +3195,8 @@
    (else
     (let1 depth (max (pass3/rec x ccb renv (normal-context ctx)) 1)
       (pass3/emit! ccb `(,PUSH) #f #f)
-      (pass3/if-final iform y `(,BNEQ) depth
+      (pass3/if-final iform #f `(,BNEQ)
+                      (max (pass3/rec y ccb renv 'normal/top) depth)
                       info ccb renv ctx)))))
 
 (define (pass3/if-eqv iform x y info ccb renv ctx)
@@ -3209,7 +3210,8 @@
    (else
     (let1 depth (max (pass3/rec x ccb renv (normal-context ctx)) 1)
       (pass3/emit! ccb `(,PUSH) #f #f)
-      (pass3/if-final iform y `(,BNEQV) depth
+      (pass3/if-final iform #f `(,BNEQV)
+                      (max (pass3/rec y ccb renv 'normal/top) depth)
                       info ccb renv ctx)))))
 
 (define (pass3/if-numeq iform x y info ccb renv ctx)
@@ -3223,12 +3225,15 @@
                            info ccb renv ctx))
       (let1 depth (max (pass3/rec x ccb renv (normal-context ctx)) 1)
         (pass3/emit! ccb `(,PUSH) #f #f)
-        (pass3/if-final iform y `(,BNUMNE) depth info ccb renv ctx))))
+        (pass3/if-final iform #f `(,BNUMNE)
+                        (max (pass3/rec y ccb renv 'normal/top) depth)
+                        info ccb renv ctx))))
 
 (define (pass3/if-numcmp iform x y insn info ccb renv ctx)
   (let1 depth (max (pass3/rec x ccb renv (normal-context ctx)) 1)
     (pass3/emit! ccb `(,PUSH) #f #f)
-    (pass3/if-final iform y `(,insn) depth
+    (pass3/if-final iform #f `(,insn)
+                    (max (pass3/rec y ccb renv 'normal/top) depth)
                     info ccb renv ctx)))
 
 ;; Final stage of emitting branch instruction.
@@ -3246,7 +3251,9 @@
   `(,BNEQC ,BNEQVC))
 
 (define (pass3/if-final iform test insn depth info ccb renv ctx)
-  (let1 depth (max (pass3/rec test ccb renv (normal-context ctx)) depth)
+  (let1 depth (if test
+                (max (pass3/rec test ccb renv (normal-context ctx)) depth)
+                depth)
     (cond
      ((tail-context? ctx)
       (cond
@@ -3541,11 +3548,9 @@
             (max dinit (+ nargs ENV_HEADER_SIZE CONT_FRAME_SIZE))))))))
 
 ;; Embedded call
-;;  - We need to push the continuation even if we're at the tail
-;;    context, since there may be an env frame on top of the stack
-;;    which will be clobbered by LOCAL-ENV-JUMP if we don't protect
-;;    it.  In future, we can track whether the stack top has
-;;    env frame or not, and emit PRE-CALL instruction selectively.
+;;   $call-proc has $lambda node.  We inline its body.
+;;   We also record the RENV to the current node, so that the jump calls
+;;   to the inlined body can adjust env frame properly.
 (define (pass3/embed-call iform ccb renv ctx)
   (let* ((proc ($call-proc iform))
          (args ($call-args iform))
