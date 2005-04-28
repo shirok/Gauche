@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.50 2005-04-12 01:42:28 shirok Exp $
+ *  $Id: write.c,v 1.51 2005-04-28 05:30:55 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1180,7 +1180,7 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap, int sharedp)
             case 'o':; case 'u':; case 'x':; case 'X':
                 {
                     unsigned long val = va_arg(ap, unsigned long);
-                    SCM_APPEND1(h, t, Scm_MakeIntegerFromUI(val));
+                    SCM_APPEND1(h, t, Scm_MakeIntegerU(val));
                     break;
                 }
             case 'e':; case 'E':; case 'f':; case 'g':; case 'G':
@@ -1204,7 +1204,7 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap, int sharedp)
             case 'p':
                 {
                     void *val = va_arg(ap, void *);
-                    SCM_APPEND1(h, t, Scm_MakeIntegerFromUI((unsigned long)val));
+                    SCM_APPEND1(h, t, Scm_MakeIntegerU((unsigned long)val));
                     break;
                 }
             case 'S':; case 'A':
