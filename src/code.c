@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: code.c,v 1.2 2005-04-12 01:42:25 shirok Exp $
+ *  $Id: code.c,v 1.3 2005-04-29 02:44:17 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -219,7 +219,8 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
                     Scm_Printf(SCM_CUROUT, "; lambda %#40.1S\n",
                                SCM_CDR(bindinfo));
                 } else {
-                    Scm_Printf(SCM_CUROUT, "; %#40.1S\n", SCM_CDR(srcinfo));
+                    Scm_Printf(SCM_CUROUT, "; %#40.1S\n",
+                               Scm_UnwrapSyntax(SCM_CDR(srcinfo)));
                 }
             }
         }
