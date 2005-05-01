@@ -1,3 +1,13 @@
+2005-04-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/objlib.scm: embed gauche/object.scm into the core library.
+	* src/gencomp: Fixed handling of identifiers.
+	* src/compile.scm: Object system macros (define-class etc) are now
+	  handled as syntax, though this should be transient until gencomp
+	  properly handles macros.
+	* src/gauche-init.scm, src/core.c, src/autoloads.scm:
+	  changed accordingly.
+
 2005-04-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/code.c (Scm_CompiledCodeDump): unwrap syntax from the source

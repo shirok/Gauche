@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.10 2005-04-28 05:45:41 shirok Exp $
+;;;  $Id: compile.scm,v 1.11 2005-05-01 06:36:03 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -2276,6 +2276,47 @@
 (define-pass1-syntax (import form cenv) :gauche
   ($const (%import-modules (cenv-module cenv) (cdr form))))
 
+;; Class stuff ........................................
+
+;; KLUDGES.  They should be implemented as macros, but the
+;; current compiler doesn't preserves macro definitions.
+;; These syntax handler merely expands the given form to
+;; the call to internal procedures of objlib.scm, which
+;; returns the macro expanded form.
+
+(define-pass1-syntax (define-generic form cenv) :gauche
+  (match form
+    ((_ name . opts)
+     (check-toplevel form cenv)
+     (pass1 (with-module gauche.object
+              (%expand-define-generic name opts))
+            cenv))
+    (else
+     (error "syntax-error: malformed define-generic:" form))))
+
+(define-pass1-syntax (define-method form cenv) :gauche
+  (match form
+    ((_ name specs . body)
+     ;; Should we limit define-method only at the toplevel?  Doing so
+     ;; is consistent with toplevel define and define-syntax.  Allowing
+     ;; define-method in non-toplevel is rather CL-ish and not like Scheme.
+     ;(check-toplevel form cenv)
+     (pass1 (with-module gauche.object
+              (%expand-define-method  name specs body))
+            cenv))
+    (else
+     (error "syntax-error: malformed define-method:" form))))
+
+(define-pass1-syntax (define-class form cenv) :gauche
+  (match form
+    ((_ name supers slots . options)
+     (check-toplevel form cenv)
+     (pass1 (with-module gauche.object
+              (%expand-define-class name supers slots options))
+            cenv))
+    (else
+     (error "syntax-error: malformed define-class:" form))))
+
 ;; Black magic ........................................
 
 (define-pass1-syntax (eval-when form cenv) :gauche
@@ -2304,6 +2345,7 @@
          ($seq (map (cut pass1 <> cenv) expr))
          ($const-undef))))
     (else (error "syntax-error: malformed eval-when:" form))))
+
 
 ;;===============================================================
 ;; Pass 2.  Optimization

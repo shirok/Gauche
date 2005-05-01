@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.20 2005-04-22 04:50:54 shirok Exp $
+;;; $Id: autoloads.scm,v 1.21 2005-05-01 06:36:03 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.20 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.21 $.  DO NOT EDIT */"
    :pre-decl '("#define LIBGAUCHE_BODY")
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
@@ -82,20 +82,9 @@
                  exp log sqrt expt cos sin tan asin acos atan
                  gcd lcm numerator denominator)
 
-#|
-(autoload "gauche/object"
-          (:macro define-generic) (:macro define-method)
-          (:macro define-class)
-          class-slot-ref class-slot-set! |setter of class-slot-ref|
-          slot-push! slot-exists?
-          class-name class-precedence-list class-direct-supers
-          class-direct-slots class-direct-methods class-direct-subclasses
-          class-slots class-slot-definition class-slot-accessor
-          slot-definition-name slot-definition-options slot-definition-option
-          slot-definition-allocation slot-definition-getter
-          slot-definition-setter slot-definition-accessor
-          x->string x->integer x->number ref |setter of ref|)
-|#
+(autoload "gauche/redefutil"
+          redefine-class! class-redefinition
+          update-direct-subclass! change-object-class)
 
 (autoload gauche.charconv
           %open-input-file/conv %open-output-file/conv)

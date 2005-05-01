@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: redefutil.scm,v 1.3 2003-12-14 00:52:15 shirok Exp $
+;;;  $Id: redefutil.scm,v 1.4 2005-05-01 06:36:03 shirok Exp $
 ;;;
 
 ;; This file is autoloaded
@@ -165,9 +165,9 @@
 
 
 ;; inject definitions into gauche module
-(insert-symbols redefine-class!
-                class-redefinition
-                update-direct-subclass!
-                change-object-class)
+(define-in-module gauche redefine-class! redefine-class!)
+(define-in-module gauche class-redefinition class-redefinition)
+(define-in-module gauche update-direct-subclass! update-direct-subclass!)
+(define-in-module gauche change-object-class change-object-class)
 
 (provide "gauche/redefutil")

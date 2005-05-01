@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: scmlib.scm,v 1.2 2005-04-12 01:42:27 shirok Exp $
+;;;  $Id: scmlib.scm,v 1.3 2005-05-01 06:36:03 shirok Exp $
 ;;;
 
 ;; This file contains builtin library functions that are easier to be
@@ -315,6 +315,4 @@
   (with-input-from-string
       (if (null? args) string (apply %maybe-substring string args))
     read))
-
-
 

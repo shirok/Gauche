@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-init.scm,v 1.118 2005-04-12 01:42:26 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.119 2005-05-01 06:36:03 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -73,7 +73,7 @@
 (define-module srfi-10 )
 (define-module srfi-17 )
 
-;; for backqard compatibility
+;; for backward compatibility
 (define-module gauche.vm.debugger )
 
 ;;
@@ -89,5 +89,9 @@
 ;; Load object system
 ;;
 
-(require "gauche/object")
+;; A trick to cross-compile during development.  Will go away.
+(define-macro (%init-object-system)
+  (unless (find-module 'gauche.object)
+    (%require "gauche/object")))
 
+(%init-object-system)

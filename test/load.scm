@@ -272,8 +272,9 @@
        (not (not (library-exists? 'gauche :paths paths-b :force-search? #t))))
 (test* "library-exists? gauche" #f
        (not (not (library-exists? "gauche" :paths paths-b))))
-(test* "library-exists? gauche/object" #t
-       (not (not (library-exists? "gauche/object" :paths paths-b))))
+;;NB: this no longer work since gauche.object is compiled in.
+;(test* "library-exists? gauche/object" #t
+;       (not (not (library-exists? "gauche/object" :paths paths-b))))
 
 ;; we check module here, since gauche.libutil is autoloaded.
 (test-module 'gauche.libutil)
