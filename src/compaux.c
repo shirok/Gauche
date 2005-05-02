@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compaux.c,v 1.3 2005-04-21 06:53:27 shirok Exp $
+ *  $Id: compaux.c,v 1.4 2005-05-02 11:09:50 shirok Exp $
  */
 
 /* This file serves as a bridge to the compiler, which is implemented
@@ -255,24 +255,30 @@ static ScmClassStaticSlotSpec identifier_slots[] = {
       LEXICAL(0) - lookup only lexical bindings
     | SYNTAX(1)  - lookup lexical and syntactic bindings
     | PATTERN(2) - lookup lexical, syntactic and pattern bindings
+
+   PERFORMANCE KLUDGE:
+     - We assume the frame structure is well-formed, so skip some tests.
+     - We assume 'lookupAs' and the car of each frame are small non-negative
+       integers, so we directly compare them without unboxing them.
 */
 
 ScmObj Scm_CompilerEnvLookup(ScmObj cenv, ScmObj name, ScmObj lookupAs)
 {
-    ScmObj frames, fp;
-    int type = SCM_INT_VALUE(lookupAs);
+    ScmObj frames, fp, vp;
+    int name_identifier = SCM_IDENTIFIERP(name);
     SCM_ASSERT(SCM_VECTORP(cenv));
     frames = SCM_VECTOR_ELEMENT(cenv, 2);
     SCM_FOR_EACH(fp, frames) {
         ScmObj p;
-        if (SCM_IDENTIFIERP(name) &&
-            SCM_IDENTIFIER(name)->env == fp) {
+        if (name_identifier && SCM_IDENTIFIER(name)->env == fp) {
             /* strip identifier if we're in the same env (kludge). */
             name = SCM_OBJ(SCM_IDENTIFIER(name)->name);
         }
-        if (SCM_INT_VALUE(SCM_CAAR(fp)) > type) continue;
-        p = Scm_Assq(name, SCM_CDAR(fp));
-        if (SCM_PAIRP(p)) return SCM_CDR(p);
+        if (SCM_CAAR(fp) > lookupAs) continue; /* see PERFORMANCE KLUDGE above */
+        /* We inline assq here to squeeze performance. */
+        SCM_FOR_EACH(vp, SCM_CDAR(fp)) {
+            if (SCM_EQ(name, SCM_CAAR(vp))) return SCM_CDAR(vp);
+        }
     }
     if (SCM_SYMBOLP(name)) {
         ScmObj mod = SCM_VECTOR_ELEMENT(cenv, 1);
