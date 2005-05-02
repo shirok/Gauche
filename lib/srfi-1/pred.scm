@@ -2,7 +2,7 @@
 ;;; List predicates of SRFI-1
 ;;;
 
-;; $Id: pred.scm,v 1.1 2001-04-06 09:53:46 shiro Exp $
+;; $Id: pred.scm,v 1.2 2005-05-02 10:30:39 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -11,49 +11,6 @@
 ;; hold me liable for its use. Please send bug reports to shivers@ai.mit.edu.
 
 (select-module srfi-1)
-
-;;; <proper-list> ::= ()			; Empty proper list
-;;;		  |   (cons <x> <proper-list>)	; Proper-list pair
-;;; Note that this definition rules out circular lists -- and this
-;;; function is required to detect this case and return false.
-
-(define (proper-list? x)
-  (let lp ((x x) (lag x))
-    (if (pair? x)
-	(let ((x (cdr x)))
-	  (if (pair? x)
-	      (let ((x   (cdr x))
-		    (lag (cdr lag)))
-		(and (not (eq? x lag)) (lp x lag)))
-	      (null? x)))
-	(null? x))))
-
-;;; A dotted list is a finite list (possibly of length 0) terminated
-;;; by a non-nil value. Any non-cons, non-nil value (e.g., "foo" or 5)
-;;; is a dotted list of length 0.
-;;;
-;;; <dotted-list> ::= <non-nil,non-pair>	; Empty dotted list
-;;;               |   (cons <x> <dotted-list>)	; Proper-list pair
-
-(define (dotted-list? x)
-  (let lp ((x x) (lag x))
-    (if (pair? x)
-	(let ((x (cdr x)))
-	  (if (pair? x)
-	      (let ((x   (cdr x))
-		    (lag (cdr lag)))
-		(and (not (eq? x lag)) (lp x lag)))
-	      (not (null? x))))
-	(not (null? x)))))
-
-(define (circular-list? x)
-  (let lp ((x x) (lag x))
-    (and (pair? x)
-	 (let ((x (cdr x)))
-	   (and (pair? x)
-		(let ((x   (cdr x))
-		      (lag (cdr lag)))
-		  (or (eq? x lag) (lp x lag))))))))
 
 (define (list= = . lists)
   (or (null? lists) ; special case

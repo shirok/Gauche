@@ -2,7 +2,7 @@
 ;;; Selectors of SRFI-1
 ;;;
 
-;; $Id: selector.scm,v 1.1 2001-04-06 09:53:46 shiro Exp $
+;; $Id: selector.scm,v 1.2 2005-05-02 10:30:39 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -61,13 +61,6 @@
 		     lis)))
 
 	'())))	; Special case dropping everything -- no cons to side-effect.
-
-(define (split-at x k)
-  (check-arg integer? k)
-  (let recur ((lis x) (k k))
-    (if (zero? k) (values '() lis)
-	(receive (prefix suffix) (recur (cdr lis) (- k 1))
-	  (values (cons (car lis) prefix) suffix)))))
 
 (define (split-at! x k)
   (check-arg integer? k)

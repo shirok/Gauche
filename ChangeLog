@@ -1,3 +1,8 @@
+2005-05-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-1.scm, lib/srfi-1/*.scm: removed some procedures that are
+	  already defined in the core.
+
 2005-04-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/objlib.scm: embed gauche/object.scm into the core library.

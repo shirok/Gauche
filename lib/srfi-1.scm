@@ -2,7 +2,7 @@
 ;;; SRFI-1 - List processing library
 ;;;
 
-;; $Id: srfi-1.scm,v 1.18 2005-04-12 01:42:24 shirok Exp $
+;; $Id: srfi-1.scm,v 1.19 2005-05-02 10:30:38 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -20,23 +20,22 @@
 ;; You can obtain the original version from http://srfi.schemers.org
 
 (define-module srfi-1
-  (export xcons cons* make-list list-tabulate list-copy circular-list iota
-          proper-list? circular-list? dotted-list? not-pair?
-          ;null-list?
+  (export xcons cons* list-tabulate list-copy circular-list iota
+          not-pair?
           list=
           first second third fourth fifth sixth seventh eighth
           ninth tenth car+cdr take drop take-right drop-right
-          take! drop-right! split-at split-at! last
-          length+ concatenate append! concatenate! reverse!
+          take! drop-right! split-at! last
+          length+ concatenate concatenate!
           append-reverse append-reverse!
           zip unzip1 unzip2 unzip3 unzip4 unzip5
-          count fold unfold pair-fold reduce fold-right unfold-right
+          count unfold pair-fold reduce unfold-right
           count$ fold$ fold-right$ reduce$ reduce-right$
           pair-fold-right reduce-right append-map append-map!
           map! pair-for-each filter-map map-in-order
           filter partition remove filter! partition! remove!
           filter$ partition$ remove$
-          member find find-tail any every list-index
+          member find-tail every list-index
           member$ find$ find-tail$ any$ every$
           take-while drop-while take-while! span break span! break!
           delete delete-duplicates delete! delete-duplicates!
@@ -50,19 +49,18 @@
 (select-module srfi-1)
 
 (autoload "srfi-1/generator"  list-tabulate iota circular-list)
-(autoload "srfi-1/pred"       proper-list? dotted-list? circular-list? length+
-                              list=)
+(autoload "srfi-1/pred"       length+ list=)
 (autoload "srfi-1/zipper"     zip unzip1 unzip2 unzip3 unzip4 unzip5)
 (autoload "srfi-1/nth"        first second third fourth fifth sixth
                               seventh eighth ninth tenth)
 (autoload "srfi-1/selector"   take drop take! take-right
                               drop-right drop-right!
-                              split-at split-at! last)
+                              split-at! last)
 (autoload "srfi-1/nary"       car+cdr %cdrs %cars+ %cars+cdrs %cars+cdrs+
                               %cars+cdrs/no-test)
-(autoload "srfi-1/cat"        append! append-reverse append-reverse!
+(autoload "srfi-1/cat"        append-reverse append-reverse!
                               concatenate concatenate!)
-(autoload "srfi-1/folder"     count unfold-right unfold fold fold-right
+(autoload "srfi-1/folder"     count unfold-right unfold 
                               pair-fold-right pair-fold reduce reduce-right
                               count$ fold$ fold-right$ reduce$ reduce-right$)
 (autoload "srfi-1/mapper"     append-map append-map! pair-for-each map!
@@ -70,9 +68,9 @@
 (autoload "srfi-1/filter"     filter filter! partition partition!
                               remove remove!
                               filter$ partition$ remove$)
-(autoload "srfi-1/finder"     find find-tail take-while drop-while take-while!
+(autoload "srfi-1/finder"     find-tail take-while drop-while take-while!
                               span break span! break!
-                              any every list-index
+                              every list-index
                               find$ find-tail$ any$ every$)
 (autoload "srfi-1/set"        lset<= lset= lset-adjoin lset-union lset-union!
                               lset-intersection lset-intersection!

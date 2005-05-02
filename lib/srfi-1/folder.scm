@@ -2,7 +2,7 @@
 ;;; Folders of SRFI-1
 ;;;
 
-;; $Id: folder.scm,v 1.4 2002-10-26 09:02:44 shirok Exp $
+;; $Id: folder.scm,v 1.5 2005-05-02 10:30:39 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -51,33 +51,11 @@
       (let recur ((seed seed))
 	(if (p seed) '()
 	    (cons (f seed) (recur (g seed)))))))
-      
 
-(define (fold kons knil lis1 . lists)
-  (if (pair? lists)
-      (let lp ((lists (cons lis1 lists)) (ans knil))	; N-ary case
-	(receive (cars+ans cdrs) (%cars+cdrs+ lists ans)
-	  (if (null? cars+ans) ans ; Done.
-	      (lp cdrs (apply kons cars+ans)))))
-	    
-      (let lp ((lis lis1) (ans knil))			; Fast path
-	(if (null-list? lis) ans
-	    (lp (cdr lis) (kons (car lis) ans))))))
+;; fold and fold-right are built-in      
 
 (define (fold$ kons . maybe-knil)
   (lambda lists (apply fold kons (append maybe-knil lists))))
-
-(define (fold-right kons knil lis1 . lists)
-  (if (pair? lists)
-      (let recur ((lists (cons lis1 lists)))		; N-ary case
-	(let ((cdrs (%cdrs lists)))
-	  (if (null? cdrs) knil
-	      (apply kons (%cars+ lists (recur cdrs))))))
-
-      (let recur ((lis lis1))				; Fast path
-	(if (null-list? lis) knil
-	    (let ((head (car lis)))
-	      (kons head (recur (cdr lis))))))))
 
 (define (fold-right$ kons . maybe-knil)
   (lambda lists (apply fold-right kons (append maybe-knil lists))))

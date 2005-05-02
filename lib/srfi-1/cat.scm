@@ -2,7 +2,7 @@
 ;;; Concatenators of SRFI-1
 ;;;
 
-;; $Id: cat.scm,v 1.1 2001-04-06 09:53:46 shiro Exp $
+;; $Id: cat.scm,v 1.2 2005-05-02 10:30:39 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -11,25 +11,6 @@
 ;; hold me liable for its use. Please send bug reports to shivers@ai.mit.edu.
 
 (select-module srfi-1)
-
-(define (append! . lists)
-  ;; First, scan through lists looking for a non-empty one.
-  (let lp ((lists lists) (prev '()))
-    (if (not (pair? lists)) prev
-	(let ((first (car lists))
-	      (rest (cdr lists)))
-	  (if (not (pair? first)) (lp rest first)
-
-	      ;; Now, do the splicing.
-	      (let lp2 ((tail-cons (last-pair first))
-			(rest rest))
-		(if (pair? rest)
-		    (let ((next (car rest))
-			  (rest (cdr rest)))
-		      (set-cdr! tail-cons next)
-		      (lp2 (if (pair? next) (last-pair next) tail-cons)
-			   rest))
-		    first)))))))
 
 (define (append-reverse rev-head tail)
   (let lp ((rev-head rev-head) (tail tail))

@@ -2,7 +2,7 @@
 ;;; Find and alike of SRFI-1
 ;;;
 
-;; $Id: finder.scm,v 1.3 2002-10-13 09:03:00 shirok Exp $
+;; $Id: finder.scm,v 1.4 2005-05-02 10:30:39 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -11,11 +11,6 @@
 ;; hold me liable for its use. Please send bug reports to shivers@ai.mit.edu.
 
 (select-module srfi-1)
-
-
-(define (find pred list)
-  (cond ((find-tail pred list) => car)
-	(else #f)))
 
 (define (find$ pred) (pa$ find pred))
 
@@ -81,25 +76,6 @@
 
 (define (break  pred lis) (span  (lambda (x) (not (pred x))) lis))
 (define (break! pred lis) (span! (lambda (x) (not (pred x))) lis))
-
-(define (any pred lis1 . lists)
-  (if (pair? lists)
-
-      ;; N-ary case
-      (receive (heads tails) (%cars+cdrs (cons lis1 lists))
-	(and (pair? heads)
-	     (let lp ((heads heads) (tails tails))
-	       (receive (next-heads next-tails) (%cars+cdrs tails)
-		 (if (pair? next-heads)
-		     (or (apply pred heads) (lp next-heads next-tails))
-		     (apply pred heads)))))) ; Last PRED app is tail call.
-
-      ;; Fast path
-      (and (not (null-list? lis1))
-	   (let lp ((head (car lis1)) (tail (cdr lis1)))
-	     (if (null-list? tail)
-		 (pred head)		; Last PRED app is tail call.
-		 (or (pred head) (lp (car tail) (cdr tail))))))))
 
 (define (any$ pred) (pa$ any pred))
 

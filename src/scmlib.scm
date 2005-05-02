@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: scmlib.scm,v 1.3 2005-05-01 06:36:03 shirok Exp $
+;;;  $Id: scmlib.scm,v 1.4 2005-05-02 10:30:39 shirok Exp $
 ;;;
 
 ;; This file contains builtin library functions that are easier to be
@@ -108,10 +108,11 @@
 
 (define (any pred lis . more)
   (if (null? more)
-    (let loop ((lis lis))
-      (cond ((null-list? lis) #f)
-            ((pred (car lis)))
-            (else (loop (cdr lis)))))
+    (and (not (null-list? lis))
+         (let loop ((head (car lis)) (tail (cdr lis)))
+           (cond ((null-list? tail) (pred head)) ; tail call
+                 ((pred head))
+                 (else (loop (car tail) (cdr tail))))))
     (let loop ((liss (cons lis more)))
       (receive (cars cdrs)
           ((with-module gauche.internal %zip-nary-args) liss)
