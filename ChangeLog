@@ -1,3 +1,10 @@
+2005-05-10  Shiro Kawai  <shiro@acm.org>
+
+	* ext/dbm/gdbm.scm (dbm-db-copy, dbm-db-rename): didn't work. fixed.
+	* ext/uvector/uvlib.stub.tmpl: some linear-updating binop didn't
+	  reuse the arg.
+
+
 2005-05-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-1.scm, lib/srfi-1/*.scm: removed some procedures that are
