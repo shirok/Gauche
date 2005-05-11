@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.50 2004-06-01 12:44:04 shirok Exp $
+ *  $Id: regexp.c,v 1.51 2005-05-11 21:34:25 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -220,6 +220,8 @@ static int regexp_compare(ScmObj x, ScmObj y, int equalp)
 #ifndef CHAR_MAX
 #define CHAR_MAX 256
 #endif
+
+#define REGEXP_OFFSET_MAX 65535
 
 /*=======================================================================
  * Compiler
@@ -920,6 +922,11 @@ static void rc3_emit(regcomp_ctx *ctx, char code)
 
 static void rc3_emit_offset(regcomp_ctx *ctx, int offset)
 {
+    if (offset > REGEXP_OFFSET_MAX) {
+        Scm_Error("regexp too large.  consider splitting it up: %50.1S",
+                  SCM_OBJ(ctx->rx));
+    }
+    
     if (ctx->emitp) {
         SCM_ASSERT(ctx->codep < ctx->codemax-1);
         ctx->code[ctx->codep++] = (offset>>8) & 0xff;
@@ -931,6 +938,11 @@ static void rc3_emit_offset(regcomp_ctx *ctx, int offset)
 
 static void rc3_fill_offset(regcomp_ctx *ctx, int codep, int offset)
 {
+    if (offset > REGEXP_OFFSET_MAX) {
+        Scm_Error("regexp too large.  consider splitting it up: %50.1S",
+                  SCM_OBJ(ctx->rx));
+    }
+
     if (ctx->emitp) {
         SCM_ASSERT(codep < ctx->codemax-1);
         ctx->code[codep] = (offset >> 8) & 0xff;

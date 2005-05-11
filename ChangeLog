@@ -1,3 +1,7 @@
+2005-05-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c : added range check of jump offset.
+
 2005-05-10  Shiro Kawai  <shiro@acm.org>
 
 	* ext/dbm/gdbm.scm (dbm-db-copy, dbm-db-rename): didn't work. fixed.
