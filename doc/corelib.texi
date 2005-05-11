@@ -10970,7 +10970,7 @@ Unix user information.  Has following slots.
 Unixのユーザの情報です。以下のスロットを持ちます。
 @c COMMON
 
-@defivar <sys-group> name
+@defivar <sys-passwd> name
 @c EN
 User name.
 @c JP
@@ -10978,7 +10978,7 @@ User name.
 @c COMMON
 @end defivar
 
-@defivar <sys-group> uid
+@defivar <sys-passwd> uid
 @c EN
 User ID.
 @c JP
@@ -10986,7 +10986,7 @@ User ID.
 @c COMMON
 @end defivar
 
-@defivar <sys-group> gid
+@defivar <sys-passwd> gid
 @c EN
 User's primary group id.
 @c JP
@@ -10994,7 +10994,7 @@ User's primary group id.
 @c COMMON
 @end defivar
 
-@defivar <sys-group> passwd
+@defivar <sys-passwd> passwd
 @c EN
 User's (encrypted) password.  If the system uses the shadow password file,
 you just get obscure string like "x".
@@ -11004,7 +11004,7 @@ you just get obscure string like "x".
 @c COMMON
 @end defivar
 
-@defivar <sys-group> gecos
+@defivar <sys-passwd> gecos
 @c EN
 Gecos field.
 @c JP
@@ -11012,7 +11012,7 @@ Gecosフィールド。
 @c COMMON
 @end defivar
 
-@defivar <sys-group> dir
+@defivar <sys-passwd> dir
 @c EN
 User's home directory.
 @c JP
@@ -11020,7 +11020,7 @@ User's home directory.
 @c COMMON
 @end defivar
 
-@defivar <sys-group> shell
+@defivar <sys-passwd> shell
 @c EN
 User's login shell.
 @c JP
@@ -11028,7 +11028,7 @@ User's login shell.
 @c COMMON
 @end defivar
 
-@defivar <sys-group> class
+@defivar <sys-passwd> class
 @c EN
 User's class (only available on some systems).
 @c JP
