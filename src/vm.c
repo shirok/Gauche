@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.223 2005-05-12 08:52:53 shirok Exp $
+ *  $Id: vm.c,v 1.224 2005-05-12 08:59:22 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -210,6 +210,7 @@ int Scm_AttachVM(ScmVM *vm)
     if (pthread_setspecific(Scm_VMKey(), vm) != 0) return FALSE;
 
     vm->thread = pthread_self();
+    vm->state = RUNNABLE;
     return TRUE;
 #else  /*!GAUCHE_USE_PTHREADS*/
     return FALSE;
