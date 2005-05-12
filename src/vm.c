@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.222 2005-04-27 02:35:09 shirok Exp $
+ *  $Id: vm.c,v 1.223 2005-05-12 08:52:53 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -106,11 +106,27 @@ static ScmEnvFrame *get_env(ScmVM *vm);
  *
  *   PROTO argument is treated as a prototype for the new VM, i.e.
  *   some of default values are 'inherited' from PROTO.
+ *
+ *   VM should be 'attached' to the running OS thread before being
+ *   used.  The root thread is always attached to the primordial thread
+ *   at the initialization stage (see Scm__InitVM()).   For other threads,
+ *   it depends on whether the thread is created from Gauche side or not.
+ *
+ *   If the thread is created from Gauche side (i.e. by Scm_MakeThread() 
+ *   C API or make-thread Scheme API), attaching is handled automatically
+ *   by Gauche.
+ *
+ *   If the thread is created by other means, the VM should be attached
+ *   to the thread by Scm_AttachVM() API.   The VMs attached by this are
+ *   somewhat different than the ones attached by Gauche; such VM can't
+ *   be passed to thread-join, for example.   This type of VM is for
+ *   the applications that want to evaluate Gauche program in their own
+ *   thread.
+ *   NOTE: the thread should still be created by Boehm-GC's pthread_create,
+ *   for it is the only way for GC to see the thread's stack.
  */
 
-ScmVM *Scm_NewVM(ScmVM *proto,
-                 ScmModule *module,
-                 ScmObj name)
+ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
 {
     ScmVM *v = SCM_NEW(ScmVM);
     int i;
@@ -125,7 +141,7 @@ ScmVM *Scm_NewVM(ScmVM *proto,
     v->thunk = NULL;
     v->result = SCM_UNDEFINED;
     v->resultException = SCM_UNDEFINED;
-    v->module = module ? module : proto->module;
+    v->module = proto ? proto->module : Scm_SchemeModule();
     v->cstack = proto ? proto->cstack : NULL;
     
     v->curin  = SCM_PORT(Scm_Stdin());
@@ -175,8 +191,31 @@ ScmVM *Scm_NewVM(ScmVM *proto,
     v->profilerRunning = FALSE;
     v->prof = NULL;
 
+#ifdef GAUCHE_USE_PTHREADS
+    v->thread = (pthread_t)NULL;
+#endif /*GAUCHE_USE_PTHREADS*/
+
     return v;
 }
+
+/* Attach the thread to the current thread.
+   See the notes of Scm_NewVM above.
+   Returns TRUE on success, FALSE on failure. */
+int Scm_AttachVM(ScmVM *vm)
+{
+#ifdef GAUCHE_USE_PTHREADS
+    if (vm->thread != (pthread_t)NULL) return FALSE;
+    if (theVM != NULL) return FALSE;
+
+    if (pthread_setspecific(Scm_VMKey(), vm) != 0) return FALSE;
+
+    vm->thread = pthread_self();
+    return TRUE;
+#else  /*!GAUCHE_USE_PTHREADS*/
+    return FALSE;
+#endif /*!GAUCHE_USE_PTHREADS*/
+}
+
 
 ScmObj Scm_VMGetResult(ScmVM *vm)
 {
@@ -3712,15 +3751,13 @@ void Scm__InitVM(void)
     if (pthread_key_create(&vm_key, NULL) != 0) {
         Scm_Panic("pthread_key_create failed.");
     }
-    rootVM = Scm_NewVM(NULL, Scm_SchemeModule(),
-                       SCM_MAKE_STR_IMMUTABLE("root"));
+    rootVM = Scm_NewVM(NULL, SCM_MAKE_STR_IMMUTABLE("root"));
     if (pthread_setspecific(vm_key, rootVM) != 0) {
         Scm_Panic("pthread_setspecific failed.");
     }
     rootVM->thread = pthread_self();
 #else   /* !GAUCHE_USE_PTHREADS */
-    rootVM = theVM = Scm_NewVM(NULL, Scm_SchemeModule(),
-                               SCM_MAKE_STR_IMMUTABLE("root"));
+    rootVM = theVM = Scm_NewVM(NULL, SCM_MAKE_STR_IMMUTABLE("root"));
 #endif  /* !GAUCHE_USE_PTHREADS */
     rootVM->state = SCM_VM_RUNNABLE;
 }

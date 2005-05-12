@@ -1,5 +1,9 @@
 2005-05-11  Shiro Kawai  <shiro@acm.org>
 
+	* src/vm.c (Scm_NewVM): removed redundant 'module' parameter.
+	  (Scm_AttachVM): added API.
+	* ext/threads/threads.c: changed accordingly.
+
 	* src/regexp.c : added range check of jump offset.
 
 2005-05-10  Shiro Kawai  <shiro@acm.org>
