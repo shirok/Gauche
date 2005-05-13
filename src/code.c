@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: code.c,v 1.3 2005-04-29 02:44:17 shirok Exp $
+ *  $Id: code.c,v 1.4 2005-05-13 23:36:15 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -248,12 +248,15 @@ typedef struct cc_builder_chunk {
     ScmWord code[CC_BUILDER_CHUNK_SIZE];
 } cc_builder_chunk;
 
+/* To perform instruction combination, the builder buffers one insn/operand.
+ * currentInsn == SCM_WORD(-1) indicates there's no buffered insn.
+ */
 typedef struct cc_builder_rec {
     cc_builder_chunk *chunks;
     int numChunks;
     ScmObj constants;           /* list of constants */
     int currentIndex;
-    ScmObj currentInsn;         /* buffer for instruction combining */
+    ScmWord currentInsn;        /* buffer for instruction combining. */
     ScmObj currentOperand;      /* ditto */
     ScmObj currentInfo;         /* ditto */
     ScmObj labelDefs;           /* alist of (name . offset) */
@@ -261,6 +264,9 @@ typedef struct cc_builder_rec {
     int labelCount;             /* counter to generate unique labels */
     ScmObj info;                /* alist of (offset (source-info obj)) */
 } cc_builder;
+
+#define CC_BUILDER_BUFFER_EMPTY       SCM_WORD(-1)
+#define CC_BUILDER_BUFFER_EMPTY_P(b)  ((b)->currentInsn == CC_BUILDER_BUFFER_EMPTY)
 
 /* Some internal stuff */
 
@@ -280,7 +286,8 @@ static cc_builder *make_cc_builder(void)
     b->numChunks = 0;
     b->constants = SCM_NIL;
     b->currentIndex = 0;
-    b->currentInsn = b->currentOperand = b->currentInfo = SCM_FALSE;
+    b->currentInsn = CC_BUILDER_BUFFER_EMPTY;
+    b->currentOperand = b->currentInfo = SCM_FALSE;
     b->labelDefs = b->labelRefs = SCM_NIL;
     b->labelCount = 0;
     b->info = SCM_NIL;
@@ -354,28 +361,11 @@ static void cc_builder_flush(cc_builder *b)
     ScmWord word;
     int labelAddr;
     
-    if (!SCM_PAIRP(b->currentInsn)) return;
-    code = SCM_INT_VALUE(SCM_CAR(b->currentInsn));
-    args = SCM_CDR(b->currentInsn);
-
-    if (code >= SCM_VM_NUM_INSNS) goto badinsn;
-
-    switch (Scm_Length(args)) {
-    case 0:
-        word = SCM_VM_INSN(code);
-        break;
-    case 1:
-        word = SCM_VM_INSN1(code, SCM_INT_VALUE(SCM_CAR(args)));
-        break;
-    default:
-        word = SCM_VM_INSN2(code,
-                            SCM_INT_VALUE(SCM_CAR(args)),
-                            SCM_INT_VALUE(SCM_CADR(args)));
-        break;
-    }
+    if (CC_BUILDER_BUFFER_EMPTY_P(b)) return;
     cc_builder_add_info(b);
-    cc_builder_add_word(b, word);
+    cc_builder_add_word(b, b->currentInsn);
 
+    code = SCM_VM_INSN_CODE(b->currentInsn);
     switch (Scm_VMInsnOperandType(code)) {
     case SCM_VM_OPERAND_ADDR:
         /* Addr should be a label.  We just push the label reference
@@ -411,13 +401,10 @@ static void cc_builder_flush(cc_builder *b)
     default:
         break;
     }
-    b->currentInsn = SCM_FALSE;
+    b->currentInsn = CC_BUILDER_BUFFER_EMPTY;
     return;
-  badinsn:
-    Scm_Error("[internal error] bad instruction in the compiler: %S",
-              b->currentInsn);
   badoperand:
-    b->currentInsn = SCM_FALSE;
+    b->currentInsn = CC_BUILDER_BUFFER_EMPTY;
     Scm_Error("[internal error] bad operand: %S", b->currentOperand);
     return;
 }
@@ -478,52 +465,6 @@ ScmObj Scm_MakeCompiledCodeBuilder(int reqargs, int optargs,
     cc->parent = parent;
     cc->intermediateForm = intForm;
     return SCM_OBJ(cc);
-}
-
-/* Returns current buffered insn/operand */
-ScmObj Scm_CompiledCodeCurrentInsn(ScmCompiledCode *cc)
-{
-    cc_builder *b;
-    CC_BUILDER_GET(b, cc);
-    return Scm_Values2(b->currentInsn, b->currentOperand);
-}
-
-/* Replace current buffered insn/operand */
-void Scm_CompiledCodeReplaceInsn(ScmCompiledCode *cc,
-                                 ScmObj insn,
-                                 ScmObj operand,
-                                 ScmObj info)
-{
-    cc_builder *b;
-    CC_BUILDER_GET(b, cc);
-    b->currentInsn = insn;
-    b->currentOperand = operand;
-    if (!SCM_FALSEP(info)) {
-        b->currentInfo = info;
-    }
-}
-
-/* Flush the current buffered insn/operant to the chunk. */
-void Scm_CompiledCodeFlushInsn(ScmCompiledCode *cc)
-{
-    cc_builder *b;
-    CC_BUILDER_GET(b, cc);
-    cc_builder_flush(b);
-}
-
-
-/* Put an insn.  If there's a buffered insn/operand, first they are moved
-   to the chunk, then the given insn/operand are put in the buffer.
-   We assume instruction combination is already done */
-void Scm_CompiledCodePutInsn(ScmCompiledCode *cc, ScmObj insn, ScmObj operand,
-                             ScmObj info)
-{
-    cc_builder *b;
-    CC_BUILDER_GET(b, cc);
-    cc_builder_flush(b);
-    b->currentInsn = insn;
-    b->currentOperand = operand;
-    b->currentInfo = info;
 }
 
 /* Returns a label identifier (integer) unique to this code block */
@@ -622,8 +563,267 @@ void Scm_CompiledCodeFinishBuilder(ScmCompiledCode *cc, int maxstack)
     cc->builder = NULL;
 }
 
+/*----------------------------------------------------------------
+ * Emitting instruction and operand, performing instruction combination
+ */
 
-/* CompiledCode - Scheme interface */
+/* This is originally implemented in Scheme, but moved here for efficiency,
+ * since this routine is the most frequently called one during compilation.
+ */
+
+/* some abbreviations for better readability */
+
+#define INSN(x)         SCM_VM_INSN(x)
+#define INSN1(x, a)     SCM_VM_INSN1(x, a)
+#define INSN2(x, a, b)  SCM_VM_INSN2(x, a, b)
+
+#define CODE(x)         SCM_VM_INSN_CODE(x)
+#define IARG(x)         SCM_VM_INSN_ARG(x)
+#define IARG0(x)        SCM_VM_INSN_ARG0(x)
+#define IARG1(x)        SCM_VM_INSN_ARG1(x)
+
+#define EMPTYP(b)       CC_BUILDER_BUFFER_EMPTY_P(b)
+
+
+#define PUT(insn, operand)                      \
+    do {                                        \
+        cc_builder_flush(b);                    \
+        b->currentInsn = (insn);                \
+        b->currentOperand = (operand);          \
+        b->currentInfo = (info);                \
+    } while (0)
+
+#define SUB(insn)                                       \
+    do {                                                \
+        b->currentInsn = (insn);                        \
+        if (!SCM_FALSEP(info)) b->currentInfo = info;   \
+    } while (0)
+
+#define SUBO(insn, operand)                             \
+    do {                                                \
+        b->currentInsn = (insn);                        \
+        b->currentOperand = (operand);                  \
+        if (!SCM_FALSEP(info)) b->currentInfo = info;   \
+    } while (0)
+
+#define INT_FITS_P(obj) \
+    (SCM_INTP(obj)&&SCM_VM_INSN_ARG_FITS(SCM_INT_VALUE(obj)))
+
+
+void Scm_CompiledCodeEmit(ScmCompiledCode *cc,
+                          int code, /* instruction code number */
+                          int arg0, /* instruction code parameter 0 */
+                          int arg1, /* instruction code parameter 1 */
+                          ScmObj operand,
+                          ScmObj info) /* debug info */
+{
+    cc_builder *b;
+    CC_BUILDER_GET(b, cc);
+
+    switch (code) {
+    case SCM_VM_LREF:
+    {
+        static const int lrefs[] = {
+            SCM_VM_LREF0, SCM_VM_LREF1, SCM_VM_LREF2,
+            SCM_VM_LREF3, SCM_VM_LREF4,
+            SCM_VM_LREF10, SCM_VM_LREF11, SCM_VM_LREF12,
+            SCM_VM_LREF13, SCM_VM_LREF14
+        };
+        if (arg0 <= 1 && arg1 <= 4) {
+            PUT(INSN(lrefs[arg0*5+arg1]), SCM_FALSE);
+        } else {
+            PUT(INSN2(SCM_VM_LREF, arg0, arg1), SCM_FALSE);
+        }
+        break;
+    }
+    
+    case SCM_VM_LSET:
+    {
+        static const int lsets[] = {
+            SCM_VM_LSET0, SCM_VM_LSET1, SCM_VM_LSET2,
+            SCM_VM_LSET3, SCM_VM_LSET4,
+        };
+        if (arg0 == 0 && arg1 <= 4) {
+            PUT(INSN(lsets[arg1]), SCM_FALSE);
+        } else {
+            PUT(INSN2(SCM_VM_LSET, arg0, arg1), SCM_FALSE);
+        }
+        break;
+    }
+
+    case SCM_VM_PUSH:
+    {
+        if (EMPTYP(b)) goto def;
+        switch (CODE(b->currentInsn)) {
+        case SCM_VM_LREF0:  SUB(INSN(SCM_VM_LREF0_PUSH)); break;
+        case SCM_VM_LREF1:  SUB(INSN(SCM_VM_LREF1_PUSH)); break;
+        case SCM_VM_LREF2:  SUB(INSN(SCM_VM_LREF2_PUSH)); break;
+        case SCM_VM_LREF3:  SUB(INSN(SCM_VM_LREF3_PUSH)); break;
+        case SCM_VM_LREF4:  SUB(INSN(SCM_VM_LREF4_PUSH)); break;
+        case SCM_VM_LREF10: SUB(INSN(SCM_VM_LREF10_PUSH)); break;
+        case SCM_VM_LREF11: SUB(INSN(SCM_VM_LREF11_PUSH)); break;
+        case SCM_VM_LREF12: SUB(INSN(SCM_VM_LREF12_PUSH)); break;
+        case SCM_VM_LREF13: SUB(INSN(SCM_VM_LREF13_PUSH)); break;
+        case SCM_VM_LREF14: SUB(INSN(SCM_VM_LREF14_PUSH)); break;
+        case SCM_VM_LREF:   SUB(INSN2(SCM_VM_LREF_PUSH,
+                                      IARG0(b->currentInsn),
+                                      IARG1(b->currentInsn))); break;
+        case SCM_VM_GREF:   SUB(INSN(SCM_VM_GREF_PUSH)); break;
+
+        case SCM_VM_CAR:    SUB(INSN(SCM_VM_CAR_PUSH)); break;
+        case SCM_VM_CDR:    SUB(INSN(SCM_VM_CDR_PUSH)); break;
+        case SCM_VM_CAAR:   SUB(INSN(SCM_VM_CAAR_PUSH)); break;
+        case SCM_VM_CADR:   SUB(INSN(SCM_VM_CADR_PUSH)); break;
+        case SCM_VM_CDAR:   SUB(INSN(SCM_VM_CDAR_PUSH)); break;
+        case SCM_VM_CDDR:   SUB(INSN(SCM_VM_CDDR_PUSH)); break;
+        case SCM_VM_CONS:   SUB(INSN(SCM_VM_CONS_PUSH)); break;
+        case SCM_VM_CONST:  SUB(INSN(SCM_VM_CONST_PUSH)); break;
+        case SCM_VM_CONSTI: SUB(INSN1(SCM_VM_CONSTI_PUSH,
+                                      IARG(b->currentInsn))); break;
+        case SCM_VM_CONSTN: SUB(INSN(SCM_VM_CONSTN_PUSH)); break;
+        case SCM_VM_CONSTF: SUB(INSN(SCM_VM_CONSTF_PUSH)); break;
+        default:
+            PUT(INSN(SCM_VM_PUSH), SCM_FALSE);
+        }
+        break;
+    }
+    
+    case SCM_VM_CONST: 
+    {
+        if (SCM_NULLP(operand)) {
+            PUT(INSN(SCM_VM_CONSTN), SCM_FALSE);
+        } else if (SCM_FALSEP(operand)) {
+            PUT(INSN(SCM_VM_CONSTF), SCM_FALSE);
+        } else if (SCM_UNDEFINEDP(operand)) {
+            PUT(INSN(SCM_VM_CONSTU), SCM_FALSE);
+        } else if (INT_FITS_P(operand)) {
+            PUT(INSN1(SCM_VM_CONSTI, SCM_INT_VALUE(operand)), SCM_FALSE);
+        } else {
+            PUT(INSN(SCM_VM_CONST), operand);
+        }
+        break;
+    }
+
+    case SCM_VM_CALL:
+    {
+        if (EMPTYP(b)) goto def;
+        switch (CODE(b->currentInsn)) {
+        case SCM_VM_GREF:
+            SUB(INSN1(SCM_VM_GREF_CALL, arg0)); break;
+        case SCM_VM_PUSH_GREF:
+            SUB(INSN1(SCM_VM_PUSH_GREF_CALL, arg0)); break;
+        default:
+            PUT(INSN1(SCM_VM_CALL, arg0), SCM_FALSE);
+        }
+        break;
+    }
+
+    case SCM_VM_TAIL_CALL:
+    {
+        if (EMPTYP(b)) goto def;
+        switch (CODE(b->currentInsn)) {
+        case SCM_VM_GREF:
+            SUB(INSN1(SCM_VM_GREF_TAIL_CALL, arg0)); break;
+        case SCM_VM_PUSH_GREF:
+            SUB(INSN1(SCM_VM_PUSH_GREF_TAIL_CALL, arg0)); break;
+        default:
+            PUT(INSN1(SCM_VM_TAIL_CALL, arg0), SCM_FALSE);
+        }
+        break;
+    }
+
+    case SCM_VM_PRE_CALL:
+    {
+        if (!EMPTYP(b) && CODE(b->currentInsn) == SCM_VM_PUSH) {
+            SUBO(INSN1(SCM_VM_PUSH_PRE_CALL, arg0), operand);
+        } else {
+            PUT(INSN1(SCM_VM_PRE_CALL, arg0), operand);
+        }
+        break;
+    }
+
+    case SCM_VM_GREF:
+    {
+        if (!EMPTYP(b) && CODE(b->currentInsn) == SCM_VM_PUSH) {
+            SUBO(INSN1(SCM_VM_PUSH_GREF, arg0), operand);
+        } else {
+            PUT(INSN1(SCM_VM_GREF, arg0), operand);
+        }
+        break;
+    }
+
+    case SCM_VM_LOCAL_ENV:
+    {
+        if (!EMPTYP(b) && CODE(b->currentInsn) == SCM_VM_PUSH) {
+            SUBO(INSN1(SCM_VM_PUSH_LOCAL_ENV, arg0), SCM_FALSE);
+        } else {
+            PUT(INSN1(SCM_VM_LOCAL_ENV, arg0), SCM_FALSE);
+        }
+        break;
+    }
+
+    case SCM_VM_RET:
+    {
+        if (EMPTYP(b)) goto def;
+        switch (CODE(b->currentInsn)) {
+        case SCM_VM_CONST:  SUB(INSN(SCM_VM_CONST_RET)); break;
+        case SCM_VM_CONSTF: SUB(INSN(SCM_VM_CONSTF_RET)); break;
+        case SCM_VM_CONSTU: SUB(INSN(SCM_VM_CONSTU_RET)); break;
+        default:
+            PUT(INSN(SCM_VM_RET), SCM_FALSE);
+        }
+        break;
+    }
+
+    case SCM_VM_CAR:
+    {
+        if (EMPTYP(b)) goto def;
+        switch (CODE(b->currentInsn)) {
+        case SCM_VM_CAR: SUB(INSN(SCM_VM_CAAR)); break;
+        case SCM_VM_CDR: SUB(INSN(SCM_VM_CADR)); break;
+        default:
+            PUT(INSN(SCM_VM_CAR), SCM_FALSE);
+        }
+        break;
+    }
+    
+    case SCM_VM_CDR:
+    {
+        if (EMPTYP(b)) goto def;
+        switch (CODE(b->currentInsn)) {
+        case SCM_VM_CAR: SUB(INSN(SCM_VM_CDAR)); break;
+        case SCM_VM_CDR: SUB(INSN(SCM_VM_CDDR)); break;
+        default:
+            PUT(INSN(SCM_VM_CDR), SCM_FALSE);
+        }
+        break;
+    }
+    
+    default:;
+    def:
+    switch (Scm_VMInsnNumParams(code)) {
+    case 0: PUT(INSN(code), operand); break;
+    case 1: PUT(INSN1(code, arg0), operand); break;
+    case 2: PUT(INSN2(code, arg0, arg1), operand); break;
+    }
+    }
+}
+
+#undef PUT
+#undef SUB
+#undef SUBO
+#undef INSN
+#undef INSN1
+#undef INSN2
+#undef CODE
+#undef IARG
+#undef IARG0
+#undef IARG1
+#undef EMPTYP
+
+/*----------------------------------------------------------------
+ * CompiledCode - Scheme interface
+ */
 
 /* Converts the code vector into a list.
    Instruction -> (<insn-symbol> [<arg0> <arg1>])

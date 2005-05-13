@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.2 2005-04-12 01:42:27 shirok Exp $
+;;; $Id: intlib.stub,v 1.3 2005-05-13 23:36:15 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -177,19 +177,71 @@
                                           name parent intform)
   (return "Scm_MakeCompiledCodeBuilder"))
 
-(define-cproc compiled-code-current-insn (cc::<compiled-code>)
-  (return "Scm_CompiledCodeCurrentInsn"))
+;; CompiledCodeEmit is performance critical.  To reduce the overhead of
+;;  argument passing, we prepare variations for specific code patterns.
+(define-cproc compiled-code-emit0! (cc::<compiled-code>
+                                    code::<int>)
+  "Scm_CompiledCodeEmit(cc, code, 0, 0, SCM_FALSE, SCM_FALSE);
+   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc compiled-code-replace-insn! (cc::<compiled-code>
-                                           insn operand info)
-  (return <void> "Scm_CompiledCodeReplaceInsn"))
+(define-cproc compiled-code-emit0o! (cc::<compiled-code>
+                                     code::<int> operand)
+  "Scm_CompiledCodeEmit(cc, code, 0, 0, operand, SCM_FALSE);
+   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc compiled-code-flush-insn! (cc::<compiled-code>)
-  (return <void> "Scm_CompiledCodeFlushInsn"))
+(define-cproc compiled-code-emit0i! (cc::<compiled-code>
+                                     code::<int> info)
+  "Scm_CompiledCodeEmit(cc, code, 0, 0, SCM_FALSE, info);
+   SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc compiled-code-put-insn! (cc::<compiled-code>
-                                       insn operand info)
-  (return <void> "Scm_CompiledCodePutInsn"))
+(define-cproc compiled-code-emit0oi! (cc::<compiled-code>
+                                      code::<int> operand info)
+  "Scm_CompiledCodeEmit(cc, code, 0, 0, operand, info);
+   SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc compiled-code-emit1! (cc::<compiled-code>
+                                    code::<int> arg0::<int>)
+  "Scm_CompiledCodeEmit(cc, code, arg0, 0, SCM_FALSE, SCM_FALSE);
+   SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc compiled-code-emit1o! (cc::<compiled-code>
+                                     code::<int> arg0::<int> operand)
+  "Scm_CompiledCodeEmit(cc, code, arg0, 0, operand, SCM_FALSE);
+   SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc compiled-code-emit1i! (cc::<compiled-code>
+                                     code::<int> arg0::<int> info)
+  "Scm_CompiledCodeEmit(cc, code, arg0, 0, SCM_FALSE, info);
+   SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc compiled-code-emit1oi! (cc::<compiled-code>
+                                      code::<int> arg0::<int> operand info)
+  "Scm_CompiledCodeEmit(cc, code, arg0, 0, operand, info);
+   SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc compiled-code-emit2! (cc::<compiled-code>
+                                    code::<int> arg0::<int> arg1::<int>)
+  "Scm_CompiledCodeEmit(cc, code, arg0, arg1, SCM_FALSE, SCM_FALSE);
+   SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc compiled-code-emit2o! (cc::<compiled-code>
+                                     code::<int> arg0::<int> arg1::<int>
+                                     operand)
+  "Scm_CompiledCodeEmit(cc, code, arg0, arg1, operand, SCM_FALSE);
+   SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc compiled-code-emit2i! (cc::<compiled-code>
+                                     code::<int> arg0::<int> arg1::<int>
+                                     info)
+  "Scm_CompiledCodeEmit(cc, code, arg0, arg1, SCM_FALSE, info);
+   SCM_RETURN(SCM_UNDEFINED);")
+
+(define-cproc compiled-code-emit2oi! (cc::<compiled-code>
+                                      code::<int> arg0::<int> arg1::<int>
+                                      operand info)
+  "Scm_CompiledCodeEmit(cc, code, arg0, arg1, operand, info);
+   SCM_RETURN(SCM_UNDEFINED);")
+
 
 (define-cproc compiled-code-new-label (cc::<compiled-code>)
   (return "Scm_CompiledCodeNewLabel"))
