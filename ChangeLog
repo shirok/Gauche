@@ -2,7 +2,7 @@
 
 	* src/compile.scm, src/code.c: rewrote instruction emitting & combining
 	  routine (pass3/emit!) in C for better compiler performance.
-	  (20-25% gain!).
+	  (20-25% gain!).  Also optimized pass1/global-call.
 	* src/intlib.stub: changed accordingly.
 
 2005-05-11  Shiro Kawai  <shiro@acm.org>

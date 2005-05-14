@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.3 2005-05-13 23:36:15 shirok Exp $
+;;; $Id: intlib.stub,v 1.4 2005-05-14 01:47:52 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -44,6 +44,7 @@
 #include <gauche/vminsn.h>
 #include <gauche/macro.h>
 #include <gauche/prof.h>
+#include <gauche/builtin-syms.h>
 "
 
 ;;
@@ -128,8 +129,40 @@
 ;; Compiler interface (Temporary)
 ;;
 
+;; Lookup variable reference in the compiler environment in Pass 1.
+;; This is a performance critical function, thus it is implemented in C.
 (define-cproc cenv-lookup (cenv name lookup-as)
   (return "Scm_CompilerEnvLookup"))
+
+;; This is an aux call to dispatch the function call with global variable
+;; reference in its first position (in pass1/glbobal-call).  It checks
+;; up the binding of global identifier, and returns two values.
+;; The first value is #f if this global call would be a simple call.
+;; Otherwise, the first value is a bound value of the global variable,
+;; and the second value is one of the symbols 'macro, 'syntax or 'inline.
+
+(define-cproc global-call-type (id)
+  "ScmGloc *gloc = Scm_FindBinding(SCM_IDENTIFIER(id)->module,
+                                   SCM_IDENTIFIER(id)->name, FALSE);
+  ScmObj gval;
+  if (!gloc) SCM_RETURN(Scm_Values2(SCM_FALSE, SCM_FALSE));
+  gval = SCM_GLOC_GET(gloc);
+  if (SCM_MACROP(gval)) {
+    SCM_RETURN(Scm_Values2(gval, SCM_SYM_MACRO));
+  } else if (SCM_SYNTAXP(gval)) {
+    SCM_RETURN(Scm_Values2(gval, SCM_SYM_SYNTAX));
+  } else if (SCM_PROCEDUREP(gval)
+             && SCM_PROCEDURE_INLINER(gval)
+             && !SCM_FALSEP(SCM_PROCEDURE_INLINER(gval))
+             && !SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), 
+                                             SCM_COMPILE_NOINLINE_GLOBALS)) {
+    SCM_RETURN(Scm_Values2(gval, SCM_SYM_INLINE));
+  } else {
+    SCM_RETURN(Scm_Values2(SCM_FALSE, SCM_FALSE));
+  }")
+
+(define-cproc macro? (obj)
+  (return <boolean> "SCM_MACROP"))
 
 (define-cproc make-toplevel-closure (code::<compiled-code>)
   "SCM_RETURN(Scm_MakeClosure(SCM_OBJ(code), NULL));")

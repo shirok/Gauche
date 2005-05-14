@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.12 2005-05-13 23:36:15 shirok Exp $
+;;;  $Id: compile.scm,v 1.13 2005-05-14 01:47:52 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1307,7 +1307,7 @@
          (cond
           ((lvar? head)
            (pass1/call program ($lref head) (cdr program) cenv))
-          ((is-a? head <macro>)
+          ((macro? head)
            (pass1 (call-macro-expander head program (cenv-frames cenv)) cenv))
           ((identifier? head)
            (pass1/global-call head program cenv))
@@ -1338,27 +1338,44 @@
           (else
            (error "[internal] pass1/variable got weird object:" var)))))
 
-;; handle global procedure call (when we know the operator is a global
+;; Handle global procedure call (when we know the operator is a global
 ;; variable reference; in this case, we may have macro expansion or
 ;; inline expansion).
+;; This function is in the performance critical path, so the dispatching
+;; part is written in C (global-call-type).  The original Scheme version
+;; is commented below, which may be more comprehensive than the current one.
+
 (define (pass1/global-call id program cenv)
-  (let1 gloc (find-binding (slot-ref id 'module)
-                           (slot-ref id 'name)
-                           #f)
-    (if (not gloc)
-      (pass1/call program ($gref id) (cdr program) cenv)
-      (let1 gval (gloc-ref gloc)
-        (cond
-         ((is-a? gval <macro>)
-          (pass1 (call-macro-expander gval program (cenv-frames cenv)) cenv))
-         ((is-a? gval <syntax>)
-          (call-syntax-compiler gval program cenv))
-         ((and (not (vm-compiler-flag-is-set? SCM_COMPILE_NOINLINE_GLOBALS))
-               (procedure? gval)
-               (%procedure-inliner gval))
-          (pass1/expand-inliner id gval program cenv))
-         (else
-          (pass1/call program ($gref id) (cdr program) cenv)))))))
+  (receive (gval type) (global-call-type id)
+    (if gval
+      (case type
+        ((macro)
+         (pass1 (call-macro-expander gval program (cenv-frames cenv)) cenv))
+        ((syntax)
+         (call-syntax-compiler gval program cenv))
+        ((inline)
+         (pass1/expand-inliner id gval program cenv))
+        )
+      (pass1/call program ($gref id) (cdr program) cenv))))
+
+;(define (pass1/global-call id program cenv)
+;  (let1 gloc (find-binding (slot-ref id 'module)
+;                           (slot-ref id 'name)
+;                           #f)
+;    (if (not gloc)
+;      (pass1/call program ($gref id) (cdr program) cenv)
+;      (let1 gval (gloc-ref gloc)
+;        (cond
+;         ((is-a? gval <macro>)
+;          (pass1 (call-macro-expander gval program (cenv-frames cenv)) cenv))
+;         ((is-a? gval <syntax>)
+;          (call-syntax-compiler gval program cenv))
+;         ((and (not (vm-compiler-flag-is-set? SCM_COMPILE_NOINLINE_GLOBALS))
+;               (procedure? gval)
+;               (%procedure-inliner gval))
+;          (pass1/expand-inliner id gval program cenv))
+;         (else
+;          (pass1/call program ($gref id) (cdr program) cenv)))))))
 
 ;; handle procedure call
 ;; KLUDGE: the body should be this simple:
@@ -1415,7 +1432,7 @@
         (let1 var (cenv-lookup cenv op SYNTAX)
           (cond
            ((lvar? var) (pass1/body-wrap-intdefs intdefs exprs cenv))
-           ((is-a? var <macro>)
+           ((macro? var)
             (pass1/body
              (cons (call-macro-expander var (car exprs) (cenv-frames cenv))
                    rest)
@@ -1434,7 +1451,7 @@
                                                  (slot-ref var 'name)
                                                  #f))
                              (gval (gloc-ref gloc))
-                             ( (is-a? gval <macro>) ))
+                             ( (macro? gval) ))
                     (pass1/body
                      (cons (call-macro-expander gval (car exprs) (cenv-frames cenv))
                            rest)
@@ -2827,7 +2844,7 @@
           (args ($call-args iform)))
       (cond
        ((vm-compiler-flag-is-set? SCM_COMPILE_NOINLINE_LOCALS)
-        ($call-args-set! iform (map (cut pass2/rec <> penv #f) args))
+        ($call-args-set! iform (pass2/call-args args penv))
         iform)
        ((has-tag? proc $LAMBDA) ;; ((lambda (...) ...) arg ...)
         (pass2/rec (expand-inlined-procedure ($*-src iform) proc args)
@@ -2852,12 +2869,19 @@
                  ($lambda-calls-set! lambda-node
                                      (acons iform penv
                                             ($lambda-calls lambda-node)))
-                 ($call-args-set! iform (map (cut pass2/rec <> penv #f) args))
+                 ($call-args-set! iform (pass2/call-args args penv))
                  iform)))))
        (else
-        ($call-args-set! iform (map (cut pass2/rec <> penv #f) args))
+        ($call-args-set! iform (pass2/call-args args penv))
         iform))))
    ))
+
+;; (map (cut pass2/rec <> penv #f) args), but avoid closure creation.
+(define (pass2/call-args args penv)
+  (let loop ((args args) (r '()))
+    (if (null? args)
+      (reverse! r)
+      (loop (cdr args) (cons (pass2/rec (car args) penv #f) r)))))
 
 ;; Check if IFORM ($LREF node) can be a target of procedure-call optimization.
 ;;   - If IFORM is not statically bound to $LAMBDA node,
