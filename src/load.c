@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.96 2005-04-12 01:42:27 shirok Exp $
+ *  $Id: load.c,v 1.97 2005-05-14 07:11:31 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -89,7 +89,8 @@ static ScmObj key_ignore_coding      = SCM_UNBOUND;
  * 
  *   The most basic function in the load()-family.  Read an expression
  *   from the given port and evaluates it repeatedly, until it reaches
- *   EOF.  Then the port is closed.
+ *   EOF.  Then the port is closed.   The port is locked by the calling
+ *   thread until the operation terminates.
  *
  *   The result of the last evaluation remains on VM.
  *
@@ -100,6 +101,9 @@ static ScmObj key_ignore_coding      = SCM_UNBOUND;
  *   FLAGS argument is ignored for now, but reserved for future
  *   extension.  SCM_LOAD_QUIET_NOFILE and SCM_LOAD_IGNORE_CODING
  *   won't have any effect for LoadFromPort; see Scm_Load below.
+ *
+ *   TODO: if we're using coding-aware port, how should we propagate
+ *   locking into the wrapped (original) port?
  */
 
 struct load_packet {
@@ -118,6 +122,7 @@ static ScmObj load_after(ScmObj *args, int nargs, void *data)
     struct load_packet *p = (struct load_packet *)data;
     ScmVM *vm = Scm_VM();
     Scm_ClosePort(p->port);
+    PORT_UNLOCK(p->port);
     Scm_SelectModule(p->prev_module);
     vm->load_port = p->prev_port;
     vm->load_history = p->prev_history;
@@ -189,6 +194,8 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
         port_info = SCM_LIST1(SCM_FALSE);
     }
     vm->load_history = Scm_Cons(port_info, vm->load_history);
+
+    PORT_LOCK(port, vm);
     return Scm_VMDynamicWindC(NULL, load_body, load_after, p);
 }
 
@@ -790,7 +797,7 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export_)
  *   There may be a case that the feature dependency forms a loop because
  *   of bug.  An error should be signaled in such a case, rather than going
  *   to deadlock.   So, when the calling thread finds the required feature
- *   is in the ldinfo.providing alist, it checks the waiting chaing of
+ *   is in the ldinfo.providing alist, it checks the waiting chain of
  *   features, and no threads are waiting for a feature being provided by
  *   the calling thread.
  */

@@ -1,5 +1,8 @@
 2005-05-13  Shiro Kawai  <shiro@acm.org>
 
+	* src/load.c (Scm_VMLoadFromPort): Lock port during loading.  This
+	  slightly improves script loading performance.
+
 	* src/compile.scm, src/code.c: rewrote instruction emitting & combining
 	  routine (pass3/emit!) in C for better compiler performance.
 	  (20-25% gain!).  Also optimized pass1/global-call.
