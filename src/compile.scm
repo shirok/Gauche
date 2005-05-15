@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.13 2005-05-14 01:47:52 shirok Exp $
+;;;  $Id: compile.scm,v 1.14 2005-05-15 09:06:43 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -162,6 +162,25 @@
     `(let ((,tmp ,obj))
        (cond ,@(map expand-clause clauses)))))
 
+;; Inlining map.  Combined with closure optimization, we can avoid
+;; closure creation if we inline map call.
+;; We once tried inlining map calls automatically, and found the
+;; performance gain in general wasn't significant to justify the
+;; amount of increase of the code.
+;; However, it is worth to do in performance critical path.
+;; NB: proc is evaluated every iteration.  Intended it to be a lambda form,
+;; so that its call is inlined.
+;; NB: commented out for now, since it wasn't effective.
+
+;(define-macro (imap proc lis)
+;  (let ((p (gensym))
+;        (r (gensym)))
+;    `(let loop ((,p ,lis) (,r '()))
+;       (if (null? ,p)
+;         (reverse! ,r)
+;         (loop (cdr ,p) (cons (,proc (car ,p)) ,r))))
+;    ))
+
 ;;============================================================
 ;; Data structures
 ;;
@@ -181,10 +200,9 @@
 ;; (usually a symbol or an integer) to indicate the type of the
 ;; structure.
 ;;
-;; (define-simple-struct <name> <tag> <constructor> [<predicate> (<slot-spec>*)])
+;; (define-simple-struct <name> <tag> <constructor> [(<slot-spec>*)])
 ;;
 ;; <constructor> : <symbol> | #f
-;; <predicate>   : <symbol> | #f
 ;; <slot-spec>   : <slot-name> | (<slot-name> [<init-value>])
 ;;
 ;; For each <slot-spec>, the following accessor/modifier are automatially
@@ -201,8 +219,7 @@
 ;; <init-value> (or #f if <init-value> is omitted).
 
 (define-macro (define-simple-struct name tag constructor . opts)
-  (let-optionals* opts ((predicate #f)
-                        (slot-defs '()))
+  (let-optionals* opts ((slot-defs '()))
     (define (take l n) ; we can't use srfi-1 take, so here it is.
       (if (zero? n)
         '()
@@ -235,10 +252,6 @@
        ,@(if constructor
            `(,(make-constructor))
            '())
-       ,@(if predicate
-           `((define (,predicate obj)
-               (and (vector? obj) (eqv? (vector-ref obj 0) ,tag))))
-           '())
        ,@(let loop ((s slot-defs) (i 1) (r '()))
            (if (null? s)
              (reverse! r)
@@ -267,14 +280,18 @@
 ;;     set-count - in how many places this variable is set!
 ;;
 
-(define-simple-struct lvar 'lvar
-  make-lvar
-  lvar?
+(define-simple-struct lvar 'lvar make-lvar
   (name
    (initval (undefined))
    (ref-count 0)
    (call-count 0) ;; will be gone
    (set-count 0)))
+
+(define (make-lvar+ name) ;; procedure version of constructor, for mapping
+  (make-lvar name))
+
+(define-inline (lvar? obj)
+  (and (vector? obj) (eq? (vector-ref obj 0) 'lvar)))
 
 (define (lvar-ref++! var)
   (lvar-ref-count-set! var (+ (lvar-ref-count var) 1)))
@@ -313,8 +330,7 @@
 ;; NB: this structure is assumed by cenv-lookup, defined in compaux.c.
 ;; If you change this structure here, adjust compaux.c accordingly.
 
-(define-simple-struct cenv 'cenv
-  make-cenv #f
+(define-simple-struct cenv 'cenv make-cenv
   (module frames exp-name current-proc))
 
 (define (cenv-copy cenv) (vector-copy cenv))
@@ -431,7 +447,7 @@
 ;; $define <src> <flags> <id> <expr>
 ;;   Global definition.  Binds the result of <expr> to the global
 ;;   identifier <id>.
-(define-simple-struct $define $DEFINE $define #f
+(define-simple-struct $define $DEFINE $define
   (src       ; original source for debugging
    flags     ; a list of flags.  Currently, only the following flag
              ;  is supported:
@@ -442,7 +458,7 @@
 
 ;; $lref <lvar>
 ;;   Local variable reference.
-(define-simple-struct $lref $LREF #f #f
+(define-simple-struct $lref $LREF #f
   (lvar      ; lvar struct.
    ))
 (define-inline ($lref lvar)
@@ -450,7 +466,7 @@
 
 ;; $lset <lvar> <expr>
 ;;   Local variable assignment.  The result of <expr> is set to <lvar>.
-(define-simple-struct $lset $LSET #f #f
+(define-simple-struct $lset $LSET #f
   (lvar      ; lvar struct
    expr      ; IForm
    ))
@@ -459,20 +475,20 @@
 
 ;; $gref <id>
 ;;   Gloval variable reference.
-(define-simple-struct $gref $GREF $gref #f
+(define-simple-struct $gref $GREF $gref
   (id        ; identifier
    ))
 
 ;; $gset <id> <iform>
 ;;   Glocal variable assignment.
-(define-simple-struct $gset $GSET $gset #f
+(define-simple-struct $gset $GSET $gset
   (id        ; identifier
    expr      ; IForm
    ))
 
 ;; $const <value>
 ;;   Constant.
-(define-simple-struct $const $CONST $const #f
+(define-simple-struct $const $CONST $const
   (value     ; Scheme value
    ))
 
@@ -486,7 +502,7 @@
 ;;   A special IForm, $it, can appear in either <then> or <else>
 ;;   clause; it is no-op and indicates that the result(s) of <test>
 ;;   should be carried over.
-(define-simple-struct $if $IF $if #f
+(define-simple-struct $if $IF $if
   (src       ; original source for debugging
    test      ; IForm for test expression
    then      ; IForm for then expression
@@ -496,7 +512,7 @@
 ;; $let <src> <type> <lvars> <inits> <body>
 ;;   Binding construct.  let, letrec, and inlined closure is represented
 ;;   by this node (let* is expanded to the nested $let in pass 1).
-(define-simple-struct $let $LET $let #f
+(define-simple-struct $let $LET $let
   (src       ; original source for debugging
    type      ; indicates scope: 'let for normal let, 'rec for letrec.
    lvars     ; list of lvars
@@ -506,7 +522,7 @@
 
 ;; $receive <src> <reqargs> <optarg> <lvars> <expr> <body>
 ;;   Multiple value binding construct. 
-(define-simple-struct $receive $RECEIVE $receive #f
+(define-simple-struct $receive $RECEIVE $receive
   (src       ; original source for debugging
    reqargs   ; # of required args
    optarg    ; 0 or 1, # of optional arg
@@ -519,7 +535,7 @@
 ;;   Closure. 
 ;;   $lambda has a couple of transient slots, which are used only
 ;;   during the optimization paths and not be saved by pack-iform.
-(define-simple-struct $lambda $LAMBDA $lambda #f
+(define-simple-struct $lambda $LAMBDA $lambda
   (src              ; original source for debugging
    name             ; inferred name of this closure
    reqargs          ; # of required args
@@ -538,7 +554,7 @@
 ;;    This kind of IForm node is introduced in Pass2 to record a shared
 ;;    node.  It marks the destination of LOCAL-ENV-JUMP, and also is
 ;;    created during $if optimization.
-(define-simple-struct $label $LABEL $label #f
+(define-simple-struct $label $LABEL $label
   (src       ; original source for debugging
    label     ; label.  #f in Pass 2.  Assigned in Pass 3.
    body      ; IForm for the body
@@ -549,7 +565,7 @@
 ;;    The compile tries to avoid creating $seq node if <body> has only
 ;;    one expression, but optimization paths may introduce such a $seq node.
 ;;    There can also be an empty $seq node, ($seq '()).
-(define-simple-struct $seq $SEQ #f #f
+(define-simple-struct $seq $SEQ #f
   (body      ; list of IForms
    ))
 
@@ -562,7 +578,7 @@
 ;;    Call a procedure.
 ;;    See the "Closure optimization" section in Pass 2 for the detailed
 ;;    description.
-(define-simple-struct $call $CALL $call #f
+(define-simple-struct $call $CALL $call
   (src       ; original source for debugging
    proc      ; IForm for the procedure to call.
    args      ; list of IForms for arguments.
@@ -574,7 +590,7 @@
 
 ;; $asm <src> <insn> <args>
 ;;    Inlined assembly code.
-(define-simple-struct $asm $ASM $asm #f
+(define-simple-struct $asm $ASM $asm
   (src       ; original source for debugging
    insn      ; instruction (<code> [<param> ...])
    args      ; list of IForms
@@ -582,7 +598,7 @@
 
 ;; $promise <src> <expr>
 ;;    Promise.
-(define-simple-struct $promise $PROMISE $promise #f
+(define-simple-struct $promise $PROMISE $promise
   (src       ; original source for debugging
    expr      ; IForm
    ))
@@ -594,7 +610,7 @@
 
 ;; The followings are builtin version of standard procedures.
 ;; 
-(define-simple-struct $cons $CONS #f #f (arg0 arg1))
+(define-simple-struct $cons $CONS #f (arg0 arg1))
 
 ;; quasiquote tends to generate nested $cons, which can be
 ;; packed to $list or $list*.
@@ -612,14 +628,14 @@
       (values type (cons (vector-ref elt 2) elts))))
    (else (values $LIST* (list elt)))))
 
-(define-simple-struct $append $APPEND $append #f (src arg0 arg1))
-(define-simple-struct $memv   $MEMV   $memv #f (src arg0 arg1))
-(define-simple-struct $eq?    $EQ?    $eq? #f (src arg0 arg1))
-(define-simple-struct $eqv?   $EQV?   $eqv? #f (src arg0 arg1))
-(define-simple-struct $vector $VECTOR $vector #f (src args))
-(define-simple-struct $list   $LIST   $list #f (src args))
-(define-simple-struct $list*  $LIST*  $list* #f (src args))
-(define-simple-struct $list->vector $LIST->VECTOR $list->vector #f (src arg0))
+(define-simple-struct $append $APPEND $append (src arg0 arg1))
+(define-simple-struct $memv   $MEMV   $memv   (src arg0 arg1))
+(define-simple-struct $eq?    $EQ?    $eq?    (src arg0 arg1))
+(define-simple-struct $eqv?   $EQV?   $eqv?   (src arg0 arg1))
+(define-simple-struct $vector $VECTOR $vector (src args))
+(define-simple-struct $list   $LIST   $list   (src args))
+(define-simple-struct $list*  $LIST*  $list*  (src args))
+(define-simple-struct $list->vector $LIST->VECTOR $list->vector (src arg0))
 
 ;; common accessors
 (define-macro ($*-src  iform)  `(vector-ref ,iform 1))
@@ -1500,7 +1516,7 @@
 ;; Expand inlinable procedure.  Inliner may be...
 ;;   - An integer.  This must be the VM instruction number.
 ;;     (It is useful to initialize the inliner statically in .stub file).
-;;   - A vector.  This must be an intermediate form.  It is set if
+;;   - A vector.  This must be a packed intermediate form.  It is set if
 ;;     the procedure is defined by define-inline.
 ;;   - A procedure.   It is called like a macro expander.
 ;;     It may return #<undef> to cancel inlining.
@@ -1821,34 +1837,43 @@
 
 (define-pass1-syntax (cond form cenv) :null
   (define (process-clauses cls)
-    (match cls
-      (() ($const-undef))
-      ((((? (global-eq?? 'else cenv)) expr ...) . rest)
-       (unless (null? rest)
-         (error "syntax-error: 'else' clause followed by more clauses:" form))
-       ($seq (map (cut pass1 <> cenv) expr)))
-      (((test (? (global-eq?? '=> cenv)) proc) . rest)
-       (let* ((ttree (pass1 test cenv))
-              (tmp (make-lvar 'tmp)))
-         (lvar-initval-set! tmp ttree)
-         ($let (car cls) 'let
-               (list tmp)
-               (list ttree)
-               ($if (car cls)
-                    ($lref tmp)
-                    ($call (car cls)
-                           (pass1 proc (cenv-sans-name cenv))
-                           (list ($lref tmp)))
-                    (process-clauses rest)))))
-      (((test) . rest)
-       ($if (car cls) (pass1 test (cenv-sans-name cenv))
-            ($it) (process-clauses rest)))
-      (((test expr ...) . rest)
-       ($if (car cls) (pass1 test (cenv-sans-name cenv))
-            ($seq (map (cut pass1 <> cenv) expr))
-            (process-clauses rest)))
-      (else
-       (error "syntax-error: bad clause in cond:" form))))
+    (cond
+     ((null? cls) ($const-undef))
+     ((not (and (pair? cls) (pair? (car cls))))
+      (error "syntax-error: bad clause in cond:" form))
+     ((global-eq? (caar cls) 'else cenv) ; ((else . exprs) . rest)
+      (let ((exprs (cdar cls))
+            (rest  (cdr cls)))
+        (unless (null? rest)
+          (error "syntax-error: 'else' clause followed by more clauses:" form))
+        ($seq (map (cut pass1 <> cenv) exprs))))
+     ((and (pair? (cdar cls))           ; ((test => proc) . rest)
+           (global-eq? (cadar cls) '=> cenv)
+           (pair? (cddar cls))
+           (null? (cdddar cls)))
+      (let ((test (pass1 (caar cls) cenv))
+            (proc (caddar cls))
+            (rest (cdr cls))
+            (tmp (make-lvar 'tmp)))
+        (lvar-initval-set! tmp test)
+        ($let (car cls) 'let
+              (list tmp)
+              (list test)
+              ($if (car cls)
+                   ($lref tmp)
+                   ($call (car cls)
+                          (pass1 proc (cenv-sans-name cenv))
+                          (list ($lref tmp)))
+                   (process-clauses rest)))))
+     ((null? (cdar cls))                ; ((test) . rest)
+      ($if (car cls) (pass1 (caar cls) (cenv-sans-name cenv))
+           ($it) (process-clauses (cdr cls))))
+     ((list? (car cls))                 ; ((test . exprs) . rest)
+      ($if (car cls) (pass1 (caar cls) (cenv-sans-name cenv))
+           ($seq (map (cut pass1 <> cenv) (cdar cls)))
+           (process-clauses (cdr cls))))
+     (else
+      (error "syntax-error: bad clause in cond:" form))))
   (match form
     ((_)
      (error "syntax-error: at least one clause is required for cond:" form))
@@ -1859,28 +1884,30 @@
 
 (define-pass1-syntax (case form cenv) :null
   (define (process-clauses tmpvar cls)
-    (match cls
-      (() ($const-undef))
-      ((('else expr ...) . rest) ;; NB: use global-id=?
-       (unless (null? rest)
-         (error "syntax-error: 'else' clause followed by more clauses:" form))
-       ($seq (map (cut pass1 <> cenv) expr)))
-      ((((elt ...) expr ...) . rest)
-       (let* ((nelts (length elt))
-              (elts (map unwrap-syntax elt)))
-         (unless (> nelts 0)
-           (error "syntax-error: bad clause in case:" form))
-         ($if (car cls)
-              (if (> nelts 1)
-                ($memv #f ($lref tmpvar) ($const elts))
-                (if (symbol? (car elts))
-                  ($eq? #f  ($lref tmpvar) ($const (car elts)))
-                  ($eqv? #f ($lref tmpvar) ($const (car elts)))))
-              ($seq (map (cut pass1 <> cenv) expr))
-              (process-clauses tmpvar rest))))
-      (else
-       (error "syntax-error: bad clause in case:" form))))
-  
+    (cond
+     ((null? cls) ($const-undef))
+     ((not (and (pair? cls) (pair? (car cls))))
+      (error "syntax-error: bad clause in case:" form))
+     ((global-eq? (caar cls) 'else cenv) ; ((else . exprs) . rest)
+      (unless (null? (cdr cls))
+        (error "syntax-error: 'else' clause followed by more clauses:" form))
+      ($seq (map (cut pass1 <> cenv) (cdar cls))))
+     ((and (list? (caar cls)))          ;  ((elts . exprs) . rset)
+      (let ((nelts (length (caar cls)))
+            (elts  (map unwrap-syntax (caar cls)))
+            (exprs (cdar cls)))
+        (unless (> nelts 0)
+          (error "syntax-error: bad clause in case:" form))
+        ($if (car cls)
+             (if (> nelts 1)
+               ($memv #f ($lref tmpvar) ($const elts))
+               (if (symbol? (car elts))
+                 ($eq? #f  ($lref tmpvar) ($const (car elts)))
+                 ($eqv? #f ($lref tmpvar) ($const (car elts)))))
+             ($seq (map (cut pass1 <> cenv) exprs))
+             (process-clauses tmpvar (cdr cls)))))
+     (else
+      (error "syntax-error: bad clause in case:" form))))
   (match form
     ((_)
      (error "syntax-error: at least one clause is required for case:" form))
@@ -2072,7 +2099,7 @@
 
 (define (pass1/lambda form formals body cenv flag)
   (receive (args reqargs optarg) (parse-lambda-args formals)
-    (let* ((lvars (map (lambda (x) (make-lvar x)) args))
+    (let* ((lvars (map make-lvar+ args))
            (intform ($lambda form (cenv-exp-name cenv)
                              reqargs optarg lvars #f flag))
            (newenv (cenv-extend/proc cenv (map cons args lvars)
@@ -2084,7 +2111,7 @@
   (match form
     ((_ formals expr body ...)
      (receive (args reqargs optarg) (parse-lambda-args formals)
-       (let* ((lvars (map (lambda (x) (make-lvar x)) args))
+       (let* ((lvars (map make-lvar+ args))
               (newenv (cenv-extend cenv (map cons args lvars) LEXICAL)))
          ($receive form reqargs optarg lvars (pass1 expr cenv)
                    (pass1/body body '() newenv)))))
@@ -2096,7 +2123,7 @@
     ((_ () body ...)
      (pass1/body body '() cenv))
     ((_ ((var expr) ...) body ...)
-     (let* ((lvars (map (lambda (x) (make-lvar x)) var))
+     (let* ((lvars (map make-lvar+ var))
             (newenv (cenv-extend cenv (map cons var lvars) LEXICAL)))
        ($let form 'let lvars
              (map (lambda (init lvar)
@@ -2123,7 +2150,7 @@
      ;;  The reason is that this form can be more easily spotted by
      ;;  our simple-minded closure optimizer in Pass 2.
      (let* ((lvar (make-lvar name))
-            (args (map (lambda (x) (make-lvar x)) var))
+            (args (map make-lvar+ var))
             (env1 (cenv-extend cenv `((,name . ,lvar)) LEXICAL))
             (env2 (cenv-extend/name env1 (map cons var args) LEXICAL name))
             (lmda ($lambda form name (length args) 0 args
@@ -2158,7 +2185,7 @@
     ((_ () body ...)
      (pass1/body body '() cenv))
     ((_ ((var expr) ...) body ...)
-     (let* ((lvars (map (lambda (x) (make-lvar x)) var))
+     (let* ((lvars (map make-lvar+ var))
             (newenv (cenv-extend cenv (map cons var lvars) LEXICAL))
             )
        ($let form 'rec lvars
@@ -2176,7 +2203,7 @@
   (match form
     ((_ ((var init . update) ...) (test expr ...) body ...)
      (let* ((tmp  (make-lvar 'do-proc))
-            (args (map (lambda (x) (make-lvar x)) var))
+            (args (map make-lvar+ var))
             (newenv (cenv-extend/proc cenv (map cons var args) LEXICAL 'do-proc))
             (clo ($lambda
                   form 'do-body (length var) 0 args
@@ -2974,21 +3001,26 @@
 ;; the code generation, each handler returns the maximum stack depth.
 
 
-;; predicate
-(define (normal-context? ctx) (memq ctx '(normal/bottm normal/top)))
-(define (stmt-context? ctx)   (memq ctx '(stmt/bottm stmt/top)))
-(define (tail-context? ctx)   (eq? ctx 'tail))
-(define (bottom-context? ctx) (memq ctx '(normal/bottom stmt/bottom tail)))
-(define (top-context? ctx)    (memq ctx '(normal/top stmt/top)))
+;; predicates
+(define-inline (normal-context? ctx)
+  (or (eq? ctx 'normal/bottm) (eq? ctx 'normal/top)))
+(define-inline (stmt-context? ctx)
+  (or (eq? ctx 'stmt/bottm) (eq? ctx 'stmt/top)))
+(define-inline (tail-context? ctx)
+  (eq? ctx 'tail))
+(define-inline (bottom-context? ctx)
+  (or (eq? ctx 'normal/bottom) (eq? ctx 'stmt/bottom) (eq? ctx 'tail)))
+(define-inline (top-context? ctx)
+  (or (eq? ctx 'normal/top) (eq? ctx 'stmt/top)))
 
 ;; context switch 
-(define (normal-context prev-ctx)
+(define-inline (normal-context prev-ctx)
   (if (bottom-context? prev-ctx) 'normal/bottom 'normal/top))
 
-(define (stmt-context prev-ctx)
+(define-inline (stmt-context prev-ctx)
   (if (bottom-context? prev-ctx) 'stmt/bottom 'stmt/top))
 
-(define (tail-context prev-ctx) 'tail)
+(define-inline (tail-context prev-ctx) 'tail)
 
 ;; Dispatch pass3 handler.
 ;; *pass3-dispatch-table* is defined below, after all handlers are defined.
@@ -3839,27 +3871,6 @@
 (define *pass3-dispatch-table* (pass3-generate-dispatch-table))
      
 ;; Returns depth and offset of local variable reference.
-;; NB: for the time being, we manually extract the inner loop
-;; to the toplevel.  The original versio is in the comment below.
-;; Turn it back once we implemented tail call inliner.
-
-;(define (pass3/lookup-lvar lvar renv ctx)
-;  (pass3/lookup-lvar-outer lvar renv 0 ctx))
-
-;(define (pass3/lookup-lvar-outer lvar renv depth ctx)
-;  (if (null? renv)
-;    (error "[internal error] stray local variable:" lvar)
-;    (pass3/lookup-lvar-inner lvar (car renv) renv 1 depth ctx)))
-
-;(define (pass3/lookup-lvar-inner lvar frame renv count depth ctx)
-;  (cond
-;   ((null? frame)
-;    (pass3/lookup-lvar-outer lvar (cdr renv) (+ depth 1) ctx))
-;   ((eq? (car frame) lvar)
-;    (values depth (- (length (car renv)) count)))
-;   (else
-;    (pass3/lookup-lvar-inner lvar (cdr frame) renv (+ count 1) depth ctx))))
-
 (define (pass3/lookup-lvar lvar renv ctx)
   (let outer ((renv renv)
               (depth 0))
@@ -3877,17 +3888,14 @@
     0
     (let1 d (pass3/rec (car args) ccb renv (normal-context ctx))
       (compiled-code-emit0! ccb PUSH)
-      (pass3/prepare-args-rest (cdr args) ccb renv ctx (+ d 1) 1))))
-
-(define (pass3/prepare-args-rest args ccb renv ctx depth cnt)
-  (if (null? args)
-    depth
-    (let1 d (pass3/rec (car args) ccb renv 'normal/top)
-      (compiled-code-emit0! ccb PUSH)
-      (pass3/prepare-args-rest (cdr args) ccb renv ctx
-                               (max depth (+ d cnt 1)) (+ cnt 1)))))
-
-
+      (let loop ((args  (cdr args))
+                 (depth (+ d 1))
+                 (cnt  1))
+        (if (null? args)
+          depth
+          (let1 d (pass3/rec (car args) ccb renv 'normal/top)
+            (compiled-code-emit0! ccb PUSH)
+            (loop (cdr args) (max depth (+ d cnt 1)) (+ cnt 1))))))))
 
 ;;============================================================
 ;; Inliners of builtin procedures
