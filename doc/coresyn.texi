@@ -1590,7 +1590,7 @@ and affects the resolution of global variable reference.
 Unlike CommonLisp's packages, which map names to symbols,
 in Gauche symbols are always @code{eq?} if two have the
 same name.  However, Gauche's symbol doesn't have a 'value'
-slot in it.  Given symbol, a module finds its binding that
+slot in it.  From a given symbol, a module finds its binding that
 keeps a value.
 Different modules can associate different bindings
 to the same symbol, that yield different values.
