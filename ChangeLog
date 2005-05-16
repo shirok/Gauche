@@ -1,3 +1,8 @@
+2005-05-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/gencomp (vectorize-code): fix to make the dumped code work on
+	  both 32bit and 64bit architecture.
+
 2005-05-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm_VMLoadFromPort): Lock port during loading.  This

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.6 2005-05-01 06:36:03 shirok Exp $
+;;;  $Id: gencomp,v 1.7 2005-05-16 09:09:03 shirok Exp $
 ;;;
 
 ;;;
@@ -297,8 +297,16 @@
       (unless (null? cv)
         (let* ((insn (car cv))
                (info (vm-find-insn-info (car insn))))
-          (format #t "  0x~8,'0x,    /* ~3d ~s */\n"
-                  (vm-build-insn insn) count insn)
+          ;; KLUDGE: we need to emit C code that can be compiled on both
+          ;; 32bit and 64bit platforms.  An instructions with one parameter
+          ;; can be a negative integer, though vm-build-insn returns a value
+          ;; that wraps around by 32bit integer.
+          (let1 insnval (vm-build-insn insn)
+            (if (> insnval #x80000000)
+              (format #t "  -0x~8,'0x,    /* ~3d ~s */\n"
+                      (- #x100000000 insnval) count insn)
+              (format #t "  0x~8,'0x,    /* ~3d ~s */\n"
+                      insnval count insn)))
           (case (ref info 'operand-type)
             ((none) (loop (cdr cv) (cdr lv) (+ count 1)))
             ((addr)
