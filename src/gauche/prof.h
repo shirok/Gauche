@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: prof.h,v 1.2 2005-04-12 01:42:28 shirok Exp $
+ *  $Id: prof.h,v 1.3 2005-05-16 09:57:40 shirok Exp $
  */
 
 #ifndef GAUCHE_PROF_H
@@ -125,6 +125,7 @@ SCM_EXTERN ScmObj Scm_ProfilerRawResult(void);
 
 SCM_EXTERN void Scm_ProfilerCountBufferFlush(ScmVM *vm);
 
+#ifdef GAUCHE_PROFILE
 #define SCM_PROF_COUNT_CALL(vm, obj)                                    \
     do {                                                                \
         if (vm->profilerRunning) {                                      \
@@ -134,5 +135,9 @@ SCM_EXTERN void Scm_ProfilerCountBufferFlush(ScmVM *vm);
             vm->prof->counts[vm->prof->currentCount++].func = obj;      \
         }                                                               \
     } while (0)
+#else  /*!GAUCHE_PROFILE*/
+#define SCM_PROF_COUNT_CALL(vm, obj)  /*empty*/
+#endif /*!GAUCHE_PROFILE*/
+
 
 #endif  /*GAUCHE_PROF_H*/

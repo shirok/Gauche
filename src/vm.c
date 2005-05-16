@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.225 2005-05-12 09:00:57 shirok Exp $
+ *  $Id: vm.c,v 1.226 2005-05-16 09:57:26 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -828,9 +828,7 @@ pthread_key_t Scm_VMKey(void)
                     PC = PC_TO_RETURN;
 
                     SAVE_REGS();
-#ifdef GAUCHE_PROFILE
                     SCM_PROF_COUNT_CALL(vm, VAL0);
-#endif /*GAUCHE_PROFILE*/
                     VAL0 = SCM_SUBR(VAL0)->func(ARGP, argc,
                                                 SCM_SUBR(VAL0)->data);
                     RESTORE_REGS();
@@ -851,9 +849,7 @@ pthread_key_t Scm_VMKey(void)
                     vm->base = SCM_COMPILED_CODE(SCM_CLOSURE(VAL0)->code);
                     PC = vm->base->code;
                     CHECK_STACK(vm->base->maxstack);
-#ifdef GAUCHE_PROFILE
                     SCM_PROF_COUNT_CALL(vm, SCM_OBJ(vm->base));
-#endif /*GAUCHE_PROFILE*/
                     NEXT;
                 }
                 /*
@@ -918,9 +914,7 @@ pthread_key_t Scm_VMKey(void)
                     FINISH_ENV(SCM_PROCEDURE_INFO(VAL0), NULL);
                     PC = PC_TO_RETURN;
                     SAVE_REGS();
-#ifdef GAUCHE_PROFILE
                     SCM_PROF_COUNT_CALL(vm, VAL0);
-#endif /*GAUCHE_PROFILE*/
                     VAL0 = SCM_GENERIC(VAL0)->fallback(fp,
                                                        argc,
                                                        SCM_GENERIC(VAL0));
@@ -942,9 +936,7 @@ pthread_key_t Scm_VMKey(void)
                     FINISH_ENV(SCM_PROCEDURE_INFO(VAL0), NULL);
                     PC = PC_TO_RETURN;
                     SAVE_REGS();
-#ifdef GAUCHE_PROFILE
                     SCM_PROF_COUNT_CALL(vm, VAL0);
-#endif /*GAUCHE_PROFILE*/
                     VAL0 = SCM_METHOD(VAL0)->func(SCM_NEXT_METHOD(nm),
                                                   fp,
                                                   argc,
@@ -964,9 +956,7 @@ pthread_key_t Scm_VMKey(void)
                     vm->base = SCM_COMPILED_CODE(SCM_METHOD(VAL0)->data);
                     PC = vm->base->code;
                     CHECK_STACK(vm->base->maxstack);
-#ifdef GAUCHE_PROFILE
                     SCM_PROF_COUNT_CALL(vm, SCM_OBJ(vm->base));
-#endif /*GAUCHE_PROFILE*/
                 }
                 NEXT;
                 /*
@@ -1259,9 +1249,7 @@ pthread_key_t Scm_VMKey(void)
                 vm->base = SCM_COMPILED_CODE(SCM_CLOSURE(VAL0)->code);
                 PC = vm->base->code;
                 CHECK_STACK(vm->base->maxstack);
-#ifdef GAUCHE_PROFILE
                 SCM_PROF_COUNT_CALL(vm, SCM_OBJ(vm->base));
-#endif /*GAUCHE_PROFILE*/
                 NEXT;
             }
             CASE(SCM_VM_LOCAL_ENV_CLOSURES) {
@@ -2698,9 +2686,7 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
         SCM_ASSERT(SCM_COMPILED_CODE_P(v));
         vm->base = SCM_COMPILED_CODE(v);
         vm->pc = SCM_COMPILED_CODE(v)->code;
-#ifdef GAUCHE_PROFILE
         SCM_PROF_COUNT_CALL(vm, v);
-#endif /*GAUCHE_PROFILE*/
         return SCM_UNDEFINED;
     }
 }
@@ -2748,9 +2734,7 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
         PC = vm->base->code;
         CHECK_STACK(vm->base->maxstack);
     }
-#ifdef GAUCHE_PROFILE
     SCM_PROF_COUNT_CALL(vm, program);
-#endif /*GAUCHE_PROFILE*/
     SAVE_REGS();
 
     cstack.prev = vm->cstack;
