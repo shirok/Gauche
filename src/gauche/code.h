@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: code.h,v 1.2 2005-04-12 01:42:28 shirok Exp $
+ *  $Id: code.h,v 1.3 2005-05-16 22:56:08 shirok Exp $
  */
 
 #ifndef GAUCHE_CODE_H
@@ -44,14 +44,15 @@
 
 struct ScmCompiledCodeRec {
     SCM_HEADER;
-    ScmWord *code;              /* Code vector.  this is allocated as atomic,
-                                   to prevent GC from scanning it. */
+    ScmWord *code;              /* Code vector (*1). This is allocated as
+                                   atomic, to prevent GC from scanning it.
+                                   (*2) */
     ScmObj *constants;          /* Constant vector.  this isn't used during
                                    execution, but kept here so that the
                                    constants in the code vector won't be
-                                   GC-ed. */
+                                   GC-ed. (*2) */
     int codeSize;               /* size of code vector */
-    int constantSize;           /* size of constant vector */
+    int constantSize;           /* size of constant vector (*2) */
     int maxstack;               /* maximum runtime stack depth */
     u_short requiredArgs;       /* # of required args, if this code is the
                                    body of a closure.  Otherwise 0. */
@@ -62,17 +63,30 @@ struct ScmCompiledCodeRec {
     ScmObj info;                /* debug info.  alist of instruction offset
                                    and info. */
     ScmObj argInfo;             /* If this code is the body of the closure,
-                                   keeps a list of args.  #f otherwise. */
+                                   keeps a list of args.  #f otherwise. (*3) */
     ScmObj parent;              /* ScmCompiledCode if this code is compiled
                                    within other code chunk.  #f otherwise. */
-    ScmObj intermediateForm;    /* An intermediate form (the result of pass1
-                                   of the compiler) of the body.  It is used
+    ScmObj intermediateForm;    /* A packed IForm of the body (see compile.scm
+                                   for the details of IForm).  It is used
                                    to inline this procedure.  Only set if
                                    the procedure is defined with define-inline.
-                                   #f otherwise. */
+                                   #f otherwise. (*4) */
     void *builder;              /* An opaque data used during consturcting
                                    the code vector.  Usually NULL. */
 };
+
+/* Footnotes on ScmCompiledCodeRec
+ *
+ *   *1) This may be NULL if this compiled code is "partially compiled"---
+ *       that is, the compiler only runs pass1 and put the intermediate
+ *       form in intermediateForm field.
+ *   *2) For the C-dumped code, the code vector is located in a static data
+ *       area, subject to GC scanning.  In that case, the constants pointer
+ *       is NULL.
+ *   *3) This info isn't set for the time being.
+ *   *4) This IForm is a direct result of Pass1, i.e. non-optimized form.
+ *       Pass2 scans it When IForm is inlined into the caller site.
+ */
 
 SCM_CLASS_DECL(Scm_CompiledCodeClass);
 #define SCM_CLASS_COMPILED_CODE   (&Scm_CompiledCodeClass)
