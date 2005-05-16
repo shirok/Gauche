@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.14 2005-05-15 09:06:43 shirok Exp $
+;;;  $Id: compile.scm,v 1.15 2005-05-16 09:04:51 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -51,24 +51,23 @@
 ;;;
 ;;; Structure of the compiler
 ;;;
-;;;   We have 3 passes.  Here are the outlines.  See the header of each
+;;;   We have 3 passes, outlined here.  See the header of each
 ;;;   section for the details.
 ;;;
 ;;;   Pass 1 (Parsing):
 ;;;     - Converts Sexpr into an intermediate form (IForm).
 ;;;     - Macros and global inlinable functions are expanded.
 ;;;     - Global constant variables are substituted to its value.
-;;;     - Variable bindings are analyzed.  The # of references and
-;;;       modifications of each local variable are recorded.
-;;;     - Constant folding #1.
+;;;     - Variable bindings are resolved.  Local variables are marked
+;;;       according to its usage.
+;;;     - Constant expressons are folded.
 ;;;
 ;;;   Pass 2 (Optimization):
 ;;;     - Traverses IFrom and modify the tree to optimize it.
 ;;;     - Limited beta-sustitution (local variable substitution and
 ;;;       inline local functions for the obvious cases).
-;;;     - Closure analysis (track the usage of local variables and
-;;;       closures, and adds marks to the IForm nodes).
-;;;     - Constant folding #2.
+;;;     - Closure optimization (generates efficient code for truly local
+;;;       closures)
 ;;;
 ;;;   Pass 3 (Code generation):
 ;;;     - Traverses IForm and generate VM instructions.
@@ -80,6 +79,7 @@
 ;; Compile-time constants
 ;;
 
+;; used by find-binding
 (eval-when (:compile-toplevel)
   (define-constant LEXICAL 0)
   (define-constant SYNTAX  1)
@@ -97,6 +97,7 @@
                      (loop (cdr syms) (+ i 1))))))
        (define-constant ,name ',(reverse! alist)))))
 
+;; IForm tags
 (define-enum .intermediate-tags.
   $DEFINE
   $LREF
@@ -147,7 +148,9 @@
 ;;;
 
 ;; We use integers, instead of symbols, as tags, for it allows
-;; us to use jump table rather than 'case'. 
+;; us to use jump table rather than 'case'.   
+;; This macro allows us to use symbolic constants instead of
+;; the actual integers.
 
 (define-macro (case/unquote obj . clauses)
   (let1 tmp (gensym)
@@ -170,6 +173,7 @@
 ;; However, it is worth to do in performance critical path.
 ;; NB: proc is evaluated every iteration.  Intended it to be a lambda form,
 ;; so that its call is inlined.
+
 ;; NB: commented out for now, since it wasn't effective.
 
 ;(define-macro (imap proc lis)
@@ -333,7 +337,7 @@
 (define-simple-struct cenv 'cenv make-cenv
   (module frames exp-name current-proc))
 
-(define (cenv-copy cenv) (vector-copy cenv))
+(define-macro (cenv-copy cenv) `(vector-copy ,cenv))
 
 (define (make-bottom-cenv . maybe-module)
   (make-cenv (get-optional maybe-module (vm-current-module)) '() #f))
