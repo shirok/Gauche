@@ -711,9 +711,9 @@ As of 0.8.4, Gauche has a built-in profiler.  It is still experimental
 quality and only be tested on Linux.  It isn't available for all
 platforms.   It works only in single-thread applications for now.
 @c JP
-0.8.4 から Gauche は組込みのプロファイラを持つようになりました。これは
-現時点では、まだ実験的なもので Linux 上でしかテストしていません。すべてのプ
-ラットフォームで利用できるわけではありません。それにシングルスレッドの
+0.8.4 から Gauche は組込みのプロファイラを備えています。これは
+現時点ではまだ実験的なもので、Linux 上でしかテストしていません。すべてのプ
+ラットフォームで利用できるわけではありませんし、シングルスレッドの
 アプリケーションでしか動きません。
 @c COMMON
 
@@ -734,7 +734,7 @@ After the execution of @file{your-script.scm} is completed, Gauche prints
 out the table of functions with its call count and its consumed time,
 sorted by the total consumed time.
 @c JP
-@file{your-script.scm} の実行完了後 Gauche は関数と、その呼び出し回数
+@file{your-script.scm} の実行完了後、Gauche は各関数についてその呼び出し回数
 および消費時間を示した表を印字します。この表は総消費時間の順でソートさ
 れています。
 @c COMMON
@@ -776,19 +776,33 @@ function call, which is the order of nanoseconds, this sampilng rate
 is very sparse.  However, if we run the program long enough,
 we can expect the distribution of samples per each function 
 approximately reflects the distribution of time spent in each function.
-Keep in mind that the number is only approximation; the number
-of sample counts for a function may easily vary if the program deals
-with different data.  Yet it is helpful to know the general pattern.
 @c JP
 時間プロファイラは統計的標本化をおこなっていることに注意してください。
 プロファイラは10ミリ秒ごとにプロセスに割込んで、その時点で実行されてい
 る関数を記録します。ナノ秒オーダの関数呼出しごとの個別の実行時間に比べる
-とサンプリングレートはかなり粗いものになっています。しかしながら、プロ
+と、このサンプリングレートはかなり粗いものです。しかしながら、プロ
 グラムの実行時間が長ければ、各関数ごとの標本分布は関数ごとの消費時間を
-ほぼ反映しているだろうと期待できます。数字はあくまで近似にすぎないこと
+ほぼ反映しているだろうと期待できます。
+@c COMMON
+
+@c EN
+Keep in mind that the number is only approximation; the number
+of sample counts for a function may easily vary if the program deals
+with different data.   It should also be noted that, for now, GC 
+time is included in the function in which GC is triggered.
+This sometimes causes a less important function to "float up" to
+near-top of the list.  
+To know the general pattern, it is a good custom to run the program
+with several different data.
+@c JP
+数字はあくまで近似にすぎないこと
 を心にとめておいてください。ひとつの関数あたりの標本数はプログラムが扱
-うデータが違えば、すぐに変化してしまうことがあります。それでも、一般的
-なパターンを知るには役に立ちます。
+うデータが違えば、すぐに変化してしまうことがあります。
+また、今のところGCにかかる時間はGCがトリガされた関数の実行時間に
+算入されてしまっていることに注意して下さい。これによって、あまり
+重要でない関数がリストの上位に浮かびあがってくることがあります。
+一般的なパターンを知るには、プログラムをいろいろなデータで走らせて
+みると良いでしょう。
 @c COMMON
 
 @c EN
@@ -811,7 +825,7 @@ Schemeでは基本的にすべての関数は無名なので、プロファイル結果の'name'
 フィールドはヒントにすぎません。トップレベルで束縛されている関数につい
 ては通常それが最初に束縛されたグローバル変数名が印字されます。内部関数
 については関数の入れ子構造を反映して名前のリストが印字されます。
-メソッドについても名前と特定化子のリストが印字されます。
+メソッドは、名前と特定化子のリストとして印字されます。
 @c COMMON
 
 @c EN
@@ -823,7 +837,7 @@ exitting the server, you can call the profiler API from your program;
 see @ref{Profiler API}, for the details.
 @c JP
 プロファイラはそれ自身にオーバヘッドがあります。通常は、処理時間が
-20-30% 増加します。プロファイラを選択的にオンにしたい場合か、
+20-30% 増加します。プロファイラを選択的にオンにしたい場合や、
 停止しないサーバプログラムを走らせていて、そのサーバを停止することなく、
 統計を取りたいような場合には、プログラムからプロファイラ APIを呼ぶこと
 ができます。詳細については @ref{Profiler API} を参照してください。
@@ -831,7 +845,81 @@ see @ref{Profiler API}, for the details.
 
 @node Performance tips,  , Using profiler, Profiling and tuning
 @subsection Performance tips
-@c NODE パフォーマンスに関するコツ
+@c NODE パフォーマンスに関するヒント
+
+Don't guess, just benchmark.  It is the first rule of
+performance tuning.  Especially for the higher-level languages 
+like Scheme, what impacts on performance greatly depends on
+the implementation's strategy (for example, some implementations
+has super-light call/cc and would be natural to use them rather
+than mantaining application-specific state; while in some 
+implementations call/cc can be very heavy).
+
+Gauche has such implementation-specific characteristics, and
+to know some of them would help to see what to look out in
+the benchmark results.
+
+@subsubheading General issues
+
+Some type of objects and pattens need special attention in
+regard to the performance, if your application touches them intensely.
+
+@emph{Ports}: To satisfy the specification of SRFI-18 (Threading),
+every call to I/O primitives of Gauche locks the port.
+This overhead may be visible if the application does a lot of I/O
+with smaller units (e.g. every bytes).   The primitives that deals
+with larger unit, such as @code{read} and @code{read-block}, are less
+problematic, since they just lock the port once per call and do
+all the low-level I/O without the lock overhead.
+
+If you find out the locking is indeed a bottleneck, there are couple
+of things you can consider: (1) Try using the larger-unit primitives,
+instead of calling the smaller-unit ones.  (2) Use @code{with-port-locking}
+(see @ref{Port and threads}) to lock the port in larger context.
+
+@emph{Strings}: Because of the multibyte strings, two operations
+are particularly heavy in Gauche: string mutation and indexed string access.
+It is a design choice; we encourage the programming style that
+avois those operations.  When you sequentially access the string,
+string ports (see @ref{String ports}) provides a more efficient way.
+When you search and retrieve a substring, there are various
+higher-level primitives are provided (see @ref{String utilities},
+@ref{Regular expression}, and @ref{String library}, for example).
+If you're using strings to represent an octet stream, use uniform
+vectors (see @ref{Uniform vectors}) instead.
+
+@emph{Deep recursion}: Gauche's VM uses a stack for efficient
+local frame calling.  If recursion goes very deep (depending on
+the code, but usually several hundreds to a thousand), the stack
+overflows and Gauche moves the content of the stack into the heap.
+This incurs some overhead.  If you observe a performance degradation
+beyond a certain amount of data, check out this possibility.
+
+@emph{Generic functions}: Because of its dynamic nature, generic
+function calls are slower than procedure calls.  You don't need
+to avoid generic functions because of performance reasons in general,
+but if you do find single function call consuming a few ten percent of
+execution time and it is calling a generic function in its inner loop---
+then it may be worth to change it.
+
+@emph{Redefining builtin functions}: Gauche inlines some builtin
+functions if it is not redefined.  Although sometimes it is useful
+to redefine basic functions, you may want to limit the effect.
+For example, put redefined functions in a separate module and
+use the module in the code that absolutely needs those functions
+replaced.
+
+
+@subsubheading Cutting the last corners
+
+
+
+
+
+
+
+
+
 
 
 @c ----------------------------------------------------------------------
