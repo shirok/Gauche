@@ -1,3 +1,7 @@
+2005-05-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (compile), src/compaux.c (Scm_Compile): API fix.
+
 2005-05-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/gencomp (vectorize-code): fix to make the dumped code work on

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.226 2005-05-16 09:57:26 shirok Exp $
+ *  $Id: vm.c,v 1.227 2005-05-17 04:33:09 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2665,7 +2665,7 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
     ScmObj v = SCM_NIL;
     ScmVM *vm = Scm_VM();
     int restore_module = SCM_MODULEP(e);
-    
+
     v = Scm_Compile(expr, e);
     if (SCM_VM_COMPILER_FLAG_IS_SET(theVM, SCM_COMPILE_SHOWRESULT)) {
         Scm_CompiledCodeDump(SCM_COMPILED_CODE(v));

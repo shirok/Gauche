@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.7 2005-05-16 09:09:03 shirok Exp $
+;;;  $Id: gencomp,v 1.8 2005-05-17 04:33:09 shirok Exp $
 ;;;
 
 ;;;
@@ -69,7 +69,6 @@
 
 ;; compatibility kludge
 (define compile       (with-module gauche.internal compile))
-(define compile-int   (with-module gauche.internal compile-int))
 (define compile-toplevel-lambda
   (with-module gauche.internal compile-toplevel-lambda))
 (define %procedure-inliner
@@ -180,7 +179,7 @@
               (code (cgen-literal (closure-code closure)))
               (var  (cgen-literal name)))
          (cgen-init
-         (format "  Scm_Define(mod, SCM_SYMBOL(~a), Scm_MakeClosure(~a, NULL));"
+          (format "  Scm_Define(mod, SCM_SYMBOL(~a), Scm_MakeClosure(~a, NULL));"
                   (cgen-cexpr var) (cgen-cexpr code))))
        seed)
       (else

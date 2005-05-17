@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compaux.c,v 1.4 2005-05-02 11:09:50 shirok Exp $
+ *  $Id: compaux.c,v 1.5 2005-05-17 04:33:09 shirok Exp $
  */
 
 /* This file serves as a bridge to the compiler, which is implemented
@@ -71,13 +71,7 @@ static ScmGloc *init_compiler_gloc = NULL;
 
 ScmObj Scm_Compile(ScmObj program, ScmObj env)
 {
-    ScmObj code;
-    if (SCM_FALSEP(env) || SCM_UNBOUNDP(env)) {
-        code = Scm_Apply(SCM_GLOC_GET(compile_gloc), SCM_LIST1(program));
-    } else {
-        code = Scm_Apply(SCM_GLOC_GET(compile_gloc), SCM_LIST2(program, env));
-    }
-    return code;
+    return Scm_Apply(SCM_GLOC_GET(compile_gloc), SCM_LIST2(program, env));
 }
 
 /*-------------------------------------------------------------

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.15 2005-05-16 09:04:51 shirok Exp $
+;;;  $Id: compile.scm,v 1.16 2005-05-17 04:33:09 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1261,15 +1261,14 @@
 ;;
 
 ;; compile:: Sexpr, Module -> CompiledCode
-(define (compile program . opts)
-  (let1 mod (get-optional opts #f)
-    (if mod
-      (let1 origmod (vm-current-module)
-        (dynamic-wind
-            (lambda () (vm-set-current-module mod))
-            (lambda () (compile-int program '%toplevel (make-bottom-cenv) 0 0))
-            (lambda () (vm-set-current-module origmod))))
-      (compile-int program '%toplevel (make-bottom-cenv) 0 0))))
+(define (compile program module)
+  (if (module? module)
+    (let1 origmod (vm-current-module)
+      (dynamic-wind
+          (lambda () (vm-set-current-module module))
+          (lambda () (compile-int program '%toplevel (make-bottom-cenv) 0 0))
+          (lambda () (vm-set-current-module origmod))))
+    (compile-int program '%toplevel (make-bottom-cenv) 0 0)))
 
 (define (compile-int program name cenv reqargs optarg)
   (with-error-handler

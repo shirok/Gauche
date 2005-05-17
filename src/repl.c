@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: repl.c,v 1.32 2004-02-02 10:43:37 shirok Exp $
+ *  $Id: repl.c,v 1.33 2005-05-17 04:33:09 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -113,7 +113,7 @@ static ScmObj repl_read_cc(ScmObj result, void **data)
         return Scm_VMApply2(evaluator, result, SCM_OBJ(SCM_CURRENT_MODULE()));
     } else {
         Scm_VMPushCC(repl_eval_cc, data, 4);
-        return Scm_VMEval(result, SCM_UNBOUND);
+        return Scm_VMEval(result, SCM_FALSE);
     }
 }
 

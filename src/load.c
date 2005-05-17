@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.97 2005-05-14 07:11:31 shirok Exp $
+ *  $Id: load.c,v 1.98 2005-05-17 04:33:09 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -139,7 +139,7 @@ static ScmObj load_cc(ScmObj result, void **data)
 
     if (!SCM_EOFP(expr)) {
         Scm_VMPushCC(load_cc, data, 1);
-        return Scm_VMEval(expr, SCM_UNBOUND);
+        return Scm_VMEval(expr, SCM_FALSE);
     } else {
         return SCM_TRUE;
     }
