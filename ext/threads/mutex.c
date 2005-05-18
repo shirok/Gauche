@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: mutex.c,v 1.6 2004-10-09 11:36:36 shirok Exp $
+ *  $Id: mutex.c,v 1.7 2005-05-18 09:44:20 shirok Exp $
  */
 
 #include <math.h>
@@ -188,6 +188,8 @@ ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
     int intr = FALSE;
     
     pts = Scm_GetTimeSpec(timeout, &ts);
+    pthread_cleanup_push((void (*)(void*))pthread_mutex_unlock,
+                         (void *)&(mutex->mutex));
     if (SCM_INTERNAL_MUTEX_LOCK(mutex->mutex) != 0) {
         Scm_Error("mutex-lock!: failed to lock");
     }
@@ -210,6 +212,7 @@ ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
         mutex->owner = owner;
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(mutex->mutex);
+    pthread_cleanup_pop(0);
     if (intr) Scm_SigCheck(Scm_VM());
     if (abandoned) {
         ScmObj exc = Scm_MakeThreadException(SCM_CLASS_ABANDONED_MUTEX_EXCEPTION, abandoned);
@@ -230,6 +233,8 @@ ScmObj Scm_MutexUnlock(ScmMutex *mutex, ScmConditionVariable *cv, ScmObj timeout
     int intr = FALSE;
     
     pts = Scm_GetTimeSpec(timeout, &ts);
+    pthread_cleanup_push((void (*)(void*))pthread_mutex_unlock,
+                         (void *)&(mutex->mutex));
     if (SCM_INTERNAL_MUTEX_LOCK(mutex->mutex) != 0) {
         Scm_Error("mutex-unlock!: failed to lock");
     }
@@ -246,6 +251,7 @@ ScmObj Scm_MutexUnlock(ScmMutex *mutex, ScmConditionVariable *cv, ScmObj timeout
         }
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(mutex->mutex);
+    pthread_cleanup_pop(0);
     if (intr) Scm_SigCheck(Scm_VM());
 #endif /* GAUCHE_USE_PTHREADS */
     return r;

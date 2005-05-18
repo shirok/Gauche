@@ -1,3 +1,11 @@
+2005-05-17  Shiro Kawai  <shiro@acm.org>
+
+	* ext/threads/mutex.c (Scm_MutexLock, Scm_MutexUnlock): added
+	  protection for the case that mutex can be locked indefinitely
+	  by killed thread. (Patch from Michael Campbell).
+	* lib/srfi-19/format.scm (tm:locale-long-month->index): fixed
+	  incorrect call to find-index (Patch from Michael Campbell).
+
 2005-05-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (compile), src/compaux.c (Scm_Compile): API fix.

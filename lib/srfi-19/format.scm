@@ -1,5 +1,5 @@
 ;;; srfi-19/format.scm - excerpt from SRFI-19 for date formatting routine.
-;;; $Id: format.scm,v 1.9 2003-10-23 02:42:37 fuyuki Exp $
+;;; $Id: format.scm,v 1.10 2005-05-18 09:44:20 shirok Exp $
 
 ;; SRFI-19: Time Data Types and Procedures.
 ;; 
@@ -89,7 +89,7 @@
   (find-index (cut string=? string <>) tm:locale-abbr-month-vector))
 
 (define (tm:locale-long-month->index string)
-  (find-index (cut string=? string <>) tm:locale-long-month-vector string=?))
+  (find-index (cut string=? string <>) tm:locale-long-month-vector))
 
 ;; do nothing. 
 ;; Your implementation might want to do something...
