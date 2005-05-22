@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.20 2005-05-22 12:35:28 shirok Exp $
+;;;  $Id: compile.scm,v 1.21 2005-05-22 19:38:49 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -159,7 +159,9 @@
         (((item) . body)
          `((eqv? ,tmp ,item) ,@body))
         (((item ...) . body)
-         `((memv ,tmp (list ,@item)) ,@body))
+         (let1 ilist (list 'quasiquote
+                           (map (cut list 'unquote <>) item))
+           `((memv ,tmp ,ilist) ,@body)))
         (('else . body)
          `(else ,@body))))
     `(let ((,tmp ,obj))
