@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.19 2005-05-22 11:48:34 shirok Exp $
+;;;  $Id: compile.scm,v 1.20 2005-05-22 12:35:28 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -2443,10 +2443,10 @@
 ;; the expression is tail position or not.
 
 ;; Dispatch pass2 handler.
-;; *pass3-dispatch-table* is defined below, after all handlers are defined.
+;; *pass2-dispatch-table* is defined below, after all handlers are defined.
 (define-inline (pass2/rec iform penv tail?)
-  (let ((t (vector-ref *pass2-dispatch-table* (iform-tag iform))))
-    (if t (t iform penv tail?) iform)))
+  ((vector-ref *pass2-dispatch-table* (iform-tag iform))
+   iform penv tail?))
 
 (define (pass2 iform)
   (pass2/rec iform '() #t))
@@ -2489,15 +2489,15 @@
   ($lset-expr-set! iform (pass2/rec ($lset-expr iform) penv #f))
   iform)
 
-(define pass2/$GREF #f)
+(define (pass2/$GREF iform penv tail?) iform)
 
 (define (pass2/$GSET iform penv tail?)
   ($gset-expr-set! iform (pass2/rec ($gset-expr iform) penv #f))
   iform)
 
-(define pass2/$CONST #f)
+(define (pass2/$CONST iform penv tail?) iform)
 
-(define pass2/$IT #f)
+(define (pass2/$IT iform penv tail?) iform)
 
 ;; If optimization:
 ;;

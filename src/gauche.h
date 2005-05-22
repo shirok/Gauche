@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.409 2005-05-22 11:00:22 shirok Exp $
+ *  $Id: gauche.h,v 1.410 2005-05-22 12:35:28 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -419,7 +419,10 @@ SCM_EXTERN ScmObj Scm_VMApply(ScmObj proc, ScmObj args);
 SCM_EXTERN ScmObj Scm_VMApply0(ScmObj proc);
 SCM_EXTERN ScmObj Scm_VMApply1(ScmObj proc, ScmObj arg);
 SCM_EXTERN ScmObj Scm_VMApply2(ScmObj proc, ScmObj arg1, ScmObj arg2);
-SCM_EXTERN ScmObj Scm_VMApply3(ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj agr3);
+SCM_EXTERN ScmObj Scm_VMApply3(ScmObj proc, ScmObj arg1, ScmObj arg2,
+                               ScmObj arg3);
+SCM_EXTERN ScmObj Scm_VMApply4(ScmObj proc, ScmObj arg1, ScmObj arg2,
+                               ScmObj arg3, ScmObj arg4);
 SCM_EXTERN ScmObj Scm_VMEval(ScmObj expr, ScmObj env);
 SCM_EXTERN ScmObj Scm_VMCall(ScmObj *args, int argcnt, void *data);
 

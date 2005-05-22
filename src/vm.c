@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.227 2005-05-17 04:33:09 shirok Exp $
+ *  $Id: vm.c,v 1.228 2005-05-22 12:35:28 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2581,6 +2581,8 @@ static ScmWord apply_calls[][2] = {
       SCM_VM_INSN(SCM_VM_RET) },
     { SCM_VM_INSN1(SCM_VM_TAIL_CALL, 3),
       SCM_VM_INSN(SCM_VM_RET) },
+    { SCM_VM_INSN1(SCM_VM_TAIL_CALL, 4),
+      SCM_VM_INSN(SCM_VM_RET) },
 };
 
 ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
@@ -2601,7 +2603,7 @@ ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
     SCM_FOR_EACH(cp, args) {
         PUSH_ARG(SCM_CAR(cp));
     }
-    if (numargs <= 3) {
+    if (numargs <= 4) {
         PC = apply_calls[numargs];
     } else {
         PC = SCM_NEW_ARRAY(ScmWord, 2);
@@ -2649,6 +2651,19 @@ ScmObj Scm_VMApply3(ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3)
     PUSH_ARG(arg2);
     PUSH_ARG(arg3);
     PC = apply_calls[3];
+    SAVE_REGS();
+    return proc;
+}
+
+ScmObj Scm_VMApply4(ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3, ScmObj arg4)
+{
+    DECL_REGS;
+    CHECK_STACK(4);
+    PUSH_ARG(arg1);
+    PUSH_ARG(arg2);
+    PUSH_ARG(arg3);
+    PUSH_ARG(arg4);
+    PC = apply_calls[4];
     SAVE_REGS();
     return proc;
 }

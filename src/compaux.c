@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compaux.c,v 1.7 2005-05-22 11:00:22 shirok Exp $
+ *  $Id: compaux.c,v 1.8 2005-05-22 12:35:27 shirok Exp $
  */
 
 /* This file serves as a bridge to the compiler, which is implemented
@@ -327,7 +327,6 @@ ScmObj Scm_RuntimeEnvLookup(ScmObj renv, ScmObj lvar)
     }
     Scm_Error("[internal error] stray local variable:", lvar);
 }
-
 
 /* Convert all identifiers in form into a symbol. 
    This keeps linear history to avoid entering infinite loop if
