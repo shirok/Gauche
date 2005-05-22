@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.53 2005-04-12 01:42:27 shirok Exp $
+ *  $Id: macro.c,v 1.54 2005-05-22 03:27:33 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -54,13 +54,12 @@ static void syntax_print(ScmObj obj, ScmPort *port, ScmWriteContext *mode)
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SyntaxClass, syntax_print);
 
-ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmCompileProc compiler, void *data)
+ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmObj handler)
 {
     ScmSyntax *s = SCM_NEW(ScmSyntax);
     SCM_SET_CLASS(s, SCM_CLASS_SYNTAX);
     s->name = name;
-    s->compiler = compiler;
-    s->data = data;
+    s->handler = handler;
     return SCM_OBJ(s);
 }
 

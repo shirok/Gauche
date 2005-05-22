@@ -1,6 +1,6 @@
 ;; srfi-7 implementation, taken from Richard Kelsey's reference implementation.
 ;; Gauche module stuff added by Alex Shinn.
-;; $Id: srfi-7.scm,v 1.1 2004-01-25 11:11:22 shirok Exp $
+;; $Id: srfi-7.scm,v 1.2 2005-05-22 03:27:31 shirok Exp $
 
 ;; Copyright (C) Richard Kelsey (1999). All Rights Reserved.
 
@@ -24,8 +24,8 @@
 ;; However, if there's a form like (begin <constant> (begin)), Gauche's
 ;; compiler optimizer removes <constant> as well.
 ;; A user might be surprised when he finds (program (code 4))
-;; returns #<undef> ---but the expecting a result of 'program' form
-;; itself is outside of srfi-7 spec anyway.
+;; returns #<undef> ---but note that 'program' form isn't an expression
+;; anyway, so expecting its result is beyond the scope of srfi-7.
 
 (define-module srfi-7
   (export program))

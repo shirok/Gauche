@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.407 2005-04-18 22:28:58 shirok Exp $
+ *  $Id: gauche.h,v 1.408 2005-05-22 03:27:32 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2209,16 +2209,10 @@ SCM_EXTERN ScmObj Scm_Map(ScmObj proc, ScmObj arg1, ScmObj args);
  */
 
 /* Syntax is a built-in procedure to compile given form. */
-typedef ScmObj (*ScmCompileProc)(ScmObj form,
-                                 ScmObj env,
-                                 int context,
-                                 void *data);
-
 struct ScmSyntaxRec {
     SCM_HEADER;
-    ScmSymbol *name;            /* for debug */
-    ScmCompileProc compiler;    /* takes Sexpr and returns compiled insns */
-    void *data;
+    ScmSymbol *name;            /* for debugging */
+    ScmObj     handler;         /* syntax handler.  (Sexpr, Env) -> IForm */
 };
 
 #define SCM_SYNTAX(obj)             ((ScmSyntax*)(obj))
@@ -2227,8 +2221,7 @@ struct ScmSyntaxRec {
 SCM_CLASS_DECL(Scm_SyntaxClass);
 #define SCM_CLASS_SYNTAX            (&Scm_SyntaxClass)
 
-SCM_EXTERN ScmObj Scm_MakeSyntax(ScmSymbol *name,
-				 ScmCompileProc compiler, void *data);
+SCM_EXTERN ScmObj Scm_MakeSyntax(ScmSymbol *name, ScmObj handler);
 
 /* Macro */
 struct ScmMacroRec {

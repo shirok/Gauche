@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.4 2005-05-14 01:47:52 shirok Exp $
+;;; $Id: intlib.stub,v 1.5 2005-05-22 03:27:33 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -167,9 +167,6 @@
 (define-cproc make-toplevel-closure (code::<compiled-code>)
   "SCM_RETURN(Scm_MakeClosure(SCM_OBJ(code), NULL));")
 
-(define-cproc call-syntax-compiler (syn form env)
-  (return "Scm_CallSyntaxCompiler"))
-
 (define-cproc make-macro-transformer (name::<symbol> proc::<procedure>)
   (return "Scm_MakeMacroTransformerOld"))
 
@@ -180,15 +177,16 @@
   "if (!SCM_MACROP(mac)) Scm_Error(\"macro required, but got %S\", mac);
   SCM_RETURN(Scm_CallMacroExpander(SCM_MACRO(mac), expr, env));")
 
-"static ScmObj call_compile_closure(ScmObj form, ScmObj env, int ctx,
-                                   void *data)
- {
-    ScmObj closure = SCM_OBJ(data);
-    return Scm_Apply(closure, SCM_LIST2(form, env));
- }"
-
 (define-cproc make-syntax (name::<symbol> proc)
-  "SCM_RETURN(Scm_MakeSyntax(name, call_compile_closure, proc));")
+  "SCM_RETURN(Scm_MakeSyntax(name, proc));")
+
+(define-cproc call-syntax-handler (syn program cenv)
+  "SCM_ASSERT(SCM_SYNTAXP(syn));
+   SCM_RETURN(Scm_VMApply2(SCM_SYNTAX(syn)->handler, program, cenv));")
+
+(define-cproc syntax-handler (syn)
+  "SCM_ASSERT(SCM_SYNTAXP(syn));
+   SCM_RETURN(SCM_SYNTAX(syn)->handler);")
 
 (define-cproc %internal-macro-expand (form env once::<boolean>)
   (return "Scm_MacroExpand"))

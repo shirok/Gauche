@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.234 2005-04-21 02:54:48 shirok Exp $
+;;; $Id: extlib.stub,v 1.235 2005-05-22 03:27:32 shirok Exp $
 ;;;
 
 "
@@ -1248,11 +1248,11 @@
 (define-cproc path->module-name (path::<string>)
   (return "Scm_PathToModuleName"))
 
-(define-cproc %export-all ()
-  "  SCM_RETURN(Scm_ExportAll(SCM_CURRENT_MODULE()));")
+(define-cproc %export-all (module::<module>)
+  "  SCM_RETURN(Scm_ExportAll(module));")
 
-(define-cproc %extend (modules::<list>)
-  "  SCM_RETURN(Scm_ExtendModule(SCM_CURRENT_MODULE(), modules));")
+(define-cproc %extend-module (module::<module> supers::<list>)
+  " SCM_RETURN(Scm_ExtendModule(module, supers));")
 
 ;;
 ;; Gauche extentions

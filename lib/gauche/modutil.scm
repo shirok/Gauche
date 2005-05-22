@@ -30,22 +30,13 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: modutil.scm,v 1.4 2003-12-09 19:45:47 shirok Exp $
+;;;  $Id: modutil.scm,v 1.5 2005-05-22 03:27:32 shirok Exp $
 ;;;
 
 (define-module gauche.modutil
-  (export extend export-if-defined use-version)
+  (export export-if-defined use-version)
   )
 (select-module gauche.modutil)
-
-(define-macro (extend . modules)
-  `',(%extend (map (lambda (m)
-                     (or (find-module m)
-                         (begin
-                           (%require (module-name->path m))
-                           (find-module m))
-                         (error "undefined module" m)))
-                   modules)))
 
 (define-macro (export-if-defined . symbols)
   ;; CAVEAT: this form sees whether the given symbols are defined or not

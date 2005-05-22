@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-init.scm,v 1.119 2005-05-01 06:36:03 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.120 2005-05-22 03:27:32 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -47,15 +47,30 @@
 (define-macro (add-load-path path . args)
   `',(apply %add-load-path path args))
 
-;; Same as above.
-(define-macro (require feature)
-  `',(%require feature))
-
-(define-macro (export-all)
-  `',(%export-all))
-
 (define-macro (autoload file . vars)
   `(%autoload (current-module) ',file ',vars))
+
+;; Transition to the new compiler.
+;; The new compiler supports these syntax built-in.  We need a macro
+;; version when we compile the new one with the old gosh.
+(define-macro (ensure-extend)
+  (if (symbol-bound? '%extend-module)
+    #f
+    '(begin
+       (define-macro (require feature)
+         `',(%require feature))
+       (define-macro (export-all)
+         `',(%export-all))
+       (define-macro (extend . modules)
+         (%extend (map (lambda (m)
+                         (or (find-module m)
+                             (begin
+                               (%require (module-name->path m))
+                               (find-module m))
+                             (error "undefined module" m)))
+                       modules))
+         #f))))
+(ensure-extend)
 
 ;; Preferred way
 ;;  (use x.y.z) ==> (require "x/y/z") (import x.y.z)

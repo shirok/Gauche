@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.21 2005-05-01 06:36:03 shirok Exp $
+;;; $Id: autoloads.scm,v 1.22 2005-05-22 03:27:32 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.21 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.22 $.  DO NOT EDIT */"
    :pre-decl '("#define LIBGAUCHE_BODY")
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
@@ -93,7 +93,7 @@
           (:macro with-signal-handlers))
 
 (autoload gauche.modutil
-          (:macro extend) (:macro export-if-defined) (:macro use-version))
+          (:macro export-if-defined) (:macro use-version))
 
 (autoload gauche.portutil
           port->string port->list port->string-list port->sexp-list

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.16 2005-05-17 04:33:09 shirok Exp $
+;;;  $Id: compile.scm,v 1.17 2005-05-22 03:27:32 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -174,16 +174,24 @@
 ;; NB: proc is evaluated every iteration.  Intended it to be a lambda form,
 ;; so that its call is inlined.
 
-;; NB: commented out for now, since it wasn't effective.
+(define-macro (imap proc lis)
+  (let ((p (gensym))
+        (r (gensym)))
+    `(let loop ((,r '()) (,p ,lis))
+       (if (null? ,p)
+         (reverse! ,r)
+         (loop (cons (,proc (car ,p)) ,r) (cdr ,p))))
+    ))
 
-;(define-macro (imap proc lis)
-;  (let ((p (gensym))
-;        (r (gensym)))
-;    `(let loop ((,p ,lis) (,r '()))
-;       (if (null? ,p)
-;         (reverse! ,r)
-;         (loop (cdr ,p) (cons (,proc (car ,p)) ,r))))
-;    ))
+(define-macro (imap2 proc lis1 lis2)
+  (let ((p1 (gensym))
+        (p2 (gensym))
+        (r  (gensym)))
+    `(let loop ((,r '()) (,p1 ,lis1) (,p2 ,lis2))
+       (if (null? ,p1)
+         (reverse! ,r)
+         (loop (cons (,proc (car ,p1) (car ,p2)) ,r) (cdr ,p1) (cdr ,p2))))
+    ))
 
 ;;============================================================
 ;; Data structures
@@ -339,8 +347,10 @@
 
 (define-macro (cenv-copy cenv) `(vector-copy ,cenv))
 
-(define (make-bottom-cenv . maybe-module)
-  (make-cenv (get-optional maybe-module (vm-current-module)) '() #f))
+(define-macro (make-bottom-cenv . maybe-module)
+  (if (null? maybe-module)
+    `(make-cenv (vm-current-module) '())
+    `(make-cenv ,(car maybe-module) '())))
 
 (define-macro (%cenv-copy/update cenv . updates)
   (let1 new (gensym)
@@ -353,29 +363,41 @@
                      (cons `(,setter ,new ,(cadr updates)) r)))))
        ,new)))
 
-(define (cenv-swap-module cenv mod)
-  (%cenv-copy/update cenv cenv-module mod))
+(define-inline (cenv-swap-module cenv mod)
+  (make-cenv mod (cenv-frames cenv)
+             (cenv-exp-name cenv) (cenv-current-proc cenv)))
 
-(define (cenv-extend cenv frame type)
-  (%cenv-copy/update cenv cenv-frames (acons type frame (cenv-frames cenv))))
+(define-inline (cenv-extend cenv frame type)
+  (make-cenv (cenv-module cenv)
+             (acons type frame (cenv-frames cenv))
+             (cenv-exp-name cenv)
+             (cenv-current-proc cenv)))
 
-(define (cenv-extend/proc cenv frame type proc)
-  (%cenv-copy/update cenv
-                     cenv-frames (acons type frame (cenv-frames cenv))
-                     cenv-current-proc proc))
+(define-inline (cenv-extend/proc cenv frame type proc)
+  (make-cenv (cenv-module cenv)
+             (acons type frame (cenv-frames cenv))
+             (cenv-exp-name cenv)
+             proc))
 
-(define (cenv-add-name cenv name)
-  (%cenv-copy/update cenv cenv-exp-name name))
+(define-inline (cenv-add-name cenv name)
+  (make-cenv (cenv-module cenv)
+             (cenv-frames cenv)
+             name
+             (cenv-current-proc cenv)))
 
-(define (cenv-sans-name cenv)
+(define-inline (cenv-sans-name cenv)
   (if (cenv-exp-name cenv)
-    (%cenv-copy/update cenv cenv-exp-name #f)
+    (make-cenv (cenv-module cenv)
+               (cenv-frames cenv)
+               #f
+               (cenv-current-proc cenv))
     cenv))
 
-(define (cenv-extend/name cenv frame type name)
-  (%cenv-copy/update cenv
-                     cenv-frames  (acons type frame (cenv-frames cenv))
-                     cenv-exp-name name))
+(define-inline (cenv-extend/name cenv frame type name)
+  (make-cenv (cenv-module cenv)
+             (acons type frame (cenv-frames cenv))
+             name
+             (cenv-current-proc cenv)))
 
 ;; toplevel environment == cenv has only syntactic frames
 (define (cenv-toplevel? cenv)
@@ -1262,28 +1284,30 @@
 
 ;; compile:: Sexpr, Module -> CompiledCode
 (define (compile program module)
-  (if (module? module)
-    (let1 origmod (vm-current-module)
-      (dynamic-wind
-          (lambda () (vm-set-current-module module))
-          (lambda () (compile-int program '%toplevel (make-bottom-cenv) 0 0))
-          (lambda () (vm-set-current-module origmod))))
-    (compile-int program '%toplevel (make-bottom-cenv) 0 0)))
+  (let1 cenv (if (module? module)
+               (make-bottom-cenv module)
+               (make-bottom-cenv))
+    (with-error-handler
+        ;; TODO: check if e is an expected error (such as syntax error) or
+        ;; an unexpected error (compiler bug).
+        (lambda (e)
+          (let1 srcinfo (and (pair? program)
+                             (pair-attribute-get program 'source-info #f))
+            (if srcinfo
+              (errorf "Compile Error: ~a\n~s:~d:~,,,,40:s\n"
+                      (slot-ref e 'message) (car srcinfo)
+                      (cadr srcinfo) program)
+              (errorf "Compile Error: ~a\n" (slot-ref e 'message)))))
+      (lambda ()
+        (let1 p1 (pass1 program cenv)
+          (pass3 (pass2 p1) '() 0 0 '%toplevel #f #f))))))
 
-(define (compile-int program name cenv reqargs optarg)
-  (with-error-handler
-      ;; TODO: check if e is an expected error (such as syntax error) or
-      ;; an unexpected error (compiler bug).
-      (lambda (e)
-        (let1 srcinfo (and (pair? program)
-                           (pair-attribute-get program 'source-info #f))
-          (if srcinfo
-            (errorf "Compile Error: ~a\n~s:~d:~,,,,40:s\n"
-                    (slot-ref e 'message) (car srcinfo) (cadr srcinfo) program)
-            (errorf "Compile Error: ~a\n" (slot-ref e 'message)))))
-    (lambda ()
-      (let1 p1 (pass1 program cenv)
-        (pass3 (pass2 p1) '() reqargs optarg name #f #f)))))
+;; stub for future extension
+(define (compile-partial program module)
+  #f)
+
+(define (compile-finish cc)
+  #f)
 
 ;; Returns a compiled toplevel closure.  This is a shortcut of
 ;; evaluating lambda expression---it skips extra code segment
@@ -1319,6 +1343,69 @@
 
 ;; pass1 :: Sexpr, Cenv -> IForm
 (define (pass1 program cenv)
+
+  ;; PROGRAM is a call to global procedure, macro, or syntax.
+  (define (pass1/global-call id)
+    (receive (gval type) (global-call-type id)
+      (if gval
+        (case type
+          ((macro)
+           (pass1 (call-macro-expander gval program (cenv-frames cenv)) cenv))
+          ((syntax)
+           (call-syntax-handler gval program cenv))
+          ((inline)
+           (pass1/expand-inliner id gval))
+          )
+        (pass1/call program ($gref id) (cdr program) cenv))))
+
+  ;; Expand inlinable procedure.  Inliner may be...
+  ;;   - An integer.  This must be the VM instruction number.
+  ;;     (It is useful to initialize the inliner statically in .stub file).
+  ;;   - A vector.  This must be a packed intermediate form.  It is set if
+  ;;     the procedure is defined by define-inline.
+  ;;   - A procedure.   It is called like a macro expander.
+  ;;     It may return #<undef> to cancel inlining.
+  (define (pass1/expand-inliner name proc)
+    ;; TODO: for inline asm, check validity of opcode.
+    (let1 inliner (%procedure-inliner proc)
+      (cond
+       ((integer? inliner)
+        (let ((nargs (length (cdr program)))
+              (opt?  (slot-ref proc 'optional)))
+          (unless (argcount-ok? (cdr program) (slot-ref proc 'required) opt?)
+            (errorf "wrong number of arguments: ~a requires ~a, but got ~a"
+                    (variable-name name) (slot-ref proc 'required) nargs))
+          ($asm program (if opt? `(,inliner ,nargs) `(,inliner))
+                (imap (cut pass1 <> cenv) (cdr program)))))
+       ((vector? inliner)
+        (expand-inlined-procedure program
+                                  (unpack-iform inliner)
+                                  (imap (cut pass1 <> cenv) (cdr program))))
+       (else
+        (let1 form (inliner program cenv)
+          (if (undefined? form)
+            (pass1/call program ($gref name) (cdr program) cenv)
+            form))))))
+
+  ;; PROGRAM is a variable reference
+  (define (pass1/variable var)
+    (let ((r (cenv-lookup cenv var LEXICAL)))
+      (cond ((lvar? r) ($lref r))
+            ((variable? r)
+             (receive (mod name)
+                 (if (identifier? r)
+                   (values (slot-ref r 'module) (slot-ref r 'name))
+                   (values (cenv-module cenv) r))
+               (or (and-let* ((gloc (find-binding mod name #f))
+                              ( (gloc-const? gloc) )
+                              ( (not (vm-compiler-flag-is-set?
+                                      SCM_COMPILE_NOINLINE_CONSTS)) ))
+                     ($const (gloc-ref gloc)))
+                   ($gref (ensure-identifier r cenv)))))
+            (else
+             (error "[internal] pass1/variable got weird object:" var)))))
+
+  ;; main body of pass1
   (cond
     ((pair? program)  ;; (op . args)
      (if (variable? (car program))
@@ -1329,72 +1416,15 @@
           ((macro? head)
            (pass1 (call-macro-expander head program (cenv-frames cenv)) cenv))
           ((identifier? head)
-           (pass1/global-call head program cenv))
+           (pass1/global-call head))
           (else
            (error "[internal] unknown resolution of head:" head))))
        (pass1/call program (pass1 (car program) (cenv-sans-name cenv))
                    (cdr program) cenv)))
     ((variable? program)
-     (pass1/variable program cenv))
+     (pass1/variable program))
     (else
      ($const program))))
-
-;; handle variable reference
-(define (pass1/variable var cenv)
-  (let ((r (cenv-lookup cenv var LEXICAL)))
-    (cond ((lvar? r) ($lref r))
-          ((variable? r)
-           (receive (mod name)
-               (if (identifier? r)
-                 (values (slot-ref r 'module) (slot-ref r 'name))
-                 (values (cenv-module cenv) r))
-             (or (and-let* ((gloc (find-binding mod name #f))
-                            ( (gloc-const? gloc) )
-                            ( (not (vm-compiler-flag-is-set?
-                                    SCM_COMPILE_NOINLINE_CONSTS)) ))
-                   ($const (gloc-ref gloc)))
-                 ($gref (ensure-identifier r cenv)))))
-          (else
-           (error "[internal] pass1/variable got weird object:" var)))))
-
-;; Handle global procedure call (when we know the operator is a global
-;; variable reference; in this case, we may have macro expansion or
-;; inline expansion).
-;; This function is in the performance critical path, so the dispatching
-;; part is written in C (global-call-type).  The original Scheme version
-;; is commented below, which may be more comprehensive than the current one.
-
-(define (pass1/global-call id program cenv)
-  (receive (gval type) (global-call-type id)
-    (if gval
-      (case type
-        ((macro)
-         (pass1 (call-macro-expander gval program (cenv-frames cenv)) cenv))
-        ((syntax)
-         (call-syntax-compiler gval program cenv))
-        ((inline)
-         (pass1/expand-inliner id gval program cenv))
-        )
-      (pass1/call program ($gref id) (cdr program) cenv))))
-
-;(define (pass1/global-call id program cenv)
-;  (let1 gloc (find-binding (slot-ref id 'module)
-;                           (slot-ref id 'name)
-;                           #f)
-;    (if (not gloc)
-;      (pass1/call program ($gref id) (cdr program) cenv)
-;      (let1 gval (gloc-ref gloc)
-;        (cond
-;         ((is-a? gval <macro>)
-;          (pass1 (call-macro-expander gval program (cenv-frames cenv)) cenv))
-;         ((is-a? gval <syntax>)
-;          (call-syntax-compiler gval program cenv))
-;         ((and (not (vm-compiler-flag-is-set? SCM_COMPILE_NOINLINE_GLOBALS))
-;               (procedure? gval)
-;               (%procedure-inliner gval))
-;          (pass1/expand-inliner id gval program cenv))
-;         (else
-;          (pass1/call program ($gref id) (cdr program) cenv)))))))
 
 ;; handle procedure call
 ;; KLUDGE: the body should be this simple:
@@ -1418,8 +1448,8 @@
                                      (pass1 (cadr args) cenv)
                                      (pass1 (caddr args) cenv)))))
     (else
-     ($call program proc
-            (map (cute pass1 <> (cenv-sans-name cenv)) args)))))
+     (let1 cenv (cenv-sans-name cenv)
+       ($call program proc (imap (cute pass1 <> cenv) args))))))
 
 ;; Compiling body with internal definitions.
 ;;
@@ -1515,35 +1545,6 @@
                 (reverse! (cons (pass1 (car exprs) cenv) r))
                 (loop (cdr exprs)
                       (cons (pass1 (car exprs) stmtenv) r)))))))))
-
-;; Expand inlinable procedure.  Inliner may be...
-;;   - An integer.  This must be the VM instruction number.
-;;     (It is useful to initialize the inliner statically in .stub file).
-;;   - A vector.  This must be a packed intermediate form.  It is set if
-;;     the procedure is defined by define-inline.
-;;   - A procedure.   It is called like a macro expander.
-;;     It may return #<undef> to cancel inlining.
-(define (pass1/expand-inliner name proc program cenv)
-  ;; TODO: for inline asm, check validity of opcode.
-  (let1 inliner (%procedure-inliner proc)
-    (cond
-     ((integer? inliner)
-      (let ((nargs (length (cdr program)))
-            (opt?  (slot-ref proc 'optional)))
-        (unless (argcount-ok? (cdr program) (slot-ref proc 'required) opt?)
-          (errorf "wrong number of arguments: ~a requires ~a, but got ~a"
-                  (variable-name name) (slot-ref proc 'required) nargs))
-        ($asm program (if opt? `(,inliner ,nargs) `(,inliner))
-              (map (cut pass1 <> cenv) (cdr program)))))
-     ((vector? inliner)
-      (expand-inlined-procedure program
-                                (unpack-iform inliner)
-                                (map (cut pass1 <> cenv) (cdr program))))
-     (else
-      (let1 form (inliner program cenv)
-        (if (undefined? form)
-          (pass1/call program ($gref name) (cdr program) cenv)
-          form))))))
 
 ;;--------------------------------------------------------------
 ;; Pass1 utilities
@@ -1823,7 +1824,7 @@
     ((_ test body ...)
      (let1 cenv (cenv-sans-name cenv)
        ($if form (pass1 test cenv)
-            ($seq (map (cut pass1 <> cenv) body))
+            ($seq (imap (cut pass1 <> cenv) body))
             ($const-undef))))
     (else
      (error "syntax-error: malformed when:" form))))
@@ -1834,7 +1835,7 @@
      (let1 cenv (cenv-sans-name cenv)
        ($if form (pass1 test cenv)
             ($const-undef)
-            ($seq (map (cut pass1 <> cenv) body)))))
+            ($seq (imap (cut pass1 <> cenv) body)))))
     (else
      (error "syntax-error: malformed unless:" form))))
 
@@ -1849,7 +1850,7 @@
             (rest  (cdr cls)))
         (unless (null? rest)
           (error "syntax-error: 'else' clause followed by more clauses:" form))
-        ($seq (map (cut pass1 <> cenv) exprs))))
+        ($seq (imap (cut pass1 <> cenv) exprs))))
      ((and (pair? (cdar cls))           ; ((test => proc) . rest)
            (global-eq? (cadar cls) '=> cenv)
            (pair? (cddar cls))
@@ -1873,7 +1874,7 @@
            ($it) (process-clauses (cdr cls))))
      ((list? (car cls))                 ; ((test . exprs) . rest)
       ($if (car cls) (pass1 (caar cls) (cenv-sans-name cenv))
-           ($seq (map (cut pass1 <> cenv) (cdar cls)))
+           ($seq (imap (cut pass1 <> cenv) (cdar cls)))
            (process-clauses (cdr cls))))
      (else
       (error "syntax-error: bad clause in cond:" form))))
@@ -1894,7 +1895,7 @@
      ((global-eq? (caar cls) 'else cenv) ; ((else . exprs) . rest)
       (unless (null? (cdr cls))
         (error "syntax-error: 'else' clause followed by more clauses:" form))
-      ($seq (map (cut pass1 <> cenv) (cdar cls))))
+      ($seq (imap (cut pass1 <> cenv) (cdar cls))))
      ((and (list? (caar cls)))          ;  ((elts . exprs) . rset)
       (let ((nelts (length (caar cls)))
             (elts  (map unwrap-syntax (caar cls)))
@@ -1907,7 +1908,7 @@
                (if (symbol? (car elts))
                  ($eq? #f  ($lref tmpvar) ($const (car elts)))
                  ($eqv? #f ($lref tmpvar) ($const (car elts)))))
-             ($seq (map (cut pass1 <> cenv) exprs))
+             ($seq (imap (cut pass1 <> cenv) exprs))
              (process-clauses tmpvar (cdr cls)))))
      (else
       (error "syntax-error: bad clause in case:" form))))
@@ -2131,7 +2132,8 @@
        ($let form 'let lvars
              (map (lambda (init lvar)
                     (let1 iexpr
-                        (pass1 init (cenv-add-name cenv (variable-name lvar)))
+                        (pass1 init
+                               (cenv-add-name cenv (variable-name lvar)))
                       (lvar-initval-set! lvar iexpr)
                       iexpr))
                   expr lvars)
@@ -2152,18 +2154,19 @@
      ;;
      ;;  The reason is that this form can be more easily spotted by
      ;;  our simple-minded closure optimizer in Pass 2.
-     (let* ((lvar (make-lvar name))
-            (args (map make-lvar+ var))
-            (env1 (cenv-extend cenv `((,name . ,lvar)) LEXICAL))
-            (env2 (cenv-extend/name env1 (map cons var args) LEXICAL name))
-            (lmda ($lambda form name (length args) 0 args
-                           (pass1/body body '() env2))))
-       (lvar-initval-set! lvar lmda)
-       ($let form 'rec
-             (list lvar)
-             (list lmda)
-             ($call #f ($lref lvar)
-                    (map (cute pass1 <> (cenv-sans-name cenv)) expr)))))
+     (let ((lvar (make-lvar name))
+           (args (map make-lvar+ var))
+           (argenv (cenv-sans-name cenv)))
+       (let* ((env1 (cenv-extend cenv `((,name . ,lvar)) LEXICAL))
+              (env2 (cenv-extend/name env1 (map cons var args) LEXICAL name))
+              (lmda ($lambda form name (length args) 0 args
+                             (pass1/body body '() env2))))
+         (lvar-initval-set! lvar lmda)
+         ($let form 'rec
+               (list lvar)
+               (list lmda)
+               ($call #f ($lref lvar)
+                      (imap (cut pass1 <> argenv) expr))))))
     (else
      (error "syntax-error: malformed let:" form))))
 
@@ -2285,10 +2288,7 @@
     ((_ name body ...)
      (let* ((mod (ensure-module name 'define-module #t))
             (newenv (make-bottom-cenv mod)))
-       (dynamic-wind
-           (lambda () (vm-set-current-module mod))
-           (lambda () ($seq (map (cut pass1 <> newenv) body)))
-           (lambda () (vm-set-current-module (cenv-module cenv))))))
+       ($seq (map (cut pass1 <> newenv) body))))
     (else
      (error "syntax-error: malformed define-module:" form))))
 
@@ -2297,10 +2297,7 @@
     ((_ name body ...)
      (let* ((mod (ensure-module name 'with-module #f))
             (newenv (cenv-swap-module cenv mod)))
-       (dynamic-wind
-           (lambda () (vm-set-current-module mod))
-           (lambda () ($seq (map (cut pass1 <> newenv) body)))
-           (lambda () (vm-set-current-module (cenv-module cenv))))))
+       ($seq (map (cut pass1 <> newenv) body))))
     (else
      (error "syntax-error: malformed with-module:" form))))
 
@@ -2308,8 +2305,15 @@
   (check-toplevel form cenv)
   (match form
     ((_ module)
-     (vm-set-current-module (ensure-module module 'select-module #f))
-     ($const-undef))
+     ;; This is the only construct that changes VM's current module.
+     ;; We also modifies CENV's module, so that select-module has an
+     ;; effect in the middle of sequence of expressions like
+     ;;  (begin ... (select-module foo) ...)
+     ;; It is yet debatable that how select-module should interact with EVAL.
+     (let1 m (ensure-module module 'select-module #f)
+       (vm-set-current-module m)
+       (cenv-module-set! cenv m)
+       ($const-undef)))
     (else (error "syntax-error: malformed select-module:" form))))
 
 (define-pass1-syntax (current-module form cenv) :gauche
@@ -2318,10 +2322,37 @@
   ($const (cenv-module cenv)))
 
 (define-pass1-syntax (export form cenv) :gauche
-  ($const (%export-symbols (cenv-module cenv) (cdr form))))
+  (%export-symbols (cenv-module cenv) (cdr form))
+  ($const-undef))
+
+(define-pass1-syntax (export-all form cenv) :gauche
+  (unless (null? (cdr form))
+    (error "syntax-error: malformed export-all:" form))
+  (%export-all (cenv-module cenv))
+  ($const-undef))
 
 (define-pass1-syntax (import form cenv) :gauche
-  ($const (%import-modules (cenv-module cenv) (cdr form))))
+  (%import-modules (cenv-module cenv) (cdr form))
+  ($const-undef))
+
+(define-pass1-syntax (extend form cenv) :gauche
+  (%extend-module (cenv-module cenv)
+                  (map (lambda (m)
+                         (or (find-module m)
+                             (begin
+                               (%require (module-name->path m))
+                               (find-module m))
+                             (error "undefined module" m)))
+                       (cdr form)))
+  ($const-undef))
+
+(define-pass1-syntax (require form cenv) :gauche
+  (match form
+    ((_ feature)
+     (%require feature)
+     ($const-undef))
+    (else
+     (error "syntax-error: malformed require:" form))))
 
 ;; Class stuff ........................................
 
@@ -2942,8 +2973,8 @@
   (find (cut eq? node <>) penv))
 
 (define (pass2/$ASM iform penv tail?)
-  ($asm-args-set! iform (map (cut pass2/rec <> penv #f)
-                             ($asm-args iform)))
+  ($asm-args-set! iform (imap (cut pass2/rec <> penv #f)
+                              ($asm-args iform)))
   iform)
 
 (define (pass2/onearg-inliner iform penv tail?)
@@ -3925,10 +3956,10 @@
 
 ;; Some useful utilities
 ;;
-(define (asm-arg1 form insn x cenv)
+(define-inline (asm-arg1 form insn x cenv)
   ($asm form insn (list (pass1 x cenv))))
 
-(define (asm-arg2 form insn x y cenv)
+(define-inline (asm-arg2 form insn x y cenv)
   ($asm form insn (list (pass1 x cenv) (pass1 y cenv))))
 
 (define (gen-inliner-arg2 insn)

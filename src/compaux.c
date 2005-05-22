@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compaux.c,v 1.5 2005-05-17 04:33:09 shirok Exp $
+ *  $Id: compaux.c,v 1.6 2005-05-22 03:27:32 shirok Exp $
  */
 
 /* This file serves as a bridge to the compiler, which is implemented
@@ -42,36 +42,53 @@
 #include "gauche/vm.h"
 #include "gauche/vminsn.h"
 #include "gauche/class.h"
+#include "gauche/code.h"
 #include "gauche/builtin-syms.h"
 
 /*
  * Syntax
  */
 
-/* Temporary: to expose syntax to the new compiler */
-ScmObj Scm_CallSyntaxCompiler(ScmObj syn, ScmObj form, ScmObj env)
-{
-    ScmCompileProc cmpl;
-    void *data;
-
-    if (!SCM_SYNTAXP(syn)) {
-        Scm_Error("syntax required, but got %S", syn);
-    }
-    cmpl = SCM_SYNTAX(syn)->compiler;
-    data = SCM_SYNTAX(syn)->data;
-    return cmpl(form, env, 0, data);
-}
 
 /*
  * Compiler Entry
  */
 
 static ScmGloc *compile_gloc = NULL;
+static ScmGloc *compile_partial_gloc = NULL;
+static ScmGloc *compile_finish_gloc = NULL;
 static ScmGloc *init_compiler_gloc = NULL;
+
+static ScmInternalMutex compile_finish_mutex;
 
 ScmObj Scm_Compile(ScmObj program, ScmObj env)
 {
     return Scm_Apply(SCM_GLOC_GET(compile_gloc), SCM_LIST2(program, env));
+}
+
+ScmObj Scm_CompilePartial(ScmObj program, ScmObj env)
+{
+    return Scm_Apply(SCM_GLOC_GET(compile_partial_gloc),
+                     SCM_LIST2(program, env));
+}
+
+void Scm_CompileFinish(ScmCompiledCode *cc)
+{
+    if (cc->code == NULL) {
+        SCM_INTERNAL_MUTEX_LOCK(compile_finish_mutex);
+        SCM_UNWIND_PROTECT {
+            if (cc->code == NULL) {
+                Scm_Apply(SCM_GLOC_GET(compile_finish_gloc),
+                          SCM_LIST1(SCM_OBJ(cc)));
+            }
+        }
+        SCM_WHEN_ERROR {
+            SCM_INTERNAL_MUTEX_UNLOCK(compile_finish_mutex);
+            SCM_NEXT_HANDLER;
+        }
+        SCM_END_PROTECT;
+        SCM_INTERNAL_MUTEX_UNLOCK(compile_finish_mutex);
+    }
 }
 
 /*-------------------------------------------------------------
@@ -344,6 +361,14 @@ ScmObj Scm_UnwrapSyntax(ScmObj form)
  * Initializer
  */
 
+#define INIT_GLOC(gloc, name, mod)                                      \
+    do {                                                                \
+        gloc = Scm_FindBinding(mod, SCM_SYMBOL(SCM_INTERN(name)), TRUE); \
+        if (gloc == NULL) {                                             \
+            Scm_Panic("no " name " procedure in gauche.internal");      \
+        }                                                               \
+    } while (0)
+
 void Scm__InitCompaux(void)
 {
     ScmModule *g = Scm_GaucheModule();
@@ -353,22 +378,15 @@ void Scm__InitCompaux(void)
                         synclo_slots, 0);
     Scm_InitStaticClass(SCM_CLASS_IDENTIFIER, "<identifier>", g,
                         identifier_slots, 0);
-    
+
+    SCM_INTERNAL_MUTEX_INIT(compile_finish_mutex);
 
     /* Grab the entry points of compile.scm */
-    init_compiler_gloc = Scm_FindBinding(gi,
-                                         SCM_SYMBOL(SCM_INTERN("init-compiler")),
-                                         TRUE);
-    if (init_compiler_gloc == NULL) {
-        Scm_Panic("no init-compiler procedure in gauche.internal");
-    }
+    INIT_GLOC(init_compiler_gloc,   "init-compiler", gi);
+    INIT_GLOC(compile_gloc,         "compile",       gi);
+    INIT_GLOC(compile_partial_gloc, "compile-partial", gi);
+    INIT_GLOC(compile_finish_gloc,  "compile-finish",  gi);
+
     Scm_Apply(SCM_GLOC_GET(init_compiler_gloc), SCM_NIL);
-        
-    compile_gloc = Scm_FindBinding(gi,
-                                   SCM_SYMBOL(SCM_INTERN("compile")),
-                                   TRUE);
-    if (compile_gloc == NULL) {
-        Scm_Panic("no compile procedure in gauche.internal");
-    }
 }
 
