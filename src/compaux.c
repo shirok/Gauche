@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compaux.c,v 1.6 2005-05-22 03:27:32 shirok Exp $
+ *  $Id: compaux.c,v 1.7 2005-05-22 11:00:22 shirok Exp $
  */
 
 /* This file serves as a bridge to the compiler, which is implemented
@@ -260,7 +260,7 @@ static ScmClassStaticSlotSpec identifier_slots[] = {
    See compile.scm for Cenv structure.
 
    cenv-lookup :: Cenv, Name, LookupAs -> Var
-        where Var = Lvar | Identifier
+        where Var = Lvar | Identifier | Macro
 
    LookupAs ::
       LEXICAL(0) - lookup only lexical bindings
@@ -300,6 +300,32 @@ ScmObj Scm_CompilerEnvLookup(ScmObj cenv, ScmObj name, ScmObj lookupAs)
         SCM_ASSERT(SCM_IDENTIFIERP(name));
         return name;
     }
+}
+
+/* Lookup local variable from the runtime envirnoment Renv.
+ * Called in Pass3.  Moved here for efficiency.
+ *
+ *   renv-lookup : [[Lvar]], Lvar -> Int, Int
+ *
+ * Returns depth and offset of local variable frame.
+ * Note that this routine is agnostic about the structure of Lvar.
+ */
+ScmObj Scm_RuntimeEnvLookup(ScmObj renv, ScmObj lvar)
+{
+    ScmObj fp, lp;
+    int depth = 0;
+    SCM_FOR_EACH(fp, renv) {
+        int count = 1;
+        SCM_FOR_EACH(lp, SCM_CAR(fp)) {
+            if (SCM_EQ(SCM_CAR(lp), lvar)) {
+                return Scm_Values2(SCM_MAKE_INT(depth),
+                                   SCM_MAKE_INT(Scm_Length(SCM_CAR(fp))-count));
+            }
+            count++;
+        }
+        depth++;
+    }
+    Scm_Error("[internal error] stray local variable:", lvar);
 }
 
 

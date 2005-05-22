@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.17 2005-05-22 03:27:32 shirok Exp $
+;;;  $Id: compile.scm,v 1.18 2005-05-22 11:00:22 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -95,7 +95,7 @@
                (push! alist (cons (car syms) i))
                (cons `(define-constant ,(car syms) ,i)
                      (loop (cdr syms) (+ i 1))))))
-       (define-constant ,name ',(reverse! alist)))))
+       (define-constant ,name ',(reverse alist)))))
 
 ;; IForm tags
 (define-enum .intermediate-tags.
@@ -137,7 +137,7 @@
       (push! *insn-alist* (cons name num))
       `(define-constant ,name ,num)))
   (load "vminsn.scm")
-  (define-constant .insn-alist. (reverse! *insn-alist*))
+  (define-constant .insn-alist. (reverse *insn-alist*))
   )
 
 ;; Maximum size of $LAMBDA node we allow to duplicate and inline.
@@ -175,13 +175,20 @@
 ;; so that its call is inlined.
 
 (define-macro (imap proc lis)
-  (let ((p (gensym))
-        (r (gensym)))
-    `(let loop ((,r '()) (,p ,lis))
-       (if (null? ,p)
-         (reverse! ,r)
-         (loop (cons (,proc (car ,p)) ,r) (cdr ,p))))
-    ))
+  (match proc
+    (('cut p '<> c)
+     `(%map1c ,p ,lis ,c))
+    (('cut p '<> c1 c2)
+     `(%map1cc ,p ,lis ,c1 ,c2))
+    (('lambda . _)
+     (let ((p (gensym))
+           (r (gensym)))
+       `(let loop ((,r '()) (,p ,lis))
+          (if (null? ,p)
+            (reverse ,r)
+            (loop (cons (,proc (car ,p)) ,r) (cdr ,p))))
+       ))
+    (else `(map ,proc ,lis))))
 
 (define-macro (imap2 proc lis1 lis2)
   (let ((p1 (gensym))
@@ -189,7 +196,7 @@
         (r  (gensym)))
     `(let loop ((,r '()) (,p1 ,lis1) (,p2 ,lis2))
        (if (null? ,p1)
-         (reverse! ,r)
+         (reverse ,r)
          (loop (cons (,proc (car ,p1) (car ,p2)) ,r) (cdr ,p1) (cdr ,p2))))
     ))
 
@@ -266,7 +273,7 @@
            '())
        ,@(let loop ((s slot-defs) (i 1) (r '()))
            (if (null? s)
-             (reverse! r)
+             (reverse r)
              (let* ((slot-name (if (pair? (car s)) (caar s) (car s)))
                     (acc (string->symbol #`",|name|-,|slot-name|"))
                     (mod (string->symbol #`",|name|-,|slot-name|-set!")))
@@ -357,7 +364,7 @@
     `(let1 ,new (cenv-copy ,cenv)
        ,@(let loop ((updates updates) (r '()))
            (if (null? updates)
-             (reverse! r)
+             (reverse r)
              (let1 setter (string->symbol #`",(car updates)-set!")
                (loop (cddr updates)
                      (cons `(,setter ,new ,(cadr updates)) r)))))
@@ -1085,10 +1092,10 @@
         (iform-copy-zip-lvs ($let-lvars iform) lv-alist)
       ($let ($*-src iform) ($let-type iform)
             newlvs
-            (map (cute iform-copy <> (case ($let-type iform)
-                                       ((let) lv-alist)
-                                       ((rec) newalist)))
-                 ($let-inits iform))
+            (imap (cute iform-copy <> (case ($let-type iform)
+                                        ((let) lv-alist)
+                                        ((rec) newalist)))
+                  ($let-inits iform))
             (iform-copy ($let-body iform) newalist))))
    (($RECEIVE)
     (receive (newlvs newalist)
@@ -1115,15 +1122,15 @@
                                (iform-copy ($label-body iform) label-alist))
              newnode))))
    (($SEQ)
-    ($seq (map (cut iform-copy <> lv-alist) ($seq-body iform))))
+    ($seq (imap (cut iform-copy <> lv-alist) ($seq-body iform))))
    (($CALL)
     ($call ($*-src iform)
            (iform-copy ($call-proc iform) lv-alist)
-           (map (cut iform-copy <> lv-alist) ($call-args iform))
+           (imap (cut iform-copy <> lv-alist) ($call-args iform))
            #f))
    (($ASM)
     ($asm ($*-src iform) ($asm-insn iform)
-          (map (cut iform-copy <> lv-alist) ($asm-args iform))))
+          (imap (cut iform-copy <> lv-alist) ($asm-args iform))))
    (($PROMISE)
     ($promise ($*-src iform) (iform-copy ($promise-expr iform) lv-alist)))
    (($CONS)
@@ -1136,15 +1143,15 @@
              (iform-copy ($*-arg1 iform) lv-alist)))
    (($VECTOR)
     ($vector ($*-src iform)
-             (map (cut iform-copy <> lv-alist) ($*-args iform))))
+             (imap (cut iform-copy <> lv-alist) ($*-args iform))))
    (($LIST->VECTOR)
     ($list->vector ($*-src iform) (iform-copy ($*-arg0 iform) lv-alist)))
    (($LIST)
     ($list ($*-src iform)
-           (map (cut iform-copy <> lv-alist) ($*-args iform))))
+           (imap (cut iform-copy <> lv-alist) ($*-args iform))))
    (($LIST*)
     ($list* ($*-src iform)
-            (map (cut iform-copy <> lv-alist) ($*-args iform))))
+            (imap (cut iform-copy <> lv-alist) ($*-args iform))))
    (($MEMV)
     ($memv ($*-src iform)
            (iform-copy ($*-arg0 iform) lv-alist)
@@ -1161,7 +1168,7 @@
    (else iform)))
 
 (define (iform-copy-zip-lvs orig-lvars lv-alist)
-  (let1 new-lvars (map (lambda (lv) (make-lvar (lvar-name lv))) orig-lvars)
+  (let1 new-lvars (imap (lambda (lv) (make-lvar (lvar-name lv))) orig-lvars)
     (values new-lvars
             (fold-right acons lv-alist orig-lvars new-lvars))))
 
@@ -1341,6 +1348,13 @@
 ;;   variable references (defined by define-constant) are converted to
 ;;   its values at this stage.
 
+;; small macro to handle procedure call
+(define-inline (pass1/call program proc args cenv)
+  (if (null? args)
+    ($call program proc '()) ;; fast path
+    (let1 cenv (cenv-sans-name cenv)
+      ($call program proc (imap (cut pass1 <> cenv) args)))))
+
 ;; pass1 :: Sexpr, Cenv -> IForm
 (define (pass1 program cenv)
 
@@ -1387,69 +1401,48 @@
             (pass1/call program ($gref name) (cdr program) cenv)
             form))))))
 
-  ;; PROGRAM is a variable reference
-  (define (pass1/variable var)
-    (let ((r (cenv-lookup cenv var LEXICAL)))
-      (cond ((lvar? r) ($lref r))
-            ((variable? r)
-             (receive (mod name)
-                 (if (identifier? r)
-                   (values (slot-ref r 'module) (slot-ref r 'name))
-                   (values (cenv-module cenv) r))
-               (or (and-let* ((gloc (find-binding mod name #f))
-                              ( (gloc-const? gloc) )
-                              ( (not (vm-compiler-flag-is-set?
-                                      SCM_COMPILE_NOINLINE_CONSTS)) ))
-                     ($const (gloc-ref gloc)))
-                   ($gref (ensure-identifier r cenv)))))
-            (else
-             (error "[internal] pass1/variable got weird object:" var)))))
-
   ;; main body of pass1
   (cond
-    ((pair? program)  ;; (op . args)
+    ((pair? program)                    ; (op . args)
      (if (variable? (car program))
        (let1 head (cenv-lookup cenv (car program) SYNTAX)
          (cond
-          ((lvar? head)
-           (pass1/call program ($lref head) (cdr program) cenv))
-          ((macro? head)
-           (pass1 (call-macro-expander head program (cenv-frames cenv)) cenv))
           ((identifier? head)
            (pass1/global-call head))
+          ((lvar? head)
+           (pass1/call program ($lref head) (cdr program) cenv))
+          ((macro? head) ;; local macro
+           (pass1 (call-macro-expander head program (cenv-frames cenv)) cenv))
           (else
            (error "[internal] unknown resolution of head:" head))))
        (pass1/call program (pass1 (car program) (cenv-sans-name cenv))
                    (cdr program) cenv)))
-    ((variable? program)
-     (pass1/variable program))
+    ((variable? program)                 ; variable reference
+     (let1 r (cenv-lookup cenv program LEXICAL)
+       (cond ((lvar? r) ($lref r))
+             ((identifier? r)
+              (or (and-let* ((const (find-const-binding r)))
+                    ($const const))
+                  ($gref r)))
+             (else
+              (error "[internal] cenv-lookup returned weird obj:" r)))))
     (else
      ($const program))))
 
-;; handle procedure call
-;; KLUDGE: the body should be this simple:
-;;
-;;   ($call program proc (map (cute pass1 <> (cenv-sans-name cenv)) args))
-;;
-;;   However, we want to make it FAST, so we manually unfold pass1
-;;   application to avoid closure creation in typical cases.  Should be
-;;   cleaned up once our compiler does clever closure optimization.
-;; 
-(define (pass1/call program proc args cenv)
-  (case (length args)
-    ((0) ($call program proc ()))
-    ((1) ($call program proc
-                (list (pass1 (car args) (cenv-sans-name cenv)))))
-    ((2) (let1 cenv (cenv-sans-name cenv)
-           ($call program proc (list (pass1 (car args) cenv)
-                                     (pass1 (cadr args) cenv)))))
-    ((3) (let1 cenv (cenv-sans-name cenv)
-           ($call program proc (list (pass1 (car args) cenv)
-                                     (pass1 (cadr args) cenv)
-                                     (pass1 (caddr args) cenv)))))
-    (else
-     (let1 cenv (cenv-sans-name cenv)
-       ($call program proc (imap (cute pass1 <> cenv) args))))))
+;  (case (length args)
+;    ((0) ($call program proc ()))
+;    ((1) ($call program proc
+;                (list (pass1 (car args) (cenv-sans-name cenv)))))
+;    ((2) (let1 cenv (cenv-sans-name cenv)
+;           ($call program proc (list (pass1 (car args) cenv)
+;                                     (pass1 (cadr args) cenv)))))
+;    ((3) (let1 cenv (cenv-sans-name cenv)
+;           ($call program proc (list (pass1 (car args) cenv)
+;                                     (pass1 (cadr args) cenv)
+;                                     (pass1 (caddr args) cenv)))))
+;    (else
+;     (let1 cenv (cenv-sans-name cenv)
+;       ($call program proc (imap (cut pass1 <> cenv) args))))))
 
 ;; Compiling body with internal definitions.
 ;;
@@ -1542,7 +1535,7 @@
       ($seq (let loop ((exprs exprs)
                        (r '()))
               (if (null? (cdr exprs))
-                (reverse! (cons (pass1 (car exprs) cenv) r))
+                (reverse (cons (pass1 (car exprs) cenv) r))
                 (loop (cdr exprs)
                       (cons (pass1 (car exprs) stmtenv) r)))))))))
 
@@ -1737,7 +1730,7 @@
 (define (pass1/inliner-procedure ivec)
   (lambda (form cenv)
     (expand-inlined-procedure form (unpack-iform ivec)
-                              (map (cut pass1 <> cenv) (cdr form)))))
+                              (imap (cut pass1 <> cenv) (cdr form)))))
 
 ;; Macros ...........................................
 
@@ -1763,14 +1756,14 @@
                              (error "syntax-error: malformed transformer-spec:"
                                     spec))))
                         name trans-spec))
-            (newenv (cenv-extend cenv (map cons name trans) SYNTAX)))
+            (newenv (cenv-extend cenv (%map-cons name trans) SYNTAX)))
        (pass1/body body '() newenv)))
     (else "syntax-error: malformed let-syntax:" form)))
 
 (define-pass1-syntax (letrec-syntax form cenv) :null
   (match form
     ((_ ((name trans-spec) ...) body ...)
-     (let* ((newenv (cenv-extend cenv (map cons name trans-spec) SYNTAX))
+     (let* ((newenv (cenv-extend cenv (%map-cons name trans-spec) SYNTAX))
             (trans (map (lambda (n spec)
                           (match spec
                             (('syntax-rules (lit ...) rule ...)
@@ -1937,7 +1930,7 @@
       ((((? variable? var) init) . more)
        (let* ((lvar (make-lvar var))
               (newenv (cenv-extend cenv `((,var . ,lvar)) LEXICAL))
-              (itree (pass1 init (cenv-add-name cenv (variable-name lvar)))))
+              (itree (pass1 init (cenv-add-name cenv var))))
          (lvar-initval-set! lvar itree)
          ($let form 'let
                (list lvar)
@@ -2103,10 +2096,10 @@
 
 (define (pass1/lambda form formals body cenv flag)
   (receive (args reqargs optarg) (parse-lambda-args formals)
-    (let* ((lvars (map make-lvar+ args))
+    (let* ((lvars (imap make-lvar+ args))
            (intform ($lambda form (cenv-exp-name cenv)
                              reqargs optarg lvars #f flag))
-           (newenv (cenv-extend/proc cenv (map cons args lvars)
+           (newenv (cenv-extend/proc cenv (%map-cons args lvars)
                                      LEXICAL intform)))
       (vector-set! intform 6 (pass1/body body '() newenv))
       intform)))
@@ -2115,8 +2108,8 @@
   (match form
     ((_ formals expr body ...)
      (receive (args reqargs optarg) (parse-lambda-args formals)
-       (let* ((lvars (map make-lvar+ args))
-              (newenv (cenv-extend cenv (map cons args lvars) LEXICAL)))
+       (let* ((lvars (imap make-lvar+ args))
+              (newenv (cenv-extend cenv (%map-cons args lvars) LEXICAL)))
          ($receive form reqargs optarg lvars (pass1 expr cenv)
                    (pass1/body body '() newenv)))))
     (else
@@ -2127,13 +2120,13 @@
     ((_ () body ...)
      (pass1/body body '() cenv))
     ((_ ((var expr) ...) body ...)
-     (let* ((lvars (map make-lvar+ var))
-            (newenv (cenv-extend cenv (map cons var lvars) LEXICAL)))
+     (let* ((lvars (imap make-lvar+ var))
+            (newenv (cenv-extend cenv (%map-cons var lvars) LEXICAL)))
        ($let form 'let lvars
              (map (lambda (init lvar)
                     (let1 iexpr
                         (pass1 init
-                               (cenv-add-name cenv (variable-name lvar)))
+                               (cenv-add-name cenv (lvar-name lvar)))
                       (lvar-initval-set! lvar iexpr)
                       iexpr))
                   expr lvars)
@@ -2155,10 +2148,10 @@
      ;;  The reason is that this form can be more easily spotted by
      ;;  our simple-minded closure optimizer in Pass 2.
      (let ((lvar (make-lvar name))
-           (args (map make-lvar+ var))
+           (args (imap make-lvar+ var))
            (argenv (cenv-sans-name cenv)))
        (let* ((env1 (cenv-extend cenv `((,name . ,lvar)) LEXICAL))
-              (env2 (cenv-extend/name env1 (map cons var args) LEXICAL name))
+              (env2 (cenv-extend/name env1 (%map-cons var args) LEXICAL name))
               (lmda ($lambda form name (length args) 0 args
                              (pass1/body body '() env2))))
          (lvar-initval-set! lvar lmda)
@@ -2179,7 +2172,7 @@
          (let* ((lv (make-lvar (car vars)))
                 (newenv (cenv-extend cenv `((,(car vars) . ,lv)) LEXICAL))
                 (iexpr (pass1 (car inits)
-                              (cenv-add-name cenv (variable-name lv)))))
+                              (cenv-add-name cenv (car vars)))))
            (lvar-initval-set! lv iexpr)
            ($let #f 'let (list lv) (list iexpr)
                  (loop (cdr vars) (cdr inits) newenv))))))
@@ -2191,8 +2184,8 @@
     ((_ () body ...)
      (pass1/body body '() cenv))
     ((_ ((var expr) ...) body ...)
-     (let* ((lvars (map make-lvar+ var))
-            (newenv (cenv-extend cenv (map cons var lvars) LEXICAL))
+     (let* ((lvars (imap make-lvar+ var))
+            (newenv (cenv-extend cenv (%map-cons var lvars) LEXICAL))
             )
        ($let form 'rec lvars
              (map (lambda (lv init)
@@ -2209,15 +2202,15 @@
   (match form
     ((_ ((var init . update) ...) (test expr ...) body ...)
      (let* ((tmp  (make-lvar 'do-proc))
-            (args (map make-lvar+ var))
-            (newenv (cenv-extend/proc cenv (map cons var args) LEXICAL 'do-proc))
+            (args (imap make-lvar+ var))
+            (newenv (cenv-extend/proc cenv (%map-cons var args) LEXICAL 'do-proc))
             (clo ($lambda
                   form 'do-body (length var) 0 args
                   ($if #f
                        (pass1 test newenv)
                        (if (null? expr)
                          ($it)
-                         ($seq (map (cut pass1 <> newenv) expr)))
+                         ($seq (imap (cut pass1 <> newenv) expr)))
                        ($seq
                         (list
                          (pass1/body body '() newenv)
@@ -2254,7 +2247,7 @@
                    ($gref setter.)
                    (list (pass1 op cenv)) #f)
             (let1 cenv (cenv-sans-name cenv)
-              (append (map (cut pass1 <> cenv) args)
+              (append (imap (cut pass1 <> cenv) args)
                       (list (pass1 expr cenv))))))
     ((_ name expr)
      (unless (variable? name)
@@ -2270,7 +2263,7 @@
 ;; Begin .....................................................
 
 (define-pass1-syntax (begin form cenv) :null
-  ($seq (map (cut pass1 <> cenv) (cdr form))))
+  ($seq (imap (cut pass1 <> cenv) (cdr form))))
 
 ;; Delay .....................................................
 
@@ -2288,7 +2281,7 @@
     ((_ name body ...)
      (let* ((mod (ensure-module name 'define-module #t))
             (newenv (make-bottom-cenv mod)))
-       ($seq (map (cut pass1 <> newenv) body))))
+       ($seq (imap (cut pass1 <> newenv) body))))
     (else
      (error "syntax-error: malformed define-module:" form))))
 
@@ -2297,7 +2290,7 @@
     ((_ name body ...)
      (let* ((mod (ensure-module name 'with-module #f))
             (newenv (cenv-swap-module cenv mod)))
-       ($seq (map (cut pass1 <> newenv) body))))
+       ($seq (imap (cut pass1 <> newenv) body))))
     (else
      (error "syntax-error: malformed with-module:" form))))
 
@@ -2337,13 +2330,13 @@
 
 (define-pass1-syntax (extend form cenv) :gauche
   (%extend-module (cenv-module cenv)
-                  (map (lambda (m)
-                         (or (find-module m)
-                             (begin
-                               (%require (module-name->path m))
-                               (find-module m))
-                             (error "undefined module" m)))
-                       (cdr form)))
+                  (imap (lambda (m)
+                          (or (find-module m)
+                              (begin
+                                (%require (module-name->path m))
+                                (find-module m))
+                              (error "undefined module" m)))
+                        (cdr form)))
   ($const-undef))
 
 (define-pass1-syntax (require form cenv) :gauche
@@ -2420,7 +2413,7 @@
                     (cenv-toplevel? cenv))
                (and (eqv? situ SCM_VM_EXECUTING)
                     (memq :execute wlist)))
-         ($seq (map (cut pass1 <> cenv) expr))
+         ($seq (imap (cut pass1 <> cenv) expr))
          ($const-undef))))
     (else (error "syntax-error: malformed eval-when:" form))))
 
@@ -2612,7 +2605,7 @@
 
 (define (pass2/$LET iform penv tail?)
   (let ((lvars ($let-lvars iform))
-        (inits (map (cut pass2/rec <> penv #f) ($let-inits iform)))
+        (inits (imap (cut pass2/rec <> penv #f) ($let-inits iform)))
         (obody (pass2/rec ($let-body iform) penv tail?)))
     (for-each pass2/optimize-closure lvars inits)
     (receive (new-lvars new-inits removed-inits)
@@ -2639,7 +2632,7 @@
 (define (pass2/remove-unused-lvars lvars inits)
   (let loop ((lvars lvars) (inits inits) (rl '()) (ri '()) (rr '()))
     (cond ((null? lvars)
-           (values (reverse! rl) (reverse! ri) (reverse! rr)))
+           (values (reverse rl) (reverse ri) (reverse rr)))
           ((and (zero? (lvar-ref-count (car lvars)))
                 (zero? (lvar-set-count (car lvars))))
            ;; TODO: if we remove $LREF from inits, we have to decrement
@@ -2855,7 +2848,7 @@
                (r '()))
       (cond ((null? (cdr body))
              ($seq-body-set! iform
-                             (reverse! (cons (pass2/rec (car body) penv tail?)
+                             (reverse (cons (pass2/rec (car body) penv tail?)
                                              r)))
              iform)
             (else
@@ -2905,7 +2898,7 @@
           (args ($call-args iform)))
       (cond
        ((vm-compiler-flag-is-set? SCM_COMPILE_NOINLINE_LOCALS)
-        ($call-args-set! iform (pass2/call-args args penv))
+        ($call-args-set! iform (imap (cut pass2/rec <> penv #f) args))
         iform)
        ((has-tag? proc $LAMBDA) ;; ((lambda (...) ...) arg ...)
         (pass2/rec (expand-inlined-procedure ($*-src iform) proc args)
@@ -2930,19 +2923,12 @@
                  ($lambda-calls-set! lambda-node
                                      (acons iform penv
                                             ($lambda-calls lambda-node)))
-                 ($call-args-set! iform (pass2/call-args args penv))
+                 ($call-args-set! iform (imap (cut pass2/rec <> penv #f) args))
                  iform)))))
        (else
-        ($call-args-set! iform (pass2/call-args args penv))
+        ($call-args-set! iform (imap (cut pass2/rec <> penv #f) args))
         iform))))
    ))
-
-;; (map (cut pass2/rec <> penv #f) args), but avoid closure creation.
-(define (pass2/call-args args penv)
-  (let loop ((args args) (r '()))
-    (if (null? args)
-      (reverse! r)
-      (loop (cdr args) (cons (pass2/rec (car args) penv #f) r)))))
 
 ;; Check if IFORM ($LREF node) can be a target of procedure-call optimization.
 ;;   - If IFORM is not statically bound to $LAMBDA node,
@@ -2995,7 +2981,7 @@
 (define pass2/$EQV?   pass2/twoarg-inliner)
 
 (define (pass2/narg-inliner iform penv tail?)
-  ($*-args-set! iform (map (cut pass2/rec <> penv #f) ($*-args iform)))
+  ($*-args-set! iform (imap (cut pass2/rec <> penv #f) ($*-args iform)))
   iform)
 
 (define pass2/$LIST   pass2/narg-inliner)
@@ -3083,13 +3069,13 @@
     d))
 
 (define (pass3/$LREF iform ccb renv ctx)
-  (receive (depth offset) (pass3/lookup-lvar ($lref-lvar iform) renv ctx)
+  (receive (depth offset) (renv-lookup renv ($lref-lvar iform))
     (compiled-code-emit2i! ccb LREF depth offset
                            (lvar-name ($lref-lvar iform)))
     0))
 
 (define (pass3/$LSET iform ccb renv ctx)
-  (receive (depth offset) (pass3/lookup-lvar ($lset-lvar iform) renv ctx)
+  (receive (depth offset) (renv-lookup renv ($lset-lvar iform))
     (let1 d (pass3/rec ($lset-expr iform) ccb renv (normal-context ctx))
       (compiled-code-emit2i! ccb LSET depth offset
                              (lvar-name ($lset-lvar iform)))
@@ -3365,7 +3351,7 @@
 
 (define (partition-letrec-inits inits ccb renv cnt closures others)
   (if (null? inits)
-    (values (reverse! closures) (reverse! others))
+    (values (reverse closures) (reverse others))
     (let1 init (car inits)
       (cond
        ((has-tag? init $LAMBDA)
@@ -3905,17 +3891,17 @@
 (define *pass3-dispatch-table* (pass3-generate-dispatch-table))
      
 ;; Returns depth and offset of local variable reference.
-(define (pass3/lookup-lvar lvar renv ctx)
-  (let outer ((renv renv)
-              (depth 0))
-    (if (null? renv)
-      (error "[internal error] stray local variable:" lvar)
-      (let inner ((frame (car renv))
-                  (count 1))
-        (cond ((null? frame) (outer (cdr renv) (+ depth 1)))
-              ((eq? (car frame) lvar)
-               (values depth (- (length (car renv)) count)))
-              (else (inner (cdr frame) (+ count 1))))))))
+;(define (renv-lookup renv lvar)
+;  (let outer ((renv renv)
+;              (depth 0))
+;    (if (null? renv)
+;      (error "[internal error] stray local variable:" lvar)
+;      (let inner ((frame (car renv))
+;                  (count 1))
+;        (cond ((null? frame) (outer (cdr renv) (+ depth 1)))
+;              ((eq? (car frame) lvar)
+;               (values depth (- (length (car renv)) count)))
+;              (else (inner (cdr frame) (+ count 1))))))))
 
 (define (pass3/prepare-args args ccb renv ctx)
   (if (null? args)
@@ -4149,6 +4135,22 @@
                                 ,(pass1 val cenv))))
       (else (error "wrong number of arguments for vector-set!:" form)))))
 
+(define-builtin-inliner zero?
+  (lambda (form cenv)
+    (match form
+      ((_ arg)
+       ($asm form `(,NUMEQ2) `(,(pass1 arg cenv) ,($const 0))))
+      (else (error "wrong number of arguments for zero?:" form)))))
+
+(define-builtin-inliner acons
+  (lambda (form cenv)
+    (match form
+      ((_ a b c)
+       ($asm form `(,CONS) `(,($asm #f `(,CONS) `(,(pass1 a cenv)
+                                                  ,(pass1 b cenv)))
+                             ,(pass1 c cenv))))
+      (else (error "wrong number of arguments for acons:" form)))))
+
 ;;============================================================
 ;; Utilities
 ;;
@@ -4173,15 +4175,9 @@
 (define (global-eq? var sym cenv)
   (and (variable? var)
        (let1 v (cenv-lookup cenv var LEXICAL)
-         (cond
-          ((identifier? v)
-           (and (eq? (slot-ref v 'name) sym)
-                (null? (slot-ref v 'env))))
-          ((symbol? v) (eq? v sym))
-          (else #f)))))
-
-(define (global-eq?? sym cenv)
-  (cut global-eq? <> sym cenv))
+         (and (identifier? v)
+              (eq? (slot-ref v 'name) sym)
+              (null? (slot-ref v 'env))))))
 
 ;;============================================================
 ;; Initialization

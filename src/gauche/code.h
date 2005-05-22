@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: code.h,v 1.3 2005-05-16 22:56:08 shirok Exp $
+ *  $Id: code.h,v 1.4 2005-05-22 11:00:45 shirok Exp $
  */
 
 #ifndef GAUCHE_CODE_H
@@ -134,7 +134,7 @@ SCM_EXTERN void   Scm_CompiledCodeFinishBuilder(ScmCompiledCode *cc,
  */
 SCM_EXTERN ScmObj Scm_CompilerEnvLookup(ScmObj cenv, ScmObj name,
                                         ScmObj lookupAs);
-
+SCM_EXTERN ScmObj Scm_RuntimeEnvLookup(ScmObj renv, ScmObj lvar);
 
 /*
  * VM instructions

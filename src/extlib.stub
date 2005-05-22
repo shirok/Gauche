@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.235 2005-05-22 03:27:32 shirok Exp $
+;;; $Id: extlib.stub,v 1.236 2005-05-22 11:00:22 shirok Exp $
 ;;;
 
 "
@@ -45,9 +45,9 @@
 ;;
 
 (define-cproc macroexpand (form)
-  "SCM_RETURN(Scm_MacroExpand(form, SCM_NIL, FALSE));")
+  "SCM_RETURN(Scm_VMMacroExpand(form, SCM_NIL, FALSE));")
 (define-cproc macroexpand-1 (form)
-  "SCM_RETURN(Scm_MacroExpand(form, SCM_NIL, TRUE));")
+  "SCM_RETURN(Scm_VMMacroExpand(form, SCM_NIL, TRUE));")
 
 ;;
 ;; 6.1  Equivalence predicates

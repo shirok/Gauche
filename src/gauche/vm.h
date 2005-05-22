@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.100 2005-05-12 08:52:53 shirok Exp $
+ *  $Id: vm.h,v 1.101 2005-05-22 11:00:45 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -79,7 +79,7 @@ typedef struct ScmCompiledCodeRec ScmCompiledCode;
 typedef struct ScmEnvFrameRec {
     struct ScmEnvFrameRec *up;  /* static link */
     ScmObj info;                /* reserved */
-    int size;                   /* size of the frame (excluding header) */
+    ScmWord size;               /* size of the frame (excluding header) */
 } ScmEnvFrame;
 
 #define ENV_HDR_SIZE   3        /* envframe header size */

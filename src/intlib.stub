@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.5 2005-05-22 03:27:33 shirok Exp $
+;;; $Id: intlib.stub,v 1.6 2005-05-22 11:00:22 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -104,6 +104,17 @@
    if (g) SCM_RETURN(SCM_OBJ(g));
    else   SCM_RETURN(SCM_FALSE);")
 
+;; This small piece of code encapsulates the common procedure in
+;; pass1/variable to find whether the variable reference is a constant
+;; or not.
+(define-cproc find-const-binding (id::<identifier>)
+  "ScmGloc *g = Scm_FindBinding(id->module, id->name, FALSE);
+  if (!g || !SCM_GLOC_CONST_P(g)
+      || SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), SCM_COMPILE_NOINLINE_CONSTS)) {
+    SCM_RETURN(SCM_FALSE);
+  }
+  SCM_RETURN(SCM_GLOC_GET(g));")
+
 (define-cproc %insert-binding (mod::<module> name::<symbol> value)
   (return "Scm_Define"))
 
@@ -133,6 +144,11 @@
 ;; This is a performance critical function, thus it is implemented in C.
 (define-cproc cenv-lookup (cenv name lookup-as)
   (return "Scm_CompilerEnvLookup"))
+
+;; Lookup local variable from runtime environment in Pass 3.
+;; Also moved to C for efficiency.
+(define-cproc renv-lookup (renv lvar)
+  (return "Scm_RuntimeEnvLookup"))
 
 ;; This is an aux call to dispatch the function call with global variable
 ;; reference in its first position (in pass1/glbobal-call).  It checks
@@ -189,7 +205,7 @@
    SCM_RETURN(SCM_SYNTAX(syn)->handler);")
 
 (define-cproc %internal-macro-expand (form env once::<boolean>)
-  (return "Scm_MacroExpand"))
+  (return "Scm_VMMacroExpand"))
 
 (define-cproc make-promise (thunk)
   (return "Scm_MakePromise"))
@@ -342,6 +358,76 @@
 ;; Profiler internal API
 ;;
 (define-cproc profiler-raw-result () (return "Scm_ProfilerRawResult"))
+
+;;
+;; Some aux hacks
+;;
+
+;; (%map1c proc lis c) = (map (cut proc <> c) lis)
+"static ScmObj map1c_cc(ScmObj result, void *data[])
+ {
+   ScmObj proc = SCM_OBJ(data[0]);
+   ScmObj r = SCM_OBJ(data[1]);
+   ScmObj lis = SCM_OBJ(data[2]);
+   ScmObj c = SCM_OBJ(data[3]);
+   if (SCM_NULLP(lis)) {
+     SCM_RETURN(Scm_ReverseX(Scm_Cons(result, r)));
+   } else {
+     data[1] = Scm_Cons(result, r);
+     data[2] = SCM_CDR(lis);
+     Scm_VMPushCC(map1c_cc, data, 4);
+     SCM_RETURN(Scm_VMApply2(proc, SCM_CAR(lis), c));
+   }
+ }"
+
+(define-cproc %map1c (proc lis c)
+  "void *data[4];
+  if (SCM_NULLP(lis)) SCM_RETURN(SCM_NIL);
+  data[0] = proc;
+  data[1] = SCM_NIL;
+  data[2] = SCM_CDR(lis);
+  data[3] = c;
+  Scm_VMPushCC(map1c_cc, data, 4);
+  SCM_RETURN(Scm_VMApply2(proc, SCM_CAR(lis), c));")
+
+;; (%map1cc proc lis c1 c2) = (map (cut proc <> c1 c2) lis)
+"static ScmObj map1cc_cc(ScmObj result, void *data[])
+ {
+   ScmObj proc = SCM_OBJ(data[0]);
+   ScmObj r = SCM_OBJ(data[1]);
+   ScmObj lis = SCM_OBJ(data[2]);
+   ScmObj c1 = SCM_OBJ(data[3]);
+   ScmObj c2 = SCM_OBJ(data[4]);
+   if (SCM_NULLP(lis)) {
+     SCM_RETURN(Scm_ReverseX(Scm_Cons(result, r)));
+   } else {
+     data[1] = Scm_Cons(result, r);
+     data[2] = SCM_CDR(lis);
+     Scm_VMPushCC(map1cc_cc, data, 5);
+     SCM_RETURN(Scm_VMApply3(proc, SCM_CAR(lis), c1, c2));
+   }
+ }"
+
+(define-cproc %map1cc (proc lis c1 c2)
+  "void *data[5];
+  if (SCM_NULLP(lis)) SCM_RETURN(SCM_NIL);
+  data[0] = proc;
+  data[1] = SCM_NIL;
+  data[2] = SCM_CDR(lis);
+  data[3] = c1;
+  data[4] = c2;
+  Scm_VMPushCC(map1cc_cc, data, 5);
+  SCM_RETURN(Scm_VMApply3(proc, SCM_CAR(lis), c1, c2));")
+
+;; (%map-cons lis1 lis2) = (map cons lis1 lis2)
+(define-cproc %map-cons (lis1 lis2)
+  "ScmObj h = SCM_NIL, t = SCM_NIL;
+  while (SCM_PAIRP(lis1) && SCM_PAIRP(lis2)) {
+    SCM_APPEND1(h, t, Scm_Cons(SCM_CAR(lis1), SCM_CAR(lis2)));
+    lis1 = SCM_CDR(lis1);
+    lis2 = SCM_CDR(lis2);
+  }
+  SCM_RETURN(h);")
 
 ;; Local variables:
 ;; mode: scheme
