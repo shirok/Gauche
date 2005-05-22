@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.18 2005-05-22 11:00:22 shirok Exp $
+;;;  $Id: compile.scm,v 1.19 2005-05-22 11:48:34 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -199,6 +199,14 @@
          (reverse ,r)
          (loop (cons (,proc (car ,p1) (car ,p2)) ,r) (cdr ,p1) (cdr ,p2))))
     ))
+
+;; Inlining max
+;; We only compare unsigned integers (in Pass 3), so we use the specialized
+;; version of max.
+(define-macro (imax x y . more)
+  (if (null? more)
+    `(%imax ,x ,y)
+    `(%imax ,x (imax ,y ,@more))))
 
 ;;============================================================
 ;; Data structures
@@ -3177,10 +3185,10 @@
                     0
                     info ccb renv ctx))
    (else
-    (let1 depth (max (pass3/rec x ccb renv (normal-context ctx)) 1)
+    (let1 depth (imax (pass3/rec x ccb renv (normal-context ctx)) 1)
       (compiled-code-emit0! ccb PUSH)
       (pass3/if-final iform #f BNEQ 0
-                      (max (pass3/rec y ccb renv 'normal/top) depth)
+                      (imax (pass3/rec y ccb renv 'normal/top) depth)
                       info ccb renv ctx)))))
 
 (define (pass3/if-eqv iform x y info ccb renv ctx)
@@ -3194,10 +3202,10 @@
                     0
                     info ccb renv ctx))
    (else
-    (let1 depth (max (pass3/rec x ccb renv (normal-context ctx)) 1)
+    (let1 depth (imax (pass3/rec x ccb renv (normal-context ctx)) 1)
       (compiled-code-emit0! ccb PUSH)
       (pass3/if-final iform #f BNEQV 0
-                      (max (pass3/rec y ccb renv 'normal/top) depth)
+                      (imax (pass3/rec y ccb renv 'normal/top) depth)
                       info ccb renv ctx)))))
 
 (define (pass3/if-numeq iform x y info ccb renv ctx)
@@ -3211,17 +3219,17 @@
            (pass3/if-final iform x BNUMNEI ($const-value y)
                            0
                            info ccb renv ctx))
-      (let1 depth (max (pass3/rec x ccb renv (normal-context ctx)) 1)
+      (let1 depth (imax (pass3/rec x ccb renv (normal-context ctx)) 1)
         (compiled-code-emit0! ccb PUSH)
         (pass3/if-final iform #f BNUMNE 0
-                        (max (pass3/rec y ccb renv 'normal/top) depth)
+                        (imax (pass3/rec y ccb renv 'normal/top) depth)
                         info ccb renv ctx))))
 
 (define (pass3/if-numcmp iform x y insn info ccb renv ctx)
-  (let1 depth (max (pass3/rec x ccb renv (normal-context ctx)) 1)
+  (let1 depth (imax (pass3/rec x ccb renv (normal-context ctx)) 1)
     (compiled-code-emit0! ccb PUSH)
     (pass3/if-final iform #f insn 0
-                    (max (pass3/rec y ccb renv 'normal/top) depth)
+                    (imax (pass3/rec y ccb renv 'normal/top) depth)
                     info ccb renv ctx)))
 
 ;; Final stage of emitting branch instruction.
@@ -3240,7 +3248,7 @@
 
 (define (pass3/if-final iform test code arg0/opr depth info ccb renv ctx)
   (let1 depth (if test
-                (max (pass3/rec test ccb renv (normal-context ctx)) depth)
+                (imax (pass3/rec test ccb renv (normal-context ctx)) depth)
                 depth)
     (cond
      ((tail-context? ctx)
@@ -3248,32 +3256,32 @@
        ((and (eqv? code BF)
              (has-tag? ($if-then iform) $IT))
         (compiled-code-emit0i! ccb RT info)
-        (max (pass3/rec ($if-else iform) ccb renv ctx) depth))
+        (imax (pass3/rec ($if-else iform) ccb renv ctx) depth))
        ((and (eqv? code BF)
              (has-tag? ($if-else iform) $IT))
         (compiled-code-emit0i! ccb RF info)
-        (max (pass3/rec ($if-then iform) ccb renv ctx) depth))
+        (imax (pass3/rec ($if-then iform) ccb renv ctx) depth))
        (else
         (let ((elselabel (compiled-code-new-label ccb)))
           (if (memv code .branch-insn-extra-operand.)
             (compiled-code-emit0oi! ccb code (list arg0/opr elselabel) info)
             (compiled-code-emit1oi! ccb code arg0/opr elselabel info))
-          (set! depth (max (pass3/rec ($if-then iform) ccb renv ctx) depth))
+          (set! depth (imax (pass3/rec ($if-then iform) ccb renv ctx) depth))
           (compiled-code-emit0! ccb RET)
           (compiled-code-set-label! ccb elselabel)
-          (max (pass3/rec ($if-else iform) ccb renv ctx) depth)))))
+          (imax (pass3/rec ($if-else iform) ccb renv ctx) depth)))))
      (else
       (let ((elselabel  (compiled-code-new-label ccb))
             (mergelabel (compiled-code-new-label ccb)))
         (if (memv code .branch-insn-extra-operand.)
           (compiled-code-emit0oi! ccb code (list arg0/opr elselabel) info)
           (compiled-code-emit1oi! ccb code arg0/opr elselabel info))
-        (set! depth (max (pass3/rec ($if-then iform) ccb renv ctx) depth))
+        (set! depth (imax (pass3/rec ($if-then iform) ccb renv ctx) depth))
         (unless (has-tag? ($if-else iform) $IT)
           (compiled-code-emit0o! ccb JUMP mergelabel))
         (compiled-code-set-label! ccb elselabel)
         (unless (has-tag? ($if-else iform) $IT)
-          (set! depth (max (pass3/rec ($if-else iform) ccb renv ctx) depth)))
+          (set! depth (imax (pass3/rec ($if-else iform) ccb renv ctx) depth)))
         (compiled-code-set-label! ccb mergelabel)
         depth)))))
 
@@ -3309,7 +3317,7 @@
              (let1 dbody (pass3/rec body ccb (cons lvars renv) ctx)
                (unless (tail-context? ctx)
                  (compiled-code-emit0! ccb POP-LOCAL-ENV))
-               (max dinit (+ dbody ENV_HEADER_SIZE nlocals)))))
+               (imax dinit (+ dbody ENV_HEADER_SIZE nlocals)))))
           (else
            (compiled-code-emit1o! ccb PRE-CALL nlocals merge-label)
            (let1 dinit (pass3/prepare-args inits ccb renv ctx)
@@ -3317,7 +3325,7 @@
              (let1 dbody (pass3/rec body ccb (cons lvars renv) 'tail)
                (compiled-code-emit0! ccb RET)
                (compiled-code-set-label! ccb merge-label)
-               (max dinit
+               (imax dinit
                     (+ dbody CONT_FRAME_SIZE ENV_HEADER_SIZE nlocals))))
            )))
         ((rec)
@@ -3332,7 +3340,7 @@
                     (dbody (pass3/rec body ccb (cons lvars renv) ctx)))
                (unless (tail-context? ctx)
                  (compiled-code-emit0! ccb POP-LOCAL-ENV))
-               (+ ENV_HEADER_SIZE nlocals (max dinit dbody))))
+               (+ ENV_HEADER_SIZE nlocals (imax dinit dbody))))
             (else
              (compiled-code-emit1o! ccb PRE-CALL nlocals merge-label)
              (compiled-code-emit1oi! ccb LOCAL-ENV-CLOSURES nlocals
@@ -3343,7 +3351,7 @@
                (compiled-code-emit0! ccb RET)
                (compiled-code-set-label! ccb merge-label)
                (+ CONT_FRAME_SIZE ENV_HEADER_SIZE nlocals
-                  (max dinit dbody)))))))
+                  (imax dinit dbody)))))))
         (else
          (error "[internal error]: pass3/$LET got unknown let type:"
                 ($let-type iform)))
@@ -3383,7 +3391,7 @@
            (d (pass3/rec (cdr off&expr) ccb renv 'normal/bottom)))
       (compiled-code-emit2! ccb LSET 0 (- nlocals 1 (car off&expr)))
       (emit-letrec-inits (cdr init-alist) nlocals ccb renv
-                         (max depth d)))))
+                         (imax depth d)))))
 
 (define (pass3/$RECEIVE iform ccb renv ctx)
   (let ((nargs  ($receive-reqargs iform))
@@ -3398,7 +3406,7 @@
         (let1 dbody (pass3/rec body ccb (cons lvars renv) ctx)
           (unless (tail-context? ctx)
             (compiled-code-emit0! ccb POP-LOCAL-ENV))
-          (max dinit (+ nargs optarg ENV_HEADER_SIZE dbody)))))
+          (imax dinit (+ nargs optarg ENV_HEADER_SIZE dbody)))))
      (else
       (let ((merge-label (compiled-code-new-label ccb))
             (dinit (pass3/rec expr ccb renv (normal-context ctx))))
@@ -3407,7 +3415,7 @@
         (let1 dbody (pass3/rec body ccb (cons lvars renv) 'tail)
           (compiled-code-emit0! ccb RET)
           (compiled-code-set-label! ccb merge-label)
-          (max dinit (+ nargs optarg CONT_FRAME_SIZE ENV_HEADER_SIZE dbody)))))
+          (imax dinit (+ nargs optarg CONT_FRAME_SIZE ENV_HEADER_SIZE dbody)))))
      )))
 
 (define (pass3/$LAMBDA iform ccb renv ctx)
@@ -3444,9 +3452,9 @@
      (else
       (let loop ((exprs exprs) (depth 0))
         (if (null? (cdr exprs))
-          (max (pass3/rec (car exprs) ccb renv ctx) depth)
+          (imax (pass3/rec (car exprs) ccb renv ctx) depth)
           (loop (cdr exprs)
-                (max (pass3/rec (car exprs) ccb renv (stmt-context ctx))
+                (imax (pass3/rec (car exprs) ccb renv (stmt-context ctx))
                      depth)))))
      )))
 
@@ -3525,7 +3533,7 @@
         (compiled-code-emit1i! ccb LOCAL-ENV-TAIL-CALL nargs ($*-src iform))
         (if (= nargs 0)
           0
-          (max dinit (+ nargs ENV_HEADER_SIZE))))
+          (imax dinit (+ nargs ENV_HEADER_SIZE))))
       (let1 merge-label (compiled-code-new-label ccb)
         (compiled-code-emit1o! ccb PRE-CALL nargs merge-label)
         (let1 dinit (pass3/prepare-args args ccb renv ctx)
@@ -3534,7 +3542,7 @@
           (compiled-code-set-label! ccb merge-label)
           (if (= nargs 0)
             CONT_FRAME_SIZE
-            (max dinit (+ nargs ENV_HEADER_SIZE CONT_FRAME_SIZE))))))))
+            (imax dinit (+ nargs ENV_HEADER_SIZE CONT_FRAME_SIZE))))))))
 
 ;; Embedded call
 ;;   $call-proc has $lambda node.  We inline its body.
@@ -3564,7 +3572,7 @@
         (compiled-code-set-label! ccb merge-label)
         (if (= nargs 0)
           (+ CONT_FRAME_SIZE dbody)
-          (max dinit (+ nargs ENV_HEADER_SIZE CONT_FRAME_SIZE dbody)))))
+          (imax dinit (+ nargs ENV_HEADER_SIZE CONT_FRAME_SIZE dbody)))))
     ))
 
 ;; Jump call
@@ -3585,7 +3593,7 @@
           (compiled-code-emit1oi! ccb LOCAL-ENV-JUMP (length renv-diff)
                                   (pass3/ensure-label ccb label)
                                   ($*-src iform))
-          (if (= nargs 0) 0 (max dinit (+ nargs ENV_HEADER_SIZE))))
+          (if (= nargs 0) 0 (imax dinit (+ nargs ENV_HEADER_SIZE))))
         (let1 merge-label (compiled-code-new-label ccb)
           (compiled-code-emit1o! ccb PRE-CALL nargs merge-label)
           (let1 dinit (pass3/prepare-args args ccb renv ctx)
@@ -3595,7 +3603,7 @@
             (compiled-code-set-label! ccb merge-label)
             (if (= nargs 0)
               CONT_FRAME_SIZE
-              (max dinit (+ nargs ENV_HEADER_SIZE CONT_FRAME_SIZE)))))
+              (imax dinit (+ nargs ENV_HEADER_SIZE CONT_FRAME_SIZE)))))
         ))))
 
 ;; Head-heavy call
@@ -3607,7 +3615,7 @@
                                ccb renv (normal-context ctx)))
              (dinit (pass3/prepare-args args ccb renv 'normal/top)))
         (compiled-code-emit1i! ccb TAIL-CALL nargs ($*-src iform))
-        (max dinit (+ nargs dproc ENV_HEADER_SIZE)))
+        (imax dinit (+ nargs dproc ENV_HEADER_SIZE)))
       (let1 merge-label (compiled-code-new-label ccb)
         (compiled-code-emit1o! ccb PRE-CALL nargs merge-label)
         (let* ((dproc (pass3/rec ($call-proc iform)
@@ -3615,7 +3623,7 @@
                (dinit (pass3/prepare-args args ccb renv 'normal/top)))
           (compiled-code-emit1i! ccb CALL nargs ($*-src iform))
           (compiled-code-set-label! ccb merge-label)
-          (+ CONT_FRAME_SIZE (max dinit (+ nargs dproc ENV_HEADER_SIZE)))))
+          (+ CONT_FRAME_SIZE (imax dinit (+ nargs dproc ENV_HEADER_SIZE)))))
       )))
 
 ;; Normal call
@@ -3626,14 +3634,14 @@
       (let* ((dinit (pass3/prepare-args args ccb renv ctx))
              (dproc (pass3/rec ($call-proc iform) ccb renv 'normal/top)))
         (compiled-code-emit1i! ccb TAIL-CALL nargs ($*-src iform))
-        (max dinit (+ nargs dproc ENV_HEADER_SIZE)))
+        (imax dinit (+ nargs dproc ENV_HEADER_SIZE)))
       (let1 merge-label (compiled-code-new-label ccb)
         (compiled-code-emit1o! ccb PRE-CALL nargs merge-label)
         (let* ((dinit (pass3/prepare-args args ccb renv ctx))
                (dproc (pass3/rec ($call-proc iform) ccb renv 'normal/top)))
           (compiled-code-emit1i! ccb CALL nargs ($*-src iform))
           (compiled-code-set-label! ccb merge-label)
-          (+ CONT_FRAME_SIZE (max dinit (+ nargs dproc ENV_HEADER_SIZE)))))
+          (+ CONT_FRAME_SIZE (imax dinit (+ nargs dproc ENV_HEADER_SIZE)))))
       )))
 
 (define (all-args-simple? args)
@@ -3708,17 +3716,17 @@
            (compiled-code-emit0! ccb PUSH)
            (let1 d1 (pass3/rec (cadr args) ccb renv 'normal/top)
              (pass3/emit-asm! ccb insn info)
-             (max d0 (+ d1 1)))))
+             (imax d0 (+ d1 1)))))
         (else
          (let loop ((args args) (depth 0) (cnt 0))
            (cond ((null? (cdr args))
                   (let1 d (pass3/rec (car args) ccb renv 'normal/top)
                     (pass3/emit-asm! ccb insn info)
-                    (max depth (+ cnt d))))
+                    (imax depth (+ cnt d))))
                  (else
                   (let1 d (pass3/rec (car args) ccb renv 'normal/top)
                     (compiled-code-emit0! ccb PUSH)
-                    (loop (cdr args) (max depth (+ d cnt)) (+ cnt 1)))))))
+                    (loop (cdr args) (imax depth (+ d cnt)) (+ cnt 1)))))))
         )))))
 
 (define (pass3/emit-asm! ccb insn info)
@@ -3740,7 +3748,7 @@
        (compiled-code-emit0! ccb PUSH)
        (let1 ,d1 (pass3/rec ,arg1 ccb renv 'normal/top)
          (compiled-code-emit1i! ccb ,code ,param ,info)
-         (max ,d0 (+ ,d1 1))))
+         (imax ,d0 (+ ,d1 1))))
     ))
 
 (define-macro (pass3/builtin-onearg info code param arg0)
@@ -3762,11 +3770,11 @@
       (cond ((null? (cdr as))
              (let1 d (pass3/rec (car as) ccb renv 'normal/top)
                (compiled-code-emit1i! ccb code (length args) info)
-               (max (+ d cnt) depth)))
+               (imax (+ d cnt) depth)))
             (else
              (let1 d (pass3/rec (car as) ccb renv 'normal/top)
                (compiled-code-emit0! ccb PUSH)
-               (loop (cdr as) (max (+ d cnt) depth) (+ cnt 1))))))))
+               (loop (cdr as) (imax (+ d cnt) depth) (+ cnt 1))))))))
 
 (define (pass3/$CONS iform ccb renv ctx)
   (pass3/builtin-twoargs ($*-src iform)
@@ -3857,7 +3865,7 @@
              (compiled-code-emit0! ccb PUSH)
              (let1 d2 (pass3/rec obj ccb renv 'normal/top)
                (compiled-code-emit0i! ccb VEC-SET info)
-               (max d0 (+ d1 1) (+ d2 2))))))))
+               (imax d0 (+ d1 1) (+ d2 2))))))))
 
 (define (pass3/asm-slot-ref info obj slot ccb renv ctx)
   (cond ((has-tag? slot $CONST)
@@ -3873,7 +3881,7 @@
            (compiled-code-emit0! ccb PUSH)
            (let1 d1 (pass3/rec val ccb renv 'normal/top)
              (compiled-code-emit0oi! ccb SLOT-SETC ($const-value slot) info)
-             (max d0 (+ d1 1)))))
+             (imax d0 (+ d1 1)))))
         (else
          (let1 d0 (pass3/rec obj ccb renv (normal-context ctx))
            (compiled-code-emit0! ccb PUSH)
@@ -3881,7 +3889,7 @@
              (compiled-code-emit0! ccb PUSH)
              (let1 d2 (pass3/rec val ccb renv 'normal/top)
                (compiled-code-emit0i! ccb SLOT-SET info)
-               (max d0 (+ d1 1) (+ d2 2))))))))
+               (imax d0 (+ d1 1) (+ d2 2))))))))
 
 ;; Dispatch table.
 (define-macro (pass3-generate-dispatch-table)
@@ -3891,6 +3899,7 @@
 (define *pass3-dispatch-table* (pass3-generate-dispatch-table))
      
 ;; Returns depth and offset of local variable reference.
+;; NB: this is moved to compaux.c
 ;(define (renv-lookup renv lvar)
 ;  (let outer ((renv renv)
 ;              (depth 0))
@@ -3915,7 +3924,7 @@
           depth
           (let1 d (pass3/rec (car args) ccb renv 'normal/top)
             (compiled-code-emit0! ccb PUSH)
-            (loop (cdr args) (max depth (+ d cnt 1)) (+ cnt 1))))))))
+            (loop (cdr args) (imax depth (+ d cnt 1)) (+ cnt 1))))))))
 
 ;;============================================================
 ;; Inliners of builtin procedures

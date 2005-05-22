@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.6 2005-05-22 11:00:22 shirok Exp $
+;;; $Id: intlib.stub,v 1.7 2005-05-22 11:48:35 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -362,6 +362,11 @@
 ;;
 ;; Some aux hacks
 ;;
+
+;; %imax - max for unsigned integer only, unsafe
+(define-cproc %imax (x y)
+  "if (SCM_WORD(x) > SCM_WORD(y)) SCM_RETURN(x);
+   else SCM_RETURN(y);")
 
 ;; (%map1c proc lis c) = (map (cut proc <> c) lis)
 "static ScmObj map1c_cc(ScmObj result, void *data[])
