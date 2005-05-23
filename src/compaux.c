@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compaux.c,v 1.8 2005-05-22 12:35:27 shirok Exp $
+ *  $Id: compaux.c,v 1.9 2005-05-23 03:48:19 shirok Exp $
  */
 
 /* This file serves as a bridge to the compiler, which is implemented
@@ -278,7 +278,7 @@ ScmObj Scm_CompilerEnvLookup(ScmObj cenv, ScmObj name, ScmObj lookupAs)
     ScmObj frames, fp, vp;
     int name_identifier = SCM_IDENTIFIERP(name);
     SCM_ASSERT(SCM_VECTORP(cenv));
-    frames = SCM_VECTOR_ELEMENT(cenv, 2);
+    frames = SCM_VECTOR_ELEMENT(cenv, 1);
     SCM_FOR_EACH(fp, frames) {
         ScmObj p;
         if (name_identifier && SCM_IDENTIFIER(name)->env == fp) {
@@ -292,7 +292,7 @@ ScmObj Scm_CompilerEnvLookup(ScmObj cenv, ScmObj name, ScmObj lookupAs)
         }
     }
     if (SCM_SYMBOLP(name)) {
-        ScmObj mod = SCM_VECTOR_ELEMENT(cenv, 1);
+        ScmObj mod = SCM_VECTOR_ELEMENT(cenv, 0);
         SCM_ASSERT(SCM_MODULEP(mod));
         return Scm_MakeIdentifierWithModule(SCM_SYMBOL(name), SCM_NIL,
                                             SCM_MODULE(mod));

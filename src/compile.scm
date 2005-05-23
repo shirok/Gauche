@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.21 2005-05-22 19:38:49 shirok Exp $
+;;;  $Id: compile.scm,v 1.22 2005-05-23 03:48:19 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -271,7 +271,8 @@
                            (cons
                             `(,carg
                               (list 'vector
-                                    ',tag ,@carg
+                                    ,@(if tag `(',tag) '())
+                                    ,@carg
                                     ,@(map (cut list 'quote <>)
                                            (list-tail init-vals n))))
                             r)))
@@ -281,7 +282,7 @@
        ,@(if constructor
            `(,(make-constructor))
            '())
-       ,@(let loop ((s slot-defs) (i 1) (r '()))
+       ,@(let loop ((s slot-defs) (i (if tag 1 0)) (r '()))
            (if (null? s)
              (reverse r)
              (let* ((slot-name (if (pair? (car s)) (caar s) (car s)))
@@ -359,48 +360,33 @@
 ;; NB: this structure is assumed by cenv-lookup, defined in compaux.c.
 ;; If you change this structure here, adjust compaux.c accordingly.
 
-(define-simple-struct cenv 'cenv make-cenv
+(define-simple-struct cenv #f make-cenv
   (module frames exp-name current-proc))
-
-(define-macro (cenv-copy cenv) `(vector-copy ,cenv))
 
 (define-macro (make-bottom-cenv . maybe-module)
   (if (null? maybe-module)
     `(make-cenv (vm-current-module) '())
     `(make-cenv ,(car maybe-module) '())))
 
-(define-macro (%cenv-copy/update cenv . updates)
-  (let1 new (gensym)
-    `(let1 ,new (cenv-copy ,cenv)
-       ,@(let loop ((updates updates) (r '()))
-           (if (null? updates)
-             (reverse r)
-             (let1 setter (string->symbol #`",(car updates)-set!")
-               (loop (cddr updates)
-                     (cons `(,setter ,new ,(cadr updates)) r)))))
-       ,new)))
-
 (define-inline (cenv-swap-module cenv mod)
   (make-cenv mod (cenv-frames cenv)
-             (cenv-exp-name cenv) (cenv-current-proc cenv)))
+             (cenv-exp-name cenv)
+             (cenv-current-proc cenv)))
 
 (define-inline (cenv-extend cenv frame type)
   (make-cenv (cenv-module cenv)
              (acons type frame (cenv-frames cenv))
-             (cenv-exp-name cenv)
-             (cenv-current-proc cenv)))
+             (cenv-exp-name cenv) (cenv-current-proc cenv)))
 
 (define-inline (cenv-extend/proc cenv frame type proc)
   (make-cenv (cenv-module cenv)
              (acons type frame (cenv-frames cenv))
-             (cenv-exp-name cenv)
-             proc))
+             (cenv-exp-name cenv) proc))
 
 (define-inline (cenv-add-name cenv name)
   (make-cenv (cenv-module cenv)
              (cenv-frames cenv)
-             name
-             (cenv-current-proc cenv)))
+             name (cenv-current-proc cenv)))
 
 (define-inline (cenv-sans-name cenv)
   (if (cenv-exp-name cenv)
@@ -413,8 +399,7 @@
 (define-inline (cenv-extend/name cenv frame type name)
   (make-cenv (cenv-module cenv)
              (acons type frame (cenv-frames cenv))
-             name
-             (cenv-current-proc cenv)))
+             name (cenv-current-proc cenv)))
 
 ;; toplevel environment == cenv has only syntactic frames
 (define (cenv-toplevel? cenv)
