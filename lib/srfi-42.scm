@@ -4,7 +4,7 @@
 ;;  This is a port of Sebastian Egner's reference implementation to Gauche.
 ;;  Ported by Alex Shinn.
 ;;
-;;  $Id: srfi-42.scm,v 1.1 2005-05-23 11:56:28 shirok Exp $
+;;  $Id: srfi-42.scm,v 1.2 2005-05-23 21:51:35 shirok Exp $
 
 ; <PLAINTEXT>
 ; Eager Comprehensions in [outer..inner|expr]-Convention
@@ -384,11 +384,51 @@
      (g (srfi-42-while-1 cc test) arg1 arg ...) )))
 
 (define-syntax srfi-42-while-1
-  ;;(syntax-rules (:do)
-  (syntax-rules (srfi-42-do)
-    ((_ cc test (srfi-42-do olet lbs ne1? ilet ne2? lss))
-     (srfi-42-do cc olet lbs (and ne1? test) ilet ne2? lss) )))
+  (syntax-rules (srfi-42-do let)
+    ((srfi-42-while-1 cc test (srfi-42-do olet lbs ne1? ilet ne2? lss))
+     (srfi-42-while-2 cc test () () () (srfi-42-do olet lbs ne1? ilet ne2? lss)))))
 
+(define-syntax srfi-42-while-2
+  (syntax-rules (srfi-42-do let)
+    ((srfi-42-while-2 cc 
+                      test 
+                      (ib-let     ...)
+                      (ib-save    ...)
+                      (ib-restore ...)
+                      (srfi-42-do olet 
+                                  lbs 
+                                  ne1? 
+                                  (let ((ib-var ib-rhs) ib ...) ic ...)
+                                  ne2? 
+                                  lss))
+     (srfi-42-while-2 cc 
+                      test 
+                      (ib-let     ... (ib-tmp #f))
+                      (ib-save    ... (ib-var ib-rhs))
+                      (ib-restore ... (ib-var ib-tmp))
+                      (srfi-42-do olet 
+                                  lbs 
+                                  ne1? 
+                                  (let (ib ...) ic ... (set! ib-tmp ib-var)) 
+                                  ne2? 
+                                  lss)))
+    ((srfi-42-while-2 cc
+                      test
+                      (ib-let     ...)
+                      (ib-save    ...)
+                      (ib-restore ...)
+                      (srfi-42-do (let (ob ...) oc ...) lbs ne1?
+                                  (let () ic ...) ne2? lss))
+     (srfi-42-do cc
+                 (let (ob ... ib-let ...) oc ...)
+                 lbs
+                 (let ((ne1?-value ne1?))
+                   (let (ib-save ...)
+                     ic ...
+                     (and ne1?-value test)))
+                 (let (ib-restore ...))
+                 ne2?
+                 lss))))
 
 (define-syntax srfi-42-until
   (syntax-rules ()
