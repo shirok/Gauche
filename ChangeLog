@@ -1,3 +1,9 @@
+2005-05-22  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-42.scm : Added srfi-42 support; it is a port of srfi-42
+	  reference implementation.  Contributed by Alex Shinn.
+	* lib/Makefile.in : changed accordingly.
+
 2005-05-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h (ScmSyntax), src/compaux.c: simplified ScmSyntax
