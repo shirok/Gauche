@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compaux.c,v 1.9 2005-05-23 03:48:19 shirok Exp $
+ *  $Id: compaux.c,v 1.10 2005-05-23 11:07:05 shirok Exp $
  */
 
 /* This file serves as a bridge to the compiler, which is implemented
@@ -253,80 +253,6 @@ static ScmClassStaticSlotSpec identifier_slots[] = {
 /*------------------------------------------------------------------
  * Utility functions
  */
-
-/* Lookup variable reference from the compiler environment Cenv.
-   Called in Pass1.  This is the most frequently called procedure
-   in the compiler, so we implement this in C.
-   See compile.scm for Cenv structure.
-
-   cenv-lookup :: Cenv, Name, LookupAs -> Var
-        where Var = Lvar | Identifier | Macro
-
-   LookupAs ::
-      LEXICAL(0) - lookup only lexical bindings
-    | SYNTAX(1)  - lookup lexical and syntactic bindings
-    | PATTERN(2) - lookup lexical, syntactic and pattern bindings
-
-   PERFORMANCE KLUDGE:
-     - We assume the frame structure is well-formed, so skip some tests.
-     - We assume 'lookupAs' and the car of each frame are small non-negative
-       integers, so we directly compare them without unboxing them.
-*/
-
-ScmObj Scm_CompilerEnvLookup(ScmObj cenv, ScmObj name, ScmObj lookupAs)
-{
-    ScmObj frames, fp, vp;
-    int name_identifier = SCM_IDENTIFIERP(name);
-    SCM_ASSERT(SCM_VECTORP(cenv));
-    frames = SCM_VECTOR_ELEMENT(cenv, 1);
-    SCM_FOR_EACH(fp, frames) {
-        ScmObj p;
-        if (name_identifier && SCM_IDENTIFIER(name)->env == fp) {
-            /* strip identifier if we're in the same env (kludge). */
-            name = SCM_OBJ(SCM_IDENTIFIER(name)->name);
-        }
-        if (SCM_CAAR(fp) > lookupAs) continue; /* see PERFORMANCE KLUDGE above */
-        /* We inline assq here to squeeze performance. */
-        SCM_FOR_EACH(vp, SCM_CDAR(fp)) {
-            if (SCM_EQ(name, SCM_CAAR(vp))) return SCM_CDAR(vp);
-        }
-    }
-    if (SCM_SYMBOLP(name)) {
-        ScmObj mod = SCM_VECTOR_ELEMENT(cenv, 0);
-        SCM_ASSERT(SCM_MODULEP(mod));
-        return Scm_MakeIdentifierWithModule(SCM_SYMBOL(name), SCM_NIL,
-                                            SCM_MODULE(mod));
-    } else {
-        SCM_ASSERT(SCM_IDENTIFIERP(name));
-        return name;
-    }
-}
-
-/* Lookup local variable from the runtime envirnoment Renv.
- * Called in Pass3.  Moved here for efficiency.
- *
- *   renv-lookup : [[Lvar]], Lvar -> Int, Int
- *
- * Returns depth and offset of local variable frame.
- * Note that this routine is agnostic about the structure of Lvar.
- */
-ScmObj Scm_RuntimeEnvLookup(ScmObj renv, ScmObj lvar)
-{
-    ScmObj fp, lp;
-    int depth = 0;
-    SCM_FOR_EACH(fp, renv) {
-        int count = 1;
-        SCM_FOR_EACH(lp, SCM_CAR(fp)) {
-            if (SCM_EQ(SCM_CAR(lp), lvar)) {
-                return Scm_Values2(SCM_MAKE_INT(depth),
-                                   SCM_MAKE_INT(Scm_Length(SCM_CAR(fp))-count));
-            }
-            count++;
-        }
-        depth++;
-    }
-    Scm_Error("[internal error] stray local variable:", lvar);
-}
 
 /* Convert all identifiers in form into a symbol. 
    This keeps linear history to avoid entering infinite loop if

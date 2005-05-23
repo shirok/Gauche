@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.22 2005-05-23 03:48:19 shirok Exp $
+;;;  $Id: compile.scm,v 1.23 2005-05-23 11:07:05 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -182,6 +182,8 @@
      `(%map1c ,p ,lis ,c))
     (('cut p '<> c1 c2)
      `(%map1cc ,p ,lis ,c1 ,c2))
+    ('make-lvar+
+     `(%map-make-lvar ,lis))
     (('lambda . _)
      (let ((p (gensym))
            (r (gensym)))
@@ -314,7 +316,6 @@
   (name
    (initval (undefined))
    (ref-count 0)
-   (call-count 0) ;; will be gone
    (set-count 0)))
 
 (define (make-lvar+ name) ;; procedure version of constructor, for mapping
@@ -323,12 +324,13 @@
 (define-inline (lvar? obj)
   (and (vector? obj) (eq? (vector-ref obj 0) 'lvar)))
 
-(define (lvar-ref++! var)
-  (lvar-ref-count-set! var (+ (lvar-ref-count var) 1)))
-(define (lvar-ref--! var)
-  (lvar-ref-count-set! var (- (lvar-ref-count var) 1)))
-(define (lvar-set++! var)
-  (lvar-set-count-set! var (+ (lvar-set-count var) 1)))
+;; moved to C
+;(define (lvar-ref++! var)
+;  (lvar-ref-count-set! var (+ (lvar-ref-count var) 1)))
+;(define (lvar-ref--! var)
+;  (lvar-ref-count-set! var (- (lvar-ref-count var) 1)))
+;(define (lvar-set++! var)
+;  (lvar-set-count-set! var (+ (lvar-set-count var) 1)))
 
 ;; Compile-time environment (cenv)
 ;;
@@ -402,8 +404,9 @@
              name (cenv-current-proc cenv)))
 
 ;; toplevel environment == cenv has only syntactic frames
-(define (cenv-toplevel? cenv)
-  (not (any (lambda (frame) (eqv? (car frame) LEXICAL)) (cenv-frames cenv))))
+;; moved to C
+;(define (cenv-toplevel? cenv)
+;  (not (any (lambda (frame) (eqv? (car frame) LEXICAL)) (cenv-frames cenv))))
 
 ;; Intermediate tree form (IForm)
 ;;
@@ -1558,7 +1561,7 @@
         (and optarg? (>= nargs reqargs)))))
 
 ;; signal an error if the form is not on the toplevel
-(define (check-toplevel form cenv)
+(define-inline (check-toplevel form cenv)
   (unless (cenv-toplevel? cenv)
     (error "syntax-error: the form can appear only in the toplevel:" form)))
 
@@ -2892,7 +2895,8 @@
     (let ((proc ($call-proc iform))
           (args ($call-args iform)))
       (cond
-       ((vm-compiler-flag-is-set? SCM_COMPILE_NOINLINE_LOCALS)
+       (;(vm-compiler-flag-is-set? SCM_COMPILE_NOINLINE_LOCALS)
+        (vm-compiler-flag-noinline-locals?)
         ($call-args-set! iform (imap (cut pass2/rec <> penv #f) args))
         iform)
        ((has-tag? proc $LAMBDA) ;; ((lambda (...) ...) arg ...)
