@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.in,v 1.8 2004-06-22 11:32:00 shirok Exp $
+# $Id: Makefile.in,v 1.9 2005-05-24 11:09:00 shirok Exp $
 #
 
 SHELL       = @SHELL@
@@ -58,7 +58,7 @@ all : $(TARGET)
 spigotlib.c : spigotlib.stub
 
 $(MODULE).$(DSOEXT): $(OBJS)
-	$(CC) -Wl,-rpath -Wl,`gauche-config --sysarchdir` $(LDFLAGS) $(MODULE).$(DSOEXT) $(OBJS) $(LIBS)
+	$(CC) $(LDFLAGS) $(MODULE).$(DSOEXT) $(OBJS) $(LIBS)
 
 $(MODULE)_head.c $(MODULE)_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension $(MODULE)

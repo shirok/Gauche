@@ -1,3 +1,8 @@
+2005-05-24  Shiro Kawai  <shiro@acm.org>
+
+	* examples/spigot/Makefile.in : remove rpath link option, for it is
+	  not portable and not necessary anyway.
+
 2005-05-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-55.scm: added srfi-55.
