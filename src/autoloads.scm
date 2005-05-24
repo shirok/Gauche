@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.22 2005-05-22 03:27:32 shirok Exp $
+;;; $Id: autoloads.scm,v 1.23 2005-05-24 09:19:41 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.22 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.23 $.  DO NOT EDIT */"
    :pre-decl '("#define LIBGAUCHE_BODY")
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
@@ -147,7 +147,8 @@
           sys-gethostname sys-getdomainname
           sys-putenv sys-setenv sys-unsetenv
           sys-gettimeofday sys-chown sys-lchown sys-utime
-          sys-getgroups sys-getlogin sys-localeconv)
+          sys-getgroups sys-getlogin sys-localeconv
+          sys-getloadavg)
 
 (autoload gauche.defvalues
           (:macro define-values) (:macro set!-values))

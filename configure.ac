@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.54 2005-04-22 23:12:02 shirok Exp $
+dnl $Id: configure.ac,v 1.55 2005-05-24 09:19:33 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.4_pre2, shiro@acm.org)
-AC_REVISION($Revision: 1.54 $)
+AC_REVISION($Revision: 1.55 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -203,6 +203,7 @@ AC_CHECK_HEADERS(stdint.h inttypes.h)
 AC_CHECK_HEADERS(rpc/types.h)
 AC_CHECK_HEADERS(syslog.h)
 AC_CHECK_HEADERS(pty.h util.h libutil.h)
+AC_CHECK_HEADERS(sys/loadavg.h)
 
 dnl ===========================================================
 dnl Checks processor type, for processor-specific stuff
@@ -304,6 +305,7 @@ AC_CHECK_FUNCS(putenv setenv unsetenv getpgid)
 AC_CHECK_FUNCS(gethostname sethostname getdomainname setdomainname)
 AC_CHECK_FUNCS(gettimeofday)
 AC_CHECK_FUNCS(syslog setlogmask)
+AC_CHECK_FUNCS(getloadavg)
 dnl Check for select().  HP-UX doesn't like the way configure tests
 dnl select() existence, so we skip the test on it.
 case "$target" in

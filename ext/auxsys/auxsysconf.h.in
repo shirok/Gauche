@@ -1,3 +1,9 @@
+/* Define to 1 if you have getloadavg function. */
+#undef HAVE_GETLOADAVG
+
+/* Define to 1 if you have sys/loadavg.h */
+#undef HAVE_SYS_LOADAVG_H
+
 /* Define to 1 if the system has setenv */
 #undef HAVE_SETENV
 

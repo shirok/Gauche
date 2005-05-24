@@ -1,7 +1,7 @@
 ;;;
 ;;; auxsys - Auxiliary system interface
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: auxsys.scm,v 1.10 2004-04-11 05:29:27 fuyuki Exp $
+;;;  $Id: auxsys.scm,v 1.11 2005-05-24 09:19:41 shirok Exp $
 ;;;
 
 (define-module gauche.auxsys
@@ -41,7 +41,8 @@
           sys-gethostname sys-getdomainname
           sys-putenv sys-setenv sys-unsetenv
           sys-gettimeofday sys-chown sys-lchown sys-utime
-          sys-getgroups sys-getlogin sys-localeconv)
+          sys-getgroups sys-getlogin sys-localeconv
+          sys-getloadavg)
   )
 (select-module gauche.auxsys)
 
@@ -103,5 +104,10 @@
       %sys-lchown
       (lambda (path owner group)
         (error "sys-lchown not supported on this platform"))))
+
+(define sys-getloadavg
+  (if (symbol-bound? '%sys-getloadavg)
+    %sys-getloadavg
+    (lambda args #f)))
 
 (provide "gauche/auxsys")

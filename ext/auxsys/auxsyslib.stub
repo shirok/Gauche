@@ -1,7 +1,7 @@
 ;;;
 ;;; auxsyslib.stub - auxiliary system interface
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: auxsyslib.stub,v 1.21 2004-07-15 07:10:04 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.22 2005-05-24 09:19:41 shirok Exp $
 ;;;
 
 "
@@ -45,6 +45,11 @@
 #  include <time.h>
 # endif
 #endif
+
+#ifdef HAVE_SYS_LOADAVG_H
+#  include <sys/loadavg.h>
+#endif /*HAVE_SYS_LOADAVG_H*/
+
 #include <stdlib.h>
 #include <math.h>
 #include <locale.h>
@@ -53,9 +58,9 @@
 #include <unistd.h>
 #include <utime.h>
 #ifndef __MINGW32__
-#include <sys/times.h>
-#include <sys/utsname.h>
-#endif
+#  include <sys/times.h>
+#  include <sys/utsname.h>
+#endif  /*!__MINGW32__ */
 "
 
 ;; stdlib.h
@@ -90,10 +95,28 @@
 (define-cproc log10 (x::<real>)
   (return <real> "log10"))
 
+;; sys/loadavg.h
+(if "defined HAVE_GETLOADAVG"
+  (define-cproc %sys-getloadavg (&optional (nsamples::<int> 3))
+    "#define MAX_LOAD_SAMPLES  3
+     double samples[MAX_LOAD_SAMPLES];
+     int count, i;
+     ScmObj h = SCM_NIL, t = SCM_NIL;
+     if (nsamples <= 0 || nsamples > MAX_LOAD_SAMPLES) {
+       Scm_Error(\"sys-getloadavg: argument out of range: %d\", samples);
+     }
+     count = getloadavg(samples, nsamples);
+     if (count < 0) SCM_RETURN(SCM_FALSE);
+     for (i=0; i<count; i++) {
+       ScmObj n = Scm_MakeFlonum(samples[i]);
+       SCM_APPEND1(h, t, n);
+     }
+     SCM_RETURN(h);"))
+
 ;; sys/time.h
 (if "defined HAVE_GETTIMEOFDAY"
-    (define-cproc %sys-gettimeofday ()
-      "struct timeval tv;
+  (define-cproc %sys-gettimeofday ()
+    "struct timeval tv;
        int r; SCM_SYSCALL(r, gettimeofday(&tv, NULL));
        if (r < 0) Scm_SysError(\"gettimeofday failed\");
        SCM_RETURN(Scm_Values2(Scm_MakeInteger(tv.tv_sec), Scm_MakeInteger(tv.tv_usec)));"))
