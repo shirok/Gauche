@@ -1,5 +1,7 @@
 2005-05-23  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-55.scm: added srfi-55.
+
 	* ext/auxsys/auxsys.scm (sys-getloadavg), ext/auxsys/auxsyslib.stub,
 	  ext/auxsys/auxsysconf.h.in, configure.ac, src/autoloads.scm:
 	  Added sys-getloadavg (based on a patch from John Kilburg).

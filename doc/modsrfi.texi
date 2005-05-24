@@ -31,6 +31,7 @@ of supported SRFIs.
 * Localization::                
 * A program argument processor::  
 * Eager comprehensions::        
+* Requiring extensions::        
 @end menu
 
 @node Feature conditional, List library, Library modules - SRFIs, Library modules - SRFIs
@@ -4165,7 +4166,7 @@ A simple example:
 @end example
 
 @c ----------------------------------------------------------------------
-@node Eager comprehensions,  , A program argument processor, Library modules - SRFIs
+@node Eager comprehensions, Requiring extensions, A program argument processor, Library modules - SRFIs
 @section @code{srfi-42} - Eager comprehensions
 @c NODE Eager comprehensions, @code{srfi-42} - Eager comprehensions
 
@@ -4368,3 +4369,46 @@ after @var{bodies}.
 
 @deffn {EC Qualifier} :until generator expr
 @end deffn
+
+@c ----------------------------------------------------------------------
+@node Requiring extensions,  , Eager comprehensions, Library modules - SRFIs
+@section @code{srfi-55} - Requiring extensions
+@c NODE Requiring extensions, @code{srfi-55} - Requiring extensions
+
+@deftp {Module} srfi-55
+@mdindex srfi-55
+This module defines @code{require-extension} macro, a yet another way
+to write portable scripts.  See @ref{Feature conditional} and
+@ref{Feature-based program configuration language} for other means of
+ensuring specific features.
+
+This module is autoloaded when you use @code{require-extension}, so
+you don't need explicitly say @code{(use srfi-55)}; for portable scripts,
+you shouldn't.
+@end deftp
+
+@defmac require-extension clause @dots{}
+Make extension(s) specified by @var{clause}s available in the rest
+of the program.
+
+A @var{clause} takes the following form:
+@example
+(@var{extension-id} @var{extension-arg} @dots{})
+@end example
+
+Currently, only @code{srfi} is supported as @var{extension-id}, and
+its arguments are SRFI numbers.
+
+For example, the following form:
+@example
+(require-extension (srfi 1 13 14))
+@end example
+
+Roughly correspons to Gauche's @code{use} forms:
+@example
+(use srfi-1)
+(use srfi-13)
+(use srfi-14)
+@end example
+@end defmac
+
