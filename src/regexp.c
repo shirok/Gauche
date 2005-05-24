@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.51 2005-05-11 21:34:25 shirok Exp $
+ *  $Id: regexp.c,v 1.52 2005-05-24 07:46:14 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -112,6 +112,10 @@ enum {
     RE_EOL,                     /* end of line assertion */
     RE_WB,                      /* word boundary assertion */
     RE_NWB,                     /* negative word boundary assertion */
+    RE_ASSERT,                  /* positive look-ahead assertion. followed by
+                                   offset (2 bytes). */
+    RE_NASSERT,                 /* negative look-ahead assertion. followed by
+                                 * offset (2 bytes). */
     /* The following instructions are not necessary to implement the basic
        engine, but used in the optimized code */
     RE_MATCH1B,                 /* (match 1 byte or branch)
@@ -165,6 +169,8 @@ enum {
  *           | (rep-bound-min <n> . <ast>) ; repetition up to <n> (lazy)
  *           | (rep-while . <ast>) ; like rep, but no backtrack
  *           | (<integer> . <ast>) ; capturing group 
+ *           | (assert . <ast>)   ; positive look-ahead assertion
+ *           | (nassert . <ast>)  ; negative look-ahead assertion
  * 
  * For seq-uncase, items inside <ast> has to be prepared for case-insensitive
  * match, i.e. chars have to be downcased and char-sets have to be 
@@ -306,6 +312,8 @@ static ScmChar rc1_lex_xdigits(ScmPort *port, int ndigs, int key);
  *         | "(?:"   <re> ")"   ;; grouping w/o capturing
  *         | "(?i:"  <re> ")"   ;; grouping w/o capturing (case insensitive)
  *         | "(?-i:" <re> ")"   ;; grouping w/o capturing (case sensitive)
+ *         | "(?="   <re> ")"   ;; positive look-ahead assertion
+ *         | "(?!"   <re> ")"   ;; negative look-ahead assertion
  */
 
 /* Lexer */
@@ -439,6 +447,8 @@ static ScmObj rc1_lex_open_paren(regcomp_ctx *ctx)
     }
     ch = Scm_GetcUnsafe(ctx->ipat);
     if (ch == ':') return SCM_SYM_SEQ;
+    if (ch == '=') return SCM_SYM_ASSERT;
+    if (ch == '!') return SCM_SYM_NASSERT;
     if (ch == 'i') {
         ch = Scm_GetcUnsafe(ctx->ipat);
         if (ch == ':') return SCM_SYM_SEQ_UNCASE;
@@ -606,6 +616,16 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp)
             PUSH(Scm_Cons(token, item));
             ctx->casefoldp = oldflag;
             bolp = FALSE;
+            continue;
+        }
+        if (SCM_EQ(token, SCM_SYM_ASSERT)) {
+            item = rc1_parse(ctx, bolp, FALSE);
+            PUSH(Scm_Cons(SCM_SYM_ASSERT, item));
+            continue;
+        }
+        if (SCM_EQ(token, SCM_SYM_NASSERT)) {
+            item = rc1_parse(ctx, bolp, FALSE);
+            PUSH(Scm_Cons(SCM_SYM_NASSERT, item));
             continue;
         }
         if (SCM_EQ(token, SCM_SYM_STAR)) {
@@ -1113,6 +1133,15 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp, int toplevelp)
         /* fallthrough to rep */
         type = SCM_SYM_REP;
     }
+    if (SCM_EQ(type, SCM_SYM_ASSERT) || SCM_EQ(type, SCM_SYM_NASSERT)) {
+        int ocodep = ctx->codep;
+        rc3_emit(ctx, SCM_EQ(type, SCM_SYM_ASSERT) ? RE_ASSERT : RE_NASSERT);
+        rc3_emit_offset(ctx, 0); /* will be patched */
+        rc3_seq(ctx, SCM_CDR(ast), lastp, toplevelp);
+        rc3_emit(ctx, RE_SUCCESS);
+        rc3_fill_offset(ctx, ocodep+1, ctx->codep);
+        return;
+    }
     if (SCM_EQ(type, SCM_SYM_REP)) {
         /* rep: TRY next
                 <seq>
@@ -1463,6 +1492,18 @@ void Scm_RegDump(ScmRegexp *rx)
                        codep-1, rx->code[codep],
                        rx->sets[rx->code[codep]]);
             continue;
+        case RE_ASSERT:
+            codep++;
+            Scm_Printf(SCM_CUROUT, "%4d  ASSERT %d\n", codep-1,
+                       (rx->code[codep])*256 + rx->code[codep+1]);
+            codep++;
+            continue;            
+        case RE_NASSERT:
+            codep++;
+            Scm_Printf(SCM_CUROUT, "%4d  NASSERT %d\n", codep-1,
+                       (rx->code[codep])*256 + rx->code[codep+1]);
+            codep++;
+            continue;            
         default:
             Scm_Error("regexp screwed up\n");
         }
@@ -1628,7 +1669,7 @@ struct match_ctx {
     const char *last;
     struct match_list *matches;
     void *begin_stack;          /* C stack pointer the match began from. */
-    sigjmp_buf cont;
+    sigjmp_buf *cont;
 };
 
 #define MAX_STACK_USAGE   0x100000
@@ -1796,7 +1837,7 @@ static void rex_rec(const unsigned char *code,
         case RE_SUCCESS:
             ctx->last = input;
             ctx->matches = mlist;
-            siglongjmp(ctx->cont, 1);
+            siglongjmp(*ctx->cont, 1);
             /*NOTREACHED*/
         case RE_FAIL:
             return;
@@ -1839,6 +1880,31 @@ static void rex_rec(const unsigned char *code,
                 input += SCM_CHAR_NBYTES(ch);
             }
             continue;
+        case RE_ASSERT: {
+            sigjmp_buf cont, *ocont = ctx->cont;
+            ctx->cont = &cont;
+            if (sigsetjmp(cont, FALSE) == 0) {
+                rex_rec(code+2, input, ctx, mlist);
+                ctx->cont = ocont;
+                return;
+            }
+            code = ctx->codehead + code[0]*256 + code[1];
+            ctx->cont = ocont;
+            mlist = ctx->matches;
+            continue;
+        }
+        case RE_NASSERT: {
+            sigjmp_buf cont, *ocont = ctx->cont;
+            ctx->cont = &cont;
+            if (sigsetjmp(cont, FALSE) == 0) {
+                rex_rec(code+2, input, ctx, mlist);
+                code = ctx->codehead + code[0]*256 + code[1];
+                ctx->cont = ocont;
+                continue;
+            }
+            ctx->cont = ocont;
+            return;
+        }
         default:
             /* shouldn't be here */
             Scm_Error("regexp implementation seems broken\n");
@@ -1892,14 +1958,16 @@ static ScmObj rex(ScmRegexp *rx, ScmString *orig,
                   const char *start, const char *end)
 {
     struct match_ctx ctx;
+    sigjmp_buf cont;
     ctx.rx = rx;
     ctx.codehead = rx->code;
     ctx.input = SCM_STRING_START(orig);
     ctx.stop = end;
     ctx.matches = NULL;
     ctx.begin_stack = (void*)&ctx;
+    ctx.cont = &cont;
 
-    if (sigsetjmp(ctx.cont, FALSE) == 0) {
+    if (sigsetjmp(cont, FALSE) == 0) {
         rex_rec(ctx.codehead, start, &ctx, NULL);
         return SCM_FALSE;
     } else {

@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates builtin symbols
 ;;;
-;;; $Id: builtin-syms.scm,v 1.8 2005-05-14 01:47:52 shirok Exp $
+;;; $Id: builtin-syms.scm,v 1.9 2005-05-24 07:46:14 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (define *unit*
   (make <cgen-unit>
     :name "builtin-syms"
-    :preamble "/* Generated from builtin-syms.scm $Revision: 1.8 $.  DO NOT EDIT */"
+    :preamble "/* Generated from builtin-syms.scm $Revision: 1.9 $.  DO NOT EDIT */"
     :pre-decl "#define LIBGAUCHE_BODY"
     :c-file "builtin-syms.c"
     :h-file "gauche/builtin-syms.h"
@@ -165,6 +165,8 @@
     (+?                        SCM_SYM_PLUSQ)
     (?                         SCM_SYM_QUESTION)
     (??                        SCM_SYM_QUESTIONQ)
+    (assert                    SCM_SYM_ASSERT)
+    (nassert                   SCM_SYM_NASSERT)
     (open-paren                SCM_SYM_OPEN_PAREN)
     (close-paren               SCM_SYM_CLOSE_PAREN)
 
