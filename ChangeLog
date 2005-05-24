@@ -1,3 +1,8 @@
+2005-05-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/arith_i386.h : Applied patch from NIIBE Yutaka for
+	  better register allocation.
+
 2005-05-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-42.scm : Added srfi-42 support; it is a port of srfi-42
