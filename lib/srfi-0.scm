@@ -1,7 +1,7 @@
 ;;;
 ;;; SRFI-0   feature based conditional expansion construct
 ;;;
-;;; $Id: srfi-0.scm,v 1.23 2005-04-12 01:42:24 shirok Exp $
+;;; $Id: srfi-0.scm,v 1.24 2005-05-24 09:22:45 shirok Exp $
 ;;;
 
 (define-module srfi-0
@@ -63,6 +63,7 @@
                 (srfi-37 srfi-37)
                 (srfi-38)
                 (srfi-39 gauche.parameter)
+                (srfi-42 srfi-42)
                 )))
 
 (define-macro (cond-expand . clauses)
