@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.63 2005-05-01 06:36:03 shirok Exp $
+ *  $Id: core.c,v 1.64 2005-05-24 23:28:37 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -220,6 +220,7 @@ ScmObj Scm_VMFinalizerRun(ScmVM *vm)
 {
     GC_invoke_finalizers();
     vm->queueNotEmpty &= ~SCM_VM_FINQ_MASK;
+    return SCM_UNDEFINED;
 }
 
 /*=============================================================
@@ -253,7 +254,7 @@ void Scm_Exit(int code)
                 vm->stat.sovCount,
                 vm->stat.sovTime/1000.0,
                 (vm->stat.sovCount > 0?
-                 (vm->stat.sovTime/vm->stat.sovCount)/1000.0 :
+                 (double)(vm->stat.sovTime/vm->stat.sovCount)/1000.0 :
                  0.0));
     }
 

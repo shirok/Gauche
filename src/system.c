@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.62 2005-04-12 01:42:27 shirok Exp $
+ *  $Id: system.c,v 1.63 2005-05-24 23:28:38 shirok Exp $
  */
 
 #include <stdio.h>
@@ -376,18 +376,18 @@ ScmObj Scm_DirName(ScmString *filename)
 }
 
 /* Make mkstemp() work even if the system doesn't have one. */
-int Scm_Mkstemp(char *template)
+int Scm_Mkstemp(char *templat)
 {
     int fd = -1;
 #if defined(HAVE_MKSTEMP)
-    SCM_SYSCALL(fd, mkstemp(template));
+    SCM_SYSCALL(fd, mkstemp(templat));
     if (fd < 0) Scm_SysError("mkstemp failed");
     return fd;
 #else   /*!defined(HAVE_MKSTEMP)*/
     /* Emulate mkstemp. */
-    int siz = strlen(template);
+    int siz = strlen(templat);
     if (siz < 6) {
-        Scm_Error("mkstemp - invalid template: %s", template);
+        Scm_Error("mkstemp - invalid template: %s", templat);
     }
 #define MKSTEMP_MAX_TRIALS 65535   /* avoid infinite loop */
     {
@@ -396,11 +396,11 @@ int Scm_Mkstemp(char *template)
 	char suffix[7];
 	for (numtry=0; numtry<MKSTEMP_MAX_TRIALS; numtry++) {
 	    snprintf(suffix, 7, "%06x", seed&0xffffff);
-	    memcpy(template+siz-6, suffix, 7);
+	    memcpy(templat+siz-6, suffix, 7);
 #ifndef __MINGW32__
-	    SCM_SYSCALL(fd, open(template, O_CREAT|O_EXCL|O_WRONLY, 0600));
+	    SCM_SYSCALL(fd, open(templat, O_CREAT|O_EXCL|O_WRONLY, 0600));
 #else  /*__MINGW32__*/
- 	    SCM_SYSCALL(fd, open(template, _O_CREAT|_O_EXCL|_O_WRONLY, 0600));
+ 	    SCM_SYSCALL(fd, open(templat, _O_CREAT|_O_EXCL|_O_WRONLY, 0600));
 #endif /*__MINGW32__*/
 	    if (fd >= 0) break;
 	    seed *= 2654435761UL;
@@ -414,16 +414,16 @@ int Scm_Mkstemp(char *template)
 }
 
 
-ScmObj Scm_SysMkstemp(ScmString *template)
+ScmObj Scm_SysMkstemp(ScmString *templat)
 {
 #define MKSTEMP_PATH_MAX 1025  /* Geez, remove me */
     char name[MKSTEMP_PATH_MAX];
     ScmObj sname;
-    int siz = SCM_STRING_SIZE(template), fd;
+    int siz = SCM_STRING_SIZE(templat), fd;
     if (siz >= MKSTEMP_PATH_MAX-6) { 
-	Scm_Error("pathname too long: %S", template);
+	Scm_Error("pathname too long: %S", templat);
     }
-    memcpy(name, SCM_STRING_START(template), siz);
+    memcpy(name, SCM_STRING_START(templat), siz);
     memcpy(name + siz, "XXXXXX", 6);
     name[siz+6] = '\0';
     fd = Scm_Mkstemp(name);
@@ -978,7 +978,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap, int forkp)
     char **argv;
     const char *program;
     ScmObj ap, iop;
-    pid_t pid;
+    pid_t pid = 0;
 
     if (argc < 1) {
         Scm_Error("argument list must have at least one element: %S", args);

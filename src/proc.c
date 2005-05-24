@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: proc.c,v 1.40 2005-04-12 01:42:27 shirok Exp $
+ *  $Id: proc.c,v 1.41 2005-05-24 23:28:38 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -50,7 +50,6 @@ static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmObj info = SCM_PROCEDURE_INFO(obj);
     if (SCM_PROCEDURE_TYPE(obj) == SCM_PROC_SUBR) {
-        ScmSubr *subr = SCM_SUBR(obj);
         SCM_PUTZ("#<subr", -1, port);
         if (!SCM_FALSEP(info)) {
             Scm_Printf(port, " %A", info);
@@ -69,7 +68,7 @@ ScmObj Scm_MakeClosure(ScmObj code, ScmEnvFrame *env)
 {
     ScmClosure *c = SCM_NEW(ScmClosure);
     int req, opt;
-    ScmObj info, iform;
+    ScmObj info;
 
     SCM_ASSERT(SCM_COMPILED_CODE(code));
     info = Scm_CompiledCodeFullName(SCM_COMPILED_CODE(code));

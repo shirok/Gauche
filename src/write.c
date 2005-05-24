@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.51 2005-04-28 05:30:55 shirok Exp $
+ *  $Id: write.c,v 1.52 2005-05-24 23:28:38 shirok Exp $
  */
 
 #include <stdio.h>
@@ -382,7 +382,6 @@ static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         else {
             /* Now we have user-defined object.
                Call the user's print routine. */
-            ScmClass *c;
             e = Scm_HashTableGet(ht, obj);
             if (e) { e->value = SCM_TRUE; return; }
             Scm_HashTablePut(ht, obj, SCM_FALSE);

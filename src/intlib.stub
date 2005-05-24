@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.8 2005-05-23 11:07:05 shirok Exp $
+;;; $Id: intlib.stub,v 1.9 2005-05-24 23:28:37 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -384,7 +384,6 @@
     SCM_ASSERT(SCM_VECTORP(cenv));
     frames = SCM_VECTOR_ELEMENT(cenv, 1);
     SCM_FOR_EACH(fp, frames) {
-        ScmObj p;
         if (name_identifier && SCM_IDENTIFIER(name)->env == fp) {
             /* strip identifier if we're in the same env (kludge). */
             name = SCM_OBJ(SCM_IDENTIFIER(name)->name);
@@ -443,6 +442,7 @@
         depth++;
     }
     Scm_Error(\"[internal error] stray local variable:\", lvar);
+    SCM_RETURN(SCM_UNDEFINED); /* dummy */
   ")
 
 ;; Specialized routines handling Lvar structure.

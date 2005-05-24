@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.55 2005-05-22 11:00:23 shirok Exp $
+ *  $Id: macro.c,v 1.56 2005-05-24 23:28:37 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -40,7 +40,11 @@
 #include "gauche/vminsn.h"
 #include "gauche/builtin-syms.h"
 
+/* avoid C++ reserved name conflict.
+   (I hate languages that takes away names from programmers!) */
+#define template templat
 
+/* define if you want to debug syntax-rule expander */
 /*#define DEBUG_SYNRULE*/
 
 /*===================================================================

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: code.c,v 1.4 2005-05-13 23:36:15 shirok Exp $
+ *  $Id: code.c,v 1.5 2005-05-24 23:28:37 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -117,7 +117,6 @@ static ScmObj execute_toplevels_cc(ScmObj result, void **data)
 
 static ScmObj execute_toplevels(ScmObj *args, int nargs, void *cv)
 {
-    ScmCompiledCode **cs = (ScmCompiledCode **)cv;
     Scm_VMPushCC(execute_toplevels_cc, &cv, 1);
     return SCM_UNDEFINED;
 }
@@ -129,7 +128,7 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
 {
     int i;
     ScmWord *p;
-    ScmObj closures = SCM_NIL, arginfo, cp;
+    ScmObj closures = SCM_NIL, cp;
     int clonum = 0;
 
     Scm_Printf(SCM_CUROUT, "main_code (name=%S, code=%p, size=%d, const=%d, stack=%d):\n",
@@ -324,23 +323,6 @@ static void cc_builder_add_info(cc_builder *b)
     b->currentInfo = SCM_FALSE;
 }
 
-static ScmWord *cc_builder_ref(cc_builder *b, int index)
-{
-    int nc, ni;
-    cc_builder_chunk *chunk;
-    if (index < 0 || index >= b->currentIndex){
-        Scm_Error("compiled code builder: index out of range: %d", index);
-    }
-    nc = b->numChunks - (index >> CC_BUILDER_CHUNK_BITS) - 1;
-    ni = index & CC_BUILDER_CHUNK_BITS;
-    chunk = b->chunks;
-    while (nc > 0) {
-        chunk = chunk->prev;
-        nc--;
-    }
-    return chunk->code + ni;
-}
-
 /* Returns label offset of the given label, if the label is already defined.
    Otherwise, returns -1. */
 static int cc_builder_label_def(cc_builder *b, ScmObj label)
@@ -356,10 +338,7 @@ static int cc_builder_label_def(cc_builder *b, ScmObj label)
 /* Flush the currentInsn buffer. */
 static void cc_builder_flush(cc_builder *b)
 {
-    ScmObj args;
     u_int code;
-    ScmWord word;
-    int labelAddr;
     
     if (CC_BUILDER_BUFFER_EMPTY_P(b)) return;
     cc_builder_add_info(b);
@@ -497,7 +476,7 @@ void Scm_CompiledCodeSetLabel(ScmCompiledCode *cc, ScmObj label)
    Perform label resolution and jump optimization. */
 void Scm_CompiledCodeFinishBuilder(ScmCompiledCode *cc, int maxstack)
 {
-    ScmObj constants = SCM_NIL, cp;
+    ScmObj cp;
     cc_builder *b;
     cc_builder_chunk *bc, *bcprev;
     int i, j, numConstants;
@@ -992,10 +971,7 @@ int Scm_VMInsnNameToCode(ScmObj name)
 /* (kind of) inversion of VMInsnInspect. */
 ScmWord Scm_VMInsnBuild(ScmObj obj)
 {
-    struct insn_info *info;
     int len = Scm_Length(obj), code, arg0, arg1;
-    const char *name;
-    ScmWord insn = 0;
     
     if (len < 1 || len > 3 || !SCM_SYMBOLP(SCM_CAR(obj))) goto badspec;
     code = Scm_VMInsnNameToCode(SCM_CAR(obj));

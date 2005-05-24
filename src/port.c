@@ -30,13 +30,14 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.118 2004-12-02 12:59:28 shirok Exp $
+ *  $Id: port.c,v 1.119 2005-05-24 23:28:38 shirok Exp $
  */
 
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <ctype.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/class.h"
@@ -1058,7 +1059,6 @@ enum {
 /* A hardcoded DFA to recognize #/;.*coding[:=]\s*([\w.-]+)/ */
 static const char *look_for_encoding(const char *buf)
 {
-    char c;
     const char *s;
     char *encoding;
     
@@ -1170,7 +1170,7 @@ static void coding_port_recognize_encoding(ScmPort *port,
 
 static int coding_filler(ScmPort *p, int cnt)
 {
-    int nread = 0, i;
+    int nread = 0;
     coding_port_data *data = (coding_port_data*)p->src.buf.data;
     char *datptr = p->src.buf.end;
 
@@ -1239,7 +1239,6 @@ ScmObj Scm_MakeCodingAwarePort(ScmPort *iport)
     ScmObj p;
     ScmPortBuffer bufrec;
     coding_port_data *data;
-    int i;
 
     if (!SCM_IPORTP(iport)) {
         Scm_Error("open-coding-aware-port requires an input port, but got %S", iport);

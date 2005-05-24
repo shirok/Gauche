@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: code.h,v 1.5 2005-05-23 11:07:34 shirok Exp $
+ *  $Id: code.h,v 1.6 2005-05-24 23:29:09 shirok Exp $
  */
 
 #ifndef GAUCHE_CODE_H
@@ -128,6 +128,12 @@ SCM_EXTERN ScmObj Scm_CompiledCodeNewLabel(ScmCompiledCode *cc);
 SCM_EXTERN void   Scm_CompiledCodeSetLabel(ScmCompiledCode *cc, ScmObj label);
 SCM_EXTERN void   Scm_CompiledCodeFinishBuilder(ScmCompiledCode *cc,
                                                 int maxstack);
+SCM_EXTERN void   Scm_CompiledCodeEmit(ScmCompiledCode *cc,
+                                       int code,
+                                       int arg0, 
+                                       int arg1, 
+                                       ScmObj operand,
+                                       ScmObj info);
 
 /*
  * VM instructions

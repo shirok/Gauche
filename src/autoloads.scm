@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.24 2005-05-24 09:52:56 shirok Exp $
+;;; $Id: autoloads.scm,v 1.25 2005-05-24 23:28:37 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.24 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.25 $.  DO NOT EDIT */"
    :pre-decl '("#define LIBGAUCHE_BODY")
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
@@ -39,7 +39,7 @@
   (cgen-init "  ScmModule *scheme = Scm_SchemeModule();"
              "  ScmModule *gauche = Scm_GaucheModule();"
              "  ScmSymbol *sym, *import_from;"
-             "  ScmObj al, path, z;")
+             "  ScmObj al, path;")
 
   ;; loop
   (dolist (al (reverse *autoloads*))

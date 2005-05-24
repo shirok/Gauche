@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.118 2005-04-12 01:42:25 shirok Exp $
+ *  $Id: class.c,v 1.119 2005-05-24 23:28:37 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -813,7 +813,7 @@ int Scm_TypeP(ScmObj obj, ScmClass *type)
  */
 ScmObj Scm_ComputeCPL(ScmClass *klass)
 {
-    ScmObj seqh = SCM_NIL, seqt, ds, dp, result;
+    ScmObj seqh = SCM_NIL, seqt = SCM_NIL, ds, dp, result;
 
     /* a trick to ensure we have <object> <top> at the end of CPL. */
     ds = Scm_Delete(SCM_OBJ(SCM_CLASS_OBJECT), klass->directSupers,
@@ -1115,15 +1115,15 @@ ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize)
 /* Invoke class redefinition method */
 static ScmObj instance_class_redefinition(ScmObj obj, ScmClass *old)
 {
-    ScmObj new;
+    ScmObj newc;
     (void)SCM_INTERNAL_MUTEX_LOCK(old->mutex);
     while (!SCM_ISA(old->redefined, SCM_CLASS_CLASS)) {
         (void)SCM_INTERNAL_COND_WAIT(old->cv, old->mutex);
     }
-    new = old->redefined;
+    newc = old->redefined;
     (void)SCM_INTERNAL_MUTEX_UNLOCK(old->mutex);
-    if (SCM_CLASSP(new)) {
-        return Scm_VMApply2(SCM_OBJ(&Scm_GenericChangeClass), obj, new);
+    if (SCM_CLASSP(newc)) {
+        return Scm_VMApply2(SCM_OBJ(&Scm_GenericChangeClass), obj, newc);
     } else {
         return SCM_OBJ(old);
     }
@@ -2296,16 +2296,15 @@ static void method_specializers_set(ScmMethod *m, ScmObj val)
  *   Note that if we implement this in Scheme, we need a mutex to lock the
  *   specializer array.
  */
-ScmObj Scm_UpdateDirectMethod(ScmMethod *m, ScmClass *old, ScmClass *new)
+ScmObj Scm_UpdateDirectMethod(ScmMethod *m, ScmClass *old, ScmClass *newc)
 {
     int i, rec = SCM_PROCEDURE_REQUIRED(m);
     ScmClass **sp = m->specializers;
-    ScmObj dmeths;
     for (i=0; i<rec; i++) {
-        if (sp[i] == old) sp[i] = new;
+        if (sp[i] == old) sp[i] = newc;
     }
-    if (SCM_FALSEP(Scm_Memq(SCM_OBJ(m), new->directMethods))) {
-        new->directMethods = Scm_Cons(SCM_OBJ(m), new->directMethods);
+    if (SCM_FALSEP(Scm_Memq(SCM_OBJ(m), newc->directMethods))) {
+        newc->directMethods = Scm_Cons(SCM_OBJ(m), newc->directMethods);
     }
     return SCM_OBJ(m);
 }

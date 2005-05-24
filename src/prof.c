@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: prof.c,v 1.3 2005-04-14 05:28:54 shirok Exp $
+ *  $Id: prof.c,v 1.4 2005-05-24 23:28:38 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -90,7 +90,7 @@
 
 static void sampler_flush(ScmVM *vm)
 {
-    int i, nsamples;
+    int nsamples;
     ssize_t r;
     
     if (vm->prof == NULL) return; /* for safety */
@@ -145,7 +145,6 @@ static void sampler_sample(int sig)
 void collect_samples(ScmVMProfiler *prof)
 {
     int i, cnt;
-    ScmProfSample *s = prof->samples;
     for (i=0; i<prof->currentSample; i++) {
         ScmHashEntry *e = Scm_HashTableGet(prof->statHash,
                                            prof->samples[i].func);
@@ -171,10 +170,8 @@ void collect_samples(ScmVMProfiler *prof)
 void Scm_ProfilerCountBufferFlush(ScmVM *vm)
 {
     int i, ncounts;
-    ScmProfCount *cnt;
     ScmObj func;
     sigset_t set;
-    struct itimerval tval, oval;
 
     if (vm->prof == NULL) return; /* for safety */
     if (vm->prof->currentCount == 0) return;
@@ -223,10 +220,10 @@ void Scm_ProfilerStart(void)
     ScmVM *vm = Scm_VM();
 
     if (!vm->prof) {
-        char template[] = "/tmp/gauche-profXXXXXX";
+        char templat[] = "/tmp/gauche-profXXXXXX";
         vm->prof = SCM_NEW(ScmVMProfiler);
-        vm->prof->state == SCM_PROFILER_INACTIVE;
-        vm->prof->samplerFd = Scm_Mkstemp(template);
+        vm->prof->state = SCM_PROFILER_INACTIVE;
+        vm->prof->samplerFd = Scm_Mkstemp(templat);
         vm->prof->currentSample = 0;
         vm->prof->totalSamples = 0;
         vm->prof->errorOccurred = 0;
@@ -234,7 +231,7 @@ void Scm_ProfilerStart(void)
         vm->prof->statHash =
             SCM_HASHTABLE(Scm_MakeHashTable((ScmHashProc)SCM_HASH_ADDRESS,
                                             NULL, 0));
-        unlink(template);       /* keep anonymous tmpfile */
+        unlink(templat);       /* keep anonymous tmpfile */
     }
     
     if (vm->prof->state == SCM_PROFILER_RUNNING) return;
@@ -255,7 +252,7 @@ void Scm_ProfilerStart(void)
 int Scm_ProfilerStop(void)
 {
     ScmVM *vm = Scm_VM();
-    if (vm->prof->state != SCM_PROFILER_RUNNING) return;
+    if (vm->prof->state != SCM_PROFILER_RUNNING) return 0;
     ITIMER_STOP();
     vm->prof->state = SCM_PROFILER_PAUSING;
     vm->profilerRunning = FALSE;
@@ -288,7 +285,6 @@ ScmObj Scm_ProfilerRawResult(void)
 {
     off_t off;
     ssize_t r;
-    int i;
     ScmObj sampler_port;
     ScmVM *vm = Scm_VM();
 

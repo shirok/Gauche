@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.228 2005-05-22 12:35:28 shirok Exp $
+ *  $Id: vm.c,v 1.229 2005-05-24 23:28:38 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1448,8 +1448,8 @@ pthread_key_t Scm_VMKey(void)
                 if (!SCM_NUMBERP(v0)) {
                     VM_ERR(("Number required, but got %S", VAL0));
                 }
-                if (SCM_INTP(v0) && SCM_INT_VALUE(v0) == imm
-                    || SCM_FLONUMP(v0) && SCM_FLONUM_VALUE(v0) == imm) {
+                if ((SCM_INTP(v0) && SCM_INT_VALUE(v0) == imm)
+                    || (SCM_FLONUMP(v0) && SCM_FLONUM_VALUE(v0) == imm)) {
                     VAL0 = SCM_TRUE;
                     INCR_PC;
                 } else {
@@ -1508,7 +1508,7 @@ pthread_key_t Scm_VMKey(void)
                 int reqargs = SCM_VM_INSN_ARG0(code);
                 int restarg = SCM_VM_INSN_ARG1(code);
                 int size, i = 0, argsize;
-                ScmObj rest = SCM_NIL, tail = SCM_NIL, body;
+                ScmObj rest = SCM_NIL, tail = SCM_NIL;
                 ScmWord *nextpc;
 
                 if (vm->numVals < reqargs) {
@@ -2833,7 +2833,7 @@ ScmObj Scm_Eval(ScmObj expr, ScmObj e)
 
 ScmObj Scm_Apply(ScmObj proc, ScmObj args)
 {
-    ScmObj cp, program;
+    ScmObj program;
     int nargs = Scm_Length(args);
     ScmVM *vm = Scm_VM();
     ScmWord *code = SCM_NEW_ARRAY(ScmWord, 3);
@@ -3076,8 +3076,8 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
     if (ep) {
         /* There's an escape point defined by with-error-handler. */
         ScmObj target, current;
-        ScmObj result, rvals[SCM_VM_MAX_VALUES];
-        int numVals, i;
+        ScmObj result = SCM_FALSE, rvals[SCM_VM_MAX_VALUES];
+        int numVals = 0, i;
 
         /* Call the error handler and save the results.
            NB: before calling the error handler, we need to pop
@@ -3607,12 +3607,12 @@ static ScmObj env2vec(ScmEnvFrame *env, struct EnvTab *etab)
 
 ScmObj Scm_VMGetStack(ScmVM *vm)
 {
+#if 0 /* for now */
     ScmContFrame *c = vm->cont;
     ScmObj stack = SCM_NIL, tail = SCM_NIL;
     ScmObj info, evec;
     struct EnvTab envTab;
 
-#if 0 /* for now */
     envTab.numEntries = 0;
     if (SCM_PAIRP(vm->pc)) {
         info = Scm_VMGetSourceInfo(vm->pc);
@@ -3625,8 +3625,9 @@ ScmObj Scm_VMGetStack(ScmVM *vm)
         evec = env2vec(c->env, &envTab);
         SCM_APPEND1(stack, tail, Scm_Cons(info, evec));
     }
-#endif
     return stack;
+#endif
+    return SCM_NIL;
 }
 
 /*

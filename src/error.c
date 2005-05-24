@@ -30,11 +30,12 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.62 2004-12-18 04:11:12 shirok Exp $
+ *  $Id: error.c,v 1.63 2005-05-24 23:28:37 shirok Exp $
  */
 
 #include <errno.h>
 #include <string.h>
+#include <ctype.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/class.h"
@@ -317,7 +318,7 @@ ScmObj Scm_MakeCompoundCondition(ScmObj conditions)
     }
     if (nconds == 1) {
         if (!SCM_CONDITIONP(SCM_CAR(conditions))) {
-            Scm_Error("make-compound-condition: given non-condition object: %S", SCM_CAR(cp));
+            Scm_Error("make-compound-condition: given non-condition object: %S", SCM_CAR(conditions));
         }
         return SCM_CAR(conditions);
     }
@@ -354,7 +355,7 @@ static ScmObj conditions_get(ScmCompoundCondition *obj)
 
 static void   conditions_set(ScmCompoundCondition *obj, ScmObj conds)
 {
-    ScmObj cp, eobj;
+    ScmObj cp;
     SCM_FOR_EACH(cp, conds) {
         if (!SCM_CONDITIONP(SCM_CAR(cp))) goto err;
     }
@@ -812,9 +813,8 @@ static void Scm_PrintDefaultErrorHeading(ScmObj e, ScmPort *out)
 
 static void report_error_inner(ScmVM *vm, ScmObj e)
 {
-    ScmObj stack = Scm_VMGetStackLite(vm), cp;
+    ScmObj stack = Scm_VMGetStackLite(vm);
     ScmPort *err = SCM_VM_CURRENT_ERROR_PORT(vm);
-    int depth = 0;
 
     Scm_PrintDefaultErrorHeading(e, err);
     SCM_PUTZ("Stack Trace:\n", -1, err);

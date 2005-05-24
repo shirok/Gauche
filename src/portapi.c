@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: portapi.c,v 1.27 2004-11-29 10:54:39 shirok Exp $
+ *  $Id: portapi.c,v 1.28 2005-05-24 23:28:38 shirok Exp $
  */
 
 /* This file is included _twice_ by port.c to define safe- and unsafe-
@@ -411,7 +411,7 @@ int Scm_PeekbUnsafe(ScmPort *p)
 #define SHIFT_SCRATCH
 
 /* shift scratch buffer content */
-static inline shift_scratch(ScmPort *p, int off)
+static inline void shift_scratch(ScmPort *p, int off)
 {
     int i;
     for (i=0; i<p->scrcnt; i++) {
