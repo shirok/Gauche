@@ -5458,14 +5458,14 @@ to refer to an object used to communicate the code that encountered
 an exceptional situation with a handler that deals with it.
 Gauche uses a term @emph{condition} to refer to such objects,
 following SRFI-35.  @emph{Exception} is the situation, and
-@emph{condition} is what describes it.
+@emph{condition} is a runtime object that describes it.
 @c JP
 用語について: いくつかの言語では@emph{例外(exception)}というと、
 例外的状況に遭遇したコードとそのハンドラがやりとりをするために用られる
 オブジェクトのことを指します。Gaucheではそのようなオブジェクトのことを言うときには、
 SRFI-35にならって@emph{コンディション(condition)}を使います。
-@emph{例外}というのは、状況であり、@emph{コンディション}はそれを記述した
-ものです。
+@emph{例外}というのは、状況であり、@emph{コンディション}はそれを記述する
+実行時のオブジェクトです。
 @c COMMON
 
 @c The most common exceptional case is errors, so Gauche has

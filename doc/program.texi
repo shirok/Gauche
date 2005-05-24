@@ -668,7 +668,7 @@ of the code is consuming the execution time.   Gauche has
 a couple of basic tools to help it.  A built-in sampling profiler,
 explained in the following subsection, can show how much time
 is spent in each procedure, and how many times it is called.
-The @code{gauche.time} module (@ref{Measure timings}) also provides
+The @code{gauche.time} module (@ref{Measure timings}) provides
 APIs to measure execution time of specific part of the code.
 @c JP
 どんなときでも、実行時間を食いつぶしているコード部分を見つけるというの
@@ -677,7 +677,7 @@ APIs to measure execution time of specific part of the code.
 の節で説明します)を使えば各手続きでどれほどの時間がかかり、その手続き
 が何回呼ばれたかを表示できます。@code{gauche.time} モジュール
 (@ref{Measure timings}) ではコードの中の特定の部分の実行にかかる時間を
-測定するためのAPIも提供されています。
+測定するためのAPIが提供されています。
 @c COMMON
 
 @c EN
@@ -850,21 +850,20 @@ see @ref{Profiler API}, for the details.
 Don't guess, just benchmark.  It is the first rule of
 performance tuning.  Especially for the higher-level languages 
 like Scheme, what impacts on performance greatly depends on
-the implementation's strategy (for example, some implementations
-has super-light call/cc and would be natural to use them rather
-than mantaining application-specific state; while in some 
-implementations call/cc can be very heavy).
-
+the implementation.  Certain operations that are very cheap
+on an impelementation may be costly on others.
 Gauche has such implementation-specific characteristics, and
 to know some of them would help to see what to look out in
 the benchmark results.
 
-@subsubheading General issues
+"80% of execution time is spent in 20% of the code" is another
+old saying.  Don't obscure your code by "potential" optimization
+that has little impact on the actual execution.  We describe some
+tips below, but it doesn't mean you need to watch them all the time.
+It is better to keep most of the code clean and easy to understand,
+and only do tricks on the innermost loop.
 
-Some type of objects and pattens need special attention in
-regard to the performance, if your application touches them intensely.
-
-@emph{Ports}: To satisfy the specification of SRFI-18 (Threading),
+@strong{Ports}: To satisfy the specification of SRFI-18 (Threading),
 every call to I/O primitives of Gauche locks the port.
 This overhead may be visible if the application does a lot of I/O
 with smaller units (e.g. every bytes).   The primitives that deals
@@ -877,50 +876,54 @@ of things you can consider: (1) Try using the larger-unit primitives,
 instead of calling the smaller-unit ones.  (2) Use @code{with-port-locking}
 (see @ref{Port and threads}) to lock the port in larger context.
 
-@emph{Strings}: Because of the multibyte strings, two operations
+@strong{Strings}: Because of the multibyte strings, two operations
 are particularly heavy in Gauche: string mutation and indexed string access.
 It is a design choice; we encourage the programming style that
 avois those operations.  When you sequentially access the string,
-string ports (see @ref{String ports}) provides a more efficient way.
+string ports (see @ref{String ports}) provides a cleaner and
+more efficient way.
 When you search and retrieve a substring, there are various
 higher-level primitives are provided (see @ref{String utilities},
 @ref{Regular expression}, and @ref{String library}, for example).
 If you're using strings to represent an octet stream, use uniform
 vectors (see @ref{Uniform vectors}) instead.
 
-@emph{Deep recursion}: Gauche's VM uses a stack for efficient
-local frame calling.  If recursion goes very deep (depending on
+@strong{Deep recursion}: Gauche's VM uses a stack for efficient
+local frame allocation.  If recursion goes very deep (depending on
 the code, but usually several hundreds to a thousand), the stack
 overflows and Gauche moves the content of the stack into the heap.
 This incurs some overhead.  If you observe a performance degradation
 beyond a certain amount of data, check out this possibility.
 
-@emph{Generic functions}: Because of its dynamic nature, generic
-function calls are slower than procedure calls.  You don't need
-to avoid generic functions because of performance reasons in general,
-but if you do find single function call consuming a few ten percent of
-execution time and it is calling a generic function in its inner loop---
-then it may be worth to change it.
+@strong{Generic functions}: Because of its dynamic nature, generic
+function calls are slower than procedure calls.  Not only because
+of the runtime dispatch overhead, but also because Gauche's compile-time
+optimizer can't do much optimization for generic function calls.
+You don't need to avoid generic functions because of performance
+reasons in general, but if you do find single function call consuming
+a large part of execution time and it is calling a generic
+function in its inner loop---then it may be worth to modify it.
 
-@emph{Redefining builtin functions}: Gauche inlines some builtin
-functions if it is not redefined.  Although sometimes it is useful
+@strong{Redefining builtin functions}: Gauche inlines some builtin
+functions if they are not redefined.  Although sometimes it is useful
 to redefine basic functions, you may want to limit the effect.
 For example, put redefined functions in a separate module and
 use the module in the code that absolutely needs those functions
-replaced.
+replaced.  
 
+@strong{Closure creation}: When you create a closure, its closing environment
+is copied to the heap.  This overhead is small, but it still may be
+visible when a closure is created within an innermost loop that is
+called millions of times.   If you suspect this is a problem,
+try disassemble the function.   Gauche's compiler uses some basic
+technique of closure analysis to avoid creating closures for
+typical cases, in which case you see the local function's bodies
+are inlined.  If you see a @code{CLOSURE} instruction, though, it
+means a closure is created.
 
-@subsubheading Cutting the last corners
-
-
-
-
-
-
-
-
-
-
+This list isn't complete, and may change when Gauche's implementation
+is improved, so don't take this as a fixed features.
+We'll adjust it occasionally.
 
 @c ----------------------------------------------------------------------
 @node Writing Gauche modules, Using extension packages, Profiling and tuning, Programming in Gauche

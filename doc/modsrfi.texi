@@ -16,20 +16,21 @@ of supported SRFIs.
 
 @c ----------------------------------------------------------------------
 @menu
-* Feature conditional::         (srfi-0)
-* List library::                (srfi-1)
-* And-let*::                    (srfi-2)
-* Homogeneous vectors::         (srfi-4)
-* A compatible let form with signatures and rest arguments::  (srfi-5)
-* Feature-based program configuration language:: (srfi-7)
-* Record types::                (srfi-9)
-* Let-values::                  (srfi-11)
-* String library::              (srfi-13)
-* Character-set library::       (srfi-14)
-* Time data types and procedures::  (srfi-19)
-* Sources of random bits::      (srfi-27)
-* Localization::                (srfi-29)
-* A program argument processor::  (srfi-37)
+* Feature conditional::         
+* List library::                
+* And-let*::                    
+* Homogeneous vectors::         
+* A compatible let form with signatures and rest arguments::  
+* Feature-based program configuration language::  
+* Record types::                
+* Let-values::                  
+* String library::              
+* Character-set library::       
+* Time data types and procedures::  
+* Sources of random bits::      
+* Localization::                
+* A program argument processor::  
+* Eager comprehensions::        
 @end menu
 
 @node Feature conditional, List library, Library modules - SRFIs, Library modules - SRFIs
@@ -3894,7 +3895,7 @@ Gauche ネイティヴの @code{format} を使いたければ、@code{srfi-29.bundle}
 @end defun
 
 @c ----------------------------------------------------------------------
-@node A program argument processor,  , Localization, Library modules - SRFIs
+@node A program argument processor, Eager comprehensions, Localization, Library modules - SRFIs
 @section @code{srfi-37} - args-fold: a program argument processor
 @c NODE args-fold プログラム引数処理, @code{srfi-37} - args-fold プログラム引数処理
 
@@ -4163,3 +4164,207 @@ A simple example:
      0))
 @end example
 
+@c ----------------------------------------------------------------------
+@node Eager comprehensions,  , A program argument processor, Library modules - SRFIs
+@section @code{srfi-42} - Eager comprehensions
+@c NODE Eager comprehensions, @code{srfi-42} - Eager comprehensions
+
+@deftp {Module} srfi-42
+@mdindex srfi-42
+This module provides a generic comprehension mechanism, which some other
+languages (e.g. Haskell and Python) provides as a built-in mechanism.
+It provides rich set of operators so it can be used as not only a list
+generator but a generic loop construct (actually, some may say
+it is as powerful/evil as Common Lisp's @emph{loop} macro).
+
+It is also runs eagerly, that is, if it generates a list, it
+creates the entire list when evaluated, instead of generate the
+elements @emph{on demand}.  Thus it can't represent an infinite
+sequence, which Haskell's comprehension naturally can.  In Scheme,
+you can use streams built on top of delayed evaluation for
+such purpose.
+@end deftp
+
+@subheading Eager comprehension examples
+
+Let's begin with some examples.
+
+Generate a list of squares for the first five integers:
+@example
+(list-ec (: i 5) (* i i)) @result{} (0 1 4 9 16)
+@end example
+
+Generate set of pair of numbers @code{(x y)}, where @code{x}
+is between 2 (inclusive) and 5 (exclusive),
+and @code{y} is between 1 (inclusive) and x (exclusive).
+@example
+(list-ec (: x 2 5) (: y 1 x) (list x y))
+  @result{} ((2 1) (3 1) (3 2) (4 1) (4 2) (4 3))
+@end example
+
+The above two examples can be written in Haskell as the followings:
+@example
+[ i*i   | i <- [0..4] ]
+[ (x,y) | x <- [2..4], y <- [1..x-1] ]
+@end example
+Note the differences: (1) In Haskell, the body expression to yield the
+elements comes first, followed by qualifiers (selectors).  In srfi-42, the body
+expression comes last.  (2) In srfi-42, range operator's lower bound
+is inclusive but its upper bound is exclusive.
+
+List a set of numbers @code{(a b c d)}, where @code{a^3+b^3 = c^3+d^3}:
+@example
+(define (taxi-number n)
+  (list-ec (: a 1 n)
+           (: b (+ a 1) n)
+           (: c (+ a 1) b)
+           (: d (+ c 1) b)
+           (if (= (+ (expt a 3) (expt b 3))
+                  (+ (expt c 3) (expt d 3))))
+           (list a b c d)))
+@end example
+
+You can generate not only a list, but other sequences:
+@example
+(vector-ec (: i 5) i) @result{} #(0 1 2 3 4)
+(string-ec (: i 5) (integer->char (+ i 65))) @result{} "ABCDE"
+@end example
+
+Or apply folding operations:
+@example
+(sum-ec (: i 1 10) i)
+  @result{} 450    ;; sum of integers from 1 below 100.
+(product-ec (: i 1 10) i)
+  @result{} 362880 ;; ... and product of them.
+@end example
+
+@subheading Comprehension macros
+
+Each comprehension takes the following form.
+@example
+(@var{comprehension-macro} @var{qualifier} @dots{} @var{body})
+@end example
+
+Evaluates @var{body} repeatedly as specified by @var{qualifier}s.
+Depending on the type of comprehension,
+the results of @var{body} may be either collected to create an 
+aggregate (list, vector, string, ...), folded by some operator
+(sum, product, min, max, ...), or simply discarded.
+
+A few comprehensions takes extra values before @var{qualifiers} or
+after @var{bodies}.
+
+
+@defmac do-ec qualifier @dots{} body
+[SRFI-42]
+@end defmac
+
+@defmac list-ec qualifier @dots{} body
+[SRFI-42]
+@end defmac
+
+@defmac append-ec qualifier @dots{} body
+[SRFI-42]
+@end defmac
+
+@defmac string-ec qualifier @dots{} body
+@defmacx string-append-ec qualifier @dots{} body
+[SRFI-42]
+@end defmac
+
+@defmac vector-ec qualifier @dots{} body
+[SRFI-42]
+@end defmac
+
+@defmac vector-of-length-ec qualifier @dots{} body
+[SRFI-42]
+@end defmac
+
+@defmac sum-ec qualifier @dots{} body
+@defmacx product-ec qualifier @dots{} body
+@defmacx min-ec qualifier @dots{} body
+@defmacx max-ec qualifier @dots{} body
+[SRFI-42]
+@end defmac
+
+@defmac any?-ec qualifier @dots{} test
+@defmacx every?-ec qualifier @dots{} test
+[SRFI-42]
+@end defmac
+
+@defmac first-ec default qualifier @dots{} body
+@defmacx last-ec default qualifier @dots{} body
+[SRFI-42]
+@end defmac
+
+@defmac fold-ec x0 qualifier @dots{} expr f2
+@defmacx fold3-ec x0 qualifier @dots{} expr f1 f2
+[SRFI-42]
+@end defmac
+
+@subheading Qualifiers
+
+@subsubheading Control qualifiers
+
+@deffn {EC Qualifier} if test
+@end deffn
+
+@deffn {EC Qualifier} not test
+@deffnx {EC Qualifier} and test
+@deffnx {EC Qualifier} or test
+@end deffn
+
+@deffn {EC Qualifier} begin test
+@end deffn
+
+@deffn {EC Qualifier} nested test
+@end deffn
+
+@subsubheading Generational qualifiers
+
+@deffn {EC Qualifier} : vars arg1 args @dots{}
+@end deffn
+
+@deffn {EC Qualifier} :list vars arg1 args @dots{}
+@deffnx {EC Qualifier} :vector vars arg1 args @dots{}
+@deffnx {EC Qualifier} :string vars arg1 args @dots{}
+@end deffn
+
+@deffn {EC Qualifier} :integers vars
+@end deffn
+
+@deffn {EC Qualifier} :range vars stop
+@deffnx {EC Qualifier} :range vars start stop
+@deffnx {EC Qualifier} :range vars start stop step
+@end deffn
+
+@deffn {EC Qualifier} :real-range vars stop
+@deffnx {EC Qualifier} :real-range vars start stop
+@deffnx {EC Qualifier} :real-range vars start stop step
+@end deffn
+
+@deffn {EC Qualifier} :char-range vars min max
+@end deffn
+
+@deffn {EC Qualifier} :port vars port
+@deffnx {EC Qualifier} :port vars port read-proc
+@end deffn
+
+@deffn {EC Qualifier} :dispatched vars dispatch arg1 args @dots{}
+@end deffn
+
+@deffn {EC Qualifier} :do (lb @dots{}) ne1? (ls @dots{})
+@deffnx {EC Qualifier} :do (let (ob @dots{}) oc @dots{}) (lb @dots{}) ne1? (let (ib @dots{}) ic @dots{}) ne2? (ls @dots{})
+@end deffn
+
+@deffn {EC Qualifier} :let vars expr
+@end deffn
+
+@deffn {EC Qualifier} :parallel generator @dots{}
+@end deffn
+
+@deffn {EC Qualifier} :while generator expr
+@end deffn
+
+@deffn {EC Qualifier} :until generator expr
+@end deffn

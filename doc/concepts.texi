@@ -375,6 +375,10 @@ Supported by the module @code{gauche.parameter}.
 モジュール@code{gauche.parameter}でサポートされます。
 @ref{Parameters}参照。
 @c COMMON
+@item SRFI-42, Eager comprehensions
+Supported by the module @code{srfi-42}.
+@xref{Eager comprehensions}.
+
 @end table
 
 
