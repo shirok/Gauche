@@ -1,5 +1,7 @@
 2005-05-23  Shiro Kawai  <shiro@acm.org>
 
+	* ltmain.sh, configu.guess, config.sub: updated for the latest version.
+
 	* src/gauche/arith_i386.h : Applied patch from NIIBE Yutaka for
 	  better register allocation.
 
