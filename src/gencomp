@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.8 2005-05-17 04:33:09 shirok Exp $
+;;;  $Id: gencomp,v 1.9 2005-05-25 06:00:33 shirok Exp $
 ;;;
 
 ;;;
@@ -395,6 +395,7 @@
     :name (path-sans-extension scmfile)
     :preamble `(,(format "/* Generated automatically from ~a.  DO NOT EDIT */"
                          scmfile))
+    :pre-decl '("#define LIBGAUCHE_BODY")
     :init-prologue (format "void Scm__Init~a() { ScmModule *mod;"
                            (string-titlecase
                             (string-tr
