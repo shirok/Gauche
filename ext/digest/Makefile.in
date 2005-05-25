@@ -25,7 +25,7 @@ md5.c : md5.stub
 sha1_OBJECTS = sha1_head.$(OBJEXT) sha1.$(OBJEXT) sha.$(OBJEXT) sha1_tail.$(OBJEXT)
 
 sha1.$(SOEXT) : $(sha1_OBJECTS) 
-	$(MODLINK) sha1.$(SOEXT) $(sha1_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+	$(MODLINK) sha1.$(SOEXT) $(sha1_OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
 
 sha1.c : sha1.stub
 
