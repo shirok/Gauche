@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.101 2005-05-22 11:00:45 shirok Exp $
+ *  $Id: vm.h,v 1.102 2005-05-25 23:44:09 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -54,8 +54,10 @@
 
 #define SCM_PCTYPE ScmWord*
 
+#if defined(ITIMER_PROF) && defined(SIGPROF)
 /* define if you want to use profiler */
 #define GAUCHE_PROFILE
+#endif /* defined(ITIMER_PROF) && defined(SIGPROF) */
 
 /* Actual structure is defined in code.h */
 typedef struct ScmCompiledCodeRec ScmCompiledCode;

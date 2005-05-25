@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.229 2005-05-24 23:28:38 shirok Exp $
+ *  $Id: vm.c,v 1.230 2005-05-25 23:44:09 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2530,9 +2530,11 @@ static void save_stack(ScmVM *vm)
     struct timeval t0, t1;
     int stats = SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_COLLECT_VM_STATS);
 
+#if HAVE_GETTIMEOFDAY
     if (stats) {
         gettimeofday(&t0, NULL);
     }
+#endif
 
     vm->env = save_env(vm, vm->env, vm->cont);
     save_cont(vm, vm->cont);
@@ -2543,12 +2545,14 @@ static void save_stack(ScmVM *vm)
     /* Clear the stack.  This removes bogus pointers and accelerates GC */
     for (p = vm->sp; p < vm->stackEnd; p++) *p = NULL;
 
+#if HAVE_GETTIMEOFDAY
     if (stats) {
         gettimeofday(&t1, NULL);
         vm->stat.sovCount++;
         vm->stat.sovTime +=
             (t1.tv_sec - t0.tv_sec)*1000000+(t1.tv_usec - t0.tv_usec);
     }
+#endif
 }
 
 static ScmEnvFrame *get_env(ScmVM *vm)
