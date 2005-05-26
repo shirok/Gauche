@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.57 2005-05-26 10:01:40 shirok Exp $
+dnl $Id: configure.ac,v 1.58 2005-05-26 10:23:28 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.4_pre3, shiro@acm.org)
-AC_REVISION($Revision: 1.57 $)
+AC_REVISION($Revision: 1.58 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -470,7 +470,7 @@ case $target in
     SHLIB_OK=ok
     LINK_HELPER='./link-hpux'
     ;;
-  *cygwin*|*mingw*)
+  *cygwin*)
     SHLIB_SO_CFLAGS=""
     SHLIB_SO_LDFLAGS='-Wl,--export-all-symbols -Wl,--enable-auto-import -shared -o'
     SHLIB_SO_SUFFIX="dll"
