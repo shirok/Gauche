@@ -1,3 +1,7 @@
+2005-05-26  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac: added --enable-runtime-pseudo-reloc ld flag for MinGW.
+
 2005-05-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/procedure.scm (compose): allow zero or one arguments

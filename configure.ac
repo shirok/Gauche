@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.56 2005-05-25 23:44:03 shirok Exp $
+dnl $Id: configure.ac,v 1.57 2005-05-26 10:01:40 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.4_pre3, shiro@acm.org)
-AC_REVISION($Revision: 1.56 $)
+AC_REVISION($Revision: 1.57 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -473,6 +473,18 @@ case $target in
   *cygwin*|*mingw*)
     SHLIB_SO_CFLAGS=""
     SHLIB_SO_LDFLAGS='-Wl,--export-all-symbols -Wl,--enable-auto-import -shared -o'
+    SHLIB_SO_SUFFIX="dll"
+    SHLIB_DYLIB_SUFFIX="dll"
+    SHLIB_MAIN_LDFLAGS="-Wl,--enable-auto-import"
+    SHLIB_OK=ok
+    GOSH_USE_SHLIB=yes
+    ext_use_uvector=yes
+    ext_use_libgauche=yes
+    libgauche_version_link=no
+    ;;
+  *mingw*)
+    SHLIB_SO_CFLAGS=""
+    SHLIB_SO_LDFLAGS='-Wl,--export-all-symbols -Wl,--enable-auto-import -Wl,--enable-runtime-pseudo-reloc -shared -o'
     SHLIB_SO_SUFFIX="dll"
     SHLIB_DYLIB_SUFFIX="dll"
     SHLIB_MAIN_LDFLAGS="-Wl,--enable-auto-import"
