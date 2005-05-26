@@ -28,6 +28,9 @@
               (not-zero? 0)
               (not-zero? -100))))
 
+(test "compose" 'a (lambda () ((compose car) '(a b c))))
+(test "compose" '(a b c) (lambda () ((compose) '(a b c))))
+
 (test "compose, apply$, map$" 32
       (lambda ()
         (define dot-product (compose (apply$ +) (map$ *)))

@@ -4637,16 +4637,27 @@ SRFI-1 (@xref{List library}), such as @code{fold$},
 @ref{List library}を参照してください。
 @c COMMON
 
-@defun compose f g h @dots{}
+@defun compose f @dots{}
 @c EN
-Combine two or more procedures.  Arguments must be procedures.
+Combine procedures.  All arguments must be procedures.
 When two procedures are given, @code{(compose f g)} is equivalent to
+the following code:
 @c JP
-2つ以上の手続きを結合します。引数は全て手続きでなければなりません。
+複数の手続きを結合します。引数は全て手続きでなければなりません。
 2つの引数が渡された時、@code{(compose f g)}は次の式と等価です。
 @c COMMON
 @example
 (lambda args (call-with-values (lambda () (apply g args)) f))
+@end example
+
+@c EN
+When more than two arguments are passed, they are composed
+as follows:
+@c JP
+2つ以上の引数が渡された場合は、次のように結合されます。
+@c COMMON
+@example
+(compose f g h ...) @equiv{} (compose (compose f g) h ...)
 @end example
 
 @c EN
@@ -4663,6 +4674,15 @@ Some examples:
 (define dot-product (compose (apply$ +) (map$ *)))
 (dot-product '(1 2 3) '(4 5 6)) @result{} 32
 @end example
+
+@c EN
+A couple of edge cases: if only one argument is given, the argument
+itself is returned.  If no argumens are given, the procedure @code{values} 
+is returned.
+@c JP
+境界のケース：ひとつだけ引数が渡された場合は、その引数がそのまま返されます。
+引数が全く渡されなかった場合は手続き@var{values}が返されます。
+@c COMMON
 @end defun
 
 @defun any-pred pred @dots{}

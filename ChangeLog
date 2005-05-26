@@ -1,3 +1,8 @@
+2005-05-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/procedure.scm (compose): allow zero or one arguments
+	  to compose (Suggested by Ueyama Rui).
+
 2005-05-24  Shiro Kawai  <shiro@acm.org>
 
 	* examples/spigot/Makefile.in : remove rpath link option, for it is

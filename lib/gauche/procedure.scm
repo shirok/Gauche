@@ -1,7 +1,7 @@
 ;;;
 ;;; procedure.scm - auxiliary procedure utilities.  to be autoloaded.
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: procedure.scm,v 1.12 2005-04-12 01:42:25 shirok Exp $
+;;;  $Id: procedure.scm,v 1.13 2005-05-26 09:57:49 shirok Exp $
 ;;;
 
 (define-module gauche.procedure
@@ -51,11 +51,14 @@
 (define (pa$ fn . args)                  ;partial apply
   (lambda more-args (apply fn (append args more-args))))
 
-(define (compose f g . more)
-  (if (null? more)
-      (lambda args
-        (call-with-values (lambda () (apply g args)) f))
-      (compose f (apply compose g more))))
+(define (compose . fns)
+  (cond ((null? fns) values)
+        ((null? (cdr fns)) (car fns))
+        ((null? (cddr fns))
+         (lambda args
+           (call-with-values (lambda () (apply (cadr fns) args)) (car fns))))
+        (else
+         (compose (car fns) (apply compose (cdr fns))))))
 
 (define (compose$ f) (pa$ compose f))
 
