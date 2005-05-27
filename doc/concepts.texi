@@ -381,7 +381,7 @@ Supported by the module @code{gauche.parameter}.
 Supported by the module @code{srfi-42}.
 @xref{Eager comprehensions}.
 @c JP
-@item SRFI-42, Eager comprehensions
+@item SRFI-42, 几帳面な内包表記
 モジュール@code{srfi-42}でサポートされます。
 @ref{Eager comprehensions}参照。
 @c COMMON
