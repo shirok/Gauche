@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.9 2005-05-24 23:28:37 shirok Exp $
+;;; $Id: intlib.stub,v 1.10 2005-05-28 09:14:16 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -469,20 +469,23 @@
    SCM_RETURN(h);")
 
 (define-cproc lvar-ref++! (lvar)
-  "SCM_ASSERT(SCM_VECTORP(lvar));
-  int i = SCM_INT_VALUE(SCM_VECTOR_ELEMENT(lvar, LVAR_OFFSET_REF_COUNT));
+  "int i;
+  SCM_ASSERT(SCM_VECTORP(lvar));
+  i = SCM_INT_VALUE(SCM_VECTOR_ELEMENT(lvar, LVAR_OFFSET_REF_COUNT));
   SCM_VECTOR_ELEMENT(lvar, LVAR_OFFSET_REF_COUNT) = SCM_MAKE_INT(i+1);
   SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc lvar-ref--! (lvar)
-  "SCM_ASSERT(SCM_VECTORP(lvar));
-  int i = SCM_INT_VALUE(SCM_VECTOR_ELEMENT(lvar, LVAR_OFFSET_REF_COUNT));
+  "int i;
+  SCM_ASSERT(SCM_VECTORP(lvar));
+  i = SCM_INT_VALUE(SCM_VECTOR_ELEMENT(lvar, LVAR_OFFSET_REF_COUNT));
   SCM_VECTOR_ELEMENT(lvar, LVAR_OFFSET_REF_COUNT) = SCM_MAKE_INT(i-1);
   SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc lvar-set++! (lvar)
-  "SCM_ASSERT(SCM_VECTORP(lvar));
-  int i = SCM_INT_VALUE(SCM_VECTOR_ELEMENT(lvar, LVAR_OFFSET_SET_COUNT));
+  "int i;
+  SCM_ASSERT(SCM_VECTORP(lvar));
+  i = SCM_INT_VALUE(SCM_VECTOR_ELEMENT(lvar, LVAR_OFFSET_SET_COUNT));
   SCM_VECTOR_ELEMENT(lvar, LVAR_OFFSET_SET_COUNT) = SCM_MAKE_INT(i+1);
   SCM_RETURN(SCM_UNDEFINED);")
 
