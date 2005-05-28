@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.h,v 1.9 2005-05-24 23:29:09 shirok Exp $
+ *  $Id: macro.h,v 1.10 2005-05-28 10:40:12 shirok Exp $
  */
 
 #ifndef GAUCHE_MACRO_H
@@ -80,7 +80,7 @@ SCM_CLASS_DECL(Scm_SyntaxRulesClass);
 #define SCM_SYNTAX_RULES_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_SYNTAX_RULES)
 
 SCM_EXTERN ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj lietrals,
-                                         ScmObj rules, ScmObj env);
+                                         ScmObj rules, ScmObj mod, ScmObj env);
 
 /*
  * Pattern variable reference object 

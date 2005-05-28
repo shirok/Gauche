@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.11 2005-05-28 10:24:36 shirok Exp $
+;;; $Id: intlib.stub,v 1.12 2005-05-28 10:40:12 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -173,7 +173,7 @@
 (define-cproc make-macro-transformer (name::<symbol> proc::<procedure>)
   (return "Scm_MakeMacroTransformerOld"))
 
-(define-cproc compile-syntax-rules (name literals rules env)
+(define-cproc compile-syntax-rules (name literals rules mod env)
   (return "Scm_CompileSyntaxRules"))
 
 (define-cproc call-macro-expander (mac expr env)

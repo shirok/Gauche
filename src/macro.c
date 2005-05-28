@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.57 2005-05-28 10:24:36 shirok Exp $
+ *  $Id: macro.c,v 1.58 2005-05-28 10:40:12 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -276,6 +276,7 @@ typedef struct {
     int pvcnt;                  /* counter of pattern variables */
     int maxlev;                 /* maximum level */
     ScmObj tvars;               /* list of identifies inserted in template */
+    ScmModule *mod;             /* module where this macro is defined */
     ScmObj env;                 /* compiler env of this macro definition */
 } PatternContext;
 
@@ -348,7 +349,7 @@ static ScmObj id_memq(ScmObj name, ScmObj list)
                Ctx->name, Ctx->form)
 
 /* convert literal symbols into identifiers */
-static ScmObj preprocess_literals(ScmObj literals, ScmObj env)
+static ScmObj preprocess_literals(ScmObj literals, ScmModule *mod, ScmObj env)
 {
     ScmObj lp, h = SCM_NIL, t = SCM_NIL;
     SCM_FOR_EACH(lp, literals) {
@@ -356,7 +357,7 @@ static ScmObj preprocess_literals(ScmObj literals, ScmObj env)
         if (SCM_IDENTIFIERP(lit))
             SCM_APPEND1(h, t, lit);
         else if (SCM_SYMBOLP(lit))
-            SCM_APPEND1(h, t, Scm_MakeIdentifier(SCM_SYMBOL(lit), NULL, env));
+            SCM_APPEND1(h, t, Scm_MakeIdentifier(SCM_SYMBOL(lit), mod, env));
         else
             Scm_Error("literal list contains non-symbol: %S", literals);
     }
@@ -445,7 +446,8 @@ static ScmObj compile_rule1(ScmObj form,
                 if (SCM_IDENTIFIERP(form)) {
                     id = form;
                 } else {
-                    id = Scm_MakeIdentifier(SCM_SYMBOL(form), NULL, ctx->env);
+                    id = Scm_MakeIdentifier(SCM_SYMBOL(form),
+                                            ctx->mod, ctx->env);
                 }
                 ctx->tvars = Scm_Cons(id, ctx->tvars);
                 return id;
@@ -462,6 +464,7 @@ static ScmObj compile_rule1(ScmObj form,
 static ScmSyntaxRules *compile_rules(ScmObj name,
                                      ScmObj literals,
                                      ScmObj rules,
+                                     ScmModule *mod,
                                      ScmObj env) /* compiler env */
 {
     PatternContext ctx;
@@ -474,7 +477,8 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
     if (Scm_Length(literals) < 0) goto badform;
 
     ctx.name = name;
-    ctx.literals = preprocess_literals(literals, env);
+    ctx.literals = preprocess_literals(literals, mod, env);
+    ctx.mod = mod;
     ctx.env = env;
 
     sr = make_syntax_rules(numRules);
@@ -903,7 +907,7 @@ static ScmObj synrule_transform(ScmObj self, ScmObj form, ScmObj env,
 
 /* NB: a stub for the new compiler (TEMPORARY) */
 ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj literals, ScmObj rules,
-                              ScmObj env)
+                              ScmObj mod, ScmObj env)
 {
     ScmSyntaxRules *sr;
 
@@ -911,7 +915,8 @@ ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj literals, ScmObj rules,
     else if (!SCM_SYMBOLP(name)) {
         Scm_Error("symbol required, but got %S", name);
     }
-    sr = compile_rules(name, literals, rules, env);
+    if (!SCM_MODULEP(mod)) Scm_Error("module required, but got %S", mod);
+    sr = compile_rules(name, literals, rules, SCM_MODULE(mod), env);
     return Scm_MakeMacro(SCM_SYMBOL(name), synrule_transform, (void*)sr);
 }
 

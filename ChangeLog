@@ -1,5 +1,9 @@
 2005-05-28  Shiro Kawai  <shiro@acm.org>
 
+	* src/macro.c: fixed module handing during syntax-rules compilation
+	  (passing current module explicitly instead of relying on
+	  CURRENT_MODULE).
+
 	* src/gauche/compaux.c (Scm_MakeIdentifier): API fix.  Removed
 	  Scm_MakeIdentifierWithModule.
 	* src/gauche/vm.h, src/macro.c, src/intlib.stub, src/gencomp,

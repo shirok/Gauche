@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.25 2005-05-28 10:24:36 shirok Exp $
+;;;  $Id: compile.scm,v 1.26 2005-05-28 10:40:12 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1686,7 +1686,8 @@
   (match form
     ((_ name ('syntax-rules (literal ...) rule ...))
      (let1 transformer
-         (compile-syntax-rules name literal rule (cenv-frames cenv))
+         (compile-syntax-rules name literal rule
+                               (cenv-module cenv) (cenv-frames cenv))
        (%insert-binding (cenv-module cenv) name transformer)
        ($const-undef)))
     (else
@@ -1751,6 +1752,7 @@
                           (match spec
                             (('syntax-rules (lit ...) rule ...)
                              (compile-syntax-rules n lit rule
+                                                   (cenv-module cenv)
                                                    (cenv-frames cenv)))
                             (else
                              (error "syntax-error: malformed transformer-spec:"
@@ -1768,6 +1770,7 @@
                           (match spec
                             (('syntax-rules (lit ...) rule ...)
                              (compile-syntax-rules n lit rule
+                                                   (cenv-module cenv)
                                                    (cenv-frames newenv)))
                             (else
                              (error "syntax-error: malformed transformer-spec:"
