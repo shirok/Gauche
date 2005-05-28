@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.9 2005-05-25 06:00:33 shirok Exp $
+;;;  $Id: gencomp,v 1.10 2005-05-28 09:15:10 shirok Exp $
 ;;;
 
 ;;;
@@ -190,14 +190,10 @@
 ;; calling cgen-emit.
 (define (emit-toplevel-executor topcodes)
   (cgen-decl "static ScmCompiledCode *toplevels[] = {")
-  (dolist (t topcodes) (cgen-decl "  NULL,"))
+  (dolist (t topcodes)
+    (cgen-decl (format "  SCM_COMPILED_CODE(~a)," (cgen-cexpr t))))
   (cgen-decl " NULL /*termination*/" "};")
 
-  (for-each-with-index
-   (lambda (index t)
-     (cgen-init (format "  toplevels[~a] = SCM_COMPILED_CODE(~a);"
-                        index (cgen-cexpr t))))
-   topcodes)
   (cgen-init (format "  Scm_VMExecuteToplevels(toplevels);"))
   )
 
