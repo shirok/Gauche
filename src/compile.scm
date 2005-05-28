@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.23 2005-05-23 11:07:05 shirok Exp $
+;;;  $Id: compile.scm,v 1.24 2005-05-28 10:11:46 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1402,6 +1402,8 @@
   ;; main body of pass1
   (cond
     ((pair? program)                    ; (op . args)
+     (unless (list? program)
+       (error "proper list required for function application:" program))
      (if (variable? (car program))
        (let1 head (cenv-lookup cenv (car program) SYNTAX)
          (cond
