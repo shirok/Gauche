@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.102 2005-05-25 23:44:09 shirok Exp $
+ *  $Id: vm.h,v 1.103 2005-05-28 10:24:37 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -158,16 +158,12 @@ SCM_CLASS_DECL(Scm_IdentifierClass);
 #define SCM_IDENTIFIER(obj)     ((ScmIdentifier*)(obj))
 #define SCM_IDENTIFIERP(obj)    SCM_XTYPEP(obj, SCM_CLASS_IDENTIFIER)
 
-SCM_EXTERN ScmObj Scm_MakeIdentifier(ScmSymbol *name, ScmObj env);
+SCM_EXTERN ScmObj Scm_MakeIdentifier(ScmSymbol *name, ScmModule *mod,
+                                     ScmObj env);
 SCM_EXTERN ScmObj Scm_CopyIdentifier(ScmIdentifier *id);
 SCM_EXTERN int    Scm_IdentifierBindingEqv(ScmIdentifier *id, ScmSymbol *sym,
 					   ScmObj env);
 SCM_EXTERN int    Scm_FreeVariableEqv(ScmObj var, ScmObj sym, ScmObj env);
-
-/* temporary: this should be proper Scm_MakeIdentifer after adoption of
-   the new compiler */
-SCM_EXTERN ScmObj Scm_MakeIdentifierWithModule(ScmSymbol *name, ScmObj env,
-                                               ScmModule *mod);
 
 /*
  * Escape handling

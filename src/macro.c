@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.56 2005-05-24 23:28:37 shirok Exp $
+ *  $Id: macro.c,v 1.57 2005-05-28 10:24:36 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -356,7 +356,7 @@ static ScmObj preprocess_literals(ScmObj literals, ScmObj env)
         if (SCM_IDENTIFIERP(lit))
             SCM_APPEND1(h, t, lit);
         else if (SCM_SYMBOLP(lit))
-            SCM_APPEND1(h, t, Scm_MakeIdentifier(SCM_SYMBOL(lit), env));
+            SCM_APPEND1(h, t, Scm_MakeIdentifier(SCM_SYMBOL(lit), NULL, env));
         else
             Scm_Error("literal list contains non-symbol: %S", literals);
     }
@@ -445,7 +445,7 @@ static ScmObj compile_rule1(ScmObj form,
                 if (SCM_IDENTIFIERP(form)) {
                     id = form;
                 } else {
-                    id = Scm_MakeIdentifier(SCM_SYMBOL(form), ctx->env);
+                    id = Scm_MakeIdentifier(SCM_SYMBOL(form), NULL, ctx->env);
                 }
                 ctx->tvars = Scm_Cons(id, ctx->tvars);
                 return id;

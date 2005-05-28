@@ -1,3 +1,10 @@
+2005-05-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/compaux.c (Scm_MakeIdentifier): API fix.  Removed
+	  Scm_MakeIdentifierWithModule.
+	* src/gauche/vm.h, src/macro.c, src/intlib.stub, src/gencomp,
+	  src/compile.scm: changed accordingly
+
 2005-05-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass1 program): added a check for function

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.24 2005-05-28 10:11:46 shirok Exp $
+;;;  $Id: compile.scm,v 1.25 2005-05-28 10:24:36 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1547,7 +1547,7 @@
 (define (ensure-identifier sym-or-id cenv)
   (if (identifier? sym-or-id)
     sym-or-id
-    (make-identifier sym-or-id '() (cenv-module cenv))))
+    (make-identifier sym-or-id (cenv-module cenv) '())))
 
 ;; Returns <list of args>, <# of reqargs>, <has optarg?>
 (define (parse-lambda-args formals)
@@ -1618,7 +1618,7 @@
                         (make-syntax ',(car formals) ,name)))))
 
 (define (global-id id)
-  (make-identifier id '() (find-module 'gauche)))
+  (make-identifier id (find-module 'gauche) '()))
 
 (define lambda. (global-id 'lambda))
 (define setter. (global-id 'setter))
@@ -1637,7 +1637,7 @@
        (error "syntax-error:" origform))
      (let1 cenv (cenv-add-name cenv (variable-name name))
        ($define oform flags
-                (make-identifier (unwrap-syntax name) '() module)
+                (make-identifier (unwrap-syntax name) module '())
                 (pass1 expr cenv))))
     (else (error "syntax-error:" oform))))
 
@@ -1723,7 +1723,7 @@
     ;; for execution time, the required information is recorded in
     ;; the compiled-code.
     ($define form '()
-             (make-identifier (unwrap-syntax name) '() module)
+             (make-identifier (unwrap-syntax name) module '())
              p1)
     ))
 

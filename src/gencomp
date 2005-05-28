@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.10 2005-05-28 09:15:10 shirok Exp $
+;;;  $Id: gencomp,v 1.11 2005-05-28 10:24:36 shirok Exp $
 ;;;
 
 ;;;
@@ -189,10 +189,10 @@
 ;; that calls them.  This is assumed to be the last procedure before
 ;; calling cgen-emit.
 (define (emit-toplevel-executor topcodes)
-  (cgen-decl "static ScmCompiledCode *toplevels[] = {")
+  (cgen-body "static ScmCompiledCode *toplevels[] = {")
   (dolist (t topcodes)
-    (cgen-decl (format "  SCM_COMPILED_CODE(~a)," (cgen-cexpr t))))
-  (cgen-decl " NULL /*termination*/" "};")
+    (cgen-body (format "  SCM_COMPILED_CODE(~a)," (cgen-cexpr t))))
+  (cgen-body " NULL /*termination*/" "};")
 
   (cgen-init (format "  Scm_VMExecuteToplevels(toplevels);"))
   )
@@ -234,7 +234,7 @@
     (format #t "static ScmCompiledCode ~a;\n" (ref self 'static-record-cname)))
   (body (self)
     (vectorize-code self)
-    (let1 cc (ref self 'value)
+    (let ((cc (ref self 'value)))
       (print "static ScmCompiledCode "(ref self 'static-record-cname)" =")
       (print "    SCM_COMPILED_CODE_CONST_INITIALIZER("
              (ref self 'code-vector-cname)", "
@@ -356,8 +356,10 @@
     (let ((name (cgen-cexpr (ref self 'id-name)))
           (cname (ref self 'c-name)))
       (or (and-let* ((modnam (ref self 'mod-name)))
-            (print "  "cname" = Scm_MakeIdentifierWithModule(SCM_SYMBOL("name"), SCM_NIL, SCM_MODULE(Scm_FindModule(SCM_SYMBOL("(cgen-cexpr modnam)"), TRUE)));"))
-          (print "  "cname" = Scm_MakeIdentifierWithModule(SCM_SYMBOL("name"), SCM_NIL, mod);"))))
+            (print "  "cname" = Scm_MakeIdentifier(SCM_SYMBOL("name"), "
+                   "SCM_MODULE(Scm_FindModule(SCM_SYMBOL("(cgen-cexpr modnam)"), TRUE)),"
+                   "SCM_NIL);"))
+          (print "  "cname" = Scm_MakeIdentifier(SCM_SYMBOL("name"), mod, SCM_NIL);"))))
   (static (self) #f)
   )
 

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.10 2005-05-28 09:14:16 shirok Exp $
+;;; $Id: intlib.stub,v 1.11 2005-05-28 10:24:36 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -87,11 +87,8 @@
 ;;   in the expanded form of the macro.  Hence we leave identifer?
 ;;   and identifier->symbol in extlib.stub.
 
-(define-cproc make-identifier-old (name::<symbol> env::<list>)
+(define-cproc make-identifier (name::<symbol> mod::<module> env::<list>)
   (return "Scm_MakeIdentifier"))
-
-(define-cproc make-identifier (name::<symbol> env::<list> mod::<module>)
-  (return "Scm_MakeIdentifierWithModule"))
 
 ;;
 ;; Symbol table
@@ -397,8 +394,7 @@
     if (SCM_SYMBOLP(name)) {
         ScmObj mod = SCM_VECTOR_ELEMENT(cenv, 0);
         SCM_ASSERT(SCM_MODULEP(mod));
-        return Scm_MakeIdentifierWithModule(SCM_SYMBOL(name), SCM_NIL,
-                                            SCM_MODULE(mod));
+        return Scm_MakeIdentifier(SCM_SYMBOL(name), SCM_MODULE(mod), SCM_NIL);
     } else {
         SCM_ASSERT(SCM_IDENTIFIERP(name));
         return name;
