@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.11 2005-05-28 10:24:36 shirok Exp $
+;;;  $Id: gencomp,v 1.12 2005-05-29 12:38:20 shirok Exp $
 ;;;
 
 ;;;
@@ -207,7 +207,7 @@
    (literal-vector :init-keyword :literal-vector)
                   ;; a list of the same size as code-vector, and locations
                   ;; where the code-vector has literals are filled by
-                  ;; corresponding <cgen-scheme-value>.
+                  ;; corresponding <cgen-literal>.
    (arg-info    :init-keyword :arg-info)
                   ;; literal for arg-info of the original compiled code
    (code-name   :init-keyword :code-name)
