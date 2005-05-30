@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: code.c,v 1.5 2005-05-24 23:28:37 shirok Exp $
+ *  $Id: code.c,v 1.6 2005-05-30 11:19:16 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -854,6 +854,11 @@ ScmObj Scm_CompiledCodeToList(ScmCompiledCode *cc)
     return h;
 }
 
+static ScmObj code_size_get(ScmObj cc)
+{
+    return SCM_MAKE_INT(SCM_COMPILED_CODE(cc)->codeSize);
+}
+
 static ScmObj code_maxstack_get(ScmObj cc)
 {
     return SCM_MAKE_INT(SCM_COMPILED_CODE(cc)->maxstack);
@@ -902,6 +907,7 @@ static ScmClassStaticSlotSpec code_slots[] = {
     SCM_CLASS_SLOT_SPEC("optional-args", code_optargs_get, NULL),
     SCM_CLASS_SLOT_SPEC("name", code_name_get, NULL),
     SCM_CLASS_SLOT_SPEC("full-name", Scm_CompiledCodeFullName, NULL),
+    SCM_CLASS_SLOT_SPEC("size", code_size_get, NULL),
     SCM_CLASS_SLOT_SPEC("max-stack", code_maxstack_get, NULL),
     SCM_CLASS_SLOT_SPEC("intermediate-form", code_iform_get, NULL),
     { NULL }

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.13 2005-05-30 07:50:12 shirok Exp $
+;;;  $Id: gencomp,v 1.14 2005-05-30 11:19:18 shirok Exp $
 ;;;
 
 ;;;
@@ -183,7 +183,26 @@
                   (cgen-cexpr var) (cgen-cexpr code))))
        seed)
       (else
-       (cons (cgen-literal (compile form (compile-module))) seed)))))
+       (let1 compiled-code (compile form (compile-module))
+         ;; We exclude a compiled code with only CONSTU-RET, which appears
+         ;; as the result of macro expansion sometimes.
+         (if (toplevel-constu-ret-code? compiled-code)
+           seed
+           (cons (cgen-literal (compile form (compile-module))) seed))))
+      )))
+
+;; check to see the compiled code only contains CONSTU-RET insn.
+;; the 'size slot test is a temporary one to make this work with 0.8.4
+;; preview version.  once 0.8.4 is out, it should be removed.
+(define (toplevel-constu-ret-code? compiled-code)
+  (and (eq? (ref compiled-code 'name) '%toplevel)
+       (if (assq 'size (class-slots <compiled-code>))
+         (= (ref compiled-code 'size) 1)
+         #t)
+       (let1 code (vm-code->list compiled-code)
+         (null? (cdr code))
+         (eq? (caar code) 'CONSTU-RET))))
+
 
 ;; given list of toplevel compiled codes, generate code in init
 ;; that calls them.  This is assumed to be the last procedure before
@@ -196,8 +215,6 @@
 
   (cgen-init (format "  Scm_VMExecuteToplevels(toplevels);"))
   )
-
-(define (code-name) (gensym "code_vector_"))
 
 ;; Literalize compiled code.
 ;;       

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.26 2005-05-28 10:40:12 shirok Exp $
+;;;  $Id: compile.scm,v 1.27 2005-05-30 11:19:17 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -3027,9 +3027,9 @@
 
 ;; predicates
 (define-inline (normal-context? ctx)
-  (or (eq? ctx 'normal/bottm) (eq? ctx 'normal/top)))
+  (or (eq? ctx 'normal/bottom) (eq? ctx 'normal/top)))
 (define-inline (stmt-context? ctx)
-  (or (eq? ctx 'stmt/bottm) (eq? ctx 'stmt/top)))
+  (or (eq? ctx 'stmt/bottom) (eq? ctx 'stmt/top)))
 (define-inline (tail-context? ctx)
   (eq? ctx 'tail))
 (define-inline (bottom-context? ctx)
