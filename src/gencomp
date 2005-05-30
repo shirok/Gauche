@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.12 2005-05-29 12:38:20 shirok Exp $
+;;;  $Id: gencomp,v 1.13 2005-05-30 07:50:12 shirok Exp $
 ;;;
 
 ;;;
@@ -211,51 +211,46 @@
    (arg-info    :init-keyword :arg-info)
                   ;; literal for arg-info of the original compiled code
    (code-name   :init-keyword :code-name)
-   (static-record-cname :init-keyword :static-record-cname)
    (inliner     :init-keyword :inliner)
    )
   (make (value)
     (let* ((cv  (vm-code->list value))
-           (cvn (gensym "code_vector_"))
-           (rec (gensym "code_"))
            (lv  (extract-literals cv))
+           (cvn (allocate-code-vector cv lv (ref value 'full-name)))
            (il  (ref value 'intermediate-form))
+           (code-name (cgen-literal (ref value 'name)))
+           (arg-info (cgen-literal (ref value 'arg-info)))
+           (inliner (and (vector? il) (cgen-literal il)))
            )
+      (define (init-thunk)
+        (print "    SCM_COMPILED_CODE_CONST_INITIALIZER(")
+        (format #t "            (ScmWord*)(~a), ~a,\n"
+                cvn (length cv))
+        (format #t "            ~a, ~a, ~a, ~a, SCM_NIL, ~a,\n"
+                (ref value 'max-stack)
+                (ref value 'required-args)
+                (ref value 'optional-args)
+                (if (cgen-literal-static? code-name)
+                  (cgen-cexpr code-name)
+                  "SCM_FALSE")
+                (cgen-cexpr arg-info))
+        (format #t "            ~a, ~a)"
+                (cgen-cexpr (cgen-literal (ref value 'parent)))
+                (if inliner
+                  (cgen-cexpr inliner)
+                  "SCM_FALSE")))
       (make <cgen-scheme-code> :value value
-            :c-name (format "SCM_OBJ(&~a)" rec)
-            :code-vector cv :code-vector-cname cvn
-            :static-record-cname rec
+            :c-name (cgen-allocate-static-datum 'runtime 'ScmCompiledCode
+                                                init-thunk)
+            :code-vector cv
+            :code-vector-cname cvn
             :literal-vector lv
-            :code-name (cgen-literal (ref value 'name))
-            :arg-info (cgen-literal (ref value 'arg-info))
-            :inliner (and (vector? il) (cgen-literal il))
-            )))
-  (decl (self)
-    (format #t "static ScmCompiledCode ~a;\n" (ref self 'static-record-cname)))
-  (body (self)
-    (vectorize-code self)
-    (let ((cc (ref self 'value)))
-      (print "static ScmCompiledCode "(ref self 'static-record-cname)" =")
-      (print "    SCM_COMPILED_CODE_CONST_INITIALIZER("
-             (ref self 'code-vector-cname)", "
-             (length (ref self 'code-vector))", ")
-      (print "        "(ref cc 'max-stack)", "
-             (ref cc 'required-args)", "
-             (ref cc 'optional-args)", "
-             (if (cgen-literal-static? (ref self 'code-name))
-               (cgen-cexpr (ref self 'code-name))
-               "SCM_FALSE")
-             ", ")
-      (print "        SCM_NIL, "(cgen-cexpr (ref self 'arg-info))", "
-             (cgen-cexpr (cgen-literal (ref cc 'parent)))", "
-             (if (ref self 'inliner)
-               (cgen-cexpr (ref self 'inliner))
-               "SCM_FALSE")
-             ");"))
-    )
+            :code-name code-name
+            :arg-info arg-info
+            :inliner inliner)))
   (init (self)
     (unless (cgen-literal-static? (ref self 'code-name))
-      (print "  "(ref self 'static-record-cname)".name = "
+      (print "  SCM_COMPILED_CODE("(ref self 'c-name)")->name = "
              (cgen-cexpr (ref self 'code-name))";"))
     (fill-code self))
   (static (self) #t)
@@ -280,52 +275,59 @@
                  (list* #f (cgen-literal (cadr code)) #f lits)))
           )))))
 
-(define (vectorize-code code)
-  (let ((cv   (ref code 'code-vector))
-        (cvn  (ref code 'code-vector-cname))
-        (lv   (ref code 'literal-vector)))
-    
-    (format #t "static ScmWord ~a[] = {\n" cvn)
-    (let loop ((cv cv)
-               (lv lv)
-               (count 0))
-      (unless (null? cv)
-        (let* ((insn (car cv))
-               (info (vm-find-insn-info (car insn))))
-          ;; KLUDGE: we need to emit C code that can be compiled on both
-          ;; 32bit and 64bit platforms.  An instructions with one parameter
-          ;; can be a negative integer, though vm-build-insn returns a value
-          ;; that wraps around by 32bit integer.
-          (let1 insnval (vm-build-insn insn)
-            (if (> insnval #x80000000)
-              (format #t "  -0x~8,'0x,    /* ~3d ~s */\n"
-                      (- #x100000000 insnval) count insn)
-              (format #t "  0x~8,'0x,    /* ~3d ~s */\n"
-                      insnval count insn)))
-          (case (ref info 'operand-type)
-            ((none) (loop (cdr cv) (cdr lv) (+ count 1)))
-            ((addr)
-             (format #t "  SCM_WORD(&~a[~a]),  /*    ~3d */\n"
-                     cvn (cadr cv) (cadr cv))
-             (loop (cddr cv) (cddr lv) (+ count 2)))
-            ((obj code codes)
-             (if (cgen-literal-static? (cadr lv))
-               (format #t "  SCM_WORD(~a), /* ~a */\n"
-                       (cgen-cexpr (cadr lv)) (cadr cv))
-               (format #t "  SCM_WORD(SCM_UNDEFINED), /* ~a (to be filled) */\n"
-                       (cadr cv)))
-             (loop (cddr cv) (cddr lv) (+ count 2)))
-            ((obj+addr)
-             (if (cgen-literal-static? (cadr lv))
-               (format #t "  SCM_WORD(~a), /* ~a */\n"
-                       (cgen-cexpr (cadr lv)) (cadr cv))
-               (format #t "  SCM_WORD(SCM_UNDEFINED), /* ~a (to be filled) */\n"
-                       (cadr cv)))
-             (format #t "  SCM_WORD(&~a[~a]),  /*    ~3d */\n"
-                     cvn (caddr cv) (caddr cv))
-             (loop (cdddr cv) (cdddr lv) (+ count 3)))
-            ))))
-    (print "};")))
+(define (allocate-code-vector cv lv full-name)
+
+  (define (alloc-word initval)
+    (cgen-allocate-static-datum 'runtime 'ScmWord initval))
+
+  (define (loop cv lv count first-cexpr)
+    (if (null? cv)
+      first-cexpr
+      (let* ((insn (car cv))
+             (info (vm-find-insn-info (car insn)))
+             (insnval (vm-build-insn insn))
+             (name-info (if first-cexpr ""
+                            (format "/* ~a */\n    " full-name)))
+             (insn-cexpr
+              (alloc-word
+               ;; We emit it as signed integer so that 64bit machine
+               ;; correctly handles negative parameter value.
+               (if (> insnval #x80000000)
+                 (format "~a-0x~8,'0x   /* ~3d ~s */"
+                         name-info (- #x100000000 insnval) count insn)
+                 (format "~a0x~8,'0x    /* ~3d ~s */"
+                         name-info insnval count insn))))
+             (first-cexpr (or first-cexpr insn-cexpr)))
+        (case (ref info 'operand-type)
+          ((none)
+           (loop (cdr cv) (cdr lv) (+ count 1) first-cexpr))
+          ((addr)
+           (alloc-word
+            (format "SCM_WORD((ScmWord*)~a + ~d)"
+                    first-cexpr (cadr cv)))
+           (loop (cddr cv) (cddr lv) (+ count 2) first-cexpr))
+          ((obj code codes)
+           (alloc-word
+            (if (cgen-literal-static? (cadr lv))
+              (format "SCM_WORD(~a) /* ~a */"
+                      (cgen-cexpr (cadr lv)) (cadr cv))
+              (format "SCM_WORD(SCM_UNDEFINED) /* ~a */"
+                      (cadr cv))))
+           (loop (cddr cv) (cddr lv) (+ count 2) first-cexpr))
+          ((obj+addr)
+           (alloc-word
+            (if (cgen-literal-static? (cadr lv))
+              (format "SCM_WORD(~a) /* ~a */"
+                      (cgen-cexpr (cadr lv)) (cadr cv))
+              (format "SCM_WORD(SCM_UNDEFINED) /* ~a */"
+                      (cadr cv))))
+           (alloc-word
+            (format "SCM_WORD((ScmWord*)~a + ~d)  /*    ~3d */"
+                    first-cexpr (caddr cv) (caddr cv)))
+           (loop (cdddr cv) (cdddr lv) (+ count 3) first-cexpr))
+          ))))
+
+  (loop cv lv 0 #f))
 
 (define (fill-code code)
   (let ((cvn  (ref code 'code-vector-cname))
@@ -333,7 +335,8 @@
     (for-each-with-index
      (lambda (index lit)
        (when (and lit (not (cgen-literal-static? lit)))
-         (print "  "cvn"["index"] = SCM_WORD("(cgen-cexpr lit)");")))
+         (format #t "  ((ScmWord*)~a)[~a] = SCM_WORD(~a);\n"
+                 cvn index (cgen-cexpr lit))))
      lv)
     ))
 

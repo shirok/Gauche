@@ -2,6 +2,7 @@
 
 	* lib/gauche/cgen.scm: revised handling of static C data for Scheme
 	  literals to avoid forward-reference problem.
+	* src/gencomp: ditto
 
 2005-05-28  Shiro Kawai  <shiro@acm.org>
 
