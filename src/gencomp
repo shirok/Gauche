@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.14 2005-05-30 11:19:18 shirok Exp $
+;;;  $Id: gencomp,v 1.15 2005-05-30 11:52:33 shirok Exp $
 ;;;
 
 ;;;
@@ -219,16 +219,9 @@
 ;; Literalize compiled code.
 ;;       
 (define-cgen-literal <cgen-scheme-code> <compiled-code>
-  ((code-vector :init-keyword :code-vector)
-   (code-vector-cname :init-keyword :code-vector-cname)
-   (literal-vector :init-keyword :literal-vector)
-                  ;; a list of the same size as code-vector, and locations
-                  ;; where the code-vector has literals are filled by
-                  ;; corresponding <cgen-literal>.
-   (arg-info    :init-keyword :arg-info)
-                  ;; literal for arg-info of the original compiled code
-   (code-name   :init-keyword :code-name)
-   (inliner     :init-keyword :inliner)
+  ((code-name   :init-keyword :code-name)
+   (code-vector-c-name :init-keyword :code-vector-c-name)
+   (literals    :init-keyword :literals)
    )
   (make (value)
     (let* ((cv  (vm-code->list value))
@@ -259,12 +252,9 @@
       (make <cgen-scheme-code> :value value
             :c-name (cgen-allocate-static-datum 'runtime 'ScmCompiledCode
                                                 init-thunk)
-            :code-vector cv
-            :code-vector-cname cvn
-            :literal-vector lv
+            :code-vector-c-name cvn
             :code-name code-name
-            :arg-info arg-info
-            :inliner inliner)))
+            :literals lv)))
   (init (self)
     (unless (cgen-literal-static? (ref self 'code-name))
       (print "  SCM_COMPILED_CODE("(ref self 'c-name)")->name = "
@@ -273,6 +263,9 @@
   (static (self) #t)
   )
 
+;; Returns a list of the same length of CODE, which includes the
+;; <cgen-literal>s corresponding to the literal values in CODE.
+;; #f is filled in the places that don't have corresponding litaral value.
 (define (extract-literals code)
   (let loop ((code code)
              (lits '()))
@@ -347,8 +340,8 @@
   (loop cv lv 0 #f))
 
 (define (fill-code code)
-  (let ((cvn  (ref code 'code-vector-cname))
-        (lv   (ref code 'literal-vector)))
+  (let ((cvn  (ref code 'code-vector-c-name))
+        (lv   (ref code 'literals)))
     (for-each-with-index
      (lambda (index lit)
        (when (and lit (not (cgen-literal-static? lit)))
