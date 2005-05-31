@@ -1,5 +1,7 @@
 2005-05-30  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.8.4
+
 	* src/compile.scm (stmt-context): fixed typo.
 	* src/gencomp (compile-toplevel-form): avoid emitting useless toplevel
 	  code that only contains CONSTU-RET instruction (such code is
