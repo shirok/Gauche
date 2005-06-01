@@ -1,3 +1,8 @@
+2005-05-31  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen.scm (cgen-allocate-static-datum): avoid generating
+	  cast exprsesion when the value can be used as an lvalue.
+
 2005-05-30  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.8.4
