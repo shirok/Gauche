@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.63 2005-05-24 23:28:38 shirok Exp $
+ *  $Id: system.c,v 1.64 2005-06-01 18:47:54 shirok Exp $
  */
 
 #include <stdio.h>
@@ -616,7 +616,7 @@ static void time_nsec_set(ScmTime *t, ScmObj val)
         Scm_Error("real number required, but got %S", val);
     }
     if ((l = Scm_GetInteger(val)) >= 1000000000) {
-        Scm_Error("nanoseconds out of range: %l", l);
+        Scm_Error("nanoseconds out of range: %ld", l);
     }
     t->nsec = l;
 }

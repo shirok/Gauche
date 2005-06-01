@@ -1,3 +1,8 @@
+2005-06-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (time_nsec_set): fixed a format string bug in the
+	  error message that caused double fault.
+
 2005-05-31  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen.scm (cgen-allocate-static-datum): avoid generating
