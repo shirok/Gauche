@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.27 2005-05-30 11:19:17 shirok Exp $
+;;;  $Id: compile.scm,v 1.28 2005-06-02 09:43:21 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1305,7 +1305,10 @@
               (errorf "Compile Error: ~a\n" (slot-ref e 'message)))))
       (lambda ()
         (let1 p1 (pass1 program cenv)
-          (pass3 (pass2 p1) '() 0 0 '%toplevel #f #f))))))
+          (pass3 (pass2 p1)
+                 (make-compiled-code-builder 0 0 '%toplevel #f #f)
+                 '() 'tail)))
+      )))
 
 ;; stub for future extension
 (define (compile-partial program module)
@@ -1320,12 +1323,7 @@
 (define (compile-toplevel-lambda oform name formals body module)
   (let* ((cenv (make-cenv module '() name))
          (iform (pass2 (pass1/lambda oform formals body cenv #f))))
-    (make-toplevel-closure
-     (pass3 ($lambda-body iform)
-            (list ($lambda-lvars iform))
-            ($lambda-reqargs iform)
-            ($lambda-optarg iform)
-            ($lambda-name iform) #f #f))))
+    (make-toplevel-closure (pass3/lambda iform #f '()))))
   
 ;; For testing
 (define (compile-p1 program)
@@ -1335,8 +1333,9 @@
   (pp-iform (pass2 (pass1 program (make-bottom-cenv)))))
 
 (define (compile-p3 program)
-  (vm-dump-code (pass3 (pass2 (pass1 program (make-bottom-cenv))) '() 0 0
-                       '%toplevel #f #f)))
+  (vm-dump-code (pass3 (pass2 (pass1 program (make-bottom-cenv)))
+                       (make-compiled-code-builder 0 0 '%toplevel #f #f)
+                       '() 'tail)))
 
 ;;===============================================================
 ;; Pass 1
@@ -3055,9 +3054,8 @@
 ;;
 ;; Pass 3 main entry
 ;;
-(define (pass3 iform initial-renv reqargs optargs name parent intform)
-  (let* ((ccb (make-compiled-code-builder reqargs optargs name parent intform))
-         (maxstack (pass3/rec iform ccb initial-renv 'tail)))
+(define (pass3 iform ccb initial-renv ctx)
+  (let1 maxstack (pass3/rec iform ccb initial-renv ctx)
     (compiled-code-emit0! ccb RET)
     (compiled-code-finish-builder ccb maxstack)
     ccb))
@@ -3361,15 +3359,7 @@
        ((has-tag? init $LAMBDA)
         (let1 args ($lambda-lvars init)
           (partition-letrec-inits (cdr inits) ccb renv (+ cnt 1)
-                                  (cons (pass3 ($lambda-body init)
-                                               (if (null? args)
-                                                 renv
-                                                 (cons args renv))
-                                               ($lambda-reqargs init)
-                                               ($lambda-optarg init)
-                                               ($lambda-name init)
-                                               ccb #f)
-                                        closures)
+                                  (cons (pass3/lambda init ccb renv) closures)
                                   others)))
        ((has-tag? init $CONST)
         (partition-letrec-inits (cdr inits) ccb renv (+ cnt 1)
@@ -3415,19 +3405,20 @@
      )))
 
 (define (pass3/$LAMBDA iform ccb renv ctx)
-  (let1 body
-      (pass3 ($lambda-body iform)
-             (if (null? ($lambda-lvars iform))
-               renv
-               (cons ($lambda-lvars iform) renv))
-             ($lambda-reqargs iform) ($lambda-optarg iform)
-             ($lambda-name iform)
-             ccb
-             (case ($lambda-flag iform)
-               ((inlined) (pack-iform iform))
-               (else #f)))
-    (compiled-code-emit0oi! ccb CLOSURE body ($*-src iform))
-    0))
+  (compiled-code-emit0oi! ccb CLOSURE (pass3/lambda iform ccb renv)
+                          ($*-src iform))
+  0)
+
+(define (pass3/lambda iform ccb renv)
+  (pass3 ($lambda-body iform)
+         (make-compiled-code-builder ($lambda-reqargs iform)
+                                     ($lambda-optarg iform)
+                                     ($lambda-name iform)
+                                     ccb #f)
+         (if (null? ($lambda-lvars iform))
+           renv
+           (cons ($lambda-lvars iform) renv))
+         'tail))
 
 (define (pass3/$LABEL iform ccb renv ctx)
   (let ((label ($label-label iform)))
