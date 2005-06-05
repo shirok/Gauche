@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.411 2005-05-24 23:28:37 shirok Exp $
+ *  $Id: gauche.h,v 1.412 2005-06-05 23:58:45 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2567,7 +2567,7 @@ typedef struct ScmHeaderRec ScmSysFdset;
 #endif /*!HAVE_SELECT*/
 
 /* other stuff */
-SCM_EXTERN int    Scm_Mkstemp(char *template);
+SCM_EXTERN int    Scm_Mkstemp(char *tmpl);
 SCM_EXTERN ScmObj Scm_SysMkstemp(ScmString *tmpl);
 
 /*---------------------------------------------------
