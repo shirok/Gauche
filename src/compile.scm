@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.28 2005-06-02 09:43:21 shirok Exp $
+;;;  $Id: compile.scm,v 1.29 2005-06-06 09:59:29 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1633,7 +1633,7 @@
                    oform flags module cenv))
     ((_ name expr)
      (unless (variable? name)
-       (error "syntax-error:" origform))
+       (error "syntax-error:" oform))
      (let1 cenv (cenv-add-name cenv (variable-name name))
        ($define oform flags
                 (make-identifier (unwrap-syntax name) module '())
@@ -1666,7 +1666,7 @@
        ($const-undef)))
     ((_ name expr)
      (unless (variable? name)
-       (error "syntax-error:" origform))
+       (error "syntax-error:" oform))
      ;; TODO: macro autoload
      (let1 trans (make-macro-transformer name (eval expr module))
        (%insert-binding module name trans)

@@ -1,3 +1,7 @@
+2005-06-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm : typo fix (Patch from Hisazumi Kenji).
+
 2005-06-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (time_nsec_set): fixed a format string bug in the
