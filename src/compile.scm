@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.29 2005-06-06 09:59:29 shirok Exp $
+;;;  $Id: compile.scm,v 1.30 2005-06-08 17:21:33 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1927,6 +1927,10 @@
       (() (pass1/body body '() cenv))
       (((exp) . more)
        ($if form (pass1 exp (cenv-sans-name cenv))
+            (process-binds more body cenv)
+            ($it)))
+      (((? variable? var) . more)
+       ($if form (pass1 var (cenv-sans-name cenv))
             (process-binds more body cenv)
             ($it)))
       ((((? variable? var) init) . more)
