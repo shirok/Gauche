@@ -391,7 +391,7 @@ Supported by the module @code{srfi-42}.
 Supported as an autoloaded macro.
 @xref{Requiring extensions}.
 @c JP
-@item SRFI-55, require 拡張
+@item SRFI-55, require-extension
 オートロードマクロとしてサポートされます。
 @ref{Requiring extensions}参照。
 @c COMMON
