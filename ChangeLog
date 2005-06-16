@@ -1,5 +1,7 @@
 2005-06-16  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen.scm (cgen-emit-c): added some kludge to save cygwin.
+
 	* src/number.c : let division by zero yields infinity instead of
 	  an error.  Adopted a notation of 1/0 and -1/0 for positive and
 	  negative infinity, following the current srfi-70 draft.
