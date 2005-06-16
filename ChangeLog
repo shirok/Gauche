@@ -1,5 +1,9 @@
 2005-06-15  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen.scm (cgen-with-output-file): close the port
+	  before unlinking or renaming the file, since Win32 doesn't like
+	  a unclosed file to be removed.
+
 	* src/compile.scm (inliner/-): There was a bug in constant-folding
 	  path that yields a wrong value.  Gosh!
 
