@@ -1,3 +1,8 @@
+2005-06-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (inliner/-): There was a bug in constant-folding
+	  path that yields a wrong value.  Gosh!
+
 2005-06-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (and-let*): fix to handle lone BOUND-VARIABLE

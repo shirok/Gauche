@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.30 2005-06-08 17:21:33 shirok Exp $
+;;;  $Id: compile.scm,v 1.31 2005-06-16 07:35:59 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -4019,7 +4019,7 @@
         ((x)
          (receive (num tree) (check-numeric-constant x cenv)
            (if num
-             (or tree ($const (- num)))
+             ($const (- num))
              ($asm form `(,NEGATE) (list tree)))))
         ((x y . more)
          (receive (xval xtree) (check-numeric-constant x cenv)
