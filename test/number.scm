@@ -171,7 +171,7 @@
 
 (test* "rational reader" '(1 #t)
       (rational-test (string->number "3/03")))
-(test* "rational reader" #f
+(test* "rational reader" '(1/0 #f)
       (rational-test (string->number "3/0")))
 (test* "rational reader" #f
       (rational-test (string->number "3/3/4")))
@@ -332,7 +332,7 @@
 (test* "complex reader" '(0.0 0.5) (decompose-complex 0+1/2i))
 (test* "complex reader" '(0.0 -0.5) (decompose-complex -1/2i))
 (test* "complex reader" 0.5 (decompose-complex 1/2-0/2i))
-(test* "complex reader" #f (decompose-complex (string->number "1/2-1/0i")))
+(test* "complex reader" '(0.5 -1/0) (decompose-complex (string->number "1/2-1/0i")))
 
 (test* "complex reader (polar)" (make-polar 1.0 1.0) 1.0@1.0)
 (test* "complex reader (polar)" (make-polar 1.0 -1.0) 1.0@-1.0)

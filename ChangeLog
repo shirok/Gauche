@@ -1,3 +1,10 @@
+2005-06-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c : let division by zero yields infinity instead of
+	  an error.  Adopted a notation of 1/0 and -1/0 for positive and
+	  negative infinity, following the current srfi-70 draft.
+	  Treatment of NaN should be considered later.
+
 2005-06-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen.scm (cgen-with-output-file): close the port

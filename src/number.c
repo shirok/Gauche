@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.118 2005-04-12 01:42:27 shirok Exp $
+ *  $Id: number.c,v 1.119 2005-06-16 21:41:52 shirok Exp $
  */
 
 #include <math.h>
@@ -139,7 +139,7 @@ ScmObj Scm_MakeFlonum(double d)
 
 ScmObj Scm_MakeFlonumToNumber(double d, int exact)
 {
-    if (exact) {
+    if (exact && !SCM_IS_INF(d)) {
         /* see if d can be demoted to integer */
         double i, f;
         f = modf(d, &i);
@@ -762,21 +762,17 @@ ScmObj Scm_Reciprocal(ScmObj obj)
 {
     if (SCM_INTP(obj)) {
         long val = SCM_INT_VALUE(obj);
-        if (val == 0) Scm_Error("divide by zero");
         obj = Scm_MakeFlonum(1.0/(double)val);
     } else if (SCM_BIGNUMP(obj)) {
         double val = Scm_BignumToDouble(SCM_BIGNUM(obj));
-        if (val == 0.0) Scm_Error("divide by zero");
         obj = Scm_MakeFlonum(1.0/val);
     } else if (SCM_FLONUMP(obj)) {
         double val = SCM_FLONUM_VALUE(obj);
-        if (val == 0.0) Scm_Error("divide by zero");
         obj = Scm_MakeFlonum(1.0/val);
     } else if (SCM_COMPLEXP(obj)) {
         double r = SCM_COMPLEX_REAL(obj), r1;
         double i = SCM_COMPLEX_IMAG(obj), i1;
         double d;
-        if (r == 0.0 && i == 0.0) Scm_Error("divide by zero");
         d = r*r + i*i;
         r1 = r/d;
         i1 = -i/d;
@@ -1266,7 +1262,6 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
                                     Scm_MakeFlonumToNumber(result_real, exact),
                                     arg1, args);
             }
-            if (div_real == 0) Scm_Error("divide by zero");
             result_real /= div_real;
             if (SCM_NULLP(args))
                 return Scm_MakeFlonumToNumber(result_real, exact);
@@ -1297,7 +1292,6 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
                                     arg1, args);
             }
             d = div_real*div_real + div_imag*div_imag;
-            if (d == 0.0) Scm_Error("divide by zero");
             r = (result_real*div_real + result_imag*div_imag)/d;
             i = (result_imag*div_real - result_real*div_imag)/d;
             result_real = r;
@@ -1387,7 +1381,7 @@ ScmObj Scm_Quotient(ScmObj x, ScmObj y, ScmObj *rem)
         goto BADARG;
     }
   DIVBYZERO:
-    Scm_Error("divide by zero");
+    Scm_Error("attempt to calculate a quotient by zero");
   BADARGY:
     x = y;
   BADARG:
@@ -1493,7 +1487,7 @@ ScmObj Scm_Modulo(ScmObj x, ScmObj y, int remp)
         goto BADARG;
     }
   DIVBYZERO:
-    Scm_Error("divide by zero");
+    Scm_Error("attempt to take a modulo or remainder by zero");
   BADARGY:
     x = y;
   BADARG:
@@ -1934,7 +1928,7 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
     if (val < 0.0) *buf++ = '-', buflen--;
     else if (plus_sign) *buf++ = '+', buflen--;
     if (SCM_IS_INF(val)) {
-        strcpy(buf, "#<inf>");
+        strcpy(buf, "1/0");
     } else if (SCM_IS_NAN(val)) {
         strcpy(buf, "#<nan>");
     } else if (val == 0.0) {
@@ -2448,8 +2442,11 @@ static ScmObj read_real(const char **strp, int *lenp,
             if (SCM_FALSEP(denom)) return SCM_FALSE;
             if (denom == SCM_MAKE_INT(0)) {
                 if (lensave > *lenp) {
-                    return numread_error("(zero in denominator of rational number)",
-                                         ctx);
+                    if (minusp) {
+                        return Scm_MakeFlonum(-1.0/0.0);
+                    } else {
+                        return Scm_MakeFlonum(1.0/0.0);
+                    }
                 } else {
                     return SCM_FALSE;
                 }
