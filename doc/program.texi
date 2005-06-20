@@ -659,7 +659,7 @@ If you find your script isn't running fast enough,
 there are several possibilities to improve its performance.
 @c JP
 自分のスクリプトのスピードが十分に出ないというときには、
-性能を改善するポイントとして考えられ点がいくつかあります。
+性能を改善するポイントとして考えられる点がいくつかあります。
 @c COMMON
 
 @c EN
@@ -879,7 +879,7 @@ instead of calling the smaller-unit ones.  (2) Use @code{with-port-locking}
 @strong{Strings}: Because of the multibyte strings, two operations
 are particularly heavy in Gauche: string mutation and indexed string access.
 It is a design choice; we encourage the programming style that
-avois those operations.  When you sequentially access the string,
+avoids those operations.  When you sequentially access the string,
 string ports (see @ref{String ports}) provides a cleaner and
 more efficient way.
 When you search and retrieve a substring, there are various
