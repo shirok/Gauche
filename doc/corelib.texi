@@ -3913,18 +3913,25 @@ These optional arguments are Gauche's extension.
 @c COMMON
 @end defun
 
-@defun vector-copy vector &optional start end
+@defun vector-copy vector &optional start end fill
+[SRFI-43]
 @c EN
 Copies a vector @var{vector}.  Optional @var{start} and @var{end}
 arguments can be used to limit the range of @var{vector} to be copied.
+If the range specified by @var{start} and @var{end} falls outside of
+the original @var{vector}, the @var{fill} value is used to fill
+the result vector.
 @c JP
 ベクタ@var{vector}をコピーします。引数@var{start}と@var{end}を与えることで
 コピーされる範囲を制限することができます。
+@var{start}と@var{end}で指定される範囲が元の@var{vector}の範囲を越えた
+場合は、その部分が@var{fill}で埋められます。
 @c COMMON
 
 @example
 (vector-copy '#(1 2 3 4 5))     @result{} #(1 2 3 4 5)
 (vector-copy '#(1 2 3 4 5) 2 4) @result{} #(3 4)
+(vector-copy '#(1 2 3 4 5) 3 7 #f) @result{} #(4 5 #f #f)
 @end example
 @end defun
 

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.236 2005-05-22 11:00:22 shirok Exp $
+;;; $Id: extlib.stub,v 1.237 2005-06-21 19:33:41 shirok Exp $
 ;;;
 
 "
@@ -246,7 +246,7 @@
 ;; is given.
 (define-cproc %sort (seq)
   "if (SCM_VECTORP(seq)) {
-    ScmObj r = Scm_VectorCopy(SCM_VECTOR(seq), 0, -1);
+    ScmObj r = Scm_VectorCopy(SCM_VECTOR(seq), 0, -1, SCM_UNDEFINED);
     Scm_SortArray(SCM_VECTOR_ELEMENTS(r), SCM_VECTOR_SIZE(r), SCM_FALSE);
     SCM_RETURN(r);
   } else if (Scm_Length(seq) >= 0) {
@@ -652,7 +652,8 @@
 ;;
 
 (define-cproc vector-copy (v::<vector>
-                           &optional (start::<fixnum> 0) (end::<fixnum> -1))
+                           &optional
+                           (start::<fixnum> 0) (end::<fixnum> -1) fill)
   (return "Scm_VectorCopy"))
 
 ;; weak vector

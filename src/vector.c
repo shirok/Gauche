@@ -1,7 +1,7 @@
 /*
  * vector.c - vector implementation
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vector.c,v 1.21 2003-07-05 03:29:12 shirok Exp $
+ *  $Id: vector.c,v 1.22 2005-06-21 19:33:43 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -126,14 +126,23 @@ ScmObj Scm_VectorFill(ScmVector *vec, ScmObj fill, int start, int end)
     return SCM_OBJ(vec);
 }
 
-ScmObj Scm_VectorCopy(ScmVector *vec, int start, int end)
+ScmObj Scm_VectorCopy(ScmVector *vec, int start, int end, ScmObj fill)
 {
     int i, len = SCM_VECTOR_SIZE(vec);
     ScmVector *v;
-    SCM_CHECK_START_END(start, end, len);
-    v = make_vector(end - start);
-    for (i=0; i<end-start; i++) {
-        SCM_VECTOR_ELEMENT(v, i) = SCM_VECTOR_ELEMENT(vec, i+start);
+    if (end < 0) end = len;
+    if (end <= start) {
+        v = make_vector(0);
+    } else {
+        if (SCM_UNBOUNDP(fill)) fill = SCM_UNDEFINED;
+        v = make_vector(end - start);
+        for (i=0; i<end-start; i++) {
+            if (i+start < 0 || i+start >= len) {
+                SCM_VECTOR_ELEMENT(v, i) = fill;
+            } else {
+                SCM_VECTOR_ELEMENT(v, i) = SCM_VECTOR_ELEMENT(vec, i+start);
+            }
+        }
     }
     return SCM_OBJ(v);
 }
