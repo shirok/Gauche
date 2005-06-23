@@ -1,5 +1,5 @@
 # Spec file to build Gauche RPM package
-# $Id: Gauche.spec,v 1.40 2005-06-01 00:35:02 shirok Exp $
+# $Id: Gauche.spec,v 1.41 2005-06-23 04:17:54 shirok Exp $
 #
 # In order to build different encoding-specific packages (like
 # Gauche-euc-jp, etc) from a single source rpm, the actual package
@@ -21,7 +21,7 @@ Name: Gauche
 Version: %{version}
 Release: 1
 Source: Gauche-%{version}.tgz
-CopyRight: revised BSD
+License: revised BSD
 Group: Development/Languages
 Packager: Shiro Kawai (shiro@acm.org)
 Buildroot: %{_tmppath}/rpm
@@ -38,7 +38,7 @@ It can handle multibyte character strings natively.
 Summary: Scheme script interpreter with multibyte character handling
 Group: Development/Languages
 Provides: Gauche libgauche.so
-Copyright: revised BSD
+License: revised BSD
 Requires: Gauche-common
 %description %{encoding}
 Gauche is a Scheme interpreter conforming Revised^5 Report on
@@ -50,7 +50,7 @@ This package is compiled with %{encoding} as the native character encoding.
 %package common
 Summary: Scheme script interpreter with multibyte character handling
 Group: Development/Languages
-Copyright: revised BSD
+License: revised BSD
 %description common
 Gauche is a Scheme interpreter conforming Revised^5 Report on
 Algorithmic Language Scheme.  It is designed for rapid development
@@ -63,7 +63,7 @@ package as well.
 %package gdbm-%{encoding}
 Summary: gdbm binding for Gauche Scheme system
 Group: Development/Languages
-Copyright: GPL
+License: GPL
 Provides: Gauche-gdbm
 Requires: gdbm >= 1.8.0, Gauche-%{encoding}
 %description gdbm-%{encoding}

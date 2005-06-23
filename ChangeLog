@@ -1,3 +1,11 @@
+2005-06-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/Gauche.spec : change Copyright: entry to License: for newer
+	  version of rpm.
+	* src/gauche.h, src/string.c, ext/uvector/uvector.c.tmpl,
+	  ext/mt-random/mt-lib.stub, ext/digest/sha1.stub,
+	  ext/digest/md5.stub : code cleanup to eliminate warnings.
+
 2005-06-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/vector.c (Scm_VectorCopy): added fill argument to adopt srfi-43.

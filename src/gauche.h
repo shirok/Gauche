@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.413 2005-06-21 19:33:41 shirok Exp $
+ *  $Id: gauche.h,v 1.414 2005-06-23 04:18:21 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -887,7 +887,7 @@ struct ScmStringRec {
 #define SCM_STRING(obj)         ((ScmString*)(obj))
 #define SCM_STRING_LENGTH(obj)  (SCM_STRING(obj)->length)
 #define SCM_STRING_SIZE(obj)    (SCM_STRING(obj)->size)
-#define SCM_STRING_START(obj)   ((unsigned char *)SCM_STRING(obj)->start)
+#define SCM_STRING_START(obj)   (SCM_STRING(obj)->start)
 
 #define SCM_STRING_INCOMPLETE_P(obj) (SCM_STRING(obj)->incomplete)
 #define SCM_STRING_IMMUTABLE_P(obj)  (SCM_STRING(obj)->immutable)

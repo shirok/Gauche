@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: string.c,v 1.73 2004-01-17 01:34:48 shirok Exp $
+ *  $Id: string.c,v 1.74 2005-06-23 04:18:21 shirok Exp $
  */
 
 #include <stdio.h>
@@ -405,7 +405,7 @@ ScmChar Scm_StringRef(ScmString *str, int pos)
         Scm_Error("incomplete string not allowed : %S", str);
     if (pos < 0 || pos >= len) Scm_Error("argument out of range: %d", pos);
     if (SCM_STRING_SINGLE_BYTE_P(str)) {
-        return (ScmChar)(SCM_STRING_START(str)[pos]);
+        return (ScmChar)(((unsigned char *)SCM_STRING_START(str))[pos]);
     } else {
         const char *p = forward_pos(SCM_STRING_START(str), pos);
         ScmChar c;
@@ -960,9 +960,9 @@ ScmObj Scm_StringFill(ScmString *str, ScmChar ch,
     }
     if (start == end) return SCM_OBJ(str);
     
-    s = SCM_STRING_START(str);
+    s = (unsigned char*)SCM_STRING_START(str);
     for (i = 0; i < start; i++) s += SCM_CHAR_NFOLLOWS(*s)+1;
-    prelen = s - SCM_STRING_START(str);
+    prelen = s - (unsigned char*)SCM_STRING_START(str);
     r = s;
     for (; i < end; i++)        s += SCM_CHAR_NFOLLOWS(*s)+1;
     midlen = s - r;

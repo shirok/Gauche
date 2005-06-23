@@ -20,7 +20,7 @@
     }
     Scm_MTInitByUI(mt, s);
   } else if (SCM_U32VECTORP(init)) {
-    Scm_MTInitByArray(mt, SCM_U32VECTOR_ELEMENTS(init), SCM_U32VECTOR_SIZE(init));
+    Scm_MTInitByArray(mt, (ScmInt32*)SCM_U32VECTOR_ELEMENTS(init), SCM_U32VECTOR_SIZE(init));
   } else {
     Scm_Error(\"bad random seed: must be an exact integer or u32vector, but got %S\", init);
   }
