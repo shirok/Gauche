@@ -1,3 +1,11 @@
+2005-06-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/genconfig.in : introduced to make gauche-config a compiled
+	  executable.
+	* src/gauche-config.in : removed, for a shell script doesn't work
+	  well on Windows/MinGW.  Instead, src/genconfig generates a C
+	  file gauche-config.c, which is then compiled to gauche-config.
+
 2005-06-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/Gauche.spec : change Copyright: entry to License: for newer

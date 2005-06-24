@@ -1,0 +1,241 @@
+#! /bin/sh
+
+#
+# Generates gauche-config.c
+#
+# $Id: genconfig.in,v 1.1 2005-06-24 09:57:46 shirok Exp $
+#
+
+prefix=${prefix:-@prefix@}
+exec_prefix=@exec_prefix@
+
+cc="@CC@"
+
+datadir=@datadir@/gauche
+archdir=@libdir@/gauche
+
+gauche_incdir="$archdir/@GAUCHE_VERSION@/include"
+gauche_libdir="$datadir/@GAUCHE_VERSION@/lib"
+gauche_aclocaldir="$datadir/@GAUCHE_VERSION@/"
+gauche_archdir="$archdir/@GAUCHE_VERSION@/@host@"
+gauche_siteincdir="$archdir/site/include"
+gauche_sitelibdir="$datadir/site/lib"
+gauche_sitearchdir="$archdir/site/@GAUCHE_VERSION@/@host@"
+gauche_mandir="@mandir@"
+gauche_infodir="@infodir@"
+gauche_version="@GAUCHE_VERSION@"
+gauche_libs="@LIBS@"
+gauche_configure_args="@GAUCHE_CONFIGURE_ARGS@"
+arch="@host@"
+
+local_incdir="@LOCAL_INC@"
+local_libdir="@LOCAL_LIB@"
+
+default_cflags="@DEFAULT_CFLAGS@"
+
+object_suffix="@OBJEXT@"
+executable_suffix="@EXEEXT@"
+shlib_so_suffix="@SHLIB_SO_SUFFIX@"
+shlib_so_cflags="@SHLIB_SO_CFLAGS@"
+shlib_so_ldflags="@SHLIB_SO_LDFLAGS@"
+shlib_so_libs="@SHLIB_LIBS_FOR_EXT@"
+shlib_dylib_suffix="@SHLIB_DYLIB_SUFFIX@"
+shlib_dylib_ldflags="@SHLIB_DYLIB_LDFLAGS@"
+shlib_main_ldflags="@SHLIB_MAIN_LDFLAGS@"
+libgauche_so="@LIBGAUCHE_SO@"
+
+cat > gauche-config.c <<EOF
+/* Generated automatically by genconfig.  DO NOT EDIT */
+
+/* The small program gauche-config is installed in the same place
+   as gosh, and used to retrieve various configuration information
+   later.  It is made a separate program from gosh for quicker
+   startup and avoiding complications of dynamic library etc.
+   It used to be a shell script, but turned into a C program
+   so that it works on the platform that lacks sh. */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <ctype.h>
+
+static void usage (void) {
+   puts("Usage: gauche-config [option]\\n"
+        "\\n"
+        "General parameter\\n"
+        "  -V   the current gauche version\\n"
+        "\\n"
+        "Parameters to compile an application using Gauche\\n"
+        "  -I   include paths required to compile programs using gauche\\n"
+        "  -L   library paths required to link programs using gauche\\n"
+        "  -l   libraries required to link programs using gauche\\n"
+        "  --cc name of the compiler\\n"
+        "  --ac directory that contains Gauche specific autoconf macro\\n"
+        "  --reconfigure\\n"
+        "       prints the command line used to configure the current\\n"
+        "       installation.\\n"
+        "  --arch\\n"
+        "       prints the architecture signature\\n"
+        "\\n"
+        "Parameters to install files\\n"
+        "  --syslibdir/--sitelibdir\\n"
+        "       directories where system/site scheme files go\\n"
+        "  --sysarchdir/--sitearchdir\\n"
+        "       directories where system/site DSO files go\\n"
+        "  --sysincdir/--siteincdir\\n"
+        "       directories where system/site header files of extensions go\\n"
+        "  --mandir/--infodir\\n"
+        "       directories where gauche manpage and info docs are installed\\n"
+        "\\n"
+        "Parameters to help building extensions\\n"
+        "  --object-suffix\\n"
+        "       Returns extension of the compiled objects (e.g. \"o\")\\n"
+        "  --executable-suffix\\n"
+        "       Returns extension of the executable (mostly empty, sometimes \".exe\")\\n"
+        "  --so-suffix\\n"
+        "       Suffix for dynamically loadable (dlopen-able) modules\\n"
+        "  --so-cflags\\n"
+        "       CFLAGS to create dynamically loadable modules\\n"
+        "  --so-ldflags\\n"
+        "       LDFLAGS to create dynamically loadable modules\\n"
+        "  --so-libs\\n"
+        "       Required libraries to create dynamically loadable modules\\n"
+        "  --dylib-suffix\\n"
+        "       Suffix for dynamically linked libraries\\n"
+        "  --dylib-ldflags\\n"
+        "       LDFLAGS to create dynamically linked libraries\\n"
+        "  --fixup-extension FILE [MODULE]\\n"
+        "       creates FILE_head.c and FILE_tail.c.  They are required for GC\\n"
+        "       to work properly on some platforms.  MODULE must be the extension\\n"
+        "       module's name, and has to match the name given to the\\n"
+        "       SCM_INIT_EXTENSION macro in the extension initialization code. \\n"
+        "       If MODULE is omitted, FILE is used as the module's name.\\n"
+        );
+    exit(1);
+}
+
+static struct cmd_rec {
+    const char *cmd;
+    const char *value;
+} cmds[] = {
+    { "-V", "$gauche_version" },
+    { "-I", "-I$gauche_incdir $local_incdir" },
+    { "-L", "-L$gauche_archdir $local_libdir" },
+    { "-l", "-lgauche $gauche_libs" },
+    { "--cc", "$cc" },
+    { "--ac", "$gauche_aclocaldir" },
+    { "--reconfigure", "./configure $gauche_configure_args" },
+
+    { "--sysincdir",   "$gauche_incdir" },
+    { "--siteincdir",  "$gauche_siteincdir" },
+    { "--syslibdir",   "$gauche_libdir" },
+    { "--sitelibdir",  "$gauche_sitelibdir" },
+    { "--sysarchdir",  "$gauche_archdir" },
+    { "--sitearchdir", "$gauche_sitearchdir" },
+    { "--mandir",      "$gauche_mandir" },
+    { "--infodir",     "$gauche_infodir" },
+    { "--arch",        "$arch" },
+
+    { "--local-incdir", "$local_incdir" },
+    { "--local-libdir", "$local_libdir" },
+
+    { "--default-cflags", "$default_cflags" },
+
+    { "--object-suffix",  "$object_suffix" },
+    { "--executable-suffix", "$executable_suffix" },
+    { "--so-suffix",      "$shlib_so_suffix" },
+    { "--so-cflags",      "$shlib_so_cflags" },
+    { "--so-ldflags",     "$shlib_so_ldflags" },
+    { "--so-libs",        "$shlib_so_libs" },
+    { "--dylib-suffix",   "$shlib_dylib_suffix" },
+    { "--dylib-ldflags",  "$shlib_dylib_ldflags" },
+    { "--libgauche-so",   "$libgauche_so" },
+
+    { NULL, NULL }
+};
+
+static void print_output(struct cmd_rec *cmd) 
+{
+    printf("%s\n", cmd->value);
+}
+
+static void fixup_extension(int argc, char **argv)
+{
+    const char *file, *module;
+    char *outfile, *m = NULL;
+    FILE *fp;
+
+    if (argc < 3) usage();
+    file = argv[2];
+    if (argc > 3) {
+        module = argv[3];
+    } else {
+        const char *f;
+        char *mm;
+        m = (char *)malloc(strlen(file)+1);
+        for (f = file, mm = m; *f; f++, mm++) {
+           if (isalnum(*f)) *mm = *f;
+           else *mm = '_';
+        }
+        *mm = '\0';
+        module = m;
+    }
+    
+    outfile = (char *)malloc(strlen(file) + sizeof("_head.c") + 1);
+    strcpy(outfile, file);
+    strcat(outfile, "_head.c");
+    fp = fopen(outfile, "w");
+    if (fp == NULL) {
+        fprintf(stderr, "gauche-config: couldn't create %s: %s",
+                outfile, strerror(errno));
+        exit(1);
+    }
+    fprintf(fp, "void *Scm__datastart_%s = (void*)&Scm__datastart_%s;\n",
+            module, module);
+    fprintf(fp, "void *Scm__bssstart_%s;\n", module);
+    fclose(fp);
+
+    strcpy(outfile, file);
+    strcat(outfile, "_tail.c");
+    fp = fopen(outfile, "w");
+    if (fp == NULL) {
+        fprintf(stderr, "gauche-config: couldn't create %s: %s",
+                outfile, strerror(errno));
+        exit(1);
+    }
+    fprintf(fp, "void *Scm__dataend_%s = (void*)&Scm__dataend_%s;\n",
+            module, module);
+    fprintf(fp, "void *Scm__bssend_%s;\n", module);
+    fclose(fp);
+
+    free(outfile);
+    if (m) free(m);
+}
+
+int main(int argc, char **argv)
+{
+    if (argc < 2) usage();
+    if (strcmp(argv[1], "--fixup-extension") == 0) {
+        fixup_extension(argc, argv);
+    } else {
+        struct cmd_rec *cp = cmds;
+
+        while (cp->cmd != NULL) {
+            if (strcmp(cp->cmd, argv[1]) == 0) {
+                print_output(cp);
+                exit(0);
+            }
+            cp++;
+        }
+        usage();
+    }
+    return 0;
+}
+
+EOF
+
+
+# Local variables:
+# mode: shell-script
+# end:

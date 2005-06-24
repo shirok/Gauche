@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.59 2005-05-31 08:13:31 shirok Exp $
+dnl $Id: configure.ac,v 1.60 2005-06-24 09:57:08 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.4, shiro@acm.org)
-AC_REVISION($Revision: 1.59 $)
+AC_REVISION($Revision: 1.60 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -631,7 +631,7 @@ dnl ===========================================================
 dnl Create output files
 echo $GAUCHE_VERSION > VERSION
 AC_OUTPUT(Makefile
-          src/Makefile src/gauche-config
+          src/Makefile src/genconfig
           lib/Makefile lib/slib.scm
           doc/gosh.1 doc/gauche-config.1 doc/Makefile
           ext/Makefile ext/Makefile.ext

@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.137 2005-05-29 00:18:55 shirok Exp $
+#  $Id: Makefile.in,v 1.138 2005-06-24 09:57:46 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -98,8 +98,8 @@ INSTALL_SUBHEADERS = gauche/config.h                                  \
                      gauche/pthread.h gauche/uthread.h gauche/arch.h  \
 	             gauche/mingw-compat.h
 INSTALL_LIBS = libgauche.$(SOEXT)
-INSTALL_BINS = gosh$(EXEEXT) gauche-config gauche-install gauche-package \
-               gauche-cesconv
+INSTALL_BINS = gosh$(EXEEXT) gauche-config$(EXEEXT) \
+               gauche-install gauche-package gauche-cesconv
 INSTALL_SCMS = gauche-init.scm genstub cesconv
 
 GENERATED_SCRIPTS = gauche-install gauche-package gauche-cesconv
@@ -140,7 +140,7 @@ HEADERS = gauche.h $(INSTALL_SUBHEADERS) $(PRIVATE_HEADERS)
 
 OBJECTS = $(libgauche_OBJECTS) $(gosh_OBJECTS)
 
-all : gosh$(EXEEXT) libgauche.$(SOEXT) $(GENERATED_SCRIPTS)
+all : gosh$(EXEEXT) libgauche.$(SOEXT) gauche-config$(EXEEXT) $(GENERATED_SCRIPTS)
 
 gosh$(EXEEXT) : libgauche.$(SOEXT) $(gosh_OBJECTS) 
 	@rm -f gosh$(EXEEXT)
@@ -196,6 +196,12 @@ gauche/arch.h :
 	@echo '#define GAUCHE_SITE_LIB_DIR "$(SITE_SCM_DIR)"' >> gauche/arch.h
 	@echo '#define GAUCHE_SITE_ARCH_DIR "$(SITE_ARCH_DIR)"' >> gauche/arch.h
 
+gauche-config : gauche-config.c
+	$(CC) -o gauche-config gauche-config.c
+
+gauche-config.c : genconfig
+	$(SHELL) ./genconfig
+
 gauche-install : gauche-install.in
 	@rm -f gauche-install
 	echo "#!$(BIN_INSTALL_DIR)/gosh" > gauche-install && \
@@ -248,12 +254,12 @@ install-check :
 GENERATED = stdlib.c extlib.c exclib.c syslib.c moplib.c intlib.c scmlib.c \
 	    objlib.c compile.c autoloads.c builtin-syms.c \
 	    gauche/builtin-syms.h vminsn.c gauche/vminsn.h
-CONFIG_GENERATED = Makefile gauche-config gauche/config.h
+CONFIG_GENERATED = Makefile genconfig gauche/config.h
 
 clean :
-	rm -rf core core.[0-9]* gosh$(EXEEXT) \
+	rm -rf core core.[0-9]* gosh$(EXEEXT) gauche-config$(EXEEXT) \
 	       test-vmstack$(EXEEXT) test-arith$(EXEEXT)   \
-	       $(GENERATED_SCRIPTS) $(INSTALL_BATS) \
+	       $(GENERATED_SCRIPTS) $(INSTALL_BATS) gauche-config.c \
 	       libgauche.$(SOEXT)* *.$(OBJEXT) *~ *.a *.t *.def *.exp \
 	       test.log test.dir so_locations gauche/*~ gauche/arch.h
 
@@ -282,7 +288,7 @@ install : all relink
 	$(INSTALL) -m 555 $(INSTALL_BINS) $(DESTDIR)$(BIN_INSTALL_DIR)
 	$(INSTALL) -m 555 $(INSTALL_BINS) $(DESTDIR)$(ARCH_INSTALL_DIR)
 	$(INSTALL) -m 444 $(INSTALL_SCMS) $(DESTDIR)$(SCM_INSTALL_DIR)
-	@case `$(SHELL) gauche-config --arch` in *-cygwin*|*-mingw*) \
+	@case `./gauche-config --arch` in *-cygwin*|*-mingw*) \
 	  $(INSTALL) $(INSTALL_LIBS) $(DESTDIR)$(BIN_INSTALL_DIR);;\
 	esac
 	$(POSTINSTALL)

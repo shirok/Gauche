@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions
-## $Id: Makefile.ext.in,v 1.20 2004-08-02 12:20:47 shirok Exp $
+## $Id: Makefile.ext.in,v 1.21 2005-06-24 09:57:46 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -33,7 +33,7 @@ LINK      = $(CCLD) $(CFLAGS) $(LDFLAGS)
 MODLINK   = $(CCLD) $(CFLAGS) $(LDFLAGS)
 
 GOSH           = $(top_builddir)/src/gosh -ftest
-GAUCHE_CONFIG  = $(SHELL) $(top_srcdir)/src/gauche-config
+GAUCHE_CONFIG  = $(top_srcdir)/src/gauche-config
 GAUCHE_INSTALL = $(GOSH) $(top_srcdir)/src/gauche-install
 INSTALL_TYPE   = sys
 
