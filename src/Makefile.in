@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.138 2005-06-24 09:57:46 shirok Exp $
+#  $Id: Makefile.in,v 1.139 2005-06-24 11:56:54 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -108,7 +108,7 @@ PRIVATE_HEADERS = gauche/arith.h
 
 # MinGW specific
 INSTALL_MINGWHEADERS = gauche/mingw-compat.h
-INSTALL_BATS = gauche-config.bat gauche-install.bat gauche-package.bat \
+INSTALL_BATS = gauche-install.bat gauche-package.bat \
                gauche-cesconv.bat
 
 # build -----------------------------------------------
@@ -196,8 +196,8 @@ gauche/arch.h :
 	@echo '#define GAUCHE_SITE_LIB_DIR "$(SITE_SCM_DIR)"' >> gauche/arch.h
 	@echo '#define GAUCHE_SITE_ARCH_DIR "$(SITE_ARCH_DIR)"' >> gauche/arch.h
 
-gauche-config : gauche-config.c
-	$(CC) -o gauche-config gauche-config.c
+gauche-config$(EXEEXT) : gauche-config.c
+	$(CC) -o gauche-config$(EXEEXT) gauche-config.c
 
 gauche-config.c : genconfig
 	$(SHELL) ./genconfig
