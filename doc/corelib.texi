@@ -3525,6 +3525,21 @@ and @code{\B} matches an empty string elsewhere.
 @code{\B}はその逆です。
 @c COMMON
 
+@item (?=@i{pattern})
+@itemx (?!@i{pattern})
+Positive/negative lookahead assertion.  
+Match succeeds if @i{pattern} matches (or does not match) 
+the input string from the current position, but this doesn't
+move the current position itself, so that the following
+regular expression is applied again from the current position.
+
+For example, the following expression matches strings
+that might be a phone number, except the numbers in Japan
+(i.e. ones that begin with "81").
+@example
+\+(?!81)\d@{9,@}
+@end example
+
 @end table
 
 @defun string->regexp string &keyword case-fold
