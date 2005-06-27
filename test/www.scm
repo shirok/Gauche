@@ -186,6 +186,18 @@ VGhpcyBpcyBhIHRlc3Qgc2VudGVuY2Uu
                   "a="
                   ,(cgi-get-parameter "a" params))))))))
 
+(unless (eq? (gauche-character-encoding) 'none)
+  (test* "cgi-output-character-encoding" #*"\xe3\x81\x82"
+         (string-complete->incomplete
+          (parameterize ((cgi-metavariables `(("REQUEST_METHOD" "GET")
+                                              ("QUERY_STRING" "")))
+                         (cgi-output-character-encoding 'utf8))
+            (with-output-to-string
+              (lambda ()
+                (cgi-main
+                 (lambda (params)
+                   (string #\u3042)))))))))
+
 ;;------------------------------------------------
 (test-section "www.cgi-test")
 (use www.cgi-test)

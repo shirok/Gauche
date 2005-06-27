@@ -1,3 +1,8 @@
+2005-06-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/www/cgi.scm (cgi-default-output): make sure cgi-default-output
+	  writes out everthing even if output conversion port is inserted.
+
 2005-06-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/genconfig.in : introduced to make gauche-config a compiled

@@ -1,7 +1,7 @@
 ;;;
 ;;; cgi.scm - CGI utility
 ;;;  
-;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.24 2004-11-29 09:06:23 shirok Exp $
+;;;  $Id: cgi.scm,v 1.25 2005-06-27 22:49:07 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -389,8 +389,15 @@
                  (html:p (html-escape-string (slot-ref e 'message)))))))
 
 (define (cgi-default-output tree)
-  (write-tree tree (wrap-with-output-conversion
-                    (current-output-port)
-                    (cgi-output-character-encoding))))
+  (if (ces-equivalent? (gauche-character-encoding)
+                       (cgi-output-character-encoding))
+    (write-tree tree)
+    ;; NB: we avoid using wrap-with-output-conversion, for we want
+    ;; to make sure output is flushed each time in case cgi-main
+    ;; is used in a persistent process.
+    (with-output-conversion
+     (current-output-port)
+     (cut write-tree tree)
+     :encoding (cgi-output-character-encoding))))
 
 (provide "www/cgi")
