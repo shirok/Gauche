@@ -1,7 +1,7 @@
 /*
  * system.c - system interface
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.64 2005-06-01 18:47:54 shirok Exp $
+ *  $Id: system.c,v 1.65 2005-06-29 11:23:56 shirok Exp $
  */
 
 #include <stdio.h>
@@ -186,14 +186,14 @@ ScmObj Scm_ReadDirectory(ScmString *pathname)
 /* TODO: allow to take optional flags */
 ScmObj Scm_GlobDirectory(ScmString *pattern)
 {
-#ifdef HAVE_GLOB_H
+#if defined(HAVE_GLOB_H)
     glob_t globbed;
     ScmObj head = SCM_NIL, tail = SCM_NIL;
     int i, r;
     SCM_SYSCALL(r, glob(Scm_GetStringConst(pattern), 0, NULL, &globbed));
     if (r) {
         globfree(&globbed);
-#ifdef GLOB_NOMATCH
+#if defined(GLOB_NOMATCH)
         if (r == GLOB_NOMATCH) return SCM_NIL;
 #endif /*!GLOB_NOMATCH*/
         Scm_Error("Couldn't glob %S", pattern);
@@ -204,10 +204,35 @@ ScmObj Scm_GlobDirectory(ScmString *pattern)
     }
     globfree(&globbed);
     return head;
-#else  /*!HAVE_GLOB_H*/
+#elif defined(__MINGW32__)
+    /* We provide alternative using Windows API */
+    HANDLE dirp;
+    WIN32_FIND_DATA fdata;
+    DWORD winerrno;
+    const char *path = Scm_GetStringConst(pattern);
+    ScmObj head = SCM_NIL, tail = SCM_NIL;
+    
+    dirp = FindFirstFile(path, &fdata);
+    if (dirp == INVALID_HANDLE_VALUE) {
+	if ((winerrno = GetLastError()) != ERROR_FILE_NOT_FOUND) goto err;
+	return head;
+    }
+    SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(fdata.cFileName));
+    while (FindNextFile(dirp, &fdata) != 0) {
+	SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(fdata.cFileName));
+    }
+    winerrno = GetLastError();
+    FindClose(dirp);
+    if (winerrno != ERROR_NO_MORE_FILES) goto err;
+    return head;
+ err:
+    Scm_Error("Searching directory failed by windows error %d",
+	      winerrno);
+    return SCM_UNDEFINED;	/* dummy */
+#else  /*!HAVE_GLOB_H && !__MINGW32__*/
     Scm_Error("glob-directory is not supported on this architecture.");
     return SCM_UNDEFINED;
-#endif /*!HAVE_GLOB_H*/
+#endif /*!HAVE_GLOB_H && !__MINGW32__*/
 }
 
 /*
@@ -233,6 +258,14 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
     
 #define SKIP_SLASH \
     while ((*srcp == '/' || *srcp == '\\') && srcp < str+size) { srcp++; }
+
+#ifdef __MINGW32__
+#define SEPARATOR '\\'
+#define ROOTDIR   "\\"
+#else
+#define SEPARATOR '/'
+#define ROOTDIR   "/"
+#endif
 
     if ((flags & SCM_PATH_EXPAND) && size >= 1 && *str == '~') {
 #ifndef __MINGW32__
@@ -272,7 +305,7 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
 	buf = SCM_NEW_ATOMIC2(char*, size+1);
 	dstp = buf;
 #endif /* __MINGW32__ */
-    } else if ((flags & SCM_PATH_ABSOLUTE) && *str != '/') {
+    } else if ((flags & SCM_PATH_ABSOLUTE) && *str != '/' && *str != '\\') {
         int dirlen;
 #define GETCWD_PATH_MAX 1024  /* TODO: must be configured */
         char p[GETCWD_PATH_MAX];
@@ -284,22 +317,40 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
         buf = SCM_NEW_ATOMIC2(char*, dirlen+size+1);
         strcpy(buf, p);
         dstp = buf + dirlen;
-        if (*(dstp-1) != '/') *dstp++ = '/';
+        if (*(dstp-1) != '/' && *(dstp-1) != '\\') *dstp++ = SEPARATOR;
     } else if (flags & SCM_PATH_CANONICALIZE) {
         dstp = buf = SCM_NEW_ATOMIC2(char*, size+1);
-        if (*str == '/') {
-            *dstp++ = '/';
+        if (*str == '/' || *str == '\\') {
+            *dstp++ = SEPARATOR;
             SKIP_SLASH;
         }
     } else {
+#if defined(__MINGW32__)
+	/* On Windows/MinGW, we might replace '/' for '\\', so
+	   we allocate the buffer */
+	dstp = buf = SCM_NEW_ATOMIC2(char*, size+1);
+#else  /* !__MINGW32__ */
         return SCM_OBJ(pathname); /* nothing to do */
+#endif /* !__MINGW32__ */
     }
 
     if (!(flags & SCM_PATH_CANONICALIZE)) {
+#if defined(__MINGW32__)
+	while (*srcp) {
+	    char c = *srcp++;
+	    if (c == '/' || c == '\\') {
+		*dstp++ = SEPARATOR;
+	    } else {
+		*dstp++ = c;
+	    }
+	}
+	return Scm_MakeString(buf, dstp-buf, -1, SCM_MAKSTR_COPYING);
+#else  /* !__MINGW32 */
         size -= srcp-str;
         memcpy(dstp, srcp, size);
         *(dstp + size) = '\0';
         return Scm_MakeString(buf, (dstp-buf)+size, -1, SCM_MAKSTR_COPYING);
+#endif /* !__MINGW32 */
     }
 
     while (srcp < str+size) {
@@ -308,19 +359,19 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
                 *dstp++ = '.'; /* preserve the last dot */
                 break;
             }
-            if (*(srcp+1) == '/') {
+            if (*(srcp+1) == '/' || *(srcp+1) == '\\') {
                 srcp++;
                 SKIP_SLASH;
                 continue;
             }
             if (!bottomp
                 && *(srcp+1) == '.'
-                && (srcp == str+size-2 || *(srcp+2) == '/')) {
+                && (srcp == str+size-2 || *(srcp+2) == '/' || *(srcp+2) == '\\')) {
 
                 /* back up to parent dir */
                 char *q = dstp-2;
                 for (;q >= buf; q--) {
-                    if (*q == '/') break;
+                    if (*q == '/' || *q == '\\') break;
                 }
                 if (q >= buf) {
                     dstp = q+1;
@@ -328,14 +379,21 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
                     bottomp = TRUE;
                     *dstp++ = '.';
                     *dstp++ = '.';
-                    *dstp++ = '/';
+                    *dstp++ = SEPARATOR;
                 }
                 srcp += 3;
                 continue;
             }
         }
-        while ((*dstp++ = *srcp++) != '/' && srcp < str+size)
-            ;
+	while (srcp < str+size) {
+	    char c = *srcp++;
+	    if (c == '/' || c == '\\') {
+		*dstp++ = SEPARATOR;
+		break;
+	    } else {
+		*dstp++ = c;
+	    }
+	}
         SKIP_SLASH;
     }
     *dstp = '\0';
@@ -349,10 +407,12 @@ ScmObj Scm_BaseName(ScmString *filename)
 
     if (size == 0) return SCM_MAKE_STR("");
     p = str+size-1;
-    while (*p == '/' && size > 0) { p--; size--; } /* ignore trailing '/' */
+    while ((*p == '/' || *p == '\\') && size > 0) {
+	p--; size--;   /* ignore trailing '/' */
+    }
     if (size == 0) return SCM_MAKE_STR("");
     for (i = 0; i < size; i++, p--) {
-        if (*p == '/') break;
+        if (*p == '/' || *p == '\\') break;
     }
     return Scm_MakeString(p+1, i, -1, 0);
 }
@@ -364,14 +424,18 @@ ScmObj Scm_DirName(ScmString *filename)
 
     if (size == 0) return SCM_MAKE_STR(".");
     p = str+size-1;
-    while (*p == '/' && size > 0) { p--; size--; } /* ignore trailing '/' */
-    if (size == 0) return SCM_MAKE_STR("/");
+    while ((*p == '/' || *p == '\\') && size > 0) {
+	p--; size--;  /* ignore trailing '/' */
+    }
+    if (size == 0) return SCM_MAKE_STR(ROOTDIR);
     for (i = size; i > 0; i--, p--) {
-        if (*p == '/') break;
+        if (*p == '/' || *p == '\\') break;
     }
     if (i == 0) return SCM_MAKE_STR(".");
-    while (*p == '/' && i > 0) { p--; i--; } /* delete trailing '/' */
-    if (i == 0) return SCM_MAKE_STR("/");
+    while ((*p == '/' || *p == '\\') && i > 0) {
+	p--; i--;  /* delete trailing '/' */
+    }
+    if (i == 0) return SCM_MAKE_STR(ROOTDIR);
     return Scm_MakeString(str, i, -1, 0);
 }
 

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.29 2005-04-12 01:42:24 shirok Exp $
+;;;  $Id: util.scm,v 1.30 2005-06-29 11:23:55 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -49,6 +49,7 @@
           make-directory* create-directory* remove-directory* delete-directory*
           build-path resolve-path expand-path simplify-path decompose-path
           absolute-path? relative-path? find-file-in-paths
+	  path-separator
           path-extension path-sans-extension path-swap-extension
           file-is-readable? file-is-writable? file-is-executable?
           file-is-symlink?
@@ -186,6 +187,7 @@
 ;;; Pathnames
 
 (define (build-path base-path . components)
+  (define path-separator-string (string (path-separator)))
   (define (rec base components)
     (if (null? components)
         base
@@ -193,17 +195,17 @@
             (let1 p (car components)
               (cond ((eq? p 'up) "..")
                     ((eq? p 'same) ".")
-                    ((string-prefix? "/" p)
+                    ((absolute-path? p)
                      (error "can't append absolute path after other path" p))
-                    (else p)))
+                    (else (sys-normalize-pathname p))))
           (rec (cond ((string-null? base) component)
                      ((string-null? component) base)
-                     ((string-suffix? "/" base)
+                     ((#/[\/\\]$/ base)
                       (string-append base component))
                      (else
-                      (string-append base "/" component)))
+                      (string-append base path-separator-string component)))
                (cdr components)))))
-  (rec base-path components))
+  (rec (sys-normalize-pathname base-path) components))
 
 (define (expand-path path)
   (sys-normalize-pathname path :expand #t))
@@ -235,8 +237,8 @@
   (sys-normalize-pathname path :canonicalize #t))
 
 (define (decompose-path path)
-  (if (string-suffix? "/" path)
-    (values (string-trim-right path #\/) #f #f)
+  (if (#/[\/\\]$/ path)
+    (values (string-trim-right path #[\\/]) #f #f)
     (let* ((dir (sys-dirname path))
            (base (sys-basename path)))
       (cond ((string-index-right base #\.)
@@ -249,11 +251,20 @@
             (else
              (values dir base #f))))))
 
-(define (absolute-path? path)
-  (or (string-prefix? "/" path) (string-prefix? "~" path)))
-
 (define (relative-path? path)
-  (not (absolute-path? path)))
+  (cond-expand
+   (gauche-windows
+    (not (#/^[\/\\]|^[A-Za-z]:/ path)))
+   (else
+    (not (#/^[\/~]/ path)))))
+
+(define (absolute-path? path)
+  (not (relative-path? path)))
+
+(define (path-separator)
+  (cond-expand
+   (gauche-windows #\\)
+   (else #\/)))
 
 (define (path-extension path)
   (receive (dir file ext) (decompose-path path) ext))
@@ -326,24 +337,35 @@
 ;;              links.  The files must exist.
 ;;  file-equal? - the content of two files are the same.
 
-(define (file-eq? f1 f2)
-  (let ((s1 (sys-lstat f1))
-        (s2 (sys-lstat f2)))
-    (and (eqv? (slot-ref s1 'dev) (slot-ref s2 'dev))
-         (eqv? (slot-ref s1 'ino) (slot-ref s2 'ino)))))
+;; NB: on Windows/MinGW, we cannot obtain inode number correctly.
+;; We compare canonicalized pathnames (this doesn't work if there's
+;; an alias.  We should call Windows API to check for sure in future).
 
-(define (file-eqv? f1 f2)
-  (let ((s1 (sys-stat f1))
-        (s2 (sys-stat f2)))
+(cond-expand
+ (gauche-windows
+  (define (%stat-compare s1 s2 f1 f2)
+    (let ((p1 (sys-normalize-pathname f1 :absolute #t :canonicalize #t))
+	  (p2 (sys-normalize-pathname f2 :absolute #t :canonicalize #t)))
+      (equal? p1 p2)))
+  (define (file-eq? f1 f2)
+    (%stat-compare #f #f f1 f2))
+  (define (file-eqv? f1 f2)
+    (%stat-compare #f #f f1 f2))
+  )
+ (else
+  (define (%stat-compare s1 s2 f1 f2)
     (and (eqv? (slot-ref s1 'dev) (slot-ref s2 'dev))
-         (eqv? (slot-ref s1 'ino) (slot-ref s2 'ino)))))
+         (eqv? (slot-ref s1 'ino) (slot-ref s2 'ino))))
+  (define (file-eq? f1 f2)
+    (%stat-compare (sys-lstat f1) (sys-lstat f2) f1 f2))
+  (define (file-eqv? f1 f2)
+    (%stat-compare (sys-stat f1) (sys-stat f2) f1 f2))
+  ))
 
 (define (file-equal? f1 f2)
   (let ((s1 (sys-stat f1))
         (s2 (sys-stat f2)))
-    (cond ((and (eqv? (slot-ref s1 'dev) (slot-ref s2 'dev))
-                (eqv? (slot-ref s1 'ino) (slot-ref s2 'ino)))
-           #t)
+    (cond ((%stat-compare s1 s2 f1 f2))
           ((not (eq? (slot-ref s1 'type) (slot-ref s2 'type)))
            #f)
           ((not (= (slot-ref s1 'size) (slot-ref s2 'size)))

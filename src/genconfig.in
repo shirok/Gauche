@@ -3,34 +3,55 @@
 #
 # Generates gauche-config.c
 #
-# $Id: genconfig.in,v 1.1 2005-06-24 09:57:46 shirok Exp $
+# $Id: genconfig.in,v 1.2 2005-06-29 11:23:56 shirok Exp $
 #
 
-prefix=${prefix:-@prefix@}
-exec_prefix=@exec_prefix@
+host=@host@
+gauche_version=@GAUCHE_VERSION@
 
-cc="@CC@"
+case "$host" in
+  *mingw*)
+     # Since we cross-build Windows/MinGW version, we cannot use the
+     # directory prefix set by configure (which works on the build
+     # environment, but not on the runtime environment).  Instead,
+     # we find the location of the binary and calculate the prefix path
+     # from it.  The '@' mark will be replaced by the prefix path
+     # at runtime.
+     prefix=@
+     exec_prefix=@
+     pathfix='sed -e sx/x\\xg -e sx\\x\\\\xg'
+     ;;
+  *)
+     # Standard configured paths
+     prefix=${prefix:-@prefix@}
+     exec_prefix=@exec_prefix@
+     pathfix="cat"
+     ;;
+esac
 
 datadir=@datadir@/gauche
 archdir=@libdir@/gauche
 
-gauche_incdir="$archdir/@GAUCHE_VERSION@/include"
-gauche_libdir="$datadir/@GAUCHE_VERSION@/lib"
-gauche_aclocaldir="$datadir/@GAUCHE_VERSION@/"
-gauche_archdir="$archdir/@GAUCHE_VERSION@/@host@"
-gauche_siteincdir="$archdir/site/include"
-gauche_sitelibdir="$datadir/site/lib"
-gauche_sitearchdir="$archdir/site/@GAUCHE_VERSION@/@host@"
-gauche_mandir="@mandir@"
-gauche_infodir="@infodir@"
-gauche_version="@GAUCHE_VERSION@"
+mandir=`echo @mandir@ | $pathfix`
+infodir=`echo @infodir@ | $pathfix`
+
+gauche_incdir=`echo "$archdir/$gauche_version/include" | $pathfix`
+gauche_libdir=`echo "$datadir/$gauche_version/lib" | $pathfix`
+gauche_aclocaldir=`echo "$datadir/$gauche_version/" | $pathfix`
+gauche_archdir=`echo "$archdir/$gauche_version/$host" | $pathfix`
+gauche_siteincdir=`echo "$archdir/site/include" | $pathfix`
+gauche_sitelibdir=`echo "$datadir/site/lib" | $pathfix`
+gauche_sitearchdir=`echo "$archdir/site/$gauche_version/$host" | $pathfix`
+
+
 gauche_libs="@LIBS@"
 gauche_configure_args="@GAUCHE_CONFIGURE_ARGS@"
-arch="@host@"
+arch="$host"
 
 local_incdir="@LOCAL_INC@"
 local_libdir="@LOCAL_LIB@"
 
+cc="@CC@"
 default_cflags="@DEFAULT_CFLAGS@"
 
 object_suffix="@OBJEXT@"
@@ -59,6 +80,11 @@ cat > gauche-config.c <<EOF
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
+
+#ifdef __MINGW32__
+#include <windows.h>
+#include <shlwapi.h>
+#endif
 
 static void usage (void) {
    puts("Usage: gauche-config [option]\\n"
@@ -120,22 +146,22 @@ static struct cmd_rec {
     const char *value;
 } cmds[] = {
     { "-V", "$gauche_version" },
-    { "-I", "-I$gauche_incdir $local_incdir" },
-    { "-L", "-L$gauche_archdir $local_libdir" },
+    { "-I", "-I'$gauche_incdir'" },
+    { "-L", "-L'$gauche_archdir' $local_libdir" },
+    { "--ac", "'$gauche_aclocaldir'" },
     { "-l", "-lgauche $gauche_libs" },
     { "--cc", "$cc" },
-    { "--ac", "$gauche_aclocaldir" },
     { "--reconfigure", "./configure $gauche_configure_args" },
 
-    { "--sysincdir",   "$gauche_incdir" },
-    { "--siteincdir",  "$gauche_siteincdir" },
-    { "--syslibdir",   "$gauche_libdir" },
-    { "--sitelibdir",  "$gauche_sitelibdir" },
-    { "--sysarchdir",  "$gauche_archdir" },
-    { "--sitearchdir", "$gauche_sitearchdir" },
-    { "--mandir",      "$gauche_mandir" },
-    { "--infodir",     "$gauche_infodir" },
-    { "--arch",        "$arch" },
+    { "--sysincdir",   "'$gauche_incdir'" },
+    { "--siteincdir",  "'$gauche_siteincdir'" },
+    { "--syslibdir",   "'$gauche_libdir'" },
+    { "--sitelibdir",  "'$gauche_sitelibdir'" },
+    { "--sysarchdir",  "'$gauche_archdir'" },
+    { "--sitearchdir", "'$gauche_sitearchdir'" },
+    { "--mandir",      "'$mandir'" },
+    { "--infodir",     "'$infodir'" },
+    { "--arch",        "'$arch'" },
 
     { "--local-incdir", "$local_incdir" },
     { "--local-libdir", "$local_libdir" },
@@ -157,7 +183,44 @@ static struct cmd_rec {
 
 static void print_output(struct cmd_rec *cmd) 
 {
-    printf("%s\n", cmd->value);
+#if !defined(__MINGW32__)
+    printf("%s\\n", cmd->value);
+#else   /* __MINGW32__ */
+    const char *dir_mark;
+
+    if ((dir_mark = strchr(cmd->value, '@')) == NULL) {
+	printf("%s\\n", cmd->value);
+    } else {
+	HMODULE mod;
+	DWORD r;
+	char path[MAX_PATH];
+	char *p;
+
+	mod = GetModuleHandle(NULL);
+	if (mod == NULL) {
+	    fprintf(stderr, "GetModuleHandle failed");
+	    exit(1);
+	}
+	r = GetModuleFileName(mod, path, MAX_PATH);
+	if (r == 0) {
+	    fprintf(stderr, "GetModuleFileName failed");
+	    exit(1);
+	}
+	/* remove \\gauche-config.exe */
+	if (!PathRemoveFileSpec(path)) {
+	    fprintf(stderr, "PathRemoveFileSpec failed on %s", path);
+	    exit(1);
+	}
+	/* remobe \\bin */
+	if (!PathRemoveFileSpec(path)) {
+	    fprintf(stderr, "PathRemoveFileSpec failed on %s", path);
+	    exit(1);
+	}
+	
+	fwrite(cmd->value, dir_mark - cmd->value, 1, stdout);
+	fprintf(stdout, "%s%s\\n", path, dir_mark+1);
+    }
+#endif  /* __MINGW32__ */
 }
 
 static void fixup_extension(int argc, char **argv)
@@ -178,7 +241,7 @@ static void fixup_extension(int argc, char **argv)
            if (isalnum(*f)) *mm = *f;
            else *mm = '_';
         }
-        *mm = '\0';
+        *mm = '\\0';
         module = m;
     }
     
@@ -191,9 +254,9 @@ static void fixup_extension(int argc, char **argv)
                 outfile, strerror(errno));
         exit(1);
     }
-    fprintf(fp, "void *Scm__datastart_%s = (void*)&Scm__datastart_%s;\n",
+    fprintf(fp, "void *Scm__datastart_%s = (void*)&Scm__datastart_%s;\\n",
             module, module);
-    fprintf(fp, "void *Scm__bssstart_%s;\n", module);
+    fprintf(fp, "void *Scm__bssstart_%s;\\n", module);
     fclose(fp);
 
     strcpy(outfile, file);
@@ -204,9 +267,9 @@ static void fixup_extension(int argc, char **argv)
                 outfile, strerror(errno));
         exit(1);
     }
-    fprintf(fp, "void *Scm__dataend_%s = (void*)&Scm__dataend_%s;\n",
+    fprintf(fp, "void *Scm__dataend_%s = (void*)&Scm__dataend_%s;\\n",
             module, module);
-    fprintf(fp, "void *Scm__bssend_%s;\n", module);
+    fprintf(fp, "void *Scm__bssend_%s;\\n", module);
     fclose(fp);
 
     free(outfile);

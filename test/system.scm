@@ -38,6 +38,10 @@
         ((sys-access "/sbin/pwd" |X_OK|) (get-command-output "/sbin/pwd"))
         (else (get-command-output "pwd"))))
 
+;; shorthand of normalizing pathname.  this doesn't do anything on
+;; unix, but on Windows the separator in PATHNAME is replaced.
+(define (n pathname) (sys-normalize-pathname pathname))
+
 ;;-------------------------------------------------------------------
 (test-section "environment")
 
@@ -45,7 +49,7 @@
        (sys-getenv "PATH"))
 
 (test* "getenv"
-       (let ((x (get-command-output "echo $NoSucHEniIRoNmenT")))
+       (let ((x (get-command-output "echo $NoSucHEnvIRoNmenT")))
          (if (string-null? x) #f x))
        (sys-getenv "NoSucHEniIRoNmenT"))
 
@@ -56,45 +60,45 @@
 (test-section "pathnames")
 
 (test* "basename" "ghi.jkl" (sys-basename "/abc/def/ghi.jkl"))
-(test* "dirname" "/abc/def" (sys-dirname "/abc/def/ghi.jkl"))
+(test* "dirname"  "/abc/def" (sys-dirname "/abc/def/ghi.jkl"))
 (test* "basename" "ghi.jkl" (sys-basename "/abc/def/ghi.jkl/"))
-(test* "dirname" "/abc/def" (sys-dirname "/abc/def/ghi.jkl/"))
+(test* "dirname"  "/abc/def" (sys-dirname "/abc/def/ghi.jkl/"))
 (test* "basename" "ghi.jkl" (sys-basename "/abc//def//ghi.jkl//"))
-(test* "dirname" "/abc//def" (sys-dirname "/abc//def//ghi.jkl//"))
+(test* "dirname"  "/abc//def" (sys-dirname "/abc//def//ghi.jkl//"))
 (test* "basename" "ghi.jkl" (sys-basename "ghi.jkl"))
 (test* "dirname" "." (sys-dirname "ghi.jkl"))
 
 (test* "basename" "" (sys-basename ""))
 (test* "dirname"  "." (sys-dirname ""))
 (test* "basename" "" (sys-basename "/"))
-(test* "dirname"  "/" (sys-dirname "/"))
+(test* "dirname"  (n "/") (sys-dirname "/"))
 (test* "basename" "" (sys-basename "//"))
-(test* "dirname"  "/" (sys-dirname "//"))
+(test* "dirname"  (n "/") (sys-dirname "//"))
 
 (test* "basename" ".." (sys-basename "../"))
 (test* "dirname"  "." (sys-dirname "../"))
 (test* "basename" ".." (sys-basename "../.."))
 (test* "dirname"  ".." (sys-dirname "../.."))
 
-(test* "normalize" (string-append (get-pwd-via-pwd) "/.")
+(test* "normalize" (n (string-append (get-pwd-via-pwd) "/."))
        (sys-normalize-pathname "." :absolute #t))
-(test* "normalize" (string-append (get-pwd-via-pwd) "/")
+(test* "normalize" (n (string-append (get-pwd-via-pwd) "/"))
        (sys-normalize-pathname "" :absolute #t))
-(test* "normalize" (string-append (get-command-output "echo $HOME") "/abc")
+(test* "normalize" (n (string-append (get-command-output "echo $HOME") "/abc"))
        (sys-normalize-pathname "~/abc" :expand #t))
-(test* "normalize" "/a/b/c/d/e"
+(test* "normalize" (n "/a/b/c/d/e")
        (sys-normalize-pathname "/a/b//.///c//d/./e"
                                :canonicalize #t))
-(test* "normalize" "/a/b/c/d/e/"
+(test* "normalize" (n "/a/b/c/d/e/")
        (sys-normalize-pathname "/a/b//.///c//d/./e/"
                                :canonicalize #t))
-(test* "normalize" "/a/b/c/d/e/"
+(test* "normalize" (n "/a/b/c/d/e/")
        (sys-normalize-pathname "/a/B//./../c/d/../../b//c/d/e/f/.."
                                :canonicalize #t))
 (test* "normalize" ""
        (sys-normalize-pathname ""
                                :canonicalize #t))
-(test* "normalize" "a/../../.."
+(test* "normalize" (n "a/../../..")
        (sys-normalize-pathname "a/b/c/../../../../.."
                                :canonicalize #t))
 

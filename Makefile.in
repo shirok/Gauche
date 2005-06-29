@@ -1,5 +1,5 @@
 # Top Makefle for Gauche
-# $Id: Makefile.in,v 1.51 2005-04-12 01:42:14 shirok Exp $
+# $Id: Makefile.in,v 1.52 2005-06-29 11:23:50 shirok Exp $
 #  Run 'configure' script to generate Makefile
 
 .PHONY: all test check pre-package install uninstall \
@@ -20,6 +20,7 @@ MKINSTDIR = @top_srcdir@/mkinstalldirs
 INSTALL = @INSTALL@
 GAUCHE_VERSION  = @GAUCHE_VERSION@
 GAUCHE_DATA_DIR = $(datadir)/gauche
+GAUCHE_ACLOCAL_DIR = $(datadir)/gauche/$(GAUCHE_VERSION)/
 DESTDIR =
 
 CONFIG_GENERATED = Makefile config.cache config.log config.status libtool \
@@ -52,7 +53,7 @@ install-pkg:
 	cd lib; $(MAKE) install
 	cd ext; $(MAKE) install
 	cd src; $(MAKE) install
-	$(INSTALL) -m 444 acinclude.m4 $(DESTDIR)`sh src/gauche-config --ac`/aclocal.m4
+	$(INSTALL) -m 444 acinclude.m4 $(DESTDIR)$(GAUCHE_ACLOCAL_DIR)/aclocal.m4
 	$(MKINSTDIR) $(DESTDIR)$(datadir)/aclocal
 	$(INSTALL) -m 444 acinclude.m4 $(DESTDIR)$(datadir)/aclocal/gauche.m4
 
