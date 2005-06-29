@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.65 2005-06-29 11:23:56 shirok Exp $
+ *  $Id: system.c,v 1.66 2005-06-29 23:35:29 shirok Exp $
  */
 
 #include <stdio.h>
@@ -336,7 +336,7 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
 
     if (!(flags & SCM_PATH_CANONICALIZE)) {
 #if defined(__MINGW32__)
-	while (*srcp) {
+	while (srcp < str+size) {
 	    char c = *srcp++;
 	    if (c == '/' || c == '\\') {
 		*dstp++ = SEPARATOR;
@@ -396,7 +396,6 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
 	}
         SKIP_SLASH;
     }
-    *dstp = '\0';
     return Scm_MakeString(buf, dstp-buf, -1, SCM_MAKSTR_COPYING);
 }
 
