@@ -3,7 +3,7 @@
 #
 # Generates gauche-config.c
 #
-# $Id: genconfig.in,v 1.2 2005-06-29 11:23:56 shirok Exp $
+# $Id: genconfig.in,v 1.3 2005-06-29 14:49:10 shirok Exp $
 #
 
 host=@host@
@@ -148,20 +148,20 @@ static struct cmd_rec {
     { "-V", "$gauche_version" },
     { "-I", "-I'$gauche_incdir'" },
     { "-L", "-L'$gauche_archdir' $local_libdir" },
-    { "--ac", "'$gauche_aclocaldir'" },
+    { "--ac", "$gauche_aclocaldir" },
     { "-l", "-lgauche $gauche_libs" },
     { "--cc", "$cc" },
     { "--reconfigure", "./configure $gauche_configure_args" },
 
-    { "--sysincdir",   "'$gauche_incdir'" },
-    { "--siteincdir",  "'$gauche_siteincdir'" },
-    { "--syslibdir",   "'$gauche_libdir'" },
-    { "--sitelibdir",  "'$gauche_sitelibdir'" },
-    { "--sysarchdir",  "'$gauche_archdir'" },
-    { "--sitearchdir", "'$gauche_sitearchdir'" },
-    { "--mandir",      "'$mandir'" },
-    { "--infodir",     "'$infodir'" },
-    { "--arch",        "'$arch'" },
+    { "--sysincdir",   "$gauche_incdir" },
+    { "--siteincdir",  "$gauche_siteincdir" },
+    { "--syslibdir",   "$gauche_libdir" },
+    { "--sitelibdir",  "$gauche_sitelibdir" },
+    { "--sysarchdir",  "$gauche_archdir" },
+    { "--sitearchdir", "$gauche_sitearchdir" },
+    { "--mandir",      "$mandir" },
+    { "--infodir",     "$infodir" },
+    { "--arch",        "$arch" },
 
     { "--local-incdir", "$local_incdir" },
     { "--local-libdir", "$local_libdir" },
