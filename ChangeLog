@@ -1,3 +1,9 @@
+2005-06-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/genconfig.in, Makefiles : better MinGW support
+	* src/system.c (Scm_Globdirectory): support on MinGW
+	* lib/file/util.scm: better MinGW support
+
 2005-06-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/www/cgi.scm (cgi-default-output): make sure cgi-default-output
