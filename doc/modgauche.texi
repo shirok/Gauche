@@ -11331,8 +11331,8 @@ input, such as @code{read-block}, is requested.
 設定されているなら、その値は、正の正確な整数の引数をひとつだけとる手続き
 でなければなりません。ブロックバイナリ入力、たとえば、
 @code{read-block}などが要求された場合に、呼出されます。
-@c COMMON
 
+@c EN
 It must return a (maybe incomplete) string up to the specified size, 
 or @code{#f} or EOF object.  If it returns a null string, @code{#f}
 or EOF object, 
@@ -11340,6 +11340,12 @@ the port thinks it reached EOF.  If it returns other string,
 it is used as the result of block read.
 It shouldn't return a string larger than the given size
 (Note: you must count size (bytes), not the number of characters).
+@c JP
+そしてそれは文字列、 不完全文字列、 @code{#f}、 EOF オブジェクトを
+返さなくてはなりません. 文字列を返す場合は上記正の正確な整数によって
+指定された大きさを越えてはなりません。空文字列、 @code{#f}、EOF を
+返した場合はポートの終端にたどり着いたものとみなされます。
+(注意: 文字列大きさは文字数でなく文字列が占めるバイト数で指定されます。)
 
 @c EN
 The reason of this procedure is efficiency; if this procedure
