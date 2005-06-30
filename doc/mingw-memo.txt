@@ -7,8 +7,9 @@ don't work because MinGW is not quite POSIX, it may be useful
 for Windows users to try out Gauche without installing the pile
 of other libraries.
 
-The quality is experimental.  Tests fails miserably.  We'll
+The quality is experimental.  Tests fail miserably.  We'll
 gradually add support layer to emulate the features MinGW lacks.
+
 
 [Compilation]
 
@@ -55,6 +56,18 @@ afterwards.
 In the src/ directory, there's a shell script mingw-dist.sh
 which configures, builds and creates a zip archive of MinGW
 distribution.  
+
+
+[Building extensions]
+
+We checked at least Gauche-gl works with MinGW version of gosh.
+Again, you need Cygwin environment to build the extension
+(you have to run ./configure after all).
+However, you no longer need Cygwin version of gosh; actually,
+you have to set a path so that the ./configure script finds
+MinGW version of gosh, gauche-config and other gauche-* tools.
+
+Just ./configure, make, and make install should work.
 
 
 
