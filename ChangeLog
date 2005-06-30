@@ -1,3 +1,14 @@
+2005-06-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c, src/system.c : set O_BINARY by default on MinGW.
+	  For sys-rename, unlink the destination file before calling rename()
+	  on MinGW, since Windows doesn't allow rename over an existing file.
+	  (NB: this breaks atomicity of rename operation).
+	* src/mingw-exify, src/Makefile.in : to run gauche-* utilities on
+	  Windows, we decided to generate .exe files for them.
+	* lib/file/util.scm (find-file-in-paths): Adapt MinGW, which uses
+	  #\; for PATH directory separator.
+
 2005-06-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/genconfig.in, Makefiles : better MinGW support
