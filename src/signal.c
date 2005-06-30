@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.32 2005-06-30 19:27:41 shirok Exp $
+ *  $Id: signal.c,v 1.33 2005-06-30 22:48:31 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -92,10 +92,10 @@ static struct sigHandlersRec {
 /* Table of signals and its initial behavior. */
 #define SIGDEF_NOHANDLE 0       /* Gauche doesn't install a signal handler,
                                    leaving it to the application. */
-#define SIGDEF_ERROR    1       /* Gauche installs a default signal handler
+#define SIGDEF_DFL      1       /* Gauche resets the singal handler to
+                                   SIG_DFL. */
+#define SIGDEF_ERROR    2       /* Gauche installs a default signal handler
                                    that raises an error. */
-#define SIGDEF_THROUGH  2       /* Gauche installs a handler that doesn't
-                                   do anything. */
 #define SIGDEF_EXIT     3       /* Gauche installs a handler that calls
                                    Scm_Exit(). */
 
@@ -146,7 +146,7 @@ static struct sigdesc {
     SIGDEF(SIGSTKFLT, SIGDEF_ERROR),  /* Stack fault */
 #endif
 #ifdef SIGCHLD
-    SIGDEF(SIGCHLD, SIGDEF_THROUGH),  /* Child status has changed (POSIX) */
+    SIGDEF(SIGCHLD, SIGDEF_DFL),      /* Child status has changed (POSIX) */
 #endif
 #ifdef SIGCONT
     SIGDEF(SIGCONT, SIGDEF_NOHANDLE), /* Continue (POSIX) */
@@ -269,7 +269,7 @@ static ScmObj default_sighandler(ScmObj *args, int nargs, void *data)
 }
 
 static SCM_DEFINE_STRING_CONST(default_sighandler_name,
-                               "%default-signal-handler", 24, 24);
+                               "%default-signal-handler", 23, 23);
 static SCM_DEFINE_SUBR(default_sighandler_stub, 1, 0,
                        SCM_OBJ(&default_sighandler_name),
                        default_sighandler,
@@ -601,16 +601,18 @@ void Scm_SetMasterSigmask(sigset_t *set)
         } else if (!sigismember(&sigHandlers.masterSigset, desc->num)
                    && sigismember(set, desc->num)) {
             /* add sighandler if necessary */
-            if (desc->defaultHandle != SIGDEF_NOHANDLE) {
+            if (desc->defaultHandle == SIGDEF_DFL) {
+                if (sigaction(desc->num, &actoff, NULL) != 0) {
+                    Scm_SysError("sigaction on %d failed", desc->num);
+                }
+                sigHandlers.handlers[desc->num] = SCM_TRUE;
+            } else if (desc->defaultHandle != SIGDEF_NOHANDLE) {
                 if (sigaction(desc->num, &acton, NULL) != 0) {
                     Scm_SysError("sigaction on %d failed", desc->num);
                 }
                 switch (desc->defaultHandle) {
                 case SIGDEF_ERROR:
                     sigHandlers.handlers[desc->num] = DEFAULT_SIGHANDLER;
-                    break;
-                case SIGDEF_THROUGH:
-                    sigHandlers.handlers[desc->num] = THROUGH_SIGHANDLER;
                     break;
                 case SIGDEF_EXIT:
                     sigHandlers.handlers[desc->num] = EXIT_SIGHANDLER;
