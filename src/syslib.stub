@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.99 2004-07-21 07:25:17 shirok Exp $
+;;; $Id: syslib.stub,v 1.100 2005-06-30 09:57:41 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -214,7 +214,16 @@
 
 (define-cproc sys-rename (old::<string> new::<string>)
   "  int r;
-  SCM_SYSCALL(r, rename(Scm_GetStringConst(old), Scm_GetStringConst(new)));
+  const char *snew = Scm_GetStringConst(new);
+#if defined(__MINGW32__)
+  /* Windows doesn't allow renaming to the existing file, so we unlink
+     it first.  This breaks the atomicity of rename operation.
+     We don't check and raise an error here, since the error will be
+     caught by rename() call. */
+  chmod(snew, 0666);
+  unlink(snew);
+#endif /* __MINGW32__ */
+  SCM_SYSCALL(r, rename(Scm_GetStringConst(old), snew));
   if (r < 0) Scm_SysError(\"renaming %S to %S failed\", old, new);
   SCM_RETURN(SCM_TRUE);")
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.66 2005-06-29 23:35:29 shirok Exp $
+ *  $Id: system.c,v 1.67 2005-06-30 09:57:41 shirok Exp $
  */
 
 #include <stdio.h>
@@ -455,16 +455,17 @@ int Scm_Mkstemp(char *templat)
 #define MKSTEMP_MAX_TRIALS 65535   /* avoid infinite loop */
     {
 	u_long seed = (u_long)time(NULL);
-	int numtry;
+	int numtry, flags;
 	char suffix[7];
+#if defined(__MINGW32__)
+	flags = O_CREAT|O_EXCL|O_WRONLY|O_BINARY;
+#else  /* !__MINGW32__ */
+	flags = O_CREAT|O_EXCL|O_WRONLY;
+#endif /* !__MINGW32__ */
 	for (numtry=0; numtry<MKSTEMP_MAX_TRIALS; numtry++) {
 	    snprintf(suffix, 7, "%06x", seed&0xffffff);
 	    memcpy(templat+siz-6, suffix, 7);
-#ifndef __MINGW32__
-	    SCM_SYSCALL(fd, open(templat, O_CREAT|O_EXCL|O_WRONLY, 0600));
-#else  /*__MINGW32__*/
- 	    SCM_SYSCALL(fd, open(templat, _O_CREAT|_O_EXCL|_O_WRONLY, 0600));
-#endif /*__MINGW32__*/
+	    SCM_SYSCALL(fd, open(templat, flags, 0600));
 	    if (fd >= 0) break;
 	    seed *= 2654435761UL;
 	}

@@ -1,0 +1,47 @@
+#!/bin/sh
+# Helper script to cross-compile Windows/MinGW distribution.
+# Since Windows doesn't understand shebang magic, we make the gauche
+# scripts (e.g. gauche-install) to exe files.
+#
+# $Id: mingw-exify,v 1.1 2005-06-30 09:57:41 shirok Exp $
+
+target=$1
+
+cat <<EOF
+#include "gauche.h"
+
+static const char* script = "\\n"
+EOF
+
+sed -e 's@\\@\\\\@g' -e 's@"@\\"@g' -e 's@^.*$@"&\\n"@g' $1
+
+cat <<EOF
+;
+
+int main(int argc, char **argv)
+{
+    int i;
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    ScmObj progstr, progport, mainproc;
+    ScmModule *usermod;
+
+    Scm_Init(GAUCHE_SIGNATURE);
+    Scm_Load("gauche-init.scm", 0);
+    for (i=0; i<argc; i++) {
+        SCM_APPEND1(h, t, SCM_MAKE_STR(argv[i]));
+    }
+    usermod = Scm_UserModule();
+    SCM_DEFINE(usermod, "*argv*", SCM_CDR(h));
+    SCM_DEFINE(usermod, "*program-name*", SCM_CAR(h));
+    progstr = SCM_MAKE_STR(script);
+    progport = Scm_MakeInputStringPort(SCM_STRING(progstr), TRUE);
+    Scm_LoadFromPort(SCM_PORT(progport), 0);
+    mainproc = Scm_SymbolValue(usermod, SCM_SYMBOL(SCM_INTERN("main")));
+    if (SCM_PROCEDUREP(mainproc)) {
+        ScmObj r = Scm_Apply(mainproc, SCM_LIST1(h));
+        if (SCM_INTP(r)) Scm_Exit(SCM_INT_VALUE(r));
+        else Scm_Exit(70);
+    }
+    Scm_Exit(0);
+}
+EOF

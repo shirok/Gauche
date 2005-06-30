@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.119 2005-05-24 23:28:38 shirok Exp $
+ *  $Id: port.c,v 1.120 2005-06-30 09:57:41 shirok Exp $
  */
 
 #include <unistd.h>
@@ -841,6 +841,12 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
     if (buffering < SCM_PORT_BUFFER_FULL || buffering > SCM_PORT_BUFFER_NONE) {
         Scm_Error("bad buffering flag: %d", buffering);
     }
+#if defined(__MINGW32__)
+    /* Force binary mode if not specified */
+    if (!(flags & (O_TEXT|O_BINARY))) {
+	flags |= O_BINARY;
+    }
+#endif /*__MINGW32__*/
     fd = open(path, flags, perm);
     if (fd < 0) return SCM_FALSE;
     bufrec.mode = buffering;

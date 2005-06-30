@@ -30,9 +30,6 @@ make
 VERSION=`cat VERSION`
 make GOSH=$cyggosh install
 (cd src; make GOSH=$cyggosh install-mingw)
-rm -rf $distdir/Gauche/bin/gauche-install
-rm -rf $distdir/Gauche/bin/gauche-package
-rm -rf $distdir/Gauche/bin/gauche-cesconv
 rm -rf $distdir/Gauche/lib/libgauche.dll*
 cp COPYING $distdir/Gauche
 cp $mingwdir/bin/mingwm10.dll $distdir/Gauche/bin

@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.140 2005-06-29 11:23:56 shirok Exp $
+#  $Id: Makefile.in,v 1.141 2005-06-30 09:57:41 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -9,7 +9,7 @@
 	clean distclean maintainer-clean install-check
 
 .SUFFIXES:
-.SUFFIXES: .S .c .o .obj .s .stub .bat .in
+.SUFFIXES: .S .c .o .obj .s .stub .in .exe
 
 .c.obj:
 	$(COMPILE) -c `cygpath -w $<`
@@ -98,8 +98,11 @@ INSTALL_SUBHEADERS = gauche/config.h                                  \
                      gauche/pthread.h gauche/uthread.h gauche/arch.h  \
 	             gauche/mingw-compat.h
 INSTALL_LIBS = libgauche.$(SOEXT)
-INSTALL_BINS = gosh$(EXEEXT) gauche-config$(EXEEXT) \
-               gauche-install gauche-package gauche-cesconv
+INSTALL_BINS = gosh$(EXEEXT)           \
+	       gauche-config$(EXEEXT)  \
+               gauche-install$(EXEEXT) \
+	       gauche-package$(EXEEXT) \
+	       gauche-cesconv$(EXEEXT)
 INSTALL_SCMS = gauche-init.scm genstub cesconv
 
 GENERATED_SCRIPTS = gauche-install gauche-package gauche-cesconv
@@ -108,8 +111,6 @@ PRIVATE_HEADERS = gauche/arith.h
 
 # MinGW specific
 INSTALL_MINGWHEADERS = gauche/mingw-compat.h
-INSTALL_BATS = gauche-install.bat gauche-package.bat \
-               gauche-cesconv.bat
 
 # build -----------------------------------------------
 
@@ -140,7 +141,7 @@ HEADERS = gauche.h $(INSTALL_SUBHEADERS) $(PRIVATE_HEADERS)
 
 OBJECTS = $(libgauche_OBJECTS) $(gosh_OBJECTS)
 
-all : gosh$(EXEEXT) libgauche.$(SOEXT) gauche-config$(EXEEXT) $(GENERATED_SCRIPTS)
+all : libgauche.$(SOEXT) $(INSTALL_BINS) $(GENERATED_SCRIPTS)
 
 gosh$(EXEEXT) : libgauche.$(SOEXT) $(gosh_OBJECTS) 
 	@rm -f gosh$(EXEEXT)
@@ -259,8 +260,8 @@ CONFIG_GENERATED = Makefile genconfig gauche/config.h
 clean :
 	rm -rf core core.[0-9]* gosh$(EXEEXT) gauche-config$(EXEEXT) \
 	       test-vmstack$(EXEEXT) test-arith$(EXEEXT)   \
-	       $(GENERATED_SCRIPTS) $(INSTALL_BATS) gauche-config.c \
-	       libgauche.$(SOEXT)* *.$(OBJEXT) *~ *.a *.t *.def *.exp \
+	       $(GENERATED_SCRIPTS) gauche-config.c \
+	       libgauche.$(SOEXT)* *.$(OBJEXT) *~ *.a *.t *.def *.exp *.exe \
 	       test.log test.dir so_locations gauche/*~ gauche/arch.h
 
 distclean : clean
@@ -301,15 +302,10 @@ uninstall :
 pre-package : $(GENERATED)
 
 # MinGW specific stuff --------------------------------
-.in.bat:
-	@rm -f $@
-	echo ";echo off" > $@
-	echo ";gosh $@ %1 %2 %3 %4 %5 %6 %7 %8 %9" >> $@
-	echo ";goto end_batfile" >> $@
-	cat $< >> $@
-	echo ":end_batfile" >> $@
-	@chmod -w $@
+.in$(EXEEXT):
+	$(SHELL) mingw-exify $< > $<.c
+	$(COMPILE) -c -o $<.o $<.c
+	$(LINK) $(gosh_LDFLAGS) -o $@ $<.o $(gosh_LDADD) $(LIBS)
 
-install-mingw: $(INSTALL_BATS)
-	$(INSTALL) -m 555 $(INSTALL_BATS) $(DESTDIR)$(BIN_INSTALL_DIR)
+install-mingw:
 	$(INSTALL) -m 444 $(INSTALL_MINGWHEADERS) $(DESTDIR)$(HEADER_INSTALL_DIR)/gauche

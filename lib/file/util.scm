@@ -1,7 +1,7 @@
 ;;;
 ;;; file/util.scm - filesystem utility functions
 ;;;  
-;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.30 2005-06-29 11:23:55 shirok Exp $
+;;;  $Id: util.scm,v 1.31 2005-06-30 09:57:40 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -281,7 +281,10 @@
 (define (find-file-in-paths name . opts)
   (let* ((paths (get-keyword :paths opts
                              (cond ((sys-getenv "PATH")
-                                    => (cut string-split <> #\:))
+                                    => (cut string-split <> 
+					    (cond-expand
+					     (gauche-windows #\;)
+					     (else #\:))))
                                    (else '()))))
          (pred  (get-keyword :pred opts file-is-executable?)))
     (if (absolute-path? name)
@@ -495,7 +498,7 @@
                          (map (cut slot-ref stat <>) '(atime mtime)))))
          (begin0
           (and (open-destination)
-               (copy-port inport outport)
+               (copy-port inport outport :unit 65536)
                #t)
           (commit)))))
 
