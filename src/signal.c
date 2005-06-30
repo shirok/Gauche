@@ -1,7 +1,7 @@
 /*
  * signal.c - signal handling
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.31 2004-11-22 14:12:43 shirok Exp $
+ *  $Id: signal.c,v 1.32 2005-06-30 19:27:41 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -94,7 +94,9 @@ static struct sigHandlersRec {
                                    leaving it to the application. */
 #define SIGDEF_ERROR    1       /* Gauche installs a default signal handler
                                    that raises an error. */
-#define SIGDEF_EXIT     2       /* Gauche installs a handler that calls
+#define SIGDEF_THROUGH  2       /* Gauche installs a handler that doesn't
+                                   do anything. */
+#define SIGDEF_EXIT     3       /* Gauche installs a handler that calls
                                    Scm_Exit(). */
 
 #define SIGDEF(x, flag)  { #x, x, flag }
@@ -144,7 +146,7 @@ static struct sigdesc {
     SIGDEF(SIGSTKFLT, SIGDEF_ERROR),  /* Stack fault */
 #endif
 #ifdef SIGCHLD
-    SIGDEF(SIGCHLD, SIGDEF_NOHANDLE), /* Child status has changed (POSIX) */
+    SIGDEF(SIGCHLD, SIGDEF_THROUGH),  /* Child status has changed (POSIX) */
 #endif
 #ifdef SIGCONT
     SIGDEF(SIGCONT, SIGDEF_NOHANDLE), /* Continue (POSIX) */
@@ -290,6 +292,22 @@ static SCM_DEFINE_SUBR(exit_sighandler_stub, 1, 0,
                        NULL, NULL);
 
 #define EXIT_SIGHANDLER    SCM_OBJ(&exit_sighandler_stub)
+
+/* For some signals, gauche does nothing */
+static ScmObj through_sighandler(ScmObj *args, int nargs, void *data)
+{
+    return SCM_UNDEFINED;
+}
+
+static SCM_DEFINE_STRING_CONST(through_sighandler_name,
+                               "%through-signal-handler", 20, 20);
+static SCM_DEFINE_SUBR(through_sighandler_stub, 1, 0,
+                       SCM_OBJ(&through_sighandler_name),
+                       through_sighandler,
+                       NULL, NULL);
+
+#define THROUGH_SIGHANDLER    SCM_OBJ(&through_sighandler_stub)
+
 
 /*
  * sigset class
@@ -587,10 +605,18 @@ void Scm_SetMasterSigmask(sigset_t *set)
                 if (sigaction(desc->num, &acton, NULL) != 0) {
                     Scm_SysError("sigaction on %d failed", desc->num);
                 }
-                if (desc->defaultHandle == SIGDEF_EXIT) {
-                    sigHandlers.handlers[desc->num] = EXIT_SIGHANDLER;
-                } else {
+                switch (desc->defaultHandle) {
+                case SIGDEF_ERROR:
                     sigHandlers.handlers[desc->num] = DEFAULT_SIGHANDLER;
+                    break;
+                case SIGDEF_THROUGH:
+                    sigHandlers.handlers[desc->num] = THROUGH_SIGHANDLER;
+                    break;
+                case SIGDEF_EXIT:
+                    sigHandlers.handlers[desc->num] = EXIT_SIGHANDLER;
+                    break;
+                default:
+                    Scm_Panic("Scm_SetMasterSigmask: can't be here");
                 }
             }
         }

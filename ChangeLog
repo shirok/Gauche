@@ -1,5 +1,8 @@
 2005-06-30  Shiro Kawai  <shiro@acm.org>
 
+	* src/signal.c : Set SIGCHLD handler, since the default behavior
+	  differs among OSes and cannot rely on.
+
 	* src/number.c (double_print): changed notation of infinity to #i1/0
 	  to emphasize inexactness.  (this notation might change depending
 	  on how srfi-70 comes out).
