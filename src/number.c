@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.119 2005-06-16 21:41:52 shirok Exp $
+ *  $Id: number.c,v 1.120 2005-06-30 17:10:29 shirok Exp $
  */
 
 #include <math.h>
@@ -1928,7 +1928,7 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
     if (val < 0.0) *buf++ = '-', buflen--;
     else if (plus_sign) *buf++ = '+', buflen--;
     if (SCM_IS_INF(val)) {
-        strcpy(buf, "1/0");
+        strcpy(buf, "#i1/0");
     } else if (SCM_IS_NAN(val)) {
         strcpy(buf, "#<nan>");
     } else if (val == 0.0) {

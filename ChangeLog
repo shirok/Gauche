@@ -1,5 +1,9 @@
 2005-06-30  Shiro Kawai  <shiro@acm.org>
 
+	* src/number.c (double_print): changed notation of infinity to #i1/0
+	  to emphasize inexactness.  (this notation might change depending
+	  on how srfi-70 comes out).
+
 	* src/port.c, src/system.c : set O_BINARY by default on MinGW.
 	  For sys-rename, unlink the destination file before calling rename()
 	  on MinGW, since Windows doesn't allow rename over an existing file.
