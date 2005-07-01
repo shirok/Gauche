@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.120 2005-06-30 17:10:29 shirok Exp $
+ *  $Id: number.c,v 1.121 2005-07-01 01:02:14 shirok Exp $
  */
 
 #include <math.h>
@@ -1925,15 +1925,25 @@ static inline int numcmp3(ScmObj x, ScmObj d, ScmObj y)
 
 static void double_print(char *buf, int buflen, double val, int plus_sign)
 {
-    if (val < 0.0) *buf++ = '-', buflen--;
-    else if (plus_sign) *buf++ = '+', buflen--;
-    if (SCM_IS_INF(val)) {
-        strcpy(buf, "#i1/0");
+    /* Handle a few special cases first.
+       The notation of infinity is provisional; see how srfi-70 becomes. */
+    if (val == 0.0) {
+        if (plus_sign) strcpy(buf, "+0.0");
+        else strcpy(buf, "0.0");
+        return;
+    } else if (SCM_IS_INF(val)) {
+        if (val < 0.0) strcpy(buf, "#i-1/0");
+        else if (plus_sign) strcpy(buf, "#i+1/0");
+        else strcpy(buf, "#i1/0");
+        return;
     } else if (SCM_IS_NAN(val)) {
         strcpy(buf, "#<nan>");
-    } else if (val == 0.0) {
-        strcpy(buf, "0.0");
-    } else {
+        return;
+    }
+    
+    if (val < 0.0) *buf++ = '-', buflen--;
+    else if (plus_sign) *buf++ = '+', buflen--;
+    {
         /* variable names follows Burger&Dybvig paper. mp, mm for m+, m-.
            note that m+ == m- for most cases, and m+ == 2*m- for the rest.
            so we calculate m+ from m- for each iteration, using the flag
