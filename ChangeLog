@@ -1,7 +1,9 @@
 2005-06-30  Shiro Kawai  <shiro@acm.org>
 
-	* src/signal.c : Set SIGCHLD handler, since the default behavior
-	  differs among OSes and cannot rely on.
+	* release 0.8.5
+	
+	* src/signal.c : fixed a problem that with-signal-handlers reset
+	  SIGCHLD handler to SIG_IGN afterwards.
 
 	* src/number.c (double_print): changed notation of infinity to #i1/0
 	  to emphasize inexactness.  (this notation might change depending

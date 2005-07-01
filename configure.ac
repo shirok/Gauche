@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.61 2005-06-27 22:48:10 shirok Exp $
+dnl $Id: configure.ac,v 1.62 2005-07-01 11:36:38 shirok Exp $
 AC_PREREQ(2.54)
-AC_INIT(Gauche, 0.8.5_pre1, shiro@acm.org)
-AC_REVISION($Revision: 1.61 $)
+AC_INIT(Gauche, 0.8.5, shiro@acm.org)
+AC_REVISION($Revision: 1.62 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
