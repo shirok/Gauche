@@ -1,7 +1,7 @@
 ;;;
 ;;; regexp.scm - regexp-related utilities
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,12 +30,14 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: regexp.scm,v 1.13 2004-09-12 21:42:41 shirok Exp $
+;;;  $Id: regexp.scm,v 1.14 2005-07-02 12:34:08 shirok Exp $
 ;;;
 
 (define-module gauche.regexp
   (export rxmatch-let rxmatch-if rxmatch-cond rxmatch-case
-          regexp-replace regexp-replace-all regexp-quote))
+          regexp-replace regexp-replace-all
+          regexp-replace* regexp-replace-all*
+          regexp-quote))
 (select-module gauche.regexp)
 
 (define-syntax rxmatch-bind*
@@ -173,6 +175,26 @@
                     (else (display str out)))))
           (regexp-replace-rec match subpat out loop)))
       string)))
+
+;; Multiple replacement 
+(define (regexp-replace-driver name func-1)
+  (lambda (string rx sub . more)
+    (cond ((null? more)
+           (func-1 rx string sub))
+          (else
+           (unless (zero? (modulo (length more) 2))
+             (errorf "~a: regexp and subsitution don't pair up" name))
+           (let loop ((s (func-1 rx string sub))
+                      (args more))
+             (if (null? args)
+               s
+               (loop (func-1 (car args) s (cadr args))
+                     (cddr args))))))))
+
+(define regexp-replace*
+  (regexp-replace-driver 'regexp-replace* regexp-replace))
+(define regexp-replace-all*
+  (regexp-replace-driver 'regexp-replace-all* regexp-replace-all))
 
 ;; Contributed from Alex Shinn; modified a bit by shiro
 (define (regexp-quote str)

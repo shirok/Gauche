@@ -2,7 +2,7 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.20 2005-05-24 07:46:14 shirok Exp $
+;; $Id: regexp.scm,v 1.21 2005-07-02 12:34:08 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -681,6 +681,18 @@
        (regexp-replace-all #/\d*/ "abcdef" "X"))
 (test* "regexp-replace-all" *test-error*
        (regexp-replace-all #/\d*/ "123abcdef" "X"))
+
+(test* "regexp-replace*" "cbazzbc"
+       (regexp-replace* "abcbabc"
+                        #/abc/ "cba"
+                        #/aba/ "abc"
+                        #/bc/  "zz"))
+
+(test* "regexp-replace-all*" "cbazzccbazz"
+       (regexp-replace-all* "abcbacabcbc"
+                            #/abc/ "cba"
+                            #/aba/ "abc"
+                            #/bc/  "zz"))
 
 ;;-------------------------------------------------------------------------
 (test-section "regexp cimatch")
