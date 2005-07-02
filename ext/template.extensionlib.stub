@@ -1,0 +1,8 @@
+;;;
+;;; @@extname@@lib.stub
+;;;
+
+"
+#include \"@@extname@@.h\"
+"
+

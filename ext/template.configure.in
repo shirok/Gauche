@@ -1,11 +1,11 @@
 dnl
-dnl Configuring spigot
+dnl Configuring @@package@@
 dnl  process this file with autoconf to generate 'configure'.
-dnl $Id: configure.in,v 1.4 2005-07-02 13:23:13 shirok Exp $
+dnl $Id: template.configure.in,v 1.1 2005-07-02 13:23:13 shirok Exp $
 dnl
 
 AC_PREREQ(2.54)
-AC_INIT(spigot, 1.0, shiro@acm.org)
+AC_INIT(@@package@@, 1.0, shiro@acm.org)
 dnl If you want to use the system name (OS, architecture, etc) in the
 dnl configure, uncomment the following line.  In such a case, you need
 dnl to copy config.guess and config.sub from automake distribution.

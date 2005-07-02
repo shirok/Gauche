@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche-package - Gauche package builder/manager
 ;;;  
-;;;   Copyright (c) 2004 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2004-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-package.in,v 1.7 2004-05-16 20:40:27 shirok Exp $
+;;;  $Id: gauche-package.in,v 1.8 2005-07-02 13:23:13 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -38,11 +38,19 @@
 (use gauche.parseopt)
 (use gauche.version)
 (use gauche.package)
-(use gauche.package.build)
-(use gauche.package.fetch)
 (use gauche.collection)
 (use file.util)
+(use file.filter)
 (use util.list)
+(use text.tr)
+
+(autoload gauche.package.build
+          gauche-package-build)
+(autoload gauche.package.compile
+          gauche-package-compile-and-link
+          gauche-package-compile
+          gauche-package-link
+          gauche-package-clean)
 
 (define *commands* '())
 (define *helps* '())
@@ -180,7 +188,7 @@ Options:
 (define-cmd "list"
   ("list"
    "List known installed packages"
-   "Shows installed packages.  Only packages that have .gpd file are listed.
+   "  Only packages that have .gpd file are listed.
 Options:
   -a, --all    : shows all packages, even the ones that are installed for
                  other versions of Gauche.")
@@ -221,6 +229,120 @@ Options:
                         (make-keyword (string-trim (car p) #[-:]))
                         r)))
           )))
+
+;;------------------------------------------------------
+;; compile
+;;
+(define-cmd "compile"
+  ("compile [options] [<extension-name>] <file> ..."
+   "Compile and link an extension module from sources"
+   "
+  <file> can be any types the system's C compiler accepts, plus a stub
+  file (with extension '.stub') which is a genstub source.
+
+  By default, this command compiles given files with the options appropriate
+  to compile Gauche extensions, then links a dynamically loadable object
+  <extension-name>.so (the suffix may differ among systems).  
+  If '-c' option is given, only compilation of a single file is done.  
+  You can give extra flags for the compiler/linker via options.
+
+  <extension-name> must match the name passed to SCM_INIT_EXTENSION, 
+  and must be a valid C identifier.  (NB: <extension-name> is used only 
+  as the filename and the argument of SCM_INIT_EXTENSION, and has nothing 
+  to do with the package name or the module name.  
+
+Options:
+  -c, --compile       : compile only.  with this option, <module> shouldn't
+                        be given and only one <file> is allowed.
+  -n, --dry-run       : just display commands to be executed.
+  -v, --verbose       : reports commands being executed.
+  -o, --output=name   : alternative output file name
+      --clean         : instead of compile and link, removes the intermediate
+                        and output file(s) that would be generated otherwise.
+                        useful for 'make clean'.
+  --cppflags=CPPFLAGS : extra cpp flags for compile, such as -I/usr/local
+  --cflags=CFLAGS     : extra cc flags for compile
+  --ldflags=LDFLAGS   : extra ld flags
+  --libs=LIBS         : extra libraries")
+  (let-args args ((dry-run      "n|dry-run")
+                  (verbose      "v|verbose")
+                  (compile-only "c|compile")
+                  (output       "o|output=s")
+                  (clean        "clean")
+                  (cppflags     "cppflags=s")
+                  (cflags       "cflags=s")
+                  (ldflags      "ldflags=s")
+                  (libs         "libs=s")
+                  . args)
+    (cond
+     (clean
+      (unless (null? args)
+        (gauche-package-clean (if compile-only #f (car args))
+                              (if compile-only args (cdr args))
+                              :output output)))
+     (compile-only
+      (unless (= (length args) 1) (usage-self))
+      (gauche-package-compile (car args)
+                              :dry-run dry-run :verbose verbose
+                              :output output
+                              :cppflags cppflags :cflags cflags))
+     (else
+      (when (<= (length args) 1) (usage-self))
+      (gauche-package-compile-and-link (car args) (cdr args)
+                                       :dry-run dry-run :verbose verbose
+                                       :output output
+                                       :cppflags cppflags :cflags cflags
+                                       :ldflags ldflags :libs libs)))
+    ))
+
+;;------------------------------------------------------
+;; generate
+;;
+(define-cmd "generate"
+  ("generate package-name"
+   "Generate template source tree for a new Gauche extension"
+   "
+  This command creates a directory <package-name> under the current
+  directory, and populates it with the template files.  It is an easy
+  way to start writing Gauche extension.
+
+  <package-name> is the one you'll see as a part of the name of tarball,
+  for example, \"Gauche-gl\".  It is the name of the unit of distribution
+  and installation of your package.")
+  (let-optionals* args ((package-name #f)
+                        . more)
+    (unless (and package-name (null? more)) (usage-self))
+    (unless (#/^[\w-]+$/ package-name)
+      (app-error "Invalid character in package-name ~s: You can only use alphanumeric chars, underscore, and minus sign."))
+    (let ((extension-name (string-tr package-name "A-Za-z_-" "a-za-z__"))
+          (tmpl-dir (sys-dirname (gauche-library-directory))))
+      (make-directory* package-name)
+      (for-each
+       (lambda (file)
+         (filter-copy (build-path tmpl-dir #`"template.,file")
+                      (build-path package-name
+                                  (regexp-replace #/extension/ file
+                                                  extension-name))
+                      package-name extension-name))
+       '("Makefile.in" "configure.in" "extension.c" "extension.h"
+         "extensionlib.stub" "extension.scm" "test.scm")))
+    ))
+
+(define (filter-copy src dst package-name extension-name)
+  (let1 EXTENSION-NAME (string-upcase extension-name)
+    (file-filter (lambda (in out)
+                   (port-for-each
+                    (lambda (line)
+                      (display
+                       (regexp-replace-all* line
+                                            #/@@package@@/ package-name
+                                            #/@@extname@@/ extension-name
+                                            #/@@EXTNAME@@/ EXTENSION-NAME)
+                       out)
+                      (newline out))
+                    (cut read-line in)))
+                 :input src
+                 :output dst)))
 
 ;;------------------------------------------------------
 ;; help

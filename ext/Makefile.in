@@ -1,9 +1,29 @@
-
 @SET_MAKE@
 SUBDIRS= auxsys threads uvector charconv binary net termios \
          fcntl sxml syslog dbm mt-random digest vport
 
 CONFIG_GENERATED = Makefile Makefile.ext
+
+SHELL       = @SHELL@
+prefix      = @prefix@
+exec_prefix = @exec_prefix@
+bindir      = @bindir@
+libdir      = @libdir@
+datadir     = @datadir@
+srcdir      = @srcdir@
+VPATH       = $(srcdir)
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+GAUCHE_VERSION = @GAUCHE_VERSION@
+DESTDIR     =
+
+INSTALL = @INSTALL@
+TEMPLATE_INST_DIR = $(datadir)/gauche/$(GAUCHE_VERSION)
+
+TEMPLATES = template.Makefile.in template.configure.in \
+	    template.extension.h template.extension.c \
+	    template.extensionlib.stub template.extension.scm \
+	    template.test.scm
 
 all:
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) default); done
@@ -15,9 +35,13 @@ check:
 
 install:
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) install); done
+	$(INSTALL) -m 444 $(TEMPLATES) $(DESTDIR)$(TEMPLATE_INST_DIR)
 
 uninstall:
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) uninstall); done
+	for f in $(TEMPLATES); do \
+	  rm -f $(DESTDIR)$(TEMPLATE_INST_DIR)/$$f; \
+	done
 
 clean:
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) clean); done

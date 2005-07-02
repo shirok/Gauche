@@ -6889,6 +6889,16 @@ Returns a string with the characters that are special to regexp escaped.
 @end example
 @end defun
 
+@defun regexp-replace* string rx1 sub1 rx2 sub2 @dots{}
+@defunx regexp-replace-all* string rx1 sub1 rx2 sub2 @dots{}
+First applies @code{regexp-replace} or @code{regexp-replace-all} to
+@var{string} with a regular expression @var{rx1} substituting for
+@var{sub1}, then applies the function on the result string
+with a regular expression @var{rx2} substituting for @var{sub2}, and
+so on.  These functions are handy when you want to apply
+multiple substitutions sequentially on a string.
+@end defun
+
 @c ----------------------------------------------------------------------
 @node Reloading modules, Simple dispatcher, Regular expression utilities, Library modules - Gauche extensions
 @section @code{gauche.reload} - Reloading modules

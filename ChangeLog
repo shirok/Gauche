@@ -1,3 +1,12 @@
+2005-07-02  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/package/compile.scm : utility to compile & link 
+	  extension modules.
+	* src/gauche-package.in: added 'compile' and 'generate' command
+	  to ease extension module building.
+	* ext/template.*: template files for extension modules. 
+	  "gauche-package generate" creates the skeleton from these files.
+
 2005-07-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/regexp.scm (regexp-replace*, regexp-replace-all*): 

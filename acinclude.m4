@@ -1,16 +1,16 @@
 dnl Gauche-specific autoconf macros.
-dnl $Id: acinclude.m4,v 1.15 2004-12-21 22:49:37 shirok Exp $
+dnl $Id: acinclude.m4,v 1.16 2005-07-02 13:23:04 shirok Exp $
 
 dnl AC_GAUCHE_INIT_EXT
 dnl   Sets some parameters about installed Gauche package. 
 dnl
-dnl    GAUCHE_CONFIG   - Name of gauche-config script
-dnl    GAUCHE_TOP      - [OBSOLETED] Directory prefix where Gauche is
-dnl                      installed, or empty if this is an individual
-dnl                      extension.
+dnl    GOSH            - Path of gosh executable
+dnl    GAUCHE_CONFIG   - Path of gauche-config program
+dnl    GAUCHE_PACKAGE  - Path of gauche-package program
+dnl    GAUCHE_INSTALL  - Path of gauche-install program
+dnl    GAUCHE_CESCONV  - Path of gauche-cesconv program
 dnl    GAUCHE_INC      - '-I' macros required to compile extensions.
 dnl    GAUCHE_LIB      - '-L' macros required to link extensions.
-dnl    GOSH            - Path of gosh executable
 dnl    GAUCHE_VERSION  - The version of Gauche.
 AC_DEFUN([AC_GAUCHE_INIT_EXT],
          [
@@ -18,10 +18,10 @@ AC_PATH_PROG([GOSH], gosh)
 AC_PATH_PROG([GAUCHE_CONFIG], gauche-config)
 AC_PATH_PROG([GAUCHE_PACKAGE], gauche-package)
 AC_PATH_PROG([GAUCHE_INSTALL], gauche-install)
+AC_PATH_PROG([GAUCHE_CESCONV], gauche-cesconv)
 GAUCHE_TOP=
 GAUCHE_INC="`gauche-config -I`"
 GAUCHE_LIB="`gauche-config -L`"
-AC_SUBST(GAUCHE_TOP)
 AC_SUBST(GAUCHE_INC)
 AC_SUBST(GAUCHE_LIB)
 GAUCHE_VERSION=`$GAUCHE_CONFIG -V`

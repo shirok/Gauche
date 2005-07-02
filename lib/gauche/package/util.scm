@@ -30,21 +30,23 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.1 2004-04-23 06:01:27 shirok Exp $
+;;;  $Id: util.scm,v 1.2 2005-07-02 13:23:13 shirok Exp $
 ;;;
 
 ;;; NB: this module is not intended for external use.
 
 (define-module gauche.package.util
   (use gauche.parameter)
-  (export run dry-run))
+  (export run dry-run verbose-run))
 (select-module gauche.package.util)
 
-(define dry-run (make-parameter #f))
+(define dry-run     (make-parameter #f))
+(define verbose-run (make-parameter #f))
 
 (define (run cmdline)
-  (if (dry-run)
-    (print cmdline)
+  (when (or (dry-run) (verbose-run))
+    (print cmdline))
+  (unless (dry-run)
     ;; NB: theoretically this is non-portable, but practically it works
     ;; well.
     (unless (zero? (sys-system cmdline))

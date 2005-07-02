@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.package.build - build a package
 ;;;  
-;;;   Copyright (c) 2004 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2004-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: build.scm,v 1.7 2004-05-22 19:02:40 shirok Exp $
+;;;  $Id: build.scm,v 1.8 2005-07-02 13:23:13 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -39,7 +39,6 @@
 
 (define-module gauche.package.build
   (use srfi-1)
-  (use srfi-2)
   (use gauche.package)
   (use gauche.package.util)
   (use gauche.package.fetch)
@@ -102,7 +101,7 @@
   (let ((make (assq-ref config 'make *make-program*)))
     (run #`"cd \",dir\"; \",make\" check")))
 
-(define (make-install config dir sudo-user)
+(define (make-install config dir sudo-user sudo-pass)
   (let ((make (assq-ref config 'make *make-program*))
         (sudo (assq-ref config 'sudo *sudo-program*)))
     (if sudo-user
@@ -138,7 +137,8 @@
                        (check?       :check #t)
                        (install?     :install #f)
                        (clean?       :clean #f)
-                       (sudo-user    :sudo-install #f))
+                       (sudo-user    :sudo-install #f)
+                       (sudo-pass    :sudo-password #f))
     (parameterize ((dry-run dry?))
       (let* ((tarball   (gauche-package-ensure uri :config config))
              (build-dir (assq-ref config 'build-dir "."))
@@ -155,7 +155,7 @@
           (make config dir)
           (when check?   (make-check config dir)))
         (when (or install? install-only?)
-          (make-install config dir sudo-user))
+          (make-install config dir sudo-user sudo-pass))
         (when clean?   (clean config dir))))))
 
 (provide "gauche/package/build")
