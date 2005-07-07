@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.230 2005-05-25 23:44:09 shirok Exp $
+ *  $Id: vm.c,v 1.231 2005-07-07 01:45:27 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2400,13 +2400,30 @@ pthread_key_t Scm_VMKey(void)
  * Stack management
  */
 
+/* We have 'fowarding pointer' for env and cont frames being moved.
+   Forwarding pointers are resolved within these internal routines
+   and should never leak out.
+
+   Forwarded pointer is marked by the 'size' field be set -1.
+   Env->up or Cont->prev field holds the relocated frame.
+
+   Invariance: forwarded pointer only appear in stack.  We skip some
+   IN_STACK_P check because of it. */
+
+#define FORWARDED_ENV_P(e)  ((e)&&((e)->size == -1))
+#define FORWARDED_ENV(e)    ((e)->up)
+
+#define FORWARDED_CONT_P(c) ((c)&&((c)->size == -1))
+#define FORWARDED_CONT(c)   ((c)->prev)
+
+/* update env ptr of continuation chain. */
 #define ADJUST_CONT_ENV(c, start)                                       \
     do {                                                                \
-      for (c = (start); IN_STACK_P((ScmObj*)c); c = c->prev) {          \
-        if (IN_STACK_P((ScmObj*)(c->env)) && c->env->size == -1) {      \
-          c->env = c->env->up;                                          \
+        for (c = (start); IN_STACK_P((ScmObj*)c); c = c->prev) {        \
+            if (FORWARDED_ENV_P(c->env)) {                              \
+                c->env = FORWARDED_ENV(c->env);                         \
+            }                                                           \
         }                                                               \
-      }                                                                 \
     } while (0)
 
 /* Performance note: As of 0.8.4_pre1, each save_env call spends about
@@ -2433,6 +2450,7 @@ static inline ScmEnvFrame *save_env(ScmVM *vm,
     ScmContFrame *c;
 
     if (!IN_STACK_P((ScmObj*)e)) return e;
+    if (FORWARDED_ENV_P(e)) return FORWARDED_ENV(e);
 
     /* First pass - move envs in stack to heap.  After env is moved,
        the location of 'up' pointer in the env frame in the stack
@@ -2459,68 +2477,103 @@ static inline ScmEnvFrame *save_env(ScmVM *vm,
     /* Second pass - scan continuation frames in the stack, and forwards
        env pointers.   Most of the time we don't need to scan cont chains
        except the main one (from vm->cont). */
-    ADJUST_CONT_ENV(c, cont_begin);
-    if (cont_begin != vm->cont) {
-        ScmCStack *cstk;
-        ScmEscapePoint *ep;
-        for (cstk = vm->cstack; cstk; cstk = cstk->prev) {
-            ADJUST_CONT_ENV(c, cstk->cont);
-        }
-        for (ep = vm->escapePoint; ep; ep = ep->prev) {
-            ADJUST_CONT_ENV(c, ep->cont);
-        }
-        ep = SCM_VM_FLOATING_EP(vm);
-        for (; ep; ep = ep->floating) {
-            ADJUST_CONT_ENV(c, ep->cont);
+    if (cont_begin != NULL) {
+        ADJUST_CONT_ENV(c, cont_begin);
+        if (cont_begin != vm->cont) {
+            ScmCStack *cstk;
+            ScmEscapePoint *ep;
+            for (cstk = vm->cstack; cstk; cstk = cstk->prev) {
+                ADJUST_CONT_ENV(c, cstk->cont);
+            }
+            for (ep = vm->escapePoint; ep; ep = ep->prev) {
+                ADJUST_CONT_ENV(c, ep->cont);
+            }
+            ep = SCM_VM_FLOATING_EP(vm);
+            for (; ep; ep = ep->floating) {
+                ADJUST_CONT_ENV(c, ep->cont);
+            }
         }
     }
     return head;
 }
 
-/* Copy the continuation to the heap. 
-   Note that the naive copy of the stack won't work, since
-   - Environment frame in it may be moved later, and corresponding
-     pointers must be adjusted, and
-   - The stack frame contains a pointer value to other frames,
-     which will be invalid if the continuation is resumed by
-     the different thread.
+/* Copy the continuation frames to the heap.  Env frames are also
+   saved.
+
+   Like save_env, we run two passes, first replacing cont frame
+   with the forwarding pointer.  Forwarded frame has the pointer
+   to the new frame in c->prev, and marked by c->size == -1.
  */
 static void save_cont(ScmVM *vm, ScmContFrame *cont_begin)
 {
-    ScmContFrame *c = cont_begin, *prev = NULL;
+    ScmContFrame *c = cont_begin, *prev = NULL, *tmp;
     ScmCStack *cstk;
     ScmEscapePoint *ep;
-    
-    for (; IN_STACK_P((ScmObj*)c); c = c->prev) {
-        ScmEnvFrame *e = save_env(vm, c->env, c);
+    ScmObj *s, *d;
+    int i;
+
+    /* First pass */
+    while (IN_STACK_P((ScmObj*)c)) {
+        ScmEnvFrame *e;
         int size = (CONT_FRAME_SIZE + c->size) * sizeof(ScmObj);
         ScmContFrame *csave = SCM_NEW2(ScmContFrame*, size);
 
-        if (c->env == vm->env) vm->env = e;
-        if (c == vm->cont) vm->cont = csave;
+        /* update env ptr if necessary */
+        c->env = save_env(vm, c->env, NULL);
+
+        /* copy cont frame */
         if (c->argp) {
-            memcpy(csave, c, CONT_FRAME_SIZE * sizeof(ScmObj));
+            *csave = *c; /* copy the frame */
             if (c->size) {
-                memcpy((void**)csave + CONT_FRAME_SIZE,
-                       c->argp, c->size * sizeof(ScmObj));
+                /* copy the args */
+                s = c->argp;
+                d = (ScmObj*)csave + CONT_FRAME_SIZE;
+                for (i=0; i<c->size; i++) {
+                    *d++ = *s++;
+                }
             }
-            csave->argp = ((ScmObj *)csave + CONT_FRAME_SIZE);
+            csave->argp = ((ScmObj*)csave + CONT_FRAME_SIZE);
         } else {
             /* C continuation */
-            memcpy(csave, c, (CONT_FRAME_SIZE + c->size) * sizeof(ScmObj));
+            s = (ScmObj*)c;
+            d = (ScmObj*)csave;
+            for (i=0; i<CONT_FRAME_SIZE + c->size; i++) {
+                *d++ = *s++;
+            }
         }
-        for (cstk = vm->cstack; cstk; cstk = cstk->prev) {
-            if (cstk->cont == c) cstk->cont = csave;
-        }
-        for (ep = vm->escapePoint; ep; ep = ep->prev) {
-            if (ep->cont == c) ep->cont = csave;
-        }
-        ep = SCM_VM_FLOATING_EP(vm);
-        for (; ep; ep = ep->floating) {
-            if (ep->cont == c) ep->cont = csave;
-        }
+
+        /* make the orig frame forwarded */
         if (prev) prev->prev = csave;
         prev = csave;
+        
+        tmp = c->prev;
+        c->prev = csave;
+        c->size = -1;
+        c = tmp;
+    }
+    
+    /* Second pass */
+    if (FORWARDED_CONT_P(vm->cont)) {
+        vm->cont = FORWARDED_CONT(vm->cont);
+    }
+    if (FORWARDED_ENV_P(vm->env)) {
+        vm->env = FORWARDED_ENV(vm->env);
+    }
+    for (cstk = vm->cstack; cstk; cstk = cstk->prev) {
+        if (FORWARDED_CONT_P(cstk->cont)) {
+            cstk->cont = FORWARDED_CONT(cstk->cont);
+        }
+    }
+    for (ep = vm->escapePoint; ep; ep = ep->prev) {
+        if (FORWARDED_CONT_P(ep->cont)) {
+            ep->cont = FORWARDED_CONT(ep->cont);
+        }
+    }
+    ep = SCM_VM_FLOATING_EP(vm);
+    for (; ep; ep = ep->floating) {
+        if (FORWARDED_CONT_P(ep->cont)) {
+            ep->cont = FORWARDED_CONT(ep->cont);
+        }
     }
 }
 
