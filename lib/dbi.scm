@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.1 2005-07-10 11:03:07 shirok Exp $
+;;;  $Id: dbi.scm,v 1.2 2005-07-10 20:39:00 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -39,26 +39,21 @@
 ;;; management systems.  
 
 (define-module dbi
-  (export <dbi-error> <dbi-sql-error> <dbi-exception>
+  (use text.sxql)
+  (export <dbi-error>
           <dbi-driver> <dbi-connection> <dbi-query> <dbi-result-set>
 	  dbi-make-driver dbi-make-connection dbi-make-query
 	  dbi-execute-query dbi-get-value dbi-close
-          dbi-sql-escape-string))
+          ;; compatibility
+          <dbi-exception))
 (select-module dbi)
-
-;; Base class of dbi-related error condition.
-(define-condition-type <dbi-error> <error> #f)
-
-;; for backward compatibility
-(define <dbi-exception> <dbi-error>)
 
 ;;;==============================================================
 ;;; DBI objects
 ;;;
 
-;; Conditions: actual definition is in dbd module.
-
-(define <dbi-error> <dbi-error>)
+;; Root of dbi-related errors
+(define-condition-type <dbi-error> <error> #f)
 
 ;; <dbi-driver> is the base class of database drivers; a database
 ;; driver implements actual interface to a specific database system.
@@ -133,7 +128,13 @@
   (and-let* ((module-name (dbd-search-driver-name driver-name))
              (class-name  (string->symbol #`"<,|driver-name|-driver>")))
     (eval `(use ,module-name) (current-module))
-    (eval class-name (current-module))))
+    (eval class-name (find-module module-name))))
+
+;;;===================================================================
+;;; Default prepared-SQL handler
+;;;   For the drivers that doesn't handle prepared (parameterized) SQL,
+;;;   we provide a default method
+
 
 ;;;==============================================================
 ;;; Backward compatibility stuff
