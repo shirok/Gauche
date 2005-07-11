@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: scmlib.scm,v 1.4 2005-05-02 10:30:39 shirok Exp $
+;;;  $Id: scmlib.scm,v 1.5 2005-07-11 03:33:13 shirok Exp $
 ;;;
 
 ;; This file contains builtin library functions that are easier to be
@@ -160,6 +160,12 @@
 ;;; call/cc alias
 ;;;
 (define-in-module scheme call/cc call-with-current-continuation)
+
+;;;=======================================================
+;;; symbol-bound? (deprecated)
+;;;
+(define (symbol-bound? name . maybe-module)
+  (global-variable-bound? (get-optional maybe-module #f) name))
 
 ;;;=======================================================
 ;;; call-with-values

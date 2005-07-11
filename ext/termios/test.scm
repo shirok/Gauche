@@ -19,7 +19,7 @@
            syms
            (let ((p (open-input-string (string-append "(list " str ")"))))
              (eval (read p) (interaction-environment))))
-      (if (symbol-bound? (car cans))
+      (if (global-variable-bound? 'gauche.termios (car cans))
         (loop (cdr cans)
               (cons (car cans) syms)
               (string-append str " " (symbol->string (car cans))))

@@ -1541,11 +1541,11 @@ The second form is merely a syntactic sugar of:
 
 @c EN
 Note: to find out if a symbol has definition (global binding) in
-the current module, you can use @code{symbol-bound?}
+the current module, you can use @code{global-variable-bound?}
 (@xref{Module introspection}).
 @c JP
 註: シンボルが現在のモジュール中で定義されているか(グローバルな束縛を持つか)
-を調べるには、@code{symbol-bound?}が使えます
+を調べるには、@code{global-variable-bound?}が使えます
 (@ref{Module introspection}参照)。
 @c COMMON
 
@@ -2351,23 +2351,65 @@ list (@ref{Module inheritance}参照) を返します。
 @c COMMON
 @end defun
 
-@defun symbol-bound? symbol &optional module
+@defun global-variable-bound? module symbol
 @c EN
 Returns true if @var{symbol}'s global binding is visible
-from @var{module}.  If @var{module} is omitted, the current module
-is used.
+from @var{module}.  @var{Module} must be a module object or
+a symbol name of an existing module.
+
+Note: there used to be the @code{symbol-bound?} procedure to
+check whether a global variable is bound.  It is deprecated and
+the new code should use @code{global-variable-bound?} instead.
+The reason of change is that the name @code{symbol-bound?} and
+the fact that it assumes current-module by default, it gives
+an illusion as if a global bound value is somewhat 'stored'
+in a symbol itself (like CommonLisp's model).  It caused a lot
+of confusion when the current module differs between
+compile-time and runtime.  The new name and API made it clear
+that you are querying module's property.
 @c JP
 @var{symbol}のグローバルなバインディングが@var{module}から
-可視であれば、真を返します。@var{module}が省略された場合は、
-現在のモジュールが使われます。
+可視であれば、真を返します。@var{module}はモジュールオブジェクトか
+既存のモジュール名を示すシンボルでなければなりません。
+
+註: 以前、この手続きの機能は@code{symbol-bound?}という手続きで
+実現されていました。@code{symbol-bound?}は非推奨となり、新しいコードは
+@code{global-variable-bound?}を使わねばなりません。
+この変更の理由は、@code{symbol-bound?}がカレントモジュールをデフォルトと
+しており、またその名前からも、グローバルな束縛値があたかも
+(CommonLispのように)シンボルそのものの属性であるかのような誤解を招いて
+いたからです。そのせいで、特にコンパイル時と実行時でカレントモジュールが
+異なるような場合に多くの混乱が生じていました。
+新しい名前とAPIは、グローバルな束縛値についてモジュールに問い合わせている
+ということを明確にしています。
+@c COMMON
+@end defun
+
+@defun global-variable-ref module symbol &optional default
+@c EN
+Returns a value globally bound to the @var{symbol} visible
+from @var{module}.  @var{Module} must be a module object or
+a symbol name of an existing module.  If there's no visible
+global binding from @var{module} for @var{symbol},
+an error is signalled, unless the @var{default} argument is
+provided, in which case it is returned instead.
+@c JP
+モジュール@var{module}から可視の、シンボル@var{symbol}のグローバルな
+束縛値を返します。@var{module}はモジュールオブジェクトか
+既存のモジュール名を示すシンボルでなければなりません。
+@var{symbol}に対する可視のグローバル束縛が無い場合は、
+@var{default}引数があたえられていればその値を返し、
+無ければエラーを通知します。
 @c COMMON
 @end defun
 
 @defun module-name->path symbol
 @c EN
-Converts a module name @var{symbol} to a fragment of pathname string.
+Converts a module name @var{symbol} to a fragment of pathname string
+(which you use for @code{require} and @code{provide}).
 @c JP
-モジュール名@var{symbol}を、パス名の一部へと変換します。
+モジュール名@var{symbol}を、パス名の一部(@code{require}や@code{provide}が
+使うような)へと変換します。
 @c COMMON
 @end defun
 

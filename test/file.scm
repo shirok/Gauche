@@ -45,7 +45,7 @@
 (with-output-to-file "test.out/test5.o"
   (lambda () (display (make-string 20000 #\i))))
 
-(if (symbol-bound? 'sys-symlink)
+(if (global-variable-bound? 'gauche 'sys-symlink)
     (begin
       (sys-symlink "test1.o" "test.out/test6.o")
       (sys-symlink "test6.o" "test.out/test7.o")
@@ -58,7 +58,7 @@
 (sys-system "mkdir test.out/test.d")
 (with-output-to-file "test.out/test.d/test10.o"
   (lambda () (display (make-string 100 #\o))))
-(if (symbol-bound? 'sys-symlink)
+(if (global-variable-bound? 'gauche 'sys-symlink)
     (sys-symlink "../test1.o" "test.out/test.d/test11.o")
     (with-output-to-file "test.out/test.d/test11.o" (lambda () (newline))))
 
@@ -122,7 +122,7 @@
                             :filter (lambda (p) (string-contains p "test")))
          x))
 
-(when (symbol-bound? 'sys-symlink)
+(when (global-variable-bound? 'gauche 'sys-symlink)
   (test* "directory-list2 :follow-link? #f"
          '(("test.d")
            ("test1.o" "test2.d" "test2.o" "test3.o" "test4.o"
@@ -132,7 +132,7 @@
          ))
 
 (test* "directory-fold"
-       (if (symbol-bound? 'sys-symlink)
+       (if (global-variable-bound? 'gauche 'sys-symlink)
            '("test.out/test.d/test10.o" "test.out/test.d/test11.o"
              "test.out/test1.o"
              "test.out/test2.d/test10.o" "test.out/test2.d/test11.o"
@@ -151,7 +151,7 @@
                         '()))
        )
 
-(when (symbol-bound? 'sys-symlink)
+(when (global-variable-bound? 'gauche 'sys-symlink)
   (test* "directory-fold :follow-link? #f"
          '("test.out/test.d/test10.o" "test.out/test.d/test11.o"
            "test.out/test1.o"
@@ -207,7 +207,7 @@
 (test* "resolve-path" "/" (resolve-path "/"))
 (test* "resolve-path" "." (resolve-path "."))
 (test* "resolve-path" "test.out" (resolve-path "test.out"))
-(when (symbol-bound? 'sys-symlink)
+(when (global-variable-bound? 'gauche 'sys-symlink)
   (test* "resolve-path" "test.out/test1.o"
          (resolve-path "test.out/test6.o"))
   (test* "resolve-path" "test.out/test1.o"
@@ -267,7 +267,7 @@
 (test* "file-type" '(directory directory regular)
        (map file-type
             '("test.out/test.d" "test.out/test2.d" "test.out/test1.o")))
-(when (symbol-bound? 'sys-symlink)
+(when (global-variable-bound? 'gauche 'sys-symlink)
   (test* "file-type :follow-link? #f" '(directory symlink regular)
          (map (cut file-type <> :follow-link? #f)
               '("test.out/test.d" "test.out/test2.d" "test.out/test1.o")))
@@ -275,14 +275,14 @@
 
 (test* "file-eq?" #t
        (file-eq? "test.out/test1.o" "test.out/test1.o"))
-(when (symbol-bound? 'sys-symlink)
+(when (global-variable-bound? 'gauche 'sys-symlink)
   (test* "file-eq? (symlink)" #f
          (file-eq? "test.out/test1.o" "test.out/test7.o")))
 (test* "file-eq?" #f
        (file-eq? "test.out/test1.o" "test.out/test2.o"))
 (test* "file-eqv?" #t
        (file-eqv? "test.out/test1.o" "test.out/test1.o"))
-(when (symbol-bound? 'sys-symlink)
+(when (global-variable-bound? 'gauche 'sys-symlink)
   (test* "file-eqv? (symlink)" #t
          (file-eqv? "test.out/test1.o" "test.out/test7.o"))
   (test* "file-eqv? (symlink)" #t

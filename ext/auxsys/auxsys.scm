@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: auxsys.scm,v 1.11 2005-05-24 09:19:41 shirok Exp $
+;;;  $Id: auxsys.scm,v 1.12 2005-07-11 03:33:12 shirok Exp $
 ;;;
 
 (define-module gauche.auxsys
@@ -51,43 +51,43 @@
 ;; define alternatives if the platform doesn't support...
 
 (define sys-realpath
-  (if (symbol-bound? '%sys-realpath)
+  (if (global-variable-bound? 'gauche.auxsys '%sys-realpath)
       %sys-realpath
       (lambda (path) (error "sys-realpath not supported on this platform"))))
 
 (define sys-gethostname
-  (if (symbol-bound? '%sys-gethostname)
+  (if (global-variable-bound? 'gauche.auxsys '%sys-gethostname)
     %sys-gethostname
     (lambda () (cadr (sys-uname)))))  ;utsname.nodename
 
 (define sys-getdomainname
-  (if (symbol-bound? '%sys-getdomainname)
+  (if (global-variable-bound? 'gauche.auxsys '%sys-getdomainname)
     %sys-getdomainname
     (lambda () "localdomain")))
 
 (define sys-putenv
-  (if (symbol-bound? '%sys-putenv)
+  (if (global-variable-bound? 'gauche.auxsys '%sys-putenv)
     %sys-putenv
     (lambda (var val) (error "sys-putenv not supported on this platform"))))
 
 (define sys-setenv
-  (if (symbol-bound? '%sys-setenv)
+  (if (global-variable-bound? 'gauche.auxsys '%sys-setenv)
     %sys-setenv
     (lambda (var val overwrite)
       (error "sys-setenv not supported on this platform"))))
 
 (define sys-unsetenv
-  (if (symbol-bound? '%sys-unsetenv)
+  (if (global-variable-bound? 'gauche.auxsys '%sys-unsetenv)
     %sys-unsetenv
     (lambda (var) (error "sys-unsetenv not supported on this platform"))))
 
 (define sys-setpgrp
-  (if (symbol-bound? '%sys-setpgrp)
+  (if (global-variable-bound? 'gauche.auxsys '%sys-setpgrp)
     %sys-setpgrp
     (lambda () (sys-setpgid 0 0))))
 
 (define sys-getpgid
-  (if (symbol-bound? '%sys-getpgid)
+  (if (global-variable-bound? 'gauche.auxsys '%sys-getpgid)
     %sys-getpgid
     (lambda (pid)
       (if (zero? pid)
@@ -95,18 +95,18 @@
         (error "sys-getpgid for arbitrary process id is not supported on this platform")))))
 
 (define sys-gettimeofday
-  (if (symbol-bound? '%sys-gettimeofday)
+  (if (global-variable-bound? 'gauche.auxsys '%sys-gettimeofday)
     %sys-gettimeofday
     (lambda () (values (sys-time) 0))))
 
 (define sys-lchown
-  (if (symbol-bound? '%sys-lchown)
+  (if (global-variable-bound? 'gauche.auxsys '%sys-lchown)
       %sys-lchown
       (lambda (path owner group)
         (error "sys-lchown not supported on this platform"))))
 
 (define sys-getloadavg
-  (if (symbol-bound? '%sys-getloadavg)
+  (if (global-variable-bound? 'gauche.auxsys '%sys-getloadavg)
     %sys-getloadavg
     (lambda args #f)))
 

@@ -1,8 +1,8 @@
 ;; test gauche.selector
-;; $Id: selector.scm,v 1.1 2003-11-01 12:23:34 shirok Exp $
+;; $Id: selector.scm,v 1.2 2005-07-11 03:33:14 shirok Exp $
 
 
-(unless (symbol-bound? 'sys-select)
+(unless (global-variable-bound? 'gauche 'sys-select)
   ;; they don't work on the platform that doesn't have sys-select.
   (exit 0))
 

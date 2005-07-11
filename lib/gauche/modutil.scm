@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: modutil.scm,v 1.5 2005-05-22 03:27:32 shirok Exp $
+;;;  $Id: modutil.scm,v 1.6 2005-07-11 03:33:13 shirok Exp $
 ;;;
 
 (define-module gauche.modutil
@@ -50,7 +50,7 @@
         (cond ((null? syms) (reverse! r))
               ((not (symbol? (car syms)))
                (error "non-symbol in export-if-defined form:" (car syms)))
-              ((symbol-bound? (car syms))
+              ((global-variable-bound? #f (car syms))
                (loop (cdr syms) (cons (car syms) r)))
               (else (loop (cdr syms) r))))))
 

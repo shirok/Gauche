@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: net.scm,v 1.28 2005-01-08 09:04:04 shirok Exp $
+;;;  $Id: net.scm,v 1.29 2005-07-11 03:33:13 shirok Exp $
 ;;;
 
 (define-module gauche.net
@@ -56,9 +56,9 @@
   
 (select-module gauche.net)
 
-(dynamic-load "libnet" :export-symbols #t)
+(dynamic-load "libnet")
 
-(define ipv6-capable (symbol-bound? 'sys-getaddrinfo))
+(define ipv6-capable (global-variable-bound? 'gauche.net 'sys-getaddrinfo))
 
 (export-if-defined
  |IPPROTO_IP| |IPPROTO_ICMP| |IPPROTO_TCP| |IPPROTO_UDP| |IPPROTO_IPV6|

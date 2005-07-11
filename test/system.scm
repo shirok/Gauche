@@ -391,7 +391,7 @@
 ;;-------------------------------------------------------------------
 (test-section "select")
 
-(when (symbol-bound? 'sys-select)
+(when (global-variable-bound? 'gauche 'sys-select)
   (test* "fdset" '(3 #t #f #t #t #f)
          (let ((fdset (make <sys-fdset>)))
            (set! (sys-fdset-ref fdset (current-input-port)) #t)
@@ -444,7 +444,7 @@
                     (sys-waitpid pid)))))
              ))
          )
-  );; symbol-bound? sys-select
+  );; globla-variable-bound? sys-select
 
 ;;-------------------------------------------------------------------
 (test-section "signal handling")
@@ -497,7 +497,7 @@
             (sys-alarm 1)
             (read in)))))
 
-(when (symbol-bound? 'sys-select)
+(when (global-variable-bound? 'gauche 'sys-select)
   (test* "sigalrm6 (interrupting syscall - restart)" '(#t 0)
          (let1 r #f
            (with-signal-handlers

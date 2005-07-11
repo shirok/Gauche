@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.2 2005-07-10 20:39:00 shirok Exp $
+;;;  $Id: dbi.scm,v 1.3 2005-07-11 03:33:13 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -49,11 +49,25 @@
 (select-module dbi)
 
 ;;;==============================================================
-;;; DBI objects
+;;; DBI conditions
 ;;;
 
 ;; Root of dbi-related errors
 (define-condition-type <dbi-error> <error> #f)
+
+;; Failed to load the specified driver
+(define-condition-type <dbi-driver-not-found> <dbi-error> #f
+  ((driver-name :init-keyword :driver-name)))
+
+;; Feature not supported
+(define-condition-type <dbi-fature-not-supported> <dbi-error> #f
+  ((feature :init-keyword :feature)))
+
+
+;;;==============================================================
+;;; DBI objects
+;;;
+
 
 ;; <dbi-driver> is the base class of database drivers; a database
 ;; driver implements actual interface to a specific database system.
@@ -62,7 +76,8 @@
   ((driver-name ;:getter dbi-driver-name-of
                 :init-keyword :driver-name)))
 
-;; 
+;; Loads a concrete driver module, and returns an instance of
+;; the driver.
 (define (dbi-make-driver driver-name)
   (let ((driver-class (dbd-load-driver-class driver-name)))
     (make driver-class :driver-name driver-name)))
@@ -84,8 +99,7 @@
 
 ;; <dbi-query> : represents a query.  Query can be sent to the database
 ;; system by dbi-execute-query, to obtain a result set.
-(define-class <dbi-query> (<dbi-object>)
-  ())
+(define-class <dbi-query> (<dbi-object>) ())
 
 (define-method dbi-prepare-query ((c <dbi-connection>) (sql <string>))
   #f)
@@ -113,22 +127,16 @@
                (lambda (m p)
                  (cons m (path-sans-extension (sys-basename p))))))
 
-;; Returns a module name from the given driver name.
-;; #f if not found.
-(define (dbd-search-driver-module driver-name)
-  (let ((driver-module-name
-	 (path->module-name (string-append "dbd/" (x->string driver-name)))))
-    (if (library-exists? driver-module-name)
-	driver-module-name
-	#f)))
-
 ;; Loads the module of the given driver name, and returns the
 ;; driver class.  If there's no such module, returns #f.
 (define (dbd-load-driver-class driver-name)
-  (and-let* ((module-name (dbd-search-driver-name driver-name))
-             (class-name  (string->symbol #`"<,|driver-name|-driver>")))
-    (eval `(use ,module-name) (current-module))
-    (eval class-name (find-module module-name))))
+  (and-let* ((module&path (library-fold #`"dbd/,driver-name"
+                                        (lambda (m p s) (cons m p)) #f))
+             (class-name  (string->symbol #`"<,|driver-name|-driver>"))
+             )
+    (eval `(requlre ,(cdr module&path)) (current-module))
+    (and (global-variable-bound? (car module&path) class-name)
+         (eval class-name (find-module (car module&path))))))
 
 ;;;===================================================================
 ;;; Default prepared-SQL handler

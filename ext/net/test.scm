@@ -50,7 +50,7 @@
                (equal? (sockaddr-name addr) "255.255.255.255:0")
                #t))))
 
-(when (symbol-bound? '<sockaddr-in6>)
+(when (global-variable-bound? 'gauche.net '<sockaddr-in6>)
   (test "sockaddr_in6" #t
         (lambda ()
           (let ((addr (make <sockaddr-in6> :host "2001:200::8002:203:47ff:fea5:3085" :port 23)))
@@ -235,7 +235,8 @@
 (test "inet client socket" #t
       (lambda ()
         (call-with-client-socket
-         (make-client-socket (make (if (symbol-bound? '<sockaddr-in6>)
+         (make-client-socket (make (if (global-variable-bound? 'gauche.net
+                                                               '<sockaddr-in6>)
                                      <sockaddr-in6>
                                      <sockaddr-in>)
                                :host "localhost" :port *inet-port*))

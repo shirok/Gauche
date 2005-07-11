@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.237 2005-06-21 19:33:41 shirok Exp $
+;;; $Id: extlib.stub,v 1.238 2005-07-11 03:33:13 shirok Exp $
 ;;;
 
 "
@@ -273,18 +273,6 @@
 ;;
 ;; 6.3.3  Symbols
 ;;
-
-(define-cproc symbol-bound? (symbol::<symbol> &optional module)
-  "  
-  if (module == SCM_UNBOUND) {
-     module = SCM_OBJ(SCM_CURRENT_MODULE());
-  } else if (!SCM_MODULEP(module)) {
-     Scm_Error(\"module required, but got %S\", module);
-  }
-  if (Scm_SymbolValue(SCM_MODULE(module), symbol) == SCM_UNBOUND)
-     SCM_RETURN(SCM_FALSE);
-  else
-     SCM_RETURN(SCM_TRUE);")
 
 (define-cproc gensym (&optional prefix)
   "  ScmString *p = NULL;
@@ -1254,6 +1242,41 @@
 
 (define-cproc %extend-module (module::<module> supers::<list>)
   " SCM_RETURN(Scm_ExtendModule(module, supers));")
+
+"static ScmModule *get_module_from_mod_or_name(ScmObj mod_or_name)
+ {
+   if (SCM_MODULEP(mod_or_name)) return SCM_MODULE(mod_or_name);
+   else if (SCM_SYMBOLP(mod_or_name)) {
+     ScmObj m = Scm_FindModule(SCM_SYMBOL(mod_or_name), FALSE);
+     if (SCM_FALSEP(m)) {
+       Scm_Error(\"no such module: %s\", mod_or_name);
+     }
+     return SCM_MODULE(m);
+   } else if (SCM_FALSEP(mod_or_name)) {
+     return SCM_CURRENT_MODULE();
+   } else {
+     Scm_Error(\"module or symbol required, but got: %s\", mod_or_name);
+     return NULL;
+   }
+ }
+"
+
+(define-cproc global-variable-bound? (mod-or-name name::<symbol>)
+  "ScmModule *module = get_module_from_mod_or_name(mod_or_name);
+   if (Scm_SymbolValue(module, name) == SCM_UNBOUND)
+     SCM_RETURN(SCM_FALSE);
+   else
+     SCM_RETURN(SCM_TRUE);")
+
+(define-cproc global-variable-ref (mod_or_name name::<symbol>
+                                               &optional fallback)
+  "ScmModule *module = get_module_from_mod_or_name(mod_or_name);
+  ScmObj r = Scm_SymbolValue(module, name);
+  if (r != SCM_UNBOUND) SCM_RETURN(r);
+  else if (fallback == SCM_UNBOUND) {
+    Scm_Error(\"global variable ~s is not bound in module ~s\", name, module);
+  }
+  SCM_RETURN(fallback);")
 
 ;;
 ;; Gauche extentions

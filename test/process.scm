@@ -18,7 +18,7 @@
   (exit 0))
 
 ;; Avoid locale specific behavior of client programs
-(when (symbol-bound? 'sys-putenv)
+(when (global-variable-bound? 'gauche 'sys-putenv)
   (sys-putenv "LANG" "C"))
 
 ;;-------------------------------

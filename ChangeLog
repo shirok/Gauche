@@ -1,3 +1,14 @@
+2005-07-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub: deprecate symbol-bound?, superceded by
+	  global-variable-bound?.  See the manual for the reason.
+	  Also added global-variable-ref.
+	* src/scmlib.scm (symbol-bound?): implemented here for the backward
+	  compatibility; will go away in future.
+	* ext/auxsys/auxsys.scm, ext/net/net.scm, ext/net/test.scm,
+	  ext/termios/test.scm, lib/gauche/modutil.scm, test/*.scm:
+	  replaced symbol-bound? for global-variable-bound?
+
 2005-07-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (save_env, save_cont): improved stack-overflow handling
