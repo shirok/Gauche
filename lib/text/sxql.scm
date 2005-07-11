@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: sxql.scm,v 1.1 2005-07-10 11:03:48 shirok Exp $
+;;;  $Id: sxql.scm,v 1.2 2005-07-11 10:16:09 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -42,6 +42,7 @@
 (define-module text.sxql
   (use srfi-13)
   (export <sql-parse-error>
+          sql-tokenize
           ))
 (select-module text.sxql)
 
@@ -62,10 +63,11 @@
 ;;;   following form.
 ;;;   
 ;;;    <symbol>              Regular identifier, or special delimiter:
-;;;                          + - * / < = > <> <= >= ? ||
+;;;                          + - * / < = > <> <= >= ||
 ;;;    <character>           Special delimiter: 
 ;;;                          #\, #\. #\: #\( #\) #\;
 ;;;    (delimited <string>)  Delimited identifier
+;;;    (parameter <num>)     Positional parameter (?)
 ;;;    (string    <string>)  Character string literal
 ;;;    (number    <string>)  Numeric literal
 ;;;    (bitstring <string>)  Binary string.  <string> is like "01101"
@@ -73,6 +75,7 @@
 ;;;
 
 (define (sql-tokenize sql-string)
+  (define parameter-count 0) ;; positional parameter count
   ;;
   ;; skip whitespaces
   ;;
@@ -94,6 +97,10 @@
           (cond
            ((char=? c #\') (scan-string s r))
            ((char=? c #\") (scan-delimited s r))
+           ((char=? c #\?)
+            (entry (string-drop s 1)
+                   `(parameter ,(begin0 parameter-count
+                                        (inc! parameter-count)))))
            ((#/^[+-]?(?:\d+(?:\.\d*)?|(?:\.\d+))(?:[eE][+-]?\d+)?/ s)
             => (lambda (m)
                  (entry (m 'after) (cons `(number ,(m)) r))))
@@ -102,7 +109,7 @@
                    (cons (string->symbol (string-take s 2)) r)))
            ((#/^[bB]'/ s) (scan-bitstring s r))
            ((#/^[xX]'/ s) (scan-hexstring s r))
-           ((char-set-contains? #[-+*/<=>?] c)
+           ((char-set-contains? #[-+*/<=>] c)
             (entry (string-drop s 1) (cons (string->symbol (string c)) r)))
            ((char-set-contains? #[,.:()\;] c)
             (entry (string-drop s 1) (cons c r)))
