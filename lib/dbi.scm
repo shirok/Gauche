@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.3 2005-07-11 03:33:13 shirok Exp $
+;;;  $Id: dbi.scm,v 1.4 2005-07-11 05:56:54 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -63,24 +63,21 @@
 (define-condition-type <dbi-fature-not-supported> <dbi-error> #f
   ((feature :init-keyword :feature)))
 
-
 ;;;==============================================================
-;;; DBI objects
+;;; DBI object definitions
 ;;;
-
 
 ;; <dbi-driver> is the base class of database drivers; a database
 ;; driver implements actual interface to a specific database system.
 ;; Each dbd.* module provides the concrete implementation.
+;;
+;; Usually the singleton instance of a concrete driver is created
+;; implicitly by dbi-connect with the data-source string.  So the
+;; user hardly need to see <dbi-driver> object.
+
 (define-class <dbi-driver> ()
   ((driver-name ;:getter dbi-driver-name-of
                 :init-keyword :driver-name)))
-
-;; Loads a concrete driver module, and returns an instance of
-;; the driver.
-(define (dbi-make-driver driver-name)
-  (let ((driver-class (dbd-load-driver-class driver-name)))
-    (make driver-class :driver-name driver-name)))
 
 ;; Base of all dbi transient objects
 (define-class <dbi-object> ()
@@ -94,23 +91,36 @@
 ;; or 'open'.
 (define-class <dbi-connection> (<dbi-object>) ())
 
-;; Subclass should implement this.
-(define-method dbi-make-connection ((d <dbi-driver>) . options) #f)
-
 ;; <dbi-query> : represents a query.  Query can be sent to the database
 ;; system by dbi-execute-query, to obtain a result set.
 (define-class <dbi-query> (<dbi-object>) ())
+
+;; <dbi-result-set> : an abstract entity of the result of a query.
+;; For RDBMS, it is a set of rows.  The implementation may choose to
+;; delay fetcing 
+(define-class <dbi-result-set> (<dbi-object>) ())
+
+;;;==============================================================
+;;; User-level APIs
+;;;
+
+(define (dbi-connect dsn . args)
+  (
+
+
+;;;==============================================================
+;;; DBD-level APIs
+;;;
+
+
+;; Subclass should implement this.
+(define-method dbi-make-connection ((d <dbi-driver>) . options) #f)
 
 (define-method dbi-prepare-query ((c <dbi-connection>) (sql <string>))
   #f)
 
 (define-method dbi-execute ((q <dbi-query>) (params <list>))
   #f)
-
-;; <dbi-result-set> : an abstract entity of the result of a query.
-;; For RDBMS, it is a set of rows.  The implementation may choose to
-;; delay fetcing 
-(define-class <dbi-result-set> (<dbi-object>) ())
 
 ;; Subclass should implement this.
 (define-method dbi-get-value ((r <dbi-result-set>) (n <integer>))
@@ -127,6 +137,12 @@
                (lambda (m p)
                  (cons m (path-sans-extension (sys-basename p))))))
 
+;; Loads a concrete driver module, and returns an instance of
+;; the driver.  It is a low-level API.
+(define (dbi-make-driver driver-name)
+  (let ((driver-class (dbd-load-driver-class driver-name)))
+    (make driver-class :driver-name driver-name)))
+
 ;; Loads the module of the given driver name, and returns the
 ;; driver class.  If there's no such module, returns #f.
 (define (dbd-load-driver-class driver-name)
@@ -134,7 +150,7 @@
                                         (lambda (m p s) (cons m p)) #f))
              (class-name  (string->symbol #`"<,|driver-name|-driver>"))
              )
-    (eval `(requlre ,(cdr module&path)) (current-module))
+    (eval `(require ,(cdr module&path)) (current-module))
     (and (global-variable-bound? (car module&path) class-name)
          (eval class-name (find-module (car module&path))))))
 
@@ -142,6 +158,13 @@
 ;;; Default prepared-SQL handler
 ;;;   For the drivers that doesn't handle prepared (parameterized) SQL,
 ;;;   we provide a default method
+
+
+;;;===================================================================
+;;; Low-level utilities
+;;;
+
+
 
 
 ;;;==============================================================
