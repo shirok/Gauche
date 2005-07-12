@@ -10029,6 +10029,27 @@ if you import @code{gauche.collection}.
 @end example
 @end deftp
 
+@deftp {Function} @var{TAG}vector-fill! @r{@var{vec} @var{fill} &optional @var{start} @var{end}}
+@findex s8vector-fill!
+@findex u8vector-fill!
+@findex s16vector-fill!
+@findex u16vector-fill!
+@findex s32vector-fill!
+@findex u32vector-fill!
+@findex s64vector-fill!
+@findex u64vector-fill!
+@findex f32vector-fill!
+@findex f64vector-fill!
+@c EN
+Stores @var{fill} in every element of @var{vec},
+ranging from @var{start} to @var{end} of @var{vec},
+if they are given. 
+@c JP
+@var{vec}のすべて要素に@var{fill}をセットします。
+@var{start}と@var{end}で要素の範囲を指定することも出来ます。
+@c COMMON
+@end deftp
+
 @deftp {Function} @var{TAG}vector-copy @r{@var{vec} &optional @var{start} @var{end}}
 @findex s8vector-copy
 @findex u8vector-copy
