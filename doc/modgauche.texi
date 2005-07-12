@@ -162,7 +162,7 @@ you should use one of the following concrete array classes.
 Concrete array classes.  The @code{<array>} class implements srfi-25
 compatible array, i.e. an array that can store any Scheme objects.
 The @code{<u8array>} class through @code{<f64array>} classes uses
-a @code{<u8vector} through @code{<f64vector>} as a backing stroage,
+a @code{<u8vector>} through @code{<f64vector>} as a backing stroage,
 and can only store a limited range of integers or inexact real numbers,
 but they are space efficient.
 @c JP
