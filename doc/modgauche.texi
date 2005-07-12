@@ -4107,7 +4107,6 @@ IP アドレスをもつ場合、ソケットアドレスはそれぞれのIPアドレス毎に生成
 @c COMMON
 @end defun
 
-
 @node High-level network functions, Low-level socket interface, Socket address, Networking
 @subsection High-level network functions
 @c NODE 高レベルネットワーク手続き
@@ -4122,26 +4121,26 @@ channel by two ports associated to the socket, one for input and
 another for output.  @code{socket-input-port} and @code{socket-output-port}
 returns those ports, respectively.
 @c JP
-コミュニケーション終端であるソケットを表すクラスです。
+通信の終端であるところのソケットを表すクラスです。
 
-コネクション型のソケットに対しては、2つのポート(入力用と出力用)を使って
-コミュニケーションチャネルにアクセスすることができます。
-@code{socket-input-port}と@code{socket-output-port}がこれらのポートを
-それぞれ返します。
+コネクション型のソケットには、入力用と出力用の2つのポートが結び付いており、
+それらを使って通信路にアクセスできます。
+@code{socket-input-port}と@code{socket-output-port}はそれぞれ
+入力用、出力用のポートを返します。
+
 @c COMMON
 @end deftp
 
 @c EN
-The following two functions are convenient ways to create
+The following three functions are convenient ways to create
 a connection-oriented socket.  Those functions
 are to provide an easy methods for typical cases,
 but have less control.  If you need more than these functions
 provide, use low-level interface.
 @c JP
-以下の2つの手続きはコネクション型のソケットを作成する
-便利な手続きです。これらは典型的な場合に対する簡単な方法を提供しますが、
-細かい制御はできません。動作のより細かい制御が必要な場合は低レベルAPIを
-見て下さい。
+以下の3つは手軽にコネクション型のソケットを作成する
+ための手続きです。 大抵の場合はこれらの手続きで間に合いますが、
+より細かい制御が必要な場合は低レベルAPIを使用して下さい。
 @c COMMON
 
 @defun make-client-socket &optional address-spec @dots{}
@@ -4149,7 +4148,7 @@ provide, use low-level interface.
 Creates and returns a client socket, connected to the address
 specified by @var{address-spec} @dots{}.
 @c JP
-引数@var{address-spec} @dots{} によって指定されるアドレスと通信する
+引数@var{address-spec} @dots{}によって指定されるアドレスと接続する
 クライアントソケットを作成して返します。
 @c COMMON
 
@@ -4175,15 +4174,15 @@ If gauche is compiled with --enable-ipv6, and the hostname is given,
 and the hostname has both IPv6 and IPv4 addresses, then
 IPv6 connection is tried first, and IPv4 is used when IPv6 fails.
 @c JP
-ホスト@var{host}のポート@var{port}で待っているInetドメインのサーバーソケットに
-TCPを使って接続します。@var{host}はIPアドレスのドット表記でもホスト名でも
-構いません。Gaucheが--enable-ipv6でコンパイルされていれば、IPv6形式のアドレス
-表記も受け付けます。
+ホスト@var{host}のポート@var{port}にTCPで接続します。
+@var{host}はIPv4アドレスのドット表記でもホスト名でも
+構いません。Gaucheが--enable-ipv6でコンパイルされていれば、
+IPv6形式のアドレス表記も受け付けます。
 @var{port}はポート番号を指定する正確な整数か、文字列のサービス名
 (@code{"http"}等)でなければなりません。
 
 Gaucheが--enable-ipv6でコンパイルされており、ホスト名が渡されて、
-そのホストがIPv6とIPv4の両方のアドレスを持っていた場合は、
+そのホスト名がIPv6とIPv4の両方のアドレスを持っていた場合は、
 最初にIPv6での接続が試みられ、それが失敗した場合にIPv4での接続が試みられます。
 @c COMMON
 @item (make-client-socket @var{host} @var{port})
@@ -4198,8 +4197,8 @@ If an instance of @code{<sockaddr>} is passed,
 a socket suitable for @var{sockaddr} is opened and then connected
 to the given address.
 @c JP
-@code{<sockaddr>}のインスタンスが渡された場合には、それに対応する
-ソケットがオープンされ、そのアドレスへと接続されます。
+@code{<sockaddr>}クラスのインスタンスが渡された場合には、それに対応する
+ソケットをオープンし、そのアドレスへ接続します。
 @c COMMON
 @end table
 
@@ -4248,12 +4247,12 @@ the port.  This allows the process to bind the server socket
 immediately after other process releases the port.
 @c JP
 ポート@var{port}にて接続を待つInetドメインのTCPソケットが作成されます。
-@var{port}は非負の整数か、文字列のサービス名(@code{"http"}等)でなければなりません。
-@var{port}が0の場合はシステムが適当なポート番号を割り当てます。
+@var{port}は非負の正確な整数か、文字列のサービス名(@code{"http"}等)でなければなりません。
+@var{port}が零の場合はシステムが適当なポート番号を割り当てます。
 キーワード引数@var{reuse-addr?}に真の値が与えられた場合は、
 ソケットに@code{SO_REUSEADDR}オプションがセットされます。
-このオプションをセットすると、他のプロセスがそのポートを使わなくなったら直ちに
-このプロセスがそのポートを使うことができます。
+その場合、他のプロセスが解放したばかりの(TCP)ポートでも
+エラーとならずに使うことができます。
 @c COMMON
 
 @c EN
@@ -4262,10 +4261,11 @@ that takes two arguments, a created socket and the socket address.
 The procedure is called just after the socket is created.  It is
 useful to set some special socket options.
 @c JP
-キーワード引数@code{sock-init}が与えられた場合、それは
-2つ引数を取る手続きでなければなりません。その手続きは
-ソケットが作られた直後に、ソケットとアドレスを引数にして呼び出されます。
-特殊なソケットオプションを設定したいような場合に使えます。
+キーワード引数@code{sock-init}が与えられた場合、@code{proc} が出来たての
+ソケットとそのソケットアドレスを引数にして呼び出されます。
+つまり、@code{proc} はそのような2つの引数を取る手続きでなければなりません。
+ソケットに特殊なオプションを設定したいような場合に便利です。
+
 @c COMMON
 @item (make-server-socket @var{port} [:reuse-addr? @var{flag}] [:sock-init @var{proc}])
 @c EN
@@ -4308,32 +4308,27 @@ You can specify a service name (such as "@code{http}") to
 Returns a list of opened, bound and listened sockets.
 
 This procedure is particularly useful when the host
-has multiple protocol stacks, such as IPv4 and IPv6; in which
-case, you can start a server that listenes both protocol
-using @code{make-server-sockets}.
+has multiple protocol stacks, such as IPv4 and IPv6.
 
 The meaning of keyword arguments are the same as of @code{make-server-socket}.
 @c JP
-@var{host} のすべての利用可能なネットワークインタフェース上の
-@var{port} をリッスンする1つ以上のソケットを生成します。
-@var{port} に対しては数字のポート番号と同様に、サービス名を
-指定できます。たとえば、"@code{http}" です。この手続きは
-オープンされ、バインドされ、リッスンされたソケットのリストを
-返します。
+@var{host} が持つすべての利用可能なネットワークインタフェース上の
+@var{port} で接続を待つソケットを生成し、それらのリストを返します。
+@var{port} には数字のポート番号のほか、"@code{http}"などの
+サービス名も指定できます。
 
 この手続きは、ホストが複数のプロトコルスタック(IPv4とIPv6など)を
-持つ場合に特に便利です。このような場合、両方のプロトコルで
-リッスンするようなサーバを @code{make-server-sockets} をつかって、
-スタートすることができます。
+持つ場合に特に便利です。
 
-キーワード引数の意味は@code{make-server-socket}のそれと同じです。
+キーワード引数の意味は@code{make-server-socket}のと同じです。
 @c COMMON
 @end defun
 
 @c EN
 Several accessors are available on the returned socket object.
 @c JP
-返されたソケットオブジェクトに対して、以下のようなアクセサを適用することができます。
+上記の手続きによって返されたソケットオブジェクトに対して、
+以下のようなアクセサがあります。
 @c COMMON
 
 @defun socket-address socket
@@ -4341,7 +4336,7 @@ Several accessors are available on the returned socket object.
 Returns a socket address associated with @var{socket}.
 If no address has been associated to the socket, @code{#f} is returned.
 @c JP
-ソケット@var{socket}のアドレスを返します。
+ソケット@var{socket}のソケットアドレスを返します。
 ソケットにアドレスがまだバインドされていない場合は@code{#f}が返ります。
 @c COMMON
 @end defun
@@ -4352,7 +4347,7 @@ If no address has been associated to the socket, @code{#f} is returned.
 Returns an input and output port associated with @var{socket},
 respectively.
 @c JP
-@var{socket}からデータを読みだす入力ポート、または
+それぞれ、@var{socket}からデータを読みだす入力ポート、および
 @var{socket}にデータを書き出す出力ポートを返します。
 @c COMMON
 
@@ -4362,14 +4357,14 @@ of the port.  @xref{File ports}, for explanation of the
 buffering mode.
 @c JP
 キーワード引数@var{buffering}はポートのバッファリングモードを
-指定します。バッファリングモードの説明は@ref{File ports}を見て下さい。
+指定します。バッファリングモードの説明は@ref{File ports}にあります。
 @c COMMON
 @end defun
 
 @defun socket-close socket
 @c EN
 Closes @var{socket}.  All the ports associated to
-@var{socket} are closed as well.   If the socket is connected,
+@var{socket} are closed as well.
 @c JP
 ソケット@var{socket}をクローズします。@var{socket}の入出力ポートも
 クローズされます。
@@ -4380,7 +4375,6 @@ the connection.  It is because @var{socket} may be referenced
 by forked process(es) and you might want to close it without
 interfering the existing connection.   You can call
 @code{socket-shutdown} to shutdown the connection explicitly.
-
 @c JP
 注意: リリース 0.7.2 より、この手続きは接続をシャットダウンしないように
 なりました。その理由は、@var{socket} が fork した別プロセスから参照され
@@ -4400,7 +4394,7 @@ raises an error.
 @var{socket}は接続されたクライアントソケットでなければなりません。
 @var{proc}がソケットから読み出す入力ポートと、
 ソケットに書き出す出力ポートを引数として呼ばれます。
-@var{proc}が正常終了するか、エラーを投げた場合にソケットは閉じられます。
+@var{proc}が正常終了するか、エラーを投げた場合にソケットはクローズされます。
 @c COMMON
 @end defun
 
