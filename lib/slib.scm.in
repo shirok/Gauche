@@ -62,6 +62,43 @@
 	    (else "")))))
     (lambda () library-path)))
 
+; by dai 2005-07-04 borrowed from Init5e1.scm
+(define *load-pathname* #f)
+(define (user-vicinity)
+  (case (software-type)
+    ((VMS)	"[.]")
+    (else	"")))
+(define sub-vicinity
+  (case (software-type)
+    ((VMS) (lambda
+	       (vic name)
+	     (let ((l (string-length vic)))
+	       (if (or (zero? (string-length vic))
+		       (not (char=? #\] (string-ref vic (- l 1)))))
+		   (string-append vic "[" name "]")
+		   (string-append (substring vic 0 (- l 1))
+				  "." name "]")))))
+    (else (let ((*vicinity-suffix*
+		 (case (software-type)
+		   ((NOSVE) ".")
+		   ((MACOS THINKC) ":")
+		   ((MS-DOS WINDOWS ATARIST OS/2) "\\")
+		   ((UNIX COHERENT PLAN9 AMIGA) "/"))))
+	    (lambda (vic name)
+	      (string-append vic name *vicinity-suffix*))))))
+(define with-load-pathname
+  (let ((exchange
+	 (lambda (new)
+	   (let ((old *load-pathname*))
+	     (set! *load-pathname* new)
+	     old))))
+    (lambda (path thunk)
+      (let ((old #f))
+	(dynamic-wind
+	    (lambda () (set! old (exchange path)))
+	    thunk
+	    (lambda () (exchange old)))))))
+
 (define-constant *dir-sep* "/")
 
 ;;; (home-vicinity) should return the vicinity of the user's HOME
