@@ -313,6 +313,69 @@ fuga
        (test-parseutil read-string "" 7))
 
 ;;-------------------------------------------------------------------
+(test-section "sxql")
+(use text.sxql)
+(test-module 'text.sxql)
+
+(test* "sql-tokenize" '(select tab #\. x #\, tab #\. y as foo
+                               from tab where tab #\. z < (number "30"))
+       (sql-tokenize "select tab.x, tab.y as foo from tab\nwhere tab.z<30"))
+
+(test* "sql-tokenize (literal numberes)" '((number "0")
+                                           (number "-12")
+                                           (number "+12")
+                                           (number ".123")
+                                           (number "123.")
+                                           (number "123.45")
+                                           (number "-.123")
+                                           (number "-123.")
+                                           (number "-123.45")
+                                           (number "+.123")
+                                           (number "+123.")
+                                           (number "+123.45")
+                                           (number "0E0")
+                                           (number "-1E3")
+                                           (number "-1.E3")
+                                           (number "-.1E3")
+                                           (number "-1.2E3")
+                                           (number "1E-3")
+                                           (number "1.E-3")
+                                           (number ".1E-3")
+                                           - #\. E (number "-3")
+                                           (number "1.2") (number ".3")
+                                           )
+                                           
+       (sql-tokenize "0 -12 +12 .123 123. 123.45 -.123 -123. -123.45
+                      +.123 +123. +123.45 0E0 -1E3 -1.E3 -.1E3
+                      -1.2E3 1E-3 1.E-3 .1E-3 -.E-3 1.2.3"))
+
+(test* "sql-tokenize (literal strings)" '((string "abc")
+                                          (string "ab'c")
+                                          (string "'abc")
+                                          (string "abc'")
+                                          (string "")
+                                          (string "'"))
+       (sql-tokenize "'abc' 'ab''c' '''abc' 'abc''' '' ''''"))
+
+(test* "sql-tokenize (unterminated literal)" #t
+       (guard (e ((<sql-parse-error> e) #t))
+         (sql-tokenize "'abc''def")))
+
+(test* "sql-tokenize (other stuff)" '((bitstring "0")
+                                      (bitstring "010101")
+                                      (hexstring "0")
+                                      (hexstring "1aBc9")
+                                      (delimited "run \"run\" run"))
+       (sql-tokenize "B'0' B'010101' X'0' X'1aBc9' \"run \"\"run\"\" run\""))
+
+(test* "sql-tokenize (parameters)" '((parameter 0) #\,
+                                     (parameter 1) #\,
+                                     (parameter "foo") #\,
+                                     (parameter "bar") #\,
+                                     (parameter 2))
+       (sql-tokenize "?,?,:foo, :bar , ?"))
+
+;;-------------------------------------------------------------------
 (test-section "tr")
 (use text.tr)
 (test-module 'text.tr)

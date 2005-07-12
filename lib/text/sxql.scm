@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: sxql.scm,v 1.2 2005-07-11 10:16:09 shirok Exp $
+;;;  $Id: sxql.scm,v 1.3 2005-07-12 00:57:46 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -68,6 +68,7 @@
 ;;;                          #\, #\. #\: #\( #\) #\;
 ;;;    (delimited <string>)  Delimited identifier
 ;;;    (parameter <num>)     Positional parameter (?)
+;;;    (parameter <string>)  Named parameter (:foo)
 ;;;    (string    <string>)  Character string literal
 ;;;    (number    <string>)  Numeric literal
 ;;;    (bitstring <string>)  Binary string.  <string> is like "01101"
@@ -99,8 +100,9 @@
            ((char=? c #\") (scan-delimited s r))
            ((char=? c #\?)
             (entry (string-drop s 1)
-                   `(parameter ,(begin0 parameter-count
-                                        (inc! parameter-count)))))
+                   (cons `(parameter ,(begin0 parameter-count
+                                              (inc! parameter-count)))
+                         r)))
            ((#/^[+-]?(?:\d+(?:\.\d*)?|(?:\.\d+))(?:[eE][+-]?\d+)?/ s)
             => (lambda (m)
                  (entry (m 'after) (cons `(number ,(m)) r))))
@@ -111,8 +113,11 @@
            ((#/^[xX]'/ s) (scan-hexstring s r))
            ((char-set-contains? #[-+*/<=>] c)
             (entry (string-drop s 1) (cons (string->symbol (string c)) r)))
-           ((char-set-contains? #[,.:()\;] c)
+           ((char-set-contains? #[,.()\;] c)
             (entry (string-drop s 1) (cons c r)))
+           ((#/^:(\w+)/ s)
+            => (lambda (m)
+                 (entry (m 'after) (cons `(parameter ,(m 1)) r))))
            ((#/^\w+/ s)
             => (lambda (m)
                  (entry (m 'after) (cons (string->symbol (m)) r))))
@@ -133,7 +138,7 @@
     (cond ((#/^\"((?:[^\"]|\"\")*)\"/ s)
            => (lambda (m)
                 (entry (m 'after)
-                       (cons `(string ,(regexp-replace-all #/""/ (m 1) "\""))
+                       (cons `(delimited ,(regexp-replace-all #/""/ (m 1) "\""))
                              r))))
           (else
            (e "unterminated delimited identifier in SQL: ~s" sql-string))))
