@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: scmlib.scm,v 1.5 2005-07-11 03:33:13 shirok Exp $
+;;;  $Id: scmlib.scm,v 1.6 2005-07-12 11:42:02 shirok Exp $
 ;;;
 
 ;; This file contains builtin library functions that are easier to be
@@ -160,6 +160,55 @@
 ;;; call/cc alias
 ;;;
 (define-in-module scheme call/cc call-with-current-continuation)
+
+;;;=======================================================
+;;; error stuff, in terms of the condition system
+;;;
+(define-values (error errorf)
+  (let ()
+    (define (compose-error-message msg args) ;; srfi-23 style message
+      (let1 p (open-output-string)
+        (display msg p)
+        (let loop ((args args))
+          (if (null? args)
+            (get-output-string p)
+            (begin (display " " p)
+                   (write (car args) p)
+                   (loop (cdr args)))))))
+    (define (scan-keys args)
+      (let loop ((args args)
+                 (keys '()))
+        (if (and (not (null? args))
+                 (keyword? (car args))
+                 (not (null? (cdr args))))
+          (loop (cddr args) (list* (cadr args) (car args) keys))
+          (values (reverse! keys) args))))
+    
+    (define (error msg . args)
+      (raise
+       (cond
+        ((is-a? msg <condition-meta>)
+         (receive (keys msgs) (scan-keys args)
+           (if (null? msgs)
+             (apply make msg keys)
+             (apply make msg
+                    :message (compose-error-message (car msgs) (cdr msgs))
+                    keys))))
+        (else (make <error> :message (compose-error-message msg args))))))
+
+    (define (errorf fmt . args)
+      (raise
+       (cond
+        ((is-a? fmt <condition-meta>)
+         (receive (keys msgs) (scan-keys args)
+           (if (null? msgs)
+             (apply make fmt keys)
+             (apply make fmt
+                    :message (apply format #f msgs)
+                    keys))))
+        (else (make <error> :message (apply format #f fmt args))))))
+
+    (values error errorf)))
 
 ;;;=======================================================
 ;;; symbol-bound? (deprecated)

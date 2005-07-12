@@ -2,7 +2,7 @@
 ;; test error handlers
 ;;
 
-;;  $Id: error.scm,v 1.11 2005-04-12 01:42:29 shirok Exp $
+;;  $Id: error.scm,v 1.12 2005-07-12 11:42:02 shirok Exp $
 
 (use gauche.test)
 (test-start "error and exception handlers")
@@ -505,6 +505,80 @@
                 (if (> x 2)
                     'ok
                     (car x))))))))
+
+;;----------------------------------------------------------------
+(test-section "error and errorf procedures")
+
+(prim-test "error (<error>)" "Message 1 \"2\" (:a . #\\4)"
+           (lambda ()
+             (with-error-handler
+                 (lambda (e)
+                   (and (is-a? e <error>) (slot-ref e 'message)))
+               (lambda ()
+                 (error "Message" 1 "2" (cons :a #\4))))))
+
+(prim-test "errorf (<error>)" "Message 1 and 2 or 3 and 4"
+           (lambda ()
+             (with-error-handler
+                 (lambda (e)
+                   (and (is-a? e <error>) (slot-ref e 'message)))
+               (lambda ()
+                 (errorf "Message ~a and ~a or ~a and ~a" 1 2 3 4)))))
+
+(prim-test "error (<system-error>)" '("Wow: \"bang!\" 4" 111)
+           (lambda ()
+             (with-error-handler
+                 (lambda (e)
+                   (and (is-a? e <system-error>)
+                        (list (slot-ref e 'message)
+                              (slot-ref e 'errno))))
+               (lambda ()
+                 (error <system-error> :errno 111 "Wow:" "bang!" 4)))))
+
+(prim-test "errorf (<system-error>)" '("Wow: \"bang!\" 4" 111)
+           (lambda ()
+             (with-error-handler
+                 (lambda (e)
+                   (and (is-a? e <system-error>)
+                        (list (slot-ref e 'message)
+                              (slot-ref e 'errno))))
+               (lambda ()
+                 (errorf <system-error> :errno 111
+                         "Wow: ~s ~s" "bang!" 4)))))
+
+(prim-test "error (base case)" #t
+           (lambda ()
+             (with-error-handler
+                 (lambda (e)
+                   (and (is-a? e <error>)
+                        (eq? (slot-ref e 'message) #f)))
+               (lambda ()
+                 (error <error>)))))
+
+(prim-test "errorf (base case)" #t
+           (lambda ()
+             (with-error-handler
+                 (lambda (e)
+                   (and (is-a? e <error>)
+                        (eq? (slot-ref e 'message) #f)))
+               (lambda ()
+                 (errorf <error>)))))
+
+(prim-test "error (explicit message)" "msg"
+           (lambda ()
+             (with-error-handler
+                 (lambda (e)
+                   (and (is-a? e <error>) (slot-ref e 'message)))
+               (lambda ()
+                 (error <error> :message "msg")))))
+
+(prim-test "errorf (explicit message)" "msg~s"
+           (lambda ()
+             (with-error-handler
+                 (lambda (e)
+                   (and (is-a? e <error>) (slot-ref e 'message)))
+               (lambda ()
+                 (error <error> :message "msg~s")))))
 
 ;;----------------------------------------------------------------
 (test-section "stack overflow inside handlers")

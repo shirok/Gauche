@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: exclib.stub,v 1.12 2004-10-10 09:52:09 shirok Exp $
+;;; $Id: exclib.stub,v 1.13 2005-07-12 11:42:02 shirok Exp $
 ;;;
 
 "
@@ -42,11 +42,11 @@
 ;; Exception procedures
 ;;
 
-(define-cproc error (reason &rest args)
-  (return "Scm_SError"))
+;(define-cproc error (reason &rest args)
+;  (return "Scm_SError"))
 
-(define-cproc errorf (fmt &rest args)
-  (return "Scm_FError"))
+;(define-cproc errorf (fmt &rest args)
+;  (return "Scm_FError"))
 
 (define-cproc with-error-handler (handler thunk)
   "  if (!SCM_PROCEDURE_TAKE_NARG_P(handler, 1)) {

@@ -1,7 +1,7 @@
 /*
  * error.c - error handling
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.63 2005-05-24 23:28:37 shirok Exp $
+ *  $Id: error.c,v 1.64 2005-07-12 11:42:01 shirok Exp $
  */
 
 #include <errno.h>
@@ -644,6 +644,7 @@ void Scm_Warn(const char *msg, ...)
     Scm_Flush(SCM_CURERR);
 }
 
+#if 0
 /*
  * Those versions are called from Scheme.  Do not use them from C.
  */
@@ -697,6 +698,7 @@ ScmObj Scm_FError(ScmObj fmt, ScmObj args)
     SCM_END_PROTECT;
     return Scm_VMThrowException(e);
 }
+#endif
 
 /* format & warn */
 void Scm_FWarn(ScmString *fmt, ScmObj args)

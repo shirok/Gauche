@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.5 2005-07-11 10:15:41 shirok Exp $
+;;;  $Id: dbi.scm,v 1.6 2005-07-12 11:42:01 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -129,14 +129,16 @@
 (define-method dbi-execute ((q <dbi-query>) options . args)
   (or (and-let* ((prepared (slot-ref q '%prepared)))
         (apply prepared options args))
-      (raise (condition
-              (<dbi-unsupported-error>
-               (message (format "dbi-execute is not implemented on ~s" q)))))
-      ))
+      (error <dbi-unsupported-error> "dbi-execute is not implemented on" q)))
 
 ;; Does preparation and execution at once.  The driver may overload this.
 (define-method dbi-do ((c <dbi-connection>) sql options . args)
   (apply (dbi-prepare-sql sql) options args))
+
+;; Returns a list of available dbd.* backends.  Each entry is
+;; a cons of a module name and its driver name.
+(define (dbi-all-driver-modules)
+  (library-map 'dbd.* (lambda (m p) m)))
   
 ;;;==============================================================
 ;;; DBD-level APIs
@@ -151,17 +153,6 @@
   '())
 
 ;;;===================================================================
-;;; Meta-utilities
-;;;   Scans installed modules to find available dbd.* backends
-
-;; Returns a list of available dbd.* backends.  Each entry is
-;; a cons of a module name and its driver name.
-(define (dbd-all-driver-modules)
-  (library-map 'dbd.*
-               (lambda (m p)
-                 (cons m (path-sans-extension (sys-basename p))))))
-
-;;;===================================================================
 ;;; Low-level utilities
 ;;;
 
@@ -170,9 +161,7 @@
   (rxmatch-case data-source-name
     (#/^dbi:([\w-]+)(:[\w\/-]+)?$/ (#f driver dbname) (values driver dbname))
     (else
-     (raise (condition
-             (<dbi-error> (message (format "bad data source name spec: ~s"
-                                           data-source-name))))))))
+     (error <dbi-error> "bad data source name spec:" data-source-name))))
 
 ;; Loads a concrete driver module, and returns an instance of
 ;; the driver.
@@ -188,10 +177,9 @@
                          (global-variable-ref module class-name #f)))
                  )
         (make driver-class :driver-name driver-name))
-      (raise (condition
-              (<dbi-nonexistent-driver-error>
-               (message (format "couldn't load driver dbd.~a" driver-name))
-               (driver-name driver-name))))))
+      (errorf <dbi-nonexistent-driver-error>
+              :driver-name driver-name
+              "couldn't load driver dbd.~a" driver-name)))
 
 ;; Default prepared-SQL handler
 ;; dbi-prepare-sql returns a procedure, which generates a complete sql
@@ -199,59 +187,62 @@
 (define (dbi-prepare-sql sql)
   (let* ((tokens (sql-tokenize sql))
          (num-params (count (lambda (elt)
-                              (and (pair? elt) (eq? (car elt) 'parameter)))
+                              (match elt
+                                (('parameter (? integer?)) #t)
+                                (('parameter (? string? name))
+                                 (errorf <dbi-unsupported-error>
+                                         "Named parameter (:~a) isn't supported yet" name))
+                                (else #f)))
                             tokens)))
     (lambda (options . args)
       (unless (= (length args) num-params)
-        (raise (condition
-                (<dbi-parameter-error>
-                 (message (format "wrong number of parameters given to an SQL ~s"
-                                  sql))))))
+        (error <dbi-parameter-error>
+               "wrong number of parameters given to an SQL:" sql))
       (call-with-output-string
         (lambda (p)
           (with-port-locking p
-            (lambda ()
-              (let loop ((tokens tokens)
-                         (args   args)
-                         (delim  #t))
-                (match (car tokens)
-                  ((? symbol? x)
-                   (unless delim (write-char #\space p))
-                   (display x p)
-                   (loop (cdr tokens) args #f))
-                  ((? char? x)
-                   (display x p)
-                   (loop (cdr tokens) args #t))
-                  (('delimited x)
-                   (unless delim (write-char #\space p))
-                   (format p "\"~a\"" (regexp-replace-all #/\"/ x "\"\""))
-                   (loop (cdr tokens) args #f))
-                  (('string x)
-                   (unless delim (write-char #\space p))
-                   (format p "'~a'" (regexp-replace-all #/'/ x "''"))
-                   (loop (cdr tokens) args #f))
-                  (('number x)
-                   (unless delim (write-char #\space p))
-                   (display x)
-                   (loop (cdr tokens) args #f))
-                  (('parameter n)
-                   (unless delim (write-char #\space p))
-                   (display (sql-escape-literal (car args)) p)
-                   (loop (cdr tokens) (cdr args) #f))
-                  (('bitstring x)
-                   (unless delim (write-char #\space p))
-                   (format p "B'~a'" x)
-                   (loop (cdr tokens) args #f))
-                  (('hexstring x)
-                   (unless delim (write-char #\space p))
-                   (format p "X'~a'" x)
-                   (loop (cdr tokens) args #f))
-                  (else
-                   (raise (condition
-                           (<dbi-unsupported-error>
-                            (message (format "unsupported SQL token ~a in ~s"
-                                             (car tokens) sql))))))
-                  )))))))))
+            (cut generate-sql/parameters tokens args p))))
+
+(define (generate-sql/parameters tokens args p)
+  (let loop ((tokens tokens)
+             (args   args)
+             (delim  #t))
+    (match (car tokens)
+      ((? symbol? x)
+       (unless delim (write-char #\space p))
+       (display x p)
+       (loop (cdr tokens) args #f))
+      ((? char? x)
+       (display x p)
+       (loop (cdr tokens) args #t))
+      (('delimited x)
+       (unless delim (write-char #\space p))
+       (format p "\"~a\"" (regexp-replace-all #/\"/ x "\"\""))
+       (loop (cdr tokens) args #f))
+      (('string x)
+       (unless delim (write-char #\space p))
+       (format p "'~a'" (regexp-replace-all #/'/ x "''"))
+       (loop (cdr tokens) args #f))
+      (('number x)
+       (unless delim (write-char #\space p))
+       (display x)
+       (loop (cdr tokens) args #f))
+      (('parameter n)
+       (unless delim (write-char #\space p))
+       (display (sql-escape-literal (car args)) p)
+       (loop (cdr tokens) (cdr args) #f))
+      (('bitstring x)
+       (unless delim (write-char #\space p))
+       (format p "B'~a'" x)
+       (loop (cdr tokens) args #f))
+      (('hexstring x)
+       (unless delim (write-char #\space p))
+       (format p "X'~a'" x)
+       (loop (cdr tokens) args #f))
+      (else
+       (errorf <dbi-unsupported-error>
+               "unsupported SQL token ~a in ~s" (car tokens) sql))
+      )))
 
 ;;;==============================================================
 ;;; Backward compatibility stuff

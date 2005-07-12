@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: sxql.scm,v 1.3 2005-07-12 00:57:46 shirok Exp $
+;;;  $Id: sxql.scm,v 1.4 2005-07-12 11:42:01 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -160,8 +160,7 @@
   ;; raising an error
   ;;
   (define (e fmt . args)
-    (raise (condition (<sql-parse-error> (message (apply format fmt args))
-                                         (sql-string sql-string)))))
+    (apply errorf <sql-parse-error> :sql-string sql-string fmt args))
   ;;
   ;; main entry
   ;;

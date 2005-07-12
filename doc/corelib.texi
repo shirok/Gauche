@@ -5872,6 +5872,18 @@ condition type like the following code:
   )
 @end example
 
+If you don't mind to lose srfi compatibility, you can use
+Gauche's extended @code{error} and @code{errorf} procedures to throw
+a condition of subtype of @code{<error>}:
+
+@example
+  (if (something-went-wrong)
+    (error <myapp-error>
+           :debug-info "during processing xxx"
+           :reason "something went wrong"))
+@end example
+
+
 @c EN
 See the description of @code{define-condition-type} macro
 for how the condition type is implemented in Gauche's object system.
@@ -5892,71 +5904,90 @@ Gauche のオブジェクトシステムでコンディション型がどのように実装されているかは
 
 @c EN
 The most common case of exceptions is an error.
-Two convenience functions to signal a standard error condition
-are provided.   To signal a condition other than the standard
-error, you can use @code{raise} as explained below.
+Two convenience functions to signal an error condition
+in simple cases are provided.
+To signal a compound condition, you can use @code{raise} as explained below.
 @c JP
-最も良くある例外ケースはエラーです。標準的なエラー条件を通知するために、
+最も良くある例外ケースはエラーです。単純なエラーを通知するために、
 ふたつの簡単な関数が用意されています。
-標準的なエラー以外の条件を通知するには、
+複合コンディションを通知する必要がある場合は
 下で説明する@code{raise}手続きを使って下さい。
 @c COMMON
 
 @defun error string arg @dots{}
+@defunx error condition-type keyword-arg @dots{} string arg @dots{}
 @c EN
-[SRFI-23] Signals an error.   Internally the action is realized
-by those two steps.
+[SRFI-23+] Signals an error.  The first form creates an @code{<error>}
+condition, with a message consists of @var{string} and @var{arg} @dots{},
+and raises it.  It is compatible to srfi-23's @code{error} behavior.
 @c JP
-[SRFI-23] エラーを通知します。内部的には、このアクションは次の
-2つのステップで実現されます。
+[SRFI-23+] エラーを通知します。最初の形式は、
+@var{string}と@var{arg} @dots{}からなるメッセージを持つ
+@code{<error>}コンディションを作成それを@code{raise}します。
+この形式はsrfi-23の@code{error}と互換です。
 @c COMMON
-@enumerate
-@item
-@c EN
-An error condition is created, with the message prefixed
-by @var{string} and followed by @var{arg}s.
-@c JP
-前に@var{string}、後に@var{arg}が続くメッセージとともに、
-エラーコンディションが生成されます。
-@c COMMON
-@item
-@c EN
-The error condition is thrown, which may be handled by the
-current active exception handler, if any.
-@c JP
-エラーコンディションが投げられます。現在アクティブな例外ハンドラがあれば、
-それにより処理されます。
-@c COMMON
-@end enumerate
+
+@example
+gosh> (define (check-integer x)
+        (unless (integer? x)
+           (error "Integer required, but got:" x)))
+check-integer
+gosh> (check-integer "a")
+*** ERROR: Integer required, but got: "a"
+Stack Trace:
+_______________________________________
+@end example
 
 @c EN
-If no error handler is active, the default error handler is
-used, which prints the error message to the current error port
-and some debug information.   Then, if Gauche is running
-interactively, the control moves to the toplevel; if Gauche
-is running as a script, it exits with the exit status @code{EX_SOFTWARE}
-(70).
+The second form can be used to raise an error other than the
+@code{<error>} condition.  @var{condition-type} must be
+a condition type (see @ref{Conditions} for more explanation of
+condition types).  It may be followed by keyword-value list 
+to initialize the condition slots, and then optionally followed by
+a string and other objects that becomes an error message.
 @c JP
-アクティブなエラーハンドラがない場合、デフォルトのエラーハンドラが
-使われます。それはエラーメッセージといくらかのデバッグ情報を現在の
-エラーポートに出力します。Gaucheがインタラクティブに動作しているときは、
-制御がトップレベルに移ります。Gaucheがスクリプトを実行しているときは、
-終了ステータス@code{EX_SOFTWARE}とともに終了します。
+2番目の形式は@code{<error>}以外のエラーコンディションを通知したいときに
+使います。@var{condition-type}はコンディションタイプ
+でなければなりません (コンディションタイプについては@ref{Conditions}を
+参照して下さい)。その後に、キーワードと値のリストを与えることで
+コンディションのスロットを初期化することができます。また、その後に
+メッセージを構成する文字列と他のオブジェクトのリストを与えることができます。
 @c COMMON
+
+@example
+(define-condition-type <my-error> <error> #f
+  (reason)
+  (priority))
+
+...
+  (unless (memq operation *supported-operations*)
+    (error <my-error> 
+           :reason 'not-supported :priority 'urgent
+           "Operation not supported:" operation))
+...
+@end example
 @end defun
 
 @defun errorf fmt-string arg @dots{}
+@defunx errorf condition-type keyword-arg @dots{} fmt-string arg @dots{}
 @c EN
 Similar to an error, but the error message is formatted by
-@code{format}, i.e. it is equivalent to:
+@code{format}, i.e. the first form is equivalent to:
 @c JP
 エラーに似ていますが、エラーメッセージは@code{format}によりフォーマット
-されます。すなわち、以下と等価です。
+されます。すなわち、最初のフォームは以下と等価です。
 @c COMMON
 @example
 (define (errorf fmt . args)
   (error (apply format #f fmt args)))
 @end example
+
+@c EN
+The second form can be used to raise an error other than an
+@code{<error>} condition.  Meaning of @var{condition-type} and
+@var{keyword-arg}s are the same as @code{error}.
+@c JP
+@c COMMON
 @end defun
 
 @c EN
@@ -6011,9 +6042,15 @@ Gaucheの組み込み手続きやライブラリ手続きは常に、@code{<condition>}クラス
 @c COMMON
 @end defun
 
+
 @node Handling exceptions, Conditions, Signalling exceptions, Exceptions
 @subsection Handling exceptions
 @c NODE 例外の処理
+
+@c EN
+There are 
+@c JP
+@c COMMON
 
 @c EN
 @subsubheading High-level exception handling mechanism
@@ -6177,6 +6214,30 @@ mechanisms (similar to "one-shot continuation", @ref{onecont, [1CC], 1CC}).
           thunk))))))
 @end example
 @end defun
+
+@c EN
+@subsubheading Behavior of unhandled exception
+@c JP
+@subsubheading 処理されなかった例外のふるまい
+@c COMMON
+
+@c EN
+If an exception is raised where no program-defined exception handler is
+installed, the following action is taken.
+
+@itemize @bullet
+@item 
+If the program is running interactively (in repl), the information
+of the thrown exception and stack trace are displayed, and
+the program returns to the toplevel prompt.
+@item
+If the program is running non-interactively, the information
+of the thrown exception and stack trace are displayed, then
+the program exits with an exit status @code{EX_SOFTWARE} (70).
+@end itemize
+@c JP
+@c COMMON
+
 
 @c EN
 @subsubheading Low-level exception handling mechanism

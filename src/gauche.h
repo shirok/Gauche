@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.414 2005-06-23 04:18:21 shirok Exp $
+ *  $Id: gauche.h,v 1.415 2005-07-12 11:42:02 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2283,9 +2283,6 @@ enum {
 SCM_EXTERN void Scm_Error(const char *msg, ...);
 SCM_EXTERN void Scm_SysError(const char *msg, ...);
 SCM_EXTERN void Scm_PortError(ScmPort *port, int reason, const char *msg, ...);
-
-SCM_EXTERN ScmObj Scm_SError(ScmObj reason, ScmObj args);
-SCM_EXTERN ScmObj Scm_FError(ScmObj fmt, ScmObj args);
 
 SCM_EXTERN void Scm_Warn(const char *msg, ...);
 SCM_EXTERN void Scm_FWarn(ScmString *fmt, ScmObj args);

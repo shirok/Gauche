@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.25 2005-06-27 22:49:07 shirok Exp $
+;;;  $Id: cgi.scm,v 1.26 2005-07-12 11:42:01 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -135,10 +135,9 @@
                 (member typesig
                         '(("application" "x-www-form-urlencoded")
                           ("multipart" "form-data"))))
-      (raise (condition
-              (<cgi-content-type-error>
-               (content-type type)
-               (message (format "Unsupported CONTENT_TYPE: ~a" type))))))
+      (errorf <cgi-content-type-error>
+              :content-type type
+              "Unsupported CONTENT_TYPE: ~a" type))
     (cond ((not method)  ;; interactive use.
            (if (sys-isatty (current-input-port))
              (begin
@@ -152,10 +151,9 @@
                          (if (string-null? line)
                            params
                            (cons line params))))))
-             (raise (condition
-                     (<cgi-request-method-error>
-                      (request-method #f)
-                      (message "REQUEST_METHOD not defined"))))))
+             (error <cgi-request-method-error>
+                    :request-method #f
+                    "REQUEST_METHOD not defined")))
           ((or (string-ci=? method "GET")
                (string-ci=? method "HEAD"))
            (or (get-meta "QUERY_STRING") ""))
@@ -169,10 +167,9 @@
                    (string-incomplete->complete (read-block len)))
                  (port->string (current-input-port)))))
           (else
-           (raise (condition
-                   (<cgi-request-method-error>
-                    (request-method method)
-                    (message (format "Unknown REQUEST_METHOD: ~a" method))))))
+           (errorf <cgi-request-method-error>
+                   :request-method method
+                   "Unknown REQUEST_METHOD: ~a" method))
           )))
 
 ;;----------------------------------------------------------------

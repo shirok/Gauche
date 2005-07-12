@@ -1,5 +1,9 @@
 2005-07-11  Shiro Kawai  <shiro@acm.org>
 
+	* src/error.c, src/exclib.stub, src/scmlib.scm (error, errorf):
+	  implement error and errorf in Scheme, allowing to specify
+	  condition class to throw.
+	
 	* lib/slib.scm.in : additional interface for slib3 (patch from
 	  Dai Inukai).
 
