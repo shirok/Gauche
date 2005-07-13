@@ -5510,29 +5510,6 @@ SRFI-35にならって@emph{コンディション(condition)}を使います。
 実行時のオブジェクトです。
 @c COMMON
 
-@c The most common exceptional case is errors, so Gauche has
-@c a convenience API for reporting errors (e.g. @code{error}).
-@c Technically it creates an @emph{error condition} with given
-@c message and passes it to the active exception handler.
-@c Gauche's built-in procedures may signal exceptions with
-@c more specific conditions, such as @emph{read-error} if
-@c @code{read} encounters an illegal syntax, or @emph{system-error}
-@c if a system call fails.   @ref{Signalling exceptions} explains
-@c both the convenience error functions and more primitive API to
-@c signal other type of conditions.
-
-@c The exception handler can examine
-@c the signalled condition and take an appropriate action for
-@c each case.  @ref{Handling exceptions} explains how to do that.
-@c This part also has layers, from the convenient high-level macro
-@c to the underlying low-level primitive APIs.  
-
-@c In @ref{Conditions} 
-@c A library programmer may define his/her own
-@c condition type, if necessary, to allow the library users
-@c to handle specific type of exceptions differently than the
-@c built-in conditions.
-
 @menu
 * Exception handling overview::  
 * Signalling exceptions::       
@@ -5763,8 +5740,8 @@ a convenience procedure @code{error} and @code{errorf} are
 provided.  They create an error condition with a message and
 raise it.
 @c JP
-もっとも、一般的なコンディションのタイプはエラーコンディション
-ですから、@code{error} および @code{errorf} という便利な手続きが
+最も一般的なコンディションのタイプはエラーコンディションなので、
+@code{error} および @code{errorf} という便利な手続きが
 用意されています。これらはメッセージ付きのエラーコンディションを
 生成し、それを発生させます。
 @c COMMON
@@ -5872,9 +5849,15 @@ condition type like the following code:
   )
 @end example
 
+@c EN
 If you don't mind to lose srfi compatibility, you can use
-Gauche's extended @code{error} and @code{errorf} procedures to throw
-a condition of subtype of @code{<error>}:
+Gauche's extended @code{error} and @code{errorf} procedures to write
+more concise code to raise a condition of subtype of @code{<error>}:
+@c JP
+SRFIとの互換性が重要でないなら、Gaucheの拡張された@code{error}手続きを
+使うと@code{<error>}のサブタイプであるコンディションを投げるコードを
+より簡潔に書くことができます。
+@c COMMON
 
 @example
   (if (something-went-wrong)
@@ -5971,10 +5954,10 @@ a string and other objects that becomes an error message.
 @defun errorf fmt-string arg @dots{}
 @defunx errorf condition-type keyword-arg @dots{} fmt-string arg @dots{}
 @c EN
-Similar to an error, but the error message is formatted by
+Similar to @code{error}, but the error message is formatted by
 @code{format}, i.e. the first form is equivalent to:
 @c JP
-エラーに似ていますが、エラーメッセージは@code{format}によりフォーマット
+@code{error}に似ていますが、エラーメッセージは@code{format}によりフォーマット
 されます。すなわち、最初のフォームは以下と等価です。
 @c COMMON
 @example
@@ -5987,6 +5970,9 @@ The second form can be used to raise an error other than an
 @code{<error>} condition.  Meaning of @var{condition-type} and
 @var{keyword-arg}s are the same as @code{error}.
 @c JP
+2番目の形式は@code{<error>}以外のエラーコンディションを通知するのに
+使えます。@var{condition-type}, @var{keyword-arg}の意味については
+@code{error}と同じです。
 @c COMMON
 @end defun
 
@@ -6221,7 +6207,6 @@ mechanisms (similar to "one-shot continuation", @ref{onecont, [1CC], 1CC}).
 @subsubheading 処理されなかった例外のふるまい
 @c COMMON
 
-@c EN
 If an exception is raised where no program-defined exception handler is
 installed, the following action is taken.
 
@@ -6235,9 +6220,6 @@ If the program is running non-interactively, the information
 of the thrown exception and stack trace are displayed, then
 the program exits with an exit status @code{EX_SOFTWARE} (70).
 @end itemize
-@c JP
-@c COMMON
-
 
 @c EN
 @subsubheading Low-level exception handling mechanism
