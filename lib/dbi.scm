@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.6 2005-07-12 11:42:01 shirok Exp $
+;;;  $Id: dbi.scm,v 1.7 2005-07-14 09:11:18 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -40,13 +40,19 @@
 
 (define-module dbi
   (use text.sxql)
+  (use file.util)
+  (use srfi-1)
+  (use srfi-13)
+  (use util.match)
   (export <dbi-error> <dbi-nonexistent-driver-error>
           <dbi-unsupported-error> <dbi-parameter-error>
           <dbi-driver> <dbi-connection> <dbi-query> <dbi-result-set>
           dbi-connect dbi-close dbi-prepare dbi-execute dbi-do
-          dbi-parse-dsn dbi-make-driver dbi-prepare-sql
+          dbi-parse-dsn dbi-make-driver
+          dbi-prepare-sql dbi-escape-sql dbi-list-drivers
+          dbd-make-connection dbd-prepare dbd-execute
           ;; compatibility
-          dbi-make-query dbi-execute-query dbi-get-value
+          dbi-make-connection dbi-make-query dbi-execute-query dbi-get-value
           <dbi-exception>))
 (select-module dbi)
 
@@ -81,30 +87,32 @@
 ;; user hardly need to see <dbi-driver> object.
 
 (define-class <dbi-driver> ()
-  ((driver-name ;:getter dbi-driver-name-of
-                :init-keyword :driver-name)))
+  ((driver-name :init-keyword :driver-name)  ; "mysql" "pg" etc.
+   ))
 
 ;; Base of all dbi transient objects
 (define-class <dbi-object> ()
-  ((open :getter dbi-open? :init-keyword :open :init-value #f)))
+  ((open   :getter dbi-open? :init-keyword :open :init-value #f)))
 
 (define-method dbi-close ((o <dbi-object>))
   (set! (ref o 'open) #f))
 
 ;; <dbi-connection> : represents a connection to the database system.
-;; All the transactions must be done while the connection is 'active',
-;; or 'open'.
+;; All the transactions must be done while the connection is 'open'.
 (define-class <dbi-connection> (<dbi-object>) ())
 
 ;; <dbi-query> : represents a query.  Query can be sent to the database
 ;; system by dbi-execute-query, to obtain a result set.
+;; %prepared slot is used to store a prepared statemet by the DBI's default
+;; SQL statement preparation method.  The driver may prepare statements
+;; differently.
 (define-class <dbi-query> (<dbi-object>)
-  ((%prepared :init-value #f :init-keyword :prepared))
-  )
+  ((connection :init-value #f :init-keyword :connection)
+   (%prepared  :init-value #f :init-keyword :%prepared)
+  ))
 
 ;; <dbi-result-set> : an abstract entity of the result of a query.
-;; For RDBMS, it is a set of rows.  The implementation may choose to
-;; delay fetcing 
+;; For RDBMS, it is a set of rows.
 (define-class <dbi-result-set> (<dbi-object>) ())
 
 ;;;==============================================================
@@ -113,41 +121,75 @@
 
 ;; Establish a connection to the data source specified by DSN,
 ;; and returns a connection object.
+;; DSN is the data source name, which can have the following syntax.
+;;   "dbi:driver-type"
+;;   "dbi:driver-type:connection-options"
+;; Connection-options is like "name1=value1;name2=value2;...".
+;; 
 (define (dbi-connect dsn . args)
-  (receive (driver-name db-name) (dbi-parse-dsn dsn)
-    (apply dbi-make-connection (dbi-make-driver driver-name) args)))
+  (receive (driver-name options option-alist) (dbi-parse-dsn dsn)
+    (apply dbd-make-connection
+           (dbi-make-driver driver-name) options option-alist args)))
 
 ;; Prepares and returns a query object.  The default method
 ;; parse SQL and store it in <dbi-query>.  The driver may overload
 ;; this method to delegate preparation in the DBMS.
-(define-method dbi-prepare ((c <dbi-connection>) (sql <string>))
-  (make <dbi-query> :prepared (dbi-prepare-sql sql)))
+(define-method dbi-prepare ((c <dbi-connection>) (sql <string>) . options)
+  (let1 q (apply dbd-prepare c sql options)
+    (set! (ref q 'connection) c)
+    q))
 
-;; Execute the prepared statement.  Again, the default method assumes
-;; query is prepared by dbi module, but the driver may overload this
-;; to handle execution in the DBMS.
-(define-method dbi-execute ((q <dbi-query>) options . args)
-  (or (and-let* ((prepared (slot-ref q '%prepared)))
-        (apply prepared options args))
-      (error <dbi-unsupported-error> "dbi-execute is not implemented on" q)))
+;; Execute the prepared statement.
+(define-method dbi-execute ((q <dbi-query>) . args)
+  (apply dbd-execute (ref q 'connection) q args))
 
 ;; Does preparation and execution at once.  The driver may overload this.
 (define-method dbi-do ((c <dbi-connection>) sql options . args)
-  (apply (dbi-prepare-sql sql) options args))
+  (apply dbd-execute (apply dbd-prepare c sql options) args))
+
+(define-method dbi-do ((c <dbi-connection>) sql)
+  (dbi-do c sql '()))
+
+;; Returns a string safe to be embedded in SQL.
+;;   (dbi-escape-sql c "Don't know") => "'Don''t know'"
+;; What's "safe" depends on the underlying DBMS.  The default procedure
+;; only escapes a single quote by repeating it.  If the DBMS has other
+;; type of escaping mechanism, the driver should overload this with
+;; a proper escaping method.
+(define-method dbi-escape-sql ((c <dbi-connection>) str)
+  (string-append "'" (regexp-replace-all #/'/ str "''") "'"))
 
 ;; Returns a list of available dbd.* backends.  Each entry is
 ;; a cons of a module name and its driver name.
-(define (dbi-all-driver-modules)
+(define (dbi-list-drivers)
   (library-map 'dbd.* (lambda (m p) m)))
   
 ;;;==============================================================
 ;;; DBD-level APIs
 ;;;
 
-;; Subclass should implement this.
-(define-method dbi-make-connection ((d <dbi-driver>) . options) #f)
+;; Subclass SHOULD implement this.
+(define-method dbd-make-connection ((d <dbi-driver>) options option-alist
+                                    . args)
+  ;; The default method here is just a temporary one to use
+  ;; older dbd drivers.  Will go away once the drivers catch up
+  ;; the new interface.
+  (let-keywords* args ((username "")
+                       (password ""))
+    ;; call deprecated dbi-make-connection API.
+    (dbi-make-connection d username password (or options ""))))
 
+;; Subclass may override this method.
+(define-method dbd-prepare ((c <dbi-connection>) (sql <string>) . options)
+  (make <dbi-query> :%prepared (dbi-prepare-sql c sql)))
 
+;; Subclass should implement this.  The current default procedure
+;; delegates the work for the old driver API.  Should go away soon.
+(define-method dbd-execute ((c <dbi-connection>) (q <dbi-query>) . params)
+  (or (and-let* ((prepared (slot-ref q '%prepared)))
+        (dbi-execute-query (dbi-make-query c) (apply prepared params)))
+      (error <dbi-unsupported-error> "dbi-execute is not implemented on" q)))
+    
 ;; Subclass should implement this.
 (define-method dbi-get-value ((r <dbi-result-set>) (n <integer>))
   '())
@@ -156,24 +198,35 @@
 ;;; Low-level utilities
 ;;;
 
-;; Parse data source name
+;; Parse data source name.  Returns 
+;;  (driver-name, option-string, option-alist)
+;;
 (define (dbi-parse-dsn data-source-name)
   (rxmatch-case data-source-name
-    (#/^dbi:([\w-]+)(:[\w\/-]+)?$/ (#f driver dbname) (values driver dbname))
+    (#/^dbi:([\w-]+)(?::(.+))?$/ (#f driver options)
+     (if options
+       (let1 alist (map (lambda (nv)
+                          (receive (n v) (string-scan nv "=" 'both)
+                            (if n (cons n v) (cons nv #t))))
+                        (string-split options #\;))
+         (values driver options alist))
+       (values driver #f #f)))
     (else
      (error <dbi-error> "bad data source name spec:" data-source-name))))
 
 ;; Loads a concrete driver module, and returns an instance of
 ;; the driver.
 (define (dbi-make-driver driver-name)
-  (or (and-let* ((module&path (library-fold #`"dbd/,driver-name"
-                                            (lambda (m p s) (cons m p)) #f))
+  (or (and-let* ((module&path (library-fold
+                               (string->symbol #`"dbd.,driver-name")
+                               (lambda (m p s) (cons m p)) #f))
                  (module      (car module&path))
                  (path        (cdr module&path))
                  (class-name  (string->symbol #`"<,|driver-name|-driver>"))
                  
                  (driver-class
-                  (begin (eval `(require ,path) (current-module))
+                  (begin (eval `(require ,(path-sans-extension path))
+                               (current-module))
                          (global-variable-ref module class-name #f)))
                  )
         (make driver-class :driver-name driver-name))
@@ -184,7 +237,7 @@
 ;; Default prepared-SQL handler
 ;; dbi-prepare-sql returns a procedure, which generates a complete sql
 ;; when called with binding values to the parameters.
-(define (dbi-prepare-sql sql)
+(define (dbi-prepare-sql conn sql)
   (let* ((tokens (sql-tokenize sql))
          (num-params (count (lambda (elt)
                               (match elt
@@ -194,55 +247,57 @@
                                          "Named parameter (:~a) isn't supported yet" name))
                                 (else #f)))
                             tokens)))
-    (lambda (options . args)
+    (lambda args
       (unless (= (length args) num-params)
         (error <dbi-parameter-error>
                "wrong number of parameters given to an SQL:" sql))
       (call-with-output-string
         (lambda (p)
           (with-port-locking p
-            (cut generate-sql/parameters tokens args p))))
+            (cut generate-sql/parameters conn tokens args p)))))))
 
-(define (generate-sql/parameters tokens args p)
+(define (generate-sql/parameters conn tokens args p)
   (let loop ((tokens tokens)
              (args   args)
              (delim  #t))
-    (match (car tokens)
-      ((? symbol? x)
-       (unless delim (write-char #\space p))
-       (display x p)
-       (loop (cdr tokens) args #f))
-      ((? char? x)
-       (display x p)
-       (loop (cdr tokens) args #t))
-      (('delimited x)
-       (unless delim (write-char #\space p))
-       (format p "\"~a\"" (regexp-replace-all #/\"/ x "\"\""))
-       (loop (cdr tokens) args #f))
-      (('string x)
-       (unless delim (write-char #\space p))
-       (format p "'~a'" (regexp-replace-all #/'/ x "''"))
-       (loop (cdr tokens) args #f))
-      (('number x)
-       (unless delim (write-char #\space p))
-       (display x)
-       (loop (cdr tokens) args #f))
-      (('parameter n)
-       (unless delim (write-char #\space p))
-       (display (sql-escape-literal (car args)) p)
-       (loop (cdr tokens) (cdr args) #f))
-      (('bitstring x)
-       (unless delim (write-char #\space p))
-       (format p "B'~a'" x)
-       (loop (cdr tokens) args #f))
-      (('hexstring x)
-       (unless delim (write-char #\space p))
-       (format p "X'~a'" x)
-       (loop (cdr tokens) args #f))
-      (else
-       (errorf <dbi-unsupported-error>
-               "unsupported SQL token ~a in ~s" (car tokens) sql))
-      )))
+    (unless (null? tokens)
+      (match (car tokens)
+        ((? symbol? x)
+         (unless delim (write-char #\space p))
+         (display x p)
+         (loop (cdr tokens) args #f))
+        ((? char? x)
+         (display x p)
+         (loop (cdr tokens) args #t))
+        (('delimited x)
+         (unless delim (write-char #\space p))
+         (format p "\"~a\"" (regexp-replace-all #/\"/ x "\"\""))
+         (loop (cdr tokens) args #f))
+        (('string x)
+         (unless delim (write-char #\space p))
+         (format p "'~a'" (regexp-replace-all #/'/ x "''"))
+         (loop (cdr tokens) args #f))
+        (('number x)
+         (unless delim (write-char #\space p))
+         (display x)
+         (loop (cdr tokens) args #f))
+        (('parameter n)
+         (unless delim (write-char #\space p))
+         (display (dbi-escape-sql conn (car args)) p)
+         (loop (cdr tokens) (cdr args) #f))
+        (('bitstring x)
+         (unless delim (write-char #\space p))
+         (format p "B'~a'" x)
+         (loop (cdr tokens) args #f))
+        (('hexstring x)
+         (unless delim (write-char #\space p))
+         (format p "X'~a'" x)
+         (loop (cdr tokens) args #f))
+        (else
+         (errorf <dbi-unsupported-error>
+                 "unsupported SQL token ~a in ~s" (car tokens) sql))
+        ))))
+
 
 ;;;==============================================================
 ;;; Backward compatibility stuff
@@ -255,6 +310,8 @@
 (define <dbi-exception> <dbi-error>)
 
 ;; Older API
+(define-method dbi-make-connection ((d <dbi-driver>) user pass options)
+  #f)
 (define-method dbi-make-query ((c <dbi-connection>) (o <string>))
   #f)
 (define-method dbi-make-query ((c <dbi-connection>))
