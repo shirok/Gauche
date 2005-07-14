@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.239 2005-07-12 01:28:24 shirok Exp $
+;;; $Id: extlib.stub,v 1.240 2005-07-14 09:08:13 shirok Exp $
 ;;;
 
 "
@@ -1255,7 +1255,7 @@
    } else if (SCM_FALSEP(mod_or_name)) {
      return SCM_CURRENT_MODULE();
    } else {
-     Scm_Error(\"module or symbol required, but got: %s\", mod_or_name);
+     Scm_Error(\"module or symbol required, but got: %S\", mod_or_name);
      return NULL;
    }
  }
