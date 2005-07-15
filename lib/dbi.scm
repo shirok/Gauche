@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.7 2005-07-14 09:11:18 shirok Exp $
+;;;  $Id: dbi.scm,v 1.8 2005-07-15 01:59:57 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -44,6 +44,7 @@
   (use srfi-1)
   (use srfi-13)
   (use util.match)
+  (extend util.relations)
   (export <dbi-error> <dbi-nonexistent-driver-error>
           <dbi-unsupported-error> <dbi-parameter-error>
           <dbi-driver> <dbi-connection> <dbi-query> <dbi-result-set>
@@ -112,8 +113,9 @@
   ))
 
 ;; <dbi-result-set> : an abstract entity of the result of a query.
-;; For RDBMS, it is a set of rows.
-(define-class <dbi-result-set> (<dbi-object>) ())
+;; It is a collection of rows, and
+;;
+(define-class <dbi-result-set> (<dbi-object> <relation>) ())
 
 ;;;==============================================================
 ;;; User-level APIs
@@ -145,7 +147,7 @@
 
 ;; Does preparation and execution at once.  The driver may overload this.
 (define-method dbi-do ((c <dbi-connection>) sql options . args)
-  (apply dbd-execute (apply dbd-prepare c sql options) args))
+  (apply dbd-execute c (apply dbd-prepare c sql options) args))
 
 (define-method dbi-do ((c <dbi-connection>) sql)
   (dbi-do c sql '()))
@@ -190,9 +192,11 @@
         (dbi-execute-query (dbi-make-query c) (apply prepared params)))
       (error <dbi-unsupported-error> "dbi-execute is not implemented on" q)))
     
-;; Subclass should implement this.
-(define-method dbi-get-value ((r <dbi-result-set>) (n <integer>))
-  '())
+;; Result set.
+
+;; default method
+(define-method dbi-get-value ((r <list>) (n <integer>))
+  (list-ref r n))
 
 ;;;===================================================================
 ;;; Low-level utilities
