@@ -687,6 +687,11 @@
          (acc obj)))
 
 ;;-----------------------------------------------
+(test-section "util.relations")
+(use util.relations)
+(test-module 'util.relations)
+
+;;-----------------------------------------------
 (test-section "util.toposort")
 (use util.toposort)
 (test-module 'util.toposort)
