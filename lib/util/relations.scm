@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: relations.scm,v 1.2 2005-07-15 01:53:36 shirok Exp $
+;;;  $Id: relations.scm,v 1.3 2005-07-15 01:54:48 shirok Exp $
 ;;;
 
 ;;; Given set of values S1, S2, ..., Sn, a relation R is a set of tuples
@@ -115,6 +115,7 @@
 (define-class <simple-relation> (<relation>)
   ((column-alist :init-keyword :column-alist :init-value '())
    (data :init-keyword :data :init-value '())) ;; list of vectors
+  )
 
 (define-method relation-columns ((r <simple-relation>))
   (map car (ref r 'column-alist)))
