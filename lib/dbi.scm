@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.9 2005-07-15 10:23:18 shirok Exp $
+;;;  $Id: dbi.scm,v 1.10 2005-07-15 10:29:13 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -49,7 +49,7 @@
           <dbi-unsupported-error> <dbi-parameter-error>
           <dbi-driver> <dbi-connection> <dbi-query> <dbi-result-set>
           dbi-connect dbi-close dbi-prepare dbi-execute dbi-do
-          dbi-parse-dsn dbi-make-driver
+          dbi-open? dbi-parse-dsn dbi-make-driver
           dbi-prepare-sql dbi-escape-sql dbi-list-drivers
           dbd-make-connection dbd-prepare dbd-execute
           ;; compatibility
@@ -93,7 +93,7 @@
 
 ;; Base of all dbi transient objects
 (define-class <dbi-object> ()
-  ((open   :getter dbi-open? :init-keyword :open :init-value #f)))
+  ((open   :getter dbi-open? :init-keyword :open :init-value #t)))
 
 (define-method dbi-close ((o <dbi-object>))
   (set! (ref o 'open) #f))
@@ -307,11 +307,19 @@
          (loop (cdr tokens) args #f))
         (('number x)
          (unless delim (write-char #\space p))
-         (display x)
+         (display x p)
          (loop (cdr tokens) args #f))
         (('parameter n)
          (unless delim (write-char #\space p))
-         (display (dbi-escape-sql conn (car args)) p)
+         (let* ((argval (car args))
+                (s (cond
+                    ((not argval) "NULL")
+                    ((string? argval) (dbi-escape-sql conn argval))
+                    ((symbol? argval) (dbi-escape-sql conn (symbol->string argval)))
+                    ((real? argval) (number->string argval))
+                    (else (error <dbi-parameter-error>
+                                 "bad type of parameter for SQL:" argval)))))
+           (display s p))
          (loop (cdr tokens) (cdr args) #f))
         (('bitstring x)
          (unless delim (write-char #\space p))
