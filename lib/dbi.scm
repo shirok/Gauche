@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.8 2005-07-15 01:59:57 shirok Exp $
+;;;  $Id: dbi.scm,v 1.9 2005-07-15 10:23:18 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -113,8 +113,10 @@
   ))
 
 ;; <dbi-result-set> : an abstract entity of the result of a query.
-;; It is a collection of rows, and
-;;
+;; It is a collection of rows.  The driver must define a subclass
+;; this and implement collection and relation APIs.
+;; For the convenience, a simple-minded implementation <dbi-result-set-simple>
+;; is provided.
 (define-class <dbi-result-set> (<dbi-object> <relation>) ())
 
 ;;;==============================================================
@@ -193,10 +195,32 @@
       (error <dbi-unsupported-error> "dbi-execute is not implemented on" q)))
     
 ;; Result set.
+;; The driver should subclass <dbi-result-set> and implement
+;; relations and collections protocol.  For the convenience, here's
+;; a simple-minded subclass that implements required protocols, and
+;; the driver may only need to set columns and rows.
+;;   columns : should be a sequence of column names
+;;   rows    : should be a collection of sequences.
+(define-class <dbi-result-set-simple> (<dbi-result-set>)
+  ((columns :init-keyword :columns :init-value '())
+   (rows    :init-keyword :rows :init-value '())))
+
+(define-method relation-column-names ((r <dbi-result-set-simple>))
+  (ref r 'columns))
+
+(define-method relation-column-getter ((r <dbi-result-set-simple>) column)
+  (let ((i (find-index (cut equal? column <>) (ref r 'columns))))
+    (lambda (row)
+      (and i (ref row i)))))
+
+(define-method relation-column-setter ((r <dbi-result-set-simple>) column)
+  (let ((i (find-index (cut equal? column <>) (ref r 'columns))))
+    (lambda (row val)
+      (and i (set! (ref row i) val)))))
 
 ;; default method
-(define-method dbi-get-value ((r <list>) (n <integer>))
-  (list-ref r n))
+(define-method dbi-get-value ((r <sequence>) (n <integer>))
+  (ref r n))
 
 ;;;===================================================================
 ;;; Low-level utilities
