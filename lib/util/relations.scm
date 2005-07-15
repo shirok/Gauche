@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: relations.scm,v 1.1 2005-07-15 01:44:07 shirok Exp $
+;;;  $Id: relations.scm,v 1.2 2005-07-15 01:53:36 shirok Exp $
 ;;;
 
 ;;; Given set of values S1, S2, ..., Sn, a relation R is a set of tuples
@@ -60,7 +60,7 @@
 (define-module util.relations
   (use gauche.sequence)
   (use srfi-1)
-  (use list.util)
+  (use util.list)
   (export <relation>
           relation-columns
           relation-column-getter
