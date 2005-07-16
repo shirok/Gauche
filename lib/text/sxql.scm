@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: sxql.scm,v 1.4 2005-07-12 11:42:01 shirok Exp $
+;;;  $Id: sxql.scm,v 1.5 2005-07-16 00:00:31 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -41,8 +41,10 @@
 
 (define-module text.sxql
   (use srfi-13)
+  (use util.match)
   (export <sql-parse-error>
           sql-tokenize
+          ;sql->sxql
           ))
 (select-module text.sxql)
 
@@ -58,14 +60,55 @@
   (sql-string))         ;; original SQL string
 
 ;;;-----------------------------------------------------------------
-;;; Full Tokenizer
+;;; Parser
+;;;
+
+;(define (sql->sxql sql-string)
+
+;  (define (parse-stmt tokens)
+;    (match tokens
+;      (() (values '() '()))
+;      (('select . rest) (parse-select (cdr tokens)))
+;      (('insert . rest) (parse-insert (cdr tokens)))
+;      (('delete . rest) (parse-delete (cdr tokens)))
+;      (('create . rest) (parse-create (cdr tokens)))
+;      (else
+;       (err "Invalid or unsupported statement type '~a' in ~s"
+;            (car tokens) sql-string))))
+
+;  (define (parse-select tokens)
+;    (parse-select-columns tokens '()))
+
+;  (define (parse-select-columns tokens columns)
+;    (cond
+;     ((or (null? tokens) (eqv? (car tokens) #\;))
+;      (err "Unterminated SELECT statement in ~s" sql-string))
+;     ((eq? (car tokens) 'from)
+;      (parse-select-from (cdr tokens) (reverse! columns)))
+;     (else
+;      (parse-select-column tokens columns))))
+
+;  (define (parse-select-column tokens columns)
+;    (cond
+;     ((eq? (car tokens)
+;           ))))
+
+;  ;; error
+;  (define (err fmt . args)
+;    (apply errorf <sql-parse-error> :sql-string sql-string fmt args))
+
+;  ;; The body of sql->sxql
+;  (parse-stmt (sql-tokenize sql-string)))
+
+;;;-----------------------------------------------------------------
+;;; Tokenizer
 ;;;   Returns a list of tokens.  Each token is either one of the
 ;;;   following form.
 ;;;   
 ;;;    <symbol>              Regular identifier, or special delimiter:
 ;;;                          + - * / < = > <> <= >= ||
 ;;;    <character>           Special delimiter: 
-;;;                          #\, #\. #\: #\( #\) #\;
+;;;                          #\, #\. #\( #\) #\;
 ;;;    (delimited <string>)  Delimited identifier
 ;;;    (parameter <num>)     Positional parameter (?)
 ;;;    (parameter <string>)  Named parameter (:foo)
@@ -120,7 +163,8 @@
                  (entry (m 'after) (cons `(parameter ,(m 1)) r))))
            ((#/^\w+/ s)
             => (lambda (m)
-                 (entry (m 'after) (cons (string->symbol (m)) r))))
+                 (entry (m 'after)
+                        (cons (string->symbol (string-downcase (m))) r))))
            (else (e "invalid SQL token beginning with ~s in: ~s"
                     c sql-string)))))))
   ;;
