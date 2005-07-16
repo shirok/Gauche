@@ -297,11 +297,14 @@
           (set! x 10)
           (force p))))
 
+;; check to see the compiler does the right thing about expanding
+;; (delay x) to (lazy (eager x)).
 (prim-test "delay compilation" 3
            (lambda ()
-             (let ((lazy list)
-                   (eager list))
-               (delay (force 3)))))
+             (force 
+              (let ((lazy list)
+                    (eager list))
+               (delay (force 3))))))
 
 ;; srfi-45 test suite
 (prim-test "memoize 1" 1

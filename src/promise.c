@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: promise.c,v 1.13 2005-07-16 01:47:40 shirok Exp $
+ *  $Id: promise.c,v 1.14 2005-07-16 19:37:53 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -51,6 +51,17 @@
  * [syntax]     delay expr  : a -> Promise a
  *    (lazy (eager expr))
  * [procedure]  force expr  : Promise a -> a
+ *
+ * One might want to create a subtype of promise; for example, srfi-40
+ * requires the stream type to be distinct from other types, although
+ * it is essentially a promise with a specific usage pattern.  To realize
+ * that portably, one need effectively reimplement force/delay mechanism
+ * (since 'eager' operation is required to return Stream instread of Promise),
+ * which is kind of shame.
+ *
+ * Gauche experimentally tries to address this problem by allowing the
+ * program to add a specific KIND object to a promise instance.
+ * 
  */
 
 /*
@@ -68,9 +79,12 @@ typedef struct ScmPromiseContentRec {
 static void promise_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmPromise *p = (ScmPromise*)obj;
-    Scm_Printf(port, "#<promise %p%s>",
-               p,
-               p->content->forced? " (forced)" : "");
+    const char *forced = p->content->forced? " (forced)" : "";
+    if (SCM_FALSEP(p->kind)) {
+        Scm_Printf(port, "#<promise %p%s>", p, forced);
+    } else {
+        Scm_Printf(port, "#<promise(%S) %p%s>", p->kind, p, forced);
+    }
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_PromiseClass, promise_print);
@@ -87,6 +101,7 @@ ScmObj Scm_MakePromise(int forced, ScmObj code)
     c->forced = forced;
     c->code = code;
     p->content = c;
+    p->kind = SCM_FALSE;
     return SCM_OBJ(p);
 }
 

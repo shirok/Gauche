@@ -692,6 +692,11 @@
 (test-module 'util.relations)
 
 ;;-----------------------------------------------
+(test-section "util.stream")
+(use util.stream)
+(test-module 'util.stream)
+
+;;-----------------------------------------------
 (test-section "util.toposort")
 (use util.toposort)
 (test-module 'util.toposort)

@@ -1,3 +1,7 @@
+2005-07-16  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/stream.scm: added srfi-40 and more.
+
 2005-07-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/promise.c, src/gauche.h, src/compile.c, src/extlib.stub,
