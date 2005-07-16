@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.12 2005-05-28 10:40:12 shirok Exp $
+;;; $Id: intlib.stub,v 1.13 2005-07-16 01:47:40 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -193,9 +193,6 @@
 
 (define-cproc %internal-macro-expand (form env once::<boolean>)
   (return "Scm_VMMacroExpand"))
-
-(define-cproc make-promise (thunk)
-  (return "Scm_MakePromise"))
 
 (define-cproc %procedure-inliner (proc::<procedure>)
   (setter (proc::<procedure> inliner)

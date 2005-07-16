@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.240 2005-07-14 09:08:13 shirok Exp $
+;;; $Id: extlib.stub,v 1.241 2005-07-16 01:47:40 shirok Exp $
 ;;;
 
 "
@@ -676,6 +676,9 @@
 
 (define-cproc promise? (obj)
   "SCM_RETURN(SCM_MAKE_BOOL(SCM_XTYPEP(obj, SCM_CLASS_PROMISE)));")
+
+(define-cproc eager (obj)               ;srfi-45
+  "SCM_RETURN(Scm_MakePromise(TRUE, obj));")
 
 ;;
 ;; 6.6.1  Ports

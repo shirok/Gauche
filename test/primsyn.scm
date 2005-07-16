@@ -272,7 +272,7 @@
             (eval '(apply car foo '()) (find-module 'primsyn.test))))))
 
 ;;----------------------------------------------------------------
-(test-section "delay & force")
+(test-section "lazy, delay & force")
 
 (prim-test "simple delay" 3
       (lambda () (force (delay (+ 1 2)))))
@@ -296,6 +296,106 @@
           (force p)
           (set! x 10)
           (force p))))
+
+(prim-test "delay compilation" 3
+           (lambda ()
+             (let ((lazy list)
+                   (eager list))
+               (delay (force 3)))))
+
+;; srfi-45 test suite
+(prim-test "memoize 1" 1
+           (lambda ()
+             (let ((count 0))
+               (define s (delay (begin (set! count (+ count 1)) 1)))
+               (force s)
+               (force s)
+               count)))
+
+(prim-test "memoize 2" 1
+           (lambda ()
+             (let ((count 0))
+               (define s (delay (begin (set! count (+ count 1)) 1)))
+               (+ (force s) (force s))
+               count)))
+
+(prim-test "memoize 3" 1  ;; (Alejandro Forero Cuervo)
+           (lambda ()
+             (let ((count 0))
+               (let* ((r (delay (begin (set! count (+ count 1)) 1)))
+                      (s (lazy r))
+                      (t (lazy s)))
+                 (force t)
+                 (force r)
+                 count))))
+
+(prim-test "memoize 4" 5  ;; stream memoization
+           (lambda ()
+             (let ((count 0))
+               (define (stream-drop s index)
+                 (lazy
+                  (if (zero? index)
+                    s
+                    (stream-drop (cdr (force s)) (- index 1)))))
+               (define (ones)
+                 (delay (begin
+                          (set! count (+ count 1))
+                          (cons 1 (ones)))))
+               (let ((s (ones)))
+                 (car (force (stream-drop s 4)))
+                 (car (force (stream-drop s 4)))
+                 count))))
+
+(prim-test "reentrancy 1" 'second       ;; see srfi-40 post-discussion
+           (lambda ()
+             (define f
+               (let ((first? #t))
+                 (delay
+                   (if first?
+                     (begin
+                       (set! first? #f)
+                       (force f))
+                     'second))))
+             (force f)))
+
+(prim-test "reentrancy 2" '(5 0 10) ;; (John Shutt)
+           (lambda ()
+             (define q
+               (let ((count 5))
+                 (define (get-count) count)
+                 (define p (delay (if (<= count 0)
+                                    count
+                                    (begin (set! count (- count 1))
+                                           (force p)
+                                           (set! count (+ count 2))
+                                           count))))
+                 (list get-count p)))
+             (let* ((get-count (car q))
+                    (p (cadr q))
+                    (a (get-count))
+                    (b (force p))
+                    (c (get-count)))
+               (list a b c))))
+
+;; This leak test takes long time, so we exclude it by default.
+;; If you run this on pre-0.8.6 Gauche (with replacing lazy by delay+force),
+;; it'll bust the memory.
+;(prim-test "leak 1" 10000000
+;           (lambda ()
+;             (define (stream-filter p? s)
+;               (lazy
+;                (let ((lis (force s)))
+;                  (if (null? lis)
+;                    (delay '())
+;                    (let ((h (car lis))
+;                          (t (cdr lis)))
+;                      (if (p? h)
+;                        (delay (cons h (stream-filter p? t)))
+;                        (stream-filter p? t)))))))
+;             (define (from n)
+;               (delay (cons n (from (+ n 1)))))
+;             (car (force (stream-filter (lambda (n) (= n 10000000))
+;                                        (from 0))))))
 
 ;;----------------------------------------------------------------
 (test-section "optimized frames")

@@ -1,5 +1,9 @@
 2005-07-15  Shiro Kawai  <shiro@acm.org>
 
+	* src/promise.c, src/gauche.h, src/compile.c, src/extlib.stub,
+	  src/vm.c: Adopted srfi-45 semantics of lazy evaluation.  A new
+	  primitive syntax 'lazy' is added.  See srfi-45 for the details.
+
 	* lib/util/relations.scm (util.relations): added.  A generic
 	  framework of dealing with relations.  This module will grow later.
 

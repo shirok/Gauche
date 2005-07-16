@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.415 2005-07-12 11:42:02 shirok Exp $
+ *  $Id: gauche.h,v 1.416 2005-07-16 01:47:40 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2253,14 +2253,15 @@ SCM_EXTERN ScmObj Scm_VMMacroExpand(ScmObj expr, ScmObj env, int oncep);
 
 struct ScmPromiseRec {
     SCM_HEADER;
-    int forced;
-    ScmObj code;
+    struct ScmPromiseContentRec *content; /* opaque */
 };
 
 SCM_CLASS_DECL(Scm_PromiseClass);
 #define SCM_CLASS_PROMISE           (&Scm_PromiseClass)
+#define SCM_PROMISE(obj)            ((ScmPromise*)(obj))
+#define SCM_PROMISEP(obj)           SCM_XTYPEP(obj, SCM_CLASS_PROMISE)
 
-SCM_EXTERN ScmObj Scm_MakePromise(ScmObj code);
+SCM_EXTERN ScmObj Scm_MakePromise(int forced, ScmObj code);
 SCM_EXTERN ScmObj Scm_Force(ScmObj p);
 
 /*--------------------------------------------------------

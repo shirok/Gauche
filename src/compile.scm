@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.31 2005-06-16 07:35:59 shirok Exp $
+;;;  $Id: compile.scm,v 1.32 2005-07-16 01:47:40 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1621,6 +1621,8 @@
 
 (define lambda. (global-id 'lambda))
 (define setter. (global-id 'setter))
+(define lazy.   (global-id 'lazy))
+(define eager.  (global-id 'eager))
 
 ;; Definitions ........................................
 
@@ -2271,12 +2273,18 @@
 (define-pass1-syntax (begin form cenv) :null
   ($seq (imap (cut pass1 <> cenv) (cdr form))))
 
-;; Delay .....................................................
+;; Lazy & Delay ..............................................
+
+(define-pass1-syntax (lazy form cenv) :gauche
+  (match form
+    ((_ expr)
+     ($promise form (pass1 `(,lambda. () ,expr) cenv)))
+    (else (error "syntax-error: malformed lazy:" form))))
 
 (define-pass1-syntax (delay form cenv) :null
   (match form
     ((_ expr)
-     ($promise form (pass1 `(,lambda. () ,expr) cenv)))
+     (pass1 `(,lazy. (,eager. ,expr)) cenv))
     (else (error "syntax-error: malformed delay:" form))))
 
 ;; Module related ............................................

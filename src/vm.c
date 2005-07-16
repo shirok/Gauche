@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.232 2005-07-09 03:23:14 shirok Exp $
+ *  $Id: vm.c,v 1.233 2005-07-16 01:47:40 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1983,7 +1983,7 @@ pthread_key_t Scm_VMKey(void)
             }
             CASE(SCM_VM_PROMISE) {
                 SAVE_REGS();
-                VAL0 = Scm_MakePromise(VAL0);
+                VAL0 = Scm_MakePromise(FALSE, VAL0);
                 vm->numVals = 1;
                 NEXT;
             }
