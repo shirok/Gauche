@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.101 2005-04-12 01:42:27 shirok Exp $
+;;;  $Id: genstub,v 1.102 2005-07-16 19:53:39 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -378,6 +378,8 @@
      "SCM_PROCEDUREP" "SCM_PROCEDURE")
    (define-type <closure> "ScmClosure*" "closure"
      "SCM_CLOSUREP" "SCM_CLOSURE")
+   (define-type <promise> "ScmPromise*" "promise"
+     "SCM_PROMISEP" "SCM_PROMISE")
    (define-type <hash-table> "ScmHashTable*" "hash table"
      "SCM_HASHTABLEP" "SCM_HASHTABLE")
    (define-type <class> "ScmClass*" "class"
