@@ -1,5 +1,7 @@
 2005-07-16  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche-install.in : added -U (uninstall) option.
+
 	* ext/template.DIST, src/gauche-package.in, examples/spigot/README:
 	  Let "gauche-package generate" put DIST script, too.  Changed
 	  description in spigot/README to reflect the new way of using

@@ -1,7 +1,7 @@
 ;;;
 ;;; install - Generic installation utility
 ;;;  
-;;;   Copyright (c) 2004 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2004-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-install.in,v 1.1 2004-04-23 10:17:47 shirok Exp $
+;;;  $Id: gauche-install.in,v 1.2 2005-07-17 04:01:36 shirok Exp $
 ;;;
 
 ;; This is intended to replace 'install' program, in order to avoid
@@ -53,9 +53,12 @@
      "       gauche-install [options] file ... directory    (2nd format)"
      "       gauche-install -d [options] directory ...      (3rd format)"
      "       gauche-install -T directory [options] file ... (4th format)"
+     "       gauche-install -U directory [options] file ... (5th format)"
      "Options:"
      "  -T, --target=DIR  : installs files to the DIR, creating paths if needed."
      "                      Partial path of files are preserved. (4th format only)"
+     "  -U, --uninstall=DIR : Reverse of -T, e.g. removes files from its"
+     "                      destination."
      "  -S, --srcdir=DIR  : look for files within DIR; useful if VPATH is used"
      "      --shebang=PATH : adds #!PATH before the file contents."
      "                       useful to install scripts."
@@ -140,6 +143,7 @@
        (group   "g|group=s")
        (srcdir  "S|srcdir=s")
        (target  "T|target=s")
+       (utarget "U|uninstall=s")
        (shebang "shebang=s")
        (verb    "v")
        (dry     "n|dry-run")
@@ -158,6 +162,9 @@
                              (install (ensure-src src srcdir) dst
                                       shebang mode owner group)))
                          args))
+       (utarget (for-each (lambda (src)
+                            (sys-unlink (build-path utarget src)))
+                          args))
        (else
         (case (length args)
           ((0) (usage))
