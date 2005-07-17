@@ -1,5 +1,5 @@
 #
-# $Id: template.Makefile.in,v 1.2 2005-07-17 06:17:25 shirok Exp $
+# $Id: template.Makefile.in,v 1.3 2005-07-17 20:54:35 shirok Exp $
 #
 
 # General info
@@ -69,5 +69,5 @@ distclean : clean
 	rm -rf $(CONFIG_GENERATED)
 
 maintainer-clean : clean
-	rm -rf $(CONFIG_GENERATED) configure
+	rm -rf $(CONFIG_GENERATED) configure VERSION
 
