@@ -21,7 +21,7 @@
 ;;; makes error message a bit less direct, but cutting edges in such
 ;;; inner loop procedure has a considerable gain.
 ;;;
-;;; $Id: stream.scm,v 1.2 2005-07-17 01:09:34 shirok Exp $
+;;; $Id: stream.scm,v 1.3 2005-07-17 01:11:36 shirok Exp $
 
 (define-module util.stream
   (use srfi-1)
@@ -42,7 +42,7 @@
           stream-cdaaar stream-cdaadr stream-cdadar stream-cdaddr
           stream-cddaar stream-cddadr stream-cdddar stream-cddddr
           stream-ref stream-first stream-second stream-third stream-fourth
-          stream-fifth stream-sixth stream-seventh stream-lenghth
+          stream-fifth stream-sixth stream-seventh stream-eighth
           stream-ninth stream-tenth
           stream-take-safe stream-take stream-drop-safe stream-drop
           stream-intersperse stream-split stream-last stream-last-n
