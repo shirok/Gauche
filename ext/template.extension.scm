@@ -3,6 +3,8 @@
 ;;;
 
 (define-module @@extname@@
+  (export test-@@extname@@ ;; dummy
+          )
   )
 (select-module @@extname@@)
 

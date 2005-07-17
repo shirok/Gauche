@@ -23,7 +23,7 @@ TEMPLATE_INST_DIR = $(datadir)/gauche/$(GAUCHE_VERSION)
 TEMPLATES = template.Makefile.in template.configure.in \
 	    template.extension.h template.extension.c \
 	    template.extensionlib.stub template.extension.scm \
-	    template.test.scm
+	    template.test.scm template.DIST
 
 all:
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) default); done

@@ -8,7 +8,10 @@
 (use @@extname@@)
 (test-module '@@extname@@)
 
-;; put a bunch of tests here
+;; The following is a dummy test code.
+;; Replace it for your tests.
+(test* "test-@@extname@@" "@@extname@@ is working"
+       (test-@@extname@@))
 
 ;; epilogue
 (test-end)

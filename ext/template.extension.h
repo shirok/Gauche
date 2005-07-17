@@ -2,6 +2,7 @@
  * @@extname@@.h
  */
 
+/* Prologue */
 #ifndef @@EXTNAME@@_H
 #define @@EXTNAME@@_H
 
@@ -11,9 +12,13 @@
 SCM_DECL_BEGIN
 
 /*
- * put your declarations here
+ * The following entry is a dummy one.
+ * Replace it for your declarations.
  */
 
+extern ScmObj test_@@extname@@(void);
+
+/* Epilogue */
 SCM_DECL_END
 
 #endif  /* @@EXTNAME@@_H */

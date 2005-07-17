@@ -5,11 +5,17 @@
 #include "@@extname@@.h"
 
 /*
- * Put your C function definitions here
+ * The following function is a dummy one; replace it for
+ * your C function definitions.
  */
 
+ScmObj test_@@extname@@(void)
+{
+    return SCM_MAKE_STR("@@extname@@ is working");
+}
+
 /*
- * Module initialization function
+ * Module initialization function.
  */
 extern void Scm_Init_@@extname@@lib(ScmModule*);
 
