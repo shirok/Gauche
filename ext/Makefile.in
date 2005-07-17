@@ -22,7 +22,7 @@ TEMPLATE_INST_DIR = $(datadir)/gauche/$(GAUCHE_VERSION)
 
 TEMPLATES = template.Makefile.in template.configure.in \
 	    template.extension.h template.extension.c \
-	    template.extensionlib.stub template.extension.scm \
+	    template.extensionlib.stub template.module.scm \
 	    template.test.scm template.DIST
 
 all:

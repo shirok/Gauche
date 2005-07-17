@@ -1,5 +1,5 @@
 #
-# $Id: template.Makefile.in,v 1.1 2005-07-02 13:23:13 shirok Exp $
+# $Id: template.Makefile.in,v 1.2 2005-07-17 06:17:25 shirok Exp $
 #
 
 # General info
@@ -26,7 +26,7 @@ EXEEXT = @EXEEXT@
 PACKAGE   = @@package@@
 
 ARCHFILES = @@extname@@.$(SOEXT)
-SCMFILES  = @@extname@@.scm
+SCMFILES  = @@modpath@@.scm
 HEADERS   = 
 
 TARGET    = $(ARCHFILES)
@@ -54,6 +54,12 @@ install : all
 	$(INSTALL) -m 444 -T $(SCM_INSTALL_DIR) $(SCMFILES) 
 	$(INSTALL) -m 555 -T $(ARCH_INSTALL_DIR) $(ARCHFILES)
 	$(INSTALL) -m 444 -T $(SCM_INSTALL_DIR)/.packages $(PACKAGE).gpd
+
+uninstall :
+	$(INSTALL) -U $(HEADER_INSTALL_DIR) $(HEADERS)
+	$(INSTALL) -U $(SCM_INSTALL_DIR) $(SCMFILES) 
+	$(INSTALL) -U $(ARCH_INSTALL_DIR) $(ARCHFILES)
+	$(INSTALL) -U $(SCM_INSTALL_DIR)/.packages $(PACKAGE).gpd
 
 clean :
 	$(GAUCHE_PACKAGE) compile --clean @@extname@@ $(@@extname@@_SRCS)

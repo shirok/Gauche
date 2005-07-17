@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-package.in,v 1.9 2005-07-17 02:29:31 shirok Exp $
+;;;  $Id: gauche-package.in,v 1.10 2005-07-17 06:17:08 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -299,7 +299,7 @@ Options:
 ;; generate
 ;;
 (define-cmd "generate"
-  ("generate package-name"
+  ("generate package-name [module-name]"
    "Generate template source tree for a new Gauche extension"
    "
   This command creates a directory <package-name> under the current
@@ -308,36 +308,55 @@ Options:
 
   <package-name> is the one you'll see as a part of the name of tarball,
   for example, \"Gauche-gl\".  It is the name of the unit of distribution
-  and installation of your package.")
+  and installation of your package.
+
+  <module-name>, if given, is used as the name of the module
+  instead of <package-name>.  It may affect the generated directory
+  structure.")
   (let-optionals* args ((package-name #f)
+                        (module-name #f)
                         . more)
     (unless (and package-name (null? more)) (usage-self))
     (unless (#/^[\w-]+$/ package-name)
-      (app-error "Invalid character in package-name ~s: You can only use alphanumeric chars, underscore, and minus sign."))
-    (let ((extension-name (string-tr package-name "A-Za-z_-" "a-za-z__"))
-          (tmpl-dir (sys-dirname (gauche-library-directory))))
-      (make-directory* package-name)
+      (app-error "Invalid character in package-name ~s: You can only use alphanumeric chars, underscore, and minus sign." package-name))
+    (unless (or (not module-name) (#/^[\w.-]+$/ module-name))
+      (app-error "Invalid character in module-name ~s" module-name))
+    (let* ((extension-name (string-tr package-name "A-Za-z_-" "a-za-z__"))
+           (module-name (string->symbol (or module-name extension-name)))
+           (tmpl-dir (sys-dirname (gauche-library-directory)))
+           (scm-subdir (sys-dirname (module-name->path module-name))))
+      (make-directory* (simplify-path (build-path package-name scm-subdir)))
       (for-each
        (lambda (file)
-         (filter-copy (build-path tmpl-dir #`"template.,file")
-                      (build-path package-name
-                                  (regexp-replace #/extension/ file
-                                                  extension-name))
-                      package-name extension-name '("DIST")))
+         (let* ((src-path (build-path tmpl-dir #`"template.,file"))
+                (dst-name (regexp-replace* 
+                           file
+                           #/extension/ extension-name
+                           #/module/ (sys-basename
+                                      (module-name->path module-name))))
+                (dst-path (if (equal? file "module.scm")
+                            (build-path package-name scm-subdir dst-name)
+                            (build-path package-name dst-name))))
+           (filter-copy src-path dst-path
+                        package-name extension-name module-name '("DIST"))))
        '("Makefile.in" "configure.in" "extension.c" "extension.h"
-         "extensionlib.stub" "extension.scm" "test.scm" "DIST")))
+         "extensionlib.stub" "module.scm" "test.scm" "DIST")))
     ))
 
-(define (filter-copy src dst package-name extension-name executables)
+(define (filter-copy src dst
+                     package-name extension-name module-name executables)
   (let1 EXTENSION-NAME (string-upcase extension-name)
     (file-filter (lambda (in out)
                    (port-for-each
                     (lambda (line)
                       (display
-                       (regexp-replace-all* line
-                                            #/@@package@@/ package-name
-                                            #/@@extname@@/ extension-name
-                                            #/@@EXTNAME@@/ EXTENSION-NAME)
+                       (regexp-replace-all*
+                        line
+                        #/@@package@@/ package-name
+                        #/@@modname@@/ (x->string module-name)
+                        #/@@modpath@@/ (module-name->path module-name)
+                        #/@@extname@@/ extension-name
+                        #/@@EXTNAME@@/ EXTENSION-NAME)
                        out)
                       (newline out))
                     (cut read-line in)))

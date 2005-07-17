@@ -1,12 +1,12 @@
 ;;;
-;;; Test @@extname@@
+;;; Test @@modname@@
 ;;;
 
 (use gauche.test)
 
-(test-start "@@extname@@")
-(use @@extname@@)
-(test-module '@@extname@@)
+(test-start "@@modname@@")
+(use @@modname@@)
+(test-module '@@modname@@)
 
 ;; The following is a dummy test code.
 ;; Replace it for your tests.

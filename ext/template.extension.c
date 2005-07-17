@@ -27,7 +27,7 @@ ScmObj Scm_Init_@@extname@@(void)
     SCM_INIT_EXTENSION(@@extname@@);
 
     /* Create the module if it doesn't exist yet. */
-    mod = SCM_MODULE(SCM_FIND_MODULE("@@extname@@", TRUE));
+    mod = SCM_MODULE(SCM_FIND_MODULE("@@modname@@", TRUE));
 
     /* Register stub-generated procedures */
     Scm_Init_@@extname@@lib(mod);
