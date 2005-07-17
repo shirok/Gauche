@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.31 2005-06-30 09:57:40 shirok Exp $
+;;;  $Id: util.scm,v 1.32 2005-07-17 04:14:04 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -154,16 +154,17 @@
   (let-optionals* opts ((mode #o755))
     (define (rec p)
       (if (file-exists? p)
-          (unless (file-is-directory? p)
-            (errorf "non-directory ~s is found while creating a directory ~s"
-                    (sys-basename p) dir))
-          (let1 d (sys-dirname p)
-            (rec d)
-            (unless (file-is-writable? d)
-              (errorf "directory ~s unwritable during creating a directory ~s"
-                      d dir))
-            (sys-mkdir p mode)
-            )))
+        (unless (file-is-directory? p)
+          (errorf "non-directory ~s is found while creating a directory ~s"
+                  (sys-basename p) dir))
+        (let1 d (sys-dirname p)
+          (rec d)
+          (unless (file-is-writable? d)
+            (errorf "directory ~s unwritable during creating a directory ~s"
+                    d dir))
+          (unless (equal? (sys-basename p) ".") ; omit the last component in "/a/b/c/."
+            (sys-mkdir p mode))
+          )))
     ;; some platform complains the last "/"
     (rec (string-trim-right dir #[/]))))
 
