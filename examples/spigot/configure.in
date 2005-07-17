@@ -1,7 +1,7 @@
 dnl
 dnl Configuring spigot
 dnl  process this file with autoconf to generate 'configure'.
-dnl $Id: configure.in,v 1.4 2005-07-02 13:23:13 shirok Exp $
+dnl $Id: configure.in,v 1.5 2005-07-17 02:31:39 shirok Exp $
 dnl
 
 AC_PREREQ(2.54)
@@ -45,5 +45,6 @@ $GAUCHE_PACKAGE make-gpd "$PACKAGE_NAME" \
   -configure "./configure $GAUCHE_PACKAGE_CONFIGURE_ARGS"
 
 dnl Output
+echo $PACKAGE_VERSION > VERSION
 AC_OUTPUT(Makefile)
 

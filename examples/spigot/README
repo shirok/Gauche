@@ -1,11 +1,12 @@
-This directory contains sources of "spigot" extension module.
-You can use these files as a template of your extension.
+This directory contains sources of "spigot" extension module,
+as an example of Gauche extension.
 
-The extension isn't built by default.  You can build the
-extension _after installing Gauche_.  See below.
+This extension isn't built by default.  You can build it
+_after installing Gauche_.  See below.
 
 The sources include:
 
+  DIST           - a helper script to create a distribution tarball.
   configure.in   - source of "configure" script
   Makefile.in    - template makefile
   spigot.h       - common declaration within the spigot module
@@ -14,17 +15,26 @@ The sources include:
   spigot.scm     - Scheme part of the module
   test.scm       - unit test
 
-This is a typical construction of a simple extension.
+This is a typical construction of a simple extension.  Note that
+you can generate the skeletons of these files automatically,
+by "gauche-package" script:
+
+  % gauche-package generate spigot
+
+It is a good way to start writing a fresh extension; but now
+we already have the sources, so let's move on.
 
 As a developer, you have to start from generating "configure"
 script by autoconf.   You need autoconf version 2.54 or later.
 This command creates "configure" from configure.in.
 
-  % autoconf -I `gauche-config --ac`
+  % ./DIST gen
 
-Don't forget to include the generated 'configure' script when
-you distribute your extension, so that the users won't need
-autoconf.
+It actually just calls autoconf.  (Note: in Gauche 0.8.5 or
+before, you needed to give an option to autoconf so that it
+understands Gauche-specific macros.  Now the standard configure.in
+does not contain any Gauche-specific macros, so you don't need
+the option anymore.)
 
 Once configure is generated, you can create Makefile by
 running configure script.
@@ -35,28 +45,16 @@ The configure script automatically finds installed Gauche,
 and picks the right options to compile and link.
 Now, 'make' builds the extension, 'make check' runs
 the test, and 'make install' installs the extension
-in the Gauche's standard location.p
+in the Gauche's standard location.
 
   % make
   % make check
   % make install
 
-To create your own package, you can start copying configure.in and
-Makefile.in from this directory and editing it.   There are some
-autoconf macros defined for the convenience, so usually there
-won't be much of Gauche-specific stuff in configure.in.
+To create a distributable package, use DIST script:
 
-In Makefile.in, you may find some Gauche-specific items.
+  % ./DIST tgz
 
-- Define INSTALL to @GAUCHE_INSTALL@, which will be replaced to
-  the path to gauche-install script.  gauche-isntall script is
-  upper-compatible to BSD install but cleverer in handling
-  missing target directories.  Especially it eliminates the need
-  of mkinstalldirs.
+It creates a tarball "spigot-1.0.tgz" in the parent directory.
 
-- If you include AC_GAUCHE_MAKE_GPD macro in configure.in, then
-  a file $(PACKAGE).gpd is created at configuration time.  It records
-  package's version and configuration option.  You can install it
-  under $(SCM_INSTALL_DIR)/.packages.
 
-  
