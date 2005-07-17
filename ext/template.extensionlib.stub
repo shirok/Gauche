@@ -11,3 +11,8 @@
 
 (define-cproc test-@@extname@@ ()
   (return "test_@@extname@@"))
+
+
+;; Local variables:
+;; mode: scheme
+;; end:
