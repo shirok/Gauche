@@ -341,7 +341,7 @@ fuga
                                            (number "1E-3")
                                            (number "1.E-3")
                                            (number ".1E-3")
-                                           - #\. E (number "-3")
+                                           - #\. e (number "-3")
                                            (number "1.2") (number ".3")
                                            )
                                            
