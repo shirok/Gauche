@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.417 2005-07-16 19:37:53 shirok Exp $
+ *  $Id: gauche.h,v 1.418 2005-07-18 21:35:30 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -441,16 +441,25 @@ SCM_EXTERN ScmObj Scm_VMThrowException(ScmObj exception);
  * CLASS
  */
 
+typedef void (*ScmClassPrintProc)(ScmObj obj,
+                                  ScmPort *sink,
+                                  ScmWriteContext *mode);
+typedef int  (*ScmClassCompareProc)(ScmObj x, ScmObj y, int equalp);
+typedef int  (*ScmClassSerializeProc)(ScmObj obj,
+                                      ScmPort *sink,
+                                      ScmObj context);
+typedef ScmObj (*ScmClassAllocateProc)(ScmClass *klass, ScmObj initargs);
+
 /* See class.c for the description of function pointer members.
    There's a lot of voodoo magic in class structure, so don't touch
    those fields casually.  Also, the order of these fields must be
    reflected to the class definition macros below */
 struct ScmClassRec {
     SCM_INSTANCE_HEADER;
-    void (*print)(ScmObj obj, ScmPort *sink, ScmWriteContext *mode);
-    int (*compare)(ScmObj x, ScmObj y, int equalp);
-    int (*serialize)(ScmObj obj, ScmPort *sink, ScmObj context);
-    ScmObj (*allocate)(ScmClass *klass, ScmObj initargs);
+    ScmClassPrintProc     print;
+    ScmClassCompareProc   compare;
+    ScmClassSerializeProc serialize;
+    ScmClassAllocateProc  allocate;
     ScmClass **cpa;             /* class precedence array, NULL terminated */
     int numInstanceSlots;       /* # of instance slots */
     int coreSize;               /* size of core structure; 0 == unknown */
@@ -475,6 +484,7 @@ struct ScmClassRec {
                                    otherwise #f */
     ScmInternalMutex mutex;     /* to protect from MT hazard */
     ScmInternalCond cv;         /* wait on this while a class being updated */
+    void   *data;               /* extra data to do nasty trick */
 };
 
 typedef struct ScmClassStaticSlotSpecRec ScmClassStaticSlotSpec;
@@ -575,7 +585,7 @@ SCM_CLASS_DECL(Scm_UnknownClass);
 SCM_CLASS_DECL(Scm_CollectionClass);
 SCM_CLASS_DECL(Scm_SequenceClass);
 SCM_CLASS_DECL(Scm_ObjectClass); /* base of Scheme-defined objects */
-
+SCM_CLASS_DECL(Scm_ForeignPointerClass);
 
 
 #define SCM_CLASS_TOP              (&Scm_TopClass)
@@ -588,6 +598,7 @@ SCM_CLASS_DECL(Scm_ObjectClass); /* base of Scheme-defined objects */
 #define SCM_CLASS_COLLECTION       (&Scm_CollectionClass)
 #define SCM_CLASS_SEQUENCE         (&Scm_SequenceClass)
 #define SCM_CLASS_OBJECT           (&Scm_ObjectClass)
+#define SCM_CLASS_FOREIGN_POINTER  (&Scm_ForeignPointerClass)
 
 SCM_EXTERN ScmClass *Scm_DefaultCPL[];
 SCM_EXTERN ScmClass *Scm_CollectionCPL[];
@@ -651,6 +662,24 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
     SCM__DEFINE_CLASS_COMMON(cname, sizeof(ctype),        \
                              SCM_CLASS_BASE,              \
                              printer, compare, serialize, allocate, cpa)
+
+/*
+ * A simple class and instance API to wrap C pointer.
+ * This is for C programs that want to define a visible class from Scheme
+ * but don't want to go through full-fledged class mechanism.
+ */
+typedef struct ScmForeignPointerRec {
+    SCM_HEADER;
+    void *ptr;
+} ScmForeignPointer;
+
+#define SCM_FOREIGN_POINTER(obj)   ((ScmForeignPointer*)(obj))
+
+SCM_EXTERN ScmClass *Scm_MakeForeignPointerClass(ScmModule *module,
+                                                 const char *name,
+                                                 ScmClassPrintProc print,
+                                                 void (*cleanup)(ScmObj obj));
+SCM_EXTERN ScmForeignPointer *Scm_MakeForeignPointer(ScmClass *klass);
 
 /*--------------------------------------------------------
  * PAIR AND LIST

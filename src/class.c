@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.119 2005-05-24 23:28:37 shirok Exp $
+ *  $Id: class.c,v 1.120 2005-07-18 21:35:31 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -105,6 +105,7 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_CharClass, NULL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_UnknownClass, NULL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_EOFObjectClass, NULL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_UndefinedObjectClass, NULL);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ForeignPointerClass, NULL);
 
 SCM_DEFINE_BASE_CLASS(Scm_ObjectClass, ScmInstance,
                       NULL, NULL, NULL, Scm_ObjectAllocate,
@@ -342,6 +343,18 @@ ScmObj Scm__InternalClassName(ScmClass *klass)
  *     has not been output in the current serializing session.
  */
 
+/* A note on the 'data' member of ScmClass
+ *
+ *   It can be used to hang an opaque data to a specific class.  So far,
+ *   we use it only for <simple> class mechanism.  Its use is highly
+ *   controversial; I mean, The Right Thing is to define a metaclass
+ *   which defines an extra member, and allocate <simple> class as an
+ *   instance of it.  However, creating metaclass from C is messy now,
+ *   so I chose to hack.  In future we may have a nice C API to create
+ *   a metaclass, and then we may remove this 'data' member.  So DO NOT
+ *   RELY ON ITS EXISTENCE.
+ */
+
 /*
  * Class metaobject protocol implementation
  */
@@ -372,6 +385,7 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
     instance->redefined = SCM_FALSE;
     (void)SCM_INTERNAL_MUTEX_INIT(instance->mutex);
     (void)SCM_INTERNAL_COND_INIT(instance->cv);
+    instance->data = NULL;      /* see the above note on the 'data' member */
     return SCM_OBJ(instance);
 }
 
@@ -2541,6 +2555,56 @@ static void accessor_method_slot_accessor_set(ScmAccessorMethod *m, ScmObj v)
 }
 
 /*=====================================================================
+ * Foreign pointer mechanism
+ */
+
+ScmClass *Scm_MakeForeignPointerClass(ScmModule *mod,
+                                      const char *name,
+                                      ScmClassPrintProc print_proc,
+                                      void (*cleanup_proc)(ScmObj obj))
+{
+    ScmClass *fp = (ScmClass*)class_allocate(SCM_CLASS_CLASS, SCM_NIL);
+    ScmObj s = SCM_INTERN(name);
+    static ScmClass *fpcpa[] = { SCM_CLASS_FOREIGN_POINTER, SCM_CLASS_TOP, NULL };
+    fp->name = s;
+    fp->allocate = NULL;
+    fp->print = print_proc;
+    fp->cpa = fpcpa;
+    fp->flags = SCM_CLASS_BUILTIN;
+    initialize_builtin_cpl(fp, SCM_FALSE);
+    Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(fp));
+    fp->slots = SCM_NIL;
+    fp->accessors = SCM_NIL;
+    fp->data = (void*)cleanup_proc; /* see the note above class_allocate() */
+    return fp;
+}
+
+static void fp_finalize(ScmObj obj, void *data)
+{
+    void (*cleanup)(ScmObj) = (void (*)(ScmObj))data;
+    cleanup(obj);
+}
+
+ScmForeignPointer *Scm_MakeForeignPointer(ScmClass *klass)
+{
+    ScmForeignPointer *obj;
+    if (!klass) {               /* for extra safety */
+        Scm_Error("NULL pointer passed to Scm_MakeForeignPointer");
+    }
+    if (!Scm_SubtypeP(klass, SCM_CLASS_FOREIGN_POINTER)) {
+        Scm_Error("attempt to instantiate non-foreign-pointer class %S via Scm_MakeForeignPointer", klass);
+    }
+    obj = SCM_NEW(ScmForeignPointer);
+    SCM_SET_CLASS(obj, klass);
+
+    if (klass->data) {
+        Scm_RegisterFinalizer(SCM_OBJ(obj), fp_finalize, klass->data);
+    }
+    return obj;
+}
+
+
+/*=====================================================================
  * Class initialization
  */
 
@@ -2855,6 +2919,7 @@ void Scm__InitClass(void)
     BINIT(SCM_CLASS_SLOT_ACCESSOR,"<slot-accessor>", slot_accessor_slots);
     BINIT(SCM_CLASS_COLLECTION, "<collection>", NULL);
     BINIT(SCM_CLASS_SEQUENCE,   "<sequence>", NULL);
+    BINIT(SCM_CLASS_FOREIGN_POINTER, "<foreign-pointer>", NULL);
 
     /* char.c */
     CINIT(SCM_CLASS_CHARSET,          "<char-set>");

@@ -1,5 +1,8 @@
 2005-07-18  Shiro Kawai  <shiro@acm.org>
 
+	* src/class.c, src/gauche.h (ScmForeignPointer): added convenience
+	  procedures to wrap foreign pointers.
+
 	* src/syslib.stub (sys-strerror): added.
 
 2005-07-16  Shiro Kawai  <shiro@acm.org>
