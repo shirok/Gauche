@@ -2,11 +2,11 @@
 ;;; @@extname@@
 ;;;
 
-(define-module @@extname@@
+(define-module @@modname@@
   (export test-@@extname@@ ;; dummy
           )
   )
-(select-module @@extname@@)
+(select-module @@modname@@)
 
 ;; Loads extension
 (dynamic-load "@@extname@@")
@@ -16,6 +16,6 @@
 ;;
 
 ;; Epilogue
-(provide "@@extname@@")
+(provide "@@modpath@@")
 
 
