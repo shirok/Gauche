@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.10 2005-07-15 10:29:13 shirok Exp $
+;;;  $Id: dbi.scm,v 1.11 2005-07-22 11:29:41 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -149,6 +149,8 @@
 
 ;; Does preparation and execution at once.  The driver may overload this.
 (define-method dbi-do ((c <dbi-connection>) sql options . args)
+  (unless (proper-list? options)
+    (error "dbi-do: bad option list:" options))
   (apply dbd-execute c (apply dbd-prepare c sql options) args))
 
 (define-method dbi-do ((c <dbi-connection>) sql)
