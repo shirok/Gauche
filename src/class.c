@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.120 2005-07-18 21:35:31 shirok Exp $
+ *  $Id: class.c,v 1.121 2005-07-22 12:06:52 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2585,7 +2585,7 @@ static void fp_finalize(ScmObj obj, void *data)
     cleanup(obj);
 }
 
-ScmForeignPointer *Scm_MakeForeignPointer(ScmClass *klass)
+ScmObj Scm_MakeForeignPointer(ScmClass *klass, void *ptr)
 {
     ScmForeignPointer *obj;
     if (!klass) {               /* for extra safety */
@@ -2600,9 +2600,9 @@ ScmForeignPointer *Scm_MakeForeignPointer(ScmClass *klass)
     if (klass->data) {
         Scm_RegisterFinalizer(SCM_OBJ(obj), fp_finalize, klass->data);
     }
-    return obj;
+    obj->ptr = ptr;
+    return SCM_OBJ(obj);
 }
-
 
 /*=====================================================================
  * Class initialization

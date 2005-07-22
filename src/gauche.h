@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.419 2005-07-22 09:26:56 shirok Exp $
+ *  $Id: gauche.h,v 1.420 2005-07-22 12:06:51 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -678,7 +678,7 @@ SCM_EXTERN ScmClass *Scm_MakeForeignPointerClass(ScmModule *module,
                                                  const char *name,
                                                  ScmClassPrintProc print,
                                                  void (*cleanup)(ScmObj obj));
-SCM_EXTERN ScmForeignPointer *Scm_MakeForeignPointer(ScmClass *klass);
+SCM_EXTERN ScmObj Scm_MakeForeignPointer(ScmClass *klass, void *ptr);
 
 /*--------------------------------------------------------
  * PAIR AND LIST
