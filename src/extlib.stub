@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.242 2005-07-16 19:37:53 shirok Exp $
+;;; $Id: extlib.stub,v 1.243 2005-07-22 09:26:56 shirok Exp $
 ;;;
 
 "
@@ -1212,7 +1212,9 @@
   "  SCM_RETURN(SCM_OBJ(mod->table));")
 
 (define-cproc find-module (name::<symbol>)
-  "  SCM_RETURN(Scm_FindModule(name, FALSE));")
+  "  ScmModule *m = Scm_FindModule(name, SCM_FIND_MODULE_QUIET);
+     if (m) SCM_RETURN(SCM_OBJ(m));
+     else SCM_RETURN(SCM_FALSE);")
 
 (define-cproc all-modules ()
   (return "Scm_AllModules"))
@@ -1255,11 +1257,7 @@
  {
    if (SCM_MODULEP(mod_or_name)) return SCM_MODULE(mod_or_name);
    else if (SCM_SYMBOLP(mod_or_name)) {
-     ScmObj m = Scm_FindModule(SCM_SYMBOL(mod_or_name), FALSE);
-     if (SCM_FALSEP(m)) {
-       Scm_Error(\"no such module: %s\", mod_or_name);
-     }
-     return SCM_MODULE(m);
+     return Scm_FindModule(SCM_SYMBOL(mod_or_name), 0);
    } else if (SCM_FALSEP(mod_or_name)) {
      return SCM_CURRENT_MODULE();
    } else {

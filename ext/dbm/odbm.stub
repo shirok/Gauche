@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: odbm.stub,v 1.12 2003-07-20 10:07:10 shirok Exp $
+;;;  $Id: odbm.stub,v 1.13 2005-07-22 09:26:54 shirok Exp $
 ;;;
 
 "
@@ -50,7 +50,7 @@
  void Scm_Init_odbm(void)
  {
     SCM_INIT_EXTENSION(odbm);
-    Scm_odbm_internal_init(SCM_MODULE(SCM_FIND_MODULE(\"dbm.odbm\", TRUE)));
+    Scm_odbm_internal_init(SCM_FIND_MODULE(\"dbm.odbm\", SCM_FIND_MODULE_CREATE));
  }
  #define Scm_Init_odbm  Scm_odbm_internal_init
 

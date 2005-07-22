@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.37 2004-10-09 11:36:36 shirok Exp $
+ *  $Id: net.c,v 1.38 2005-07-22 09:26:54 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -453,7 +453,7 @@ void Scm_Init_libnet(void)
     ScmModule *mod;
 
     SCM_INIT_EXTENSION(net);
-    mod = SCM_MODULE(SCM_FIND_MODULE("gauche.net", TRUE));
+    mod = SCM_FIND_MODULE("gauche.net", SCM_FIND_MODULE_CREATE);
 #ifdef __MINGW32__
     /* NB: I'm supposed to call WSACleanup when application shuts down,
        or resource leak would happen, according to the Windows document.

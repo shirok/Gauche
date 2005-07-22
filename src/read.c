@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.77 2005-04-21 06:47:30 shirok Exp $
+ *  $Id: read.c,v 1.78 2005-07-22 09:26:57 shirok Exp $
  */
 
 #include <stdio.h>
@@ -204,7 +204,7 @@ void Scm_ReadError(ScmPort *port, const char *msg, ...)
     va_end(ap);
 
     rerr = Scm_MakeReadError(Scm_GetOutputString(SCM_PORT(ostr)), port, line);
-    Scm_VMThrowException(rerr);
+    Scm_Raise(rerr);
 }
 
 /*----------------------------------------------------------------

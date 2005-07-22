@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.418 2005-07-18 21:35:30 shirok Exp $
+ *  $Id: gauche.h,v 1.419 2005-07-22 09:26:56 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -435,7 +435,6 @@ SCM_EXTERN ScmObj Scm_VMDynamicWindC(ScmObj (*before)(ScmObj *, int, void *),
 
 SCM_EXTERN ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk);
 SCM_EXTERN ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk);
-SCM_EXTERN ScmObj Scm_VMThrowException(ScmObj exception);
 
 /*---------------------------------------------------------
  * CLASS
@@ -1705,12 +1704,25 @@ SCM_EXTERN ScmObj Scm_ExtendModule(ScmModule *module, ScmObj supers);
 SCM_EXTERN ScmObj Scm_ImportModules(ScmModule *module, ScmObj list);
 SCM_EXTERN ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list);
 SCM_EXTERN ScmObj Scm_ExportAll(ScmModule *module);
-SCM_EXTERN ScmObj Scm_FindModule(ScmSymbol *name, int createp);
+SCM_EXTERN ScmModule *Scm_FindModule(ScmSymbol *name, int flags);
 SCM_EXTERN ScmObj Scm_AllModules(void);
 SCM_EXTERN void   Scm_SelectModule(ScmModule *mod);
 
-#define SCM_FIND_MODULE(name, createp) \
-    Scm_FindModule(SCM_SYMBOL(SCM_INTERN(name)), createp)
+/* Flags for Scm_FindModule
+   NB: Scm_FindModule's second arg has been changed since 0.8.6;
+   before, it was just a boolean value to indicate whether a new
+   module should be created (TRUE) or not (FALSE).  We added a
+   new flag value to make Scm_FindModule raises an error if the named
+   module doesn't exist.  This change should be transparent as far
+   as the caller's using Gauche's definition of TRUE. */
+enum {
+    SCM_FIND_MODULE_CREATE = 1, /* Create if there's no named module */
+    SCM_FIND_MODULE_QUIET  = 2  /* Do not signal an error if there's no
+                                   named module, but return NULL instead. */
+};
+
+#define SCM_FIND_MODULE(name, flags) \
+    Scm_FindModule(SCM_SYMBOL(SCM_INTERN(name)), flags)
 
 SCM_EXTERN ScmObj Scm_ModuleNameToPath(ScmSymbol *name);
 SCM_EXTERN ScmObj Scm_PathToModuleName(ScmString *path);
@@ -1725,6 +1737,10 @@ SCM_EXTERN ScmModule *Scm_CurrentModule(void);
     Scm_Define(SCM_MODULE(module),              \
                SCM_SYMBOL(SCM_INTERN(cstr)),    \
                SCM_OBJ(val))
+
+#define SCM_SYMBOL_VALUE(module_name, symbol_name)                      \
+    Scm_SymbolValue(SCM_FIND_MODULE(module_name, 0),                    \
+                    SCM_SYMBOL(SCM_INTERN(symbol_name)))
 
 /*--------------------------------------------------------
  * SYMBOL
@@ -2317,6 +2333,13 @@ SCM_EXTERN void Scm_PortError(ScmPort *port, int reason, const char *msg, ...);
 
 SCM_EXTERN void Scm_Warn(const char *msg, ...);
 SCM_EXTERN void Scm_FWarn(ScmString *fmt, ScmObj args);
+
+SCM_EXTERN ScmObj Scm_Raise(ScmObj exception);
+SCM_EXTERN ScmObj Scm_RaiseCondition(ScmObj conditionType, ...);
+
+/* A marker to insert between key-value pair and formatting string
+   in Scm_RaiseCondition. */
+#define SCM_RAISE_CONDITION_MSG     ((const char *)1)
 
 SCM_EXTERN int    Scm_ConditionHasType(ScmObj c, ScmObj k);
 SCM_EXTERN ScmObj Scm_ConditionMessage(ScmObj c);

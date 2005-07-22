@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bdbm.c,v 1.2 2004-10-09 11:36:35 shirok Exp $
+ *  $Id: bdbm.c,v 1.3 2005-07-22 09:26:54 shirok Exp $
  */
 
 #include "bsddb.h"
@@ -139,7 +139,7 @@ static ScmClassStaticSlotSpec db_slots[] = {
 
 void Scm_Init_bdbm(void)
 {
-    ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE("dbm.bdbm", TRUE));
+    ScmModule *mod = SCM_FIND_MODULE("dbm.bdbm", SCM_FIND_MODULE_CREATE);
     Scm_InitStaticClass(&Scm_BsdDbClass, "<bsd-db>",
                         mod, db_slots, 0);
     Scm_Init_bsddb(mod);

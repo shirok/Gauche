@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: threads.c,v 1.8 2005-05-12 08:52:53 shirok Exp $
+ *  $Id: threads.c,v 1.9 2005-07-22 09:26:55 shirok Exp $
  */
 
 #include <gauche.h>
@@ -208,12 +208,12 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
     if (tout) {
         if (SCM_UNBOUNDP(timeoutval)) {
             ScmObj e = Scm_MakeThreadException(SCM_CLASS_JOIN_TIMEOUT_EXCEPTION, target);
-            result = Scm_VMThrowException(e);
+            result = Scm_Raise(e);
         } else {
             result = timeoutval;
         }
     } else if (SCM_CONDITIONP(resultx)) {
-        result = Scm_VMThrowException(resultx);
+        result = Scm_Raise(resultx);
     }
     return result;
 #else  /*!GAUCHE_USE_PTHREADS*/
@@ -298,7 +298,7 @@ extern void Scm_Init_thrlib(ScmModule*);
 
 void Scm_Init_threads(void)
 {
-    ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE("gauche.threads", TRUE));
+    ScmModule *mod = SCM_FIND_MODULE("gauche.threads", SCM_FIND_MODULE_CREATE);
     SCM_INIT_EXTENSION(threads);
 #ifdef GAUCHE_USE_PTHREADS
     sigfillset(&threadrec.defaultSigmask);

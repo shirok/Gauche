@@ -10,7 +10,7 @@
  *     the allocated memory for random number generator object.
  *   - changed the names of the functions
  *   - added stuff to make it as a Gauche extension module.
- * $Id: mt-random.c,v 1.14 2004-11-05 10:35:47 shirok Exp $
+ * $Id: mt-random.c,v 1.15 2005-07-22 09:26:54 shirok Exp $
  *
  * The original copyright notice follows.
  */
@@ -294,7 +294,7 @@ extern void Scm_Init_mt_lib(ScmModule*);
 
 void Scm_Init_mt_random(void)
 {
-    ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE("math.mt-random", TRUE));
+    ScmModule *mod = SCM_FIND_MODULE("math.mt-random", SCM_FIND_MODULE_CREATE);
     SCM_INIT_EXTENSION(mtrandom);
     Scm_InitStaticClass(&Scm_MersenneTwisterClass, "<mersenne-twister>",
                         mod, NULL, 0);

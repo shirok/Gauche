@@ -1,3 +1,20 @@
+2005-07-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.c (Scm_FindModule): API CHANGE for consistency.  Now
+	  it takes bitflags as the second arg, and returns ScmModule*
+	  instead of ScmObj.  Also it signals an error if flags = 0 and
+	  named module doesn't exist.
+	  This shouldn't affect typical usages, for most of them are either
+	  passing TRUE in the second arg (in new API it's the same meaning),
+	  and casting the returned value immediately to ScmModule*.
+	* src/error.c (Scm_Raise): Make Scm_VMThrowException an internal API,
+	  and provide Scm_Raise instead.
+	  (Scm_RaiseCondition): A convenience procedure to create a condition
+	  and raise it.
+	* src/gauche.h, src/vm.c, src/read.c, src/main.c, src/load.c,
+	  src/gencomp, src/extlib.stub, src/exclib.stub, ext/* :
+	  Changed accordingly.
+
 2005-07-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c, src/gauche.h (ScmForeignPointer): added convenience

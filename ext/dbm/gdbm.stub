@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gdbm.stub,v 1.18 2004-10-09 11:36:36 shirok Exp $
+;;;  $Id: gdbm.stub,v 1.19 2005-07-22 09:26:54 shirok Exp $
 ;;;
 
 "
@@ -97,7 +97,7 @@
  {
     ScmModule *mod;
     SCM_INIT_EXTENSION(gdbm);
-    mod = SCM_MODULE(SCM_FIND_MODULE(\"dbm.gdbm\", TRUE));
+    mod = SCM_FIND_MODULE(\"dbm.gdbm\", SCM_FIND_MODULE_CREATE);
     Scm_InitStaticClass(&Scm_GdbmClass, \"<gdbm-file>\", mod, NULL, 0);
     Scm_gdbm_internal_init(mod);
  }

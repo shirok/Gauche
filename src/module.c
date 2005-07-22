@@ -1,7 +1,7 @@
 /*
  * module.c - module implementation
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.52 2005-04-12 01:42:27 shirok Exp $
+ *  $Id: module.c,v 1.53 2005-07-22 09:26:57 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -319,7 +319,8 @@ ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
 
 ScmObj Scm_ImportModules(ScmModule *module, ScmObj list)
 {
-    ScmObj lp, mod;
+    ScmObj lp;
+    ScmModule *mod;
     ScmSymbol *name = NULL;
     SCM_FOR_EACH(lp, list) {
         if (SCM_SYMBOLP(SCM_CAR(lp))) {
@@ -329,11 +330,11 @@ ScmObj Scm_ImportModules(ScmModule *module, ScmObj list)
         } else {
             Scm_Error("module name required, but got %S", SCM_CAR(lp));
         }
-        mod = Scm_FindModule(name, FALSE);
-        if (!SCM_MODULEP(mod)) Scm_Error("no such module: %S", SCM_CAR(lp));
+        mod = Scm_FindModule(name, 0);
         (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
         module->imported =
-            Scm_Cons(mod, Scm_DeleteX(mod, module->imported, SCM_CMP_EQ));
+            Scm_Cons(SCM_OBJ(mod),
+                     Scm_DeleteX(SCM_OBJ(mod), module->imported, SCM_CMP_EQ));
         (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
     }
     return module->imported;
@@ -405,18 +406,27 @@ ScmObj Scm_ExtendModule(ScmModule *module, ScmObj supers)
  * Finding modules
  */
 
-ScmObj Scm_FindModule(ScmSymbol *name, int createp)
+ScmModule *Scm_FindModule(ScmSymbol *name, int flags)
 {
     ScmModule *m;
     int created;
 
-    if (createp) {
+    if (flags & SCM_FIND_MODULE_CREATE) {
         m = lookup_module_create(name, &created);
+        SCM_ASSERT(m != NULL);
+        return m;
     } else {
         m = lookup_module(name);
+        if (m == NULL) {
+            if (flags & SCM_FIND_MODULE_QUIET) {
+                return NULL;
+            } else {
+                Scm_Error("no such module: %S", name);
+            }
+        } else {
+            return m;
+        }
     }
-    if (m) return SCM_OBJ(m);
-    else return SCM_FALSE;
 }
 
 ScmObj Scm_AllModules(void)

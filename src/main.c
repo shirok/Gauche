@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.79 2005-04-22 04:45:50 shirok Exp $
+ *  $Id: main.c,v 1.80 2005-07-22 09:26:57 shirok Exp $
  */
 
 #include <unistd.h>
@@ -411,8 +411,7 @@ int main(int argc, char **argv)
     if (profiling_mode) {
         Scm_ProfilerStop();
         Scm_Eval(Scm_ReadFromCString("(profiler-show)"),
-                 Scm_FindModule(SCM_SYMBOL(SCM_INTERN("gauche.vm.profiler")),
-                                FALSE));
+                 SCM_OBJ(SCM_FIND_MODULE("gauche.vm.profiler", 0)));
     }
     
     /* All is done. */

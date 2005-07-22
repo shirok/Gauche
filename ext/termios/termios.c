@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: termios.c,v 1.15 2004-10-09 11:36:36 shirok Exp $
+ *  $Id: termios.c,v 1.16 2005-07-22 09:26:55 shirok Exp $
  */
 
 #include <string.h>
@@ -152,7 +152,7 @@ void Scm_Init_termios(void)
 {
     ScmModule *mod;
     SCM_INIT_EXTENSION(termios);
-    mod = SCM_MODULE(SCM_FIND_MODULE("gauche.termios", TRUE));
+    mod = SCM_FIND_MODULE("gauche.termios", SCM_FIND_MODULE_CREATE);
     Scm_Init_termiolib(mod);
 
 #ifndef __MINGW32__

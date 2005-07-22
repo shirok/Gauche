@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.98 2005-05-17 04:33:09 shirok Exp $
+ *  $Id: load.c,v 1.99 2005-07-22 09:26:56 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -1010,9 +1010,10 @@ ScmObj Scm_LoadAutoload(ScmAutoload *adata)
         if (adata->import_from) {
             /* autoloaded file defines import_from module.  we need to
                import the binding individually. */
-            ScmObj m = Scm_FindModule(adata->import_from, FALSE);
+            ScmModule *m = Scm_FindModule(adata->import_from,
+                                          SCM_FIND_MODULE_QUIET);
             ScmGloc *f, *g;
-            if (!SCM_MODULEP(m)) {
+            if (m == NULL) {
                 Scm_Error("Trying to autoload module %S from file %S, but the file doesn't define such a module",
                           adata->import_from, adata->path);
             }

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vport.c,v 1.10 2004-11-20 09:48:30 shirok Exp $
+ *  $Id: vport.c,v 1.11 2005-07-22 09:26:55 shirok Exp $
  */
 
 #include "gauche/vport.h"
@@ -694,7 +694,7 @@ void Scm_Init_vport(void)
 {
     ScmModule *mod;
     SCM_INIT_EXTENSION(vport);
-    mod = SCM_MODULE(SCM_FIND_MODULE("gauche.vport", TRUE));
+    mod = SCM_FIND_MODULE("gauche.vport", SCM_FIND_MODULE_CREATE);
     Scm_InitStaticClass(&Scm_VirtualInputPortClass,
                         "<virtual-input-port>", mod, viport_slots, 0);
     Scm_InitStaticClass(&Scm_VirtualOutputPortClass,

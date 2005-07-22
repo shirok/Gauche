@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: charconv.c,v 1.50 2004-11-06 12:43:40 shirok Exp $
+ *  $Id: charconv.c,v 1.51 2005-07-22 09:26:54 shirok Exp $
  */
 
 #include <string.h>
@@ -608,7 +608,7 @@ void Scm_Init_libcharconv(void)
 {
     ScmModule *mod;
     SCM_INIT_EXTENSION(charconv);
-    mod = SCM_MODULE(SCM_FIND_MODULE("gauche.charconv", TRUE));
+    mod = SCM_FIND_MODULE("gauche.charconv", SCM_FIND_MODULE_CREATE);
     guess.procs = NULL;
     (void)SCM_INTERNAL_MUTEX_INIT(guess.mutex);
 #if   defined(GAUCHE_CHAR_ENCODING_UTF_8)

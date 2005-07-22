@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: auxsys.c,v 1.4 2004-07-15 07:10:04 shirok Exp $
+ *  $Id: auxsys.c,v 1.5 2005-07-22 09:26:54 shirok Exp $
  */
 
 #include <gauche.h>
@@ -69,6 +69,6 @@ void Scm_Init_auxsys(void)
     ScmModule *mod;
 
     SCM_INIT_EXTENSION(auxsys);
-    mod = SCM_MODULE(SCM_FIND_MODULE("gauche.auxsys", TRUE));
+    mod = SCM_FIND_MODULE("gauche.auxsys", SCM_FIND_MODULE_CREATE);
     Scm_Init_auxsyslib(mod);
 }

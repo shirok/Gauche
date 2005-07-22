@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.103 2005-05-28 10:24:37 shirok Exp $
+ *  $Id: vm.h,v 1.104 2005-07-22 09:26:58 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -436,7 +436,8 @@ struct ScmVMRec {
 SCM_EXTERN ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name);
 SCM_EXTERN int    Scm_AttachVM(ScmVM *vm);
 SCM_EXTERN void   Scm_VMDump(ScmVM *vm);
-SCM_EXTERN void   Scm_VMDefaultExceptionHandler(ScmObj);
+SCM_EXTERN void   Scm_VMDefaultExceptionHandler(ScmObj exc);
+SCM_EXTERN ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exc);
 SCM_EXTERN ScmObj Scm_VMGetSourceInfo(ScmCompiledCode *code, SCM_PCTYPE pc);
 SCM_EXTERN ScmObj Scm_VMGetBindInfo(ScmCompiledCode *code, SCM_PCTYPE pc);
 

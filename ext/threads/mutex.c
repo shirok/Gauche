@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: mutex.c,v 1.7 2005-05-18 09:44:20 shirok Exp $
+ *  $Id: mutex.c,v 1.8 2005-07-22 09:26:55 shirok Exp $
  */
 
 #include <math.h>
@@ -217,7 +217,7 @@ ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
     if (abandoned) {
         ScmObj exc = Scm_MakeThreadException(SCM_CLASS_ABANDONED_MUTEX_EXCEPTION, abandoned);
         SCM_THREAD_EXCEPTION(exc)->data = SCM_OBJ(mutex);
-        r = Scm_VMThrowException(exc);
+        r = Scm_Raise(exc);
     }
     return r;
 #else  /* !GAUCHE_USE_PTHREADS */

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvinit.c,v 1.8 2004-11-05 10:34:25 shirok Exp $
+ *  $Id: uvinit.c,v 1.9 2005-07-22 09:26:55 shirok Exp $
  */
 
 #include <gauche.h>
@@ -81,7 +81,7 @@ void Scm_Init_libgauche_uvector(void)
     ScmObj t;
 
     SCM_INIT_EXTENSION(uvector);
-    m = SCM_MODULE(SCM_FIND_MODULE("gauche.uvector", TRUE));
+    m = SCM_FIND_MODULE("gauche.uvector", SCM_FIND_MODULE_CREATE);
     Scm_InitStaticClassWithMeta(&Scm_UVectorClass,   "<uvector>", m, NULL, SCM_NIL, NULL, 0);
     Scm_InitStaticClassWithMeta(&Scm_S8VectorClass,  "<s8vector>", m, NULL, SCM_NIL, NULL, 0);
     Scm_InitStaticClassWithMeta(&Scm_U8VectorClass,  "<u8vector>", m, NULL, SCM_NIL, NULL, 0);

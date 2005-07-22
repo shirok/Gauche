@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.64 2005-07-12 11:42:01 shirok Exp $
+ *  $Id: error.c,v 1.65 2005-07-22 09:26:55 shirok Exp $
  */
 
 #include <errno.h>
@@ -492,7 +492,7 @@ void Scm_Error(const char *msg, ...)
 
     if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_HANDLED)) {
         e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
-        Scm_VMThrowException(e);
+        Scm_VMThrowException(vm, e);
     }
     SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_HANDLED);
     
@@ -508,7 +508,7 @@ void Scm_Error(const char *msg, ...)
         e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
     }
     SCM_END_PROTECT;
-    Scm_VMThrowException(e);
+    Scm_VMThrowException(vm, e);
     Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
 }
 
@@ -549,6 +549,7 @@ void Scm_SysError(const char *msg, ...)
 {
     ScmObj e;
     va_list args;
+    ScmVM *vm = Scm_VM();
     int en = get_errno();
     ScmObj syserr = get_syserrmsg(en);
     
@@ -566,7 +567,8 @@ void Scm_SysError(const char *msg, ...)
         e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
     }
     SCM_END_PROTECT;
-    Scm_VMThrowException(e);
+    Scm_VMThrowException(vm, e);
+    Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
 }
 
 /*
@@ -582,6 +584,7 @@ void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
 {
     ScmObj e, smsg, pe;
     ScmClass *peclass;
+    ScmVM *vm = Scm_VM();
     va_list args;
     int en = get_errno();
 
@@ -625,7 +628,8 @@ void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
         e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
     }
     SCM_END_PROTECT;
-    Scm_VMThrowException(e);
+    Scm_VMThrowException(vm, e);
+    Scm_Panic("Scm_Error: Scm_VMThrowException returned.  something wrong.");
 }
 
 /*
@@ -644,62 +648,6 @@ void Scm_Warn(const char *msg, ...)
     Scm_Flush(SCM_CURERR);
 }
 
-#if 0
-/*
- * Those versions are called from Scheme.  Do not use them from C.
- */
-
-/* SRFI-23 compatible error.
-   We tolerate reason not to be a string.  It is not encouraged,
-   but some third-party code may use different error API, and
-   signaling an error as the first arg isn't a string would obscure
-   the problem. */
-ScmObj Scm_SError(ScmObj reason, ScmObj args)
-{
-    volatile ScmObj e;
-
-    SCM_UNWIND_PROTECT {
-        ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
-        ScmObj ap;
-        Scm_Write(reason, ostr, SCM_WRITE_DISPLAY);
-        SCM_FOR_EACH(ap, args) {
-            SCM_PUTC(' ', ostr);
-            Scm_Write(SCM_CAR(ap), ostr, SCM_WRITE_WRITE);
-        }
-        e = Scm_MakeError(Scm_GetOutputString(SCM_PORT(ostr)));
-    }
-    SCM_WHEN_ERROR {
-        /* TODO: should check continuation? */
-        e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
-    }
-    SCM_END_PROTECT;
-    return Scm_VMThrowException(e);
-}
-
-/* format & error */
-ScmObj Scm_FError(ScmObj fmt, ScmObj args)
-{
-    volatile ScmObj e;
-
-    SCM_UNWIND_PROTECT {
-        ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
-        if (SCM_STRINGP(fmt)) {
-            Scm_Format(SCM_PORT(ostr), SCM_STRING(fmt), args, TRUE);
-        } else {
-            /* this shouldn't happen, but we tolerate it. */
-            Scm_Write(fmt, ostr, SCM_WRITE_WRITE);
-        }
-        e = Scm_MakeError(Scm_GetOutputString(SCM_PORT(ostr)));
-    }
-    SCM_WHEN_ERROR {
-        /* TODO: should check continuation? */
-        e = Scm_MakeError(SCM_MAKE_STR("Error occurred in error handler"));
-    }
-    SCM_END_PROTECT;
-    return Scm_VMThrowException(e);
-}
-#endif
-
 /* format & warn */
 void Scm_FWarn(ScmString *fmt, ScmObj args)
 {
@@ -707,6 +655,71 @@ void Scm_FWarn(ScmString *fmt, ScmObj args)
     Scm_Format(SCM_PORT(ostr), fmt, args, TRUE);
     Scm_Printf(SCM_CURERR, "WARNING: %A\n", Scm_GetOutputString(SCM_PORT(ostr)));
     Scm_Flush(SCM_CURERR);
+}
+
+/*
+ * General exception raising
+ */
+
+/* An external API to hide Scm_VMThrowException. */
+ScmObj Scm_Raise(ScmObj condition)
+{
+    return Scm_VMThrowException(Scm_VM(), condition);
+}
+
+/* A convenient API---allows to call user-defined condition easily,
+   even the condition type is defined in Scheme.  For example:
+
+   Scm_RaiseCondition(SCM_SYMBOL_VALUE("mymodule", "<my-error>"),
+                      "error-type", SCM_INTERN("fatal"),
+                      "error-code", SCM_MAKE_INT(3),
+                      SCM_RAISE_CONDITION_MSG,
+                      "Fatal error occurred at %S", current_proc);
+
+   roughly corresponds to the Scheme code:
+
+   (raise (condition
+            (<my-error> (error-type 'fatal)
+                        (error-code 3)
+                        (message (format "Fatal error occurred at ~s"
+                                         current_proc)))))
+
+   This function isn't very efficient; but sometimes you want the convenience
+   more, right?
+*/
+
+ScmObj Scm_RaiseCondition(ScmObj condition_type, ...)
+{
+    ScmVM *vm = Scm_VM();
+    ScmObj argh = SCM_NIL, argt = SCM_NIL;
+    va_list ap;
+
+    if (!SCM_CLASSP(condition_type)
+        || !Scm_SubtypeP(SCM_CLASS(condition_type), SCM_CLASS_CONDITION)) {
+        /* If we don't get a condition type, fallback to a normal error. */
+        condition_type = SCM_OBJ(SCM_CLASS_ERROR);
+    }
+    SCM_APPEND1(argh, argt, condition_type);
+    va_start(ap, condition_type);
+    for (;;) {
+        const char *key = va_arg(ap, const char *);
+        if (key == NULL) {
+            break;
+        } else if (key == SCM_RAISE_CONDITION_MSG) {
+            const char *msg = va_arg(ap, const char*);
+            ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
+            Scm_Vprintf(SCM_PORT(ostr), msg, ap, TRUE);
+            SCM_APPEND1(argh, argt, SCM_MAKE_KEYWORD("message"));
+            SCM_APPEND1(argh, argt, Scm_GetOutputString(SCM_PORT(ostr)));
+            break;
+        } else {
+            ScmObj arg = va_arg(ap, ScmObj);
+            SCM_APPEND1(argh, argt, SCM_MAKE_KEYWORD(key));
+            SCM_APPEND1(argh, argt, arg);
+        }
+    }
+    va_end(ap);
+    return Scm_Apply(SCM_SYMBOL_VALUE("gauche", "error"), argh);
 }
 
 /*

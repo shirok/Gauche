@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.233 2005-07-16 01:47:40 shirok Exp $
+ *  $Id: vm.c,v 1.234 2005-07-22 09:26:57 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -3205,10 +3205,10 @@ static SCM_DEFINE_SUBR(default_exception_handler_rec, 1, 0,
  *  So there may be a raw C code in the continuation of this C call.
  *  Thus we can't use Scm_VMApply to call the user-defined exception
  *  handler.
+ *  Note that this function may return.
  */
-ScmObj Scm_VMThrowException(ScmObj exception)
+ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception)
 {
-    ScmVM *vm = theVM;
     ScmEscapePoint *ep = vm->escapePoint;
 
     SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_HANDLED);
@@ -3236,7 +3236,6 @@ ScmObj Scm_VMThrowException(ScmObj exception)
     }
     Scm_VMDefaultExceptionHandler(exception);
     /* this never returns */
-    return SCM_UNDEFINED;       /* dummy */
 }
 
 /*

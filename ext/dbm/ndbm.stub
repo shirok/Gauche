@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;  $Id: ndbm.stub,v 1.20 2004-10-09 11:36:36 shirok Exp $
+;;  $Id: ndbm.stub,v 1.21 2005-07-22 09:26:54 shirok Exp $
 ;;
 
 "
@@ -85,7 +85,7 @@
  {
     ScmModule *mod;
     SCM_INIT_EXTENSION(ndbm);
-    mod = SCM_MODULE(SCM_FIND_MODULE(\"dbm.ndbm\", TRUE));
+    mod = SCM_FIND_MODULE(\"dbm.ndbm\", SCM_FIND_MODULE_CREATE);
     Scm_InitStaticClass(&Scm_NdbmClass, \"<ndbm-file>\", mod, NULL, 0);
     Scm_ndbm_internal_init(mod);
  }

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: sha1.stub,v 1.9 2005-06-23 04:18:20 shirok Exp $
+;;;  $Id: sha1.stub,v 1.10 2005-07-22 09:26:54 shirok Exp $
 ;;;
 
 "
@@ -66,7 +66,7 @@
  static void Scm_sha_internal_init(ScmModule*);
  void Scm_Init_sha1(void)
  {
-   ScmModule *mod = SCM_MODULE(SCM_FIND_MODULE(\"rfc.sha1\", TRUE));
+   ScmModule *mod = SCM_FIND_MODULE(\"rfc.sha1\", SCM_FIND_MODULE_CREATE);
    SCM_INIT_EXTENSION(sha1);
    Scm_InitStaticClass(&Scm_Sha1Class, \"<sha1-context>\", mod, NULL, 0);
    Scm_sha_internal_init(mod);
