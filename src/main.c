@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.80 2005-07-22 09:26:57 shirok Exp $
+ *  $Id: main.c,v 1.81 2005-07-23 07:58:09 shirok Exp $
  */
 
 #include <unistd.h>
@@ -51,6 +51,7 @@ int batch_mode = FALSE;         /* force batch mode */
 int interactive_mode = FALSE;   /* force interactive mode */
 int test_mode = FALSE;          /* add . and ../lib implicitly  */
 int profiling_mode = FALSE;     /* profile the script? */
+int stats_mode = FALSE;         /* collect stats (EXPERIMENTAL) */
 
 ScmObj pre_cmds = SCM_NIL;      /* assoc list of commands that needs to be
                                    processed before entering repl.
@@ -139,6 +140,7 @@ void further_options(const char *optarg)
     }
     /* For development; not for public use */
     else if (strcmp(optarg, "collect-stats") == 0) {
+        stats_mode = TRUE;
         SCM_VM_RUNTIME_FLAG_SET(vm, SCM_COLLECT_VM_STATS);
     }
     /* Experimental */
@@ -225,6 +227,32 @@ static void sig_setup(void)
     sigdelset(&set, SIGUSR2); /* used by GC to restart the world */
 #endif /*GC_FREEBSD_THREADS*/
     Scm_SetMasterSigmask(&set);
+}
+
+/* Cleanup */
+void cleanup_main(void *data)
+{
+    ScmVM *vm = Scm_VM();
+    
+    if (profiling_mode) {
+        Scm_ProfilerStop();
+        Scm_Eval(Scm_ReadFromCString("(profiler-show)"),
+                 SCM_OBJ(SCM_FIND_MODULE("gauche.vm.profiler", 0)));
+    }
+    
+    if (stats_mode) {           /* EXPERIMENTAL */
+        fprintf(stderr, "\n;; Statistics (*: main thread only):\n");
+        fprintf(stderr,
+                ";;  GC: %dbytes heap, %dbytes allocated\n",
+                GC_get_heap_size(), GC_get_total_bytes());
+        fprintf(stderr,
+                ";;  stack overflow*: %dtimes, %.2fms total/%.2fms avg\n",
+                vm->stat.sovCount,
+                vm->stat.sovTime/1000.0,
+                (vm->stat.sovCount > 0?
+                 (double)(vm->stat.sovTime/vm->stat.sovCount)/1000.0 :
+                 0.0));
+    }
 }
 
 /*-----------------------------------------------------------------
@@ -362,12 +390,14 @@ int main(int argc, char **argv)
         }
     }
 
-    /* Following is the main dish. */
-
+    /* Set up instruments. */
     if (profiling_mode) {
         Scm_Require(SCM_MAKE_STR("gauche/vm/profiler"));
         Scm_ProfilerStart();
     }
+    Scm_AddCleanupHandler(cleanup_main, NULL);
+
+    /* Following is the main dish. */
 
     if (scriptfile != NULL) {
         /* If script file is specified, load it. */
@@ -408,12 +438,6 @@ int main(int argc, char **argv)
         exit_code = 0;
     }
 
-    if (profiling_mode) {
-        Scm_ProfilerStop();
-        Scm_Eval(Scm_ReadFromCString("(profiler-show)"),
-                 SCM_OBJ(SCM_FIND_MODULE("gauche.vm.profiler", 0)));
-    }
-    
     /* All is done. */
     Scm_Exit(exit_code);
     return 0;

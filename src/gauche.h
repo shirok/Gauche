@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.420 2005-07-22 12:06:51 shirok Exp $
+ *  $Id: gauche.h,v 1.421 2005-07-23 07:58:09 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2708,6 +2708,9 @@ SCM_EXTERN void Scm_Panic(const char *msg, ...);
 SCM_EXTERN void Scm_RegisterDL(void *data_start, void *data_end,
                                void *bss_start, void *bss_end);
 SCM_EXTERN void Scm_GCSentinel(void *obj, const char *name);
+
+SCM_EXTERN void *Scm_AddCleanupHandler(void (*proc)(void *data), void *data);
+SCM_EXTERN void  Scm_DeleteCleanupHandler(void *handle);
 
 /* repl */
 SCM_EXTERN void Scm_Repl(ScmObj reader, ScmObj evaluator, ScmObj printer,

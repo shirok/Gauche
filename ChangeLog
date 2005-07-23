@@ -1,3 +1,11 @@
+2005-07-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/core.c (Scm_AddCleanupHandler, Scm_DeleteCleanupHandler):
+	  Added API for C-level handlers that are called before exitting
+	  Scheme.  It works as far as Scm_Exit is called.
+	* src/main.c : rewritten profiler and statistics output using
+	  the new cleanup handler API.
+
 2005-07-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c (Scm_FindModule): API CHANGE for consistency.  Now

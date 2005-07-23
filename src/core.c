@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.64 2005-05-24 23:28:37 shirok Exp $
+ *  $Id: core.c,v 1.65 2005-07-23 07:58:09 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -224,8 +224,49 @@ ScmObj Scm_VMFinalizerRun(ScmVM *vm)
 }
 
 /*=============================================================
- * Program termination
+ * Program cleanup & termination
  */
+
+struct cleanup_handler_rec {
+    void (*handler)(void *data);
+    void *data;
+    struct cleanup_handler_rec *next;
+};
+
+static struct {
+    int dummy;                  /* force this to be in .data section */
+    struct cleanup_handler_rec *handlers;
+} cleanup = { 1, NULL };
+
+/* Add cleanup handler.  Returns an opaque handle, which can be
+   passed to DeleteCleanupHandler. */
+void *Scm_AddCleanupHandler(void (*h)(void *d), void *d)
+{
+    struct cleanup_handler_rec *r = SCM_NEW(struct cleanup_handler_rec);
+    r->handler = h;
+    r->data = d;
+    r->next = cleanup.handlers;
+    cleanup.handlers = r;
+    return r;
+}
+
+/* Delete cleanup handler.  HANDLE should be an opaque pointer
+   returned from Scm_AddCleanupHandler, but it won't complain if
+   other pointer is given. */
+void Scm_DeleteCleanupHandler(void *handle)
+{
+    struct cleanup_handler_rec *x = NULL, *y = cleanup.handlers;
+    while (y) {
+        if (y == handle) {
+            if (x == NULL) {
+                cleanup.handlers = y->next;
+            } else {
+                x->next = y->next;
+            }
+            break;
+        }
+    }
+}
 
 void Scm_Exit(int code)
 {
@@ -234,29 +275,21 @@ void Scm_Exit(int code)
        we call the handlers here. */
     ScmVM *vm = Scm_VM();
     ScmObj hp;
+    struct cleanup_handler_rec *ch;
+    
+    /* Execute pending dynamic handlers */
     SCM_FOR_EACH(hp, vm->handlers) {
         vm->handlers = SCM_CDR(hp);
         Scm_Apply(SCM_CDAR(hp), SCM_NIL);
     }
-    Scm_FlushAllPorts(TRUE);
 
-    /* Print statistics.
-       TODO: this should be enabled by separately from
-       SCM_COLLECT_VM_STATS flag, so that application can cutomize
-       how to utilize the statistics data. */
-    if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_COLLECT_VM_STATS)) {
-        fprintf(stderr, "\n;; Statistics (*: main thread only):\n");
-        fprintf(stderr,
-                ";;  GC: %dbytes heap, %dbytes allocated\n",
-                GC_get_heap_size(), GC_get_total_bytes());
-        fprintf(stderr,
-                ";;  stack overflow*: %dtimes, %.2fms total/%.2fms avg\n",
-                vm->stat.sovCount,
-                vm->stat.sovTime/1000.0,
-                (vm->stat.sovCount > 0?
-                 (double)(vm->stat.sovTime/vm->stat.sovCount)/1000.0 :
-                 0.0));
+    /* Call the C-registered cleanup handlers. */
+    for (ch = cleanup.handlers; ch; ch = ch->next) {
+        ch->handler(ch->data);
     }
+    
+    /* Flush Scheme ports. */
+    Scm_FlushAllPorts(TRUE);
 
     exit(code);
 }
