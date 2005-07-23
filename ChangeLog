@@ -2,7 +2,10 @@
 
 	* src/core.c (Scm_AddCleanupHandler, Scm_DeleteCleanupHandler):
 	  Added API for C-level handlers that are called before exitting
-	  Scheme.  It works as far as Scm_Exit is called.
+	  Scheme.
+	  (Scm_Exit, Scm_Cleanup): allows the application to call cleanup
+	  part separately, for the apps that wants some operation after
+	  shutting down Scheme system.
 	* src/main.c : rewritten profiler and statistics output using
 	  the new cleanup handler API.
 

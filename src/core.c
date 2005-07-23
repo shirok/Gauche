@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.65 2005-07-23 07:58:09 shirok Exp $
+ *  $Id: core.c,v 1.66 2005-07-23 08:06:50 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -234,9 +234,9 @@ struct cleanup_handler_rec {
 };
 
 static struct {
-    int dummy;                  /* force this to be in .data section */
+    int dirty;                  /* Flag to avoid cleaning up more than once. */
     struct cleanup_handler_rec *handlers;
-} cleanup = { 1, NULL };
+} cleanup = { TRUE, NULL }; 
 
 /* Add cleanup handler.  Returns an opaque handle, which can be
    passed to DeleteCleanupHandler. */
@@ -268,14 +268,26 @@ void Scm_DeleteCleanupHandler(void *handle)
     }
 }
 
+/* Scm_Cleanup and Scm_Exit
+   Usually calling Scm_Exit is the easiest way to terminate Gauche
+   application safely.  If the application wants to continue operation
+   after shutting down the Scheme part, however, it can call Scm_Cleanup().
+*/
+
 void Scm_Exit(int code)
 {
-    /* TODO: This should throw <application-exit> exception and
-       let the VM handle unwinding dynamic handlers.  For now,
-       we call the handlers here. */
+    Scm_Cleanup();
+    exit(code);
+}
+
+void Scm_Cleanup(void)
+{
     ScmVM *vm = Scm_VM();
     ScmObj hp;
     struct cleanup_handler_rec *ch;
+
+    if (!cleanup.dirty) return;
+    cleanup.dirty = FALSE;
     
     /* Execute pending dynamic handlers */
     SCM_FOR_EACH(hp, vm->handlers) {
@@ -290,8 +302,6 @@ void Scm_Exit(int code)
     
     /* Flush Scheme ports. */
     Scm_FlushAllPorts(TRUE);
-
-    exit(code);
 }
 
 void Scm_Panic(const char *msg, ...)
