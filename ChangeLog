@@ -1,3 +1,9 @@
+2005-07-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (run_loop): Fixed handling of numVals.  Some instructions
+	  used not to set numVals so that the previous numVals 'leaked',
+	  yielding incorrect result.
+
 2005-07-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/core.c (Scm_AddCleanupHandler, Scm_DeleteCleanupHandler):
