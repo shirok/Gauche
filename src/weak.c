@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: weak.c,v 1.7 2005-04-12 01:42:28 shirok Exp $
+ *  $Id: weak.c,v 1.8 2005-07-27 05:10:36 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -178,10 +178,11 @@ ScmObj Scm_WeakVectorSet(ScmWeakVector *v, int index, ScmObj value)
  *  hide the nullified pointer.  However we do rely on weak vector's
  *  constructor and finalizer.
  */
-#if 0
+
 SCM_DEFINE_BUILTIN_CLASS(Scm_WeakHashTableClass, NULL,
                          NULL, NULL, NULL,
                          SCM_CLASS_COLLECTION_CPL);
+#if 0
 
 #define BACKING_STORAGE_UNIT  256
 
@@ -205,17 +206,22 @@ ScmObj Scm_MakeWeakHashTable(ScmHashProc hashfn,
     w->freeList = 0;
     w->bsSize = vsize;
 
+    for (i=0; i<vsize-1; i++) {
+        wv->pointers[i] = SCM_MAKE_INT(i+1);
+    }
+    wv->pointers[i] = SCM_MAKE_INT(-1);
+    
     return SCM_OBJ(w);
 }
 
 /* Push index-th slot into the free list */
 static void wh_free_entry(ScmWeakHashTable *wh, int index)
 {
-    if (wh->wv->pointers[index] == NULL
-        || SCM_PTRP(wh->wv->pointers[index])) {
-        GC_unregister_disappearing_link((GC_PTR*)&wh->wv->pointers[index]);
+    if (wh->backingStorage->pointers[index] == NULL
+        || SCM_PTRP(wh->backingStorage->pointers[index])) {
+        GC_unregister_disappearing_link((GC_PTR*)&wh->backingStorage->pointers[index]);
     }
-    wh->wv->pointers[index] = SCM_MAKE_INT(wh->freeList);
+    wh->backingStorage->pointers[index] = SCM_MAKE_INT(wh->freeList);
     wh->freeList = index;
 }
 
@@ -238,6 +244,48 @@ static void wh_collect_freed(ScmWeakHashTable wh)
     }
 }
 
+/* Returns the index into the backing storage that can be used
+   to contain a new entry.  If the vector is full, we reallocate
+   the new vector. */
+static void wh_get_free_slot(ScmWeakHashTable *wh)
+{
+    int index, i, newsize;
+    ScmWeakVector *newwv;
+    
+    if (wh->freeList >= 0) {
+        index = wh->freeList;
+        wh->freeList = SCM_INT_VALUE(index);
+        return index;
+    }
+    /* collect NULLified entry and try again */
+    wh_collect_freed(wh);
+    if (wh->freeList >= 0) {
+        index = wh->freeList;
+        wh->freeList = SCM_INT_VALUE(index);
+        return index;
+    }
+    /* the backing storage is full.  realloc the vector. */
+    newsize = wh->bsSize + BACKING_STORAGE_UNIT;
+    newwv = SCM_WEAKVECTOR(Scm_MakeWeakVector(newsize));
+    
+    index = wh->bsSize;
+    for (i=0; i<index; i++) {
+        newwv->pointers[i] = wh->backingStorage->pointers[i];
+    }
+    for (i=index+1; i<newsize-1; i++) {
+        newwv->pointers[i] = SCM_MAKE_INT(i+1);
+    }
+    newwv->pointers[i] = SCM_MAKE_INT(-1);
+    wh->backingStorage = newwv;
+    wh->bsSize = newsize;
+    wh->freeList = index+1;
+    return index;
+}
+
+
+/* Retrieve the value weakly associated to the key.
+   Returns SCM_UNBOUND if the key is not associated, or the value
+   has been GCed. */
 ScmObj Scm_WeakHashTableGet(ScmWeakHashTable *wh, ScmObj key)
 {
     ScmHashEntry *e;
@@ -257,12 +305,43 @@ ScmObj Scm_WeakHashTableGet(ScmWeakHashTable *wh, ScmObj key)
     SCM_ASSERT(index >= 0 && index < wv->size);
     p = (ScmObj*)wv->pointers;
     if (p[index] == NULL) {
+        /* The value has been GCed. */
         Scm_HashTableDelete(wv->hashTable, key);
-        
+        wh_free_entry(wh, index);
         return SCM_UNBOUND;
     } else {
         return p[index];
     }
+}
+
+ScmObj Scm_WeakHashTablePut(ScmWeakHashTable *wh, ScmObj key, ScmObj value)
+{
+    ScmHashEntry *e;
+    ScmWeakVector *wv;
+    int index;
+    ScmObj val;
+    ScmObj *p;
+
+    SCM_ASSERT(wh->hashTable != NULL);
+    SCM_ASSERT(wh->backingStorage != NULL);
+    wv = wh->backingStorage;
+
+    /* try to add a dummy index value, to see if the key is already
+       registered. */
+    e = Scm_HashTableAdd(wh->hashTable, key, SCM_MAKE_INT(-1));
+    if (e->value == SCM_MAKE_INT(-1)) {
+        /* new entry. */
+        index = wh_get_free_slot(wh);
+        e->value = SCM_MAKE_INT(index);
+    } else {
+        index = SCM_INT_VALUE(index);
+        if (wh->backingStorage->pointers[index] == NULL
+            || SCM_PTRP(wh->backingStorage->pointers[index])) {
+        }
+    }
+    
+    
+    
 }
 
 #endif
