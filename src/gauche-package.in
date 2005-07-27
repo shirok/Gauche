@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-package.in,v 1.10 2005-07-17 06:17:08 shirok Exp $
+;;;  $Id: gauche-package.in,v 1.11 2005-07-27 23:00:15 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -211,7 +211,18 @@ Options:
 ;;
 (define-cmd "make-gpd"
   ("make-gpd <name> <param> ..."
-   "Make gpd file (called from configure macro)")
+   "Make gpd file (called from the configure script)"
+   "
+  This command is to create a gpd (Gauche package description) file.  
+  Usually the user doens't invoke this command.  It is intended to be
+  called within the configure script, like the following:
+
+    gauche-package make-gpd Foo \\
+       -version $PACKAGE_VERSION \\
+       -configure \"./configure $GAUCHE_PACKAGE_CONFIGURE_ARGS\"
+
+  If you generate template configure.in by 'gauche-package generate',
+  the make-gpd stuff is included in it.")
   (when (null? args) (usage-self))
   (let loop ((p (cdr args))
              (r '()))
