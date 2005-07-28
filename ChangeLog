@@ -1,3 +1,10 @@
+2005-07-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/*: code cleanup: replaced SCM_HASHTABLE -> SCM_HASH_TABLE and
+	  SCM_WEAKVECTOR -> SCM_WEAK_VECTOR for naming consistency.
+	  SCM_HASHTABLE remains as alias for a while, since it may be used
+	  in some extensions, but should go away very soon.
+
 2005-07-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (run_loop): Fixed handling of numVals.  Some instructions

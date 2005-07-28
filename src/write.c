@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.52 2005-05-24 23:28:38 shirok Exp $
+ *  $Id: write.c,v 1.53 2005-07-28 22:46:43 shirok Exp $
  */
 
 #include <stdio.h>
@@ -142,13 +142,13 @@ void Scm_Write(ScmObj obj, ScmObj p, int mode)
 
     /* if this is a "walk" pass of write/ss, dispatch to the walker */
     if (port->flags & SCM_PORT_WALKING) {
-        SCM_ASSERT(SCM_PAIRP(port->data)&&SCM_HASHTABLEP(SCM_CDR(port->data)));
+        SCM_ASSERT(SCM_PAIRP(port->data)&&SCM_HASH_TABLE_P(SCM_CDR(port->data)));
         write_walk(obj, port, &ctx);
         return;
     }
     /* if this is a "output" pass of write/ss, call the recursive routine */
     if (port->flags & SCM_PORT_WRITESS) {
-        SCM_ASSERT(SCM_PAIRP(port->data)&&SCM_HASHTABLEP(SCM_CDR(port->data)));
+        SCM_ASSERT(SCM_PAIRP(port->data)&&SCM_HASH_TABLE_P(SCM_CDR(port->data)));
         write_ss_rec(obj, port, &ctx);
         return;
     }
@@ -224,7 +224,7 @@ int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width)
         ctx.limit = width;
     }
     ctx.ncirc = 0;
-    ctx.table = SCM_HASHTABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 8));
+    ctx.table = SCM_HASH_TABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 8));
 
     if (width > 0) {
         ScmObj out = Scm_MakeOutputStringPort(TRUE);
@@ -342,7 +342,7 @@ static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     ScmHashTable *ht;
     ScmObj elt;
     
-    ht = SCM_HASHTABLE(SCM_CDR(port->data));
+    ht = SCM_HASH_TABLE(SCM_CDR(port->data));
 
     for (;;) {
         if (!SCM_PTRP(obj) || SCM_SYMBOLP(obj) || SCM_KEYWORDP(obj)
@@ -403,8 +403,8 @@ static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         if (outlen(port) >= ctx->limit) return;
     }
 
-    if (SCM_PAIRP(port->data) && SCM_HASHTABLEP(SCM_CDR(port->data))) {
-        ht = SCM_HASHTABLE(SCM_CDR(port->data));
+    if (SCM_PAIRP(port->data) && SCM_HASH_TABLE_P(SCM_CDR(port->data))) {
+        ht = SCM_HASH_TABLE(SCM_CDR(port->data));
     }
 
     if (!SCM_PTRP(obj)) {
@@ -579,12 +579,12 @@ static void format_write(ScmObj obj, ScmPort *port, ScmWriteContext *ctx,
                          int sharedp)
 {
     if (port->flags & SCM_PORT_WALKING) {
-        SCM_ASSERT(SCM_PAIRP(port->data)&&SCM_HASHTABLEP(SCM_CDR(port->data)));
+        SCM_ASSERT(SCM_PAIRP(port->data)&&SCM_HASH_TABLE_P(SCM_CDR(port->data)));
         write_walk(obj, port, ctx);
         return;
     }
     if (port->flags & SCM_PORT_WRITESS) {
-        SCM_ASSERT(SCM_PAIRP(port->data)&&SCM_HASHTABLEP(SCM_CDR(port->data)));
+        SCM_ASSERT(SCM_PAIRP(port->data)&&SCM_HASH_TABLE_P(SCM_CDR(port->data)));
         write_ss_rec(obj, port, ctx);
         return;
     }

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: weak.c,v 1.9 2005-07-28 05:08:33 shirok Exp $
+ *  $Id: weak.c,v 1.10 2005-07-28 22:46:43 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -52,7 +52,7 @@
 static void weakvector_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     int i;
-    ScmWeakVector *v = SCM_WEAKVECTOR(obj);
+    ScmWeakVector *v = SCM_WEAK_VECTOR(obj);
     ScmObj *ptrs = (ScmObj*)v->pointers;
     Scm_Printf(port, "#,(<weak-vector> %d", v->size);
     for (i=0; i<v->size; i++) {
@@ -66,7 +66,7 @@ static void weakvector_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 static void weakvector_finalize(ScmObj obj, void *data)
 {
     int i;
-    ScmWeakVector *v = SCM_WEAKVECTOR(obj);
+    ScmWeakVector *v = SCM_WEAK_VECTOR(obj);
     ScmObj *p = (ScmObj*)v->pointers;
     for (i=0; i<v->size; i++) {
         if (p[i]==NULL || SCM_PTRP(p[i])) {
@@ -86,7 +86,7 @@ ScmObj Scm_MakeWeakVector(int size)
     ScmObj *p;
     ScmWeakVector *v = SCM_NEW(ScmWeakVector);
     
-    SCM_SET_CLASS(v, SCM_CLASS_WEAKVECTOR);
+    SCM_SET_CLASS(v, SCM_CLASS_WEAK_VECTOR);
     v->size = size;
     /* Allocate pointer array by ATOMIC, so that GC won't trace the
        pointers in it.  */
@@ -198,9 +198,9 @@ ScmObj Scm_MakeWeakHashTable(ScmHashProc hashfn,
     int vsize, i;
 
     if (initSize == 0) initSize = BACKING_STORAGE_UNIT;
-    ht = SCM_HASHTABLE(Scm_MakeHashTable(hashfn, cmpfn, initSize));
+    ht = SCM_HASH_TABLE(Scm_MakeHashTable(hashfn, cmpfn, initSize));
     vsize = (initSize+BACKING_STORAGE_UNIT-1)&(~(BACKING_STORAGE_UNIT-1));
-    wv = SCM_WEAKVECTOR(Scm_MakeWeakVector(vsize));
+    wv = SCM_WEAK_VECTOR(Scm_MakeWeakVector(vsize));
     wh = SCM_NEW(ScmWeakHashTable);
     
     SCM_SET_CLASS(wh, SCM_CLASS_WEAK_HASH_TABLE);
@@ -293,7 +293,7 @@ static int wh_get_free_slot(ScmWeakHashTable *wh)
     }
     /* the backing storage is full.  realloc the vector. */
     newsize = wh->bsSize + BACKING_STORAGE_UNIT;
-    newwv = SCM_WEAKVECTOR(Scm_MakeWeakVector(newsize));
+    newwv = SCM_WEAK_VECTOR(Scm_MakeWeakVector(newsize));
     
     index = wh->bsSize;
     dst = (ScmObj*)newwv->pointers;

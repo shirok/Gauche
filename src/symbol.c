@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: symbol.c,v 1.32 2005-04-27 02:06:44 shirok Exp $
+ *  $Id: symbol.c,v 1.33 2005-07-28 22:46:43 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -221,6 +221,6 @@ ScmObj Scm_GlocConstSetter(ScmGloc *gloc, ScmObj val)
 
 void Scm__InitSymbol(void)
 {
-    obtable = SCM_HASHTABLE(Scm_MakeHashTable((ScmHashProc)SCM_HASH_STRING, NULL, 2000));
+    obtable = SCM_HASH_TABLE(Scm_MakeHashTable((ScmHashProc)SCM_HASH_STRING, NULL, 2000));
     init_builtin_syms();
 }

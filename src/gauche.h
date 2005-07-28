@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.423 2005-07-28 05:08:33 shirok Exp $
+ *  $Id: gauche.h,v 1.424 2005-07-28 22:46:41 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1575,16 +1575,20 @@ struct ScmHashTableRec {
 SCM_CLASS_DECL(Scm_HashTableClass);
 #define SCM_CLASS_HASH_TABLE  (&Scm_HashTableClass)
 
-/* NB: backward compatibility */
+/* Hash types */
+enum {
+    SCM_HASH_EQ,
+    SCM_HASH_EQV,
+    SCM_HASH_EQUAL,
+    SCM_HASH_STRING,
+    SCM_HASH_GENERAL
+};
+
+/* DEPRECATED MACROS - will dissapear soon */
 #define SCM_HASHTABLE       SCM_HASH_TABLE
 #define SCM_HASHTABLEP      SCM_HASH_TABLE_P
 #define SCM_CLASS_HASHTABLE SCM_CLASS_HASH_TABLE
-
-#define SCM_HASH_ADDRESS   (0)  /* eq?-hash */
-#define SCM_HASH_EQV       (1)
-#define SCM_HASH_EQUAL     (2)
-#define SCM_HASH_STRING    (3)
-#define SCM_HASH_GENERAL   (4)
+#define SCM_HASH_ADDRESS    SCM_HASH_EQ
 
 /* auxiliary structure; not an ScmObj. */
 struct ScmHashEntryRec {
@@ -1632,10 +1636,10 @@ typedef struct ScmWeakVectorRec {
     void *pointers;  /* opaque */
 } ScmWeakVector;
 
-#define SCM_WEAKVECTOR(obj)   ((ScmWeakVector*)(obj))
-#define SCM_WEAKVECTORP(obj)  SCM_XTYPEP(obj, SCM_CLASS_WEAKVECTOR)
+#define SCM_WEAK_VECTOR(obj)   ((ScmWeakVector*)(obj))
+#define SCM_WEAK_VECTOR_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_WEAK_VECTOR)
 SCM_CLASS_DECL(Scm_WeakVectorClass);
-#define SCM_CLASS_WEAKVECTOR  (&Scm_WeakVectorClass)
+#define SCM_CLASS_WEAK_VECTOR  (&Scm_WeakVectorClass)
     
 SCM_EXTERN ScmObj Scm_MakeWeakVector(int size);
 SCM_EXTERN ScmObj Scm_WeakVectorRef(ScmWeakVector *v, int index, ScmObj fallback);

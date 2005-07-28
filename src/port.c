@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.120 2005-06-30 09:57:41 shirok Exp $
+ *  $Id: port.c,v 1.121 2005-07-28 22:46:42 shirok Exp $
  */
 
 #include <unistd.h>
@@ -672,7 +672,7 @@ void Scm_FlushAllPorts(int exitting)
     ScmObj p = SCM_FALSE;
     int i, saved = 0;
 
-    save = SCM_WEAKVECTOR(Scm_MakeWeakVector(PORT_VECTOR_SIZE));
+    save = SCM_WEAK_VECTOR(Scm_MakeWeakVector(PORT_VECTOR_SIZE));
     ports = active_buffered_ports.ports;
     
     for (i=0; i<PORT_VECTOR_SIZE;) {
@@ -1361,7 +1361,7 @@ ScmObj Scm_Stderr(void)
 void Scm__InitPort(void)
 {
     (void)SCM_INTERNAL_MUTEX_INIT(active_buffered_ports.mutex);
-    active_buffered_ports.ports = SCM_WEAKVECTOR(Scm_MakeWeakVector(PORT_VECTOR_SIZE));
+    active_buffered_ports.ports = SCM_WEAK_VECTOR(Scm_MakeWeakVector(PORT_VECTOR_SIZE));
 
     Scm_InitStaticClass(&Scm_PortClass, "<port>",
                         Scm_GaucheModule(), NULL, 0);

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.244 2005-07-28 05:08:33 shirok Exp $
+;;; $Id: extlib.stub,v 1.245 2005-07-28 22:46:40 shirok Exp $
 ;;;
 
 "
@@ -1084,7 +1084,7 @@
   "SCM_RETURN(Scm_MakeHashTable(get_hash_proc(type), NULL, 0));")
 
 (define-cproc hash-table? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_HASHTABLEP(obj)));")
+  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_HASH_TABLE_P(obj)));")
 
 (define-cproc hash-table-type (hash::<hash-table>)
   "switch (hash->type) {

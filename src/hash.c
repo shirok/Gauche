@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.32 2004-02-21 06:27:05 shirok Exp $
+ *  $Id: hash.c,v 1.33 2005-07-28 22:46:41 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -414,7 +414,7 @@ ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
 
     b = SCM_NEW_ARRAY(ScmHashEntry*, initSize);
     z = SCM_NEW(ScmHashTable);
-    SCM_SET_CLASS(z, SCM_CLASS_HASHTABLE);
+    SCM_SET_CLASS(z, SCM_CLASS_HASH_TABLE);
     z->buckets = b;
     z->numBuckets = initSize;
     z->numEntries = 0;
