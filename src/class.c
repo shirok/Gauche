@@ -1,7 +1,7 @@
 /*
  * class.c - class metaobject implementation
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.121 2005-07-22 12:06:52 shirok Exp $
+ *  $Id: class.c,v 1.122 2005-07-28 05:08:33 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2991,6 +2991,7 @@ void Scm__InitClass(void)
     
     /* weak.c */
     CINIT(SCM_CLASS_WEAKVECTOR,       "<weak-vector>");
+    CINIT(SCM_CLASS_WEAK_HASH_TABLE,  "<weak-hash-table>");
 
 #define GINIT(gf, nam) \
     Scm_InitBuiltinGeneric(gf, nam, mod);

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.422 2005-07-23 08:06:50 shirok Exp $
+ *  $Id: gauche.h,v 1.423 2005-07-28 05:08:33 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1646,7 +1646,7 @@ typedef struct ScmWeakHashTableRec {
     SCM_HEADER;
     ScmHashTable *hashTable;
     ScmWeakVector *backingStorage;
-    int nextFree;
+    int freeList;
     int bsSize;
 } ScmWeakHashTable;
 
@@ -1661,15 +1661,10 @@ SCM_EXTERN ScmObj Scm_MakeWeakHashTable(ScmHashProc hashfn,
 
 SCM_EXTERN ScmObj Scm_CopyWeakHashTable(ScmWeakHashTable *tab);
 
-SCM_EXTERN ScmObj Scm_WeakHashTableGet(ScmWeakHashTable *hash, ScmObj key,
-                                       ScmObj fallback);
-SCM_EXTERN ScmObj Scm_WeakHashTableAdd(ScmWeakHashTable *hash, ScmObj key,
-                                       ScmObj value);
+SCM_EXTERN ScmObj Scm_WeakHashTableGet(ScmWeakHashTable *hash, ScmObj key);
 SCM_EXTERN ScmObj Scm_WeakHashTablePut(ScmWeakHashTable *hash, ScmObj key,
                                        ScmObj value);
-SCM_EXTERN ScmObj Scm_WeakHashTableDelete(ScmWeakHashTable *hash, ScmObj key,
-                                          ScmObj value);
-
+SCM_EXTERN int    Scm_WeakHashTableDelete(ScmWeakHashTable *hash, ScmObj key);
 
 /*--------------------------------------------------------
  * MODULE

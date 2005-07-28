@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.243 2005-07-22 09:26:56 shirok Exp $
+;;; $Id: extlib.stub,v 1.244 2005-07-28 05:08:33 shirok Exp $
 ;;;
 
 "
@@ -1068,8 +1068,8 @@
 (define-cproc hash (obj)
   (return <ulong> "Scm_Hash"))
 
-(define-cproc make-hash-table (&optional (type::<symbol> (c "sym_eq")))
-  "  ScmHashProc htype = 0;
+"static ScmHashProc get_hash_proc(ScmSymbol *type) {
+  ScmHashProc htype = NULL;
   if (SCM_OBJ(type) == sym_eq)             htype = (ScmHashProc)SCM_HASH_ADDRESS;
   else if (SCM_OBJ(type) == sym_eqv)       htype = (ScmHashProc)SCM_HASH_EQV;
   else if (SCM_OBJ(type) == sym_equal)     htype = (ScmHashProc)SCM_HASH_EQUAL;
@@ -1077,7 +1077,11 @@
   else {
     Scm_Error(\"unsupported hash type: %S\", type);
   }
-  SCM_RETURN(Scm_MakeHashTable(htype, NULL, 0));")
+  return htype;
+ }"
+
+(define-cproc make-hash-table (&optional (type::<symbol> (c "sym_eq")))
+  "SCM_RETURN(Scm_MakeHashTable(get_hash_proc(type), NULL, 0));")
 
 (define-cproc hash-table? (obj)
   "  SCM_RETURN(SCM_MAKE_BOOL(SCM_HASHTABLEP(obj)));")
@@ -1186,6 +1190,30 @@
 
 (define-cproc hash-table-stat (hash::<hash-table>)
   (return "Scm_HashTableStat"))
+
+;; weak hash table
+
+;(define-cproc make-weak-hash-table (&optional (type::<symbol> (c "sym_eq")))
+;  "SCM_RETURN(Scm_MakeWeakHashTable(get_hash_proc(type), NULL, 0));")
+
+;(define-cproc weak-hash-table-get (wh::<weak-hash-table> key &optional fallback)
+;  "ScmObj r = Scm_WeakHashTableGet(wh, key);
+;   if (SCM_UNBOUNDP(r)) {
+;     if (SCM_UNBOUNDP(fallback)) {
+;       Scm_Error(\"weak hash table doesn't have an entry for key %S\", key);
+;     } else {
+;       SCM_RETURN(fallback);
+;     }
+;   } else {
+;     SCM_RETURN(r);
+;   }")
+
+;(define-cproc weak-hash-table-put! (wh::<weak-hash-table> key value)
+;  "Scm_WeakHashTablePut(wh, key, value);
+;   SCM_RETURN(SCM_UNDEFINED);")
+
+;(define-cproc weak-hash-table-delete! (wh::<weak-hash-table> key)
+;  (return <boolean> "Scm_WeakHashTableDelete"))
 
 ;;
 ;; Modules

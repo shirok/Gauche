@@ -1,7 +1,7 @@
 ;;;
 ;;; genstub - simple stub generator for Gauche
 ;;;  
-;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.102 2005-07-16 19:53:39 shirok Exp $
+;;;  $Id: genstub,v 1.103 2005-07-28 05:08:33 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -40,6 +40,7 @@
 (use gauche.parseopt)
 (use gauche.parameter)
 (use gauche.mop.instance-pool)
+(use gauche.cgen)
 (use util.match)
 (use text.tr)
 
@@ -207,6 +208,11 @@
 ;;   <void>       -            void        (Used only as a return type.
 ;;                                          Scheme function returns #<undef>)
 ;;
+;;   <const-char*> <string>    const char* For arguments, string is unboxed
+;;                                         by Scm_GetStringConst.
+;;                                         For return values, C string is boxed
+;;                                         by SCM_MAKE_STR_COPYING.
+;;
 ;;   <pair>       <pair>       ScmPair*
 ;;   <list>       <list>       ScmObj
 ;;   <string>     <string>     ScmString*
@@ -214,6 +220,7 @@
 ;;   <vector>     <vector>     ScmVector*
 ;;    :
 ;;
+;; Pointer-yielding types can be qualified by 'maybe', e.g. (maybe <string>)
 
 ;; Stub type definition
 (define-class <type> (<instance-pool-mixin>)
@@ -382,6 +389,8 @@
      "SCM_PROMISEP" "SCM_PROMISE")
    (define-type <hash-table> "ScmHashTable*" "hash table"
      "SCM_HASHTABLEP" "SCM_HASHTABLE")
+   (define-type <weak-hash-table> "ScmWeakHashTable*" "weak hash table"
+     "SCM_WEAK_HASH_TABLE_P" "SCM_WEAK_HASH_TABLE")
    (define-type <class> "ScmClass*" "class"
      "SCM_CLASSP" "SCM_CLASS")
    (define-type <method> "ScmMethod*" "method"
