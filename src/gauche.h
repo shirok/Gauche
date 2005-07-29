@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.425 2005-07-29 03:29:21 shirok Exp $
+ *  $Id: gauche.h,v 1.426 2005-07-29 10:55:29 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1627,12 +1627,12 @@ SCM_EXTERN ScmHashEntry *Scm_HashTablePutRaw(ScmHashTable *hash,
                                              void *key, void *value);
 SCM_EXTERN ScmHashEntry *Scm_HashTableDeleteRaw(ScmHashTable *hash, void *key);
 
-SCM_EXTERN ScmHashEntry *Scm_HashTableGet(ScmHashTable *hash, void *key);
+SCM_EXTERN ScmHashEntry *Scm_HashTableGet(ScmHashTable *hash, ScmObj key);
 SCM_EXTERN ScmHashEntry *Scm_HashTableAdd(ScmHashTable *hash,
-					  void *key, void *value);
+					  ScmObj key, ScmObj value);
 SCM_EXTERN ScmHashEntry *Scm_HashTablePut(ScmHashTable *hash,
-					  void *key, void *value);
-SCM_EXTERN ScmHashEntry *Scm_HashTableDelete(ScmHashTable *hash, void *key);
+					  ScmObj key, ScmObj value);
+SCM_EXTERN ScmHashEntry *Scm_HashTableDelete(ScmHashTable *hash, ScmObj key);
 
 SCM_EXTERN ScmObj Scm_HashTableKeys(ScmHashTable *table);
 SCM_EXTERN ScmObj Scm_HashTableValues(ScmHashTable *table);

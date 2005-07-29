@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.34 2005-07-29 03:29:21 shirok Exp $
+ *  $Id: hash.c,v 1.35 2005-07-29 10:55:29 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -665,25 +665,25 @@ ScmHashEntry *Scm_HashTableDeleteRaw(ScmHashTable *table, void *key)
     return table->accessfn(table, key, HASH_DELETE, SCM_FALSE);
 }
 
-ScmHashEntry *Scm_HashTableGet(ScmHashTable *table, void *key)
+ScmHashEntry *Scm_HashTableGet(ScmHashTable *table, ScmObj key)
 {
     check_scm_hashtable(table);
     return table->accessfn(table, key, HASH_FIND, SCM_FALSE);
 }
 
-ScmHashEntry *Scm_HashTableAdd(ScmHashTable *table, void *key, void *value)
+ScmHashEntry *Scm_HashTableAdd(ScmHashTable *table, ScmObj key, ScmObj value)
 {
     check_scm_hashtable(table);
     return table->accessfn(table, key, HASH_ADD, value);
 }
 
-ScmHashEntry *Scm_HashTablePut(ScmHashTable *table, void *key, void *value)
+ScmHashEntry *Scm_HashTablePut(ScmHashTable *table, ScmObj key, ScmObj value)
 {
     check_scm_hashtable(table);
     return table->accessfn(table, key, HASH_UPDATE, value);
 }
 
-ScmHashEntry *Scm_HashTableDelete(ScmHashTable *table, void *key)
+ScmHashEntry *Scm_HashTableDelete(ScmHashTable *table, ScmObj key)
 {
     check_scm_hashtable(table);
     return table->accessfn(table, key, HASH_DELETE, SCM_FALSE);
