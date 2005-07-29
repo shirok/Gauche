@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.245 2005-07-28 22:46:40 shirok Exp $
+;;; $Id: extlib.stub,v 1.246 2005-07-29 03:29:20 shirok Exp $
 ;;;
 
 "
@@ -1068,27 +1068,26 @@
 (define-cproc hash (obj)
   (return <ulong> "Scm_Hash"))
 
-"static ScmHashProc get_hash_proc(ScmSymbol *type) {
-  ScmHashProc htype = NULL;
-  if (SCM_OBJ(type) == sym_eq)             htype = (ScmHashProc)SCM_HASH_ADDRESS;
-  else if (SCM_OBJ(type) == sym_eqv)       htype = (ScmHashProc)SCM_HASH_EQV;
-  else if (SCM_OBJ(type) == sym_equal)     htype = (ScmHashProc)SCM_HASH_EQUAL;
-  else if (SCM_OBJ(type) == sym_string_eq) htype = (ScmHashProc)SCM_HASH_STRING;
+"static int get_hash_proc(ScmSymbol *type) {
+  if (SCM_EQ(SCM_OBJ(type), sym_eq))             return SCM_HASH_EQ;
+  else if (SCM_EQ(SCM_OBJ(type), sym_eqv))       return SCM_HASH_EQV;
+  else if (SCM_EQ(SCM_OBJ(type), sym_equal))     return SCM_HASH_EQUAL;
+  else if (SCM_EQ(SCM_OBJ(type), sym_string_eq)) return SCM_HASH_STRING;
   else {
     Scm_Error(\"unsupported hash type: %S\", type);
+    return 0; /* dummy */
   }
-  return htype;
  }"
 
 (define-cproc make-hash-table (&optional (type::<symbol> (c "sym_eq")))
-  "SCM_RETURN(Scm_MakeHashTable(get_hash_proc(type), NULL, 0));")
+  "SCM_RETURN(Scm_MakeHashTableSimple(get_hash_proc(type), 0));")
 
 (define-cproc hash-table? (obj)
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_HASH_TABLE_P(obj)));")
+  (return <boolean> "SCM_HASH_TABLE_P"))
 
 (define-cproc hash-table-type (hash::<hash-table>)
   "switch (hash->type) {
-   case SCM_HASH_ADDRESS: SCM_RETURN(sym_eq);
+   case SCM_HASH_EQ:      SCM_RETURN(sym_eq);
    case SCM_HASH_EQV:     SCM_RETURN(sym_eqv);
    case SCM_HASH_EQUAL:   SCM_RETURN(sym_equal);
    case SCM_HASH_STRING:  SCM_RETURN(sym_string_eq);
@@ -1107,20 +1106,15 @@
   SCM_RETURN(e->value);")
 
 (define-cproc hash-table-put! (hash::<hash-table> key value)
-  "  Scm_HashTablePut(hash, key, value);
-  SCM_RETURN(SCM_UNDEFINED);")
+  (return <void> "Scm_HashTablePut"))
 
 ;; this is hash-table-remove! in STk.  I use `delete' for
 ;; it's consistent with SRFI-1 and dbm-delete!.
 (define-cproc hash-table-delete! (hash::<hash-table> key)
-  "ScmHashEntry *e = Scm_HashTableDelete(hash, key);
-  SCM_RETURN(SCM_MAKE_BOOL(e != NULL));")
+  (return <boolean> "Scm_HashTableDelete"))
 
 (define-cproc hash-table-exists? (hash::<hash-table> key)
-  " if (Scm_HashTableGet(hash, key) != NULL) 
-    SCM_RETURN(SCM_TRUE);
-  else
-    SCM_RETURN(SCM_FALSE);")
+  (return <boolean> "Scm_HashTableGet"))
 
 "static ScmObj hash_table_update_cc(ScmObj result, void **data)
  {

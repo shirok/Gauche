@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.79 2005-07-28 22:46:42 shirok Exp $
+ *  $Id: read.c,v 1.80 2005-07-29 03:29:21 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1157,7 +1157,7 @@ static ScmObj maybe_uvector(ScmPort *port, char ch, ScmReadContext *ctx)
 
 void Scm__InitRead(void)
 {
-    readCtorData.table = SCM_HASH_TABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS,
+    readCtorData.table = SCM_HASH_TABLE(Scm_MakeHashTable(SCM_HASH_EQ,
                                                           NULL, 0));
     (void)SCM_INTERNAL_MUTEX_INIT(readCtorData.mutex);
     Scm_DefineReaderCtor(SCM_SYM_DEFINE_READER_CTOR,

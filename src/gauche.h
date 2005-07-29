@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.424 2005-07-28 22:46:41 shirok Exp $
+ *  $Id: gauche.h,v 1.425 2005-07-29 03:29:21 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1552,10 +1552,10 @@ SCM_EXTERN ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc,
 
 typedef struct ScmHashEntryRec ScmHashEntry;
 
-typedef ScmHashEntry *(*ScmHashAccessProc)(ScmHashTable*,
-                                           ScmObj, int, ScmObj);
-typedef unsigned long (*ScmHashProc)(ScmObj);
-typedef int (*ScmHashCmpProc)(ScmObj, ScmHashEntry *);
+typedef ScmHashEntry *(*ScmHashAccessProc)(ScmHashTable *ht,
+                                           void *key, int op, void *val);
+typedef unsigned long (*ScmHashProc)(ScmHashTable *ht, void *key);
+typedef int (*ScmHashCmpProc)(ScmHashTable *ht, void *key, ScmHashEntry *e);
 
 struct ScmHashTableRec {
     SCM_HEADER;
@@ -1567,6 +1567,7 @@ struct ScmHashTableRec {
     ScmHashAccessProc accessfn;
     ScmHashProc hashfn;
     ScmHashCmpProc cmpfn;
+    void *data;
 };
 
 #define SCM_HASH_TABLE(obj)   ((ScmHashTable*)(obj))
@@ -1577,23 +1578,25 @@ SCM_CLASS_DECL(Scm_HashTableClass);
 
 /* Hash types */
 enum {
+    /* ScmObj hashtables */
     SCM_HASH_EQ,
     SCM_HASH_EQV,
     SCM_HASH_EQUAL,
     SCM_HASH_STRING,
-    SCM_HASH_GENERAL
+    SCM_HASH_GENERAL,
+
+    /* Raw hashtables */
+    SCM_HASH_WORD,
+    SCM_HASH_MULTIWORD,
+    SCM_HASH_RAW
 };
 
-/* DEPRECATED MACROS - will dissapear soon */
-#define SCM_HASHTABLE       SCM_HASH_TABLE
-#define SCM_HASHTABLEP      SCM_HASH_TABLE_P
-#define SCM_CLASS_HASHTABLE SCM_CLASS_HASH_TABLE
-#define SCM_HASH_ADDRESS    SCM_HASH_EQ
+#define SCM_HASH_TABLE_RAW_P(ht) (SCM_HASH_TABLE(ht)->type >= SCM_HASH_WORD)
 
 /* auxiliary structure; not an ScmObj. */
 struct ScmHashEntryRec {
-    ScmObj key;
-    ScmObj value;
+    void *key;
+    void *value;
     struct ScmHashEntryRec *next;
 };
 
@@ -1603,28 +1606,61 @@ typedef  struct ScmHashIterRec {
     ScmHashEntry *currentEntry;
 } ScmHashIter;
 
-SCM_EXTERN ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
-				    ScmHashCmpProc cmpfn,
-				    unsigned int initSize);
+/* Constructors */
+SCM_EXTERN ScmObj Scm_MakeHashTableSimple(int type, int initSize);
+SCM_EXTERN ScmObj Scm_MakeHashTableMultiWord(int keySize, int initSize);
+SCM_EXTERN ScmObj Scm_MakeHashTableFull(int type,
+                                        ScmHashProc hashfn,
+                                        ScmHashCmpProc cmpfn,
+                                        int initSize,
+                                        void *data);
+
 SCM_EXTERN ScmObj Scm_CopyHashTable(ScmHashTable *tab);
 
-SCM_EXTERN ScmHashEntry *Scm_HashTableGet(ScmHashTable *hash, ScmObj key);
+/* Accessor API: the 'Raw' versions are base ones, to be used for
+   any type of hashtables.  The versions without 'Raw' do checks
+   to make sure the given hashtable is the ScmObj one. */
+SCM_EXTERN ScmHashEntry *Scm_HashTableGetRaw(ScmHashTable *hash, void *key);
+SCM_EXTERN ScmHashEntry *Scm_HashTableAddRaw(ScmHashTable *hash,
+                                             void *key, void *value);
+SCM_EXTERN ScmHashEntry *Scm_HashTablePutRaw(ScmHashTable *hash,
+                                             void *key, void *value);
+SCM_EXTERN ScmHashEntry *Scm_HashTableDeleteRaw(ScmHashTable *hash, void *key);
+
+SCM_EXTERN ScmHashEntry *Scm_HashTableGet(ScmHashTable *hash, void *key);
 SCM_EXTERN ScmHashEntry *Scm_HashTableAdd(ScmHashTable *hash,
-					  ScmObj key, ScmObj value);
+					  void *key, void *value);
 SCM_EXTERN ScmHashEntry *Scm_HashTablePut(ScmHashTable *hash,
-					  ScmObj key, ScmObj value);
-SCM_EXTERN ScmHashEntry *Scm_HashTableDelete(ScmHashTable *hash, ScmObj key);
+					  void *key, void *value);
+SCM_EXTERN ScmHashEntry *Scm_HashTableDelete(ScmHashTable *hash, void *key);
+
 SCM_EXTERN ScmObj Scm_HashTableKeys(ScmHashTable *table);
 SCM_EXTERN ScmObj Scm_HashTableValues(ScmHashTable *table);
-SCM_EXTERN ScmObj Scm_HashTableStat(ScmHashTable *table);
 
+SCM_EXTERN void Scm_HashIterInitRaw(ScmHashTable *hash, ScmHashIter *iter);
 SCM_EXTERN void Scm_HashIterInit(ScmHashTable *hash, ScmHashIter *iter);
 SCM_EXTERN ScmHashEntry *Scm_HashIterNext(ScmHashIter *iter);
 
+/* Miscellaneous utils*/
+SCM_EXTERN ScmObj Scm_HashTableStat(ScmHashTable *table);
+
+/* Hash functions */
 SCM_EXTERN unsigned long Scm_EqHash(ScmObj obj);
 SCM_EXTERN unsigned long Scm_EqvHash(ScmObj obj);
 SCM_EXTERN unsigned long Scm_Hash(ScmObj obj);
 SCM_EXTERN unsigned long Scm_HashString(ScmString *str, unsigned long bound);
+
+/* Compatibility stuff
+   Use of these APIs are deprecated.  They'll go away in a few releases. */
+
+#define SCM_HASHTABLE       SCM_HASH_TABLE
+#define SCM_HASHTABLEP      SCM_HASH_TABLE_P
+#define SCM_CLASS_HASHTABLE SCM_CLASS_HASH_TABLE
+#define SCM_HASH_ADDRESS    SCM_HASH_EQ
+
+SCM_EXTERN ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
+				    ScmHashCmpProc cmpfn,
+				    unsigned int initSize);
 
 /*--------------------------------------------------------
  * WEAK VECTOR & WEAK HASH TABLE

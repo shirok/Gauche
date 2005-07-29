@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.53 2005-07-28 22:46:43 shirok Exp $
+ *  $Id: write.c,v 1.54 2005-07-29 03:29:21 shirok Exp $
  */
 
 #include <stdio.h>
@@ -224,7 +224,7 @@ int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width)
         ctx.limit = width;
     }
     ctx.ncirc = 0;
-    ctx.table = SCM_HASH_TABLE(Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 8));
+    ctx.table = SCM_HASH_TABLE(Scm_MakeHashTable(SCM_HASH_EQ, NULL, 8));
 
     if (width > 0) {
         ScmObj out = Scm_MakeOutputStringPort(TRUE);
@@ -329,7 +329,7 @@ static ScmPort *make_walker_port(void)
                                           
     port = SCM_PORT(Scm_MakeVirtualPort(SCM_CLASS_PORT, SCM_PORT_OUTPUT,
                                         &walker_port_vtable));
-    ht = Scm_MakeHashTable(SCM_HASH_ADDRESS, NULL, 0);
+    ht = Scm_MakeHashTable(SCM_HASH_EQ, NULL, 0);
     port->data = Scm_Cons(SCM_MAKE_INT(0), ht);
     port->flags = SCM_PORT_WALKING;
     return port;

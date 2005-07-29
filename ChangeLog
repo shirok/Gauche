@@ -1,5 +1,8 @@
 2005-07-28  Shiro Kawai  <shiro@acm.org>
 
+	* src/hash.c, src/gauche.h, src/*: rehashed hashtable API to allow
+	  raw C data in keys and values.
+
 	* src/*: code cleanup: replaced SCM_HASHTABLE -> SCM_HASH_TABLE and
 	  SCM_WEAKVECTOR -> SCM_WEAK_VECTOR for naming consistency.
 	  SCM_HASHTABLE remains as alias for a while, since it may be used

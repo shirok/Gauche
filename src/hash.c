@@ -1,7 +1,7 @@
 /*
  * hash.c - hash table implementation
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,12 +30,16 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.33 2005-07-28 22:46:41 shirok Exp $
+ *  $Id: hash.c,v 1.34 2005-07-29 03:29:21 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/class.h"
+
+/*-------------------------------------------------------------
+ * Some macros & utilities
+ */
 
 /* Usually, "shift+add" scheme for string hasing works well.  But
  * I found that it works well if you take the lower bits.
@@ -85,17 +89,154 @@ static unsigned int round2up(unsigned int val)
     return n;
 }
 
+/* In C-level, hash table can be used to contain arbitrary C data.
+   There are some pre-wired hashtables that can restrict the data
+   it holds to ScmObj.  We call such type "ScmObj hashtables", while
+   the other ones "raw hashtables".
+
+   Naturally, raw hashtables are only accessible from C-world; even
+   if it leak out to the Scheme world, you can't access it.
+
+   For the convenience, hash-table accessor API comes in pairs; those
+   who has 'Raw' in the name can access any hashtables, while another
+   one checks whether the given hashtable is an ScmObj hashtable,
+   and rejects if not. */
+
+/* internal utility to reject non-ScmObj hashtables. */
+static void check_scm_hashtable(ScmHashTable *table)
+{
+    if (SCM_HASH_TABLE_RAW_P(table)) {
+        Scm_Error("you can't access the raw hash table ~s from Scheme",
+                  table);        
+    }
+}
+
 /*------------------------------------------------------------
+ * Hash functions
+ */
+
+unsigned long Scm_EqHash(ScmObj obj)
+{
+    unsigned long hashval;
+    ADDRESS_HASH(hashval, obj);
+    return hashval;
+}
+
+unsigned long Scm_EqvHash(ScmObj obj)
+{
+    unsigned long hashval;
+    if (SCM_NUMBERP(obj)) {
+        if (SCM_INTP(obj)) {
+            SMALL_INT_HASH(hashval, SCM_INT_VALUE(obj));
+        } else if (SCM_BIGNUMP(obj)) {
+            int i;
+            unsigned long u = 0;
+            for (i=0; i<SCM_BIGNUM_SIZE(obj); i++) {
+                u += SCM_BIGNUM(obj)->values[i];
+            }
+            SMALL_INT_HASH(hashval, u);
+        } else if (SCM_FLONUMP(obj)) {
+            /* TODO: I'm not sure this is a good hash. */
+            hashval = (unsigned long)(SCM_FLONUM_VALUE(obj)*2654435761UL);
+        } else {
+            /* TODO: I'm not sure this is a good hash. */
+            hashval = (unsigned long)((SCM_COMPLEX_REAL(obj)+SCM_COMPLEX_IMAG(obj))*2654435761UL);
+        }
+    } else {
+        ADDRESS_HASH(hashval, obj);
+    }
+    return hashval;
+}
+
+/* General hash function */
+unsigned long Scm_Hash(ScmObj obj)
+{
+    unsigned long hashval;
+    if (!SCM_PTRP(obj)) {
+        SMALL_INT_HASH(hashval, (unsigned long)obj);
+        return hashval;
+    } else if (SCM_NUMBERP(obj)) {
+        return Scm_EqvHash(obj);
+    } else if (SCM_STRINGP(obj)) {
+        goto string_hash;
+    } else if (SCM_PAIRP(obj)) {
+        unsigned long h = 0, h2;
+        ScmObj cp;
+        SCM_FOR_EACH(cp, obj) {
+            h2 = Scm_Hash(SCM_CAR(cp));
+            h = COMBINE(h, h2);
+        }
+        h2 = Scm_Hash(cp);
+        h = COMBINE(h, h2);
+        return h;
+    } else if (SCM_VECTORP(obj)) {
+        int i;
+        unsigned long h = 0, h2;
+        ScmObj elt;
+        SCM_VECTOR_FOR_EACH(i, elt, obj) {
+            h2 = Scm_Hash(elt);
+            h = COMBINE(h, h2);
+        }
+        return h;
+    } else if (SCM_SYMBOLP(obj)) {
+        obj = SCM_OBJ(SCM_SYMBOL_NAME(obj));
+        goto string_hash;
+    } else if (SCM_KEYWORDP(obj)) {
+        obj = SCM_OBJ(SCM_KEYWORD_NAME(obj));
+        goto string_hash;
+    } else {
+        /* Call specialized object-hash method */
+        ScmObj r = Scm_Apply(SCM_OBJ(&Scm_GenericObjectHash),
+                             SCM_LIST1(obj));
+        if (SCM_INTP(r)) {
+            return (unsigned long)SCM_INT_VALUE(r);
+        }
+        if (SCM_BIGNUMP(r)) {
+            /* NB: Scm_GetUInteger clamps the result to [0, ULONG_MAX],
+               but taking the LSW would give better distribution. */
+            return SCM_BIGNUM(r)->values[0];
+        }
+        Scm_Error("object-hash returned non-integer: %S", r);
+        return 0;               /* dummy */
+    }
+  string_hash:
+    {
+        const char *p;
+        p = SCM_STRING_START(obj);
+        STRING_HASH(hashval, p, SCM_STRING_SIZE(obj));
+        return hashval;
+    }
+}
+
+unsigned long Scm_HashString(ScmString *str, unsigned long modulo)
+{
+    unsigned long hashval;
+    const char *p;
+    p = SCM_STRING_START(str);
+    STRING_HASH(hashval, p, SCM_STRING_SIZE(str));
+    return (hashval % modulo);
+}
+
+/*------------------------------------------------------------
+ * Parameterization
  *
- * Accessor functions
+ * Conceptually hash tables are parameterized by hash function and
+ * compare function.  However, if they are trivial functions, calling
+ * them via function pointers incur overhead.  So we layered the
+ * parameterization.
  *
- *   To accelerate lookup, we use specialized functions for string,
- *   small integer and address hash table.   They are called whenever
- *   hash table needs to be searched.   They take those four arguments:
- * 
+ * For the pre-defined simple hash tables, the calls to the hash and
+ * compare functions are inlined in a single "access" function.
+ * (In this case hashfn is only used for rehashing, and cmpfn is
+ * never used).
+ * For the generic hash tables, the general_access function uses
+ * the info in hashfn and cmpfn fields.
+ *
+ * The accessor function takes four arguments.
+ *
  *     ScmHashTable *table : hash table
- *     ScmObj key          : key
- *     ScmObj value        : value, if the request involves modification.
+ *     void *key           : key
+ *     void *value         : value, if the request involves modification.
  *     int mode            : mode of operation; one of those three:
  *                              HASH_FIND - just try to find the entry
  *                                          with key.  If no entry is found,
@@ -110,7 +251,7 @@ static unsigned int round2up(unsigned int val)
  *                              HASH_DELETE - delete the found entry.
  */
 
-/* CAVEAT: eq?, eqv?, and string=? hash tables are guaranteed not to
+/* NOTE: eq?, eqv?, and string=? hash tables are guaranteed not to
  * throw an error during hash table access (except the case that string=?
  * hash table gets non-string key).  So the caller doesn't need to
  * set unwind handler in case it needs cleanup (like unlocking mutex).
@@ -152,7 +293,7 @@ static ScmHashEntry *insert_entry(ScmHashTable *table,
         
         Scm_HashIterInit(table, &iter);
         while ((f = Scm_HashIterNext(&iter)) != NULL) {
-            unsigned long hashval = table->hashfn(f->key);
+            unsigned long hashval = table->hashfn(table, f->key);
             index = HASH2INDEX(newsize, newbits, hashval);
             f->next = newb[index];
             newb[index] = f;
@@ -179,7 +320,7 @@ static ScmHashEntry *delete_entry(ScmHashTable *table,
  * Accessor function for address.   Used for EQ-type hash.
  */
 static ScmHashEntry *address_access(ScmHashTable *table,
-                                    ScmObj key, int mode, ScmObj value)
+                                    void *key, int mode, void *value)
 {
     unsigned long hashval, index;
     ScmHashEntry *e, *p;
@@ -202,61 +343,47 @@ static ScmHashEntry *address_access(ScmHashTable *table,
     else return insert_entry(table, key, value, index);
 }
 
-static unsigned long address_hash(ScmObj obj)
+static unsigned long address_hash(ScmHashTable *ht, void *obj)
 {
     unsigned long hashval;
     ADDRESS_HASH(hashval, obj);
     return hashval;
 }
 
-static int address_cmp(ScmObj key, ScmHashEntry *e)
-{
-    return (key == e->key ? 0 : -1);
-}
-
 /*
- * Accessor function for eqv-hash
+ * Accessor function for equal and eqv-hash
  */
-static unsigned long eqv_hash(ScmObj obj)
+static unsigned long eqv_hash(ScmHashTable *table, void *key)
 {
-    unsigned long hashval;
-    if (SCM_NUMBERP(obj)) {
-        if (SCM_INTP(obj)) {
-            SMALL_INT_HASH(hashval, SCM_INT_VALUE(obj));
-        } else if (SCM_BIGNUMP(obj)) {
-            int i;
-            unsigned long u = 0;
-            for (i=0; i<SCM_BIGNUM_SIZE(obj); i++) {
-                u += SCM_BIGNUM(obj)->values[i];
-            }
-            SMALL_INT_HASH(hashval, u);
-        } else if (SCM_FLONUMP(obj)) {
-            /* TODO: I'm not sure this is a good hash. */
-            hashval = (unsigned long)(SCM_FLONUM_VALUE(obj)*2654435761UL);
-        } else {
-            /* TODO: I'm not sure this is a good hash. */
-            hashval = (unsigned long)((SCM_COMPLEX_REAL(obj)+SCM_COMPLEX_IMAG(obj))*2654435761UL);
-        }
-    } else {
-        ADDRESS_HASH(hashval, obj);
-    }
-    return hashval;
+    return Scm_EqvHash(SCM_OBJ(key));
 }
 
-static int eqv_cmp(ScmObj key, ScmHashEntry *e)
+static int eqv_cmp(ScmHashTable *table, void *key, ScmHashEntry *e)
 {
-    return (Scm_EqvP(key, e->key) ? 0 : -1);
+    return (Scm_EqvP(SCM_OBJ(key), e->key) ? 0 : -1);
 }
+
+static unsigned long equal_hash(ScmHashTable *table, void *key)
+{
+    return Scm_Hash(SCM_OBJ(key));
+}
+
+static int equal_cmp(ScmHashTable *table, void *key, ScmHashEntry *e)
+{
+    return (Scm_EqualP(SCM_OBJ(key), SCM_OBJ(e->key))? 0 : -1);
+}
+
 
 /*
  * Accessor function for string type.
  */
-static ScmHashEntry *string_access(ScmHashTable *table, ScmObj key,
-                                   int mode, ScmObj value)
+static ScmHashEntry *string_access(ScmHashTable *table, void *k,
+                                   int mode, void *v)
 {
     unsigned long hashval, index;
     int size;
     const char *s;
+    ScmObj key = SCM_OBJ(k), value = SCM_OBJ(v);
     ScmHashEntry *e, *p;
     
     if (!SCM_STRINGP(key)) {
@@ -269,7 +396,7 @@ static ScmHashEntry *string_access(ScmHashTable *table, ScmObj key,
     index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
 
     for (e = table->buckets[index], p = NULL; e; p = e, e = e->next) {
-        ScmObj ee = e->key;
+        ScmObj ee = SCM_OBJ(e->key);
         int eesize = SCM_STRING_SIZE(ee);
         if (size == eesize
             && memcmp(SCM_STRING_START(key), SCM_STRING_START(ee), eesize) == 0){
@@ -286,42 +413,73 @@ static ScmHashEntry *string_access(ScmHashTable *table, ScmObj key,
     else return insert_entry(table, key, value, index);
 }
 
-static unsigned long string_hash(ScmObj obj)
+static unsigned long string_hash(ScmHashTable *table, void *key)
 {
     unsigned long hashval;
     const char *p;
-    
-    if (!SCM_STRINGP(obj)) return 0;
-    p = SCM_STRING_START(obj);
-    STRING_HASH(hashval, p, SCM_STRING_SIZE(obj));
+    p = SCM_STRING_START(key);
+    STRING_HASH(hashval, p, SCM_STRING_SIZE(key));
     return hashval;
 }
 
-static int string_cmp(ScmObj key, ScmHashEntry *e)
+/*
+ * Accessor function for multiword raw hashtable.
+ * Key points to an array of N words.
+ */
+static unsigned long multiword_hash(ScmHashTable *table, void *key)
 {
-    ScmObj kk = e->key;
-    int siz = SCM_STRING_SIZE(kk);
-    
-    if (!SCM_STRINGP(key)) return -1;
-    if (SCM_STRING_SIZE(key) != siz) return -1;
-    return memcmp(SCM_STRING_START(key), SCM_STRING_START(kk), siz);
+    ScmWord keysize = (ScmWord)table->data;
+    ScmWord *keyarray = (ScmWord*)key;
+    unsigned long h = 0, h1;
+    int i;
+    for (i=0; i<keysize; i++) {
+        ADDRESS_HASH(h1, keyarray[i]);
+        h = COMBINE(h, h1);
+    }
+    return h;
 }
+
+static ScmHashEntry *multiword_access(ScmHashTable *table, void *k,
+                                      int mode, void *v)
+{
+    unsigned long hashval, index;
+    ScmWord keysize = (ScmWord)table->data;
+    ScmHashEntry *e, *p;
+    
+    hashval = multiword_hash(table, k);
+    index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
+
+    for (e = table->buckets[index], p = NULL; e; p = e, e = e->next) {
+        if (memcmp(k, e->key, keysize*sizeof(ScmWord)) == 0) {
+            if (mode == HASH_FIND || mode == HASH_ADD) return e;
+            if (mode == HASH_DELETE) return delete_entry(table, e, p, index);
+            else {
+                e->value = v;
+                return e;
+            }
+        }
+    }
+
+    if (mode == HASH_FIND || mode == HASH_DELETE) return NULL;
+    else return insert_entry(table, k, v, index);
+}
+
 
 /*
  * Accessor function for general case
  *    (hashfn and cmpfn are given by user)
  */
-static ScmHashEntry *general_access(ScmHashTable *table, ScmObj key,
-                                    int mode, ScmObj value)
+static ScmHashEntry *general_access(ScmHashTable *table, void *key,
+                                    int mode, void *value)
 {
     unsigned long hashval, index;
     ScmHashEntry *e, *p;
 
-    hashval = table->hashfn(key);
+    hashval = table->hashfn(table, key);
     index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
     
     for (e = table->buckets[index], p = NULL; e; p = e, e = e->next) {
-        if (table->cmpfn(key, e) == 0) {
+        if (table->cmpfn(table, key, e) == 0) {
             if (mode == HASH_FIND || mode == HASH_ADD) return e;
             if (mode == HASH_DELETE) return delete_entry(table, e, p, index);
             else {
@@ -335,63 +493,6 @@ static ScmHashEntry *general_access(ScmHashTable *table, ScmObj key,
     else return insert_entry(table, key, value, index);
 }
 
-/* generic scheme object hash.
-   note that this doesn't stop if the structure is circular */
-static unsigned long general_hash(ScmObj obj)
-{
-    if (!SCM_PTRP(obj)) {
-        unsigned long hv;
-        SMALL_INT_HASH(hv, (unsigned long)obj);
-        return hv;
-    } else if (SCM_NUMBERP(obj)) {
-        return eqv_hash(obj);
-    } else if (SCM_STRINGP(obj)) {
-        return string_hash(obj);
-    } else if (SCM_PAIRP(obj)) {
-        unsigned long h = 0, h2;
-        ScmObj cp;
-        SCM_FOR_EACH(cp, obj) {
-            h2 = general_hash(SCM_CAR(cp));
-            h = COMBINE(h, h2);
-        }
-        h2 = general_hash(cp);
-        h = COMBINE(h, h2);
-        return h;
-    } else if (SCM_VECTORP(obj)) {
-        int i;
-        unsigned long h = 0, h2;
-        ScmObj elt;
-        SCM_VECTOR_FOR_EACH(i, elt, obj) {
-            h2 = general_hash(elt);
-            h = COMBINE(h, h2);
-        }
-        return h;
-    } else if (SCM_SYMBOLP(obj)) {
-        return string_hash(SCM_OBJ(SCM_SYMBOL_NAME(obj)));
-    } else if (SCM_KEYWORDP(obj)) {
-        return string_hash(SCM_OBJ(SCM_KEYWORD_NAME(obj)));
-    } else {
-        /* Call specialized object-hash method */
-        ScmObj r = Scm_Apply(SCM_OBJ(&Scm_GenericObjectHash),
-                             SCM_LIST1(obj));
-        if (SCM_INTP(r)) {
-            return (unsigned long)SCM_INT_VALUE(r);
-        }
-        if (SCM_BIGNUMP(r)) {
-            /* NB: Scm_GetUInteger clamps the result to [0, ULONG_MAX],
-               but taking the LSW would give better distribution. */
-            return SCM_BIGNUM(r)->values[0];
-        }
-        Scm_Error("object-hash returned non-integer: %S", r);
-        return 0;               /* dummy */
-    }
-}
-
-static int general_cmp(ScmObj key, ScmHashEntry *e)
-{
-    return (Scm_EqualP(key, e->key)? 0 : -1);
-}
-
 /*---------------------------------------------------------
  * Constructor
  */
@@ -400,15 +501,17 @@ static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 SCM_DEFINE_BUILTIN_CLASS(Scm_HashTableClass, hash_print, NULL, NULL, NULL,
                          SCM_CLASS_COLLECTION_CPL);
 
-
-ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
-                         ScmHashCmpProc cmpfn,
-                         unsigned int initSize)
+static ScmObj make_hash_table(int type,
+                              ScmHashAccessProc accessfn,
+                              ScmHashProc hashfn,
+                              ScmHashCmpProc cmpfn,
+                              unsigned int initSize,
+                              void *data)
 {
     ScmHashTable *z;
     ScmHashEntry **b;
     int i;
-    
+
     if (initSize != 0) initSize = round2up(initSize);
     else initSize = DEFAULT_NUM_BUCKETS;
 
@@ -418,57 +521,104 @@ ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
     z->buckets = b;
     z->numBuckets = initSize;
     z->numEntries = 0;
+    z->type = type;
+    z->accessfn = accessfn;
+    z->hashfn = hashfn;
+    z->cmpfn = cmpfn;
+    z->data = data;
     for (i=initSize, z->numBucketsLog2=0; i > 1; i /= 2) {
         z->numBucketsLog2++;
     }
-
     for (i=0; i<initSize; i++) z->buckets[i] = NULL;
-    
-    if (hashfn == (ScmHashProc)SCM_HASH_ADDRESS) {
-        z->type = SCM_HASH_ADDRESS;
-        z->accessfn = address_access;
-        z->hashfn = address_hash;
-        z->cmpfn = address_cmp;
-    } else if (hashfn == (ScmHashProc)SCM_HASH_EQV) {
-        z->type = SCM_HASH_EQV;
-        z->accessfn = general_access;
-        z->hashfn = eqv_hash;
-        z->cmpfn =  eqv_cmp;
-    } else if (hashfn == (ScmHashProc)SCM_HASH_EQUAL) {
-        z->type = SCM_HASH_EQUAL;
-        z->accessfn = general_access;
-        z->hashfn = general_hash;
-        z->cmpfn =  general_cmp;
-    } else if (hashfn == (ScmHashProc)SCM_HASH_STRING) {
-        z->type = SCM_HASH_STRING;
-        z->accessfn = string_access;
-        z->hashfn = string_hash;
-        z->cmpfn =  string_cmp;
-    } else {
-        z->type = SCM_HASH_GENERAL;
-        z->accessfn = general_access;
-        z->hashfn = hashfn;
-        z->cmpfn = (cmpfn ? cmpfn : general_cmp);
-    }
     return SCM_OBJ(z);
+}
+
+ScmObj Scm_MakeHashTableSimple(int type, int initSize)
+{
+    switch (type) {
+    case SCM_HASH_EQ:
+        return make_hash_table(SCM_HASH_EQ, address_access, address_hash,
+                               NULL, initSize, NULL);
+    case SCM_HASH_EQV:
+        return make_hash_table(SCM_HASH_EQV, general_access, eqv_hash,
+                               eqv_cmp, initSize, NULL);
+    case SCM_HASH_EQUAL:
+        return make_hash_table(SCM_HASH_EQV, general_access, equal_hash,
+                               equal_cmp, initSize, NULL);
+    case SCM_HASH_STRING:
+        return make_hash_table(SCM_HASH_EQV, string_access, string_hash,
+                               NULL, initSize, NULL);
+    case SCM_HASH_WORD:
+        return make_hash_table(SCM_HASH_WORD, address_access, address_hash,
+                               NULL, initSize, NULL);
+    default:    
+        Scm_Error("[internal error]: wrong TYPE argument passed to Scm_MakeHashTableSimple: %d", type);
+        return SCM_UNDEFINED;   /* dummy */
+    }
+}
+
+ScmObj Scm_MakeHashTableMultiWord(int keysize, int initsize)
+{
+    return make_hash_table(SCM_HASH_MULTIWORD, multiword_access,
+                           multiword_hash, NULL, initsize,
+                           (void*)SCM_WORD(keysize));
+}
+
+ScmObj Scm_MakeHashTableFull(int type, ScmHashProc hashfn,
+                             ScmHashCmpProc cmpfn, int initSize, void *data)
+{
+    switch (type) {
+    case SCM_HASH_GENERAL:;
+    case SCM_HASH_RAW:
+        return make_hash_table(type, general_access, hashfn,
+                               cmpfn, initSize, data);
+    default:    
+        Scm_Error("[internal error]: wrong TYPE argument passed to Scm_MakeHashTableFull: %d", type);
+        return SCM_UNDEFINED;   /* dummy */
+    }
+}
+
+/* Legacy constructor.  DEPRECATED.  Will go away soon. */
+ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
+                         ScmHashCmpProc cmpfn,
+                         unsigned int initSize)
+{
+    if (hashfn == (ScmHashProc)SCM_HASH_EQ) {
+        return Scm_MakeHashTableSimple(SCM_HASH_EQ, initSize);
+    } else if (hashfn == (ScmHashProc)SCM_HASH_EQV) {
+        return Scm_MakeHashTableSimple(SCM_HASH_EQV, initSize);
+    } else if (hashfn == (ScmHashProc)SCM_HASH_EQUAL) {
+        return Scm_MakeHashTableSimple(SCM_HASH_EQUAL, initSize);
+    } else if (hashfn == (ScmHashProc)SCM_HASH_STRING) {
+        return Scm_MakeHashTableSimple(SCM_HASH_STRING, initSize);
+    } else {
+        return Scm_MakeHashTableFull(SCM_HASH_GENERAL,
+                                     hashfn, cmpfn, initSize, NULL);
+    }
 }
 
 /*
  * iteration
  */
 
-void Scm_HashIterInit(ScmHashTable *hash, ScmHashIter *iter)
+void Scm_HashIterInitRaw(ScmHashTable *table, ScmHashIter *iter)
 {
     int i;
-    iter->table = hash;
-    for (i=0; i<hash->numBuckets; i++) {
-        if (hash->buckets[i]) {
+    iter->table = table;
+    for (i=0; i<table->numBuckets; i++) {
+        if (table->buckets[i]) {
             iter->currentBucket = i;
-            iter->currentEntry = hash->buckets[i];
+            iter->currentEntry = table->buckets[i];
             return;
         }
     }
     iter->currentEntry = NULL;
+}
+
+void Scm_HashIterInit(ScmHashTable *table, ScmHashIter *iter)
+{
+    check_scm_hashtable(table);
+    Scm_HashIterInitRaw(table, iter);
 }
 
 ScmHashEntry *Scm_HashIterNext(ScmHashIter *iter)
@@ -495,25 +645,47 @@ ScmHashEntry *Scm_HashIterNext(ScmHashIter *iter)
  * Search
  */
 
-ScmHashEntry *Scm_HashTableGet(ScmHashTable *table, ScmObj key)
+ScmHashEntry *Scm_HashTableGetRaw(ScmHashTable *table, void *key)
 {
     return table->accessfn(table, key, HASH_FIND, SCM_FALSE);
 }
 
-ScmHashEntry *Scm_HashTableAdd(ScmHashTable *table,
-                               ScmObj key, ScmObj value)
+ScmHashEntry *Scm_HashTableAddRaw(ScmHashTable *table, void *key, void *value)
 {
     return table->accessfn(table, key, HASH_ADD, value);
 }
 
-ScmHashEntry *Scm_HashTablePut(ScmHashTable *table,
-                               ScmObj key, ScmObj value)
+ScmHashEntry *Scm_HashTablePutRaw(ScmHashTable *table, void *key, void *value)
 {
     return table->accessfn(table, key, HASH_UPDATE, value);
 }
 
-ScmHashEntry *Scm_HashTableDelete(ScmHashTable *table, ScmObj key)
+ScmHashEntry *Scm_HashTableDeleteRaw(ScmHashTable *table, void *key)
 {
+    return table->accessfn(table, key, HASH_DELETE, SCM_FALSE);
+}
+
+ScmHashEntry *Scm_HashTableGet(ScmHashTable *table, void *key)
+{
+    check_scm_hashtable(table);
+    return table->accessfn(table, key, HASH_FIND, SCM_FALSE);
+}
+
+ScmHashEntry *Scm_HashTableAdd(ScmHashTable *table, void *key, void *value)
+{
+    check_scm_hashtable(table);
+    return table->accessfn(table, key, HASH_ADD, value);
+}
+
+ScmHashEntry *Scm_HashTablePut(ScmHashTable *table, void *key, void *value)
+{
+    check_scm_hashtable(table);
+    return table->accessfn(table, key, HASH_UPDATE, value);
+}
+
+ScmHashEntry *Scm_HashTableDelete(ScmHashTable *table, void *key)
+{
+    check_scm_hashtable(table);
     return table->accessfn(table, key, HASH_DELETE, SCM_FALSE);
 }
 
@@ -526,6 +698,7 @@ ScmObj Scm_HashTableKeys(ScmHashTable *table)
     ScmHashIter iter;
     ScmHashEntry *e;
     ScmObj h = SCM_NIL, t = SCM_NIL;
+    check_scm_hashtable(table);
     Scm_HashIterInit(table, &iter);
     while ((e = Scm_HashIterNext(&iter)) != NULL) {
         SCM_APPEND1(h, t, e->key);
@@ -538,6 +711,7 @@ ScmObj Scm_HashTableValues(ScmHashTable *table)
     ScmHashIter iter;
     ScmHashEntry *e;
     ScmObj h = SCM_NIL, t = SCM_NIL;
+    check_scm_hashtable(table);
     Scm_HashIterInit(table, &iter);
     while ((e = Scm_HashIterNext(&iter)) != NULL) {
         SCM_APPEND1(h, t, e->value);
@@ -579,11 +753,17 @@ static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     char *str;
 
     switch (ht->type) {
-    case (int)SCM_HASH_ADDRESS: str = "eq?"; break;
-    case (int)SCM_HASH_EQV:     str = "eqv?"; break;
-    case (int)SCM_HASH_EQUAL:   str = "equal?"; break;
-    case (int)SCM_HASH_STRING:  str = "string=?"; break;
-    default: str = "general"; break;
+    case SCM_HASH_EQ:      str = "eq?"; break;
+    case SCM_HASH_EQV:     str = "eqv?"; break;
+    case SCM_HASH_EQUAL:   str = "equal?"; break;
+    case SCM_HASH_STRING:  str = "string=?"; break;
+    case SCM_HASH_GENERAL: str = "general"; break;
+
+    case SCM_HASH_WORD:      str = "raw word"; break;
+    case SCM_HASH_MULTIWORD: str = "raw multi-word"; break;
+    case SCM_HASH_RAW:       str = "raw general"; break;
+
+    default: Scm_Panic("something wrong with a hash table");
     }
 
 #if 0
@@ -602,28 +782,3 @@ static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 #endif
 }
 
-/*
- * Exposed hash functions
- */
-
-unsigned long Scm_Hash(ScmObj obj)
-{
-    return general_hash(obj);
-}
-
-unsigned long Scm_HashString(ScmString *str, unsigned long modulo)
-{
-    u_long hashval;
-    hashval = string_hash(SCM_OBJ(str));
-    return (hashval % modulo);
-}
-
-unsigned long Scm_EqHash(ScmObj obj)
-{
-    return address_hash(obj);
-}
-
-unsigned long Scm_EqvHash(ScmObj obj)
-{
-    return eqv_hash(obj);
-}
