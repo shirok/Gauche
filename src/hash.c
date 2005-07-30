@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.35 2005-07-29 10:55:29 shirok Exp $
+ *  $Id: hash.c,v 1.36 2005-07-30 06:10:02 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -360,7 +360,7 @@ static unsigned long eqv_hash(ScmHashTable *table, void *key)
 
 static int eqv_cmp(ScmHashTable *table, void *key, ScmHashEntry *e)
 {
-    return (Scm_EqvP(SCM_OBJ(key), e->key) ? 0 : -1);
+    return Scm_EqvP(SCM_OBJ(key), e->key);
 }
 
 static unsigned long equal_hash(ScmHashTable *table, void *key)
@@ -370,7 +370,7 @@ static unsigned long equal_hash(ScmHashTable *table, void *key)
 
 static int equal_cmp(ScmHashTable *table, void *key, ScmHashEntry *e)
 {
-    return (Scm_EqualP(SCM_OBJ(key), SCM_OBJ(e->key))? 0 : -1);
+    return Scm_EqualP(SCM_OBJ(key), SCM_OBJ(e->key));
 }
 
 
@@ -479,7 +479,7 @@ static ScmHashEntry *general_access(ScmHashTable *table, void *key,
     index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
     
     for (e = table->buckets[index], p = NULL; e; p = e, e = e->next) {
-        if (table->cmpfn(table, key, e) == 0) {
+        if (table->cmpfn(table, key, e)) {
             if (mode == HASH_FIND || mode == HASH_ADD) return e;
             if (mode == HASH_DELETE) return delete_entry(table, e, p, index);
             else {
@@ -501,7 +501,8 @@ static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 SCM_DEFINE_BUILTIN_CLASS(Scm_HashTableClass, hash_print, NULL, NULL, NULL,
                          SCM_CLASS_COLLECTION_CPL);
 
-static ScmObj make_hash_table(int type,
+static ScmObj make_hash_table(ScmClass *klass,
+                              int type,
                               ScmHashAccessProc accessfn,
                               ScmHashProc hashfn,
                               ScmHashCmpProc cmpfn,
@@ -517,7 +518,7 @@ static ScmObj make_hash_table(int type,
 
     b = SCM_NEW_ARRAY(ScmHashEntry*, initSize);
     z = SCM_NEW(ScmHashTable);
-    SCM_SET_CLASS(z, SCM_CLASS_HASH_TABLE);
+    SCM_SET_CLASS(z, klass);
     z->buckets = b;
     z->numBuckets = initSize;
     z->numEntries = 0;
@@ -537,19 +538,24 @@ ScmObj Scm_MakeHashTableSimple(int type, int initSize)
 {
     switch (type) {
     case SCM_HASH_EQ:
-        return make_hash_table(SCM_HASH_EQ, address_access, address_hash,
+        return make_hash_table(SCM_CLASS_HASH_TABLE, SCM_HASH_EQ,
+                               address_access, address_hash,
                                NULL, initSize, NULL);
     case SCM_HASH_EQV:
-        return make_hash_table(SCM_HASH_EQV, general_access, eqv_hash,
+        return make_hash_table(SCM_CLASS_HASH_TABLE, SCM_HASH_EQV,
+                               general_access, eqv_hash,
                                eqv_cmp, initSize, NULL);
     case SCM_HASH_EQUAL:
-        return make_hash_table(SCM_HASH_EQV, general_access, equal_hash,
+        return make_hash_table(SCM_CLASS_HASH_TABLE, SCM_HASH_EQV,
+                               general_access, equal_hash,
                                equal_cmp, initSize, NULL);
     case SCM_HASH_STRING:
-        return make_hash_table(SCM_HASH_EQV, string_access, string_hash,
+        return make_hash_table(SCM_CLASS_HASH_TABLE, SCM_HASH_EQV,
+                               string_access, string_hash,
                                NULL, initSize, NULL);
     case SCM_HASH_WORD:
-        return make_hash_table(SCM_HASH_WORD, address_access, address_hash,
+        return make_hash_table(SCM_CLASS_HASH_TABLE, SCM_HASH_WORD,
+                               address_access, address_hash,
                                NULL, initSize, NULL);
     default:    
         Scm_Error("[internal error]: wrong TYPE argument passed to Scm_MakeHashTableSimple: %d", type);
@@ -559,18 +565,24 @@ ScmObj Scm_MakeHashTableSimple(int type, int initSize)
 
 ScmObj Scm_MakeHashTableMultiWord(int keysize, int initsize)
 {
-    return make_hash_table(SCM_HASH_MULTIWORD, multiword_access,
-                           multiword_hash, NULL, initsize,
-                           (void*)SCM_WORD(keysize));
+    return make_hash_table(SCM_CLASS_HASH_TABLE, SCM_HASH_MULTIWORD,
+                           multiword_access, multiword_hash,
+                           NULL, initsize, (void*)SCM_WORD(keysize));
 }
 
-ScmObj Scm_MakeHashTableFull(int type, ScmHashProc hashfn,
+ScmObj Scm_MakeHashTableFull(ScmClass *klass, int type, ScmHashProc hashfn,
                              ScmHashCmpProc cmpfn, int initSize, void *data)
 {
+    if (!SCM_EQ(klass, SCM_CLASS_HASH_TABLE)) {
+        if (!Scm_SubtypeP(klass, SCM_CLASS_HASH_TABLE)) {
+            Scm_Error("[internal error]: non-hash-table class is given to Scm_MakeHashTableFull: %S", klass);
+        }
+    }
+
     switch (type) {
     case SCM_HASH_GENERAL:;
     case SCM_HASH_RAW:
-        return make_hash_table(type, general_access, hashfn,
+        return make_hash_table(klass, type, general_access, hashfn,
                                cmpfn, initSize, data);
     default:    
         Scm_Error("[internal error]: wrong TYPE argument passed to Scm_MakeHashTableFull: %d", type);
@@ -592,7 +604,7 @@ ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
     } else if (hashfn == (ScmHashProc)SCM_HASH_STRING) {
         return Scm_MakeHashTableSimple(SCM_HASH_STRING, initSize);
     } else {
-        return Scm_MakeHashTableFull(SCM_HASH_GENERAL,
+        return Scm_MakeHashTableFull(SCM_CLASS_HASH_TABLE, SCM_HASH_GENERAL,
                                      hashfn, cmpfn, initSize, NULL);
     }
 }

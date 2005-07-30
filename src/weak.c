@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: weak.c,v 1.10 2005-07-28 22:46:43 shirok Exp $
+ *  $Id: weak.c,v 1.11 2005-07-30 06:10:02 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -139,257 +139,104 @@ ScmObj Scm_WeakVectorSet(ScmWeakVector *v, int index, ScmObj value)
 
 /*=============================================================
  * Weak hash table
- *
- *  A weak hash table is realized by combination of a normal hash 
- *  table and a weak vector.  The normal hash table keeps an index
- *  to the weak vector, and the weak vector keeps weak pointer to
- *  the actual object.
- *
- *  This two-level structure is chosen so that the weak pointer
- *  logic won't mess up the existing hash-table API.  Merging
- *  weak hash to the existing hash table would have required client
- *  code to treat ScmHashEntry differently whether the hash table
- *  is weak or not, so integration wouldn't make things cleaner.
- *
- *  Unused entries of the backing storage weak vector is chained to
- *  a free list, which one entry contains Scheme integer of the index
- *  of the next entry.  The last entry contains Scheme integer -1.
- *
- *
- *                             backing storage
- *                                +----------+
- *   freeList : 1              ->0|    ---------> value of entry #1
- *                            /   +----------+
- *                           /   1|    3     |
- *   hash entry#0 : 2 -\    /     +----------+
- *                      \--/---->2|    ---------> value of entry #2
- *                        /       +----------+
- *   hash entry#1 : 0 ---/       3|    4     |
- *                                +----------+
- *                               4|   -1     |  : end of freeList
- *   hash entry#3 : 5 -\          +----------+
- *                      \------->5|    ---------> value of entry #3
- *                                +----------+
- *                                :          :
- *
- *  The backing storage entry will be replaced by NULL if the object
- *  pointed from it is GC-ed.  We don't use Scm_WeakVectorRef and
- *  Scm_WeakVectorSet to access the backing storage, since those APIs
- *  hide the nullified pointer.  However we do rely on weak vector's
- *  constructor and finalizer.
  */
+
+static ScmClass *weakhash_cpl[] = {
+    SCM_CLASS_STATIC_PTR(Scm_HashTableClass),
+    SCM_CLASS_STATIC_PTR(Scm_CollectionClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+    NULL
+};
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_WeakHashTableClass, NULL,
                          NULL, NULL, NULL,
-                         SCM_CLASS_COLLECTION_CPL);
+                         weakhash_cpl);
 
-#if 0                           /* not working yet */
+#if 0
+struct weakhash_rec {
+    int weakness;
+};
 
-#define BACKING_STORAGE_UNIT  256
+#define WEAK_CHECK(wh)                                                  \
+    do {                                                                \
+        if (!SCM_ISA(wh, SCM_CLASS_WEAK_HASH_TABLE)) {                  \
+            Scm_Error("weak hash table required, but got %S", wh);      \
+        }                                                               \
+    } while (0)
 
-ScmObj Scm_MakeWeakHashTable(ScmHashProc hashfn,
-                             ScmHashCmpProc cmpfn,
-                             unsigned int initSize)
+static int get_weakness(ScmHashTable *wh)
+{
+    WEAK_CHECK(wh);
+    return ((struct weakhash_rec*)wh->data)->weakness;
+}
+
+static unsigned long weak_hash(ScmHashTable *wh, void *key)
+{
+    if (((struct weakhash_rec*)wh->data)->weakness & SCM_HASH_WEAK_KEY) {
+        return Scm_EqHash(SCM_OBJ(((void**)key)[0]));
+    } else {
+        return Scm_EqHash(SCM_OBJ(key));
+    }
+}
+
+static int weak_hash_cmp(ScmHashTable *wh, void *key, ScmHashEntry *e)
+{
+    if (((struct weakhash_rec*)wh->data)->weakness & SCM_HASH_WEAK_KEY) {
+        return (key == ((void**)(e->key))[0]);
+    } else {
+        return (key == e->key);
+    }
+}
+
+ScmObj Scm_MakeWeakHashTable(int hashtype, int weakness, unsigned int initSize)
 {
     ScmHashTable *ht;
-    ScmWeakVector *wv;
-    ScmWeakHashTable *wh;
-    ScmObj *ptrs;
-    int vsize, i;
+    struct weakhash_rec *data = SCM_NEW(struct weakhash_rec);
+    data->weakness = weakness;
+    ht = Scm_MakeHashTableFull(SCM_CLASS_WEAK_HASH_TABLE, SCM_HASH_RAW,
+                               weak_hash, weak_hash_cmp, initSize, data);
+    return SCM_OBJ(ht);
+}
 
-    if (initSize == 0) initSize = BACKING_STORAGE_UNIT;
-    ht = SCM_HASH_TABLE(Scm_MakeHashTable(hashfn, cmpfn, initSize));
-    vsize = (initSize+BACKING_STORAGE_UNIT-1)&(~(BACKING_STORAGE_UNIT-1));
-    wv = SCM_WEAK_VECTOR(Scm_MakeWeakVector(vsize));
-    wh = SCM_NEW(ScmWeakHashTable);
-    
-    SCM_SET_CLASS(wh, SCM_CLASS_WEAK_HASH_TABLE);
-    wh->hashTable = ht;
-    wh->backingStorage = wv;
-    wh->freeList = 0;
-    wh->bsSize = vsize;
+void Scm_WeakHashTablePutRaw(ScmHashTable *wh, void *key, void *value)
+{
+    int weakness = get_weakness(wh);
+    ScmHashEntry *e;
 
-    ptrs = (ScmObj*)wv->pointers;
-    for (i=0; i<vsize-1; i++) {
-        ptrs[i] = SCM_MAKE_INT(i+1);
+    if (weakness & SCM_HASH_WEAK_KEY) {
+        void *dummy[1];
+        dummy[0] = key;
+        e = Scm_HashTableGetRaw(wh, (void*)dummy, NULL);
+    } else {
+        e = Scm_HashTableGetRaw(wh, key, NULL);
     }
-    ptrs[i] = SCM_MAKE_INT(-1);
     
-    Scm_Printf(SCM_CURERR, "bssize=%d\n", wh->backingStorage->size);
-    return SCM_OBJ(wh);
-}
-
-/* Register/unregister weak ptr */
-static void wh_register_weak(ScmWeakHashTable *wh, int index, ScmObj value)
-{
-    ScmObj *ptrs = (ScmObj*)wh->backingStorage->pointers;
-    GC_general_register_disappearing_link((GC_PTR*)&ptrs[index],
-                                          (GC_PTR)value);
-}
-
-static void wh_unregister_weak(ScmWeakHashTable *wh, int index)
-{
-    ScmObj *ptrs = (ScmObj*)wh->backingStorage->pointers;
-    GC_unregister_disappearing_link((GC_PTR*)&ptrs[index]);
-}
-
-/* Push index-th slot into the free list */
-static void wh_free_entry(ScmWeakHashTable *wh, int index)
-{
-    ScmObj *ptrs = (ScmObj*)wh->backingStorage->pointers;
-    if (ptrs[index] == NULL || SCM_PTRP(ptrs[index])) {
-        wh_unregister_weak(wh, index);
+    if (weakness & SCM_HASH_WEAK_VALUE) {
+        void **cell = SCM_NEW_ATOMIC(void **);
+        cell[0] = value;
+        GC_general_register_disappearing_link((GC_PTR*)cell, (GC_PTR)value);
+        vv = (void *)cell;
+    } else {
+        vv = value;
     }
-    ptrs[index] = SCM_MAKE_INT(wh->freeList);
-    wh->freeList = index;
-}
 
-/* Scan backingStorage */
-/* NB: gc can run on another thread during this operation.  It should
-   be OK, since it would replace the entry to NULL atomically; we'll miss
-   the newly nullified entry in the already-scanned area, but that will
-   be catched by the next call of wh_collect_freed().
-   We don't cache wh->wv, however, since the other thread may extend
-   the hash table and change the entry.  It is a program error, but we
-   don't want to crash the system. */
-static void wh_collect_freed(ScmWeakHashTable *wh)
-{
-    int i;
-    ScmObj *ptrs = (ScmObj*)wh->backingStorage->pointers;
-    for (i=0; i<wh->bsSize; i++) {
-        if (ptrs[i] == NULL) {
-            wh_unregister_weak(wh, i);
-            ptrs[i] = SCM_MAKE_INT(wh->freeList);
-            wh->freeList = i;
+    if (e->value) {
+        /* We already had an entry */
+        if (weakness & SCM_HASH_WEAK_VALUE) {
+            GC_unregister_disapperaing_link((GC_PTR*)e->value);
+            e->value = value;
+            GC_general_register_disappearing_link((GC_PTR*)cell,
+                                                  (GC_PTR)value);
+        } else {
+            e->value = value;
+        }
+    } else {
+        void *kk, *vv;
+        if (weakness && SCM_HASH_WEAK_KEY) {
+            void **cell = SCM_NEW_ATOMIC(void **);
+            cell[0] = key;
+            
         }
     }
 }
-
-/* Returns the index into the backing storage that can be used
-   to contain a new entry.  If the vector is full, we reallocate
-   the new vector. */
-static int wh_get_free_slot(ScmWeakHashTable *wh)
-{
-    int index, i, newsize;
-    ScmWeakVector *newwv;
-    ScmObj *dst;
-    ScmObj *ptr = (ScmObj*)wh->backingStorage->pointers;
-    
-    if (wh->freeList >= 0) {
-        index = wh->freeList;
-        SCM_ASSERT(SCM_INTP(ptr[index]));
-        wh->freeList = SCM_INT_VALUE(ptr[index]);
-        SCM_ASSERT(wh->freeList>=-1 && wh->freeList<wh->backingStorage->size);
-        return index;
-    }
-    /* collect NULLified entry and try again */
-    wh_collect_freed(wh);
-    if (wh->freeList >= 0) {
-        index = wh->freeList;
-        SCM_ASSERT(SCM_INTP(ptr[index]));
-        wh->freeList = SCM_INT_VALUE(index);
-        SCM_ASSERT(wh->freeList>=-1 && wh->freeList<wh->backingStorage->size);
-        return index;
-    }
-    /* the backing storage is full.  realloc the vector. */
-    newsize = wh->bsSize + BACKING_STORAGE_UNIT;
-    newwv = SCM_WEAK_VECTOR(Scm_MakeWeakVector(newsize));
-    
-    index = wh->bsSize;
-    dst = (ScmObj*)newwv->pointers;
-    for (i=0; i<index; i++) {
-        dst[i] = ((ScmObj*)wh->backingStorage->pointers)[i];
-    }
-    for (i=index+1; i<newsize-1; i++) {
-        dst[i] = SCM_MAKE_INT(i+1);
-    }
-    dst[i] = SCM_MAKE_INT(-1);
-    wh->backingStorage = newwv;
-    wh->bsSize = newsize;
-    wh->freeList = index+1;
-    return index;
-}
-
-
-/* Retrieve the value weakly associated to the key.
-   Returns SCM_UNBOUND if the key is not associated, or the value
-   has been GCed. */
-ScmObj Scm_WeakHashTableGet(ScmWeakHashTable *wh, ScmObj key)
-{
-    ScmHashEntry *e;
-    ScmWeakVector *wv;
-    int index;
-    ScmObj *ptrs;
-
-    e = Scm_HashTableGet(wh->hashTable, key);
-    if (e == NULL || !SCM_INTP(e->value)) return SCM_UNBOUND;
-
-    index = SCM_INT_VALUE(e->value);
-    Scm_Printf(SCM_CURERR, "bssize=%d\n", wh->backingStorage->size);
-    Scm_Printf(SCM_CURERR, "index=%d\n", index);
-    SCM_ASSERT(index >= 0 && index < wh->backingStorage->size);
-    ptrs = (ScmObj*)wh->backingStorage->pointers;
-    if (ptrs[index] == NULL) {
-        /* The value has been GCed. */
-        Scm_Printf(SCM_CURERR, "zit");
-        Scm_HashTableDelete(wh->hashTable, key);
-        Scm_Printf(SCM_CURERR, "zut");
-        wh_free_entry(wh, index);
-        Scm_Printf(SCM_CURERR, "zyt");
-        return SCM_UNBOUND;
-    } else {
-        return ptrs[index];
-    }
-}
-
-ScmObj Scm_WeakHashTablePut(ScmWeakHashTable *wh, ScmObj key, ScmObj value)
-{
-    ScmHashEntry *e;
-    int index, new_entry;
-    ScmObj *ptrs;
-
-    /* try to add a dummy index value, to see if the key is already
-       registered. */
-    e = Scm_HashTableAdd(wh->hashTable, key, SCM_MAKE_INT(-1));
-    if (e->value == SCM_MAKE_INT(-1)) {
-        /* new entry. */
-        index = wh_get_free_slot(wh);
-        e->value = SCM_MAKE_INT(index);
-        new_entry = TRUE;
-    } else {
-        index = SCM_INT_VALUE(e->value);
-        new_entry = FALSE;
-    }
-    Scm_Printf(SCM_CURERR, "allocated index=%d\n", index);
-
-    ptrs = (ScmObj*)wh->backingStorage->pointers;
-
-    if (!new_entry && (ptrs[index] == NULL || SCM_PTRP(ptrs[index]))) {
-        wh_unregister_weak(wh, index);
-    }
-
-    ptrs[index] = value;
-
-    if (SCM_PTRP(value)) {
-        wh_register_weak(wh, index, value);
-    }
-    return value;
-}
-
-int Scm_WeakHashTableDelete(ScmWeakHashTable *wh, ScmObj key)
-{
-    ScmHashEntry *e;
-    int index;
-
-    e = Scm_HashTableDelete(wh->hashTable, key);
-    if (e) {
-        index = SCM_INT_VALUE(e->value);
-        wh_free_entry(wh, index);
-        return TRUE;
-    } else {
-        return FALSE;
-    }
-}
-
 #endif
-
