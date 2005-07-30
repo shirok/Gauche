@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.36 2005-07-30 06:10:02 shirok Exp $
+ *  $Id: hash.c,v 1.37 2005-07-30 21:37:11 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -498,6 +498,7 @@ static ScmHashEntry *general_access(ScmHashTable *table, void *key,
  */
 
 static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
+
 SCM_DEFINE_BUILTIN_CLASS(Scm_HashTableClass, hash_print, NULL, NULL, NULL,
                          SCM_CLASS_COLLECTION_CPL);
 

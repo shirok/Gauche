@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: weak.c,v 1.11 2005-07-30 06:10:02 shirok Exp $
+ *  $Id: weak.c,v 1.12 2005-07-30 21:37:11 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -138,105 +138,63 @@ ScmObj Scm_WeakVectorSet(ScmWeakVector *v, int index, ScmObj value)
 }
 
 /*=============================================================
- * Weak hash table
+ * Weak box
  */
 
-static ScmClass *weakhash_cpl[] = {
-    SCM_CLASS_STATIC_PTR(Scm_HashTableClass),
-    SCM_CLASS_STATIC_PTR(Scm_CollectionClass),
-    SCM_CLASS_STATIC_PTR(Scm_TopClass),
-    NULL
+/* Weak box is not an ScmObj.  It provides a packaged 'weak pointer'
+   feature to C.  Weak hash table (hash.c) uses this. */
+
+/* ptr points to the target object weakly.
+   Registered flag becomes TRUE whenever ptr points to a GC_malloced object,
+   thus &wbox->ptr is registered as a disappearing link.
+   Note that we can distinguish a box that contaning NULL pointer, and
+   a box whose target has been GCed and hence ptr is cleared---in the
+   former case registered is FALSE, while in the latter case it is TRUE. */
+struct ScmWeakBoxRec {
+    void *ptr;
+    int registered;
 };
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_WeakHashTableClass, NULL,
-                         NULL, NULL, NULL,
-                         weakhash_cpl);
-
-#if 0
-struct weakhash_rec {
-    int weakness;
-};
-
-#define WEAK_CHECK(wh)                                                  \
-    do {                                                                \
-        if (!SCM_ISA(wh, SCM_CLASS_WEAK_HASH_TABLE)) {                  \
-            Scm_Error("weak hash table required, but got %S", wh);      \
-        }                                                               \
-    } while (0)
-
-static int get_weakness(ScmHashTable *wh)
+static void wbox_setvalue(ScmWeakBox *wbox, void *value)
 {
-    WEAK_CHECK(wh);
-    return ((struct weakhash_rec*)wh->data)->weakness;
-}
-
-static unsigned long weak_hash(ScmHashTable *wh, void *key)
-{
-    if (((struct weakhash_rec*)wh->data)->weakness & SCM_HASH_WEAK_KEY) {
-        return Scm_EqHash(SCM_OBJ(((void**)key)[0]));
+    GC_PTR base = GC_base((GC_PTR)value);
+    wbox->ptr = value;
+    if (base != NULL) {
+        GC_general_register_disappearing_link((GC_PTR)&wbox->ptr, base);
+        wbox->registered = TRUE;
     } else {
-        return Scm_EqHash(SCM_OBJ(key));
+        wbox->registered = FALSE;
     }
 }
 
-static int weak_hash_cmp(ScmHashTable *wh, void *key, ScmHashEntry *e)
+
+ScmWeakBox *Scm_MakeWeakBox(void *value)
 {
-    if (((struct weakhash_rec*)wh->data)->weakness & SCM_HASH_WEAK_KEY) {
-        return (key == ((void**)(e->key))[0]);
-    } else {
-        return (key == e->key);
-    }
+    ScmWeakBox *wbox = SCM_NEW_ATOMIC(ScmWeakBox);
+    wbox_setvalue(wbox, value);
+    return wbox;
 }
 
-ScmObj Scm_MakeWeakHashTable(int hashtype, int weakness, unsigned int initSize)
+int Scm_WeakBoxEmptyP(ScmWeakBox *wbox)
 {
-    ScmHashTable *ht;
-    struct weakhash_rec *data = SCM_NEW(struct weakhash_rec);
-    data->weakness = weakness;
-    ht = Scm_MakeHashTableFull(SCM_CLASS_WEAK_HASH_TABLE, SCM_HASH_RAW,
-                               weak_hash, weak_hash_cmp, initSize, data);
-    return SCM_OBJ(ht);
+    return (wbox->registered && wbox->ptr == NULL);
 }
 
-void Scm_WeakHashTablePutRaw(ScmHashTable *wh, void *key, void *value)
+void Scm_WeakBoxSet(ScmWeakBox *wbox, void *newvalue)
 {
-    int weakness = get_weakness(wh);
-    ScmHashEntry *e;
-
-    if (weakness & SCM_HASH_WEAK_KEY) {
-        void *dummy[1];
-        dummy[0] = key;
-        e = Scm_HashTableGetRaw(wh, (void*)dummy, NULL);
-    } else {
-        e = Scm_HashTableGetRaw(wh, key, NULL);
+    if (wbox->registered) {
+        GC_unregister_disappearing_link((GC_PTR)&wbox->ptr);
+        wbox->registered = FALSE;
     }
-    
-    if (weakness & SCM_HASH_WEAK_VALUE) {
-        void **cell = SCM_NEW_ATOMIC(void **);
-        cell[0] = value;
-        GC_general_register_disappearing_link((GC_PTR*)cell, (GC_PTR)value);
-        vv = (void *)cell;
-    } else {
-        vv = value;
-    }
-
-    if (e->value) {
-        /* We already had an entry */
-        if (weakness & SCM_HASH_WEAK_VALUE) {
-            GC_unregister_disapperaing_link((GC_PTR*)e->value);
-            e->value = value;
-            GC_general_register_disappearing_link((GC_PTR*)cell,
-                                                  (GC_PTR)value);
-        } else {
-            e->value = value;
-        }
-    } else {
-        void *kk, *vv;
-        if (weakness && SCM_HASH_WEAK_KEY) {
-            void **cell = SCM_NEW_ATOMIC(void **);
-            cell[0] = key;
-            
-        }
-    }
+    wbox_setvalue(wbox, newvalue);
 }
-#endif
+
+void *Scm_WeakBoxRef(ScmWeakBox *wbox)
+{
+    return wbox->ptr;           /* NB: if NULL is retured, you can't know
+                                   whether box has been containing NULL or
+                                   the target is GCed.  You have to call
+                                   Scm_WeakBoxEmptyP to check that. */
+}
+
+

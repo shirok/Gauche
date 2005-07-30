@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.427 2005-07-30 06:10:01 shirok Exp $
+ *  $Id: gauche.h,v 1.428 2005-07-30 21:37:10 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1547,6 +1547,32 @@ SCM_EXTERN ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc,
                                        ScmObj finisher);
     
 /*--------------------------------------------------------
+ * WEAK VECTOR & WEAK BOX
+ */
+
+typedef struct ScmWeakVectorRec {
+    SCM_HEADER;
+    int size;
+    void *pointers;  /* opaque */
+} ScmWeakVector;
+
+#define SCM_WEAK_VECTOR(obj)   ((ScmWeakVector*)(obj))
+#define SCM_WEAK_VECTOR_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_WEAK_VECTOR)
+SCM_CLASS_DECL(Scm_WeakVectorClass);
+#define SCM_CLASS_WEAK_VECTOR  (&Scm_WeakVectorClass)
+    
+SCM_EXTERN ScmObj Scm_MakeWeakVector(int size);
+SCM_EXTERN ScmObj Scm_WeakVectorRef(ScmWeakVector *v, int index, ScmObj fallback);
+SCM_EXTERN ScmObj Scm_WeakVectorSet(ScmWeakVector *v, int index, ScmObj val);
+
+typedef struct ScmWeakBoxRec ScmWeakBox; /* opaque */
+
+SCM_EXTERN ScmWeakBox *Scm_MakeWeakBox(void *value);
+SCM_EXTERN int         Scm_WeakBoxEmptyP(ScmWeakBox *wbox);
+SCM_EXTERN void        Scm_WeakBoxSet(ScmWeakBox *wbox, void *value);
+SCM_EXTERN void       *Scm_WeakBoxRef(ScmWeakBox *wbox);
+
+/*--------------------------------------------------------
  * HASHTABLE
  */
 
@@ -1570,11 +1596,15 @@ struct ScmHashTableRec {
     void *data;
 };
 
+SCM_CLASS_DECL(Scm_HashTableClass);
+#define SCM_CLASS_HASH_TABLE  (&Scm_HashTableClass)
 #define SCM_HASH_TABLE(obj)   ((ScmHashTable*)(obj))
 #define SCM_HASH_TABLE_P(obj)  SCM_ISA(obj, SCM_CLASS_HASH_TABLE)
 
-SCM_CLASS_DECL(Scm_HashTableClass);
-#define SCM_CLASS_HASH_TABLE  (&Scm_HashTableClass)
+SCM_CLASS_DECL(Scm_WeakHashTableClass);
+#define SCM_CLASS_WEAK_HASH_TABLE  (&Scm_WeakHashTableClass)
+#define SCM_WEAK_HASH_TABLE(obj)   ((ScmWeakHashTable*)(obj))
+#define SCM_WEAK_HASH_TABLE_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_WEAK_HASH_TABLE)
 
 /* Hash types */
 enum {
@@ -1592,6 +1622,13 @@ enum {
 };
 
 #define SCM_HASH_TABLE_RAW_P(ht) (SCM_HASH_TABLE(ht)->type >= SCM_HASH_WORD)
+
+/* 'weakness' type */
+enum {
+    SCM_HASH_WEAK_KEY    = 0x01,
+    SCM_HASH_WEAK_VALUE  = 0x02,
+    SCM_HASH_WEAK_BOTH   = (SCM_HASH_WEAK_KEY|SCM_HASH_WEAK_VALUE)
+};
 
 /* auxiliary structure; not an ScmObj. */
 struct ScmHashEntryRec {
@@ -1662,41 +1699,6 @@ SCM_EXTERN unsigned long Scm_HashString(ScmString *str, unsigned long bound);
 SCM_EXTERN ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
 				    ScmHashCmpProc cmpfn,
 				    unsigned int initSize);
-
-/*--------------------------------------------------------
- * WEAK VECTOR & WEAK HASH TABLE
- */
-
-typedef struct ScmWeakVectorRec {
-    SCM_HEADER;
-    int size;
-    void *pointers;  /* opaque */
-} ScmWeakVector;
-
-#define SCM_WEAK_VECTOR(obj)   ((ScmWeakVector*)(obj))
-#define SCM_WEAK_VECTOR_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_WEAK_VECTOR)
-SCM_CLASS_DECL(Scm_WeakVectorClass);
-#define SCM_CLASS_WEAK_VECTOR  (&Scm_WeakVectorClass)
-    
-SCM_EXTERN ScmObj Scm_MakeWeakVector(int size);
-SCM_EXTERN ScmObj Scm_WeakVectorRef(ScmWeakVector *v, int index, ScmObj fallback);
-SCM_EXTERN ScmObj Scm_WeakVectorSet(ScmWeakVector *v, int index, ScmObj val);
-
-
-/* 'weakness' type */
-enum {
-    SCM_HASH_WEAK_KEY    = 0x01,
-    SCM_HASH_WEAK_VALUE  = 0x02,
-    SCM_HASH_WEAK_BOTH   = (SCM_HASH_WEAK_KEY|SCM_HASH_WEAK_VALUE)
-};
-
-SCM_CLASS_DECL(Scm_WeakHashTableClass);
-#define SCM_CLASS_WEAK_HASH_TABLE  (&Scm_WeakHashTableClass)
-#define SCM_WEAK_HASH_TABLE(obj)   ((ScmWeakHashTable*)(obj))
-#define SCM_WEAK_HASH_TABLE_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_WEAK_HASH_TABLE)
-
-SCM_EXTERN ScmObj Scm_MakeWeakHashTable(int hashtype, int weakness,
-                                        unsigned int initSize);
 
 /*--------------------------------------------------------
  * MODULE

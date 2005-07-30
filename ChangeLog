@@ -1,3 +1,7 @@
+2005-07-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/weak.c: added WeakBox C API.
+
 2005-07-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/hash.c, src/gauche.h, src/*: rehashed hashtable API to allow
