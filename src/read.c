@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.80 2005-07-29 03:29:21 shirok Exp $
+ *  $Id: read.c,v 1.81 2005-07-30 23:39:50 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1017,7 +1017,8 @@ static ScmObj read_reference(ScmPort *port, ScmChar ch, ScmReadContext *ctx)
         ScmObj ref = Scm_MakeReadReference();
 
         if (ctx->table == NULL) {
-            ctx->table = SCM_HASH_TABLE(Scm_MakeHashTable((ScmHashProc)SCM_HASH_EQV, NULL, 0));
+            ctx->table =
+                SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQV, 0));
         }
         if (Scm_HashTableGet(ctx->table, Scm_MakeInteger(refnum)) != NULL) {
             Scm_ReadError(port, "duplicate back-reference number in #%d=", refnum);
@@ -1157,8 +1158,8 @@ static ScmObj maybe_uvector(ScmPort *port, char ch, ScmReadContext *ctx)
 
 void Scm__InitRead(void)
 {
-    readCtorData.table = SCM_HASH_TABLE(Scm_MakeHashTable(SCM_HASH_EQ,
-                                                          NULL, 0));
+    readCtorData.table =
+        SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
     (void)SCM_INTERNAL_MUTEX_INIT(readCtorData.mutex);
     Scm_DefineReaderCtor(SCM_SYM_DEFINE_READER_CTOR,
                          Scm_MakeSubr(reader_ctor, NULL, 2, 1,

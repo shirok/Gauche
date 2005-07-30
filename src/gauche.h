@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.428 2005-07-30 21:37:10 shirok Exp $
+ *  $Id: gauche.h,v 1.429 2005-07-30 23:39:50 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1600,11 +1600,6 @@ SCM_CLASS_DECL(Scm_HashTableClass);
 #define SCM_CLASS_HASH_TABLE  (&Scm_HashTableClass)
 #define SCM_HASH_TABLE(obj)   ((ScmHashTable*)(obj))
 #define SCM_HASH_TABLE_P(obj)  SCM_ISA(obj, SCM_CLASS_HASH_TABLE)
-
-SCM_CLASS_DECL(Scm_WeakHashTableClass);
-#define SCM_CLASS_WEAK_HASH_TABLE  (&Scm_WeakHashTableClass)
-#define SCM_WEAK_HASH_TABLE(obj)   ((ScmWeakHashTable*)(obj))
-#define SCM_WEAK_HASH_TABLE_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_WEAK_HASH_TABLE)
 
 /* Hash types */
 enum {

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: keyword.c,v 1.15 2005-07-28 22:46:41 shirok Exp $
+ *  $Id: keyword.c,v 1.16 2005-07-30 23:39:50 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -148,5 +148,5 @@ ScmObj Scm_DeleteKeywordX(ScmObj key, ScmObj list)
 void Scm__InitKeyword(void)
 {
     (void)SCM_INTERNAL_MUTEX_INIT(keywords.mutex);
-    keywords.table = SCM_HASH_TABLE(Scm_MakeHashTable((ScmHashProc)SCM_HASH_STRING, NULL, 256));
+    keywords.table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_STRING, 256));
 }

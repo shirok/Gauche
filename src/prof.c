@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: prof.c,v 1.6 2005-07-29 03:29:21 shirok Exp $
+ *  $Id: prof.c,v 1.7 2005-07-30 23:39:50 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -229,8 +229,7 @@ void Scm_ProfilerStart(void)
         vm->prof->errorOccurred = 0;
         vm->prof->currentCount = 0;
         vm->prof->statHash =
-            SCM_HASH_TABLE(Scm_MakeHashTable(SCM_HASH_EQ,
-                                             NULL, 0));
+            SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
         unlink(templat);       /* keep anonymous tmpfile */
     }
     
@@ -275,8 +274,7 @@ void Scm_ProfilerReset(void)
     vm->prof->errorOccurred = 0;
     vm->prof->currentCount = 0;
     vm->prof->statHash =
-        SCM_HASH_TABLE(Scm_MakeHashTable(SCM_HASH_EQ,
-                                         NULL, 0));
+        SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
     vm->prof->state = SCM_PROFILER_INACTIVE;
 }
 

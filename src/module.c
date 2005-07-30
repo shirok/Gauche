@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.55 2005-07-29 03:29:21 shirok Exp $
+ *  $Id: module.c,v 1.56 2005-07-30 23:39:50 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -114,7 +114,7 @@ static void init_module(ScmModule *m, ScmSymbol *name)
     m->imported = m->exported = SCM_NIL;
     m->parents = defaultParents;
     m->mpl = Scm_Cons(SCM_OBJ(m), defaultMpl);
-    m->table = SCM_HASH_TABLE(Scm_MakeHashTable(SCM_HASH_EQ, NULL, 0));
+    m->table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
 }
 
 /* Internal */
@@ -541,7 +541,7 @@ void Scm__InitModule(void)
     ScmObj mpl = SCM_NIL;
 
     (void)SCM_INTERNAL_MUTEX_INIT(modules.mutex);
-    modules.table = SCM_HASH_TABLE(Scm_MakeHashTable(SCM_HASH_EQ, NULL, 64));
+    modules.table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 64));
 
     /* standard module chain */
     INIT_MOD(nullModule, SCM_SYM_NULL, mpl);
