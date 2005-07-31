@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.125 2005-07-31 00:22:43 shirok Exp $
+ *  $Id: class.c,v 1.126 2005-07-31 06:01:40 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2559,6 +2559,7 @@ static void accessor_method_slot_accessor_set(ScmAccessorMethod *m, ScmObj v)
  */
 
 struct foreign_data_rec {
+    int flags;
     ScmForeignCleanupProc cleanup;
     ScmHashTable *identity_map;
 };
@@ -2582,6 +2583,7 @@ ScmClass *Scm_MakeForeignPointerClass(ScmModule *mod,
     Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(fp));
     fp->slots = SCM_NIL;
     fp->accessors = SCM_NIL;
+    data->flags = flags;
     data->cleanup = cleanup_proc;
     if (flags & SCM_FOREIGN_POINTER_KEEP_IDENTITY) {
         data->identity_map =
@@ -2624,17 +2626,22 @@ ScmObj Scm_MakeForeignPointer(ScmClass *klass, void *ptr)
         Scm_Error("attempt to instantiate non-foreign-pointer class %S via Scm_MakeForeignPointer", klass);
     }
 
+    if (ptr == NULL && (data->flags & SCM_FOREIGN_POINTER_MAP_NULL)) {
+        return SCM_FALSE;
+    }
+
     if (data->identity_map) {
-        ScmHashEntry *e = Scm_HashTableAdd(data->identity_map, ptr, NULL);
+        ScmHashEntry *e = Scm_HashTableAddRaw(data->identity_map, ptr, NULL);
         if (e->value) {
-            obj = (ScmForeignPointer*)Scm_WeakBoxRef((ScmWeakBox*)e->value);
-        } else {
-            obj = make_foreign_int(klass, ptr, data);
             if (Scm_WeakBoxEmptyP((ScmWeakBox*)e->value)) {
+                obj = make_foreign_int(klass, ptr, data);
                 Scm_WeakBoxSet((ScmWeakBox*)e->value, obj);
             } else {
-                e->value = Scm_MakeWeakBox(obj);
+                obj = (ScmForeignPointer*)Scm_WeakBoxRef((ScmWeakBox*)e->value);
             }
+        } else {
+            obj = make_foreign_int(klass, ptr, data);
+            e->value = Scm_MakeWeakBox(obj);
         }
     } else {
         obj = make_foreign_int(klass, ptr, data);

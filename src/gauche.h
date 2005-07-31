@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.430 2005-07-31 00:22:44 shirok Exp $
+ *  $Id: gauche.h,v 1.431 2005-07-31 06:01:42 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -672,7 +672,8 @@ typedef struct ScmForeignPointerRec {
     void *ptr;
 } ScmForeignPointer;
 
-#define SCM_FOREIGN_POINTER(obj)   ((ScmForeignPointer*)(obj))
+#define SCM_FOREIGN_POINTER(obj)     ((ScmForeignPointer*)(obj))
+#define SCM_FOREIGN_POINTER_REF(obj) (SCM_FOREIGN_POINTER(obj)->ptr)
 
 typedef void (*ScmForeignCleanupProc)(ScmObj);
 
@@ -685,7 +686,7 @@ SCM_EXTERN ScmObj Scm_MakeForeignPointer(ScmClass *klass, void *ptr);
 
 /* foreign pointer flags */
 enum {
-    SCM_FOREIGN_POINTER_KEEP_IDENTITY = (1L<<0)
+    SCM_FOREIGN_POINTER_KEEP_IDENTITY = (1L<<0),
          /* If set, a foreign pointer class keeps a weak hash table that maps
             PTR to the wrapping ScmObj, so Scm_MakeForeignPointer returns
             eq? object if the same PTR is given.  This incurs some overhead,
@@ -694,6 +695,10 @@ enum {
             Do not use this flag if PTR is also allocated by GC_malloc.  The
             used hash table is only weak for its value, so PTR wouldn't be
             GCed. */
+    SCM_FOREIGN_POINTER_MAP_NULL = (1L<<1)
+         /* If set, Scm_MakeForeignPointer returns SCM_FALSE whenever the
+            given PTR is NULL.   It is the only case that
+            Scm_MakeForeignPointer returns non-ForeignPointer object. */
 };
 
 /*--------------------------------------------------------
@@ -949,6 +954,8 @@ struct ScmStringRec {
     Scm_MakeString(cstr, -1, -1, SCM_MAKSTR_COPYING)
 #define SCM_MAKE_STR_IMMUTABLE(cstr) \
     Scm_MakeString(cstr, -1, -1, SCM_MAKSTR_IMMUTABLE)
+
+#define SCM_STRING_CONST_CSTRING(obj) Scm_GetStringConst(SCM_STRING(obj))
 
 SCM_CLASS_DECL(Scm_StringClass);
 #define SCM_CLASS_STRING        (&Scm_StringClass)

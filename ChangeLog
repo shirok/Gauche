@@ -1,5 +1,10 @@
 2005-07-30  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche-package.in: add --cc flag in 'compile' command to
+	  specify alternative C compiler; handy when you're writing a bridge
+	  to C++ library.
+	* src/genstub: added <const-cstring> stub type.
+	
 	* src/class.c: revised foreign-pointer API to take flags.  supports
 	  the mode that keeps one-to-one mapping between foreign pointer and
 	  wrapping ScmObj, for easier resource management.

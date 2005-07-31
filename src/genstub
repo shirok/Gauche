@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.105 2005-07-30 21:37:11 shirok Exp $
+;;;  $Id: genstub,v 1.106 2005-07-31 06:01:44 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -353,6 +353,10 @@
    (define-type <void>    "void" "void"
      ""      ""  "SCM_VOID_RETURN_VALUE")
    (define-type <top>     "ScmObj" "scheme object" "" "")
+
+   ;; C string
+   (define-type <const-cstring> "const char *" "const C string"
+     "SCM_STRINGP" "SCM_STRING_CONST_CSTRING" "SCM_MAKE_STR_COPYING")
 
    ;; Aggregate types
    (define-type <pair> "ScmPair*" "pair"

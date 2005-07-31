@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-package.in,v 1.11 2005-07-27 23:00:15 shirok Exp $
+;;;  $Id: gauche-package.in,v 1.12 2005-07-31 06:01:42 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -271,6 +271,8 @@ Options:
       --clean         : instead of compile and link, removes the intermediate
                         and output file(s) that would be generated otherwise.
                         useful for 'make clean'.
+  --cc=CC             : alternative C compiler.  Note that the compile should
+                        have compatible ABI with the one that compiled Gauche.
   --cppflags=CPPFLAGS : extra cpp flags for compile, such as -I/usr/local
   --cflags=CFLAGS     : extra cc flags for compile
   --ldflags=LDFLAGS   : extra ld flags
@@ -280,6 +282,7 @@ Options:
                   (compile-only "c|compile")
                   (output       "o|output=s")
                   (clean        "clean")
+                  (cc           "cc=s")
                   (cppflags     "cppflags=s")
                   (cflags       "cflags=s")
                   (ldflags      "ldflags=s")
@@ -295,13 +298,13 @@ Options:
       (unless (= (length args) 1) (usage-self))
       (gauche-package-compile (car args)
                               :dry-run dry-run :verbose verbose
-                              :output output
+                              :output output :cc cc
                               :cppflags cppflags :cflags cflags))
      (else
       (when (<= (length args) 1) (usage-self))
       (gauche-package-compile-and-link (car args) (cdr args)
                                        :dry-run dry-run :verbose verbose
-                                       :output output
+                                       :output output :cc cc :ld cc
                                        :cppflags cppflags :cflags cflags
                                        :ldflags ldflags :libs libs)))
     ))
