@@ -1,5 +1,8 @@
 2005-07-30  Shiro Kawai  <shiro@acm.org>
 
+	* lib/file/util.scm (path-sans-extension): fixed abnormality when
+	  passed a pathname without dirname part.
+
 	* lib/gauche/logger.scm (default-lock-policy): select 'file lock
 	  policy only for MacOSX 10.2 and before.  10.3 and later supports
 	  fcntl (Patch from Tatsuya BIZENN).

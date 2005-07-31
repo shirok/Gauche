@@ -250,6 +250,11 @@
        (path-sans-extension "/a.b/c.d/.e"))
 (test* "path-sans-extension" "/a.b/c.d/e"
        (path-sans-extension "/a.b/c.d/e"))
+(test* "path-sans-extension" "a" (path-sans-extension "a.c"))
+(test* "path-sans-extension" "a" (path-sans-extension "a."))
+(test* "path-sans-extension" "a" (path-sans-extension "a"))
+(test* "path-sans-extension" ".a" (path-sans-extension ".a"))
+(test* "path-sans-extension" ".a" (path-sans-extension ".a.c"))
 
 (test* "path-swap-extension" "/a.b/c.d/e.o"
        (path-swap-extension "/a.b/c.d/e.c" "o"))
@@ -261,6 +266,12 @@
        (path-swap-extension "/a.b/c.d/e" "o"))
 (test* "path-swap-extension" "/a.b/c.d/e"
        (path-swap-extension "/a.b/c.d/e.c" #f))
+(test* "path-swap-extension" "a.o" (path-swap-extension "a.c" "o"))
+(test* "path-swap-extension" "a.o" (path-swap-extension "a." "o"))
+(test* "path-swap-extension" "a.o" (path-swap-extension "a" "o"))
+(test* "path-swap-extension" ".a.o" (path-swap-extension ".a" "o"))
+(test* "path-swap-extension" ".a.o" (path-swap-extension ".a.c" "o"))
+
 
 (test* "file-type" #f
        (file-type "nonexistent/file"))

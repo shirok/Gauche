@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.32 2005-07-17 04:14:04 shirok Exp $
+;;;  $Id: util.scm,v 1.33 2005-07-31 09:16:32 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -271,12 +271,15 @@
   (receive (dir file ext) (decompose-path path) ext))
 
 (define (path-sans-extension path)
-  (receive (dir file ext) (decompose-path path) (build-path dir file)))
+  (cond ((path-extension path)
+         => (lambda (ext)
+              (substring path 0
+                         (- (string-length path) (string-length ext) 1))))
+        (else path)))
 
 (define (path-swap-extension path ext)
   (if ext
-    (receive (dir file _) (decompose-path path)
-      (build-path dir (string-append file "." ext)))
+    (string-append (path-sans-extension path) "." ext)
     (path-sans-extension path)))
 
 (define (find-file-in-paths name . opts)
