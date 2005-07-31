@@ -1,5 +1,9 @@
 2005-07-30  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/logger.scm (default-lock-policy): select 'file lock
+	  policy only for MacOSX 10.2 and before.  10.3 and later supports
+	  fcntl (Patch from Tatsuya BIZENN).
+
 	* src/gauche-package.in: add --cc flag in 'compile' command to
 	  specify alternative C compiler; handy when you're writing a bridge
 	  to C++ library.

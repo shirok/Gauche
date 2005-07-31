@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: logger.scm,v 1.6 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: logger.scm,v 1.7 2005-07-31 08:39:53 shirok Exp $
 ;;;
 
 (define-module gauche.logger
@@ -48,9 +48,9 @@
 (autoload file.util file-mtime<?)
 
 ;; Kludge! determine the default lock policy heuristically.
-;; AFAIK, MacOSX doesn't support fcntl lock.
+;; AFAIK, MacOSX didn't support fcntl lock until 10.3.
 (define (default-lock-policy)
-  (if (#/apple-darwin/ (gauche-architecture)) 'file 'fcntl))
+  (if (#/apple-darwin[56]/ (gauche-architecture)) 'file 'fcntl))
 
 ;; <log-drain> class
 (define-class <log-drain> ()
