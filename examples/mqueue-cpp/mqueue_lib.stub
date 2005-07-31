@@ -1,0 +1,21 @@
+;;;
+;;; mqueue_cpplib.stub
+;;;
+
+"
+#include \"mqueue_glue.h\"
+"
+
+(define-type <mqueue> "ScmObj" "mqueue" "MQUEUE_P")
+
+(define-cproc make-mqueue (name::<const-cstring>)
+  "SCM_RETURN(MQUEUE_BOX(new MQueue(name)));")
+
+(define-cproc mqueue-find (name::<const-cstring>)
+  " SCM_RETURN(MQUEUE_BOX(MQueue::findByName(name)));")
+
+
+
+;; Local variables:
+;; mode: scheme
+;; end:
