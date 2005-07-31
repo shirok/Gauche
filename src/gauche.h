@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.429 2005-07-30 23:39:50 shirok Exp $
+ *  $Id: gauche.h,v 1.430 2005-07-31 00:22:44 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -674,11 +674,27 @@ typedef struct ScmForeignPointerRec {
 
 #define SCM_FOREIGN_POINTER(obj)   ((ScmForeignPointer*)(obj))
 
+typedef void (*ScmForeignCleanupProc)(ScmObj);
+
 SCM_EXTERN ScmClass *Scm_MakeForeignPointerClass(ScmModule *module,
                                                  const char *name,
                                                  ScmClassPrintProc print,
-                                                 void (*cleanup)(ScmObj obj));
+                                                 ScmForeignCleanupProc cleanup,
+                                                 int flags);
 SCM_EXTERN ScmObj Scm_MakeForeignPointer(ScmClass *klass, void *ptr);
+
+/* foreign pointer flags */
+enum {
+    SCM_FOREIGN_POINTER_KEEP_IDENTITY = (1L<<0)
+         /* If set, a foreign pointer class keeps a weak hash table that maps
+            PTR to the wrapping ScmObj, so Scm_MakeForeignPointer returns
+            eq? object if the same PTR is given.  This incurs some overhead,
+            but cleanup procedure can safely free the foreign object without
+            worring if there's other ScmObj that's pointing to PTR.
+            Do not use this flag if PTR is also allocated by GC_malloc.  The
+            used hash table is only weak for its value, so PTR wouldn't be
+            GCed. */
+};
 
 /*--------------------------------------------------------
  * PAIR AND LIST

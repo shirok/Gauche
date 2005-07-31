@@ -1,5 +1,9 @@
 2005-07-30  Shiro Kawai  <shiro@acm.org>
 
+	* src/class.c: revised foreign-pointer API to take flags.  supports
+	  the mode that keeps one-to-one mapping between foreign pointer and
+	  wrapping ScmObj, for easier resource management.
+
 	* src/weak.c: added WeakBox C API.
 
 2005-07-28  Shiro Kawai  <shiro@acm.org>

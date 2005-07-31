@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.124 2005-07-30 21:37:10 shirok Exp $
+ *  $Id: class.c,v 1.125 2005-07-31 00:22:43 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2558,13 +2558,20 @@ static void accessor_method_slot_accessor_set(ScmAccessorMethod *m, ScmObj v)
  * Foreign pointer mechanism
  */
 
+struct foreign_data_rec {
+    ScmForeignCleanupProc cleanup;
+    ScmHashTable *identity_map;
+};
+
 ScmClass *Scm_MakeForeignPointerClass(ScmModule *mod,
                                       const char *name,
                                       ScmClassPrintProc print_proc,
-                                      void (*cleanup_proc)(ScmObj obj))
+                                      ScmForeignCleanupProc cleanup_proc,
+                                      int flags)
 {
     ScmClass *fp = (ScmClass*)class_allocate(SCM_CLASS_CLASS, SCM_NIL);
     ScmObj s = SCM_INTERN(name);
+    struct foreign_data_rec *data = SCM_NEW(struct foreign_data_rec);
     static ScmClass *fpcpa[] = { SCM_CLASS_FOREIGN_POINTER, SCM_CLASS_TOP, NULL };
     fp->name = s;
     fp->allocate = NULL;
@@ -2575,7 +2582,14 @@ ScmClass *Scm_MakeForeignPointerClass(ScmModule *mod,
     Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(fp));
     fp->slots = SCM_NIL;
     fp->accessors = SCM_NIL;
-    fp->data = (void*)cleanup_proc; /* see the note above class_allocate() */
+    data->cleanup = cleanup_proc;
+    if (flags & SCM_FOREIGN_POINTER_KEEP_IDENTITY) {
+        data->identity_map =
+            SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_WORD, 0));
+    } else {
+        data->identity_map = NULL;
+    }
+    fp->data = (void*)data; /* see the note above class_allocate() */
     return fp;
 }
 
@@ -2585,22 +2599,46 @@ static void fp_finalize(ScmObj obj, void *data)
     cleanup(obj);
 }
 
+static ScmForeignPointer *make_foreign_int(ScmClass *klass, void *ptr,
+                                           struct foreign_data_rec *data)
+{
+    ScmForeignPointer *obj;
+    obj = SCM_NEW(ScmForeignPointer);
+    SCM_SET_CLASS(obj, klass);
+    obj->ptr = ptr;
+    if (data->cleanup) {
+        Scm_RegisterFinalizer(SCM_OBJ(obj), fp_finalize, data->cleanup);
+    }
+    return obj;
+}
+
 ScmObj Scm_MakeForeignPointer(ScmClass *klass, void *ptr)
 {
     ScmForeignPointer *obj;
+    struct foreign_data_rec *data = (struct foreign_data_rec *)klass->data;
+    
     if (!klass) {               /* for extra safety */
         Scm_Error("NULL pointer passed to Scm_MakeForeignPointer");
     }
     if (!Scm_SubtypeP(klass, SCM_CLASS_FOREIGN_POINTER)) {
         Scm_Error("attempt to instantiate non-foreign-pointer class %S via Scm_MakeForeignPointer", klass);
     }
-    obj = SCM_NEW(ScmForeignPointer);
-    SCM_SET_CLASS(obj, klass);
 
-    if (klass->data) {
-        Scm_RegisterFinalizer(SCM_OBJ(obj), fp_finalize, klass->data);
+    if (data->identity_map) {
+        ScmHashEntry *e = Scm_HashTableAdd(data->identity_map, ptr, NULL);
+        if (e->value) {
+            obj = (ScmForeignPointer*)Scm_WeakBoxRef((ScmWeakBox*)e->value);
+        } else {
+            obj = make_foreign_int(klass, ptr, data);
+            if (Scm_WeakBoxEmptyP((ScmWeakBox*)e->value)) {
+                Scm_WeakBoxSet((ScmWeakBox*)e->value, obj);
+            } else {
+                e->value = Scm_MakeWeakBox(obj);
+            }
+        }
+    } else {
+        obj = make_foreign_int(klass, ptr, data);
     }
-    obj->ptr = ptr;
     return SCM_OBJ(obj);
 }
 
