@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.2 2005-07-31 06:01:40 shirok Exp $
+;;;  $Id: compile.scm,v 1.3 2005-08-01 04:24:03 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -65,7 +65,7 @@
   (let-keywords* args ((output #f)
                        (cppflags #f)
                        (cflags   #f)
-                       (cc CC)
+                       (cc #f)
                        (dry? :dry-run #f)
                        (verb? :verbose #f))
     (parameterize ((dry-run dry?)
@@ -77,9 +77,11 @@
             (let1 cfile (path-swap-extension file "c")
               (guard (e (else (sys-unlink cfile) (raise e)))
                 (do-genstub file)
-                (do-compile cc cfile ofile (or cppflags "") (or cflags ""))
+                (do-compile (or cc CC) cfile ofile
+                            (or cppflags "") (or cflags ""))
                 (sys-unlink cfile)))
-            (do-compile cc file ofile (or cppflags "") (or cflags ""))))))))
+            (do-compile (or cc CC) file ofile
+                        (or cppflags "") (or cflags ""))))))))
 
 (define (do-genstub stubfile)
   (run #`"',GOSH' genstub ,stubfile"))
@@ -90,7 +92,7 @@
 (define (gauche-package-link sofile ofiles . args)
   (let-keywords* args ((ldflags #f)
                        (libs #f)
-                       (ld CC)
+                       (ld #f)
                        (dry? :dry-run #f)
                        (verb? :verbose #f))
     (parameterize ((dry-run dry?)
@@ -98,7 +100,7 @@
       (unless (and (file-exists? sofile)
                    (every (cut file-mtime>? sofile <>) ofiles))
         (let1 all-ofiles (string-join (map (lambda (f) #`"',f'") ofiles) " ")
-          (run #`"',ld' ,(or ldflags \"\") ,LIBDIR ,LDFLAGS ,sofile ,all-ofiles ,LIBS ,(or libs \"\")"))))))
+          (run #`"',(or ld CC)' ,(or ldflags \"\") ,LIBDIR ,LDFLAGS ,sofile ,all-ofiles ,LIBS ,(or libs \"\")"))))))
 
 (define (gauche-package-compile-and-link module-name files . args)
   (let ((head.c #`",|module-name|_head.c")
