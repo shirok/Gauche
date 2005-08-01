@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.126 2005-07-31 06:01:40 shirok Exp $
+ *  $Id: class.c,v 1.127 2005-08-01 21:21:42 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2587,7 +2587,7 @@ ScmClass *Scm_MakeForeignPointerClass(ScmModule *mod,
     data->cleanup = cleanup_proc;
     if (flags & SCM_FOREIGN_POINTER_KEEP_IDENTITY) {
         data->identity_map =
-            SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_WORD, 0));
+            SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_WORD, 256));
     } else {
         data->identity_map = NULL;
     }

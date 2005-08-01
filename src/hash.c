@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.38 2005-08-01 20:44:58 shirok Exp $
+ *  $Id: hash.c,v 1.39 2005-08-01 21:21:42 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -291,7 +291,7 @@ static ScmHashEntry *insert_entry(ScmHashTable *table,
         newb = SCM_NEW_ARRAY(ScmHashEntry*, newsize);
         for (i=0; i<newsize; i++) newb[i] = NULL;
         
-        Scm_HashIterInit(table, &iter);
+        Scm_HashIterInitRaw(table, &iter);
         while ((f = Scm_HashIterNext(&iter)) != NULL) {
             unsigned long hashval = table->hashfn(table, f->key);
             index = HASH2INDEX(newsize, newbits, hashval);
