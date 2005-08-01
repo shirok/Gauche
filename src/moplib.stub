@@ -1,7 +1,7 @@
 ;;;
 ;;; moplib.stub - extra built-ins
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: moplib.stub,v 1.25 2005-04-12 01:42:27 shirok Exp $
+;;; $Id: moplib.stub,v 1.26 2005-08-01 12:23:34 shirok Exp $
 ;;;
 
 "
@@ -85,74 +85,74 @@
   else SCM_RETURN(SCM_OBJ(m->data));")
 
 (define-cproc %start-class-redefinition! (k::<class>)
-  (return <void> "Scm_StartClassRedefinition"))
+  (call <void> "Scm_StartClassRedefinition"))
 (define-cproc %commit-class-redefinition! (k::<class> newk)
-  (return <void> "Scm_CommitClassRedefinition"))
+  (call <void> "Scm_CommitClassRedefinition"))
 (define-cproc %check-class-binding (name module::<module>)
-  (return "Scm_CheckClassBinding"))
+  (call "Scm_CheckClassBinding"))
 (define-cproc %replace-class-binding! (k::<class> newk::<class>)
-  (return <void> "Scm_ReplaceClassBinding"))
+  (call <void> "Scm_ReplaceClassBinding"))
 (define-cproc %add-direct-subclass! (super::<class> sub::<class>)
-  (return <void> "Scm_AddDirectSubclass"))
+  (call <void> "Scm_AddDirectSubclass"))
 (define-cproc %delete-direct-subclass! (super::<class> sub::<class>)
-  (return <void> "Scm_DeleteDirectSubclass"))
+  (call <void> "Scm_DeleteDirectSubclass"))
 (define-cproc %add-direct-method! (super::<class> m::<method>)
-  (return <void> "Scm_AddDirectMethod"))
+  (call <void> "Scm_AddDirectMethod"))
 (define-cproc %delete-direct-method! (super::<class> m::<method>)
-  (return <void> "Scm_DeleteDirectMethod"))
+  (call <void> "Scm_DeleteDirectMethod"))
 
 (define-cproc %transplant-instance! (src dst)
-  (return <void> "Scm_TransplantInstance"))
+  (call <void> "Scm_TransplantInstance"))
 
 ;;
 ;; Public interface
 ;;
 
 (define-cproc class-of (obj)
-  (return "Scm_VMClassOf"))
+  (call "Scm_VMClassOf"))
 
 ;; current-class-of doesn't updates OBJ, and returns possibly the old class
 ;; which has been redefined.  Should onlyl used in class redefinition routines.
 (define-cproc current-class-of (obj)
-  "SCM_RETURN(SCM_OBJ(Scm_ClassOf(obj)));")
+  (expr "SCM_OBJ(Scm_ClassOf(obj))"))
 
 (define-cproc is-a? (obj klass::<class>)
   (inliner IS-A)
-  (return "Scm_VMIsA"))
+  (call "Scm_VMIsA"))
 
 (define-cproc slot-ref (obj slot)
   (inliner SLOT-REF)
   (setter slot-set!)
-  "  SCM_RETURN(Scm_VMSlotRef(obj, slot, FALSE));")
+  (expr "Scm_VMSlotRef(obj, slot, FALSE)"))
 
 (define-cproc slot-set! (obj slot value)
   (inliner SLOT-SET)
-  (return "Scm_VMSlotSet"))
+  (call "Scm_VMSlotSet"))
 
 (define-cproc slot-bound? (obj slot)
-  (return "Scm_VMSlotBoundP"))
+  (call "Scm_VMSlotBoundP"))
 
 (define-cproc slot-ref-using-accessor (obj accessor::<slot-accessor>)
-  "  SCM_RETURN(Scm_VMSlotRefUsingAccessor(obj, accessor, FALSE));")
+  (expr "Scm_VMSlotRefUsingAccessor(obj, accessor, FALSE)"))
 
 (define-cproc slot-bound-using-accessor? (obj accessor::<slot-accessor>)
-  "  SCM_RETURN(Scm_VMSlotRefUsingAccessor(obj, accessor, TRUE));")
+  (expr "Scm_VMSlotRefUsingAccessor(obj, accessor, TRUE)"))
 
 (define-cproc slot-set-using-accessor! (obj accessor::<slot-accessor> value)
-  (return "Scm_VMSlotSetUsingAccessor"))
+  (call "Scm_VMSlotSetUsingAccessor"))
 
 (define-cproc slot-initialize-using-accessor! (obj accessor::<slot-accessor>
                                                   initargs)
-  (return "Scm_VMSlotInitializeUsingAccessor"))
+  (call "Scm_VMSlotInitializeUsingAccessor"))
 
 (define-cproc instance-slot-ref (obj num::<fixnum>)
-  (return "Scm_InstanceSlotRef"))
+  (call "Scm_InstanceSlotRef"))
 
 (define-cproc instance-slot-set (obj num::<fixnum> value)
-  (return <void> "Scm_InstanceSlotSet"))
+  (call <void> "Scm_InstanceSlotSet"))
 
 (define-cproc touch-instance! (obj)
-  (return "Scm_VMTouchInstance"))
+  (call "Scm_VMTouchInstance"))
 
 ;; Local variables:
 ;; mode: scheme

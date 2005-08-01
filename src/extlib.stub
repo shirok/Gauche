@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.247 2005-07-31 06:01:41 shirok Exp $
+;;; $Id: extlib.stub,v 1.248 2005-08-01 12:23:34 shirok Exp $
 ;;;
 
 "
@@ -45,9 +45,9 @@
 ;;
 
 (define-cproc macroexpand (form)
-  "SCM_RETURN(Scm_VMMacroExpand(form, SCM_NIL, FALSE));")
+  (expr "Scm_VMMacroExpand(form, SCM_NIL, FALSE)"))
 (define-cproc macroexpand-1 (form)
-  "SCM_RETURN(Scm_VMMacroExpand(form, SCM_NIL, TRUE));")
+  (expr "Scm_VMMacroExpand(form, SCM_NIL, TRUE)"))
 
 ;;
 ;; 6.1  Equivalence predicates
@@ -67,16 +67,15 @@
    Scm_Error(\"unrecognized compare mode: %S\", opt);
    return 0; /* dummy */ }"
 
-(define-cproc compare (x y) (return <fixnum> "Scm_Compare"))
+(define-cproc compare (x y) (call <fixnum> "Scm_Compare"))
 
 ;;
 ;; 6.2  Numbers
 ;;
 
-(define-cproc ash (num cnt::<fixnum>)
-  (return "Scm_Ash"))
+(define-cproc ash (num cnt::<fixnum>) (call "Scm_Ash"))
 
-(define-cproc lognot (x) (return "Scm_LogNot"))
+(define-cproc lognot (x) (call "Scm_LogNot"))
 (define-cproc logand (x y &rest args)
   "  ScmObj cp, r = Scm_LogAnd(x, y);
   SCM_FOR_EACH(cp, args) {
@@ -96,12 +95,9 @@
   }
   SCM_RETURN(r);")
 
-(define-cproc fixnum? (x)
-  (return <boolean> "SCM_INTP"))
-(define-cproc bignum? (x)
-  (return <boolean> "SCM_BIGNUMP"))
-(define-cproc flonum? (x)
-  (return <boolean> "SCM_FLONUMP"))
+(define-cproc fixnum? (x) (call <boolean> "SCM_INTP"))
+(define-cproc bignum? (x) (call <boolean> "SCM_BIGNUMP"))
+(define-cproc flonum? (x) (call <boolean> "SCM_FLONUMP"))
 
 (define-cproc clamp (x &optional (min #f) (max #f))
   " ScmObj r = x;  int maybe_exact = FALSE;
@@ -174,25 +170,25 @@
 ;;
 
 (define-cproc proper-list? (obj)        ; SRFI-1
-  (return <boolean> "SCM_PROPER_LIST_P"))
+  (call <boolean> "SCM_PROPER_LIST_P"))
 
 (define-cproc dotted-list? (obj)        ; SRFI-1
-  (return <boolean> "SCM_DOTTED_LIST_P"))
+  (call <boolean> "SCM_DOTTED_LIST_P"))
 
 (define-cproc circular-list? (obj)      ; SRFI-1
-  (return <boolean> "SCM_CIRCULAR_LIST_P"))
+  (call <boolean> "SCM_CIRCULAR_LIST_P"))
 
 (define-cproc make-list (len::<fixnum> &optional (fill #f)) ; SRFI-1
-  (return "Scm_MakeList"))
+  (call "Scm_MakeList"))
 
 (define-cproc acons (caa cda cd)
-  (return "Scm_Acons"))
+  (call "Scm_Acons"))
 
 (define-cproc last-pair (list)          ; SRFI-1
-  (return "Scm_LastPair"))
+  (call "Scm_LastPair"))
 
 (define-cproc list-copy (list)          ; SRFI-1
-  (return "Scm_CopyList"))
+  (call "Scm_CopyList"))
 
 (define-cproc list* (&rest args)
   (inliner LIST-STAR)
@@ -210,22 +206,22 @@
   SCM_RETURN(head);")
 
 (define-cproc %delete (obj list::<list> &optional cmpmode)
-  "  SCM_RETURN(Scm_Delete(obj, list, getcmpmode(cmpmode)));")
+  (expr "Scm_Delete(obj, list, getcmpmode(cmpmode))"))
 
 (define-cproc %delete! (obj list::<list> &optional cmpmode)
-  "  SCM_RETURN(Scm_DeleteX(obj, list, getcmpmode(cmpmode)));")
+  (expr "Scm_DeleteX(obj, list, getcmpmode(cmpmode))"))
 
 (define-cproc %delete-duplicates (list::<list> &optional cmpmode)
-  "  SCM_RETURN(Scm_DeleteDuplicates(list, getcmpmode(cmpmode)));")
+  (expr "Scm_DeleteDuplicates(list, getcmpmode(cmpmode))"))
 
 (define-cproc %delete-duplicates! (list::<list> &optional cmpmode)
-  "  SCM_RETURN(Scm_DeleteDuplicatesX(list, getcmpmode(cmpmode)));")
+  (expr "Scm_DeleteDuplicatesX(list, getcmpmode(cmpmode))"))
 
 (define-cproc %alist-delete (elt list::<list> &optional cmpmode)
-  "  SCM_RETURN(Scm_AssocDelete(elt, list, getcmpmode(cmpmode)));")
+  (expr "Scm_AssocDelete(elt, list, getcmpmode(cmpmode))"))
 
 (define-cproc %alist-delete! (elt list::<list> &optional cmpmode)
-  "  SCM_RETURN(Scm_AssocDeleteX(elt, list, getcmpmode(cmpmode)));")
+  (expr "Scm_AssocDeleteX(elt, list, getcmpmode(cmpmode))"))
 
 (define-cproc append! (&rest list)
   "  ScmObj cp, h = SCM_NIL, t = SCM_NIL;
@@ -240,7 +236,7 @@
   SCM_RETURN(h);")
 
 (define-cproc reverse! (list)
-  (return "Scm_ReverseX"))
+  (call "Scm_ReverseX"))
 
 ;; Scheme version of 'sort' handles the case when comparison function
 ;; is given.
@@ -268,7 +264,7 @@
   }")
 
 (define-cproc monotonic-merge (start sequences::<list>)
-  (return "Scm_MonotonicMerge"))
+  (call "Scm_MonotonicMerge"))
 
 ;;
 ;; 6.3.3  Symbols
@@ -284,7 +280,7 @@
   SCM_RETURN(Scm_Gensym(p));")
 
 ;; keywords
-(define-cproc keyword? (obj) (return <boolean> "SCM_KEYWORDP"))
+(define-cproc keyword? (obj) (call <boolean> "SCM_KEYWORDP"))
 
 (define-cproc make-keyword (name)
   "   ScmString *sname = NULL;
@@ -294,24 +290,24 @@
   SCM_RETURN(Scm_MakeKeyword(sname));")
 
 (define-cproc get-keyword (key list &optional fallback)
-  (return "Scm_GetKeyword"))
+  (call "Scm_GetKeyword"))
 
 (define-cproc delete-keyword (key list)
-  (return "Scm_DeleteKeyword"))
+  (call "Scm_DeleteKeyword"))
 
 (define-cproc delete-keyword! (key list)
-  (return "Scm_DeleteKeywordX"))
+  (call "Scm_DeleteKeywordX"))
 
 (define-cproc keyword->string (key::<keyword>)
-  "SCM_RETURN(SCM_OBJ(SCM_KEYWORD_NAME(key)));")
+  (expr "SCM_OBJ(SCM_KEYWORD_NAME(key))"))
 
 ;; identifiers
 (define-cproc identifier? (obj)
   (inliner IDENTIFIERP)
-  (return <boolean> "SCM_IDENTIFIERP"))
+  (call <boolean> "SCM_IDENTIFIERP"))
 
 (define-cproc identifier->symbol (obj::<identifier>)
-  "  SCM_RETURN(SCM_OBJ(SCM_IDENTIFIER(obj)->name));")
+  (expr "SCM_OBJ(SCM_IDENTIFIER(obj)->name)"))
 
 ;;
 ;; 6.3.4  Characters
@@ -342,13 +338,13 @@
   else SCM_RETURN(Scm_MakeInteger(ucs));")
 
 (define-cproc gauche-character-encoding ()
-  (return "Scm_CharEncodingName"))
+  (call "Scm_CharEncodingName"))
 
 (define-cproc supported-character-encodings ()
-  "  SCM_RETURN(Scm_ConstCStringArrayToList(Scm_SupportedCharacterEncodings(), -1));")
+  (expr "Scm_ConstCStringArrayToList(Scm_SupportedCharacterEncodings(), -1)"))
 
 (define-cproc supported-character-encoding? (encoding::<const-cstring>)
-  (return <boolean> "Scm_SupportedCharacterEncodingP"))
+  (call <boolean> "Scm_SupportedCharacterEncodingP"))
 
 ;; character sets (SRFI-14)
 ;;   not all of srfi-14 functions are defined in C.  you need to load
@@ -356,7 +352,7 @@
 
 (define-constant *char-code-max* (c "Scm_MakeInteger(SCM_CHAR_MAX)"))
 
-(define-cproc char-set? (obj) (return <boolean> "SCM_CHARSETP"))
+(define-cproc char-set? (obj) (call <boolean> "SCM_CHARSETP"))
 
 "static void char_set_add(ScmCharSet *cs, ScmObj chars)
  {  ScmObj cp; ScmChar ch;
@@ -369,10 +365,10 @@
  }"
 
 (define-cproc %char-set-equal? (x::<char-set> y::<char-set>)
-  (return <boolean> "Scm_CharSetEq"))
+  (call <boolean> "Scm_CharSetEq"))
 
 (define-cproc %char-set<=? (x::<char-set> y::<char-set>)
-  (return <boolean> "Scm_CharSetLE"))
+  (call <boolean> "Scm_CharSetLE"))
 
 (define-cproc char-set (&rest chars)
   "  ScmCharSet *cs = SCM_CHARSET(Scm_MakeEmptyCharSet());
@@ -380,7 +376,7 @@
   SCM_RETURN(SCM_OBJ(cs));")
 
 (define-cproc char-set-copy (cs::<char-set>)
-  (return "Scm_CopyCharSet"))
+  (call "Scm_CopyCharSet"))
 
 (define-cproc %char-set-add-chars! (cs::<char-set> chars::<list>)
   "  char_set_add(cs, chars); SCM_RETURN(SCM_OBJ(cs));")
@@ -398,24 +394,24 @@
   SCM_RETURN(Scm_CharSetAddRange(cs, (ScmChar)fromc, (ScmChar)toc));")
 
 (define-cproc %char-set-add! (dst::<char-set> src::<char-set>)
-  (return "Scm_CharSetAdd"))
+  (call "Scm_CharSetAdd"))
 
 (define-cproc char-set-contains? (cs::<char-set> ch::<char>)
-  (return <boolean> "Scm_CharSetContains"))
+  (call <boolean> "Scm_CharSetContains"))
 
 (define-cproc %char-set-complement! (cs::<char-set>)
-  (return "Scm_CharSetComplement"))
+  (call "Scm_CharSetComplement"))
 
 (define-cproc %char-set-ranges (cs::<char-set>)
-  (return "Scm_CharSetRanges"))
+  (call "Scm_CharSetRanges"))
 
 (define-cproc %char-set-predefined (num::<fixnum>)
-  (return "Scm_GetStandardCharSet"))
+  (call "Scm_GetStandardCharSet"))
 
 ;; for debug
 (if "SCM_DEBUG_HELPER"
 (define-cproc %char-set-dump (cs::<char-set>)
-  "Scm_CharSetDump(cs, SCM_CUROUT); SCM_RETURN(SCM_UNDEFINED);")
+  (body <void> "Scm_CharSetDump(cs, SCM_CUROUT);"))
 )
 
 ;;
@@ -423,21 +419,21 @@
 ;;
 
 (define-cproc string-incomplete? (obj)    ;gauche specific
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_STRINGP(obj)&&SCM_STRING_INCOMPLETE_P(obj)));")
+  (expr <boolean> "SCM_STRINGP(obj)&&SCM_STRING_INCOMPLETE_P(obj)"))
 (define-cproc string-immutable? (obj)   ;gauche specific
-  "  SCM_RETURN(SCM_MAKE_BOOL(SCM_STRINGP(obj)&&SCM_STRING_IMMUTABLE_P(obj)));")
+  (expr <boolean> "SCM_STRINGP(obj)&&SCM_STRING_IMMUTABLE_P(obj)"))
 
 (define-cproc string-complete->incomplete! (str::<string>) ;gauche specific
-  (return "Scm_StringCompleteToIncompleteX"))
+  (call "Scm_StringCompleteToIncompleteX"))
 (define-cproc string-incomplete->complete! (str::<string>) ;gauche specific
-  (return "Scm_StringIncompleteToCompleteX"))
+  (call "Scm_StringIncompleteToCompleteX"))
 (define-cproc string-complete->incomplete (str::<string>) ;gauche specific
-  (return "Scm_StringCompleteToIncomplete"))
+  (call "Scm_StringCompleteToIncomplete"))
 (define-cproc string-incomplete->complete (str::<string>) ;gauche specific
-  (return "Scm_StringIncompleteToComplete"))
+  (call "Scm_StringIncompleteToComplete"))
 
 (define-cproc string-size (str::<string>)
-  (return <fixnum> "SCM_STRING_SIZE"))
+  (call <fixnum> "SCM_STRING_SIZE"))
 
 (define-cproc make-byte-string (size::<fixnum> &optional (byte::<fixnum> 0))
   "char *s;
@@ -456,7 +452,7 @@
   }")
 
 (define-cproc string-byte-set! (str::<string> k::<fixnum> b::<fixnum>)
-  (return "Scm_StringByteSet"))
+  (call "Scm_StringByteSet"))
 
 (define-cproc string-substitute! (target::<string> start::<fixnum> str::<string>)
   "  ScmObj r = Scm_StringSubstitute(target, start, str);
@@ -464,7 +460,7 @@
   SCM_RETURN(r);")
 
 (define-cproc %maybe-substring (str::<string> &optional start end)
-  (return "Scm_MaybeSubstring"))
+  (call "Scm_MaybeSubstring"))
 
 (define-symbol infix "sym_infix")
 (define-symbol strict-infix "sym_strict_infix")
@@ -495,7 +491,7 @@
 
 ;; see lib/gauche/string for generic string-split
 (define-cproc %string-split-by-char (s::<string> ch::<char>)
-  (return "Scm_StringSplitByChar"))
+  (call "Scm_StringSplitByChar"))
 
 ;; primitive scanner
 (define-symbol index   "sym_index")
@@ -534,36 +530,36 @@
                                    &optional (index::<fixnum> 0)
                                              (start::<fixnum> 0)
                                              (end::<fixnum> -1))
-  (return "Scm_MakeStringPointer"))
+  (call "Scm_MakeStringPointer"))
 (define-cproc string-pointer? (obj)
-  (return <boolean> "SCM_STRING_POINTERP"))
+  (call <boolean> "SCM_STRING_POINTERP"))
 
 (define-cproc string-pointer-ref (sp::<string-pointer>)
-  (return "Scm_StringPointerRef"))
+  (call "Scm_StringPointerRef"))
 (define-cproc string-pointer-next! (sp::<string-pointer>)
-  (return "Scm_StringPointerNext"))
+  (call "Scm_StringPointerNext"))
 (define-cproc string-pointer-prev! (sp::<string-pointer>)
-  (return "Scm_StringPointerPrev"))
+  (call "Scm_StringPointerPrev"))
 (define-cproc string-pointer-set! (sp::<string-pointer> index::<fixnum>)
-  (return "Scm_StringPointerSet"))
+  (call "Scm_StringPointerSet"))
 (define-cproc string-pointer-substring (sp::<string-pointer>
                                         &keyword (after #f))
-  "  SCM_RETURN(Scm_StringPointerSubstring(sp, !SCM_FALSEP(after)));")
+  (expr "Scm_StringPointerSubstring(sp, !SCM_FALSEP(after))"))
 (define-cproc string-pointer-index (sp::<string-pointer>)
-  "  SCM_RETURN(Scm_MakeInteger(sp->index));")
+  (expr <int> "sp->index"))
 (define-cproc string-pointer-copy (sp::<string-pointer>)
-  (return "Scm_StringPointerCopy"))
+  (call "Scm_StringPointerCopy"))
 (define-cproc string-pointer-byte-index (sp::<string-pointer>)
-  "  SCM_RETURN(Scm_MakeInteger(sp->current - sp->start));")
+  (expr <int> "sp->current - sp->start"))
 
 (if "SCM_DEBUG_HELPER"
     (define-cproc %string-pointer-dump (sp::<string-pointer>)
-      (return <void> "Scm_StringPointerDump"))
+      (call <void> "Scm_StringPointerDump"))
     )
 
 ;; Regexp
-(define-cproc regexp? (obj)    (return <boolean> "SCM_REGEXPP"))
-(define-cproc regmatch? (obj)  (return <boolean> "SCM_REGMATCHP"))
+(define-cproc regexp? (obj)    (call <boolean> "SCM_REGEXPP"))
+(define-cproc regmatch? (obj)  (call <boolean> "SCM_REGMATCHP"))
 
 (define-cproc string->regexp (str::<string> &keyword (case-fold #f))
   "int flags = SCM_BOOL_VALUE(case_fold)? SCM_REGEXP_CASE_FOLD : 0;
@@ -575,9 +571,9 @@
   "int flags = SCM_BOOL_VALUE(case_fold)? SCM_REGEXP_CASE_FOLD : 0;
   SCM_RETURN(Scm_RegComp(str, flags|SCM_REGEXP_PARSE_ONLY));")
 (define-cproc regexp-compile (ast)
-  (return "Scm_RegCompFromAST"))
+  (call "Scm_RegCompFromAST"))
 (define-cproc regexp-optimize (ast)
-  (return "Scm_RegOptimizeAST"))
+  (call "Scm_RegOptimizeAST"))
 
 (define-cproc rxmatch (regexp str::<string>)
   "  ScmRegexp *rx = NULL;
@@ -642,21 +638,21 @@
 (define-cproc vector-copy (v::<vector>
                            &optional
                            (start::<fixnum> 0) (end::<fixnum> -1) fill)
-  (return "Scm_VectorCopy"))
+  (call "Scm_VectorCopy"))
 
 ;; weak vector
 (define-cproc make-weak-vector (size::<fixnum>)
-  (return "Scm_MakeWeakVector"))
+  (call "Scm_MakeWeakVector"))
 
 (define-cproc weak-vector-length (wv::<weak-vector>)
-  "SCM_RETURN(Scm_MakeInteger(wv->size));")
+  (expr <int> "wv->size"))
 
 (define-cproc weak-vector-ref (wv::<weak-vector> index::<fixnum>
                                &optional fallback)
-  (return "Scm_WeakVectorRef"))
+  (call "Scm_WeakVectorRef"))
   
 (define-cproc weak-vector-set! (wv::<weak-vector> index::<fixnum> val)
-  (return "Scm_WeakVectorSet"))
+  (call "Scm_WeakVectorSet"))
 
 ;;
 ;; 6.4  Control Features
@@ -664,26 +660,26 @@
 
 (define-cproc setter (proc) ;SRFI-17
   (inliner SETTER)
-  (return "Scm_Setter")
+  (call "Scm_Setter")
   (setter (proc::<procedure> setter::<procedure>)
-    "  Scm_SetterSet(proc, setter, FALSE); SCM_RETURN(SCM_UNDEFINED);"))
+          (body <void> "Scm_SetterSet(proc, setter, FALSE);")))
 
 (define-cproc has-setter? (proc)
-  (return <boolean> "Scm_HasSetter"))
+  (call <boolean> "Scm_HasSetter"))
 
 (define-cproc identity (val)            ;sometimes useful
-  "SCM_RETURN(val);")
+  (expr "val"))
 
 (define-cproc promise? (obj)
-  "SCM_RETURN(SCM_MAKE_BOOL(SCM_XTYPEP(obj, SCM_CLASS_PROMISE)));")
+  (expr <boolean> "SCM_XTYPEP(obj, SCM_CLASS_PROMISE)"))
 
 (define-cproc eager (obj)               ;srfi-45
-  "SCM_RETURN(Scm_MakePromise(TRUE, obj));")
+  (expr "Scm_MakePromise(TRUE, obj)"))
 
 (define-cproc promise-kind (p::<promise>)
   "SCM_RETURN(p->kind);"
   (setter (p::<promise> obj)
-    "p->kind = obj; SCM_RETURN(SCM_UNDEFINED);"))
+          (body <void> "p->kind = obj;")))
 
 ;;
 ;; 6.6.1  Ports
@@ -760,19 +756,19 @@
 ;; String port (srfi-6)
 (define-cproc open-input-string (string::<string>
                                  &keyword (private?::<boolean> #f))
-  "SCM_RETURN(Scm_MakeInputStringPort(string, privateP));")
+  (call "Scm_MakeInputStringPort"))
 
 (define-cproc open-output-string (&keyword (private?::<boolean> #f))
-  "SCM_RETURN(Scm_MakeOutputStringPort(privateP));")
+  (call "Scm_MakeOutputStringPort"))
 
 (define-cproc get-output-string (oport::<output-port>) ;SRFI-6
-  (return "Scm_GetOutputString"))
+  (call "Scm_GetOutputString"))
 
 (define-cproc get-remaining-input-string (iport::<input-port>)
-  (return "Scm_GetRemainingInputString"))
+  (call "Scm_GetRemainingInputString"))
 
 (define-cproc open-coding-aware-port (iport::<input-port>)
-  (return "Scm_MakeCodingAwarePort"))
+  (call "Scm_MakeCodingAwarePort"))
 
 ;; Buffered port
 ;; NB: the interface may be changed soon!!
@@ -843,41 +839,41 @@
   ")
 
 (define-cproc flush (&optional (oport::<output-port> (current-output-port)))
-  (return <void> "Scm_Flush"))
+  (call <void> "Scm_Flush"))
 
 (define-cproc flush-all-ports ()
-  "  Scm_FlushAllPorts(FALSE); SCM_RETURN(SCM_UNDEFINED);")
+  (body <void> "Scm_FlushAllPorts(FALSE);"))
 
 (define-cproc port-closed? (obj::<port>)
-  (return <boolean> "SCM_PORT_CLOSED_P"))
+  (call <boolean> "SCM_PORT_CLOSED_P"))
 
 (define-cproc current-error-port ()     ;gauche extention
   (inliner CURERR)
-  "  SCM_RETURN(SCM_OBJ(SCM_CURERR));")
+  (expr "SCM_OBJ(SCM_CURERR)"))
 
 (define-cproc standard-input-port ()
-  (return "Scm_Stdin"))
+  (call "Scm_Stdin"))
 
 (define-cproc standard-output-port ()
-  (return "Scm_Stdout"))
+  (call "Scm_Stdout"))
 
 (define-cproc standard-error-port ()
-  (return "Scm_Stderr"))
+  (call "Scm_Stderr"))
 
 (define-cproc with-input-from-port (port::<input-port> thunk)
-  "  SCM_RETURN(Scm_WithPort(&port, thunk, SCM_PORT_CURIN, FALSE));")
+  (expr "Scm_WithPort(&port, thunk, SCM_PORT_CURIN, FALSE)"))
 
 (define-cproc with-output-to-port (port::<output-port> thunk)
-  "  SCM_RETURN(Scm_WithPort(&port, thunk, SCM_PORT_CUROUT, FALSE));")
+  (expr "Scm_WithPort(&port, thunk, SCM_PORT_CUROUT, FALSE)"))
 
 (define-cproc with-error-to-port (port::<output-port> thunk)
-  "  SCM_RETURN(Scm_WithPort(&port, thunk, SCM_PORT_CURERR, FALSE));")
+  (expr "Scm_WithPort(&port, thunk, SCM_PORT_CURERR, FALSE)"))
 
 (define-cproc port-name (port::<port>)
-  (return "Scm_PortName"))
+  (call "Scm_PortName"))
 
 (define-cproc port-current-line (port::<port>)
-  (return <fixnum> "Scm_PortLine"))
+  (call <fixnum> "Scm_PortLine"))
 
 (define-cproc port-file-number (port::<port>)
   "  int i = Scm_PortFileNo(port);
@@ -889,7 +885,7 @@
 
 (define-cproc port-seek (port::<port> offset::<integer>
                          &optional (whence::<fixnum> (c "SCM_MAKE_INT(SEEK_SET)")))
-  (return "Scm_PortSeek"))
+  (call "Scm_PortSeek"))
 
 (define-symbol file "sym_file")
 (define-symbol string "sym_string")
@@ -905,7 +901,7 @@
    SCM_RETURN(type);")
 
 (define-cproc port-buffering (port::<port>)
-  (return "Scm_GetBufferingMode")
+  (call "Scm_GetBufferingMode")
   (setter (port::<port> mode)
     "if (SCM_PORT_TYPE(port) != SCM_PORT_FILE) {
        Scm_Error(\"can't set buffering mode to non-buffered port: %S\", port);
@@ -933,7 +929,7 @@
 
 ;; Unsafe port operations
 (define-cproc with-port-locking (port::<port> proc)
-  (return "Scm_VMWithPortLocking"))
+  (call "Scm_VMWithPortLocking"))
 
 (define-cproc port->byte-string (port::<input-port>)
   ;; TODO: use chunked I/O if appropriate
@@ -950,7 +946,7 @@
 ;;
 
 (define-cproc byte-ready? (port::<input-port>)
-  (return <boolean> "Scm_ByteReady"))
+  (call <boolean> "Scm_ByteReady"))
 
 (define-cproc read-byte (&optional (port::<input-port> (current-input-port)))
   "  int b; SCM_GETB(b, port);
@@ -986,16 +982,16 @@
   "SCM_RETURN(Scm_ReadList(port, closer));")
 
 (define-cproc define-reader-ctor (symbol proc &optional (finisher #f))
-  (return "Scm_DefineReaderCtor"))
+  (call "Scm_DefineReaderCtor"))
 
 (define-type <read-reference> "ScmReadReference*" "read reference"
   "SCM_READ_REFERENCE_P" "SCM_READ_REFERENCE" "")
 
 (define-cproc read-reference? (obj)
-  "SCM_RETURN(SCM_MAKE_BOOL(SCM_READ_REFERENCE_P(obj)));")
+  (call <boolean> "SCM_READ_REFERENCE_P"))
 
 (define-cproc read-reference-has-value? (ref::<read-reference>)
-  "SCM_RETURN(SCM_MAKE_BOOL(!SCM_UNBOUNDP(ref->value)));")
+  (expr <boolean> "!SCM_UNBOUNDP(ref->value)"))
 
 (define-cproc read-reference-value (ref::<read-reference>)
   "if (SCM_UNBOUNDP(ref->value))
@@ -1032,11 +1028,11 @@
 (define-cproc dynamic-load (file::<string>
                             &keyword (init-function #f)
                                      (export-symbols #f))
-  "  SCM_RETURN(Scm_DynLoad(file, init_function, !SCM_FALSEP(export_symbols)));")
+  (expr "Scm_DynLoad(file, init_function, !SCM_FALSEP(export_symbols))"))
 
-(define-cproc %require (feature)  (return "Scm_Require"))
-(define-cproc provide (feature)   (return "Scm_Provide"))
-(define-cproc provided? (feature) (return <boolean> "Scm_ProvidedP"))
+(define-cproc %require (feature)  (call "Scm_Require"))
+(define-cproc provide (feature)   (call "Scm_Provide"))
+(define-cproc provided? (feature) (call <boolean> "Scm_ProvidedP"))
 
 ;(define-cproc %make-autoload (sym::<symbol> path::<string>
 ;                              &optional import-from)
@@ -1044,29 +1040,29 @@
 ;   SCM_RETURN(Scm_MakeAutoload(sym, path, from));")
 
 (define-cproc %autoload (mod::<module> file-or-module entries)
-  (return <void> "Scm_DefineAutoload"))
+  (call <void> "Scm_DefineAutoload"))
 
 (define-cproc undefined ()
   (inliner CONSTU)
-  "  SCM_RETURN(SCM_UNDEFINED);")
+  "SCM_RETURN(SCM_UNDEFINED);")
 
-(define-cproc undefined? (obj)    (return <boolean> "SCM_UNDEFINEDP"))
+(define-cproc undefined? (obj)    (call <boolean> "SCM_UNDEFINEDP"))
 
 (define-cproc warn (fmt::<string> &rest args)
-  (return void "Scm_FWarn"))
+  (call <void> "Scm_FWarn"))
 
 ;;
 ;; Hashtable
 ;;
 
 (define-cproc eq-hash (obj)
-  (return <ulong> "Scm_EqHash"))
+  (call <ulong> "Scm_EqHash"))
 
 (define-cproc eqv-hash (obj)
-  (return <ulong> "Scm_EqvHash"))
+  (call <ulong> "Scm_EqvHash"))
 
 (define-cproc hash (obj)
-  (return <ulong> "Scm_Hash"))
+  (call <ulong> "Scm_Hash"))
 
 "static int get_hash_proc(ScmSymbol *type) {
   if (SCM_EQ(SCM_OBJ(type), sym_eq))             return SCM_HASH_EQ;
@@ -1083,7 +1079,7 @@
   "SCM_RETURN(Scm_MakeHashTableSimple(get_hash_proc(type), 0));")
 
 (define-cproc hash-table? (obj)
-  (return <boolean> "SCM_HASH_TABLE_P"))
+  (call <boolean> "SCM_HASH_TABLE_P"))
 
 (define-cproc hash-table-type (hash::<hash-table>)
   "switch (hash->type) {
@@ -1095,7 +1091,7 @@
   }")
 
 (define-cproc hash-table-num-entries (hash::<hash-table>)
-  "SCM_RETURN(Scm_MakeInteger(hash->numEntries));")
+  (expr <int> "hash->numEntries"))
 
 (define-cproc hash-table-get (hash::<hash-table> key &optional defval)
   "  ScmHashEntry *e = Scm_HashTableGet(hash, key);
@@ -1106,15 +1102,15 @@
   SCM_RETURN(e->value);")
 
 (define-cproc hash-table-put! (hash::<hash-table> key value)
-  (return <void> "Scm_HashTablePut"))
+  (call <void> "Scm_HashTablePut"))
 
 ;; this is hash-table-remove! in STk.  I use `delete' for
 ;; it's consistent with SRFI-1 and dbm-delete!.
 (define-cproc hash-table-delete! (hash::<hash-table> key)
-  (return <boolean> "Scm_HashTableDelete"))
+  (call <boolean> "Scm_HashTableDelete"))
 
 (define-cproc hash-table-exists? (hash::<hash-table> key)
-  (return <boolean> "Scm_HashTableGet"))
+  (call <boolean> "Scm_HashTableGet"))
 
 "static ScmObj hash_table_update_cc(ScmObj result, void **data)
  {
@@ -1177,61 +1173,37 @@
   SCM_RETURN(Scm_MakeSubr(hash_table_iter, iter, 1, 0, SCM_MAKE_STR(\"hash-table-iterator\")));")
 
 (define-cproc hash-table-keys (hash::<hash-table>)
-  (return "Scm_HashTableKeys"))
+  (call "Scm_HashTableKeys"))
 
 (define-cproc hash-table-values (hash::<hash-table>)
-  (return "Scm_HashTableValues"))
+  (call "Scm_HashTableValues"))
 
 (define-cproc hash-table-stat (hash::<hash-table>)
-  (return "Scm_HashTableStat"))
-
-;; weak hash table
-
-;(define-cproc make-weak-hash-table (&optional (type::<symbol> (c "sym_eq")))
-;  "SCM_RETURN(Scm_MakeWeakHashTable(get_hash_proc(type), NULL, 0));")
-
-;(define-cproc weak-hash-table-get (wh::<weak-hash-table> key &optional fallback)
-;  "ScmObj r = Scm_WeakHashTableGet(wh, key);
-;   if (SCM_UNBOUNDP(r)) {
-;     if (SCM_UNBOUNDP(fallback)) {
-;       Scm_Error(\"weak hash table doesn't have an entry for key %S\", key);
-;     } else {
-;       SCM_RETURN(fallback);
-;     }
-;   } else {
-;     SCM_RETURN(r);
-;   }")
-
-;(define-cproc weak-hash-table-put! (wh::<weak-hash-table> key value)
-;  "Scm_WeakHashTablePut(wh, key, value);
-;   SCM_RETURN(SCM_UNDEFINED);")
-
-;(define-cproc weak-hash-table-delete! (wh::<weak-hash-table> key)
-;  (return <boolean> "Scm_WeakHashTableDelete"))
+  (call "Scm_HashTableStat"))
 
 ;;
 ;; Modules
 ;;
 
-(define-cproc module? (obj) (return <boolean> "SCM_MODULEP"))
+(define-cproc module? (obj) (call <boolean> "SCM_MODULEP"))
 
 (define-cproc module-name (mod::<module>)
-  "  SCM_RETURN(SCM_OBJ(SCM_MODULE(mod)->name));")
+  (expr "SCM_OBJ(SCM_MODULE(mod)->name)"))
 
 (define-cproc module-parents (mod::<module>)
-  "  SCM_RETURN(mod->parents);")
+  (expr "mod->parents"))
 
 (define-cproc module-precedence-list (mod::<module>)
-  "  SCM_RETURN(mod->mpl);")
+  (expr "mod->mpl"))
 
 (define-cproc module-imports (mod::<module>)
-  "  SCM_RETURN(mod->imported);")
+  (expr "mod->imported"))
 
 (define-cproc module-exports (mod::<module>)
-  "  SCM_RETURN(mod->exported);")
+  (expr "mod->exported"))
 
 (define-cproc module-table (mod::<module>)
-  "  SCM_RETURN(SCM_OBJ(mod->table));")
+  (expr "SCM_OBJ(mod->table)"))
 
 (define-cproc find-module (name::<symbol>)
   "  ScmModule *m = Scm_FindModule(name, SCM_FIND_MODULE_QUIET);
@@ -1239,7 +1211,7 @@
      else SCM_RETURN(SCM_FALSE);")
 
 (define-cproc all-modules ()
-  (return "Scm_AllModules"))
+  (call "Scm_AllModules"))
 
 (define-keyword error "key_error") ; this is also in stdlib.stub.  should I
                                    ; consolidate these?
@@ -1267,13 +1239,13 @@
   SCM_RETURN(Scm_ModuleNameToPath(s));")
 
 (define-cproc path->module-name (path::<string>)
-  (return "Scm_PathToModuleName"))
+  (call "Scm_PathToModuleName"))
 
 (define-cproc %export-all (module::<module>)
-  "  SCM_RETURN(Scm_ExportAll(module));")
+  (call "Scm_ExportAll"))
 
 (define-cproc %extend-module (module::<module> supers::<list>)
-  " SCM_RETURN(Scm_ExtendModule(module, supers));")
+  (call "Scm_ExtendModule"))
 
 "static ScmModule *get_module_from_mod_or_name(ScmObj mod_or_name)
  {
@@ -1314,10 +1286,10 @@
 
 (define-cproc %format (port::<output-port> fmt::<string>
                        args shared::<boolean>)
-  (return <void> "Scm_Format"))
+  (call <void> "Scm_Format"))
 
 (define-cproc exit (&optional (code::<fixnum> 0))
-  (return <void> "Scm_Exit"))
+  (call <void> "Scm_Exit"))
 
 ;;
 ;; External view of VM.
@@ -1366,11 +1338,11 @@
   SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc current-load-history ()
-  "  SCM_RETURN(Scm_VM()->load_history);")
+  (expr "Scm_VM()->load_history"))
 (define-cproc current-load-next ()
-  "  SCM_RETURN(Scm_VM()->load_next);")
+  (expr "Scm_VM()->load_next"))
 (define-cproc current-load-port ()
-  "  SCM_RETURN(Scm_VM()->load_port);")
+  (expr "Scm_VM()->load_port"))
 
 ;; parameter
 (define-cproc %vm-make-parameter-slot ()
@@ -1378,9 +1350,9 @@
    num = Scm_MakeParameterSlot(Scm_VM(), &newid);
    SCM_RETURN(Scm_Values2(SCM_MAKE_INT(num), SCM_MAKE_INT(newid)));")
 (define-cproc %vm-parameter-ref (index::<int> id::<int>)
-  "  SCM_RETURN(Scm_ParameterRef(Scm_VM(), index, id));")
+  (expr "Scm_ParameterRef(Scm_VM(), index, id)"))
 (define-cproc %vm-parameter-set! (index::<int> id::<int> value)
-  "  SCM_RETURN(Scm_ParameterSet(Scm_VM(), index, id, value));")
+  (expr "Scm_ParameterSet(Scm_VM(), index, id, value)"))
 
 ;;
 ;; Inspecting feature
@@ -1388,33 +1360,33 @@
 
 ;; Obtain info about gauche itself
 (define-cproc gauche-version ()
-  "  SCM_RETURN(SCM_MAKE_STR(GAUCHE_VERSION));")
+  (expr "SCM_MAKE_STR(GAUCHE_VERSION)"))
 (define-cproc gauche-architecture ()
-  "  SCM_RETURN(SCM_MAKE_STR(GAUCHE_ARCH));")
+  (expr "SCM_MAKE_STR(GAUCHE_ARCH)"))
 (define-cproc gauche-library-directory ()
-  (return "Scm_LibraryDirectory"))
+  (call "Scm_LibraryDirectory"))
 (define-cproc gauche-architecture-directory ()
-  (return "Scm_ArchitectureDirectory"))
+  (call "Scm_ArchitectureDirectory"))
 (define-cproc gauche-site-library-directory ()
-  (return "Scm_SiteLibraryDirectory"))
+  (call "Scm_SiteLibraryDirectory"))
 (define-cproc gauche-site-architecture-directory ()
-  (return "Scm_SiteArchitectureDirectory"))
+  (call "Scm_SiteArchitectureDirectory"))
 (define-cproc gauche-dso-suffix ()
-  "  SCM_RETURN(SCM_MAKE_STR(SHLIB_SO_SUFFIX));")
+  (expr "SCM_MAKE_STR(SHLIB_SO_SUFFIX)"))
 
 ;; Other thread stuff is in ext/threads/thrlib.stub
 (define-cproc current-thread ()
-  "SCM_RETURN(SCM_OBJ(Scm_VM()));")
+  (expr "SCM_OBJ(Scm_VM())"))
 
 (define-cproc unwrap-syntax (form)
-  (return "Scm_UnwrapSyntax"))
+  (call "Scm_UnwrapSyntax"))
 
 ;;
 ;; Profiling
 ;;
 
 ;; GC stuff
-(define-cproc gc () (return <void> "GC_gcollect"))
+(define-cproc gc () (call <void> "GC_gcollect"))
 
 (define-keyword total-heap-size "key_total_heap_size")
 (define-keyword free-bytes      "key_free_bytes")
@@ -1434,23 +1406,23 @@
   SCM_RETURN(h);")
 
 ;; Profiler public API
-(define-cproc profiler-start () (return <void> "Scm_ProfilerStart"))
-(define-cproc profiler-stop  () (return <int>  "Scm_ProfilerStop"))
-(define-cproc profiler-reset () (return <void> "Scm_ProfilerReset"))
+(define-cproc profiler-start () (call <void> "Scm_ProfilerStart"))
+(define-cproc profiler-stop  () (call <int>  "Scm_ProfilerStop"))
+(define-cproc profiler-reset () (call <void> "Scm_ProfilerReset"))
 
 ;; Misc.  WARNING: API may change
 (define-cproc subr? (obj)
-  (return <boolean> "SCM_SUBRP"))
+  (call <boolean> "SCM_SUBRP"))
 (define-cproc closure? (obj)
-  (return <boolean> "SCM_CLOSUREP"))
+  (call <boolean> "SCM_CLOSUREP"))
 (define-cproc toplevel-closure? (obj)
-  "SCM_RETURN(SCM_MAKE_BOOL(SCM_CLOSUREP(obj) && SCM_CLOSURE(obj)->env == NULL));")
+  (expr <boolean> "SCM_CLOSUREP(obj) && SCM_CLOSURE(obj)->env == NULL"))
 
 (define-cproc closure-code (clo::<closure>)
-  "  SCM_RETURN(clo->code);")
+  (expr "clo->code"))
 
 (define-cproc procedure-info (proc::<procedure>)
-  "  SCM_RETURN(SCM_PROCEDURE_INFO(proc));")
+  (expr "SCM_PROCEDURE_INFO(proc)"))
 
 
 ;; Local variables:

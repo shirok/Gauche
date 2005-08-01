@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.107 2005-08-01 04:26:17 shirok Exp $
+;;;  $Id: genstub,v 1.108 2005-08-01 12:23:34 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -64,16 +64,27 @@
 ;;   define-cproc name (args ...) body ...
 ;;
 ;;      Create a subr function.  Body can be:
-;;        a string : becomes the body of C code.
-;;        (return [<rettype>] <C-function>) :
-;;             calls C-function.  If <rettype> is omitted, C-function
+;;        (call [<rettype>] <C-function-name>)
+;;             Calls C-function.  If <rettype> is omitted, C-function
 ;;             is assumed to return ScmObj.  Otherwise, a boxer of
 ;;             <rettype> is used.  As a special case, if <rettype> is
 ;;             <void>, the return value of C-function is ignored and
 ;;             the function returns #<undef>.
+;;        (body [<rettype>] <C-code> ...) :
+;;             C-code becomes the body of the stub function.  In it,
+;;             the code must assign to a variable SCM_RESULT.  The stub
+;;             generator boxes the value and returns it.  (If <rettype>
+;;             is <void>, though, C-code shouldn't assign SCM_RESULT.
+;;             The generated function returns #<undef>.
+;;        (expr [<rettype>] <C-expr>) :
+;;             <C-expr> must be a C expression of type <rettype>.  The
+;;             value of C-expr is boxed and returned.  <void> isn't allowed
+;;             as <rettype> (you can use 'body' directive).
 ;;        (setter <setter-name>) : specfy setter.  <setter-name> should
 ;;             be a cproc name defined in the same stub file
 ;;        (setter (args ...) body ...) : specify setter anonymously.
+;;        a string : becomes the body of C code.  DEPRECATED.
+;;        (return [<rettype>] <C-function-name>)  same as 'call'.  DEPRECATED.
 ;;
 ;;   define-cgeneric name c-name property-clause ...)
 ;;
@@ -861,20 +872,16 @@
   )
 
 (define-method process-body ((cproc <cproc>) body)
-  (let loop ((body body))
-    (if (null? body)
-        (set! (stmts-of cproc) (reverse (stmts-of cproc)))
-        (receive (form next) (car+cdr body)
-          (match form
-            ((? string?) (push-stmt! cproc form) (loop next))
-            (('inliner opcode)
-             (set! (inline-insn-of cproc) opcode) (loop next))
-            (('setter . spec)
-             (process-setter cproc spec) (loop next))
-            (('return . spec)
-             (process-return-spec cproc form) (loop next))
-            (else
-             (error "unknown body form:" form)))))))
+  (dolist (form body)
+    (match form
+      ((? string?) (push-stmt! cproc form))
+      (('inliner opcode) (set! (inline-insn-of cproc) opcode))
+      (('setter . spec) (process-setter cproc spec))
+      (('return . spec) (process-call-spec cproc form))
+      (('call . spec) (process-call-spec cproc form))
+      (('body . spec) (process-body-spec cproc form))
+      (('expr . spec) (process-expr-spec cproc form))
+      (else (error "unknown body form:" form)))))
 
 (define-method process-setter ((cproc <cproc>) decl)
   (cond
@@ -904,8 +911,8 @@
           (emit-record setter))))
     )))
 
-(define-method process-return-spec ((cproc <cproc>) form)
-  (define (err) (error "malformed return spec" form))
+(define-method process-call-spec ((cproc <procstub>) form)
+  (define (err) (error "malformed 'call' spec:" form))
   (define (args)
     (string-join (map c-name-of (args-of cproc)) ", "))
   (case (length (cdr form))
@@ -918,6 +925,37 @@
          (push-stmt! cproc #`",(caddr form)(,(args)); SCM_RETURN(SCM_UNDEFINED);")
          (push-stmt! cproc #`"SCM_RETURN(,(boxer-of (name->type (cadr form)))(,(caddr form)(,(args))));")))
     (else (err))))
+
+(define-method process-body-spec ((cproc <procstub>) form)
+  (define (typed-result rettype stmts)
+    (push-stmt! cproc #`",(c-type-of rettype) SCM_RESULT;")
+    (push-stmt! cproc "{")
+    (for-each (cut push-stmt! cproc <>) stmts)
+    (push-stmt! cproc "}")
+    (push-stmt! cproc #`"SCM_RETURN(,(boxer-of rettype)(SCM_RESULT));"))
+  (match form
+    ((_ '<void> . stmts)
+     (for-each (cut push-stmt! cproc <>) stmts)
+     (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);"))
+    ((_ (? symbol? rettype) . stmts)
+     (typed-result (name->type rettype) stmts))
+    ((_ . stmts)
+     (typed-result *scm-type* stmts))
+    (else (error "malformed 'body' spec:" form))))
+
+(define-method process-expr-spec ((cproc <procstub>) form)
+  (define (typed-result rettype expr)
+    (push-stmt! cproc #`",(c-type-of rettype) SCM_RESULT;")
+    (push-stmt! cproc #`" SCM_RESULT = (,expr);")
+    (push-stmt! cproc #`"SCM_RETURN(,(boxer-of rettype)(SCM_RESULT));"))
+  (match form
+    ((_ '<void> . stmts)
+     (error "<void> type isn't allowed in 'expr' directive:" form))
+    ((_ (? symbol? rettype) expr)
+     (typed-result (name->type rettype) expr))
+    ((_ expr)
+     (typed-result *scm-type* expr))
+    (else (error "malformed 'expr' spec:" form))))
 
 ;;; emit code
 
@@ -1123,16 +1161,22 @@
                     :args args
                     :have-rest-arg? have-optarg?
                     )))
-      (for-each (lambda (stmt)
-                  (cond ((string? stmt) (push-stmt! method stmt))
-                        ((and (pair? stmt) (eq? (car stmt) 'c-generic-name))
-                         (unless (string? (cadr stmt))
-                           (error "c-generic-name requires a string:"
-                                  (cadr stmt)))
-                         (set! (c-generic-of method) (cadr stmt)))
-                        (else
-                         (error "unrecognized form in body:" stmt))))
-                body)
+      (dolist (stmt body)
+        (match stmt
+          ((? string?) (push-stmt! method stmt))
+          (('c-generic-name gen-name)
+           (unless (string? (cadr stmt))
+             (error "c-generic-name requires a string:"
+                    gen-name)
+             (set! (c-generic-of method) gen-name)))
+          (('body . spec)
+           (process-body-spec method stmt))
+          (('call . spec)
+           (process-call-spec method stmt))
+          (('expr . spec)
+           (process-expr-spec method stmt))
+          (else
+           (error "unrecognized form in body:" stmt))))
       (unless (c-generic-of method)
         (set! (c-generic-of method)
               (or (get-c-generic-name scheme-name)
@@ -1151,7 +1195,7 @@
   (for-each emit-arg-unbox (args-of method))
   ;; body
   (cgen-body "  {")
-  (apply cgen-body (stmts-of method))
+  (apply cgen-body (reverse (stmts-of method)))
   (cgen-body "  }")
   (cgen-body "}")
   (cgen-body "")

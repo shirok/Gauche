@@ -1,7 +1,7 @@
 ;;;
 ;;; netlib.stub - network interface
 ;;;  
-;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netlib.stub,v 1.28 2004-08-02 12:20:54 shirok Exp $
+;;;  $Id: netlib.stub,v 1.29 2005-08-01 12:23:33 shirok Exp $
 ;;;
 
 "#include \"gauche/net.h\"
@@ -55,16 +55,16 @@
 (define-symbol unknown "sym_unknown")
 
 (define-cmethod sockaddr-name ((addr "Scm_SockAddrClass"))
-  "  SCM_RETURN(SCM_MAKE_STR(\"unknown\"));")
+  (expr "SCM_MAKE_STR(\"unknown\")"))
 
 (define-cmethod sockaddr-family ((addr "Scm_SockAddrClass"))
-  "  SCM_RETURN(sym_unknown);")
+  (expr "sym_unknown"))
 
 (define-cmethod sockaddr-name ((addr "Scm_SockAddrUnClass"))
-  "  SCM_RETURN(SCM_MAKE_STR(((ScmSockAddrUn*)addr)->addr.sun_path));")
+  (expr "SCM_MAKE_STR(((ScmSockAddrUn*)addr)->addr.sun_path)"))
 
 (define-cmethod sockaddr-family ((addr "Scm_SockAddrUnClass"))
-  "  SCM_RETURN(sym_unix);")
+  (expr "sym_unix"))
 
 (define-cmethod sockaddr-name ((addr "Scm_SockAddrInClass"))
   "  ScmSockAddrIn *a = (ScmSockAddrIn*)addr;
@@ -81,7 +81,7 @@
     SCM_RETURN(Scm_GetOutputStringUnsafe(out));")
 
 (define-cmethod sockaddr-family ((addr "Scm_SockAddrInClass"))
-  "  SCM_RETURN(sym_inet);")
+  (expr "sym_inet"))
 
 (define-cmethod sockaddr-addr ((addr "Scm_SockAddrInClass"))
   "  ScmSockAddrIn *a = (ScmSockAddrIn*)addr;
@@ -105,7 +105,7 @@
   SCM_RETURN(Scm_GetOutputStringUnsafe(out));")
 
       (define-cmethod sockaddr-family ((addr "Scm_SockAddrIn6Class"))
-        "  SCM_RETURN(sym_inet6);")
+        (expr "sym_inet6"))
 
       (define-cmethod sockaddr-addr ((addr "Scm_SockAddrIn6Class"))
         "#define BN_SIZE (16 / SIZEOF_LONG)
@@ -129,7 +129,7 @@
 
 (define-cproc make-socket (domain::<fixnum> type::<fixnum>
                                             &optional (protocol::<fixnum> 0))
-  (return "Scm_MakeSocket"))
+  (call "Scm_MakeSocket"))
 
 (define-enum PF_UNSPEC)
 (define-enum PF_UNIX)
@@ -181,7 +181,7 @@
   }")
 
 (define-cproc socket-fd (sock::<socket>)
-  "  SCM_RETURN(Scm_MakeInteger(sock->fd));")
+  (expr <int> "sock->fd"))
 
 ;; NB: buffered? keyword args in the following two procedures are
 ;; deprecated; use buffering arg.
@@ -206,76 +206,76 @@
   SCM_RETURN(Scm_SocketOutputPort(sock, bufmode));")
 
 (define-cproc socket-shutdown (sock::<socket> &optional (how::<fixnum> 2))
-  (return "Scm_SocketShutdown"))
+  (call "Scm_SocketShutdown"))
   
 (define-cproc socket-close (sock::<socket>)
-  (return "Scm_SocketClose"))
+  (call "Scm_SocketClose"))
 
 (define-cproc socket-bind (sock::<socket> addr::<socket-address>)
-  (return "Scm_SocketBind"))
+  (call "Scm_SocketBind"))
 
 (define-cproc socket-listen (sock::<socket> backlog::<fixnum>)
-  (return "Scm_SocketListen"))
+  (call "Scm_SocketListen"))
 
 (define-cproc socket-accept (sock::<socket>)
-  (return "Scm_SocketAccept"))
+  (call "Scm_SocketAccept"))
 
 (define-cproc socket-connect (sock::<socket> addr::<socket-address>)
-  (return "Scm_SocketConnect"))
+  (call "Scm_SocketConnect"))
 
 (define-cproc socket-getsockname (sock::<socket>)
-  (return "Scm_SocketGetSockName"))
+  (call "Scm_SocketGetSockName"))
 
 (define-cproc socket-getpeername (sock::<socket>)
-  (return "Scm_SocketGetPeerName"))
+  (call "Scm_SocketGetPeerName"))
 
 (define-cproc socket-send (sock::<socket> msg::<string>
                            &optional (flags::<fixnum> 0))
-  (return "Scm_SocketSend"))
+  (call "Scm_SocketSend"))
 
 (define-cproc socket-sendto (sock::<socket> msg::<string> to::<socket-address>
                              &optional (flags::<fixnum> 0))
-  (return "Scm_SocketSendTo"))
+  (call "Scm_SocketSendTo"))
 
 (define-cproc socket-recv (sock::<socket> bytes::<fixnum>
                            &optional (flags::<fixnum> 0))
-  (return "Scm_SocketRecv"))
+  (call "Scm_SocketRecv"))
 
 (define-cproc socket-recvfrom (sock::<socket> bytes::<fixnum>
                                &optional (flags::<fixnum> 0))
-  (return "Scm_SocketRecvFrom"))
+  (call "Scm_SocketRecvFrom"))
 
 ;; socket option interface
 
 (define-cproc socket-setsockopt (sock::<socket>
                                  level::<fixnum> option::<fixnum> value)
-  (return "Scm_SocketSetOpt"))
+  (call "Scm_SocketSetOpt"))
 
 (define-cproc socket-getsockopt (sock::<socket>
                                  level::<fixnum> option::<fixnum>
                                  rsize::<fixnum>)
-  (return "Scm_SocketGetOpt"))
+  (call "Scm_SocketGetOpt"))
 
 ;;----------------------------------------------------------
 ;; netdb routines
 
-(define-cproc sys-gethostbyname (name::<string>)
-  "  SCM_RETURN(Scm_GetHostByName(Scm_GetStringConst(name)));")
+(define-cproc sys-gethostbyname (name::<const-cstring>)
+  (call "Scm_GetHostByName"))
 
-(define-cproc sys-gethostbyaddr (addr::<string> type::<fixnum>)
-  "  SCM_RETURN(Scm_GetHostByAddr(Scm_GetStringConst(addr), type));")
+(define-cproc sys-gethostbyaddr (addr::<const-cstring> type::<fixnum>)
+  (call "Scm_GetHostByAddr"))
 
-(define-cproc sys-getprotobyname (name::<string>)
-  "  SCM_RETURN(Scm_GetProtoByName(Scm_GetStringConst(name)));")
+(define-cproc sys-getprotobyname (name::<const-cstring>)
+  (call "Scm_GetProtoByName"))
 
 (define-cproc sys-getprotobynumber (number::<fixnum>)
-  "  SCM_RETURN(Scm_GetProtoByNumber(number));")
+  (call "Scm_GetProtoByNumber"))
 
-(define-cproc sys-getservbyname (name::<string> proto::<string>)
-  "  SCM_RETURN(Scm_GetServByName(Scm_GetStringConst(name), Scm_GetStringConst(proto)));")
+(define-cproc sys-getservbyname (name::<const-cstring> proto::<const-cstring>)
+  (call "Scm_GetServByName"))
 
-(define-cproc sys-getservbyport (port::<fixnum> proto::<string>)
-  "  SCM_RETURN(Scm_GetServByPort(port, Scm_GetStringConst(proto)));")
+(define-cproc sys-getservbyport (port::<fixnum> proto::<const-cstring>)
+  (call "Scm_GetServByPort"))
 
 ;;----------------------------------------------------------
 ;; IPv6 routines
@@ -320,7 +320,7 @@
                              SCM_FALSEP(hints) ? NULL : &ai));")
 
       (define-cproc sys-getnameinfo (addr::<socket-address> &optional flags::<fixnum>)
-        "  SCM_RETURN(Scm_GetNameinfo(addr, flags));")
+        (call "Scm_GetNameinfo"))
       ))
 
 (if "defined AF_INET6" (define-enum AF_INET6))

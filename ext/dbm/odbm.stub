@@ -1,7 +1,7 @@
 ;;;
 ;;; odbm.stub - original dbm interface
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: odbm.stub,v 1.13 2005-07-22 09:26:54 shirok Exp $
+;;;  $Id: odbm.stub,v 1.14 2005-08-01 12:23:33 shirok Exp $
 ;;;
 
 "
@@ -76,62 +76,58 @@
 "static int odbm_opened = FALSE;"
 
 (define-cproc odbm-init (name::<string>)
-  "int r;
-  if (odbm_opened) Scm_Error(\"dbm file is already opened.\");
-  r = dbminit(Scm_GetString(name));
-  if (r < 0) {
-    Scm_SysError(\"couldn't open dbm database %S\", name);
-  }
-  odbm_opened = TRUE;
-  SCM_RETURN(SCM_MAKE_INT(r));")
+  (body <int>
+        "if (odbm_opened) Scm_Error(\"dbm file is already opened.\");"
+        "SCM_RESULT = dbminit(Scm_GetString(name));"
+        "if (SCM_RESULT < 0) {"
+        "  Scm_SysError(\"couldn't open dbm database %S\", name);"
+        "}"
+        "odbm_opened = TRUE;"))
 
 (define-cproc odbm-close ()
-  "if (odbm_opened) {
-      dbmclose();
-      odbm_opened = FALSE;
-   }
-   SCM_RETURN(SCM_UNDEFINED);")
+  (body <void>
+        "if (odbm_opened) {"
+        "  dbmclose();"
+        "  odbm_opened = FALSE;"
+        "}"))
 
 (define-cproc odbm-closed? ()
-  "SCM_RETURN(SCM_MAKE_BOOL(!odbm_opened));")
+  (expr <boolean> "!odbm_opened"))
 
 (define-cproc odbm-store (key::<string> val::<string>)
-  "datum dkey, dval; int r;
-   CHECK_ODBM();
-   TO_DATUM(dkey, key);
-   TO_DATUM(dval, val);
-   r = store(dkey, dval);
-   SCM_RETURN(SCM_MAKE_INT(r));")
+  (body <int>
+        "datum dkey, dval;"
+        "CHECK_ODBM();"
+        "TO_DATUM(dkey, key);"
+        "TO_DATUM(dval, val);"
+        "SCM_RESULT = store(dkey, dval);"))
 
 (define-cproc odbm-fetch (key::<string>)
-  "datum dkey, dval; ScmObj r;
-   CHECK_ODBM();
-   TO_DATUM(dkey, key);
-   dval = fetch(dkey);
-   FROM_DATUM(r, dval);
-   SCM_RETURN(r);")
+  (body "datum dkey, dval;"
+        "CHECK_ODBM();"
+        "TO_DATUM(dkey, key);"
+        "dval = fetch(dkey);"
+        "FROM_DATUM(SCM_RESULT, dval);"))
 
 (define-cproc odbm-delete (key::<string>)
-  "datum dkey; int r;
-   CHECK_ODBM();
-   TO_DATUM(dkey, key);
-   r = delete(dkey);
-   SCM_RETURN(SCM_MAKE_INT(r));")
+  (body <int>
+        "datum dkey;"
+        "CHECK_ODBM();"
+        "TO_DATUM(dkey, key);"
+        "SCM_RESULT = delete(dkey);"))
 
 (define-cproc odbm-firstkey ()
-  "datum dkey; ScmObj r;
-   CHECK_ODBM();
-   dkey = firstkey();
-   FROM_DATUM(r, dkey);
-   SCM_RETURN(r);")
+  (body "datum dkey;"
+        "CHECK_ODBM();"
+        "dkey = firstkey();"
+        "FROM_DATUM(SCM_RESULT, dkey);"))
 
 (define-cproc odbm-nextkey (key::<string>)
-  "datum dkey, dnkey; ScmObj r;
-   CHECK_ODBM();
-   TO_DATUM(dkey, key);
-   dnkey = nextkey(dkey);
-   FROM_DATUM(r, dnkey);
-   SCM_RETURN(r);")
+  (body "datum dkey, dnkey;"
+        "CHECK_ODBM();"
+        "TO_DATUM(dkey, key);"
+        "dnkey = nextkey(dkey);"
+        "FROM_DATUM(SCM_RESULT, dnkey);"))
 
 ;; Local variables:
 ;; mode: scheme

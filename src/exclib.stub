@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: exclib.stub,v 1.14 2005-07-22 09:26:55 shirok Exp $
+;;; $Id: exclib.stub,v 1.15 2005-08-01 12:23:34 shirok Exp $
 ;;;
 
 "
@@ -41,12 +41,6 @@
 ;;
 ;; Exception procedures
 ;;
-
-;(define-cproc error (reason &rest args)
-;  (return "Scm_SError"))
-
-;(define-cproc errorf (fmt &rest args)
-;  (return "Scm_FError"))
 
 (define-cproc with-error-handler (handler thunk)
   "  if (!SCM_PROCEDURE_TAKE_NARG_P(handler, 1)) {
@@ -60,7 +54,7 @@
 
 ;; srfi-18 primitive exception mechanism
 (define-cproc current-exception-handler ()
-  "  SCM_RETURN(Scm_VM()->exceptionHandler);")
+  (expr "Scm_VM()->exceptionHandler"))
 
 (define-cproc with-exception-handler (handler thunk)
   "  if (!SCM_PROCEDURE_TAKE_NARG_P(handler, 1)) {
@@ -72,23 +66,22 @@
   }
   SCM_RETURN(Scm_VMWithExceptionHandler(handler, thunk));")
 
-(define-cproc raise (exception) (return "Scm_Raise"))
+(define-cproc raise (exception) (call "Scm_Raise"))
 
-(define-cproc report-error (exception)
-  (return <void> "Scm_ReportError"))
+(define-cproc report-error (exception) (call <void> "Scm_ReportError"))
 
 ;;
 ;; Condition procedures (srfi-35)
 ;;
 
 (define-cproc condition? (obj)
-  (return <boolean> "SCM_CONDITIONP"))
+  (call <boolean> "SCM_CONDITIONP"))
 
 (define-cproc condition-has-type? (c k)
-  (return <boolean> "Scm_ConditionHasType"))
+  (call <boolean> "Scm_ConditionHasType"))
 
 (define-cproc make-compound-condition (&rest conditions)
-  (return "Scm_MakeCompoundCondition"))
+  (call "Scm_MakeCompoundCondition"))
 
 
 ;; Local variables:

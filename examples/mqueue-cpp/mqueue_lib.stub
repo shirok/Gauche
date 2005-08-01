@@ -6,13 +6,20 @@
 #include \"mqueue_glue.h\"
 "
 
-(define-type <mqueue> "ScmObj" "mqueue" "MQUEUE_P")
+(define-type <mqueue> "ScmObj" "mqueue" "MQUEUE_P" "" "")
 
 (define-cproc make-mqueue (name::<const-cstring>)
   "SCM_RETURN(MQUEUE_BOX(new MQueue(name)));")
 
 (define-cproc mqueue-find (name::<const-cstring>)
-  " SCM_RETURN(MQUEUE_BOX(MQueue::findByName(name)));")
+  "SCM_RETURN(MQUEUE_BOX(MQueue::findByName(name)));")
+
+(define-cproc mqueue-push! (mq::<mqueue> message::<const-cstring>
+                                        &optional (urgency::<int> 0))
+  "SCM_RETURN(Scm_MakeInteger(MQUEUE_UNBOX(mq)->pushMessage(message, urgency)));")
+
+(define-cproc mqueue-pop! (mq::<mqueue>)
+  "SCM_RETURN(SCM_MAKE_STR_COPYING(MQUEUE_UNBOX(mq)->popMessage().c_str()));")
 
 
 

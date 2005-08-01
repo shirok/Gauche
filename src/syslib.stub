@@ -1,7 +1,7 @@
 ;;;
 ;;; syslib.stub - system interface functions
 ;;;  
-;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.101 2005-07-18 17:27:04 shirok Exp $
+;;; $Id: syslib.stub,v 1.102 2005-08-01 12:23:34 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -66,10 +66,10 @@
 ;;   we don't have correspoinding functions, but provide these:
 
 (define-cproc sys-readdir (pathname::<string>)
-  (return "Scm_ReadDirectory"))
+  (call "Scm_ReadDirectory"))
 
 (define-cproc sys-glob (pattern::<string>)
-  (return "Scm_GlobDirectory"))
+  (call "Scm_GlobDirectory"))
 
 ;; Bonus
 
@@ -84,10 +84,10 @@
   SCM_RETURN(Scm_NormalizePathname(pathname, flags));")
 
 (define-cproc sys-basename (pathname::<string>)
-  (return "Scm_BaseName"))
+  (call "Scm_BaseName"))
 
 (define-cproc sys-dirname (pathname::<string>)
-  (return "Scm_DirName"))
+  (call "Scm_DirName"))
 
 ;;---------------------------------------------------------------------
 ;; grp.h - groups
@@ -95,9 +95,9 @@
 (define-type <sys-group> "ScmSysGroup*")
 
 (define-cproc sys-getgrgid (gid::<int>)
-  (return "Scm_GetGroupById"))
+  (call "Scm_GetGroupById"))
 (define-cproc sys-getgrnam (name::<string>)
-  (return "Scm_GetGroupByName"))
+  (call "Scm_GetGroupByName"))
 
 ;; faster functions; bypassing creation of group object
 (define-cproc sys-gid->group-name (gid::<int>)
@@ -133,9 +133,9 @@
 (define-type <sys-passwd> "ScmSysPasswd*")
 
 (define-cproc sys-getpwuid (uid::<int>)
-  (return "Scm_GetPasswdById"))
+  (call "Scm_GetPasswdById"))
 (define-cproc sys-getpwnam (name::<string>)
-  (return "Scm_GetPasswdByName"))
+  (call "Scm_GetPasswdByName"))
 
 ;; faster functions; bypassing creation of passwd object
 (define-cproc sys-uid->user-name (uid::<int>)
@@ -158,19 +158,19 @@
 (define-type <sys-sigset> "ScmSysSigset*")
 
 (define-cproc sys-sigset-add! (set::<sys-sigset> &rest sigs)
-  "SCM_RETURN(Scm_SysSigsetOp(set, sigs, FALSE));")
+  (expr "Scm_SysSigsetOp(set, sigs, FALSE)"))
 
 (define-cproc sys-sigset-delete! (set::<sys-sigset> &rest sigs)
-  "SCM_RETURN(Scm_SysSigsetOp(set, sigs, TRUE));")
+  (expr "Scm_SysSigsetOp(set, sigs, TRUE)"))
 
 (define-cproc sys-sigset-fill! (set::<sys-sigset>)
-  "SCM_RETURN(Scm_SysSigsetFill(set, FALSE));")
+  (expr "Scm_SysSigsetFill(set, FALSE)"))
 
 (define-cproc sys-sigset-empty! (set::<sys-sigset>)
-  "SCM_RETURN(Scm_SysSigsetFill(set, TRUE));")
+  (expr "Scm_SysSigsetFill(set, TRUE)"))
 
 (define-cproc sys-signal-name (sig::<fixnum>)
-  (return "Scm_SignalName"))
+  (call "Scm_SignalName"))
 
 (define-cproc sys-kill (pid::<int> sig::<fixnum>)
   "  int r;
@@ -179,23 +179,23 @@
   SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc set-signal-handler! (sig proc)
-  (return "Scm_SetSignalHandler"))
+  (call "Scm_SetSignalHandler"))
 
 (define-cproc get-signal-handler (sig::<fixnum>)
-  (return "Scm_GetSignalHandler"))
+  (call "Scm_GetSignalHandler"))
 
 (define-cproc get-signal-handlers ()
-  (return "Scm_GetSignalHandlers"))
+  (call "Scm_GetSignalHandlers"))
 
 (define-enum SIG_SETMASK)
 (define-enum SIG_BLOCK)
 (define-enum SIG_UNBLOCK)
 
 (define-cproc sys-sigmask (how::<fixnum> mask::<sys-sigset>)
-  (return "Scm_SysSigmask"))
+  (call "Scm_SysSigmask"))
 
 (define-cproc sys-sigsuspend (mask::<sys-sigset>)
-  (return "Scm_SigSuspend"))
+  (call "Scm_SigSuspend"))
 
 ;(define-cproc %with-signal-handlers (handlers thunk)
 ;  (assert (procedure? thunk))
@@ -245,7 +245,7 @@
 #endif")
 
 (define-cproc sys-mkstemp (template::<string>)
-  "SCM_RETURN(Scm_SysMkstemp(template));")
+  (call "Scm_SysMkstemp"))
 
 ;; tmpfile
 
@@ -253,7 +253,7 @@
 ;; stdlib.h
 
 (define-cproc sys-exit (code::<fixnum>)
-  (return void "_exit"))
+  (call <void> "_exit"))
 
 (define-cproc sys-getenv (name::<string>)
   "  const char *p = getenv(Scm_GetStringConst(name));
@@ -302,7 +302,7 @@
 ;; unfortunately there are conflicting versions of strerror_r among
 ;; various systems.
 (define-cproc sys-strerror (errno::<int>)
-  "SCM_MAKE_STR_COPYING(strerror(errno));")
+  (expr "SCM_MAKE_STR_COPYING(strerror(errno))"))
 
 ;;---------------------------------------------------------------------
 ;; sys/stat.h
@@ -361,22 +361,22 @@
 
 ;; status interpretation
 (define-cproc sys-wait-exited? (status::<int>)
-  (return <boolean> "WIFEXITED"))
+  (call <boolean> "WIFEXITED"))
 
 (define-cproc sys-wait-exit-status (status::<int>)
-  (return <int> "WEXITSTATUS"))
+  (call <int> "WEXITSTATUS"))
 
 (define-cproc sys-wait-signaled? (status::<int>)
-  (return <boolean> "WIFSIGNALED"))
+  (call <boolean> "WIFSIGNALED"))
 
 (define-cproc sys-wait-termsig (status::<int>)
-  (return <int> "WTERMSIG"))
+  (call <int> "WTERMSIG"))
 
 (define-cproc sys-wait-stopped? (status::<int>)
-  (return <boolean> "WIFSTOPPED"))
+  (call <boolean> "WIFSTOPPED"))
 
 (define-cproc sys-wait-stopsig (status::<int>)
-  (return <int> "WSTOPSIG"))
+  (call <int> "WSTOPSIG"))
 
 )) ;; !defined(__MINGW32__)
 
@@ -388,30 +388,29 @@
 (define-type <sys-tm> "ScmSysTm*")
 
 (define-cproc sys-time ()
-  "SCM_RETURN(Scm_MakeSysTime(time(NULL)));")
+  (expr "Scm_MakeSysTime(time(NULL))"))
 
 (define-cproc current-time ()           ;SRFI-18, SRFI-19, SRFI-21
-  (return "Scm_CurrentTime"))
+  (call "Scm_CurrentTime"))
 
 (define-cproc time? (obj)               ;SRFI-18, SRFI-19, SRFI-21
-  (return <boolean> "SCM_TIMEP"))
+  (call <boolean> "SCM_TIMEP"))
 
 (define-cproc time->seconds (t::<time>) ;SRFI-18
-  (return "Scm_TimeToSeconds"))
+  (call "Scm_TimeToSeconds"))
 
 (define-cproc seconds->time (t::<real>) ;SRFI-18
-  (return "Scm_RealSecondsToTime"))
+  (call "Scm_RealSecondsToTime"))
 
 (define-cproc sys-asctime (tm::<sys-tm>)
-  "  SCM_RETURN(SCM_MAKE_STR_COPYING(asctime(&SCM_SYS_TM_TM(tm))));")
+  (expr "SCM_MAKE_STR_COPYING(asctime(&SCM_SYS_TM_TM(tm)))"))
 
 (define-cproc sys-ctime (time)
   "time_t tim = Scm_GetSysTime(time);
   SCM_RETURN(SCM_MAKE_STR_COPYING(ctime(&tim)));")
 
 (define-cproc sys-difftime (time1 time0)
-  "SCM_RETURN(Scm_MakeFlonum(difftime(Scm_GetSysTime(time1),
-                                      Scm_GetSysTime(time0))));")
+  (expr <double> "difftime(Scm_GetSysTime(time1), Scm_GetSysTime(time0))"))
 
 (define-cproc sys-strftime (format::<string> tm::<sys-tm>)
   "  char tmpbuf[256];
@@ -428,7 +427,7 @@
   SCM_RETURN(Scm_MakeSysTm(localtime(&tim)));")
 
 (define-cproc sys-mktime (tm::<sys-tm>)
-  "  SCM_RETURN(Scm_MakeSysTime(mktime(&SCM_SYS_TM_TM(tm))));")
+  (expr "Scm_MakeSysTime(mktime(&SCM_SYS_TM_TM(tm)))"))
 
 ;;---------------------------------------------------------------------
 ;; unistd.h - miscellaneous functions
@@ -465,12 +464,11 @@
   SCM_RETURN(Scm_MakeInteger(pid));")
 
 (define-cproc sys-exec (command::<string> args::<list> &optional iomap)
-  "  Scm_SysExec(command, args, iomap, FALSE);
-  SCM_RETURN(SCM_UNDEFINED); /* dummy */")
+  (body <void> "Scm_SysExec(command, args, iomap, FALSE);"))
 
 (define-cproc sys-fork-and-exec (command::<string> args::<list>
                                                    &optional iomap)
-  "SCM_RETURN(Scm_SysExec(command, args, iomap, TRUE));")
+  (expr "Scm_SysExec(command, args, iomap, TRUE)"))
 
 (define-cproc sys-getcwd ()
   "#define GETCWD_PATH_MAX 1024  /* TODO: needs to be configured */
@@ -479,13 +477,13 @@
   s = SCM_MAKE_STR_COPYING(p);
   SCM_RETURN(s);")
 
-(define-cproc sys-getegid () (return <int> "getegid"))
-(define-cproc sys-getgid ()  (return <int> "getgid"))
-(define-cproc sys-geteuid () (return <int> "geteuid"))
-(define-cproc sys-getuid ()  (return <int> "getuid"))
+(define-cproc sys-getegid () (call <int> "getegid"))
+(define-cproc sys-getgid ()  (call <int> "getgid"))
+(define-cproc sys-geteuid () (call <int> "geteuid"))
+(define-cproc sys-getuid ()  (call <int> "getuid"))
 
-(define-cproc sys-getpid ()  (return <int> "getpid"))
-(define-cproc sys-getppid () (return <int> "getppid"))
+(define-cproc sys-getpid ()  (call <int> "getpid"))
+(define-cproc sys-getppid () (call <int> "getppid"))
 
 (define-cproc sys-link (existing::<string> newpath::<string>)
   " int r;
@@ -497,12 +495,10 @@
   ;; We can't simply use pause().  If a signal is delivered after the last
   ;; Scm_SigCheck and before the call of pause(), the signal will just sit
   ;; in a queue and pause() may not return.
-  (return "Scm_Pause"))
+  (call "Scm_Pause"))
 
 (define-cproc sys-alarm (seconds::<fixnum>)
-  "  int r;
-  SCM_SYSCALL(r, alarm(seconds));
-  SCM_RETURN(Scm_MakeInteger(r));")
+  (body <int> "SCM_SYSCALL(SCM_RESULT, alarm(seconds));"))
 
 ;; returns a list of two ports
 (define-cproc sys-pipe (&keyword (name "(pipe)") (buffering #f) (buffered? #f))
@@ -535,10 +531,10 @@
   SCM_RETURN(SCM_TRUE);")
 
 (define-cproc sys-umask (mode::<fixnum>)
-  (return <int> "umask"))
+  (call <int> "umask"))
 
 (define-cproc sys-sleep (seconds::<fixnum>)
-  (return <int> "sleep"))
+  (call <int> "sleep"))
 
 (if "defined(HAVE_NANOSLEEP)"
     (define-cproc sys-nanosleep (nanoseconds)
@@ -670,13 +666,13 @@
   SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc sys-fdset-max-fd (fdset::<sys-fdset>)
-  "  SCM_RETURN(Scm_MakeInteger(fdset->maxfd));")
+  (expr <int> "fdset->maxfd"))
 
 (define-cproc sys-select (rfds wfds efds &optional (timeout #f))
-  (return "Scm_SysSelect"))
+  (call "Scm_SysSelect"))
 
 (define-cproc sys-select! (rfds wfds efds &optional (timeout #f))
-  (return "Scm_SysSelectX"))
+  (call "Scm_SysSelectX"))
 
 )) ;; if defined(HAVE_SELECT)
 

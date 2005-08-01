@@ -1,7 +1,7 @@
 ;;;
 ;;; gdbm.stub - gdbm interface
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gdbm.stub,v 1.19 2005-07-22 09:26:54 shirok Exp $
+;;;  $Id: gdbm.stub,v 1.20 2005-08-01 12:23:33 shirok Exp $
 ;;;
 
 "
@@ -107,7 +107,7 @@
 (define-type <gdbm> "ScmGdbm*")
 
 ;; finalization
-"static void gdbm_finalize(GC_PTR obj, GC_PTR data)
+"static void gdbm_finalize(ScmObj obj, void *data)
  {
     ScmGdbm *g = SCM_GDBM(obj);
     if (g->dbf) { gdbm_close(g->dbf); g->dbf = NULL; }
@@ -119,99 +119,94 @@
                          &optional (size::<fixnum> 0)
                                    (rwmode::<fixnum> (c "SCM_MAKE_INT(GDBM_READER)"))
                                    (fmode::<fixnum> (c "SCM_MAKE_INT(0666)")))
-  "GC_finalization_proc ofn; GC_PTR ocd;
-  ScmGdbm *z = SCM_NEW(ScmGdbm);
+  "ScmGdbm *z = SCM_NEW(ScmGdbm);
   SCM_SET_CLASS(z, SCM_CLASS_GDBM);
-  GC_REGISTER_FINALIZER(z, gdbm_finalize, NULL, &ofn, &ocd);
+  Scm_RegisterFinalizer(SCM_OBJ(z), gdbm_finalize, NULL);
   z->name = SCM_OBJ(name);
   z->dbf = gdbm_open(Scm_GetString(name), size, rwmode, fmode, NULL);
   if (z->dbf == NULL) Scm_SysError(\"couldn't open gdbm file %S\", name);
   SCM_RETURN(SCM_OBJ(z));")
 
 (define-cproc gdbm-close (gdbm::<gdbm>)
-  "CHECK_GDBM(gdbm);
-  if (gdbm->dbf) {
-    gdbm_close(gdbm->dbf);
-    gdbm->dbf = NULL;
-  }
-  SCM_RETURN(SCM_UNDEFINED);")
+  (body <void>
+        "CHECK_GDBM(gdbm);"
+        "if (gdbm->dbf) {"
+        "  gdbm_close(gdbm->dbf);"
+        "  gdbm->dbf = NULL;"
+        "}"))
 
 (define-cproc gdbm-closed? (gdbm::<gdbm>)
-  "SCM_RETURN(SCM_MAKE_BOOL(gdbm->dbf == NULL));")
+  (expr <boolean> "gdbm->dbf == NULL"))
 
 (define-cproc gdbm-store (gdbm::<gdbm> key::<string> val::<string>
                                        &optional (flags::<fixnum> 0))
-  "datum dkey, dval; int r;
-  CHECK_GDBM(gdbm);
-  TO_DATUM(dkey, key);
-  TO_DATUM(dval, val);
-  r = gdbm_store(gdbm->dbf, dkey, dval, flags);
-  SCM_RETURN(SCM_MAKE_INT(r));")
+  (body <int>
+        "datum dkey, dval;"
+        "CHECK_GDBM(gdbm);"
+        "TO_DATUM(dkey, key);"
+        "TO_DATUM(dval, val);"
+        "SCM_RESULT = gdbm_store(gdbm->dbf, dkey, dval, flags);"))
 
 (define-cproc gdbm-fetch (gdbm::<gdbm> key::<string>)
-  "datum dkey, dval; ScmObj r;
-  CHECK_GDBM(gdbm);
-  TO_DATUM(dkey, key);
-  dval = gdbm_fetch(gdbm->dbf, dkey);
-  FROM_DATUM(r, dval);
-  SCM_RETURN(r);")
+  (body "datum dkey, dval;"
+        "CHECK_GDBM(gdbm);"
+        "TO_DATUM(dkey, key);"
+        "dval = gdbm_fetch(gdbm->dbf, dkey);"
+        "FROM_DATUM(SCM_RESULT, dval);"))
 
 (define-cproc gdbm-delete (gdbm::<gdbm> key::<string>)
-  "datum dkey; int r;
-  CHECK_GDBM(gdbm);
-  TO_DATUM(dkey, key);
-  r = gdbm_delete(gdbm->dbf, dkey);
-  SCM_RETURN(SCM_MAKE_INT(r));")
+  (body <int>
+        "datum dkey;"
+        "CHECK_GDBM(gdbm);"
+        "TO_DATUM(dkey, key);"
+        "SCM_RESULT = gdbm_delete(gdbm->dbf, dkey);"))
 
 (define-cproc gdbm-firstkey (gdbm::<gdbm>)
-  "datum dkey = gdbm_firstkey(gdbm->dbf); ScmObj r;
-  FROM_DATUM(r, dkey);
-  SCM_RETURN(r);")
+  (body "datum dkey = gdbm_firstkey(gdbm->dbf);"
+        "FROM_DATUM(SCM_RESULT, dkey);"))
 
 (define-cproc gdbm-nextkey (gdbm::<gdbm> key::<string>)
-  "datum dkey, dnkey; ScmObj r;
-  CHECK_GDBM(gdbm);
-  TO_DATUM(dkey, key);
-  dnkey = gdbm_nextkey(gdbm->dbf, dkey);
-  FROM_DATUM(r, dnkey);
-  SCM_RETURN(r);")
+  (body "datum dkey, dnkey;"
+        "CHECK_GDBM(gdbm);"
+        "TO_DATUM(dkey, key);"
+        "dnkey = gdbm_nextkey(gdbm->dbf, dkey);"
+        "FROM_DATUM(SCM_RESULT, dnkey);"))
 
 (define-cproc gdbm-reorganize (gdbm::<gdbm>)
-  "int r;
-  CHECK_GDBM(gdbm);
-  r = gdbm_reorganize(gdbm->dbf);
-  SCM_RETURN(SCM_MAKE_INT(r));")
+  (body <int>
+        "CHECK_GDBM(gdbm);"
+        "SCM_RESULT = gdbm_reorganize(gdbm->dbf);"))
 
 (define-cproc gdbm-sync (gdbm::<gdbm>)
-  "CHECK_GDBM(gdbm);
-  gdbm_sync(gdbm->dbf);
-  SCM_RETURN(SCM_UNDEFINED);")
+  (body <void>
+        "CHECK_GDBM(gdbm);"
+        "gdbm_sync(gdbm->dbf);"))
 
 (define-cproc gdbm-exists? (gdbm::<gdbm> key::<string>)
-  "datum dkey; int r;
-  CHECK_GDBM(gdbm);
-  TO_DATUM(dkey, key);
-  r = gdbm_exists(gdbm->dbf, dkey);
-  SCM_RETURN(SCM_MAKE_BOOL(r));")
+  (body <boolean>
+        "datum dkey;"
+        "CHECK_GDBM(gdbm);"
+        "TO_DATUM(dkey, key);"
+        "SCM_RESULT = gdbm_exists(gdbm->dbf, dkey);"))
 
 (define-cproc gdbm-strerror (errno::<fixnum>)
-  "SCM_RETURN(SCM_MAKE_STR_IMMUTABLE(gdbm_strerror(errno)));")
+  (expr "SCM_MAKE_STR_IMMUTABLE(gdbm_strerror(errno))"))
 
 (define-cproc gdbm-setopt (gdbm::<gdbm> option::<fixnum> val)
-  "int ival, r;
-  CHECK_GDBM(gdbm);
-  if (SCM_EXACTP(val)) ival = Scm_GetUInteger(val);
-  else ival = !SCM_FALSEP(val);
-  r = gdbm_setopt(gdbm->dbf, option, &ival, sizeof(int));
-  SCM_RETURN(SCM_MAKE_INT(r));")
+  (body <int>
+        "int ival;"
+        "CHECK_GDBM(gdbm);"
+        "if (SCM_EXACTP(val)) ival = Scm_GetUInteger(val);"
+        "else ival = !SCM_FALSEP(val);"
+        "SCM_RESULT = gdbm_setopt(gdbm->dbf, option, &ival, sizeof(int));"))
 
 (define-cproc gdbm-version ()
-  "SCM_RETURN(SCM_MAKE_STR_IMMUTABLE(gdbm_version));")
+  (expr "SCM_MAKE_STR_IMMUTABLE(gdbm_version)"))
 
 (define-cproc gdbm-errno ()
-  "int r = gdbm_errno;
-  gdbm_errno = 0;
-  SCM_RETURN(SCM_MAKE_INT(r));")
+  (body <int>
+        "SCM_RESULT = gdbm_errno;"
+        "gdbm_errno = 0;"))
 
 (define-enum GDBM_READER)
 (define-enum GDBM_WRITER)

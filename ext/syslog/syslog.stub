@@ -1,7 +1,7 @@
 ;;;
 ;;; syslog.stub - syslog interface
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: syslog.stub,v 1.4 2005-07-22 09:26:55 shirok Exp $
+;;;  $Id: syslog.stub,v 1.5 2005-08-01 12:23:33 shirok Exp $
 ;;;
 
 "
@@ -55,21 +55,19 @@ void Scm_Init_syslog(void)
     (begin
       (define-cproc sys-openlog (ident::<string> option::<fixnum>
                                  facility::<fixnum>)
-        "openlog(Scm_GetStringConst(ident), option, facility);
-         SCM_RETURN(SCM_UNDEFINED);")
+        (body <void> "openlog(Scm_GetStringConst(ident), option, facility);"))
       (define-cproc sys-syslog (prio::<fixnum> message::<string>)
-        "syslog(prio, \"%s\", Scm_GetStringConst(message));
-         SCM_RETURN(SCM_UNDEFINED);")
+        (body <void> "syslog(prio, \"%s\", Scm_GetStringConst(message));"))
       (define-cproc sys-closelog ()
-        (return <void> "closelog"))
+        (call <void> "closelog"))
       ))
 
 (if "defined(HAVE_SETLOGMASK)"
     (begin
       (define-cproc sys-logmask (prio::<fixnum>)
-        (return <fixnum> "LOG_MASK"))
+        (call <fixnum> "LOG_MASK"))
       (define-cproc sys-setlogmask (mask::<fixnum>)
-        (return <fixnum> "setlogmask"))))
+        (call <fixnum> "setlogmask"))))
 
 ;; openlog options
 (if "defined(LOG_CONS)"   (define-enum LOG_CONS))

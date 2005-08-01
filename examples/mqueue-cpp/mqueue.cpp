@@ -23,14 +23,17 @@ set<MQueue*> MQueue::knownQueues;
 string MQueue::popMessage()
 {
     Message m = q.top();
+    fprintf(stderr, "zap\n");
     q.pop();
+    fprintf(stderr, "zip\n");
     return m.getBody();
 }
 
-void MQueue::pushMessage(string body, int urgency)
+size_t MQueue::pushMessage(string body, int urgency)
 {
     Message *m = new Message(body, urgency);
     q.push(*m);
+    return q.size();
 }
 
 void MQueue::registerSelf()

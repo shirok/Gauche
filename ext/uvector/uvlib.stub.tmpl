@@ -6,7 +6,7 @@
 ;;;
 ;;; uvlib.stub - uniform vector library
 ;;;  
-;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -35,7 +35,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; \$Id: uvlib.stub.tmpl,v 1.5 2005-05-11 02:48:03 shirok Exp $
+;;; \$Id: uvlib.stub.tmpl,v 1.6 2005-08-01 12:23:34 shirok Exp $
 ;;;
 
 "
@@ -73,7 +73,7 @@
 (define-type <${t}vector> "Scm${T}Vector*")
 
 (define-cproc ${t}vector? (obj)
-  (return <boolean> "SCM_${T}VECTORP"))
+  (call <boolean> "SCM_${T}VECTORP"))
 
 (define-cproc make-${t}vector (length::<fixnum> &optional (fill 0))
   "${etype} filler;
@@ -98,7 +98,7 @@
 (define-cproc ${t}vector-copy (v::<${t}vector>
                                &optional (start::<fixnum> 0)
                                          (end::<fixnum> -1))
-  (return "Scm_${T}VectorCopy"))
+  (call "Scm_${T}VectorCopy"))
 
 ;; NB: this function accomodates to two APIs.
 ;; The 'modern' API, compatible to srfi-13 and srfi-43, takes arguments:
@@ -132,7 +132,7 @@
 (define-cproc ${t}vector->list (v::<${t}vector>
                                 &optional (start::<fixnum> 0)
                                           (end::<fixnum> -1))
-  (return "Scm_${T}VectorToList"))
+  (call "Scm_${T}VectorToList"))
 
 (define-cproc list->${t}vector (l::<list> &optional clamp)
   "SCM_RETURN(Scm_ListTo${T}Vector(l, clamp_arg(clamp)));")
@@ -147,7 +147,7 @@
 (define-cproc ${t}vector->vector (v::<${t}vector>
                                   &optional (start::<fixnum> 0)
                                             (end::<fixnum> -1))
-  (return "Scm_${T}VectorToVector"))
+  (call "Scm_${T}VectorToVector"))
 
 (define-cproc vector->${t}vector (v::<vector>>
                                   &optional (start::<fixnum> 0)
@@ -175,19 +175,19 @@
 
 ///(define *tmpl-dotop* '(
 (define-cproc ${t}vector-dot (v0::<${t}vector> v1)
-  (return "Scm_${T}VectorDotProd"))
+  (call "Scm_${T}VectorDotProd"))
 ///)) ;; end of tmpl-dotop
 
 ///(define *tmpl-rangeop* '(
 (define-cproc ${t}vector-${opname} (v0::<${t}vector> min max)
-  (return "Scm_${T}Vector${Opname}"))
+  (call "Scm_${T}Vector${Opname}"))
 ///)) ;; end of tmpl-rangeop
 
 ///(define *tmpl-swapb* '(
 (define-cproc ${t}vector-swap-bytes (v0::<${t}vector>)
-  (return "Scm_${T}VectorSwapBytes"))
+  (call "Scm_${T}VectorSwapBytes"))
 (define-cproc ${t}vector-swap-bytes! (v0::<${t}vector>)
-  (return "Scm_${T}VectorSwapBytesX"))
+  (call "Scm_${T}VectorSwapBytesX"))
 ///)) ;; end of tmpl-rangeop
 
 ///(define *extra-procedure*  ;; procedurally generates code
@@ -205,13 +205,13 @@
 
 (define-cproc uvector-alias (klass::<class> v::<uvector>
                              &optional (start::<int> 0) (end::<int> -1))
-  (return "Scm_UVectorAlias"))
+  (call "Scm_UVectorAlias"))
 
 (define-cproc uvector-swap-bytes (v::<uvector>)
-  (return "Scm_UVectorSwapBytes"))
+  (call "Scm_UVectorSwapBytes"))
 
 (define-cproc uvector-swap-bytes! (v::<uvector>)
-  (return "Scm_UVectorSwapBytesX"))
+  (call "Scm_UVectorSwapBytesX"))
 
 
 (define-cproc read-block! (v::<uvector>
@@ -219,14 +219,14 @@
                                      (start::<fixnum> 0)
                                      (end::<fixnum> -1)
                                      (endian #f))
-  (return "Scm_ReadBlockX"))
+  (call "Scm_ReadBlockX"))
 
 (define-cproc write-block (v::<uvector>
                            &optional (port::<output-port> (current-output-port))
                                      (start::<fixnum> 0)
                                      (end::<fixnum> -1)
                                      (endian #f))
-  (return "Scm_WriteBlock"))
+  (call "Scm_WriteBlock"))
 
 ;;; String operations 
 "static ScmObj string_to_bytevector(ScmClass *klass, ScmString *s, int start, int end)

@@ -47,7 +47,7 @@ class MQueue {
     // about Message.
     bool empty() const      { return q.empty(); }
     string popMessage();
-    void pushMessage(string body, int urgency = 0);
+    size_t pushMessage(string body, int urgency = 0);
 
     // One can find a previously created MQueue by its name.
     static MQueue *findByName(string name);

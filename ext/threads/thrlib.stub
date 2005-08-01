@@ -1,7 +1,7 @@
 ;;;
 ;;; thrlib.stub - thread interface functions
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: thrlib.stub,v 1.8 2004-10-09 11:36:36 shirok Exp $
+;;; $Id: thrlib.stub,v 1.9 2005-08-01 12:23:34 shirok Exp $
 ;;;
 
 "
@@ -58,44 +58,44 @@
 ;; Basic thread interface
 ;;
 
-(define-cproc thread? (obj) (return <boolean> "SCM_VMP"))
+(define-cproc thread? (obj) (call <boolean> "SCM_VMP"))
 
 (define-cproc thread-name (vm::<thread>)
-  "SCM_RETURN(vm->name);")
+  (expr "vm->name"))
 
 (define-cproc thread-specific (vm::<thread>)
-  "SCM_RETURN(vm->specific);")
+  (expr "vm->specific"))
 
 (define-cproc thread-specific-set! (vm::<thread> obj)
-  "vm->specific = obj; SCM_RETURN(SCM_UNDEFINED);")
+  (body <void> "vm->specific = obj;"))
 
 (define-cproc make-thread (thunk::<procedure> &optional (name #f))
-  (return "Scm_MakeThread"))
+  (call "Scm_MakeThread"))
 
 (define-cproc thread-start! (vm::<thread>)
-  (return "Scm_ThreadStart"))
+  (call "Scm_ThreadStart"))
 
 (define-cproc thread-yield! ()
-  (return "Scm_ThreadYield"))
+  (call "Scm_ThreadYield"))
 
 (define-cproc thread-sleep! (timeout)
-  (return "Scm_ThreadSleep"))
+  (call "Scm_ThreadSleep"))
 
 (define-cproc thread-join! (vm::<thread> &optional (timeout #f) timeout-val)
-  (return "Scm_ThreadJoin"))
+  (call "Scm_ThreadJoin"))
 
 (define-cproc thread-terminate! (vm::<thread>)
-  (return "Scm_ThreadTerminate"))
+  (call "Scm_ThreadTerminate"))
 
 ;;===============================================================
 ;; Mutex
 ;;
 
 (define-cproc make-mutex (&optional (name #f))
-  (return "Scm_MakeMutex"))
+  (call "Scm_MakeMutex"))
 
 (define-cproc mutex? (obj)
-  (return <boolean> "SCM_MUTEXP"))
+  (call <boolean> "SCM_MUTEXP"))
 
 (define-symbol not-owned "sym_not_owned")
 (define-symbol abandoned "sym_abandoned")
@@ -131,38 +131,38 @@
   SCM_RETURN(Scm_MutexUnlock(mutex, cond, timeout));")
 
 (define-cproc mutex-specific (mutex::<mutex>)
-  "SCM_RETURN(mutex->specific);")
+  (expr "mutex->specific"))
 
 (define-cproc mutex-specific-set! (mutex::<mutex> obj)
-  "mutex->specific = obj; SCM_RETURN(SCM_UNDEFINED);")
+  (body <void> "mutex->specific = obj;"))
 
 (define-cproc mutex-name (mutex::<mutex>)
-  "SCM_RETURN(mutex->name);")
+  (expr "mutex->name"))
 
 ;;===============================================================
 ;; Condition variable
 ;;
 
 (define-cproc make-condition-variable (&optional (name #f))
-  (return "Scm_MakeConditionVariable"))
+  (call "Scm_MakeConditionVariable"))
 
 (define-cproc condition-variable? (obj)
-  (return <boolean> "SCM_CONDITION_VARIABLE_P"))
+  (call <boolean> "SCM_CONDITION_VARIABLE_P"))
 
 (define-cproc condition-variable-name (cv::<condition-variable>)
-  "SCM_RETURN(cv->name);")
+  (expr "cv->name"))
 
 (define-cproc condition-variable-specific (cv::<condition-variable>)
-  "SCM_RETURN(cv->specific);")
+  (expr "cv->specific"))
 
 (define-cproc condition-variable-specific-set! (cv::<condition-variable> obj)
-  "cv->specific = obj; SCM_RETURN(SCM_UNDEFINED);")
+  (body <void> "cv->specific = obj;"))
 
 (define-cproc condition-variable-signal! (cv::<condition-variable>)
-  (return "Scm_ConditionVariableSignal"))
+  (call "Scm_ConditionVariableSignal"))
 
 (define-cproc condition-variable-broadcast! (cv::<condition-variable>)
-  (return "Scm_ConditionVariableBroadcast"))
+  (call "Scm_ConditionVariableBroadcast"))
 
 ;;===============================================================
 ;; Thread exceptions

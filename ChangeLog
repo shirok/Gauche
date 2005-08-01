@@ -1,3 +1,15 @@
+2005-08-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/genstub: rewriting genstub 2nd stage: added new CPROC specs,
+	  'body' and 'expr'.  They can make typical cproc body much shorter.
+	  The 'return' spec is deprecated, in favor of 'call' spec.
+	* *.stub: adapted to the new CPROC specs.
+
+2005-07-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/genstub: rewriting genstub 1st stage: adopted gauche.cgen
+	  framework to generate code.
+
 2005-07-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/file/util.scm (path-sans-extension): fixed abnormality when

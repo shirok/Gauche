@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: auxsyslib.stub,v 1.22 2005-05-24 09:19:41 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.23 2005-08-01 12:23:33 shirok Exp $
 ;;;
 
 "
@@ -64,7 +64,7 @@
 "
 
 ;; stdlib.h
-(define-cproc sys-abort ()  (return <void> "abort"))
+(define-cproc sys-abort ()  (call <void> "abort"))
 
 (if "defined HAVE_REALPATH"
     (define-cproc %sys-realpath (path::<string>)
@@ -90,10 +90,10 @@
   SCM_RETURN(Scm_Values2(Scm_MakeFlonum(fr), Scm_MakeFlonum(inte)));")
 
 (define-cproc ldexp (x::<real> exp::<int>)
-  (return <real> "ldexp"))
+  (call <real> "ldexp"))
 
 (define-cproc log10 (x::<real>)
-  (return <real> "log10"))
+  (call <real> "log10"))
 
 ;; sys/loadavg.h
 (if "defined HAVE_GETLOADAVG"

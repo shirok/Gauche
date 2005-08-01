@@ -1,5 +1,5 @@
 #
-# $Id: Makefile.in,v 1.1 2005-07-31 06:08:13 shirok Exp $
+# $Id: Makefile.in,v 1.2 2005-08-01 12:23:33 shirok Exp $
 #
 
 # NOTE: "gauche-package compile" doesn't handle C++ sources, so
@@ -68,7 +68,7 @@ uninstall :
 	$(INSTALL) -U $(SCM_INSTALL_DIR)/.packages $(PACKAGE).gpd
 
 clean :
-	$(GAUCHE_PACKAGE) compile --clean mqueue_cpp $(mqueue_cpp_SRCS)
+	$(GAUCHE_PACKAGE) compile --clean mqueue_cpp $(mqueue_SRCS)
 	rm -rf core $(TARGET) $(GENERATED) *~ test.log so_locations
 
 distclean : clean

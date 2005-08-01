@@ -45,16 +45,16 @@
   SCM_RETURN(SCM_UNDEFINED);")
 
 (define-cproc mt-random-real (mt::<mersenne-twister>)
-  "SCM_RETURN(Scm_MakeFlonum(Scm_MTGenrandF64(mt, TRUE)));")
+  (expr <double> "Scm_MTGenrandF64(mt, TRUE)"))
 
 (define-cproc mt-random-real0 (mt::<mersenne-twister>)
-  "SCM_RETURN(Scm_MakeFlonum(Scm_MTGenrandF64(mt, FALSE)));")
+  (expr <double> "Scm_MTGenrandF64(mt, FALSE)"))
 
 (define-cproc %mt-random-integer (mt::<mersenne-twister> n)
-  "SCM_RETURN(Scm_MTGenrandInt(mt, n));")
+  (call "Scm_MTGenrandInt"))
 
 (define-cproc %mt-random-uint32 (mt::<mersenne-twister>)
-  "SCM_RETURN(Scm_MakeIntegerFromUI(Scm_MTGenrandU32(mt)));")
+  (call <ulong> "Scm_MTGenrandU32"))
 
 (define-cproc mt-random-fill-u32vector! (mt::<mersenne-twister> v::<u32vector>)
   " int len = SCM_U32VECTOR_SIZE(v), i;
