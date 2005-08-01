@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.106 2005-07-31 06:01:44 shirok Exp $
+;;;  $Id: genstub,v 1.107 2005-08-01 04:26:17 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -41,6 +41,7 @@
 (use gauche.parameter)
 (use gauche.mop.instance-pool)
 (use gauche.cgen)
+(use file.util)
 (use util.match)
 (use text.tr)
 
@@ -50,7 +51,8 @@
 
 (define cpp-condition (make-parameter #f))
 
-(define (f fmt . args) (apply format #t fmt args) (newline))
+(define (f fmt . args)
+  (cgen-body (apply format fmt args)))
 
 ;; Summary of forms
 ;;
@@ -140,7 +142,7 @@
     (apply (handler-of self) args)))
 
 (define (parse-form form)
-  (cond ((string? form) (print form))
+  (cond ((string? form) (cgen-body form))
         ((not (pair? form))
          (error "bad form:" form))
         ((find (lambda (p) (eq? (car form) (name-of p)))
@@ -208,7 +210,7 @@
 ;;   <void>       -            void        (Used only as a return type.
 ;;                                          Scheme function returns #<undef>)
 ;;
-;;   <const-char*> <string>    const char* For arguments, string is unboxed
+;;   <const-cstring> <string>  const char* For arguments, string is unboxed
 ;;                                         by Scm_GetStringConst.
 ;;                                         For return values, C string is boxed
 ;;                                         by SCM_MAKE_STR_COPYING.
@@ -415,14 +417,14 @@
 (define *scm-type* (name->type '<top>))
 
 ;; DEPRECATED: for backward compatibility
-(define-method predicate-of ((self <type>))
-  (string->symbol #`",(string-trim-both (x->string (name-of self)) #[<>])?"))
+;(define-method predicate-of ((self <type>))
+;  (string->symbol #`",(string-trim-both (x->string (name-of self)) #[<>])?"))
 
-;; DEPRECATED: for backward compatibility
-(define (predicate->type pred)
-  (or (find (lambda (type) (eq? (predicate-of type) pred))
-            (instance-pool->list <type>))
-      (error "unknown predicate to assert" pred)))
+;;; DEPRECATED: for backward compatibility
+;(define (predicate->type pred)
+;  (or (find (lambda (type) (eq? (predicate-of type) pred))
+;            (instance-pool->list <type>))
+;      (error "unknown predicate to assert" pred)))
 
 ;;===================================================================
 ;; Stub : base class of declarations
@@ -506,10 +508,12 @@
 (define-method emit-definition ((self <bignum-literal>))
   (f #`"static ScmObj ,(c-name-of self) = SCM_UNBOUND;"))
 (define-method emit-initializer ((self <bignum-literal>))
-  (f "  ~a = ~a(~a)"
-     (c-name-of a)
-     (if (positive? (value-of a)) "Scm_MakeIntegerFromUI" "Scm_MakeInteger")
-     (value-of a)))
+  (cgen-init (format "  ~a = ~a(~a)"
+                     (c-name-of a)
+                     (if (positive? (value-of a))
+                       "Scm_MakeIntegerFromUI"
+                       "Scm_MakeInteger")
+                     (value-of a))))
 
 ;; boolean literals
 (define-literal-binding <boolean> <boolean-literal>)
@@ -532,7 +536,7 @@
   (emit-static-string (c-name-of self) (value-of self))
   (f "static ScmObj ~a = SCM_UNBOUND;" (c-name-of self)))
 (define-method emit-initializer ((self <symbol-literal>))
-  (f "  ~a = Scm_Intern(&~:*~a__NAME);" (c-name-of self)))
+  (cgen-init (format "  ~a = Scm_Intern(&~:*~a__NAME);" (c-name-of self))))
 
 ;; keyword literals
 (define-literal-binding <keyword> <keyword-literal>)
@@ -542,7 +546,7 @@
                       (write-to-string (value-of self) display))
   (f "static ScmObj ~a = SCM_UNBOUND;" (c-name-of self)))
 (define-method emit-initializer ((self <keyword-literal>))
-  (f "  ~a = Scm_MakeKeyword(&~:*~a__NAME);" (c-name-of self)))
+  (cgen-init (format "  ~a = Scm_MakeKeyword(&~:*~a__NAME);" (c-name-of self))))
 
 ;; some special literals
 ;;  (c "...")              - embedding C code
@@ -644,10 +648,11 @@
 (define-method emit-initializer ((self <cvariable>))
   (emit-initializer (symbol-of self))
   (emit-initializer (initializer-of self))
-  (f "  ~a(module, SCM_SYMBOL(~a), ~a);"
-     (if (constant? self) "Scm_DefineConst" "Scm_Define")
-     (value-getter-of (symbol-of self))
-     (value-getter-of (initializer-of self))))
+  (cgen-init
+   (format "  ~a(module, SCM_SYMBOL(~a), ~a);"
+           (if (constant? self) "Scm_DefineConst" "Scm_Define")
+           (value-getter-of (symbol-of self))
+           (value-getter-of (initializer-of self)))))
 
 (define-method emit-definition ((self <cvariable>))
   (emit-definition (symbol-of self))
@@ -920,40 +925,42 @@
   (for-each ensure-keyword-arg (keyword-args-of cproc))
   (f "static ScmObj ~a(ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)"
      (c-name-of cproc))
-  (print "{")
+  (cgen-body "{")
   ;; argument decl
   (for-each emit-arg-decl (args-of cproc))
   (when (> (num-optargs-of cproc) 0)
-    (print "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
+    (cgen-body "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
   (f "  SCM_ENTER_SUBR(\"~a\");" (scheme-name-of cproc))
   ;; argument count check (for optargs)
   (when (and (> (num-optargs-of cproc) 0)
              (null? (keyword-args-of cproc))
              (not (have-rest-arg? cproc)))
-    (print #`"  if (Scm_Length(SCM_OPTARGS) > ,(num-optargs-of cproc))")
-    (print #`"    Scm_Error(\"too many arguments: up to ,(num-optargs-of cproc) is expected, %d given.\",, Scm_Length(SCM_OPTARGS));"))
+    (cgen-body #`"  if (Scm_Length(SCM_OPTARGS) > ,(num-optargs-of cproc))")
+    (cgen-body #`"    Scm_Error(\"too many arguments: up to ,(num-optargs-of cproc) is expected, %d given.\",, Scm_Length(SCM_OPTARGS));"))
   ;; argument assertions & unbox op.
   (for-each emit-arg-unbox (args-of cproc))
   ;; body
-  (print "  {")
-  (for-each print (reverse (stmts-of cproc)))
-  (print "  }")
-  (print "}")
-  (newline)
+  (cgen-body "  {")
+  (apply cgen-body (reverse (stmts-of cproc)))
+  (cgen-body "  }")
+  (cgen-body "}")
+  (cgen-body "")
   )
 
 (define-method emit-initializer ((cproc <cproc>))
   (when (symbol? (scheme-name-of cproc))
-    (f "  SCM_DEFINE(module, ~s, SCM_OBJ(&~a__STUB));"
-       (symbol->string (scheme-name-of cproc)) (c-name-of cproc)))
+    (cgen-init
+     (format "  SCM_DEFINE(module, ~s, SCM_OBJ(&~a__STUB));"
+             (symbol->string (scheme-name-of cproc)) (c-name-of cproc))))
   (next-method)
   )
 
 (define-method emit-initializer ((cproc <setter-mixin>))
   (when (setter-of cproc)
-    (f "  Scm_SetterSet(SCM_PROCEDURE(&~a__STUB), SCM_PROCEDURE(&~a__STUB), TRUE);"
-       (c-name-of cproc)
-       (setter-c-name-of cproc))))
+    (cgen-init
+     (format "  Scm_SetterSet(SCM_PROCEDURE(&~a__STUB), SCM_PROCEDURE(&~a__STUB), TRUE);"
+             (c-name-of cproc)
+             (setter-c-name-of cproc)))))
 
 (define (emit-arg-decl arg)
   (f "  ScmObj ~a;" (scm-name-of arg))
@@ -1027,7 +1034,7 @@
        c-func-name
        inliner-name
        )
-    (newline)))
+    (cgen-body "")))
 
 ;;-----------------------------------------------------------------
 ;; Generic function
@@ -1047,11 +1054,11 @@
 (define-method emit-definition ((self <cgeneric>))
   (unless (extern? self) (display "static "))
   (f "SCM_DEFINE_GENERIC(~a, ~a, NULL);" (c-name-of self) (fallback-of self))
-  (newline))
+  (cgen-body ""))
 
 (define-method emit-initializer ((self <cgeneric>))
-  (f "  Scm_InitBuiltinGeneric(&~a, ~s, module);"
-     (c-name-of self) (symbol->string (scheme-name-of self)))
+  (cgen-init (format "  Scm_InitBuiltinGeneric(&~a, ~s, module);"
+                     (c-name-of self) (symbol->string (scheme-name-of self))))
   (next-method))
 
 (define-form-parser define-cgeneric (scheme-name c-name . body)
@@ -1137,30 +1144,30 @@
 (define-method emit-definition ((method <cmethod>))
   (f "static ScmObj ~a(ScmNextMethod *nm_, ScmObj *SCM_FP, int SCM_ARGCNT, void *d_)"
      (c-name-of method))
-  (print "{")
+  (cgen-body "{")
   (for-each emit-arg-decl (args-of method))
   (when (have-rest-arg? method)
-    (print "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
+    (cgen-body "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
   (for-each emit-arg-unbox (args-of method))
   ;; body
-  (print "  {")
-  (for-each print (stmts-of method))
-  (print "  }")
-  (print "}")
-  (newline)
-  (display #`"static ScmClass *,(c-name-of method)__SPEC[] = { ")
-  (for-each (lambda (spec) (display #`"SCM_CLASS_STATIC_PTR(,|spec|), "))
+  (cgen-body "  {")
+  (apply cgen-body (stmts-of method))
+  (cgen-body "  }")
+  (cgen-body "}")
+  (cgen-body "")
+  (cgen-body #`"static ScmClass *,(c-name-of method)__SPEC[] = { ")
+  (for-each (lambda (spec) (cgen-body #`"SCM_CLASS_STATIC_PTR(,|spec|), "))
             (reverse (specializers-of method)))
-  (print "};")
+  (cgen-body "};")
   (f "static SCM_DEFINE_METHOD(~a__STUB, &~a, ~a, ~a, ~a__SPEC, ~:*~a, NULL);"
      (c-name-of method) (c-generic-of method)
      (num-reqargs-of method) (if (have-rest-arg? method) "1" "0")
      (c-name-of method))
-  (newline)
+  (cgen-body "")
   )
 
 (define-method emit-initializer ((method <cmethod>))
-  (f "  Scm_InitBuiltinMethod(&~a__STUB);" (c-name-of method)))
+  (cgen-init (format "  Scm_InitBuiltinMethod(&~a__STUB);" (c-name-of method))))
 
 ;; returns four values: args, specializers, numreqargs, have-optarg?
 (define (parse-specialized-args arglist)
@@ -1315,43 +1322,43 @@
       
 (define-method emit-definition ((self <cclass>))
   (when (string? (allocator-of self))
-    (print #`"static ScmObj ,(c-allocator-name-of self)(ScmClass *klass, ScmObj initargs)")
-    (print "{")
-    (print (allocator-of self))
-    (print "}")
-    (newline))
+    (cgen-body #`"static ScmObj ,(c-allocator-name-of self)(ScmClass *klass, ScmObj initargs)")
+    (cgen-body "{")
+    (cgen-body (allocator-of self))
+    (cgen-body "}")
+    (cgen-body ""))
   (when (string? (printer-of self))
-    (print #`"static void ,(c-printer-name-of self)(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)")
-    (print "{")
-    (print (printer-of self))
-    (print "}")
-    (newline))
+    (cgen-body #`"static void ,(c-printer-name-of self)(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)")
+    (cgen-body "{")
+    (cgen-body (printer-of self))
+    (cgen-body "}")
+    (cgen-body ""))
   (emit-cpa self)
   (if (eqv? (qualifier-of self) :base)
       (let1 c-type (string-trim-right (c-type-of self))
         (unless (string-suffix? "*" c-type)
           (errorf "can't use C-type ~s as a base class; C-type must be a pointer type" c-type))
         (let1 c-instance-type (string-drop-right c-type 1)
-          (print #`"SCM_DEFINE_BASE_CLASS(,(c-name-of self), ,|c-instance-type|, ,(c-printer-name-of self), NULL, NULL, ,(c-allocator-name-of self), ,(cpa-name-of self));")))
-      (print #`"SCM_DEFINE_BUILTIN_CLASS(,(c-name-of self), ,(c-printer-name-of self), NULL, NULL, ,(c-allocator-name-of self), ,(cpa-name-of self));"))
-  (newline)
+          (cgen-body #`"SCM_DEFINE_BASE_CLASS(,(c-name-of self), ,|c-instance-type|, ,(c-printer-name-of self), NULL, NULL, ,(c-allocator-name-of self), ,(cpa-name-of self));")))
+      (cgen-body #`"SCM_DEFINE_BUILTIN_CLASS(,(c-name-of self), ,(c-printer-name-of self), NULL, NULL, ,(c-allocator-name-of self), ,(cpa-name-of self));"))
+  (cgen-body "")
   (when (pair? (slot-spec-of self))
     (for-each emit-getter-n-setter (slot-spec-of self))
-    (print #`"static ScmClassStaticSlotSpec ,(c-slot-spec-name-of self)[] = {")
+    (cgen-body #`"static ScmClassStaticSlotSpec ,(c-slot-spec-name-of self)[] = {")
     (for-each emit-spec-definition (slot-spec-of self))
-    (print "  { NULL }")
-    (print "};")
-    (newline))
+    (cgen-body "  { NULL }")
+    (cgen-body "};")
+    (cgen-body ""))
   )
 
 (define-method emit-initializer ((self <cclass>))
-  (print #`"  Scm_InitBuiltinClass(&,(c-name-of self), \",(scheme-name-of self)\", ,(c-slot-spec-name-of self), TRUE, module);")
+  (cgen-init #`"  Scm_InitBuiltinClass(&,(c-name-of self), \",(scheme-name-of self)\", ,(c-slot-spec-name-of self), TRUE, module);")
   ;; adjust direct-supers if necessary
   (let1 ds (direct-supers-of self)
     (when (not (null? ds))
-      (format #t "  ~a.directSupers = Scm_List(" (c-name-of self))
-      (for-each (lambda (s) (format #t "SCM_OBJ(&~a), " s)) ds)
-      (format #t " NULL);\n"))))
+      (cgen-init (format "  ~a.directSupers = Scm_List(" (c-name-of self)))
+      (for-each (lambda (s) (cgen-init (format "SCM_OBJ(&~a), " s))) ds)
+      (cgen-init (format " NULL);\n")))))
 
 ;; cpa ----------
 ;;  For now, cpa should be a list of C class names, or c literal
@@ -1364,14 +1371,14 @@
 (define-method emit-cpa ((self <cclass>))
   (let1 cpa (cpa-of self)
     (unless (or (null? cpa) (c-literal? (cpa-of self)))
-      (print #`"static ScmClass *,(c-name-of self)_CPL[] = {")
+      (cgen-body #`"static ScmClass *,(c-name-of self)_CPL[] = {")
       (for-each (lambda (class)
-                  (print #`"  SCM_CLASS_STATIC_PTR(,|class|),"))
+                  (cgen-body #`"  SCM_CLASS_STATIC_PTR(,|class|),"))
                 cpa)
       (unless (equal? (car (last-pair cpa)) "Scm_TopClass")
-        (print "  SCM_CLASS_STATIC_PTR(Scm_TopClass),"))
-      (print "  NULL")
-      (print "};"))))
+        (cgen-body "  SCM_CLASS_STATIC_PTR(Scm_TopClass),"))
+      (cgen-body "  NULL")
+      (cgen-body "};"))))
 
 ;; slot ---------
 
@@ -1411,38 +1418,38 @@
   (let* ((type  (type-of slot))
          (class (cclass-of slot))
          (class-type (name->type (scheme-name-of class))))
-    (print #`"static ScmObj ,(slot-getter-name slot)(ScmObj OBJARG)")
-    (print "{")
-    (print #`"  ,(c-type-of class-type) obj = ,(unboxer-of class-type)(OBJARG);")
-    (cond ((string? (getter-of slot)) (print (getter-of slot)))
+    (cgen-body #`"static ScmObj ,(slot-getter-name slot)(ScmObj OBJARG)")
+    (cgen-body "{")
+    (cgen-body #`"  ,(c-type-of class-type) obj = ,(unboxer-of class-type)(OBJARG);")
+    (cond ((string? (getter-of slot)) (cgen-body (getter-of slot)))
           ((string? (c-spec-of slot))
            (f "  return ~a(~a);" (boxer-of type) (c-spec-of slot)))
           (else
            (f "  return ~a(obj->~a);" (boxer-of type) (c-name-of slot))))
-    (print "}")
-    (newline)))
+    (cgen-body "}")
+    (cgen-body "")))
 
 (define-method emit-setter ((slot <cslot>))
   (let* ((type (type-of slot))
          (class (cclass-of slot))
          (class-type (name->type (scheme-name-of class))))
-    (print #`"static void ,(slot-setter-name slot)(ScmObj OBJARG, ScmObj value)")
-    (print "{")
-    (print #`"  ,(c-type-of class-type) obj = ,(unboxer-of class-type)(OBJARG);")
+    (cgen-body #`"static void ,(slot-setter-name slot)(ScmObj OBJARG, ScmObj value)")
+    (cgen-body "{")
+    (cgen-body #`"  ,(c-type-of class-type) obj = ,(unboxer-of class-type)(OBJARG);")
     (if (string? (setter-of slot))
-        (print (setter-of slot))
-        (begin
-          (unless (eq? type *scm-type*)
-            (f "  if (!~a(value)) Scm_Error(\"~a required, but got %S\", value);"
-               (c-predicate-of type) (c-type-of type)))
-          (if (c-spec-of slot)
-              (f "  ~a = ~a(value);" (c-spec-of slot) (unboxer-of type))
-              (f "  obj->~a = ~a(value);" (c-name-of slot) (unboxer-of type)))))
-    (print "}")
-    (newline)))
+      (cgen-body (setter-of slot))
+      (begin
+        (unless (eq? type *scm-type*)
+          (f "  if (!~a(value)) Scm_Error(\"~a required, but got %S\", value);"
+             (c-predicate-of type) (c-type-of type)))
+        (if (c-spec-of slot)
+          (f "  ~a = ~a(value);" (c-spec-of slot) (unboxer-of type))
+          (f "  obj->~a = ~a(value);" (c-name-of slot) (unboxer-of type)))))
+    (cgen-body "}")
+    (cgen-body "")))
 
 (define-method emit-spec-definition ((slot <cslot>))
-  (print #`"  SCM_CLASS_SLOT_SPEC(\",(scheme-name-of slot)\", ,(slot-getter-name slot), ,(slot-setter-name slot)),"))
+  (cgen-body #`"  SCM_CLASS_SLOT_SPEC(\",(scheme-name-of slot)\", ,(slot-getter-name slot), ,(slot-setter-name slot)),"))
 
 ;;===================================================================
 ;; Extra initializers
@@ -1455,7 +1462,7 @@
 (define-method emit-defintion ((self <initcode>))
   #f)
 (define-method emit-initializer ((self <initcode>))
-  (for-each display (code-of self)))
+  (apply cgen-init (code-of self)))
 
 (define-form-parser initcode codes
   (make <initcode> :code codes))
@@ -1552,13 +1559,13 @@
     (lambda () (port-for-each parse-form read)))
   )
 
-(define-method emit-initializer ((name <string>))
-  (f "void Scm_Init_~a(ScmModule *module)" name)
-  (print "{")
+(define-method emit-initializer ()
   (for-each (lambda (stub)
-              (with-cpp-condition stub (emit-initializer stub)))
+              (let1 cpp (cpp-condition-of stub)
+                (when cpp (cgen-init (format "#if ~a" cpp)))
+                (emit-initializer stub)
+                (when cpp (cgen-init (format "#endif /* ~a */" cpp)))))
             (reverse (instance-pool->list <stub>)))
-  (print "}")
   )
 
 ;;===================================================================
@@ -1575,33 +1582,36 @@
       (usage))
 
     (let* ((file (car args))
+           ;; NB: the following part should be replaced using
+           ;; path-sans-extension etc. for simplicity, but it will be after
+           ;; 0.8.6 release since 0.8.5 has a bug in it.
            (base (sys-basename file))
            (filelen (string-length file))
            (baselen (string-length base))
-           (prefix (substring base 0 (- baselen 5)))
+           (prefix  (get-c-name "" (substring base 0 (- baselen 5))))
            (outfile (string-append (substring file 0 (- filelen 5)) ".c")))
       (unless (file-exists? file)
         (f "Couldn't open ~a" file)
         (exit 1))
-      (set! *file-prefix* (string-append (get-c-name "" prefix) "_"))
-      (with-output-to-file outfile
-        (lambda ()
-          (f "/* Generated by genstub.  Do not edit. */")
-          (f "/* source: ~a */" file)
-          (for-each (lambda (sym) (f "#define ~a" sym)) predef-syms)
-          (f "#include <gauche.h>")
-          (newline)
-          (with-input-from-file file
-            (lambda () (port-for-each parse-form read)))
-          (emit-initializer (get-c-name "" prefix))
-          )))
-    )
+      (set! *file-prefix* (string-append prefix "_"))
+      (parameterize ((cgen-current-unit
+                      (make <cgen-unit>
+                        :name (path-sans-extension file)
+                        :preamble '("/* Generated by genstub.  Do not edit. */")
+                        :pre-decl (map (cut format "#define ~a" <>)
+                                       predef-syms)
+                        :init-prologue (format "void Scm_Init_~a(ScmModule *module)\n{\n" prefix)
+                        )))
+        (with-input-from-file file
+          (lambda () (port-for-each parse-form read)))
+        (emit-initializer)
+        (cgen-emit-c (cgen-current-unit))
+        )))
   0)
 
 (define (usage)
   (print "Usage: genstub [-D symbol] FILE.stub")
   (exit 1))
-
 
 ;; Local variables:
 ;; mode: scheme
