@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.108 2005-08-01 12:23:34 shirok Exp $
+;;;  $Id: genstub,v 1.109 2005-08-01 19:55:56 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -50,6 +50,8 @@
 (define *unbound* (cons #f #f))         ;placeholder for unbound value
 
 (define cpp-condition (make-parameter #f))
+
+(define c++-exception-used? (make-parameter #f))
 
 (define (f fmt . args)
   (cgen-body (apply format fmt args)))
@@ -83,6 +85,10 @@
 ;;        (setter <setter-name>) : specfy setter.  <setter-name> should
 ;;             be a cproc name defined in the same stub file
 ;;        (setter (args ...) body ...) : specify setter anonymously.
+;;        (catch (<decl> <C-stmt> ...) ...) : when writing a stub
+;;             for C++ function that may throw an exception, use this spec
+;;             to ensure the exception will be caught and converted to
+;;             Gauche error condition.
 ;;        a string : becomes the body of C code.  DEPRECATED.
 ;;        (return [<rettype>] <C-function-name>)  same as 'call'.  DEPRECATED.
 ;;
@@ -744,6 +750,12 @@
    (have-rest-arg?  :initform #f  :accessor have-rest-arg? :init-keyword :have-rest-arg?)
    (decls           :initform '() :accessor decls-of)
    (stmts           :initform '() :accessor stmts-of)
+      ;; reverse list of C stmt lines.
+   (c++-handlers    :initform '() :accessor c++-handlers-of)
+      ;; ((<c++-exception-decl> <handler-stmt> ...) ...)
+      ;; If not null, the entire procedure body is wrapped by 'try' and
+      ;; an appropriate handlers are emitted.  Necessary to write a stub
+      ;; for C++ functions that may throw an exception.
    ))
 
 (define (get-arg cproc arg)
@@ -881,6 +893,7 @@
       (('call . spec) (process-call-spec cproc form))
       (('body . spec) (process-body-spec cproc form))
       (('expr . spec) (process-expr-spec cproc form))
+      (('catch . spec) (process-catch-spec cproc form))
       (else (error "unknown body form:" form)))))
 
 (define-method process-setter ((cproc <cproc>) decl)
@@ -957,6 +970,27 @@
      (typed-result *scm-type* expr))
     (else (error "malformed 'expr' spec:" form))))
 
+(define-method process-catch-spec ((cproc <procstub>) form)
+  (match form
+    ((_ (decl . handler-stmts) ...)
+     ;; push default handlers
+     (push! (ref cproc 'c++-handlers)
+            (list "..."
+                  (format "Scm_Error(\"C++ exception is thrown in ~s\");"
+                          (scheme-name-of cproc))))
+     (push! (ref cproc 'c++-handlers)
+            (list "std::exception& e"
+                  (format "Scm_Error(\"~a: %s\", e.what());"
+                          (scheme-name-of cproc))))
+     (for-each (lambda (d s) (push! (ref cproc 'c++-handlers) (cons d s)))
+               decl handler-stmts)
+     ;; if this is the first time, make sure we include <stdexcept>.
+     (unless (c++-exception-used?)
+       (cgen-decl "#include <stdexcept>")
+       (c++-exception-used? #t))
+     )
+    (else (error "malformed 'catch' spec:" form))))
+
 ;;; emit code
 
 (define-method emit-definition ((cproc <cproc>))
@@ -978,9 +1012,18 @@
   ;; argument assertions & unbox op.
   (for-each emit-arg-unbox (args-of cproc))
   ;; body
+  (unless (null? (ref cproc 'c++-handlers))
+    (cgen-body "try {"))
   (cgen-body "  {")
   (apply cgen-body (reverse (stmts-of cproc)))
   (cgen-body "  }")
+  (unless (null? (ref cproc 'c++-handlers))
+    (cgen-body "}")
+    (dolist (h (ref cproc 'c++-handlers))
+      (cgen-body (format "catch (~a) {" (car h)))
+      (dolist (s (cdr h)) (cgen-body s))
+      (cgen-body "}")))
+  ;; closing the function
   (cgen-body "}")
   (cgen-body "")
   )

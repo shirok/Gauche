@@ -3,6 +3,9 @@
 	* src/genstub: rewriting genstub 2nd stage: added new CPROC specs,
 	  'body' and 'expr'.  They can make typical cproc body much shorter.
 	  The 'return' spec is deprecated, in favor of 'call' spec.
+	  Also added C++ exception handling support---with 'catch' spec,
+	  the stub body is surrounded by try-catch construct and C++ exceptions
+	  raised in the body is converted to Gauche exception.
 	* *.stub: adapted to the new CPROC specs.
 
 2005-07-31  Shiro Kawai  <shiro@acm.org>
