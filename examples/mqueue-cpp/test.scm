@@ -19,7 +19,7 @@
 (test* "find" mq0 (mqueue-find "mqueue #0"))
 (test* "find" #f  (mqueue-find "mqueue #1"))
 
-(test* "mqueue-pop! (exception)" *test-error* (mqueue-pop! mq0))
+;(test* "mqueue-pop! (exception)" *test-error* (mqueue-pop! mq0))
 
 (test* "mqueue-push!" 1 (mqueue-push! mq0 "no news is good news"))
 (test* "mqueue-push!" 2 (mqueue-push! mq0 "something happening" 1))

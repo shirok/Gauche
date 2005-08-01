@@ -23,9 +23,7 @@ set<MQueue*> MQueue::knownQueues;
 string MQueue::popMessage()
 {
     Message m = q.top();
-    fprintf(stderr, "zap\n");
     q.pop();
-    fprintf(stderr, "zip\n");
     return m.getBody();
 }
 
