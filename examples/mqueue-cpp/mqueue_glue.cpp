@@ -23,7 +23,6 @@ static void mqueue_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 static void mqueue_cleanup(ScmObj obj)
 {
     MQueue *q;
-    fprintf(stderr, "yonder, %p\n", q);
     q = MQUEUE_UNBOX(obj);
     delete q;
 }

@@ -20,8 +20,11 @@ class MQueue_eq : public unary_function<MQueue*, bool> {
 
 set<MQueue*> MQueue::knownQueues;
 
-string MQueue::popMessage()
+string MQueue::popMessage() throw (MQueueException)
 {
+    if (q.empty()) {
+        throw MQueueException("attempt to pop from an empty queue");
+    }
     Message m = q.top();
     q.pop();
     return m.getBody();

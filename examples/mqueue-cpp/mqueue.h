@@ -36,6 +36,12 @@ class Message {
     int urgency;
 };
 
+class MQueueException {
+  public:
+    string reason;
+    MQueueException(string reason_) : reason(reason_) {}
+};
+
 class MQueue {
   public:
     MQueue(string name_) : name(name_) { registerSelf(); }
@@ -46,7 +52,7 @@ class MQueue {
     // Basic queue operations.  The client doesn't need to know
     // about Message.
     bool empty() const      { return q.empty(); }
-    string popMessage();
+    string popMessage() throw (MQueueException);
     size_t pushMessage(string body, int urgency = 0);
 
     // One can find a previously created MQueue by its name.

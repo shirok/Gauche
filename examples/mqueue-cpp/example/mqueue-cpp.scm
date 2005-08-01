@@ -4,7 +4,8 @@
 
 (define-module example.mqueue-cpp
   (export <mqueue>
-          make-mqueue mqueue-find mqueue-push! mqueue-pop!)
+          make-mqueue mqueue-find mqueue-name mqueue-empty?
+          mqueue-push! mqueue-pop!)
   )
 (select-module example.mqueue-cpp)
 

@@ -15,12 +15,20 @@
 (define-cproc mqueue-find (name::<const-cstring>)
   (call <mqueue> "MQueue::findByName"))
 
+(define-cproc mqueue-name (mq::<mqueue>)
+  (expr <const-cstring> "mq->getName().c_str()"))
+
+(define-cproc mqueue-empty? (mq::<mqueue>)
+  (expr <boolean> "mq->empty()"))
+
 (define-cproc mqueue-push! (mq::<mqueue> message::<const-cstring>
-                                        &optional (urgency::<int> 0))
+                                         &optional (urgency::<int> 0))
   (expr <int> "mq->pushMessage(message, urgency)"))
 
 (define-cproc mqueue-pop! (mq::<mqueue>)
-  (expr <const-cstring> "mq->popMessage().c_str()"))
+  (expr <const-cstring> "mq->popMessage().c_str()")
+  (catch ("MQueueException e"
+          "Scm_Error(\"mqueue-pop!: %s\", e.reason.c_str());")))
 
 ;; Local variables:
 ;; mode: scheme
