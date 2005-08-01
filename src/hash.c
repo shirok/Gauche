@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.37 2005-07-30 21:37:11 shirok Exp $
+ *  $Id: hash.c,v 1.38 2005-08-01 20:44:58 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -106,7 +106,7 @@ static unsigned int round2up(unsigned int val)
 static void check_scm_hashtable(ScmHashTable *table)
 {
     if (SCM_HASH_TABLE_RAW_P(table)) {
-        Scm_Error("you can't access the raw hash table ~s from Scheme",
+        Scm_Error("you can't access the raw hash table %S from Scheme",
                   table);        
     }
 }
