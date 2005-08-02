@@ -1,5 +1,5 @@
 ;;;
-;;; mqueue_cpplib.stub
+;;; mqueue_lib.stub
 ;;;
 
 "
@@ -27,7 +27,7 @@
 
 (define-cproc mqueue-pop! (mq::<mqueue>)
   (expr <const-cstring> "mq->popMessage().c_str()")
-  (catch ("MQueueException e"
+  (catch ("MQueueException& e"
           "Scm_Error(\"mqueue-pop!: %s\", e.reason.c_str());")))
 
 ;; Local variables:
