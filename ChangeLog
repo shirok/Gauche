@@ -1,5 +1,7 @@
 2005-08-01  Shiro Kawai  <shiro@acm.org>
 
+	* examples/mqueue-cpp: An example of writing bindings to C++ libraries.
+
 	* src/genstub: rewriting genstub 2nd stage: added new CPROC specs,
 	  'body' and 'expr'.  They can make typical cproc body much shorter.
 	  The 'return' spec is deprecated, in favor of 'call' spec.
