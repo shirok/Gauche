@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char_utf_8.h,v 1.9 2003-07-05 03:29:13 shirok Exp $
+ *  $Id: char_utf_8.h,v 1.10 2005-08-05 11:38:26 shirok Exp $
  */
 
 #ifndef SCM_CHAR_ENCODING_BODY
@@ -44,8 +44,8 @@
 #define SCM_CHAR_ENCODING_NAME "utf-8"
 
 SCM_EXTERN char Scm_CharSizeTable[];
-SCM_EXTERN ScmChar Scm_CharUtf8Getc(const char *);
-SCM_EXTERN void Scm_CharUtf8Putc(char *, ScmChar);
+SCM_EXTERN ScmChar Scm_CharUtf8Getc(const unsigned char *);
+SCM_EXTERN void Scm_CharUtf8Putc(unsigned char *, ScmChar);
 
 /* Given first byte of the multibyte character, returns # of
  * bytes that follows, i.e. if the byte consists a single-byte
@@ -72,24 +72,24 @@ SCM_EXTERN void Scm_CharUtf8Putc(char *, ScmChar);
  * and store it in ScmChar ch.  If cp doesn't point to valid multibyte
  * character, store SCM_CHAR_INVALID to ch.  cp is not modified.
  */
-#define SCM_CHAR_GET(cp, ch)                            \
-    do {                                                \
-        if (((ch) = (unsigned char)*(cp)) >= 0x80) {    \
-            (ch) = Scm_CharUtf8Getc(cp);                \
-        }                                               \
+#define SCM_CHAR_GET(cp, ch)                                    \
+    do {                                                        \
+        if (((ch) = (unsigned char)*(cp)) >= 0x80) {            \
+            (ch) = Scm_CharUtf8Getc((unsigned char*)cp);        \
+        }                                                       \
     } while (0)
 
 /* Convert a character CH to multibyte form and put it to the buffer
  * starting from char *cp.  You can assume the buffer has enough length
  * to contain the multibyte char.   cp is not modified.
  */
-#define SCM_CHAR_PUT(cp, ch)                    \
-    do {                                        \
-        if (ch >= 0x80) {                       \
-            Scm_CharUtf8Putc(cp, ch);           \
-        } else {                                \
-            *(cp) = (ch);                       \
-        }                                       \
+#define SCM_CHAR_PUT(cp, ch)                            \
+    do {                                                \
+        if (ch >= 0x80) {                               \
+            Scm_CharUtf8Putc((unsigned char*)cp, ch);   \
+        } else {                                        \
+            *(cp) = (ch);                               \
+        }                                               \
     } while (0)
 
 /* const char *cp points to a multibyte string.  Set const char *result
@@ -161,7 +161,7 @@ char Scm_CharSizeTable[256] = {
     3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 0, 0  /* fx */
 };
 
-ScmChar Scm_CharUtf8Getc(const char *cp)
+ScmChar Scm_CharUtf8Getc(const unsigned char *cp)
 {
     ScmChar ch;
     unsigned char *ucp = (unsigned char *)cp;
@@ -209,7 +209,7 @@ ScmChar Scm_CharUtf8Getc(const char *cp)
     return ch;
 }
 
-void Scm_CharUtf8Putc(char *cp, ScmChar ch)
+void Scm_CharUtf8Putc(unsigned char *cp, ScmChar ch)
 {
     if (ch < 0x80) {
         *cp = ch;

@@ -1,3 +1,7 @@
+2005-08-04  Shiro Kawai  <shiro@schemearts.com>
+
+	* src/gauche/char_utf_8.h: fixed u_char*/char* pointer confusion.
+
 2005-08-01  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac: 0.8.6_pre1
