@@ -1213,7 +1213,7 @@ then @var{body} @dots{} are evaluated.
 (receive all (divrem 13 4) all)
   @result{} (3 1)
 
-(receive (q . rest) (divrem 13 4) (list q rest)
+(receive (q . rest) (divrem 13 4) (list q rest))
   @result{} (3 (1))
 @end example
 

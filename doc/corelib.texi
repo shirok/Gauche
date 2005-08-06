@@ -4341,16 +4341,16 @@ value, over all the entries in the hash table @var{ht}.
 @c EN
 For all entries in the hash table @var{ht},
 a procedure @var{kons} is called with three arguments;
-a key, its associated value, and the previous return value of @var{proc}.
-The first call of @var{proc} receives @var{knil} as the third argument.
-The return value of the last call of @var{proc} is returned
+a key, its associated value, and the previous return value of @var{kons}.
+The first call of @var{kons} receives @var{knil} as the third argument.
+The return value of the last call of @var{kons} is returned
 from @code{hash-table-fold}.
 @c JP
-ハッシュテーブル@var{ht}内の全てのエントリについて@var{proc}を呼びます。
-@var{proc}には3つの引数が渡されます。
-各エントリのキーと値、および一つ前の@var{proc}の返り値です。
-最初の@var{proc}の呼び出しの時には、第3引数に@var{knil}が渡されます。
-最後の@var{proc}の返り値が@code{hash-table-fold}の返り値となります。
+ハッシュテーブル@var{ht}内の全てのエントリについて@var{kons}を呼びます。
+@var{kons}には3つの引数が渡されます。
+各エントリのキーと値、および一つ前の@var{kons}の返り値です。
+最初の@var{kons}の呼び出しの時には、第3引数に@var{knil}が渡されます。
+最後の@var{kons}の返り値が@code{hash-table-fold}の返り値となります。
 @c COMMON
 @end defun
 
@@ -8055,7 +8055,7 @@ If @var{port} has already reached to EOF, a null string is returned.
 @c COMMON
 
 @example
-(define p (open-input-string "abc\ndef")
+(define p (open-input-string "abc\ndef"))
 (read-line p)                  @result{} "abc"
 (get-remaining-input-string p) @result{} "def"
 (read-char p)                  @result{} #\d
@@ -9169,9 +9169,9 @@ a string ``@code{ ...}'' is attached after it.
   @result{} "|oops☆☆☆☆☆☆|"
 @c COMMON
 
-(format #f "|~,,,,10a|" '(abc def ghi jkl)
+(format #f "|~,,,,10a|" '(abc def ghi jkl))
   @result{} "|(abc def gh|" 
-(format #f "|~,,,,10:a|" '(abc def ghi jkl)
+(format #f "|~,,,,10:a|" '(abc def ghi jkl))
   @result{} "|(abc de ...|" 
 @end example
 
@@ -10165,7 +10165,7 @@ finally calls @code{exit(2)}.
 @end defun
 
 
-@defun sys-exit &optional (code 0)
+@defun sys-exit code
 [POSIX]
 @c EN
 Terminates the current process with the exit code @var{code}.
@@ -11138,7 +11138,7 @@ If the specified user doesn't exist, @code{#f} is returned.
 @end defun
 
 @defun sys-uid->user-name uid
-@defunx sys-user-name->uid
+@defunx sys-user-name->uid name
 @c EN
 Convenience functions to convert between user id and user name.
 @c JP
@@ -12968,7 +12968,7 @@ is interrupted by a signal.
 (sys-nanosleep 500000000)
 
 ;@r{wait for 1.3 sec}
-(sys-nanosleep (make <time> :second 1 :nanosecond 300000000)
+(sys-nanosleep (make <time> :second 1 :nanosecond 300000000))
 @end example
 @end defun
 
