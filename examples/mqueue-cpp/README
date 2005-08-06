@@ -1,5 +1,5 @@
 This directory contains a sample extension module code to bridge
-C++ libraries.
+Gauche and C++ libraries.
 
 The two files, mqueue.h and mqueue.cpp, are our hypothetical
 external C++ library.  It implements a simple message queue.
@@ -21,8 +21,9 @@ The skeleton of those files can be generated, as usual, by
 
   % gauche-package generate mqueue-cpp example.mqueue-cpp
 
-(I renamed some auto-generated files to reflect their roles
-clearly.)
+I renamed the generated mqueue_cpp.h, mqueue_cpp.c, mqueue_cpplib.stub
+to more descriptive names, mqueue_glue.h, mqueue_glue.cpp,
+and mqueue_lib.stub, respectively.
 
 
 [Build process]
@@ -31,7 +32,7 @@ In order to compile in C++, you have to tweak configure.in and
 Makefile.in.
 
 The default extension build process obtains C compiler name
-from gauche-config, which knows what C compiler is used to build
+from gauche-config, which knows what C compiler was used to build
 Gauche.  Unfortunately it knows nothing about C++, so we manually
 have to tell the build process about it.
 
@@ -69,7 +70,7 @@ interface (mqueue.h) and Gauche interface.
     #include <gauche/extend.h>
 
 We need a Gauche class that represents MQueue object in C++ world.
-We're going to use Gauche's foreing pointer feature to implement it.
+We're going to use Gauche's foreign pointer feature to implement it.
 The pointer to the Scheme <mqueue> class is held in this external
 variable.  It is set in the extension initialization routine.
 
@@ -84,8 +85,8 @@ ScmForeignPointer.
     #define MQUEUE_UNBOX(obj)  ((MQueue*)(SCM_FOREIGN_POINTER_REF(obj)))
     #define MQUEUE_BOX(ptr)    Scm_MakeForeignPointer(MQueueClass, ptr)
 
-And declaration of the extension initialization routine.  It is
-important for it to be declared/defined in "C" linkage scope.
+Next comes the declaration of the extension initialization routine.
+It is important for it to be declared/defined in "C" linkage scope.
 Macros SCM_DECL_BEGIN ad SCM_DECL_END ensures it (they are the same
 as 'extern "C" {' and '}'.)
 
@@ -101,20 +102,26 @@ important part is this statement:
                                     SCM_FOREIGN_POINTER_KEEP_IDENTITY|SCM_FOREIGN_POINTER_MAP_NULL);
 
 This creates a new Scheme class, named "<mqueue>", as a foreign pointer
-class and stores its pointer to MQueueClass.
+class and stores its pointer to MQueueClass.  Scheme variable <mqueue>
+is bound to the newly created class in the module MOD.
+
+The second argument is a print procedure, called whenever the
+instancd of <mqueue> is printed.
 
 The tricky part here is the 'cleanup' procedure.  If you pass
 a cleanup procedure, it is called when the Scheme <mqueue> object
 is about to be GC-ed, so that you can free the resources in the C++ 
-world.  However, this part needs more attention; if you do something
-wrong here, you'll get a nasty bug which is very hard to track.
+world.  Although it sounds simple, it requires more attention than
+its superficial simplicity.  If you do something wrong here,
+you'll get a nasty bug which is very hard to track.
 
 Typically, there are a few cases with regard to the foreign resouce
 management.
 
 Case 1: You allocate the foreign object via Gauche's allocator.
         (SCM_NEW etc.)   In this case, Gauche's GC can take care
-        of deallocation, so you don't specify 'cleanup' procedure.
+        of deallocation, so you don't need specify 'cleanup' procedure
+        except you have other resouces to free (e.g. file descriptors).
 
 Case 2: The foreign object is allocated by the foreign library, and
         it is only pointed from the Scheme world.  In this case,
@@ -122,13 +129,13 @@ Case 2: The foreign object is allocated by the foreign library, and
         no reference from the Scheme world to it.  You can use cleanup
         procedure to do so.
 
-        However, note that the cleanup procedure is called when there's
+        Note that the cleanup procedure is called when there's
         no reference to the Scheme <mqueue> object here, but it doesn't
         necessarily means that the C++ MQueue object pointed by it can be
         freed---what if there are other Scheme <mqueue> object which
         points to the same C++ MQueue object?  Gauche's GC can't detect
-        such case, since the C++ MQueue object is outside of Gauche's
-        management.
+        such case, since the C++ MQueue object is outside the scope
+        of Gauche's memory management.
 
         There's no universal solution for it, but Gauche provides a
         convenience mehchanism that works in typical cases.  If you
@@ -203,7 +210,7 @@ and a boxer.
     Consider this define-type as temporary structure.
 
 The rest of the stub file is mostly self-descriptive, except one
-thing.  C++ exceptions.
+thing: C++ exceptions.
 
 Gauche has its own exception handling system, and although both
 can coexist, it is not allowed that one nonlocal exit jumps the
