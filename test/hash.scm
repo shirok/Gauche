@@ -2,7 +2,7 @@
 ;; Test hash table
 ;;
 
-;; $Id: hash.scm,v 1.7 2005-04-18 10:25:20 shirok Exp $
+;; $Id: hash.scm,v 1.8 2005-08-06 12:31:36 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -23,6 +23,9 @@
 
 (test* "make-hash-table" #t
        (hash-table? h-eq))
+
+(test* "hash-table-type" 'eq?
+       (hash-table-type h-eq))
 
 (test* "a => 8" 8
        (begin
@@ -78,6 +81,9 @@
 
 (test* "make-hash-table" #t
        (hash-table? h-eqv))
+
+(test* "hash-table-type" 'eqv?
+       (hash-table-type h-eqv))
 
 (test* "a => 8" 8
        (begin
@@ -136,6 +142,9 @@
 
 (test* "make-hash-table" #t
        (hash-table? h-equal))
+
+(test* "hash-table-type" 'equal?
+       (hash-table-type h-equal))
 
 (test* "a => 8" 8
        (begin
@@ -212,6 +221,9 @@
 
 (test* "make-hash-table" #t
        (hash-table? h-string))
+
+(test* "hash-table-type" 'string=?
+       (hash-table-type h-string))
 
 (test* "\"a\" => 8" 8
        (begin

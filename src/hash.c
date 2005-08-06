@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.39 2005-08-01 21:21:42 shirok Exp $
+ *  $Id: hash.c,v 1.40 2005-08-06 12:31:36 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -547,11 +547,11 @@ ScmObj Scm_MakeHashTableSimple(int type, int initSize)
                                general_access, eqv_hash,
                                eqv_cmp, initSize, NULL);
     case SCM_HASH_EQUAL:
-        return make_hash_table(SCM_CLASS_HASH_TABLE, SCM_HASH_EQV,
+        return make_hash_table(SCM_CLASS_HASH_TABLE, SCM_HASH_EQUAL,
                                general_access, equal_hash,
                                equal_cmp, initSize, NULL);
     case SCM_HASH_STRING:
-        return make_hash_table(SCM_CLASS_HASH_TABLE, SCM_HASH_EQV,
+        return make_hash_table(SCM_CLASS_HASH_TABLE, SCM_HASH_STRING,
                                string_access, string_hash,
                                NULL, initSize, NULL);
     case SCM_HASH_WORD:

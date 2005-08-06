@@ -1,3 +1,8 @@
+2005-08-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c, test/hash.scm: hash-table-type has been broken for
+	  a while.  (Patch from Ueyama Rui)
+
 2005-08-04  Shiro Kawai  <shiro@schemearts.com>
 
 	* src/gauche/char_utf_8.h: fixed u_char*/char* pointer confusion.
