@@ -209,8 +209,59 @@ and a boxer.
     NOTE: I'm planning to have better way to define foreign types.
     Consider this define-type as temporary structure.
 
-The rest of the stub file is mostly self-descriptive, except one
-thing: C++ exceptions.
+The define-cproc directive defines the foreign function interface:
+
+  (define-cproc SCHEME-NAME (ARGSPEC ...)
+    CLAUSE ...)
+
+SCHEME-NAME becomes the name of the Scheme function.  ARGSPEC
+specifies the arguments and its type.
+
+  ARGSPEC := name::type
+
+To see the exact meanings of type and how it is mapped in the
+C world, peek the source of src/genstub (search "Type handling").
+You can use &rest, &optional and &keyword a la Common Lisp.
+
+CLAUSE gives the information about how to call the C stuff.
+There are quite a few clauses you can put here, but the most
+important ones are the followings:
+
+  (call [return-type] C-function-name)
+
+  (expr [return-type] C-expression)
+
+  (body [return-type] C-code-fragment)
+
+You have to have either one of these.
+
+'CALL' clause generates a code that calls a function given by
+C-function-name, with the arguments specified in ARGSPEC.
+If the Scheme calling convention matches the C function, this
+is the easiest way.  If return-type is given, the returned value
+is boxed accordingly.  If return-type is omitted, the C function
+must return ScmObj.  You can also put <void> as a return-type,
+in which case the return value of the C function is discarded
+and the Scheme function returns #<undef>.
+
+'EXPR' clause allows you to specify a C expression instead.  
+The result of expression is boxed accordingly if return-type
+is specified.
+
+'BODY' clause allows more complicated processing.  You can
+write any C code in C-code-fragment.  Unless return-type is
+<void>, you have to assign to a variable SCM_RESULT within
+the C-code-fragment.  SCM_RESULT is declared with a suitable
+type that matches return-type.  After C-code-fragment is
+executed, the value of SCM_RESULT is boxed and returned
+from the Scheme file.
+
+For more details, check out the stub files included in the
+Gauche source tree.  I'll write up more complete specification
+until 0.9 release.
+
+Other clause type worth to mention here is 'catch' clause.
+It handles C++ exceptions.
 
 Gauche has its own exception handling system, and although both
 can coexist, it is not allowed that one nonlocal exit jumps the
