@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: isomorph.scm,v 1.2 2003-07-05 03:29:12 shirok Exp $
+;;;  $Id: isomorph.scm,v 1.3 2005-08-06 22:53:38 shirok Exp $
 ;;;
 
 (define-module util.isomorph
@@ -47,7 +47,9 @@
                   (make-hash-table)))
 
   (define (iso? a b)
-    (cond ((or (boolean? a) (char? a) (number? a)) (eqv? a b))
+    (cond ((or (boolean? a) (char? a) (number? a) (undefined? a)
+               (eof-object? a))
+           (eqv? a b))
           ((eq? a '()) (eq? b '()))
           ((hash-table-get ctx a #f)   ;node has been appeared
            => (lambda (bb) (eq? bb b)))
@@ -86,7 +88,7 @@
   (iso? a b)
   )
 
-(define (object-isomorphic? a b context)
+(define-method object-isomorphic? (a b context)
   (equal? a b))                         ;default
 
 (provide "util/isomorph")

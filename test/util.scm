@@ -314,13 +314,26 @@
 (use util.isomorph)
 (test-module 'util.isomorph)
 
+(define-class <isomorph-test> ()
+  ((a :init-keyword :a)
+   (b :init-keyword :b)))
+
+(define-method object-isomorphic? ((x <isomorph-test>)
+                                   (y <isomorph-test>)
+                                   context)
+  (and (isomorphic? (ref x 'a) (ref y 'a) context)
+       (isomorphic? (ref x 'b) (ref y 'b) context)))
+
 (define (make-data type)
-  (let* ((z (vector #f #f #f))
+  (let* ((z (vector #f #f #f #f))
          (x (circular-list "a" 'b 4 9845938427094857239485 #\z 8+5i z))
-         (y (circular-list "a" 'b 4 9845938427094857239485 #\z 8+5i z)))
+         (y (circular-list "a" 'b 4 9845938427094857239485 #\z 8+5i z))
+         (w (make <isomorph-test> :a z)))
     (vector-set! z 0 x)
     (vector-set! z 1 y)
-    (if type (vector-set! z 2 x) (vector-set! z 2 y))
+    (vector-set! z 2 w)
+    (slot-set! w 'b w)
+    (if type (vector-set! z 3 x) (vector-set! z 3 y))
     z))
 
 (test* "isomorphic?" #t

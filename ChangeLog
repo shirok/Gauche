@@ -1,3 +1,8 @@
+2005-08-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/isomorph.scm (object-isomorphic?): was a normal procedure,
+	  which should be a generic function.
+
 2005-08-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/hash.c, test/hash.scm: hash-table-type has been broken for
