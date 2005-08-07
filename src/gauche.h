@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.431 2005-07-31 06:01:42 shirok Exp $
+ *  $Id: gauche.h,v 1.432 2005-08-07 17:58:05 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2470,6 +2470,10 @@ SCM_EXTERN void Scm_RegMatchDump(ScmRegMatch *match);
 #define SCM_RETURN(value)           return value
 #define SCM_CURRENT_MODULE()        (Scm_VM()->module)
 #define SCM_VOID_RETURN_VALUE(expr) ((void)(expr), SCM_UNDEFINED)
+
+#define SCM_MAYBE_P(pred, obj)      (SCM_FALSEP(obj)||(pred(obj)))
+#define SCM_MAYBE(unboxer, obj)     (SCM_FALSEP(obj)?NULL:(unboxer(obj)))
+#define SCM_MAKE_MAYBE(boxer, obj)  ((obj)?(boxer(obj)):SCM_FALSE)
 
 /*---------------------------------------------------
  * SIGNAL

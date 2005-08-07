@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.14 2005-08-01 12:23:34 shirok Exp $
+;;; $Id: intlib.stub,v 1.15 2005-08-07 17:58:06 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -46,6 +46,9 @@
 #include <gauche/prof.h>
 #include <gauche/builtin-syms.h>
 "
+
+(define-type <gloc> "ScmGloc*" "GLOC"
+  "SCM_GLOCP" "SCM_GLOC" "SCM_OBJ")
 
 ;;
 ;; Pair attributes
@@ -97,9 +100,7 @@
 ;; Returns GLOC object or #f
 (define-cproc find-binding (mod::<module> name::<symbol>
                             stay-in-module::<boolean>)
-  "ScmGloc *g = Scm_FindBinding(mod, name, stay_in_module);
-   if (g) SCM_RETURN(SCM_OBJ(g));
-   else   SCM_RETURN(SCM_FALSE);")
+  (expr maybe:<gloc> "Scm_FindBinding(mod, name, stay_in_module)"))
 
 ;; This small piece of code encapsulates the common procedure in
 ;; pass1/variable to find whether the variable reference is a constant
@@ -120,9 +121,6 @@
 
 (define-cproc %import-modules (mod::<module> mods)
   (call "Scm_ImportModules"))
-
-(define-type <gloc> "ScmGloc*" "GLOC"
-  "SCM_GLOCP" "SCM_GLOC" "SCM_OBJ")
 
 (define-cproc gloc-ref (gloc::<gloc>)
   (call "SCM_GLOC_GET"))
@@ -314,7 +312,8 @@
   (body <void> "SCM_VM_COMPILER_FLAG_CLEAR(Scm_VM(), flag);"))
 
 (define-cproc vm-compiler-flag-noinline-locals? ()
-  (expr <boolean> "SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), SCM_COMPILE_NOINLINE_LOCALS)"))
+  (expr <boolean>
+        "SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), SCM_COMPILE_NOINLINE_LOCALS)"))
 
 (define-enum SCM_COMPILE_NOINLINE_GLOBALS)
 (define-enum SCM_COMPILE_NOINLINE_LOCALS)

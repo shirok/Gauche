@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.248 2005-08-01 12:23:34 shirok Exp $
+;;; $Id: extlib.stub,v 1.249 2005-08-07 17:58:04 shirok Exp $
 ;;;
 
 "
@@ -1107,10 +1107,10 @@
 ;; this is hash-table-remove! in STk.  I use `delete' for
 ;; it's consistent with SRFI-1 and dbm-delete!.
 (define-cproc hash-table-delete! (hash::<hash-table> key)
-  (call <boolean> "Scm_HashTableDelete"))
+  (expr <boolean> "Scm_HashTableDelete(hash, key) != NULL"))
 
 (define-cproc hash-table-exists? (hash::<hash-table> key)
-  (call <boolean> "Scm_HashTableGet"))
+  (expr <boolean> "Scm_HashTableGet(hash, key) != NULL"))
 
 "static ScmObj hash_table_update_cc(ScmObj result, void **data)
  {
@@ -1206,9 +1206,7 @@
   (expr "SCM_OBJ(mod->table)"))
 
 (define-cproc find-module (name::<symbol>)
-  "  ScmModule *m = Scm_FindModule(name, SCM_FIND_MODULE_QUIET);
-     if (m) SCM_RETURN(SCM_OBJ(m));
-     else SCM_RETURN(SCM_FALSE);")
+  (expr maybe:<module> "Scm_FindModule(name, SCM_FIND_MODULE_QUIET)"))
 
 (define-cproc all-modules ()
   (call "Scm_AllModules"))
@@ -1232,11 +1230,11 @@
                             error_if_exists));")
 
 (define-cproc module-name->path (name)
-  "  ScmSymbol *s = NULL;
-  if (SCM_SYMBOLP(name)) s = SCM_SYMBOL(name);
-  else if (SCM_IDENTIFIERP(name)) s = SCM_IDENTIFIER(name)->name;
-  else Scm_Error(\"symbol or identifier required, but got %S\", name);
-  SCM_RETURN(Scm_ModuleNameToPath(s));")
+  (body "ScmSymbol *s = NULL;"
+        "if (SCM_SYMBOLP(name)) s = SCM_SYMBOL(name);"
+        "else if (SCM_IDENTIFIERP(name)) s = SCM_IDENTIFIER(name)->name;"
+        "else Scm_Error(\"symbol or identifier required, but got %S\", name);"
+        "SCM_RESULT = Scm_ModuleNameToPath(s);"))
 
 (define-cproc path->module-name (path::<string>)
   (call "Scm_PathToModuleName"))
@@ -1262,21 +1260,19 @@
 "
 
 (define-cproc global-variable-bound? (mod-or-name name::<symbol>)
-  "ScmModule *module = get_module_from_mod_or_name(mod_or_name);
-   if (Scm_SymbolValue(module, name) == SCM_UNBOUND)
-     SCM_RETURN(SCM_FALSE);
-   else
-     SCM_RETURN(SCM_TRUE);")
+  (body <boolean>
+        "ScmModule *module = get_module_from_mod_or_name(mod_or_name);"
+        "SCM_RESULT = (Scm_SymbolValue(module, name) != SCM_UNBOUND);"))
 
 (define-cproc global-variable-ref (mod_or_name name::<symbol>
                                                &optional fallback)
-  "ScmModule *module = get_module_from_mod_or_name(mod_or_name);
-  ScmObj r = Scm_SymbolValue(module, name);
-  if (r != SCM_UNBOUND) SCM_RETURN(r);
-  else if (fallback == SCM_UNBOUND) {
-    Scm_Error(\"global variable %S is not bound in module %S\", name, module);
-  }
-  SCM_RETURN(fallback);")
+  (body "ScmModule *module = get_module_from_mod_or_name(mod_or_name);"
+        "ScmObj r = Scm_SymbolValue(module, name);"
+        "if (r != SCM_UNBOUND) SCM_RESULT = r;"
+        "else if (fallback == SCM_UNBOUND) {"
+        "  Scm_Error(\"global variable %S is not bound in module %S\", name, module);"
+        "}"
+        "SCM_RESULT = fallback;"))
 
 ;;
 ;; Gauche extentions

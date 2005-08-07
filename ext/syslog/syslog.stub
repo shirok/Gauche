@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: syslog.stub,v 1.5 2005-08-01 12:23:33 shirok Exp $
+;;;  $Id: syslog.stub,v 1.6 2005-08-07 17:58:04 shirok Exp $
 ;;;
 
 "
@@ -53,11 +53,11 @@ void Scm_Init_syslog(void)
 
 (if "defined(HAVE_SYSLOG)"
     (begin
-      (define-cproc sys-openlog (ident::<string> option::<fixnum>
+      (define-cproc sys-openlog (ident::<const-cstring> option::<fixnum>
                                  facility::<fixnum>)
-        (body <void> "openlog(Scm_GetStringConst(ident), option, facility);"))
-      (define-cproc sys-syslog (prio::<fixnum> message::<string>)
-        (body <void> "syslog(prio, \"%s\", Scm_GetStringConst(message));"))
+        (call <void> "openlog"))
+      (define-cproc sys-syslog (prio::<fixnum> message::<const-cstring>)
+        (body <void> "syslog(prio, \"%s\", message);"))
       (define-cproc sys-closelog ()
         (call <void> "closelog"))
       ))

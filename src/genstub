@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.109 2005-08-01 19:55:56 shirok Exp $
+;;;  $Id: genstub,v 1.110 2005-08-07 17:58:05 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -239,7 +239,11 @@
 ;;   <vector>     <vector>     ScmVector*
 ;;    :
 ;;
-;; Pointer-yielding types can be qualified by 'maybe', e.g. (maybe <string>)
+;; Pointer types can be qualified by 'maybe', e.g. maybe:<string>
+;; If 'maybe' type appears as an argument type, the argument accepts #f
+;; as well as the specified type, and translates #f to NULL.  If 'maybe'
+;; type appears as the return type, the result of C expression can be NULL
+;; and the stub translates it to #f.
 
 ;; Stub type definition
 (define-class <type> (<instance-pool-mixin>)
@@ -259,19 +263,24 @@
                 :init-value "SCM_OBJ_SAFE")
    ;; ::<string> - name of a C function (macro) that takes C object
    ;;              and returns a Scheme Object.
+   (maybe       :init-keyword :maybe       :init-value #f)
+   ;; ::maybe:<type> - base type, if this is 'maybe' qualified type.
    ))
 
 (define (find-type-by-name name)
-  ;; trick for transition - will be removed later
-  (define (canon-type-name type-name)
-    (let1 n (x->string type-name)
-      (if (string-prefix? "<" n)
-          (string->symbol (string-trim-both n #[<>]))
-          (begin (warn "old-style type name used: ~s" type-name)
-                 type-name))))
-  (let1 cname (canon-type-name name)
-    (find (lambda (type) (eq? (canon-type-name (name-of type)) cname))
-          (instance-pool->list <type>))))
+  (or (find (lambda (type) (eq? (name-of type) name))
+            (instance-pool->list <type>))
+      ;; when 'maybe' qualified type is used for the first time, we
+      ;; create it from the base type.
+      (and-let* ((m (#/^maybe:/ (symbol->string name)))
+                 (basename (string->symbol (m 'after)))
+                 (basetype (find-type-by-name basename)))
+        (make <type> :name name :c-type (ref basetype 'c-type)
+              :description #`",(ref basetype 'description) or #f"
+              :c-predicate (ref basetype 'c-predicate)
+              :unboxer     (ref basetype 'unboxer)
+              :boxer       (ref basetype 'boxer)
+              :maybe       basetype))))
 
 (define (name->type name)
   (or (find-type-by-name name) (error "unknown type" name)))
@@ -293,35 +302,34 @@
   (define (default-box name)
     #`"SCM_MAKE_,(string-tr (strip<> name) \"a-z-\" \"A-Z_\")")
 
-  (if (string? (car args))
-      ;; comatibility
-      (receive (desc assert c-type c-pred unboxer . maybe-boxer)
-          (apply values args)
-        (warn "using obsolete define-type form (~s)" desc)
-        (parse-form
-         `(define-type
-            ,(string->symbol #`"<,(string-drop-right (symbol->string assert) 1)>")
-            ,c-type
-            ,desc
-            ,c-pred
-            ,unboxer
-            ,@maybe-boxer)))
-      (begin
-        (unless (<= 2 (length args) 6)
-          (error "malformed define-type:" args))
-        (let ((name   (list-ref args 0))
-              (c-type (list-ref args 1))
-              (desc   (list-ref args 2 #f))
-              (c-pred (list-ref args 3 #f))
-              (unbox  (list-ref args 4 #f))
-              (box    (list-ref args 5 #f)))
-          (make <type>
-            :name name :c-type c-type
-            :description (or desc (x->string name))
-            :c-predicate (or c-pred (default-cpred (x->string name)))
-            :unboxer     (or unbox (default-unbox (x->string name)))
-            :boxer       (or box "SCM_OBJ_SAFE"))))
-      ))
+  (unless (<= 2 (length args) 6)
+    (error "malformed define-type:" args))
+  (let-optionals* args ((name #f)
+                        (c-type #f)
+                        (desc   (x->string name))
+                        (c-pred (default-cpred (x->string name)))
+                        (unbox  (default-unbox (x->string name)))
+                        (box    "SCM_OBJ_SAFE"))
+    (make <type>
+      :name name :c-type c-type :description desc
+      :c-predicate c-pred :unboxer unbox :boxer box)))
+
+;; Returns C expr
+(define (box-expr type c-expr)
+  (if (ref type 'maybe)
+    #`"SCM_MAKE_MAYBE(,(ref type 'boxer),, ,c-expr)"
+    #`",(ref type 'boxer)(,c-expr)"))
+
+(define (unbox-expr type c-expr)
+  (if (ref type 'maybe)
+    #`"SCM_MAKE_MAYBE(,(ref type 'unboxer),, ,c-expr)"
+    #`",(ref type 'unboxer)(,c-expr)"))
+
+(define (pred-expr type c-expr)
+  (if (ref type 'maybe)
+    #`"SCM_MAYBE_P(,(ref type 'c-predicate),, ,c-expr)"
+    #`",(ref type 'c-predicate)(,c-expr)"))
+  
 
 ;; Builtin types
 (for-each
@@ -928,15 +936,21 @@
   (define (err) (error "malformed 'call' spec:" form))
   (define (args)
     (string-join (map c-name-of (args-of cproc)) ", "))
-  (case (length (cdr form))
-    ((1)
-     (unless (string? (cadr form)) (err))
-     (push-stmt! cproc #`"SCM_RETURN(,(cadr form)(,(args)));"))
-    ((2)
-     (unless (and (symbol? (cadr form)) (string? (caddr form))) (err))
-     (if (memq (cadr form) '(void <void>)) ;trick for transition
-         (push-stmt! cproc #`",(caddr form)(,(args)); SCM_RETURN(SCM_UNDEFINED);")
-         (push-stmt! cproc #`"SCM_RETURN(,(boxer-of (name->type (cadr form)))(,(caddr form)(,(args))));")))
+  (define (typed-result rettype c-func-name)
+    (push-stmt! cproc #`",(c-type-of rettype) SCM_RESULT;")
+    (push-stmt! cproc #`"SCM_RESULT = ,c-func-name(,(args));")
+    (push-stmt! cproc #`"SCM_RETURN(,(box-expr rettype \"SCM_RESULT\"));"))
+  (match form
+    ((_ (? string? expr))
+     (typed-result *scm-type* expr))
+    ((_ typename expr)
+     (unless (and (symbol? typename) (string? expr)) (err))
+     (cond
+      ((eq? typename '<void>)
+       (push-stmt! cproc #`",(caddr form)(,(args));")
+       (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);"))
+      (else
+       (typed-result (name->type typename) expr))))
     (else (err))))
 
 (define-method process-body-spec ((cproc <procstub>) form)
@@ -945,7 +959,7 @@
     (push-stmt! cproc "{")
     (for-each (cut push-stmt! cproc <>) stmts)
     (push-stmt! cproc "}")
-    (push-stmt! cproc #`"SCM_RETURN(,(boxer-of rettype)(SCM_RESULT));"))
+    (push-stmt! cproc #`"SCM_RETURN(,(box-expr rettype \"SCM_RESULT\"));"))
   (match form
     ((_ '<void> . stmts)
      (for-each (cut push-stmt! cproc <>) stmts)
@@ -960,7 +974,7 @@
   (define (typed-result rettype expr)
     (push-stmt! cproc #`",(c-type-of rettype) SCM_RESULT;")
     (push-stmt! cproc #`" SCM_RESULT = (,expr);")
-    (push-stmt! cproc #`"SCM_RETURN(,(boxer-of rettype)(SCM_RESULT));"))
+    (push-stmt! cproc #`"SCM_RETURN(,(box-expr rettype \"SCM_RESULT\"));"))
   (match form
     ((_ '<void> . stmts)
      (error "<void> type isn't allowed in 'expr' directive:" form))

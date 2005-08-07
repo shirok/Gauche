@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: auxsyslib.stub,v 1.23 2005-08-01 12:23:33 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.24 2005-08-07 17:58:01 shirok Exp $
 ;;;
 
 "
@@ -67,17 +67,19 @@
 (define-cproc sys-abort ()  (call <void> "abort"))
 
 (if "defined HAVE_REALPATH"
-    (define-cproc %sys-realpath (path::<string>)
-      "  #define REALPATH_PATH_MAX 1024  /* TODO: needs to be configured */
-  char buf[REALPATH_PATH_MAX];
-  if (realpath(Scm_GetStringConst(path), buf) == NULL)
-    Scm_SysError(\"realpath failed\");
-  SCM_RETURN(SCM_MAKE_STR_COPYING(buf));"))
+  (define-cproc %sys-realpath (path::<string>)
+    (body <const-cstring>
+          "#define REALPATH_PATH_MAX 1024  /* TODO: needs to be configured */"
+          "char buf[REALPATH_PATH_MAX];"
+          "if (realpath(Scm_GetStringConst(path), buf) == NULL) {"
+          "  Scm_SysError(\"realpath failed\");"
+          "}"
+          "SCM_RESULT = buf;"))
+  )
 
 ;; math.h
 (define-cproc fmod (x::<real> y::<real>)
-  "if (y == 0.0) Scm_Error(\"Attempted to divide by zero\");
-  SCM_RETURN(Scm_MakeFlonum(fmod(x, y)));")
+  (call <double> "fmod"))
 
 (define-cproc frexp (d::<real>)
   "  double fr; int exp;
@@ -117,17 +119,16 @@
 (if "defined HAVE_GETTIMEOFDAY"
   (define-cproc %sys-gettimeofday ()
     "struct timeval tv;
-       int r; SCM_SYSCALL(r, gettimeofday(&tv, NULL));
-       if (r < 0) Scm_SysError(\"gettimeofday failed\");
-       SCM_RETURN(Scm_Values2(Scm_MakeInteger(tv.tv_sec), Scm_MakeInteger(tv.tv_usec)));"))
+     int r; SCM_SYSCALL(r, gettimeofday(&tv, NULL));
+     if (r < 0) Scm_SysError(\"gettimeofday failed\");
+     SCM_RETURN(Scm_Values2(Scm_MakeInteger(tv.tv_sec), Scm_MakeInteger(tv.tv_usec)));"))
 
 ;; sys/stat.h
 (if "!defined(__MINGW32__)"
 (define-cproc sys-mkfifo (path::<string> mode::<int>)
-  "  int r;
-  SCM_SYSCALL(r, mkfifo(Scm_GetStringConst(path), mode));
-  if (r < 0) Scm_SysError(\"mkfifo failed on %S\", path);
-  SCM_RETURN(Scm_MakeInteger(r));")
+  (body <int>
+        "SCM_SYSCALL(SCM_RESULT, mkfifo(Scm_GetStringConst(path), mode));"
+        "if (SCM_RESULT < 0) Scm_SysError(\"mkfifo failed on %S\", path);"))
 ) ;; !defined(__MINGW32__)
 
 ;; utime.h
@@ -149,14 +150,14 @@
 (if "!defined(__MINGW32__)" (begin
 
 (define-cproc sys-setgid (gid::<int>)
-  "  int r; SCM_SYSCALL(r, setgid(gid));
-  if (r < 0) Scm_SysError(\"setgid failed\");
-  SCM_RETURN(Scm_MakeInteger(r));")
+  (body <int>
+        "SCM_SYSCALL(SCM_RESULT, setgid(gid));"
+        "if (SCM_RESULT < 0) Scm_SysError(\"setgid failed\");"))
 
 (define-cproc sys-setpgid (pid::<int> pgid::<int>)
-  "  int r; SCM_SYSCALL(r, setpgid(pid, pgid));
-  if (r < 0) Scm_SysError(\"setpgid failed\");
-  SCM_RETURN(Scm_MakeInteger(r));")
+  (body <int>
+        "SCM_SYSCALL(SCM_RESULT, setpgid(pid, pgid));"
+        "if (SCM_RESULT < 0) Scm_SysError(\"setpgid failed\");"))
 
 ;; The prototype of setpgrp() differs between platforms.   Since it is
 ;; redundant anyway, Gauche doesn't support it.
@@ -167,25 +168,26 @@
 ;      SCM_RETURN(Scm_MakeInteger(r));"))
 
 (if "defined HAVE_GETPGID"
-    (define-cproc %sys-getpgid (pid::<int>)
-      "  int r; SCM_SYSCALL(r, (int)getpgid(pid));
-      if (r < 0) Scm_SysError(\"getpgid failed\");
-      SCM_RETURN(Scm_MakeInteger(r));"))
+(define-cproc %sys-getpgid (pid::<int>)
+  (body <int>
+        "SCM_SYSCALL(SCM_RESULT, (int)getpgid(pid));"
+        "if (SCM_RESULT < 0) Scm_SysError(\"getpgid failed\");"))
+)
 
 (define-cproc sys-getpgrp ()
-  "int r; SCM_SYSCALL(r, (int)getpgrp());
-  if (r < 0) Scm_SysError(\"getpgrp failed\");
-  SCM_RETURN(Scm_MakeInteger(r));")
+  (body <int>
+        "SCM_SYSCALL(SCM_RESULT, (int)getpgrp());"
+        "if (SCM_RESULT < 0) Scm_SysError(\"getpgrp failed\");"))
 
 (define-cproc sys-setsid ()
-  "  int r; SCM_SYSCALL(r, setsid());
-  if (r < 0) Scm_SysError(\"setsid failed\");
-  SCM_RETURN(Scm_MakeInteger(r));")
+  (body <int>
+        "SCM_SYSCALL(SCM_RESULT, setsid());"
+        "if (SCM_RESULT < 0) Scm_SysError(\"setsid failed\");"))
 
 (define-cproc sys-setuid (uid::<int>)
-  "  int r; SCM_SYSCALL(r, setuid(uid));
-  if (r < 0) Scm_SysError(\"setuid failed\");
-  SCM_RETURN(Scm_MakeInteger(r));")
+  (body <int>
+        "SCM_SYSCALL(SCM_RESULT, setuid(uid));"
+        "if (SCM_RESULT < 0) Scm_SysError(\"setuid failed\");"))
 
 ;; some less-frequently used get-*
 
@@ -215,9 +217,7 @@
 )) ;; !defined(__MINGW32__)
 
 (define-cproc sys-getlogin ()
-  "  const char *p = getlogin();
-  if (p) SCM_RETURN(SCM_MAKE_STR_COPYING(p));
-  else SCM_RETURN(SCM_FALSE);")
+  (call maybe:<const-cstring> "getlogin"))
 
 ;; sys/times.h
 (if "!defined(__MINGW32__)"
@@ -315,18 +315,19 @@
 
 ;; chown
 (if "!defined(__MINGW32__)"
-(define-cproc sys-chown (path::<string> owner::<int> group::<int>)
-  "int r; SCM_SYSCALL(r, chown(Scm_GetStringConst(path), owner, group));
-  if (r < 0) Scm_SysError(\"chown failed on %S\", path);
-  SCM_RETURN(SCM_TRUE);")
+(define-cproc sys-chown (path::<const-cstring> owner::<int> group::<int>)
+  (body <int>
+        "SCM_SYSCALL(SCM_RESULT, chown(path, owner, group));"
+        "if (SCM_RESULT < 0) Scm_SysError(\"chown failed on %s\", path);"))
 ) ;; !defined(__MINGW32__)
 
 ;; lchown
 (if "defined HAVE_LCHOWN"
-    (define-cproc %sys-lchown (path::<string> owner::<int> group::<int>)
-      "int r; SCM_SYSCALL(r, lchown(Scm_GetStringConst(path), owner, group));
-  if (r < 0) Scm_SysError(\"lchown failed on %S\", path);
-  SCM_RETURN(SCM_TRUE);"))
+(define-cproc %sys-lchown (path::<const-cstring> owner::<int> group::<int>)
+  (body <int>
+        "SCM_SYSCALL(SCM_RESULT, lchown(path, owner, group));"
+        "if (SCM_RESULT < 0) Scm_SysError(\"lchown failed on %S\", path);"))
+)
 
 ;; localeconv
 

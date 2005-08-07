@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netlib.stub,v 1.29 2005-08-01 12:23:33 shirok Exp $
+;;;  $Id: netlib.stub,v 1.30 2005-08-07 17:58:04 shirok Exp $
 ;;;
 
 "#include \"gauche/net.h\"
@@ -300,12 +300,10 @@
   obj->addr = SCM_SOCKADDR(value);"))
         (allocator (c "addrinfo_allocate")))
 
-      (define-cproc sys-getaddrinfo (nodename servname hints)
+      (define-cproc sys-getaddrinfo (nodename::maybe:<const-cstring>
+                                     servname::maybe:<const-cstring>
+                                     hints)
         "  struct addrinfo ai;
-  if (!SCM_STRINGP(nodename) && !SCM_FALSEP(nodename))
-    Scm_Error(\"string or #f required, but got %S\", nodename);
-  if (!SCM_STRINGP(servname) && !SCM_FALSEP(servname))
-    Scm_Error(\"string or #f required, but got %S\", servname);
   if (!SCM_SYS_ADDRINFO_P(hints) && !SCM_FALSEP(hints))
     Scm_Error(\"<sys-addrinfo> or #f required, but got %S\", hints);
   if (!SCM_FALSEP(hints)) {
@@ -315,8 +313,7 @@
     ai.ai_socktype = SCM_SYS_ADDRINFO(hints)->socktype;
     ai.ai_protocol = SCM_SYS_ADDRINFO(hints)->protocol;
   }
-  SCM_RETURN(Scm_GetAddrinfo(SCM_FALSEP(nodename) ? NULL : Scm_GetStringConst(SCM_STRING(nodename)),
-                             SCM_FALSEP(servname) ? NULL : Scm_GetStringConst(SCM_STRING(servname)),
+  SCM_RETURN(Scm_GetAddrinfo(nodename, servname,
                              SCM_FALSEP(hints) ? NULL : &ai));")
 
       (define-cproc sys-getnameinfo (addr::<socket-address> &optional flags::<fixnum>)

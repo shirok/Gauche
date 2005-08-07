@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.111 2005-08-01 12:23:34 shirok Exp $
+;;; $Id: stdlib.stub,v 1.112 2005-08-07 17:58:07 shirok Exp $
 ;;;
 
 
@@ -70,8 +70,8 @@
 (define-cproc rational? (obj) (call <boolean> "SCM_REALP"))
 (define-cproc integer? (obj)
   (body <boolean>
-        "  if (!SCM_NUMBERP(obj)) SCM_RESULT = FALSE;
-           else SCM_RESULT = Scm_IntegerP(obj);"))
+        "if (!SCM_NUMBERP(obj)) SCM_RESULT = FALSE;"
+        "else SCM_RESULT = Scm_IntegerP(obj);"))
 
 (define-cproc exact? (obj)    (call <boolean> "SCM_EXACTP"))
 (define-cproc inexact? (obj)  (call <boolean> "SCM_INEXACTP"))

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.102 2005-08-01 12:23:34 shirok Exp $
+;;; $Id: syslib.stub,v 1.103 2005-08-07 17:58:07 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -119,10 +119,8 @@
 (define-enum LC_NUMERIC)
 (define-enum LC_TIME)
 
-(define-cproc sys-setlocale (category::<fixnum> locale::<string>)
-  "  char *result = setlocale(category, Scm_GetStringConst(locale));
-  if (result) SCM_RETURN(SCM_MAKE_STR_COPYING(result));
-  else SCM_RETURN(SCM_FALSE);")
+(define-cproc sys-setlocale (category::<fixnum> locale::<const-cstring>)
+  (call maybe:<const-cstring> "setlocale"))
 
 ;;---------------------------------------------------------------------
 ;; math.h
@@ -173,10 +171,9 @@
   (call "Scm_SignalName"))
 
 (define-cproc sys-kill (pid::<int> sig::<fixnum>)
-  "  int r;
-  SCM_SYSCALL(r, kill(pid, sig));
-  if (r < 0) Scm_SysError(\"kill failed\");
-  SCM_RETURN(SCM_UNDEFINED);")
+  (body <void>
+        "int r; SCM_SYSCALL(r, kill(pid, sig));"
+        "if (r < 0) Scm_SysError(\"kill failed\");"))
 
 (define-cproc set-signal-handler! (sig proc)
   (call "Scm_SetSignalHandler"))
@@ -206,25 +203,24 @@
 ;;---------------------------------------------------------------------
 ;; stdio.h
 
-(define-cproc sys-remove (filename::<string>)
+(define-cproc sys-remove (filename::<const-cstring>)
   "  int r;
-  SCM_SYSCALL(r, remove(Scm_GetStringConst(filename)));
-  if (r < 0) Scm_SysError(\"removing %S failed\", filename);
+  SCM_SYSCALL(r, remove(filename));
+  if (r < 0) Scm_SysError(\"removing %s failed\", filename);
   SCM_RETURN(SCM_TRUE);")
 
-(define-cproc sys-rename (old::<string> new::<string>)
+(define-cproc sys-rename (oldname::<const-cstring> newname::<const-cstring>)
   "  int r;
-  const char *snew = Scm_GetStringConst(new);
 #if defined(__MINGW32__)
   /* Windows doesn't allow renaming to the existing file, so we unlink
      it first.  This breaks the atomicity of rename operation.
      We don't check and raise an error here, since the error will be
      caught by rename() call. */
-  chmod(snew, 0666);
-  unlink(snew);
+  chmod(newname, 0666);
+  unlink(newname);
 #endif /* __MINGW32__ */
-  SCM_SYSCALL(r, rename(Scm_GetStringConst(old), snew));
-  if (r < 0) Scm_SysError(\"renaming %S to %S failed\", old, new);
+  SCM_SYSCALL(r, rename(oldname, newname));
+  if (r < 0) Scm_SysError(\"renaming %s to %s failed\", oldname, newname);
   SCM_RETURN(SCM_TRUE);")
 
 ;; NB: Alghough tmpnam() is in POSIX, its use is discouraged because of
@@ -255,19 +251,13 @@
 (define-cproc sys-exit (code::<fixnum>)
   (call <void> "_exit"))
 
-(define-cproc sys-getenv (name::<string>)
-  "  const char *p = getenv(Scm_GetStringConst(name));
-  if (p == NULL) {
-    SCM_RETURN(SCM_FALSE);
-  } else {
-    SCM_RETURN(SCM_MAKE_STR_COPYING(p));
-  }")
+(define-cproc sys-getenv (name::<const-cstring>)
+  (call maybe:<const-cstring> "getenv"))
 
 ;; Note: the return value of system() is not portable.
-(define-cproc sys-system (command::<string>)
-  "  int r;
-  SCM_SYSCALL(r, system(Scm_GetStringConst(command)));
-  SCM_RETURN(Scm_MakeInteger(r));")
+(define-cproc sys-system (command::<const-cstring>)
+  (body <int>
+        "SCM_SYSCALL(SCM_RESULT, system(command));"))
 
 (define-cproc sys-random ()
   "#if defined(HAVE_RANDOM) && defined(HAVE_SRANDOM)
@@ -302,26 +292,26 @@
 ;; unfortunately there are conflicting versions of strerror_r among
 ;; various systems.
 (define-cproc sys-strerror (errno::<int>)
-  (expr "SCM_MAKE_STR_COPYING(strerror(errno))"))
+  (call <const-cstring> "strerror"))
 
 ;;---------------------------------------------------------------------
 ;; sys/stat.h
 
 (define-type <sys-stat> "ScmSysStat*")
 
-(define-cproc sys-stat (path::<string>)
+(define-cproc sys-stat (path::<const-cstring>)
   "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
   int r;
-  SCM_SYSCALL(r, stat(Scm_GetStringConst(path), &s->statrec));
-  if (r < 0) Scm_SysError(\"stat failed for %S\", path);
+  SCM_SYSCALL(r, stat(path, &s->statrec));
+  if (r < 0) Scm_SysError(\"stat failed for %s\", path);
   SCM_RETURN(SCM_OBJ(s));")
 
 (if "!defined(__MINGW32__)"
-(define-cproc sys-lstat (path::<string>)
+(define-cproc sys-lstat (path::<const-cstring>)
   "  ScmSysStat *s = SCM_SYS_STAT(Scm_MakeSysStat());
   int r;
-  SCM_SYSCALL(r, lstat(Scm_GetStringConst(path), &s->statrec));
-  if (r < 0) Scm_SysError(\"lstat failed for %S\", path);
+  SCM_SYSCALL(r, lstat(path, &s->statrec));
+  if (r < 0) Scm_SysError(\"lstat failed for %s\", path);
   SCM_RETURN(SCM_OBJ(s));")
 )
 
@@ -412,10 +402,9 @@
 (define-cproc sys-difftime (time1 time0)
   (expr <double> "difftime(Scm_GetSysTime(time1), Scm_GetSysTime(time0))"))
 
-(define-cproc sys-strftime (format::<string> tm::<sys-tm>)
+(define-cproc sys-strftime (format::<const-cstring> tm::<sys-tm>)
   "  char tmpbuf[256];
-  strftime(tmpbuf, sizeof(tmpbuf),
-           Scm_GetStringConst(format), &SCM_SYS_TM_TM(tm));
+  strftime(tmpbuf, sizeof(tmpbuf), format, &SCM_SYS_TM_TM(tm));
   SCM_RETURN(SCM_MAKE_STR_COPYING(tmpbuf));")
 
 (define-cproc sys-gmtime (time)
@@ -437,23 +426,23 @@
 (define-enum X_OK)
 (define-enum F_OK)
 
-(define-cproc sys-access (pathname::<string> amode::<int>)
+(define-cproc sys-access (pathname::<const-cstring> amode::<int>)
   "int r;
   if (Scm_IsSugid()) {
     Scm_Error(\"cannot use sys-access in suid/sgid program.\");
   }
-  SCM_SYSCALL(r, access(Scm_GetStringConst(pathname), amode));
+  SCM_SYSCALL(r, access(pathname, amode));
   SCM_RETURN((r == 0)? SCM_TRUE : SCM_FALSE);")
 
-(define-cproc sys-chdir (pathname::<string>)
+(define-cproc sys-chdir (pathname::<const-cstring>)
   " int r;
-  SCM_SYSCALL(r, chdir(Scm_GetStringConst(pathname)));
+  SCM_SYSCALL(r, chdir(pathname));
   if (r < 0) Scm_SysError(\"chdir failed\");
   SCM_RETURN(SCM_TRUE);")
 
-(define-cproc sys-chmod (pathname::<string> mode::<int>)
+(define-cproc sys-chmod (pathname::<const-cstring> mode::<int>)
   " int r;
-  SCM_SYSCALL(r, chmod(Scm_GetStringConst(pathname), mode));
+  SCM_SYSCALL(r, chmod(pathname, mode));
   if (r < 0) Scm_SysError(\"chmod failed\");
   SCM_RETURN(SCM_TRUE);")
 
@@ -485,9 +474,9 @@
 (define-cproc sys-getpid ()  (call <int> "getpid"))
 (define-cproc sys-getppid () (call <int> "getppid"))
 
-(define-cproc sys-link (existing::<string> newpath::<string>)
+(define-cproc sys-link (existing::<const-cstring> newpath::<const-cstring>)
   " int r;
-  SCM_SYSCALL(r, link(Scm_GetStringConst(existing), Scm_GetStringConst(newpath)));
+  SCM_SYSCALL(r, link(existing, newpath));
   if (r < 0) Scm_SysError(\"link failed\");
   SCM_RETURN(SCM_TRUE);")
 
@@ -514,19 +503,19 @@
   wend = Scm_MakePortWithFd(name, SCM_PORT_OUTPUT, fds[1], bufmode, TRUE);
   SCM_RETURN(Scm_Values2(rend, wend));")  
 
-(define-cproc sys-mkdir (pathname::<string> mode::<int>)
+(define-cproc sys-mkdir (pathname::<const-cstring> mode::<int>)
   " int r;
 #ifndef __MINGW32__
-  SCM_SYSCALL(r, mkdir(Scm_GetStringConst(pathname), mode));
+  SCM_SYSCALL(r, mkdir(pathname, mode));
 #else
-  SCM_SYSCALL(r, mkdir(Scm_GetStringConst(pathname)));
+  SCM_SYSCALL(r, mkdir(pathname));
 #endif /*__MINGW32__*/
   if (r < 0) Scm_SysError(\"mkdir failed\");
   SCM_RETURN(SCM_TRUE);")
 
-(define-cproc sys-rmdir (pathname::<string>)
+(define-cproc sys-rmdir (pathname::<const-cstring>)
   " int r;
-  SCM_SYSCALL(r, rmdir(Scm_GetStringConst(pathname)));
+  SCM_SYSCALL(r, rmdir(pathname));
   if (r < 0) Scm_SysError(\"rmdir failed\");
   SCM_RETURN(SCM_TRUE);")
 
@@ -559,9 +548,9 @@
        if (rem.tv_sec == 0 && rem.tv_nsec == 0) SCM_RETURN(SCM_FALSE);
        else SCM_RETURN(Scm_MakeTime(SCM_FALSE, rem.tv_sec, rem.tv_nsec));"))
 
-(define-cproc sys-unlink (pathname::<string>)
+(define-cproc sys-unlink (pathname::<const-cstring>)
   "  int r;
-  SCM_SYSCALL(r, unlink(Scm_GetStringConst(pathname)));
+  SCM_SYSCALL(r, unlink(pathname));
   if (r < 0) {
      if (errno == ENOENT) { SCM_RETURN(SCM_FALSE); }
      else Scm_SysError(\"unlink failed\");
@@ -579,9 +568,9 @@
   if (name) SCM_RETURN(SCM_MAKE_STR_COPYING(name));
   else SCM_RETURN(SCM_FALSE);")
 
-(define-cproc sys-truncate (path::<string> length::<integer>)
+(define-cproc sys-truncate (path::<const-cstring> length::<integer>)
   "int r;
-  SCM_SYSCALL(r, truncate(Scm_GetStringConst(path), Scm_IntegerToOffset(length)));
+  SCM_SYSCALL(r, truncate(path, Scm_IntegerToOffset(length)));
   if (r < 0) Scm_SysError(\"truncate failed\");
   SCM_RETURN(SCM_TRUE);")
 
@@ -596,10 +585,8 @@
 ;; prototype.  However, it screws up something else.  Just for now I
 ;; cast the return value of crypt() to avoid it...such a kludge...
 (if "defined(HAVE_CRYPT)"
-(define-cproc sys-crypt (key::<string> salt::<string>)
-  "
-  SCM_RETURN(SCM_MAKE_STR_COPYING((const char *)crypt(Scm_GetStringConst(key),
-                                                      Scm_GetStringConst(salt))));")
+(define-cproc sys-crypt (key::<const-cstring> salt::<const-cstring>)
+  (expr <const-cstring> "(const char *)crypt(key, salt)"))
 )
 
 ;; not supported yet:
@@ -609,11 +596,11 @@
 ;; symbolic link
 
 (if "defined(HAVE_SYMLINK)"
-(define-cproc sys-symlink (existing::<string> new::<string>)
+(define-cproc sys-symlink (existing::<const-cstring> newpath::<const-cstring>)
   "
 #ifdef HAVE_SYMLINK
   int r;
-  SCM_SYSCALL(r, symlink(Scm_GetStringConst(existing), Scm_GetStringConst(new)));
+  SCM_SYSCALL(r, symlink(existing, newpath));
   if (r < 0) Scm_SysError(\"link failed\");
   SCM_RETURN(SCM_TRUE);
 #else
@@ -624,11 +611,11 @@
 )
 
 (if "defined(HAVE_READLINK)"
-(define-cproc sys-readlink (path::<string>)
+(define-cproc sys-readlink (path::<const-cstring>)
   "#define READLINK_PATH_MAX 1024  /* TODO: needs to be configured */
   char buf[READLINK_PATH_MAX];
   int n;
-  SCM_SYSCALL(n, readlink(Scm_GetStringConst(path), buf, READLINK_PATH_MAX));
+  SCM_SYSCALL(n, readlink(path, buf, READLINK_PATH_MAX));
   if (n < 0) Scm_SysError(\"readlink failed\");
   if (n == READLINK_PATH_MAX) Scm_Error(\"readlink result too long\");
   return Scm_MakeString(buf, n, -1, SCM_MAKSTR_COPYING);")
