@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.103 2005-08-07 17:58:07 shirok Exp $
+;;; $Id: syslib.stub,v 1.104 2005-08-07 23:42:23 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -330,24 +330,25 @@
 
 ;; returns pid and status 
 (define-cproc sys-wait ()
-  "  int status;
-  pid_t r = wait(&status);
-  if (r < 0) {
-    if (errno == EINTR) Scm_SigCheck(Scm_VM());
-    Scm_SysError(\"wait() failed\");
-  }
-  SCM_RETURN(Scm_Values2(Scm_MakeInteger(r), Scm_MakeInteger(status)));")
+  (body (<int> <int>)
+        "int status;  pid_t r = wait(&status);"
+        "if (r < 0) {"
+        "  if (errno == EINTR) Scm_SigCheck(Scm_VM());"
+        "  Scm_SysError(\"wait() failed\");"
+        "}"
+        "SCM_RESULT0 = r; SCM_RESULT1 = status;"))
 
 (define-cproc sys-waitpid (pid::<int> &keyword (nohang #f) (untraced #f))
-  "  int status, options = 0;  pid_t r;
-  if (!SCM_FALSEP(nohang))   options |= WNOHANG;
-  if (!SCM_FALSEP(untraced)) options |= WUNTRACED;
-  r = waitpid(pid, &status, options);
-  if (r < 0) {
-    if (errno == EINTR) Scm_SigCheck(Scm_VM());
-    Scm_SysError(\"waitpid() failed\");
-  }
-  SCM_RETURN(Scm_Values2(Scm_MakeInteger(r), Scm_MakeInteger(status)));")
+  (body (<int> <int>)
+        "  int status, options = 0;  pid_t r;"
+        "if (!SCM_FALSEP(nohang))   options |= WNOHANG;"
+        "if (!SCM_FALSEP(untraced)) options |= WUNTRACED;"
+        "r = waitpid(pid, &status, options);"
+        "if (r < 0) {"
+        "  if (errno == EINTR) Scm_SigCheck(Scm_VM());"
+        "  Scm_SysError(\"waitpid() failed\");"
+        "}"
+        "SCM_RESULT0 = r; SCM_RESULT1 = status;"))
 
 ;; status interpretation
 (define-cproc sys-wait-exited? (status::<int>)
@@ -396,24 +397,26 @@
   (expr "SCM_MAKE_STR_COPYING(asctime(&SCM_SYS_TM_TM(tm)))"))
 
 (define-cproc sys-ctime (time)
-  "time_t tim = Scm_GetSysTime(time);
-  SCM_RETURN(SCM_MAKE_STR_COPYING(ctime(&tim)));")
+  (body <const-cstring>
+        "time_t tim = Scm_GetSysTime(time);"
+        "SCM_RESULT = ctime(&tim);"))
 
 (define-cproc sys-difftime (time1 time0)
   (expr <double> "difftime(Scm_GetSysTime(time1), Scm_GetSysTime(time0))"))
 
 (define-cproc sys-strftime (format::<const-cstring> tm::<sys-tm>)
-  "  char tmpbuf[256];
-  strftime(tmpbuf, sizeof(tmpbuf), format, &SCM_SYS_TM_TM(tm));
-  SCM_RETURN(SCM_MAKE_STR_COPYING(tmpbuf));")
+  (body <const-cstring>
+        "char tmpbuf[256];"
+        "strftime(tmpbuf, sizeof(tmpbuf), format, &SCM_SYS_TM_TM(tm));"
+        "SCM_RESULT = tmpbuf;"))
 
 (define-cproc sys-gmtime (time)
-  "time_t tim = Scm_GetSysTime(time);
-  SCM_RETURN(Scm_MakeSysTm(gmtime(&tim)));")
+  (body "time_t tim = Scm_GetSysTime(time);"
+        "SCM_RESULT = Scm_MakeSysTm(gmtime(&tim));"))
 
 (define-cproc sys-localtime (time)
-  "time_t tim = Scm_GetSysTime(time);
-  SCM_RETURN(Scm_MakeSysTm(localtime(&tim)));")
+  (body "time_t tim = Scm_GetSysTime(time);"
+        "SCM_RESULT = Scm_MakeSysTm(localtime(&tim));"))
 
 (define-cproc sys-mktime (tm::<sys-tm>)
   (expr "Scm_MakeSysTime(mktime(&SCM_SYS_TM_TM(tm)))"))
@@ -427,30 +430,29 @@
 (define-enum F_OK)
 
 (define-cproc sys-access (pathname::<const-cstring> amode::<int>)
-  "int r;
-  if (Scm_IsSugid()) {
-    Scm_Error(\"cannot use sys-access in suid/sgid program.\");
-  }
-  SCM_SYSCALL(r, access(pathname, amode));
-  SCM_RETURN((r == 0)? SCM_TRUE : SCM_FALSE);")
+  (body <boolean>
+        "int r;"
+        "if (Scm_IsSugid()) {
+           Scm_Error(\"cannot use sys-access in suid/sgid program.\");"
+        "}"
+        "SCM_SYSCALL(r, access(pathname, amode));"
+        "SCM_RESULT = (r == 0);"))
 
 (define-cproc sys-chdir (pathname::<const-cstring>)
-  " int r;
-  SCM_SYSCALL(r, chdir(pathname));
-  if (r < 0) Scm_SysError(\"chdir failed\");
-  SCM_RETURN(SCM_TRUE);")
+  (body "int r; SCM_SYSCALL(r, chdir(pathname));"
+        "if (r < 0) Scm_SysError(\"chdir failed\");"
+        "SCM_RESULT = SCM_TRUE;"))
 
 (define-cproc sys-chmod (pathname::<const-cstring> mode::<int>)
-  " int r;
-  SCM_SYSCALL(r, chmod(pathname, mode));
-  if (r < 0) Scm_SysError(\"chmod failed\");
-  SCM_RETURN(SCM_TRUE);")
+  (body "int r; SCM_SYSCALL(r, chmod(pathname, mode));"
+        "if (r < 0) Scm_SysError(\"chmod failed\");"
+        "SCM_RESULT = SCM_TRUE;"))
 
 (define-cproc sys-fork ()
-  "  int pid;
-  SCM_SYSCALL(pid, fork());
-  if (pid < 0) Scm_SysError(\"fork failed\");
-  SCM_RETURN(Scm_MakeInteger(pid));")
+  (body <int>
+        "pid_t pid; SCM_SYSCALL(pid, fork());"
+        "if (pid < 0) Scm_SysError(\"fork failed\");"
+        "SCM_RESULT = pid;"))
 
 (define-cproc sys-exec (command::<string> args::<list> &optional iomap)
   (body <void> "Scm_SysExec(command, args, iomap, FALSE);"))
@@ -460,11 +462,13 @@
   (expr "Scm_SysExec(command, args, iomap, TRUE)"))
 
 (define-cproc sys-getcwd ()
-  "#define GETCWD_PATH_MAX 1024  /* TODO: needs to be configured */
-  char p[GETCWD_PATH_MAX]; ScmObj s;
-  if (getcwd(p, GETCWD_PATH_MAX-1) == NULL) Scm_SysError(\"getcwd failed\");
-  s = SCM_MAKE_STR_COPYING(p);
-  SCM_RETURN(s);")
+  (body <const-cstring>
+        "#define GETCWD_PATH_MAX 1024  /* TODO: needs to be configured */"
+        "char p[GETCWD_PATH_MAX];"
+        "if (getcwd(p, GETCWD_PATH_MAX-1) == NULL) {"
+        "  Scm_SysError(\"getcwd failed\");"
+        "}"
+        "SCM_RESULT = p;"))
 
 (define-cproc sys-getegid () (call <int> "getegid"))
 (define-cproc sys-getgid ()  (call <int> "getgid"))
@@ -475,10 +479,9 @@
 (define-cproc sys-getppid () (call <int> "getppid"))
 
 (define-cproc sys-link (existing::<const-cstring> newpath::<const-cstring>)
-  " int r;
-  SCM_SYSCALL(r, link(existing, newpath));
-  if (r < 0) Scm_SysError(\"link failed\");
-  SCM_RETURN(SCM_TRUE);")
+  (body "int r; SCM_SYSCALL(r, link(existing, newpath));"
+        "if (r < 0) Scm_SysError(\"link failed\");"
+        "SCM_RESULT = SCM_TRUE;"))
 
 (define-cproc sys-pause ()
   ;; We can't simply use pause().  If a signal is delivered after the last
@@ -491,33 +494,33 @@
 
 ;; returns a list of two ports
 (define-cproc sys-pipe (&keyword (name "(pipe)") (buffering #f) (buffered? #f))
-  "  int fds[2], r, bufmode; ScmObj rend, wend;
-  SCM_SYSCALL(r, pipe(fds));
-  if (r < 0) Scm_SysError(\"pipe failed\");
-  if (SCM_TRUEP(bufferedP)) {
-    bufmode = SCM_PORT_BUFFER_FULL; /* for backward compatibility */
-  } else {
-    bufmode = Scm_BufferingMode(buffering, -1, SCM_PORT_BUFFER_LINE);
-  }
-  rend = Scm_MakePortWithFd(name, SCM_PORT_INPUT, fds[0], bufmode, TRUE);
-  wend = Scm_MakePortWithFd(name, SCM_PORT_OUTPUT, fds[1], bufmode, TRUE);
-  SCM_RETURN(Scm_Values2(rend, wend));")  
+  (body (<top> <top>)
+        "int fds[2], r, bufmode;"
+        "SCM_SYSCALL(r, pipe(fds));"
+        "if (r < 0) Scm_SysError(\"pipe failed\");"
+        "if (SCM_TRUEP(bufferedP)) {"
+        "  bufmode = SCM_PORT_BUFFER_FULL; /* for backward compatibility */"
+        "} else {"
+        "  bufmode = Scm_BufferingMode(buffering, -1, SCM_PORT_BUFFER_LINE);"
+        "}"
+        "SCM_RESULT0 = Scm_MakePortWithFd(name, SCM_PORT_INPUT, fds[0], bufmode, TRUE);"
+        "SCM_RESULT1 = Scm_MakePortWithFd(name, SCM_PORT_OUTPUT, fds[1], bufmode, TRUE);"))
+        
 
 (define-cproc sys-mkdir (pathname::<const-cstring> mode::<int>)
-  " int r;
-#ifndef __MINGW32__
-  SCM_SYSCALL(r, mkdir(pathname, mode));
-#else
-  SCM_SYSCALL(r, mkdir(pathname));
-#endif /*__MINGW32__*/
-  if (r < 0) Scm_SysError(\"mkdir failed\");
-  SCM_RETURN(SCM_TRUE);")
+  (body "int r;"
+        "#ifndef __MINGW32__"
+        "SCM_SYSCALL(r, mkdir(pathname, mode));"
+        "#else"
+        "SCM_SYSCALL(r, mkdir(pathname));"
+        "#endif /*__MINGW32__*/"
+        "if (r < 0) Scm_SysError(\"mkdir failed\");"
+        "SCM_RESULT = SCM_TRUE;"))
 
 (define-cproc sys-rmdir (pathname::<const-cstring>)
-  " int r;
-  SCM_SYSCALL(r, rmdir(pathname));
-  if (r < 0) Scm_SysError(\"rmdir failed\");
-  SCM_RETURN(SCM_TRUE);")
+  (body "int r; SCM_SYSCALL(r, rmdir(pathname));"
+        "if (r < 0) Scm_SysError(\"rmdir failed\");"
+        "SCM_RESULT = SCM_TRUE;"))
 
 (define-cproc sys-umask (mode::<fixnum>)
   (call <int> "umask"))
@@ -549,37 +552,34 @@
        else SCM_RETURN(Scm_MakeTime(SCM_FALSE, rem.tv_sec, rem.tv_nsec));"))
 
 (define-cproc sys-unlink (pathname::<const-cstring>)
-  "  int r;
-  SCM_SYSCALL(r, unlink(pathname));
-  if (r < 0) {
-     if (errno == ENOENT) { SCM_RETURN(SCM_FALSE); }
-     else Scm_SysError(\"unlink failed\");
-  }
-  SCM_RETURN(SCM_TRUE);")
+  (body "int r; SCM_SYSCALL(r, unlink(pathname));"
+        "if (r < 0) {"
+        "  if (errno == ENOENT) { SCM_RETURN(SCM_FALSE); }"
+        "  else Scm_SysError(\"unlink failed\");"
+        "}"
+        "SCM_RESULT = SCM_TRUE;"))
 
 (define-cproc sys-isatty (port_or_fd)
-  "  int fd = Scm_GetPortFd(port_or_fd, FALSE);
-  SCM_RETURN(SCM_MAKE_BOOL(fd >= 0 && isatty(fd)));")
+  (body <boolean>
+        "int fd = Scm_GetPortFd(port_or_fd, FALSE);"
+        "SCM_RESULT = (fd >= 0 && isatty(fd));"))
   
 (define-cproc sys-ttyname (port_or_fd)
-  "  int fd = Scm_GetPortFd(port_or_fd, FALSE); const char *name;
-  if (fd < 0) SCM_RETURN(SCM_FALSE);
-  name = ttyname(fd);
-  if (name) SCM_RETURN(SCM_MAKE_STR_COPYING(name));
-  else SCM_RETURN(SCM_FALSE);")
+  (body maybe:<const-cstring>
+        "int fd = Scm_GetPortFd(port_or_fd, FALSE);"
+        "if (fd < 0) SCM_RESULT = NULL;"
+        "else SCM_RESULT = ttyname(fd);"))
 
 (define-cproc sys-truncate (path::<const-cstring> length::<integer>)
-  "int r;
-  SCM_SYSCALL(r, truncate(path, Scm_IntegerToOffset(length)));
-  if (r < 0) Scm_SysError(\"truncate failed\");
-  SCM_RETURN(SCM_TRUE);")
+  (body "int r; SCM_SYSCALL(r, truncate(path, Scm_IntegerToOffset(length)));"
+        "if (r < 0) Scm_SysError(\"truncate failed\");"
+        "SCM_RESULT = SCM_TRUE;"))
 
 (define-cproc sys-ftruncate (port_or_fd length::<integer>)
-  "int r;
-  int fd = Scm_GetPortFd(port_or_fd, TRUE);
-  SCM_SYSCALL(r, ftruncate(fd, Scm_IntegerToOffset(length)));
-  if (r < 0) Scm_SysError(\"ftruncate failed\");
-  SCM_RETURN(SCM_TRUE);")
+  (body "int r; int fd = Scm_GetPortFd(port_or_fd, TRUE);"
+        "SCM_SYSCALL(r, ftruncate(fd, Scm_IntegerToOffset(length)));"
+        "if (r < 0) Scm_SysError(\"ftruncate failed\");"
+        "SCM_RESULT = SCM_TRUE;"))
 
 ;; NB. Linux needs _XOPEN_SOURCE defined before unistd.h to get crypt()
 ;; prototype.  However, it screws up something else.  Just for now I
@@ -628,9 +628,10 @@
 
 (if "defined(HAVE_SELECT)" (begin
 (define-cproc sys-fdset-ref (fdset::<sys-fdset> pf)
-  "int fd = Scm_GetPortFd(pf, FALSE);
-  if (fd < 0) SCM_RETURN(SCM_TRUE);
-  else SCM_RETURN(SCM_MAKE_BOOL(FD_ISSET(fd, &fdset->fdset)));"
+  (body <boolean>
+        "int fd = Scm_GetPortFd(pf, FALSE);"
+        "if (fd < 0) SCM_RESULT = TRUE;"
+        "else SCM_RESULT = FD_ISSET(fd, &fdset->fdset);")
   (setter sys-fdset-set!))
   
 (define-cproc sys-fdset-set! (fdset::<sys-fdset> pf flag::<boolean>)

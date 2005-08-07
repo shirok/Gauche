@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: auxsyslib.stub,v 1.24 2005-08-07 17:58:01 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.25 2005-08-07 23:42:23 shirok Exp $
 ;;;
 
 "
@@ -67,11 +67,11 @@
 (define-cproc sys-abort ()  (call <void> "abort"))
 
 (if "defined HAVE_REALPATH"
-  (define-cproc %sys-realpath (path::<string>)
+  (define-cproc %sys-realpath (path::<const-cstring>)
     (body <const-cstring>
           "#define REALPATH_PATH_MAX 1024  /* TODO: needs to be configured */"
           "char buf[REALPATH_PATH_MAX];"
-          "if (realpath(Scm_GetStringConst(path), buf) == NULL) {"
+          "if (realpath(path, buf) == NULL) {"
           "  Scm_SysError(\"realpath failed\");"
           "}"
           "SCM_RESULT = buf;"))
@@ -82,14 +82,10 @@
   (call <double> "fmod"))
 
 (define-cproc frexp (d::<real>)
-  "  double fr; int exp;
-  fr = frexp(d, &exp);
-  SCM_RETURN(Scm_Values2(Scm_MakeFlonum(fr), Scm_MakeInteger(exp)));")
+  (body (<double> <int>) "SCM_RESULT0 = frexp(d, &SCM_RESULT1);"))
 
 (define-cproc modf (x::<real>)
-  "  double fr, inte;
-  fr = modf(x, &inte);
-  SCM_RETURN(Scm_Values2(Scm_MakeFlonum(fr), Scm_MakeFlonum(inte)));")
+  (body (<double> <double>) "SCM_RESULT0 = modf(x, &SCM_RESULT1);"))
 
 (define-cproc ldexp (x::<real> exp::<int>)
   (call <real> "ldexp"))
@@ -118,32 +114,36 @@
 ;; sys/time.h
 (if "defined HAVE_GETTIMEOFDAY"
   (define-cproc %sys-gettimeofday ()
-    "struct timeval tv;
-     int r; SCM_SYSCALL(r, gettimeofday(&tv, NULL));
-     if (r < 0) Scm_SysError(\"gettimeofday failed\");
-     SCM_RETURN(Scm_Values2(Scm_MakeInteger(tv.tv_sec), Scm_MakeInteger(tv.tv_usec)));"))
+    (body (<int> <int>)
+          "struct timeval tv;"
+          "int r; SCM_SYSCALL(r, gettimeofday(&tv, NULL));"
+          "if (r < 0) Scm_SysError(\"gettimeofday failed\");"
+          "SCM_RESULT0 = tv.tv_sec;"
+          "SCM_RESULT1 = tv.tv_usec;"))
+)
 
 ;; sys/stat.h
 (if "!defined(__MINGW32__)"
-(define-cproc sys-mkfifo (path::<string> mode::<int>)
+(define-cproc sys-mkfifo (path::<const-cstring> mode::<int>)
   (body <int>
-        "SCM_SYSCALL(SCM_RESULT, mkfifo(Scm_GetStringConst(path), mode));"
-        "if (SCM_RESULT < 0) Scm_SysError(\"mkfifo failed on %S\", path);"))
+        "SCM_SYSCALL(SCM_RESULT, mkfifo(path, mode));"
+        "if (SCM_RESULT < 0) Scm_SysError(\"mkfifo failed on %s\", path);"))
 ) ;; !defined(__MINGW32__)
 
 ;; utime.h
 
-(define-cproc sys-utime (path::<string> &optional (atime #f) (mtime #f))
-  "  struct utimbuf tim; int r;
-  if (SCM_FALSEP(atime)&&SCM_FALSEP(mtime)) {
-    SCM_SYSCALL(r, utime(Scm_GetStringConst(path), NULL));
-  } else {
-    tim.actime  = SCM_FALSEP(atime)? time(NULL) : Scm_GetUInteger(atime);
-    tim.modtime = SCM_FALSEP(mtime)? time(NULL) : Scm_GetUInteger(mtime);
-    SCM_SYSCALL(r, utime(Scm_GetStringConst(path), &tim));
-  }
-  if (r < 0) Scm_SysError(\"utime failed on %S\", path);
-  SCM_RETURN(SCM_UNDEFINED);")
+(define-cproc sys-utime (path::<const-cstring>
+                         &optional (atime #f) (mtime #f))
+  (body <void>
+        "struct utimbuf tim; int r;"
+        "if (SCM_FALSEP(atime)&&SCM_FALSEP(mtime)) {"
+        "  SCM_SYSCALL(r, utime(path, NULL));"
+        "} else {"
+        "  tim.actime  = SCM_FALSEP(atime)?time(NULL):Scm_GetUInteger(atime);"
+        "  tim.modtime = SCM_FALSEP(mtime)?time(NULL):Scm_GetUInteger(mtime);"
+        "  SCM_SYSCALL(r, utime(path, &tim));"
+        "}"
+        "if (r < 0) Scm_SysError(\"utime failed on %s\", path);"))
 
 ;; set*
 
@@ -262,18 +262,22 @@
 #endif"
 
 (if "defined HAVE_GETHOSTNAME"
-    (define-cproc %sys-gethostname ()
-      "  char buf[HOSTNAMELEN]; int r;
-         SCM_SYSCALL(r, gethostname(buf, HOSTNAMELEN));
-         if (r < 0) Scm_SysError(\"gethostname failed\");
-         SCM_RETURN(SCM_MAKE_STR_COPYING(buf));"))
+  (define-cproc %sys-gethostname ()
+    (body <const-cstring>
+          "char buf[HOSTNAMELEN]; int r;"
+          "SCM_SYSCALL(r, gethostname(buf, HOSTNAMELEN));"
+          "if (r < 0) Scm_SysError(\"gethostname failed\");"
+          "SCM_RESULT = buf;"))
+)    
 
 (if "defined HAVE_GETDOMAINNAME"
-    (define-cproc %sys-getdomainname ()
-      "  char buf[HOSTNAMELEN]; int r;
-         SCM_SYSCALL(r, getdomainname(buf, HOSTNAMELEN));
-         if (r < 0) Scm_SysError(\"getdomainname failed\");
-         SCM_RETURN(SCM_MAKE_STR_COPYING(buf));"))
+  (define-cproc %sys-getdomainname ()
+    (body <const-cstring>
+          "char buf[HOSTNAMELEN]; int r;"
+          "SCM_SYSCALL(r, getdomainname(buf, HOSTNAMELEN));"
+          "if (r < 0) Scm_SysError(\"getdomainname failed\");"
+          "SCM_RESULT = buf;"))
+)
 
 ;; putenv
 ;;  Assume name and value doesn't contain NUL character.
@@ -281,36 +285,37 @@
 ;;  being GCed.  That memory might be leaked when putenv is called
 ;;  again for the same variable, but it's the same case as in C programs.
 (if "defined HAVE_PUTENV"
-    (define-cproc %sys-putenv (name::<string> value::<string>)
-      "  char *buf; int namelen, valuelen, len;
- namelen = SCM_STRING_SIZE(name);
- valuelen = SCM_STRING_SIZE(value);
- len = namelen + valuelen + 2;
- buf = (char*)malloc(len);
- memcpy(buf, SCM_STRING_START(name), namelen);
- buf[namelen] = '=';
- memcpy(buf+namelen+1, SCM_STRING_START(value), valuelen);
- buf[len-1] = '\\0';
- putenv(buf);
- SCM_RETURN(SCM_UNDEFINED);")
+  (define-cproc %sys-putenv (name::<string> value::<string>)
+    (body <void>
+          "char *buf; int namelen, valuelen, len;"
+          "namelen = SCM_STRING_SIZE(name);"
+          "valuelen = SCM_STRING_SIZE(value);"
+          "len = namelen + valuelen + 2;"
+          "buf = (char*)malloc(len);"
+          "memcpy(buf, SCM_STRING_START(name), namelen);"
+          "buf[namelen] = '=';"
+          "memcpy(buf+namelen+1, SCM_STRING_START(value), valuelen);"
+          "buf[len-1] = '\\0';"
+          "putenv(buf);"))
 )
 
 (if "defined HAVE_SETENV"
-  (define-cproc %sys-setenv (name::<string> value::<string> overwrite::<boolean>)
-    "  setenv(Scm_GetStringConst(name), Scm_GetStringConst(value), overwrite);
-       SCM_RETURN(SCM_UNDEFINED);"))
+  (define-cproc %sys-setenv (name::<const-cstring>
+                             value::<const-cstring>
+                             overwrite::<boolean>)
+    (call <void> "setenv"))
+)
 
 (if "defined HAVE_UNSETENV"
-  (define-cproc %sys-unsetenv (name::<string>)
-    "  unsetenv(Scm_GetStringConst(name));
-       SCM_RETURN(SCM_UNDEFINED);"))
+  (define-cproc %sys-unsetenv (name::<const-cstring>)
+    (call <void> "unsetenv"))
+)
 
 ;; ctermid
 (if "!defined(__MINGW32__)"
 (define-cproc sys-ctermid ()
-  "  char buf[L_ctermid+1];
-  char *r = ctermid(buf);
-  SCM_RETURN(SCM_MAKE_STR_COPYING(r));")
+  (body <const-cstring>
+        "char buf[L_ctermid+1]; SCM_RESULT = ctermid(buf);"))
 ) ;; !defined(__MINGW32__)
 
 ;; chown

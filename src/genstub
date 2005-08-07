@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.110 2005-08-07 17:58:05 shirok Exp $
+;;;  $Id: genstub,v 1.111 2005-08-07 23:42:23 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -40,6 +40,7 @@
 (use gauche.parseopt)
 (use gauche.parameter)
 (use gauche.mop.instance-pool)
+(use gauche.sequence)
 (use gauche.cgen)
 (use file.util)
 (use util.match)
@@ -72,16 +73,20 @@
 ;;             <rettype> is used.  As a special case, if <rettype> is
 ;;             <void>, the return value of C-function is ignored and
 ;;             the function returns #<undef>.
+;;        (expr [<rettype>] <C-expr>) :
+;;             <C-expr> must be a C expression of type <rettype>.  The
+;;             value of C-expr is boxed and returned.  <void> isn't allowed
+;;             as <rettype> (you can use 'body' directive).
 ;;        (body [<rettype>] <C-code> ...) :
 ;;             C-code becomes the body of the stub function.  In it,
 ;;             the code must assign to a variable SCM_RESULT.  The stub
 ;;             generator boxes the value and returns it.  (If <rettype>
 ;;             is <void>, though, C-code shouldn't assign SCM_RESULT.
 ;;             The generated function returns #<undef>.
-;;        (expr [<rettype>] <C-expr>) :
-;;             <C-expr> must be a C expression of type <rettype>.  The
-;;             value of C-expr is boxed and returned.  <void> isn't allowed
-;;             as <rettype> (you can use 'body' directive).
+;;        (body (<rettype> ...) <C-code> ...) :
+;;             Procedure yields more than one value.  C variables
+;;             SCM_RESULT0, SCM_RESULT1, ... are defined to receive the
+;;             results.
 ;;        (setter <setter-name>) : specfy setter.  <setter-name> should
 ;;             be a cproc name defined in the same stub file
 ;;        (setter (args ...) body ...) : specify setter anonymously.
@@ -89,6 +94,7 @@
 ;;             for C++ function that may throw an exception, use this spec
 ;;             to ensure the exception will be caught and converted to
 ;;             Gauche error condition.
+;;
 ;;        a string : becomes the body of C code.  DEPRECATED.
 ;;        (return [<rettype>] <C-function-name>)  same as 'call'.  DEPRECATED.
 ;;
@@ -329,7 +335,9 @@
   (if (ref type 'maybe)
     #`"SCM_MAYBE_P(,(ref type 'c-predicate),, ,c-expr)"
     #`",(ref type 'c-predicate)(,c-expr)"))
-  
+
+(define (return-stmt expr)
+  #`"SCM_RETURN(,expr);")
 
 ;; Builtin types
 (for-each
@@ -939,7 +947,7 @@
   (define (typed-result rettype c-func-name)
     (push-stmt! cproc #`",(c-type-of rettype) SCM_RESULT;")
     (push-stmt! cproc #`"SCM_RESULT = ,c-func-name(,(args));")
-    (push-stmt! cproc #`"SCM_RETURN(,(box-expr rettype \"SCM_RESULT\"));"))
+    (push-stmt! cproc (return-stmt (box-expr rettype "SCM_RESULT"))))
   (match form
     ((_ (? string? expr))
      (typed-result *scm-type* expr))
@@ -959,22 +967,51 @@
     (push-stmt! cproc "{")
     (for-each (cut push-stmt! cproc <>) stmts)
     (push-stmt! cproc "}")
-    (push-stmt! cproc #`"SCM_RETURN(,(box-expr rettype \"SCM_RESULT\"));"))
+    (push-stmt! cproc (return-stmt (box-expr rettype "SCM_RESULT"))))
+  (define (typed-results rettypes stmts)
+    (let1 nrets (length rettypes)
+      (for-each-with-index
+       (lambda (i rettype)
+         (push-stmt! cproc #`",(c-type-of rettype) SCM_RESULT,i;"))
+       rettypes)
+      (push-stmt! cproc "{")
+      (for-each (cut push-stmt! cproc <>) stmts)
+      (push-stmt! cproc "}")
+      (let1 results
+          (string-join
+           (map-with-index (lambda (i rettype)
+                             (box-expr rettype #`"SCM_RESULT,i"))
+                           rettypes)
+           ",")
+        (push-stmt! cproc
+                    (case nrets
+                      ((0) (return-stmt "Scm_Values(SCM_NIL)"))
+                      ((1) (return-stmt results))
+                      ((2) (return-stmt #`"Scm_Values2(,results)"))
+                      ((3) (return-stmt #`"Scm_Values3(,results)"))
+                      ((4) (return-stmt #`"Scm_Values4(,results)"))
+                      ((5) (return-stmt #`"Scm_Values5(,results)"))
+                      (else (return-stmt #`"Scm_Values(Scm_List(,results,, NULL))"))))
+        )))
+  (define (err) (error "malformed 'body' spec:" form))
   (match form
     ((_ '<void> . stmts)
      (for-each (cut push-stmt! cproc <>) stmts)
      (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);"))
     ((_ (? symbol? rettype) . stmts)
      (typed-result (name->type rettype) stmts))
+    ((_ (? list? rettypes) . stmts)
+     (unless (every symbol? rettypes) (err))
+     (typed-results (map name->type rettypes) stmts))
     ((_ . stmts)
      (typed-result *scm-type* stmts))
-    (else (error "malformed 'body' spec:" form))))
+    (else (err))))
 
 (define-method process-expr-spec ((cproc <procstub>) form)
   (define (typed-result rettype expr)
     (push-stmt! cproc #`",(c-type-of rettype) SCM_RESULT;")
     (push-stmt! cproc #`" SCM_RESULT = (,expr);")
-    (push-stmt! cproc #`"SCM_RETURN(,(box-expr rettype \"SCM_RESULT\"));"))
+    (push-stmt! cproc (return-stmt (box-expr rettype "SCM_RESULT"))))
   (match form
     ((_ '<void> . stmts)
      (error "<void> type isn't allowed in 'expr' directive:" form))

@@ -35,7 +35,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; \$Id: uvlib.stub.tmpl,v 1.6 2005-08-01 12:23:34 shirok Exp $
+;;; \$Id: uvlib.stub.tmpl,v 1.7 2005-08-07 23:42:23 shirok Exp $
 ;;;
 
 "
@@ -149,7 +149,7 @@
                                             (end::<fixnum> -1))
   (call "Scm_${T}VectorToVector"))
 
-(define-cproc vector->${t}vector (v::<vector>>
+(define-cproc vector->${t}vector (v::<vector>
                                   &optional (start::<fixnum> 0)
                                             (end::<fixnum> -1)
                                             clamp)

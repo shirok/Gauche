@@ -1,7 +1,8 @@
 2005-08-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/genstub: allow 'maybe' type qualifier to have stub-generated
-	  code to handle #f <-> NULL conversion.
+	  code to handle #f <-> NULL conversion.  also supports multiple
+	  value return in 'body' spec.
 	* *.stub: adapted to the new specs.
 
 2005-08-06  Shiro Kawai  <shiro@acm.org>
