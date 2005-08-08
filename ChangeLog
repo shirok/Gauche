@@ -1,5 +1,7 @@
 2005-08-07  Shiro Kawai  <shiro@acm.org>
 
+	* lib/Makefile.in: enable installation of dbi.
+
 	* lib/util/queue.scm: added copy-queue.
 	* src/genstub: allow 'maybe' type qualifier to have stub-generated
 	  code to handle #f <-> NULL conversion.  also supports multiple
