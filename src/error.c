@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.65 2005-07-22 09:26:55 shirok Exp $
+ *  $Id: error.c,v 1.66 2005-08-08 06:16:15 shirok Exp $
  */
 
 #include <errno.h>
@@ -673,7 +673,7 @@ ScmObj Scm_Raise(ScmObj condition)
    Scm_RaiseCondition(SCM_SYMBOL_VALUE("mymodule", "<my-error>"),
                       "error-type", SCM_INTERN("fatal"),
                       "error-code", SCM_MAKE_INT(3),
-                      SCM_RAISE_CONDITION_MSG,
+                      SCM_RAISE_CONDITION_MESSAGE,
                       "Fatal error occurred at %S", current_proc);
 
    roughly corresponds to the Scheme code:
@@ -705,7 +705,7 @@ ScmObj Scm_RaiseCondition(ScmObj condition_type, ...)
         const char *key = va_arg(ap, const char *);
         if (key == NULL) {
             break;
-        } else if (key == SCM_RAISE_CONDITION_MSG) {
+        } else if (key == SCM_RAISE_CONDITION_MESSAGE) {
             const char *msg = va_arg(ap, const char*);
             ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
             Scm_Vprintf(SCM_PORT(ostr), msg, ap, TRUE);

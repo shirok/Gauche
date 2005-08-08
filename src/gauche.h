@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.432 2005-08-07 17:58:05 shirok Exp $
+ *  $Id: gauche.h,v 1.433 2005-08-08 06:16:15 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2386,7 +2386,7 @@ SCM_EXTERN ScmObj Scm_RaiseCondition(ScmObj conditionType, ...);
 
 /* A marker to insert between key-value pair and formatting string
    in Scm_RaiseCondition. */
-#define SCM_RAISE_CONDITION_MSG     ((const char *)1)
+#define SCM_RAISE_CONDITION_MESSAGE  ((const char *)1)
 
 SCM_EXTERN int    Scm_ConditionHasType(ScmObj c, ScmObj k);
 SCM_EXTERN ScmObj Scm_ConditionMessage(ScmObj c);
