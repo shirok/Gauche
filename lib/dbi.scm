@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.13 2005-08-08 09:49:19 shirok Exp $
+;;;  $Id: dbi.scm,v 1.14 2005-08-08 12:06:18 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -255,9 +255,9 @@
                  (class-name  (string->symbol #`"<,|driver-name|-driver>"))
                  
                  (driver-class
-                  (begin #?=(eval `(require ,(path-sans-extension path))
+                  (begin (eval `(require ,(path-sans-extension path))
                                (current-module))
-                         #?=(global-variable-ref module class-name #f)))
+                         (global-variable-ref module class-name #f)))
                  )
         (make driver-class :driver-name driver-name))
       (errorf <dbi-nonexistent-driver-error>
