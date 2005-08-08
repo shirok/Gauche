@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/lib
-#  $Id: Makefile.in,v 1.124 2005-07-17 01:44:36 shirok Exp $
+#  $Id: Makefile.in,v 1.125 2005-08-08 10:47:07 shirok Exp $
 
 .PHONY: all check pre-package install uninstall slibcat slibcat-in-place \
 	clean distclean maintainer-clean
@@ -69,7 +69,7 @@ SCMFILES = srfi-0.scm \
        gauche/package.scm gauche/package/build.scm gauche/package/fetch.scm \
        gauche/package/util.scm gauche/package/compile.scm \
        binary/pack.scm \
-       dbm.scm dbm/fsdbm.scm \
+       dbi.scm dbm.scm dbm/fsdbm.scm \
        math/const.scm \
        util/isomorph.scm util/toposort.scm util/queue.scm util/tree.scm \
        util/digest.scm util/combinations.scm util/lcs.scm util/list.scm \
