@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.250 2005-08-08 00:23:22 shirok Exp $
+;;; $Id: extlib.stub,v 1.251 2005-08-08 04:10:39 shirok Exp $
 ;;;
 
 "
@@ -1206,7 +1206,7 @@
   (expr "SCM_OBJ(mod->table)"))
 
 (define-cproc find-module (name::<symbol>)
-  (expr maybe:<module> "Scm_FindModule(name, SCM_FIND_MODULE_QUIET)"))
+  (expr <module>? "Scm_FindModule(name, SCM_FIND_MODULE_QUIET)"))
 
 (define-cproc all-modules ()
   (call "Scm_AllModules"))

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.104 2005-08-07 23:42:23 shirok Exp $
+;;; $Id: syslib.stub,v 1.105 2005-08-08 04:10:40 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -120,7 +120,7 @@
 (define-enum LC_TIME)
 
 (define-cproc sys-setlocale (category::<fixnum> locale::<const-cstring>)
-  (call maybe:<const-cstring> "setlocale"))
+  (call <const-cstring>? "setlocale"))
 
 ;;---------------------------------------------------------------------
 ;; math.h
@@ -252,7 +252,7 @@
   (call <void> "_exit"))
 
 (define-cproc sys-getenv (name::<const-cstring>)
-  (call maybe:<const-cstring> "getenv"))
+  (call <const-cstring>? "getenv"))
 
 ;; Note: the return value of system() is not portable.
 (define-cproc sys-system (command::<const-cstring>)
@@ -565,7 +565,7 @@
         "SCM_RESULT = (fd >= 0 && isatty(fd));"))
   
 (define-cproc sys-ttyname (port_or_fd)
-  (body maybe:<const-cstring>
+  (body <const-cstring>?
         "int fd = Scm_GetPortFd(port_or_fd, FALSE);"
         "if (fd < 0) SCM_RESULT = NULL;"
         "else SCM_RESULT = ttyname(fd);"))

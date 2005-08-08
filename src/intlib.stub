@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.15 2005-08-07 17:58:06 shirok Exp $
+;;; $Id: intlib.stub,v 1.16 2005-08-08 04:10:40 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -100,7 +100,7 @@
 ;; Returns GLOC object or #f
 (define-cproc find-binding (mod::<module> name::<symbol>
                             stay-in-module::<boolean>)
-  (expr maybe:<gloc> "Scm_FindBinding(mod, name, stay_in_module)"))
+  (expr <gloc>? "Scm_FindBinding(mod, name, stay_in_module)"))
 
 ;; This small piece of code encapsulates the common procedure in
 ;; pass1/variable to find whether the variable reference is a constant

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.111 2005-08-07 23:42:23 shirok Exp $
+;;;  $Id: genstub,v 1.112 2005-08-08 04:10:39 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -245,7 +245,8 @@
 ;;   <vector>     <vector>     ScmVector*
 ;;    :
 ;;
-;; Pointer types can be qualified by 'maybe', e.g. maybe:<string>
+;; Pointer types can be qualified as 'maybe', by adding '?' at the
+;; end of type name, e.g. '<string>?'.
 ;; If 'maybe' type appears as an argument type, the argument accepts #f
 ;; as well as the specified type, and translates #f to NULL.  If 'maybe'
 ;; type appears as the return type, the result of C expression can be NULL
@@ -270,7 +271,7 @@
    ;; ::<string> - name of a C function (macro) that takes C object
    ;;              and returns a Scheme Object.
    (maybe       :init-keyword :maybe       :init-value #f)
-   ;; ::maybe:<type> - base type, if this is 'maybe' qualified type.
+   ;; ::<type>? - base type, if this is 'maybe' qualified type.
    ))
 
 (define (find-type-by-name name)
@@ -278,8 +279,8 @@
             (instance-pool->list <type>))
       ;; when 'maybe' qualified type is used for the first time, we
       ;; create it from the base type.
-      (and-let* ((m (#/^maybe:/ (symbol->string name)))
-                 (basename (string->symbol (m 'after)))
+      (and-let* ((m (#/\?$/ (symbol->string name)))
+                 (basename (string->symbol (m 'before)))
                  (basetype (find-type-by-name basename)))
         (make <type> :name name :c-type (ref basetype 'c-type)
               :description #`",(ref basetype 'description) or #f"
@@ -328,7 +329,7 @@
 
 (define (unbox-expr type c-expr)
   (if (ref type 'maybe)
-    #`"SCM_MAKE_MAYBE(,(ref type 'unboxer),, ,c-expr)"
+    #`"SCM_MAYBE(,(ref type 'unboxer),, ,c-expr)"
     #`",(ref type 'unboxer)(,c-expr)"))
 
 (define (pred-expr type c-expr)
@@ -1125,11 +1126,11 @@
      ((eq? class <rest-arg>)
       (f "  ~a = SCM_OPTARGS;" sname)))
     (when (and pred (not (string-null? pred)))
-      (f "  if (!~a(~a)) Scm_Error(\"~a required, but got %S\", ~a);"
-         pred sname tdesc sname))
+      (f "  if (!~a) Scm_Error(\"~a required, but got %S\", ~a);"
+         (pred-expr type sname) tdesc sname))
     (if unbox
-        (f "  ~a = ~a(~a);" cname unbox sname)
-        (f "  ~a = ~a;" cname sname))))
+      (f "  ~a = ~a;" cname (unbox-expr type sname))
+      (f "  ~a = ~a;" cname sname))))
 
 (define (ensure-keyword-arg arg)
   (set! (c-keyword-of arg)
@@ -1558,12 +1559,12 @@
          (class-type (name->type (scheme-name-of class))))
     (cgen-body #`"static ScmObj ,(slot-getter-name slot)(ScmObj OBJARG)")
     (cgen-body "{")
-    (cgen-body #`"  ,(c-type-of class-type) obj = ,(unboxer-of class-type)(OBJARG);")
+    (cgen-body #`"  ,(c-type-of class-type) obj = ,(unbox-expr class-type \"OBJARG\");")
     (cond ((string? (getter-of slot)) (cgen-body (getter-of slot)))
           ((string? (c-spec-of slot))
-           (f "  return ~a(~a);" (boxer-of type) (c-spec-of slot)))
+           (f "  return ~a;" (box-expr type c-spec-of slot)))
           (else
-           (f "  return ~a(obj->~a);" (boxer-of type) (c-name-of slot))))
+           (f "  return ~a;" (box-expr type #`"obj->,(c-name-of slot)"))))
     (cgen-body "}")
     (cgen-body "")))
 
@@ -1573,7 +1574,7 @@
          (class-type (name->type (scheme-name-of class))))
     (cgen-body #`"static void ,(slot-setter-name slot)(ScmObj OBJARG, ScmObj value)")
     (cgen-body "{")
-    (cgen-body #`"  ,(c-type-of class-type) obj = ,(unboxer-of class-type)(OBJARG);")
+    (cgen-body #`"  ,(c-type-of class-type) obj = ,(unbox-expr class-type \"OBJARG\");")
     (if (string? (setter-of slot))
       (cgen-body (setter-of slot))
       (begin
@@ -1581,8 +1582,8 @@
           (f "  if (!~a(value)) Scm_Error(\"~a required, but got %S\", value);"
              (c-predicate-of type) (c-type-of type)))
         (if (c-spec-of slot)
-          (f "  ~a = ~a(value);" (c-spec-of slot) (unboxer-of type))
-          (f "  obj->~a = ~a(value);" (c-name-of slot) (unboxer-of type)))))
+          (f "  ~a = ~a;" (c-spec-of slot) (unbox-expr type "value"))
+          (f "  obj->~a = ~a;" (c-name-of slot) (unbox-expr type "value")))))
     (cgen-body "}")
     (cgen-body "")))
 

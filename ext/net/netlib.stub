@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netlib.stub,v 1.30 2005-08-07 17:58:04 shirok Exp $
+;;;  $Id: netlib.stub,v 1.31 2005-08-08 04:10:39 shirok Exp $
 ;;;
 
 "#include \"gauche/net.h\"
@@ -300,8 +300,8 @@
   obj->addr = SCM_SOCKADDR(value);"))
         (allocator (c "addrinfo_allocate")))
 
-      (define-cproc sys-getaddrinfo (nodename::maybe:<const-cstring>
-                                     servname::maybe:<const-cstring>
+      (define-cproc sys-getaddrinfo (nodename::<const-cstring>?
+                                     servname::<const-cstring>?
                                      hints)
         "  struct addrinfo ai;
   if (!SCM_SYS_ADDRINFO_P(hints) && !SCM_FALSEP(hints))
