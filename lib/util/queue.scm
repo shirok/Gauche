@@ -5,7 +5,7 @@
 ;;;  Public Domain..  I guess lots of Scheme programmers have already
 ;;;  written similar code.
 ;;;
-;;;  $Id: queue.scm,v 1.8 2004-12-13 09:51:42 shirok Exp $
+;;;  $Id: queue.scm,v 1.9 2005-08-08 09:47:50 shirok Exp $
 ;;;
 
 ;; This queue implementation is tuned for speed.  A queue is simply
@@ -18,7 +18,7 @@
 ;; for performance reasons.
 
 (define-module util.queue
-  (export make-queue queue? queue-empty?
+  (export make-queue queue? queue-empty? copy-queue
           queue-push! queue-push-unique! enqueue! enqueue-unique!
           queue-pop! dequeue! dequeue-all!
           queue-front queue-rear queue-length
@@ -35,6 +35,10 @@
        (or (and (null? (car obj)) (null? (cdr obj)))
            (and (pair? (car obj)) (pair? (cdr obj))
                 (eq? (last-pair (car obj)) (cdr obj))))))
+
+(define (copy-queue q)
+  (unless (queue? q) (error "argument is not a queue:" q))
+  (list->queue (car q)))
 
 ;; internal macro
 (define-syntax %empty? 

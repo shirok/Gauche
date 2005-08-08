@@ -10680,6 +10680,14 @@ Returns the number of the items in the queue.
 @c COMMON
 @end defun
 
+@defun copy-queue queue
+@c EN
+Returns a copy of the queue.
+@c JP
+キューqueueのコピーを返します。
+@c COMMON
+@end defun
+
 @defun enqueue! queue obj &optional more-objs @dots{}
 @c EN
 Add @var{obj} to the end of @var{queue}.  You may give more than
