@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.12 2005-08-08 04:10:39 shirok Exp $
+;;;  $Id: dbi.scm,v 1.13 2005-08-08 09:49:19 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -250,9 +250,9 @@
   (or (and-let* ((module&path (library-fold
                                (string->symbol #`"dbd.,driver-name")
                                (lambda (m p s) (cons m p)) #f))
-                 (module      #?=(car module&path))
+                 (module      (car module&path))
                  (path        (cdr module&path))
-                 (class-name  #?=(string->symbol #`"<,|driver-name|-driver>"))
+                 (class-name  (string->symbol #`"<,|driver-name|-driver>"))
                  
                  (driver-class
                   (begin #?=(eval `(require ,(path-sans-extension path))
