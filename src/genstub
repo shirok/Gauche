@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.112 2005-08-08 04:10:39 shirok Exp $
+;;;  $Id: genstub,v 1.113 2005-08-10 09:30:11 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -365,17 +365,17 @@
    (define-type <int32>   "int" "C integer"
      "SCM_EXACTP" "Scm_GetInteger" "Scm_MakeInteger")
    (define-type <uint>    "u_int" "C integer"
-     "SCM_UINTP" "Scm_GetUInteger" "Scm_MakeIntegerFromUI")
+     "SCM_UINTEGERP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
    (define-type <ulong>   "u_long" "C integer"
-     "SCM_EXACTP" "Scm_GetUInteger" "Scm_MakeIntegerFromUI")
+     "SCM_UINTEGERP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
    (define-type <ushort>  "u_short" "C short integer"
-     "SCM_EXACTP" "(unsigned short)Scm_GetUInteger" "Scm_MakeIntegerFromUI")
+     "SCM_EXACTP" "(unsigned short)Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
    (define-type <uint8>   "u_int" "C integer"
-     "SCM_UINTP" "Scm_GetUInteger" "Scm_MakeIntegerFromUI")
+     "SCM_UINTP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
    (define-type <uint16>  "u_int" "C integer"
-     "SCM_UINTP" "Scm_GetUInteger" "Scm_MakeIntegerFromUI")
+     "SCM_UINTP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
    (define-type <uint32>  "u_int" "C integer"
-     "SCM_EXACTP" "Scm_GetUInteger" "Scm_MakeIntegerFromUI")
+     "SCM_UINTEGERP" "Scm_GetIntegerU" "Scm_MakeIntegerFromUI")
    (define-type <float>   "float" "real number"
      "SCM_REALP" "(float)Scm_GetDouble" "Scm_MakeFlonum")
    (define-type <double>  "double" "real number"
