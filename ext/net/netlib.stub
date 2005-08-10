@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netlib.stub,v 1.31 2005-08-08 04:10:39 shirok Exp $
+;;;  $Id: netlib.stub,v 1.32 2005-08-10 10:10:15 shirok Exp $
 ;;;
 
 "#include \"gauche/net.h\"
@@ -276,6 +276,11 @@
 
 (define-cproc sys-getservbyport (port::<fixnum> proto::<const-cstring>)
   (call "Scm_GetServByPort"))
+
+(define-cproc sys-ntohl (x::<uint32>) (call <uint32> "ntohl"))
+(define-cproc sys-ntohs (x::<uint16>) (call <uint16> "ntohs"))
+(define-cproc sys-htonl (x::<uint32>) (call <uint32> "htonl"))
+(define-cproc sys-htons (x::<uint16>) (call <uint16> "htons"))
 
 ;;----------------------------------------------------------
 ;; IPv6 routines

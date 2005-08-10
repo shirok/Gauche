@@ -1,5 +1,7 @@
 2005-08-09  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/netlib.stub, ext/net/net.scm : added sys-htonl, sys-htons,
+	  sys-ntohl and sys-ntohs (based on the patch by John Kilburg).
 	* src/genstub: fixed a bug in <uint> stub-type handling.
 
 2005-08-07  Shiro Kawai  <shiro@acm.org>
