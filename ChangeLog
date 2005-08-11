@@ -1,3 +1,7 @@
+2005-08-10  Shiro Kawai  <shiro@acm.org>
+
+	* gc/* : upgraded to Boehm GC 6.5.
+
 2005-08-09  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/netlib.stub, ext/net/net.scm : added sys-htonl, sys-htons,

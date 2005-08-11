@@ -804,7 +804,10 @@ void GC_init_inner()
 
 void GC_enable_incremental GC_PROTO(())
 {
-# if !defined(SMALL_CONFIG)
+# if !defined(SMALL_CONFIG) && !defined(KEEP_BACK_PTRS)
+  /* If we are keeping back pointers, the GC itself dirties all	*/
+  /* pages on which objects have been marked, making 		*/
+  /* incremental GC pointless.					*/
   if (!GC_find_leak) {
     DCL_LOCK_STATE;
     
