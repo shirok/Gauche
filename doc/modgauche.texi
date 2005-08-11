@@ -5194,6 +5194,33 @@ This is only available if gauche is compiled with --enable-ipv6 option.
 @c COMMON
 @end defun
 
+@defun sys-ntohs integer
+@defunx sys-ntohl integer
+@defunx sys-htons integer
+@defunx sys-htonl integer
+@c EN
+Utility functions to convert 16bit (@code{s}) or 32bit (@code{l}) integers
+between @emph{network} byte order (@code{n}) and @emph{host} byte order
+(@code{h}).
+
+Scheme API to the netdb interface calls those byte order conversion
+functions internally, so you don't usually need them so much as in C 
+programs.  However, it may be useful when you're constructing or
+analyzing binary packets.  See also @ref{Packing Binary Data} to handle
+binary data.
+@c JP
+16bit (@code{s})もしくは32bit (@code{l}) の整数を
+ネットワークバイト順 (@code{n}) とホストバイト順 (@code{h}) の間で
+相互変換するユーティリティ関数です。
+
+netdbインタフェースのScheme APIは必要な箇所ではこれらの関数を内部的に
+呼んでいるので、Cでプログラミングしている時ほどこれらの関数を必要とする
+ことはないでしょう。ただ、バイナリデータパケットを構築したり解析したり
+する際は便利かもしれません。バイナリデータの扱いについては
+@ref{Packing Binary Data}も参照して下さい。
+@c COMMON
+@end defun
+
 @c ----------------------------------------------------------------------
 @node Parameters, Parsing command-line options, Networking, Library modules - Gauche extensions
 @section @code{gauche.parameter} - Parameters
