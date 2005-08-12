@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.235 2005-07-24 10:18:26 shirok Exp $
+ *  $Id: vm.c,v 1.236 2005-08-12 01:09:06 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -42,6 +42,14 @@
 #include "gauche/code.h"
 #include "gauche/vminsn.h"
 #include "gauche/prof.h"
+
+#ifdef USE_CUSTOM_STACK_MARKER
+#include "gc_mark.h"
+
+static void **vm_stack_free_list;
+static int vm_stack_kind;
+static int vm_stack_mark_proc;
+#endif /*USE_CUSTOM_STACK_MARKER*/
 
 #include <unistd.h>
 #ifdef HAVE_SCHED_H
@@ -154,7 +162,13 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->runtimeFlags = proto? proto->runtimeFlags : 0;
     v->queueNotEmpty = 0;
 
+#ifdef USE_CUSTOM_STACK_MARKER
+    v->stack = (ScmObj*)GC_generic_malloc((SCM_VM_STACK_SIZE+1)*sizeof(ScmObj),
+                                          vm_stack_kind);
+    *v->stack++ = SCM_OBJ(v);
+#else  /*!USE_CUSTOM_STACK_MARKER*/
     v->stack = SCM_NEW_ARRAY(ScmObj, SCM_VM_STACK_SIZE);
+#endif /*!USE_CUSTOM_STACK_MARKER*/
     v->sp = v->stack;
     v->stackBase = v->stack;
     v->stackEnd = v->stack + SCM_VM_STACK_SIZE;
@@ -485,8 +499,12 @@ pthread_key_t Scm_VMKey(void)
         if (CONT->argp == NULL) {                                       \
             void *data__[SCM_CCONT_DATA_SIZE];                          \
             ScmObj (*after__)(ScmObj, void**);                          \
-            memcpy(data__, (ScmObj*)CONT + CONT_FRAME_SIZE,             \
-                   CONT->size * sizeof(void*));                         \
+            void **d__ = data__;                                        \
+            void **s__ = (void**)((ScmObj*)CONT + CONT_FRAME_SIZE);     \
+            int i__ = CONT->size;                                       \
+            while (i__-- > 0) {                                         \
+                *d__++ = *s__++;                                        \
+            }                                                           \
             after__ = (ScmObj (*)(ScmObj, void**))CONT->pc;             \
             if (IN_STACK_P((ScmObj*)CONT)) SP = (ScmObj*)CONT;          \
             ENV = CONT->env;                                            \
@@ -511,8 +529,11 @@ pthread_key_t Scm_VMKey(void)
             PC = CONT->pc;                                              \
             BASE = CONT->base;                                          \
             if (CONT->argp && size__) {                                 \
-                memmove(SP, CONT->argp, size__*sizeof(ScmObj*));        \
-                SP = ARGP + size__;                                     \
+                ScmObj *s__ = CONT->argp, *d__ = SP;                    \
+                SP += size__;                                           \
+                while (size__-- > 0) {                                  \
+                    *d__++ = *s__++;                                    \
+                }                                                       \
             }                                                           \
             CONT = CONT->prev;                                          \
         }                                                               \
@@ -3710,12 +3731,46 @@ void Scm_VMDump(ScmVM *vm)
     }
 }
 
+#ifdef USE_CUSTOM_STACK_MARKER
+struct GC_ms_entry *vm_stack_mark(GC_word *addr,
+                                  struct GC_ms_entry *mark_sp,
+                                  struct GC_ms_entry *mark_sp_limit,
+                                  GC_word env)
+{
+    struct GC_ms_entry *e = mark_sp;
+    ScmObj *vmsb = ((ScmObj*)addr)+1;
+    ScmVM *vm = (ScmVM*)*addr;
+    int i, limit = vm->sp - vm->stackBase + 5;
+    GC_PTR spb = (GC_PTR)vm->stackBase;
+    GC_PTR sbe = (GC_PTR)(vm->stackBase + SCM_VM_STACK_SIZE);
+    GC_PTR hb = GC_least_plausible_heap_addr;
+    GC_PTR he = GC_greatest_plausible_heap_addr;
+
+    for (i=0; i<limit; i++, vmsb++) {
+        ScmObj z = *vmsb;
+        if ((hb < (GC_PTR)z && (GC_PTR)z < spb)
+            || ((GC_PTR)z > sbe && (GC_PTR)z < he)) {
+            e = GC_mark_and_push((GC_PTR)z, e, mark_sp_limit, (GC_PTR)addr);
+        }
+    }
+    return e;
+}
+#endif /*USE_CUSTOM_STACK_MARKER*/
+
 /*===============================================================
  * Initialization
  */
 
 void Scm__InitVM(void)
 {
+#ifdef USE_CUSTOM_STACK_MARKER
+    vm_stack_free_list = GC_new_free_list();
+    vm_stack_mark_proc = GC_new_proc(vm_stack_mark);
+    vm_stack_kind = GC_new_kind(vm_stack_free_list,
+                                GC_MAKE_PROC(vm_stack_mark_proc, 0),
+                                0, 0);
+#endif /*USE_CUSTOM_STACK_MARKER*/
+
     /* Create root VM */
 #ifdef GAUCHE_USE_PTHREADS
     if (pthread_key_create(&vm_key, NULL) != 0) {

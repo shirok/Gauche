@@ -1,3 +1,9 @@
+2005-08-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c: experimentally added the custom mark procedure for the
+	  VM stack under USE_CUSTOM_STACK_MARKER flag.  It doesn't show
+	  any improvement, so currently it's turned off.
+
 2005-08-10  Shiro Kawai  <shiro@acm.org>
 
 	* gc/* : upgraded to Boehm GC 6.5.
