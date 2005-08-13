@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.32 2005-07-16 01:47:40 shirok Exp $
+;;;  $Id: compile.scm,v 1.33 2005-08-13 06:51:52 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -3517,7 +3517,8 @@
     (else
      (if (and (bottom-context? ctx)
               (has-tag? ($call-proc iform) $LET)
-              (all-args-simple? ($call-args iform)))
+              (all-args-simple? ($call-args iform))
+              (not (vm-compiler-flag-is-set? SCM_COMPILE_NOCOMBINE)))
        (pass3/head-heavy-call iform ccb renv ctx)
        (pass3/normal-call iform ccb renv ctx)))))
 

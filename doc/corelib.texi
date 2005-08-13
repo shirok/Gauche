@@ -4291,23 +4291,10 @@ except that the lookup of @var{key} is only done once.
 基本的に次のように動作します。
 @c COMMON
 @example
-(let ((tmp (proc (hash-table-get @var{ht} @var{key}))))
+(let ((tmp (proc (hash-table-get @var{ht} @var{key} @var{default}))))
   (hash-table-put! @var{ht} @var{key} tmp)
   tmp)
 @end example
-@c EN
-When @var{ht} doesn't have the entry for @var{key}, 
-the action depends on whether @var{default} is given.
-If @var{default} is given, its value is stored to @var{ht} as 
-the entry of @var{key} (Note that @var{proc} won't be called
-in this case).   If @var{default} is not given, an error is signalled.
-@c JP
-@var{key}に対応するエントリが@var{ht}に無かった場合、動作は
-@var{default}が与えられているかどうかで異なります。
-@var{default}が与えられている場合は、それが@var{key}に対応する値として
-テーブル@var{ht}に追加されます (@var{proc}は呼ばれません)。
-@var{default}が与えられていなければ、エラーが報告されます。
-@c COMMON
 
 @c EN
 For example, when you use a hash table to count the occurrences

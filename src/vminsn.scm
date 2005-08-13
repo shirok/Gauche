@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: vminsn.scm,v 1.4 2005-05-23 03:48:19 shirok Exp $
+;;;  $Id: vminsn.scm,v 1.5 2005-08-13 06:51:52 shirok Exp $
 ;;;
 
 ;;; This file is processed by geninsn to produce a couple of C files:
@@ -428,3 +428,10 @@
 (define-insn SLOT-SET    0 none)        ; slot-set!
 (define-insn SLOT-REFC   0 obj)         ; slot-ref with constant slot name
 (define-insn SLOT-SETC   0 obj)         ; slot-set! with constant slot name
+
+;; combined
+;(define-insn LREF0-NUMADDI 1 none)
+;(define-insn LREF1-NUMADDI 1 none)
+;(define-insn LREF2-NUMADDI 1 none)
+;(define-insn LREF3-NUMADDI 1 none)
+;(define-insn LREF4-NUMADDI 1 none)

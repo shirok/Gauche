@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.16 2005-08-08 04:10:40 shirok Exp $
+;;; $Id: intlib.stub,v 1.17 2005-08-13 06:51:52 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -320,6 +320,7 @@
 (define-enum SCM_COMPILE_NOINLINE_CONSTS)
 (define-enum SCM_COMPILE_NOSOURCE)
 (define-enum SCM_COMPILE_SHOWRESULT)
+(define-enum SCM_COMPILE_NOCOMBINE)
 
 ;; Set/get VM's current module info. (temporary)
 (define-cproc vm-current-module ()

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.104 2005-07-22 09:26:58 shirok Exp $
+ *  $Id: vm.h,v 1.105 2005-08-13 06:51:53 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -582,6 +582,7 @@ enum {
     SCM_COMPILE_NOSOURCE = (1L<<3),        /* Do not insert source info */
     SCM_COMPILE_SHOWRESULT = (1L<<4),      /* Display each result of
                                               compilation */
+    SCM_COMPILE_NOCOMBINE = (1L<<5)        /* Do not combine instructions */
 };
 
 #define SCM_VM_COMPILER_FLAG_IS_SET(vm, flag) ((vm)->compilerFlags & (flag))

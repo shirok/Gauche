@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.81 2005-07-23 07:58:09 shirok Exp $
+ *  $Id: main.c,v 1.82 2005-08-13 06:51:52 shirok Exp $
  */
 
 #include <unistd.h>
@@ -122,6 +122,9 @@ void further_options(const char *optarg)
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_GLOBALS);
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_LOCALS);
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_CONSTS);
+    }
+    else if (strcmp(optarg, "no-combine-instructions") == 0) {
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOCOMBINE);
     }
     else if (strcmp(optarg, "debug-compiler") == 0) {
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_SHOWRESULT);

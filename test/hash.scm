@@ -2,7 +2,7 @@
 ;; Test hash table
 ;;
 
-;; $Id: hash.scm,v 1.8 2005-08-06 12:31:36 shirok Exp $
+;; $Id: hash.scm,v 1.9 2005-08-13 06:51:53 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -60,14 +60,19 @@
          (hash-table-update! h-eq 'e (lambda (x) (+ x 1)))
          (hash-table-get h-eq 'e)))
 
-(test* "eq? test" 6
+(test* "f => 1" 3
+       (begin
+         (hash-table-update! h-eq 'f (lambda (x) (+ x 1)) 2)
+         (hash-table-get h-eq 'f)))
+
+(test* "eq? test" 7
        (begin
          (hash-table-put! h-eq (string #\d) 4)
          (hash-table-put! h-eq (string #\d) 5)
          (length (hash-table-keys h-eq))))
 
 (test* "hash-table-values(1)" #t
-       (lset= equal? (hash-table-values h-eq) '(8 "b" #\c 4 5 10)))
+       (lset= equal? (hash-table-values h-eq) '(8 "b" #\c 3 4 5 10)))
 
 (test* "delete!" #f
        (begin

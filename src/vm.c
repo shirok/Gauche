@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.236 2005-08-12 01:09:06 shirok Exp $
+ *  $Id: vm.c,v 1.237 2005-08-13 06:51:52 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -43,6 +43,9 @@
 #include "gauche/vminsn.h"
 #include "gauche/prof.h"
 
+/* Experimental code to use custom mark procedure for stack gc.
+   Currently it doens't show any improvement, so we disable it
+   by default. */
 #ifdef USE_CUSTOM_STACK_MARKER
 #include "gc_mark.h"
 
@@ -79,6 +82,8 @@ static ScmCompiledCode internal_apply_compiled_code =
                                         SCM_NIL, SCM_FALSE,
                                         SCM_FALSE, SCM_FALSE);
 
+
+
 /*
  * The VM. 
  *
@@ -108,6 +113,11 @@ static ScmObj throw_cont_body(ScmObj, ScmEscapePoint*, ScmObj);
 static void   process_queued_requests(ScmVM *vm);
 
 static ScmEnvFrame *get_env(ScmVM *vm);
+
+/*#define COUNT_INSN_FREQUENCY*/
+#ifdef COUNT_INSN_FREQUENCY
+#include "vmstat.c"
+#endif /*COUNT_INSN_FREQUENCY*/
 
 /*
  * Constructor
@@ -279,12 +289,17 @@ pthread_key_t Scm_VMKey(void)
  * Micro-operations
  */
 
-/* fetch an instruction */
+/* fetching */
 #define INCR_PC                 (PC++)
-#define FETCH_INSN(var)         ((var) = *PC++)
 #define FETCH_LOCATION(var)     ((var) = (ScmWord*)*PC)
 #define FETCH_OPERAND(var)      ((var) = SCM_OBJ(*PC))
 #define FETCH_OPERAND_PUSH      (*SP++ = SCM_OBJ(*PC))
+
+#ifndef COUNT_INSN_FREQUENCY
+#define FETCH_INSN(var)         ((var) = *PC++)
+#else
+#define FETCH_INSN(var)         ((var) = fetch_insn_counting(vm, var))
+#endif
 
 /* For sanity check in debugging mode */
 #ifdef PARANOIA
@@ -2205,6 +2220,98 @@ pthread_key_t Scm_VMKey(void)
                 }
                 NEXT1;
             }
+#if 0
+            CASE(SCM_VM_LREF0_NUMADDI) {
+                long imm = SCM_VM_INSN_ARG(code);
+                ScmObj val = ENV_DATA(ENV, 0);
+                if (SCM_INTP(val)) {
+                    imm += SCM_INT_VALUE(val);
+                    if (SCM_SMALL_INT_FITS(imm)) {
+                        VAL0 = SCM_MAKE_INT(imm);
+                    } else {
+                        SAVE_REGS();
+                        VAL0 = Scm_MakeInteger(imm);
+                    }
+                } else {
+                    SAVE_REGS();
+                    VAL0 = Scm_Add(SCM_MAKE_INT(imm), val, SCM_NIL);
+                    RESTORE_REGS();
+                }
+                NEXT1;
+            }
+            CASE(SCM_VM_LREF1_NUMADDI) {
+                long imm = SCM_VM_INSN_ARG(code);
+                ScmObj val = ENV_DATA(ENV, 1);
+                if (SCM_INTP(val)) {
+                    imm += SCM_INT_VALUE(val);
+                    if (SCM_SMALL_INT_FITS(imm)) {
+                        VAL0 = SCM_MAKE_INT(imm);
+                    } else {
+                        SAVE_REGS();
+                        VAL0 = Scm_MakeInteger(imm);
+                    }
+                } else {
+                    SAVE_REGS();
+                    VAL0 = Scm_Add(SCM_MAKE_INT(imm), val, SCM_NIL);
+                    RESTORE_REGS();
+                }
+                NEXT1;
+            }
+            CASE(SCM_VM_LREF2_NUMADDI) {
+                long imm = SCM_VM_INSN_ARG(code);
+                ScmObj val = ENV_DATA(ENV, 2);
+                if (SCM_INTP(val)) {
+                    imm += SCM_INT_VALUE(val);
+                    if (SCM_SMALL_INT_FITS(imm)) {
+                        VAL0 = SCM_MAKE_INT(imm);
+                    } else {
+                        SAVE_REGS();
+                        VAL0 = Scm_MakeInteger(imm);
+                    }
+                } else {
+                    SAVE_REGS();
+                    VAL0 = Scm_Add(SCM_MAKE_INT(imm), val, SCM_NIL);
+                    RESTORE_REGS();
+                }
+                NEXT1;
+            }
+            CASE(SCM_VM_LREF3_NUMADDI) {
+                long imm = SCM_VM_INSN_ARG(code);
+                ScmObj val = ENV_DATA(ENV, 3);
+                if (SCM_INTP(val)) {
+                    imm += SCM_INT_VALUE(val);
+                    if (SCM_SMALL_INT_FITS(imm)) {
+                        VAL0 = SCM_MAKE_INT(imm);
+                    } else {
+                        SAVE_REGS();
+                        VAL0 = Scm_MakeInteger(imm);
+                    }
+                } else {
+                    SAVE_REGS();
+                    VAL0 = Scm_Add(SCM_MAKE_INT(imm), val, SCM_NIL);
+                    RESTORE_REGS();
+                }
+                NEXT1;
+            }
+            CASE(SCM_VM_LREF4_NUMADDI) {
+                long imm = SCM_VM_INSN_ARG(code);
+                ScmObj val = ENV_DATA(ENV, 4);
+                if (SCM_INTP(val)) {
+                    imm += SCM_INT_VALUE(val);
+                    if (SCM_SMALL_INT_FITS(imm)) {
+                        VAL0 = SCM_MAKE_INT(imm);
+                    } else {
+                        SAVE_REGS();
+                        VAL0 = Scm_MakeInteger(imm);
+                    }
+                } else {
+                    SAVE_REGS();
+                    VAL0 = Scm_Add(SCM_MAKE_INT(imm), val, SCM_NIL);
+                    RESTORE_REGS();
+                }
+                NEXT1;
+            }
+#endif /* 0 */
             CASE(SCM_VM_NUMSUBI) {
                 long imm = SCM_VM_INSN_ARG(code);
                 if (SCM_INTP(VAL0)) {
@@ -3785,5 +3892,9 @@ void Scm__InitVM(void)
     rootVM = theVM = Scm_NewVM(NULL, SCM_MAKE_STR_IMMUTABLE("root"));
 #endif  /* !GAUCHE_USE_PTHREADS */
     rootVM->state = SCM_VM_RUNNABLE;
+
+#ifdef COUNT_INSN_FREQUENCY
+    Scm_AddCleanupHandler(dump_insn_frequency, NULL);
+#endif /*COUNT_INSN_FREQUENCY*/
 }
 

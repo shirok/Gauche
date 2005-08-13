@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.251 2005-08-08 04:10:39 shirok Exp $
+;;; $Id: extlib.stub,v 1.252 2005-08-13 06:51:52 shirok Exp $
 ;;;
 
 "
@@ -1120,20 +1120,18 @@
  }"
 
 (define-cproc hash-table-update! (hash::<hash-table> key proc &optional defval)
-  "ScmHashEntry *e = Scm_HashTableAdd(hash, key, SCM_UNBOUND);
-  if (SCM_UNBOUNDP(e->value)) {
-    if (SCM_UNBOUNDP(defval)) {
-      Scm_Error(\"hash table doesn't have an entry for key %S\", key);
-    } else {
-      e->value = defval;
-    }
-    SCM_RETURN(defval);
-  } else {
-    void *data[1];
-    data[0] = (void*)e;
-    Scm_VMPushCC(hash_table_update_cc, data, 1);
-    SCM_RETURN(Scm_VMApply1(proc, e->value));
-  }")
+  (body "ScmHashEntry *e;"
+        "ScmObj curval;"
+        "void *data[1];"
+        "if (SCM_UNBOUNDP(defval)) {"
+        "  e = Scm_HashTableGet(hash, key);"
+        "  if (!e) Scm_Error(\"hash table doesn't have an entry for key %S\", key);"
+        "} else {"
+        "  e = Scm_HashTableAdd(hash, key, defval);"
+        "}"
+        "data[0] = (void*)e;"
+        "Scm_VMPushCC(hash_table_update_cc, data, 1);"
+        "SCM_RESULT = Scm_VMApply1(proc, e->value);"))
 
 (define-cproc hash-table-push! (hash::<hash-table> key value)
   "ScmHashEntry *e = Scm_HashTableAdd(hash, key, SCM_UNBOUND);

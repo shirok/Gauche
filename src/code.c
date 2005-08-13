@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: code.c,v 1.6 2005-05-30 11:19:16 shirok Exp $
+ *  $Id: code.c,v 1.7 2005-08-13 06:51:52 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -599,6 +599,10 @@ void Scm_CompiledCodeEmit(ScmCompiledCode *cc,
     cc_builder *b;
     CC_BUILDER_GET(b, cc);
 
+    if (SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), SCM_COMPILE_NOCOMBINE)) {
+        goto def;
+    }
+
     switch (code) {
     case SCM_VM_LREF:
     {
@@ -777,6 +781,23 @@ void Scm_CompiledCodeEmit(ScmCompiledCode *cc,
         }
         break;
     }
+
+#if 0
+    case SCM_VM_NUMADDI:
+    {
+        if (EMPTYP(b)) goto def;
+        switch (CODE(b->currentInsn)) {
+        case SCM_VM_LREF0:  SUB(INSN1(SCM_VM_LREF0_NUMADDI, arg0)); break;
+        case SCM_VM_LREF1:  SUB(INSN1(SCM_VM_LREF1_NUMADDI, arg0)); break;
+        case SCM_VM_LREF2:  SUB(INSN1(SCM_VM_LREF2_NUMADDI, arg0)); break;
+        case SCM_VM_LREF3:  SUB(INSN1(SCM_VM_LREF3_NUMADDI, arg0)); break;
+        case SCM_VM_LREF4:  SUB(INSN1(SCM_VM_LREF4_NUMADDI, arg0)); break;
+        default:
+            PUT(INSN1(SCM_VM_NUMADDI, arg0), SCM_FALSE);
+        }
+        break;
+    }
+#endif
     
     default:;
     def:

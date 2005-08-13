@@ -1,3 +1,14 @@
+2005-08-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/vmstat.c: added some code to record instruction
+	  and instruction pair frequency (enabled only if vm.c is compiled
+	  with COUNT_INSN_FREQUENCY defined).  The collected data will be
+	  useful for tuning.
+
+	* src/extlib.stub: the spec of hash-table-update! was broken.  PROC
+	  should be called with the default value, when the given key hasn't
+	  been in the table.
+
 2005-08-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c: experimentally added the custom mark procedure for the
