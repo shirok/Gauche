@@ -1,3 +1,8 @@
+2005-08-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (IEXPT10_TABLESIZ): we need to enlarge pre-calculated
+	  exp10 table to handle denormalized numbers.
+
 2005-08-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c, src/vmstat.c: added some code to record instruction

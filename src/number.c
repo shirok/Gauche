@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.121 2005-07-01 01:02:14 shirok Exp $
+ *  $Id: number.c,v 1.122 2005-08-16 06:18:16 shirok Exp $
  */
 
 #include <math.h>
@@ -1502,7 +1502,8 @@ ScmObj Scm_Modulo(ScmObj x, ScmObj y, int remp)
 /* Integer power of 10.  It is extensively used during string->number
    and number->string operations.
    IEXPT10_TABLESIZ is ceil(-log10(ldexp(1.0, -1022-52))) + 2 */
-#define IEXPT10_TABLESIZ  326
+/* NB: actually we need more margin here to handle denormalized numbers. */
+#define IEXPT10_TABLESIZ  341
 static ScmObj iexpt10_n[IEXPT10_TABLESIZ] = { NULL };
 static int    iexpt10_initialized = FALSE;
 
