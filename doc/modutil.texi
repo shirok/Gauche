@@ -5,48 +5,49 @@
 
 @c ----------------------------------------------------------------------
 @menu
-* Packing Binary Data::         (binary.pack)
-* Generic DBM interface::       (dbm)
-* File-system dbm::             (dbm.fsdbm)
-* GDBM interface::              (dbm.gdbm)
-* NDBM interface::              (dbm.ndbm)
-* Original DBM interface::      (dbm.odbm)
-* Filtering file content::      (file.filter)
-* Filesystem utilities::        (file.util)
-* Mathematic constants::        (math.const)
-* Mersenne-Twister random number generator::  (math.mt-random)
-* RFC822 message parsing::      (rfc.822)
-* Base64 encoding/decoding::    (rfc.base64)
-* HTTP cookie handling::        (rfc.cookie)
-* HMAC keyed-hashing::          (rfc.hmac)
-* HTTP::                        (rfc.http)
-* MD5 message digest::          (rfc.md5)
-* MIME message handling::       (rfc.mime)
-* Quoted-printable encoding/decoding::  (rfc.quoted-printable)
-* SHA1 message digest::         (rfc.sha1)
-* URI parsing and construction::  (rfc.uri)
-* SLIB::                        (slib)
-* Functional XML parser::       (sxml.ssax)
-* SXML Query Language::         (sxml.sxpath)
-* manipulationg SXML structure::  (sxml.tools)
-* CSV tables::                  (text.csv)
-* Calculate difference of text streams::  (text.diff)
-* Localized messages::          (text.gettext)
-* Simple HTML document construction::  (text.html-lite)
-* Parsing input stream::        (text.parse)
-* Transliterate characters::    (text.tr)
-* Lazy text construction::      (text.tree)
-* Combination library::         (util.combinations)
-* Message digester framework::  (util.digest)
-* Determine isomorphism::       (util.isomorph)
-* The longest common subsequence::  (util.lcs)
-* Additional list library::     (util.list)
-* Pattern matching::            (util.match)
-* Queue::                       (util.queue)
-* SLIB-compatible record type::  (util.record)
-* Topological sort::            (util.toposort)
-* CGI Utility::                 (www.cgi)
-* CGI testing::                 (www.cgi-test)
+* Packing Binary Data::         
+* Generic DBM interface::       
+* File-system dbm::             
+* GDBM interface::              
+* NDBM interface::              
+* Original DBM interface::      
+* Filtering file content::      
+* Filesystem utilities::        
+* Mathematic constants::        
+* Mersenne-Twister random number generator::  
+* RFC822 message parsing::      
+* Base64 encoding/decoding::    
+* HTTP cookie handling::        
+* HMAC keyed-hashing::          
+* HTTP::                        
+* MD5 message digest::          
+* MIME message handling::       
+* Quoted-printable encoding/decoding::  
+* SHA1 message digest::         
+* URI parsing and construction::  
+* SLIB::                        
+* Functional XML parser::       
+* SXML Query Language::         
+* manipulationg SXML structure::  
+* CSV tables::                  
+* Calculate difference of text streams::  
+* Localized messages::          
+* Simple HTML document construction::  
+* Parsing input stream::        
+* Transliterate characters::    
+* Lazy text construction::      
+* Combination library::         
+* Message digester framework::  
+* Determine isomorphism::       
+* The longest common subsequence::  
+* Additional list library::     
+* Pattern matching::            
+* Queue::                       
+* SLIB-compatible record type::  
+* Stream library::              
+* Topological sort::            
+* CGI Utility::                 
+* CGI testing::                 
 @end menu
 
 @c ----------------------------------------------------------------------
@@ -10840,7 +10841,7 @@ Scheme48 compatible way or consistent to SRFI-1 argument order.
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node SLIB-compatible record type, Topological sort, Queue, Library modules - Utilities
+@node SLIB-compatible record type, Stream library, Queue, Library modules - Utilities
 @section @code{util.record} - SLIB-compatible record type
 @c NODE SLIB-互換のレコード型, @code{util.record} - SLIB-互換のレコード型
 
@@ -10967,9 +10968,336 @@ obj @result{} #<my-record 0x819d9b0>
 ((record-accessor rtd 'a) obj) @result{} -1
 @end example
 
+@c ----------------------------------------------------------------------
+@node Stream library, Topological sort, SLIB-compatible record type, Library modules - Utilities
+@section @code{util.stream} - Stream library
+@c NODE ストリームライブラリ, @code{util.stream} - ストリームライブラリ
+
+@deftp {Module} util.stream
+@mdindex util.stream
+This module provides a library of lazy streams, including the
+functions and syntaxes defined in srfi-40.
+@end deftp
+
+@defun stream? obj
+[SRFI-40]
+Returns @code{#t} iff @var{obj} is a stream created by a procedure
+of @code{util.stream}.
+@end defun
+
+@defvar stream-null
+[SRFI-40]
+The singleton instance of NULL stream.
+@end defvar
+
+@defmac stream-cons object stream
+[SRFI-40]
+A fundamental constructor of a stream.  Adds @var{object} to the
+head of a @var{stream}, and returns a new stream.
+@end defmac
+
+@defun stream-null? obj
+[SRFI-40]
+Returns iff @var{obj} is the null stream.
+@end defun
+
+@defun stream-pair? obj
+[SRFI-40]
+Returns iff @var{obj} is a non-null stream.
+@end defun
+
+@defun stream-car s
+[SRFI-40]
+Returns the first element of the stream @var{s}.
+@end defun
+
+@defun stream-cdr s
+[SRFI-40]
+Returns the remaining elements of the stream @var{s}, as a stream.
+@end defun
+
+@defmac stream-delay expr
+[SRFI-40]
+Returns a stream which is a delayed form of @var{expr}.
+
+As a rule of thumb, any stream-producing functions should
+wrap the resulting expression by @code{stream-delay}.
+@end defmac
+
+@defun stream obj @dots{}
+[SRFI-40]
+Returns a new stream whose elements are @var{obj} @dots{}.
+@end defun
+
+@defun stream-unfoldn generator seed n
+[SRFI-40]
+Creates @var{n} streams related each other, whose contents are
+generated by @var{generator} and @var{seed}.
+
+The @var{generator} is called with the current seed value,
+and returns @code{@var{n}+1} values:
+@example
+(@var{generator} @var{seed})
+  => seed result_0 result_1 @dots{} result_n-1
+@end example
+
+The first value is to be the next seed value.
+@var{Result_k} must be one of the following forms:
+@table @code
+@item (val)
+@var{val} will be the next car of @var{k}-th stream.
+@item #f
+No new information for @var{k}-th stream.
+@item ()
+The end of @var{k}-th stream has been reached.
+@end table
+
+The following example creates two streams, the first one produces
+an infinite series of odd numbers and the second produces evens.
+
+@example
+gosh> (define-values (s0 s1)
+        (stream-unfoldn (lambda (i)
+                          (values (+ i 2)          ;; next seed
+                                  (list i)         ;; for the first stream
+                                  (list (+ i 1)))) ;; for the second stream
+                        0 2))
+#<undef>
+gosh> (stream->list (stream-take s0 10))
+(0 2 4 6 8 10 12 14 16 18)
+gosh> (stream->list (stream-take s1 10))
+(1 3 5 7 9 11 13 15 17 19)
+@end example
+
+@end defun
+
+@defun stream-map func . streams
+[SRFI-40]
+Returns a new stream, whose elements are calculated by
+applying @var{func} to each element of @var{streams}.
+@end defun
+
+@defun stream-for-each func . streams
+[SRFI-40]
+Applies @var{func} for each element of @var{streams}.
+Terminates if one of @var{streams} reaches the end.
+@end defun
+
+@defun stream-filter pred? stream
+[SRFI-40]
+Resturns a new stream including only elements passing @var{pred?}.
+@end defun
+
+The following procedures are taken from the library written by
+Alejandro Forero Cuervo for Chicken Scheme.  They follow
+the naming conventions of srfi-1 (@ref{List library}).
+
+@defun stream-xcons a b
+@code{(stream-cons b a)}.  Just for convenience.
+@end defun
+
+@defun stream-cons* elt @dots{} stream
+Creates a new stream which appends @var{elt} @dots{} before @var{stream}.
+@end defun
+
+@defun make-stream n &optional init
+Creates a new stream of @var{n} elements of @var{init}.
+If @var{init} is omitted, @code{#f} is used.
+Specifying a negative number to @var{n} creates an infinite stream.
+@end defun
+
+@defun stream-tabulate n init-proc
+Creates a new stream of @var{n} elements.
+The @var{k}-th element is obtained by applying @var{init-proc}
+to @var{k}.  Specifying a negative number to @var{n} creates
+an infinite stream.
+@end defun
+
+@defun stream-iota count &optional start step
+Creates a new stream of integers, starting from @var{start}
+and incrementing @var{step}.  The length of stream is @var{count}
+if it is positive, or infinite if @var{count} is negative.
+The default values of @var{start} and @var{step} are 0 an 1, respectively.
+@end defun
+
+@defun stream-format fmt arg @dots{}
+Resturns a stream which is a result of applying @code{string->stream}
+to @code{(format fmt arg @dots{})}.
+@end defun
+
+@defun stream-lines string
+@end defun
+
+@defun stream->list stream
+@end defun
+
+@defun list->stream list
+@end defun
+
+@defun string->stream string &optional stream
+@end defun
+
+@defun stream->string stream
+@end defun
+
+@defun port->stream &optional iport reader closer
+@end defun
+
+@defun iterator->stream proc
+@end defun
+
+@defun stream= elt= stream @dots{}
+@end defun
+
+@defun stream-prefix= stream prefix &optional elt=
+@end defun
+
+@defun stream-caar s
+@defunx stream-cadr s
+@findex stream-cdar
+@findex stream-cddr
+@findex stream-caaar
+@findex stream-caadr
+@findex stream-cadar
+@findex stream-caddr
+@findex stream-cdaar
+@findex stream-cdadr
+@findex stream-cddar
+@findex stream-cdddr
+@findex stream-caaaar
+@findex stream-caaadr
+@findex stream-caadar
+@findex stream-caaddr
+@findex stream-cadaar
+@findex stream-cadadr
+@findex stream-caddar
+@findex stream-cadddr
+@findex stream-cdaaar
+@findex stream-cdaadr
+@findex stream-cdadar
+@findex stream-cdaddr
+@findex stream-cddaar
+@findex stream-cddadr
+@dots{}
+@end defun
+@defun stream-cdddar s
+@defunx stream-cddddr s
+@end defun
+
+@defun
+
+@defun stream-ref stream pos
+@end defun
+
+@defun stream-first s
+@defunx stream-second s
+@defunx stream-third s
+@defunx stream-fourth s
+@defunx stream-fifth s
+@defunx stream-sixth s
+@defunx stream-seventh s
+@defunx stream-eighth s
+@defunx stream-ninth s
+@defunx stream-tenth s
+@end defun
+
+@defun stream-take stream count
+@defun stream-take-safe stream count
+@end defun
+
+@defun stream-drop stream count
+@defunx stream-drop-safe stream count
+@end defun
+
+@defun stream-intersperse stream element
+@end defun
+
+@defun stream-split stream pred
+@end defun
+
+@defun stream-last stream
+@end defun
+
+@defun stream-last-n stream count
+@end defun
+
+@defun stream-butlast stream
+@end defun
+
+@defun stream-butlast-n stream count
+@end defun
+
+@defun stream-length stream
+@end defun
+
+@defun stream-length>= stream n
+@end defun
+
+@defun stream-append stream @dots{}
+@end defun
+
+@defun steram-concatenate streams
+@end defun
+
+@defun stream-reverse stream &optional tail-stream
+@end defun
+
+@defun stream-count pred stream @dots{}
+@end defun
+
+@defun stream-remove pred stream
+@end defun
+
+@defun stream-partition pred stream
+@end defun
+
+@defun stream-find pred stream
+@end defun
+
+@defun stream-find-tail pred stream
+@end defun
+
+@defun stream-take-while pred stream
+@end defun
+
+@defun stream-drop-while pred stream
+@end defun
+
+@defun stream-span pred stream
+@end defun
+
+@defun stream-break pred stream
+@end defun
+
+@defun stream-any pred stream @dots{}
+@end defun
+
+@defun stream-every pred stream @dots{}
+@end defun
+
+@defun stream-index pred stream @dots{}
+@end defun
+
+@defun stream-member obj stream &optional elt=
+@defunx stream-memq obj stream
+@defunx stream-memv obj stream
+@end defun
+
+@defun stream-delete obj stream &optional elt=
+@end defun
+
+@defun stream-delete-duplicates stream &optional elt=
+@end defun
+
+@defun stream-grep re stream
+@end defun
+
+@defun write-stream stream &optional oport writer
+@end defun
+
 
 @c ----------------------------------------------------------------------
-@node Topological sort, CGI Utility, SLIB-compatible record type, Library modules - Utilities
+@node Topological sort, CGI Utility, Stream library, Library modules - Utilities
 @section @code{util.toposort} - Topological sort
 @c NODE トポロジカルソート, @code{util.toposort} - トポロジカルソート
 
