@@ -709,6 +709,52 @@
 (use util.stream)
 (test-module 'util.stream)
 
+(test* "stream?" #t
+       (stream? (stream-cons 'a stream-null)))
+
+(test* "stream-cons/car/cdr" '(1 1 1)
+       (letrec ((s (stream-cons 1 s)))
+         (list (stream-car s)
+               (stream-cadr s)
+               (stream-caddr s))))
+
+(test* "stream-delay" #t
+       (stream? (stream-delay (error "Boo"))))
+
+(test* "stream-unfoldn" '((0 2 4 6) (1 3 5 7))
+       (receive (s0 s1)
+           (stream-unfoldn (lambda (s)
+                             (values (+ s 2)
+                                     (list s)
+                                     (list (+ s 1))))
+                           0 2)
+         (map (lambda (s)
+                (list (stream-first s)
+                      (stream-second s)
+                      (stream-third s)
+                      (stream-fourth s)))
+              (list s0 s1))))
+
+(test* "stream-map/stream-ref" '(2 4 6 8)
+       (let1 s
+           (stream-map (cut * 2 <>)
+                       (stream-unfoldn (lambda (s) (values (+ s 1) (list s)))
+                                       0 1))
+         (map (cut stream-ref s <>) '(1 2 3 4))))
+
+(test* "stream-for-each/stream-iota" '(1 3 5 7)
+       (let1 r '()
+         (stream-for-each (lambda (x y)
+                            (push! r (+ x y)))
+                          (stream-iota 4)
+                          (stream-iota -1 1))
+         (reverse r)))
+
+(test* "stream-filter/take/drop" '(12 15 18 21)
+       (let1 s (stream-filter (lambda (x) (zero? (modulo x 3)))
+                              (stream-iota #f))
+         (stream->list (stream-take (stream-drop s 4) 4))))
+
 ;;-----------------------------------------------
 (test-section "util.toposort")
 (use util.toposort)
