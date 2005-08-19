@@ -1,3 +1,7 @@
+2005-08-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (Scm_EvalCString): added for convenience.
+
 2005-08-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (IEXPT10_TABLESIZ): we need to enlarge pre-calculated
