@@ -21,7 +21,7 @@
 ;;; makes error message a bit less direct, but cutting edges in such
 ;;; inner loop procedure has a considerable gain.
 ;;;
-;;; $Id: stream.scm,v 1.3 2005-07-17 01:11:36 shirok Exp $
+;;; $Id: stream.scm,v 1.4 2005-08-19 10:50:54 shirok Exp $
 
 (define-module util.stream
   (use srfi-1)
@@ -210,7 +210,7 @@
        (stream-cons (init-proc i) (loop (+ i 1)))))))
 
 (define (stream-iota count . args)
-  (let loop ((i count)
+  (let loop ((i (or count -1))
              (start (if (null? args) 0 (car args)))
              (step (if (or (null? args) (null? (cdr args))) 1 (cadr args))))
     (stream-delay
@@ -569,11 +569,8 @@
 (define (stream-span pred str)
   (values (stream-take-while pred str) (stream-drop-while pred str)))
 
-;(define (complement proc)
-;  (lambda args (not (apply proc args))))
-
 (define (stream-break pred str)
-  (stream-span (complement pred) str))
+  (stream-span (lambda (x) (not (pred x))) str))
 
 (define (stream-any pred . strs)
   (and (not (find stream-null? strs))
@@ -626,8 +623,8 @@
 ;;; Pattern Matching
 
 (define (stream-grep re stream)
-  (let ((real-re (if (string? re) (regexp re) re)))
-    (stream-filter (cut string-match real-re <>) stream)))
+  (let ((real-re (if (string? re) (string->regexp re) re)))
+    (stream-filter (cut real-re <>) stream)))
 
 ;;;
 
