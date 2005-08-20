@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.82 2005-08-13 06:51:52 shirok Exp $
+ *  $Id: main.c,v 1.83 2005-08-20 05:09:45 shirok Exp $
  */
 
 #include <unistd.h>
@@ -269,15 +269,7 @@ int main(int argc, char **argv)
     ScmObj av = SCM_NIL;
     int exit_code;
 
-#if defined(__CYGWIN__) || defined(__MINGW32__)
-    /* Cygwin needs explicit initialization for GC module.
-       This code is taken from gc.h and gcconfig.h (I don't want to
-       include private/gcconfig.h)
-       May not work except cygwin 1.3.x */
-    extern int _data_start__;
-    extern int _bss_end__;
-    GC_add_roots((void*)&_data_start__, (void*)&_bss_end__);
-#endif
+    GC_INIT();
     Scm_Init(GAUCHE_SIGNATURE);
     sig_setup();
 
