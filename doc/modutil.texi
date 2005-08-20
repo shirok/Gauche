@@ -11184,8 +11184,6 @@ to @code{(format fmt arg @dots{})}.
 @defunx stream-cddddr s
 @end defun
 
-@defun
-
 @defun stream-ref stream pos
 @end defun
 
@@ -11202,7 +11200,7 @@ to @code{(format fmt arg @dots{})}.
 @end defun
 
 @defun stream-take stream count
-@defun stream-take-safe stream count
+@defunx stream-take-safe stream count
 @end defun
 
 @defun stream-drop stream count
