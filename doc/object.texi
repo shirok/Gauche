@@ -1589,7 +1589,7 @@ definitions, @code{c} and @code{d}'s come from @code{<T>}, and
 あるクラス @code{<U>} がスロット @code{b} および @code{e} を定義していると
 しよう。@code{<U>} の CPL が @code{(<U> <T> <S> <object> <top>)} と
 なっている場合、@code{<U>} のスロットが下の図のように計算されます。
-すなわち、@code{<U>} は 5つのスロットは 5 つのスロットをもち、
+すなわち、@code{<U>} は 5 つのスロットをもち、
 @code{b} および @code{e} の定義は @code{<U>} のものを、@code{c}
 および @code{d} の定義は @code{<T>} 由来のものを、そして、@code{a}
 の定義は @code{<S>} 由来のものとなります。
@@ -2315,10 +2315,10 @@ as follows:
 
 @c EN
 That is, first it allocates memory for @var{class}'s instance,
-then initialize it with the @var{initialize} method.
+then initialize it with the @code{initialize} method.
 @c JP
 すなわち、最初、@code{class} のインスタンス用にメモリをアロケートし、
-それから、@var{initialize} メソッドを用いてそれを初期化します。
+それから、@code{initialize} メソッドを用いてそれを初期化します。
 @c COMMON
 
 @deffn {Generic Function} allocate-instance
@@ -2407,12 +2407,12 @@ configured either initializable or not initializable; see
 @c COMMON
 
 @c EN
-If you specialize @var{initialize} method, make sure to call
+If you specialize @code{initialize} method, make sure to call
 @code{next-method} so that the slots are properly initialized
 by the default sequence, before accessing any slot of the
 newly created instance.
 @c JP
-@var{initialize} メソッドを特定化する場合には @code{next-method} が
+@code{initialize} メソッドを特定化する場合には @code{next-method} が
 確実に呼ばれるようにして、新しく生成されたインスタンスのすべての
 スロットにアクセスする前にデフォルトの流れで、そのスロットが正しく
 初期化されるようにしてください。
@@ -2451,7 +2451,7 @@ some circumstances (e.g. using pre-allocated instances).
 
 @defun slot-ref obj slot
 @c EN
-Returns a value of the slot @var{slot} of object @var{object}.
+Returns a value of the slot @var{slot} of object @var{obj}.
 
 If the specified slot is not bound to any value, a generic function
 @code{slot-unbound} is called with three arguments, @var{obj}'s class,
@@ -2464,7 +2464,7 @@ arguments, @var{obj}'s class,
 @var{obj}, and @var{slot}.  The default behavior of @code{slot-missing}
 is to signal an error.
 @c JP
-オブジェクト@var{object}のスロット@var{slot}の値を返します。
+オブジェクト@var{obj}のスロット@var{slot}の値を返します。
 
 指定したスロットが値に束縛されていない場合、ジェネリック関数
 @code{slot-unbound}が3つの引数、@var{obj}のクラス、@var{obj}、@var{slot}
@@ -2480,14 +2480,14 @@ is to signal an error.
 
 @defun slot-set! obj slot value
 @c EN
-Alters the value of the slot @var{slot} of object @var{object} to
+Alters the value of the slot @var{slot} of object @var{obj} to
 the value @var{value}.
 
 If the object doesn't have the specified slot, a generic function
 @code{slot-missing} is called with four arguments,
 @var{obj}'s class, @var{obj}, @var{slot}, @var{value}.
 @c JP
-オブジェクト@var{object}のスロット@var{slot}の値を、@var{value}に
+オブジェクト@var{obj}のスロット@var{slot}の値を、@var{value}に
 セットします。
 
 オブジェクトが指定したスロットを持っていない場合は、ジェネリック関数
@@ -2616,11 +2616,11 @@ get/set the value of the slot without having an instance.
 @deffnx {Method} slot-bound-using-class? (class <class>) (obj <object>) slot-name
 @c EN
 Generic function version of @code{slot-ref}, @code{slot-set!} and
-@code{slot-bound?}.   @var{Class} must be the class of @var{object}.
+@code{slot-bound?}.   @var{Class} must be the class of @var{obj}.
 
 Besides being generic, these functions are different from
 their procedural versions that they don't trigger class
-redefinition when @code{obj}'s class has been redefined
+redefinition when @var{obj}'s class has been redefined
 (i.e. in which case, @var{class} should be the original class
 of @var{obj}).
 @c JP
@@ -2628,8 +2628,8 @@ of @var{obj}).
 関数版です。@var{class} は @var{object} のクラスでなければなりません。
 
 これらの関数は、ジェネリックであることに加えて、
-@code{obj} のクラスが再定義されてもクラスの再定義を起動しない
-(そのような場合、@var{class}は @var{object} の元々のクラスで
+@var{obj} のクラスが再定義されてもクラスの再定義を起動しない
+(そのような場合、@var{class}は @var{obj} の元々のクラスで
 なければならない)という点で手続き版とは違います。
 @c COMMON
 
@@ -3066,7 +3066,7 @@ tail is more specific than the one that has.
 
 @item
 もし、@code{a} および @code{b} のすべての特定化子が、一方は rest 引数
-をもち、もう一方はもたないという以外同じであれば、rest 引数をもつ
+をもち、もう一方はもたないという以外同じであれば、rest 引数をもたない
 メソッドのほうがそうでないものより特定化されているとします。
 @c COMMON
 @end itemize
