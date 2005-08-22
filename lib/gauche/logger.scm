@@ -1,7 +1,7 @@
 ;;;
 ;;; logger.scm - simple use-level logging
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,16 +30,18 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: logger.scm,v 1.7 2005-07-31 08:39:53 shirok Exp $
+;;;  $Id: logger.scm,v 1.8 2005-08-22 21:07:57 shirok Exp $
 ;;;
 
 (define-module gauche.logger
   (use srfi-1)
   (use srfi-13)
   (use gauche.fcntl)
+  (use gauche.parameter)
   (export <log-drain>
           log-open
-          log-format)
+          log-format
+          log-default-drain)
   )
 (select-module gauche.logger)
 
@@ -67,7 +69,8 @@
    (syslog-priority :init-keyword :syslog-priority)
    ))
 
-(define *default-log-drain* (make <log-drain>))
+(define log-default-drain
+  (make-parameter (make <log-drain>)))
 
 (define-method initialize ((self <log-drain>) initargs)
   (next-method)
@@ -206,7 +209,7 @@
 ;; log-format drain "fmtstr" arg ...
 
 (define-method log-format ((fmtstr <string>) . args)
-  (apply log-format *default-log-drain* fmtstr args))
+  (apply log-format (log-default-drain) fmtstr args))
 
 (define-method log-format ((drain <log-drain>) fmt . args)
   (let* ((prefix (log-get-prefix drain))
@@ -223,6 +226,6 @@
 ;; log-open path &keyword :program-name :prefix
 
 (define (log-open path . args)
-  (set! *default-log-drain* (apply make <log-drain> :path path args)))
+  (log-default-drain (apply make <log-drain> :path path args)))
 
 (provide "gauche/logger")

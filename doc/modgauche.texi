@@ -3635,6 +3635,31 @@ is called.
 @c COMMON
 @end defun
 
+@deffn {Parameter} log-default-drain
+@c EN
+When called with no argument, returns the current default log-drain
+@code{log-format} uses when the explicit drain is omitted.  
+It may return @code{#f} if the default log drain hasn't been
+opened by @code{log-open}.
+
+Calling with new @code{<log-drain>} object or
+@code{#f} alters the default log-drain.
+You can also use @code{parameterize} (@ref{Parameters}) to change
+the log drain temporary.
+@c JP
+引数無しで呼ばれると、@code{log-format}が使う、
+現在のデフォルトのログの行き先が返されます。
+まだデフォルトのログの行き先が@code{log-open}で指定されていない場合は
+@code{#f}が帰ります。
+
+新たな@code{<log-drain>}オブジェクトか@code{#f}を引数にして呼び出すと、
+デフォルトのログの行き先がそれに変更されます。
+@code{parameterize} (@ref{Parameters}) を使えば、一時的にデフォルトの
+ログの行き先を変更できます。
+@c COMMON
+@end deffn
+
+
 @deffn {Method} log-format (format <string>) arg @dots{}
 @deffnx {Method} log-format (drain <log-drain>) (format <string>) arg @dots{}
 @c EN

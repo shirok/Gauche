@@ -1,3 +1,13 @@
+2005-08-22  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/logger.scm (log-default-drain): exposed the default
+	  drain as a parameter.
+
+2005-08-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c (main): use GC_INIT macro instead of our own #ifdef-ed
+	  GC initialization stuff.
+
 2005-08-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (Scm_EvalCString): added for convenience.
