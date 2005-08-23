@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: vminsn.scm,v 1.5 2005-08-13 06:51:52 shirok Exp $
+;;;  $Id: vminsn.scm,v 1.6 2005-08-23 04:33:56 shirok Exp $
 ;;;
 
 ;;; This file is processed by geninsn to produce a couple of C files:
@@ -38,7 +38,7 @@
 ;;; This file is also used by the compiler.
 ;;;
 ;;; 
-;;; (define-insn <name> <num-params> <operand-type>)
+;;; (define-insn <name> <num-params> <operand-type> [<combination>])
 ;;;
 ;;;   <name> - instruction name.  In C, an enum SCM_VM_<name> is defined.
 ;;;
@@ -49,6 +49,10 @@
 ;;;                    addr : an address the next pc points.
 ;;;                    code : an ScmCompiledCode operand.
 ;;;                    codes: a list of ScmCompiledCodes.
+;;;
+;;;   If this insn is a combined insn, <combination> gives a list of
+;;;   insns that combines into this one.  It is used to generate a
+;;;   code-emitting table.
 
 
 ;; NOP
@@ -61,24 +65,20 @@
 ;;
 (define-insn CONST 0 obj)
 
-;; CONSTI(i)
-;; CONSTN
-;; CONSTF
-;; CONSTU
-;;  
+;; Some immediate constants
 (define-insn CONSTI 1 none)             ; constant small integer
 (define-insn CONSTN 0 none)             ; constant ()
 (define-insn CONSTF 0 none)             ; constant #f
 (define-insn CONSTU 0 none)             ; constant #<undef>
 
-(define-insn CONST-PUSH  0 obj)         ; combined insn
-(define-insn CONSTI-PUSH 1 none)        ; push small integer
-(define-insn CONSTN-PUSH 0 none)        ; push ()
-(define-insn CONSTF-PUSH 0 none)        ; push #f
-
-(define-insn CONST-RET   0 obj)
-(define-insn CONSTF-RET  0 none)
-(define-insn CONSTU-RET  0 none)
+;; Combined insn
+(define-insn CONST-PUSH  0 obj   (CONST PUSH))
+(define-insn CONSTI-PUSH 1 none  (CONSTI PUSH))
+(define-insn CONSTN-PUSH 0 none  (CONSTN PUSH))
+(define-insn CONSTF-PUSH 0 none  (CONSTF PUSH))
+(define-insn CONST-RET   0 obj   (CONST RET))
+(define-insn CONSTF-RET  0 none  (CONSTF RET))
+(define-insn CONSTU-RET  0 none  (CONSTU RET))
 
 ;; push
 ;;  Push value of val0 to the stack top
@@ -93,7 +93,7 @@
 (define-insn PRE-CALL 1 addr)
 
 ;; combined insn
-(define-insn PUSH-PRE-CALL 1 addr)
+(define-insn PUSH-PRE-CALL 1 addr (PUSH PRE-CALL))
 
 ;; CHECK-STACK(size)
 ;;  Check for stack overflow
@@ -143,7 +143,7 @@
 (define-insn LOCAL-ENV  1 none)
 
 ;; combined insn
-(define-insn PUSH-LOCAL-ENV 1 none)
+(define-insn PUSH-LOCAL-ENV 1 none (PUSH LOCAL-ENV))
 
 ;; LOCAL-ENV-CLOSURES(nlocals) <codelist>
 ;;  Used for letrec.
@@ -252,7 +252,8 @@
 ;;
 (define-insn LSET        2 none)
 
-;; shortcut for the first frame, small offset */
+;; shortcut for the first frame, small offset
+;; NB: this doesn't help much. will go away.
 (define-insn LSET0       0 none)
 (define-insn LSET1       0 none)
 (define-insn LSET2       0 none)
@@ -269,29 +270,46 @@
 ;;
 (define-insn LREF        2 none)
 
-;; shortcut for the first and second frame, small offset
+;; Shortcut for the frequent depth/offset.
+;; From statistics, we found that the following depth/offset combinations
+;; are quite frequent:
+;;  (0,0) (0,1) (0,2) (0,3)
+;;  (1,0) (1,1) (1,2)
+;;  (2,0) (2,1)
+;;  (3,0)
+;; 
+
 (define-insn LREF0       0 none)
 (define-insn LREF1       0 none)
 (define-insn LREF2       0 none)
 (define-insn LREF3       0 none)
-(define-insn LREF4       0 none)
-
 (define-insn LREF10      0 none)
 (define-insn LREF11      0 none)
 (define-insn LREF12      0 none)
+(define-insn LREF20      0 none)
+(define-insn LREF21      0 none)
+(define-insn LREF30      0 none)
+
+;; these will go away:
+(define-insn LREF4       0 none)
 (define-insn LREF13      0 none)
 (define-insn LREF14      0 none)
 
 ;; combined instrction
-(define-insn LREF-PUSH   2 none)
-(define-insn LREF0-PUSH  0 none)
-(define-insn LREF1-PUSH  0 none)
-(define-insn LREF2-PUSH  0 none)
-(define-insn LREF3-PUSH  0 none)
+(define-insn LREF-PUSH   2 none  (LREF PUSH))
+(define-insn LREF0-PUSH  0 none  (LREF0 PUSH))
+(define-insn LREF1-PUSH  0 none  (LREF1 PUSH))
+(define-insn LREF2-PUSH  0 none  (LREF2 PUSH))
+(define-insn LREF3-PUSH  0 none  (LREF3 PUSH))
+(define-insn LREF10-PUSH 0 none  (LREF10 PUSH))
+(define-insn LREF11-PUSH 0 none  (LREF11 PUSH))
+(define-insn LREF12-PUSH 0 none  (LREF12 PUSH))
+(define-insn LREF20-PUSH 0 none  (LREF20 PUSH))
+(define-insn LREF21-PUSH 0 none  (LREF21 PUSH))
+(define-insn LREF30-PUSH 0 none  (LREF30 PUSH))
+
+;; these will go away:
 (define-insn LREF4-PUSH  0 none)
-(define-insn LREF10-PUSH 0 none)
-(define-insn LREF11-PUSH 0 none)
-(define-insn LREF12-PUSH 0 none)
 (define-insn LREF13-PUSH 0 none)
 (define-insn LREF14-PUSH 0 none)
 
@@ -306,13 +324,17 @@
 ;;  transient state to PUSH-GREF-CALL / PUSH-GREF-TAIL-CALL, which are
 ;;  very frequent operation, during instruction combining.
 
-(define-insn GREF-PUSH   0 obj)
-(define-insn GREF-CALL   1 obj)
-(define-insn GREF-TAIL-CALL 1 obj)
+(define-insn GREF-PUSH   0 obj   (GREF PUSH))
+(define-insn GREF-CALL   1 obj   (GREF CALL))
+(define-insn GREF-TAIL-CALL 1 obj (GREF TAIL-CALL))
 
-(define-insn PUSH-GREF   0 obj)
-(define-insn PUSH-GREF-CALL 1 obj)
-(define-insn PUSH-GREF-TAIL-CALL 1 obj)
+(define-insn PUSH-GREF   0 obj      (PUSH GREF))
+(define-insn PUSH-GREF-CALL 1 obj   (PUSH GREF CALL))
+(define-insn PUSH-GREF-TAIL-CALL 1 obj (PUSH GREF TAIL-CALL))
+
+(define-insn LREF0-PUSH-GREF 0 obj  (LREF0 PUSH GREF))
+(define-insn LREF0-PUSH-GREF-CALL 1 obj (LREF0 PUSH GREF CALL))
+(define-insn LREF0-PUSH-GREF-TAIL-CALL 1 obj (LREF0 PUSH GREF TAIL-CALL))
 
 ;; PROMISE
 ;;  Delay syntax emits this instruction.  Wrap a procedure into a promise
@@ -337,19 +359,19 @@
 ;;  as well.
 ;;
 (define-insn CONS        0 none)
-(define-insn CONS-PUSH   0 none)
+(define-insn CONS-PUSH   0 none   (CONS PUSH))
 (define-insn CAR         0 none)
-(define-insn CAR-PUSH    0 none)
+(define-insn CAR-PUSH    0 none   (CAR PUSH))
 (define-insn CDR         0 none)
-(define-insn CDR-PUSH    0 none)
+(define-insn CDR-PUSH    0 none   (CDR PUSH))
 (define-insn CAAR        0 none)
-(define-insn CAAR-PUSH   0 none)
+(define-insn CAAR-PUSH   0 none   (CAAR PUSH))
 (define-insn CADR        0 none)
-(define-insn CADR-PUSH   0 none)
+(define-insn CADR-PUSH   0 none   (CADR PUSH))
 (define-insn CDAR        0 none)
-(define-insn CDAR-PUSH   0 none)
+(define-insn CDAR-PUSH   0 none   (CDAR PUSH))
 (define-insn CDDR        0 none)
-(define-insn CDDR-PUSH   0 none)
+(define-insn CDDR-PUSH   0 none   (CDDR PUSH))
 
 (define-insn LIST        1 none)
 (define-insn LIST-STAR   1 none)        ; list*

@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.142 2005-07-01 11:36:50 shirok Exp $
+#  $Id: Makefile.in,v 1.143 2005-08-23 04:33:56 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -181,6 +181,8 @@ objlib.c : objlib.scm gencomp vminsn.scm
 symbol.$(OBJEXT) : builtin-syms.c
 
 port.$(OBJEXT) : port.c portapi.c
+
+vm.$(OBJEXT) : vminsn.c vmstat.c
 
 load.$(OBJEXT) : dl_dlopen.c dl_dummy.c dl_win.c dl_darwin.c
 

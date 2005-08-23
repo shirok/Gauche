@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: code.c,v 1.7 2005-08-13 06:51:52 shirok Exp $
+ *  $Id: code.c,v 1.8 2005-08-23 04:33:56 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -256,6 +256,8 @@ typedef struct cc_builder_rec {
     ScmObj constants;           /* list of constants */
     int currentIndex;
     ScmWord currentInsn;        /* buffer for instruction combining. */
+    int    currentArg0;         /* ditto */
+    int    currentArg1;         /* ditto */
     ScmObj currentOperand;      /* ditto */
     ScmObj currentInfo;         /* ditto */
     ScmObj labelDefs;           /* alist of (name . offset) */
@@ -550,6 +552,28 @@ void Scm_CompiledCodeFinishBuilder(ScmCompiledCode *cc, int maxstack)
  * since this routine is the most frequently called one during compilation.
  */
 
+/* The state transition table */
+struct stn_arc {
+    int input;                  /* input insn, or -1 for wildcard */
+    int action;                 /* NEXT, RESET, KEEPn */
+    int operand;                /* emitting insn / next state */
+};
+
+/* State transition actions */
+enum {
+    NEXT,
+    EMIT,
+    KEEP
+};
+
+/* Include STN generated from vminsn.scm */
+static struct stn_arc stn[] = {
+#define STATE_TABLE
+#include "vminsn.c"
+#undef STATE_TABLE
+};
+    
+
 /* some abbreviations for better readability */
 
 #define INSN(x)         SCM_VM_INSN(x)
@@ -598,56 +622,55 @@ void Scm_CompiledCodeEmit(ScmCompiledCode *cc,
 {
     cc_builder *b;
     CC_BUILDER_GET(b, cc);
+    int arg0_save, arg1_save;
+    ScmObj operand_save, info_save;
+    
 
     if (SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), SCM_COMPILE_NOCOMBINE)) {
         goto def;
     }
 
+
     switch (code) {
     case SCM_VM_LREF:
     {
-        static const int lrefs[] = {
-            SCM_VM_LREF0, SCM_VM_LREF1, SCM_VM_LREF2,
-            SCM_VM_LREF3, SCM_VM_LREF4,
-            SCM_VM_LREF10, SCM_VM_LREF11, SCM_VM_LREF12,
-            SCM_VM_LREF13, SCM_VM_LREF14
+        static const int lrefs[4][4] = {
+            { SCM_VM_LREF0,  SCM_VM_LREF1,  SCM_VM_LREF2,  SCM_VM_LREF3 },
+            { SCM_VM_LREF10, SCM_VM_LREF11, SCM_VM_LREF12, -1 },
+            { SCM_VM_LREF20, SCM_VM_LREF21, -1, -1 },
+            { SCM_VM_LREF30, -1, -1, -1 }
         };
-        if (arg0 <= 1 && arg1 <= 4) {
-            PUT(INSN(lrefs[arg0*5+arg1]), SCM_FALSE);
-        } else {
-            PUT(INSN2(SCM_VM_LREF, arg0, arg1), SCM_FALSE);
+        if (arg0 < 4 && arg1 < 4) {
+            int insn = lrefs[arg0][arg1];
+            if (insn >= 0) {
+                PUT(INSN(insn), SCM_FALSE);
+                break;
+            }
         }
+        PUT(INSN2(SCM_VM_LREF, arg0, arg1), SCM_FALSE);
         break;
     }
     
-    case SCM_VM_LSET:
-    {
-        static const int lsets[] = {
-            SCM_VM_LSET0, SCM_VM_LSET1, SCM_VM_LSET2,
-            SCM_VM_LSET3, SCM_VM_LSET4,
-        };
-        if (arg0 == 0 && arg1 <= 4) {
-            PUT(INSN(lsets[arg1]), SCM_FALSE);
-        } else {
-            PUT(INSN2(SCM_VM_LSET, arg0, arg1), SCM_FALSE);
-        }
-        break;
-    }
-
     case SCM_VM_PUSH:
     {
         if (EMPTYP(b)) goto def;
         switch (CODE(b->currentInsn)) {
-        case SCM_VM_LREF0:  SUB(INSN(SCM_VM_LREF0_PUSH)); break;
-        case SCM_VM_LREF1:  SUB(INSN(SCM_VM_LREF1_PUSH)); break;
-        case SCM_VM_LREF2:  SUB(INSN(SCM_VM_LREF2_PUSH)); break;
-        case SCM_VM_LREF3:  SUB(INSN(SCM_VM_LREF3_PUSH)); break;
-        case SCM_VM_LREF4:  SUB(INSN(SCM_VM_LREF4_PUSH)); break;
+        case SCM_VM_LREF0: SUB(INSN(SCM_VM_LREF0_PUSH)); break;
+        case SCM_VM_LREF1: SUB(INSN(SCM_VM_LREF1_PUSH)); break;
+        case SCM_VM_LREF2: SUB(INSN(SCM_VM_LREF2_PUSH)); break;
+        case SCM_VM_LREF3: SUB(INSN(SCM_VM_LREF3_PUSH)); break;
         case SCM_VM_LREF10: SUB(INSN(SCM_VM_LREF10_PUSH)); break;
         case SCM_VM_LREF11: SUB(INSN(SCM_VM_LREF11_PUSH)); break;
         case SCM_VM_LREF12: SUB(INSN(SCM_VM_LREF12_PUSH)); break;
+        case SCM_VM_LREF20: SUB(INSN(SCM_VM_LREF20_PUSH)); break;
+        case SCM_VM_LREF21: SUB(INSN(SCM_VM_LREF21_PUSH)); break;
+        case SCM_VM_LREF30: SUB(INSN(SCM_VM_LREF30_PUSH)); break;
+
+        /* obsoleted */
+        case SCM_VM_LREF4:  SUB(INSN(SCM_VM_LREF4_PUSH)); break;
         case SCM_VM_LREF13: SUB(INSN(SCM_VM_LREF13_PUSH)); break;
         case SCM_VM_LREF14: SUB(INSN(SCM_VM_LREF14_PUSH)); break;
+
         case SCM_VM_LREF:   SUB(INSN2(SCM_VM_LREF_PUSH,
                                       IARG0(b->currentInsn),
                                       IARG1(b->currentInsn))); break;
@@ -695,6 +718,8 @@ void Scm_CompiledCodeEmit(ScmCompiledCode *cc,
             SUB(INSN1(SCM_VM_GREF_CALL, arg0)); break;
         case SCM_VM_PUSH_GREF:
             SUB(INSN1(SCM_VM_PUSH_GREF_CALL, arg0)); break;
+        case SCM_VM_LREF0_PUSH_GREF:
+            SUB(INSN1(SCM_VM_LREF0_PUSH_GREF_CALL, arg0)); break;
         default:
             PUT(INSN1(SCM_VM_CALL, arg0), SCM_FALSE);
         }
@@ -709,6 +734,8 @@ void Scm_CompiledCodeEmit(ScmCompiledCode *cc,
             SUB(INSN1(SCM_VM_GREF_TAIL_CALL, arg0)); break;
         case SCM_VM_PUSH_GREF:
             SUB(INSN1(SCM_VM_PUSH_GREF_TAIL_CALL, arg0)); break;
+        case SCM_VM_LREF0_PUSH_GREF:
+            SUB(INSN1(SCM_VM_LREF0_PUSH_GREF_TAIL_CALL, arg0)); break;
         default:
             PUT(INSN1(SCM_VM_TAIL_CALL, arg0), SCM_FALSE);
         }
@@ -727,11 +754,16 @@ void Scm_CompiledCodeEmit(ScmCompiledCode *cc,
 
     case SCM_VM_GREF:
     {
-        if (!EMPTYP(b) && CODE(b->currentInsn) == SCM_VM_PUSH) {
-            SUBO(INSN1(SCM_VM_PUSH_GREF, arg0), operand);
-        } else {
-            PUT(INSN1(SCM_VM_GREF, arg0), operand);
+        if (!EMPTYP(b)) {
+            if (CODE(b->currentInsn) == SCM_VM_PUSH) {
+                SUBO(INSN1(SCM_VM_PUSH_GREF, arg0), operand);
+                break;
+            } else if (CODE(b->currentInsn) == SCM_VM_LREF0_PUSH) {
+                SUBO(INSN1(SCM_VM_LREF0_PUSH_GREF, arg0), operand);
+                break;
+            }
         }
+        PUT(INSN1(SCM_VM_GREF, arg0), operand);
         break;
     }
 

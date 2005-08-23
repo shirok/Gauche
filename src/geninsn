@@ -30,17 +30,23 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: geninsn,v 1.2 2005-04-12 01:42:27 shirok Exp $
+;;;  $Id: geninsn,v 1.3 2005-08-23 04:33:56 shirok Exp $
 ;;;
 
-;; Reads vminsn.scm and generate vminsn.c and gauche/vminsn.h
+;; Generate the following VM instruction related files from vminsn.scm
+;;   vminsn.c
+;;   gauche/vminsn.h
+;;   ../lib/gauche/vm/insn.scm
 
 (use gauche.cgen)
 (use gauche.parameter)
+(use gauche.sequence)
+(use gauche.mop.instance-pool)
 (use srfi-13)
 (use text.tr)
 (use file.util)
 (use util.match)
+(use util.list)
 
 (define (c-insn-name name)
   (string-append "SCM_VM_" (string-tr (x->string name) "-" "_")))
@@ -59,29 +65,229 @@
     :init-epilogue ""
     ))
 
+;; Instructon information
+(define-class <vm-insn-info> ()
+  ((name   :init-keyword :name)           ; name of insn (symbol)
+   (code   :init-keyword :code)           ; code of insn (integer)
+   (num-params :init-keyword :num-params) ; # of parameters
+   (operand-type :init-keyword :operand-type) ; operand type
+   (combined :init-keyword :combined)     ; combined insns
+   ))
+
+(define-method write-object ((s <vm-insn-info>) out)
+  (format out "#<insn ~a>" (ref s 'name)))
+
+;;=============================================================
+;; Generate gauche.vm.insn
+;;   We have a header in ../lib/gauche/vm/insn.scm.src.
+;;
+
+(define (gen-gauche.vm.insn insns)
+  (define (write-header out)
+    (call-with-input-file "../lib/gauche/vm/insn.scm.src"
+      (cut copy-port <> out)))
+  (define (write-insn insn out)
+    (format out ";; #x~3,'0x  ~a\n" (ref insn 'code) (ref insn 'name))
+    (format out "(make <vm-insn-info> :name '~a :code ~a\n"
+            (ref insn 'name) (ref insn 'code))
+    (format out "  :num-params ~a :operand-type '~a\n"
+            (ref insn 'num-params) (ref insn 'operand-type))
+    (format out "  :combined '~a)\n\n"
+            (ref insn 'combined)))
+  (call-with-output-file "../lib/gauche/vm/insn.scm"
+    (lambda (out)
+      (write-header out)
+      (for-each (cut write-insn <> out) insns)
+      (display "(provide \"gauche/vm/insn\")\n" out))
+    :if-exists :supersede)
+  )
+
+;;==============================================================
+;; Emit state-transition table for instruction combiner
+;; The state transition table is basically a DFA, but we have some
+;; tweaks to keep the size of the tables small.
+;;
+;; Each state is represented by a table, keyed by input insn codes.
+;; Each value indicates an action and the next state.
+;;
+;; In the following descrption, we denote a table as [something],
+;; and the input code as (something), and the output as {something}.
+;;
+;; Actions:
+;;   NEXT    - output nothing, merely replaces the current state to the
+;;             next state.
+;;   RESET   - emit the specified insn(s), consuming the input, return
+;;             to the state 0.
+;;   KEEP    - emit the specified insn, keep other pending insns and
+;;             input, then run DFA on the pending input.
+
+(define-class <state> (<instance-pool-mixin>)
+  ((name  :init-keyword :name)
+   (transitions :init-value '())        ;; alist of (insn-name . <arc>)
+   (index)                              ;; table #
+   (entry-index)                        ;; an index of the entry array
+                                        ;; that indicates the first entry
+                                        ;; of this state.
+   (index-count :allocation :class :init-value 0)
+   ))
+
+(define-method write-object ((s <state>) out)
+  (format out "#<state ~a ~a>" (ref s 'index) (ref s 'name)))
+
+;; A transitional arc.  stop-insn is used to hold intermediate value
+;; during STN creation.
+(define-class <arc> ()
+  ((input        :init-keyword :input)
+   (next-state   :init-keyword :next-state   :init-value #f)
+   (stop-insn    :init-keyword :stop-insn    :init-value #f)
+   (command      :init-keyword :command      :init-value #f)))
+
+(define-method initialize ((s <state>) initargs)
+  (next-method)
+  (set! (ref s 'index) (ref s 'index-count))
+  (inc! (ref s 'index-count)))
+
+(define (make-state name) (make <state> :name name))
+
+(define (state-lookup state insn-name)
+  (assq-ref (ref state 'transitions) insn-name))
+
+(define (state-set-insn! state insn-name stop-insn)
+  (or (and-let* ((arc (state-lookup state insn-name)))
+        (set! (ref arc 'stop-insn) stop-insn))
+      (push! (ref state 'transitions)
+             (cons insn-name
+                   (make <arc> :input insn-name :stop-insn stop-insn)))))
+
+(define (state-set-state! state insn-name next-state)
+  (or (and-let* ((arc (state-lookup state insn-name)))
+        (set! (ref arc 'next-state) next-state))
+      (push! (ref state 'transitions)
+             (cons insn-name
+                   (make <arc> :input insn-name :next-state next-state)))))
+
+;; Add one insn to a state network.
+(define (add-insn-to-state! root-state insn)
+
+  (define (substate state name)
+    (or (and-let* ((arc (state-lookup state name)))
+          (ref arc 'next-state))
+        (let1 newstate (make-state `(,@(ref state 'name) ,name))
+          (state-set-state! state name newstate)
+          newstate)))
+
+  (state-set-insn! root-state (ref insn 'name) insn)
+  (unless (null? (ref insn 'combined))
+    (let loop ((combined (ref insn 'combined))
+               (state    root-state))
+      (if (null? (cdr combined))
+        (state-set-insn! state (car combined) insn)
+        (loop (cdr combined) (substate state (car combined)))))))
+
+;; The second path to fixup the STN.  Assign each arc a command.
+(define (fixup-states! root-state)
+  (define state-entry-index 0)
+  
+  (define (fixup1 state pending)
+    (unless (eq? state root-state)
+      (push! (ref state 'transitions) (cons #f (make <arc> :input #f))))
+    (set! (ref state 'entry-index) state-entry-index)
+    (inc! state-entry-index (length (ref state 'transitions)))
+    (dolist (transition (ref state 'transitions))
+      (let* ((arc (cdr transition))
+             (si  (ref arc 'stop-insn))
+             (ns  (ref arc 'next-state)))
+        (cond
+         ((and si (not ns))
+          (set! (ref arc 'command) `(reset ,(ref si 'name)))
+          (set! (ref arc 'next-state) root-state))
+         ((and si ns)
+          (set! (ref arc 'command) `(next ,ns))
+          (fixup1 ns (list (ref si 'name))))
+         ((and (not si) ns)
+          (set! (ref arc 'command) `(next ,ns))
+          (fixup1 ns (cons (ref arc 'input) pending)))
+         (else
+          (set! (ref arc 'command) `(keep ,@(reverse pending)))
+          (set! (ref arc 'next-state) root-state)))))
+    (update! (ref state 'transitions) reverse!))
+
+  (fixup1 root-state '()))
+
+;; Emit the state table.
+(define (emit-states states)
+
+  (define entry-count 0)
+  
+  (dolist (s (sort states (lambda (s1 s2)
+                            (< (ref s1 'entry-index)
+                               (ref s2 'entry-index)))))
+    (cgen-body #`"/* State #,(ref s 'index) ,(ref s 'name) [,(ref s 'entry-index)] */")
+    (dolist (t (ref s 'transitions))
+      (match-let1 (op . args) (ref (cdr t) 'command)
+        (receive (action operand)
+            (case op
+              ((next)  (values 'NEXT (ref (car args) 'entry-index)))
+              ((reset) (values 'EMIT (c-insn-name (car args))))
+              ((keep)
+               (if (null? (cdr args))
+                 (values 'KEEP (c-insn-name (car args)))
+                 (error "zntata"))))
+          (cgen-body
+           (format "  /*~3d*/ { ~a, ~a, ~a },"
+                   entry-count
+                   (cond ((ref (cdr t) 'input) => c-insn-name)
+                         (else -1))
+                   action
+                   operand))))
+      (inc! entry-count)))
+  )
+
+(define (construct-state-table insns)
+  (let ((root (make-state '())))
+    (for-each (cut add-insn-to-state! root <>) insns)
+    (fixup-states! root)
+    (emit-states (instance-pool->list <state>))))
+
+;;
+;; Main
+;;
 (define (main args)
-  (let ((insns (file->sexp-list (get-optional (cdr args) "vminsn.scm"))))
-    (parameterize ((cgen-current-unit *unit*))
+  (parameterize ((cgen-current-unit *unit*))
+    
+    (cgen-extern "enum {")
+    (cgen-body "#ifdef DEFINSN")
+    (let1 insns
+        (map-with-index
+         (lambda (count insn)
+           (match insn
+             ((_ name num-params operand-type . maybe-combined)
+              (cgen-extern #`"  ,(c-insn-name name),,")
+              (cgen-body (format "DEFINSN(~a, \"~a\", ~a, ~a)"
+                                 (c-insn-name name) name
+                                 num-params
+                                 (string-tr (x->string operand-type)
+                                            "a-z+-" "A-Z__")))
+              (make <vm-insn-info>
+                :name name :code count :num-params num-params
+                :operand-type operand-type
+                :combined (get-optional maybe-combined '()))
+              )
+             (else
+              (error "unrecognized form: ~s" insn))))
+         (file->sexp-list (get-optional (cdr args) "vminsn.scm")))
       
-      (cgen-extern "enum {")
-
-      (dolist (insn insns)
-        (match insn
-          ((_ name num-params operand-type)
-           (cgen-extern #`"  ,(c-insn-name name),,")
-           (cgen-body (format "DEFINSN(~a, \"~a\", ~a, ~a)"
-                              (c-insn-name name) name
-                              num-params
-                              (string-tr (x->string operand-type)
-                                         "a-z+-" "A-Z__")))
-           )
-          (else
-           (warn "unrecognized form: ~s" insn))))
-
       (cgen-extern "  SCM_VM_NUM_INSNS" "};")
+      (cgen-body "#endif /*DEFINSN*/")
 
+      (cgen-body "#ifdef STATE_TABLE")
+      (construct-state-table insns)
+      (cgen-body "#endif /*STATE_TABLE*/")
+
+      ;; Generating files
       (cgen-emit-h (cgen-current-unit))
       (cgen-emit-c (cgen-current-unit))
+      (gen-gauche.vm.insn insns)
       0)))
 
 ;; Local variables:

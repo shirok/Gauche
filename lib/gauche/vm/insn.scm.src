@@ -1,50 +1,8 @@
-;; -*-mode:scheme-*-
-;; NB: process this file to generate insn.scm.
-
-(use srfi-13)
-(use gauche.sequence)
-(use file.filter)
-(use file.util)
-(use util.match)
-
-(define (process in out insn-defs)
-  (define (preamble line)
-    (cond ((eof-object? line) (error "Huh?"))
-          ((string-prefix? ";; THE FOLLOWING CODE" line) (body (read-line in)))
-          (else (preamble (read-line in)))))
-  (define (body line)
-    (cond ((eof-object? line))
-          ((string-prefix? ";; INSERT INSN DEF" line) (insert))
-          (else (display line out) (newline out) (body (read-line in)))))
-  (define (insert)
-    (for-each-with-index
-     (lambda (index def)
-       (match-let1 (_ name num-params optype) def
-         (format out ";; #x~3,'0x  ~a\n" index name)
-         (write `(make <vm-insn-info> :name ',name :code ,index
-                       :num-params ,num-params
-                       :operand-type ',optype)
-                out)
-         (newline out)))
-     insn-defs)
-    (body (read-line in)))
-  (preamble (read-line in)))
-
-(let* ((lp (port-name (current-load-port)))
-       (insn-def (build-path (sys-dirname lp) "../../../src/vminsn.scm"))
-       (outfile  (build-path (sys-dirname lp) "insn.scm"))
-       (insns (file->sexp-list insn-def))
-       )
-  (file-filter (cut process <> <> insns) :input lp :output outfile))
-
-(exit 0)
-
-;; THE FOLLOWING CODE WILL BE THE PART OF INSN.SCM
 ;;;
 ;;; gauche.vm.insn - VM instruction introspection
 ;;; (This file is generated automatically; DO NOT EDIT)
 ;;;  
-;;;   Copyright (c) 2004 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2004-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -73,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: insn.scm.src,v 1.2 2005-04-12 01:42:25 shirok Exp $
+;;;  $Id: insn.scm.src,v 1.3 2005-08-23 04:33:56 shirok Exp $
 ;;;
 
 (define-module gauche.vm.insn
@@ -89,6 +47,7 @@
    (code   :init-keyword :code)           ; code of insn (integer)
    (num-params :init-keyword :num-params) ; # of parameters
    (operand-type :init-keyword :operand-type) ; operand type
+   (combined :init-keyword :combined)     ; combined insns
    
    (all-insns :allocation :class          ; alist of all instructions,
               :init-value '())            ;   keyed by name.
@@ -133,10 +92,4 @@
          (else (error "vm-build-insn: bad insn:" insn)))))
     (else
      (error "vm-build-insn: bad insn:" insn))))
-
-;; INSERT INSN DEFINITION HERE
-
-(provide "gauche/vm/insn")
-
-
 

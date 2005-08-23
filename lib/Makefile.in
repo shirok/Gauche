@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/lib
-#  $Id: Makefile.in,v 1.125 2005-08-08 10:47:07 shirok Exp $
+#  $Id: Makefile.in,v 1.126 2005-08-23 04:33:56 shirok Exp $
 
 .PHONY: all check pre-package install uninstall slibcat slibcat-in-place \
 	clean distclean maintainer-clean
@@ -117,11 +117,6 @@ slibcat-in-place :
 	if test -f $(SLIB_DIR)/require.scm; then \
 	  $(SHELL) ./mklibcat $(top_builddir)/src/gosh ; \
 	fi
-
-# Generates insn.scm.  NOTE: this must be called at packaging time,
-# so that the build process doesn't need to call gosh being built.
-gauche/vm/insn.scm : gauche/vm/insn.scm.src $(top_srcdir)/src/vminsn.scm
-	gosh ./gauche/vm/insn.scm.src
 
 clean:
 	rm -f core slibcat *~

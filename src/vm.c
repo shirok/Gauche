@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.238 2005-08-19 11:34:30 shirok Exp $
+ *  $Id: vm.c,v 1.239 2005-08-23 04:33:56 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -732,8 +732,6 @@ pthread_key_t Scm_VMKey(void)
         NEXT;                                   \
     } while (0)
 
-#define FNEXT    NEXT
-
 /*===================================================================
  * Main loop of VM
  */
@@ -1060,10 +1058,16 @@ pthread_key_t Scm_VMKey(void)
                 }
                 NEXT;
             }
+            CASE(SCM_VM_LREF0_PUSH_GREF) {
+                CHECK_STACK_PARANOIA(1);
+                PUSH_ARG(ENV_DATA(ENV,0));
+                goto gref;
+            }
             CASE(SCM_VM_PUSH_GREF) {
                 CHECK_STACK_PARANOIA(1);
                 PUSH_ARG(VAL0);
             }
+          gref:
             /*FALLTHROUGH*/
             CASE(SCM_VM_GREF) {
                 ScmObj v;
@@ -1077,10 +1081,16 @@ pthread_key_t Scm_VMKey(void)
                 *SP++ = v;
                 NEXT;
             }
+            CASE(SCM_VM_LREF0_PUSH_GREF_CALL) {
+                CHECK_STACK_PARANOIA(1);
+                PUSH_ARG(ENV_DATA(ENV,0));
+                goto gref_call;
+            }
             CASE(SCM_VM_PUSH_GREF_CALL) {
                 CHECK_STACK_PARANOIA(1);
                 PUSH_ARG(VAL0);
             }
+          gref_call:
             /*FALLTHROUGH*/
             CASE(SCM_VM_GREF_CALL) {
                 ScmObj v;
@@ -1088,10 +1098,16 @@ pthread_key_t Scm_VMKey(void)
                 VAL0 = v;
                 goto call_entry;
             }
+            CASE(SCM_VM_LREF0_PUSH_GREF_TAIL_CALL) {
+                CHECK_STACK_PARANOIA(1);
+                PUSH_ARG(ENV_DATA(ENV,0));
+                goto gref_tail_call;
+            }
             CASE(SCM_VM_PUSH_GREF_TAIL_CALL) {
                 CHECK_STACK_PARANOIA(1);
                 PUSH_ARG(VAL0);
             }
+          gref_tail_call:
             /*FALLTHROUGH*/
             CASE(SCM_VM_GREF_TAIL_CALL) {
                 ScmObj v;
@@ -1099,16 +1115,21 @@ pthread_key_t Scm_VMKey(void)
                 VAL0 = v;
                 goto tail_call_entry;
             }
-            CASE(SCM_VM_LREF0) { VAL0 = ENV_DATA(ENV, 0); NEXT1; }
-            CASE(SCM_VM_LREF1) { VAL0 = ENV_DATA(ENV, 1); NEXT1; }
-            CASE(SCM_VM_LREF2) { VAL0 = ENV_DATA(ENV, 2); NEXT1; }
-            CASE(SCM_VM_LREF3) { VAL0 = ENV_DATA(ENV, 3); NEXT1; }
-            CASE(SCM_VM_LREF4) { VAL0 = ENV_DATA(ENV, 4); NEXT1; }
+            CASE(SCM_VM_LREF0)  { VAL0 = ENV_DATA(ENV, 0); NEXT1; }
+            CASE(SCM_VM_LREF1)  { VAL0 = ENV_DATA(ENV, 1); NEXT1; }
+            CASE(SCM_VM_LREF2)  { VAL0 = ENV_DATA(ENV, 2); NEXT1; }
+            CASE(SCM_VM_LREF3)  { VAL0 = ENV_DATA(ENV, 3); NEXT1; }
             CASE(SCM_VM_LREF10) { VAL0 = ENV_DATA(ENV->up, 0); NEXT1; }
             CASE(SCM_VM_LREF11) { VAL0 = ENV_DATA(ENV->up, 1); NEXT1; }
             CASE(SCM_VM_LREF12) { VAL0 = ENV_DATA(ENV->up, 2); NEXT1; }
-            CASE(SCM_VM_LREF13) { VAL0 = ENV_DATA(ENV->up, 3); NEXT1; }
-            CASE(SCM_VM_LREF14) { VAL0 = ENV_DATA(ENV->up, 4); NEXT1; }
+            CASE(SCM_VM_LREF20) { VAL0 = ENV_DATA(ENV->up->up, 0);NEXT1; }
+            CASE(SCM_VM_LREF21) { VAL0 = ENV_DATA(ENV->up->up, 1);NEXT1; }
+            CASE(SCM_VM_LREF30) { VAL0 = ENV_DATA(ENV->up->up->up, 0);NEXT1; }
+                
+            /*OB*/CASE(SCM_VM_LREF4) { VAL0 = ENV_DATA(ENV, 4); NEXT1; }
+            /*OB*/CASE(SCM_VM_LREF13) { VAL0 = ENV_DATA(ENV->up, 3); NEXT1; }
+            /*OB*/CASE(SCM_VM_LREF14) { VAL0 = ENV_DATA(ENV->up, 4); NEXT1; }
+
             CASE(SCM_VM_LREF) {
                 int dep = SCM_VM_INSN_ARG0(code);
                 int off = SCM_VM_INSN_ARG1(code);
@@ -1123,34 +1144,22 @@ pthread_key_t Scm_VMKey(void)
                 VAL0 = ENV_DATA(e, off);
                 NEXT1;
             }
-            CASE(SCM_VM_LREF0_PUSH) {
-                PUSH_ARG(ENV_DATA(ENV, 0)); NEXT;
-            }
-            CASE(SCM_VM_LREF1_PUSH) {
-                PUSH_ARG(ENV_DATA(ENV, 1)); NEXT;
-            }
-            CASE(SCM_VM_LREF2_PUSH) {
-                PUSH_ARG(ENV_DATA(ENV, 2)); NEXT;
-            }
-            CASE(SCM_VM_LREF3_PUSH) {
-                PUSH_ARG(ENV_DATA(ENV, 3)); NEXT;
-            }
-            CASE(SCM_VM_LREF4_PUSH) {
-                PUSH_ARG(ENV_DATA(ENV, 4)); NEXT;
-            }
-            CASE(SCM_VM_LREF10_PUSH) {
-                PUSH_ARG(ENV_DATA(ENV->up, 0)); NEXT;
-            }
-            CASE(SCM_VM_LREF11_PUSH) {
-                PUSH_ARG(ENV_DATA(ENV->up, 1)); NEXT;
-            }
-            CASE(SCM_VM_LREF12_PUSH) {
-                PUSH_ARG(ENV_DATA(ENV->up, 2)); NEXT;
-            }
-            CASE(SCM_VM_LREF13_PUSH) {
+            CASE(SCM_VM_LREF0_PUSH) {PUSH_ARG(ENV_DATA(ENV, 0)); NEXT;}
+            CASE(SCM_VM_LREF1_PUSH) {PUSH_ARG(ENV_DATA(ENV, 1)); NEXT;}
+            CASE(SCM_VM_LREF2_PUSH) {PUSH_ARG(ENV_DATA(ENV, 2)); NEXT;}
+            CASE(SCM_VM_LREF3_PUSH) {PUSH_ARG(ENV_DATA(ENV, 3)); NEXT;}
+            CASE(SCM_VM_LREF10_PUSH) {PUSH_ARG(ENV_DATA(ENV->up, 0)); NEXT;}
+            CASE(SCM_VM_LREF11_PUSH) {PUSH_ARG(ENV_DATA(ENV->up, 1)); NEXT;}
+            CASE(SCM_VM_LREF12_PUSH) {PUSH_ARG(ENV_DATA(ENV->up, 2)); NEXT;}
+            CASE(SCM_VM_LREF20_PUSH) {PUSH_ARG(ENV_DATA(ENV->up->up, 0)); NEXT;}
+            CASE(SCM_VM_LREF21_PUSH) {PUSH_ARG(ENV_DATA(ENV->up->up, 1)); NEXT;}
+            CASE(SCM_VM_LREF30_PUSH) {PUSH_ARG(ENV_DATA(ENV->up->up->up, 0)); NEXT;}
+
+            /*OB*/CASE(SCM_VM_LREF4_PUSH) {PUSH_ARG(ENV_DATA(ENV, 4)); NEXT;}
+            /*OB*/CASE(SCM_VM_LREF13_PUSH) {
                 PUSH_ARG(ENV_DATA(ENV->up, 3)); NEXT;
             }
-            CASE(SCM_VM_LREF14_PUSH) {
+            /*OB*/CASE(SCM_VM_LREF14_PUSH) {
                 PUSH_ARG(ENV_DATA(ENV->up, 4)); NEXT;
             }
             CASE(SCM_VM_LREF_PUSH) {
@@ -1288,7 +1297,7 @@ pthread_key_t Scm_VMKey(void)
             }
             CASE(SCM_VM_POP_LOCAL_ENV) {
                 ENV = ENV->up;
-                FNEXT;
+                NEXT;
             }
             CASE(SCM_VM_GSET) {
                 ScmObj loc;
@@ -1325,11 +1334,11 @@ pthread_key_t Scm_VMKey(void)
                 INCR_PC;
                 NEXT1;
             }
-            CASE(SCM_VM_LSET0) { ENV_DATA(ENV, 0) = VAL0; NEXT1; }
-            CASE(SCM_VM_LSET1) { ENV_DATA(ENV, 1) = VAL0; NEXT1; }
-            CASE(SCM_VM_LSET2) { ENV_DATA(ENV, 2) = VAL0; NEXT1; }
-            CASE(SCM_VM_LSET3) { ENV_DATA(ENV, 3) = VAL0; NEXT1; }
-            CASE(SCM_VM_LSET4) { ENV_DATA(ENV, 4) = VAL0; NEXT1; }
+            /*OB*/CASE(SCM_VM_LSET0) { ENV_DATA(ENV, 0) = VAL0; NEXT1; }
+            /*OB*/CASE(SCM_VM_LSET1) { ENV_DATA(ENV, 1) = VAL0; NEXT1; }
+            /*OB*/CASE(SCM_VM_LSET2) { ENV_DATA(ENV, 2) = VAL0; NEXT1; }
+            /*OB*/CASE(SCM_VM_LSET3) { ENV_DATA(ENV, 3) = VAL0; NEXT1; }
+            /*OB*/CASE(SCM_VM_LSET4) { ENV_DATA(ENV, 4) = VAL0; NEXT1; }
             CASE(SCM_VM_LSET) {
                 int dep = SCM_VM_INSN_ARG0(code);
                 int off = SCM_VM_INSN_ARG1(code);
