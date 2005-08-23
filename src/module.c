@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.56 2005-07-30 23:39:50 shirok Exp $
+ *  $Id: module.c,v 1.57 2005-08-23 10:44:05 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -62,8 +62,8 @@
  * to use a single global lock (modules.mutex), based on the following
  * observations:
  *
- *  - Profiling shows mutex_lock takes around 10% of program loading
- *    phase.
+ *  - Profiling showed mutex_lock was taking around 10% of program loading
+ *    phase in the previous version.
  *
  *  - Module operations almost always occur during program loading and
  *    interactive session.  Having giant lock for module operations won't
@@ -112,6 +112,7 @@ static void init_module(ScmModule *m, ScmSymbol *name)
 {
     m->name = name;
     m->imported = m->exported = SCM_NIL;
+    m->exportAll = FALSE;
     m->parents = defaultParents;
     m->mpl = Scm_Cons(SCM_OBJ(m), defaultMpl);
     m->table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
@@ -219,10 +220,7 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
                 
                 m = SCM_MODULE(SCM_CAR(mp));
                 e = Scm_HashTableGet(m->table, SCM_OBJ(symbol));
-                if (e &&
-                    (SCM_TRUEP(m->exported)
-                     || !SCM_FALSEP(Scm_Memq(SCM_OBJ(symbol), m->exported)))) {
-                    gloc = SCM_GLOC(e->value);
+                if (e && (gloc = SCM_GLOC(e->value))->exported) {
                     goto found;
                 }
 
@@ -257,6 +255,7 @@ ScmObj Scm_SymbolValue(ScmModule *module, ScmSymbol *symbol)
 
 /*
  * Definition.
+ *  TODO: consolidate the common code between Scm_Define and Scm_DefineConst.
  */
 ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
 {
@@ -264,7 +263,7 @@ ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
     ScmHashEntry *e;
     int redefining = FALSE;
     
-    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
+    //(void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
     e = Scm_HashTableGet(module->table, SCM_OBJ(symbol));
     if (e) {
         g = SCM_GLOC(e->value);
@@ -277,6 +276,11 @@ ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
         g = SCM_GLOC(Scm_MakeGloc(symbol, module));
         SCM_GLOC_SET(g, value);
         Scm_HashTablePut(module->table, SCM_OBJ(symbol), SCM_OBJ(g));
+        /* If module is marked 'export-all', export this binding by default */
+        if (module->exportAll) {
+            g->exported = TRUE;
+            module->exported = Scm_Cons(SCM_OBJ(g->name), module->exported);
+        }
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
     
@@ -308,6 +312,11 @@ ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
         g = SCM_GLOC(Scm_MakeConstGloc(symbol, module));
         g->value = value;
         Scm_HashTablePut(module->table, SCM_OBJ(symbol), SCM_OBJ(g));
+        /* If module is marked 'export-all', export this binding by default */
+        if (module->exportAll) {
+            g->exported = TRUE;
+            module->exported = Scm_Cons(SCM_OBJ(g->name), module->exported);
+        }
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
 
@@ -344,21 +353,42 @@ ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list)
 {
     ScmObj lp, syms, badsym = SCM_FALSE;
     int error = FALSE;
+    ScmSymbol *s;
+    ScmHashEntry *e;
+    ScmGloc *g;
 
+    /* We used to do something like
+     *  (set! (module-exports module)
+     *        (delete-duplicates (union (module-exports module) list)))
+     * This is slow when we export lots of symbols.  As of 0.8.6,
+     * each GLOC has exported flag, so we can check whether a binding
+     * is exported or not in O(1).   Module-exports list is kept
+     * for backward compatibility.
+     */
     (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
     syms = module->exported;
-    if (!SCM_TRUEP(syms)) {
-        SCM_FOR_EACH(lp, list) {
-            if (!SCM_SYMBOLP(SCM_CAR(lp))) {
-                error = TRUE;
-                badsym = SCM_CAR(lp);
-                break;
-            }
-            if (SCM_FALSEP(Scm_Memq(SCM_CAR(lp), syms)))
-                syms = Scm_Cons(SCM_CAR(lp), syms);
+    SCM_FOR_EACH(lp, list) {
+        if (!SCM_SYMBOLP(SCM_CAR(lp))) {
+            error = TRUE;
+            badsym = SCM_CAR(lp);
+            break;
         }
-        if (!error) module->exported = syms;
+        s = SCM_SYMBOL(SCM_CAR(lp));
+        e = Scm_HashTableAdd(module->table, SCM_OBJ(s), SCM_UNBOUND);
+        if (SCM_GLOCP(e->value)) {
+            g = SCM_GLOC(e->value);
+            if (!g->exported) {
+                syms = Scm_Cons(SCM_OBJ(s), syms);
+                g->exported = TRUE;
+            }
+        } else {
+            g = SCM_GLOC(Scm_MakeGloc(s, module));
+            g->exported = TRUE;
+            e->value = SCM_OBJ(g);
+            syms = Scm_Cons(SCM_OBJ(s), syms);
+        }
     }
+    if (!error) module->exported = syms;
     (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
     if (error) Scm_Error("symbol required, but got %S", badsym);
     return syms;
@@ -366,8 +396,26 @@ ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list)
 
 ScmObj Scm_ExportAll(ScmModule *module)
 {
+    ScmHashIter iter;
+    ScmHashEntry *e;
+    
     (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
-    module->exported = SCM_TRUE;
+    if (!module->exportAll) {
+        /* Mark the module 'export-all' so that the new bindings would get
+           exported mark by default. */
+        module->exportAll = TRUE;
+        
+        /* Scan the module and mark all existing bindings as exported. */
+        Scm_HashIterInit(module->table, &iter);
+        while ((e = Scm_HashIterNext(&iter)) != NULL) {
+            ScmGloc *g = SCM_GLOC(e->value);
+            if (!g->exported) {
+                g->exported = TRUE;
+                module->exported =
+                    Scm_Cons(SCM_OBJ(g->name), module->exported);
+            }
+        }
+    }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
     return SCM_OBJ(module);
 }

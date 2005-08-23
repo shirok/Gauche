@@ -1,7 +1,7 @@
 /*
  * symbol.c - symbol implementation
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: symbol.c,v 1.34 2005-07-30 23:39:50 shirok Exp $
+ *  $Id: symbol.c,v 1.35 2005-08-23 10:44:05 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -194,6 +194,7 @@ ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
     g->name = sym;
     g->module = module;
     g->value = SCM_UNBOUND;
+    g->exported = FALSE;
     g->getter = NULL;
     g->setter = NULL;
     return SCM_OBJ(g);

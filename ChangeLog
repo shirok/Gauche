@@ -3,6 +3,21 @@
 	* lib/gauche/logger.scm (log-default-drain): exposed the default
 	  drain as a parameter.
 
+	* src/module.c, src/gauche.h, src/symbol.c: put the information 
+	  of whether a binding is exported or not in gloc, instead of 
+	  module->exported list.  We keep the exported list only for backward
+	  compatibility and the convenience of meta-module utilities.
+	  This change makes Scm_FindBinding faster, since it doens't need
+	  to scan the exported list.  We also removed the weird convention
+	  of putting #t to the exported list to show export-all status---now
+	  exported list always keeps the list of exported symbols, even
+	  the module is export-all-ed ('define' adds the defined symbol to
+	  the exported list).
+	  As a side effects, the 'export' syntax is interpreted in more
+	  strict way; specifically, you shouldn't export a symbol which you
+	  don't define in the module.  It used to be ignored, but now it
+	  shadows the earlier binding of the symbol.
+
 2005-08-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c (main): use GC_INIT macro instead of our own #ifdef-ed

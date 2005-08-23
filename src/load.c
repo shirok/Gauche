@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.99 2005-07-22 09:26:56 shirok Exp $
+ *  $Id: load.c,v 1.100 2005-08-23 10:44:05 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -359,11 +359,9 @@ ScmObj Scm_VMLoad(ScmString *filename, ScmObj load_paths,
         if (errorp) Scm_Error("file %S exists, but couldn't open.", truename);
         else        return SCM_FALSE;
     }
-
     if (!ignore_coding) {
         port = Scm_MakeCodingAwarePort(SCM_PORT(port));
     }
-    
     return Scm_VMLoadFromPort(SCM_PORT(port), load_paths, env, flags);
 }
 

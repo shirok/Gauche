@@ -1,7 +1,7 @@
 ;;;
 ;;; charconv - character code conversion module
 ;;;  
-;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: charconv.scm,v 1.20 2004-11-23 20:34:24 shirok Exp $
+;;;  $Id: charconv.scm,v 1.21 2005-08-23 10:44:04 shirok Exp $
 ;;;
 
 (define-module gauche.charconv
@@ -49,9 +49,6 @@
           call-with-output-conversion
           with-input-conversion
           with-output-conversion
-          open-input-file open-output-file
-          call-with-input-file call-with-output-file
-          with-input-from-file with-output-to-file
           ))
 (select-module gauche.charconv)
 

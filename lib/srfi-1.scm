@@ -2,7 +2,7 @@
 ;;; SRFI-1 - List processing library
 ;;;
 
-;; $Id: srfi-1.scm,v 1.19 2005-05-02 10:30:38 shirok Exp $
+;; $Id: srfi-1.scm,v 1.20 2005-08-23 10:44:04 shirok Exp $
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -20,7 +20,7 @@
 ;; You can obtain the original version from http://srfi.schemers.org
 
 (define-module srfi-1
-  (export xcons cons* list-tabulate list-copy circular-list iota
+  (export xcons cons* list-tabulate circular-list iota
           not-pair?
           list=
           first second third fourth fifth sixth seventh eighth

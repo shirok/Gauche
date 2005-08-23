@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.434 2005-08-19 11:34:30 shirok Exp $
+ *  $Id: gauche.h,v 1.435 2005-08-23 10:44:05 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1726,8 +1726,9 @@ SCM_EXTERN ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
 struct ScmModuleRec {
     SCM_HEADER;
     ScmSymbol *name;
-    ScmObj imported;
-    ScmObj exported;
+    ScmObj imported;            /* list of imported modules */
+    ScmObj exported;            /* list of exported symbols */
+    int    exportAll;           /* TRUE if (export-all) */
     ScmObj parents;             /* direct parent modules */
     ScmObj mpl;                 /* module precedence list */
     ScmHashTable *table;
@@ -1816,6 +1817,7 @@ struct ScmGlocRec {
     ScmSymbol *name;
     ScmModule *module;
     ScmObj value;
+    int exported;
     ScmObj (*getter)(ScmGloc *);
     ScmObj (*setter)(ScmGloc *, ScmObj);
 };

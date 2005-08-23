@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: sequence.scm,v 1.8 2004-12-15 11:04:28 shirok Exp $
+;;;  $Id: sequence.scm,v 1.9 2005-08-23 10:44:04 shirok Exp $
 ;;;
 
 ;; This module defines an unified way to treat sequence-like objects
@@ -40,7 +40,7 @@
 (define-module gauche.sequence
   (use srfi-1)
   (extend gauche.collection)
-  (export referencer modifier ref subseq
+  (export referencer modifier subseq
           fold-with-index map-with-index map-to-with-index for-each-with-index
           find-index find-with-index group-sequence)
   )
