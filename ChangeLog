@@ -1,3 +1,8 @@
+2005-08-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen.scm (<cgen-scheme-char-set>): added support for
+	  the literal char-set.
+
 2005-08-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/logger.scm (log-default-drain): exposed the default
