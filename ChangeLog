@@ -1,5 +1,8 @@
 2005-08-24  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche-init.scm: removed compatibility hack of loading 
+	  gauche.object for transition of 0.8.3->0.8.4.
+
 	* src/gencomp: Experimentally added --ext-module option to allow
 	  gencomp to emit a module interface scm file, so that it can be
 	  used to compile extension modules out of Scheme library easily.

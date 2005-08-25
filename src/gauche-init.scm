@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-init.scm,v 1.121 2005-07-11 03:33:13 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.122 2005-08-25 07:48:24 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -78,13 +78,3 @@
 (define-reader-ctor 'string-interpolate
   (lambda (s) (string-interpolate s))) ;;lambda is required to delay loading
 
-;;
-;; Load object system
-;;
-
-;; A trick to cross-compile during development.  Will go away.
-(define-macro (%init-object-system)
-  (unless (find-module 'gauche.object)
-    (%require "gauche/object")))
-
-(%init-object-system)
