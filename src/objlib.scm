@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: objlib.scm,v 1.2 2005-08-25 07:51:18 shirok Exp $
+;;;  $Id: objlib.scm,v 1.3 2005-08-25 08:28:20 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -164,7 +164,8 @@
          (when (%check-class-binding ',name (current-module))
            (redefine-class! ,name ,class))
          (for-each (lambda (,slot)
-                     (,%make-accessor ,class ,slot (current-module)))
+                     (,(make-identifier '%make-accessor (current-module) '())
+                      ,class ,slot (current-module)))
                    (class-slots ,class))
          ,class))
     ))
