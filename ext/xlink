@@ -4,13 +4,12 @@
 ;; Such links are only of developers' interest; they must be cleaned out
 ;; to create a distribution tarball.
 ;;
-;; $Id: xlink,v 1.7 2004-07-16 11:11:40 shirok Exp $
+;; $Id: xlink,v 1.8 2005-08-25 10:20:57 shirok Exp $
 ;;
 
-(use gauche.parseopt)
-(use srfi-1)
-(use srfi-13)
-(use file.util)
+;; NB: this script is called before all the necessary 'wiring' is
+;; done during the build, so most useful extension modules are not
+;; available.  We have to do things in primitive way...
 
 (define (usage)
   (print "Usage: gosh xlink [-l|-u][-g group][-b top_builddir][-s top_srcdir] <scm-or-so-file> ...\n"
@@ -26,22 +25,21 @@
          )
   (exit 1))
 
+(define *link*   #f)
+(define *unlink* #f)
+(define *group*  #f)
+(define *builddir* #f)
+(define *srcdir*   #f)
+
 (define (main args)
-  (let-args (cdr args)
-      ((link     "l")
-       (unlink   "u")
-       (group    "g=s")
-       (builddir "b=s")
-       (srcdir   "s=s")
-       (else     _ (usage))
-       . files)
-    (unless (or link unlink) (usage))
+  (let1 files (parse-args (cdr args))
+    (unless (or *link* *unlink*) (usage))
     (for-each (lambda (file)
                 (let ((path   (build-path (sys-getcwd) file))
                       (target (if (string-suffix? ".scm" file)
-                                (build-path srcdir "lib" group file)
-                                (build-path builddir "src" file))))
-                  (if unlink
+                                (build-path *srcdir* "lib" *group* file)
+                                (build-path *builddir* "src" file))))
+                  (if *unlink*
                     (sys-unlink target)
                     (make-link path target))))
               files))
@@ -57,10 +55,47 @@
       (sys-system #`"cp ,file ,target"))))
 
 (define (link-exists? file target)
-  (and (symbol-bound? 'sys-lstat)
+  (and (global-variable-bound? 'gauche 'sys-lstat)
        (file-exists? target)
-       (eq? (file-type target :follow-link? #f) 'symlink)
+       (file-is-symlink? target)
        (equal? file (sys-readlink target))))
+
+(define (parse-args args)
+  (cond ((null? args) (usage))
+        ((string=? (car args) "-l")
+         (set! *link* #t) (parse-args (cdr args)))
+        ((string=? (car args) "-u")
+         (set! *unlink* #t) (parse-args (cdr args)))
+        ((string=? (car args) "-g")
+         (set! *group* (cadr args)) (parse-args (cddr args)))
+        ((string=? (car args) "-b")
+         (set! *builddir* (cadr args)) (parse-args (cddr args)))
+        ((string=? (car args) "-s")
+         (set! *srcdir* (cadr args)) (parse-args (cddr args)))
+        ((#/^-/ (car args)) (usage))
+        (else args)))
+
+;; simpler versions of file.util procedures
+(define (build-path . args)
+  (string-join args "/" 'infix))
+
+(define (make-directory* dir)
+  (let1 up (sys-dirname dir)
+    (unless (equal? up ".")
+      (make-directory* up)
+      (unless (file-exists? dir)
+        (sys-mkdir (sys-basename dir) #o755)))))
+
+(define (file-is-symlink? path)
+  (eq? (ref (sys-lstat path) 'type) 'symlink))
+
+(define (string-suffix? suffix str)
+  (let ((suffix-len (string-length suffix))
+        (str-len    (string-length str)))
+    (and (>= str-len suffix-len)
+         (string=? (substring str (- str-len suffix-len) str-len) suffix))))
+
+    
 
 ;; Local variables:
 ;; mode: scheme

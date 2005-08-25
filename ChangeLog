@@ -1,3 +1,7 @@
+2005-08-25  Shiro Kawai  <shiro@acm.org>
+
+	* ext/xlink: removed dependency to the library modules.
+
 2005-08-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/objlib.scm (%expand-define-class): avoid embedding literal
