@@ -30,14 +30,14 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: objlib.scm,v 1.1 2005-05-01 06:36:03 shirok Exp $
+;;;  $Id: objlib.scm,v 1.2 2005-08-25 07:51:18 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
 ;; auxiliary procedures from the rest of the system.  The initialization
 ;; file loads this file, and this file inserts exported symbols into
 ;; gauche module explicitly.
-(define-module gauche.object )
+(define-module gauche.object)
 (select-module gauche.object)
 
 ;;; I'm trying to make MOP as close to STklos and Goops as possible.
@@ -144,9 +144,13 @@
 ;(define-macro (define-class name supers slots . options)
 ;  (%expand-define-class name supers slots options))
 
+(define make-identifier (with-module gauche.internal make-identifier))
+
 (define (%expand-define-class name supers slots options)
   (let* ((metaclass (or (get-keyword :metaclass options #f)
-                        `(,%get-default-metaclass (list ,@supers))))
+                        `(,(make-identifier '%get-default-metaclass
+                                            (current-module) '())
+                          (list ,@supers))))
          (slot-defs (map %process-slot-definition slots))
          (class     (gensym))
          (slot      (gensym)))

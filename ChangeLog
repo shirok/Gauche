@@ -1,5 +1,10 @@
 2005-08-24  Shiro Kawai  <shiro@acm.org>
 
+	* src/objlib.scm (%expand-define-class): avoid embedding literal
+	  closure to the macro output, for it prevents the code using
+	  define-class from being pre-compiled by gencomp.  Instead we
+	  insert an identifier.
+
 	* src/gauche-init.scm: removed compatibility hack of loading 
 	  gauche.object for transition of 0.8.3->0.8.4.
 
