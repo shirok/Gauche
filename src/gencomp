@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.17 2005-08-25 04:27:34 shirok Exp $
+;;;  $Id: gencomp,v 1.18 2005-08-25 06:13:59 shirok Exp $
 ;;;
 
 ;;;
@@ -248,7 +248,8 @@
   (cgen-init (format "  Scm_VMExecuteToplevels(toplevels);"))
   )
 
-;; Literalize compiled code.
+;;================================================================
+;; Compiler-specific literal handling definitions
 ;;       
 (define-cgen-literal <cgen-scheme-code> <compiled-code>
   ((code-name   :init-keyword :code-name)
@@ -427,6 +428,21 @@
   ()
   (make (value)
     (make <cgen-scheme-macro> :value value :c-name #f))
+  )
+
+;; For generic functions, we initialize it at runtime.
+(define-cgen-literal <cgen-scheme-generic> <generic>
+  ((gf-name :init-keyword :gf-name))
+  (make (value)
+    (make <cgen-scheme-generic>
+      :value value
+      :c-name  (cgen-allocate-static-datum 'runtime 'ScmObj #f)
+      :gf-name (cgen-literal (ref value 'name))))
+  (init (self)
+    (format #t "  ~a = Scm_SymbolValue(mod, SCM_SYMBOL(~a));\n"
+            (ref self 'c-name)
+            (ref (ref self 'gf-name) 'c-name)))
+  (static (self) #f)
   )
 
 ;;================================================================
