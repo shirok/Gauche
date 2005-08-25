@@ -7,6 +7,7 @@
 
 	* src/gauche-init.scm: removed compatibility hack of loading 
 	  gauche.object for transition of 0.8.3->0.8.4.
+	* lib/gauche/object.scm: removed, for it is no longer needed.
 
 	* src/gencomp: Experimentally added --ext-module option to allow
 	  gencomp to emit a module interface scm file, so that it can be
@@ -18,6 +19,7 @@
 	  and sxml.tools into extension modules.
 	* ext/uvector/uvseq.scm : added to compile collection & sequence 
 	  framework stuff into libgauche-uvector.so.
+	* ext/srfi-19/*: this is also turned to an extension.
 
 2005-08-23  Shiro Kawai  <shiro@acm.org>
 

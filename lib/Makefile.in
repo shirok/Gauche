@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/lib
-#  $Id: Makefile.in,v 1.126 2005-08-23 04:33:56 shirok Exp $
+#  $Id: Makefile.in,v 1.127 2005-08-25 08:49:07 shirok Exp $
 
 .PHONY: all check pre-package install uninstall slibcat slibcat-in-place \
 	clean distclean maintainer-clean
@@ -27,7 +27,7 @@ CONFIG_GENERATED = Makefile slib.scm
 
 SUBDIRS  = gauche gauche/vm gauche/serializer gauche/interactive gauche/mop \
            gauche/package \
-           srfi-1 srfi-13 srfi-14 srfi-19 srfi-29 \
+           srfi-1 srfi-13 srfi-14 srfi-29 \
            binary dbm math util compat file rfc text www
 
 SCMFILES = srfi-0.scm \
@@ -42,12 +42,11 @@ SCMFILES = srfi-0.scm \
        srfi-13/pred.scm srfi-13/prefix.scm srfi-13/revapp.scm \
        srfi-13/rotator.scm srfi-13/searcher.scm srfi-13/selector.scm \
        srfi-14.scm srfi-14/query.scm srfi-14/set.scm \
-       srfi-19.scm srfi-19/format.scm srfi-19/read-tai.scm \
        srfi-26.scm srfi-27.scm \
        srfi-29.scm srfi-29/bundle.scm srfi-29/format.scm \
        srfi-31.scm srfi-37.scm srfi-42.scm srfi-55.scm \
        slib.scm	 \
-       gauche/object.scm gauche/redefutil.scm gauche/test.scm \
+       gauche/redefutil.scm gauche/test.scm \
        gauche/macroutil.scm gauche/stringutil.scm \
        gauche/condutil.scm \
        gauche/regexp.scm gauche/process.scm gauche/signal.scm \
