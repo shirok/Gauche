@@ -10,7 +10,7 @@
 ;;;      sxpath-ext.scm,v 1.911
 ;;;   Public domain.
 ;;;
-;;; $Id: sxpath.scm.in,v 1.6 2003-11-05 12:38:33 shirok Exp $
+;;; $Id: sxml-sxpath.scm.in,v 1.1 2005-08-25 04:32:54 shirok Exp $
 ;;;
 
 (define-module sxml.sxpath

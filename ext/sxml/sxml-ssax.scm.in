@@ -1,11 +1,11 @@
 ;;;
-;;; sxml.ssax - XML parser
+;;; sxml-ssax - XML parser
 ;;;
 ;;;   This file is mechanically translated for Gauche from
 ;;;   Oleg Kiselyov's SSAX XML parser, SSAX.scm, v4.9.
 ;;;   Public domain.
 ;;;
-;;; $Id: ssax.scm.in,v 1.4 2004-08-02 03:33:41 shirok Exp $
+;;; $Id: sxml-ssax.scm.in,v 1.1 2005-08-25 04:32:54 shirok Exp $
 ;;;
 
 (define-module sxml.ssax
@@ -38,28 +38,8 @@
 
 ;#include-body "src/SSAX.scm"
 
-;; for backward compatibility - will be gone soon
-
-(define SSAX:read-markup-token ssax:read-markup-token)
-(define SSAX:read-cdata-body ssax:read-cdata-body)
-(define SSAX:read-char-ref ssax:read-char-ref)
-(define SSAX:handle-parsed-entity ssax:handle-parsed-entity)
-(define SSAX:read-attributes ssax:read-attributes)
-(define SSAX:resolve-name ssax:resolve-name)
-(define SSAX:uri-string->symbol ssax:uri-string->symbol)
-(define SSAX:complete-start-tag ssax:complete-start-tag)
-(define SSAX:read-external-id ssax:read-external-id)
-(define SSAX:scan-Misc ssax:scan-Misc)
-(define SSAX:read-char-data ssax:read-char-data)
-(define SSAX:assert-token ssax:assert-token)
-(define SSAX:make-pi-parser ssax:make-pi-parser)
-(define SSAX:make-elem-parser ssax:make-elem-parser)
-(define SSAX:make-parser ssax:make-parser)
-(define SSAX:XML->SXML ssax:xml->sxml)
-
 (provide "sxml/ssax")
 
-          
 ;; Local variables:
 ;; mode: scheme
 ;; end:

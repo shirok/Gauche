@@ -1,7 +1,7 @@
 ;;;
 ;;; Adapt SSAX to Gauche
 ;;;
-;;; $Id: adaptor.scm,v 1.7 2003-11-10 08:50:02 shirok Exp $
+;;; $Id: adaptor.scm,v 1.1 2005-08-25 04:32:54 shirok Exp $
 ;;;
 
 (define-module sxml.adaptor
@@ -138,4 +138,4 @@
 
 (define nl "\n")
 
-(provide "ssax/adaptor")
+(provide "sxml/adaptor")

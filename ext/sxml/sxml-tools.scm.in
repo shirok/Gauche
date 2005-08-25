@@ -5,7 +5,7 @@
 ;;;   Kirill Lisovsky's sxml-tools.scm CVS revision 3.13
 ;;;   Public domain.
 ;;;
-;;; $Id: tools.scm.in,v 1.2 2003-11-05 12:38:33 shirok Exp $
+;;; $Id: sxml-tools.scm.in,v 1.1 2005-08-25 04:32:54 shirok Exp $
 ;;;
 
 (define-module sxml.tools
