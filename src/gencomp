@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.16 2005-07-22 09:26:56 shirok Exp $
+;;;  $Id: gencomp,v 1.17 2005-08-25 04:27:34 shirok Exp $
 ;;;
 
 ;;;
@@ -63,6 +63,17 @@
 ;; runtime.
 (define compile-module-name (make-parameter #f))
 
+;; keep the basename sans extension of the compiling file.
+(define compile-file-basename (make-parameter #f))
+
+;; when we're compiling extension module (--ext-module=file), this parameter
+;; keeps a port to the specified file.  the file becomes a module definition
+;; file, containing define-module and dynamic-load forms, as well as the
+;; exported macros.
+;; NB: we insert (dynamic-load ...) just after select-module in the ext-module
+;; file, assuming the source file has standard layout.
+(define ext-module-file (make-parameter #f))
+
 ;; set this true if we want to keep macro definition in the dumped code.
 ;;  (--keep-macro option)  ;; NOT IMPLEMENTED YET
 (define keep-macro-definition (make-parameter #f))
@@ -85,10 +96,15 @@
 (define (main args)
   (let-args (cdr args)
       ((keep-macro "keep-macro" #f)
+       (ext-module "ext-module=s" #f)
        . args)
     (keep-macro-definition keep-macro)
     (match args
-      ((scmfile) (do-it scmfile))
+      ((scmfile)
+       (when ext-module
+         (ext-module-file (open-output-file ext-module)))
+       (do-it scmfile)
+       (when ext-module (close-output-port (ext-module-file))))
       (else (print "Usage: gosh gencomp [--keep-macro] <file.scm>")
             (exit 0)))
     0))
@@ -96,6 +112,8 @@
 (define (do-it scmfile)
   (parameterize ((cgen-current-unit (get-unit scmfile))
                  (compile-module    (make-module #f))
+                 (compile-file-basename (sys-basename
+                                         (path-sans-extension scmfile)))
                  (vm-eval-situation SCM_VM_COMPILING))
     (eval '(define-macro (current-module)
              `(find-module ',(with-module user (compile-module-name))))
@@ -106,6 +124,10 @@
         (emit-toplevel-executor
          (reverse (port-fold compile-toplevel-form '() read)))))
     (cgen-emit-c (cgen-current-unit))))
+
+(define (write-ext-module form)
+  (cond ((ext-module-file)
+         => (lambda (p) (write form p) (newline p)))))
 
 ;;================================================================
 ;; Compiler stuff
@@ -153,9 +175,13 @@
            (raise e)))
     (match form
       (('define-module mod . body)
+       (write-ext-module form)
        (parameterize ((compile-module-name mod))
          (fold compile-toplevel-form seed body)))
       (('select-module mod)
+       (write-ext-module form)
+       (write-ext-module
+        `(dynamic-load ,(compile-file-basename)))
        (let ((sym (cgen-literal mod)))
          (cgen-init
           (format "  mod = Scm_FindModule(SCM_SYMBOL(~a), SCM_FIND_MODULE_CREATE);"
@@ -168,9 +194,15 @@
        (eval `(use ,mod) (compile-module)) seed)
       (('export . syms)
        (eval `(export ,@syms) (compile-module)) seed)
-      (('provide arg) seed)
-      (('define-macro . rest)
-       (eval `(define-macro ,@rest) (compile-module)) seed)
+      (('provide arg)
+       (write-ext-module form)
+       seed)
+      (('define-macro . _)
+       (write-ext-module form)
+       (eval form (compile-module)) seed)
+      (('define-syntax . _)
+       (write-ext-module form)
+       (eval form (compile-module)) seed)
       (('define (name . args) . body)
        (compile-toplevel-form `(define ,name (lambda ,args ,@body)) seed))
       (('define (? symbol? name) ('lambda args . body))
@@ -407,11 +439,10 @@
     :preamble `(,(format "/* Generated automatically from ~a.  DO NOT EDIT */"
                          scmfile))
     :pre-decl '("#define LIBGAUCHE_BODY")
-    :init-prologue (format "void Scm__Init~a() { ScmModule *mod;"
-                           (string-titlecase
-                            (string-tr
-                             (sys-basename (path-sans-extension scmfile))
-                             "-+" "__")))
+    :init-prologue (format "void Scm_Init_~a() { ScmModule *mod;"
+                           (string-tr
+                            (sys-basename (path-sans-extension scmfile))
+                             "-+" "__"))
     ))
 
 ;; Local variables:

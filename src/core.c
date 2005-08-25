@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.66 2005-07-23 08:06:50 shirok Exp $
+ *  $Id: core.c,v 1.67 2005-08-25 04:27:34 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -82,9 +82,9 @@ extern void Scm_Init_syslib(ScmModule *);
 extern void Scm_Init_moplib(ScmModule *);
 extern void Scm_Init_intlib(ScmModule *);
 
-extern void Scm__InitScmlib(void);
-extern void Scm__InitCompile(void);
-extern void Scm__InitObjlib(void);
+extern void Scm_Init_scmlib(void);
+extern void Scm_Init_compile(void);
+extern void Scm_Init_objlib(void);
 
 static void finalizable(void);
 
@@ -145,10 +145,11 @@ void Scm_Init(const char *signature)
     Scm_Init_moplib(Scm_GaucheModule());
     Scm_Init_intlib(Scm_GaucheInternalModule());
 
-    Scm__InitScmlib();
-    Scm__InitCompile();
+    Scm_Init_scmlib();
+    Scm_Init_compile();
+    Scm_Init_objlib();
+
     Scm__InitCompaux();
-    Scm__InitObjlib();
 
     Scm_SelectModule(Scm_GaucheModule());
     Scm__InitAutoloads();
