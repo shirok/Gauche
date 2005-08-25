@@ -8,6 +8,8 @@
 	* src/core.c: changed accordingly.
 	* ext/sxml/*: using the above change, compile sxml.ssax, sxml.sxpath
 	  and sxml.tools into extension modules.
+	* ext/uvector/uvseq.scm : added to compile collection & sequence 
+	  framework stuff into libgauche-uvector.so.
 
 2005-08-23  Shiro Kawai  <shiro@acm.org>
 

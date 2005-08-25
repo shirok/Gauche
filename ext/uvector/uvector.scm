@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: uvector.scm,v 1.7 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: uvector.scm,v 1.8 2005-08-25 06:21:58 shirok Exp $
 ;;;
 
 ;; This module defines the superset of SRFI-4, homogeneous numeric vector
@@ -47,83 +47,4 @@
   )
 (select-module gauche.uvector)
 (dynamic-load "libgauche-uvector")
-
-;; collection protocol implementation
-(define-macro (%define-srfi-4-collection-interface tag)
-  (let* ((tagvector (string->symbol #`",|tag|vector"))
-         (class     (string->symbol #`"<,|tagvector|>"))
-         (meta      (string->symbol #`"<,|tagvector|-meta>"))
-         (len       (string->symbol #`",|tagvector|-length"))
-         (ref       (string->symbol #`",|tagvector|-ref"))
-         (set       (string->symbol #`",|tagvector|-set!"))
-         (copy      (string->symbol #`",|tagvector|-copy"))
-         (->list    (string->symbol #`",|tagvector|->list"))
-         (list->    (string->symbol #`"list->,|tagvector|"))
-         (->vec     (string->symbol #`",|tagvector|->vector"))
-         (vec->     (string->symbol #`"vector->,|tagvector|"))
-         )
-    `(begin
-       (define-method call-with-iterator ((v ,class) proc . opts)
-         (let* ((start (get-keyword :start opts #f))
-                (len   (,len v))
-                (i     (or start 0)))
-           (proc (lambda () (>= i len))
-                 (lambda () (let ((r (,ref v i))) (inc! i) r)))))
-       (define-method call-with-builder ((c ,meta) proc . opts)
-         (let ((size  (get-keyword :start opts #f)))
-           (if size
-               (let ((v (,make size))
-                     (i 0))
-                 (proc (lambda (item) (,set v i item) (inc! i))
-                       (lambda () v)))
-               (let ((q (make-queue)))
-                 (proc (lambda (item) (enqueue! q item))
-                       (lambda () (,list-> (dequeue-all! q)))))
-               )))
-       (define-method referencer ((v ,class)) ,ref)
-       (define-method modifier   ((v ,class)) ,set)
-       (define-method size-of ((v ,class)) (,len v))
-       (define-method coerce-to ((c <list-meta>) (v ,class))
-         (,->list v))
-       (define-method coerce-to ((c ,meta) (v <list>))
-         (,list-> v))
-       (define-method coerce-to ((c <vector-meta>) (v ,class))
-         (,->vec v))
-       (define-method coerce-to ((c ,meta) (v <vector>))
-         (,vec-> v))
-       (define-method coerce-to ((c ,meta) (v ,class))
-         (,copy v))
-       (define-method subseq ((v ,class) . args)
-         (apply ,copy v args))
-       )))
-
-(%define-srfi-4-collection-interface s8)
-(%define-srfi-4-collection-interface u8)
-(%define-srfi-4-collection-interface s16)
-(%define-srfi-4-collection-interface u16)
-(%define-srfi-4-collection-interface s32)
-(%define-srfi-4-collection-interface u32)
-(%define-srfi-4-collection-interface s64)
-(%define-srfi-4-collection-interface u64)
-(%define-srfi-4-collection-interface f32)
-(%define-srfi-4-collection-interface f64)
-
-;; some special cases
-(define-method coerce-to ((dst <string-meta>) (src <u8vector>))
-  (u8vector->string src))
-(define-method coerce-to ((dst <string-meta>) (src <s8vector>))
-  (s8vector->string src))
-(define-method coerce-to ((dst <u8vector-meta>) (src <string>))
-  (string->u8vector src))
-(define-method coerce-to ((dst <s8vector-meta>) (src <string>))
-  (string->s8vector src))
-(define-method coerce-to ((dst <string-meta>) (src <u32vector>))
-  (u32vector->string src))
-(define-method coerce-to ((dst <string-meta>) (src <s32vector>))
-  (s32vector->string src))
-(define-method coerce-to ((dst <u32vector-meta>) (src <string>))
-  (string->u32vector src))
-(define-method coerce-to ((dst <s32vector-meta>) (src <string>))
-  (string->s32vector src))
-
 (provide "gauche/uvector")

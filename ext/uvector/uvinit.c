@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvinit.c,v 1.9 2005-07-22 09:26:55 shirok Exp $
+ *  $Id: uvinit.c,v 1.10 2005-08-25 06:21:58 shirok Exp $
  */
 
 #include <gauche.h>
@@ -72,6 +72,7 @@ static ScmObj read_uvector(ScmPort *port, const char *tag,
  * Initialization
  */
 extern void Scm_Init_uvlib(ScmModule *);
+extern void Scm_Init_uvseq(void);
 SCM_EXTERN ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag,
                                          ScmReadContext *ctx);
  
@@ -95,5 +96,6 @@ void Scm_Init_libgauche_uvector(void)
     Scm_InitStaticClassWithMeta(&Scm_F64VectorClass, "<f64vector>", m, NULL, SCM_NIL, NULL, 0);
 
     Scm_Init_uvlib(m);
+    Scm_Init_uvseq();
     Scm_ReadUvectorHook = read_uvector;
 }
