@@ -1,3 +1,14 @@
+2005-08-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/gencomp: Experimentally added --ext-module option to allow
+	  gencomp to emit a module interface scm file, so that it can be
+	  used to compile extension modules out of Scheme library easily.
+	  This is highly experimental; interface and build process may
+	  likely change.
+	* src/core.c: changed accordingly.
+	* ext/sxml/*: using the above change, compile sxml.ssax, sxml.sxpath
+	  and sxml.tools into extension modules.
+
 2005-08-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen.scm (<cgen-scheme-char-set>): added support for
