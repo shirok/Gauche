@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.100 2005-08-23 10:44:05 shirok Exp $
+ *  $Id: load.c,v 1.101 2005-08-25 03:19:54 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -47,6 +47,9 @@
 #include "gauche/builtin-syms.h"
 
 #define LOAD_SUFFIX ".scm"      /* default load suffix */
+
+/* for tuning.  define this to display load timing info */
+#undef SHOW_LOAD_TIMINGS
 
 /*
  * Load file.
@@ -121,6 +124,15 @@ static ScmObj load_after(ScmObj *args, int nargs, void *data)
 {
     struct load_packet *p = (struct load_packet *)data;
     ScmVM *vm = Scm_VM();
+
+#ifdef SHOW_LOAD_TIMINGS
+    struct timeval t0;
+    gettimeofday(&t0, NULL);
+    fprintf(stdout, "%10u)\n",
+            t0.tv_sec*1000000+t0.tv_usec,
+            Scm_GetStringConst(SCM_STRING(Scm_PortName(p->port))));
+#endif /*SHOW_LOAD_TIMINGS*/
+
     Scm_ClosePort(p->port);
     PORT_UNLOCK(p->port);
     Scm_SelectModule(p->prev_module);
@@ -346,6 +358,15 @@ ScmObj Scm_VMLoad(ScmString *filename, ScmObj load_paths,
     truename = Scm_FindFile(filename, &load_paths, suffixes, flags);
     if (SCM_FALSEP(truename)) return SCM_FALSE;
 
+#ifdef SHOW_LOAD_TIMINGS
+    {
+        struct timeval t0;
+        gettimeofday(&t0, NULL);
+        fprintf(stdout, "(\"%s\" %10u\n",
+                Scm_GetStringConst(SCM_STRING(truename)),
+                t0.tv_sec*1000000+t0.tv_usec);
+    }
+#endif /*SHOW_LOAD_TIMINGS*/
     if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_LOAD_VERBOSE)) {
         int len = Scm_Length(vm->load_history);
         SCM_PUTZ(";;", 2, SCM_CURERR);
