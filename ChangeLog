@@ -1,3 +1,7 @@
+2005-08-26  Shiro Kawai  <shiro@acm.org>
+
+	* gc/configure.in: set LARGE_CONFIG.
+
 2005-08-25  Shiro Kawai  <shiro@acm.org>
 
 	* ext/xlink: removed dependency to the library modules.

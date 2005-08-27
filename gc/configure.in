@@ -22,7 +22,7 @@ AC_INIT(gc,6.5,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.14 $)
+AC_REVISION($Revision: 1.15 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE
 
@@ -410,6 +410,7 @@ AC_DEFINE(GC_GCJ_SUPPORT)
 AC_DEFINE(ATOMIC_UNCOLLECTABLE)
 dnl [SK] this is _required_ to make Gauche work correctly.
 AC_DEFINE(DONT_ADD_BYTE_AT_END)
+AC_DEFINE(LARGE_CONFIG)
 dnl [SK] this may also needed to use sys-fork safely in multithreaded
 dnl Gauche, but this seems to hang on some platforms.  So I don't put
 dnl it in by default.
