@@ -1,5 +1,8 @@
 2005-08-26  Shiro Kawai  <shiro@acm.org>
 
+	* src/Makefile.in: introduced HOSTGOSH macro to be used whenever 
+	  host gosh is required.
+
 	* gc/configure.in: set LARGE_CONFIG.
 
 2005-08-25  Shiro Kawai  <shiro@acm.org>
