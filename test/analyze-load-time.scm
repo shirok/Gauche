@@ -16,9 +16,9 @@
        (match-let1 (file t0 . more) form
          (let* ((t1 (last more))
                 (kids-total (reduce + 0 (map rec (drop-right more 1))))
-                (me (- t1 t0 kids-total)))
-           (push! results (cons me file))
-           me))))
+                (total (- t1 t0)))
+           (push! results (cons (- total kids-total) file))
+           total))))
    read)
   (for-each (lambda (k)
               (format #t "~10d ~s\n" (car k) (cdr k)))
