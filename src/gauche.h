@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.435 2005-08-23 10:44:05 shirok Exp $
+ *  $Id: gauche.h,v 1.436 2005-08-27 05:49:49 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -673,8 +673,9 @@ typedef struct ScmForeignPointerRec {
     void *ptr;
 } ScmForeignPointer;
 
-#define SCM_FOREIGN_POINTER(obj)     ((ScmForeignPointer*)(obj))
-#define SCM_FOREIGN_POINTER_REF(obj) (SCM_FOREIGN_POINTER(obj)->ptr)
+#define SCM_FOREIGN_POINTER(obj)        ((ScmForeignPointer*)(obj))
+#define SCM_FOREIGN_POINTER_REF(type, obj) \
+    ((type)(SCM_FOREIGN_POINTER(obj)->ptr))
 
 typedef void (*ScmForeignCleanupProc)(ScmObj);
 

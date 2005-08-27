@@ -19,7 +19,7 @@ SCM_DECL_BEGIN   // start "C" linkage
 extern ScmClass *MQueueClass;
 
 #define MQUEUE_P(obj)      SCM_XTYPEP(obj, MQueueClass)
-#define MQUEUE_UNBOX(obj)  ((MQueue*)(SCM_FOREIGN_POINTER_REF(obj)))
+#define MQUEUE_UNBOX(obj)  SCM_FOREIGN_POINTER_REF(MQueue*, obj)
 #define MQUEUE_BOX(ptr)    Scm_MakeForeignPointer(MQueueClass, ptr)
 
 extern void Scm_Init_mqueue_cpp();

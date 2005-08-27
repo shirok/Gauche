@@ -39,6 +39,9 @@
 
 2005-08-22  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche.h (SCM_FOREIGN_POINTER_REF): takes type argument for
+	  casting.
+
 	* lib/gauche/logger.scm (log-default-drain): exposed the default
 	  drain as a parameter.
 
