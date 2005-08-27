@@ -4,7 +4,7 @@
 ;; Such links are only of developers' interest; they must be cleaned out
 ;; to create a distribution tarball.
 ;;
-;; $Id: xlink,v 1.8 2005-08-25 10:20:57 shirok Exp $
+;; $Id: xlink,v 1.9 2005-08-27 04:11:00 shirok Exp $
 ;;
 
 ;; NB: this script is called before all the necessary 'wiring' is
@@ -84,7 +84,7 @@
     (unless (equal? up ".")
       (make-directory* up)
       (unless (file-exists? dir)
-        (sys-mkdir (sys-basename dir) #o755)))))
+        (sys-mkdir dir #o755)))))
 
 (define (file-is-symlink? path)
   (eq? (ref (sys-lstat path) 'type) 'symlink))
