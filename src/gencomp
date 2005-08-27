@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.18 2005-08-25 06:13:59 shirok Exp $
+;;;  $Id: gencomp,v 1.19 2005-08-27 10:51:38 shirok Exp $
 ;;;
 
 ;;;
@@ -97,29 +97,29 @@
   (let-args (cdr args)
       ((keep-macro "keep-macro" #f)
        (ext-module "ext-module=s" #f)
+       (output-base "o|output=s" #f)
        . args)
     (keep-macro-definition keep-macro)
     (match args
       ((scmfile)
        (when ext-module
          (ext-module-file (open-output-file ext-module)))
-       (do-it scmfile)
+       (do-it scmfile (or output-base (path-sans-extension scmfile)))
        (when ext-module (close-output-port (ext-module-file))))
       (else (print "Usage: gosh gencomp [--keep-macro] <file.scm>")
             (exit 0)))
     0))
 
-(define (do-it scmfile)
-  (parameterize ((cgen-current-unit (get-unit scmfile))
+(define (do-it src base)
+  (parameterize ((cgen-current-unit (get-unit src base))
                  (compile-module    (make-module #f))
-                 (compile-file-basename (sys-basename
-                                         (path-sans-extension scmfile)))
+                 (compile-file-basename base)
                  (vm-eval-situation SCM_VM_COMPILING))
     (eval '(define-macro (current-module)
              `(find-module ',(with-module user (compile-module-name))))
           (compile-module))
     (cgen-decl "#include <gauche/code.h>")
-    (with-input-from-file scmfile
+    (with-input-from-file src
       (lambda ()
         (emit-toplevel-executor
          (reverse (port-fold compile-toplevel-form '() read)))))
@@ -449,16 +449,14 @@
 ;; Utilities
 ;;
 
-(define (get-unit scmfile)
+(define (get-unit src base)
   (make <cgen-unit>
-    :name (path-sans-extension scmfile)
+    :name base
     :preamble `(,(format "/* Generated automatically from ~a.  DO NOT EDIT */"
-                         scmfile))
+                         src))
     :pre-decl '("#define LIBGAUCHE_BODY")
     :init-prologue (format "void Scm_Init_~a() { ScmModule *mod;"
-                           (string-tr
-                            (sys-basename (path-sans-extension scmfile))
-                             "-+" "__"))
+                           (string-tr (sys-basename base) "-+" "__"))
     ))
 
 ;; Local variables:

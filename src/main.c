@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.83 2005-08-20 05:09:45 shirok Exp $
+ *  $Id: main.c,v 1.84 2005-08-27 10:51:26 shirok Exp $
  */
 
 #include <unistd.h>
@@ -280,14 +280,10 @@ int main(int argc, char **argv)
        loading init file.   This is to help development of Gauche
        itself; normal user should never need this. */
     if (test_mode) {
-        if (access("../lib", R_OK) == 0
-            && access("../lib/srfi-0.scm", R_OK) == 0) {
-            Scm_AddLoadPath("../lib", FALSE);
-        }
-        if (access("../../lib", R_OK) == 0
-            && access("../../lib/srfi-0.scm", R_OK) == 0) {
-            Scm_AddLoadPath("../../lib", FALSE);
-        }
+        /* The order of 'src' and 'lib' is important.  'lib' should
+           be searched first (hence it should come latter), since some
+           extension modules are built from the file in src then linked
+           from lib, and we want to test the one in lib. */
         if (access("../src", R_OK) == 0
             && access("../src/stdlib.stub", R_OK) == 0) {
             Scm_AddLoadPath("../src", FALSE);
@@ -295,6 +291,14 @@ int main(int argc, char **argv)
         if (access("../../src", R_OK) == 0
             && access("../../src/stdlib.stub", R_OK) == 0) {
             Scm_AddLoadPath("../../src", FALSE);
+        }
+        if (access("../lib", R_OK) == 0
+            && access("../lib/srfi-0.scm", R_OK) == 0) {
+            Scm_AddLoadPath("../lib", FALSE);
+        }
+        if (access("../../lib", R_OK) == 0
+            && access("../../lib/srfi-0.scm", R_OK) == 0) {
+            Scm_AddLoadPath("../../lib", FALSE);
         }
     }
 

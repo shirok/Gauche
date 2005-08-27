@@ -1,3 +1,10 @@
+2005-08-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c (main): reversed search priority of 'lib' and 'src'
+	  when -ftest option is given.  See the comment for the details.
+	* src/gencomp: added -o option to specify the output .c name
+	  (experimental).
+
 2005-08-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/Makefile.in: introduced HOSTGOSH macro to be used whenever 
