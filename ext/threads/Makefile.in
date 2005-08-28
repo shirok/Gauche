@@ -11,7 +11,8 @@ SCMFILES = threads.scm
 
 OBJECTS = threads_head.$(OBJEXT) threads.$(OBJEXT) mutex.$(OBJEXT) thrlib.$(OBJEXT) threads_tail.$(OBJEXT)
 
-GENERATED = Makefile thrlib.c threads_head.c threads_tail.c
+GENERATED = Makefile 
+XCLEANFILES = thrlib.c threads_head.c threads_tail.c
 
 all : $(LIBFILES)
 

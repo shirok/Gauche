@@ -9,16 +9,17 @@ include ../Makefile.ext
 LIBFILES = file-util-lib.$(SOEXT)
 SCMFILES = file/util.scm
 
-GENERATED = Makefile *.c file/util.scm
+GENERATED = Makefile
+XCLEANFILES = *.c file/util.scm
 
-srfi_1_OBJECTS = file-util_head.$(OBJEXT) \
-                 file-util-lib.$(OBJEXT)  \
-                 file-util_tail.$(OBJEXT)
+file-util_OBJECTS = file-util_head.$(OBJEXT) \
+                    file-util-lib.$(OBJEXT)  \
+                    file-util_tail.$(OBJEXT)
 
 all : $(LIBFILES)
 
-file-util-lib.$(SOEXT) : $(srfi_1_OBJECTS) 
-	$(MODLINK) file-util-lib.$(SOEXT) $(srfi_1_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+file-util-lib.$(SOEXT) : $(file-util_OBJECTS) 
+	$(MODLINK) file-util-lib.$(SOEXT) $(file-util_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 file-util_head.c file-util_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension file-util

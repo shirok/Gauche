@@ -1,6 +1,6 @@
 @SET_MAKE@
 SUBDIRS= srfi auxsys threads uvector charconv binary net termios \
-         fcntl file sxml syslog dbm mt-random digest vport
+         fcntl file util sxml syslog dbm mt-random digest vport
 
 CONFIG_GENERATED = Makefile Makefile.ext
 

@@ -13,7 +13,8 @@ SCMFILES = srfi-1.scm  \
            srfi-13.scm \
            srfi-19.scm
 
-GENERATED = Makefile *.c srfi-1.scm srfi-13.scm srfi-19.scm
+GENERATED = Makefile 
+XCLEANFILES = *.c srfi-1.scm srfi-13.scm srfi-19.scm
 
 all : $(LIBFILES)
 

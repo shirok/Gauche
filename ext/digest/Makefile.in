@@ -9,7 +9,8 @@ SCM_CATEGORY = rfc
 LIBFILES = md5.$(SOEXT) sha1.$(SOEXT)
 SCMFILES = md5.scm sha1.scm
 
-GENERATED = Makefile md5.c sha1.c *_head.c *_tail.c
+GENERATED = Makefile
+XCLEANFILES = md5.c sha1.c *_head.c *_tail.c
 
 EXTRA_INCLUDES = -I$(srcdir)/../uvector
 

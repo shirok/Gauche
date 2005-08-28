@@ -9,7 +9,8 @@ include ../Makefile.ext
 LIBFILES = auxsys.$(SOEXT)
 SCMFILES = auxsys.scm
 
-GENERATED = Makefile auxsysconf.h auxsyslib.c auxsys_head.c auxsys_tail.c
+GENERATED = Makefile auxsysconf.h
+XCLEANFILES = auxsyslib.c auxsys_head.c auxsys_tail.c
 
 OBJECTS = auxsys_head.$(OBJEXT) auxsys.$(OBJEXT) auxsyslib.$(OBJEXT) auxsys_tail.$(OBJEXT)
 

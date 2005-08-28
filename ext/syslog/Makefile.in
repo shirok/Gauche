@@ -11,7 +11,8 @@ SCMFILES = syslog.scm
 
 OBJECTS = syslog_head.$(OBJEXT) syslog.$(OBJEXT) syslog_tail.$(OBJEXT)
 
-GENERATED = Makefile syslog.c syslog_head.c syslog_tail.c
+GENERATED = Makefile
+XCLEANFILES = syslog.c syslog_head.c syslog_tail.c
 
 all : $(LIBFILES)
 

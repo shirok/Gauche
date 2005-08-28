@@ -10,8 +10,9 @@ LIBFILES = libgauche-uvector.$(SOEXT)
 SCMFILES = array.scm uvector.scm matrix.scm
 HDRFILES = gauche/uvector.h
 
-GENERATED = Makefile uvlib.c uvlib.stub uvector.c uvseq.c \
-	    gauche/uvector.h uvector_head.c uvector_tail.c
+GENERATED = Makefile
+XCLEANFILES =  uvlib.c uvlib.stub uvector.c uvseq.c \
+	       gauche/uvector.h uvector_head.c uvector_tail.c
 
 all : $(LIBFILES)
 

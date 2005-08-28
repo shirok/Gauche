@@ -9,7 +9,8 @@ SCM_CATEGORY = dbm
 LIBFILES = @DBM_ARCHFILES@
 SCMFILES = @DBM_SCMFILES@
 
-GENERATED = Makefile gdbm.c ndbm.c odbm.c *_head.c *_tail.c dbmconf.h
+GENERATED = Makefile dbmconf.h
+XCLEANFILES = gdbm.c ndbm.c odbm.c *_head.c *_tail.c
 
 all : $(LIBFILES)
 

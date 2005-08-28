@@ -5,7 +5,7 @@
 ;;   Modified to work with Gauche's object system instead of the original
 ;;   structure model.
 ;;
-;; $Id: match.scm,v 1.5 2004-08-23 12:13:01 shirok Exp $
+;; $Id: match.scm,v 1.1 2005-08-28 23:04:25 shirok Exp $
 
 (define-module util.match
   (use srfi-1)

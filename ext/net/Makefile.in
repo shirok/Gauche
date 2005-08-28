@@ -12,7 +12,8 @@ HDRFILES = gauche/net.h
 
 OBJECTS = net_head.$(OBJEXT) net.$(OBJEXT) addr.$(OBJEXT) netdb.$(OBJEXT) netlib.$(OBJEXT) net_tail.$(OBJEXT)
 
-GENERATED = Makefile netlib.c net_head.c net_tail.c
+GENERATED = Makefile 
+XCLEANFILES = netlib.c net_head.c net_tail.c
 
 all : $(LIBFILES)
 

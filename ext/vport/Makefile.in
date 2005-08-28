@@ -11,7 +11,8 @@ SCMFILES = vport.scm
 
 OBJECTS = vport_head.$(OBJEXT) vport.$(OBJEXT) vportlib.$(OBJEXT) vport_tail.$(OBJEXT)
 
-GENERATED = Makefile vportlib.c vport_head.c vport_tail.c
+GENERATED = Makefile
+XCLEANFILES = vportlib.c vport_head.c vport_tail.c
 
 EXTRA_INCLUDES = -I$(srcdir)/../uvector
 

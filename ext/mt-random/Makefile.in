@@ -11,7 +11,8 @@ SCMFILES = mt-random.scm
 
 OBJECTS = mt-random_head.$(OBJEXT) mt-random.$(OBJEXT) mt-lib.$(OBJEXT) mt-random_tail.$(OBJEXT)
 
-GENERATED = Makefile mt-lib.c mt-random_head.c mt-random_tail.c
+GENERATED = Makefile
+XCLEANFILES = mt-lib.c mt-random_head.c mt-random_tail.c
 
 EXTRA_INCLUDES = -I$(srcdir)/../uvector
 

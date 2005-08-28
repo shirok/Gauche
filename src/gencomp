@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.21 2005-08-28 20:30:58 shirok Exp $
+;;;  $Id: gencomp,v 1.22 2005-08-28 23:04:25 shirok Exp $
 ;;;
 
 ;;;
@@ -183,6 +183,7 @@
            (format (current-error-port) "Error in compiling ~s\n" form)
            (raise e)))
     (match form
+      ;; Module related stuff
       (('define-module mod . body)
        (write-ext-module form)
        (parameterize ((compile-module-name mod))
@@ -211,10 +212,20 @@
       (('provide arg)
        (write-ext-module form)
        seed)
-      (('define-macro (name . arg) . _)
+      ;; For the time being, we only compile the legacy macros into C file.
+      ;; R5RS macros are put in ext-module file as is.
+      (('define-macro (name . formals) . body)
+       (eval form (compile-module))
        (when (symbol-exported? name)
-         (write-ext-module form))
-       (eval form (compile-module)) seed)
+         (let* ((body-closure (compile-toplevel-lambda form name formals
+                                                       body (compile-module)))
+                (code (cgen-literal (closure-code body-closure)))
+                (var  (cgen-literal name)))
+           (cgen-init
+            (format "  Scm_Define(mod, SCM_SYMBOL(~a), Scm_MakeMacroTransformerOld(SCM_SYMBOL(~a), Scm_MakeClosure(~a, NULL)));"
+                    (cgen-cexpr var) (cgen-cexpr var)
+                    (cgen-cexpr code)))))
+       seed)
       (('define-macro name . _)
        (when (symbol-exported? name)
          (write-ext-module form))
@@ -223,6 +234,7 @@
        (when (symbol-exported? name)
          (write-ext-module form))
        (eval form (compile-module)) seed)
+      ;; Finally, ordinary expressions.
       (('define (name . args) . body)
        (compile-toplevel-form `(define ,name (lambda ,args ,@body)) seed))
       (('define (? symbol? name) ('lambda args . body))

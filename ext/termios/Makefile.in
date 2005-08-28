@@ -11,7 +11,8 @@ SCMFILES = termios.scm
 
 OBJECTS = termios_head.$(OBJEXT) termios.$(OBJEXT) termiolib.$(OBJEXT) termios_tail.$(OBJEXT)
 
-GENERATED = Makefile termiolib.c termios_head.c termios_tail.c
+GENERATED = Makefile
+XCLEANFILES =  termiolib.c termios_head.c termios_tail.c
 
 EXTRA_INCLUDES = -I$(srcdir)/../uvector
 

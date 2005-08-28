@@ -13,8 +13,9 @@ GENERATED_FILES = sxml-ssax.c sxml-ssax.scm \
                   sxml-sxpath.c sxml-sxpath.scm \
                   sxml-tools.c sxml-tools.scm
 GENERATED_TEST = ssax-test.scm tree-trans-test.scm to-html-test.scm
-XCLEANFILES = $(GENERATED_TARGET) $(GENERATED_TEST) $(GENERATED_FILES)
-GENERATED = Makefile *_head.c *_tail.c
+XCLEANFILES = $(GENERATED_TARGET) $(GENERATED_TEST) $(GENERATED_FILES) \
+              *_head.c *_tail.c
+GENERATED = Makefile
 
 LIBFILES = sxml-ssax.$(SOEXT) sxml-sxpath.$(SOEXT) sxml-tools.$(SOEXT)
 SCMFILES = sxml/adaptor.scm sxml/ssax.scm sxml/sxpath.scm sxml/tools.scm \
