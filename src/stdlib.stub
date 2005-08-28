@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.113 2005-08-07 23:42:23 shirok Exp $
+;;; $Id: stdlib.stub,v 1.114 2005-08-28 12:59:17 shirok Exp $
 ;;;
 
 
@@ -339,13 +339,18 @@
 
 (define-cproc list (&rest args)
   (inliner LIST)
-  "  SCM_RETURN(args);")
+  (expr "args"))
 
 (define-cproc length (list)
   (inliner LENGTH)
-  "  int i = Scm_Length(list);
-  if (i < 0) Scm_Error(\"bad list: %S\", list);
-  SCM_RETURN(Scm_MakeInteger(i));")
+  (body <long>
+        "SCM_RESULT = Scm_Length(list);"
+        "if (SCM_RESULT < 0) Scm_Error(\"bad list: %S\", list);"))
+
+(define-cproc length+ (list) ;; srfi-1
+  (body "int i = Scm_Length(list);"
+        "if (i<0) SCM_RESULT = SCM_FALSE;"
+        "else SCM_RESULT = Scm_MakeInteger(i);"))
 
 (define-cproc append (&rest lists)
   (inliner APPEND)

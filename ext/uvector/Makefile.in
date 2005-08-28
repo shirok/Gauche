@@ -31,19 +31,19 @@ uvector_head.c uvector_tail.c :
 gauche/uvector.h : uvector.h.tmpl uvgen.scm
 	if test ! -d gauche; then mkdir gauche; fi
 	rm -rf gauche/uvector.h
-	$(GOSH) -ftest ./uvgen.scm uvector.h.tmpl && mv uvector.h gauche/uvector.h
+	$(GOSH) ./uvgen.scm uvector.h.tmpl && mv uvector.h gauche/uvector.h
 
 uvector.$(OBJEXT) uvlib.$(OBJEXT) uvinit.$(OBJEXT) : gauche/uvector.h uvectorP.h
 
 uvector.c : uvector.c.tmpl uvgen.scm
 	rm -rf uvector.c
-	$(GOSH) -ftest ./uvgen.scm uvector.c.tmpl
+	$(GOSH) ./uvgen.scm uvector.c.tmpl
 
 uvlib.c : uvlib.stub
 
 uvlib.stub : uvlib.stub.tmpl
 	rm -rf uvlib.stub
-	$(GOSH) -ftest ./uvgen.scm uvlib.stub.tmpl
+	$(GOSH) ./uvgen.scm uvlib.stub.tmpl
 
 uvseq.c : uvseq.scm
 	$(GOSH) gencomp uvseq.scm

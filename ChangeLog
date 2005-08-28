@@ -1,3 +1,15 @@
+2005-08-28  Shiro Kawai  <shiro@acm.org>
+
+	* Reorganized to compile some Scheme libraries as extension modules.
+	* libsrc/* : library sources that are compiled as extension modules,
+	  _and_ required during compilation, are moved here from lib.
+	* src/main.c : when -ftest flag is given, add ../libsrc to the 
+	  search path as well.
+	* lib/gauche/cgen.scm : added regexp literal support.
+	* src/stdlib.stub : added regexp-case-fold?
+	* lib/gauche/procedure.scm: partial evaluated versions of srfi-1
+	  procedures are moved here.
+
 2005-08-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c (main): reversed search priority of 'lib' and 'src'

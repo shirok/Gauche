@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.252 2005-08-13 06:51:52 shirok Exp $
+;;; $Id: extlib.stub,v 1.253 2005-08-28 12:59:17 shirok Exp $
 ;;;
 
 "
@@ -562,14 +562,16 @@
 (define-cproc regmatch? (obj)  (call <boolean> "SCM_REGMATCHP"))
 
 (define-cproc string->regexp (str::<string> &keyword (case-fold #f))
-  "int flags = SCM_BOOL_VALUE(case_fold)? SCM_REGEXP_CASE_FOLD : 0;
-  SCM_RETURN(Scm_RegComp(str, flags));")
+  (body "int flags = SCM_BOOL_VALUE(case_fold)? SCM_REGEXP_CASE_FOLD : 0;"
+        "SCM_RESULT = Scm_RegComp(str, flags);"))
 (define-cproc regexp->string (regexp::<regexp>)
-  "SCM_RETURN(regexp->pattern?SCM_OBJ(regexp->pattern):SCM_FALSE);")
+  (expr "regexp->pattern?SCM_OBJ(regexp->pattern):SCM_FALSE"))
+(define-cproc regexp-case-fold? (regexp::<regexp>)
+  (expr <boolean> "regexp->flags&SCM_REGEXP_CASE_FOLD"))
 
 (define-cproc regexp-parse (str::<string> &keyword (case-fold #f))
-  "int flags = SCM_BOOL_VALUE(case_fold)? SCM_REGEXP_CASE_FOLD : 0;
-  SCM_RETURN(Scm_RegComp(str, flags|SCM_REGEXP_PARSE_ONLY));")
+  (body "int flags = SCM_BOOL_VALUE(case_fold)? SCM_REGEXP_CASE_FOLD : 0;"
+        "SCM_RESULT = Scm_RegComp(str, flags|SCM_REGEXP_PARSE_ONLY);"))
 (define-cproc regexp-compile (ast)
   (call "Scm_RegCompFromAST"))
 (define-cproc regexp-optimize (ast)

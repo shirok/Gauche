@@ -1,0 +1,30 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SCM_CATEGORY =
+
+include ../Makefile.ext
+
+LIBFILES = file-util-lib.$(SOEXT)
+SCMFILES = file/util.scm
+
+GENERATED = Makefile *.c file/util.scm
+
+srfi_1_OBJECTS = file-util_head.$(OBJEXT) \
+                 file-util-lib.$(OBJEXT)  \
+                 file-util_tail.$(OBJEXT)
+
+all : $(LIBFILES)
+
+file-util-lib.$(SOEXT) : $(srfi_1_OBJECTS) 
+	$(MODLINK) file-util-lib.$(SOEXT) $(srfi_1_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+file-util_head.c file-util_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension file-util
+
+file-util-lib.c : $(top_srcdir)/libsrc/file/util.scm
+	$(GOSH) gencomp --ext-module file/util.scm -o file-util-lib $(top_srcdir)/libsrc/file/util.scm
+
+install : install-std
+

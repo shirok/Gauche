@@ -1,0 +1,72 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SCM_CATEGORY = 
+
+include ../Makefile.ext
+
+LIBFILES = srfi-1-lib.$(SOEXT)  \
+           srfi-13-lib.$(SOEXT) \
+           srfi-19-lib.$(SOEXT)
+SCMFILES = srfi-1.scm  \
+           srfi-13.scm \
+           srfi-19.scm
+
+GENERATED = Makefile *.c srfi-1.scm srfi-13.scm srfi-19.scm
+
+all : $(LIBFILES)
+
+install : install-std
+
+#
+# srfi-1
+#
+
+srfi_1_OBJECTS = srfi-1_head.$(OBJEXT) \
+                 srfi-1-lib.$(OBJEXT)  \
+                 srfi-1_tail.$(OBJEXT)
+
+srfi-1-lib.$(SOEXT) : $(srfi_1_OBJECTS) 
+	$(MODLINK) srfi-1-lib.$(SOEXT) $(srfi_1_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+srfi-1_head.c srfi-1_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension srfi-1
+
+srfi-1-lib.c : $(top_srcdir)/libsrc/srfi-1.scm
+	$(GOSH) gencomp --ext-module srfi-1.scm -o srfi-1-lib $(top_srcdir)/libsrc/srfi-1.scm
+
+#
+# srfi-13
+#
+
+srfi_13_OBJECTS = srfi-13_head.$(OBJEXT) \
+                 srfi-13-lib.$(OBJEXT)  \
+                 srfi-13_tail.$(OBJEXT)
+
+srfi-13-lib.$(SOEXT) : $(srfi_13_OBJECTS) 
+	$(MODLINK) srfi-13-lib.$(SOEXT) $(srfi_13_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+srfi-13_head.c srfi-13_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension srfi-13
+
+srfi-13-lib.c : $(top_srcdir)/libsrc/srfi-13.scm
+	$(GOSH) gencomp --ext-module srfi-13.scm -o srfi-13-lib $(top_srcdir)/libsrc/srfi-13.scm
+
+#
+# srfi-19
+#
+
+srfi_19_OBJECTS = srfi-19_head.$(OBJEXT) \
+                  srfi-19-lib.$(OBJEXT)  \
+                  srfi-19_tail.$(OBJEXT)
+
+srfi-19-lib.$(SOEXT) : $(srfi_19_OBJECTS) 
+	$(MODLINK) srfi-19-lib.$(SOEXT) $(srfi_19_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+srfi-19_head.c srfi-19_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension srfi-19
+
+srfi-19-lib.c : srfi-19-lib.scm
+	$(GOSH) gencomp --ext-module srfi-19.scm $(srcdir)/srfi-19-lib.scm
+

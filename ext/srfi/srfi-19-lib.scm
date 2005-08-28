@@ -24,7 +24,7 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19-lib.scm,v 1.1 2005-08-25 08:48:26 shirok Exp $
+;;; $Id: srfi-19-lib.scm,v 1.1 2005-08-28 12:59:17 shirok Exp $
 
 (define-module srfi-19
   (use srfi-1)
@@ -1217,5 +1217,36 @@
         (errorf "string->date: incomplete date read: ~s for ~s"
                 newdate template-string))))
 
+;; A table of leap seconds
+;; See ftp://maia.usno.navy.mil/ser7/tai-utc.dat
+;; and update as necessary.
+;; this procedures reads the file in the abover
+;; format and creates the leap second table
+;; it also calls the almost standard, but not R5 procedures read-line 
+;; & open-input-string
+;; ie (set! tm:leap-second-table (tm:read-tai-utc-date "tai-utc.dat"))
+
+(define (tm:read-tai-utc-data filename)
+  (define (convert-jd jd)
+    (* (- (inexact->exact jd) tm:tai-epoch-in-jd) tm:sid))
+  (define (convert-sec sec)
+    (inexact->exact sec))
+  (let ( (port (open-input-file filename))
+	 (table '()) )
+    (let loop ((line (read-line port)))
+      (if (not (eq? line eof))
+	  (begin
+	    (let* ( (data (read (open-input-string (string-append "(" line ")")))) 
+		    (year (car data))
+		    (jd   (cadddr (cdr data)))
+		    (secs (cadddr (cdddr data))) )
+	      (if (>= year 1972)
+		  (set! table (cons (cons (convert-jd jd) (convert-sec secs)) table)))
+	      (loop (read-line port))))))
+    table))
+
+(define (read-leap-second-table filename)
+  (set! tm:leap-second-table (tm:read-tai-utc-data filename))
+  (values))
 
 (provide "srfi-19")

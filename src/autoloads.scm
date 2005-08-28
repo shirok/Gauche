@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.26 2005-07-02 13:23:13 shirok Exp $
+;;; $Id: autoloads.scm,v 1.27 2005-08-28 12:59:17 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.26 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.27 $.  DO NOT EDIT */"
    :pre-decl '("#define LIBGAUCHE_BODY")
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
@@ -112,6 +112,8 @@
           (:macro push!) (:macro pop!) (:macro inc!) (:macro dec!)
           (:macro update!)
           (:macro check-arg) (:macro get-keyword*)
+          (:macro let-optionals*) (:macro let-keywords*)
+          (:macro get-optional)
           (:macro let1) (:macro let/cc) (:macro begin0) (:macro fluid-let)
           (:macro values-ref)
           (:macro dotimes) (:macro dolist) (:macro while) (:macro until)
@@ -126,8 +128,6 @@
 
 (autoload gauche.procedure
           compose pa$ map$ for-each$ apply$ any-pred every-pred
-          (:macro let-optionals*) (:macro let-keywords*)
-          (:macro get-optional)
           arity procedure-arity-includes?
           <arity-at-least> arity-at-least? arity-at-least-value disasm
           (:macro case-lambda))

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: parseopt.scm,v 1.8 2004-10-17 10:22:26 shirok Exp $
+;;;  $Id: parseopt.scm,v 1.9 2005-08-28 12:59:17 shirok Exp $
 ;;;
 
 (define-module gauche.parseopt
@@ -59,7 +59,9 @@
 ;; ((<optspec> <help-string>) <handler)
 (define (compose-entry a-spec)
   (let ((optspec (if (pair? (car a-spec)) (caar a-spec) (car a-spec)))
-        (helpstr (and (>= (length+ (car a-spec)) 2) (cadar a-spec)))
+        (helpstr (and-let* ((l (length+ (car a-spec)))
+                            ( (>= l 2 ) ))
+                   (cadar a-spec)))
         (handler (cadr a-spec)))
     (unless (string? optspec)
       (error "option spec must be a string, but got" optspec))

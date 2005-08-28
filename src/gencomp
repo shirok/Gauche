@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.19 2005-08-27 10:51:38 shirok Exp $
+;;;  $Id: gencomp,v 1.20 2005-08-28 12:59:17 shirok Exp $
 ;;;
 
 ;;;
@@ -103,7 +103,7 @@
     (match args
       ((scmfile)
        (when ext-module
-         (ext-module-file (open-output-file ext-module)))
+         (ext-module-file (ensure-ext-module-file ext-module)))
        (do-it scmfile (or output-base (path-sans-extension scmfile)))
        (when ext-module (close-output-port (ext-module-file))))
       (else (print "Usage: gosh gencomp [--keep-macro] <file.scm>")
@@ -124,6 +124,12 @@
         (emit-toplevel-executor
          (reverse (port-fold compile-toplevel-form '() read)))))
     (cgen-emit-c (cgen-current-unit))))
+
+(define (ensure-ext-module-file filename)
+  (let1 dir (sys-dirname filename)
+    (unless (file-exists? dir)
+      (make-directory* dir))
+    (open-output-file filename)))
 
 (define (write-ext-module form)
   (cond ((ext-module-file)

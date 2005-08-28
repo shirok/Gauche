@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: procedure.scm,v 1.13 2005-05-26 09:57:49 shirok Exp $
+;;;  $Id: procedure.scm,v 1.14 2005-08-28 12:59:17 shirok Exp $
 ;;;
 
 (define-module gauche.procedure
@@ -66,6 +66,28 @@
 (define (for-each$ proc) (pa$ for-each proc))
 (define (apply$ proc)    (pa$ apply proc))
 
+;; partial evaluation version of srfi-1 procedures
+(define (count$ pred) (pa$ count pred))
+(define (fold$ kons . maybe-knil)
+  (lambda lists (apply fold kons (append maybe-knil lists))))
+(define (fold-right$ kons . maybe-knil)
+  (lambda lists (apply fold-right kons (append maybe-knil lists))))
+(define (reduce$ f . maybe-ridentity)
+  (lambda args (apply reduce f (append maybe-ridentity args))))
+(define (reduce-right$ f . maybe-ridentity)
+  (lambda args (apply reduce-right f (append maybe-ridentity args))))
+(define (filter$ pred) (pa$ filter pred))
+(define (partition$ pred) (pa$ partition pred))
+(define (remove$ pred) (pa$ remove pred))
+(define (find$ pred) (pa$ find pred))
+(define (find-tail$ pred) (pa$ find-tail pred))
+(define (any$ pred) (pa$ any pred))
+(define (every$ pred) (pa$ every pred))
+(define (delete$ x) (pa$ delete x))
+(define (member$ x) (pa$ member x))
+(define (assoc$ x) (pa$ assoc x))
+
+
 (define (any-pred . preds)
   (lambda args
     (let loop ((preds preds))
@@ -83,75 +105,6 @@
                 ((apply (car preds) args)
                  (loop (cdr preds)))
                 (else #f))))))
-
-;; Macros for optional arguments ---------------------------
-
-(define-syntax get-optional
-  (syntax-rules ()
-    ((_ args default)
-     (let ((a args))
-       (if (pair? a) (car a) default)))
-    ((_ . other)
-     (syntax-error "badly formed get-optional" (get-optional . other)))
-    ))
-
-(define-syntax let-optionals*
-  (syntax-rules ()
-    ((_ "binds" arg binds () body) (let* binds . body))
-    ((_ "binds" arg (binds ...) ((var default) . more) body)
-     (let-optionals* "binds"
-         (if (null? tmp) tmp (cdr tmp))
-       (binds ...
-              (tmp arg)
-              (var (if (null? tmp) default (car tmp))))
-       more
-       body))
-    ((_ "binds" arg (binds ...) (var . more) body)
-     (let-optionals* "binds"
-         (if (null? tmp) tmp (cdr tmp))
-       (binds ...
-              (tmp arg)
-              (var (if (null? tmp) (undefined) (car tmp))))
-       more
-       body))
-    ((_ "binds" arg (binds ...) var body)
-     (let-optionals* "binds"
-         arg
-       (binds ... (var arg))
-       ()
-       body))
-    ((_ arg vars . body)
-     (let-optionals* "binds" arg () vars body))
-    ((_ . other)
-     (syntax-error "badly formed let-optionals*" (let-optionals* . other)))
-    ))
-
-;; We want to generate corresponding keyword for each variable
-;; beforehand, so I use a traditional macro as a wrapper.
-
-(define-macro (let-keywords* arg vars . body)
-  (let* ((tmp (gensym))
-         (triplets
-          (map (lambda (var&default)
-                 (or (and-let* (((list? var&default))
-                                (var (unwrap-syntax (car var&default)))
-                                ((symbol? var)))
-                       (case (length var&default)
-                         ((2) `(,(car var&default)
-                                ,(make-keyword var)
-                                ,(cadr var&default)))
-                         ((3) `(,(car var&default)
-                                ,(unwrap-syntax (cadr var&default))
-                                ,(caddr var&default)))
-                         (else #f)))
-                     (error "bad binding form in let-keywords*" var&default)))
-               vars)))
-    `(let* ((,tmp ,arg)
-            ,@(map (lambda (binds)
-                     `(,(car binds)
-                       (get-keyword* ,(cadr binds) ,tmp ,(caddr binds))))
-                   triplets))
-       ,@body)))
 
 ;; Procedure arity -----------------------------------------
 
