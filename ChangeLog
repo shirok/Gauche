@@ -1,5 +1,7 @@
 2005-08-28  Shiro Kawai  <shiro@acm.org>
 
+	* src/gencomp: improved macro handling
+
 	* Reorganized to compile some Scheme libraries as extension modules.
 	* libsrc/* : library sources that are compiled as extension modules,
 	  _and_ required during compilation, are moved here from lib.

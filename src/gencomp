@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.20 2005-08-28 12:59:17 shirok Exp $
+;;;  $Id: gencomp,v 1.21 2005-08-28 20:30:58 shirok Exp $
 ;;;
 
 ;;;
@@ -65,6 +65,9 @@
 
 ;; keep the basename sans extension of the compiling file.
 (define compile-file-basename (make-parameter #f))
+
+;; keep the list of exported bindings (or #t if export-all)
+(define compile-module-exports (make-parameter '()))
 
 ;; when we're compiling extension module (--ext-module=file), this parameter
 ;; keeps a port to the specified file.  the file becomes a module definition
@@ -199,15 +202,26 @@
       (('use mod)
        (eval `(use ,mod) (compile-module)) seed)
       (('export . syms)
+       (when (list? (compile-module-exports))
+         (compile-module-exports
+          (lset-union eq? syms (compile-module-exports))))
        (eval `(export ,@syms) (compile-module)) seed)
+      (('export-all)
+       (compile-module-exports #t))
       (('provide arg)
        (write-ext-module form)
        seed)
-      (('define-macro . _)
-       (write-ext-module form)
+      (('define-macro (name . arg) . _)
+       (when (symbol-exported? name)
+         (write-ext-module form))
        (eval form (compile-module)) seed)
-      (('define-syntax . _)
-       (write-ext-module form)
+      (('define-macro name . _)
+       (when (symbol-exported? name)
+         (write-ext-module form))
+       (eval form (compile-module)) seed)
+      (('define-syntax name . _)
+       (when (symbol-exported? name)
+         (write-ext-module form))
        (eval form (compile-module)) seed)
       (('define (name . args) . body)
        (compile-toplevel-form `(define ,name (lambda ,args ,@body)) seed))
@@ -241,7 +255,6 @@
          (null? (cdr code))
          (eq? (caar code) 'CONSTU-RET))))
 
-
 ;; given list of toplevel compiled codes, generate code in init
 ;; that calls them.  This is assumed to be the last procedure before
 ;; calling cgen-emit.
@@ -253,6 +266,11 @@
 
   (cgen-init (format "  Scm_VMExecuteToplevels(toplevels);"))
   )
+
+;; check to see if the symbol is exported
+(define (symbol-exported? sym)
+  (or (eq? (compile-module-exports) #t)
+      (memq sym (compile-module-exports))))
 
 ;;================================================================
 ;; Compiler-specific literal handling definitions
