@@ -700,9 +700,9 @@
          (acc obj)))
 
 ;;-----------------------------------------------
-(test-section "util.relations")
-(use util.relations)
-(test-module 'util.relations)
+(test-section "util.relation")
+(use util.relation)
+(test-module 'util.relation)
 
 ;;-----------------------------------------------
 (test-section "util.stream")

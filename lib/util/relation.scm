@@ -1,5 +1,5 @@
 ;;;
-;;; relations.scm - relational operaions
+;;; relation.scm - relational operations
 ;;;
 ;;;  Copyright(C) 2005 by Shiro Kawai (shiro@acm.org)
 ;;;
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: relations.scm,v 1.4 2005-07-15 10:18:21 shirok Exp $
+;;;  $Id: relation.scm,v 1.1 2005-08-29 10:57:31 shirok Exp $
 ;;;
 
 ;;; Given set of values S1, S2, ..., Sn, a relation R is a set of tuples
@@ -66,7 +66,7 @@
 ;;;  - Codd's relational operations
 ;;;  - A relation that wraps existing relations, adding index operation.
 
-(define-module util.relations
+(define-module util.relation
   (use gauche.sequence)
   (use srfi-1)
   (use util.list)
@@ -80,7 +80,7 @@
           relation-deletable? relation-delete!
           relation-fold
           ))
-(select-module util.relations)
+(select-module util.relation)
 
 ;; An abstract base class of <relation>.
 (define-class <relation> (<collection>) ())
@@ -266,6 +266,6 @@
 (define-method relation-delete! ((r <object-set-relation>) row)
   (update! (ref r 'rows) (cut delete! row <> equal?)))
 
-(provide "util/relations")
+(provide "util/relation")
 
 
