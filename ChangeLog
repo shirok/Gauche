@@ -1,5 +1,7 @@
 2005-08-29  Shiro Kawai  <shiro@acm.org>
 
+	* lib/dbi.scm (dbi-escape-sql): changed not to add surrounding quotes.
+
 	* src/module.c (Scm_FindBinding): fixed a problem that export
 	  shadowed the binding that should be visible in the module body.
 	* src/moplib.stub (%ensure-generic-function): ensure the method

@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.16 2005-08-29 12:41:48 shirok Exp $
+;;;  $Id: dbi.scm,v 1.17 2005-08-29 22:45:14 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -163,7 +163,7 @@
 ;; type of escaping mechanism, the driver should overload this with
 ;; a proper escaping method.
 (define-method dbi-escape-sql ((c <dbi-connection>) str)
-  (string-append "'" (regexp-replace-all #/'/ str "''") "'"))
+  (regexp-replace-all #/'/ str "''"))
 
 ;; Returns a list of available dbd.* backends.  Each entry is
 ;; a cons of a module name and its driver name.
@@ -316,8 +316,10 @@
          (let* ((argval (car args))
                 (s (cond
                     ((not argval) "NULL")
-                    ((string? argval) (dbi-escape-sql conn argval))
-                    ((symbol? argval) (dbi-escape-sql conn (symbol->string argval)))
+                    ((string? argval)
+                     #`"',(dbi-escape-sql conn argval)'")
+                    ((symbol? argval)
+                     #`"',(dbi-escape-sql conn (symbol->string argval))'")
                     ((real? argval) (number->string argval))
                     (else (error <dbi-parameter-error>
                                  "bad type of parameter for SQL:" argval)))))
