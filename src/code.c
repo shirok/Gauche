@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: code.c,v 1.8 2005-08-23 04:33:56 shirok Exp $
+ *  $Id: code.c,v 1.9 2005-08-29 09:15:55 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -552,6 +552,9 @@ void Scm_CompiledCodeFinishBuilder(ScmCompiledCode *cc, int maxstack)
  * since this routine is the most frequently called one during compilation.
  */
 
+/* The plan is to use STN generated from vminsn.scm for instruction
+   combination, but we haven't got it working yet. */
+#if 0
 /* The state transition table */
 struct stn_arc {
     int input;                  /* input insn, or -1 for wildcard */
@@ -572,7 +575,9 @@ static struct stn_arc stn[] = {
 #include "vminsn.c"
 #undef STATE_TABLE
 };
-    
+#endif /*0*/
+/* The following is the legacy code (manually tweaked automaton).
+   Once we get STN working it will go away. */
 
 /* some abbreviations for better readability */
 
@@ -622,9 +627,6 @@ void Scm_CompiledCodeEmit(ScmCompiledCode *cc,
 {
     cc_builder *b;
     CC_BUILDER_GET(b, cc);
-    int arg0_save, arg1_save;
-    ScmObj operand_save, info_save;
-    
 
     if (SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), SCM_COMPILE_NOCOMBINE)) {
         goto def;
