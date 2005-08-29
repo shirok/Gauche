@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.14 2005-08-08 12:06:18 shirok Exp $
+;;;  $Id: dbi.scm,v 1.15 2005-08-29 11:26:06 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -44,7 +44,7 @@
   (use srfi-1)
   (use srfi-13)
   (use util.match)
-  (extend util.relations)
+  (extend util.relation)
   (export <dbi-error> <dbi-nonexistent-driver-error>
           <dbi-unsupported-error> <dbi-parameter-error>
           <dbi-driver> <dbi-connection> <dbi-query> <dbi-result-set>
