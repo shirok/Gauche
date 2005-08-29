@@ -1,6 +1,16 @@
 2005-08-29  Shiro Kawai  <shiro@acm.org>
 
-	* util/relation.scm : changed name to singular for the consistency
+	* src/module.c (Scm_FindBinding): fixed a problem that export
+	  shadowed the binding that should be visible in the module body.
+	* src/moplib.stub (%ensure-generic-function): ensure the method
+	  definition always inserts the binding of the generic function 
+	  in the current module.
+
+	* lib/dbi.scm: let the default methods for legacy API raise an
+	  error, to catch the case a dbd implentation fails to implement
+	  necessary methods.
+
+	* util/relation.scm : changed its name to singular for the consistency
 	  of gauche.collection etc.
 
 2005-08-28  Shiro Kawai  <shiro@acm.org>

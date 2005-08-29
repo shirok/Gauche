@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.15 2005-08-29 11:26:06 shirok Exp $
+;;;  $Id: dbi.scm,v 1.16 2005-08-29 12:41:48 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -349,13 +349,17 @@
 
 ;; Older API
 (define-method dbi-make-connection ((d <dbi-driver>) user pass options)
-  #f)
+  (error <dbi-error>
+         "dbi-make-connection not implemented for the driver:" d))
 (define-method dbi-make-query ((c <dbi-connection>) (o <string>))
-  #f)
+  (error <dbi-error>
+         "dbi-make-query not implemented for the connection:" c))
 (define-method dbi-make-query ((c <dbi-connection>))
-  #f)
+  (error <dbi-error>
+         "dbi-make-query not implemented for the connection:" c))
 (define-method dbi-execute-query ((q <dbi-query>) (s <string>))
-  #f)
+  (error <dbi-error>
+         "dbi-execute-query not implemented for the query:" q))
 
 
 (provide "dbi")

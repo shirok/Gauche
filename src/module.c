@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.57 2005-08-23 10:44:05 shirok Exp $
+ *  $Id: module.c,v 1.58 2005-08-29 12:41:48 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -198,9 +198,15 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
 
     (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
 
-    /* fist, search from the specified module */
+    /* first, search from the specified module.
+       NB: we directly check gloc->value instead of calling
+       SCM_GLOC_GET, since this check is merely to eliminate
+       the GLOC inserted by export. */
     e = Scm_HashTableGet(m->table, SCM_OBJ(symbol));
-    if (e) { gloc = SCM_GLOC(e->value); goto found; }
+    if (e) {
+        gloc = SCM_GLOC(e->value);
+        if (!SCM_UNBOUNDP(gloc->value)) goto found;
+    }
     
     if (!stay_in_module) {
         /* Next, search from imported modules */
@@ -220,7 +226,9 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
                 
                 m = SCM_MODULE(SCM_CAR(mp));
                 e = Scm_HashTableGet(m->table, SCM_OBJ(symbol));
-                if (e && (gloc = SCM_GLOC(e->value))->exported) {
+                /* see above comment about the check of gloc->value */
+                if (e && (gloc = SCM_GLOC(e->value))->exported
+                    && !SCM_UNBOUNDP(gloc->value)) {
                     goto found;
                 }
 
@@ -263,7 +271,7 @@ ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
     ScmHashEntry *e;
     int redefining = FALSE;
     
-    //(void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
+    (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
     e = Scm_HashTableGet(module->table, SCM_OBJ(symbol));
     if (e) {
         g = SCM_GLOC(e->value);

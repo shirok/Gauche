@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: moplib.stub,v 1.26 2005-08-01 12:23:34 shirok Exp $
+;;; $Id: moplib.stub,v 1.27 2005-08-29 12:41:48 shirok Exp $
 ;;;
 
 "
@@ -53,6 +53,16 @@
  }
 "
 
+;; Ensure a named generic function is defined within the given module.
+;; This is called from method definition (either explicit definition by
+;; define-method, or implicit definition by slot's :getter/:setter option).
+;;
+;; If NAME has a visible binding to a subr or a closure, we use it as
+;; a fallback method.  NB: this feature is debatable, since it may breach
+;; the isolation of namespaces.  We may drop this feature in future.
+;;
+;; After the call to this procedure, a binding of NAME is inserted in
+;; the current module.
 (define-cproc %ensure-generic-function (name::<symbol> module::<module>)
   "  ScmObj val = Scm_SymbolValue(module, name);
   if (!Scm_TypeP(val, SCM_CLASS_GENERIC)) {
@@ -61,8 +71,8 @@
     } else {
       val = Scm_MakeBaseGeneric(SCM_OBJ(name), NULL, NULL);
     }
-    Scm_Define(module, name, val);
   }
+  Scm_Define(module, name, val);
   SCM_RETURN(val);")
 
 (define-cproc %make-next-method (gf methods::<list> args::<list>)
