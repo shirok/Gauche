@@ -31,4 +31,5 @@ version.scm
 file.scm
 selector.scm
 listener.scm
+dbidbd.scm
 www.scm

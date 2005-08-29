@@ -1,6 +1,6 @@
 ;;
 ;; Test dbi modules
-;;  $Id: dbi.scm,v 1.2 2005-07-15 10:29:49 shirok Exp $
+;;  $Id: dbidbd.scm,v 1.1 2005-08-29 22:43:59 shirok Exp $
 
 (use gauche.test)
 (use gauche.sequence)
