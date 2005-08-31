@@ -4475,7 +4475,7 @@ weak ベクタ @var{wvec}の@var{k}番目の要素を@var{obj}に変更します。
 * Applicable objects::          
 * Continuation::                
 * Multiple values::             
-* Delayed Evaludation::         
+* Delayed evaluation::         
 @end menu
 
 @node Procedures, Applicable objects, Control features, Control features
@@ -5296,7 +5296,7 @@ scope of @code{dynamic-wind}, @var{before} is called.
 @end defun
 
 
-@node Multiple values, Delayed Evaludation, Continuation, Control features
+@node Multiple values, Delayed evaluation, Continuation, Control features
 @subsection Multiple values
 @c NODE 多値
 
@@ -5363,28 +5363,45 @@ Scheme の他の@code{*-ref} 手続きと合わせるためです。
 @c COMMON
 @end defmac
 
-@node Delayed Evaludation,  , Multiple values, Control features
-@subsection  Delayed Evaludation
+@node Delayed evaluation,  , Multiple values, Control features
+@subsection  Delayed evaluation
 @c NODE 遅延評価
 
-@c EN
-A syntax @code{delay} and a procedure @code{force} are used
-together to implemnt @emph{lazy evaluation} semantics.
-@c JP
-構文@code{delay}および手続き@code{force}は共に@emph{遅延評価}のセマンティクスを
-実装するのに使います。
-@c COMMON
-@defspec delay expression
-[R5RS]
-@c EN
-Returns a @emph{promise} object that encapsulates the evaluation
-of @var{expression}.   The evaluation of @var{expression} is
-delayed until its value is explicitly requested by @code{force}.
-@c JP
-@var{expression}の評価を内包した@emph{プロミス}オブジェクトを返します。
-@var{expression}の評価はその値が@code{force}によって、明示的に要求される
-まで遅延されます。
-@c COMMON
+Gauche provides an extended lazy evaluation mechanism, according
+to srfi-45.  Instead of two primitives as R5RS, we have three
+primitivies: @code{lazy}, @code{delay}, and @code{force}.
+
+It is found that the traditional mechanism that uses only
+@code{delay} and @code{force} didn't mix well with tail-recursive
+algorithm: It required unbound memory, despite that the
+body of algorithm could be expressed in iterative manner.
+For the detailed explanation, please look at the srfi-45 document.
+Here we explain how to use those primitives.
+
+@defspec lazy expression
+@defspecx delay expression
+[SRFI-45][R5RS]
+These forms creates a @emph{promise} that delays the evaluation
+of @var{expression}.  @var{Expression} will be evaluated
+when the promise is passed to @code{force}.
+
+If @var{expression} itself is expected to yield a promise,
+you should use @code{lazy}.  Othewise, you should use @code{delay}.
+If you can think in types, the difference may be clearer.
+
+@example
+lazy  : Promise a -> Promise a
+delay : a -> Promise a
+@end example
+
+Since we don't have static typing, we can't enforce this usage.
+The programmer has to choose appropriate one from the context.
+Generally, @code{lazy} appeares only to surround the entire
+body of function that express a lazy algorithm.
+
+For the real-world example of use of @code{lazy},
+you may want to check the implementation of @code{util.stream}
+(@xref{Stream library}).
 @end defspec
 
 @defun force promise
@@ -5411,20 +5428,18 @@ so that subsequent @code{force} on it won't cause the computation.
 
 @defun promise? obj
 @c EN
-Returns @code{#t} iff @var{obj} is a promise object
-created by @code{delay}.
+Returns @code{#t} iff @var{obj} is a promise object.
 @c JP
-@var{obj}が@code{delay}で生成されたプロミスオブジェクトである場合で、
-その場合に限り、@code{#t}を返します。
+@var{obj}がプロミスオブジェクトである場合に
+@code{#t}を返します。
 @c COMMON
 @end defun
 
-@c EN
-The following example uses a simple lazy stream to calculate
-fibonacci numbers.
-@c JP
-以下は、フィボナッチ数を計算するのに単純な遅延ストリームを用いた例です。
-@c COMMON
+The following example represents Fibonacci numbers by
+a lazy list.   The list @code{fib} is calculated by
+adding @code{fib} itself shifted one element.
+Since it uses cached result of previous elements, calculation
+of n-th Fibonacci number can be done in O(n).
 
 @example
 (define (lcar lis)   ;; lazy car
@@ -5450,6 +5465,13 @@ fibonacci numbers.
   @result{} (1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 
       987 1597 2584 4181 6765)
 @end example
+
+Note that, although it is elegant, it also requires O(n) storage
+even when you only need n-th Fibonacci number.  That's because
+the @code{delay} expression in the tail of @code{fibs} is grabbing
+the head of @code{fibs} list and never releases it.
+
+
 
 @c ----------------------------------------------------------------------
 @node Exceptions, Eval and repl, Control features, Core library
@@ -6406,7 +6428,7 @@ a condition class as a predicate, e.g.:
 @deftp {Class} <condition>
 @deftpx {Condition Type} &condition
 @clindex condition
-@vrindex &condition
+@vindex &condition
 [SRFI-35]
 @c EN
 The root class of the condition hierarchy.
@@ -6439,7 +6461,7 @@ if any of the original conditions has the given type.
 @deftp {Class} <serious-condition>
 @deftpx {Condition Type} &serious
 @clindex serious-condition
-@vrindex &serious
+@vindex &serious
 [SRFI-35]
 @c EN
 Conditions of this class are for the situations that are too serious
@@ -6495,7 +6517,7 @@ A message.
 @deftp {Class} <error>
 @deftpx {Condition Type} &error
 @clindex error
-@vrindex &error
+@vindex &error
 [SRFI-35]
 @c EN
 Indicates an error.  Inherits @code{<serious-condition>}
@@ -6571,7 +6593,7 @@ OSの生のエラーコードを取得するのに重要です。いくつかのケースで
 @deftp {Class} <read-error>
 @deftpx {Condition Type} &read-error
 @clindex read-error
-@vrindex &read-error
+@vindex &read-error
 [SRFI-36]
 @c EN
 A subclass of @code{<error>}.
@@ -6622,7 +6644,7 @@ For the time being, these slots always hold @code{#f}.
 @deftp {Class} <io-error>
 @deftpx {Condition Type} &io-error
 @clindex io-error
-@vrindex &io-error
+@vindex &io-error
 [SRFI-36]
 @c EN
 A base class of I/O errors.  Inherits @code{<error>}.
@@ -6634,7 +6656,7 @@ I/O エラーのベースとなるクラス。@code{<error>} を継承しています。
 @deftp {Class} <port-error>
 @deftpx {Condition Type} &io-port-error
 @clindex port-error
-@vrindex &io-port-error
+@vindex &io-port-error
 [SRFI-36]
 @c EN
 An I/O error related to a port.   Inherits @code{<io-error>}.
@@ -6654,7 +6676,7 @@ Holds the port where the error occurred.
 @deftp {Class} <io-read-error>
 @deftpx {Condition Type} &io-read-error
 @clindex io-read-error
-@vrindex &io-read-error
+@vindex &io-read-error
 [SRFI-36]
 @c EN
 An I/O error during reading from a port.  Inherits @code{<port-error>}.
@@ -6666,7 +6688,7 @@ An I/O error during reading from a port.  Inherits @code{<port-error>}.
 @deftp {Class} <io-write-error>
 @deftpx {Condition Type} &io-write-error
 @clindex io-write-error
-@vrindex &io-write-error
+@vindex &io-write-error
 [SRFI-36]
 @c EN
 An I/O error during writing to a port.  Inherits @code{<port-error>}.
@@ -6678,7 +6700,7 @@ An I/O error during writing to a port.  Inherits @code{<port-error>}.
 @deftp {Class} <io-closd-error>
 @deftpx {Condition Type} &io-closed-error
 @clindex io-closed-error
-@vrindex &io-closed-error
+@vindex &io-closed-error
 [SRFI-36]
 @c EN
 An I/O error when read/write is attempted on a closed port.

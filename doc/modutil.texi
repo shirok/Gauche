@@ -6,6 +6,7 @@
 @c ----------------------------------------------------------------------
 @menu
 * Packing Binary Data::         
+* Database independent access layer::  
 * Generic DBM interface::       
 * File-system dbm::             
 * GDBM interface::              
@@ -34,6 +35,7 @@
 * Localized messages::          
 * Simple HTML document construction::  
 * Parsing input stream::        
+* SQL parsing and construction::  
 * Transliterate characters::    
 * Lazy text construction::      
 * Combination library::         
@@ -44,6 +46,7 @@
 * Pattern matching::            
 * Queue::                       
 * SLIB-compatible record type::  
+* Relation framework::          
 * Stream library::              
 * Topological sort::            
 * CGI Utility::                 
@@ -51,7 +54,7 @@
 @end menu
 
 @c ----------------------------------------------------------------------
-@node Packing Binary Data, Generic DBM interface, Library modules - Utilities, Library modules - Utilities
+@node Packing Binary Data, Database independent access layer, Library modules - Utilities, Library modules - Utilities
 @section @code{binary.pack} - Packing Binary Data
 @c NODE バイナリデータのパック, @code{binary.pack} - バイナリデータのパック
 
@@ -528,8 +531,128 @@ return #t if the template has variable length elements.
 @end defun
 @c ----------------------------------------------------------------------
 
+@node Database independent access layer, Generic DBM interface, Packing Binary Data, Library modules - Utilities
+@section @code{dbi} - Database independent access layer
 
-@node Generic DBM interface, File-system dbm, Packing Binary Data, Library modules - Utilities
+@deftp {Module} dbi
+@mdindex dbi
+This module allows the programmer to access various relational
+database systems (RDBMS) with the same APIs.  RDBMS-specific
+operations are hidden in the database driver (DBD) layer, which
+is usually automatically loaded.
+@end deftp
+
+It's better to look at the example.  This is a simple outline
+of accessing a database by @code{dbi} module:
+
+@example
+(guard (e ((<dbi-error> e) (handle-error)))
+  (let* ((conn   (dbi-connect "dbi:mysql:test;host=dbhost"))
+         (query  (dbi-prepare conn
+                   "SELECT id, name FROM users WHERE department = ?"))
+         (result (dbi-execute query "R&D"))
+         (getter (relation-accessor result)))
+    (map (lambda (row)
+           (list (getter row "id")
+                 (getter row "name")))
+         result)))
+@end example
+
+There's nothing specific to the underlying database system
+except the argument @code{"dbi:mysql:test;host=dbhost"}
+passed to @code{dbi-connect}, from which @code{dbi} module
+figures out it is an access to @code{mysql} database, and
+loads @code{dbd.mysql} module, and let it handle the mysql-specific
+stuff.  If you want to use whatever database system, you can just
+pass @code{"dbi:@var{whatever}:@var{parameter}"} to @code{dbi-connect}
+instead, and everything stays the same as far as you have
+@code{dbd.whatever} installed in your system.
+
+A query to the database can be created by @code{dbi-prepare}, then
+executed by @code{dbi-execute}.  For the @code{SELECT} statement,
+the result is returned as a relation, and you can retrieve the data
+
+
+The outermost @code{guard} is to catch @code{dbi}-specific errors.
+There are some 
+
+
+
+@menu
+* DBI user API::                
+* Writing drivers for DBI::     
+@end menu
+
+@node DBI user API, Writing drivers for DBI, Database independent access layer, Database independent access layer
+@subsection DBI user API
+
+@subsubheading DBI Conditions
+
+@deftp {Condition} <dbi-error>
+@end deftp
+
+@deftp {Condition} <dbi-nonexistent-driver-error>
+@end deftp
+
+@deftp {Condition} <dbi-unsupported-error>
+@end deftp
+
+@deftp {Condition} <dbi-parameter-error>
+@end deftp
+
+@subsubheading DBI classes
+
+@deftp {Class} <dbi-driver>
+@end deftp
+
+@deftp {Class} <dbi-connection>
+@end deftp
+
+@deftp {Class} <dbi-query>
+@end deftp
+
+@subsubheading Communicating with DBMS
+
+@defun dbi-connect dsn &keyword username password
+@end defun
+
+@defun dbi-prepare conn sql &optional option @dots{}
+@end defun
+
+@defun dbi-execute query &optional parameter-value @dots{}
+@end defun
+
+@defun dbi-do conn sql &optional options parameter-value @dots{}
+@end defun
+
+@defun dbi-escape-sql conn str
+@end defun
+
+@defun dbi-list-drivers
+@end defun
+
+@subsubheading Fetching data
+
+@deftp {Class} <dbi-result-set>
+@end deftp
+
+
+@node Writing drivers for DBI,  , DBI user API, Database independent access layer
+@subsection Writing drivers for DBI
+
+@deffn {Method} dbd-make-connection (d <dbi-driver>) options option-alist &keyword username password
+@end deffn
+
+@deffn {Method} dbd-prepare (c <dbi-connection>) (sql <string>) &optional option @dots{}
+@end deffn
+
+@deffn {Method} dbd-execute (c <dbi-connection>) (q <dbi-query>) &optional parameter-values
+@end deffn
+
+
+@c ----------------------------------------------------------------------
+
+@node Generic DBM interface, File-system dbm, Database independent access layer, Library modules - Utilities
 @section @code{dbm} - Generic DBM interface
 @c NODE 汎用DBMインタフェース, @code{dbm} - 汎用DBMインタフェース
 
@@ -8575,7 +8698,7 @@ if the given content is valid for the element.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Parsing input stream, Transliterate characters, Simple HTML document construction, Library modules - Utilities
+@node Parsing input stream, SQL parsing and construction, Simple HTML document construction, Library modules - Utilities
 @section @code{text.parse} - Parsing input stream
 @c NODE 入力ストリームのパージング, @code{text.parse} - 入力ストリームのパージング
 
@@ -8790,7 +8913,25 @@ as many characters available.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Transliterate characters, Lazy text construction, Parsing input stream, Library modules - Utilities
+@node SQL parsing and construction, Transliterate characters, Parsing input stream, Library modules - Utilities
+@section @code{text.sql} - SQL parsing and construction
+
+@deftp {Module} text.sql
+@mdindex text.sql
+@end deftp
+
+@deffn {Condition} <sql-parse-error>
+@example
+(define-condition-type <sql-parse-error> <error> #f
+  (sql-string))         ;; original SQL string
+@end example
+@end deffn
+
+@defun sql-tokenize sql-string
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Transliterate characters, Lazy text construction, SQL parsing and construction, Library modules - Utilities
 @section @code{text.tr} - Transliterate characters
 @c NODE 文字変換, @code{text.tr} - 文字変換
 
@@ -10841,7 +10982,7 @@ Scheme48 compatible way or consistent to SRFI-1 argument order.
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node SLIB-compatible record type, Stream library, Queue, Library modules - Utilities
+@node SLIB-compatible record type, Relation framework, Queue, Library modules - Utilities
 @section @code{util.record} - SLIB-compatible record type
 @c NODE SLIB-互換のレコード型, @code{util.record} - SLIB-互換のレコード型
 
@@ -10969,7 +11110,115 @@ obj @result{} #<my-record 0x819d9b0>
 @end example
 
 @c ----------------------------------------------------------------------
-@node Stream library, Topological sort, SLIB-compatible record type, Library modules - Utilities
+@node Relation framework, Stream library, SLIB-compatible record type, Library modules - Utilities
+@section @code{util.relation} - Relation framework
+
+@deftp {Module} util.relation
+@mdindex util.relation
+Provides a set of common operations for relations.
+
+Given set of values S1, S2, ..., Sn, a relation R is a set of tuples
+such that the first element of a tuple is from S1, the second from
+S2, ..., and the n-th from Sn.  In another word, R is a subset of
+Cartesian product of S1, ..., Sn.
+(The definition, as well as the term @emph{relation}, is taken 
+from the Codd's 1970 paper, 
+"A Relational Model of Data for Large Shared Data Banks", in
+CACM 13(6) pp.377--387.)
+
+This definition can be applied to various datasets: A set of Gauche
+instances is a relation, if you view each instance as a tuple and
+each slot value as the actual values.  A list of lists can be a
+relation.  A stream that reads from CSV table produces a relation.
+Thus it would be useful to provide a module that implements generic
+operations on relations, no matter how the actual representation is.
+
+From the operational point of view, we can treat any datastructure
+that provides the following two properties.
+
+@itemize @bullet
+@item
+A collection of tuples (rows), that is, the structure should implement
+@code{<collection>} framework (@xref{Collection framework}).
+@item
+Metadata to retrieve individual column value from a given tuple.
+At lease three methods, @code{relation-column-names},
+@code{relation-column-getter}, and @code{relation-column-setter}
+should be implemented.
+@end itemize
+
+This module is still under development.
+The plan is to build useful relational operations on top of the
+common methods.
+@end deftp
+
+@subheading Basic class and methods
+
+@deftp {Class} <relation>
+An abstract base class of relations.
+Inherits @code{<collection>} (@xref{Collection framework}).
+@end deftp
+
+@deffn {Method} relation-column-names (r <relation>)
+@deffnx {Method} relation-column-getter (r <relation>) column
+@deffnx {Method} relation-column-setter (r <relation>) column
+@end deffn
+
+
+@deffn {Method} relation-column-name? (r <relation>) column
+@end deffn
+
+@deffn {Method} relation-accessor (r <relation>)
+@end deffn
+
+@deffn {Method} relation-modifier (r <relation>)
+@end deffn
+
+@deffn {Method} relation-ref (r <relation>) row column &optional default
+@end deffn
+
+@deffn {Method} relation-set! (r <relation> row column value
+@end deffn
+
+@deffn {Method} relation-column-getters (r <relation>)
+@deffnx {Method} relation-column-setters (r <relation>)
+Returns full list of getters and setters.  Usually the default
+method is sufficient, but the implementation may want to cache
+the list of getters, for example.
+@end deffn
+
+@deffn {Method} relation-coercer (r <relation>)
+Returns a procedure that coerces a row into a sequence.
+If the relation already uses a sequence to represent a row, it can
+return row as is.
+@end deffn
+
+@deffn {Method} relation-insertable? (r <relation>)
+@end deffn
+
+@deffn {Method} relation-insert! (r <relation>) row
+@end deffn
+
+@deffn {Method} relation-deletable? (r <relation>)
+@end deffn
+
+@deffn {Method} relation-delete! (r <relation>)
+@end deffn
+
+@deffn {Method} relation-fold (r <relation>) columns proc seed
+@end deffn
+
+@subheading Concrete classes
+
+@deftp {Class} <simple-relation>
+@end deftp
+
+@deftp {Class} <object-set-relation>
+@end deftp
+
+
+@c ----------------------------------------------------------------------
+@node Stream library, Topological sort, Relation framework, Library modules - Utilities
 @section @code{util.stream} - Stream library
 @c NODE ストリームライブラリ, @code{util.stream} - ストリームライブラリ
 

@@ -377,6 +377,16 @@ Supported by the module @code{gauche.parameter}.
 @c COMMON
 
 @c EN
+@item SRFI-40, A Library of Streams
+Supported by the module @code{util.stream}.
+@xref{Stream library}.
+@c JP
+@item SRFI-40, A Library of Streams
+Supported by the module @code{util.stream}.
+@xref{Stream library}.
+@c COMMON
+
+@c EN
 @item SRFI-42, Eager comprehensions
 Supported by the module @code{srfi-42}.
 @xref{Eager comprehensions}.
@@ -384,6 +394,16 @@ Supported by the module @code{srfi-42}.
 @item SRFI-42, 几帳面な内包表記
 モジュール@code{srfi-42}でサポートされます。
 @ref{Eager comprehensions}参照。
+@c COMMON
+
+@c EN
+@item SRFI-45, Primitives for Expressing Iterative Lazy Algorithms
+Built-in.
+@xref{Delayed evaluation}.
+@c JP
+@item SRFI-45, Primitives for Expressing Iterative Lazy Algorithms
+Built-in.
+@xref{Delayed evaluation}.
 @c COMMON
 
 @c EN
