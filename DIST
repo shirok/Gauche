@@ -1,7 +1,7 @@
 #!/bin/sh
 TGZ_DEST="$HOME/shiro.dreamhost.com/scheme/vault/"
 MAN_DEST="$HOME/shiro.dreamhost.com/scheme/gauche/man/"
-DOC_DEST="../test"
+DOC_DEST="$HOME/src/test"
 RPMDIR="$HOME/rpm"
 CHANGELOG_DEST="$HOME/shiro.dreamhost.com/scheme/gauche/ChangeLog.txt"
 XTRA_TEST_DIR="$HOME/src/test"
@@ -68,9 +68,7 @@ if [ "$doc" = "yes" ]; then
   (cd doc; make texi)
   for lang in j e; do
     rm -rf $DOC_DEST/gauche-ref$lang
-    mkdir $DOC_DEST/gauche-ref$lang
-    cp doc/*.texi doc/Makefile doc/extract $DOC_DEST/gauche-ref$lang/
-    (cd $DOC_DEST/gauche-ref$lang; make gauche-ref${lang}_toc.html; rm -f *.texi extract Makefile)
+    (cd doc; make gauche-ref${lang}_toc.html; mv gauche-ref${lang} $DOC_DEST)
   done
 fi
 
