@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.115 2005-08-31 12:43:29 shirok Exp $
+;;;  $Id: genstub,v 1.116 2005-08-31 13:14:58 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -312,13 +312,16 @@
     (error "malformed define-type:" args))
   (let-optionals* args ((name #f)
                         (c-type #f)
-                        (desc   (x->string name))
-                        (c-pred (default-cpred (x->string name)))
-                        (unbox  (default-unbox (x->string name)))
-                        (box    "SCM_OBJ_SAFE"))
+                        (desc   #f)
+                        (c-pred #f)
+                        (unbox  #f)
+                        (box    #f))
     (make <type>
-      :name name :c-type c-type :description desc
-      :c-predicate c-pred :unboxer unbox :boxer box)))
+      :name name :c-type c-type
+      :description (or desc (x->string name))
+      :c-predicate (or c-pred (default-cpred (x->string name)))
+      :unboxer     (or unbox (default-unbox (x->string name)))
+      :boxer       (or box "SCM_OBJ_SAFE"))))
 
 ;; Returns C expr
 (define (box-expr type c-expr)

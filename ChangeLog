@@ -2,6 +2,9 @@
 
 	* src/genstub: reverted to tolerate 'void' to be a return type
 	  as well as '<void>' (to accept legacy stub files).
+	  (define-type): fixed the behavior when #f is specified for
+	  predicate/unboxer/boxer names.
+
 	* src/gencomp: adds #include <gauche/macro.h> to the output C code
 	  (necessary if a traditional macro is compiled in).
 	* lib/gauche/package/util.scm, lib/gauche/package/build.scm: changed
