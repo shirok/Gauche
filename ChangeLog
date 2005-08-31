@@ -1,3 +1,15 @@
+2005-08-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/genstub: reverted to tolerate 'void' to be a return type
+	  as well as '<void>' (to accept legacy stub files).
+	* src/gencomp: adds #include <gauche/macro.h> to the output C code
+	  (necessary if a traditional macro is compiled in).
+	* lib/gauche/package/util.scm, lib/gauche/package/build.scm: changed
+	  to ask password immediately after "gauche-package install" command
+	  is invoked with "--install-as" option.  The previous versions asked
+	  pass before actual installation, which was annoying when the build
+	  process took long.
+
 2005-08-30  Shiro Kawai  <shiro@acm.org>
 
 	* doc/extract : switched to generate Japanese document in utf-8.

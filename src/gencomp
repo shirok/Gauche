@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.23 2005-08-29 04:08:45 shirok Exp $
+;;;  $Id: gencomp,v 1.24 2005-08-31 12:43:29 shirok Exp $
 ;;;
 
 ;;;
@@ -123,6 +123,7 @@
              `(find-module ',(with-module user (compile-module-name))))
           (compile-module))
     (cgen-decl "#include <gauche/code.h>")
+    (cgen-decl "#include <gauche/macro.h>") ;;for MakeMacroTransformerOld. temporary.
     (with-input-from-file src
       (lambda ()
         (emit-toplevel-executor

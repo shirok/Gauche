@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: build.scm,v 1.8 2005-07-02 13:23:13 shirok Exp $
+;;;  $Id: build.scm,v 1.9 2005-08-31 12:43:29 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -105,7 +105,8 @@
   (let ((make (assq-ref config 'make *make-program*))
         (sudo (assq-ref config 'sudo *sudo-program*)))
     (if sudo-user
-      (run #`"cd \",dir\"; \",sudo\" -u \",sudo-user\" \",make\" install")
+      (run #`"cd \",dir\"; \",sudo\" -u \",sudo-user\" -S \",make\" install"
+           :stdin-string sudo-pass)
       (run #`"cd \",dir\"; \",make\" install"))))
 
 (define (clean config dir)
@@ -145,6 +146,8 @@
              (basename  (tarball->package-directory tarball))
              (dir       (build-path build-dir basename))
              (packname  (package-name basename)))
+        (when (and sudo-user (not sudo-pass))
+          (set! sudo-pass (get-password)))
         (unless install-only?
           (clean config dir)
           (untar config tarball)

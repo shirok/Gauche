@@ -30,26 +30,58 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.2 2005-07-02 13:23:13 shirok Exp $
+;;;  $Id: util.scm,v 1.3 2005-08-31 12:43:29 shirok Exp $
 ;;;
 
 ;;; NB: this module is not intended for external use.
 
 (define-module gauche.package.util
+  (use gauche.process)
   (use gauche.parameter)
-  (export run dry-run verbose-run))
+  (use gauche.termios)
+  (export run dry-run verbose-run get-password))
 (select-module gauche.package.util)
 
 (define dry-run     (make-parameter #f))
 (define verbose-run (make-parameter #f))
 
-(define (run cmdline)
-  (when (or (dry-run) (verbose-run))
-    (print cmdline))
-  (unless (dry-run)
-    ;; NB: theoretically this is non-portable, but practically it works
-    ;; well.
-    (unless (zero? (sys-system cmdline))
-      (errorf "command execution failed: ~a" cmdline))))
+(define (run cmdline . opts)
+  (let-keywords* opts ((stdin-string #f))
+    (when (or (dry-run) (verbose-run))
+      (print cmdline))
+    (unless (dry-run)
+      (let1 p (run-process "/bin/sh" "-c" cmdline
+                           :input (if stdin-string :pipe "/dev/null")
+                           :wait #f)
+        (when stdin-string
+          (let1 pi (process-input p)
+            (display stdin-string pi)
+            (flush pi)
+            (close-output-port pi)))
+        (process-wait p)
+        (unless (zero? (process-exit-status p))
+          (errorf "command execution failed: ~a" cmdline))))))
+
+;; Read password from the terminal without echoing
+(define (get-password)
+  (let ((prompt "Password: ")
+        (iport (open-input-file "/dev/tty"))
+        (oport (open-output-file "/dev/tty")))
+    (let* ((attr  (sys-tcgetattr iport))
+           (lflag (ref attr 'lflag)))
+      (dynamic-wind
+          (lambda ()
+            (set! (ref attr 'lflag)
+                  (logand lflag (lognot (logior ECHO ICANON ISIG))))
+            (sys-tcsetattr iport TCSANOW attr))
+          (lambda ()
+            (display prompt oport) (flush oport)
+            (read-line iport))
+          (lambda ()
+            (set! (ref attr 'lflag) lflag)
+            (sys-tcsetattr iport TCSANOW attr)
+            (close-input-port iport)
+            (close-output-port oport)
+            )))))
 
 (provide "gauche/package/util")
