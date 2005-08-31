@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: info.scm,v 1.6 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: info.scm,v 1.7 2005-08-31 13:55:55 shirok Exp $
 ;;;
 
 (define-module gauche.interactive.info
@@ -54,6 +54,7 @@
 
 (define viewer
   (if (or (equal? (sys-getenv "TERM") "emacs")
+          (equal? (sys-getenv "TERM") "dumb")
           (not (sys-isatty (current-output-port)))
           (not *pager*))
       display
