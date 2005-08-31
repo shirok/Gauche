@@ -313,9 +313,9 @@ fuga
        (test-parseutil read-string "" 7))
 
 ;;-------------------------------------------------------------------
-(test-section "sxql")
-(use text.sxql)
-(test-module 'text.sxql)
+(test-section "sql")
+(use text.sql)
+(test-module 'text.sql)
 
 (test* "sql-tokenize" '(select tab #\. x #\, tab #\. y as foo
                                from tab where tab #\. z < (number "30"))

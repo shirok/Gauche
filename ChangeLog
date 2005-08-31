@@ -1,3 +1,10 @@
+2005-08-30  Shiro Kawai  <shiro@acm.org>
+
+	* doc/extract : switched to generate Japanese document in utf-8.
+	  Partly because the new texi2html uses utf-8 if I specify --lang=jp.
+	* lib/text/sql.scm: renamed text.sxql to text.sql, since I keep
+	  being confused (was it sqxl or sxql?) and also it's awkward to type.
+	
 2005-08-29  Shiro Kawai  <shiro@acm.org>
 
 	* lib/dbi.scm (dbi-escape-sql): changed not to add surrounding quotes.

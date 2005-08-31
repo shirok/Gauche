@@ -1,5 +1,5 @@
 ;;;
-;;; sxql.scm - S-expression query language
+;;; text.sql - SQL parsing
 ;;;  
 ;;;   Copyright (c) 2005 Shiro Kawai, All rights reserved.
 ;;;   
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: sxql.scm,v 1.5 2005-07-16 00:00:31 shirok Exp $
+;;;  $Id: sql.scm,v 1.1 2005-08-31 05:46:32 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -39,18 +39,14 @@
 ;; For the time being, we only use tokenizer which is used by dbi/dbd
 ;; modules.
 
-(define-module text.sxql
+(define-module text.sql
   (use srfi-13)
   (use util.match)
   (export <sql-parse-error>
           sql-tokenize
           ;sql->sxql
           ))
-(select-module text.sxql)
-
-;;;=================================================================
-;;; SxQL
-;;;
+(select-module text.sql)
 
 ;;;-----------------------------------------------------------------
 ;;; Conditions
@@ -210,5 +206,5 @@
   ;;
   (entry (skip-ws sql-string) '()))
 
-(provide "text/sxql")
+(provide "text/sql")
 

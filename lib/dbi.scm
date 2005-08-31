@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.17 2005-08-29 22:45:14 shirok Exp $
+;;;  $Id: dbi.scm,v 1.18 2005-08-31 05:46:32 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -39,7 +39,7 @@
 ;;; management systems.  
 
 (define-module dbi
-  (use text.sxql)
+  (use text.sql)
   (use file.util)
   (use srfi-1)
   (use srfi-13)
