@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.18 2005-08-31 05:46:32 shirok Exp $
+;;;  $Id: dbi.scm,v 1.19 2005-09-02 12:26:27 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -240,7 +240,7 @@
                             (if n (cons n v) (cons nv #t))))
                         (string-split options #\;))
          (values driver options alist))
-       (values driver #f #f)))
+       (values driver "" '())))
     (else
      (error <dbi-error> "bad data source name spec:" data-source-name))))
 

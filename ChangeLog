@@ -1,3 +1,8 @@
+2005-09-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/dbi.scm : ensure dbi-parse-dsn always return a string and
+	  a list as option-string and option-alist.
+
 2005-08-31  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive/info.scm (viewer): check whether TERM is
