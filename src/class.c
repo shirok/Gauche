@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.127 2005-08-01 21:21:42 shirok Exp $
+ *  $Id: class.c,v 1.128 2005-09-02 22:03:59 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2608,6 +2608,7 @@ static ScmForeignPointer *make_foreign_int(ScmClass *klass, void *ptr,
     obj = SCM_NEW(ScmForeignPointer);
     SCM_SET_CLASS(obj, klass);
     obj->ptr = ptr;
+    obj->attributes = SCM_NIL;
     if (data->cleanup) {
         Scm_RegisterFinalizer(SCM_OBJ(obj), fp_finalize, data->cleanup);
     }
@@ -2647,6 +2648,32 @@ ScmObj Scm_MakeForeignPointer(ScmClass *klass, void *ptr)
         obj = make_foreign_int(klass, ptr, data);
     }
     return SCM_OBJ(obj);
+}
+
+ScmObj Scm_ForeignPointerAttr(ScmForeignPointer *fp)
+{
+    return fp->attributes;
+}
+
+ScmObj Scm_ForeignPointerAttrGet(ScmForeignPointer *fp,
+                                 ScmObj key, ScmObj fallback)
+{
+    ScmObj p = Scm_Assq(key, fp->attributes);
+    if (SCM_PAIRP(p)) return SCM_CDR(p);
+    if (SCM_UNBOUNDP(fallback)) {
+        Scm_Error("No value associated with key %S in a foreign pointer %S",
+                  key, SCM_OBJ(fp));
+    }
+    return fallback;
+}
+
+ScmObj Scm_ForeignPointerAttrSet(ScmForeignPointer *fp,
+                                 ScmObj key, ScmObj value)
+{
+    ScmObj p = Scm_Assq(key, fp->attributes);
+    if (SCM_PAIRP(p)) return SCM_SET_CDR(p, value);
+    else fp->attributes = Scm_Acons(key, value, fp->attributes);
+    return SCM_UNDEFINED;
 }
 
 /*=====================================================================

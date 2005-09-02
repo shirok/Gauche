@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.436 2005-08-27 05:49:49 shirok Exp $
+ *  $Id: gauche.h,v 1.437 2005-09-02 22:03:59 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -671,9 +671,12 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
 typedef struct ScmForeignPointerRec {
     SCM_HEADER;
     void *ptr;
+    ScmObj attributes;          /* alist.  useful to store e.g. callbacks.
+                                   use accessor procedures. */
 } ScmForeignPointer;
 
-#define SCM_FOREIGN_POINTER(obj)        ((ScmForeignPointer*)(obj))
+#define SCM_FOREIGN_POINTER_P(obj)   SCM_XTYPEP(obj, SCM_CLASS_FOREIGN_POINTER)
+#define SCM_FOREIGN_POINTER(obj)     ((ScmForeignPointer*)(obj))
 #define SCM_FOREIGN_POINTER_REF(type, obj) \
     ((type)(SCM_FOREIGN_POINTER(obj)->ptr))
 
@@ -702,6 +705,18 @@ enum {
             given PTR is NULL.   It is the only case that
             Scm_MakeForeignPointer returns non-ForeignPointer object. */
 };
+
+/* foreign pointer attributes.  you can attach info to each foreign pointer.
+   possible applications:
+   - Keep Scheme objects that are set in the foreign object, preventing
+     them from begin GCed.
+   - Keep mutex to use the foreign object from multiple threads */
+
+SCM_EXTERN ScmObj Scm_ForeignPointerAttr(ScmForeignPointer *fp);
+SCM_EXTERN ScmObj Scm_ForeignPointerAttrGet(ScmForeignPointer *fp,
+                                            ScmObj key, ScmObj fallback);
+SCM_EXTERN ScmObj Scm_ForeignPointerAttrSet(ScmForeignPointer *fp,
+                                            ScmObj key, ScmObj value);
 
 /*--------------------------------------------------------
  * PAIR AND LIST

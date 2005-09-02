@@ -1,3 +1,8 @@
+2005-09-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (Scm_ForeignPointerAttr etc): added 'attributes' alist
+	  to a foreign pointer.  See the comments in gauche.h for its usage.
+
 2005-09-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/dbi.scm : ensure dbi-parse-dsn always return a string and

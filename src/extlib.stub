@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.253 2005-08-28 12:59:17 shirok Exp $
+;;; $Id: extlib.stub,v 1.254 2005-09-02 22:03:59 shirok Exp $
 ;;;
 
 "
@@ -1376,6 +1376,18 @@
 
 (define-cproc unwrap-syntax (form)
   (call "Scm_UnwrapSyntax"))
+
+;; foreign pointer
+(define-cproc foreign-pointer-attributes (fp::<foreign-pointer>)
+  (call "Scm_ForeignPointerAttr"))
+
+(define-cproc foreign-pointer-attribute-get (fp::<foreign-pointer>
+                                             key &optional fallback)
+  (call "Scm_ForeignPointerAttrGet"))
+
+(define-cproc foreign-pointer-attribute-set (fp::<foreign-pointer>
+                                             key value)
+  (call "Scm_ForeignPointerAttrSet"))
 
 ;;
 ;; Profiling
