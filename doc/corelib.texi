@@ -11998,8 +11998,14 @@ an error is signalled.   See also @code{sys-chdir}
 @c EN
 [POSIX] Returns integer value of real and effective group id of the
 current process, respectively.
+Use @code{sys-gid->group-name} or @code{sys-getgrgid} to obtain 
+the group's name and other information associated to the returned
+group id (@xref{Unix groups and users}).
 @c JP
 [POSIX] 現在のプロセスの実グループIDと実効グループIDをそれぞれ整数で返します。
+返されたグループIDからグループ名その他の情報を得るには
+@code{sys-gid->group-name}や@code{sys-getgrgid}を使って下さい
+(@ref{Unix groups and users}参照)。
 @c COMMON
 @end defun
 
@@ -12016,8 +12022,14 @@ current process, respectively.
 @c EN
 [POSIX] Returns integer value of real and effective user id of the
 current process, respectively.
+Use @code{sys-uid->user-name} or @code{sys-getpwuid} to obtain 
+the user's name and other information associated to the returned
+user id (@xref{Unix groups and users}).
 @c JP
 [POSIX] 現在のプロセスの実ユーザIDと実効ユーザIDをそれぞれ整数で返します。
+返されたユーザIDからユーザ名その他の情報を得るには
+@code{sys-uid->user-name}や@code{sys-getpwuid}を使って下さい
+(@ref{Unix groups and users}参照)。
 @c COMMON
 @end defun
 
