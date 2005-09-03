@@ -663,24 +663,94 @@ dbi:@var{driver}:@var{parameters}
 @end example
 
 @var{Driver} part names a specific driver.  You need to have the
-corresponding driver module (@code{dbd.@var{driver}}) installed in
-your system.  For example, @code{"dbi:mysql"}
+corresponding driver module, @code{dbd.@var{driver}}, installed in
+your system.  For example, if @var{dsn} begins with @code{"dbi:mysql:"},
+@code{dbi-connect} tries to load @code{dbd.mysql}.
 
+Interpretation of the @var{parameters} part is up to the driver.
+Usually it is in the form of @code{key1=value1;key2=value2;...},
+but some driver may interpret it differently.  For example,
+@code{mysql} driver allows you to specify a database name
+at the beginning of @var{parameters}.   You have to check out
+the document of each driver for the exact specification of @var{parameters}.
+
+The keyword arguments gives extra information required for
+connection.  The @var{username} and @var{password} are commonly
+supported arguments.  The driver may recognize more keyword arguments.
+
+If a connection to the database is successfully established,
+a connection object (an instance of a subclass of @code{<dbi-connection>})
+is returned.  Otherwise, an error is signalled.
 @end defun
 
 @deffn {Method} dbi-prepare conn sql &optional option @dots{}
+Creates and returns a query object for the database connection @code{conn}
+from a string representation of SQL statement @var{sql}.
+
+@var{Sql} may contain parameter slots, denoted by @code{?}, e.g.
+@example
+(dbi-prepare conn "insert into tab (col1, col2) values (?, ?)")
+
+(dbi-prepare conn "select * from tab where col1 = ?")
+@end example
+
+They will be filled when you actually issue the query by
+@code{dbi-execute}.  There are some advantages of using parameter
+slots: (1) The necessary quoting is done automatically.
+You don't need to concern about security holes caused by
+improper quoting, for example.
+(2) Some drivers support a feature to send the template SQL
+statement to the server at the preparation stage, and send
+only the parameter values at the execution stage.  It would be
+more efficient if you issue similar queries lots of time.
+
+If the backend does't support prepared statement (SQL template
+having @code{?} parameters), the driver may use @code{text.sql}
+module to parse @var{sql}.  It may raise @code{<sql-parse-error>}
+condition if the given SQL is not well formed.
+
+The driver may take some optional values to tune the behavior
+of the query.  @code{DBI} layer doens't specify any.
 @end deffn
 
 @deffn {Method} dbi-execute query &optional parameter-value @dots{}
+Issue the @var{query} prepared by @code{dbi-prepare}.
+If the query has parameter slots, the same number of actual 
+values should be given to @var{parameter-value} @dots{}.
+
+If the query is @code{select} statement, this returns an object
+represents a @emph{relation}.  A relation encapsulates the values in
+rows and columns, as well as meta infomation like column names.
+See "Feching data" below for how to access the result.
+See also @ref{Relation framework} for the general information
+about relations.
+
+If the query is other types, such as @code{create}, @code{insert} 
+or @code{delete}, the return value is unspecified.
 @end deffn
 
 @deffn {Method} dbi-do conn sql &optional options parameter-value @dots{}
+This is a convenience procedure when you create a query
+and immediately execute it.   It is equivalent to the following
+expression.
+
+@example
+(dbi-execute (apply dbi-prepare conn sql options) parameter-value @dots{})
+@end example
 @end deffn
 
 @deffn {Method}  dbi-escape-sql conn str
+Returns a string where special characters in @var{str} are escaped.
+
+The official SQL standard only specify a single quote (@code{'}) as
+such character.  However, it doesn't specify non-printable characters,
+and the database system may use other escaping characters.  So 
+it is necessary to use this method rather than doing escaping
+by your own.
 @end deffn
 
 @defun dbi-list-drivers
+Returns a list of module names of known drivers.
 @end defun
 
 @subsubheading Fetching data
@@ -8970,17 +9040,43 @@ as many characters available.
 
 @deftp {Module} text.sql
 @mdindex text.sql
+This module provides a utility to parse and construct SQL statement.
+
+It is currently under development, and we only have a tokenization routine.
+The plan is to define S-expression syntax of SQL and provides a routine
+to translate one form to the other.
 @end deftp
 
-@deffn {Condition} <sql-parse-error>
-@example
-(define-condition-type <sql-parse-error> <error> #f
-  (sql-string))         ;; original SQL string
-@end example
-@end deffn
-
 @defun sql-tokenize sql-string
+Tokenize a SQL statement @var{sql-string}.  The return value is
+a list of tokens, where each token is 
+represented by one of the following forms.
+
+@example
+<symbol>              Regular identifier, or special delimiter:
+                      + - * / < = > <> <= >= ||
+<character>           Special delimiter: 
+                      #\, #\. #\( #\) #\;
+(delimited <string>)  Delimited identifier
+(parameter <num>)     Positional parameter (?)
+(parameter <string>)  Named parameter (:foo)
+(string    <string>)  Character string literal
+(number    <string>)  Numeric literal
+(bitstring <string>)  Binary string.  <string> is like "01101"
+(hexstring <string>)  Binary string.  <string> is like "3AD20"
+@end example
+
+If it encounters an untokenizable string, it raises an
+@code{<sql-parse-error>} condition.
 @end defun
+
+@deffn {Condition} <sql-parse-error>
+A condition to indicate an SQL parse error.  Inherits @code{<error>}.
+
+@defivar <sql-parse-error> sql-string
+Holds the source SQL string.
+@end defivar
+@end deffn
 
 @c ----------------------------------------------------------------------
 @node Transliterate characters, Lazy text construction, SQL parsing and construction, Library modules - Utilities
