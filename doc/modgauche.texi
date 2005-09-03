@@ -3778,39 +3778,56 @@ class the property of singleton.
 @deftp {Module} gauche.mop.validator
 @mdindex gauche.mop.validator
 @c EN
-Provides a metaclass that adds @code{:validator} slot option.
+Provides a metaclass that adds @code{:validator} and @code{:observer}
+slot options.
 @c JP
-@code{:validator}スロットオプションを追加するメタクラスを提供するモジュールです。
+@code{:validator}および@code{:observer}
+スロットオプションを追加するメタクラスを提供するモジュールです。
 @c COMMON
 @end deftp
 
 @deftp {Class} <validator-meta>
 @clindex validator-meta
 @c EN
-This metaclass adds a feature that the class can validate a value
-before being set to the slot.   For example, if you want to guarantee
+This metaclass adds a feature that you can specify callbacks that are
+called before and after the slot value is set.
+For example, if you want to guarantee
 that a certain slot always holds a string value, you can make a procedure
 be called before the slot is modified, either by @code{slot-ref} or
 by a setter method.  In the procedure you can either rejects a
 value except string, or coerce the value to a string.
 
-The validator procedure can be set per each slot by using @code{:validator}
+A @emph{validator} procedure is a callback procedure that is called
+before the slot value is set.   It can be specified by @code{:validator}
 slot option.  The procedure takes two values, the instance and
 the value to be set.  Whatever the procedure returns is set to
 the actual slot value.
+
+A @emph{observer} procedure is a callback procedure that is called
+after the slot value is set.  It can be specified by @code{:observer}
+slot option.  The procedure also takes two values, the instance
+and the new value.  Result of the observer procedure is discarded.
+
 See the following example:
 @c JP
-このメタクラスは、スロットに対して値がセットされようとする時にその値の正当性を
-検査する手続きを指定する機能を提供します。例えば、あるスロットに常に文字列のみが
+このメタクラスは、スロットの値がセットされる前後に呼ばれるコールバックを
+指定する機能を提供します。例えば、あるスロットに常に文字列のみが
 セットされているようにしたい場合、そのスロットに、@code{slot-ref}経由であれ
 アクセサメソッド経由であれ値がセットされようとした時に指定の手続きが呼ばれるように
 し、その手続きの中で、値が文字列でなかったらエラーとするか、強制的に値を
 文字列に変換してしまうことができます。その手続きが返した値が実際にスロットに
 セットされます。
 
-検査手続きは@code{:validator}スロットオプションによってスロット毎に指定できます。
+スロットに値がセットされる前に呼ばれる@emph{validator}手続きは、
+@code{:validator}スロットオプションによって指定できます。
 手続きは、インスタンスとセットされようとしている値の二つを引数に取ります。
 その手続きが返した値が実際にスロットにセットされる値となります。
+
+スロットに値がセットされた後に呼ばれる@emph{observer}手続きは
+@code{:obserever}スロットオプションによって指定できます。
+手続きは、インスタンスとセットされた値の二つを引数に取ります。
+戻り値は捨てられます。
+
 下の例を参照して下さい。
 @c COMMON
 
@@ -3846,7 +3863,8 @@ instance calls the validator with the specified default value,
 if :init-keyword is not given.
 @c JP
 @code{:validator} が指定されたスロットにも、@code{:init-value}等を
-使って既定の初期値を指定しておくことができます。その場合、インスタンスの初期化ルーチンは、
+使って既定の初期値を指定しておくことができます。
+その場合、インスタンスの初期化ルーチンは、
 init-keywordによる初期値指定が無ければ既定の初期値を引数としてvalidator手続きを
 呼び出します。
 @c COMMON
@@ -3867,7 +3885,7 @@ slot doesn't.
 
 It is also a good example of customizing how the slots are accessed
 using the metaobject protocol.  This feature is implemented by
-only couple of dozen lines of code.
+only a couple of dozen lines of code.
 @c JP
 仮想スロットに似ていますが、validatorを持つスロットはインスタンス内に実際に
 値を格納している点が異なります。
