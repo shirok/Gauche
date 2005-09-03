@@ -1,6 +1,6 @@
 ;;
 ;; Test dbi modules
-;;  $Id: dbidbd.scm,v 1.1 2005-08-29 22:43:59 shirok Exp $
+;;  $Id: dbidbd.scm,v 1.2 2005-09-03 03:11:32 shirok Exp $
 
 (use gauche.test)
 (use gauche.sequence)
@@ -56,8 +56,33 @@
                     (dbi-do conn "insert into foo values (?, ?)" '()
                             "don't know" #f)))
 
+  (test* "<dbi-parameter-error>" '<dbi-parameter-error>
+         (guard (e (else (class-name (class-of e))))
+           (dbi-execute (dbi-prepare (dbi-connect "dbi:null")
+                                     "select * from foo where x = ?")
+                        1 2)))
 
+  (test* "<dbi-parameter-error>" '<dbi-parameter-error>
+         (guard (e (else (class-name (class-of e))))
+           (dbi-execute (dbi-prepare (dbi-connect "dbi:null")
+                                     "select * from foo where x = ?"))))
+
+  (test* "<dbi-parameter-error>" '<dbi-parameter-error>
+         (guard (e (else (class-name (class-of e))))
+           (dbi-execute (dbi-prepare (dbi-connect "dbi:null")
+                                     "select * from foo where x = 3")
+                        4)))
   )
+
+(test-section "testing conditions")
+
+(test* "<dbi-nonexistent-driver-error>" "nosuchdriver"
+       (guard (e ((<dbi-nonexistent-driver-error> e)
+                  (ref e 'driver-name)))
+         (dbi-connect "dbi:nosuchdriver")))
+
+
+
 
 (test-end)
 

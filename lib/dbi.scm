@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.19 2005-09-02 12:26:27 shirok Exp $
+;;;  $Id: dbi.scm,v 1.20 2005-09-03 03:11:32 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -103,7 +103,7 @@
 (define-class <dbi-connection> (<dbi-object>) ())
 
 ;; <dbi-query> : represents a query.  Query can be sent to the database
-;; system by dbi-execute-query, to obtain a result set.
+;; system by dbi-execute, to obtain a result set.
 ;; %prepared slot is used to store a prepared statemet by the DBI's default
 ;; SQL statement preparation method.  The driver may prepare statements
 ;; differently.
