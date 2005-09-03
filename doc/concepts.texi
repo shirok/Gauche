@@ -416,6 +416,14 @@ Supported as an autoloaded macro.
 @ref{Requiring extensions}参照。
 @c COMMON
 
+@c EN
+@item SRFI-62, S-expression comments
+Supported by the native reader.  @xref{Lexical structure}.
+@c JP
+@item SRFI-62, S式コメント
+ネイティブのリーダでサポートされています。@ref{Lexical structure}参照。
+@c COMMON
+
 @end table
 
 @node Multibyte Strings, Multibyte scripts, Standard conformance, Concepts

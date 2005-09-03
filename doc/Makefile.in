@@ -90,7 +90,7 @@ gauche-refe.dvi : gauche-refe.texi
 	texi2dvi gauche-refe.texi
 
 gauche-refe.pdf : gauche-refe.texi
-	texi2pdf gauche-refe.texi
+	pdftex gauche-refe.texi
 
 gauche-refe.texi : $(TEXIS) extract
 	$(GOSH) ./extract -en -o gauche-refe.texi gauche-ref.texi
@@ -113,7 +113,7 @@ ngauche-refj.dvi : gauche-refj.texi
 	texi2dvi gauche-refj.texi
 
 gauche-refj.pdf : gauche-refj.texi
-	texi2pdf gauche-refj.texi
+	pdftex gauche-refj.texi
 
 gauche-refj.texi : $(TEXIS) extract
 	$(GOSH) ./extract -jp -o gauche-refj.texi gauche-ref.texi

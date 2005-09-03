@@ -170,11 +170,18 @@ The table below lists sharp-syntaxes.
 @c JP
  @tab [SRFI-38] 共有サブストラクチャの定義と参照。
 @c COMMON
-@item @code{#:}, @code{#;}
+@item @code{#:}
 @c EN
  @tab Unused
 @c JP
  @tab 未使用。
+@c COMMON
+@item @code{#;}
+@c EN
+ @tab [SRFI-62] S-expression comment.  Reads next one S-expression and
+      discard it.
+@c JP
+ @tab [SRFI-62] S式コメント。続くS式をひとつ読んで捨てます。
 @c COMMON
 @item @code{#<}
 @c EN
@@ -382,8 +389,9 @@ Equivalent to @code{(quote datum)}.
 @c EN
 @emph{Note:}  R5RS says it is an error to alter the value of
 a literal expression.
-Gauche doesn't check constant-ness of pairs and vectors, so you can
-alter them using the destructive procedures such as @code{set-car!}
+Gauche doesn't check constant-ness of pairs and vectors, and does
+not signal an error if you modify them using the destructive
+procedures such as @code{set-car!}
 and @code{vector-set!}.  Doing so will cause unexpected results.
 Gauche does check constant-ness of strings, and signals an error
 if you try to alter a constant string.
@@ -391,7 +399,7 @@ if you try to alter a constant string.
 @emph{注:} R5RSは、リテラル式の値を変更するのはエラーであるとしています。
 しかしGaucheはペアとベクタについてはそれが定数であるかどうかをチェックしておらず、
 @code{set-car!}や@code{vector-set!}等の破壊的手続きによってそれらの値を
-変更できてしまいます。そうした場合の動作は不定です。
+変更してもエラーは報告されません。そうした場合の動作は不定です。
 文字列に関しては定数かどうかのチェックを行っており、定数文字列を変更しようとすると
 エラーが報告されます。
 @c COMMON

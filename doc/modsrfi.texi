@@ -3280,7 +3280,7 @@ Represents a date.
 日付を表現します。
 @c COMMON
 
-@defivar nanosecond
+@defivar <date> nanosecond
 @c EN
 Nanosecond portion of the date by an integer between 0 and 999,999,999,
 inclusive.
@@ -3289,7 +3289,7 @@ inclusive.
 @c COMMON
 @end defivar
 
-@defivar second
+@defivar <date> second
 @c EN
 Second portion of the date by an integer between 0 and 60, inclusive.
 (60 for leap second).
@@ -3298,7 +3298,7 @@ Second portion of the date by an integer between 0 and 60, inclusive.
 @c COMMON
 @end defivar
 
-@defivar minute
+@defivar <date> minute
 @c EN
 Minute portion of the date by an integer between 0 and 59, inclusive.
 @c JP
@@ -3306,7 +3306,7 @@ Minute portion of the date by an integer between 0 and 59, inclusive.
 @c COMMON
 @end defivar
 
-@defivar hour
+@defivar <date> hour
 @c EN
 Hour portion of the date by an integer between 0 and 23, inclusive.
 @c JP
@@ -3314,7 +3314,7 @@ Hour portion of the date by an integer between 0 and 23, inclusive.
 @c COMMON
 @end defivar
 
-@defivar day
+@defivar <date> day
 @c EN
 Day portion of the date by an integer between 0 and 31, inclusive.
 The actual upper bound of the day is determined by the year and the month.
@@ -3327,7 +3327,7 @@ but I don't see why).
 @c COMMON
 @end defivar
 
-@defivar month
+@defivar <date> month
 @c EN
 Month portion of the date by an integer between 1 and 12, inclusive.
 1 for January, 2 for February, and so on.
@@ -3338,7 +3338,7 @@ Month portion of the date by an integer between 1 and 12, inclusive.
 @c COMMON
 @end defivar
 
-@defivar year
+@defivar <date> year
 @c EN
 Year portion of the date.
 @c JP
@@ -3346,7 +3346,7 @@ Year portion of the date.
 @c COMMON
 @end defivar
 
-@defivar zone-offset
+@defivar <date> zone-offset
 @c EN
 The number of seconds east of GMT for this timezone, by an integer.
 @c JP

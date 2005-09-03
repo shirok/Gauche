@@ -550,7 +550,7 @@ of accessing a database by @code{dbi} module:
 
 @example
 (guard (e ((<dbi-error> e)
-           ;; do your error handling
+           ;; handle error
            ))
   (let* ((conn   (dbi-connect "dbi:mysql:test;host=dbhost"))
          (query  (dbi-prepare conn
@@ -625,7 +625,7 @@ This condition is thrown when the number of parameters given to
 @code{dbi-execute} doesn't match the ones in the prepared statement.
 @end deftp
 
-Other than these errors, if the driver relies on @code{dbi} to
+Besides these errors, if a driver relies on @code{dbi} to
 parse the prepared SQL statement, @code{<sql-parse-error>} may 
 be thrown if an invalid SQL statement is passed to @code{dbi-prepare}.
 (@xref{SQL parsing and construction}).
@@ -662,7 +662,10 @@ Connect to a database using a data source specified by @var{dsn}
 dbi:@var{driver}:@var{parameters}
 @end example
 
-@var{Driver} part names a specific driver.
+@var{Driver} part names a specific driver.  You need to have the
+corresponding driver module (@code{dbd.@var{driver}}) installed in
+your system.  For example, @code{"dbi:mysql"}
+
 @end defun
 
 @deffn {Method} dbi-prepare conn sql &optional option @dots{}
@@ -11226,7 +11229,7 @@ Inherits @code{<collection>} (@xref{Collection framework}).
 @deffn {Method} relation-ref (r <relation>) row column &optional default
 @end deffn
 
-@deffn {Method} relation-set! (r <relation> row column value
+@deffn {Method} relation-set! (r <relation>) row column value
 @end deffn
 
 @deffn {Method} relation-column-getters (r <relation>)
