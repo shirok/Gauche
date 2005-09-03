@@ -540,13 +540,18 @@ This module allows the programmer to access various relational
 database systems (RDBMS) with the same APIs.  RDBMS-specific
 operations are hidden in the database driver (DBD) layer, which
 is usually automatically loaded.
+
+The module is strongly influenced by Perl's DBI/DBD architecture.
+If you have used Perl DBI, it would be easy to use this module.
 @end deftp
 
 It's better to look at the example.  This is a simple outline
 of accessing a database by @code{dbi} module:
 
 @example
-(guard (e ((<dbi-error> e) (handle-error)))
+(guard (e ((<dbi-error> e)
+           ;; do your error handling
+           ))
   (let* ((conn   (dbi-connect "dbi:mysql:test;host=dbhost"))
          (query  (dbi-prepare conn
                    "SELECT id, name FROM users WHERE department = ?"))
@@ -561,7 +566,7 @@ of accessing a database by @code{dbi} module:
 There's nothing specific to the underlying database system
 except the argument @code{"dbi:mysql:test;host=dbhost"}
 passed to @code{dbi-connect}, from which @code{dbi} module
-figures out it is an access to @code{mysql} database, and
+figures out that it is an access to @code{mysql} database,
 loads @code{dbd.mysql} module, and let it handle the mysql-specific
 stuff.  If you want to use whatever database system, you can just
 pass @code{"dbi:@var{whatever}:@var{parameter}"} to @code{dbi-connect}
@@ -570,13 +575,19 @@ instead, and everything stays the same as far as you have
 
 A query to the database can be created by @code{dbi-prepare}, then
 executed by @code{dbi-execute}.  For the @code{SELECT} statement,
-the result is returned as a relation, and you can retrieve the data
+the result is returned as a @emph{relation}, and you can retrieve the data
+using the relation protocol (@xref{Relation framework}).
 
+The outermost @code{guard} is to catch errors.  The @code{dbi} related
+errors are supposed to inherit @code{<dbi-error>} condition.
+There are a few specific errors defined in @code{dbi} module.
+A specific @code{dbd} layer may define more specific errors.
 
-The outermost @code{guard} is to catch @code{dbi}-specific errors.
-There are some 
-
-
+In the next section we describe user-level API, that is,
+the procedures you need to concern when you're using @code{dbi}.
+The following section is for the driver API, which you need to use
+to write a specific @code{dbd} driver to make it work with @code{dbi}
+framework.
 
 @menu
 * DBI user API::                
@@ -588,45 +599,83 @@ There are some
 
 @subsubheading DBI Conditions
 
+There are several predefined conditions @code{dbi} API may throw.
+See @ref{Exceptions} for the details of conditions.
+
 @deftp {Condition} <dbi-error>
+The base class of @code{dbi}-related conditions.  Inherits @code{<error>}.
 @end deftp
 
 @deftp {Condition} <dbi-nonexistent-driver-error>
+This condition is thrown by @code{dbi-connect} when it cannot
+find the specified driver.  Inherits @code{<dbi-error>}.
+
+@defivar <dbi-nonexistent-driver-error> driver-name
+Holds the requested driver name as a string.
+@end defivar
 @end deftp
 
 @deftp {Condition} <dbi-unsupported-error>
+This condition is thrown when the called method isn't supported 
+by the underlying driver.  Inherits @code{<dbi-error>}.
 @end deftp
 
 @deftp {Condition} <dbi-parameter-error>
+This condition is thrown when the number of parameters given to
+@code{dbi-execute} doesn't match the ones in the prepared statement.
 @end deftp
 
-@subsubheading DBI classes
+Other than these errors, if the driver relies on @code{dbi} to
+parse the prepared SQL statement, @code{<sql-parse-error>} may 
+be thrown if an invalid SQL statement is passed to @code{dbi-prepare}.
+(@xref{SQL parsing and construction}).
+
+
+@subsubheading DBI objects
 
 @deftp {Class} <dbi-driver>
+The base class of a driver.  You usually don't need to see this
+as far as you're using the high-level @code{dbi} API.
 @end deftp
 
 @deftp {Class} <dbi-connection>
+The base class of a connection to a database system.
+Each driver defines a subclass of this to keep information about
+database-specific connections.
 @end deftp
 
 @deftp {Class} <dbi-query>
+An object to represent a query prepared by @code{dbi-prepare}.
+It has one public slot.
+
+@defivar <dbi-query> connection
+Keeps an instance of @code{<dbi-connection>}.
+@end defivar
 @end deftp
 
 @subsubheading Communicating with DBMS
 
 @defun dbi-connect dsn &keyword username password
+Connect to a database using a data source specified by @var{dsn}
+(data source name).  @var{Dsn} is a string with the following syntax:
+@example
+dbi:@var{driver}:@var{parameters}
+@end example
+
+@var{Driver} part names a specific driver.
 @end defun
 
-@defun dbi-prepare conn sql &optional option @dots{}
-@end defun
+@deffn {Method} dbi-prepare conn sql &optional option @dots{}
+@end deffn
 
-@defun dbi-execute query &optional parameter-value @dots{}
-@end defun
+@deffn {Method} dbi-execute query &optional parameter-value @dots{}
+@end deffn
 
-@defun dbi-do conn sql &optional options parameter-value @dots{}
-@end defun
+@deffn {Method} dbi-do conn sql &optional options parameter-value @dots{}
+@end deffn
 
-@defun dbi-escape-sql conn str
-@end defun
+@deffn {Method}  dbi-escape-sql conn str
+@end deffn
 
 @defun dbi-list-drivers
 @end defun
