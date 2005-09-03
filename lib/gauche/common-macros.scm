@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: common-macros.scm,v 1.20 2005-08-28 12:59:17 shirok Exp $
+;;;  $Id: common-macros.scm,v 1.21 2005-09-03 04:35:09 shirok Exp $
 ;;;
 
 ;;; Defines number of useful macros.  This file is to be autoloaded.
@@ -329,7 +329,15 @@
      (syntax-error "malformed dolist" (dolist . other)))))
 
 (define-syntax while
-  (syntax-rules ()
+  (syntax-rules (=>)
+    ((_ expr guard => var . body)
+     (do ((var expr expr))
+         ((not (guard var)))
+       . body))
+    ((_ expr => var . body)
+     (do ((var expr expr))
+         ((not var))
+       . body))    
     ((_ expr . body)
      (do ()
          ((not expr))
@@ -339,6 +347,14 @@
 
 (define-syntax until
   (syntax-rules ()
+    ((_ expr guard => var . body)
+     (do ((var expr expr))
+         ((guard var))
+       . body))
+    ((_ expr => var . body)
+     (do ((var expr expr))
+         (var)
+       . body))
     ((_ expr . body)
      (do ()
          (expr)

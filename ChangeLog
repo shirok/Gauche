@@ -1,5 +1,9 @@
 2005-09-02  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/common-macros.scm (while, until): now these are
+	  supported officially, with additional syntax to bind a variable
+	  during execution of repetition body.
+
 	* src/class.c (Scm_ForeignPointerAttr etc): added 'attributes' alist
 	  to a foreign pointer.  See the comments in gauche.h for its usage.
 

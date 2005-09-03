@@ -1402,6 +1402,61 @@ Common Lispからの輸入です。それぞれ以下のように展開されます。
 @end example
 @end defmac
 
+@defmac while expr body @dots{}
+@defmacx while expr @code{=>} var body @dots{}
+@defmacx while expr guard @code{=>} var body @dots{}
+@var{Var} is an identifier and @var{guard} is a procedure
+that takes one argument.
+
+In the first form, @var{expr} is evaluated, and if it yields a true
+value, @var{body} @dots{} are evaluated.  It is repeated while
+@var{expr} yields true value.
+
+In the second form, @var{var} is bound to a result of @var{expr}
+in the scope of @var{body} @dots{}.
+
+In the third form, the value @var{expr} yields are passed to
+@var{guard}, and the execution of @var{body} @dots{} is repeated
+while @var{guard} returns a true value.  @var{var} is bound
+to the result of @var{expr}.
+
+The return value of @code{while} form itself isn't specified.
+
+@example
+(let ((a '(0 1 2 3 4)))
+  (while (pair? a)
+    (write (pop! a)))) @result{} @r{prints "01234"}
+
+(let ((a '(0 1 2 3 #f 5 6)))
+  (while (pop! a) integer? => var
+    (write var))) @result{} @r{prints "0123"}
+@end example
+@end defmac
+
+@defmac until expr body @dots{}
+@defmacx until expr guard @code{=>} var body @dots{}
+Like @code{while}, but the condition is reversed.  That is,
+the first form repeats evaluation of @var{expr} and @var{body} @dots{}
+until @var{expr} yields true.  In the second form,
+the result of @var{expr} is passed to @var{guard}, and the
+execution is repeated until it returns true.  @var{Var} is bound
+to the result of @var{expr}.
+
+(The second form of @code{while} isn't useful in @code{until}, since
+@var{var} would always be bound to @code{#f}).
+
+@example
+(let ((a '(0 1 2 3 4)))
+  (until (null? a)
+    (write (pop! a)))) @result{} @r{prints "01234"}
+
+(until (read-char) eof-object? => ch
+  (write-char ch))
+ @result{} @r{reads from stdin and writes char until EOF is read}
+@end example
+@end defmac
+
+
 @c ----------------------------------------------------------------------
 @node Quasiquotation, Definitions, Iteration, Core syntax
 @section Quasiquotation

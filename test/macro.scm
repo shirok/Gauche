@@ -797,6 +797,53 @@
           (dotimes (n (if (null? m) 10 (error "Boom!")) (reverse m))
                    (push! m n)))))
 
+(test "while" 9
+      (lambda ()
+        (let ((a 10)
+              (b 0))
+          (while (positive? (dec! a))
+            (inc! b))
+          b)))
+(test "while" 0
+      (lambda ()
+        (let ((a -1)
+              (b 0))
+          (while (positive? (dec! a))
+            (inc! b))
+          b)))
+
+(test "while =>" 6
+      (lambda ()
+        (let ((a '(1 2 3 #f))
+              (b 0))
+          (while (pop! a)
+            => val
+            (inc! b val))
+          b)))
+
+(test "while => guard" 45
+      (lambda ()
+        (let ((a 10)
+              (b 0))
+          (while (dec! a)
+            positive? => val
+            (inc! b a))
+          b)))
+
+(test "until" 10
+      (lambda ()
+        (let ((a 10) (b 0))
+          (until (negative? (dec! a))
+            (inc! b))
+          b)))
+(test "until => guard" 45
+      (lambda ()
+        (let ((a 10) (b 0))
+          (until (dec! a)
+            negative? => val
+            (inc! b a))
+          b)))
+
 (test "values-ref" 3
       (lambda ()
         (values-ref (quotient&remainder 10 3) 0)))
