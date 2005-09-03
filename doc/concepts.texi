@@ -102,10 +102,10 @@ SRFI-1の手続きのうちいくつかは組み込みになっています。
 
 @c EN
 @item SRFI-2, AND-LET*: an AND with local bindings, a guarded LET* special form.
-Supported by the module @code{srfi-2}.  @xref{And-let*}.
+Supported natively.  @xref{Binding constructs}.
 @c JP
 @item SRFI-2, AND-LET*: 局所束縛をともなう AND、ガード付 LET* 特殊フォーム
-モジュール@code{srfi-2}でサポートされます。@ref{And-let*}参照。
+組み込みです。@ref{Binding constructs}参照。
 @c COMMON
 
 @c EN

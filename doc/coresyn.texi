@@ -1157,6 +1157,102 @@ Expanded as follows.
 @end example
 @end defmac
 
+@defmac and-let* (binding @dots{}) body @dots{}
+[SRFI-2]
+@c EN
+In short, it works like @code{let*}, but returns @code{#f} immediately
+whenever the expression in @var{binding}s evaluates to @code{#f}.
+@c JP
+簡単に言うと、このフォームは@code{let*}のように動作しますが、
+@var{bindings}中の式が@code{#f}に評価されたらそこで評価を打ち切り
+@code{#f}を返します。
+@c COMMON
+
+@c EN
+Each @var{binding} should be one of the following form:
+@c JP
+各@var{binding}は以下のいずれかの形式でなければなりません。
+@c COMMON
+@table @var
+@item (variable expression)
+@c EN
+The @var{expression} is evaluated; if it yields true value, the value
+is bound to @var{variable}, then proceed to the next binding.  If
+no more bindings, evaluates @var{body} @dots{}.   If @var{expression}
+yieds @code{#f}, stops evaluation and returns @code{#f} from @code{and-let*}.
+@c JP
+@var{expression}が評価されます。それが真の値を返したら、その値が@var{variable}
+に束縛され、次の@var{binding}へと進みます。もう@var{binding}が無ければ
+@var{body} @dots{}が評価されます。もし@var{expression}が@code{#f}を返したら、
+評価を打ち切り、@code{and-let*}から@code{#f}を返します。
+@c COMMON
+@item (expression)
+@c EN
+In this form, @var{variable} is omitted.  @var{Expression} is evaluated
+and the result is used just to determine whether we continue or
+stop further evaluation.
+@c JP
+この形式では@var{variable}が省略されています。@var{Expression}が評価され、
+その結果は評価を続行するか打ち切るかを判断するためにのみ使われます。
+@c COMMON
+@item bound-variable
+@c EN
+In this form, @var{bound-variable} should be an identifier denoting
+a bound variable.  If its value is not @code{#f}, we continue
+the evaluation of the clauses.
+@c JP
+この形式では@var{bound-variable}は束縛変数を示す識別子でなければなりません。
+その変数の値が偽でなければ評価を続行します。
+@c COMMON
+@end table
+
+@c EN
+Let's see some examples.  The following code searches @var{key}
+from an assoc-list @var{alist} and returns its value if found.
+@c JP
+いくつか例を挙げます。次のコードは連想リスト@var{alist}から@var{key}を
+探し、見つかったらその値を返します。
+@c COMMON
+@example
+(and-let* ((entry (assoc key alist))) (cdr entry))
+@end example
+
+@c EN
+If @var{arg} is a string representation of an exact integer, returns its value;
+otherwise, returns 0:
+@c JP
+もし@var{arg}が正確な整数の文字列表現だった場合は@var{num}を返し、そうでなければ
+0を返します：
+@c COMMON
+@example
+(or (and-let* ((num (string->number arg))
+               ( (exact? num) )
+               ( (integer? num) ))
+      num)
+    0)
+@end example
+
+@c EN
+The following is a hypothetical code that searches a certain server port
+number from a few possibilities (environment variable, configuration file,
+...)
+@c JP
+以下のコードはとあるサーバーのポート番号をいくつかの可能性
+(環境変数、設定ファイル…)の中から探す仮想的なコードです。
+@c COMMON
+@example
+(or (and-let* ((val (sys-getenv "SERVER_PORT")))
+      (string->number val))
+    (and-let* ((portfile (expand-path "~/.server_port"))
+               ( (file-exists? portfile) )
+               (val (call-with-input-string portfile port->string)))
+      (string->number val))
+    8080) ; default
+@end example
+
+@end defmac
+
+
 @defmac fluid-let ((var val) @dots{}) body @dots{}
 @c EN
 A macro that emulates dynamic scoped variables.
@@ -1442,8 +1538,10 @@ the result of @var{expr} is passed to @var{guard}, and the
 execution is repeated until it returns true.  @var{Var} is bound
 to the result of @var{expr}.
 
-(The second form of @code{while} isn't useful in @code{until}, since
+(The second form without @var{guard} isn't useful in @code{until}, since
 @var{var} would always be bound to @code{#f}).
+
+The return value of @code{until} form itself isn't specified.
 
 @example
 (let ((a '(0 1 2 3 4)))
@@ -2423,7 +2521,7 @@ a symbol name of an existing module.
 Note: there used to be the @code{symbol-bound?} procedure to
 check whether a global variable is bound.  It is deprecated and
 the new code should use @code{global-variable-bound?} instead.
-The reason of change is that the name @code{symbol-bound?} and
+The reason of change is that because of the name @code{symbol-bound?} and
 the fact that it assumes current-module by default, it gives
 an illusion as if a global bound value is somewhat 'stored'
 in a symbol itself (like CommonLisp's model).  It caused a lot

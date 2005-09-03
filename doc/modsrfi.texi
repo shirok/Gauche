@@ -18,7 +18,6 @@ of supported SRFIs.
 @menu
 * Feature conditional::         
 * List library::                
-* And-let*::                    
 * Homogeneous vectors::         
 * A compatible let form with signatures and rest arguments::  
 * Feature-based program configuration language::  
@@ -190,7 +189,7 @@ as well, by providing alternative library definitions.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node List library, And-let*, Feature conditional, Library modules - SRFIs
+@node List library, Homogeneous vectors, Feature conditional, Library modules - SRFIs
 @section @code{srfi-1} - List library
 
 @deftp {Module} srfi-1
@@ -670,17 +669,6 @@ At least one of the argument lists must be finite:
 @end example
 @end defun
 
-@defun count$ pred
-@c EN
-Partial application version of @code{count}
-@c JP
-@code{count} の部分適用バージョンです。
-@c COMMON
-@example
-((count$ pred) arg @dots{}) === (count pred arg @dots{})
-@end example
-@end defun
-
 @node SRFI-1 Fold, SRFI-1 Filtering & Partitioning, SRFI-1 List miscellaneous routines, List library
 @subsection List fold, unfold & map
 @c NODE リストの畳み込み(fold)、解きほぐし(unfold)、および写像(map)
@@ -934,19 +922,6 @@ At least one of the list arguments must be finite.
 @end example
 @end defun
 
-@defun fold$ kons &optional knil
-@defunx fold-right$ kons &optional knil
-@defunx reduce$ f &optional ridentity
-@defunx reduce-right$ f &optional ridentity
-@c EN
-Partial application versions of @code{fold}, @code{fold-right},
-@code{reduce}, and @code{reduce-right}.
-@c JP
-それぞれ、@code{fold}、@code{fold-right}、@code{reduce}、
-@code{reduce-right} の部分適用バージョンです。
-@c COMMON
-@end defun
-
 @node SRFI-1 Filtering & Partitioning, SRFI-1 Searching, SRFI-1 Fold, List library
 @subsection List filtering & partitioning
 @c NODE リストのフィルタおよび分割
@@ -1018,18 +993,6 @@ modifies @var{list} to produce the result.
 @var{list} を破壊的に更新するかもしれません。
 @c COMMON
 @end defun
-
-@defun filter$ pred
-@defunx remove$ pred
-@defunx partition$ pred
-@c EN
-Partial application versions of @code{filter}, @code{remove} and
-@code{partition}.
-@c JP
-@code{filter}、@code{remove}、@code{partition}の部分的に適用するバージョンです。
-@c COMMON
-@end defun
-
 
 @node SRFI-1 Searching, SRFI-1 Deletion, SRFI-1 Filtering & Partitioning, List library
 @subsection List searching
@@ -1141,20 +1104,6 @@ Returns the index of the leftmost element that satisfies @var{pred}.
 @c COMMON
 @end defun
 
-@defun member$ item
-@defunx find$ pred
-@defunx find-tail$ pred
-@defunx any$ pred
-@defunx every$ pred
-@c EN
-Partial application version of @code{member}, @code{find}, @code{find-tail},
-@code{any} and @code{every}.
-@c JP
-@code{member}、@code{find}、@code{find-tail}、@code{any}、@code{every}の部分的適用
-バージョンです。
-@c COMMON
-@end defun
-
 @node SRFI-1 Deletion, SRFI-1 Association lists, SRFI-1 Searching, List library
 @subsection List deletion
 @c NODE リストの削除
@@ -1176,14 +1125,6 @@ Equivalent to
 The comparison procedure, @var{elt=}, defaults to @code{equal?}.
 @c JP
 比較手続き @var{elt=} はデフォルトでは @code{equal?} です。
-@c COMMON
-@end defun
-
-@defun delete$ x
-@c EN
-Partial application version of @code{delete}.
-@c JP
-@code{delete} の部分適用バージョンです。
 @c COMMON
 @end defun
 
@@ -1258,14 +1199,6 @@ The linear-update version @code{alist-delete!} may or may not modify
 
 その場で更新を行うバージョン @code{alist-delete!} は元の
 @var{alist} を変更してしまうことがあります。
-@c COMMON
-@end defun
-
-@defun assoc$ item
-@c EN
-Partial application version of @code{assoc}.
-@c JP
-@code{assoc} の部分適用バージョンです。
 @c COMMON
 @end defun
 
@@ -1418,106 +1351,7 @@ The cells in the first list argument may be reused to construct the result.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node And-let*, Homogeneous vectors, List library, Library modules - SRFIs
-@section @code{srfi-2} - And-let*
-
-@deftp {Module} srfi-2
-@mdindex srfi-2
-@c EN
-Provides SRFI-2 @code{and-let*} macro.
-@c JP
-SRFI-2の@code{and-let*}マクロを提供します。
-@c COMMON
-@end deftp
-
-@defmac and-let* (binding @dots{}) body @dots{}
-[SRFI-2]
-@c EN
-In short, it works like @code{let*}, but returns #f immediately
-whenever the expression in @var{binding}s evaluates to #f.
-@c JP
-簡単に言うと、このフォームは@code{let*}のように動作しますが、
-@var{bindings}中の式が@code{#f}に評価されたらそこで評価を打ち切り
-@code{#f}を返します。
-@c COMMON
-
-@c EN
-Each @var{binding} should be one of the following form:
-@c JP
-各@var{binding}は以下のいずれかの形式でなければなりません。
-@c COMMON
-@table @var
-@item (variable expression)
-@c EN
-The @var{expression} is evaluated; if it yields true value, the value
-is bound to @var{variable}, then proceed to the next binding.  If
-no more bindings, evaluates @var{body} @dots{}.   If @var{expression}
-yieds @code{#f}, stops evaluation and returns @code{#f} from @code{and-let*}.
-@c JP
-@var{expression}が評価されます。それが真の値を返したら、その値が@var{variable}
-に束縛され、次の@var{binding}へと進みます。もう@var{binding}が無ければ
-@var{body} @dots{}が評価されます。もし@var{expression}が@code{#f}を返したら、
-評価を打ち切り、@code{and-let*}から@code{#f}を返します。
-@c COMMON
-@item (expression)
-@c EN
-In this form, @var{variable} is omitted.  @var{Expression} is evaluated
-and the result is used just to determine whether we continue or
-stop further evaluation.
-@c JP
-この形式では@var{variable}が省略されています。@var{Expression}が評価され、
-その結果は評価を続行するか打ち切るかを判断するためにのみ使われます。
-@c COMMON
-@end table
-
-@c EN
-Let's see some examples.  The following code searches @var{key}
-from an assoc-list @var{alist} and returns its value if found.
-@c JP
-いくつか例を挙げます。次のコードは連想リスト@var{alist}から@var{key}を
-探し、見つかったらその値を返します。
-@c COMMON
-@example
-(and-let* ((entry (assoc key alist))) (cdr entry))
-@end example
-
-@c EN
-If @var{arg} is a string representation of an exact integer, returns its value;
-otherwise, returns 0:
-@c JP
-もし@var{arg}が正確な整数の文字列表現だった場合は@var{num}を返し、そうでなければ
-0を返します：
-@c COMMON
-@example
-(or (and-let* ((num (string->number arg))
-               ((exact? num))
-               ((integer? num)))
-      num)
-    0)
-@end example
-
-@c EN
-The following is a hypothetical code that searches a certain server port
-number from a few possibilities (environment variable, configuration file,
-...)
-@c JP
-以下のコードはとあるサーバーのポート番号をいくつかの可能性
-(環境変数、設定ファイル…)の中から探す仮想的なコードです。
-@c COMMON
-@example
-(or (and-let* ((val (sys-getenv "SERVER_PORT")))
-      (string->number val))
-    (and-let* ((portfile (expand-path "~/.server_port"))
-               ((file-exists? portfile))
-               (val (call-with-input-string portfile port->string)))
-      (string->number val))
-    8080) ; default
-@end example
-
-@end defmac
-
-@c ----------------------------------------------------------------------
-@node Homogeneous vectors, A compatible let form with signatures and rest arguments, And-let*, Library modules - SRFIs
+@node Homogeneous vectors, A compatible let form with signatures and rest arguments, List library, Library modules - SRFIs
 @section @code{srfi-4} - Homogeneous vectors
 @c NODE 単一型のベクタ, @code{srfi-4} - 単一型のベクタ
 
