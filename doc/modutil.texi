@@ -11290,8 +11290,8 @@ A collection of tuples (rows), that is, the structure should implement
 @code{<collection>} framework (@xref{Collection framework}).
 @item
 Metadata to retrieve individual column value from a given tuple.
-At lease three methods, @code{relation-column-names},
-@code{relation-column-getter}, and @code{relation-column-setter}
+At least three methods, @code{relation-column-names},
+@code{relation-accessor}, and @code{relation-modifier}
 should be implemented.
 @end itemize
 
@@ -11308,24 +11308,53 @@ Inherits @code{<collection>} (@xref{Collection framework}).
 @end deftp
 
 @deffn {Method} relation-column-names (r <relation>)
-@deffnx {Method} relation-column-getter (r <relation>) column
-@deffnx {Method} relation-column-setter (r <relation>) column
-@end deffn
-
-
-@deffn {Method} relation-column-name? (r <relation>) column
+Returns a sequence of names of the columns.
+The type of column names is up to the relation; we don't
+place any restriction on it, as far as they are different
+each other in terms of @code{equal?}.
 @end deffn
 
 @deffn {Method} relation-accessor (r <relation>)
+Returns a procedure that takes two arguments, a row from
+the relation @var{r} and a column name, and returns the value
+of the specified column.
 @end deffn
 
 @deffn {Method} relation-modifier (r <relation>)
+Returns a procedure that takes three arguments, a row
+from the relation @var{r}, a column name, and a value to set.
+
+If the relation is read-only, this method returns @code{#f}.
+@end deffn
+
+@deffn {Method} relation-column-name? (r <relation>) column
+Returns true iff @var{column} is a valid column name for the relation
+@var{r}.
+@end deffn
+
+@deffn {Method} relation-column-getter (r <relation>) column
+@deffnx {Method} relation-column-setter (r <relation>) column
+Returns a procedure to access the specified column of a row
+from the relation @var{r}.  @code{Relation-column-getter}
+should return a procedure that takes one argument, a row.
+@code{Relation-column-setter} should return a procedure that
+takes two arguments, a row and a new value to set.
+
+If the relation is read-only, @code{relation-column-setter}
+returns @code{#f}.
 @end deffn
 
 @deffn {Method} relation-ref (r <relation>) row column &optional default
+@var{Row} is a row from the relation @var{r}.  Returns value of
+the @var{column} in @var{row}.  If @var{column} is not a valid
+column name, @var{default} is returned if it is given, otherwise
+an error is signalled.
 @end deffn
 
 @deffn {Method} relation-set! (r <relation>) row column value
+@var{Row} is a row from the relation @var{r}.  Sets @var{value}
+as the value of @var{column} in @var{row}.  This may signal
+an error if the relation is read-only.
 @end deffn
 
 @deffn {Method} relation-column-getters (r <relation>)
@@ -11337,23 +11366,47 @@ the list of getters, for example.
 
 @deffn {Method} relation-coercer (r <relation>)
 Returns a procedure that coerces a row into a sequence.
-If the relation already uses a sequence to represent a row, it can
-return row as is.
+If the relation already uses a sequence to represent a row,
+it can return row as is.
 @end deffn
 
 @deffn {Method} relation-insertable? (r <relation>)
+Returns true iff new rows can be inserted to the relation @var{r}.
 @end deffn
 
 @deffn {Method} relation-insert! (r <relation>) row
+Insert a row @var{row} to the relation @var{r}.
 @end deffn
 
 @deffn {Method} relation-deletable? (r <relation>)
+Returns true iff rows can be deleted from the relation @var{r}.
 @end deffn
 
-@deffn {Method} relation-delete! (r <relation>)
+@deffn {Method} relation-delete! (r <relation>) row
+Delets a row @var{row} from the relation @var{r}.
 @end deffn
 
-@deffn {Method} relation-fold (r <relation>) columns proc seed
+@deffn {Method} relation-fold (r <relation>) proc seed column @dots{}
+Applies @var{proc} to the values of @var{column} @dots{} of each row,
+passing @var{seed} as the state value.  That is, for each row in 
+@var{r}, @var{proc} is called as follows:
+@example
+
+(@var{proc} @var{v_0} @var{v_1} @dots{} @var{v_i} @var{seed})
+
+ where @var{v_k} = (relation-ref @var{r} @var{row} @var{column_k})
+
+@end example
+
+The result of the call becomes a new seed value, and the final result
+is returned from @var{relation-fold}.
+
+For example, if a relation has a column named @code{amount},
+and you want to sum up all of them in a relation @var{r},
+you can write like this:
+@example
+(relation-fold r + 0 'amount)
+@end example
 @end deffn
 
 @subheading Concrete classes
