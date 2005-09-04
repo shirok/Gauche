@@ -1,11 +1,11 @@
 dnl
-dnl Configuring mqueue-cpp
+dnl Configuring spigot
 dnl  process this file with autoconf to generate 'configure'.
-dnl $Id: configure.in,v 1.1 2005-07-31 06:08:13 shirok Exp $
+dnl $Id: configure.ac,v 1.1 2005-09-04 09:22:42 shirok Exp $
 dnl
 
 AC_PREREQ(2.54)
-AC_INIT(mqueue-cpp, 1.0, shiro@acm.org)
+AC_INIT(spigot, 1.0, shiro@acm.org)
 dnl If you want to use the system name (OS, architecture, etc) in the
 dnl configure, uncomment the following line.  In such a case, you need
 dnl to copy config.guess and config.sub from automake distribution.
@@ -18,12 +18,6 @@ AC_PATH_PROG([GAUCHE_CONFIG], gauche-config)
 AC_PATH_PROG([GAUCHE_PACKAGE], gauche-package)
 AC_PATH_PROG([GAUCHE_INSTALL], gauche-install)
 AC_PATH_PROG([GAUCHE_CESCONV], gauche-cesconv)
-
-dnl We need the name of C++ compiler.  Actually the C++ compile must
-dnl be compatible with the C compiler used to build Gauche, but I
-dnl don't know how to guarantee that; here we just assume system's
-dnl C++ compiler is compatible with the cc used for Gauche.
-AC_PROG_CXX
 
 dnl Usually these parameters are set by AC_PROG_CC, but we'd rather use
 dnl the same one as Gauche has been compiled with.

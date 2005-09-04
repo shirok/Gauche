@@ -1,3 +1,10 @@
+2005-09-03  Shiro Kawai  <shiro@acm.org>
+
+	* ext/template.configure.ac : renamed configure.in -> configure.ac
+	* src/gauche-package.in : ditto
+	* examples/mqueue-cpp/configure.ac: ditto
+	* examples/spigot/configure.ac: ditto
+
 2005-09-02  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/common-macros.scm (while, until): now these are

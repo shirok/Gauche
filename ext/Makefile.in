@@ -20,7 +20,7 @@ DESTDIR     =
 INSTALL = @INSTALL@
 TEMPLATE_INST_DIR = $(datadir)/gauche/$(GAUCHE_VERSION)
 
-TEMPLATES = template.Makefile.in template.configure.in \
+TEMPLATES = template.Makefile.in template.configure.ac \
 	    template.extension.h template.extension.c \
 	    template.extensionlib.stub template.module.scm \
 	    template.test.scm template.DIST

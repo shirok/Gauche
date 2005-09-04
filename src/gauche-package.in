@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-package.in,v 1.12 2005-07-31 06:01:42 shirok Exp $
+;;;  $Id: gauche-package.in,v 1.13 2005-09-04 09:22:43 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -221,7 +221,7 @@ Options:
        -version $PACKAGE_VERSION \\
        -configure \"./configure $GAUCHE_PACKAGE_CONFIGURE_ARGS\"
 
-  If you generate template configure.in by 'gauche-package generate',
+  If you generate template configure.ac by 'gauche-package generate',
   the make-gpd stuff is included in it.")
   (when (null? args) (usage-self))
   (let loop ((p (cdr args))
@@ -335,7 +335,10 @@ Options:
       (app-error "Invalid character in package-name ~s: You can only use alphanumeric chars, underscore, and minus sign." package-name))
     (unless (or (not module-name) (#/^[\w.-]+$/ module-name))
       (app-error "Invalid character in module-name ~s" module-name))
-    (let* ((extension-name (string-tr package-name "A-Za-z_-" "a-za-z__"))
+    (let* ((package-name*  (rxmatch-case package-name
+                             (#/^Gauche-(.*)/ (#f rest) rest)
+                             (else package-name)))
+           (extension-name (string-tr package-name* "A-Za-z_-" "a-za-z__"))
            (module-name (string->symbol (or module-name extension-name)))
            (tmpl-dir (sys-dirname (gauche-library-directory)))
            (scm-subdir (sys-dirname (module-name->path module-name))))
@@ -353,7 +356,7 @@ Options:
                             (build-path package-name dst-name))))
            (filter-copy src-path dst-path
                         package-name extension-name module-name '("DIST"))))
-       '("Makefile.in" "configure.in" "extension.c" "extension.h"
+       '("Makefile.in" "configure.ac" "extension.c" "extension.h"
          "extensionlib.stub" "module.scm" "test.scm" "DIST")))
     ))
 
