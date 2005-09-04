@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: relation.scm,v 1.3 2005-09-04 20:40:49 shirok Exp $
+;;;  $Id: relation.scm,v 1.4 2005-09-04 20:44:35 shirok Exp $
 ;;;
 
 ;;; Given set of values S1, S2, ..., Sn, a relation R is a set of tuples
@@ -174,12 +174,12 @@
 ;; select
 ;; join
 
-(define-method relation-fold ((r <relation>) proc seed columns)
+(define-method relation-fold ((r <relation>) proc seed . columns)
   (let1 getters (map (cut relation-column-getter r <>) columns)
     (fold (lambda (row seed)
             (apply proc (fold-right (lambda (getter seed)
                                       (cons (getter row) seed))
-                                    seed
+                                    (list seed)
                                     getters)))
           seed r)))
 

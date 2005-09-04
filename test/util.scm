@@ -749,6 +749,9 @@
                (setter (relation-column-setter r 'e)))
            (for-each (lambda (row) (setter row (+ (getter row) 300))) r)
            (map getter r)))
+
+  (test* "simple-relation (relation-fold)" 1264
+         (relation-fold r + 0 'a 'b))
            
   )
 
@@ -802,6 +805,8 @@
            (for-each (lambda (row) (setter row (+ (getter row) 300))) r)
            (map getter r)))
            
+  (test* "simple-relation (relation-fold)" 1644
+         (relation-fold r + 0 'a 'c))
   )
 ;;-----------------------------------------------
 (test-section "util.stream")
