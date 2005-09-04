@@ -1,3 +1,8 @@
+2005-09-04  Shiro Kawai  <shiro@acm.org>
+
+	* m4/*, aclocal.m4 : adapetd to the newer autotools convention.
+	* acinclude.m4: removed. superseded by m4/gauche.m4.
+
 2005-09-03  Shiro Kawai  <shiro@acm.org>
 
 	* ext/template.configure.ac : renamed configure.in -> configure.ac

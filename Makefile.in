@@ -1,5 +1,5 @@
 # Top Makefle for Gauche
-# $Id: Makefile.in,v 1.52 2005-06-29 11:23:50 shirok Exp $
+# $Id: Makefile.in,v 1.53 2005-09-04 11:02:28 shirok Exp $
 #  Run 'configure' script to generate Makefile
 
 .PHONY: all test check pre-package install uninstall \
@@ -53,9 +53,9 @@ install-pkg:
 	cd lib; $(MAKE) install
 	cd ext; $(MAKE) install
 	cd src; $(MAKE) install
-	$(INSTALL) -m 444 acinclude.m4 $(DESTDIR)$(GAUCHE_ACLOCAL_DIR)/aclocal.m4
+	$(INSTALL) -m 444 m4/gauche.m4 $(DESTDIR)$(GAUCHE_ACLOCAL_DIR)/aclocal.m4
 	$(MKINSTDIR) $(DESTDIR)$(datadir)/aclocal
-	$(INSTALL) -m 444 acinclude.m4 $(DESTDIR)$(datadir)/aclocal/gauche.m4
+	$(INSTALL) -m 444 m4/gauche.m4 $(DESTDIR)$(datadir)/aclocal/gauche.m4
 
 slibcat-in-place:
 	cd lib; $(MAKE) slibcat-in-place
@@ -87,19 +87,3 @@ install-check:
 	@rm -rf test.log
 	@(cd src; $(MAKE) install-check) >> test.log
 	@(cd ext; $(MAKE) install-check) >> test.log
-
-# NB: I intentionally make aclocal.m4 not depend on acinclude.m4, to
-# prevent aclocal from running accidentally.
-aclocal.m4 :
-	@echo "************************************************************"
-	@echo "To rebuild aclocal.m4 from acinclude.m4, follow the instructions"
-	@echo "below:"
-	@echo " - Make sure you have libtool 1.5, or you'll be in deep trouble"
-	@echo " - Run aclocal"
-	@echo " - Edit aclocal.m4 so that always_export_symbols libtool parameter"
-	@echo "   shall be 'yes' on cygwin platforms.  (Don't change the default"
-	@echo "   value.  There are two occurrences of setting the parameter in"
-	@echo "   case statement when the target platform is cygwin.)"
-	@echo "************************************************************"
-
-

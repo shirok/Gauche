@@ -1,5 +1,11 @@
 dnl Gauche-specific autoconf macros.
-dnl $Id: acinclude.m4,v 1.16 2005-07-02 13:23:04 shirok Exp $
+dnl
+dnl  NB: As of 0.8.6, use of Gauche-specific macros is deprecated.
+dnl      The 'gauche-package' program can generate template configure.ac
+dnl      that doesn't have any Gauche-specific macros.  We still keep
+dnl      this for backward compatibility, but will be remove after some time.
+dnl
+dnl $Id: gauche.m4,v 1.1 2005-09-04 11:02:28 shirok Exp $
 
 dnl AC_GAUCHE_INIT_EXT
 dnl   Sets some parameters about installed Gauche package. 
