@@ -703,7 +703,106 @@
 (test-section "util.relation")
 (use util.relation)
 (test-module 'util.relation)
+(use gauche.sequence)
 
+(let ((r #f))
+  (test* "simple-relation" '<simple-relation>
+         (begin
+           (set! r (make <simple-relation>
+                     :columns '(a b c d e)
+                     :rows (list
+                            (vector 0 1 2 3 4)
+                            (vector 5 6 7 8 9)
+                            (vector 10 11 12 13 14)
+                            (vector 15 16 17 18 19))))
+           (class-name (class-of r))))
+
+  (test* "simple-relation (relation-ref)" '(0 5 10 15)
+         (map (cut relation-ref r <> 'a) r))
+
+  (test* "simple-relation (relation-accessor)" '(1 6 11 16)
+         (let1 ref (relation-accessor r)
+           (map (cut ref <> 'b) r)))
+
+  (test* "simple-relation (relation-column-getter)" '(2 7 12 17)
+         (let1 getter (relation-column-getter r 'c)
+           (map getter r)))
+
+  (test* "simple-relation (relation-set!)" '(100 105 110 115)
+         (begin
+           (for-each (lambda (row)
+                       (relation-set! r row 'a
+                                      (+ (relation-ref r row 'a) 100)))
+                     r)
+           (map (cut relation-ref r <> 'a) r)))
+
+  (test* "simple-relation (relation-modifier)" '(201 206 211 216)
+         (let ((set (relation-modifier r))
+               (ref (relation-accessor r)))
+           (for-each (lambda (row)
+                       (set row 'b (+ (ref row 'b) 200)))
+                     r)
+           (map (cut ref <> 'b) r)))
+
+  (test* "simple-relation (relation-column-setter)" '(304 309 314 319)
+         (let ((getter (relation-column-getter r 'e))
+               (setter (relation-column-setter r 'e)))
+           (for-each (lambda (row) (setter row (+ (getter row) 300))) r)
+           (map getter r)))
+           
+  )
+
+(define-class <object-set-test> ()
+  ((a :init-value 0 :init-keyword :a)
+   (b :init-value 1 :init-keyword :b)
+   (c :init-value 2 :init-keyword :c)))
+
+(let ((r #f))
+  (test* "object-set-relation" '<object-set-relation>
+         (begin
+           (set! r (make <object-set-relation>
+                     :class <object-set-test>
+                     :rows (list
+                            (make <object-set-test> :a 0 :b 1 :c 2)
+                            (make <object-set-test> :a 3 :b 4 :c 5)
+                            (make <object-set-test> :a 6 :b 7 :c 8)
+                            (make <object-set-test> :a 9 :b 10 :c 11))))
+           (class-name (class-of r))))
+
+  (test* "object-set-relation (relation-ref)" '(0 3 6 9)
+         (map (cut relation-ref r <> 'a) r))
+
+  (test* "object-set-relation (relation-accessor)" '(1 4 7 10)
+         (let1 ref (relation-accessor r)
+           (map (cut ref <> 'b) r)))
+
+  (test* "object-set-relation (relation-column-getter)" '(2 5 8 11)
+         (let1 getter (relation-column-getter r 'c)
+           (map getter r)))
+
+  (test* "object-set-relation (relation-set!)" '(100 103 106 109)
+         (begin
+           (for-each (lambda (row)
+                       (relation-set! r row 'a
+                                      (+ (relation-ref r row 'a) 100)))
+                     r)
+           (map (cut relation-ref r <> 'a) r)))
+
+  (test* "object-set-relation (relation-modifier)" '(201 204 207 210)
+         (let ((set (relation-modifier r))
+               (ref (relation-accessor r)))
+           (for-each (lambda (row)
+                       (set row 'b (+ (ref row 'b) 200)))
+                     r)
+           (map (cut ref <> 'b) r)))
+
+  (test* "object-set-relation (relation-column-setter)" '(302 305 308 311)
+         (let ((getter (relation-column-getter r 'c))
+               (setter (relation-column-setter r 'c)))
+           (for-each (lambda (row) (setter row (+ (getter row) 300))) r)
+           (map getter r)))
+           
+  )
 ;;-----------------------------------------------
 (test-section "util.stream")
 (use util.stream)

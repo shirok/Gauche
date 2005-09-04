@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: relation.scm,v 1.2 2005-09-04 09:20:05 shirok Exp $
+;;;  $Id: relation.scm,v 1.3 2005-09-04 20:40:49 shirok Exp $
 ;;;
 
 ;;; Given set of values S1, S2, ..., Sn, a relation R is a set of tuples
@@ -85,22 +85,25 @@
 ;; An abstract base class of <relation>.
 (define-class <relation> (<collection>) ())
 
+;;;-----------------------------------------------------------------
 ;;; Minimal set of generic functions.  Concrete implementations must
 ;;; implement the followings.
+
+;; Returns a procedure that can be used as
+;;   (REF <row> <column> &optional <value>)
+(define-method relation-accessor ((r <relation>))
+  (error "accessor method isn't defined for the relation" r))
+
+;; Returns a procedure that can be used as
+;;   (SET! <row> <column> <value>)
+;; If the relation is read-only, this method can return #f.
+(define-method relation-modifier ((r <relation>))
+  #f)
 
 ;; Returns a sequence of column names.
 (define-method relation-column-names ((r <relation>)) '())
 
-;; Returns a procedure that extracts the value of the column from
-;; the given row.
-(define-method relation-column-getter ((r <relation>) column)
-  (lambda (row) #f))
-
-;; Returns a procedure that takes a row and a value, and set row's
-;; column by value.
-(define-method relation-column-setter ((r <relation>) column)
-  (lambda (row v) (undefined)))
-
+;;;-----------------------------------------------------------------
 ;;; Optional methods.  They can be implemented by the minimal methods
 ;;; above, but a concrete implementation may override these methods
 ;;; for efficiency.
@@ -110,23 +113,25 @@
 (define-method relation-column-name? ((r <relation>) column)
   (memq column (relation-column-names r)))
 
-;; Returns a procedure that can be used as
-;;   (REF <row> <column> &optional <value>)
-(define-method relation-accessor ((r <relation>))
-  (cut relation-ref r <> <>))
+;; Returns a procedure that extracts the value of the column from
+;; the given row.
+(define-method relation-column-getter ((r <relation>) column)
+  (let1 accessor (relation-accessor r)
+    (lambda (row) (accessor row column))))
 
-;; Returns a procedure that can be used as
-;;   (SET! <row> <column> <value>)
-(define-method relation-modifier ((r <relation>))
-  (cut relation-set! r <> <> <>))
+;; Returns a procedure that takes a row and a value, and set row's
+;; column by value.
+(define-method relation-column-setter ((r <relation>) column)
+  (let1 modifier (relation-modifier r)
+    (lambda (row v) (modifier row column v))))
 
 ;; Direct referencer
 (define-method relation-ref ((r <relation>) row column . default)
-  ((apply relation-column-getter r column default) row))
+  (apply (relation-accessor r) row column default))
 
 ;; Direct modifier
 (define-method relation-set! ((r <relation>) row column val)
-  ((relation-column-setter r column) row val))
+  ((relation-modifier r) row column val))
 
 (define-method (setter relation-ref) ((r <relation>) row column val)
   (relation-set! r row column val))
@@ -135,10 +140,14 @@
 ;; method is sufficient, but the implementation may want to cache
 ;; the list of getters, for example.
 (define-method relation-column-getters ((r <relation>))
-  (map (cut relation-column-getter r <>) (relation-column-names r)))
+  (let1 accessor (relation-accessor r)
+    (map (lambda (c) (lambda (row) (acessor row c)))
+         (relation-column-names r))))
 
 (define-method relation-column-setters ((r <relation>))
-  (map (cut relation-column-setter r <>) (relation-column-names r)))
+  (let1 modifier (relation-modifier r)
+    (map (lambda (c) (lambda (row val) (modifier row c val)))
+         (relation-column-names r))))
 
 ;; Returns a procedure that coerces a row into a sequence.
 ;; If the relation already uses a sequence to represent a row, it can
@@ -153,7 +162,6 @@
 
 (define-method relation-deletable? ((r <relation>)) #f)
 (define-method relation-delete! ((r <relation>) row) #f)
-
 
 ;;;
 ;;; Generic stuff
@@ -185,7 +193,7 @@
 
 (define-class <simple-relation> (<relation>)
   ((columns :init-keyword :columns :init-value '()) ;; sequence of symbols
-   (rows    :init-keyword :data :init-value '())) ;; list of sequences
+   (rows    :init-keyword :rows :init-value '())) ;; list of sequences
   )
 
 (define-method call-with-iterator ((r <simple-relation>) proc . keys)
@@ -194,13 +202,29 @@
 (define-method relation-column-names ((r <simple-relation>))
   (ref r 'columns))
 
+(define-method relation-accessor ((r <simple-relation>))
+  (lambda (row column . maybe-default)
+    (or (and-let* ((ind (find-index (cut eq? <> column)
+                                    (ref r 'columns))))
+          (ref row ind))
+        (if (pair? maybe-default)
+          (car maybe-default)
+          (error "simple-relation: invalid column:" column)))))
+
+(define-method relation-modifier ((r <simple-relation>))
+  (lambda (row column val)
+    (or (and-let* ((ind (find-index (cut eq? <> column)
+                                    (ref r 'columns))))
+          (set! (ref row ind) val))
+        (error "simple-relation: invalid column:" column))))
+
 (define-method relation-column-getter ((r <simple-relation>) column)
-  (let1 ind (find-index (cut eq? <> column) (ref r 'column-alist))
+  (let1 ind (find-index (cut eq? <> column) (ref r 'columns))
     (unless ind (error "simple-relation: invalid column:" column))
     (lambda (row) (ref row ind))))
 
 (define-method relation-column-setter ((r <simple-relation>) column)
-  (let1 ind (find-index (cut eq? <> column) (ref r 'column-alist))
+  (let1 ind (find-index (cut eq? <> column) (ref r 'columns))
     (unless ind
       (error "simple-relation: invalid column:" column))
     (lambda (row v) (set! (ref row ind) v))))
@@ -223,7 +247,7 @@
 
 (define-class <object-set-relation> (<relation>)
   ((class :init-keyword :class :init-value <object>)
-   (rows  :init-keyword :data  :init-value '())  ;; list of instances of class
+   (rows  :init-keyword :rows  :init-value '())  ;; list of instances of class
    ))
 
 (define-method call-with-iterator ((r <object-set-relation>) proc . keys)
