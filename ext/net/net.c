@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.38 2005-07-22 09:26:54 shirok Exp $
+ *  $Id: net.c,v 1.39 2005-09-04 23:59:47 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -237,7 +237,8 @@ ScmObj Scm_SocketListen(ScmSocket *sock, int backlog)
 ScmObj Scm_SocketAccept(ScmSocket *sock)
 {
     const char addrbuf[SCM_SOCKADDR_MAXLEN];
-    int newfd, addrlen = SCM_SOCKADDR_MAXLEN;
+    int newfd;
+    socklen_t addrlen = SCM_SOCKADDR_MAXLEN;
     ScmSocket *newsock;
     ScmClass *addrClass = Scm_ClassOf(SCM_OBJ(sock->address));
     
@@ -279,7 +280,8 @@ ScmObj Scm_SocketConnect(ScmSocket *sock, ScmSockAddr *addr)
 ScmObj Scm_SocketGetSockName(ScmSocket *sock)
 {
     const char addrbuf[SCM_SOCKADDR_MAXLEN];
-    int r, addrlen = SCM_SOCKADDR_MAXLEN;
+    int r;
+    socklen_t addrlen = SCM_SOCKADDR_MAXLEN;
 
     if (SOCKET_CLOSED(sock->fd)) {
         Scm_Error("attempt to get the name of a closed socket: %S", sock);
@@ -294,7 +296,8 @@ ScmObj Scm_SocketGetSockName(ScmSocket *sock)
 ScmObj Scm_SocketGetPeerName(ScmSocket *sock)
 {
     const char addrbuf[SCM_SOCKADDR_MAXLEN];
-    int r, addrlen = SCM_SOCKADDR_MAXLEN;
+    int r;
+    socklen_t addrlen = SCM_SOCKADDR_MAXLEN;
 
     if (SOCKET_CLOSED(sock->fd)) {
         Scm_Error("attempt to get the name of a closed socket: %S", sock);
@@ -358,7 +361,7 @@ ScmObj Scm_SocketRecvFrom(ScmSocket *sock, int bytes, int flags)
     int r;
     char *buf;
     struct sockaddr from;
-    int fromlen = sizeof(from);
+    socklen_t fromlen = sizeof(from);
     if (SOCKET_CLOSED(sock->fd)) {
         Scm_Error("attempt to recv from a closed socket: %S", sock);
     }
@@ -399,18 +402,19 @@ ScmObj Scm_SocketSetOpt(ScmSocket *s, int level, int option, ScmObj value)
 ScmObj Scm_SocketGetOpt(ScmSocket *s, int level, int option, int rsize)
 {
     int r = 0;
+    socklen_t rrsize = rsize;
     if (SOCKET_CLOSED(s->fd)) {
         Scm_Error("attempt to get a socket option of a closed socket: %S", s);
     }
     if (rsize > 0) {
-        char *buf = SCM_NEW_ATOMIC2(char *, rsize);
-        SCM_SYSCALL(r, getsockopt(s->fd, level, option, buf, &rsize));
+        char *buf = SCM_NEW_ATOMIC2(char *, rrsize);
+        SCM_SYSCALL(r, getsockopt(s->fd, level, option, buf, &rrsize));
         if (r < 0) Scm_SysError("getsockopt failed");
-        return Scm_MakeString(buf, rsize, rsize, SCM_MAKSTR_INCOMPLETE);
+        return Scm_MakeString(buf, rrsize, rrsize, SCM_MAKSTR_INCOMPLETE);
     } else {
         int val;
-        rsize = sizeof(int);
-        SCM_SYSCALL(r, getsockopt(s->fd, level, option, &val, &rsize));
+        rrsize = sizeof(int);
+        SCM_SYSCALL(r, getsockopt(s->fd, level, option, &val, &rrsize));
         if (r < 0) Scm_SysError("getsockopt failed");
         return Scm_MakeInteger(val);
     }

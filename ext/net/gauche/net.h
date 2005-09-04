@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.h,v 1.1 2004-08-02 12:24:25 shirok Exp $
+ *  $Id: net.h,v 1.2 2005-09-04 23:59:54 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -77,7 +77,7 @@ SCM_DECL_BEGIN
 
 typedef struct ScmSockAddrRec {
     SCM_HEADER;
-    int addrlen;
+    socklen_t addrlen;
     struct sockaddr addr;
 } ScmSockAddr;
 
