@@ -6,6 +6,25 @@
 #include \"mqueue_glue.h\"
 "
 
+;; Let the stub generator know about <mqueue> type.
+;; The arguments of define-type are:
+;;
+;; (define-type 
+;;    scheme-name    ;; Scheme class name
+;;    c-type         ;; C type name when unboxed
+;;    description    ;; used in error message 
+;;    c-predicate    ;; bool c-predicate(ScmObj obj) - check whether
+;;                   ;;   obj is the type.
+;;    c-unbox        ;; c-type c-unbox(ScmObj obj) - unbox obj.
+;;                   ;;   You can assume obj is of the type.
+;;    c-box          ;; ScmObj c-box(c-type x) - box obj.
+;;    )
+;;
+;; Note: when you use a foreign pointer class, care should be taken
+;; if you want to save the unboxed value somewhere; since the ScmObj
+;; that points to the unboxed value may be unreferenced after subr
+;; call, you should be responsible to make sure the unboxed pointer
+;; is visible from GC.
 (define-type <mqueue> "MQueue*" "mqueue"
   "MQUEUE_P" "MQUEUE_UNBOX" "MQUEUE_BOX")
 
