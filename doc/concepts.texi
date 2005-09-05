@@ -61,13 +61,13 @@ but converts them to inexact real numbers.
 The reader can recognize '@code{#}' as insignificant digits.
 @c JP
 Numeric towerは整数、実数、複素数をサポートしていますが、
-有理数はサポートしていません。リーダーは有理数の構文を認識しますが、
+有理数はサポートしていません。リーダは有理数の構文を認識しますが、
 読む込むと不正確な実数になります。数字のフォーマットのうち、
 リーダは、精度に影響を与えない桁を'@code{#}'で表す表記を認識します。
 @c COMMON
 @item
 @c EN
-Procedure @code{rationalize}, @code{transcript-on} and @code{transcript-off}
+Procedures @code{rationalize}, @code{transcript-on} and @code{transcript-off}
 are not supported.
 @c JP
 手続き@code{rationalize}、@code{transcript-on}、及び@code{transcript-off}
@@ -114,9 +114,9 @@ The module @code{gauche.uvector} provides a superset of
 @code{srfi-4} procedures, including arithmetic operations and
 generic interface on the SRFI-4 vectors.  @xref{Uniform vectors}.
 @c JP
-@item SRFI-4, 一様型の数値ベクタ
-モジュール@code{gauche.uvector}が、
-@code{srfi-4}の手続きのスーパーセットを提供します。
+@item SRFI-4, 一様な数値ベクタ型
+モジュール@code{gauche.uvector}が
+@code{srfi-4}の上位互換手続きを提供します。
 同モジュールにはSRFI-4の手続きに加え、
 算術演算やジェネリックなインタフェースが定義されています。@ref{Uniform vectors}参照。
 @c COMMON
@@ -188,7 +188,7 @@ Supported by the module @code{srfi-13}.  @xref{String library}.
 @c JP
 @item SRFI-13, 文字列ライブラリ
 モジュール@code{srfi-13}でサポートされます。@ref{String library}参照。
-(SRFI-13の手続きのいくつかは組み込みになっています)。
+(SRFI-13の手続きのいくつかは組み込みになっています。)
 @c COMMON
 
 @c EN
@@ -264,7 +264,7 @@ Supported by the module @code{gauche.array}, which defines
 superset of SRFI-25.  @xref{Arrays}.
 @c JP
 @item SRFI-25, 多次元配列のプリミティブ
-モジュール@code{gauche.array}が、SRFI-25のスーパーセットと
+モジュール@code{gauche.array}が、SRFI-25の上位互換と
 なっています。@ref{Arrays}参照。
 @c COMMON
 
@@ -290,7 +290,7 @@ Gauche's built-in @code{format} procedure is a superset of
 SRFI-28 @code{format}.  @xref{Output}.
 @c JP
 @item SRFI-28, 基本フォーマット文字列
-Gauche組み込みの@code{format}がSRFI-28のもののスーパーセットに
+Gauche組み込みの@code{format}がSRFI-28のものの上位互換に
 なっています。@ref{Output}参照。
 @c COMMON
 
@@ -381,8 +381,8 @@ Supported by the module @code{gauche.parameter}.
 Supported by the module @code{util.stream}.
 @xref{Stream library}.
 @c JP
-@item SRFI-40, A Library of Streams
-Supported by the module @code{util.stream}.
+@item SRFI-40, ストリームライブラリ
+モジュール@code{util.stream}でサポートされています。
 @xref{Stream library}.
 @c COMMON
 
@@ -401,8 +401,8 @@ Supported by the module @code{srfi-42}.
 Built-in.
 @xref{Delayed evaluation}.
 @c JP
-@item SRFI-45, Primitives for Expressing Iterative Lazy Algorithms
-Built-in.
+@item SRFI-45, 反復的 Lazy アルゴリズムのための基本関数
+組み込みです。
 @xref{Delayed evaluation}.
 @c COMMON
 
@@ -436,10 +436,10 @@ Programmers tend to imagine a string as a simple
 array of characters (though a character may occupy more than one byte).
 It's not the case in Gauche.
 @c JP
-伝統的に、文字列は単なるバイトの配列として長く扱われてきました。
-一文字が複数バイトを占めるようになっても、
-文字列は単純な文字の配列であると考えられがちです。
-しかしGaucheにおいては、そうではありません。
+従来、文字列は単なるバイトの配列として扱われてきました。
+そのため一文字が複数バイトを占めるようになっても
+文字列は単純な文字の配列であると考えられがちですが、
+Gaucheにおいては、そうではありません。
 @c COMMON
 
 @c EN
@@ -679,8 +679,9 @@ internally even in R5RS Scheme; case-insensitivity is about readers.)
 @c JP
 Lisp系の言語は歴史的にシンボルの大文字小文字を区別していませんでした。
 Schemeもその流れを汲んでおり、R5RSでもシンボルは読み込まれる時に大文字小文字の
-区別をしないと定義されています。(但し、R5RSの範囲内でも内部的なシンボル名は
-大文字小文字の区別がなされます。ここで問題としているのは読み込み時の動作です)。
+区別をしないと定義されています。(但し、R5RSの範囲内でも処理系内部では
+大文字小文字を区別することになってます。
+ここで問題としているのは読み込み時の動作です。)
 @c COMMON
 
 @c EN
@@ -900,8 +901,8 @@ For more details about metaobject protocol, see @ref{mop,[MOP],MOP}.
 と呼ばれています。メタオブジェクトプロトコルは、言語をその言語そのもので拡張する方法と
 言えるでしょう。
 
-例として、ディストリビューションに含まれる@code{lib/gauche/singleton.scm}や
-@code{lib/gauche/validator}等があります。@code{lib/gauche/object.scm}を
+例として、ディストリビューションに含まれる@code{lib/gauche/mop/singleton.scm}や
+@code{lib/gauche/mop/validator}等があります。@code{src/objlib.scm}を
 読めば、クラス自身がGaucheでどのように定義されているかがわかります。
 メタオブジェクトプロトコルの更に詳しいことについては、
 @ref{mop,[MOP],MOP}が参考になります。
@@ -1078,7 +1079,7 @@ like this:
 @example
 ;; @r{in ``foo.scm''}
 (define-syntax foo
-  (syntax-rules () (_ arg) (quote arg)))
+  (syntax-rules () ((_ arg) (quote arg))))
 
 ;; @r{in your program}
 (begin (load "foo") (foo (1 2 3)))

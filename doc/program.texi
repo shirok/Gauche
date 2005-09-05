@@ -75,7 +75,7 @@ The first command line argument which doesn't begin with `@minus{}'
 is recognized as the script file.  If you want to specify a file
 that begins with a minus sign, use a dummy option `@code{--}'.
 @c JP
-以下のコマンドラインオプションが@code{gosh}に認識されます。
+@code{gosh}には以下のようなコマンドラインオプションがあります。
 `@minus{}' で始まらない最初のコマンドライン引数がスクリプトファイルと認識されます。
 スクリプトファイル名が `@minus{}' で始まっている可能性がある場合は、ダミーオプション
 `@code{--}' をスクリプトファイル名の前に置いて下さい。
@@ -103,7 +103,7 @@ You can specify this option more than once to add multiple paths.
 @c EN
 Makes @code{gosh} not to load the default initialization file.
 @c JP
-@code{gosh}が起動時にシステムの初期化ファイルを読まないようにします。
+@code{gosh}が起動時にシステムの初期化ファイルをロードしないようにします。
 @c COMMON
 @end deftp
 
@@ -124,8 +124,8 @@ You can specify this option more than once to use multiple modules.
 @c JP
 起動後、インタラクティブなread-eval-printループに入る前、もしくは@var{scheme-file}
 をロードする前に@var{module}を``use''します。つまりそのモジュールがロードされ
-インポートされます。(@code{use}の詳細については@ref{Defining and selecting modules}を参照して下さい)。
-このオプションは複数回指定できます。
+インポートされます。(@code{use}の詳細については@ref{Defining and selecting modules}を参照して下さい。)
+このオプションは複数指定できます。
 @c COMMON
 @end deftp
 
@@ -137,8 +137,8 @@ the read-eval-print loop.   The file is loaded in the same way as
 You can specify this option more than once to load multiple files.
 @c JP
 起動後、インタラクティブなread-eval-printループに入る前、もしくは@var{scheme-file}
-をロードする前に@var{file}をロードします(ロードの詳細については@ref{Loading Scheme file}
-を参照して下さい)。このオプションは複数回指定できます。
+をロードする前に@var{file}をロードします。ロードの詳細については@ref{Loading Scheme file}
+を参照して下さい。このオプションは複数指定できます。
 @c COMMON
 @end deftp
 
@@ -153,7 +153,7 @@ You can specify this option more than once to evaluate multiple experssions.
 起動後、インタラクティブなread-eval-printループに入る前、もしくは@var{scheme-file}
 をロードする前に@var{scheme-expression}を評価します。評価は
 @var{interaction-environment}中で行われます(@ref{Eval and repl}参照)。
-このオプションは複数回指定できます。
+このオプションは複数指定できます。
 @c COMMON
 @end deftp
 
@@ -164,7 +164,7 @@ as if it is surrounded by parenthesis.  For example:
 @c JP
 オプション-eとほぼ同じですが、@var{scheme-expression}は
 それが括弧で囲まれているかのように読まれます。
-このオプションは複数回指定できます。例：
+このオプションは複数指定できます。例：
 @c COMMON
 @example
 % gosh -umath.const -E"print (sin (* pi/180 15))" -Eexit
@@ -174,20 +174,17 @@ as if it is surrounded by parenthesis.  For example:
 
 @deftp {Command Option} -b
 @c EN
-Batch. Does not print prompts in read-eval-print loop even if
-the input is a terminal.
+Batch. Does not print prompts even if the input is a terminal.
 @c JP
-バッチ。入力が端末であっても、read-eval-printループがプロンプトを出さないようにします。
+バッチ。入力が端末であってもプロンプトを出さないようにします。
 @c COMMON
 @end deftp
 
 @deftp {Command Option} -i
 @c EN
-Interactive. Print prompts in read-eval-print loop even if
-the input is not a terminal.
+Interactive. Print prompts even if the input is not a terminal.
 @c JP
-インタラクティブ。入力が端末で無くても、read-eval-printループが
-プロンプトを出すようにします。
+インタラクティブ。入力が端末で無くてもプロンプトを出すようにします。
 @c COMMON
 @end deftp
 
@@ -197,11 +194,18 @@ This option controls compiler and runtime behavior.  For now we have
 following options available:
 @table @asis
 @item no-inline
-Prohibits the compiler from inilining primitive Scheme procedures.
-@item no-source-info
-Don't keep source information for debugging.  Consumes less memory.
+Prohibits the compiler from inlining procedures and constants. Equivalent to
+no-inline-globals, no-inline-locals and no-inline constants combined.
+@item no-inline-globals
+Prohibits the compiler from inlining global procedures.
+@item no-inline-locals
+Prohibits the compiler from inlining local procedures.
+@item no-inline-constants
+Prohibits the compiler from inlining constants.
 @item load-verbose
 Reports whenever a file is loaded.
+@item no-source-info
+Don't keep source information for debugging.  Consumes less memory.
 @item case-fold
 Ignore case for symbols as specified in R5RS.
 (It is distinguished by default).  @xref{Case-sensitivity}.
@@ -215,7 +219,14 @@ compiled @code{gosh} interpreter inside source tree, without installing it.
 今のところ、次のオプションのみが@var{compiler-option}として有効です。
 @table @asis
 @item no-inline
-Schemeの基本関数のインライン展開を行いません。
+一切のインライン展開を行いません。このオプションは以下の no-inline-globals
+no-inline-locals および no-inline-constants を同時に指定したのと等価です。
+@item no-inline-globals
+大域(global)関数のインライン展開を展開を行ないません。
+@item no-inline-locals
+局所(local)関数のインライン展開を展開を行ないません。
+@item no-inline-constants
+定数のインライン展開を行ないません。
 @item no-source-info
 デバッグのためのソースファイル情報を保持しません。メモリの使用量は小さくなります。
 @item load-verbose
@@ -344,7 +355,7 @@ in script mode.)
 ファイルがあればをれをロードします。
 インタラクティブデバッグに便利な設定をそこに書いておくことができます。
 (Gauche release 0.7.3から、@file{.gaucherc}はgoshがスクリプトモードで
-起動された時は読まれなくなりました)。
+起動された時は読まれなくなりました。)
 @c COMMON
 
 @c EN
@@ -352,7 +363,7 @@ I recommend you to run @code{gosh} inside Emacs, for it has
 rich features useful to interact with internal Scheme process.
 Put the following line to your @file{.emacs} file:
 @example
-(setq scheme-program-name "gosh")
+(setq scheme-program-name "gosh -i")
 @end example
 And you can run @code{gosh} by @key{M-x run-scheme}.
 @c JP
@@ -361,7 +372,7 @@ EmacsはSchemeサブプロセスを操作するための豊富な機能を持っています。
 次の行を@file{.emacs}に加えておくと、@key{M-x run-scheme} で
 Emacsのバッファ内で@code{gosh}が走ります。
 @example
-(setq scheme-program-name "gosh")
+(setq scheme-program-name "gosh -i")
 @end example
 @c COMMON
 
@@ -577,8 +588,8 @@ The following script is a simple grep command.
 See also @ref{Parsing command-line options}, for a convenient way to
 parse command-line options.
 @c JP
-コマンドライン引数を処理するモジュールがあります。
-@ref{Parsing command-line options}を参照してください。
+また、@ref{Parsing command-line options}を使うと手軽にコマンドラインオプション
+を処理することができます。
 @c COMMON
 
 @c ----------------------------------------------------------------------
@@ -847,6 +858,7 @@ see @ref{Profiler API}, for the details.
 @subsection Performance tips
 @c NODE パフォーマンスに関するヒント
 
+@c EN
 Don't guess, just benchmark.  It is the first rule of
 performance tuning.  Especially for the higher-level languages 
 like Scheme, what impacts on performance greatly depends on
@@ -855,14 +867,32 @@ on an impelementation may be costly on others.
 Gauche has such implementation-specific characteristics, and
 to know some of them would help to see what to look out in
 the benchmark results.
+@c JP
+「論より run 」これがパフォーマンスチューニングの第一法則です。
+Scheme のような高級言語では、何がパフォーマンスに強い影響を
+与えるかはことのほかその実装に大きく依存し、ある処理系では
+とても安価な操作が別の処理系ではとても高価になり得ます。
+Gauche にもそのようなパフォーマンスに関する実装特有の特徴があり、
+それらのうちのいくつかを知っておくことは、ベンチマークの結果の
+どこに着目すべきかを知るうえで助けになるでしょう。
 
+@c EN
 "80% of execution time is spent in 20% of the code" is another
 old saying.  Don't obscure your code by "potential" optimization
 that has little impact on the actual execution.  We describe some
 tips below, but it doesn't mean you need to watch them all the time.
 It is better to keep most of the code clean and easy to understand,
 and only do tricks on the innermost loop.
+@c JP
+「ソースコードの2割が実行時間の8割を消費する」というのも古くから
+言われています。実際の実行時間に大した影響を及ぼさないところを
+下手にいじくってプログラムをわかりづらくすることは避けましょう。
+これからいくつかのヒントを述べますが、これらのことを四六時中気にして
+プログラミングしなければならないということではありません。
+むしろ、出来るだけ明瞭でわかりやすいプログラムを心がけ、ループの一番深いところ
+(もっとも時間を消費するところ)でこれらのトリックを使うのが良いでしょう。
 
+@c EN
 @strong{Ports}: To satisfy the specification of SRFI-18 (Threading),
 every call to I/O primitives of Gauche locks the port.
 This overhead may be visible if the application does a lot of I/O
@@ -870,12 +900,28 @@ with smaller units (e.g. every bytes).   The primitives that deals
 with larger unit, such as @code{read} and @code{read-block}, are less
 problematic, since they just lock the port once per call and do
 all the low-level I/O without the lock overhead.
+@c JP
+@strong{Ports}: SRFI-18 (スレッド) の仕様を満たすために
+Gauche のすべての入出力基本関数はポートをロックします。
+このオーバーヘッドは小単位(例えばバイト毎)の入出力を行なう
+アプリケーションでは無視できないでしょう。
+入出力基本関数は呼びだし毎にポートをロックし、そこからの
+下位レベルの入出力はロックのオーバーヘッドの影響を受けずに
+行なわれます。ですから @code{read} や@code{raed-block} 
+などのより大きな単位で入出力を行なう基本関数では問題と
+なることが少なくなります。
 
+@c EN
 If you find out the locking is indeed a bottleneck, there are couple
 of things you can consider: (1) Try using the larger-unit primitives,
 instead of calling the smaller-unit ones.  (2) Use @code{with-port-locking}
 (see @ref{Port and threads}) to lock the port in larger context.
+@c JP
+ポートロックが実際に問題となった場合、二つばかり対処策が考えられます。
+(1) より大きな単位で入出力を行なう。(2) @code{with-port-locking}
+(@ref{Port and threads} 参照)を使ってより広範囲でポートをロックする。
 
+@c EN
 @strong{Strings}: Because of the multibyte strings, two operations
 are particularly heavy in Gauche: string mutation and indexed string access.
 It is a design choice; we encourage the programming style that
@@ -887,14 +933,35 @@ higher-level primitives are provided (see @ref{String utilities},
 @ref{Regular expression}, and @ref{String library}, for example).
 If you're using strings to represent an octet stream, use uniform
 vectors (see @ref{Uniform vectors}) instead.
+@c JP
+@strong{文字列}: 多バイト文字列の取扱いのため、Gauche では文字列の
+変更とインデックスによるアクセスが特に高価な操作となります。
+これは意図的な設計です。 Gauche ではこの二つの操作を避けたプログラミングを
+推奨しています。 文字列の中の文字を順にアクセスするには
+(インデックスを使わずに)文字列ポート(@ref{String ports}参照)を使うと
+より明瞭かつ効率的なプログラムとなり、一方サーチして部分文字列をとり出す
+といった操作には、多彩な高レベル関数が用意されています。
+(例えば @ref{String utilities}、@ref{Regular expression}、
+ @ref{String library} 等を参照。)  オクテットストリームを表現するのに
+文字列を使っていたなら、代わりにユニフォームベクタ(@ref{Uniform vectors}
+参照)を使いましょう。
 
+@c EN
 @strong{Deep recursion}: Gauche's VM uses a stack for efficient
 local frame allocation.  If recursion goes very deep (depending on
 the code, but usually several hundreds to a thousand), the stack
 overflows and Gauche moves the content of the stack into the heap.
 This incurs some overhead.  If you observe a performance degradation
 beyond a certain amount of data, check out this possibility.
+@c JP
+@strong{深い再帰}: Gauche の仮想機械(VM)は効率的な
+ローカルフレーム割り当てのためにスタックを使っています。
+再帰が深くなって(プログラムにもよりますが、大体数百回から千回)
+スタックがオーバーフローするとスタックの内容をヒープに退避するという
+オーバーヘッドが生じます。 あるデータ量を越えたところでパフォーマンスの
+低下が見られたならば、深い再帰がないか調べてみて下さい。
 
+@c EN
 @strong{Generic functions}: Because of its dynamic nature, generic
 function calls are slower than procedure calls.  Not only because
 of the runtime dispatch overhead, but also because Gauche's compile-time
@@ -903,14 +970,33 @@ You don't need to avoid generic functions because of performance
 reasons in general, but if you do find single function call consuming
 a large part of execution time and it is calling a generic
 function in its inner loop---then it may be worth to modify it.
+@c JP
+@strong{Generic functions}: Generic function の持つ動的な性質の
+ため、これらの呼び出しは通常の手続き呼び出しより遅くなります。
+実行時のディスパッチのオーバヘッドだけでなく、
+VM コードへのコンパイル時にたいして最適化が行えないためです。
+パフォーマンスのために Generic function の利用をどんな場合にも避ける
+という必要はありませんが、もしある一つの関数が実行時間の大部分を
+占めていて、その関数が Generic function を内部で呼び出しているなら
+それを使わないように変更してみる価値はあるでしょう。
 
+@c EN
 @strong{Redefining builtin functions}: Gauche inlines some builtin
 functions if they are not redefined.  Although sometimes it is useful
 to redefine basic functions, you may want to limit the effect.
 For example, put redefined functions in a separate module and
 use the module in the code that absolutely needs those functions
 replaced.  
+@c JP
+@strong{組込み関数の再定義}:
+Gauche のコンパイラはいくつかの組込み関数を(それらが再定義されていなければ)
+インライン展開します。 基本関数を再定義するのは時には便利ですが、
+限られた範囲にとどめておいた方がよいでしょう。
+やり方は、再定義をどこか別のモジュールに集めておき、どうしても再定義
+バージョンが必要なときに限ってそのモジュール use するというように
+しておけばよいでしょう。
 
+@c EN
 @strong{Closure creation}: When you create a closure, its closing environment
 is copied to the heap.  This overhead is small, but it still may be
 visible when a closure is created within an innermost loop that is
@@ -920,10 +1006,24 @@ technique of closure analysis to avoid creating closures for
 typical cases, in which case you see the local function's bodies
 are inlined.  If you see a @code{CLOSURE} instruction, though, it
 means a closure is created.
+@c JP
+@strong{クロージャの作成}: クロージャを作成するとそれが持つ環境がヒープに
+コピーされます。 オーバーヘッドは小さいですが、何百万回も呼ばれるような
+ループの中で作成されれば無視できなくなるでしょう。そんな疑いがあれば
+その関数を逆アセンブルしてみましょう。 Gauche のコンパイラはクロージャの
+簡単な解析を行ない生成をなるべく避けるようになっています。そのような場合
+局所関数の本体はインライン展開されています。逆アセンブルのコードに
+@code{CLOSURE}命令が含まれていれば、残念ながらクロージャが生成されます。
 
+@c EN
 This list isn't complete, and may change when Gauche's implementation
 is improved, so don't take this as a fixed features.
 We'll adjust it occasionally.
+@c JP
+これらのヒント集は完全でないし、Gauche の改良とともに変わっていくでしょう。
+ですから、固定された特徴だとは思わないで下さい。
+このヒント集は今後、折を見て実装に対応させて更新してゆきます。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Writing Gauche modules, Using extension packages, Profiling and tuning, Programming in Gauche
