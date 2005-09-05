@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.24 2005-08-31 12:43:29 shirok Exp $
+;;;  $Id: gencomp,v 1.25 2005-09-05 00:00:31 shirok Exp $
 ;;;
 
 ;;;
@@ -224,7 +224,7 @@
                 (code (cgen-literal (closure-code body-closure)))
                 (var  (cgen-literal name)))
            (cgen-init
-            (format "  Scm_Define(mod, SCM_SYMBOL(~a), Scm_MakeMacroTransformerOld(SCM_SYMBOL(~a), Scm_MakeClosure(~a, NULL)));"
+            (format "  Scm_Define(mod, SCM_SYMBOL(~a), Scm_MakeMacroTransformerOld(SCM_SYMBOL(~a), SCM_PROCEDURE(Scm_MakeClosure(~a, NULL))));"
                     (cgen-cexpr var) (cgen-cexpr var)
                     (cgen-cexpr code)))))
        seed)
