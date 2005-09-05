@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.20 2005-09-03 03:11:32 shirok Exp $
+;;;  $Id: dbi.scm,v 1.21 2005-09-05 08:56:52 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -210,15 +210,12 @@
 (define-method relation-column-names ((r <dbi-result-set-simple>))
   (ref r 'columns))
 
-(define-method relation-column-getter ((r <dbi-result-set-simple>) column)
-  (let ((i (find-index (cut equal? column <>) (ref r 'columns))))
-    (lambda (row)
-      (and i (ref row i)))))
-
-(define-method relation-column-setter ((r <dbi-result-set-simple>) column)
-  (let ((i (find-index (cut equal? column <>) (ref r 'columns))))
-    (lambda (row val)
-      (and i (set! (ref row i) val)))))
+(define-method relation-accessor ((r <dbi-result-set-simple>))
+  (let1 columns (ref r 'columns)
+    (lambda (row column . maybe-default)
+      ((find-index (cut equal? column <>) columns) => (cut ref row <>))
+      ((pair? maybe-default) (car maybe-default))
+      (else (error "invalid column:" column)))))
 
 ;; default method
 (define-method dbi-get-value ((r <sequence>) (n <integer>))
