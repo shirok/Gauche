@@ -1,3 +1,7 @@
+2005-09-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c (further_options): comment options for internal use.
+
 2005-09-04  Shiro Kawai  <shiro@acm.org>
 
 	* m4/*, aclocal.m4 : adapetd to the newer autotools convention.

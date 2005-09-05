@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.85 2005-08-28 12:59:17 shirok Exp $
+ *  $Id: main.c,v 1.86 2005-09-05 12:05:25 shirok Exp $
  */
 
 #include <unistd.h>
@@ -123,12 +123,6 @@ void further_options(const char *optarg)
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_LOCALS);
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOINLINE_CONSTS);
     }
-    else if (strcmp(optarg, "no-combine-instructions") == 0) {
-        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOCOMBINE);
-    }
-    else if (strcmp(optarg, "debug-compiler") == 0) {
-        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_SHOWRESULT);
-    }
     else if (strcmp(optarg, "no-source-info") == 0) {
         SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOSOURCE);
     }
@@ -146,13 +140,21 @@ void further_options(const char *optarg)
         stats_mode = TRUE;
         SCM_VM_RUNTIME_FLAG_SET(vm, SCM_COLLECT_VM_STATS);
     }
+    /* For development; not for public use */
+    else if (strcmp(optarg, "no-combine-instructions") == 0) {
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_NOCOMBINE);
+    }
+    /* For development; not for public use */
+    else if (strcmp(optarg, "debug-compiler") == 0) {
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_SHOWRESULT);
+    }
     /* Experimental */
     else if (strcmp(optarg, "limit-module-mutation") == 0) {
         SCM_VM_RUNTIME_FLAG_SET(vm, SCM_LIMIT_MODULE_MUTATION);
     }
     else {
         fprintf(stderr, "unknown -f option: %s\n", optarg);
-        fprintf(stderr, "supported options are: -fcase-fold or -fload-verbose, -fno-inline, -fno-inline-globals, -fno-inline-locals, -fno-inline-constants, -fno-source-info, -fprofile, -ftest\n");
+        fprintf(stderr, "supported options are: -fcase-fold or -fload-verbose, -fno-inline, -fno-inline-globals, -fno-inline-locals, -fno-inline-constants, -fno-source-info, -ftest\n");
         exit(1);
     }
 }
