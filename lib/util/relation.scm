@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: relation.scm,v 1.4 2005-09-04 20:44:35 shirok Exp $
+;;;  $Id: relation.scm,v 1.5 2005-09-05 06:40:59 shirok Exp $
 ;;;
 
 ;;; Given set of values S1, S2, ..., Sn, a relation R is a set of tuples
@@ -203,20 +203,20 @@
   (ref r 'columns))
 
 (define-method relation-accessor ((r <simple-relation>))
-  (lambda (row column . maybe-default)
-    (or (and-let* ((ind (find-index (cut eq? <> column)
-                                    (ref r 'columns))))
-          (ref row ind))
-        (if (pair? maybe-default)
-          (car maybe-default)
-          (error "simple-relation: invalid column:" column)))))
+  (let1 columns (ref r 'columns)
+    (lambda (row column . maybe-default)
+      (cond
+       ((find-index (cut eq? <> column) columns) => (cut ref row <>))
+       ((pair? maybe-default) (car maybe-default))
+       (else (error "simple-relation: invalid column:" column))))))
 
 (define-method relation-modifier ((r <simple-relation>))
-  (lambda (row column val)
-    (or (and-let* ((ind (find-index (cut eq? <> column)
-                                    (ref r 'columns))))
-          (set! (ref row ind) val))
-        (error "simple-relation: invalid column:" column))))
+  (let1 columns (ref r 'columns)
+    (lambda (row column val)
+      (cond
+       ((find-index (cut eq? <> column) columns)
+        => (cut (setter ref) row <> val))
+       (else (error "simple-relation: invalid column:" column))))))
 
 (define-method relation-column-getter ((r <simple-relation>) column)
   (let1 ind (find-index (cut eq? <> column) (ref r 'columns))
