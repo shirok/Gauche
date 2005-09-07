@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.22 2005-09-07 02:09:51 shirok Exp $
+;;;  $Id: dbi.scm,v 1.23 2005-09-07 02:14:31 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -135,8 +135,7 @@
     (apply dbd-make-connection
            (dbi-make-driver driver-name) options option-alist args)))
 
-;; Prepares and returns a closure.
-;;query object.  The default method
+;; Prepares and returns a query object.  The default method
 ;; parse SQL and store it in <dbi-query>.  The driver may overload
 ;; this method to delegate preparation in the DBMS.
 (define-method dbi-prepare ((c <dbi-connection>) (sql <string>) . options)
@@ -186,14 +185,9 @@
     ;; call deprecated dbi-make-connection API.
     (dbi-make-connection d username password (or options ""))))
 
-;; Subclass may override this method.  The default method returns
-;; a closure that takes parameters and returns a complete sql string.
-;; It is useful if the DBMS doesn't have prepared statement feature.
+;; Subclass may override this method.
 (define-method dbd-prepare ((c <dbi-connection>) (sql <string>) . options)
-  (let-keywords* options ((pass-through #f))
-    (if pass-through
-      (lambda () sql)
-      (dbi-prepare-sql c sql))))
+  (make <dbi-query> :%prepared (dbi-prepare-sql c sql)))
 
 ;; Subclass should implement this.  The current default procedure
 ;; delegates the work for the old driver API.  Should go away soon.
