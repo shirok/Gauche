@@ -52,7 +52,7 @@ Complex numbers can be written both in the rectangular format
 @item 数値リテラル
 不正確な実数の整数部または小数部のいずれかが0の場合、それを省略することが
 できます。例：@code{30.}, @code{.25}, @code{-.4}。
-数値のリーダーは、パディングの'@code{#}'を認識します。
+数値のリーダは、パディングの'@code{#}'を認識します。
 有理数表記 (例：@code{1/3}) は認識されますが、読み込み時に不正確な実数へと
 変換されます。
 複素数表記は直交座標形 (例：@code{1+0.3i}) でも極座標形 (例：3.0@@1.57) でも
@@ -696,7 +696,7 @@ seamlessly with the generalized @code{set!}.
 @xref{Applicable objects}, for the details.
 @c JP
 手続き@var{proc}のsetter手続きを返します。
-@var{proc}がsetter手続きを持たない場合の動作は不定です。
+@var{proc}がsetter手続きを持たない場合の動作は未定義です。
 
 ある関数@var{f}のsetter手続き@var{g}とは、もし@code{(g a b @dots{} v)}のように
 呼ばれた場合、次の@code{(f a b @dots{})}が@var{v}を返すようになる手続きのことです。
@@ -993,7 +993,8 @@ sequentially, and the result(s) of the last expression in the
 If the result of evaluating @var{key} is different from every @var{datum},
 then if there is an else clause its expressions are evaluated and
 the result(s) of the last is(are) the result(s) of the case expression;
-otherwise the result of the case expression is unspecified.
+otherwise the result of the case expression is undefined.
+@c skimu このファイルの他の場所では undefined なのでそれに合わせました。
 @c JP
 @var{key}は任意の式です。@var{clause}は以下の形式でなければなりません。
 @example
@@ -1501,23 +1502,44 @@ Common Lispからの輸入です。それぞれ以下のように展開されます。
 @defmac while expr body @dots{}
 @defmacx while expr @code{=>} var body @dots{}
 @defmacx while expr guard @code{=>} var body @dots{}
+@c EN
 @var{Var} is an identifier and @var{guard} is a procedure
 that takes one argument.
+@c JP
+@var{Var} は識別子で@var{guard}は一つの引数をとる手続きです。
 
+@c EN
 In the first form, @var{expr} is evaluated, and if it yields a true
 value, @var{body} @dots{} are evaluated.  It is repeated while
 @var{expr} yields true value.
+@c JP
+最初の形式ではまず@var{expr}が評価され、もしそれが真値を返したら
+@var{body} @dots{} が評価されます。そして@var{expr}が真値を返す
+限り繰り返されます。
 
+@c EN
 In the second form, @var{var} is bound to a result of @var{expr}
 in the scope of @var{body} @dots{}.
+@c JP
+2番目の形式では、@var{body} @dots{} で有効な変数@var{var}を
+作成し、@var{expr}の結果に束縛します。
 
+@c EN
 In the third form, the value @var{expr} yields are passed to
 @var{guard}, and the execution of @var{body} @dots{} is repeated
 while @var{guard} returns a true value.  @var{var} is bound
 to the result of @var{expr}.
+@c JP 
+最後の形式では、@var{expr} の返り値が @var{guard} に渡されこの
+結果が真値である限り @var{body} @dots{} が繰り返されます。
+変数 @var{var} は @var{expr} の結果に束縛されます。
 
+@c EN
 The return value of @code{while} form itself isn't specified.
+@c JP
+@code{while} 自体の返り値は不定です。
 
+@c COMMON
 @example
 (let ((a '(0 1 2 3 4)))
   (while (pair? a)
@@ -1531,18 +1553,33 @@ The return value of @code{while} form itself isn't specified.
 
 @defmac until expr body @dots{}
 @defmacx until expr guard @code{=>} var body @dots{}
+@c EN
 Like @code{while}, but the condition is reversed.  That is,
 the first form repeats evaluation of @var{expr} and @var{body} @dots{}
 until @var{expr} yields true.  In the second form,
 the result of @var{expr} is passed to @var{guard}, and the
 execution is repeated until it returns true.  @var{Var} is bound
 to the result of @var{expr}.
+@c JP
+@code{while} の条件を逆にしたものです。 つまり、
+最初の形式では@var{expr}が真値を返すまで @var{body} @dots{} を
+繰り返します。2番目の形式では@var{expr}の結果が@var{guard} に渡され
+それが真値を返すまで繰り返します。 @var{Var}は@var{expr}返り値に
+束縛されます。
 
+@c EN
 (The second form without @var{guard} isn't useful in @code{until}, since
 @var{var} would always be bound to @code{#f}).
+@c JP
+(@var{guard} を省いた2番目の形式では@var{var}は常に@code{#f}へ
+束縛されるため、あまり意味がありません。)
 
+@c EN
 The return value of @code{until} form itself isn't specified.
+@c JP
+@code{until}自体の返り値は不定です。
 
+@c COMMON
 @example
 (let ((a '(0 1 2 3 4)))
   (until (null? a)
@@ -1962,8 +1999,9 @@ namespace, so that they can control which bindings to be
 visible from library users.
 
 @c JP
-しかしほとんどのライブラリは、固有の名前空間を生成します。これにより、
-どの束縛を、ライブラリ使用者に見せるかを制御できます。
+しかしほとんどのライブラリは、固有の名前空間を生成するために
+モジュールを用います。これにより、どの束縛をライブラリ使用者に
+見せるかを制御できます。
 
 @c EN
 Usually a library is provided in the form of one or more Scheme
@@ -2124,17 +2162,17 @@ This keeps modules' modularity; a library module can import whatever
 modules it needs without worring about polluting the namespace of
 the user of the module.
 @c JP
-名前@var{module-name}を持つモジュールがexportしている束縛を
-カレントモジュール中で使えるようにします。該当するモジュールが既に定義されて
-いなければなりません。
+@var{module-name}という名前のモジュールがexportしている束縛を
+カレントモジュール中で使えるようにします。該当するモジュールは
+コンパイル時に存在していなくてはなりません。
 
 モジュールのimportは遷移的でないことに注意してください。
-@code{module-name}で指定されるモジュール内でimportしているモジュールは、
-カレントモジュールにはimportされません。
-これはモジュールのモジュラリティを保つために必要です；
-例えば、ライブラリモジュールは内部で使用するためにいくつも他のモジュールを
-importするかもしれませんが、それがそのライブラリモジュールを使用するモジュールの
-名前空間に影響することはないわけです。
+つまり@code{module-name}で指定されたモジュールがその内部でimport
+しているモジュールは自動的にカレントモジュールにはimportされてません。
+モジュールの独立性を保つための設計です。この性質により、
+ライブラリモジュールの作者はいくら他のモジュールを
+importしようとも利用者の名前空間を不意に汚染してしまう心配はありません。
+(利用者からはそのモジュールでexportしている名前しか見えないからです。)
 @c COMMON
 @end defspec
 
@@ -2152,7 +2190,7 @@ loaded) which defines a module named @code{foo} in it,
 and then import the module
 @code{foo} into the current module.
 @c JP
-モジュールのインポートとオンデマンドのファイルのロードを合わせて行う、
+モジュールのインポートと必要に応じてファイルのロードを合わせて行う、
 便利なマクロです。基本的に、@code{(use foo)} は以下のふたつのフォームと
 等価です。
 @example
@@ -2173,7 +2211,7 @@ modules provided with Gauche are arranged so that they can be
 used by @code{use} macro.
 @c JP
 ファイルのロードとモジュールとは直交する概念ですが、
-現実にはモジュール毎にファイルを分割するのが便利です。
+実用的にはモジュール毎にファイルを分割するのが便利です。
 必ずしもそうする必要は無く、@code{require} と @code{import} を別々に
 使っても構いません。が、Gaucheに附属してくるライブラリはすべて、
 @code{use} マクロで使えるように書かれています。
