@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.24 2005-09-07 09:43:10 shirok Exp $
+;;;  $Id: dbi.scm,v 1.25 2005-09-07 10:51:32 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -51,9 +51,9 @@
           dbi-connect dbi-close dbi-prepare dbi-do
           dbi-open? dbi-parse-dsn dbi-make-driver
           dbi-prepare-sql dbi-escape-sql dbi-list-drivers
-          dbd-make-connection
+          dbi-make-connection 
           ;; compatibility
-          dbi-make-connection dbi-make-query dbi-execute-query dbi-get-value
+          dbi-make-query dbi-execute-query dbi-get-value
           <dbi-query> <dbi-exception>))
 (select-module dbi)
 
@@ -122,7 +122,7 @@
 ;; 
 (define (dbi-connect dsn . args)
   (receive (driver-name options option-alist) (dbi-parse-dsn dsn)
-    (apply dbd-make-connection
+    (apply dbi-make-connection
            (dbi-make-driver driver-name) options option-alist args)))
 
 ;; Prepares SQL statement and returns a closure, which executes
@@ -172,7 +172,9 @@
 ;;;
 
 ;; Subclass SHOULD implement this.
-(define-method dbd-make-connection ((d <dbi-driver>) options option-alist
+(define-method dbi-make-connection ((d <dbi-driver>)
+                                    (options <string>)
+                                    (option-alist <list>)
                                     . args)
   ;; The default method here is just a temporary one to use
   ;; older dbd drivers.  Will go away once the drivers catch up
@@ -333,21 +335,18 @@
 (define <dbi-exception> <dbi-error>)
 
 (define-class <dbi-query> (<dbi-object>)
-  ())
+  ((connection :init-keyword :connection)))
 
 ;; Older API
-(define-method dbi-make-connection ((d <dbi-driver>) user pass options)
+(define-method dbi-make-connection ((d <dbi-driver>)
+                                    (user <string>)
+                                    (pass <string>)
+                                    (options <list>))
   (error <dbi-error>
          "dbi-make-connection not implemented for the driver:" d))
-(define-method dbi-make-query ((c <dbi-connection>) (o <string>))
-  (error <dbi-error>
-         "dbi-make-query not implemented for the connection:" c))
-(define-method dbi-make-query ((c <dbi-connection>))
-  (error <dbi-error>
-         "dbi-make-query not implemented for the connection:" c))
+(define-method dbi-make-query ((c <dbi-connection>) . _)
+  (make <dbi-query> :connection c))
 (define-method dbi-execute-query ((q <dbi-query>) (s <string>))
-  (error <dbi-error>
-         "dbi-execute-query not implemented for the query:" q))
-
+  (dbi-do (ref q 'connection) s))
 
 (provide "dbi")

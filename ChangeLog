@@ -2,8 +2,13 @@
 
 	* lib/dbi.scm, lib/dbd/null.scm: Revised API.  Now dbi-prepare
 	  returns a closure that executes the prepared query when invoked.
-	  Dropped dbi-execute.  Since the driver can now just overload
-	  dbi-prepare, we dropped dbd-{prepare|execute}, too.
+	  Dropped dbi-execute.  Dropped dbd-prepare and dbd-execute, since
+	  the driver can now just overload dbi-prepare.
+	  Renamed dbd-make-connection to dbi-make-connection to make
+	  every method is called dbi-* now (the legacy dbi-make-connection
+	  can be distinguished by the signature).  Sets the default method
+	  of legacy dbi-make-query and dbi-execute-query so that the old
+	  client code that uses legacy DBI API can work with the new dbi/dbd.
 
 	* libsrc/srfi-13.scm (%string-prefix-int): fix (Patch by
 	  Michal Maruška).
