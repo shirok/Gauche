@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.25 2005-09-07 10:51:32 shirok Exp $
+;;;  $Id: dbi.scm,v 1.26 2005-09-07 11:34:12 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -341,9 +341,9 @@
 (define-method dbi-make-connection ((d <dbi-driver>)
                                     (user <string>)
                                     (pass <string>)
-                                    (options <list>))
-  (error <dbi-error>
-         "dbi-make-connection not implemented for the driver:" d))
+                                    (options <string>))
+  (dbi-connect #`"dbi:,(slot-ref d 'driver-name):,options"
+               :username user :password pass))
 (define-method dbi-make-query ((c <dbi-connection>) . _)
   (make <dbi-query> :connection c))
 (define-method dbi-execute-query ((q <dbi-query>) (s <string>))
