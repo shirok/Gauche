@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.23 2005-09-07 02:14:31 shirok Exp $
+;;;  $Id: dbi.scm,v 1.24 2005-09-07 09:43:10 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -47,14 +47,14 @@
   (extend util.relation)
   (export <dbi-error> <dbi-nonexistent-driver-error>
           <dbi-unsupported-error> <dbi-parameter-error>
-          <dbi-driver> <dbi-connection> <dbi-query> <dbi-result-set>
-          dbi-connect dbi-close dbi-prepare dbi-execute dbi-do
+          <dbi-driver> <dbi-connection> <dbi-result-set>
+          dbi-connect dbi-close dbi-prepare dbi-do
           dbi-open? dbi-parse-dsn dbi-make-driver
           dbi-prepare-sql dbi-escape-sql dbi-list-drivers
-          dbd-make-connection dbd-prepare dbd-execute
+          dbd-make-connection
           ;; compatibility
           dbi-make-connection dbi-make-query dbi-execute-query dbi-get-value
-          <dbi-exception>))
+          <dbi-query> <dbi-exception>))
 (select-module dbi)
 
 ;;;==============================================================
@@ -102,16 +102,6 @@
 ;; All the transactions must be done while the connection is 'open'.
 (define-class <dbi-connection> (<dbi-object>) ())
 
-;; <dbi-query> : represents a query.  Query can be sent to the database
-;; system by dbi-execute, to obtain a result set.
-;; %prepared slot is used to store a prepared statemet by the DBI's default
-;; SQL statement preparation method.  The driver may prepare statements
-;; differently.
-(define-class <dbi-query> (<dbi-object>)
-  ((connection :init-value #f :init-keyword :connection)
-   (%prepared  :init-value #f :init-keyword :%prepared)
-  ))
-
 ;; <dbi-result-set> : an abstract entity of the result of a query.
 ;; It is a collection of rows.  The driver must define a subclass
 ;; this and implement collection and relation APIs.
@@ -135,23 +125,30 @@
     (apply dbd-make-connection
            (dbi-make-driver driver-name) options option-alist args)))
 
-;; Prepares and returns a query object.  The default method
-;; parse SQL and store it in <dbi-query>.  The driver may overload
-;; this method to delegate preparation in the DBMS.
+;; Prepares SQL statement and returns a closure, which executes
+;; the statement when called.  If the given SQL statement takes parameters,
+;; the closure takes the same number of arguments as of the parameters.
+;;
+;; The default method uses text.sql to parse the SQL statement, and calls
+;; legacy dbd API.  This will go away once the drivers switched to the
+;; new dbd API.
 (define-method dbi-prepare ((c <dbi-connection>) (sql <string>) . options)
-  (let1 q (apply dbd-prepare c sql options)
-    (set! (ref q 'connection) c)
-    q))
-
-;; Execute the prepared statement.
-(define-method dbi-execute ((q <dbi-query>) . args)
-  (apply dbd-execute (ref q 'connection) q args))
+  (let-keywords* options ((pass-through #f))
+    (if pass-through
+      (let1 prepared (dbi-prepare-sql c sql)
+        (lambda args
+          (dbi-execute-query (dbi-make-query c) (apply prepared args))))
+      (lambda args
+        (unless (null? args)
+          (error <dbi-parameter-error>
+                 "parameter is given to the pass through sql:" sql))
+        (dbi-execute-query (dbi-make-query c) sql)))))
 
 ;; Does preparation and execution at once.  The driver may overload this.
 (define-method dbi-do ((c <dbi-connection>) sql options . args)
   (unless (proper-list? options)
     (error "dbi-do: bad option list:" options))
-  (apply dbd-execute c (apply dbd-prepare c sql options) args))
+  (apply (apply dbi-prepare c sql options) args))
 
 (define-method dbi-do ((c <dbi-connection>) sql)
   (dbi-do c sql '()))
@@ -185,17 +182,6 @@
     ;; call deprecated dbi-make-connection API.
     (dbi-make-connection d username password (or options ""))))
 
-;; Subclass may override this method.
-(define-method dbd-prepare ((c <dbi-connection>) (sql <string>) . options)
-  (make <dbi-query> :%prepared (dbi-prepare-sql c sql)))
-
-;; Subclass should implement this.  The current default procedure
-;; delegates the work for the old driver API.  Should go away soon.
-(define-method dbd-execute ((c <dbi-connection>) (q <dbi-query>) . params)
-  (or (and-let* ((prepared (slot-ref q '%prepared)))
-        (dbi-execute-query (dbi-make-query c) (apply prepared params)))
-      (error <dbi-unsupported-error> "dbi-execute is not implemented on" q)))
-    
 ;; Result set.
 ;; The driver should subclass <dbi-result-set> and implement
 ;; relations and collections protocol.  For the convenience, here's
@@ -345,6 +331,9 @@
 ;; these interface.  Will be gone in a few releases.
 
 (define <dbi-exception> <dbi-error>)
+
+(define-class <dbi-query> (<dbi-object>)
+  ())
 
 ;; Older API
 (define-method dbi-make-connection ((d <dbi-driver>) user pass options)
