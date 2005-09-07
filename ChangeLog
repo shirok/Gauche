@@ -1,3 +1,8 @@
+2005-09-06  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/srfi-13.scm (%string-prefix-int): fix (Patch by
+	  Michal Maruška).
+
 2005-09-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c (further_options): comment options for internal use.

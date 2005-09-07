@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: srfi-13.scm,v 1.1 2005-08-28 12:59:17 shirok Exp $
+;;;  $Id: srfi-13.scm,v 1.2 2005-09-07 02:09:51 shirok Exp $
 ;;;
 
 ;; Natively implemented functions:
@@ -389,7 +389,7 @@
     (let loop ((ch1 (string-pointer-next! sp1))
                (ch2 (string-pointer-next! sp2)))
       (cond ((eof-object? ch1) (action (string-pointer-index sp1) #t))
-            ((eof-object? ch2) (action (string-pointer-index sp1) #f))
+            ((eof-object? ch2) (action (string-pointer-index sp2) #f))
             ((= ch1 ch2) (loop (string-pointer-next! sp1)
                                (string-pointer-next! sp2)))
             (else (action (- (string-pointer-index sp1) 1) #f)))

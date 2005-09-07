@@ -517,12 +517,32 @@
 
 (test* "string-prefix-length" 5
        (string-prefix-length "cancaNCAM" "cancancan"))
+(test* "string-prefix-length" 1
+       (string-prefix-length "abc" "a"))
+(test* "string-prefix-length" 1
+       (string-prefix-length "a" "abc"))
+(test* "string-prefix-length" 0
+       (string-prefix-length "abc" ""))
+(test* "string-prefix-length" 0
+       (string-prefix-length "" "abc"))
+(test* "string-prefix-length" 0
+       (string-prefix-length "" ""))
 (test* "string-prefix-length-ci" 8
        (string-prefix-length-ci "cancaNCAM" "cancancan"))
 (test* "string-suffix-length" 2
        (string-suffix-length "CanCan" "cankancan"))
 (test* "string-suffix-length-ci" 5
        (string-suffix-length-ci "CanCan" "cankancan"))
+(test* "string-prefix-length-ci" 1
+       (string-prefix-length-ci "abc" "A"))
+(test* "string-prefix-length-ci" 1
+       (string-prefix-length-ci "A" "abc"))
+(test* "string-prefix-length-ci" 0
+       (string-prefix-length-ci "abc" ""))
+(test* "string-prefix-length-ci" 0
+       (string-prefix-length-ci "" "abc"))
+(test* "string-prefix-length-ci" 0
+       (string-prefix-length-ci "" ""))
 
 (test* "string-prefix?" #t    (string-prefix? "abcd" "abcdefg"))
 (test* "string-prefix?" #f    (string-prefix? "abcf" "abcdefg"))
