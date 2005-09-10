@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.114 2005-08-28 12:59:17 shirok Exp $
+;;; $Id: stdlib.stub,v 1.115 2005-09-10 09:10:32 shirok Exp $
 ;;;
 
 
@@ -77,39 +77,39 @@
 (define-cproc inexact? (obj)  (call <boolean> "SCM_INEXACTP"))
 
 (define-cproc = (arg0 arg1 &rest args)
-  "for (;;) {
-     if (!Scm_NumEq(arg0, arg1)) return SCM_FALSE;
-     if (SCM_NULLP(args)) return SCM_TRUE;
-     arg1 = SCM_CAR(args); args = SCM_CDR(args);
-   }")
+  "for (;;) {"
+  "  if (!Scm_NumEq(arg0, arg1)) return SCM_FALSE;"
+  "  if (SCM_NULLP(args)) return SCM_TRUE;"
+  "  arg1 = SCM_CAR(args); args = SCM_CDR(args);"
+  "}")
 
 (define-cproc < (arg0 arg1 &rest args)
-  "for (;;) {
-     if (Scm_NumCmp(arg0, arg1) >= 0) return SCM_FALSE;
-     if (SCM_NULLP(args)) return SCM_TRUE;
-      arg0 = arg1;  arg1 = SCM_CAR(args);  args = SCM_CDR(args);
-   }")
+  "for (;;) {"
+  "  if (Scm_NumCmp(arg0, arg1) >= 0) return SCM_FALSE;"
+  "  if (SCM_NULLP(args)) return SCM_TRUE;"
+  "  arg0 = arg1;  arg1 = SCM_CAR(args);  args = SCM_CDR(args);"
+  "}")
 
 (define-cproc <= (arg0 arg1 &rest args)
-  "for (;;) {
-     if (Scm_NumCmp(arg0, arg1) > 0) return SCM_FALSE;
-     if (SCM_NULLP(args)) return SCM_TRUE;
-     arg0 = arg1;  arg1 = SCM_CAR(args);  args = SCM_CDR(args);
-   }")
+  "for (;;) {"
+  "  if (Scm_NumCmp(arg0, arg1) > 0) return SCM_FALSE;"
+  "  if (SCM_NULLP(args)) return SCM_TRUE;"
+  "  arg0 = arg1;  arg1 = SCM_CAR(args);  args = SCM_CDR(args);"
+  "}")
 
 (define-cproc > (arg0 arg1 &rest args)
-  "for (;;) {
-     if (Scm_NumCmp(arg0, arg1) <= 0) return SCM_FALSE;
-     if (SCM_NULLP(args)) return SCM_TRUE;
-     arg0 = arg1;  arg1 = SCM_CAR(args);  args = SCM_CDR(args);
-   }")
+  "for (;;) {"
+  "  if (Scm_NumCmp(arg0, arg1) <= 0) return SCM_FALSE;"
+  "  if (SCM_NULLP(args)) return SCM_TRUE;"
+  "  arg0 = arg1;  arg1 = SCM_CAR(args);  args = SCM_CDR(args);"
+  "}")
 
 (define-cproc >= (arg0 arg1 &rest args)
-  "for (;;) {
-     if (Scm_NumCmp(arg0, arg1) < 0) return SCM_FALSE;
-     if (SCM_NULLP(args)) return SCM_TRUE;
-     arg0 = arg1;  arg1 = SCM_CAR(args);  args = SCM_CDR(args);
-   }")
+  "for (;;) {"
+  "  if (Scm_NumCmp(arg0, arg1) < 0) return SCM_FALSE;"
+  "  if (SCM_NULLP(args)) return SCM_TRUE;"
+  "  arg0 = arg1;  arg1 = SCM_CAR(args);  args = SCM_CDR(args);"
+  "}")
 
 (define-cproc zero? (obj)
   (body <boolean>
@@ -132,23 +132,23 @@
   (body "Scm_MinMax(arg0, args, &SCM_RESULT, NULL);"))
 
 (define-cproc + (&rest args)
-  "if (SCM_NULLP(args)) SCM_RETURN(SCM_MAKE_INT(0));
-  if (!SCM_PAIRP(SCM_CDR(args))) {
-    if (!SCM_NUMBERP(SCM_CAR(args)))
-      Scm_Error(\"number required, but got %S\", SCM_CAR(args));
-    SCM_RETURN(SCM_CAR(args));
-  } else {
-    SCM_RETURN(Scm_Add(SCM_CAR(args), SCM_CADR(args), SCM_CDDR(args)));
-  }")
+  "if (SCM_NULLP(args)) SCM_RETURN(SCM_MAKE_INT(0));"
+  "if (!SCM_PAIRP(SCM_CDR(args))) {"
+  "  if (!SCM_NUMBERP(SCM_CAR(args)))"
+  "     Scm_Error(\"number required, but got %S\", SCM_CAR(args));"
+  "  SCM_RETURN(SCM_CAR(args));"
+  "} else {"
+  "  SCM_RETURN(Scm_Add(SCM_CAR(args), SCM_CADR(args), SCM_CDDR(args)));"
+  "}")
 
 (define-cproc * (&rest args)
-  "if (!SCM_PAIRP(args)) return SCM_MAKE_INT(1);
-  if (!SCM_PAIRP(SCM_CDR(args))) {
-    if (!SCM_NUMBERP(SCM_CAR(args)))
-      Scm_Error(\"number required, but got %S\", SCM_CAR(args));
-      return SCM_CAR(args);
-    }
-  SCM_RETURN(Scm_Multiply(SCM_CAR(args), SCM_CADR(args), SCM_CDDR(args)));")
+  "if (!SCM_PAIRP(args)) return SCM_MAKE_INT(1);"
+  "if (!SCM_PAIRP(SCM_CDR(args))) {"
+  "  if (!SCM_NUMBERP(SCM_CAR(args)))"
+  "     Scm_Error(\"number required, but got %S\", SCM_CAR(args));"
+  "  return SCM_CAR(args);"
+  "}"
+  "SCM_RETURN(Scm_Multiply(SCM_CAR(args), SCM_CADR(args), SCM_CDDR(args)));")
 
 (define-cproc - (arg1 &rest args)
   (body "if (SCM_NULLP(args)) SCM_RESULT = Scm_Negate(arg1);
@@ -179,43 +179,44 @@
 (define-cproc %exp (x::<real>) (call <real> "exp"))
 
 (define-cproc %log (x)
-  "  int sign;
-  if (!SCM_REALP(x)) Scm_Error(\"real number required, but got %S\", x);
-  sign = Scm_Sign(x);
-  if (sign < 0)
-    SCM_RETURN(Scm_MakeComplex(log(-Scm_GetDouble(x)), M_PI));
-  else
-    /* NB: I intentionally delegate handling of the case x==0.0 to the
-       system log() function.  Most systems should yield NaN or Inf. */
-    SCM_RETURN(Scm_MakeFlonum(log(Scm_GetDouble(x))));")
+  (body "if (!SCM_REALP(x)) {"
+        "  Scm_Error(\"real number required, but got %S\", x);"
+        "}"
+        "if (Scm_Sign(x) < 0) {"
+        "  SCM_RESULT = Scm_MakeComplex(log(-Scm_GetDouble(x)), M_PI);"
+        "} else {"
+        "  /* NB: I intentionally delegate handling of the case x==0.0 to the"
+        "  system log() function.  Most systems should yield NaN or Inf. */"
+        "  SCM_RESULT = Scm_MakeFlonum(log(Scm_GetDouble(x)));"
+        "}"))
 
 (define-cproc %sin (x::<real>) (call <real> "sin"))
 (define-cproc %cos (x::<real>) (call <real> "cos"))
 (define-cproc %tan (x::<real>) (call <real> "tan"))
 (define-cproc %asin (x::<real>)
-  "if (x > 1.0) {
-    SCM_RETURN(Scm_MakeComplex(M_PI/2.0, -log(x + sqrt(x*x-1.0))));
-  } else if (x < -1.0) {
-    SCM_RETURN(Scm_MakeComplex(-M_PI/2.0, -log(-x - sqrt(x*x-1.0))));
-  } else {
-    SCM_RETURN(Scm_MakeFlonum(asin(x)));
-  }")
+  (body "if (x > 1.0) {"
+        "  SCM_RESULT = Scm_MakeComplex(M_PI/2.0, -log(x + sqrt(x*x-1.0)));"
+        "} else if (x < -1.0) {"
+        "  SCM_RESULT = Scm_MakeComplex(-M_PI/2.0, -log(-x - sqrt(x*x-1.0)));"
+        "} else {"
+        "  SCM_RESULT = Scm_MakeFlonum(asin(x));"
+        "}"))
 (define-cproc %acos (x::<real>)
-  "if (x > 1.0) {
-    SCM_RETURN(Scm_MakeComplex(0, log(x + sqrt(x*x-1.0))));
-  } else if (x < -1.0) {
-    SCM_RETURN(Scm_MakeComplex(M_PI, log(-x - sqrt(x*x-1.0))));
-  } else {
-    SCM_RETURN(Scm_MakeFlonum(acos(x)));
-  }")
+  (body "if (x > 1.0) {"
+        "  SCM_RESULT = Scm_MakeComplex(0, log(x + sqrt(x*x-1.0)));"
+        "} else if (x < -1.0) {"
+        "  SCM_RESULT = Scm_MakeComplex(M_PI, log(-x - sqrt(x*x-1.0)));"
+        "} else {"
+        "  SCM_RESULT = Scm_MakeFlonum(acos(x));"
+        "}"))
 
 (define-cproc %atan (z::<real> &optional x)
-  "if (x == SCM_UNBOUND) {
-     SCM_RETURN(Scm_MakeFlonum(atan(z)));
-  } else {
-     if (!SCM_REALP(x)) Scm_Error(\"real number required for x, but got %S\", x);
-     SCM_RETURN(Scm_MakeFlonum(atan2(z, Scm_GetDouble(x))));
-  }")
+  (body "if (x == SCM_UNBOUND) {"
+        "  SCM_RESULT = Scm_MakeFlonum(atan(z));"
+        "} else {"
+        "  if (!SCM_REALP(x)) Scm_Error(\"real number required for x, but got %S\", x);"
+        "  SCM_RESULT = Scm_MakeFlonum(atan2(z, Scm_GetDouble(x)));"
+        "}"))
 
 (define-cproc %sinh (x::<real>) (call <real> "sinh"))
 (define-cproc %cosh (x::<real>) (call <real> "cosh"))
@@ -262,10 +263,10 @@
 
 (define-cproc number->string (obj
                               &optional (radix::<fixnum> 10) (use-upper? #f))
-  "SCM_RETURN(Scm_NumberToString(obj, radix, !SCM_FALSEP(use_upperP)));")
+  (expr "Scm_NumberToString(obj, radix, !SCM_FALSEP(use_upperP))"))
 
 (define-cproc string->number (obj::<string> &optional (radix::<fixnum> 10))
-  "SCM_RETURN(Scm_StringToNumber(obj, radix, FALSE));")
+  (expr "Scm_StringToNumber(obj, radix, FALSE)"))
 
 ;;
 ;; 6.3.1  Booleans
@@ -375,7 +376,7 @@
   (call "Scm_Memv"))
 
 (define-cproc member (obj list::<list>)
-  "  SCM_RETURN(Scm_Member(obj, list, SCM_CMP_EQUAL));")
+  (expr "Scm_Member(obj, list, SCM_CMP_EQUAL)"))
 
 (define-cproc assq (obj alist::<list>)
   (inliner ASSQ)
@@ -386,7 +387,7 @@
   (call "Scm_Assv"))
 
 (define-cproc assoc (obj alist::<list>)
-  "  SCM_RETURN(Scm_Assoc(obj, alist, SCM_CMP_EQUAL));")
+  (expr "Scm_Assoc(obj, alist, SCM_CMP_EQUAL)"))
 
 ;;
 ;; 6.3.3  Symbols
@@ -607,11 +608,13 @@
 
 ;; for now, just return a module.
 (define-cproc null-environment (version::<fixnum>)
-  "  if (version != 5) Scm_Error(\"unknown rNrs version: %d\", version);
-  SCM_RETURN(SCM_OBJ(Scm_NullModule()));")
+  (code "if (version != 5)"
+        "  Scm_Error(\"unknown rNrs version: %d\", version);")
+  (expr "SCM_OBJ(Scm_NullModule())"))
 (define-cproc scheme-report-environment (version::<fixnum>)
-  "  if (version != 5) Scm_Error(\"unknown rNrs version: %d\", version);
-  SCM_RETURN(SCM_OBJ(Scm_SchemeModule()));")
+  (code "if (version != 5)"
+        "  Scm_Error(\"unknown rNrs version: %d\", version);")
+  (expr "SCM_OBJ(Scm_SchemeModule())"))
 (define-cproc interaction-environment ()
   (expr "SCM_OBJ(Scm_UserModule())"))
 

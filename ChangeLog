@@ -1,3 +1,11 @@
+2005-09-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/genstub : added 'code' spec to the cproc body so that
+	  the cproc can perform some checking before 'call' or 'expr' spec.
+	
+	* ext/charconv/convaux.scm: splitted Scheme-defined functions
+	  from charconv.scm and compile them into charconv.so.
+
 2005-09-06  Shiro Kawai  <shiro@acm.org>
 
 	* lib/dbi.scm, lib/dbd/null.scm: Revised API.  Now dbi-prepare

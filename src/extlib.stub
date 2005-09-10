@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.254 2005-09-02 22:03:59 shirok Exp $
+;;; $Id: extlib.stub,v 1.255 2005-09-10 09:10:32 shirok Exp $
 ;;;
 
 "
@@ -314,18 +314,18 @@
 ;;
 
 (define-cproc digit->integer (ch::<char> &optional (radix::<fixnum> 10))
-  "  int r;
-  if (radix < 2 || radix > 36)
-     Scm_Error(\"radix must be between 2 and 36, but got %d\", radix);
-  r = Scm_DigitToInt(ch, radix);
-  return (r >= 0 ? SCM_MAKE_INT(r) : SCM_FALSE);")
+  (body "int r;"
+        "if (radix < 2 && radix > 36)"
+        "  Scm_Error(\"radix must be between 2 and 36, but got %d\", radix);"
+        "r = Scm_DigitToInt(ch, radix);"
+        "SCM_RESULT = (r >= 0 ? SCM_MAKE_INT(r) : SCM_FALSE);"))
 
 (define-cproc integer->digit (n::<fixnum> &optional (radix::<fixnum> 10))
-  "  ScmChar r;
-  if (radix < 2 || radix > 36)
-     Scm_Error(\"radix must be between 2 and 36, but got %d\", radix);
-  r = Scm_IntToDigit(n, radix);
-  return (r == SCM_CHAR_INVALID? SCM_FALSE : SCM_MAKE_CHAR(r));")
+  (body "ScmChar r;"
+        "if (radix < 2 || radix > 36)"
+        "  Scm_Error(\"radix must be between 2 and 36, but got %d\", radix);"
+        "r = Scm_IntToDigit(n, radix);"
+        "return (r == SCM_CHAR_INVALID? SCM_FALSE : SCM_MAKE_CHAR(r));"))
 
 (define-cproc ucs->char (n::<int>)
   "ScmChar ch = Scm_UcsToChar(n);
@@ -622,15 +622,13 @@
 
 ;; for debug
 (if "SCM_DEBUG_HELPER"
-(define-cproc %regexp-dump (rx)
-  "  if (!SCM_REGEXPP(rx)) Scm_Error(\"regexp required, but got %S\", rx);
-  Scm_RegDump(SCM_REGEXP(rx));  SCM_RETURN(SCM_UNDEFINED);")
+(define-cproc %regexp-dump (rx::<regexp>)
+  (call <void> "Scm_RegDump"))
 )
 
 (if "SCM_DEBUG_HELPER"
-(define-cproc %regmatch-dump (rm)
-  "  if (!SCM_REGMATCHP(rm)) Scm_Error(\"regmatch required, but got %S\", rm);
-  Scm_RegMatchDump(SCM_REGMATCH(rm));  SCM_RETURN(SCM_UNDEFINED);")
+(define-cproc %regmatch-dump (rm::<regmatch>)
+  (call <void> "Scm_RegMatchDump"))
 )
 
 ;;
@@ -679,7 +677,7 @@
   (expr "Scm_MakePromise(TRUE, obj)"))
 
 (define-cproc promise-kind (p::<promise>)
-  "SCM_RETURN(p->kind);"
+  (expr "p->kind")
   (setter (p::<promise> obj)
           (body <void> "p->kind = obj;")))
 

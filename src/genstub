@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.117 2005-09-02 22:03:59 shirok Exp $
+;;;  $Id: genstub,v 1.118 2005-09-10 09:10:32 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -66,6 +66,9 @@
 ;;   define-cproc name (args ...) body ...
 ;;
 ;;      Create a subr function.  Body can be:
+;;        (code <C-code> ...)
+;;             <C-code> is inserted at this position.  Useful to insert
+;;             extra code before 'call' or 'expr' spec.
 ;;        (call [<rettype>] <C-function-name>)
 ;;             Calls C-function.  If <rettype> is omitted, C-function
 ;;             is assumed to return ScmObj.  Otherwise, a boxer of
@@ -915,6 +918,7 @@
       (('body . spec) (process-body-spec cproc form))
       (('expr . spec) (process-expr-spec cproc form))
       (('catch . spec) (process-catch-spec cproc form))
+      (('code . stmts) (for-each (cut push-stmt! cproc <>) stmts))
       (else (error "unknown body form:" form)))))
 
 (define-method process-setter ((cproc <cproc>) decl)
@@ -950,9 +954,11 @@
   (define (args)
     (string-join (map c-name-of (args-of cproc)) ", "))
   (define (typed-result rettype c-func-name)
+    (push-stmt! cproc "{")
     (push-stmt! cproc #`",(c-type-of rettype) SCM_RESULT;")
     (push-stmt! cproc #`"SCM_RESULT = ,c-func-name(,(args));")
-    (push-stmt! cproc (return-stmt (box-expr rettype "SCM_RESULT"))))
+    (push-stmt! cproc (return-stmt (box-expr rettype "SCM_RESULT")))
+    (push-stmt! cproc "}"))
   (match form
     ((_ (? string? expr))
      (typed-result *scm-type* expr))
@@ -969,11 +975,11 @@
 
 (define-method process-body-spec ((cproc <procstub>) form)
   (define (typed-result rettype stmts)
-    (push-stmt! cproc #`",(c-type-of rettype) SCM_RESULT;")
     (push-stmt! cproc "{")
+    (push-stmt! cproc #`",(c-type-of rettype) SCM_RESULT;")
     (for-each (cut push-stmt! cproc <>) stmts)
-    (push-stmt! cproc "}")
-    (push-stmt! cproc (return-stmt (box-expr rettype "SCM_RESULT"))))
+    (push-stmt! cproc (return-stmt (box-expr rettype "SCM_RESULT")))
+    (push-stmt! cproc "}"))
   (define (typed-results rettypes stmts)
     (let1 nrets (length rettypes)
       (for-each-with-index
@@ -1015,9 +1021,11 @@
 
 (define-method process-expr-spec ((cproc <procstub>) form)
   (define (typed-result rettype expr)
+    (push-stmt! cproc "{")
     (push-stmt! cproc #`",(c-type-of rettype) SCM_RESULT;")
     (push-stmt! cproc #`" SCM_RESULT = (,expr);")
-    (push-stmt! cproc (return-stmt (box-expr rettype "SCM_RESULT"))))
+    (push-stmt! cproc (return-stmt (box-expr rettype "SCM_RESULT")))
+    (push-stmt! cproc "}"))
   (match form
     ((_ '<void> . stmts)
      (error "<void> type isn't allowed in 'expr' directive:" form))
@@ -1269,12 +1277,10 @@
              (error "c-generic-name requires a string:"
                     gen-name)
              (set! (c-generic-of method) gen-name)))
-          (('body . spec)
-           (process-body-spec method stmt))
-          (('call . spec)
-           (process-call-spec method stmt))
-          (('expr . spec)
-           (process-expr-spec method stmt))
+          (('body . spec) (process-body-spec method stmt))
+          (('call . spec) (process-call-spec method stmt))
+          (('expr . spec) (process-expr-spec method stmt))
+          (('code . stmts) (for-each (cut push-stmt! method <>) stmts))
           (else
            (error "unrecognized form in body:" stmt))))
       (unless (c-generic-of method)
