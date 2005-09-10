@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: charconv.c,v 1.51 2005-07-22 09:26:54 shirok Exp $
+ *  $Id: charconv.c,v 1.52 2005-09-10 09:04:04 shirok Exp $
  */
 
 #include <string.h>
@@ -598,6 +598,7 @@ static int chartoucs(ScmChar ch)
  * Initialization
  */
 extern void Scm_Init_convlib(ScmModule *module);
+extern void Scm_Init_convaux(void);
 extern void Scm_Init_convguess(void);
 SCM_EXTERN ScmChar (*Scm_UcsToCharHook)(int ucs4);
 SCM_EXTERN int (*Scm_CharToUcsHook)(ScmChar ch);
@@ -625,6 +626,7 @@ void Scm_Init_libcharconv(void)
     (void)SCM_INTERNAL_MUTEX_INIT(ucsconv.mutex);
     Scm_Init_convguess();
     Scm_Init_convlib(mod);
+    Scm_Init_convaux();
     Scm_UcsToCharHook = ucstochar;
     Scm_CharToUcsHook = chartoucs;
     Scm_CodingAwarePortHook = coding_aware_conv;

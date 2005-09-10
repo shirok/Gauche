@@ -14,10 +14,15 @@ LIBFILES = libcharconv.$(SOEXT)
 SCMFILES = charconv.scm
 
 GENERATED = Makefile charconv.h eucj2ucs.c ucs2eucj.c guess_tab.c
-XCLEANFILES = convlib.c charconv_head.c charconv_tail.c 
+XCLEANFILES = convlib.c convaux.c *_head.c *_tail.c 
 
-OBJECTS = charconv_head.$(OBJEXT) charconv.$(OBJEXT) convlib.$(OBJEXT) \
-          jconv.$(OBJEXT) guess.$(OBJEXT) charconv_tail.$(OBJEXT)
+OBJECTS = charconv_head.$(OBJEXT) \
+          charconv.$(OBJEXT)      \
+          convlib.$(OBJEXT)       \
+          convaux.$(OBJEXT)       \
+          jconv.$(OBJEXT)         \
+          guess.$(OBJEXT)         \
+          charconv_tail.$(OBJEXT)
 
 all : $(LIBFILES)
 
@@ -28,6 +33,9 @@ charconv_head.c charconv_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension charconv
 
 convlib.c : convlib.stub
+
+convaux.c : convaux.scm
+	$(GOSH) gencomp convaux.scm
 
 jconv.$(OBJEXT) : eucj2ucs.c ucs2eucj.c jconv.c
 
