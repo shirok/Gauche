@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.58 2005-08-29 12:41:48 shirok Exp $
+ *  $Id: module.c,v 1.59 2005-09-10 23:28:13 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -213,6 +213,8 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
         SCM_FOR_EACH(p, module->imported) {
             SCM_ASSERT(SCM_MODULEP(SCM_CAR(p)));
             SCM_FOR_EACH(mp, SCM_MODULE(SCM_CAR(p))->mpl) {
+                ScmGloc *g;
+                
                 SCM_ASSERT(SCM_MODULEP(SCM_CAR(mp)));
                 
                 for (i=0; i<num_searched; i++) {
@@ -227,8 +229,9 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
                 m = SCM_MODULE(SCM_CAR(mp));
                 e = Scm_HashTableGet(m->table, SCM_OBJ(symbol));
                 /* see above comment about the check of gloc->value */
-                if (e && (gloc = SCM_GLOC(e->value))->exported
-                    && !SCM_UNBOUNDP(gloc->value)) {
+                if (e && (g = SCM_GLOC(e->value))->exported
+                    && !SCM_UNBOUNDP(g->value)) {
+                    gloc = g;
                     goto found;
                 }
 
