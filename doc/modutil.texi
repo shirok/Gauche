@@ -555,7 +555,7 @@ of accessing a database by @code{dbi} module:
   (let* ((conn   (dbi-connect "dbi:mysql:test;host=dbhost"))
          (query  (dbi-prepare conn
                    "SELECT id, name FROM users WHERE department = ?"))
-         (result (dbi-execute query "R&D"))
+         (result (query "R&D"))
          (getter (relation-accessor result)))
     (map (lambda (row)
            (list (getter row "id")
@@ -573,9 +573,10 @@ pass @code{"dbi:@var{whatever}:@var{parameter}"} to @code{dbi-connect}
 instead, and everything stays the same as far as you have
 @code{dbd.whatever} installed in your system.
 
-A query to the database can be created by @code{dbi-prepare}, then
-executed by @code{dbi-execute}.  For the @code{SELECT} statement,
-the result is returned as a @emph{relation}, and you can retrieve the data
+A query to the database can be created by @code{dbi-prepare} as
+a closure.  For the @code{SELECT} statement,
+the query result is returned as a @emph{relation},
+and you can retrieve the data
 using the relation protocol (@xref{Relation framework}).
 
 The outermost @code{guard} is to catch errors.  The @code{dbi} related
@@ -622,7 +623,7 @@ by the underlying driver.  Inherits @code{<dbi-error>}.
 
 @deftp {Condition} <dbi-parameter-error>
 This condition is thrown when the number of parameters given to
-@code{dbi-execute} doesn't match the ones in the prepared statement.
+the prepared query doesn't match the ones in the prepared statement.
 @end deftp
 
 Besides these errors, if a driver relies on @code{dbi} to
@@ -642,15 +643,6 @@ as far as you're using the high-level @code{dbi} API.
 The base class of a connection to a database system.
 Each driver defines a subclass of this to keep information about
 database-specific connections.
-@end deftp
-
-@deftp {Class} <dbi-query>
-An object to represent a query prepared by @code{dbi-prepare}.
-It has one public slot.
-
-@defivar <dbi-query> connection
-Keeps an instance of @code{<dbi-connection>}.
-@end defivar
 @end deftp
 
 @subsubheading Communicating with DBMS
@@ -683,9 +675,10 @@ a connection object (an instance of a subclass of @code{<dbi-connection>})
 is returned.  Otherwise, an error is signalled.
 @end defun
 
-@deffn {Method} dbi-prepare conn sql &optional option @dots{}
-Creates and returns a query object for the database connection @code{conn}
-from a string representation of SQL statement @var{sql}.
+@deffn {Method} dbi-prepare conn sql &keyword pass-through @dots{}
+From a string representation of SQL statement @var{sql},
+Creates and returns a closure that represents a prepared query
+for the database connection @code{conn}
 
 @var{Sql} may contain parameter slots, denoted by @code{?}, e.g.
 @example
@@ -695,7 +688,8 @@ from a string representation of SQL statement @var{sql}.
 @end example
 
 They will be filled when you actually issue the query by
-@code{dbi-execute}.  There are some advantages of using parameter
+invoking the returned procedure with the same number of parameters.
+There are some advantages of using parameter
 slots: (1) The necessary quoting is done automatically.
 You don't need to concern about security holes caused by
 improper quoting, for example.
@@ -709,24 +703,27 @@ having @code{?} parameters), the driver may use @code{text.sql}
 module to parse @var{sql}.  It may raise @code{<sql-parse-error>}
 condition if the given SQL is not well formed.
 
-The driver may take some optional values to tune the behavior
-of the query.  @code{DBI} layer doens't specify any.
-@end deffn
+You may pass a true value to the keyword argument @code{pass-through}
+to suppress interpretation of SQL and pass @var{sql} as-is to the
+back end database system.  It is useful if the back-end supports
+extension of SQL which @code{text.sql} doesn't understand.
 
-@deffn {Method} dbi-execute query &optional parameter-value @dots{}
-Issue the @var{query} prepared by @code{dbi-prepare}.
-If the query has parameter slots, the same number of actual 
-values should be given to @var{parameter-value} @dots{}.
+If the driver lets prepared statement handled in back-end,
+without using @code{text.sql}, the @code{pass-through} argument
+may be ignored.
+The driver may also take other keyword arguments.
+@code{DBI} layer doens't specify any.
 
-If the query is @code{select} statement, this returns an object
-represents a @emph{relation}.  A relation encapsulates the values in
+If @var{sql} is @code{select} statement, the query closure
+returns an object represents a @emph{relation}.
+A relation encapsulates the values in
 rows and columns, as well as meta infomation like column names.
 See "Feching data" below for how to access the result.
 See also @ref{Relation framework} for the general information
 about relations.
 
-If the query is other types, such as @code{create}, @code{insert} 
-or @code{delete}, the return value is unspecified.
+If @var{sql} is other types, such as @code{create}, @code{insert} 
+or @code{delete}, the return value of the query closure is unspecified.
 @end deffn
 
 @deffn {Method} dbi-do conn sql &optional options parameter-value @dots{}
@@ -735,7 +732,7 @@ and immediately execute it.   It is equivalent to the following
 expression.
 
 @example
-(dbi-execute (apply dbi-prepare conn sql options) parameter-value @dots{})
+(apply (apply dbi-prepare conn sql options) parameter-value @dots{})
 @end example
 @end deffn
 
@@ -762,13 +759,10 @@ Returns a list of module names of known drivers.
 @node Writing drivers for DBI,  , DBI user API, Database independent access layer
 @subsection Writing drivers for DBI
 
-@deffn {Method} dbd-make-connection (d <dbi-driver>) options option-alist &keyword username password
+@deffn {Method} dbi-make-connection (d <dbi-driver>) (options <string>) (option-alist <list>) &keyword username password
 @end deffn
 
-@deffn {Method} dbd-prepare (c <dbi-connection>) (sql <string>) &optional option @dots{}
-@end deffn
-
-@deffn {Method} dbd-execute (c <dbi-connection>) (q <dbi-query>) &optional parameter-values
+@deffn {Method} dbi-prepare (c <dbi-connection>) (sql <string>) &keyword pass-through @dots{}
 @end deffn
 
 
