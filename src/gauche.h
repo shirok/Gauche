@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.437 2005-09-02 22:03:59 shirok Exp $
+ *  $Id: gauche.h,v 1.438 2005-09-10 11:40:42 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -670,7 +670,9 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
  */
 typedef struct ScmForeignPointerRec {
     SCM_HEADER;
-    void *ptr;
+    void *ptr;                  /* foreign object.  this pointer shouldn't
+                                   be modified once <foreign-pointer> is
+                                   constructed by Scm_MakeForeignPointer. */
     ScmObj attributes;          /* alist.  useful to store e.g. callbacks.
                                    use accessor procedures. */
 } ScmForeignPointer;
