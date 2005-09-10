@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: relation.scm,v 1.5 2005-09-05 06:40:59 shirok Exp $
+;;;  $Id: relation.scm,v 1.6 2005-09-10 23:31:50 shirok Exp $
 ;;;
 
 ;;; Given set of values S1, S2, ..., Sn, a relation R is a set of tuples
@@ -79,6 +79,7 @@
           relation-insertable? relation-insert!
           relation-deletable? relation-delete!
           relation-fold
+          <simple-relation> <object-set-relation>
           ))
 (select-module util.relation)
 

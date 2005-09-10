@@ -1,3 +1,11 @@
+2005-09-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/relation.scm (util.relation): exports <simple-relation>
+	  and <object-set-relation>.
+
+	* src/module.c (Scm_FindBinding): fixed a bug that inadvertently
+	  exposes non-exported symbols to outside.
+
 2005-09-09  Shiro Kawai  <shiro@acm.org>
 
 	* ext/mt-random/mt-random.c (mt_allocate): allow u32vector to be 

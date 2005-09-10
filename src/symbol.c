@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: symbol.c,v 1.35 2005-08-23 10:44:05 shirok Exp $
+ *  $Id: symbol.c,v 1.36 2005-09-10 23:31:49 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -182,7 +182,9 @@ static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 static void gloc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmGloc *g = SCM_GLOC(obj);
-    Scm_Printf(port, "#<gloc %S#%S>", g->module->name, g->name);
+    Scm_Printf(port, "#<gloc %S%s%S>", g->module->name,
+               (g->exported?"#":"##"),
+               g->name);
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_GlocClass, gloc_print);
