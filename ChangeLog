@@ -1,5 +1,8 @@
 2005-09-09  Shiro Kawai  <shiro@acm.org>
 
+	* ext/mt-random/mt-random.c (mt_allocate): allow u32vector to be 
+	  given to :seed initarg.
+
 	* ext/srfi/srfi-19-lib.scm (tm:integer-reader-exact): fixed typo
 	  in function name.
 

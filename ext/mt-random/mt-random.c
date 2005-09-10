@@ -10,7 +10,7 @@
  *     the allocated memory for random number generator object.
  *   - changed the names of the functions
  *   - added stuff to make it as a Gauche extension module.
- * $Id: mt-random.c,v 1.15 2005-07-22 09:26:54 shirok Exp $
+ * $Id: mt-random.c,v 1.16 2005-09-10 09:39:12 shirok Exp $
  *
  * The original copyright notice follows.
  */
@@ -277,8 +277,8 @@ static ScmObj mt_allocate(ScmClass *klass, ScmObj initargs)
     ScmObj seed = Scm_GetKeyword(key_seed, initargs, SCM_FALSE);
     ScmMersenneTwister *mt;
     
-    if (!SCM_FALSEP(seed) && !SCM_EXACTP(seed)) {
-        Scm_Error("seed needs to be an exact integer, but got: %S", seed);
+    if (!SCM_FALSEP(seed) && !SCM_EXACTP(seed) && !SCM_U32VECTORP(seed)) {
+        Scm_Error("seed needs to be an exact integer or a u32vector, but got: %S", seed);
     }
     
     mt = SCM_NEW(ScmMersenneTwister);
@@ -286,6 +286,9 @@ static ScmObj mt_allocate(ScmClass *klass, ScmObj initargs)
     mt->mti = N+1;
     if (SCM_EXACTP(seed)) {
         Scm_MTInitByUI(mt, Scm_GetUInteger(seed));
+    } else if (SCM_U32VECTORP(seed)) {
+        Scm_MTInitByArray(mt, (ScmInt32*)SCM_U32VECTOR_ELEMENTS(seed),
+                          SCM_U32VECTOR_SIZE(seed));
     }
     return SCM_OBJ(mt);
 }
