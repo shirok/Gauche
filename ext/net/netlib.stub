@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netlib.stub,v 1.33 2005-09-11 12:55:06 shirok Exp $
+;;;  $Id: netlib.stub,v 1.34 2005-09-11 23:23:45 shirok Exp $
 ;;;
 
 "#include \"gauche/net.h\"
@@ -143,18 +143,18 @@
 (define-enum SOCK_DGRAM)
 (define-enum SOCK_RAW)
 
-(if "defined MSG_CTRUNC"    (define-enum MSG_CTRUNC))
-(if "defined MSG_DONTROUTE" (define-enum MSG_DONTROUTE))
-(if "defined MSG_EOR"       (define-enum MSG_EOR))
-(if "defined MSG_OOB"       (define-enum MSG_OOB))
-(if "defined MSG_PEEK"      (define-enum MSG_PEEK))
-(if "defined MSG_TRUNC"     (define-enum MSG_TRUNC))
-(if "defined MSG_WAITALL"   (define-enum MSG_WAITALL))
+(define-enum-conditionally MSG_CTRUNC)
+(define-enum-conditionally MSG_DONTROUTE)
+(define-enum-conditionally MSG_EOR)
+(define-enum-conditionally MSG_OOB)
+(define-enum-conditionally MSG_PEEK)
+(define-enum-conditionally MSG_TRUNC)
+(define-enum-conditionally MSG_WAITALL)
 
-(if "defined IPPROTO_IP"   (define-enum IPPROTO_IP))
-(if "defined IPPROTO_ICMP" (define-enum IPPROTO_ICMP))
-(if "defined IPPROTO_TCP"  (define-enum IPPROTO_TCP))
-(if "defined IPPROTO_UDP"  (define-enum IPPROTO_UDP))
+(define-enum-conditionally IPPROTO_IP)
+(define-enum-conditionally IPPROTO_ICMP)
+(define-enum-conditionally IPPROTO_TCP)
+(define-enum-conditionally IPPROTO_UDP)
 
 (define-cproc socket-address (sock::<socket>)
   "  if (sock->address) { SCM_RETURN(SCM_OBJ(sock->address)); }
@@ -256,6 +256,25 @@
                                  rsize::<fixnum>)
   (call "Scm_SocketGetOpt"))
 
+(define-enum-conditionally SOL_SOCKET)
+(define-enum-conditionally SO_KEEPALIVE)
+(define-enum-conditionally SO_OOBINLINE)
+(define-enum-conditionally SO_REUSEADDR)
+(define-enum-conditionally SO_TYPE)
+(define-enum-conditionally SO_BROADCAST)
+(define-enum-conditionally SO_SNDBUF)
+(define-enum-conditionally SO_RFCBUF)
+(define-enum-conditionally SO_PRIORITY)
+(define-enum-conditionally SO_ERROR)
+
+(define-enum-conditionally SOL_TCP)
+(define-enum-conditionally TCP_NODELAY)
+(define-enum-conditionally TCP_MAXSEG)
+(define-enum-conditionally TCP_CORK)
+
+(define-enum-conditionally SOL_IP)
+(define-enum-conditionally IP_OPTIONS)
+
 ;;----------------------------------------------------------
 ;; netdb routines
 
@@ -325,31 +344,31 @@
         (call "Scm_GetNameinfo"))
       ))
 
-(if "defined AF_INET6" (define-enum AF_INET6))
-(if "defined PF_INET6" (define-enum PF_INET6))
+(define-enum-conditionally AF_INET6)
+(define-enum-conditionally PF_INET6)
 
-(if "defined IPPROTO_IPV6" (define-enum IPPROTO_IPV6))
-(if "defined IPV6_UNICAST_HOPS" (define-enum IPV6_UNICAST_HOPS))
-(if "defined IPV6_MULTICAST_IF" (define-enum IPV6_MULTICAST_IF))
-(if "defined IPV6_MULTICAST_HOPS" (define-enum IPV6_MULTICAST_HOPS))
-(if "defined IPV6_MULTICAST_LOOP" (define-enum IPV6_MULTICAST_LOOP))
-(if "defined IPV6_JOIN_GROUP" (define-enum IPV6_JOIN_GROUP))
-(if "defined IPV6_LEAVE_GROUP" (define-enum IPV6_LEAVE_GROUP))
-(if "defined IPV6_V6ONLY" (define-enum IPV6_V6ONLY))
+(define-enum-conditionally IPPROTO_IPV6)
+(define-enum-conditionally IPV6_UNICAST_HOPS)
+(define-enum-conditionally IPV6_MULTICAST_IF)
+(define-enum-conditionally IPV6_MULTICAST_HOPS)
+(define-enum-conditionally IPV6_MULTICAST_LOOP)
+(define-enum-conditionally IPV6_JOIN_GROUP)
+(define-enum-conditionally IPV6_LEAVE_GROUP)
+(define-enum-conditionally IPV6_V6ONLY)
 
-(if "defined AI_PASSIVE" (define-enum AI_PASSIVE))
-(if "defined AI_CANONNAME" (define-enum AI_CANONNAME))
-(if "defined AI_NUMERICHOST" (define-enum AI_NUMERICHOST))
-(if "defined AI_NUMERICSERV" (define-enum AI_NUMERICSERV))
-(if "defined AI_V4MAPPED" (define-enum AI_V4MAPPED))
-(if "defined AI_ALL" (define-enum AI_ALL))
-(if "defined AI_ADDRCONFIG" (define-enum AI_ADDRCONFIG))
+(define-enum-conditionally AI_PASSIVE)
+(define-enum-conditionally AI_CANONNAME)
+(define-enum-conditionally AI_NUMERICHOST)
+(define-enum-conditionally AI_NUMERICSERV)
+(define-enum-conditionally AI_V4MAPPED)
+(define-enum-conditionally AI_ALL)
+(define-enum-conditionally AI_ADDRCONFIG)
 
-(if "defined NI_NOFQDN" (define-enum NI_NOFQDN))
-(if "defined NI_NUMERICHOST" (define-enum NI_NUMERICHOST))
-(if "defined NI_NAMEREQD" (define-enum NI_NAMEREQD))
-(if "defined NI_NUMERICSERV" (define-enum NI_NUMERICSERV))
-(if "defined NI_DGRAM" (define-enum NI_DGRAM))
+(define-enum-conditionally NI_NOFQDN)
+(define-enum-conditionally NI_NUMERICHOST)
+(define-enum-conditionally NI_NAMEREQD)
+(define-enum-conditionally NI_NUMERICSERV)
+(define-enum-conditionally NI_DGRAM)
 
 ;; Local variables:
 ;; mode: scheme

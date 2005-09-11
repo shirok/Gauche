@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.39 2005-09-04 23:59:47 shirok Exp $
+ *  $Id: net.c,v 1.40 2005-09-11 23:23:45 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -451,6 +451,7 @@ static WSADATA wsaData;
 extern void Scm_Init_NetAddr(ScmModule *mod);
 extern void Scm_Init_NetDB(ScmModule *mod);
 extern void Scm_Init_netlib(ScmModule *mod);
+extern void Scm_Init_netaux(void);
 
 void Scm_Init_libnet(void)
 {
@@ -486,57 +487,5 @@ void Scm_Init_libnet(void)
     Scm_Init_NetAddr(mod);
     Scm_Init_NetDB(mod);
     Scm_Init_netlib(mod);
-
-    /* Constants for socket option operation.
-       I define them here, instead of netlib.stub,  so that I can check
-       if the symbol is defined */
-#define DEFSYM(sym, val) \
-    SCM_DEFINE(mod, sym, Scm_MakeInteger(val))
-
-    DEFSYM("SOL_SOCKET", SOL_SOCKET);
-#ifdef SO_KEEPALIVE
-    DEFSYM("SO_KEEPALIVE", SO_KEEPALIVE);
-#endif
-#ifdef SO_OOBINLINE
-    DEFSYM("SO_OOBINLINE", SO_OOBINLINE);
-#endif
-#ifdef SO_REUSEADDR
-    DEFSYM("SO_REUSEADDR", SO_REUSEADDR);
-#endif
-#ifdef SO_TYPE
-    DEFSYM("SO_TYPE",      SO_TYPE);
-#endif
-#ifdef SO_BROADCAST
-    DEFSYM("SO_BROADCAST", SO_BROADCAST);
-#endif
-#ifdef SO_SNDBUF
-    DEFSYM("SO_SNDBUF",    SO_SNDBUF);
-#endif
-#ifdef SO_RCVBUF
-    DEFSYM("SO_RCVBUF",    SO_RCVBUF);
-#endif
-#ifdef SO_PRIORITY
-    DEFSYM("SO_PRIORITY",  SO_PRIORITY);
-#endif
-    DEFSYM("SO_ERROR",     SO_ERROR);
-
-#ifdef SOL_TCP
-    DEFSYM("SOL_TCP", SOL_TCP);
-#ifdef TCP_NODELAY
-    DEFSYM("TCP_NODELAY",  TCP_NODELAY);
-#endif
-#ifdef TCP_MAXSEG
-    DEFSYM("TCP_MAXSEG",   TCP_MAXSEG);
-#endif
-#ifdef TCP_CORK
-    DEFSYM("TCP_CORK",     TCP_CORK);
-#endif
-#endif /* SOL_TCP */
-
-#ifdef SOL_IP
-    DEFSYM("SOL_IP", SOL_IP);
-#ifdef IP_OPTIONS
-    DEFSYM("IP_OPTIONS",   IP_OPTIONS);
-#endif
-#endif /* SOL_IP */
+    Scm_Init_netaux();
 }

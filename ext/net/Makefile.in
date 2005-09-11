@@ -10,10 +10,16 @@ LIBFILES = libnet.$(SOEXT)
 SCMFILES = net.scm
 HDRFILES = gauche/net.h
 
-OBJECTS = net_head.$(OBJEXT) net.$(OBJEXT) addr.$(OBJEXT) netdb.$(OBJEXT) netlib.$(OBJEXT) net_tail.$(OBJEXT)
+OBJECTS = net_head.$(OBJEXT) \
+          net.$(OBJEXT)      \
+          addr.$(OBJEXT)     \
+          netdb.$(OBJEXT)    \
+          netlib.$(OBJEXT)   \
+          netaux.$(OBJEXT)   \
+          net_tail.$(OBJEXT)
 
 GENERATED = Makefile 
-XCLEANFILES = netlib.c net_head.c net_tail.c
+XCLEANFILES = netlib.c netaux.c net_head.c net_tail.c
 
 all : $(LIBFILES)
 
@@ -21,6 +27,9 @@ libnet.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) libnet.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 netlib.c : netlib.stub
+
+netaux.c : netaux.scm
+	$(GOSH) gencomp netaux.scm
 
 net_head.c net_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension net

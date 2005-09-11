@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: syslog.stub,v 1.6 2005-08-07 17:58:04 shirok Exp $
+;;;  $Id: syslog.stub,v 1.7 2005-09-11 23:23:45 shirok Exp $
 ;;;
 
 "
@@ -70,44 +70,44 @@ void Scm_Init_syslog(void)
         (call <fixnum> "setlogmask"))))
 
 ;; openlog options
-(if "defined(LOG_CONS)"   (define-enum LOG_CONS))
-(if "defined(LOG_NDELAY)" (define-enum LOG_NDELAY))
-(if "defined(LOG_NOWAIT)" (define-enum LOG_NOWAIT))
-(if "defined(LOG_ODELAY)" (define-enum LOG_ODELAY))
-(if "defined(LOG_PERROR)" (define-enum LOG_PERROR))
-(if "defined(LOG_PID)"    (define-enum LOG_PID))
+(define-enum-conditionally LOG_CONS)
+(define-enum-conditionally LOG_NDELAY)
+(define-enum-conditionally LOG_NOWAIT)
+(define-enum-conditionally LOG_ODELAY)
+(define-enum-conditionally LOG_PERROR)
+(define-enum-conditionally LOG_PID)
 
 ;; facility
-(if "defined(LOG_AUTH)"   (define-enum LOG_AUTH))
-(if "defined(LOG_AUTHPRIV)" (define-enum LOG_AUTHPRIV))
-(if "defined(LOG_CRON)"   (define-enum LOG_CRON))
-(if "defined(LOG_DAEMON)" (define-enum LOG_DAEMON))
-(if "defined(LOG_FTP)"    (define-enum LOG_FTP))
-(if "defined(LOG_KERN)"   (define-enum LOG_KERN))
-(if "defined(LOG_LOCAL0)" (define-enum LOG_LOCAL0))
-(if "defined(LOG_LOCAL1)" (define-enum LOG_LOCAL1))
-(if "defined(LOG_LOCAL2)" (define-enum LOG_LOCAL2))
-(if "defined(LOG_LOCAL3)" (define-enum LOG_LOCAL3))
-(if "defined(LOG_LOCAL4)" (define-enum LOG_LOCAL4))
-(if "defined(LOG_LOCAL5)" (define-enum LOG_LOCAL5))
-(if "defined(LOG_LOCAL6)" (define-enum LOG_LOCAL6))
-(if "defined(LOG_LOCAL7)" (define-enum LOG_LOCAL7))
-(if "defined(LOG_LPR)"    (define-enum LOG_LPR))
-(if "defined(LOG_MAIL)"   (define-enum LOG_MAIL))
-(if "defined(LOG_NEWS)"   (define-enum LOG_NEWS))
-(if "defined(LOG_SYSLOG)" (define-enum LOG_SYSLOG))
-(if "defined(LOG_USER)"   (define-enum LOG_USER))
-(if "defined(LOG_UUCP)"   (define-enum LOG_UUCP))
+(define-enum-conditionally LOG_AUTH)
+(define-enum-conditionally LOG_AUTHPRIV)
+(define-enum-conditionally LOG_CRON)
+(define-enum-conditionally LOG_DAEMON)
+(define-enum-conditionally LOG_FTP)
+(define-enum-conditionally LOG_KERN)
+(define-enum-conditionally LOG_LOCAL0)
+(define-enum-conditionally LOG_LOCAL1)
+(define-enum-conditionally LOG_LOCAL2)
+(define-enum-conditionally LOG_LOCAL3)
+(define-enum-conditionally LOG_LOCAL4)
+(define-enum-conditionally LOG_LOCAL5)
+(define-enum-conditionally LOG_LOCAL6)
+(define-enum-conditionally LOG_LOCAL7)
+(define-enum-conditionally LOG_LPR)
+(define-enum-conditionally LOG_MAIL)
+(define-enum-conditionally LOG_NEWS)
+(define-enum-conditionally LOG_SYSLOG)
+(define-enum-conditionally LOG_USER)
+(define-enum-conditionally LOG_UUCP)
 
 ;; level
-(if "defined(LOG_EMERG)"  (define-enum LOG_EMERG))
-(if "defined(LOG_ALERT)"  (define-enum LOG_ALERT))
-(if "defined(LOG_CRIT)"   (define-enum LOG_CRIT))
-(if "defined(LOG_ERR)"    (define-enum LOG_ERR))
-(if "defined(LOG_WARNING)" (define-enum LOG_WARNING))
-(if "defined(LOG_NOTICE)" (define-enum LOG_NOTICE))
-(if "defined(LOG_INFO)"   (define-enum LOG_INFO))
-(if "defined(LOG_DEBUG)"  (define-enum LOG_DEBUG))
+(define-enum-conditionally LOG_EMERG)
+(define-enum-conditionally LOG_ALERT)
+(define-enum-conditionally LOG_CRIT)
+(define-enum-conditionally LOG_ERR)
+(define-enum-conditionally LOG_WARNING)
+(define-enum-conditionally LOG_NOTICE)
+(define-enum-conditionally LOG_INFO)
+(define-enum-conditionally LOG_DEBUG)
 
 ;; Local variables:
 ;; mode: scheme

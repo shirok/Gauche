@@ -30,12 +30,11 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: net.scm,v 1.30 2005-08-10 10:10:15 shirok Exp $
+;;;  $Id: net.scm,v 1.31 2005-09-11 23:23:45 shirok Exp $
 ;;;
 
 (define-module gauche.net
   (use srfi-1)
-  (use srfi-2)
   (export <socket> make-socket
           |PF_UNSPEC| |PF_UNIX| |PF_INET| |AF_UNSPEC| |AF_UNIX| |AF_INET|
           |SOCK_STREAM| |SOCK_DGRAM| |SOCK_RAW|
@@ -59,8 +58,6 @@
 
 (dynamic-load "libnet")
 
-(define ipv6-capable (global-variable-bound? 'gauche.net 'sys-getaddrinfo))
-
 (export-if-defined
  |IPPROTO_IP| |IPPROTO_ICMP| |IPPROTO_TCP| |IPPROTO_UDP| |IPPROTO_IPV6|
  |SOL_SOCKET| |SO_KEEPALIVE| |SO_OOBINLINE| |SO_REUSEADDR| |SO_TYPE|
@@ -69,19 +66,6 @@
  |SOL_IP| |IP_OPTIONS|
  |MSG_CTRUNC| |MSG_DONTROUTE| |MSG_EOR| |MSG_OOB| |MSG_PEEK|
  |MSG_TRUNC| |MSG_WAITALL|)
-
-(if ipv6-capable
-    (define (make-sys-addrinfo . args)
-      (let-keywords* args ((flags :flags 0)
-                           (family :family |AF_UNSPEC|)
-                           (socktype :socktype 0)
-                           (protocol :protocol 0))
-        (let1 hints (make <sys-addrinfo>)
-          (slot-set! hints 'flags (if (list? flags) (apply logior flags) flags))
-          (slot-set! hints 'family family)
-          (slot-set! hints 'socktype socktype)
-          (slot-set! hints 'protocol protocol)
-          hints))))
 
 ;; if ipv6 is supported, these symbols are defiend in the C routine.
 
@@ -94,158 +78,5 @@
  |IPV6_MULTICAST_LOOP| |IPV6_JOIN_GROUP| |IPV6_LEAVE_GROUP| |IPV6_V6ONLY|
  sys-getnameinfo
  |NI_NOFQDN| |NI_NUMERICHOST| |NI_NAMEREQD| |NI_NUMERICSERV| |NI_DGRAM|)
-
-;; Utility
-(define (address->protocol-family addr)
-  (case (sockaddr-family addr)
-    ((unix)  |PF_UNIX|)
-    ((inet)  |PF_INET|)
-    ((inet6) |PF_INET6|) ;;this can't happen if !ipv6-capable
-    (else (error "unknown family of socket address" addr))))
-
-;; High-level interface.  We need some hardcoded heuristics here.
-
-(define (make-client-socket proto . args)
-  (cond ((eq? proto 'unix)
-         (let-optionals* args ((path #f))
-           (unless (string? path)
-             (error "unix socket requires pathname, but got" path))
-           (make-client-socket-unix path)))
-        ((eq? proto 'inet)
-         (let-optionals* args ((host #f) (port #f))
-           (unless (and (string? host) (or (integer? port) (string? port)))
-             (errorf "inet socket requires host name and port, but got ~s and ~s"
-                     host port))
-           (make-client-socket-inet host port)))
-        ((is-a? proto <sockaddr>)
-         ;; caller provided sockaddr
-         (make-client-socket-from-addr proto))
-        ((and (string? proto)
-              (pair? args)
-              (integer? (car args)))
-         ;; STk compatibility
-         (make-client-socket-inet proto (car args)))
-        (else
-         (error "unsupported protocol:" proto))))
-
-(define (make-client-socket-from-addr addr)
-  (let1 socket (make-socket (address->protocol-family addr) |SOCK_STREAM|)
-    (socket-connect socket addr)
-    socket))
-
-(define (make-client-socket-unix path)
-  (let ((address (make <sockaddr-un> :path path))
-        (socket  (make-socket |PF_UNIX| |SOCK_STREAM|)))
-    (socket-connect socket address)
-    socket))
-
-(define (make-client-socket-inet host port)
-  (let1 err #f
-    (define (try-connect address)
-      (with-error-handler
-          (lambda (e) (set! err e) #f)
-        (lambda ()
-          (let1 socket (make-socket (address->protocol-family address)
-                                    |SOCK_STREAM|)
-            (socket-connect socket address)
-            socket))))
-    (let1 socket (any try-connect (make-sockaddrs host port))
-      (unless socket (raise err))
-      socket)))
-
-(define (make-server-socket proto . args)
-  (cond ((eq? proto 'unix)
-         (let-optionals* args ((path #f))
-           (unless (string? path)
-             (error "unix socket requires pathname, but got" path))
-           (make-server-socket-unix path)))
-        ((eq? proto 'inet)
-         (let-optionals* args ((port #f))
-           (unless (or (integer? port) (string? port))
-             (error "inet socket requires port, but got" port))
-           (apply make-server-socket-inet port (cdr args))))
-        ((is-a? proto <sockaddr>)
-         ;; caller provided sockaddr
-         (apply make-server-socket-from-addr proto args))
-        ((integer? proto)
-         ;; STk compatibility
-         (apply make-server-socket-inet proto args))
-        (else
-         (error "unsupported protocol:" proto))))
-
-(define (make-server-socket-from-addr addr . args)
-  (let-keywords* args ((reuse-addr? #f)
-		       (sock-init #f))
-    (let1 socket (make-socket (address->protocol-family addr) |SOCK_STREAM|)
-      (when (procedure? sock-init)
-	(sock-init socket addr))
-      (when reuse-addr?
-	(socket-setsockopt socket |SOL_SOCKET| |SO_REUSEADDR| 1))
-      (socket-bind socket addr)
-      (socket-listen socket 5))))
-
-(define (make-server-socket-unix path)
-  (let ((address (make <sockaddr-un> :path path))
-        (socket (make-socket |PF_UNIX| |SOCK_STREAM|)))
-    (socket-bind socket address)
-    (socket-listen socket 5)))
-
-(define (make-server-socket-inet port . args)
-  (let1 addr (car (make-sockaddrs #f port))
-    (apply make-server-socket-from-addr addr args)))
-
-(define (make-server-sockets host port . args)
-  (map (lambda (sockaddr) (apply make-server-socket sockaddr args))
-       (make-sockaddrs host port)))
-
-(define (make-sockaddrs host port . maybe-proto)
-  (let1 proto (get-optional maybe-proto 'tcp)
-    (cond (ipv6-capable
-           (let* ((socktype (case proto
-                              ((tcp) |SOCK_STREAM|)
-                              ((udp) |SOCK_DGRAM|)
-                              (else (error "unsupported protocol:" proto))))
-                  (port (x->string port))
-                  (hints (make-sys-addrinfo :flags |AI_PASSIVE|
-                                            :socktype socktype)))
-             (map (lambda (ai) (slot-ref ai 'addr))
-                  (sys-getaddrinfo host port hints))))
-          (else
-           (let* ((proto (symbol->string proto))
-                  (port (cond ((number? port) port)
-                              ((sys-getservbyname port proto)
-                               => (cut slot-ref <> 'port))
-                              (else
-                               (error "couldn't find a port number of service:"
-                                      port)))))
-             (if host
-               (let ((hh (sys-gethostbyname host)))
-                 (unless hh (error "couldn't find host: " host))
-                 (map (cut make <sockaddr-in> :host <> :port port)
-                      (slot-ref hh 'addresses)))
-               (list (make <sockaddr-in> :host :any :port port))))))))
-
-(define (call-with-client-socket socket proc)
-  (with-error-handler
-      (lambda (e)
-        (socket-close socket)
-        (raise e))
-    (lambda ()
-      (begin0
-       (proc (socket-input-port socket) (socket-output-port socket))
-       (socket-close socket)))))
-
-;; backward compatibility -- will be removed!
-(define pf_inet |PF_INET|)
-(define pf_unix |PF_UNIX|)
-
-(define af_inet |AF_INET|)
-(define af_unix |AF_UNIX|)
-
-(define sock_stream |SOCK_STREAM|)
-(define sock_dgram  |SOCK_DGRAM|)
-
-(define sol_socket |SOL_SOCKET|)
-(define so_reuseaddr |SO_REUSEADDR|)
 
 (provide "gauche/net")

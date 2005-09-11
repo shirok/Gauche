@@ -1,5 +1,11 @@
 2005-09-11  Shiro Kawai  <shiro@acm.org>
 
+	* src/genstub, *.stub : added define-enum-conditionally to abbreviate
+	  the common idiom of defining Scheme enum constant only if it is
+	  defined in C.  Rewrote some .stub files by using it.
+	* ext/net/netaux.scm, ext/net/net.scm: compile Scheme part into
+	  libnet.so.
+
 	* ext/net/netlib.stub (socket-status): made returned symbol lowercase,
 	  in sync with the documentation.
 

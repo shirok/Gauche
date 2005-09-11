@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: fcntlib.stub,v 1.10 2005-08-01 12:23:33 shirok Exp $
+;;; $Id: fcntlib.stub,v 1.11 2005-09-11 23:23:45 shirok Exp $
 ;;;
 
 "#include \"gauche/fcntl.h\""
@@ -50,15 +50,15 @@
 (define-enum F_WRLCK)
 (define-enum F_UNLCK)
 
-(if "defined(F_GETOWN)"   (define-enum F_GETOWN))
-(if "defined(F_SETOWN)"   (define-enum F_SETOWN))
-(if "defined(F_GETSIG)"   (define-enum F_GETSIG))
-(if "defined(F_SETSIG)"   (define-enum F_SETSIG))
-(if "defined(F_GETLEASE)" (define-enum F_GETLEASE))
-(if "defined(F_SETLEASE)" (define-enum F_SETLEASE))
-(if "defined(F_NOTIFY)"   (define-enum F_NOTIFY))
+(define-enum-conditionally F_GETOWN)
+(define-enum-conditionally F_SETOWN)
+(define-enum-conditionally F_GETSIG)
+(define-enum-conditionally F_SETSIG)
+(define-enum-conditionally F_GETLEASE)
+(define-enum-conditionally F_SETLEASE)
+(define-enum-conditionally F_NOTIFY)
 
-(if "defined(FD_CLOEXEC)" (define-enum FD_CLOEXEC))
+(define-enum-conditionally FD_CLOEXEC)
 
 (define-enum O_ACCMODE)
 (define-enum O_RDONLY)
@@ -67,9 +67,9 @@
 (define-enum O_APPEND)
 (define-enum O_CREAT)
 (define-enum O_EXCL)
-(if "defined(O_NOCTTY)"   (define-enum O_NOCTTY))
-(if "defined(O_NONBLOCK)" (define-enum O_NONBLOCK))
-(if "defined(O_ASYNC)"    (define-enum O_ASYNC))
+(define-enum-conditionally O_NOCTTY)
+(define-enum-conditionally O_NONBLOCK)
+(define-enum-conditionally O_ASYNC)
 (define-enum O_TRUNC)
 
 ;; Linux specific F_NOTIFY flags (not available yet, w/o _GNU_SOURCE)

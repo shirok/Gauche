@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.118 2005-09-10 09:10:32 shirok Exp $
+;;;  $Id: genstub,v 1.119 2005-09-11 23:23:45 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -129,6 +129,9 @@
 ;;
 ;;   define-enum name
 ;;      A define-constant Specialized for enum values.
+;;
+;;   define-enum-conditionally name
+;;      Abbreviation of (if "defined(name)" (define-enum name))
 ;;
 ;;   initcode <c-code>
 ;;      Insert <c-code> literally in the initialization function
@@ -727,6 +730,11 @@
 (define-form-parser define-enum (name)
   (check-arg symbol? name)
   (variable-parser-common #t name (list 'c #`"Scm_MakeInteger(,name)") '()))
+
+(define-form-parser define-enum-conditionally (name)
+  (check-arg symbol? name)
+  (parameterize ((cpp-condition #`"defined(,name)"))
+    (variable-parser-common #t name (list 'c #`"Scm_MakeInteger(,name)") '())))
 
 ;;-------------------------------------------------------------------
 ;; (define-keyword scheme-name c-name)
