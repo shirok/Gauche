@@ -1,5 +1,10 @@
 2005-09-10  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac (--enable-multibyte): Switched the default encoding
+	  from euc-jp to utf-8.  Issue a warning and wait for user's
+	  reaction if --enable-multibyte is not given to ./configure,
+	  in order to avoid confusion.
+
 	* lib/dbi.scm, lib/dbd/null.scm : dropped <dbi-object> and 
 	  <dbi-result-set>.  Moved dbi-get-value to the deprecated section.
 	  Defines fallbacks of dbi-open? and dbi-close.

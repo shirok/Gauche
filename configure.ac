@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.66 2005-08-28 23:03:46 shirok Exp $
+dnl $Id: configure.ac,v 1.67 2005-09-11 10:35:06 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.6_pre2, shiro@acm.org)
-AC_REVISION($Revision: 1.66 $)
+AC_REVISION($Revision: 1.67 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -13,12 +13,12 @@ dnl
 dnl ----------------------------------------------------------
 dnl   enable-multibyte
 dnl
-GAUCHE_CHAR_ENCODING=eucjp
+GAUCHE_CHAR_ENCODING=undefined
 AC_ARG_ENABLE(multibyte,
   AC_HELP_STRING([--enable-multibyte=ENCODING],
                  [Use ENCODING as the internal multibyte string encoding.
 Following encodings are currently recognized:
-'euc-jp' (EUC-JP code, default), 'utf-8' (UTF-8), 'sjis' (Shift-JIS), 
+'euc-jp' (EUC-JP code), 'utf-8' (UTF-8), 'sjis' (Shift-JIS), 
 or 'no' (No multibyte support)]),
   [
    case $enable_multibyte in
@@ -36,6 +36,20 @@ case $GAUCHE_CHAR_ENCODING in
  utf8)  AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8);;
  sjis)  AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS);;
  none)  ;;
+ undefined)
+   cat <<EOM
+*********************************************************************
+WARNING: You didn't give --enable-multibyte option to the ./configure
+script.  As of version 0.8.6, Gauche switched the default character
+encoding from euc-jp to utf-8.  If you've compiled previous versions
+of Gauche without specifying --enable-multibyte option and want to keep
+the same character encoding, quit ./configure now and run it again with
+--enable-multibyte=euc-jp option.   If this is the first time you
+compile Gauche and you want utf-8, just hit return.
+*********************************************************************
+EOM
+    read
+    AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8);;
 esac
 
 dnl ----------------------------------------------------------
