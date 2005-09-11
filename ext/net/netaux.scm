@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netaux.scm,v 1.1 2005-09-11 23:23:45 shirok Exp $
+;;;  $Id: netaux.scm,v 1.2 2005-09-11 23:50:02 shirok Exp $
 ;;;
 
 (select-module gauche.net)
@@ -38,18 +38,16 @@
 
 (define ipv6-capable (global-variable-bound? 'gauche.net 'sys-getaddrinfo))
 
-(if ipv6-capable
-    (define (make-sys-addrinfo . args)
-      (let-keywords* args ((flags :flags 0)
-                           (family :family |AF_UNSPEC|)
-                           (socktype :socktype 0)
-                           (protocol :protocol 0))
-        (let1 hints (make <sys-addrinfo>)
-          (slot-set! hints 'flags (if (list? flags) (apply logior flags) flags))
-          (slot-set! hints 'family family)
-          (slot-set! hints 'socktype socktype)
-          (slot-set! hints 'protocol protocol)
-          hints))))
+(define (make-sys-addrinfo . args)
+  (if ipv6-capable
+    (let-keywords* args ((flags    0)
+                         (family   |AF_UNSPEC|)
+                         (socktype 0)
+                         (protocol 0))
+      (make <sys-addrinfo>
+        :flags (if (list? flags) (apply logior flags) flags)
+        :family family :socktype socktype :protocol protocol))
+    (error "make-sys-addrinfo is available on IPv6-enabled platform")))
 
 ;; Utility
 (define (address->protocol-family addr)
