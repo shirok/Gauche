@@ -1,3 +1,8 @@
+2005-09-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/syslib.stub: exposed some unix error codes (such as EINTR)
+	  as predefined constants.
+
 2005-09-10  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac (--enable-multibyte): Switched the default encoding
