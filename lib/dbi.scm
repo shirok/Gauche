@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.26 2005-09-07 11:34:12 shirok Exp $
+;;;  $Id: dbi.scm,v 1.27 2005-09-11 08:21:57 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -47,7 +47,7 @@
   (extend util.relation)
   (export <dbi-error> <dbi-nonexistent-driver-error>
           <dbi-unsupported-error> <dbi-parameter-error>
-          <dbi-driver> <dbi-connection> <dbi-result-set>
+          <dbi-driver> <dbi-connection>
           dbi-connect dbi-close dbi-prepare dbi-do
           dbi-open? dbi-parse-dsn dbi-make-driver
           dbi-prepare-sql dbi-escape-sql dbi-list-drivers
@@ -91,23 +91,9 @@
   ((driver-name :init-keyword :driver-name)  ; "mysql" "pg" etc.
    ))
 
-;; Base of all dbi transient objects
-(define-class <dbi-object> ()
-  ((open   :getter dbi-open? :init-keyword :open :init-value #t)))
-
-(define-method dbi-close ((o <dbi-object>))
-  (set! (ref o 'open) #f))
-
 ;; <dbi-connection> : represents a connection to the database system.
 ;; All the transactions must be done while the connection is 'open'.
-(define-class <dbi-connection> (<dbi-object>) ())
-
-;; <dbi-result-set> : an abstract entity of the result of a query.
-;; It is a collection of rows.  The driver must define a subclass
-;; this and implement collection and relation APIs.
-;; For the convenience, a simple-minded implementation <dbi-result-set-simple>
-;; is provided.
-(define-class <dbi-result-set> (<dbi-object> <relation>) ())
+(define-class <dbi-connection> () ())
 
 ;;;==============================================================
 ;;; User-level APIs
@@ -166,7 +152,7 @@
 ;; a cons of a module name and its driver name.
 (define (dbi-list-drivers)
   (library-map 'dbd.* (lambda (m p) m)))
-  
+
 ;;;==============================================================
 ;;; DBD-level APIs
 ;;;
@@ -184,30 +170,10 @@
     ;; call deprecated dbi-make-connection API.
     (dbi-make-connection d username password (or options ""))))
 
-;; Result set.
-;; The driver should subclass <dbi-result-set> and implement
-;; relations and collections protocol.  For the convenience, here's
-;; a simple-minded subclass that implements required protocols, and
-;; the driver may only need to set columns and rows.
-;;   columns : should be a sequence of column names
-;;   rows    : should be a collection of sequences.
-(define-class <dbi-result-set-simple> (<dbi-result-set>)
-  ((columns :init-keyword :columns :init-value '())
-   (rows    :init-keyword :rows :init-value '())))
-
-(define-method relation-column-names ((r <dbi-result-set-simple>))
-  (ref r 'columns))
-
-(define-method relation-accessor ((r <dbi-result-set-simple>))
-  (let1 columns (ref r 'columns)
-    (lambda (row column . maybe-default)
-      ((find-index (cut equal? column <>) columns) => (cut ref row <>))
-      ((pair? maybe-default) (car maybe-default))
-      (else (error "invalid column:" column)))))
-
-;; default method
-(define-method dbi-get-value ((r <sequence>) (n <integer>))
-  (ref r n))
+;; Usually the subclass should define these for the connection
+;; and result set objects.
+(define-method dbi-open? (obj) #t)
+(define-method dbi-close (obj) (undefined))
 
 ;;;===================================================================
 ;;; Low-level utilities
@@ -334,8 +300,11 @@
 
 (define <dbi-exception> <dbi-error>)
 
-(define-class <dbi-query> (<dbi-object>)
+(define-class <dbi-query> ()
   ((connection :init-keyword :connection)))
+
+(define-method dbi-get-value ((r <sequence>) (n <integer>))
+  (ref r n))
 
 ;; Older API
 (define-method dbi-make-connection ((d <dbi-driver>)

@@ -632,26 +632,13 @@ be thrown if an invalid SQL statement is passed to @code{dbi-prepare}.
 (@xref{SQL parsing and construction}).
 
 
-@subsubheading DBI objects
-
-@deftp {Class} <dbi-driver>
-The base class of a driver.  You usually don't need to see this
-as far as you're using the high-level @code{dbi} API.
-@end deftp
-
-@deftp {Class} <dbi-connection>
-The base class of a connection to a database system.
-Each driver defines a subclass of this to keep information about
-database-specific connections.
-@end deftp
-
-@subsubheading Communicating with DBMS
+@subsubheading Connecting to the database
 
 @defun dbi-connect dsn &keyword username password
 Connect to a database using a data source specified by @var{dsn}
 (data source name).  @var{Dsn} is a string with the following syntax:
 @example
-dbi:@var{driver}:@var{parameters}
+dbi:@var{driver}:@var{options}
 @end example
 
 @var{Driver} part names a specific driver.  You need to have the
@@ -659,12 +646,12 @@ corresponding driver module, @code{dbd.@var{driver}}, installed in
 your system.  For example, if @var{dsn} begins with @code{"dbi:mysql:"},
 @code{dbi-connect} tries to load @code{dbd.mysql}.
 
-Interpretation of the @var{parameters} part is up to the driver.
+Interpretation of the @var{options} part is up to the driver.
 Usually it is in the form of @code{key1=value1;key2=value2;...},
 but some driver may interpret it differently.  For example,
 @code{mysql} driver allows you to specify a database name
-at the beginning of @var{parameters}.   You have to check out
-the document of each driver for the exact specification of @var{parameters}.
+at the beginning of @var{options}.   You have to check out
+the document of each driver for the exact specification of @var{options}.
 
 The keyword arguments gives extra information required for
 connection.  The @var{username} and @var{password} are commonly
@@ -675,12 +662,53 @@ a connection object (an instance of a subclass of @code{<dbi-connection>})
 is returned.  Otherwise, an error is signalled.
 @end defun
 
+@deftp {Class} <dbi-connection>
+The base class of a connection to a database system.
+Each driver defines a subclass of this to keep information about
+database-specific connections.
+@end deftp
+
+@deffn {Method} dbi-open? (c <dbi-connection>)
+Queries whether a connection to the database is still open (active).
+@end deffn
+
+@deffn {Method} dbi-close (c <dbi-connection>)
+Closes a connection to the database.  This causes releasing resources
+related to this connection.   Once closed, @var{c} cannot
+be used for any dbi operations (except passing to @code{dbi-open?}).
+Calling @code{dbi-close} on an already closed connection has no effect.
+
+Although a driver usually closes a connection when @code{<dbi-connection>}
+object is garbage-collected, it is not a good idea to rely on that,
+since the timing of GC is unpredictable.  The user program must make
+sure that it calls @code{dbi-close} at a proper moment.
+@end deffn
+
+@defun dbi-list-drivers
+Returns a list of module names of known drivers.
+@end defun
+
+@deftp {Class} <dbi-driver>
+The base class of a driver.  You usually don't need to see this
+as far as you're using the high-level @code{dbi} API.
+@end deftp
+
+@defun dbi-make-driver driver-name
+This is a low-level function called from @code{dbi-connect} method,
+and usually a user doesn't need to call it.
+
+Loads a driver module specified by @var{driver-name}, and
+instantiate the driver class and returns it.
+@end defun
+
+@subsubheading Preparing and issuing queries
+
 @deffn {Method} dbi-prepare conn sql &keyword pass-through @dots{}
 From a string representation of SQL statement @var{sql},
-Creates and returns a closure that represents a prepared query
+creates and returns a closure that represents a prepared query
 for the database connection @code{conn}
 
-@var{Sql} may contain parameter slots, denoted by @code{?}, e.g.
+@var{Sql} may contain parameter slots, denoted by @code{?}.
 @example
 (dbi-prepare conn "insert into tab (col1, col2) values (?, ?)")
 
@@ -688,7 +716,7 @@ for the database connection @code{conn}
 @end example
 
 They will be filled when you actually issue the query by
-invoking the returned procedure with the same number of parameters.
+invoking the returned closure with the same number of parameters.
 There are some advantages of using parameter
 slots: (1) The necessary quoting is done automatically.
 You don't need to concern about security holes caused by
@@ -703,7 +731,7 @@ having @code{?} parameters), the driver may use @code{text.sql}
 module to parse @var{sql}.  It may raise @code{<sql-parse-error>}
 condition if the given SQL is not well formed.
 
-You may pass a true value to the keyword argument @code{pass-through}
+You may pass a true value to the keyword argument @var{pass-through}
 to suppress interpretation of SQL and pass @var{sql} as-is to the
 back end database system.  It is useful if the back-end supports
 extension of SQL which @code{text.sql} doesn't understand.
@@ -718,9 +746,7 @@ If @var{sql} is @code{select} statement, the query closure
 returns an object represents a @emph{relation}.
 A relation encapsulates the values in
 rows and columns, as well as meta infomation like column names.
-See "Feching data" below for how to access the result.
-See also @ref{Relation framework} for the general information
-about relations.
+See "Retrieving query results" below for how to access the result.
 
 If @var{sql} is other types, such as @code{create}, @code{insert} 
 or @code{delete}, the return value of the query closure is unspecified.
@@ -744,27 +770,215 @@ such character.  However, it doesn't specify non-printable characters,
 and the database system may use other escaping characters.  So 
 it is necessary to use this method rather than doing escaping
 by your own.
+
+@example
+;; assumes c is a valid DBI connection
+(dbi-escape-sql c "don't know")
+  @result{} "don''t know"
+@end example
 @end deffn
 
-@defun dbi-list-drivers
-Returns a list of module names of known drivers.
-@end defun
+@subsubheading Retrieving query results
 
-@subsubheading Fetching data
+If the query is a @code{select} statement, it returns an instance
+of @code{<relation>} or its subclass.   It is a collection of rows
+(that is, it implements @code{<collection>} API, so you can use
+@code{map}, @code{for-each} or other generic functions to access
+rows), and you can use relation API to retrieve column names and
+accessors from it.  See @ref{Relation framework}, for the relation
+API, and @ref{Collection framework}, for the collection API.
 
-@deftp {Class} <dbi-result-set>
-@end deftp
+The actual class of the object returned from a query depends on
+the driver, but you may use the following method on it.
+
+@deffn {Method} dbi-open? result
+Check whether the result of a query is still active.
+The result may become inactive when it is explicitly closed
+by @code{dbi-close} and/or the connection to the database is
+closed.
+@end deffn
+
+@deffn {Method} dbi-close result
+Close the result of the query.  This may cause releasing resources
+related to the result.   You can no longer use @var{result} once it is
+closed, except passing it to @code{dbi-open?}.
+
+Although a driver usually releases resources when the result is
+garbage-collected, the application shouldn't rely on that and
+is recommended call @code{dbi-close} explicitly when it is done
+with the result.
+@end deffn
 
 
 @node Writing drivers for DBI,  , DBI user API, Database independent access layer
 @subsection Writing drivers for DBI
 
-@deffn {Method} dbi-make-connection (d <dbi-driver>) (options <string>) (option-alist <list>) &keyword username password
+Writing a driver for a specific database system means implementing
+a module @code{dbd.@var{foo}}, where @var{foo} is the name of the driver.
+Usually a database system provides a client library and C API, so
+it involves writing low-level stub functions, then implement a DBI protocol
+on top of it.  Altogether, the specific driver becomes an extension
+module.
+
+To start writing a driver as an extension module, it is convenient
+to start generating templates, like this:
+@example
+% gauche-package generate Gauche-dbd-foo dbd.foo
+@end example
+
+This creates template files under the directory @file{Gauche-dbd-foo/}.
+Then you take the following steps.
+
+@enumerate
+@item
+Implement a low-level binding to the database system in 
+@file{dbd_foo.h}, @file{dbd_foo.c}, and @file{dbd_foo.stub}.
+We don't explain this part further in this document.
+@item
+Implement a high-level DBI protocol in @file{dbd/foo.scm}.
+We describe this part below.
+@end enumerate
+
+@subsubheading DBI classes to implement
+
+You have to define the following classes.
+
+@itemize @bullet
+@item
+Subclass @code{<dbi-driver>}.  
+The class name @emph{must} be @code{<@var{foo}-driver>}, where
+@var{foo} is the name of the driver.  
+Usually this class produces a singleton instance, 
+and is only used to dispatch @code{dbi-make-connection}
+method below.
+@item
+Subclass @code{<dbi-connection>}.  An instance of this class is created
+by @code{dbi-make-connection}.  It needs to keep the information about
+the actual connections.
+@item
+Subclass @code{<relation>} to represent query results suitable for
+the driver.
+@end itemize
+
+@subsubheading DBI methods to implement
+
+The driver need to implement the following methods.
+
+@deffn {Method} dbi-make-connection (d <foo-driver>) (options <string>) (option-alist <list>) &keyword username password @dots{} 
+This method is called from @code{dbi-connect}, and responsible to
+connect to the database and to create a connection object.
+It must return a connection object, or raise an @code{<dbi-error>} if
+it cannot establish a connection.
+
+@var{Options} is the option part of the data source name (DSN) given to
+@code{dbi-connect}.  @var{Option-alist} is an assoc list of
+the result of parsing @var{options}.  Both are provided so that
+the driver may interpret @var{options} string in nontrivial way.
+
+For example, given @code{"dbi:foo:myaddressbook;host=dbhost;port=8998"}
+as DSN, foo's @code{dbi-make-connection} will receive
+@code{"myaddressbook;host=dbhost;port=8998"} as @var{options},
+and @code{(("myaddressbook" . #t) ("host" . "dbhost") ("port" . "8998"))}
+as @var{optons-alist}.
+
+After @var{options-alist}, whatever keyword arguments given to
+@code{dbi-connect} are passed.  DBI protocol currently 
+specifies only @var{username} and @var{password}.
+The driver may define other keyword arguments.
+It is recommended to name the driver-specific keyword arguments
+prefixed by the driver name, e.g. for @code{dbd.foo}, it may take
+a @code{:foo-whatever} keyword argument.
+
+It is up to the driver write to define what options are available and
+the syntax of the options.  The basic idea is that the DSN
+identifies the source of the data; it's role is like URL in WWW.
+So, it may include the hostname and port number of the database,
+and/or the name of the database, etc.  However, it shouldn't include
+information related to authentication, such as username and password.
+That's why those are passed via keyword arguments.
 @end deffn
 
-@deffn {Method} dbi-prepare (c <dbi-connection>) (sql <string>) &keyword pass-through @dots{}
+@deffn {Method} dbi-prepare (c <foo-connection>) (sql <string>) &keyword pass-through @dots{}
+This method should create and return a closure, which executes the
+query specified by @var{sql} when called.  We call the returned closure
+a query closure.
+
+@var{Sql} is an SQL statement.  It may contain placeholders represented
+by @code{'?'}.  The query closure should take the same number of arguments
+as of the placeholders.   It is up to the driver whether it parses
+@var{sql} internally and construct a complete SQL statement when
+the query closure is called, or it passes @var{sql} to the back-end
+server to prepare the statement and let the query closure just send
+parameters.
+
+If the driver parses SQL statement internally, it should recognize
+a keyword argument @code{pass-through}.  If a true value is given,
+the driver must treat @code{sql} opaque and pass it as is when
+the query closure is called.
+
+The query closure should check the number of arguments given to it
+and raise @code{<dbi-parameter-error>} if the number differs from what
+the query expects.
+
+The driver may define other keyword arguments.
+It is recommended to name the driver-specific keyword arguments
+prefixed by the driver name, e.g. for @code{dbd.foo}, it may take
+a @code{:foo-whatever} keyword argument.
 @end deffn
 
+@deffn {Method} dbi-escape-sql (c <foo-connection>) str
+If the default escape method isn't enough, the driver may
+overload this method to implement a specific escaping.
+For example, MySQL treats backslash characters specially
+as well as signle quotes, so it has its @code{dbi-escape-sql} 
+method.
+@end deffn
+
+@deffn {Method} dbi-open? (c <foo-connection>)
+@deffnx {Method} dbi-open? (r <foo-result>)
+@deffnx {Method} dbi-close (c <foo-connection>)
+@deffnx {Method} dbi-close (r <foo-result>)
+Queries open/close status of a connection and a result, and
+closes a connection and a result.  The close methods should cause
+releasing resources used by connection/result.  The driver
+has to allow @code{dbi-close} to be called on a connection or a
+result which has already been closed.
+@end deffn
+
+@subsubheading DBI utility funcitons
+
+The following functions are low-level utilities which you may
+use to implement the above methods.
+
+@defun dbi-parse-dsn data-source-name
+Parse the data source name (DSN) string given to @code{dbi-connect},
+and returns tree values: (1) The driver name in a string. (2)
+'options' part of DSN as a string.  (3) parsed options in an assoc
+list.  This may raise @code{<dbi-error>} if the given string doesn't
+conform DSN syntax.
+
+You don't need to use this to write a typical driver, for the
+parsing is done before @code{dbi-make-connection} is called.
+This method may be useful if you're writing a kind of meta-driver,
+such as a proxy.
+@end defun
+
+@defun dbi-prepare-sql connection sql
+Parses an SQL statement @var{sql} which may contain placeholders,
+and returns a closure, which generats a complete SQL statement when
+called with actual values for the parameters.  If the back-end
+doesn't support prepared statements, you may use this function
+to prepare queries in the driver.
+
+@var{Connection} is a DBI connection to the database.  It is required
+to escape values within SQL properly (see @code{dbi-escape-sql} above).
+
+@example
+;; assume c contains a valid dbi connection
+((dbi-prepare-sql c "select * from table where id=?") "foo'bah")
+ => "select * from table where id='foo''bar'"
+@end example
+@end defun
 
 @c ----------------------------------------------------------------------
 

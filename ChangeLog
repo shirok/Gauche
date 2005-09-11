@@ -1,5 +1,9 @@
 2005-09-10  Shiro Kawai  <shiro@acm.org>
 
+	* lib/dbi.scm, lib/dbd/null.scm : dropped <dbi-object> and 
+	  <dbi-result-set>.  Moved dbi-get-value to the deprecated section.
+	  Defines fallbacks of dbi-open? and dbi-close.
+
 	* lib/util/relation.scm (util.relation): exports <simple-relation>
 	  and <object-set-relation>.
 
