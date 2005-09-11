@@ -1,5 +1,8 @@
 2005-09-11  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/netlib.stub (socket-status): made returned symbol lowercase,
+	  in sync with the documentation.
+
 	* src/gauche.h (SCM_FOREIGN_POINTER_P): use SCM_ISA to check.
 
 	* src/syslib.stub: exposed some unix error codes (such as EINTR)
