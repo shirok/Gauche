@@ -1,5 +1,10 @@
 2005-09-11  Shiro Kawai  <shiro@acm.org>
 
+	* src/class.c (accessor_get_proc, accessor_set_proc): fixed a long
+	  pending bug about an undesired interaction of modules and accessor
+	  methods.  Check out test/object.scm "module and accessor" section
+	  for an explanation and an example.
+
 	* lib/gauche/let-opt.scm, lib/gauche/singleton.scm,
 	  lib/gauche/validator.scm : issue warning when used.  preparation
 	  of removing these obsoleted modules.

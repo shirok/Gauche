@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.36 2005-09-12 04:05:49 shirok Exp $
+;; $Id: object.scm,v 1.37 2005-09-12 09:22:25 shirok Exp $
 
 (use gauche.test)
 
@@ -269,6 +269,51 @@
               (i (s-get-i s))
               (j (begin (set! (s-get-i s) "j") (s-get-i s))))
          (list i j)))
+
+;;----------------------------------------------------------------
+(test-section "module and accessor")
+
+;; This test is a contrived example of the case where the
+;; superclass has a slot with a getter method whose name isn't
+;; exported.  Gauche 0.8.5 and before doesn't handle
+;; this correctly, since the implicit accessor method of slot a
+;; of <ma-class-2> defined in MA doesn't share the generic function
+;; with MA.inner#ma-get.  Thus, in MA.inner#ma-method, (ma-get <ma-class-1>)
+;; is called even when the passed object is <ma-class-2>.
+;;
+;; The root of the problem is the undesired interaction between
+;; module system and generic functions.  In 0.8.6, we haven't still
+;; solved the root problem, but we fixed this particular problem by
+;; adding extra check in accessor methods.
+(define-module MA.inner
+  (export <ma-class-1> ma-getter ma-setter)
+  (define-class <ma-class-1> ()
+    ((a :accessor ma-get :init-value 'a)))
+  (define-method ma-getter ((o <ma-class-1>))
+    (ma-get o))
+  (define-method ma-setter ((o <ma-class-1>) val)
+    (set! (ma-get o) val)))
+
+(define-module MA
+  (import MA.inner)
+  (export <ma-class-2> ma-g ma-s)
+  (define-class <ma-class-2> (<ma-class-1>)
+    ((b :init-value 'b)))
+  (define (ma-g o) (ma-getter o))
+  (define (ma-s o v) (ma-setter o v)))
+
+(define-module MA.user
+  (import MA))
+
+(test* "module and accessor" 'a
+       (with-module MA.user
+         (ma-g (make <ma-class-2>))))
+
+(test* "module and accessor" 'ei
+       (with-module MA.user
+         (let1 m (make <ma-class-2>)
+           (ma-s m 'ei)
+           (slot-ref m 'a))))
 
 ;;----------------------------------------------------------------
 (test-section "class redefinition (part 1)")

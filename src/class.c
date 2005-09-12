@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.128 2005-09-02 22:03:59 shirok Exp $
+ *  $Id: class.c,v 1.129 2005-09-12 09:22:25 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2488,6 +2488,16 @@ static ScmObj accessor_get_proc(ScmNextMethod *nm, ScmObj *args, int nargs,
 {
     ScmObj obj = args[0];
     ScmSlotAccessor *ca = (ScmSlotAccessor*)data;
+    /* NB: we need this extra check, in case if the getter method of parent
+       class and the one of subclass don't share the generic function, and
+       the getter method of parent class is called on the subclass's instance.
+       See test/object.scm "module and accessor" section for a concrete
+       example. */
+    if (!SCM_EQ(Scm_ClassOf(obj), ca->klass)) {
+        /* fallback to a normal protocol */
+        return Scm_VMSlotRef(obj, ca->name, FALSE);
+    }
+    /* Standard path.  We can skip searching the slot, so it is faster. */
     return slot_ref_using_accessor(obj, ca, FALSE);
 }
 
@@ -2497,6 +2507,10 @@ static ScmObj accessor_set_proc(ScmNextMethod *nm, ScmObj *args, int nargs,
     ScmObj obj = args[0];
     ScmObj val = args[1];
     ScmSlotAccessor *ca = (ScmSlotAccessor*)data;
+    /* See the comment in accessor_get_proc above about this check. */
+    if (!SCM_EQ(Scm_ClassOf(obj), ca->klass)) {
+        return Scm_VMSlotSet(obj, ca->name, val);
+    }
     return slot_set_using_accessor(obj, ca, val);
 }
 
