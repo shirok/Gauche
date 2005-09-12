@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.35 2004-05-21 10:06:22 shirok Exp $
+;; $Id: object.scm,v 1.36 2005-09-12 04:05:49 shirok Exp $
 
 (use gauche.test)
 
@@ -786,7 +786,7 @@
 ;;----------------------------------------------------------------
 (test-section "metaclass/singleton")
 
-(use gauche.singleton)
+(use gauche.mop.singleton)
 
 (define-class <single> ()
   ((foo :init-keyword :foo :initform 4))
