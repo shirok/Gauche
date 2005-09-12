@@ -1,5 +1,9 @@
 2005-09-11  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/let-opt.scm, lib/gauche/singleton.scm,
+	  lib/gauche/validator.scm : issue warning when used.  preparation
+	  of removing these obsoleted modules.
+
 	* src/genstub, *.stub : added define-enum-conditionally to abbreviate
 	  the common idiom of defining Scheme enum constant only if it is
 	  defined in C.  Rewrote some .stub files by using it.

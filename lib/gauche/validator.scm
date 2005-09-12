@@ -1,6 +1,6 @@
 ;;;
 ;;; gauche/validator.scm - validator slot option
-;;;  $Id: validator.scm,v 1.6 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: validator.scm,v 1.7 2005-09-12 03:40:00 shirok Exp $
 ;;;
 
 ;; NB: validator is moved to gauche.mop.validator.
@@ -8,5 +8,7 @@
 
 (define-module gauche.validator
   (extend gauche.mop.validator))
+
+(warn "gauche.validator is obsoleted.  use gauche.mop.validator.")
 
 (provide "gauche/validator")
