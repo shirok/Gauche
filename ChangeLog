@@ -1,3 +1,10 @@
+2005-09-12  Shiro Kawai  <shiro@acm.org>
+
+	* lib/dbi.scm, lib/dbd/null.scm, test/dbidbd.scm : reverted the change
+	  in 9/6, and we use <dbi-query> and dbi-execute again.  It is because
+	  some drivers require an explicit deallocation of resources used
+	  by prepared query, and we can't do it nicely with closures.
+
 2005-09-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c (accessor_get_proc, accessor_set_proc): fixed a long

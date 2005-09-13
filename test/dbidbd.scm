@@ -1,6 +1,6 @@
 ;;
 ;; Test dbi modules
-;;  $Id: dbidbd.scm,v 1.3 2005-09-07 09:43:10 shirok Exp $
+;;  $Id: dbidbd.scm,v 1.4 2005-09-13 02:45:50 shirok Exp $
 
 (use gauche.test)
 (use gauche.sequence)
@@ -35,18 +35,18 @@
                  (ref conn 'attr-alist)
                  (ref conn 'options))))
 
-  (test* "dbi-prepare" #t
+  (test* "dbi-prepare" '<dbi-query>
          (begin (set! query (dbi-prepare conn "select * from foo where x = ?"))
-                #t))
+                (class-name (class-of query))))
 
   (test* "execute query" '("select * from foo where x = 'z'")
-         (coerce-to <list> (query "z")))
+         (coerce-to <list> (dbi-execute query "z")))
 
   (test* "execute query" '("select * from foo where x = 333")
-         (coerce-to <list> (query 333)))
+         (coerce-to <list> (dbi-execute query 333)))
 
   (test* "execute query" '("select * from foo where x = ''''")
-         (coerce-to <list> (query "'")))
+         (coerce-to <list> (dbi-execute query "'")))
 
   (test* "dbi-do" '("insert into foo values(2,3)")
          (coerce-to <list> (dbi-do conn "insert into foo values (2, 3)")))
@@ -58,20 +58,20 @@
 
   (test* "<dbi-parameter-error>" '<dbi-parameter-error>
          (guard (e (else (class-name (class-of e))))
-           ((dbi-prepare (dbi-connect "dbi:null")
-                         "select * from foo where x = ?")
-            1 2)))
+           (dbi-execute (dbi-prepare (dbi-connect "dbi:null")
+                                     "select * from foo where x = ?")
+                        1 2)))
 
   (test* "<dbi-parameter-error>" '<dbi-parameter-error>
          (guard (e (else (class-name (class-of e))))
-           ((dbi-prepare (dbi-connect "dbi:null")
-                         "select * from foo where x = ?"))))
+           (dbi-execute (dbi-prepare (dbi-connect "dbi:null")
+                                     "select * from foo where x = ?"))))
 
   (test* "<dbi-parameter-error>" '<dbi-parameter-error>
          (guard (e (else (class-name (class-of e))))
-           ((dbi-prepare (dbi-connect "dbi:null")
-                         "select * from foo where x = 3")
-            4)))
+           (dbi-execute (dbi-prepare (dbi-connect "dbi:null")
+                                     "select * from foo where x = 3")
+                        4)))
   )
 
 (test-section "testing conditions")

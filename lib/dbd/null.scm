@@ -1,7 +1,7 @@
 ;;;
 ;;; dbd.null - A database driver that does (almost) nothing
 ;;;
-;;;  $Id: null.scm,v 1.6 2005-09-11 08:21:57 shirok Exp $
+;;;  $Id: null.scm,v 1.7 2005-09-13 02:45:50 shirok Exp $
 ;;;
 
 (define-module dbd.null
@@ -29,12 +29,9 @@
     :attr-string attr-string :attr-alist attr-alist
     :options options))
 
-(define-method dbi-prepare ((c <null-connection>) (sql <string>) . options)
-  (let-keywords* options ((pass-through #f))
-    (let1 prepared (if pass-through (lambda () sql) (dbi-prepare-sql c sql))
-      (lambda args
-        (list (apply prepared args))))))
-
+(define-method dbi-execute-using-connection ((c <null-connection>) q p)
+  (list (apply (ref q 'prepared) p)))
+                                             
 (define-method dbi-open? ((c <null-connection>))
   (ref c 'open?))
 

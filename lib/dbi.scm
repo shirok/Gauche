@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.27 2005-09-11 08:21:57 shirok Exp $
+;;;  $Id: dbi.scm,v 1.28 2005-09-13 02:45:50 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -47,14 +47,14 @@
   (extend util.relation)
   (export <dbi-error> <dbi-nonexistent-driver-error>
           <dbi-unsupported-error> <dbi-parameter-error>
-          <dbi-driver> <dbi-connection>
-          dbi-connect dbi-close dbi-prepare dbi-do
+          <dbi-driver> <dbi-connection> <dbi-query>
+          dbi-connect dbi-close dbi-prepare dbi-execute dbi-do
           dbi-open? dbi-parse-dsn dbi-make-driver
           dbi-prepare-sql dbi-escape-sql dbi-list-drivers
-          dbi-make-connection 
+          dbi-make-connection dbi-execute-using-connection
           ;; compatibility
           dbi-make-query dbi-execute-query dbi-get-value
-          <dbi-query> <dbi-exception>))
+          <dbi-exception>))
 (select-module dbi)
 
 ;;;==============================================================
@@ -95,6 +95,11 @@
 ;; All the transactions must be done while the connection is 'open'.
 (define-class <dbi-connection> () ())
 
+;; <dbi-query> : represents a prepared query.
+(define-class <dbi-query> ()
+  ((connection :init-keyword :connection)
+   (prepared   :init-keyword :prepared)))
+
 ;;;==============================================================
 ;;; User-level APIs
 ;;;
@@ -120,21 +125,30 @@
 ;; new dbd API.
 (define-method dbi-prepare ((c <dbi-connection>) (sql <string>) . options)
   (let-keywords* options ((pass-through #f))
-    (if pass-through
-      (let1 prepared (dbi-prepare-sql c sql)
-        (lambda args
-          (dbi-execute-query (dbi-make-query c) (apply prepared args))))
-      (lambda args
-        (unless (null? args)
-          (error <dbi-parameter-error>
-                 "parameter is given to the pass through sql:" sql))
-        (dbi-execute-query (dbi-make-query c) sql)))))
+    (let1 prepared (if pass-through
+                     (lambda args
+                       (unless (null? args)
+                         (error <dbi-parameter-error>
+                                "parameter is given to the pass through sql:"
+                                sql))
+                       sql)
+                     (dbi-prepare-sql c sql))
+      (make <dbi-query>
+        :connection c
+        :prepared prepared))))
+
+(define-method dbi-execute ((q <dbi-query>) . params)
+  (dbi-execute-using-connection (ref q 'connection) q params))
+
+(define-method dbi-execute-using-connection ((c <dbi-connection>)
+                                             (q <dbi-query>) params)
+  (dbi-execute-query c (apply (ref q 'prepared) params)))
 
 ;; Does preparation and execution at once.  The driver may overload this.
 (define-method dbi-do ((c <dbi-connection>) sql options . args)
   (unless (proper-list? options)
     (error "dbi-do: bad option list:" options))
-  (apply (apply dbi-prepare c sql options) args))
+  (apply dbi-execute (apply dbi-prepare c sql options) args))
 
 (define-method dbi-do ((c <dbi-connection>) sql)
   (dbi-do c sql '()))
@@ -299,9 +313,6 @@
 ;; these interface.  Will be gone in a few releases.
 
 (define <dbi-exception> <dbi-error>)
-
-(define-class <dbi-query> ()
-  ((connection :init-keyword :connection)))
 
 (define-method dbi-get-value ((r <sequence>) (n <integer>))
   (ref r n))
