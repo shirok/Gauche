@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.1 2005-08-28 12:59:17 shirok Exp $
+;;;  $Id: util.scm,v 1.2 2005-09-14 09:50:48 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -257,7 +257,7 @@
    (gauche-windows
     (not (#/^[\/\\]|^[A-Za-z]:/ path)))
    (else
-    (not (#/^[\/~]/ path)))))
+    (not (#/^\// path)))))
 
 (define (absolute-path? path)
   (not (relative-path? path)))

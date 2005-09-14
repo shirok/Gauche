@@ -1,3 +1,9 @@
+2005-09-13  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/file/util.scm (relative-path?): recognize pathnames beginning
+	  with '~' as a relative pathname.  Tilda expansion must be done
+	  before any operation on pathnames anyway.
+
 2005-09-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/dbi.scm, lib/dbd/null.scm, test/dbidbd.scm : reverted the change
