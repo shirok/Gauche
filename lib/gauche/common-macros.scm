@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: common-macros.scm,v 1.21 2005-09-03 04:35:09 shirok Exp $
+;;;  $Id: common-macros.scm,v 1.22 2005-09-18 12:31:16 shirok Exp $
 ;;;
 
 ;;; Defines number of useful macros.  This file is to be autoloaded.
@@ -346,7 +346,7 @@
      (syntax-error "malformed while" (while . other)))))
 
 (define-syntax until
-  (syntax-rules ()
+  (syntax-rules (=>)
     ((_ expr guard => var . body)
      (do ((var expr expr))
          ((guard var))
