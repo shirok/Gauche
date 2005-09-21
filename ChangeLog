@@ -1,3 +1,8 @@
+2005-09-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c (Scm_LoadAutoload): fixed a bug that autoload's
+	  definition enviornment and resolution environment didn't match.
+
 2005-09-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/common-macros.scm (until): missing => as a literal

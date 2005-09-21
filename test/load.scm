@@ -107,6 +107,17 @@
 (autoload "test.o/l1" foo1)
 (test* "autoload (file/error)" *test-error* foo1)
 
+(with-output-to-file "test.o/l0.scm"
+  (lambda ()
+    (write '(define-module foo (extend scheme)))
+    (write '(load "./test.o/l1.scm" :environment (find-module 'foo)))))
+(with-output-to-file "test.o/l1.scm"
+  (lambda ()
+    (write '(expt 2 3))))
+
+(test* "autoload environment" #t
+       (load "./test.o/l0.scm"))
+
 (sys-system "rm -rf test.o")
 
 ;; library utilities -----------------------------------

@@ -555,7 +555,7 @@ of accessing a database by @code{dbi} module:
   (let* ((conn   (dbi-connect "dbi:mysql:test;host=dbhost"))
          (query  (dbi-prepare conn
                    "SELECT id, name FROM users WHERE department = ?"))
-         (result (query "R&D"))
+         (result (dbi-execute query "R&D"))
          (getter (relation-accessor result)))
     (map (lambda (row)
            (list (getter row "id")
@@ -573,9 +573,18 @@ pass @code{"dbi:@var{whatever}:@var{parameter}"} to @code{dbi-connect}
 instead, and everything stays the same as far as you have
 @code{dbd.whatever} installed in your system.
 
-A query to the database can be created by @code{dbi-prepare} as
-a closure.  For the @code{SELECT} statement,
-the query result is returned as a @emph{relation},
+A query to the database can be created by @code{dbi-prepare}.
+You can issue the query by @code{dbi-execute}.  This two-phase
+approach allows you to create a prepared query, which is a kind of
+parameterized SQL statement.  In the above example the query
+takes one parameter, denoted as @code{'?'} in the SQL.
+The actual value is given in @code{dbi-execute}.  When you
+issue similar queries a lot, creating a prepared query and
+execute it with different parameters may give you performance gain.
+Also the parameter is automatically quoted.
+
+When the query is a @code{SELECT} statement,
+its result is returned as a @emph{relation},
 and you can retrieve the data
 using the relation protocol (@xref{Relation framework}).
 
@@ -705,8 +714,8 @@ instantiate the driver class and returns it.
 
 @deffn {Method} dbi-prepare conn sql &keyword pass-through @dots{}
 From a string representation of SQL statement @var{sql},
-creates and returns a closure that represents a prepared query
-for the database connection @code{conn}
+creates and returns a query object (an instance of @code{<dbi-query>}
+or its subclass) for the database connection @code{conn}
 
 @var{Sql} may contain parameter slots, denoted by @code{?}.
 @example
@@ -716,7 +725,7 @@ for the database connection @code{conn}
 @end example
 
 They will be filled when you actually issue the query by
-invoking the returned closure with the same number of parameters.
+@code{dbi-execute}.
 There are some advantages of using parameter
 slots: (1) The necessary quoting is done automatically.
 You don't need to concern about security holes caused by
@@ -741,14 +750,31 @@ without using @code{text.sql}, the @code{pass-through} argument
 may be ignored.
 The driver may also take other keyword arguments.
 @code{DBI} layer doens't specify any.
+@end deffn
 
-If @var{sql} is @code{select} statement, the query closure
+@deftp {Class} <dbi-query>
+Holds information 
+
+@defivar <dbi-query> connection
+@end defivar
+
+@defivar <dbi-query> prepared
+@end defivar
+
+@end deftp
+
+
+@deffn {Method} dbi-execute (q <dbi-query>) parameter @dots{}
+Executes a query created by @code{dbi-prepare}.  You should pass
+the same number of @var{parameter}s as the query expects.
+
+If the issued query is @code{select} statement, @code{dbi-execute}
 returns an object represents a @emph{relation}.
 A relation encapsulates the values in
 rows and columns, as well as meta infomation like column names.
 See "Retrieving query results" below for how to access the result.
 
-If @var{sql} is other types, such as @code{create}, @code{insert} 
+If the query is other types, such as @code{create}, @code{insert} 
 or @code{delete}, the return value of the query closure is unspecified.
 @end deffn
 

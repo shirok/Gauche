@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.101 2005-08-25 03:19:54 shirok Exp $
+ *  $Id: load.c,v 1.102 2005-09-21 05:15:25 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -986,6 +986,8 @@ void Scm_DefineAutoload(ScmModule *where,
 ScmObj Scm_LoadAutoload(ScmAutoload *adata)
 {
     int error = FALSE;
+    ScmModule *prev_module;
+    ScmVM *vm = Scm_VM();
     
     /* check if some other thread already loaded this before attempt to lock */
     if (adata->loaded) {
@@ -997,14 +999,14 @@ ScmObj Scm_LoadAutoload(ScmAutoload *adata)
     do {
         if (adata->loaded) break;
         if (adata->locker == NULL) {
-            adata->locker = Scm_VM(); /* take me */
-        } else if (adata->locker == Scm_VM()) {
+            adata->locker = vm;
+        } else if (adata->locker == vm) {
             /* bad circular dependency */
             error = TRUE;
         } else if (adata->locker->state == SCM_VM_TERMINATED) {
             /* the loading thread have died prematurely.
                let's take over the task. */
-            adata->locker = Scm_VM();
+            adata->locker = vm;
         } else {
             (void)SCM_INTERNAL_COND_WAIT(adata->cv, adata->mutex);
             continue;
@@ -1023,8 +1025,11 @@ ScmObj Scm_LoadAutoload(ScmAutoload *adata)
                   adata->module, adata->name);
     }
 
+    prev_module = vm->module;
     SCM_UNWIND_PROTECT {
+        vm->module = adata->module;
         Scm_Require(SCM_OBJ(adata->path));
+        vm->module = prev_module;
     
         if (adata->import_from) {
             /* autoloaded file defines import_from module.  we need to
@@ -1059,6 +1064,7 @@ ScmObj Scm_LoadAutoload(ScmAutoload *adata)
         }
     } SCM_WHEN_ERROR {
         adata->locker = NULL;
+        vm->module = prev_module;
         SCM_INTERNAL_COND_SIGNAL(adata->cv);
         SCM_NEXT_HANDLER;
     } SCM_END_PROTECT;
