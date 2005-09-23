@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: http.scm,v 1.7 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: http.scm,v 1.8 2005-09-23 06:22:59 shirok Exp $
 ;;;
 
 ;; HTTP handling routines.
@@ -231,6 +231,8 @@
 ;; NB: chunk extension and trailer are ignored for now.
 (define (receive-body-chunked remote sink)
   (let loop ((line (read-line remote)))
+    (when (eof-object? line)
+      (error "chunked body ended prematurely"))
     (rxmatch-if (#/^([[:xdigit:]]+)/ line) (#f digits)
       (let1 chunk-size (string->number digits 16)
         (if (zero? chunk-size)
@@ -243,7 +245,7 @@
               (read-line remote) ;skip the following CRLF
               (loop (read-line remote)))))
       ;; something wrong
-      (error "bad line in chunked data" initial-line))
+      (error "bad line in chunked data:" line))
     )
   )
 

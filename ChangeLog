@@ -1,3 +1,9 @@
+2005-09-22  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http.scm (receive-body-chunked): added error checking of
+	  premature end of chunked body, and fixed a bug referring a
+	  nonexistent variable (patch from Michael Campbell).
+
 2005-09-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm_LoadAutoload): fixed a bug that autoload's
