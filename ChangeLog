@@ -1,3 +1,7 @@
+2005-09-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_NormalizePathname): fixed memory corrupting bug.
+
 2005-09-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm (receive-body-chunked): added error checking of

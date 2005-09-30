@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.67 2005-06-30 09:57:41 shirok Exp $
+ *  $Id: system.c,v 1.68 2005-09-30 21:17:58 shirok Exp $
  */
 
 #include <stdio.h>
@@ -296,7 +296,8 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
         srcp = p;
         SKIP_SLASH;
         dirlen = strlen(pwd->pw_dir);
-        buf = SCM_NEW_ATOMIC2(char*, dirlen+size+1);
+        /* extra byte for buf since we might add a separator */
+        buf = SCM_NEW_ATOMIC2(char*, dirlen+size+2);
         strcpy(buf, pwd->pw_dir);
         dstp = buf + dirlen;
         if (*(dstp-1) != '/') { *dstp++ = '/'; *(dstp+1) = '\0'; }
@@ -314,7 +315,8 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
             Scm_SysError("couldn't get current directory.");
         }
         dirlen = strlen(p);
-        buf = SCM_NEW_ATOMIC2(char*, dirlen+size+1);
+        /* extra byte for buf since we might add a separator */
+        buf = SCM_NEW_ATOMIC2(char*, dirlen+size+2);
         strcpy(buf, p);
         dstp = buf + dirlen;
         if (*(dstp-1) != '/' && *(dstp-1) != '\\') *dstp++ = SEPARATOR;
