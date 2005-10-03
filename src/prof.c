@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: prof.c,v 1.7 2005-07-30 23:39:50 shirok Exp $
+ *  $Id: prof.c,v 1.8 2005-10-03 01:02:39 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -218,9 +218,9 @@ void Scm_ProfilerStart(void)
 {
     struct sigaction act;
     ScmVM *vm = Scm_VM();
+    char templat[] = "/tmp/gauche-profXXXXXX";
 
     if (!vm->prof) {
-        char templat[] = "/tmp/gauche-profXXXXXX";
         vm->prof = SCM_NEW(ScmVMProfiler);
         vm->prof->state = SCM_PROFILER_INACTIVE;
         vm->prof->samplerFd = Scm_Mkstemp(templat);
@@ -231,6 +231,9 @@ void Scm_ProfilerStart(void)
         vm->prof->statHash =
             SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 0));
         unlink(templat);       /* keep anonymous tmpfile */
+    } else if (vm->prof->samplerFd < 0) {
+	vm->prof->samplerFd = Scm_Mkstemp(templat);
+	unlink(templat);
     }
     
     if (vm->prof->state == SCM_PROFILER_RUNNING) return;
@@ -251,6 +254,7 @@ void Scm_ProfilerStart(void)
 int Scm_ProfilerStop(void)
 {
     ScmVM *vm = Scm_VM();
+    if (vm->prof == NULL) return 0;
     if (vm->prof->state != SCM_PROFILER_RUNNING) return 0;
     ITIMER_STOP();
     vm->prof->state = SCM_PROFILER_PAUSING;
@@ -262,6 +266,7 @@ void Scm_ProfilerReset(void)
 {
     ScmVM *vm = Scm_VM();
     
+    if (vm->prof == NULL) return;
     if (vm->prof->state == SCM_PROFILER_INACTIVE) return;
     if (vm->prof->state == SCM_PROFILER_RUNNING) Scm_ProfilerStop();
 

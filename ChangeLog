@@ -1,3 +1,11 @@
+2005-10-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/prof.c (Scm_ProfilerStart): fixed bugs that the temporary file
+	  wasn't reopened after profiler reset, and profiler-show/profiler-stop
+	  segfaulted if profiler-start hadn't been called.  Patch from
+	  Michael Campbell.
+	* src/autoloads.scm (profiler-show): autoloads gauche.vm.profiler.
+
 2005-09-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm_NormalizePathname): fixed memory corrupting bug.
