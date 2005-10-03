@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.439 2005-09-11 12:25:48 shirok Exp $
+ *  $Id: gauche.h,v 1.440 2005-10-03 20:57:45 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1189,7 +1189,7 @@ SCM_EXTERN ScmObj Scm_VectorRef(ScmVector *vec, int i, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_VectorSet(ScmVector *vec, int i, ScmObj obj);
 SCM_EXTERN ScmObj Scm_VectorFill(ScmVector *vec, ScmObj fill, int start, int end);
 
-SCM_EXTERN ScmObj Scm_ListToVector(ScmObj l);
+SCM_EXTERN ScmObj Scm_ListToVector(ScmObj l, int start, int end);
 SCM_EXTERN ScmObj Scm_VectorToList(ScmVector *v, int start, int end);
 SCM_EXTERN ScmObj Scm_VectorCopy(ScmVector *vec, int start, int end,
                                  ScmObj fill);

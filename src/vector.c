@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vector.c,v 1.22 2005-06-21 19:33:43 shirok Exp $
+ *  $Id: vector.c,v 1.23 2005-10-03 20:57:45 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -72,15 +72,27 @@ ScmObj Scm_MakeVector(int size, ScmObj fill)
     return SCM_OBJ(v);
 }
 
-ScmObj Scm_ListToVector(ScmObj l)
+ScmObj Scm_ListToVector(ScmObj l, int start, int end)
 {
     ScmVector *v;
     ScmObj e;
-    int size = Scm_Length(l), i = 0;
-    if (size < 0) Scm_Error("bad list: %S", l);
-    v = make_vector(size);
-    SCM_FOR_EACH(e, l) {
-        v->elements[i++] = SCM_CAR(e);
+    int i;
+
+    if (end < 0) {
+        int size = Scm_Length(l);
+        if (size < 0) Scm_Error("bad list: %S", l);
+        SCM_CHECK_START_END(start, end, size);
+        v = make_vector(size - start);
+    } else {
+        SCM_CHECK_START_END(start, end, end);
+        v = make_vector(end - start);
+    }
+    e = Scm_ListTail(l, start);
+    for (i=0; i<end-start; i++, e=SCM_CDR(e)) {
+        if (!SCM_PAIRP(e)) {
+            Scm_Error("list too short: %S", l);
+        }
+        v->elements[i] = SCM_CAR(e);
     }
     return SCM_OBJ(v);
 }

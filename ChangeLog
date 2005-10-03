@@ -1,3 +1,9 @@
+2005-10-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/vector.c (Scm_ListToVector): added start and end arguments
+	  to support srfi-43's extended list->vector.
+	* src/*.c : some files are affected by the above API change.
+
 2005-10-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/prof.c (Scm_ProfilerStart): fixed bugs that the temporary file

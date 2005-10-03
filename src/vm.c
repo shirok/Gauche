@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.239 2005-08-23 04:33:56 shirok Exp $
+ *  $Id: vm.c,v 1.240 2005-10-03 20:57:45 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1797,7 +1797,7 @@ pthread_key_t Scm_VMKey(void)
             }
             CASE(SCM_VM_LIST2VEC) {
                 SAVE_REGS();
-                VAL0 = Scm_ListToVector(VAL0);
+                VAL0 = Scm_ListToVector(VAL0, 0, -1);
                 vm->numVals = 1;
                 RESTORE_REGS();
                 NEXT1;
@@ -2023,7 +2023,7 @@ pthread_key_t Scm_VMKey(void)
                     }
                 }
                 SAVE_REGS();
-                VAL0 = Scm_ListToVector(cp);
+                VAL0 = Scm_ListToVector(cp, 0, -1);
                 NEXT1;
             }
             CASE(SCM_VM_VEC_LEN) {

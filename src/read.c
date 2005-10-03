@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.81 2005-07-30 23:39:50 shirok Exp $
+ *  $Id: read.c,v 1.82 2005-10-03 20:57:45 shirok Exp $
  */
 
 #include <stdio.h>
@@ -637,7 +637,7 @@ static ScmObj read_vector(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
     
     if (ctx->flags & SCM_READ_SOURCE_INFO) line = Scm_PortLine(port);
     r = read_list_int(port, closer, ctx, &has_ref, line);
-    r = Scm_ListToVector(r);
+    r = Scm_ListToVector(r, 0, -1);
     if (has_ref) ref_push(ctx, r, SCM_FALSE);
     return r;
 }

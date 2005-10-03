@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.115 2005-09-10 09:10:32 shirok Exp $
+;;; $Id: stdlib.stub,v 1.116 2005-10-03 20:57:45 shirok Exp $
 ;;;
 
 
@@ -533,7 +533,7 @@
 
 (define-cproc vector (&rest args)
   (inliner VEC)
-  (call "Scm_ListToVector"))
+  (expr "Scm_ListToVector(args, 0, -1)"))
 
 (define-cproc vector-length (vec::<vector>)
   (inliner VEC-LEN)
@@ -550,7 +550,8 @@
                             &optional (start::<fixnum> 0) (end::<fixnum> -1))
   (call "Scm_VectorToList"))
 
-(define-cproc list->vector (list::<list>)
+(define-cproc list->vector (list::<list>
+                            &optional (start::<fixnum> 0) (end::<fixnum> -1))
   (call "Scm_ListToVector"))
 
 (define-cproc vector-fill! (vec::<vector> fill

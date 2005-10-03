@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.58 2005-05-28 10:40:12 shirok Exp $
+ *  $Id: macro.c,v 1.59 2005-10-03 20:57:45 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -423,7 +423,7 @@ static ScmObj compile_rule1(ScmObj form,
         /* TODO: this is a sloppy implementation.
            Eliminate intermediate list structure! */
         ScmObj l = Scm_VectorToList(SCM_VECTOR(form), 0, -1);
-        return Scm_ListToVector(compile_rule1(l, spat, ctx, patternp));
+        return Scm_ListToVector(compile_rule1(l, spat, ctx, patternp), 0, -1);
     }
 #if 0
     else if (patternp && SCM_IDENTIFIERP(form)) {
@@ -834,7 +834,7 @@ static ScmObj realize_template_rec(ScmObj template,
                 SCM_APPEND1(h, t, r);
             }
         }
-        return Scm_ListToVector(h);
+        return Scm_ListToVector(h, 0, -1);
     }
     if (SCM_IDENTIFIERP(template)) {
         /* we copy the identifier, so that the symbol bindings introduced
