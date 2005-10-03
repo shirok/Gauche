@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.67 2005-09-11 10:35:06 shirok Exp $
+dnl $Id: configure.ac,v 1.68 2005-10-03 10:18:43 shirok Exp $
 AC_PREREQ(2.54)
-AC_INIT(Gauche, 0.8.6_pre2, shiro@acm.org)
-AC_REVISION($Revision: 1.67 $)
+AC_INIT(Gauche, 0.8.6_pre3, shiro@acm.org)
+AC_REVISION($Revision: 1.68 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -13,7 +13,7 @@ dnl
 dnl ----------------------------------------------------------
 dnl   enable-multibyte
 dnl
-GAUCHE_CHAR_ENCODING=undefined
+GAUCHE_CHAR_ENCODING=utf8
 AC_ARG_ENABLE(multibyte,
   AC_HELP_STRING([--enable-multibyte=ENCODING],
                  [Use ENCODING as the internal multibyte string encoding.
@@ -25,19 +25,13 @@ or 'no' (No multibyte support)]),
      euc-jp|eucjp|yes)  GAUCHE_CHAR_ENCODING=eucjp;;
      utf-8|utf8)        GAUCHE_CHAR_ENCODING=utf8;;
      sjis|shift-jis)    GAUCHE_CHAR_ENCODING=sjis;;
-     no|none)           GAUCHE_CHAR_ENCODING=none;;
+     no|none)           ;;
      *) echo "unrecognized encoding option: '$enable_multibyte'; type ./configure --help for available options"
         exit 1;;
    esac
-  ])
-
-case $GAUCHE_CHAR_ENCODING in
- eucjp) AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP);;
- utf8)  AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8);;
- sjis)  AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS);;
- none)  ;;
- undefined)
-   cat <<EOM
+  ], 
+  [
+    cat <<EOM
 *********************************************************************
 WARNING: You didn't give --enable-multibyte option to the ./configure
 script.  As of version 0.8.6, Gauche switched the default character
@@ -49,7 +43,14 @@ compile Gauche and you want utf-8, just hit return.
 *********************************************************************
 EOM
     read
-    AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8);;
+    GAUCHE_CHAR_ENCODING=utf8
+    ac_configure_args="$ac_configure_args '--enable-multibyte=utf-8'"
+  ])
+
+case $GAUCHE_CHAR_ENCODING in
+  eucjp) AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP);;
+  utf8)  AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8);;
+  sjis)  AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS);;
 esac
 
 dnl ----------------------------------------------------------
