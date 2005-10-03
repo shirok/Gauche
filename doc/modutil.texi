@@ -536,10 +536,11 @@ return #t if the template has variable length elements.
 
 @deftp {Module} dbi
 @mdindex dbi
-This module allows the programmer to access various relational
-database systems (RDBMS) with the same APIs.  RDBMS-specific
-operations are hidden in the database driver (DBD) layer, which
-is usually automatically loaded.
+This module provides the unified interface to access various 
+relational database systems (RDBMS).  The operations specific
+to individual database systems are packaged
+in database driver (DBD) modules, which is usually loaded
+implicitly by DBI layer.
 
 The module is strongly influenced by Perl's DBI/DBD architecture.
 If you have used Perl DBI, it would be easy to use this module.
@@ -735,7 +736,7 @@ statement to the server at the preparation stage, and send
 only the parameter values at the execution stage.  It would be
 more efficient if you issue similar queries lots of time.
 
-If the backend does't support prepared statement (SQL template
+If the backend does't support prepared statements (SQL templates
 having @code{?} parameters), the driver may use @code{text.sql}
 module to parse @var{sql}.  It may raise @code{<sql-parse-error>}
 condition if the given SQL is not well formed.
@@ -748,20 +749,38 @@ extension of SQL which @code{text.sql} doesn't understand.
 If the driver lets prepared statement handled in back-end,
 without using @code{text.sql}, the @code{pass-through} argument
 may be ignored.
-The driver may also take other keyword arguments.
-@code{DBI} layer doens't specify any.
+The driver may also take other keyword arguments.  Check out
+the documentation of individual drivers.
 @end deffn
 
 @deftp {Class} <dbi-query>
-Holds information 
+Holds information about prepared query, created by @code{dbi-prepare}.
+The following slots are defined.
 
 @defivar <dbi-query> connection
+Contains the @code{<dbi-connection>} object.
 @end defivar
 
 @defivar <dbi-query> prepared
+If the driver prepares query by itself, this slot may contain
+a prepared statement.  It is up to each driver how to use
+this slot, so the client shouldn't rely on its value.
 @end defivar
 
 @end deftp
+
+@deffn {Method} dbi-open? (q <dbi-query>)
+Returns @code{#t} iff the query can still be passed to
+@code{dbi-execute}.
+@end deffn
+
+@deffn {Method} dbi-close (q <dbi-query>)
+Destroy the query and free resouces associated to the query.
+After this opereaion, @code{dbi-open?} returns @code{#f} for @var{q},
+and the query can't be used in any other way.  Although the resource
+may be freed when @var{q} is garbage-collected, it is strongly recommended
+that the application closes queries explicitly.
+@end deffn
 
 
 @deffn {Method} dbi-execute (q <dbi-query>) parameter @dots{}
@@ -781,10 +800,12 @@ or @code{delete}, the return value of the query closure is unspecified.
 @deffn {Method} dbi-do conn sql &optional options parameter-value @dots{}
 This is a convenience procedure when you create a query
 and immediately execute it.   It is equivalent to the following
-expression.
+expression, although the driver may overload this method to avoid
+creating intermediate query object to avoid the overhead.
 
 @example
-(apply (apply dbi-prepare conn sql options) parameter-value @dots{})
+(dbi-execute (apply dbi-prepare conn sql options)
+             parameter-value @dots{})
 @end example
 @end deffn
 
@@ -884,6 +905,9 @@ the actual connections.
 @item
 Subclass @code{<relation>} to represent query results suitable for
 the driver.
+@item
+Optionally, subclass @code{<dbi-query>} to keep driver-specific
+information of prepared queries.
 @end itemize
 
 @subsubheading DBI methods to implement
@@ -915,7 +939,7 @@ It is recommended to name the driver-specific keyword arguments
 prefixed by the driver name, e.g. for @code{dbd.foo}, it may take
 a @code{:foo-whatever} keyword argument.
 
-It is up to the driver write to define what options are available and
+It is up to the driver writer to define what options are available and
 the syntax of the options.  The basic idea is that the DSN
 identifies the source of the data; it's role is like URL in WWW.
 So, it may include the hostname and port number of the database,
@@ -925,9 +949,13 @@ That's why those are passed via keyword arguments.
 @end deffn
 
 @deffn {Method} dbi-prepare (c <foo-connection>) (sql <string>) &keyword pass-through @dots{}
-This method should create and return a closure, which executes the
-query specified by @var{sql} when called.  We call the returned closure
-a query closure.
+This method should create and return a prepared query object,
+which is an instance of @code{<dbi-query>} or its subclass.
+The query specified by @var{sql} is issued to the database system
+when the prepared query object is passed to @code{dbi-execute}.
+
+The method must set @var{c} to the @code{connection} slot of 
+the returned query object.
 
 @var{Sql} is an SQL statement.  It may contain placeholders represented
 by @code{'?'}.  The query closure should take the same number of arguments
@@ -942,14 +970,20 @@ a keyword argument @code{pass-through}.  If a true value is given,
 the driver must treat @code{sql} opaque and pass it as is when
 the query closure is called.
 
-The query closure should check the number of arguments given to it
-and raise @code{<dbi-parameter-error>} if the number differs from what
-the query expects.
-
 The driver may define other keyword arguments.
 It is recommended to name the driver-specific keyword arguments
 prefixed by the driver name, e.g. for @code{dbd.foo}, it may take
 a @code{:foo-whatever} keyword argument.
+@end deffn
+
+@deffn {Method} dbi-execute-using-connection (c <foo-connection>) (q <dbi-query>) (params <list>)
+This method is called from @code{dbi-execute}.
+It must issue the query kept in @var{q}.  If the query is parameterized,
+the actual parameters given to @var{dbi-execute} are passed to
+@var{params} argument.
+
+If @var{q} is a @code{select}-type query, this method must return
+an appropriate relation object.
 @end deffn
 
 @deffn {Method} dbi-escape-sql (c <foo-connection>) str
@@ -961,14 +995,25 @@ method.
 @end deffn
 
 @deffn {Method} dbi-open? (c <foo-connection>)
+@deffnx {Method} dbi-open? (q <foo-query>)
 @deffnx {Method} dbi-open? (r <foo-result>)
 @deffnx {Method} dbi-close (c <foo-connection>)
+@deffnx {Method} dbi-close (q <foo-query>)
 @deffnx {Method} dbi-close (r <foo-result>)
 Queries open/close status of a connection and a result, and
 closes a connection and a result.  The close methods should cause
 releasing resources used by connection/result.  The driver
 has to allow @code{dbi-close} to be called on a connection or a
 result which has already been closed.
+@end deffn
+
+@deffn {Method} dbi-do (c <foo-connection>) (sql <string>) &optional options parameter-value @dots{}
+The default method uses @code{dbi-prepare} and @code{dbi-execute}
+to implement this
+
+
+The driver may overload this method, if it wants to avoid creating
+intermediate 
 @end deffn
 
 @subsubheading DBI utility funcitons
