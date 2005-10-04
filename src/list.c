@@ -1,7 +1,7 @@
 /*
  * list.c - List related functions
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: list.c,v 1.45 2005-04-12 01:42:27 shirok Exp $
+ *  $Id: list.c,v 1.46 2005-10-04 10:52:19 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -364,21 +364,23 @@ ScmObj Scm_ReverseX(ScmObj list)
     return result;
 }
 
-/* Scm_ListTail(list, i)
- * Scm_ListRef(list, i)
+/* Scm_ListTail(list, i, fallback)
+ * Scm_ListRef(list, i, fallback)
  *    Note that i is C-INTEGER.  If i is out of bound, signal error.
  */
 
-ScmObj Scm_ListTail(ScmObj list, int i)
+ScmObj Scm_ListTail(ScmObj list, int i, ScmObj fallback)
 {
     int cnt = i;
-    if (i < 0) Scm_Error("argument out of range: %d", i);
+    if (i < 0) goto err;
     while (cnt-- > 0) {
-        if (!SCM_PAIRP(list))
-            Scm_Error("argument out of range: %d", i);
+        if (!SCM_PAIRP(list)) goto err;
         list = SCM_CDR(list);
     }
     return list;
+  err:  
+    if (SCM_UNBOUNDP(fallback)) Scm_Error("argument out of range: %d", i);
+    return fallback;
 }
 
 ScmObj Scm_ListRef(ScmObj list, int i, ScmObj fallback)

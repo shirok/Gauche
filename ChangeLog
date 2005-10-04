@@ -1,8 +1,9 @@
 2005-10-03  Shiro Kawai  <shiro@acm.org>
 
+	* src/list.c (Scm_ListTail): added fallback argument for consistency.
 	* src/vector.c (Scm_ListToVector): added start and end arguments
 	  to support srfi-43's extended list->vector.
-	* src/*.c : some files are affected by the above API change.
+	* src/*.c : some files are affected by the above API changes.
 
 2005-10-02  Shiro Kawai  <shiro@acm.org>
 

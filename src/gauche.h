@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.440 2005-10-03 20:57:45 shirok Exp $
+ *  $Id: gauche.h,v 1.441 2005-10-04 10:52:19 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -841,7 +841,7 @@ SCM_EXTERN ScmObj Scm_Append2(ScmObj list, ScmObj obj);
 SCM_EXTERN ScmObj Scm_Append(ScmObj args);
 SCM_EXTERN ScmObj Scm_ReverseX(ScmObj list);
 SCM_EXTERN ScmObj Scm_Reverse(ScmObj list);
-SCM_EXTERN ScmObj Scm_ListTail(ScmObj list, int i);
+SCM_EXTERN ScmObj Scm_ListTail(ScmObj list, int i, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_ListRef(ScmObj list, int i, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_LastPair(ScmObj list);
 

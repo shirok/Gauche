@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.116 2005-10-03 20:57:45 shirok Exp $
+;;; $Id: stdlib.stub,v 1.117 2005-10-04 10:52:19 shirok Exp $
 ;;;
 
 
@@ -361,7 +361,7 @@
   (inliner REVERSE)
   (call "Scm_Reverse"))
 
-(define-cproc list-tail (list k::<fixnum>)
+(define-cproc list-tail (list k::<fixnum> &optional fallback)
   (call "Scm_ListTail"))
 
 (define-cproc list-ref (list k::<fixnum> &optional fallback)

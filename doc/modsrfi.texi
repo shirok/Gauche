@@ -30,6 +30,7 @@ of supported SRFIs.
 * Localization::                
 * A program argument processor::  
 * Eager comprehensions::        
+* Vector library::              
 * Requiring extensions::        
 @end menu
 
@@ -4000,7 +4001,7 @@ A simple example:
 @end example
 
 @c ----------------------------------------------------------------------
-@node Eager comprehensions, Requiring extensions, A program argument processor, Library modules - SRFIs
+@node Eager comprehensions, Vector library, A program argument processor, Library modules - SRFIs
 @section @code{srfi-42} - Eager comprehensions
 @c NODE Eager comprehensions, @code{srfi-42} - Eager comprehensions
 
@@ -4205,7 +4206,21 @@ after @var{bodies}.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Requiring extensions,  , Eager comprehensions, Library modules - SRFIs
+@node Vector library, Requiring extensions, Eager comprehensions, Library modules - SRFIs
+@section @code{srfi-43} - Vector library
+@c NODE Vector library, @code{srfi-43} - Vector library
+
+@deftp {Module} srfi-43
+@mdindex srfi-43
+This module provides library functions for vectors.
+
+Gauche already has some of srfi-43 procedures; see @ref{Vectors}.
+@end deftp
+
+
+
+@c ----------------------------------------------------------------------
+@node Requiring extensions,  , Vector library, Library modules - SRFIs
 @section @code{srfi-55} - Requiring extensions
 @c NODE Requiring extensions, @code{srfi-55} - Requiring extensions
 

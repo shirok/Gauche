@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.55 2005-07-30 23:39:50 shirok Exp $
+ *  $Id: write.c,v 1.56 2005-10-04 10:52:19 shirok Exp $
  */
 
 #include <stdio.h>
@@ -853,7 +853,7 @@ static void format_proc(ScmPort *out, ScmString *fmt, ScmObj args, int sharedp)
                         Scm_Error("'~*' format directive refers outside of argument list in %S", fmt);
                     }
                     argcnt = argindex;
-                    args = Scm_ListTail(oargs, argcnt);
+                    args = Scm_ListTail(oargs, argcnt, SCM_UNBOUND);
                     break;
                 }
             case 'v':; case 'V':;

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vector.c,v 1.23 2005-10-03 20:57:45 shirok Exp $
+ *  $Id: vector.c,v 1.24 2005-10-04 10:52:19 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -87,7 +87,7 @@ ScmObj Scm_ListToVector(ScmObj l, int start, int end)
         SCM_CHECK_START_END(start, end, end);
         v = make_vector(end - start);
     }
-    e = Scm_ListTail(l, start);
+    e = Scm_ListTail(l, start, SCM_UNBOUND);
     for (i=0; i<end-start; i++, e=SCM_CDR(e)) {
         if (!SCM_PAIRP(e)) {
             Scm_Error("list too short: %S", l);
