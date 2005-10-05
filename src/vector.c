@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vector.c,v 1.24 2005-10-04 10:52:19 shirok Exp $
+ *  $Id: vector.c,v 1.25 2005-10-05 13:27:28 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -66,7 +66,11 @@ static ScmVector *make_vector(int size)
 ScmObj Scm_MakeVector(int size, ScmObj fill)
 {
     int i;
-    ScmVector *v = make_vector(size);
+    ScmVector *v;
+    if (size < 0) {
+        Scm_Error("vector size must be a positive integer, but got %d", size);
+    }
+    v = make_vector(size);
     if (SCM_UNBOUNDP(fill)) fill = SCM_UNDEFINED;
     for (i=0; i<size; i++) v->elements[i] = fill;
     return SCM_OBJ(v);
@@ -141,9 +145,12 @@ ScmObj Scm_VectorFill(ScmVector *vec, ScmObj fill, int start, int end)
 ScmObj Scm_VectorCopy(ScmVector *vec, int start, int end, ScmObj fill)
 {
     int i, len = SCM_VECTOR_SIZE(vec);
-    ScmVector *v;
+    ScmVector *v = NULL;
     if (end < 0) end = len;
-    if (end <= start) {
+    if (end < start) {
+        Scm_Error("vector-copy: start (%d) is greater than end (%d)",
+                  start, end);
+    } else if (end == start) {
         v = make_vector(0);
     } else {
         if (SCM_UNBOUNDP(fill)) fill = SCM_UNDEFINED;

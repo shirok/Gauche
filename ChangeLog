@@ -1,3 +1,9 @@
+2005-10-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/vector.c (Scm_MakeVector): check the size argument.
+	* ext/srfi/srfi-43-lib.scm: added support of srfi-43.
+	* ext/srfi/test.scm: ditto.
+
 2005-10-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/list.c (Scm_ListTail): added fallback argument for consistency.

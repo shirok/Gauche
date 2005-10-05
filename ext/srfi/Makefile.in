@@ -8,13 +8,15 @@ include ../Makefile.ext
 
 LIBFILES = srfi-1-lib.$(SOEXT)  \
            srfi-13-lib.$(SOEXT) \
-           srfi-19-lib.$(SOEXT)
+           srfi-19-lib.$(SOEXT) \
+           srfi-43-lib.$(SOEXT)
 SCMFILES = srfi-1.scm  \
            srfi-13.scm \
-           srfi-19.scm
+           srfi-19.scm \
+           srfi-43.scm
 
 GENERATED = Makefile 
-XCLEANFILES = *.c srfi-1.scm srfi-13.scm srfi-19.scm
+XCLEANFILES = *.c srfi-1.scm srfi-13.scm srfi-19.scm srfi-43.scm
 
 all : $(LIBFILES)
 
@@ -70,4 +72,21 @@ srfi-19_head.c srfi-19_tail.c :
 
 srfi-19-lib.c : srfi-19-lib.scm
 	$(GOSH) gencomp --ext-module srfi-19.scm $(srcdir)/srfi-19-lib.scm
+
+#
+# srfi-43
+#
+
+srfi_43_OBJECTS = srfi-43_head.$(OBJEXT) \
+                  srfi-43-lib.$(OBJEXT)  \
+                  srfi-43_tail.$(OBJEXT)
+
+srfi-43-lib.$(SOEXT) : $(srfi_43_OBJECTS) 
+	$(MODLINK) srfi-43-lib.$(SOEXT) $(srfi_43_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+srfi-43_head.c srfi-43_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension srfi-43
+
+srfi-43-lib.c : srfi-43-lib.scm
+	$(GOSH) gencomp --ext-module srfi-43.scm $(srcdir)/srfi-43-lib.scm
 
