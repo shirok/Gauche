@@ -1507,6 +1507,7 @@ Common Lispからの輸入です。それぞれ以下のように展開されます。
 that takes one argument.
 @c JP
 @var{Var} は識別子で@var{guard}は一つの引数をとる手続きです。
+@c COMMON
 
 @c EN
 In the first form, @var{expr} is evaluated, and if it yields a true
@@ -1516,6 +1517,7 @@ value, @var{body} @dots{} are evaluated.  It is repeated while
 最初の形式ではまず@var{expr}が評価され、もしそれが真値を返したら
 @var{body} @dots{} が評価されます。そして@var{expr}が真値を返す
 限り繰り返されます。
+@c COMMON
 
 @c EN
 In the second form, @var{var} is bound to a result of @var{expr}
@@ -1523,23 +1525,25 @@ in the scope of @var{body} @dots{}.
 @c JP
 2番目の形式では、@var{body} @dots{} で有効な変数@var{var}を
 作成し、@var{expr}の結果に束縛します。
+@c COMMON
 
 @c EN
 In the third form, the value @var{expr} yields are passed to
 @var{guard}, and the execution of @var{body} @dots{} is repeated
 while @var{guard} returns a true value.  @var{var} is bound
 to the result of @var{expr}.
-@c JP 
+@c JP
 最後の形式では、@var{expr} の返り値が @var{guard} に渡されこの
 結果が真値である限り @var{body} @dots{} が繰り返されます。
 変数 @var{var} は @var{expr} の結果に束縛されます。
+@c COMMON
 
 @c EN
 The return value of @code{while} form itself isn't specified.
 @c JP
 @code{while} 自体の返り値は不定です。
-
 @c COMMON
+
 @example
 (let ((a '(0 1 2 3 4)))
   (while (pair? a)
@@ -1566,6 +1570,7 @@ to the result of @var{expr}.
 繰り返します。2番目の形式では@var{expr}の結果が@var{guard} に渡され
 それが真値を返すまで繰り返します。 @var{Var}は@var{expr}返り値に
 束縛されます。
+@c COMMON
 
 @c EN
 (The second form without @var{guard} isn't useful in @code{until}, since
@@ -1573,13 +1578,14 @@ to the result of @var{expr}.
 @c JP
 (@var{guard} を省いた2番目の形式では@var{var}は常に@code{#f}へ
 束縛されるため、あまり意味がありません。)
+@c COMMON
 
 @c EN
 The return value of @code{until} form itself isn't specified.
 @c JP
 @code{until}自体の返り値は不定です。
-
 @c COMMON
+
 @example
 (let ((a '(0 1 2 3 4)))
   (until (null? a)

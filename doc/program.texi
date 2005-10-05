@@ -875,6 +875,7 @@ Scheme のような高級言語では、何がパフォーマンスに強い影響を
 Gauche にもそのようなパフォーマンスに関する実装特有の特徴があり、
 それらのうちのいくつかを知っておくことは、ベンチマークの結果の
 どこに着目すべきかを知るうえで助けになるでしょう。
+@c COMMON
 
 @c EN
 "80% of execution time is spent in 20% of the code" is another
@@ -891,6 +892,7 @@ and only do tricks on the innermost loop.
 プログラミングしなければならないということではありません。
 むしろ、出来るだけ明瞭でわかりやすいプログラムを心がけ、ループの一番深いところ
 (もっとも時間を消費するところ)でこれらのトリックを使うのが良いでしょう。
+@c COMMON
 
 @c EN
 @strong{Ports}: To satisfy the specification of SRFI-18 (Threading),
@@ -910,6 +912,7 @@ Gauche のすべての入出力基本関数はポートをロックします。
 行なわれます。ですから @code{read} や@code{raed-block} 
 などのより大きな単位で入出力を行なう基本関数では問題と
 なることが少なくなります。
+@c COMMON
 
 @c EN
 If you find out the locking is indeed a bottleneck, there are couple
@@ -920,6 +923,7 @@ instead of calling the smaller-unit ones.  (2) Use @code{with-port-locking}
 ポートロックが実際に問題となった場合、二つばかり対処策が考えられます。
 (1) より大きな単位で入出力を行なう。(2) @code{with-port-locking}
 (@ref{Port and threads} 参照)を使ってより広範囲でポートをロックする。
+@c COMMON
 
 @c EN
 @strong{Strings}: Because of the multibyte strings, two operations
@@ -945,6 +949,7 @@ vectors (see @ref{Uniform vectors}) instead.
  @ref{String library} 等を参照。)  オクテットストリームを表現するのに
 文字列を使っていたなら、代わりにユニフォームベクタ(@ref{Uniform vectors}
 参照)を使いましょう。
+@c COMMON
 
 @c EN
 @strong{Deep recursion}: Gauche's VM uses a stack for efficient
@@ -960,6 +965,7 @@ beyond a certain amount of data, check out this possibility.
 スタックがオーバーフローするとスタックの内容をヒープに退避するという
 オーバーヘッドが生じます。 あるデータ量を越えたところでパフォーマンスの
 低下が見られたならば、深い再帰がないか調べてみて下さい。
+@c COMMON
 
 @c EN
 @strong{Generic functions}: Because of its dynamic nature, generic
@@ -979,6 +985,7 @@ VM コードへのコンパイル時にたいして最適化が行えないためです。
 という必要はありませんが、もしある一つの関数が実行時間の大部分を
 占めていて、その関数が Generic function を内部で呼び出しているなら
 それを使わないように変更してみる価値はあるでしょう。
+@c COMMON
 
 @c EN
 @strong{Redefining builtin functions}: Gauche inlines some builtin
@@ -995,6 +1002,7 @@ Gauche のコンパイラはいくつかの組込み関数を(それらが再定義されていなければ)
 やり方は、再定義をどこか別のモジュールに集めておき、どうしても再定義
 バージョンが必要なときに限ってそのモジュール use するというように
 しておけばよいでしょう。
+@c COMMON
 
 @c EN
 @strong{Closure creation}: When you create a closure, its closing environment
@@ -1014,6 +1022,7 @@ means a closure is created.
 簡単な解析を行ない生成をなるべく避けるようになっています。そのような場合
 局所関数の本体はインライン展開されています。逆アセンブルのコードに
 @code{CLOSURE}命令が含まれていれば、残念ながらクロージャが生成されます。
+@c COMMON
 
 @c EN
 This list isn't complete, and may change when Gauche's implementation
