@@ -1215,3 +1215,4 @@
                        (list list? lst)
                        `(while calling ,reverse-list->vector)))))))))
 
+(provide "srfi-43")
