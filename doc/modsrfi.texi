@@ -4213,11 +4213,118 @@ after @var{bodies}.
 @deftp {Module} srfi-43
 @mdindex srfi-43
 This module provides library functions for vectors.
-
-Gauche already has some of srfi-43 procedures; see @ref{Vectors}.
+Some of srfi-43 procedures are built-in; see @ref{Vectors}.
 @end deftp
 
+@subheading Vector constructors
 
+@defun vector-unfold f length seed @dots{}
+[SRFI-43]
+@end defun
+
+@defun vector-unfold-right f length seed @dots{}
+[SRFI-43]
+@end defun
+
+@defun vector-reverse-copy vec &optional start end
+[SRFI-43]
+@end defun
+
+@defun vector-append vec @dots{}
+[SRFI-43]
+@end defun
+
+@defun vector-concatenete list-of-vectors
+[SRFI-43]
+@end defun
+
+@subheading Vector predicates
+
+@defun vector-empty? vec
+[SRFI-43]
+@end defun
+
+@defun vector= elt= vec @dots{}
+[SRFI-43]
+@end defun
+
+@subheading Iteration over vectors
+
+@defun vector-fold kons knil vec1 vec2 @dots{}
+[SRFI-43]
+@end defun
+
+@defun vector-fold-right kons knil vec1 vec2 @dots{}
+[SRFI-43]
+@end defun
+
+@defun vector-map f vec1 vec2 @dots{}
+[SRFI-43]
+@end defun
+
+@defun vector-map! f vec1 vec2 @dots{}
+[SRFI-43]
+@end defun
+
+@defun vector-for-each f vec1 vec2 @dots{}
+[SRFI-43]
+@end defun
+
+@defun vector-count pred vec1 vec2 @dots{}
+[SRFI-43]
+@end defun
+
+@subheading Vector searching
+
+@defun vector-index pred vec1 vec2 @dots{}
+@defunx vector-index-right pred vec1 vec2 @dots{}
+[SRFI-43]
+@end defun
+
+@defun vector-skip pred vec1 vec2 @dots{}
+@defunx vector-skip-right pred vec1 vec2 @dots{}
+[SRFI-43]
+@end defun
+
+@defun vector-binary-search vec value cmp &optional start end
+[SRFI-43+]
+@end defun
+
+@defun vector-any pred  vec1 vec2 @dots{}
+[SRFI-43]
+@end defun
+
+@defun vector-every pred vec1 vec2 @dots{}
+[SRFI-43]
+@end defun
+
+@subheading Vector mutators
+
+@defun vector-swap! vec i j
+[SRFI-43]
+@end defun
+
+@defun vector-reverse! vec &optional start end
+[SRFI-43]
+@end defun
+
+@defun vector-copy! target tstart source &optional sstart send
+[SRFI-43]
+@end defun
+
+@defun vector-reverse-copy! target tstart source &optional sstart send
+[SRFI-43]
+@end defun
+
+@subheading Vector conversion
+
+@defun reverse-vector->list vec &optional start end
+[SRFI-43]
+@end defun
+
+@defun reverse-list->vector list &optional start end
+[SRFI-43]
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Requiring extensions,  , Vector library, Library modules - SRFIs

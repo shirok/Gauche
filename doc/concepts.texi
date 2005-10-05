@@ -397,6 +397,16 @@ Supported by the module @code{srfi-42}.
 @c COMMON
 
 @c EN
+@item SRFI-43, Vector library
+Supported by the module @code{srfi-43}.
+@xref{Vector library}.
+@c JP
+@item SRFI-43, ベクタライブラリ
+モジュール@code{srfi-43}でサポートされます。
+@ref{Vector library}参照。
+@c COMMON
+
+@c EN
 @item SRFI-45, Primitives for Expressing Iterative Lazy Algorithms
 Built-in.
 @xref{Delayed evaluation}.

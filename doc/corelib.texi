@@ -4265,7 +4265,7 @@ a setter method of @code{ref}.
 
 @defun vector->list vector &optional start end
 @defunx list->vector list &optional start end
-[R5RS+][SRFI-43]
+[R5RS+][SRFI-43+]
 @c EN
 Converts a vector to a list, or vice versa.
 
