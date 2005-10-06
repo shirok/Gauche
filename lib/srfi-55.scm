@@ -3,7 +3,7 @@
 ;;;
 ;;; Written by Shiro Kawai
 ;;;
-;;; $Id: srfi-55.scm,v 1.2 2005-10-06 10:06:17 shirok Exp $
+;;; $Id: srfi-55.scm,v 1.3 2005-10-06 10:11:58 shirok Exp $
 ;;;
 
 ;; This file is to be autoloaded
@@ -36,7 +36,9 @@
       (rec rest)
       (let ((id (string->symbol #`"srfi-,(car ids)")))
         `(cond-expand (,id ,(require-srfi (cdr ids) rest))
-                      (else (use ,id))))))
+                      (else
+                       (use ,id) ;; count on the user providing srfi-N.scm
+                       ,(require-srfi (cdr ids) rest))))))
   (rec clauses))
 
 (provide "srfi-55")
