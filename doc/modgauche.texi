@@ -9079,7 +9079,7 @@ error port, much like the bourne shell's time command.
 
 @c EN
 The current version uses @code{sys-gettimeofday} (@xref{Time}) to
-calculate the elapsed time, and @code{sys-times} (@xref{System Inquiry})
+calculate the elapsed time, and @code{sys-times} (@xref{System inquiry})
 to calculate user and system CPU times.  So the resolution of these numbers
 depends on these underlying system calls.  Usually the CPU
 time has 10ms resolution, while the elapsed time might have higher
@@ -9088,7 +9088,7 @@ however, the elapsed time resolution can be as bad as a second.
 @c JP
 現在の実装は、経過時間に対しては@code{sys-gettimeofday}
 (@ref{Time}参照)を、CPU時間に対しては@code{sys-times}
-(@ref{System Inquiry}参照)を用いています。従って、
+(@ref{System inquiry}参照)を用いています。従って、
 それぞれの数値の分解能はこれらの手続きが用いているシステムコールに依存します。
 CPU時間は10ms単位で、経過時間はそれより細かいことが多いです。
 但しgettimeofday(2)コールをサポートしていないOSでは経過時間が最悪の場合

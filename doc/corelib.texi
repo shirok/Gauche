@@ -6975,12 +6975,15 @@ Contains an integer value of system's error number.
 Error numbers may differ among systems.  Gauche defines
 constants for typical Unix error values (e.g. @code{EACCES}, @code{EBADF},
 etc), so it is desirable to use them instead of literal numbers.
+See the description of @code{sys-strerror} in @ref{System inquiry}
+for available constants.
 @c JP
 システムのエラー番号の整数値を持ちます。
 
 エラー番号はシステムによって異なる可能性があります。Gaucheは典型的な
 Unixのエラー番号に対して定数を定義している(例: @code{EACCES}, @code{EBADF})ので、
-それを使うと良いでしょう。
+それを使うと良いでしょう。定義されている定数に関しては
+@ref{System inquiry}の@code{sys-strerror}の説明を参照してください。
 @c COMMON
 @end defivar
 
@@ -10552,7 +10555,7 @@ Cの標準ライブラリとGaucheの手続きとの対応が示してあります。
 * Unix groups and users::       
 * Locale::                      
 * Signal::                      
-* System Inquiry::              
+* System inquiry::              
 * Time::                        
 * Unix process management::     
 * I/O multiplexing::            
@@ -11658,7 +11661,7 @@ An example session.  It may differ on your system settings.
    (p_sign_posn . 1) (n_sign_posn . 1))
 @end example
 
-@node Signal, System Inquiry, Locale, System interface
+@node Signal, System inquiry, Locale, System interface
 @subsection Signal
 @c NODE  シグナル
 
@@ -12351,8 +12354,8 @@ signal.
 望むシグナルをブロックしないようにすれば、可能です。
 @c COMMON
 
-@node System Inquiry, Time, Signal, System interface
-@subsection System Inquiry
+@node System inquiry, Time, Signal, System interface
+@subsection System inquiry
 @c NODE システムへの問い合わせ
 
 @defun sys-uname
@@ -12554,7 +12557,54 @@ This may be just a @code{"/dev/tty"}.   See also @code{sys-ttyname}.
 @c COMMON
 @end defun
 
-@node Time, Unix process management, System Inquiry, System interface
+@defun sys-strerror errno
+@var{Errno} must be an exact nonnegative integer representing
+a system error number.  This function returns a string describing
+the error.
+
+To represent @var{errno}, the following constants are defined.
+Each constant is bound to an exact integer representing the system's
+error number.  Note that the actual value may differ among systems,
+and some of these constants may note be defined on some systems.
+
+@example
+E2BIG             EHOSTDOWN         ENETDOWN          ENXIO
+EACCES            EHOSTUNREACH      ENETRESET         EOPNOTSUPP
+EADDRINUSE        EIDRM             ENETUNREACH       EOVERFLOW
+EADDRNOTAVAIL     EILSEQ            ENFILE            EPERM
+EADV              EINPROGRESS       ENOANO            EPFNOSUPPORT
+EAFNOSUPPORT      EINTR             ENOBUFS           EPIPE
+EAGAIN            EINVAL            ENOCSI            EPROTO
+EALREADY          EIO               ENODATA           EPROTONOSUPPORT
+EBADE             EISCONN           ENODEV            EPROTOTYPE
+EBADF             EISDIR            ENOENT            ERANGE
+EBADFD            EISNAM            ENOEXEC           EREMCHG
+EBADMSG           EKEYEXPIRED       ENOKEY            EREMOTE
+EBADR             EKEYREJECTED      ENOLCK            EREMOTEIO
+EBADRQC           EKEYREVOKED       ENOLINK           ERESTART
+EBADSLT           EL2HLT            ENOMEDIUM         EROFS
+EBFONT            EL2NSYNC          ENOMEM            ESHUTDOWN
+EBUSY             EL3HLT            ENOMSG            ESOCKTNOSUPPORT
+ECANCELED         EL3RST            ENONET            ESPIPE
+ECHILD            ELIBACC           ENOPKG            ESRCH
+ECHRNG            ELIBBAD           ENOPROTOOPT       ESRMNT
+ECOMM             ELIBEXEC          ENOSPC            ESTALE
+ECONNABORTED      ELIBMAX           ENOSR             ESTRPIPE
+ECONNREFUSED      ELIBSCN           ENOSTR            ETIME
+ECONNRESET        ELNRNG            ENOSYS            ETIMEDOUT
+EDEADLK           ELOOP             ENOTBLK           ETOOMANYREFS
+EDEADLOCK         EMEDIUMTYPE       ENOTCONN          ETXTBSY
+EDESTADDRREQ      EMFILE            ENOTDIR           EUCLEAN
+EDOM              EMLINK            ENOTEMPTY         EUNATCH
+EDOTDOT           EMSGSIZE          ENOTNAM           EUSERS
+EDQUOT            EMULTIHOP         ENOTSOCK          EWOULDBLOCK
+EEXIST            ENAMETOOLONG      ENOTTY            EXDEV
+EFAULT            ENAVAIL           ENOTUNIQ          EXFULL
+EFBIG
+@end example
+@end defun
+
+@node Time, Unix process management, System inquiry, System interface
 @subsection Time
 @c NODE 時間
 

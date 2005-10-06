@@ -415,9 +415,9 @@ See @ref{File ports} for more control over the creation of files.
 @c COMMON
 @item ctermid
 @c EN
-Gauche @code{sys-ctermid}.  @xref{System Inquiry}.
+Gauche @code{sys-ctermid}.  @xref{System inquiry}.
 @c JP
-Gauche の @code{sys-ctermid}。@ref{System Inquiry} 参照。
+Gauche の @code{sys-ctermid}。@ref{System inquiry} 参照。
 @c COMMON
 @item ctime
 @c EN
@@ -709,21 +709,21 @@ Use @code{read-char} or @code{read-byte}.  @xref{Input}.
 @c COMMON
 @item getcwd
 @c EN
-Gauche's @code{sys-getcwd}.   @xref{System Inquiry}.
+Gauche's @code{sys-getcwd}.   @xref{System inquiry}.
 @c JP
-Gauche の @code{sys-getcwd}。@ref{System Inquiry} 参照。
+Gauche の @code{sys-getcwd}。@ref{System inquiry} 参照。
 @c COMMON
 @item getdomainname
 @c EN
-Gauche's @code{sys-getdomainname}.  @xref{System Inquiry}.
+Gauche's @code{sys-getdomainname}.  @xref{System inquiry}.
 @c JP
-Gauche の @code{sys-getdomainname}。@ref{System Inquiry} 参照。
+Gauche の @code{sys-getdomainname}。@ref{System inquiry} 参照。
 @c COMMON
 @item getegid
 @c EN
-Gauche's @code{sys-getegid}.   @xref{System Inquiry}.
+Gauche's @code{sys-getegid}.   @xref{System inquiry}.
 @c JP
-Gauche の @code{sys-getegid}。@ref{System Inquiry} 参照。
+Gauche の @code{sys-getegid}。@ref{System inquiry} 参照。
 @c COMMON
 @item getenv
 @c EN
@@ -733,21 +733,21 @@ Gauche の @code{sys-getenv}。@ref{Environment Inquiry} 参照。
 @c COMMON
 @item geteuid
 @c EN
-Gauche's @code{sys-geteuid}.   @xref{System Inquiry}.
+Gauche's @code{sys-geteuid}.   @xref{System inquiry}.
 @c JP
-Gauche の @code{sys-geteuid}。@ref{System Inquiry} 参照。
+Gauche の @code{sys-geteuid}。@ref{System inquiry} 参照。
 @c COMMON
 @item gethostname
 @c EN
-Gauche's @code{sys-gethostname}.  @xref{System Inquiry}.
+Gauche's @code{sys-gethostname}.  @xref{System inquiry}.
 @c JP
-Gauche の @code{sys-gethostname}。@ref{System Inquiry} 参照。
+Gauche の @code{sys-gethostname}。@ref{System inquiry} 参照。
 @c COMMON
 @item getgid
 @c EN
-Gauche's @code{sys-getgid}.   @xref{System Inquiry}.
+Gauche's @code{sys-getgid}.   @xref{System inquiry}.
 @c JP
-Gauche の @code{sys-getgid}。@ref{System Inquiry} 参照。
+Gauche の @code{sys-getgid}。@ref{System inquiry} 参照。
 @c COMMON
 @item getgrgid
 @itemx getgrnam
@@ -759,28 +759,28 @@ Gauche の @code{sys-getgrgid} および @code{sys-getgrnam}。
 @c COMMON
 @item getgroups
 @c EN
-Gauche's @code{sys-getgroups}.   @xref{System Inquiry}.
+Gauche's @code{sys-getgroups}.   @xref{System inquiry}.
 @c JP
-Gauche の @code{sys-getgroups}。@ref{System Inquiry}参照。
+Gauche の @code{sys-getgroups}。@ref{System inquiry}参照。
 @c COMMON
 @item getlogin
 @c EN
-Gauche's @code{sys-getlogin}.  @xref{System Inquiry}.
+Gauche's @code{sys-getlogin}.  @xref{System inquiry}.
 @c JP
-Gauche の @code{sys-getlogin}。@ref{System Inquiry}参照。
+Gauche の @code{sys-getlogin}。@ref{System inquiry}参照。
 @c COMMON
 @item getpgrp
 @c EN
-Gauche's @code{sys-getpgrp}.   @xref{System Inquiry}.
+Gauche's @code{sys-getpgrp}.   @xref{System inquiry}.
 @c JP
-Gauche の @code{sys-getpgrp}。@ref{System Inquiry} 参照。
+Gauche の @code{sys-getpgrp}。@ref{System inquiry} 参照。
 @c COMMON
 @item getpid
 @itemx getppid
 @c EN
-Gauche's @code{sys-getpid}.   @xref{System Inquiry}.
+Gauche's @code{sys-getpid}.   @xref{System inquiry}.
 @c JP
-Gauche の @code{sys-getpid}。@ref{System Inquiry} 参照。
+Gauche の @code{sys-getpid}。@ref{System inquiry} 参照。
 @c COMMON
 @item getpwnam
 @itemx getpwuid
@@ -804,9 +804,9 @@ Gauche の @code{sys-gettimeofday}。@ref{Time} 参照。
 @c COMMON
 @item getuid
 @c EN
-Gauche's @code{sys-getuid}.  @xref{System Inquiry}.
+Gauche's @code{sys-getuid}.  @xref{System inquiry}.
 @c JP
-Gauche の @code{sys-getuid}。@ref{System Inquiry} 参照。
+Gauche の @code{sys-getuid}。@ref{System inquiry} 参照。
 @c COMMON
 @item gmtime
 @c EN
@@ -1292,21 +1292,21 @@ Gauche の @code{sys-setlocale}。@ref{Locale}参照。
 @c COMMON
 @item setpgid
 @c EN
-Gauche's @code{sys-setpgid}.  @xref{System Inquiry}.
+Gauche's @code{sys-setpgid}.  @xref{System inquiry}.
 @c JP
-Gauche の @code{sys-setpgid}。@ref{System Inquiry}参照。
+Gauche の @code{sys-setpgid}。@ref{System inquiry}参照。
 @c COMMON
 @item setsid
 @c EN
-Gauche's @code{sys-setsid}.  @xref{System Inquiry}.
+Gauche's @code{sys-setsid}.  @xref{System inquiry}.
 @c JP
-Gauche の @code{sys-setsid}。@ref{System Inquiry}参照。
+Gauche の @code{sys-setsid}。@ref{System inquiry}参照。
 @c COMMON
 @item setuid
 @c EN
-Gauche's @code{sys-setuid}.  @xref{System Inquiry}.
+Gauche's @code{sys-setuid}.  @xref{System inquiry}.
 @c JP
-Gauche の @code{sys-setuid}。@ref{System Inquiry}参照。
+Gauche の @code{sys-setuid}。@ref{System inquiry}参照。
 @c COMMON
 @item setvbuf
 @c EN
@@ -1656,9 +1656,9 @@ Gauche の @code{sys-time}。  @ref{Time}参照。
 @c COMMON
 @item times
 @c EN
-Gauche's @code{sys-times}.  @xref{System Inquiry}.
+Gauche's @code{sys-times}.  @xref{System inquiry}.
 @c JP
-Gauche の @code{sys-times}。@ref{System Inquiry}参照。
+Gauche の @code{sys-times}。@ref{System inquiry}参照。
 @c COMMON
 @item tmpfile
 @c EN
@@ -1704,9 +1704,9 @@ Gauche の @code{sys-umask}。@ref{Directory manipulation}参照。
 @c COMMON
 @item uname
 @c EN
-Gauche's @code{sys-uname}.  @xref{System Inquiry}.
+Gauche's @code{sys-uname}.  @xref{System inquiry}.
 @c JP
-Gauche の @code{sys-uname}。@ref{System Inquiry}参照。
+Gauche の @code{sys-uname}。@ref{System inquiry}参照。
 @c COMMON
 @item ungetc
 @c EN
