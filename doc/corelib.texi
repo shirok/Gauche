@@ -6131,7 +6131,7 @@ show how to create a condition with some slot values and then raise it.
 ;; create and raise a system error condition
 (raise (condition
         (<system-error> (message "A system error occurred.")
-                        (errno 4))))
+                        (errno EINTR))))
 @end example
 
 @c EN
@@ -6971,8 +6971,16 @@ Besides that, this class has one more instance slot:
 @defivar {<system-error>} errno
 @c EN
 Contains an integer value of system's error number.
+
+Error numbers may differ among systems.  Gauche defines
+constants for typical Unix error values (e.g. @code{EACCES}, @code{EBADF},
+etc), so it is desirable to use them instead of literal numbers.
 @c JP
 システムのエラー番号の整数値を持ちます。
+
+エラー番号はシステムによって異なる可能性があります。Gaucheは典型的な
+Unixのエラー番号に対して定数を定義している(例: @code{EACCES}, @code{EBADF})ので、
+それを使うと良いでしょう。
 @c COMMON
 @end defivar
 
