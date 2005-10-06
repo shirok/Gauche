@@ -1,3 +1,10 @@
+2005-10-05  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-55.scm (require-extension): when srfi number unknown to
+	  the Gauche runtime is given, it expands to (use srfi-N) anyway,
+	  so that it may work if the user put srfi-N.scm in the load-path.
+	  (This is useful to make Alex Shinn's common-scheme work).
+
 2005-10-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/vector.c (Scm_MakeVector): check the size argument.

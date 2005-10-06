@@ -3,7 +3,7 @@
 ;;;
 ;;; Written by Shiro Kawai
 ;;;
-;;; $Id: srfi-55.scm,v 1.1 2005-05-24 09:52:56 shirok Exp $
+;;; $Id: srfi-55.scm,v 1.2 2005-10-06 10:06:17 shirok Exp $
 ;;;
 
 ;; This file is to be autoloaded
@@ -16,6 +16,10 @@
 ;; load and imports required features if necessary.
 ;; (This depends on the fact that Gauche's cond-expand has an effect
 ;; after the form).
+;;
+;; An important extension from the plain cond-expand is that
+;; if we can't cond-expand to srfi-N, we look for the module
+;; srfi-N from the current load path.
 
 (define-macro (require-extension . clauses)
   (define (rec clauses)
@@ -32,7 +36,7 @@
       (rec rest)
       (let ((id (string->symbol #`"srfi-,(car ids)")))
         `(cond-expand (,id ,(require-srfi (cdr ids) rest))
-                      (else (syntax-error "unsupported srfi:" ,id))))))
+                      (else (use ,id))))))
   (rec clauses))
 
 (provide "srfi-55")
