@@ -5,6 +5,7 @@
 	  the default initialization method to handle it.  The custom
 	  initialization method had a problem of initializing slots defined
 	  in a subclass of <generic>.
+	* lib/dbi.scm : added some more backward-compatibility code.
 
 2005-10-05  Shiro Kawai  <shiro@acm.org>
 

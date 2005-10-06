@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.28 2005-09-13 02:45:50 shirok Exp $
+;;;  $Id: dbi.scm,v 1.29 2005-10-06 13:49:13 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -54,7 +54,7 @@
           dbi-make-connection dbi-execute-using-connection
           ;; compatibility
           dbi-make-query dbi-execute-query dbi-get-value
-          <dbi-exception>))
+          <dbi-exception> <dbi-result-set>))
 (select-module dbi)
 
 ;;;==============================================================
@@ -93,12 +93,18 @@
 
 ;; <dbi-connection> : represents a connection to the database system.
 ;; All the transactions must be done while the connection is 'open'.
-(define-class <dbi-connection> () ())
+(define-class <dbi-connection> ()
+  ((open :init-value #t) ;; this slot is for backward compatibility.
+                         ;; do not count on this.  will be removed.
+   ))
 
 ;; <dbi-query> : represents a prepared query.
 (define-class <dbi-query> ()
   ((connection :init-keyword :connection)
-   (prepared   :init-keyword :prepared)))
+   (prepared   :init-keyword :prepared)
+   (open :init-value #t) ;; this slot is for backward compatibility.
+                         ;; do not count on this.  will be removed.
+   ))
 
 ;;;==============================================================
 ;;; User-level APIs
@@ -313,6 +319,9 @@
 ;; these interface.  Will be gone in a few releases.
 
 (define <dbi-exception> <dbi-error>)
+
+(define-class <dbi-result-set> ()
+  ((open :init-value #t)))
 
 (define-method dbi-get-value ((r <sequence>) (n <integer>))
   (ref r n))
