@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.129 2005-09-12 09:22:25 shirok Exp $
+ *  $Id: class.c,v 1.130 2005-10-06 13:09:29 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1923,28 +1923,6 @@ static void generic_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 }
 
 /*
- * (initialize <generic> &key name)  - default initialize function for gf
- */
-static ScmObj generic_initialize(ScmNextMethod *nm, ScmObj *args, int nargs,
-                                 void *data)
-{
-    ScmGeneric *g = SCM_GENERIC(args[0]);
-    ScmObj initargs = args[1], name;
-    name = Scm_GetKeyword(key_name, initargs, SCM_FALSE);
-    g->common.info = name;
-    return SCM_OBJ(g);
-}
-
-static ScmClass *generic_initialize_SPEC[] = {
-    SCM_CLASS_STATIC_PTR(Scm_GenericClass), SCM_CLASS_STATIC_PTR(Scm_ListClass)
-};
-static SCM_DEFINE_METHOD(generic_initialize_rec,
-                         &Scm_GenericInitialize,
-                         2, 0,
-                         generic_initialize_SPEC,
-                         generic_initialize, NULL);
-
-/*
  * Accessors
  */
 static ScmObj generic_name(ScmGeneric *gf)
@@ -3115,7 +3093,6 @@ void Scm__InitClass(void)
     Scm_InitBuiltinMethod(&slot_set_using_class_rec);
     Scm_InitBuiltinMethod(&slot_bound_using_class_p_rec);
     Scm_InitBuiltinMethod(&object_initialize_rec);
-    Scm_InitBuiltinMethod(&generic_initialize_rec);
     Scm_InitBuiltinMethod(&generic_addmethod_rec);
     Scm_InitBuiltinMethod(&generic_deletemethod_rec);
     Scm_InitBuiltinMethod(&method_initialize_rec);

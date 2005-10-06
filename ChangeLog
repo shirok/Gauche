@@ -1,3 +1,11 @@
+2005-10-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (generic_initialize): It turned out we don't need a
+	  special initialization method for <generic>.  We can just let
+	  the default initialization method to handle it.  The custom
+	  initialization method had a problem of initializing slots defined
+	  in a subclass of <generic>.
+
 2005-10-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-55.scm (require-extension): when srfi number unknown to

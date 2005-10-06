@@ -114,13 +114,13 @@ if [ "$testcode" = "yes" ]; then
   tar xzvf ../Gauche-$VERSION.tgz >& /dev/null
   cd Gauche-$VERSION
   rm -f testcode.log
-  echo "EUC-JP ----------------------------------------------------"
-  ./configure -C --enable-threads=pthreads --enable-multibyte=euc-jp >> testcode.log 2>&1
+  echo "UTF-8 -----------------------------------------------------"
+  ./configure -C --enable-threads=pthreads --enable-multibyte=utf-8  >> testcode.log 2>&1
   make -s >> testcode.log 2>&1
   make -s test
   make -s distclean
-  echo "UTF-8 -----------------------------------------------------"
-  ./configure -C --enable-threads=pthreads --enable-multibyte=utf-8  >> testcode.log 2>&1
+  echo "EUC-JP ----------------------------------------------------"
+  ./configure -C --enable-threads=pthreads --enable-multibyte=euc-jp >> testcode.log 2>&1
   make -s >> testcode.log 2>&1
   make -s test
   make -s distclean
