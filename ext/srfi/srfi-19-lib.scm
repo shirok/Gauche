@@ -24,7 +24,7 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19-lib.scm,v 1.2 2005-09-10 09:25:08 shirok Exp $
+;;; $Id: srfi-19-lib.scm,v 1.3 2005-10-07 19:55:36 shirok Exp $
 
 (define-module srfi-19
   (use srfi-1)
@@ -1014,7 +1014,7 @@
 		     (+ nchars 1)))
 	 (padding-ok
 	  (read-char port) ; consume padding
-	  (accum-int prot accum (+ nchars 1)))
+	  (accum-int port accum (+ nchars 1)))
 	 (else ; padding where it shouldn't be
           (error "string->date: Non-numeric characters in integer read."))
          )))

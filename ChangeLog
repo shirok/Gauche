@@ -1,3 +1,7 @@
+2005-10-07  Shiro Kawai  <shiro@acm.org>
+
+	* ext/srfi/srfi-19-lib.scm (tm:integer-reader-exact): fixed typo.
+
 2005-10-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c (generic_initialize): It turned out we don't need a
