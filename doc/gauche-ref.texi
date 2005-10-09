@@ -2,22 +2,22 @@
 @comment %**start of header
 @c EN
 @setfilename gauche-refe.info
-@settitle Gauche Reference Manual
+@settitle Gauche User's Reference
 @dircategory The Algorithmic Language Scheme
 @direntry
-* Gauche Reference: (gauche-refe.info).	An R5RS Scheme implementation.
+* Gauche: (gauche-refe.info).	        An R5RS Scheme implementation.
 @end direntry
 @c JP
 @setfilename gauche-refj.info
-@settitle Gauche リファレンスマニュアル
+@settitle Gauche ユーザリファレンス
 @dircategory The Algorithmic Language Scheme
 @direntry
-* Gauche Reference (ja): (gauche-refj.info).	An R5RS Scheme implementation.
+* Gauche (ja): (gauche-refj.info).	An R5RS Scheme implementation.
 @end direntry
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.429 2005-09-03 05:58:20 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.430 2005-10-09 11:38:34 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -30,11 +30,11 @@
 
 @titlepage
 @c EN
-@title Gauche Reference Manual
+@title Gauche User's Reference
 @subtitle version @VERSION@
 @author Shiro Kawai (shiro@@acm.org)
 @c JP
-@title Gauche リファレンスマニュアル
+@title Gauche ユーザリファレンス
 @subtitle version @VERSION@
 @author Shiro Kawai (shiro@@acm.org)
 @c COMMON

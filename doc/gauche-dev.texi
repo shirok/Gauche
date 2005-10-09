@@ -1,0 +1,315 @@
+\input texinfo  @c -*-texinfo-*-
+@comment %**start of header
+@c EN
+@setfilename gauche-deve.info
+@settitle Gauche Developer's Reference
+@dircategory The Algorithmic Language Scheme
+@direntry
+* Gauche Developer's Reference: (gauche-deve.info).	Internals of Gauche
+@end direntry
+@c JP
+@setfilename gauche-devj.info
+@settitle Gauche 開発者リファレンス
+@dircategory The Algorithmic Language Scheme
+@direntry
+* Gauche Developer's Reference (ja): (gauche-devj.info).	Internals of Gauche
+@end direntry
+@c COMMON
+@comment %**end of header
+
+@c $Id: gauche-dev.texi,v 1.1 2005-10-09 11:38:34 shirok Exp $
+
+@iftex
+@finalout
+@parskip 4pt plus 1pt
+@end iftex
+
+@titlepage
+@c EN
+@title Gauche Developer's Reference
+@c JP
+@title Gauche 開発者リファレンス
+@c COMMON
+@subtitle version @VERSION@
+@author Shiro Kawai (shiro@@acm.org)
+
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 2005 Shiro Kawai (shiro@@acm.org)
+
+@end titlepage
+
+@node Top, Introduction, (dir), (dir)
+
+@ifnottex
+@c EN
+This document explains the internal guts of Gauche
+for developers who want to extend Gauche functionality in C, 
+or to embed Gauche to other applications.
+This manual is for version @VERSION@.
+@c JP
+本書は、Gaucheの機能をCで拡張したり、Gaucheを他のアプリケーションに
+埋め込むといったことを行う開発者のために、
+Gaucheの内部構造を説明するものです。
+Gaucheのバージョン@VERSION@に対応します。
+@c COMMON
+@end ifnottex
+
+@menu
+* Introduction::                
+* Getting started::             
+* Fundamental concepts::        
+* C API reference::             
+* Helper program reference::    
+* Indices::                     
+@end menu
+
+@c ======================================================================
+@node Introduction, Getting started, Top, Top
+@chapter Introduction
+
+The core part of the Gauche runtime is written in C and provided
+as a library, @file{libgauche}.  This document explains how to
+use it from C.  Using C API, you can extend Gauche's
+functionality (e.g. providing bindinds to the existing C library).
+You can also link @file{libgauche} to your application, making
+Gauche as an embedded scripting language.
+
+Gauche's C API is designed for efficiency, consistency,
+simplicity and safety, roughly in this order of precedence.
+That is, simplicity and safety are sometimes compromized
+by efficiency.  For example, sometimes you have to choose
+from similar APIs to achieve a goal, where each API is designed
+to be efficient for a particular case.  The API also assumes
+the caller takes care not to break internal structure; there's
+no much safety net that protects you from shooting your foot.
+
+That said, it won't be too difficult to use Gauche's C API
+as far as you know some fundamental design concepts.
+
+We intend this document to serve both a programmer's guide
+that explains such design concepts, and a programer's reference
+that describes every C API in detail.
+
+The guide part begins with @ref{Getting started}, that shows
+how to write a simple Gauche extension in C, as well as
+a simple application that embeds Gauche.  It gives an overview
+of the whole process.
+
+The following chapter, @ref{Fundamental concepts}, describes
+the design behind the API.  We strongly recommend you to 
+understand this chapetr before trying to use Gauche C API
+seriously.  As we mentioned above, it is very easy to break
+something without knowing those concepts.
+
+The guide part concludes with @ref{Real-life examples}, that
+explains pitfalls in the practical situations using excerpt
+of the actual Gauche extension code.
+
+The reference part consists of two chapters: @ref{C API reference}
+lists all the public C API.  @ref{Helper program reference}
+explains several programs installed as a part of Gauche Scheme
+system to help program development.
+
+@c ======================================================================
+@node Getting started, Fundamental concepts, Introduction, Top
+@chapter Getting started
+
+This chapter explains the basics of how to use Gauche C API
+by several simple examples.
+
+Although each example is too small to be practical value,
+we try to present working code for each example, so that you
+can actually play with it.  We recommend you to read through
+all examples, for we introduce new concepts in each step.
+
+We deal with the advanced topics that arises in the practical
+situation in @ref{Real-life examples}.
+
+The prerequisites for building Gauche extension, besides 
+the basic compiler chain, are the followings.  We assume
+these are installed in your system.  
+@itemize @bullet
+@item 
+Gauche 0.8.6 or later
+@item
+GNU autoconf 2.54 or later
+@end itemize
+
+@node A trivial extension
+@section A trivial extension
+
+Let's create a Gauche extension that does nothing.
+
+Gauche can generate a skeleton of the extension code
+by @code{gauche-package generate} command.  You give the
+package name to the command-line argument (here we pick @code{trivial}).
+
+@cartouche
+@example
+% ls trivial
+ls: trivial: No such file or directory
+% gauche-package generate trivial
+% ls trivial
+DIST	     configure.ac  trivial.c  trivial.scm
+Makefile.in  test.scm	   trivial.h  triviallib.stub
+@end example
+@end cartouche
+
+The @code{gauche-package} command creates a directory @file{trivial},
+and populates it with template files.  The role of each file is shown
+below.
+
+@table @emph
+@item Glue code (@file{trivial.c} and @file{trivial.h})
+If what you want to do is just to write C functions and make it
+available from Scheme, the function definitions and declarations
+would go to these files.
+
+Even if what you want to do is just to write bindings to
+an existing library, it is typical that you need small amount
+of auxiliary management code, such as initializing the library
+and allocating/freeing library-side data structures. 
+
+@item Stub file (@file{trivial.stub})
+This file is the bridge between C world and Scheme world.
+You have to list C functions you want to make it visible from
+Scheme world.  Because of its nature, this file looks like 
+a mixture of Scheme code and C code fragments.
+
+When the package is compiled, Gauche's helper scripts generates
+a C file from a stub file, and compiles it with other glue code
+to generate a dynamically loadable object code, called DLL
+(dynamically loadable library) or SO (shared object), depending
+on the platform.
+
+@item Module file (@file{trivail.scm})
+This file typically defines Gauche modules and set exported
+symbols, and dynamically loads the compiled object code.
+You may put auxiliary Scheme code in it.
+
+@item Files to build the package (@file{configure.ac}, @file{Makefile.in}, @file{DIST})
+Gauche relies on GNU @code{autoconf} and @code{make} to build
+the package, that is, the package user can use the simple
+@code{./configure}, @code{make} and @code{make install} sequence
+to build and install the package.  
+
+@file{DIST} is a small shell script that automates creating
+a distribution tarball.
+
+@item Unit test (@file{test.scm})
+It is strongly encouraged to include unit test in your package,
+and this file contains the skeleton of it.  The package user
+can run the test by @code{make check}.
+@end table
+
+These auto-generated files are already buildable.  
+First, you need to run @file{autoconf} to generate a @file{configure}
+script.
+
+@cartouche
+@example
+% cd trivial
+% autoconf
+% ls
+DIST	     autom4te.cache  configure.ac  trivial.c  trivial.scm
+Makefile.in  configure	     test.scm	   trivial.h  triviallib.stub
+@end example
+@end cartouche
+
+The directory @file{autom4te.cache} is a temporary structure used
+by autoconf.  You can safely remove it if it bothers you.
+
+Once @file{configure} script is generated, you can run it to
+generate @file{Makefile}, then run @code{make}.
+
+@cartouche
+@example
+% ./configure
+checking for gosh... /usr/bin/gosh
+checking for gauche-config... /usr/bin/gauche-config
+checking for gauche-package... /usr/bin/gauche-package
+checking for gauche-install... /usr/bin/gauche-install
+checking for gauche-cesconv... /usr/bin/gauche-cesconv
+configure: creating trivial.gpd
+configure: creating ./config.status
+config.status: creating Makefile
+% make
+/usr/bin/gauche-package compile --verbose trivial trivial.c triviallib.stub
+@i(... message truncated ...)
+[shiro@sonatina trivial]$ ls
+DIST		config.log     trivial.c    trivial.so	    triviallib.o
+Makefile	config.status  trivial.gpd  trivial_head.c  triviallib.stub
+Makefile.in	configure      trivial.h    trivial_head.o
+VERSION		configure.ac   trivial.o    trivial_tail.c
+autom4te.cache	test.scm       trivial.scm  trivial_tail.o
+@end example
+@end cartouche
+
+
+
+
+
+
+@c ======================================================================
+@node Fundamental concepts, C API reference, Getting started, Top
+@chapter Fundamental concepts
+
+@menu
+* Naming convention::           
+* Scheme types and C types::    
+* Memories::                    
+* The VM::                      
+@end menu
+
+@node Naming convention, Scheme types and C types, Fundamental concepts, Fundamental concepts
+@section Naming convention
+
+@node Scheme types and C types, Memories, Naming convention, Fundamental concepts
+@section Scheme types and C types
+
+@node Memories, The VM, Scheme types and C types, Fundamental concepts
+@section Memories
+
+@node The VM,  , Memories, Fundamental concepts
+@section The VM
+
+
+
+@c ======================================================================
+@node C API reference, Helper program reference, Fundamental concepts, Top
+@chapter C API reference
+
+
+@c ======================================================================
+@node Helper program reference, Indices, C API reference, Top
+@chapter Helper program reference
+
+
+@c ======================================================================
+@node Indices,  , Helper program reference, Top
+@appendix Indices
+@c NODE 索引
+
+@menu
+* Function and Macro Index::    
+* Type Index::                  
+* Variable Index::              
+@end menu
+
+@node Function and Macro Index, Type Index, Indices, Indices
+@appendixsec Function and Macro Index
+@printindex fn
+
+
+@node Type Index, Variable Index, Function and Macro Index, Indices
+@appendixsec Type Index
+@printindex cl
+
+@node Variable Index,  , Type Index, Indices
+@appendixsec Variable Index
+@printindex vr
+
+@contents
+@bye
+
