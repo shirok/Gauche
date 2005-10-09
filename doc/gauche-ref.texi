@@ -2,7 +2,7 @@
 @comment %**start of header
 @c EN
 @setfilename gauche-refe.info
-@settitle Gauche User's Reference
+@settitle Gauche Users' Reference
 @dircategory The Algorithmic Language Scheme
 @direntry
 * Gauche: (gauche-refe.info).	        An R5RS Scheme implementation.
@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.430 2005-10-09 11:38:34 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.431 2005-10-09 12:54:47 shirok Exp $
 
 @c module and class index
 @defcodeindex md
@@ -30,7 +30,7 @@
 
 @titlepage
 @c EN
-@title Gauche User's Reference
+@title Gauche Users' Reference
 @subtitle version @VERSION@
 @author Shiro Kawai (shiro@@acm.org)
 @c JP

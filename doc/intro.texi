@@ -3,12 +3,12 @@
 @c NODE はじめに
 
 @c EN
-This is a programmers' guide and reference manual of
+This is a users' guide and reference manual of
 the Gauche Scheme system.
 Here I tried to describe Gauche's implementation precisely,
 sometimes referring to background design choices.
 @c JP
-本書はGauche Scheme systemに関する、プログラマーのためのガイドと
+本書はGauche Scheme systemに関する、ユーザのためのガイドと
 リファレンスです。なるべくGaucheの実装を正確に記述することを
 目的として、時には背景となる設計上の選択も含めて説明しています。
 @c COMMON
@@ -66,7 +66,7 @@ recent version on the web:
 時々下記のURLをチェックしてみて下さい。更新があるかもしれません。
 @c COMMON
 @example
-@uref{http://www.shiro.dreamhost.com/scheme/gauche/}.
+@uref{http://practical-scheme.net/gauche/}.
 @end example
 
 @c JP
