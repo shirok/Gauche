@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.1 2005-10-09 11:38:34 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.2 2005-10-10 01:45:51 shirok Exp $
 
 @iftex
 @finalout
@@ -139,6 +139,9 @@ GNU autoconf 2.54 or later
 @node A trivial extension
 @section A trivial extension
 
+@node Generating skeletons
+@subsection Generating skeletons
+
 Let's create a Gauche extension that does nothing.
 
 Gauche can generate a skeleton of the extension code
@@ -147,10 +150,10 @@ package name to the command-line argument (here we pick @code{trivial}).
 
 @cartouche
 @example
-% ls trivial
+% @b{ls trivial}
 ls: trivial: No such file or directory
-% gauche-package generate trivial
-% ls trivial
+% @b{gauche-package generate trivial}
+% @b{ls trivial}
 DIST	     configure.ac  trivial.c  trivial.scm
 Makefile.in  test.scm	   trivial.h  triviallib.stub
 @end example
@@ -209,9 +212,9 @@ script.
 
 @cartouche
 @example
-% cd trivial
-% autoconf
-% ls
+% @b{cd trivial}
+% @b{autoconf}
+% @b{ls}
 DIST	     autom4te.cache  configure.ac  trivial.c  trivial.scm
 Makefile.in  configure	     test.scm	   trivial.h  triviallib.stub
 @end example
@@ -225,7 +228,7 @@ generate @file{Makefile}, then run @code{make}.
 
 @cartouche
 @example
-% ./configure
+% @b{./configure}
 checking for gosh... /usr/bin/gosh
 checking for gauche-config... /usr/bin/gauche-config
 checking for gauche-package... /usr/bin/gauche-package
@@ -234,10 +237,10 @@ checking for gauche-cesconv... /usr/bin/gauche-cesconv
 configure: creating trivial.gpd
 configure: creating ./config.status
 config.status: creating Makefile
-% make
+% @b{make}
 /usr/bin/gauche-package compile --verbose trivial trivial.c triviallib.stub
-@i(... message truncated ...)
-[shiro@sonatina trivial]$ ls
+@i{(... message truncated ...)}
+% @b{ls}
 DIST		config.log     trivial.c    trivial.so	    triviallib.o
 Makefile	config.status  trivial.gpd  trivial_head.c  triviallib.stub
 Makefile.in	configure      trivial.h    trivial_head.o
@@ -245,6 +248,49 @@ VERSION		configure.ac   trivial.o    trivial_tail.c
 autom4te.cache	test.scm       trivial.scm  trivial_tail.o
 @end example
 @end cartouche
+
+The build process creates @file{trivial.so}, the dynamically loadable
+object file (the actual suffix may differ on some OSes).
+
+Now it's ready to load the extension into Gauche.  The skeleton code
+defines a Scheme function @code{test-trivial}, which just returns
+a string.   Run the Gauche interpreter, load the @code{trivial} module,
+and call @code{test-trivial} function.  Note that you need to give
+@code{-I.} option to @code{gosh}, so that Gauche can find 
+
+@cartouche
+@example
+% @b{gosh -I.}
+gosh> @b{(use trivial)}
+#<undef>
+gosh> @b{(test-trivial)}
+"trivial is working"
+gosh>
+@end example
+@end cartouche
+
+You may have noticed a file @file{trivial.gpd}.  The unfamiliar
+suffix @code{gpd} stands for ``Gauche package description''.
+It is created by @file{configure}, and records the name and version
+of the package, and the configure options.  It is installed with
+other 
+
+
+
+@node The templates explained
+@subsection The templates explained
+
+
+@node Introduction of the stub file
+@subsection Introduction of the stub file
+
+
+
+@node Simple readline binding
+@seciton Simple readline binding
+
+
+
 
 
 
