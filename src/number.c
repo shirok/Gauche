@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.122 2005-08-16 06:18:16 shirok Exp $
+ *  $Id: number.c,v 1.123 2005-10-13 08:14:13 shirok Exp $
  */
 
 #include <math.h>
@@ -2683,12 +2683,13 @@ static ScmObj numread_error(const char *msg, struct numread_packet *context)
 
 ScmObj Scm_StringToNumber(ScmString *str, int radix, int strict)
 {
-    if (SCM_STRING_LENGTH(str) != SCM_STRING_SIZE(str)) {
+    u_int len, size;
+    const char *p = Scm_GetStringContent(str, &size, &len, NULL);
+    if (size != len) {
         /* This can't be a proper number. */
         return SCM_FALSE;
     } else {
-        return read_number(SCM_STRING_START(str), SCM_STRING_SIZE(str),
-                           radix, strict);
+        return read_number(p, size, radix, strict);
     }
 }
 

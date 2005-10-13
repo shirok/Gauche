@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.40 2005-09-11 23:23:45 shirok Exp $
+ *  $Id: net.c,v 1.41 2005-10-13 08:14:13 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -311,13 +311,13 @@ ScmObj Scm_SocketGetPeerName(ScmSocket *sock)
 
 ScmObj Scm_SocketSend(ScmSocket *sock, ScmString *msg, int flags)
 {
-    int r;
+    int r; u_int size;
+    const char *cmsg;
     if (SOCKET_CLOSED(sock->fd)) {
         Scm_Error("attempt to send to a closed socket: %S", sock);
     }
-    SCM_SYSCALL(r, send(sock->fd,
-                        SCM_STRING_START(msg), SCM_STRING_SIZE(msg),
-                        flags));
+    cmsg = Scm_GetStringContent(msg, &size, NULL, NULL);
+    SCM_SYSCALL(r, send(sock->fd, cmsg, size, flags));
     if (r < 0) {
         Scm_SysError("send(2) failed");
     }
@@ -327,13 +327,13 @@ ScmObj Scm_SocketSend(ScmSocket *sock, ScmString *msg, int flags)
 ScmObj Scm_SocketSendTo(ScmSocket *sock, ScmString *msg, ScmSockAddr *to,
                         int flags)
 {
-    int r;
+    int r; u_int size;
+    const char *cmsg;
     if (SOCKET_CLOSED(sock->fd)) {
         Scm_Error("attempt to send to a closed socket: %S", sock);
     }
-    SCM_SYSCALL(r, sendto(sock->fd,
-                          SCM_STRING_START(msg), SCM_STRING_SIZE(msg),
-                          flags,
+    cmsg = Scm_GetStringContent(msg, &size, NULL, NULL);
+    SCM_SYSCALL(r, sendto(sock->fd, cmsg, size, flags,
                           &SCM_SOCKADDR(to)->addr, SCM_SOCKADDR(to)->addrlen));
     if (r < 0) {
         Scm_SysError("sendto(2) failed");
@@ -387,8 +387,10 @@ ScmObj Scm_SocketSetOpt(ScmSocket *s, int level, int option, ScmObj value)
         Scm_Error("attempt to set a socket option of a closed socket: %S", s);
     }
     if (SCM_STRINGP(value)) {
-        SCM_SYSCALL(r, setsockopt(s->fd, level, option, SCM_STRING_START(value),
-                                    SCM_STRING_SIZE(value)));
+        u_int size;
+        const char *cvalue = Scm_GetStringContent(SCM_STRING(value), &size,
+                                                  NULL, NULL);
+        SCM_SYSCALL(r, setsockopt(s->fd, level, option, cvalue, size));
     } else if (SCM_INTP(value) || SCM_BIGNUMP(value)) {
         int v = Scm_GetInteger(value);
         SCM_SYSCALL(r, setsockopt(s->fd, level, option, &v, sizeof(int)));

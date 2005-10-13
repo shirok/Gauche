@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.441 2005-10-04 10:52:19 shirok Exp $
+ *  $Id: gauche.h,v 1.442 2005-10-13 08:14:13 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -935,37 +935,97 @@ SCM_EXTERN ScmObj Scm_GetStandardCharSet(int id);
  * STRING
  */
 
-/* NB: Conceptually, object immutablility is not specific for strings,
- * so the immutable flag has to be in SCM_HEADER or somewhere else.
- * In practical situations, however, what ususally matters is string
- * immutability (like the return value of symbol->string).  So I keep
- * string specific immutable flag.
+/* [String mutation and MT safety]
+ * Scheme String is mutable (unfortunately).  The fields of a string
+ * may be altered by another thread while you're reading it.  For MT
+ * safety, it is important that we ensure the atomicity in retrieving
+ * string length/size and content.
+ *
+ * It isn't practical to use mutex for every string access, so we use
+ * atomicity of pointer dereference and assignments.  The actual string
+ * fields are stored in immutable structure, ScmStringBody, and a Scheme
+ * string, ScmString, has a pointer to it.  When mutation occurs, a new
+ * ScmStringBody is allocated, and the pointer is altered.  So, as far
+ * as the client retrieves ScmStringBody first, then use its field values,
+ * the client won't see inconsistent state.
+ * Alternatively, the client can use Scm_GetStringContent(), which
+ * retrieves length, size and char array atomically.
+ *
+ * We further use an assumption that mutation of strings is rare.
+ * So ScmString is allocated with initial body.   The 'body' pointer
+ * of ScmString is NULL when it is created, which indicates the initial
+ * body is used (this convention allows static definition of ScmString).
+ * Once the string is mutated, a new the 'body' pointer points to a
+ * fresh ScmStringBody.  Note that it means the initial content of the
+ * string, pointed by initialBody.start, won't be GC-ed as far as the
+ * ScmString is alive, even if its content is mutated and the initial
+ * content isn't used.  
  */
+
+typedef struct ScmStringBodyRec {
+    unsigned int flags;
+    unsigned int length;
+    unsigned int size;
+    const char *start;
+} ScmStringBody;
 
 struct ScmStringRec {
     SCM_HEADER;
-    unsigned int incomplete : 1;
-    unsigned int immutable : 1;
-    unsigned int length : (SIZEOF_INT*CHAR_BIT-2);
-    unsigned int size;
-    const char *start;
+    const ScmStringBody *body;  /* may be NULL if we use initial body. */
+    ScmStringBody initialBody;  /* initial body */
 };
+
+/* The flag value.  Runtime strings can have flag bits reserved by
+   SCM_STRING_FLAG_MASK.  (The rest of the bits are used in Scm_MakeString */
+enum {
+    SCM_STRING_IMMUTABLE  = (1L<<0),
+    SCM_STRING_INCOMPLETE = (1L<<1)
+};
+#define SCM_STRING_FLAG_MASK  (0xffff)
 
 #define SCM_STRINGP(obj)        SCM_XTYPEP(obj, SCM_CLASS_STRING)
 #define SCM_STRING(obj)         ((ScmString*)(obj))
-#define SCM_STRING_LENGTH(obj)  (SCM_STRING(obj)->length)
-#define SCM_STRING_SIZE(obj)    (SCM_STRING(obj)->size)
-#define SCM_STRING_START(obj)   (SCM_STRING(obj)->start)
+#define SCM_STRING_BODY(obj) \
+    ((const ScmStringBody*)(SCM_STRING(obj)->body?SCM_STRING(obj)->body:&SCM_STRING(obj)->initialBody))
 
-#define SCM_STRING_INCOMPLETE_P(obj) (SCM_STRING(obj)->incomplete)
-#define SCM_STRING_IMMUTABLE_P(obj)  (SCM_STRING(obj)->immutable)
+/* Accessor macros for string body */
+#define SCM_STRING_BODY_LENGTH(body)       ((body)->length)
+#define SCM_STRING_BODY_SIZE(body)         ((body)->size)
+#define SCM_STRING_BODY_START(body)        ((body)->start)
+#define SCM_STRING_BODY_FLAGS(body)        ((body)->flags)
+
+#define SCM_STRING_BODY_HAS_FLAG(body, flag) \
+    (SCM_STRING_BODY_FLAGS(body)&(flag))
+#define SCM_STRING_BODY_INCOMPLETE_P(body)   \
+    SCM_STRING_BODY_HAS_FLAG(body, SCM_STRING_INCOMPLETE)
+#define SCM_STRING_BODY_IMMUTABLE_P(body)    \
+    SCM_STRING_BODY_HAS_FLAG(body, SCM_STRING_IMMUTABLE)
+#define SCM_STRING_BODY_SINGLE_BYTE_P(body) \
+    (SCM_STRING_BODY_SIZE(body)==SCM_STRING_BODY_LENGTH(body))
+
+/* This is MT-safe, for string immutability won't change */
+#define SCM_STRING_IMMUTABLE_P(obj)  \
+    SCM_STRING_BODY_IMMUTABLE_P(SCM_STRING_BODY(obj))
+
+#define SCM_STRING_NULL_P(obj) \
+    (SCM_STRING_BODY_SIZE(SCM_STRING_BODY(obj)) == 0)
+
+/* Macros for backward compatibility.  Use of these are deprecated,
+   since they are not MT-safe.  Use SCM_STRING_BODY_* macros or
+   Scm_GetString* API. */
+#define SCM_STRING_LENGTH(obj)  (SCM_STRING_BODY(obj)->length)
+#define SCM_STRING_SIZE(obj)    (SCM_STRING_BODY(obj)->size)
+#define SCM_STRING_START(obj)   (SCM_STRING_BODY(obj)->start)
+#define SCM_STRING_INCOMPLETE_P(obj)  \
+    (SCM_STRING_BODY_INCOMPLETE_P(SCM_STRING_BODY(obj)))
 #define SCM_STRING_SINGLE_BYTE_P(obj) \
     (SCM_STRING_SIZE(obj)==SCM_STRING_LENGTH(obj))
 
-/* constructor flags */
-#define SCM_MAKSTR_COPYING     (1L<<0)
-#define SCM_MAKSTR_INCOMPLETE  (1L<<1)
-#define SCM_MAKSTR_IMMUTABLE   (1L<<2)
+
+/* Constructor flags */
+#define SCM_MAKSTR_INCOMPLETE  SCM_STRING_INCOMPLETE
+#define SCM_MAKSTR_IMMUTABLE   SCM_STRING_IMMUTABLE
+#define SCM_MAKSTR_COPYING     (1L<<16) /* FIXME */
 
 #define SCM_MAKE_STR(cstr) \
     Scm_MakeString(cstr, -1, -1, 0)
@@ -992,12 +1052,17 @@ SCM_EXTERN int     Scm_MBLen(const char *str, const char *stop);
 SCM_EXTERN ScmObj  Scm_MakeString(const char *str, int size, int len,
 				  int flags);
 SCM_EXTERN ScmObj  Scm_MakeFillString(int len, ScmChar fill);
-SCM_EXTERN ScmObj  Scm_CopyString(ScmString *str);
+SCM_EXTERN ScmObj  Scm_CopyStringWithFlags(ScmString *str, int flags, int mask);
+#define Scm_CopyString(str) \
+    Scm_CopyStringWithFlags(str, 0, SCM_STRING_IMMUTABLE)
 
 SCM_EXTERN char*   Scm_GetString(ScmString *str);
 SCM_EXTERN const char* Scm_GetStringConst(ScmString *str);
+SCM_EXTERN const char* Scm_GetStringContent(ScmString *str,
+                                            unsigned int *psize,
+                                            unsigned int *plen,
+                                            unsigned int *pflags);
 
-SCM_EXTERN ScmObj  Scm_StringMakeImmutable(ScmString *str);
 SCM_EXTERN ScmObj  Scm_StringCompleteToIncompleteX(ScmString *str);
 SCM_EXTERN ScmObj  Scm_StringIncompleteToCompleteX(ScmString *str);
 SCM_EXTERN ScmObj  Scm_StringCompleteToIncomplete(ScmString *str);
@@ -1008,9 +1073,9 @@ SCM_EXTERN int     Scm_StringCmp(ScmString *x, ScmString *y);
 SCM_EXTERN int     Scm_StringCiCmp(ScmString *x, ScmString *y);
 
 SCM_EXTERN const char *Scm_StringPosition(ScmString *str, int k);
-SCM_EXTERN ScmChar Scm_StringRef(ScmString *str, int k);
+SCM_EXTERN ScmChar Scm_StringRef(ScmString *str, int k, int range_error);
 SCM_EXTERN ScmObj  Scm_StringSet(ScmString *str, int k, ScmChar sc);
-SCM_EXTERN int     Scm_StringByteRef(ScmString *str, int k);
+SCM_EXTERN int     Scm_StringByteRef(ScmString *str, int k, int range_error);
 SCM_EXTERN ScmObj  Scm_StringByteSet(ScmString *str, int k, ScmByte b);
 SCM_EXTERN ScmObj  Scm_StringSubstitute(ScmString *target, int start,
 					ScmString *str);
@@ -1040,7 +1105,6 @@ enum {
     SCM_STRING_SCAN_BOTH        /* return substr of s1 before and after s2 */
 };
 
-SCM_EXTERN ScmObj  Scm_StringP(ScmObj obj);
 SCM_EXTERN ScmObj  Scm_StringToList(ScmString *str);
 SCM_EXTERN ScmObj  Scm_ListToString(ScmObj chars);
 SCM_EXTERN ScmObj  Scm_StringFill(ScmString *str, ScmChar c,
@@ -1057,7 +1121,8 @@ SCM_EXTERN ScmObj Scm_CStringArrayToList(char **array, int size);
    of strings. */
 
 #define SCM_STRING_CONST_INITIALIZER(str, len, siz)             \
-    { { SCM_CLASS2TAG(SCM_CLASS_STRING) }, 0, 1, (len), (siz), (str) }
+    { { SCM_CLASS2TAG(SCM_CLASS_STRING) }, NULL, \
+      { SCM_STRING_IMMUTABLE, (len), (siz), (str) } }
 
 #define SCM_DEFINE_STRING_CONST(name, str, len, siz)            \
     ScmString name = SCM_STRING_CONST_INITIALIZER(str, len, siz)
@@ -1090,7 +1155,7 @@ struct ScmDStringRec {
 
 SCM_EXTERN void        Scm_DStringInit(ScmDString *dstr);
 SCM_EXTERN int         Scm_DStringSize(ScmDString *dstr);
-SCM_EXTERN ScmObj      Scm_DStringGet(ScmDString *dstr);
+SCM_EXTERN ScmObj      Scm_DStringGet(ScmDString *dstr, int flags);
 SCM_EXTERN const char *Scm_DStringGetz(ScmDString *dstr);
 SCM_EXTERN void        Scm_DStringPutz(ScmDString *dstr, const char *str,
 				       int siz);

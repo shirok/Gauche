@@ -1,3 +1,14 @@
+2005-10-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/string.c, src/gauche.h (ScmString): API CHANGE: ScmString
+	  is splitted into the header part and the immutable body
+	  (ScmStringBody), for thread safety.  See the lengthy comment
+	  in the STRING section of gauche.h.  New thread-safe API,
+	  Scm_GetStringContent and SCM_STRING_BODY* macros are added.
+	  Use of SCM_STRING_LENGTH, SCM_STRING_SIZE and SCM_STRING_START
+	  is deprecated.
+	* src/*.{c,stub}, ext/*/*.{c,stub}: adapted to the above changes.
+
 2005-10-07  Shiro Kawai  <shiro@acm.org>
 
 	* ext/srfi/srfi-19-lib.scm (tm:integer-reader-exact): fixed typo.

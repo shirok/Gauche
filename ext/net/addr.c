@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: addr.c,v 1.21 2004-10-09 11:36:36 shirok Exp $
+ *  $Id: addr.c,v 1.22 2005-10-13 08:14:13 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -128,11 +128,13 @@ static ScmObj sockaddr_un_allocate(ScmClass *klass, ScmObj initargs)
     memset(&addr->addr, 0, sizeof(struct sockaddr_un));
     addr->addr.sun_family = AF_UNIX;
     if (SCM_STRINGP(path)) {
-        int size = SCM_STRING_SIZE(path);
+        int size;
+        const char *cpath = Scm_GetStringContent(SCM_STRING(path), &size,
+                                                 NULL, NULL);
         if (size >= UNIX_ADDRESS_PATH_MAX-1) {
             Scm_Error("path too long: %S", path);
         }
-        memcpy(addr->addr.sun_path, SCM_STRING_START(path), size);
+        memcpy(addr->addr.sun_path, cpath, size);
         addr->addr.sun_path[size] = '\0';
     }
     addr->addrlen = sizeof(struct sockaddr_un);

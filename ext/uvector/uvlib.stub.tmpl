@@ -35,7 +35,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; \$Id: uvlib.stub.tmpl,v 1.7 2005-08-07 23:42:23 shirok Exp $
+;;; \$Id: uvlib.stub.tmpl,v 1.8 2005-10-13 08:14:13 shirok Exp $
 ;;;
 
 "
@@ -231,11 +231,12 @@
 ;;; String operations 
 "static ScmObj string_to_bytevector(ScmClass *klass, ScmString *s, int start, int end)
  {
-  int len = SCM_STRING_LENGTH(s); const char *sp, *ep; char *buf;
+  u_int size, len; const char *ss, *sp, *ep; char *buf;
+  ss = Scm_GetStringContent(s, &size, &len, NULL);
   SCM_CHECK_START_END(start, end, len);
-  if (start == 0) sp = SCM_STRING_START(s);
+  if (start == 0) sp = ss;
   else sp = Scm_StringPosition(s, start);
-  if (end == len) ep = SCM_STRING_START(s)+SCM_STRING_SIZE(s);
+  if (end == len) ep = ss + size;
   else ep = Scm_StringPosition(s, end);
   buf = SCM_NEW_ATOMIC2(char *, ep-sp);
   memcpy(buf, sp, ep-sp);
@@ -254,15 +255,16 @@
 
 "static ScmObj string_to_bytevectorX(ScmUVector *v, int tstart, ScmString *s, int start, int end)
  {
-   int len = SCM_STRING_LENGTH(s); const char *sp, *ep; char *buf;
+   u_int size, len; const char *ss, *sp, *ep; char *buf;
    int tlen = SCM_UVECTOR_SIZE(v), i;
 
    if (tstart >= tlen || tstart < 0) return SCM_OBJ(v);
    SCM_UVECTOR_CHECK_MUTABLE(v);
+   ss = Scm_GetStringContent(s, &size, &len, NULL);
    SCM_CHECK_START_END(start, end, len);
-   if (start == 0) sp = SCM_STRING_START(s);
+   if (start == 0) sp = ss;
    else sp = Scm_StringPosition(s, start);
-   if (end == len) ep = SCM_STRING_START(s)+SCM_STRING_SIZE(s);
+   if (end == len) ep = ss+size;
    else ep = Scm_StringPosition(s, end);
 
    buf = (char *)SCM_UVECTOR_ELEMENTS(v) + tstart;
@@ -309,12 +311,13 @@
 
 "static ScmObj string_to_wordvector(ScmClass *klass, ScmString *s, int start, int end)
  {
-  int len = SCM_STRING_LENGTH(s), i; const char *sp, *ep;
+  u_int size, len, i; const char *ss, *sp, *ep;
   ScmObj v; ScmInt32 *eltp;
+  ss = Scm_GetStringContent(s, &size, &len, NULL);
   SCM_CHECK_START_END(start, end, len);
-  if (start == 0) sp = SCM_STRING_START(s);
+  if (start == 0) sp = ss;
   else sp = Scm_StringPosition(s, start);
-  if (end == len) ep = SCM_STRING_START(s)+SCM_STRING_SIZE(s);
+  if (end == len) ep = ss+size;
   else ep = Scm_StringPosition(s, end);
   v = Scm_MakeUVector(klass, end - start, NULL);
   eltp = (ScmInt32*)SCM_UVECTOR_ELEMENTS(v);

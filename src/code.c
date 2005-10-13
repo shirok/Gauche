@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: code.c,v 1.9 2005-08-29 09:15:55 shirok Exp $
+ *  $Id: code.c,v 1.10 2005-10-13 08:14:13 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -206,7 +206,7 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
                 Scm_Puts(SCM_STRING(s), SCM_CUROUT);
                 Scm_Putc('\n', SCM_CUROUT);
             } else {
-                int len = SCM_STRING_SIZE(s);
+                int len = SCM_STRING_BODY_SIZE(SCM_STRING_BODY(s));
                 ScmObj srcinfo = Scm_Assq(SCM_SYM_SOURCE_INFO, info);
                 ScmObj bindinfo = Scm_Assq(SCM_SYM_BIND_INFO, info);
                 Scm_Puts(SCM_STRING(s), SCM_CUROUT);

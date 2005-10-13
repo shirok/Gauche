@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: auxsyslib.stub,v 1.26 2005-08-08 04:10:21 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.27 2005-10-13 08:14:13 shirok Exp $
 ;;;
 
 "
@@ -287,14 +287,15 @@
 (if "defined HAVE_PUTENV"
   (define-cproc %sys-putenv (name::<string> value::<string>)
     (body <void>
-          "char *buf; int namelen, valuelen, len;"
-          "namelen = SCM_STRING_SIZE(name);"
-          "valuelen = SCM_STRING_SIZE(value);"
+          "char *buf;"
+          "u_int namelen, valuelen, len;"
+          "const char *cname = Scm_GetStringContent(name, &namelen, NULL, NULL);"
+          "const char *cvalue = Scm_GetStringContent(value, &valuelen, NULL, NULL);"
           "len = namelen + valuelen + 2;"
           "buf = (char*)malloc(len);"
-          "memcpy(buf, SCM_STRING_START(name), namelen);"
+          "memcpy(buf, cname, namelen);"
           "buf[namelen] = '=';"
-          "memcpy(buf+namelen+1, SCM_STRING_START(value), valuelen);"
+          "memcpy(buf+namelen+1, cvalue, valuelen);"
           "buf[len-1] = '\\0';"
           "putenv(buf);"))
 )

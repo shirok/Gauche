@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.102 2005-09-21 05:15:25 shirok Exp $
+ *  $Id: load.c,v 1.103 2005-10-13 08:14:13 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -281,8 +281,8 @@ static ScmObj try_suffixes(ScmObj base, ScmObj suffixes)
 ScmObj Scm_FindFile(ScmString *filename, ScmObj *paths,
                     ScmObj suffixes, int flags)
 {
-    int size = SCM_STRING_LENGTH(filename);
-    const char *ptr = SCM_STRING_START(filename);
+    u_int size;
+    const char *ptr = Scm_GetStringContent(filename, &size, NULL, NULL);
     int use_load_paths = TRUE;
     ScmObj file = SCM_OBJ(filename), fpath = SCM_FALSE;
 

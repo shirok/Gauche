@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.40 2005-08-06 12:31:36 shirok Exp $
+ *  $Id: hash.c,v 1.41 2005-10-13 08:14:13 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -202,8 +202,9 @@ unsigned long Scm_Hash(ScmObj obj)
   string_hash:
     {
         const char *p;
-        p = SCM_STRING_START(obj);
-        STRING_HASH(hashval, p, SCM_STRING_SIZE(obj));
+        const ScmStringBody *b = SCM_STRING_BODY(obj);
+        p = SCM_STRING_BODY_START(b);
+        STRING_HASH(hashval, p, SCM_STRING_BODY_SIZE(b));
         return hashval;
     }
 }
@@ -212,8 +213,9 @@ unsigned long Scm_HashString(ScmString *str, unsigned long modulo)
 {
     unsigned long hashval;
     const char *p;
-    p = SCM_STRING_START(str);
-    STRING_HASH(hashval, p, SCM_STRING_SIZE(str));
+    const ScmStringBody *b = SCM_STRING_BODY(str);
+    p = SCM_STRING_BODY_START(b);
+    STRING_HASH(hashval, p, SCM_STRING_BODY_SIZE(b));
     return (hashval % modulo);
 }
 
@@ -385,21 +387,25 @@ static ScmHashEntry *string_access(ScmHashTable *table, void *k,
     const char *s;
     ScmObj key = SCM_OBJ(k), value = SCM_OBJ(v);
     ScmHashEntry *e, *p;
+    const ScmStringBody *keyb;
     
     if (!SCM_STRINGP(key)) {
         Scm_Error("Got non-string key %S to the string hashtable %S",
                   key, table);
     }
-    s = SCM_STRING_START(key);
-    size = SCM_STRING_SIZE(key);
+    keyb = SCM_STRING_BODY(key);
+    s = SCM_STRING_BODY_START(keyb);
+    size = SCM_STRING_BODY_SIZE(keyb);
     STRING_HASH(hashval, s, size);
     index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
 
     for (e = table->buckets[index], p = NULL; e; p = e, e = e->next) {
         ScmObj ee = SCM_OBJ(e->key);
-        int eesize = SCM_STRING_SIZE(ee);
+        const ScmStringBody *eeb = SCM_STRING_BODY(ee);
+        int eesize = SCM_STRING_BODY_SIZE(eeb);
         if (size == eesize
-            && memcmp(SCM_STRING_START(key), SCM_STRING_START(ee), eesize) == 0){
+            && memcmp(SCM_STRING_BODY_START(keyb),
+                      SCM_STRING_BODY_START(eeb), eesize) == 0){
             if (mode == HASH_FIND || mode == HASH_ADD) return e;
             if (mode == HASH_DELETE) return delete_entry(table, e, p, index);
             else {
@@ -417,8 +423,9 @@ static unsigned long string_hash(ScmHashTable *table, void *key)
 {
     unsigned long hashval;
     const char *p;
-    p = SCM_STRING_START(key);
-    STRING_HASH(hashval, p, SCM_STRING_SIZE(key));
+    const ScmStringBody *b = SCM_STRING_BODY(key);
+    p = SCM_STRING_BODY_START(b);
+    STRING_HASH(hashval, p, SCM_STRING_BODY_SIZE(b));
     return hashval;
 }
 

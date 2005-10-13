@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.56 2005-10-04 10:52:19 shirok Exp $
+ *  $Id: write.c,v 1.57 2005-10-13 08:14:13 shirok Exp $
  */
 
 #include <stdio.h>
@@ -360,7 +360,7 @@ static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             obj = SCM_CDR(obj);
             continue;
         }
-        if (SCM_STRINGP(obj) && SCM_STRING_SIZE(obj) > 0) {
+        if (SCM_STRINGP(obj) && !SCM_STRING_NULL_P(obj)) {
             e = Scm_HashTableGet(ht, obj);
             if (e) { e->value = SCM_TRUE; return; }
             Scm_HashTablePut(ht, obj, SCM_FALSE);
@@ -445,7 +445,7 @@ static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         return;
     }
     
-    if ((SCM_STRINGP(obj) && SCM_STRING_SIZE(obj) == 0)
+    if ((SCM_STRINGP(obj) && SCM_STRING_NULL_P(obj))
         || (SCM_VECTORP(obj) && SCM_VECTOR_SIZE(obj) == 0)) {
         /* special case where we don't put a reference tag. */
         write_general(obj, port, ctx);
@@ -600,7 +600,7 @@ static void format_pad(ScmPort *out, ScmString *str,
                        int mincol, int colinc, ScmChar padchar,
                        int rightalign)
 {
-    int padcount = mincol- SCM_STRING_LENGTH(str);
+    int padcount = mincol- SCM_STRING_BODY_LENGTH(SCM_STRING_BODY(str));
     int i;
     
     if (padcount > 0) {
@@ -649,7 +649,7 @@ static void format_sexp(ScmPort *out, ScmObj arg,
     tmpstr = SCM_STRING(Scm_GetOutputString(SCM_PORT(tmpout)));
 
     if (maxcol > 0 && nwritten < 0) {
-        const char *s = SCM_STRING_START(tmpstr), *e;
+        const char *s = Scm_GetStringContent(tmpstr, NULL, NULL, NULL), *e;
         if (dots && maxcol > 4) {
             e = Scm_StringPosition(tmpstr, maxcol-4);
             Scm_PutzUnsafe(s, e-s, out);
@@ -685,7 +685,7 @@ static void format_integer(ScmPort *out, ScmObj arg,
     if (nparams>2 && SCM_CHARP(params[2])) commachar = SCM_CHAR_VALUE(params[2]);
     if (nparams>3 && SCM_INTP(params[3])) commainterval = SCM_INT_VALUE(params[3]);
     str = Scm_NumberToString(arg, radix, use_upper);
-    if (alwayssign && SCM_STRING_START(str)[0] != '-') {
+    if (alwayssign && SCM_STRING_BODY_START(SCM_STRING_BODY(str))[0] != '-') {
         str = Scm_StringAppend2(SCM_STRING(SCM_MAKE_STR("+")),
                                 SCM_STRING(str));
     }
@@ -696,8 +696,9 @@ static void format_integer(ScmPort *out, ScmObj arg,
            contradicts its examples; it is ambiguous about what happens
            if the number is padded. */
         ScmDString tmpout;
-        const char *ptr = SCM_STRING_START(str);
-        int num_digits = SCM_STRING_LENGTH(str), colcnt;
+        u_int num_digits, colcnt;
+        const char *ptr = Scm_GetStringContent(SCM_STRING(str), &num_digits,
+                                               NULL, NULL);
 
         Scm_DStringInit(&tmpout);
         if (*ptr == '-' || *ptr == '+') {
@@ -712,7 +713,7 @@ static void format_integer(ScmPort *out, ScmObj arg,
             Scm_DStringPutz(&tmpout, ptr+colcnt, commainterval);
             colcnt += commainterval;
         }
-        str = Scm_DStringGet(&tmpout);
+        str = Scm_DStringGet(&tmpout, 0);
     }
     format_pad(out, SCM_STRING(str), mincol, 1, padchar, TRUE);
 }
@@ -1059,7 +1060,9 @@ static void vprintf_proc(ScmPort *out, const char *fmt, ScmObj args,
                     /* TODO: support right adjustment such as %-10s.
                        Currently we ignore minus sign and pad chars
                        on the right. */
-                    for (len = SCM_STRING_LENGTH(val); len < width; len++) {
+                    for (len = SCM_STRING_BODY_LENGTH(SCM_STRING_BODY(val));
+                         len < width;
+                         len++) {
                         Scm_PutcUnsafe(' ', out);
                     }
                     break;

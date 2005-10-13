@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vport.c,v 1.11 2005-07-22 09:26:55 shirok Exp $
+ *  $Id: vport.c,v 1.12 2005-10-13 08:14:13 shirok Exp $
  */
 
 #include "gauche/vport.h"
@@ -162,16 +162,17 @@ static int vport_getz(char *buf, int buflen, ScmPort *p)
     SCM_ASSERT(data != NULL);
 
     if (!SCM_FALSEP(data->gets_proc)) {
-        int size;
+        u_int size;
+        const char *start;
         ScmObj s = Scm_Apply(data->gets_proc, SCM_LIST1(SCM_MAKE_INT(buflen)));
         if (!SCM_STRINGP(s)) return EOF;
-        size = SCM_STRING_SIZE(s);
+        start = Scm_GetStringContent(SCM_STRING(s), &size, NULL, NULL);
         if (size > buflen) {
             /* NB: should raise an exception? */
-            memcpy(buf, SCM_STRING_START(s), buflen);
+            memcpy(buf, start, buflen);
             return buflen;
         } else {
-            memcpy(buf, SCM_STRING_START(s), size);
+            memcpy(buf, start, size);
             return size;
         }
     } else {
@@ -283,20 +284,21 @@ static void vport_putz(const char *buf, int size, ScmPort *p)
 static void vport_puts(ScmString *s, ScmPort *p)
 {
     vport *data = (vport*)p->src.vt.data;
+    const ScmStringBody *b = SCM_STRING_BODY(s);
     SCM_ASSERT(data != NULL);
 
     if (!SCM_FALSEP(data->puts_proc)) {
         Scm_Apply(data->puts_proc, SCM_LIST1(SCM_OBJ(s)));
-    } else if (SCM_STRING_INCOMPLETE_P(s) 
+    } else if (SCM_STRING_BODY_INCOMPLETE_P(b) 
                || (SCM_FALSEP(data->putc_proc)
                    && !SCM_FALSEP(data->putb_proc))) {
         /* we perform binary output */
-        vport_putz(SCM_STRING_START(s), SCM_STRING_SIZE(s), p);
+        vport_putz(SCM_STRING_BODY_START(b), SCM_STRING_BODY_SIZE(b), p);
     } else if (!SCM_FALSEP(data->putc_proc)) {
         ScmChar c;
         int i;
-        const char *cp = SCM_STRING_START(s);
-        for (i=0; i < SCM_STRING_LENGTH(s); i++) {
+        const char *cp = SCM_STRING_BODY_START(b);
+        for (i=0; i < SCM_STRING_BODY_LENGTH(b); i++) {
             SCM_CHAR_GET(cp, c);
             cp += SCM_CHAR_NFOLLOWS(*cp)+1;
             Scm_Apply(data->putc_proc, SCM_LIST1(SCM_MAKE_CHAR(c)));

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.255 2005-09-10 09:10:32 shirok Exp $
+;;; $Id: extlib.stub,v 1.256 2005-10-13 08:14:13 shirok Exp $
 ;;;
 
 "
@@ -433,7 +433,7 @@
   (call "Scm_StringIncompleteToComplete"))
 
 (define-cproc string-size (str::<string>)
-  (call <fixnum> "SCM_STRING_SIZE"))
+  (expr <fixnum> "SCM_STRING_BODY_SIZE(SCM_STRING_BODY(str))"))
 
 (define-cproc make-byte-string (size::<fixnum> &optional (byte::<fixnum> 0))
   "char *s;
@@ -443,13 +443,8 @@
   SCM_RETURN(Scm_MakeString(s, size, size, SCM_MAKSTR_INCOMPLETE));")
 
 (define-cproc string-byte-ref (str::<string> k::<fixnum> &optional fallback)
-  "  int r;
-  if (!SCM_UNBOUNDP(fallback) && (k < 0 || k >= SCM_STRING_SIZE(str))) {
-    SCM_RETURN(fallback);
-  } else {
-    r = Scm_StringByteRef(str, k);
-    SCM_RETURN(SCM_MAKE_INT(r));
-  }")
+  (body "int r = Scm_StringByteRef(str, k, SCM_UNBOUNDP(fallback));"
+        "SCM_RESULT = (r<0)? fallback : SCM_MAKE_INT(r);"))
 
 (define-cproc string-byte-set! (str::<string> k::<fixnum> b::<fixnum>)
   (call "Scm_StringByteSet"))
@@ -785,6 +780,7 @@
 "static int bufport_filler(ScmPort *p, int cnt)
  {
     ScmObj scmfiller, r;  int siz;
+    const ScmStringBody *b;
     scmfiller = SCM_OBJ(p->src.buf.data);
     /* no need to use VMApply; we're in the C callback */
     r = Scm_Apply(scmfiller, SCM_LIST1(Scm_MakeInteger(cnt)));
@@ -793,10 +789,11 @@
     } else if (!SCM_STRINGP(r)) {
        Scm_Error(\"buffered port callback procedure returned non-string: %S\", r);
     }
-    siz = SCM_STRING_SIZE(r);
+    b = SCM_STRING_BODY(r);
+    siz = SCM_STRING_BODY_SIZE(b);
     if (siz > cnt) siz = cnt; /* for safety */
-    memcpy(p->src.buf.end, SCM_STRING_START(r), siz);
-    return SCM_STRING_SIZE(r);
+    memcpy(p->src.buf.end, SCM_STRING_BODY_START(b), siz);
+    return SCM_STRING_BODY_SIZE(b);
  }"
 
 (define-cproc open-input-buffered-port (filler::<procedure>

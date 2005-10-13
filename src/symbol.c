@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: symbol.c,v 1.36 2005-09-10 23:31:49 shirok Exp $
+ *  $Id: symbol.c,v 1.37 2005-10-13 08:14:13 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -59,7 +59,8 @@ ScmObj Scm_Intern(ScmString *name)
     ScmHashEntry *e = Scm_HashTableGet(obtable, SCM_OBJ(name));
     if (e) return e->value;
     else {
-        ScmObj n = Scm_StringMakeImmutable(SCM_STRING(Scm_CopyString(name)));
+        ScmObj n = Scm_CopyStringWithFlags(name, SCM_STRING_IMMUTABLE,
+                                           SCM_STRING_IMMUTABLE);
         ScmSymbol *sym;
         INITSYM(sym, n);
         Scm_HashTablePut(obtable, n, SCM_OBJ(sym));
@@ -123,8 +124,9 @@ static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         /* TODO: For now, we regard chars over 0x80 is all "printable".
            Need a more consistent mechanism. */
         ScmString *snam = SCM_SYMBOL(obj)->name;
-        const char *p = SCM_STRING_START(snam), *q;
-        int siz = SCM_STRING_SIZE(snam), i;
+        const ScmStringBody *b = SCM_STRING_BODY(snam);
+        const char *p = SCM_STRING_BODY_START(b), *q;
+        int siz = SCM_STRING_BODY_SIZE(b), i;
         int escape = FALSE;
         int case_mask =
             ((SCM_WRITE_CASE(ctx) == SCM_WRITE_CASE_FOLD)? 0x12 : 0x02);

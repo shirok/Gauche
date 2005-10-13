@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.68 2005-09-30 21:17:58 shirok Exp $
+ *  $Id: system.c,v 1.69 2005-10-13 08:14:13 shirok Exp $
  */
 
 #include <stdio.h>
@@ -251,8 +251,9 @@ const char *Scm_PathDelimiter(void)
 
 ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
 {
-    const char *str = SCM_STRING_START(pathname), *srcp = str;
-    int size = SCM_STRING_SIZE(pathname);
+    u_int size;
+    const char *str = Scm_GetStringContent(pathname, &size, NULL, NULL);
+    const char *srcp = str;
     char *buf = NULL, *dstp;
     int bottomp = FALSE;
     
@@ -403,8 +404,8 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
 
 ScmObj Scm_BaseName(ScmString *filename)
 {
-    const char *p, *str = SCM_STRING_START(filename);
-    int i, size = SCM_STRING_SIZE(filename);
+    u_int i, size;
+    const char *p, *str = Scm_GetStringContent(filename, &size, NULL, NULL);
 
     if (size == 0) return SCM_MAKE_STR("");
     p = str+size-1;
@@ -420,8 +421,8 @@ ScmObj Scm_BaseName(ScmString *filename)
 
 ScmObj Scm_DirName(ScmString *filename)
 {
-    const char *p, *str = SCM_STRING_START(filename);
-    int i, size = SCM_STRING_SIZE(filename);
+    u_int i, size;
+    const char *p, *str = Scm_GetStringContent(filename, &size, NULL, NULL);
 
     if (size == 0) return SCM_MAKE_STR(".");
     p = str+size-1;
@@ -485,11 +486,13 @@ ScmObj Scm_SysMkstemp(ScmString *templat)
 #define MKSTEMP_PATH_MAX 1025  /* Geez, remove me */
     char name[MKSTEMP_PATH_MAX];
     ScmObj sname;
-    int siz = SCM_STRING_SIZE(templat), fd;
+    u_int siz;
+    int fd;
+    const char *t = Scm_GetStringContent(templat, &siz, NULL, NULL);
     if (siz >= MKSTEMP_PATH_MAX-6) { 
 	Scm_Error("pathname too long: %S", templat);
     }
-    memcpy(name, SCM_STRING_START(templat), siz);
+    memcpy(name, t, siz);
     memcpy(name + siz, "XXXXXX", 6);
     name[siz+6] = '\0';
     fd = Scm_Mkstemp(name);

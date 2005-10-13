@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.82 2005-10-03 20:57:45 shirok Exp $
+ *  $Id: read.c,v 1.83 2005-10-13 08:14:13 shirok Exp $
  */
 
 #include <stdio.h>
@@ -718,11 +718,9 @@ static ScmObj read_string(ScmPort *port, int incompletep,
         switch (c) {
           case EOF: goto eof_exit;
           case '"': {
-              ScmString *s = SCM_STRING(Scm_DStringGet(&ds));
-              if (incompletep) {
-                  s = SCM_STRING(Scm_StringCompleteToIncompleteX(s));
-              }
-              return Scm_StringMakeImmutable(s);
+              int flags = ((incompletep? SCM_STRING_INCOMPLETE : 0)
+                           | SCM_STRING_IMMUTABLE);
+              return Scm_DStringGet(&ds, flags);
           }
           case '\\': {
             int c1 = Scm_GetcUnsafe(port);
@@ -758,7 +756,8 @@ static ScmObj read_string(ScmPort *port, int incompletep,
         }
     }
  eof_exit:
-    Scm_ReadError(port, "EOF encountered in a string literal: %S", Scm_DStringGet(&ds));
+    Scm_ReadError(port, "EOF encountered in a string literal: %S",
+                  Scm_DStringGet(&ds, 0));
     /* NOTREACHED */
     return SCM_FALSE; 
 }
@@ -793,6 +792,7 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
     int c;
     ScmString *name;
     const char *cname;
+    u_int namelen, namesize;
     struct char_name *cntab = char_names;
     
     c = Scm_GetcUnsafe(port);
@@ -805,26 +805,26 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
     default:
         /* need to read word to see if it is a character name */
         name = SCM_STRING(read_word(port, c, ctx, TRUE));
-        if (SCM_STRING_LENGTH(name) == 1) {
+        cname = Scm_GetStringContent(name, &namesize, &namelen, NULL);
+        if (namelen == 1) {
             return SCM_MAKE_CHAR(c);
         }
-        cname = Scm_GetStringConst(name);
-        if (SCM_STRING_LENGTH(name) != SCM_STRING_SIZE(name)) {
+        if (namelen != namesize) {
             /* no character name contains multibyte chars */
             goto unknown;
         }
 
         /* handle #\x1f etc. */
         if (cname[0] == 'x' && isxdigit(cname[1])) {
-            int code = Scm_ReadXdigitsFromString(cname+1, SCM_STRING_SIZE(name)-1, NULL);
+            int code = Scm_ReadXdigitsFromString(cname+1, namesize-1, NULL);
             if (code < 0) goto unknown;
             return SCM_MAKE_CHAR(code);
         }
         /* handle #\uxxxx or #\uxxxxxxxx*/
         if ((cname[0] == 'u') && isxdigit(cname[1])) {
             int code;
-            if (SCM_STRING_SIZE(name) == 5 || SCM_STRING_SIZE(name) == 9) {
-                code = Scm_ReadXdigitsFromString(cname+1, SCM_STRING_SIZE(name)-1, NULL);
+            if (namesize == 5 || namesize == 9) {
+                code = Scm_ReadXdigitsFromString(cname+1, namesize-1, NULL);
                 if (code >= 0) return SCM_MAKE_CHAR(Scm_UcsToChar(code));
             }
             /* if we come here, it's an error. */
@@ -832,11 +832,11 @@ static ScmObj read_char(ScmPort *port, ScmReadContext *ctx)
         }
 
         while (cntab->name) {
-            if (strcmp(cntab->name, cname) == 0) return cntab->ch;
+            if (strncmp(cntab->name, cname, namesize) == 0) return cntab->ch;
             cntab++;
         }
       unknown:
-        Scm_ReadError(port, "Unknown character name: #\\%s", cname);
+        Scm_ReadError(port, "Unknown character name: #\\%A", name);
     }
     return SCM_UNDEFINED;       /* dummy */
 }
@@ -866,7 +866,7 @@ static ScmObj read_word(ScmPort *port, ScmChar initial, ScmReadContext *ctx,
         c = Scm_GetcUnsafe(port);
         if (c == EOF || !char_word_constituent(c)) {
             Scm_UngetcUnsafe(c, port); 
-            return Scm_DStringGet(&ds);
+            return Scm_DStringGet(&ds, 0);
         }
         if (case_fold && char_word_case_fold(c)) c = tolower(c);
         SCM_DSTRING_PUTC(&ds, c);
@@ -915,7 +915,7 @@ static ScmObj read_escaped_symbol(ScmPort *port, ScmChar delim)
         if (c == EOF) {
             goto err;
         } else if (c == delim) {
-            ScmString *s = SCM_STRING(Scm_DStringGet(&ds));
+            ScmString *s = SCM_STRING(Scm_DStringGet(&ds, 0));
             return Scm_Intern(s);
         } else if (c == '\\') {
             /* CL-style single escape */
@@ -962,7 +962,7 @@ static ScmObj read_regexp(ScmPort *port)
             c = Scm_GetcUnsafe(port);
             if (c == 'i') flags |= SCM_REGEXP_CASE_FOLD;
             else          Scm_UngetcUnsafe(c, port);
-            return Scm_RegComp(SCM_STRING(Scm_DStringGet(&ds)), flags);
+            return Scm_RegComp(SCM_STRING(Scm_DStringGet(&ds, 0)), flags);
         } else {
             SCM_DSTRING_PUTC(&ds, c);
         }

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.52 2005-05-24 07:46:14 shirok Exp $
+ *  $Id: regexp.c,v 1.53 2005-10-13 08:14:13 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -1599,10 +1599,9 @@ ScmObj Scm_RegComp(ScmString *pattern, int flags)
     if (SCM_STRING_INCOMPLETE_P(pattern)) {
         Scm_Error("incomplete string is not allowed: %S", pattern);
     }
-    rx->pattern = SCM_STRING(Scm_MakeString(SCM_STRING_START(pattern),
-                                            SCM_STRING_SIZE(pattern),
-                                            SCM_STRING_LENGTH(pattern),
-                                            SCM_MAKSTR_IMMUTABLE));
+    rx->pattern = SCM_STRING(Scm_CopyStringWithFlags(pattern, 
+                                                     SCM_STRING_IMMUTABLE,
+                                                     SCM_STRING_IMMUTABLE));
     rc_ctx_init(&cctx, rx);
     cctx.casefoldp = flags & SCM_REGEXP_CASE_FOLD;
     rx->flags |= (flags & SCM_REGEXP_CASE_FOLD);
@@ -1918,15 +1917,17 @@ static ScmObj make_match(ScmRegexp *rx, ScmString *orig,
     int i;
     struct match_list *ml;
     ScmRegMatch *rm = SCM_NEW(ScmRegMatch);
+    const ScmStringBody *origb;
     SCM_SET_CLASS(rm, SCM_CLASS_REGMATCH);
     rm->numMatches = rx->numGroups;
     rm->matches = SCM_NEW_ARRAY(struct ScmRegMatchSub, rx->numGroups);
     /* we keep information of original string separately, instead of
        keeping a pointer to orig; For orig may be destructively modified,
        but its elements are not. */
-    rm->input = SCM_STRING_START(orig);
-    rm->inputLen = SCM_STRING_LENGTH(orig);
-    rm->inputSize = SCM_STRING_SIZE(orig);
+    origb = SCM_STRING_BODY(orig);
+    rm->input = SCM_STRING_BODY_START(origb);
+    rm->inputLen = SCM_STRING_BODY_LENGTH(origb);
+    rm->inputSize = SCM_STRING_BODY_SIZE(origb);
     for (i=0; i<rx->numGroups; i++) {
         rm->matches[i].start = -1;
         rm->matches[i].length = -1;
@@ -1961,7 +1962,7 @@ static ScmObj rex(ScmRegexp *rx, ScmString *orig,
     sigjmp_buf cont;
     ctx.rx = rx;
     ctx.codehead = rx->code;
-    ctx.input = SCM_STRING_START(orig);
+    ctx.input = SCM_STRING_BODY_START(SCM_STRING_BODY(orig));
     ctx.stop = end;
     ctx.matches = NULL;
     ctx.begin_stack = (void*)&ctx;
@@ -1980,9 +1981,11 @@ static ScmObj rex(ScmRegexp *rx, ScmString *orig,
  */
 ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
 {
-    const char *start = SCM_STRING_START(str);
-    const char *end = start + SCM_STRING_SIZE(str);
-    int mustMatchLen = rx->mustMatch? SCM_STRING_SIZE(rx->mustMatch) : 0;
+    const ScmStringBody *b = SCM_STRING_BODY(str);
+    const char *start = SCM_STRING_BODY_START(b);
+    const char *end = start + SCM_STRING_BODY_SIZE(b);
+    const ScmStringBody *mb = rx->mustMatch? SCM_STRING_BODY(rx->mustMatch) : NULL;
+    int mustMatchLen = mb? SCM_STRING_BODY_SIZE(mb) : 0;
 
     if (SCM_STRING_INCOMPLETE_P(str)) {
         Scm_Error("incomplete string is not allowed: %S", str);
@@ -2035,7 +2038,7 @@ ScmObj Scm_RegMatchSubstr(ScmRegMatch *rm, int i)
                               sub->length, 0);
     } else {
         ScmObj s = Scm_MakeString(sub->startp, sub->endp - sub->startp, -1, 0);
-        sub->length = SCM_STRING_LENGTH(s);
+        sub->length = SCM_STRING_BODY_LENGTH(SCM_STRING_BODY(s));
         return s;
     }
 }

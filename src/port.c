@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.121 2005-07-28 22:46:42 shirok Exp $
+ *  $Id: port.c,v 1.122 2005-10-13 08:14:13 shirok Exp $
  */
 
 #include <unistd.h>
@@ -899,9 +899,11 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
 ScmObj Scm_MakeInputStringPort(ScmString *str, int privatep)
 {
     ScmPort *p = make_port(SCM_CLASS_PORT, SCM_PORT_INPUT, SCM_PORT_ISTR);
-    p->src.istr.start = SCM_STRING_START(str);
-    p->src.istr.current = SCM_STRING_START(str);
-    p->src.istr.end = SCM_STRING_START(str) + SCM_STRING_SIZE(str);
+    u_int size;
+    const char *s = Scm_GetStringContent(str, &size, NULL, NULL);
+    p->src.istr.start = s;
+    p->src.istr.current = s;
+    p->src.istr.end = s + size;
     SCM_PORT(p)->name = SCM_MAKE_STR("(input string port)");
     if (privatep) PORT_PRELOCK(p, Scm_VM());
     return SCM_OBJ(p);
@@ -924,7 +926,7 @@ ScmObj Scm_GetOutputString(ScmPort *port)
         Scm_Error("output string port required, but got %S", port);
     vm = Scm_VM();
     PORT_LOCK(port, vm);
-    r = Scm_DStringGet(&SCM_PORT(port)->src.ostr);
+    r = Scm_DStringGet(&SCM_PORT(port)->src.ostr, 0);
     PORT_UNLOCK(port);
     return r;
 }
@@ -933,7 +935,7 @@ ScmObj Scm_GetOutputStringUnsafe(ScmPort *port)
 {
     if (SCM_PORT_TYPE(port) != SCM_PORT_OSTR)
         Scm_Error("output string port required, but got %S", port);
-    return Scm_DStringGet(&SCM_PORT(port)->src.ostr);
+    return Scm_DStringGet(&SCM_PORT(port)->src.ostr, 0);
 }
 
 ScmObj Scm_GetRemainingInputString(ScmPort *port)

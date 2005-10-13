@@ -30,16 +30,16 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: convlib.stub,v 1.11 2003-07-05 03:29:10 shirok Exp $
+;;; $Id: convlib.stub,v 1.12 2005-10-13 08:14:13 shirok Exp $
 ;;;
 
 "#include \"charconv.h\""
 
 (define-cproc ces-conversion-supported? (from to)
-  " const char *cfrom, *cto;
-  cfrom = Scm_GetCESName(from, \"from-code\");
-  cto   = Scm_GetCESName(to, \"to-code\");
-  SCM_RETURN(SCM_MAKE_BOOL(Scm_ConversionSupportedP(cfrom, cto)));")
+  (body <boolean>
+        "const char *cfrom = Scm_GetCESName(from, \"from-code\");"
+        "const char *cto   = Scm_GetCESName(to, \"to-code\");"
+        "SCM_RESULT = Scm_ConversionSupportedP(cfrom, cto);"))
 
 ;; NB: :handler interface is experimental.  Do not use it.
 (define-cproc open-input-conversion-port (source::<input-port>
@@ -48,26 +48,29 @@
                                                    (buffer-size::<fixnum> 0)
                                                    (owner? #f)
                                                    (handler #f))
-  " const char *fc = Scm_GetCESName(from_code, \"from-code\");
-  const char *tc = Scm_GetCESName(to_code, \"to-code\");
-  SCM_RETURN(Scm_MakeInputConversionPort(source, fc, tc, handler,
-                                         buffer_size, !SCM_FALSEP(ownerP)));")
+  (body "const char *fc = Scm_GetCESName(from_code, \"from-code\");"
+        "const char *tc = Scm_GetCESName(to_code, \"to-code\");"
+        "SCM_RESULT = "
+        "  Scm_MakeInputConversionPort(source, fc, tc, handler, buffer_size,"
+        "                              !SCM_FALSEP(ownerP));"))
 
 (define-cproc open-output-conversion-port (sink::<output-port> to-code
                                            &keyword (from-code #f)
                                                     (buffer-size::<fixnum> 0)
                                                     (owner? #f))
-  " const char *fc = Scm_GetCESName(from_code, \"from-code\");
-  const char *tc = Scm_GetCESName(to_code, \"to-code\");
-  SCM_RETURN(Scm_MakeOutputConversionPort(sink, tc, fc,
-                                          buffer_size, !SCM_FALSEP(ownerP)));")
+  (body "const char *fc = Scm_GetCESName(from_code, \"from-code\");"
+        "const char *tc = Scm_GetCESName(to_code, \"to-code\");"
+        "SCM_RESULT = "
+        "  Scm_MakeOutputConversionPort(sink, tc, fc, buffer_size,"
+        "                               !SCM_FALSEP(ownerP));"))
 
 (define-cproc ces-guess-from-string (string::<string> scheme::<string>)
-  " const char *guessed = Scm_GuessCES(Scm_GetStringConst(scheme),
-                                       SCM_STRING_START(string),
-                                       SCM_STRING_SIZE(string));
-  if (guessed) SCM_RETURN(SCM_MAKE_STR(guessed));
-  else SCM_RETURN(SCM_FALSE);")
+  (body "u_int size;"
+        "const char *s = Scm_GetStringContent(string, &size, NULL, NULL);"
+        "const char *guessed = Scm_GuessCES(Scm_GetStringConst(scheme),"
+        "                                   s, size);"
+        "if (guessed) SCM_RESULT = SCM_MAKE_STR(guessed);"
+        "else SCM_RESULT = SCM_FALSE;"))
 
 ;;; Local variables:
 ;;; mode: scheme

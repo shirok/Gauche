@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.130 2005-10-06 13:09:29 shirok Exp $
+ *  $Id: class.c,v 1.131 2005-10-13 08:14:13 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -225,16 +225,18 @@ static ScmObj class_array_to_names(ScmClass **array, int len)
 ScmObj Scm__InternalClassName(ScmClass *klass)
 {
     ScmObj name = klass->name;
-    int len;
-    
-    if (SCM_SYMBOLP(name)
-        && (len = SCM_STRING_LENGTH(SCM_SYMBOL_NAME(name))) > 2 
-        && SCM_STRING_START(SCM_SYMBOL_NAME(name))[0] == '<'
-        && SCM_STRING_START(SCM_SYMBOL_NAME(name))[len-1] == '>') {
-        return Scm_Substring(SCM_SYMBOL_NAME(name), 1, len-1);
-    } else {
-        return name;
+    int size;
+
+    if (SCM_SYMBOLP(name)) {
+        const ScmStringBody *b = SCM_STRING_BODY(SCM_SYMBOL_NAME(name));
+        if (((size = SCM_STRING_BODY_SIZE(b)) > 2)
+            && SCM_STRING_BODY_START(b)[0] == '<'
+            && SCM_STRING_BODY_START(b)[size-1] == '>') {
+            return Scm_Substring(SCM_SYMBOL_NAME(name), 1,
+                                 SCM_STRING_BODY_LENGTH(b)-1);
+        }
     }
+    return name;
 }
 
 /*=====================================================================

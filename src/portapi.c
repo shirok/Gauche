@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: portapi.c,v 1.28 2005-05-24 23:28:38 shirok Exp $
+ *  $Id: portapi.c,v 1.29 2005-10-13 08:14:13 shirok Exp $
  */
 
 /* This file is included _twice_ by port.c to define safe- and unsafe-
@@ -197,8 +197,10 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
     CLOSE_CHECK(p);
     
     switch (SCM_PORT_TYPE(p)) {
-    case SCM_PORT_FILE:
-        SAFE_CALL(p, bufport_write(p, SCM_STRING_START(s), SCM_STRING_SIZE(s)));
+    case SCM_PORT_FILE: {
+        u_int size;
+        const char *ss = Scm_GetStringContent(s, &size, NULL, NULL);
+        SAFE_CALL(p, bufport_write(p, ss, size));
         
         if (p->src.buf.mode == SCM_PORT_BUFFER_LINE) {
             const char *cp = p->src.buf.current;
@@ -213,6 +215,7 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
         }
         UNLOCK(p);
         break;
+    }
     case SCM_PORT_OSTR:
         Scm_DStringAdd(&p->src.ostr, s);
         UNLOCK(p);
@@ -760,7 +763,7 @@ ScmObj readline_body(ScmPort *p)
     b1 = Scm_GetbUnsafe(p);
     if (b1 == EOF) return SCM_EOF;
     for (;;) {
-        if (b1 == EOF) return Scm_DStringGet(&ds);
+        if (b1 == EOF) return Scm_DStringGet(&ds, 0);
         if (b1 == '\n') break;
         if (b1 == '\r') {
             b2 = Scm_GetbUnsafe(p);
@@ -772,7 +775,7 @@ ScmObj readline_body(ScmPort *p)
         b1 = Scm_GetbUnsafe(p);
     }
     p->line++;
-    return Scm_DStringGet(&ds);
+    return Scm_DStringGet(&ds, 0);
 }
 #endif /* READLINE_AUX */
 
