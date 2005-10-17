@@ -13321,7 +13321,7 @@ the second is the number of microseconds.  If you pass @code{#f},
 @code{sys-select} waits indefinitely.
 @c JP
 @var{timeout}は@code{sys-select}が条件の変更を待つ最大の時間を指定します。
-それは、マイクロミリ秒を表す実数か、1つ目が秒数で2つ目がマイクロ秒である
+それは、マイクロ秒を表す実数か、1つ目が秒数で2つ目がマイクロ秒である
 2つの整数からなるリストです。@code{#f}を渡すと、@code{sys-select}は
 永久に待ちます。
 @c COMMON

@@ -97,11 +97,18 @@ including external ones and planned ones.
 @c COMMON
 
 @table @code
-@item data.*
+@item binary.*
 @c EN
-Generic data structures (planned).
+Utilities to treat binary data.
 @c JP
-汎用的なデータ構造。(予定)
+バイナリデータを扱うためのユーティリティ。
+@c COMMON
+
+@item dbi.*, dbd.*
+@c EN
+Database independent interface layer and drivers.
+@c JP
+データベース独立インタフェース層とドライバー。
 @c COMMON
 
 @item dbm.*
@@ -172,6 +179,13 @@ RFCで定義されているデータフォーマットやネットワークプロトコルの実装。
 SRFI implementations.
 @c JP
 SRFIの実装
+@c COMMON
+
+@item sxml.*
+@c EN
+SXML libraries.
+@c JP
+SXMLライブラリ。
 @c COMMON
 
 @item text.*
