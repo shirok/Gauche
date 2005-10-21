@@ -1,7 +1,7 @@
 dnl
 dnl Configuring @@package@@
 dnl  process this file with autoconf to generate 'configure'.
-dnl $Id: template.configure.ac,v 1.1 2005-09-04 09:22:42 shirok Exp $
+dnl $Id: template.configure.ac,v 1.2 2005-10-21 22:21:42 shirok Exp $
 dnl
 
 AC_PREREQ(2.54)
@@ -27,6 +27,13 @@ EXEEXT=`$GAUCHE_CONFIG --executable-suffix`
 AC_SUBST(SOEXT)
 AC_SUBST(OBJEXT)
 AC_SUBST(EXEEXT)
+
+GAUCHE_PKGINCDIR=`$GAUCHE_CONFIG --pkgincdir`
+GAUCHE_PKGLIBDIR=`$GAUCHE_CONFIG --pkglibdir`
+GAUCHE_PKGARCHDIR=`$GAUCHE_CONFIG --pkgarchdir`
+AC_SUBST(GAUCHE_PKGINCDIR)
+AC_SUBST(GAUCHE_PKGLIBDIR)
+AC_SUBST(GAUCHE_PKGARCHDIR)
 
 dnl Check for headers.
 dnl Add your macro calls to check required headers, if you have any.

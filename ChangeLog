@@ -1,3 +1,13 @@
+2005-10-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/genconfig.in: added --pkg{inc|lib|arch}dir option for more
+	  flexible extension configuration.  
+	* ext/template.Makefile.in, ext/template.configure.ac: adapted to
+	  --pkg*dir option of gauche-config.  With the generated configure
+	  script, the package installer can choose installation location
+	  by command-line options such as --prefix, --exec-prefix, --libdir
+	  or --datadir.
+
 2005-10-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c, src/gauche.h (ScmString): API CHANGE: ScmString
@@ -8,6 +18,11 @@
 	  Use of SCM_STRING_LENGTH, SCM_STRING_SIZE and SCM_STRING_START
 	  is deprecated.
 	* src/*.{c,stub}, ext/*/*.{c,stub}: adapted to the above changes.
+
+2005-10-09  Shiro Kawai  <shiro@acm.org>
+
+	* doc/libgauche-ref.texi: dumped.
+	* doc/gauche-dev.texi: started.
 
 2005-10-07  Shiro Kawai  <shiro@acm.org>
 

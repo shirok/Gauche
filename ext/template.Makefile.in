@@ -1,5 +1,5 @@
 #
-# $Id: template.Makefile.in,v 1.3 2005-07-17 20:54:35 shirok Exp $
+# $Id: template.Makefile.in,v 1.4 2005-10-21 22:21:42 shirok Exp $
 #
 
 # General info
@@ -8,6 +8,8 @@ prefix      = @prefix@
 exec_prefix = @exec_prefix@
 bindir      = @bindir@
 libdir      = @libdir@
+datadir     = @datadir@
+srcdir      = @srcdir@
 VPATH       = $(srcdir)
 
 # These may be overridden by make invocators
@@ -34,9 +36,9 @@ GENERATED =
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
 		   configure.lineno autom4te*.cache $(PACKAGE).gpd
 
-HEADER_INSTALL_DIR  = $(DESTDIR)`$(GAUCHE_CONFIG) --siteincdir`
-SCM_INSTALL_DIR     = $(DESTDIR)`$(GAUCHE_CONFIG) --sitelibdir`
-ARCH_INSTALL_DIR    = $(DESTDIR)`$(GAUCHE_CONFIG) --sitearchdir`
+GAUCHE_PKGINCDIR  = @GAUCHE_PKGINCDIR@
+GAUCHE_PKGLIBDIR  = @GAUCHE_PKGLIBDIR@
+GAUCHE_PKGARCHDIR = @GAUCHE_PKGARCHDIR@
 
 @@extname@@_SRCS = @@extname@@.c @@extname@@lib.stub
 
@@ -50,16 +52,16 @@ check : all
 	$(GOSH) -I. test.scm > test.log
 
 install : all
-	$(INSTALL) -m 444 -T $(HEADER_INSTALL_DIR) $(HEADERS)
-	$(INSTALL) -m 444 -T $(SCM_INSTALL_DIR) $(SCMFILES) 
-	$(INSTALL) -m 555 -T $(ARCH_INSTALL_DIR) $(ARCHFILES)
-	$(INSTALL) -m 444 -T $(SCM_INSTALL_DIR)/.packages $(PACKAGE).gpd
+	$(INSTALL) -m 444 -T $(GAUCHE_PKGINCDIR) $(HEADERS)
+	$(INSTALL) -m 444 -T $(GAUCHE_PKGLIBDIR) $(SCMFILES) 
+	$(INSTALL) -m 555 -T $(GAUCHE_PKGARCHDIR) $(ARCHFILES)
+	$(INSTALL) -m 444 -T $(GAUCHE_PKGLIBDIR)/.packages $(PACKAGE).gpd
 
 uninstall :
-	$(INSTALL) -U $(HEADER_INSTALL_DIR) $(HEADERS)
-	$(INSTALL) -U $(SCM_INSTALL_DIR) $(SCMFILES) 
-	$(INSTALL) -U $(ARCH_INSTALL_DIR) $(ARCHFILES)
-	$(INSTALL) -U $(SCM_INSTALL_DIR)/.packages $(PACKAGE).gpd
+	$(INSTALL) -U $(GAUCHE_PKGINCDIR) $(HEADERS)
+	$(INSTALL) -U $(GAUCHE_PKGLIBDIR) $(SCMFILES) 
+	$(INSTALL) -U $(GAUCHE_PKGARCHDIR) $(ARCHFILES)
+	$(INSTALL) -U $(GAUCHE_PKGLIBDIR)/.packages $(PACKAGE).gpd
 
 clean :
 	$(GAUCHE_PACKAGE) compile --clean @@extname@@ $(@@extname@@_SRCS)
