@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.2 2005-10-10 01:45:51 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.3 2005-10-22 02:14:27 shirok Exp $
 
 @iftex
 @finalout
@@ -136,10 +136,21 @@ Gauche 0.8.6 or later
 GNU autoconf 2.54 or later
 @end itemize
 
-@node A trivial extension
+@menu
+* A trivial extension::         
+* Simple readline binding::     
+@end menu
+
+@node A trivial extension, Simple readline binding, Getting started, Getting started
 @section A trivial extension
 
-@node Generating skeletons
+@menu
+* Generating skeletons::        
+* The templates explained::     
+* Introduction of the stub file::  
+@end menu
+
+@node Generating skeletons, The templates explained, A trivial extension, A trivial extension
 @subsection Generating skeletons
 
 Let's create a Gauche extension that does nothing.
@@ -272,22 +283,21 @@ gosh>
 You may have noticed a file @file{trivial.gpd}.  The unfamiliar
 suffix @code{gpd} stands for ``Gauche package description''.
 It is created by @file{configure}, and records the name and version
-of the package, and the configure options.  It is installed with
-other 
+of the package, and the configure options.  It is installed as a part
+of the package and will be used by @code{gauche-package} script
+(e.g. @code{gauche-package list} lists the installed packages).
 
-
-
-@node The templates explained
+@node The templates explained, Introduction of the stub file, Generating skeletons, A trivial extension
 @subsection The templates explained
 
 
-@node Introduction of the stub file
+@node Introduction of the stub file,  , The templates explained, A trivial extension
 @subsection Introduction of the stub file
 
 
 
-@node Simple readline binding
-@seciton Simple readline binding
+@node Simple readline binding,  , A trivial extension, Getting started
+@section Simple readline binding
 
 
 

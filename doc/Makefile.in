@@ -139,6 +139,9 @@ gauche-deve.info.gz : gauche-deve.texi
 	  $(GZIP_PROGRAM) gauche-deve.info gauche-deve.info-[0-9]*; \
 	fi
 
+gauche-deve.pdf : gauche-deve.texi
+	pdftex gauche-deve.texi
+
 clean:
 	rm -rf core *~ *.aux *.cl *.cls *.cp *.fn *.fns *.ky *.log *.md *.mds \
 	       *.pg *.toc *.tp *.tps *.vr *.vrs *.pdf *.dvi *.info* \
