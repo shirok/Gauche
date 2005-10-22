@@ -862,29 +862,8 @@ with the result.
 
 Writing a driver for a specific database system means implementing
 a module @code{dbd.@var{foo}}, where @var{foo} is the name of the driver.
-Usually a database system provides a client library and C API, so
-it involves writing low-level stub functions, then implement a DBI protocol
-on top of it.  Altogether, the specific driver becomes an extension
-module.
 
-To start writing a driver as an extension module, it is convenient
-to start generating templates, like this:
-@example
-% gauche-package generate Gauche-dbd-foo dbd.foo
-@end example
-
-This creates template files under the directory @file{Gauche-dbd-foo/}.
-Then you take the following steps.
-
-@enumerate
-@item
-Implement a low-level binding to the database system in 
-@file{dbd_foo.h}, @file{dbd_foo.c}, and @file{dbd_foo.stub}.
-We don't explain this part further in this document.
-@item
-Implement a high-level DBI protocol in @file{dbd/foo.scm}.
-We describe this part below.
-@end enumerate
+The module have to implement several classes and methods, as explained below.
 
 @subsubheading DBI classes to implement
 
@@ -1009,11 +988,9 @@ result which has already been closed.
 
 @deffn {Method} dbi-do (c <foo-connection>) (sql <string>) &optional options parameter-value @dots{}
 The default method uses @code{dbi-prepare} and @code{dbi-execute}
-to implement this
-
-
-The driver may overload this method, if it wants to avoid creating
-intermediate 
+to implement the function.  It just works,
+but the driver may overload this method in order to skip
+creating intermediate query object for efficiency.
 @end deffn
 
 @subsubheading DBI utility funcitons
