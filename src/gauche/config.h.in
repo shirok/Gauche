@@ -28,6 +28,9 @@
 /* Gauche signature string */
 #undef GAUCHE_SIGNATURE
 
+/* Define if bilding as a framework on MacOSX */
+#undef GAUCHE_MACOSX_FRAMEWORK
+
 /* Define to use Darwin threads */
 #undef GC_DARWIN_THREADS
 

@@ -3,13 +3,13 @@
 #
 # Generates gauche-config.c
 #
-# $Id: genconfig.in,v 1.4 2005-10-21 22:21:42 shirok Exp $
+# $Id: genconfig.in,v 1.5 2005-10-24 01:37:21 shirok Exp $
 #
 
-host=@host@
+xtarget=@xtarget@
 gauche_version=@GAUCHE_VERSION@
 
-case "$host" in
+case "$xtarget" in
   *mingw*)
      # Since we cross-build Windows/MinGW version, we cannot use the
      # directory prefix set by configure (which works on the build
@@ -21,9 +21,17 @@ case "$host" in
      exec_prefix=@
      pathfix='sed -e sx/x\\xg -e sx\\x\\\\xg'
      ;;
+  *darwin*-framework)
+     # On MacOSX Framework build, we also calculate the paths at runtime,
+     # so we can make a framework bundle that can be placed anywhere.
+     prefix=@
+     exec_prefix=@
+     pathfix="cat"
+     ;;
   *)
      # Standard configured paths
      prefix=${prefix:-@prefix@}
+
      exec_prefix=@exec_prefix@
      pathfix="cat"
      ;;

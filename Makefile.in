@@ -1,5 +1,5 @@
 # Top Makefle for Gauche
-# $Id: Makefile.in,v 1.53 2005-09-04 11:02:28 shirok Exp $
+# $Id: Makefile.in,v 1.54 2005-10-24 01:37:20 shirok Exp $
 #  Run 'configure' script to generate Makefile
 
 .PHONY: all test check pre-package install uninstall \
@@ -35,6 +35,12 @@ test : check
 check: all
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) check); done
 
+install-check:
+	@echo "Testing installed Gauche"
+	@rm -rf test.log
+	@(cd src; $(MAKE) install-check) >> test.log
+	@(cd ext; $(MAKE) install-check) >> test.log
+
 # pre-package target should be run before creating distribution tarball.
 # it generates files that requires pre-installed gosh.
 pre-package:
@@ -64,8 +70,10 @@ uninstall:
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) uninstall); done
 	rm -f $(datadir)/aclocal/gauche.m4
 
+# Cleaning ---------------------------------------------
+
 clean:
-	rm -rf test.log core *~
+	rm -rf test.log core Gauche.framework *~
 	for d in $(SRIDBUS); do (cd $$d; $(MAKE) clean); done
 
 distclean: clean
@@ -76,14 +84,14 @@ maintainer-clean: clean
 	for d in $(SRIDBUS); do (cd $$d; $(MAKE) maintainer-clean); done
 	rm -rf $(AUTOCONF_GENERATED) VERSION INSTALL INSTALL.eucjp DIST_EXCLUDE_X gc/configure
 
+# MacOSX Framework specific stuff
+framework: all
+	./framework.sh $(GAUCHE_VERSION)
+
+# Other dummy targets -------------------------------------------
+
 dist:
 	@echo "To create a distribution tarball, use DIST script."
 
 distcheck:
 	@echo "To create a distribution tarball, use DIST script."
-
-install-check:
-	@echo "Testing installed Gauche"
-	@rm -rf test.log
-	@(cd src; $(MAKE) install-check) >> test.log
-	@(cd ext; $(MAKE) install-check) >> test.log

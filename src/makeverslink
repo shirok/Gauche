@@ -3,6 +3,13 @@
 #   like libgauche.so -> libgauche.so.0.1
 # Assumes $TARGETLIB and $DESTDIR is set by the caller.
 
+# In some occasions, TARGETLIB contains a path like
+# '@executable_path/../Frameworks/Gauche.framework'.
+# We don't need to create links in such case.
+
+case "$TARGETLIB" in 
+  "@*") 
+
 LIBGAUCHE=$1
 
 API_VERSION=`cat ../VERSION | sed 's/_.*//'`

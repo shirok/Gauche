@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.68 2005-10-03 10:18:43 shirok Exp $
+dnl $Id: configure.ac,v 1.69 2005-10-24 01:37:20 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.6_pre3, shiro@acm.org)
-AC_REVISION($Revision: 1.68 $)
+AC_REVISION($Revision: 1.69 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -190,6 +190,23 @@ if test $GAUCHE_THREAD_TYPE = pthreads; then
   esac
 fi
 LIBS="$LIBS $THREADLIBS"
+
+dnl ----------------------------------------------------------
+dnl   enable-framework
+dnl  
+ac_gauche_framework=no
+AC_ARG_ENABLE(framework,
+  AC_HELP_STRING([--enable-framework],
+                 [On MacOSX, build Gauche as a framework.  This flag has no effect on other platforms.]),
+  [
+    case $enableval in
+      no)
+      ;;
+      *)
+      ac_gauche_framework=yes
+      ;;
+    esac
+  ], [])
 
 dnl ==========================================================
 dnl Checks for programs.
@@ -406,6 +423,10 @@ libgauche_version_link=yes
 # we only build the static version of libgauche.
 ext_use_uvector=no
 
+# We put additional information, such as whether we use Framework for
+# darwin, in this variable.
+xtarget=$target
+
 case $target in
   *freebsd2*)
     SHLIB_SO_CFLAGS="-fpic -fPIC"
@@ -440,7 +461,13 @@ case $target in
     SHLIB_SO_CFLAGS="-no-cpp-precomp -fPIC -fno-common"
     SHLIB_SO_LDFLAGS="-bundle $FLAT_NAMESPACE -undefined suppress -o"
     SHLIB_SO_SUFFIX="so"
-    SHLIB_DYLIB_LDFLAGS='-dynamiclib -o'
+    if test "$ac_gauche_framework" = yes; then 
+      SHLIB_DYLIB_LDFLAGS='-framework CoreFoundation -dynamiclib -o'
+      AC_DEFINE(GAUCHE_MACOSX_FRAMEWORK, 1, [Define 1 if building framework on MacOSX])
+      xtarget="${target}-framework"
+    else
+      SHLIB_DYLIB_LDFLAGS="-dynamiclib -o"
+    fi
     SHLIB_DYLIB_SUFFIX="dylib"
     SHLIB_LIBS_FOR_EXT=""
     SHLIB_MAIN_LDFLAGS=""
@@ -544,6 +571,7 @@ else
   MAKEVERSLINK=:
 fi
 
+AC_SUBST(xtarget)
 AC_SUBST(SHLIB_SO_CFLAGS)
 AC_SUBST(SHLIB_SO_LDFLAGS)
 AC_SUBST(SHLIB_SO_SUFFIX)
