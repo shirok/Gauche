@@ -7107,7 +7107,7 @@ An I/O error during writing to a port.  Inherits @code{<port-error>}.
 @c COMMON
 @end deftp
 
-@deftp {Class} <io-closd-error>
+@deftp {Class} <io-closed-error>
 @deftpx {Condition Type} &io-closed-error
 @clindex io-closed-error
 @vindex &io-closed-error
