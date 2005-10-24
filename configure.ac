@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.69 2005-10-24 01:37:20 shirok Exp $
+dnl $Id: configure.ac,v 1.70 2005-10-24 08:54:29 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.6_pre3, shiro@acm.org)
-AC_REVISION($Revision: 1.69 $)
+AC_REVISION($Revision: 1.70 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -42,7 +42,7 @@ the same character encoding, quit ./configure now and run it again with
 compile Gauche and you want utf-8, just hit return.
 *********************************************************************
 EOM
-    read
+    read < /dev/tty
     GAUCHE_CHAR_ENCODING=utf8
     ac_configure_args="$ac_configure_args '--enable-multibyte=utf-8'"
   ])

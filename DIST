@@ -35,7 +35,7 @@ if [ "$tgz" = "yes" ]; then
     (cd examples/spigot; make maintainer-clean);
   fi
   ./DIST gen
-  ./configure --enable-threads=pthreads -C || exit 1
+  ./configure --enable-threads=pthreads --enable-multibyte=utf8 -C || exit 1
   make GOSH=gosh pre-package
   (cd ext/charconv/; make GOSH=gosh eucj2ucs.c) || exit 1
   (cd ext/charconv/; make GOSH=gosh guess_tab.c) || exit 1

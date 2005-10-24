@@ -2,22 +2,22 @@
 @comment %**start of header
 @c EN
 @setfilename gauche-deve.info
-@settitle Gauche Developer's Reference
+@settitle Gauche Developers' Reference
 @dircategory The Algorithmic Language Scheme
 @direntry
-* Gauche Developer's Reference: (gauche-deve.info).	Internals of Gauche
+* Gauche Developers' Reference: (gauche-deve.info).	Internals of Gauche
 @end direntry
 @c JP
 @setfilename gauche-devj.info
 @settitle Gauche 開発者リファレンス
 @dircategory The Algorithmic Language Scheme
 @direntry
-* Gauche Developer's Reference (ja): (gauche-devj.info).	Internals of Gauche
+* Gauche Developers' Reference (ja): (gauche-devj.info).	Internals of Gauche
 @end direntry
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.3 2005-10-22 02:14:27 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.4 2005-10-24 08:54:30 shirok Exp $
 
 @iftex
 @finalout
@@ -26,7 +26,7 @@
 
 @titlepage
 @c EN
-@title Gauche Developer's Reference
+@title Gauche Developers' Reference
 @c JP
 @title Gauche 開発者リファレンス
 @c COMMON
@@ -146,11 +146,12 @@ GNU autoconf 2.54 or later
 
 @menu
 * Generating skeletons::        
+* Building the trivial module::  
 * The templates explained::     
 * Introduction of the stub file::  
 @end menu
 
-@node Generating skeletons, The templates explained, A trivial extension, A trivial extension
+@node Generating skeletons, Building the trivial module, A trivial extension, A trivial extension
 @subsection Generating skeletons
 
 Let's create a Gauche extension that does nothing.
@@ -159,7 +160,6 @@ Gauche can generate a skeleton of the extension code
 by @code{gauche-package generate} command.  You give the
 package name to the command-line argument (here we pick @code{trivial}).
 
-@cartouche
 @example
 % @b{ls trivial}
 ls: trivial: No such file or directory
@@ -168,7 +168,6 @@ ls: trivial: No such file or directory
 DIST	     configure.ac  trivial.c  trivial.scm
 Makefile.in  test.scm	   trivial.h  triviallib.stub
 @end example
-@end cartouche
 
 The @code{gauche-package} command creates a directory @file{trivial},
 and populates it with template files.  The role of each file is shown
@@ -217,11 +216,13 @@ and this file contains the skeleton of it.  The package user
 can run the test by @code{make check}.
 @end table
 
+@node Building the trivial module, The templates explained, Generating skeletons, A trivial extension
+@subsection Building, testing and installing the trivial module
+
 These auto-generated files are already buildable.  
 First, you need to run @file{autoconf} to generate a @file{configure}
 script.
 
-@cartouche
 @example
 % @b{cd trivial}
 % @b{autoconf}
@@ -229,7 +230,6 @@ script.
 DIST	     autom4te.cache  configure.ac  trivial.c  trivial.scm
 Makefile.in  configure	     test.scm	   trivial.h  triviallib.stub
 @end example
-@end cartouche
 
 The directory @file{autom4te.cache} is a temporary structure used
 by autoconf.  You can safely remove it if it bothers you.
@@ -237,7 +237,6 @@ by autoconf.  You can safely remove it if it bothers you.
 Once @file{configure} script is generated, you can run it to
 generate @file{Makefile}, then run @code{make}.
 
-@cartouche
 @example
 % @b{./configure}
 checking for gosh... /usr/bin/gosh
@@ -258,7 +257,6 @@ Makefile.in	configure      trivial.h    trivial_head.o
 VERSION		configure.ac   trivial.o    trivial_tail.c
 autom4te.cache	test.scm       trivial.scm  trivial_tail.o
 @end example
-@end cartouche
 
 The build process creates @file{trivial.so}, the dynamically loadable
 object file (the actual suffix may differ on some OSes).
@@ -269,7 +267,6 @@ a string.   Run the Gauche interpreter, load the @code{trivial} module,
 and call @code{test-trivial} function.  Note that you need to give
 @code{-I.} option to @code{gosh}, so that Gauche can find 
 
-@cartouche
 @example
 % @b{gosh -I.}
 gosh> @b{(use trivial)}
@@ -278,7 +275,6 @@ gosh> @b{(test-trivial)}
 "trivial is working"
 gosh>
 @end example
-@end cartouche
 
 You may have noticed a file @file{trivial.gpd}.  The unfamiliar
 suffix @code{gpd} stands for ``Gauche package description''.
@@ -287,7 +283,7 @@ of the package, and the configure options.  It is installed as a part
 of the package and will be used by @code{gauche-package} script
 (e.g. @code{gauche-package list} lists the installed packages).
 
-@node The templates explained, Introduction of the stub file, Generating skeletons, A trivial extension
+@node The templates explained, Introduction of the stub file, Building the trivial module, A trivial extension
 @subsection The templates explained
 
 
