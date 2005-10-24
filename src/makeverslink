@@ -9,6 +9,8 @@
 
 case "$TARGETLIB" in 
   "@*") 
+    exit 0;;
+esac
 
 LIBGAUCHE=$1
 
