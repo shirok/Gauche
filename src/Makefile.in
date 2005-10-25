@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.147 2005-10-24 01:37:21 shirok Exp $
+#  $Id: Makefile.in,v 1.148 2005-10-25 08:19:09 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -87,10 +87,10 @@ GAUCHE_ARCH_DIR = @libdir@/gauche
 
 HEADER_INSTALL_DIR    = $(GAUCHE_ARCH_DIR)/@GAUCHE_VERSION@/include
 SCM_INSTALL_DIR       = $(GAUCHE_DATA_DIR)/@GAUCHE_VERSION@/lib
-ARCH_INSTALL_DIR      = $(GAUCHE_ARCH_DIR)/@GAUCHE_VERSION@/@host@
+ARCH_INSTALL_DIR      = $(GAUCHE_ARCH_DIR)/@GAUCHE_VERSION@/@target@
 SITE_SCM_DIR          = $(GAUCHE_DATA_DIR)/site/lib
-SITE_ARCH_DIR         = $(GAUCHE_ARCH_DIR)/site/@GAUCHE_VERSION@/@host@
-ARCH = @host@
+SITE_ARCH_DIR         = $(GAUCHE_ARCH_DIR)/site/@GAUCHE_VERSION@/@target@
+ARCH = @target@
 
 # targetlib is given when we relink the final version of gosh to embed
 # the path to libgauche.  Usually it is LIB_INSTALL_DIR, but under
@@ -321,6 +321,3 @@ pre-package : $(GENERATED)
 install-mingw:
 	$(INSTALL) -m 444 $(INSTALL_MINGWHEADERS) $(DESTDIR)$(HEADER_INSTALL_DIR)/gauche
 
-# MacOSX framework specific stuff ---------------------
-framework:
-	
