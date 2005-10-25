@@ -92,7 +92,7 @@ if [ "$test" = "yes" ]; then
   mkdir -p test-inst
   tar xzvf ../Gauche-$VERSION.tgz
   cd Gauche-$VERSION
-  ./configure --enable-threads=pthreads --prefix=`pwd`/../test-inst
+  ./configure --enable-threads=pthreads --prefix=`pwd`/../test-inst --enable-multibyte=utf8
   make
   make -s test
   make install

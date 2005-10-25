@@ -3,9 +3,10 @@
 #
 # Generates gauche-config.c
 #
-# $Id: genconfig.in,v 1.5 2005-10-24 01:37:21 shirok Exp $
+# $Id: genconfig.in,v 1.6 2005-10-25 02:25:44 shirok Exp $
 #
 
+target=@target@
 xtarget=@xtarget@
 gauche_version=@GAUCHE_VERSION@
 
@@ -46,17 +47,17 @@ infodir=`echo @infodir@ | $pathfix`
 gauche_incdir=`echo "$garchdir/$gauche_version/include" | $pathfix`
 gauche_libdir=`echo "$gdatadir/$gauche_version/lib" | $pathfix`
 gauche_aclocaldir=`echo "$gdatadir/$gauche_version/" | $pathfix`
-gauche_archdir=`echo "$garchdir/$gauche_version/$host" | $pathfix`
+gauche_archdir=`echo "$garchdir/$gauche_version/$target" | $pathfix`
 gauche_siteincdir=`echo "$garchdir/site/include" | $pathfix`
 gauche_sitelibdir=`echo "$gdatadir/site/lib" | $pathfix`
-gauche_sitearchdir=`echo "$garchdir/site/$gauche_version/$host" | $pathfix`
+gauche_sitearchdir=`echo "$garchdir/site/$gauche_version/$target" | $pathfix`
 gauche_pkgincdir=`echo '${libdir}'"/gauche/site/include" | $pathfix`
 gauche_pkglibdir=`echo '${datadir}'"/gauche/site/lib" | $pathfix`
-gauche_pkgarchdir=`echo '${libdir}'"/gauche/site/$gauche_version/$host" | $pathfix`
+gauche_pkgarchdir=`echo '${libdir}'"/gauche/site/$gauche_version/$target" | $pathfix`
 
 gauche_libs="@LIBS@"
 gauche_configure_args="@GAUCHE_CONFIGURE_ARGS@"
-arch="$host"
+arch="$target"
 
 local_incdir="@LOCAL_INC@"
 local_libdir="@LOCAL_LIB@"
