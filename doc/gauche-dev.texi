@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.4 2005-10-24 08:54:30 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.5 2005-10-25 02:04:32 shirok Exp $
 
 @iftex
 @finalout
@@ -265,7 +265,8 @@ Now it's ready to load the extension into Gauche.  The skeleton code
 defines a Scheme function @code{test-trivial}, which just returns
 a string.   Run the Gauche interpreter, load the @code{trivial} module,
 and call @code{test-trivial} function.  Note that you need to give
-@code{-I.} option to @code{gosh}, so that Gauche can find 
+@code{-I.} option to @code{gosh}, so that Gauche can find the @file{trivial}
+module files.
 
 @example
 % @b{gosh -I.}
@@ -282,6 +283,8 @@ It is created by @file{configure}, and records the name and version
 of the package, and the configure options.  It is installed as a part
 of the package and will be used by @code{gauche-package} script
 (e.g. @code{gauche-package list} lists the installed packages).
+
+
 
 @node The templates explained, Introduction of the stub file, Building the trivial module, A trivial extension
 @subsection The templates explained
