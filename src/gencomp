@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.25 2005-09-05 00:00:31 shirok Exp $
+;;;  $Id: gencomp,v 1.26 2005-10-26 09:07:33 shirok Exp $
 ;;;
 
 ;;;
@@ -119,15 +119,21 @@
                  (compile-module    (make-module #f))
                  (compile-file-basename base)
                  (vm-eval-situation SCM_VM_COMPILING))
+    ;; Set up initial environment
     (eval '(define-macro (current-module)
              `(find-module ',(with-module user (compile-module-name))))
           (compile-module))
+    ;; Static stuff
     (cgen-decl "#include <gauche/code.h>")
     (cgen-decl "#include <gauche/macro.h>") ;;for MakeMacroTransformerOld. temporary.
+    (and-let* ((extm (ext-module-file)))
+      (insert-ext-initializer (port-name extm)))
+    ;; Main processing
     (with-input-from-file src
       (lambda ()
         (emit-toplevel-executor
          (reverse (port-fold compile-toplevel-form '() read)))))
+    ;; Emitting
     (cgen-emit-c (cgen-current-unit))))
 
 (define (ensure-ext-module-file filename)
@@ -139,6 +145,15 @@
 (define (write-ext-module form)
   (cond ((ext-module-file)
          => (lambda (p) (write form p) (newline p)))))
+
+;; If we're compiling stand-alone Scheme file (i.e. --ext-module is
+;; given), we need to include SCM_INIT_EXTENSION in the initialization
+;; code.
+(define (insert-ext-initializer ext-module-file-name)
+  (cgen-decl "#include <gauche/extend.h>")
+  (let* ((extname (path-sans-extension ext-module-file-name))
+         (safe-extname (regexp-replace-all #/\W/ extname "_")))
+    (cgen-init #`"SCM_INIT_EXTENSION(,safe-extname);")))
 
 ;;================================================================
 ;; Compiler stuff
