@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: extend.h,v 1.5 2003-10-02 09:33:59 shirok Exp $
+ *  $Id: extend.h,v 1.6 2005-10-26 06:00:44 shirok Exp $
  */
 
 #ifndef GAUCHE_EXTEND_H
@@ -57,19 +57,20 @@ extern "C" {
                       (void*)&SCM_CPP_CAT(Scm__bssend_, name));         \
    } while (0)
 #else  /* __CYGWIN__ */
+/* Cygwin's loader rearranges placement of bss, so Scm__bssstart_ and
+   Scm__bssend_ are no longer useful to find bss area.  It defines
+   _bss_start__ and _bss_end__ for each DLLs so we can use it.
+   Note that these symbols are declared in gc.h. */
 #define SCM_INIT_EXTENSION(name)                                        \
-   do {                                                                 \
+    do {                                                                \
        extern void *SCM_CPP_CAT(Scm__datastart_, name);                 \
        extern void *SCM_CPP_CAT(Scm__dataend_, name);                   \
-       extern void *_bss_start__;                  \
-       extern void *_bss_end__;                    \
        Scm_RegisterDL((void*)&SCM_CPP_CAT(Scm__datastart_, name),       \
                       (void*)&SCM_CPP_CAT(Scm__dataend_, name),         \
-                      (void*)&_bss_start__,        \
-                      (void*)&_bss_end__);         \
-   } while (0)
+                      (void*)&_bss_start__,                             \
+                      (void*)&_bss_end__);                              \
+    } while (0)
 #endif /* __CYGWIN__ */
-
 
 #ifdef __cplusplus
 }
