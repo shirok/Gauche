@@ -95,11 +95,24 @@
 (test* "normalize" (n "/a/b/c/d/e/")
        (sys-normalize-pathname "/a/B//./../c/d/../../b//c/d/e/f/.."
                                :canonicalize #t))
+(test* "normalize" (n "/a/b/")
+       (sys-normalize-pathname "/a/b/c/d/../.."
+                               :canonicalize #t))
+(test* "normalize" (n "/c/d/")
+       (sys-normalize-pathname "/c/d/e/f/../../"
+                               :canonicalize #t))
+(test* "normalize" (n "/e/f/")
+       (sys-normalize-pathname "/e/f/g/h/../../."
+                               :canonicalize #t))
+
 (test* "normalize" ""
        (sys-normalize-pathname ""
                                :canonicalize #t))
-(test* "normalize" (n "a/../../..")
+(test* "normalize" (n "../..")
        (sys-normalize-pathname "a/b/c/../../../../.."
+                               :canonicalize #t))
+(test* "normalize" (n "../../x/y")
+       (sys-normalize-pathname "a/b/c/../../../../../x/y"
                                :canonicalize #t))
 
 ;;-------------------------------------------------------------------

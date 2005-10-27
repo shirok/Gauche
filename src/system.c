@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.69 2005-10-13 08:14:13 shirok Exp $
+ *  $Id: system.c,v 1.70 2005-10-27 11:27:53 shirok Exp $
  */
 
 #include <stdio.h>
@@ -235,8 +235,13 @@ ScmObj Scm_GlobDirectory(ScmString *pattern)
 #endif /*!HAVE_GLOB_H && !__MINGW32__*/
 }
 
-/*
+/*===============================================================
  * Pathname manipulation
+ *
+ *  It gets complicated since the byte '/' and '\\' can appear in
+ *  the trailing octets of a multibyte character.
+ *  Assuming these operations won't be a bottleneck, we use simple and
+ *  straightforward code rather than tricky and fast one.
  */
 
 /* Returns the system's native pathname delimiter. */
@@ -249,17 +254,6 @@ const char *Scm_PathDelimiter(void)
 #endif /*__MINGW32__*/
 }
 
-ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
-{
-    u_int size;
-    const char *str = Scm_GetStringContent(pathname, &size, NULL, NULL);
-    const char *srcp = str;
-    char *buf = NULL, *dstp;
-    int bottomp = FALSE;
-    
-#define SKIP_SLASH \
-    while ((*srcp == '/' || *srcp == '\\') && srcp < str+size) { srcp++; }
-
 #ifdef __MINGW32__
 #define SEPARATOR '\\'
 #define ROOTDIR   "\\"
@@ -268,178 +262,290 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
 #define ROOTDIR   "/"
 #endif
 
-    if ((flags & SCM_PATH_EXPAND) && size >= 1 && *str == '~') {
-#ifndef __MINGW32__
-        /* ~user magic */
-        const char *p = str+1;
-        struct passwd *pwd;
-        int dirlen;
-        
-        for (; p < str+size && *p != '/' && *p != '\0'; p++)
-            ;
-        if (p == str+1) {
-            pwd = getpwuid(geteuid());
-            if (pwd == NULL) {
-                Scm_SigCheck(Scm_VM());
-                Scm_SysError("couldn't get home directory.\n");
-            }
-        } else {
-            char *user = (char *)SCM_MALLOC_ATOMIC(p-str);
-            memcpy(user, str+1, p-str-1);
-            user[p-str-1] = '\0';
-            pwd = getpwnam(user);
-            if (pwd == NULL) {
-                Scm_SigCheck(Scm_VM());
-                Scm_Error("couldn't get home directory of user \"%s\".\n",
-                          user);
-            }
-        }
-        srcp = p;
-        SKIP_SLASH;
-        dirlen = strlen(pwd->pw_dir);
-        /* extra byte for buf since we might add a separator */
-        buf = SCM_NEW_ATOMIC2(char*, dirlen+size+2);
-        strcpy(buf, pwd->pw_dir);
-        dstp = buf + dirlen;
-        if (*(dstp-1) != '/') { *dstp++ = '/'; *(dstp+1) = '\0'; }
-#else  /* __MINGW32__ */
-	/* we don't support '~' magic on win32 native */
-	buf = SCM_NEW_ATOMIC2(char*, size+1);
-	dstp = buf;
-#endif /* __MINGW32__ */
-    } else if ((flags & SCM_PATH_ABSOLUTE) && *str != '/' && *str != '\\') {
-        int dirlen;
-#define GETCWD_PATH_MAX 1024  /* TODO: must be configured */
-        char p[GETCWD_PATH_MAX];
-        if (getcwd(p, GETCWD_PATH_MAX-1) == NULL) {
+/* Returns the pointer to the first path separator character,
+   or NULL if no separator is found. */
+static const char *get_first_separator(const char *path, const char *end)
+{
+    const char *p = path;
+    while (p < end) {
+        if (*p == '/' || *p == '\\') return p;
+        p += SCM_CHAR_NFOLLOWS(*p)+1;
+    }
+    return NULL;
+}
+
+/* Returns the pointer to the last path separator character,
+   or NULL if no separator is found. */
+static const char *get_last_separator(const char *path, const char *end)
+{
+    const char *p = path, *last = NULL;
+    while (p < end) {
+        if (*p == '/' || *p == '\\') last = p;
+        p += SCM_CHAR_NFOLLOWS(*p)+1;
+    }
+    return last;
+}
+
+static const char *skip_separators(const char *p, const char *end)
+{
+    while (p < end) {
+        if (*p != '/' && *p != '\\') break;
+        p += SCM_CHAR_NFOLLOWS(*p)+1;
+    }
+    return p;
+}
+
+/* Returns the end pointer sans trailing separators. */
+static const char *truncate_trailing_separators(const char *path,
+                                                const char *end)
+{
+    const char *p = get_first_separator(path, end), *q;
+    if (p == NULL) return end;
+    for (;;) {
+        q = skip_separators(p, end);
+        if (q == end) return p;
+        p = get_first_separator(q, end);
+        if (p == NULL) return end;
+    }
+}
+
+/* A utility for tilde expansion.  They are called only on
+   Unix variants, so we only need to check '/'. */
+static void put_user_home(ScmDString *dst,
+                          const char *name,
+                          const char *end)
+{
+    struct passwd *pwd;
+    int dirlen;
+
+    if (name == end) {
+        pwd = getpwuid(geteuid());
+        if (pwd == NULL) {
             Scm_SigCheck(Scm_VM());
-            Scm_SysError("couldn't get current directory.");
-        }
-        dirlen = strlen(p);
-        /* extra byte for buf since we might add a separator */
-        buf = SCM_NEW_ATOMIC2(char*, dirlen+size+2);
-        strcpy(buf, p);
-        dstp = buf + dirlen;
-        if (*(dstp-1) != '/' && *(dstp-1) != '\\') *dstp++ = SEPARATOR;
-    } else if (flags & SCM_PATH_CANONICALIZE) {
-        dstp = buf = SCM_NEW_ATOMIC2(char*, size+1);
-        if (*str == '/' || *str == '\\') {
-            *dstp++ = SEPARATOR;
-            SKIP_SLASH;
+            Scm_SysError("couldn't get home directory.\n");
         }
     } else {
-#if defined(__MINGW32__)
-	/* On Windows/MinGW, we might replace '/' for '\\', so
-	   we allocate the buffer */
-	dstp = buf = SCM_NEW_ATOMIC2(char*, size+1);
-#else  /* !__MINGW32__ */
-        return SCM_OBJ(pathname); /* nothing to do */
-#endif /* !__MINGW32__ */
+        int namesiz = end - name;
+        char *uname = (char*)SCM_MALLOC_ATOMIC(namesiz+1);
+        memcpy(uname, name, namesiz);
+        uname[namesiz] = '\0';
+        pwd = getpwnam(uname);
+        if (pwd == NULL) {
+            Scm_SigCheck(Scm_VM());
+            Scm_Error("couldn't get home directory of user \"%s\".\n", uname);
+        }
     }
+    dirlen = strlen(pwd->pw_dir);
+    Scm_DStringPutz(dst, pwd->pw_dir, dirlen);
+    if (pwd->pw_dir[dirlen-1] != '/') Scm_DStringPutc(dst, '/');
+}
 
+/* SRC points to the pathname string beginning with '~'.  Expand it
+   to the user's home directory, leaving the partial result in DST.
+   Returns the pointer into SRC sans tilde prefix (e.g. removed "~user/").
+   The returned pointer may points just past the last char of SRC. */
+static const char *expand_tilde(ScmDString *dst,
+                                const char *src,
+                                const char *end)
+{
+    struct passwd *pwd;
+    int dirlen;
+    const char *sep = get_first_separator(src, end);
+
+    if (sep == NULL) {
+        put_user_home(dst, src+1, end);
+        return end;
+    } else {
+        put_user_home(dst, src+1, sep);
+        return skip_separators(sep, end);
+    }
+}
+
+/* Put current dir to DST */
+static void put_current_dir(ScmDString *dst)
+{
+    int dirlen;
+#define GETCWD_PATH_MAX 1024  /* TODO: must be configured */
+    char p[GETCWD_PATH_MAX];
+    if (getcwd(p, GETCWD_PATH_MAX-1) == NULL) {
+        Scm_SigCheck(Scm_VM());
+        Scm_SysError("couldn't get current directory.");
+    }
+    dirlen = strlen(p);
+    Scm_DStringPutz(dst, p, dirlen);
+    if (p[dirlen-1] != '/' && p[dirlen-1] != '\\') {
+        Scm_DStringPutc(dst, SEPARATOR);
+    }
+#undef GETCWD_PATH_MAX
+}
+
+/* win32 specific; copy pathname with replacing '/' by '\\'. */
+static void copy_win32_path(ScmDString *dst,
+                            const char *srcp,
+                            const char *end)
+{
+    while (srcp < end) {
+        ScmChar ch;
+        if (*srcp == '/' || *srcp == '\\') {
+            Scm_DStringPutc(dst, SEPARATOR);
+        } else {
+            SCM_CHAR_GET(srcp, ch);
+            Scm_DStringPutc(dst, ch);
+        }
+        srcp += SCM_CHAR_NBYTES(ch);
+    }
+}
+
+ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
+{
+    u_int size;
+    const char *str = Scm_GetStringContent(pathname, &size, NULL, NULL);
+    const char *srcp = str;
+    const char *endp = str + size;
+    ScmDString buf;
+
+    Scm_DStringInit(&buf);
+
+    /* Preprocess.  We expand tilde (on unix platform), and prepend the
+       current directory to the relative pathname if absolutize is required.
+       For canonicalization, we also put any absolute prefix into buf, so
+       that srcp points to the relative path part after this. */
+#if !defined(__MINGW32__)
+    if ((flags & SCM_PATH_EXPAND) && size >= 1 && *str == '~') {
+        srcp = expand_tilde(&buf, srcp, endp);
+    } else if (endp > srcp && *srcp == '/') {
+        /* Path is absolute */
+        if (flags & SCM_PATH_CANONICALIZE) {
+            Scm_DStringPutc(&buf, SEPARATOR);
+            srcp = skip_separators(srcp, endp);
+        }
+    } else {
+        /* Path is relative */
+        if (flags & SCM_PATH_ABSOLUTE) {
+            put_current_dir(&buf);
+        }
+    }
     if (!(flags & SCM_PATH_CANONICALIZE)) {
-#if defined(__MINGW32__)
-	while (srcp < str+size) {
-	    char c = *srcp++;
-	    if (c == '/' || c == '\\') {
-		*dstp++ = SEPARATOR;
-	    } else {
-		*dstp++ = c;
-	    }
-	}
-	return Scm_MakeString(buf, dstp-buf, -1, SCM_MAKSTR_COPYING);
-#else  /* !__MINGW32 */
-        size -= srcp-str;
-        memcpy(dstp, srcp, size);
-        *(dstp + size) = '\0';
-        return Scm_MakeString(buf, (dstp-buf)+size, -1, SCM_MAKSTR_COPYING);
-#endif /* !__MINGW32 */
+        Scm_DStringPutz(&buf, srcp, endp - srcp);
+	return Scm_DStringGet(&buf, 0);
     }
+#else /* __MINGW32__ */
+    if (endp > srcp+1 && isalpha(*srcp) && *(srcp+1) == ':') {
+        /* We first process the Evil Drive Letter */
+        Scm_DStringPutc(&buf, *srcp++);
+        Scm_DStringPutc(&buf, *srcp++);
+    }
+    if (endp > srcp && (*srcp == '/' || *srcp == '\\')) {
+        if (flags & SCM_PATH_CANONICALIZE) {
+            Scm_DStringPutc(&buf, SEPARATOR);
+            srcp = skip_separators(srcp, endp);
+        }
+    } else if (srcp == str) {
+        /* Path is relative (the srcp==str condition rules out the
+           drive letter case */
+        if (flags & SCM_PATH_ABSOLUTE) {
+            put_current_dir(&buf);
+        }
+    }
+    if (!(flags & SCM_PATH_CANONICALIZE)) {
+        copy_win32_path(&buf, srcp, endp);
+	return Scm_DStringGet(&buf, 0);
+    }
+#endif /* __MINGW32__ */
 
-    while (srcp < str+size) {
-        if (*srcp == '.') {
-            if (srcp == str+size-1) {
-                *dstp++ = '.'; /* preserve the last dot */
+    /* Canonicalization.  We used to have a tricky piece of code here
+       that avoids extra allocations, but have replaced it for
+       simple-minded code, since speed gain here won't contribute to
+       the overall performance anyway.  */
+    {
+        ScmObj comps = SCM_NIL; /* reverse list of components */
+        int cnt = 0;            /* # of components except ".."'s */
+        int final = FALSE;
+        int wentup = FALSE;     /* true if the last loop went up a dir */
+        const char *p;
+
+        for (;;) {
+            p = get_first_separator(srcp, endp);
+            if (p == NULL) {
+                final = TRUE;
+                p = endp;
+            }
+
+            if (p == srcp+1 && *srcp == '.') {
+                /* do nothing */
+            } else if (p == srcp+2 && srcp[0] == '.' && srcp[1] == '.') {
+                if (cnt > 0) {
+                    SCM_ASSERT(SCM_PAIRP(comps));
+                    comps = SCM_CDR(comps);
+                    cnt--;
+                    wentup = TRUE;
+                } else {
+                    comps = Scm_Cons(SCM_MAKE_STR(".."), comps);
+                    wentup = FALSE;
+                }
+            } else {
+                comps = Scm_Cons(Scm_MakeString(srcp, p-srcp, -1, 0), comps);
+                cnt++;
+                wentup = FALSE;
+            }
+            if (final) {
+                /* If we just went up a directory, we want to preserve the
+                   trailing separator in the result.  So we add an empty
+                   component. */
+                if (wentup) comps = Scm_Cons(SCM_MAKE_STR(""), comps);
                 break;
             }
-            if (*(srcp+1) == '/' || *(srcp+1) == '\\') {
-                srcp++;
-                SKIP_SLASH;
-                continue;
-            }
-            if (!bottomp
-                && *(srcp+1) == '.'
-                && (srcp == str+size-2 || *(srcp+2) == '/' || *(srcp+2) == '\\')) {
-
-                /* back up to parent dir */
-                char *q = dstp-2;
-                for (;q >= buf; q--) {
-                    if (*q == '/' || *q == '\\') break;
-                }
-                if (q >= buf) {
-                    dstp = q+1;
-                } else {
-                    bottomp = TRUE;
-                    *dstp++ = '.';
-                    *dstp++ = '.';
-                    *dstp++ = SEPARATOR;
-                }
-                srcp += 3;
-                continue;
+            srcp = skip_separators(p, endp);
+        }
+        if (SCM_PAIRP(comps)) {
+            comps = Scm_ReverseX(comps);
+            Scm_DStringAdd(&buf, SCM_STRING(SCM_CAR(comps)));
+            SCM_FOR_EACH(comps, SCM_CDR(comps)) {
+                Scm_DStringPutc(&buf, SEPARATOR);
+                Scm_DStringAdd(&buf, SCM_STRING(SCM_CAR(comps)));
             }
         }
-	while (srcp < str+size) {
-	    char c = *srcp++;
-	    if (c == '/' || c == '\\') {
-		*dstp++ = SEPARATOR;
-		break;
-	    } else {
-		*dstp++ = c;
-	    }
-	}
-        SKIP_SLASH;
     }
-    return Scm_MakeString(buf, dstp-buf, -1, SCM_MAKSTR_COPYING);
+    return Scm_DStringGet(&buf, 0);        
 }
 
 ScmObj Scm_BaseName(ScmString *filename)
 {
-    u_int i, size;
-    const char *p, *str = Scm_GetStringContent(filename, &size, NULL, NULL);
+    u_int size;
+    const char *path = Scm_GetStringContent(filename, &size, NULL, NULL);
+    const char *endp, *last;
 
     if (size == 0) return SCM_MAKE_STR("");
-    p = str+size-1;
-    while ((*p == '/' || *p == '\\') && size > 0) {
-	p--; size--;   /* ignore trailing '/' */
+    endp = truncate_trailing_separators(path, path+size);
+    last = get_last_separator(path, endp);
+    if (last == NULL) {
+        return Scm_MakeString(path, endp-path, -1, 0);
+    } else {
+        return Scm_MakeString(last+1, endp-last-1, -1, 0);
     }
-    if (size == 0) return SCM_MAKE_STR("");
-    for (i = 0; i < size; i++, p--) {
-        if (*p == '/' || *p == '\\') break;
-    }
-    return Scm_MakeString(p+1, i, -1, 0);
 }
 
 ScmObj Scm_DirName(ScmString *filename)
 {
-    u_int i, size;
-    const char *p, *str = Scm_GetStringContent(filename, &size, NULL, NULL);
+    u_int size;
+    const char *path = Scm_GetStringContent(filename, &size, NULL, NULL);
+    const char *endp, *last;
 
     if (size == 0) return SCM_MAKE_STR(".");
-    p = str+size-1;
-    while ((*p == '/' || *p == '\\') && size > 0) {
-	p--; size--;  /* ignore trailing '/' */
+    endp = truncate_trailing_separators(path, path+size);
+    if (endp == path) return SCM_MAKE_STR(ROOTDIR);
+    last = get_last_separator(path, endp);
+    if (last == NULL) {
+        return SCM_MAKE_STR(".");
     }
-    if (size == 0) return SCM_MAKE_STR(ROOTDIR);
-    for (i = size; i > 0; i--, p--) {
-        if (*p == '/' || *p == '\\') break;
-    }
-    if (i == 0) return SCM_MAKE_STR(".");
-    while ((*p == '/' || *p == '\\') && i > 0) {
-	p--; i--;  /* delete trailing '/' */
-    }
-    if (i == 0) return SCM_MAKE_STR(ROOTDIR);
-    return Scm_MakeString(str, i, -1, 0);
+
+    /* we have "something/", and 'last' points to the last separator. */
+    last = truncate_trailing_separators(path, last);
+    return Scm_MakeString(path, last-path, -1, 0);
 }
+
+#undef ROOTDIR
+#undef SEPARATOR
 
 /* Make mkstemp() work even if the system doesn't have one. */
 int Scm_Mkstemp(char *templat)
