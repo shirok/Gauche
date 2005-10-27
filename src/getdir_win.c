@@ -2,10 +2,11 @@
  * getdir_win.c - get the library directory at runtime (fow windows)
  *  included from paths.c
  *
- * $Id: getdir_win.c,v 1.1 2005-10-24 01:37:21 shirok Exp $
+ * $Id: getdir_win.c,v 1.2 2005-10-27 13:16:55 shirok Exp $
  */
 
 #include <windows.h>
+#include <shlwapi.h>
 #include <string.h>
 
 static int get_install_dir(char *buf, int buflen,
