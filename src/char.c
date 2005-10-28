@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.42 2005-10-28 02:34:42 shirok Exp $
+ *  $Id: char.c,v 1.43 2005-10-28 02:53:10 shirok Exp $
  */
 
 #include <ctype.h>
@@ -350,7 +350,9 @@ static int charset_compare(ScmObj x, ScmObj y, int equalp)
     } else {
         if (Scm_CharSetEq(xx, yy)) return 0;
         if (Scm_CharSetLE(xx, yy)) return -1;
-        else return 1;
+        if (Scm_CharSetLE(yy, xx)) return 1;
+        Scm_Error("cannot compare char-sets: %S vs %S", x, y);
+        return 0;               /* dummy */
     }
 }
 

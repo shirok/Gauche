@@ -1,5 +1,9 @@
 2005-10-27  Shiro Kawai  <shiro@acm.org>
 
+	* src/system.c (time_compare): implement proper compare function
+	  so that equal? will work on <time>'s.
+	* ext/srfi/srfi-19-lib.scm (time<=? etc): changed accordingly.
+
 	* src/char.c (charset_compare): implement compare function properly,
 	  so that equal? will work on charsets.
 

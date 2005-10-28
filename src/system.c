@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.70 2005-10-27 11:27:53 shirok Exp $
+ *  $Id: system.c,v 1.71 2005-10-28 02:53:10 shirok Exp $
  */
 
 #include <stdio.h>
@@ -712,8 +712,35 @@ static void time_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     Scm_Printf(port, "#<%S %lu.%09lu>", t->type, t->sec, t->nsec);
 }
 
+static int time_compare(ScmObj x, ScmObj y, int equalp)
+{
+    ScmTime *tx = SCM_TIME(x);
+    ScmTime *ty = SCM_TIME(y);
+    
+    if (equalp) {
+        if (SCM_EQ(tx->type, ty->type)
+            && tx->sec == ty->sec
+            && tx->nsec == ty->nsec) {
+            return 0;
+        } else {
+            return 1;
+        }
+    } else {
+        if (!SCM_EQ(tx->type, ty->type)) {
+            Scm_Error("cannot compare different types of time objects: %S vs %S", x, y);
+        }
+        if (tx->sec < ty->sec) return -1;
+        if (tx->sec == ty->sec) {
+            if (tx->nsec < ty->nsec) return -1;
+            if (tx->nsec == ty->nsec) return 0;
+            else return 1;
+        } 
+        else return 1;
+    }
+}
+
 SCM_DEFINE_BUILTIN_CLASS(Scm_TimeClass,
-                         time_print, NULL, NULL,
+                         time_print, time_compare, NULL,
                          time_allocate, SCM_CLASS_DEFAULT_CPL);
 
 ScmObj Scm_MakeTime(ScmObj type, long sec, long nsec)

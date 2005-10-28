@@ -24,7 +24,7 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19-lib.scm,v 1.3 2005-10-07 19:55:36 shirok Exp $
+;;; $Id: srfi-19-lib.scm,v 1.4 2005-10-28 02:53:10 shirok Exp $
 
 (define-module srfi-19
   (use srfi-1)
@@ -204,32 +204,22 @@
   10000000)
 
 ;; -- Time comparisons
+;; [SK] we can use builtin comparison.
+(define-syntax define-tm:cmp
+  (syntax-rules ()
+    ((_ (name time1 time2) expr)
+     (define (name time1 time2)
+       (unless (time? time1)
+         (errorf "~a: time objects are required, but got ~s" 'name time1))
+       (unless (time? time2)
+         (errorf "~a: time objects are required, but got ~s" 'name time2))
+       expr))))
 
-(define (tm:time-compare time1 time2 proc caller)
-  (if (or (not (and (time? time1) (time? time2)))
-	  (not (eq? (time-type time1) (time-type time2))))
-      (errorf "~a: incompatible time types: ~s, ~s"
-              caller time1 time2)
-      (cond ((= (time-second time1) (time-second time2))
-             (proc (time-nanosecond time1) (time-nanosecond time2)))
-            ((and (not (eq? proc =))
-                  (proc (time-second time1) (time-second time2))))
-            (else #f))))
-
-(define (time=? time1 time2)
-  (tm:time-compare time1 time2 = 'time=?))
-
-(define (time>? time1 time2)
-  (tm:time-compare time1 time2 > 'time>?))
-
-(define (time<? time1 time2)
-  (tm:time-compare time1 time2 < 'time<?))
-
-(define (time>=? time1 time2)
-  (tm:time-compare time1 time2 >= 'time>=?))
-
-(define (time<=? time1 time2)
-  (tm:time-compare time1 time2 <= 'time<=?))
+(define-tm:cmp (time=? time1 time2) (equal? time1 time2))
+(define-tm:cmp (time>? time1 time2) (> (compare time1 time2) 0))
+(define-tm:cmp (time<? time1 time2) (< (compare time1 time2) 0))
+(define-tm:cmp (time>=? time1 time2) (>= (compare time1 time2) 0))
+(define-tm:cmp (time<=? time1 time2) (<= (compare time1 time2) 0))
 
 ;; -- Time arithmetic
 
