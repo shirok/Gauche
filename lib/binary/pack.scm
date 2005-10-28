@@ -14,6 +14,8 @@
 ;;   an @ following a variable length template, without which all the
 ;;   "vlp" references would be gone.
 
+;; $Id: pack.scm,v 1.8 2005-10-28 11:35:11 shirok Exp $
+
 (define-module binary.pack
   (use srfi-1)
   (use srfi-2)    ;; and-let*
@@ -769,22 +771,30 @@
            ;; n   An unsigned short in "network" (big-endian) order.
            ((#\n)
             (make-number-pack-dispatcher
-             read-binary-uint16 write-binary-uint16 16 count vlp 'big-endian))
+             (if bang read-binary-sint16 read-binary-uint16)
+             (if bang write-binary-sint16 write-binary-uint16)
+             16 count vlp 'big-endian))
 
            ;; N   An unsigned long in "network" (big-endian) order.
            ((#\N)
             (make-number-pack-dispatcher
-             read-binary-uint32 write-binary-uint32 32 count vlp 'big-endian))
+             (if bang read-binary-sint32 read-binary-uint32)
+             (if bang write-binary-sint32 write-binary-uint32)
+             32 count vlp 'big-endian))
 
            ;; v   An unsigned short in "VAX" (little-endian) order.
            ((#\v)
             (make-number-pack-dispatcher
-             read-binary-uint16 write-binary-uint16 16 count vlp 'little-endian))
+             (if bang read-binary-sint16 read-binary-uint16)
+             (if bang write-binary-sint16 write-binary-uint16)
+             16 count vlp 'little-endian))
 
            ;; V   An unsigned long in "VAX" (little-endian) order.
            ((#\V)
             (make-number-pack-dispatcher
-             read-binary-uint32 write-binary-uint32 16 count vlp 'little-endian))
+             (if bang read-binary-sint32 read-binary-uint32)
+             (if bang write-binary-sint32 write-binary-uint32)
+             32 count vlp 'little-endian))
 
            ;; q   A signed quad (64-bit) value.
            ((#\q)
