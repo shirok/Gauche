@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.53 2005-10-13 08:14:13 shirok Exp $
+ *  $Id: regexp.c,v 1.54 2005-10-28 11:53:57 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -1527,6 +1527,7 @@ static ScmObj rc_setup_context(regcomp_ctx *ctx, ScmObj ast)
             return ast;
         }
         if (SCM_EQ(ast, SCM_SYM_BOL) || SCM_EQ(ast, SCM_SYM_EOL)
+            || SCM_EQ(ast, SCM_SYM_WB) || SCM_EQ(ast, SCM_SYM_NWB)
             || SCM_EQ(ast, SCM_SYM_ANY)) {
             return ast;
         }

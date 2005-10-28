@@ -1,5 +1,9 @@
 2005-10-28  Shiro Kawai  <shiro@acm.org>
 
+	* src/regexp.c (rc_setup_context): fixed a bug that caused
+	  regexp-compile to choke if an external AST containing 'wb' or
+	  'nwb' node is given.
+
 	* lib/binary/pack.scm (read-one-packer): fix 'V' directive, and
 	  added n!, N!, v!, V! directives as the signed variants of
 	  n, N, v, and V.  (Patch from Masatake YAMATO).
