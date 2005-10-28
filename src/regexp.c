@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.54 2005-10-28 11:53:57 shirok Exp $
+ *  $Id: regexp.c,v 1.55 2005-10-28 12:04:15 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -1253,7 +1253,7 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp, int toplevelp)
         int count, n, j0 = 0, jn;
         int greedy = SCM_EQ(type, SCM_SYM_REP_BOUND);
 
-        SCM_ASSERT(Scm_Length(ast) == 3 && SCM_INTP(SCM_CADR(ast)));
+        SCM_ASSERT(Scm_Length(ast) >= 3 && SCM_INTP(SCM_CADR(ast)));
         count = SCM_INT_VALUE(SCM_CADR(ast));
         SCM_ASSERT(count > 0);
         item = SCM_CDDR(ast);

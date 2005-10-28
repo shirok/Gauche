@@ -3,6 +3,7 @@
 	* src/regexp.c (rc_setup_context): fixed a bug that caused
 	  regexp-compile to choke if an external AST containing 'wb' or
 	  'nwb' node is given.
+	  (rc3_rec): fixed bad assertion.
 
 	* lib/binary/pack.scm (read-one-packer): fix 'V' directive, and
 	  added n!, N!, v!, V! directives as the signed variants of
