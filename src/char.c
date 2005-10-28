@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.41 2004-09-16 10:41:41 shirok Exp $
+ *  $Id: char.c,v 1.42 2005-10-28 02:34:42 shirok Exp $
  */
 
 #include <ctype.h>
@@ -342,7 +342,16 @@ ScmChar Scm_ReadXdigitsFromPort(ScmPort *port, int ndigits,
  */
 static int charset_compare(ScmObj x, ScmObj y, int equalp)
 {
-    return 1;                   /* for now */
+    ScmCharSet *xx = SCM_CHARSET(x);
+    ScmCharSet *yy = SCM_CHARSET(y);
+    
+    if (equalp) {
+        return (Scm_CharSetEq(xx, yy)? 0 : 1);
+    } else {
+        if (Scm_CharSetEq(xx, yy)) return 0;
+        if (Scm_CharSetLE(xx, yy)) return -1;
+        else return 1;
+    }
 }
 
 int Scm_CharSetEq(ScmCharSet *x, ScmCharSet *y)

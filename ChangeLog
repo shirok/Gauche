@@ -1,5 +1,8 @@
 2005-10-27  Shiro Kawai  <shiro@acm.org>
 
+	* src/char.c (charset_compare): implement compare function properly,
+	  so that equal? will work on charsets.
+
 	* ext/vport/vport.c (bport_allocate): accept :buffer-size keyword
 	  argument to specify the size of the buffer (Patch from Tatsuya
 	  BIZENN).
