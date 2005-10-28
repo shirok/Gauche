@@ -1,8 +1,8 @@
 #
 # Makefile.in for Gauche/lib
-#  $Id: Makefile.in,v 1.135 2005-09-11 11:48:08 shirok Exp $
+#  $Id: Makefile.in,v 1.136 2005-10-28 11:03:15 shirok Exp $
 
-.PHONY: all check pre-package install uninstall slibcat slibcat-in-place \
+.PHONY: all check install uninstall slibcat slibcat-in-place \
 	clean distclean maintainer-clean
 
 DESTDIR =
@@ -75,8 +75,6 @@ SCMFILES = srfi-0.scm \
 all: $(GENERATED)
 
 check:
-
-pre-package: $(GENERATED)
 
 install:
 	for d in $(SUBDIRS); do \

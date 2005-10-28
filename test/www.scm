@@ -44,7 +44,7 @@ ghi
 Content-Disposition: form-data; name=\"ccc\"; filename=\"\"
 
 --boundary
-Content-Disposition: form-data: name=\"ddd\"; filename=\"ttt\"
+Content-Disposition: form-data: name=\"ddd\"; filename=\"ttt\\bbb\"
 Content-Type: application/octet-stream
 Content-Transfer-Encoding: base64
 
@@ -54,7 +54,7 @@ VGhpcyBpcyBhIHRlc3Qgc2VudGVuY2Uu
 
 (define pr1 '(("aaa" "111") ("bbb" "abc\ndef\nghi\n") ("ccc" #f) ("ddd" "This is a test sentence.")))
 
-(define pr2 '(("aaa" "111") ("bbb" "x.txt") ("ccc" #f) ("ddd" "ttt")))
+(define pr2 '(("aaa" "111") ("bbb" "x.txt") ("ccc" #f) ("ddd" "ttt\\bbb")))
 
 (test* "cgi-parse-parameters (multipart)" pr1
        (parameterize ((cgi-metavariables `(("REQUEST_METHOD" "POST")

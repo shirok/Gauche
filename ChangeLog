@@ -1,5 +1,9 @@
 2005-10-27  Shiro Kawai  <shiro@acm.org>
 
+	* lib/www/cgi.scm (get-mime-parts): put a code to accomodate broken
+	  IE sending improperly quoted value to content-disposition field.
+	  (Patch from Tatsuya BIZENN).
+
 	* src/system.c (time_compare): implement proper compare function
 	  so that equal? will work on <time>'s.
 	* ext/srfi/srfi-19-lib.scm (time<=? etc): changed accordingly.

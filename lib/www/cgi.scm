@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.26 2005-07-12 11:42:01 shirok Exp $
+;;;  $Id: cgi.scm,v 1.27 2005-10-28 11:03:15 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -287,9 +287,38 @@
      ((eq? action 'ignore) ignore-handler)
      (else action)))
 
+  ;; The value of content-disposition must be a properly quoted string
+  ;; according to RFC2183 and RFC2045.  However, IE sends a pathname including
+  ;; backslashes without quoting them.  As a compromise, we only consider
+  ;; backslash escape if the following character is either #\" or #\\.
+  ;; (This fix is provided by Tatsuya BIZENN).
+  (define (content-disposition-string input)
+    (read-char input)                   ; discard beginning DQUOTE
+    (let1 r (open-output-string :private? #t)
+      (define (finish) (get-output-string r))
+      (let loop ((c (read-char input)))
+        (cond ((eof-object? c) (finish)) ; tolerate missing closing DQUOTE
+              ((char=? c #\")  (finish)) ; discard ending DQUOTE
+              ((char=? c #\\)
+               (let1 c (read-char input)
+                 (cond ((eof-object? c) (finish)) ;; tolerate stray backslash
+                       (else
+                        (unless (char-set-contains? #[\\\"] c)
+                          (write-char #\\ r))
+                        (write-char c r)
+                        (loop (read-char input))))))
+              (else (write-char c r) (loop (read-char input)))))))
+
+  (define (parse-content-disposition field)
+    (if field
+      (rfc822-field->tokens field
+                            `((#[\"] . ,content-disposition-string)
+                              (,*rfc822-atext-chars* . ,rfc822-dot-atom)))
+      '()))
+
   (define (handle-part part-info inp)
     (let* ((cd   (part-ref part-info "content-disposition"))
-           (opts (if cd (rfc822-field->tokens cd) '()))
+           (opts (parse-content-disposition cd))
            (name (cond ((member "name=" opts) => cadr) (else #f)))
            (filename (cond ((member "filename=" opts) => cadr) (else #f)))
            )
