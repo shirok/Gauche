@@ -11439,6 +11439,18 @@ needs special care.  See the note on finalization below.
 @c COMMON
 @end defivar
 
+Besides those slot values, you can pass an exact nonnegative integer
+as the @code{:buffer-size} keyword argument to the @var{make} method
+to set the size of the port's internal buffer.  If @code{:buffer-size}
+is omitted, or zero is passed, the system's default buffer size
+(something like 8K) is used.  @code{:buffer-size} is not an instance
+slot and you cannot set it after the instance of the buffered port
+is created.   The following example specifies the buffered port
+to use a buffer of size 64K:
+
+@example
+(make <buffered-input-port> :buffer-size 65536 :fill my-filler)
+@end example
 @end deftp
 
 @deftp {Class} <buffered-output-port>
@@ -11500,6 +11512,11 @@ Same as @code{<buffered-input-port>}'s @code{seek} slot.
 @code{<buffered-input-port>} の @code{seek} スロットと同様です。
 @c COMMON
 @end defivar
+
+Besides those slot values, you can pass an exact nonnegative integer
+as the @code{:buffer-size} keyword argument to the @var{make} method
+to set the size of the port's internal buffer.  See the description
+of @code{<buffered-input-port>} above for the details.
 
 @end deftp
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vport.c,v 1.12 2005-10-13 08:14:13 shirok Exp $
+ *  $Id: vport.c,v 1.13 2005-10-28 02:20:26 shirok Exp $
  */
 
 #include "gauche/vport.h"
@@ -487,6 +487,8 @@ SCM_DEFINE_BASE_CLASS(Scm_BufferedOutputPortClass, ScmPort,
                       vport_print, NULL, NULL,
                       bport_allocate, vport_cpa);
 
+static ScmObj key_bufsize = SCM_FALSE; /* :buffer-size */
+
 /*
  * Scheme handlers.  They are visible from Scheme as instance slots.
  */
@@ -612,6 +614,8 @@ static ScmObj bport_allocate(ScmClass *klass, ScmObj initargs)
     bport *data = SCM_NEW(bport);
     ScmPortBuffer buf;
     int dir;
+    int bufsize = Scm_GetInteger(Scm_GetKeyword(key_bufsize, initargs,
+                                                SCM_MAKE_INT(0)));
 
     data->fill_proc  = SCM_FALSE;
     data->flush_proc = SCM_FALSE;
@@ -620,10 +624,16 @@ static ScmObj bport_allocate(ScmClass *klass, ScmObj initargs)
     data->filenum_proc = SCM_FALSE;
     data->seek_proc  = SCM_FALSE;
 
-    buf.buffer  = NULL;
+    if (bufsize > 0) {
+        buf.buffer = SCM_NEW_ATOMIC2(char*, bufsize);
+        buf.size = bufsize;
+    } else {
+        buf.buffer = NULL;
+        buf.size = 0;
+    }
+    
     buf.current = NULL;
     buf.end     = NULL;
-    buf.size    = 0;
     buf.mode    = SCM_PORT_BUFFER_FULL;
     buf.filler  = bport_fill;
     buf.flusher = bport_flush;
@@ -697,6 +707,7 @@ void Scm_Init_vport(void)
     ScmModule *mod;
     SCM_INIT_EXTENSION(vport);
     mod = SCM_FIND_MODULE("gauche.vport", SCM_FIND_MODULE_CREATE);
+    
     Scm_InitStaticClass(&Scm_VirtualInputPortClass,
                         "<virtual-input-port>", mod, viport_slots, 0);
     Scm_InitStaticClass(&Scm_VirtualOutputPortClass,
@@ -705,6 +716,9 @@ void Scm_Init_vport(void)
                         "<buffered-input-port>", mod, biport_slots, 0);
     Scm_InitStaticClass(&Scm_BufferedOutputPortClass,
                         "<buffered-output-port>", mod, boport_slots, 0);
+
+    key_bufsize = SCM_MAKE_KEYWORD("buffer-size");
+
     Scm_Init_vportlib(mod);
 }
 

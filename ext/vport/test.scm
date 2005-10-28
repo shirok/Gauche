@@ -174,40 +174,72 @@
 (test-section "buffered-input-port")
 
 (let ()
-  (define (test-biport file)
+  (define (test-biport file size)
     (let* ((src (open-input-file file))
-           (p (make <buffered-input-port>
-                :fill  (lambda (buf) (read-block! buf src))
-                :close (lambda () (close-input-port src))))
+           (p (apply make <buffered-input-port>
+                     :fill  (lambda (buf) (read-block! buf src))
+                     :close (lambda () (close-input-port src))
+                     (if size
+                       (list :buffer-size size)
+                       '())))
            (a (file->string-list file))
            (b (port->string-list p)))
       (close-input-port p)
       (list (equal? a b) (port-closed? src))))
 
-  (test* "read from vport.c" '(#t #t) (test-biport "vport.c"))
-  (test* "read from vport_head.c" '(#t #t) (test-biport "vport_head.c"))
+  (test* "vport.c"      '(#t #t) (test-biport "vport.c" #f))
+  (test* "vport_head.c" '(#t #t) (test-biport "vport_head.c" #f))
+
+  (test* "vport.c (bufsize=100)"
+         '(#t #t) (test-biport "vport.c" 100))
+  (test* "vport_head.c (bufsize=100)"
+         '(#t #t) (test-biport "vport_head.c" 100))
+  (test* "vport.c (bufsize=65536)"
+         '(#t #t) (test-biport "vport.c" 65536))
+  (test* "vport_head.c (bufsize=65536)"
+         '(#t #t) (test-biport "vport_head.c" 65536))
+  (test* "vport.c (bufsize=1)"
+         '(#t #t) (test-biport "vport.c" 1))
+  (test* "vport.c (bufsize=0)"
+         '(#t #t) (test-biport "vport.c" 0))
   )
 
 ;;-----------------------------------------------------------
 (test-section "buffered-output-port")
 
 (let ()
-  (define (test-boport file)
+  (define (test-boport file size)
     (let* ((src  (file->string file))
            (sink (open-output-string))
            (closed? #f)
-           (p (make <buffered-output-port>
-                :flush (lambda (buf force?)
-                         (write-block buf sink)
-                         (u8vector-length buf))
-                :close (lambda () (set! closed? #t)))))
+           (p (apply make <buffered-output-port>
+                     :flush (lambda (buf force?)
+                              (write-block buf sink)
+                              (u8vector-length buf))
+                     :close (lambda () (set! closed? #t))
+                     (if size
+                       (list :buffer-size size)
+                       '()))))
       (string-for-each (lambda (c) (write-char c p)) src)
       (close-output-port p)
       (list (equal? src (get-output-string sink))
             closed?)))
   
-  (test* "vport_head.c" '(#t #t) (test-boport "vport_head.c"))
-  (test* "vport.c" '(#t #t) (test-boport "vport.c"))
+  (test* "vport.c"      '(#t #t) (test-boport "vport.c" #f))
+  (test* "vport_head.c" '(#t #t) (test-boport "vport_head.c" #f))
+
+  (test* "vport.c (bufsize=100)"
+         '(#t #t) (test-boport "vport.c" 100))
+  (test* "vport_head.c (bufsize=100)"
+         '(#t #t) (test-boport "vport_head.c" 100))
+  (test* "vport.c (bufsize=65536)"
+         '(#t #t) (test-boport "vport.c" 65536))
+  (test* "vport_head.c (bufsize=65536)"
+         '(#t #t) (test-boport "vport_head.c" 65536))
+  (test* "vport.c (bufsize=1)"
+         '(#t #t) (test-boport "vport.c" 1))
+  (test* "vport.c (bufsize=0)"
+         '(#t #t) (test-boport "vport.c" 0))
   )
 
 ;;-----------------------------------------------------------

@@ -1,3 +1,9 @@
+2005-10-27  Shiro Kawai  <shiro@acm.org>
+
+	* ext/vport/vport.c (bport_allocate): accept :buffer-size keyword
+	  argument to specify the size of the buffer (Patch from Tatsuya
+	  BIZENN).
+
 2005-10-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm_NormalizePathname, Scm_BaseName, Scm_DirName):
