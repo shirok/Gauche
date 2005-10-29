@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.107 2005-09-11 23:23:45 shirok Exp $
+;;; $Id: syslib.stub,v 1.108 2005-10-29 12:25:00 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -641,7 +641,14 @@
         "}"
         "SCM_RESULT0 = Scm_MakePortWithFd(name, SCM_PORT_INPUT, fds[0], bufmode, TRUE);"
         "SCM_RESULT1 = Scm_MakePortWithFd(name, SCM_PORT_OUTPUT, fds[1], bufmode, TRUE);"))
-        
+
+;; close integer file descriptor.  should only be used for
+;; low-level file descriptor handling.
+(define-cproc sys-close (fd::<int>)
+  (body "int r;"
+        "SCM_SYSCALL(r, close(fd));"
+        "if (r < 0) Scm_SysError(\"close failed\");"
+        "SCM_RESULT = SCM_TRUE;"))
 
 (define-cproc sys-mkdir (pathname::<const-cstring> mode::<int>)
   (body "int r;"
