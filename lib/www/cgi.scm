@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.27 2005-10-28 11:03:15 shirok Exp $
+;;;  $Id: cgi.scm,v 1.28 2005-10-30 14:04:01 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -394,13 +394,18 @@
                        (output-proc cgi-default-output)
                        (merge-cookies #f)
                        (part-handlers '()))
-    (with-error-handler
-     (lambda (e) (output-proc (on-error e)))
-     (lambda ()
-       (let1 params
-           (cgi-parse-parameters :merge-cookies merge-cookies
-                                 :part-handlers part-handlers)
-         (output-proc (proc params)))))
+    ;; we need to keep the output port, for the error handler may be
+    ;; called while the current output port is altered.
+    (let1 default-output (current-output-port)
+      (with-error-handler
+          (lambda (e)
+            (with-output-to-port default-output
+              (cut output-proc (on-error e))))
+        (lambda ()
+          (let1 params
+              (cgi-parse-parameters :merge-cookies merge-cookies
+                                    :part-handlers part-handlers)
+            (output-proc (proc params))))))
     ;; remove any temporary files
     (for-each sys-unlink (cgi-temporary-files))
     ))

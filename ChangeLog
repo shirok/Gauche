@@ -1,3 +1,8 @@
+2005-10-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/www/cgi.scm (cgi-main): ensure error page output goes to the
+	  current-output at the time cgi-main is called.
+
 2005-10-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/syslib.stub (sys-close): added for low-level tweaking.

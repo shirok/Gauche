@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.148 2005-10-25 08:19:09 shirok Exp $
+#  $Id: Makefile.in,v 1.149 2005-10-30 14:04:01 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -259,7 +259,7 @@ test-arith.$(OBJEXT) : gauche/arith.h
 install-check :
 	@rm -rf test.log
 	@for f in `cat ../test/TESTS`; do \
-	  ${prefix}/bin/gosh ../test/$$f; \
+	  ${bindir}/gosh ../test/$$f; \
 	done
 
 # clean ------------------------------------------------

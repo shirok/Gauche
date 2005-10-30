@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions  -*-mode: Makefile-*-
-## $Id: Makefile.ext.in,v 1.24 2005-08-28 23:03:46 shirok Exp $
+## $Id: Makefile.ext.in,v 1.25 2005-10-30 14:04:01 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -80,7 +80,7 @@ check : all
 	$(GOSH) -I. test.scm > test.log
 
 install-check :
-	${bindir}/gosh test.scm
+	${bindir}/gosh ./test.scm
 
 clean : unlink
 	rm -rf $(CLEANFILES) *.$(OBJEXT) *.$(SOEXT)
