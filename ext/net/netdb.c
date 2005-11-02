@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: netdb.c,v 1.11 2004-10-09 11:36:36 shirok Exp $
+ *  $Id: netdb.c,v 1.12 2005-11-02 06:03:26 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -44,7 +44,7 @@ static struct netdb_data_rec {
     ScmInternalMutex hostent_mutex;
     ScmInternalMutex protoent_mutex;
     ScmInternalMutex servent_mutex;
-} netdb_data = { 0 };
+} netdb_data = { 1 };
 
 #define WITH_GLOBAL_LOCK(mutex, body)           \
     SCM_UNWIND_PROTECT {                        \

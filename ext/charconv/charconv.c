@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: charconv.c,v 1.52 2005-09-10 09:04:04 shirok Exp $
+ *  $Id: charconv.c,v 1.53 2005-11-02 06:03:26 shirok Exp $
  */
 
 #include <string.h>
@@ -51,16 +51,18 @@ typedef struct conv_guess_rec {
 
 /* anchor of the chain of conversion guessing procedures */
 static struct {
+    int dummy;                  /* trick to place this in .data section */
     conv_guess *procs;
     ScmInternalMutex mutex;
-} guess = { NULL };
+} guess = { 1 };
 
 /* anchor of the conversion context used for UCS -> internal char routine */
 static struct {
+    int dummy;                  /* trick to place this in .data section */
     ScmConvInfo *ucs2char;
     ScmConvInfo *char2ucs;
     ScmInternalMutex mutex;
-} ucsconv = { NULL };
+} ucsconv = { 1 };
 
 /*------------------------------------------------------------
  * Query

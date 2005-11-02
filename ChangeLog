@@ -1,5 +1,9 @@
 2005-11-01  Shiro Kawai  <shiro@acm.org>
 
+	* ext/charconv/charconv.c, ext/net/netdb.c : force static data to
+	  be in .data section instead of .bss section, for .bss section can't
+	  be reliably scanned by GC.
+
 	* src/syslib.stub (sys-fork): force GC_gcollect() just before fork(),
 	  to avoid the page dirty bits synchronization problem on Solaris.
 	  (See my post in the Boehm gc mailing list on Nov 1).

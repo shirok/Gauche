@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.68 2005-10-24 01:37:21 shirok Exp $
+ *  $Id: core.c,v 1.69 2005-11-02 06:03:26 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -170,12 +170,21 @@ void Scm_Init(const char *signature)
 /*
  * External API to register root set in dynamically loaded library.
  * Boehm GC doesn't do this automatically on some platforms.
+ *
+ * NB: The scheme we're using to find bss area (by Scm__bss{start|end})
+ * is getting less effective, since more platforms are adopting the
+ * linker that rearranges bss variables.  The extensions should not
+ * keep GC_MALLOCED pointer into the bss variable.
  */
 void Scm_RegisterDL(void *data_start, void *data_end,
                     void *bss_start, void *bss_end)
 {
-    GC_add_roots((GC_PTR)data_start, (GC_PTR)data_end);
-    GC_add_roots((GC_PTR)bss_start, (GC_PTR)bss_end);
+    if (data_start < data_end) {
+        GC_add_roots((GC_PTR)data_start, (GC_PTR)data_end);
+    }
+    if (bss_start < bss_end) {
+        GC_add_roots((GC_PTR)bss_start, (GC_PTR)bss_end);
+    }
 }
 
 /*
