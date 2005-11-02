@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.55 2005-10-28 12:04:15 shirok Exp $
+ *  $Id: regexp.c,v 1.56 2005-11-02 10:49:19 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -1550,12 +1550,14 @@ static ScmObj rc_setup_context(regcomp_ctx *ctx, ScmObj ast)
     }
     if (SCM_EQ(type, SCM_SYM_SEQ) || SCM_EQ(type, SCM_SYM_ALT)
         || SCM_EQ(type, SCM_SYM_SEQ_UNCASE) || SCM_EQ(type, SCM_SYM_SEQ_CASE)
-        || SCM_EQ(type, SCM_SYM_REP) || SCM_EQ(type, SCM_SYM_REP_WHILE)) {
+        || SCM_EQ(type, SCM_SYM_REP) || SCM_EQ(type, SCM_SYM_REP_MIN)
+        || SCM_EQ(type, SCM_SYM_ASSERT) || SCM_EQ(type, SCM_SYM_NASSERT)
+        || SCM_EQ(type, SCM_SYM_REP_WHILE)) {
         rest = rc_setup_context_seq(ctx, SCM_CDR(ast));
         if (SCM_EQ(SCM_CDR(ast), rest)) return ast;
         else return Scm_Cons(type, rest);
     }
-    if (SCM_EQ(type, SCM_SYM_REP_BOUND)) {
+    if (SCM_EQ(type, SCM_SYM_REP_BOUND) || SCM_EQ(type, SCM_SYM_REP_BOUND_MIN)) {
         if (!SCM_PAIRP(SCM_CDR(ast)) || !SCM_INTP(SCM_CADR(ast))
             || SCM_INT_VALUE(SCM_CADR(ast)) < 0) {
             goto badast;

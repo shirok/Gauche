@@ -1,3 +1,9 @@
+2005-11-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c (rc_setup_context): fixed a bug that caused
+	  regexp-compile to choke if an external AST containing non-greedy
+	  match, assertin, etc.
+
 2005-11-01  Shiro Kawai  <shiro@acm.org>
 
 	* ext/charconv/charconv.c, ext/net/netdb.c : force static data to
