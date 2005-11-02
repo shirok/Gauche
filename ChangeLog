@@ -1,3 +1,9 @@
+2005-11-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/syslib.stub (sys-fork): force GC_gcollect() just before fork(),
+	  to avoid the page dirty bits synchronization problem on Solaris.
+	  (See my post in the Boehm gc mailing list on Nov 1).
+
 2005-10-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/www/cgi.scm (cgi-main): ensure error page output goes to the

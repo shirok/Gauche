@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.109 2005-10-30 14:04:01 shirok Exp $
+;;; $Id: syslib.stub,v 1.110 2005-11-02 05:43:33 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -584,9 +584,14 @@
         "if (r < 0) Scm_SysError(\"chmod failed\");"
         "SCM_RESULT = SCM_TRUE;"))
 
+;; NB: we force GC just befor fork().  It appeares necessary on some
+;; platform to synchronize page dirty bit information, so that incremental
+;; GC works properly.
 (define-cproc sys-fork ()
   (body <int>
-        "pid_t pid; SCM_SYSCALL(pid, fork());"
+        "pid_t pid;"
+        "GC_gcollect();"
+        "SCM_SYSCALL(pid, fork());"
         "if (pid < 0) Scm_SysError(\"fork failed\");"
         "SCM_RESULT = pid;"))
 
