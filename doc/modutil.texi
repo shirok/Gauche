@@ -11531,25 +11531,30 @@ from the Codd's 1970 paper,
 CACM 13(6) pp.377--387.)
 
 This definition can be applied to various datasets: A set of Gauche
-instances is a relation, if you view each instance as a tuple and
-each slot value as the actual values.  A list of lists can be a
+object system instances is a relation, if you view each instance as
+a tuple and each slot value as the actual values.  A list of lists can be a
 relation.  A stream that reads from CSV table produces a relation.
 Thus it would be useful to provide a module that implements generic
 operations on relations, no matter how the actual representation is.
 
 From the operational point of view, we can treat any datastructure
-that provides the following two properties.
+that provides the following four methods; @code{relation-rows},
+which retrieves a collection of tuples (rows);
+@code{relation-column-names}, @code{relation-accessor}, and
+@code{relation-modifier}, which provide the means to access
+meta-information.
+All the rest of relational operations are built on top of
+those primitive methods.
 
-@itemize @bullet
-@item
-A collection of tuples (rows), that is, the structure should implement
-@code{<collection>} framework (@xref{Collection framework}).
-@item
-Metadata to retrieve individual column value from a given tuple.
-At least three methods, @code{relation-column-names},
-@code{relation-accessor}, and @code{relation-modifier}
-should be implemented.
-@end itemize
+A concrete implementation of relation can use duck typing,
+i.e. it doesn't need to inherit a particular base class to
+use the relation methods.  However, for the convenience,
+a base class @code{<relation>} is provided in this module.
+It works as a mixin class---a concrete class typically wants
+to inherit @code{<relation>} and @code{<collection>} or
+@code{<sequence>}.  Check out the sample implementations
+in the @file{lib/util/relation.scm} in the source tree, if
+you're curious.
 
 This module is still under development.
 The plan is to build useful relational operations on top of the
