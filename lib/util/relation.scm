@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: relation.scm,v 1.6 2005-09-10 23:31:50 shirok Exp $
+;;;  $Id: relation.scm,v 1.7 2005-11-03 12:38:45 shirok Exp $
 ;;;
 
 ;;; Given set of values S1, S2, ..., Sn, a relation R is a set of tuples
@@ -52,13 +52,13 @@
 ;;; From the operational point of view, we can treat any datastructure
 ;;; that provides the following two properties.
 ;;;
-;;;  - a collection of tuples (rows), that is, the structure should implement
-;;;    <collection> framework.
+;;;  - a collection of tuples (rows), which should be a <collection> or
+;;     one of its subclasses (e.g. <sequence>).
 ;;;  - metadata to retrieve individual column value from a given tuple.
 ;;;
 ;;; One can implement a relation by writing at least four methods,
 ;;; relation-column-names, relation-column-getter and relation-column-setter,
-;;; and call-with-iterator.
+;;; and relation-rows.
 ;;;
 ;;; On top of that abstraction, we can implement a bunch of useful stuff.
 ;;; We'll add them, but here are some ideas.
@@ -84,25 +84,29 @@
 (select-module util.relation)
 
 ;; An abstract base class of <relation>.
-(define-class <relation> (<collection>) ())
+(define-class <relation> () ())
 
 ;;;-----------------------------------------------------------------
 ;;; Minimal set of generic functions.  Concrete implementations must
 ;;; implement the followings.
 
-;; Returns a procedure that can be used as
+;; Should return a procedure that can be used as
 ;;   (REF <row> <column> &optional <value>)
 (define-method relation-accessor ((r <relation>))
   (error "accessor method isn't defined for the relation" r))
 
-;; Returns a procedure that can be used as
+;; Should return a procedure that can be used as
 ;;   (SET! <row> <column> <value>)
 ;; If the relation is read-only, this method can return #f.
 (define-method relation-modifier ((r <relation>))
   #f)
 
-;; Returns a sequence of column names.
+;; Should return a sequence of column names.
 (define-method relation-column-names ((r <relation>)) '())
+
+;; Should return a <collection> of rows.  (For some relations,
+;; the returned object can be <sequence>.)
+(define-method relation-rows ((r <relation>)) '())
 
 ;;;-----------------------------------------------------------------
 ;;; Optional methods.  They can be implemented by the minimal methods
@@ -182,7 +186,7 @@
                                       (cons (getter row) seed))
                                     (list seed)
                                     getters)))
-          seed r)))
+          seed (relation-rows r))))
 
 ;;;=============================================================
 ;;; Concrete implementations
@@ -192,13 +196,16 @@
 ;; <simple-relation>
 ;;   
 
-(define-class <simple-relation> (<relation>)
+(define-class <simple-relation> (<relation> <collection>)
   ((columns :init-keyword :columns :init-value '()) ;; sequence of symbols
    (rows    :init-keyword :rows :init-value '())) ;; list of sequences
   )
 
 (define-method call-with-iterator ((r <simple-relation>) proc . keys)
   (apply call-with-iterator (ref r 'rows) proc keys))
+
+(define-method relation-rows ((r <simple-relation>))
+  (slot-ref r 'rows))
 
 (define-method relation-column-names ((r <simple-relation>))
   (ref r 'columns))
@@ -246,13 +253,16 @@
 ;; <object-set-relation>
 ;;
 
-(define-class <object-set-relation> (<relation>)
+(define-class <object-set-relation> (<relation> <collection>)
   ((class :init-keyword :class :init-value <object>)
    (rows  :init-keyword :rows  :init-value '())  ;; list of instances of class
    ))
 
 (define-method call-with-iterator ((r <object-set-relation>) proc . keys)
   (apply call-with-iterator (ref r 'rows) proc keys))
+
+(define-method relation-rows ((r <object-set-relation>))
+  (slot-ref r 'rows))
 
 (define-method relation-column-names ((r <object-set-relation>))
   (map slot-definition-name (class-slots (ref r 'class))))

@@ -1,7 +1,7 @@
 ;;;
 ;;; sequence.scm - sequence operations
 ;;;  
-;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: sequence.scm,v 1.9 2005-08-23 10:44:04 shirok Exp $
+;;;  $Id: sequence.scm,v 1.10 2005-11-03 12:38:45 shirok Exp $
 ;;;
 
 ;; This module defines an unified way to treat sequence-like objects
@@ -59,13 +59,13 @@
 
 ;; ref and (setter ref) --------------------------------
 
-(define-method ref ((obj <sequence>) index)
+(define-method ref ((obj <sequence>) (index <integer>))
   ((referencer obj) obj index))
 
-(define-method ref ((obj <sequence>) index default)
+(define-method ref ((obj <sequence>) (index <integer>) default)
   ((referencer obj) obj index default))
 
-(define-method (setter ref) ((obj <sequence>) index value)
+(define-method (setter ref) ((obj <sequence>) (index <integer>) value)
   ((modifier obj) obj index value))
 
 ;; subseq ----------------------------------------------
@@ -102,20 +102,20 @@
 
 (define-method fold-with-index (proc knil (seq <sequence>) . more)
   (if (null? more)
-      (with-iterator (seq end? next)
-        (do ((i 0    (+ i 1))
-             (r knil (proc i (next) r)))
-            ((end?) r)
-          #f))
-      (call-with-iterators
-       (cons seq more)
-       (lambda (ends? nexts)
-         (do ((i 0    (+ i 1))
-              (r knil (apply proc i (fold-right (lambda (p r) (cons (p) r))
-                                                (list r)
-                                                nexts))))
-             ((any (cut <>) ends?) r)
-           #f)))))
+    (with-iterator (seq end? next)
+      (do ((i 0    (+ i 1))
+           (r knil (proc i (next) r)))
+          ((end?) r)
+        #f))
+    (call-with-iterators
+     (cons seq more)
+     (lambda (ends? nexts)
+       (do ((i 0    (+ i 1))
+            (r knil (apply proc i (fold-right (lambda (p r) (cons (p) r))
+                                              (list r)
+                                              nexts))))
+           ((any (cut <>) ends?) r)
+         #f)))))
 
 ;; shortcut
 (define-method fold-with-index (proc knil (seq <list>))
@@ -134,18 +134,18 @@
 
 (define-method map-with-index (proc (seq <sequence>) . more)
   (if (null? more)
-      (with-iterator (seq end? next)
-        (do ((i 0   (+ i 1))
-             (r '() (cons (proc i (next)) r)))
-            ((end?) (reverse! r))
-          #f))
-      (call-with-iterators
-       (cons seq more)
-       (lambda (ends? nexts)
-         (do ((i 0   (+ i 1))
-              (r '() (cons (apply proc i (map (cut <>) nexts)) r)))
-             ((any (cut <>) ends?) (reverse! r))
-           #f)))))
+    (with-iterator (seq end? next)
+      (do ((i 0   (+ i 1))
+           (r '() (cons (proc i (next)) r)))
+          ((end?) (reverse! r))
+        #f))
+    (call-with-iterators
+     (cons seq more)
+     (lambda (ends? nexts)
+       (do ((i 0   (+ i 1))
+            (r '() (cons (apply proc i (map (cut <>) nexts)) r)))
+           ((any (cut <>) ends?) (reverse! r))
+         #f)))))
 
 ;; shortcut
 (define-method map-with-index (proc (seq <list>))

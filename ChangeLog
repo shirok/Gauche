@@ -1,3 +1,14 @@
+2005-11-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/relation.scm (<relation>): no longer inherits <collection>,
+	  since <sequence> can also become as a relation.  It now behaves
+	  like a mixin.  Added the relation-rows method to adapt to the
+	  collection.
+
+	* lib/gauche/sequence.scm (ref): restrict second arg to <integer>,
+	  so that it won't interfere if the object inherits <sequence> and
+	  something else.
+
 2005-11-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/regexp.c (rc_setup_context): fixed a bug that caused
