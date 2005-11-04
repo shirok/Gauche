@@ -1,5 +1,11 @@
 2005-11-03  Shiro Kawai  <shiro@acm.org>
 
+	* src/genconfig.in: generates src/gauche/arch.h simultaneously as
+	  src/gauche-config.c, for it's simpler to synchronize (esp. in
+	  MinGW).
+	* src/Makefile.in : changed accordingly.
+	* src/genarch : removed.
+
 	* lib/util/relation.scm (<relation>): no longer inherits <collection>,
 	  since <sequence> can also become as a relation.  It now behaves
 	  like a mixin.  Added the relation-rows method to adapt to the
