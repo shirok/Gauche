@@ -160,22 +160,14 @@ if [ "$rpm" = "yes" ]; then
   rm -f $RPMDIR/SOURCES/Gauche-$VERSION.tgz
   cp ../Gauche-$VERSION.tgz $RPMDIR/SOURCES/
   spec=$RPMDIR/SPECS/Gauche.spec
-#  echo "UTF8, i386 ----------------------------------------------"
-#  rm -f $spec
-#  cat Gauche.spec | sed 's/%define encoding .*/%define encoding utf8/' > $spec
-#  rpm -bb --clean $spec
-#  echo "UTF8, i686 ----------------------------------------------"
-#  rm -f $spec
-#  cat Gauche.spec | sed 's/%define encoding .*/%define encoding utf8/' > $spec
-#  rpmbuild -bb --clean --target i686 $spec
-#  echo "EUC, i386 -----------------------------------------------"
+#  echo "EUC, i686 -----------------------------------------------"
 #  rm -f $spec
 #  cat Gauche.spec | sed 's/%define encoding .*/%define encoding eucjp/' > $spec
-#  rpm -bb --clean $spec
-  echo "EUC, i686 -----------------------------------------------"
+#  rpmbuild -ba --clean --target i686 $spec
+  echo "UTF8, i686 ----------------------------------------------"
   rm -f $spec
-  cat Gauche.spec | sed 's/%define encoding .*/%define encoding eucjp/' > $spec
-  rpmbuild -ba --clean --target i686 $spec
+  cat Gauche.spec | sed 's/%define encoding .*/%define encoding utf8/' > $spec
+  rpmbuild -bb --clean --target i686 $spec
   echo "Finishing..."
 #  mv $RPMDIR/RPMS/i386/Gauche-eucjp-*.rpm $TGZ_DEST
 #  mv $RPMDIR/RPMS/i386/Gauche-utf8-*.rpm $TGZ_DEST

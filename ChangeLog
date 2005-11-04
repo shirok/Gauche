@@ -1,3 +1,7 @@
+2005-11-04  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.8.6
+
 2005-11-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/Makefile.in : fixed to make sure lib/gauche/vm/insn.scm is
