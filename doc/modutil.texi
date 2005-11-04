@@ -278,32 +278,32 @@ An unsigned long (32 bit) value.
 符号なしlong(32ビット)。
 @c COMMON
 
-@item n
+@item n, n!
 @c EN
-An unsigned short (16 bit) in "network" (big-endian) order.
+An unsigned and signed short (16 bit) in "network" (big-endian) order.
 @c JP
-ネットワークオーダー(ビッグエンディアン)での符号なしshort(16ビット)。
+ネットワークオーダー(ビッグエンディアン)での符号なし/符号つきshort(16ビット)。
 @c COMMON
 
-@item N
+@item N, N!
 @c EN
-An unsigned long (32 bit) in "network" (big-endian) order.
+An unsigned and signed long (32 bit) in "network" (big-endian) order.
 @c JP
-ネットワークオーダー(ビッグエンディアン)での符号なしlong(32ビット)。
+ネットワークオーダー(ビッグエンディアン)での符号なし/符号つきlong(32ビット)。
 @c COMMON
 
-@item v
+@item v, v!
 @c EN
-An unsigned short (16 bit) in "VAX" (little-endian) order.
+An unsigned and signed short (16 bit) in "VAX" (little-endian) order.
 @c JP
-VAXオーダー(リトルエンディアン)での符号なしshort(16ビット)。
+VAXオーダー(リトルエンディアン)での符号なし/符号つきshort(16ビット)。
 @c COMMON
 
-@item V
+@item V, V!
 @c EN
-An unsigned long (32 bit) in "VAX" (little-endian) order.
+An unsigned and signed long (32 bit) in "VAX" (little-endian) order.
 @c JP
-VAXオーダー(リトルエンディアン)での符号なしlong(32ビット)。
+VAXオーダー(リトルエンディアン)での符号なし/符号つきlong(32ビット)。
 @c COMMON
 
 @item q
@@ -585,9 +585,9 @@ execute it with different parameters may give you performance gain.
 Also the parameter is automatically quoted.
 
 When the query is a @code{SELECT} statement,
-its result is returned as a @emph{relation},
-and you can retrieve the data
-using the relation protocol (@xref{Relation framework}).
+its result is returned as a collection that implements 
+the relation protocol.  See @ref{Collection framework}
+and @ref{Relation framework} for the details.
 
 The outermost @code{guard} is to catch errors.  The @code{dbi} related
 errors are supposed to inherit @code{<dbi-error>} condition.
@@ -827,12 +827,12 @@ by your own.
 
 @subsubheading Retrieving query results
 
-If the query is a @code{select} statement, it returns an instance
-of @code{<relation>} or its subclass.   It is a collection of rows
-(that is, it implements @code{<collection>} API, so you can use
-@code{map}, @code{for-each} or other generic functions to access
-rows), and you can use relation API to retrieve column names and
-accessors from it.  See @ref{Relation framework}, for the relation
+If the query is a @code{select} statement, it returns an object
+of both @code{<collection>} and @code{<relation>}.   
+It is a collection of rows (that is, it implements @code{<collection>} API),
+so you can use @code{map}, @code{for-each} or other generic functions
+to access rows.  You can also use the relation API to retrieve column
+names and accessors from it.  See @ref{Relation framework}, for the relation
 API, and @ref{Collection framework}, for the collection API.
 
 The actual class of the object returned from a query depends on
@@ -882,8 +882,11 @@ Subclass @code{<dbi-connection>}.  An instance of this class is created
 by @code{dbi-make-connection}.  It needs to keep the information about
 the actual connections.
 @item
-Subclass @code{<relation>} to represent query results suitable for
-the driver.
+Subclass @code{<relation>} and @code{<collection>} to represent
+query results suitable for the driver.  (In most cases, the order of
+the result of SELECT statement is significant, since it may be 
+sorted by ORDER BY clause.  Thus it is more appropriate to
+inherit @code{<sequence>}, rather than @code{<collection>}).
 @item
 Optionally, subclass @code{<dbi-query>} to keep driver-specific
 information of prepared queries.
@@ -11565,28 +11568,40 @@ common methods.
 
 @deftp {Class} <relation>
 An abstract base class of relations.
-Inherits @code{<collection>} (@xref{Collection framework}).
 @end deftp
 
 @deffn {Method} relation-column-names (r <relation>)
-Returns a sequence of names of the columns.
+A subclass must implement this method.
+It should return a sequence of names of the columns.
 The type of column names is up to the relation; we don't
 place any restriction on it, as far as they are different
 each other in terms of @code{equal?}.
 @end deffn
 
 @deffn {Method} relation-accessor (r <relation>)
-Returns a procedure that takes two arguments, a row from
+A subclass must implement this method.
+It should return a procedure that takes two arguments, a row from
 the relation @var{r} and a column name, and returns the value
 of the specified column.
 @end deffn
 
 @deffn {Method} relation-modifier (r <relation>)
-Returns a procedure that takes three arguments, a row
+A subclass must implement this method.
+It should returns a procedure that takes three arguments, a row
 from the relation @var{r}, a column name, and a value to set.
 
 If the relation is read-only, this method returns @code{#f}.
 @end deffn
+
+@deffn {Method} relation-rows (r <relation>)
+A subclass must implement this method.
+It should return the underlying instance of @code{<collection>} or
+its subclass (e.g.  @code{<sequence>}) 
+@end deffn
+
+The rest of method are built on top of the above four methods.
+A subclass of @code{<relation>} may overload some of the
+methods below for better performance, though.
 
 @deffn {Method} relation-column-name? (r <relation>) column
 Returns true iff @var{column} is a valid column name for the relation
