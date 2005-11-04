@@ -1,9 +1,13 @@
 2005-11-03  Shiro Kawai  <shiro@acm.org>
 
+	* src/Makefile.in : fixed to make sure lib/gauche/vm/insn.scm is
+	  generated at pre-package stage.
+
 	* src/genconfig.in: generates src/gauche/arch.h simultaneously as
 	  src/gauche-config.c, for it's simpler to synchronize (esp. in
 	  MinGW).
 	* src/Makefile.in : changed accordingly.
+
 	* src/genarch : removed.
 
 	* lib/util/relation.scm (<relation>): no longer inherits <collection>,

@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/lib
-#  $Id: Makefile.in,v 1.136 2005-10-28 11:03:15 shirok Exp $
+#  $Id: Makefile.in,v 1.137 2005-11-04 08:27:47 shirok Exp $
 
 .PHONY: all check install uninstall slibcat slibcat-in-place \
 	clean distclean maintainer-clean
@@ -72,7 +72,7 @@ SCMFILES = srfi-0.scm \
        text/html-lite.scm text/info.scm text/gettext.scm text/diff.scm \
        www/cgi.scm www/cgi-test.scm
 
-all: $(GENERATED)
+all:
 
 check:
 
