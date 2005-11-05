@@ -2,6 +2,10 @@
 
 	* release 0.8.6
 
+	* src/genconfig.in: added --prefix optoin.
+	* ext/template.configure.ac: override the default prefix by the prefix
+	  used to compile installed Gauche.
+
 2005-11-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/Makefile.in : fixed to make sure lib/gauche/vm/insn.scm is

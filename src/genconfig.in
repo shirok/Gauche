@@ -3,7 +3,7 @@
 #
 # Generates gauche-config.c and gauche/arch.h
 #
-# $Id: genconfig.in,v 1.7 2005-11-04 04:26:44 shirok Exp $
+# $Id: genconfig.in,v 1.8 2005-11-05 00:54:52 shirok Exp $
 #
 
 target=@target@
@@ -167,6 +167,7 @@ static struct cmd_rec {
     { "--cc", "$cc" },
     { "--reconfigure", "./configure $gauche_configure_args" },
 
+    { "--prefix",      "$prefix" },
     { "--sysincdir",   "$gauche_incdir" },
     { "--siteincdir",  "$gauche_siteincdir" },
     { "--pkgincdir",   "$gauche_pkgincdir" },

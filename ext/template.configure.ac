@@ -1,7 +1,7 @@
 dnl
 dnl Configuring @@package@@
 dnl  process this file with autoconf to generate 'configure'.
-dnl $Id: template.configure.ac,v 1.2 2005-10-21 22:21:42 shirok Exp $
+dnl $Id: template.configure.ac,v 1.3 2005-11-05 00:54:52 shirok Exp $
 dnl
 
 AC_PREREQ(2.54)
@@ -27,6 +27,8 @@ EXEEXT=`$GAUCHE_CONFIG --executable-suffix`
 AC_SUBST(SOEXT)
 AC_SUBST(OBJEXT)
 AC_SUBST(EXEEXT)
+
+ac_default_prefix=`$GAUCHE_CONFIG --prefix`
 
 GAUCHE_PKGINCDIR=`$GAUCHE_CONFIG --pkgincdir`
 GAUCHE_PKGLIBDIR=`$GAUCHE_CONFIG --pkglibdir`
