@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.86 2005-09-05 12:05:25 shirok Exp $
+ *  $Id: main.c,v 1.87 2005-11-07 18:26:16 shirok Exp $
  */
 
 #include <unistd.h>
@@ -325,11 +325,11 @@ int main(int argc, char **argv)
         if (argv[optind][0] == '\0') Scm_Error("bad script name");
         if (argv[optind][0] == '/') {
             scriptfile = argv[optind];
-#ifdef __CYGWIN__
+#if defined(__CYGWIN__) || defined(__MINGW32__)
 	} else if (isalpha(argv[optind][0]) && argv[optind][1] == ':') {
 	    /* support of wicked legacy DOS drive letter */
 	    scriptfile = argv[optind];
-#endif /* __CYGWIN__ */
+#endif /* __CYGWIN__ || __MINGW32__ */
         } else {
             if (stat(argv[optind], &statbuf) == 0) {
                 ScmDString ds;
