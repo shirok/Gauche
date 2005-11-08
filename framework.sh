@@ -1,6 +1,6 @@
 #!/bin/sh
 # Install Gauche as a framework on MacOSX
-# $Id: framework.sh,v 1.1 2005-10-24 01:37:20 shirok Exp $
+# $Id: framework.sh,v 1.2 2005-11-08 00:16:44 shirok Exp $
 
 # This script installs the Gauche stuff under Gauche.framework.
 # It can be just copied into the application bundle as a private
@@ -42,7 +42,7 @@ ln -s ./Versions/Current/Resources $framework_dir/Resources
 for h in $framework_dir/Headers/*.h $framework_dir/Headers/gauche/*.h
 do
   sed -e 's@^#include <gc\.h>@#include <Gauche/gc.h>@' \
-      -e 's@^#include <\(gauche.*\)\.h>@#include <Gauche/\1.h>@' \
+      -e 's@^# *include <\(gauche.*\)\.h>@#include <Gauche/\1.h>@' \
       -e 's@^# *include "\(gc.*\)\.h"@#include "Gauche/\1.h"@' $h > tmp.h && \
    mv -f $h $h.bak && \
    mv tmp.h $h && \
