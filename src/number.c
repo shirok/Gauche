@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.123 2005-10-13 08:14:13 shirok Exp $
+ *  $Id: number.c,v 1.124 2005-11-10 20:42:32 shirok Exp $
  */
 
 #include <math.h>
@@ -1210,9 +1210,20 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
            inexact number */
         if (SCM_INTP(arg1)) {
             long rem;
-            ScmObj div = Scm_BignumDivSI(SCM_BIGNUM(arg0),
-                                         SCM_INT_VALUE(arg1),
-                                         &rem);
+            ScmObj div;
+
+            if (SCM_EQ(arg1, SCM_MAKE_INT(0))) {
+                if (SCM_BIGNUM_SIGN(arg0) > 0) {
+                    result_real = 1.0 / 0.0; /* +inf */
+                } else {
+                    result_real = -1.0 / 0.0; /* -inf */
+                }
+                exact = FALSE;
+                goto DO_FLONUM;
+            }
+            div = Scm_BignumDivSI(SCM_BIGNUM(arg0),
+                                  SCM_INT_VALUE(arg1),
+                                  &rem);
             if (rem != 0) {
                 result_real = Scm_BignumToDouble(SCM_BIGNUM(arg0));
                 exact = FALSE;
