@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: collection.scm,v 1.15 2004-12-15 11:04:28 shirok Exp $
+;;;  $Id: collection.scm,v 1.1 2005-11-10 10:45:16 shirok Exp $
 ;;;
 
 ;; Defines generic operations over collection.   A collection is

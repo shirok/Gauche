@@ -1,3 +1,14 @@
+2005-11-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/collection.scm, lib/gauche/sequence.scm,
+	  lib/gauche/hook.scm, lib/gauche/parameter.scm: moved to libsrc/,
+	  and compiled into DSOs under ext/gauche.
+	* test/colseq.scm, test/hook.scm, test/parameter.scm: moved into
+	  ext/gauche.
+	* ext/gauche/* : compile some of gauche.* modules into DSOs
+	* configure.ac, ext/Makefile.in, lib/Makefile.in: adjusted
+	  accordingly.
+
 2005-11-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/gencomp: added --keep-private-macro option to emit some

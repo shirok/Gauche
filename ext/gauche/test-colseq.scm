@@ -1,6 +1,4 @@
-;;
-;; testing collections and sequences
-;;
+;; Test gauche.* extensions
 
 (use gauche.test)
 (test-start "collections and sequences")

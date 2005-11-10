@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: sequence.scm,v 1.10 2005-11-03 12:38:45 shirok Exp $
+;;;  $Id: sequence.scm,v 1.1 2005-11-10 10:45:16 shirok Exp $
 ;;;
 
 ;; This module defines an unified way to treat sequence-like objects

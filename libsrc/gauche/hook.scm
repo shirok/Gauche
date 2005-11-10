@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: hook.scm,v 1.4 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: hook.scm,v 1.1 2005-11-10 10:45:16 shirok Exp $
 ;;;
 
 ;; The API is upper-comaptible of Guile's.   The differences are:
