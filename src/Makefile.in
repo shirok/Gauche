@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.151 2005-11-04 08:26:41 shirok Exp $
+#  $Id: Makefile.in,v 1.152 2005-11-10 08:46:42 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -76,7 +76,7 @@ POSTINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) libg
 # be incompatible with the host gosh.
 # (NB: HOSTGOSH is used at creating tarball, so the builder from tarball
 #  doesn't need to call it).
-HOSTGOSH  = gosh -usrfi-1 -usrfi-13 -ufile.util -uutil.match -I$(top_srcdir)/src -I$(top_srcdir)/lib
+HOSTGOSH  = gosh -l./preload -I$(top_srcdir)/src -I$(top_srcdir)/lib
 
 LIB_INSTALL_DIR  = @libdir@
 BIN_INSTALL_DIR  = @bindir@

@@ -1,3 +1,9 @@
+2005-11-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/preload.scm: added to make HOSTGOSH more compact.  See the file
+	  for the detailed explanation.
+	* src/Makefile.in (HOSTGOSH): rewrote using preload.scm
+
 2005-11-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c (main): recognize drive letter in argv on MinGW32.
