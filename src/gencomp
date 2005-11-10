@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.26 2005-10-26 09:07:33 shirok Exp $
+;;;  $Id: gencomp,v 1.27 2005-11-10 09:47:03 shirok Exp $
 ;;;
 
 ;;;
@@ -77,9 +77,13 @@
 ;; file, assuming the source file has standard layout.
 (define ext-module-file (make-parameter #f))
 
-;; set this true if we want to keep macro definition in the dumped code.
-;;  (--keep-macro option)  ;; NOT IMPLEMENTED YET
-(define keep-macro-definition (make-parameter #f))
+;; list of private macros that should be included in the output.
+;; (--keep-private-macro=name,name,...)
+;; usually private macros (macros bound to a variable which isn't exported)
+;; are discarded, but sometimes hygienic public macros expands to a call
+;; of private macros.  gencomp cannot detect such dependency yet, and
+;; so they need to be explicitly listed for the time being.
+(define private-macros-to-keep (make-parameter '()))
 
 ;; compatibility kludge
 (define compile       (with-module gauche.internal compile))
@@ -98,11 +102,13 @@
 ;;
 (define (main args)
   (let-args (cdr args)
-      ((keep-macro "keep-macro" #f)
+      ((keep-private-macro "keep-private-macro=s" #f)
        (ext-module "ext-module=s" #f)
        (output-base "o|output=s" #f)
        . args)
-    (keep-macro-definition keep-macro)
+    (when keep-private-macro
+      (private-macros-to-keep
+       (map string->symbol (string-split keep-private-macro #\,))))
     (match args
       ((scmfile)
        (when ext-module
@@ -233,7 +239,8 @@
       ;; R5RS macros are put in ext-module file as is.
       (('define-macro (name . formals) . body)
        (eval form (compile-module))
-       (when (symbol-exported? name)
+       (when (or (symbol-exported? name)
+                 (memq name (private-macros-to-keep)))
          (let* ((body-closure (compile-toplevel-lambda form name formals
                                                        body (compile-module)))
                 (code (cgen-literal (closure-code body-closure)))
@@ -248,7 +255,8 @@
          (write-ext-module form))
        (eval form (compile-module)) seed)
       (('define-syntax name . _)
-       (when (symbol-exported? name)
+       (when (or (symbol-exported? name)
+                 (memq name (private-macros-to-keep)))
          (write-ext-module form))
        (eval form (compile-module)) seed)
       ;; Finally, ordinary expressions.

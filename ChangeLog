@@ -1,5 +1,9 @@
 2005-11-09  Shiro Kawai  <shiro@acm.org>
 
+	* src/gencomp: added --keep-private-macro option to emit some
+	  private macros into the generated Scheme file by --ext-module
+	  option.  It's a kludge, but needed to compile gauche.parameter.
+
 	* src/preload.scm: added to make HOSTGOSH more compact.  See the file
 	  for the detailed explanation.
 	* src/Makefile.in (HOSTGOSH): rewrote using preload.scm
