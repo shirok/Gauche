@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.33 2005-06-30 22:48:31 shirok Exp $
+ *  $Id: signal.c,v 1.34 2005-11-10 20:51:09 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -395,8 +395,16 @@ static void sig_handle(int signum)
     if (vm == NULL) return;
     
     if (vm->sigq.overflow) {
-        /* TODO: what should we do? */
-        Scm_Warn("Signal queue overflow\n");
+        /* TODO: we should have better fallback strategy. */
+        struct sigdesc *desc = sigDesc;
+        const char *signame = "unknown signal";
+        for (; desc->name; desc++) {
+            if (desc->num == signum) {
+                signame = desc->name;
+                break;
+            }
+        }
+        Scm_Warn("Signal queue overflow by %s(%d)\n", signame, signum);
         return;
     }
     vm->sigq.queue[vm->sigq.tail++] = signum;

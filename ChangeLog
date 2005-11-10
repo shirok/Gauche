@@ -1,5 +1,8 @@
 2005-11-10  Shiro Kawai  <shiro@acm.org>
 
+	* src/signal.c (sig_handle): in the sigqueue overflow warning,
+	  show the signal name and number as the debugging aid.
+
 	* src/number.c (Scm_Divide): fixed a bug that busts VM when 
 	  a bignum is divided by zero.
 
