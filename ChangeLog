@@ -1,3 +1,7 @@
+2005-11-11  Shiro Kawai  <shiro@acm.org>
+
+	* ext/template.Makefile.in : add $(DESTDIR)
+
 2005-11-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/signal.c (sig_handle): in the sigqueue overflow warning,
