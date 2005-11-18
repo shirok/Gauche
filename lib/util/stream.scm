@@ -21,7 +21,7 @@
 ;;; makes error message a bit less direct, but cutting edges in such
 ;;; inner loop procedure has a considerable gain.
 ;;;
-;;; $Id: stream.scm,v 1.5 2005-08-23 10:44:05 shirok Exp $
+;;; $Id: stream.scm,v 1.6 2005-11-18 10:39:09 shirok Exp $
 
 (define-module util.stream
   (use srfi-1)
@@ -172,11 +172,13 @@
          (error "attempt to apply stream-filter to non-stream"))
         (else (stream-unfoldn
                (lambda (s)
-                 (values
-                  (stream-cdr s)
-                  (cond ((stream-null? s) '())
-                        ((pred? (stream-car s)) (list (stream-car s)))
-                        (else #f))))
+                 (cond
+                  ((stream-null? s)
+                   (values stream-null '()))
+                  ((pred? (stream-car s))
+                   (values (stream-cdr s) (list (stream-car s))))
+                  (else
+                   (values (stream-cdr s) #f))))
                strm
                1))))
 

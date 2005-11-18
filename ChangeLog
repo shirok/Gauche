@@ -1,3 +1,8 @@
+2005-11-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/stream.scm (stream-filter): fixed a bug from the reference
+	  implementation that didn't handle the end of stream correctly.
+
 2005-11-11  Shiro Kawai  <shiro@acm.org>
 
 	* ext/template.Makefile.in : add $(DESTDIR)
