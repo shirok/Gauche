@@ -9103,7 +9103,7 @@ in the different files if possible.
 
 @c EN
 Another issue about the current @code{define-reader-ctor} is that
-it modifies the global table of Gauche system, hence not modular.
+it modifies the global table of Gauche system, hence it is not modular.
 The code written by different people might use the same tags,
 and yield an unexpected result.   In future versions, Gauche may
 have some way to encapsulate the scope of @var{tag}, although
@@ -12565,7 +12565,7 @@ the error.
 To represent @var{errno}, the following constants are defined.
 Each constant is bound to an exact integer representing the system's
 error number.  Note that the actual value may differ among systems,
-and some of these constants may note be defined on some systems.
+and some of these constants may not be defined on some systems.
 
 @example
 E2BIG             EHOSTDOWN         ENETDOWN          ENXIO

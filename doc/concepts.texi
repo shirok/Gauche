@@ -604,11 +604,11 @@ characters in future.  So it's better to avoid those characters
 @c COMMON
 
 @c EN
-By default, Gauche assumes the Scheme program is written in
-its internal encoding scheme.   It is fine as far as you're writing
-scripts to use your own environment, but becomes a problem if
+By default, Gauche assumes a Scheme program is written in
+its internal character encoding.   It is fine as far as you're writing
+scripts to use your own environment, but it becomes a problem if
 somebody else tries to use your script and finds out you're using
-different character encodings than his/hers.
+different character encoding than his/hers.
 @c JP
 デフォルトでは、GaucheはSchemeプログラムをGaucheの内部文字エンコーディングで
 書かれているものとして扱います。これは、自分で書いたスクリプトを自分の

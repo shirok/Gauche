@@ -200,14 +200,11 @@ SRFI-1 is a rich collection of list manipulation library
 (@ref{srfi-1,[SRFI-1],SRFI-1}).
 It is available by saying @code{(use srfi-1)}.
 The implementation is based on Olin Shivers's reference implementation.
-I splitted it into number of subfiles that will be autoloaded on demand.
 @c JP
 SRFI-1 は、リスト操作ライブラリの豊富なコレクションです
 (@ref{srfi-1,[SRFI-1],SRFI-1})。
 このライブラリを使うには、@code{(use srfi-1)} として下さい。
 Olin Shivers氏のリファレンス実装に基づいて実装されています。
-必要に応じてオートロードされるいくつかのサブファイルに分割して
-あります。
 @c COMMON
 @end deftp
 
