@@ -1,3 +1,7 @@
+2005-11-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/relation.scm (util.relation): relation-rows wasn't exported.
+
 2005-11-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/stream.scm (stream-filter): fixed a bug from the reference

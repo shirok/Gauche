@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: relation.scm,v 1.7 2005-11-03 12:38:45 shirok Exp $
+;;;  $Id: relation.scm,v 1.8 2005-11-24 08:40:00 shirok Exp $
 ;;;
 
 ;;; Given set of values S1, S2, ..., Sn, a relation R is a set of tuples
@@ -73,6 +73,7 @@
   (export <relation>
           relation-column-names relation-column-name?
           relation-column-getter relation-column-setter
+          relation-rows
           relation-accessor relation-modifier
           relation-ref relation-set! relation-coercer
           relation-column-getters relation-column-setters
