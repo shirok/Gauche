@@ -2,7 +2,7 @@
 ;; Test dynamic-wind, call/cc and related stuff
 ;;
 
-;; $Id: dynwind.scm,v 1.19 2004-10-03 10:36:14 shirok Exp $
+;; $Id: dynwind.scm,v 1.20 2005-12-05 10:18:54 shirok Exp $
 
 (use gauche.test)
 
@@ -216,6 +216,47 @@
                           (lambda () #f))
           x)))
 
+;; Test for error handling with dynamic-wind
+(test "dynamic-wind - error in before thunk"
+      '(a b c d h)
+      (lambda ()
+        (let ((k '()))
+          (with-error-handler (lambda (e) #f)
+            (lambda ()
+              (push! k 'a)
+              (dynamic-wind
+                  (lambda () (push! k 'b))
+                  (lambda ()
+                    (push! k 'c)
+                    (dynamic-wind
+                        (lambda () (push! k 'd) (error "ho"))
+                        (lambda () (push! k 'e))
+                        (lambda () (push! k 'f)))
+                    (push! k 'g))
+                  (lambda () (push! k 'h)))
+              (push! k 'i)))
+          (reverse k))))
+            
+(test "dynamic-wind - error in after thunk"
+      '(a b c d e f h)
+      (lambda ()
+        (let ((k '()))
+          (with-error-handler (lambda (e) #f)
+            (lambda ()
+              (push! k 'a)
+              (dynamic-wind
+                  (lambda () (push! k 'b))
+                  (lambda ()
+                    (push! k 'c)
+                    (dynamic-wind
+                        (lambda () (push! k 'd))
+                        (lambda () (push! k 'e))
+                        (lambda () (push! k 'f) (error "ho")))
+                    (push! k 'g))
+                  (lambda () (push! k 'h)))
+              (push! k 'i)))
+          (reverse k))))
+            
 ;;-----------------------------------------------------------------------
 ;; Test for stack overflow handling
 
