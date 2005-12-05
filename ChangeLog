@@ -1,3 +1,8 @@
+2005-12-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub (read-block): fixed a bug that may cause SEGV later.
+	  (patch from Tatsuya BIZENN).
+
 2005-11-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/relation.scm (util.relation): relation-rows wasn't exported.
