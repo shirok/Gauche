@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.57 2005-10-13 08:14:13 shirok Exp $
+ *  $Id: write.c,v 1.58 2005-12-21 18:37:16 shirok Exp $
  */
 
 #include <stdio.h>
@@ -292,7 +292,10 @@ static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf)
                   Scm_ArrayToList(args, nargs));
     }
     klass = Scm_ClassOf(args[0]);
-    Scm_Printf(SCM_PORT(args[1]), "#<%A %p>", klass->name, args[0]);
+    Scm_Printf(SCM_PORT(args[1]), "#<%A%s%p>",
+               klass->name,
+               (SCM_FALSEP(klass->redefined)? " " : ":redefined "),
+               args[0]);
     return SCM_TRUE;
 }
 

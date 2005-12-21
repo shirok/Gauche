@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.131 2005-10-13 08:14:13 shirok Exp $
+ *  $Id: class.c,v 1.132 2005-12-21 18:37:16 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -393,7 +393,9 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs)
 
 static void class_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx) 
 {
-    Scm_Printf(port, "#<class %A>", SCM_CLASS(obj)->name);
+    Scm_Printf(port, "#<class %A%s>",
+               SCM_CLASS(obj)->name,
+               (SCM_FALSEP(SCM_CLASS(obj)->redefined)? "" : " (redefined)"));
 }
 
 /*

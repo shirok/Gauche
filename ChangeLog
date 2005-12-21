@@ -1,3 +1,9 @@
+2005-12-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c (write_object_fallback), src/class.c (class_print):
+	  Show whether the class is redefined.  This helps to avoid confusions
+	  during interactive development when the class is redefined.
+
 2005-12-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/extlib.stub (read-block): fixed a bug that may cause SEGV later.
