@@ -1,3 +1,8 @@
+2006-01-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_DirName): fixed a bug that doesn't handle a
+	  pathnames with a single slash at the beginning, like "/abc".
+
 2005-12-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/write.c (write_object_fallback), src/class.c (class_print):

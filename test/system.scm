@@ -74,6 +74,10 @@
 (test* "dirname"  (n "/") (sys-dirname "/"))
 (test* "basename" "" (sys-basename "//"))
 (test* "dirname"  (n "/") (sys-dirname "//"))
+(test* "basename" "abc"   (sys-basename "/abc"))
+(test* "dirname"  (n "/") (sys-dirname  "/abc"))
+(test* "basename" "abc"   (sys-basename "//abc"))
+(test* "dirname"  (n "/") (sys-dirname  "//abc"))
 
 (test* "basename" ".." (sys-basename "../"))
 (test* "dirname"  "." (sys-dirname "../"))

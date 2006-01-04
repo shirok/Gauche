@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.71 2005-10-28 02:53:10 shirok Exp $
+ *  $Id: system.c,v 1.72 2006-01-04 09:47:25 shirok Exp $
  */
 
 #include <stdio.h>
@@ -541,7 +541,11 @@ ScmObj Scm_DirName(ScmString *filename)
 
     /* we have "something/", and 'last' points to the last separator. */
     last = truncate_trailing_separators(path, last);
-    return Scm_MakeString(path, last-path, -1, 0);
+    if (last == path) {
+        return SCM_MAKE_STR(ROOTDIR);
+    } else {
+        return Scm_MakeString(path, last-path, -1, 0);
+    }
 }
 
 #undef ROOTDIR
