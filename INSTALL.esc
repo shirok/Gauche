@@ -26,7 +26,7 @@
                       Compiling and Installing Gauche
 <? ) !>
 
-$Id: INSTALL.esc,v 1.25 2005-06-23 04:17:54 shirok Exp $
+$Id: INSTALL.esc,v 1.26 2006-01-06 19:20:52 shirok Exp $
 <? (if-lang japanese? !>
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:<? else !>
@@ -77,19 +77,19 @@ shell and you can reconfigure with the same options.
 <? (header "文字エンコーディングの選択" "Choosing Character Encoding") !>
 
 <? (if-lang japanese? !>
-デフォルトでは、Gaucheは内部文字エンコーディングとしてEUC-JPを使います。
+デフォルトでは、Gaucheは内部文字エンコーディングとしてutf-8を使います。
 --enable-multibyte=ENCODING というオプションをconfigureに渡すことで、
 内部文字エンコーディングを変えることができます。
 <? else !>
-By default, Gauche is compiled with EUC-JP as a native character encoding.
+By default, Gauche is compiled with utf-8 as a native character encoding.
 You can give a --enable-multibyte=ENCODING option to switch the native
 encoding.   Note that if you want to use ISO8859-1 GR characters in
 the program text, you have to specify no multibyte encoding, or
 Gauche takes such characters as the first byte of multibyte charaters.
 <? ) !>
 
-  ./configure --enable-multibyte=euc-jp  ;; EUC-JP (default)
-  ./configure --enable-multibyte=utf-8   ;; UTF-8
+  ./configure --enable-multibyte=utf-8   ;; UTF-8 (default)
+  ./configure --enable-multibyte=euc-jp  ;; EUC-JP
   ./configure --enable-multibyte=sjis    ;; Shift JIS
   ./configure --enable-multibyte=no      ;; No multibyte string
 

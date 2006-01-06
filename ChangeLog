@@ -1,3 +1,7 @@
+2006-01-06  Shiro Kawai  <shiro@acm.org>
+
+	* INSTALL.esc: corrected the default encoding (euc-jp -> utf-8).
+
 2006-01-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm_DirName): fixed a bug that doesn't handle a
