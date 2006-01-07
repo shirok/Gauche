@@ -5093,6 +5093,23 @@ is returned.
 @c COMMON
 @end defun
 
+@defun complement pred
+@c EN
+Returns a procedure that reverses the meaning of the predicate @var{pred}.
+That is, for the arguments for which @var{pred} returns true return
+false, and vice versa.
+@c JP
+述語@var{pred}の意味を逆にした手続きを返します。すなわち、@var{pred}が真を
+返すような引数にたいして偽を返す、またその逆も同様であるような手続きです。
+@c COMMON
+
+@example
+(map (complement even?) '(1 2 3)) @result{} '(#t #f #t)
+(map (complement =) '(1 2 3) '(1 1 3)) @result{} '(#f #t #f)
+((complement (lambda () #f))) @result{} #t
+@end example
+@end defun
+
 @defun any-pred pred @dots{}
 @c EN
 Returns a procedure which applies given argument(s) to

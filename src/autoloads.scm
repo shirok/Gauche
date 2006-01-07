@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.28 2005-10-03 01:02:39 shirok Exp $
+;;; $Id: autoloads.scm,v 1.29 2006-01-07 03:08:40 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.28 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.29 $.  DO NOT EDIT */"
    :pre-decl '("#define LIBGAUCHE_BODY")
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
@@ -127,7 +127,7 @@
           regexp-quote)
 
 (autoload gauche.procedure
-          compose pa$ map$ for-each$ apply$ any-pred every-pred
+          compose complement pa$ map$ for-each$ apply$ any-pred every-pred
           arity procedure-arity-includes?
           <arity-at-least> arity-at-least? arity-at-least-value disasm
           (:macro case-lambda))

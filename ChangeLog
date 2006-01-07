@@ -1,5 +1,7 @@
 2006-01-06  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/procedure.scm (complement): added complement.
+
 	* src/compile.scm (pass2/$CALL): fixed a bug that caused an internal
 	  compiler error when local function inline expansion happens
 	  recursively.  Many thanks to Jun Inoue for tracking this bug

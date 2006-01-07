@@ -31,6 +31,17 @@
 (test "compose" 'a (lambda () ((compose car) '(a b c))))
 (test "compose" '(a b c) (lambda () ((compose) '(a b c))))
 
+(test "complement" '(#t #f #t)
+      (lambda () (map (complement even?) '(1 2 3))))
+(test "complement" '(#t #f #t)
+      (lambda () (map (complement zero?) '(-1 0 1))))
+(test "complement" '(#f #t #f)
+      (lambda () (map (complement =) '(1 2 3) '(1 1 3))))
+(test "complement" '(#f #t #f)
+      (lambda () (map (complement (lambda (x y) (= x y))) '(1 2 3) '(1 1 3))))
+(test "complement" #t
+      (lambda () ((complement (lambda () #f)))))
+
 (test "compose, apply$, map$" 32
       (lambda ()
         (define dot-product (compose (apply$ +) (map$ *)))

@@ -30,13 +30,13 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: procedure.scm,v 1.14 2005-08-28 12:59:17 shirok Exp $
+;;;  $Id: procedure.scm,v 1.15 2006-01-07 03:08:40 shirok Exp $
 ;;;
 
 (define-module gauche.procedure
   (use srfi-1)
   (use srfi-2)
-  (export compose pa$ map$ for-each$ apply$
+  (export compose complement pa$ map$ for-each$ apply$
           any-pred every-pred
           let-optionals* let-keywords* get-optional
           arity procedure-arity-includes?
@@ -61,6 +61,13 @@
          (compose (car fns) (apply compose (cdr fns))))))
 
 (define (compose$ f) (pa$ compose f))
+
+(define (complement fn)
+  (case (arity fn) ;; some optimization
+    ((0) (lambda () (not (fn))))
+    ((1) (lambda (x) (not (fn x))))
+    ((2) (lambda (x y) (not (fn x y))))
+    (else (lambda args (not (apply fn args))))))
 
 (define (map$ proc)      (pa$ map proc))
 (define (for-each$ proc) (pa$ for-each proc))
