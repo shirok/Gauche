@@ -38,31 +38,24 @@ Generally, whenever you added new VM instructions, defined in
 src/vminsn.scm, you need to take the following steps to get
 the new version of working gosh:
 
-[1]% (cd lib; make)
-[2]% cd src
-[3]% gosh -ftest -fno-inline-globals ./gencomp compile.scm
-[4]% gosh -ftest -fno-inline-globals ./gencomp scmlib.scm
-[5]% make
-[6]% ./gosh -ftest ./gencomp compile.scm
-[7]% ./gosh -ftest ./gencomp scmlib.scm
-[8]% make
+   % cd src
+   % gosh -ftest -fno-inline-globals ./gencomp compile.scm
+   % gosh -ftest -fno-inline-globals ./gencomp scmlib.scm
+   % gosh -ftest -fno-inline-globals ./gencomp objlib.scm
+   % make
+   % ./gosh -ftest ./gencomp compile.scm
+   % ./gosh -ftest ./gencomp scmlib.scm
+   % ./gosh -ftest ./gencomp objlib.scm
+   % make
 
-The first step, [1], will update lib/gauche/vm/insn.scm, which is
-used by src/gencomp to dump the compiled code vector as C data.
-Gencomp remaps the host VM instruction code to the target VM 
-instruction code using insn.scm.
+The first series of gencomp generates compiled Scheme files
+that do not include code piece from host gosh.  If you allow
+inlining globals, some built-in procedures are expanded in-line
+using pre-compiled code vector stored in host gosh, whose
+instruction set may differ from the target's.
 
-The steps [3] and [4] compiles the compiler by the host Gauche,
-turning off a certain optimization.   Without -fno-inline-globals,
-host Gauche's code fragment will sneak into the compiled code and
-keeps the compiled result from running on the target Gauche.
-
-The step [5] creates a target Gauche, except its compiler isn't
-optimal because it is compiled without optimization.
-
-The steps [6] and [7] recompiles the target Gauche by the target
-Gauche itself, with all optimizations on.   Thus the step [8]
-produces the optimized target Gauche.
+The second series of gencomp re-generates compiled Scheme files
+using the target gosh, enabling all optimizations.
 
 
 Removing VM instructions is even more cumbersome.  Suppose you want to
