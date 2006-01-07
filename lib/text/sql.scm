@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: sql.scm,v 1.1 2005-08-31 05:46:32 shirok Exp $
+;;;  $Id: sql.scm,v 1.2 2006-01-07 02:37:51 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -100,11 +100,12 @@
 ;;; Tokenizer
 ;;;   Returns a list of tokens.  Each token is either one of the
 ;;;   following form.
-;;;   
-;;;    <symbol>              Regular identifier, or special delimiter:
-;;;                          + - * / < = > <> <= >= ||
-;;;    <character>           Special delimiter: 
-;;;                          #\, #\. #\( #\) #\;
+;;;
+;;;    <string>              Regular identifiers.
+;;;    <symbol>              Special delimiters:
+;;;                           + - * / < = > <> <= >= ||
+;;;    <char>                Special delimiters:
+;;;                           , . ( ) ;
 ;;;    (delimited <string>)  Delimited identifier
 ;;;    (parameter <num>)     Positional parameter (?)
 ;;;    (parameter <string>)  Named parameter (:foo)
@@ -113,6 +114,9 @@
 ;;;    (bitstring <string>)  Binary string.  <string> is like "01101"
 ;;;    (hexstring <string>)  Binary string.  <string> is like "3AD20"
 ;;;
+;;;   NB: The difference of two kinds of special delimiters is that
+;;;       the former is sometimes written with surrounding
+;;;       whitespaces, while the latter is almost never written with them.
 
 (define (sql-tokenize sql-string)
   (define parameter-count 0) ;; positional parameter count
@@ -159,8 +163,7 @@
                  (entry (m 'after) (cons `(parameter ,(m 1)) r))))
            ((#/^\w+/ s)
             => (lambda (m)
-                 (entry (m 'after)
-                        (cons (string->symbol (string-downcase (m))) r))))
+                 (entry (m 'after) (cons (m) r))))
            (else (e "invalid SQL token beginning with ~s in: ~s"
                     c sql-string)))))))
   ;;

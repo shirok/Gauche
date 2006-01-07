@@ -1,5 +1,13 @@
 2006-01-06  Shiro Kawai  <shiro@acm.org>
 
+	* lib/text/sql.scm (sql-tokenize): INCOMPATIBLE CHANGE: changed to
+	  return SQL unquoted identifiers as strings.  This is because
+	  we want to preserve the case of identifiers; although SQL is
+	  case-insensitive, some RDBMS honors the case of table and
+	  column names.  It would be very confusing if pass-through SQL and
+	  SQL parsed by sql-tokenize behaves differently.
+	* lib/dbi.scm (generate-sql/parameters): adapted to the above change.
+
 	* src/port.c (bufport_read): fixed a bug that could block read
 	  from non-full-buffered port even there are some data in the
 	  buffer.

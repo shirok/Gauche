@@ -751,6 +751,13 @@ without using @code{text.sql}, the @code{pass-through} argument
 may be ignored.
 The driver may also take other keyword arguments.  Check out
 the documentation of individual drivers.
+
+@emph{Note:} Case folding of SQL statement
+is implementation dependent.  Some DBMS may treat table
+names and column names in case insensitive way, while
+others do in case sensitive way.  To write a portable
+SQL statement, make them quoted identifiers, that is,
+always surround names by double quotes.
 @end deffn
 
 @deftp {Class} <dbi-query>
@@ -9312,10 +9319,11 @@ a list of tokens, where each token is
 represented by one of the following forms.
 
 @example
-<symbol>              Regular identifier, or special delimiter:
+<symbol>              Special delimiter.  One of the followings:
                       + - * / < = > <> <= >= ||
-<character>           Special delimiter: 
+<character>           Special delimiter.  One of the followings:
                       #\, #\. #\( #\) #\;
+<string>              Regular identifier
 (delimited <string>)  Delimited identifier
 (parameter <num>)     Positional parameter (?)
 (parameter <string>)  Named parameter (:foo)

@@ -317,8 +317,8 @@ fuga
 (use text.sql)
 (test-module 'text.sql)
 
-(test* "sql-tokenize" '(select tab #\. x #\, tab #\. y as foo
-                               from tab where tab #\. z < (number "30"))
+(test* "sql-tokenize" '("select" "tab" #\. "x" #\, "tab" #\. "y" "as" "foo"
+                        "from" "tab" "where" "tab" #\. "z" < (number "30"))
        (sql-tokenize "select tab.x, tab.y as foo from tab\nwhere tab.z<30"))
 
 (test* "sql-tokenize (literal numberes)" '((number "0")
@@ -341,7 +341,7 @@ fuga
                                            (number "1E-3")
                                            (number "1.E-3")
                                            (number ".1E-3")
-                                           - #\. e (number "-3")
+                                           - #\. "E" (number "-3")
                                            (number "1.2") (number ".3")
                                            )
                                            

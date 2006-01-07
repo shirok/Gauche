@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.29 2005-10-06 13:49:13 shirok Exp $
+;;;  $Id: dbi.scm,v 1.30 2006-01-07 02:37:51 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -263,13 +263,17 @@
              (delim  #t))
     (unless (null? tokens)
       (match (car tokens)
+        ((? char? x)
+         (display x p)
+         (loop (cdr tokens) args #t))
         ((? symbol? x)
          (unless delim (write-char #\space p))
          (display x p)
          (loop (cdr tokens) args #f))
-        ((? char? x)
+        ((? string? x)
+         (unless delim (write-char #\space p))
          (display x p)
-         (loop (cdr tokens) args #t))
+         (loop (cdr tokens) args #f))
         (('delimited x)
          (unless delim (write-char #\space p))
          (format p "\"~a\"" (regexp-replace-all #/\"/ x "\"\""))
