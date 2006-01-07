@@ -29,52 +29,47 @@ loaded and imported.  See @ref{Autoload}, for the details of autoloading.
 @c COMMON
 
 @c EN
-@ref{Library modules - Gauche extensions} describes
+As the number of bundled libraries grows, it becomes harder
+to find the one you need.  If you feel lost, check
+out the section @ref{Finding libraries you need}, in which
+we categorized libraries by its purpose.
+@c JP
+付属ライブラリの数が増えるにつれ、必要なライブラリを探すのが難しく
+なりつつあります。迷ったら、@ref{Finding libraries you need}を
+見てみて下さい。目的に合わせてライブラリをカテゴライズしています。
+@c COMMON
+
+@c EN
+The following three chapters describe bundled modules,
+grouped by their names.  
+@ref{Library modules - Gauche extensions} contains a description of
 @code{gauche.*} modules, which are more or less considered
 the core features of Gauche but separated since less frequently used.
 (Some modules are rather ad-hoc, but here for historically reasons).
-The modules in this category include system APIs
-(e.g. @code{gauche.fcntl}, @code{gauche.termios}),
-networking (@code{gauche.net}), thread APIs (@code{gauche.threads}),
-and some high-level routines that are built on top of Gauche
-low-level core APIs (e.g. @code{gauche.process}, @code{gauche.regexp}).
-@c JP
-@ref{Library modules - Gauche extensions}では、
-@code{gauche.*}モジュールを解説します。
-これらのモジュールはGaucheのコアの機能ですが、使用頻度が少ないために
-モジュールとして分離されたものです。
-(一部のモジュールはそれほど重要ではありませんが、
-歴史的な理由からこのカテゴリに含まれています)。
-このカテゴリに含まれるモジュールには、システムAPI (@code{gauche.fcntl}、
-@code{gauche.termios}等)、ネットワーキング(@code{gauche.net})、
-スレッドAPI (@code{gauche.threads})、
-それからGaucheの低レベルのコアAPIの上に実装された高レベルなルーチン
-(@code{gauche.process}、@code{gauche.regexp}等) があります。
-@c COMMON
-
-@c EN
 @ref{Library modules - SRFIs} describes the modules that
-provides SRFI functionalities.
+provides SRFI functionalities.  They have the names begins
+with @code{srfi-}.
 Note that some of SRFI features are built in Gauche core and
 not listed here.  @xref{Standard conformance}, for entire list
 of supported SRFIs.
-@c JP
-@ref{Library modules - SRFIs}では、SRFIの機能を提供するモジュールを
-解説します。一部のSRFIはGaucheのコアに組み込まれており、
-この章には挙げられていないことに注意して下さい。
-サポートされている全てのSRFIのリストは@ref{Standard conformance}にあります。
-@c COMMON
-
-@c EN
-@ref{Library modules - Utilities} describes the modules
-provides miscellaneous utility functions---including
-dbm-style database interface, filesystem utilities,
+@ref{Library modules - Utilities} describes other modules
+---including database interface, filesystem utilities,
 network protocol utilities, and more.
 @c JP
-@ref{Library modules - Utilities} ではその他のさまざまなユーティリティ
-関数を提供するモジュールを解説します。dbmスタイルのデータベース
-インタフェース、ファイルシステムユーティリティ、ネットワークプロトコルユーティリティ
-等があります。
+この章に続く3つの章で、各ライブラリについて詳細に記述します。
+各章は名前でグループ化されています。
+@ref{Library modules - Gauche extensions}では@code{gauche.*}という
+名前を持つモジュールを説明します。これらはある意味Gaucheの基本的な
+機能なのですが、使われる頻度が少ないために別モジュールになったというものです。
+(いくつかのモジュールはもっと付加的なものですが、歴史的理由からここにあります)。
+@ref{Library modules - SRFIs}ではSRFIの機能を提供するモジュールを
+扱います。@code{srfi-}で始まる名前を持ちます。
+いくつかのSRFIについてはGaucheのコアに組み込みになっているため、
+この章には現れないことに注意してください。サポートされているSRFIの
+完全なリストについては@ref{Standard conformance}を見て下さい。
+@ref{Library modules - Utilities}では残りのモジュールに
+ついて説明します。データベースインタフェース、ファイルシステム、
+ネットワークプロトコル、その他様々なライブラリがあります。
 @c COMMON
 
 @c EN
@@ -87,6 +82,163 @@ See @ref{Operations on libraries}, for the details.
 詳しくは@ref{Operations on libraries}を参照して下さい。
 @c COMMON
 
+@menu
+* Finding libraries you need::  
+* Naming convetion of libraries::  
+@end menu
+
+@node Finding libraries you need, Naming convetion of libraries, Library modules - Overview, Library modules - Overview
+@section Finding libraries you need
+
+Gauche's modules are organized by hierarchical names.  However,
+the names are more or less represents what it implements
+instead of what it is implemented for.  If the module solves
+one problem, both are the same.  However, sometimes there
+are multiple ways to solve a problem, and also one implementation
+of an algorithm can solve multiple different problems; thus
+it is difficult to name the modules in problem-oriented
+(or purpose-oriented) way.
+
+Thus, if you're new to Gauche and just looking for a module that
+does your job, it may not be straightforward.  Since there may
+be multiple algorithms to do your job, and each algorithm is
+implemented in different module.
+
+The modules are also designed in layers; some low-level modules
+provides direct interface to the system calls, while some
+higher-level ones provide more abstract interface, possibly
+built on top of more than one low-level modules.   Which one
+should you use?  Generally, you want to use the highest level,
+for the very purpose of libraries are to provide easy, abstract
+interface.  However there are times that you have to break
+the abstraction and to go down to tweak the machinery in
+the basement; then you need to use low-level modules directly.
+
+The purpose of this section is to group the libraries by
+their purposes.  Each category lists relevant modules with
+brief descriptions, and also showing whether 
+
+
+@menu
+* Library directory - data containers::  
+* Library directory - strings and characters::  
+* Library directory - data exchange::  
+* Library directory - files::   
+* Library directory - processes::  
+* Library directory - networking::  
+* Library directory - input and output::  
+* Library directory - time::    
+* Library directory - bits and bytes::  
+@end menu
+
+@node Library directory - data containers, Library directory - strings and characters, Finding libraries you need, Finding libraries you need
+@subsection Library directory - data containers
+
+@subsubheading Generic container operations
+
+Some data containers have similar properties; for example,
+lists, vectors and hash tables can be seen as a collection
+of data.  So it is handy to have generic operators, such
+as applying a procedure to all the elements.
+
+Gauche provides such mechanism to a certain degree, mainly using
+its object system.
+
+@itemize @bullet
+@item
+@emph{Collection} - Generic functions applicable for unordered
+set of values.  @xref{Collection framework}.
+@item
+@emph{Sequence} - Generic functions applicable for ordered set
+of values.  @xref{Sequence framework}.
+@item
+@emph{Relation} - Generic functions to handle relations
+(in a sense of Codd's definition).  @xref{Relation framework}.
+@item
+@emph{Comprehension} - This is a collection of macros very handy
+to construct collections and sequences in concise code.
+@xref{Eager comprehensions}.
+@end itemize
+
+@subsubheading Container implementations
+
+@itemize @bullet
+@item
+@emph{List} - the universal data structure.  You want to check
+@ref{Pairs and Lists}, @ref{List library}, 
+and @ref{Additional list library}.
+@item
+@emph{Vector} - a one-dimensional array of arbitrary Scheme values.
+See @ref{Vectors} and @ref{Vector library}.
+@item
+@emph{Uniform vector} - a special kind of vectors that can hold
+limited types of values.  It tends to be used in performance
+sensitive applications, such as graphics.  See @ref{Uniform vectors}.
+@item
+@emph{Array} - multi-dimensional arrays that can hold
+arbitrary Scheme values.  See @ref{Arrays}.
+@item
+@emph{Uniform array} - multi-dimensional arrays that can hold
+limited types of values.  This is also supported by @ref{Arrays}.
+@item
+@emph{String} - a sequence of characters.  See @ref{Strings}
+and @ref{String library}.  Gauche handles multibyte strings---
+see @ref{Multibyte Strings} for the defatils.
+@item
+@emph{Character set} - a set of characters.  See @ref{Character set}
+and @ref{Character-set library}.
+@item
+@emph{Hash table} - hash tables.  See @ref{Hashtables}.  There are
+also some conversion functions in @ref{Additional list library}.
+@item
+@emph{Queue} - a simple queue is provided in @ref{Queue}.
+@item
+@emph{Record} - a simple data structure.  Although Gauche's object
+system can be used to define arbitrary data structures, you might
+want to look at @ref{Record types} and @ref{SLIB-compatible record type},
+for they are more portable and potentially more efficient.
+@item
+@emph{Stream} - you can implement cool lazy algorithms with it.
+See @ref{Stream library}.
+@item
+@emph{Database interface} - dbm interface can be used as a
+persistent hash table; see @ref{Generic DBM interface}.
+for generic RDBMS interface, see @ref{Database independent access layer}.
+@end itemize
+
+@node Library directory - strings and characters, Library directory - data exchange, Library directory - data containers, Finding libraries you need
+@subsection Library directory - string and character
+
+@subsubheading String manipulation
+
+@subsubheading Regular expressions
+
+@subsubheading Character encodings
+
+@node Library directory - data exchange, Library directory - files, Library directory - strings and characters, Finding libraries you need
+@subsection Library directory - data exchange
+
+@node Library directory - files, Library directory - processes, Library directory - data exchange, Finding libraries you need
+@subsection Library directory - files
+
+@node Library directory - processes, Library directory - networking, Library directory - files, Finding libraries you need
+@subsection Library directory - processes
+
+@node Library directory - networking, Library directory - input and output, Library directory - processes, Finding libraries you need
+@subsection Library directory - networking
+
+@node Library directory - input and output, Library directory - time, Library directory - networking, Finding libraries you need
+@subsection Library directory - input and output
+
+@node Library directory - time, Library directory - bits and bytes, Library directory - input and output, Finding libraries you need
+@subsection Library directory - time
+
+@node Library directory - bits and bytes,  , Library directory - time, Finding libraries you need
+@subsection Library directory - bits and bytes
+
+
+@node Naming convetion of libraries,  , Finding libraries you need, Library modules - Overview
+@section Naming convetion of libraries
 
 @c EN
 The following table summarizes naming categories of the modules,
