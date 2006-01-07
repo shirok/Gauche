@@ -142,6 +142,10 @@
 
 (test* "map-to (nary)" '#(3 5 7 9 11)
        (map-to <vector> + '(1 2 3 4 5) '#(2 3 4 5 6)))
+(test* "map-to (nary, uneven)" '#(3 5 7 9)
+       (map-to <vector> + '(1 2 3 4) '#(2 3 4 5 6)))
+(test* "map-to (nary)" '#(3 5 7 9)
+       (map-to <vector> + '(1 2 3 4 5) '#(2 3 4 5)))
 
 (test* "map-accum" '((45 30 15) 5)
        (receive r 
@@ -463,6 +467,8 @@
        (map-to-with-index <vector> cons (sseq)))
 (test* "map-to-with-index (boundary)" '#()
        (map-to-with-index <vector> cons (sseq) '()))
+(test* "map-to-with-index (uneven lengths)" '#((0 a d) (1 b e))
+       (map-to-with-index <vector> list '#(a b c) '#(d e)))
 
 (test* "fold-with-index (list)" '((2 . a) (1 . b) (0 . c))
        (fold-with-index acons '() '(c b a)))

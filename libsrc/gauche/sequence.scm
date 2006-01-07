@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: sequence.scm,v 1.1 2005-11-10 10:45:16 shirok Exp $
+;;;  $Id: sequence.scm,v 1.2 2006-01-07 03:36:54 shirok Exp $
 ;;;
 
 ;; This module defines an unified way to treat sequence-like objects
@@ -169,7 +169,7 @@
           (do ((i 0   (+ i 1)))
               ((end?) (get))
             (add! (proc i (next))))))
-      (with-builder (class add! get :size (size-of seq))
+      (with-builder (class add! get :size (maybe-minimum-size seq more))
         (call-with-iterators
          (cons seq more)
          (lambda (ends? nexts)

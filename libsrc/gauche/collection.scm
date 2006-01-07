@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: collection.scm,v 1.1 2005-11-10 10:45:16 shirok Exp $
+;;;  $Id: collection.scm,v 1.2 2006-01-07 03:36:54 shirok Exp $
 ;;;
 
 ;; Defines generic operations over collection.   A collection is
@@ -167,6 +167,23 @@
             (hash-table-put! h (car item) (cdr item)))
           (lambda () h))))
 
+;; utility.  return minimum size of collections if it's easily known, or #f.
+(define (maybe-minimum-size col more)
+  (let1 size (and-let* ((siz (lazy-size-of col))
+                        ( (integer? siz) ))
+               siz)
+    (if (null? more)
+      size  ;; short path
+      (let loop ((cols more)
+                 (r    size))
+        (if (null? cols)
+          r
+          (let1 size (lazy-size-of (car cols))
+            (loop (cdr cols)
+                  (cond ((not (integer? size)) r)
+                        ((not (integer? r)) size)
+                        (else (min r size))))))))))
+
 ;;----------------------------------------------------
 ;; Derived operations
 ;;
@@ -260,18 +277,18 @@
 ;; generic way.
 (define-method map-to ((class <class>) proc (coll <collection>) . more)
   (if (null? more)
-      (with-builder (class add! get :size (size-of coll))
-        (with-iterator (coll end? next)
-          (do ()
-              ((end?) (get))
-            (add! (proc (next))))))
-      (with-builder (class add! get :size (size-of coll))
-        (call-with-iterators
-         (cons coll more)
-         (lambda (ends? nexts)
-           (do ()
-               ((any (cut <>) ends?) (get))
-             (add! (apply proc (map (cut <>) nexts)))))))))
+    (with-builder (class add! get :size (size-of coll))
+      (with-iterator (coll end? next)
+        (do ()
+            ((end?) (get))
+          (add! (proc (next))))))
+    (with-builder (class add! get :size (maybe-minimum-size coll more))
+      (call-with-iterators
+       (cons coll more)
+       (lambda (ends? nexts)
+         (do ()
+             ((any (cut <>) ends?) (get))
+           (add! (apply proc (map (cut <>) nexts)))))))))
 
 ;; map-to <list> is equivalent to map.
 (define-method map-to ((class <list-meta>) proc coll . more)
