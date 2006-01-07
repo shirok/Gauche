@@ -39,7 +39,7 @@ Lisp系言語のマクロは、他の言語に見られるマクロ(例えばCプリプロセッサマクロ)とは
 @c EN
 R5RS hygienic macro is based on a special pattern language,
 and guaranteed that no "variable capture" occurs.
-"Variable catpture" means that if you insert new variable
+"Variable capture" means that if you insert new variable
 bindings in the expanded form, the new bindings
 shadows the bindings in the form passed to the macro.
 @c JP

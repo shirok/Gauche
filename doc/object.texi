@@ -445,7 +445,7 @@ slots:
 @end example
 
 @c EN
-You see that a method is dispached not only by its primary
+You see that a method is dispatched not only by its primary
 receiver (@code{<2d-point>}), but also other arguments.
 In fact, the first argument is no more special than the rest.
 In CLOS-like system a method does not belong to
@@ -689,7 +689,7 @@ first thing in your @code{initialize} method to call @code{next-method}.
 Let's inspect the above code.  When you call
 @code{(make <shape> args @dots{})}, the system allocates
 memory for an instance of @code{<shape>}, and calls
-@code{initialize} generic funciton with the instance and
+@code{initialize} generic function with the instance and
 @code{args @dots{}}.  It is dispatched to the @code{initialize}
 method you just defined.  In it, you call @code{next-method},
 which in turn calls @code{<object>} class's @code{initialize}
@@ -1075,7 +1075,7 @@ inherits.   You can use multiple inheritance.
 All Scheme-defined classes implicitly inherits @code{<object>}.
 It is implicitly added to the right of @var{supers} list, so you
 don't need to specify it.
-See @ref{Inheritance}, for the details abount inheritance.
+See @ref{Inheritance}, for the details about inheritance.
 
 @var{Slot-spec} is a specification of a "slot", sometimes known as 
 a "field" or an "instance variable" (but you can specify "class variable"
@@ -1568,7 +1568,7 @@ Once the class precedence order is determined,
 the slots of defined class is calculated as follows:
 the slot definitions are collected in the direction from superclasss
 to subclass in CPL.  If a subclass has a slot definition of the same
-name of the one in superclass, then the slot defintion of the subclass
+name of the one in superclass, then the slot definition of the subclass
 is taken and superclass's is discarded.    Suppose a class @code{<S>}
 defines slots @code{a}, @code{b}, and @code{c}, a class @code{<T>}
 defines slots @code{c}, @code{d}, and @code{e}, and a class @code{<U>}
@@ -1627,7 +1627,7 @@ definitions, @code{c} and @code{d}'s come from @code{<T>}, and
 You can get a list of slot definitions of a class object using
 @code{class-slots} function.
 
-Note that the behavor described above is mere a default behavior.
+Note that the behavior described above is mere a default behavior.
 You can customize how the CPL is computed, or how slot definitions
 are inherited, by defining metaclass.  For example,
 you can write a metaclass that allows you to merge slot options
@@ -1850,7 +1850,7 @@ Returns the value of @code{:allocation} option of @var{slot-def}.
 @end defun
 
 @defun slot-definition-getter slot-def
-@defunx slot-defininion-setter slot-def
+@defunx slot-definition-setter slot-def
 @defunx slot-definition-accessor slot-def
 @c EN
 Returns the value of @code{:getter}, @code{:setter} and @code{:accessor}
@@ -1907,7 +1907,7 @@ original class is modified so that they will point to the new class.
 All the subclasses of the original class are redefined recursively
 so that they reflect the changes of the class.
 Each class remembers its initialization arguments, and
-each redefined subclass gets the same initalization arguments
+each redefined subclass gets the same initialization arguments
 as the original subclass. 
 
 @item
@@ -2060,7 +2060,7 @@ the instance update protocol.
 @c EN
 @subsubheading Notes on compatibility
 
-Class redefinition protocol subtlely differs among CLOS-like
+Class redefinition protocol subtlety differs among CLOS-like
 Scheme systems.   Gauche's is very similar to STklos's, except
 that STklos 0.56 doesn't replace bindings of redefined subclasses,
 and also it doesn't remember initialization arguments so the
@@ -2637,7 +2637,7 @@ of @var{obj}).
 Note: Unlike CLOS, @code{slot-ref} etc. don't call the generic
 function version in it, so you can't customize the behavior
 of @code{slot-ref} by specializing @code{slot-ref-using-class}.
-So the primary puropose of those generic functions are to be
+So the primary purpose of those generic functions are to be
 used within @code{change-class} method; especially, @code{slot-ref} etc.
 can't be used during @var{obj}'s being redefined, since they
 trigger class redefinition again (see @ref{Changing classes} for details).

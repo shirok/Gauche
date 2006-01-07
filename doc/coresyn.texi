@@ -431,13 +431,13 @@ and returns the value(s) of the last expression in the body.
 arguments.  The actual arguments are bound to the corresponding
 variables.
 @item
-@code{@var{variable}} : The procedure takes any number of argumnets.
+@code{@var{variable}} : The procedure takes any number of arguments.
 The actual arguments are collected to form a new list and bound to
 the variable.
 @item
 @code{(@var{variable_0} @dots{} @var{variable_N-1}. @var{variable_N})} : 
 The procedure takes at least @var{N} arguments.  The actual arguments
-up to @var{N} is bound to the corresponding varibles.
+up to @var{N} is bound to the corresponding variables.
 If more than @var{N} arguments are given, the rest arguments are
 collected to form a new list and bound to @var{variable_N}.
 @end itemize
@@ -1605,6 +1605,7 @@ The return value of @code{until} form itself isn't specified.
 
 @defspec quasiquote template
 [R5RS]
+Quasiquotation is used to build a 
 @end defspec
 
 
@@ -2088,7 +2089,7 @@ It is an error if no module named @var{name} exists.
 
 If @code{select-module} is used in the Scheme file, its effect is
 limited inside the file, i.e. even if you load/require a file that uses
-@code{select-module} internallly, the current module of requirer is
+@code{select-module} internally, the current module of requirer is
 not affected.
 @c JP
 名前@var{name}を持つモジュールをカレントモジュールとします。
@@ -2104,7 +2105,7 @@ not affected.
 @c EN
 Evaluates @var{body} sequentially in the module
 named @var{name}.  Returns the last result(s).
-If no moudle named @var{name}, an error is signalled.
+If no module named @var{name}, an error is signalled.
 @c JP
 名前@var{name}を持つモジュールをカレントモジュールとした状態で@var{body} @dots{}
 を順に評価し、最後の結果を返します。該当するモジュールが存在しなければエラーとなります。
@@ -2165,7 +2166,7 @@ when the compiler sees this special form.
 Note that imports are not transitive.  The modules that @var{module-name}s
 are importing are not automatically imported to the current module.
 This keeps modules' modularity; a library module can import whatever
-modules it needs without worring about polluting the namespace of
+modules it needs without worrying about polluting the namespace of
 the user of the module.
 @c JP
 @var{module-name}という名前のモジュールがexportしている束縛を

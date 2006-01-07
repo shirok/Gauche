@@ -15,7 +15,7 @@ Gaucheの動作を正確に理解する助けになると思います。
 * Multibyte Strings::           
 * Multibyte scripts::           
 * Case-sensitivity::            
-* Integerated Object System::   
+* Integrated Object System::   
 * Module system::               
 * Compilation::                 
 @end menu
@@ -46,7 +46,7 @@ A command-line option is provided to make the reader case-insensitive.
 @item
 @c EN
 Continuations created in a certain situation
-(specifcally, inside a Scheme code that is called from external
+(specifically, inside a Scheme code that is called from external
 C routine) have limited extent (@xref{Continuation}, for details).
 @c JP
 ある条件下で作られた継続は限られたエクステントを持ちます
@@ -677,7 +677,7 @@ this feature.
 @ref{Loading Scheme file}を参照して下さい。
 @c COMMON
 
-@node Case-sensitivity, Integerated Object System, Multibyte scripts, Concepts
+@node Case-sensitivity, Integrated Object System, Multibyte scripts, Concepts
 @section Case-sensitivity
 @c NODE 大文字小文字の区別
 
@@ -696,7 +696,7 @@ Schemeもその流れを汲んでおり、R5RSでもシンボルは読み込まれる時に大文字小文字の
 
 @c EN
 However, nowadays programming is hardly completed in one language.
-When you have to interact with other languages that distinguishe uppercase
+When you have to interact with other languages that distinguish uppercase
 and lowercase characters, it is desirable that Scheme distinguishes them
 as well.
 @c JP
@@ -749,14 +749,14 @@ out using |-escape (@xref{Symbols}).
 
 @c EN
 Right now, there's no way to switch these two modes back and forth
-inside the intepreter; an API will be provided in the later versions.
+inside the interpreter; an API will be provided in the later versions.
 @c JP
 今のところ、インタプリタの中から両方のモードを切り替えることはできません。
 将来のバージョンではその方法が提供されるでしょう。
 @c COMMON
 
 
-@node Integerated Object System, Module system, Case-sensitivity, Concepts
+@node Integrated Object System, Module system, Case-sensitivity, Concepts
 @section Integrated Object System
 @c NODE 統合されたオブジェクトシステム
 
@@ -791,7 +791,7 @@ GaucheはCLOSに類似した、STklosスタイルのオブジェクトシステムを持っています。
 @end example
 
 @c EN
-However, if you are familiar with mainstream OO langauges but new to CLOS-style
+However, if you are familiar with mainstream OO languages but new to CLOS-style
 object system, Gauche's object system may look strange
 when you look deeper into it.
 Here I describe several characteristics of Gauche object system quickly.
@@ -934,7 +934,7 @@ Gaucheでは、名前空間はオブジェクトシステムとは直交する、
 
 @end table
 
-@node Module system, Compilation, Integerated Object System, Concepts
+@node Module system, Compilation, Integrated Object System, Concepts
 @section Module system
 @c NODE モジュールシステム
 
@@ -1053,7 +1053,7 @@ Gaucheは、Schemeフォームをひとつづつ読み込んでは評価するという意味では
 @c COMMON
 
 @c EN
-Built-in sytanxes and macros are recognized and expanded
+Built-in syntaxes and macros are recognized and expanded
 at the compilation time.  Some built-in procedures are
 expanded in-line as far as the compiler can see the global
 binding is not altered at the time the form is compiled.

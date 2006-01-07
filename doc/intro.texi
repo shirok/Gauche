@@ -109,7 +109,7 @@ Gaucheは、プログラマやシステム管理者がこなす日常の雑事を
 
 @c EN
 There are lots of Scheme implementations available, and each
-of them has its design emphasis and weeknesses.  Gauche is
+of them has its design emphasis and weaknesses.  Gauche is
 designed with emphasis on the following criteria.
 @c JP
 世の中には多くのSchemeの実装がありますが、
@@ -373,7 +373,7 @@ I use this notation since it is useful to indicate valid pattern of arguments.
 @c COMMON
 @item &rest args
 @c EN
-Indicates it may take rest arguements.
+Indicates it may take rest arguments.
 Note that Gauche doesn't really support Common-Lisp style
 @code{&rest} argument specifier in the lambda list.
 I use this notation since it is useful to indicate valid pattern of arguments.

@@ -195,7 +195,7 @@ A bit string (ascending bit order inside each byte).
 
 @item B
 @c EN
-A bit string (decending bit order inside each byte).
+A bit string (descending bit order inside each byte).
 @c JP
 ビット文字列(それぞれのバイトにおけるビットオーダーは降順)。
 @c COMMON
@@ -439,7 +439,7 @@ packはその文字列を入力とします。
 @c EN
 @emph{Note:} in the current version, @code{@@} in @code{unpack}
 template has a bug and does not work as supposed.  It will
-be fixed in the future verson.
+be fixed in the future version.
 @c JP
 @emph{註:} 現在のバージョンには、@code{unpack}のテンプレートの
 @code{@@}が想定したように動かないというバグがあります。
@@ -450,7 +450,7 @@ be fixed in the future verson.
 @defun unpack-skip template &keyword :input
 @c EN
 unpack-skip is the same as unpack except it does not return the
-values.  In some cases, particulary with fixed-size templates, this
+values.  In some cases, particularly with fixed-size templates, this
 can be much more efficient when you just want to skip over a value.
 @c JP
 unpack-skipは、値を返さないことを除いてunpackと同じです。
@@ -461,7 +461,7 @@ unpack-skipは、値を返さないことを除いてunpackと同じです。
 
 @defun make-packer template
 @c EN
-The low-level interface.  This function returns a disptach closure
+The low-level interface.  This function returns a dispatch closure
 that can be used to pack, unpack and skip over the same cached
 template.  The dispatch closure accepts symbol methods as follows:
 @c JP
@@ -782,8 +782,8 @@ Returns @code{#t} iff the query can still be passed to
 @end deffn
 
 @deffn {Method} dbi-close (q <dbi-query>)
-Destroy the query and free resouces associated to the query.
-After this opereaion, @code{dbi-open?} returns @code{#f} for @var{q},
+Destroy the query and free resources associated to the query.
+After this operation, @code{dbi-open?} returns @code{#f} for @var{q},
 and the query can't be used in any other way.  Although the resource
 may be freed when @var{q} is garbage-collected, it is strongly recommended
 that the application closes queries explicitly.
@@ -797,7 +797,7 @@ the same number of @var{parameter}s as the query expects.
 If the issued query is @code{select} statement, @code{dbi-execute}
 returns an object represents a @emph{relation}.
 A relation encapsulates the values in
-rows and columns, as well as meta infomation like column names.
+rows and columns, as well as meta information like column names.
 See "Retrieving query results" below for how to access the result.
 
 If the query is other types, such as @code{create}, @code{insert} 
@@ -979,7 +979,7 @@ an appropriate relation object.
 If the default escape method isn't enough, the driver may
 overload this method to implement a specific escaping.
 For example, MySQL treats backslash characters specially
-as well as signle quotes, so it has its @code{dbi-escape-sql} 
+as well as single quotes, so it has its @code{dbi-escape-sql} 
 method.
 @end deffn
 
@@ -1003,7 +1003,7 @@ but the driver may overload this method in order to skip
 creating intermediate query object for efficiency.
 @end deffn
 
-@subsubheading DBI utility funcitons
+@subsubheading DBI utility functions
 
 The following functions are low-level utilities which you may
 use to implement the above methods.
@@ -1023,7 +1023,7 @@ such as a proxy.
 
 @defun dbi-prepare-sql connection sql
 Parses an SQL statement @var{sql} which may contain placeholders,
-and returns a closure, which generats a complete SQL statement when
+and returns a closure, which generates a complete SQL statement when
 called with actual values for the parameters.  If the back-end
 doesn't support prepared statements, you may use this function
 to prepare queries in the driver.
@@ -1033,7 +1033,7 @@ to escape values within SQL properly (see @code{dbi-escape-sql} above).
 
 @example
 ;; assume c contains a valid dbi connection
-((dbi-prepare-sql c "select * from table where id=?") "foo'bah")
+((dbi-prepare-sql c "select * from table where id=?") "foo'bar")
  => "select * from table where id='foo''bar'"
 @end example
 @end defun
@@ -1067,7 +1067,7 @@ importing @code{dbm} module is enough.
 
 @c EN
 To create or open a database, you need a concrete implementation
-of the database.  Gauche currently has the following impelentations.
+of the database.  Gauche currently has the following implementations.
 Each module defines its own low-level accessing functions
 as well as the common interface.
 Note that your system may not have one or more of those DBM libraries;
@@ -1311,7 +1311,7 @@ DBMインスタンスを作成してオープンするための便利なメソッドです。
 
 @c EN
 Database file is closed when it is garbage collected.
-However, to ensure the modification is properly synchornized,
+However, to ensure the modification is properly synchronized,
 you should close the database explicitly.
 @c JP
 データベースファイルはガベージコレクトされる際にクローズされますが、
@@ -1388,7 +1388,7 @@ Delete a value associated with @var{key}.
 @c NODE DBMデータベース上の繰り返し処理
 
 @c EN
-To walk over the entire database, following methos are provided.
+To walk over the entire database, following methods are provided.
 @c JP
 全データベースを渡り歩く処理のために、以下のメソッドが用意されています。
 @c COMMON
@@ -2256,7 +2256,7 @@ as follows.
 @c EN
 Note that @var{lister} shouldn't return the given path itself (@code{"."})
 nor the parent directory (@code{".."}), or the recursion wouldn't
-terminate.  Also note @var{lister} is expected to return a path accesible
+terminate.  Also note @var{lister} is expected to return a path accessible
 from the current directory, i.e. if @var{path} is @code{"/usr/lib/foo"} and
 it contains @code{"libfoo.a"} and @code{"libfoo.so"}, @var{lister} should
 return @code{'("/usr/lib/foo/libfoo.a" "/usr/lib/foo/libfoo.so")}.
@@ -2283,7 +2283,7 @@ When @var{follow-link?} is false, @var{proc} is not called.
 @c COMMON
 
 @c EN
-The following examble returns a list of pathnames of the emacs backup files
+The following example returns a list of pathnames of the emacs backup files
 (whose name ends with "~") under the given path.
 @c JP
 次の例は、与えられたpath以下からemacsのバックアップファイル ("~"で終る名を持つファイル)
@@ -2444,7 +2444,7 @@ convention, which ignores trailing slashes.)
 Returns an extension of @var{path},
 and  a pathname of @var{path} without extension, respectively.
 If @var{path} doesn't have an extension, @code{#f} and @var{path}
-is returnedm respectively.
+is returned respectively.
 @c JP
 それぞれ、@var{path}の拡張子と、@var{path}から拡張子を除いたものを返します。
 @var{path}が拡張子を持っていない場合はそれぞれ@code{#f}と@var{path}が返されます。
@@ -2527,7 +2527,7 @@ by default.
 @end defun
 
 @node File attribute utilities, File operations, Pathname utilities, Filesystem utilities
-@subsection File attibute utilities
+@subsection File attribute utilities
 @c NODE ファイル属性ユーティリティ
 
 @defun file-type path &keyword follow-link?
@@ -3665,7 +3665,7 @@ as the data coming in.
 @deftp {Class} <hmac>
 @clindex hmac
 @c EN
-Keeps state informatoin of HMAC algorithm.
+Keeps state information of HMAC algorithm.
 Key and the hashing algorithm should be given at the construction
 time, using @code{:key} and @code{:hasher} keyword-arguments respectively.
 You can pass any class object that implements message digest 
@@ -4169,7 +4169,7 @@ to do with the message body before the entire message is read.
 @defun mime-parse-message port headers handler
 @c EN
 The fundamental streaming parser.  @var{Port} is an input port
-from where the mssage is read.  @var{Headers} is a list of headers
+from where the message is read.  @var{Headers} is a list of headers
 parsed by @code{rfc822-header->list}; that is, this procedure
 is supposed to be called after the header part of the message
 is parsed from @var{port}:
@@ -4784,8 +4784,8 @@ combinations:
 
 @c EN
 If @code{#f} is given to a keyword argument, it is
-equivalent to the absense of that keyword argument.
-It is particulary useful to pass the results of
+equivalent to the absence of that keyword argument.
+It is particularly useful to pass the results of
 parsed uri.
 
 If a component contains a character that is not appropriate
@@ -4856,7 +4856,7 @@ By default, characters that are not specified ``unreserved'' in
 RFC2396 are escaped.  You can pass different character set
 to @var{noescape} argument to keep from being encoded.
 
-The multibyte characters are encoded as the octed stream of Gauche's
+The multibyte characters are encoded as the octet stream of Gauche's
 native multibyte representation.
 @c JP
 安全でない文字を、@code{%}によるエスケープでエンコードします。
@@ -5333,7 +5333,7 @@ default-valueは、デフォルト値としての文字列か、与えられなければ@code{#f}。
 @defun make-empty-attlist
 @defunx attlist-add attlist name-value
 @defunx attlist-null?
-@defunx attlist-remoev-top attlist
+@defunx attlist-remove-top attlist
 @defunx attlist->alist attlist
 @defunx attlist-fold
 @c EN
@@ -8400,7 +8400,7 @@ SXML->HTML変換に対して特化され最適化されたバージョンのノードディスパッチ
 @mdindex text.csv
 @c EN
 Provides a function to parse/generate CSV (comma separated value) tables.
-Actually, the separater is not limited to comma; you can customize it.
+Actually, the separator is not limited to comma; you can customize it.
 
 CSV format is widely used to exchange table-type data in plain text,
 although there are apparently no ``formal'' specification.
@@ -8588,7 +8588,7 @@ displays:
 This module provides utilities to deal with localized messages.
 The API is compatible to GNU's gettext, and the messages
 are read from @file{*.po} and @file{*.mo} files,
-so that you can use the GNU texttext
+so that you can use the GNU gettext
 toolchain to prepare localized messages.
 However, the code is written from scratch by Alex Shinn and
 doesn't depend on GNU's gettext library.
@@ -8756,7 +8756,7 @@ plural forms.
 Pass a singular form to @var{msg-id}, and plural form to
 @code{msg-id2}.  The @var{num} argument is used to determine
 the plural form.  If no message catalog is found, @var{msg-id}
-is returnf when @var{num} is 1, and @var{msg-id2} otherwise.
+is returned when @var{num} is 1, and @var{msg-id2} otherwise.
 @c JP
 @var{gettext}と似ていますが、複数形を処理するのに使うことが
 できます。単数形のメッセージを @var{msg-id} へ、複数形のメッセージを
@@ -9609,7 +9609,7 @@ It is a very common operation to concatenate text segments.
 However, using string-append repeatedly causes unnecessary
 copying of intermediate strings, and sometimes such intermediate
 strings are discarded due to the error situation (for example,
-think about constucting an HTML document in the CGI script).
+think about constructing an HTML document in the CGI script).
 
 The efficient technique is to delay concatenation of those
 text segments until it is needed.  In Scheme it is done very
@@ -10169,7 +10169,7 @@ the smallest set of commands (additions and deletions) that changes
 @var{a} into @var{b}.
 This procedure is built on top of @code{lcs-fold} above.
 
-Returns a list of @emph{hunk}s, which is a contigous section of
+Returns a list of @emph{hunk}s, which is a contiguous section of
 additions and deletions.  Each hunk consists of a list of
 directives, which is a form of:
 @c JP
@@ -10596,7 +10596,7 @@ and (2) structure matching is integrated to Gauche's object system.
 
 @c EN
 We show a list of APIs first, then the table of complete syntax of 
-patterns, folowed by examples.
+patterns, followed by examples.
 @c JP
 まず API のリストを示し、それからパターンの完全な構文のテーブルを示し、
 そして例を示します。
@@ -10879,7 +10879,7 @@ an integer.
 @item
 @c EN
 A symbol @code{_} matches anything, without binding a patter variable.
-It can be used to show "don't care" placeholoder.
+It can be used to show "don't care" placeholder.
 @c JP
 シンボル @code{_} はあらゆるものマッチし、パターン変数は束縛しません。
 プレースホルダであることを示すのに用います。
@@ -11667,7 +11667,7 @@ Returns true iff rows can be deleted from the relation @var{r}.
 @end deffn
 
 @deffn {Method} relation-delete! (r <relation>) row
-Delets a row @var{row} from the relation @var{r}.
+Deletes a row @var{row} from the relation @var{r}.
 @end deffn
 
 @deffn {Method} relation-fold (r <relation>) proc seed column @dots{}
@@ -11819,7 +11819,7 @@ Terminates if one of @var{streams} reaches the end.
 
 @defun stream-filter pred? stream
 [SRFI-40]
-Resturns a new stream including only elements passing @var{pred?}.
+Returns a new stream including only elements passing @var{pred?}.
 @end defun
 
 The following procedures are taken from the library written by
@@ -11855,7 +11855,7 @@ The default values of @var{start} and @var{step} are 0 an 1, respectively.
 @end defun
 
 @defun stream-format fmt arg @dots{}
-Resturns a stream which is a result of applying @code{string->stream}
+Returns a stream which is a result of applying @code{string->stream}
 to @code{(format fmt arg @dots{})}.
 @end defun
 
@@ -12111,7 +12111,7 @@ CGIスクリプトを手軽に書くにはこのモジュールの他に、
 
 @deffn {Parameter} cgi-metavariables &optional metavariables
 @c EN
-Normally, httpd passes a cgi progam various information
+Normally, httpd passes a cgi program various information
 via environment variables.
 Most procedures in @code{www.cgi} refer to them (meta-variables). 
 However, it is sometimes inconvenient to require environment variable access
@@ -12210,7 +12210,7 @@ That is, the content of uploaded file will be seen as one big
 chunk of a string.  The other information, such as the original file
 name, is discarded.   If it is not desirable to read entire file
 into a string, you can customize the behavior by the @var{part-handler}
-argument.  The details are explaned in the "Handling file uploads"
+argument.  The details are explained in the "Handling file uploads"
 section below.
 @c JP
 @code{REQUEST_METHOD}が@code{POST}の場合、この手続きはenctypeとして
@@ -12523,7 +12523,7 @@ calling this procedure.
 
 @deffn {Parameter} cgi-temporary-files
 @c EN
-Keeps a list of filenames registered by @code{cgi-add-temorary-file}.
+Keeps a list of filenames registered by @code{cgi-add-temporary-file}.
 @c JP
 @code{cgi-add-temporary-file}で登録された一時ファイルを保持するパラメータです。
 @c COMMON

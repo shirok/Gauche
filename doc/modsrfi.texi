@@ -61,7 +61,7 @@ supports @var{feature-requirement}.
 In a way, it can be used to absorb the different feature sets supported by
 different Scheme implementations.
 
-@var{feature-requiremnt} must be in the following syntax:
+@var{feature-requirement} must be in the following syntax:
 @c JP
 Gauche が @var{feature-requirement} をサポートしていれば、このマクロは
 @var{command-or-definition} @dots{} を展開します。
@@ -157,7 +157,7 @@ to your program.  Note that Gauche issues @code{(use srfi-13)}
 for you in this case.
 
 The above form signals an error if the implementation doesn't support
-srfi-13.  However, you might want to run your program on such implentations
+srfi-13.  However, you might want to run your program on such implementations
 as well, by providing alternative library definitions.
 @c JP
 その実装が @code{srfi-13} をサポートしていれば、この形式は「あなたの
@@ -428,7 +428,7 @@ An error is signalled if @var{i} is past the end of list @var{x}.
 @xref{Additional list library}, for more tolerant version
 of @code{take} and @code{drop}.
 
-For generic subsequence extranction from any sequence, see @code{subseq}
+For generic subsequence extraction from any sequence, see @code{subseq}
 in @ref{Slicing sequence}.
 @c JP
 @code{drop} は @var{x} に @var{i} 回 cdr 操作をおこなうのと全く
@@ -524,7 +524,7 @@ returning a list of the first @var{i} elements, and the remaining tail.
 @end example
 @c EN
 @code{split-at!} is the linear-update variant. It may destructively
-modifes @var{x} to produce the result. 
+modifies @var{x} to produce the result. 
 @c JP
 @code{split-at!} はその場で更新されるバージョンです。
 これは @var{x} を破壊的に更新するかもしれません。
@@ -828,7 +828,7 @@ to map each seed value to a list element.
 @c EN
 [SRFI-1]
 Fundamental iterative list constructor.
-Defined by the following recursin.
+Defined by the following recursion.
 @c JP
 [SRFI-1]
 基本リスト反復構築子です。
@@ -3015,7 +3015,7 @@ number of days since 1858-11-17T00:00:00Z
 Returns an instance of @code{<time>} class with specified initial values.
 Equivalent to @code{(make <time> :type type :second seconds :nanosecond nanoseconds)}.
 
-(This funciton had been defined incorrectly before release 0.6.8; 
+(This function had been defined incorrectly before release 0.6.8; 
 the arguments @var{seconds} and @var{nanoseconds} were switched.
 Please check your code if it uses @code{make-time}).
 @c JP
@@ -3695,12 +3695,12 @@ Gauche's native @code{format} (@xref{Output}),
 this SRFI-29 extention isn't.
 Specifically, the @code{~N@@*} directive of Gauche's @code{format}
 changes the argument pointer to points @var{N}-th optional argument,
-thus it affects all the subsequent arugments.
+thus it affects all the subsequent arguments.
 
 Because of this incompatibility, this function is defined in
 a separate module, @code{srfi-29.format}.  If you use @code{srfi-29},
 which extends @code{srfi-29.bundle} and @code{srfi-29.format},
-the @code{format} procedure will be overriden by srfi-29's @code{format}
+the @code{format} procedure will be overridden by srfi-29's @code{format}
 in your module.  If you want to keep Gauche's native @code{format},
 use @code{srfi-29.bundle} only.
 @c JP
@@ -4231,7 +4231,7 @@ Some of srfi-43 procedures are built-in; see @ref{Vectors}.
 [SRFI-43]
 @end defun
 
-@defun vector-concatenete list-of-vectors
+@defun vector-concatenate list-of-vectors
 [SRFI-43]
 @end defun
 

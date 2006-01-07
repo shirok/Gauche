@@ -34,7 +34,7 @@
 
 @c EN
 Scheme has three different general equivalence test predicates.
-Other than these, some types have their own comarison predicates.
+Other than these, some types have their own comparison predicates.
 @c JP
 Schemeには等価性を判定する汎用的な述語が3つあります。
 また、これらの他に、いくつかの型はその型同士で使える比較手続きを持っています。
@@ -675,7 +675,7 @@ Returns an exact integer only if all the given numbers are exact integers.
 @defunx atan z
 [R5RS]
 @c EN
-Transcedental functions.  Work for complex numbers as well.
+Transcendental functions.  Work for complex numbers as well.
 @c JP
 超越関数です。複素数も扱えます。
 @c COMMON
@@ -862,7 +862,7 @@ Gaucheは一般的な有理数をサポートしないため、@code{inexact->exact}の結果は
 @defunx string->number string &optional radix
 [R5RS+]
 @c EN
-These procedurs convert a number and its string representation
+These procedures convert a number and its string representation
 in radix @var{radix} system.
 @var{radix} must be between 2 and 36 inclusive.
 If @var{radix} is omitted, 10 is assumed.
@@ -939,7 +939,7 @@ it is regarded in 2's complement form, and infinite number of
 @c COMMON
 
 @c EN
-The API is consisntent to SLIB's ``logical'' module.
+The API is consistent to SLIB's ``logical'' module.
 @c JP
 APIはSLIBの``logical''モジュールに合わせてあります。
 @c COMMON
@@ -1116,10 +1116,10 @@ Gaucheのコアは全ての標準のリスト手続きと、多くのScheme実装に見られる
 @deftp {Builtin Class} <list>
 @clindex list
 @c EN
-An abstract class respresents lists.   A parent class of @code{<null>}
+An abstract class represents lists.   A parent class of @code{<null>}
 and @code{<pair>}.   Inherits @code{<sequence>}.
 
-Note that a cirular list is also an instance of the @code{<list>} class,
+Note that a circular list is also an instance of the @code{<list>} class,
 while R5RS procedure @code{list?} returns false on the circular lists and
 dotted lists.
 @c JP
@@ -1819,7 +1819,7 @@ If there's no key that matches @var{key}, @var{kv-list} is returned.
 @defun identifier? obj
 @end defun
 
-@defun identifier->symbol identiifer
+@defun identifier->symbol identifier
 @end defun
 
 
@@ -1837,7 +1837,7 @@ If there's no key that matches @var{key}, @var{kv-list} is returned.
 @c EN
 Denotes a literal character.
 
-When the reader reads @code{#\}, it fetches a sbusequent character.
+When the reader reads @code{#\}, it fetches a subsequent character.
 If it is one of @code{()[]@{@}" \|;#}, this is a character literal of itself.
 Otherwise, the reader reads subsequent characters until it sees
 a non word-constituent character.  If only one character is read,
@@ -1846,7 +1846,7 @@ with predefined character names.  If it doesn't match any, an error
 is signalled.
 
 The following character names are recognized.
-These haracter names are case insensitive.
+These character names are case insensitive.
 @table @code
 @item space
 Whitespace (ASCII #x20)
@@ -2018,7 +2018,7 @@ return @code{#f} for all other characters.
 internal encoding of the character @var{char}.
 @code{integer->char} returns a character whose internal encoding
 is an exact integer @var{n}.  The following expression is always
-true for valid charcter @var{char}:
+true for valid character @var{char}:
 @example
 (eq? char (integer->char (char->integer char)))
 @end example
@@ -2744,7 +2744,7 @@ as follows:
 @emph{Rationale of the syntax:}
 Some other scripting languages use `@code{$expr}' or '@code{#@{...@}}'.
 I chose this syntax with respect to the quasiquote (@xref{Quasiquotation}).
-Althogh it may be awkward to delimit variable names by `|',
+Although it may be awkward to delimit variable names by `|',
 the comma syntax should be easier to read than the other exotic syntax
 for seasoned Scheme programmers.
 
@@ -3329,7 +3329,7 @@ beyond ASCII characters, the match is done in the same way as normal match.)
 @c EN
 The advantage of using this syntax over @code{string->regexp} is
 that the regexp is compiled only once.  You can use literal regexp
-inside loop without worring about regexp compilation overhead.
+inside loop without worrying about regexp compilation overhead.
 If you want to construct regexp on-the-fly, however, use @code{string->regexp}.
 @c JP
 @code{string->regexp}に対してこの構文を使う利点は、
@@ -3519,7 +3519,7 @@ when appears at the beginning or end of the pattern.
 
 @item \b, \B
 @c EN
-Word boundary and non word boundary assertion, repectively.
+Word boundary and non word boundary assertion, respectively.
 That is, @code{\b} matches an empty string between
 word-constituent character and non-word-constituent character,
 and @code{\B} matches an empty string elsewhere.
@@ -4154,7 +4154,7 @@ you can use various generic functions such as @code{map} and @code{fold}
 on it.   @xref{Collection framework}, and @xref{Sequence framework}.
 
 If you keep only a homogeneous numeric type, you may be able
-to use SRFI-4 homogenous vectors (@xref{Homogeneous vectors}).
+to use SRFI-4 homogeneous vectors (@xref{Homogeneous vectors}).
 
 @xref{Vector library}, for additional operations on vectors.
 @c JP
@@ -4428,7 +4428,7 @@ while @code{hash} is defined for types of @var{a} and @var{b}.
 The value of @code{hash} is independent from the runtime state
 of the machine (such as address of the data); so you can safely save
 the hash value to file and read it again with different process
-without losing vailidity of the hash value.
+without losing validity of the hash value.
 @end itemize
 If @var{obj} is either a number, a boolean, a character, 
 a symbol, a keyword, a string, a list or a vector,
@@ -5085,7 +5085,7 @@ Some examples:
 
 @c EN
 A couple of edge cases: if only one argument is given, the argument
-itself is returned.  If no argumens are given, the procedure @code{values} 
+itself is returned.  If no arguments are given, the procedure @code{values} 
 is returned.
 @c JP
 境界のケース：ひとつだけ引数が渡された場合は、その引数がそのまま返されます。
@@ -5181,7 +5181,7 @@ Schemeでオプショナル引数やキーワード引数を使うためには、
 @defmac let-optionals* restargs (var-spec @dots{}) body @dots{}
 @defmacx let-optionals* restargs (var-spec @dots{} . restvar) body @dots{}
 @c EN
-Given a list of values @var{restargs}, binds variables accodring
+Given a list of values @var{restargs}, binds variables according
 to @var{var-spec}, then evaluates @var{body}.
 @c JP
 与えられた値のリスト@var{restargs}を、@var{var-spec}にしたがって
@@ -5483,7 +5483,7 @@ following expression:
 
 @c EN
 The operator evaluates to a string, which is neither a procedure
-nor a generic fuction.  So Gauche interpretes the expression
+nor a generic function.  So Gauche interprets the expression
 as if it were like this:
 @c JP
 オペレータは文字列に評価されますから、手続きでもジェネリックファンクションでも
@@ -5812,7 +5812,7 @@ delay : a -> Promise a
 
 Since we don't have static typing, we can't enforce this usage.
 The programmer has to choose appropriate one from the context.
-Generally, @code{lazy} appeares only to surround the entire
+Generally, @code{lazy} appearers only to surround the entire
 body of function that express a lazy algorithm.
 
 For the real-world example of use of @code{lazy},
@@ -5829,7 +5829,7 @@ Otherwise, if @var{promise}'s value hasn't been computed,
 @code{force} makes @var{promise}'s encapsulated expression
 be evaluated, and returns the result.
 
-Once @var{promise}'s value is computed, it is memoized in it
+Once @var{promise}'s value is computed, it is memorized in it
 so that subsequent @code{force} on it won't cause the computation.
 @c JP
 もし、@var{promise}がプロミスでなければ、それをそのまま返します。
@@ -5993,7 +5993,7 @@ example has only one expression, @code{(read-from-string "(abc")}.
 
 @c EN
 @code{guard} starts executing its body.
-@code{read-from-string} reaises an error of type @code{<read-error>}
+@code{read-from-string} raises an error of type @code{<read-error>}
 when it encounters syntactic errors.  The form @code{guard} intercepts
 the error, and binds the condition object to the variable @var{exc},
 then checks the clauses following @var{exc} in a similar manner
@@ -6015,7 +6015,7 @@ printed and a symbol @code{read-error} is returned.
 @c EN
 If you're familiar with other languages, you may recognize the
 pattern.  The cddr of @code{guard} form is like @var{try} clause
-of C++/Jave or the cadr of @code{handler-case} of Common Lisp;
+of C++/Java or the cadr of @code{handler-case} of Common Lisp;
 and the cdadr of @code{guard} form is like @code{catch} clauses
 or the cddr of @code{handler-case}.
 @c JP
@@ -7243,7 +7243,7 @@ A procedural version to create a new condition type.
 @defun make-condition type field-name value @dots{}
 [SRFI-35]
 @c EN
-Creates a new condition of conditon-type @var{type}, and
+Creates a new condition of condition-type @var{type}, and
 initializes its fields as specified by @code{field-name} and @code{value}
 pairs
 @c JP
@@ -7578,7 +7578,7 @@ Other R5RS I/O routines can be built on top of them.
 
 @c EN
 Besides this basics, Gauche's port can handle the following
-opertaions.
+operations.
 @c JP
 Gaucheではさらに次のような操作がportに対して可能になっています。
 @c COMMON
@@ -7661,7 +7661,7 @@ When Gauche is compiled with thread support,
 the builtin port operations locks the port, so that port access
 from multiple threads will be serialized.   
 (It is required by SRFI-18, BTW).
-Here, "builtin port opertaions" are the port access functions
+Here, "builtin port operations" are the port access functions
 that takes a port and does some I/O or query on it,
 such as @code{read}/@code{write}, @code{read-char}/@code{write-char}, 
 @code{port->string}, etc.
@@ -7889,7 +7889,7 @@ to the system file I/O.  Returns @code{#f} otherwise.
 @defun port-seek port offset &optional whence
 @c EN
 If the given @var{port} allows random access, this procedure sets
-the read/write pointer of the @var{port} accodring to the given @var{offset}
+the read/write pointer of the @var{port} according to the given @var{offset}
 and @var{whence}, then returns the updated offset (number of bytes
 from the beginning of the data).  If @var{port} is not random-accessible,
 @code{#f} is returned.  In the current version, file ports and
@@ -8283,7 +8283,7 @@ languages (e.g. Perl) have similar features.  In Gauche,
 @code{open-input-file} and @code{open-output-file} strictly operates
 on files (what the underlying OS thinks as files).
 However, you can use ``process ports'' to invoke
-other command in a subprocess and to communiate it.
+other command in a subprocess and to communicate it.
 @xref{Process ports}, for details.
 @c JP
 移植性に関する註：Schemeシステムによっては、@var{filename}のところに
@@ -8385,7 +8385,7 @@ R5RSは@code{call-with-input-file}等の説明において、次のように述べています。
 @c EN
 Gauche's implementation slightly misses this criteria; the mere fact
 that an uncaptured error is thrown in @var{proc} does not prove
-the port will never be used.  Nevertheless, it is very diffcult
+the port will never be used.  Nevertheless, it is very difficult
 to think the situation that you can do meaningful operation on
 the port after such an error is signalled; you'd have no idea
 what kind of state the port is in.  In practical programs, you
@@ -8424,7 +8424,7 @@ file descriptor.  @var{Buffering} specifies the buffering mode
 as described in @code{open-input-file} entry above; the default
 is @code{:full}.  @var{Name} is used for the created port's name
 and returned by @code{port-name}.  A boolean flag @code{owner?}
-specfies whether @var{fd} should be closed when the port is closed.
+specifies whether @var{fd} should be closed when the port is closed.
 @c JP
 与えられたファイルディスクリプタにアクセスする入力または出力ポートを
 作成して返します。@var{buffering} は@code{open-input-file} の項で
@@ -8594,7 +8594,7 @@ The interface is parallel to the file port version.
 @defun write-to-string obj &optional writer
 @defunx read-from-string string &optional start end
 @c EN
-These convenience functions cover commin idioms using string ports.
+These convenience functions cover common idioms using string ports.
 @example
 (write-to-string obj writer)
   @equiv{}
@@ -8687,7 +8687,7 @@ the program source, so that the coding magic comment works for
 the Gauche source programs (see @ref{Loading Scheme file}).
 However, since the mechanism itself
 is independent from @code{load}, you can use this port for
-other purposes; it is particulary useful to write a function
+other purposes; it is particularly useful to write a function
 that processes Scheme source programs which may have the coding
 magic comment.
 @c JP
@@ -8842,7 +8842,7 @@ which doesn't constitute a valid character in the native encoding,
 is given to the argument @var{allow-byte-string?}, 
 @code{read-line} returns a byte string (incomplete string) in such case,
 without reporting an error.
-It is particulary useful if you read from a source whose
+It is particularly useful if you read from a source whose
 character encoding is not yet known; for example, to read XML document,
 you need to check the first line to see if there is a charset parameter
 so that you can then use an appropriate character conversion port.
@@ -9888,7 +9888,7 @@ Furthermore,
 under the specified path and if it exists, sets up the internal
 path list for dynamic loading correctly.   Suppose you have
 your Scheme module in @code{/home/yours/lib}, and that requires 
-a dyncamic loadable library.  You can put the library under
+a dynamic loadable library.  You can put the library under
 @code{/home/yours/lib/@var{ARCH}/}, where @var{ARCH} is
 the value @code{(gauche-architecture)} returns (@xref{Environment Inquiry}).
 Then you can have compiled libraries for multiple platforms and
@@ -10346,7 +10346,7 @@ Here are some examples (the result may differ in your environment).
 @defunx library-for-each pattern proc &keyword paths allow-duplicates? strict?
 @c EN
 @code{Map} and @code{for-each} version of iterator over matched
-libraries/modules.  See @code{library-fold} above for deatiled
+libraries/modules.  See @code{library-fold} above for detailed
 operation of matching and the meanings of keyword arguments.
 
 @var{Proc} receives two arguments, the matched module/library name
@@ -10756,7 +10756,7 @@ Gaucheではいずれ、自前のglob()実装を持つ予定です。
 @subsubsection Directory manipulation
 @c NODE ディレクトリ操作
 
-@defun sys-remove filenmae
+@defun sys-remove filename
 [POSIX] 
 @c EN
 If @var{filename} is a file it is removed.
@@ -10800,7 +10800,7 @@ security risk.  Use @code{sys-mkstemp} below if possible.
 Creates and opens a file that has unique name, and returns two values;
 opened port and the created filename.  The file is created exclusively,
 avoiding race conditions.   @var{tmpname} is used as the prefix
-of the file.  Unlinke Unix's mkstemp, you don't need padding characters.
+of the file.  Unlike Unix's mkstemp, you don't need padding characters.
 The file is opened for writing, and its permission is set to 600.
 @c JP
 ユニークな名前を持つファイルを作成してオープンし、オープンされたポートとファイル名の
@@ -10925,7 +10925,7 @@ More than one keyword argument can be specified.
 @table @code
 @item absolute
 @c EN
-  If this keyword arugment is given and true, and @var{pathname} is not
+  If this keyword argument is given and true, and @var{pathname} is not
   an absolute pathname, it is converted to an absolute pathname by
   appending the current working directory in front of @var{pathname}.
 @c JP
@@ -12675,7 +12675,7 @@ measured in seconds).  It may be a non-integral number, depending on
 the architecture.
 
 Note that POSIX's definition of ``seconds since the Epoch'' doesn't
-take leap seconds into acount.
+take leap seconds into account.
 @c JP
 [POSIX] 現在の時間を POSIX 時間(エポック(00:00:00 UTC, January 1, 1970)
 からの秒数)で返します。マシンのアーキテクチャによっては、不正確数で
@@ -12991,7 +12991,7 @@ a mutex which is locked by another thread at the time of @code{sys-fork}
 remains locked in the child process, nevertheless the child process
 doesn't have the thread that unlock it!
 (This applies to the internal mutexes as well, so even you don't
-use Scheme multex explicitly, this situation can always happen.)
+use Scheme mutex explicitly, this situation can always happen.)
 
 If what you want is to spawn another program in a multi-threaded application,
 use @code{sys-fork-and-exec} explained below.
@@ -13055,7 +13055,7 @@ open file descriptors are treated.  It must be the following format:
 @i{To-fd} must be an integer,
 and @i{from-port-or-fd} must be an integer file descriptor or a port.
 Each element of the list makes the file descriptor of @i{from-port-or-fd}
-of the current process be mapped to the file descriptr @i{to-fd}
+of the current process be mapped to the file descriptor @i{to-fd}
 in the executed process.
 @c JP
 @i{to-fd}は整数でなければならず、@i{from-port-or-fd}は整数のファイル
@@ -13218,8 +13218,8 @@ of @code{main()}.
 The argument is an exit status returned as a second value
 from @code{sys-wait} or @code{sys-waitpid}.
 @code{sys-wait-signaled?} returns @code{#t} if the child process
-is termintaed by an uncaught signal.
-@code{sys-wait-termsig} returns the signal number that terminted the child.
+is terminated by an uncaught signal.
+@code{sys-wait-termsig} returns the signal number that terminated the child.
 @c JP
 [POSIX]
 引数は、@code{sys-wait}か@code{sys-waitpid}の2つ目の戻り値である終了ステータスです。
@@ -13281,7 +13281,7 @@ makeメソッドによって、空のファイルディスクリプタの集合を作れます。
 @defun sys-fdset-ref fdset port-or-fd
 @defunx sys-fdset-set! fdset port-or-fd flag
 @c EN
-Gets and sets specific file descritor bit of @var{fdset}.
+Gets and sets specific file descriptor bit of @var{fdset}.
 @var{port-or-fd} may be a port or an integer file descriptor.
 If @var{port-or-fd} is a port that doesn't have associated file descriptor,
 @code{sys-fdset-ref} returns @code{#f}, and @code{sys-fdset-set!} doesn't
@@ -13432,8 +13432,9 @@ or the process receives a signal.  Returns zero if it sleeps well,
 or the number of unslept seconds if it is woke up by a signal.
 @c JP
 [POSIX] 指定された秒数が経過するまで、あるいはプロセスがシグナルを受け取るまで
-スレッドを一時停止します。一時停止している場合は0を返し、
-シグナルによって一時停止が解除されている場合は、解除されてからの秒数を返します。
+スレッドを一時停止します。指定時間が満了した場合は0を返し、
+シグナルによって一時停止が解除された場合は、満了までの秒数を返します。
+@c 満了は完了の方がよいかも?
 @c COMMON
 
 @c EN
@@ -13498,7 +13499,7 @@ the system.
 
 @c EN
 The intention of these functions are to provide an off-the-stock handy
-random number generator (RNG) for applications that doens't
+random number generator (RNG) for applications that doesn't
 sensitive to the quality and/or speed of RNG.  For serious statistics
 analysis, use Mersenne Twister RNG in @code{math.mt-random}
 module (@xref{Mersenne-Twister random number generator}).

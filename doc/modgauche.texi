@@ -161,7 +161,7 @@ you should use one of the following concrete array classes.
 Concrete array classes.  The @code{<array>} class implements srfi-25
 compatible array, i.e. an array that can store any Scheme objects.
 The @code{<u8array>} class through @code{<f64array>} classes uses
-a @code{<u8vector>} through @code{<f64vector>} as a backing stroage,
+a @code{<u8vector>} through @code{<f64vector>} as a backing storage,
 and can only store a limited range of integers or inexact real numbers,
 but they are space efficient.
 @c JP
@@ -1136,7 +1136,7 @@ The meaning of keyword arguments are the same as @code{call-with-*-conversion}.
 Convenient procedures to avoid adding unnecessary conversion port.
 Each procedure works like @code{open-input-conversion-port}
 and @code{open-output-conversion-port}, respectively,
-except if system knows no conversoin is needed,
+except if system knows no conversion is needed,
 no conversion port is created and @var{port} is returned as is.
 
 When a conversion port is created, @var{port} is always owned by the port.
@@ -1225,7 +1225,7 @@ Using the method dispatch of the object system, this module
 efficiently extends those
 functions for other collection classes such as vectors and hash tables.
 It also provides a simple way for user-defined class to adapt
-those opertaions.
+those operations.
 So far, the following operations are defined.
 @c JP
 このモジュールは、様々なコレクションに対して繰り返し処理を行う総称関数を提供します。
@@ -2213,7 +2213,7 @@ to optimize a procedure that uses @code{fold} as a basic
 iterator construct.
 However, it is rather cumbersome to derive
 generator-style interface from it.   It is also tricky
-to iterate irregulary over more than one collections.
+to iterate irregularly over more than one collections.
 @c JP
 @code{fold}を最も基礎的なメソッドとして、他のイテレータメソッドをその上に
 構築することも可能です。繰り返しの状態はスタックに置かれるので効率良く走ります。
@@ -2423,7 +2423,7 @@ advisory file locking.
 
 @defun sys-fcntl port-or-fd operation &optional arg
 @c EN
-Performs certain operation on the file specfied by @var{port-or-fd},
+Performs certain operation on the file specified by @var{port-or-fd},
 which should be a port object or an integer
 that specifies a system file descriptor.  If it is a port, it must
 be associated to the opened file (i.e. @code{port-type}
@@ -2781,7 +2781,7 @@ Hook object itself is applicable.  You don't need to use @code{run-hook}.
 @c EN
 The method to remove a procedure from a hook is called @code{delete-hook!},
 for consistency with SRFI-1 and others.  @code{remove-hook!} is
-defined as an alias of @code{delete-hook!} for compability with Guile.
+defined as an alias of @code{delete-hook!} for compatibility with Guile.
 @c JP
 フックから手続きを削除するメソッドは、SRFI-1やその他との一貫性の
 ために@code{delete-hook!}と呼ばれます。
@@ -2856,7 +2856,7 @@ at the @code{make-hook}.
 @c EN
 Removes @var{proc} from the procedure list of @var{hook}.
 @code{Remove-hook!} is an alias of @code{delete-hook!} just for
-compability with Guile.
+compatibility with Guile.
 @c JP
 @var{hook}の手続きリストから@var{proc}を削除します。
 Guileとの互換性のためだけに、@code{remove-hook!}が@code{delete-hook!}の
@@ -4093,7 +4093,7 @@ Returns a pathname of the socket address.
 @deftp {Builtin Class} <sockaddr-in6>
 @clindex sockaddr-in6
 @c EN
-AF_INET6 family socket address.  This is only avalable if
+AF_INET6 family socket address.  This is only available if
 gauche is configured with --enable-ipv6 configure option.
 The constructor and the slots are the same as @code{<sockaddr-in>}.
 @c JP
@@ -4198,7 +4198,7 @@ specified by @var{address-spec} @dots{}.
 @item (make-client-socket 'unix @var{path})
 @c EN
 The client socket is connected to the unix domain server socket
-of addreess @var{path}.
+of address @var{path}.
 @c JP
 @var{path}で待っているUnixドメインのサーバーソケットに接続します。
 @c COMMON
@@ -5270,7 +5270,7 @@ netdbインタフェースのScheme APIは必要な箇所ではこれらの関数を内部的に
 @deftp {Module} gauche.parameter
 @mdindex gauche.parameter
 @c EN
-A @emph{parameter} is somethink like a stateful procedure that takes zero or
+A @emph{parameter} is something like a stateful procedure that takes zero or
 one argument.
 If no argument is given, the parameter returns the current value it is keeping.
 If single argument is given, it will be the current value of the parameter.
@@ -5495,7 +5495,7 @@ these hook objects are shared by all threads.
 @c EN
 This module defines a convenient way to parse command-line options.
 The interface is hinted by Perl, and conveniently handles long-format
-options with mutiple option arguments.
+options with multiple option arguments.
 
 Actually, you have a few choices to parse command-line
 options in Gauche.
@@ -5686,7 +5686,7 @@ For example, an option spec @code{"h|help"} will match both
 
 @c EN
 In the command line, the option may appear with preceding
-single or double minus signs.  The option's argument may be comibined
+single or double minus signs.  The option's argument may be combined
 by the option itself with an equal sign.  For example, all the following
 command line arguments match an option spec @code{"prefix=s"}.
 @c JP
@@ -6777,7 +6777,7 @@ deletes all the handlers associated to @var{the-port}, and
 (selector-delete! selector #f #f '(w))
 @end example
 @c EN
-delets all the handlers waiting for writable condition.
+deletes all the handlers waiting for writable condition.
 @c JP
 書き込み可能になるのを待っている全てのハンドラを削除します。
 @c COMMON
@@ -6866,7 +6866,7 @@ echoサーバのシンプルな例を示します。
 @deftp {Module} gauche.sequence
 @mdindex gauche.sequence
 @c EN
-Provides a generic opertaions on @emph{sequences}.  A sequence is
+Provides a generic operations on @emph{sequences}.  A sequence is
 a collection in which elements can be accessed by integer index,
 starting with zero.
 @c JP
@@ -8123,7 +8123,7 @@ for example).
 
 @item
 @c EN
-If what you need is to control the resouce consumption in the
+If what you need is to control the resource consumption in the
 subsystem, and the subsystem works fairly independently from
 the main system, you may be able to use Unix processes instead of threads.
 It may sound to go backward, but Unix process does provide
@@ -8506,7 +8506,7 @@ Mutexの名前。
 @defivar <mutex> state
 @c EN
 The state of the mutex.  This is a read-only slot.
-See the descrption of @code{mutex-state} below.
+See the description of @code{mutex-state} below.
 @c JP
 Mutexの状態。これは読み取りのみ可能なスロットです。
 下記の@code{mutex-state}の説明を参照して下さい。
@@ -8717,7 +8717,7 @@ a @code{<time>} object to represent an absolute time point (@xref{Time}),
 a real number to represent a relative time in seconds, or @code{#f} which
 means never.  The calling thread may be unblocked prematurely,
 so it should reacquire the lock of @var{mutex} and checks the
-condition, as in the follwing example (it is taken from SRFI-18 document):
+condition, as in the following example (it is taken from SRFI-18 document):
 @c JP
 オプショナル引数の@var{conditional-variable}が与えられている場合、
 @code{mutex-unlock!}は``条件変数待機''の動作も行います(例えば、POSIXスレッドの
@@ -10073,7 +10073,7 @@ the range of conversion between them.
 @c EN
 This procedure creates an uvector of class @var{uvector-class}
 that shares the storage of the given uniform vector @var{vec}.
-If optional @var{start} and @var{end} arugments are given,
+If optional @var{start} and @var{end} arguments are given,
 only the specified range of @var{vec} is used for the new vector.
 Since the storage is shared, modification of the original vector
 can be seen from the new vector, or vice versa.
@@ -10091,7 +10091,7 @@ can be seen from the new vector, or vice versa.
 The class @var{uvector-class} must be either one of the uniform
 vector class, but is not necessary match the class of the
 source vector @var{vec}.   In such case, the new vector looks at the same
-region of @var{vec}'s memory, but interpretes it differently.
+region of @var{vec}'s memory, but interprets it differently.
 For example, the following code determines whether Gauche
 is running on big-endian or little-endian machine:
 @c JP
@@ -10468,7 +10468,7 @@ as @var{vec}, or a number, or @code{#f}.
 
 Like @var{TAG}vector-range-check, these procedures check if
 each element of @var{vec} are within the range between @var{minval}
-and @var{maxval} inclusive, which are defived from @var{min} and @var{max}.
+and @var{maxval} inclusive, which are derived from @var{min} and @var{max}.
 If the value is less than @var{minval}, it is replaced by @var{minval}.
 If the value is grater than @var{maxval}, it is replaced by @var{maxval}.
 
@@ -10926,7 +10926,7 @@ the port returns EOF for all input requests.
 
 @defivar {<virtual-input-port>} getb
 @c EN
-If set, the value must be a proceture that takes no arguments.
+If set, the value must be a procedure that takes no arguments.
 Every time binary input is required, the procedure is called.
 @c JP
 設定されているのなら、その値は、引数を取らない手続きでなければなりません。
@@ -10957,7 +10957,7 @@ multiple times, to construct a whole character.
 
 @defivar {<virtual-input-port>} getc
 @c EN
-If set, the value must be a proceture that takes no arguments.
+If set, the value must be a procedure that takes no arguments.
 Every time character input is required, the procedure is called.
 @c JP
 設定されているのなら、その値は、引数を取らない手続きでなければなりません。
@@ -11527,7 +11527,7 @@ of @code{<buffered-input-port>} above for the details.
 @c COMMON
 
 @c EN
-The following two procedures returns a bufferd input/output port
+The following two procedures returns a buffered input/output port
 backed up by a uniform vector.    The source or destination vector
 can be any type of uniform vector, but they are aliased
 to @code{u8vector} (see @code{uvector-alias} in

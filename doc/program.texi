@@ -148,7 +148,7 @@ Evaluate @var{scheme-expression}
 before starting execution of @var{scheme-file} or entering
 the read-eval-print loop.   Evaluation is done in the
 @var{interaction-environment} (@xref{Eval and repl}).
-You can specify this option more than once to evaluate multiple experssions.
+You can specify this option more than once to evaluate multiple expressions.
 @c JP
 起動後、インタラクティブなread-eval-printループに入る前、もしくは@var{scheme-file}
 をロードする前に@var{scheme-expression}を評価します。評価は
@@ -159,7 +159,7 @@ You can specify this option more than once to evaluate multiple experssions.
 
 @deftp {Command Option} -E scheme-expression
 @c EN
-Same as -e, except the @var{scheme-experssion} is read
+Same as -e, except the @var{scheme-expression} is read
 as if it is surrounded by parenthesis.  For example:
 @c JP
 オプション-eとほぼ同じですが、@var{scheme-expression}は
@@ -244,7 +244,7 @@ R5RSに示される通り、シンボルの大文字小文字を区別しません。
 
 @deftp {Command Option} -p profiler-option
 @c EN
-Turn on the profiler.  Currnetly, only "@code{time}" is supported
+Turn on the profiler.  Currently, only "@code{time}" is supported
 as @var{profiler-option}.  See @ref{Using profiler} for the details
 of the profiler.
 @c JP
@@ -286,7 +286,7 @@ of appearance.  For example, adding a load path by -I affects the
 @c COMMON
 
 @c EN
-The following enviornment variables are recognized:
+The following environment variables are recognized:
 @c JP
 以下の環境変数を認識します。
 @c COMMON
@@ -331,7 +331,7 @@ it goes into interactive read-eval-print loop.
 @c COMMON
 
 @c EN
-To exit the interpreter, type EOF (usually Control-D in Unix termials)
+To exit the interpreter, type EOF (usually Control-D in Unix terminals)
 or evaluate @code{(exit)}.
 @c JP
 インタプリタを終了するには、EOF文字(Unix端末では通常Control-D)をタイプするか、
@@ -345,7 +345,7 @@ convenience.  The module also loads a file @file{.gaucherc} under
 the user's home directory if it exists.
 You may put settings there that would help interactive debugging.
 (As of Gauche release 0.7.3,
-@file{.gauchrc} is no longer loaded when @code{gosh} is run
+@file{.gaucherc} is no longer loaded when @code{gosh} is run
 in script mode.)
 @c JP
 インタラクティブセッションでは、@code{gosh}は
@@ -400,7 +400,7 @@ line-editing or command history.   They'll be added in future.
 
 @c EN
 When a Scheme program file is given to @code{gosh}, it
-bounds a global varialbe @code{*argv*} to the list of the remaining
+bounds a global variable @code{*argv*} to the list of the remaining
 command-line arguments, then loads the Scheme program.
 If the first line of @var{scheme-file} begins with two character
 sequence ``@code{#!}'', the entire line is ignored by @code{gosh}.
@@ -783,7 +783,7 @@ pair?                                               237307  0.0001     3(  0%)
 Note that the time profiler uses statistic sampling.  Every 10ms
 the profiler interrupts the process and records the function that is
 executed then.   Compared to the individual execution time per
-function call, which is the order of nanoseconds, this sampilng rate
+function call, which is the order of nanoseconds, this sampling rate
 is very sparse.  However, if we run the program long enough,
 we can expect the distribution of samples per each function 
 approximately reflects the distribution of time spent in each function.
@@ -844,7 +844,7 @@ The profiler has its own overhead; generally the total
 process time will increase 20-30%.
 If you want to turn on the profiler selectively, or you're running
 a non-stop server program and want to obtain the statistics without
-exitting the server, you can call the profiler API from your program;
+exiting the server, you can call the profiler API from your program;
 see @ref{Profiler API}, for the details.
 @c JP
 プロファイラはそれ自身にオーバヘッドがあります。通常は、処理時間が
@@ -863,7 +863,7 @@ Don't guess, just benchmark.  It is the first rule of
 performance tuning.  Especially for the higher-level languages 
 like Scheme, what impacts on performance greatly depends on
 the implementation.  Certain operations that are very cheap
-on an impelementation may be costly on others.
+on an implementation may be costly on others.
 Gauche has such implementation-specific characteristics, and
 to know some of them would help to see what to look out in
 the benchmark results.
@@ -1117,7 +1117,7 @@ syntaxes).
 @c COMMON
 
 @c EN
-Those @code{use} forms or @code{export} forms are not required to appeare
+Those @code{use} forms or @code{export} forms are not required to appear
 in the @code{define-module} form, but it is a good convention to keep
 them in there at the head of the file so that it is visually recognizable
 which modules @code{foo} depends and which symbols it exports.
@@ -1215,7 +1215,7 @@ module name.
 Gauche comes with some amount of libraries, but they aren't 
 enough at all to use Gauche in the production environment. 
 There are number of additional libraries available.   We call them 
-@emph{extention packages}, or simply packages.  Each package
+@emph{extension packages}, or simply packages.  Each package
 usually provides one or more modules that adds extra
 functionality.   Most of the packages provide
 binding to other C libraries, such as graphics libraries
@@ -1313,7 +1313,7 @@ manually cd to the @file{Package-1.0} directory and run
 @c COMMON
 
 @c EN
-You can give configuration optoins via @code{-C} or @code{--configure-options}
+You can give configuration options via @code{-C} or @code{--configure-options}
 command-line argument, like this:
 @c JP
 設定オプションを @code{-C} あるいは @code{--configure-options}
