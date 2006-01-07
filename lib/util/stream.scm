@@ -21,7 +21,7 @@
 ;;; makes error message a bit less direct, but cutting edges in such
 ;;; inner loop procedure has a considerable gain.
 ;;;
-;;; $Id: stream.scm,v 1.6 2005-11-18 10:39:09 shirok Exp $
+;;; $Id: stream.scm,v 1.7 2006-01-07 03:13:26 shirok Exp $
 
 (define-module util.stream
   (use srfi-1)
@@ -635,7 +635,7 @@
 
 (define (->stream-char obj . rest)
   (stream-delay
-   (let-optionals rest ((tail stream-null))
+   (let-optionals* rest ((tail stream-null))
      (cond
       ((string? obj) (string->stream obj tail))
       ((or (number? obj) (boolean? obj) (symbol? obj)) (->stream-char (->string obj) tail))
@@ -659,7 +659,7 @@
   (stream-map (lambda (c) (if (equal? c from) to c)) str))
 
 (define (write-stream stream . rest)
-  (let-optionals rest ((port (current-output-port)) (writer write-char))
+  (let-optionals* rest ((port (current-output-port)) (writer write-char))
     (let loop ((s stream))
       (unless (stream-null? s)
         (writer (stream-car s) port)
