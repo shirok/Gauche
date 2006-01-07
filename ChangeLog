@@ -1,5 +1,8 @@
 2006-01-06  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/net.c (Scm_SocketInputPort, Scm_SocketInputPort):
+	  prohibit creating i/o ports from closed socket.
+
 	* src/gauche.h: removed SCM_VECTOR_FOR_EACH, for it was buggy and
 	  not a very useful API.
 	* src/hash.c: rewrote the only instance of using SCM_VECTOR_FOR_EACH.

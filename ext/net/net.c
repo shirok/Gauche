@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.41 2005-10-13 08:14:13 shirok Exp $
+ *  $Id: net.c,v 1.42 2006-01-07 05:54:20 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -138,6 +138,13 @@ ScmObj Scm_SocketClose(ScmSocket *s)
     return SCM_TRUE;
 }
 
+static void sockport_err(ScmSocket *sock, const char *io)
+{
+    Scm_Error("attempt to obtain an %s port from unconnected or closed socket: %S",
+              io, sock);
+}
+
+
 ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffering)
 {
     if (sock->inPort == NULL) {
@@ -145,14 +152,15 @@ ScmObj Scm_SocketInputPort(ScmSocket *sock, int buffering)
 	int infd;
         if (sock->type != SOCK_DGRAM &&
             sock->status < SCM_SOCKET_STATUS_CONNECTED) {
-            Scm_Error("attempt to obtain an input port from unconnected socket: %S",
-                      SCM_OBJ(sock));
+            sockport_err(sock, "input");
         }
 #ifndef __MINGW32__
 	infd = sock->fd;
 #else  /*__MINGW32__*/
 	infd = _open_osfhandle(sock->fd, O_RDONLY);
 #endif /*__MINGW32__*/
+        if (infd == INVALID_SOCKET) sockport_err(sock, "input");
+        
         /* NB: I keep the socket itself in the port name, in order to avoid
            the socket from GCed prematurely if application doesn't keep
            pointer to the socket. */
@@ -171,14 +179,14 @@ ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffering)
 	int outfd;
         if (sock->type != SOCK_DGRAM &&
             sock->status < SCM_SOCKET_STATUS_CONNECTED) {
-            Scm_Error("attempt to obtain an output port from an unconnected socket: %S",
-                      SCM_OBJ(sock));
+            sockport_err(sock, "output");
         }
 #ifndef __MINGW32__
 	outfd = sock->fd;
 #else  /*__MINGW32__*/
 	outfd = _open_osfhandle(sock->fd, 0);
 #endif /*__MINGW32__*/
+        if (outfd == INVALID_SOCKET) sockport_err(sock, "output");
 
         /* NB: I keep the socket itself in the port name, in order to avoid
            the socket from GCed prematurely if application doesn't keep

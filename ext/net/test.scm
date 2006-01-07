@@ -254,6 +254,18 @@
             (receive (pid code) (sys-wait)
               (sys-wait-exit-status code))))))
 
+(test "socket w/ port error handling" *test-error*
+      (lambda ()
+        (let1 s (make-client-socket 'inet "localhost" *inet-port*)
+          (close-socket s)
+          (socket-input-port s))))
+
+(test "socket w/ port error handling" *test-error*
+      (lambda ()
+        (let1 s (make-client-socket 'inet "localhost" *inet-port*)
+          (close-socket s)
+          (socket-output-port s))))
+
 (test "getsockname/getpeername" #t
       (lambda ()
         (let* ((addr (make <sockaddr-in> :host :loopback :port *inet-port*))
