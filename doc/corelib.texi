@@ -8948,6 +8948,11 @@ sequence, then use input string port to read characters.)
 @c COMMON
 @end defun
 
+@defun byte-ready? port
+If one byte (octet) is ready to be read from @var{port}, returns
+@code{#t}.
+@end defun
+
 @node Read-time constructor, Input utility functions, Reading data, Input
 @subsubsection Read-time constructor
 @c NODE 読み込み時コンストラクタ
