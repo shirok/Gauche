@@ -1961,7 +1961,7 @@ a temporary file is opened instead), and the resulting port
 is passed to @var{proc}.  This port is closed when @var{proc} returns.
 If this argument is omitted, the current output port is passed.
 @c JP
-この引数は入力ポートかファイル名を示す文字列でなければなりません。
+この引数は出力ポートかファイル名を示す文字列でなければなりません。
 出力ポートの場合、それはそのまま@var{proc}に渡されます。
 文字列が渡された場合は、そのファイル名を持つファイルを出力用にオープンし、
 そのポートが@var{proc}に渡されます (但し、@var{temporary-file}

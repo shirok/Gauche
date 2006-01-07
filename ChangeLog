@@ -1,5 +1,9 @@
 2006-01-06  Shiro Kawai  <shiro@acm.org>
 
+	* src/port.c (bufport_read): fixed a bug that could block read
+	  from non-full-buffered port even there are some data in the
+	  buffer.
+
 	* INSTALL.esc: corrected the default encoding (euc-jp -> utf-8).
 
 2006-01-03  Shiro Kawai  <shiro@acm.org>

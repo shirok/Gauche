@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.122 2005-10-13 08:14:13 shirok Exp $
+ *  $Id: port.c,v 1.123 2006-01-07 01:09:54 shirok Exp $
  */
 
 #include <unistd.h>
@@ -558,7 +558,7 @@ static int bufport_fill(ScmPort *p, int min, int allow_less)
  * we know less data is available; non-greedy read can return at that point.
  * However, if the filler procedure returns exactly the requested size,
  * and we need more bytes, we gotta be careful -- next call to the filler
- * procedure may or may not hang.  So we need to check the ready procedure.
+ * procedure may or may not block.  So we need to check the ready procedure.
  */
 static int bufport_read(ScmPort *p, char *dst, int siz)
 {
@@ -574,6 +574,16 @@ static int bufport_read(ScmPort *p, char *dst, int siz)
         dst += req;
     }
     while (siz > 0) {
+        /* We check data availability first, since we might already get
+           some data from the remanings in the buffer, and it is enough
+           if buffering mode is not full. */
+        if (nread && (p->src.buf.mode != SCM_PORT_BUFFER_FULL)) {
+            if (p->src.buf.ready
+                && p->src.buf.ready(p) == SCM_FD_WOULDBLOCK) {
+                break;
+            }
+        }
+        
         req = MIN(siz, p->src.buf.size);
         r = bufport_fill(p, req, TRUE);
         if (r <= 0) break; /* EOF or an error*/
@@ -588,13 +598,6 @@ static int bufport_read(ScmPort *p, char *dst, int siz)
             nread += r;
             siz -= r;
             dst += r;
-        }
-        if (p->src.buf.mode != SCM_PORT_BUFFER_FULL) {
-            if (r < req) break;
-            if (p->src.buf.ready
-                && p->src.buf.ready(p) == SCM_FD_WOULDBLOCK) {
-                break;
-            }
         }
     }
     return nread;
