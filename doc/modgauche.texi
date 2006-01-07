@@ -7965,7 +7965,7 @@ supported, many thread-related procedures simply signals a
 "not supported" error.
 @c JP
 スレッドを扱うAPIを提供します。コンパイル時にスレッドのサポートを
-指定したか否かに関わらず、このモジュールを'usr'することができます。
+指定したか否かに関わらず、このモジュールを'use'することができます。
 スレッドがサポートされていない場合は、多くのスレッド関連の手続きは
 単に``not supported''エラーを通知するだけです。
 @c COMMON
