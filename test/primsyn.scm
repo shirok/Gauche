@@ -272,6 +272,22 @@
             (eval '(apply car foo '()) (find-module 'primsyn.test))))))
 
 ;;----------------------------------------------------------------
+(test-section "internal define optimization")
+
+;; this caused an internal compiler error in 0.8.6.
+(prim-test "internal-define inilining" '(1)
+           (lambda ()
+             (with-error-handler
+                 (lambda (e) 'ouch!)
+               (lambda ()
+                 (eval '(let ()
+                          (define (a x) x)
+                          (define (b x) (a x))
+                          (define (c x) (b x))
+                          (list 1))
+                       (interaction-environment))))))
+
+;;----------------------------------------------------------------
 (test-section "lazy, delay & force")
 
 (prim-test "simple delay" 3
