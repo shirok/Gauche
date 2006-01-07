@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.34 2006-01-07 02:54:26 shirok Exp $
+;;;  $Id: compile.scm,v 1.35 2006-01-07 11:13:50 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -359,8 +359,8 @@
 ;;                in later stages for the optimization.  This slot may
 ;;                be #f.
 ;;
-;; NB: this structure is assumed by cenv-lookup, defined in compaux.c.
-;; If you change this structure here, adjust compaux.c accordingly.
+;; NB: this structure is assumed by cenv-lookup, defined in intlib.stub.
+;; If you change this structure here, adjust intlib.stub accordingly.
 
 (define-simple-struct cenv #f make-cenv
   (module frames exp-name current-proc))
@@ -1482,7 +1482,7 @@
             (cond
              ((global-eq? var 'define cenv)
               (when (null? args)
-                (error "malformed internal define:" (car expr)))
+                (error "malformed internal define:" (car exprs)))
               (pass1/body-handle-intdef args rest intdefs cenv))
              ((global-eq? var 'begin cenv)
               ;; intersperse the body of begin
