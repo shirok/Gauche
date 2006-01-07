@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: collection.scm,v 1.2 2006-01-07 03:36:54 shirok Exp $
+;;;  $Id: collection.scm,v 1.3 2006-01-07 11:36:16 shirok Exp $
 ;;;
 
 ;; Defines generic operations over collection.   A collection is
@@ -172,17 +172,15 @@
   (let1 size (and-let* ((siz (lazy-size-of col))
                         ( (integer? siz) ))
                siz)
-    (if (null? more)
+    (if (or (null? more) (not size))
       size  ;; short path
       (let loop ((cols more)
                  (r    size))
         (if (null? cols)
           r
           (let1 size (lazy-size-of (car cols))
-            (loop (cdr cols)
-                  (cond ((not (integer? size)) r)
-                        ((not (integer? r)) size)
-                        (else (min r size))))))))))
+            (and (integer? size)
+                 (loop (cdr cols) (min r size)))))))))
 
 ;;----------------------------------------------------
 ;; Derived operations

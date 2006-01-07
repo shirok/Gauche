@@ -1,5 +1,9 @@
 2006-01-07  Shiro Kawai  <shiro@acm.org>
 
+	* libsrc/gauche/collection.scm (maybe-minimum-size): should return
+	  #f if any of collection's size isn't immediately known.  Patch
+	  from Takahiro Horii.
+
 	* src/compile.scm (pass1/body): fixed a bug in an argument of
 	  error function (Patch from Kazuki Tsujimoto).
 
