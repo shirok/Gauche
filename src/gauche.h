@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.442 2005-10-13 08:14:13 shirok Exp $
+ *  $Id: gauche.h,v 1.443 2006-01-07 05:15:41 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1258,11 +1258,6 @@ SCM_EXTERN ScmObj Scm_ListToVector(ScmObj l, int start, int end);
 SCM_EXTERN ScmObj Scm_VectorToList(ScmVector *v, int start, int end);
 SCM_EXTERN ScmObj Scm_VectorCopy(ScmVector *vec, int start, int end,
                                  ScmObj fill);
-
-#define SCM_VECTOR_FOR_EACH(cnt, obj, vec)           \
-    for (cnt = 0, obj = SCM_VECTOR_ELEMENT(vec, 0);  \
-         cnt < SCM_VECTOR_SIZE(vec);                 \
-         obj = SCM_VECTOR_ELEMENT(vec, ++cnt)) 
 
 /*--------------------------------------------------------
  * PORT

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.41 2005-10-13 08:14:13 shirok Exp $
+ *  $Id: hash.c,v 1.42 2006-01-07 05:15:41 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -170,11 +170,11 @@ unsigned long Scm_Hash(ScmObj obj)
         h = COMBINE(h, h2);
         return h;
     } else if (SCM_VECTORP(obj)) {
-        int i;
+        int i, siz = SCM_VECTOR_SIZE(obj);
         unsigned long h = 0, h2;
         ScmObj elt;
-        SCM_VECTOR_FOR_EACH(i, elt, obj) {
-            h2 = Scm_Hash(elt);
+        for (i=0; i<siz; i++) {
+            h2 = Scm_Hash(SCM_VECTOR_ELEMENT(obj, i));
             h = COMBINE(h, h2);
         }
         return h;

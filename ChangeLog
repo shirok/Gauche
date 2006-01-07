@@ -1,5 +1,9 @@
 2006-01-06  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche.h: removed SCM_VECTOR_FOR_EACH, for it was buggy and
+	  not a very useful API.
+	* src/hash.c: rewrote the only instance of using SCM_VECTOR_FOR_EACH.
+
 	* libsrc/gauche/collection.scm (map-to): size estimatin was wrong when
 	  multiple collections of uneven lengths are given.
 	* libsrc/gauche/sequence.scm (map-to-with-index): ditto.
