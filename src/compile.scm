@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.33 2005-08-13 06:51:52 shirok Exp $
+;;;  $Id: compile.scm,v 1.34 2006-01-07 02:54:26 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -2926,7 +2926,8 @@
                ;; Directly inlinable case.  NB: this only happens if the $LREF
                ;; node is the lvar's single reference, so we know the inlined
                ;; procedure is never called recursively.  Thus we can safely
-               ;; travarse the inlined body without going into infinite loop.
+               ;; traverse the inlined body without going into infinite loop.
+               ($call-proc-set! iform result)
                (pass2/rec (expand-inlined-procedure ($*-src iform) result args)
                           penv tail?))
               (else
