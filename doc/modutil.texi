@@ -9040,12 +9040,12 @@ notation before the actual content.
 @example
 (tree->string (html:a :href "http://foo/bar" "foobar"))
   @result{}
-  "<a href=\"http://foo/bar\">foobar</a>\n"
+  "<a href=\"http://foo/bar\">foobar</a\n>"
 
 (tree->string
   (html:table :width "100%" :cellpading 0 "content here"))
   @result{}
-  "<table width=\"100%\" cellpadding=\"0\">content here</table>\n"
+  "<table width=\"100%\" cellpadding=\"0\">content here</table\n>"
 @end example
 
 @c EN
@@ -9059,10 +9059,10 @@ If @code{#f} is given, the attribute is not rendered.
 @c COMMON
 @example
 (tree->string (html:table :border #t))
-  @result{} "<table border></table>\n"
+  @result{} "<table border></table\n>"
 
 (tree->string (html:table :border #f))
-  @result{} "<table></table>\n"
+  @result{} "<table></table\n>"
 @end example
 
 @c EN
@@ -9083,6 +9083,34 @@ if the given content is valid for the element.
 手続きは、与えられた属性が妥当であるか、与えられた内容がその要素に
 とって妥当であるかのチェックはしません。
 @c COMMON
+
+@emph{Note:}
+You might have noticed that these procedures insert a newline
+before @code{>} of the closing tag.  That is, the rendered
+HTML would look like this:
+
+@example
+<table><tr><td>foo</td
+><td>bar</td
+></tr
+></table
+>
+@end example
+
+We intentionally avoid inserting newlines after the closing
+tag, since @emph{it depends on the surrounding context whether
+the newline is significant or not}.  We may be able to insert newlines
+after the elements directly below a @code{<head>} element,
+for example, but we cannot in a @code{<p>} element.
+
+There are three possible solutions: (1) not to insert newlines
+at all, (2) to insert newlines within tags, and (3) to insert
+newlines only at the safe position.  The first one creates one
+long line of HTML, and although it is still valid HTML, it is
+inconvenient to handle it with line-oriented tools.
+The third one requires the
+rendering routine to be aware of DTD.  So we took the second
+approach.
 @end deftp
 
 @c ----------------------------------------------------------------------
