@@ -2,7 +2,7 @@
 ;; Test dynamic-wind, call/cc and related stuff
 ;;
 
-;; $Id: dynwind.scm,v 1.20 2005-12-05 10:18:54 shirok Exp $
+;; $Id: dynwind.scm,v 1.21 2006-01-10 10:33:57 shirok Exp $
 
 (use gauche.test)
 
@@ -256,7 +256,36 @@
                   (lambda () (push! k 'h)))
               (push! k 'i)))
           (reverse k))))
-            
+
+;; test for error during dynamic handler reinstallation by call/cc.
+;; (problem found and fixed by Kazuki Tsujimoto)
+
+(define (test-thunk body)
+  (let ((x '()))
+    (with-error-handler
+        (lambda (e) (push! x 'x))
+      (lambda ()
+        (call/cc
+         (lambda (c)
+           (dynamic-wind
+               (lambda () (push! x 'a))
+               (lambda ()
+                 (dynamic-wind
+                     (lambda () (push! x 'b))
+                     (lambda () (body c))
+                     (lambda () (push! x 'c) (car 3))))
+               (lambda () (push! x 'd)))))))
+    (reverse x)))
+
+(test* "restart & dynamic-wind with error(1)" '(a b c x d)
+       (test-thunk (lambda (cont) (cont #t))))
+
+(test* "restart & dynamic-wind with error(2)" '(a b c x d)
+       (test-thunk (lambda (cont)
+                     (with-error-handler
+                         (lambda (e) (cont #t))
+                       (lambda () (car 3))))))
+
 ;;-----------------------------------------------------------------------
 ;; Test for stack overflow handling
 

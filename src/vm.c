@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.241 2006-01-10 09:59:46 shirok Exp $
+ *  $Id: vm.c,v 1.242 2006-01-10 10:33:43 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -3436,7 +3436,9 @@ ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk)
  * Call With Current Continuation
  */
 
-/* Figure out which before and after thunk should be called. */
+/* Figure out which before and after thunk should be called.
+   Returns a list of (<handler> . <handler-chain>), where the <handler-chain>
+   is the state of handlers on which <handler> should be executed. */
 static ScmObj throw_cont_calculate_handlers(ScmEscapePoint *ep, /*target*/
                                             ScmVM *vm)
 {
@@ -3448,13 +3450,16 @@ static ScmObj throw_cont_calculate_handlers(ScmEscapePoint *ep, /*target*/
         SCM_ASSERT(SCM_PAIRP(SCM_CAR(p)));
         if (!SCM_FALSEP(Scm_Memq(SCM_CAR(p), target))) break;
         /* push 'after' handlers to be called */
-        SCM_APPEND1(h, t, SCM_CDAR(p));
+        SCM_APPEND1(h, t, Scm_Cons(SCM_CDAR(p), SCM_CDR(p)));
     }
     SCM_FOR_EACH(p, target) {
+        ScmObj chain;
         SCM_ASSERT(SCM_PAIRP(SCM_CAR(p)));
         if (!SCM_FALSEP(Scm_Memq(SCM_CAR(p), current))) continue;
+        chain = Scm_Memq(SCM_CAR(p), ep->handlers);
+        SCM_ASSERT(SCM_PAIRP(chain));
         /* push 'before' handlers to be called */
-        SCM_APPEND1(h, t, SCM_CAAR(p));
+        SCM_APPEND1(h, t, Scm_Cons(SCM_CAAR(p), SCM_CDR(chain)));
     }
     return h;
 }
@@ -3476,11 +3481,17 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
      * first, check to see if we need to evaluate dynamic handlers.
      */
     if (SCM_PAIRP(handlers)) {
+        ScmObj handler, chain;
+        SCM_ASSERT(SCM_PAIRP(SCM_CAR(handlers)));
+        handler = SCM_CAAR(handlers);
+        chain   = SCM_CDAR(handlers);
+        
         data[0] = (void*)SCM_CDR(handlers);
         data[1] = (void*)ep;
         data[2] = (void*)args;
         Scm_VMPushCC(throw_cont_cc, data, 3);
-        return Scm_VMApply0(SCM_CAR(handlers));
+        vm->handlers = chain;
+        return Scm_VMApply0(handler);
     }
 
     /*
@@ -3488,6 +3499,7 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
      */
     vm->pc = PC_TO_RETURN;
     vm->cont = ep->cont;
+    vm->handlers = ep->handlers;
 
     nargs = Scm_Length(args);
     if (nargs == 1) {
@@ -3537,7 +3549,6 @@ static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
         }
     } else {
         ScmObj handlers_to_call = throw_cont_calculate_handlers(ep, vm);
-        vm->handlers = ep->handlers;
         return throw_cont_body(handlers_to_call, ep, args);
     }
     return SCM_UNDEFINED; /*dummy*/

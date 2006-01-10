@@ -1,3 +1,10 @@
+2006-01-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (throw_cont_calculate_handlers, user_eval_inner):
+	  dynamic handlers didn't properly invoked when error occurred
+	  during reinstallation of dynamic handlers via call/cc.
+	  (Patch from Kazuki Tsujimoto).
+
 2006-01-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c, src/vminsn.scm: added some experimental VM insns.
