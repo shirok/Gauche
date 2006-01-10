@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.152 2005-11-10 08:46:42 shirok Exp $
+#  $Id: Makefile.in,v 1.153 2006-01-10 09:35:55 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -228,6 +228,17 @@ gauche-cesconv : gauche-cesconv.in
 	echo "#!$(BIN_INSTALL_DIR)/gosh" > gauche-cesconv && \
 	cat gauche-cesconv.in >> gauche-cesconv
 	@chmod -w gauche-cesconv
+
+# a special build sequence when VM instruction set has been changed
+newinsn : 
+	$(HOSTGOSH) -fno-inline-globals ./gencomp compile.scm
+	$(HOSTGOSH) -fno-inline-globals ./gencomp scmlib.scm
+	$(HOSTGOSH) -fno-inline-globals ./gencomp objlib.scm
+	$(MAKE) all
+	./gosh -ftest ./gencomp compile.scm
+	./gosh -ftest ./gencomp scmlib.scm
+	./gosh -ftest ./gencomp objlib.scm
+	$(MAKE) all
 
 # tests -----------------------------------------------
 TESTFILES = `cat ../test/TESTS`
