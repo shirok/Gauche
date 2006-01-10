@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.35 2006-01-07 11:13:50 shirok Exp $
+;;;  $Id: compile.scm,v 1.36 2006-01-10 06:13:54 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1073,7 +1073,8 @@
    (($LREF)
     ($lref (iform-copy-lvar ($lref-lvar iform) lv-alist)))
    (($LSET)
-    ($lset ($lset-lvar iform) (iform-copy ($lset-expr iform) lv-alist)))
+    ($lset (iform-copy-lvar ($lset-lvar iform) lv-alist)
+           (iform-copy ($lset-expr iform) lv-alist)))
    (($GREF)
     ($gref ($gref-id iform)))
    (($GSET)
