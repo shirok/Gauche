@@ -272,9 +272,10 @@
             (eval '(apply car foo '()) (find-module 'primsyn.test))))))
 
 ;;----------------------------------------------------------------
-(test-section "internal define optimization")
+(test-section "local procedure optimization")
 
 ;; this caused an internal compiler error in 0.8.6.
+;; (found and fixed by Jun Inoue)
 (prim-test "internal-define inilining" '(1)
            (lambda ()
              (with-error-handler
@@ -286,6 +287,12 @@
                           (define (c x) (b x))
                           (list 1))
                        (interaction-environment))))))
+
+;; this caused an internal compiler error in 0.8.6
+;; (found and fixed by Kazuki Tsujimoto)
+(prim-test "multiple inlining" 0
+           (lambda ()
+             (let ((f (lambda (i) (set! i 0) i))) (f (f 1)))))
 
 ;;----------------------------------------------------------------
 (test-section "lazy, delay & force")

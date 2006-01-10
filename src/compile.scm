@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.36 2006-01-10 06:13:54 shirok Exp $
+;;;  $Id: compile.scm,v 1.37 2006-01-10 09:13:58 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1063,8 +1063,6 @@
 ;;  old lvar to copied lvar.
 
 (define (iform-copy iform lv-alist)
-  (define label-alist '()) ;; alist of old-label & new-label 
-  
   (case/unquote
    (iform-tag iform)
    (($DEFINE)
@@ -1112,13 +1110,13 @@
                (iform-copy ($lambda-body iform) newalist)
                ($lambda-flag iform))))
    (($LABEL)
-    (cond ((assq iform label-alist) => (lambda (p) (cdr p)))
+    (cond ((assq iform lv-alist) => (lambda (p) (cdr p)))
           (else
            (let1 newnode
                ($label ($label-src iform) ($label-label iform) #f)
-             (push! label-alist (cons iform newnode))
              ($label-body-set! newnode
-                               (iform-copy ($label-body iform) label-alist))
+                               (iform-copy ($label-body iform)
+                                           (acons iform newnode lv-alist)))
              newnode))))
    (($SEQ)
     ($seq (imap (cut iform-copy <> lv-alist) ($seq-body iform))))

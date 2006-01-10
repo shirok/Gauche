@@ -2,6 +2,8 @@
 
 	* src/compile.scm (iform-copy): lvar in $LSET insn wasn't copied,
 	  causing compiler internal error (Patch from Kazuki Tsujimoto).
+	  Also fixed wrong handling of label assoc list in copying $LABEL
+	  node.
 
 2006-01-07  Shiro Kawai  <shiro@acm.org>
 
