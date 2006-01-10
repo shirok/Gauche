@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.240 2005-10-03 20:57:45 shirok Exp $
+ *  $Id: vm.c,v 1.241 2006-01-10 09:59:46 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1566,6 +1566,26 @@ pthread_key_t Scm_VMKey(void)
                 FINISH_ENV(SCM_FALSE, ENV);
                 NEXT1;
             }
+#if 1
+            CASE(SCM_VM_RECEIVE_ALL) {
+                ScmWord *nextpc;
+                CHECK_STACK_PARANOIA(CONT_FRAME_SIZE);
+                FETCH_LOCATION(nextpc);
+                INCR_PC;
+                PUSH_CONT(nextpc);
+                /*FALLTHROUGH*/
+            }
+            CASE(SCM_VM_TAIL_RECEIVE_ALL) {
+                int i;
+                CHECK_STACK_PARANOIA(ENV_SIZE(vm->numVals+1));
+                PUSH_ARG(VAL0);
+                for (i=0; i<vm->numVals-1; i++) {
+                    PUSH_ARG(vm->vals[i]);
+                }
+                FINISH_ENV(SCM_FALSE, ENV);
+                NEXT;
+            }
+#endif
             /* fixed constants */
             CASE(SCM_VM_CONSTI) {
                 long imm = SCM_VM_INSN_ARG(code);
@@ -1993,6 +2013,20 @@ pthread_key_t Scm_VMKey(void)
                 vm->numVals = nargs;
                 NEXT;
             }
+#if 1
+            CASE(SCM_VM_VALUES_N) {
+                int nvals;
+                VM_ASSERT(ENV);
+                nvals = ENV->size;
+                SCM_ASSERT(nvals < SCM_VM_MAX_VALUES);
+                vm->numVals = nvals;
+                for (; nvals > 1; nvals--) {
+                    POP_ARG(vm->vals[nvals-1]);
+                }
+                POP_ARG(VAL0);
+                NEXT;
+            }
+#endif
             CASE(SCM_VM_VEC) {
                 int nargs = SCM_VM_INSN_ARG(code), i;
                 ScmObj vec;
@@ -2442,6 +2476,21 @@ pthread_key_t Scm_VMKey(void)
                 VAL0 = Scm_VMSlotSet(obj, slot, VAL0);
                 RESTORE_REGS();
                 NEXT1;
+            }
+            CASE(SCM_VM_PUSH_HANDLERS) {
+                ScmObj before, after;
+                VM_ASSERT(SP - vm->stackBase >= 1);
+                before = VAL0;
+                POP_ARG(before);
+                SAVE_REGS();
+                vm->handlers = Scm_Acons(before, after, vm->handlers);
+                RESTORE_REGS();
+                NEXT;
+            }
+            CASE(SCM_VM_POP_HANDLERS) {
+                VM_ASSERT(SCM_PAIRP(vm->handlers));
+                vm->handlers = SCM_CDR(vm->handlers);
+                NEXT;
             }
 #ifndef __GNUC__
         default:

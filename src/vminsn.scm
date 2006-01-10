@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: vminsn.scm,v 1.6 2005-08-23 04:33:56 shirok Exp $
+;;;  $Id: vminsn.scm,v 1.7 2006-01-10 09:59:46 shirok Exp $
 ;;;
 
 ;;; This file is processed by geninsn to produce a couple of C files:
@@ -232,7 +232,7 @@
 (define-insn RNEQV       0 none)
 (define-insn RNNULL      0 none)
 
-;; RECEIVE(nargs,restarg) <cont>
+;; RECEIVE(nargs,restarg) <cont-offset>
 ;;  Primitive operation for receive and call-with-values.
 ;;  Turn the value(s) into an environment.
 ;;  Like LET, this pushes the continuation frame to resume the
@@ -457,3 +457,39 @@
 ;(define-insn LREF2-NUMADDI 1 none)
 ;(define-insn LREF3-NUMADDI 1 none)
 ;(define-insn LREF4-NUMADDI 1 none)
+
+;;;
+;;; Additional instructions
+;;;
+;;;  [SK] Note for myself: They're here not to change instruction
+;;;  numbers, so that building from CVS won't be complicated.
+;;;  Need to put them in appropriate places just before 0.8.7-pre1
+;;;  packaging.
+;;;
+
+;; RECEIVE-ALL <cont>
+;;  A special version of RECEIVE that pushes all the current values
+;;  into the stack and makes them into an environment.
+;;  It is used primarily for the occasions that compiler knows it needs
+;;  to save the values temporarily (e.g. for evaluate 'after' thunk of
+;;  dynamic-wind, the results of its body needs to be saved).  
+;;  This must be twined with VALUES-N, which reverses the effects, i.e.
+;;  turn the values in the env frame into values.
+(define-insn RECEIVE-ALL 0 addr)
+
+;; TAIL-RECEIVE-ALL 
+;;  Tail version of RECEIVE-ALL.  
+(define-insn TAIL-RECEIVE-ALL 0 none)
+
+;; VALUES-N
+;;  Inverse of RECEIVE-ALL.  Transfer the current environment content
+;;  to the values register, and pop the env.
+;;  Differ from VALUES since this one doesn't know # of values beforehand.
+(define-insn VALUES-N 0 none)
+
+;; PUSH-HANDLERS
+;; POP-HANDLERS
+;;   Used for dynamic-wind and alike.
+
+(define-insn PUSH-HANDLERS 0 none)      ; push dynamic handlers
+(define-insn POP-HANDLERS 0 none)       ; pop dynamic handlers
