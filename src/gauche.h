@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.443 2006-01-07 05:15:41 shirok Exp $
+ *  $Id: gauche.h,v 1.444 2006-01-11 09:13:33 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1818,10 +1818,15 @@ struct ScmModuleRec {
 SCM_CLASS_DECL(Scm_ModuleClass);
 #define SCM_CLASS_MODULE     (&Scm_ModuleClass)
 
+SCM_EXTERN ScmObj Scm_MakeModule(ScmSymbol *name, int error_if_exists);
+
 SCM_EXTERN ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
 				    int stay_in_module);
-SCM_EXTERN ScmObj Scm_MakeModule(ScmSymbol *name, int error_if_exists);
-SCM_EXTERN ScmObj Scm_SymbolValue(ScmModule *module, ScmSymbol *symbol);
+SCM_EXTERN ScmObj Scm_GlobalVariableRef(ScmModule *module,
+                                        ScmSymbol *symbol,
+                                        int stay_in_module);
+#define Scm_SymbolValue(m, s) Scm_GlobalVariableRef(m, s, FALSE)
+
 SCM_EXTERN ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol,
 			     ScmObj value);
 SCM_EXTERN ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol,

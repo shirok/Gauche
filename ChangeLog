@@ -1,5 +1,12 @@
 2006-01-10  Shiro Kawai  <shiro@acm.org>
 
+	* src/extlib.stub (global-variable-ref): added second optional
+	  argument to limit the lookup within the module.
+	* src/module.c (Scm_GlobalVariableRef): dropped Scm_SymbolValue
+	  and added this corresponding to global-variable-ref.
+	* src/gauche.h (Scm_SymbolValue): definds it as a macro which
+	  expands to Scm_GlobalVariableRef call.
+
 	* src/vm.c (throw_cont_calculate_handlers, user_eval_inner):
 	  dynamic handlers didn't properly invoked when error occurred
 	  during reinstallation of dynamic handlers via call/cc.

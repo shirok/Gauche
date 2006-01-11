@@ -148,6 +148,22 @@
       (lambda ()
         (eval '(with-module V (extend Q MM)) (interaction-environment))))
 
+(test "global-variable-ref" 'gamma
+      (lambda ()
+        (global-variable-ref 'U 'c)))
+
+(test "global-variable-ref" *test-error*
+      (lambda ()
+        (global-variable-ref 'U 'e)))
+
+(test "global-variable-ref" 'huh?
+      (lambda ()
+        (global-variable-ref 'U 'e 'huh?)))
+
+(test "global-variable-ref" 'huh?
+      (lambda ()
+        (global-variable-ref 'U 'c 'huh? #t)))
+
 ;;------------------------------------------------------------------
 ;; creates modules on-the-fly
 
