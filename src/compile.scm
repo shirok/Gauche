@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.37 2006-01-10 09:13:58 shirok Exp $
+;;;  $Id: compile.scm,v 1.38 2006-01-16 10:45:47 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1352,9 +1352,24 @@
       ($call program proc (imap (cut pass1 <> cenv) args)))))
 
 ;; pass1 :: Sexpr, Cenv -> IForm
+;;
+;;  This is one of the most frequently called routine.  It is critical to
+;;  make sure all internal functions are inlined, in case you
+;;  change something.
 (define (pass1 program cenv)
 
-  ;; PROGRAM is a call to global procedure, macro, or syntax.
+  ;; Check if the head of the list is a variable, and if so, lookup it.
+  ;; Note that we need to detect the case ((with-module foo bar) arg ...)
+  (define (lookup-head head)
+    (or (and (variable? head)
+             (cenv-lookup cenv head SYNTAX))
+        (and (module-qualified-variable? head cenv)
+             (let1 mod (ensure-module (cadr head) 'with-module #f)
+               (cenv-lookup (cenv-swap-module cenv mod)
+                            (caddr head) SYNTAX)))))
+
+  ;; Handle a global call.  PROGRAM's car is resolved to an identifier, ID.
+  ;; We know PROGRAM is a call to global procedure, macro, or syntax.
   (define (pass1/global-call id)
     (receive (gval type) (global-call-type id)
       (if gval
@@ -1402,19 +1417,21 @@
     ((pair? program)                    ; (op . args)
      (unless (list? program)
        (error "proper list required for function application:" program))
-     (if (variable? (car program))
-       (let1 head (cenv-lookup cenv (car program) SYNTAX)
-         (cond
-          ((identifier? head)
-           (pass1/global-call head))
-          ((lvar? head)
-           (pass1/call program ($lref head) (cdr program) cenv))
-          ((macro? head) ;; local macro
-           (pass1 (call-macro-expander head program (cenv-frames cenv)) cenv))
-          (else
-           (error "[internal] unknown resolution of head:" head))))
+     (cond
+      ((lookup-head (car program))
+       => (lambda (head)
+            (cond
+             ((identifier? head)
+              (pass1/global-call head))
+             ((lvar? head)
+              (pass1/call program ($lref head) (cdr program) cenv))
+             ((macro? head) ;; local macro
+              (pass1 (call-macro-expander head program (cenv-frames cenv)) cenv))
+             (else
+              (error "[internal] unknown resolution of head:" head)))))
+      (else
        (pass1/call program (pass1 (car program) (cenv-sans-name cenv))
-                   (cdr program) cenv)))
+                   (cdr program) cenv))))
     ((variable? program)                 ; variable reference
      (let1 r (cenv-lookup cenv program LEXICAL)
        (cond ((lvar? r) ($lref r))
@@ -1426,21 +1443,6 @@
               (error "[internal] cenv-lookup returned weird obj:" r)))))
     (else
      ($const program))))
-
-;  (case (length args)
-;    ((0) ($call program proc ()))
-;    ((1) ($call program proc
-;                (list (pass1 (car args) (cenv-sans-name cenv)))))
-;    ((2) (let1 cenv (cenv-sans-name cenv)
-;           ($call program proc (list (pass1 (car args) cenv)
-;                                     (pass1 (cadr args) cenv)))))
-;    ((3) (let1 cenv (cenv-sans-name cenv)
-;           ($call program proc (list (pass1 (car args) cenv)
-;                                     (pass1 (cadr args) cenv)
-;                                     (pass1 (caddr args) cenv)))))
-;    (else
-;     (let1 cenv (cenv-sans-name cenv)
-;       ($call program proc (imap (cut pass1 <> cenv) args))))))
 
 ;; Compiling body with internal definitions.
 ;;
@@ -4180,6 +4182,16 @@
         ((identifier? arg) (slot-ref arg 'name))
         ((lvar? arg) (lvar-name arg))
         (else (error "variable required, but got:" arg))))
+
+;; returns #t iff exp is the form (with-module module VARIABLE)
+(define (module-qualified-variable? expr cenv)
+  (and (pair? expr)
+       (pair? (cdr expr))
+       (pair? (cddr expr))
+       (null? (cdddr expr))
+       (variable? (caddr expr))
+       ;; we check this last, since it needs to call CENV-LOOKUP.
+       (global-eq? (car expr) 'with-module cenv)))
 
 (define (global-eq? var sym cenv)
   (and (variable? var)

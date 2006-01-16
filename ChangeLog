@@ -1,3 +1,11 @@
+2006-01-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass1): support compilation of a form in which
+	  the head position has (with-module mod identifier).  This allows
+	  one to refer syntactic keyword from other module, e.g.
+	  ((with-module gauche define) x 4).  This, in turn, gives more
+	  flexibility for modules to redefine syntaxes.
+
 2006-01-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/extlib.stub (global-variable-ref): added second optional

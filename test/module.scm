@@ -32,6 +32,19 @@
 (test "with-module (error)" *test-error*
       (lambda () (eval '(with-module MM 4) (interaction-environment))))
 
+(with-module M
+  (define + list)
+  (define if list))
+
+(test "with-module in head position" '(2 3)
+      (lambda ()
+        ((with-module M +) 2 3)))
+
+(test "with-module in head position" '(3 5 6)
+      (lambda ()
+        (with-module M
+          (if ((with-module scheme if) 2 3 4) 5 6))))
+
 ;;------------------------------------------------------------------
 ;; define-in-module
 
