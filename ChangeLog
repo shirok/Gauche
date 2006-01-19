@@ -1,3 +1,9 @@
+2006-01-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (module-qualified-variable?): fixed to check if
+	  with-module has the right binding when parsing
+	  ((with-module m v) ...) form.
+
 2006-01-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (pass1): support compilation of a form in which

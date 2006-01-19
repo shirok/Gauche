@@ -1,7 +1,7 @@
 ;;;
 ;;; compile.scm - The compiler
-;;;
-;;;   Copyright (c) 2004-2005 Shiro Kawai, All rights reserved.
+;;;  
+;;;   Copyright (c) 2004-2006 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.38 2006-01-16 10:45:47 shirok Exp $
+;;;  $Id: compile.scm,v 1.39 2006-01-19 10:07:54 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1353,6 +1353,7 @@
 
 ;; pass1 :: Sexpr, Cenv -> IForm
 ;;
+;;  The Pass 1 entry point.
 ;;  This is one of the most frequently called routine.  It is critical to
 ;;  make sure all internal functions are inlined, in case you
 ;;  change something.
@@ -1360,6 +1361,11 @@
 
   ;; Check if the head of the list is a variable, and if so, lookup it.
   ;; Note that we need to detect the case ((with-module foo bar) arg ...)
+  ;; NB: This isn't a proper fix, for we cannot deal with the situation
+  ;; like nested or aliased with-modules.  The Right Thing is to run
+  ;; `pass1 for syntax' on (car PROGRAM) and check the result to see if
+  ;; we need to treat PROGRAM as a special form or an ordinary procedure.
+  ;; It would be a large change, so this is a compromise...
   (define (lookup-head head)
     (or (and (variable? head)
              (cenv-lookup cenv head SYNTAX))
@@ -1443,6 +1449,25 @@
               (error "[internal] cenv-lookup returned weird obj:" r)))))
     (else
      ($const program))))
+
+;; Returns #t iff exp is the form (with-module module VARIABLE)
+;; We need to check the global value of with-module, for it might
+;; be redefined.  We assume this function is called infrequently,
+;; thus we can afford the time.
+(define (module-qualified-variable? expr cenv)
+  (and (pair? expr)
+       (pair? (cdr expr))
+       (pair? (cddr expr))
+       (null? (cdddr expr))
+       (variable? (caddr expr))
+       ;; we check the heaviest one last.
+       (and-let* ((var (cenv-lookup cenv (car expr) SYNTAX))
+                  ( (identifier? var) )
+                  (gloc (find-binding (slot-ref var 'module)
+                                      (slot-ref var 'name)
+                                      #f))
+                  (wm   (find-binding (find-module 'gauche) 'with-module #f)))
+         (eq? (gloc-ref gloc) (gloc-ref wm)))))
 
 ;; Compiling body with internal definitions.
 ;;
@@ -4182,16 +4207,6 @@
         ((identifier? arg) (slot-ref arg 'name))
         ((lvar? arg) (lvar-name arg))
         (else (error "variable required, but got:" arg))))
-
-;; returns #t iff exp is the form (with-module module VARIABLE)
-(define (module-qualified-variable? expr cenv)
-  (and (pair? expr)
-       (pair? (cdr expr))
-       (pair? (cddr expr))
-       (null? (cdddr expr))
-       (variable? (caddr expr))
-       ;; we check this last, since it needs to call CENV-LOOKUP.
-       (global-eq? (car expr) 'with-module cenv)))
 
 (define (global-eq? var sym cenv)
   (and (variable? var)

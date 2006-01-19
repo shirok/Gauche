@@ -45,6 +45,27 @@
         (with-module M
           (if ((with-module scheme if) 2 3 4) 5 6))))
 
+(define-module MA
+  (export with-module)
+  (define-syntax with-module
+    (syntax-rules ()
+      ((_ a b) list))))
+
+(test "with-module in head position (shadowed)" '(1 2 3)
+      (lambda ()
+        (with-module MA
+          ((with-module x y) 1 2 3))))
+
+(define-module MB
+  (import MA))
+
+(test "with-module in head position (shadowed)" '(1 2 3)
+      (lambda ()
+        (with-module MB
+          ((with-module x y) 1 2 3))))
+
+
+
 ;;------------------------------------------------------------------
 ;; define-in-module
 
