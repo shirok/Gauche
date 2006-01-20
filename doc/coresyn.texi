@@ -1605,9 +1605,140 @@ The return value of @code{until} form itself isn't specified.
 
 @defspec quasiquote template
 [R5RS]
-Quasiquotation is used to build a 
+Quasiquotation is a convenient way to build a structure that has
+some fixed parts and some variable parts.  See the explanation below.
 @end defspec
 
+@deftp {Reader Syntax} @code{`@var{template}}
+[R5RS]
+The syntax @code{`x} is read as @code{(quasiquote x)}.
+@end deftp
+
+@defspec unquote datum
+@defspecx unquote-splicing datum
+[R5RS]
+These syntaxes have meaning only when they appear in the @var{template}
+of quasiquoted form.  The standard says nothing about these syntaxes
+appear outside of quasiquote.  Gauche signals an error in such case,
+for it usually indicates you forget quasiquote somewhere.
+See the explanation below for the meaning of these.
+@end defspec
+
+@deftp {Reader Syntax} @code{,@var{datum}}
+@deftpx {Reader Syntax} @code{,@@@var{datum}}
+[R5RS]
+The syntaxes @code{,x} and @code{,@@x} are read as @code{(unquote x)}
+and @code{(unquote-splicing x)}, respectively.
+@end deftp
+
+@subheading Quasiquote basics
+
+Suppose you want to create a list @code{(foo bar @var{x} @var{y})}, 
+where @code{foo} and @code{bar} are symbols, and @var{x} and @var{y}
+are the value determined at runtime.  (For the sake of explanation,
+let's assume we have variables @var{x} and @var{y} that provides those
+values.)  One way to do that is to call the function @code{list}
+explicitly.
+
+@example
+(let ((x 0) (y 1))
+  (list 'foo 'bar x y)) @result{} (foo bar 0 1)
+@end example
+
+You can do the same thing with quasiquote, like this:
+
+@example
+(let ((x 0) (y 1))
+  `(foo bar ,x ,y))  @result{} (foo bar 0 1)
+@end example
+
+The difference between the two notations is that the explicit version
+quotes the parts that you want to insert literally into the result,
+while the quasiquote version @emph{unquotes} the parts that you
+don't want to quote.  
+
+The quasiquote version gets simpler and more readable when you
+have lots of static parts with scattered variable parts in your
+structure.  
+
+That's why quasiquote is frequently used with
+legacy macros, which are basically a procedure that
+create program fragments from variable parts provided as
+macro arguments.  See the simple-minded @code{my-if} macro
+that expands to @code{cond} form:
+
+@example
+(define-macro (my-if test then else)
+  `(cond (,test ,then) 
+         (else ,else)))
+
+(macroexpand '(my-if (< n 0) n (- n)))
+  @result{} (cond ((< n 0) n) (else (- n)))
+@end example
+
+Note the two @code{else}s in the macro definition; one isn't unquoted,
+thus appears liteally in the output, while another is unquoted and
+the corresponding macro argument is inserted in its place.
+
+Of course you can use quasiquotes unrelated to macros.  It is a general
+way to construct structures.  Some even prefer using quasiquote to 
+explicit construction even most of the structure is variable, for
+quasiquoted form can be more concise.  Gauche also tries to minimize
+runtime allocation for quasiquoted forms, so it may potentially
+be more efficient; see "How static are quasiquoted forms?" below.
+
+@subheading Splicing
+
+When @code{(unquote-splicing @var{expr})} appears in a quasiquoted form, 
+@var{expr} must evaluate to a list, which is @emph{spliced} into the
+surrounding context.  It's easier to see examples:
+
+@example
+(let ((x '(1 2 3)))
+  `(a ,@@x b)) @result{} (a 1 2 3 b)
+
+(let ((x '(1 2 3)))
+  `(a ,x b)) @result{} (a (1 2 3) b)
+
+(let ((x '(1 2 3)))
+  `#(a ,@@x b)) @result{} #(a 1 2 3 b)
+@end example
+
+Compare the unquote version and unquote-splicing version.  Splicing
+also works within a vector.
+
+@subheading Some edge cases
+
+
+
+
+
+@subheading How static are quasiquated forms?
+
+When quasiquoted form contains variable parts, what happens at
+runtime is just the same as when an explicit form is used:
+@code{`(,x ,y)} is evaluated exactly like @code{(list x y)}.
+However, Gauche tries to minimize runtime allocation when
+a quasiquoted form has static parts.
+
+First of all, if there's no variable parts in quasiquoted
+form, like @code{`(a b c)}, the entire form is allocated statically.
+If there is a static tail in the sturcture, it is also allocated
+statically; e.g. @code{`((,x a b) (,y c d))} works like
+@code{(list (cons x '(a b)) (cons y '(c d)))}.
+
+Furthermore, when an unquoted expression is a
+constant expressoin, Gauche embeds it into the static
+form.  If you've defined a constant like
+@code{(define-constant x 3)}, then the form
+@code{`(,x ,(+ x 1))} is compiled as the constant @code{'(3 4)}.
+(See @ref{Definitions}, for the explanation of @code{define-constant} form.)
+
+In general it is hard to say which part of quasiquoted form is
+compiled as a static datum and which part is not, so you shouldn't
+write a code that assumes some parts of the structure returned from
+quasiquote are freshly allocated.  In other words, you better avoid
+mutating such structures.
 
 @c ----------------------------------------------------------------------
 @node Definitions, Modules, Quasiquotation, Core syntax
