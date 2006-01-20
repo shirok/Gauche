@@ -332,6 +332,18 @@
        (let ((istr (open-input-string "abcdefg")))
          (read-line istr)
          (get-remaining-input-string istr)))
+(test* "get-remaining-input-string" "cdefg"
+       (let ((istr (open-input-string "abcdefg")))
+         (read-char istr)
+         (read-char istr)
+         (peek-char istr)
+         (get-remaining-input-string istr)))
+(test* "get-remaining-input-string" "cdefg"
+       (let ((istr (open-input-string "abcdefg")))
+         (read-char istr)
+         (read-char istr)
+         (peek-byte istr)
+         (get-remaining-input-string istr)))
 
 (define (read-line-tester str)
   (let1 s (open-input-string str)

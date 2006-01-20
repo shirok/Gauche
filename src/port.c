@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.123 2006-01-07 01:09:54 shirok Exp $
+ *  $Id: port.c,v 1.124 2006-01-20 11:19:34 shirok Exp $
  */
 
 #include <unistd.h>
@@ -941,16 +941,59 @@ ScmObj Scm_GetOutputStringUnsafe(ScmPort *port)
     return Scm_DStringGet(&SCM_PORT(port)->src.ostr, 0);
 }
 
+static ScmObj get_remaining_input_string_aux(const char *s, int ssiz,
+                                             const char *p, int psiz);
+
 ScmObj Scm_GetRemainingInputString(ScmPort *port)
 {
-    const char *cp, *ep;
+    const char *cp, *ep, *sp;
+    
     if (SCM_PORT_TYPE(port) != SCM_PORT_ISTR)
         Scm_Error("input string port required, but got %S", port);
     /* NB: we don't need to lock the port, since the string body
-       the port is pointing won't be changed */
+       the port is pointing won't be changed. */
     ep = port->src.istr.end;
     cp = port->src.istr.current;
-    return Scm_MakeString(cp, ep-cp, -1, 0);
+    /* Things gets complicated if there's an ungotten char or bytes.
+       We want to share the string body whenever possible, so we
+       first check the ungotten stuff matches the content of the
+       buffer. */
+    if (port->ungotten != SCM_CHAR_INVALID) {
+        char cbuf[SCM_CHAR_MAX_BYTES];
+        int nbytes = SCM_CHAR_NBYTES(port->ungotten);
+        SCM_CHAR_PUT(cbuf, port->ungotten);
+        sp = port->src.istr.start;
+        if (cp - sp >= nbytes
+            && memcmp(cp - nbytes, cbuf, nbytes) == 0) {
+            cp -= nbytes;       /* we can reuse buffer */
+            return Scm_MakeString(cp, ep-cp, -1, 0);
+        } else {
+            /* we need to copy */
+            return get_remaining_input_string_aux(cp, ep-cp, cbuf, nbytes);
+        }
+    } else if (port->scrcnt > 0) {
+        if (cp - sp >= port->scrcnt
+            && memcmp(cp - port->scrcnt, port->scratch, port->scrcnt) == 0) {
+            cp -= port->scrcnt; /* we can reuse buffer */
+            return Scm_MakeString(cp, ep-cp, -1, 0);
+        } else {
+            /* we need to copy */
+            return get_remaining_input_string_aux(cp, ep-cp, port->scratch,
+                                                  port->scrcnt);
+        }
+    } else {
+        return Scm_MakeString(cp, ep-cp, -1, 0);
+    }
+}
+
+static ScmObj get_remaining_input_string_aux(const char *s, int ssiz,
+                                             const char *p, int psiz)
+{
+    char *b = SCM_NEW_ATOMIC2(char *, psiz+ssiz+1);
+    memcpy(b, p, psiz);
+    memcpy(b+psiz, s, ssiz);
+    b[psiz+ssiz] = '\0';
+    return Scm_MakeString(b, psiz+ssiz, -1, 0);
 }
 
 /*===============================================================

@@ -1,3 +1,8 @@
+2006-01-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c (Scm_GetRemainingInputString): fixed a bug that didn't
+	  consider ungotten chars.
+
 2006-01-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (module-qualified-variable?): fixed to check if
