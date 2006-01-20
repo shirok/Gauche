@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: dbm.scm,v 1.5 2004-04-02 00:02:31 shirok Exp $
+;;;  $Id: dbm.scm,v 1.6 2006-01-20 10:43:13 shirok Exp $
 ;;;
 
 (define-module dbm
@@ -145,7 +145,7 @@
 (define-method dbm-delete! ((dbm <dbm>) key)
   (when (dbm-closed? dbm) (errorf "dbm-delete!: dbm already closed: ~s" dbm))
   (when (eqv? (slot-ref dbm 'rw-mode) :read)
-    (errorf "dbm-put!: dbm is read only: ~s" dbm)))
+    (errorf "dbm-delete!: dbm is read only: ~s" dbm)))
 
 (define-method dbm-fold ((dbm <dbm>) proc knil) #f)
 
