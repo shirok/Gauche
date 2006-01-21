@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.103 2005-10-13 08:14:13 shirok Exp $
+ *  $Id: load.c,v 1.104 2006-01-21 01:44:20 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -47,9 +47,6 @@
 #include "gauche/builtin-syms.h"
 
 #define LOAD_SUFFIX ".scm"      /* default load suffix */
-
-/* for tuning.  define this to display load timing info */
-#undef SHOW_LOAD_TIMINGS
 
 /*
  * Load file.
@@ -125,13 +122,15 @@ static ScmObj load_after(ScmObj *args, int nargs, void *data)
     struct load_packet *p = (struct load_packet *)data;
     ScmVM *vm = Scm_VM();
 
-#ifdef SHOW_LOAD_TIMINGS
-    struct timeval t0;
-    gettimeofday(&t0, NULL);
-    fprintf(stdout, "%10u)\n",
-            t0.tv_sec*1000000+t0.tv_usec,
-            Scm_GetStringConst(SCM_STRING(Scm_PortName(p->port))));
-#endif /*SHOW_LOAD_TIMINGS*/
+#ifdef HAVE_GETTIMEOFDAY
+    if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_COLLECT_LOAD_STATS)) {
+        struct timeval t0;
+        gettimeofday(&t0, NULL);
+        vm->stat.loadStat =
+            Scm_Cons(Scm_MakeIntegerU(t0.tv_sec*1000000+t0.tv_usec),
+                     vm->stat.loadStat);
+    }
+#endif /*HAVE_GETTIMEOFDAY*/
 
     Scm_ClosePort(p->port);
     PORT_UNLOCK(p->port);
@@ -358,15 +357,16 @@ ScmObj Scm_VMLoad(ScmString *filename, ScmObj load_paths,
     truename = Scm_FindFile(filename, &load_paths, suffixes, flags);
     if (SCM_FALSEP(truename)) return SCM_FALSE;
 
-#ifdef SHOW_LOAD_TIMINGS
-    {
+#ifdef HAVE_GETTIMEOFDAY
+    if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_COLLECT_LOAD_STATS)) {
         struct timeval t0;
         gettimeofday(&t0, NULL);
-        fprintf(stdout, "(\"%s\" %10u\n",
-                Scm_GetStringConst(SCM_STRING(truename)),
-                t0.tv_sec*1000000+t0.tv_usec);
+        vm->stat.loadStat =
+            Scm_Acons(truename,
+                      Scm_MakeIntegerU(t0.tv_sec*1000000+t0.tv_usec),
+                      vm->stat.loadStat);
     }
-#endif /*SHOW_LOAD_TIMINGS*/
+#endif /*HAVE_GETTIMEOFDAY*/
     if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_LOAD_VERBOSE)) {
         int len = Scm_Length(vm->load_history);
         SCM_PUTZ(";;", 2, SCM_CURERR);
@@ -541,7 +541,6 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
  *     doesn't need to look it up in the search paths.
  *     The caller also checks whether pathname is already loaded or not,
  *     so this function doesn't need to worry about duplicate loads.
- *
  *     This function should have the semantics equivalent to the
  *     RTLD_NOW|RTLD_GLOBAL of dlopen().
  *

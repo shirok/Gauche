@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.87 2005-11-07 18:26:16 shirok Exp $
+ *  $Id: main.c,v 1.88 2006-01-21 01:44:20 shirok Exp $
  */
 
 #include <unistd.h>
@@ -161,8 +161,13 @@ void further_options(const char *optarg)
 
 void profiler_options(const char *optarg)
 {
+    ScmVM *vm = Scm_VM();
+    
     if (strcmp(optarg, "time") == 0) {
         profiling_mode = TRUE;
+    }
+    else if (strcmp(optarg, "load") == 0) {
+        SCM_VM_RUNTIME_FLAG_SET(vm, SCM_COLLECT_LOAD_STATS);
     }
     else {
         fprintf(stderr, "unknown -p option: %s\n", optarg);
@@ -245,7 +250,8 @@ void cleanup_main(void *data)
                  SCM_OBJ(SCM_FIND_MODULE("gauche.vm.profiler", 0)));
     }
     
-    if (stats_mode) {           /* EXPERIMENTAL */
+    /* EXPERIMENTAL */
+    if (stats_mode) {
         fprintf(stderr, "\n;; Statistics (*: main thread only):\n");
         fprintf(stderr,
                 ";;  GC: %dbytes heap, %dbytes allocated\n",
@@ -257,6 +263,14 @@ void cleanup_main(void *data)
                 (vm->stat.sovCount > 0?
                  (double)(vm->stat.sovTime/vm->stat.sovCount)/1000.0 :
                  0.0));
+    }
+
+    /* EXPERIMENTAL */
+    if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_COLLECT_LOAD_STATS)) {
+        ///Scm_Printf(SCM_CURERR, "-- %S\n", vm->stat.loadStat);
+        Scm_Eval(SCM_LIST2(SCM_INTERN("profiler-show-load-stats"),
+                           SCM_LIST2(SCM_INTERN("quote"), vm->stat.loadStat)),
+                 SCM_OBJ(SCM_FIND_MODULE("gauche", 0)));
     }
 }
 

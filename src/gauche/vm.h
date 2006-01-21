@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.105 2005-08-13 06:51:53 shirok Exp $
+ *  $Id: vm.h,v 1.106 2006-01-21 01:44:21 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -325,6 +325,9 @@ typedef struct ScmVMStatRec {
     /* Stack overflow handler */
     u_long     sovCount; /* # of stack overflow */
     double     sovTime;  /* cumulated time of stack ov handling */
+
+    /* Load statistics chain */
+    ScmObj     loadStat;
 } ScmVMStat;
 
 /* The profiler structure is defined in prof.h */
@@ -530,6 +533,10 @@ enum {
        Scm_VM()->cstack = Scm_VM()->cstack->prev;       \
     } while (0)
 
+SCM_EXTERN long Scm_VMUnwindProtect(ScmVM *vm, ScmCStack *cstack);
+SCM_EXTERN void Scm_VMNextHandler(ScmVM *vm);
+SCM_EXTERN void Scm_VMRewindProtect(ScmVM *vm);
+
 /*
  * Runtime flags
  */
@@ -541,8 +548,10 @@ enum {
     SCM_LIMIT_MODULE_MUTATION = (1L<<4),/* disable set! to modify the
                                            global binding in the other
                                            module */
-    SCM_COLLECT_VM_STATS     = (1L<<5)  /* enable statistics collection
+    SCM_COLLECT_VM_STATS     = (1L<<5), /* enable statistics collection
                                            (incurs runtime overhead) */
+    SCM_COLLECT_LOAD_STATS   = (1L<<6)  /* log the stats of file load
+                                           timings (incurs runtime overhead) */
 };
 
 #define SCM_VM_RUNTIME_FLAG_IS_SET(vm, flag) ((vm)->runtimeFlags & (flag))

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.242 2006-01-10 10:33:43 shirok Exp $
+ *  $Id: vm.c,v 1.243 2006-01-21 01:44:20 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -212,6 +212,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     /* stats */
     v->stat.sovCount = 0;
     v->stat.sovTime = 0;
+    v->stat.loadStat = SCM_NIL;
     v->profilerRunning = FALSE;
     v->prof = NULL;
 
@@ -3577,6 +3578,34 @@ ScmObj Scm_VMCallCC(ScmObj proc)
     contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                             SCM_MAKE_STR("continuation"));
     return Scm_VMApply1(proc, contproc);
+}
+
+/*==============================================================
+ * Unwind protect API
+ */
+
+long Scm_VMUnwindProtect(ScmVM *vm, ScmCStack *cstack)
+{
+    cstack->prev = vm->cstack;
+    cstack->cont = NULL;
+    vm->cstack = cstack;
+    return sigsetjmp(cstack->jbuf, FALSE);
+}
+
+void Scm_VMNextHandler(ScmVM *vm)
+{
+    if (vm->cstack->prev) {
+        vm->cstack = vm->cstack->prev;
+        siglongjmp(vm->cstack->jbuf, 1);
+    } else {
+        Scm_Exit(1);
+    }
+}
+
+void Scm_VMRewindProtect(ScmVM *vm)
+{
+    SCM_ASSERT(vm->cstack);
+    vm->cstack = vm->cstack->prev;
 }
 
 /*==============================================================

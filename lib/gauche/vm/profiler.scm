@@ -30,17 +30,17 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: profiler.scm,v 1.3 2005-04-22 04:49:12 shirok Exp $
+;;;  $Id: profiler.scm,v 1.4 2006-01-21 01:44:20 shirok Exp $
 ;;;
 
-;; EXPERIMENTAL
 (define-module gauche.vm.profiler
   (use srfi-1)
   (use srfi-13)
   (use util.list)
   (use util.match)
   (extend gauche.internal)
-  (export profiler-show profiler-get-result)
+  (export profiler-show profiler-get-result
+          profiler-show-load-stats)
   )
 (select-module gauche.vm.profiler)
 
@@ -90,9 +90,45 @@
         ;; show 'em.
         (show-stats (hash-table-map ht cons) sort-by max-rows)))))
 
-;;
-;; Internal routines
-;;
+;; *EXPERIMENTAL*
+;; Show the load statistics.
+;; Called from the cleanup routine of main.c.  Passed STATS is a list of
+;; accumulated load stats info; see load.c for th exact format.
+;; This routine should be in sync of it.
+(define (profiler-show-load-stats stats)
+  (let ((results '())) ;; [(<filename> . <time>)]
+    (let/cc return
+      (define (start stats)
+        (match stats
+          (()  (show-results))
+          (((f . t) . more)
+           (receive (_ rest) (cumulate f t more) (start rest)))
+          ((_ . more) (start more)) ;; this can't happen, but tolerate
+          ))
+      ;; cumulate :: String, Integer, [Stat] -> Integer, [Stat]
+      (define (cumulate filename start-time stats)
+        (match stats
+          (() (show-results))  ;; premature stats data; we discard current fn.
+          (((f . t) . more)
+           (receive (time-spent rest) (cumulate f t more)
+             (cumulate filename (+ start-time time-spent) rest)))
+          ((t . more)
+           (set! results
+                 (cons (cons filename (- t start-time)) results))
+           (values (- t start-time) more))))
+      (define (show-results)
+        (print "Load statistics:")
+        (print "Time(us)    File")
+        (print "--------+-------------------------------------------------------------------")
+        (for-each (lambda (p)
+                    (format #t "~8d ~a\n" (cdr p) (car p)))
+                  (sort results (lambda (a b) (> (cdr a) (cdr b)))))
+        (return #f))
+      (start (reverse stats)))))
+
+;;;==========================================================
+;;; Internal routines
+;;;
 
 ;; Show the result in a comprehensive way
 (define (show-stats stat sort-by max-rows)

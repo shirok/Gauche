@@ -1,5 +1,10 @@
 2006-01-20  Shiro Kawai  <shiro@acm.org>
 
+	* src/load.c (Scm_VMLoad), src/main.c, lib/gauche/vm/profiler.scm:
+	  added -pload profiler option.
+	* src/vm.c (Scm_VMUnwindProtect, Scm_VMNextHandler, Scm_VMRewindProtect):
+	  added.
+
 	* src/port.c (Scm_GetRemainingInputString): fixed a bug that didn't
 	  consider ungotten chars.
 
