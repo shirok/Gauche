@@ -1,4 +1,12 @@
+2006-01-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/syslib.stub (sys-wait, sys-waitpid): syscall wasn't restarted
+	  when wait/waitpid was interrupted.
+
 2006-01-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (pass1/body): added a check for improper list
+	  in the lambda body.
 
 	* src/load.c (Scm_VMLoad), src/main.c, lib/gauche/vm/profiler.scm:
 	  added -pload profiler option.

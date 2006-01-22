@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.110 2005-11-02 05:43:33 shirok Exp $
+;;; $Id: syslib.stub,v 1.111 2006-01-22 00:28:54 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -467,11 +467,9 @@
 ;; returns pid and status 
 (define-cproc sys-wait ()
   (body (<int> <int>)
-        "int status;  pid_t r = wait(&status);"
-        "if (r < 0) {"
-        "  if (errno == EINTR) Scm_SigCheck(Scm_VM());"
-        "  Scm_SysError(\"wait() failed\");"
-        "}"
+        "int status;  pid_t r;"
+        "SCM_SYSCALL(r, wait(&status));"
+        "if (r < 0) Scm_SysError(\"wait() failed\");"
         "SCM_RESULT0 = r; SCM_RESULT1 = status;"))
 
 (define-cproc sys-waitpid (pid::<int> &keyword (nohang #f) (untraced #f))
@@ -479,11 +477,8 @@
         "  int status, options = 0;  pid_t r;"
         "if (!SCM_FALSEP(nohang))   options |= WNOHANG;"
         "if (!SCM_FALSEP(untraced)) options |= WUNTRACED;"
-        "r = waitpid(pid, &status, options);"
-        "if (r < 0) {"
-        "  if (errno == EINTR) Scm_SigCheck(Scm_VM());"
-        "  Scm_SysError(\"waitpid() failed\");"
-        "}"
+        "SCM_SYSCALL(r, waitpid(pid, &status, options));"
+        "if (r < 0) Scm_SysError(\"waitpid() failed\");"
         "SCM_RESULT0 = r; SCM_RESULT1 = status;"))
 
 ;; status interpretation
