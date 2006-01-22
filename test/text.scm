@@ -354,8 +354,13 @@ fuga
                                           (string "'abc")
                                           (string "abc'")
                                           (string "")
-                                          (string "'"))
-       (sql-tokenize "'abc' 'ab''c' '''abc' 'abc''' '' ''''"))
+                                          (string "'")
+                                          (string "a'b'c'"))
+       (sql-tokenize "'abc' 'ab''c' '''abc' 'abc''' '' '''' 'a''b''c'''"))
+
+(test* "sql-tokenize (unterminated literal)" #t
+       (guard (e ((<sql-parse-error> e) #t))
+         (sql-tokenize "'abc def")))
 
 (test* "sql-tokenize (unterminated literal)" #t
        (guard (e ((<sql-parse-error> e) #t))

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: sql.scm,v 1.2 2006-01-07 02:37:51 shirok Exp $
+;;;  $Id: sql.scm,v 1.3 2006-01-22 01:33:26 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -169,22 +169,30 @@
   ;;
   ;; subscanners
   ;;
+  (define (scan-quote s r q succ efmt)
+    (let loop ((pos 0))
+      (or (and-let* ((pos (string-index s q pos)))
+            (if (eqv? (string-ref s (+ pos 1) #f) q)
+              (loop (+ pos 2))
+              (succ (string-take s pos) (string-drop s (+ pos 1)))))
+          (e efmt sql-string))))
+  
   (define (scan-string s r)
-    (cond ((#/^'((?:[^']|'')*)'/ s)
-           => (lambda (m)
-                (entry (m 'after)
-                       (cons `(string ,(regexp-replace-all #/''/ (m 1) "'"))
-                             r))))
-          (else
-           (e "unterminated string literal in SQL: ~s" sql-string))))
+    (scan-quote (string-drop s 1) r #\'
+                (lambda (body rest)
+                  (entry rest
+                         `((string ,(regexp-replace-all #/''/ body "'"))
+                           . ,r)))
+                "unterminated string literal in SQL: ~s"))
+
   (define (scan-delimited s r)
-    (cond ((#/^\"((?:[^\"]|\"\")*)\"/ s)
-           => (lambda (m)
-                (entry (m 'after)
-                       (cons `(delimited ,(regexp-replace-all #/""/ (m 1) "\""))
-                             r))))
-          (else
-           (e "unterminated delimited identifier in SQL: ~s" sql-string))))
+    (scan-quote (string-drop s 1) r #\"
+                (lambda (body rest)
+                  (entry rest
+                         `((delimited ,(regexp-replace-all #/""/ body "\""))
+                           . ,r)))
+                "unterminated delimited identifier in SQL: ~s"))
+
   (define (scan-bitstring s r)
     (cond ((#/^.'([01]+)'/ s)
            => (lambda (m)

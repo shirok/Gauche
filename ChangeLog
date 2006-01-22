@@ -1,5 +1,8 @@
 2006-01-21  Shiro Kawai  <shiro@acm.org>
 
+	* lib/text/sql.scm (sql-tokenize): fixed the regexp stack overflow
+	  problem when very long input is given.
+
 	* src/compile.scm (pass1/body): handles ((with-module x y) arg ...)
 	  form in the beginning of lambda body.
 
