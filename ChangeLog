@@ -1,3 +1,7 @@
+2006-01-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub (with-ports): added.
+
 2006-01-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/sql.scm (sql-tokenize): fixed the regexp stack overflow

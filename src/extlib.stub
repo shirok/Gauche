@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.258 2006-01-11 09:13:33 shirok Exp $
+;;; $Id: extlib.stub,v 1.259 2006-01-22 10:21:32 shirok Exp $
 ;;;
 
 "
@@ -865,6 +865,16 @@
 
 (define-cproc with-error-to-port (port::<output-port> thunk)
   (expr "Scm_WithPort(&port, thunk, SCM_PORT_CURERR, FALSE)"))
+
+(define-cproc with-ports (iport::<input-port>?
+                          oport::<output-port>?
+                          eport::<output-port>?
+                          thunk)
+  (body "ScmPort *p[3]; int flags = 0, cnt = 0;"
+        "if (iport) { p[cnt++] = iport; flags |= SCM_PORT_CURIN; }"
+        "if (oport) { p[cnt++] = oport; flags |= SCM_PORT_CUROUT; }"
+        "if (eport) { p[cnt++] = eport; flags |= SCM_PORT_CURERR; }"
+        "SCM_RESULT = Scm_WithPort(p, thunk, flags, FALSE);"))
 
 (define-cproc port-name (port::<port>)
   (call "Scm_PortName"))

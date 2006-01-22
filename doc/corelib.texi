@@ -7801,9 +7801,25 @@ error port, respectively.
 Calls @var{thunk}.  During evaluation of thunk, the current input port, current
 output port and current error port are set to @var{port}, respectively.
 @c JP
-それぞれ入力、出力、エラーポートは@var{port}にセットした状態で@var{thunk}を呼び出します。
+それぞれ入力、出力、エラーポートを@var{port}にセットした状態で@var{thunk}を呼び出します。
 @c COMMON
 @end defun
+
+@defun with-ports iport oport eport thunk
+@c EN
+Does the above three functions at once.
+Calls @var{thunk} while the current input, output, and error ports are
+set to @var{iport}, @var{oport}, and @var{eport}, respectively.
+You may pass @code{#f} to any port argument(s) if you don't need
+to alter the port(s).
+@c JP
+上の3つの動作を同時に行う手続きです。
+入力、出力、エラーの各ポートをそれぞれ@var{iport}, @var{oport}, @var{eport}に
+セットして@var{thunk}を呼び出します。変更する必要がないポートの引数には
+@code{#f}を渡すことができます。
+@c COMMON
+@end defun
+
 
 @defun close-input-port port
 @defunx close-output-port port
