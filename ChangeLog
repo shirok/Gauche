@@ -1,5 +1,8 @@
 2006-01-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (pass1/body): handles ((with-module x y) arg ...)
+	  form in the beginning of lambda body.
+
 	* src/syslib.stub (sys-wait, sys-waitpid): syscall wasn't restarted
 	  when wait/waitpid was interrupted.
 

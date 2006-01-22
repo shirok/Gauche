@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.39 2006-01-19 10:07:54 shirok Exp $
+;;;  $Id: compile.scm,v 1.40 2006-01-22 00:54:04 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1351,6 +1351,22 @@
     (let1 cenv (cenv-sans-name cenv)
       ($call program proc (imap (cut pass1 <> cenv) args)))))
 
+;; Check if the head of the list is a variable, and if so, lookup it.
+;; Note that we need to detect the case ((with-module foo bar) arg ...)
+;; NB: This isn't a proper fix, for we cannot deal with the situation
+;; like nested or aliased with-modules.  The Right Thing is to run
+;; `pass1 for syntax' on (car PROGRAM) and check the result to see if
+;; we need to treat PROGRAM as a special form or an ordinary procedure.
+;; It would be a large change, so this is a compromise...
+(define-inline (pass1/lookup-head head cenv)
+  (or (and (variable? head)
+           (cenv-lookup cenv head SYNTAX))
+      (and (pair? head)
+           (module-qualified-variable? head cenv)
+           (let1 mod (ensure-module (cadr head) 'with-module #f)
+             (cenv-lookup (cenv-swap-module cenv mod)
+                          (caddr head) SYNTAX)))))
+
 ;; pass1 :: Sexpr, Cenv -> IForm
 ;;
 ;;  The Pass 1 entry point.
@@ -1358,21 +1374,6 @@
 ;;  make sure all internal functions are inlined, in case you
 ;;  change something.
 (define (pass1 program cenv)
-
-  ;; Check if the head of the list is a variable, and if so, lookup it.
-  ;; Note that we need to detect the case ((with-module foo bar) arg ...)
-  ;; NB: This isn't a proper fix, for we cannot deal with the situation
-  ;; like nested or aliased with-modules.  The Right Thing is to run
-  ;; `pass1 for syntax' on (car PROGRAM) and check the result to see if
-  ;; we need to treat PROGRAM as a special form or an ordinary procedure.
-  ;; It would be a large change, so this is a compromise...
-  (define (lookup-head head)
-    (or (and (variable? head)
-             (cenv-lookup cenv head SYNTAX))
-        (and (module-qualified-variable? head cenv)
-             (let1 mod (ensure-module (cadr head) 'with-module #f)
-               (cenv-lookup (cenv-swap-module cenv mod)
-                            (caddr head) SYNTAX)))))
 
   ;; Handle a global call.  PROGRAM's car is resolved to an identifier, ID.
   ;; We know PROGRAM is a call to global procedure, macro, or syntax.
@@ -1422,9 +1423,9 @@
   (cond
     ((pair? program)                    ; (op . args)
      (unless (list? program)
-       (error "proper list required for function application:" program))
+       (error "proper list required for function application or macro use:" program))
      (cond
-      ((lookup-head (car program))
+      ((pass1/lookup-head (car program) cenv)
        => (lambda (head)
             (cond
              ((identifier? head)
@@ -1474,7 +1475,8 @@
 ;; First we scan internal defines.  We need to expand macros at this stage,
 ;; since the macro may produce more internal defines.  Note that the
 ;; previous internal definition in the same body may shadow the macro
-;; binding, so we need to check idef_vars for that.
+;; binding.  In pass1/body, it is checked by keeping newly defined
+;; identifiers in intdefs.
 ;;
 ;; Actually, this part touches the hole of R5RS---we can't determine
 ;; the scope of the identifiers of the body until we find the boundary
@@ -1487,45 +1489,47 @@
 ;; let*-like semantics for the purpose of determining macro binding
 ;; during expansion.
 (define (pass1/body exprs intdefs cenv)
-  (cond
-   ((null? exprs) ($const-undef))
-   ((pair? (car exprs))
-    (let ((op   (caar exprs))
-          (args (cdar exprs))
-          (rest (cdr exprs)))
-      (if (or (not (variable? op)) (assq op intdefs))
-        ;; This can't be an internal define.
-        (pass1/body-wrap-intdefs intdefs exprs cenv)
-        (let1 var (cenv-lookup cenv op SYNTAX)
-          (cond
-           ((lvar? var) (pass1/body-wrap-intdefs intdefs exprs cenv))
-           ((macro? var)
-            (pass1/body
-             (cons (call-macro-expander var (car exprs) (cenv-frames cenv))
-                   rest)
-             intdefs cenv))
-           ((identifier? var)
+
+  (match exprs
+    (()  ($const-undef))
+    (((op . args) . rest)
+     (cond
+      ((and (not (assq op intdefs))
+            (pass1/lookup-head op cenv))
+       => (lambda (head)
+            (unless (list? args)
+              (error "proper list required for function application or macro use:" (car exprs)))
             (cond
-             ((global-eq? var 'define cenv)
-              (when (null? args)
-                (error "malformed internal define:" (car exprs)))
-              (pass1/body-handle-intdef args rest intdefs cenv))
-             ((global-eq? var 'begin cenv)
-              ;; intersperse the body of begin
-              (pass1/body (append args rest) intdefs cenv))
+             ((lvar? head) (pass1/body-wrap-intdefs intdefs exprs cenv))
+             ((macro? head)
+              (pass1/body
+               (cons (call-macro-expander head (car exprs) (cenv-frames cenv))
+                     rest)
+               intdefs cenv))
+             ((identifier? head)
+              (cond
+               ((global-eq? head 'define cenv)
+                (when (null? args)
+                  (error "malformed internal define:" (car exprs)))
+                (pass1/body-handle-intdef args rest intdefs cenv))
+               ((global-eq? head 'begin cenv)
+                ;; intersperse the body of begin
+                (pass1/body (append args rest) intdefs cenv))
+               (else
+                (or (and-let* ((gloc (find-binding (slot-ref head 'module)
+                                                   (slot-ref head 'name)
+                                                   #f))
+                               (gval (gloc-ref gloc))
+                               ( (macro? gval) ))
+                      (pass1/body
+                       (cons (call-macro-expander gval (car exprs) (cenv-frames cenv))
+                             rest)
+                       intdefs cenv))
+                    (pass1/body-wrap-intdefs intdefs exprs cenv)))))
              (else
-              (or (and-let* ((gloc (find-binding (slot-ref var 'module)
-                                                 (slot-ref var 'name)
-                                                 #f))
-                             (gval (gloc-ref gloc))
-                             ( (macro? gval) ))
-                    (pass1/body
-                     (cons (call-macro-expander gval (car exprs) (cenv-frames cenv))
-                           rest)
-                     intdefs cenv))
-                  (pass1/body-wrap-intdefs intdefs exprs cenv)))))
-           (else
-            (error "[internal] pass1/body" var)))))))
+              (error "[internal] pass1/body" head)))))
+      (else
+       (pass1/body-wrap-intdefs intdefs exprs cenv))))
     (else
      (pass1/body-wrap-intdefs intdefs exprs cenv))))
 

@@ -57,14 +57,22 @@
           ((with-module x y) 1 2 3))))
 
 (define-module MB
-  (import MA))
+  (import MA)
+  (export oops)
+  (define-syntax oops
+    (syntax-rules ()
+      ((_ a) (define a 3)))))
 
 (test "with-module in head position (shadowed)" '(1 2 3)
       (lambda ()
         (with-module MB
           ((with-module x y) 1 2 3))))
 
-
+(test "with-module in head position (in lambda body)" 6
+      (lambda ()
+        (let ((x 1))
+          ((with-module MB oops) x)
+          (+ x x))))
 
 ;;------------------------------------------------------------------
 ;; define-in-module
