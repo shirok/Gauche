@@ -6794,6 +6794,7 @@ SRFI condition type, the class has the SRFI name as well.
     +- <message-condition>
          +- <error>                      ; also inherits <serious-condition>
               +- <system-error>
+              +- <unhandled-signal-error>
               +- <read-error>
               +- <io-error>
                    +- <port-error>
@@ -7017,6 +7018,29 @@ OSの生のエラーコードを取得するのに重要です。いくつかのケースで
 @c COMMON
 @end deftp
 
+@deftp {Class} <unhandled-signal-error>
+@clindex unhandled-signal-error
+@c EN
+A subclass of @code{<error>}.  The default handler of most of
+signals raises this condition.   See @ref{Handling signals} for
+the details.
+@c JP
+@code{<error>}のサブクラス。多くのシグナルのデフォルトハンドラは
+このコンディションを投げます。詳しくは@ref{Handling signals}を
+参照してください。
+@c COMMON
+@defivar {<unhandled-signal-error>} signal
+@c EN
+An integer indicating the received signal number.
+There are constants defined for typical signal numbers; see
+@ref{Signals and signal sets}.
+@c JP
+受け取ったシグナル番号を示す整数値。典型的なシグナル番号については
+定数が定義されています。@ref{Signals and signal sets}を参照のこと。
+@c COMMON
+@end defivar
+@end deftp
+
 @deftp {Class} <read-error>
 @deftpx {Condition Type} &read-error
 @clindex read-error
@@ -7025,10 +7049,10 @@ OSの生のエラーコードを取得するのに重要です。いくつかのケースで
 @c EN
 A subclass of @code{<error>}.
 When the reader detects a lexical or syntactic error during
-reading an S-expression, this type of exception is thrown.
+reading an S-expression, this type of condition is raised.
 @c JP
 @code{<error>} のサブクラス。リーダがS式を読み込み中に、字句エラー
-または構文エラーを検出したとき、この型の例外が投げられます。
+または構文エラーを検出したとき、この型のコンディションが投げられます。
 @c COMMON
 
 @defivar {<read-error>} port
@@ -11999,14 +12023,15 @@ Linuxプラットフォームでスレッドを使用している場合は、
 @c COMMON
 @c EN
 @item other signals
-@code{Gosh} installs the default signal handler, which signals
-       an "unhandled signal" error.  Scheme programs can override it
-       by its own signal handler.
+@code{Gosh} installs the default signal handler, which raises
+@code{<unhandled-signal-error>} condition (see @ref{Conditions}).
+Scheme programs can override it by its own signal handler.
 @c JP
 @item 他のシグナル
 @code{gosh}はデフォルトのシグナルハンドラを設定します。
-       デフォルトのシグナルハンドラは "unhandled signal" エラーを通知します。
-       Schemeプログラムはシグナル毎に独自のハンドラを設定することが可能です。
+デフォルトのシグナルハンドラは@code{<unhandled-signal-error>}コンディションを
+通知します(@ref{Conditions}参照)。
+Schemeプログラムはシグナル毎に独自のハンドラを設定することが可能です。
 @c COMMON
 @end table
 

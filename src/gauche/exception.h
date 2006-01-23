@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: exception.h,v 1.11 2004-11-23 13:10:00 shirok Exp $
+ *  $Id: exception.h,v 1.12 2006-01-23 07:06:32 shirok Exp $
  */
 
 #ifndef GAUCHE_EXCEPTION_H
@@ -46,6 +46,7 @@
     |    +- <application-exit>           ; also inherits <serious-condition>
     |    +- <error>             ; srfi-35, also inherits <serious-condition>
     |         +- <system-error>
+    |         +- <unhandled-signal-error>
     |         +- <read-error> ; srfi-36
     |         +- <io-error>   ; srfi-36
     |              +- <port-error> ; srfi-36
@@ -127,6 +128,17 @@ SCM_CLASS_DECL(Scm_SystemErrorClass);
 #define SCM_SYSTEM_ERROR_P(obj)    SCM_ISA(obj, SCM_CLASS_SYSTEM_ERROR)
 
 SCM_EXTERN ScmObj Scm_MakeSystemError(ScmObj message, int error_num);
+
+/* <unhandled-signal-error>: unhandled signal */
+typedef struct ScmUnhandledSignalErrorRec {
+    ScmError common;
+    int signal;                 /* signal number */
+} ScmUnhandledSignalError;
+
+SCM_CLASS_DECL(Scm_UnhandledSignalErrorClass);
+#define SCM_CLASS_UNHANDLED_SIGNAL_ERROR  (&Scm_UnhandledSignalErrorClass)
+#define SCM_UNHANDLED_SIGNAL_ERROR(obj)   ((ScmUnhandledSignalError*)(obj))
+#define SCM_UNHANDLED_SIGNAL_ERROR_P(obj) SCM_ISA(obj, SCM_CLASS_UNHANDLED_SIGNAL_ERROR)
 
 /* <read-error>: error from the reader */
 typedef struct ScmReadErrorRec {

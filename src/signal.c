@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.34 2005-11-10 20:51:09 shirok Exp $
+ *  $Id: signal.c,v 1.35 2006-01-23 07:06:32 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -261,9 +261,15 @@ static ScmObj default_sighandler(ScmObj *args, int nargs, void *data)
         }
     }
     if (name) {
-        Scm_Error("unhandled signal %d (%s)", signum, name);
+        Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_UNHANDLED_SIGNAL_ERROR),
+                           "signal", SCM_MAKE_INT(signum),
+                           SCM_RAISE_CONDITION_MESSAGE,
+                           "unhandled signal %d (%s)", signum, name);
     } else {
-        Scm_Error("unhandled signal %d (unknown signal)", signum);
+        Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_UNHANDLED_SIGNAL_ERROR),
+                           "signal", SCM_MAKE_INT(signum),
+                           SCM_RAISE_CONDITION_MESSAGE,
+                           "unhandled signal %d (unknown signal)", signum);
     }
     return SCM_UNDEFINED;       /* dummy */
 }

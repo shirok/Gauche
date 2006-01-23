@@ -1,7 +1,7 @@
 /*
  * error.c - error handling
  *
- *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.66 2005-08-08 06:16:15 shirok Exp $
+ *  $Id: error.c,v 1.67 2006-01-23 07:06:32 shirok Exp $
  */
 
 #include <errno.h>
@@ -46,6 +46,7 @@
 static void   message_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static ScmObj message_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs);
+static ScmObj sigerror_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj readerror_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj porterror_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj compound_allocate(ScmClass *klass, ScmObj initargs);
@@ -138,6 +139,9 @@ SCM_DEFINE_BASE_CLASS(Scm_ErrorClass, ScmError,
 SCM_DEFINE_BASE_CLASS(Scm_SystemErrorClass, ScmSystemError,
                       message_print, NULL, NULL,
                       syserror_allocate, error_cpl);
+SCM_DEFINE_BASE_CLASS(Scm_UnhandledSignalErrorClass, ScmUnhandledSignalError,
+                      message_print, NULL, NULL,
+                      sigerror_allocate, error_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_ReadErrorClass, ScmReadError,
                       message_print, NULL, NULL,
                       readerror_allocate, error_cpl);
@@ -166,6 +170,15 @@ static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs)
     SCM_SET_CLASS(e, klass);
     e->common.message = SCM_FALSE; /* set by initialize */
     e->error_number = 0;           /* set by initialize */
+    return SCM_OBJ(e);
+}
+
+static ScmObj sigerror_allocate(ScmClass *klass, ScmObj initargs)
+{
+    ScmUnhandledSignalError *e = SCM_ALLOCATE(ScmUnhandledSignalError, klass);
+    SCM_SET_CLASS(e, klass);
+    e->common.message = SCM_FALSE; /* set by initialize */
+    e->signal = 0;                 /* set by initialize */
     return SCM_OBJ(e);
 }
 
@@ -199,6 +212,19 @@ static void syserror_number_set(ScmSystemError *obj, ScmObj val)
         Scm_Error("small integer required, but got %S", val);
     }
     obj->error_number = SCM_INT_VALUE(val);
+}
+
+static ScmObj sigerror_signal_get(ScmUnhandledSignalError *obj)
+{
+    return SCM_MAKE_INT(obj->signal);
+}
+
+static void sigerror_signal_set(ScmUnhandledSignalError *obj, ScmObj val)
+{
+    if (!SCM_INTP(val)) {
+        Scm_Error("small integer required, but got %S", val);
+    }
+    obj->signal = SCM_INT_VALUE(val);
 }
 
 static ScmObj readerror_port_get(ScmReadError *obj)
@@ -259,6 +285,11 @@ static void porterror_port_set(ScmPortError *obj, ScmObj val)
 
 static ScmClassStaticSlotSpec syserror_slots[] = {
     SCM_CLASS_SLOT_SPEC("errno", syserror_number_get, syserror_number_set),
+    { NULL }
+};
+
+static ScmClassStaticSlotSpec sigerror_slots[] = {
+    SCM_CLASS_SLOT_SPEC("signal", sigerror_signal_get, sigerror_signal_set),
     { NULL }
 };
 
@@ -912,6 +943,10 @@ void Scm__InitExceptions(void)
                                 "<system-error>",
                                 mod, cond_meta, SCM_FALSE,
                                 syserror_slots, 0);
+    Scm_InitStaticClassWithMeta(SCM_CLASS_UNHANDLED_SIGNAL_ERROR,
+                                "<unhandled-signal-error>",
+                                mod, cond_meta, SCM_FALSE,
+                                sigerror_slots, 0);
     Scm_InitStaticClassWithMeta(SCM_CLASS_READ_ERROR,
                                 "<read-error>",
                                 mod, cond_meta, SCM_FALSE,

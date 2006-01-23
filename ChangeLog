@@ -1,5 +1,9 @@
 2006-01-22  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche/exception.h, src/error.c : added Scm_UnhandledSignalError.
+	* src/signal.c (default_sighandler): the default signal handler now
+	  throws <unhandled-signal-error>.
+
 	* src/extlib.stub (with-ports): added.
 
 2006-01-21  Shiro Kawai  <shiro@acm.org>
