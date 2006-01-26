@@ -14,12 +14,11 @@
 
 ;; NB: the API will likely to be renamed according to the
 ;; oncoming binary i/o srfi.  Use the current API at your own risk.
-;; $Id: io.scm,v 1.1 2004-01-28 09:34:55 shirok Exp $
+;; $Id: io.scm,v 1.2 2006-01-26 20:15:44 shirok Exp $
 
 (define-module binary.io
   (use gauche.uvector)
   (use srfi-1)  ;; list library
-  (use srfi-2)  ;; and-let*
   (use srfi-13) ;; string library
   (export default-endian
           read-binary-uint
@@ -55,11 +54,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; config
 
-(define *bit-size* 2)   ;; hey, you never know :)
-(define *byte-size* 8)
-(define *byte-magnitude* (expt *bit-size* *byte-size*))
-(define *byte-mask* (- *byte-magnitude* 1))
-(define *byte-right-shift* (* -1 *byte-size*))
+(define-constant *bit-size* 2)   ;; hey, you never know :)
+(define-constant *byte-size* 8)
+(define-constant *byte-magnitude* (expt *bit-size* *byte-size*))
+(define-constant *byte-mask* (- *byte-magnitude* 1))
+(define-constant *byte-right-shift* (* -1 *byte-size*))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; basic reading
@@ -67,22 +66,25 @@
 ;; mind-numblingly slow, consider a uvector approach but it doesn't
 ;; handle endianess
 (define (read-binary-uint size . args)
-  (let ((port (current-input-port))
-        (endian (default-endian)))
-    ;; [port [endian]]
-    (if (pair? args)
-      (let ((args2 (cdr args)))
-        (if (car args) (set! port (car args)))
-        (if (pair? args2) (set! endian (car args2)))))
-    (let ((ls '()))
-      ;; build a list of bytes
-      (dotimes (i size)
-        (push! ls (read-byte port)))
-      ;; reverse if big-endian
-      (when (eq? endian 'big-endian)
-        (set! ls (reverse ls)))
-      ;; accumulate
-      (fold (lambda (a b) (+ a (* b *byte-magnitude*))) 0 ls))))
+  (let-optionals* args ((port (current-input-port))
+                        (endian (default-endian)))
+    (case size
+      ((1) (read-binary-uint8 port endian))
+      ((2) (read-binary-uint16 port endian))
+      ((4) (read-binary-uint32 port endian))
+      ((8) (read-binary-uint64 port endian))
+      (else
+       (let loop ((ls '())
+                  (cnt 0))
+         (if (= cnt size)
+           (fold (lambda (a b) (+ a (* b *byte-magnitude*)))
+                 0
+                 (if (eq? endian 'big-endian) (reverse ls) ls))
+           (let1 byte (read-byte port)
+             (if (eof-object? byte)
+               byte
+               (loop (cons byte ls) (+ cnt 1)))))))
+      )))
 
 (define (lognot-small int bytes)
   (logand (lognot int) (- (expt *bit-size* (* *byte-size* bytes)) 1)))
@@ -99,32 +101,49 @@
     int))
 
 (define (read-binary-sint size . args)
-  (uint->sint (apply read-binary-uint (cons size args)) size))
+  (let-optionals* args ((port (current-input-port))
+                        (endian (default-endian)))
+    (case size
+      ((1) (read-binary-sint8 port endian))
+      ((2) (read-binary-sint16 port endian))
+      ((4) (read-binary-sint32 port endian))
+      ((8) (read-binary-sint64 port endian))
+      (else
+       (uint->sint (read-binary-uint size port endian) size)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; basic writing
 
 (define (write-binary-uint size int . args)
-  (let ((port (current-output-port))
-        (endian (default-endian)))
-    ;; [port [endian]]
-    (if (pair? args)
-      (let ((args2 (cdr args)))
-        (if (car args) (set! port (car args)))
-        (if (pair? args2) (set! endian (car args2)))))
-    (let ((ls '()))
-      ;; build a list of bytes
-      (dotimes (i size)
-        (push! ls (logand int *byte-mask*))
-        (set! int (ash int *byte-right-shift*)))
-      ;; reverse if big-endian
-      (unless (eq? endian 'big-endian)
-        (set! ls (reverse ls)))
-      ;; write the list
-      (for-each (cut write-byte <> port) ls))))
+  (let-optionals* args ((port (current-output-port))
+                        (endian (default-endian)))
+    (case size
+      ((1) (write-binary-uint8 int port endian))
+      ((2) (write-binary-uint16 int port endian))
+      ((4) (write-binary-uint32 int port endian))
+      ((8) (write-binary-uint64 int port endian))
+      (else
+       (let ((ls '()))
+         ;; build a list of bytes
+         (dotimes (i size)
+           (push! ls (logand int *byte-mask*))
+           (set! int (ash int *byte-right-shift*)))
+         ;; reverse if big-endian
+         (unless (eq? endian 'big-endian)
+           (set! ls (reverse ls)))
+         ;; write the list
+         (for-each (cut write-byte <> port) ls))))))
 
 (define (write-binary-sint size int . args)
-  (apply write-binary-uint (cons size (cons (sint->uint int size) args))))
+  (let-optionals* args ((port (current-output-port))
+                        (endian (default-endian)))
+    (case size
+      ((1) (write-binary-sint8 int port endian))
+      ((2) (write-binary-sint16 int port endian))
+      ((4) (write-binary-sint32 int port endian))
+      ((8) (write-binary-sint64 int port endian))
+      (else
+       (write-binary-uint size (sint->uint int size) port endian)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; compatibility
@@ -152,7 +171,7 @@
 ;; up any more space than they would in normal char/short/int encodings.
 
 (define (read-ber-integer . opt-port)
-  (let ((port (if (pair? opt-port) (car opt-port) (current-input-port))))
+  (let ((port (get-optional opt-port (current-input-port))))
     (let ((first (read-byte port)))
       (if (eof-object? first)
         first ;; stop on eof
@@ -166,7 +185,7 @@
                     (read-binary-uint8 port)))))))))
 
 (define (write-ber-integer number . opt-port)
-  (let ((port (if (pair? opt-port) (car opt-port) (current-output-port))))
+  (let ((port (get-optional opt-port (current-output-port))))
     (let ((final (logand number #b01111111))
           (start (ash number -7)))
       (unless (zero? start)

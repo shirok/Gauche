@@ -5,6 +5,7 @@
 
 @c ----------------------------------------------------------------------
 @menu
+* Binary I/O::                  
 * Packing Binary Data::         
 * Database independent access layer::  
 * Generic DBM interface::       
@@ -54,7 +55,142 @@
 @end menu
 
 @c ----------------------------------------------------------------------
-@node Packing Binary Data, Database independent access layer, Library modules - Utilities, Library modules - Utilities
+@node Binary I/O, Packing Binary Data, Library modules - Utilities, Library modules - Utilities
+@section @code{binary.io} - Binary I/O
+@c NODE バイナリI/O, @code{binary.io} - バイナリI/O
+
+@deftp {Module} binary.io
+@mdindex binary.io
+This module provides basic procedures to perform binary I/O
+of numeric data from/to ports.  For structured binary data I/O,
+more convenient @code{pack} utility is implemented
+on top of this module (see @ref{Packing Binary Data}).
+You might want to use this module directly if you need
+speed or want a flexible control of endianness.
+
+See also @code{Uniform vectors}, which provides binary block I/O.
+@end deftp
+
+@subsection Endianness
+
+Most procedures of this module take an optional @var{endian} argument,
+specifying the byte order of the binary input.
+It must be either a symbol @code{big-endian} or @code{little-endian}.
+If the endian argument is omitted, the machine's native endian is assumed.
+(For 8-bit I/O procedures like @code{read-binary-uint8} the endian
+argument has no effect, but is accepted for consistency).
+
+@defun default-endian
+Returns a symbol @code{big-endian} or @code{little-endian}.
+@end defun
+
+(Technically there can be more variations of endianness than big and
+little.  Among the platforms that run Gauche, some OSes on ARM 
+are known to use a peculiar endian for double-precision
+floating point number.
+Currently we don't have means to specify that endian explicitly,
+although on ARM the @code{read-binary-double} etc. uses its native
+format when @var{endian} is unspecified.  This limitation will be
+removed in the future version.)
+
+
+@subsection Integer I/O
+
+@defun read-binary-uint8 &optional port endian
+@defunx read-binary-uint16 &optional port endian
+@defunx read-binary-uint32 &optional port endian
+@defunx read-binary-uint64 &optional port endian
+Reads 8, 16, 32 or 64 bit unsigned integer from @var{port}
+with specified endian, respectively.  If @var{port} is omitted, 
+current input port is used.  If @var{port} reaches EOF before
+a complete integer is read, EOF is returned.
+@end defun
+
+@defun read-binary-sint8 &optional port endian
+@defunx read-binary-sint16 &optional port endian
+@defunx read-binary-sint32 &optional port endian
+@defunx read-binary-sint64 &optional port endian
+Reads 8, 16, 32 or 64 bit 2's complement signed integer from @var{port}
+with specified endian, respectively.  If @var{port} is omitted, 
+current input port is used.  If @var{port} reaches EOF before
+a complete integer is read, EOF is returned.
+@end defun
+
+@defun read-binary-uint size &optional port endian
+@defunx read-binary-sint size &optional port endian
+More flexible version.  Reads @var{size}-octed unsigned
+or signed integer from @var{port} with specified endian.
+If @var{port} reaches EOF before a complete integer is read,
+EOF is returned.
+@end defun
+
+@defun reads-ber-integer &optional port
+Reads BER compressed integer a la X.209.
+A BER compressed integer is an unsigned integer in base 128,
+most  significant digit first, where the high bit is set on all but the
+final (least significant) byte.
+@end defun
+
+@defun write-binary-uint8 val &optional port endian
+@defunx write-binary-uint16 val &optional port endian
+@defunx write-binary-uint32 val &optional port endian
+@defunx write-binary-uint64 val &optional port endian
+Writes a nonnegative integer @var{val} as 8, 16, 32 or 64 bit
+unsigned integer
+to @var{port} with specified endian, respectively.  @var{Val} must be within
+the range of integers representable by the specified bits.
+When @var{port} is omitted, current output port is used.
+@end defun
+
+@defun write-binary-sint8 val &optional port endian
+@defunx write-binary-sint16 val &optional port endian
+@defunx write-binary-sint32 val &optional port endian
+@defunx write-binary-sint64 val &optional port endian
+Writes an integer @var{val} as 8, 16, 32 or 64 bit
+as 2's complement signed integer to @var{port} with specified endian,
+respectively.  @var{Val} must be within
+the range of integers representable by the specified bits.
+When @var{port} is omitted, current output port is used.
+@end defun
+
+@defun write-binary-uint size val &optional port endian
+@defunx write-binary-sint size val &optional port endian
+More flexible version.  Writes an integer @var{val} as unsigned
+or signed integer of @var{size} bytes to @var{port} with
+specified endian.
+When @var{port} is omitted, current output port is used.
+@end defun
+
+@defun write-ber-integer val &optional port
+Writes a nonnegative integer @var{val} in BER compressed integer
+to @var{port}.  See @code{read-ber-integer} above for BER format.
+@end defun
+
+
+@subsection Floating point number I/O
+
+@defun read-binary-float &optional port endian
+@defunx read-binary-double &optional port endian
+Reads IEEE754 single-precision or double-precision floating point
+number from @var{port} with specified endian.
+If @var{port} is omitted, 
+current input port is used.  If @var{port} reaches EOF before
+a complete number is read, EOF is returned.
+@end defun
+
+@defun write-binary-float val &optional port endian
+@defunx write-binary-double val &optional port endian
+Writes a real number @var{val} to @var{port} in IEEE754 
+single-precision or double-precision floating point number
+with specified endian.  If @var{port} is omitted, 
+current output port is used. 
+@end defun
+
+
+
+
+@c ----------------------------------------------------------------------
+@node Packing Binary Data, Database independent access layer, Binary I/O, Library modules - Utilities
 @section @code{binary.pack} - Packing Binary Data
 @c NODE バイナリデータのパック, @code{binary.pack} - バイナリデータのパック
 
