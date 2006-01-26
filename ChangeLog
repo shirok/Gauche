@@ -1,5 +1,8 @@
 2006-01-26  Shiro Kawai  <shiro@acm.org>
 
+	* lib/dbi.scm (generate-sql/parameters): fix referencing out-of-scope
+	  variable.
+
 	* ext/binary/io.scm: some optimization and cosmetic changes.
 	* doc/modutil.texi: made "binary.io" official.
 

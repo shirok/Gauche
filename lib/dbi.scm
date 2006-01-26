@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.30 2006-01-07 02:37:51 shirok Exp $
+;;;  $Id: dbi.scm,v 1.31 2006-01-26 20:23:41 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -255,9 +255,9 @@
       (call-with-output-string
         (lambda (p)
           (with-port-locking p
-            (cut generate-sql/parameters conn tokens args p)))))))
+            (cut generate-sql/parameters conn tokens args p sql)))))))
 
-(define (generate-sql/parameters conn tokens args p)
+(define (generate-sql/parameters conn tokens args p sql)
   (let loop ((tokens tokens)
              (args   args)
              (delim  #t))
