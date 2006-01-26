@@ -1,6 +1,6 @@
 ;;
 ;; test for listener
-;; $Id: listener.scm,v 1.3 2003-01-09 11:45:10 shirok Exp $
+;; $Id: listener.scm,v 1.4 2006-01-26 05:07:23 shirok Exp $
 
 (use gauche.test)
 
@@ -89,12 +89,17 @@
 (set! (port-buffering opipe-in) :none)
 (set! (port-buffering opipe-out) :none)
 
+(define *fatal* #f)
+
+(define (fatal x) (set! *fatal* x) #t)
+
 (define listener
   (make <listener>
     :input-port ipipe-in
     :output-port opipe-out
     :error-port epipe-out
-    :prompter (lambda () (display "<<<\n"))))
+    :prompter (lambda () (display "<<<\n"))
+    :fatal-handler fatal))
 
 (define handler (listener-read-handler listener))
 
@@ -116,22 +121,19 @@
 (test* "listener" '("3")
        (begin
          (send-expr "(+ 1 2)\n")
-         (with-error-handler (lambda (e) (print (ref e 'message)))
-           handler)
+         (handler)
          (read-results)))
 
 (test* "listener" '("1" "2" "3")
        (begin
          (send-expr "(values 1 2 3)\n")
-         (with-error-handler (lambda (e) (print (ref e 'message)))
-           handler)
+         (handler)
          (read-results)))
 
 (test* "listener" '(("1") ("2"))
        (begin
          (send-expr "1 2\n")
-         (with-error-handler (lambda (e) (print (ref e 'message)))
-           handler)
+         (handler)
          (let* ((r0 (read-results))
                 (r1 (read-results)))
            (list r0 r1))))
@@ -139,45 +141,36 @@
 (test* "listener" '("3")
        (begin
          (send-expr "(+ 1 \n")
-         (with-error-handler (lambda (e) (print (ref e 'message)))
-           handler)
+         (handler)
          (send-expr "2")
-         (with-error-handler (lambda (e) (print (ref e 'message)))
-           handler)
+         (handler)
          (send-expr ")")
-         (with-error-handler (lambda (e) (print (ref e 'message)))
-           handler)
+         (handler)
          (read-results)))
 
 (test* "listener" '(("#\\a") ("3"))
        (begin
          (send-expr "#\\")
-         (with-error-handler (lambda (e) (print (ref e 'message)))
-           handler)
+         (handler)
          (send-expr "a (+")
-         (with-error-handler (lambda (e) (print (ref e 'message)))
-           handler)
+         (handler)
          (send-expr " 1 2)")
-         (with-error-handler (lambda (e) (print (ref e 'message)))
-           handler)
+         (handler)
          (let* ((r0 (read-results))
                 (r1 (read-results)))
            (list r0 r1))))
 
-;(test "listener (error)" "error"
-;      (lambda ()
-;        (send-expr "zzz")
-;        (with-error-handler (lambda (e)
-;                              (print "error" (currnet-error-port)))
-;                            handler)
-;        (read-line epipe-in)))
+;(test* "listener (error)" "*** ERROR: unbound variable: zzz"
+;       (begin
+;         (send-expr "zzz")
+;         (handler)
+;         (read-line epipe-in)))
 
-;(test "listener" #t
-;      (lambda ()
-;        (send-expr "(+ 1 2 ")
-;        (handler)
-;        (close-output-port ipipe-out)
-;        (handler)
-;        ))
+(test* "listener (fatal error)" <unhandled-signal-error>
+       (begin
+         (close-input-port opipe-in)
+         (send-expr "(+ 1 2)")
+         (handler)
+         (class-of *fatal*)))
 
 (test-end)

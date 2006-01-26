@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche/listener - listerner utility
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: listener.scm,v 1.6 2004-01-30 20:20:27 shirok Exp $
+;;;  $Id: listener.scm,v 1.7 2006-01-26 05:07:22 shirok Exp $
 ;;;
 
 ;; provides functions useful to implement a repl listener
@@ -65,58 +65,120 @@
                 :init-form (lambda args
                              (for-each (lambda (r) (write r) (newline)) args)))
    (prompter    :init-keyword :prompter
-                :init-form (lambda () (display "listener> ")))
+                :init-form (cut display "listener> "))
    (environment :init-keyword :environment
                 :init-form (interaction-environment))
    (finalizer   :init-keyword :finalizer :init-form #f)
    (error-handler :init-keyword :error-handler
-                :init-form (lambda (e) (report-error e)))
+                  :init-form report-error)
+   (fatal-handler :init-keyword :fatal-handler
+                  :init-form #f)
+   ;; Private
    (rbuf        :init-value "")
+   (original-input-port)    ; capture std ports when listener-read-handler is
+   (original-output-port)   ;   called.
+   (original-error-port)    ;
    ))
 
 (define-method listener-show-prompt ((self <listener>))
-  (with-output-to-port (ref self 'output-port)
-    (lambda ()
-      ((ref self 'prompter))
-      (flush))))
+  (guard (e ((sigpipe? e)
+             (or (listener-fatal self e)
+                 (listener-finalize self))
+             #f))
+    (with-output-to-port (ref self 'output-port)
+      (lambda ()
+        ((ref self 'prompter))
+        (flush)
+        #t))))
+
+;; Returns a thunk which should be called whenever input is
+;; available.
+
+;; Error handling is rather convoluted, for we have to deal with
+;; a few different cases:
+;;
+;;  - I/O errors with reading/writing the client is regarded a
+;;    fatal error.  The fatal-handler is called if the listener
+;;    has any.  If the fatal-handler returns #f or the listener
+;;    doesn't have one, the finalizer is called.  Usually these
+;;    handlers removes listener to be called again.
+;;
+;;  - Errors during fatal handler or finalizer are "passed through"
+;;    to the caller of the listener handler.  Usually it has a
+;;    fatal consequence.  The fatal-handler and finalizer should 
+;;    be written so that foreseeable errors are properly handled
+;;    within them.
+;;
+;;  - Other errors (e.g. read error while reading provided S-expr,
+;;    or evaluation error) are handled by listener's error-handler.
+;;    Double fault is regarded as a fatal error.
 
 (define-method listener-read-handler ((self <listener>))
-  (define (repl)
-    (with-error-handler
-     (lambda (e)
-       (set! (ref self 'rbuf) "")
-       ((ref self 'error-handler) e)
-       (listener-show-prompt self))
-     (lambda ()
-       (update! (ref self 'rbuf) (cut string-trim <> #[\s]))
-       (when (and (not (string-null? (ref self 'rbuf)))
-                  (complete-sexp? (ref self 'rbuf)))
-         (with-input-from-string (ref self 'rbuf)
-           (lambda ()
-             (let* ((env  (ref self 'environment))
-                    (expr ((ref self 'reader))))
-               (unless (eof-object? expr)
-                 (with-output-to-port (ref self 'output-port)
-                   (lambda ()
-                     (call-with-values
-                      (lambda () ((ref self 'evaluator) expr env))
-                      (ref self 'printer))))
-                 (listener-show-prompt self)))
-             (set! (ref self 'rbuf) (port->string (current-input-port)))))
-         (repl)))))
 
+  (define (body return)
+    (define (finish)
+      (guard (e (else (return e)))
+        (listener-finalize self)
+        (return #f)))
+    (define (abort e)
+      (guard (e (else (return e)))
+        (or (listener-fatal self e) (listener-finalize self))
+        (return #f)))
+    
+    (let1 chunk (guard (e (else (abort e)))
+                  (read-block 8192 (ref self 'input-port)))
+      (when (eof-object? chunk) (finish))
+      (with-ports
+          (ref self 'input-port)
+          (ref self 'output-port)
+          (ref self 'error-port)
+        (lambda ()
+          (update! (ref self 'rbuf) (cut string-append <> chunk))
+          (string-incomplete->complete! (ref self 'rbuf))
+          (guard (e (else
+                     (set! (ref self 'rbuf) "")
+                     (guard (e1 (else (abort e1)))
+                       ((ref self 'error-handler) e)
+                       (listener-show-prompt self))))
+            (let loop ()
+              (update! (ref self 'rbuf) (cut string-trim <> #[\s]))
+              (and (not (string-null? (ref self 'rbuf)))
+                   (complete-sexp? (ref self 'rbuf))
+                   (begin
+                     (with-input-from-string (ref self 'rbuf)
+                       (lambda ()
+                         (let1 expr ((ref self 'reader))
+                           (when (eof-object? expr) (finish))
+                           (receive r 
+                               ((ref self 'evaluator) expr
+                                (ref self 'environment))
+                             (guard (e ((sigpipe? e) (abort e)))
+                               (apply (ref self 'printer) r)
+                               (flush)))
+                           (set! (ref self 'rbuf)
+                                 (get-remaining-input-string
+                                  (current-input-port))))))
+                     (or (listener-show-prompt self) (abort e))
+                     (loop)))))))
+      ))
+
+  ;; Capture std ports when the handler is created
+  (set! (ref self 'original-input-port)  (current-input-port))
+  (set! (ref self 'original-output-port) (current-output-port))
+  (set! (ref self 'original-error-port)  (current-error-port))
+
+  ;; Returns a handler closure.
   (lambda ()
-    (let ((chunk (read-block 8192 (ref self 'input-port))))
-      (if (eof-object? chunk)
-          (cond ((ref self 'finalizer) => (lambda (f) (f))))
-          (begin
-            (update! (ref self 'rbuf) (cut string-append <> chunk))
-            (string-incomplete->complete! (ref self 'rbuf))
-            (with-error-to-port (ref self 'error-port) repl)))))
+    (cond ((call/cc body) => raise)
+          (else #t)))
   )
 
 ;; Check if the given string can be parsed as a complete sexp.
 ;; Note that this test doesn't rule out all invalid sexprs.
+;;
+;; NB: This should eventually be folded into build-in read, so that
+;; any nontrivial syntax can be handled consistently. 
+
 (define (complete-sexp? str)
   (with-input-from-string str
     (lambda ()
@@ -186,5 +248,29 @@
       ;; body
       (rec #f)
       )))
+
+;;;
+;;; Private utils
+;;;
+
+(define-method listener-finalize ((self <listener>))
+  (and-let* ((f (ref self 'finalizer)))
+    (with-ports
+        (ref self 'original-input-port)
+        (ref self 'original-output-port)
+        (ref self 'original-error-port)
+      f)))
+
+(define-method listener-fatal ((self <listener>) e)
+  (and-let* ((f (ref self 'fatal-handler)))
+    (with-ports
+        (ref self 'original-input-port)
+        (ref self 'original-output-port)
+        (ref self 'original-error-port)
+      (cut f e))))
+
+(define (sigpipe? e)
+  (and (<unhandled-signal-error> e)
+       (eqv? (ref e 'signal) SIGPIPE)))
 
 (provide "gauche/listener")
