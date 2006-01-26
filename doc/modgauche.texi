@@ -3089,6 +3089,8 @@ but the current version doesn't implement it.
 @c COMMON
 @end deftp
 
+@subheading Listener API
+
 @deftp {Class} <listener>
 @c EN
 An object that maintains the state of a repl session.
@@ -3203,6 +3205,10 @@ evaluated.  The default value is the value returned by
 @defivar <listener> finalizer
 @c EN
 A thunk that will be called when EOF is read from @code{input-port}.
+During the execution of @var{finalizer}, the current input, output
+and error ports are restored to the ones when
+@code{listener-read-handler} is called.
+
 It can be @code{#f} if no such procedure is needed.
 The default value is @code{#f}.
 @c JP
@@ -3226,6 +3232,24 @@ error exception by @code{report-error}.
 デフォルト値はエラー例外を@code{report-error}を使って印字する手続きです。
 @c COMMON
 @end defivar
+
+@defivar <listener> fatal-handler
+A procedure that takes one argument, an error exception.
+It is called when a @emph{fatal} error occurred (see below
+for the precise definition).  If this handler is
+called, you should assume you can no longer continue the listener
+session safely, even write messages to the client.  This handler
+is to log such condition or to clean up the listener.
+During the execution of @var{fatal-handler}, the current input, output
+and error ports are restored to the ones when
+@code{listener-read-handler} is called.
+
+If @var{fatal-handler} returns @code{#f}, @var{finalizer} is
+called afterwards.  With this, you can implement a common
+cleanup work in @var{finalizer}.  If @var{fatal-handler} returns
+a true value, @var{finalizer} will not be called.
+@end defivar
+
 @end deftp
 
 
@@ -3322,6 +3346,44 @@ This procedure may raise an error if the input contains
 シーケンスを含むと、エラーを発生させます。
 @c COMMON
 @end defun
+
+
+@subheading Error handling
+
+There are a few error situations the listener handles diffetently.
+
+@itemize @bullet
+@item
+@emph{Fatal error} - An error situation that the listener session 
+can no longer go on safely.  You cannot even tell so to the
+listener client, since the connection to the client may be broken.
+All you can do is to clean up the listener session (e.g. removes
+the handler).   This case happens in (1) a low-level system error
+occurrs during reading from @var{input-port}. (A syntax error
+of the input isn't count as fatal, and handled as REPL error described
+below.), (2) a @code{SIGPIPE} signal is raised during writing to
+@var{output-port}, or (3) an unhandled error occurred during executing
+@var{error-handler}.
+
+When this situation happens, the @var{fatal-handler} is called
+if it is given.  If @var{fatal-handler} returns @code{#f}, or
+@var{fatal-handler} isn't given, @var{finalizer} is also called.
+
+@item
+@emph{Leaked error} - If an error occurrs during executing
+@var{fatal-handler} or @var{finalizer}, we don't have no more
+safety net.  The error is 'leaked' outside the listener handler,
+and should be handled by the user of @code{gauche.listener}.
+
+Generally this situation should be considered as a bug of
+the program; you should make sure to catch foreseeable errors within
+@var{fatal-handler} and @var{finalizer}.
+
+@item
+@emph{REPL error} - Other errors are handled by @var{error-handler}.
+@end itemize
+
+@subheading Listener example
 
 @c EN
 The following code snippet opens a server socket, and opens
