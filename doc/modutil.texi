@@ -68,10 +68,10 @@ on top of this module (see @ref{Packing Binary Data}).
 You might want to use this module directly if you need
 speed or want a flexible control of endianness.
 
-See also @code{Uniform vectors}, which provides binary block I/O.
+See also @ref{Uniform vectors}, which provides binary block I/O.
 @end deftp
 
-@subsection Endianness
+@subheading Endianness
 
 Most procedures of this module take an optional @var{endian} argument,
 specifying the byte order of the binary input.
@@ -94,7 +94,7 @@ format when @var{endian} is unspecified.  This limitation will be
 removed in the future version.)
 
 
-@subsection Integer I/O
+@subheading Integer I/O
 
 @defun read-binary-uint8 &optional port endian
 @defunx read-binary-uint16 &optional port endian
@@ -167,7 +167,7 @@ to @var{port}.  See @code{read-ber-integer} above for BER format.
 @end defun
 
 
-@subsection Floating point number I/O
+@subheading Floating point number I/O
 
 @defun read-binary-float &optional port endian
 @defunx read-binary-double &optional port endian

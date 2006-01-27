@@ -209,14 +209,51 @@ for generic RDBMS interface, see @ref{Database independent access layer}.
 @node Library directory - strings and characters, Library directory - data exchange, Library directory - data containers, Finding libraries you need
 @subsection Library directory - string and character
 
-@subsubheading String manipulation
+Basic string operations are covered in
+@ref{Strings} and @ref{String library}.
+A string is also a sequence of characters, so you can
+apply methods in @ref{Collection framework} and
+@ref{Sequence framework}.
 
-@subsubheading Regular expressions
+Character and character set operations are covered in
+@ref{Characters}, @ref{Character set}, and @ref{Character-set library}.
 
-@subsubheading Character encodings
+You can use regular expressions to search and extract
+character sequences from strings; see @ref{Regular expression}.
+
+If you need to deal with low-level (i.e. byte-level)
+representation of strings, @ref{Uniform vectors} has some
+tools to convert strings and byte vectors back and forth.
+
+Are you dealing with a structure higher than a mere sequence
+of characters?  Then take a look at @code{text.*} modules.
+@ref{Parsing input stream} has some basic
+scanners.  @ref{Transliterate characters} implements a
+feature similar to Unix's @code{tr(1)}.  
+You can take @code{diff} of two texts; see
+@ref{Calculate difference of text streams}.
+And if you want to construct large text from string fragments,
+do not use @code{string-append}---see @ref{Lazy text construction}.
+
+There are also a bunch of libraries to deal with specific purpose
+of text documents: @ref{RFC822 message parsing} to parse 
+RFC2822 message format,
+@ref{URI parsing and construction} to parse URI string, @ref{Functional XML parser} to
+parse XML, and so on.
+
+Last but not least, Gauche has support of various character
+encoding schemes.  See @ref{Character code conversion} for
+the basic utilities.  Most higher-level functions such as
+@code{open-input-file} can take @code{:encoding} keyword argument
+to perform character conversion implicitly.  Also see 
+@ref{Multibyte scripts} if you write Scheme program in
+non-ASCII characters.
 
 @node Library directory - data exchange, Library directory - files, Library directory - strings and characters, Finding libraries you need
 @subsection Library directory - data exchange
+
+
+
 
 @node Library directory - files, Library directory - processes, Library directory - data exchange, Finding libraries you need
 @subsection Library directory - files
