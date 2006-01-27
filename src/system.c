@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.72 2006-01-04 09:47:25 shirok Exp $
+ *  $Id: system.c,v 1.73 2006-01-27 07:34:11 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1179,11 +1179,10 @@ int Scm_IsSugid(void)
 
 ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap, int forkp)
 {
-    int argc = Scm_Length(args), i, j, maxfd, iollen;
-    int *tofd = NULL, *fromfd = NULL, *tmpfd = NULL;
+    int argc = Scm_Length(args), i, *fds;
     char **argv;
     const char *program;
-    ScmObj ap, iop;
+    ScmObj ap;
     pid_t pid = 0;
 
     if (argc < 1) {
@@ -1202,17 +1201,73 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap, int forkp)
 
 #ifndef __MINGW32__
     /* setting up iomap table */
-    iollen = Scm_Length(iomap);
+    fds = Scm_SysPrepareFdMap(iomap);
+    
+    /* When requested, call fork() here. */
+    if (forkp) {
+        SCM_SYSCALL(pid, fork());
+        if (pid < 0) Scm_SysError("fork failed");
+    }
+
+    /* Now we swap file descriptors and exec(). */
+    if (!forkp || pid == 0) {
+        Scm_SysSwapFds(fds);
+        execvp(program, (char *const*)argv);
+        /* here, we failed */
+        Scm_Panic("exec failed: %s: %s", program, strerror(errno));
+    }
+
+    /* We come here only when fork is requested. */
+    return Scm_MakeInteger(pid);
+#else  /* __MINGW32__ */
+    if (forkp) {
+	Scm_Error("fork() not supported on MinGW port");
+    } else {
+	execvp(program, (const char *const*)argv);
+	Scm_Panic("exec failed: %s: %s", program, strerror(errno));	
+    }
+    return SCM_FALSE; /* dummy */
+#endif /* __MINGW32__ */
+}
+
+/* Two auxiliary functions to support iomap feature.  They are exposed
+   so that the library can implement iomap feature as the same way as
+   sys-exec.
+
+   The first function, Scm_SysPrepareFdMap, walks iomap structure and
+   prepare a table of file descriptors to modify.  The second function,
+   Scm_SysSwapFds, takes the table and modifies process's file descriptors.
+
+   We need to split this feature to two function, since it is unsafe
+   to raise an error after fork() in multi-threaded environment.
+   Scm_SysPrepareFdMap may throw an error if passed iomap contains
+   invalid entries.  On the other hand, Scm_SysSwapFds just aborts if
+   things goes wrong---not only because of the MT-safety issue, but also
+   it is generally impossible to handle errors reasonably since we don't
+   even sure we have stdios.   And the client code is supposed to call  
+   fork() between these functions.
+
+   The client code should treat the returned pointer of Scm_SysPrepareFdMap
+   opaque, and pass it to Scm_SysSwapFds as is.
+*/
+int *Scm_SysPrepareFdMap(ScmObj iomap)
+{
+    int *fds = NULL;
+
     if (SCM_PAIRP(iomap)) {
+        ScmObj iop;
+        int iollen = Scm_Length(iomap), i = 0;
+        int *tofd, *fromfd;
+        
         /* check argument vailidity before duping file descriptors, so that
            we can still use Scm_Error */
         if (iollen < 0) {
             Scm_Error("proper list required for iolist, but got %S", iomap);
         }
-        tofd   = SCM_NEW_ATOMIC2(int *, iollen * sizeof(int));
-        fromfd = SCM_NEW_ATOMIC2(int *, iollen * sizeof(int));
-        tmpfd  = SCM_NEW_ATOMIC2(int *, iollen * sizeof(int));
-        i = 0;
+        fds    = SCM_NEW_ATOMIC2(int *, 2 * iollen * sizeof(int) + 1);
+        fds[0] = iollen;
+        tofd   = fds + 1;
+        fromfd = fds + 1 + iollen;
         SCM_FOR_EACH(iop, iomap) {
             ScmObj port, elt = SCM_CAR(iop);
             if (!SCM_PAIRP(elt) || !SCM_INTP(SCM_CAR(elt))
@@ -1242,56 +1297,46 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap, int forkp)
             i++;
         }
     }
-    
-    /* When requested, call fork() here. */
-    if (forkp) {
-        SCM_SYSCALL(pid, fork());
-        if (pid < 0) Scm_SysError("fork failed");
-    }
-
-    /* Now we swap file descriptors and exec().
-       We can't throw an error anymore! */
-    if (!forkp || pid == 0) {
-        /* TODO: use getdtablehi if available */
-        if ((maxfd = sysconf(_SC_OPEN_MAX)) < 0) {
-            Scm_Panic("failed to get OPEN_MAX value from sysconf");
-        }
-
-        for (i=0; i<iollen; i++) {
-            if (tofd[i] == fromfd[i]) continue;
-            for (j=i+1; j<iollen; j++) {
-                if (tofd[i] == fromfd[j]) {
-                    int tmp = dup(tofd[i]);
-                    if (tmp < 0) Scm_Panic("dup failed: %s", strerror(errno));
-                    fromfd[j] = tmp;
-                }
-            }
-            if (dup2(fromfd[i], tofd[i]) < 0)
-                Scm_Panic("dup2 failed: %s", strerror(errno));
-        }
-        for (i=0; i<maxfd; i++) {
-            for (j=0; j<iollen; j++) {
-                if (i == tofd[j]) break;
-            }
-            if (j == iollen) close(i);
-        }
-        execvp(program, (char *const*)argv);
-        /* here, we failed */
-        Scm_Panic("exec failed: %s: %s", program, strerror(errno));
-    }
-
-    /* We come here only when fork is requested. */
-    return Scm_MakeInteger(pid);
-#else  /* __MINGW32__ */
-    if (forkp) {
-	Scm_Error("fork() not supported on MinGW port");
-    } else {
-	execvp(program, (const char *const*)argv);
-	Scm_Panic("exec failed: %s: %s", program, strerror(errno));	
-    }
-    return SCM_FALSE; /* dummy */
-#endif /* __MINGW32__ */
+    return fds;
 }
+
+void Scm_SysSwapFds(int *fds)
+{
+    int *tofd, *fromfd, nfds, maxfd, i, j, fd;
+    
+    if (fds == NULL) return;
+
+    nfds   = fds[0];
+    tofd   = fds + 1;
+    fromfd = fds + 1 + nfds;
+
+    /* TODO: use getdtablehi if available */
+    if ((maxfd = sysconf(_SC_OPEN_MAX)) < 0) {
+        Scm_Panic("failed to get OPEN_MAX value from sysconf");
+    }
+
+    /* Dup fromfd to the corresponding tofd.  We need to be careful
+       not to override the destination fd if it will be used. */
+    for (i=0; i<nfds; i++) {
+        if (tofd[i] == fromfd[i]) continue;
+        for (j=i+1; j<nfds; j++) {
+            if (tofd[i] == fromfd[j]) {
+                int tmp = dup(tofd[i]);
+                if (tmp < 0) Scm_Panic("dup failed: %s", strerror(errno));
+                fromfd[j] = tmp;
+            }
+        }
+        if (dup2(fromfd[i], tofd[i]) < 0)
+            Scm_Panic("dup2 failed: %s", strerror(errno));
+    }
+    
+    /* Close unused fds */
+    for (fd=0; fd<maxfd; fd++) {
+        for (j=0; j<nfds; j++) if (fd == tofd[j]) break;
+        if (j == nfds) close(fd);
+    }
+}
+
 
 /*===============================================================
  * select

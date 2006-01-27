@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.444 2006-01-11 09:13:33 shirok Exp $
+ *  $Id: gauche.h,v 1.445 2006-01-27 07:34:11 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1112,6 +1112,9 @@ SCM_EXTERN ScmObj  Scm_StringFill(ScmString *str, ScmChar c,
 
 SCM_EXTERN ScmObj Scm_ConstCStringArrayToList(const char **array, int size);
 SCM_EXTERN ScmObj Scm_CStringArrayToList(char **array, int size);
+SCM_EXTERN const char **Scm_ListToConstCStringArray(ScmObj lis, int errp);
+SCM_EXTERN char **Scm_ListToCStringArray(ScmObj lis, int errp,
+                                         void *alloc(size_t));
 
 /* You can allocate a constant string statically, if you calculate
    the length by yourself.  These macros are mainly used in machine-
@@ -2725,6 +2728,8 @@ SCM_EXTERN int    Scm_IsSugid(void);
 
 SCM_EXTERN ScmObj Scm_SysExec(ScmString *file, ScmObj args,
                               ScmObj iomap, int forkp);
+SCM_EXTERN int   *Scm_SysPrepareFdMap(ScmObj iomap);
+SCM_EXTERN void   Scm_SysSwapFds(int *fds);
 
 /* select */
 #ifdef HAVE_SELECT

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: string.c,v 1.75 2005-10-13 08:14:13 shirok Exp $
+ *  $Id: string.c,v 1.76 2006-01-27 07:34:11 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1162,6 +1162,69 @@ ScmObj Scm_CStringArrayToList(char **array, int size)
             SCM_APPEND1(h, t, SCM_MAKE_STR_COPYING(*array++));
     }
     return h;
+}
+
+/* common routine for Scm_ListTo[Const]CStringArray */
+static int list_to_cstring_array_check(ScmObj lis, int errp)
+{
+    ScmObj lp;
+    int len = 0;
+    SCM_FOR_EACH(lp, lis) {
+        if (!SCM_STRINGP(SCM_CAR(lp))) {
+            if (errp) Scm_Error("a proper list of strings is required, but the list contains non-string element: %S", SCM_CAR(lp));
+            else return -1;
+        }
+        len++;
+    }
+    return len;
+}
+
+/* Convert list of Scheme strings into C const char* string array, NULL
+   terminated.
+   If errp == FALSE, returns NULL on error.
+   otherwise, signals an error. */
+const char **Scm_ListToConstCStringArray(ScmObj lis, int errp)
+{
+    ScmObj lp;
+    const char **array, **p;
+    int len = list_to_cstring_array_check(lis, errp);
+    if (len < 0) return NULL;
+    p = array = SCM_NEW_ARRAY(const char*, len+1);
+    SCM_FOR_EACH(lp, lis) {
+        *p++ = Scm_GetStringConst(SCM_STRING(SCM_CAR(lp)));
+    }
+    *p = NULL;                  /* termination */
+    return array;
+}
+
+/* Convert list of Scheme strings into C char* string array, NULL
+   terminated.
+   If errp == FALSE, returns NULL on error.
+   otherwise, signals an error.
+   If provided, alloc is used to allocate both a pointer array and char
+   arrays.  Otherwise, SCM_ALLOC is used. */
+char **Scm_ListToCStringArray(ScmObj lis, int errp, void *alloc(size_t))
+{
+    ScmObj lp;
+    char **array, **p;
+    int len = list_to_cstring_array_check(lis, errp);
+    if (len < 0) return NULL;
+
+    if (alloc) {
+        p = array = (char **)alloc(len * sizeof(char *));
+        SCM_FOR_EACH(lp, lis) {
+            const char *s = Scm_GetStringConst(SCM_STRING(SCM_CAR(lp)));
+            *p = (char *)alloc(strlen(s) + 1);
+            strcpy(*p, s);
+            p++;
+        }
+    } else {
+        p = array = SCM_NEW_ARRAY(char*, len);
+        SCM_FOR_EACH(lp, lis) {
+            *p++ = Scm_GetString(SCM_STRING(SCM_CAR(lp)));
+        }
+    }
+    return array;
 }
 
 /*----------------------------------------------------------------
