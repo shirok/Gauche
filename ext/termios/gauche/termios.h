@@ -1,7 +1,7 @@
 /*
  * termios.h - termios interface
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: termios.h,v 1.6 2004-09-12 10:25:59 shirok Exp $
+ *  $Id: termios.h,v 1.7 2006-01-27 10:04:46 shirok Exp $
  */
 
 #ifndef GAUCHE_TERMIOS_H
@@ -70,6 +70,8 @@ ScmObj Scm_Openpty(ScmObj slaveterm);
 #endif
 #ifdef HAVE_FORKPTY
 ScmObj Scm_Forkpty(ScmObj slaveterm);
+ScmObj Scm_ForkptyAndExec(ScmString *file, ScmObj args, ScmObj iomap,
+                          ScmObj slaveterm);
 #endif
 
 #endif /* !defined(__MINGW32__) */

@@ -1,7 +1,7 @@
 /*
  * termios.c - termios interface
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: termios.c,v 1.16 2005-07-22 09:26:55 shirok Exp $
+ *  $Id: termios.c,v 1.17 2006-01-27 10:04:46 shirok Exp $
  */
 
 #include <string.h>
@@ -135,6 +135,41 @@ ScmObj Scm_Forkpty(ScmObj slaveterm)
     }
     if ((pid = forkpty(&master, NULL, term, NULL)) < 0) {
         Scm_SysError("forkpty failed");
+    }
+    return Scm_Values2(Scm_MakeInteger(pid), SCM_MAKE_INT(master));
+}
+
+ScmObj Scm_ForkptyAndExec(ScmString *file, ScmObj args, ScmObj iomap,
+                          ScmObj slaveterm)
+{
+    int argc = Scm_Length(args);
+    char **argv;
+    const char *program;
+    int *fds;
+    int master;
+    pid_t pid;
+    struct termios *term = NULL;
+
+    if (argc < 1) {
+        Scm_Error("argument list must have at least one element: %S", args);
+    }
+    argv = Scm_ListToCStringArray(args, TRUE, NULL);
+    program = Scm_GetStringConst(file);
+
+    if (SCM_SYS_TERMIOS_P(slaveterm)) {
+        term = &SCM_SYS_TERMIOS(slaveterm)->term;
+    }
+
+    fds = Scm_SysPrepareFdMap(iomap);
+
+    if ((pid = forkpty(&master, NULL, term, NULL)) < 0) {
+        Scm_SysError("forkpty failed");
+    }
+    if (pid == 0) {
+        Scm_SysSwapFds(fds);
+        execvp(program, (char *const*)argv);
+        /* here, we failed */
+        Scm_Panic("exec failed: %s: %s", program, strerror(errno));
     }
     return Scm_Values2(Scm_MakeInteger(pid), SCM_MAKE_INT(master));
 }

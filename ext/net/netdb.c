@@ -1,7 +1,7 @@
 /*
  * netdb.c - obtain information about network
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: netdb.c,v 1.12 2005-11-02 06:03:26 shirok Exp $
+ *  $Id: netdb.c,v 1.13 2006-01-27 10:04:46 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -70,11 +70,8 @@ static ScmSysHostent *make_hostent(struct hostent *he)
     
     SCM_SET_CLASS(entry, SCM_CLASS_SYS_HOSTENT);
     entry->name = SCM_MAKE_STR_COPYING(he->h_name);
-    for (p = he->h_aliases; *p; p++) {
-        SCM_APPEND1(h, t, SCM_MAKE_STR_COPYING(*p));
-    }
-    entry->aliases = h;
-    h = t = SCM_NIL;
+    entry->aliases = Scm_CStringArrayToList((const char**)he->h_aliases, -1,
+                                            SCM_MAKSTR_COPYING);
     if (he->h_addrtype == AF_INET) {
         for (p = he->h_addr_list; *p; p++) {
             char buf[50];
@@ -226,15 +223,11 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysProtoentClass, NULL);
 static ScmSysProtoent *make_protoent(struct protoent *pe)
 {
     ScmSysProtoent *entry = SCM_NEW(ScmSysProtoent);
-    ScmObj h = SCM_NIL, t = SCM_NIL;
-    char **p;
     
     SCM_SET_CLASS(entry, SCM_CLASS_SYS_PROTOENT);
     entry->name = SCM_MAKE_STR_COPYING(pe->p_name);
-    for (p = pe->p_aliases; *p; p++) {
-        SCM_APPEND1(h, t, SCM_MAKE_STR_COPYING(*p));
-    }
-    entry->aliases = h;
+    entry->aliases = Scm_CStringArrayToList((const char **)pe->p_aliases, -1,
+                                            SCM_MAKSTR_COPYING);
     entry->proto = Scm_MakeInteger(pe->p_proto);
     return entry;
 }
@@ -350,15 +343,11 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysServentClass, NULL);
 static ScmSysServent *make_servent(struct servent *se)
 {
     ScmSysServent *entry = SCM_NEW(ScmSysServent);
-    ScmObj h = SCM_NIL, t = SCM_NIL;
-    char **p;
     
     SCM_SET_CLASS(entry, SCM_CLASS_SYS_SERVENT);
     entry->name = SCM_MAKE_STR_COPYING(se->s_name);
-    for (p = se->s_aliases; *p; p++) {
-        SCM_APPEND1(h, t, SCM_MAKE_STR_COPYING(*p));
-    }
-    entry->aliases = h;
+    entry->aliases = Scm_CStringArrayToList((const char **)se->s_aliases, -1,
+                                            SCM_MAKSTR_COPYING);
     entry->port = Scm_MakeInteger(ntohs(se->s_port));
     entry->proto = SCM_MAKE_STR_COPYING(se->s_proto);
     return entry;

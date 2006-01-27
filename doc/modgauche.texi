@@ -7731,7 +7731,25 @@ This function is available only if the system supports @code{forkpty(3)}.
 この関数はシステムが @code{forkpty(3)} をサポートしている場合にのみ利用
 可能です。
 @c COMMON
+
+
+Note: @code{sys-forkpty} has the same MT hazard as @code{sys-fork}
+(see @ref{Unix process management}, for details).  If you're
+running multiple threads, use @code{sys-forkpty-and-exec} below.
 @end defun
+
+@defun sys-forkpty-and-exec command args &optional iomap term
+Does @code{sys-forkpty}, and lets the child process
+immediately @code{exec}s the specified @var{command}
+with arguments @var{args}.   This function doesn't have
+the hazard in multi-thread environment.
+
+The meaning of arguments @var{command}, @var{args} and @var{iomap}
+is the same as @code{sys-exec} (see @ref{Unix process management}).
+If the optional argument @var{term} is given, it is used to initialize
+the slave pty.
+@end defun
+
 
 @c EN
 The following example shows how to get a password from the user

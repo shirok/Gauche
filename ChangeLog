@@ -1,5 +1,21 @@
 2006-01-26  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/netdb.c: rewrote some code using Scm_CStringArrayToList.
+
+	* ext/termios/termiolib.stub (sys-forkpty-and-exec): added.
+	* ext/termios/termios.c (Scm_ForkptyAndExec): ditto.
+
+	* src/string.c (Scm_CStringArrayToList): API Change - integrated
+	  copying and non-copying version, and added FLAGS argument to
+	  specify which.
+
+	* src/system.c (Scm_SysPrepareFdMap, Scm_SysSwapFds):
+	  extracted core functionality of I/O remapping in Scm_SysExec,
+	  so that it can be used from other extensions.
+
+	* src/string.c (Scm_ListToConstCStringArray, Scm_ListToCStringArray):
+	  added.
+
 	* lib/dbi.scm (generate-sql/parameters): fix referencing out-of-scope
 	  variable.
 

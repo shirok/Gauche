@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.73 2006-01-27 07:34:11 shirok Exp $
+ *  $Id: system.c,v 1.74 2006-01-27 10:04:48 shirok Exp $
  */
 
 #include <stdio.h>
@@ -991,8 +991,6 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_SysGroupClass, grp_print);
 
 static ScmObj make_group(struct group *g)
 {
-    ScmObj head = SCM_NIL, tail = SCM_NIL, p;
-    char **memp;
     ScmSysGroup *sg = SCM_NEW(ScmSysGroup);
     SCM_SET_CLASS(sg, SCM_CLASS_SYS_GROUP);
     
@@ -1003,11 +1001,8 @@ static ScmObj make_group(struct group *g)
     sg->passwd = SCM_FALSE;
 #endif
     sg->gid = Scm_MakeInteger(g->gr_gid);
-    for (memp = g->gr_mem; *memp; memp++) {
-        p = SCM_MAKE_STR_COPYING(*memp);
-        SCM_APPEND1(head, tail, p);
-    }
-    sg->mem = head;
+    sg->mem = Scm_CStringArrayToList((const char**)g->gr_mem, -1,
+                                     SCM_MAKSTR_COPYING);
     return SCM_OBJ(sg);
 }
 
@@ -1190,13 +1185,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap, int forkp)
     }
 
     /* make a C array of C strings */    
-    argv = SCM_NEW_ARRAY(char *, argc+1);
-    for (i=0, ap = args; i<argc; i++, ap = SCM_CDR(ap)) {
-        if (!SCM_STRINGP(SCM_CAR(ap)))
-            Scm_Error("bad argument (string required): %S", SCM_CAR(ap));
-        argv[i] = Scm_GetString(SCM_STRING(SCM_CAR(ap)));
-    }
-    argv[i] = NULL;
+    argv = Scm_ListToCStringArray(args, TRUE, NULL);
     program = Scm_GetStringConst(file);
 
 #ifndef __MINGW32__

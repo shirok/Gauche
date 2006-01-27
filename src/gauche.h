@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.445 2006-01-27 07:34:11 shirok Exp $
+ *  $Id: gauche.h,v 1.446 2006-01-27 10:04:46 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1110,8 +1110,8 @@ SCM_EXTERN ScmObj  Scm_ListToString(ScmObj chars);
 SCM_EXTERN ScmObj  Scm_StringFill(ScmString *str, ScmChar c,
 				  ScmObj maybeStart, ScmObj maybeEnd);
 
-SCM_EXTERN ScmObj Scm_ConstCStringArrayToList(const char **array, int size);
-SCM_EXTERN ScmObj Scm_CStringArrayToList(char **array, int size);
+SCM_EXTERN ScmObj Scm_CStringArrayToList(const char **array,
+                                         int size, int flags);
 SCM_EXTERN const char **Scm_ListToConstCStringArray(ScmObj lis, int errp);
 SCM_EXTERN char **Scm_ListToCStringArray(ScmObj lis, int errp,
                                          void *alloc(size_t));

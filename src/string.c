@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: string.c,v 1.76 2006-01-27 07:34:11 shirok Exp $
+ *  $Id: string.c,v 1.77 2006-01-27 10:04:48 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1138,28 +1138,23 @@ ScmObj Scm_StringFill(ScmString *str, ScmChar ch,
     return SCM_OBJ(str);
 }
 
-ScmObj Scm_ConstCStringArrayToList(const char **array, int size)
+/* Convert cstring array to a list of Scheme strings.  Cstring array
+   can be NULL terminated (in case size < 0) or its size is explicitly
+   specified (size >= 0).  FLAGS is passed to Scm_MakeString. */
+ScmObj Scm_CStringArrayToList(const char **array, int size, int flags)
 {
     int i;
     ScmObj h = SCM_NIL, t = SCM_NIL;
     if (size < 0) {
-        for (;*array; array++) SCM_APPEND1(h, t, SCM_MAKE_STR(*array));
+        for (;*array; array++) {
+            ScmObj s = Scm_MakeString(*array, -1, -1, flags);
+            SCM_APPEND1(h, t, s);
+        }
     } else {
-        for (i=0; i<size; i++) SCM_APPEND1(h, t, SCM_MAKE_STR(*array++));
-    }
-    return h;
-}
-
-ScmObj Scm_CStringArrayToList(char **array, int size)
-{
-    int i;
-    ScmObj h = SCM_NIL, t = SCM_NIL;
-    if (size < 0) {
-        for (;*array; array++)
-            SCM_APPEND1(h, t, SCM_MAKE_STR_COPYING(*array));
-    } else {
-        for (i=0; i<size; i++)
-            SCM_APPEND1(h, t, SCM_MAKE_STR_COPYING(*array++));
+        for (i=0; i<size; i++, array++) {
+            ScmObj s = Scm_MakeString(*array, -1, -1, flags);
+            SCM_APPEND1(h, t, s);
+        }
     }
     return h;
 }
@@ -1211,7 +1206,7 @@ char **Scm_ListToCStringArray(ScmObj lis, int errp, void *alloc(size_t))
     if (len < 0) return NULL;
 
     if (alloc) {
-        p = array = (char **)alloc(len * sizeof(char *));
+        p = array = (char **)alloc((len+1) * sizeof(char *));
         SCM_FOR_EACH(lp, lis) {
             const char *s = Scm_GetStringConst(SCM_STRING(SCM_CAR(lp)));
             *p = (char *)alloc(strlen(s) + 1);
@@ -1219,11 +1214,12 @@ char **Scm_ListToCStringArray(ScmObj lis, int errp, void *alloc(size_t))
             p++;
         }
     } else {
-        p = array = SCM_NEW_ARRAY(char*, len);
+        p = array = SCM_NEW_ARRAY(char*, len+1);
         SCM_FOR_EACH(lp, lis) {
             *p++ = Scm_GetString(SCM_STRING(SCM_CAR(lp)));
         }
     }
+    *p = NULL;                  /* termination */
     return array;
 }
 
