@@ -1,3 +1,8 @@
+2006-01-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/signal.c (Scm_SysSigmask): Allow NULL to newmask arg, if
+	  the caller just want to obtain the mask without modifying it.
+
 2006-01-26  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/netdb.c: rewrote some code using Scm_CStringArrayToList.

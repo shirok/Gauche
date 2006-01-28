@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.35 2006-01-23 07:06:32 shirok Exp $
+ *  $Id: signal.c,v 1.36 2006-01-28 04:00:33 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -648,10 +648,15 @@ void Scm_SetMasterSigmask(sigset_t *set)
 ScmObj Scm_SysSigmask(int how, ScmSysSigset *newmask)
 {
     ScmSysSigset *oldmask = make_sigset();
-    if (how != SIG_SETMASK && how != SIG_BLOCK && how != SIG_UNBLOCK) {
-        Scm_Error("bad 'how' argument for signal mask action: %d", how);
+    sigset_t *newset = NULL;
+
+    if (newmask) {
+        newset = &(newmask->set);
+        if (how != SIG_SETMASK && how != SIG_BLOCK && how != SIG_UNBLOCK) {
+            Scm_Error("bad 'how' argument for signal mask action: %d", how);
+        }
     }
-    if (SIGPROCMASK(how, &(newmask->set), &(oldmask->set)) != 0) {
+    if (SIGPROCMASK(how, newset, &(oldmask->set)) != 0) {
         Scm_Error("sigprocmask failed");
     }
     return SCM_OBJ(oldmask);

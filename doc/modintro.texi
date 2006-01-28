@@ -218,6 +218,9 @@ apply methods in @ref{Collection framework} and
 Character and character set operations are covered in
 @ref{Characters}, @ref{Character set}, and @ref{Character-set library}.
 
+If you scan or build strings sequentially, 
+
+
 You can use regular expressions to search and extract
 character sequences from strings; see @ref{Regular expression}.
 

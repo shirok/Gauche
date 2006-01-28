@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.5 2005-10-25 02:04:32 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.6 2006-01-28 04:00:33 shirok Exp $
 
 @iftex
 @finalout
@@ -71,8 +71,8 @@ Gaucheのバージョン@VERSION@に対応します。
 The core part of the Gauche runtime is written in C and provided
 as a library, @file{libgauche}.  This document explains how to
 use it from C.  Using C API, you can extend Gauche's
-functionality (e.g. providing bindinds to the existing C library).
-You can also link @file{libgauche} to your application, making
+functionality (e.g. providing bindinds to the existing C library),
+and also link @file{libgauche} to your application, making
 Gauche as an embedded scripting language.
 
 Gauche's C API is designed for efficiency, consistency,
@@ -83,6 +83,9 @@ from similar APIs to achieve a goal, where each API is designed
 to be efficient for a particular case.  The API also assumes
 the caller takes care not to break internal structure; there's
 no much safety net that protects you from shooting your foot.
+(By saying "safety is compromized" I don't mean @file{libgauche}
+has security holes; I mean it assumes the programmer knows what
+he's doing.)
 
 That said, it won't be too difficult to use Gauche's C API
 as far as you know some fundamental design concepts.
@@ -284,10 +287,47 @@ of the package, and the configure options.  It is installed as a part
 of the package and will be used by @code{gauche-package} script
 (e.g. @code{gauche-package list} lists the installed packages).
 
+You can also run a unit test by @code{make check}.
+
+@example
+% make check
+/usr/bin/gosh -I. test.scm > test.log
+Testing trivial ...                                              passed.
+@end example
+
+For now, it just checks if the compiled extention can be loaded,
+and the integrity of the module.  As you add APIs in the extension,
+you're expected to add tests as well.
+
+Finally, you can install the extension by @code{make install}.
+
+@example
+% make install
+/usr/bin/gauche-install -m 444 -T /usr/lib/gauche/site/include 
+/usr/bin/gauche-install -m 444 -T /usr/share/gauche/site/lib trivial.scm 
+/usr/bin/gauche-install -m 555 -T /usr/lib/gauche/site/0.8.6/i686-pc-linux-gnu trivial.so
+/usr/bin/gauche-install -m 444 -T /usr/share/gauche/site/lib/.packages trivial.gpd
+@end example
+
+By default, the files are installed in the site-specific area
+reserved within the intalled Gauche.
+If you want to change the install location, you can do the
+same as typical autoconfiscated softwares; e.g. giving
+@code{--prefix} option to the @code{configure} script,
+or 
+
+
+
+
 
 
 @node The templates explained, Introduction of the stub file, Building the trivial module, A trivial extension
 @subsection The templates explained
+
+@node 
+@subsubsection 
+
+
 
 
 @node Introduction of the stub file,  , The templates explained, A trivial extension

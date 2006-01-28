@@ -12229,12 +12229,19 @@ In multithread environment, each thread has its own signal mask.
 @defun sys-sigmask how mask
 @c EN
 Modifies the current thread's signal mask, and returns the previous
-signal mask.   @var{Mask} should be a @code{<sys-sigset>} object.
-@var{How} argument should be one of the following
+signal mask.   @var{Mask} should be a @code{<sys-sigset>} object
+to specify the new mask, or @code{#f} if you just want to query
+the current mask without modifying one.
+
+If you give @code{<sys-sigset>} object to @var{mask},
+@var{how} argument should be one of the following
 integer constants:
 @c JP
 現在のスレッドのシグナルマスクを変更し、以前のシグナルマスクを返します。
-@var{mask}は@code{<sys-sigset>}オブジェクトでなければなりません。
+@var{mask}には新しいマスクを指定する@code{<sys-sigset>}オブジェクトか、
+あるいはマスクを変更せず現在のマスクを得るだけなら@code{#f}を渡します。
+
+@var{mask}に@code{<sys-sigset>}オブジェクトを渡した場合、
 引数@var{how}は以下の整数定数のうちの1つでなければなりません。
 @c COMMON
 @table @code
