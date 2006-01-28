@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.58 2005-12-21 18:37:16 shirok Exp $
+ *  $Id: write.c,v 1.59 2006-01-28 09:17:42 shirok Exp $
  */
 
 #include <stdio.h>
@@ -191,7 +191,11 @@ int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width)
     /* if case mode is not specified, use default taken from VM default */
     if (SCM_WRITE_CASE(&ctx) == 0) ctx.mode |= DEFAULT_CASE;
     /* we don't need to lock out, for it is private. */
-    write_ss_rec(obj, SCM_PORT(out), &ctx);
+    if (SCM_WRITE_MODE(&ctx) == SCM_WRITE_SHARED) {
+        write_ss(obj, SCM_PORT(out), &ctx);
+    } else {
+        write_ss_rec(obj, SCM_PORT(out), &ctx);
+    }
     nc = outlen(SCM_PORT(out));
     if (nc > width) {
         ScmObj sub = Scm_Substring(SCM_STRING(Scm_GetOutputString(SCM_PORT(out))),
@@ -770,8 +774,8 @@ static void format_proc(ScmPort *out, ScmString *fmt, ScmObj args, int sharedp)
                 if (numParams == 0) {
                     format_write(arg, out, &sctx, sharedp);
                 } else {
-                    format_sexp(out, arg, params, numParams, atflag,
-                                colonflag, SCM_WRITE_WRITE);
+                    format_sexp(out, arg, params, numParams, atflag, colonflag,
+                                sharedp? SCM_WRITE_SHARED:SCM_WRITE_WRITE);
                 }
                 break;
             case 'a':; case 'A':;
@@ -780,8 +784,11 @@ static void format_proc(ScmPort *out, ScmString *fmt, ScmObj args, int sharedp)
                     /* short path */
                     format_write(arg, out, &actx, sharedp);
                 } else {
-                    format_sexp(out, arg, params, numParams, atflag,
-                                colonflag, SCM_WRITE_DISPLAY);
+                    /* TODO: Here we discard sharedp flag, since we don't yet
+                       have 'display/ss' mode.  We should separate
+                       write/display distinction and shared-write mode. */
+                    format_sexp(out, arg, params, numParams, atflag, colonflag,
+                                SCM_WRITE_DISPLAY);
                 }
                 break;
             case 'd':; case 'D':;

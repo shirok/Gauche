@@ -1,7 +1,7 @@
 ;;;
-;;; Debugger - terminal base debugger
+;;; Debugging aids
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,48 +30,60 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: debugger.scm,v 1.18 2005-04-22 04:50:53 shirok Exp $
+;;;  $Id: debugger.scm,v 1.19 2006-01-28 09:17:42 shirok Exp $
 ;;;
-
-;; NB: this is still a working version.  
 
 (define-module gauche.vm.debugger
   (use srfi-1)
-  (use srfi-2)
   (use srfi-13)
-  (use text.parse)
-  (extend gauche.internal)
-  (export debug-print)
+  (use gauche.parameter)
+  (export debug-print debug-print-width debug-source-info)
   )
 (select-module gauche.vm.debugger)
 
-(define *stack-show-depth* 20)
-(define *expr-show-length* 65)
+(define (debug-source-info obj)
+  (and-let* (( (pair? obj) )
+             (info ((with-module gauche.internal pair-attribute-get)
+                    obj 'source-info #f))
+             ( (pair? info) )
+             ( (pair? (cdr info)) ))
+    info))
+
+(define debug-print-width (make-parameter 65))
 
 ;; Debug print stub ------------------------------------------
 ;; (this is temporary implementation)
 (define-syntax debug-print
   (syntax-rules ()
     ((_ ?form)
-     (let1 f '?form
-       (or (and-let* ((info (and (pair? f)
-                                 (pair-attribute-get f 'source-info #f)))
-                      ((pair? info))
-                      ((pair? (cdr info))))
-             (format/ss (current-error-port) "#?=~s:~a:~,,,,65:s\n"
-                        (car info) (cadr info) f)
-             #t)
-           (format (current-error-port) "#?=~,,,,65:s\n" f))
+     (begin
+       (debug-print-pre '?form)
        (receive vals ?form
-         (if (null? vals)
-             (format (current-error-port) "#?-<void>\n")
-             (begin
-               (format/ss (current-error-port) "#?-    ~,,,,65:s\n" (car vals))
-               (for-each (lambda (elt)
-                           (format/ss (current-error-port)
-                                      "#?+    ~,,,,65:s\n" elt))
-                         (cdr vals))))
-         (apply values vals))))))
+         (debug-print-post vals))))))
+
+;; Non-exported routines
+
+(define (debug-print-pre form)
+  (cond ((debug-source-info form)
+         => (lambda (info)
+              (format/ss (current-error-port) "#?=~s:~a:~,,,,v:s\n"
+                         (car info) (cadr info) (debug-print-width) form)))
+        (else
+         (format/ss (current-error-port) "#?=~,,,,v:s\n"
+                    (debug-print-width) form))))
+
+(define (debug-print-post vals)
+  (if (null? vals)
+    (format (current-error-port) "#?-<void>\n")
+    (begin
+      (format/ss (current-error-port) "#?-    ~,,,,v:s\n"
+                 (debug-print-width) (car vals))
+      (for-each (lambda (elt)
+                  (format/ss (current-error-port)
+                             "#?+    ~,,,,v:s\n"
+                             (debug-print-width) elt))
+                (cdr vals))))
+  (apply values vals))
 
 (provide "gauche/vm/debugger")
 

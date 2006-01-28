@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.30 2006-01-21 01:44:20 shirok Exp $
+;;; $Id: autoloads.scm,v 1.31 2006-01-28 09:17:42 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.30 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.31 $.  DO NOT EDIT */"
    :pre-decl '("#define LIBGAUCHE_BODY")
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
@@ -132,7 +132,8 @@
           <arity-at-least> arity-at-least? arity-at-least-value disasm
           (:macro case-lambda))
 
-(autoload gauche.vm.debugger (:macro debug-print))
+(autoload gauche.vm.debugger (:macro debug-print)
+                             debug-print-width debug-source-info)
 
 (autoload gauche.vm.profiler profiler-show profiler-show-load-stats)
 

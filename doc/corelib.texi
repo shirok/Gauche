@@ -13608,6 +13608,22 @@ details.
 @c COMMON
 @end defmac
 
+@deffn {Parameter} debug-print-width
+This parameter specifies the maximum width of information to be 
+printed by @code{debug-print}.  If the information takes more
+columns than the value of this parameter, it is truncated.
+
+To show all the information, set @code{#f} to this parameter.
+@end deffn
+
+@defun debug-source-info obj
+Retrieves source information attached to @var{obj}.
+The source information is returned as a list of source file name
+and an integer line number.  If no source information is available
+in @var{obj}, @code{#f} is returned.
+@end defun
+
+
 @defun disasm closure
 @c EN
 Disassemble the compiled body of @var{closure} and print it.

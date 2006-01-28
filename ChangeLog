@@ -1,5 +1,15 @@
 2006-01-27  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/vm/debugger.scm (debug-print): made the width of
+	  information to print customizable by the parameter
+	  debug-print-width.
+	  (debug-source-info): added.
+	* src/autoloads.scm: added debug-print-width and debug-source-info.
+
+	* src/write.c (Scm_WriteLimited, Scm_Format): Fixed a bug that
+	  didn't propagate shared-structure-mode flags, causing write routine
+	  to go infinite loop even it is called with ss-mode.
+
 	* src/signal.c (Scm_SysSigmask): Allow NULL to newmask arg, if
 	  the caller just want to obtain the mask without modifying it.
 
