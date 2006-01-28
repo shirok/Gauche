@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.243 2006-01-21 01:44:20 shirok Exp $
+ *  $Id: vm.c,v 1.244 2006-01-28 01:28:25 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -736,7 +736,7 @@ pthread_key_t Scm_VMKey(void)
 /*===================================================================
  * Main loop of VM
  */
-/*static*/ void run_loop()
+static void run_loop()
 {
     DECL_REGS;
     ScmWord code = 0;
