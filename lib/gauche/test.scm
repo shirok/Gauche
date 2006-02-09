@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: test.scm,v 1.14 2004-10-10 09:52:09 shirok Exp $
+;;;  $Id: test.scm,v 1.15 2006-02-09 08:52:12 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -154,7 +154,7 @@
       ;; 2. Check if all exported symbols are properly defined.
       (when (pair? (module-exports mod))
         (for-each (lambda (sym)
-                  (with-error-handler
+                    (with-error-handler
                       (lambda (e) (push! bad-export sym))
                     (lambda () (eval sym mod))))
                   (module-exports mod)))
