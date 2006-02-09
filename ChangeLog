@@ -2,6 +2,9 @@
 
 	* 0.8.7_pre1.  Entered release test cycle.
 
+	* gc/darwin_stop_world.c: applied Bruce Mitchener's memory leak patch
+	  posted on Boehm GC list.
+
 2006-01-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/vm/debugger.scm (debug-print): made the width of
