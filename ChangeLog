@@ -1,3 +1,7 @@
+2006-02-08  Shiro Kawai  <shiro@acm.org>
+
+	* 0.8.7_pre1.  Entered release test cycle.
+
 2006-01-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/vm/debugger.scm (debug-print): made the width of

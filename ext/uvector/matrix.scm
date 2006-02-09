@@ -13,7 +13,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;; $Id: matrix.scm,v 1.2 2004-04-02 01:13:53 foof Exp $
+;;; $Id: matrix.scm,v 1.3 2006-02-09 09:16:39 shirok Exp $
 ;;;
 
 (select-module gauche.array)
@@ -235,6 +235,7 @@
                            (- (s32vector-ref end 1) 1)))
            (subarray tmp (shape (s32vector-ref start 0) (s32vector-ref end 0)
                                 (s32vector-ref end 1) (+ (s32vector-ref end 1) n)))))))
+
 
 (define (determinant! a)
   (let* ((start (s32vector->list (start-vector-of a)))
@@ -594,3 +595,6 @@
         (if (eq? next <array>)
           (return <array>) ; already most general array
           (loop next (cdr l)))))))
+
+(provide "gauche/matrix")
+
