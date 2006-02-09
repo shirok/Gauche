@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.132 2005-12-21 18:37:16 shirok Exp $
+ *  $Id: class.c,v 1.133 2006-02-09 08:59:21 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -962,12 +962,17 @@ void Scm_CommitClassRedefinition(ScmClass *klass, ScmObj newklass)
    This can't be implemented in Scheme, since the class we're looking for
    may be set to autoload, and this function is invoked during the autoload
    process---in which case, the class hasn't defined yet, and referencing
-   the value in Scheme triggers recursive autoload that is an error. */
+   the value in Scheme triggers recursive autoload that is an error.
+   (By the same reason, we can't use Scm_GlobalVariableRef(). */
 ScmObj Scm_CheckClassBinding(ScmObj name, ScmModule *module)
 {
     ScmObj v;
-    if (!SCM_SYMBOLP(name)) return FALSE;
-    v = Scm_SymbolValue(module, SCM_SYMBOL(name));
+    ScmGloc *g;
+    
+    if (!SCM_SYMBOLP(name)) return SCM_FALSE;
+    g = Scm_FindBinding(module, SCM_SYMBOL(name), FALSE);
+    if (g == NULL) return SCM_FALSE;
+    v = SCM_GLOC_GET(g);
     return SCM_CLASSP(v) ? v : SCM_FALSE;
 }
 
