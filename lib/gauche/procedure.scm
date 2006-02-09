@@ -30,12 +30,11 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: procedure.scm,v 1.15 2006-01-07 03:08:40 shirok Exp $
+;;;  $Id: procedure.scm,v 1.16 2006-02-09 08:52:59 shirok Exp $
 ;;;
 
 (define-module gauche.procedure
   (use srfi-1)
-  (use srfi-2)
   (export compose complement pa$ map$ for-each$ apply$
           any-pred every-pred
           let-optionals* let-keywords* get-optional
