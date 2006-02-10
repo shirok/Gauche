@@ -454,6 +454,10 @@
        (let ((x (string-copy "abcdefg")))
          (string-copy! x 2 "ZABCDEFG" 3 6)
          x))
+(test* "string-copy!" "CDEFGfg"
+       (let ((x (string-copy "abcdefg")))
+         (string-copy! x 0 "ZABCDEFG" 3)
+         x))
 (test* "string-take" "Pete S"  (string-take "Pete Szilagyi" 6))
 (test* "string-take" ""        (string-take "Pete Szilagyi" 0))
 (test* "string-take" "Pete Szilagyi" (string-take "Pete Szilagyi" 13))

@@ -1,7 +1,7 @@
 ;;;
 ;;; srfi-13.scm - string library
 ;;;  
-;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: srfi-13.scm,v 1.2 2005-09-07 02:09:51 shirok Exp $
+;;;  $Id: srfi-13.scm,v 1.3 2006-02-10 22:40:38 shirok Exp $
 ;;;
 
 ;; Natively implemented functions:
@@ -139,7 +139,7 @@
 
 (define (string-copy! target tstart s . args)
   (check-arg string? target)
-  (check-arg (lambda (x) (and (integer? x) (positive? x))) tstart)
+  (check-arg (lambda (x) (and (integer? x) (>= x 0))) tstart)
   (let* ((str (apply %maybe-substring s args))
          (slen (string-length str))
          (tlen (string-length target)))

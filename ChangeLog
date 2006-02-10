@@ -1,3 +1,8 @@
+2006-02-10  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/srfi-13.scm (string-copy!): fixed argument range check bug
+	  (Thanks to Jeff Read).
+
 2006-02-08  Shiro Kawai  <shiro@acm.org>
 
 	* 0.8.7_pre1.  Entered release test cycle.
