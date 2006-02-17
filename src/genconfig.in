@@ -3,7 +3,7 @@
 #
 # Generates gauche-config.c and gauche/arch.h
 #
-# $Id: genconfig.in,v 1.8 2005-11-05 00:54:52 shirok Exp $
+# $Id: genconfig.in,v 1.9 2006-02-17 19:58:36 shirok Exp $
 #
 
 target=@target@
@@ -130,9 +130,9 @@ static void usage (void) {
         "\\n"
         "Parameters to help building extensions\\n"
         "  --object-suffix\\n"
-        "       Returns extension of the compiled objects (e.g. \"o\")\\n"
+        "       Returns extension of the compiled objects (e.g. 'o')\\n"
         "  --executable-suffix\\n"
-        "       Returns extension of the executable (mostly empty, sometimes \".exe\")\\n"
+        "       Returns extension of the executable (mostly empty, sometimes '.exe')\\n"
         "  --so-suffix\\n"
         "       Suffix for dynamically loadable (dlopen-able) modules\\n"
         "  --so-cflags\\n"
