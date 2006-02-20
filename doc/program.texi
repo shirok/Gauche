@@ -930,12 +930,12 @@ instead of calling the smaller-unit ones.  (2) Use @code{with-port-locking}
 are particularly heavy in Gauche: string mutation and indexed string access.
 It is a design choice; we encourage the programming style that
 avoids those operations.  When you sequentially access the string,
-string ports (see @ref{String ports}) provides a cleaner and
+string ports (see @ref{String ports}) provide a cleaner and
 more efficient way.
 When you search and retrieve a substring, there are various
 higher-level primitives are provided (see @ref{String utilities},
 @ref{Regular expression}, and @ref{String library}, for example).
-If you're using strings to represent an octet stream, use uniform
+If you're using strings to represent an octet sequence, use uniform
 vectors (see @ref{Uniform vectors}) instead.
 @c JP
 @strong{文字列}: 多バイト文字列の取扱いのため、Gauche では文字列の
@@ -946,7 +946,7 @@ vectors (see @ref{Uniform vectors}) instead.
 より明瞭かつ効率的なプログラムとなり、一方サーチして部分文字列をとり出す
 といった操作には、多彩な高レベル関数が用意されています。
 (例えば @ref{String utilities}、@ref{Regular expression}、
- @ref{String library} 等を参照。)  オクテットストリームを表現するのに
+ @ref{String library} 等を参照。)  バイト列を表現するのに
 文字列を使っていたなら、代わりにユニフォームベクタ(@ref{Uniform vectors}
 参照)を使いましょう。
 @c COMMON
@@ -1010,7 +1010,7 @@ is copied to the heap.  This overhead is small, but it still may be
 visible when a closure is created within an innermost loop that is
 called millions of times.   If you suspect this is a problem,
 try disassemble the function.   Gauche's compiler uses some basic
-technique of closure analysis to avoid creating closures for
+techniques of closure analysis to avoid creating closures for
 typical cases, in which case you see the local function's bodies
 are inlined.  If you see a @code{CLOSURE} instruction, though, it
 means a closure is created.
@@ -1026,7 +1026,7 @@ means a closure is created.
 
 @c EN
 This list isn't complete, and may change when Gauche's implementation
-is improved, so don't take this as a fixed features.
+is improved, so don't take this as fixed features.
 We'll adjust it occasionally.
 @c JP
 これらのヒント集は完全でないし、Gauche の改良とともに変わっていくでしょう。
@@ -1042,7 +1042,7 @@ We'll adjust it occasionally.
 @c EN
 Gauche's libraries are organized by modules.   Although Gauche
 can load any valid Scheme programs, there is a convention that
-Gauche library follows.    When you write a chunk of Scheme
+Gauche's libraries follow.    When you write a chunk of Scheme
 code for Gauche, it is convenient to make it a module,
 so that it can be shared and/or reused.
 @c JP
