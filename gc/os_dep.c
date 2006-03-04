@@ -60,6 +60,10 @@
 #   include <signal.h>
 # endif
 
+#if defined(LINUX) || defined(LINUX_STACKBOTTOM)
+# include <ctype.h>
+#endif
+
 /* Blatantly OS dependent routines, except for those that are related 	*/
 /* to dynamic loading.							*/
 
@@ -80,7 +84,7 @@
 #   define NEED_FIND_LIMIT
 # endif
 
-#if defined(FREEBSD) && defined(I386)
+#if defined(FREEBSD) && (defined(I386) || defined(powerpc) || defined(__powerpc__))
 #  include <machine/trap.h>
 #  if !defined(PCR)
 #    define NEED_FIND_LIMIT
@@ -245,30 +249,11 @@ word GC_apply_to_maps(word (*fn)(char *))
 //  XXXXXXXX-XXXXXXXX r-xp 00000000 30:05 260537     name of mapping...\n
 //  ^^^^^^^^ ^^^^^^^^ ^^^^          ^^
 //  start    end      prot          maj_dev
-//  0        9        18            32
-//  
-//  For 64 bit ABIs:
-//  0	     17	      34	    56
 //
-//  The parser is called with a pointer to the entry and the return value
-//  is either NULL or is advanced to the next entry(the byte after the
-//  trailing '\n'.)
+//  Note that since about auguat 2003 kernels, the columns no longer have
+//  fixed offsets on 64-bit kernels.  Hence we no longer rely on fixed offsets
+//  anywhere, which is safer anyway.
 //
-#if CPP_WORDSZ == 32
-# define OFFSET_MAP_START   0
-# define OFFSET_MAP_END     9
-# define OFFSET_MAP_PROT   18
-# define OFFSET_MAP_MAJDEV 32
-# define ADDR_WIDTH 	    8
-#endif
-
-#if CPP_WORDSZ == 64
-# define OFFSET_MAP_START   0
-# define OFFSET_MAP_END    17
-# define OFFSET_MAP_PROT   34
-# define OFFSET_MAP_MAJDEV 56
-# define ADDR_WIDTH 	   16
-#endif
 
 /*
  * Assign various fields of the first line in buf_ptr to *start, *end,
@@ -277,36 +262,46 @@ word GC_apply_to_maps(word (*fn)(char *))
 char *GC_parse_map_entry(char *buf_ptr, word *start, word *end,
                                 char *prot_buf, unsigned int *maj_dev)
 {
-    char *tok;
+    char *start_start, *end_start, *prot_start, *maj_dev_start;
+    char *p;
+    char *endp;
 
     if (buf_ptr == NULL || *buf_ptr == '\0') {
         return NULL;
     }
 
-    memcpy(prot_buf, buf_ptr+OFFSET_MAP_PROT, 4);
-    				/* do the protections first. */
+    p = buf_ptr;
+    while (isspace(*p)) ++p;
+    start_start = p;
+    GC_ASSERT(isxdigit(*start_start));
+    *start = strtoul(start_start, &endp, 16); p = endp;
+    GC_ASSERT(*p=='-');
+
+    ++p;
+    end_start = p;
+    GC_ASSERT(isxdigit(*end_start));
+    *end = strtoul(end_start, &endp, 16); p = endp;
+    GC_ASSERT(isspace(*p));
+
+    while (isspace(*p)) ++p;
+    prot_start = p;
+    GC_ASSERT(*prot_start == 'r' || *prot_start == '-');
+    memcpy(prot_buf, prot_start, 4);
     prot_buf[4] = '\0';
-
-    if (prot_buf[1] == 'w') {/* we can skip all of this if it's not writable. */
-
-        tok = buf_ptr;
-        buf_ptr[OFFSET_MAP_START+ADDR_WIDTH] = '\0';
-        *start = strtoul(tok, NULL, 16);
-
-        tok = buf_ptr+OFFSET_MAP_END;
-        buf_ptr[OFFSET_MAP_END+ADDR_WIDTH] = '\0';
-        *end = strtoul(tok, NULL, 16);
-
-        buf_ptr += OFFSET_MAP_MAJDEV;
-        tok = buf_ptr;
-        while (*buf_ptr != ':') buf_ptr++;
-        *buf_ptr++ = '\0';
-        *maj_dev = strtoul(tok, NULL, 16);
+    if (prot_buf[1] == 'w') {/* we can skip the rest if it's not writable. */
+	/* Skip past protection field to offset field */
+          while (!isspace(*p)) ++p; while (isspace(*p)) ++p;
+          GC_ASSERT(isxdigit(*p));
+	/* Skip past offset field, which we ignore */
+          while (!isspace(*p)) ++p; while (isspace(*p)) ++p;
+	maj_dev_start = p;
+        GC_ASSERT(isxdigit(*maj_dev_start));
+        *maj_dev = strtoul(maj_dev_start, NULL, 16);
     }
 
-    while (*buf_ptr && *buf_ptr++ != '\n');
+    while (*p && *p++ != '\n');
 
-    return buf_ptr;
+    return p;
 }
 
 #endif /* Need to parse /proc/self/maps. */	
@@ -855,7 +850,6 @@ ptr_t GC_get_stack_base()
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <ctype.h>
 
 # define STAT_SKIP 27   /* Number of fields preceding startstack	*/
 			/* field in /proc/self/stat			*/
@@ -1187,12 +1181,15 @@ void GC_register_data_segments()
   	/* This used to be set for gcc, to avoid dealing with		*/
   	/* the structured exception handling issues.  But we now have	*/
   	/* assembly code to do that right.				*/
+  GC_bool GC_wnt = FALSE;
+        /* This is a Windows NT derivative, i.e. NT, W2K, XP or later.  */
   
   void GC_init_win32()
   {
     /* if we're running under win32s, assume that no DLLs will be loaded */
     DWORD v = GetVersion();
-    GC_no_win32_dlls |= ((v & 0x80000000) && (v & 0xff) <= 3);
+    GC_wnt = !(v & 0x80000000);
+    GC_no_win32_dlls |= ((!GC_wnt) && (v & 0xff) <= 3);
   }
 
   /* Return the smallest address a such that VirtualQuery		*/
@@ -1395,7 +1392,7 @@ int * etext_addr;
 }
 # endif
 
-# if defined(FREEBSD) && defined(I386) && !defined(PCR)
+# if defined(FREEBSD) && (defined(I386) || defined(powerpc) || defined(__powerpc__)) && !defined(PCR)
 /* Its unclear whether this should be identical to the above, or 	*/
 /* whether it should apply to non-X86 architectures.			*/
 /* For now we don't assume that there is always an empty page after	*/
@@ -1504,7 +1501,7 @@ void GC_register_data_segments()
 
 # if !defined(OS2) && !defined(PCR) && !defined(AMIGA) \
 	&& !defined(MSWIN32) && !defined(MSWINCE) \
-	&& !defined(MACOS) && !defined(DOS4GW)
+	&& !defined(MACOS) && !defined(DOS4GW) && !defined(NONSTOP)
 
 # ifdef SUNOS4
     extern caddr_t sbrk();
@@ -3805,8 +3802,12 @@ catch_exception_raise(
         mach_msg_type_number_t exc_state_count = PPC_EXCEPTION_STATE64_COUNT;
         ppc_exception_state64_t exc_state;
 #     endif
+#   elif defined(I386)
+        thread_state_flavor_t flavor = i386_EXCEPTION_STATE;
+        mach_msg_type_number_t exc_state_count = i386_EXCEPTION_STATE_COUNT;
+        i386_exception_state_t exc_state;
 #   else
-#	error FIXME for non-ppc darwin
+#	error FIXME for non-ppc/x86 darwin
 #   endif
 
     
@@ -3836,7 +3837,13 @@ catch_exception_raise(
     }
     
     /* This is the address that caused the fault */
+#if defined(POWERPC)
     addr = (char*) exc_state.dar;
+#elif defined (I386)
+    addr = (char*) exc_state.faultvaddr;
+#else
+#   error FIXME for non POWERPC/I386
+#endif
         
     if((HDR(addr)) == 0) {
         /* Ugh... just like the SIGBUS problem above, it seems we get a bogus 

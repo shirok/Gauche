@@ -258,17 +258,6 @@ typedef char * ptr_t;	/* A generic pointer to which we can add	*/
 /*                               */
 /*********************************/
 
-#ifdef SAVE_CALL_CHAIN
-
-/* Fill in the pc and argument information for up to NFRAMES of my	*/
-/* callers.  Ignore my frame and my callers frame.			*/
-struct callinfo;
-void GC_save_callers GC_PROTO((struct callinfo info[NFRAMES]));
-  
-void GC_print_callers GC_PROTO((struct callinfo info[NFRAMES]));
-
-#endif
-
 #ifdef NEED_CALLINFO
     struct callinfo {
 	word ci_pc;  	/* Caller, not callee, pc	*/
@@ -280,6 +269,16 @@ void GC_print_callers GC_PROTO((struct callinfo info[NFRAMES]));
 	    word ci_dummy;
 #	endif
     };
+#endif
+
+#ifdef SAVE_CALL_CHAIN
+
+/* Fill in the pc and argument information for up to NFRAMES of my	*/
+/* callers.  Ignore my frame and my callers frame.			*/
+void GC_save_callers GC_PROTO((struct callinfo info[NFRAMES]));
+  
+void GC_print_callers GC_PROTO((struct callinfo info[NFRAMES]));
+
 #endif
 
 
@@ -756,17 +755,9 @@ struct hblk {
 # ifdef LARGE_CONFIG
 #   define MAX_ROOT_SETS 4096
 # else
-#   ifdef PCR
-#     define MAX_ROOT_SETS 1024
-#   else
-#     if defined(MSWIN32) || defined(MSWINCE)
-#	define MAX_ROOT_SETS 1024
-	    /* Under NT, we add only written pages, which can result 	*/
-	    /* in many small root sets.					*/
-#     else
-#       define MAX_ROOT_SETS 256
-#     endif
-#   endif
+    /* GCJ LOCAL: MAX_ROOT_SETS increased to permit more shared */
+    /* libraries to be loaded.                                  */ 
+#   define MAX_ROOT_SETS 1024
 # endif
 
 # define MAX_EXCLUSIONS (MAX_ROOT_SETS/4)

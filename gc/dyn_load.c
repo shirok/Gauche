@@ -776,8 +776,8 @@ void GC_register_dynamic_libraries()
   /* this automatically, and rely largely on user input.	*/
   /* We expect that any mapping with type MEM_MAPPED (which 	*/
   /* apparently excludes library data sections) can be safely	*/
-  /* ignored.  But we're too chicken to do that in this 	*/
-  /* version.							*/
+  /* ignored.  But we're too completely remove this code in	*/
+  /* this version.						*/
   /* Based on a very limited sample, it appears that:		*/
   /* 	- Frame buffer mappings appear as mappings of large	*/
   /*	  length, usually a bit less than a power of two.	*/
@@ -844,6 +844,9 @@ void GC_register_dynamic_libraries()
   }
 # endif /* DEBUG_VIRTUALQUERY */
 
+  extern GC_bool GC_wnt;  /* Is Windows NT derivative.		*/
+  			  /* Defined and set in os_dep.c.	*/
+
   void GC_register_dynamic_libraries()
   {
     MEMORY_BASIC_INFORMATION buf;
@@ -885,7 +888,12 @@ void GC_register_dynamic_libraries()
 		 * !is_frame_buffer(p, buf.RegionSize, buf.Type)
 		 * instead of just checking for MEM_IMAGE.
 		 * If something breaks, change it back. */
-		&& buf.Type == MEM_IMAGE) {  
+		/* There is some evidence that we cannot always
+		 * ignore MEM_PRIVATE sections under Windows ME
+		 * and predecessors.  Hence we now also check for
+		 * that case.	*/
+		&& (buf.Type == MEM_IMAGE ||
+		    !GC_wnt && buf.Type == MEM_PRIVATE)) {  
 #	        ifdef DEBUG_VIRTUALQUERY
 	          GC_dump_meminfo(&buf);
 #	        endif
@@ -1141,21 +1149,22 @@ static const char *GC_dyld_name_for_hdr(struct mach_header *hdr) {
 static void GC_dyld_image_add(struct mach_header* hdr, unsigned long slide) {
     unsigned long start,end,i;
     const struct section *sec;
+    if (GC_no_dls) return;
     for(i=0;i<sizeof(GC_dyld_sections)/sizeof(GC_dyld_sections[0]);i++) {
         sec = getsectbynamefromheader(
             hdr,GC_dyld_sections[i].seg,GC_dyld_sections[i].sect);
-            if(sec == NULL || sec->size == 0) continue;
-            start = slide + sec->addr;
-            end = start + sec->size;
-#		ifdef DARWIN_DEBUG
-                GC_printf4("Adding section at %p-%p (%lu bytes) from image %s\n",
-                start,end,sec->size,GC_dyld_name_for_hdr(hdr));
-#			endif
-        GC_add_roots((char*)start,(char*)end);
-        }
+        if(sec == NULL || sec->size == 0) continue;
+        start = slide + sec->addr;
+        end = start + sec->size;
 #	ifdef DARWIN_DEBUG
-    GC_print_static_roots();
-#	endif
+            GC_printf4("Adding section at %p-%p (%lu bytes) from image %s\n",
+                start,end,sec->size,GC_dyld_name_for_hdr(hdr));
+#       endif
+        GC_add_roots((char*)start,(char*)end);
+    }
+#   ifdef DARWIN_DEBUG
+        GC_print_static_roots();
+#   endif
 }
 
 /* This should never be called by a thread holding the lock */
@@ -1168,15 +1177,15 @@ static void GC_dyld_image_remove(struct mach_header* hdr, unsigned long slide) {
         if(sec == NULL || sec->size == 0) continue;
         start = slide + sec->addr;
         end = start + sec->size;
-#		ifdef DARWIN_DEBUG
+#	ifdef DARWIN_DEBUG
             GC_printf4("Removing section at %p-%p (%lu bytes) from image %s\n",
                 start,end,sec->size,GC_dyld_name_for_hdr(hdr));
 #		endif
         GC_remove_roots((char*)start,(char*)end);
     }
-#	ifdef DARWIN_DEBUG
-    GC_print_static_roots();
-#	endif
+#   ifdef DARWIN_DEBUG
+        GC_print_static_roots();
+#   endif
 }
 
 void GC_register_dynamic_libraries() {

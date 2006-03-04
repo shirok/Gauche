@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.119 2005-09-11 23:23:45 shirok Exp $
+;;;  $Id: genstub,v 1.120 2006-03-04 09:17:31 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -1723,7 +1723,7 @@
                 (when cpp (cgen-init (format "#if ~a" cpp)))
                 (emit-initializer stub)
                 (when cpp (cgen-init (format "#endif /* ~a */" cpp)))))
-            (reverse (instance-pool->list <stub>)))
+            (instance-pool->list <stub>))
   )
 
 ;;===================================================================

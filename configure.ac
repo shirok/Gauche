@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.75 2006-02-09 09:16:39 shirok Exp $
+dnl $Id: configure.ac,v 1.76 2006-03-04 09:17:30 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.7_pre1, shiro@acm.org)
-AC_REVISION($Revision: 1.75 $)
+AC_REVISION($Revision: 1.76 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -168,6 +168,13 @@ if test $GAUCHE_THREAD_TYPE = pthreads; then
       AC_DEFINE(GC_FREEBSD_THREADS,1,[Define to use FreeBSD threads])
       INCLUDES="$INCLUDES -pthread"
       THREADLIBS=-pthread
+      ;;
+    *-*-netbsd*)
+      AC_MSG_WARN("Only on NetBSD 2.0 or later.")
+      AC_DEFINE(GC_NETBSD_THREADS,1,[Define to use FreeBSD threads])
+      AC_DEFINE(_REENTRANT)
+      AC_DEFINE(_PTHREADS)
+      THREADDLLIBS="-lpthread -lrt"
       ;;
     *-*-solaris*)
       AC_DEFINE(GC_SOLARIS_THREADS,1,[Define to use Solaris threads])

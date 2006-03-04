@@ -37,6 +37,9 @@
 /* Define to use FreeBSD threads */
 #undef GC_FREEBSD_THREADS
 
+/* Define to use NetBSD threads */
+#undef GC_NETBSD_THREADS
+
 /* Define to use HP-UX threads */
 #undef GC_HPUX_THREADS
 

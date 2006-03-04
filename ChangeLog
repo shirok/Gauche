@@ -1,5 +1,8 @@
 2006-03-03  Shiro Kawai  <shiro@acm.org>
 
+	* gc/*, src/genstub, src/gauche/config.h.in: Bumped to Boehm GC 6.7.
+	  Support NetBSD threads.  (Patch from Tatsuya BIZENN).
+
 	* lib/www/cgi.scm (cgi-header): changed line terminators from '\n' to
 	  '\r\n', in order to follow the spec precisely.  Some httpds don't
 	  like '\n'.
