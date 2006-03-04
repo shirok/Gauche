@@ -151,31 +151,31 @@ VGhpcyBpcyBhIHRlc3Qgc2VudGVuY2Uu
          (with-input-from-string qs2
            cgi-parse-parameters)))
 
-(test* "cgi-header" "Content-type: text/html\n\n"
+(test* "cgi-header" "Content-type: text/html\r\n\r\n"
        (tree->string (cgi-header)))
 
-(test* "cgi-header" "Location: http://foo.bar/\n\n"
+(test* "cgi-header" "Location: http://foo.bar/\r\n\r\n"
        (tree->string (cgi-header :location "http://foo.bar/")))
 
-(test* "cgi-header" "Content-type: hoge\nLocation: http://foo.bar/\n\n"
+(test* "cgi-header" "Content-type: hoge\r\nLocation: http://foo.bar/\r\n\r\n"
        (tree->string
         (cgi-header :location "http://foo.bar/" :content-type "hoge")))
 
-(test* "cgi-header" "Content-type: text/plain; charset=utf-8\n\n"
+(test* "cgi-header" "Content-type: text/plain; charset=utf-8\r\n\r\n"
        (tree->string
         (cgi-header :content-type "text/plain; charset=utf-8")))
 
 (test* "cgi-header"
-       "Content-type: text/html\nSet-cookie: hoge\nSet-cookie: poge\n\n"
+       "Content-type: text/html\r\nSet-cookie: hoge\r\nSet-cookie: poge\r\n\r\n"
        (tree->string
         (cgi-header :cookies '("hoge" "poge"))))
 
 (test* "cgi-header"
-       "Content-type: text/html\nSet-cookie: hoge\nSet-cookie: poge\nx-foo: foo\n\n"
+       "Content-type: text/html\r\nSet-cookie: hoge\r\nSet-cookie: poge\r\nx-foo: foo\r\n\r\n"
        (tree->string
         (cgi-header :x-foo "foo" :cookies '("hoge" "poge"))))
 
-(test* "cgi-main" "Content-type: text/plain\n\na=foo bar"
+(test* "cgi-main" "Content-type: text/plain\r\n\r\na=foo bar"
        (parameterize ((cgi-metavariables `(("REQUEST_METHOD" "GET")
                                            ("QUERY_STRING" ,qs1))))
          (with-output-to-string

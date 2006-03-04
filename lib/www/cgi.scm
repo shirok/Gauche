@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.28 2005-10-30 14:04:01 shirok Exp $
+;;;  $Id: cgi.scm,v 1.29 2006-03-04 09:13:27 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -369,11 +369,11 @@
     (let ((ct (or content-type
                   (and (not location) "text/html")))
           (r '()))
-      (when status   (push! r #`"Status: ,status\n"))
-      (when ct       (push! r #`"Content-type: ,ct\n"))
-      (when location (push! r #`"Location: ,location\n"))
+      (when status   (push! r #`"Status: ,status\r\n"))
+      (when ct       (push! r #`"Content-type: ,ct\r\n"))
+      (when location (push! r #`"Location: ,location\r\n"))
       (for-each (lambda (cookie)
-                  (push! r #`"Set-cookie: ,cookie\n"))
+                  (push! r #`"Set-cookie: ,cookie\r\n"))
                 cookies)
       (let loop ((args args))
         (cond ((null? args))
@@ -381,9 +381,9 @@
               ((memv (car args) '(:content-type :location :status :cookies))
                (loop (cddr args)))
               (else
-               (push! r #`",(car args): ,(cadr args)\n")
+               (push! r #`",(car args): ,(cadr args)\r\n")
                (loop (cddr args)))))
-      (push! r "\n")
+      (push! r "\r\n")
       (reverse r))))
       
 ;;----------------------------------------------------------------

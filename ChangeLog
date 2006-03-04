@@ -1,3 +1,9 @@
+2006-03-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/www/cgi.scm (cgi-header): changed line terminators from '\n' to
+	  '\r\n', in order to follow the spec precisely.  Some httpds don't
+	  like '\n'.
+
 2006-02-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/genconfig.in: Avoid using '\"' sequence within the string that
