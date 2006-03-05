@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.40 2006-01-22 00:54:04 shirok Exp $
+;;;  $Id: compile.scm,v 1.41 2006-03-05 08:10:27 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1457,6 +1457,7 @@
 ;; thus we can afford the time.
 (define (module-qualified-variable? expr cenv)
   (and (pair? expr)
+       (variable? (car expr))
        (pair? (cdr expr))
        (pair? (cddr expr))
        (null? (cdddr expr))

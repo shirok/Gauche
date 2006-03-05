@@ -1,5 +1,8 @@
 2006-03-04  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (module-qualified-variable?): filtered out the
+	  case that non-variable could be passed to cenv-lookup.
+
 	* src/gauche.h (SCM__DEFINE_CLASS_COMMON),
 	  src/gauche/pthread.h, src/gauche/uthread.h:
 	  Iniitalize the mutex and condition variable in the statically
