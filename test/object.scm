@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.37 2005-09-12 09:22:25 shirok Exp $
+;; $Id: object.scm,v 1.38 2006-03-05 07:48:38 shirok Exp $
 
 (use gauche.test)
 
@@ -251,6 +251,21 @@
 (test* "next-method"
        '(y-in (y*-in (x-in (t*-in fallback t*-out) x-out) y*-out) y-out)
        (nm (make <y>)))
+
+;;----------------------------------------------------------------
+(test-section "method sorting")
+
+;; Corner cases of method sorting.
+
+;; 0.8.6 and before had a bug in method-more-specific? when both methods
+;; had optional arg.
+(define-method ms-1 ((x <string>) . rest) 1)
+(define-method ms-1 rest 0)
+(define-method ms-1 ((x <string>) (y <string>) . rest) 2)
+
+(test* "method sorting" 2 (ms-1 "a" "a"))
+(test* "method sorting" 1 (ms-1 "a"))
+
 
 ;;----------------------------------------------------------------
 (test-section "setter method definition")

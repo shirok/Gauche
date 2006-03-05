@@ -1,3 +1,8 @@
+2006-03-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (method_more_specific): fixed a bug when comparing
+	  methods both of which have rest arg.
+
 2006-03-03  Shiro Kawai  <shiro@acm.org>
 
 	* gc/*, src/genstub, src/gauche/config.h.in: Bumped to Boehm GC 6.7.

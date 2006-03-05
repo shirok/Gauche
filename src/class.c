@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.133 2006-02-09 08:59:21 shirok Exp $
+ *  $Id: class.c,v 1.134 2006-03-05 07:48:38 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2046,8 +2046,9 @@ static inline int method_more_specific(ScmMethod *x, ScmMethod *y,
     ScmClass **xs = x->specializers;
     ScmClass **ys = y->specializers;
     ScmClass *ac, **acpl;
-    int i;
-    for (i=0; i<SCM_PROCEDURE_REQUIRED(x) && i<SCM_PROCEDURE_REQUIRED(y); i++) {
+    int i, xreq = SCM_PROCEDURE_REQUIRED(x), yreq = SCM_PROCEDURE_REQUIRED(y);
+    
+    for (i=0; i<xreq && i<yreq; i++) {
         if (xs[i] != ys[i]) {
             ac = targs[i];
             if (xs[i] == ac) return TRUE;
@@ -2059,6 +2060,9 @@ static inline int method_more_specific(ScmMethod *x, ScmMethod *y,
             Scm_Panic("internal error: couldn't determine more specific method.");
         }
     }
+    if (xreq > yreq) return TRUE;
+    if (xreq < yreq) return FALSE;
+    
     /* all specializers match.  the one without optional arg is more special.*/
     if (SCM_PROCEDURE_OPTIONAL(y)) return TRUE;
     else return FALSE;
