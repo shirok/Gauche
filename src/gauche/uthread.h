@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uthread.h,v 1.6 2003-07-05 03:29:13 shirok Exp $
+ *  $Id: uthread.h,v 1.7 2006-03-05 08:00:37 shirok Exp $
  */
 
 #ifndef GAUCHE_UTHREAD_H
@@ -40,6 +40,7 @@ typedef int ScmInternalMutex;
 #define SCM_INTERNAL_MUTEX_INIT(mutex)     (0)
 #define SCM_INTERNAL_MUTEX_LOCK(mutex)     (0)
 #define SCM_INTERNAL_MUTEX_UNLOCK(mutex)   (0)
+#define SCM_INTERNAL_MUTEX_INITIALIZER     (0)
 
 typedef int ScmInternalCond;
 #define SCM_INTERNAL_COND_INIT(cond)       (0)
@@ -47,5 +48,6 @@ typedef int ScmInternalCond;
 #define SCM_INTERNAL_COND_BROADCAST(cond)  (0)
 #define SCM_INTERNAL_COND_WAIT(cond, mutex) (0)
 #define SCM_INTERNAL_COND_DESTROY(cond)    (0)
+#define SCM_INTERNAL_COND_INITIALIZER      (0)
 
 #endif /* GAUCHE_UTHREAD_H */

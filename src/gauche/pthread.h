@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: pthread.h,v 1.5 2003-07-05 03:29:13 shirok Exp $
+ *  $Id: pthread.h,v 1.6 2006-03-05 08:00:37 shirok Exp $
  */
 
 #ifndef GAUCHE_PTHREAD_H
@@ -46,6 +46,8 @@ typedef pthread_mutex_t ScmInternalMutex;
     pthread_mutex_lock(&(mutex))
 #define SCM_INTERNAL_MUTEX_UNLOCK(mutex) \
     pthread_mutex_unlock(&(mutex))
+#define SCM_INTERNAL_MUTEX_INITIALIZER \
+    PTHREAD_MUTEX_INITIALIZER
 
 /* Condition variable */
 typedef pthread_cond_t ScmInternalCond;
@@ -59,5 +61,7 @@ typedef pthread_cond_t ScmInternalCond;
     pthread_cond_wait(&(cond), &(mutex))
 #define SCM_INTERNAL_COND_DESTROY(cond) \
     pthread_cond_destroy(&(cond))
+#define SCM_INTERNAL_COND_INITIALIZER \
+    PTHREAD_COND_INITIALIZER
 
 #endif /* GAUCHE_PTHREAD_H */

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.446 2006-01-27 10:04:46 shirok Exp $
+ *  $Id: gauche.h,v 1.447 2006-03-05 08:00:35 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -638,7 +638,9 @@ SCM_EXTERN ScmClass *Scm_ObjectCPL[];
         SCM_NIL,  /*directMethods*/              \
         SCM_NIL,  /*initargs*/                   \
         SCM_NIL,  /*modules*/                    \
-        SCM_FALSE /*redefined*/                  \
+        SCM_FALSE, /*redefined*/                 \
+        SCM_INTERNAL_MUTEX_INITIALIZER,          \
+        SCM_INTERNAL_COND_INITIALIZER,           \
     }
     
 /* Define built-in class statically -- full-featured version */

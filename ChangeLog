@@ -1,5 +1,10 @@
 2006-03-04  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche.h (SCM__DEFINE_CLASS_COMMON),
+	  src/gauche/pthread.h, src/gauche/uthread.h:
+	  Iniitalize the mutex and condition variable in the statically
+	  defined builtin classes.
+
 	* src/class.c (method_more_specific): fixed a bug when comparing
 	  methods both of which have rest arg.
 
