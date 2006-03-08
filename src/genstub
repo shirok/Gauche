@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.120 2006-03-04 09:17:31 shirok Exp $
+;;;  $Id: genstub,v 1.121 2006-03-08 05:50:41 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -511,7 +511,7 @@
 ;; Literal is used to embed Scheme value in C file.
 ;; Class <literal> is subclassed to each Scheme object types.
 ;; Besides the standard stub protocol, a subclass has to define
-;; value-getter-of that returns a C expression ot retrieve the
+;; value-getter-of that returns a C expression to retrieve the
 ;; Scheme value.
 
 (define-class <literal> (<instance-pool-mixin>)
@@ -553,11 +553,11 @@
   (f #`"static ScmObj ,(c-name-of self) = SCM_UNBOUND;"))
 (define-method emit-initializer ((self <bignum-literal>))
   (cgen-init (format "  ~a = ~a(~a)"
-                     (c-name-of a)
-                     (if (positive? (value-of a))
+                     (c-name-of self)
+                     (if (positive? (value-of self))
                        "Scm_MakeIntegerFromUI"
                        "Scm_MakeInteger")
-                     (value-of a))))
+                     (value-of self))))
 
 ;; boolean literals
 (define-literal-binding <boolean> <boolean-literal>)
@@ -1206,7 +1206,7 @@
    ))
 
 (define-method emit-definition ((self <cgeneric>))
-  (unless (extern? self) (display "static "))
+  (unless (extern? self) (cgen-body "static "))
   (f "SCM_DEFINE_GENERIC(~a, ~a, NULL);" (c-name-of self) (fallback-of self))
   (cgen-body ""))
 
@@ -1236,7 +1236,7 @@
     (with-cpp-condition gf
       (emit-definition gf))))
 
-(define-method process-setter ((gf <cgeneric>) setter)
+(define-method process-setter ((gf <cgeneric>) decl)
   (cond
    ((symbol? (car decl))
     (set! (setter-of gf) (car decl))
@@ -1581,7 +1581,7 @@
     (cgen-body #`"  ,(c-type-of class-type) obj = ,(unbox-expr class-type \"OBJARG\");")
     (cond ((string? (getter-of slot)) (cgen-body (getter-of slot)))
           ((string? (c-spec-of slot))
-           (f "  return ~a;" (box-expr type c-spec-of slot)))
+           (f "  return ~a;" (box-expr type (c-spec-of slot))))
           (else
            (f "  return ~a;" (box-expr type #`"obj->,(c-name-of slot)"))))
     (cgen-body "}")
