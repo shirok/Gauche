@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.122 2006-03-09 15:21:47 shirok Exp $
+;;;  $Id: genstub,v 1.123 2006-03-09 15:32:15 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -672,7 +672,7 @@
     (warn "using initializer value in define-symbol is deprecated.  use define-variable instead.")
     (parse-form `(define-variable ,name ,@maybe-init)))
   (let* ((literal (make-literal name :c-name c-name))
-         (symbol  (make <csymbol> :symbol literal)))
+         (symbol  (make <csymbol> :symbol literal :scheme-name name)))
     (with-cpp-condition symbol (emit-definition symbol))
     ))
 
@@ -704,7 +704,7 @@
 (define (variable-parser-common const? name init opts)
   (let* ((c-name (get-keyword :c-name opts #`",(get-c-name *file-prefix* name)__VAR"))
          (symbol (make <cvariable>
-                   :constant? const?
+                   :constant? const? :scheme-name name
                    :symbol (make-literal name :c-name c-name)
                    :initializer (make-literal init))))
     (with-cpp-condition symbol (emit-definition symbol))))
@@ -755,7 +755,7 @@
                       (x->string (value-of (keyword-of k)))))
             (get-stubs <ckeyword>))
       (let* ((literal (make-literal (make-keyword name) :c-name c-name))
-             (keyword (make <ckeyword> :keyword literal)))
+             (keyword (make <ckeyword> :keyword literal :scheme-name name)))
         (with-cpp-condition keyword (emit-definition keyword))
         keyword)))
 
