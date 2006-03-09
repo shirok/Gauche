@@ -4333,13 +4333,21 @@ specified by @var{address-spec}.
 @c COMMON
 
 @table @code
-@item (make-server-socket 'unix @var{path})
+@item (make-server-socket 'unix @var{path} [:backlog @var{num}])
 @c EN
 The socket is bound to a unix domain socket with a name @var{path}.
+The keyword argument @var{backlog} is passed to @code{socket-listen}
+to specify the maximum number of connection request the server can keep
+befor accepting them.  The default is 5.  If your server is very busy
+and you see "connection refused" often, you might want to increase it.
 @c JP
 パス名@var{path}を持つUnixドメインソケットが作成されます。
+キーワード引数@var{backlog}に渡された数値は@code{socket-listen}に渡され、
+サーバが接続要求を貯めておくキューの最大長を指定します。
+デフォルトは5です。多忙なサーバーで、"connection refused"が頻発する場合は
+この数値を増やしてみて下さい。
 @c COMMON
-@item (make-server-socket 'inet @var{port} [:reuse-addr? @var{flag}] [:sock-init @var{proc}])
+@item (make-server-socket 'inet @var{port} [:reuse-addr? @var{flag}] [:sock-init @var{proc}] [:backlog @var{num}])
 @c EN
 The socket is bound to an inet domain TCP socket, listening
 port @var{port}, which must be a non-negative exact integer
@@ -4370,8 +4378,14 @@ useful to set some special socket options.
 つまり、@code{proc} はそのような2つの引数を取る手続きでなければなりません。
 ソケットに特殊なオプションを設定したいような場合に便利です。
 
+@c EN
+The keyword argument @var{backlog} is the same as in unix sockets;
+see the description above.
+@c JP
+キーワード引数@var{backlog}はunixソケットと同じです。上の記述を参照して下さい。
+
 @c COMMON
-@item (make-server-socket @var{port} [:reuse-addr? @var{flag}] [:sock-init @var{proc}])
+@item (make-server-socket @var{port} [:reuse-addr? @var{flag}] [:sock-init @var{proc}][:backlog @var{num}])
 @c EN
 This is a synonym to the above form (except @var{port} must be 
 an integer).  This form is backward-compatible
@@ -4381,7 +4395,7 @@ with STk's @code{make-server-socket}.
 上の形式と同じ動作をします。STkの@code{make-server-socket}との
 互換性のために提供されています。
 @c COMMON
-@item (make-server-socket @var{sockaddr} [:reuse-addr? @var{flag}][:sock-init @var{proc}])
+@item (make-server-socket @var{sockaddr} [:reuse-addr? @var{flag}][:sock-init @var{proc}][:backlog @var{num}])
 @c EN
 This form explicitly specifies the socket address to listen
 by an instance of @code{<sockaddr>}.
