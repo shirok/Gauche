@@ -1,5 +1,9 @@
 2006-03-09  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/netaux.scm (make-server-socket): added :backlog keyword
+	  argument to customize the backlog number passed to socket-listen.
+	  (Patch from Tatsuya BIZENN).
+
 	* src/genstub: fixed setter procedure generation.  By looking up
 	  the stub name of setter procedure, instead of assuming naming
 	  convention, we can now handle setter defintion in define-cgeneric

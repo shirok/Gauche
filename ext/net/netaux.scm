@@ -1,7 +1,7 @@
 ;;;
 ;;; netaux.scm - network interface
 ;;;  
-;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,11 +30,14 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netaux.scm,v 1.2 2005-09-11 23:50:02 shirok Exp $
+;;;  $Id: netaux.scm,v 1.3 2006-03-09 21:40:10 shirok Exp $
 ;;;
 
 (select-module gauche.net)
 (use srfi-1)
+
+;; default backlog value for socket-listen
+(define-constant DEFAULT_BACKLOG 5)
 
 (define ipv6-capable (global-variable-bound? 'gauche.net 'sys-getaddrinfo))
 
@@ -112,7 +115,7 @@
          (let-optionals* args ((path #f))
            (unless (string? path)
              (error "unix socket requires pathname, but got" path))
-           (make-server-socket-unix path)))
+           (apply make-server-socket-unix path (cdr args))))
         ((eq? proto 'inet)
          (let-optionals* args ((port #f))
            (unless (or (integer? port) (string? port))
@@ -129,20 +132,22 @@
 
 (define (make-server-socket-from-addr addr . args)
   (let-keywords* args ((reuse-addr? #f)
-		       (sock-init #f))
+		       (sock-init #f)
+                       (backlog DEFAULT_BACKLOG))
     (let1 socket (make-socket (address->protocol-family addr) |SOCK_STREAM|)
       (when (procedure? sock-init)
 	(sock-init socket addr))
       (when reuse-addr?
 	(socket-setsockopt socket |SOL_SOCKET| |SO_REUSEADDR| 1))
       (socket-bind socket addr)
-      (socket-listen socket 5))))
+      (socket-listen socket backlog))))
 
-(define (make-server-socket-unix path)
-  (let ((address (make <sockaddr-un> :path path))
+(define (make-server-socket-unix path . args)
+  (let ((backlog (get-keyword :backlog args DEFAULT_BACKLOG))
+        (address (make <sockaddr-un> :path path))
         (socket (make-socket |PF_UNIX| |SOCK_STREAM|)))
     (socket-bind socket address)
-    (socket-listen socket 5)))
+    (socket-listen socket backlog)))
 
 (define (make-server-socket-inet port . args)
   (let1 addr (car (make-sockaddrs #f port))
@@ -180,11 +185,7 @@
                (list (make <sockaddr-in> :host :any :port port))))))))
 
 (define (call-with-client-socket socket proc)
-  (with-error-handler
-      (lambda (e)
-        (socket-close socket)
-        (raise e))
-    (lambda ()
-      (begin0
-       (proc (socket-input-port socket) (socket-output-port socket))
-       (socket-close socket)))))
+  (guard (e (else (socket-close socket) (raise e)))
+    (begin0
+     (proc (socket-input-port socket) (socket-output-port socket))
+     (socket-close socket))))

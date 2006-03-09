@@ -13,117 +13,105 @@
 ;;-----------------------------------------------------------------
 (test-section "socket address")
 
-'(test "sockaddr_un" #t
-      (lambda ()
+'(test* "sockaddr_un" #t
         (let ((addr (make <sockaddr-un> :path "/tmp/xxx")))
           (and (eq? (sockaddr-family addr) 'unix)
                (equal? (sockaddr-name addr) "/tmp/xxx")
-               #t))))
+               #t)))
 
-'(test "sockaddr_in" #t
-      (lambda ()
+'(test* "sockaddr_in" #t
         (let ((addr (make <sockaddr-in> :host "127.0.0.1" :port 80)))
           (and (eq? (sockaddr-family addr) 'inet)
                (equal? (sockaddr-name addr) "127.0.0.1:80")
                (= (sockaddr-addr addr) #x7f000001)
                (= (sockaddr-port addr) 80)
-               #t))))
+               #t)))
 
-(test "sockaddr_in" #t
-      (lambda ()
-        (let ((addr (make <sockaddr-in> :host "localhost" :port 23)))
-          (and (eq? (sockaddr-family addr) 'inet)
-               (equal? (sockaddr-name addr) "127.0.0.1:23")
-               #t))))
+(test* "sockaddr_in" #t
+       (let ((addr (make <sockaddr-in> :host "localhost" :port 23)))
+         (and (eq? (sockaddr-family addr) 'inet)
+              (equal? (sockaddr-name addr) "127.0.0.1:23")
+              #t)))
 
-(test "sockaddr_in" #t
-      (lambda ()
-        (let ((addr (make <sockaddr-in> :host :any :port 7777)))
-          (and (eq? (sockaddr-family addr) 'inet)
-               (equal? (sockaddr-name addr) "0.0.0.0:7777")
-               #t))))
+(test* "sockaddr_in" #t
+       (let ((addr (make <sockaddr-in> :host :any :port 7777)))
+         (and (eq? (sockaddr-family addr) 'inet)
+              (equal? (sockaddr-name addr) "0.0.0.0:7777")
+              #t)))
 
-(test "sockaddr_in" #t
-      (lambda ()
-        (let ((addr (make <sockaddr-in> :host :broadcast)))
-          (and (eq? (sockaddr-family addr) 'inet)
-               (equal? (sockaddr-name addr) "255.255.255.255:0")
-               #t))))
+(test* "sockaddr_in" #t
+       (let ((addr (make <sockaddr-in> :host :broadcast)))
+         (and (eq? (sockaddr-family addr) 'inet)
+              (equal? (sockaddr-name addr) "255.255.255.255:0")
+              #t)))
 
 (when (global-variable-bound? 'gauche.net '<sockaddr-in6>)
-  (test "sockaddr_in6" #t
-        (lambda ()
-          (let ((addr (make <sockaddr-in6> :host "2001:200::8002:203:47ff:fea5:3085" :port 23)))
-            (and (eq? (sockaddr-family addr) 'inet6)
-                 (#/\[2001:200:0?:8002:203:47ff:fea5:3085\]:23/ (sockaddr-name addr))
-                 (= (sockaddr-addr addr) #x2001020000008002020347fffea53085)
-                 (= (sockaddr-port addr) 23)
-                 #t)))))
+  (test* "sockaddr_in6" #t
+         (let ((addr (make <sockaddr-in6> :host "2001:200::8002:203:47ff:fea5:3085" :port 23)))
+           (and (eq? (sockaddr-family addr) 'inet6)
+                (#/\[2001:200:0?:8002:203:47ff:fea5:3085\]:23/ (sockaddr-name addr))
+                (= (sockaddr-addr addr) #x2001020000008002020347fffea53085)
+                (= (sockaddr-port addr) 23)
+                #t))))
 
 ;;-----------------------------------------------------------------
 (test-section "netdb")
 
-(test "gethostbyname" #t
-      (lambda ()
-        (let ((host (sys-gethostbyname "localhost")))
-          (and host
-               (or (equal? (slot-ref host 'name) "localhost")
-                   (member "localhost" (slot-ref host 'aliases))
-                   ;; cygwin usually doesn't define "localhost", and
-                   ;; returns hostname.  For now we skip this test.
-                   (string-suffix? "cygwin" (gauche-architecture)))
-               (member "127.0.0.1" (slot-ref host 'addresses))
-               #t))))
+(test* "gethostbyname" #t
+       (let ((host (sys-gethostbyname "localhost")))
+         (and host
+              (or (equal? (slot-ref host 'name) "localhost")
+                  (member "localhost" (slot-ref host 'aliases))
+                  ;; cygwin usually doesn't define "localhost", and
+                  ;; returns hostname.  For now we skip this test.
+                  (string-suffix? "cygwin" (gauche-architecture)))
+              (member "127.0.0.1" (slot-ref host 'addresses))
+              #t)))
 
-(test "gethostbyaddr" #t
-      (lambda ()
-        (let ((host (sys-gethostbyaddr "127.0.0.1" |AF_INET|)))
-          (and host
-               (or (equal? (slot-ref host 'name) "localhost")
-                   (member "localhost" (slot-ref host 'aliases))
-                   ;; cygwin usually doesn't define "localhost", and
-                   ;; returns hostname.  For now we skip this test.
-                   (string-suffix? "cygwin" (gauche-architecture)))
-               (member "127.0.0.1" (slot-ref host 'addresses))
-               #t))))
+(test* "gethostbyaddr" #t
+       (let ((host (sys-gethostbyaddr "127.0.0.1" |AF_INET|)))
+         (and host
+              (or (equal? (slot-ref host 'name) "localhost")
+                  (member "localhost" (slot-ref host 'aliases))
+                  ;; cygwin usually doesn't define "localhost", and
+                  ;; returns hostname.  For now we skip this test.
+                  (string-suffix? "cygwin" (gauche-architecture)))
+              (member "127.0.0.1" (slot-ref host 'addresses))
+              #t)))
 
-(test "getprotobyname" '(("ip" 0) ("tcp" 6) ("udp" 17))
-      (lambda ()
-        (let ((tcp (sys-getprotobyname "tcp"))
-              (udp (sys-getprotobyname "udp"))
-              (ip  (sys-getprotobyname "ip")))
-          (map (lambda (proto)
-                 (list (slot-ref proto 'name)
-                       (slot-ref proto 'proto)))
-               (list ip tcp udp)))))
+(test* "getprotobyname" '(("ip" 0) ("tcp" 6) ("udp" 17))
+       (let ((tcp (sys-getprotobyname "tcp"))
+             (udp (sys-getprotobyname "udp"))
+             (ip  (sys-getprotobyname "ip")))
+         (map (lambda (proto)
+                (list (slot-ref proto 'name)
+                      (slot-ref proto 'proto)))
+              (list ip tcp udp))))
 
-(test "getprotobynumber" '(#t #t #t)
-      (lambda ()
-        (map (lambda (proto name)
-               (or (member name (slot-ref proto 'aliases))
-                   (equal? name (slot-ref proto 'name))))
-             (map sys-getprotobynumber '(0 6 17))
-             '("ip" "tcp" "udp"))))
+(test* "getprotobynumber" '(#t #t #t)
+       (map (lambda (proto name)
+              (or (member name (slot-ref proto 'aliases))
+                  (equal? name (slot-ref proto 'name))))
+            (map sys-getprotobynumber '(0 6 17))
+            '("ip" "tcp" "udp")))
 
-(test "getservbyname" '(("telnet" 23 "tcp") ("ftp" 21 "tcp"))
-      (lambda ()
-        (map (lambda (name proto)
-               (let ((x (sys-getservbyname name proto)))
-                 (and x
-                      (map (lambda (s) (slot-ref x s))
-                           '(name port proto)))))
-             '("telnet" "ftp")
-             '("tcp"    "tcp"))))
+(test* "getservbyname" '(("telnet" 23 "tcp") ("ftp" 21 "tcp"))
+       (map (lambda (name proto)
+              (let ((x (sys-getservbyname name proto)))
+                (and x
+                     (map (lambda (s) (slot-ref x s))
+                          '(name port proto)))))
+            '("telnet" "ftp")
+            '("tcp"    "tcp")))
 
-(test "getservbyport" '(("telnet" 23 "tcp") ("ftp" 21 "tcp"))
-      (lambda ()
-        (map (lambda (port proto)
-               (let ((x (sys-getservbyport port proto)))
-                 (and x
-                      (map (lambda (s) (slot-ref x s))
-                           '(name port proto)))))
-             '(23       21)
-             '("tcp"    "tcp"))))
+(test* "getservbyport" '(("telnet" 23 "tcp") ("ftp" 21 "tcp"))
+       (map (lambda (port proto)
+              (let ((x (sys-getservbyport port proto)))
+                (and x
+                     (map (lambda (s) (slot-ref x s))
+                          '(name port proto)))))
+            '(23       21)
+            '("tcp"    "tcp")))
 
 ;;-----------------------------------------------------------------
 (test-section "socket")
@@ -157,152 +145,137 @@
 
 (sys-unlink "sock.o")
 
-(test "unix server socket" #f
-      (lambda ()
-        (let ((pid (sys-fork)))
-          (if (= pid 0)
-              (simple-server (make-server-socket 'unix "sock.o"))
-              (begin
-                (sys-select #f #f #f 300000)
-                (let ((stat (sys-stat "sock.o")))
-                  (not (memq (sys-stat->file-type stat) '(socket fifo)))))))))
+(test* "unix server socket" #f
+       (let ((pid (sys-fork)))
+         (if (= pid 0)
+           (simple-server (make-server-socket 'unix "sock.o"))
+           (begin
+             (sys-select #f #f #f 300000)
+             (let ((stat (sys-stat "sock.o")))
+               (not (memq (sys-stat->file-type stat) '(socket fifo))))))))
 
-(test "unix client socket" '("ABC" "XYZ")
-      (lambda ()
-        (call-with-client-socket (make-client-socket 'unix "sock.o")
-          (lambda (in out)
-            (display "abc\n" out) (flush out)
-            (let ((abc (read-line in)))
-              (display "xyz\n" out) (flush out)
-              (list abc (read-line in)))))))
+(test* "unix client socket" '("ABC" "XYZ")
+       (call-with-client-socket (make-client-socket 'unix "sock.o")
+         (lambda (in out)
+           (display "abc\n" out) (flush out)
+           (let ((abc (read-line in)))
+             (display "xyz\n" out) (flush out)
+             (list abc (read-line in))))))
 
-(test "unix client socket" #t
-      (lambda ()
-        (call-with-client-socket (make-client-socket 'unix "sock.o")
-          (lambda (in out)
-            (display (make-string *chunk-size* #\a) out)
-            (newline out)
-            (flush out)
-            (string=? (read-line in) (make-string *chunk-size* #\A))))))
+(test* "unix client socket" #t
+       (call-with-client-socket (make-client-socket 'unix "sock.o")
+         (lambda (in out)
+           (display (make-string *chunk-size* #\a) out)
+           (newline out)
+           (flush out)
+           (string=? (read-line in) (make-string *chunk-size* #\A)))))
 
-(test "unix client socket" #t
-      (lambda ()
-        (call-with-client-socket (make-client-socket (make <sockaddr-un> :path "sock.o"))
-          (lambda (in out)
-            (display (make-string *chunk-size* #\a) out)
-            (newline out)
-            (flush out)
-            (string=? (read-line in) (make-string *chunk-size* #\A))))))
+(test* "unix client socket" #t
+       (call-with-client-socket (make-client-socket (make <sockaddr-un> :path "sock.o"))
+         (lambda (in out)
+           (display (make-string *chunk-size* #\a) out)
+           (newline out)
+           (flush out)
+           (string=? (read-line in) (make-string *chunk-size* #\A)))))
 
-(test "unix client socket" 33
-      (lambda ()
-        (call-with-client-socket (make-client-socket 'unix "sock.o")
-          (lambda (in out)
-            (display "END\n" out) (flush out)
-            (receive (pid code) (sys-wait)
-              (sys-wait-exit-status code))))))
+(test* "unix client socket" 33
+       (call-with-client-socket (make-client-socket 'unix "sock.o")
+         (lambda (in out)
+           (display "END\n" out) (flush out)
+           (receive (pid code) (sys-wait)
+             (sys-wait-exit-status code)))))
 
 
 (sys-unlink "sock.o")
 
-(test "inet server socket" #t
-      (lambda ()
-        (let ((pid (sys-fork)))
-          (if (= pid 0)
-              (simple-server (make-server-socket 'inet *inet-port* :reuse-addr? #t))
-              (begin
-                (sys-select #f #f #f 300000)
-                #t)))))
+(test* "inet server socket" #t
+       (let ((pid (sys-fork)))
+         (if (= pid 0)
+           (simple-server (make-server-socket 'inet *inet-port* :reuse-addr? #t))
+           (begin
+             (sys-select #f #f #f 300000)
+             #t))))
 
-(test "inet client socket" '("ABC" "XYZ")
-      (lambda ()
-        (call-with-client-socket (make-client-socket 'inet "localhost" *inet-port*)
-          (lambda (in out)
-            (display "abc\n" out) (flush out)
-            (let ((abc (read-line in)))
-              (display "xyz\n" out) (flush out)
-              (list abc (read-line in)))))))
+(test* "inet client socket" '("ABC" "XYZ")
+       (call-with-client-socket (make-client-socket 'inet "localhost" *inet-port*)
+         (lambda (in out)
+           (display "abc\n" out) (flush out)
+           (let ((abc (read-line in)))
+             (display "xyz\n" out) (flush out)
+             (list abc (read-line in))))))
 
-(test "inet client socket" #t
-      (lambda ()
-        (call-with-client-socket (make-client-socket "localhost" *inet-port*)
-          (lambda (in out)
-            (display (make-string *chunk-size* #\a) out)
-            (newline out)
-            (flush out)
-            (string=? (read-line in) (make-string *chunk-size* #\A))))))
+(test* "inet client socket" #t
+       (call-with-client-socket (make-client-socket "localhost" *inet-port*)
+         (lambda (in out)
+           (display (make-string *chunk-size* #\a) out)
+           (newline out)
+           (flush out)
+           (string=? (read-line in) (make-string *chunk-size* #\A)))))
 
-(test "inet client socket" #t
-      (lambda ()
-        (call-with-client-socket
-         (make-client-socket (make (if (global-variable-bound? 'gauche.net
-                                                               '<sockaddr-in6>)
-                                     <sockaddr-in6>
-                                     <sockaddr-in>)
-                               :host "localhost" :port *inet-port*))
-          (lambda (in out)
-            (display (make-string *chunk-size* #\a) out)
-            (newline out)
-            (flush out)
-            (string=? (read-line in) (make-string *chunk-size* #\A))))))
+(test* "inet client socket" #t
+       (call-with-client-socket
+           (make-client-socket (make (if (global-variable-bound? 'gauche.net
+                                                                 '<sockaddr-in6>)
+                                       <sockaddr-in6>
+                                       <sockaddr-in>)
+                                 :host "localhost" :port *inet-port*))
+         (lambda (in out)
+           (display (make-string *chunk-size* #\a) out)
+           (newline out)
+           (flush out)
+           (string=? (read-line in) (make-string *chunk-size* #\A)))))
 
-(test "inet client socket" 33
-      (lambda ()
-        (call-with-client-socket (make-client-socket 'inet "localhost" *inet-port*)
-          (lambda (in out)
-            (display "END\n" out) (flush out)
-            (receive (pid code) (sys-wait)
-              (sys-wait-exit-status code))))))
+(test* "inet client socket" 33
+       (call-with-client-socket (make-client-socket 'inet "localhost" *inet-port*)
+         (lambda (in out)
+           (display "END\n" out) (flush out)
+           (receive (pid code) (sys-wait)
+             (sys-wait-exit-status code)))))
 
-(test "socket w/ port error handling" *test-error*
-      (lambda ()
-        (let1 s (make-client-socket 'inet "localhost" *inet-port*)
-          (close-socket s)
-          (socket-input-port s))))
+(test* "socket w/ port error handling" *test-error*
+       (let1 s (make-client-socket 'inet "localhost" *inet-port*)
+         (close-socket s)
+         (socket-input-port s)))
 
-(test "socket w/ port error handling" *test-error*
-      (lambda ()
-        (let1 s (make-client-socket 'inet "localhost" *inet-port*)
-          (close-socket s)
-          (socket-output-port s))))
+(test* "socket w/ port error handling" *test-error*
+       (let1 s (make-client-socket 'inet "localhost" *inet-port*)
+         (close-socket s)
+         (socket-output-port s)))
 
-(test "getsockname/getpeername" #t
-      (lambda ()
-        (let* ((addr (make <sockaddr-in> :host :loopback :port *inet-port*))
-               (serv (make-server-socket addr :reuse-addr? #t))
-               (clnt (make-client-socket addr)))
-          (begin0 (every (lambda (addr)
-                           (and (= (sockaddr-addr addr) #x7f000001)
-                                (= (sockaddr-port addr) *inet-port*)))
-                         (list (socket-getsockname serv)
-                               (socket-getpeername clnt)))
-                  (socket-close clnt)
-                  (socket-close serv)))))
+(test* "getsockname/getpeername" #t
+       (let* ((addr (make <sockaddr-in> :host :loopback :port *inet-port*))
+              (serv (make-server-socket addr :reuse-addr? #t))
+              (clnt (make-client-socket addr)))
+         (begin0 (every (lambda (addr)
+                          (and (= (sockaddr-addr addr) #x7f000001)
+                               (= (sockaddr-port addr) *inet-port*)))
+                        (list (socket-getsockname serv)
+                              (socket-getpeername clnt)))
+                 (socket-close clnt)
+                 (socket-close serv))))
 
-(test "udp server socket" #t
-      (lambda ()
-        (let ((pid (sys-fork)))
-          (if (= pid 0)
-              (let ((sock (make-socket |PF_INET| |SOCK_DGRAM|))
-                    (addr (make <sockaddr-in> :host :any :port *inet-port*)))
-                (socket-setsockopt sock |SOL_SOCKET| |SO_REUSEADDR| 1)
-                (socket-bind sock addr)
-                (receive (msg from) (socket-recvfrom sock 1024)
-                  (socket-sendto sock (string-upcase msg) from))
-                (socket-close sock)
-                (sys-exit 33))
-              (begin
-                (sys-select #f #f #f 300000)
-                #t)))))
+(test* "udp server socket" #t
+       (let ((pid (sys-fork)))
+         (if (= pid 0)
+           (let ((sock (make-socket |PF_INET| |SOCK_DGRAM|))
+                 (addr (make <sockaddr-in> :host :any :port *inet-port*)))
+             (socket-setsockopt sock |SOL_SOCKET| |SO_REUSEADDR| 1)
+             (socket-bind sock addr)
+             (receive (msg from) (socket-recvfrom sock 1024)
+               (socket-sendto sock (string-upcase msg) from))
+             (socket-close sock)
+             (sys-exit 33))
+           (begin
+             (sys-select #f #f #f 300000)
+             #t))))
 
-(test "udp client socket" "ABC"
-      (lambda ()
-        (let ((sock (make-socket |PF_INET| |SOCK_DGRAM|))
-              (addr (make <sockaddr-in> :host :loopback :port *inet-port*)))
-          (socket-setsockopt sock |SOL_SOCKET| |SO_REUSEADDR| 1)
-          (socket-connect sock addr)
-          (socket-send sock "abc")
-          (begin0 (string-incomplete->complete (socket-recv sock 1024))
-                  (socket-close sock)))))
+(test* "udp client socket" "ABC"
+       (let ((sock (make-socket |PF_INET| |SOCK_DGRAM|))
+             (addr (make <sockaddr-in> :host :loopback :port *inet-port*)))
+         (socket-setsockopt sock |SOL_SOCKET| |SO_REUSEADDR| 1)
+         (socket-connect sock addr)
+         (socket-send sock "abc")
+         (begin0 (string-incomplete->complete (socket-recv sock 1024))
+                 (socket-close sock))))
 
 (test-end)
