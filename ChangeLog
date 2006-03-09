@@ -1,5 +1,9 @@
 2006-03-09  Shiro Kawai  <shiro@acm.org>
 
+	* lib/dbi.scm (dbi-execute-query): the adapter to the legacy dbd
+	  interface passes :pass-through option to the dbi-do for compatibiliy.
+	  This change doesn't affect the new dbd interface.
+
 	* ext/net/netaux.scm (make-server-socket): added :backlog keyword
 	  argument to customize the backlog number passed to socket-listen.
 	  (Patch from Tatsuya BIZENN).
