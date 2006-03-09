@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.121 2006-03-08 05:50:41 shirok Exp $
+;;;  $Id: genstub,v 1.122 2006-03-09 15:21:47 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -492,8 +492,7 @@
   (set! (cpp-condition-of self) (cpp-condition)))
 
 (define (get-stubs class)
-  (reverse (filter (lambda (s) (is-a? s class))
-                   (instance-pool->list <stub>))))
+  (filter (cut is-a? <> class) (instance-pool->list <stub>)))
 
 (define-syntax with-cpp-condition
   (syntax-rules ()
@@ -773,7 +772,8 @@
 
 (define-class <setter-mixin> ()
   ((setter          :initform #f  :accessor setter-of)
-   (setter-c-name   :initform #f  :accessor setter-c-name-of)
+   ;; setter keeps the name of the setter, or a string of c-name of the
+   ;; setter in case of anonymous setter.
    ))
 
 (define-class <procstub> (<setter-mixin> <stub>)
@@ -795,6 +795,8 @@
 
 (define (push-stmt! cproc stmt)
   (push! (stmts-of cproc) stmt))
+
+(define-generic c-stub-name-of )
 
 ;;-----------------------------------------------------------------
 ;; (define-cproc scheme-name (argspec) body)
@@ -827,6 +829,9 @@
         (emit-definition cproc)
         (emit-inliner cproc)
         (emit-record cproc)))))
+
+(define-method c-stub-name-of ((cproc <cproc>))
+  #`",(c-name-of cproc)__STUB")
 
 ;; create arg object.  used in cproc and cmethod
 (define (make-arg class argname count . rest)
@@ -932,8 +937,7 @@
 (define-method process-setter ((cproc <cproc>) decl)
   (cond
    ((symbol? (car decl))
-    (set! (setter-of cproc) (car decl))
-    (set! (setter-c-name-of cproc) (get-c-name *file-prefix* (car decl))))
+    (set! (setter-of cproc) (car decl)))
    ((< (length decl) 2)
     (error "bad form of anonymous setter:" `(setter ,decl)))
    (else
@@ -941,13 +945,12 @@
         (process-cproc-args (car decl))
       (let ((setter (make <cproc>
                       :scheme-name `(setter ,(scheme-name-of cproc))
-                      :c-name (string-append (c-name-of cproc) "_SETTER")
+                      :c-name #`",(c-name-of cproc)_SETTER"
                       :args args
                       :num-reqargs nreqs
                       :num-optargs nopts
                       :have-rest-arg? rest?)))
-        (set! (setter-of cproc) setter)
-        (set! (setter-c-name-of cproc) (c-name-of setter))
+        (set! (setter-of cproc) #`",(c-name-of setter)__STUB")
         (set! (keyword-args-of setter)
               (filter (lambda (x) (eq? (class-of x) <keyword-arg>)) args))
         (process-body setter (cdr decl))
@@ -1104,17 +1107,26 @@
 (define-method emit-initializer ((cproc <cproc>))
   (when (symbol? (scheme-name-of cproc))
     (cgen-init
-     (format "  SCM_DEFINE(module, ~s, SCM_OBJ(&~a__STUB));"
-             (symbol->string (scheme-name-of cproc)) (c-name-of cproc))))
+     (format "  SCM_DEFINE(module, ~s, SCM_OBJ(&~a));"
+             (symbol->string (scheme-name-of cproc))
+             (c-stub-name-of cproc))))
   (next-method)
   )
 
 (define-method emit-initializer ((cproc <setter-mixin>))
-  (when (setter-of cproc)
+  (define (emit setter-name)
     (cgen-init
-     (format "  Scm_SetterSet(SCM_PROCEDURE(&~a__STUB), SCM_PROCEDURE(&~a__STUB), TRUE);"
-             (c-name-of cproc)
-             (setter-c-name-of cproc)))))
+     (format "  Scm_SetterSet(SCM_PROCEDURE(&~a), SCM_PROCEDURE(&~a), TRUE);"
+             (c-stub-name-of cproc) setter-name)))
+  (match (setter-of cproc)
+    ((? string? x) (emit x))
+    ((? symbol? x)
+     (or (and-let* ((setter (find (lambda (z) (eq? (scheme-name-of z) x))
+                                  (get-stubs <stub>))))
+           (emit (c-stub-name-of setter)))
+         (errorf "unknown setter name '~a' is used in the definition of '~a'"
+                 x (scheme-name-of cproc))))
+    (_ #f)))
 
 (define (emit-arg-decl arg)
   (f "  ScmObj ~a;" (scm-name-of arg))
@@ -1176,16 +1188,15 @@
     ))
 
 (define (emit-record cproc)
-  (let ((c-func-name (c-name-of cproc))
-        (inliner-name "NULL"))
-    (emit-static-string c-func-name (scheme-name-of cproc))
+  (let ((inliner-name "NULL"))
+    (emit-static-string (c-name-of cproc) (scheme-name-of cproc))
     (when (inliner-of cproc)
       (set! inliner-name (inliner-of cproc)))
-    (f "static SCM_DEFINE_SUBR(~a__STUB, ~a, ~a, SCM_OBJ(&~a__NAME), ~:*~a, ~a, NULL);"
-       c-func-name
+    (f "static SCM_DEFINE_SUBR(~a, ~a, ~a, SCM_OBJ(&~a__NAME), ~:*~a, ~a, NULL);"
+       (c-stub-name-of cproc)
        (num-reqargs-of cproc)
        (if (or (have-rest-arg? cproc) (> (num-optargs-of cproc) 0)) 1 0)
-       c-func-name
+       (c-name-of cproc)
        inliner-name
        )
     (cgen-body "")))
@@ -1204,6 +1215,9 @@
    (fallback :initform "NULL" :init-keyword :fallback
              :accessor fallback-of)
    ))
+
+(define-method c-stub-name-of ((self <cgeneric>))
+  (c-name-of self))
 
 (define-method emit-definition ((self <cgeneric>))
   (unless (extern? self) (cgen-body "static "))
@@ -1239,10 +1253,9 @@
 (define-method process-setter ((gf <cgeneric>) decl)
   (cond
    ((symbol? (car decl))
-    (set! (setter-of gf) (car decl))
-    (set! (setter-c-name-of gf) (get-c-name *file-prefix* (car decl))))
+    (set! (setter-of gf) (car decl)))
    (else
-    (error "bad form of anonymous setter:" `(setter ,decl)))))
+    (error "bad form of anonymous setter:" `(setter ,@decl)))))
 
 (define (get-c-generic-name name)
   (cond ((find (lambda (x) (eq? (scheme-name-of x) name))

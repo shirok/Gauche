@@ -1,3 +1,11 @@
+2006-03-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/genstub: fixed setter procedure generation.  By looking up
+	  the stub name of setter procedure, instead of assuming naming
+	  convention, we can now handle setter defintion in define-cgeneric
+	  clause (it needs different treatment since their C stub name would
+	  differ from normal cproc/cmethod).
+
 2006-03-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/genstub: fixed several typos in cgeneric setter generation
