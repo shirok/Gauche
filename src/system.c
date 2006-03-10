@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.74 2006-01-27 10:04:48 shirok Exp $
+ *  $Id: system.c,v 1.75 2006-03-10 05:09:06 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1242,7 +1242,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap, int forkp)
 int *Scm_SysPrepareFdMap(ScmObj iomap)
 {
     int *fds = NULL;
-
+#ifndef __MINGW32__
     if (SCM_PAIRP(iomap)) {
         ScmObj iop;
         int iollen = Scm_Length(iomap), i = 0;
@@ -1286,11 +1286,13 @@ int *Scm_SysPrepareFdMap(ScmObj iomap)
             i++;
         }
     }
+#endif /* __MINGW32__ */
     return fds;
 }
 
 void Scm_SysSwapFds(int *fds)
 {
+#ifndef __MINGW32__
     int *tofd, *fromfd, nfds, maxfd, i, j, fd;
     
     if (fds == NULL) return;
@@ -1324,6 +1326,7 @@ void Scm_SysSwapFds(int *fds)
         for (j=0; j<nfds; j++) if (fd == tofd[j]) break;
         if (j == nfds) close(fd);
     }
+#endif /* __MINGW32__ */
 }
 
 
