@@ -9,6 +9,8 @@
 
 (test-start "system")
 
+(define *win32* (string-suffix? "-mingw32" (gauche-architecture)))
+
 ;;-------------------------------------------------------------------
 (test-section "system")
 ;; test this first, so that we can use system commands to verify our results.
@@ -33,7 +35,8 @@
 (define (get-pwd-via-pwd)
   ;; use pwd command to get pwd.  avoid using shell's built-in pwd,
   ;; for it may be confused by symlinks.
-  (cond ((sys-access "/bin/pwd" |X_OK|) (get-command-output "/bin/pwd"))
+  (cond (*win32* (get-command-output "cd"))
+	((sys-access "/bin/pwd" |X_OK|) (get-command-output "/bin/pwd"))
         ((sys-access "/usr/bin/pwd" |X_OK|) (get-command-output "/usr/bin/pwd"))
         ((sys-access "/sbin/pwd" |X_OK|) (get-command-output "/sbin/pwd"))
         (else (get-command-output "pwd"))))
@@ -45,13 +48,10 @@
 ;;-------------------------------------------------------------------
 (test-section "environment")
 
-(test* "getenv" (get-command-output "echo $PATH")
-       (sys-getenv "PATH"))
-
 (test* "getenv"
-       (let ((x (get-command-output "echo $NoSucHEnvIRoNmenT")))
-         (if (string-null? x) #f x))
-       (sys-getenv "NoSucHEniIRoNmenT"))
+       (string-trim-both
+	(get-command-output (if *win32* "echo %PATH%" "echo $PATH")))
+       (sys-getenv "PATH"))
 
 (test* "getcwd" (get-pwd-via-pwd)
        (sys-getcwd))
@@ -88,8 +88,10 @@
        (sys-normalize-pathname "." :absolute #t))
 (test* "normalize" (n (string-append (get-pwd-via-pwd) "/"))
        (sys-normalize-pathname "" :absolute #t))
-(test* "normalize" (n (string-append (get-command-output "echo $HOME") "/abc"))
-       (sys-normalize-pathname "~/abc" :expand #t))
+(unless *win32*
+  (test* "normalize"
+         (n (string-append (get-command-output "echo $HOME") "/abc"))
+         (sys-normalize-pathname "~/abc" :expand #t)))
 (test* "normalize" (n "/a/b/c/d/e")
        (sys-normalize-pathname "/a/b//.///c//d/./e"
                                :canonicalize #t))
@@ -315,22 +317,31 @@
                (close-input-port in) (close-output-port out)
                (list f1 f2 f3))))))
 
+;; Kludge: MinGW32 seems not to support :none, :line buffering,
+;; so we flush and close the output pipe before reading from it.
+
 (test* "pipe and read-block(none)" 2
        (receive (in out) (sys-pipe :buffering :none)
          (display "ab" out)
+         (when *win32* (close-output-port out))
          (let1 r (string-size (read-block 1000 in))
-           (close-input-port in) (close-output-port out)
+           (close-input-port in)
+           (unless *win32* (close-output-port out))
            r)))
 
 (test* "pipe and read-block(line)" 2
        (receive (in out) (sys-pipe :buffering :line)
          (display "a\n" out)
+         (when *win32* (close-output-port out))
          (let1 r (string-size (read-block 1000 in))
-           (close-input-port in) (close-output-port out)
+           (close-input-port in)
+           (unless *win32* (close-output-port out))
            r)))
 
 ;;-------------------------------------------------------------------
 (test-section "fork&exec")
+
+(unless *win32*  ;; win32 doesn't support fork at all.
 
 (test* "fork & wait" #t
        (let ((pid (sys-fork)))
@@ -403,6 +414,8 @@
                        (loop (- toread r) (+ nread r)))))
                ))))
 
+) ;; unless *win32*
+
 ;;-------------------------------------------------------------------
 (test-section "select")
 
@@ -463,6 +476,8 @@
 
 ;;-------------------------------------------------------------------
 (test-section "signal handling")
+
+(unless *win32*
 
 (test* "sigalrm1" SIGALRM
        (call/cc
@@ -581,6 +596,7 @@
                     ;;  (unless chld (loop)))
                     sig)))))))
 
+) ;; unless *win32*
 
 (test-end)
 
