@@ -8,6 +8,18 @@
 
 (add-load-path ".")
 
+;; Some abstraction for win32... The file.util module provides
+;; higher abstraction, but we're not at the stage of using it yet.
+
+(define *win32*
+  ;; we can't use string-suffix? yet.
+  (let* ((arch (gauche-architecture))
+	 (len  (string-length arch)))
+    (and (> len 7)
+	 (string=? (substring arch (- len 7) len) "mingw32"))))
+
+(define (P path) (sys-normalize-pathname path))
+
 ;;----------------------------------------------------------------
 (test-section "require and provide")
 
@@ -125,19 +137,8 @@
 (test-section "libutil")
 
 (sys-system "mkdir test.o")
-
-(let* ((arch (gauche-architecture))
-       (len  (string-length arch)))
-  (if (and (> len 7)
-	   (string=? (substring arch (- len 7) len) "mingw32"))
-      (begin
-	;; NB: we use Windows' mkdir command, so we need to use backslashes!
-        ;; sys-mkdir isn't tested yet so we can't use it.
-	(sys-system "mkdir test.o\\_test")
-	(sys-system "mkdir test.o\\_tset"))
-      (begin
-	(sys-system "mkdir test.o/_test")
-	(sys-system "mkdir test.o/_tset"))))
+(sys-system #`"mkdir ,(P \"test.o/_test\")")
+(sys-system #`"mkdir ,(P \"test.o/_tset\")")
 
 (with-output-to-file "test.o/_test.scm"
   (lambda ()
@@ -167,82 +168,93 @@
   (lambda ()
     (write '(provide "_tset/_test2"))))
 
-(test* "library-fold _test" '((_test . "test.o/_test.scm"))
+(test* "library-fold _test" `((_test . ,(P "test.o/_test.scm")))
        (library-fold '_test acons '() :paths '("./test.o")))
 
-(test* "library-fold _test" '(("_test" . "test.o/_test.scm"))
+(test* "library-fold _test" `(("_test" . ,(P "test.o/_test.scm")))
        (library-fold "_test" acons '() :paths '("./test.o")))
 
-(define paths-a '("./test.o" "./test.o/_test" "./test.o/_tset"))
-(define paths-b '("./test.o/_test" "./test.o" "./test.o/_tset"))
+(define paths-a (map P '("./test.o" "./test.o/_test" "./test.o/_tset")))
+(define paths-b (map P '("./test.o/_test" "./test.o" "./test.o/_tset")))
 
-(test* "library-fold _test (multi)" '((_test . "test.o/_test.scm"))
+(test* "library-fold _test (multi)" `((_test . ,(P "test.o/_test.scm")))
        (library-fold '_test acons '() :paths paths-a))
-(test* "library-fold _test (multi)" '((_test . "test.o/_test.scm"))
+(test* "library-fold _test (multi)" `((_test . ,(P "test.o/_test.scm")))
        (library-fold '_test acons '() :paths paths-b))
-(test* "library-fold _test (multi)" '(("_test" . "test.o/_test/_test.scm"))
+(test* "library-fold _test (multi)"
+       `(("_test" . ,(P "test.o/_test/_test.scm")))
        (library-fold "_test" acons '() :paths paths-b))
-(test* "library-fold _test (multi)" '(("_test" . "test.o/_tset/_test.scm")
-                                      ("_test" . "test.o/_test.scm")
-                                      ("_test" . "test.o/_test/_test.scm"))
+(test* "library-fold _test (multi)"
+       `(("_test" . ,(P "test.o/_tset/_test.scm"))
+	 ("_test" . ,(P "test.o/_test.scm"))
+	 ("_test" . ,(P "test.o/_test/_test.scm")))
        (library-fold "_test" acons '() :paths paths-b
                      :allow-duplicates? #t))
-(test* "library-fold _test (non-strict)" '((_test . "test.o/_tset/_test.scm")
-                                           (_test . "test.o/_test.scm")
-                                           (_test . "test.o/_test/_test.scm"))
+(test* "library-fold _test (non-strict)"
+       `((_test . ,(P "test.o/_tset/_test.scm"))
+	 (_test . ,(P "test.o/_test.scm"))
+	 (_test . ,(P "test.o/_test/_test.scm")))
        (library-fold '_test acons '() :paths paths-b
                      :strict? #f :allow-duplicates? #t))
 
-(test* "library-fold _test._test" '((_test._test . "test.o/_test/_test.scm"))
+(test* "library-fold _test._test"
+       `((_test._test . ,(P "test.o/_test/_test.scm")))
        (library-fold '_test._test acons '() :paths paths-b))
-(test* "library-fold _test/_test" '(("_test/_test" . "test.o/_test/_test.scm"))
+(test* "library-fold _test/_test"
+       `(("_test/_test" . ,(P "test.o/_test/_test.scm")))
        (library-fold "_test/_test" acons '() :paths paths-b))
 
 ;; needs sort the result, for the order library-fold returns depends on
 ;; readdir(), which may be system dependent.
-(test* "library-fold _test.*" '((_test._test . "test.o/_test/_test.scm")
-                                (_test._test1 . "test.o/_test/_test1.scm"))
+(test* "library-fold _test.*"
+       `((_test._test . ,(P "test.o/_test/_test.scm"))
+	 (_test._test1 . ,(P "test.o/_test/_test1.scm")))
        (sort (library-fold '_test.* acons '() :paths paths-b)
              (lambda (a b) (string<? (cdr a) (cdr b)))))
-(test* "library-fold _tset.*" '((_tset._test . "test.o/_tset/_test.scm"))
+(test* "library-fold _tset.*"
+       `((_tset._test . ,(P "test.o/_tset/_test.scm")))
        (sort (library-fold '_tset.* acons '() :paths paths-b)
              (lambda (a b) (string<? (cdr a) (cdr b)))))
-(test* "library-fold _tset/*" '(("_tset/_test" . "test.o/_tset/_test.scm")
-                                ("_tset/_test2" . "test.o/_tset/_test2.scm"))
+(test* "library-fold _tset/*"
+       `(("_tset/_test" . ,(P "test.o/_tset/_test.scm"))
+	 ("_tset/_test2" . ,(P "test.o/_tset/_test2.scm")))
        (sort (library-fold "_tset/*" acons '() :paths paths-b)
              (lambda (a b) (string<? (cdr a) (cdr b)))))
 
-(test* "library-fold _test.*1" '((_test._test1 . "test.o/_test/_test1.scm"))
+(test* "library-fold _test.*1"
+       `((_test._test1 . ,(P "test.o/_test/_test1.scm")))
        (sort (library-fold '_test.*1 acons '() :paths paths-b)
              (lambda (a b) (string<? (cdr a) (cdr b)))))
-(test* "library-fold _*t._te*" '((_test._test . "test.o/_test/_test.scm")
-                                 (_test._test1 . "test.o/_test/_test1.scm")
-                                 (_tset._test . "test.o/_tset/_test.scm"))
+(test* "library-fold _*t._te*"
+       `((_test._test .  ,(P "test.o/_test/_test.scm"))
+	 (_test._test1 . ,(P "test.o/_test/_test1.scm"))
+	 (_tset._test .  ,(P "test.o/_tset/_test.scm")))
        (sort (library-fold '_*t._te* acons '() :paths paths-b)
              (lambda (a b) (string<? (cdr a) (cdr b)))))
-(test* "library-fold */*" '(("_test/_test" . "test.o/_test/_test.scm")
-                            ("_test/_test1" . "test.o/_test/_test1.scm")
-                            ("_tset/_test" . "test.o/_tset/_test.scm")
-                            ("_tset/_test2" . "test.o/_tset/_test2.scm"))
+(test* "library-fold */*"
+       `(("_test/_test" .  ,(P "test.o/_test/_test.scm"))
+	 ("_test/_test1" . ,(P "test.o/_test/_test1.scm"))
+	 ("_tset/_test" .  ,(P "test.o/_tset/_test.scm"))
+	 ("_tset/_test2" . ,(P "test.o/_tset/_test2.scm")))
        (sort (library-fold "*/*" acons '() :paths paths-b)
              (lambda (a b) (string<? (cdr a) (cdr b)))))
 
 (test* "library-fold _t??t._test?"
-       '((_test._test1 . "test.o/_test/_test1.scm"))
+       `((_test._test1 . ,(P "test.o/_test/_test1.scm")))
        (sort (library-fold '_t??t._test? acons '() :paths paths-b)
              (lambda (a b) (string<? (cdr a) (cdr b)))))
 (test* "library-fold ?test.?test"
-       '((_test._test . "test.o/_test/_test.scm"))
+       `((_test._test . ,(P "test.o/_test/_test.scm")))
        (sort (library-fold '?test.?test acons '() :paths paths-b)
              (lambda (a b) (string<? (cdr a) (cdr b)))))
 (test* "library-fold _t??t._test?"
-       '((_test._test1 . "test.o/_test/_test1.scm")
-         (_tset._test2 . "test.o/_tset/_test2.scm"))
+       `((_test._test1 . ,(P "test.o/_test/_test1.scm"))
+         (_tset._test2 . ,(P "test.o/_tset/_test2.scm")))
        (sort (library-fold '_t??t._test? acons '() :paths paths-b :strict? #f)
              (lambda (a b) (string<? (cdr a) (cdr b)))))
 (test* "library-fold _t??t/_test?"
-       '(("_test/_test1" . "test.o/_test/_test1.scm")
-         ("_tset/_test2" . "test.o/_tset/_test2.scm"))
+       `(("_test/_test1" . ,(P "test.o/_test/_test1.scm"))
+         ("_tset/_test2" . ,(P "test.o/_tset/_test2.scm")))
        (sort (library-fold "_t??t/_test?" acons '() :paths paths-b)
              (lambda (a b) (string<? (cdr a) (cdr b)))))
 (test* "library-fold _t??t?/_test?"
@@ -250,12 +262,12 @@
        (sort (library-fold "_t??t?/_test?" acons '() :paths paths-b)
              (lambda (a b) (string<? (cdr a) (cdr b)))))
 
-(test* "library-map" '((_test._test . "test.o/_test/_test.scm")
-                       (_test._test1 . "test.o/_test/_test1.scm"))
+(test* "library-map" `((_test._test . ,(P "test.o/_test/_test.scm"))
+                       (_test._test1 . ,(P "test.o/_test/_test1.scm")))
        (sort (library-map '_test.* cons :paths paths-b)
              (lambda (a b) (string<? (cdr a) (cdr b)))))
-(test* "library-for-each" '((_test._test . "test.o/_test/_test.scm")
-                            (_test._test1 . "test.o/_test/_test1.scm"))
+(test* "library-for-each" `((_test._test .  ,(P "test.o/_test/_test.scm"))
+                            (_test._test1 . ,(P "test.o/_test/_test1.scm")))
        (let ((p '()))
          (library-for-each '_test.*
                            (lambda (x y) (push! p (cons x y)))
