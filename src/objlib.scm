@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: objlib.scm,v 1.3 2005-08-25 08:28:20 shirok Exp $
+;;;  $Id: objlib.scm,v 1.4 2006-03-10 07:28:16 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -560,11 +560,13 @@
 (define-method object-apply ((self <regmatch>) (i <integer>))
   (rxmatch-substring self i))
 (define-method object-apply ((self <regmatch>) (s <symbol>))
-  (object-apply self s 0))
-(define-method object-apply ((self <regmatch>) (s <symbol>) (i <integer>))
   (case s
-    ((before) (rxmatch-before self i))
-    ((after)  (rxmatch-after self i))
+    ((before after) (object-apply self s 0))
+    (else (rxmatch-substring self s))))
+(define-method object-apply ((self <regmatch>) (s <symbol>) group)
+  (case s
+    ((before) (rxmatch-before self group))
+    ((after)  (rxmatch-after self group))
     (else
      (errorf "bad symbol argument to ~s: ~s: must be either 'before or 'after"
              self s))))

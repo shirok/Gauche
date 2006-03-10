@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with utf-8.
 
-;; $Id: utf-8.scm,v 1.6 2003-02-28 02:03:58 shirok Exp $
+;; $Id: utf-8.scm,v 1.7 2006-03-10 07:28:16 shirok Exp $
 
 (use gauche.test)
 
@@ -540,6 +540,31 @@
 
 (test* "regexp" "あい"
        (cond ((rxmatch #/([^a]+)い/ "aあいaう")
+              => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp" "う"
+       (cond ((rxmatch #/(?<=[あい]+)う/ "あいう")
+              => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp" #f
+       (cond ((rxmatch #/(?<=[あい]+)う/ "aあいaう")
+              => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp" "う"
+       (cond ((rxmatch #/(?<=[^あいう]+)う/ "えおう")
+              => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp" "う"
+       (cond ((rxmatch #/(?<=.あ.)う/ "aあaう")
+              => rxmatch-substring)
+             (else #f)))
+
+(test* "regexp" #f
+       (cond ((rxmatch #/(?<=.あ.)う/ "あaaう")
               => rxmatch-substring)
              (else #f)))
 

@@ -2,7 +2,7 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.21 2005-07-02 12:34:08 shirok Exp $
+;; $Id: regexp.scm,v 1.22 2006-03-10 07:28:16 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -18,6 +18,53 @@
               (map (lambda (n) (rxmatch-substring match n))
                    (iota (rxmatch-num-matches match)))))
         (else #f)))
+
+;;-------------------------------------------------------------------------
+(test-section "regexp-parse")
+
+(define-syntax test-regexp-parse
+  (syntax-rules ()
+    ((_ re ast)
+     (test* #`"regexp-parse \",re\"" ast (regexp-parse re)))))
+
+(test-regexp-parse "a" '(0 #f #\a))
+(test-regexp-parse "ab" '(0 #f #\a #\b))
+(test-regexp-parse "(?:ab)" '(0 #f (seq #\a #\b)))
+(test-regexp-parse "(a)" '(0 #f (1 #f #\a)))
+(test-regexp-parse "a?" '(0 #f (rep 0 1 #\a)))
+(test-regexp-parse "a*" '(0 #f (rep 0 #f #\a)))
+(test-regexp-parse "a+" '(0 #f (rep 1 #f #\a)))
+(test-regexp-parse "a{3,5}" '(0 #f (rep 3 5 #\a)))
+(test-regexp-parse "a{3}" '(0 #f (rep 3 3 #\a)))
+(test-regexp-parse "a|b" '(0 #f (alt #\a #\b)))
+(test-regexp-parse "[ab]" '(0 #f #[ab]))
+(test-regexp-parse "[^ab]" '(0 #f (comp . #[ab])))
+(test-regexp-parse "." '(0 #f any))
+(test-regexp-parse "^" '(0 #f bol))
+(test-regexp-parse "$" '(0 #f eol))
+(test-regexp-parse "\\b" '(0 #f wb))
+(test-regexp-parse "\\B" '(0 #f nwb))
+(test-regexp-parse "(?>a)" '(0 #f (once #\a)))
+(test-regexp-parse "a*+" '(0 #f (once (rep 0 #f #\a))))
+(test-regexp-parse "a++" '(0 #f (once (rep 1 #f #\a))))
+(test-regexp-parse "a?+" '(0 #f (once (rep 0 1 #\a))))
+(test-regexp-parse "(?i:a)" '(0 #f (seq-uncase #\a)))
+(test-regexp-parse "(?-i:a)" '(0 #f (seq-case #\a)))
+(test-regexp-parse "(?=a)" '(0 #f (assert #\a)))
+(test-regexp-parse "(?!a)" '(0 #f (nassert #\a)))
+(test-regexp-parse "(?<=ab)" '(0 #f (assert (lookbehind #\a #\b))))
+(test-regexp-parse "(?<!ab)" '(0 #f (nassert (lookbehind #\a #\b))))
+(test-regexp-parse "(?<name>a)" '(0 #f (1 name #\a)))
+(test-regexp-parse "(?(?=)y)" '(0 #f (cpat (assert) (#\y) #f)))
+(test-regexp-parse "(?(?=)y|n)" '(0 #f (cpat (assert) (#\y) (#\n))))
+(test-regexp-parse "(?(?<=)y)" '(0 #f (cpat (assert (lookbehind)) (#\y) #f)))
+(test-regexp-parse "(?(?<=)y|n)" '(0 #f (cpat (assert (lookbehind)) (#\y) (#\n))))
+(test-regexp-parse "()(?(1)y)" '(0 #f (1 #f) (cpat 1 (#\y) #f)))
+(test-regexp-parse "()(?(1)y|n)"'(0 #f (1 #f) (cpat 1 (#\y) (#\n))))
+(test-regexp-parse "()\\1" '(0 #f (1 #f) (backref . 1)))
+(test-regexp-parse "(?<name>)\\k<name>" '(0 #f (1 name) (backref . 1)))
+(test-regexp-parse "(?<name>)(?<name>)\\k<name>"
+                   '(0 #f (1 name) (2 name) (alt (backref . 2) (backref . 1))))
 
 ;;-------------------------------------------------------------------------
 (test-section "basics")
@@ -104,6 +151,10 @@
        (match&list #/aa|(ab|(ac))|ad/ "cac"))
 (test* "(aa|(a(b)|a(c))|ad)" '("ac" "ac" "ac" #f "c")
        (match&list #/(aa|(a(b)|a(c))|ad)/ "cac"))
+(test* "(.)*" '("abc" "c")
+       (match&list #/(.)*/ "abc"))
+(test* "(a([^a])*)*" '("abcaBC" "aBC" "C")
+       (match&list #/(a([^a])*)*/ "abcaBC"))
 (test* "b|()|a" '("" "")
        (match&list #/b|()|a/ "cac"))
 
@@ -308,6 +359,12 @@
        (match&list #/ab??./ "abbaac"))
 (test* "a(hoge)??hoge" '("ahoge" #f)
        (match&list #/a(hoge)??hoge/ "ahogehoge"))
+(test* "(foo)??bar" '("foobar" "foo")
+       (match&list #/(foo)??bar/ "foobar"))
+(test* "(foo)??bar" '("foobar" "foo")
+       (match&list #/(foo)??bar/ "foofoobar"))
+(test* "(foo)*?bar" '("foofoobar" "foo")
+       (match&list #/(foo)*?bar/ "foofoobar"))
 
 ;;-------------------------------------------------------------------------
 (test-section "character class")
@@ -442,7 +499,7 @@
        (match&list #/(\d{1,3})(\d{2,})/ "a1234b"))
 (test* "(\\d{1,3})(\\d{0,2})" '("1234" "123" "4")
        (match&list #/(\d{1,3})(\d{0,2})/ "a1234b"))
-(test* "(\\d{2}){2}" '("1234" "12")
+(test* "(\\d{2}){2}" '("1234" "34")
        (match&list #/(\d{2}){2}/ "a12345b"))
 
 (test* "{2}" *test-error*  (regexp? (string->regexp "{2}")))
@@ -530,56 +587,231 @@
        (rxmatch-substring (#/^(?i:a*).$/ "Ab")))
 
 ;;-------------------------------------------------------------------------
-(test-section "look-ahead assertion")
+(test-section "backreference")
+(test* "^(.)\\1$" '("aa" "a")
+       (match&list #/^(.)\1$/ "aa"))
+(test* "^(.)\\1$" #f
+       (match&list #/^(.)\1$/ "ab"))
+(test* "(.+)\\1" '("123123" "123")
+       (match&list #/(.+)\1/ "a123123j"))
+(test* "/(.+)\\1/i" '("AbCaBC" "AbC")
+       (match&list #/(.+)\1/i "AbCaBC"))
+(test* "/(.+)\\1/i" #f
+       (match&list #/(.+)\1/ "AbCAb1"))
+(test* "^\\1(.)$" *test-error*
+       (string->regexp "^\\1(.)"))
+(test* "^(\\1)$" *test-error*
+       (string->regexp "^(\\1)$"))
 
-(test* "/^(?=ab(de))(abd)(e)/" '("abde" "de" "abd" "e")
+;;-------------------------------------------------------------------------
+(test-section "independent subexpression")
+(test* "(?>.*\\/)foo" #f
+       (match&list #/(?>.*\/)foo/ "/this/is/a/long/line/"))
+(test* "(?>.*\\/)foo" '("/this/is/a/long/line/foo")
+       (match&list #/(?>.*\/)foo/ "/this/is/a/long/line/foo"))
+(test* "(?>(\.\d\d[1-9]?))\d+" '(".230003938" ".23")
+       (match&list #/(?>(\.\d\d[1-9]?))\d+/ "1.230003938"))
+(test* "(?>(\.\d\d[1-9]?))\d+" '(".875000282" ".875")
+       (match&list #/(?>(\.\d\d[1-9]?))\d+/ "1.875000282"))
+(test* "(?>(\.\d\d[1-9]?))\d+" #f
+       (match&list #/(?>(\.\d\d[1-9]?))\d+/ "1.235"))
+(test* "^((?>\\w+)|(?>\\s+))*$" '("foo bar" "bar")
+       (match&list #/^((?>\w+)|(?>\s+))*$/ "foo bar"))
+(test* "a*+a" #f
+       (match&list #/a*+a/ "aaa"))
+(test* "a*+b" '("aab")
+       (match&list #/a*+b/ "aab"))
+(test* "a++a" #f
+       (match&list #/a++a/ "aaa"))
+(test* "a++b" '("aab")
+       (match&list #/a++b/ "aab"))
+(test* "(a?+)a" #f
+       (match&list #/a?+a/ "a"))
+(test* "(a?+)b" '("ab")
+       (match&list #/a?+b/ "ab"))
+
+;;-------------------------------------------------------------------------
+(test-section "lookahead assertion")
+
+(test* "^(?=ab(de))(abd)(e)" '("abde" "de" "abd" "e")
        (match&list #/^(?=ab(de))(abd)(e)/ "abde"))
-(test* "/^(?!(ab)de|x)(abd)(f)/" '("abdf" #f "abd" "f")
+(test* "^(?!(ab)de|x)(abd)(f)" '("abdf" #f "abd" "f")
        (match&list #/^(?!(ab)de|x)(abd)(f)/ "abdf"))
-(test* "/^(?=(ab(cd)))(ab)/" '("ab" "abcd" "cd" "ab")
+(test* "^(?=(ab(cd)))(ab)" '("ab" "abcd" "cd" "ab")
        (match&list #/^(?=(ab(cd)))(ab)/ "abcd"))
-(test* "/\w+(?=\t)/" '("brown")
+(test* "\w+(?=\t)" '("brown")
        (match&list #/\w+(?=\t)/ "the quick brown\t fox"))
-(test* "/foo(?!bar)(.*)/" '("foolish see?" "lish see?")
+(test* "foo(?!bar)(.*)" '("foolish see?" "lish see?")
        (match&list #/foo(?!bar)(.*)/ "foobar is foolish see?"))
-(test* "/(?:(?!foo)...|^.{0,2})bar(.*)/" '("rowbar etc" " etc")
+(test* "(?:(?!foo)...|^.{0,2})bar(.*)" '("rowbar etc" " etc")
        (match&list #/(?:(?!foo)...|^.{0,2})bar(.*)/ "foobar crowbar etc"))
-(test* "/(?:(?!foo)...|^.{0,2})bar(.*)/" '("barrel" "rel")
+(test* "(?:(?!foo)...|^.{0,2})bar(.*)" '("barrel" "rel")
        (match&list #/(?:(?!foo)...|^.{0,2})bar(.*)/ "barrel"))
-(test* "/(?:(?!foo)...|^.{0,2})bar(.*)/" '("2barrel" "rel")
+(test* "(?:(?!foo)...|^.{0,2})bar(.*)" '("2barrel" "rel")
        (match&list #/(?:(?!foo)...|^.{0,2})bar(.*)/ "2barrel"))
-(test* "/(?:(?!foo)...|^.{0,2})bar(.*)/" '("A barrel" "rel")
+(test* "(?:(?!foo)...|^.{0,2})bar(.*)" '("A barrel" "rel")
        (match&list #/(?:(?!foo)...|^.{0,2})bar(.*)/ "A barrel"))
-(test* "/^(\D*)(?=\d)(?!123)/" '("abc" "abc")
+(test* "^(\D*)(?=\d)(?!123)" '("abc" "abc")
        (match&list #/^(\D*)(?=\d)(?!123)/ "abc456"))
-(test* "/^(\D*)(?=\d)(?!123)/" #f
+(test* "^(\D*)(?=\d)(?!123)" #f
        (match&list #/^(\D*)(?=\d)(?!123)/ "abc123"))
-(test* "/(?!^)abc/" '("abc")
+(test* "(?!^)abc" '("abc")
        (match&list #/(?!^)abc/ "the abc"))
-(test* "/(?!^)abc/" #f
+(test* "(?!^)abc" #f
        (match&list #/(?!^)abc/ "abc"))
-(test* "/(?=^)abc/" '("abc")
+(test* "(?=^)abc" '("abc")
        (match&list #/(?=^)abc/ "abc"))
-(test* "/(?=^)abc/" #f
+(test* "(?=^)abc" #f
        (match&list #/(?=^)abc/ "the abc"))
-(test* "/(\.\d\d((?=0)|\d(?=\d)))/" '(".23" ".23" "")
+(test* "(\.\d\d((?=0)|\d(?=\d)))" '(".23" ".23" "")
        (match&list #/(\.\d\d((?=0)|\d(?=\d)))/ "1.230003938"))
-(test* "/(\.\d\d((?=0)|\d(?=\d)))/" '(".875" ".875" "5")
+(test* "(\.\d\d((?=0)|\d(?=\d)))" '(".875" ".875" "5")
        (match&list #/(\.\d\d((?=0)|\d(?=\d)))/ "1.875000282"))
-(test* "/(\.\d\d((?=0)|\d(?=\d)))/" #f
+(test* "(\.\d\d((?=0)|\d(?=\d)))" #f
        (match&list #/(\.\d\d((?=0)|\d(?=\d)))/ "1.235"))
-(test* "/^\D*(?!123)/" '("AB")
+(test* "^\D*(?!123)" '("AB")
        (match&list #/^\D*(?!123)/ "ABC123"))
-(test* "/^(\D*)(?=\d)(?!123)/" '("ABC" "ABC")
+(test* "^(\D*)(?=\d)(?!123)" '("ABC" "ABC")
        (match&list #/^(\D*)(?=\d)(?!123)/ "ABC445"))
-(test* "/^(\D*)(?=\d)(?!123)/" #f
+(test* "^(\D*)(?=\d)(?!123)" #f
        (match&list #/^(\D*)(?=\d)(?!123)/ "ABC123"))
-(test* "/a(?!b)./" '("ad")
+(test* "a(?!b)." '("ad")
        (match&list #/a(?!b)./ "abad"))
-(test* "/a(?=d)./" '("ad")
+(test* "a(?!b)" '("a")
+       (match&list #/a(?!b)/ "abad"))
+(test* "a(?=d)." '("ad")
        (match&list #/a(?=d)./ "abad"))
-(test* "/a(?=c|d)./" '("ad")
+(test* "a(?=c|d)." '("ad")
        (match&list #/a(?=c|d)./ "abad"))
+
+;;-------------------------------------------------------------------------
+(test-section "lookbehind assertion")
+(test* "(?<=a)b" #f
+       (match&list #/(?<=a)b/ "b"))
+(test* "(?<=a)b" '("b")
+       (match&list #/(?<=a)b/ "ab"))
+(test* "(?<=a+)b" '("b")
+       (match&list #/(?<=a+)b/ "aab"))
+(test* "(?<=x[yz])b" '("b")
+       (match&list #/(?<=x[yz])b/ "xzb"))
+(test* "(?<=zyx)b" #f
+       (match&list #/(?<=zyx)b/ "xyzb"))
+(test* "(?<=[ab]+)c" '("c")
+       (match&list #/(?<=[ab]+)c/ "abc"))
+(test* "(?<!<[^>]+)foo" #f
+       (match&list #/(?<!<[^>]*)foo/ "<foo>"))
+(test* "(?<!<[^>]+)foo" '("foo")
+       (match&list #/(?<!<[^>]*)foo/ "<bar>foo"))
+(test* "(?<=^a)b" '("b")
+       (match&list #/(?<=^a)b/ "ab"))
+(test* "(?<=^)b" #f
+       (match&list #/(?<=^)b/ "ab"))
+(test* "(?<=^)b" '("b")
+       (match&list #/(?<=^)b/ "b"))
+(test* ".(?<=^)b" '("^b")
+       (match&list #/.(?<=^)b/ "a^b"))
+(test* "(?<=^a$)" '("")
+       (match&list #/(?<=^a$)/ "a"))
+(test* "(?<=^a$)b" '("b")
+       (match&list #/(?<=^a$)b/ "a$b"))
+(test* "(?<=(a))b" '("b" "a")
+       (match&list #/(?<=(a))b/ "ab"))
+(test* "(?<=(a)(b))c" '("c" "a" "b")
+       (match&list #/(?<=(a)(b))c/ "abc"))
+(test* "(?<=(a)|(b))c" '("c" #f "b")
+       (match&list #/(?<=(a)|(b))c/ "bc"))
+(test* "(?<=(?<!foo)bar)baz" '("baz")
+       (match&list #/(?<=(?<!foo)bar)baz/ "abarbaz"))
+(test* "(?<=(?<!foo)bar)baz" #f
+       (match&list #/(?<=(?<!foo)bar)baz/ "foobarbaz"))
+(test* "(?<=\d{3})(?<!999)foo" '("foo")
+       (match&list #/(?<=\d{3})(?<!999)foo/ "865foo"))
+(test* "(?<=\d{3})(?<!999)foo" #f
+       (match&list #/(?<=\d{3})(?<!999)foo/ "999foo"))
+(test* "(?<=(?>a*))" *test-error*
+       (string->regexp "(?<=(?>a*))"))
+(test* "(abc)...(?<=\\1)" '("abcabc" "abc")
+       (match&list #/(abc)...(?<=\1)/ "abcabc"))
+(test* "/(abC)...(?<=\\1)/i" '("abCAbc" "abC")
+       (match&list #/(abC)...(?<=\1)/i "abCAbc"))
+
+;;-------------------------------------------------------------------------
+(test-section "named group")
+(test* "(?<foo>a)" '("a" "a")
+       (match&list #/(?<foo>a)/ "a"))
+(test* "(?<foo>a)" "a"
+       (let1 m (#/(?<foo>a)/ "a")
+         (m 'foo)))
+(test* "(?<foo>a)(?<bar>.*)" '("a" "bcd")
+       (let1 m (#/(?<foo>a)(?<bar>.*)/ "abcd")
+         (list (m 'foo) (m 'bar))))
+(test* "(?<foo>a)(?<bar>.*)" '("abcd" "a" "bcd")
+       (match&list #/(?<foo>a)(?<bar>.*)/ "abcd"))
+(test* "(?<foo>a)" *test-error*
+       (let1 m (#/(?<foo>a)/ "abcd")
+         (m 'bar)))
+(test* "(?<foo>^a$)" '("a" "a")
+       (match&list #/(?<foo>^a$)/ "a"))
+(test* "(?<foo>^a$)" #f
+       (match&list #/(?<foo>^a$)/ "ab"))
+(test* "(?<name-with-hyphen>a)" '("a" "a")
+       (match&list #/(?<name-with-hyphen>a)/ "a"))
+(test* "(?<host>\d+.\d+.\d+.\d+)|(?<host>[\w.]+)"
+       '("127.0.0.1" "127.0.0.1" #f "127.0.0.1")
+       (let1 m (#/(?<host>\d+.\d+.\d+.\d+)|(?<host>[\w.]+)/ "127.0.0.1")
+         (list (m 0) (m 1) (m 2) (m 'host))))
+(test* "(?<host>\d+.\d+.\d+.\d+)|(?<host>[\w.]+)"
+       '("foo.com" #f "foo.com" "foo.com")
+       (let1 m (#/(?<host>\d+.\d+.\d+.\d+)|(?<host>[\w.]+)/ "foo.com")
+         (list (m 0) (m 1) (m 2) (m 'host))))
+(test* "(?<foo>.+)\\k<foo>" '("abcabc" "abc")
+       (match&list #/(?<foo>.+)\k<foo>/ "abcabc"))
+(test* "(?<foo>.+)\\k<foo>" #f
+       (match&list #/(?<foo>.+)\k<foo>/ "abcdef"))
+(test* "\\k<foo>" *test-error*
+       (regexp-parse "\\k<foo>"))
+(test* "rxmatch-before" "abc"
+       (rxmatch-before (#/(?<foo>def)/ "abcdefghi") 'foo))
+(test* "rxmatch-after" "ghi"
+       (rxmatch-after (#/(?<foo>def)/ "abcdefghi") 'foo))
+(test* "rxmatch-start" 3
+       (rxmatch-start (#/(?<foo>def)/ "abcdefghi") 'foo))
+(test* "rxmatch-end" 6
+       (rxmatch-end (#/(?<foo>def)/ "abcdefghi") 'foo))
+
+;;-------------------------------------------------------------------------
+(test-section "conditional subexpression")
+(test* "(a)(?(1)b)" '("ab" "a")
+       (match&list #/(a)(?(1)b)/ "ab"))
+(test* "(a)(?(1)b)" #f
+       (match&list #/(a)(?(1)b)/ "aa"))
+(test* "(a)(?(1)b|c)" #f
+       (match&list #/(a)(?(1)b)/ "ac"))
+(test* "(a)?(?(1)b|c)" #f
+       (match&list #/(a)?(?(1)b|c)/ "xb"))
+(test* "(a)?(?(1)b|c)" '("c" #f)
+       (match&list #/(a)?(?(1)b|c)/ "xc"))
+(test* "(?(?<=a)b)" '("b")
+       (match&list #/(?(?<=a)b)/ "ab"))
+(test* "(?(?<=a)b)" #f
+       (match&list #/(?(?<=a)b)/ "ac"))
+(test* "(?(?<=a)b)" #f
+       (match&list #/(?(?<=a)b)/ "xb"))
+(test* "(?(?<=a)b|c)" '("b")
+       (match&list #/(?(?<=a)b)/ "ab"))
+(test* "(?(?<=a)b|c)" #f
+       (match&list #/(?(?<=a)b)/ "ac"))
+(test* "(?(?a)b|c)" *test-error*
+       (regexp-parse "(?(?a)b|c)"))
+(test* "()(?(1))" '("" "")
+       (match&list #/()(?(1))/ ""))
+
+(test* "()(?(" *test-error*
+       (regexp-parse "()((?("))
+(test* "()(?(1" *test-error*
+       (regexp-parse "()((?(1"))
+(test* "()(?(1)b|c|d)" *test-error*
+       (regexp-parse "()(?(1)b|c|d)"))
 
 ;;-------------------------------------------------------------------------
 (test-section "regexp macros")
@@ -755,6 +987,22 @@
 (test* "object-apply regmatch (symbol)" '("..." ".14..." "pi=" "pi=3.")
        (list (match 'after) (match 'after 1)
              (match 'before) (match 'before 2)))
+
+(set! match (#/(?<int>\d+)\.(?<frac>\d+)/ "pi=3.14..."))
+
+(test* "object-apply regmatch (index)" '("3.14" "3" "14" "3" "14")
+       (list (match) (match 1) (match 2)
+             (match 'int) (match 'frac)))
+
+(test* "object-apply regmatch (symbol)"
+       '("..." ".14..." ".14..." "pi=" "pi=3." "pi=3.")
+       (list (match 'after) (match 'after 1) (match 'after 'int)
+             (match 'before) (match 'before 2) (match 'before 'frac)))
+
+(test* "object-apply regmatch (named submatch)"
+       '("..." ".14..." ".14..." "pi=" "pi=3." "pi=3.")
+       (list (match 'after) (match 'after 1) (match 'after 'int)
+             (match 'before) (match 'before 2) (match 'before 'frac)))
 
 ;;-------------------------------------------------------------------------
 (test-section "regexp quote")

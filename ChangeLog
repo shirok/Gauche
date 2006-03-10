@@ -1,5 +1,10 @@
 2006-03-09  Shiro Kawai  <shiro@acm.org>
 
+	* src/regexp.c etc.  Added support of backreferences, named captures,
+	  and lookback assertions to regexp.  (Patch from Rui Ueyama).
+	* src/gauche/regexp.h: Splitted regexp-related objects into this
+	  header; their internals are not of general interest.
+
 	* lib/dbi.scm (dbi-execute-query): the adapter to the legacy dbd
 	  interface passes :pass-through option to the dbi-do for compatibiliy.
 	  This change doesn't affect the new dbd interface.

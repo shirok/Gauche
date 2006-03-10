@@ -3449,6 +3449,13 @@ a single @i{re}, but the matched string isn't saved.
 扱われますが、サブマッチとして保存されません。
 @c COMMON
 
+@item (?<@i{name}>@i{re}@dots{})
+名前つきの補捉とクラスタリング。@code{(@i{re}@dots{})}と同様ですが、
+マッチした文字列に名前@i{name}がつけられます。マッチした文字列には
+インデックスの数字と名前のどちらでも参照できます。
+
+同じ名前を複数回使ってもかまいません。
+
 @item (?i:@i{re}@dots{})
 @itemx (?-i:@i{re}@dots{})
 @c EN
@@ -3475,6 +3482,27 @@ Alternation.  Matches either one of patterns, where each
 pattern is @i{re} @dots{}.
 @c JP
 パターンのいずれかにマッチします。
+@c COMMON
+
+@item \@i{n}
+@c EN
+Backreference.
+@c JP
+バックリファレンス。
+@i{n}番目の補捉カッコに補捉された文字列と一致する場合に、\@i{n}が
+マッチします。@i{n}番目のカッコが繰り返しの中にあり、複数回マッチ
+している場合は、最後にマッチした文字列との比較が行われます。
+
+@item \k<@i{name}>
+@c EN
+@c JP
+名前によるバックリファレンス。
+名前@i{name}を持つ補捉カッコで補捉された文字列と一致する場合に、
+\k<@i{name}>がマッチします。参照しているカッコが繰り返しの中にあり、
+複数回マッチしている場合は、最後にマッチした文字列との比較が行わ
+れます。同じ名前@i{name}を持つ補捉カッコが複数ある場合には、
+それらのカッコの最後にマッチした文字列のいずれかと一致する場合、
+マッチが成功します。
 @c COMMON
 
 @item .
@@ -3540,6 +3568,7 @@ and @code{\B} matches an empty string elsewhere.
 
 @item (?=@i{pattern})
 @itemx (?!@i{pattern})
+@c EN
 Positive/negative lookahead assertion.  
 Match succeeds if @i{pattern} matches (or does not match) 
 the input string from the current position, but this doesn't
@@ -3549,9 +3578,49 @@ regular expression is applied again from the current position.
 For example, the following expression matches strings
 that might be a phone number, except the numbers in Japan
 (i.e. ones that begin with "81").
+@c JP
+肯定および否定の先読み。
+@i{pattern}が文字列の現在の位置にマッチする(あるいはマッチ
+しない)ときにマッチが成功しますが、現在の位置は変更しない
+ので、後に続く正規表現は現在と同じ位置から適用されます。
+
+例えば、次の表現は、電話番号のうち日本の番号("81"から始まるもの)
+を除く文字列にマッチします。
+@c COMMON
 @example
 \+(?!81)\d@{9,@}
 @end example
+
+@item (?<=@i{pattern})
+@itemx (?<!@i{pattern})
+@c EN
+Positive/negative lookbehind assertion.
+@c JP
+肯定の後読みおよび否定の後読み。
+現在の位置の左側に@i{pattern}にマッチする文字列がある場合に
+マッチが成功(あるいは失敗)します。先読みと同様、現在の位置は
+変更しません。
+
+内部的にこの表現は、@i{pattern}を逆転させたうえで、現在の位置
+から左に向かってマッチを進めることで実現されています。したがって、
+@i{pattern}には任意のものにマッチする表現を含めることができますが、
+マッチの順番や長さが重要な場合(例えば2通りにマッチしうる捕捉の
+カッコ)などは、左から右に現在位置が進むときとは異なる場所に
+マッチするかもしれません。
+
+@item (?>@i{pattern})
+アトミックなクラスタリング。@i{pattern}がいったんマッチすると、その後
+@i{pattern}の中でバックトラックを行いません。
+@c COMMON
+
+@item @i{re}*+
+@itemx @i{re}++
+@itemx @i{re}?+
+@c EN
+They are the same as (?>@i{re}*), (?>@i{re}+), (?>@i{re}?), respectively.
+@c JP
+それぞれ(?>@i{re}*)、(?>@i{re}+)、(?>@i{re}?)と同じです。
+@c COMMON
 
 @end table
 
@@ -3643,7 +3712,10 @@ submatches.  It is an error to pass other values to @var{I}.
 @var{i}が省略されるか0の場合、これらの手続きはそれぞれ一致した
 文字列の開始インデックス、終了インデックス、および一致した部分文字列を
 返します。@var{i}に正の整数が与えられた場合は、@var{i}番目のサブマッチ
-に関する情報を返します。@var{i}にそれ以外の値を与えるのはエラーです。
+に関する情報を返します。@var{i}にシンボルが与えられた場合は、名前
+@var{i}を持つサブマッチの情報を返します。同じ名前@var{i}を持つ複数の
+サブマッチがある場合には、成功したサブマッチの情報を返します。
+@var{i}にそれ以外の値を与えるのはエラーです。
 @c COMMON
 
 @c EN
@@ -3704,7 +3776,8 @@ If optional argument is given, the @var{i}-th submatch is used
 @c JP
 マッチオブジェクト@var{match}の前および後の文字列を返します。
 正の整数が@var{i}に与えられた場合はi番目のサブマッチの前および後の
-文字列を返します。
+文字列を返します。シンボルが与えられた場合は、その名前を持つ
+サブマッチの前後の文字列を返します。
 @c COMMON
 @example
 (define match (rxmatch #/(\d+)\.(\d+)/ "pi=3.14..."))
@@ -3729,11 +3802,12 @@ They works the same as @code{(rxmatch-substring @var{regmatch} @var{index})},
 This allows shorter notation.  @xref{Applicable objects}, for
 generic mechanism used to implement this.
 @c JP
-マッチオブジェクトは直接整数のインデックスもしくはシンボル@code{before}または
-@code{after}に対して適用することができます。
-それぞれ@code{(rxmatch-substring @var{regmatch} @var{index})}、
-@code{(rxmatch-before @var{regmatch})}、および
-@code{(rxmatch-after @var{regmatch})}と同じ動作をしますが、
+マッチオブジェクトは直接整数のインデックスもしくはシンボルに対して適用することが
+できます。整数に適用したときは@code{(rxmatch-substring @var{regmatch} @var{index})}、
+シンボル@code{before}のときは@code{(rxmatch-before @var{regmatch})}、シンボル
+@code{after}のときは@code{(rxmatch-after @var{regmatch})}、そのほかのシンボルのときは
+@code{(rxmatch-substring @var{regmatch} @var{symbol})}と同じ動作をします。
+
 表記が短くて済みます。
 この機能は@ref{Applicable objects} で述べているメカニズムを使って実装されています。
 @c COMMON
@@ -3741,15 +3815,27 @@ generic mechanism used to implement this.
 @example
 (define match (#/(\d+)\.(\d+)/ "pi=3.14..."))
 
-(match)           @result{} "3.14"
-(match 1)         @result{} "3"
-(match 2)         @result{} "14"
+  (match)           @result{} "3.14"
+  (match 1)         @result{} "3"
+  (match 2)         @result{} "14"
 
-(match 'after)    @result{} "..."
-(match 'after 1)  @result{} ".14..."
+  (match 'after)    @result{} "..."
+  (match 'after 1)  @result{} ".14..."
 
-(match 'before)   @result{} "pi="
-(match 'before 2) @result{} "pi=3."
+  (match 'before)   @result{} "pi="
+  (match 'before 2) @result{} "pi=3."
+
+(define match (#/(?<integer>\d+)\.(?<fraction>(\d+)/ "pi=3.14..."))
+
+  (match 1)         @result{} "3"
+  (match 2)         @result{} "14"
+
+  (match 'integer)  @result{} "3"
+  (match 'fraction) @result{} "14"
+
+  (match 'after 'integer)   @result{} ".14..."
+  (match 'before 'fraction) @result{} "pi=3."
+
 @end example
 @end deftp
 
@@ -12078,8 +12164,8 @@ once you return from @var{handler}).
 @var{handler}が手続きの場合、プロセスが指定されたシグナル(のうちのいずれか)を
 受けた時に、そのシグナル番号を引数として@var{handler}が呼ばれます。
 @var{handler}の中でできる操作にはほとんど制限がありません。
-@var{handler}からエラーを投げたり、他の場所で補足された継続を呼ぶことも
-できます。但し、@var{handler}内で補足した継続は@var{handler}から
+@var{handler}からエラーを投げたり、他の場所で補捉された継続を呼ぶことも
+できます。但し、@var{handler}内で補捉した継続は@var{handler}から
 戻った時点で無効になります。
 @c COMMON
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.447 2006-03-05 08:00:35 shirok Exp $
+ *  $Id: gauche.h,v 1.448 2006-03-10 07:28:16 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2499,17 +2499,8 @@ SCM_EXTERN void Scm_ReportError(ScmObj e);
  * REGEXP
  */
 
-struct ScmRegexpRec {
-    SCM_HEADER;
-    ScmString *pattern;
-    const unsigned char *code;
-    int numGroups;
-    int numCodes;
-    ScmCharSet **sets;
-    int numSets;
-    int flags;
-    ScmString *mustMatch;
-};
+/* The definition of Scm_RegexpRec and Scm_RegeMatchRec is hidden
+   in gauche/regexp.h */
 
 SCM_CLASS_DECL(Scm_RegexpClass);
 #define SCM_CLASS_REGEXP          (&Scm_RegexpClass)
@@ -2526,30 +2517,16 @@ SCM_EXTERN ScmObj Scm_RegOptimizeAST(ScmObj ast);
 SCM_EXTERN ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *input);
 SCM_EXTERN void Scm_RegDump(ScmRegexp *rx);
 
-struct ScmRegMatchRec {
-    SCM_HEADER;
-    const char *input;
-    int inputSize;
-    int inputLen;
-    int numMatches;
-    struct ScmRegMatchSub {
-        int start;
-        int length;
-        const char *startp;
-        const char *endp;
-    } *matches;
-};
-
 SCM_CLASS_DECL(Scm_RegMatchClass);
 #define SCM_CLASS_REGMATCH        (&Scm_RegMatchClass)
 #define SCM_REGMATCH(obj)         ((ScmRegMatch*)obj)
 #define SCM_REGMATCHP(obj)        SCM_XTYPEP(obj, SCM_CLASS_REGMATCH)
 
-SCM_EXTERN ScmObj Scm_RegMatchSubstr(ScmRegMatch *rm, int i);
-SCM_EXTERN ScmObj Scm_RegMatchStart(ScmRegMatch *rm, int i);
-SCM_EXTERN ScmObj Scm_RegMatchEnd(ScmRegMatch *rm, int i);
-SCM_EXTERN ScmObj Scm_RegMatchAfter(ScmRegMatch *rm, int i);
-SCM_EXTERN ScmObj Scm_RegMatchBefore(ScmRegMatch *rm, int i);
+SCM_EXTERN ScmObj Scm_RegMatchSubstr(ScmRegMatch *rm, ScmObj obj);
+SCM_EXTERN ScmObj Scm_RegMatchStart(ScmRegMatch *rm, ScmObj obj);
+SCM_EXTERN ScmObj Scm_RegMatchEnd(ScmRegMatch *rm, ScmObj obj);
+SCM_EXTERN ScmObj Scm_RegMatchAfter(ScmRegMatch *rm, ScmObj obj);
+SCM_EXTERN ScmObj Scm_RegMatchBefore(ScmRegMatch *rm, ScmObj obj);
 SCM_EXTERN void Scm_RegMatchDump(ScmRegMatch *match);
 
 /*-------------------------------------------------------

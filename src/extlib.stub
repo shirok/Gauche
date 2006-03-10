@@ -1,7 +1,7 @@
 ;;;
 ;;; extlib.stub - extra built-ins
 ;;;  
-;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.260 2006-01-27 10:04:46 shirok Exp $
+;;; $Id: extlib.stub,v 1.261 2006-03-10 07:28:16 shirok Exp $
 ;;;
 
 "
@@ -38,6 +38,7 @@
 #include <gauche/arch.h>
 #include <gauche/class.h>
 #include <gauche/vminsn.h>
+#include <gauche/regexp.h>
 "
 
 ;;
@@ -579,35 +580,35 @@
   else Scm_Error(\"regexp required, but got %S\", regexp);
   SCM_RETURN(Scm_RegExec(rx, str));")
 
-(define-cproc rxmatch-substring (match &optional (i::<fixnum> 0))
+(define-cproc rxmatch-substring (match &optional (obj 0))
   "  if (SCM_FALSEP(match)) SCM_RETURN(SCM_FALSE);
   if (!SCM_REGMATCHP(match))
     Scm_Error(\"regexp match object required, but got %S\", match);
-  SCM_RETURN(Scm_RegMatchSubstr(SCM_REGMATCH(match), i));")
+  SCM_RETURN(Scm_RegMatchSubstr(SCM_REGMATCH(match), obj));")
 
-(define-cproc rxmatch-start (match &optional (i::<fixnum> 0))
+(define-cproc rxmatch-start (match &optional (obj 0))
   "  if (SCM_FALSEP(match)) SCM_RETURN(SCM_FALSE);
   if (!SCM_REGMATCHP(match))
     Scm_Error(\"regexp match object required, but got %S\", match);
-  SCM_RETURN(Scm_RegMatchStart(SCM_REGMATCH(match), i));")
+  SCM_RETURN(Scm_RegMatchStart(SCM_REGMATCH(match), obj));")
 
-(define-cproc rxmatch-end (match &optional (i::<fixnum> 0))
+(define-cproc rxmatch-end (match &optional (obj 0))
   "  if (SCM_FALSEP(match)) SCM_RETURN(SCM_FALSE);
   if (!SCM_REGMATCHP(match))
     Scm_Error(\"regexp match object required, but got %S\", match);
-  SCM_RETURN(Scm_RegMatchEnd(SCM_REGMATCH(match), i));")
+  SCM_RETURN(Scm_RegMatchEnd(SCM_REGMATCH(match), obj));")
 
-(define-cproc rxmatch-before (match &optional (i::<fixnum> 0))
+(define-cproc rxmatch-before (match &optional (obj 0))
   "  if (SCM_FALSEP(match)) SCM_RETURN(SCM_FALSE);
   if (!SCM_REGMATCHP(match))
     Scm_Error(\"regexp match object required, but got %S\", match);
-  SCM_RETURN(Scm_RegMatchBefore(SCM_REGMATCH(match), i));")
+  SCM_RETURN(Scm_RegMatchBefore(SCM_REGMATCH(match), obj));")
 
-(define-cproc rxmatch-after (match &optional (i::<fixnum> 0))
+(define-cproc rxmatch-after (match &optional (obj 0))
   "  if (SCM_FALSEP(match)) SCM_RETURN(SCM_FALSE);
   if (!SCM_REGMATCHP(match))
     Scm_Error(\"regexp match object required, but got %S\", match);
-  SCM_RETURN(Scm_RegMatchAfter(SCM_REGMATCH(match), i));")
+  SCM_RETURN(Scm_RegMatchAfter(SCM_REGMATCH(match), obj));")
 
 (define-cproc rxmatch-num-matches (match)
   "  if (SCM_FALSEP(match)) SCM_RETURN(SCM_MAKE_INT(0));

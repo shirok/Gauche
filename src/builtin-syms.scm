@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates builtin symbols
 ;;;
-;;; $Id: builtin-syms.scm,v 1.9 2005-05-24 07:46:14 shirok Exp $
+;;; $Id: builtin-syms.scm,v 1.10 2006-03-10 07:28:16 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (define *unit*
   (make <cgen-unit>
     :name "builtin-syms"
-    :preamble "/* Generated from builtin-syms.scm $Revision: 1.9 $.  DO NOT EDIT */"
+    :preamble "/* Generated from builtin-syms.scm $Revision: 1.10 $.  DO NOT EDIT */"
     :pre-decl "#define LIBGAUCHE_BODY"
     :c-file "builtin-syms.c"
     :h-file "gauche/builtin-syms.h"
@@ -150,8 +150,6 @@
     (alt                       SCM_SYM_ALT)
     (rep                       SCM_SYM_REP)
     (rep-min                   SCM_SYM_REP_MIN)
-    (rep-bound                 SCM_SYM_REP_BOUND)
-    (rep-bound-min             SCM_SYM_REP_BOUND_MIN)
     (rep-while                 SCM_SYM_REP_WHILE)
     (any                       SCM_SYM_ANY)
     (bol                       SCM_SYM_BOL)
@@ -161,12 +159,21 @@
     (comp                      SCM_SYM_COMP)
     (*                         SCM_SYM_STAR)
     (*?                        SCM_SYM_STARQ)
+    (*+                        SCM_SYM_STARP)
     (+                         SCM_SYM_PLUS)
     (+?                        SCM_SYM_PLUSQ)
+    (+?                        SCM_SYM_PLUSP)
     (?                         SCM_SYM_QUESTION)
     (??                        SCM_SYM_QUESTIONQ)
+    (?+                        SCM_SYM_QUESTIONP)
+    (backref                   SCM_SYM_BACKREF)
+    (once                      SCM_SYM_ONCE)
+    (reg                       SCM_SYM_REG)
     (assert                    SCM_SYM_ASSERT)
     (nassert                   SCM_SYM_NASSERT)
+    (lookbehind                SCM_SYM_LOOKBEHIND)
+    (nlookbehind               SCM_SYM_NLOOKBEHIND)
+    (cpat                      SCM_SYM_CPAT)
     (open-paren                SCM_SYM_OPEN_PAREN)
     (close-paren               SCM_SYM_CLOSE_PAREN)
 
