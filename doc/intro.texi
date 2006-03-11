@@ -5,7 +5,7 @@
 @c EN
 This is a users' guide and reference manual of
 the Gauche Scheme system.
-Here I tried to describe Gauche's implementation precisely,
+Here I tried to describe the implementation precisely,
 sometimes referring to background design choices.
 @c JP
 本書はGauche Scheme systemに関する、ユーザのためのガイドと
@@ -40,13 +40,13 @@ GaucheはC言語から呼べる汎用リスト処理ライブラリとしての側面も持っていますが、
 
 @c EN
 For the Scheme side, I tried to make this manual self-contained
-for reader's convenience, i.e. as far as you want to look up
+for the reader's convenience, i.e. as far as you want to look up
 Gauche's features you don't need to refer to other documents.
 For example, description of functions defined in the standard
 documents are included in this manual, instead of saying
 ``see the standard document''.   However, this document is not a verbatim
 copy of the standard documents; sometimes I omit detailed
-discussions in the standard documents for brevity.
+discussions for brevity.
 I put pointers to the original documents, so please consult them if you
 need to refer to the standards.
 @c JP

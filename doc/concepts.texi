@@ -749,10 +749,9 @@ out using |-escape (@xref{Symbols}).
 
 @c EN
 Right now, there's no way to switch these two modes back and forth
-inside the interpreter; an API will be provided in the later versions.
+inside the interpreter.
 @c JP
 今のところ、インタプリタの中から両方のモードを切り替えることはできません。
-将来のバージョンではその方法が提供されるでしょう。
 @c COMMON
 
 
@@ -811,7 +810,7 @@ You have seen this tagline for the other languages.
 And yes, in Gauche, everything is an object in the sense that you can
 query its class, and get various meta information of
 the object at run time.  You can also define a new method
-on any class including built-in classes.
+on any class, including built-in ones.
 
 Note that, however, in CLOS-like paradigm it doesn't really matter
 whether everything is an object or not, because of the following
@@ -882,6 +881,15 @@ or not in CLOS-style object system.
 @c COMMON
 
 @c EN
+To step into the details a bit, the methods are belong to a
+@emph{generic function}, which is responsible for dispatching
+appropriate methods.
+@c JP
+少し詳しいことを言えば、メソッドは@emph{ジェネリック関数}に属しており、
+ジェネリック関数が適切なメソッドを選ぶ役割を果たします。
+@c COMMON
+
+@c EN
 @item Class is also an instance.
 By default, a class is also an instance of class
 @code{<class>}, and a generic function is an instance of class
@@ -894,8 +902,8 @@ Metaobject protocol allows you to extend the language by
 the language itself.  
 
 To find examples, see the files @code{lib/gauche/singleton.scm} and
-@code{lib/gauche/validator.scm} included in the distribution.
-You can also read @code{lib/gauche/object.scm}, which actually
+@code{lib/gauche/mop/validator.scm} included in the distribution.
+You can also read @code{lib/gauche/mop/object.scm}, which actually
 defines how a class is defined in Gauche.
 For more details about metaobject protocol, see @ref{mop,[MOP],MOP}.
 @c JP

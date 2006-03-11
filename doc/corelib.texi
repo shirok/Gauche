@@ -5880,13 +5880,13 @@ Scheme の他の@code{*-ref} 手続きと合わせるためです。
 @c NODE 遅延評価
 
 Gauche provides an extended lazy evaluation mechanism according
-to srfi-45.  Instead of two primitives as R5RS, we have three
-primitivies: @code{lazy}, @code{delay}, and @code{force}.
+to srfi-45.  Instead of two primitives as R5RS, we have three:
+@code{lazy}, @code{delay}, and @code{force}.
 
 It is found that the traditional mechanism that uses only
 @code{delay} and @code{force} didn't mix well with tail-recursive
-algorithm: It required unbound memory, despite that the
-body of algorithm could be expressed in iterative manner.
+algorithms: It required unbound memory, despite that the
+body of the algorithm could be expressed in iterative manner.
 For the detailed explanation please look at the srfi-45 document.
 Here we explain how to use those primitives.
 
@@ -6553,11 +6553,6 @@ Gaucheの組み込み手続きやライブラリ手続きは常に、@code{<condition>}クラス
 @node Handling exceptions, Conditions, Signalling exceptions, Exceptions
 @subsection Handling exceptions
 @c NODE 例外の処理
-
-@c EN
-There are 
-@c JP
-@c COMMON
 
 @c EN
 @subsubheading High-level exception handling mechanism

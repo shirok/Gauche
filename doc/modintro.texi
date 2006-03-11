@@ -90,23 +90,22 @@ See @ref{Operations on libraries}, for the details.
 @node Finding libraries you need, Naming convetion of libraries, Library modules - Overview, Library modules - Overview
 @section Finding libraries you need
 
-Gauche's modules are organized by hierarchical names.  However,
-the names are more or less represents what it implements
-instead of what it is implemented for.  If the module solves
+Gauche's modules are named more or less after what it implements
+rather than what it is implemented for.  If the module solves
 one problem, both are the same.  However, sometimes there
-are multiple ways to solve a problem, and also one implementation
+are multiple ways to solve a problem, or one implementation
 of an algorithm can solve multiple different problems; thus
 it is difficult to name the modules in problem-oriented
 (or purpose-oriented) way.
 
 Thus, if you're new to Gauche and just looking for a module that
-does your job, it may not be straightforward.  Since there may
-be multiple algorithms to do your job, and each algorithm is
+solves your problem, it may not be straightforward.  Since there may
+be multiple algorithms to do your job, and each algorithm can be
 implemented in different module.
 
 The modules are also designed in layers; some low-level modules
 provides direct interface to the system calls, while some
-higher-level ones provide more abstract interface, possibly
+higher-level ones provide more abstract, easy-to-use interface, possibly
 built on top of more than one low-level modules.   Which one
 should you use?  Generally, you want to use the highest level,
 for the very purpose of libraries are to provide easy, abstract
@@ -116,7 +115,7 @@ the basement; then you need to use low-level modules directly.
 
 The purpose of this section is to group the libraries by
 their purposes.  Each category lists relevant modules with
-brief descriptions, and also showing whether 
+brief descriptions.
 
 
 @menu
@@ -156,7 +155,7 @@ of values.  @xref{Sequence framework}.
 (in a sense of Codd's definition).  @xref{Relation framework}.
 @item
 @emph{Comprehension} - This is a collection of macros very handy
-to construct collections and sequences in concise code.
+to construct and traverse collections/sequences in concise code.
 @xref{Eager comprehensions}.
 @end itemize
 
@@ -172,7 +171,8 @@ and @ref{Additional list library}.
 See @ref{Vectors} and @ref{Vector library}.
 @item
 @emph{Uniform vector} - a special kind of vectors that can hold
-limited types of values.  It tends to be used in performance
+limited types of values (e.g. integers representable in 8bits).
+It tends to be used in performance
 sensitive applications, such as graphics.  See @ref{Uniform vectors}.
 @item
 @emph{Array} - multi-dimensional arrays that can hold
@@ -203,7 +203,7 @@ See @ref{Stream library}.
 @item
 @emph{Database interface} - dbm interface can be used as a
 persistent hash table; see @ref{Generic DBM interface}.
-for generic RDBMS interface, see @ref{Database independent access layer}.
+For generic RDBMS interface, see @ref{Database independent access layer}.
 @end itemize
 
 @node Library directory - strings and characters, Library directory - data exchange, Library directory - data containers, Finding libraries you need
@@ -218,8 +218,9 @@ apply methods in @ref{Collection framework} and
 Character and character set operations are covered in
 @ref{Characters}, @ref{Character set}, and @ref{Character-set library}.
 
-If you scan or build strings sequentially, 
-
+If you scan or build strings sequentially, do not use index
+access.  String ports (see @ref{String ports}) provides more efficient,
+and elegant way.
 
 You can use regular expressions to search and extract
 character sequences from strings; see @ref{Regular expression}.
@@ -238,34 +239,104 @@ You can take @code{diff} of two texts; see
 And if you want to construct large text from string fragments,
 do not use @code{string-append}---see @ref{Lazy text construction}.
 
-There are also a bunch of libraries to deal with specific purpose
-of text documents: @ref{RFC822 message parsing} to parse 
-RFC2822 message format,
-@ref{URI parsing and construction} to parse URI string, @ref{Functional XML parser} to
-parse XML, and so on.
-
 Last but not least, Gauche has support of various character
 encoding schemes.  See @ref{Character code conversion} for
 the basic utilities.  Most higher-level functions such as
 @code{open-input-file} can take @code{:encoding} keyword argument
 to perform character conversion implicitly.  Also see 
 @ref{Multibyte scripts} if you write Scheme program in
-non-ASCII characters.
+non-ASCII characters.  If you want to process Gauche source code
+which may contain "encoding" magic comment, see @ref{Coding-aware ports}.
+Gauche also has GNU gettext compatible module (@ref{Localized messages})
+if you need localization.
 
 @node Library directory - data exchange, Library directory - files, Library directory - strings and characters, Finding libraries you need
 @subsection Library directory - data exchange
 
+Most useful programs need to communicate with outside world
+(other programs or humans).  That involves reading the external data
+into your program understanding whatever format the data is in, and
+also writing the data in the format the others can understand.
 
+Lots of network-related external formats are defined in RFC,
+and there are corresponding @code{rfc.*} module that handle 
+some of them.  See @ref{RFC822 message parsing}, for example,
+to handle the pervasive RFC2822 message format.
+
+When you exchange table-formatted data, one of the easiest way
+may be the plain text, one row per line, and columns are separeted
+by some specific characters (e.g. comma).  See @ref{CSV tables} for
+basic parser/writer for them.
+
+Oh, and nowadays every business user wants XML, right?  You know
+they are just S-expressions with extra redundancy and pointy
+parentheses.  So why don't you read XML as if they're S-exprs,
+process them with familiar cars and cdrs and maps, then write them
+out with extra redundancy and pointy parens?
+Module @code{sxml.ssax} (@ref{Functional XML parser})
+implements SAX XML parser, with which you
+can parse XML and process them on the fly, or convert it to
+SXML, S-expression XML.  You can query SXML usinv
+SXPath, an XPath counterparts of S-expression (@ref{SXML Query Language}).
+
+It is planned that various file format handling routines would
+be available as @code{file.*} modules, though we have none ready
+yet.  If you plan to write one, please go ahead and let us know!
 
 
 @node Library directory - files, Library directory - processes, Library directory - data exchange, Finding libraries you need
 @subsection Library directory - files
 
+Files and directories.  Roughly speaking, there are two places
+you want to look at.
+
+@ref{Filesystems}, in the core, has
+routines close to the underlying OS provides.  If you have
+experience with Unix system programming you'll find familiar
+function names there.   The @code{fcntl} functionality is
+splitted to @code{gauche.fcntl} (@ref{Low-level file operations}), FYI.
+
+Also you definitely want to look at @code{file.util}
+(@ref{Filesystem utilities}), which implements higher-level
+routines on top of system-level ones.
+
+
+
 @node Library directory - processes, Library directory - networking, Library directory - files, Finding libraries you need
 @subsection Library directory - processes
 
+Process-related routines also come in two levels.
+
+The @code{gauche.process} module provides
+high-level routines (@ref{High Level Process Interface}); 
+you can pipe the data into and out of child processes easily, for example.
+
+Gauche core provides the primitive @code{fork} and @code{exec} interface
+as well as the convenient @code{system} call
+(see @ref{Unix process management}).  Use them when you want a precise
+control over what you're doing.
+
+
 @node Library directory - networking, Library directory - input and output, Library directory - processes, Finding libraries you need
 @subsection Library directory - networking
+
+We have multi-layer abstraction here.  At the bottom, we have
+APIs corresponding to socket-level system calls.  In the middle,
+a convenience library that automates host name lookups, connection
+and shutdown, etc.  On top of them we have several modules that
+handles specific protocols (e.g. http).
+
+The @code{gauche.net} module (@ref{Networking}) provides the bottom
+and middle layer.  For the top layer, look for @code{rfc.*} modules,
+e.g. @code{rfc.http} (@ref{HTTP}).
+More protocol support is coming (there are @code{rfc.ftp} and
+@code{rfc.imap4} written by users, which are waiting for being
+integrated into Gauche---maybe in next release).
+
+There's a plan of even higher level of libraries, under the name
+@code{net.*}, which will abstract more than one network protocols.
+The planned ones include sending emails, or
+universal resource access by uri.  Code contributions are welcome.
 
 @node Library directory - input and output, Library directory - time, Library directory - networking, Finding libraries you need
 @subsection Library directory - input and output
@@ -275,6 +346,26 @@ non-ASCII characters.
 
 @node Library directory - bits and bytes,  , Library directory - time, Finding libraries you need
 @subsection Library directory - bits and bytes
+
+@subsubheading Binary I/O
+
+As the bottom level,
+Gauche includes primitive byte I/O (@code{read-byte}, @code{write-byte})
+as well as block I/O (@code{read-block!}, @code{write-block}) in its core.
+(See @ref{Reading data}, @ref{Output}, and @ref{Uvector block I/O}).
+
+As the middle level, the module @code{binary.io}
+(@ref{Binary I/O}) has routines to retrieve specific datatype
+with optional endian specification.
+
+And as the top level, the module @code{binary.pack}
+(@ref{Packing Binary Data}) allows packing and unpacking 
+structured binary data, a la Perl's @code{pack}/@code{unpack}.
+
+@subsubheading Bit manipulation
+
+Gauche core provides bitshift and mask operations. 
+See @ref{Bitwise operations}.
 
 
 @node Naming convetion of libraries,  , Finding libraries you need, Library modules - Overview

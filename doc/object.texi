@@ -997,7 +997,7 @@ of descendants of @var{class}.
 If @var{obj}'s class has been redefined, these procedures
 first updates @var{obj} to change its class to the new class.
 So @code{class-of} always returns the new class.
-This behavior is different from stklos 0.55, which @code{class-of}
+This behavior is different from stklos 0.55, in which @code{class-of}
 returns an old class if @var{obj} hasn't been updated.
 If you need to get the old class, you should use @code{current-class-of}
 below.  
@@ -1812,7 +1812,7 @@ keeps information about a slot.
 Currently Gauche uses a list to represent the slot definition,
 as STklos and TinyCLOS do.  However, it is not guaranteed that
 Gauche keeps such a structure in future; you should use the
-following dedicated accessor method to obtain information
+following dedicated accessor methods to obtain information
 of a slot definition object.
 @c JP
 @code{class-slots} が返すスロットの定義オブジェクト
@@ -1961,7 +1961,7 @@ defining the @code{class-redefinition} method; see
 If there are instances of the original class, such instances
 are automatically @emph{updated} when it is about to be accessed or modified
 via @code{class-of}, @code{is-a?}, @code{slot-ref},
-@code{slot-set!}, @code{ref}, getter method, or setter method.  
+@code{slot-set!}, @code{ref}, a getter method, or a setter method.  
 @c JP
 元々のクラスのインスタンスが存在している場合、それらのインスタンスは
 以下のようなメソッドでアクセスあるいは変更しようとしたときに自動的に
@@ -2060,7 +2060,7 @@ the instance update protocol.
 @c EN
 @subsubheading Notes on compatibility
 
-Class redefinition protocol subtlety differs among CLOS-like
+Class redefinition protocols subtlety differ among CLOS-like
 Scheme systems.   Gauche's is very similar to STklos's, except
 that STklos 0.56 doesn't replace bindings of redefined subclasses,
 and also it doesn't remember initialization arguments so the

@@ -244,12 +244,35 @@ R5RSに示される通り、シンボルの大文字小文字を区別しません。
 
 @deftp {Command Option} -p profiler-option
 @c EN
-Turn on the profiler.  Currently, only "@code{time}" is supported
-as @var{profiler-option}.  See @ref{Using profiler} for the details
-of the profiler.
+Turn on the profiler.  The following @var{profiler-option} is recognized:
 @c JP
-プロファイラを有効にします。現在のところ、@var{profiler-option}として
-"@code{time}" のみがサポートされています。
+プロファイラを有効にします。以下のような@var{profiler-option}が
+今のところサポートされています。
+@c COMMON
+
+@table @code
+@item time
+@c EN
+Records and reports time spent on function calls and number of times
+each function is called.
+@c JP
+関数中で費された時間と、各関数が呼ばれた回数を記録して報告します。
+@c COMMON
+@item load
+@c EN
+Records and reports time spent on loading each modules.
+Useful to tune start-up time of the scripts.
+(Results are in elapsed time).
+@c JP
+各モジュールをロードするのにかかった時間を記録して報告します。
+スクリプトの起動時間をチューンするのに便利です
+(実経過時間が報告されます)。
+@c COMMON
+@end table
+
+@c EN
+See @ref{Using profiler} for the details of the profiler.
+@c JP
 詳しくは@ref{Using profiler}を参照して下さい。
 @c COMMON
 @end deftp
