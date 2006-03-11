@@ -1,7 +1,7 @@
 ;;;
 ;;; procedure.scm - auxiliary procedure utilities.  to be autoloaded.
 ;;;  
-;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,14 +30,16 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: procedure.scm,v 1.16 2006-02-09 08:52:59 shirok Exp $
+;;;  $Id: procedure.scm,v 1.17 2006-03-11 01:48:44 shirok Exp $
 ;;;
 
 (define-module gauche.procedure
   (use srfi-1)
   (export compose complement pa$ map$ for-each$ apply$
+          count$ fold$ fold-right$ reduce$ reduce-right$
+          filter$ partition$ remove$ find$ find-tail$
+          any$ every$ delete$ member$ assoc$
           any-pred every-pred
-          let-optionals* let-keywords* get-optional
           arity procedure-arity-includes?
           <arity-at-least> arity-at-least? arity-at-least-value
           case-lambda disasm
