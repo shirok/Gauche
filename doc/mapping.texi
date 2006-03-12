@@ -631,11 +631,16 @@ Use @code{display}.  @xref{Output}.
 @c COMMON
 @item fread
 @c EN
-Not directly supported.  If you want to read a chunk
-of bytes, you may be able to use @code{read-block}.
+Not directly supported.  
+To read binary numbers, see @ref{Binary I/O}.
+If you want to read a chunk of bytes, you may be 
+able to use @code{read-block!}.
+@xref{Uvector block I/O}.
 @c JP
-直接はサポートされていません。バイトのチャンクで読みたければ、
-@code{read-block} を使えるでしょう。
+直接はサポートされていません。
+バイナリの数値を読む場合は@ref{Binary I/O}を参照のこと。
+バイトのチャンクで読みたければ、
+@code{read-block!} が使えるでしょう (@ref{Uvector block I/O}参照)。
 @c COMMON
 @item free
 @c EN
@@ -694,11 +699,17 @@ Gauche の @code{port-tell}(@xref{Common port operations}参照)を使いましょう。
 @c COMMON
 @item fwrite
 @c EN
-Not directly supported.  If you want to write a chunk of bytes,
-you can simply use @code{display}.  @xref{Output}.
+Not directly supported.  
+To write binary numbers, see @ref{Binary I/O}.
+If you want to write a chunk of bytes,
+you can simply use @code{display} or @code{write-block}
+(@xref{Uvector block I/O}).
 @c JP
-直接はサポートされていません。バイト列のチャンクを書き出したければ、
-単に @code{display} を使うだけでよいでしょう。@ref{Output}参照。
+直接はサポートされていません。
+バイナリの数値を書き出すのなら、@ref{Binary I/O}参照のこと。
+バイト列のチャンクを書き出しすなら、
+単に @code{display} を使うか、@code{write-block} が使えます
+(@ref{Uvector block I/O}参照)。
 @c COMMON
 @item getc
 @itemx getchar
@@ -1106,7 +1117,7 @@ No equivalent function in Gauche.  System calls generally throws an
 error (@code{<system-error>}), including the description of the reason
 of failure.
 @c JP
-Gauche には同等んお関数はありません。システムコールは一般的には error
+Gauche には同等の関数はありません。システムコールは一般的には error
 (@code{<system-error>}) を投げます。これには、失敗した理由の説明が含まれて
 います。
 @c COMMON
@@ -1159,7 +1170,7 @@ is to raise an exception.   You can use @code{(sys-kill (sys-getpid) SIG)}
 to send a signal @code{SIG} to the current process.
 @c JP
 Gauche には同等の関数はありません。Scheme の関数 @code{raise} (SRFI-18)
-が例外を発生させます。シグナル @code{SIG} を現在のプロセスに送るには
+は例外を発生させます。シグナル @code{SIG} を現在のプロセスに送るには
 @code{(sys-kill (sys-getpid) SIG)} が使えます。
 @c COMMON
 @item rand
@@ -1224,9 +1235,11 @@ Gauche の @code{sys-rename}。@ref{Directory manipulation}参照。
 @c COMMON
 @item rewind
 @c EN
-Not supported yet.
+Not directly supported, but you can use @code{port-seek} instead.
+@xref{Common port operations}.
 @c JP
-未サポート。
+直接はサポートされませんが、@code{port-seek}が代わりに使えます。
+@ref{Common port operations}参照。
 @c COMMON
 @item rewinddir
 @c EN
@@ -1412,10 +1425,14 @@ R5RS の @code{sqrt}。@ref{Arithmetics}参照。
 @item srand
 @c EN
 Not supported directly, but on most platforms a better RNG is available
-as @code{sys-srandom}.  @xref{Miscellaneous system calls}.
+as @code{sys-srandom} (@xref{Miscellaneous system calls}).
+The @code{math.mt-random} module provides much superior RNG
+(@xref{Mersenne-Twister random number generator}).
 @c JP
 直接はサポートされていませんが、多くのプラットフォーム上で、@code{sys-random}
 のような、よりよい RNG が利用可能です。@ref{Miscellaneous system calls} 参照。
+また、@code{math.mt-random}はさらに優れたRNGを提供します
+(@ref{Mersenne-Twister random number generator}参照)。
 @c COMMON
 @item sscanf
 @c EN
@@ -1487,9 +1504,9 @@ with a character set.  @xref{SRFI-13 String searching}.
 @c COMMON
 @item strerror
 @c EN
-Not supported.
+Gauche's @code{sys-strerror}.  @xref{System inquiry}.
 @c JP
-サポートされません。
+Gaucheの@code{sys-strerror}。  @ref{System inquiry}参照。
 @c COMMON
 @item strftime
 @c EN

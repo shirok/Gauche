@@ -10601,7 +10601,7 @@ So you might want to use it for binary I/O.  Yes, you can do it.
 できます。それなら、それをバイナリI/Oに使えないでしょうか。もちろんできます。
 @c COMMON
 
-@defun read-block! vec &optional iport start end
+@defun read-block! vec &optional iport start end endian
 @c EN
 Reads a chunk of data from the given input port @var{iport},
 and stores it to the uniform vector @var{vec}.
@@ -10609,7 +10609,8 @@ You can give any uniform vector.
 If optional @var{start} and @var{end}
 arguments are given, they specify the index range in @var{vec}
 that is to be filled, and the rest of the vector remains untouched.
-Otherwise, entire vector is used.
+Otherwise, entire vector is used.  A special value -1 for @var{end}
+indicates the end of @var{vec}.
 If @var{iport} is omitted, the current input port is used.
 @c JP
 与えられた入力ポート@var{iport}からデータの固まりを読みだし、それを
@@ -10617,7 +10618,8 @@ If @var{iport} is omitted, the current input port is used.
 どんな種類のユニフォームベクタでも与えることができます。
 省略可能な引数@var{start}と@var{end}が与えられた場合は、
 それらが@var{vec}中でデータが格納されるべき領域のインデックスの範囲を
-示します。その範囲外の@var{vec}の値は変更されません。
+示します。@var{end}については-1で@var{vec}の最後を示すこともできます。
+その範囲外の@var{vec}の値は変更されません。
 @var{start}、@var{end}が与えられなかった場合は@var{vec}全体が使われます。
 @var{iport}が省略された場合はカレント入力ポートが使われます。
 @c COMMON
@@ -10660,36 +10662,52 @@ EOFに達していなくても、@var{vec}を埋める前に戻ることがあります
 @c EN
 The data is read as a byte stream, so if you give uniform vectors
 other than s8vector or u8vector, your result may affected by
-the endianness of the platform.    Suppose the input stream
+the endian.    Suppose the input stream
 has a byte sequence @code{#x01, #x02, #x03, #x04}.  If you read
 it into u32vector, the first element you'll get may be
-@code{#x01020304} if you're using big-endian architecture,
-or @code{#x04030201} if you're using little-endian architecture.
+@code{#x01020304} if you're using big-endian,
+or @code{#x04030201} if you're using little-endian.
+By default @code{read-block!} uses the platform's native endian.
+You can specify the endian by passing either symbol @code{big-endian}
+or @code{little-endian} to the optional argument @var{endian}.
 @c JP
 データはバイトストリームとして読まれるので、
 s8vectorとu8vector以外のユニフォームベクタを与えた場合は
-結果がプラットフォームのエンディアンに影響を受けることに注意して下さい。
+結果がエンディアンに影響を受けることに注意して下さい。
 例えば入力が@code{#x01, #x02, #x03, #x04}というバイトシーケンスだったと
 します。これをu32vectorに読み込んだ場合、最初の要素は
-ビッグエンディアンアーキテクチャでは@code{#x01020304}になりますが、
-リトルエンディアンアーキテクチャでは@code{#x04030201}となるでしょう。
+ビッグエンディアンでは@code{#x01020304}になりますが、
+リトルエンディアンでは@code{#x04030201}となるでしょう。
+デフォルトではプラットフォームのエンディアンが使われます。
+エンディアンを指定したい場合は、シンボル@code{big-endian}もしくは
+@code{little-endian}を@var{endian}引数に渡して下さい。
 @c COMMON
 @end defun
 
+@c EN
+(Technically there are more variations than a simple big/little endians.
+See the discussion in @ref{Binary I/O}.)
+@c JP
+(実際には、単純なビッグ/リトル以外のエンディアンも存在します。
+@ref{Binary I/O}の議論も参照してください。)
+@c COMMON
 
-@defun write-block vec &optional oport start end
+
+@defun write-block vec &optional oport start end endian
 @c EN
 Writes out the content of the uniform vector @var{vec} 'as is'
 to the output port @var{oport}.   If @var{oport} is omitted,
 the current output port is used.
 If optional @var{start} and @var{end} arguments are given,
 they specify the index range in @var{vec} to be written out.
+A special value -1 for @var{end} indicates the end of @var{vec}.
 This procedure returns an unspecified value.
 @c JP
 ユニフォームベクタ@var{vec}の内容を「そのまま」@var{oport}に書き出します。
 @var{oport}が省略された場合はカレント出力ポートが使われます。
 省略可能な引数@var{start}と@var{end}が与えられた場合は、
 それらのインデックスの範囲が示す@var{vec}の内容のみが出力されます。
+@var{end}に-1を渡して@var{vec}の最後を示すこともできます。
 この手続きの返す値は未定義です。
 @c COMMON
 
@@ -10698,13 +10716,16 @@ If you write out a uniform vector except s8vector and u8vector, the
 care should be taken about the endianness, as in @code{read-block!}.
 The number @code{#x01020304} in your u32vector may be written out
 as the byte sequence @code{#x01, #x02, #x03, #x04} or
-@code{#x04, #x03, #x02, #x01}, depending on your architecture.
+@code{#x04, #x03, #x02, #x01}, depends on the @var{endian} argument,
+whose default is platform-dependent.
 @c JP
 @code{s8vector}と@code{u8vector}以外のユニフォームベクタを与えた場合、
 @code{read-block!}と同じようにエンディアンの影響を受けることに注意して
 下さい。u32vector中の数値@code{#x01020304}は、
-プラットフォームによってバイトシーケンス@code{#x01, #x02, #x03, #x04}と
+@var{endian}引数によって
+バイトシーケンス@code{#x01, #x02, #x03, #x04}と
 なるかもしれませんし、@code{#x04, #x03, #x02, #x01}となるかもしれません。
+@var{endian}引数のデフォルト値はプラットフォームによって異なります。
 @c COMMON
 @end defun
 
