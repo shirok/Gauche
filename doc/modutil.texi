@@ -118,7 +118,7 @@ a complete integer is read, EOF is returned.
 
 @defun read-binary-uint size &optional port endian
 @defunx read-binary-sint size &optional port endian
-More flexible version.  Reads @var{size}-octed unsigned
+More flexible version.  Reads @var{size}-octet unsigned
 or signed integer from @var{port} with specified endian.
 If @var{port} reaches EOF before a complete integer is read,
 EOF is returned.

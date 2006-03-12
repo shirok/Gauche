@@ -3529,7 +3529,7 @@ srfi-29 features.
 
 実際には、このモジュールは2つのサブモジュール、@code{srfi-29.bundle}
 および @code{srfi-29.format} で構成されています。@code{srfi-29}モジュールは
-このふたつのモジュールを拡張しています。このようにしているのは、
+このふたつのモジュールをextendしています。このようにしているのは、
 SRFI-29 での @code{format} 手続きの定義が Gauche ネイティヴの(すなわち
 Common Lisp の) @code{format} とでは @code{~@@*} 指令の扱い
 において互換性がないからです。
