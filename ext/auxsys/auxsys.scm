@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: auxsys.scm,v 1.12 2005-07-11 03:33:12 shirok Exp $
+;;;  $Id: auxsys.scm,v 1.13 2006-03-12 11:05:46 shirok Exp $
 ;;;
 
 (define-module gauche.auxsys
@@ -40,7 +40,7 @@
           sys-setsid sys-setuid sys-times sys-uname sys-ctermid
           sys-gethostname sys-getdomainname
           sys-putenv sys-setenv sys-unsetenv
-          sys-gettimeofday sys-chown sys-lchown sys-utime
+          sys-chown sys-lchown sys-utime
           sys-getgroups sys-getlogin sys-localeconv
           sys-getloadavg)
   )
@@ -93,11 +93,6 @@
       (if (zero? pid)
         (sys-getpgrp)
         (error "sys-getpgid for arbitrary process id is not supported on this platform")))))
-
-(define sys-gettimeofday
-  (if (global-variable-bound? 'gauche.auxsys '%sys-gettimeofday)
-    %sys-gettimeofday
-    (lambda () (values (sys-time) 0))))
 
 (define sys-lchown
   (if (global-variable-bound? 'gauche.auxsys '%sys-lchown)

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.113 2006-03-12 04:41:28 shirok Exp $
+;;; $Id: syslib.stub,v 1.114 2006-03-12 11:06:05 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -513,6 +513,10 @@
 
 (define-cproc sys-time ()
   (expr "Scm_MakeSysTime(time(NULL))"))
+
+(define-cproc sys-gettimeofday ()
+  (body (<ulong> <ulong>)
+        "Scm_GetTimeOfDay(&SCM_RESULT0, &SCM_RESULT1);"))
 
 (define-cproc current-time ()           ;SRFI-18, SRFI-19, SRFI-21
   (call "Scm_CurrentTime"))

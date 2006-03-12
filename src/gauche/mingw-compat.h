@@ -6,7 +6,7 @@
  *  I tried to put mingw-specific stuff here as much as possible,
  *  instead of scattering #ifdefs around the sources.
  *
- *  $Id: mingw-compat.h,v 1.3 2004-11-21 22:42:27 shirok Exp $
+ *  $Id: mingw-compat.h,v 1.4 2006-03-12 11:06:10 shirok Exp $
  */
 
 #ifndef GAUCHE_MINGW_COMPAT_H
@@ -27,6 +27,31 @@ typedef unsigned int u_int;
 typedef unsigned long u_long;
 #define _BSDTYPES_DEFINED
 #endif /* _BSDTYPES_DEFINED */
+
+/*
+ * Time calculation
+ * Win32API's FILETIME is 64bit time count since 1601/1/1 UTC, measured
+ * in 100nanosecs.  The macro conveniently converts the value to
+ * (seconds, microseconds) pair since Unix Epoch.
+ */
+#define SCM_FILETIME_TO_UNIXTIME(ft, secs, usecs)                       \
+  do {                                                                  \
+    const int64_t off_ = ((int64_t)27111902UL << 32) + 3577643008UL;    \
+    int64_t val_ = ((int64_t)(ft).dwHighDateTime << 32) + (ft).dwLowDateTime; \
+    val_ = (val_ - off_)/10;                                            \
+    secs  = (u_long)(val_ / 1000000);                                   \
+    usecs = (u_long)(val_ % 1000000);                                   \
+  } while (0)
+
+/* times(2) emulation is in ext/auxsys/auxsys.c */
+struct tms {
+    u_int tms_utime;
+    u_int tms_stime;
+    u_int tms_cutime;
+    u_int tms_cstime;
+};
+
+clock_t times(struct tms *buf);
 
 /*
  * Users and groups

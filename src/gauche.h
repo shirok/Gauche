@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.448 2006-03-10 07:28:16 shirok Exp $
+ *  $Id: gauche.h,v 1.449 2006-03-12 11:06:05 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2625,6 +2625,8 @@ SCM_EXTERN ScmObj Scm_MakeSysStat(void); /* returns empty SysStat */
  */
 SCM_EXTERN ScmObj Scm_MakeSysTime(time_t time);
 SCM_EXTERN time_t Scm_GetSysTime(ScmObj val);
+
+SCM_EXTERN void Scm_GetTimeOfDay(u_long *sec, u_long *usec);
 
 /* Gauche also has a <time> object, as specified in SRFI-18, SRFI-19
  * and SRFI-21.  It can be constructed from the basic system interface

@@ -1,7 +1,7 @@
 /*
  * auxsys.c - Auxiliary system functions
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,12 +30,16 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: auxsys.c,v 1.5 2005-07-22 09:26:54 shirok Exp $
+ *  $Id: auxsys.c,v 1.6 2006-03-12 11:05:46 shirok Exp $
  */
 
 #include <gauche.h>
 #include <gauche/extend.h>
 #include "auxsysconf.h"
+
+#ifndef __MINGW32__
+#  include <sys/times.h>
+#endif
 
 /*
  * Some emulation stuff for Windows/MinGW
@@ -56,7 +60,28 @@ const char *getlogin(void)
     }
 }
 
+clock_t times(struct tms *info)
+{
+    HANDLE process = GetCurrentProcess();
+    FILETIME ctime, xtime, utime, stime;
+    int64_t val;
+    const int factor = 10000000/CLK_TCK;
+    const int bias   = factor/2;
+
+    if (!GetProcessTimes(process, &ctime, &xtime, &stime, &utime)) {
+        Scm_SysError("GetProcessTimes failed");
+    }
+    val = ((int64_t)stime.dwHighDateTime << 32) + stime.dwLowDateTime;
+    info->tms_stime = (u_int)((val+bias) / factor);
+    val = ((int64_t)utime.dwHighDateTime << 32) + utime.dwLowDateTime;
+    info->tms_utime = (u_int)((val+bias) / factor);
+
+    info->tms_cstime = 0;
+    info->tms_cutime = 0;
+    return 0;
+}
 #endif /*__MINGW32__*/
+
 
 /*
  * Initialization

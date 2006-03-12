@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.76 2006-03-12 04:41:28 shirok Exp $
+ *  $Id: system.c,v 1.77 2006-03-12 11:06:05 shirok Exp $
  */
 
 #include <stdio.h>
@@ -183,7 +183,9 @@ ScmObj Scm_ReadDirectory(ScmString *pathname)
 }
 
 /* Glob()function. */
-/* TODO: allow to take optional flags */
+/* NB: This will soon go away.  sys-glob will be implemented in Scheme
+   on top of sys-readdir and some text manipulation, so that we'll be
+   free from system-dependent gotchas. */
 ScmObj Scm_GlobDirectory(ScmString *pattern)
 {
 #if defined(HAVE_GLOB_H)
@@ -792,17 +794,33 @@ ScmObj Scm_MakeTime(ScmObj type, long sec, long nsec)
     return SCM_OBJ(t);
 }
 
-ScmObj Scm_CurrentTime(void)
+/* Abstract gettimeofday() */
+void Scm_GetTimeOfDay(u_long *sec, u_long *usec)
 {
-#ifdef HAVE_GETTIMEOFDAY
+#if defined(HAVE_GETTIMEOFDAY)
     struct timeval tv;
     int r;
     SCM_SYSCALL(r, gettimeofday(&tv, NULL));
     if (r < 0) Scm_SysError("gettimeofday failed");
-    return Scm_MakeTime(SCM_SYM_TIME_UTC, (long)tv.tv_sec, (long)tv.tv_usec*1000);
-#else  /* !HAVE_GETTIMEOFDAY */
-    return Scm_MakeTime(SCM_SYM_TIME_UTC, (long)time(NULL), 0);
-#endif /* !HAVE_GETTIMEOFDAY */
+    *sec = (u_long)tv.tv_sec;
+    *usec = (u_long)tv.tv_usec;
+#elif defined(__MINGW32__)
+    FILETIME ft;
+    GetSystemTimeAsFileTime(&ft);
+    SCM_FILETIME_TO_UNIXTIME(ft, *sec, *usec);
+#else  /* !HAVE_GETTIMEOFDAY && !__MINGW32 */
+    /* Last resort */
+    *sec = (u_long)time(NULL);
+    *usec = 0;
+#endif /* !HAVE_GETTIMEOFDAY && !__MINGW32 */
+}
+
+
+ScmObj Scm_CurrentTime(void)
+{
+    u_long sec, usec;
+    Scm_GetTimeOfDay(&sec, &usec);
+    return Scm_MakeTime(SCM_SYM_TIME_UTC, sec, usec*1000);
 }
 
 ScmObj Scm_IntSecondsToTime(long sec)
