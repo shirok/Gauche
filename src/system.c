@@ -1,7 +1,7 @@
 /*
  * system.c - system interface
  *
- *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.75 2006-03-10 05:09:06 shirok Exp $
+ *  $Id: system.c,v 1.76 2006-03-12 04:41:28 shirok Exp $
  */
 
 #include <stdio.h>
@@ -509,11 +509,25 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
     return Scm_DStringGet(&buf, 0);        
 }
 
+/* Basename and dirname.
+   On Win32, we need to treat drive names specially, e.g.:
+   (sys-dirname "C:/a") == (sys-dirname "C:/") == (sys-dirname "C:") == "C:\\"
+   (sys-basename "C:/") == (sys-basename "C:) == "" 
+*/
+
 ScmObj Scm_BaseName(ScmString *filename)
 {
     u_int size;
     const char *path = Scm_GetStringContent(filename, &size, NULL, NULL);
     const char *endp, *last;
+
+#if defined(__MINGW32__)
+    /* Ignore drive letter, for it can never be a part of basename. */
+    if (size >= 2 && path[1] == ':' && isalpha(path[0])) {
+        path += 2;
+        size -= 2;
+    }
+#endif /* __MINGW32__ */
 
     if (size == 0) return SCM_MAKE_STR("");
     endp = truncate_trailing_separators(path, path+size);
@@ -530,22 +544,44 @@ ScmObj Scm_DirName(ScmString *filename)
     u_int size;
     const char *path = Scm_GetStringContent(filename, &size, NULL, NULL);
     const char *endp, *last;
-
-    if (size == 0) return SCM_MAKE_STR(".");
-    endp = truncate_trailing_separators(path, path+size);
-    if (endp == path) return SCM_MAKE_STR(ROOTDIR);
-    last = get_last_separator(path, endp);
-    if (last == NULL) {
-        return SCM_MAKE_STR(".");
+#if defined(__MINGW32__)
+    int drive_letter = -1;
+    if (size >= 2 && path[1] == ':' && isalpha(path[0])) {
+        drive_letter = path[0];
+        path += 2;
+        size -= 2;
     }
+#endif /* __MINGW32__ */
+
+    if (size == 0) { path = NULL; goto finale; }
+    endp = truncate_trailing_separators(path, path+size);
+    if (endp == path) { path = ROOTDIR, size = 1; goto finale; }
+    last = get_last_separator(path, endp);
+    if (last == NULL) { path = ".", size = 1; goto finale; }
 
     /* we have "something/", and 'last' points to the last separator. */
     last = truncate_trailing_separators(path, last);
     if (last == path) {
-        return SCM_MAKE_STR(ROOTDIR);
+        path = ROOTDIR, size = 1;
     } else {
-        return Scm_MakeString(path, last-path, -1, 0);
+        size = last - path;
     }
+ finale:
+#if defined(__MINGW32__)
+    if (drive_letter > 0) {
+        ScmObj z;
+        char p[3] = "x:";
+        p[0] = (char)drive_letter;
+        z = Scm_MakeString(p, 2, 2, SCM_MAKSTR_COPYING);
+        if (path) {
+            return Scm_StringAppendC(SCM_STRING(z), path, size, -1);
+        } else {
+            return Scm_StringAppendC(SCM_STRING(z), ROOTDIR, 1, -1);
+        }
+    }
+#endif /* __MINGW32__ */
+    if (path) return Scm_MakeString(path, size, -1, 0);
+    else      return Scm_MakeString(".", 1, 1, 0);
 }
 
 #undef ROOTDIR

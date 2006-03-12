@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.112 2006-01-28 04:00:33 shirok Exp $
+;;; $Id: syslib.stub,v 1.113 2006-03-12 04:41:28 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -48,7 +48,9 @@
 #include <sys/wait.h>
 #include <grp.h>
 #include <pwd.h>
-#endif /*!__MINGW32__*/
+#else  /* __MINGW32__ */
+#include <windows.h>
+#endif /* __MINGW32__ */
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
@@ -671,7 +673,12 @@
   (call <int> "umask"))
 
 (define-cproc sys-sleep (seconds::<fixnum>)
-  (call <int> "sleep"))
+  (body <int>
+        "#if defined(__MINGW32__)"
+        "  Sleep(seconds*1000); SCM_RESULT=0;"
+        "#else"
+        "  SCM_RESULT = sleep(seconds);"
+        "#endif"))
 
 (if "defined(HAVE_NANOSLEEP)"
     (define-cproc sys-nanosleep (nanoseconds)

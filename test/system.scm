@@ -84,6 +84,22 @@
 (test* "basename" ".." (sys-basename "../.."))
 (test* "dirname"  ".." (sys-dirname "../.."))
 
+(when *win32*
+  ;; test with a drive letter
+  (test* "dirname"  "d:\\" (sys-dirname  "d:"))
+  (test* "basename" ""     (sys-basename "d:"))
+  (test* "dirname"  "d:\\" (sys-dirname  "d:/"))
+  (test* "basename" ""     (sys-basename "d:/"))
+  (test* "dirname"  "d:\\" (sys-dirname  "d:/z"))
+  (test* "basename" "z"    (sys-basename "d:/z"))
+  (test* "dirname"  "d:/z" (sys-dirname  "d:/z/y"))
+  (test* "basename" "y"    (sys-basename "d:/z/y"))
+  (test* "dirname"  "d:."  (sys-dirname  "d:z"))
+  (test* "basename" "z"    (sys-basename "d:z"))
+  (test* "dirname"  "d:z"  (sys-dirname  "d:z/y"))
+  (test* "basename" "y"    (sys-basename "d:z/y"))
+  )
+
 (test* "normalize" (n (string-append (get-pwd-via-pwd) "/."))
        (sys-normalize-pathname "." :absolute #t))
 (test* "normalize" (n (string-append (get-pwd-via-pwd) "/"))
