@@ -1,3 +1,9 @@
+2006-03-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_BaseName, Sys_DirName): handles drive letters
+	  sensibly on mingw32.
+	* src/syslib.stub (sys-sleep): Use Sleep() win32api call on mingw32.
+
 2006-03-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/autoloads.scm, lib/gauche/procedure.scm: added forgotten exports
