@@ -1,3 +1,13 @@
+2006-03-12  Shiro Kawai  <shiro@acm.org>
+
+	* ext/auxsys.c, ext/auxsyslib.stub: moved sys-gettimeofday to
+	  main system.  support sys-times on mingw32, emulating times()
+	  by GetProcessTimes.
+	* src/system.c, src/syslib.stub: added Scm_GetTimeOfDay, an
+	  abstraction of gettimeofday() call.  On mingw32 we emulate it
+	  with GetSystemTime.  sys-gettimeofday is moved here.
+	* src/gauche/mingw-compat.h : some addition for above changes.
+
 2006-03-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm_BaseName, Sys_DirName): handles drive letters
