@@ -21,7 +21,7 @@
 ;;; makes error message a bit less direct, but cutting edges in such
 ;;; inner loop procedure has a considerable gain.
 ;;;
-;;; $Id: stream.scm,v 1.7 2006-01-07 03:13:26 shirok Exp $
+;;; $Id: stream.scm,v 1.8 2006-03-14 21:10:56 shirok Exp $
 
 (define-module util.stream
   (use srfi-1)
@@ -82,9 +82,10 @@
     ((stream-cons obj strm)
      (%make-stream
       (delay
-        (if (not (stream? strm))
-          (error "attempt to stream-cons onto non-stream")
-          (cons obj strm)))))))
+        (let ((s strm))
+          (if (not (stream? s))
+            (error "attempt to stream-cons onto non-stream")
+            (cons obj s))))))))
 
 ;; STREAM-NULL? object -- #t if object is the null stream, #f otherwise
 (define-inline (stream-null? obj)

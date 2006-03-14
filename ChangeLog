@@ -1,3 +1,8 @@
+2006-03-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/stream.scm (stream-cons): The original srfi-40 reference
+	  implementation evaluates the second argument twice within delay.
+
 2006-03-12  Shiro Kawai  <shiro@acm.org>
 
 	* ext/auxsys.c, ext/auxsyslib.stub: moved sys-gettimeofday to
