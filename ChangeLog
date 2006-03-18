@@ -1,5 +1,8 @@
 2006-03-17  Shiro Kawai  <shiro@acm.org>
 
+	* lib/util/queue.scm (dequeue!): avoid non weak-GC-robust pattern.
+	  See the comment for the details.
+
 	* src/objlib.scm (ref*): Added utility procedure ref*, as suggested
 	  by Issac Trotts.  Ref methods for some builtin classes are also
 	  added here.

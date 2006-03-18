@@ -5,7 +5,7 @@
 ;;;  Public Domain..  I guess lots of Scheme programmers have already
 ;;;  written similar code.
 ;;;
-;;;  $Id: queue.scm,v 1.9 2005-08-08 09:47:50 shirok Exp $
+;;;  $Id: queue.scm,v 1.10 2006-03-18 04:52:59 shirok Exp $
 ;;;
 
 ;; This queue implementation is tuned for speed.  A queue is simply
@@ -111,12 +111,23 @@
   (when (%empty? q) (error "queue is empty" q))
   (cadr q))
 
+;; When we dequeue an item, we clear the cdr of the cell that becomes
+;; unused.  It is necessary to prevent the conservative GC from
+;; retaining unbound memory, in case a false pointer happens to point
+;; one of this unused cell, which in turn retains all the cells used
+;; for the queue. See Boehm: "Bounding Space Usage of Conservative 
+;; Garbage Collectors", 
+;; http://www.hpl.hp.com/techreports/2001/HPL-2001-251.pdf
+;; for the details.
+
 (define (dequeue! q)
   (when (%empty? q) (error "queue is empty" q))
   (let ((item (caar q)))
     (if (eq? (car q) (cdr q))
-        (begin (set-car! q '()) (set-cdr! q '()))
-        (set-car! q (cdar q)))
+      (begin (set-car! q '()) (set-cdr! q '()))
+      (let1 h (car q)
+        (set-car! q (cdar q))
+        (set-cdr! h #f)))      ;; cut the false chain.  see above.
     item))
 
 (define queue-pop! dequeue!)
