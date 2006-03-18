@@ -1,7 +1,7 @@
 ;;;
 ;;; object.scm - object system
 ;;;  
-;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: objlib.scm,v 1.4 2006-03-10 07:28:16 shirok Exp $
+;;;  $Id: objlib.scm,v 1.5 2006-03-18 04:46:03 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -536,7 +536,10 @@
 (define-method x->number  ((obj <char>)) (char->integer obj))
 (define-method x->number  ((obj <top>)) 0)
 
-;; shorthand notation
+;;----------------------------------------------------------------
+;; Generic accessor
+;;
+
 (define-method ref ((obj <top>) (slot <symbol>))
   (slot-ref obj slot))
 (define-method (setter ref) ((obj <top>) (slot <symbol>) value)
@@ -548,6 +551,35 @@
   (hash-table-get obj key fallback))
 (define-method (setter ref) ((obj <hash-table>) key value)
   (hash-table-put! obj key value))
+
+;; gauche.sequence has the generic version for <sequence>, but these
+;; shortcuts would be faster.
+(define-method ref ((obj <list>) (index <integer>))
+  (list-ref obj index))
+(define-method ref ((obj <vector>) (index <integer>))
+  (vector-ref obj index))
+(define-method ref ((obj <string>) (index <integer>))
+  (string-ref obj index))
+(define-method (setter ref) ((obj <vector>) (index <integer>) val)
+  (vector-set! obj index val))
+(define-method (setter ref) ((obj <string>) (index <integer>) val)
+  (string-set! obj index val))
+
+;; ref* - chain of refs.
+;;                                        
+;; This allows us to write
+;;   (ref (ref (ref foo 'bar) 'baz) 'bang)
+;; as
+;;   (ref* foo 'bar 'baz 'bang)
+;; Credit to Issac Trotts.
+
+;; Once we have a compiler-macro, or optimized case-lambda, we
+;; can make them more efficient by expanding ref* to refs in
+;; fixed-argument case.
+(define (ref* x y . more)
+  (if (null? more)
+    (ref x y)
+    (apply ref* (ref x y) more)))
 
 ;;----------------------------------------------------------------
 ;; Generalized application hooks
@@ -601,6 +633,6 @@
                 slot-definition-allocation slot-definition-getter
                 slot-definition-setter slot-definition-accessor
                 class-slot-definition class-slot-accessor
-                x->string x->integer x->number ref |setter of ref|)
+                x->string x->integer x->number ref ref* |setter of ref|)
 
 (provide "gauche/object")

@@ -1,3 +1,9 @@
+2006-03-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/objlib.scm (ref*): Added utility procedure ref*, as suggested
+	  by Issac Trotts.  Ref methods for some builtin classes are also
+	  added here.
+
 2006-03-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/stream.scm (stream-cons): The original srfi-40 reference
