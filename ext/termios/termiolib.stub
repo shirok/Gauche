@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: termiolib.stub,v 1.14 2006-01-27 10:04:46 shirok Exp $
+;;; $Id: termiolib.stub,v 1.15 2006-03-25 15:40:22 shirok Exp $
 ;;;
 
 "#include \"gauche/termios.h\""
@@ -39,6 +39,7 @@
 ;; termios.h
 
 (define-type <sys-termios> "ScmSysTermios*")
+(define-type <sys-sigset>  "ScmSysSigset*")
 
 (if "!defined(__MINGW32__)" (begin
 
@@ -142,7 +143,8 @@
 (define-cproc sys-forkpty (&optional term)
   (call "Scm_Forkpty"))
 (define-cproc sys-forkpty-and-exec (program::<string> args::<list>
-                                    &optional (iomap ()) term)
+                                    &keyword (iomap ()) term
+                                             (sigmask::<sys-sigset>? #f))
   (call "Scm_ForkptyAndExec"))
 ))
 

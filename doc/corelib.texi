@@ -13232,8 +13232,8 @@ or @code{#f} (@xref{Signal}, for the details of signal masks).
 If it is an instance of @code{<sys-sigset>}, the signal mask of calling
 thread is replaced by it just before @code{exec(2)} is called.
 It is useful, for example, to run an external program from a thread where
-all signals are blocked (which is the default; see @ref{Signals and threads});
-without setting @var{sigmask}, the @code{exec}ed process inherits 
+all signals are blocked (which is the default; see @ref{Signals and threads}).
+Without setting @var{sigmask}, the @code{exec}ed process inherits 
 calling thread's signal mask and become a process that blocks all signals,
 which is not very convenient in most cases.
 @c JP
@@ -13251,15 +13251,16 @@ which is not very convenient in most cases.
 @c COMMON
 
 @c EN
-When it encounters an error, most of the time it raises an error condition.
+When @code{sys-exec}
+encounters an error, most of the time it raises an error condition.
 Once the file descriptors are permuted, however, it would be impractical
 to handle errors in reasonable way (you don't even know stderr is still
 available!), so Gauche simply exits on the error.
 @c JP
-エラーに遭遇すると、たいていの場合エラー条件を投げます。
-一旦ファイルディスクリプタの順番が変えられると、合理的な方法でエラーを処理する
+@code{sys-exec}がエラーに遭遇すると、たいていの場合エラー条件を投げます。
+しかし一旦ファイルディスクリプタの順番が変えられると、合理的な方法でエラーを処理する
 ことは実行不可能です(標準エラーがまだ有効かどうかさえ知る術がありません)。
-したがって、Gaucheはエラー時には単に終了するだけです。
+したがって、その場合はGaucheはエラー時には単に終了するだけです。
 @c COMMON
 @end defun
 

@@ -7773,15 +7773,16 @@ Note: @code{sys-forkpty} has the same MT hazard as @code{sys-fork}
 running multiple threads, use @code{sys-forkpty-and-exec} below.
 @end defun
 
-@defun sys-forkpty-and-exec command args &optional iomap term
+@defun sys-forkpty-and-exec command args &keyword iomap term sigmask
 Does @code{sys-forkpty}, and lets the child process
 immediately @code{exec}s the specified @var{command}
 with arguments @var{args}.   This function doesn't have
 the hazard in multi-thread environment.
 
-The meaning of arguments @var{command}, @var{args} and @var{iomap}
-is the same as @code{sys-exec} (see @ref{Unix process management}).
-If the optional argument @var{term} is given, it is used to initialize
+The meanings of arguments @var{command}, @var{args}, @var{iomap} and
+@var{sigmask}
+are the same as @code{sys-exec} (see @ref{Unix process management}).
+If the keyword argument @var{term} is given, it is used to initialize
 the slave pty.
 @end defun
 

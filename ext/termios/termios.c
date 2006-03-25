@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: termios.c,v 1.17 2006-01-27 10:04:46 shirok Exp $
+ *  $Id: termios.c,v 1.18 2006-03-25 15:40:22 shirok Exp $
  */
 
 #include <string.h>
@@ -140,7 +140,7 @@ ScmObj Scm_Forkpty(ScmObj slaveterm)
 }
 
 ScmObj Scm_ForkptyAndExec(ScmString *file, ScmObj args, ScmObj iomap,
-                          ScmObj slaveterm)
+                          ScmObj slaveterm, ScmSysSigset *mask)
 {
     int argc = Scm_Length(args);
     char **argv;
@@ -167,6 +167,10 @@ ScmObj Scm_ForkptyAndExec(ScmString *file, ScmObj args, ScmObj iomap,
     }
     if (pid == 0) {
         Scm_SysSwapFds(fds);
+        if (mask) {
+            Scm_ResetSignalHandlers(&mask->set);
+            Scm_SysSigmask(SIG_SETMASK, mask);
+        }
         execvp(program, (char *const*)argv);
         /* here, we failed */
         Scm_Panic("exec failed: %s: %s", program, strerror(errno));
