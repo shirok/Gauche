@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.77 2006-03-12 11:06:05 shirok Exp $
+ *  $Id: system.c,v 1.78 2006-03-25 14:15:21 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1226,13 +1226,15 @@ int Scm_IsSugid(void)
  *   reasonable way.  For now, iomap is ignored.
  */
 
-ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap, int forkp)
+ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
+                   ScmSysSigset *mask, int flags)
 {
     int argc = Scm_Length(args), i, *fds;
     char **argv;
     const char *program;
     ScmObj ap;
     pid_t pid = 0;
+    int forkp = flags & SCM_EXEC_WITH_FORK;
 
     if (argc < 1) {
         Scm_Error("argument list must have at least one element: %S", args);
@@ -1255,6 +1257,10 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap, int forkp)
     /* Now we swap file descriptors and exec(). */
     if (!forkp || pid == 0) {
         Scm_SysSwapFds(fds);
+        if (mask) {
+            Scm_ResetSignalHandlers(&mask->set);
+            Scm_SysSigmask(SIG_SETMASK, mask);
+        }
         execvp(program, (char *const*)argv);
         /* here, we failed */
         Scm_Panic("exec failed: %s: %s", program, strerror(errno));

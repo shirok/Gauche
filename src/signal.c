@@ -1,7 +1,7 @@
 /*
  * signal.c - signal handling
  *
- *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.36 2006-01-28 04:00:33 shirok Exp $
+ *  $Id: signal.c,v 1.37 2006-03-25 14:15:21 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -660,6 +660,31 @@ ScmObj Scm_SysSigmask(int how, ScmSysSigset *newmask)
         Scm_Error("sigprocmask failed");
     }
     return SCM_OBJ(oldmask);
+}
+
+/*
+ * Reset signal handlers except the masked ones.
+ * This is called just before we change the signal mask and call exec(2),
+ * so that we can avoid the hazard that the signal handler is called
+ * between sigsetmask and exec.
+ */
+void Scm_ResetSignalHandlers(sigset_t *mask)
+{
+    struct sigdesc *desc = sigDesc;
+    struct sigaction act;
+    int signum;
+
+    act.sa_handler = SIG_IGN;
+
+    for (; desc->name; desc++) {
+        if (!sigismember(&sigHandlers.masterSigset, desc->num)
+            && (!mask || !sigismember(mask, desc->num))) {
+            fprintf(stderr, "MASKING %s\n", desc->name);
+            act.sa_flags = 0;
+            // NB: we tolerate failure of this
+            sigaction(desc->num, &act, NULL);
+        }
+    }
 }
 
 /*

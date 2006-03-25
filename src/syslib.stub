@@ -1,7 +1,7 @@
 ;;;
 ;;; syslib.stub - system interface functions
 ;;;  
-;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.114 2006-03-12 11:06:05 shirok Exp $
+;;; $Id: syslib.stub,v 1.115 2006-03-25 14:15:21 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -596,12 +596,46 @@
         "if (pid < 0) Scm_SysError(\"fork failed\");"
         "SCM_RESULT = pid;"))
 
-(define-cproc sys-exec (command::<string> args::<list> &optional iomap)
-  (body <void> "Scm_SysExec(command, args, iomap, FALSE);"))
+;; NB: the signature of old version was (command args &optional iomap).
+;; The new version is (command args &keyword iomap sigmask).
+;; For transitional stage, we accept both.
+(define-keyword iomap "key_iomap")
+(define-keyword sigmask "key_sigmask")
 
-(define-cproc sys-fork-and-exec (command::<string> args::<list>
-                                                   &optional iomap)
-  (expr "Scm_SysExec(command, args, iomap, TRUE)"))
+"static void get_exec_args(ScmObj rest, ScmObj *iomap, ScmSysSigset **sigmask)"
+"{"
+"  ScmObj s_sigmask = SCM_NIL;"
+"  *iomap = SCM_NIL; *sigmask = NULL;"
+"  if (SCM_PAIRP(rest) && SCM_NULLP(SCM_CDR(rest))) {"
+"    /* OLD SIGNATURE */"
+"    *iomap = SCM_CAR(rest);"
+"  } else {"
+"    *iomap = Scm_GetKeyword(key_iomap, rest, SCM_NIL);"
+"    s_sigmask = Scm_GetKeyword(key_sigmask, rest, SCM_FALSE);"
+"    if (SCM_SYS_SIGSET_P(s_sigmask)) {"
+"      *sigmask = SCM_SYS_SIGSET(s_sigmask);"
+"    } else if (!SCM_FALSEP(s_sigmask)) {"
+"      Scm_Error(\"<sys-sigset> or #f required, but got %S\", s_sigmask);"
+"    }"
+"  }"
+"}"
+
+(define-cproc sys-exec (command::<string>
+                        args::<list>
+                        &rest rest)
+  (body <void>
+        "ScmObj iomap = SCM_NIL;"
+        "ScmSysSigset *sigmask = NULL;"
+        "get_exec_args(rest, &iomap, &sigmask);"
+        "Scm_SysExec(command, args, iomap, sigmask, 0);"))
+
+(define-cproc sys-fork-and-exec (command::<string>
+                                 args::<list>
+                                 &rest rest)
+  (body "ScmObj iomap = SCM_NIL;"
+        "ScmSysSigset *sigmask = NULL;"
+        "get_exec_args(rest, &iomap, &sigmask);"
+        "SCM_RESULT = Scm_SysExec(command, args, iomap, sigmask, SCM_EXEC_WITH_FORK);"))
 
 (define-cproc sys-getcwd ()
   (body <const-cstring>

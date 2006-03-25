@@ -1,7 +1,7 @@
 /*
  * gauche.h - Gauche scheme system header
  *
- *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.449 2006-03-12 11:06:05 shirok Exp $
+ *  $Id: gauche.h,v 1.450 2006-03-25 14:15:21 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2568,6 +2568,7 @@ SCM_EXTERN ScmObj Scm_SigSuspend(ScmSysSigset *mask);
 SCM_EXTERN sigset_t Scm_GetMasterSigmask(void);
 SCM_EXTERN void   Scm_SetMasterSigmask(sigset_t *set);
 SCM_EXTERN ScmObj Scm_SignalName(int signum);
+SCM_EXTERN void   Scm_ResetSignalHandlers(sigset_t *mask);
 
 /*---------------------------------------------------
  * SYSTEM
@@ -2707,8 +2708,13 @@ SCM_EXTERN ScmObj Scm_GetPasswdByName(ScmString *name);
 
 SCM_EXTERN int    Scm_IsSugid(void);
 
+/* flags for Scm_SysExec */
+enum {
+    SCM_EXEC_WITH_FORK = (1L<<0)
+};
+
 SCM_EXTERN ScmObj Scm_SysExec(ScmString *file, ScmObj args,
-                              ScmObj iomap, int forkp);
+                              ScmObj iomap, ScmSysSigset *mask, int flags);
 SCM_EXTERN int   *Scm_SysPrepareFdMap(ScmObj iomap);
 SCM_EXTERN void   Scm_SysSwapFds(int *fds);
 

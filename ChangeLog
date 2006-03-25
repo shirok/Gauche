@@ -1,3 +1,12 @@
+2006-03-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_SysExec): added support of setting signal mask
+	  before exec.
+	* src/syslib.stub (sys-exec, sys-fork-and-exec): Changed API to take
+	  keyword arguments :iomap and :sigmask.  The old signature (optional
+	  iomap) is supported for backward compatibility, but will be gone 
+	  in future.
+
 2006-03-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/queue.scm (dequeue!): avoid non weak-GC-robust pattern.

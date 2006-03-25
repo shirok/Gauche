@@ -13157,7 +13157,7 @@ forkを依頼するという方法です。
 @c COMMON
 @end defun
 
-@defun sys-exec command args &optional iomap
+@defun sys-exec command args &keyword iomap sigmask
 @c EN
 [POSIX+]
 Execute @var{command} with @var{args}, a list of arguments.
@@ -13180,10 +13180,10 @@ All elements of @var{args} must be strings.  The first element of
 @c COMMON
 
 @c EN
-The optional @var{iomap} argument, when provided, specifies how the
+The @var{iomap} keyword argument, when provided, specifies how the
 open file descriptors are treated.  It must be the following format:
 @c JP
-オプショナル引数の@var{iomap}は、与えられた場合は、開かれている
+キーワード引数の@var{iomap}は、与えられた場合は、開かれている
 ファイルディスクリプタがどのように扱われるかを指定します。
 この引数は以下のフォーマットでなければなりません。
 @c COMMON
@@ -13227,6 +13227,30 @@ process remain open.
 @end example
 
 @c EN
+The @var{sigmask} keyword argument can be an instance of @code{<sys-sigmask>}
+or @code{#f} (@xref{Signal}, for the details of signal masks).
+If it is an instance of @code{<sys-sigmask>}, the signal mask of calling
+thread is replaced by it just before @code{exec(2)} is called.
+It is useful, for example, to run an external program from a thread where
+all signals are blocked (which is the default; see @ref{Signals and threads});
+without setting @var{sigmask}, the @code{exec}ed process inherits 
+calling thread's signal mask and become a process that blocks all signals,
+which is not very convenient in most cases.
+@c JP
+@var{sigmask}キーワード引数には、@code{<sys-sigmask>}のインスタンスか
+@code{#f}を渡すことができます (シグナルマスクについては@xref{Signal}を
+参照して下さい)。@code{<sys-sigmask>}のインスタンスを渡した場合、
+この関数を呼び出したスレッドのシグナルマスクが、@code{exec(2)}を呼ぶ
+直前にそれによって置き換えられます。
+これは、全てのシグナルをブロックしているスレッドから外部プログラムを走らせる
+ような場合に便利です (@ref{Signals and threads}で述べるように、
+新たなスレッドは全てのシグナルをデフォルトでブロックします)。
+このような場合に@var{sigmask}を設定しないと、@code{exec}されたプロセスは
+スレッドのシグナルマスクを継承し、ほとんどのシグナルを受け付けないプロセスと
+なってしまうからです。通常、それはあまり便利ではありません。
+@c COMMON
+
+@c EN
 When it encounters an error, most of the time it raises an error condition.
 Once the file descriptors are permuted, however, it would be impractical
 to handle errors in reasonable way (you don't even know stderr is still
@@ -13239,11 +13263,12 @@ available!), so Gauche simply exits on the error.
 @c COMMON
 @end defun
 
-@defun sys-fork-and-exec command args &optional iomap
+@defun sys-fork-and-exec command args &keyword iomap sigmask
 @c EN
 Like @code{sys-exec}, but executes @code{fork(2)} just before
-remapping I/O and @code{execvp(2)}.
-Returns child's process id.
+remapping I/O, altering signal mask and call @code{execvp(2)}.
+Returns child's process id.  The meanings of arguments are
+the same as @code{sys-exec}.
 
 It is strongly recommended to use this procedure instead of
 @code{sys-fork} and @code{sys-exec} combination when you need
@@ -13252,9 +13277,9 @@ No memory allocation nor lock acquisition is done between
 @code{fork(2)} and @code{execvp(2)},
 so it's pretty safe in the multithreaded environment.
 @c JP
-@code{sys-exec}と同じですが、ファイルディスクリプタを変更して
+@code{sys-exec}と同じですが、ファイルディスクリプタとシグナルマスクを変更して
 @code{execvp(2)}を実行する直前に、@code{fork(2)}を実行します。
-子プロセスのプロセスidを返します。
+子プロセスのプロセスidを返します。引数の意味は@code{sys-exec}と同じです。
 
 他のスレッドが走っている環境下で別プログラムをspawnしたい場合は、
 @code{sys-fork}と@code{sys-exec}を別々に使うのではなく、

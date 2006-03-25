@@ -1,7 +1,7 @@
 ;;;
 ;;; scmlib.scm - more Scheme libraries
 ;;;
-;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: scmlib.scm,v 1.6 2005-07-12 11:42:02 shirok Exp $
+;;;  $Id: scmlib.scm,v 1.7 2006-03-25 14:15:21 shirok Exp $
 ;;;
 
 ;; This file contains builtin library functions that are easier to be
