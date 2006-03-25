@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.37 2006-03-25 14:15:21 shirok Exp $
+ *  $Id: signal.c,v 1.38 2006-03-25 14:49:10 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -679,7 +679,6 @@ void Scm_ResetSignalHandlers(sigset_t *mask)
     for (; desc->name; desc++) {
         if (!sigismember(&sigHandlers.masterSigset, desc->num)
             && (!mask || !sigismember(mask, desc->num))) {
-            fprintf(stderr, "MASKING %s\n", desc->name);
             act.sa_flags = 0;
             // NB: we tolerate failure of this
             sigaction(desc->num, &act, NULL);
