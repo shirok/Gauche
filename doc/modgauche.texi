@@ -6161,6 +6161,27 @@ it never returns.
 フォークします。これはデフォルトの振る舞いです。@var{flag} が偽の場合、
 @code{run-process} は直接 @code{sys-exec} を呼ぶので、それは返りません。
 @c COMMON
+
+@item :sigmask @var{mask}
+@c EN
+@var{Mask} must be either an instance of @code{<sys-sigset>},
+a list of integers, or 
+@code{#f}.  If an instance of @code{<sys-sigset>} is given, the
+signal mask of executed process is set to it.   A list of integers
+are treated as a list of signals to mask.  It is important
+to set an appropriate mask if you call @code{run-process} from
+multithreaded application.
+See the description of @code{sys-exec} (@ref{Unix process management})
+for the details.
+@c JP
+@var{mask}は@code{<sys-sigset>}のインスタンス、整数のリスト、
+あるいは@code{#f}でなければなりません。
+@code{<sys-sigset>}のインスタンスである場合、それが実行する
+プロセスのシグナルマスクになります。整数のリストの場合は各整数が
+マスクすべきシグナル番号とみなされます。マルチスレッドアプリケーションで
+@code{run-process}を使う場合はシグナルマスクを適切に設定することが重要です。
+@code{sys-exec}の説明を参照して下さい (@ref{Unix process management})。
+@c COMMON
 @end table
 @end defun
 

@@ -6,6 +6,7 @@
 	  keyword arguments :iomap and :sigmask.  The old signature (optional
 	  iomap) is supported for backward compatibility, but will be gone 
 	  in future.
+	* lib/gauche/process.c (run-process): allow :sigmask keyword argument.
 
 2006-03-17  Shiro Kawai  <shiro@acm.org>
 

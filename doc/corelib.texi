@@ -13227,9 +13227,9 @@ process remain open.
 @end example
 
 @c EN
-The @var{sigmask} keyword argument can be an instance of @code{<sys-sigmask>}
+The @var{sigmask} keyword argument can be an instance of @code{<sys-sigset>}
 or @code{#f} (@xref{Signal}, for the details of signal masks).
-If it is an instance of @code{<sys-sigmask>}, the signal mask of calling
+If it is an instance of @code{<sys-sigset>}, the signal mask of calling
 thread is replaced by it just before @code{exec(2)} is called.
 It is useful, for example, to run an external program from a thread where
 all signals are blocked (which is the default; see @ref{Signals and threads});
@@ -13237,9 +13237,9 @@ without setting @var{sigmask}, the @code{exec}ed process inherits
 calling thread's signal mask and become a process that blocks all signals,
 which is not very convenient in most cases.
 @c JP
-@var{sigmask}キーワード引数には、@code{<sys-sigmask>}のインスタンスか
+@var{sigmask}キーワード引数には、@code{<sys-sigset>}のインスタンスか
 @code{#f}を渡すことができます (シグナルマスクについては@xref{Signal}を
-参照して下さい)。@code{<sys-sigmask>}のインスタンスを渡した場合、
+参照して下さい)。@code{<sys-sigset>}のインスタンスを渡した場合、
 この関数を呼び出したスレッドのシグナルマスクが、@code{exec(2)}を呼ぶ
 直前にそれによって置き換えられます。
 これは、全てのシグナルをブロックしているスレッドから外部プログラムを走らせる

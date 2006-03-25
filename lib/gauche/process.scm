@@ -1,7 +1,7 @@
 ;;;
 ;;; process.scm - process interface
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: process.scm,v 1.19 2004-04-28 06:42:11 shirok Exp $
+;;;  $Id: process.scm,v 1.20 2006-03-25 15:16:52 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -89,7 +89,7 @@
               (car args) (cadr args))))
     
   (let loop ((args args) (argv '())
-             (input #f) (output #f) (error #f) (wait #f) (fork #t))
+             (input #f) (output #f) (error #f) (wait #f) (fork #t) (mask #f))
     (cond ((null? args)
            (let ((proc  (make <process> :command (x->string command))))
              (receive (iomap toclose)
@@ -97,25 +97,28 @@
                    (%setup-iomap proc input output error)
                    (values #f '()))
                (%run-process proc (cons (x->string command) (reverse argv))
-                             iomap toclose wait fork))))
+                             iomap mask toclose wait fork))))
           ((eqv? (car args) :input)
            (check-iokey args)
-           (loop (cddr args) argv (cadr args) output error wait fork))
+           (loop (cddr args) argv (cadr args) output error wait fork mask))
           ((eqv? (car args) :output)
            (check-iokey args)
-           (loop (cddr args) argv input (cadr args) error wait fork))
+           (loop (cddr args) argv input (cadr args) error wait fork mask))
           ((eqv? (car args) :error)
            (check-iokey args)
-           (loop (cddr args) argv input output (cadr args) wait fork))
+           (loop (cddr args) argv input output (cadr args) wait fork mask))
           ((eqv? (car args) :fork)
            (check-key args)
-           (loop (cddr args) argv input output error wait (cadr args)))
+           (loop (cddr args) argv input output error wait (cadr args) mask))
           ((eqv? (car args) :wait)
            (check-key args)
-           (loop (cddr args) argv input output error (cadr args) fork))
+           (loop (cddr args) argv input output error (cadr args) fork mask))
+          ((eqv? (car args) :sigmask)
+           (check-key args)
+           (loop (cddr args) argv input output error wait fork (cadr args)))
           (else
            (loop (cdr args) (cons (x->string (car args)) argv)
-                 input output error wait fork))
+                 input output error wait fork mask))
           ))
   )
 
@@ -154,22 +157,31 @@
                               2)))))
     (values iomap toclose)))
 
-(define (%run-process proc argv iomap toclose wait fork)
+(define (%ensure-mask mask)
+  (cond
+   ((is-a? mask <sys-sigset>) mask)
+   ((and (list? mask) (every integer? mask))
+    (fold (lambda (sig m) (sys-sigset-add! m sig) m) (make <sys-sigset>) mask))
+   ((not mask) #f)
+   (else (error "run-process: sigmask argument must be either #f, <sys-sigset>, or a list of integers, but got:" mask))))
+
+(define (%run-process proc argv iomap sigmask toclose wait fork)
   (if fork
-      (let ((pid (sys-fork-and-exec (car argv) argv iomap)))
-        (slot-set! proc 'processes
-                   (cons proc (slot-ref proc 'processes)))
-        (slot-set! proc 'pid pid)
-        (map (lambda (p)
-               (if (input-port? p)
-                 (close-input-port p)
-                 (close-output-port p)))
-             toclose)
-        (when wait
-          (slot-set! proc 'status
-                     (receive (p code) (sys-waitpid pid) code)))
-        proc)
-      (sys-exec (car argv) argv iomap)))
+    (let1 pid (sys-fork-and-exec (car argv) argv
+                                 :iomap iomap :sigmask (%ensure-mask sigmask))
+      (slot-set! proc 'processes
+                 (cons proc (slot-ref proc 'processes)))
+      (slot-set! proc 'pid pid)
+      (map (lambda (p)
+             (if (input-port? p)
+               (close-input-port p)
+               (close-output-port p)))
+           toclose)
+      (when wait
+        (slot-set! proc 'status
+                   (receive (p code) (sys-waitpid pid) code)))
+      proc)
+    (sys-exec (car argv) argv :iomap iomap :sigmask (%ensure-mask sigmask))))
 
 ;; other basic interfaces
 (define (process? obj) (is-a? obj <process>))
