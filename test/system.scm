@@ -435,16 +435,17 @@
              (cmask (make <sys-sigset>)))
          (sys-sigset-fill! nmask)
          (let ((omask (sys-sigmask SIG_SETMASK nmask))
-               (in    (open-input-file "/dev/zero"))
-               (out   (open-output-file "/dev/null")))
-           (let1 pid
-               (sys-fork-and-exec "cat" '("cat")
-                                  :iomap `((0 . ,in) (1 . ,out) (2 . ,out))
-                                  :sigmask cmask)
-             (sys-kill pid SIGINT)
-             (sys-sigmask SIG_SETMASK omask)
-             (sys-waitpid pid)
-             #t))))
+               (zero  (open-input-file "/dev/zero")))
+           (receive (in out) (sys-pipe :buffering :none)
+             (let1 pid
+                 (sys-fork-and-exec "cat" '("cat")
+                                    :iomap `((0 . ,zero) (1 . ,out))
+                                    :sigmask cmask)
+               (read-byte in) ;; make sure 'cat' is started
+               (sys-kill pid SIGINT)
+               (sys-sigmask SIG_SETMASK omask)
+               (sys-waitpid pid)
+               #t)))))
 
 ) ;; unless *win32*
 
