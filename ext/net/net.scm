@@ -1,7 +1,7 @@
 ;;;
 ;;; net - network interface
 ;;;  
-;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: net.scm,v 1.31 2005-09-11 23:23:45 shirok Exp $
+;;;  $Id: net.scm,v 1.32 2006-03-26 19:55:50 shirok Exp $
 ;;;
 
 (define-module gauche.net
@@ -61,7 +61,7 @@
 (export-if-defined
  |IPPROTO_IP| |IPPROTO_ICMP| |IPPROTO_TCP| |IPPROTO_UDP| |IPPROTO_IPV6|
  |SOL_SOCKET| |SO_KEEPALIVE| |SO_OOBINLINE| |SO_REUSEADDR| |SO_TYPE|
- |SO_BROADCAST| |SO_SNDBUF| |SO_RCVBUF| |SO_PRIORITY| |SO_ERROR|
+ |SO_BROADCAST| |SO_SNDBUF| |SO_RCVBUF| |SO_PRIORITY| |SO_ERROR| |SOMAXCONN|
  |SOL_TCP| |TCP_NODELAY| |TCP_MAXSEG| |TCP_CORK|
  |SOL_IP| |IP_OPTIONS|
  |MSG_CTRUNC| |MSG_DONTROUTE| |MSG_EOR| |MSG_OOB| |MSG_PEEK|
