@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compaux.c,v 1.11 2005-05-28 10:24:36 shirok Exp $
+ *  $Id: compaux.c,v 1.12 2006-03-27 09:17:25 shirok Exp $
  */
 
 /* This file serves as a bridge to the compiler, which is implemented
@@ -303,7 +303,8 @@ ScmObj Scm_UnwrapSyntax(ScmObj form)
 
 #define INIT_GLOC(gloc, name, mod)                                      \
     do {                                                                \
-        gloc = Scm_FindBinding(mod, SCM_SYMBOL(SCM_INTERN(name)), TRUE); \
+        gloc = Scm_FindBinding(mod, SCM_SYMBOL(SCM_INTERN(name)),       \
+                               SCM_BINDING_STAY_IN_MODULE);             \
         if (gloc == NULL) {                                             \
             Scm_Panic("no " name " procedure in gauche.internal");      \
         }                                                               \

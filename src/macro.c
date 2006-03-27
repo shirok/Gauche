@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.59 2005-10-03 20:57:45 shirok Exp $
+ *  $Id: macro.c,v 1.60 2006-03-27 09:17:25 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -953,7 +953,7 @@ ScmObj Scm_VMMacroExpand(ScmObj expr, ScmObj env, int oncep)
             }
             if (SCM_SYMBOLP(sym)) {
                 ScmGloc *g = Scm_FindBinding(Scm_VM()->module,
-                                             SCM_SYMBOL(sym), FALSE);
+                                             SCM_SYMBOL(sym), 0);
                 if (g) {
                     ScmObj gv = SCM_GLOC_GET(g);
                     if (SCM_MACROP(gv)) mac = SCM_MACRO(gv);

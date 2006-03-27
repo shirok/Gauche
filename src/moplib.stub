@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: moplib.stub,v 1.28 2006-02-09 08:57:37 shirok Exp $
+;;; $Id: moplib.stub,v 1.29 2006-03-27 09:17:25 shirok Exp $
 ;;;
 
 "
@@ -66,16 +66,17 @@
 
 
 (define-cproc %ensure-generic-function (name::<symbol> module::<module>)
-  "  ScmObj val = Scm_GlobalVariableRef(module, name, FALSE);
-  if (!Scm_TypeP(val, SCM_CLASS_GENERIC)) {
-    if (SCM_SUBRP(val) || SCM_CLOSUREP(val)) {
-      val = Scm_MakeBaseGeneric(SCM_OBJ(name), call_fallback_proc, val);
-    } else {
-      val = Scm_MakeBaseGeneric(SCM_OBJ(name), NULL, NULL);
-    }
-  }
-  Scm_Define(module, name, val);
-  SCM_RETURN(val);")
+  (body
+   "ScmObj val = Scm_GlobalVariableRef(module, name, SCM_BINDING_KEEP_AUTOLOAD);"
+   "if (!Scm_TypeP(val, SCM_CLASS_GENERIC)) {"
+   "  if (SCM_SUBRP(val) || SCM_CLOSUREP(val)) {"
+   "    val = Scm_MakeBaseGeneric(SCM_OBJ(name), call_fallback_proc, val);"
+   "  } else {"
+   "    val = Scm_MakeBaseGeneric(SCM_OBJ(name), NULL, NULL);"
+   "  }"
+   "}"
+   "Scm_Define(module, name, val);"
+   "SCM_RESULT = val;"))
 
 (define-cproc %make-next-method (gf methods::<list> args::<list>)
   "  ScmObj mp, *argv; int nargs = Scm_Length(args);

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.134 2006-03-05 07:48:38 shirok Exp $
+ *  $Id: class.c,v 1.135 2006-03-27 09:17:25 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -970,7 +970,7 @@ ScmObj Scm_CheckClassBinding(ScmObj name, ScmModule *module)
     ScmGloc *g;
     
     if (!SCM_SYMBOLP(name)) return SCM_FALSE;
-    g = Scm_FindBinding(module, SCM_SYMBOL(name), FALSE);
+    g = Scm_FindBinding(module, SCM_SYMBOL(name), 0);
     if (g == NULL) return SCM_FALSE;
     v = SCM_GLOC_GET(g);
     return SCM_CLASSP(v) ? v : SCM_FALSE;

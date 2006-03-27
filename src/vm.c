@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.244 2006-01-28 01:28:25 shirok Exp $
+ *  $Id: vm.c,v 1.245 2006-03-27 09:17:25 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -611,7 +611,7 @@ pthread_key_t Scm_VMKey(void)
             VM_ASSERT(SCM_IDENTIFIERP(v));                              \
             gloc = Scm_FindBinding(SCM_IDENTIFIER(v)->module,           \
                                    SCM_IDENTIFIER(v)->name,             \
-                                   FALSE);                              \
+                                   0);                                  \
             if (gloc == NULL) {                                         \
                 VM_ERR(("unbound variable: %S",                         \
                         SCM_IDENTIFIER(v)->name));                      \
@@ -1314,11 +1314,11 @@ static void run_loop()
                        we search only for the id's module, so that set! won't
                        mutate bindings in the other module. */
                     gloc = Scm_FindBinding(id->module, id->name,
-                                           SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_LIMIT_MODULE_MUTATION));
+                                           (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_LIMIT_MODULE_MUTATION)? SCM_BINDING_STAY_IN_MODULE : 0));
                     if (gloc == NULL) {
                         /* Do search again for meaningful error message */
                         if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_LIMIT_MODULE_MUTATION)) {
-                            gloc = Scm_FindBinding(id->module, id->name, FALSE);
+                            gloc = Scm_FindBinding(id->module, id->name, 0);
                             if (gloc != NULL) {
                                 VM_ERR(("can't mutate binding of %S, which is in another module",
                                         id->name));

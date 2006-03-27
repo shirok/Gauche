@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.62 2006-02-09 09:14:41 shirok Exp $
+ *  $Id: module.c,v 1.63 2006-03-27 09:17:25 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -183,12 +183,13 @@ ScmObj Scm_MakeModule(ScmSymbol *name, int error_if_exists)
 #define SEARCHED_ARRAY_SIZE  64
 
 ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
-                         int stay_in_module)
+                         int flags)
 {
     ScmHashEntry *e;
     ScmModule *m = module;
     ScmObj p, mp;
     ScmGloc *gloc = NULL;
+    int stay_in_module = flags&SCM_BINDING_STAY_IN_MODULE;
 
     /* keep record of searched modules.  we use stack array for small # of
        modules, in order to avoid consing for typical cases. */
@@ -259,18 +260,17 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
 
 ScmObj Scm_GlobalVariableRef(ScmModule *module,
                              ScmSymbol *symbol,
-                             int stay_in_module)
+                             int flags)
 {
-    ScmGloc *g = Scm_FindBinding(module, symbol, stay_in_module);
+    ScmGloc *g = Scm_FindBinding(module, symbol, flags);
     ScmObj val;
     
     if (g == NULL) return SCM_UNBOUND;
     val = SCM_GLOC_GET(g);
-#if 0  /* This one yet has a problem. */
-    if (SCM_AUTOLOADP(val)) {
+    if (!(flags & SCM_BINDING_KEEP_AUTOLOAD)
+        && SCM_AUTOLOADP(val)) {
         val = Scm_LoadAutoload(SCM_AUTOLOAD(val));
     }
-#endif
     return val;
 }
 

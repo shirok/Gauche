@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.104 2006-01-21 01:44:20 shirok Exp $
+ *  $Id: load.c,v 1.105 2006-03-27 09:17:25 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -1040,8 +1040,8 @@ ScmObj Scm_LoadAutoload(ScmAutoload *adata)
                 Scm_Error("Trying to autoload module %S from file %S, but the file doesn't define such a module",
                           adata->import_from, adata->path);
             }
-            f = Scm_FindBinding(SCM_MODULE(m), adata->name, FALSE);
-            g = Scm_FindBinding(adata->module, adata->name, FALSE);
+            f = Scm_FindBinding(SCM_MODULE(m), adata->name, 0);
+            g = Scm_FindBinding(adata->module, adata->name, 0);
             SCM_ASSERT(f != NULL);
             SCM_ASSERT(g != NULL);
             adata->value = SCM_GLOC_GET(f);
@@ -1053,7 +1053,7 @@ ScmObj Scm_LoadAutoload(ScmAutoload *adata)
         } else {
             /* Normal import.  The binding must have been inserted to
                adata->module */
-            ScmGloc *g = Scm_FindBinding(adata->module, adata->name, FALSE);
+            ScmGloc *g = Scm_FindBinding(adata->module, adata->name, 0);
             SCM_ASSERT(g != NULL);
             adata->value = SCM_GLOC_GET(g);
             if (SCM_UNBOUNDP(adata->value) || SCM_AUTOLOADP(adata->value)) {

@@ -1,5 +1,14 @@
 2006-03-26  Shiro Kawai  <shiro@acm.org>
 
+	* src/module.c (Scm_FindBinding, Scm_GlobalVariableRef): API CHANGE:
+	  instead of stay_in_module boolean flag, it takes bitmasks so that
+	  we can extend it later.  Scm_GlobalVaribleRef takes a new flag,
+	  SCM_BINDING_KEEP_AUTOLOAD, to choose not to resolve autoload, which
+	  is required in some special occasions.
+	* src/vm.c, src/moplib.stub, src/macro.c, src/load.c, src/intlib.stub,
+	  src/gauche.h, src/extlib.stub, src/compaux.c, src/class.c:
+	  changed accordingly.
+
 	* ext/net/netlib.stub (SOMAXCONN): added SOMAXCONN constant (suggested
 	  by Tatsuya BIZENN).
 

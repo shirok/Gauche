@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.450 2006-03-25 14:15:21 shirok Exp $
+ *  $Id: gauche.h,v 1.451 2006-03-27 09:17:25 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1825,11 +1825,18 @@ SCM_CLASS_DECL(Scm_ModuleClass);
 
 SCM_EXTERN ScmObj Scm_MakeModule(ScmSymbol *name, int error_if_exists);
 
+/* Flags for Scm_FindBinding and Scm_GlobalVariableRef */
+enum {
+    SCM_BINDING_STAY_IN_MODULE = (1L<<0), /* do not search parent/imported */
+    SCM_BINDING_KEEP_AUTOLOAD = (1L<<1)   /* do not resolve autoload 
+                                             (Scm_GlobalVaribleRef only) */
+};
+
 SCM_EXTERN ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
-				    int stay_in_module);
+				    int flags);
 SCM_EXTERN ScmObj Scm_GlobalVariableRef(ScmModule *module,
                                         ScmSymbol *symbol,
-                                        int stay_in_module);
+                                        int flags);
 #define Scm_SymbolValue(m, s) Scm_GlobalVariableRef(m, s, FALSE)
 
 SCM_EXTERN ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol,

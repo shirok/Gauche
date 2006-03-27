@@ -1,7 +1,7 @@
 ;;;
 ;;; intlib.stub - internal built-ins
 ;;;  
-;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.17 2005-08-13 06:51:52 shirok Exp $
+;;; $Id: intlib.stub,v 1.18 2006-03-27 09:17:25 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -100,13 +100,13 @@
 ;; Returns GLOC object or #f
 (define-cproc find-binding (mod::<module> name::<symbol>
                             stay-in-module::<boolean>)
-  (expr <gloc>? "Scm_FindBinding(mod, name, stay_in_module)"))
+  (expr <gloc>? "Scm_FindBinding(mod, name, (stay_in_module? SCM_BINDING_STAY_IN_MODULE : 0))"))
 
 ;; This small piece of code encapsulates the common procedure in
 ;; pass1/variable to find whether the variable reference is a constant
 ;; or not.
 (define-cproc find-const-binding (id::<identifier>)
-  "ScmGloc *g = Scm_FindBinding(id->module, id->name, FALSE);
+  "ScmGloc *g = Scm_FindBinding(id->module, id->name, 0);
   if (!g || !SCM_GLOC_CONST_P(g)
       || SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), SCM_COMPILE_NOINLINE_CONSTS)) {
     SCM_RETURN(SCM_FALSE);
@@ -144,7 +144,7 @@
 
 (define-cproc global-call-type (id)
   "ScmGloc *gloc = Scm_FindBinding(SCM_IDENTIFIER(id)->module,
-                                   SCM_IDENTIFIER(id)->name, FALSE);
+                                   SCM_IDENTIFIER(id)->name, 0);
   ScmObj gval;
   if (!gloc) SCM_RETURN(Scm_Values2(SCM_FALSE, SCM_FALSE));
   gval = SCM_GLOC_GET(gloc);
