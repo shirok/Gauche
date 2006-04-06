@@ -13,7 +13,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;; $Id: matrix.scm,v 1.3 2006-02-09 09:16:39 shirok Exp $
+;;; $Id: matrix.scm,v 1.4 2006-04-06 04:09:31 shirok Exp $
 ;;;
 
 (select-module gauche.array)
@@ -256,10 +256,10 @@
             (eq? class <f64array>)
             (eq? class <array>))
       (determinant! (copy-object a))
-      (let ((rank (s32vector-length (start-vector-of a)))
-            (b (tabulate-array (array-shape a)
-                 (lambda (ind) (array-ref a ind))
-                 (make-vector rank))))
+      (let* ((rank (s32vector-length (start-vector-of a)))
+             (b (tabulate-array (array-shape a)
+                                (lambda (ind) (array-ref a ind))
+                                (make-vector rank))))
         (determinant! b)))))
 
 

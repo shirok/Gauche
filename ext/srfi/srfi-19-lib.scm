@@ -24,7 +24,7 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19-lib.scm,v 1.4 2005-10-28 02:53:10 shirok Exp $
+;;; $Id: srfi-19-lib.scm,v 1.5 2006-04-06 04:09:30 shirok Exp $
 
 (define-module srfi-19
   (use srfi-1)
@@ -336,7 +336,7 @@
 (define (time-monotonic->time-utc! time-in)
   (tm:check-time-type time-in 'time-monotonic 'time-monotonic->time-utc!)
   (set-time-type! time-in time-tai)
-  (tm:time-tai->time-utc! ntime ntime 'time-monotonic->time-utc))
+  (tm:time-tai->time-utc! time-in time-in 'time-monotonic->time-utc))
 
 (define (time-monotonic->time-tai time-in)
   (tm:check-time-type time-in 'time-monotonic 'time-monotonic->time-tai)
@@ -1214,7 +1214,7 @@
 ;; format and creates the leap second table
 ;; it also calls the almost standard, but not R5 procedures read-line 
 ;; & open-input-string
-;; ie (set! tm:leap-second-table (tm:read-tai-utc-date "tai-utc.dat"))
+;; ie (set! tm:leap-second-table (tm:read-tai-utc-data "tai-utc.dat"))
 
 (define (tm:read-tai-utc-data filename)
   (define (convert-jd jd)
@@ -1224,15 +1224,15 @@
   (let ( (port (open-input-file filename))
 	 (table '()) )
     (let loop ((line (read-line port)))
-      (if (not (eq? line eof))
-	  (begin
-	    (let* ( (data (read (open-input-string (string-append "(" line ")")))) 
-		    (year (car data))
-		    (jd   (cadddr (cdr data)))
-		    (secs (cadddr (cdddr data))) )
-	      (if (>= year 1972)
-		  (set! table (cons (cons (convert-jd jd) (convert-sec secs)) table)))
-	      (loop (read-line port))))))
+      (if (not (eof-object? line))
+        (begin
+          (let* ( (data (read (open-input-string (string-append "(" line ")")))) 
+                  (year (car data))
+                  (jd   (cadddr (cdr data)))
+                  (secs (cadddr (cdddr data))) )
+            (if (>= year 1972)
+              (set! table (cons (cons (convert-jd jd) (convert-sec secs)) table)))
+            (loop (read-line port))))))
     table))
 
 (define (read-leap-second-table filename)
