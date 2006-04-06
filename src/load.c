@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.105 2006-03-27 09:17:25 shirok Exp $
+ *  $Id: load.c,v 1.106 2006-04-06 21:41:25 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -524,6 +524,59 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
     
     return r;
 }
+
+#if 0 /* not sure we need this yet */
+/*------------------------------------------------------------------
+ * Append FEATURE to *cond-features*.  Once added, the symbol FEATURE
+ * will be recognized by cond-expand.
+ *
+ *  (cond-expand (FEATURE body ...)) 
+ *   
+ * If loading a module is required in order to make FEATURE available,
+ * such module can be specified in MODULE argument.  It can be SCM_FALSE
+ * if the feature is built-in.
+ *
+ * Although cond-expand can be used like #ifdefs of cpp, it is a bit
+ * different since you can test a feature _before_ loading the module
+ * (or, you can say testing the feature itself implies loading the
+ * module if available).  Thus it is not recommended to add a feature
+ * as a result of loading a specific module.  One possible usage is
+ * to add a feature conditionally if a module may or may not provide
+ * such a feature depending on platforms or compile-time options.
+ * (An example of this is gauche.net, which may provide gauche-ipv6
+ * if IPv6 support is compiled in.)
+ *
+ * Because of this obscurity, I do not encourage user-land programs
+ * to use this API.  We may try some use within Gauche bundled extensions,
+ * and see how well it works, before we make it open to public.
+ * (Esp. we need to come up a reasonable naming scheme of features
+ * if we allow arbitrary extensions to add them).
+ */
+
+ScmObj
+Scm_AddCondFeature(ScmObj feature, ScmObj module)
+{
+    ScmObj cell, z;
+   
+    if (!SCM_SYMBOLP(feature)) {
+        Scm_Error("feature name must be a symbol, but got %S", feature);
+    }
+    if (!SCM_SYMBOLP(module) && !SCM_FALSEP(module)) {
+        Scm_Error("module must be a symbol or #f, but got %S", module);
+    }
+    if (SCM_FALSEP(module)) {
+        cell = SCM_LIST1(feature);
+    } else {
+        cell = SCM_LIST2(feature, module);
+    }
+    
+    (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.path_mutex);
+    z = ldinfo.cond_features_rec->value =
+        Scm_Cons(cell, ldinfo.cond_features_rec->value);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
+    return z;
+}
+#endif
 
 /*------------------------------------------------------------------
  * Dynamic link
