@@ -8013,23 +8013,44 @@ A convenience macro that wraps @var{expr} by lambda.
 @end example
 @end defmac
 
-@defun test-module module
+@defun test-module module &keyword allow-undefined
 @c EN
 @var{Module} must be a symbol module name or a module.
 This procedure performs some heuristic consistency check of
 the given module: (1) whether symbols set as autoload
-in @var{module} can actually be loaded, and (2) whether
+in @var{module} can actually be loaded, (2) whether
 the symbols declared in export list is actually defined
-in the module.   Although not perfect, this test can catch
-some careless typo in symbol names.
+in the module, and (3) whether the global variable referenced
+within functions are all defined.   Although not perfect, 
+this test can catch some careless typo in symbol names.
 @c JP
 @var{Module}はモジュール名のシンボルかモジュールでなければなりません。
 この手続きはモジュール@var{module}に関していくつかの経験的な一貫性チェックを
 行います：(1) autoloadに設定されたシンボルがちゃんとロードできるか、
-(2) exportにリストされたシンボルがモジュール内で定義されているか。
+(2) exportにリストされたシンボルがモジュール内で定義されているか、
+(3) 関数中で参照されているグローバル変数が全て定義されたものであるか。
 この手続きは完璧ではないものの、
 ケアレスミスによる名前の綴り間違いを発見することができます。
 @c COMMON
+
+@c EN
+Sometimes you have a global vaiable that may not be
+defined depending on compiler options or platforms, and
+you check its existence at runtime before using it.
+The undefined variable reference check by @code{test-module}
+doesn't follow such logic, and reports an error whenever
+it finds your code referring to undefined variable.  In such case,
+you can give a list of symbols to the @var{allow-undefined}
+keyword argument; the test will excludes them from the check.
+@c COMMON
+しばしば、プラットフォームやコンパイルオプションによって
+グローバル変数が定義されるかどうかが異なる場合があります。
+コード中では実行時にその変数の存在を確認してから使うように
+コーディングしてあったとしても、@code{test-module}は
+そのようなロジックを追わないため、未定義変数の参照を報告して
+しまいます。そのような場合は、チェックから外す変数名のリストを
+@var{allow-undefined}キーワード引数に渡して下さい。
+@c JP
 @end defun
 
 @defun test-start module-name
