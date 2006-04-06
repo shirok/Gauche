@@ -1,5 +1,7 @@
 2006-04-06  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-0.scm: added some newly supported srfis.
+
 	* lib/gauche/test.scm (test-module): added a check to find out
 	  referencing undefined global variables, as suggested by
 	  Kazuki Tsujimoto.  A new keyword argument, :allow-undefined,

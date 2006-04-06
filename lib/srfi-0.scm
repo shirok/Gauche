@@ -1,14 +1,14 @@
 ;;;
 ;;; SRFI-0   feature based conditional expansion construct
 ;;;
-;;; $Id: srfi-0.scm,v 1.25 2005-05-24 09:52:56 shirok Exp $
+;;; $Id: srfi-0.scm,v 1.26 2006-04-06 21:42:53 shirok Exp $
 ;;;
 
 (define-module srfi-0
   (export cond-expand))
 (select-module srfi-0)
 
-;;; Rewritten by a legacy macro, instead of r5rs syntax-rules,
+;;; Rewritten with a legacy macro, instead of r5rs syntax-rules,
 ;;; to enable adding features at runtime.  Such capability is
 ;;; for system management, and not supposed to be used freely
 ;;; by user programs.
@@ -23,8 +23,11 @@
 ;;;   srfi-16, srfi-17, srfi-18, srfi-19,
 ;;;   srfi-22, srfi-23, srfi-25, 
 ;;;   srfi-26, srfi-27, srfi-28, srfi-29, srfi-30,
-;;;   srfi-31,
-;;;   srfi-37, srfi-39
+;;;   srfi-31, srfi-34, srfi-35,
+;;;   srfi-36, srfi-37, srfi-38, srfi-39, srfi-40,
+;;;   srfi-42, srfi-43, srfi-45, 
+;;;   srfi-55,
+;;;   srfi-62,
 ;;;   gauche
 ;;;
 ;;; The following features are conditionally defined depending on
@@ -62,10 +65,16 @@
                 (srfi-31)
                 (srfi-34)
                 (srfi-35)
+                (srfi-36)
                 (srfi-37 srfi-37)
                 (srfi-38)
                 (srfi-39 gauche.parameter)
+                (srfi-40 util.stream)
                 (srfi-42 srfi-42)
+                (srfi-43 srfi-43)
+                (srfi-45)
+                (srfi-55)
+                (srfi-62)
                 )))
 
 (define-macro (cond-expand . clauses)
