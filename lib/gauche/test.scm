@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.test - test framework
 ;;;  
-;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: test.scm,v 1.15 2006-02-09 08:52:12 shirok Exp $
+;;;  $Id: test.scm,v 1.16 2006-04-06 21:41:00 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -69,6 +69,11 @@
   (export test test* test-start test-end test-section test-module
           *test-error* *test-report-error* test-error? prim-test))
 (select-module gauche.test)
+
+;; we cannot use srfi-1, since we use gauche.test to test srfi-1 itself.
+;; we count on the built-in fold work properly here.
+(define (%filter proc lis)
+  (reverse (fold (lambda (x r) (if (proc x) (cons x r) r)) '() lis)))
 
 ;; An object to represent error.
 (define-class <test-error> ()
@@ -132,41 +137,61 @@
 ;; Toplevel binding sanity check ----------------------------------
 
 ;; Try to catch careless typos.  Suggested by Kimura Fuyuki.
+;; The toplevel undefined variable screening is suggested by Kazuki Tsujimoto.
+;; Keyword argument :allow-undefined may take a list of symbols, which
+;; is excluded from undefined variable check.
 
-(define (test-module module)
-  (let1 mod (cond ((module? module) module)
-                  ((symbol? module)
-                   (or (find-module module)
-                       (error "no such module" module)))
-                  (else
-                   (error "test-module requires module or symbol, but got"
-                          module)))
-    (format #t "testing bindings in ~a ... " mod) (flush)
-    (let ((bad-autoload '())
-          (bad-export '())
-          (report '()))
-      ;; 1. Check if there's no dangling autoloads.
-      (hash-table-for-each (module-table mod)
-                           (lambda (sym val)
-                             (with-error-handler
-                                 (lambda (e) (push! bad-autoload sym))
-                               (lambda () (eval sym mod)))))
-      ;; 2. Check if all exported symbols are properly defined.
-      (when (pair? (module-exports mod))
-        (for-each (lambda (sym)
-                    (with-error-handler
-                      (lambda (e) (push! bad-export sym))
-                    (lambda () (eval sym mod))))
-                  (module-exports mod)))
-      ;; report discrepancies
-      (unless (null? bad-autoload)
-        (push! report
-               (format #f "found dangling autoloads: ~a" bad-autoload)))
-      (unless (null? bad-export)
-        (unless (null? report) (push! report " AND "))
-        (push! report
-               (format #f "symbols exported but not defined: ~a" bad-export)))
-      (if (null? report)
+(define (test-module module . opts)
+  (let-keywords* opts ((allow-undefined '()))
+    (let1 mod (cond ((module? module) module)
+                    ((symbol? module)
+                     (or (find-module module)
+                         (error "no such module" module)))
+                    (else
+                     (error "test-module requires module or symbol, but got"
+                            module)))
+      (format #t "testing bindings in ~a ... " mod) (flush)
+      (let ((bad-autoload '())
+            (bad-export '())
+            (bad-gref '())
+            (report '()))
+        ;; 1. Check if there's no dangling autoloads.
+        (hash-table-for-each (module-table mod)
+                             (lambda (sym val)
+                               (guard (_ (else (push! bad-autoload sym)))
+                                 (global-variable-ref mod sym))))
+        ;; 2. Check if all exported symbols are properly defined.
+        (when (pair? (module-exports mod))
+          (for-each (lambda (sym)
+                      (guard (_ (else (push! bad-export sym)))
+                        (global-variable-ref mod sym)))
+                    (module-exports mod)))
+        ;; 3. Check if all global references are resolvable.
+        (for-each
+         (lambda (closure)
+           (for-each (lambda (gref)
+                       (cond ((and (not (memq (slot-ref gref 'name)
+                                              allow-undefined))
+                                   (dangling-gref? gref closure))
+                              => (lambda (bad) (push! bad-gref bad)))))
+                     (closure-grefs closure)))
+         (toplevel-closures mod))
+        ;; report discrepancies
+        (unless (null? bad-autoload)
+          (push! report (format "found dangling autoloads: ~a" bad-autoload)))
+        (unless (null? bad-export)
+          (unless (null? report) (push! report " AND "))
+          (push! report
+                 (format "symbols exported but not defined: ~a" bad-export)))
+        (unless (null? bad-gref)
+          (unless (null? report) (push! report " AND "))
+          (push! report
+                 (format "symbols referenced but not defined: ~a"
+                         (string-join (map (lambda (z)
+                                             (format "~a(~a)" (car z) (cdr z)))
+                                           bad-gref)
+                                      ", "))))
+        (if (null? report)
           (format #t "ok\n")
           (let ((s (apply string-append report)))
             (format #t "ERROR: ~a\n" s)
@@ -174,8 +199,40 @@
                   (cons (list (format #f "bindings in module ~a" (module-name mod))
                               '() s)
                         *discrepancy-list*))))
-      )
-    ))
+        )
+      )))
+
+;; Auxiliary funcs to catch dangling grefs.  We use the fact that
+;; an identifier embedded within the vm code is almost always an
+;; operand of GREF or GSET.  (This is because identifiers are
+;; introduced by macro expansion, but quoted identifiers are turned
+;; back to ortinary symbols when expansion is done.)  However, it
+;; may not be impossible to embed identifiers within literals.  
+;; Eventually we need a builtin procedure that picks identifiers
+;; used for GREF/GSET.
+;;
+;; Note that these identifiers in operands are replaced by GLOCs 
+;; once the code is executed.  We don't need to consider them; since
+;; if the identifier has successufully replaced by a GLOC, it couldn't
+;; be an undefined reference.
+
+(define (toplevel-closures module)
+  (%filter closure?
+           (map (lambda (sym)
+                  (global-variable-ref module sym #f))
+                (hash-table-keys (module-table module)))))
+
+(define (closure-grefs closure)
+  (%filter identifier?
+           ((with-module gauche.internal vm-code->list)
+            (closure-code closure))))
+
+(define (dangling-gref? ident closure)
+  (and (not ((with-module gauche.internal find-binding)
+             (slot-ref ident 'module)
+             (slot-ref ident 'name)
+             #f))
+       (cons (slot-ref ident 'name) (slot-ref closure 'info))))
 
 ;; Logging and bookkeeping -----------------------------------------
 (define (test-section msg)

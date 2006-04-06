@@ -8,7 +8,8 @@
 (test-start "net")
 
 (use gauche.net)
-(test-module 'gauche.net)
+(test-module 'gauche.net
+             :allow-undefined '(sys-getaddrinfo <sys-addrinfo>))
 
 ;;-----------------------------------------------------------------
 (test-section "socket address")

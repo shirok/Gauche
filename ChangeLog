@@ -1,3 +1,11 @@
+2006-04-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test.scm (test-module): added a check to find out
+	  referencing undefined global variables, as suggested by
+	  Kazuki Tsujimoto.  A new keyword argument, :allow-undefined,
+	  is introduced to disable the checking on certain variables.
+	* ext/net/test.scm, ext/auxsys/test.scm: changed accordingly.
+
 2006-04-05  Shiro Kawai  <shiro@acm.org>
 
 	* ext/srfi/srfi-19-lib.scm, ext/uvector/matrix.scm,
