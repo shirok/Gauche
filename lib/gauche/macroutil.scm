@@ -2,7 +2,7 @@
 ;;; Handy macro expander
 ;;;
 
-;;; $Id: macroutil.scm,v 1.2 2001-10-03 09:17:38 shirok Exp $
+;;; $Id: macroutil.scm,v 1.3 2006-04-07 02:04:33 shirok Exp $
 
 ;;
 ;; These routines are handy to check macro expansion process interactively.
@@ -15,11 +15,11 @@
 (define-syntax xmac
   (syntax-rules ()
     ((_ ?form)
-     (unwrap-syntax (%macro-expand ?form)))))
+     (unwrap-syntax (%macroexpand ?form)))))
 
 (define-syntax xmac1
   (syntax-rules ()
     ((_ ?form)
-     (unwrap-syntax (%macro-expand-1 ?form)))))
+     (unwrap-syntax (%macroexpand-1 ?form)))))
 
 (provide "gauche/macroutil")
