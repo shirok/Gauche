@@ -82,10 +82,10 @@ pdf : gauche-refe.pdf
 info : gauche-refe.info.gz gauche-refj.info.gz
 
 gauche-refe.html : gauche-refe.texi
-	texi2html --lang en --number gauche-refe.texi
+	texi2html --number gauche-refe.texi
 
 gauche-refe_toc.html : gauche-refe.texi
-	texi2html --lang en --split section --number gauche-refe.texi
+	texi2html --split section --number gauche-refe.texi
 
 gauche-refe.dvi : gauche-refe.texi
 	texi2dvi gauche-refe.texi
@@ -104,13 +104,15 @@ gauche-refe.info.gz : gauche-refe.texi
 	fi
 
 gauche-refj.html : gauche-refj.texi
-	texi2html --lang ja --number gauche-refj.texi
+	texi2html --init-file=ja-init.pl --number gauche-refj.texi
 
-# the sed stuff fixes broken charset spec
 gauche-refj_toc.html : gauche-refj.texi
-	texi2html --lang ja --split section --number gauche-refj.texi;
+	texi2html --init-file=ja-init.pl --split section --number gauche-refj.texi
+	for f in gauche-refj/gauche-refj*.html; do \
+	  sed 's/^<body lang="en"/<body lang="jp"/' $$f > $$f.t && mv $$f.t $$f; \
+	done
 
-ngauche-refj.dvi : gauche-refj.texi
+gauche-refj.dvi : gauche-refj.texi
 	texi2dvi gauche-refj.texi
 
 gauche-refj.pdf : gauche-refj.texi
@@ -130,7 +132,7 @@ gauche-deve.texi : gauche-dev.texi extract
 	$(GOSH) ./extract -en -o gauche-deve.texi gauche-dev.texi
 
 gauche-deve.html : gauche-deve.texi
-	texi2html --lang ja --number gauche-deve.texi
+	texi2html --number gauche-deve.texi
 
 gauche-deve.info.gz : gauche-deve.texi
 	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \

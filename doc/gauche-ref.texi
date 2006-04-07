@@ -14,10 +14,11 @@
 @direntry
 * Gauche (ja): (gauche-refj.info).	An R5RS Scheme implementation.
 @end direntry
+@documentencoding euc-jp
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-ref.texi,v 1.431 2005-10-09 12:54:47 shirok Exp $
+@c $Id: gauche-ref.texi,v 1.432 2006-04-07 11:29:48 shirok Exp $
 
 @c module and class index
 @defcodeindex md

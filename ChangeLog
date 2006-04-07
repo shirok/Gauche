@@ -1,5 +1,8 @@
 2006-04-06  Shiro Kawai  <shiro@acm.org>
 
+	* doc/Makefile.in: reverted jp document from utf-8 to euc-jp,
+	  for some tools still don't like utf-8.
+	
 	* src/compile.scm (pass1/define-inline): made define-inline keeps
 	  its effect outside its compiler unit.
 
