@@ -6659,7 +6659,7 @@ is for developers who knows what they are doing.
 @strong{Redefinition rules}: Reloading a module resets all
 the binding in the module by default.
 Sometimes it is not desirable, however.  For example,
-you might have  a large list of objects that takes time to rebuild.
+you might want to keep an intermediate results in some variable.
 You can specify rules for the reloading procedure to determine
 which binding to keep.
 
@@ -6668,7 +6668,7 @@ The rule is described in the following syntax.
 @strong{再定義ルール}: モジュールを再ロードすると、デフォルトでは、その
 モジュール内のすべての束縛はリセットされます。
 しかしながら、場合によってこれは望ましいことではありません。たとえば、
-再構築するのに時間のかかるオブジェクトの大きなリストをもつような場合です。
+中間結果をある変数に残したままにしておきたい場合です。
 再ロード手続きにどの束縛を保存するかを決めるためのルールを指定することが
 できます。
 
@@ -6696,7 +6696,10 @@ is a regexp, the bindings of the variable whose name matches the
 regexp are kept.
 
 Note that the mechanism to prevent redefinition is kind of ad-hoc
-hack and semantically unclean.  It's just for your convenience.
+hack and semantically unclean.  Especially, the right-hand expressions
+of @code{define}s are still evaluated, so any side effects they have
+will be in effect (e.g. @code{define-class} would still redefine a class).
+It's just for your convenience.
 Take a look at the code if you want to know the exact behavior.
 @c JP
 @code{<module-rules>} はモジュールごとのルールをきめるグローバルルール
@@ -6708,7 +6711,10 @@ Take a look at the code if you want to know the exact behavior.
 マッチする名前の変数は保護されます。
 
 再定義からの保護機構は、場当たり的なもので、セマンティクスとしても
-不透明なものであることに注意してください。利便のためだけのものです。
+不透明なものであることに注意してください。特に@code{define}の右辺式は
+評価されてしまうので、そこで起きる副作用は効果を持ちます (例えば
+@code{define-class}はクラスの再定義を行ってしまいます)。
+これは利便のためだけのものだと考えて下さい。
 正確な振舞いをしれたければ、コードを見てください。
 @c COMMON
 @end deftp
