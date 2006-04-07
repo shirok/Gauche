@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.41 2006-03-05 08:10:27 shirok Exp $
+;;;  $Id: compile.scm,v 1.42 2006-04-07 02:26:05 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1745,20 +1745,34 @@
      (error "syntax-error: malformed define-inline:" form))))
 
 (define (pass1/define-inline form name formals body cenv)
-  (let ((p1 (pass1/lambda form formals body
-                          (cenv-add-name cenv (variable-name name)) 'inlined))
-        (module  (cenv-module cenv))
-        (dummy-proc (lambda _ (undefined))))
+  (let* ((p1 (pass1/lambda form formals body
+                           (cenv-add-name cenv (variable-name name)) 'inlined))
+         (module  (cenv-module cenv))
+         (dummy-proc (lambda _ (undefined)))
+         (packed (pack-iform p1))
+         (lv (make-lvar name)))
     ;; record inliner function for compiler
     (%insert-binding module name dummy-proc)
-    (set! (%procedure-inliner dummy-proc)
-          (pass1/inliner-procedure (pack-iform p1)))
+    (set! (%procedure-inliner dummy-proc) (pass1/inliner-procedure packed))
     ;; for execution time, the required information is recorded in
-    ;; the compiled-code.
+    ;; the compiled-code.  This should be clean up later, but it serves
+    ;; its purpose for the time being.
     ($define form '()
              (make-identifier (unwrap-syntax name) module '())
-             p1)
-    ))
+             ($let form 'let (list lv) (list p1)
+                   ($seq
+                    (list
+                     ($call form
+                            ($call form
+                                   ($gref setter.)
+                                   (list
+                                    ($gref (make-identifier '%procedure-inliner
+                                                            (find-module 'gauche.internal)
+                                                            '()))))
+                            (list
+                             ($lref lv)
+                             ($const packed)))
+                     ($lref lv)))))))
 
 (define (pass1/inliner-procedure ivec)
   (lambda (form cenv)

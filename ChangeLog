@@ -1,5 +1,8 @@
 2006-04-06  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (pass1/define-inline): made define-inline keeps
+	  its effect outside its compiler unit.
+
 	* ext/net/net.c (socket_finalize, Scm_SocketClose): clear
 	  inPort/outPort when we're done to help GC.
 
