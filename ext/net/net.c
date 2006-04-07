@@ -1,7 +1,7 @@
 /*
  * net.c - network interface
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.42 2006-01-07 05:54:20 shirok Exp $
+ *  $Id: net.c,v 1.43 2006-04-07 01:32:35 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -50,11 +50,14 @@ static void socket_finalize(ScmObj obj, void *data)
 {
     ScmSocket *sock = (ScmSocket*)obj;
     /* NB: at this point, sock->inPort and sock->outPort may already
-       be GC-ed and finalized, so we don't flush them here. */
+       be GC-ed and finalized, so we don't flush them here.
+       Clearing them would help them to be collected earlier, though. */
     if (!(SOCKET_CLOSED(sock->fd))) {
         closeSocket(sock->fd);
         sock->fd = INVALID_SOCKET;
         sock->status = SCM_SOCKET_STATUS_CLOSED;
+        sock->inPort = NULL;
+        sock->outPort = NULL;
     }
 }
 
@@ -130,8 +133,15 @@ ScmObj Scm_SocketClose(ScmSocket *s)
     }
     /* We don't shutdown the connection; forked process may have
        reference to the same socket. */
-    if (s->inPort)  Scm_ClosePort(s->inPort);  /* ignore errors */
-    if (s->outPort) Scm_ClosePort(s->outPort); /* ignore errors */
+    /* Clearing inPort/outPort helps them to be collected earlier. */
+    if (s->inPort)  {
+        Scm_ClosePort(s->inPort);  /* ignore errors */
+        s->inPort = NULL;
+    }
+    if (s->outPort) {
+        Scm_ClosePort(s->outPort); /* ignore errors */
+        s->outPort = NULL;
+    }
     closeSocket(s->fd);
     s->fd = INVALID_SOCKET;
     s->status = SCM_SOCKET_STATUS_CLOSED;

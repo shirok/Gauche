@@ -1,5 +1,8 @@
 2006-04-06  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/net.c (socket_finalize, Scm_SocketClose): clear
+	  inPort/outPort when we're done to help GC.
+
 	* lib/srfi-0.scm: added some newly supported srfis.
 
 	* lib/gauche/test.scm (test-module): added a check to find out
