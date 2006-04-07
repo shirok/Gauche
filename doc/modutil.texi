@@ -360,30 +360,30 @@ The object types:
 @table @code
 @item c
 @c EN
-A single char value.
+A signed 8bit integer.
 @c JP
-1つのchar。
+符号付き8ビット整数。
 @c COMMON
 
 @item C
 @c EN
-An unsigned char value, single-byte only.
+An unsigned 8bit integer.
 @c JP
-符号なしchar。シングルバイトのみ。
+符号なし8ビット整数。
 @c COMMON
 
 @item s
 @c EN
 A signed short (16 bit) value.
 @c JP
-符号付きshort(16ビット)。
+符号付き16ビット整数。
 @c COMMON
 
 @item S
 @c EN
 An unsigned short (16 bit) value.
 @c JP
-符号なしshort(16ビット)。
+符号なし16ビット整数。
 @c COMMON
 
 @item i
