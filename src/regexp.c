@@ -31,7 +31,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.57 2006-03-10 07:28:16 shirok Exp $
+ *  $Id: regexp.c,v 1.58 2006-04-07 10:51:21 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -442,11 +442,13 @@ static ScmObj rc1_lex(regcomp_ctx *ctx)
             if (Scm_GetcUnsafe(ctx->ipat) != '<') {
                 Scm_Error("\\k must be followed by 'k': %S", ctx->pattern);
             }
-            ScmObj name = rc1_group_name(ctx);
-            if (SCM_FALSEP(name)) {
-                Scm_Error("malformed backreference found in regexp %S", ctx->pattern);
+            {
+                ScmObj name = rc1_group_name(ctx);
+                if (SCM_FALSEP(name)) {
+                    Scm_Error("malformed backreference found in regexp %S", ctx->pattern);
+                }
+                return Scm_Cons(SCM_SYM_BACKREF, name);
             }
-            return Scm_Cons(SCM_SYM_BACKREF, name);
         }
         }
         /*FALLTHROUGH*/
@@ -548,11 +550,11 @@ static ScmObj rc1_read_integer(regcomp_ctx *ctx)
 {
     ScmObj r;
     ScmDString ds;
-    Scm_DStringInit(&ds);
     ScmChar ch = Scm_GetcUnsafe(ctx->ipat);
     if (!isdigit(ch)) {
         Scm_Error("number expected, but got '%c'", ch);
     }
+    Scm_DStringInit(&ds);
     do {
         Scm_DStringPutc(&ds, ch);
         ch = Scm_GetcUnsafe(ctx->ipat);
