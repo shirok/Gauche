@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: threads.c,v 1.9 2005-07-22 09:26:55 shirok Exp $
+ *  $Id: threads.c,v 1.10 2006-04-07 02:07:46 shirok Exp $
  */
 
 #include <gauche.h>
@@ -156,7 +156,7 @@ ScmObj Scm_ThreadStart(ScmVM *vm)
 #ifdef GAUCHE_USE_PTHREADS
     int err_state = FALSE, err_create = FALSE;
     pthread_attr_t thattr;
-    sigset_t omask, dummy;
+    sigset_t omask;
 
     (void)SCM_INTERNAL_MUTEX_LOCK(vm->vmlock);
     if (vm->state != SCM_VM_NEW) {
@@ -171,7 +171,7 @@ ScmObj Scm_ThreadStart(ScmVM *vm)
             vm->state = SCM_VM_NEW;
             err_create = TRUE;
         }
-        pthread_sigmask(SIG_SETMASK, &omask, &dummy);
+        pthread_sigmask(SIG_SETMASK, &omask, NULL);
         pthread_attr_destroy(&thattr);
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(vm->vmlock);
