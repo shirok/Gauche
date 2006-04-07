@@ -1,7 +1,7 @@
 ;;;
 ;;; install - Generic installation utility
 ;;;  
-;;;   Copyright (c) 2004-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2004-2006 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-install.in,v 1.2 2005-07-17 04:01:36 shirok Exp $
+;;;  $Id: gauche-install.in,v 1.3 2006-04-07 21:33:45 shirok Exp $
 ;;;
 
 ;; This is intended to replace 'install' program, in order to avoid
@@ -85,15 +85,23 @@
   (newline (current-error-port))
   (exit 1))
 
-(define (ensure-directory path)
+(define (ensure-directory path . args)
   (if (file-exists? path)
-      (unless (file-is-directory? path)
-        (app-errorf "non-directory file gets in my way: ~s" path))
+    (unless (file-is-directory? path)
+      (app-errorf "non-directory file gets in my way: ~s" path))
+    (let-optionals* args ((mode #f)
+                          (owner #f)
+                          (group #f))
       (do-it #`"creating directory ,path"
-             (with-error-handler
-                 (lambda (e)
-                   (app-errorf "can't create directory: ~s" (ref e 'message)))
-               (lambda () (make-directory* path))))))
+             (guard (e (else (app-errorf "can't create directory: ~s"
+                                         (ref e 'message))))
+               (when (make-directory* path)
+                 (when mode (sys-chmod path mode))
+                 (when (or owner group)
+                   (sys-chown path
+                              (->ugid sys-user-name->uid owner "user")
+                              (->ugid sys-group-name->gid group "group")))))
+             ))))
 
 ;; user/group -> uid/gid
 (define (->ugid str->id arg type)
@@ -155,7 +163,7 @@
                    (dry-run dry))
       (when shebang (set! shebang #`"#!,shebang\n"))
       (cond
-       (mkdir  (for-each ensure-directory args))
+       (mkdir  (for-each (cut ensure-directory <> mode owner group) args))
        (target (for-each (lambda (src)
                            (let1 dst (build-path target src)
                              (ensure-directory (sys-dirname dst))
