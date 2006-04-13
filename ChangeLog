@@ -1,3 +1,7 @@
+2006-04-12  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.8.7
+
 2006-04-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/autoloads.scm : set autoload for 'time' macro---it seems that
