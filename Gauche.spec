@@ -1,5 +1,5 @@
 # Spec file to build Gauche RPM package
-# $Id: Gauche.spec,v 1.43 2005-11-04 10:58:06 shirok Exp $
+# $Id: Gauche.spec,v 1.44 2006-04-13 04:02:29 shirok Exp $
 #
 # In order to build different encoding-specific packages (like
 # Gauche-euc-jp, etc) from a single source rpm, the actual package
@@ -12,7 +12,7 @@
 #    Gauche-ENC-VERS.ARCH.rpm     ;; binary package with encoding ENC
 #    Gauche-VERS.src.rpm          ;; source package
 
-%define version  0.8.6
+%define version  0.8.7
 %define encoding utf8
 %define threads  pthreads
 
@@ -124,6 +124,9 @@ make DESTDIR=${RPM_BUILD_ROOT}/ install-doc
 %defattr(-,root,root)
 
 %changelog
+* Tue Apr 12 2006 Shiro Kawai
+- Gauche release 0.8.7.
+
 * Tue Nov  4 2005 Shiro Kawai
 - Gauche release 0.8.6.
 
