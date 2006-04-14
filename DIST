@@ -76,7 +76,7 @@ if [ "$docs" = "yes" ]; then
   rm -rf $MAN_DEST
   mkdir $MAN_DEST
   for lang in j e; do
-    (cd doc; make gauche-ref$lang.html; gzip gauche-ref$lang.html; mv gauche-ref$lang.html.gz $TGZ_DEST)
+#    (cd doc; make gauche-ref$lang.html; gzip gauche-ref$lang.html; mv gauche-ref$lang.html.gz $TGZ_DEST)
     (cd $DOC_DEST; tar czf $TGZ_DEST/gauche-ref$lang.tgz gauche-ref$lang)
     cp $DOC_DEST/gauche-ref$lang/* $MAN_DEST
   done
@@ -167,7 +167,7 @@ if [ "$rpm" = "yes" ]; then
   echo "UTF8, i686 ----------------------------------------------"
   rm -f $spec
   cat Gauche.spec | sed 's/%define encoding .*/%define encoding utf8/' > $spec
-  rpmbuild -bb --clean --target i686 $spec
+  rpmbuild -bs --clean --target i686 $spec
   echo "Finishing..."
 #  mv $RPMDIR/RPMS/i386/Gauche-eucjp-*.rpm $TGZ_DEST
 #  mv $RPMDIR/RPMS/i386/Gauche-utf8-*.rpm $TGZ_DEST
