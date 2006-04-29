@@ -1,3 +1,8 @@
+2006-04-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/char.c (Scm_DigitToInt): fix digit->integer.
+	  (digit->integer #\2 2) yielded 2, should be #f.
+
 2006-04-13  Shiro Kawai  <shiro@acm.org>
 
 	* doc/Makefile.in: conversion of japanese html lang spec was wrong:

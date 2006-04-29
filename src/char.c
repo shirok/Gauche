@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.43 2005-10-28 02:53:10 shirok Exp $
+ *  $Id: char.c,v 1.44 2006-04-29 10:14:08 shirok Exp $
  */
 
 #include <ctype.h>
@@ -83,7 +83,7 @@ int Scm_DigitToInt(ScmChar ch, int radix)
 {
     if (ch < '0') return -1;
     if (radix <= 10) {
-        if (ch <= '0' + radix) return (ch - '0');
+        if (ch < '0' + radix) return (ch - '0');
     } else {
         if (ch <= '9') return (ch - '0');
         if (ch < 'A') return -1;
