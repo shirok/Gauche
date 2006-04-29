@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.79 2006-04-29 10:14:07 shirok Exp $
+dnl $Id: configure.ac,v 1.80 2006-04-29 10:16:11 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.7, shiro@acm.org)
-AC_REVISION($Revision: 1.79 $)
+AC_REVISION($Revision: 1.80 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -261,7 +261,6 @@ dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
 AC_C_BIGENDIAN
 AC_STRUCT_TM
-AC_SYS_LARGEFILE
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(off_t)
