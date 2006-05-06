@@ -6065,7 +6065,7 @@ looks like this:
         ((condition-has-type? exc <read-error>) (format #t "read error!")
                                                 'read-error)
         (else 'other-error))
-  (read-from-string "(abc")))
+  (read-from-string "(abc"))
 @end example
 
 @c EN
