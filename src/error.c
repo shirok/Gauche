@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.67 2006-01-23 07:06:32 shirok Exp $
+ *  $Id: error.c,v 1.68 2006-05-06 00:12:36 shirok Exp $
  */
 
 #include <errno.h>
@@ -853,7 +853,7 @@ static void Scm_PrintDefaultErrorHeading(ScmObj e, ScmPort *out)
             Scm_Printf(out, "*** %s\n", heading);
         }
     } else {
-        Scm_Printf(out, "*** ERROR: unhandled exeption: %S\n", e);
+        Scm_Printf(out, "*** ERROR: unhandled exception: %S\n", e);
     }
 }
 

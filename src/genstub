@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.124 2006-03-09 15:48:24 shirok Exp $
+;;;  $Id: genstub,v 1.125 2006-05-06 00:12:36 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -1084,7 +1084,7 @@
              (null? (keyword-args-of cproc))
              (not (have-rest-arg? cproc)))
     (cgen-body #`"  if (Scm_Length(SCM_OPTARGS) > ,(num-optargs-of cproc))")
-    (cgen-body #`"    Scm_Error(\"too many arguments: up to ,(num-optargs-of cproc) is expected, %d given.\",, Scm_Length(SCM_OPTARGS));"))
+    (cgen-body #`"    Scm_Error(\"too many arguments: up to ,(+ (num-reqargs-of cproc) (num-optargs-of cproc)) is expected, %d given.\",, Scm_Length(SCM_OPTARGS)+,(num-reqargs-of cproc));"))
   ;; argument assertions & unbox op.
   (for-each emit-arg-unbox (args-of cproc))
   ;; body
