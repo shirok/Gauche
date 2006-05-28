@@ -5982,7 +5982,7 @@ The @var{bind-spec} list can be an improper list, whose last @code{cdr} is
 a symbol.  In which case, a list of the rest of the command-line arguments
 is bound to the variable named by the symbol.
 @c JP
-束縛リストは、最後の@code{car}にシンボルを持つ不完全なリストであっても良く、
+束縛リストは、最後の@code{cdr}にシンボルを持つ不完全なリストであっても良く、
 その場合はコマンドライン引数の残りのリストがその変数にと束縛されます。
 @c COMMON
 
