@@ -2,7 +2,7 @@
 ;; testing regexp
 ;;
 
-;; $Id: regexp.scm,v 1.22 2006-03-10 07:28:16 shirok Exp $
+;; $Id: regexp.scm,v 1.23 2006-05-28 02:29:16 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -65,6 +65,53 @@
 (test-regexp-parse "(?<name>)\\k<name>" '(0 #f (1 name) (backref . 1)))
 (test-regexp-parse "(?<name>)(?<name>)\\k<name>"
                    '(0 #f (1 name) (2 name) (alt (backref . 2) (backref . 1))))
+
+;;-------------------------------------------------------------------------
+(test-section "compile")
+
+(define-syntax test-regexp-compile
+  (syntax-rules ()
+    ((_ pat)
+     (test* #`"regexp-compile \",|pat|\"" #t
+           (regexp? (regexp-compile (regexp-parse pat)))))))
+
+(test-regexp-compile "a")
+(test-regexp-compile "ab")
+(test-regexp-compile "(?:ab)")
+(test-regexp-compile "(a)")
+(test-regexp-compile "a?")
+(test-regexp-compile "a*")
+(test-regexp-compile "a+")
+(test-regexp-compile "a{3,5}")
+(test-regexp-compile "a{3}")
+(test-regexp-compile "a|b")
+(test-regexp-compile "[ab]")
+(test-regexp-compile "[^ab]")
+(test-regexp-compile ".")
+(test-regexp-compile "^")
+(test-regexp-compile "$")
+(test-regexp-compile "\\b")
+(test-regexp-compile "\\B")
+(test-regexp-compile "(?>a)")
+(test-regexp-compile "a*+")
+(test-regexp-compile "a++")
+(test-regexp-compile "a?+")
+(test-regexp-compile "(?i:a)")
+(test-regexp-compile "(?-i:a)")
+(test-regexp-compile "(?=a)")
+(test-regexp-compile "(?!a)")
+(test-regexp-compile "(?<=ab)")
+(test-regexp-compile "(?<!ab)")
+(test-regexp-compile "(?<name>a)")
+(test-regexp-compile "(?(?=)y)")
+(test-regexp-compile "(?(?=)y|n)")
+(test-regexp-compile "(?(?<=)y)")
+(test-regexp-compile "(?(?<=)y|n)")
+(test-regexp-compile "()(?(1)y)")
+(test-regexp-compile "()(?(1)y|n)")
+(test-regexp-compile "()\\1")
+(test-regexp-compile "(?<name>)\\k<name>")
+(test-regexp-compile "(?<name>)(?<name>)\\k<name>")
 
 ;;-------------------------------------------------------------------------
 (test-section "basics")

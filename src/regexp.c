@@ -31,7 +31,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.58 2006-04-07 10:51:21 shirok Exp $
+ *  $Id: regexp.c,v 1.59 2006-05-28 02:29:16 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -200,6 +200,7 @@ enum {
  *         | (once . <ast>)        ; standalone pattern.  no backtrack
  *         | (assert . <ast>)      ; positive lookahead assertion
  *         | (nassert . <ast>)     ; negative lookahead assertion
+ *         | (lookbehind . <ast>)  ; lookbehind assertion
  *
  *  <condition> : <integer>     ; (?(1)yes|no) style conditional expression
  *         | (assert . <ast>)   ; (?(?=condition)...) or (?(?<=condition)...)
@@ -347,7 +348,6 @@ static ScmChar rc1_lex_xdigits(ScmPort *port, int ndigs, int key);
  *         | <atom> "*+"
  *         | <atom> "++"
  *         | <atom> "?+"
- *         | <atom> "{" <n> ("," <m>?)? "}+"
  *         | <atom>
  *
  *  <atom> : a normal char, an escaped char, or a char-set
@@ -363,6 +363,8 @@ static ScmChar rc1_lex_xdigits(ScmPort *port, int ndigs, int key);
  *         | "(?!"   <re> ")"   ;; negative lookahead assertion
  *         | "(?<="  <re> ")"   ;; positive lookbehind assertion
  *         | "(?<!"  <re> ")"   ;; negative lookbehind assertion
+ *         | "(?("cond")"yes-pattern"|"no-pattern")"
+ *         | "(?("cond")"yes-pattern")" ;; conditional pattern
  *
  */
 
@@ -440,7 +442,7 @@ static ScmObj rc1_lex(regcomp_ctx *ctx)
             return Scm_Cons(SCM_SYM_BACKREF, rc1_read_integer(ctx));
         case 'k': {
             if (Scm_GetcUnsafe(ctx->ipat) != '<') {
-                Scm_Error("\\k must be followed by 'k': %S", ctx->pattern);
+                Scm_Error("\\k must be followed by '<': %S", ctx->pattern);
             }
             {
                 ScmObj name = rc1_group_name(ctx);
@@ -1934,8 +1936,38 @@ static ScmObj rc_setup_context(regcomp_ctx *ctx, ScmObj ast)
         rc_register_charset(ctx, SCM_CHARSET(SCM_CDR(ast)));
         return ast;
     }
+    if (SCM_EQ(type, SCM_SYM_BACKREF)) {
+       if (!SCM_INTP(SCM_CDR(ast))) goto badast;
+       return ast;
+    }
+    if (SCM_EQ(type, SCM_SYM_CPAT)) {
+       ScmObj cond, then, alt;
+       if (!SCM_PAIRP(SCM_CDR(ast))
+           || !SCM_PAIRP(SCM_CDDR(ast))
+           || !SCM_PAIRP(SCM_CDR(SCM_CDDR(ast)))
+           || !SCM_NULLP(SCM_CDDR(SCM_CDDR(ast))))
+           goto badast;
+       cond = SCM_CADR(ast);
+       then = SCM_CAR(SCM_CDDR(ast));
+       alt = SCM_CADR(SCM_CDDR(ast));
+       if (SCM_PAIRP(cond)) {
+           if (!SCM_EQ(SCM_CAR(cond), SCM_SYM_ASSERT)
+               && !SCM_EQ(SCM_CAR(cond), SCM_SYM_NASSERT)) goto badast;
+           cond = rc_setup_context(ctx, cond);
+       } else if (!SCM_INTP(cond)) {
+           goto badast;
+       }
+       then = rc_setup_context_seq(ctx, then);
+       if (!SCM_FALSEP(alt))
+           alt = rc_setup_context_seq(ctx, alt);
+       if (SCM_EQ(cond, SCM_CADR(ast))
+           && SCM_EQ(then, SCM_CAR(SCM_CDDR(ast)))
+           && SCM_EQ(alt, SCM_CADR(SCM_CDDR(ast)))) return ast;
+       else return SCM_LIST4(type, cond, then, alt);
+    }
     if (SCM_EQ(type, SCM_SYM_SEQ) || SCM_EQ(type, SCM_SYM_ALT)
         || SCM_EQ(type, SCM_SYM_SEQ_UNCASE) || SCM_EQ(type, SCM_SYM_SEQ_CASE)
+        || SCM_EQ(type, SCM_SYM_ONCE) || SCM_EQ(type, SCM_SYM_LOOKBEHIND)
         || SCM_EQ(type, SCM_SYM_ASSERT) || SCM_EQ(type, SCM_SYM_NASSERT)) {
         rest = rc_setup_context_seq(ctx, SCM_CDR(ast));
         if (SCM_EQ(SCM_CDR(ast), rest)) return ast;
@@ -1948,7 +1980,7 @@ static ScmObj rc_setup_context(regcomp_ctx *ctx, ScmObj ast)
             goto badast;
         m = SCM_CADR(ast);
         n = SCM_CAR(SCM_CDDR(ast));
-        item = SCM_CADR(SCM_CDDR(ast));
+        item = SCM_CDR(SCM_CDDR(ast));
         if (!SCM_INTP(m) || SCM_INT_VALUE(m) < 0) goto badast;
         if (!SCM_FALSEP(n) && (!SCM_INTP(n) || SCM_INT_VALUE(m) < 0))
             goto badast;
@@ -2021,7 +2053,7 @@ ScmObj Scm_RegCompFromAST(ScmObj ast)
     /* prepare some context */
     if (!SCM_PAIRP(ast) || !SCM_INTP(SCM_CAR(ast))) {
         /* ensure the entire AST is in a group #0 */
-        ast = SCM_LIST2(SCM_MAKE_INT(0), ast);
+        ast = SCM_LIST3(SCM_MAKE_INT(0), SCM_FALSE, ast);
     }
     ast = rc_setup_context(&cctx, ast);
     rc_setup_charsets(rx, &cctx);
