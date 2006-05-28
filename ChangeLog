@@ -1,5 +1,8 @@
 2006-05-27  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/http.scm (send-request): avoid sending "\r\n" after
+	  body (RFC2616 section 4.1).
+
 	* lib/gauche/package/compile.scm: dropped quote around CC, for
 	  it may contain options such as 'gcc -std=gnu99'.
 

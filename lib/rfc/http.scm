@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: http.scm,v 1.8 2005-09-23 06:22:59 shirok Exp $
+;;;  $Id: http.scm,v 1.9 2006-05-28 02:17:31 shirok Exp $
 ;;;
 
 ;; HTTP handling routines.
@@ -177,7 +177,7 @@
                               out)
         (display "\r\n" out)
         (display body out)
-        (display "\r\n" out))
+        (flush out))
       ;; requests w/o body
       (begin
         (send-request-headers options out)
