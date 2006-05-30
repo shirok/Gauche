@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.78 2006-03-25 14:15:21 shirok Exp $
+ *  $Id: system.c,v 1.79 2006-05-30 00:22:51 shirok Exp $
  */
 
 #include <stdio.h>
@@ -56,6 +56,7 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/class.h"
+#include "gauche/bignum.h"
 #include "gauche/builtin-syms.h"
 
 #ifdef HAVE_GLOB_H
