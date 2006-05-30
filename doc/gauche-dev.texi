@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.6 2006-01-28 04:00:33 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.7 2006-05-30 00:19:30 shirok Exp $
 
 @iftex
 @finalout
@@ -374,6 +374,278 @@ or
 @c ======================================================================
 @node C API reference, Helper program reference, Fundamental concepts, Top
 @chapter C API reference
+
+@node Representation of Scheme objects
+@section Representation of Scheme objects
+
+
+@node Equivalence
+@section Equivalence
+
+
+@node Numbers
+@section Numbers
+
+@node Scheme number objects
+@subsection Scheme number objects
+
+@subsubheading C representation of numbers
+
+Gauche uses several different structures to represent Scheme 
+numbers.  Because of this polymorphic nature, the Scheme numbers
+are almost always passed as @code{ScmObj}, except special occasions.
+In Scheme level you usually don't need to think much
+about different types of numbers, for Gauche automatically
+converts them as needed.   There are C routines that accept
+generic Scheme numbers like Scheme, but time to time 
+you need to check the actual type of the number and cast it
+from @code{ScmObj} to the actual structure.
+
+Currently Gauche has the following C-level representations.
+Note that this list may be extended in future (a rational number
+is likely to be added), so it is always good to check for
+any types, rather than assuming like "if it is not a fixnum, bignum,
+or flonum, then it must be a complexnum!".
+
+@table @emph
+@item Fixnum
+For small Scheme exact integers (30 or 62 bit signed integer
+in 32 or 64 bit
+architectures, respectively), we encode its immediate value into
+a machine word.  You can test if an @code{ScmObj} is a fixnum
+by @code{SCM_INTP}.
+@item Bignum
+If a Scheme exact integer doesn't fit in fixnum, it is represented
+as a bignum, by a @code{ScmBignum} structure.  You can test
+if @code{ScmObj} is a bignum by @code{SCM_BIGNUMP}, and then
+cast the object to @code{ScmBignum*} for further treatment.
+@item Flonum
+Scheme real numbers are represented as flonum, by @code{ScmFlonum}
+structure.  You can test if @code{ScmObj} is a flonum by @code{SCM_FLONUMP}.
+@item Complexnum
+Scheme complex numbers are represented as complexnum, by
+a @code{ScmComplex} structure.  You can test if @code{ScmObj} is a
+complexnum by @code{SCM_COMPLEXP}.
+@end table
+
+@subsubheading Normalized form
+
+It is important for C-routine writers to know one rule:
+If your routine returns a Scheme number, it must be in
+a @emph{normalized} form, i.e.:
+
+@itemize @bullet
+@item
+If the number is an exact integer and representable as
+fixnum, it must be in fixnum, rather than bignum.
+@item
+If the imaginary part of the number is 0.0, it must be
+in flonum, rather than complexnum.
+@end itemize
+
+(Note: here we use the term @emph{normalized} and @emph{denormalized}
+in the sense that Scheme numbers should be represented in a simplest
+possible C structure.  It is unrelated to the term in
+IEEE floating point number.)
+
+Some number constructors are guaranteed to return normalized
+numbers (e.g. @code{Scm_MakeInteger} family and
+@code{Scm_MakeComplexNormalized}).  It is always good to
+use them as much as possible.
+
+Carrying around a denormalized Scheme number should be limited
+for intermediate results, and only when you find the overhead of
+conversion is a problem.  Generally such overhead is negligible
+compared to other overheads.
+
+Especially, you don't need to touch @code{ScmBignum*} routines
+for most of the times.  The generic integer API should cover
+most cases.  If you ever need to touch bignums directly,
+always make sure you return a normalized integers.
+
+@subsubheading Conversions
+
+Converting a Scheme number to a C number is a 
+tricky business.  It's always possible that the Scheme number
+you got may not fit into the desired C variable.  There are several
+options you can choose.
+
+@itemize @bullet
+@item
+Error: Throws an error.
+@item
+Clamp: If the Scheme value falls out of the supported range
+of C variable, use the closest representable value.
+@item 
+Convert only when possible.  If conversion is not possible, use
+the Scheme value as-is.  It is useful to provide a shortcut path
+to improve performance.
+@end itemize
+
+Some C APIs take @var{clamp} argument to specify the behavior.  The value
+can be one of the following enums.
+
+@example
+enum {
+    SCM_CLAMP_ERROR = 0,       /* throws an error when out-of-range */
+    SCM_CLAMP_HI = 1,
+    SCM_CLAMP_LO = 2,
+    SCM_CLAMP_BOTH = 3,
+    SCM_CLAMP_NONE = 4         /* do not convert when out-of-range */
+};
+@end example
+
+If an API supports @code{SCM_CLAMP_NONE},
+it also takes an output argument to return a flag whether the argument
+is out of range or not.  This output argument can be @code{NULL} if the caller 
+doesn't specify @code{SCM_CLAMP_NONE} flag.
+
+@node Integer numbers
+@subsection Integer numbers
+
+@subsubheading Type predicates and accessors
+
+@deftypefn {Macro} int SCM_INTP (ScmObj @var{obj})
+Returns @code{TRUE} iff @var{obj} is a fixnum.
+@end deftypefn
+
+@deftypevr {Macro} int SCM_SMALL_INT_SIZE
+Number of bits (excluding sign bit) of an integer representable
+in fixnum.  Currently it is 29 and 61 for 32 and 64-bit architectures,
+respectively.
+@end deftypevr
+
+@deftypevr {Macro} int SCM_SMALL_INT_MAX
+@deftypevrx {Macro} int SCM_SMALL_INT_MIN
+Maximum and minimum integer values representable in fixnum.
+@end deftypevr
+
+@deftypefn {Macro} int SCM_SMALL_INT_FITS (int @var{k})
+Returns @code{TRUE} iff @var{k} fits in fixnum.
+@end deftypefn
+
+@deftypefn {Macro} int SCM_INT_VALUE (ScmObj @var{fixnum})
+Extracts (unboxes) an integer value from @var{fixnum}.  You have to check
+whether @var{fixnum} is a fixnum or not before applying this.
+@end deftypefn
+
+@deftypefn {Macro} ScmObj SCM_MAKE_INT(int @var{i})
+Boxes an integer value @var{i} to a fixnum.  You have to make
+sure @var{i} is in the range representable by fixnum.
+@end deftypefn
+
+@deftypefn {Macro} int SCM_UINTP (ScmObj @var{obj})
+A convenience macro to check if @var{obj} is a fixnum 
+@emph{and} non-negative.
+@end deftypefn
+
+@deftypefn {Macro} int SCM_BIGNUMP (ScmObj @var{obj})
+@end deftypefn
+
+@deftypefn {Macro} ScmBignum* SCM_BIGNUM (ScmObj @var{obj})
+@end deftypefn
+
+@deftypefn {Macro} int SCM_BIGNUM_SIZE (ScmObj @var{bignum})
+@deftypefnx {Macro} int SCM_BIGNUM_SIGN (ScmObj @var{bignum})
+@end deftypefn
+
+@subsubheading Conversion routines
+
+@deftypefun ScmObj Scm_MakeInteger (long @var{i})
+@deftypefunx ScmObj Scm_MakeIntegerU (u_long @var{i})
+@end deftypefun
+
+@deftypefun ScmObj Scm_MakeInteger64 (ScmInt64 @var{i})
+@deftypefunx ScmObj Scm_MakeIntegerU64 (ScmUInt64 @var{i})
+@end deftypefun
+
+@deftypefun long Scm_GetIntegerClamp (ScmObj @var{obj}, int @var{clamp}, int *@var{oor})
+@deftypefunx u_long Scm_GetIntegerClamp (ScmObj @var{obj}, int @var{clamp}, int *@var{oor})
+@end deftypefun
+
+@deftypefun long Scm_GetInteger (ScmObj obj)
+@deftypefunx u_long Scm_GetIntegerU (ScmObj obj)
+@end deftypefun
+
+@deftypefun ScmInt32 Scm_GetInteger32Clamp (ScmObj @var{obj}, int @var{clamp}, int *@var{oor})
+@deftypefunx ScmUInt32 Scm_GetInteger32Clamp (ScmObj @var{obj}, int @var{clamp}, int *@var{oor})
+@end deftypefun
+
+@deftypefun ScmInt64 Scm_GetInteger64Clamp (ScmObj @var{obj}, int @var{clamp}, int *@var{oor})
+@deftypefunx ScmUInt64 Scm_GetInteger64Clamp (ScmObj @var{obj}, int @var{clamp}, int *@var{oor})
+@end deftypefun
+
+@deftypefun long Scm_GetInteger64 (ScmObj obj)
+@deftypefunx u_long Scm_GetIntegerU64 (ScmObj obj)
+@end deftypefun
+
+
+@node Real and complex numbers
+@subsection Real and complex numbers
+
+
+@node Generic arithmetics
+@subsection Generic arithmetics
+
+
+
+@node Reading and writing numbers
+@subsection Reading and writing numbers
+
+
+
+
+
+
+
+@node Booleans
+@section Booleans
+
+@node Pairs and Lists
+@section Pairs and Lists
+
+@node Symbols
+@section Symbols
+
+@node Keywords
+@section Keywords
+
+
+@node Characters
+@section Characters
+
+@node Character sets
+@section Character sets
+
+@node Strings
+@section Strings
+
+@node Regular expressions
+@section Regular expressions
+
+@node Vectors
+@section Vectors
+
+@node Hashtables
+@section Hashtables
+
+@node Weak pointers
+@section Weak pointers
+
+@node Exceptions
+@section Exceptions
+
+@node Calling back to Scheme
+@section Calling back to Scheme
+
+@node Input and output
+@section Input and output
+
+@node Loading programs
+@section Loading programs
+
+@node System interface
+@sectino System interface
 
 
 @c ======================================================================
