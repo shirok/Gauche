@@ -995,7 +995,7 @@ Returns bitwise not of an integer @var{n}.
 @end defun
 
 @defun logtest n1 n2 @dots{}
- @equiv{} @code{(not (zero? (logand @var{n1} @var{n2} @dots{})))}
+@equiv{} @code{(not (zero? (logand @var{n1} @var{n2} @dots{})))}
 @end defun
 
 @defun logbit? index n
@@ -1031,21 +1031,52 @@ If @var{bit} is false, resets @var{index}-th bit of an exact integer @var{n}.
 @end defun
 
 @defun copy-bit-field n start end from
-@c EN
-@c JP
-@c COMMON
+Returns an exact integer, each bit of which is the same as
+@var{n} except the @var{start}-th bit (inclusive) to @var{end}-th
+bit (exclusive), which is a copy of the lower
+@code{(@var{end}-@var{start})}-th bits of an exact
+integer @var{from}.
+
+@example
+(number->string (copy-bit-field #b10000000 1 5 -1) 2)
+  @result{} "10011110"
+
+(number->string (copy-bit-field #b10000000 1 7 #b010101010) 2)
+  @result{} "11010100"
+@end example
 @end defun
 
 @defun logcount n
-@c EN
-@c JP
-@c COMMON
+If @var{n} is positive, returns the number of @code{1}'s in the
+bits of @var{n}.  If @var{n} is negative, 
+returns the number of @code{0}'s in the bits of 2's complement
+representation of @var{n}.
+
+@example
+(logcount 0)      @result{} 0
+(logcount #b0010) @result{} 1
+(logcount #b0110) @result{} 2
+(logcount #b1111) @result{} 4
+
+(logcount #b-0001) @result{} 0  ;; 2's complement:  ....111111
+(logcount #b-0010) @result{} 1  ;; 2's complement:  ....111110
+(logcount #b-0011) @result{} 1  ;; 2's complement:  ....111101
+(logcount #b-0100) @result{} 2  ;; 2's complement:  ....111100
+@end example
 @end defun
 
 @defun integer-length n
-@c EN
-@c JP
-@c COMMON
+Returns the minimum number of bits required to represent an
+exact integer @var{n}.  Negative integer is assumed to be in
+2's complement form.  A sign bit is not considered.
+
+@example
+(integer-length 255)  @result{} 8
+(integer-length 256)  @result{} 9
+
+(integer-length -256)  @result{} 8
+(integer-length -257)  @result{} 9
+@end example
 @end defun
 
 @c ----------------------------------------------------------------------
