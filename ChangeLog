@@ -1,3 +1,8 @@
+2006-05-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h, src/number.c, src/stdlib.stub: API CHANGE:
+	  changed complex number C API for consistency.
+
 2006-05-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/regexp.c, test/regexp.scm: fixed bugs that resulted

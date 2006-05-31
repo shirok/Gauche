@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.452 2006-05-30 00:22:51 shirok Exp $
+ *  $Id: gauche.h,v 1.453 2006-05-31 01:29:04 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2040,7 +2040,7 @@ struct ScmBignumRec {
  * doesn't specify SCM_CLAMP_NONE flag.
  */
 
-enum {
+enum ScmClampMode {
     SCM_CLAMP_ERROR = 0,       /* throws an error when out-of-range */
     SCM_CLAMP_HI = 1,
     SCM_CLAMP_LO = 2,
@@ -2103,9 +2103,9 @@ SCM_EXTERN double Scm_GetDouble(ScmObj obj);
 SCM_EXTERN ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign);
 SCM_EXTERN ScmObj Scm_MakeFlonumToNumber(double d, int exactp);
 
+SCM_EXTERN ScmObj Scm_MakeCompnum(double real, double imag);
 SCM_EXTERN ScmObj Scm_MakeComplex(double real, double imag);
 SCM_EXTERN ScmObj Scm_MakeComplexPolar(double magnitude, double angle);
-SCM_EXTERN ScmObj Scm_MakeComplexNormalized(double real, double imag);
 
 SCM_EXTERN ScmObj Scm_PromoteToBignum(ScmObj obj);
 SCM_EXTERN ScmObj Scm_PromoteToComplex(ScmObj obj);
@@ -2147,7 +2147,7 @@ SCM_EXTERN int    Scm_LogTest(ScmObj x, ScmObj y);
 SCM_EXTERN int    Scm_LogBit(ScmObj x, int bit);
 SCM_EXTERN ScmObj Scm_Ash(ScmObj x, int cnt);
     
-enum {
+enum ScmRoundMode {
     SCM_ROUND_FLOOR,
     SCM_ROUND_CEIL,
     SCM_ROUND_TRUNC,
@@ -2155,8 +2155,10 @@ enum {
 };
 SCM_EXTERN ScmObj Scm_Round(ScmObj num, int mode);
 
-SCM_EXTERN ScmObj Scm_Magnitude(ScmObj z);
-SCM_EXTERN ScmObj Scm_Angle(ScmObj z);
+SCM_EXTERN double Scm_Magnitude(ScmObj z);
+SCM_EXTERN double Scm_Angle(ScmObj z);
+SCM_EXTERN double Scm_RealPart(ScmObj z);
+SCM_EXTERN double Scm_ImagPart(ScmObj z);
 
 SCM_EXTERN ScmObj Scm_NumberToString(ScmObj num, int radix, int use_upper);
 SCM_EXTERN ScmObj Scm_StringToNumber(ScmString *str, int radix, int strict);

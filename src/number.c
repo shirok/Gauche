@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.125 2006-05-30 00:22:51 shirok Exp $
+ *  $Id: number.c,v 1.126 2006-05-31 01:29:04 shirok Exp $
  */
 
 #include <math.h>
@@ -212,6 +212,8 @@ ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign)
     
     dd.d = d;
 
+    *sign = (dd.components.sign? -1 : 1);
+
     /* Check exceptional cases */
     if (dd.components.exp == 0x7ff) {
         *exp = 0;
@@ -229,7 +231,6 @@ ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign)
     }
 
     *exp  = (dd.components.exp? dd.components.exp - 0x3ff - 52 : -0x3fe - 52);
-    *sign = (dd.components.sign? -1 : 1);
     
 #if SIZEOF_LONG >= 8
     {
@@ -257,7 +258,7 @@ ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign)
  *  Complex numbers
  */
 
-ScmObj Scm_MakeComplex(double r, double i)
+ScmObj Scm_MakeCompnum(double r, double i)
 {
     ScmComplex *c = SCM_NEW_ATOMIC(ScmComplex);
     SCM_SET_CLASS(c, SCM_CLASS_COMPLEX);
@@ -266,10 +267,10 @@ ScmObj Scm_MakeComplex(double r, double i)
     return SCM_OBJ(c);
 }
 
-ScmObj Scm_MakeComplexNormalized(double r, double i)
+ScmObj Scm_MakeComplex(double r, double i)
 {
     if (i == 0.0) return Scm_MakeFlonum(r);
-    else          return Scm_MakeComplex(r, i);
+    else          return Scm_MakeCompnum(r, i);
 }
 
 ScmObj Scm_MakeComplexPolar(double mag, double angle)
@@ -277,10 +278,35 @@ ScmObj Scm_MakeComplexPolar(double mag, double angle)
     double real = mag * cos(angle);
     double imag = mag * sin(angle);
     if (imag == 0.0) return Scm_MakeFlonum(real);
-    else             return Scm_MakeComplex(real, imag);
+    else             return Scm_MakeCompnum(real, imag);
 }
 
-ScmObj Scm_Magnitude(ScmObj z)
+double Scm_RealPart(ScmObj z)
+{
+    double m;
+    if (SCM_REALP(z)) {
+        m = Scm_GetDouble(z);
+    } else if (!SCM_COMPLEXP(z)) {
+        Scm_Error("number required, but got %S", z);
+        m = 0.0;                /* dummy */
+    } else {
+        m = SCM_COMPLEX_REAL(z);
+    }
+    return m;
+}
+
+double Scm_ImagPart(ScmObj z)
+{
+    double m = 0.0;
+    if (SCM_COMPLEXP(z)) {
+        m = SCM_COMPLEX_IMAG(z);
+    } else if (!SCM_REALP(z)) {
+        Scm_Error("number required, but got %S", z);
+    }
+    return m;
+}
+
+double Scm_Magnitude(ScmObj z)
 {
     double m;
     if (SCM_REALP(z)) {
@@ -293,10 +319,10 @@ ScmObj Scm_Magnitude(ScmObj z)
         double i = SCM_COMPLEX_IMAG(z);
         m = sqrt(r*r+i*i);
     }
-    return Scm_MakeFlonum(m);
+    return m;
 }
 
-ScmObj Scm_Angle(ScmObj z)
+double Scm_Angle(ScmObj z)
 {
     double a;
     if (SCM_REALP(z)) {
@@ -309,7 +335,7 @@ ScmObj Scm_Angle(ScmObj z)
         double i = SCM_COMPLEX_IMAG(z);
         a = atan2(i, r);
     }
-    return Scm_MakeFlonum(a);
+    return a;
 }
 
 /*=======================================================================
@@ -751,7 +777,7 @@ ScmObj Scm_Negate(ScmObj obj)
     } else if (SCM_FLONUMP(obj)) {
         obj = Scm_MakeFlonum(-SCM_FLONUM_VALUE(obj));
     } else if (SCM_COMPLEXP(obj)) {
-        obj = Scm_MakeComplex(-SCM_COMPLEX_REAL(obj),
+        obj = Scm_MakeCompnum(-SCM_COMPLEX_REAL(obj),
                               -SCM_COMPLEX_IMAG(obj));
     } else {
         obj = Scm_Apply(SCM_OBJ(&generic_sub), SCM_LIST1(obj));
@@ -777,7 +803,7 @@ ScmObj Scm_Reciprocal(ScmObj obj)
         d = r*r + i*i;
         r1 = r/d;
         i1 = -i/d;
-        obj = Scm_MakeComplexNormalized(r1, i1);
+        obj = Scm_MakeComplex(r1, i1);
     } else {
         obj = Scm_Apply(SCM_OBJ(&generic_div), SCM_LIST1(obj));
     }
@@ -845,11 +871,11 @@ ScmObj Scm_PromoteToFlonum(ScmObj obj)
 ScmObj Scm_PromoteToComplex(ScmObj obj)
 {
     if (SCM_INTP(obj))
-        return Scm_MakeComplex((double)SCM_INT_VALUE(obj), 0.0);
+        return Scm_MakeCompnum((double)SCM_INT_VALUE(obj), 0.0);
     if (SCM_BIGNUMP(obj))
-        return Scm_MakeComplex(Scm_BignumToDouble(SCM_BIGNUM(obj)), 0.0);
+        return Scm_MakeCompnum(Scm_BignumToDouble(SCM_BIGNUM(obj)), 0.0);
     if (SCM_FLONUMP(obj))
-        return Scm_MakeComplex(SCM_FLONUM_VALUE(obj), 0.0);
+        return Scm_MakeCompnum(SCM_FLONUM_VALUE(obj), 0.0);
     if (SCM_COMPLEXP(obj)) return obj;
     Scm_Panic("Scm_PromoteToComplex: can't be here");
     return SCM_UNDEFINED;       /* dummy */
@@ -964,12 +990,11 @@ ScmObj Scm_Add(ScmObj arg0, ScmObj arg1, ScmObj args)
                 result_imag += SCM_COMPLEX_IMAG(arg1);
             } else {
                 APPLY_GENERIC_ARITH(arg0, generic_add,
-                                    Scm_MakeComplexNormalized(result_real,
-                                                              result_imag),
+                                    Scm_MakeComplex(result_real, result_imag),
                                     arg1, args);
             }
             if (!SCM_PAIRP(args)) {
-                return Scm_MakeComplexNormalized(result_real, result_imag);
+                return Scm_MakeComplex(result_real, result_imag);
             }
             arg1 = SCM_CAR(args);
             args = SCM_CDR(args);
@@ -1064,12 +1089,11 @@ ScmObj Scm_Subtract(ScmObj arg0, ScmObj arg1, ScmObj args)
                 result_imag -= SCM_COMPLEX_IMAG(arg1);
             } else {
                 APPLY_GENERIC_ARITH(arg0, generic_sub,
-                                    Scm_MakeComplexNormalized(result_real,
-                                                              result_imag),
+                                    Scm_MakeComplex(result_real, result_imag),
                                     arg1, args);
             }
             if (SCM_NULLP(args))
-                return Scm_MakeComplexNormalized(result_real, result_imag);
+                return Scm_MakeComplex(result_real, result_imag);
             arg1 = SCM_CAR(args);
             args = SCM_CDR(args);
         }
@@ -1174,12 +1198,11 @@ ScmObj Scm_Multiply(ScmObj arg0, ScmObj arg1, ScmObj args)
                 result_real = t;
             } else {
                 APPLY_GENERIC_ARITH(arg0, generic_mul,
-                                    Scm_MakeComplexNormalized(result_real,
-                                                              result_imag),
+                                    Scm_MakeComplex(result_real, result_imag),
                                     arg1, args);
             }
             if (!SCM_PAIRP(args)) {
-                return Scm_MakeComplexNormalized(result_real, result_imag);
+                return Scm_MakeComplex(result_real, result_imag);
             }
             arg1 = SCM_CAR(args);
             args = SCM_CDR(args);
@@ -1299,8 +1322,7 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
                 div_imag = SCM_COMPLEX_IMAG(arg1);
             } else {
                 APPLY_GENERIC_ARITH(arg0, generic_div,
-                                    Scm_MakeComplexNormalized(result_real,
-                                                              result_imag),
+                                    Scm_MakeComplex(result_real, result_imag),
                                     arg1, args);
             }
             d = div_real*div_real + div_imag*div_imag;
@@ -1309,7 +1331,7 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
             result_real = r;
             result_imag = i;
             if (SCM_NULLP(args))
-                return Scm_MakeComplexNormalized(result_real, result_imag);
+                return Scm_MakeComplex(result_real, result_imag);
             arg1 = SCM_CAR(args);
             args = SCM_CDR(args);
         }
@@ -1589,7 +1611,7 @@ ScmObj Scm_Expt(ScmObj x, ScmObj y)
         */
         double mag = exp(dy * log(-dx));
         double theta = dy * M_PI;
-        return Scm_MakeComplexNormalized(mag * cos(theta), mag * sin(theta));
+        return Scm_MakeComplex(mag * cos(theta), mag * sin(theta));
     } else {
         return Scm_MakeFlonum(pow(dx, dy));
     }
@@ -2668,8 +2690,8 @@ static ScmObj read_number(const char *str, int len, int radix, int strict)
             }
             CHK_EXACT_COMPLEX();
             if (Scm_Sign(imagpart) == 0) return realpart;
-            return Scm_MakeComplexNormalized(Scm_GetDouble(realpart), 
-                                             Scm_GetDouble(imagpart));
+            return Scm_MakeComplex(Scm_GetDouble(realpart), 
+                                   Scm_GetDouble(imagpart));
         }
     case 'i':
         /* '+' <ureal> 'i'  or '-' <ureal> 'i' */
