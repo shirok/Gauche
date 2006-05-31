@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.126 2006-05-31 01:29:04 shirok Exp $
+ *  $Id: number.c,v 1.127 2006-05-31 01:50:49 shirok Exp $
  */
 
 #include <math.h>
@@ -260,7 +260,7 @@ ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign)
 
 ScmObj Scm_MakeCompnum(double r, double i)
 {
-    ScmComplex *c = SCM_NEW_ATOMIC(ScmComplex);
+    ScmCompnum *c = SCM_NEW_ATOMIC(ScmCompnum);
     SCM_SET_CLASS(c, SCM_CLASS_COMPLEX);
     c->real = r;
     c->imag = i;
@@ -286,11 +286,11 @@ double Scm_RealPart(ScmObj z)
     double m;
     if (SCM_REALP(z)) {
         m = Scm_GetDouble(z);
-    } else if (!SCM_COMPLEXP(z)) {
+    } else if (!SCM_COMPNUMP(z)) {
         Scm_Error("number required, but got %S", z);
         m = 0.0;                /* dummy */
     } else {
-        m = SCM_COMPLEX_REAL(z);
+        m = SCM_COMPNUM_REAL(z);
     }
     return m;
 }
@@ -298,8 +298,8 @@ double Scm_RealPart(ScmObj z)
 double Scm_ImagPart(ScmObj z)
 {
     double m = 0.0;
-    if (SCM_COMPLEXP(z)) {
-        m = SCM_COMPLEX_IMAG(z);
+    if (SCM_COMPNUMP(z)) {
+        m = SCM_COMPNUM_IMAG(z);
     } else if (!SCM_REALP(z)) {
         Scm_Error("number required, but got %S", z);
     }
@@ -311,12 +311,12 @@ double Scm_Magnitude(ScmObj z)
     double m;
     if (SCM_REALP(z)) {
         m = fabs(Scm_GetDouble(z));
-    } else if (!SCM_COMPLEXP(z)) {
+    } else if (!SCM_COMPNUMP(z)) {
         Scm_Error("number required, but got %S", z);
         m = 0.0;                /* dummy */
     } else {
-        double r = SCM_COMPLEX_REAL(z);
-        double i = SCM_COMPLEX_IMAG(z);
+        double r = SCM_COMPNUM_REAL(z);
+        double i = SCM_COMPNUM_IMAG(z);
         m = sqrt(r*r+i*i);
     }
     return m;
@@ -327,12 +327,12 @@ double Scm_Angle(ScmObj z)
     double a;
     if (SCM_REALP(z)) {
         a = (Scm_Sign(z) < 0)? M_PI : 0.0;
-    } else if (!SCM_COMPLEXP(z)) {
+    } else if (!SCM_COMPNUMP(z)) {
         Scm_Error("number required, but got %S", z);
         a = 0.0;                /* dummy */
     } else {
-        double r = SCM_COMPLEX_REAL(z);
-        double i = SCM_COMPLEX_IMAG(z);
+        double r = SCM_COMPNUM_REAL(z);
+        double i = SCM_COMPNUM_IMAG(z);
         a = atan2(i, r);
     }
     return a;
@@ -691,7 +691,7 @@ int Scm_IntegerP(ScmObj obj)
         if ((f = modf(d, &i)) == 0.0) return TRUE;
         return FALSE;
     }
-    if (SCM_COMPLEXP(obj)) return FALSE;
+    if (SCM_COMPNUMP(obj)) return FALSE;
     Scm_Error("number required, but got %S", obj);
     return FALSE;           /* dummy */
 }
@@ -727,9 +727,9 @@ ScmObj Scm_Abs(ScmObj obj)
     } else if (SCM_FLONUMP(obj)) {
         double v = SCM_FLONUM_VALUE(obj);
         if (v < 0) obj = Scm_MakeFlonum(-v);
-    } else if (SCM_COMPLEXP(obj)) {
-        double r = SCM_COMPLEX_REAL(obj);
-        double i = SCM_COMPLEX_IMAG(obj);
+    } else if (SCM_COMPNUMP(obj)) {
+        double r = SCM_COMPNUM_REAL(obj);
+        double i = SCM_COMPNUM_IMAG(obj);
         double a = sqrt(r*r+i*i);
         return Scm_MakeFlonum(a);
     } else {
@@ -776,9 +776,9 @@ ScmObj Scm_Negate(ScmObj obj)
         obj = Scm_BignumNegate(SCM_BIGNUM(obj));
     } else if (SCM_FLONUMP(obj)) {
         obj = Scm_MakeFlonum(-SCM_FLONUM_VALUE(obj));
-    } else if (SCM_COMPLEXP(obj)) {
-        obj = Scm_MakeCompnum(-SCM_COMPLEX_REAL(obj),
-                              -SCM_COMPLEX_IMAG(obj));
+    } else if (SCM_COMPNUMP(obj)) {
+        obj = Scm_MakeCompnum(-SCM_COMPNUM_REAL(obj),
+                              -SCM_COMPNUM_IMAG(obj));
     } else {
         obj = Scm_Apply(SCM_OBJ(&generic_sub), SCM_LIST1(obj));
     }
@@ -796,9 +796,9 @@ ScmObj Scm_Reciprocal(ScmObj obj)
     } else if (SCM_FLONUMP(obj)) {
         double val = SCM_FLONUM_VALUE(obj);
         obj = Scm_MakeFlonum(1.0/val);
-    } else if (SCM_COMPLEXP(obj)) {
-        double r = SCM_COMPLEX_REAL(obj), r1;
-        double i = SCM_COMPLEX_IMAG(obj), i1;
+    } else if (SCM_COMPNUMP(obj)) {
+        double r = SCM_COMPNUM_REAL(obj), r1;
+        double i = SCM_COMPNUM_IMAG(obj), i1;
         double d;
         d = r*r + i*i;
         r1 = r/d;
@@ -820,7 +820,7 @@ ScmObj Scm_ExactToInexact(ScmObj obj)
         obj = Scm_MakeFlonum((double)SCM_INT_VALUE(obj));
     } else if (SCM_BIGNUMP(obj)) {
         obj = Scm_MakeFlonum(Scm_BignumToDouble(SCM_BIGNUM(obj)));
-    } else if (!SCM_FLONUMP(obj) && !SCM_COMPLEXP(obj)) {
+    } else if (!SCM_FLONUMP(obj) && !SCM_COMPNUMP(obj)) {
         Scm_Error("number required: %S", obj);
     }
     return obj;
@@ -835,7 +835,7 @@ ScmObj Scm_InexactToExact(ScmObj obj)
         } else {
             obj = SCM_MAKE_INT((long)d);
         }
-    } else if (SCM_COMPLEXP(obj)) {
+    } else if (SCM_COMPNUMP(obj)) {
         Scm_Error("exact complex is not supported: %S", obj);
     } if (!SCM_INTP(obj) && !SCM_BIGNUMP(obj)) {
         Scm_Error("number required: %S", obj);
@@ -876,7 +876,7 @@ ScmObj Scm_PromoteToComplex(ScmObj obj)
         return Scm_MakeCompnum(Scm_BignumToDouble(SCM_BIGNUM(obj)), 0.0);
     if (SCM_FLONUMP(obj))
         return Scm_MakeCompnum(SCM_FLONUM_VALUE(obj), 0.0);
-    if (SCM_COMPLEXP(obj)) return obj;
+    if (SCM_COMPNUMP(obj)) return obj;
     Scm_Panic("Scm_PromoteToComplex: can't be here");
     return SCM_UNDEFINED;       /* dummy */
 }
@@ -926,7 +926,7 @@ ScmObj Scm_Add(ScmObj arg0, ScmObj arg1, ScmObj args)
             } else if (SCM_FLONUMP(arg1)) {
                 result_real = (double)result_int;
                 goto DO_FLONUM;
-            } else if (SCM_COMPLEXP(arg1)) {
+            } else if (SCM_COMPNUMP(arg1)) {
                 result_real = (double)result_int;
                 result_imag = 0.0;
                 goto DO_COMPLEX;
@@ -961,7 +961,7 @@ ScmObj Scm_Add(ScmObj arg0, ScmObj arg1, ScmObj args)
                 result_real += Scm_BignumToDouble(SCM_BIGNUM(arg1));
             } else if (SCM_FLONUMP(arg1)) {
                 result_real += SCM_FLONUM_VALUE(arg1);
-            } else if (SCM_COMPLEXP(arg1)) {
+            } else if (SCM_COMPNUMP(arg1)) {
                 result_imag = 0.0;
                 goto DO_COMPLEX;
             } else {
@@ -974,9 +974,9 @@ ScmObj Scm_Add(ScmObj arg0, ScmObj arg1, ScmObj args)
             args = SCM_CDR(args);
         }
     }
-    if (SCM_COMPLEXP(arg0)) {
-        result_real = SCM_COMPLEX_REAL(arg0);
-        result_imag = SCM_COMPLEX_IMAG(arg0);
+    if (SCM_COMPNUMP(arg0)) {
+        result_real = SCM_COMPNUM_REAL(arg0);
+        result_imag = SCM_COMPNUM_IMAG(arg0);
       DO_COMPLEX:
         for (;;) {
             if (SCM_INTP(arg1)) {
@@ -985,9 +985,9 @@ ScmObj Scm_Add(ScmObj arg0, ScmObj arg1, ScmObj args)
                 result_real += Scm_BignumToDouble(SCM_BIGNUM(arg1));
             } else if (SCM_FLONUMP(arg1)) {
                 result_real += SCM_FLONUM_VALUE(arg1);
-            } else if (SCM_COMPLEXP(arg1)) {
-                result_real += SCM_COMPLEX_REAL(arg1);
-                result_imag += SCM_COMPLEX_IMAG(arg1);
+            } else if (SCM_COMPNUMP(arg1)) {
+                result_real += SCM_COMPNUM_REAL(arg1);
+                result_imag += SCM_COMPNUM_IMAG(arg1);
             } else {
                 APPLY_GENERIC_ARITH(arg0, generic_add,
                                     Scm_MakeComplex(result_real, result_imag),
@@ -1030,7 +1030,7 @@ ScmObj Scm_Subtract(ScmObj arg0, ScmObj arg1, ScmObj args)
             } else if (SCM_FLONUMP(arg1)) {
                 result_real = (double)result_int;
                 goto DO_FLONUM;
-            } else if (SCM_COMPLEXP(arg1)) {
+            } else if (SCM_COMPNUMP(arg1)) {
                 result_real = (double)result_int;
                 goto DO_COMPLEX;
             } else {
@@ -1060,7 +1060,7 @@ ScmObj Scm_Subtract(ScmObj arg0, ScmObj arg1, ScmObj args)
                 result_real -= Scm_BignumToDouble(SCM_BIGNUM(arg1));
             } else if (SCM_FLONUMP(arg1)) {
                 result_real -= SCM_FLONUM_VALUE(arg1);
-            } else if (SCM_COMPLEXP(arg1)) {
+            } else if (SCM_COMPNUMP(arg1)) {
                 goto DO_COMPLEX;
             } else {
                 APPLY_GENERIC_ARITH(arg0, generic_sub,
@@ -1073,9 +1073,9 @@ ScmObj Scm_Subtract(ScmObj arg0, ScmObj arg1, ScmObj args)
             args = SCM_CDR(args);
         }
     }
-    if (SCM_COMPLEXP(arg0)) {
-        result_real = SCM_COMPLEX_REAL(arg0);
-        result_imag = SCM_COMPLEX_IMAG(arg0);
+    if (SCM_COMPNUMP(arg0)) {
+        result_real = SCM_COMPNUM_REAL(arg0);
+        result_imag = SCM_COMPNUM_IMAG(arg0);
       DO_COMPLEX:
         for (;;) {
             if (SCM_INTP(arg1)) {
@@ -1084,9 +1084,9 @@ ScmObj Scm_Subtract(ScmObj arg0, ScmObj arg1, ScmObj args)
                 result_real -= Scm_BignumToDouble(SCM_BIGNUM(arg1));
             } else if (SCM_FLONUMP(arg1)) {
                 result_real -= SCM_FLONUM_VALUE(arg1);
-            } else if (SCM_COMPLEXP(arg1)) {
-                result_real -= SCM_COMPLEX_REAL(arg1);
-                result_imag -= SCM_COMPLEX_IMAG(arg1);
+            } else if (SCM_COMPNUMP(arg1)) {
+                result_real -= SCM_COMPNUM_REAL(arg1);
+                result_imag -= SCM_COMPNUM_IMAG(arg1);
             } else {
                 APPLY_GENERIC_ARITH(arg0, generic_sub,
                                     Scm_MakeComplex(result_real, result_imag),
@@ -1133,7 +1133,7 @@ ScmObj Scm_Multiply(ScmObj arg0, ScmObj arg1, ScmObj args)
             } else if (SCM_FLONUMP(arg1)) {
                 result_real = (double)result_int;
                 goto DO_FLONUM;
-            } else if (SCM_COMPLEXP(arg1)) {
+            } else if (SCM_COMPNUMP(arg1)) {
                 result_real = (double)result_int;
                 result_imag = 0.0;
                 goto DO_COMPLEX;
@@ -1163,7 +1163,7 @@ ScmObj Scm_Multiply(ScmObj arg0, ScmObj arg1, ScmObj args)
                 result_real *= Scm_BignumToDouble(SCM_BIGNUM(arg1));
             } else if (SCM_FLONUMP(arg1)) {
                 result_real *= SCM_FLONUM_VALUE(arg1);
-            } else if (SCM_COMPLEXP(arg1)) {
+            } else if (SCM_COMPNUMP(arg1)) {
                 result_imag = 0.0;
                 goto DO_COMPLEX;
             } else {
@@ -1175,9 +1175,9 @@ ScmObj Scm_Multiply(ScmObj arg0, ScmObj arg1, ScmObj args)
             args = SCM_CDR(args);
         }
     }
-    if (SCM_COMPLEXP(arg0)) {
-        result_real = SCM_COMPLEX_REAL(arg0);
-        result_imag = SCM_COMPLEX_IMAG(arg0);
+    if (SCM_COMPNUMP(arg0)) {
+        result_real = SCM_COMPNUM_REAL(arg0);
+        result_imag = SCM_COMPNUM_IMAG(arg0);
       DO_COMPLEX:
         for (;;) {
             if (SCM_INTP(arg1)) {
@@ -1190,9 +1190,9 @@ ScmObj Scm_Multiply(ScmObj arg0, ScmObj arg1, ScmObj args)
             } else if (SCM_FLONUMP(arg1)) {
                 result_real *= SCM_FLONUM_VALUE(arg1);
                 result_imag *= SCM_FLONUM_VALUE(arg1);
-            } else if (SCM_COMPLEXP(arg1)) {
-                double r = SCM_COMPLEX_REAL(arg1);
-                double i = SCM_COMPLEX_IMAG(arg1);
+            } else if (SCM_COMPNUMP(arg1)) {
+                double r = SCM_COMPNUM_REAL(arg1);
+                double i = SCM_COMPNUM_IMAG(arg1);
                 double t = result_real * r - result_imag * i;
                 result_imag   = result_real * i + result_imag * r;
                 result_real = t;
@@ -1271,7 +1271,7 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
             result_real = Scm_BignumToDouble(SCM_BIGNUM(arg0));
             goto DO_FLONUM;
         }
-        if (SCM_COMPLEXP(arg1)) {
+        if (SCM_COMPNUMP(arg1)) {
             exact = FALSE;
             result_real = Scm_BignumToDouble(SCM_BIGNUM(arg0));
             goto DO_COMPLEX;
@@ -1290,7 +1290,7 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
             } else if (SCM_FLONUMP(arg1)) {
                 div_real = SCM_FLONUM_VALUE(arg1);
                 exact = FALSE;
-            } else if (SCM_COMPLEXP(arg1)) {
+            } else if (SCM_COMPNUMP(arg1)) {
                 goto DO_COMPLEX;
             } else {
                 APPLY_GENERIC_ARITH(arg0, generic_div,
@@ -1304,10 +1304,10 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
             args = SCM_CDR(args);
         }
     }
-    if (SCM_COMPLEXP(arg0)) {
+    if (SCM_COMPNUMP(arg0)) {
         double d, r, i;
-        result_real = SCM_COMPLEX_REAL(arg0);
-        result_imag = SCM_COMPLEX_IMAG(arg0);
+        result_real = SCM_COMPNUM_REAL(arg0);
+        result_imag = SCM_COMPNUM_IMAG(arg0);
       DO_COMPLEX:
         for (;;) {
             div_imag = 0.0;
@@ -1317,9 +1317,9 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
                 div_real = Scm_BignumToDouble(SCM_BIGNUM(arg1));
             } else if (SCM_FLONUMP(arg1)) {
                 div_real = SCM_FLONUM_VALUE(arg1);
-            } else if (SCM_COMPLEXP(arg1)) {
-                div_real = SCM_COMPLEX_REAL(arg1);
-                div_imag = SCM_COMPLEX_IMAG(arg1);
+            } else if (SCM_COMPNUMP(arg1)) {
+                div_real = SCM_COMPNUM_REAL(arg1);
+                div_imag = SCM_COMPNUM_IMAG(arg1);
             } else {
                 APPLY_GENERIC_ARITH(arg0, generic_div,
                                     Scm_MakeComplex(result_real, result_imag),
@@ -1623,14 +1623,14 @@ ScmObj Scm_Expt(ScmObj x, ScmObj y)
 
 int Scm_NumEq(ScmObj arg0, ScmObj arg1)
 {
-    if (SCM_COMPLEXP(arg0)) {
-        if (SCM_COMPLEXP(arg1)) {
-            return ((SCM_COMPLEX_REAL(arg0) == SCM_COMPLEX_REAL(arg1))
-                    && (SCM_COMPLEX_IMAG(arg0) == SCM_COMPLEX_IMAG(arg1)));
+    if (SCM_COMPNUMP(arg0)) {
+        if (SCM_COMPNUMP(arg1)) {
+            return ((SCM_COMPNUM_REAL(arg0) == SCM_COMPNUM_REAL(arg1))
+                    && (SCM_COMPNUM_IMAG(arg0) == SCM_COMPNUM_IMAG(arg1)));
         }
         return FALSE;
     } else {
-        if (SCM_COMPLEXP(arg1)) return FALSE;
+        if (SCM_COMPNUMP(arg1)) return FALSE;
         return (Scm_NumCmp(arg0, arg1) == 0);
     }
 }
@@ -2165,11 +2165,11 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix, int use_upper)
     } else if (SCM_FLONUMP(obj)) {
         double_print(buf, FLT_BUF, SCM_FLONUM_VALUE(obj), FALSE);
         r = SCM_MAKE_STR_COPYING(buf);
-    } else if (SCM_COMPLEXP(obj)) {
+    } else if (SCM_COMPNUMP(obj)) {
         ScmObj p = Scm_MakeOutputStringPort(TRUE);
-        double_print(buf, FLT_BUF, SCM_COMPLEX_REAL(obj), FALSE);
+        double_print(buf, FLT_BUF, SCM_COMPNUM_REAL(obj), FALSE);
         SCM_PUTZ(buf, -1, SCM_PORT(p));
-        double_print(buf, FLT_BUF, SCM_COMPLEX_IMAG(obj), TRUE);
+        double_print(buf, FLT_BUF, SCM_COMPNUM_IMAG(obj), TRUE);
         SCM_PUTZ(buf, -1, SCM_PORT(p));
         SCM_PUTC('i', SCM_PORT(p));
         r = Scm_GetOutputString(SCM_PORT(p));

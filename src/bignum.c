@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bignum.c,v 1.59 2004-11-05 10:33:37 shirok Exp $
+ *  $Id: bignum.c,v 1.60 2006-05-31 01:50:49 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -712,7 +712,7 @@ ScmObj Scm_BignumAddN(ScmBignum *bx, ScmObj args)
             r = bignum_add(r, SCM_BIGNUM(v));
             continue;
         }
-        if (SCM_FLONUMP(v) || SCM_COMPLEXP(v)) {
+        if (SCM_FLONUMP(v) || SCM_COMPNUMP(v)) {
             ScmObj z = Scm_MakeFlonum(Scm_BignumToDouble(r));
             return Scm_Add(z, v, SCM_CDR(args));
         }
@@ -735,7 +735,7 @@ ScmObj Scm_BignumSubN(ScmBignum *bx, ScmObj args)
             r = bignum_sub(r, SCM_BIGNUM(v));
             continue;
         }
-        if (SCM_FLONUMP(v) || SCM_COMPLEXP(v)) {
+        if (SCM_FLONUMP(v) || SCM_COMPNUMP(v)) {
             ScmObj z = Scm_MakeFlonum(Scm_BignumToDouble(r));
             return Scm_Subtract(z, v, SCM_CDR(args));
         }
@@ -906,7 +906,7 @@ ScmObj Scm_BignumMulN(ScmBignum *bx, ScmObj args)
             r = bignum_mul(r, SCM_BIGNUM(v));
             continue;
         }
-        if (SCM_FLONUMP(v) || SCM_COMPLEXP(v)) {
+        if (SCM_FLONUMP(v) || SCM_COMPNUMP(v)) {
             ScmObj f = Scm_MakeFlonum(Scm_BignumToDouble(r));
             return Scm_Multiply(f, v, SCM_CDR(args));
         }

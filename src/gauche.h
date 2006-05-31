@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.453 2006-05-31 01:29:04 shirok Exp $
+ *  $Id: gauche.h,v 1.454 2006-05-31 01:50:49 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -356,7 +356,7 @@ typedef struct ScmDStringRec   ScmDString;
 typedef struct ScmVectorRec    ScmVector;
 typedef struct ScmBignumRec    ScmBignum;
 typedef struct ScmFlonumRec    ScmFlonum;
-typedef struct ScmComplexRec   ScmComplex;
+typedef struct ScmCompnumRec   ScmCompnum;
 typedef struct ScmPortRec      ScmPort;
 typedef struct ScmHashTableRec ScmHashTable;
 typedef struct ScmModuleRec    ScmModule;
@@ -1989,9 +1989,9 @@ SCM_EXTERN ScmObj Scm_DeleteKeywordX(ScmObj key, ScmObj list);
 
 #define SCM_INTEGERP(obj)          (SCM_INTP(obj) || SCM_BIGNUMP(obj))
 #define SCM_REALP(obj)             (SCM_INTEGERP(obj)||SCM_FLONUMP(obj))
-#define SCM_NUMBERP(obj)           (SCM_REALP(obj)||SCM_COMPLEXP(obj))
+#define SCM_NUMBERP(obj)           (SCM_REALP(obj)||SCM_COMPNUMP(obj))
 #define SCM_EXACTP(obj)            SCM_INTEGERP(obj)
-#define SCM_INEXACTP(obj)          (SCM_FLONUMP(obj)||SCM_COMPLEXP(obj))
+#define SCM_INEXACTP(obj)          (SCM_FLONUMP(obj)||SCM_COMPNUMP(obj))
 
 #define SCM_UINTEGERP(obj) \
     (SCM_UINTP(obj) || (SCM_BIGNUMP(obj)&&SCM_BIGNUM_SIGN(obj)>=0))
@@ -2057,16 +2057,16 @@ struct ScmFlonumRec {
 #define SCM_FLONUMP(obj)           SCM_XTYPEP(obj, SCM_CLASS_REAL)
 #define SCM_FLONUM_VALUE(obj)      (SCM_FLONUM(obj)->value)
 
-struct ScmComplexRec {
+struct ScmCompnumRec {
     SCM_HEADER;
     double real;
     double imag;
 };
 
-#define SCM_COMPLEX(obj)           ((ScmComplex*)(obj))
-#define SCM_COMPLEXP(obj)          SCM_XTYPEP(obj, SCM_CLASS_COMPLEX)
-#define SCM_COMPLEX_REAL(obj)      SCM_COMPLEX(obj)->real
-#define SCM_COMPLEX_IMAG(obj)      SCM_COMPLEX(obj)->imag
+#define SCM_COMPNUM(obj)           ((ScmCompnum*)(obj))
+#define SCM_COMPNUMP(obj)          SCM_XTYPEP(obj, SCM_CLASS_COMPLEX)
+#define SCM_COMPNUM_REAL(obj)      SCM_COMPNUM(obj)->real
+#define SCM_COMPNUM_IMAG(obj)      SCM_COMPNUM(obj)->imag
 
 SCM_EXTERN ScmObj Scm_MakeInteger(long i);
 SCM_EXTERN ScmObj Scm_MakeIntegerU(u_long i);

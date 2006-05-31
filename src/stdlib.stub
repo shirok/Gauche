@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.119 2006-05-31 01:29:04 shirok Exp $
+;;; $Id: stdlib.stub,v 1.120 2006-05-31 01:50:49 shirok Exp $
 ;;;
 
 
@@ -113,9 +113,9 @@
 
 (define-cproc zero? (obj)
   (body <boolean>
-        "if (SCM_COMPLEXP(obj)) {"
-        "  SCM_RESULT = (SCM_COMPLEX_REAL(obj) == 0.0"
-        "                && SCM_COMPLEX_IMAG(obj) == 0.0);"
+        "if (SCM_COMPNUMP(obj)) {"
+        "  SCM_RESULT = (SCM_COMPNUM_REAL(obj) == 0.0"
+        "                && SCM_COMPNUM_IMAG(obj) == 0.0);"
         "} else {"
         "  SCM_RESULT = (Scm_Sign(obj) == 0);"
         "}"))
@@ -238,23 +238,23 @@
 (define-cproc %complex->real/imag (z)
   "  if (SCM_EXACTP(z)) { SCM_RETURN(Scm_Values2(z, SCM_MAKE_INT(0))); }
   else if (SCM_FLONUMP(z)) { SCM_RETURN(Scm_Values2(z, Scm_MakeFlonum(0.0))); }
-  else if (!SCM_COMPLEXP(z)) {
+  else if (!SCM_COMPNUMP(z)) {
     Scm_Error(\"number required, but got %S\", z);
     SCM_RETURN(SCM_UNDEFINED);
-  } else { SCM_RETURN(Scm_Values2(Scm_MakeFlonum(SCM_COMPLEX_REAL(z)), Scm_MakeFlonum(SCM_COMPLEX_IMAG(z))));}")
+  } else { SCM_RETURN(Scm_Values2(Scm_MakeFlonum(SCM_COMPNUM_REAL(z)), Scm_MakeFlonum(SCM_COMPNUM_IMAG(z))));}")
 
 ;; we don't use Scm_RealPart and Scm_ImagPart, for preserving exactness
 ;; and avoiding extra allocation.
 (define-cproc real-part (z::<number>)
   "if (SCM_REALP(z)) SCM_RETURN(z);
-   SCM_ASSERT(SCM_COMPLEXP(z));
-   SCM_RETURN(Scm_MakeFlonum(SCM_COMPLEX_REAL(z)));")
+   SCM_ASSERT(SCM_COMPNUMP(z));
+   SCM_RETURN(Scm_MakeFlonum(SCM_COMPNUM_REAL(z)));")
 
 (define-cproc imag-part (z::<number>)
   "if (SCM_EXACTP(z)) SCM_RETURN(SCM_MAKE_INT(0));
    else if (SCM_REALP(z)) SCM_RETURN(Scm_MakeFlonum(0.0));
-   SCM_ASSERT(SCM_COMPLEXP(z));
-   SCM_RETURN(Scm_MakeFlonum(SCM_COMPLEX_IMAG(z)));")
+   SCM_ASSERT(SCM_COMPNUMP(z));
+   SCM_RETURN(Scm_MakeFlonum(SCM_COMPNUM_IMAG(z)));")
 
 (define-cproc magnitude (z)  (call <double> "Scm_Magnitude"))
 (define-cproc angle (z)      (call <double> "Scm_Angle"))
