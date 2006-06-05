@@ -35,7 +35,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvector.c.tmpl,v 1.6 2005-06-23 04:18:21 shirok Exp $
+ *  $Id: uvector.c.tmpl,v 1.7 2006-06-05 05:11:24 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -645,7 +645,7 @@ static inline ScmInt64 s64g_add(ScmInt64 x, ScmInt64 y, int clamp)
 #if SIZEOF_LONG == 4
     ScmObj xx = Scm_MakeInteger64(x);
     ScmObj yy = Scm_MakeInteger64(y);
-    ScmObj r = Scm_Add2(xx, yy);
+    ScmObj r = Scm_Add(xx, yy);
     return Scm_GetInteger64Clamp(r, clamp, NULL);
 #else
     long r, v;
@@ -661,7 +661,7 @@ static inline ScmInt64 s64g_sub(ScmInt64 x, ScmInt64 y, int clamp)
 #if SIZEOF_LONG == 4
     ScmObj xx = Scm_MakeInteger64(x);
     ScmObj yy = Scm_MakeInteger64(y);
-    ScmObj r = Scm_Subtract2(xx, yy);
+    ScmObj r = Scm_Sub(xx, yy);
     return Scm_GetInteger64Clamp(r, clamp, NULL);
 #else
     long r, v;
@@ -677,7 +677,7 @@ static inline ScmInt64 s64g_mul(ScmInt64 x, ScmInt64 y, int clamp)
 #if SIZEOF_LONG == 4
     ScmObj xx = Scm_MakeInteger64(x);
     ScmObj yy = Scm_MakeInteger64(y);
-    ScmObj r = Scm_Multiply2(xx, yy);
+    ScmObj r = Scm_Mul(xx, yy);
     return Scm_GetInteger64Clamp(r, clamp, NULL);
 #else
     long r, v;
@@ -697,7 +697,7 @@ static inline ScmUInt64 u64g_add(ScmUInt64 x, ScmUInt64 y, int clamp)
 #if SIZEOF_LONG == 4
     ScmObj xx = Scm_MakeIntegerU64(x);
     ScmObj yy = Scm_MakeIntegerU64(y);
-    ScmObj r = Scm_Add2(xx, yy);
+    ScmObj r = Scm_Add(xx, yy);
     return Scm_GetIntegerU64Clamp(r, clamp, NULL);
 #else
     u_long r, v;
@@ -712,7 +712,7 @@ static inline ScmUInt64 u64g_sub(ScmUInt64 x, ScmUInt64 y, int clamp)
 #if SIZEOF_LONG == 4
     ScmObj xx = Scm_MakeIntegerU64(x);
     ScmObj yy = Scm_MakeIntegerU64(y);
-    ScmObj r = Scm_Subtract2(xx, yy);
+    ScmObj r = Scm_Sub(xx, yy);
     return Scm_GetIntegerU64Clamp(r, clamp, NULL);
 #else
     u_long r, v;
@@ -727,7 +727,7 @@ static inline ScmUInt64 u64g_mul(ScmUInt64 x, ScmUInt64 y, int clamp)
 #if SIZEOF_LONG == 4
     ScmObj xx = Scm_MakeIntegerU64(x);
     ScmObj yy = Scm_MakeIntegerU64(y);
-    ScmObj r = Scm_Multiply2(xx, yy);
+    ScmObj r = Scm_Mul(xx, yy);
     return Scm_GetIntegerU64Clamp(r, clamp, NULL);
 #else
     u_long r, v;
@@ -995,7 +995,7 @@ static inline long s8muladd(long x, long y, long acc, ScmObj *sacc)
     m = x * y;
     SADDOV(k, v, acc, m);
     if (v) {
-        *sacc = Scm_Add2(*sacc, Scm_MakeInteger(acc));
+        *sacc = Scm_Add(*sacc, Scm_MakeInteger(acc));
         return m;
     } else {
         return k;
@@ -1009,13 +1009,13 @@ static inline long s32muladd(long x, long y, long acc, ScmObj *sacc)
     long k, v, m;
     SMULOV(m, v, x, y);
     if (v) {
-        *sacc = Scm_Add2(*sacc, Scm_Multiply2(Scm_MakeInteger(x),
-                                              Scm_MakeInteger(y)));
+        *sacc = Scm_Add(*sacc, Scm_Mul(Scm_MakeInteger(x),
+                                       Scm_MakeInteger(y)));
         return acc;
     } else {
         SADDOV(k, v, acc, m);
         if (v) {
-            *sacc = Scm_Add2(*sacc, Scm_MakeInteger(acc));
+            *sacc = Scm_Add(*sacc, Scm_MakeInteger(acc));
             return m;
         } else {
             return k;
@@ -1027,8 +1027,8 @@ static inline long s32muladd(long x, long y, long acc, ScmObj *sacc)
 static inline ScmInt64 s64muladd(ScmInt64 x, ScmInt64 y, ScmInt64 acc, ScmObj *sacc)
 {
     /* we don't use acc, and operate only on sacc. */
-    *sacc = Scm_Add2(*sacc, Scm_Multiply2(Scm_MakeInteger64(x),
-                                          Scm_MakeInteger64(y)));
+    *sacc = Scm_Add(*sacc, Scm_Mul(Scm_MakeInteger64(x),
+                                   Scm_MakeInteger64(y)));
     return acc;
 }
 #else
@@ -1041,7 +1041,7 @@ static inline u_long u8muladd(u_long x, u_long y, u_long acc, ScmObj *sacc)
     m = x * y;
     UADDOV(k, v, acc, m);
     if (v) {
-        *sacc = Scm_Add2(*sacc, Scm_MakeIntegerU(acc));
+        *sacc = Scm_Add(*sacc, Scm_MakeIntegerU(acc));
         return m;
     } else {
         return k;
@@ -1055,13 +1055,13 @@ static inline u_long u32muladd(u_long x, u_long y, u_long acc, ScmObj *sacc)
     u_long k, v, m;
     UMULOV(m, v, x, y);
     if (v) {
-        *sacc = Scm_Add2(*sacc, Scm_Multiply2(Scm_MakeIntegerU(x),
+        *sacc = Scm_Add(*sacc, Scm_Mul(Scm_MakeIntegerU(x),
                                               Scm_MakeIntegerU(y)));
         return acc;
     } else {
         UADDOV(k, v, acc, m);
         if (v) {
-            *sacc = Scm_Add2(*sacc, Scm_MakeIntegerU(acc));
+            *sacc = Scm_Add(*sacc, Scm_MakeIntegerU(acc));
             return m;
         } else {
             return k;
@@ -1073,7 +1073,7 @@ static inline u_long u32muladd(u_long x, u_long y, u_long acc, ScmObj *sacc)
 static inline ScmUInt64 u64muladd(ScmUInt64 x, ScmUInt64 y, ScmUInt64 acc, ScmObj *sacc)
 {
     /* we don't use acc, and operate only on sacc. */
-    *sacc = Scm_Add2(*sacc, Scm_Multiply2(Scm_MakeIntegerU64(x),
+    *sacc = Scm_Add(*sacc, Scm_Mul(Scm_MakeIntegerU64(x),
                                           Scm_MakeIntegerU64(y)));
     return acc;
 }
@@ -1110,7 +1110,7 @@ ScmObj Scm_${T}VectorDotProd(Scm${T}Vector *x, ScmObj y)
                 r = ${t}muladd(vx, vy, r, &rr);
             } else {
                 ${BOX vvx vx};
-                rr = Scm_Add2(rr, Scm_Multiply2(vvx, vvy));
+                rr = Scm_Add(rr, Scm_Mul(vvx, vvy));
             }
         }
         break;
@@ -1123,7 +1123,7 @@ ScmObj Scm_${T}VectorDotProd(Scm${T}Vector *x, ScmObj y)
                 r = ${t}muladd(vx, vy, r, &rr);
             } else {
                 ${BOX vvx vx};
-                rr = Scm_Add2(rr, Scm_Multiply2(vvx, vvy));
+                rr = Scm_Add(rr, Scm_Mul(vvx, vvy));
             }
         }
     }
@@ -1135,7 +1135,7 @@ ScmObj Scm_${T}VectorDotProd(Scm${T}Vector *x, ScmObj y)
     } else {
         ScmObj sr;
         ${NBOX sr r};
-        rr = Scm_Add2(rr, sr);
+        rr = Scm_Add(rr, sr);
     }
     return rr;
 }

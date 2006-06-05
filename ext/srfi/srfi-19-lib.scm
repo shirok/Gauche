@@ -24,7 +24,7 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19-lib.scm,v 1.5 2006-04-06 04:09:30 shirok Exp $
+;;; $Id: srfi-19-lib.scm,v 1.6 2006-06-05 05:11:24 shirok Exp $
 
 (define-module srfi-19
   (use srfi-1)
@@ -414,13 +414,9 @@
        (quotient y 400)
        -32045)))
 
-(define (tm:split-real r)
-  (receive (frac int) (modf r) (values int frac)))
-
 ;; Gives the seconds/date/month/year
-;; In Gauche, jdn is scaled by tm:sid to avoid precision loss.
 (define (tm:decode-julian-day-number jdn)
-  (let* ((days (inexact->exact (truncate (/ jdn tm:sid))))
+  (let* ((days (truncate jdn))
 	 (a (+ days 32044))
 	 (b (quotient (+ (* 4 a) 3) 146097))
 	 (c (- a (quotient (* 146097 b) 4)))
@@ -429,7 +425,7 @@
 	 (m (quotient (+ (* 5 e) 2) 153))
 	 (y (+ (* 100 b) d -4800 (quotient m 10))))
     (values ; seconds date month year
-     (- jdn (* days tm:sid))
+     (* (- jdn days) tm:sid)
      (+ e (- (quotient (+ (* 153 m) 2) 5)) 1)
      (+ m 3 (* -12 (quotient m 10)))
      (if (>= 0 y) (- y 1) y))
@@ -473,11 +469,8 @@
           )))
 
 ;; special thing -- ignores nanos
-;; Gauche doesn't have exact rational arithmetic.  To avoid precision loss,
-;; the result is scaled by tm:sid.
 (define (tm:time->julian-day-number seconds tz-offset)
-  (+ (+ seconds tz-offset tm:sihd)
-     (inexact->exact (* tm:tai-epoch-in-jd tm:sid))))
+  (+ (/ (+ seconds tz-offset tm:sihd) tm:sid) tm:tai-epoch-in-jd))
 
 (define (tm:leap-second? second)
   (and (assoc second tm:leap-second-table) #t))
@@ -652,13 +645,13 @@
          (offset (date-zone-offset date))
          )
     (+ (tm:encode-julian-day-number day month year)
-       (- 1/2)
-       (+ (/ (+ (* hour 60 60)
-		(* minute 60)
-		second
-		(/ nanosecond tm:nano)
-                (- offset))
-	     tm:sid)))))
+       -1/2
+       (/ (+ (* hour 60 60)
+             (* minute 60)
+             second
+             (/ nanosecond tm:nano)
+             (- offset))
+          tm:sid))))
 
 (define (date->modified-julian-day date)
   (- (date->julian-day date)
@@ -703,12 +696,10 @@
 
 
 (define (julian-day->time-utc jdn)
- (let ( (secs (* tm:sid (- jdn tm:tai-epoch-in-jd))) )
-    (receive (seconds parts)
-	     (tm:split-real secs)
-	     (make-time time-utc 
-			(inexact->exact (truncate (* parts tm:nano)))
-			(inexact->exact seconds)))))
+  (let ((nanosecs (* tm:nano tm:sid (- jdn tm:tai-epoch-in-jd))))
+    (make-time time-utc
+               (remainder nanosecs tm:nano)
+               (floor (/ nanosecs tm:nano)))))
 
 (define (julian-day->time-tai jdn)
   (time-utc->time-tai! (julian-day->time-utc jdn)))

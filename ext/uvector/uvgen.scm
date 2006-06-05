@@ -1,7 +1,7 @@
 ;;
 ;; Generates uvect.c from uvect.c.tmpl
 ;;
-;; $Id: uvgen.scm,v 1.4 2004-12-02 12:14:12 shirok Exp $
+;; $Id: uvgen.scm,v 1.5 2006-06-05 05:11:24 shirok Exp $
 ;;
 
 (use srfi-1)
@@ -269,11 +269,11 @@
                  *tmpl-numop*)))
    '("add" "sub" "mul")
    '("Add" "Sub" "Mul")
-   '("Add2" "Subtract2" "Multiply2"))
+   '("Add" "Sub" "Mul"))
   (dolist (rule (make-flonum-rules))
     (for-each (cute substitute <> (list* '(opname . "div")
                                          '(Opname . "Div")
-                                         '(Sopname . "Divide2")
+                                         '(Sopname . "Div")
                                          rule))
               *tmpl-numop*)))
 

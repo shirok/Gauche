@@ -164,10 +164,10 @@
 (test* "rational reader" '(1234 #t) (rational-test '+1234/1))
 (test* "rational reader" '|1234/-1| (rational-test '1234/-1))
 (test* "rational reader" '(1234 #t) (rational-test '2468/2))
-(test* "rational reader" '(0.5 #f) (rational-test '1/2))
-(test* "rational reader" '(-0.5 #f) (rational-test '-1/2))
-(test* "rational reader" '(0.5 #f) (rational-test '+1/2))
-(test* "rational reader" '(0.5 #f) (rational-test '751/1502))
+(test* "rational reader" '(1/2 #t) (rational-test '1/2))
+(test* "rational reader" '(-1/2 #t) (rational-test '-1/2))
+(test* "rational reader" '(1/2 #t) (rational-test '+1/2))
+(test* "rational reader" '(1/2 #t) (rational-test '751/1502))
 
 (test* "rational reader" '(1 #t)
       (rational-test (string->number "3/03")))
@@ -184,10 +184,10 @@
       (rational-test '#e1234/1))
 (test* "rational reader w/#e" '(-1234 #t)
       (rational-test '#e-1234/1))
-(test* "rational reader w/#e" #f
-      (string->number "#e32/7"))
-(test* "rational reader w/#e" #f
-      (string->number "#e-32/7"))
+(test* "rational reader w/#e" '(32/7 #t)
+      (rational-test '#e32/7))
+(test* "rational reader w/#e" '(-32/7 #t)
+      (rational-test '#e-32/7))
 (test* "rational reader w/#i" '(1234.0 #f)
       (rational-test '#i1234/1))
 (test* "rational reader w/#i" '(-1234.0 #f)
@@ -331,7 +331,7 @@
 (test* "complex reader" '(0.5 0.5) (decompose-complex 1/2+1/2i))
 (test* "complex reader" '(0.0 0.5) (decompose-complex 0+1/2i))
 (test* "complex reader" '(0.0 -0.5) (decompose-complex -1/2i))
-(test* "complex reader" 0.5 (decompose-complex 1/2-0/2i))
+(test* "complex reader" 1/2 (decompose-complex 1/2-0/2i))
 (test* "complex reader" '(0.5 -1/0) (decompose-complex (string->number "1/2-1/0i")))
 
 (test* "complex reader (polar)" (make-polar 1.0 1.0) 1.0@1.0)
@@ -397,6 +397,7 @@
 
 (test* "rational?" #t (rational? 0))
 (test* "rational?" #t (rational? 85736847562938475634534245))
+(test* "rational?" #t (rational? 1/2))
 (test* "rational?" #t (rational? 85736.534245))
 (test* "rational?" #t (rational? 3.14))
 (test* "rational?" #f (rational? 3+4i))
@@ -429,12 +430,14 @@
 
 (test* "exact?" #t (exact? 1))
 (test* "exact?" #t (exact? 4304953480349304983049304953804))
+(test* "exact?" #t (exact? 430495348034930/4983049304953804))
 (test* "exact?" #f (exact? 1.0))
 (test* "exact?" #f (exact? 4304953480349304983.049304953804))
 (test* "exact?" #f (exact? 1.0+0i))
 (test* "exact?" #f (exact? 1.0+5i))
 (test* "inexact?" #f (inexact? 1))
 (test* "inexact?" #f (inexact? 4304953480349304983049304953804))
+(test* "inexact?" #f (inexact? 430495348034930/4983049304953804))
 (test* "inexact?" #t (inexact? 1.0))
 (test* "inexact?" #t (inexact? 4304953480349304983.049304953804))
 (test* "inexact?" #t (inexact? 1.0+0i))
@@ -461,12 +464,16 @@
 (test* "zero?" #f (zero? +5i))
 (test* "positive?" #t (positive? 1))
 (test* "positive?" #f (positive? -1))
+(test* "positive?" #t (positive? 1/7))
+(test* "positive?" #f (positive? -1/7))
 (test* "positive?" #t (positive? 3.1416))
 (test* "positive?" #f (positive? -3.1416))
 (test* "positive?" #t (positive? 134539485343498539458394))
 (test* "positive?" #f (positive? -134539485343498539458394))
 (test* "negative?" #f (negative? 1))
 (test* "negative?" #t (negative? -1))
+(test* "negative?" #f (negative? 1/7))
+(test* "negative?" #t (negative? -1/7))
 (test* "negative?" #f (negative? 3.1416))
 (test* "negative?" #t (negative? -3.1416))
 (test* "negative?" #f (negative? 134539485343498539458394))
@@ -474,13 +481,16 @@
 
 (test* "eqv?" #t (eqv? 20 20))
 (test* "eqv?" #t (eqv? 20.0 20.00000))
+(test* "eqv?" #f (eqv? 4/5 0.8))
+(test* "eqv?" #t (eqv? (exact->inexact 4/5) 0.8))
+;(test* "eqv?" #f (eqv? 4/5 (inexact->exact 0.8)))
 (test* "eqv?" #t (eqv? 20 (inexact->exact 20.0)))
 (test* "eqv?" #f (eqv? 20 20.0))
 
 ;; the following tests combine instructions for comparison.
 
 (let ((zz #f))
-  (set! zz 3.14)  ;; fool the compiler to avoid optimization
+  (set! zz 3.14)  ;; prevent the compiler from optimizing constants
 
   (test* "NUMEQF" '(#t #t #f #f)
          (list (= 3.14 zz) (= zz 3.14) (= 3.15 zz) (= zz 3.15)))
@@ -582,6 +592,15 @@
 (test* "NUMSUBI" #xfffffffd (- x 3))
 (test* "NUMSUBI" #x-100000003 (- -3 x))
 (test* "NUMSUBI" #x100000003 (- x -3))
+(define x 33/7)
+(test* "NUMADDI" 54/7 (+ 3 x))
+(test* "NUMADDI" 54/7 (+ x 3))
+(test* "NUMADDI" 26/7 (+ -1 x))
+(test* "NUMADDI" 26/7 (+ x -1))
+(test* "NUMADDI" -12/7 (- 3 x))
+(test* "NUMADDI" 12/7 (- x 3))
+(test* "NUMADDI" -54/7 (- -3 x))
+(test* "NUMADDI" 54/7 (- x -3))
 
 (test* "NUMADDI" 30 (+ 10 (if #t 20 25)))
 (test* "NUMADDI" 30 (+ (if #t 20 25) 10))
@@ -638,6 +657,12 @@
 (test* "NUMDIVF" 2.0 (/ 4.0 x))
 (test* "NUMDIVF" 0.0-0.5i (/ x +4i))
 (test* "NUMDIVF" 0.0+2.0i (/ +4i x))
+
+;;------------------------------------------------------------------
+(test-section "rational number addition")
+
+(test* "ratnum +" 482/247 (+ 11/13 21/19))
+(test* "ratnum -" -64/247 (- 11/13 21/19))
  
 ;;------------------------------------------------------------------
 (test-section "promotions in addition")
@@ -648,10 +673,12 @@
 (test* "+" '(1 #t) (+-tester (+ 1)))
 (test* "+" '(3 #t) (+-tester (+ 1 2)))
 (test* "+" '(6 #t) (+-tester (+ 1 2 3)))
+(test* "+" '(1 #t) (+-tester (+ 1/6 1/3 1/2)))
 (test* "+" '(1.0 #f) (+-tester (+ 1.0)))
 (test* "+" '(3.0 #f) (+-tester (+ 1.0 2)))
 (test* "+" '(3.0 #f) (+-tester (+ 1 2.0)))
 (test* "+" '(6.0 #f) (+-tester (+ 1 2 3.0)))
+(test* "+" '(1.0 #f) (+-tester (+ 1/6 1/3 0.5)))
 (test* "+" '(1+i #f) (+-tester (+ 1 +i)))
 (test* "+" '(3+i #f) (+-tester (+ 1 2 +i)))
 (test* "+" '(3+i #f) (+-tester (+ +i 1 2)))
@@ -720,6 +747,22 @@
 ;;------------------------------------------------------------------
 (test-section "division")
 
+(test* "exact division" 3/20 (/ 3 4 5))
+(test* "exact division" 1/2  (/ 9223372036854775808 18446744073709551616))
+(test* "exact division" 4692297364841/7
+       (/ 28153784189046 42))
+(test* "exact division" 7/4692297364841
+       (/ 42 28153784189046))
+(test* "exact division" -7/4692297364841
+       (/ 42 -28153784189046))
+(test* "exact division" 7/4692297364841
+       (/ -42 -28153784189046))
+(test* "exact reciprocal" 1/3 (/ 3))
+(test* "exact reciprocal" -1/3 (/ -3))
+(test* "exact reciprocal" 5/6 (/ 6/5))
+(test* "exact reciprocal" -5/6 (/ -6/5))
+(test* "exact reciprocal" 7/4692297364841 (/ 4692297364841/7))
+
 (define (almost=? x y)
   (define (flonum=? x y)
     (let ((ax (abs x)) (ay (abs y)))
@@ -735,35 +778,15 @@
   (list (/ x y) (/ (- x) y) (/ x (- y)) (/ (- x) (- y))
         (exact? (/ x y))))
 
-;; these uses BignumDivSI -> bignum_sdiv
-(test* "big[1]/fix->fix" (d-result 17353 #t) 
-      (d-tester 727836879 41943))
-(test* "big[1]/fix->fix" (d-result 136582.040690235 #f)
-      (d-tester 3735928559 27353)
-      almost=?)
-(test* "big[2]/fix->big[1]" (d-result 535341266467 #t)
-      (d-tester 12312849128741 23))
-(test* "big[2]/fix->big[2]" (d-result 12312849128741 #t)
-      (d-tester 12312849128741 1))
-
-;; these uses BignumDivSI -> bignum_gdiv
-(test* "big[1]/fix->fix" (d-result 41943 #t)
-      (d-tester 3663846879 87353))
-(test* "big[2]/fix->fix" (d-result 19088743.0196145 #f)
-      (d-tester 705986470884353 36984440)
-      almost=?)
-(test* "big[2]/fix->fix" (d-result 92894912.9263878 #f)
-      (d-tester 12312849128741 132546)
-      almost=?)
-(test* "big[2]/fix->big[1]" (d-result 2582762030.11968 #f)
-      (d-tester 425897458766735 164900)
-      almost=?)
-
 ;; inexact division
 (test* "exact/inexact -> inexact" (d-result 3.25 #f)
       (d-tester 13 4.0))
+(test* "exact/inexact -> inexact" (d-result 1.625 #f)
+      (d-tester 13/2 4.0))
 (test* "inexact/exact -> inexact" (d-result 3.25 #f)
       (d-tester 13.0 4))
+(test* "inexact/exact -> inexact" (d-result 9.75 #f)
+      (d-tester 13.0 4/3))
 (test* "inexact/inexact -> inexact" (d-result 3.25 #f)
       (d-tester 13.0 4.0))
 
@@ -998,13 +1021,66 @@
 (test* "exact expt" 9765625 (expt 5 10))
 (test* "exact expt" 1220703125 (expt 5 13))
 (test* "exact expt" 94039548065783000637498922977779654225493244541767001720700136502273380756378173828125 (expt 5 123))
+(test* "exact expt" 1/94039548065783000637498922977779654225493244541767001720700136502273380756378173828125 (expt 5 -123))
 (test* "exact expt" 1 (expt -5 0))
 (test* "exact expt" 9765625 (expt -5 10))
 (test* "exact expt" -1220703125 (expt -5 13))
 (test* "exact expt" -94039548065783000637498922977779654225493244541767001720700136502273380756378173828125 (expt -5 123))
+(test* "exact expt" -1/94039548065783000637498922977779654225493244541767001720700136502273380756378173828125 (expt -5 -123))
 (test* "exact expt" 1 (expt 1 720000))
 (test* "exact expt" 1 (expt -1 720000))
 (test* "exact expt" -1 (expt -1 720001))
+
+(test* "exact expt (ratinoal)" 8589934592/5559060566555523
+       (expt 2/3 33))
+(test* "exact expt (rational)" -8589934592/5559060566555523
+       (expt -2/3 33))
+(test* "exact expt (ratinoal)" 5559060566555523/8589934592
+       (expt 2/3 -33))
+
+(test* "expt (coercion to inexact)" 1.4142135623730951
+       (expt 2 1/2)
+       (lambda (x y) (nearly=? 10e7 x y))) ;; NB: pa$ will be tested later
+
+;;------------------------------------------------------------------
+(test-section "rounding")
+
+(define (round-tester value exactness cei flo tru rou)
+  (test* (string-append "rounding " (number->string value))
+         (list exactness cei flo tru rou)
+         (let ((c (ceiling value))
+               (f (floor value))
+               (t (truncate value))
+               (r (round value)))
+           (list (and (exact? c) (exact? f) (exact? t) (exact? r))
+                 c f t r))))
+
+(round-tester 0  #t 0 0 0 0)
+(round-tester 3  #t 3 3 3 3)
+(round-tester -3 #t -3 -3 -3 -3)
+(round-tester (expt 2 99) #t (expt 2 99) (expt 2 99) (expt 2 99) (expt 2 99))
+(round-tester (- (expt 2 99)) #t
+              (- (expt 2 99)) (- (expt 2 99)) (- (expt 2 99)) (- (expt 2 99)))
+
+(round-tester 9/4  #t 3 2 2 2)
+(round-tester -9/4 #t -2 -3 -2 -2)
+(round-tester 34985495387484938453495/17 #t
+              2057970316910878732559
+              2057970316910878732558
+              2057970316910878732558
+              2057970316910878732559)
+(round-tester -34985495387484938453495/17 #t
+              -2057970316910878732558
+              -2057970316910878732559
+              -2057970316910878732558
+              -2057970316910878732559)
+
+(round-tester 35565/2 #t 17783 17782 17782 17782)
+(round-tester -35565/2 #t -17782 -17783 -17782 -17782)
+(round-tester 35567/2 #t 17784 17783 17783 17784)
+(round-tester -35567/2 #t -17783 -17784 -17783 -17784)
+
+                  
 
 ;;------------------------------------------------------------------
 (test-section "logical operations")

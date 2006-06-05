@@ -1,3 +1,17 @@
+2006-06-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c: Introduced exact rational numbers.  Arithmetic
+	  API changed for consistency.  Dropped n-ary APIs, since we hardly
+	  see n-ary cases now (the compiler expands primitive arithmetics
+	  to binary applications).
+	* src/gauche.h, src/gauche/number.h : Splitted numeric APIs to
+	  subfile.  This is a first step of slimming down gauche.h.
+	* src/vm.c, src/test-arith.h, src/stdlib.stub, src/hash.c,
+	  src/bignum.c, src/autoloads.scm, lib/gauche/numerical.scm,
+	  lib/gauche/cgen.scm, lib/srfi-42.scm, ext/uvector/uvgen.scm,
+	  ext/uvector/uvector.c.tmpl, ext/srfi-srfi-19-lib.scm:
+	  Reflected the API changes.
+
 2006-05-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h, src/number.c, src/stdlib.stub: API CHANGE:

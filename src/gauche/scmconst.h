@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: scmconst.h,v 1.2 2004-11-05 10:33:52 shirok Exp $
+ *  $Id: scmconst.h,v 1.3 2006-06-05 05:11:25 shirok Exp $
  */
 
 #ifndef GAUCHE_SCMCONST_H
@@ -38,17 +38,20 @@
 
 SCM_EXTERN ScmObj Scm__ConstObjs[];   /* initialized in number.c */
 
-#define SCM_2_64          (Scm__ConstObjs[0])    /*  2^64 */
-#define SCM_2_64_MINUS_1  (Scm__ConstObjs[1])    /*  2^64-1 */
-#define SCM_2_63          (Scm__ConstObjs[2])    /*  2^63 */
-#define SCM_MINUS_2_63    (Scm__ConstObjs[3])    /* -2^63 */
-#define SCM_2_53          (Scm__ConstObjs[4])    /*  2^52 */
-#define SCM_2_52          (Scm__ConstObjs[5])    /*  2^52 */
-#define SCM_2_32          (Scm__ConstObjs[6])    /*  2^32 */
-#define SCM_2_31          (Scm__ConstObjs[7])    /*  2^31 */
-#define SCM_MINUS_2_31    (Scm__ConstObjs[8])    /* -2^31 */
+#define SCM_2_64               (Scm__ConstObjs[0])    /*  2^64 */
+#define SCM_2_64_MINUS_1       (Scm__ConstObjs[1])    /*  2^64-1 */
+#define SCM_2_63               (Scm__ConstObjs[2])    /*  2^63 */
+#define SCM_MINUS_2_63         (Scm__ConstObjs[3])    /* -2^63 */
+#define SCM_2_53               (Scm__ConstObjs[4])    /*  2^52 */
+#define SCM_2_52               (Scm__ConstObjs[5])    /*  2^52 */
+#define SCM_2_32               (Scm__ConstObjs[6])    /*  2^32 */
+#define SCM_2_31               (Scm__ConstObjs[7])    /*  2^31 */
+#define SCM_MINUS_2_31         (Scm__ConstObjs[8])    /* -2^31 */
+#define SCM_POSITIVE_INFINITY  (Scm__ConstObjs[9])    /* #i1/0 */
+#define SCM_NEGATIVE_INFINITY  (Scm__ConstObjs[10])   /* #i-1/0 */
+#define SCM_NAN                (Scm__ConstObjs[11])   /* #<nan> */
 
-#define SCM_NUM_CONST_OBJS  9
+#define SCM_NUM_CONST_OBJS  12
 
 #endif /*GAUCHE_SCMCONST_H*/
 

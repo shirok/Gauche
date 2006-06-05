@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bignum.h,v 1.1 2006-05-30 00:22:51 shirok Exp $
+ *  $Id: bignum.h,v 1.2 2006-06-05 05:11:25 shirok Exp $
  */
 
 /* APIs concerning bignums.  They are not for general public use,
@@ -65,13 +65,10 @@ SCM_EXTERN ScmObj Scm_BignumComplement(ScmBignum *bx);
 
 SCM_EXTERN ScmObj Scm_BignumAdd(ScmBignum *bx, ScmBignum *by);
 SCM_EXTERN ScmObj Scm_BignumAddSI(ScmBignum *bx, long y);
-SCM_EXTERN ScmObj Scm_BignumAddN(ScmBignum *bx, ScmObj args);
 SCM_EXTERN ScmObj Scm_BignumSub(ScmBignum *bx, ScmBignum *by);
 SCM_EXTERN ScmObj Scm_BignumSubSI(ScmBignum *bx, long y);
-SCM_EXTERN ScmObj Scm_BignumSubN(ScmBignum *bx, ScmObj args);
 SCM_EXTERN ScmObj Scm_BignumMul(ScmBignum *bx, ScmBignum *by);
 SCM_EXTERN ScmObj Scm_BignumMulSI(ScmBignum *bx, long y);
-SCM_EXTERN ScmObj Scm_BignumMulN(ScmBignum *bx, ScmObj args);
 SCM_EXTERN ScmObj Scm_BignumDivSI(ScmBignum *bx, long y, long *r);
 SCM_EXTERN ScmObj Scm_BignumDivRem(ScmBignum *bx, ScmBignum *by);
 

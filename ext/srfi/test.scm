@@ -991,7 +991,7 @@
         (lambda ()
           (round-to-seconds (julian-day->time-utc (time-utc->julian-day t0))))
         time=?))
-(let1 jd 2453311.0
+(let1 jd 2453311
   (test "julian day number, via date"
         jd
         (lambda ()

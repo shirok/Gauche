@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.245 2006-03-27 09:17:25 shirok Exp $
+ *  $Id: vm.c,v 1.246 2006-06-05 05:11:25 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2176,7 +2176,7 @@ static void run_loop()
                     }
                 } else {
                     SAVE_REGS();
-                    VAL0 = Scm_Add(arg, VAL0, SCM_NIL);
+                    VAL0 = Scm_Add(arg, VAL0);
                     RESTORE_REGS();
                 }
                 NEXT1;
@@ -2193,7 +2193,7 @@ static void run_loop()
                     }
                 } else {
                     SAVE_REGS();
-                    VAL0 = Scm_Subtract(arg, VAL0, SCM_NIL);
+                    VAL0 = Scm_Sub(arg, VAL0);
                     RESTORE_REGS();
                 }
                 NEXT1;
@@ -2209,7 +2209,7 @@ static void run_loop()
                     VAL0 = Scm_MakeFlonum(Scm_GetDouble(arg)*Scm_GetDouble(VAL0));
                 } else {
                     SAVE_REGS();
-                    VAL0 = Scm_Multiply(arg, VAL0, SCM_NIL);
+                    VAL0 = Scm_Mul(arg, VAL0);
                     RESTORE_REGS();
                 }
                 NEXT1;
@@ -2224,7 +2224,7 @@ static void run_loop()
                     VAL0 = Scm_MakeFlonum(Scm_GetDouble(arg)/Scm_GetDouble(VAL0));
                 } else {
                     SAVE_REGS();
-                    VAL0 = Scm_Divide(arg, VAL0, SCM_NIL);
+                    VAL0 = Scm_Div(arg, VAL0);
                     RESTORE_REGS();
                 }
                 NEXT1;
@@ -2259,7 +2259,7 @@ static void run_loop()
                     }
                 } else {
                     SAVE_REGS();
-                    VAL0 = Scm_Add(SCM_MAKE_INT(imm), VAL0, SCM_NIL);
+                    VAL0 = Scm_Add(SCM_MAKE_INT(imm), VAL0);
                     RESTORE_REGS();
                 }
                 NEXT1;
@@ -2368,7 +2368,7 @@ static void run_loop()
                     }
                 } else {
                     SAVE_REGS();
-                    VAL0 = Scm_Subtract(SCM_MAKE_INT(imm), VAL0, SCM_NIL);
+                    VAL0 = Scm_Sub(SCM_MAKE_INT(imm), VAL0);
                     RESTORE_REGS();
                 }
                 NEXT1;

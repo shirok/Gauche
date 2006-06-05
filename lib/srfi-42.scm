@@ -4,7 +4,7 @@
 ;;  This is a port of Sebastian Egner's reference implementation to Gauche.
 ;;  Ported by Alex Shinn.
 ;;
-;;  $Id: srfi-42.scm,v 1.2 2005-05-23 21:51:35 shirok Exp $
+;;  $Id: srfi-42.scm,v 1.3 2006-06-05 05:11:24 shirok Exp $
 
 ; <PLAINTEXT>
 ; Eager Comprehensions in [outer..inner|expr]-Convention
@@ -619,7 +619,7 @@
                    "(use :real-range?)" a b s ))
             (if (zero? s)
                 (error "step size must not be zero in :range") )
-            (set! stop (+ a (* (max 0 (ceiling (/ (- b a) s))) s))) )
+            (set! stop (+ a (* (max 0 (ceiling (/ (- b a) s))) s))))
           ((var a))
           (not (= var stop))
           (let ())

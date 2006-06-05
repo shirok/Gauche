@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.127 2006-05-31 01:50:49 shirok Exp $
+ *  $Id: number.c,v 1.128 2006-06-05 05:11:25 shirok Exp $
  */
 
 #include <math.h>
@@ -80,6 +80,7 @@ static double roundeven(double);
  */
 
 static ScmClass *numeric_cpl[] = {
+    SCM_CLASS_STATIC_PTR(Scm_RationalClass),
     SCM_CLASS_STATIC_PTR(Scm_RealClass),
     SCM_CLASS_STATIC_PTR(Scm_ComplexClass),
     SCM_CLASS_STATIC_PTR(Scm_NumberClass),
@@ -90,10 +91,12 @@ static ScmClass *numeric_cpl[] = {
 static void number_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_NumberClass, number_print, NULL, NULL, NULL,
-                         numeric_cpl+3);
+                         numeric_cpl+4);
 SCM_DEFINE_BUILTIN_CLASS(Scm_ComplexClass, number_print, NULL, NULL, NULL,
-                         numeric_cpl+2);
+                         numeric_cpl+3);
 SCM_DEFINE_BUILTIN_CLASS(Scm_RealClass, number_print, NULL, NULL, NULL,
+                         numeric_cpl+2);
+SCM_DEFINE_BUILTIN_CLASS(Scm_RationalClass, number_print, NULL, NULL, NULL,
                          numeric_cpl+1);
 SCM_DEFINE_BUILTIN_CLASS(Scm_IntegerClass, number_print, NULL, NULL, NULL,
                          numeric_cpl);
@@ -254,8 +257,180 @@ ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign)
     return f;
 }
 
+/*=====================================================================
+ *  Ratnums
+ */
+
+/* possibly returns denomalized number */
+ScmObj Scm_MakeRatnum(ScmObj numer, ScmObj denom)
+{
+    ScmRatnum *r;
+    if (!SCM_INTEGERP(numer)) {
+        Scm_Error("numerator must be an exact integer, but got %S", numer);
+    }
+    if (!SCM_INTEGERP(denom)) {
+        Scm_Error("denominator must be an exact integer, but got %S", denom);
+    }
+    r = SCM_NEW(ScmRatnum);
+    SCM_SET_CLASS(r, SCM_CLASS_RATIONAL);
+    r->numerator = numer;
+    r->denominator = denom;
+    return SCM_OBJ(r);
+}
+
+#define ENSURE_RATNUM(integer) \
+    SCM_RATNUM(Scm_MakeRatnum(integer, SCM_MAKE_INT(1)))
+
+ScmObj Scm_MakeRational(ScmObj numer, ScmObj denom)
+{
+    if (!SCM_INTEGERP(numer)) {
+        Scm_Error("numerator must be an exact integer, but got %S", numer);
+    }
+    if (!SCM_INTEGERP(denom)) {
+        Scm_Error("denominator must be an exact integer, but got %S", denom);
+    }
+    if (SCM_EXACT_ONE_P(denom)) return numer;
+    if (SCM_EXACT_ZERO_P(numer)) return SCM_MAKE_INT(0);
+    else return Scm_ReduceRational(Scm_MakeRatnum(numer, denom));
+}
+
+ScmObj Scm_Numerator(ScmObj n)
+{
+    if (SCM_RATNUMP(n)) {
+        return SCM_RATNUM_NUMER(n);
+    }
+    if (SCM_NUMBERP(n)) {
+        return n;
+    }
+    Scm_Error("number required, but got %S", n);
+    return SCM_UNDEFINED;       /* dummy */
+}
+
+ScmObj Scm_Denominator(ScmObj n)
+{
+    if (SCM_RATNUMP(n)) {
+        return SCM_RATNUM_DENOM(n);
+    }
+    if (SCM_INTEGERP(n)) {
+        return SCM_MAKE_INT(1);
+    }
+    if (SCM_NUMBERP(n)) {
+        return Scm_MakeFlonum(1.0);
+    }
+    Scm_Error("number required, but got %S", n);
+    return SCM_UNDEFINED;       /* dummy */
+}
+
+ScmObj Scm_ReduceRational(ScmObj rational)
+{
+    ScmObj numer, denom;
+    ScmObj common;              /* common divisor */
+    int negated = FALSE;
+    
+    if (SCM_INTEGERP(rational)) return rational;
+    if (!SCM_RATNUMP(rational)) {
+        Scm_Error("exact rational number required, but got %S", rational);
+    }
+    numer = SCM_RATNUM_NUMER(rational);
+    denom = SCM_RATNUM_DENOM(rational);
+
+    if (Scm_Sign(denom) < 0) {
+        numer = Scm_Negate(numer);
+        denom = Scm_Negate(denom);
+        negated = TRUE;
+    }
+
+    /* special cases */
+    if (SCM_EXACT_ONE_P(denom)) return numer;
+    if (SCM_EXACT_ZERO_P(denom)) {
+        int s = Scm_Sign(numer);
+        if (s > 0) return SCM_POSITIVE_INFINITY;
+        if (s < 0) return SCM_NEGATIVE_INFINITY;
+        return SCM_NAN;
+    }
+    
+    common = Scm_Gcd(numer, denom);
+    if (SCM_EXACT_ONE_P(common)) {
+        if (negated) {
+            return Scm_MakeRatnum(numer, denom);
+        } else {
+            return rational;
+        }
+    } else {
+        numer = Scm_Quotient(numer, common, NULL);
+        denom = Scm_Quotient(denom, common, NULL);
+        if (SCM_EQ(denom, SCM_MAKE_INT(1))) {
+            return numer;
+        } else {
+            return Scm_MakeRatnum(numer, denom);
+        }
+    }
+}
+
+/* x, y must be exact numbers */
+ScmObj Scm_RatnumAddSub(ScmObj x, ScmObj y, int subtract)
+{
+    ScmObj nx = SCM_RATNUMP(x)? SCM_RATNUM_NUMER(x) : x;
+    ScmObj dx = SCM_RATNUMP(x)? SCM_RATNUM_DENOM(x) : SCM_MAKE_INT(1);
+    ScmObj ny = SCM_RATNUMP(y)? SCM_RATNUM_NUMER(y) : y;
+    ScmObj dy = SCM_RATNUMP(y)? SCM_RATNUM_DENOM(y) : SCM_MAKE_INT(1);
+    ScmObj gcd, lcm, fx, fy, nr, dr;
+
+    /* shortcut */
+    if (Scm_NumEq(dx, dy)) {
+        dr = dx;
+        goto finish;
+    }
+
+    if (SCM_EXACT_ONE_P(dx)||SCM_EXACT_ONE_P(dx)) gcd = SCM_MAKE_INT(1);
+    else gcd = Scm_Gcd(dx, dy);
+    if (Scm_NumEq(dx, gcd)) {
+        /* only factor x */
+        nx = Scm_Mul(Scm_Quotient(dy, dx, NULL), nx);
+        dr = dy;
+        goto finish;
+    }
+    if (Scm_NumEq(dy, gcd)) {
+        /* only factor y */
+        ny = Scm_Mul(Scm_Quotient(dx, dy, NULL), ny);
+        dr = dx;
+        goto finish;
+    }
+
+    /* general case */
+    fx = Scm_Quotient(dx, gcd, NULL);
+    fy = Scm_Quotient(dy, gcd, NULL);
+    nx = Scm_Mul(nx, fy);
+    ny = Scm_Mul(ny, fx);
+    dr = Scm_Mul(dx, fy);
+  finish:
+    nr = (subtract? Scm_Sub(nx, ny) : Scm_Add(nx, ny));
+    return Scm_MakeRational(nr, dr);
+}
+
+ScmObj Scm_RatnumMulDiv(ScmObj x, ScmObj y, int divide)
+{
+    ScmObj nx, ny, dx, dy;
+    nx = SCM_RATNUMP(x)? SCM_RATNUM_NUMER(x) : x;
+    dx = SCM_RATNUMP(x)? SCM_RATNUM_DENOM(x) : SCM_MAKE_INT(1);
+    ny = SCM_RATNUMP(y)? SCM_RATNUM_NUMER(y) : y;
+    dy = SCM_RATNUMP(y)? SCM_RATNUM_DENOM(y) : SCM_MAKE_INT(1);
+    
+    if (divide) {
+        ScmObj t = ny; ny = dy; dy = t;
+    }
+    return Scm_MakeRational(Scm_Mul(nx, ny),
+                            Scm_Mul(dx, dy));
+}
+
+#define Scm_RatnumAdd(x, y)  Scm_RatnumAddSub(x, y, FALSE)
+#define Scm_RatnumSub(x, y)  Scm_RatnumAddSub(x, y, TRUE)
+#define Scm_RatnumMul(x, y)  Scm_RatnumMulDiv(x, y, FALSE)
+#define Scm_RatnumDiv(x, y)  Scm_RatnumMulDiv(x, y, TRUE)
+
+
 /*=======================================================================
- *  Complex numbers
+ *  Compnums
  */
 
 ScmObj Scm_MakeCompnum(double r, double i)
@@ -360,23 +535,33 @@ ScmObj Scm_MakeIntegerU(u_long i)
 /* Convert scheme integer to C integer */
 long Scm_GetIntegerClamp(ScmObj obj, int clamp, int *oor)
 {
+    double v = 0.0;
     if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (SCM_INTP(obj)) return SCM_INT_VALUE(obj);
     else if (SCM_BIGNUMP(obj)) {
         return Scm_BignumToSI(SCM_BIGNUM(obj), clamp, oor);
     }
     else if (SCM_FLONUMP(obj)) {
-        double v = SCM_FLONUM_VALUE(obj);
-        if (v > (double)LONG_MAX) {
-            if (clamp & SCM_CLAMP_HI) return LONG_MAX;
-            else goto err;
-        }
-        if (v < (double)LONG_MIN) {
-            if (clamp & SCM_CLAMP_LO) return LONG_MIN;
-            else goto err;
-        }
-        return (long)v;
+        v = SCM_FLONUM_VALUE(obj);
+        goto flonum;
     }
+    else if (SCM_RATNUMP(obj)) {
+        v = Scm_GetDouble(obj);
+        goto flonum;
+    }
+    else {
+        goto err;
+    }
+  flonum:    
+    if (v > (double)LONG_MAX) {
+        if (clamp & SCM_CLAMP_HI) return LONG_MAX;
+        else goto err;
+    }
+    if (v < (double)LONG_MIN) {
+        if (clamp & SCM_CLAMP_LO) return LONG_MIN;
+        else goto err;
+    }
+    return (long)v;
   err:
     if (clamp == SCM_CLAMP_NONE && oor != NULL) {
         *oor = TRUE;
@@ -388,6 +573,8 @@ long Scm_GetIntegerClamp(ScmObj obj, int clamp, int *oor)
 
 u_long Scm_GetIntegerUClamp(ScmObj obj, int clamp, int *oor)
 {
+    double v = 0.0;
+    
     if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     if (SCM_INTP(obj)) {
         if (SCM_INT_VALUE(obj) < 0) {
@@ -395,21 +582,31 @@ u_long Scm_GetIntegerUClamp(ScmObj obj, int clamp, int *oor)
             else goto err;
         }
         return SCM_INT_VALUE(obj);
-    } else if (SCM_BIGNUMP(obj)) {
+    }
+    else if (SCM_BIGNUMP(obj)) {
         return Scm_BignumToUI(SCM_BIGNUM(obj), clamp, oor);
     }
     else if (SCM_FLONUMP(obj)) {
-        double v = SCM_FLONUM_VALUE(obj);
-        if (v > (double)ULONG_MAX) {
-            if (clamp & SCM_CLAMP_HI) return ULONG_MAX;
-            else goto err;
-        }
-        if (v < 0.0) {
-            if (clamp & SCM_CLAMP_LO) return 0;
-            else goto err;
-        }
-        return (u_long)v;
+        v = SCM_FLONUM_VALUE(obj);
+        goto flonum;
     }
+    else if (SCM_RATNUMP(obj)) {
+        v = Scm_GetDouble(obj);
+        goto flonum;
+    }
+    else {
+        goto err;
+    }
+  flonum:
+    if (v > (double)ULONG_MAX) {
+        if (clamp & SCM_CLAMP_HI) return ULONG_MAX;
+        else goto err;
+    }
+    if (v < 0.0) {
+        if (clamp & SCM_CLAMP_LO) return 0;
+        else goto err;
+    }
+    return (u_long)v;
   err:
     if (clamp == SCM_CLAMP_NONE && oor != NULL) {
         *oor = TRUE;
@@ -425,6 +622,7 @@ ScmInt32 Scm_GetInteger32Clamp(ScmObj obj, int clamp, int *oor)
 #if SIZEOF_LONG == 4
     return (ScmInt32)Scm_GetIntegerClamp(obj, clamp, oor);
 #else  /* SIZEOF_LONG >= 8 */
+    
     if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;
     /* NB: we denote the constant directly here.  (1L<<31) fails on
        Alpha machines, since the compiler somehow calculates the constant
@@ -450,6 +648,7 @@ ScmInt32 Scm_GetInteger32Clamp(ScmObj obj, int clamp, int *oor)
             goto err;
         }
     }
+    /*TODO: flonum and ratnum! */
   err:
     if (clamp == SCM_CLAMP_NONE && oor != NULL) {
         *oor = TRUE;
@@ -673,6 +872,9 @@ double Scm_GetDouble(ScmObj obj)
     if (SCM_FLONUMP(obj)) return SCM_FLONUM_VALUE(obj);
     else if (SCM_INTP(obj)) return (double)SCM_INT_VALUE(obj);
     else if (SCM_BIGNUMP(obj)) return Scm_BignumToDouble(SCM_BIGNUM(obj));
+    else if (SCM_RATNUMP(obj)) {
+        return Scm_GetDouble(SCM_RATNUM_NUMER(obj))/Scm_GetDouble(SCM_RATNUM_DENOM(obj));
+    }
     else return 0.0;
 }
 
@@ -685,6 +887,7 @@ double Scm_GetDouble(ScmObj obj)
 int Scm_IntegerP(ScmObj obj)
 {
     if (SCM_INTP(obj) || SCM_BIGNUMP(obj)) return TRUE;
+    if (SCM_RATNUMP(obj)) return FALSE; /* normalized ratnum never be integer */
     if (SCM_FLONUMP(obj)) {
         double d = SCM_FLONUM_VALUE(obj);
         double f, i;
@@ -727,6 +930,11 @@ ScmObj Scm_Abs(ScmObj obj)
     } else if (SCM_FLONUMP(obj)) {
         double v = SCM_FLONUM_VALUE(obj);
         if (v < 0) obj = Scm_MakeFlonum(-v);
+    } else if (SCM_RATNUMP(obj)) {
+        if (Scm_Sign(SCM_RATNUM_NUMER(obj)) < 0) {
+            obj = Scm_MakeRational(Scm_Negate(SCM_RATNUM_NUMER(obj)),
+                                   SCM_RATNUM_DENOM(obj));
+        }
     } else if (SCM_COMPNUMP(obj)) {
         double r = SCM_COMPNUM_REAL(obj);
         double i = SCM_COMPNUM_IMAG(obj);
@@ -755,6 +963,8 @@ int Scm_Sign(ScmObj obj)
         if (v != 0.0) {
             r = (v > 0.0)? 1 : -1;
         }
+    } else if (SCM_RATNUMP(obj)) {
+        return Scm_Sign(SCM_RATNUM_NUMER(obj));
     } else {
         /* NB: zero? can accept a complex number, but it is processed in
            the stub function.   see stdlib.stub */
@@ -776,6 +986,9 @@ ScmObj Scm_Negate(ScmObj obj)
         obj = Scm_BignumNegate(SCM_BIGNUM(obj));
     } else if (SCM_FLONUMP(obj)) {
         obj = Scm_MakeFlonum(-SCM_FLONUM_VALUE(obj));
+    } else if (SCM_RATNUMP(obj)) {
+        obj = Scm_MakeRational(Scm_Negate(SCM_RATNUM_NUMER(obj)),
+                               SCM_RATNUM_DENOM(obj));
     } else if (SCM_COMPNUMP(obj)) {
         obj = Scm_MakeCompnum(-SCM_COMPNUM_REAL(obj),
                               -SCM_COMPNUM_IMAG(obj));
@@ -787,15 +1000,14 @@ ScmObj Scm_Negate(ScmObj obj)
 
 ScmObj Scm_Reciprocal(ScmObj obj)
 {
-    if (SCM_INTP(obj)) {
-        long val = SCM_INT_VALUE(obj);
-        obj = Scm_MakeFlonum(1.0/(double)val);
-    } else if (SCM_BIGNUMP(obj)) {
-        double val = Scm_BignumToDouble(SCM_BIGNUM(obj));
-        obj = Scm_MakeFlonum(1.0/val);
+    if (SCM_INTP(obj) || SCM_BIGNUMP(obj)) {
+        obj = Scm_MakeRational(SCM_MAKE_INT(1), obj);
     } else if (SCM_FLONUMP(obj)) {
         double val = SCM_FLONUM_VALUE(obj);
         obj = Scm_MakeFlonum(1.0/val);
+    } else if (SCM_RATNUMP(obj)) {
+        obj = Scm_MakeRational(SCM_RATNUM_DENOM(obj),
+                               SCM_RATNUM_NUMER(obj));
     } else if (SCM_COMPNUMP(obj)) {
         double r = SCM_COMPNUM_REAL(obj), r1;
         double i = SCM_COMPNUM_IMAG(obj), i1;
@@ -820,6 +1032,8 @@ ScmObj Scm_ExactToInexact(ScmObj obj)
         obj = Scm_MakeFlonum((double)SCM_INT_VALUE(obj));
     } else if (SCM_BIGNUMP(obj)) {
         obj = Scm_MakeFlonum(Scm_BignumToDouble(SCM_BIGNUM(obj)));
+    } else if (SCM_RATNUMP(obj)) {
+        obj = Scm_MakeFlonum(Scm_GetDouble(obj));
     } else if (!SCM_FLONUMP(obj) && !SCM_COMPNUMP(obj)) {
         Scm_Error("number required: %S", obj);
     }
@@ -830,515 +1044,581 @@ ScmObj Scm_InexactToExact(ScmObj obj)
 {
     if (SCM_FLONUMP(obj)) {
         double d = SCM_FLONUM_VALUE(obj);
-        if (d < SCM_SMALL_INT_MIN || d > SCM_SMALL_INT_MAX) {
-            obj = Scm_MakeBignumFromDouble(d);
+        double f, i;
+        if ((f = modf(d, &i)) == 0.0) {
+            /* integer */
+            if (d < SCM_SMALL_INT_MIN || d > SCM_SMALL_INT_MAX) {
+                obj = Scm_MakeBignumFromDouble(d);
+            } else {
+                obj = SCM_MAKE_INT((long)d);
+            }
         } else {
-            obj = SCM_MAKE_INT((long)d);
+            ScmObj m;
+            int exp, sign;
+            m = Scm_DecodeFlonum(d, &exp, &sign);
+            SCM_ASSERT(exp < 0); /* exp >= 0 case should be handled above */
+            obj = Scm_Div(m, Scm_Ash(SCM_MAKE_INT(1), -exp));
+            if (sign < 0) obj = Scm_Negate(obj);
         }
     } else if (SCM_COMPNUMP(obj)) {
         Scm_Error("exact complex is not supported: %S", obj);
-    } if (!SCM_INTP(obj) && !SCM_BIGNUMP(obj)) {
+    } if (!SCM_EXACTP(obj)) {
         Scm_Error("number required: %S", obj);
     }
     return obj;
 }
 
-/* Type conversion:
- *   `promote' means a conversion from lower number class to higher,
- *      e.g. fixnum -> bignum -> flonum -> complex.
- *   `demote' means a conversion from higher number class to lower,
- *      e.g. complex -> flonum -> bignum -> fixnum.
- */
-
-ScmObj Scm_PromoteToBignum(ScmObj obj)
-{
-    if (SCM_INTP(obj)) return Scm_MakeBignumFromSI(SCM_INT_VALUE(obj));
-    if (SCM_BIGNUMP(obj)) return obj;
-    Scm_Panic("Scm_PromoteToBignum: can't be here");
-    return SCM_UNDEFINED;       /* dummy */
-}
-
-ScmObj Scm_PromoteToFlonum(ScmObj obj)
-{
-    if (SCM_INTP(obj)) return Scm_MakeFlonum(SCM_INT_VALUE(obj));
-    if (SCM_BIGNUMP(obj))
-        return Scm_MakeFlonum(Scm_BignumToDouble(SCM_BIGNUM(obj)));
-    if (SCM_FLONUMP(obj)) return obj;
-    Scm_Panic("Scm_PromoteToFlonum: can't be here");
-    return SCM_UNDEFINED;       /* dummy */
-}
-
-ScmObj Scm_PromoteToComplex(ScmObj obj)
-{
-    if (SCM_INTP(obj))
-        return Scm_MakeCompnum((double)SCM_INT_VALUE(obj), 0.0);
-    if (SCM_BIGNUMP(obj))
-        return Scm_MakeCompnum(Scm_BignumToDouble(SCM_BIGNUM(obj)), 0.0);
-    if (SCM_FLONUMP(obj))
-        return Scm_MakeCompnum(SCM_FLONUM_VALUE(obj), 0.0);
-    if (SCM_COMPNUMP(obj)) return obj;
-    Scm_Panic("Scm_PromoteToComplex: can't be here");
-    return SCM_UNDEFINED;       /* dummy */
-}
-
 /*===============================================================
  * Arithmetics
  */
-/* The code of addition, subtraction, multiplication and division
-   are somewhat ugly (they use the harmful goto!).  My intention is
-   to keep intermediate result in C-native types whenever possible,
-   so that I can avoid boxing/unboxing those numbers. */
 
-#define APPLY_GENERIC_ARITH(v, gf, arg0, arg1, args)    \
-  do {                                                  \
-    v = Scm_Apply(SCM_OBJ(&gf), SCM_LIST2(arg0, arg1)); \
-    if (SCM_NULLP(args)) return v;                      \
-    arg1 = SCM_CAR(args);                               \
-    args = SCM_CDR(args);                               \
-    goto retry;                                         \
-  } while (0)
+/* NB: we used to support n-ary operations in C API, expecting
+   them to be faster since we can carry around the intermediate
+   results unboxed.  The newer versions of compiler, however,
+   decomposes n-ary arithmetic operations into binary ones
+   during optimization, so n-ary API hadn't really been used much.
+   So we dropped them, in favor of simple code. */
 
 /*
  * Addition and subtraction
  */
 
-ScmObj Scm_Add(ScmObj arg0, ScmObj arg1, ScmObj args)
+ScmObj Scm_Add(ScmObj arg0, ScmObj arg1)
 {
-    long result_int;
-    double result_real, result_imag;
-
-  retry:
-    result_int = 0;
     if (SCM_INTP(arg0)) {
-        result_int = SCM_INT_VALUE(arg0);
-        for (;;) {
-            if (SCM_INTP(arg1)) {
-                result_int += SCM_INT_VALUE(arg1);
-                if (result_int > SCM_SMALL_INT_MAX 
-                    || result_int < SCM_SMALL_INT_MIN) {
-                    arg0 = Scm_MakeBignumFromSI(result_int);
-                    break;
-                }
-            } else if (SCM_BIGNUMP(arg1)) {
-                arg0 = Scm_BignumAdd(SCM_BIGNUM(Scm_MakeBignumFromSI(result_int)),
-                                     SCM_BIGNUM(arg1));
-                break;
-            } else if (SCM_FLONUMP(arg1)) {
-                result_real = (double)result_int;
-                goto DO_FLONUM;
-            } else if (SCM_COMPNUMP(arg1)) {
-                result_real = (double)result_int;
-                result_imag = 0.0;
-                goto DO_COMPLEX;
-            } else {
-                APPLY_GENERIC_ARITH(arg0, generic_add,
-                                    Scm_MakeInteger(result_int),
-                                    arg1, args);
-            }
-            if (!SCM_PAIRP(args)) return Scm_MakeInteger(result_int);
-            arg1 = SCM_CAR(args);
-            args = SCM_CDR(args);
+        if (SCM_INTP(arg1)) {
+            long r = SCM_INT_VALUE(arg0) + SCM_INT_VALUE(arg1);
+            return Scm_MakeInteger(r);
         }
-        if (!SCM_PAIRP(args)) return arg0;
-        arg1 = SCM_CAR(args);
-        args = SCM_CDR(args);
-    }
-    if (SCM_BIGNUMP(arg0)) {
-        /* See if we should call generic version */
-        if (SCM_NUMBERP(arg1)) {
-            return Scm_BignumAddN(SCM_BIGNUM(arg0), Scm_Cons(arg1, args));
-        } else {
-            APPLY_GENERIC_ARITH(arg0, generic_add, arg0, arg1, args);
+        if (SCM_BIGNUMP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg0)) return arg1;
+            return Scm_BignumAddSI(SCM_BIGNUM(arg1), SCM_INT_VALUE(arg0));
         }
-    }
-    if (SCM_FLONUMP(arg0)) {
-        result_real = SCM_FLONUM_VALUE(arg0);
-      DO_FLONUM:
-        for (;;) {
-            if (SCM_INTP(arg1)) {
-                result_real += (double)SCM_INT_VALUE(arg1);
-            } else if (SCM_BIGNUMP(arg1)) {
-                result_real += Scm_BignumToDouble(SCM_BIGNUM(arg1));
-            } else if (SCM_FLONUMP(arg1)) {
-                result_real += SCM_FLONUM_VALUE(arg1);
-            } else if (SCM_COMPNUMP(arg1)) {
-                result_imag = 0.0;
-                goto DO_COMPLEX;
-            } else {
-                APPLY_GENERIC_ARITH(arg0, generic_add,
-                                    Scm_MakeFlonum(result_real),
-                                    arg1, args);
-            }
-            if (!SCM_PAIRP(args)) return Scm_MakeFlonum(result_real);
-            arg1 = SCM_CAR(args);
-            args = SCM_CDR(args);
+        if (SCM_RATNUMP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg0)) return arg1;
+            return Scm_RatnumAdd(arg0, arg1);
         }
-    }
-    if (SCM_COMPNUMP(arg0)) {
-        result_real = SCM_COMPNUM_REAL(arg0);
-        result_imag = SCM_COMPNUM_IMAG(arg0);
-      DO_COMPLEX:
-        for (;;) {
-            if (SCM_INTP(arg1)) {
-                result_real += (double)SCM_INT_VALUE(arg1);
-            } else if (SCM_BIGNUMP(arg1)) {
-                result_real += Scm_BignumToDouble(SCM_BIGNUM(arg1));
-            } else if (SCM_FLONUMP(arg1)) {
-                result_real += SCM_FLONUM_VALUE(arg1);
-            } else if (SCM_COMPNUMP(arg1)) {
-                result_real += SCM_COMPNUM_REAL(arg1);
-                result_imag += SCM_COMPNUM_IMAG(arg1);
-            } else {
-                APPLY_GENERIC_ARITH(arg0, generic_add,
-                                    Scm_MakeComplex(result_real, result_imag),
-                                    arg1, args);
-            }
-            if (!SCM_PAIRP(args)) {
-                return Scm_MakeComplex(result_real, result_imag);
-            }
-            arg1 = SCM_CAR(args);
-            args = SCM_CDR(args);
+        if (SCM_FLONUMP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg0)) return arg1;
+            return Scm_MakeFlonum((double)SCM_INT_VALUE(arg0)
+                                  + SCM_FLONUM_VALUE(arg1));
         }
+        if (SCM_COMPNUMP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg0)) return arg1;
+            return Scm_MakeComplex((double)SCM_INT_VALUE(arg0)
+                                   + SCM_COMPNUM_REAL(arg1),
+                                   SCM_COMPNUM_IMAG(arg1));
+        }
+        /* fallback to generic */
     }
-    APPLY_GENERIC_ARITH(arg0, generic_add,
-                        arg0, arg1, args);
-    return SCM_UNDEFINED;       /* NOTREACHED */
+    else if (SCM_BIGNUMP(arg0)) {
+        if (SCM_INTP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg1)) return arg0;
+            return Scm_BignumAddSI(SCM_BIGNUM(arg0), SCM_INT_VALUE(arg1));
+        }
+        if (SCM_BIGNUMP(arg1)) {
+            return Scm_BignumAdd(SCM_BIGNUM(arg0), SCM_BIGNUM(arg1));
+        }
+        if (SCM_RATNUMP(arg1)) {
+            return Scm_RatnumAdd(arg0, arg1);
+        }
+        if (SCM_FLONUMP(arg1)) {
+            return Scm_MakeFlonum(Scm_GetDouble(arg0)
+                                  + SCM_FLONUM_VALUE(arg1));
+        }
+        if (SCM_COMPNUMP(arg1)) {
+            return Scm_MakeComplex(Scm_GetDouble(arg0)
+                                   + SCM_COMPNUM_REAL(arg1),
+                                   SCM_COMPNUM_IMAG(arg1));
+        }
+        /* fallback to generic */
+    }
+    else if (SCM_RATNUMP(arg0)) {
+        if (SCM_INTP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg1)) return arg0;
+            return Scm_RatnumAdd(arg0, arg1);
+        }
+        if (SCM_BIGNUMP(arg1)||SCM_RATNUMP(arg1)) {
+            return Scm_RatnumAdd(arg0, arg1);
+        }
+        if (SCM_FLONUMP(arg1)) {
+            return Scm_MakeFlonum(Scm_GetDouble(arg0)
+                                  + SCM_FLONUM_VALUE(arg1));
+        }
+        if (SCM_COMPNUMP(arg1)) {
+            return Scm_MakeComplex(Scm_GetDouble(arg0)
+                                   + SCM_COMPNUM_REAL(arg1),
+                                   SCM_COMPNUM_IMAG(arg1));
+        }
+        /* fallback to generic */
+    }
+    else if (SCM_FLONUMP(arg0)) {
+        if (SCM_INTP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg1)) return arg0;
+            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)
+                                  + (double)SCM_INT_VALUE(arg1));
+        }
+        if (SCM_BIGNUMP(arg1) || SCM_RATNUMP(arg1)) {
+            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)
+                                  + Scm_GetDouble(arg1));
+        }
+        if (SCM_FLONUMP(arg1)) {
+            if (SCM_FLONUM_VALUE(arg0) == 0.0) return arg1;
+            if (SCM_FLONUM_VALUE(arg1) == 0.0) return arg0;
+            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)
+                                  + SCM_FLONUM_VALUE(arg1));
+        }
+        if (SCM_COMPNUMP(arg1)) {
+            if (SCM_FLONUM_VALUE(arg0) == 0.0) return arg1;
+            return Scm_MakeComplex(SCM_FLONUM_VALUE(arg0)
+                                   + SCM_COMPNUM_REAL(arg1),
+                                   SCM_COMPNUM_IMAG(arg1));
+        }
+        /* fallback to generic */
+    }
+    else if (SCM_COMPNUMP(arg0)) {
+        if (SCM_INTP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg1)) return arg0;
+            return Scm_MakeComplex(SCM_COMPNUM_REAL(arg0)
+                                   + (double)SCM_INT_VALUE(arg1),
+                                   SCM_COMPNUM_IMAG(arg0));
+        }
+        if (SCM_BIGNUMP(arg1) || SCM_RATNUMP(arg1)) {
+            return Scm_MakeComplex(SCM_COMPNUM_REAL(arg0)
+                                   + Scm_GetDouble(arg1),
+                                   SCM_COMPNUM_IMAG(arg0));
+        }
+        if (SCM_FLONUMP(arg1)) {
+            if (SCM_FLONUM_VALUE(arg1) == 0.0) return arg0;
+            return Scm_MakeComplex(SCM_COMPNUM_REAL(arg0)
+                                   + SCM_FLONUM_VALUE(arg1),
+                                   SCM_COMPNUM_IMAG(arg0));
+        }
+        if (SCM_COMPNUMP(arg1)) {
+            return Scm_MakeComplex(SCM_COMPNUM_REAL(arg0)
+                                   + SCM_COMPNUM_REAL(arg1),
+                                   SCM_COMPNUM_IMAG(arg0)
+                                   + SCM_COMPNUM_IMAG(arg1));
+        }
+        /* fallback to generic */
+    }
+    /* object-+ handling */
+    return Scm_Apply(SCM_OBJ(&generic_add), SCM_LIST2(arg0, arg1));
 }
 
-ScmObj Scm_Subtract(ScmObj arg0, ScmObj arg1, ScmObj args)
+ScmObj Scm_Sub(ScmObj arg0, ScmObj arg1)
 {
-    long result_int;
-    double result_real, result_imag;
-
-  retry:
-    result_int = 0;
-    result_real = 0.0;
-    result_imag = 0.0;
     if (SCM_INTP(arg0)) {
-        result_int = SCM_INT_VALUE(arg0);
-        for (;;) {
-            if (SCM_INTP(arg1)) {
-                result_int -= SCM_INT_VALUE(arg1);
-                if (result_int < SCM_SMALL_INT_MIN
-                    || result_int > SCM_SMALL_INT_MAX) {
-                    ScmObj big = Scm_MakeBignumFromSI(result_int);
-                    return Scm_BignumSubN(SCM_BIGNUM(big), args);
-                }
-            } else if (SCM_BIGNUMP(arg1)) {
-                ScmObj big = Scm_MakeBignumFromSI(result_int);
-                return Scm_BignumSubN(SCM_BIGNUM(big), Scm_Cons(arg1, args));
-            } else if (SCM_FLONUMP(arg1)) {
-                result_real = (double)result_int;
-                goto DO_FLONUM;
-            } else if (SCM_COMPNUMP(arg1)) {
-                result_real = (double)result_int;
-                goto DO_COMPLEX;
-            } else {
-                APPLY_GENERIC_ARITH(arg0, generic_sub,
-                                    Scm_MakeInteger(result_int),
-                                    arg1, args);
-            }
-            if (SCM_NULLP(args)) return SCM_MAKE_INT(result_int);
-            arg1 = SCM_CAR(args);
-            args = SCM_CDR(args);
+        if (SCM_INTP(arg1)) {
+            long r = SCM_INT_VALUE(arg0) - SCM_INT_VALUE(arg1);
+            return Scm_MakeInteger(r);
         }
+        if (SCM_BIGNUMP(arg1)) {
+            ScmObj big = Scm_MakeBignumFromSI(SCM_INT_VALUE(arg0));
+            return Scm_BignumSub(SCM_BIGNUM(big), SCM_BIGNUM(arg1));
+        }
+        if (SCM_RATNUMP(arg1)) {
+            return Scm_RatnumSub(arg0, arg1);
+        }
+        if (SCM_FLONUMP(arg1)) {
+            return Scm_MakeFlonum((double)SCM_INT_VALUE(arg0)
+                                  - SCM_FLONUM_VALUE(arg1));
+        }
+        if (SCM_COMPNUMP(arg1)) {
+            return Scm_MakeComplex((double)SCM_INT_VALUE(arg0)
+                                   - SCM_COMPNUM_REAL(arg1),
+                                   - SCM_COMPNUM_IMAG(arg1));
+        }
+        /* fallback to generic */
     }
     if (SCM_BIGNUMP(arg0)) {
-        if (SCM_NUMBERP(arg1)) {
-            return Scm_BignumSubN(SCM_BIGNUM(arg0), Scm_Cons(arg1, args));
-        } else {
-            APPLY_GENERIC_ARITH(arg0, generic_sub, arg0, arg1, args);
+        if (SCM_INTP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg1)) return arg0;
+            return Scm_BignumSubSI(SCM_BIGNUM(arg0), SCM_INT_VALUE(arg1));
         }
+        if (SCM_BIGNUMP(arg1)) {
+            return Scm_BignumSub(SCM_BIGNUM(arg0), SCM_BIGNUM(arg1));
+        }
+        if (SCM_RATNUMP(arg1)) {
+            return Scm_RatnumSub(arg0, arg1);
+        }
+        if (SCM_FLONUMP(arg1)) {
+            return Scm_MakeFlonum(Scm_GetDouble(arg0)
+                                  - SCM_FLONUM_VALUE(arg1));
+        }
+        if (SCM_COMPNUMP(arg1)) {
+            return Scm_MakeComplex(Scm_GetDouble(arg0)
+                                   - SCM_COMPNUM_REAL(arg1),
+                                   - SCM_COMPNUM_IMAG(arg1));
+        }
+        /* fallback to generic */
+    }
+    if (SCM_RATNUMP(arg0)) {
+        if (SCM_INTP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg1)) return arg0;
+            return Scm_RatnumSub(arg0, arg1);
+        }
+        if (SCM_BIGNUMP(arg1)||SCM_RATNUMP(arg1)) {
+            return Scm_RatnumSub(arg0, arg1);
+        }
+        if (SCM_FLONUMP(arg1)) {
+            if (SCM_FLONUM_VALUE(arg1) == 0.0) return arg0;
+            return Scm_MakeFlonum(Scm_GetDouble(arg0)
+                                  - SCM_FLONUM_VALUE(arg1));
+        }
+        if (SCM_COMPNUMP(arg1)) {
+            return Scm_MakeComplex(Scm_GetDouble(arg0)
+                                   - SCM_COMPNUM_REAL(arg1),
+                                   - SCM_COMPNUM_IMAG(arg1));
+        }
+        /* fallback to generic */
     }
     if (SCM_FLONUMP(arg0)) {
-        result_real = SCM_FLONUM_VALUE(arg0);
-      DO_FLONUM:
-        for (;;) {
-            if (SCM_INTP(arg1)) {
-                result_real -= (double)SCM_INT_VALUE(arg1);
-            } else if (SCM_BIGNUMP(arg1)) {
-                result_real -= Scm_BignumToDouble(SCM_BIGNUM(arg1));
-            } else if (SCM_FLONUMP(arg1)) {
-                result_real -= SCM_FLONUM_VALUE(arg1);
-            } else if (SCM_COMPNUMP(arg1)) {
-                goto DO_COMPLEX;
-            } else {
-                APPLY_GENERIC_ARITH(arg0, generic_sub,
-                                    Scm_MakeFlonum(result_real),
-                                    arg1, args);
-            }
-            if (SCM_NULLP(args))
-                return Scm_MakeFlonum(result_real);
-            arg1 = SCM_CAR(args);
-            args = SCM_CDR(args);
+        if (SCM_INTP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg1)) return arg0;
+            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)
+                                  - (double)SCM_INT_VALUE(arg1));
         }
+        if (SCM_BIGNUMP(arg1) || SCM_RATNUMP(arg1)) {
+            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)
+                                  - Scm_GetDouble(arg1));
+        }
+        if (SCM_FLONUMP(arg1)) {
+            if (SCM_FLONUM_VALUE(arg1) == 0.0) return arg0;
+            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)
+                                  - SCM_FLONUM_VALUE(arg1));
+        }
+        if (SCM_COMPNUMP(arg1)) {
+            return Scm_MakeComplex(SCM_FLONUM_VALUE(arg0)
+                                   - SCM_COMPNUM_REAL(arg1),
+                                   - SCM_COMPNUM_IMAG(arg1));
+        }
+        /* fallback to generic */
     }
     if (SCM_COMPNUMP(arg0)) {
-        result_real = SCM_COMPNUM_REAL(arg0);
-        result_imag = SCM_COMPNUM_IMAG(arg0);
-      DO_COMPLEX:
-        for (;;) {
-            if (SCM_INTP(arg1)) {
-                result_real -= (double)SCM_INT_VALUE(arg1);
-            } else if (SCM_BIGNUMP(arg1)) {
-                result_real -= Scm_BignumToDouble(SCM_BIGNUM(arg1));
-            } else if (SCM_FLONUMP(arg1)) {
-                result_real -= SCM_FLONUM_VALUE(arg1);
-            } else if (SCM_COMPNUMP(arg1)) {
-                result_real -= SCM_COMPNUM_REAL(arg1);
-                result_imag -= SCM_COMPNUM_IMAG(arg1);
-            } else {
-                APPLY_GENERIC_ARITH(arg0, generic_sub,
-                                    Scm_MakeComplex(result_real, result_imag),
-                                    arg1, args);
-            }
-            if (SCM_NULLP(args))
-                return Scm_MakeComplex(result_real, result_imag);
-            arg1 = SCM_CAR(args);
-            args = SCM_CDR(args);
+        if (SCM_INTP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg1)) return arg0;
+            return Scm_MakeComplex(SCM_COMPNUM_REAL(arg0)
+                                   - (double)SCM_INT_VALUE(arg1),
+                                   SCM_COMPNUM_IMAG(arg0));
         }
+        if (SCM_BIGNUMP(arg1) || SCM_RATNUMP(arg1)) {
+            return Scm_MakeComplex(SCM_COMPNUM_REAL(arg0)
+                                   - Scm_GetDouble(arg1),
+                                   SCM_COMPNUM_IMAG(arg0));
+        }
+        if (SCM_FLONUMP(arg1)) {
+            if (SCM_FLONUM_VALUE(arg1) == 0.0) return arg0;
+            return Scm_MakeComplex(SCM_COMPNUM_REAL(arg0)
+                                   - Scm_GetDouble(arg1),
+                                   SCM_COMPNUM_IMAG(arg0));
+        }
+        if (SCM_COMPNUMP(arg1)) {
+            return Scm_MakeComplex(SCM_COMPNUM_REAL(arg0)
+                                   - SCM_COMPNUM_REAL(arg1),
+                                   SCM_COMPNUM_IMAG(arg0)
+                                   - SCM_COMPNUM_IMAG(arg1));
+        }
+        /* fallback to generic */
     }
-    APPLY_GENERIC_ARITH(arg0, generic_sub, arg0, arg1, args);
-    return SCM_UNDEFINED;       /* NOTREACHED */
+    /* object-- handling */
+    return Scm_Apply(SCM_OBJ(&generic_sub), SCM_LIST2(arg0, arg1));
 }
 
 /*
  * Multiplication
  */
 
-ScmObj Scm_Multiply(ScmObj arg0, ScmObj arg1, ScmObj args)
+ScmObj Scm_Mul(ScmObj arg0, ScmObj arg1)
 {
-    long result_int;
-    double result_real, result_imag;
-
-  retry:
     if (SCM_INTP(arg0)) {
-        result_int = SCM_INT_VALUE(arg0);
-        for (;;) {
-            if (SCM_INTP(arg1)) {
-                long vv = SCM_INT_VALUE(arg1);
-                long k = result_int * vv;
-                /* TODO: need a better way to check overflow */
-                if ((vv != 0 && k/vv != result_int)
-                    || k < SCM_SMALL_INT_MIN
-                    || k > SCM_SMALL_INT_MAX) {
-                    ScmObj big = Scm_MakeBignumFromSI(result_int);
-                    arg0 = Scm_BignumMulSI(SCM_BIGNUM(big), vv);
-                    break;
-                }
-                result_int = k;
-            } else if (SCM_BIGNUMP(arg1)) {
-                arg0 = Scm_BignumMulSI(SCM_BIGNUM(arg1), result_int);
-                break;
-            } else if (SCM_FLONUMP(arg1)) {
-                result_real = (double)result_int;
-                goto DO_FLONUM;
-            } else if (SCM_COMPNUMP(arg1)) {
-                result_real = (double)result_int;
-                result_imag = 0.0;
-                goto DO_COMPLEX;
+        if (SCM_INTP(arg1)) {
+            long v0 = SCM_INT_VALUE(arg0);
+            long v1 = SCM_INT_VALUE(arg1);
+            long k = v0 * v1;
+            /* TODO: need a better way to check overflow */
+            if ((v1 != 0 && k/v1 != v0) || !SCM_SMALL_INT_FITS(k)) {
+                ScmObj big = Scm_MakeBignumFromSI(v0);
+                return Scm_BignumMulSI(SCM_BIGNUM(big), v1);
             } else {
-                APPLY_GENERIC_ARITH(arg0, generic_mul,
-                                    Scm_MakeInteger(result_int), arg1, args);
+                return Scm_MakeInteger(k);
             }
-            if (!SCM_PAIRP(args)) return Scm_MakeInteger(result_int);
-            arg1 = SCM_CAR(args);
-            args = SCM_CDR(args);
         }
-        if (!SCM_PAIRP(args)) return arg0;
-        arg1 = SCM_CAR(args);
-        args = SCM_CDR(args);
-        goto retry;
+        if (SCM_BIGNUMP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg0)) return arg0;
+            if (SCM_EQ(arg0, SCM_MAKE_INT(1))) return arg1;
+            return Scm_BignumMulSI(SCM_BIGNUM(arg1), SCM_INT_VALUE(arg0));
+        }
+        if (SCM_RATNUMP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg0)) return arg0;
+            if (SCM_EQ(arg0, SCM_MAKE_INT(1))) return arg1;
+            return Scm_RatnumMul(arg0, arg1);
+        }
+        if (SCM_FLONUMP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg0)) return arg0;
+            if (SCM_EQ(arg0, SCM_MAKE_INT(1))) return arg1;
+            return Scm_MakeFlonum((double)SCM_INT_VALUE(arg0)
+                                  * SCM_FLONUM_VALUE(arg1));
+        }
+        if (SCM_COMPNUMP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg0)) return arg0;
+            if (SCM_EQ(arg0, SCM_MAKE_INT(1))) return arg1;
+            return Scm_MakeComplex((double)SCM_INT_VALUE(arg0)
+                                   * SCM_COMPNUM_REAL(arg1),
+                                   (double)SCM_INT_VALUE(arg0)
+                                   * SCM_COMPNUM_IMAG(arg1));
+        }
+        /* fallback to generic */
     }
     if (SCM_BIGNUMP(arg0)) {
-        return Scm_BignumMulN(SCM_BIGNUM(arg0), Scm_Cons(arg1, args));
+        if (SCM_INTP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg1)) return arg1;
+            if (SCM_EXACT_ONE_P(arg1)) return arg0;
+            return Scm_BignumMulSI(SCM_BIGNUM(arg0), SCM_INT_VALUE(arg1));
+        }
+        if (SCM_BIGNUMP(arg1)) {
+            return Scm_BignumMul(SCM_BIGNUM(arg0), SCM_BIGNUM(arg1));
+        }
+        if (SCM_RATNUMP(arg1)) {
+            return Scm_RatnumMul(arg0, arg1);
+        }
+        if (SCM_FLONUMP(arg1)) {
+            return Scm_MakeFlonum(Scm_GetDouble(arg0)
+                                  * SCM_FLONUM_VALUE(arg1));
+        }
+        if (SCM_COMPNUMP(arg1)) {
+            double z = Scm_GetDouble(arg0);
+            return Scm_MakeComplex(z * SCM_COMPNUM_REAL(arg1),
+                                   z * SCM_COMPNUM_IMAG(arg1));
+        }
+        /* fallback to generic */
+    }
+    if (SCM_RATNUMP(arg0)) {
+        if (SCM_INTP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg1)) return arg1;
+            if (SCM_EXACT_ONE_P(arg1)) return arg0;
+            return Scm_RatnumMul(arg0, arg1);
+        }
+        if (SCM_BIGNUMP(arg1)||SCM_RATNUMP(arg1)) {
+            return Scm_RatnumMul(arg0, arg1);
+        }
+        if (SCM_FLONUMP(arg1)) {
+            if (SCM_FLONUM_VALUE(arg1) == 0.0) return arg1;
+            return Scm_MakeFlonum(Scm_GetDouble(arg0)
+                                  * SCM_FLONUM_VALUE(arg1));
+        }
+        if (SCM_COMPNUMP(arg1)) {
+            return Scm_MakeComplex(Scm_GetDouble(arg0)
+                                   * SCM_COMPNUM_REAL(arg1),
+                                   Scm_GetDouble(arg0)
+                                   * SCM_COMPNUM_IMAG(arg1));
+        }
+        /* fallback to generic */
     }
     if (SCM_FLONUMP(arg0)) {
-        result_real = SCM_FLONUM_VALUE(arg0);
-      DO_FLONUM:
-        for (;;) {
-            if (SCM_INTP(arg1)) {
-                result_real *= (double)SCM_INT_VALUE(arg1);
-            } else if (SCM_BIGNUMP(arg1)) {
-                result_real *= Scm_BignumToDouble(SCM_BIGNUM(arg1));
-            } else if (SCM_FLONUMP(arg1)) {
-                result_real *= SCM_FLONUM_VALUE(arg1);
-            } else if (SCM_COMPNUMP(arg1)) {
-                result_imag = 0.0;
-                goto DO_COMPLEX;
-            } else {
-                APPLY_GENERIC_ARITH(arg0, generic_mul,
-                                    Scm_MakeFlonum(result_real), arg1, args);
-            }
-            if (!SCM_PAIRP(args)) return Scm_MakeFlonum(result_real);
-            arg1 = SCM_CAR(args);
-            args = SCM_CDR(args);
+        if (SCM_INTP(arg1)) {
+            /* inexact number * exact zero makes exact zero */
+            if (SCM_EXACT_ZERO_P(arg1)) return arg1;
+            if (SCM_EXACT_ONE_P(arg1)) return arg0;
+            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)
+                                  * (double)SCM_INT_VALUE(arg1));
         }
+        if (SCM_BIGNUMP(arg1) || SCM_RATNUMP(arg1)) {
+            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)
+                                  * Scm_GetDouble(arg1));
+        }
+        if (SCM_FLONUMP(arg1)) {
+            if (SCM_FLONUM_VALUE(arg1) == 0.0) return arg0;
+            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)
+                                  * SCM_FLONUM_VALUE(arg1));
+        }
+        if (SCM_COMPNUMP(arg1)) {
+            return Scm_MakeComplex(SCM_FLONUM_VALUE(arg0)
+                                   * SCM_COMPNUM_REAL(arg1),
+                                   SCM_FLONUM_VALUE(arg0)
+                                   * SCM_COMPNUM_IMAG(arg1));
+        }
+        /* fallback to generic */
     }
     if (SCM_COMPNUMP(arg0)) {
-        result_real = SCM_COMPNUM_REAL(arg0);
-        result_imag = SCM_COMPNUM_IMAG(arg0);
-      DO_COMPLEX:
-        for (;;) {
-            if (SCM_INTP(arg1)) {
-                result_real *= (double)SCM_INT_VALUE(arg1);
-                result_imag *= (double)SCM_INT_VALUE(arg1);
-            } else if (SCM_BIGNUMP(arg1)) {
-                double dd = Scm_BignumToDouble(SCM_BIGNUM(arg1));
-                result_real *= dd;
-                result_imag *= dd;
-            } else if (SCM_FLONUMP(arg1)) {
-                result_real *= SCM_FLONUM_VALUE(arg1);
-                result_imag *= SCM_FLONUM_VALUE(arg1);
-            } else if (SCM_COMPNUMP(arg1)) {
-                double r = SCM_COMPNUM_REAL(arg1);
-                double i = SCM_COMPNUM_IMAG(arg1);
-                double t = result_real * r - result_imag * i;
-                result_imag   = result_real * i + result_imag * r;
-                result_real = t;
-            } else {
-                APPLY_GENERIC_ARITH(arg0, generic_mul,
-                                    Scm_MakeComplex(result_real, result_imag),
-                                    arg1, args);
-            }
-            if (!SCM_PAIRP(args)) {
-                return Scm_MakeComplex(result_real, result_imag);
-            }
-            arg1 = SCM_CAR(args);
-            args = SCM_CDR(args);
+        if (SCM_INTP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg1)) return arg0;
+            return Scm_MakeComplex(SCM_COMPNUM_REAL(arg0)
+                                   * (double)SCM_INT_VALUE(arg1),
+                                   SCM_COMPNUM_IMAG(arg0)
+                                   * (double)SCM_INT_VALUE(arg1));
         }
+        if (SCM_BIGNUMP(arg1) || SCM_RATNUMP(arg1)) {
+            return Scm_MakeComplex(SCM_COMPNUM_REAL(arg0)
+                                   * Scm_GetDouble(arg1),
+                                   SCM_COMPNUM_IMAG(arg0)
+                                   * Scm_GetDouble(arg1));
+        }
+        if (SCM_FLONUMP(arg1)) {
+            if (SCM_FLONUM_VALUE(arg1) == 0.0) return arg0;
+            return Scm_MakeComplex(SCM_COMPNUM_REAL(arg0)
+                                   * SCM_FLONUM_VALUE(arg1),
+                                   SCM_COMPNUM_IMAG(arg0)
+                                   * SCM_FLONUM_VALUE(arg1));
+        }
+        if (SCM_COMPNUMP(arg1)) {
+            double r0 = SCM_COMPNUM_REAL(arg0);
+            double i0 = SCM_COMPNUM_IMAG(arg0);
+            double r1 = SCM_COMPNUM_REAL(arg1);
+            double i1 = SCM_COMPNUM_IMAG(arg1);
+            return Scm_MakeComplex(r0 * r1 - i0 * i1,
+                                   r0 * i1 + r1 * i0);
+        }
+        /* fallback to generic */
     }
-    APPLY_GENERIC_ARITH(arg0, generic_mul,
-                        arg0, arg1, args);
-    return SCM_UNDEFINED;       /* NOTREACHED */
+    return Scm_Apply(SCM_OBJ(&generic_mul), SCM_LIST2(arg0, arg1));
 }
 
 /*
  * Division
  */
 
-ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
+ScmObj Scm_Div(ScmObj arg0, ScmObj arg1)
 {
-    double result_real = 0.0, result_imag = 0.0;
-    double div_real = 0.0, div_imag = 0.0;
-    int exact = TRUE;
-
-  retry:
-    result_real = result_imag = div_real = div_imag = 0.0;
     if (SCM_INTP(arg0)) {
-        result_real = (double)SCM_INT_VALUE(arg0);
-        goto DO_FLONUM;
-    }
-    if (SCM_BIGNUMP(arg0)) {
-        /* Try integer division first, and if remainder != 0, shift to
-           inexact number */
-        if (SCM_INTP(arg1)) {
-            long rem;
-            ScmObj div;
-
-            if (SCM_EQ(arg1, SCM_MAKE_INT(0))) {
-                if (SCM_BIGNUM_SIGN(arg0) > 0) {
-                    result_real = 1.0 / 0.0; /* +inf */
-                } else {
-                    result_real = -1.0 / 0.0; /* -inf */
-                }
-                exact = FALSE;
-                goto DO_FLONUM;
-            }
-            div = Scm_BignumDivSI(SCM_BIGNUM(arg0),
-                                  SCM_INT_VALUE(arg1),
-                                  &rem);
-            if (rem != 0) {
-                result_real = Scm_BignumToDouble(SCM_BIGNUM(arg0));
-                exact = FALSE;
-                goto DO_FLONUM;
-            }
-            if (SCM_NULLP(args)) return div;
-            return Scm_Divide(div, SCM_CAR(args), SCM_CDR(args));
+        if (SCM_INTP(arg1)) { 
+           if (SCM_EXACT_ZERO_P(arg1)) goto ANORMAL;
+            if (SCM_EXACT_ZERO_P(arg0)) return arg0;
+            if (SCM_EXACT_ONE_P(arg1)) return arg0;
+            return Scm_MakeRational(arg0, arg1);
         }
         if (SCM_BIGNUMP(arg1)) {
-            ScmObj divrem = Scm_BignumDivRem(SCM_BIGNUM(arg0), SCM_BIGNUM(arg1));
-            if (SCM_CDR(divrem) != SCM_MAKE_INT(0)) {
-                result_real = Scm_BignumToDouble(SCM_BIGNUM(arg0));
-                exact = FALSE;
-                goto DO_FLONUM;
-            }
-            if (SCM_NULLP(args)) return SCM_CAR(divrem);
-            return Scm_Divide(SCM_CAR(divrem), SCM_CAR(args), SCM_CDR(args));
+            if (SCM_EXACT_ZERO_P(arg0)) return arg0;
+            return Scm_MakeRational(arg0, arg1);
+        }
+        if (SCM_RATNUMP(arg1)) {
+            return Scm_MakeRational(Scm_Mul(arg0,
+                                                  SCM_RATNUM_DENOM(arg1)),
+                                    SCM_RATNUM_NUMER(arg1));
         }
         if (SCM_FLONUMP(arg1)) {
-            exact = FALSE;
-            result_real = Scm_BignumToDouble(SCM_BIGNUM(arg0));
-            goto DO_FLONUM;
+            if (SCM_FLONUM_VALUE(arg1) == 0.0) goto ANORMAL;
+            if (SCM_EXACT_ZERO_P(arg0)) return arg0;
+            return Scm_MakeFlonum(SCM_INT_VALUE(arg0)/SCM_FLONUM_VALUE(arg1));
         }
         if (SCM_COMPNUMP(arg1)) {
-            exact = FALSE;
-            result_real = Scm_BignumToDouble(SCM_BIGNUM(arg0));
-            goto DO_COMPLEX;
+            goto DO_COMPLEX1;
         }
-        APPLY_GENERIC_ARITH(arg0, generic_div, arg0, arg1, args);
+        /* fallback to generic */
+    }
+    if (SCM_BIGNUMP(arg0)) {
+        if (SCM_INTP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg1)) goto ANORMAL;
+            if (SCM_EXACT_ONE_P(arg1)) return arg0;
+            return Scm_MakeRational(arg0, arg1);
+        }
+        if (SCM_BIGNUMP(arg1)) {
+            return Scm_MakeRational(arg0, arg1);
+        }
+        if (SCM_RATNUMP(arg1)) {
+            return Scm_MakeRational(Scm_Mul(arg0,
+                                                  SCM_RATNUM_DENOM(arg1)),
+                                    SCM_RATNUM_NUMER(arg1));
+        }
+        if (SCM_FLONUMP(arg1)) {
+            if (SCM_FLONUM_VALUE(arg1) == 0.0) goto ANORMAL;
+            return Scm_MakeFlonum(Scm_GetDouble(arg0)/SCM_FLONUM_VALUE(arg1));
+        }
+        if (SCM_COMPNUMP(arg1)) {
+            goto DO_COMPLEX1;
+        }
+        /* fallback to generic */
+    }
+    if (SCM_RATNUMP(arg0)) {
+        if (SCM_INTP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg1)) goto ANORMAL;
+            if (SCM_EXACT_ONE_P(arg1)) return arg0;
+            return Scm_MakeRational(SCM_RATNUM_NUMER(arg0),
+                                    Scm_Mul(SCM_RATNUM_DENOM(arg0),
+                                                  arg1));
+        }
+        if (SCM_BIGNUMP(arg1)) {
+            return Scm_MakeRational(SCM_RATNUM_NUMER(arg0),
+                                    Scm_Mul(SCM_RATNUM_DENOM(arg0),
+                                                  arg1));
+        }
+        if (SCM_RATNUMP(arg1)) {
+            return Scm_RatnumDiv(arg0, arg1);
+        }
+        if (SCM_FLONUMP(arg1)) {
+            if (SCM_FLONUM_VALUE(arg1) == 0.0) goto ANORMAL;
+            return Scm_MakeFlonum(Scm_GetDouble(arg0)/SCM_FLONUM_VALUE(arg1));
+        }
+        if (SCM_COMPNUMP(arg1)) {
+            goto DO_COMPLEX1;
+        }
+        /* fallback to generic */
     }
     if (SCM_FLONUMP(arg0)) {
-        result_real = SCM_FLONUM_VALUE(arg0);
-        exact = FALSE;
-      DO_FLONUM:
-        for (;;) {
-            if (SCM_INTP(arg1)) {
-                div_real = (double)SCM_INT_VALUE(arg1);
-            } else if (SCM_BIGNUMP(arg1)) {
-                div_real = Scm_BignumToDouble(SCM_BIGNUM(arg1));
-            } else if (SCM_FLONUMP(arg1)) {
-                div_real = SCM_FLONUM_VALUE(arg1);
-                exact = FALSE;
-            } else if (SCM_COMPNUMP(arg1)) {
-                goto DO_COMPLEX;
-            } else {
-                APPLY_GENERIC_ARITH(arg0, generic_div,
-                                    Scm_MakeFlonumToNumber(result_real, exact),
-                                    arg1, args);
-            }
-            result_real /= div_real;
-            if (SCM_NULLP(args))
-                return Scm_MakeFlonumToNumber(result_real, exact);
-            arg1 = SCM_CAR(args);
-            args = SCM_CDR(args);
+        if (SCM_INTP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg1)) goto ANORMAL;
+            if (SCM_EXACT_ONE_P(arg1)) return arg0;
+            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)/SCM_INT_VALUE(arg1));
         }
+        if (SCM_BIGNUMP(arg1) || SCM_RATNUMP(arg1)) {
+            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)/Scm_GetDouble(arg1));
+        }
+        if (SCM_FLONUMP(arg1)) {
+            if (SCM_FLONUM_VALUE(arg1) == 0.0) goto ANORMAL;
+            return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)/SCM_FLONUM_VALUE(arg1));
+        }
+        if (SCM_COMPNUMP(arg1)) {
+            goto DO_COMPLEX1;
+        }
+        /* fallback to generic */
     }
     if (SCM_COMPNUMP(arg0)) {
-        double d, r, i;
-        result_real = SCM_COMPNUM_REAL(arg0);
-        result_imag = SCM_COMPNUM_IMAG(arg0);
-      DO_COMPLEX:
-        for (;;) {
-            div_imag = 0.0;
-            if (SCM_INTP(arg1)) {
-                div_real = (double)SCM_INT_VALUE(arg1);
-            } else if (SCM_BIGNUMP(arg1)) {
-                div_real = Scm_BignumToDouble(SCM_BIGNUM(arg1));
-            } else if (SCM_FLONUMP(arg1)) {
-                div_real = SCM_FLONUM_VALUE(arg1);
-            } else if (SCM_COMPNUMP(arg1)) {
-                div_real = SCM_COMPNUM_REAL(arg1);
-                div_imag = SCM_COMPNUM_IMAG(arg1);
-            } else {
-                APPLY_GENERIC_ARITH(arg0, generic_div,
-                                    Scm_MakeComplex(result_real, result_imag),
-                                    arg1, args);
-            }
-            d = div_real*div_real + div_imag*div_imag;
-            r = (result_real*div_real + result_imag*div_imag)/d;
-            i = (result_imag*div_real - result_real*div_imag)/d;
-            result_real = r;
-            result_imag = i;
-            if (SCM_NULLP(args))
-                return Scm_MakeComplex(result_real, result_imag);
-            arg1 = SCM_CAR(args);
-            args = SCM_CDR(args);
+        if (SCM_INTP(arg1)) {
+            if (SCM_EXACT_ZERO_P(arg1)) goto ANORMAL;
+            if (SCM_EXACT_ONE_P(arg1)) return arg0;
+            return Scm_MakeComplex(SCM_COMPNUM_REAL(arg0)/SCM_INT_VALUE(arg1),
+                                   SCM_COMPNUM_IMAG(arg0)/SCM_INT_VALUE(arg1));
         }
+        if (SCM_BIGNUMP(arg1) || SCM_RATNUMP(arg1)) {
+            double z = Scm_GetDouble(arg1);
+            return Scm_MakeComplex(SCM_COMPNUM_REAL(arg0)/z,
+                                   SCM_COMPNUM_IMAG(arg0)/z);
+        }
+        if (SCM_FLONUMP(arg1)) {
+            if (SCM_FLONUM_VALUE(arg1) == 0.0) goto ANORMAL;
+            return Scm_MakeComplex(SCM_COMPNUM_REAL(arg0)/SCM_FLONUM_VALUE(arg1),
+                                   SCM_COMPNUM_IMAG(arg0)/SCM_FLONUM_VALUE(arg1));
+        }
+        if (SCM_COMPNUMP(arg1)) {
+            double r0 = SCM_COMPNUM_REAL(arg0);
+            double i0 = SCM_COMPNUM_IMAG(arg0);
+            double r1 = SCM_COMPNUM_REAL(arg1);
+            double i1 = SCM_COMPNUM_IMAG(arg1);
+            double d = r1*r1+i1*i1;
+            return Scm_MakeComplex((r0*r1 + i0*i1)/d,
+                                   (i0*r1 - r0*i1)/d);
+        }
+        /* fallback to generic */
     }
-    APPLY_GENERIC_ARITH(arg0, generic_div, arg0, arg1, args);
-    return SCM_UNDEFINED;       /* NOTREACHED */
+    return Scm_Apply(SCM_OBJ(&generic_div), SCM_LIST2(arg0, arg1));
+  ANORMAL:
+    {
+        int s = SCM_EXACT_ZERO_P(arg0);
+        if (s == 0) return SCM_NAN;
+        if (s < 0)  return SCM_NEGATIVE_INFINITY;
+        else        return SCM_POSITIVE_INFINITY;
+    }
+  DO_COMPLEX1:
+    {
+        double r1 = SCM_COMPNUM_REAL(arg1);
+        double i1 = SCM_COMPNUM_IMAG(arg1);
+        double d = r1*r1+i1*i1;
+        return Scm_MakeComplex(r1 * Scm_GetDouble(arg0) / d,
+                               -i1 * Scm_GetDouble(arg0) / d);
+    }    
 }
+
+#undef SHIFT
 
 /*
  * Integer division
@@ -1348,6 +1628,16 @@ ScmObj Scm_Divide(ScmObj arg0, ScmObj arg1, ScmObj args)
 ScmObj Scm_Quotient(ScmObj x, ScmObj y, ScmObj *rem)
 {
     double rx, ry;
+
+    /* Trivial shortcut.  This case may seem too specific, but actually
+       it appears rather often in rational operations. */
+    if (SCM_EQ(y, SCM_MAKE_INT(1))) {
+        if (!Scm_IntegerP(x)) goto BADARG;
+        if (rem) *rem = SCM_MAKE_INT(0);
+        return x;
+    }
+    
+    
     if (SCM_INTP(x)) {
         if (SCM_INTP(y)) {
             long q, r;
@@ -1530,6 +1820,112 @@ ScmObj Scm_Modulo(ScmObj x, ScmObj y, int remp)
 }
 
 /*
+ * Gcd
+ */
+
+/* assumes x > y >= 0 */
+static u_long gcd_fixfix(u_long x, u_long y)
+{
+    while (y > 0) {
+        u_long r = x % y;
+        x = y;
+        y = r;
+    }
+    return x;
+}
+
+static double gcd_floflo(double x, double y)
+{
+    if (x < 0) x = -x;
+    if (y < 0) y = -y;
+    if (x < y) { double t = x; x = y; y = t; }
+        
+    while (y > 0.0) {
+        double r = fmod(x, y);
+        x = y;
+        y = r;
+    }
+    return x;
+}
+
+/* assumes y <= LONG_MAX.  curiously, the sign of x doesn't matter,
+   since it only affects the remainder's sign which we adjust afterwards. */
+static u_long gcd_bigfix(ScmBignum *x, u_long y)
+{
+    long rem;
+    (void)Scm_BignumDivSI(x, (signed long)y, &rem);
+    if (rem < 0) rem = -rem;
+    return gcd_fixfix(y, (u_long)rem);
+}
+
+ScmObj Scm_Gcd(ScmObj x, ScmObj y)
+{
+    int ox = FALSE, oy = FALSE, inexact = FALSE;
+    long ix, iy;
+    u_long ux, uy, ur;
+    
+    if (!Scm_IntegerP(x)) {
+        Scm_Error("integer required, but got %S", x);
+    }
+    if (!Scm_IntegerP(y)) {
+        Scm_Error("integer required, but got %S", y);
+    }
+    if (SCM_FLONUMP(x) || SCM_FLONUMP(y)) {
+        return Scm_MakeFlonum(gcd_floflo(Scm_GetDouble(x),
+                                         Scm_GetDouble(y)));
+    }
+
+    if (SCM_EXACT_ZERO_P(x)) return y;
+    if (SCM_EXACT_ZERO_P(y)) return x;
+
+    ix = Scm_GetIntegerClamp(x, SCM_CLAMP_NONE, &ox);
+    iy = Scm_GetIntegerClamp(y, SCM_CLAMP_NONE, &oy);
+
+    if (!ox && !oy) {
+        ux = (ix < 0)? -ix : ix;
+        uy = (iy < 0)? -iy : iy;
+        if (ux >= uy) {
+            ur = gcd_fixfix(ux, uy);
+        } else {
+            ur = gcd_fixfix(uy, ux);
+        }
+        return Scm_MakeIntegerU(ur);
+    }
+
+    if (!oy && iy != LONG_MIN) {
+        /* x overflows long.  y doesn't.  so we know abs(x) > abs(y)
+           (abs(x) == abs(y) iff LONG_MAX+1 and y == LONG_MIN, but we
+           excluded it above). */
+        SCM_ASSERT(SCM_BIGNUMP(x));
+        uy = (iy < 0)? -iy : iy;
+        ur = gcd_bigfix(SCM_BIGNUM(x), uy);
+        return Scm_MakeIntegerU(ur);
+    }
+
+    if (!ox && ix != LONG_MIN) {
+        /* reverse condition of above */
+        SCM_ASSERT(SCM_BIGNUMP(y));
+        ux = (ix < 0)? -ix : ix;
+        ur = gcd_bigfix(SCM_BIGNUM(y), ux);
+        return Scm_MakeIntegerU(ur);
+    }
+    
+    /* Now we need to treat both args as bignums.  We could use
+       Algorithm L in Knuth's TAOCP 4.5.2, but we assume this path
+       is rarely executed, so we don't bother for now. */
+    x = Scm_Abs(x);
+    y = Scm_Abs(y);
+    if (Scm_NumCmp(x, y) < 0) {ScmObj t = x; x = y; y = t;}
+
+    while (!SCM_EXACT_ZERO_P(y)) {
+        ScmObj r = Scm_Modulo(x, y, TRUE);
+        x = y;
+        y = r;
+    }
+    return x;
+}
+
+/*
  * Expt
  */
 
@@ -1552,7 +1948,7 @@ static void iexpt10_init(void)
     iexpt10_n[5] = SCM_MAKE_INT(100000);
     iexpt10_n[6] = SCM_MAKE_INT(1000000);
     for (i=7; i<IEXPT10_TABLESIZ; i++) {
-        iexpt10_n[i] = Scm_Multiply2(iexpt10_n[i-1], SCM_MAKE_INT(10));
+        iexpt10_n[i] = Scm_Mul(iexpt10_n[i-1], SCM_MAKE_INT(10));
     }
     iexpt10_initialized = TRUE;
 }
@@ -1568,8 +1964,8 @@ static ScmObj exact_expt(ScmObj x, ScmObj y)
     ScmObj r = SCM_MAKE_INT(1);
 
     if (sign == 0) return r;
-    if (x == SCM_MAKE_INT(1)) return r;
-    if (x == SCM_MAKE_INT(-1)) return Scm_OddP(y)? SCM_MAKE_INT(-1) : r;
+    if (SCM_EQ(x, SCM_MAKE_INT(1))) return r;
+    if (SCM_EQ(x, SCM_MAKE_INT(-1))) return Scm_OddP(y)? SCM_MAKE_INT(-1) : r;
 
     if (!SCM_INTP(y)) {
         /* who wants such a heavy calculation? */
@@ -1577,18 +1973,21 @@ static ScmObj exact_expt(ScmObj x, ScmObj y)
     }
     iy = SCM_INT_VALUE(y);
     /* Shortcut for special cases */
-    if (x == SCM_MAKE_INT(10) && iy > 0 && iy < IEXPT10_TABLESIZ) {
+    if (SCM_EQ(x, SCM_MAKE_INT(10)) && iy > 0 && iy < IEXPT10_TABLESIZ) {
+        /* We have a precalculated table for 10^y */
         IEXPT10_INIT();
         r = iexpt10_n[iy];
-    } else if (x == SCM_MAKE_INT(2) && iy > 0) {
+    } else if (SCM_EQ(x, SCM_MAKE_INT(2)) && iy > 0) {
+        /* Use shift operation for 2^y, y>0 */
         r = Scm_Ash(SCM_MAKE_INT(1), iy);
     } else {
+        /* General case */
         if (iy < 0) iy = -iy;
         for (;;) {
             if (iy == 0) break;
-            if (iy == 1) { r = Scm_Multiply2(r, x); break; }
-            if (iy & 0x01) r = Scm_Multiply2(r, x);
-            x = Scm_Multiply2(x, x);
+            if (iy == 1) { r = Scm_Mul(r, x); break; }
+            if (iy & 0x01) r = Scm_Mul(r, x);
+            x = Scm_Mul(x, x);
             iy >>= 1;
         }
     }
@@ -1598,7 +1997,8 @@ static ScmObj exact_expt(ScmObj x, ScmObj y)
 ScmObj Scm_Expt(ScmObj x, ScmObj y)
 {
     double dx, dy;
-    if (SCM_EXACTP(x) && SCM_EXACTP(y)) return exact_expt(x, y);
+    if (SCM_EXACTP(x) && SCM_INTEGERP(y)) return exact_expt(x, y);
+    /* TODO: ratnum vs ratnum */
     if (!SCM_REALP(x)) Scm_Error("real number required, but got %S", x);
     if (!SCM_REALP(y)) Scm_Error("real number required, but got %S", y);
     dx = Scm_GetDouble(x);
@@ -1656,6 +2056,13 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
         if (SCM_BIGNUMP(arg1))
             return Scm_BignumCmp(SCM_BIGNUM(Scm_MakeBignumFromSI(SCM_INT_VALUE(arg0))),
                                  SCM_BIGNUM(arg1));
+        if (SCM_RATNUMP(arg1)) {
+            /* numerical error doesn't matter for the range of fixnum */
+            double r = SCM_INT_VALUE(arg0) - Scm_GetDouble(arg1);
+            if (r < 0) return -1;
+            if (r > 0) return 1;
+            return 0;
+        }
         badnum = arg1;
     }
     else if (SCM_FLONUMP(arg0)) {
@@ -1674,6 +2081,12 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
         if (SCM_BIGNUMP(arg1))
             return Scm_BignumCmp(SCM_BIGNUM(Scm_MakeBignumFromDouble(SCM_FLONUM_VALUE(arg0))),
                                  SCM_BIGNUM(arg1));
+        if (SCM_RATNUMP(arg1)) {
+            double r = SCM_FLONUM_VALUE(arg0) - Scm_GetDouble(arg1);
+            if (r < 0) return -1;
+            if (r > 0) return 1;
+            return 0;
+        }
         badnum = arg1;
     }
     else if (SCM_BIGNUMP(arg0)) {
@@ -1685,6 +2098,32 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
                                  SCM_BIGNUM(Scm_MakeBignumFromDouble(SCM_FLONUM_VALUE(arg1))));
         if (SCM_BIGNUMP(arg1))
             return Scm_BignumCmp(SCM_BIGNUM(arg0), SCM_BIGNUM(arg1));
+        if (SCM_RATNUMP(arg1)) {
+            /* we can't coerce to flonum, for it may lose precision. */
+            ScmObj d1 = SCM_RATNUM_DENOM(arg1);
+            return Scm_NumCmp(Scm_Mul(arg0, d1),
+                              SCM_RATNUM_NUMER(arg1));
+        }
+        badnum = arg1;
+    }
+    else if (SCM_RATNUMP(arg0)) {
+        if (SCM_INTP(arg1) || SCM_BIGNUMP(arg1) || SCM_FLONUMP(arg1)) {
+            return -Scm_NumCmp(arg1, arg0);
+        }
+        if (SCM_RATNUMP(arg1)) {
+            ScmObj n0 = SCM_RATNUM_NUMER(arg0), d0 = SCM_RATNUM_DENOM(arg0);
+            ScmObj n1 = SCM_RATNUM_NUMER(arg1), d1 = SCM_RATNUM_DENOM(arg1);
+
+            int d = Scm_NumCmp(d0, d1), n;
+            /* screen the obvious cases */
+            if (d == 0) return Scm_NumCmp(n0, n1);
+            n = Scm_NumCmp(n0, n1);
+            if (d > 0 && n <= 0) return -1;
+            if (d < 0 && n >= 0) return 1;
+            
+            return Scm_NumCmp(Scm_Mul(n0, d1),
+                              Scm_Mul(n1, d0));
+        }
         badnum = arg1;
     }
     else badnum = arg0;
@@ -1760,25 +2199,73 @@ static double roundeven(double v)
 
 ScmObj Scm_Round(ScmObj num, int mode)
 {
-    double r = 0.0, v;
     
-    if (SCM_EXACTP(num)) return num;
-    if (!SCM_FLONUMP(num))
-        Scm_Error("real number required, but got %S", num);
-    v = SCM_FLONUM_VALUE(num);
-    switch (mode) {
-    case SCM_ROUND_FLOOR: r = floor(v); break;
-    case SCM_ROUND_CEIL:  r = ceil(v); break;
-    /* trunc is neither in ANSI nor in POSIX. */
-#ifdef HAVE_TRUNC
-    case SCM_ROUND_TRUNC: r = trunc(v); break;
-#else
-    case SCM_ROUND_TRUNC: r = (v < 0.0)? ceil(v) : floor(v); break;
-#endif
-    case SCM_ROUND_ROUND: r = roundeven(v); break;
-    default: Scm_Panic("something screwed up");
+    if (SCM_INTEGERP(num)) return num;
+    if (SCM_RATNUMP(num)) {
+        int offset = 0;
+        ScmObj rem;
+        ScmObj quot = Scm_Quotient(SCM_RATNUM_NUMER(num),
+                                   SCM_RATNUM_DENOM(num), &rem);
+        /* this shouldn't happen, but just in case.. */
+        if (SCM_EXACT_ZERO_P(rem)) return quot;
+
+        /* Here we have quotient, which is always closer to zero
+           than the original value */
+        switch (mode) {
+        case SCM_ROUND_FLOOR:
+            offset = (Scm_Sign(num) < 0)? -1 : 0;
+            break;
+        case SCM_ROUND_CEIL:
+            offset = (Scm_Sign(num) < 0)? 0 : 1;
+            break;
+        case SCM_ROUND_TRUNC:
+            offset = 0;
+            break;
+        case SCM_ROUND_ROUND: {
+            ScmObj rem2 = Scm_Mul(Scm_Abs(rem), SCM_MAKE_INT(2));
+            int cmp = Scm_NumCmp(SCM_RATNUM_DENOM(num), rem2);
+            
+            if (cmp > 0) {
+                /* NUM is closer to zero than halfway */
+                offset = 0;
+            } else if (cmp < 0) {
+                /* NUM is further from zero than halfway */
+                offset = (Scm_Sign(num) < 0)? -1 : 1;
+            } else {
+                /* NUM is exactly the halfway.  We round to even */
+                if (Scm_OddP(quot)) {
+                    offset = (Scm_Sign(num) < 0)? -1 : 1;
+                } else {
+                    offset = 0;
+                }
+            }
+            break;
+        }
+        default: Scm_Panic("something screwed up");
+        }
+
+        if (offset == 0) return quot;
+        else return Scm_Add(quot, SCM_MAKE_INT(offset));
     }
-    return Scm_MakeFlonum(r);
+    if (SCM_FLONUMP(num)) {
+        double r = 0.0, v;
+        v = SCM_FLONUM_VALUE(num);
+        switch (mode) {
+        case SCM_ROUND_FLOOR: r = floor(v); break;
+        case SCM_ROUND_CEIL:  r = ceil(v); break;
+        /* trunc is neither in ANSI nor in POSIX. */
+#ifdef HAVE_TRUNC
+        case SCM_ROUND_TRUNC: r = trunc(v); break;
+#else
+        case SCM_ROUND_TRUNC: r = (v < 0.0)? ceil(v) : floor(v); break;
+#endif
+        case SCM_ROUND_ROUND: r = roundeven(v); break;
+        default: Scm_Panic("something screwed up");
+        }
+        return Scm_MakeFlonum(r);
+    }
+    Scm_Error("real number required, but got %S", num);
+    return SCM_UNDEFINED;       /* dummy */
 }
 
 /*===============================================================
@@ -2023,11 +2510,11 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
         /* estimate scale */
         est = (int)ceil(log10(val) - 0.1);
         if (est >= 0) {
-            s = Scm_Multiply2(s, iexpt10(est));
+            s = Scm_Mul(s, iexpt10(est));
         } else {
             ScmObj scale = iexpt10(-est);
-            r =  Scm_Multiply2(r, scale);
-            mm = Scm_Multiply2(mm, scale);
+            r =  Scm_Mul(r, scale);
+            mm = Scm_Mul(mm, scale);
         }
 
         /* fixup.  avoid calculating m+ for obvious case. */
@@ -2042,7 +2529,7 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
             }
         }
         if (fixup) {
-            s = Scm_Multiply2(s, SCM_MAKE_INT(10));
+            s = Scm_Mul(s, SCM_MAKE_INT(10));
             est++;
         }
         
@@ -2067,9 +2554,9 @@ static void double_print(char *buf, int buflen, double val, int plus_sign)
             }
         }
         for (digs=1;buflen>5;digs++) {
-            ScmObj r10 = Scm_Multiply2(r, SCM_MAKE_INT(10));
+            ScmObj r10 = Scm_Mul(r, SCM_MAKE_INT(10));
             q = Scm_Quotient(r10, s, &r);
-            mm = Scm_Multiply2(mm, SCM_MAKE_INT(10));
+            mm = Scm_Mul(mm, SCM_MAKE_INT(10));
             mp = (mp2? Scm_Ash(mm, 1) : mm);
             
             /* Scm_Printf(SCM_CURERR, "q=%S, r=%S, mp=%S, mm=%S\n",
@@ -2165,6 +2652,15 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix, int use_upper)
     } else if (SCM_FLONUMP(obj)) {
         double_print(buf, FLT_BUF, SCM_FLONUM_VALUE(obj), FALSE);
         r = SCM_MAKE_STR_COPYING(buf);
+    } else if (SCM_RATNUMP(obj)) {
+        ScmDString ds; ScmObj s;
+        Scm_DStringInit(&ds);
+        s = Scm_NumberToString(SCM_RATNUM_NUMER(obj), radix, use_upper);
+        Scm_DStringAdd(&ds, SCM_STRING(s));
+        Scm_DStringPutc(&ds, '/');
+        s = Scm_NumberToString(SCM_RATNUM_DENOM(obj), radix, use_upper);
+        Scm_DStringAdd(&ds, SCM_STRING(s));
+        return Scm_DStringGet(&ds, 0);
     } else if (SCM_COMPNUMP(obj)) {
         ScmObj p = Scm_MakeOutputStringPort(TRUE);
         double_print(buf, FLT_BUF, SCM_COMPNUM_REAL(obj), FALSE);
@@ -2352,19 +2848,19 @@ static double algorithmR(ScmObj f, int e, double z)
   retry:
     if (k >= 0) {
         if (e >= 0) {
-            x = Scm_Multiply2(f, iexpt10(e));
+            x = Scm_Mul(f, iexpt10(e));
             y = Scm_Ash(m, k);
         } else {
             x = f;
-            y = Scm_Ash(Scm_Multiply2(m, iexpt10(-e)), k);
+            y = Scm_Ash(Scm_Mul(m, iexpt10(-e)), k);
         }
     } else {
         if (e >= 0) {
-            x = Scm_Ash(Scm_Multiply2(f, iexpt10(e)), -k);
+            x = Scm_Ash(Scm_Mul(f, iexpt10(e)), -k);
             y = m;
         } else {
             x = Scm_Ash(f, -k);
-            y = Scm_Multiply2(m, iexpt10(-e));
+            y = Scm_Mul(m, iexpt10(-e));
         }
     }
     kprev = k;
@@ -2374,8 +2870,8 @@ static double algorithmR(ScmObj f, int e, double z)
         /*Scm_Printf(SCM_CURERR, "z=%.20lg,\nx=%S,\ny=%S\nf=%S\nm=%S\ne=%d, k=%d\n", z, x, y, f, m, e, k);*/
         /* compare */
         sign_d = Scm_NumCmp(x, y);
-        abs_d = (sign_d > 0)? Scm_Subtract2(x, y) : Scm_Subtract2(y, x);
-        d2 = Scm_Ash(Scm_Multiply2(m, abs_d), 1);
+        abs_d = (sign_d > 0)? Scm_Sub(x, y) : Scm_Sub(y, x);
+        d2 = Scm_Ash(Scm_Mul(m, abs_d), 1);
         switch (Scm_NumCmp(d2, y)) {
         case -1: /* d2 < y */
             if (Scm_NumCmp(m, SCM_2_52) == 0
@@ -2403,14 +2899,14 @@ static double algorithmR(ScmObj f, int e, double z)
             else            goto nextfloat;
         }
       prevfloat:
-        m = Scm_Subtract2(m, SCM_MAKE_INT(1));
+        m = Scm_Sub(m, SCM_MAKE_INT(1));
         if (k > -1074 && Scm_NumCmp(m, SCM_2_52) < 0) {
             m = Scm_Ash(m, 1);
             k--;
         }
         goto next;
       nextfloat:
-        m = Scm_Add2(m, SCM_MAKE_INT(1));
+        m = Scm_Add(m, SCM_MAKE_INT(1));
         if (Scm_NumCmp(m, SCM_2_53) >= 0) {
             m = Scm_Ash(m, -1);
             k++;
@@ -2423,7 +2919,7 @@ static double algorithmR(ScmObj f, int e, double z)
                 if (e >= 0) {
                     y = Scm_Ash(m, k);
                 } else {
-                    y = Scm_Ash(Scm_Multiply2(m, iexpt10(-e)), k);
+                    y = Scm_Ash(Scm_Mul(m, iexpt10(-e)), k);
                 }
             } else {
                 /* k turned to negative */
@@ -2433,11 +2929,11 @@ static double algorithmR(ScmObj f, int e, double z)
             if (k < 0) {
                 /* k stays negative. */
                 if (e >= 0) {
-                    if (k != kprev) x = Scm_Ash(Scm_Multiply2(f, iexpt10(e)), -k);
+                    if (k != kprev) x = Scm_Ash(Scm_Mul(f, iexpt10(e)), -k);
                     y = m;
                 } else {
                     if (k != kprev) x = Scm_Ash(f, -k);
-                    y = Scm_Multiply2(m, iexpt10(-e));
+                    y = Scm_Mul(m, iexpt10(-e));
                 }
             } else {
                 /* k turned to positive */
@@ -2485,28 +2981,18 @@ static ScmObj read_real(const char **strp, int *lenp,
             lensave = *lenp;
             denom = read_uint(strp, lenp, ctx, SCM_FALSE);
             if (SCM_FALSEP(denom)) return SCM_FALSE;
-            if (denom == SCM_MAKE_INT(0)) {
+            if (SCM_EXACT_ZERO_P(denom)) {
                 if (lensave > *lenp) {
-                    if (minusp) {
-                        return Scm_MakeFlonum(-1.0/0.0);
-                    } else {
-                        return Scm_MakeFlonum(1.0/0.0);
-                    }
+                    return minusp? SCM_NEGATIVE_INFINITY:SCM_POSITIVE_INFINITY;
                 } else {
                     return SCM_FALSE;
                 }
             }
             if (minusp) intpart = Scm_Negate(intpart);
-            ratval = Scm_Divide2(intpart, denom);
-
-            if (ctx->exactness == EXACT && !Scm_IntegerP(ratval)) {
-                return numread_error("(exact non-integral rational number is not supported)",
-                                     ctx);
-            }
-            if (ctx->exactness == INEXACT && !SCM_FLONUMP(ratval)) {
-                return Scm_ExactToInexact(ratval);
+            if (ctx->exactness == INEXACT) {
+                return Scm_ExactToInexact(Scm_Div(intpart, denom));
             } else {
-                return ratval;
+                return Scm_MakeRational(intpart, denom);
             }
         }
         /* fallthrough */
@@ -2754,13 +3240,17 @@ void Scm__InitNumber(void)
     
     SCM_2_63 = Scm_Ash(SCM_MAKE_INT(1), 63);
     SCM_2_64 = Scm_Ash(SCM_MAKE_INT(1), 64);
-    SCM_2_64_MINUS_1 = Scm_Subtract2(SCM_2_64, SCM_MAKE_INT(1));
+    SCM_2_64_MINUS_1 = Scm_Sub(SCM_2_64, SCM_MAKE_INT(1));
     SCM_2_52 = Scm_Ash(SCM_MAKE_INT(1), 52);
     SCM_2_53 = Scm_Ash(SCM_MAKE_INT(1), 53);
     SCM_MINUS_2_63 = Scm_Negate(SCM_2_63);
     SCM_2_32 = Scm_Ash(SCM_MAKE_INT(1), 32);
     SCM_2_31 = Scm_Ash(SCM_MAKE_INT(1), 31);
     SCM_MINUS_2_31 = Scm_Negate(SCM_2_31);
+
+    SCM_POSITIVE_INFINITY = Scm_MakeFlonum(1.0/0.0);
+    SCM_NEGATIVE_INFINITY = Scm_MakeFlonum(-1.0/0.0);
+    SCM_NAN               = Scm_MakeFlonum(0.0/0.0);
     
     dexpt2_minus_52 = ldexp(1.0, -52);
     dexpt2_minus_53 = ldexp(1.0, -53);

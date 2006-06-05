@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: numerical.scm,v 1.17 2005-04-19 06:58:11 shirok Exp $
+;;;  $Id: numerical.scm,v 1.18 2006-06-05 05:11:24 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -46,12 +46,10 @@
 ;;  Knuth: "The Art of Computer Programming" Chap. 4.5.2
 
 (define-in-module scheme (gcd . args)
-  (define (rec u v)
-    (if (zero? v) u (rec v (remainder u v))))
   (define (recn arg args)
     (if (null? args)
         arg
-        (recn (rec arg (car args)) (cdr args))))
+        (recn (%gcd arg (car args)) (cdr args))))
   (let ((args (map (lambda (arg)
                      (unless (integer? arg)
                        (error "integer required, but got" arg))
@@ -62,10 +60,8 @@
           (else (recn (car args) (cdr args))))))
 
 (define-in-module scheme (lcm . args)
-  (define (gcd u v)
-    (if (zero? v) u (gcd v (remainder u v))))
   (define (lcm2 u v)
-    (let ((g (gcd u v)))
+    (let ((g (%gcd u v)))
       (if (zero? u) 0 (* (quotient u g) v))))
   (define (recn arg args)
     (if (null? args)
@@ -79,20 +75,6 @@
     (cond ((null? args) 1)
           ((null? (cdr args)) (car args))
           (else (recn (car args) (cdr args))))))
-
-;;
-;; Numerator and denominator
-;;
-
-;; in Gauche, rational number is just the same as integer, i.e. N/1
-
-(define-in-module scheme (numerator q)
-  (unless (integer? q) (error "integer required, but got:" q))
-  q)
-
-(define-in-module scheme (denominator q)
-  (unless (integer? q) (error "integer required, but got:" q))
-  (if (exact? q) 1 1.0))
 
 ;;
 ;; Complex numbers
@@ -241,5 +223,13 @@
 
 (define (atanh z)
   (/ (- (log (+ 1 z)) (log (- 1 z))) 2))
+
+;;
+;; Nearly equal comparison
+;;  (Unofficial yet; see how it works)
+
+(define (nearly=? tolerance x y)
+  (< (abs (- x y))
+     (/ (max (abs x) (abs y)) tolerance)))
 
 (provide "gauche/numerical")

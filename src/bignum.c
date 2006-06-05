@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bignum.c,v 1.60 2006-05-31 01:50:49 shirok Exp $
+ *  $Id: bignum.c,v 1.61 2006-06-05 05:11:25 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -699,51 +699,6 @@ ScmObj Scm_BignumSubSI(ScmBignum *bx, long y)
     return Scm_NormalizeBignum(bignum_add_si(bx, -y));
 }
 
-ScmObj Scm_BignumAddN(ScmBignum *bx, ScmObj args)
-{
-    ScmBignum *r = bx;
-    for (;SCM_PAIRP(args); args = SCM_CDR(args)) {
-        ScmObj v = SCM_CAR(args);
-        if (SCM_INTP(v)) {
-            r = bignum_add_si(r, SCM_INT_VALUE(v));
-            continue;
-        }
-        if (SCM_BIGNUMP(v)) {
-            r = bignum_add(r, SCM_BIGNUM(v));
-            continue;
-        }
-        if (SCM_FLONUMP(v) || SCM_COMPNUMP(v)) {
-            ScmObj z = Scm_MakeFlonum(Scm_BignumToDouble(r));
-            return Scm_Add(z, v, SCM_CDR(args));
-        }
-        /* Pass back to Scm_Add to deal with object-add hook */
-        return Scm_Add(Scm_NormalizeBignum(r), v, SCM_CDR(args));
-    }
-    return Scm_NormalizeBignum(r);
-}
-
-ScmObj Scm_BignumSubN(ScmBignum *bx, ScmObj args)
-{
-    ScmBignum *r = bx;
-    for (;SCM_PAIRP(args); args = SCM_CDR(args)) {
-        ScmObj v = SCM_CAR(args);
-        if (SCM_INTP(v)) {
-            r = bignum_add_si(r, -SCM_INT_VALUE(v));
-            continue;
-        }
-        if (SCM_BIGNUMP(v)) {
-            r = bignum_sub(r, SCM_BIGNUM(v));
-            continue;
-        }
-        if (SCM_FLONUMP(v) || SCM_COMPNUMP(v)) {
-            ScmObj z = Scm_MakeFlonum(Scm_BignumToDouble(r));
-            return Scm_Subtract(z, v, SCM_CDR(args));
-        }
-        Scm_Error("number expected, but got %S", v);
-    }
-    return Scm_NormalizeBignum(r);
-}
-
 /*-----------------------------------------------------------------------
  * Shifter
  */
@@ -891,28 +846,6 @@ ScmObj Scm_BignumMulSI(ScmBignum *bx, long y)
 {
     ScmBignum *br = bignum_mul_si(bx, y);
     return Scm_NormalizeBignum(br);
-}
-
-ScmObj Scm_BignumMulN(ScmBignum *bx, ScmObj args)
-{
-    ScmBignum *r = bx;
-    for (; SCM_PAIRP(args); args = SCM_CDR(args)) {
-        ScmObj v = SCM_CAR(args);
-        if (SCM_INTP(v)) {
-            r = bignum_mul_si(r, SCM_INT_VALUE(v));
-            continue;
-        }
-        if (SCM_BIGNUMP(v)) {
-            r = bignum_mul(r, SCM_BIGNUM(v));
-            continue;
-        }
-        if (SCM_FLONUMP(v) || SCM_COMPNUMP(v)) {
-            ScmObj f = Scm_MakeFlonum(Scm_BignumToDouble(r));
-            return Scm_Multiply(f, v, SCM_CDR(args));
-        }
-        Scm_Error("number expected, but got %S", v);
-    }
-    return Scm_NormalizeBignum(r);
 }
 
 /*-----------------------------------------------------------------------
@@ -1119,11 +1052,10 @@ ScmObj Scm_BignumAsh(ScmBignum *x, int cnt)
         } else {
             if (SCM_BIGNUM_SIGN(x) < 0) {
                 /* painful way */
-                ScmObj r = Scm_Quotient(Scm_Add(SCM_OBJ(x), SCM_MAKE_INT(1),
-                                                SCM_NIL),
+                ScmObj r = Scm_Quotient(Scm_Add(SCM_OBJ(x), SCM_MAKE_INT(1)),
                                         Scm_Ash(SCM_MAKE_INT(1), -cnt),
                                         NULL);
-                return Scm_Add(r, SCM_MAKE_INT(-1), SCM_NIL);
+                return Scm_Add(r, SCM_MAKE_INT(-1));
             } else {
                 ScmBignum *r = make_bignum(rsize);
                 return Scm_NormalizeBignum(bignum_rshift(r, x, -cnt));

@@ -2,7 +2,7 @@
 ;; Test for SRFIs
 ;;
 
-;; $Id: srfi.scm,v 1.43 2005-08-28 12:59:17 shirok Exp $
+;; $Id: srfi.scm,v 1.44 2006-06-05 05:11:25 shirok Exp $
 
 (use gauche.test)
 
@@ -1246,11 +1246,8 @@
               (/ 1 (+ n8 5))
               (/ 1 (+ n8 6))))
         (/ 1 (expt 16 n)) )))
-  ;; NB: Gauche doesn't have exact rational (yet), so we have to torelate
-  ;; rounding error
   (test* "pi-BBP" (/ 40413742330349316707 12864093722915635200)
-         (pi-BBP 5)
-         (lambda (x y) (< (abs (- x y)) 1e-10)))
+         (pi-BBP 5))
   )
 
 (let ()

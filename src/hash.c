@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.42 2006-01-07 05:15:41 shirok Exp $
+ *  $Id: hash.c,v 1.43 2006-06-05 05:11:25 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -140,7 +140,7 @@ unsigned long Scm_EqvHash(ScmObj obj)
             hashval = (unsigned long)(SCM_FLONUM_VALUE(obj)*2654435761UL);
         } else {
             /* TODO: I'm not sure this is a good hash. */
-            hashval = (unsigned long)((SCM_COMPLEX_REAL(obj)+SCM_COMPLEX_IMAG(obj))*2654435761UL);
+            hashval = (unsigned long)((SCM_COMPNUM_REAL(obj)+SCM_COMPNUM_IMAG(obj))*2654435761UL);
         }
     } else {
         ADDRESS_HASH(hashval, obj);

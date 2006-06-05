@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.120 2006-05-31 01:50:49 shirok Exp $
+;;; $Id: stdlib.stub,v 1.121 2006-06-05 05:11:25 shirok Exp $
 ;;;
 
 
@@ -132,31 +132,40 @@
   (body "Scm_MinMax(arg0, args, &SCM_RESULT, NULL);"))
 
 (define-cproc + (&rest args)
-  "if (SCM_NULLP(args)) SCM_RETURN(SCM_MAKE_INT(0));"
-  "if (!SCM_PAIRP(SCM_CDR(args))) {"
-  "  if (!SCM_NUMBERP(SCM_CAR(args)))"
-  "     Scm_Error(\"number required, but got %S\", SCM_CAR(args));"
-  "  SCM_RETURN(SCM_CAR(args));"
-  "} else {"
-  "  SCM_RETURN(Scm_Add(SCM_CAR(args), SCM_CADR(args), SCM_CDDR(args)));"
-  "}")
+  (body "ScmObj p;"
+        "if (!SCM_PAIRP(args)) SCM_RETURN(SCM_MAKE_INT(0));"
+        "if (!SCM_NUMBERP(SCM_CAR(args)))"
+        "   Scm_Error(\"number required, but got %S\", SCM_CAR(args));"
+        "SCM_RESULT = SCM_CAR(args);"
+        "SCM_FOR_EACH(p, SCM_CDR(args)) {"
+        "  SCM_RESULT = Scm_Add(SCM_RESULT, SCM_CAR(p));"
+        "}"))
 
 (define-cproc * (&rest args)
-  "if (!SCM_PAIRP(args)) return SCM_MAKE_INT(1);"
-  "if (!SCM_PAIRP(SCM_CDR(args))) {"
-  "  if (!SCM_NUMBERP(SCM_CAR(args)))"
-  "     Scm_Error(\"number required, but got %S\", SCM_CAR(args));"
-  "  return SCM_CAR(args);"
-  "}"
-  "SCM_RETURN(Scm_Multiply(SCM_CAR(args), SCM_CADR(args), SCM_CDDR(args)));")
+  (body "ScmObj p;"
+        "if (!SCM_PAIRP(args)) return SCM_MAKE_INT(1);"
+        "if (!SCM_NUMBERP(SCM_CAR(args)))"
+        "   Scm_Error(\"number required, but got %S\", SCM_CAR(args));"
+        "SCM_RESULT = SCM_CAR(args);"
+        "SCM_FOR_EACH(p, SCM_CDR(args)) {"
+        "  SCM_RESULT = Scm_Mul(SCM_RESULT, SCM_CAR(p));"
+        "}"))
 
 (define-cproc - (arg1 &rest args)
-  (body "if (SCM_NULLP(args)) SCM_RESULT = Scm_Negate(arg1);
-         else SCM_RESULT = Scm_Subtract(arg1, SCM_CAR(args), SCM_CDR(args));"))
+  (body "ScmObj p;"
+        "if (SCM_NULLP(args)) return Scm_Negate(arg1);"
+        "SCM_FOR_EACH(p, args) {"
+        "  arg1 = Scm_Sub(arg1, SCM_CAR(p));"
+        "}"
+        "SCM_RESULT = arg1;"))
 
 (define-cproc / (arg1 &rest args)
-  (body "if (SCM_NULLP(args)) SCM_RESULT = Scm_Reciprocal(arg1);
-         else SCM_RESULT = Scm_Divide(arg1, SCM_CAR(args), SCM_CDR(args));"))
+  (body "ScmObj p;"
+        "if (SCM_NULLP(args)) return Scm_Reciprocal(arg1);"
+        "SCM_FOR_EACH(p, args) {"
+        "  arg1 = Scm_Div(arg1, SCM_CAR(p));"
+        "}"
+        "SCM_RESULT = arg1;"))
 
 (define-cproc abs (obj) (call "Scm_Abs"))
 
@@ -164,7 +173,10 @@
 (define-cproc remainder (n1 n2) (expr "Scm_Modulo(n1, n2, TRUE)"))
 (define-cproc modulo (n1 n2)    (expr "Scm_Modulo(n1, n2, FALSE)"))
 
-;; gcd, lcd, numerator, denominator - in gauche/numeric.scm
+(define-cproc %gcd (n1 n2)    (call "Scm_Gcd"))
+(define-cproc numerator (n)   (call "Scm_Numerator"))
+(define-cproc denominator (n) (call "Scm_Denominator"))
+;; gcd, lcd - in gauche/numerical.scm
 
 (define-cproc floor (v)    (expr "Scm_Round(v, SCM_ROUND_FLOOR)"))
 (define-cproc ceiling (v)  (expr "Scm_Round(v, SCM_ROUND_CEIL)"))
