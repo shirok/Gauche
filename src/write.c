@@ -1,7 +1,7 @@
 /*
  * write.c - writer
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.59 2006-01-28 09:17:42 shirok Exp $
+ *  $Id: write.c,v 1.60 2006-06-08 17:43:14 shirok Exp $
  */
 
 #include <stdio.h>
@@ -39,7 +39,6 @@
 #include "gauche.h"
 #include "gauche/port.h"
 #include "gauche/builtin-syms.h"
-#include "gauche/code.h"        /* NB: for SCM_VM_INSNP -- remove this later */
 
 static void write_walk(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);

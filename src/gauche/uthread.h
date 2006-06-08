@@ -1,7 +1,7 @@
 /*
  * uthread.h - user level thread primitives
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,11 +30,17 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uthread.h,v 1.7 2006-03-05 08:00:37 shirok Exp $
+ *  $Id: uthread.h,v 1.8 2006-06-08 17:43:15 shirok Exp $
  */
 
 #ifndef GAUCHE_UTHREAD_H
 #define GAUCHE_UTHREAD_H
+
+typedef int ScmInternalSpinlock;
+#define SCM_INTERNAL_SPIN_INIT(spin)       (0)
+#define SCM_INTERNAL_SPIN_LOCK(spin)       (0)
+#define SCM_INTERNAL_SPIN_TRYLOCK(spin)    (0)
+#define SCM_INTERNAL_SPIN_DESTROY(spin)    (0)
 
 typedef int ScmInternalMutex;
 #define SCM_INTERNAL_MUTEX_INIT(mutex)     (0)

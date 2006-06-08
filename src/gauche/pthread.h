@@ -1,7 +1,7 @@
 /*
  * pthread.h - pthread primitives
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,13 +30,25 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: pthread.h,v 1.6 2006-03-05 08:00:37 shirok Exp $
+ *  $Id: pthread.h,v 1.7 2006-06-08 17:43:15 shirok Exp $
  */
 
 #ifndef GAUCHE_PTHREAD_H
 #define GAUCHE_PTHREAD_H
 
 #include <pthread.h>
+
+/* Spinlock */
+typedef pthread_spinloc_t ScmInternalSpinlock;
+#define SCM_INTERNAL_SPIN_INIT(spin) \
+    pthread_spin_init(&(spin), PTHREAD_PROCESS_PRIVATE)
+#define SCM_INTERNAL_SPIN_LOCK(spin) \
+    pthread_spin_lock(&(spin))
+#define SCM_INTERNAL_SPIN_TRYLOCK(spin) \
+    pthread_spin_trylock(&(spin))
+#define SCM_INTERNAL_SPIN_DESTROY(spin) \
+    pthread_spin_destroy(&(spin))
+
 
 /* Mutex */
 typedef pthread_mutex_t ScmInternalMutex;

@@ -1,7 +1,7 @@
 /*
  * gauche/port.h - Port inline macros
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.h,v 1.11 2004-10-17 10:29:39 shirok Exp $
+ *  $Id: port.h,v 1.12 2006-06-08 17:43:15 shirok Exp $
  */
 
 /*
@@ -40,31 +40,12 @@
 
 /* Mutex of ports:
  *  SRFI-18 requires the system to serialize access to ports.
- *  I need to implement a few tricks to avoid this requirement
- *  from affecting performance too much.
+ *  The locking strategy affects I/O performance greatly.
  *
- *  Each port has a recursive lock, that is, the same thread can
- *  lock the port many times; the port will be fully unlocked
- *  when the thread calls unlock as many times as it called lock.
+ *  Since arbitrary C/Scheme code can run between PORT_LOCK and
+ *  PORT_UNLOCK, we can't use a single mutex naively to lock a port.
  *
- *  The port functions may call-back Scheme code or other Gauche
- *  C API that may take arbitrarily long time to execute, and may
- *  raise an error.  It prevents us from using simple mutex; we
- *  need to use CVs, and need to save dynamic context to revert
- *  lock state in case an error is thrown during processing.
- *
- *  If implemented naively it costs too much, since in most
- *  cases the port operation is trivial; such as fetching some
- *  bytes from memory and incrementing a counter.   Only in some
- *  occasions the operation involves system calls or calling other
- *  Gauche C functions.   In the following macro, mutex call is done
- *  only when the caller hasn't been locked the port.
- *
- *  As you see, PORT_UNLOCK doesn't do any mutex ops.  I count on
- *  that the pointer assignment is atomic; if so, the race condition
- *  won't happen.  If not, Boehm GC won't work anyway.
- *
- *  Furthermore, some port functions have 'unsafe' mode, which 
+ *  Note that, some port functions have 'unsafe' mode, which 
  *  should be called when the caller is sure that the thread
  *  already locked the port.
  */

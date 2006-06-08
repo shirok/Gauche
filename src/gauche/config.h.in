@@ -146,6 +146,9 @@
 /* Define if you have openpty */
 #undef HAVE_OPENPTY
 
+/* Define to 1 if you have pthread_spin_init. */
+#undef HAVE_PTHREAD_SPIN_INIT
+
 /* Define to 1 if you have the <pty.h> header file. */
 #undef HAVE_PTY_H
 
