@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: pthread.h,v 1.7 2006-06-08 17:43:15 shirok Exp $
+ *  $Id: pthread.h,v 1.8 2006-06-13 23:55:37 shirok Exp $
  */
 
 #ifndef GAUCHE_PTHREAD_H
@@ -39,7 +39,7 @@
 #include <pthread.h>
 
 /* Spinlock */
-typedef pthread_spinloc_t ScmInternalSpinlock;
+typedef pthread_spinlock_t ScmInternalSpinlock;
 #define SCM_INTERNAL_SPIN_INIT(spin) \
     pthread_spin_init(&(spin), PTHREAD_PROCESS_PRIVATE)
 #define SCM_INTERNAL_SPIN_LOCK(spin) \
