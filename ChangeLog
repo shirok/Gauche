@@ -1,3 +1,11 @@
+2006-06-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/dbi.scm (dbi-make-driver): use module-name->path instead of
+	  library-fold to get a path component of the requested dbd module;
+	  if we get full pathname from library-fold, requiring it doesn't
+	  match with provided path component in the module, causing the
+	  module to be loaded every time dbi-make-driver is called.
+
 2006-06-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c: Introduced exact rational numbers.  Arithmetic

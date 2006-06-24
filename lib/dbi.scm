@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.32 2006-03-09 21:53:06 shirok Exp $
+;;;  $Id: dbi.scm,v 1.33 2006-06-24 03:32:16 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -218,22 +218,18 @@
 ;; Loads a concrete driver module, and returns an instance of
 ;; the driver.
 (define (dbi-make-driver driver-name)
-  (or (and-let* ((module&path (library-fold
-                               (string->symbol #`"dbd.,driver-name")
-                               (lambda (m p s) (cons m p)) #f))
-                 (module      (car module&path))
-                 (path        (cdr module&path))
-                 (class-name  (string->symbol #`"<,|driver-name|-driver>"))
-                 
-                 (driver-class
-                  (begin (eval `(require ,(path-sans-extension path))
-                               (current-module))
-                         (global-variable-ref module class-name #f)))
-                 )
-        (make driver-class :driver-name driver-name))
-      (errorf <dbi-nonexistent-driver-error>
-              :driver-name driver-name
-              "couldn't load driver dbd.~a" driver-name)))
+  (let* ((module (string->symbol #`"dbd.,driver-name"))
+         (path   (module-name->path module))
+         (class-name  (string->symbol #`"<,|driver-name|-driver>")))
+    (or (and-let* (( (library-exists? path :strict? #t) )
+                   (driver-class
+                    (begin (eval `(require ,(path-sans-extension path))
+                                 (current-module))
+                           (global-variable-ref module class-name #f))))
+          (make driver-class :driver-name driver-name))
+        (errorf <dbi-nonexistent-driver-error>
+                :driver-name driver-name
+                "couldn't load driver dbd.~a" driver-name))))
 
 ;; Default prepared-SQL handler
 ;; dbi-prepare-sql returns a procedure, which generates a complete sql
