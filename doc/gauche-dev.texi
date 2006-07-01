@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.8 2006-06-05 05:11:24 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.9 2006-07-01 22:39:29 shirok Exp $
 
 @iftex
 @finalout
@@ -402,6 +402,17 @@ or
 
 @node Representation of Scheme objects, Equivalence, C API reference, C API reference
 @section Representation of Scheme objects
+
+Scheme objects are uniformly treated as of type @code{ScmObj},
+which may be either a tagged pointer to a heap allocated object
+or a tagged immediate value.
+
+Querying the type of a Scheme object and accessing its fields
+should be done via provided macros or APIs.  The user code must
+treat @code{ScmObj} as an opaque word.
+
+
+
 
 
 @node Equivalence, Numbers, Representation of Scheme objects, C API reference
