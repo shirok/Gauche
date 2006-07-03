@@ -1,13 +1,15 @@
 ;;;
 ;;; Adapt SSAX to Gauche
 ;;;
-;;; $Id: adaptor.scm,v 1.1 2005-08-25 04:32:54 shirok Exp $
+;;; $Id: adaptor.scm,v 1.2 2006-07-03 10:19:30 shirok Exp $
 ;;;
 
 (define-module sxml.adaptor
   (use srfi-1)
+  (use srfi-13)
   (export ascii->char ucscode->char char-return char-tab char-newline
-          make-char-quotator assert |--| parser-error cout cerr nl))
+          make-char-quotator assert |--| parser-error cout cerr nl
+          string-rindex))
 (select-module sxml.adaptor)
 
 ;; Charcode related stuff, used in ssax.scm
@@ -29,6 +31,9 @@
                  => (lambda (p) (display (cdr p)) (loop (read-char))))
                 (else (display ch) (loop (read-char)))))))
     ))
+
+;; string-rindex is used in sxml-tools
+(define string-rindex string-index-right)
 
 ;; Derived from Oleg's myenv.scm -----------------------------
 

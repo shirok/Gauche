@@ -1,3 +1,13 @@
+2006-07-03  Shiro Kawai  <shiro@acm.org>
+
+	* ext/threads/threads.c (Scm_ThreadStart): fixed a bug of passing
+	  invalid value to pthread_attr_setdetachstate().
+	* lib/dbi.scm (dbi-parse-dsn): treat "dbi:driver:" as no-option,
+	  i.e. same as "dbi:driver".  Suggested by Tatsuya BIZENN.
+
+	* ext/sxml/sxml/adaptor.scm (string-rindex): added alias for missing
+	  definition of string-rindex used in sxml-tools.scm
+
 2006-06-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/dbi.scm (dbi-make-driver): use module-name->path instead of

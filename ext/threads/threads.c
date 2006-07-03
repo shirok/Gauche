@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: threads.c,v 1.10 2006-04-07 02:07:46 shirok Exp $
+ *  $Id: threads.c,v 1.11 2006-07-03 10:19:29 shirok Exp $
  */
 
 #include <gauche.h>
@@ -165,7 +165,7 @@ ScmObj Scm_ThreadStart(ScmVM *vm)
         SCM_ASSERT(vm->thunk);
         vm->state = SCM_VM_RUNNABLE;
         pthread_attr_init(&thattr);
-        pthread_attr_setdetachstate(&thattr, TRUE);
+        pthread_attr_setdetachstate(&thattr, PTHREAD_CREATE_DETACHED);
         pthread_sigmask(SIG_SETMASK, &threadrec.defaultSigmask, &omask);
         if (pthread_create(&vm->thread, &thattr, thread_entry, vm) != 0) {
             vm->state = SCM_VM_NEW;
