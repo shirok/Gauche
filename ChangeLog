@@ -1,5 +1,8 @@
 2006-07-03  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac: check pthread_spinlock_t type instead of
+	  pthread_spinlock_init() function.
+
 	* ext/threads/threads.c (Scm_ThreadStart): fixed a bug of passing
 	  invalid value to pthread_attr_setdetachstate().
 	* lib/dbi.scm (dbi-parse-dsn): treat "dbi:driver:" as no-option,
