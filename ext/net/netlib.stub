@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netlib.stub,v 1.35 2006-03-26 19:55:50 shirok Exp $
+;;;  $Id: netlib.stub,v 1.36 2006-07-04 10:56:03 shirok Exp $
 ;;;
 
 "#include \"gauche/net.h\"
@@ -265,9 +265,17 @@
 (define-enum-conditionally SO_TYPE)
 (define-enum-conditionally SO_BROADCAST)
 (define-enum-conditionally SO_SNDBUF)
-(define-enum-conditionally SO_RFCBUF)
+(define-enum-conditionally SO_RCVBUF)
 (define-enum-conditionally SO_PRIORITY)
 (define-enum-conditionally SO_ERROR)
+(define-enum-conditionally SO_DEBUG)
+(define-enum-conditionally SO_DONTROUTE)
+(define-enum-conditionally SO_LINGER)
+(define-enum-conditionally SO_RCVLOWAT)
+(define-enum-conditionally SO_SNDLOWAT)
+(define-enum-conditionally SO_RCVTIMEO)
+(define-enum-conditionally SO_SNDTIMEO)
+(define-enum-conditionally SO_REUSEPORT)
 
 (define-enum-conditionally SOL_TCP)
 (define-enum-conditionally TCP_NODELAY)

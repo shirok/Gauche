@@ -1,3 +1,8 @@
+2006-07-04  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/netlib.stub: fixed typo (SO_RCVBUF).  added some more
+	  SO_* constants.
+
 2006-07-03  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac: check pthread_spinlock_t type instead of
