@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.34 2006-07-03 10:19:30 shirok Exp $
+;;;  $Id: dbi.scm,v 1.35 2006-07-04 10:42:52 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -204,7 +204,7 @@
 ;;
 (define (dbi-parse-dsn data-source-name)
   (rxmatch-case data-source-name
-    (#/^dbi:([\w-]+)(?::(.+))?$/ (#f driver options)
+    (#/^dbi:([\w-]+)(?::(.*))?$/ (#f driver options)
      (if (and options (not (string-null? options)))
        (let1 alist (map (lambda (nv)
                           (receive (n v) (string-scan nv "=" 'both)
