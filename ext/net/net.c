@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.43 2006-04-07 01:32:35 shirok Exp $
+ *  $Id: net.c,v 1.44 2006-07-05 03:35:54 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -254,16 +254,16 @@ ScmObj Scm_SocketListen(ScmSocket *sock, int backlog)
 
 ScmObj Scm_SocketAccept(ScmSocket *sock)
 {
-    const char addrbuf[SCM_SOCKADDR_MAXLEN];
     int newfd;
-    socklen_t addrlen = SCM_SOCKADDR_MAXLEN;
+    struct sockaddr_storage addrbuf;
+    socklen_t addrlen = sizeof(addrbuf);
     ScmSocket *newsock;
     ScmClass *addrClass = Scm_ClassOf(SCM_OBJ(sock->address));
     
     if (SOCKET_CLOSED(sock->fd)) {
         Scm_Error("attempt to accept a closed socket: %S", sock);
     }
-    SCM_SYSCALL(newfd, accept(sock->fd, (struct sockaddr *)addrbuf, &addrlen));
+    SCM_SYSCALL(newfd, accept(sock->fd, (struct sockaddr*)&addrbuf, &addrlen));
     if (SOCKET_INVALID(newfd)) {
         if (errno == EAGAIN) {
             return SCM_FALSE;
@@ -274,7 +274,7 @@ ScmObj Scm_SocketAccept(ScmSocket *sock)
     newsock = make_socket(newfd, sock->type);
     newsock->address =
         SCM_SOCKADDR(Scm_MakeSockAddr(addrClass,
-                                      (struct sockaddr *)addrbuf,
+                                      (struct sockaddr*)&addrbuf,
                                       addrlen));
     newsock->status = SCM_SOCKET_STATUS_CONNECTED;
     return SCM_OBJ(newsock);
@@ -297,34 +297,34 @@ ScmObj Scm_SocketConnect(ScmSocket *sock, ScmSockAddr *addr)
 
 ScmObj Scm_SocketGetSockName(ScmSocket *sock)
 {
-    const char addrbuf[SCM_SOCKADDR_MAXLEN];
     int r;
-    socklen_t addrlen = SCM_SOCKADDR_MAXLEN;
+    struct sockaddr_storage addrbuf;
+    socklen_t addrlen = sizeof(addrbuf);
 
     if (SOCKET_CLOSED(sock->fd)) {
         Scm_Error("attempt to get the name of a closed socket: %S", sock);
     }
-    SCM_SYSCALL(r, getsockname(sock->fd, (struct sockaddr *)addrbuf, &addrlen));
+    SCM_SYSCALL(r, getsockname(sock->fd, (struct sockaddr*)&addrbuf, &addrlen));
     if (r < 0) {
         Scm_SysError("getsockname(2) failed");
     }
-    return SCM_OBJ(Scm_MakeSockAddr(NULL, (struct sockaddr *)addrbuf, addrlen));
+    return SCM_OBJ(Scm_MakeSockAddr(NULL, (struct sockaddr*)&addrbuf, addrlen));
 }
 
 ScmObj Scm_SocketGetPeerName(ScmSocket *sock)
 {
-    const char addrbuf[SCM_SOCKADDR_MAXLEN];
     int r;
-    socklen_t addrlen = SCM_SOCKADDR_MAXLEN;
+    struct sockaddr_storage addrbuf;
+    socklen_t addrlen = sizeof(addrbuf);
 
     if (SOCKET_CLOSED(sock->fd)) {
         Scm_Error("attempt to get the name of a closed socket: %S", sock);
     }
-    SCM_SYSCALL(r, getpeername(sock->fd, (struct sockaddr *)addrbuf, &addrlen));
+    SCM_SYSCALL(r, getpeername(sock->fd, (struct sockaddr*)&addrbuf, &addrlen));
     if (r < 0) {
         Scm_SysError("getpeername(2) failed");
     }
-    return SCM_OBJ(Scm_MakeSockAddr(NULL, (struct sockaddr *)addrbuf, addrlen));
+    return SCM_OBJ(Scm_MakeSockAddr(NULL, (struct sockaddr*)&addrbuf, addrlen));
 }
 
 ScmObj Scm_SocketSend(ScmSocket *sock, ScmString *msg, int flags)
@@ -378,18 +378,19 @@ ScmObj Scm_SocketRecvFrom(ScmSocket *sock, int bytes, int flags)
 {
     int r;
     char *buf;
-    struct sockaddr from;
+    struct sockaddr_storage from;
     socklen_t fromlen = sizeof(from);
     if (SOCKET_CLOSED(sock->fd)) {
         Scm_Error("attempt to recv from a closed socket: %S", sock);
     }
     buf = SCM_NEW_ATOMIC2(char*, bytes);
-    SCM_SYSCALL(r, recvfrom(sock->fd, buf, bytes, flags, &from, &fromlen));
+    SCM_SYSCALL(r, recvfrom(sock->fd, buf, bytes, flags,
+                            (struct sockaddr*)&from, &fromlen));
     if (r < 0) {
         Scm_SysError("recvfrom(2) failed");
     }
     return Scm_Values2(Scm_MakeString(buf, r, r, SCM_MAKSTR_INCOMPLETE),
-                       Scm_MakeSockAddr(NULL, &from, fromlen));
+                       Scm_MakeSockAddr(NULL, (struct sockaddr*)&from, fromlen));
 }
 
 /* Low-level setsockopt() and getsockopt() interface. */

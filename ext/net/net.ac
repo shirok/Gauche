@@ -2,7 +2,7 @@ dnl
 dnl Configure ext/net
 dnl This file is included by the toplevel configure.in
 dnl
-dnl $Id: net.ac,v 1.4 2004-07-15 07:10:05 shirok Exp $
+dnl $Id: net.ac,v 1.5 2006-07-05 03:35:54 shirok Exp $
 
 # ext/net -------------------------------------------------
 
@@ -37,30 +37,16 @@ if test $enable_ipv6 = yes; then
 fi
 
 dnl
+dnl Check to see if the system provides sockaddr_storage
+dnl
+AC_CHECK_TYPES([struct sockaddr_storage],,,[#include <netinet/in.h>])
+
+dnl
 dnl Checks if sockaddr_in and sockaddr_in6 has *_len field
 dnl
-
-AC_CACHE_CHECK(struct sockaddr_in has sin_len, ac_cv_struct_sockaddr_in_len, [
-AC_TRY_COMPILE([#include <netinet/in.h>], [
-struct sockaddr_in addr;
-int z = addr.sin_len;
-], ac_cv_struct_sockaddr_in_len=yes, ac_cv_struct_sockaddr_in_len=no)])
-
-if test "$ac_cv_struct_sockaddr_in_len" = yes; then
-AC_DEFINE(HAVE_SIN_LEN,1,[Define if struct sockaddr_in has sin_len])
-fi
-
-if test "$ac_cv_ipv6" = yes; then
- AC_CACHE_CHECK(struct sockaddr_in6 has sin6_len, ac_cv_struct_sockaddr_in6_len, [
-AC_TRY_COMPILE([#include <netinet/in.h>], [
-struct sockaddr_in6 addr;
-int z = addr.sin6_len;
-], ac_cv_struct_sockaddr_in6_len=yes, ac_cv_struct_sockaddr_in6_len=no)])
-
-if test "$ac_cv_struct_sockaddr_in6_len" = yes; then
-AC_DEFINE(HAVE_SIN6_LEN,1,[Define if struct sockaddr_in6 has sin6_len])
-fi
-fi
+AC_CHECK_MEMBERS([struct sockaddr_un.sun_len],,,[#include <sys/un.h>])
+AC_CHECK_MEMBERS([struct sockaddr_in.sin_len,
+                  struct sockaddr_in6.sin6_len],,,[#include <netinet/in.h>])
 
 dnl
 dnl Check for some extra libraries

@@ -1,7 +1,7 @@
 /*
  * net.h - network interface
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.h,v 1.2 2005-09-04 23:59:54 shirok Exp $
+ *  $Id: net.h,v 1.3 2006-07-05 03:35:54 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -70,6 +70,34 @@ SCM_DECL_BEGIN
 /*==================================================================
  * Socket
  */
+
+/*------------------------------------------------------------------
+ * Sockaddr_storage
+ */
+
+#if !defined(HAVE_STRUCT_SOCKADDR_STORAGE)
+/* Alternative implemenation in case the system doesn't provide
+   sockaddr_storage.  The code is based on the reference implementation
+   provided in RFC3493.
+   We don't consider ss_len, for we don't care the internal structure
+   of sockaddr_storage.  Only the size and alignment matters. */
+
+#define _SS_MAXSIZE    128 
+#define _SS_ALIGNSIZE  (sizeof (ScmInt64))
+
+#define _SS_PAD1SIZE   (_SS_ALIGNSIZE - sizeof(sa_family_t))
+#define _SS_PAD2SIZE   (_SS_MAXSIZE - (sizeof(sa_family_t) + \
+                                      _SS_PAD1SIZE + _SS_ALIGNSIZE))
+
+struct sockaddr_storage {
+    sa_family_t  ss_family;
+    char      __ss_pad1[_SS_PAD1SIZE];
+    ScmInt64  __ss_align;     /* force alignment */
+    char      __ss_pad2[_SS_PAD2SIZE];
+};
+
+#endif /*HAVE_STRUCT_SOCKADDR_STORAGE*/
+
 
 /*------------------------------------------------------------------
  * Socket address

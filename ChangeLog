@@ -1,5 +1,13 @@
 2006-07-04  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/net.ac, ext/net/gauche/net.h (struct sockaddr_storage): added
+	  check for struct sockaddr_storage and provides an alternative
+	  if the system doesn't have it.  Also rewrote the check of
+	  SIN_LEN etc by AC_CHECK_MEMBERS.
+	* ext/net/net.c (Scm_SocketRecvFrom): fixed a bug that didn't
+	  retrieve sender's sockaddr correctly.  Also applied some cosmetic
+	  fixes by Tatsuya BIZENN.
+
 	* configure.ac, src/gauche/config.h.in, src/system.c: use 
 	  AC_CHECK_MEMBERS to check struct passwd/group members such 
 	  as PW_GECOS.

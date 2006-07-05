@@ -1,18 +1,36 @@
 /*
  * addr.c - socket address
  *
- *  Copyright(C) 2001-2004 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2001-2006 by Shiro Kawai (shiro@acm.org)
  *
- *  Permission to use, copy, modify, distribute this software and
- *  accompanying documentation for any purpose is hereby granted,
- *  provided that existing copyright notices are retained in all
- *  copies and that this notice is included verbatim in all
- *  distributions.
- *  This software is provided as is, without express or implied
- *  warranty.  In no circumstances the author(s) shall be liable
- *  for any damages arising out of the use of this software.
+ *   Redistribution and use in source and binary forms, with or without
+ *   modification, are permitted provided that the following conditions
+ *   are met:
+ * 
+ *   1. Redistributions of source code must retain the above copyright
+ *      notice, this list of conditions and the following disclaimer.
  *
- *  $Id: addr.c,v 1.23 2006-01-22 00:52:54 shirok Exp $
+ *   2. Redistributions in binary form must reproduce the above copyright
+ *      notice, this list of conditions and the following disclaimer in the
+ *      documentation and/or other materials provided with the distribution.
+ *
+ *   3. Neither the name of the authors nor the names of its contributors
+ *      may be used to endorse or promote products derived from this
+ *      software without specific prior written permission.
+ *
+ *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ *   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ *   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ *   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+ *   TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ *   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ *   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *  $Id: addr.c,v 1.24 2006-07-05 03:36:37 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -100,7 +118,6 @@ ScmObj Scm_MakeSockAddr(ScmClass *klass, struct sockaddr *saddr, int len)
     }
     SCM_SET_CLASS(addr, klass);
     addr->addrlen = len;
-    memset(&addr->addr, 0, len);
     memcpy(&addr->addr, saddr, len);
     return SCM_OBJ(addr);
 }
@@ -109,7 +126,6 @@ ScmObj Scm_MakeSockAddr(ScmClass *klass, struct sockaddr *saddr, int len)
  * Unix domain socket
  */
 
-#define UNIX_ADDRESS_PATH_MAX  108
 static ScmObj sockaddr_un_allocate(ScmClass *klass, ScmObj initargs);
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrUnClass, sockaddr_print,
@@ -124,14 +140,17 @@ static ScmObj sockaddr_un_allocate(ScmClass *klass, ScmObj initargs)
         Scm_Error(":path parameter must be a string, but got %S", path);
     }
     addr = SCM_NEW(ScmSockAddrUn);
-    SCM_SET_CLASS(addr, &Scm_SockAddrUnClass);
+    SCM_SET_CLASS(addr, SCM_CLASS_SOCKADDR_UN);
     memset(&addr->addr, 0, sizeof(struct sockaddr_un));
+#ifdef HAVE_STRUCT_SOCKADDR_UN_SUN_LEN
+    addr->addr.sun_len = sizeof(struct sockaddr_un);
+#endif
     addr->addr.sun_family = AF_UNIX;
     if (SCM_STRINGP(path)) {
         u_int size;
         const char *cpath = Scm_GetStringContent(SCM_STRING(path), &size,
                                                  NULL, NULL);
-        if (size >= UNIX_ADDRESS_PATH_MAX-1) {
+        if (size >= sizeof(addr->addr.sun_path)-1) {
             Scm_Error("path too long: %S", path);
         }
         memcpy(addr->addr.sun_path, cpath, size);
@@ -161,9 +180,9 @@ static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
                   port);
     }
     addr = SCM_NEW(ScmSockAddrIn);
-    SCM_SET_CLASS(addr, &Scm_SockAddrInClass);
+    SCM_SET_CLASS(addr, SCM_CLASS_SOCKADDR_IN);
     memset(&addr->addr, 0, sizeof(struct sockaddr_in));
-#ifdef HAVE_SIN_LEN
+#ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
     addr->addr.sin_len = sizeof(struct sockaddr_in);
 #endif
     addr->addr.sin_family = AF_INET;
@@ -222,9 +241,9 @@ static ScmObj sockaddr_in6_allocate(ScmClass *klass, ScmObj initargs)
                   port);
     }
     addr = SCM_NEW(ScmSockAddrIn6);
-    SCM_SET_CLASS(addr, &Scm_SockAddrIn6Class);
+    SCM_SET_CLASS(addr, SCM_CLASS_SOCKADDR_IN6);
     memset(&addr->addr, 0, sizeof(struct sockaddr_in6));
-#ifdef HAVE_SIN6_LEN
+#ifdef HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
     addr->addr.sin6_len = sizeof(struct sockaddr_in6);
 #endif
     addr->addr.sin6_family = AF_INET6;
