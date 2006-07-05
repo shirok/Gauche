@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.79 2006-05-30 00:22:51 shirok Exp $
+ *  $Id: system.c,v 1.80 2006-07-05 02:59:02 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1050,7 +1050,7 @@ static ScmObj make_group(struct group *g)
     SCM_SET_CLASS(sg, SCM_CLASS_SYS_GROUP);
     
     sg->name = SCM_MAKE_STR_COPYING(g->gr_name);
-#ifdef HAVE_GR_PASSWD
+#ifdef HAVE_STRUCT_GROUP_GR_PASSWD
     sg->passwd = SCM_MAKE_STR_COPYING(g->gr_passwd);
 #else
     sg->passwd = SCM_FALSE;
@@ -1123,17 +1123,17 @@ static ScmObj make_passwd(struct passwd *pw)
     sp->name = SCM_MAKE_STR_COPYING(pw->pw_name);
     sp->uid = Scm_MakeInteger(pw->pw_uid);
     sp->gid = Scm_MakeInteger(pw->pw_gid);
-#ifdef HAVE_PW_PASSWD
+#ifdef HAVE_STRUCT_PASSWD_PW_PASSWD
     sp->passwd = SCM_MAKE_STR_COPYING(pw->pw_passwd);
 #else
     sp->passwd = SCM_FALSE;
 #endif
-#ifdef HAVE_PW_GECOS
+#ifdef HAVE_STRUCT_PASSWD_PW_GECOS
     sp->gecos = SCM_MAKE_STR_COPYING(pw->pw_gecos);
 #else
     sp->gecos = SCM_FALSE;
 #endif
-#ifdef HAVE_PW_CLASS
+#ifdef HAVE_STRUCT_PASSWD_PW_CLASS
     sp->pwclass = SCM_MAKE_STR_COPYING(pw->pw_class);
 #else
     sp->pwclass = SCM_FALSE;

@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.82 2006-07-03 11:29:13 shirok Exp $
+dnl $Id: configure.ac,v 1.83 2006-07-05 02:59:01 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.7, shiro@acm.org)
-AC_REVISION($Revision: 1.82 $)
+AC_REVISION($Revision: 1.83 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -272,45 +272,10 @@ if test "$GAUCHE_THREAD_TYPE" = pthreads; then
 fi
 
 dnl Checks non-POSIX members of system structure
-AC_CACHE_CHECK(struct group has gr_passwd, ac_cv_struct_gr_passwd, [
-AC_TRY_COMPILE([#include <grp.h>], [
-struct group g;
-const char *p = g.gr_passwd;
-], ac_cv_struct_gr_passwd=yes, ac_cv_struct_gr_passwd=no)])
-
-if test "$ac_cv_struct_gr_passwd" = yes; then
-AC_DEFINE(HAVE_GR_PASSWD,1,[Define if "struct group" has gr_passwd])
-fi
-
-AC_CACHE_CHECK(struct passwd has pw_passwd, ac_cv_struct_pw_passwd, [
-AC_TRY_COMPILE([#include <pwd.h>], [
-struct passwd pw;
-const char *p = pw.pw_passwd;
-], ac_cv_struct_pw_passwd=yes, ac_cv_struct_pw_passwd=no)])
-
-if test "$ac_cv_struct_pw_passwd" = yes; then
-AC_DEFINE(HAVE_PW_PASSWD,1,[Define if "struct passwd" has pw_passwd])
-fi
-
-AC_CACHE_CHECK(struct passwd has pw_gecos, ac_cv_struct_pw_gecos, [
-AC_TRY_COMPILE([#include <pwd.h>], [
-struct passwd pw;
-const char *p = pw.pw_gecos;
-], ac_cv_struct_pw_gecos=yes, ac_cv_struct_pw_gecos=no)])
-
-if test "$ac_cv_struct_pw_gecos" = yes; then
-AC_DEFINE(HAVE_PW_GECOS,1,[Define if "struct passwd" has pw_gecos])
-fi
-
-AC_CACHE_CHECK(struct passwd has pw_class, ac_cv_struct_pw_class, [
-AC_TRY_COMPILE([#include <pwd.h>], [
-struct passwd pw;
-const char *p = pw.pw_class;
-], ac_cv_struct_pw_class=yes, ac_cv_struct_pw_class=no)])
-
-if test "$ac_cv_struct_pw_class" = yes; then
-AC_DEFINE(HAVE_PW_CLASS,1,[Define if "struct passwd" has pw_class])
-fi
+AC_CHECK_MEMBERS([struct group.gr_passwd],,,[#include <grp.h>])
+AC_CHECK_MEMBERS([struct passwd.pw_passwd, 
+                  struct passwd.pw_gecos,
+                  struct passwd.pw_class],,,[#include <pwd.h>])
 
 dnl checks if time_t is integer or flonum
 AC_CACHE_CHECK(time_t is integral, ac_cv_type_time_t_integral, [

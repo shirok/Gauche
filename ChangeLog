@@ -1,5 +1,9 @@
 2006-07-04  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac, src/gauche/config.h.in, src/system.c: use 
+	  AC_CHECK_MEMBERS to check struct passwd/group members such 
+	  as PW_GECOS.
+
 	* ext/net/netlib.stub: fixed typo (SO_RCVBUF).  added some more
 	  SO_* constants.
 
