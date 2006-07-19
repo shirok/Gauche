@@ -1,3 +1,8 @@
+2006-07-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/vm/profiler.scm (show-stats): properly round the result
+	  of division so that the result won't be shown as a rational number.
+
 2006-07-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h, src/gauche/port.h: splitted public port API

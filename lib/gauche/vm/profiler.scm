@@ -1,7 +1,7 @@
 ;;;
 ;;; Profiler - profiler interface
 ;;;  
-;;;   Copyright (c) 2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2005-2006 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: profiler.scm,v 1.4 2006-01-21 01:44:20 shirok Exp $
+;;;  $Id: profiler.scm,v 1.5 2006-07-19 03:14:20 shirok Exp $
 ;;;
 
 (define-module gauche.vm.profiler
@@ -167,7 +167,7 @@
                  name ncalls (time/call samples ncalls) samples
                  (if (zero? num-samples)
                    0
-                   (inexact->exact (* 100 (/ samples num-samples)))))))
+                   (inexact->exact (round (* 100 (/ samples num-samples))))))))
      (if (integer? max-rows)
        (take* sorted max-rows)
        sorted)))
@@ -178,7 +178,7 @@
 ;; If the time is under 10^6ms: ###.### - ######.
 ;; Else print as is.
 (define (time/call samples ncalls)
-  (let1 time (* 10 (/ samples ncalls)) ;; in ms
+  (let1 time (* 10.0 (/ samples ncalls)) ;; in ms
     (receive (frac int) (modf (* time 10000))
       (let1 val (inexact->exact (if (>= frac 0.5) (+ int 1) int))
         (receive (q r) (quotient&remainder val 10000)
