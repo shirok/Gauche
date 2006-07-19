@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: charconv.c,v 1.53 2005-11-02 06:03:26 shirok Exp $
+ *  $Id: charconv.c,v 1.54 2006-07-19 05:25:10 shirok Exp $
  */
 
 #include <string.h>
@@ -235,6 +235,10 @@ static void conv_input_closer(ScmPort *p)
 {
     ScmConvInfo *info = (ScmConvInfo*)p->src.buf.data;
     jconv_close(info);
+    if (info->ownerp) {
+        Scm_ClosePort(info->remote);
+        info->remoteClosed = TRUE;
+    }
 }
 
 ScmObj Scm_MakeInputConversionPort(ScmPort *fromPort,

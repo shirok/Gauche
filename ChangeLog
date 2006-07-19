@@ -1,5 +1,9 @@
 2006-07-18  Shiro Kawai  <shiro@acm.org>
 
+	* ext/charconv/charconv.c (conv_input_closer): Fixed file descriptor
+	  leak by adding code to close the source port if the input port
+	  owns it.  Tracked down by Tatsuya BIZENN.
+
 	* lib/gauche/vm/profiler.scm (show-stats): properly round the result
 	  of division so that the result won't be shown as a rational number.
 
