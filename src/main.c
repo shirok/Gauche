@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.88 2006-01-21 01:44:20 shirok Exp $
+ *  $Id: main.c,v 1.89 2006-07-19 03:15:25 shirok Exp $
  */
 
 #include <unistd.h>
@@ -246,8 +246,8 @@ void cleanup_main(void *data)
     
     if (profiling_mode) {
         Scm_ProfilerStop();
-        Scm_Eval(Scm_ReadFromCString("(profiler-show)"),
-                 SCM_OBJ(SCM_FIND_MODULE("gauche.vm.profiler", 0)));
+        Scm_EvalCString("(profiler-show)",
+                        SCM_OBJ(SCM_FIND_MODULE("gauche.vm.profiler", 0)));
     }
     
     /* EXPERIMENTAL */
