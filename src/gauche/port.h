@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.h,v 1.13 2006-07-05 15:14:00 shirok Exp $
+ *  $Id: port.h,v 1.14 2006-07-22 23:45:14 shirok Exp $
  */
 
 #ifndef GAUCHE_PORT_H
@@ -236,6 +236,9 @@ enum ScmPortICPolicy {
 #define SCM_PORT_OWNER_P(obj)   (SCM_PORT(obj)->ownerp)
 #define SCM_PORT_ERROR_OCCURRED_P(obj) (SCM_PORT(obj)->error)
 
+#define SCM_PORT_BUFFER_DATA(obj)  (SCM_PORT(obj)->buf.data)
+#define SCM_PORT_VIRTUAL_DATA(obj) (SCM_PORT(obj)->vt.data)
+
 #define SCM_IPORTP(obj)  (SCM_PORTP(obj)&&(SCM_PORT_DIR(obj)&SCM_PORT_INPUT))
 #define SCM_OPORTP(obj)  (SCM_PORTP(obj)&&(SCM_PORT_DIR(obj)&SCM_PORT_OUTPUT))
 
@@ -255,6 +258,10 @@ SCM_CLASS_DECL(Scm_PortClass);
 
 SCM_CLASS_DECL(Scm_CodingAwarePortClass);
 #define SCM_CLASS_CODING_AWARE_PORT (&Scm_CodingAwarePortClass)
+
+SCM_CLASS_DECL(Scm_LimitedLengthPortClass);
+#define SCM_CLASS_LIMITED_LENGTH_PORT (&Scm_LimitedLengthPortClass)
+
 
 SCM_EXTERN ScmObj Scm_GetBufferingMode(ScmPort *port);
 SCM_EXTERN int    Scm_BufferingMode(ScmObj flag, int direction, int fallback);
@@ -346,7 +353,7 @@ SCM_EXTERN ScmObj Scm_GetRemainingInputString(ScmPort *port);
 
 SCM_EXTERN ScmObj Scm_MakeVirtualPort(ScmClass *klass,
                                       int direction,
-				      ScmPortVTable *vtable);
+				      const ScmPortVTable *vtable);
 SCM_EXTERN ScmObj Scm_MakeBufferedPort(ScmClass *klass,
                                        ScmObj name, int direction,
                                        int ownerp,
@@ -367,23 +374,7 @@ SCM_EXTERN ScmObj Scm_MakeCodingAwarePort(ScmPort *iport);
  *  shouldn't be used casually.
  */
 
-/* Mutex of ports:
- *  SRFI-18 requires the system to serialize access to ports.
- *  The locking strategy affects I/O performance greatly.
- *
- *  Since arbitrary C/Scheme code can run between PORT_LOCK and
- *  PORT_UNLOCK, we can't use a single mutex naively to lock a port.
- *
- *  Note that, some port functions have 'unsafe' mode, which 
- *  should be called when the caller is sure that the thread
- *  already locked the port.
- */
 
-/* TODO: what if a thread having a lock of the port died before unlocking it?
- * Currently, PORT_LOCK checks if the lock holder is terminated or not.
- * However, the dead thread may have left the port state inconsistent.
- * I need to set the cancellation points carefully...
- */
 
 #define PORT_LOCK(p, vm)                                        \
     do {                                                        \
@@ -442,7 +433,6 @@ SCM_EXTERN ScmObj Scm_MakeCodingAwarePort(ScmPort *iport);
      p->lockOwner = vm;                         \
      p->lockCount = 1;                          \
    } while (0)
-   
 
 #endif /*GAUCHE_PORT_H*/
 
