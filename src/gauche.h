@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.456 2006-07-05 15:14:00 shirok Exp $
+ *  $Id: gauche.h,v 1.457 2006-07-25 03:21:29 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -2124,6 +2124,9 @@ SCM_EXTERN ScmObj Scm_TimeToSeconds(ScmTime *t);
 #if defined(HAVE_STRUCT_TIMESPEC) || defined(GAUCHE_USE_PTHREADS)
 SCM_EXTERN struct timespec *Scm_GetTimeSpec(ScmObj t, struct timespec *spec);
 #endif /*HAVE_STRUCT_TIMESPEC||GAUCHE_USE_PTHREADS*/
+
+/* sched_yield */
+SCM_EXTERN void   Scm_YieldCPU(void);
 
 /* struct tm */
 typedef struct ScmSysTmRec {

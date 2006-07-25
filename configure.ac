@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.83 2006-07-05 02:59:01 shirok Exp $
+dnl $Id: configure.ac,v 1.84 2006-07-25 03:21:29 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.7, shiro@acm.org)
-AC_REVISION($Revision: 1.83 $)
+AC_REVISION($Revision: 1.84 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -311,9 +311,8 @@ AC_CHECK_FUNCS(symlink readlink lchown mkstemp realpath nanosleep usleep)
 AC_CHECK_FUNCS(random srandom lrand48 srand48)
 AC_CHECK_FUNCS(putenv setenv unsetenv getpgid)
 AC_CHECK_FUNCS(gethostname sethostname getdomainname setdomainname)
-AC_CHECK_FUNCS(gettimeofday)
+AC_CHECK_FUNCS(gettimeofday getloadavg)
 AC_CHECK_FUNCS(syslog setlogmask)
-AC_CHECK_FUNCS(getloadavg)
 
 dnl Check for select().  HP-UX doesn't like the way configure tests
 dnl select() existence, so we skip the test on it.

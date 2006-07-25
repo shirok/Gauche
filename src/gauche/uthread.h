@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uthread.h,v 1.8 2006-06-08 17:43:15 shirok Exp $
+ *  $Id: uthread.h,v 1.9 2006-07-25 03:21:29 shirok Exp $
  */
 
 #ifndef GAUCHE_UTHREAD_H
@@ -55,5 +55,11 @@ typedef int ScmInternalCond;
 #define SCM_INTERNAL_COND_WAIT(cond, mutex) (0)
 #define SCM_INTERNAL_COND_DESTROY(cond)    (0)
 #define SCM_INTERNAL_COND_INITIALIZER      (0)
+
+typedef int ScmInternalFastlock;
+#define SCM_INTERNAL_FASTLOCK_INIT(fl)     (0)
+#define SCM_INTERNAL_FASTLOCK_LOCK(fl)     (0)
+#define SCM_INTERNAL_FASTLOCK_UNLOCK(fl)   (0)
+#define SCM_INTENRAL_FASTLOCK_DESTROY(fl)  (0)
 
 #endif /* GAUCHE_UTHREAD_H */

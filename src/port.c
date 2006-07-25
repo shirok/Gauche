@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.125 2006-07-22 23:45:14 shirok Exp $
+ *  $Id: port.c,v 1.126 2006-07-25 03:21:29 shirok Exp $
  */
 
 #include <unistd.h>
@@ -137,8 +137,7 @@ static ScmPort *make_port(ScmClass *klass, int dir, int type)
     port->ownerp = FALSE;
     port->flags = 0;
     port->name = SCM_FALSE;
-    (void)SCM_INTERNAL_MUTEX_INIT(port->mutex);
-    (void)SCM_INTERNAL_COND_INIT(port->cv);
+    (void)SCM_INTERNAL_FASTLOCK_INIT(port->lock);
     port->lockOwner = NULL;
     port->lockCount = 0;
     port->data = SCM_FALSE;

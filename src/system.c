@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.80 2006-07-05 02:59:02 shirok Exp $
+ *  $Id: system.c,v 1.81 2006-07-25 03:21:29 shirok Exp $
  */
 
 #include <stdio.h>
@@ -61,6 +61,9 @@
 
 #ifdef HAVE_GLOB_H
 #include <glob.h>
+#endif
+#ifdef HAVE_SCHED_H
+#include <sched.h>
 #endif
 
 /*
@@ -1031,6 +1034,33 @@ static ScmClassStaticSlotSpec tm_slots[] = {
     SCM_CLASS_SLOT_SPEC("isdst", tm_isdst_get, tm_isdst_set),
     { NULL }
 };
+
+/*===============================================================
+ * Yielding CPU (sched.h, if available)
+ */
+
+/* If sched_yield is not available, we make the calling thread sleep
+   small amount of time, hoping there are other threads that can run
+   in place. */
+void
+Scm_YieldCPU(void)
+{
+#if defined(HAVE_SCHED_YIELD)
+    sched_yield();
+#elif define(HAVE_NANOSLEEP)
+    struct timespec spec;
+    spec.tv_sec = 0;
+    spec.tv_nsec = 1;
+    nanosleep(&spec, NULL);
+#elif defined(HAVE_SELECT)
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = 1;
+    select(0, NULL, NULL, NULL, &tv);
+#else /* the last resort */
+    sleep(1);
+#endif
+}
 
 /*===============================================================
  * Groups (grp.h)

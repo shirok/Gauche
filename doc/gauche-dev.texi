@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.10 2006-07-03 10:17:19 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.11 2006-07-25 03:21:29 shirok Exp $
 
 @iftex
 @finalout
@@ -1341,11 +1341,25 @@ procedure.  For a binary input port, you must provide at least
 on which binary or character input can be done, you must provide
 at least those three procedures.
 
+@code{Getb} should return an 8bit unsigned integer value read from
+the port, or @code{EOF} if the port has already reached EOF.
+@code{Getc} should return an @code{ScmChar} read from the port,
+or @code{SCM_CHAR_INVALID} if the port has already reached EOF.
+@code{Getz} should read at most @var{buflen} bytes from the port
+and store it in @var{buf}, then returns the number of bytes
+actually read.   Returning @code{0} indicates the port has
+already reached EOF.
+
 For a character output port you must provide at least @code{Putc}
 and @code{Puts} procedures.  For a binary output port you must
 provide at least @code{Putb} and @code{Putz} procedures.
 For a general output port you must provide at least those four
-procedures.
+procedures.   
+
+@code{Putb} and @code{Putc} write a byte or a character
+to the port, respectively.  @code{Putz} writes @var{size} bytes
+in @var{buf} to the port.  @code{Puts} writes the content of
+the given Scheme string to the port.
 
 The @code{Ready} procedure is optional for an input port.
 If provided, it is called when @code{char-ready?} or @code{byte-ready?}
@@ -1367,7 +1381,7 @@ It is called when an explicit flushing is requested to the port
 (such as @code{flush} Scheme procedure), or just before the
 @code{Close} procedure when the port is closed.
 
-It is important that @code{Close} and @code{Flush} procedures can
+It is important to note that @code{Close} and @code{Flush} procedures can
 be called in finalization stage of the port.  That means (1) you
 cannot predict in which thread these procedures are called, and
 (2) at the time these procedures are called, the objects visible
@@ -1378,10 +1392,17 @@ The @code{Seek} procedure is called for seek operation (such as
 @code{port-seek} Scheme procedure).   If you don't provide
 this, the port becomes unseekable.
 
+For all those procedures, error conditions should be reported
+by Scheme exception mechanism.  Care should be taken not to leave
+the port in inconsistent state in case an exception is thrown.
+
 The @code{data} field may contain opaque data to be used in your
-custom port operations.
+custom port operations.   Once the procedure port is created,
+the value of this data pointer can be accessed by the macro
+@code{SCM_PORT_VIRTUAL_DATA}.
 @end deftypefun
 
+@subsubheading Virtual buffered ports
 
 
 
@@ -1404,6 +1425,103 @@ custom port operations.
 @c ======================================================================
 @node Helper program reference, Indices, C API reference, Top
 @chapter Helper program reference
+
+Several executable scripts are installed along Gauche.
+They are to help build and installation process.
+
+@node Managing packages
+@section Managing packages
+
+@deffn {Command} gauche-package @var{operation} [@var{option} @dots{}] [@var{arg} ...]
+
+The @code{gauche-package} command is the front-end of managing
+Gauche extension packages.  It can perform the various operations
+accoring to @var{operation} argument.
+
+@table @asis
+@item Download, compile and install packages
+@code{install}, @code{build}, @code{compile}
+@item Retrieve info about installed packages
+@code{list}, @code{reconfigure}, @code{make-gpd}
+@item Help package development
+@code{generate}
+@item Instruct @code{gauche-package} usage
+@code{help}
+@end itemize
+
+Among those operations, usually @code{install}, @code{build}, 
+@code{list}, @code{generate} and @code{help} are used directly from
+the shell.
+Other operations are mainly invoked by @code{make} command.
+@end deffn
+
+@node gauche-package operations
+@section gauche-package operations
+
+@deffn {Package Operation} gauche-package install [@var{options}] @var{tarball-path/url}
+
+This opertaion obtains the package source specified by @var{tarball-path/url},
+then extracts the source, configures and builds,
+runs the tests, and installs the built package.
+Most of the time this is the only command required to install a Gauche
+extension package.
+
+The argument @var{tarball-path/url} may be a URL (http, https, and ftp
+are supported), or a path to the local file of gzip-compressed tarball
+of the package source.   If it is a URL, @code{gauche-package} downloads
+it first.  By default @code{gauche-package} uses the current working
+directory, but you can make it use specific directory by customizing
+@file{~/.gauche-package} (@xref{Customizing gauche-package}).
+
+The following options are recognized by this opertaion.
+
+@deffn {Option} -n, --dry-run
+Shows shell commands to be executed, without running them.
+@end deffn
+
+@deffn {Option} -C, --configure-options=@var{options}
+Pass @var{options} to the @code{./configure} script.  Overrides @code{-r}.
+The following command configures the package with the option
+@code{--prefix=/opt}.
+@example
+gauche-package install -C='--prefix=/opt' package.tgz
+@end example
+
+Those configure options are recorded in the package description
+file
+@end deffn
+
+
+
+
+
+
+@node Customizing gauche-package 
+@section Customizing gauche-package
+
+
+
+@node Simplifying build process
+@section Simplifying build process
+
+
+
+@deffn {Command} gauche-cesconv [options] [inputfile]
+@end deffn
+
+@node Gauche-config - configuration parameters
+@section @code{gauche-config} - configuration parameters
+
+@node Gauche-install - alternative install script
+@section @code{gauche-install} - alternative install script
+
+
+
+
+@node Gauche-package - package manager
+@section @code{gauche-package} - package manager
+
+
 
 
 @c ======================================================================

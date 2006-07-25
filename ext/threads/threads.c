@@ -1,7 +1,7 @@
 /*
  * thread.c - Scheme thread API
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: threads.c,v 1.11 2006-07-03 10:19:29 shirok Exp $
+ *  $Id: threads.c,v 1.12 2006-07-25 03:21:29 shirok Exp $
  */
 
 #include <gauche.h>
@@ -220,21 +220,6 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
     Scm_Error("not implemented!\n");
     return SCM_UNDEFINED;
 #endif /*!GAUCHE_USE_PTHREADS*/
-}
-
-/* Thread yield */
-ScmObj Scm_ThreadYield(void)
-{
-#ifdef GAUCHE_USE_PTHREADS
-#if defined(HAVE_SCHED_H) && defined(_POSIX_PRIORITY_SCHEDULING) && defined(HAVE_SCHED_YIELD)
-    sched_yield();
-#else  /*!HAVE_SCHED_H*/
-    /* what can I do? */
-#endif /*!HAVE_SCHED_H*/
-#else  /*!GAUCHE_USE_PTHREADS*/
-    Scm_Error("not implemented!\n");
-#endif /*!GAUCHE_USE_PTHREADS*/
-    return SCM_UNDEFINED;
 }
 
 /* Thread sleep */

@@ -1,3 +1,16 @@
+2006-07-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/port.h (PORT_LOCK, PORT_UNLOCK, ScmPort): fixed a race
+	  condition caused from PORT_UNLOCK having not been an atomic
+	  operation (setting lockOwner, then calling cond_signal).  Now
+	  we drop using condition variable, which also decreases overhead.
+	  See the comment for more detailed discussion.
+
+	* src/system.c (Scm_YieldCPU): added an API to yield CPU.
+
+	* ext/thread/thread.c, ext/thread/thrlib.stub (thread-yield!):
+	  changed to use Scm_YieldCPU.  Dropped Scm_ThreadYield.
+
 2006-07-18  Shiro Kawai  <shiro@acm.org>
 
 	* ext/charconv/charconv.c (conv_input_closer): Fixed file descriptor

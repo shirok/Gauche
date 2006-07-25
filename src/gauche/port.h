@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.h,v 1.14 2006-07-22 23:45:14 shirok Exp $
+ *  $Id: port.h,v 1.15 2006-07-25 03:21:29 shirok Exp $
  */
 
 #ifndef GAUCHE_PORT_H
@@ -145,8 +145,7 @@ struct ScmPortRec {
                                    SCM_CHAR_INVALID if empty. */
     ScmObj name;                /* port's name.  Can be any Scheme object. */
 
-    ScmInternalMutex mutex;     /* for port mutex */
-    ScmInternalCond  cv;        /* for port mutex */
+    ScmInternalFastlock lock;   /* for port mutex */
     ScmVM *lockOwner;           /* for port mutex; owner of the lock */
     int lockCount;              /* for port mutex; # of recursive locks */
 
@@ -372,57 +371,79 @@ SCM_EXTERN ScmObj Scm_MakeCodingAwarePort(ScmPort *iport);
  *  Since most of the public APIs locks the ports, you don't usually
  *  need to lock the ports by yourself.   The following macros
  *  shouldn't be used casually.
+ *
+ *  Port locking overhead is critical to the I/O performance.
+ *  The following macros are designed carefully so that it minimizes
+ *  the call to the system-level lock primitives, under the assumption
+ *  that port access never conflicts in the performance critical code.
+ *  (Since it doesn't make much sense to for multiple threads to write
+ *  to a port, since the outputs are mixed in unpredictable way---except
+ *  a casual debug print to stderr, but I don't believe performance     
+ *  critical part does that.)
+ *
+ *  The port's lock state is kept in a single pointer, port->lockOwner.
+ *  It points to the owner of the port, or NULL if the port is unlocked.
+ *  Unlocking the port is a single atomic opertaion, port->lockOwner = NULL,
+ *  hence PORT_UNLOCK doesn't need mutex to do that.
+ *
+ *  To lock the port, the thread needs to grab a system-level lock
+ *  (spinlock if available, mutex otherwise) to check the lockOwner
+ *  pointer.  If the port is locked, the thread yields CPU and
+ *  try again later.
+ * 
+ *  It is possible that lockOwner slot changes its value to NULL during
+ *  a thread is trying to lock the port, since PORT_UNLOCK doesn't obtain
+ *  the system-level lock.  If it happens, the thread trying to lock
+ *  the port would wait extra timeslice.  Not a big deal.
+ *
+ *  Note that we cannot use a condition variable to let the locking thread
+ *  wait on it.  If we use CV, unlocking becomes two-step opertaion
+ *  (set lockOwner to NULL, and call cond_signal), so it is no longer
+ *  atomic.  We need to get system-level lock in PORT_UNLOCK as well.
  */
-
-
 
 #define PORT_LOCK(p, vm)                                        \
     do {                                                        \
-      if (!(p->flags&SCM_PORT_PRIVATE)) {                       \
-        if (p->lockOwner != vm) {                               \
-          (void)SCM_INTERNAL_MUTEX_LOCK(p->mutex);              \
-          while (p->lockOwner != NULL) {                        \
-            if (p->lockOwner->state == SCM_VM_TERMINATED) {     \
-              break;                                            \
-            }                                                   \
-            (void)SCM_INTERNAL_COND_WAIT(p->cv, p->mutex);      \
+      if (p->lockOwner != vm) {                                 \
+          for (;;) {                                            \
+              ScmVM* owner__;                                   \
+              (void)SCM_INTERNAL_FASTLOCK_LOCK(p->lock);        \
+              owner__ = p->lockOwner;                           \
+              if (owner__ == NULL                               \
+                  || (owner__->state == SCM_VM_TERMINATED)) {   \
+                  p->lockOwner = vm;                            \
+                  p->lockCount = 1;                             \
+              }                                                 \
+              (void)SCM_INTERNAL_FASTLOCK_UNLOCK(p->lock);      \
+              if (p->lockOwner == vm) break;                    \
+              Scm_YieldCPU();                                   \
           }                                                     \
-          p->lockOwner = vm;                                    \
-          p->lockCount = 0;       /* for safety */              \
-          (void)SCM_INTERNAL_MUTEX_UNLOCK(p->mutex);            \
-        } else {                                                \
+      } else {                                                  \
           p->lockCount++;                                       \
-        }                                                       \
       }                                                         \
     } while (0)
 
 /* Assumes the calling thread has the lock */
 #define PORT_UNLOCK(p)                                  \
     do {                                                \
-      if (!(p->flags&SCM_PORT_PRIVATE)) {               \
-        if (--p->lockCount <= 0) {                      \
-          p->lockOwner = NULL;                          \
-          (void)SCM_INTERNAL_COND_SIGNAL(p->cv);        \
-        }                                               \
-      }                                                 \
+        if (--p->lockCount <= 0) p->lockOwner = NULL;   \
     } while (0) 
 
 #define PORT_SAFE_CALL(p, call)                 \
     do {                                        \
-      if (!(p->flags&SCM_PORT_PRIVATE)) {       \
-        SCM_UNWIND_PROTECT {                    \
-          call;                                 \
-        } SCM_WHEN_ERROR {                      \
-          PORT_UNLOCK(p);                       \
-          SCM_NEXT_HANDLER;                     \
-        } SCM_END_PROTECT;                      \
-      } else {                                  \
-        call;                                   \
-      }                                         \
+        if (p->lockOwner != Scm_VM()) {         \
+            SCM_UNWIND_PROTECT {                \
+                call;                           \
+            } SCM_WHEN_ERROR {                  \
+                PORT_UNLOCK(p);                 \
+                SCM_NEXT_HANDLER;               \
+            } SCM_END_PROTECT;                  \
+        } else {                                \
+            call;                               \
+        }                                       \
     } while (0)
 
-#define PORT_LOCKED(p, vm) \
-   (((p)->flags&SCM_PORT_PRIVATE)||((p)->lockOwner == (vm)))
+#define PORT_LOCKED(p, vm) (((p)->lockOwner == (vm)))
 
 /* Should be used in the constructor of provate ports.
    Mark the port locked by vm, so that it can be used exclusively by

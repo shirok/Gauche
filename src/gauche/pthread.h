@@ -30,26 +30,13 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: pthread.h,v 1.10 2006-07-03 11:29:15 shirok Exp $
+ *  $Id: pthread.h,v 1.11 2006-07-25 03:21:29 shirok Exp $
  */
 
 #ifndef GAUCHE_PTHREAD_H
 #define GAUCHE_PTHREAD_H
 
 #include <pthread.h>
-
-/* Spinlock */
-#ifdef HAVE_PTHREAD_SPINLOCK_T
-typedef pthread_spinlock_t ScmInternalSpinlock;
-#define SCM_INTERNAL_SPIN_INIT(spin) \
-    pthread_spin_init(&(spin), PTHREAD_PROCESS_PRIVATE)
-#define SCM_INTERNAL_SPIN_LOCK(spin) \
-    pthread_spin_lock(&(spin))
-#define SCM_INTERNAL_SPIN_TRYLOCK(spin) \
-    pthread_spin_trylock(&(spin))
-#define SCM_INTERNAL_SPIN_DESTROY(spin) \
-    pthread_spin_destroy(&(spin))
-#endif /*HAVE_PTHREAD_SPINLOCK_T*/
 
 /* Mutex */
 typedef pthread_mutex_t ScmInternalMutex;
@@ -76,5 +63,24 @@ typedef pthread_cond_t ScmInternalCond;
     pthread_cond_destroy(&(cond))
 #define SCM_INTERNAL_COND_INITIALIZER \
     PTHREAD_COND_INITIALIZER
+
+/* Fast lock */
+#ifdef HAVE_PTHREAD_SPINLOCK_T
+typedef pthread_spinlock_t ScmInternalFastlock;
+#define SCM_INTERNAL_FASTLOCK_INIT(spin) \
+    pthread_spin_init(&(spin), PTHREAD_PROCESS_PRIVATE)
+#define SCM_INTERNAL_FASTLOCK_LOCK(spin) \
+    pthread_spin_lock(&(spin))
+#define SCM_INTERNAL_FASTLOCK_UNLOCK(spin) \
+    pthread_spin_unlock(&(spin))
+#define SCM_INTERNAL_FASTLOCK_DESTROY(spin) \
+    pthread_spin_destroy(&(spin))
+#else  /*!HAVE_PTHREAD_SPINLOCK_T*/
+typedef pthread_mutex_t ScmInternalFastlock;
+#define SCM_INTERNAL_FASTLOCK_INIT(fl)   SCM_INTERNAL_MUTEX_INIT(fl)
+#define SCM_INTERNAL_FASTLOCK_LOCK(fl)   SCM_INTERNAL_MUTEX_LOCK(fl)
+#define SCM_INTERNAL_FASTLOCK_UNLOCK(fl) SCM_INTERNAL_MUTEX_UNLOCK(fl)
+#define SCM_INTERNAL_FASTLOCK_DESTROY(fl) SCM_INTERNAL_MUTEX_DESTROY(fl)
+#endif /*!HAVE_PTHREAD_SPINLOCK_T*/
 
 #endif /* GAUCHE_PTHREAD_H */
