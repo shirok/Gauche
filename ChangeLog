@@ -1,3 +1,8 @@
+2006-07-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/system.h, src/gauche.h : splitted system-related API
+	  declarations to gauche/system.h.
+
 2006-07-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/port.h (PORT_LOCK, PORT_UNLOCK, ScmPort): fixed a race
