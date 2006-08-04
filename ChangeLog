@@ -1,3 +1,8 @@
+2006-08-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/822.scm (rfc822-date->date): fixed treatment of sub-hour
+	  timezone value.
+
 2006-07-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/system.h, src/gauche.h : splitted system-related API

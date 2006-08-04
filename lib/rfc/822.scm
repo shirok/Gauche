@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: 822.scm,v 1.17 2004-10-06 09:07:01 shirok Exp $
+;;;  $Id: 822.scm,v 1.18 2006-08-04 07:15:53 shirok Exp $
 ;;;
 
 ;; Parser and constructor of the message defined in
@@ -234,7 +234,7 @@
     (and year
          (make-date 0 sec min hour day month year
                     (receive (quot rem) (quotient&remainder tz 100)
-                      (+ (* quot 3600) (* (abs rem) 60)))))))
+                      (+ (* quot 3600) (* rem 60)))))))
 
 ;;------------------------------------------------------------------
 ;; Address specification (Section 3.4)
