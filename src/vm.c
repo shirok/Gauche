@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.246 2006-06-05 05:11:25 shirok Exp $
+ *  $Id: vm.c,v 1.247 2006-08-27 07:32:11 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2164,6 +2164,44 @@ static void run_loop()
                 VAL0 = SCM_MAKE_BOOL(r);
                 NEXT1;
             }
+#if 0 /* Experiment code.  See pass2/asm-numadd2 in compile.scm */
+            CASE(SCM_VM_LREF_NUMADD2) {
+                int dep = SCM_VM_INSN_ARG0(code);
+                int off = SCM_VM_INSN_ARG1(code);
+                ScmObj arg;
+                ScmEnvFrame *e = ENV;
+                switch (dep) {
+                default:
+                for (; dep > 4; dep--) {
+                    e = e->up;
+                }
+                case 4:
+                    e = e->up;
+                case 3:
+                    e = e->up;
+                case 2:
+                    e = e->up;
+                case 1:
+                    e = e->up;
+                case 0:;
+                }
+                VM_ASSERT(e->size > off);
+                arg = ENV_DATA(e, off);
+                if (SCM_INTP(arg) && SCM_INTP(VAL0)) {
+                    long r = SCM_INT_VALUE(arg) + SCM_INT_VALUE(VAL0);
+                    if (SCM_SMALL_INT_FITS(r)) {
+                        VAL0 = SCM_MAKE_INT(r);
+                    } else {
+                        VAL0 = Scm_MakeInteger(r);
+                    }
+                } else {
+                    SAVE_REGS();
+                    VAL0 = Scm_Add(arg, VAL0);
+                    RESTORE_REGS();
+                }
+                NEXT1;
+            }
+#endif
             CASE(SCM_VM_NUMADD2) {
                 ScmObj arg;
                 POP_ARG(arg);

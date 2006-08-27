@@ -9,13 +9,14 @@
 ;;  gosh -l./preload -I./src -I./lib ....
 ;;
 ;;
-;; $Id: preload.scm,v 1.1 2005-11-10 08:46:42 shirok Exp $
+;; $Id: preload.scm,v 1.2 2006-08-27 07:32:11 shirok Exp $
 ;;
 
 (use gauche.collection)
 (use gauche.sequence)
 (use gauche.hook)
 (use gauche.parameter)
+(use gauche.uvector)
 (use srfi-1)
 (use srfi-13)
 (use file.util)

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: vminsn.scm,v 1.7 2006-01-10 09:59:46 shirok Exp $
+;;;  $Id: vminsn.scm,v 1.8 2006-08-27 07:32:12 shirok Exp $
 ;;;
 
 ;;; This file is processed by geninsn to produce a couple of C files:
@@ -493,3 +493,6 @@
 
 (define-insn PUSH-HANDLERS 0 none)      ; push dynamic handlers
 (define-insn POP-HANDLERS 0 none)       ; pop dynamic handlers
+
+;; experiment
+;(define-insn LREF-NUMADD2 2 none)

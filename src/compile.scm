@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.42 2006-04-07 02:26:05 shirok Exp $
+;;;  $Id: compile.scm,v 1.43 2006-08-27 07:32:10 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -3875,6 +3875,17 @@
       (and (has-tag? y $CONST)
            (integer-fits-insn-arg? ($const-value y))
            (pass3/builtin-onearg info NUMADDI ($const-value y) x))
+#|
+      ;; Experiment of LREF-NUMADD2 combining insn.  It does have quite an
+      ;; effect, though I'd like to put it with other new insns in the
+      ;; next big update.
+      (and (has-tag? y $LREF)
+           (receive (depth offset) (renv-lookup renv ($lref-lvar y))
+             (pass3/builtin-onearg info LREF-NUMADD2 (+ (ash offset 10) depth) x)))
+      (and (has-tag? x $LREF)
+           (receive (depth offset) (renv-lookup renv ($lref-lvar x))
+             (pass3/builtin-onearg info LREF-NUMADD2 (+ (ash offset 10) depth) y)))
+|#
       (pass3/builtin-twoargs info NUMADD2 0 x y)))
 
 (define (pass3/asm-numsub2 info x y ccb renv ctx)
