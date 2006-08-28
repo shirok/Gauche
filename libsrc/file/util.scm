@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.2 2005-09-14 09:50:48 shirok Exp $
+;;;  $Id: util.scm,v 1.3 2006-08-28 05:03:31 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -132,12 +132,14 @@
 
 ;; directory-fold DIR PROC KNIL &keyword LISTER FOLDER FOLLOW-LINK?
 (define (directory-fold dir proc knil . opts)
-  (let* ((follow (get-keyword :follow-link? opts #t))
-         (lister (get-keyword :lister opts
+  ;; NB: follow-link? keyword is considered within %stat call.
+  (let* ((lister (get-keyword :lister opts
                               (lambda (path knil)
-                                (directory-list path
-                                                :add-path? #t
-                                                :children? #t))))
+                                (values
+                                 (directory-list path
+                                                 :add-path? #t
+                                                 :children? #t)
+                                 knil))))
          (folder (get-keyword :folder opts fold))
          (selector (let1 stat (%stat opts)
                      (lambda (e)
@@ -145,8 +147,11 @@
                             (eq? (slot-ref (stat e) 'type) 'directory))))))
     (define (rec path knil)
       (if (selector path)
-          (folder rec knil (lister path knil))
-          (proc path knil)))
+        ;; [TODO]: For the backward compatibiliy, we allow LISTER to return
+        ;; only a single value.  Should be removed, probably in 0.9.
+        (receive res (lister path knil)
+          (folder rec (get-optional (cdr res) knil) (car res)))
+        (proc path knil)))
     (rec dir knil)))
 
 ;; mkdir -p

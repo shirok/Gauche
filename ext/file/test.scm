@@ -142,6 +142,27 @@
                         '()))
        )
 
+(test* "directory-fold"
+       '("test.out"
+         "test.out/test.d"
+         "test.out/test.d/test10.o" "test.out/test.d/test11.o"
+         "test.out/test1.o"
+         "test.out/test2.d"
+         "test.out/test2.d/test10.o"
+         "test.out/test2.d/test11.o"
+         "test.out/test2.o" "test.out/test3.o"
+         "test.out/test4.o" "test.out/test5.o"
+         "test.out/test6.o" "test.out/test7.o")
+       (reverse
+        (directory-fold "test.out" cons '()
+                        :lister (lambda (path seed)
+                                  (values
+                                   (directory-list path
+                                                   :add-path? #t
+                                                   :children? #t)
+                                   (cons path seed)))))
+       )
+
 (when (global-variable-bound? 'gauche 'sys-symlink)
   (test* "directory-fold :follow-link? #f"
          '("test.out/test.d/test10.o" "test.out/test.d/test11.o"

@@ -2342,7 +2342,7 @@ while it will be in the second list if @var{follow-link?} is false.
 @c COMMON
 @end defun
 
-@defun directory-fold path proc knil &keyword lister follow-link?
+@defun directory-fold path proc seed &keyword lister follow-link?
 @c EN
 A fundamental directory traverser.
 Conceptually it works as follows, in recursive way.
@@ -2354,27 +2354,29 @@ Conceptually it works as follows, in recursive way.
 @itemize @bullet
 @item
 If @var{path} is not a directory, calls 
-@code{(@var{proc} @var{path} @var{knil})} and returns the result.
+@code{(@var{proc} @var{path} @var{seed})} and returns the result.
 @item
 If @var{path} is a directory, calls
-@code{(@var{lister} @var{path} @var{knil})}.  The procedure @var{lister}
-is expected to return a list of pathnames.  Then
-@code{directory-fold} is called on each returned pathname.
-Each result of @code{directory-fold} is passed as the @var{knil}
-argument of the next recursive invocation.
-Returns the result of the last recursive call.
+@code{(@var{lister} @var{path} @var{seed})}.  The procedure @var{lister}
+is expected to return two values: a list of pathnames, and the 
+next seed value.   Then
+@code{directory-fold} is called on each returned pathname,
+passing the returned seed value to the @var{seed} argument of the
+next call of @code{directory-fold}.
+Returns the result of the last seed value.
 @end itemize
 @c JP
 @itemize @bullet
 @item
-@var{path}がディレクトリでない場合は@code{(@var{proc} @var{path} @var{knil})} を
+@var{path}がディレクトリでない場合は@code{(@var{proc} @var{path} @var{seed})} を
 評価し、結果を返します。
 @item
 @var{path}がディレクトリであった場合、まず
-@var{(@var{lister} @var{path} @var{knil})} を評価します。
-手続き@var{lister}はパス名のリストを返さなければなりません。
+@var{(@var{lister} @var{path} @var{seed})} を評価します。
+手続き@var{lister}は2つの値、パス名のリストと次のseedとなる値を
+返さなければなりません。
 続いて、@code{directory-fold}が各パス名に対して再帰的に呼ばれます。
-各呼び出しの結果が次の再帰呼び出しの@var{knil}の値に使われます。
+各呼び出しの結果が次の再帰呼び出しの@var{seed}の値に使われます。
 @end itemize
 @c COMMON
 
@@ -2385,8 +2387,9 @@ as follows.
 デフォルトの@var{lister}は@code{directory-list}を次のように呼び出すものです。
 @c COMMON
 @example
-(lambda (path knil)
-  (directory-list path :add-path? #t :children? #t)))))
+(lambda (path seed)
+  (values (directory-list path :add-path? #t :children? #t)
+          seed))
 @end example
 
 @c EN
@@ -2433,6 +2436,22 @@ The following example returns a list of pathnames of the emacs backup files
                       (cons entry result)
                       result))
                 '())
+@end example
+
+@c EN
+The following example lists all the files and directories under the
+given pathname.   Note the use of @var{lister} argument to include
+the directory path itself in the result.
+@c JP
+次の例は与えられたpath以下全てのファイルとディレクトリ名をリストにして
+返します。@var{lister}引数を使ってディレクトリ名そのものを結果に
+含めていることに注目して下さい。
+@c COMMON
+@example
+(directory-fold path cons '()
+  :lister (lambda (path seed)
+            (values (directory-list path :add-path? #t :children? #t)
+                    (cons path seed))))
 @end example
 
 @end defun

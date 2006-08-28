@@ -1,3 +1,9 @@
+2006-08-27  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/file/util.scm: fixed directory-fold to make lister returns
+	  new seed value as well as directory contents, so that it can process
+	  directory pathnames.
+
 2006-08-03  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/822.scm (rfc822-date->date): fixed treatment of sub-hour
