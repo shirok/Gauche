@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.81 2006-07-25 03:21:29 shirok Exp $
+ *  $Id: system.c,v 1.82 2006-09-25 23:55:35 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1047,7 +1047,7 @@ Scm_YieldCPU(void)
 {
 #if defined(HAVE_SCHED_YIELD)
     sched_yield();
-#elif define(HAVE_NANOSLEEP)
+#elif defined(HAVE_NANOSLEEP)
     struct timespec spec;
     spec.tv_sec = 0;
     spec.tv_nsec = 1;

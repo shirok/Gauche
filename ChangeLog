@@ -1,3 +1,7 @@
+2006-09-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_YieldCPU): typo fix.
+
 2006-08-27  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/file/util.scm: fixed directory-fold to make lister returns
