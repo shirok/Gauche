@@ -5,7 +5,7 @@
 ;;   Modified to work with Gauche's object system instead of the original
 ;;   structure model.
 ;;
-;; $Id: match.scm,v 1.1 2005-08-28 23:04:25 shirok Exp $
+;; $Id: match.scm,v 1.2 2006-09-29 11:58:54 shirok Exp $
 
 (define-module util.match
   (use srfi-1)
@@ -652,7 +652,10 @@
                             `(call-with-current-continuation
                               (lambda (,fail-sym)
                                 (let ((,fail-sym
-                                       (lambda () (,fail-sym ,(fail sf)))))
+                                       (lambda ()
+                                         (call-with-values
+                                             (lambda () ,(fail sf))
+                                           ,fail-sym))))
                                   ,ap))))
                           `(,code ,@(map val bv)))))))
       (let next ((p (caar plist))
@@ -914,7 +917,9 @@
          (memq (car f) '(cond match:error))
          (guarantees s (cadr tst)))
     s)
-   ((and (pair? s)
+   (;; (if (and X ...) Y f) => (if (and tst X ...) Y f)
+    ;; (if X Y f)           => (if (and tst X) Y  f)
+    (and (pair? s)
          (eq? (car s) 'if)
          (equal? (cadddr s) f))
     (if (eq? (car (cadr s)) 'and)
@@ -924,7 +929,14 @@
       `(if (and ,tst ,(cadr s))
          ,(caddr s)
          ,f)))
-   ((and (pair? s)
+   (;; (call/cc (lambda (X) 
+    ;;            (let ((Y (lambda () (call-with-values (lambda () f) X)))) 
+    ;;              BODY)))
+    ;; =>
+    ;; (call/cc (lambda (X) 
+    ;;            (let ((Y (lambda () (call-with-values (lambda () f) X)))) 
+    ;;              (assm tst (Y) BODY))))
+    (and (pair? s)
          (equal? (car s) 'call-with-current-continuation)
          (pair? (cdr s))
          (pair? (cadr s))
@@ -945,8 +957,16 @@
          (null? (cadadr (caadar (cddadr s))))
          (pair? (cddadr (caadar (cddadr s))))
          (pair? (car (cddadr (caadar (cddadr s)))))
+         (equal? (caar (cddadr (caadar (cddadr s)))) 'call-with-values) 
          (pair? (cdar (cddadr (caadar (cddadr s)))))
-         (null? (cddar (cddadr (caadar (cddadr s)))))
+         (pair? (cadar (cddadr (caadar (cddadr s)))))
+         (equal? (caadar (cddadr (caadar (cddadr s)))) 'lambda)
+         (pair? (cdadar (cddadr (caadar (cddadr s)))))
+         (null? (car (cdadar (cddadr (caadar (cddadr s))))))
+         (pair? (cdr (cdadar (cddadr (caadar (cddadr s))))))
+         (null? (cddr (cdadar (cddadr (caadar (cddadr s))))))
+         (pair? (cddar (cddadr (caadar (cddadr s)))))
+         (null? (cdddar (cddadr (caadar (cddadr s)))))
          (null? (cdr (cddadr (caadar (cddadr s)))))
          (null? (cddr (caadar (cddadr s))))
          (null? (cdadar (cddadr s)))
@@ -954,13 +974,13 @@
          (null? (cdddar (cddadr s)))
          (null? (cdr (cddadr s)))
          (null? (cddr s))
-         (equal? f (cadar (cddadr (caadar (cddadr s))))))
+         (equal? f (cadr (cdadar (cddadr (caadar (cddadr s)))))))
     (let ((k (car (cadadr s)))
           (fail (car (caadar (cddadr s))))
           (s2 (caddar (cddadr s))))
       `(call-with-current-continuation
         (lambda (,k)
-          (let ((,fail (lambda () (,k ,f))))
+          (let ((,fail (lambda () (call-with-values (lambda () ,f) ,k))))
             ,(assm tst `(,fail) s2))))))
    ((and #f
          (pair? s)

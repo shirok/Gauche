@@ -1,3 +1,10 @@
+2006-09-28  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/util/match.scm: fixed a bug that multiple values were not
+	  handled properly under the existence of failure continuations.
+	  Failure handler was expanded into (k <body>), which should be
+	  (call-with-values (lambda () <body>) k).
+
 2006-09-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm_YieldCPU): typo fix.

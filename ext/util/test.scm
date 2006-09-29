@@ -1,5 +1,5 @@
 ;; Tests Andrew Wright's match package in Gauche
-;; $Id: test.scm,v 1.1 2005-08-28 23:04:25 shirok Exp $
+;; $Id: test.scm,v 1.2 2006-09-29 11:58:53 shirok Exp $
 
 (use gauche.test)
 
@@ -251,6 +251,30 @@
            ((_ _ #(_ _ (@ Var (s (set! setter))) _) _)
             (setter 'bar)
             (ref v 's)))))
+
+;;--------------------------------------------------------------
+(test-section "failure continuation")
+
+;; test case derived from the bug report from Tatsuya BIZENN.
+
+(define (test-match ls)
+   (match ls
+     ((a b . c)   (=> next) (values a b c))
+     ((a . b)     (=> next) (values #f a b))
+     (()          (=> next) (values #f #f '()))))
+
+(test* "failure continuation #1" '(1 2 (3))
+       (receive r (test-match '(1 2 3)) r))
+
+(test* "failure continuation #2" '(#f 1 ())
+       (receive r (test-match '(1)) r))
+
+(test* "failure continuation #2" '(#f #f ())
+       (receive r (test-match '()) r))
+
+(test* "failure continuation #2" *test-error*
+       (test-match 1))
+
 
 ;;--------------------------------------------------------------
 (test-section "match-let etc.")
