@@ -24,7 +24,7 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19-lib.scm,v 1.6 2006-06-05 05:11:24 shirok Exp $
+;;; $Id: srfi-19-lib.scm,v 1.7 2006-10-01 11:27:01 shirok Exp $
 
 (define-module srfi-19
   (use srfi-1)
@@ -917,10 +917,6 @@
               (display (date->string date "~Y-~m-~dT~k:~M:~S"))))
     ))
 
-(define (tm:get-formatter char)
-  (let ( (associated (assoc char tm:directives)) )
-    (if associated (cdr associated) #f)))
-
 (define (date->string date . maybe-fmtstr)
 
   (define (bad i)
@@ -943,8 +939,19 @@
       (let1 ch2 (read-char)
         (cond
          ((eof-object? ch2) (write-char ch))
+         ;; Gauche extension: ~@x calls the directive 'x' with locale
+         ;; set to C, so the caller can guarantee the output.  Currently
+         ;; the library only supports the default locale, so we can simply
+         ;; ignore '@'.  In future we'll add locale-sensitive stuff.
+         ((char=? ch2 #\@)
+          (call-formatter (read-char) #f (+ ind 2)))
+         ;; The following two optional characters are not specified in
+         ;; srfi-19 document, and to me it doesn't seem useful.  I disable
+         ;; it for now. --[SK]
+         #;
          ((char=? ch2 #\-)
           (call-formatter (read-char) #f (+ ind 2)))
+         #;
          ((char=? ch2 #\_)
           (call-formatter (read-char) #\space (+ ind 2)))
          (else

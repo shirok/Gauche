@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cookie.scm,v 1.9 2006-10-01 06:12:40 shirok Exp $
+;;;  $Id: cookie.scm,v 1.10 2006-10-01 11:27:02 shirok Exp $
 ;;;
 
 ;; Parser and constructor of http "Cookies" defined in
@@ -237,7 +237,7 @@
      ((number? time)
       (sys-strftime "%a, %d-%b-%Y %H:%M:%S GMT" (sys-gmtime time)))
      ((is-a? time <date>)
-      (date->string time "~a, ~d-~b-~Y ~H:~M:~S GMT"))
+      (date->string time "~a, ~d-~@b-~Y ~H:~M:~S GMT"))
      ((is-a? time <time>)
       (case (time-type time)
         ((time-utc) (ensure-time-string (time-utc->date time 0)))

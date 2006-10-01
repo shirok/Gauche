@@ -3330,11 +3330,169 @@ UTC 形式から様々な様式の日付/時間に変換します。
 @c NODE 日付の読み書き
 
 @defun date->string date &optional format-string
-[SRFI-19]
+[SRFI-19+]
+Converts a @code{<date>} object to a string, according
+to the format specified by @var{format-string}.
+If @var{format-string} is omitted, @code{"~c"} is assumed.
+
+A format string is copied to output, except a sequence begins with
+@code{~} which is replaced with the following rules:
+
+@table @code
+@item ~~
+A literal @code{~}.
+@item ~a
+Locale's abbreviated weekday name (Sun...Sat).
+@item ~A
+Locale's full weekday name (Sunday...Saturday).
+@item ~b
+Locale's abbreviate month name (Jan...Dec).
+@item ~B
+Locale's full month name (January...December).
+@item ~c
+Locale's date and time (e.g., "Fri Jul 14 20:28:42-0400 2000").
+@item ~d
+Day of month, zero padded (01...31).
+@item ~D
+Date (mm/dd/yy).
+@item ~e
+Day of month, blank padded ( 1...31).
+@item ~f
+Seconds+fractional seconds, using locale's decimal separator (e.g. 5.2).
+@item ~h
+Same as ~b.
+@item ~H
+Hour, zero padded, 24-hour clock (00...23).
+@item ~I
+Hour, zero padded, 12-hour clock (01...12).
+@item ~j
+Day of year, zero padded.
+@item ~k
+Hour, blank padded, 24-hour clock (00...23).
+@item ~l
+Hour, blank padded, 12-hour clock (01...12).
+@item ~m
+Month, zero padded (01...12).
+@item ~M
+Minute, zero padded (00...59).
+@item ~n
+New line.
+@item ~N
+Nanosecond, zero padded.
+@item ~p
+Locale's AM or PM.
+@item ~r
+Time, 12 hour clock, same as "~I:~M:~S ~p".
+@item ~s
+Number of full seconds since "the epoch" (in UTC).
+@item ~S
+Second, zero padded (00...60).
+@item ~t
+Horizontal tab.
+@item ~T
+Time, 24 hour clock, same as "~H:~M:~S".
+@item ~U
+Week number of year with Sunday as first day of week (00...53).
+@item ~V
+Week number of year with Monday as first day of week (01...52).
+@item ~w
+Day of week (0...6).
+@item ~W
+Week number of year with Monday as first day of week (01...52).
+@item ~x
+Week number of year with Monday as first day of week (00...53).
+@item ~X
+Locale's date representation, for example: "07/31/00".
+@item ~y
+Last two digits of year (00...99).
+@item ~Y
+Year.
+@item ~z
+Time zone in RFC-822 style.
+@c @item ~Z
+@c Symbol time zone (not-implemented).
+@item ~1
+ISO-8601 year-month-day format.
+@item ~2
+ISO-8601 hour-minute-second-timezone format.
+@item ~3
+ISO-8601 hour-minute-second format.
+@item ~4
+ISO-8601 year-month-day-hour-minute-second-timezone format.
+@item ~5
+ISO-8601 year-month-day-hour-minute-second format.
+@end table
+
+Note: currently Gauche doesn't honor process's locale setting,
+and it always formats the date as if the locale is "C".  It may
+be changed in future, so you shouldn't rely on, for example,
+@code{~a} always formatted as "Sun".."Sat".
+
+There's no portable way to ensure you'll get "C" locale formats
+since there's no standard way to set process's locale yet.
+However, Gauche provides a way to ensure the locale to be "C",
+as an extension to srfi-19.
+Insert @code{@@} between @code{~} and the directive
+character, such as @code{~@@a}.
 @end defun
 
 @defun string->date string template-string
 [SRFI-19]
+@c   [NB] srfi-19's string->date is broken, in both spec and reference
+@c   implementation.  I'm wondering whether I should change string->date
+@c   to make usable, or introduce another procedure, like string->date*,
+@c   which fixes the problem.
+@
+@c Both procedures parse a string representation of date in @var{string},
+@c according to the format given in @var{template-string}.
+
+@c The input string must match the @var{template-string},
+@c except tilde-directives described below, which matches
+@c one or more component(s) of the date.  If the input string
+@c is parsed successfully, a @code{<date>} object is returned
+@c with the matched components are filled.
+
+@c If the input string does not match @var{template-string},
+@c an error is signalled.  (The SRFI-19 spec doesn't explicitly
+@c state what happens if @code{string->date} doesn't accept the
+@c input, which actually reduces usability of @code{string->date}
+
+@c but the reference implentation signals an error, and
+@c it would be safe to assume
+
+
+@c @table @code
+@c @item ~~
+@c Matches literal @code{~}.
+@c @item ~a
+@c Skip to an alphanumeric character, then matches abbreviated
+@c weekday in locale.  Match result is ignored.
+@c @item ~A
+@c Skip to an alphanumeric character, then matches full
+@c weekday in locale.  Match result is ignored.
+@c @item ~b
+@c Skip to an alphanumeric character, then matches abbreviated
+@c month name in locale.  Sets the month component of the date.
+@c @item ~B
+@c Skip to an alphanumeric character, then matches full
+@c month name in locale.  Sets the month component of the date.
+@c @item ~d
+@c Skip to a numeric character, then maches the day of month.
+@c Sets the month component of the date.
+@c @item ~e
+
+@c ~e	any	day of month, blank padded	date-day
+@c ~h	char-alphabetic?	same as ~b	nothing
+@c ~H	char-numeric?	hour	date-hour
+@c ~k	any	hour, blank padded	date-hour
+@c ~m	char-numeric?	month	date-month
+@c ~M	char-numeric?	minute	date-minute
+@c ~S	char-numeric?	second	date-second
+@c ~y	any	2-digit year	date-year within 50 years
+@c ~Y	char-numeric?	year	date-year
+@c ~z	any	time zone	date-zone-offset@end table
+
+
 @end defun
 
 @c ----------------------------------------------------------------------

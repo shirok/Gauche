@@ -1,3 +1,12 @@
+2006-10-01  Shiro Kawai  <shiro@acm.org>
+
+	* ext/srfi/srfi-19-lib.scm (date->string): allow '@' option in
+	  the format directive (e.g. ~@b) to gurantee the 'C' locale is
+	  used.  Since srfi-19 only provides locale-sensitive directives
+	  for month and day-of-week names, without such extention you
+	  cannot write a library whose output isn't affected with locale 
+	  settings.
+
 2006-09-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/cookie.scm (construct-cookie-string): accepts srfi-19
