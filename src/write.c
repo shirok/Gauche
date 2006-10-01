@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.60 2006-06-08 17:43:14 shirok Exp $
+ *  $Id: write.c,v 1.61 2006-10-01 02:26:08 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1160,7 +1160,7 @@ static void vprintf_proc(ScmPort *out, const char *fmt, ScmObj args,
             break;
         }
         if (c == 0) {
-            Scm_Error("incomplete %-directive in format string: %s", fmt);
+            Scm_Error("incomplete %%-directive in format string: %s", fmt);
         }
     }
 }
@@ -1236,7 +1236,7 @@ void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap, int sharedp)
             break;
         }
         if (c == 0) {
-            Scm_Error("incomplete %-directive in format string: %s", fmt);
+            Scm_Error("incomplete %%-directive in format string: %s", fmt);
         }
     }
     /*

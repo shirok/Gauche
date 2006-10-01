@@ -1,3 +1,8 @@
+2006-09-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c (Scm_Vprintf): fixed lone '%' in the printf format
+	  string.
+
 2006-09-28  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/util/match.scm: fixed a bug that multiple values were not
