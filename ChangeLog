@@ -1,5 +1,9 @@
 2006-09-30  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/cookie.scm (construct-cookie-string): accepts srfi-19
+	  <time> and <date> as well as number and string for :expires
+	  argument.
+
 	* src/write.c (Scm_Vprintf): fixed lone '%' in the printf format
 	  string.
 

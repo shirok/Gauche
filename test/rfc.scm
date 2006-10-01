@@ -179,6 +179,7 @@ Content-Length: 4349
 ;;--------------------------------------------------------------------
 (test-section "rfc.cookie")
 (use rfc.cookie)
+(use srfi-19)
 (test-module 'rfc.cookie)
 
 (test* "parse, old" '(("foo" "bar")
@@ -228,6 +229,15 @@ Content-Length: 4349
        '("guest-id=foo123;Domain=foo.com;Path=/abc;Max-Age=864000;Discard;Comment=hogehoge;CommentURL=\"http://foo.com/hogehoge\";Port=\"80, 8080\";Version=1"
          "guest-account=87975348;Domain=zzz.com;Path=/zzz;Secure;Comment=\"ZzzZzz, OooOoo\";CommentURL=\"http://foo.com/hogehoge\"")
        (construct-cookie-string *cookie-spec* 1))
+
+;; test for formatting srfi-19 time/date
+(test* "cookie, old, srfi-19 date"
+       '("foo=bar;Expires=Sun, 09-Sep-2001 01:46:40 GMT"
+         "foo=baz;Expires=Sun, 09-Sep-2001 01:46:40 GMT")
+       (construct-cookie-string
+        `(("foo" "bar" :expires ,(make-time time-utc 0 1000000000))
+          ("foo" "baz" :expires ,(make-date 0 40 46 1 9 9 2001 0)))
+        0))
 
 ;;--------------------------------------------------------------------
 (test-section "rfc.mime")
