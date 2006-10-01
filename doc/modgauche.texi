@@ -7947,7 +7947,7 @@ method is to compare inexact numbers tolerating small error.
 (@var{compare} @var{expected} @var{result-of-thunk})
 @end example
 この手続きは、渡された結果が期待する値と合致する場合に@code{#t}を、
-そうでなければ@code{#t}を返さなければなりません。
+そうでなければ@code{#f}を返さなければなりません。
 特別な比較手続きのひとつの用法は、不正確な数値を、多少の誤差を許して
 比較するような場合です。
 @c COMMON
