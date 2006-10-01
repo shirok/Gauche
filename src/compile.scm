@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.43 2006-08-27 07:32:10 shirok Exp $
+;;;  $Id: compile.scm,v 1.44 2006-10-01 02:20:04 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -64,7 +64,7 @@
 ;;;
 ;;;   Pass 2 (Optimization):
 ;;;     - Traverses IFrom and modify the tree to optimize it.
-;;;     - Limited beta-sustitution (local variable substitution and
+;;;     - Limited beta-substitution (local variable substitution and
 ;;;       inline local functions for the obvious cases).
 ;;;     - Closure optimization (generates efficient code for truly local
 ;;;       closures)
