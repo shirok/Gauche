@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.126 2006-07-25 03:21:29 shirok Exp $
+ *  $Id: port.c,v 1.127 2006-10-06 09:52:02 shirok Exp $
  */
 
 #include <unistd.h>
@@ -55,7 +55,6 @@
 static void port_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static void port_finalize(ScmObj obj, void* data);
 static void register_buffered_port(ScmPort *port);
-static void unregister_buffered_port(ScmPort *port);
 static void bufport_flush(ScmPort*, int, int);
 static void file_closer(ScmPort *p);
 
@@ -164,10 +163,6 @@ void Scm_ClosePort(ScmPort *port)
                    do {
                        if (!SCM_PORT_CLOSED_P(port)) {
                            port_cleanup(port);
-                           if (SCM_PORT_TYPE(port) == SCM_PORT_FILE
-                               && SCM_PORT_DIR(port) == SCM_PORT_OUTPUT) {
-                               unregister_buffered_port(port);
-                           }
                        }
                    } while (0));
     PORT_UNLOCK(port);
@@ -615,11 +610,18 @@ static int bufport_read(ScmPort *p, char *dst, int siz)
 }
 
 /* Tracking buffered ports:
+ *
  *   The system doesn't automatically flush the buffered output port,
  *   as it does on FILE* structure.  So Gauche keeps track of active
  *   output buffered ports, in a weak vector.
  *   When the port is no longer used, it is collected by GC and removed
  *   from the vector.   Scm_FlushAllPorts() flushes the active ports.
+ *
+ *   Note that we don't remove entry from the weak vector explicitly.
+ *   We used to do that in the port finalizer; however, the finalizer
+ *   is called _after_ GC has run and determined the port is a garbage,
+ *   and has cleared the vector entry.  So we can rather let GC do
+ *   the removing entries.
  */
 
 /*TODO: allow to extend the port vector. */
@@ -638,37 +640,40 @@ static struct {
 static void register_buffered_port(ScmPort *port)
 {
     int i, h, c;
+    int tried_gc = FALSE;
+    int need_gc  = FALSE;
+    
+  retry:
     h = i = PORT_HASH(port);
     c = 0;
     /* search the available entry by quadratic hash */
     (void)SCM_INTERNAL_MUTEX_LOCK(active_buffered_ports.mutex);
     while (!SCM_FALSEP(Scm_WeakVectorRef(active_buffered_ports.ports, i, SCM_FALSE))) {
-        i -= ++c; if (i<0) i+=PORT_VECTOR_SIZE;
-        if (i == h) Scm_Panic("active buffered port table overflow");
-    }
-    Scm_WeakVectorSet(active_buffered_ports.ports, i, SCM_OBJ(port));
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(active_buffered_ports.mutex);
-}
-
-/* This should be called when the output buffered port is explicitly closed.
-   The ports collected by GC are automatically unregistered. */
-static void unregister_buffered_port(ScmPort *port)
-{
-    int i, h, c;
-    ScmObj p;
-    
-    h = i = PORT_HASH(port);
-    c = 0;
-    (void)SCM_INTERNAL_MUTEX_LOCK(active_buffered_ports.mutex);
-    do {
-        p = Scm_WeakVectorRef(active_buffered_ports.ports, i, SCM_FALSE);
-        if (!SCM_FALSEP(p) && SCM_EQ(SCM_OBJ(port), p)) {
-            Scm_WeakVectorSet(active_buffered_ports.ports, i, SCM_FALSE);
+        i -= ++c; while (i<0) i+=PORT_VECTOR_SIZE;
+        if (i == h) {
+            // Vector entry is full.  We run global GC to try to collect
+            // unused entry.
+            need_gc = TRUE;
             break;
         }
-        i -= ++c; if (i<0) i+=PORT_VECTOR_SIZE;
-    } while (i != h);
+    }
+    if (!need_gc) {
+        Scm_WeakVectorSet(active_buffered_ports.ports, i, SCM_OBJ(port));
+    }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(active_buffered_ports.mutex);
+
+    if (need_gc) {
+        if (tried_gc > 10) {
+            // We should probably try to extend the weak vector.
+            // But for the time being...
+            Scm_Panic("active buffered port table overflow");
+        } else {
+            GC_gcollect();
+            tried_gc = TRUE;
+            need_gc = FALSE;
+            goto retry;
+        }
+    }
 }
 
 /* Flush all ports.  Note that it is possible that this routine can be
