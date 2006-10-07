@@ -1,5 +1,7 @@
 2006-10-07  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac: bumped to 0.8.8_pre1.
+
 	* ext/sxml/src/serializer.scm, ext/sxml/sxml-serializer.scm.in,
 	  ext/sxml/Makefile.in, doc/modutil.texi:
 	  Added sxml.serializer module, a customizable SXML serializer.
