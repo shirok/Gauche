@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.h,v 1.15 2006-07-25 03:21:29 shirok Exp $
+ *  $Id: port.h,v 1.16 2006-10-07 08:42:04 shirok Exp $
  */
 
 #ifndef GAUCHE_PORT_H
@@ -376,8 +376,8 @@ SCM_EXTERN ScmObj Scm_MakeCodingAwarePort(ScmPort *iport);
  *  The following macros are designed carefully so that it minimizes
  *  the call to the system-level lock primitives, under the assumption
  *  that port access never conflicts in the performance critical code.
- *  (Since it doesn't make much sense to for multiple threads to write
- *  to a port, since the outputs are mixed in unpredictable way---except
+ *  (It doesn't make much sense for multiple threads to writeto the
+ *  same port, since the outputs are mixed in unpredictable way---except
  *  a casual debug print to stderr, but I don't believe performance     
  *  critical part does that.)
  *
@@ -399,7 +399,7 @@ SCM_EXTERN ScmObj Scm_MakeCodingAwarePort(ScmPort *iport);
  *  Note that we cannot use a condition variable to let the locking thread
  *  wait on it.  If we use CV, unlocking becomes two-step opertaion
  *  (set lockOwner to NULL, and call cond_signal), so it is no longer
- *  atomic.  We need to get system-level lock in PORT_UNLOCK as well.
+ *  atomic.  We would need to get system-level lock in PORT_UNLOCK as well.
  */
 
 #define PORT_LOCK(p, vm)                                        \
@@ -445,7 +445,7 @@ SCM_EXTERN ScmObj Scm_MakeCodingAwarePort(ScmPort *iport);
 
 #define PORT_LOCKED(p, vm) (((p)->lockOwner == (vm)))
 
-/* Should be used in the constructor of provate ports.
+/* Should be used in the constructor of private ports.
    Mark the port locked by vm, so that it can be used exclusively by
    the vm. */
 
