@@ -1,3 +1,11 @@
+2006-10-07  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sxml/src/serializer.scm, ext/sxml/sxml-serializer.scm.in,
+	  ext/sxml/Makefile.in, doc/modutil.texi:
+	  Added sxml.serializer module, a customizable SXML serializer.
+	  Original code is by Dmitry Lizorkin.  Ported to Gauche and
+	  documented by Leonardo Boiko.
+
 2006-10-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (Scm_Div, Scm_DivInexact): provide backward-compatible

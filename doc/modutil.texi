@@ -7,6 +7,7 @@
 @menu
 * Binary I/O::                  
 * Packing Binary Data::         
+* Rational-less arithmetic::    
 * Database independent access layer::  
 * Generic DBM interface::       
 * File-system dbm::             
@@ -30,7 +31,8 @@
 * SLIB::                        
 * Functional XML parser::       
 * SXML Query Language::         
-* manipulationg SXML structure::  
+* Manipulating SXML structure::  
+* Serializing XML and HTML from SXML::  
 * CSV tables::                  
 * Calculate difference of text streams::  
 * Localized messages::          
@@ -190,7 +192,7 @@ current output port is used.
 
 
 @c ----------------------------------------------------------------------
-@node Packing Binary Data, Database independent access layer, Binary I/O, Library modules - Utilities
+@node Packing Binary Data, Rational-less arithmetic, Binary I/O, Library modules - Utilities
 @section @code{binary.pack} - Packing Binary Data
 @c NODE バイナリデータのパック, @code{binary.pack} - バイナリデータのパック
 
@@ -665,9 +667,69 @@ return #t if the template has variable length elements.
 @c COMMON
 @end table
 @end defun
+
 @c ----------------------------------------------------------------------
 
-@node Database independent access layer, Generic DBM interface, Packing Binary Data, Library modules - Utilities
+@node Rational-less arithmetic, Database independent access layer, Packing Binary Data, Library modules - Utilities
+@section @code{compat.norational} - Rational-less arithmetic
+
+@deftp {Module} compat.norational
+@mdindex compat.norational
+
+Until release 0.8.7, Gauche didn't have exact rational numbers.
+It was able to read the rational number literals such as
+@code{2/3}, but they are immediately coerced to inexact real
+numbers (except when it represents a whole integer).
+And if you divided an exact integer by another exact integer,
+the result could be coerced to an inexact real if the result
+wasn't a whole integer.
+
+As of 0.8.8, this is not the case anymore.  Exact division
+always yields exact result, except when the divisor is zero.
+
+@example
+(/ 2 3)  @result{} 2/3
+(/ 5)    @result{} 1/5
+(/ 4 2)  @result{} 2
+@end example
+
+This is more precise, but has one drawback: exact rational
+arithmetic is much slower than the integer and inexact real
+arithmetic.  If you inadvertently produce
+a rational number in the early stage of calculation, and
+continue to apply exact arithmetic, performance would be
+degraded miserably.
+
+The proper way to solve this is to insert @code{exact->inexact}
+to appropriate places.  However, to ease the transition, you can
+just import this module and the division @code{/} behaves
+in the way it used to.
+
+@example
+(use compat.norational)
+
+(/ 2 3)  @result{} 0.6666666666666666
+(/ 5)    @result{} 0.2
+(/ 4 2)  @result{} 2
+@end example
+
+The effect is not global, but only to the modules you explicitly
+import @code{compat.norational}.
+
+This module only redefines @code{/}.  So if your code has
+exact rational literals, they are treated as exact rationals
+rather than coerced to inexact reals.  You should prefix
+rational literals with @code{#i} to force Gauche to coerce
+them to inexact reals.
+@end deftp
+
+
+
+
+
+@c ----------------------------------------------------------------------
+
+@node Database independent access layer, Generic DBM interface, Rational-less arithmetic, Library modules - Utilities
 @section @code{dbi} - Database independent access layer
 
 @deftp {Module} dbi
@@ -6695,7 +6757,7 @@ XMLドキュメントのSXML表現を返します。
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SXML Query Language, manipulationg SXML structure, Functional XML parser, Library modules - Utilities
+@node SXML Query Language, Manipulating SXML structure, Functional XML parser, Library modules - Utilities
 @section @code{sxml.sxpath} - SXML Query Language
 @c NODE SXMLクエリ言語, @code{sxml.sxpath} - SXMLクエリ言語
 
@@ -7726,8 +7788,8 @@ Popular shortcuts:
 
 
 @c ----------------------------------------------------------------------
-@node manipulationg SXML structure, CSV tables, SXML Query Language, Library modules - Utilities
-@section @code{sxml.tools} - manipulationg SXML structure
+@node Manipulating SXML structure, Serializing XML and HTML from SXML, SXML Query Language, Library modules - Utilities
+@section @code{sxml.tools} - Manipulating SXML structure
 @c NODE SXML構造を操作する, @code{sxml.tools} - SXML構造を操作する
 
 @deftp {Module} sxml.tools
@@ -7758,7 +7820,7 @@ source code.
 @end menu
 
 @c ----------------------------------------------------------------------
-@node SXML predicates, SXML accessors, manipulationg SXML structure, manipulationg SXML structure
+@node SXML predicates, SXML accessors, Manipulating SXML structure, Manipulating SXML structure
 @subsection SXML predicates
 @c NODE SXMLの述語
 
@@ -7820,7 +7882,7 @@ The element itself and all its nested elements have to be minimised.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SXML accessors, SXML modifiers, SXML predicates, manipulationg SXML structure
+@node SXML accessors, SXML modifiers, SXML predicates, Manipulating SXML structure
 @subsection SXML accessors
 @c NODE SXMLへのアクセッサ
 
@@ -8196,7 +8258,7 @@ namespace-id is used instead.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SXML modifiers, SXPath auxiliary utilities, SXML accessors, manipulationg SXML structure
+@node SXML modifiers, SXPath auxiliary utilities, SXML accessors, Manipulating SXML structure
 @subsection SXML modifiers
 @c NODE SXMLのモディファイヤ
 
@@ -8379,7 +8441,7 @@ Returns a minimized and normalized SXML element.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SXPath auxiliary utilities, SXML to markup conversion, SXML modifiers, manipulationg SXML structure
+@node SXPath auxiliary utilities, SXML to markup conversion, SXML modifiers, Manipulating SXML structure
 @subsection SXPath auxiliary utilities
 @c NODE SXPathの補助的ユーティリティ
 
@@ -8426,14 +8488,19 @@ Lookup an element using its ID.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SXML to markup conversion,  , SXPath auxiliary utilities, manipulationg SXML structure
+@node SXML to markup conversion,  , SXPath auxiliary utilities, Manipulating SXML structure
 @subsection SXML to markup conversion
 @c NODE SXMLからマークアップへの変換
 
 @c EN
 Procedures to generate XML or HTML marked up text from SXML.
+For more advanced conversion, see the SXML serializer
+(@ref{Serializing XML and HTML from SXML}).
+
 @c JP
 SXMLからXMLやHTMLなどのマークアップされたテキストを生成する手続き。
+もっと高尚な変換器を得たいだけならば、
+@ref{Serializing XML and HTML from SXML}をチェックして下さい。
 @c COMMON
 
 @defun sxml:clean-feed . fragments
@@ -8547,7 +8614,250 @@ SXML->HTML変換に対して特化され最適化されたバージョンのノードディスパッチ
 @end defun
 
 @c ----------------------------------------------------------------------
-@node CSV tables, Calculate difference of text streams, manipulationg SXML structure, Library modules - Utilities
+@node Serializing XML and HTML from SXML, CSV tables, Manipulating SXML structure, Library modules - Utilities
+@section @code{sxml.serializer} -  Serializing XML and HTML from SXML
+@c NODE SXMLからXMLとXHTMLのシリアライゼーション
+
+@deftp {Module} sxml.serializer
+@mdindex sxml.serializer
+@c EN
+This module contains a full-featured serializer from SXML into XML and
+HTML, partially conforming to XSLT 2.0 and XQuery 1.0 Serialization
+(@uref{http://www.w3.org/TR/2005/CR-xslt-xquery-serialization-20051103/}).
+It's more powerful than sxml:sxml->xml and sxml:sxml->html from
+sxml.tools.
+
+The manual entry is mainly derived from the comments in the original
+source code.
+@c JP
+このモジュールはSXMLからXMLとHTMLへの変換を行う、様々な機能を持つ
+シリアライザを提供します。XSLT2.0とXQuery1.0に部分的に適合しています。
+(@uref{http://www.w3.org/TR/2005/CR-xslt-xquery-serialization-20051103/})。
+sxml.toolsのsxml:sxml->xmlとsxml:sxml->htmlよりも強力です。
+
+マニュアルのエントリは主に、オリジナルのソースコードから取られてています。
+@c COMMON
+@end deftp
+
+@c ----------------------------------------------------------------------
+@menu
+* Simple SXML serializing::     
+* Custom SXML serializing::     
+@end menu
+
+@c ----------------------------------------------------------------------
+@node Simple SXML serializing, Custom SXML serializing, Serializing XML and HTML from SXML, Serializing XML and HTML from SXML
+@subsection Simple SXML serializing
+@c NODE 簡単なSXML変換
+
+@c EN
+The SXML serializer provides some convenient high-level converters which
+should be enough for most tasks.
+@c JP
+高レベルの、簡単に使えるシリアライザです。大抵の目的にはこれで十分使えるでしょう。
+@c COMMON
+
+@defun srl:sxml->xml sxml-obj &optional port-or-filename
+@c EN
+Serializes the @var{sxml-obj} into XML, with indentation to facilitate
+readability by a human.
+
+If @var{port-or-filename} is not supplied, the functions return a
+string that contains the serialized representation of the
+@var{sxml-obj}.
+
+If @var{port-or-filename} is supplied and is a port, the functions
+write the serialized representation of @var{sxml-obj} to this port and
+return an unspecified result.
+
+If @var{port-or-filename} is supplied and is a string, this string is
+treated as an output filename, the serialized representation of
+@var{sxml-obj} is written to that filename and an unspecified result
+is returned. If a file with the given name already exists, the effect
+is unspecified.
+@c JP
+@var{sxml-obj}をXMLへと変換します。出力は人間が読みやすいように
+インデントされます。
+
+@var{port-or-filename}が与えられなければ、
+戻り値は@var{sxml-obj}の変換結果の文字列になります。
+
+@var{port-or-filename}がポートならば、そのポートにXMLを書き出します。
+戻り値は不定です。
+
+@var{port-or-filename}が文字列ならば、その名のファイルにXMLを書き出し
+ます。戻り値は不定です。そのようなファイルが既に存在する場合、
+結果は不定です。
+@c COMMON
+@end defun
+
+@defun srl:sxml->xml-noindent sxml-obj &optional port-or-filename
+@c EN
+Serializes the @var{sxml-obj} into XML, without indentation.
+
+Argument @var{port-or-filename} works like described in
+@code{srl:sxml->xml}.
+@c JP
+@code{srl:sxml->xml}と同じように動作しますが、インデントを行いません。
+
+引数@var{port-or-filename}は@code{srl:sxml->xml}と同様に動作します。
+@c COMMON
+@end defun
+
+@defun srl:sxml->html sxml-obj &optional port-or-filename
+@c EN
+Serializes the @var{sxml-obj} into HTML, with indentation to
+facilitate readability by a human.
+
+Argument @var{port-or-filename} works like described in @code{srl:sxml->xml}.
+@c JP
+@var{sxml-obj}をHTMLへと変換します。出力は人間が読みやすいように
+インデントされます。
+
+引数@var{port-or-filename}は@code{srl:sxml->xml}と同様に動作します。
+@c COMMON
+@end defun
+
+@defun srl:sxml->html-noindent sxml-obj &optional port-or-filename
+@c EN
+Serializes the @var{sxml-obj} into HTML, without indentation.
+
+Argument @var{port-or-filename} works like described in @code{srl:sxml->xml}.
+@c JP
+@code{srl:sxml->html}と同じように動作しますが、インデントを行いません。
+
+引数@var{port-or-filename}は@code{srl:sxml->xml}と同様に動作します。
+@c COMMON
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Custom SXML serializing,  , Simple SXML serializing, Serializing XML and HTML from SXML
+@subsection Custom SXML serializing
+@c NODE カスタムSXML変換
+
+@c EN
+These functions provide full access to all configuration parameters of
+the XML serializer.
+@c JP
+以下の手続きはXMLシリアライザの全ての変更可能なパラメータへのアクセスを
+提供します。
+@c COMMON
+
+@defun srl:parameterizable sxml-obj &optional port-or-filename params*
+Generalized serialization procedure, parameterizable with all the
+serialization parameters supported by this implementation.
+
+@var{sxml-obj} - an SXML object to serialize
+
+@var{port-or-filename} - either @code{#f}, a port or a string; works
+like in srl:sxml->xml (@ref{Simple SXML serializing}).
+
+@var{params} - each parameter is a cons of param-name (a symbol) and
+param-value.  The available parameter names and their values are
+described below:
+
+@code{method} - Either the symbol @code{xml} or @code{html}.  For a
+detailed explanation of the difference between XML and HTML methods,
+see XSLT 2.0 and XQuery 1.0 Serialization (@uref{http://www.w3.org/TR/2005/CR-xslt-xquery-serialization-20051103/}).
+
+@code{indent} - Whether the output XML should include whitespace for
+human readability (@code{#t} or @code{#f}).  You can also supply a
+string, which will be used as the indentation unit.
+
+@code{omit-xml-declaration?} - Whether the XML declaration should be
+omitted.  Default: @code{#t}.
+
+@code{standalone} - Whether to define the XML document as standalone in
+the XML declaration.  Should be one of the symbols @code{yes},
+@code{no} or @code{omit}, the later causing standalone declaration to
+be supressed.  Default: @code{omit}.
+
+@code{version} - The XML version used in the declaration.  A string or
+a number.  Default: @code{"1.0"}.
+
+@code{cdata-section-elements} - A list of SXML element names (as
+symbols).  The contents of those elements will be escaped as CDATA
+sections.
+
+@code{ns-prefix-assig} - A list of @code{(cons prefix namespace-uri)},
+where each @code{prefix} is a symbol and each @code{namespace-uri} a
+string.  Will serialize the given namespaces with the corresponding
+prefixes.
+
+ATTENTION: If a parameter name is unexpected or a parameter value is
+ill-formed, the parameter is silently ignored!
+
+@c EN
+Example usage:
+
+@lisp
+(srl:parameterizable
+  '(tag (@@ (attr "value")) (nested "text node") (empty))
+  (current-output-port)
+  '(method . xml)  ; XML output method is used by default
+  '(indent . "\t")  ; use a single tabulation to indent
+  '(omit-xml-declaration . #f)  ; add XML declaration
+  '(standalone . yes)  ; denote a standalone XML document
+  '(version . "1.0"))  ; XML version
+@end lisp
+@c JP
+使用実例：
+@lisp
+(srl:parameterizable
+  '(tag (@@ (attr "value")) (nested "text node") (empty))
+  (current-output-port)
+  '(method . xml)  ; XML出力をデフォールト
+  '(indent . "\t")  ; インデントは一つのタブ
+  '(omit-xml-declaration . #f)  ; XML宣言をつける
+  '(standalone . yes)  ; 「standalone」宣言もつける
+  '(version . "1.0"))  ; XMLのバージョン
+@end lisp
+@c COMMON
+
+@lisp
+param ::= (cons param-name param-value)
+param-name ::= symbol
+
+cdata-section-elements
+value ::= (listof sxml-elem-name)
+sxml-elem-name ::= symbol
+
+indent
+value ::= 'yes | #t | 'no | #f | whitespace-string
+
+method
+value ::= 'xml | 'html
+
+ns-prefix-assig
+value ::= (listof (cons prefix namespace-uri))
+prefix ::= symbol
+namespace-uri ::= string
+
+omit-xml-declaration?
+value ::= 'yes | #t | 'no | #f
+
+standalone
+value ::= 'yes | #t | 'no | #f | 'omit
+
+version
+value ::= string | number
+@end lisp
+@end defun
+
+@defun srl:sxml->string sxml-obj cdata-section-elements indent method ns-prefix-assig omit-xml-declaration? standalone version
+Same as @code{srl:parameterizable} returning a string and without the
+overhead of parsing parameters.  This function interface may change in
+future versions of the library.
+@end defun
+
+@defun srl:display-sxml sxml->obj port-or-filename cdata-section-elements indent method ns-prefix-assig omit-xml-declaration? standalone version
+Same as @code{srl:parameterizable} writing to @var{port-or-filename}
+and without the overhead of parsing parameters.  This function
+interface may change in future versions of the library.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node CSV tables, Calculate difference of text streams, Serializing XML and HTML from SXML, Library modules - Utilities
 @section @code{text.csv} - CSV tables
 @c NODE CSVテーブル, @code{text.csv} - CSVテーブル
 

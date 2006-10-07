@@ -8,10 +8,12 @@ SCMCOMPILE = $(GOSH) -I. $(top_srcdir)/src/gencomp
 SCMTRANS   = $(GOSH) ./trans.scm
 
 GENERATED_TARGET = sxml/tree-trans.scm sxml/to-html.scm \
-                   sxml/ssax.scm sxml/tools.scm sxml/sxpath.scm
+                   sxml/ssax.scm sxml/tools.scm sxml/sxpath.scm \
+	           sxml/serializer.scm
 GENERATED_FILES = sxml-ssax.c sxml-ssax.scm \
                   sxml-sxpath.c sxml-sxpath.scm \
-                  sxml-tools.c sxml-tools.scm
+                  sxml-tools.c sxml-tools.scm \
+	          sxml-serializer.c sxml-serializer.scm
 GENERATED_TEST = ssax-test.scm tree-trans-test.scm to-html-test.scm
 XCLEANFILES = $(GENERATED_TARGET) $(GENERATED_TEST) $(GENERATED_FILES) \
               *_head.c *_tail.c
@@ -19,7 +21,7 @@ GENERATED = Makefile
 
 LIBFILES = sxml-ssax.$(SOEXT) sxml-sxpath.$(SOEXT) sxml-tools.$(SOEXT)
 SCMFILES = sxml/adaptor.scm sxml/ssax.scm sxml/sxpath.scm sxml/tools.scm \
-           sxml/tree-trans.scm sxml/to-html.scm
+           sxml/tree-trans.scm sxml/to-html.scm sxml/serializer.scm
 
 all : $(LIBFILES) $(GENERATED_TARGET)
 
@@ -70,6 +72,22 @@ sxml-tools.c sxml/tools.scm : sxml-tools.scm.in src/sxml-tools.scm
 
 sxml-tools_head.c sxml-tools_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension sxml-tools sxml_tools
+
+### sxml-serializer
+
+serializer_OBJECTS = sxml-serializer_head.$(OBJEXT) \
+                     sxml-serializer.$(OBJEXT)      \
+                     sxml-serializer_tail.$(OBJEXT)
+
+sxml-serializer.$(SOEXT) : $(serializer_OBJECTS)
+	$(MODLINK) sxml-serializer.$(SOEXT) $(serializer_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+sxml-serializer.c sxml/serializer.scm : sxml-serializer.scm.in src/serializer.scm
+	$(SCMTRANS) sxml-serializer.scm.in
+	$(SCMCOMPILE) --ext-module sxml/serializer.scm sxml-serializer.scm
+
+sxml-serializer_head.c sxml-serializer_tail.c :
+	$(GAUCHE_CONFIG) --fixup-extension sxml-serializer sxml_serializer
 
 ### miscellaneous
 sxml/tree-trans.scm : src/SXML-tree-trans.scm

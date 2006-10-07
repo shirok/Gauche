@@ -3,9 +3,9 @@
 @c NODE ライブラリモジュール - 概要
 
 @c EN
-In the following chapters, the library modules bundled with the Gauche
-distribution are explained.
-Those modules should generally be loaded and imported (usually using @code{use}
+In the following chapters, we explain library modules bundled with Gauche's
+distribution.
+These modules should generally be loaded and imported (usually using @code{use}
 - @xref{Using modules}, for details), unless otherwise noted.
 @c JP
 続くいくつかの章で、Gaucheのディストリビューションに含まれる
@@ -32,7 +32,7 @@ loaded and imported.  See @ref{Autoload}, for the details of autoloading.
 As the number of bundled libraries grows, it becomes harder
 to find the one you need.  If you feel lost, check
 out the section @ref{Finding libraries you need}, in which
-we categorized libraries by its purpose.
+we categorized libraries by their purposes.
 @c JP
 付属ライブラリの数が増えるにつれ、必要なライブラリを探すのが難しく
 なりつつあります。迷ったら、@ref{Finding libraries you need}を
@@ -45,12 +45,12 @@ grouped by their names.
 @ref{Library modules - Gauche extensions} contains a description of
 @code{gauche.*} modules, which are more or less considered
 the core features of Gauche but separated since less frequently used.
-(Some modules are rather ad-hoc, but here for historically reasons).
-@ref{Library modules - SRFIs} describes the modules that
-provides SRFI functionalities.  They have the names begins
+(Some modules are rather ad-hoc, but here for historical reasons).
+@ref{Library modules - SRFIs} describes the modules which
+provide SRFI functionalities.  They have the names beginning
 with @code{srfi-}.
 Note that some of SRFI features are built in Gauche core and
-not listed here.  @xref{Standard conformance}, for entire list
+not listed here.  @xref{Standard conformance}, for the entire list
 of supported SRFIs.
 @ref{Library modules - Utilities} describes other modules
 ---including database interface, filesystem utilities,
@@ -73,7 +73,7 @@ network protocol utilities, and more.
 @c COMMON
 
 @c EN
-There are a few procedures that helps your program to check
+There are a few procedures that help your program to check
 the existence of certain modules or libraries at run-time.
 See @ref{Operations on libraries}, for the details.
 @c JP
@@ -90,24 +90,24 @@ See @ref{Operations on libraries}, for the details.
 @node Finding libraries you need, Naming convetion of libraries, Library modules - Overview, Library modules - Overview
 @section Finding libraries you need
 
-Gauche's modules are named more or less after what it implements
-rather than what it is implemented for.  If the module solves
+Each module is named more or less after what it implements
+rather than what it is implemented @emph{for}.  If the module solves
 one problem, both are the same.  However, sometimes there
 are multiple ways to solve a problem, or one implementation
 of an algorithm can solve multiple different problems; thus
 it is difficult to name the modules in problem-oriented
 (or purpose-oriented) way.
 
-Thus, if you're new to Gauche and just looking for a module that
-solves your problem, it may not be straightforward.  Since there may
-be multiple algorithms to do your job, and each algorithm can be
-implemented in different module.
+Because of this, it may not be straightforward for a newcomer
+to Gauche to find an appropriate Gauche module to solve your problem.
+Since there may be multiple algorithms to do the job,
+and each algorithm can be implemented in different modules.
 
 The modules are also designed in layers; some low-level modules
-provides direct interface to the system calls, while some
+provide direct interface to the system calls, while some
 higher-level ones provide more abstract, easy-to-use interface, possibly
 built on top of more than one low-level modules.   Which one
-should you use?  Generally, you want to use the highest level,
+should you use?  Generally you want to use the highest level,
 for the very purpose of libraries are to provide easy, abstract
 interface.  However there are times that you have to break
 the abstraction and to go down to tweak the machinery in
@@ -278,6 +278,8 @@ implements SAX XML parser, with which you
 can parse XML and process them on the fly, or convert it to
 SXML, S-expression XML.  You can query SXML usinv
 SXPath, an XPath counterparts of S-expression (@ref{SXML Query Language}).
+You can output all kinds of XML and HTML using the SXML serializer
+(@ref{Serializing XML and HTML from SXML}).
 
 It is planned that various file format handling routines would
 be available as @code{file.*} modules, though we have none ready
@@ -385,6 +387,13 @@ including external ones and planned ones.
 Utilities to treat binary data.
 @c JP
 バイナリデータを扱うためのユーティリティ。
+@c COMMON
+
+@item compat.*
+@c EN
+Provides compatibility layers.
+@c JP
+互換性のためのレイヤを提供。
 @c COMMON
 
 @item dbi.*, dbd.*
