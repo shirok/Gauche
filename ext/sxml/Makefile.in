@@ -19,7 +19,8 @@ XCLEANFILES = $(GENERATED_TARGET) $(GENERATED_TEST) $(GENERATED_FILES) \
               *_head.c *_tail.c
 GENERATED = Makefile
 
-LIBFILES = sxml-ssax.$(SOEXT) sxml-sxpath.$(SOEXT) sxml-tools.$(SOEXT)
+LIBFILES = sxml-ssax.$(SOEXT) sxml-sxpath.$(SOEXT) sxml-tools.$(SOEXT) \
+	   sxml-serializer.$(SOEXT)
 SCMFILES = sxml/adaptor.scm sxml/ssax.scm sxml/sxpath.scm sxml/tools.scm \
            sxml/tree-trans.scm sxml/to-html.scm sxml/serializer.scm
 
