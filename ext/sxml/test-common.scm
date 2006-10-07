@@ -1,10 +1,10 @@
 ;;
-;; Common auxiliary procedure to run test
+;; Common auxiliary procedures to run test
 ;;
 ;; This file consists of excepts from Oleg Kiselyov's myenv.scm and
 ;; SSAX.scm.   They are macros and procedures only required for testing.
 ;;
-;; $Id: test-common.scm,v 1.1 2003-07-19 11:46:23 shirok Exp $
+;; $Id: test-common.scm,v 1.2 2006-10-07 23:37:26 shirok Exp $
 
 ;; Excerpt from myenv.scm --------------------------------------
 

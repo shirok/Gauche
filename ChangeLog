@@ -8,6 +8,9 @@
 	  Original code is by Dmitry Lizorkin.  Ported to Gauche and
 	  documented by Leonardo Boiko.
 
+	* ext/sxml/test.scm:
+	  Added simple tests for sxml.serializer
+
 2006-10-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (Scm_Div, Scm_DivInexact): provide backward-compatible
