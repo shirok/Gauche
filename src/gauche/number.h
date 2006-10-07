@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.h,v 1.3 2006-06-05 05:11:25 shirok Exp $
+ *  $Id: number.h,v 1.4 2006-10-07 07:35:46 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -208,6 +208,7 @@ SCM_EXTERN ScmObj Scm_Abs(ScmObj obj);
 SCM_EXTERN int    Scm_Sign(ScmObj obj);
 SCM_EXTERN ScmObj Scm_Negate(ScmObj obj);
 SCM_EXTERN ScmObj Scm_Reciprocal(ScmObj obj);
+SCM_EXTERN ScmObj Scm_ReciprocalInexact(ScmObj obj);
 SCM_EXTERN ScmObj Scm_ExactToInexact(ScmObj obj);
 SCM_EXTERN ScmObj Scm_InexactToExact(ScmObj obj);
 
@@ -215,6 +216,7 @@ SCM_EXTERN ScmObj Scm_Add(ScmObj arg1, ScmObj arg2);
 SCM_EXTERN ScmObj Scm_Sub(ScmObj arg1, ScmObj arg2);
 SCM_EXTERN ScmObj Scm_Mul(ScmObj arg1, ScmObj arg2);
 SCM_EXTERN ScmObj Scm_Div(ScmObj arg1, ScmObj arg2);
+SCM_EXTERN ScmObj Scm_DivInexact(ScmObj arg1, ScmObj arg2);
 
 SCM_EXTERN ScmObj Scm_Quotient(ScmObj arg1, ScmObj arg2, ScmObj *rem);
 SCM_EXTERN ScmObj Scm_Modulo(ScmObj arg1, ScmObj arg2, int remainder);

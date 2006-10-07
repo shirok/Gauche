@@ -1,3 +1,14 @@
+2006-10-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_Div, Scm_DivInexact): provide backward-compatible
+	  version of division, Scm_DivInexact, which returns flonum when
+	  arguments are exact integers and the result isn't a whole number.
+	* src/extlib.stub (inexact-/): make the backward-compatible version
+	  of division as 'inexact-/'.
+	* lib/compat/norational.scm: when used, redefines '/' by 'inexact-/',
+	  so that the existing code that counts on the old behavior can
+	  work as before.
+
 2006-10-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c (register_buffered_port): Run global GC when the port

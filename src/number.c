@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.128 2006-06-05 05:11:25 shirok Exp $
+ *  $Id: number.c,v 1.129 2006-10-07 07:35:46 shirok Exp $
  */
 
 #include <math.h>
@@ -1022,6 +1022,18 @@ ScmObj Scm_Reciprocal(ScmObj obj)
     return obj;
 }
 
+ScmObj Scm_ReciprocalInexact(ScmObj obj)
+{
+    if (SCM_EXACT_ZERO_P(obj)) return SCM_POSITIVE_INFINITY;
+    if (SCM_EXACT_ONE_P(obj))  return obj;
+    if (SCM_REALP(obj)) {
+        return Scm_MakeFlonum(1.0/Scm_GetDouble(obj));
+    }
+    // delegate the rest to exact reciprocal
+    return Scm_Reciprocal(obj);
+}
+
+
 /*
  * Conversion operators
  */
@@ -1478,18 +1490,45 @@ ScmObj Scm_Mul(ScmObj arg0, ScmObj arg1)
  * Division
  */
 
-ScmObj Scm_Div(ScmObj arg0, ScmObj arg1)
+/* In the transient stage towards supporting the full numeric tower,
+ * we provide two versions of Scm_Div --- the standard one supports
+ * full tower, and a "auto coerce" version works like the old version
+ * of Gauche; that is, it returns inexact number for exact integer 
+ * division if the result isn't a whole integer.
+ *
+ *  Scm_Div            (/ 1 3) => 1/3
+ *  Scm_DivInexact     (/ 1 3) => 0.333333333333333333
+ *
+ * NB: Scm_DivInexact does exact rational arithmetic if one of the
+ * arguments is ratnum.
+ */
+
+static ScmObj div_internal(ScmObj arg0, ScmObj arg1, int autocoerce)
 {
     if (SCM_INTP(arg0)) {
         if (SCM_INTP(arg1)) { 
-           if (SCM_EXACT_ZERO_P(arg1)) goto ANORMAL;
+            if (SCM_EXACT_ZERO_P(arg1)) goto ANORMAL;
             if (SCM_EXACT_ZERO_P(arg0)) return arg0;
             if (SCM_EXACT_ONE_P(arg1)) return arg0;
-            return Scm_MakeRational(arg0, arg1);
+            if (autocoerce) {
+                if (SCM_INT_VALUE(arg0)%SCM_INT_VALUE(arg1) == 0) {
+                    long q = SCM_INT_VALUE(arg0)/SCM_INT_VALUE(arg1);
+                    return Scm_MakeInteger(q);
+                } else {
+                    return Scm_MakeFlonum((double)SCM_INT_VALUE(arg0)
+                                          /(double)SCM_INT_VALUE(arg1));
+                }
+            } else {
+                return Scm_MakeRational(arg0, arg1);
+            }
         }
         if (SCM_BIGNUMP(arg1)) {
             if (SCM_EXACT_ZERO_P(arg0)) return arg0;
-            return Scm_MakeRational(arg0, arg1);
+            if (autocoerce) {
+                goto COERCE_INEXACT;
+            } else {
+                return Scm_MakeRational(arg0, arg1);
+            }
         }
         if (SCM_RATNUMP(arg1)) {
             return Scm_MakeRational(Scm_Mul(arg0,
@@ -1510,14 +1549,21 @@ ScmObj Scm_Div(ScmObj arg0, ScmObj arg1)
         if (SCM_INTP(arg1)) {
             if (SCM_EXACT_ZERO_P(arg1)) goto ANORMAL;
             if (SCM_EXACT_ONE_P(arg1)) return arg0;
-            return Scm_MakeRational(arg0, arg1);
+            if (autocoerce) {
+                goto COERCE_INEXACT;
+            } else {
+                return Scm_MakeRational(arg0, arg1);
+            }
         }
         if (SCM_BIGNUMP(arg1)) {
-            return Scm_MakeRational(arg0, arg1);
+            if (autocoerce) {
+                goto COERCE_INEXACT;
+            } else {
+                return Scm_MakeRational(arg0, arg1);
+            }
         }
         if (SCM_RATNUMP(arg1)) {
-            return Scm_MakeRational(Scm_Mul(arg0,
-                                                  SCM_RATNUM_DENOM(arg1)),
+            return Scm_MakeRational(Scm_Mul(arg0, SCM_RATNUM_DENOM(arg1)),
                                     SCM_RATNUM_NUMER(arg1));
         }
         if (SCM_FLONUMP(arg1)) {
@@ -1601,6 +1647,20 @@ ScmObj Scm_Div(ScmObj arg0, ScmObj arg1)
         /* fallback to generic */
     }
     return Scm_Apply(SCM_OBJ(&generic_div), SCM_LIST2(arg0, arg1));
+
+  COERCE_INEXACT:
+    {
+        /* We have exact integer division arg0/arg1 (arg1 != 0).
+           If it doesn't produce a whole integer, we coerce the
+           result to flonum. */
+        ScmObj rem;
+        ScmObj q = Scm_Quotient(arg0, arg1, &rem);
+        if (SCM_EXACT_ZERO_P(rem)) {
+            return q;
+        } else {
+            return Scm_MakeFlonum(Scm_GetDouble(arg0)/Scm_GetDouble(arg1));
+        }
+    }
   ANORMAL:
     {
         int s = SCM_EXACT_ZERO_P(arg0);
@@ -1618,7 +1678,16 @@ ScmObj Scm_Div(ScmObj arg0, ScmObj arg1)
     }    
 }
 
-#undef SHIFT
+ScmObj Scm_Div(ScmObj x, ScmObj y)
+{
+    return div_internal(x, y, FALSE);
+}
+
+ScmObj Scm_DivInexact(ScmObj x, ScmObj y)
+{
+    return div_internal(x, y, TRUE);
+}
+
 
 /*
  * Integer division
