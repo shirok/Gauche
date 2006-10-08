@@ -1,5 +1,9 @@
 2006-10-07  Shiro Kawai  <shiro@acm.org>
 
+	* ext/charconv/convaux.scm (%open-{input|output}-file/conv): 
+	  Avoid creating conversion ports when it is unnecessary.
+	  Patch from Tatsuya BIZENN.
+
 	* configure.ac: bumped to 0.8.8_pre1.
 
 	* ext/sxml/src/serializer.scm, ext/sxml/sxml-serializer.scm.in,

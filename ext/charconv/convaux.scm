@@ -1,7 +1,7 @@
 ;;;
 ;;; convaux - auxiliary charconv routines
 ;;;  
-;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: convaux.scm,v 1.1 2005-09-10 09:04:04 shirok Exp $
+;;;  $Id: convaux.scm,v 1.2 2006-10-08 03:31:47 shirok Exp $
 ;;;
 
 (select-module gauche.charconv)
@@ -184,7 +184,7 @@
 ;; open-{input|output}-port when :encoding argument is given.
 (define (%open-input-file/conv name . args)
   (and-let* ((port (apply %open-input-file name args)))
-    (open-input-conversion-port
+    (wrap-with-input-conversion
      port
      (get-keyword :encoding args #f)
      :buffer-size (get-keyword :conversion-buffer-size args 0)
@@ -192,7 +192,7 @@
 
 (define (%open-output-file/conv name . args)
   (and-let* ((port (apply %open-output-file name args)))
-    (open-output-conversion-port
+    (wrap-with-output-conversion
      port
      (get-keyword :encoding args #f)
      :buffer-size (get-keyword :conversion-buffer-size args 0)
