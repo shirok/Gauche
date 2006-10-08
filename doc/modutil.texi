@@ -8864,11 +8864,9 @@ interface may change in future versions of the library.
 @deftp {Module} text.csv
 @mdindex text.csv
 @c EN
-Provides a function to parse/generate CSV (comma separated value) tables.
-Actually, the separator is not limited to comma; you can customize it.
-
-CSV format is widely used to exchange table-type data in plain text,
-although there are apparently no ``formal'' specification.
+Provides a function to parse/generate CSV (comma separated value) tables,
+including the format defined in RFC4180.  You can customize the
+separator and quoter character to deal with variations of CSV formats.
 
 CSV table is consisted by a series of @var{records}, separated by
 a newline.  Each record contains number of @var{fields}, separated
@@ -8878,11 +8876,10 @@ To include double-quote character in a quoted field, use two
 consecutive double-quote character.   Usually, the whitespaces around
 the field are ignored.
 @c JP
+RFC4180に定義されたフォーマットを含む、
 CSV (カンマ区切りの値) の表をパーズ/生成するための手続きを提供します。
-実際には、区切り文字はカンマに制限されず、カスタマイズできます。
-
-CSV 形式は、「正式な」仕様が無さそうなのにも関わらず、プレーン・テキストで
-表形式のデータを交換するために広く使われています。
+区切り文字やクオート文字をカスタマイズすることで、CVSに似たフォーマットを
+広くカバーすることができます。
 
 CSV の表は、改行で区切られた @var{record} の連続で構成されます。
 それぞれのレコードは、区切り文字(デフォルトではカンマ)で区切られた
