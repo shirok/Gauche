@@ -3,7 +3,7 @@
 ;; this test is splitted from io.scm, since this one uses util.isomorph,
 ;; and has to be done after the test of util.* module.
 
-;; $Id: io2.scm,v 1.3 2006-06-05 05:11:25 shirok Exp $
+;; $Id: io2.scm,v 1.4 2006-10-08 03:59:42 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -121,7 +121,7 @@
   (display " " port)
   (write/ss (ref self 'b) port)
   (display ")" port))
-'(test* "user defined" "#,(bar #0=(a b) #0#)"
+(test* "user defined" "#,(bar #0=(a b) #0#)"
        (let* ((x '(a b))
               (bar (make <bar> :a x :b x)))
          (write-to-string bar write/ss)))

@@ -1,5 +1,9 @@
 2006-10-07  Shiro Kawai  <shiro@acm.org>
 
+	* src/write.c (Scm_WriteCircular, Scm_WriteLimited):
+	  Fix for write/ss is called during walk pass of outer write/ss.
+	  Patch from Rui Ueyama.
+
 	* ext/charconv/convaux.scm (%open-{input|output}-file/conv): 
 	  Avoid creating conversion ports when it is unnecessary.
 	  Patch from Tatsuya BIZENN.

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.61 2006-10-01 02:26:08 shirok Exp $
+ *  $Id: write.c,v 1.62 2006-10-08 03:59:42 shirok Exp $
  */
 
 #include <stdio.h>
@@ -45,6 +45,8 @@ static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static void write_object(ScmObj obj, ScmPort *out, ScmWriteContext *ctx);
 static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf);
+static void format_write(ScmObj obj, ScmPort *port, ScmWriteContext *ctx,
+                         int sharedp);
 SCM_DEFINE_GENERIC(Scm_GenericWriteObject, write_object_fallback, NULL);
 
 /*============================================================
@@ -179,22 +181,26 @@ int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width)
 {
     ScmWriteContext ctx;
     ScmObj out;
-    int nc;
+    int nc, sharedp = FALSE;
     
     if (!SCM_OPORTP(port))
         Scm_Error("output port required, but got %S", port);
     out = Scm_MakeOutputStringPort(TRUE);
+    SCM_PORT(out)->data = SCM_PORT(port)->data;
     ctx.mode = mode;
     ctx.flags = WRITE_LIMITED;
     ctx.limit = width;
     /* if case mode is not specified, use default taken from VM default */
     if (SCM_WRITE_CASE(&ctx) == 0) ctx.mode |= DEFAULT_CASE;
-    /* we don't need to lock out, for it is private. */
-    if (SCM_WRITE_MODE(&ctx) == SCM_WRITE_SHARED) {
-        write_ss(obj, SCM_PORT(out), &ctx);
-    } else {
-        write_ss_rec(obj, SCM_PORT(out), &ctx);
+    /* the walk pass does not produce any output, so we return immediately. */
+    if (SCM_PORT(port)->flags & SCM_PORT_WALKING) {
+        SCM_ASSERT(SCM_PAIRP(SCM_PORT(port)->data)&&SCM_HASH_TABLE_P(SCM_CDR(SCM_PORT(port)->data)));
+        write_walk(obj, SCM_PORT(port), &ctx);
+        return;
     }
+    /* we don't need to lock out, for it is private. */
+    sharedp = SCM_WRITE_MODE(&ctx) == SCM_WRITE_SHARED;
+    format_write(obj, SCM_PORT(out), &ctx, sharedp);
     nc = outlen(SCM_PORT(out));
     if (nc > width) {
         ScmObj sub = Scm_Substring(SCM_STRING(Scm_GetOutputString(SCM_PORT(out))),
@@ -213,6 +219,7 @@ int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width)
 
 int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width)
 {
+    ScmObj out;
     ScmWriteContext ctx;
     int nc;
 
@@ -229,28 +236,35 @@ int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width)
     ctx.ncirc = 0;
     ctx.table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 8));
 
-    if (width > 0) {
-        ScmObj out = Scm_MakeOutputStringPort(TRUE);
-        /* no need to lock out, for it is private */
-        write_ss(obj, SCM_PORT(out), &ctx);
-        nc = outlen(SCM_PORT(out));
-        if (nc > width) {
-            ScmObj sub = Scm_Substring(SCM_STRING(Scm_GetOutputString(SCM_PORT(out))),
-                                       0, width);
-            SCM_PUTS(sub, port); /* this locks port */
-            return -1;
-        } else {
-            SCM_PUTS(Scm_GetOutputString(SCM_PORT(out)), port); /* this locks port */
-            return nc;
-        }
-    } else {
+    if (width <= 0) {
         ScmVM *vm = Scm_VM();
         PORT_LOCK(SCM_PORT(port), vm);
         PORT_SAFE_CALL(SCM_PORT(port),
-                       write_ss(obj, SCM_PORT(port), &ctx));
+                       format_write(obj, SCM_PORT(port), &ctx, TRUE));
         PORT_UNLOCK(SCM_PORT(port));
+        return 0;
     }
-    return 0;
+
+    if (SCM_PORT(port)->flags & SCM_PORT_WALKING) {
+        SCM_ASSERT(SCM_PAIRP(SCM_PORT(port)->data)&&SCM_HASH_TABLE_P(SCM_CDR(SCM_PORT(port)->data)));
+        write_walk(obj, SCM_PORT(port), &ctx);
+        return;
+    }
+
+    out = Scm_MakeOutputStringPort(TRUE);
+    SCM_PORT(out)->data = SCM_PORT(port)->data;
+    /* no need to lock out, for it is private */
+    format_write(obj, SCM_PORT(out), &ctx, TRUE);
+    nc = outlen(SCM_PORT(out));
+    if (nc > width) {
+        ScmObj sub = Scm_Substring(SCM_STRING(Scm_GetOutputString(SCM_PORT(out))),
+                                   0, width);
+        SCM_PUTS(sub, port); /* this locks port */
+        return -1;
+    } else {
+        SCM_PUTS(Scm_GetOutputString(SCM_PORT(out)), port); /* this locks port */
+        return nc;
+    }
 }
 
 /*===================================================================
