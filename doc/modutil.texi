@@ -12782,11 +12782,13 @@ procedure is applied to each values.
 @c COMMON
 
 @c EN
-If no value is defined for @var{name}, a value given to the keyword
-argument @var{default} is returned; the default value of @var{default}
+If the parameter @var{name} doesn't appear in the query,
+a value given to the keyword argument @var{default} is returned;
+the default value of @var{default}
 is @code{#f} if @var{list} is false, or @code{()} otherwise.
 @c JP
-パラメータ@var{name}に対応する値が無ければ、@var{default}に与えられた値がそのまま
+パラメータ@var{name}がQuery中に現れなかった場合は、
+@var{default}に与えられた値がそのまま
 返されます。@var{default}が省略された場合、@var{list}が偽であれば@code{#f}が、
 真であれば@code{()}が返されます。
 @c COMMON
