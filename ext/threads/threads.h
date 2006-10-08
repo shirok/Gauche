@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: threads.h,v 1.3 2006-07-25 03:21:29 shirok Exp $
+ *  $Id: threads.h,v 1.4 2006-10-08 05:00:30 shirok Exp $
  */
 
 #ifndef GAUCHE_THREADS_H
@@ -58,7 +58,7 @@ extern ScmObj Scm_ThreadTerminate(ScmVM *vm);
  * Scheme condition variable.
  */
 typedef struct ScmConditionVariableRec {
-    SCM_HEADER;
+    SCM_INSTANCE_HEADER;
     ScmInternalCond cv;
     ScmObj name;
     ScmObj specific;
@@ -81,7 +81,7 @@ ScmObj Scm_ConditionVariableBroadcast(ScmConditionVariable *cond);
  *    locked=TRUE   owner=terminated vm  unlocked/abandoned
  */
 typedef struct ScmMutexRec {
-    SCM_HEADER;
+    SCM_INSTANCE_HEADER;
     ScmInternalMutex mutex;
     ScmInternalCond  cv;
     ScmObj name;

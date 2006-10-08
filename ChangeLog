@@ -1,5 +1,12 @@
 2006-10-07  Shiro Kawai  <shiro@acm.org>
 
+	* ext/threads/threads.h:
+	  ScmConditionVariable and ScmMutexRec should have SCM_INSTANCE_HEADER,
+	  for they are BASE class (I'm not sure whether I should let them
+	  inheritable or not, so I may revert this and change them to
+	  BUILTIN class in future; but for now, let's maintain the
+	  consistency.)
+
 	* src/write.c (Scm_WriteCircular, Scm_WriteLimited):
 	  Fix for write/ss is called during walk pass of outer write/ss.
 	  Patch from Rui Ueyama.
