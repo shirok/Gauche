@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.127 2006-10-06 09:52:02 shirok Exp $
+ *  $Id: port.c,v 1.128 2006-10-11 08:45:08 shirok Exp $
  */
 
 #include <unistd.h>
@@ -663,7 +663,7 @@ static void register_buffered_port(ScmPort *port)
     (void)SCM_INTERNAL_MUTEX_UNLOCK(active_buffered_ports.mutex);
 
     if (need_gc) {
-        if (tried_gc > 10) {
+        if (tried_gc) {
             // We should probably try to extend the weak vector.
             // But for the time being...
             Scm_Panic("active buffered port table overflow");
