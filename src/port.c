@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.128 2006-10-11 08:45:08 shirok Exp $
+ *  $Id: port.c,v 1.129 2006-10-11 09:11:29 shirok Exp $
  */
 
 #include <unistd.h>
@@ -620,8 +620,13 @@ static int bufport_read(ScmPort *p, char *dst, int siz)
  *   Note that we don't remove entry from the weak vector explicitly.
  *   We used to do that in the port finalizer; however, the finalizer
  *   is called _after_ GC has run and determined the port is a garbage,
- *   and has cleared the vector entry.  So we can rather let GC do
- *   the removing entries.
+ *   and at that moment GC has already cleared the vector entry.  So we
+ *   can rather let GC remove the entries.
+ *
+ *   When we find the weak vector is full, we trigger a global GC once.
+ *   It may collect garbaged ports and make some room in the vector,
+ *   even though the ports are not finalized (GC_gcollect doesn't call
+ *   finalizers; they are called at the next checkpoint in VM).
  */
 
 /*TODO: allow to extend the port vector. */
@@ -646,7 +651,7 @@ static void register_buffered_port(ScmPort *port)
   retry:
     h = i = PORT_HASH(port);
     c = 0;
-    /* search the available entry by quadratic hash */
+    /* search an available entry by quadratic hash */
     (void)SCM_INTERNAL_MUTEX_LOCK(active_buffered_ports.mutex);
     while (!SCM_FALSEP(Scm_WeakVectorRef(active_buffered_ports.ports, i, SCM_FALSE))) {
         i -= ++c; while (i<0) i+=PORT_VECTOR_SIZE;
