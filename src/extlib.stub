@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.263 2006-10-07 07:35:46 shirok Exp $
+;;; $Id: extlib.stub,v 1.264 2006-10-14 23:14:49 shirok Exp $
 ;;;
 
 "
@@ -182,6 +182,10 @@
 ;;
 ;; 6.3.1  Booleans
 ;;
+
+;; a convenient coercer
+(define-cproc boolean (obj)
+  (call <boolean> "!SCM_FALSEP"))
 
 ;;
 ;; 6.3.2  Pairs and lists

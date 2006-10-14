@@ -1113,6 +1113,17 @@ Returns @code{#t} if @var{obj} is a boolean value.
 @c COMMON
 @end defun
 
+@defun boolean obj
+@c EN
+Returns @code{#f} iff @var{obj} is @code{#f}, and returns @code{#t}
+otherwise.  Convenient to coerce a value to boolean.
+@c JP
+@var{obj}が@code{#f}であるとき@code{#f}を返し、それ以外の場合は@code{#t}を
+返します。値を論理値に変換したい場合に便利です。
+@end defun
+@end defun
+
+
 @c ----------------------------------------------------------------------
 @node Pairs and Lists, Symbols, Booleans, Core library
 @section Pairs and Lists

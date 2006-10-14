@@ -1,3 +1,9 @@
+2006-10-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/extlib.stub (boolean): added boolean procedure, which is
+	  just (compose not not), but convenient if you want to guarantee
+	  the returned value is boolean.
+
 2006-10-07  Shiro Kawai  <shiro@acm.org>
 
 	* ext/threads/threads.h:
