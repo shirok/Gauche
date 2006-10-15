@@ -1120,7 +1120,7 @@ otherwise.  Convenient to coerce a value to boolean.
 @c JP
 @var{obj}が@code{#f}であるとき@code{#f}を返し、それ以外の場合は@code{#t}を
 返します。値を論理値に変換したい場合に便利です。
-@end defun
+@c COMMON
 @end defun
 
 
