@@ -8048,7 +8048,7 @@ doesn't follow such logic, and reports an error whenever
 it finds your code referring to undefined variable.  In such case,
 you can give a list of symbols to the @var{allow-undefined}
 keyword argument; the test will excludes them from the check.
-@c COMMON
+@c JP
 しばしば、プラットフォームやコンパイルオプションによって
 グローバル変数が定義されるかどうかが異なる場合があります。
 コード中では実行時にその変数の存在を確認してから使うように
@@ -8056,7 +8056,7 @@ keyword argument; the test will excludes them from the check.
 そのようなロジックを追わないため、未定義変数の参照を報告して
 しまいます。そのような場合は、チェックから外す変数名のリストを
 @var{allow-undefined}キーワード引数に渡して下さい。
-@c JP
+@c COMMON
 @end defun
 
 @defun test-start module-name
