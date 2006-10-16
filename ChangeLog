@@ -1,3 +1,8 @@
+2006-10-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/trie.scm, lib/Makefile.in, test/util.scm: Added util.trie
+	  module, contributed by OOHASHI Daichi and other people on WiLiKi.
+
 2006-10-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/extlib.stub (boolean): added boolean procedure, which is

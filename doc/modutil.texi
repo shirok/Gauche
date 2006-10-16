@@ -51,6 +51,7 @@
 * SLIB-compatible record type::  
 * Relation framework::          
 * Stream library::              
+* Trie::                        
 * Topological sort::            
 * CGI Utility::                 
 * CGI testing::                 
@@ -12193,7 +12194,7 @@ you can write like this:
 
 
 @c ----------------------------------------------------------------------
-@node Stream library, Topological sort, Relation framework, Library modules - Utilities
+@node Stream library, Trie, Relation framework, Library modules - Utilities
 @section @code{util.stream} - Stream library
 @c NODE ストリームライブラリ, @code{util.stream} - ストリームライブラリ
 
@@ -12517,9 +12518,252 @@ to @code{(format fmt arg @dots{})}.
 @defun write-stream stream &optional oport writer
 @end defun
 
+@c ----------------------------------------------------------------------
+@node Trie, Topological sort, Stream library, Library modules - Utilities
+@section @code{util.trie} - Trie
+
+@deftp {Module} util.trie
+This module provides @emph{Trie}, a dictionary-like data
+structure that maps keys to values, where a key is an arbitrary sequence.
+Internally it stores the data as a tree where each node corresponds 
+to each element in the key sequence.
+Key lookup is O(n) where n is the length of the key.
+And it is easy to find a set of values whose keys have a common prefix.
+
+The following example may give you the idea.
+
+@example
+(define t (make-trie))   ;; create a trie
+
+(trie-put! t "pho" 3)    ;; populate the trie
+(trie-put! t "phone" 5)
+(trie-put! t "phrase" 6)
+
+(trie-get t "phone")  @result{} 5  ;; lookup
+
+(trie-common-prefix t "pho")       ;; common prefix search
+  @result{} (("phone" . 5) ("pho" . 3))
+(trie-common-prefix-keys t "ph")
+  @result{} ("phone" "pho" "phrase")
+@end example
+
+Tries are frequently used with string keys, but you are not
+limited to do so; any sequence (@xref{Sequence framework}) can be
+a key.  If the types of keys differ, they are treated as different
+keys:
+
+@example
+(trie-put! t '(#\p #\h #\o) 8)  ;; different key from "pho"
+@end example
+
+Trie inheris @code{<collection>} and implements collection framework
+including the builder. So you can apply generic collection 
+operations on a trie (@xref{Collection framework}).
+When iterated, each element of a trie appears as a pair of a key
+and a value.
+@end deftp
+
+@deftp {Class} <trie>
+A class for Trie.  No slots are intended for public.  
+Use the following procedures to operate on tries.
+@end deftp
+
+@defun make-trie &optional tab-make tab-get tab-put! tab-fold
+Creates and returns an empty trie.  The optional four arguments
+are procedures to customize how the nodes of the internal
+tree are managed.
+
+Each node can have a table to store its child nodes, indexed
+by an element of the key sequence (e.g. if the trie uses strings
+as keys, a node's table is indexed by characters).
+
+@table @code
+@item tab-make
+A procedure with no arguments.  When called, creates and
+returns an empty table for a node.
+@item tab-get @var{tab} @var{elt}
+Returns a child node indexed by @var{elt}, or returns @code{#f}
+if the table doesn't have a child for @var{elt}.
+@item tab-put! @var{tab} @var{elt} @var{child-node}
+If @var{child-node} isn't @code{#f}, 
+stores a @var{child-node} with index @var{elt}.  
+If @var{child-node} is @code{#f}, 
+removes the entry with index @var{elt}. 
+In both cases, this procedure should return the updated table.
+@item tab-fold @var{tab} @var{proc} @var{seed}
+Calls @var{proc} for every index and node in @var{tab}, while
+passing a seed value, whose initial value is @var{seed}.
+That is, @var{proc} has a type of @code{index, node, seed -> seed}.
+Returns the last result of @var{proc}.
+@end table
+
+The default assumes @code{eqv?}-hashtables, i.e. the
+following procedures are used.
+
+@example
+tab-make: (lambda () (make-hash-table 'eqv?))
+
+tab-get:  (lambda (tab k) (hash-table-get tab k #f))
+
+tab-put!: (lambda (tab k v)
+            (if v
+              (hash-table-put! tab k v)
+              (hash-table-delete! tab k))
+            tab)
+
+tab-fold: hash-table-fold
+@end example
+
+The following example creates a trie using
+assoc list to manage children, while comparing
+string keys with case-insensitive way:
+
+@example
+(make-trie list
+           (cut assoc-ref <> <> #f char-ci=?)
+           (lambda (t k v)
+             (if v
+               (assoc-set! t k v char-ci=?)
+               (alist-delete! k t char-ci=?)))
+           (lambda (t f s) (fold f s t)))
+@end example
+
+It is important that @code{tab-put!} must return an updated
+table---by that, you can replace the table structure on the fly.
+For example, you may design a table which uses assoc list when
+the number of children are small, and then switches to a vector
+(indexed by character code) once the number of children grows over
+a certain threshold.
+@end defun
+
+@defun trie params key&value @dots{}
+Construct a trie with the initial contents
+@var{key&value} @dots{}.   @var{Params} are a list of arguments
+which will be given to @code{make-trie} to create the trie.
+The following example creates a trie with two entries
+and the default table procedures.
+
+@example
+(trie '() '("foo" . a) '("bar" . b))
+@end example
+@end defun
+
+@defun trie-with-keys params key @dots{}
+A convenient version of @code{trie} when you only concern
+the keys.  Values are the same as keys.
+The following example creates a trie with two entries
+and the default table procedures.
+
+@example
+(trie-with-keys '() "foo" "bar")
+@end example
+@end defun
+
+@defun trie? obj
+Returns @code{#t} if @var{obj} is a trie, or @code{#f} otherwise.
+@end defun
+
+@defun trie-num-entries trie
+Returns the number of entries in @var{trie}.
+@end defun
+
+@defun trie-exists? trie key
+Returns @code{#t} if @var{trie} contains an entry with @var{key},
+or returns @code{#f} otherwise.
+@end defun
+
+@defun trie-get trie key &optional fallback
+Returns the value associated with @var{key} in @var{trie}, if 
+such an entry exists.  When there's no entry for @var{key},
+if @var{fallback} is given, it is returned; otherwise,
+an error is signalled.
+@end defun
+
+@defun trie-put! trie key value
+Puts @var{value} associated to @var{key} into @var{trie}.
+@end defun
+
+@defun trie-update! trie key proc &optional fallback
+Works like the following code, except that the
+lookup of entry in @var{trie} is done only once.
+
+@example
+(let ((val (trie-get trie key fallback)))
+  (trie-put! trie key (proc val)))
+@end example
+@end defun
+
+@defun trie-delete! trie key
+Removes an entry associated with @var{key} from @var{trie}.
+If there's no such entry, this procedure does nothing.
+@end defun
+
+@defun trie->list trie
+Makes each entry in @var{trie} to a pair @code{(@var{key} . @var{value})}
+and returns a list of pairs of all entries.  The order of entries
+are undefined.
+@end defun
+
+@defun trie-keys trie
+@defunx trie-values trie
+Returns a list of all keys and values in @var{trie}, respectively.
+The order of keys/values are undefined.
+@end defun
+
+@defun trie->hash-table trie ht-type
+Creates a hash table with type @var{ht-type} (see @ref{Hashtables}, 
+about hash table types), and populates it with every key and value
+pair in @var{trie}.
+@end defun
+
+@defun trie-common-prefix trie prefix
+@defunx trie-common-prefix-keys trie prefix
+@defunx trie-common-prefix-values trie prefix
+Gathers all entries whose keys begin with @var{prefix};
+@code{trie-common-prefix} returns those entries in a list of
+pairs @code{(key . value)}; @code{trie-common-prefix-keys} returns
+a list of keys; and @code{trie-common-prefix-values} returns a list
+of values.   The order of entries in a returned list is undefined.
+If @var{trie} contains no entry whose key has @var{prefix}, an
+empty list is returned.
+
+Note that prefix matching doesn't consider the type of sequence;
+if @var{trie} has entries for @code{"foo"} and @code{(#\f #\o #\o)},
+@code{(trie-common-prefix trie "foo")} will return both entries.
+@end defun
+
+@defun trie-common-prefix-fold trie prefix proc seed
+For each entry whose key begins with @var{prefix},
+calls @var{proc} with three argments, the entry's key,
+its value, and the current seed value.  @var{Seed} is
+used for the first seed value, and the value @var{proc}
+returns is used for the seed value of the next call of @var{proc}.
+The last returned value from @var{proc} is returned from 
+@code{trie-common-prefix-fold}.
+The order of entries on which @var{proc} is called is undefined.
+If @var{trie} contains no entry whose key has @var{prefix}, 
+@var{proc} is never called and @var{seed} is returned.
+@end defun
+
+@defun trie-common-prefix-map trie prefix proc
+@defunx trie-common-prefix-for-each trie prefix proc
+These are to @var{trie-common-prefix-fold} as @code{map} and @code{for-each}
+are to @code{fold}; @code{trie-common-prefix-map} calls
+@var{proc} with key and value for matching entries and
+gathers its result to a list; @code{trie-common-prefix-for-each}
+also applies @var{proc}, but discards its results.
+@end defun
+
+@defun trie-fold trie proc seed
+@defunx trie-map trie proc
+@defunx trie-for-each trie proc
+These procedures are like their common-prefix versions, but
+traverse entire @var{trie} instead.
+@end defun
+
 
 @c ----------------------------------------------------------------------
-@node Topological sort, CGI Utility, Stream library, Library modules - Utilities
+@node Topological sort, CGI Utility, Trie, Library modules - Utilities
 @section @code{util.toposort} - Topological sort
 @c NODE トポロジカルソート, @code{util.toposort} - トポロジカルソート
 
