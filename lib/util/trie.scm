@@ -154,14 +154,6 @@
   (let1 c (class-of seq)
     (find (lambda (p) (eq? c (class-of (car p)))) (cdr node))))
 
-(define (%add-terminal! trie node seq val)
-  (or (and-let* ((c (class-of seq))
-                 (p (find (lambda (p) (eq? c (class-of (car p)))) (cdr node))))
-        (set-cdr! p val))
-      (begin
-        (push! (%node-terminals node) (cons seq val))
-        (inc! (slot-ref trie 'size)))))
-
 (define (%no-key seq)
   (error "Trie does not have an entry for a key:" seq))
 
@@ -200,7 +192,13 @@
       (get-optional opt (%no-key seq))))
 
 (define (trie-put! trie seq val)
-  (%add-terminal! trie (%trie-get-node trie seq #t) seq val)
+  (let* ((node (%trie-get-node trie seq #t))
+         (p (%node-find-terminal node seq)))
+    (cond
+     (p (set-cdr! p val))
+     (else
+      (push! (%node-terminals node) (cons seq val))
+      (inc! (slot-ref trie 'size)))))
   (undefined))
 
 (define (trie-update! trie seq proc . opt)
