@@ -1,3 +1,9 @@
+2006-10-16  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/list.scm (cond-list): extended the syntax to allow
+	  splicing, using '@' modifier.
+	* lib/util/trie.scm (make-trie): revised using new cond-list syntax.
+
 2006-10-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/trie.scm, lib/Makefile.in, test/util.scm: Added util.trie

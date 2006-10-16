@@ -488,6 +488,9 @@
 (test* "cond-list" '(b) (cond-list (#f 'a) (#t 'b)))
 (test* "cond-list" '(a b d) (cond-list (#t 'a) (#t 'b) (#f 'c) (#t 'd)))
 (test* "cond-list" '((b)) (cond-list (#f 'a) ('b => list)))
+(test* "cond-list" '(a b c d x)
+       (cond-list (#t @ '(a b)) (#t @ '(c d)) (#f @ '(e f))
+                  ('x => @ list)))
 
 (test* "alist->hash-table" '(a b)
        (let ((ht (alist->hash-table '((5 . b) (3 . a)) 'eqv?)))

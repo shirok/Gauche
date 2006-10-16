@@ -112,10 +112,11 @@
                         (tab-put! #f)
                         (tab-fold #f))
     (apply make <trie>
-           `(,@(if tab-make `(:tab-make ,tab-make) '())
-             ,@(if tab-get  `(:tab-get  ,tab-get) '())
-             ,@(if tab-put! `(:tab-put! ,tab-put!) '())
-             ,@(if tab-fold `(:tab-fold ,tab-fold) '())))))
+           (cond-list
+            (tab-make @ `(:tab-make ,tab-make))
+            (tab-get  @ `(:tab-get  ,tab-get))
+            (tab-put! @ `(:tab-put! ,tab-put!))
+            (tab-fold @ `(:tab-fold ,tab-fold))))))
 
 (define (trie params . keys&vals)
   (let1 t (apply make-trie params)
@@ -262,9 +263,7 @@
   (%trie-prefix-collect trie prefix (lambda (k v s) (cons v s))))
 
 (define (trie-common-prefix-fold trie prefix proc seed)
-  (or (and-let* ((node (%trie-get-node trie prefix #f)))
-        (%trie-node-fold trie node proc seed))
-      seed))
+  (%trie-node-fold trie (or (%trie-get-node trie prefix #f) '()) proc seed))
 
 (define (trie-common-prefix-map trie prefix proc)
   (trie-common-prefix-fold trie prefix

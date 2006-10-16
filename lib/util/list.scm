@@ -13,7 +13,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: list.scm,v 1.11 2004-12-15 11:13:55 shirok Exp $
+;;;  $Id: list.scm,v 1.12 2006-10-16 19:24:56 shirok Exp $
 ;;;
 
 ;; This module adds useful list utility procedures that are not in SRFI-1.
@@ -112,9 +112,11 @@
 ;;
 ;;   clause : (test expr ...)
 ;;          | (test => proc)
+;;          | (test @ expr ...) ;; intersperse
+;;          | (test => @ proc)  ;; intersperse
 
 (define-syntax cond-list
-  (syntax-rules (=>)
+  (syntax-rules (=> @)
     ((_) '())
     ((_ (test) . rest)
      (let* ((tmp test)
@@ -124,6 +126,14 @@
      (let* ((tmp test)
             (r (cond-list . rest)))
        (if tmp (cons (proc tmp) r) r)))
+    ((_ (test => @ proc) . rest)
+     (let* ((tmp test)
+            (r (cond-list . rest)))
+       (if tmp (append (proc tmp) r) r)))
+    ((_ (test @ . expr) . rest)
+     (let* ((tmp test)
+            (r (cond-list . rest)))
+       (if tmp (append (begin . expr) r) r)))
     ((_ (test . expr) . rest)
      (let* ((tmp test)
             (r (cond-list . rest)))

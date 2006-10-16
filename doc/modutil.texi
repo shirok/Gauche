@@ -10901,6 +10901,14 @@ the result of @var{test} is used if it is not false.
 @var{Test} is evaluated, and when it is true,
 @var{proc} is called with the value, and the return
 value is used to construct the result.
+@item (@var{test} @@ @varx{expr} @dots{})
+Like @code{(test expr @dots{})}, except that the result of
+the last @var{expr} must be a list, and it is spliced into
+the resulting list, like unquote-splicing.
+@item (@var{test} => @@ @var{proc})
+Like @code{(test => proc)}, except that the result of
+@var{proc} must be a list, and and it is spliced into
+the resulting list, like unquote-splicing.
 @end table
 @c JP
 @var{clause}は、以下のフォームのうちの1つでなければなりません。
@@ -10912,6 +10920,14 @@ value is used to construct the result.
 @item (@var{test} => @var{proc})
 @var{test}が評価され、それが真ならば@var{proc}がその値とともに
 呼ばれ、その戻り値が結果を構築するために使われます。
+@item (@var{test} @@ @var{expr} @dots{})
+@code{(test expr @dots{})}のように動作しますが、最後の@var{expr}の
+値はリストでなければならず、それは結果のリストに(unquote-splicingのように)
+スプライスされます。
+@item (@var{test} => @@ @var{proc})
+@code{(test => proc)}のように動作しますが、@var{proc}の戻り値
+はリストでなければならず、それは結果のリストに(unquote-splicingのように)
+スプライスされます。
 @end table
 @c COMMON
 
@@ -10921,6 +10937,12 @@ value is used to construct the result.
             ((assoc 'w alist) 'have-w)
             ((assoc 'z alist) => cadr)))
   @result{} (have-x 6)
+
+(let ((x 2) (y #f) (z 5))
+  (cond-list (x @ `(:x ,x))
+             (y @ `(:y ,y))
+             (z @ `(:z ,z))))
+  @result{} (:x 2 :z 5)
 @end example
 @end defmac
 
