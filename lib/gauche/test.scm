@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: test.scm,v 1.17 2006-10-16 12:00:42 shirok Exp $
+;;;  $Id: test.scm,v 1.18 2006-10-16 12:02:44 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -66,7 +66,7 @@
 ;;
 
 (define-module gauche.test
-  (export test test* test-start test-end test-section test-subsection
+  (export test test* test-start test-end test-section
           test-module
           *test-error* *test-report-error* test-error? prim-test))
 (select-module gauche.test)
@@ -239,10 +239,6 @@
 (define (test-section msg)
   (let ((msglen (string-length msg)))
     (format #t "<~a>~a\n" msg (make-string (max 5 (- 77 msglen)) #\-))))
-
-(define (test-subsection msg)
-  (let ((msglen (string-length msg)))
-    (format #t "+<~a>~a\n" msg (make-string (max 5 (- 76 msglen)) #\.))))
 
 (define (test-start msg)
   (let* ((s (format #f "Testing ~a ... " msg))
