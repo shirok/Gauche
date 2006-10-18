@@ -1,3 +1,9 @@
+2006-10-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (read_real): Fixed the behavior when too big or
+	  too small exponent is given.  Also fixed the handling of explicitly
+	  exact fractional numbers (e.g. #e12.34e3 or #e4e-2).
+
 2006-10-16  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/list.scm (cond-list): extended the syntax to allow

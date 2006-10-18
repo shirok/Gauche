@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.129 2006-10-07 07:35:46 shirok Exp $
+ *  $Id: number.c,v 1.130 2006-10-18 10:59:52 shirok Exp $
  */
 
 #include <math.h>
@@ -61,6 +61,13 @@
 
 #define RADIX_MIN 2
 #define RADIX_MAX 36
+
+/* Maximum allowable range of exponent in the number litereal.
+   For flonums, IEEE double can support [-323..308].  For exact
+   numbers we can go futher, but it would easily consume huge
+   memory.  So I assume it is reasonable to limit its range. */
+#define MAX_EXPONENT  324
+
 
 /* Linux gcc have those, but the declarations aren't included unless
    __USE_ISOC9X is defined.  Just in case. */
@@ -3016,7 +3023,7 @@ static double algorithmR(ScmObj f, int e, double z)
 static ScmObj read_real(const char **strp, int *lenp,
                         struct numread_packet *ctx)
 {
-    int minusp = FALSE, exp_minusp = FALSE;
+    int minusp = FALSE, exp_minusp = FALSE, exp_overflow = FALSE;
     int fracdigs = 0;
     long exponent = 0;
     ScmObj intpart, fraction;
@@ -3052,6 +3059,10 @@ static ScmObj read_real(const char **strp, int *lenp,
             if (SCM_FALSEP(denom)) return SCM_FALSE;
             if (SCM_EXACT_ZERO_P(denom)) {
                 if (lensave > *lenp) {
+                    if (ctx->exactness == EXACT) {
+                        return numread_error("(exact infinity is not supported.)",
+                                             ctx);
+                    }
                     return minusp? SCM_NEGATIVE_INFINITY:SCM_POSITIVE_INFINITY;
                 } else {
                     return SCM_FALSE;
@@ -3074,8 +3085,7 @@ static ScmObj read_real(const char **strp, int *lenp,
     if (**strp == '.') {
         int lensave;
         if (ctx->radix != 10) {
-            return numread_error("(only 10-based fraction is supported)",
-                                 ctx);
+            return numread_error("(only 10-based fraction is supported)", ctx);
         }
         (*strp)++; (*lenp)--;
         lensave = *lenp;
@@ -3104,24 +3114,54 @@ static ScmObj read_real(const char **strp, int *lenp,
             int c = **strp;
             if (!isdigit(c)) break;
             (*strp)++, (*lenp)--;
-            if (isdigit(c)) {
+            if (isdigit(c) && !exp_overflow) {
                 exponent = exponent * 10 + (c - '0');
-                /* just reject obviously wrong exponent.  more precise
-                   check will be done later. */
-                if (exponent >= LONG_MAX/10 - 10) {
-                    return numread_error("(exponent of floating-point number out of range)", ctx);
+                /* Check obviously wrong exponent range.  More subtle check
+                   will be done later. */
+                if (exponent >= MAX_EXPONENT) {
+                    exp_overflow = TRUE;
                 }
             }
         }
         if (exp_minusp) exponent = -exponent;
     }
+    if (exp_overflow) {
+        if (ctx->exactness == EXACT) {
+            /* Although we can represent such a number using bignum and
+               ratnum, such large (or small) exponent is highly unusual
+               and we assume we can report implementation limitation
+               violation. */
+            return numread_error("(such an exact number is out of implementation limitation)",
+                                 ctx);
+        }
+        if (exp_minusp) {
+            return Scm_MakeFlonum(0.0);
+        } else {
+            return minusp? SCM_NEGATIVE_INFINITY : SCM_POSITIVE_INFINITY;
+        }
+    }
 
     /*Scm_Printf(SCM_CURERR, "fraction=%S, exponent=%d\n", fraction, exponent);*/
-    /* Compose flonum.*/
-    {
+
+    /* Compose the number. */
+    if (ctx->exactness == EXACT) {
+        /* Explicit exact number.  We can continue exact arithmetic
+           (it may end up ratnum) */
+        ScmObj e = Scm_Mul(fraction,
+                           exact_expt(SCM_MAKE_INT(10),
+                                      Scm_MakeInteger(exponent-fracdigs)));
+        if (minusp) return Scm_Negate(e);
+        else        return e;
+    } else {
         double realnum = Scm_GetDouble(fraction);
 
         realnum = raise_pow10(realnum, exponent-fracdigs);
+
+        if (SCM_IS_INF(realnum)) {
+            /* Special case.  We catch too big exponent here. */
+            return (minusp? SCM_NEGATIVE_INFINITY : SCM_POSITIVE_INFINITY);
+        }
+
         if (realnum > 0.0
             && (Scm_NumCmp(fraction, SCM_2_52) > 0
                 || exponent-fracdigs > MAX_EXACT_10_EXP
@@ -3129,15 +3169,6 @@ static ScmObj read_real(const char **strp, int *lenp,
             realnum = algorithmR(fraction, exponent-fracdigs, realnum);
         }
         if (minusp) realnum = -realnum;
-        /* check exactness */
-        if (ctx->exactness == EXACT) {
-            double integ;
-            if (modf(realnum, &integ) != 0.0) {
-                return numread_error("(exact non-integral number is not supported)",
-                                     ctx);
-            }
-            return Scm_InexactToExact(Scm_MakeFlonum(realnum));
-        }
         return Scm_MakeFlonum(realnum);
     }
 }

@@ -25,97 +25,98 @@
   (list x (+ x -1 x) (+ x x) (- x) (- (+ x -1 x)) (- 0 x x) (- 0 x x 1)))
 
 (test* "around 2^28"
-      '(268435456 536870911 536870912
-        -268435456 -536870911 -536870912 -536870913)
-      (i-tester (exp2 28)))
-      
+       '(268435456 536870911 536870912
+         -268435456 -536870911 -536870912 -536870913)
+       (i-tester (exp2 28)))
+
 (test* "around 2^31"
-      '(2147483648 4294967295 4294967296
-        -2147483648 -4294967295 -4294967296 -4294967297)
-      (i-tester (exp2 31)))
+       '(2147483648 4294967295 4294967296
+         -2147483648 -4294967295 -4294967296 -4294967297)
+       (i-tester (exp2 31)))
 
 (test* "around 2^60"
-      '(1152921504606846976 2305843009213693951 2305843009213693952
-        -1152921504606846976 -2305843009213693951 -2305843009213693952
-        -2305843009213693953)
-      (i-tester (exp2 60)))
+       '(1152921504606846976 2305843009213693951 2305843009213693952
+         -1152921504606846976 -2305843009213693951 -2305843009213693952
+         -2305843009213693953)
+       (i-tester (exp2 60)))
 
 (test* "around 2^63"
-      '(9223372036854775808 18446744073709551615 18446744073709551616
-        -9223372036854775808 -18446744073709551615 -18446744073709551616
-        -18446744073709551617)
-      (i-tester (exp2 63)))
+       '(9223372036854775808 18446744073709551615 18446744073709551616
+         -9223372036854775808 -18446744073709551615 -18446744073709551616
+         -18446744073709551617)
+       (i-tester (exp2 63)))
 
 (test* "around 2^127"
-      '(170141183460469231731687303715884105728
-        340282366920938463463374607431768211455
-        340282366920938463463374607431768211456
-        -170141183460469231731687303715884105728
-        -340282366920938463463374607431768211455
-        -340282366920938463463374607431768211456
-        -340282366920938463463374607431768211457)
-      (i-tester (exp2 127)))
+       '(170141183460469231731687303715884105728
+         340282366920938463463374607431768211455
+         340282366920938463463374607431768211456
+         -170141183460469231731687303715884105728
+         -340282366920938463463374607431768211455
+         -340282366920938463463374607431768211456
+         -340282366920938463463374607431768211457)
+       (i-tester (exp2 127)))
 
 ;; test for reader's overflow detection code
 (test* "peculiarity around 2^32"
       (* 477226729 10) 4772267290)
 
 (test* "radix" '(43605 342391 718048024785
-                123456789 123456789987654321
-                1193046 3735928559 3735928559)
-              (list #b1010101001010101
-              #o1234567
-              #o12345677654321
-              #d123456789
-              #d123456789987654321
-              #x123456
-              #xdeadbeef
-              #xDeadBeef))
+                 123456789 123456789987654321
+                 1193046 3735928559 3735928559)
+       (list #b1010101001010101
+             #o1234567
+             #o12345677654321
+             #d123456789
+             #d123456789987654321
+             #x123456
+             #xdeadbeef
+             #xDeadBeef))
 
 (test* "exactness" #t (exact? #e10))
 (test* "exactness" #t (exact? #e10.0))
 (test* "exactness" #t (exact? #e10e10))
-(test* "exactness" #f (string->number "#e12.34"))
+(test* "exactness" #t (exact? #e12.34))
 (test* "inexactness" #f (exact? #i10))
 (test* "inexactness" #f (exact? #i10.0))
 (test* "inexactness" #f (exact? #i12.34))
 
 (test* "exactness & radix" '(#t 3735928559 #t 3735928559)
-      (list (exact? #e#xdeadbeef)
-                       #e#xdeadbeef
-                       (exact? #x#edeadbeef)
-                       #x#edeadbeef))
+       (list (exact? #e#xdeadbeef)
+             #e#xdeadbeef
+             (exact? #x#edeadbeef)
+             #x#edeadbeef))
 (test* "inexactness & radix" '(#f 3735928559.0 #f 3735928559.0)
-      (list (exact? #i#xdeadbeef)
-                       #i#xdeadbeef
-                       (exact? #x#ideadbeef)
-                       #x#ideadbeef))
+       (list (exact? #i#xdeadbeef)
+             #i#xdeadbeef
+             (exact? #x#ideadbeef)
+             #x#ideadbeef))
 
 (test* "invalid exactness/radix spec" #f
-      (or (string->number "#e")
-                     (string->number "#i")
-                     (string->number "#e#i3")
-                     (string->number "#i#e5")
-                     (string->number "#x#o13")
-                     (string->number "#e#b#i00101")))
+       (or (string->number "#e")
+           (string->number "#i")
+           (string->number "#e#i3")
+           (string->number "#i#e5")
+           (string->number "#x#o13")
+           (string->number "#e#b#i00101")))
 
 (define (radix-tester radix)
-  (list (let loop ((digits 0)
-                   (input "1")
-                   (value 1))
-          (cond ((> digits 64) #t)
-                ((eqv? (string->number input radix) value)
-                 (loop (+ digits 1) (string-append input "0") (* value radix)))
-                (else #f)))
-        (let loop ((digits 0)
-                   (input (string (integer->digit (- radix 1) radix)))
-                   (value (- radix 1)))
-          (cond ((> digits 64) #t)
-                ((eqv? (string->number input radix) value)
-                 (loop (+ digits 1)
-                       (string-append input (string (integer->digit (- radix 1) radix)))
-                       (+ (* value radix) (- radix 1))))
-                (else #f)))))
+  (list
+   (let loop ((digits 0)
+              (input "1")
+              (value 1))
+     (cond ((> digits 64) #t)
+           ((eqv? (string->number input radix) value)
+            (loop (+ digits 1) (string-append input "0") (* value radix)))
+           (else #f)))
+   (let loop ((digits 0)
+              (input (string (integer->digit (- radix 1) radix)))
+              (value (- radix 1)))
+     (cond ((> digits 64) #t)
+           ((eqv? (string->number input radix) value)
+            (loop (+ digits 1)
+                  (string-append input (string (integer->digit (- radix 1) radix)))
+                  (+ (* value radix) (- radix 1))))
+           (else #f)))))
 
 (test* "base-2 reader" '(#t #t) (radix-tester 2))
 (test* "base-3 reader" '(#t #t) (radix-tester 3))
@@ -170,37 +171,44 @@
 (test* "rational reader" '(1/2 #t) (rational-test '751/1502))
 
 (test* "rational reader" '(1 #t)
-      (rational-test (string->number "3/03")))
-(test* "rational reader" '(1/0 #f)
-      (rational-test (string->number "3/0")))
+       (rational-test (string->number "3/03")))
+(test* "rational reader" '(#i1/0 #f)
+       (rational-test (string->number "3/0")))
+(test* "rational reader" '(#i-1/0 #f)
+       (rational-test (string->number "-3/0")))
 (test* "rational reader" #f
-      (rational-test (string->number "3/3/4")))
+       (rational-test (string->number "3/3/4")))
 (test* "rational reader" #f
-      (rational-test (string->number "1/2.")))
+       (rational-test (string->number "1/2.")))
 (test* "rational reader" #f
-      (rational-test (string->number "1.3/2")))
+       (rational-test (string->number "1.3/2")))
+
+(test* "rational reader" *test-error*
+       (rational-test (read-from-string "#e3/0")))
+(test* "rational reader" *test-error*
+       (rational-test (read-from-string "#e-3/0")))
 
 (test* "rational reader w/#e" '(1234 #t)
-      (rational-test '#e1234/1))
+       (rational-test '#e1234/1))
 (test* "rational reader w/#e" '(-1234 #t)
-      (rational-test '#e-1234/1))
+       (rational-test '#e-1234/1))
 (test* "rational reader w/#e" '(32/7 #t)
-      (rational-test '#e32/7))
+       (rational-test '#e32/7))
 (test* "rational reader w/#e" '(-32/7 #t)
-      (rational-test '#e-32/7))
+       (rational-test '#e-32/7))
 (test* "rational reader w/#i" '(1234.0 #f)
-      (rational-test '#i1234/1))
+       (rational-test '#i1234/1))
 (test* "rational reader w/#i" '(-1234.0 #f)
-      (rational-test '#i-1234/1))
+       (rational-test '#i-1234/1))
 (test* "rational reader w/#i" '(-0.125 #f)
-      (rational-test '#i-4/32))
+       (rational-test '#i-4/32))
 
 (test* "rational reader w/radix" '(15 #t)
-      (rational-test '#e#xff/11))
+       (rational-test '#e#xff/11))
 (test* "rational reader w/radix" '(56 #t)
-      (rational-test '#o770/11))
+       (rational-test '#o770/11))
 (test* "rational reader w/radix" '(15.0 #f)
-      (rational-test '#x#iff/11))
+       (rational-test '#x#iff/11))
 
 
 ;;------------------------------------------------------------------
@@ -286,6 +294,44 @@
 (test* "padding (exactness)" '(100.0 #t) (flonum-test '#i1##))
 (test* "padding (exactness)" '(120.0 #t) (flonum-test '#i12#))
 (test* "padding (exactness)" '(120.0 #t) (flonum-test '#i12#.#))
+
+(test* "exponent out-of-range 1" '(#i1/0 #t) (flonum-test '1e309))
+(test* "exponent out-of-range 2" '(#i1/0 #t) (flonum-test '1e10000))
+(test* "exponent out-of-range 3" '(#i1/0 #t) (flonum-test '1e1000000000000000000000000000000000000000000000000000000000000000))
+(test* "exponent out-of-range 4" '(#i-1/0 #t) (flonum-test '-1e309))
+(test* "exponent out-of-range 5" '(#i-1/0 #t) (flonum-test '-1e10000))
+(test* "exponent out-of-range 6" '(#i-1/0 #t) (flonum-test '-1e1000000000000000000000000000000000000000000000000000000000000000))
+(test* "exponent out-of-range 7" '(0.0 #t) (flonum-test '1e-324))
+(test* "exponent out-of-range 8" '(0.0 #t) (flonum-test '1e-1000))
+(test* "exponent out-of-range 9" '(0.0 #t) (flonum-test '1e-1000000000000000000000000000000000000000000000000000000000000000000))
+
+(test* "exact fractonal number" 12345
+       (string->number "#e1.2345e4"))
+(test* "exact fractonal number" 123450000000000
+       (string->number "#e1.2345e14"))
+(test* "exact fractonal number" 12345/100
+       (string->number "#e1.2345e2"))
+(test* "exact fractonal number" 12345/1000000
+       (string->number "#e1.2345e-2"))
+(test* "exact fractonal number" -12345
+       (string->number "#e-1.2345e4"))
+(test* "exact fractonal number" -123450000000000
+       (string->number "#e-1.2345e14"))
+(test* "exact fractonal number" -12345/100
+       (string->number "#e-1.2345e2"))
+(test* "exact fractonal number" -12345/1000000
+       (string->number "#e-1.2345e-2"))
+
+(test* "exact fractonal number" (expt 10 296)
+       (string->number "#e0.0001e300"))
+(test* "exact fractonal number" (- (expt 10 296))
+       (string->number "#e-0.0001e300"))
+
+(test* "exact fractonal number" *test-error*
+       (read-from-stirng "#e1e330"))
+(test* "exact fractonal number" *test-error*
+       (read-from-stirng "#e1e-330"))
+
 
 ;;------------------------------------------------------------------
 (test-section "complex reader")
