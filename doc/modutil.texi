@@ -10901,7 +10901,7 @@ the result of @var{test} is used if it is not false.
 @var{Test} is evaluated, and when it is true,
 @var{proc} is called with the value, and the return
 value is used to construct the result.
-@item (@var{test} @@ @varx{expr} @dots{})
+@item (@var{test} @@ @var{expr} @dots{})
 Like @code{(test expr @dots{})}, except that the result of
 the last @var{expr} must be a list, and it is spliced into
 the resulting list, like unquote-splicing.
