@@ -1,4 +1,6 @@
-2006-10-19  Shiro Kawai  <shiro@acm.org>
+2006-10-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c (Scm_FlushAllPorts): fixed MT-hazard in Scm_FlushAllPorts.
 
 	* src/number.c (read_real): Fixed the behavior when too big or
 	  too small exponent is given.  Also fixed the handling of explicitly

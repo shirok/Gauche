@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.129 2006-10-11 09:11:29 shirok Exp $
+ *  $Id: port.c,v 1.130 2006-10-19 05:49:23 shirok Exp $
  */
 
 #include <unistd.h>
@@ -327,7 +327,7 @@ int Scm_FdReady(int fd, int dir)
  *        ^   ^                                  ^
  *        b   c                                  e
  *
- *    (*1) Why should these two mode need to be distinguished?  Suppose
+ *    (*1) Why should these two modes need to be distinguished?  Suppose
  *    you implement a buffered port that does character encoding conversion.
  *    The flusher converts the content of the buffer to different character
  *    encoding and feed it to some specified port.  It is often the case
@@ -361,11 +361,14 @@ int Scm_FdReady(int fd, int dir)
  *        bc  e
  *
  *    Then port->src.buf.filler is called.  It is supposed to read as many
- *    bytes as cnt, putting them after the end pointer.   It may read
- *    less if all cnt bytes of data is not available immediately.
- *    The filler returns the number of bytes actually read in.
- *    The filler should return 0 if it reaches the end of the data source.
- *    If an error occurs, the filler must return -1.
+ *    bytes as cnt, putting them after the end pointer.   The filler doesn't
+ *    need to modify the end pointer; it is taken care of after the filler
+ *    returns.
+ *
+ *    The filler may read less than cnt bytes if all bytes of data is not
+ *    available immediately.   The filler returns the number of bytes
+ *    actually read in.  The filler should return 0 if it reaches the end
+ *    of the data source.  If an error occurs, the filler must return -1.
  *
  *    bufport_fill then adjust the end pointer, so the buffer becomes like
  *    this.
@@ -611,7 +614,7 @@ static int bufport_read(ScmPort *p, char *dst, int siz)
 
 /* Tracking buffered ports:
  *
- *   The system doesn't automatically flush the buffered output port,
+ *   The OS doesn't automatically flush the buffered output port,
  *   as it does on FILE* structure.  So Gauche keeps track of active
  *   output buffered ports, in a weak vector.
  *   When the port is no longer used, it is collected by GC and removed
@@ -653,7 +656,7 @@ static void register_buffered_port(ScmPort *port)
     c = 0;
     /* search an available entry by quadratic hash */
     (void)SCM_INTERNAL_MUTEX_LOCK(active_buffered_ports.mutex);
-    while (!SCM_FALSEP(Scm_WeakVectorRef(active_buffered_ports.ports, i, SCM_FALSE))) {
+    while (SCM_PORTP(Scm_WeakVectorRef(active_buffered_ports.ports, i, SCM_FALSE))) {
         i -= ++c; while (i<0) i+=PORT_VECTOR_SIZE;
         if (i == h) {
             // Vector entry is full.  We run global GC to try to collect
@@ -688,31 +691,33 @@ static void register_buffered_port(ScmPort *port)
    (unless exitting is true, in that case we know nobody cares the active
    port vector anymore).
    Even if more than one thread calls Scm_FlushAllPorts simultaneously,
-   the flush method is called only once, from one of the calling thread.
+   the flush method is called only once for each vector.
  */
 void Scm_FlushAllPorts(int exitting)
 {
-    ScmWeakVector *save, *ports;
+    ScmWeakVector *ports;
+    ScmVector *save;
     ScmObj p = SCM_FALSE;
     int i, saved = 0;
 
-    save = SCM_WEAK_VECTOR(Scm_MakeWeakVector(PORT_VECTOR_SIZE));
+    save = SCM_VECTOR(Scm_MakeVector(PORT_VECTOR_SIZE, SCM_FALSE));
     ports = active_buffered_ports.ports;
     
     for (i=0; i<PORT_VECTOR_SIZE;) {
         (void)SCM_INTERNAL_MUTEX_LOCK(active_buffered_ports.mutex);
         for (; i<PORT_VECTOR_SIZE; i++) {
             p = Scm_WeakVectorRef(ports, i, SCM_FALSE);
-            if (!SCM_FALSEP(p)) {
-                Scm_WeakVectorSet(save, i, p);
-                Scm_WeakVectorSet(ports, i, SCM_FALSE);
+            if (SCM_PORTP(p)) {
+                Scm_VectorSet(save, i, p);
+                /* Set #t so that the slot won't be reused. */
+                Scm_WeakVectorSet(ports, i, SCM_TRUE);
                 saved++;
                 break;
             }
         }
         (void)SCM_INTERNAL_MUTEX_UNLOCK(active_buffered_ports.mutex);
-        if (!SCM_FALSEP(p)) {
-            SCM_ASSERT(SCM_PORTP(p) && SCM_PORT_TYPE(p)==SCM_PORT_FILE);
+        if (SCM_PORTP(p)) {
+            SCM_ASSERT(SCM_PORT_TYPE(p)==SCM_PORT_FILE);
             if (!SCM_PORT_ERROR_OCCURRED_P(SCM_PORT(p))) {
                 bufport_flush(SCM_PORT(p), 0, TRUE);
             }
@@ -721,8 +726,8 @@ void Scm_FlushAllPorts(int exitting)
     if (!exitting && saved) {
         (void)SCM_INTERNAL_MUTEX_LOCK(active_buffered_ports.mutex);
         for (i=0; i<PORT_VECTOR_SIZE; i++) {
-            p = Scm_WeakVectorRef(save, i, SCM_FALSE);
-            if (!SCM_FALSEP(p)) Scm_WeakVectorSet(ports, i, p);
+            p = Scm_VectorRef(save, i, SCM_FALSE);
+            if (SCM_PORTP(p)) Scm_WeakVectorSet(ports, i, p);
         }
         (void)SCM_INTERNAL_MUTEX_UNLOCK(active_buffered_ports.mutex);
     }
