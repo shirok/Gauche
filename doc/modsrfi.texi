@@ -1155,7 +1155,7 @@ The comparison procedure, @var{elt=}, defaults to @code{equal?}.
 This is an alias of the Gauche builtin procedure @code{acons}.
 @c JP
 [SRFI-1] @code{(cons (cons @var{key} @var{datum}) @var{alist})} を返します。
-これは、Gauche の組み込み手続き @code{acon} の別名です。
+これは、Gauche の組み込み手続き @code{acons} の別名です。
 @c COMMON
 @end defun
 
