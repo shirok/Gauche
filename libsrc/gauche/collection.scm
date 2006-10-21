@@ -1,7 +1,7 @@
 ;;;
 ;;; collection.scm - collection generics
 ;;;  
-;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: collection.scm,v 1.3 2006-01-07 11:36:16 shirok Exp $
+;;;  $Id: collection.scm,v 1.4 2006-10-21 09:39:07 shirok Exp $
 ;;;
 
 ;; Defines generic operations over collection.   A collection is
@@ -99,9 +99,9 @@
              (eprocs '())
              (nprocs '()))
     (if (null? colls)
-        (proc (reverse! eprocs) (reverse! nprocs))
-        (with-iterator ((car colls) end? next)
-          (loop (cdr colls) (cons end? eprocs) (cons next nprocs))))))
+      (proc (reverse! eprocs) (reverse! nprocs))
+      (with-iterator ((car colls) end? next)
+        (loop (cdr colls) (cons end? eprocs) (cons next nprocs))))))
 
 ;;-------------------------------------------------
 ;; Call-with-builder - the fundamental constructor
@@ -213,15 +213,15 @@
          )))
     ))
                  
-;; generic way.   This effectively shadows SRFI-1 fold.
+;; generic way.   This shadows builtin fold.
 (define-fold-k fold (knil))
 
-;; for list arguments, SRFI-1 implementation is slightly faster.
+;; for list arguments, builtin fold is faster.
 (define-method fold (proc knil (coll <list>))
-  ((with-module srfi-1 fold) proc knil coll))
+  ((with-module gauche fold) proc knil coll))
 
 (define-method fold (proc knil (coll <list>) (coll2 <list>))
-  ((with-module srfi-1 fold) proc knil coll coll2))
+  ((with-module gauche fold) proc knil coll coll2))
 
 ;; 2- and 3- seed values
 (define-fold-k fold2 (knil1 knil2))

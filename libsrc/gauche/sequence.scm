@@ -1,7 +1,7 @@
 ;;;
 ;;; sequence.scm - sequence operations
 ;;;  
-;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: sequence.scm,v 1.2 2006-01-07 03:36:54 shirok Exp $
+;;;  $Id: sequence.scm,v 1.3 2006-10-21 09:39:07 shirok Exp $
 ;;;
 
 ;; This module defines an unified way to treat sequence-like objects
@@ -41,6 +41,7 @@
   (use srfi-1)
   (extend gauche.collection)
   (export referencer modifier subseq
+          fold-right
           fold-with-index map-with-index map-to-with-index for-each-with-index
           find-index find-with-index group-sequence)
   )
@@ -97,6 +98,35 @@
         ((>= index end))
       (when (end?) (error "not enough values for (setter subseq)" vals))
       (set! (ref seq index) (next)))))
+
+;; fold-right --------------------------------------------
+
+;;  (proc e1 (proc e2 ... (proc eN seed)))
+
+(define-method fold-right (proc seed (seq <sequence>) . more)
+  (if (null? more)
+    (with-iterator (seq end? next)
+      (let rec ()
+        (if (end?)
+          seed
+          (let1 elt (next)
+            (proc elt (rec)))))) 
+    (call-with-iterators
+     (cons seq more)
+     (lambda (ends? nexts)
+       (let rec ()
+         (if (any (cut <>) ends?)
+           seed
+           (let1 elts (map (cut <>) nexts)
+             (apply proc (append! elts (list (rec)))))))))
+    ))
+
+;; for list arguments, built-in fold-right is faster.
+(define-method fold-right (proc seed (seq <list>))
+  ((with-module gauche fold-right) proc seed seq))
+
+(define-method fold-right (proc seed (seq1 <list>) (seq2 <list>))
+  ((with-module gauche fold-right) proc seed seq1 seq2))
 
 ;; mapping with index ------------------------------------
 
