@@ -1,3 +1,16 @@
+2006-10-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/rbtree.scm, test/util.scm, lib/Makefile.in:
+	  added util.rbtree, contributed from Rui Ueyama.
+
+2006-10-20  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/collection.scm: original 'fold' is now built-in
+	  instead of srfi-1.
+	* libsrc/gauche/sequence.scm (fold-right): added generic version
+	  of fold-right.  It is sequence's operation, since collections
+	  don't care about the order of elements.
+
 2006-10-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c (Scm_FlushAllPorts): fixed MT-hazard in Scm_FlushAllPorts.

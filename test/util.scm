@@ -660,6 +660,180 @@
   )
 
 ;;-----------------------------------------------
+(test-section "util.rbtree")
+(use util.rbtree)
+(use gauche.sequence)
+(use srfi-27)
+(test-module 'util.rbtree)
+
+(define rbtree-check
+  (with-module util.rbtree rbtree-check))
+
+(let1 tree1 #f
+  (test* "make-rbtree" #t
+         (begin (set! tree1 (make-rbtree = <))
+                (rbtree? tree1)))
+  (test* "rbtree-get" *test-error*
+         (rbtree-get #f 0 'foo))
+  (test* "rbtree-get" 'not-found
+         (rbtree-get tree1 0 'not-found))
+  (test* "rbtree-get" *test-error*
+         (rbtree-get tree1 0))
+  (test* "rbtree-put!" *test-error*
+         (rbtree-put! #f 0 'foo))
+  (test* "rbtree-put!" "0"
+         (begin (rbtree-put! tree1 0 "0")
+                (rbtree-get tree1 0)))
+  (test* "rbtree-put!" '("0" "1")
+         (begin (rbtree-put! tree1 1 "1")
+                (list (rbtree-get tree1 0)
+                      (rbtree-get tree1 1))))
+  (test* "rbtree-put!" 'bar
+         (begin (rbtree-put! tree1 2 'foo)
+                (rbtree-put! tree1 2 'bar)
+                (rbtree-get tree1 2)))
+  (test* "rbtree-check" #t
+         (rbtree-check tree1))
+  (test* "rbtree-fold" '(2 bar 1 "1" 0 "0")
+         (rbtree-fold tree1 list* '()))
+  (test* "rbtree-fold-right" '(0 "0" 1 "1" 2 bar)
+         (rbtree-fold-right tree1 list* '()))
+  (test* "rbtree-delete! (exiting key)" '(#t not-found)
+         (let1 r (rbtree-delete! tree1 1)
+           (list r (rbtree-get tree1 1 'not-found))))
+  (test* "rbtree-delete! (non-existing key)" #f
+         (rbtree-delete! tree1 1))
+  (test* "rbtree-delete!" 'no-error
+         (begin (rbtree-delete! tree1 1)
+                'no-error))
+  (test* "rbtree->alist" '()
+         (rbtree->alist (make-rbtree = <)))
+  (test* "rbtree->alist" '((0 . "0") (1 . "1") (2 . "2"))
+         (let1 tree (make-rbtree = <)
+           (for-each (lambda (p) (rbtree-put! tree (car p) (cdr p)))
+                     '((0 . "0") (1 . "1") (2 . "2")))
+           (rbtree->alist tree)))
+  (test* "alist->rbtree" '((0 . "0") (1 . "1") (2 . "2"))
+         (rbtree->alist
+          (alist->rbtree '((0 . "0") (1 . "1") (2 . "2")) = <)))
+  (test* "rbtree-empty?" #f
+         (rbtree-empty? tree1))
+  (test* "rbtree-empty?" #t
+         (rbtree-empty? (make-rbtree < =)))
+  (test* "rbtree-empty?" *test-error*
+         (rbtree-empty? 'wrong-arg))
+  (test* "rbtree-exists?" '(#t #f)
+         (let1 tree (make-rbtree = <)
+           (rbtree-put! tree 1 'foo)
+           (map (cut rbtree-exists? tree <>)
+                '(1 2))))
+  (test* "rbtree-num-entries" '(0 1 0)
+         (let* ((t (make-rbtree = <))
+                (a (rbtree-num-entries t))
+                (b (begin (rbtree-put! t 7 7)
+                          (rbtree-num-entries t)))
+                (c (begin (rbtree-delete! t 7)
+                          (rbtree-num-entries t))))
+           (list a b c)))
+  (test* "rbtree-push!" '(bar foo)
+         (let1 tree (make-rbtree = <)
+           (rbtree-push! tree 1 'foo)
+           (rbtree-push! tree 1 'bar)
+           (rbtree-get tree 1)))
+  (test* "rbtree-pop!" '(foo bar)
+         (let1 tree (alist->rbtree '((1 foo bar)) = <)
+           (let1 r (rbtree-pop! tree 1)
+             (list r (rbtree-pop! tree 1)))))
+  (test* "rbtree-update!" 2
+         (let1 tree (make-rbtree = <)
+           (rbtree-update! tree 1 (cut + 1 <>) 0)
+           (rbtree-update! tree 1 (cut + 1 <>) 0)
+           (rbtree-get tree 1)))
+  )
+
+;; iterators
+(let ((empty (make-rbtree = <))
+      (tree2 (alist->rbtree '((1 . "1") (0 . "0") (2 . "2")) = <)))
+
+  (test* "rbtree-min" '(0 . "0") (rbtree-min tree2))
+  (test* "rbtree-max" '(2 . "2") (rbtree-max tree2))
+  (test* "rbtree-min" *test-error* (rbtree-min 'wrong-arg))
+  (test* "rbtree-min" *test-error* (rbtree-min 'wrong-arg))
+  (test* "rbtree-min" 'default (rbtree-min empty 'default))
+  (test* "rbtree-max" 'default (rbtree-max empty 'default))
+
+  (test* "rbtree-keys" '(0 1 2)
+         (rbtree-keys tree2))
+
+  (test* "rbtree-values" '("0" "1" "2")
+         (rbtree-values tree2))
+
+  (test* "rbtree-copy" #t
+         (let1 new (rbtree-copy tree2)
+           (rbtree-check new)
+           (equal? (rbtree->alist tree2)
+                   (rbtree->alist new))))
+
+  (test* "for-each" (rbtree->alist tree2)
+         (let1 r '()
+           (for-each (lambda (e) (push! r e)) tree2)
+           (reverse! r)))
+
+  (test* "map" (rbtree->alist tree2)
+         (map values tree2))
+
+  (test* "fold" (rbtree->alist tree2)
+         (reverse! (fold cons '() tree2)))
+
+  (test* "fold-right" (rbtree->alist tree2)
+         (fold-right cons '() tree2))
+
+  (test* "ref" '((0 . "0") (1 . "1") (2 . "2"))
+         (map (cut ref tree2 <>) '(0 1 2)))
+
+  (test* "rbtree-extract-min!" '((0 . "0") (1 . "1"))
+         (let1 r (rbtree-extract-min! tree2)
+           (list r (rbtree-min tree2))))
+
+  (test* "rbtree-extract-max!" '((2 . "2") (1 . "1"))
+         (let1 r (rbtree-extract-max! tree2)
+           (list r (rbtree-max tree2))))
+  )
+
+;; collection interface
+(let1 tree4 (alist->rbtree '(("0" . 0) ("1" . 1) ("2" . 1))
+                           string=? string<?)
+  (test* "map" '(("0" . 0) ("1" . 1) ("2" . 1))
+         (map values tree4))
+
+  (test* "call-with-builder" '(("0" . 0) ("1" . 1) ("2" . 1))
+         (call-with-builder <rbtree>
+                            (lambda (add! get)
+                              (for-each add! '(("0" . 0) ("1" . 1) ("2" . 1)))
+                              (rbtree->alist (get)))
+                            :key=? string=? :key<? string<?))
+  )
+
+;; random insertion/deletion
+
+(let1 tree4 (make-rbtree = <)
+  (random-source-randomize! default-random-source)
+
+  (test* "random insertion/deletion" 'done
+         (begin (dotimes (_ 5)
+                  (dotimes (_ 30)
+                    (let1 i (random-integer 30)
+                      (rbtree-put! tree4 i i)
+                      (rbtree-check tree4)))
+                  (dotimes (_ 30)
+                    (let1 i (random-integer 30)
+                      (rbtree-delete! tree4 i)
+                      (rbtree-check tree4))))
+                'done))
+  )
+
+
+;;-----------------------------------------------
 (test-section "util.record")
 (use util.record)
 (test-module 'util.record)

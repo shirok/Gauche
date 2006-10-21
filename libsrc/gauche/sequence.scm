@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: sequence.scm,v 1.3 2006-10-21 09:39:07 shirok Exp $
+;;;  $Id: sequence.scm,v 1.4 2006-10-21 23:26:23 shirok Exp $
 ;;;
 
 ;; This module defines an unified way to treat sequence-like objects
@@ -57,6 +57,11 @@
 (define-method modifier   ((obj <vector>)) vector-set!)
 (define-method modifier   ((obj <weak-vector>)) weak-vector-set!)
 (define-method modifier   ((obj <string>)) string-set!)
+
+(define-method modifier   ((obj <sequence>))
+  ;; fallback
+  (errorf "Modifying ~a by index isn't supported."
+          (class-of obj)))
 
 ;; ref and (setter ref) --------------------------------
 

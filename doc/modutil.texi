@@ -48,6 +48,7 @@
 * Additional list library::     
 * Pattern matching::            
 * Queue::                       
+* Red black tree::              
 * SLIB-compatible record type::  
 * Relation framework::          
 * Stream library::              
@@ -11688,7 +11689,7 @@ quasipatternの例です。最初の式では、パターンのうち@code{value}以外の
 
 
 @c ----------------------------------------------------------------------
-@node Queue, SLIB-compatible record type, Pattern matching, Library modules - Utilities
+@node Queue, Red black tree, Pattern matching, Library modules - Utilities
 @section @code{util.queue} - Queue
 @c NODE キュー, @code{util.queue} - キュー
 
@@ -11910,7 +11911,304 @@ Scheme48 compatible way or consistent to SRFI-1 argument order.
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node SLIB-compatible record type, Relation framework, Queue, Library modules - Utilities
+@node Red black tree, SLIB-compatible record type, Queue, Library modules - Utilities
+@section @code{util.rbtree} - Red black tree
+@c NODE 赤黒木, @code{util.rbtree} - 赤黒木
+
+@deftp {Module} util.rbtree
+@mdindex util.rbtree
+@c EN
+This module provides procedures to handle red black trees.
+@c JP
+このモジュールは、赤黒木 (red-black tree、2色木)を扱う手続きを提供します。
+@c COMMON
+
+@c EN
+Red black tree is a kidn of balanced binary tree.
+For a tree with @var{n} nodes, the basic operations
+such as searching, inserting, deleting, obtaining minimum
+and maximum element, and sequential access, can be done in
+O(log @var{n}).  The keys to be used for red black trees
+must have total order.
+@c JP
+赤黒木は平衡な(バランスの取れた) 2分木の一種です。nノードからなる木
+に対する基本的な操作(要素の探索、挿入、削除、最初および最大の要素の
+取得、要素の順次アクセス)は、O(log n)で行われます。赤黒木に追加する
+要素のキーは、要素間に全順序関係が定義されていなければなりません。
+@c COMMON
+
+@c EN
+API of @code{util.rbtree} is similar to the hash table API
+(@xref{Hashtables}), so the user can use a red black tree
+as if it is a hashtable, with its entries are ordered 
+by the keys.
+@c JP
+util.rbtreeのAPIはハッシュテーブルのAPIに似せて作られており、ユーザ
+は赤黒木を、キーの大小で順序付けられたハッシュテーブルのように扱う
+ことができます (@ref{Hashtables}参照)。
+@c COMMON
+@end deftp
+
+@deftp {Class} <rbtree>
+@c EN
+A class for red black trees.  Inherits @code{<sequence>},
+so that you can apply sequence APIs on a red black tree.
+When treated as a sequence, each element is a pair of
+a key and a value.
+@c JP
+赤黒木のクラスです。@code{<sequence>}を継承しているので、
+@code{gauche.sequence}で定義されるAPIを使うことができます。
+シーケンスとして扱うときの各要素は、キーと値のペアです。
+@c COMMON
+@end deftp
+
+@defun make-rbtree key=? key<?
+@c EN
+Creates and returns an instance of @code{<rbtree>}.
+The arguments @var{key=?} and @var{key<?} are both
+procedures that take two arguments, which are the keys.
+The @code{key=?} procedure should return @code{#t} if
+two arguments are equivalent, or @code{#f} otherwise.
+The @code{key<?} procedure should return @code{#t} if
+the first argument is strictly less than the second argument,
+or @code{#f} otherwise.
+@c JP
+@code{<rbtree>}オブジェクトを作成して返します。@var{key=?}、@var{key<?}はそれぞれ引
+数を2つ受け取り真偽値を返す手続きであり、要素のキーが渡されます。
+@var{key=?}は、2つの引数a, b が同値の場合に真を、それ以外の場合に@code{#f}を
+返す手続きです。@var{key<?}は、@code{a < b}が成り立つ場合に真を、それ以外の
+場合に@code{#f}を返す手続きです。
+@c COMMON
+@end defun
+
+@defun rbtree-copy rbtree
+@c EN
+Copies and returns a red black tree @var{rbtree}.  Modification
+on the returned tree doesn't affect the original tree.
+@c JP
+赤黒木@var{rbtree}のコピーを作り、それを返します。返された赤黒木に対す
+る破壊的操作は、元の赤黒木に影響を与えません。
+@c COMMON
+@end defun
+
+@defun rbtree-empty? rbtree
+@c EN
+Returns @code{#t} if @var{rbtree} doesn't have any elements,
+or @code{#f} otherwise.
+@c JP
+赤黒木@var{rbtree}が要素を持たないなら@code{#t}を、そうでなければ@code{#f}を
+返します。
+@c COMMON
+@end defun
+
+@defun rbtree-num-entries rbtree
+@c EN
+Returns the number of elements in @var{rbtree}.
+@c JP
+赤黒木@var{rbtree}内の要素の個数を返します。
+@c COMMON
+@end defun
+
+@defun rbtree-exists? rbtree key
+@c EN
+Returns @code{#t} if @var{rbtree} has an entry with @var{key},
+or @code{#f} otherwise.
+@c JP
+赤黒木@var{rbtree}にキー@var{key}を持つエントリがあれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
+@end defun
+
+@defun rbtree-get rbtree key &optional fallback
+@c EN
+Looks for @var{key} in @var{rbtree}.  If the entry is found,
+returns a value corresponding to the key.  Otherwise, returns
+@var{fallback} if it is provided, or signals an error.
+@c JP
+キー@var{key}を赤黒木@var{rbtree}から探します。見つかれば@var{key}に対応する値を返
+します。キーが見つからなかった場合、@var{fallback}が与えられていればそれ
+を返し、そうでなければエラーを報告します。
+@c COMMON
+@end defun
+
+@defun rbtree-put! rbtree key value
+@c EN
+Inserts an entry with a @var{key} and corresponding @var{value}
+into @var{rbtree}.  If there already exists an entry with a
+key which is equivalent (under @var{key=?}), the entry is modified
+to have @var{value}.
+@c JP
+キー@var{key}と対応する値@var{value}を赤黒木@var{rbtree}に挿入します。もし、@var{key}と、
+@var{key=?}における意味で同じキーがすでに存在する場合、キーに対応する値
+は新たな値に置き換えられます。
+@c COMMON
+@end defun
+
+@defun rbtree-delete! rbtree key
+@c EN
+Delets an entry with @var{key} from @var{rbtree} if such an entry
+exists, and returns @code{#t}.
+If @var{rbtree} doesn't have such an entry, @code{#f} is returned.
+@c JP
+赤黒木@var{rbtree}からキー@var{key}を持つエントリを削除します。@var{key}を持つエン
+トリが実際に存在して削除された場合は@code{#t}を、エントリが存在しなかっ
+た場合は@code{#f}を返します。
+@c COMMON
+@end defun
+
+@defun rbtree-update! rbtree key proc &optional fallback
+@c EN
+A generalized version of @code{rbtree-push!} etc.
+It works like the following code, except that searching
+for the key is done only once.
+@c JP
+@code{rbtree-push!}等のより一般的なバージョンです。赤黒木の探索が一度
+しか行われないことを除いては、基本的に次のように動作します。
+@c COMMON
+@example
+(let ((tmp (proc (rbtree-get @var{rbtree} @var{key} @var{fallback}))))
+  (rbtree-put! @var{rbtree} @var{key} tmp)
+  tmp)
+@end example
+@end defun
+
+@defun rbtree-push! rbtree key value
+@c EN
+Looks for an entry with @var{key} in @var{rbtree}.  If it exists,
+the procedure conses @var{value} to the original value and makes
+it as a new value.
+Otherwise, the procedure creates a new entry for the @var{key}
+and makes @code{(list @var{value})} its value.
+@c JP
+赤黒木@var{rbtree}中の、キー@var{key}に対応する値に@var{value}をコンスし、それを@var{key}
+に対する新たな値とします。もし@var{key}に対応する値がまだ無ければ、新た
+なエントリが作成され、@code{(list @var{value})}がその値となります。
+@c COMMON
+@end defun
+
+@defun rbtree-pop! rbtree key &optional fallback
+@c EN
+Looks for an entry with @var{key} in @var{rbtree}.  If it exists
+and its value is a pair, then the procedure updates
+its value with @code{cdr} of the original value, and returns
+@code{car} of the original entry.   If such an entry does not
+exist, or has a non-pair value, the procedure doesn't
+modify @var{rbtree} and returns @var{fallback} if it is given,
+otherwise reports an error.
+@c JP
+赤黒木@var{rbtree}中のキー@var{key}に対応する値が存在し、かつペアであった場合
+に、そのエントリの値を元の値のcdrで置き換え、元の値のcarを返します。
+@var{key}に対応する値が存在しないかペアではなかった場合、赤黒木@var{rbtree}は
+変更されず、@var{fallback}が与えられていればそれが返され、与えられていな
+ければエラーが報告されます。
+@c COMMON
+@end defun
+
+@defun rbtree-min rbtree &optional fallback
+@defunx rbtree-max rbtree &optional fallback
+@c EN
+Returns a pair of a key and its value with the minimum
+or maximum key, respectively.   If @var{rbtree} is empty,
+returns @var{fallback} if it is given, otherwise reports
+an error.
+@c JP
+それぞれ、赤黒木@var{rbtree}に含まれる最小および最大のキーを探索し、その
+キーと値のペアを返します。赤黒木@var{rbtree}が空だった場合は、@var{fallback}が
+指定されていればそれを返し、そうでなければエラーを報告します。
+@c COMMON
+@end defun
+
+@defun rbtree-extract-min! rbtree &optional fallback
+@defunx rbtree-extract-max! rbtree &optional fallback
+@c EN
+Looks for an entry with minimum or maximum key, respectively,
+then deletes the entry from @var{rbtree} and returns 
+a pair of the key and its value of the original entry.
+If @var{rbtree} is empty,
+returns @var{fallback} if it is given, otherwise reports
+an error.
+@c JP
+それぞれ、赤黒木@var{rbtree}に含まれる最小および最大のキーを探索し、そ
+のエントリを赤黒木@var{rbtree}から削除したうえで、そのキーと値のペアを
+返します。赤黒木@var{rbtree}が空だった場合は、@var{fallback}が指定されていれば
+それを返し、そうでなければエラーを報告します。
+@c COMMON
+@end defun
+
+@defun rbtree-fold rbtree proc seed
+@defunx rbtree-fold-right rbtree proc seed
+@c EN
+Iterate over elements in @var{rbtree}, applying 
+@var{proc} which has a type @code{(key, value, seed) -> seed}.
+The difference of @code{rbtree-fold} and @code{rbtree-fold-right}
+is the same as @code{fold} and @code{fold-right}---that is,
+the associative order of applying @code{proc}.
+@c JP
+@var{rbtree}の各要素に対し、@code{(key, value, seed) -> seed} の型を持つ
+@var{proc}を適用してゆきます。
+@code{rbtree-fold}と@code{rbtree-fold-right}の違いは
+@code{fold}の@code{fold-right}違いと同じ、すなわち
+結合の方向にあります。
+@c COMMON
+@example
+rbtree-fold:
+  (proc Kn Vn (proc Kn-1 Vn-1 ... (proc K0 V0 seed)))
+
+rbtree-fold-right
+  (proc K0 V0 (proc K1 V1 ... (proc Kn Vn seed)))
+@end example
+
+@c EN
+Some examples:
+@c JP
+例:
+@c COMMON
+@example
+(define tree (alist->rbtree '((3 . a) (7 . b) (5 . c)) = <))
+
+(rbtree-fold tree list* '()) 
+   @result{} (7 b 5 c 3 a)
+(rbtree-fold-right tree list* '()) 
+   @result{} (3 a 5 c 7 b)
+@end example
+@end defun
+
+@defun rbtree-keys rbtree
+@defunx rbtree-values rbtree
+@c EN
+Returns a list of all keys and all values, respectively.
+The keys and values are in ascending order of the keys.
+@c JP
+それぞれ、赤黒木@var{rbtree}内の全てのキーまたは値をリストにして返しま
+す。返されるリストの要素はキーの昇順に並んでいます。
+@c COMMON
+@end defun
+
+@defun rbtree->alist rbtree
+@c EN
+Returns a list of pairs of keys and values for all entries.
+The pairs are in ascending order of the keys.
+@c JP
+赤黒木@var{rbtree}含まれる要素を連想リストにして返します。返される連
+想リストのキーは昇順に並んでいます。
+@c COMMON
+@end defun
+
+@defun alist->rbtree alist key=? key<?
+@c EN
+Creates a new red black tree with @var{key=?} and @var{key<?},
+then populates it with @var{alist}, each pair in which are
+interpreted as a cons of a key and its value.  Returns the
+created red black tree.
+@c JP
+@var{key=?}, @var{key<?} によって新たな赤黒木を作成し、
+連想リスト@var{alist}に含まれる要素を追加し、その木を返します。
+@c COMMON
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node SLIB-compatible record type, Relation framework, Red black tree, Library modules - Utilities
 @section @code{util.record} - SLIB-compatible record type
 @c NODE SLIB-互換のレコード型, @code{util.record} - SLIB-互換のレコード型
 
