@@ -982,9 +982,9 @@ If @var{from-code} is omitted, the native CES is assumed.
 You can't specify a character guessing scheme (such as "*JP") to
 neither @var{from-code} nor @var{to-code}.
 @c JP
-文字のエンコーディングを@var{from-code}から@code{to-code}に変換して
+文字のエンコーディングを@var{from-code}から@var{to-code}に変換して
 出力ポート@var{sink}に書き出すような出力変換ポートを作成して返します。
-@var{to-code}が省略された場合はネイティブのCESと見なされます。
+@var{from-code}が省略された場合はネイティブのCESと見なされます。
 @var{from-code}にも@var{to-code}にも、CES推測アルゴリズム名を
 使用することはできません。
 @c COMMON
