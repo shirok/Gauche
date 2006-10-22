@@ -98,7 +98,7 @@ gauche-refe.texi : $(TEXIS) extract
 
 gauche-refe.info.gz : gauche-refe.texi
 	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
-	  $(MAKEINFO) --no-warn gauche-refe.texi; \
+	  env LANG=C $(MAKEINFO) --no-warn gauche-refe.texi; \
 	  rm -rf gauche-refe.info*.gz; \
 	  $(GZIP_PROGRAM) gauche-refe.info gauche-refe.info-[0-9]*; \
 	fi
@@ -123,7 +123,7 @@ gauche-refj.texi : $(TEXIS) extract
 
 gauche-refj.info.gz : gauche-refj.texi
 	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
-	  $(MAKEINFO) --no-warn gauche-refj.texi; \
+	  env LANG=C $(MAKEINFO) --no-warn gauche-refj.texi; \
 	  rm -rf gauche-refj.info*.gz; \
 	  $(GZIP_PROGRAM) gauche-refj.info gauche-refj.info-[0-9]*; \
 	fi
@@ -136,7 +136,7 @@ gauche-deve.html : gauche-deve.texi
 
 gauche-deve.info.gz : gauche-deve.texi
 	if test X$(MAKEINFO) != X -a X$(GZIP_PROGRAM) != X; then \
-	  $(MAKEINFO) --no-warn gauche-deve.texi; \
+	  env LANG=C $(MAKEINFO) --no-warn gauche-deve.texi; \
 	  rm -rf gauche-deve.info*.gz; \
 	  $(GZIP_PROGRAM) gauche-deve.info gauche-deve.info-[0-9]*; \
 	fi

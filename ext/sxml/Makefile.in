@@ -67,7 +67,7 @@ tools_OBJECTS = sxml-tools_head.$(OBJEXT) \
 sxml-tools.$(SOEXT) : $(tools_OBJECTS)
 	$(MODLINK) sxml-tools.$(SOEXT) $(tools_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-sxml-tools.c sxml/tools.scm : sxml-tools.scm.in src/sxml-tools.scm
+sxml-tools.c sxml/tools.scm : sxml-tools.scm.in src/sxml-tools.scm sxml-sxpath.$(SOEXT)
 	$(SCMTRANS) sxml-tools.scm.in
 	$(SCMCOMPILE) --ext-module sxml/tools.scm sxml-tools.scm
 

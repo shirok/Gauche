@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.130 2006-10-18 10:59:52 shirok Exp $
+ *  $Id: number.c,v 1.131 2006-10-22 07:58:33 shirok Exp $
  */
 
 #include <math.h>
@@ -1670,7 +1670,7 @@ static ScmObj div_internal(ScmObj arg0, ScmObj arg1, int autocoerce)
     }
   ANORMAL:
     {
-        int s = SCM_EXACT_ZERO_P(arg0);
+        int s = Scm_Sign(arg0);
         if (s == 0) return SCM_NAN;
         if (s < 0)  return SCM_NEGATIVE_INFINITY;
         else        return SCM_POSITIVE_INFINITY;
@@ -3060,9 +3060,10 @@ static ScmObj read_real(const char **strp, int *lenp,
             if (SCM_EXACT_ZERO_P(denom)) {
                 if (lensave > *lenp) {
                     if (ctx->exactness == EXACT) {
-                        return numread_error("(exact infinity is not supported.)",
+                        return numread_error("(exact infinity/nan is not supported.)",
                                              ctx);
                     }
+                    if (SCM_EXACT_ZERO_P(intpart)) return SCM_NAN;
                     return minusp? SCM_NEGATIVE_INFINITY:SCM_POSITIVE_INFINITY;
                 } else {
                     return SCM_FALSE;
