@@ -1,5 +1,12 @@
 2006-10-21  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/test.scm: On some systems IPv6 loopback host name isn't
+	  "localhost" by default, so we apply some heuristics.  Patch from
+	  Rui Ueyama.
+
+	* src/number.c (read_real): some fixes to handle divide-by-zero cases.
+	  Patch from OOHASHI Daichi.
+
 	* lib/util/rbtree.scm, test/util.scm, lib/Makefile.in:
 	  added util.rbtree, contributed from Rui Ueyama.
 

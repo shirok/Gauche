@@ -4968,6 +4968,9 @@ negative, or greater than or equal to the size of @var{wvec}.
 However, if an optional argument @var{fallback} is given,
 it is returned for such case.
 
+If the element has been garbage collected, this procedure returns
+@var{fallback} if it is provided,  @code{#f} otherwise.
+
 With @code{gauche.sequence} module,
 you can also use a method @code{ref}.
 @c JP
@@ -4976,6 +4979,9 @@ weak ベクタ @var{wvec}の@var{k}番目の要素を返します。
 @code{weak-vector-ref}は@var{k}が負の値であったりベクタの長さより
 大きかったりした場合はエラーを通知します。但し、省略可能な引数@var{fallback}
 が与えられている場合はその値が返されます。
+
+該当する要素が既にガベージコレクトされていた場合、@var{fallback}が
+与えられていればそれが、そうでなければ@code{#f}が返されます。
 
 @code{gauche.sequence}モジュールをロードしていれば、
 メソッド@code{ref}も同じ目的で使えます。

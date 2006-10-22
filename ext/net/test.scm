@@ -213,18 +213,26 @@
            (flush out)
            (string=? (read-line in) (make-string *chunk-size* #\A)))))
 
+;; On IPv6 system, the loopback may have different name than "localhost".
+;; We apply some heuristics here.
 (test* "inet client socket" #t
-       (call-with-client-socket
-           (make-client-socket (make (if (global-variable-bound? 'gauche.net
-                                                                 '<sockaddr-in6>)
-                                       <sockaddr-in6>
-                                       <sockaddr-in>)
-                                 :host "localhost" :port *inet-port*))
-         (lambda (in out)
-           (display (make-string *chunk-size* #\a) out)
-           (newline out)
-           (flush out)
-           (string=? (read-line in) (make-string *chunk-size* #\A)))))
+       (and-let* ((sock (any (lambda (name)
+                               (guard (e (else #f))
+                                 (make-client-socket
+                                  (make (if (global-variable-bound?
+                                             'gauche.net
+                                             '<sockaddr-in6>)
+                                          <sockaddr-in6>
+                                          <sockaddr-in>)
+                                    :host name :port *inet-port*))
+                                 ))
+                             '("localhost" "ip6-localhost" "ipv6-localhost"))))
+         (call-with-client-socket sock
+           (lambda (in out)
+             (display (make-string *chunk-size* #\a) out)
+             (newline out)
+             (flush out)
+             (string=? (read-line in) (make-string *chunk-size* #\A))))))
 
 (test* "inet client socket" 33
        (call-with-client-socket (make-client-socket 'inet "localhost" *inet-port*)

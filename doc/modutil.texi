@@ -722,12 +722,15 @@ This module only redefines @code{/}.  So if your code has
 exact rational literals, they are treated as exact rationals
 rather than coerced to inexact reals.  You should prefix
 rational literals with @code{#i} to force Gauche to coerce
-them to inexact reals.
+them to inexact reals:
+
+@example
+gosh> 1/3
+1/3
+gosh> #i1/3
+0.3333333333333333
+@end example
 @end deftp
-
-
-
-
 
 @c ----------------------------------------------------------------------
 
