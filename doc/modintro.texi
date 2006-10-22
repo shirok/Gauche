@@ -201,6 +201,12 @@ for they are more portable and potentially more efficient.
 @emph{Stream} - you can implement cool lazy algorithms with it.
 See @ref{Stream library}.
 @item
+@emph{Balanced tree} - Red-black tree implementation is available.
+See @ref{Red black tree}.
+@item
+@emph{Trie} - Another tree structure for efficient common-prefix
+search.  See @ref{Trie}.
+@item
 @emph{Database interface} - dbm interface can be used as a
 persistent hash table; see @ref{Generic DBM interface}.
 For generic RDBMS interface, see @ref{Database independent access layer}.

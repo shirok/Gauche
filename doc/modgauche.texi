@@ -1409,6 +1409,20 @@ of iteration is undefined.
 @c COMMON
 
 @c EN
+Note: We don't provide @code{fold-right} on collections, since the order
+of elements doesn't matter, so only @code{fold} is sufficient for 
+meaningful traversal.
+However, sequences do have @code{fold-right};
+see @ref{Mapping over sequences}.
+@c JP
+註：コレクションに対する@code{fold-right}は提供されません。コレクションでは
+要素の順序は定義されないため、意味のあるトラバースをするのには
+@code{fold}だけあれば十分だからです。
+しかし、シーケンスに対しては@code{fold-right}が定義されます。
+@ref{Mapping over sequences}を参照して下さい。
+@c COMMON
+
+@c EN
 You can fold more than one collection, although it doesn't make
 much sense unless all of the collections are sequences.
 Suppose @var{E(k, i)} for @var{i}-th element
@@ -6969,17 +6983,21 @@ echoサーバのシンプルな例を示します。
 @deftp {Module} gauche.sequence
 @mdindex gauche.sequence
 @c EN
-Provides a generic operations on @emph{sequences}.  A sequence is
-a collection in which elements can be accessed by integer index,
-starting with zero.
+Provides a generic operations on @emph{sequences}.
+A sequence is a collection with ordered elements.
+Besides all the operations applicable on collections,
+you can associate integer index to each element,
+and apply order-aware operations on the elements.
 @c JP
 @emph{シーケンス}に関するジェネリックな操作を提供するモジュールです。
-シーケンスとは、コレクションのうち0から始まる整数インデックスで
-アクセスできるものです。
+シーケンスとは、コレクションのうち要素の順序が規定されているものです。
+コレクションの操作全てに加え、シーケンスに対しては、
+各要素に整数のインデックスを関連づけること、
+それから要素の順序が影響する操作を適用することができます。
 @c COMMON
 
 @c EN
-This module inherits @code{gauche.collection} (@xref{Collection framework}),
+This module inherits @code{gauche.collection} (@xref{Collection framework}).
 All the collection generic operations can be applied to a sequence as well.
 @c JP
 このモジュールは@code{gauche.collection}を継承しています
@@ -7000,6 +7018,7 @@ Gauche組み込みクラスのうち、リスト、ベクター、そして文字列は
 @end deftp
 
 @menu
+
 * Fundamental sequence accessors::  
 * Slicing sequence::            
 * Mapping over sequences::      
@@ -7039,9 +7058,21 @@ an error is signalled if not.
 @c EN
 Sets @var{value} to the @var{index}-th element of the sequence @var{seq}.
 This is the uniform sequence modifier.
+
+Note: Some sequences may not support arbitrary modification by index.
+For example, if you have a sequence representing a set of sorted integers,
+you cannot modify @var{i}-th element with arbitrary value.  Yet such
+sequence may provide other means of modification, such as inserting
+or deleting elements.
 @c JP
 統一的なシーケンスの変更メソッドです。
 シーケンス@var{seq}の@var{index}番目の要素に@var{value}をセットします。
+
+註: シーケンスによってはインデックスによる変更をサポートしていない
+場合があります。例えば「ソートされた整数」を表すシーケンスがあった場合、
+@code{i}番目の要素を適当な整数で置き換えることはできないでしょう。
+そのようなシーケンスでも、要素の挿入や削除など、別の方法でシーケンスを
+変更する手段が与えられるかもしれません。
 @c COMMON
 
 @example
@@ -7217,6 +7248,46 @@ See also @code{list-index} in SRFI-1 (@xref{SRFI-1 Searching}).
 SRFI-1 (@ref{SRFI-1 Searching}参照)の@code{list-index}も見て下さい。
 @c COMMON
 @end deffn
+
+@deffn {Method} fold-right kons knil (seq <sequence>) @dots{}
+@c EN
+Generalization of @code{fold-right} on lists.
+Like @code{fold}, this method applies a higher-order function
+@var{kons} over given sequence(s), passing the "seed" value
+whose default is @var{knil}.  The difference between @code{fold}
+and @code{fold-right} is the associative order of elements on
+which @var{kons} is applied.
+
+When we have one sequence, @code{[E0, E1, ..., En]}, @code{fold}
+and @code{fold-right} work as follows, respectively.
+@c JP
+リストに対する@code{fold-right}の総称関数版です。
+@code{fold}と同じように、このメソッドは種となる値 (初期値は@var{knil})
+を受渡しながら、高階関数@var{kons}を与えられたシーケンスの各要素に
+適用してゆきます。@code{fold}と@code{fold-right}の違いは
+要素間の結合の順序にあります。
+
+ひとつだけのシーケンス@code{[E0, E1, ..., En]}に適用する場合、
+@code{fold}と@code{fold-right}はそれぞれ以下のように動作します。
+@c COMMON
+
+@example
+fold:
+  (kons En (kons En-1 (kons ... (kons E1 (kons E1 knil)) ...)))
+
+fold-right
+  (kons E0 (kons E1 (kons ... (kons En-1 (kons En knil)) ...)))
+@end example
+
+@c EN
+This method isn't defined on @code{<collection>}, since
+collections don't care the order of elements.
+@c JP
+このメソッドは@code{<collection>}に対しては提供されていません。
+コレクションは要素の順序を規定しないからです。
+@c COMMON
+@end deffn
+
 
 @node Selection and searching in sequence, Implementing sequence, Mapping over sequences, Sequence framework
 @subsection Selection and searching in sequence

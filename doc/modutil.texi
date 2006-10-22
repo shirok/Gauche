@@ -11924,11 +11924,11 @@ This module provides procedures to handle red black trees.
 @c COMMON
 
 @c EN
-Red black tree is a kidn of balanced binary tree.
+Red black tree is a kind of balanced binary tree.
 For a tree with @var{n} nodes, the basic operations
 such as searching, inserting, deleting, obtaining minimum
 and maximum element, and sequential access, can be done in
-O(log @var{n}).  The keys to be used for red black trees
+O(log @var{n}).  The keys used for red black trees
 must have total order.
 @c JP
 赤黒木は平衡な(バランスの取れた) 2分木の一種です。nノードからなる木
@@ -12847,8 +12847,9 @@ This module provides @emph{Trie}, a dictionary-like data
 structure that maps keys to values, where a key is an arbitrary sequence.
 Internally it stores the data as a tree where each node corresponds 
 to each element in the key sequence.
-Key lookup is O(n) where n is the length of the key.
-And it is easy to find a set of values whose keys have a common prefix.
+Key lookup is O(n) where n is the length of the key, and not affected
+much by the number of total entries.
+Also it is easy to find a set of values whose keys have a common prefix.
 
 The following example may give you the idea.
 
@@ -12913,8 +12914,8 @@ In both cases, this procedure should return the updated table.
 @item tab-fold @var{tab} @var{proc} @var{seed}
 Calls @var{proc} for every index and node in @var{tab}, while
 passing a seed value, whose initial value is @var{seed}.
-That is, @var{proc} has a type of @code{index, node, seed -> seed}.
-Returns the last result of @var{proc}.
+That is, @var{proc} has a type of @code{(index, node, seed) -> seed}.
+Should return the last result of @var{proc}.
 @end table
 
 The default assumes @code{eqv?}-hashtables, i.e. the
@@ -12956,9 +12957,10 @@ the number of children are small, and then switches to a vector
 a certain threshold.
 @end defun
 
-@defun trie params key&value @dots{}
+@defun trie params kv @dots{}
 Construct a trie with the initial contents
-@var{key&value} @dots{}.   @var{Params} are a list of arguments
+@var{kv} @dots{}, where each @var{kv} is a pair of a key and a value.
+@var{Params} are a list of arguments
 which will be given to @code{make-trie} to create the trie.
 The following example creates a trie with two entries
 and the default table procedures.
@@ -12970,7 +12972,7 @@ and the default table procedures.
 
 @defun trie-with-keys params key @dots{}
 A convenient version of @code{trie} when you only concern
-the keys.  Values are the same as keys.
+the keys.  Each value is the same as its key.
 The following example creates a trie with two entries
 and the default table procedures.
 
