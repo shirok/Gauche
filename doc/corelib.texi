@@ -4278,7 +4278,7 @@ The @code{parse-date} example above becomes simpler if you use
 @c ----------------------------------------------------------------------
 @node Vectors, Hashtables, Regular expression, Core library
 @section Vectors
-@c NODE ベクター
+@c NODE ベクタ
 
 @deftp {Builtin Class} <vector>
 @clindex vector
