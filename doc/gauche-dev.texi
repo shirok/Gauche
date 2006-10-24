@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.11 2006-07-25 03:21:29 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.12 2006-10-24 01:41:17 shirok Exp $
 
 @iftex
 @finalout
@@ -135,7 +135,7 @@ the basic compiler chain, are the followings.  We assume
 these are installed in your system.  
 @itemize @bullet
 @item 
-Gauche 0.8.6 or later
+Gauche 0.8.8 or later
 @item
 GNU autoconf 2.54 or later
 @end itemize
@@ -306,7 +306,7 @@ Finally, you can install the extension by @code{make install}.
 % make install
 /usr/bin/gauche-install -m 444 -T /usr/lib/gauche/site/include 
 /usr/bin/gauche-install -m 444 -T /usr/share/gauche/site/lib trivial.scm 
-/usr/bin/gauche-install -m 555 -T /usr/lib/gauche/site/0.8.6/i686-pc-linux-gnu trivial.so
+/usr/bin/gauche-install -m 555 -T /usr/lib/gauche/site/0.8.8/i686-pc-linux-gnu trivial.so
 /usr/bin/gauche-install -m 444 -T /usr/share/gauche/site/lib/.packages trivial.gpd
 @end example
 
@@ -354,6 +354,7 @@ or
 * Scheme types and C types::    
 * Memories::                    
 * The VM::                      
+* CPS API::                     
 @end menu
 
 @node Naming convention, Scheme types and C types, Fundamental concepts, Fundamental concepts
@@ -365,8 +366,11 @@ or
 @node Memories, The VM, Scheme types and C types, Fundamental concepts
 @section Memories
 
-@node The VM,  , Memories, Fundamental concepts
+@node The VM, CPS API, Memories, Fundamental concepts
 @section The VM
+
+@node CPS API,  , The VM, Fundamental concepts
+@section CPS API
 
 
 @c ======================================================================
@@ -873,7 +877,7 @@ The following macros treat fixnums specifically.
 In most cases you should use generic versions above, so that
 you don't need to care about difference between fixnums and bignums,
 and normalization.  However, if you know your Scheme number is
-mostly small, and you need speed.
+mostly small and you need speed, these macros will be handy.
 
 @deftypefn {Macro} int SCM_INTP (ScmObj @var{obj})
 Returns @code{TRUE} iff @var{obj} is a fixnum.
@@ -1319,7 +1323,7 @@ The content of the @var{vtable} will be copied,
 so you don't need to keep it after the call of @code{Scm_MakeVirtualPort}.
 
 @example
-typedef struct ScmPortVTableRec {
+typedef struct ScmPortVTableRec @{
     int       (*Getb)(ScmPort *p);
     int       (*Getc)(ScmPort *p);
     int       (*Getz)(char *buf, int buflen, ScmPort *p);
@@ -1332,7 +1336,7 @@ typedef struct ScmPortVTableRec {
     void      (*Close)(ScmPort *p);
     off_t     (*Seek)(ScmPort *p, off_t off, int whence);
     void      *data;
-} ScmPortVTable;
+@} ScmPortVTable;
 @end example
 
 For a character input port, you must provide at least @code{Getc}
@@ -1418,8 +1422,68 @@ the value of this data pointer can be accessed by the macro
 @node Loading programs, System interface, Input and output, C API reference
 @section Loading programs
 
+@deftypefun ScmObj Scm_VMLoadFromPort (ScmPort *@var{port}, ScmObj @var{next_paths}, ScmObj @var{env}, int flags)
+This is a CPS API.
+
+The most basic function in the @code{load}-family.  Read an expression
+from the given port and evaluates it repeatedly, until it reaches
+EOF.  Then the port is closed.   The port is locked by the calling
+thread until the operation terminates.
+
+The result of the last evaluation remains on VM.
+
+No matter how the load terminates, either normal or abnormal,
+the port is closed, and the current module is restored to the
+one when load is called.
+
+@var{Flags} argument is ignored for now, but reserved for future
+extension.  @code{SCM_LOAD_QUIET_NOFILE} and
+@code{SCM_LOAD_IGNORE_CODING}
+won't have any effect for @code{Scm_LoadFromPort}; 
+see @code{Scm_Load} below.
+@end deftypefun
+
+@deftypefun ScmObj Scm_FindFile (ScmString *@var{filename}, ScmObj *@var{paths}, ScmObj @var{suffixes}, int @var{flags})
+Core function to search specified file from the search paths *@var{path}.
+Search rules are:
+
+@enumerate
+@item 
+If given filename begins with @file{/}, @file{./} or @file{../},
+the file is searched.
+@item
+If given filename begins with @file{~}, unix-style username
+expansion is done, then the resulting file is searched.
+@item
+Otherwise, the file is searched for each directory in
+*@var{paths}.
+@end enumerate
+
+If a file is found, it's pathname is returned.  *@var{Path} is modified
+to contain the remains of load paths, which can be used again to
+find next matching filename.
+
+If @var{suffixes} is given, filename is assumed not to have suffix,
+and suffixes listed in @var{suffixes} are tried one by one.
+The elements in @var{suffixes} is directly appended to the @var{filename};
+so usually it begins with dot.
+
+The following flag is effective in @var{flags}.  Other flags are ignored.
+@table @code
+@item SCM_LOAD_QUIET_NOFILE
+If this flag is set, @code{Scm_FindFile} returns @code{SCM_FALSE}
+when it cannot find the file.  If this flag is not set (default),
+@code{Scm_FindFile} raises an error.
+@end table
+@end deftypefun
+
+
 @node System interface,  , Loading programs, C API reference
 @section System interface
+
+Gauche provides a few wrapper APIs for operating system interface
+to allow applications written without concerning 
+
 
 
 @c ======================================================================
@@ -1429,7 +1493,15 @@ the value of this data pointer can be accessed by the macro
 Several executable scripts are installed along Gauche.
 They are to help build and installation process.
 
-@node Managing packages
+@menu
+* Managing packages::           
+* Simplifying build process::   
+* Gauche-config - configuration parameters::  
+* Gauche-install - alternative install script::  
+* Gauche-package - package manager::  
+@end menu
+
+@node Managing packages, Simplifying build process, Helper program reference, Helper program reference
 @section Managing packages
 
 @deffn {Command} gauche-package @var{operation} [@var{option} @dots{}] [@var{arg} ...]
@@ -1447,7 +1519,7 @@ accoring to @var{operation} argument.
 @code{generate}
 @item Instruct @code{gauche-package} usage
 @code{help}
-@end itemize
+@end table
 
 Among those operations, usually @code{install}, @code{build}, 
 @code{list}, @code{generate} and @code{help} are used directly from
@@ -1455,8 +1527,13 @@ the shell.
 Other operations are mainly invoked by @code{make} command.
 @end deffn
 
-@node gauche-package operations
-@section gauche-package operations
+@menu
+* gauche-package operations::   
+* Customizing gauche-package ::  
+@end menu
+
+@node gauche-package operations, Customizing gauche-package , Managing packages, Managing packages
+@subsection gauche-package operations
 
 @deffn {Package Operation} gauche-package install [@var{options}] @var{tarball-path/url}
 
@@ -1492,16 +1569,15 @@ file
 @end deffn
 
 
+@end deffn
+
+
+@node Customizing gauche-package ,  , gauche-package operations, Managing packages
+@subsection Customizing gauche-package
 
 
 
-
-@node Customizing gauche-package 
-@section Customizing gauche-package
-
-
-
-@node Simplifying build process
+@node Simplifying build process, Gauche-config - configuration parameters, Managing packages, Helper program reference
 @section Simplifying build process
 
 
@@ -1509,16 +1585,16 @@ file
 @deffn {Command} gauche-cesconv [options] [inputfile]
 @end deffn
 
-@node Gauche-config - configuration parameters
+@node Gauche-config - configuration parameters, Gauche-install - alternative install script, Simplifying build process, Helper program reference
 @section @code{gauche-config} - configuration parameters
 
-@node Gauche-install - alternative install script
+@node Gauche-install - alternative install script, Gauche-package - package manager, Gauche-config - configuration parameters, Helper program reference
 @section @code{gauche-install} - alternative install script
 
 
 
 
-@node Gauche-package - package manager
+@node Gauche-package - package manager,  , Gauche-install - alternative install script, Helper program reference
 @section @code{gauche-package} - package manager
 
 
