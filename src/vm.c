@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.247 2006-08-27 07:32:11 shirok Exp $
+ *  $Id: vm.c,v 1.248 2006-10-29 12:04:03 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2901,6 +2901,35 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
     }
 }
 
+/* Arrange C function AFTER to be called after the procedure returns.
+ * Usually followed by Scm_VMApply* function.
+ */
+void Scm_VMPushCC(ScmObj (*after)(ScmObj result, void **data),
+                  void **data, int datasize)
+{
+    DECL_REGS;
+    int i;
+    ScmContFrame *cc;
+    ScmObj *s;
+
+    CHECK_STACK(CONT_FRAME_SIZE+datasize);
+    s = SP;
+    cc = (ScmContFrame*)s;
+    s += CONT_FRAME_SIZE;
+    cc->prev = CONT;
+    cc->argp = NULL;
+    cc->size = datasize;
+    cc->pc = (ScmWord*)after;
+    cc->base = BASE;
+    cc->env = ENV;
+    for (i=0; i<datasize; i++) {
+        *s++ = SCM_OBJ(data[i]);
+    }
+    CONT = cc;
+    ARGP = SP = s;
+    SAVE_REGS();
+}
+
 /*-------------------------------------------------------------
  * User level eval and apply.
  *   When the C routine wants the Scheme code to return to it,
@@ -3015,7 +3044,11 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
     return vm->val0;
 }
 
-ScmObj Scm_Eval(ScmObj expr, ScmObj e)
+/* API for recursive call to VM.  Exceptions are not captured.
+   Returns the primary result.  To retrieve the rest of results,
+   you have to use Scm_VMGetResult etc. */
+
+ScmObj Scm_EvalRec(ScmObj expr, ScmObj e)
 {
     ScmObj v = SCM_NIL;
     v = Scm_Compile(expr, e);
@@ -3026,12 +3059,13 @@ ScmObj Scm_Eval(ScmObj expr, ScmObj e)
     return user_eval_inner(v, NULL);
 }
 
-ScmObj Scm_EvalCString(const char *expr, ScmObj e)
+/* DEPRECATED */
+ScmObj Scm_EvalRecCString(const char *expr, ScmObj e)
 {
-    return Scm_Eval(Scm_ReadFromCString(expr), e);
+    return Scm_EvalRec(Scm_ReadFromCString(expr), e);
 }
 
-ScmObj Scm_Apply(ScmObj proc, ScmObj args)
+ScmObj Scm_ApplyRec(ScmObj proc, ScmObj args)
 {
     ScmObj program;
     int nargs = Scm_Length(args);
@@ -3051,34 +3085,87 @@ ScmObj Scm_Apply(ScmObj proc, ScmObj args)
     return user_eval_inner(program, code);
 }
 
-/* Arrange C function AFTER to be called after the procedure returns.
- * Usually followed by Scm_VMApply* function.
+/*
+ * Safe version of user-level Eval and Apply.
+ * Exceptions are caught and stored in ScmEvalPacket.
  */
-void Scm_VMPushCC(ScmObj (*after)(ScmObj result, void **data),
-                  void **data, int datasize)
-{
-    DECL_REGS;
-    int i;
-    ScmContFrame *cc;
-    ScmObj *s;
 
-    CHECK_STACK(CONT_FRAME_SIZE+datasize);
-    s = SP;
-    cc = (ScmContFrame*)s;
-    s += CONT_FRAME_SIZE;
-    cc->prev = CONT;
-    cc->argp = NULL;
-    cc->size = datasize;
-    cc->pc = (ScmWord*)after;
-    cc->base = BASE;
-    cc->env = ENV;
-    for (i=0; i<datasize; i++) {
-        *s++ = SCM_OBJ(data[i]);
+enum {
+    SAFE_EVAL,
+    SAFE_EVAL_CSTRING,
+    SAFE_APPLY
+};
+
+static int safe_eval_int(int kind,
+                         ScmObj arg0, /* from (EVAL) or proc (APPLY) */
+                         void *arg1, /* cstring (CSTRING) or args (APPLY) */
+                         ScmEvalPacket *packet)
+{
+    ScmObj env = packet->env;
+    ScmVM *vm = Scm_VM();
+    int retval = 0;
+    
+    packet->exception = SCM_FALSE;
+    packet->numResults = 0;
+
+    /* At this moment (0.8.8), we only accept <module> as ENV.
+       This may be relaxed in the later versions. */
+    if (!SCM_MODULEP(env)) return SCM_EVAL_INVALID_ARG;
+
+    SCM_UNWIND_PROTECT {
+        int i;
+
+        switch (kind) {
+        case SAFE_EVAL_CSTRING:
+            arg0 = Scm_ReadFromCString((const char*)arg1);
+            /*FALLTHROUGH*/
+        case SAFE_EVAL:
+            packet->results[0] = Scm_Eval(arg0, env);
+            break;
+        case SAFE_APPLY:
+            packet->results[0] = Scm_Apply(arg0, SCM_OBJ(arg1));
+            break;
+        }
+        retval = packet->numResults = vm->numVals;
+        for (i=1; i<vm->numVals; i++) {
+            packet->results[i] = vm->vals[i-1];
+        }
     }
-    CONT = cc;
-    ARGP = SP = s;
-    SAVE_REGS();
+    SCM_WHEN_ERROR {
+        switch (vm->escapeReason) {
+        case SCM_VM_ESCAPE_CONT:
+            /* We may provide an option to stop propagation of continuation
+               in future, but for now, we just let it pass through. */
+            SCM_NEXT_HANDLER;
+        case SCM_VM_ESCAPE_ERROR:
+            /* escapeData[0] contains the exception. */
+            packet->exception = vm->escapeData[0];
+            retval = SCM_EVAL_ERROR;
+            break;
+        default:
+            /* can't be here */
+            Scm_Panic("Scm_SafeEval: unknown escape reason");
+        }
+    }
+    SCM_END_PROTECT;
+    return retval;
 }
+
+int Scm_SafeEval(ScmObj form, ScmEvalPacket *packet)
+{
+    return safe_eval_int(SAFE_EVAL, form, NULL, packet);
+}
+
+int Scm_SafeEvalCString(const char *expr, ScmEvalPacket *packet)
+{
+    return safe_eval_int(SAFE_EVAL_CSTRING, SCM_FALSE, (void*)expr, packet);
+}
+
+int Scm_SafeApply(ScmObj proc, ScmObj args, ScmEvalPacket *packet)
+{
+    return safe_eval_int(SAFE_APPLY, proc, args, packet);
+}
+
 
 /*=================================================================
  * Dynamic handlers
@@ -3388,7 +3475,7 @@ ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception)
            exception handler in the chain.  */
         for (; ep; ep = ep->prev) {
             if (ep->xhandler != DEFAULT_EXCEPTION_HANDLER) {
-                return Scm_Apply(ep->xhandler, SCM_LIST1(exception));
+                return Scm_ApplyRec(ep->xhandler, SCM_LIST1(exception));
             }
         }
     }

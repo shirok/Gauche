@@ -1,3 +1,18 @@
+2006-10-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h, src/vm.c (Scm_SafeEval): Added convenient and robust
+	  API to call Scheme program casually from C code.  Scm_Safe* APIs
+	  catch errors and returns the info in the packet.  They also handle
+	  multiple values.
+	  The existing Scm_Eval and Scm_Apply are renamed to Scm_EvalRec
+	  and Scm_ApplyRec, for they call VM recursively.  The old names
+	  are #defined for backward compatibility.  The plan is to give
+	  Scm_Eval etc. to Scm_SafeEval eventually.  The reason is that
+	  Scm_EvalRec etc. are not really for end-user programming, since
+	  handling errors are still cumbersome.  Scm_SafeEval is more
+	  intuitive that it (almost) always returns, error or no error.
+	  So Scm_SafeEval is more suitable to get the simpler name, Scm_Eval.
+
 2006-10-21  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/test.scm: On some systems IPv6 loopback host name isn't

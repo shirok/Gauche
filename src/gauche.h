@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.458 2006-07-25 17:29:53 shirok Exp $
+ *  $Id: gauche.h,v 1.459 2006-10-29 12:04:03 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -395,9 +395,51 @@ typedef struct ScmAutoloadRec  ScmAutoload;
 
 SCM_EXTERN ScmVM *Scm_VM(void);     /* Returns the current VM */
 
-SCM_EXTERN ScmObj Scm_Eval(ScmObj form, ScmObj env);
-SCM_EXTERN ScmObj Scm_EvalCString(const char *form, ScmObj env);
-SCM_EXTERN ScmObj Scm_Apply(ScmObj proc, ScmObj args);
+/* Convenience APIs to run Scheme code from C routine.
+   Returns # of results (>=0) if operation is successful, or
+   one of the error code (<0) otherwise.
+   All values are available in ScmEvalPacket.
+   Exceptions are captured and returned in the ScmEvalPacket.
+
+   A bit of historical fact.  In retrospective, we should've called
+   these convenience APIs as Scm_Eval etc, for these are the easiest
+   APIs when one wants to evaluate Scheme from her C app.  But those
+   names were already taken by the APIs that calls VM recursively
+   (but does not catch exceptions).  Now we decided to call the 
+   latter ones as Scm_EvalRec etc., and hope the existing libraries
+   gradually rename them. */
+
+typedef struct ScmEvalPacketRec {
+    ScmObj env;                 /* in/out */
+    ScmObj results[SCM_VM_MAX_VALUES]; /* out */
+    int    numResults;          /* out */
+    ScmObj exception;           /* out */
+} ScmEvalPacket;
+
+/* Error code */
+#define SCM_EVAL_ERROR  -1      /* packet->exception contains exception */
+#define SCM_EVAL_INVALID_ARG -2 /* invalid argument */
+
+SCM_EXTERN int Scm_SafeEval(ScmObj form, ScmEvalPacket *packet);
+SCM_EXTERN int Scm_SafeEvalCString(const char *form,
+                                   ScmEvalPacket *packet);
+SCM_EXTERN int Scm_SafeApply(ScmObj proc, ScmObj args,
+                             ScmEvalPacket *packet);
+
+/* Calls VM recursively to evaluate the Scheme code.  These
+   ones does not capture exceptions.
+   Scm_EValRecCString is DEPRECATED.  Use Scm_SafeEvalCString. */
+SCM_EXTERN ScmObj Scm_EvalRec(ScmObj form, ScmObj env);
+SCM_EXTERN ScmObj Scm_EvalRecCString(const char *form, ScmObj env);
+SCM_EXTERN ScmObj Scm_ApplyRec(ScmObj proc, ScmObj args);
+
+/* Backward compatibility.  Gradually fades out.  */
+#define Scm_Eval(f,e)         Scm_EvalRec(f,e)
+#define Scm_EvalCString(s,e)  Scm_EvalRecCString(s,e)
+#define Scm_Apply(p,a)        Scm_ApplyRec(p,a)
+
+/* Returns multiple values.  Actually these functions just sets
+   extra values in VM and returns the primary value. */
 SCM_EXTERN ScmObj Scm_Values(ScmObj args);
 SCM_EXTERN ScmObj Scm_Values2(ScmObj val0, ScmObj val1);
 SCM_EXTERN ScmObj Scm_Values3(ScmObj val0, ScmObj val1, ScmObj val2);
@@ -406,17 +448,7 @@ SCM_EXTERN ScmObj Scm_Values4(ScmObj val0, ScmObj val1, ScmObj val2,
 SCM_EXTERN ScmObj Scm_Values5(ScmObj val0, ScmObj val1, ScmObj val2,
 			      ScmObj val3, ScmObj val4);
 
-SCM_EXTERN ScmObj Scm_MakeMacroTransformer(ScmSymbol *name,
-					   ScmObj proc);
-SCM_EXTERN ScmObj Scm_MakeMacroAutoload(ScmSymbol *name,
-                                        ScmAutoload *al);
-
-SCM_EXTERN ScmObj Scm_UnwrapSyntax(ScmObj form);
-
-SCM_EXTERN ScmObj Scm_VMGetResult(ScmVM *vm);
-SCM_EXTERN ScmObj Scm_VMGetStackLite(ScmVM *vm);
-SCM_EXTERN ScmObj Scm_VMGetStack(ScmVM *vm);
-
+/* CPS API for evaluating Scheme fragments on VM. */
 SCM_EXTERN ScmObj Scm_VMApply(ScmObj proc, ScmObj args);
 SCM_EXTERN ScmObj Scm_VMApply0(ScmObj proc);
 SCM_EXTERN ScmObj Scm_VMApply1(ScmObj proc, ScmObj arg);
@@ -437,6 +469,19 @@ SCM_EXTERN ScmObj Scm_VMDynamicWindC(ScmObj (*before)(ScmObj *, int, void *),
 
 SCM_EXTERN ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk);
 SCM_EXTERN ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk);
+
+/* Miscellaneous stuff */
+SCM_EXTERN ScmObj Scm_MakeMacroTransformer(ScmSymbol *name,
+					   ScmObj proc);
+SCM_EXTERN ScmObj Scm_MakeMacroAutoload(ScmSymbol *name,
+                                        ScmAutoload *al);
+
+SCM_EXTERN ScmObj Scm_UnwrapSyntax(ScmObj form);
+
+SCM_EXTERN ScmObj Scm_VMGetResult(ScmVM *vm);
+SCM_EXTERN ScmObj Scm_VMGetStackLite(ScmVM *vm);
+SCM_EXTERN ScmObj Scm_VMGetStack(ScmVM *vm);
+
 
 /*---------------------------------------------------------
  * CLASS
