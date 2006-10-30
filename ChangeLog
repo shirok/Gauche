@@ -1,3 +1,8 @@
+2006-10-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (Scm_SafeEval etc.): The previous version was broken.
+	  Needed to set up error handler properly.
+
 2006-10-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h, src/vm.c (Scm_SafeEval): Added convenient and robust

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.459 2006-10-29 12:04:03 shirok Exp $
+ *  $Id: gauche.h,v 1.460 2006-10-30 14:00:00 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -396,8 +396,8 @@ typedef struct ScmAutoloadRec  ScmAutoload;
 SCM_EXTERN ScmVM *Scm_VM(void);     /* Returns the current VM */
 
 /* Convenience APIs to run Scheme code from C routine.
-   Returns # of results (>=0) if operation is successful, or
-   one of the error code (<0) otherwise.
+   Returns # of results (>=0) if operation is successful, 
+   -1 if an error is occurred and captured.
    All values are available in ScmEvalPacket.
    Exceptions are captured and returned in the ScmEvalPacket.
 
@@ -415,10 +415,6 @@ typedef struct ScmEvalPacketRec {
     int    numResults;          /* out */
     ScmObj exception;           /* out */
 } ScmEvalPacket;
-
-/* Error code */
-#define SCM_EVAL_ERROR  -1      /* packet->exception contains exception */
-#define SCM_EVAL_INVALID_ARG -2 /* invalid argument */
 
 SCM_EXTERN int Scm_SafeEval(ScmObj form, ScmEvalPacket *packet);
 SCM_EXTERN int Scm_SafeEvalCString(const char *form,

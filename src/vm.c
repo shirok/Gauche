@@ -1,7 +1,7 @@
 /*
- * vm.c - evaluator
+ * vm.c - virtual machine
  *
- *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.248 2006-10-29 12:04:03 shirok Exp $
+ *  $Id: vm.c,v 1.249 2006-10-30 14:00:00 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -3086,7 +3086,7 @@ ScmObj Scm_ApplyRec(ScmObj proc, ScmObj args)
 }
 
 /*
- * Safe version of user-level Eval and Apply.
+ * Safe version of user-level Eval, Apply and Load.
  * Exceptions are caught and stored in ScmEvalPacket.
  */
 
@@ -3096,74 +3096,99 @@ enum {
     SAFE_APPLY
 };
 
-static int safe_eval_int(int kind,
-                         ScmObj arg0, /* from (EVAL) or proc (APPLY) */
-                         void *arg1, /* cstring (CSTRING) or args (APPLY) */
-                         ScmEvalPacket *packet)
+struct eval_packet_rec {
+    ScmObj env;
+    int kind;
+    ScmObj arg0;      /* form (EVAL), proc (APPLY) */
+    ScmObj args;      /* args (APPLY) */
+    const char *cstr; /* cstring (EVAL_CSTRING) */
+    ScmObj exception;
+};
+
+static ScmObj safe_eval_handler(ScmObj *args, int nargs, void *data)
 {
-    ScmObj env = packet->env;
+    SCM_ASSERT(nargs == 1);
+    ((struct eval_packet_rec *)data)->exception = args[0];
+    return SCM_UNDEFINED;
+}
+
+static ScmObj safe_eval_thunk(ScmObj *args, int nargs, void *data)
+{
+    struct eval_packet_rec *epak = (struct eval_packet_rec*)data;
+    ScmObj env = epak->env;
     ScmVM *vm = Scm_VM();
-    int retval = 0;
+
+    switch (epak->kind) {
+    case SAFE_EVAL_CSTRING:
+        return Scm_VMEval(Scm_ReadFromCString(epak->cstr), epak->env);
+    case SAFE_EVAL:
+        return Scm_VMEval(epak->arg0, epak->env);
+    case SAFE_APPLY:
+        return Scm_VMApply(epak->arg0, epak->args);
+    default:
+        Scm_Panic("safe_eval_subr: bad kind");
+        return SCM_UNBOUND;     /* dummy */
+    }
+}
+
+static ScmObj safe_eval_int(ScmObj *args, int nargs, void *data)
+{
+    ScmObj thunk, handler;
     
-    packet->exception = SCM_FALSE;
-    packet->numResults = 0;
+    thunk   = Scm_MakeSubr(safe_eval_thunk, data, 0, 0, SCM_FALSE);
+    handler = Scm_MakeSubr(safe_eval_handler, data, 1, 0, SCM_FALSE);
+    return Scm_VMWithErrorHandler(handler, thunk);
+}
 
-    /* At this moment (0.8.8), we only accept <module> as ENV.
-       This may be relaxed in the later versions. */
-    if (!SCM_MODULEP(env)) return SCM_EVAL_INVALID_ARG;
+static int safe_eval_wrap(int kind, ScmObj arg0, ScmObj args,
+                          const char *cstr,
+                          ScmEvalPacket *result)
+{
+    struct eval_packet_rec epak;
+    ScmObj proc, r;
+    ScmVM *vm = theVM;
+    int i;
 
-    SCM_UNWIND_PROTECT {
-        int i;
+    epak.env = result->env;
+    epak.kind = kind;
+    epak.arg0 = arg0;
+    epak.args = args;
+    epak.cstr = cstr;
+    epak.exception = SCM_UNBOUND;
 
-        switch (kind) {
-        case SAFE_EVAL_CSTRING:
-            arg0 = Scm_ReadFromCString((const char*)arg1);
-            /*FALLTHROUGH*/
-        case SAFE_EVAL:
-            packet->results[0] = Scm_Eval(arg0, env);
-            break;
-        case SAFE_APPLY:
-            packet->results[0] = Scm_Apply(arg0, SCM_OBJ(arg1));
-            break;
-        }
-        retval = packet->numResults = vm->numVals;
+    proc = Scm_MakeSubr(safe_eval_int, &epak, 0, 0, SCM_FALSE);
+    r = Scm_Apply(proc, SCM_NIL);
+
+    if (SCM_UNBOUNDP(epak.exception)) {
+        /* normal termination */
+        result->numResults = vm->numVals;
+        result->results[0] = r;
         for (i=1; i<vm->numVals; i++) {
-            packet->results[i] = vm->vals[i-1];
+            result->results[i] = vm->vals[i-1];
         }
+        result->exception = SCM_FALSE;
+        return result->numResults;
+    } else {
+        /* abnormal termination */
+        result->numResults = 0;
+        result->exception = epak.exception;
+        return -1;
     }
-    SCM_WHEN_ERROR {
-        switch (vm->escapeReason) {
-        case SCM_VM_ESCAPE_CONT:
-            /* We may provide an option to stop propagation of continuation
-               in future, but for now, we just let it pass through. */
-            SCM_NEXT_HANDLER;
-        case SCM_VM_ESCAPE_ERROR:
-            /* escapeData[0] contains the exception. */
-            packet->exception = vm->escapeData[0];
-            retval = SCM_EVAL_ERROR;
-            break;
-        default:
-            /* can't be here */
-            Scm_Panic("Scm_SafeEval: unknown escape reason");
-        }
-    }
-    SCM_END_PROTECT;
-    return retval;
 }
 
 int Scm_SafeEval(ScmObj form, ScmEvalPacket *packet)
 {
-    return safe_eval_int(SAFE_EVAL, form, NULL, packet);
+    return safe_eval_wrap(SAFE_EVAL, form, SCM_FALSE, NULL, packet);
 }
 
 int Scm_SafeEvalCString(const char *expr, ScmEvalPacket *packet)
 {
-    return safe_eval_int(SAFE_EVAL_CSTRING, SCM_FALSE, (void*)expr, packet);
+    return safe_eval_wrap(SAFE_EVAL_CSTRING, SCM_FALSE, SCM_FALSE, expr, packet);
 }
 
 int Scm_SafeApply(ScmObj proc, ScmObj args, ScmEvalPacket *packet)
 {
-    return safe_eval_int(SAFE_APPLY, proc, args, packet);
+    return safe_eval_wrap(SAFE_APPLY, proc, args, NULL, packet);
 }
 
 
