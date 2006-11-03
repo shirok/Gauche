@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.83 2005-10-13 08:14:13 shirok Exp $
+ *  $Id: read.c,v 1.84 2006-11-03 11:11:27 shirok Exp $
  */
 
 #include <stdio.h>
@@ -270,7 +270,7 @@ static void read_context_flush(ScmReadContext *ctx)
         finisher = SCM_CDR(entry);
 
         if (!SCM_FALSEP(finisher)) {
-            Scm_Apply(finisher, SCM_LIST1(obj));
+            Scm_ApplyRec(finisher, SCM_LIST1(obj));
         } else if (SCM_PAIRP(obj)) {
             SCM_FOR_EACH(ep, obj) {
                 if (SCM_READ_REFERENCE_P(SCM_CAR(ep))) {
@@ -1082,7 +1082,7 @@ static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args,
 
     if (e == NULL) Scm_ReadError(port, "unknown #,-key: %S", key);
     SCM_ASSERT(SCM_PAIRP(e->value));
-    r = Scm_Apply(SCM_CAR(e->value), args);
+    r = Scm_ApplyRec(SCM_CAR(e->value), args);
     if (has_ref) ref_push(ctx, r, SCM_CDR(e->value));
     return r;
 }

@@ -1,9 +1,10 @@
 /* 
  * Test VM stack sanity
- * $Id: test-vmstack.c,v 1.3 2003-12-16 09:50:46 shirok Exp $
+ * $Id: test-vmstack.c,v 1.4 2006-11-03 11:11:27 shirok Exp $
  */
 
 #include <stdio.h>
+#define GAUCHE_API_0_8_8
 #include "gauche.h"
 #include "gauche/vm.h"
 
@@ -26,12 +27,7 @@ void test_eval(const char *msg, const char *sexp)
     ScmObj *pre_stack = Scm_VM()->sp, *post_stack;
     ScmObj x = Scm_ReadFromCString(sexp);
     printf("%s ... ", msg);
-    SCM_UNWIND_PROTECT {
-        Scm_Eval(x, SCM_UNBOUND);
-    }
-    SCM_WHEN_ERROR {
-    }
-    SCM_END_PROTECT;
+    Scm_Eval(x, SCM_UNBOUND, NULL); /* ignore errors */
         
     post_stack = Scm_VM()->sp;
     if (pre_stack != post_stack) {

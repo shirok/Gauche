@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.264 2006-10-14 23:14:49 shirok Exp $
+;;; $Id: extlib.stub,v 1.265 2006-11-03 11:11:27 shirok Exp $
 ;;;
 
 "
@@ -794,8 +794,8 @@
     if (SCM_PORT_DIR(p) == SCM_PORT_OUTPUT) {
        ScmObj scmflusher = SCM_OBJ(p->src.buf.data);
        int siz = (int)(p->src.buf.current - p->src.buf.buffer);
-       if (siz > 0) Scm_Apply(scmflusher, SCM_LIST1(Scm_MakeString(p->src.buf.buffer, siz, siz, SCM_MAKSTR_INCOMPLETE|SCM_MAKSTR_COPYING)));
-       Scm_Apply(scmflusher, SCM_LIST1(SCM_FALSE));
+       if (siz > 0) Scm_ApplyRec(scmflusher, SCM_LIST1(Scm_MakeString(p->src.buf.buffer, siz, siz, SCM_MAKSTR_INCOMPLETE|SCM_MAKSTR_COPYING)));
+       Scm_ApplyRec(scmflusher, SCM_LIST1(SCM_FALSE));
     }
  }"
 
@@ -805,7 +805,7 @@
     const ScmStringBody *b;
     scmfiller = SCM_OBJ(p->src.buf.data);
     /* no need to use VMApply; we're in the C callback */
-    r = Scm_Apply(scmfiller, SCM_LIST1(Scm_MakeInteger(cnt)));
+    r = Scm_ApplyRec(scmfiller, SCM_LIST1(Scm_MakeInteger(cnt)));
     if (SCM_EOFP(r) || SCM_FALSEP(r)) {
        return 0;
     } else if (!SCM_STRINGP(r)) {
@@ -838,7 +838,7 @@
      ScmObj scmflusher, s;
      scmflusher = SCM_OBJ(p->src.buf.data);
      s = Scm_MakeString(p->src.buf.buffer, cnt, cnt, SCM_MAKSTR_INCOMPLETE|SCM_MAKSTR_COPYING);
-     Scm_Apply(scmflusher, SCM_LIST1(s));
+     Scm_ApplyRec(scmflusher, SCM_LIST1(s));
      return cnt;
  }"
 

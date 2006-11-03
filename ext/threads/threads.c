@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: threads.c,v 1.12 2006-07-25 03:21:29 shirok Exp $
+ *  $Id: threads.c,v 1.13 2006-11-03 11:11:26 shirok Exp $
  */
 
 #include <gauche.h>
@@ -120,7 +120,7 @@ static void *thread_entry(void *data)
             Scm_MakeError(SCM_MAKE_STR("pthread_setspecific failed"));
     } else {
         SCM_UNWIND_PROTECT {
-            vm->result = Scm_Apply(SCM_OBJ(vm->thunk), SCM_NIL);
+            vm->result = Scm_ApplyRec(SCM_OBJ(vm->thunk), SCM_NIL);
         } SCM_WHEN_ERROR {
             ScmObj exc;
             switch (vm->escapeReason) {

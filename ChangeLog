@@ -1,3 +1,17 @@
+2006-11-02  Shiro Kawai  <shiro@acm.org>
+
+	* gauche.h, vm.c (Scm_Eval etc.): changed my mind about the names
+	  of the new Eval API.  If GAUCHE_API_0_8_8 is defined before including
+	  gauche.h, Scm_Eval, Scm_EvalCString and Scm_Apply have the new
+	  APIs (the old ones are accessible as Scm_EvalRec etc.).  If 
+	  GAUCHE_API_0_8_8 is not defined, Scm_Eval, Scm_EvalCString
+	  and Scm_Apply have the original API (and Scm_EvalRec etc., are
+	  also available).  This helps the transition, while maintaining
+	  compatibility and avoid further extra names like SafeEval.
+	  NB: I'm still not sure about what Scm_Eval etc. should return.
+	  May change my mind again.
+	* various files: updated accordingly.
+
 2006-10-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (Scm_SafeEval etc.): The previous version was broken.

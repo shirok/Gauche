@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: repl.c,v 1.33 2005-05-17 04:33:09 shirok Exp $
+ *  $Id: repl.c,v 1.34 2006-11-03 11:11:27 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -193,8 +193,8 @@ static SCM_DEFINE_SUBR(repl_STUB, 0, 1, SCM_OBJ(&repl_NAME), repl_proc, NULL, NU
 void Scm_Repl(ScmObj reader, ScmObj evaluator, ScmObj printer,
               ScmObj prompter)
 {
-    Scm_Apply(SCM_OBJ(&repl_STUB),
-              SCM_LIST4(reader, evaluator, printer, prompter));
+    Scm_ApplyRec(SCM_OBJ(&repl_STUB),
+                 SCM_LIST4(reader, evaluator, printer, prompter));
 }
 
 void Scm__InitRepl(void)

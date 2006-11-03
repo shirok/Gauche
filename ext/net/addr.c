@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: addr.c,v 1.24 2006-07-05 03:36:37 shirok Exp $
+ *  $Id: addr.c,v 1.25 2006-11-03 11:11:26 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -75,14 +75,14 @@ int Scm_SockAddrP(ScmObj obj)
 /* C interface of sockaddr-name and sockaddr-family */
 ScmObj Scm_SockAddrName(ScmSockAddr *addr)
 {
-    return Scm_Apply(SCM_OBJ(&Scm_GenericSockAddrName),
-                     SCM_LIST1(SCM_OBJ(addr)));
+    return Scm_ApplyRec(SCM_OBJ(&Scm_GenericSockAddrName),
+                        SCM_LIST1(SCM_OBJ(addr)));
 }
 
 ScmObj Scm_SockAddrFamily(ScmSockAddr *addr)
 {
-    return Scm_Apply(SCM_OBJ(&Scm_GenericSockAddrFamily),
-                     SCM_LIST1(SCM_OBJ(addr)));
+    return Scm_ApplyRec(SCM_OBJ(&Scm_GenericSockAddrFamily),
+                        SCM_LIST1(SCM_OBJ(addr)));
 }
 
 /* Fallback of allocation method */

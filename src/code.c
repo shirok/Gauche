@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: code.c,v 1.10 2005-10-13 08:14:13 shirok Exp $
+ *  $Id: code.c,v 1.11 2006-11-03 11:11:27 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -98,7 +98,7 @@ static ScmObj execute_toplevels(ScmObj*, int, void*);
 void Scm_VMExecuteToplevels(ScmCompiledCode *cs[])
 {
     ScmObj proc = Scm_MakeSubr(execute_toplevels, cs, 0, 0, SCM_FALSE);
-    Scm_Apply(proc, SCM_NIL);
+    Scm_ApplyRec(proc, SCM_NIL);
 }
 
 static ScmObj execute_toplevels_cc(ScmObj result, void **data)

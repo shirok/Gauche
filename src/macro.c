@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.61 2006-10-29 11:59:14 shirok Exp $
+ *  $Id: macro.c,v 1.62 2006-11-03 11:11:27 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -188,7 +188,7 @@ static ScmObj macro_transform(ScmObj self, ScmObj form, ScmObj env,
 {
     ScmObj proc = SCM_OBJ(data);
     SCM_ASSERT(SCM_SYNTACTIC_CLOSURE_P(form));
-    return Scm_Apply(proc, SCM_LIST1(form));
+    return Scm_ApplyRec(proc, SCM_LIST1(form));
 }
 
 ScmObj Scm_MakeMacroTransformer(ScmSymbol *name, ScmObj proc)

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.135 2006-03-27 09:17:25 shirok Exp $
+ *  $Id: class.c,v 1.136 2006-11-03 11:11:27 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1872,10 +1872,10 @@ static int object_compare(ScmObj x, ScmObj y, int equalp)
 {
     ScmObj r;
     if (equalp) {
-        r = Scm_Apply(SCM_OBJ(&Scm_GenericObjectEqualP), SCM_LIST2(x, y));
+        r = Scm_ApplyRec(SCM_OBJ(&Scm_GenericObjectEqualP), SCM_LIST2(x, y));
         return (SCM_FALSEP(r)? -1 : 0);
     } else {
-        r = Scm_Apply(SCM_OBJ(&Scm_GenericObjectCompare), SCM_LIST2(x, y));
+        r = Scm_ApplyRec(SCM_OBJ(&Scm_GenericObjectCompare), SCM_LIST2(x, y));
         if (SCM_INTP(r)) {
             int ri = SCM_INT_VALUE(r);
             if (ri < 0) return -1;

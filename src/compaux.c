@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compaux.c,v 1.12 2006-03-27 09:17:25 shirok Exp $
+ *  $Id: compaux.c,v 1.13 2006-11-03 11:11:27 shirok Exp $
  */
 
 /* This file serves as a bridge to the compiler, which is implemented
@@ -63,13 +63,13 @@ static ScmInternalMutex compile_finish_mutex;
 
 ScmObj Scm_Compile(ScmObj program, ScmObj env)
 {
-    return Scm_Apply(SCM_GLOC_GET(compile_gloc), SCM_LIST2(program, env));
+    return Scm_ApplyRec(SCM_GLOC_GET(compile_gloc), SCM_LIST2(program, env));
 }
 
 ScmObj Scm_CompilePartial(ScmObj program, ScmObj env)
 {
-    return Scm_Apply(SCM_GLOC_GET(compile_partial_gloc),
-                     SCM_LIST2(program, env));
+    return Scm_ApplyRec(SCM_GLOC_GET(compile_partial_gloc),
+                        SCM_LIST2(program, env));
 }
 
 void Scm_CompileFinish(ScmCompiledCode *cc)
@@ -78,8 +78,8 @@ void Scm_CompileFinish(ScmCompiledCode *cc)
         SCM_INTERNAL_MUTEX_LOCK(compile_finish_mutex);
         SCM_UNWIND_PROTECT {
             if (cc->code == NULL) {
-                Scm_Apply(SCM_GLOC_GET(compile_finish_gloc),
-                          SCM_LIST1(SCM_OBJ(cc)));
+                Scm_ApplyRec(SCM_GLOC_GET(compile_finish_gloc),
+                             SCM_LIST1(SCM_OBJ(cc)));
             }
         }
         SCM_WHEN_ERROR {
@@ -328,6 +328,6 @@ void Scm__InitCompaux(void)
     INIT_GLOC(compile_partial_gloc, "compile-partial", gi);
     INIT_GLOC(compile_finish_gloc,  "compile-finish",  gi);
 
-    Scm_Apply(SCM_GLOC_GET(init_compiler_gloc), SCM_NIL);
+    Scm_ApplyRec(SCM_GLOC_GET(init_compiler_gloc), SCM_NIL);
 }
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.62 2006-10-08 03:59:42 shirok Exp $
+ *  $Id: write.c,v 1.63 2006-11-03 11:11:28 shirok Exp $
  */
 
 #include <stdio.h>
@@ -297,7 +297,8 @@ static void write_general(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
    may not return to VM immediately. */
 static void write_object(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    Scm_Apply(SCM_OBJ(&Scm_GenericWriteObject), SCM_LIST2(obj, SCM_OBJ(port)));
+    Scm_ApplyRec(SCM_OBJ(&Scm_GenericWriteObject),
+                 SCM_LIST2(obj, SCM_OBJ(port)));
 }
 
 /* Default method for write-object */

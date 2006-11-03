@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.39 2006-03-25 15:16:53 shirok Exp $
+ *  $Id: signal.c,v 1.40 2006-11-03 11:11:27 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -482,7 +482,7 @@ void Scm_SigCheck(ScmVM *vm)
     SCM_FOR_EACH(sp, q->pending) {
         ScmObj h = SCM_CAR(sp);
         q->pending = SCM_CDR(sp);
-        Scm_Apply(SCM_CAR(h), SCM_LIST1(SCM_CDR(h)));
+        Scm_ApplyRec(SCM_CAR(h), SCM_LIST1(SCM_CDR(h)));
     }
 }
 

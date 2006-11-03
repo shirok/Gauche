@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.249 2006-10-30 14:00:00 shirok Exp $
+ *  $Id: vm.c,v 1.250 2006-11-03 11:11:27 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -3115,7 +3115,6 @@ static ScmObj safe_eval_handler(ScmObj *args, int nargs, void *data)
 static ScmObj safe_eval_thunk(ScmObj *args, int nargs, void *data)
 {
     struct eval_packet_rec *epak = (struct eval_packet_rec*)data;
-    ScmObj env = epak->env;
     ScmVM *vm = Scm_VM();
 
     switch (epak->kind) {
@@ -3141,7 +3140,7 @@ static ScmObj safe_eval_int(ScmObj *args, int nargs, void *data)
 }
 
 static int safe_eval_wrap(int kind, ScmObj arg0, ScmObj args,
-                          const char *cstr,
+                          const char *cstr, ScmObj env,
                           ScmEvalPacket *result)
 {
     struct eval_packet_rec epak;
@@ -3149,7 +3148,7 @@ static int safe_eval_wrap(int kind, ScmObj arg0, ScmObj args,
     ScmVM *vm = theVM;
     int i;
 
-    epak.env = result->env;
+    epak.env  = env;
     epak.kind = kind;
     epak.arg0 = arg0;
     epak.args = args;
@@ -3157,38 +3156,44 @@ static int safe_eval_wrap(int kind, ScmObj arg0, ScmObj args,
     epak.exception = SCM_UNBOUND;
 
     proc = Scm_MakeSubr(safe_eval_int, &epak, 0, 0, SCM_FALSE);
-    r = Scm_Apply(proc, SCM_NIL);
+    r = Scm_ApplyRec(proc, SCM_NIL);
 
     if (SCM_UNBOUNDP(epak.exception)) {
         /* normal termination */
-        result->numResults = vm->numVals;
-        result->results[0] = r;
-        for (i=1; i<vm->numVals; i++) {
-            result->results[i] = vm->vals[i-1];
+        if (result) {
+            result->numResults = vm->numVals;
+            result->results[0] = r;
+            for (i=1; i<vm->numVals; i++) {
+                result->results[i] = vm->vals[i-1];
+            }
+            result->exception = SCM_FALSE;
         }
-        result->exception = SCM_FALSE;
-        return result->numResults;
+        return vm->numVals;
     } else {
         /* abnormal termination */
-        result->numResults = 0;
-        result->exception = epak.exception;
+        if (result) {
+            result->numResults = 0;
+            result->exception = epak.exception;
+        }
         return -1;
     }
 }
 
-int Scm_SafeEval(ScmObj form, ScmEvalPacket *packet)
+/* Temporary names.  Rename to Scm_Eval etc. after 0.8.8 release. */
+int Scm__Eval(ScmObj form, ScmObj env, ScmEvalPacket *packet)
 {
-    return safe_eval_wrap(SAFE_EVAL, form, SCM_FALSE, NULL, packet);
+    return safe_eval_wrap(SAFE_EVAL, form, SCM_FALSE, NULL, env, packet);
 }
 
-int Scm_SafeEvalCString(const char *expr, ScmEvalPacket *packet)
+int Scm__EvalCString(const char *expr, ScmObj env, ScmEvalPacket *packet)
 {
-    return safe_eval_wrap(SAFE_EVAL_CSTRING, SCM_FALSE, SCM_FALSE, expr, packet);
+    return safe_eval_wrap(SAFE_EVAL_CSTRING, SCM_FALSE, SCM_FALSE,
+                          expr, env, packet);
 }
 
-int Scm_SafeApply(ScmObj proc, ScmObj args, ScmEvalPacket *packet)
+int Scm__Apply(ScmObj proc, ScmObj args, ScmEvalPacket *packet)
 {
-    return safe_eval_wrap(SAFE_APPLY, proc, args, NULL, packet);
+    return safe_eval_wrap(SAFE_APPLY, proc, args, NULL, SCM_FALSE, packet);
 }
 
 
@@ -3403,7 +3408,7 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
         SCM_VM_FLOATING_EP_SET(vm, ep);
 
         SCM_UNWIND_PROTECT {
-            result = Scm_Apply(ep->ehandler, SCM_LIST1(e));
+            result = Scm_ApplyRec(ep->ehandler, SCM_LIST1(e));
             if ((numVals = vm->numVals) > 1) {
                 for (i=0; i<numVals-1; i++) rvals[i] = vm->vals[i];
             }
@@ -3413,7 +3418,7 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
             for (hp = current; SCM_PAIRP(hp)&&hp != target; hp = SCM_CDR(hp)) {
                 ScmObj proc = SCM_CDAR(hp);
                 vm->handlers = SCM_CDR(hp);
-                Scm_Apply(proc, SCM_NIL);
+                Scm_ApplyRec(proc, SCM_NIL);
             }
         }
         SCM_WHEN_ERROR {
@@ -3439,7 +3444,7 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
         SCM_FOR_EACH(hp, vm->handlers) {
             ScmObj proc = SCM_CDAR(hp);
             vm->handlers = SCM_CDR(hp);
-            Scm_Apply(proc, SCM_NIL);
+            Scm_ApplyRec(proc, SCM_NIL);
         }
     }
 
@@ -3484,7 +3489,7 @@ ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception)
     SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_HANDLED);
 
     if (vm->exceptionHandler != DEFAULT_EXCEPTION_HANDLER) {
-        vm->val0 = Scm_Apply(vm->exceptionHandler, SCM_LIST1(exception));
+        vm->val0 = Scm_ApplyRec(vm->exceptionHandler, SCM_LIST1(exception));
         if (SCM_SERIOUS_CONDITION_P(exception)) {
             /* the user-installed exception handler returned while it
                shouldn't.  In order to prevent infinite loop, we should

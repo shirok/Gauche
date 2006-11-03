@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.43 2006-06-05 05:11:25 shirok Exp $
+ *  $Id: hash.c,v 1.44 2006-11-03 11:11:27 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -186,8 +186,8 @@ unsigned long Scm_Hash(ScmObj obj)
         goto string_hash;
     } else {
         /* Call specialized object-hash method */
-        ScmObj r = Scm_Apply(SCM_OBJ(&Scm_GenericObjectHash),
-                             SCM_LIST1(obj));
+        ScmObj r = Scm_ApplyRec(SCM_OBJ(&Scm_GenericObjectHash),
+                                SCM_LIST1(obj));
         if (SCM_INTP(r)) {
             return (unsigned long)SCM_INT_VALUE(r);
         }

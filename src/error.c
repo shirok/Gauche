@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.68 2006-05-06 00:12:36 shirok Exp $
+ *  $Id: error.c,v 1.69 2006-11-03 11:11:27 shirok Exp $
  */
 
 #include <errno.h>
@@ -750,7 +750,7 @@ ScmObj Scm_RaiseCondition(ScmObj condition_type, ...)
         }
     }
     va_end(ap);
-    return Scm_Apply(SCM_SYMBOL_VALUE("gauche", "error"), argh);
+    return Scm_ApplyRec(SCM_SYMBOL_VALUE("gauche", "error"), argh);
 }
 
 /*
@@ -892,7 +892,7 @@ void Scm_ReportError(ScmObj e)
     SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
     SCM_UNWIND_PROTECT {
         if (SCM_PROCEDUREP(vm->defaultEscapeHandler)) {
-            Scm_Apply(vm->defaultEscapeHandler, SCM_LIST1(e));
+            Scm_ApplyRec(vm->defaultEscapeHandler, SCM_LIST1(e));
         } else {
             report_error_inner(vm, e);
         }

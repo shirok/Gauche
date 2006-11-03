@@ -30,12 +30,13 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.69 2005-11-02 06:03:26 shirok Exp $
+ *  $Id: core.c,v 1.70 2006-11-03 11:11:27 shirok Exp $
  */
 
 #include <stdlib.h>
 #include <unistd.h>
 #define LIBGAUCHE_BODY
+#define GAUCHE_API_0_8_8
 #include "gauche.h"
 #include "gauche/arch.h"
 #include "gauche/paths.h"
@@ -300,10 +301,14 @@ void Scm_Cleanup(void)
     if (!cleanup.dirty) return;
     cleanup.dirty = FALSE;
     
-    /* Execute pending dynamic handlers */
+    /* Execute pending dynamic handlers.
+       NB: we ignore errors here.  It may not be accurate behavior, though.
+       (A handler may intentionally raise an error to skip the rest of
+       handlers).  We may change to break from SCM_FOR_EACH in case if
+       we detect error in Scm_Apply. */
     SCM_FOR_EACH(hp, vm->handlers) {
         vm->handlers = SCM_CDR(hp);
-        Scm_Apply(SCM_CDAR(hp), SCM_NIL);
+        Scm_Apply(SCM_CDAR(hp), SCM_NIL, NULL);
     }
 
     /* Call the C-registered cleanup handlers. */

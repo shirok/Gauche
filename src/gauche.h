@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.460 2006-10-30 14:00:00 shirok Exp $
+ *  $Id: gauche.h,v 1.461 2006-11-03 11:11:27 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -107,7 +107,7 @@ SCM_DECL_BEGIN
 #define SCM_DEBUG_HELPER      TRUE
 #endif
 
-#define SCM_INLINE_MALLOC_PRIMITIVES
+#define SCM_INLINE_MALLOC_PRIMITIVES 1
 
 #ifdef GAUCHE_USE_PTHREADS
 # include <gauche/pthread.h>
@@ -395,44 +395,53 @@ typedef struct ScmAutoloadRec  ScmAutoload;
 
 SCM_EXTERN ScmVM *Scm_VM(void);     /* Returns the current VM */
 
-/* Convenience APIs to run Scheme code from C routine.
+/* The new APIs to run Scheme code from C.
    Returns # of results (>=0) if operation is successful, 
    -1 if an error is occurred and captured.
-   All values are available in ScmEvalPacket.
+   All result values are available in ScmEvalPacket.
    Exceptions are captured and returned in the ScmEvalPacket.
 
-   A bit of historical fact.  In retrospective, we should've called
-   these convenience APIs as Scm_Eval etc, for these are the easiest
-   APIs when one wants to evaluate Scheme from her C app.  But those
-   names were already taken by the APIs that calls VM recursively
-   (but does not catch exceptions).  Now we decided to call the 
-   latter ones as Scm_EvalRec etc., and hope the existing libraries
-   gradually rename them. */
+   Note: This is an incompatible change that breaks the existing
+   C apps.  For smooth transition, we take two-step process.
+   
+   In 0.8.8, new APIs are visible iff GAUCHE_API_0_8_8 is defined
+   before including gauche.h.  Otherwise, old APIs are visible.
+   The existing C apps are encouraged to adopt the new API during
+   this period.
+
+   In 0.8.9, new APIs become the default and old APIs will be removed. */
 
 typedef struct ScmEvalPacketRec {
-    ScmObj env;                 /* in/out */
-    ScmObj results[SCM_VM_MAX_VALUES]; /* out */
-    int    numResults;          /* out */
-    ScmObj exception;           /* out */
+    ScmObj results[SCM_VM_MAX_VALUES];
+    int    numResults;
+    ScmObj exception;
+    ScmModule *module;          /* 'Current module' after evaluation */
 } ScmEvalPacket;
 
-SCM_EXTERN int Scm_SafeEval(ScmObj form, ScmEvalPacket *packet);
-SCM_EXTERN int Scm_SafeEvalCString(const char *form,
-                                   ScmEvalPacket *packet);
-SCM_EXTERN int Scm_SafeApply(ScmObj proc, ScmObj args,
-                             ScmEvalPacket *packet);
+/* For 0.8.8, we use these names to avoid conflict with the old
+   Scm_Eval etc.  After releasing 0.8.8 we rename them. */
+SCM_EXTERN int Scm__Eval(ScmObj form, ScmObj env, ScmEvalPacket *packet);
+SCM_EXTERN int Scm__EvalCString(const char *form, ScmObj env,
+                                ScmEvalPacket *packet);
+SCM_EXTERN int Scm__Apply(ScmObj proc, ScmObj args,
+                          ScmEvalPacket *packet);
 
 /* Calls VM recursively to evaluate the Scheme code.  These
-   ones does not capture exceptions.
-   Scm_EValRecCString is DEPRECATED.  Use Scm_SafeEvalCString. */
+   ones does not capture exceptions. */
 SCM_EXTERN ScmObj Scm_EvalRec(ScmObj form, ScmObj env);
-SCM_EXTERN ScmObj Scm_EvalRecCString(const char *form, ScmObj env);
 SCM_EXTERN ScmObj Scm_ApplyRec(ScmObj proc, ScmObj args);
 
-/* Backward compatibility.  Gradually fades out.  */
-#define Scm_Eval(f,e)         Scm_EvalRec(f,e)
-#define Scm_EvalCString(s,e)  Scm_EvalRecCString(s,e)
-#define Scm_Apply(p,a)        Scm_ApplyRec(p,a)
+/* Compatibility hack */
+#if defined(GAUCHE_API_0_8_8)
+#define Scm_Eval(f, e, p)         Scm__Eval(f, e, p)
+#define Scm_EvalCString(f, e, p)  Scm__EvalCString(f, e, p)
+#define Scm_Apply(a, b, p)        Scm__Apply(a, b, p)
+#else  /* !GAUCHE_API_0_8_8 */
+SCM_EXTERN ScmObj Scm_EvalCStringRec(const char *form, ScmObj env);
+#define Scm_Eval(f, e)        Scm_EvalRec(f, e)
+#define Scm_EvalCString(f, e) Scm_EvalCStringRec(f, e)
+#define Scm_Apply(p, a)       Scm_ApplyRec(p, a)
+#endif /* !GAUCHE_API_0_8_8 */
 
 /* Returns multiple values.  Actually these functions just sets
    extra values in VM and returns the primary value. */

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.89 2006-07-19 03:15:25 shirok Exp $
+ *  $Id: main.c,v 1.90 2006-11-03 11:11:27 shirok Exp $
  */
 
 #include <unistd.h>
@@ -39,6 +39,8 @@
 #include <sys/stat.h>
 #include <signal.h>
 #include <ctype.h>
+
+#define GAUCHE_API_0_8_8
 #include "gauche.h"
 
 #ifdef HAVE_GETOPT_H
@@ -247,7 +249,8 @@ void cleanup_main(void *data)
     if (profiling_mode) {
         Scm_ProfilerStop();
         Scm_EvalCString("(profiler-show)",
-                        SCM_OBJ(SCM_FIND_MODULE("gauche.vm.profiler", 0)));
+                        SCM_OBJ(SCM_FIND_MODULE("gauche.vm.profiler", 0)),
+                        NULL); /* ignore errors */
     }
     
     /* EXPERIMENTAL */
@@ -267,10 +270,11 @@ void cleanup_main(void *data)
 
     /* EXPERIMENTAL */
     if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_COLLECT_LOAD_STATS)) {
-        ///Scm_Printf(SCM_CURERR, "-- %S\n", vm->stat.loadStat);
         Scm_Eval(SCM_LIST2(SCM_INTERN("profiler-show-load-stats"),
-                           SCM_LIST2(SCM_INTERN("quote"), vm->stat.loadStat)),
-                 SCM_OBJ(SCM_FIND_MODULE("gauche", 0)));
+                           SCM_LIST2(SCM_INTERN("quote"),
+                                     vm->stat.loadStat)),
+                 SCM_OBJ(SCM_FIND_MODULE("gauche.vm.profiler", 0)),
+                 NULL);    /* ignore errors */
     }
 }
 
@@ -284,6 +288,7 @@ int main(int argc, char **argv)
     const char *scriptfile = NULL;
     ScmObj av = SCM_NIL;
     int exit_code;
+    ScmEvalPacket epak;
 
     GC_INIT();
     Scm_Init(GAUCHE_SIGNATURE);
@@ -370,6 +375,8 @@ int main(int argc, char **argv)
     SCM_FOR_EACH(cp, Scm_Reverse(pre_cmds)) {
         ScmObj p = SCM_CAR(cp);
         ScmObj v = SCM_CDR(p);
+        int r;
+        
         switch (SCM_CHAR_VALUE(SCM_CAR(p))) {
         case 'I':
             Scm_AddLoadPath(Scm_GetStringConst(SCM_STRING(v)), FALSE);
@@ -389,15 +396,24 @@ int main(int argc, char **argv)
                               SCM_LIST1(Scm_Intern(SCM_STRING(v))));
             break;
         case 'e':
-            Scm_Eval(Scm_ReadFromString(SCM_STRING(v)),
-                     SCM_OBJ(Scm_UserModule()));
+            r = Scm_EvalCString(Scm_GetStringConst(SCM_STRING(v)),
+                                SCM_OBJ(Scm_UserModule()),
+                                &epak);
+            if (r < 0) {
+                Scm_Printf(SCM_CURERR, "Error during evaluating command-line expression %S:\n%S\n", v, epak.exception);
+            }
             break;
         case 'E':
             v = Scm_StringAppend(SCM_LIST3(SCM_MAKE_STR("("),
                                            v,
                                            SCM_MAKE_STR(")")));
-            Scm_Eval(Scm_ReadFromString(SCM_STRING(v)),
-                     SCM_OBJ(Scm_UserModule()));
+
+            r = Scm_EvalCString(Scm_GetStringConst(SCM_STRING(v)),
+                                SCM_OBJ(Scm_UserModule()),
+                                &epak);
+            if (r < 0) {
+                Scm_Printf(SCM_CURERR, "Error during evaluating command-line expression %S:\n%S\n", v, epak.exception);
+            }
             break;
         }
     }
@@ -413,7 +429,8 @@ int main(int argc, char **argv)
 
     if (scriptfile != NULL) {
         /* If script file is specified, load it. */
-        ScmObj result, mainproc;
+        ScmObj mainproc;
+        ScmEvalPacket epak;
 
         Scm_Load(scriptfile, 0);
 
@@ -422,9 +439,13 @@ int main(int argc, char **argv)
         mainproc = Scm_SymbolValue(Scm_UserModule(),
                                    SCM_SYMBOL(SCM_INTERN("main")));
         if (SCM_PROCEDUREP(mainproc)) {
-            result = Scm_Apply(mainproc, SCM_LIST1(av));
-            if (SCM_INTP(result)) exit_code = SCM_INT_VALUE(result);
-            else exit_code = 70;  /* EX_SOFTWARE, see SRFI-22. */
+            int r = Scm_Apply(mainproc, SCM_LIST1(av), &epak);
+            if (r > 0) {
+                ScmObj res = epak.results[0];
+                if (SCM_INTP(res)) exit_code = SCM_INT_VALUE(res);
+            } else {
+                exit_code = 70;  /* EX_SOFTWARE, see SRFI-22. */
+            }
         } else {
             exit_code = 0;
         }

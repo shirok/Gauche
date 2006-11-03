@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.131 2006-10-22 07:58:33 shirok Exp $
+ *  $Id: number.c,v 1.132 2006-11-03 11:11:27 shirok Exp $
  */
 
 #include <math.h>
@@ -1000,7 +1000,7 @@ ScmObj Scm_Negate(ScmObj obj)
         obj = Scm_MakeCompnum(-SCM_COMPNUM_REAL(obj),
                               -SCM_COMPNUM_IMAG(obj));
     } else {
-        obj = Scm_Apply(SCM_OBJ(&generic_sub), SCM_LIST1(obj));
+        obj = Scm_ApplyRec(SCM_OBJ(&generic_sub), SCM_LIST1(obj));
     }
     return obj;
 }
@@ -1024,7 +1024,7 @@ ScmObj Scm_Reciprocal(ScmObj obj)
         i1 = -i/d;
         obj = Scm_MakeComplex(r1, i1);
     } else {
-        obj = Scm_Apply(SCM_OBJ(&generic_div), SCM_LIST1(obj));
+        obj = Scm_ApplyRec(SCM_OBJ(&generic_div), SCM_LIST1(obj));
     }
     return obj;
 }
@@ -1222,7 +1222,7 @@ ScmObj Scm_Add(ScmObj arg0, ScmObj arg1)
         /* fallback to generic */
     }
     /* object-+ handling */
-    return Scm_Apply(SCM_OBJ(&generic_add), SCM_LIST2(arg0, arg1));
+    return Scm_ApplyRec(SCM_OBJ(&generic_add), SCM_LIST2(arg0, arg1));
 }
 
 ScmObj Scm_Sub(ScmObj arg0, ScmObj arg1)
@@ -1341,7 +1341,7 @@ ScmObj Scm_Sub(ScmObj arg0, ScmObj arg1)
         /* fallback to generic */
     }
     /* object-- handling */
-    return Scm_Apply(SCM_OBJ(&generic_sub), SCM_LIST2(arg0, arg1));
+    return Scm_ApplyRec(SCM_OBJ(&generic_sub), SCM_LIST2(arg0, arg1));
 }
 
 /*
@@ -1490,7 +1490,7 @@ ScmObj Scm_Mul(ScmObj arg0, ScmObj arg1)
         }
         /* fallback to generic */
     }
-    return Scm_Apply(SCM_OBJ(&generic_mul), SCM_LIST2(arg0, arg1));
+    return Scm_ApplyRec(SCM_OBJ(&generic_mul), SCM_LIST2(arg0, arg1));
 }
 
 /*
@@ -1653,7 +1653,7 @@ static ScmObj div_internal(ScmObj arg0, ScmObj arg1, int autocoerce)
         }
         /* fallback to generic */
     }
-    return Scm_Apply(SCM_OBJ(&generic_div), SCM_LIST2(arg0, arg1));
+    return Scm_ApplyRec(SCM_OBJ(&generic_div), SCM_LIST2(arg0, arg1));
 
   COERCE_INEXACT:
     {

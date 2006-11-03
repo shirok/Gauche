@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.106 2006-04-06 21:41:25 shirok Exp $
+ *  $Id: load.c,v 1.107 2006-11-03 11:11:27 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -233,7 +233,7 @@ static SCM_DEFINE_SUBR(load_from_port_STUB, 1, 1,
 
 void Scm_LoadFromPort(ScmPort *port, int flags)
 {
-    Scm_Apply(SCM_OBJ(&load_from_port_STUB), SCM_LIST1(SCM_OBJ(port)));
+    Scm_ApplyRec(SCM_OBJ(&load_from_port_STUB), SCM_LIST1(SCM_OBJ(port)));
 }
 
 /*---------------------------------------------------------------------
@@ -425,7 +425,7 @@ int Scm_Load(const char *cpath, int flags)
                            Scm_Cons(SCM_TRUE, options));
     }
     
-    r = Scm_Apply(SCM_OBJ(&load_STUB), Scm_Cons(f, options));
+    r = Scm_ApplyRec(SCM_OBJ(&load_STUB), Scm_Cons(f, options));
     return !SCM_FALSEP(r);
 }
 

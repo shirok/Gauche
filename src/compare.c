@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compare.c,v 1.12 2003-10-03 10:55:50 shirok Exp $
+ *  $Id: compare.c,v 1.13 2006-11-03 11:11:27 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -164,7 +164,7 @@ static void sort_q(ScmObj *elts, int lo, int hi, int depth, int limit,
 
 static int cmp_scm(ScmObj x, ScmObj y, ScmObj fn)
 {
-    ScmObj r = Scm_Apply(fn, SCM_LIST2(x, y));
+    ScmObj r = Scm_ApplyRec(fn, SCM_LIST2(x, y));
     if (SCM_TRUEP(r) || (SCM_INTP(r) && SCM_INT_VALUE(r) < 0))
         return -1;
     else
