@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: auxsyslib.stub,v 1.28 2006-03-12 11:05:46 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.29 2006-11-04 09:56:58 shirok Exp $
 ;;;
 
 "
@@ -49,6 +49,10 @@
 #ifdef HAVE_SYS_LOADAVG_H
 #  include <sys/loadavg.h>
 #endif /*HAVE_SYS_LOADAVG_H*/
+
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>
+#endif /*HAVE_UNISTD_H*/
 
 #include <stdlib.h>
 #include <math.h>
@@ -238,7 +242,7 @@
 (if "!defined(__MINGW32__)"
 (define-cproc sys-uname ()
   "  struct utsname info;
-  ScmObj head = SCM_NIL, tail;
+  ScmObj head = SCM_NIL, tail = SCM_NIL;
   if (uname(&info) < 0) Scm_SysError(\"uname failed\");
   SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.sysname));
   SCM_APPEND1(head, tail, SCM_MAKE_STR_COPYING(info.nodename));

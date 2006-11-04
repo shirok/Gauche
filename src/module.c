@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.63 2006-03-27 09:17:25 shirok Exp $
+ *  $Id: module.c,v 1.64 2006-11-04 09:56:59 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -487,11 +487,10 @@ ScmModule *Scm_FindModule(ScmSymbol *name, int flags)
     } else {
         m = lookup_module(name);
         if (m == NULL) {
-            if (flags & SCM_FIND_MODULE_QUIET) {
-                return NULL;
-            } else {
+            if (!(flags & SCM_FIND_MODULE_QUIET)) {
                 Scm_Error("no such module: %S", name);
             }
+            return NULL;
         } else {
             return m;
         }

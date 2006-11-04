@@ -1,7 +1,7 @@
 ;;
 ;; Generates uvect.c from uvect.c.tmpl
 ;;
-;; $Id: uvgen.scm,v 1.5 2006-06-05 05:11:24 shirok Exp $
+;; $Id: uvgen.scm,v 1.6 2006-11-04 09:56:59 shirok Exp $
 ;;
 
 (use srfi-1)
@@ -327,6 +327,12 @@
   (dolist (rule (make-rules))
     (let ((tag (string->symbol (assq-ref rule 't)))
           (TAG (assq-ref rule 'T)))
+      (define (ZERO r)
+        (case tag
+          ((s64 u64)
+           #`"SCM_SET_INT64_ZERO(,r)")
+          (else
+           #`",r = 0")))
       (define (GETLIM r dc v)
         (let1 getter
             (case tag
@@ -358,6 +364,7 @@
                       "SCM_OBJ(x)")
                      ))
         (for-each (cute substitute <> (list* `(GETLIM . ,GETLIM)
+                                             `(ZERO . ,ZERO)
                                              `(LT . ,LT)
                                              `(opname .  ,(ref ops 0))
                                              `(Opname .  ,(ref ops 1))

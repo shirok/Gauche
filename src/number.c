@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.132 2006-11-03 11:11:27 shirok Exp $
+ *  $Id: number.c,v 1.133 2006-11-04 09:56:59 shirok Exp $
  */
 
 #include <math.h>
@@ -381,7 +381,7 @@ ScmObj Scm_RatnumAddSub(ScmObj x, ScmObj y, int subtract)
     ScmObj dx = SCM_RATNUMP(x)? SCM_RATNUM_DENOM(x) : SCM_MAKE_INT(1);
     ScmObj ny = SCM_RATNUMP(y)? SCM_RATNUM_NUMER(y) : y;
     ScmObj dy = SCM_RATNUMP(y)? SCM_RATNUM_DENOM(y) : SCM_MAKE_INT(1);
-    ScmObj gcd, lcm, fx, fy, nr, dr;
+    ScmObj gcd, fx, fy, nr, dr;
 
     /* shortcut */
     if (Scm_NumEq(dx, dy)) {
@@ -1936,7 +1936,7 @@ static u_long gcd_bigfix(ScmBignum *x, u_long y)
 
 ScmObj Scm_Gcd(ScmObj x, ScmObj y)
 {
-    int ox = FALSE, oy = FALSE, inexact = FALSE;
+    int ox = FALSE, oy = FALSE;
     long ix, iy;
     u_long ux, uy, ur;
     
@@ -3049,7 +3049,7 @@ static ScmObj read_real(const char **strp, int *lenp,
         }
         if (**strp == '/') {
             /* possibly rational */
-            ScmObj denom, ratval;
+            ScmObj denom;
             int lensave;
             
             if ((*lenp) <= 1) return SCM_FALSE;

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvinit.c,v 1.10 2005-08-25 06:21:58 shirok Exp $
+ *  $Id: uvinit.c,v 1.11 2006-11-04 09:56:59 shirok Exp $
  */
 
 #include <gauche.h>
@@ -79,7 +79,6 @@ SCM_EXTERN ScmObj (*Scm_ReadUvectorHook)(ScmPort *port, const char *tag,
 void Scm_Init_libgauche_uvector(void)
 {
     ScmModule *m;
-    ScmObj t;
 
     SCM_INIT_EXTENSION(uvector);
     m = SCM_FIND_MODULE("gauche.uvector", SCM_FIND_MODULE_CREATE);

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.69 2006-11-03 11:11:27 shirok Exp $
+ *  $Id: error.c,v 1.70 2006-11-04 09:56:59 shirok Exp $
  */
 
 #include <errno.h>
@@ -721,7 +721,6 @@ ScmObj Scm_Raise(ScmObj condition)
 
 ScmObj Scm_RaiseCondition(ScmObj condition_type, ...)
 {
-    ScmVM *vm = Scm_VM();
     ScmObj argh = SCM_NIL, argt = SCM_NIL;
     va_list ap;
 

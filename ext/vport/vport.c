@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vport.c,v 1.14 2006-11-03 11:11:26 shirok Exp $
+ *  $Id: vport.c,v 1.15 2006-11-04 09:56:59 shirok Exp $
  */
 
 #include "gauche/vport.h"
@@ -361,7 +361,7 @@ static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs)
     ScmObj port;
     vport *data = SCM_NEW(vport);
     ScmPortVTable vtab;
-    int dir;
+    int dir = 0;
 
     data->getb_proc = SCM_FALSE;
     data->getc_proc = SCM_FALSE;
@@ -614,7 +614,7 @@ static ScmObj bport_allocate(ScmClass *klass, ScmObj initargs)
     ScmObj port;
     bport *data = SCM_NEW(bport);
     ScmPortBuffer buf;
-    int dir;
+    int dir = 0;
     int bufsize = Scm_GetInteger(Scm_GetKeyword(key_bufsize, initargs,
                                                 SCM_MAKE_INT(0)));
 
@@ -702,6 +702,8 @@ static ScmClassStaticSlotSpec boport_slots[] = {
 /*================================================================
  * Initialization
  */
+
+void Scm_Init_vportlib(ScmModule*);
 
 void Scm_Init_vport(void)
 {

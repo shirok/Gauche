@@ -31,7 +31,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.59 2006-05-28 02:29:16 shirok Exp $
+ *  $Id: regexp.c,v 1.60 2006-11-04 09:56:59 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -575,7 +575,6 @@ static ScmObj rc1_read_integer(regcomp_ctx *ctx)
 
 static ScmObj rc1_group_name(regcomp_ctx *ctx)
 {
-    ScmObj name;
     ScmChar ch;
     ScmDString ds;
     Scm_DStringInit(&ds);
@@ -718,6 +717,7 @@ static ScmObj rc1_lex_conditional_pattern(regcomp_ctx *ctx, int bolp, int level)
             } else {
                 Scm_Error("unknown switch condition (?>%c...) in regexp %S",
                           ch, ctx->pattern);
+                type = SCM_SYM_NASSERT; /* dummy */
             }
             item = rc1_parse(ctx, bolp, FALSE, level);
             return SCM_LIST2(type, Scm_Cons(SCM_SYM_LOOKBEHIND, item));
@@ -865,7 +865,7 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp, int level)
             continue;
         }
         if (SCM_EQ(token, SCM_SYM_CPAT)) {
-            ScmObj cond, ypat, npat, ep;
+            ScmObj cond, ypat, npat;
             cond = rc1_lex_conditional_pattern(ctx, bolp, level);
             item = rc1_parse(ctx, bolp, FALSE, level);
             if (SCM_PAIRP(item) && SCM_PAIRP(SCM_CAR(item))
@@ -950,7 +950,7 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp, int level)
 static ScmObj rc1(regcomp_ctx *ctx)
 {
     ScmObj ast = rc1_parse(ctx, TRUE, TRUE, 0);
-    int i, ngrp;
+    int ngrp;
     if (ctx->casefoldp) {
         ast = SCM_LIST3(SCM_MAKE_INT(0), SCM_FALSE,
                         Scm_Cons(SCM_SYM_SEQ_UNCASE, ast));
@@ -1530,7 +1530,6 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp)
     if (SCM_EQ(type, SCM_SYM_REP) || SCM_EQ(type, SCM_SYM_REP_MIN)) {
         ScmObj min = SCM_CADR(ast), max = SCM_CAR(SCM_CDDR(ast));
         ScmObj item = SCM_CDR(SCM_CDDR(ast));
-        ScmObj h = SCM_NIL, t = SCM_NIL;
         int multip = 0;
 
         if (SCM_FALSEP(max) || SCM_INT_VALUE(max) > 1)
@@ -2441,7 +2440,7 @@ static void rex_rec(const unsigned char *code,
             continue;
         }
         case RE_BACKREF_RL: {
-            int grpno = *code++, len, i;
+            int grpno = *code++, len;
             const char *match = ctx->matches[grpno]->startp;
             const char *end = ctx->matches[grpno]->endp;
             if (!match || !end) return;
@@ -2526,8 +2525,6 @@ static void rex_rec(const unsigned char *code,
 static ScmObj make_match(ScmRegexp *rx, ScmString *orig,
                          struct match_ctx *ctx)
 {
-    int i;
-    ScmObj lp;
     ScmRegMatch *rm = SCM_NEW(ScmRegMatch);
     const ScmStringBody *origb;
     SCM_SET_CLASS(rm, SCM_CLASS_REGMATCH);

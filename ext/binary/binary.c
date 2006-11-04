@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: binary.c,v 1.4 2005-07-22 09:26:54 shirok Exp $
+ *  $Id: binary.c,v 1.5 2006-11-04 09:56:58 shirok Exp $
  */
 
 #include <gauche.h>
@@ -86,7 +86,7 @@ ScmObj Scm_ReadBinarySint8(ScmObj sport, Endian endian)
 void Scm_WriteBinaryUint8(ScmObj sval, ScmObj sport, Endian endian)
 {
     ScmPort *oport;
-    int val;
+    int val = 0;
     OPORT(oport, sport);
     if (!SCM_INTP(sval)
         || ((val = SCM_INT_VALUE(sval)) < 0)
@@ -99,7 +99,7 @@ void Scm_WriteBinaryUint8(ScmObj sval, ScmObj sport, Endian endian)
 void Scm_WriteBinarySint8(ScmObj sval, ScmObj sport, Endian endian)
 {
     ScmPort *oport;
-    int val;
+    int val = 0;
     OPORT(oport, sport);
     if (!SCM_INTP(sval)
         || ((val = SCM_INT_VALUE(sval)) < -128)
@@ -254,7 +254,7 @@ ScmObj Scm_ReadBinaryDouble(ScmObj sport, Endian endian)
 void Scm_WriteBinaryUint16(ScmObj sval, ScmObj sport, Endian endian)
 {
     union { char buf[2]; u_short val; } v;
-    long vv;
+    long vv = 0;
     ScmPort *oport;
     OPORT(oport, sport);
     if (!SCM_INTP(sval)
@@ -270,7 +270,7 @@ void Scm_WriteBinaryUint16(ScmObj sval, ScmObj sport, Endian endian)
 void Scm_WriteBinarySint16(ScmObj sval, ScmObj sport, Endian endian)
 {
     union { char buf[2]; short val; } v;
-    long vv;
+    long vv = 0;
     ScmPort *oport;
     OPORT(oport, sport);
     if (!SCM_INTP(sval)

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.63 2006-11-03 11:11:28 shirok Exp $
+ *  $Id: write.c,v 1.64 2006-11-04 09:57:00 shirok Exp $
  */
 
 #include <stdio.h>
@@ -196,7 +196,7 @@ int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width)
     if (SCM_PORT(port)->flags & SCM_PORT_WALKING) {
         SCM_ASSERT(SCM_PAIRP(SCM_PORT(port)->data)&&SCM_HASH_TABLE_P(SCM_CDR(SCM_PORT(port)->data)));
         write_walk(obj, SCM_PORT(port), &ctx);
-        return;
+        return 0;               /* doesn't really matter */
     }
     /* we don't need to lock out, for it is private. */
     sharedp = SCM_WRITE_MODE(&ctx) == SCM_WRITE_SHARED;
@@ -248,7 +248,7 @@ int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width)
     if (SCM_PORT(port)->flags & SCM_PORT_WALKING) {
         SCM_ASSERT(SCM_PAIRP(SCM_PORT(port)->data)&&SCM_HASH_TABLE_P(SCM_CDR(SCM_PORT(port)->data)));
         write_walk(obj, SCM_PORT(port), &ctx);
-        return;
+        return 0;               /* doesn't really matter */
     }
 
     out = Scm_MakeOutputStringPort(TRUE);

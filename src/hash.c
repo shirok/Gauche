@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.44 2006-11-03 11:11:27 shirok Exp $
+ *  $Id: hash.c,v 1.45 2006-11-04 09:56:59 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -172,7 +172,6 @@ unsigned long Scm_Hash(ScmObj obj)
     } else if (SCM_VECTORP(obj)) {
         int i, siz = SCM_VECTOR_SIZE(obj);
         unsigned long h = 0, h2;
-        ScmObj elt;
         for (i=0; i<siz; i++) {
             h2 = Scm_Hash(SCM_VECTOR_ELEMENT(obj, i));
             h = COMBINE(h, h2);
@@ -741,7 +740,7 @@ ScmObj Scm_HashTableValues(ScmHashTable *table)
 
 ScmObj Scm_HashTableStat(ScmHashTable *table)
 {
-    ScmObj h = SCM_NIL, t;
+    ScmObj h = SCM_NIL, t = SCM_NIL;
     ScmVector *v = SCM_VECTOR(Scm_MakeVector(table->numBuckets, SCM_NIL));
     ScmObj *vp;
     int i;
@@ -770,7 +769,7 @@ ScmObj Scm_HashTableStat(ScmHashTable *table)
 static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmHashTable *ht = (ScmHashTable*)obj;
-    char *str;
+    char *str = "";
 
     switch (ht->type) {
     case SCM_HASH_EQ:      str = "eq?"; break;

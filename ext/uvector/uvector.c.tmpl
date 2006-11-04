@@ -35,7 +35,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvector.c.tmpl,v 1.7 2006-06-05 05:11:24 shirok Exp $
+ *  $Id: uvector.c.tmpl,v 1.8 2006-11-04 09:56:59 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -392,7 +392,7 @@ ScmObj Scm_${T}VectorSet(Scm${T}Vector *vec, int index, ScmObj val, int clamp)
 
 ScmObj Scm_${T}VectorToList(Scm${T}Vector *vec, int start, int end)
 {
-    ScmObj head = SCM_NIL, tail;
+    ScmObj head = SCM_NIL, tail = SCM_NIL;
     int i, size = SCM_${T}VECTOR_SIZE(vec);
     SCM_CHECK_START_END(start, end, size);
     for (i=start; i<end; i++) {
@@ -927,9 +927,9 @@ static inline ScmUInt64 bitext64(ScmObj x)
 static void ${t}vector_${opname}(const char *name,
                                  ScmObj d, ScmObj s0, ScmObj s1)
 {
-    int i, size = SCM_${T}VECTOR_SIZE(d), oor;
+    int i, size = SCM_${T}VECTOR_SIZE(d);
     ${ntype} r, v0, v1;
-    ScmObj rr, vv1;
+    ScmObj vv1;
     
     switch(arg2_check(name, s0, s1, TRUE)) {
     case ARGTYPE_UVECTOR:
@@ -1126,6 +1126,8 @@ ScmObj Scm_${T}VectorDotProd(Scm${T}Vector *x, ScmObj y)
                 rr = Scm_Add(rr, Scm_Mul(vvx, vvy));
             }
         }
+    case ARGTYPE_CONST:
+        Scm_Panic("something wrong");
     }
 
     /* r may contain a value bigger than the normal element value
@@ -1163,6 +1165,9 @@ ScmObj Scm_${T}Vector${Opname}(Scm${T}Vector *x, ScmObj min, ScmObj max)
     ScmObj vv;
     ${dstdecl};
 
+    ${ZERO minval};             /* make compiler happy */
+    ${ZERO maxval};             /* dittox */
+        
     /* size check */
     if (SCM_FALSEP(min)) mintype = ARGTYPE_CONST;
     else mintype = arg2_check("${t}vector-${opname}", SCM_OBJ(x), min, TRUE);
@@ -1190,6 +1195,9 @@ ScmObj Scm_${T}Vector${Opname}(Scm${T}Vector *x, ScmObj min, ScmObj max)
             vv = SCM_CAR(min); min = SCM_CDR(min);
             ${GETLIM minval mindc vv};
             break;
+        case ARGTYPE_CONST:
+            Scm_Panic("can't be here");
+            break;
         }
         switch (maxtype) {
         case ARGTYPE_UVECTOR:
@@ -1201,6 +1209,9 @@ ScmObj Scm_${T}Vector${Opname}(Scm${T}Vector *x, ScmObj min, ScmObj max)
         case ARGTYPE_LIST:
             vv = SCM_CAR(max); max = SCM_CDR(max);
             ${GETLIM maxval maxdc vv};
+            break;
+        case ARGTYPE_CONST:
+            Scm_Panic("can't be here");
             break;
         }
 

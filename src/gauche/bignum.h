@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bignum.h,v 1.2 2006-06-05 05:11:25 shirok Exp $
+ *  $Id: bignum.h,v 1.3 2006-11-04 09:57:00 shirok Exp $
  */
 
 /* APIs concerning bignums.  They are not for general public use,
@@ -83,6 +83,10 @@ SCM_EXTERN ScmObj Scm_BignumAsh(ScmBignum *bx, int cnt);
 SCM_EXTERN ScmBignum *Scm_MakeBignumWithSize(int size, u_long init);
 SCM_EXTERN ScmBignum *Scm_BignumAccMultAddUI(ScmBignum *acc, 
                                              u_long coef, u_long c);
+
+#if SCM_DEBUG_HELPER
+SCM_EXTERN int Scm_DumpBignum(ScmBignum *b, ScmPort *out);
+#endif
 
 #endif /* GAUCHE_BIGNUM_H */
 

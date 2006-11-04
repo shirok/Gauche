@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.82 2006-09-25 23:55:35 shirok Exp $
+ *  $Id: system.c,v 1.83 2006-11-04 09:56:59 shirok Exp $
  */
 
 #include <stdio.h>
@@ -354,8 +354,6 @@ static const char *expand_tilde(ScmDString *dst,
                                 const char *src,
                                 const char *end)
 {
-    struct passwd *pwd;
-    int dirlen;
     const char *sep = get_first_separator(src, end);
 
     if (sep == NULL) {
@@ -385,6 +383,7 @@ static void put_current_dir(ScmDString *dst)
 #undef GETCWD_PATH_MAX
 }
 
+#if defined(__MINGW32__)
 /* win32 specific; copy pathname with replacing '/' by '\\'. */
 static void copy_win32_path(ScmDString *dst,
                             const char *srcp,
@@ -401,6 +400,7 @@ static void copy_win32_path(ScmDString *dst,
         srcp += SCM_CHAR_NBYTES(ch);
     }
 }
+#endif /* __MINGW32__ */
 
 ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
 {
@@ -1260,10 +1260,9 @@ int Scm_IsSugid(void)
 ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
                    ScmSysSigset *mask, int flags)
 {
-    int argc = Scm_Length(args), i, *fds;
+    int argc = Scm_Length(args), *fds;
     char **argv;
     const char *program;
-    ScmObj ap;
     pid_t pid = 0;
     int forkp = flags & SCM_EXEC_WITH_FORK;
 

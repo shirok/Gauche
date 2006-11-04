@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: netdb.c,v 1.13 2006-01-27 10:04:46 shirok Exp $
+ *  $Id: netdb.c,v 1.14 2006-11-04 09:56:59 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -78,7 +78,7 @@ static ScmSysHostent *make_hostent(struct hostent *he)
             struct in_addr *addr = (struct in_addr*)*p;
             unsigned long addrval = ntohl(addr->s_addr);
             /* avoid using inet_ntoa, for it is not reentrant */
-            snprintf(buf, 50, "%d.%d.%d.%d",
+            snprintf(buf, 50, "%ld.%ld.%ld.%ld",
                      ((addrval >> 24)& 0xff), ((addrval >> 16) & 0xff),
                      ((addrval >> 8) & 0xff), (addrval & 0xff));
             SCM_APPEND1(h, t, SCM_MAKE_STR_COPYING(buf));

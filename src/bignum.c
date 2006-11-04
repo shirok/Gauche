@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bignum.c,v 1.61 2006-06-05 05:11:25 shirok Exp $
+ *  $Id: bignum.c,v 1.62 2006-11-04 09:56:59 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance
@@ -90,8 +90,6 @@ static ScmBignum *bignum_lshift(ScmBignum *br, ScmBignum *bx, int amount);
 static int bignum_safe_size_for_add(ScmBignum *x, ScmBignum *y);
 static ScmBignum *bignum_add_int(ScmBignum *br, ScmBignum *bx, ScmBignum *by);
 static ScmBignum *bignum_2scmpl(ScmBignum *br);
-
-int Scm_DumpBignum(ScmBignum *b, ScmPort *out);
 
 /*---------------------------------------------------------------------
  * Constructor

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.136 2006-11-03 11:11:27 shirok Exp $
+ *  $Id: class.c,v 1.137 2006-11-04 09:56:59 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2758,7 +2758,7 @@ static ScmClassStaticSlotSpec slot_accessor_slots[] = {
 static void initialize_builtin_cpl(ScmClass *klass, ScmObj supers)
 {
     ScmClass **p;
-    ScmObj h = SCM_NIL, t;
+    ScmObj h = SCM_NIL, t = SCM_NIL;
     
     SCM_APPEND1(h, t, SCM_OBJ(klass));
     for (p = klass->cpa; *p; p++) SCM_APPEND1(h, t, SCM_OBJ(*p));

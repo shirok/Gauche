@@ -35,7 +35,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; \$Id: uvlib.stub.tmpl,v 1.8 2005-10-13 08:14:13 shirok Exp $
+;;; \$Id: uvlib.stub.tmpl,v 1.9 2006-11-04 09:56:59 shirok Exp $
 ;;;
 
 "
@@ -256,7 +256,7 @@
 "static ScmObj string_to_bytevectorX(ScmUVector *v, int tstart, ScmString *s, int start, int end)
  {
    u_int size, len; const char *ss, *sp, *ep; char *buf;
-   int tlen = SCM_UVECTOR_SIZE(v), i;
+   int tlen = SCM_UVECTOR_SIZE(v);
 
    if (tstart >= tlen || tstart < 0) return SCM_OBJ(v);
    SCM_UVECTOR_CHECK_MUTABLE(v);

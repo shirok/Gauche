@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.130 2006-10-19 05:49:23 shirok Exp $
+ *  $Id: port.c,v 1.131 2006-11-04 09:56:59 shirok Exp $
  */
 
 #include <unistd.h>
@@ -998,6 +998,7 @@ ScmObj Scm_GetRemainingInputString(ScmPort *port)
             return get_remaining_input_string_aux(cp, ep-cp, cbuf, nbytes);
         }
     } else if (port->scrcnt > 0) {
+        sp = port->src.istr.start;
         if (cp - sp >= port->scrcnt
             && memcmp(cp - port->scrcnt, port->scratch, port->scrcnt) == 0) {
             cp -= port->scrcnt; /* we can reuse buffer */

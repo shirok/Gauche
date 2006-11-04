@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.250 2006-11-03 11:11:27 shirok Exp $
+ *  $Id: vm.c,v 1.251 2006-11-04 09:56:59 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -245,7 +245,7 @@ int Scm_AttachVM(ScmVM *vm)
 
 ScmObj Scm_VMGetResult(ScmVM *vm)
 {
-    ScmObj head = SCM_NIL, tail;
+    ScmObj head = SCM_NIL, tail = SCM_NIL;
     int i;
     if (vm->numVals == 0) return SCM_NIL;
     SCM_APPEND1(head, tail, vm->val0);
@@ -768,7 +768,6 @@ static void run_loop()
 #endif
 
     for (;;) {
-      dispatch:
         /*VM_DUMP("");*/
         if (vm->queueNotEmpty) goto process_queue;
         FETCH_INSN(code);
@@ -2517,7 +2516,7 @@ static void run_loop()
                 NEXT1;
             }
             CASE(SCM_VM_PUSH_HANDLERS) {
-                ScmObj before, after;
+                ScmObj before, after = SCM_FALSE;
                 VM_ASSERT(SP - vm->stackBase >= 1);
                 before = VAL0;
                 POP_ARG(before);
@@ -3115,7 +3114,6 @@ static ScmObj safe_eval_handler(ScmObj *args, int nargs, void *data)
 static ScmObj safe_eval_thunk(ScmObj *args, int nargs, void *data)
 {
     struct eval_packet_rec *epak = (struct eval_packet_rec*)data;
-    ScmVM *vm = Scm_VM();
 
     switch (epak->kind) {
     case SAFE_EVAL_CSTRING:
@@ -3511,6 +3509,7 @@ ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception)
     }
     Scm_VMDefaultExceptionHandler(exception);
     /* this never returns */
+    return SCM_UNDEFINED;       /* dummy */
 }
 
 /*

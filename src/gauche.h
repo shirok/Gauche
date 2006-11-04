@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.461 2006-11-03 11:11:27 shirok Exp $
+ *  $Id: gauche.h,v 1.462 2006-11-04 09:56:59 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -964,6 +964,10 @@ SCM_EXTERN ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
 				  int error_p, int bracket_syntax);
 
 SCM_EXTERN int    Scm_CharSetContains(ScmCharSet *cs, ScmChar c);
+
+#if SCM_DEBUG_HELPER
+SCM_EXTERN void   Scm_CharSetDump(ScmCharSet *cs, ScmPort *port);
+#endif
 
 /* predefined character set API */
 enum {

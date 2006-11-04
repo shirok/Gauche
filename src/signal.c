@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.40 2006-11-03 11:11:27 shirok Exp $
+ *  $Id: signal.c,v 1.41 2006-11-04 09:56:59 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -299,6 +299,7 @@ static SCM_DEFINE_SUBR(exit_sighandler_stub, 1, 0,
 
 #define EXIT_SIGHANDLER    SCM_OBJ(&exit_sighandler_stub)
 
+#if 0                           /* not used for now */
 /* For some signals, gauche does nothing */
 static ScmObj through_sighandler(ScmObj *args, int nargs, void *data)
 {
@@ -313,7 +314,7 @@ static SCM_DEFINE_SUBR(through_sighandler_stub, 1, 0,
                        NULL, NULL);
 
 #define THROUGH_SIGHANDLER    SCM_OBJ(&through_sighandler_stub)
-
+#endif
 
 /*
  * sigset class
@@ -672,7 +673,6 @@ void Scm_ResetSignalHandlers(sigset_t *mask)
 {
     struct sigdesc *desc = sigDesc;
     struct sigaction act;
-    int signum;
 
     for (; desc->name; desc++) {
         if (!sigismember(&sigHandlers.masterSigset, desc->num)
