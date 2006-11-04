@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.90 2006-11-03 11:11:27 shirok Exp $
+ *  $Id: main.c,v 1.91 2006-11-04 07:05:44 shirok Exp $
  */
 
 #include <unistd.h>
@@ -260,7 +260,7 @@ void cleanup_main(void *data)
                 ";;  GC: %dbytes heap, %dbytes allocated\n",
                 GC_get_heap_size(), GC_get_total_bytes());
         fprintf(stderr,
-                ";;  stack overflow*: %dtimes, %.2fms total/%.2fms avg\n",
+                ";;  stack overflow*: %ldtimes, %.2fms total/%.2fms avg\n",
                 vm->stat.sovCount,
                 vm->stat.sovTime/1000.0,
                 (vm->stat.sovCount > 0?
@@ -287,7 +287,7 @@ int main(int argc, char **argv)
     ScmObj cp;
     const char *scriptfile = NULL;
     ScmObj av = SCM_NIL;
-    int exit_code;
+    int exit_code = 0;
     ScmEvalPacket epak;
 
     GC_INIT();
@@ -446,8 +446,6 @@ int main(int argc, char **argv)
             } else {
                 exit_code = 70;  /* EX_SOFTWARE, see SRFI-22. */
             }
-        } else {
-            exit_code = 0;
         }
     } else {
         /* We're in interactive mode. (use gauche.interactive) */
@@ -468,7 +466,6 @@ int main(int argc, char **argv)
         } else {
             Scm_Repl(SCM_FALSE, SCM_FALSE, SCM_FALSE, SCM_FALSE);
         }
-        exit_code = 0;
     }
 
     /* All is done. */
