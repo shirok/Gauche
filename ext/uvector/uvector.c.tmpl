@@ -35,7 +35,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvector.c.tmpl,v 1.8 2006-11-04 09:56:59 shirok Exp $
+ *  $Id: uvector.c.tmpl,v 1.9 2006-11-04 10:04:56 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -1126,6 +1126,7 @@ ScmObj Scm_${T}VectorDotProd(Scm${T}Vector *x, ScmObj y)
                 rr = Scm_Add(rr, Scm_Mul(vvx, vvy));
             }
         }
+        break;
     case ARGTYPE_CONST:
         Scm_Panic("something wrong");
     }
@@ -1196,7 +1197,7 @@ ScmObj Scm_${T}Vector${Opname}(Scm${T}Vector *x, ScmObj min, ScmObj max)
             ${GETLIM minval mindc vv};
             break;
         case ARGTYPE_CONST:
-            Scm_Panic("can't be here");
+            /* alreadh handled above */
             break;
         }
         switch (maxtype) {
@@ -1211,7 +1212,7 @@ ScmObj Scm_${T}Vector${Opname}(Scm${T}Vector *x, ScmObj min, ScmObj max)
             ${GETLIM maxval maxdc vv};
             break;
         case ARGTYPE_CONST:
-            Scm_Panic("can't be here");
+            /* alreadh handled above */
             break;
         }
 
