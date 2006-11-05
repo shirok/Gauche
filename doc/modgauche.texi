@@ -9000,7 +9000,7 @@ A condition variable object has the following slots.
 条件変数オブジェクトは以下のスロットを持ちます。
 @c COMMON
 
-@defivar <mutex> name
+@defivar <condition-variable> name
 @c EN
 The name of the condition variable.
 @c JP
@@ -9008,7 +9008,7 @@ The name of the condition variable.
 @c COMMON
 @end defivar
 
-@defivar <mutex> specific
+@defivar <condition-variable> specific
 @c EN
 A slot an application can keep arbitrary data.
 @c JP

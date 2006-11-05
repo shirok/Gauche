@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.h,v 1.16 2006-10-07 08:42:04 shirok Exp $
+ *  $Id: port.h,v 1.17 2006-11-05 11:11:47 shirok Exp $
  */
 
 #ifndef GAUCHE_PORT_H
@@ -402,6 +402,7 @@ SCM_EXTERN ScmObj Scm_MakeCodingAwarePort(ScmPort *iport);
  *  atomic.  We would need to get system-level lock in PORT_UNLOCK as well.
  */
 
+/* Lock a port P.  Can perform recursive lock. */
 #define PORT_LOCK(p, vm)                                        \
     do {                                                        \
       if (p->lockOwner != vm) {                                 \
@@ -423,24 +424,25 @@ SCM_EXTERN ScmObj Scm_MakeCodingAwarePort(ScmPort *iport);
       }                                                         \
     } while (0)
 
-/* Assumes the calling thread has the lock */
+/* Unlock a port P.  Assumes the calling thread has the lock */
 #define PORT_UNLOCK(p)                                  \
     do {                                                \
         if (--p->lockCount <= 0) p->lockOwner = NULL;   \
     } while (0) 
 
+/* Should be used while P is locked by calling thread.
+   Evaluate C statement CALL, making sure the port is unlocked in case
+   CALL raises an error.
+   TODO: we may be ablet to utilize SCM_PORT_PRIVATE flag to avoid
+   SCM_UNWIND_PROTECT overhead. */
 #define PORT_SAFE_CALL(p, call)                 \
     do {                                        \
-        if (p->lockOwner != Scm_VM()) {         \
-            SCM_UNWIND_PROTECT {                \
-                call;                           \
-            } SCM_WHEN_ERROR {                  \
-                PORT_UNLOCK(p);                 \
-                SCM_NEXT_HANDLER;               \
-            } SCM_END_PROTECT;                  \
-        } else {                                \
-            call;                               \
-        }                                       \
+       SCM_UNWIND_PROTECT {                     \
+           call;                                \
+       } SCM_WHEN_ERROR {                       \
+           PORT_UNLOCK(p);                      \
+           SCM_NEXT_HANDLER;                    \
+       } SCM_END_PROTECT;                       \
     } while (0)
 
 #define PORT_LOCKED(p, vm) (((p)->lockOwner == (vm)))
