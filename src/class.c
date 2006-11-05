@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.137 2006-11-04 09:56:59 shirok Exp $
+ *  $Id: class.c,v 1.138 2006-11-05 11:17:53 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -887,7 +887,7 @@ static void lock_class_redefinition(ScmVM *vm)
         if (stolefrom) {
             Scm_Warn("a thread holding class redefinition lock has been terminated: %S", stolefrom);
         }
-        class_redefinition_lock.count = 0;
+        class_redefinition_lock.count = 1;
     }
 }
 

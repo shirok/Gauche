@@ -2,6 +2,9 @@
 
 	* src/gauche/port.h (PORT_SAFE_CALL): Remove bogus check of lockOwner.
 
+	* src/class.c (lock_class_redefinition): There was an off-by-one
+	  error in the recursive lock count.
+
 2006-11-02  Shiro Kawai  <shiro@acm.org>
 
 	* gauche.h, vm.c (Scm_Eval etc.): changed my mind about the names
