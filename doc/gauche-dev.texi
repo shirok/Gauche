@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.12 2006-10-24 01:41:17 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.13 2006-11-06 02:01:04 shirok Exp $
 
 @iftex
 @finalout
@@ -61,6 +61,7 @@ Gaucheのバージョン@VERSION@に対応します。
 * Fundamental concepts::        
 * Real-life examples::          
 * C API reference::             
+* Creating new Scheme datatypes::  
 * Helper program reference::    
 * Indices::                     
 @end menu
@@ -373,20 +374,26 @@ or
 @section CPS API
 
 
+
+
 @c ======================================================================
 @node Real-life examples, C API reference, Fundamental concepts, Top
 @chapter Real-life examples
 
 
 @c ======================================================================
-@node C API reference, Helper program reference, Real-life examples, Top
+@node C API reference, Creating new Scheme datatypes, Real-life examples, Top
 @chapter C API reference
+
+In this chapter we describe most of public C APIs provided by
+libgauche.  We say `most' because the features to let you create 
+a new Scheme datatype requires dedicated chapter, 
+@ref{Creating new Scheme datatypes}.
 
 @menu
 * Representation of Scheme objects::  
-* Equivalence::                 
-* Numbers::                     
 * Booleans::                    
+* Numbers::                     
 * Pairs and Lists::             
 * Symbols::                     
 * Keywords::                    
@@ -404,26 +411,160 @@ or
 * System interface::            
 @end menu
 
-@node Representation of Scheme objects, Equivalence, C API reference, C API reference
+@node Representation of Scheme objects, Booleans, C API reference, C API reference
 @section Representation of Scheme objects
 
+@deftp {Type} ScmObj 
 Scheme objects are uniformly treated as of type @code{ScmObj},
 which may be either a tagged pointer to a heap allocated object
 or a tagged immediate value.
 
+Most Scheme objects are heap allocated, and except Scheme pairs,
+heap allocated Scheme object has a fixed header.  We don't go
+into more details here, but we'll revisit this topic in
+@ref{Creating new Scheme datatypes}.   Certain frequently used
+Scheme objcts, such as boolean values, small exact integers
+and characters, are encoded in a word without allocating
+objects in heap, and we call them @emph{immediate values}.
+
 Querying the type of a Scheme object and accessing its fields
 should be done via provided macros or APIs.  The user code must
-treat @code{ScmObj} as an opaque word.
+treat @code{ScmObj} as an opaque word, since the internal
+representation may change.
+
+The standard way to treat @code{ScmObj} value is (1) check to see
+if its type matches what you expect, and (2) cast @code{ScmObj} to
+the actual type and use it, as the following example shows.
+
+@example
+void your_C_function(ScmObj arg)
+@{
+  if (SCM_STRINGP(arg)) @{            /* check */
+     ScmString *s = SCM_STRING(arg);  /* cast  */
+     do_whatever_you_like_with_scheme_string(s);
+  @} else @{
+     SCM_TYPE_ERROR(arg, "a string");
+  @}
+@}
+@end example
+
+The @code{SCM_TYPE_ERROR} macro raises an error reporting
+"a string is required for arg, but got ...".  That's a convenient
+way to report the wrong type argument.  See @ref{Exceptions}
+for more details of reporting errors.
+
+Although it is not always checked explicitly, the programmer should
+keep in mind that C's @code{NULL} is never a valid value for @code{ScmObj}.
+If a C API requires @code{ScmObj} as an argument, you shouldn't pass
+@code{NULL} to it.  Also if your function returns @code{ScmObj}, 
+you should make sure it will never return @code{NULL}.
+@end deftp
+
+@deftypefn {Macro} ScmObj SCM_OBJ (void *@var{obj})
+Typecast @var{obj} to @code{ScmObj}.  @var{Obj} must be 
+a pointer to an actual Scheme object.
+@end deftypefn
+
+We describe a few special constant Scheme objects here:
+
+@deftypevr {Macro} ScmObj SCM_EOF
+The Scheme's @code{#<eof>} object.
+@end deftypevr
+
+@deftypevr {Macro} ScmObj SCM_UNDEFINED
+The Gauche's @code{#<undef>} object.  In Gauche, it is used as a
+placeholder where the value itself doesn't matter.  As of writing
+this document, there's a discussion in the next Scheme standard
+to define @emph{the `unspecified' value} for this purpose, and it is
+likely that this value will become such a value.
+@end deftypevr
+
+@deftypevr {Macro} ScmObj SCM_UNBOUND
+This is a special value only seen in C world, and used to indicate
+that a variable hasn't got a Scheme value assigned.  For example,
+if a Scheme procedure with an optional argument is defined in C,
+and no value is passed to the optional argument, @code{SCM_UNBOUND}
+is given in C world.  This value should never be leaked out to
+Scheme world.
+@end deftypevr
+
+@deftypefn {Macro} int SCM_EOFP (ScmObj @var{obj})
+@deftypefnx {Macro} int SCM_UNDEFINEDP (ScmObj @var{obj})
+@deftypefnx {Macro} int SCM_UNBOUNDP (ScmObj @var{obj})
+Predicates to check whether the given @var{obj} is @code{SCM_EOF},
+@code{SCM_UNDEFINED}, or @code{SCM_UNBOUND}, respectively.
+@end deftypefn
+
+
+@node Booleans, Numbers, Representation of Scheme objects, C API reference
+@section Booleans
+
+@deftypevr {Macro} ScmObj SCM_TRUE
+@deftypevrx {Macro} ScmObj SCM_FALSE
+Scheme's @code{#t} and @code{#f}.
+@end deftypevr
+
+@deftypefn {Macro} int SCM_TRUEP (ScmObj @var{obj})
+@deftypefnx {Macro} int SCM_FALSEP (ScmObj @var{obj})
+Predicates to check whether the given @var{obj} is @code{SCM_TRUE} or
+@code{SCM_FALSE}, respectively.   Note that @code{!SCM_FALSEP(obj)}
+is different from @code{SCM_TRUEP(obj)}.  Since Scheme treats anthing
+other than @code{#f} as a true value, usually what you need is
+@code{SCM_FALSEP}.  You use @code{SCM_TRUEP} only iff you want
+to make sure the object is @code{#t}.
+@end deftypefn
+
+@deftypefn {Macro} int SCM_BOOLP (ScmObj @var{obj})
+Returns @code{TRUE} iff @var{obj} is either @code{SCM_FALSE} or 
+@code{SCM_TRUE}.
+@end deftypefn
+
+@deftypefn {Macro} int SCM_BOOL_VALUE (ScmObj @var{obj})
+Converts Scheme value to C boolean value.  Returns @code{FALSE}
+iff @var{obj} is @code{#f}.
+@end deftypefn
+
+@deftypefn {Macro} ScmObj SCM_MAKE_BOOL (@var{obj})
+Converts C boolean value to a Scheme boolean value.
+Returns @code{SCM_FALSE} if @var{obj} is @code{FALSE}, 
+and @code{SCM_TRUE} for any other values.
+@end deftypefn
+
+@deftypefn {Macro} int SCM_EQ (ScmObj @var{x}, ScmObj @var{y})
+Compare two Scheme objects are the same, in the sense of 
+Scheme's @code{eq?}.   You should always use this macro 
+instead of comparing two Scheme objects by @code{==}.
+@end deftypefn
+
+@deftypefun int Scm_EqP (ScmObj @var{x}, ScmObj @var{y})
+A function version of @code{SCM_EQ}.
+@end deftypefun
+
+@deftypefun int Scm_EqvP (ScmObj @var{x}, ScmObj @var{y})
+Scheme's @code{eqv?}.
+@end deftypefun
+
+@deftypefun int Scm_EqualP (ScmObj @var{x}, ScmObj @var{y})
+Scheme's @code{equal?}.  Note: this function may call back VM recursively.
+@end deftypefun
+
+@deftypefun int Scm_EqualM (ScmObj @var{x}, ScmObj @var{y}, int @var{mode})
+A convenient function to write functions with parameterized
+equivalence procedure.   @var{Mode} may be one of the following
+constants:
+@table @code
+@item SCM_CMP_EQ
+Compare using @code{eq?}
+@item SCM_CMP_EQV
+Compare using @code{eqv?}
+@item SCM_CMP_EQUAL
+Compare using @code{equal?}
+@end table
+@end deftypefun
 
 
 
-
-
-@node Equivalence, Numbers, Representation of Scheme objects, C API reference
-@section Equivalence
-
-
-@node Numbers, Booleans, Equivalence, C API reference
+@node Numbers, Pairs and Lists, Booleans, C API reference
 @section Numbers
 
 @menu
@@ -1118,10 +1259,8 @@ Returns a (possibly denormalized) compnum, whose real part is
 
 
 
-@node Booleans, Pairs and Lists, Numbers, C API reference
-@section Booleans
 
-@node Pairs and Lists, Symbols, Booleans, C API reference
+@node Pairs and Lists, Symbols, Numbers, C API reference
 @section Pairs and Lists
 
 @node Symbols, Keywords, Pairs and Lists, C API reference
@@ -1130,9 +1269,174 @@ Returns a (possibly denormalized) compnum, whose real part is
 @node Keywords, Characters, Symbols, C API reference
 @section Keywords
 
+@deftypefun ScmObj Scm_MakeKeyword (ScmString *@var{name})
+Returns a keyword whose name is @var{name}.  Note that preceding 
+@code{:} is not a part of the keyword name.
+@end deftypefun
+
+@deftypefun ScmObj Scm_GetKeyword (ScmObj @var{key}, ScmObj @var{list}, ScmObj @var{fallback})
+Scheme's @code{get-keyword}.
+@end deftypefun
+
+@deftypefun ScmObj Scm_DeleteKeyword (ScmObj @var{key}, ScmObj @var{list})
+Scheme's @code{delete-keyword}.
+@end deftypefun
+
+@deftypefun ScmObj Scm_DeleteKeywordX (ScmObj @var{key}, ScmObj @var{list})
+Scheme's @code{delete-keyword!}.
+@end deftypefun
+
 
 @node Characters, Character sets, Keywords, C API reference
 @section Characters
+
+@deftp {Type} ScmChar
+A word large enough to hold all characters Gauche can handle.
+It is like @code{wchar_t}, but we chose to use our own type since
+the actual implementation of @code{wchar_t} varies among platforms
+which complicates implementation.
+
+You can assume that within the range of ASCII characters, C's @code{char}
+and @code{ScmChar} have the same value; that is, you can safely cast
+C's ASCII character to @code{ScmChar}.
+If Gauche is compilied with utf-8 as internal character encoding,
+the value of @code{ScmChar} always matches unicode codepoint value.
+
+Note that @code{ScmChar} is @emph{not} the representation of Scheme
+character; you stil need to box @code{ScmChar} value to pass a
+character to the Scheme world by the following macros.
+@end deftp
+
+@deftypefn {Macro} ScmChar SCM_CHAR (@var{val})
+Typecast C value @var{val} to @code{ScmChar}.
+@end deftypefn
+
+@deftypefn {Macro} int SCM_CHARP (ScmObj @var{obj})
+Predicate to check whether @var{obj} is a Scheme character or not.
+@end deftypefn
+
+@deftypefn {Macro} ScmChar SCM_CHAR_VALUE (ScmObj @var{obj})
+Unbox @code{ScmChar} value from a Scheme character @var{obj}.
+@end deftypefn
+
+@deftypefn {Macro} ScmObj SCM_MAKE_CHAR (ScmChar @var{val})
+Box @var{ScmChar} value to a Scheme character.
+@end deftypefn
+
+@deftypevr {Macro} ScmChar SCM_CHAR_INVALID
+A value that can't be a valid character.  Used in various
+situations to indicate there's no appropriate character.
+@end deftypevr
+
+@deftypevr {Macro} ScmChar SCM_CHAR_MAX
+Maximum possible value of @code{ScmChar}.
+@end deftypevr
+
+@deftypefn {Macro} int SCM_CHAR_ASCII_P (ScmChar @var{val})
+@deftypefnx {Macro} int SCM_CHAR_UPPER_P (ScmChar @var{val})
+@deftypefnx {Macro} int SCM_CHAR_LOWER_P (ScmChar @var{val})
+Like @code{isascii()}, @code{isupper()}, and @code{islower()}.
+We can't use standard functions on @code{ScmChar}, since
+@code{ScmChar} representation may be different from what
+the platform supports.  Note that @var{val} may be used
+more than once in the expanded form.
+@end deftypefn
+
+@deftypefn {Macro} ScmChar SCM_CHAR_UPCASE (ScmChar @var{val})
+@deftypefnx {Macro} ScmChar SCM_CHAR_DOWNCASE (ScmChar @var{val})
+Converts @code{ScmChar} to upper case or lower case character,
+respectively.  Note that @var{val} may be used
+more than once in the expanded form.
+@end deftypefn
+
+As of 0.8.8, @code{SCM_CHAR_UPPER_P}, @code{SCM_CHAR_LOWER_P},
+@code{SCM_CHAR_UPCASE} and @code{SCM_CHAR_DOWNCASE}
+only work on ASCII characters properly.  For any other characters,
+the predicates return @code{FALSE}, and the convertes
+return the passed value as is.
+It'll be extended to support larger character 
+ranges according to Unicode character attributes.
+
+@deftypefun int Scm_DigitToInt (ScmChar @var{ch}, int @var{radix})
+If a character @var{ch} represents a digit of a number in @var{radix},
+returns the value it represents.  Otherwise, returns @code{-1}.
+
+The valid range of @var{radix} is between 2 and 36, inclusive.
+
+@example
+Scm_DigitToInt(SCM_CHAR('0'), 10) @result{} 0
+Scm_DigitToInt(SCM_CHAR('5'), 10) @result{} 5
+Scm_DigitToInt(SCM_CHAR('c'), 10) @result{} -1
+Scm_DigitToInt(SCM_CHAR('c'), 16) @result{} 12
+Scm_DigitToInt(SCM_CHAR('C'), 16) @result{} 12
+Scm_DigitToInt(SCM_CHAR('z'), 36) @result{} 35
+@end example
+@end deftypefun
+
+@deftypefun ScmChar Scm_IntToDigit (int @var{n}, int @var{radix})
+Converts an integer to a character that represents that integer.
+in radix @var{radix} number.   @var{Radix} must be between
+2 and 36 inclusive.
+
+If @var{n} is outside of valid range, @code{SCM_CHAR_INVALID}
+is returned.
+
+@example
+Scm_IntToDigit(0, 10) @result{} SCM_CHAR('0')
+Scm_IntToDigit(5, 10) @result{} SCM_CHAR('5')
+Scm_IntToDigit(10, 10) @result{} SCM_CHAR_INVALID
+Scm_IntToDigit(10, 16) @result{} SCM_CHAR('a')
+Scm_IntToDigit(35, 36) @result{} SCM_CHAR('z')
+@end example
+@end deftypefun
+
+@deftypefun ScmChar Scm_UcsToChar (int @var{n})
+Converts unicode codepoint @var{n} to an @code{ScmChar} value.
+It is just an identity function if Gauche's internal encoding
+is utf-8.  Otherwise, it uses @code{gauche.charconv} module
+to map the Unicode codepoint to a character code in the native encoding.
+
+This function may return @code{SCM_CHAR_INVALID} if @var{n}
+can't be converted to a valid character in the native encoding.
+(Note that, however, this function does not perform exhaustive
+checking; if Gauche's internal encoding is utf-8, you can
+pass any value to @var{n} even if it is not a valid Unicode codepoint,
+and this function still returns @var{n} as is.)
+@end deftypefun
+
+@deftypefun int Scm_CharToUcs (ScmChar @var{ch})
+Converts @code{ScmChar} value to Unicode codepoint.   This function
+may return @code{-1}
+if @var{ch} can't be converted to Unicode codepoint.
+@end deftypefun
+
+@deftypefun ScmObj Scm_CharEncodingname (void)
+Returns a Scheme symbol that represents Gauche's internal character encoding.
+As of 0.8.8, it may be either one of @code{utf-8},
+@code{euc-jp}, @code{sjis} or @code{none}.
+@end deftypefun
+
+@deftypefun const char ** Scm_SupportedCharacterEncodings (void)
+Returns a NULL-terminated array of C strings of character encoding names
+that are supported natively.  Since an encoding can be upper-compatible
+to another encoding, there can be multiple supported encodings; for example,
+if Gauche is compiled with @code{utf-8} as native encoding, @code{ascii}
+and @code{iso-8859-1} are also supported since they are subset of
+Unicode.
+
+An encoding can have several aliases (e.g. @code{iso-8859-1} is often
+referred as @code{latin-1}).  To avoid complication, you should use
+@code{Scm_SupportedCharacterEncodingP} below to test whether the
+running Gauche supports a certain encoding or not.
+@end deftypefun
+
+@deftypefun int Scm_SupportedCharacterEncodingP (const char *@var{encoding})
+Returns @code{TRUE} if a character encoding named by @var{encoding}
+is natively supported on the running Gauche.  Returns @code{FALSE} otherwise.
+
+@var{Encoding} is compared in case insensitive way, and certain
+variations (e.g. with or without hyphen) are allowed.
+@end deftypefun
 
 @node Character sets, Strings, Characters, C API reference
 @section Character sets
@@ -1140,11 +1444,107 @@ Returns a (possibly denormalized) compnum, whose real part is
 @node Strings, Regular expressions, Character sets, C API reference
 @section Strings
 
+Gauche supports multibyte strings natively, so its C API just
+hides most complexities that come with multibyte encodings.  You should
+treat Scheme strings as opaque objects and use provided APIs and macros
+to access their contents.  
+
+Because of multibyte nature, the size of the string measured in bytes
+can be different from the number of characters the string contains.
+In Gauche, we refer the size of a string in bytes as @emph{size},
+while the number of characters in a string as @emph{length}.
+
+One important fact: Internally, Gauche treats string as immutable objects,
+@code{ScmStringBody}.  Scheme standard requires string to be mutable,
+so we have a Scheme string (@code{ScmString}) keep a pointer to the
+string body, and when the Scheme string is modified, we allocate
+a new string body and switch the pointer in the Scheme string
+to the new body.  You can now see it is disastrously inefficient to
+call @code{string-set!} repeatedly on a string in Gauche.
+
+Note that, with preemptive multithreads, a Scheme string (@code{ScmString})
+can be mutated while a thread is accessing it.  It is a problem for
+us, since string mutation can change the size (in bytes) of the string
+because of multibyte characters.  If you obtain the size, then accesses
+the string content using the size, you don't want the size of the
+content to be changed inbetween.
+(This is not so much a problem for the implementations that use an 
+array of fixed-size characters, since mutation is localized to a
+single character at a time.)
+
+It is too expensive to use mutex for every string access.  
+Immutability helps here;
+retrieving @code{ScmStringBody} from @code{ScmString} is an atomic
+operation, and once you get hold onto @code{ScmStringBody}, you don't
+need to worry about other threads because it will never be changed.
+All the properties of strings, such as its size, belong to 
+@code{ScmStringBody} and not @code{ScmString}.
+
+@example
+/* WRONG: Thread-unsafe code */
+void f(ScmString *s)
+@{
+  int size = SCM_STRING_BODY_SIZE(SCM_STRING_BODY(s)); /* in bytes */
+  const char *cstr = Scm_GetStringConst(s);
+
+  /* do something with size and cstr */
+@}
+
+/* CORRECT: Thread-safe code */
+void f(ScmString *s)
+@{
+  int size;
+  const char *cstr = Scm_GetStringContent(s, &size, NULL, NULL);
+
+  /* do something with size and cstr */
+@}
+
+/* CORRECT: This one is also thread-safe, though you need to
+   scan the string twice. */
+void f(ScmString *s)
+@{
+  const char *cstr = Scm_GetStringConst(s);
+  int size = strlen(cstr);
+
+  /* do something with size and cstr */
+@}
+@end example
+
+@deftypefun ScmObj Scm_MakeString (const char *@var{str}, int @var{size}, int @var{len}, int @var{flags})
+@end deftypefun
+
+@deftypefn {Macro} ScmObj SCM_MAKE_STR (const char @var{cstr} )
+@end deftypefn
+
+
+
+
+
 @node Regular expressions, Vectors, Strings, C API reference
 @section Regular expressions
 
 @node Vectors, Hashtables, Regular expressions, C API reference
 @section Vectors
+
+@deftypefun ScmObj Scm_MakeVector (int @var{size}, Scmobj @var{fill})
+@end deftypefun
+
+@deftypefun ScmObj Scm_ListToVector (ScmObj @var{lis}, int @var{start}, int @var{end})
+@end deftypefun
+
+@deftypefun ScmObj Scm_VectorToList (ScmVector *@var{vec}, int @var{start}, int @var{end})
+@end deftypefun
+
+@deftypefun ScmObj Scm_VectorRef (ScmVector *@var{vec}, int @var{k}, ScmObj @var{fallback})
+@end deftypefun
+
+@deftypefun ScmObj Scm_VectorSet (ScmVector *@var{vec}, ScmObj @var{fill}, int @var{start}, int @var{end})
+@end deftypefun
+
+@deftypefun ScmObj Scm_VectorCopy (ScmVector *@var{vec}, int @var{start}, int @var{end}, ScmObj @var{fill})
+@end deftypefun
+
+
 
 @node Hashtables, Weak pointers, Vectors, C API reference
 @section Hashtables
@@ -1484,10 +1884,16 @@ when it cannot find the file.  If this flag is not set (default),
 Gauche provides a few wrapper APIs for operating system interface
 to allow applications written without concerning 
 
+@c ======================================================================
+@node Creating new Scheme datatypes, Helper program reference, C API reference, Top
+@chapter Creating new Scheme datatypes
+
+
+
 
 
 @c ======================================================================
-@node Helper program reference, Indices, C API reference, Top
+@node Helper program reference, Indices, Creating new Scheme datatypes, Top
 @chapter Helper program reference
 
 Several executable scripts are installed along Gauche.
