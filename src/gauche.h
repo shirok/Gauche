@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.462 2006-11-04 09:56:59 shirok Exp $
+ *  $Id: gauche.h,v 1.463 2006-11-06 02:44:33 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1577,7 +1577,9 @@ struct ScmModuleRec {
     int    exportAll;           /* TRUE if (export-all) */
     ScmObj parents;             /* direct parent modules */
     ScmObj mpl;                 /* module precedence list */
-    ScmHashTable *table;
+    ScmObj depended;            /* list of modules that are depended by this
+                                   module for compilation */
+    ScmHashTable *table;        /* binding table */
 };
 
 #define SCM_MODULE(obj)       ((ScmModule*)(obj))
@@ -1992,7 +1994,12 @@ enum {
 /* Throwing error */
 SCM_EXTERN void Scm_Error(const char *msg, ...);
 SCM_EXTERN void Scm_SysError(const char *msg, ...);
+SCM_EXTERN void Scm_TypeError(const char *what,
+                              const char *expected, ScmObj got);
 SCM_EXTERN void Scm_PortError(ScmPort *port, int reason, const char *msg, ...);
+
+/* common pattern */
+#define SCM_TYPE_ERROR(arg, expected)  Scm_TypeError(#arg, expected, arg)
 
 SCM_EXTERN void Scm_Warn(const char *msg, ...);
 SCM_EXTERN void Scm_FWarn(ScmString *fmt, ScmObj args);

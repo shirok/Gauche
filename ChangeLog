@@ -1,3 +1,10 @@
+2006-11-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h (ScmModule): added a field to track module dependency.
+
+	* src/error.c (Scm_TypeError): added a convenience API to report
+	  argument type error.
+
 2006-11-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/port.h (PORT_SAFE_CALL): Remove bogus check of lockOwner.

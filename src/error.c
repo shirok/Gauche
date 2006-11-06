@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.70 2006-11-04 09:56:59 shirok Exp $
+ *  $Id: error.c,v 1.71 2006-11-06 02:44:33 shirok Exp $
  */
 
 #include <errno.h>
@@ -603,7 +603,18 @@ void Scm_SysError(const char *msg, ...)
 }
 
 /*
- * A convenience function to throw port-relates errors.
+ * A convenience function to raise argument-type-violation errors.
+ * Right now it raises <error>, but it'll be changed once we adopt R6RS
+ * (The draft R6RS defines 'contract violation' in such cases).
+ */
+void Scm_TypeError(const char *what, const char *expected, ScmObj got)
+{
+    Scm_Error("%s expected for %s, got got %S", expected, what, got);
+}
+
+
+/*
+ * A convenience function to raise port-relates errors.
  * It creates either one of <port-error>, <io-read-error>,
  * <io-write-error>, <io-closed-error>, or <io-unit-error>,
  * depending on the 'reason' argument being 
