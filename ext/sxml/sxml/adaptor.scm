@@ -1,7 +1,7 @@
 ;;;
 ;;; Adapt SSAX to Gauche
 ;;;
-;;; $Id: adaptor.scm,v 1.2 2006-07-03 10:19:30 shirok Exp $
+;;; $Id: adaptor.scm,v 1.3 2006-11-08 21:14:50 shirok Exp $
 ;;;
 
 (define-module sxml.adaptor
@@ -9,7 +9,7 @@
   (use srfi-13)
   (export ascii->char ucscode->char char-return char-tab char-newline
           make-char-quotator assert |--| parser-error cout cerr nl
-          string-rindex))
+          string-rindex pp substring?))
 (select-module sxml.adaptor)
 
 ;; Charcode related stuff, used in ssax.scm
@@ -142,5 +142,13 @@
             args))
 
 (define nl "\n")
+
+;; pretty-printer called in sxpathlib.scm (node-trace).  it is used for
+;; debugging code, so for the time being we use 'write' instead.
+;; we might replace it once Gauche supports pretty-printer natively.
+(define (pp arg) (write arg) (newline))
+
+;; small function used in txpath.scm
+(define (substring? pat str) (string-contains str pat))
 
 (provide "sxml/adaptor")

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: test.scm,v 1.18 2006-10-16 12:02:44 shirok Exp $
+;;;  $Id: test.scm,v 1.19 2006-11-08 21:14:51 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -224,9 +224,15 @@
                 (hash-table-keys (module-table module)))))
 
 (define (closure-grefs closure)
-  (%filter identifier?
-           ((with-module gauche.internal vm-code->list)
-            (closure-code closure))))
+  (define code->list (with-module gauche.internal vm-code->list))
+  (let loop ((r '())
+             (code (code->list (closure-code closure))))
+    (cond ((null? code) r)
+          ((identifier? (car code))
+           (loop (cons (car code) r) (cdr code)))
+          ((is-a? (car code) <compiled-code>)
+           (loop (loop r (code->list (car code))) (cdr code)))
+          (else (loop r (cdr code))))))
 
 (define (dangling-gref? ident closure)
   (and (not ((with-module gauche.internal find-binding)

@@ -10,7 +10,7 @@
 ;;;      sxpath-ext.scm,v 1.911
 ;;;   Public domain.
 ;;;
-;;; $Id: sxml-sxpath.scm.in,v 1.1 2005-08-25 04:32:54 shirok Exp $
+;;; $Id: sxml-sxpath.scm.in,v 1.2 2006-11-08 21:14:50 shirok Exp $
 ;;;
 
 (define-module sxml.sxpath
@@ -20,6 +20,7 @@
   (use srfi-13)
   (use text.parse)
   (use sxml.adaptor)
+  (use sxml.tools)
   (export sxpath nodeset? as-nodeset sxml:element? ntype-names??
           ntype?? ntype-namespace-id?? sxml:invert node-eq? node-equal?
           node-pos sxml:filter take-until take-after map-union

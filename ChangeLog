@@ -1,5 +1,12 @@
 2006-11-08  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/test.scm (closure-grefs): fixed to trace code in the
+	  internal closures.  Thanks to Rui Ueyama.
+	* ext/srfi/srfi-19-lib.scm, ext/sxml/sxml-sxpath.scm.in, 
+	  ext/sxml/sxml-tools.scm.in, ext/sxml/sxml/adaptor-scm,
+	  lib/text/gettext.scm, lib/util/stream.scm: fixed the undefined
+	  global reference found by the above patch.
+
 	* gc/darwin_stop_world.c, gc/include/private/gc_priv.h,
 	  gc/os_dep.c: Applied Allan Hsu's GC patch for Xcode-2.4/OSX.
 

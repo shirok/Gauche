@@ -5,7 +5,7 @@
 ;;   Modified to work with Gauche's object system instead of the original
 ;;   structure model.
 ;;
-;; $Id: match.scm,v 1.2 2006-09-29 11:58:54 shirok Exp $
+;; $Id: match.scm,v 1.3 2006-11-08 21:14:51 shirok Exp $
 
 (define-module util.match
   (use srfi-1)
@@ -344,7 +344,9 @@
              `($ ,(cadr p) ,@(map ordinary (cddr p)))
              (cons-ordinary (car p) (cdr p))))
           ((@ object)
-           (if (and (pair? (cdr p)) (symbol? (cadr p)) (list? (cddr p)))
+           (if (and (pair? (cdr p)) (symbol? (cadr p)) (list? (cddr p))
+                    (every (lambda (p) (and (list? p) (= (length p) 2)))
+                           (cddr p)))
              `(object ,(cadr p) ,@(map (lambda (p)
                                          (list (car p) (ordinary (cadr p))))
                                        (cddr p)))
@@ -499,7 +501,7 @@
       (unless (and (pair? (cdr p))
                    (every (lambda (p) (and (list? p) (= (length p) 2)))
                           (cddr p)))
-        (match:error plist))
+        (match:syntax-err p "syntax error in pattern"))
       (bound* (map cadr (cddr p))
               a
               (lambda (p1 a)

@@ -520,7 +520,7 @@
     (define (set msg val) (hash-table-put! cache msg val))
 
     (define (reset!)
-      (set! file (make-file-list))
+      (set! files (make-file-list))
       (set! cache (make-cache)))
 
     ;; return the dispatcher
