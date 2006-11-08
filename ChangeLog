@@ -1,5 +1,8 @@
 2006-11-08  Shiro Kawai  <shiro@acm.org>
 
+	* gc/darwin_stop_world.c, gc/include/private/gc_priv.h,
+	  gc/os_dep.c: Applied Allan Hsu's GC patch for Xcode-2.4/OSX.
+
 	* gc/*: bumped to Boehm GC 6.8.
 
 2006-11-07  Shiro Kawai  <shiro@acm.org>
