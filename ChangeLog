@@ -1,3 +1,7 @@
+2006-11-08  Shiro Kawai  <shiro@acm.org>
+
+	* gc/*: bumped to Boehm GC 6.8.
+
 2006-11-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h: define SCM_ILLEGAL_CHAR_* enums to specify illegal
