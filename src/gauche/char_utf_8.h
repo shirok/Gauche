@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char_utf_8.h,v 1.10 2005-08-05 11:38:26 shirok Exp $
+ *  $Id: char_utf_8.h,v 1.11 2006-11-08 13:41:49 shirok Exp $
  */
 
 #ifndef SCM_CHAR_ENCODING_BODY
@@ -166,45 +166,60 @@ ScmChar Scm_CharUtf8Getc(const unsigned char *cp)
     ScmChar ch;
     unsigned char *ucp = (unsigned char *)cp;
     unsigned char first = *ucp++;
-    if (first < 0x80) { ch = first; }
-    else if (first < 0xc0) { ch = SCM_CHAR_INVALID; }
+    if (first < 0x80) { return first; }
+    else if (first < 0xc0) { return SCM_CHAR_INVALID; }
     else if (first < 0xe0) {
         ch = first&0x1f;
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
         ch = (ch<<6) | (*ucp++&0x3f);
-        if (ch < 0x80) ch = SCM_CHAR_INVALID;
+        if (ch < 0x80) return SCM_CHAR_INVALID;
     }
     else if (first < 0xf0) {
         ch = first&0x0f;
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
         ch = (ch<<6) | (*ucp++&0x3f);
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
         ch = (ch<<6) | (*ucp++&0x3f);
-        if (ch < 0x800) ch = SCM_CHAR_INVALID;
+        if (ch < 0x800) return SCM_CHAR_INVALID;
     }
     else if (first < 0xf8) {
         ch = first&0x07;
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
         ch = (ch<<6) | (*ucp++&0x3f);
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
         ch = (ch<<6) | (*ucp++&0x3f);
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
         ch = (ch<<6) | (*ucp++&0x3f);
-        if (ch < 0x10000) ch = SCM_CHAR_INVALID;
+        if (ch < 0x10000) return SCM_CHAR_INVALID;
     }
     else if (first < 0xfc) {
         ch = first&0x03;
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
         ch = (ch<<6) | (*ucp++&0x3f);
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
         ch = (ch<<6) | (*ucp++&0x3f);
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
         ch = (ch<<6) | (*ucp++&0x3f);
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
         ch = (ch<<6) | (*ucp++&0x3f);
-        if (ch < 0x200000) ch = SCM_CHAR_INVALID;
+        if (ch < 0x200000) return SCM_CHAR_INVALID;
     }
     else if (first < 0xfe) {
         ch = first&0x01;
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
         ch = (ch<<6) | (*ucp++&0x3f);
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
         ch = (ch<<6) | (*ucp++&0x3f);
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
         ch = (ch<<6) | (*ucp++&0x3f);
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
         ch = (ch<<6) | (*ucp++&0x3f);
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
         ch = (ch<<6) | (*ucp++&0x3f);
-        if (ch < 0x4000000) ch = SCM_CHAR_INVALID;
+        if (ch < 0x4000000) return SCM_CHAR_INVALID;
     }
     else {
-        ch = SCM_CHAR_INVALID;
+        return SCM_CHAR_INVALID;
     }
     return ch;
 }

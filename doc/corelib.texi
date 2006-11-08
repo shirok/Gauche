@@ -2445,7 +2445,6 @@ SRFI-13については@ref{String library}を参照してください。
 * String Accessors & Modifiers::  
 * String Comparison::           
 * String utilities::            
-* String Pointers::             
 * Incomplete strings::          
 @end menu
 
@@ -2953,7 +2952,7 @@ Return value is undefined.
 [R5RS]
 @end defun
 
-@node String utilities, String Pointers, String Comparison, Strings
+@node String utilities, Incomplete strings, String Comparison, Strings
 @subsection String utilities
 @c NODE 文字列を扱うその他の手続き
 
@@ -3218,85 +3217,50 @@ See also @code{string-tokenize} in
 @c COMMON
 @end defun
 
-@node String Pointers, Incomplete strings, String utilities, Strings
-@subsection String Pointers
-@c NODE 文字列ポインタ
-
-@deftp {Builtin Class} <string-pointer>
-@clindex string-pointer
-@c EN
-String pointer is an object to access string efficiently in sequential
-order (either forward or backward).
-@c JP
-文字列ポインタは、文字列をシーケンシャルに(前向き、または後向きに)
-効果的なアクセスをするためのオブジェクトです。
-@c COMMON
-
-@c EN
-Higher level string iterators and accessors are constructed on top of 
-this primitive.  @xref{String library}, for details.
-It is highly recommended to use SRFI-13 functions instead of these
-string pointer objects, for portability.
-@c JP
-このプリミティブに基づき、高レベルな文字列イテレータとアクセッサが
-構成されています。詳細は、@ref{String library}を参照して下さい。
-ポータビリティのため、これらの文字列ポインタオブジェクトの代わりに
-SRFI-13の関数を使うことを強く推奨します。
-@c COMMON
-@end deftp
-
-@defun make-string-pointer str &optional (index 0)
-@c EN
-Creates a string pointer that points to the @var{index}-th character of
-string @var{str}.
-@c JP
-文字列@var{str}の@var{index}番目の文字を指す文字列ポインタを生成します。
-@c COMMON
-@end defun
-
-@defun string-pointer-copy sp
-@c EN
-Copies a string pointer.  The resulting string pointer
-shares the same string as @var{sp}, but has distinct pointer.
-@c JP
-文字列ポインタをコピーします。結果となる文字列ポインタは@var{sp}と同じ
-文字列を共有しますが、ポインタとしては区別されます。
-@c COMMON
-@end defun
-
-@defun string-pointer? obj
-@c EN
-Returns @code{#t} if @var{obj} is a string pointer.
-@c JP
-@var{obj}が文字列ポインタであれば@code{#t}を返します。
-@c COMMON
-@end defun
-
-@defun string-pointer-next! sp
-@defunx string-pointer-prev! sp
-@end defun
-
-@defun string-pointer-set! sp index
-@end defun
-
-@defun string-pointer-substring sp &keyword (after #f)
-@end defun
-
-@defun string-pointer-index sp
-@defunx string-pointer-byte-index sp
-@end defun
-
-
-
-@node Incomplete strings,  , String Pointers, Strings
+@node Incomplete strings,  , String utilities, Strings
 @subsection Incomplete strings
 @c NODE 不完全文字列
 
-@defun string-complete->incomplete str
+A string can be flagged as "incomplete" if it may contain
+byte sequences that do not consist of a valid multibyte character
+in the Gauche's native encoding.
+
+Incomplete strings may be genereated in several circumstances;
+reading binary data as a string, reading a string data that has
+been 'chopped' in middle of a multibyte character, or 
+concatenating a string with other incomplete strings, for example.
+
+Incomplete strings should be regarded as an exceptional case.
+It used to be a way to handle byte strings, but now we have
+u8vector (@xref{Uniform vectors}) for that purpose.
+In fact, we're planning to remove it in the future releases.
+
+Just in case, if you happen to get an incomplete string,
+you can convert it to a complete string by the following 
+procedure:
+
+@defun string-incomplete->complete str &optional handling
+Reinterpret the content of an incomplete string @var{str}
+and returns a newly created complete string from it.
+
+The @var{handling} argument specifies how to handle the illegal
+byte sequences in @var{str}.
+
+@table @asis
+@item @code{#f}
+If @var{str} contains an illegal byte sequence, give up the
+conversion and returns @code{#f}.  This is the default behavior.
+@item @code{:omit}
+Omit any illegal byte sequences.  Always returns a complete string.
+@item a character
+Replace each byte in illegal byte sequences by the given character.
+Always returns a complete string.
+@end table
+
+If @var{str} is already a complete string, its copy is returned.
 @end defun
 
-@defun string-incomplete->complete str
-@end defun
+
 
 @c ----------------------------------------------------------------------
 @node Regular expression, Vectors, Strings, Core library
@@ -5009,7 +4973,7 @@ weak ベクタ @var{wvec}の@var{k}番目の要素を@var{obj}に変更します。
 * Applicable objects::          
 * Continuation::                
 * Multiple values::             
-* Delayed evaluation::         
+* Delayed evaluation::          
 @end menu
 
 @node Procedures, Applicable objects, Control features, Control features

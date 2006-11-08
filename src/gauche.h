@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.463 2006-11-06 02:44:33 shirok Exp $
+ *  $Id: gauche.h,v 1.464 2006-11-08 13:41:48 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -987,6 +987,20 @@ enum {
     SCM_CHARSET_NUM_PREDEFINED_SETS
 };
 SCM_EXTERN ScmObj Scm_GetStandardCharSet(int id);
+
+/* Illegal character handling mode.  Used in some APIs that handles
+   character conversion, such as input ports and string-incomplete->complete.
+*/
+enum {
+    SCM_ILLEGAL_CHAR_REJECT,    /* Refuse to handle illegal chars.  For ports
+                                   this means raising an error.  For string
+                                   conversion procedure, this makes it to
+                                   return #f. */
+    SCM_ILLEGAL_CHAR_OMIT,      /* Silently discard the illegal chars. */
+    SCM_ILLEGAL_CHAR_REPLACE    /* Replace an illegal char to a substitute
+                                   char, specified elsewhere. */
+};
+
     
 /*--------------------------------------------------------
  * STRING
@@ -1120,10 +1134,12 @@ SCM_EXTERN const char* Scm_GetStringContent(ScmString *str,
                                             unsigned int *plen,
                                             unsigned int *pflags);
 
-SCM_EXTERN ScmObj  Scm_StringCompleteToIncompleteX(ScmString *str);
-SCM_EXTERN ScmObj  Scm_StringIncompleteToCompleteX(ScmString *str);
+/*SCM_EXTERN ScmObj  Scm_StringCompleteToIncompleteX(ScmString *str);*/
+/*SCM_EXTERN ScmObj  Scm_StringIncompleteToCompleteX(ScmString *str);*/
 SCM_EXTERN ScmObj  Scm_StringCompleteToIncomplete(ScmString *str);
-SCM_EXTERN ScmObj  Scm_StringIncompleteToComplete(ScmString *str);
+SCM_EXTERN ScmObj  Scm_StringIncompleteToComplete(ScmString *str,
+                                                  int handling,
+                                                  ScmChar substitute);
 
 SCM_EXTERN int     Scm_StringEqual(ScmString *x, ScmString *y);
 SCM_EXTERN int     Scm_StringCmp(ScmString *x, ScmString *y);

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.266 2006-11-04 09:56:59 shirok Exp $
+;;; $Id: extlib.stub,v 1.267 2006-11-08 13:41:48 shirok Exp $
 ;;;
 
 "
@@ -446,14 +446,36 @@
 (define-cproc string-immutable? (obj)   ;gauche specific
   (expr <boolean> "SCM_STRINGP(obj)&&SCM_STRING_IMMUTABLE_P(obj)"))
 
-(define-cproc string-complete->incomplete! (str::<string>) ;gauche specific
-  (call "Scm_StringCompleteToIncompleteX"))
-(define-cproc string-incomplete->complete! (str::<string>) ;gauche specific
-  (call "Scm_StringIncompleteToCompleteX"))
-(define-cproc string-complete->incomplete (str::<string>) ;gauche specific
+;; obsoleted
+;(define-cproc string-complete->incomplete! (str::<string>)
+;  (call "Scm_StringCompleteToIncompleteX"))
+
+;; DEPRECATED, only kept for backward compatibility.
+;; We allocate a new string and swap the body, in order to avoid MT-hazard.
+;; (So it is _not_ allocation-free, and we no longer have reason to keep
+;; this procedure.)
+(define-cproc string-incomplete->complete! (str::<string>)
+  (body "ScmObj s = Scm_StringIncompleteToComplete(str, SCM_ILLEGAL_CHAR_REJECT, SCM_CHAR(0));"
+        "if (!SCM_FALSEP(s)) str->body = SCM_STRING_BODY(s);"
+        "SCM_RESULT = s;"))
+
+(define-cproc string-complete->incomplete (str::<string>)
   (call "Scm_StringCompleteToIncomplete"))
-(define-cproc string-incomplete->complete (str::<string>) ;gauche specific
-  (call "Scm_StringIncompleteToComplete"))
+
+(define-keyword omit "key_omit")
+
+(define-cproc string-incomplete->complete (str::<string>
+                                           &optional (handling #f))
+  (body "int h = 0; ScmChar sub = SCM_CHAR(0);"
+        "if (SCM_EQ(handling, key_omit)) {"
+        "  h = SCM_ILLEGAL_CHAR_OMIT;"
+        "} else if (SCM_FALSEP(handling)) {"
+        "  h = SCM_ILLEGAL_CHAR_REJECT;"
+        "} else if (SCM_CHARP(handling)) {"
+        "  h = SCM_ILLEGAL_CHAR_REPLACE;"
+        "  sub = SCM_CHAR_VALUE(handling);"
+        "}"
+        "SCM_RESULT = Scm_StringIncompleteToComplete(str, h, sub);"))
 
 (define-cproc string-size (str::<string>)
   (expr <fixnum> "SCM_STRING_BODY_SIZE(SCM_STRING_BODY(str))"))

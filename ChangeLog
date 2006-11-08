@@ -1,3 +1,19 @@
+2006-11-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h: define SCM_ILLEGAL_CHAR_* enums to specify illegal
+	  character handling mode.
+	
+	* src/string.c, src/extlib.stub: add 'handling' argument to
+	  string-incomplete->complete, so that the caller can ensure to
+	  obtain a complete string by omitting or replacing incomplete
+	  chars in the original string.  The linear-update versions,
+	  string-complete->incomplete! and string-incomplete->complete!,
+	  are obsoleted (the latter is kept for backward compatibility,
+	  but will go away soon).
+
+	* src/gauche/char_utf_8.h (scm_CharUtf8Getc): more strict error
+	  checking.
+
 2006-11-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h (ScmModule): added a field to track module dependency.

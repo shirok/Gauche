@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with utf-8.
 
-;; $Id: utf-8.scm,v 1.7 2006-03-10 07:28:16 shirok Exp $
+;; $Id: utf-8.scm,v 1.8 2006-11-08 13:41:49 shirok Exp $
 
 (use gauche.test)
 
@@ -133,6 +133,33 @@
       (lambda () (string-incomplete->complete #*"あいう")))
 (test "string-incomplete->complete" "あいう"
       (lambda () (string-incomplete->complete "あいう")))
+
+(test "string-incomplete->complete (reject)" #f
+      (lambda () (string-incomplete->complete #*"あい\x80う" #f)))
+(test "string-incomplete->complete (omit)" "あいう"
+      (lambda () (string-incomplete->complete #*"あい\x80う" :omit)))
+(test "string-incomplete->complete (omit)" "あいう"
+      (lambda () (string-incomplete->complete #*"\x80あいう" :omit)))
+(test "string-incomplete->complete (omit)" "あいう"
+      (lambda () (string-incomplete->complete #*"\x80\xe3あいう" :omit)))
+(test "string-incomplete->complete (omit)" "あいう"
+      (lambda () (string-incomplete->complete #*"あいう\xe3" :omit)))
+(test "string-incomplete->complete (omit)" "あいう"
+      (lambda () (string-incomplete->complete #*"あいう\xe3\xe3" :omit)))
+(test "string-incomplete->complete (omit)" "あいう"
+      (lambda () (string-incomplete->complete #*"あいう\xe3\x80" :omit)))
+(test "string-incomplete->complete (replace)" "あいふう"
+      (lambda () (string-incomplete->complete #*"あい\x80う" #\ふ)))
+(test "string-incomplete->complete (replace)" "ふあいう"
+      (lambda () (string-incomplete->complete #*"\x80あいう" #\ふ)))
+(test "string-incomplete->complete (replace)" "ふふあいう"
+      (lambda () (string-incomplete->complete #*"\x80\xe3あいう" #\ふ)))
+(test "string-incomplete->complete (replace)" "あいうふ"
+      (lambda () (string-incomplete->complete #*"あいう\xe3" #\ふ)))
+(test "string-incomplete->complete (replace)" "あいうふふ"
+      (lambda () (string-incomplete->complete #*"あいう\xe3\xe3" #\ふ)))
+(test "string-incomplete->complete (replace)" "あいうふふ"
+      (lambda () (string-incomplete->complete #*"あいう\xe3\x80" #\ふ)))
 
 (test "string=?" #t (lambda () (string=? #*"あいう" #*"あいう")))
 

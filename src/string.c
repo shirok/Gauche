@@ -1,7 +1,7 @@
 /*
  * string.c - string implementation
  *
- *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: string.c,v 1.77 2006-01-27 10:04:48 shirok Exp $
+ *  $Id: string.c,v 1.78 2006-11-08 13:41:48 shirok Exp $
  */
 
 #include <stdio.h>
@@ -321,7 +321,8 @@ ScmObj Scm_StringCompleteToIncomplete(ScmString *x)
                                    SCM_STRING_INCOMPLETE);
 }
 
-/* DEPRECATED.  MT-UNSAFE */
+#if 0
+/* OBSOLETED.  MT-UNSAFE */
 ScmObj Scm_StringIncompleteToCompleteX(ScmString *x)
 {
     ScmStringBody *b;
@@ -336,10 +337,66 @@ ScmObj Scm_StringIncompleteToCompleteX(ScmString *x)
     }
     return SCM_OBJ(x);
 }
+#endif
 
-ScmObj Scm_StringIncompleteToComplete(ScmString *x)
+ScmObj Scm_StringIncompleteToComplete(ScmString *x,
+                                      int handling,
+                                      ScmChar substitute)
 {
-    return Scm_StringIncompleteToCompleteX(SCM_STRING(Scm_CopyString(x)));
+    const ScmStringBody *b;
+    ScmObj r = SCM_FALSE;
+
+    switch (handling) {
+    case SCM_ILLEGAL_CHAR_REJECT:
+    case SCM_ILLEGAL_CHAR_OMIT:
+    case SCM_ILLEGAL_CHAR_REPLACE:
+        break;
+    default:
+        Scm_Error("invalid 'handling' argument: %d", handling);
+        return SCM_UNDEFINED; /* dummy */
+    }
+
+    b = SCM_STRING_BODY(x);
+    if (!SCM_STRING_BODY_INCOMPLETE_P(b)) {
+        /* we do simple copy */
+        r = Scm_CopyString(x);
+    } else {
+        const char *s = SCM_STRING_BODY_START(b);
+        int siz = SCM_STRING_BODY_SIZE(b);
+        int len = count_length(s, siz);
+        if (len >= 0) {
+            r = Scm_MakeString(s, siz, len, 0);
+        } else if (handling == SCM_ILLEGAL_CHAR_REJECT) {
+            r = SCM_FALSE;
+        } else {
+            ScmDString ds;
+            const char *p = s;
+            ScmChar ch;
+
+            Scm_DStringInit(&ds);
+
+            while (p < s+siz) {
+                if (p + SCM_CHAR_NFOLLOWS(*p) >= s + siz) {
+                    ch = SCM_CHAR_INVALID;
+                } else {
+                    SCM_CHAR_GET(p, ch);
+                }
+                
+                if (ch != SCM_CHAR_INVALID) {
+                    Scm_DStringPutc(&ds, ch);
+                    p += SCM_CHAR_NBYTES(ch);
+                } else if (handling == SCM_ILLEGAL_CHAR_OMIT) {
+                    p++;
+                } else {        /* SCM_ILLEGAL_CHAR_REPLACE */
+                    Scm_DStringPutc(&ds, substitute);
+                    p++;
+                }
+            }
+            r = Scm_DStringGet(&ds, 0);
+        }
+    }
+    
+    return r;
 }
 
 /*----------------------------------------------------------------
