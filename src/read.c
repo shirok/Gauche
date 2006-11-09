@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.84 2006-11-03 11:11:27 shirok Exp $
+ *  $Id: read.c,v 1.85 2006-11-09 03:16:54 shirok Exp $
  */
 
 #include <stdio.h>
@@ -238,7 +238,7 @@ static void ref_push(ScmReadContext *ctx, ScmObj obj, ScmObj finisher)
     ctx->pending = Scm_Acons(obj, finisher, ctx->pending);
 }
 
-static ScmObj ref_val(ref)
+static ScmObj ref_val(ScmObj ref)
 {
     if (!SCM_READ_REFERENCE_REALIZED(ref)) {
         Scm_Error("reader encontered unresolved read reference.  Implementation error?");

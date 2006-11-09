@@ -1,5 +1,11 @@
 2006-11-08  Shiro Kawai  <shiro@acm.org>
 
+	* ext/dbm/gdbm.stub (gdbm-open): improved error message.
+
+	* src/read.c (ref_val): added missing type declaration of the argument,
+	  which became a problem on 64bit architecture.  Patch from
+	  David Mosberger-Tang and YAEGASHI Takeshi.
+
 	* lib/gauche/test.scm (closure-grefs): fixed to trace code in the
 	  internal closures.  Thanks to Rui Ueyama.
 	* ext/srfi/srfi-19-lib.scm, ext/sxml/sxml-sxpath.scm.in, 

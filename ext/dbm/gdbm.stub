@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gdbm.stub,v 1.21 2005-10-13 08:14:13 shirok Exp $
+;;;  $Id: gdbm.stub,v 1.22 2006-11-09 03:16:53 shirok Exp $
 ;;;
 
 "
@@ -125,7 +125,7 @@
   Scm_RegisterFinalizer(SCM_OBJ(z), gdbm_finalize, NULL);
   z->name = SCM_OBJ(name);
   z->dbf = gdbm_open(Scm_GetString(name), size, rwmode, fmode, NULL);
-  if (z->dbf == NULL) Scm_SysError(\"couldn't open gdbm file %S\", name);
+  if (z->dbf == NULL) Scm_Error(\"couldn't open gdbm file %S (gdbm_errno=%d)\", name, gdbm_errno);
   SCM_RETURN(SCM_OBJ(z));")
 
 (define-cproc gdbm-close (gdbm::<gdbm>)
