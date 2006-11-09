@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.85 2006-10-07 12:27:00 shirok Exp $
+dnl $Id: configure.ac,v 1.86 2006-11-09 03:39:14 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.8_pre1, shiro@acm.org)
-AC_REVISION($Revision: 1.85 $)
+AC_REVISION($Revision: 1.86 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -238,11 +238,9 @@ dnl Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/time.h glob.h dlfcn.h getopt.h sched.h unistd.h)
-AC_CHECK_HEADERS(stdint.h inttypes.h)
-AC_CHECK_HEADERS(rpc/types.h)
-AC_CHECK_HEADERS(syslog.h)
-AC_CHECK_HEADERS(pty.h util.h libutil.h)
-AC_CHECK_HEADERS(sys/loadavg.h)
+AC_CHECK_HEADERS(stdint.h inttypes.h rpc/types.h)
+AC_CHECK_HEADERS(syslog.h crypt.h)
+AC_CHECK_HEADERS(pty.h util.h libutil.h sys/loadavg.h)
 
 dnl ===========================================================
 dnl Checks processor type, for processor-specific stuff

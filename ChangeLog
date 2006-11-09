@@ -1,5 +1,9 @@
 2006-11-08  Shiro Kawai  <shiro@acm.org>
 
+	* configre.ac, src/gauche/config.h.in, src/syslib.stub (HAVE_CRYPT_H):
+	  Adds crypt.h if exists, to suppress warnings.  Patch from
+	  David Mosberger-Tang and YAEGASHI Takeshi.
+
 	* ext/dbm/gdbm.stub (gdbm-open): improved error message.
 
 	* src/read.c (ref_val): added missing type declaration of the argument,

@@ -86,6 +86,9 @@
 /* Define if uses libcrypt */
 #undef HAVE_CRYPT
 
+/* Define to 1 if you have the <crypt.h> header file. */
+#undef HAVE_CRYPT_H
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
