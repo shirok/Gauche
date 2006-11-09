@@ -5,7 +5,7 @@
 ;;;   Kirill Lisovsky's sxml-tools.scm CVS revision 3.13
 ;;;   Public domain.
 ;;;
-;;; $Id: sxml-tools.scm.in,v 1.2 2006-11-08 21:14:50 shirok Exp $
+;;; $Id: sxml-tools.scm.in,v 1.3 2006-11-09 05:14:05 shirok Exp $
 ;;;
 
 (define-module sxml.tools
@@ -94,6 +94,13 @@
 ;; nl is used in the arg of sxml:error to insert a newline, but 
 ;; we don't really need it.
 (define nl "")
+
+;; These are defined in sxml.sxpath.  Since sxml.sxpath depends on
+;; sxml.tools, we can't simply 'use' it.
+
+(autoload sxml.sxpath
+          sxml:attr-list nodeset? ntype-names?? ntype??
+          sxml:filter select-kids sxml:element? sxml:element?)
 
 ;#include-body "src/sxml-tools.scm"
 
