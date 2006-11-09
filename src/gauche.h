@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.465 2006-11-09 10:32:19 shirok Exp $
+ *  $Id: gauche.h,v 1.466 2006-11-09 20:27:02 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -472,8 +472,8 @@ SCM_EXTERN ScmObj Scm_VMDynamicWindC(ScmObj (*before)(ScmObj *, int, void *),
 				     ScmObj (*after)(ScmObj *, int, void *),
 				     void *data);
 
-SCM_EXTERN ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk,
-                                         int rewindBefore);
+SCM_EXTERN ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk);
+SCM_EXTERN ScmObj Scm_VMWithGuardHandler(ScmObj handler, ScmObj thunk);
 SCM_EXTERN ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk);
 
 /* Miscellaneous stuff */

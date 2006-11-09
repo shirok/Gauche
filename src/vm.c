@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.252 2006-11-09 10:32:19 shirok Exp $
+ *  $Id: vm.c,v 1.253 2006-11-09 20:27:02 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -3134,7 +3134,7 @@ static ScmObj safe_eval_int(ScmObj *args, int nargs, void *data)
     
     thunk   = Scm_MakeSubr(safe_eval_thunk, data, 0, 0, SCM_FALSE);
     handler = Scm_MakeSubr(safe_eval_handler, data, 1, 0, SCM_FALSE);
-    return Scm_VMWithErrorHandler(handler, thunk, FALSE);
+    return Scm_VMWithErrorHandler(handler, thunk);
 }
 
 static int safe_eval_wrap(int kind, ScmObj arg0, ScmObj args,
@@ -3555,7 +3555,7 @@ static ScmObj discard_ehandler(ScmObj *args, int nargs, void *data)
     return SCM_UNDEFINED;
 }
 
-ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk, int rewindBefore)
+static ScmObj with_error_handler(ScmObj handler, ScmObj thunk, int rewindBefore)
 {
     ScmVM *vm = theVM;
     ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
@@ -3584,6 +3584,17 @@ ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk, int rewindBefore)
     after  = Scm_MakeSubr(discard_ehandler, ep, 0, 0, SCM_FALSE);
     return Scm_VMDynamicWind(before, thunk, after);
 }
+
+ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk)
+{
+    return with_error_handler(handler, thunk, FALSE);
+}
+
+ScmObj Scm_VMWithGuardHandler(ScmObj handler, ScmObj thunk)
+{
+    return with_error_handler(handler, thunk, TRUE);
+}
+
 
 /* 
  * with-exception-handler
