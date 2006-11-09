@@ -1,123 +1,118 @@
-#? /usr/bin/gosh
-<? ;; Process this file with escm
-(define japanese? (equal? (sys-getenv "LANG") "ja_JP"))
-(define (header ja en)
-  (format #t "[~a]\n------------------------------------------"
-          (if japanese? ja en)))
-(define-syntax if-lang
-  (syntax-rules (else)
-    ((_ "collect-then" then-expr () test)
-     (if test (begin . then-expr)))
-    ((_ "collect-then" then-expr () test else body ...)
-     (if-lang "collect-else" then-expr () test body ...))
-    ((_ "collect-then" (then-expr ...) () test body1 body ...)
-     (if-lang "collect-then" (then-expr ... body1) () test body ...))
-    ((_ "collect-else" then-expr else-expr test)
-     (if test (begin . then-expr) (begin . else-expr)))
-    ((_ "collect-else" then-expr (else-expr ...) test body1 body ...)
-     (if-lang "collect-else" then-expr (else-expr ... body1) test body ...))
-    ((_ test body ...)
-     (if-lang "collect-then" () () test body ...))))
-!>
-
-<? (if-lang japanese? !>
+@c JP
                       Gaucheのコンパイルとインストール
-<? else !>
+@c EN
                       Compiling and Installing Gauche
-<? ) !>
+@c COMMON
 
-$Id: INSTALL.esc,v 1.26 2006-01-06 19:20:52 shirok Exp $
-<? (if-lang japanese? !>
+$Id: INSTALL.in,v 1.1 2006-11-09 23:47:32 shirok Exp $
+@c JP
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
-情報が得られます:<? else !>
+情報が得られます:
+@c EN
 Note: The Gauche system is a work in progress and frequently updated.
 Check out the latest information on the site:
-<? ) !>
+@c COMMON
   http://www.shiro.dreamhost.com/scheme/gauche/
 
-<? (header "簡単な方法" "Quick Start") !>
+
+@c JP
+簡単な方法
+@c EN
+Quick Start
+@c COMMON
+---------------------------------------------------
+
 
    % ./configure [--enable-threads=pthreads]
    % make
    % make test
    % make install
-<? (if-lang japanese? !>
+
+@c JP
 これで、Gaucheシステムが /usr/local/bin, /usr/local/lib/gauche及び
 /usr/local/share/gauche以下にインストールされます。
 マルチスレッドサポートを使うためにはconfigureに--enable-threads=pthreadsを
 渡して下さい。このオプションはいくつかのプラットフォームでサポートされています。
-<? else !>
+@c EN
 Things will be installed under /usr/local/bin, /usr/local/lib/gauche,
 and /usr/local/share/gauche.
 If you want to use multithread support, pass --enable-threads=pthreads
 option to configure.  It is supported on several platforms.
-<? ) !>
+@c COMMON
 
-<? (if-lang japanese? !>
+@c JP
 既にGauche 0.5以降がインストールされているシステムで、
 全く同じconfigurationオプションで新しいバージョンのGaucheをインストール
 する場合、'configure' の代わりに次のコマンドを使うこともできます。
-<? else !>
+@c EN
 If you have installed Gauche 0.5 or later, and want to install
 new version of Gauche with the same configuration option,
 you can use the following command instead of 'configure'.
-<? ) !>
-    % `gauche-config --reconfigure`
-<? (if-lang japanese? !>
+@c COMMON
+    % gauche-config --reconfigure | sh
+@c JP
 '--reconfigure' オプションが与えられると、gauche-configは現在
 インストールされているGaucheがconfigureされた時のコマンドラインを
 標準出力に書き出します。それをシェルに評価させれば、同じオプションで
 configureすることができます。
-<? else !>
+@c EN
 When the option '--reconfigure' is given, Gauche-config prints out
 the command line when it is configured.   Pass the output to
 shell and you can reconfigure with the same options.
-<? ) !>
+@c COMMON
 
-<? (header "文字エンコーディングの選択" "Choosing Character Encoding") !>
 
-<? (if-lang japanese? !>
+@c JP
+文字エンコーディングの選択
+@c EN
+Choosing Character Encoding
+@c COMMON
+---------------------------------------------------
+
+
+@c JP
 デフォルトでは、Gaucheは内部文字エンコーディングとしてutf-8を使います。
 --enable-multibyte=ENCODING というオプションをconfigureに渡すことで、
 内部文字エンコーディングを変えることができます。
-<? else !>
+@c EN
 By default, Gauche is compiled with utf-8 as a native character encoding.
 You can give a --enable-multibyte=ENCODING option to switch the native
 encoding.   Note that if you want to use ISO8859-1 GR characters in
 the program text, you have to specify no multibyte encoding, or
 Gauche takes such characters as the first byte of multibyte charaters.
-<? ) !>
+@c COMMON
 
   ./configure --enable-multibyte=utf-8   ;; UTF-8 (default)
   ./configure --enable-multibyte=euc-jp  ;; EUC-JP
   ./configure --enable-multibyte=sjis    ;; Shift JIS
   ./configure --enable-multibyte=no      ;; No multibyte string
 
-<? (if-lang japanese? !>
+
+@c JP
 Gaucheは代表的な日本語文字エンコーディングを認識し変換することが
 できますが、それ以外のエンコーディングに関しては、iconvが利用可能で
 あればそれを利用して変換を行います。
 iconvが標準でインストールされていないシステムでは、
 --with-iconvオプションで外部のiconvライブラリを利用することができます。
-<? else !>
+@c EN
 Gauche can recognize and converts typical japanese character
 encodings, but delegates other conversion work to iconv library
 (when available).   If your system does not have iconv installed,
 you can specify the location of your external
 iconv library by --with-iconv option.
-<? ) !>
+@c COMMON
 
   ./configure --with-iconv=DIR
 
-<? (if-lang japanese? !>
+
+@c JP
 例えば --with-iconv=/usr/local とすれば、Gaucheはiconv.hを/usr/local/include
 から、libiconvを/usr/local/libから探します。もしあなたのiconvライブラリが
 libiconv以外の名前 (libmyconvとか) だったとしたら、
 --with-iconv-lib=myconv というオプションも指定して下さい。
 
 外部のiconvライブラリとしては、Bruno Haible氏のlibiconvが以下から入手可能です。
-http://www.gnu.org/software/libiconv/
-<? else !>
+@c EN
 For example, if your say --with-iconv=/usr/local, Gauche looks
 for the header iconv.h from /usr/local/include and the library
 libiconv from /usr/local/lib.
@@ -126,12 +121,19 @@ libmyconv, you can also specify --with-iconv-lib=myconv to tell
 Gauche to link against the library.
 
 You can obtain Bruno Haible's libiconv library from here:
+@c COMMON
 http://www.gnu.org/software/libiconv/
-<? ) !>
 
-<? (header "ローカルライブラリパス" "Local library paths") !>
 
-<? (if-lang japanese? !>
+@c JP
+ローカルライブラリパス
+@c EN
+Local library paths
+@c COMMON
+---------------------------------------------------
+
+
+@c JP
 Gaucheのビルドに、標準でない場所にインストールされているライブラリを
 使用したい場合、次のオプションでその場所を指定することができます。
 
@@ -144,7 +146,7 @@ PATH/lib、PATH2/lib、... がライブラリサーチパスに追加されます。
 場合は次のようにします。
 
   --with-local=/usr/local
-<? else !>
+@c EN
 If you want to use some libraries installed in non-standard location
 to build Gauche, you can use the following option to specify the
 locations.
@@ -158,68 +160,85 @@ For example, if you want to use gdbm library in /usr/local,
 you can say:
 
   --with-local=/usr/local
-<? ) !>
+@c COMMON
 
-<? (header "IPv6サポート" "IPv6 support") !>
 
-<? (if-lang japanese? !>
+@c JP
+IPv6サポート
+@c EN
+IPv6 support
+@c COMMON
+---------------------------------------------------
+
+
+@c JP
 Gaucheは実験的にIPv6をサポートしています。デフォルトではこの機能はoffに
 なっていますが、次のconfigureオプションで有効にすることができます。
-<? else !>
+@c EN
 Gauche has experimental support for IPv6.
 It is turned off by default,
 but you can include it by giving the following configure option.
-<? ) !>
+@c COMMON
 
   --enable-ipv6
 
-<? (if-lang japanese? !>
+@c JP
 もちろん、OSでIPv6がサポートされていなければなりません。
 現在の実装はFreeBSD上でテストされています。
 詳しい機能はリファレンスマニュアルのgauche.netの項を参照して下さい。
-<? else !>
+@c EN
 Of course your OS has to have the support of IPv6.
 The current implementation is tested on FreeBSD.
 See the gauche.net section of the reference manual for details.
-<? ) !>
+@c COMMON
 
-<? (header "SLIBの場所" "Selecting SLIB location") !>
 
-<? (if-lang japanese? !>
+@c JP
+SLIBの場所
+@c EN
+Selecting SLIB location
+@c COMMON
+---------------------------------------------------
+
+
+@c JP
 SLIBは、ポータブルなSchemeライブラリで、いろいろ便利な機能が
 完全にSchemeで書かれています。GaucheはSLIBがインストールされていれば
 その機能を利用することができます。
-<? else !>
+@c EN
 SLIB is a portable Scheme library containing various useful functions,
 entirely written in Scheme.  Gauche can use SLIB features if you have
 it on your system.
-<? ) !>
-<? (if-lang japanese? !>
+@c COMMON
+
+@c JP
 configureスクリプトは、/usr/local/slibなどいくつかの基本的なディレクトリ
 からSLIBを自動的に探します。もしあなたのSLIBシステムが標準的ではない場所に
 インストールされていたら、次のオプションでその場所を指定してください。
-<? else !>
+@c EN
 The configure script tries to find where SLIB is installed.  It looks
 for some typical directories like /usr/local/slib or /usr/share/slib.
 If you installed your SLIB in some non-standard location, you can tell
 it to the configure script as follows:
-<? ) !>
+@c COMMON
 
    ./configure --with-slib=PATH
 
-<? (if-lang japanese? !>
+@c JP
 ここで、PATHはSLIBがインストールされたパスです。
-<? else !>
+@c EN
 where PATH is the path you installed your SLIB.
-<? ) !>
-<? (if-lang japanese? !>
+@c COMMON
+
+@c JP
 GauchehはSLIB無しでも動作します。SLIBを使う必要がなければ、このオプションは
 気にしなくてよいです。
-<? else !>
+@c EN
 Gauche works without SLIB, anyway.  If you're not interested, you
 don't need to care about this.
-<? ) !>
-<? (if-lang japanese? !>
+@c COMMON
+
+@c JP
 SLIBは最初に使う前にGaucheのライブラリディレクトリにカタログファイルを
 作成します。Gaucheのインストール時に既にSLIBが存在すればインストール
 スクリプトがカタログファイルを作成しますが、Gaucheインストール後にSLIB
@@ -227,7 +246,7 @@ SLIBは最初に使う前にGaucheのライブラリディレクトリにカタログファイルを
 作成されます。この時、Gauche使用者がライブラリディレクトリに書き込み権限を
 持っていないとエラーとなります。書き込み権限を持つユーザがgoshを起動して
 例えば次のような式を評価すればカタログファイルが正しく作られます。
-<? else !>
+@c EN
 SLIB needs a catalog file to be created in the Gauche library
 directory before use.  If Gauche finds SLIB during installation,
 the install procedure creates the catalog file.
@@ -236,14 +255,21 @@ the catalog file when you use slib first time, and you may get
 an error if you don't have a permission to write into the
 Gauche library directory.   Run gosh in the right permission
 and evaluate something like the following will solve the problem.
-<? ) !>
+@c COMMON
+
   (use slib)
   (require 'logical)
 
 
-<? (header "実行時のライブラリパス" "Run-time library path") !>
+@c JP
+実行時のライブラリパス
+@c EN
+Run-time library path
+@c COMMON
+---------------------------------------------------
 
-<? (if-lang japanese? !>
+
+@c JP
 しばしば、環境のコントロールができない箇所でGaucheを走らせなければならない
 場合があります。例えばCGIスクリプトをISPのサーバーで走らせる場合などです。
 もし、Gaucheが標準的でない場所にインストールされた共有ライブラリに依存し
@@ -263,7 +289,7 @@ CGIスクリプトはWeb serverによって起動され、Web serverはLD_LIBRARY_PATH
 オプションはそれを利用します。--with-rpath=DIRとすると、実行時にDIRから
 共有ライブラリを探すような設定になります。このオプションは今のところgccでしか
 動作しません。
-<? else !>
+@c EN
 In some cases, your have to run Gauche under the environment
 you don't have much control.  One of such cases is when you
 want to run CGI script on the ISP's machine.  It may become
@@ -284,123 +310,149 @@ libraries that the binary depends on.  A configure option --with-rpath
 utilizes the feature.  When an option --with-rpath=DIR is given,
 configure sets up a build process so that the shared libraries
 are looked from DIR.   This works only on gcc, however.
-<? ) !>
+@c COMMON
 
 
-<? (header "インストール先の指定" "Customizing install location") !>
+@c JP
+インストール先の指定
+@c EN
+Customizing install location
+@c COMMON
+---------------------------------------------------
 
-<? (if-lang japanese? !>
+
+@c JP
 次のようにconfigureスクリプトを起動することにより、インストール先の
 ディレクトリを指定できます。
-<? else !>
+@c EN
 Call configure with those parameters to specify where to install.
-<? ) !>
+@c COMMON
 
    % ./configure --prefix=$PREFIX  --exec-prefix=$EXEC_PREFIX
 
-<? (if-lang japanese? !>
+
+@c JP
 --prefix オプションが指定されなければ、 /usr/local が指定されたものとみなされます。
 --exec-prefix オプションが指定されなければ、EXEC_PREFIXはPREFIXと同じものに
 なります。
-<? else !>
+@c EN
 If --prefix option is omitted, /usr/local is assumed as PREFIX.
 If --exec-prefix option is omitted, EXEC_PREFIX is set the same as PREFIX.
-<? ) !>
+@c COMMON
 
-<? (if-lang japanese? !>
+
+@c JP
 インストールされるファイルの内訳は以下の通りです。
-<? else !>
+@c EN
 The files are installed in those locations:
-<? ) !>
+@c COMMON
 
   $EXEC_PREFIX/bin/*
-<? (if-lang japanese? !>
+@c JP
      インタプリタ (gosh) とコンフィグレーションスクリプト (gauche-config)
-<? else !>
+@c EN
      The interpreter (gosh) and configuration script (gauche-config).
-<? ) !>
+@c COMMON
 
   $EXEC_PREFIX/lib/*
-<? (if-lang japanese? !>
+@c JP
      ライブラリ (libgauche.a).
-<? else !>
+@c EN
      Library (libgauche.a).
-<? ) !>
+@c COMMON
 
   $PREFIX/share/gauche/VERSION/include/*
-<? (if-lang japanese? !>
+@c JP
      libgaucheをリンクするアプリケーションに必要なヘッダーファイル
-<? else !>
+@c EN
      Header files required to create applications using libgauche.
-<? ) !>
+@c COMMON
 
   $PREFIX/share/gauche/VERSION/lib/*
-<? (if-lang japanese? !>
+@c JP
      マシンに依存しないSchemeファイル
-<? else !>
+@c EN
      Machine-independent Scheme files.
-<? ) !>
+@c COMMON
 
   $PREFIX/share/info/*
-<? (if-lang japanese? !>
+@c JP
      infoファイル
-<? else !>
+@c EN
      info files.
-<? ) !>
+@c COMMON
 
   $EXEC_PREFIX/lib/gauche/VERSION/ARCHITECTURE/*
-<? (if-lang japanese? !>
+@c JP
      マシンに依存するファイル (.so, gosh, gauche-config, libgauche.a)
-<? else !>
+@c EN
      Machine-dependent files (.so files, gosh, gauche-config, and libgauche.a)
-<? ) !>
+@c COMMON
 
   $PREFIX/share/gauche/site/lib/*
   $EXEC_PREFIX/lib/gauche/site/VERSION/ARCHITECTURE/*
-<? (if-lang japanese? !>
+@c JP
      ユーザが独自にインストールするマシン非依存／依存ファイルのデフォルトの置き場所。
-<? else !>
+@c EN
      These are default locations where user installed machine-indenpedent/
      dependent files will go.
-<? ) !>
+@c COMMON
 
 
-<? (header "最適化オプション" "Optimization options") !>
+@c JP
+最適化オプション
+@c EN
+Optimization options
+@c COMMON
+---------------------------------------------------
 
-<? (if-lang japanese? !>
+
+@c JP
 Make時に、makeマクロOPTFLAGSを用いて追加のコンパイルオプションを指定すること
 ができます。configureが設定するOPTFLAGS以外のオプションを試したい場合は
 次のようにmakeを走らせて下さい。
-<? else !>
+@c EN
 You can pass extra options at make time, using make macro OPTFLAGS.
 'Configure' sets a default, but if you want to explore different
 options, just run 'make' as follows:
-<? ) !>
+@c COMMON
 
   make OPTFLAGS="--some-compiler-option --other-option"
 
 
-<? (header "アンインストール" "Uninstallation") !>
+@c JP
+アンインストール
+@c EN
+Uninstallation
+@c COMMON
+---------------------------------------------------
 
-<? (if-lang japanese? !>
+
+@c JP
 インストールされたGaucheソフトウェアを取り除くには、ソースツリーのトップ
 ディレクトリで
 
   make uninstall
 
 として下さい。
-<? else !>
+@c EN
 You can remove installed Gauche software by running
 
   make uninstall
 
 on top of the source tree.
-<? ) !>
+@c COMMON
 
 
-<? (header "機種依存の情報" "Machine-dependent information") !>
+@c JP
+機種依存の情報
+@c EN
+Machine-dependent information
+@c COMMON
+---------------------------------------------------
 
-<? (if-lang japanese? !>
+
+@c JP
 * MacOS X - dlcompatライブラリ(libdl)がインストールされていることが必要です。
       http://fink.sourceforge.netからダウンロードできます。システム標準の
       場所以外にdlcompatライブラリをインストールした場合は、configureの
@@ -412,7 +464,7 @@ on top of the source tree.
          ./configure --with-local=$HOME --enable-threads=pthreads
 
        とする)
-<? else !>
+@c EN
 * MacOS X - You need to install the dlcompat library (libdl) from
        Fink project (http://fink.sourceforge.net) before configuring
        Gauche.   If the dlcompat library is installed in non-standard
@@ -424,20 +476,21 @@ on top of the source tree.
        in $HOME/lib, you should do:
 
          ./configure --with-local=$HOME --enable-threads=pthreads
-<? ) !>
-<? (if-lang japanese? !>
+@c COMMON
+
+@c JP
 * IRIX with 64bit binary - デフォルトの32bit ABIではなく64bit ABIでコンパイル
        したい場合は次のようにして下さい。
 
          CC="cc -64" AS="as -64" ./configure
-<? else !>
+@c EN
 * IRIX with 64bit binary - If you want to compile for 64bit ABI instead
        of the default 32bit ABI, run configure like this:
 
          CC="cc -64" AS="as -64" ./configure
-<? ) !>
+@c COMMON
 
-<? (if-lang japanese? !>
+@c JP
 * Linux/Crusoe TM5800 - 最近のLinuxでは Crusoe TM5800がi686互換とされる
        ようになったようですが、gc中でi686特有のprefetch命令を使っているところ
        でコンパイルに失敗するという報告がありました。とりあえずのfixは、
@@ -447,7 +500,7 @@ on top of the source tree.
 
        という記述を消してからmakeして下さい。
 
-<? else !>
+@c EN
 * Linux/Crusoe TM5800 - It is reported that recent Linux kernel thinks
        TM5800 as i686-compatible, and compilation of Gauche fails at
        gc where the i686's prefetch instruction is used.   A quick fix
@@ -457,5 +510,5 @@ on top of the source tree.
          -DUSE_I686_PREFETCH
 
        Then make it.
-<? ) !>
+@c COMMON
 

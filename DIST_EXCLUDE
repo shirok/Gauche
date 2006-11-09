@@ -3,6 +3,6 @@ DIST
 DIST_EXCLUDE
 DIST_EXCLUDE_X
 TEST
-INSTALL.esc
+INSTALL.in
 autom4te.cache
 lib/net

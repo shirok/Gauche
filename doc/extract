@@ -12,18 +12,22 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: extract,v 1.16 2006-04-07 11:29:48 shirok Exp $
+;;;  $Id: extract,v 1.17 2006-11-09 23:47:32 shirok Exp $
 ;;;
 
-(use gauche.regexp)
 (use gauche.parseopt)
 (use gauche.charconv)
+(use srfi-1)
 (use srfi-13)
+(use file.util)
 
 (define *outfile* #f)
 (define *lang* 'en)
 (define *version*
-  (string-trim-both (call-with-input-file "../VERSION" port->string)))
+  (string-trim-both (file->string (or (find (cut sys-access <> R_OK)
+                                            '("../VERSION"
+                                              "./VERSION"))
+                                      (error "No VERSION file?")))))
 (define *node-table* '())
 (define *header-table* '())
 

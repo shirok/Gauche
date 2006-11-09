@@ -50,9 +50,8 @@ if [ "$tgz" = "yes" ]; then
   rm -f DIST_EXCLUDE_X
   cat DIST_EXCLUDE > DIST_EXCLUDE_X
   find . -name CVS -print -prune >> DIST_EXCLUDE_X
-
-  escm -i gosh -o INSTALL INSTALL.esc
-  LANG=ja_JP escm -i gosh -o INSTALL.eucjp INSTALL.esc
+  gosh doc/extract -en -o INSTALL INSTALL.in
+  gosh doc/extract -jp -o INSTALL.eucjp INSTALL.in
 
   mkdir ../Gauche-$VERSION
   tar cvfX - DIST_EXCLUDE_X . | (cd ../Gauche-$VERSION; tar xf -)

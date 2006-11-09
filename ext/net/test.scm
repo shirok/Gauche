@@ -9,7 +9,8 @@
 
 (use gauche.net)
 (test-module 'gauche.net
-             :allow-undefined '(sys-getaddrinfo <sys-addrinfo>))
+             :allow-undefined '(sys-getaddrinfo <sys-addrinfo>
+                                AI_PASSIVE PF_INET6))
 
 ;;-----------------------------------------------------------------
 (test-section "socket address")

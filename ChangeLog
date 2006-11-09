@@ -1,5 +1,9 @@
 2006-11-09  Shiro Kawai  <shiro@acm.org>
 
+	* INSTALL.in, doc/extract: moved away from escm to generate INSTALL
+	  and INSTALL.eucjp, since it is awkward for escm to handle eucjp doc
+	  with utf-8 gauche.  Instead I use doc/extract.
+
 	* src/vm.c (Scm_VMDefaultExceptionHandler),
 	  src/gauche/vm.h (ScmEscapePoint): added a flag in ScmEscapePoint
 	  to specify whether the dynamic handlers should be rewind before
