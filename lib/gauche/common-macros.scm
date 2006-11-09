@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: common-macros.scm,v 1.22 2005-09-18 12:31:16 shirok Exp $
+;;;  $Id: common-macros.scm,v 1.23 2006-11-09 10:32:19 shirok Exp $
 ;;;
 
 ;;; Defines number of useful macros.  This file is to be autoloaded.
@@ -372,7 +372,8 @@
          (lambda (e)
            (let ((var e))
              (%guard-rec var e . clauses)))
-       (lambda () . body)))
+       (lambda () . body)
+       :rewind-before #t))
     ))
 
 (define-syntax %guard-rec

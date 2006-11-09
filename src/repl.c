@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: repl.c,v 1.34 2006-11-03 11:11:27 shirok Exp $
+ *  $Id: repl.c,v 1.35 2006-11-09 10:32:19 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -174,7 +174,7 @@ ScmObj Scm_VMRepl(ScmObj reader, ScmObj evaluator,
     ehandler = Scm_MakeSubr(repl_error_handle, packet, 1, 0, SCM_FALSE);
     reploop = Scm_MakeSubr(repl_main, packet, 0, 0, SCM_FALSE);
     Scm_VMPushCC(repl_loop_cc, (void**)packet, 4);
-    return Scm_VMWithErrorHandler(ehandler, reploop);
+    return Scm_VMWithErrorHandler(ehandler, reploop, FALSE);
 }
 
 static ScmObj repl_proc(ScmObj *args, int nargs, void *data)

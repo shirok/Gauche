@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: exclib.stub,v 1.16 2005-09-10 09:10:32 shirok Exp $
+;;; $Id: exclib.stub,v 1.17 2006-11-09 10:32:19 shirok Exp $
 ;;;
 
 "
@@ -42,7 +42,9 @@
 ;; Exception procedures
 ;;
 
-(define-cproc with-error-handler (handler thunk)
+;; NB: rewind-before keyword arg is EXPERIMENTAL.
+(define-cproc with-error-handler (handler thunk
+                                  &keyword (rewind-before::<boolean> #f))
   (code
    "if (!SCM_PROCEDURE_TAKE_NARG_P(handler, 1)) {"
    "  Scm_Error(\"error handler must take at least 1 argument, but got %S\","

@@ -1,4 +1,25 @@
+2006-11-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (Scm_VMDefaultExceptionHandler),
+	  src/gauche/vm.h (ScmEscapePoint): added a flag in ScmEscapePoint
+	  to specify whether the dynamic handlers should be rewind before
+	  or after the error handler is invoked.  Legacy with-error-handler
+	  assumes they are invoked after the error handler.  SRFI-34's guard
+	  requires the handler clauses are invoked after the dynamic env
+	  is rewound.  It may be better to change with-error-handler semantics,
+	  but for now, we go with this flag.  Do not count on this flag
+	  kept in future.
+	* src/exclib.stub (with-error-handler): added a keyword arg to
+	  set the ScmEscapePoint flag mentioned above.  This is a temporary
+	  solution; applications should not cound on this feature.
+	* lib/gauche/common-macros.scm (guard): fixed guard semantics
+	  to conform srfi-34, using the above feature.
+	  
+
 2006-11-08  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sxml/sxml-tools.scm.in: Avoid mutual dependency between
+	  sxml.sxpath and sxml.tools by autoloads.
 
 	* configre.ac, src/gauche/config.h.in, src/syslib.stub (HAVE_CRYPT_H):
 	  Adds crypt.h if exists, to suppress warnings.  Patch from

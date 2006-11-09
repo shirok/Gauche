@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.251 2006-11-04 09:56:59 shirok Exp $
+ *  $Id: vm.c,v 1.252 2006-11-09 10:32:19 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -3134,7 +3134,7 @@ static ScmObj safe_eval_int(ScmObj *args, int nargs, void *data)
     
     thunk   = Scm_MakeSubr(safe_eval_thunk, data, 0, 0, SCM_FALSE);
     handler = Scm_MakeSubr(safe_eval_handler, data, 1, 0, SCM_FALSE);
-    return Scm_VMWithErrorHandler(handler, thunk);
+    return Scm_VMWithErrorHandler(handler, thunk, FALSE);
 }
 
 static int safe_eval_wrap(int kind, ScmObj arg0, ScmObj args,
@@ -3394,6 +3394,23 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
         ScmObj result = SCM_FALSE, rvals[SCM_VM_MAX_VALUES];
         int numVals = 0, i;
 
+        /* To conform SRFI-34, the error handler (clauses in 'guard' form)
+           should be executed with the same continuation and dynamic
+           environment of the guard form itself.  That means the dynamic
+           handlers should be rewound before we invoke the guard clause.
+
+           If an error is raised within the dynamic handlers, it will be
+           captured by the same error handler. */
+        if (ep->rewindBefore) {
+            target = ep->handlers;
+            current = vm->handlers;
+            for (hp=current; SCM_PAIRP(hp) && (hp!=target); hp=SCM_CDR(hp)) {
+                ScmObj proc = SCM_CDAR(hp);
+                vm->handlers = SCM_CDR(hp);
+                Scm_ApplyRec(proc, SCM_NIL);
+            }
+        }
+
         /* Call the error handler and save the results.
            NB: before calling the error handler, we need to pop
            vm->escapePoint, so that the error occurred during
@@ -3410,13 +3427,14 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
             if ((numVals = vm->numVals) > 1) {
                 for (i=0; i<numVals-1; i++) rvals[i] = vm->vals[i];
             }
-            target = ep->handlers;
-            current = vm->handlers;
-            /* Call dynamic handlers */
-            for (hp = current; SCM_PAIRP(hp)&&hp != target; hp = SCM_CDR(hp)) {
-                ScmObj proc = SCM_CDAR(hp);
-                vm->handlers = SCM_CDR(hp);
-                Scm_ApplyRec(proc, SCM_NIL);
+            if (!ep->rewindBefore) {
+                target = ep->handlers;
+                current = vm->handlers;
+                for (hp=current; SCM_PAIRP(hp) && (hp!=target); hp=SCM_CDR(hp)) {
+                    ScmObj proc = SCM_CDAR(hp);
+                    vm->handlers = SCM_CDR(hp);
+                    Scm_ApplyRec(proc, SCM_NIL);
+                }
             }
         }
         SCM_WHEN_ERROR {
@@ -3537,7 +3555,7 @@ static ScmObj discard_ehandler(ScmObj *args, int nargs, void *data)
     return SCM_UNDEFINED;
 }
 
-ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk)
+ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk, int rewindBefore)
 {
     ScmVM *vm = theVM;
     ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
@@ -3557,6 +3575,7 @@ ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk)
     ep->cont = vm->cont;
     ep->errorReporting =
         SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED);
+    ep->rewindBefore = rewindBefore;
     
     vm->escapePoint = ep; /* This will be done in install_ehandler, but
                              make sure ep is visible from save_cont

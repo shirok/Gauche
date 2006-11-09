@@ -1,6 +1,6 @@
 ;; test exception handling system 
 ;; this must come after primsyn, error, macro and object tests.
-;; $Id: exception.scm,v 1.9 2004-11-02 06:01:43 shirok Exp $
+;; $Id: exception.scm,v 1.10 2006-11-09 10:32:20 shirok Exp $
 
 (use gauche.test)
 (test-start "exceptions")
@@ -222,6 +222,21 @@
                  (<io-error> (message "z"))
                  (<read-error> (message "foo"))
                  (<system-error> (message "bar"))))))
+
+(let ()
+  (define aaa '())
+  (define (foo)
+    (dynamic-wind
+        (lambda () (set! aaa '()))
+        (lambda ()
+          (set! aaa (cons 'a aaa))
+          (error "foo"))
+        (lambda ()
+          (set! aaa (cons 'b aaa)))))
+  (test* "guard w/dynamic-wind" '((b a) (b a))
+         (let1 x (guard (e (else aaa)) (foo))
+           (list x aaa))))
+
 
 ;;--------------------------------------------------------------------
 (test-section "subtype")

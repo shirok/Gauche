@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.106 2006-01-21 01:44:21 shirok Exp $
+ *  $Id: vm.h,v 1.107 2006-11-09 10:32:20 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -227,6 +227,15 @@ typedef struct ScmEscapePointRec {
                                    when this ep is captured.  The flag status
                                    should be restored when the control
                                    transferred to this escape point. */
+    int rewindBefore;           /* EXPERIMENTAL: if TRUE, dynamic handlers
+                                   are rewound after an exception is raised
+                                   and before the exception handler is called.
+                                   If FALSE, the exception handler is called
+                                   first, then the dynamic handlers are 
+                                   rewound.   SRFI-18 model and legacy 
+                                   with-error-handler uses the latter model,
+                                   but SRFI-34's guard needs the former model.
+                                */
 } ScmEscapePoint;
 
 /* Link management */
