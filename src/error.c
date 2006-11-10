@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.71 2006-11-06 02:44:33 shirok Exp $
+ *  $Id: error.c,v 1.72 2006-11-10 01:22:28 shirok Exp $
  */
 
 #include <errno.h>
@@ -609,7 +609,7 @@ void Scm_SysError(const char *msg, ...)
  */
 void Scm_TypeError(const char *what, const char *expected, ScmObj got)
 {
-    Scm_Error("%s expected for %s, got got %S", expected, what, got);
+    Scm_Error("%s expected for %s, but got %S", expected, what, got);
 }
 
 
