@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: logger.scm,v 1.8 2005-08-22 21:07:57 shirok Exp $
+;;;  $Id: logger.scm,v 1.9 2006-11-10 12:06:56 shirok Exp $
 ;;;
 
 (define-module gauche.logger
@@ -49,11 +49,6 @@
 (autoload gauche.syslog sys-openlog sys-syslog LOG_PID LOG_INFO LOG_USER)
 (autoload file.util file-mtime<?)
 
-;; Kludge! determine the default lock policy heuristically.
-;; AFAIK, MacOSX didn't support fcntl lock until 10.3.
-(define (default-lock-policy)
-  (if (#/apple-darwin[56]/ (gauche-architecture)) 'file 'fcntl))
-
 ;; <log-drain> class
 (define-class <log-drain> ()
   ((path   :init-keyword :path :initform #f)
@@ -61,7 +56,7 @@
                  :initform  (sys-basename (with-module user *program-name*)))
    (retry  :init-keyword :retry :initform 5)
    (prefix :init-keyword :prefix :initform "~T ~P[~$]: ")
-   (lock-policy :init-keyword :lock-policy :initform (default-lock-policy))
+   (lock-policy :init-keyword :lock-policy :initform 'tbd)
    ;; The following parameters are used for syslog.
    ;; The default values will be set when log-open is called with 'syslog.
    (syslog-option   :init-keyword :syslog-option)
@@ -145,14 +140,32 @@
           (else (pstr drain)))))
 
 ;; File lock handling
-;;   Only called if the drain is file and successfully opened.
+;;   Only called if the drain is a file and successfully opened.
 
 (define-constant FILE_LOCK_TIMEOUT 600)
+
+;; Generally we prefer fcntl lock, but it may not available on some
+;; occasions; some versions of some OS don't support it (OSX before 10.3),
+;; or the file may be on an NFS mounded filesystem.  We should determine
+;; it at runtime.
+;; (For the time being, we try 'fcntl' first and use 'file' as a fallback.
+;; In future this kind of feature should be in separate module, such as
+;; file.lock.)
+(define (determine-lock-policy drain port)
+  (set! (slot-ref drain 'lock-policy)
+        (guard (e ((<system-error> e) 'file))
+          (let ((lk (make <sys-flock> :type |F_WRLCK| :whence 0))
+                (un (make <sys-flock> :type |F_UNLCK| :whence 0)))
+            (and (sys-fcntl port |F_SETLK| lk)
+                 (sys-fcntl port |F_SETLK| un))
+            'fcntl)))
+  drain)
 
 (define (lock-data drain port)
   (case (slot-ref drain 'lock-policy)
     ((fcntl) (make <sys-flock> :type |F_WRLCK| :whence 0))
     ((file)  (string-append (slot-ref drain 'path) ".lock"))
+    ((tbd)   (lock-data (determine-lock-policy drain port) port))
     (else    #t)))
 
 (define (lock-file drain port data)
@@ -172,6 +185,8 @@
              (else
               (sys-sleep 1)
               (loop (+ retry 1) (open-output-file data :if-exists #f))))))
+    ((tbd)
+     (lock-file (determine-lock-policy drain port) port data))
     (else #t)))
 
 (define (unlock-file drain port data)
@@ -181,6 +196,8 @@
      (sys-fcntl port |F_SETLK| data))
     ((file)
      (sys-unlink data))
+    ((tdb)
+     (unlock-file (determine-lock-policy drain port) port data))
     (else #t)))
 
 ;; Write log

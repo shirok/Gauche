@@ -1,3 +1,10 @@
+2006-11-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/logger.scm: We can't determine lock policy statically,
+	  since the lock file may be placed on a filesystem that doesn't
+	  support fcntl lock.  So I changed the lock policy to be dynamically
+	  determined at the first access to the file-based log drain.
+
 2006-11-09  Shiro Kawai  <shiro@acm.org>
 
 	* INSTALL.in, doc/extract: moved away from escm to generate INSTALL
