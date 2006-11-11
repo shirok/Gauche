@@ -3456,11 +3456,23 @@ a single @i{re}, but the matched string isn't saved.
 @c COMMON
 
 @item (?<@i{name}>@i{re}@dots{})
+@c EN
+Named capture and clustering.  Like @code{(@i{re}@dots{})}, 
+but adds the name @i{name} to the matched substring.
+You can refer to the matched substring by both index number
+and the name.
+
+The same name can appear multiple times in a regular
+expression.  See @code{\k<@i{name}>} below for the semantics
+of such a case.
+@c JP
 名前つきの補捉とクラスタリング。@code{(@i{re}@dots{})}と同様ですが、
 マッチした文字列に名前@i{name}がつけられます。マッチした文字列には
 インデックスの数字と名前のどちらでも参照できます。
 
-同じ名前を複数回使ってもかまいません。
+同じ名前を複数回使ってもかまいません。その場合の動作は下記の
+@code{\k<@i{name}>}を参照して下さい。
+@c COMMON
 
 @item (?i:@i{re}@dots{})
 @itemx (?-i:@i{re}@dots{})
@@ -3492,15 +3504,28 @@ pattern is @i{re} @dots{}.
 
 @item \@i{n}
 @c EN
-Backreference.
+Backreference.  @i{n} is an integer.
+Matches the substring captured by the @i{n}-th capturing group.
+(counting from 1).  When capturing groups are nested, groups
+are counted by their beginnings.
+If the @i{n}-th capturing group is in a repetition and has mached
+more than once, the last matched substring is used.
 @c JP
-バックリファレンス。
-@i{n}番目の補捉カッコに補捉された文字列と一致する場合に、\@i{n}が
-マッチします。@i{n}番目のカッコが繰り返しの中にあり、複数回マッチ
+バックリファレンス。@i{n}は整数です。
+@i{n}番目(1から数える)の補捉カッコに補捉された文字列と一致する場合に、\@i{n}が
+マッチします。補足カッコがネストしている場合、開きカッコの順番で数えます。
+@i{n}番目のカッコが繰り返しの中にあり、複数回マッチ
 している場合は、最後にマッチした文字列との比較が行われます。
 
 @item \k<@i{name}>
 @c EN
+Named backreference.  Matches the substring captured by
+the capturing group with the name @i{name}.
+If the named capturing group is in a repetition and has mached
+more than once, the last matched substring is used.
+If there are more than one capturing group with @i{name},
+matching will succeed if the input matches either one of the substrings
+captured by those groups.
 @c JP
 名前によるバックリファレンス。
 名前@i{name}を持つ補捉カッコで補捉された文字列と一致する場合に、
@@ -3570,6 +3595,18 @@ and @code{\B} matches an empty string elsewhere.
 @c JP
 @code{\b}は単語の境界の空文字列にマッチします。
 @code{\B}はその逆です。
+@c COMMON
+
+@item \;
+@itemx \"
+@itemx \#
+@c EN
+These are the same as @code{;}, @code{"}, and @code{#}, respectively,
+and can be used to avoid confusing Emacs or other syntax-aware editors 
+that are not familiar with Gauche's extension.
+@c JP
+これらはそれぞれ@code{;}、@code{"}、および@code{#}と同じです。
+Emacs等、Scheme構文を理解するエディタを混乱させないために使うことができます。
 @c COMMON
 
 @item (?=@i{pattern})
