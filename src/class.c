@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.138 2006-11-05 11:17:53 shirok Exp $
+ *  $Id: class.c,v 1.139 2006-11-11 03:52:28 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -895,7 +895,10 @@ static void unlock_class_redefinition(ScmVM *vm)
 {
     if (class_redefinition_lock.owner != vm) return;
     if (--class_redefinition_lock.count <= 0) {
+        (void)SCM_INTERNAL_MUTEX_LOCK(class_redefinition_lock.mutex);
         (void)SCM_INTERNAL_COND_BROADCAST(class_redefinition_lock.cv);
+        class_redefinition_lock.owner = NULL;
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(class_redefinition_lock.mutex);
     }
 }
 

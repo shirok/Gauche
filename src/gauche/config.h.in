@@ -230,6 +230,9 @@
 /* Define to 1 if the system has the type `struct timespec'. */
 #undef HAVE_STRUCT_TIMESPEC
 
+/* Define to 1 if the system has sunmath.h (Solaris specific). */
+#undef HAVE_SUNMATH_H
+
 /* Define to 1 if you have the `symlink' function. */
 #undef HAVE_SYMLINK
 

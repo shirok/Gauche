@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.86 2006-11-09 03:39:14 shirok Exp $
+dnl $Id: configure.ac,v 1.87 2006-11-11 03:52:27 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.8_pre1, shiro@acm.org)
-AC_REVISION($Revision: 1.86 $)
+AC_REVISION($Revision: 1.87 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -242,6 +242,9 @@ AC_CHECK_HEADERS(stdint.h inttypes.h rpc/types.h)
 AC_CHECK_HEADERS(syslog.h crypt.h)
 AC_CHECK_HEADERS(pty.h util.h libutil.h sys/loadavg.h)
 
+dnl solaris specific
+AC_CHECK_HEADERS(sunmath.h)
+
 dnl ===========================================================
 dnl Checks processor type, for processor-specific stuff
 case $target in
@@ -295,7 +298,10 @@ dnl Checks for library functions.
 AC_PROG_GCC_TRADITIONAL
 
 dnl This is required to test trunc and rint below
-AC_CHECK_LIB(m, sin) dnl needed to check trunc and rint below
+AC_CHECK_LIB(m, sin)
+
+dnl x86-solaris 9 requires this to use isinf
+AC_CHECK_LIB(sunmath, isinf)
 
 dnl For Windows/MinGW, manually adds several libraries
 case "$target" in

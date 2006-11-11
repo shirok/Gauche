@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.133 2006-11-04 09:56:59 shirok Exp $
+ *  $Id: number.c,v 1.134 2006-11-11 03:52:28 shirok Exp $
  */
 
 #include <math.h>
@@ -42,6 +42,10 @@
 #include "gauche.h"
 #include "gauche/bignum.h"
 #include "gauche/scmconst.h"
+
+#ifdef HAVE_SUNMATH_H
+#include "sunmath.h"            /* for isinf() on Solaris */
+#endif /* HAVE_SUNMATH_H */
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -56,7 +60,13 @@
 #ifdef HAVE_ISINF
 #define SCM_IS_INF(x)  isinf(x)
 #else
-#define SCM_IS_INF(x)  ((x) != 0 && (x) == (x)/2.0)
+#define SCM_IS_INF(x)  Scm_IsInf(x)
+/* NB: If we inline this, some version of gcc incorrectly assumes
+   the condition would never be satisfied and optimize it away. */
+int Scm_IsInf(double x)
+{
+    return ((x) != 0 && (x) == (x)/2.0);
+}
 #endif
 
 #define RADIX_MIN 2

@@ -1,5 +1,16 @@
 2006-11-10  Shiro Kawai  <shiro@acm.org>
 
+	* src/class.c (unlock_class_redefinition): reset
+	  class_redefition_lock.owner to NULL as well, otherwise the
+	  redefinition lock keeps other threads waiting until the lock holding
+	  thread terminates.
+
+	* src/number.c (SCM_IS_INF): Provide an alternative function when
+	  the system does not provide isinf().  We used to inline the check,
+	  but some version of gcc appears to assume incorrectly the condition
+	  would never be satisfied and optimizes it away.  (It happened on
+	  gcc-3.3.2/Solaris 5.9/i86pc).
+
 	* lib/gauche/logger.scm: We can't determine lock policy statically,
 	  since the lock file may be placed on a filesystem that doesn't
 	  support fcntl lock.  So I changed the lock policy to be dynamically
