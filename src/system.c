@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.83 2006-11-04 09:56:59 shirok Exp $
+ *  $Id: system.c,v 1.84 2006-11-11 07:48:52 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1057,6 +1057,8 @@ Scm_YieldCPU(void)
     tv.tv_sec = 0;
     tv.tv_usec = 1;
     select(0, NULL, NULL, NULL, &tv);
+#elif defined(__MINGW32__)
+    Sleep(10);
 #else /* the last resort */
     sleep(1);
 #endif
