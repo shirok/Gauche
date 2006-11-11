@@ -4048,7 +4048,7 @@ HTTP URLのパス部分です。
 あるURLのコンテンツを取得する最もシンプルなフォームは次のようになるでしょう。
 @c COMMON
 @example
-(http-get "www.shiro.dreamhost.com" "/scheme/index.html")
+(http-get "practical-scheme.net" "/gauche/index.html")
 @end example
 
 @c EN

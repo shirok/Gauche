@@ -4,7 +4,7 @@
                       Compiling and Installing Gauche
 @c COMMON
 
-$Id: INSTALL.in,v 1.1 2006-11-09 23:47:32 shirok Exp $
+$Id: INSTALL.in,v 1.2 2006-11-11 20:45:17 shirok Exp $
 @c JP
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:
@@ -12,7 +12,7 @@ $Id: INSTALL.in,v 1.1 2006-11-09 23:47:32 shirok Exp $
 Note: The Gauche system is a work in progress and frequently updated.
 Check out the latest information on the site:
 @c COMMON
-  http://www.shiro.dreamhost.com/scheme/gauche/
+  http://practical-scheme.net/gauche/
 
 
 @c JP

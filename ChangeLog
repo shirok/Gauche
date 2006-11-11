@@ -1,3 +1,7 @@
+2006-11-11  Shiro Kawai  <shiro@acm.org>
+
+	* release 0.8.8
+
 2006-11-10  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac, src/gauche/config.h.in (sunmath): Solaris's compiler
