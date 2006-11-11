@@ -1,5 +1,8 @@
 2006-11-10  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac, src/gauche/config.h.in (sunmath): Solaris's compiler
+	  provides isinf() in a separate header/library.  Added checks for it.
+	
 	* src/class.c (unlock_class_redefinition): reset
 	  class_redefition_lock.owner to NULL as well, otherwise the
 	  redefinition lock keeps other threads waiting until the lock holding
