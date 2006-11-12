@@ -912,12 +912,13 @@ evaluated.  If @var{alternative} is not provided, it results undefined value.
 @end defspec
 
 @defspec cond clause1 clause2 @dots{}
-[R5RS]
+[R5RS][SRFI-61]
 @c EN
 Each @code{clause} must be the form
 @example
 (@var{test} @var{expr} @dots{})
 (@var{test} => @var{expr})
+(@var{test} @var{guard} => @var{expr})
 (else @var{expr} @var{expr2} @dots{})
 @end example
 The last form can appear only as the last clause.
@@ -929,7 +930,15 @@ and the result(s) of last @var{expr} is(are) returned; if the clause
 is the second form, the @var{expr} is evaluated and it must yield
 a procedure that takes one argument.  Then the result of @var{test}
 is passed to it, and the result(s) it returns will be returned.
-If no test yields true, and the last clause is not the third form
+
+The third form is specified in SRFI-61.  In this form, @var{test}
+can yield arbitrary number of values.  The result(s)
+of @var{test} is(are) passed to @var{guard}; if it returns a true value,
+@var{expr} is applied with an equivalent argument list, and its
+result(s) is(are) returned.  If @var{guard} returns @code{#f},
+the evaluation proceeds to the next clause.
+
+If no test yields true, and the last clause is not the fourth form
 (else clause), an undefined value is returned.
 
 If the last clause is else clause and all tests are failed,
@@ -940,6 +949,7 @@ If the last clause is else clause and all tests are failed,
 @example
 (@var{test} @var{expr} @dots{})
 (@var{test} => @var{expr})
+(@var{test} @var{guard} => @var{expr})
 (else @var{expr} @var{expr2} @dots{})
 @end example
 最後の形式は最後の節のみに許されます。
@@ -951,7 +961,16 @@ If the last clause is else clause and all tests are failed,
 @var{expr}は引数をひとつ取る手続きを返さねばなりません。
 続いて、@var{test}の結果がその手続きに渡され、その手続きの戻り値が@code{cond}形式の
 評価値となります。
-もし全てのテストが偽の値を返し、最後の節が3番目の形式(else節)でなければ、未定義の値が返されます。
+
+3番目の形式はSRFI-61で定義されています。この形式では、@var{test}は
+任意の数の値に評価されることができます。それらの値がまず
+@var{guard}に渡され、もし@var{guard}が真の値を返したら、同じ引数が@var{expr}に
+適用されて、その戻り値が@code{cond}形式の評価値となります。
+@var{guard}が@code{#f}を返した場合は次の節へと評価が進みます。
+@var{guard}と@var{expr}
+は、@var{test}が返すのと同数の引数を取れなければいけません。
+
+もし全てのテストが偽の値を返し、最後の節が4番目の形式(else節)でなければ、未定義の値が返されます。
 
 最後の節が@code{else}節で、他の全てのテストが失敗した場合、@code{else}節の@var{expr}
 が順に評価され、その最後の値が@code{cond}形式の値となります。
@@ -970,18 +989,20 @@ If the last clause is else clause and all tests are failed,
 
 
 @defspec case key clause1 clause2 @dots{}
-[R5RS]
+[R5RS][SRFI-87]
 @c EN
 @var{Key} may be any expression. 
 Each @var{clause} should have the form 
 @example
 ((@var{datum} ...) @var{expr} @var{expr2} @dots{})
+((@var{datum} ...) => @var{proc})
 @end example
 where each @var{datum} is an external representation of some object.
 All the @var{datum}s must be distinct. The last @var{clause}
 may be an ``else clause,'' which has the form 
 @example
 (else @var{expr} @var{expr2} @dots{})
+(else => @var{proc})
 @end example
 
 First, @var{key} is evaluated and its result is compared against each
@@ -990,6 +1011,10 @@ First, @var{key} is evaluated and its result is compared against each
 then the expressions in the corresponding clause are evaluated
 sequentially, and the result(s) of the last expression in the
 @var{clause} is(are) returned from the case expression.
+The forms containing @code{=>} are specified in SRFI-87.  In these
+forms, the result of @var{key} is passed to @var{proc}, and its
+result(s) is(are) returned from the case expression.
+
 If the result of evaluating @var{key} is different from every @var{datum},
 then if there is an else clause its expressions are evaluated and
 the result(s) of the last is(are) the result(s) of the case expression;
@@ -999,31 +1024,47 @@ otherwise the result of the case expression is undefined.
 @var{key}は任意の式です。@var{clause}は以下の形式でなければなりません。
 @example
 ((@var{datum} ...) @var{expr} @var{expr2} @dots{})
+((@var{datum} ...) => @var{proc})
 @end example
 ここで、各@var{datum}はSchemeオブジェクトの外部表現であり、全ての@var{datum}は
 異なっていなければなりません。最後の@var{clause}には次の形式を持つelse節が許されます。
 @example
 (else @var{expr} @var{expr2} @dots{})
+(else => @var{proc})
 @end example
 
 まず@var{key}が評価され、その結果がそれぞれの@var{datum}と比較されます。
 @var{key}の値と@code{eqv?}(@ref{Equivalence}参照)を使って一致する@var{datum}
 が見つかれば、対応する@var{expr}が順に評価され、その最後の値が@code{case}の
-値となります。もし一致する@var{datum}が見つからない場合、else節が与えられていれば
+値となります。@code{=>}を含む節はSRFI-87で定義されています。これらの節では、
+@var{key}の結果が@var{proc}に渡され、その結果が@code{case}の値となります。
+
+もし一致する@var{datum}が見つからない場合、else節が与えられていれば
 その@var{expr}が順に評価され、最後の値が返されます。else節がなければ@code{case}節
 の値は未定義です。
+
 @c COMMON
 @example
 (case (* 2 3)
   ((2 3 5 7) 'prime)
   ((1 4 6 8 9) 'composite)) @result{} composite
+
 (case (car '(c d))
   ((a) 'a)
   ((b) 'b)) @result{} @r{undefined}
+
 (case (car '(c d))
   ((a e i o u) 'vowel)
   ((w y) 'semivowel)
   (else 'consonant)) @result{} consonant
+
+(case 6
+  ((2 4 6 8) => (cut + <> 1))
+  (else => (cut - <> 1))) @result{} 7
+
+(case 5
+  ((2 4 6 8) => (cut + <> 1))
+  (else => (cut - <> 1))) @result{} 4
 @end example
 @end defspec
 

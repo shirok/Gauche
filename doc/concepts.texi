@@ -427,11 +427,27 @@ Supported as an autoloaded macro.
 @c COMMON
 
 @c EN
+@item SRFI-61, A more general @code{cond} clause
+Supported natively.  @xref{Conditionals}.
+@c JP
+@item SRFI-61, より汎用的な@code{cond}節
+組込みです。@ref{Conditionals}参照。
+@c COMMON
+
+@c EN
 @item SRFI-62, S-expression comments
 Supported by the native reader.  @xref{Lexical structure}.
 @c JP
 @item SRFI-62, S式コメント
 ネイティブのリーダでサポートされています。@ref{Lexical structure}参照。
+@c COMMON
+
+@c EN
+@item SRFI-87, @code{=>} in case clauses
+Supported natively.  @xref{Conditionals}.
+@c JP
+@item SRFI-61, case節での@code{=>}
+組込みです。@ref{Conditionals}参照。
 @c COMMON
 
 @end table

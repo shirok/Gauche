@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.44 2006-10-01 02:20:04 shirok Exp $
+;;;  $Id: compile.scm,v 1.45 2006-11-12 23:36:54 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1883,43 +1883,51 @@
 
 (define-pass1-syntax (cond form cenv) :null
   (define (process-clauses cls)
-    (cond
-     ((null? cls) ($const-undef))
-     ((not (and (pair? cls) (pair? (car cls))))
-      (error "syntax-error: bad clause in cond:" form))
-     ((global-eq? (caar cls) 'else cenv) ; ((else . exprs) . rest)
-      (let ((exprs (cdar cls))
-            (rest  (cdr cls)))
-        (unless (null? rest)
-          (error "syntax-error: 'else' clause followed by more clauses:" form))
-        ($seq (imap (cut pass1 <> cenv) exprs))))
-     ((and (pair? (cdar cls))           ; ((test => proc) . rest)
-           (global-eq? (cadar cls) '=> cenv)
-           (pair? (cddar cls))
-           (null? (cdddar cls)))
-      (let ((test (pass1 (caar cls) cenv))
-            (proc (caddar cls))
-            (rest (cdr cls))
-            (tmp (make-lvar 'tmp)))
-        (lvar-initval-set! tmp test)
-        ($let (car cls) 'let
-              (list tmp)
-              (list test)
-              ($if (car cls)
-                   ($lref tmp)
-                   ($call (car cls)
-                          (pass1 proc (cenv-sans-name cenv))
-                          (list ($lref tmp)))
-                   (process-clauses rest)))))
-     ((null? (cdar cls))                ; ((test) . rest)
-      ($if (car cls) (pass1 (caar cls) (cenv-sans-name cenv))
-           ($it) (process-clauses (cdr cls))))
-     ((list? (car cls))                 ; ((test . exprs) . rest)
-      ($if (car cls) (pass1 (caar cls) (cenv-sans-name cenv))
-           ($seq (imap (cut pass1 <> cenv) (cdar cls)))
-           (process-clauses (cdr cls))))
-     (else
-      (error "syntax-error: bad clause in cond:" form))))
+    (match cls
+      (() ($const-undef))
+      ;; (else . exprs)
+      ((((? (cut global-eq? <> 'else cenv)) . exprs) . rest)
+       (unless (null? rest)
+         (error "syntax-error: 'else' clause followed by more clauses:" form))
+       ($seq (imap (cut pass1 <> cenv) exprs)))
+      ;; (test => proc)
+      (((test (? (cut global-eq? <> '=> cenv)) proc) . rest)
+       (let ((test (pass1 test cenv))
+             (tmp (make-lvar 'tmp)))
+         (lvar-initval-set! tmp test)
+         ($let (car cls) 'let
+               (list tmp)
+               (list test)
+               ($if (car cls)
+                    ($lref tmp)
+                    ($call (car cls)
+                           (pass1 proc (cenv-sans-name cenv))
+                           (list ($lref tmp)))
+                    (process-clauses rest)))))
+      ;; (generator guard => proc) -- SRFI-61 'general cond clause'
+      (((generator guard (? (cut global-eq? <> '=> cenv)) receiver) . rest)
+       (let1 tmp (make-lvar 'tmp)
+         ($receive (car cls) 0 1 (list tmp)
+                   (pass1 generator cenv)
+                   ($if (car cls)
+                        ($asm #f
+                              '(APPLY 2)
+                              (list (pass1 guard (cenv-sans-name cenv))
+                                    ($lref tmp)))
+                        ($asm #f
+                              '(APPLY 2)
+                              (list (pass1 receiver (cenv-sans-name cenv))
+                                    ($lref tmp)))
+                        (process-clauses rest)))))
+      (((test) . rest)                  ; (test)
+       ($if (car cls) (pass1 test (cenv-sans-name cenv))
+            ($it)
+            (process-clauses rest)))
+      (((test . exprs) . rest)          ; (test . exprs)
+       ($if (car cls) (pass1 test (cenv-sans-name cenv))
+            ($seq (imap (cut pass1 <> cenv) exprs))
+            (process-clauses rest)))
+      (_ (error "syntax-error: bad clause in cond:" form))))
   (match form
     ((_)
      (error "syntax-error: at least one clause is required for cond:" form))
@@ -1930,30 +1938,40 @@
 
 (define-pass1-syntax (case form cenv) :null
   (define (process-clauses tmpvar cls)
-    (cond
-     ((null? cls) ($const-undef))
-     ((not (and (pair? cls) (pair? (car cls))))
-      (error "syntax-error: bad clause in case:" form))
-     ((global-eq? (caar cls) 'else cenv) ; ((else . exprs) . rest)
-      (unless (null? (cdr cls))
-        (error "syntax-error: 'else' clause followed by more clauses:" form))
-      ($seq (imap (cut pass1 <> cenv) (cdar cls))))
-     ((and (list? (caar cls)))          ;  ((elts . exprs) . rset)
-      (let ((nelts (length (caar cls)))
-            (elts  (map unwrap-syntax (caar cls)))
-            (exprs (cdar cls)))
-        (unless (> nelts 0)
-          (error "syntax-error: bad clause in case:" form))
-        ($if (car cls)
-             (if (> nelts 1)
-               ($memv #f ($lref tmpvar) ($const elts))
-               (if (symbol? (car elts))
-                 ($eq? #f  ($lref tmpvar) ($const (car elts)))
-                 ($eqv? #f ($lref tmpvar) ($const (car elts)))))
-             ($seq (imap (cut pass1 <> cenv) exprs))
-             (process-clauses tmpvar (cdr cls)))))
-     (else
-      (error "syntax-error: bad clause in case:" form))))
+    (match cls
+      (() ($const-undef))
+      ((((? (cut global-eq? <> 'else cenv)) . exprs) . rest)
+       (unless (null? rest)
+         (error "syntax-error: 'else' clause followed by more clauses:" form))
+       (match exprs
+         ;; (else => proc) -- SRFI-87 case clause
+         (((? (cut global-eq? <> '=> cenv)) proc)
+          ($call (car cls)
+                 (pass1 proc (cenv-sans-name cenv))
+                 (list ($lref tmpvar))))
+         ;; (else . exprs)
+         (_ ($seq (imap (cut pass1 <> cenv) exprs)))))
+      (((elts . exprs) . rest)
+       (let ((nelts (length elts))
+             (elts  (map unwrap-syntax elts)))
+         (unless (> nelts 0)
+           (error "syntax-error: bad clause in case:" form))
+         ($if (car cls)
+              (if (> nelts 1)
+                ($memv #f ($lref tmpvar) ($const elts))
+                (if (symbol? (car elts))
+                  ($eq? #f  ($lref tmpvar) ($const (car elts)))
+                  ($eqv? #f ($lref tmpvar) ($const (car elts)))))
+              (match exprs
+                ;; (elts => proc) -- SRFI-87 case clause
+                (((? (cut global-eq? <> '=> cenv)) proc)
+                 ($call (car cls)
+                        (pass1 proc (cenv-sans-name cenv))
+                        (list ($lref tmpvar))))
+                ;; (elts . exprs)
+                (_ ($seq (imap (cut pass1 <> cenv) exprs))))
+              (process-clauses tmpvar (cdr cls)))))
+      (_ (error "syntax-error: bad clause in case:" form))))
   (match form
     ((_)
      (error "syntax-error: at least one clause is required for case:" form))

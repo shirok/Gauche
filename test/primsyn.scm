@@ -34,9 +34,18 @@
 (prim-test "cond" 2        (lambda ()  (cond (1 2) (else 5))))
 (prim-test "cond" 8        (lambda ()  (cond (#f 2) (1 8) (else 5))))
 (prim-test "cond" 3        (lambda ()  (cond (1 => (lambda (x) (+ x 2))) (else 8))))
+(prim-test "cond (srfi-61)" 1 (lambda () (cond (1 number? => values) (else 8))))
+(prim-test "cond (srfi-61)" 8 (lambda () (cond (1 string? => values) (else 8))))
+(prim-test "cond (srfi-61)" '(1 2)
+           (lambda () (cond ((values 1 2)
+                             (lambda (x y) (and (= x 1) (= y 2)))
+                             => list))))
 
 (prim-test "case" #t (lambda ()  (case (+ 2 3) ((1 3 5 7 9) #t) ((0 2 4 6 8) #f))))
 (prim-test "case" #t (lambda () (undefined? (case 1 ((2 3) #t)))))
+(prim-test "case (srfi-87)" 0 (lambda () (case (+ 2 3) ((1 3 5) 0) (else => values))))
+(prim-test "case (srfi-87)" 6 (lambda () (case (+ 2 3) ((1 3 5) => (cut + 1 <>)) (else => values))))
+(prim-test "case (srfi-87)" 5 (lambda () (case (+ 2 3) ((2 4 6) 0) (else => values))))
 
 ;;----------------------------------------------------------------
 (test-section "binding")
