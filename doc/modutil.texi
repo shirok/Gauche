@@ -12846,6 +12846,7 @@ to @code{(format fmt arg @dots{})}.
 @section @code{util.trie} - Trie
 
 @deftp {Module} util.trie
+@mdindex util.trie
 This module provides @emph{Trie}, a dictionary-like data
 structure that maps keys to values, where a key is an arbitrary sequence.
 Internally it stores the data as a tree where each node corresponds 
