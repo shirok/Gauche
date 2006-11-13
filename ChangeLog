@@ -1,5 +1,7 @@
 2006-11-12  Shiro Kawai  <shiro@acm.org>
 
+	* src/vm.c (Scm_EvalCStringRec): typo fix (was: Scm_EvalRecCString).
+
 	* src/gauche.h, src/gauche/vector.h: splitted vector API header.
 
 	* src/compile.scm (case, cond): Applied srfi-61/srfi-87 patch from

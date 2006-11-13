@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.253 2006-11-09 20:27:02 shirok Exp $
+ *  $Id: vm.c,v 1.254 2006-11-13 09:49:17 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -3059,7 +3059,7 @@ ScmObj Scm_EvalRec(ScmObj expr, ScmObj e)
 }
 
 /* DEPRECATED */
-ScmObj Scm_EvalRecCString(const char *expr, ScmObj e)
+ScmObj Scm_EvalCStringRec(const char *expr, ScmObj e)
 {
     return Scm_EvalRec(Scm_ReadFromCString(expr), e);
 }
