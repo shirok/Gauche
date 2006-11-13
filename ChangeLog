@@ -1,3 +1,9 @@
+2006-11-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/gauche.h (Scm_EvalCStringRec): changed 
+	  Scm_EvalCStringRec as a macro that expands into Scm_EvalRec and
+	  Scm_ReadFromCString.
+
 2006-11-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (Scm_EvalCStringRec): typo fix (was: Scm_EvalRecCString).

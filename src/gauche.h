@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.467 2006-11-13 02:31:22 shirok Exp $
+ *  $Id: gauche.h,v 1.468 2006-11-13 22:02:06 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -437,9 +437,8 @@ SCM_EXTERN ScmObj Scm_ApplyRec(ScmObj proc, ScmObj args);
 #define Scm_EvalCString(f, e, p)  Scm__EvalCString(f, e, p)
 #define Scm_Apply(a, b, p)        Scm__Apply(a, b, p)
 #else  /* !GAUCHE_API_0_8_8 */
-SCM_EXTERN ScmObj Scm_EvalCStringRec(const char *form, ScmObj env);
 #define Scm_Eval(f, e)        Scm_EvalRec(f, e)
-#define Scm_EvalCString(f, e) Scm_EvalCStringRec(f, e)
+#define Scm_EvalCString(f, e) Scm_EvalRec(Scm_ReadFromCString(f), e)
 #define Scm_Apply(p, a)       Scm_ApplyRec(p, a)
 #endif /* !GAUCHE_API_0_8_8 */
 
