@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: portutil.scm,v 1.7 2004-02-02 10:43:36 shirok Exp $
+;;;  $Id: portutil.scm,v 1.8 2006-11-13 00:02:51 shirok Exp $
 ;;;
 
 (define-module gauche.portutil
@@ -140,7 +140,7 @@
                          (write-char data dst)
                          (+ count 1))))
           ((integer? unit)
-           (let ((buf (make-u8vector (if (zero? unit) 4196 unit))))
+           (let ((buf (make-u8vector (if (zero? unit) 4096 unit))))
              (if (and (integer? size) (positive? size))
                  (%do-copy/limitN src dst buf unit size)
                  (%do-copy (read-block! buf src)
