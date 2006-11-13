@@ -1,6 +1,8 @@
 2006-11-12  Shiro Kawai  <shiro@acm.org>
 
-	* compile.scm (case, cond): Applied srfi-61/srfi-87 patch from
+	* src/gauche.h, src/gauche/vector.h: splitted vector API header.
+
+	* src/compile.scm (case, cond): Applied srfi-61/srfi-87 patch from
 	  Rui Ueyama.
 
 2006-11-11  Shiro Kawai  <shiro@acm.org>
