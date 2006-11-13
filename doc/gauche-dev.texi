@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.14 2006-11-13 02:31:21 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.15 2006-11-13 08:44:29 shirok Exp $
 
 @iftex
 @finalout
@@ -1444,6 +1444,8 @@ variations (e.g. with or without hyphen) are allowed.
 @node Strings, Regular expressions, Character sets, C API reference
 @section Strings
 
+@subheading Multibyte strings and thread safety
+
 Gauche supports multibyte strings natively, so its C API just
 hides most complexities that come with multibyte encodings.  You should
 treat Scheme strings as opaque objects and use provided APIs and macros
@@ -1510,13 +1512,156 @@ void f(ScmString *s)
 @}
 @end example
 
-@deftypefun ScmObj Scm_MakeString (const char *@var{str}, int @var{size}, int @var{len}, int @var{flags})
-@end deftypefun
+@subheading Datatype
 
-@deftypefn {Macro} ScmObj SCM_MAKE_STR (const char @var{cstr})
+@deftp {Scheme Object} ScmString
+@end deftp
+
+@deftp {Data type} ScmStringBody
+@end deftp
+
+@deftypevr {Constant} int SCM_STRING_IMMUTABLE
+@deftypevrx {Constant} int SCM_STRING_INCOMPLETE
+@deftypevrx {Constant} int SCM_STRING_COPYING
+@end deftypevr
+
+@deftypefn {Macro} int SCM_STRINGP (ScmObj @var{obj})
+Type predicate.
+@end deftypefn
+
+@deftypefn {Macro} ScmString *SCM_STRING (ScmObj @var{obj})
+Typecast.
+@end deftypefn
+
+@deftypefn {Macro} {const ScmStringBody} *SCM_STRING_BODY (ScmObj @var{str})
+Returns a pointer to the body of the Scheme string @var{str}.
+Note that the returned body is immutable.
+@end deftypefn
+
+@deftypefn {Macro} int SCM_STRING_BODY_LENGTH (ScmStringBody *@var{body})
+@deftypefnx {Macro} int SCM_STRING_BODY_SIZE (ScmStringBody *@var{body})
+@deftypefnx {Macro} int SCM_STRING_BODY_FLAGS (ScmStringBody *@var{body})
+@end deftypefn
+
+@deftypefn {Macro} int SCM_STRING_BODY_HAS_FLAG (ScmStringBody *@var{body}, int @var{flag})
 @end deftypefn
 
 
+
+
+
+@subheading Constructors
+
+@deftypefun ScmObj Scm_MakeString (const char *@var{str}, int @var{size}, int @var{len}, int @var{flags})
+Creates a new Scheme string, whose content, size (in bytes), 
+and length (in characters) are given by @var{str}, @var{size} and
+@var{len}, respectively.
+
+You can pass @code{-1} to @var{size}.  In such case, @code{Scm_MakeString}
+assumes @var{str} is @code{NUL}-terminated string and calculates
+the size.  If you pass an explicit size, @var{str} does not need
+to be @code{NUL}-terminated.
+
+You can pass @code{-1} to @var{len}.  In such case, @code{Scm_MakeString}
+counts characters in @var{str}.  If you pass an explicit length, 
+@code{Scm_MakeString} trust it---passing wrong number will cause
+lots of troubles.
+
+C-string @var{str} is interpreted in the Gauche's native
+multibyte encoding.  If you pass @code{-1} to @var{len},
+and @var{str} contains an illegal byte sequence as the
+native multibyte encoding, the created string becomes 
+incomplete.  You can also create an incomplete string
+explicitly by passing @code{SCM_MAKSTR_INCOMPLETE} flag
+to @var{flags}.
+
+@var{Flags} is a bitwise OR of the following bitmasks.
+
+@table @code
+@item SCM_MAKSTR_INCOMPLETE
+Creates an incomplete string, even if @var{str} contains
+only valid characters.
+@item SCM_MAKSTR_IMMUTABLE
+Creates an immutable string.  Immutable string would
+raise an error if used by mutating procedures such as
+@code{Scm_StringSet}.
+@item SCM_MAKSTR_COPYING
+The content pointed by @var{str} is copied, so that the caller
+can free @var{str} after this call.
+Without this flag, the created string directly points the
+region passed by @var{str}, and it is managed by Gauche's garbage
+collector.  That is, if @var{str} points a static data or the region
+you get by Gauche's allocators, you don't need this flag; while
+if @var{str} points the region you get by @code{malloc} or other
+means, you have to specify this flag.
+@end table
+@end deftypefun
+
+@deftypefn {Macro} ScmObj SCM_MAKE_STR (const char *@var{cstr})
+A convenience macro, expanded as follows:
+@example
+Scm_MakeString(@var{cstr}, -1, -1, 0)
+@end example
+That is, the size and length are counted automatically, and 
+@var{cstr} is not copied.
+@end deftypefn
+
+@deftypefn {Macro} ScmObj SCM_MAKE_STR_COPYING (const char *@var{cstr})
+A convenience macro, expanded as follows:
+@example
+Scm_MakeString(@var{cstr}, -1, -1, SCM_MAKSTR_COPYING)
+@end example
+That is, the size and length are counted automatically, and 
+@var{cstr} is copied.
+@end deftypefn
+
+@deftypefn {Macro} ScmObj SCM_MAKE_STR_IMMUTABLE (const char *@var{cstr})
+A convenience macro, expanded as follows:
+@example
+Scm_MakeString(@var{cstr}, -1, -1, SCM_MAKSTR_IMMUTABLE)
+@end example
+@end deftypefn
+
+@deftypefun ScmObj Scm_MakeFillString (int @var{len}, ScmChar @var{fill})
+Creates a Scheme string consists of the character @var{fill}
+repeated for @var{len} times.  Returned string is always
+mutable and complete.
+@end deftypefun
+
+@deftypefun ScmObj Scm_CopyStringWithFlags (ScmString *@var{str}, int @var{flags}, int @var{mask})
+Copy the content of the string @var{str}, with modifying the flags
+as specified by the following expression:
+@example
+newflag = (@var{flags} & @var{mask}) | (oldflag & ~@var{mask})
+@end example
+
+Typically you want to drop immutable flag.
+
+Note: to copy a part of a string, you can use @code{Scm_Substring()}.
+@end deftypefun
+
+@deftypefun ScmObj Scm_CopyString (ScmString *@var{str})
+@end deftypefun
+
+@deftypefn {Macro} {} SCM_STRING_CONST_INITIALIZER (const char *@var{str}, int @var{len}, int @var{siz})
+This is expanded to a static initializer of @code{ScmStringRec} structure.
+@var{Len} and @var{siz} must be the correct values (you can't pass @code{-1}).
+
+This is mainly for programs that generates C source.  This can
+be used to embed static Scheme strings in the C source.
+@end deftypefn
+
+@deftypefn {Macro} {} SCM_DEFINE_STRING_CONST (@var{name}, const char *@var{str}, int @var{len}, int @var{siz})
+Expands to:
+@example
+ScmString @var{name} = 
+   SCM_STRING_CONST_INITIALIZER(@var{str}, @var{len}, @var{siz})
+@end example
+@end deftypefn
+
+@subheading String operations
+
+@subheading Dynamic strings
 
 
 
