@@ -30,13 +30,12 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.70 2006-11-03 11:11:27 shirok Exp $
+ *  $Id: core.c,v 1.71 2006-11-13 22:38:11 shirok Exp $
  */
 
 #include <stdlib.h>
 #include <unistd.h>
 #define LIBGAUCHE_BODY
-#define GAUCHE_API_0_8_8
 #include "gauche.h"
 #include "gauche/arch.h"
 #include "gauche/paths.h"

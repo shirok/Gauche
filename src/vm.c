@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.255 2006-11-13 22:02:06 shirok Exp $
+ *  $Id: vm.c,v 1.256 2006-11-13 22:38:12 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -3171,19 +3171,18 @@ static int safe_eval_wrap(int kind, ScmObj arg0, ScmObj args,
     }
 }
 
-/* Temporary names.  Rename to Scm_Eval etc. after 0.8.8 release. */
-int Scm__Eval(ScmObj form, ScmObj env, ScmEvalPacket *packet)
+int Scm_Eval(ScmObj form, ScmObj env, ScmEvalPacket *packet)
 {
     return safe_eval_wrap(SAFE_EVAL, form, SCM_FALSE, NULL, env, packet);
 }
 
-int Scm__EvalCString(const char *expr, ScmObj env, ScmEvalPacket *packet)
+int Scm_EvalCString(const char *expr, ScmObj env, ScmEvalPacket *packet)
 {
     return safe_eval_wrap(SAFE_EVAL_CSTRING, SCM_FALSE, SCM_FALSE,
                           expr, env, packet);
 }
 
-int Scm__Apply(ScmObj proc, ScmObj args, ScmEvalPacket *packet)
+int Scm_Apply(ScmObj proc, ScmObj args, ScmEvalPacket *packet)
 {
     return safe_eval_wrap(SAFE_APPLY, proc, args, NULL, SCM_FALSE, packet);
 }

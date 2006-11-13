@@ -1,10 +1,9 @@
 /* 
  * Test VM stack sanity
- * $Id: test-vmstack.c,v 1.4 2006-11-03 11:11:27 shirok Exp $
+ * $Id: test-vmstack.c,v 1.5 2006-11-13 22:38:12 shirok Exp $
  */
 
 #include <stdio.h>
-#define GAUCHE_API_0_8_8
 #include "gauche.h"
 #include "gauche/vm.h"
 

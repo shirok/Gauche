@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.468 2006-11-13 22:02:06 shirok Exp $
+ *  $Id: gauche.h,v 1.469 2006-11-13 22:38:11 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -399,18 +399,7 @@ SCM_EXTERN ScmVM *Scm_VM(void);     /* Returns the current VM */
    Returns # of results (>=0) if operation is successful, 
    -1 if an error is occurred and captured.
    All result values are available in ScmEvalPacket.
-   Exceptions are captured and returned in the ScmEvalPacket.
-
-   Note: This is an incompatible change that breaks the existing
-   C apps.  For smooth transition, we take two-step process.
-   
-   In 0.8.8, new APIs are visible iff GAUCHE_API_0_8_8 is defined
-   before including gauche.h.  Otherwise, old APIs are visible.
-   The existing C apps are encouraged to adopt the new API during
-   this period.
-
-   In 0.8.9, new APIs become the default and old APIs will be removed. */
-
+   Exceptions are captured and returned in the ScmEvalPacket. */
 typedef struct ScmEvalPacketRec {
     ScmObj results[SCM_VM_MAX_VALUES];
     int    numResults;
@@ -418,29 +407,19 @@ typedef struct ScmEvalPacketRec {
     ScmModule *module;          /* 'Current module' after evaluation */
 } ScmEvalPacket;
 
-/* For 0.8.8, we use these names to avoid conflict with the old
-   Scm_Eval etc.  After releasing 0.8.8 we rename them. */
-SCM_EXTERN int Scm__Eval(ScmObj form, ScmObj env, ScmEvalPacket *packet);
-SCM_EXTERN int Scm__EvalCString(const char *form, ScmObj env,
-                                ScmEvalPacket *packet);
-SCM_EXTERN int Scm__Apply(ScmObj proc, ScmObj args,
-                          ScmEvalPacket *packet);
+SCM_EXTERN int Scm_Eval(ScmObj form, ScmObj env, ScmEvalPacket *packet);
+SCM_EXTERN int Scm_EvalCString(const char *form, ScmObj env,
+                               ScmEvalPacket *packet);
+SCM_EXTERN int Scm_Apply(ScmObj proc, ScmObj args,
+                         ScmEvalPacket *packet);
 
 /* Calls VM recursively to evaluate the Scheme code.  These
    ones does not capture exceptions. */
 SCM_EXTERN ScmObj Scm_EvalRec(ScmObj form, ScmObj env);
 SCM_EXTERN ScmObj Scm_ApplyRec(ScmObj proc, ScmObj args);
 
-/* Compatibility hack */
-#if defined(GAUCHE_API_0_8_8)
-#define Scm_Eval(f, e, p)         Scm__Eval(f, e, p)
-#define Scm_EvalCString(f, e, p)  Scm__EvalCString(f, e, p)
-#define Scm_Apply(a, b, p)        Scm__Apply(a, b, p)
-#else  /* !GAUCHE_API_0_8_8 */
-#define Scm_Eval(f, e)        Scm_EvalRec(f, e)
-#define Scm_EvalCString(f, e) Scm_EvalRec(Scm_ReadFromCString(f), e)
-#define Scm_Apply(p, a)       Scm_ApplyRec(p, a)
-#endif /* !GAUCHE_API_0_8_8 */
+/* for compatibility */
+#define Scm_EvalCStringRec(f, e)  Scm_EvalRec(Scm_ReadFromCString(f), e)
 
 /* Returns multiple values.  Actually these functions just sets
    extra values in VM and returns the primary value. */
