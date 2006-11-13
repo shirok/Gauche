@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.45 2006-11-12 23:36:54 shirok Exp $
+;;;  $Id: compile.scm,v 1.46 2006-11-13 02:30:00 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1911,11 +1911,11 @@
                    (pass1 generator cenv)
                    ($if (car cls)
                         ($asm #f
-                              '(APPLY 2)
+                              `(,APPLY 2)
                               (list (pass1 guard (cenv-sans-name cenv))
                                     ($lref tmp)))
                         ($asm #f
-                              '(APPLY 2)
+                              `(,APPLY 2)
                               (list (pass1 receiver (cenv-sans-name cenv))
                                     ($lref tmp)))
                         (process-clauses rest)))))
