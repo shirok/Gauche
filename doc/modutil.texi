@@ -10943,9 +10943,9 @@ the resulting list, like unquote-splicing.
   @result{} (have-x 6)
 
 (let ((x 2) (y #f) (z 5))
-  (cond-list (x @ `(:x ,x))
-             (y @ `(:y ,y))
-             (z @ `(:z ,z))))
+  (cond-list (x @@ `(:x ,x))
+             (y @@ `(:y ,y))
+             (z @@ `(:z ,z))))
   @result{} (:x 2 :z 5)
 @end example
 @end defmac
