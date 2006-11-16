@@ -1733,18 +1733,28 @@ Returns @code{#t} if @var{obj} is a keyword.
 
 @defun make-keyword name
 @c EN
-Returns a keyword whose name is @var{name}.
+Returns a keyword whose name is @var{name}, which can be
+can be a string or a symbol.
 @c JP
-名前が @var{name} であるキーワードを返します。
+名前が @var{name} であるキーワードを返します。@var{name}には
+文字列かシンボルが許されます。
 @c COMMON
+@example
+(make-keyword "foo")  @result{} :foo
+
+(make-keyword 'foo)   @result{} :foo
+@end example
 @end defun
 
 @defun keyword->string keyword
 @c EN
-Returns the name of the keyword @var{keyword}.
+Returns the name of the keyword @var{keyword}, in a string.
 @c JP
-キーワード @var{keyword} の名前を返します。
+キーワード @var{keyword} の名前を文字列で返します。
 @c COMMON
+@example
+(keyword->string :foo) @result{} "foo"
+@end example
 @end defun
 
 @defun get-keyword key kv-list &optional fallback
