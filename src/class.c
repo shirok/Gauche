@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.139 2006-11-11 03:52:28 shirok Exp $
+ *  $Id: class.c,v 1.140 2006-11-16 02:23:55 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -221,7 +221,8 @@ static ScmObj class_array_to_names(ScmClass **array, int len)
 
 /* If the class name has brackets '<' and '>', as in Gauche's convention,
    returns a string without those brackets.  Otherwise returns the class
-   name.  This is used by some print method. */
+   name in a string.  This is used by some print method.  Always returns
+   a string. */
 ScmObj Scm__InternalClassName(ScmClass *klass)
 {
     ScmObj name = klass->name;
@@ -234,9 +235,14 @@ ScmObj Scm__InternalClassName(ScmClass *klass)
             && SCM_STRING_BODY_START(b)[size-1] == '>') {
             return Scm_Substring(SCM_SYMBOL_NAME(name), 1,
                                  SCM_STRING_BODY_LENGTH(b)-1);
+        } else {
+            return SCM_OBJ(SCM_SYMBOL_NAME(name));
         }
     }
-    return name;
+    /* Fallback.  At this moment we don't have unnamed classes,
+       so this is an ad hoc code.  We may need better handling
+       (like write-to-string) later. */
+    return SCM_MAKE_STR("(unnamed class)");
 }
 
 /*=====================================================================
