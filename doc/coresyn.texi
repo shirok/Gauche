@@ -1646,67 +1646,123 @@ The return value of @code{until} form itself isn't specified.
 
 @defspec quasiquote template
 [R5RS]
+@c EN
 Quasiquotation is a convenient way to build a structure that has
 some fixed parts and some variable parts.  See the explanation below.
+@c JP
+準クォートは固定部分と変数部分の両方を持つような構造を構成するのに便利
+です。詳細は以下の説明を参照してください。
+@c COMMON
 @end defspec
 
 @deftp {Reader Syntax} @code{`@var{template}}
 [R5RS]
+@c EN
 The syntax @code{`x} is read as @code{(quasiquote x)}.
+@c JP
+@code{`x}は@code{(quasiquote x)}として読み込まれます。
+@c COMMON
 @end deftp
 
 @defspec unquote datum
 @defspecx unquote-splicing datum
 [R5RS]
+@c EN
 These syntaxes have meaning only when they appear in the @var{template}
 of quasiquoted form.  The standard says nothing about these syntaxes
 appear outside of quasiquote.  Gauche signals an error in such case,
 for it usually indicates you forget quasiquote somewhere.
 See the explanation below for the meaning of these.
+@c JP
+これらの構文は準クォートさた@var{template}内にあるときにだけ意味を持ち
+ます。標準仕様ではこれらの構文が準クォートの外側で現われたときの意味に
+ついては何も言及していません。Gaucheではそのような場合には通常どこかで
+準クォート忘れがあることを示すエラーが発生します。これらの意味について
+は以下の説明を参照してください。
+@c COMMON
 @end defspec
 
 @deftp {Reader Syntax} @code{,@var{datum}}
 @deftpx {Reader Syntax} @code{,@@@var{datum}}
 [R5RS]
+@c EN
 The syntaxes @code{,x} and @code{,@@x} are read as @code{(unquote x)}
 and @code{(unquote-splicing x)}, respectively.
+@c JP
+@code{,x}および@code{,@@x}は、それぞれ@code{(unquote x)}および
+@code{(unquote-splicing x)}として読み込まれます。
+@c COMMON
 @end deftp
 
+@c EN
 @subheading Quasiquote basics
+@c JP
+@subheading 準クォートの基本
+@c COMMON
 
+@c EN
 Suppose you want to create a list @code{(foo bar @var{x} @var{y})}, 
 where @code{foo} and @code{bar} are symbols, and @var{x} and @var{y}
 are the value determined at runtime.  (For the sake of explanation,
 let's assume we have variables @var{x} and @var{y} that provides those
 values.)  One way to do that is to call the function @code{list}
 explicitly.
+@c JP
+@code{(foo bar @var{x} @var{y})}のようなリストを構成したいとしましょう。
+ここでは@code{foo}および@code{bar}はシンボルで、@var{x}および@var{y}は
+実行時に定まる値とします。(説明のために、変数@var{x}および@var{y}がそ
+れらの値を持っているものとします。) ひとつの方法は@code{list}関数を明
+示的に呼ぶことです。
+@c COMMON
 
 @example
 (let ((x 0) (y 1))
   (list 'foo 'bar x y)) @result{} (foo bar 0 1)
 @end example
 
+@c EN
 You can do the same thing with quasiquote, like this:
+@c JP
+同じことを準クォートを使うと以下のようになります。
+@c COMMON
 
 @example
 (let ((x 0) (y 1))
   `(foo bar ,x ,y))  @result{} (foo bar 0 1)
 @end example
 
+@c EN
 The difference between the two notations is that the explicit version
 quotes the parts that you want to insert literally into the result,
 while the quasiquote version @emph{unquotes} the parts that you
 don't want to quote.  
+@c JP
+ふたつの記法の違いは、前者では結果に書いたとおりを入れ込みたいところで
+クォートを使い、後者ではクォートしたくないところに@emph{unquotes}を使
+うことです。  
+@c COMMON
 
+@c EN
 The quasiquote version gets simpler and more readable when you
 have lots of static parts with scattered variable parts in your
 structure.  
+@c JP
+ほとんどが固定部分でその中に変数部分が散在するような場合には準クォート
+を使った方が単純で読みやすくなります。
+@c COMMON
 
+@c EN
 That's why quasiquote is frequently used with
 legacy macros, which are basically a procedure that
 create program fragments from variable parts provided as
 macro arguments.  See the simple-minded @code{my-if} macro
 that expands to @code{cond} form:
+@c JP
+そういうわけで、旧来のマクロでは準クォートが頻繁につかわれていました。
+旧来のマクロは基本的にマクロの引数として与えられた変数部分からプログラ
+ム断片を生成する手続だからです。簡単な@code{my-if}マクロの定義とそれが
+@code{cond}に展開されるようすを見てみましょう。
+@c COMMON
 
 @example
 (define-macro (my-if test then else)
@@ -1717,22 +1773,49 @@ that expands to @code{cond} form:
   @result{} (cond ((< n 0) n) (else (- n)))
 @end example
 
+@c EN
 Note the two @code{else}s in the macro definition; one isn't unquoted,
 thus appears liteally in the output, while another is unquoted and
 the corresponding macro argument is inserted in its place.
+@c JP
+マクロ定義内の2つの@code{else}に注目してください。ひとつはアンクォート
+されていませんので、出力にはそのまま現われます。もうひとつの方はといえ
+ば、こちらはアンクォートされていますので、その場所にマクロの引数が入り
+ます。
+@c COMMON
 
+@c EN
 Of course you can use quasiquotes unrelated to macros.  It is a general
 way to construct structures.  Some even prefer using quasiquote to 
 explicit construction even most of the structure is variable, for
 quasiquoted form can be more concise.  Gauche also tries to minimize
 runtime allocation for quasiquoted forms, so it may potentially
 be more efficient; see "How static are quasiquoted forms?" below.
+@c JP
+もちろんマクロとは関係のないところでも準クォートは使えます。準クォート
+は構造のあるデータを構築する汎用的な方法です。ほとんどが変数部分である
+ような構造でも準クォートを好んで使うプログラマもいます。準クォートを使っ
+た方が簡潔に書けるからです。さらにGaucheでは準クォート形式に対する実行
+時アロケーションができるだけ少くなるようにしていますので、準クォートを
+使った方が効率がいいはずです。この点については後述の「準クォートはどの
+くら静的か」を見てください。
+@c COMMON
 
+@c EN
 @subheading Splicing
+@c JP
+@subheading スプライシング
+@c COMMON
 
+@c EN
 When @code{(unquote-splicing @var{expr})} appears in a quasiquoted form, 
 @var{expr} must evaluate to a list, which is @emph{spliced} into the
 surrounding context.  It's easier to see examples:
+@c JP
+@code{(unquote-splicing @var{expr})}が準クォート形式の中で使われていれ
+ば、@var{expr}は評価されてリストになるものでなければならず、それをとり
+まくコンテキストで継ぎ合わされます。例を見ると簡単にわかります。
+@c COMMON
 
 @example
 (let ((x '(1 2 3)))
@@ -1745,41 +1828,79 @@ surrounding context.  It's easier to see examples:
   `#(a ,@@x b)) @result{} #(a 1 2 3 b)
 @end example
 
+@c EN
 Compare the unquote version and unquote-splicing version.  Splicing
 also works within a vector.
+@c JP
+アンクォート版とアンクォートスプライシング版を比べてください。スプライ
+シングはベクタに対しても機能します。
+@c COMMON
 
+@c EN
 @subheading Some edge cases
+@c JP
+@subheading 極端なケース
+@c COMMON
 
-
-
-
-
+@c EN
 @subheading How static are quasiquated forms?
+@c JP
+@subheading 準クォートはどのくらい静的か
+@c COMMON
 
+@c EN
 When quasiquoted form contains variable parts, what happens at
 runtime is just the same as when an explicit form is used:
 @code{`(,x ,y)} is evaluated exactly like @code{(list x y)}.
 However, Gauche tries to minimize runtime allocation when
 a quasiquoted form has static parts.
+@c JP
+準クォート形式が変数部分を含む場合、実行時には、明示的な形式が使われた
+ときと同じことがおこります。@code{`(,x ,y)}は@code{(list x y)}のように
+評価されます。しかし、Gaucheでは準クォート形式が固定部分を持つ場合には
+実行時アロケーションができるだけ少くなるようにします。
+@c COMMON
 
+@c EN
 First of all, if there's no variable parts in quasiquoted
 form, like @code{`(a b c)}, the entire form is allocated statically.
 If there is a static tail in the sturcture, it is also allocated
 statically; e.g. @code{`((,x a b) (,y c d))} works like
 @code{(list (cons x '(a b)) (cons y '(c d)))}.
+@c JP
+まず、@code{`(a b c)}のように準クォート形式に変数部分がない場合、全体
+は静的にアロケートされます。構造の末尾が固定部分の場合にも静的にアロケー
+トされます。たとえば、@code{`((,x a b) (,y c d))}は@code{(list (cons x
+'(a b)) (cons y '(c d)))}のように機能します。
+@c COMMON
 
+@c EN
 Furthermore, when an unquoted expression is a
 constant expressoin, Gauche embeds it into the static
 form.  If you've defined a constant like
 @code{(define-constant x 3)}, then the form
 @code{`(,x ,(+ x 1))} is compiled as the constant @code{'(3 4)}.
 (See @ref{Definitions}, for the explanation of @code{define-constant} form.)
+@c JP
+さらにアンクォート式が定数式の場合，Gacheはそれを準クォートの固定部分
+に埋め込みます。たとえば、@code{(define-constant x 3)}のように定義した
+としましょう。この場合@code{`(,x ,(+ x 1))}は定数@code{'(3 4)}のように
+コンパイルされます。(@code{define-constant}形式については、
+@ref{Definitions}を参照してください。)
+@c COMMON
 
+@c EN
 In general it is hard to say which part of quasiquoted form is
 compiled as a static datum and which part is not, so you shouldn't
 write a code that assumes some parts of the structure returned from
 quasiquote are freshly allocated.  In other words, you better avoid
 mutating such structures.
+@c JP
+一般的には、準クォート形式のどの部分が固定データとしてコンパイルされど
+の部分がされないのかを特定することは困難です。それゆえ、準クォートの返
+す構造の一部が新規にアロケートされていることを前提としたコードを書いて
+はいけません。いいかえると、そのような構造を変更するのは避けるべきです。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Definitions, Modules, Quasiquotation, Core syntax
