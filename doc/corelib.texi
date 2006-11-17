@@ -6908,18 +6908,34 @@ mechanisms (similar to "one-shot continuation", @ref{onecont, [1CC], 1CC}).
 @subsubheading 処理されなかった例外のふるまい
 @c COMMON
 
+@c EN
 If an exception is raised where no program-defined exception handler is
 installed, the following action is taken.
+@c JP
+プログラムで定義した例外ハンドラを設定していないところで例外が発生した
+場合以下のようなことが起ります。
+@c COMMON
 
 @itemize @bullet
 @item 
+@c EN
 If the program is running interactively (in repl), the information
 of the thrown exception and stack trace are displayed, and
 the program returns to the toplevel prompt.
+@c JP
+プログラムが対話的に走っている場合(REPL)、投げられた例外の情報とスタッ
+クトレースが表示され、プログラムはトップレベルのプロンプトに戻ります。
+@c COMMON
 @item
+@c EN
 If the program is running non-interactively, the information
 of the thrown exception and stack trace are displayed, then
 the program exits with an exit status @code{EX_SOFTWARE} (70).
+@c JP
+プログラムが対話的に走っているのではない場合は、投げられた例外の情報と
+スタックトレースが表示された後、プログラムは終了コード
+@code{EX_SOFTWARE} (70)で終了します。
+@c COMMON
 @end itemize
 
 @c EN
