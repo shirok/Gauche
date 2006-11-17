@@ -6085,8 +6085,8 @@ For the real-world example of use of @code{lazy},
 you may want to check the implementation of @code{util.stream}
 (@xref{Stream library}).
 @c JP
-@code{lazy}の実用的な使用例については@code{util.stream}(@ref{Stream
-library}参照)の実装をチェックするといいでしょう。
+@code{lazy}の実用的な使用例については@code{util.stream}
+(@ref{Stream library})の実装をチェックするといいでしょう。
 @c COMMON
 @end defspec
 
