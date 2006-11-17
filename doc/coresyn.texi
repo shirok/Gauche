@@ -1674,7 +1674,7 @@ appear outside of quasiquote.  Gauche signals an error in such case,
 for it usually indicates you forget quasiquote somewhere.
 See the explanation below for the meaning of these.
 @c JP
-これらの構文は準クォートさた@var{template}内にあるときにだけ意味を持ち
+これらの構文は準クォートされた@var{template}内にあるときにだけ意味を持ち
 ます。標準仕様ではこれらの構文が準クォートの外側で現われたときの意味に
 ついては何も言及していません。Gaucheではそのような場合には通常どこかで
 準クォート忘れがあることを示すエラーが発生します。これらの意味について
@@ -1798,7 +1798,7 @@ be more efficient; see "How static are quasiquoted forms?" below.
 た方が簡潔に書けるからです。さらにGaucheでは準クォート形式に対する実行
 時アロケーションができるだけ少くなるようにしていますので、準クォートを
 使った方が効率がいいはずです。この点については後述の「準クォートはどの
-くら静的か」を見てください。
+くらい静的か」を見てください。
 @c COMMON
 
 @c EN
@@ -1882,7 +1882,7 @@ form.  If you've defined a constant like
 @code{`(,x ,(+ x 1))} is compiled as the constant @code{'(3 4)}.
 (See @ref{Definitions}, for the explanation of @code{define-constant} form.)
 @c JP
-さらにアンクォート式が定数式の場合，Gacheはそれを準クォートの固定部分
+さらにアンクォート式が定数式の場合，Gaucheはそれを準クォートの固定部分
 に埋め込みます。たとえば、@code{(define-constant x 3)}のように定義した
 としましょう。この場合@code{`(,x ,(+ x 1))}は定数@code{'(3 4)}のように
 コンパイルされます。(@code{define-constant}形式については、
