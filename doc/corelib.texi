@@ -13939,18 +13939,35 @@ details.
 @end defmac
 
 @deffn {Parameter} debug-print-width
+@c EN
 This parameter specifies the maximum width of information to be 
 printed by @code{debug-print}.  If the information takes more
 columns than the value of this parameter, it is truncated.
+@c JP
+このパラメータは@code{debug-print}が印字する情報の最大幅を指定するもの
+です。このパラメータが保持する値よりも大きいカラム数の情報は丸められま
+す。
+@c COMMON
 
+@c EN
 To show all the information, set @code{#f} to this parameter.
+@c JP
+すべての情報を表示したければ、このパラメータに@code{#f}を設定してくだ
+さい。
+@c COMMON
 @end deffn
 
 @defun debug-source-info obj
+@c EN
 Retrieves source information attached to @var{obj}.
 The source information is returned as a list of source file name
 and an integer line number.  If no source information is available
 in @var{obj}, @code{#f} is returned.
+@c JP
+@var{obj}に付加されているソースコード情報を検索します。ソースコード情
+報とはソースコードファイル名と行番号のリストです。@var{obj}にソースコー
+ド情報が付加されていなければ、@code{#f}が返されます。
+@c COMMON
 @end defun
 
 
