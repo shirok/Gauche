@@ -3260,46 +3260,90 @@ See also @code{string-tokenize} in
 @subsection Incomplete strings
 @c NODE 不完全文字列
 
+@c EN
 A string can be flagged as "incomplete" if it may contain
 byte sequences that do not consist of a valid multibyte character
 in the Gauche's native encoding.
+@c JP
+Gaucheの内部エンコーディングで正当なマルチバイト文字で構成されていない
+ようなバイト列を含む文字列は「不完全文字列」となります。
+@c COMMON
 
+@c EN
 Incomplete strings may be genereated in several circumstances;
 reading binary data as a string, reading a string data that has
 been 'chopped' in middle of a multibyte character, or 
 concatenating a string with other incomplete strings, for example.
+@c JP
+不完全文字列が生成される状況はいくつかあります。たとえば、バイナリデー
+タを文字列として読み込んだとき、マルチバイト文字の途中で切れた文字列を
+読み込んだとき、別の不完全文字列が連結された場合などです。
+@c COMMON
 
+@c EN
 Incomplete strings should be regarded as an exceptional case.
 It used to be a way to handle byte strings, but now we have
 u8vector (@xref{Uniform vectors}) for that purpose.
 In fact, we're planning to remove it in the future releases.
+@c JP
+不完全文字列は例外的な状況であるとみなすべきです。これまではバイト列処
+理使っていましたが、現在はu8vector (@ref{Uniform vectors}参照)を使うこ
+とができますので、将来のリリースでは削除する計画です。
+@c COMMON
 
+@c EN
 Just in case, if you happen to get an incomplete string,
 you can convert it to a complete string by the following 
 procedure:
+@c JP
+万が一、不完全文字列に出会ってしまったら以下の手続を使って完全文字列に
+変換することができます。
+@c COMMON
 
 @defun string-incomplete->complete str &optional handling
+@c EN
 Reinterpret the content of an incomplete string @var{str}
 and returns a newly created complete string from it.
-
+@c JP
+不完全文字列@var{str}の内容を再解釈して、あらたに完全文字列を返す。
+@c COMMENT
+@c EN
 The @var{handling} argument specifies how to handle the illegal
 byte sequences in @var{str}.
-
+@c JP
+@var{handling}引数で@var{str}中の不正なバイト列の扱いかたを指定します。
+@c COMMENT
 @table @asis
 @item @code{#f}
+@c EN
 If @var{str} contains an illegal byte sequence, give up the
 conversion and returns @code{#f}.  This is the default behavior.
+@c JP
+@var{str}が不正なバイト列を含んでいる場合、変換を諦めて@code{#f}を返し
+ます。これがデフォルトのふるまいです。
+@c COMMENT
 @item @code{:omit}
+@c EN
 Omit any illegal byte sequences.  Always returns a complete string.
+@c JP
+不正なバイト列を捨てます。常に完全文字列を返します。
+@c COMMENT
+@c EN
 @item a character
 Replace each byte in illegal byte sequences by the given character.
 Always returns a complete string.
+@c JP
+@item 1文字
+不正なバイト列中の各バイトを与えた文字で置き換えます。常に完全文字列を
+返します。
+@c COMMENT
 @end table
-
+@c EN
 If @var{str} is already a complete string, its copy is returned.
+@c JP
+@var{str}が完全文字列なら，そのコピーが返されます．
+@c COMMON
 @end defun
-
-
 
 @c ----------------------------------------------------------------------
 @node Regular expression, Vectors, Strings, Core library
