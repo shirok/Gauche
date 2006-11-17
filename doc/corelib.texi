@@ -3287,7 +3287,7 @@ u8vector (@xref{Uniform vectors}) for that purpose.
 In fact, we're planning to remove it in the future releases.
 @c JP
 不完全文字列は例外的な状況であるとみなすべきです。これまではバイト列処
-理使っていましたが、現在はu8vector (@ref{Uniform vectors}参照)を使うこ
+理を使っていましたが、現在はu8vector (@ref{Uniform vectors}参照)を使うこ
 とができますので、将来のリリースでは削除する計画です。
 @c COMMON
 
@@ -12920,14 +12920,26 @@ This may be just a @code{"/dev/tty"}.   See also @code{sys-ttyname}.
 @end defun
 
 @defun sys-strerror errno
+@c EN
 @var{Errno} must be an exact nonnegative integer representing
 a system error number.  This function returns a string describing
 the error.
+@c JP
+@var{error}はシステムエラー番号を表現する非負正確整数でなければなりま
+せん。この関数はエラーを説明する文字列を返します。
+@c COMMON
 
+@c EN
 To represent @var{errno}, the following constants are defined.
 Each constant is bound to an exact integer representing the system's
 error number.  Note that the actual value may differ among systems,
 and some of these constants may not be defined on some systems.
+@c JP
+@var{errno}を表現するのに、以下の定義済み定数が使えます。各定数はシス
+テムエラーを表現する非負正確整数に束縛されています。実際の値はシステム
+ごとに違い、またシステムによっては定義されていない定数があるということ
+に注意してください。
+@c COMMON
 
 @example
 E2BIG             EHOSTDOWN         ENETDOWN          ENXIO
