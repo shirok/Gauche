@@ -3341,7 +3341,7 @@ Always returns a complete string.
 @c EN
 If @var{str} is already a complete string, its copy is returned.
 @c JP
-@var{str}が完全文字列なら，そのコピーが返されます．
+@var{str}が完全文字列なら、そのコピーが返されます。
 @c COMMON
 @end defun
 
@@ -5269,8 +5269,12 @@ Partial application versions of @code{apply}, @code{map} and @code{for-each}.
 @defunx every$ pred
 @defunx delete$ pred
 @defunx assoc$ item
+@c EN
 Partial application versions of some srfi-1 procedures
 (@xref{List library}).
+@c JP
+SRFI-1(@ref{List library}参照)の手続に対応する部分適用版手続。
+@c COMMON
 @end defun
 
 @defun compose f @dots{}
@@ -6011,41 +6015,79 @@ Scheme の他の@code{*-ref} 手続きと合わせるためです。
 @subsection  Delayed evaluation
 @c NODE 遅延評価
 
+@c EN
 Gauche provides an extended lazy evaluation mechanism according
 to srfi-45.  Instead of two primitives as R5RS, we have three:
 @code{lazy}, @code{delay}, and @code{force}.
+@c JP
+GaucheではSRFI-45による拡張された遅延評価機構を用意しています。R5RSの
+ふたつのプリミティブではなく、@code{lazy}、@code{delay}、@code{force}
+の3つのプリミティブがあります。
+@c COMMON
 
+@c EN
 It is found that the traditional mechanism that uses only
 @code{delay} and @code{force} didn't mix well with tail-recursive
 algorithms: It required unbound memory, despite that the
 body of the algorithm could be expressed in iterative manner.
 For the detailed explanation please look at the srfi-45 document.
 Here we explain how to use those primitives.
+@c JP
+伝統的な@code{delay}および@code{force}だけを使ったのでは末尾再帰的なア
+ルゴリズムとの相性がよくないことがわかっています。末尾再帰的なアルゴリ
+ズムの本体が反復的に表現できるにもかかわらず、メモリを際限なく要求して
+しまいます。詳しい説明はSRFI-45のドキュメントを見てください。ここでは3
+つのプリミティブの使い方を説明します。
+@c COMMON
 
 @defspec lazy expression
 @defspecx delay expression
 [SRFI-45][R5RS]
+@c EN
 These forms creates a @emph{promise} that delays the evaluation
 of @var{expression}.  @var{Expression} will be evaluated
 when the promise is passed to @code{force}.
+@c JP
+これらの形式は@var{expression}の評価を遅延する@emph{プロミス}を生成し
+ます。@var{Expression} はこのプロミスが@code{force}にわたったときに評
+価されます。
+@c COMMON
 
+@c EN
 If @var{expression} itself is expected to yield a promise,
 you should use @code{lazy}.  Othewise, you should use @code{delay}.
 If you can think in types, the difference may be clearer.
+@c JP
+@var{expression}自身がプロミスを評価するようになっている場合には、
+@code{lazy}を使うべきです。そうでなければ、@code{delay}を使うべきです。
+型で考えればその違いは明白でしょう。
+@c COMMON
 
 @example
 lazy  : Promise a -> Promise a
 delay : a -> Promise a
 @end example
 
+@c EN
 Since we don't have static typing, we can't enforce this usage.
 The programmer has to choose appropriate one from the context.
 Generally, @code{lazy} appearers only to surround the entire
 body of function that express a lazy algorithm.
+@c JP
+Schemeでは静的な型付けをしないので、この使い分けを強制することができま
+せん。文脈にしたがってプログラマが適切に選択する必要があります。一般的
+には@code{lazy}は遅延アルゴリズムを表現している関数本体全体を囲む場合
+にのみ出現します。
+@c COMMON
 
+@c EN
 For the real-world example of use of @code{lazy},
 you may want to check the implementation of @code{util.stream}
 (@xref{Stream library}).
+@c JP
+@code{lazy}の実用的な使用例については@code{util.stream}(@ref{Stream
+library}参照)の実装をチェックするといいでしょう。
+@c COMMON
 @end defspec
 
 @defun force promise
@@ -6079,11 +6121,18 @@ Returns @code{#t} iff @var{obj} is a promise object.
 @c COMMON
 @end defun
 
+@c EN
 The following example represents Fibonacci numbers by
 a lazy list.   The list @code{fib} is calculated by
 adding @code{fib} itself shifted one element.
 Since it uses cached result of previous elements, calculation
 of n-th Fibonacci number can be done in O(n).
+@c JP
+以下の例は遅延リストによるFibonacci数です。リスト@code{fib}は
+@code{fib}自身に1要素シフトして@code{fib}を足し合せることで計算されま
+す。直前の要素をキャッシュとして使っているので、n番目のFibonacci数の計
+算はO(n)ですみます。
+@c COMMON
 
 @example
 (define (lcar lis)   ;; lazy car
@@ -6110,12 +6159,16 @@ of n-th Fibonacci number can be done in O(n).
       987 1597 2584 4181 6765)
 @end example
 
+@c EN
 Note that, although it is elegant, it also requires O(n) storage
 even when you only need n-th Fibonacci number.  That's because
 the @code{delay} expression in the tail of @code{fibs} is grabbing
 the head of @code{fibs} list and never releases it.
-
-
+@c JP
+これはエレガントな例ですが、n番目のFibonacci数を求めるのにO(n)の空間が
+必要になるということに注意してください。これは、@code{fibs}の末尾にあ
+る@code{delay}式が@code{fibs}リストの先頭を掴んだまま離さないからです。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Exceptions, Eval and repl, Control features, Core library
