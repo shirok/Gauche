@@ -684,7 +684,7 @@ Gaucheコアはビットシフトおよびマスク操作を提供しています。
 @ref{Bitwise operations}を見てください。
 @c COMMON
 
-@node Naming convention of libraries, Library directory - bits and bytes, Finding libraries you need, Library modules - Overview
+@node Naming convention of libraries, ,Finding libraries you need, Library modules - Overview
 @section Naming convention of libraries
 @c NODE ライブラリの命名規則
 
