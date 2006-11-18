@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.35 2006-07-04 10:42:52 shirok Exp $
+;;;  $Id: dbi.scm,v 1.36 2006-11-18 01:09:48 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -66,7 +66,7 @@
 
 ;; Failed to load the specified driver
 (define-condition-type <dbi-nonexistent-driver-error> <dbi-error> #f
-  ((driver-name :init-keyword :driver-name)))
+  (driver-name))
 
 ;; Feature not supported
 (define-condition-type <dbi-unsupported-error> <dbi-error> #f)

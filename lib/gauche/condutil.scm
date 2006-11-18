@@ -30,12 +30,13 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: condutil.scm,v 1.8 2005-04-12 01:42:24 shirok Exp $
+;;;  $Id: condutil.scm,v 1.9 2006-11-18 01:09:48 shirok Exp $
 ;;;
 
 ;; Defines some condition-related primitives.
 
 (define-module gauche.condutil
+  (use util.match)
   (export make-condition-type condition-type?
           make-condition condition-ref extract-condition
           define-condition-type condition
@@ -98,42 +99,31 @@
 ;; we extend srfi-35 to allow #f as predicate and accessors, as well as
 ;; omitting accessors.
 
-(define-syntax define-condition-type
-  (syntax-rules ()
-    ;; extended - #f in predicate
-    ((define-condition-type name super #f . field-spec)
-     (define-condition-type-rec name super () field-spec))
-    ;; srfi-35
-    ((define-condition-type name super pred . field-spec)
-     (begin
-       (define-condition-type-rec name super () field-spec)
-       (define (pred obj) (condition-has-type? obj name))))
-    ((_ . other)
-     (syntax-error "malformed define-condition-type:"
-                   (define-condition-type . other)))))
-
-(define-syntax define-condition-type-rec
-  (syntax-rules ()
-    ;; end recursion - define the class
-    ((define-condition-type-rec name super slots ())
-     (define-class name (super) slots :metaclass <condition-meta>))
-    ;; extended - #f accessor, or omitting accessor
-    ((define-condition-type-rec name super (slot ...)
-       ((field #f) . more-fields))
-     (define-condition-type-rec name super (slot ... field) more-fields))
-    ((define-condition-type-rec name super (slot ...)
-       ((field) . more-fields))
-     (define-condition-type-rec name super (slot ... field) more-fields))
-    ;; srfi-35 - generate accessor
-    ((define-condition-type-rec name super (slot ...)
-       ((field reader) . more-fields))
-     (begin
-       (define (reader obj) (condition-ref obj 'field))
-       (define-condition-type-rec name super (slot ... field)
-         more-fields)))
-    ((_ name super slots (badfield . more))
-     (syntax-error "bad field spec for define-condition-type:" badfield))
-    ))
+(define-macro (define-condition-type name super pred . field-specs)
+  (define (badfield-error field)
+    (error "bad field spec for define-condition-type:" field))
+  (define (scan-specs specs slots readers)
+    (match specs
+      [() (emit-defs slots readers)]
+      [((field #f) . rest)
+       (scan-specs rest (cons field slots) readers)]
+      [((field) . rest)
+       (scan-specs rest (cons field slots) readers)]
+      [((field reader) . rest)
+       (scan-specs rest (cons field slots)
+                   (cons `(define (,reader obj) (condition-ref obj ',field))
+                         readers))]
+      [_ (badfield-error (car slots))]))
+  (define (emit-defs slots readers)
+    `(begin
+       (define-class ,name (,super)
+         ,(map (lambda (s) `(,s :init-keyword ,(make-keyword s))) slots)
+         :metaclass <condition-meta>)
+       ,@readers
+       ,@(if pred
+           `((define (,pred obj) (condition-has-type? obj ,name)))
+           '())))
+  (scan-specs field-specs '() '()))
 
 (define-syntax condition
   (syntax-rules ()

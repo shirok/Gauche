@@ -1,6 +1,6 @@
 ;; test exception handling system 
 ;; this must come after primsyn, error, macro and object tests.
-;; $Id: exception.scm,v 1.10 2006-11-09 10:32:20 shirok Exp $
+;; $Id: exception.scm,v 1.11 2006-11-18 01:09:48 shirok Exp $
 
 (use gauche.test)
 (test-start "exceptions")
@@ -158,6 +158,13 @@
   (set! v5 (make-compound-condition v2 v3))
   (test* "v5" '(#t #t #t "V2" "a3" "b2")
          (list (c? v5) (c1? v5) (c2? v5) (c-x v5) (c1-a v5) (c2-b v5)))
+
+  (test* "error (&c1)" "ok"
+         (with-error-handler
+             (lambda (e)
+               (and (is-a? e &c1)
+                    (slot-ref e 'a)))
+           (lambda () (error &c1 :a "ok"))))
   )
 
 ;;--------------------------------------------------------------------

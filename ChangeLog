@@ -1,3 +1,9 @@
+2006-11-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/condutil.scm (define-condition-type): automatically add
+	  :init-keyword to slots, for the convenience.  Based on the patch
+	  from Rui Ueyama.
+
 2006-11-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c (Scm__InternalClassName): make sure to return a string,
