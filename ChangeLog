@@ -1,5 +1,10 @@
 2006-11-17  Shiro Kawai  <shiro@acm.org>
 
+	* src/main.c (main): the change to use the new Scm_Apply was
+	  incorrect; (1) it returns exit_code == 0 when 'main' returns
+	  non-integer, and (2) it exits silently when non-captured
+	  error occurs.
+
 	* lib/gauche/condutil.scm (define-condition-type): automatically add
 	  :init-keyword to slots, for the convenience.  Based on the patch
 	  from Rui Ueyama.
