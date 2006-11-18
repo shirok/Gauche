@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.15 2006-11-13 08:44:29 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.16 2006-11-18 01:04:20 shirok Exp $
 
 @iftex
 @finalout
@@ -369,6 +369,9 @@ or
 
 @node The VM, CPS API, Memories, Fundamental concepts
 @section The VM
+
+
+
 
 @node CPS API,  , The VM, Fundamental concepts
 @section CPS API
@@ -997,6 +1000,7 @@ enum ScmRoundMode @{
 @end deftp
 
 @deftypefun ScmObj Scm_Round (ScmObj @var{num}, int @var{mode})
+Round a real number @var{num} to an integer.
 @end deftypefun
 
 

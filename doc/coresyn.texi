@@ -44,8 +44,6 @@ Either integral part or fraction part of inexact real numbers can be omitted
 if it is zero, i.e. @code{30.}, @code{.25}, @code{-.4} are read as 
 real numbers. 
 The number reader recognizes '@code{#}' as insignificant digits.
-Rational number syntax is recognized (e.g. @code{1/3}), but read as 
-an inexact real number.
 Complex numbers can be written both in the rectangular format
 (e.g. @code{1+0.3i}) and in the polar format (e.g. 3.0@@1.57).
 @c JP
@@ -53,8 +51,6 @@ Complex numbers can be written both in the rectangular format
 不正確な実数の整数部または小数部のいずれかが0の場合、それを省略することが
 できます。例：@code{30.}, @code{.25}, @code{-.4}。
 数値のリーダは、パディングの'@code{#}'を認識します。
-有理数表記 (例：@code{1/3}) は認識されますが、読み込み時に不正確な実数へと
-変換されます。
 複素数表記は直交座標形 (例：@code{1+0.3i}) でも極座標形 (例：3.0@@1.57) でも
 認識されます。
 @c COMMON
