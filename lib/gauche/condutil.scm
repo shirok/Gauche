@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: condutil.scm,v 1.9 2006-11-18 01:09:48 shirok Exp $
+;;;  $Id: condutil.scm,v 1.10 2006-11-18 04:59:33 shirok Exp $
 ;;;
 
 ;; Defines some condition-related primitives.
@@ -113,7 +113,7 @@
        (scan-specs rest (cons field slots)
                    (cons `(define (,reader obj) (condition-ref obj ',field))
                          readers))]
-      [_ (badfield-error (car slots))]))
+      [_ (badfield-error (car specs))]))
   (define (emit-defs slots readers)
     `(begin
        (define-class ,name (,super)
