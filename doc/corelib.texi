@@ -7596,6 +7596,9 @@ When @code{define-condition-type} is expanded into a class
 definition, each slot gets a @code{:init-keyword} slot option
 with the keyword whose name is the same as the slot name.
 @c JP
+@code{define-condition-type}がクラス定義に展開される際に、
+各スロットは@code{:init-keyword}スロットオプションにスロット名と
+同名のキーワードを取るように定義されます。
 @c COMMON
 @end defmac
 
