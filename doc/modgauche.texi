@@ -3248,6 +3248,7 @@ error exception by @code{report-error}.
 @end defivar
 
 @defivar <listener> fatal-handler
+@c EN
 A procedure that takes one argument, an error exception.
 It is called when a @emph{fatal} error occurred (see below
 for the precise definition).  If this handler is
@@ -3257,11 +3258,29 @@ is to log such condition or to clean up the listener.
 During the execution of @var{fatal-handler}, the current input, output
 and error ports are restored to the ones when
 @code{listener-read-handler} is called.
+@c JP
+エラー例外をひとつの引数としてとる手続です。
+@emph{fatal}エラー(詳しい定義については後述)が発生したときに呼び出され
+ます。このハンドラが呼び出された場合、リスナーセッションは安全に続ける
+ことはできないと思ってください。クライアントへのメッセージを書くことで
+も続けられません。このハンドラはこういう状況でログを残したりリスナーの
+クリーンアップするためのものです。@var{fatal-handler}を実行中は現在の
+入力、出力、エラー出力は@code{listener-read-handler}が呼ばれたときに
+元に戻ります。
+@c COMMON
 
+@c EN
 If @var{fatal-handler} returns @code{#f}, @var{finalizer} is
 called afterwards.  With this, you can implement a common
 cleanup work in @var{finalizer}.  If @var{fatal-handler} returns
 a true value, @var{finalizer} will not be called.
+@c JP
+@var{fatal-handler}が@code{#f}を返す場合、@var{finalizer}は後で呼ばれ
+ます。これを利用して@var{finalizer}で共通のクリーンアップを実行するよ
+うな実装ができます。@var{fatal-handler}が真の値を返した場合には、
+@var{finalizer}ha呼ばれません。
+@c COMMON
+
 @end defivar
 
 @end deftp
@@ -3361,13 +3380,21 @@ This procedure may raise an error if the input contains
 @c COMMON
 @end defun
 
-
+@c EN
 @subheading Error handling
+@c JP
+@subheading エラー処理
+@c COMMON
 
+@c EN
 There are a few error situations the listener handles diffetently.
+@c JP
+エラー状況によりリスナーのエラー処理法が異ります。
+@c COMMON
 
 @itemize @bullet
 @item
+@c EN
 @emph{Fatal error} - An error situation that the listener session 
 can no longer go on safely.  You cannot even tell so to the
 listener client, since the connection to the client may be broken.
@@ -3378,26 +3405,64 @@ of the input isn't count as fatal, and handled as REPL error described
 below.), (2) a @code{SIGPIPE} signal is raised during writing to
 @var{output-port}, or (3) an unhandled error occurred during executing
 @var{error-handler}.
+@c JP
+@emph{致命的エラー} - もはやリスナーセッションを安全に続けることが不可
+能ななエラー状況です。リスナーのクライアントとの接続が切れてしまうこと
+になるので、状況を知らせることもできません。できることはリスナーセッショ
+ンをクリーンアップする(たとえばハンドラを削除する)ことだけです。このエ
+ラーは以下の場合に発生します。(1) @var{input-port}からの読み込み中に低
+レベルのシステムエラーが発生した場合。(入力の構文エラーは致命的エラー
+とはみなさず、後述のREPLエラーとして処理されます。) (2)
+@var{output-port} へ書き出し中に @code{SIGPIPE} シグナルがあがった場合
+(3) @var{error-handler} を実行中に処理未設定エラーが発生した場合。
+@c COMMON
 
+@c EN
 When this situation happens, the @var{fatal-handler} is called
 if it is given.  If @var{fatal-handler} returns @code{#f}, or
 @var{fatal-handler} isn't given, @var{finalizer} is also called.
+@c JP
+このような状況が起こると、@var{fatal-handler}が与えられていればそれが
+呼ばれます。@var{fatal-handler}が@code{#f}を返すか、
+@var{fatal-handler}が与えられていなければ、@var{finalizer}が呼ばれます。
+@c COMMON
 
 @item
+@c EN
 @emph{Leaked error} - If an error occurrs during executing
 @var{fatal-handler} or @var{finalizer}, we don't have no more
 safety net.  The error is 'leaked' outside the listener handler,
 and should be handled by the user of @code{gauche.listener}.
+@c JP
+@emph{リークエラー} - @var{fatal-handler}あるいは@var{finalizer}を実行
+中にエラーが起こるともはやセーフティネットはありません。このエラーはリ
+スナーハンドラの外に漏れだしますので、@code{gauche.listener}のユーザが
+自ら処理しなければなりません。
+@c COMMON
 
+@c EN
 Generally this situation should be considered as a bug of
 the program; you should make sure to catch foreseeable errors within
 @var{fatal-handler} and @var{finalizer}.
+@c JP
+一般的にはこのような状況はプログラムのバグだと考えるべきです。したがっ
+て、想定されたエラーとして@var{fatal-handler}および@var{finalizer}内で
+捕捉されるべきです。
+@c COMMON
 
 @item
+@c EN
 @emph{REPL error} - Other errors are handled by @var{error-handler}.
+@c JP
+@emph{REPLエラー} - @var{error-handler}で処理されるその他のエラー
+@c COMMON
 @end itemize
 
+@c EN
 @subheading Listener example
+@c JP
+@subheading リスナーの例
+@c COMMON
 
 @c EN
 The following code snippet opens a server socket, and opens
