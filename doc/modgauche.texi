@@ -7909,25 +7909,43 @@ This function is available only if the system supports @code{forkpty(3)}.
 可能です。
 @c COMMON
 
-
+@c EN
 Note: @code{sys-forkpty} has the same MT hazard as @code{sys-fork}
 (see @ref{Unix process management}, for details).  If you're
 running multiple threads, use @code{sys-forkpty-and-exec} below.
+@c JP
+注意: @code{sys-forkpty}には@code{sys-fork}と同様のマルチスレッドハザー
+ドの危険性があります。(詳細については@ref{Unix process management}参照
+してください)。マルチスレッドプログラムでは後述の
+@code{sys-forkpty-and-exec}を利用してください。
+@c COMMON
 @end defun
 
 @defun sys-forkpty-and-exec command args &keyword iomap term sigmask
+@c EN
 Does @code{sys-forkpty}, and lets the child process
 immediately @code{exec}s the specified @var{command}
 with arguments @var{args}.   This function doesn't have
 the hazard in multi-thread environment.
+@c JP
+@code{sys-forkpty}して、ただちに指定した@var{command}を引数
+@var{args}で子プロセスで@code{exec}します。この関数にはマルチスレッド
+環境でもハザードを起こしません。
+@c COMMON
 
+@c EN
 The meanings of arguments @var{command}, @var{args}, @var{iomap} and
 @var{sigmask}
 are the same as @code{sys-exec} (see @ref{Unix process management}).
 If the keyword argument @var{term} is given, it is used to initialize
 the slave pty.
+@c JP
+引数@var{command}、@var{args}、@var{iomap}、@var{sigmask}の意味は
+@code{sys-exec}のものと同じです。(@ref{Unix process management}を見て
+ください)。キーワード引数@var{term}が与えられれば、スレーブptyの初期化
+に使われます。
+@c COMMON
 @end defun
-
 
 @c EN
 The following example shows how to get a password from the user
