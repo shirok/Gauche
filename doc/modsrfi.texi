@@ -2735,8 +2735,12 @@ is allowed, but not required, to modify @var{base-cs} to store the result.
 @defun char-set-adjoin char-set char1 @dots{}
 @defunx char-set-adjoin! char-set char1 @dots{}
 [SRFI-14]
+@c EN
 Returns a character set that adds @var{char1} @dots{} to
 @var{char-set}.
+@c JP
+@var{char-set}に@var{char1} @dots{}を加えた文字集合を返します。
+@c COMMON
 @end defun
 
 @defun char-set-delete char-set char1 @dots{}
@@ -3331,13 +3335,25 @@ UTC 形式から様々な様式の日付/時間に変換します。
 
 @defun date->string date &optional format-string
 [SRFI-19+]
+@c EN
 Converts a @code{<date>} object to a string, according
 to the format specified by @var{format-string}.
 If @var{format-string} is omitted, @code{"~c"} is assumed.
+@c JP
+@code{<date>}オブジェクトを文字列に変換します。書式は
+@var{format-string}で指定します。@var{format-string}が省略された場合に
+は@code{"~c"}が指定されたものとします。
+@c COMMON
 
+@c EN
 A format string is copied to output, except a sequence begins with
 @code{~} which is replaced with the following rules:
+@c JP
+書式文字列は出力にコピーされます。ただし、@code{~}で始まる並びの部分は
+以下の規則にしたがって書き換えられます。
+@c COMMON
 
+@c EN
 @table @code
 @item ~~
 A literal @code{~}.
@@ -3368,9 +3384,9 @@ Hour, zero padded, 12-hour clock (01...12).
 @item ~j
 Day of year, zero padded.
 @item ~k
-Hour, blank padded, 24-hour clock (00...23).
+Hour, blank padded, 24-hour clock ( 0...23).
 @item ~l
-Hour, blank padded, 12-hour clock (01...12).
+Hour, blank padded, 12-hour clock ( 1...12).
 @item ~m
 Month, zero padded (01...12).
 @item ~M
@@ -3392,17 +3408,17 @@ Horizontal tab.
 @item ~T
 Time, 24 hour clock, same as "~H:~M:~S".
 @item ~U
-Week number of year with Sunday as first day of week (00...53).
+Week number of year with Sunday as first day of week (01...53).
 @item ~V
-Week number of year with Monday as first day of week (01...52).
+Week number of year with Monday as first day of week (00...52).
 @item ~w
 Day of week (0...6).
 @item ~W
-Week number of year with Monday as first day of week (01...52).
+Week number of year with Monday as first day of week (00...52).
 @item ~x
-Week number of year with Monday as first day of week (00...53).
-@item ~X
 Locale's date representation, for example: "07/31/00".
+@item ~X
+Locale's time representation, for example: "06:51:44".
 @item ~y
 Last two digits of year (00...99).
 @item ~Y
@@ -3422,18 +3438,120 @@ ISO-8601 year-month-day-hour-minute-second-timezone format.
 @item ~5
 ISO-8601 year-month-day-hour-minute-second format.
 @end table
+@c JP
+@table @code
+@item ~~
+文字@code{~}そのもの。
+@item ~a
+ロケールによる曜日省略形(Sun...Sat)
+@item ~A
+ロケールによる曜日完全形(Sunday...Saturday)
+@item ~b
+ロケールによる月省略形(Jan...Dec)
+@item ~B
+ロケールによる月完全形(January...December)
+@item ~c
+ロケールによる日付時刻(たとえば、"Fri Jul 14 20:28:42-0400 2000")
+@item ~d
+月日にち、0を補填(01...31)
+@item ~D
+日付(mm/dd/yy)
+@item ~e
+月日にち、空白補填( 1...31)
+@item ~f
+秒 + 小数秒、小数点はロケールによるセパレータ(たとえば、5.2)
+@item ~h
+~b に同じ
+@item ~H
+時、0を補填、24時制(00...23)
+@item ~I
+時、0を補填、12時制(01...12)
+@item ~j
+年日にち、0補填(001...366)
+@item ~k
+時、空白補填、24時制( 0...23)
+@item ~l
+時、空白補填、12時制( 1...12)
+@item ~m
+月、0補填、(01...12)
+@item ~M
+分、0補填、(00...59)
+@item ~n
+改行
+@item ~N
+ナノ秒、0補填
+@item ~p
+ロケールによるAM、PM
+@item ~r
+時刻、12時制、"~I:~M:~S ~p"と同じ
+@item ~s
+エポックからの経過秒(UTC)
+@item ~S
+秒、0補填(00...60)
+@item ~t
+水平タブ
+@item ~T
+時刻、24時制、"~H:~M:~S"と同じ
+@item ~U
+年経過週、週は日曜はじまり(01...53)
+@item ~V
+年経過週、週は月曜はじまり(00...52)
+@item ~w
+曜日を表す数字、日曜が0 (0...6)
+@item ~W
+年経過週、週は月曜日はじまり(00...52)
+@item ~x
+ロケールによる日付、例えば、"07/31/00"
+@item ~X
+ロケールによる時刻、24時制、例えば、"06:51:44"
+@item ~y
+西暦の下2桁(00...99)
+@item ~Y
+西暦
+@item ~z
+RFC-2822スタイルのタイムゾーン
+@c @item ~Z
+@c Symbol time zone (not-implemented).
+@item ~1
+ISO-8601 の「年-月-日」形式
+@item ~2
+ISO-8601 の「時-分-秒タイムゾーン」形式
+@item ~3
+ISO-8601 の「時:分:秒」形式
+@item ~4
+ISO-8601 の「西暦-月-日T時:分:秒タイムゾーン」形式
+@item ~5
+ISO-8601 の「西暦-月-日T時:分:秒」形式
+@end table
+@c COMMON
 
+@c EN
 Note: currently Gauche doesn't honor process's locale setting,
 and it always formats the date as if the locale is "C".  It may
 be changed in future, so you shouldn't rely on, for example,
 @code{~a} always formatted as "Sun".."Sat".
+@c JP
+注意：現時点でGaucheはロケールの設定には従っておらず、常にロケールが
+"C" に設定されているものとしてフォーマットします。これについては将来変
+更する可能性がありますので、現在の振舞いを前提として、たとえば、
+@code{~a}が常に"Sun".."Sat"のようにフォーマットされることを前提にプロ
+グラムしてはいけません。
+@c COMMON
 
+@c EN
 There's no portable way to ensure you'll get "C" locale formats
 since there's no standard way to set process's locale yet.
 However, Gauche provides a way to ensure the locale to be "C",
 as an extension to srfi-19.
 Insert @code{@@} between @code{~} and the directive
 character, such as @code{~@@a}.
+@c JP
+いまのところプロセスのロケールを設定する標準的な方法がないので、
+"C"ロケール形式を取得できるかどうかを確かめるポータブルな方法がありま
+せん。とはいえ、Gaucheでは SRFI-19の拡張として"C"ロケールであることを
+確認する方法を提供しています。@code{@@} を @code{~} とディレクティブ文
+字の間に挿入し、@code{~@@a} のようにします。
+@c COMMON
 @end defun
 
 @defun string->date string template-string
