@@ -1,3 +1,10 @@
+2006-11-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (Scm_NewVM): a newly created VM didn't inherit current
+	  ports from the prototype.  This became visible when a new thread
+	  was created when current ports were bound to ports other than
+	  the standard ones.
+
 2006-11-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c (main): the change to use the new Scm_Apply was

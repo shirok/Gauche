@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.256 2006-11-13 22:38:12 shirok Exp $
+ *  $Id: vm.c,v 1.257 2006-11-20 06:06:18 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -162,9 +162,9 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->module = proto ? proto->module : Scm_SchemeModule();
     v->cstack = proto ? proto->cstack : NULL;
     
-    v->curin  = SCM_PORT(Scm_Stdin());
-    v->curout = SCM_PORT(Scm_Stdout());
-    v->curerr = SCM_PORT(Scm_Stderr());
+    v->curin  = proto? proto->curin  : SCM_PORT(Scm_Stdin());
+    v->curout = proto? proto->curout : SCM_PORT(Scm_Stdout());
+    v->curerr = proto? proto->curerr : SCM_PORT(Scm_Stderr());
 
     Scm_ParameterTableInit(&(v->parameters), proto);
 
