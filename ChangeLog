@@ -1,5 +1,9 @@
 2006-11-19  Shiro Kawai  <shiro@acm.org>
 
+	* src/string.c (substring): avoid counting characters when the end
+	  of the substring is equal to the end of the source string.
+	  Patch from Rui Ueyama.
+
 	* src/vm.c (Scm_NewVM): a newly created VM didn't inherit current
 	  ports from the prototype.  This became visible when a new thread
 	  was created when current ports were bound to ports other than

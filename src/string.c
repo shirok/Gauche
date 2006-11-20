@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: string.c,v 1.78 2006-11-08 13:41:48 shirok Exp $
+ *  $Id: string.c,v 1.79 2006-11-20 06:16:45 shirok Exp $
  */
 
 #include <stdio.h>
@@ -856,12 +856,9 @@ ScmObj Scm_StringByteSet(ScmString *x, int k, ScmByte b)
 
 static ScmObj substring(const ScmStringBody *xb, int start, int end)
 {
-    if (start < 0)
-        Scm_Error("start argument needs to be positive: %d", start);
-    if (end > SCM_STRING_BODY_LENGTH(xb))
-        Scm_Error("end argument is out of range: %d", end);
-    if (end < start)
-        Scm_Error("end argument must be equal to or greater than the start argument: start=%d, end=%d", start, end);
+    int len = SCM_STRING_BODY_LENGTH(xb);
+    SCM_CHECK_START_END(start, end, len);
+
     if (SCM_STRING_BODY_SINGLE_BYTE_P(xb)) {
         return SCM_OBJ(make_str(end-start,
                                 end-start,
@@ -871,7 +868,11 @@ static ScmObj substring(const ScmStringBody *xb, int start, int end)
         const char *s, *e;
         if (start) s = forward_pos(SCM_STRING_BODY_START(xb), start);
         else s = SCM_STRING_BODY_START(xb);
-        e = forward_pos(s, end - start);
+        if (len == end) {
+            e = SCM_STRING_BODY_START(xb) + SCM_STRING_BODY_SIZE(xb);
+        } else {
+            e = forward_pos(s, end - start);
+        }
         return SCM_OBJ(make_str(end - start, e - s, s, 0));
     }
 }
@@ -1365,7 +1366,11 @@ ScmObj Scm_MakeStringPointer(ScmString *src, int index, int start, int end)
     } else {
         sptr = forward_pos(SCM_STRING_BODY_START(srcb), start);
         ptr = forward_pos(sptr, index);
-        eptr = forward_pos(sptr, end - start);
+        if (end == len) {
+            eptr = SCM_STRING_BODY_START(srcb) + SCM_STRING_BODY_SIZE(srcb);
+        } else {
+            forward_pos(sptr, end - start);
+        }
         effective_size = eptr - ptr;
     }
     sp = SCM_NEW(ScmStringPointer);
