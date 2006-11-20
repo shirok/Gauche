@@ -11757,6 +11757,7 @@ needs special care.  See the note on finalization below.
 @c COMMON
 @end defivar
 
+@c EN
 Besides those slot values, you can pass an exact nonnegative integer
 as the @code{:buffer-size} keyword argument to the @var{make} method
 to set the size of the port's internal buffer.  If @code{:buffer-size}
@@ -11765,6 +11766,15 @@ is omitted, or zero is passed, the system's default buffer size
 slot and you cannot set it after the instance of the buffered port
 is created.   The following example specifies the buffered port
 to use a buffer of size 64K:
+@c JP
+これらのスロットの値以外に、当該ポートの内部バッファのサイズを設定する
+のには@var{make}メソッドに@code{:buffer-size}というキーワード引数で非
+負の正確な整数を渡します。@code{:buffer-size}が省略されるか、0 が渡さ
+れた場合にはシステムのデフォルトのバッファサイズ(たとえば、8kとか)が使
+われます。@code{:buffer-size}はインスタンススロットではないので、バッ
+ファポートのインスタンスを生成したあとで設定することはできません。以下
+は 64K のバッファを使うバッファの作り方の例です。
+@c COMMON
 
 @example
 (make <buffered-input-port> :buffer-size 65536 :fill my-filler)
@@ -11831,10 +11841,17 @@ Same as @code{<buffered-input-port>}'s @code{seek} slot.
 @c COMMON
 @end defivar
 
+@c EN
 Besides those slot values, you can pass an exact nonnegative integer
 as the @code{:buffer-size} keyword argument to the @var{make} method
 to set the size of the port's internal buffer.  See the description
 of @code{<buffered-input-port>} above for the details.
+@c JP
+これらのスロットの値以外に、当該ポートの内部バッファのサイズを設定する
+のには@var{make}メソッドに@code{:buffer-size}というキーワード引数で非
+負の正確な整数を渡します。詳しくは前述 @code{<buffered-input-port>}
+の項を見てください。
+@c COMMON
 
 @end deftp
 
