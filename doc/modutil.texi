@@ -875,21 +875,41 @@ gosh> #i1/3
 
 @node Database independent access layer, Generic DBM interface, Rational-less arithmetic, Library modules - Utilities
 @section @code{dbi} - Database independent access layer
+@c NODE @code{dbi} - データベース非依存アクセス層
 
 @deftp {Module} dbi
 @mdindex dbi
+@c EN
 This module provides the unified interface to access various 
 relational database systems (RDBMS).  The operations specific
 to individual database systems are packaged
 in database driver (DBD) modules, which is usually loaded
 implicitly by DBI layer.
+@c JP
+このモジュールはさまざまなリレーショナルデータベースシステム(RDBMS)に
+アクセスするための統一されたインタフェースを提供します。個々のデータベー
+スシステムに特有の操作についてはデータベースドライバ(DBD)モジュールに
+パッケージされています。DBDのモジュールは通常暗黙裏にDBIの層からロード
+されます。
+@c COMMON
 
+@c EN
 The module is strongly influenced by Perl's DBI/DBD architecture.
 If you have used Perl DBI, it would be easy to use this module.
+@c JP
+このモジュールは Perl の DBI/DBD アーキテクチャに強く影響を受けていま
+す。Perl DBIを使った経験があるなら、このモジュールを使うのはたやすいで
+しょう。
+@c COMMON
 @end deftp
 
+@c EN
 It's better to look at the example.  This is a simple outline
 of accessing a database by @code{dbi} module:
+@c JP
+まず例を見るほうがよいでしょう。以下は@code{dbi}モジュールを使ったデー
+タベースアクセス例の概要です。
+@c COMMON
 
 @example
 (guard (e ((<dbi-error> e)
@@ -906,6 +926,7 @@ of accessing a database by @code{dbi} module:
          result)))
 @end example
 
+@c EN
 There's nothing specific to the underlying database system
 except the argument @code{"dbi:mysql:test;host=dbhost"}
 passed to @code{dbi-connect}, from which @code{dbi} module
@@ -915,7 +936,18 @@ stuff.  If you want to use whatever database system, you can just
 pass @code{"dbi:@var{whatever}:@var{parameter}"} to @code{dbi-connect}
 instead, and everything stays the same as far as you have
 @code{dbd.whatever} installed in your system.
+@c JP
+@code{dbi-connect}にわたす、@code{"dbi:mysql:test;host=dbhost"}引数以
+外は使用するデータベースシステムに依存する部分はありません。この引数に
+より、@code{dbi}モジュールはこのアクセスが@code{mysql}データベースに対
+するものであると判断します。そして、mysql-特有の手続を扱うようにします。
+別のデータベースシステムwhateverを使いたいのであれば、単に
+@code{"dbi:@var{whatever}:@var{parameter}"}を@code{dbi-connect}に渡せ
+ばよく、@code{dbd.whatever}がシステムにインストールされていれば同じよ
+うにできます。
+@c COMMON
 
+@c EN
 A query to the database can be created by @code{dbi-prepare}.
 You can issue the query by @code{dbi-execute}.  This two-phase
 approach allows you to create a prepared query, which is a kind of
@@ -925,22 +957,54 @@ The actual value is given in @code{dbi-execute}.  When you
 issue similar queries a lot, creating a prepared query and
 execute it with different parameters may give you performance gain.
 Also the parameter is automatically quoted.
+@c JP
+データベースに対するクエリは@code{dbi-prepare}を使って作成します。
+クエリの発行は@code{dbi-execute}で行います。このような2つのフェーズを
+使うことで、パラメータ化されたSQL文の一種であるプリペアドクエリを
+作ることができます。上の例ではクエリはSQL文の中で@code{'?'}で表現され
+ている部分に、ひとつの引数をわりあてます。実引数の値は
+@code{dbi-execute}で設定されます。類似のクエリを大量に発行するような場
+合にはプリペアドクエリをひとつ生成し、それにさまざまなパラメータを渡し
+て実行するとパフォーマンスがかせげます。このパラメータは自動的にクォー
+トされます。
+@c COMMON
 
+@c EN
 When the query is a @code{SELECT} statement,
 its result is returned as a collection that implements 
 the relation protocol.  See @ref{Collection framework}
 and @ref{Relation framework} for the details.
+@c JP
+クエリが@code{SELECT}文の場合、その結果は関係プロトコルを実装するコレ
+クションとして返されます。詳細は@ref{Collection framework}および
+@ref{Relation framework}を見てください。
+@c COMMON
 
+@c EN
 The outermost @code{guard} is to catch errors.  The @code{dbi} related
 errors are supposed to inherit @code{<dbi-error>} condition.
 There are a few specific errors defined in @code{dbi} module.
 A specific @code{dbd} layer may define more specific errors.
+@c JP
+いちばん外側にある@code{guard}はエラーを捕捉するためのものです。
+@code{dbi}に関連したエラーは@code{<dbi-error>}コンディションを継承して
+いるものと見なされます。いくつかの特有のエラーは@code{dbi}モジュールで
+定義されています。特定の@code{dbd}層はさらに固有のエラーを定義していま
+す。
+@c COMMON
 
+@c EN
 In the next section we describe user-level API, that is,
 the procedures you need to concern when you're using @code{dbi}.
 The following section is for the driver API, which you need to use
 to write a specific @code{dbd} driver to make it work with @code{dbi}
 framework.
+@c JP
+次節ではユーザレベルのAPIについて説明します。すなわち、@code{dbi}を使
+う際に必要となる手続に関する説明です。そのあとのセクションではドライバ
+APIを説明をします。すなわち特定の@code{dbd}ドライバを@code{dbi}フレー
+ムワークで使えるようにするために使うAPIの説明です。
+@c COMMON
 
 @menu
 * DBI user API::                
