@@ -3610,7 +3610,6 @@ character, such as @code{~@@a}.
 @c ~Y	char-numeric?	year	date-year
 @c ~z	any	time zone	date-zone-offset@end table
 
-
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -4276,52 +4275,100 @@ A simple example:
 @c ----------------------------------------------------------------------
 @node Eager comprehensions, Vector library, A program argument processor, Library modules - SRFIs
 @section @code{srfi-42} - Eager comprehensions
-@c NODE Eager comprehensions, @code{srfi-42} - Eager comprehensions
+@c NODE Eager comprehensions, @code{srfi-42} - 先行評価的内包表記
 
 @deftp {Module} srfi-42
 @mdindex srfi-42
+@c EN
 This module provides a generic comprehension mechanism, which some other
 languages (e.g. Haskell and Python) provides as a built-in mechanism.
 It provides rich set of operators so it can be used as not only a list
 generator but a generic loop construct (actually, some may say
 it is as powerful/evil as Common Lisp's @emph{loop} macro).
+@c JP
+このモジュールはジェネリックな内包表記(comprehension)機構を提供します。
+この機構は他の言語(Haskell、Pythonなど)では組み込みの機構になっていま
+す。この機構は豊富な操作手続を提供しているので、リストジェネレータとい
+うだけではなく、ジェネリックなループ構文(Common Lisp の @emph{loop} マ
+クロ並みに強力/邪悪だという人もいます)を提供しています。
+@c COMMON
 
+@c EN
 It is also runs eagerly, that is, if it generates a list, it
 creates the entire list when evaluated, instead of generate the
 elements @emph{on demand}.  Thus it can't represent an infinite
 sequence, which Haskell's comprehension naturally can.  In Scheme,
 you can use streams built on top of delayed evaluation for
 such purpose.
+@c JP
+この機構は先行評価的に走ります。すなわち、リストを生成する場合、評価時
+にすべてのリストを生成します。要素を@emph{要求駆動的}に生成するわけで
+はありません。それゆえ、無限列を表現することはできません。それが自然に
+できる Haskell とは違います。Schemeにおいては無限列を扱うのなら遅延評
+価をするように構築されたストリームが使えます。
+@c COMMON
 @end deftp
 
+@c EN
 @subheading Eager comprehension examples
+@c JP
+@subheading 先行評価的内包表記の例
+@c COMMON
 
+@c EN
 Let's begin with some examples.
+@c JP
+いくつかの例からはじめましょう。
+@c COMMON
 
+@c EN
 Generate a list of squares for the first five integers:
+@c JP
+5番目までの整数の自乗のリストを生成しましょう。
+@c COMMON
 @example
 (list-ec (: i 5) (* i i)) @result{} (0 1 4 9 16)
 @end example
 
+@c EN
 Generate set of pair of numbers @code{(x y)}, where @code{x}
 is between 2 (inclusive) and 5 (exclusive),
 and @code{y} is between 1 (inclusive) and x (exclusive).
+@c JP
+数の対@code{(x y)}の集合を生成します。ここで@code{x}は
+2以上 5未満、@code{y}は1以上 x 未満です。
+@c COMMON
 @example
 (list-ec (: x 2 5) (: y 1 x) (list x y))
   @result{} ((2 1) (3 1) (3 2) (4 1) (4 2) (4 3))
 @end example
 
+@c EN
 The above two examples can be written in Haskell as the followings:
+@c JP
+上の2つの例はHaskellで書くと以下のようになります。
+@c COMMON
 @example
 [ i*i   | i <- [0..4] ]
 [ (x,y) | x <- [2..4], y <- [1..x-1] ]
 @end example
+@c EN
 Note the differences: (1) In Haskell, the body expression to yield the
 elements comes first, followed by qualifiers (selectors).  In srfi-42, the body
 expression comes last.  (2) In srfi-42, range operator's lower bound
 is inclusive but its upper bound is exclusive.
+@c JP
+違いに注意：(1) Haskellでは要素になる本体部が先にきて、そのあとに修飾
+部(セレクタ)がきます。SRFI-42では本体部は最後になります。(2) SRFI-42で
+は範囲指定の下限はそれを含み、上限はそれを含みません。
+@c COMMON
 
+@c EN
 List a set of numbers @code{(a b c d)}, where @code{a^3+b^3 = c^3+d^3}:
+@c JP
+@code{a^3+b^3 = c^3+d^3}を満すような数字の集合@code{(a b c d)}を列挙し
+ましょう。
+@c COMMON
 @example
 (define (taxi-number n)
   (list-ec (: a 1 n)
@@ -4333,36 +4380,69 @@ List a set of numbers @code{(a b c d)}, where @code{a^3+b^3 = c^3+d^3}:
            (list a b c d)))
 @end example
 
+@c EN
 You can generate not only a list, but other sequences:
+@c JP
+リストだけではなく、他のシーケンスも生成できます。
+@c COMMON
 @example
 (vector-ec (: i 5) i) @result{} #(0 1 2 3 4)
 (string-ec (: i 5) (integer->char (+ i 65))) @result{} "ABCDE"
 @end example
 
+@c EN
 Or apply folding operations:
 @example
-(sum-ec (: i 1 10) i)
-  @result{} 450    ;; sum of integers from 1 below 100.
+(sum-ec (: i 1 100) i)
+  @result{} 4950    ;; sum of integers from 1 below 100.
 (product-ec (: i 1 10) i)
   @result{} 362880 ;; ... and product of them.
 @end example
+@c JP
+畳み込み演算も適用できます。
+@example
+(sum-ec (: i 1 100) i)
+  @result{} 4950    ;; 1以上100未満の整数の和
+(product-ec (: i 1 10) i)
+  @result{} 362880 ;;  1以上10未満の整数の積
+@end example
+@c COMMON
 
+@c EN
 @subheading Comprehension macros
+@c JP
+@subheading 内包表記マクロ
+@c COMMON
 
+@c EN
 Each comprehension takes the following form.
+@c JP
+それぞれの内包表記は以下のような形式になります。
+@c COMMON
 @example
 (@var{comprehension-macro} @var{qualifier} @dots{} @var{body})
 @end example
 
+@c EN
 Evaluates @var{body} repeatedly as specified by @var{qualifier}s.
 Depending on the type of comprehension,
 the results of @var{body} may be either collected to create an 
 aggregate (list, vector, string, ...), folded by some operator
 (sum, product, min, max, ...), or simply discarded.
+@c JP
+@var{qualifier}ごとに@var{body}をくりかえし評価します。内包表記の種類
+によって、@var{body}の結果は(リスト、ベクタ、文字列などに)集約されるか、
+(sum、product、min、maxなどによって)畳み込まれるか、あるいは、単に捨て
+られます。
+@c COMMON
 
+@c EN
 A few comprehensions takes extra values before @var{qualifiers} or
 after @var{bodies}.
-
+@c JP
+いくつかの内包表記では、追加の値が@var{qualifiers}の前か、@var{bodies}
+の後に置かれます。
+@c COMMON
 
 @defmac do-ec qualifier @dots{} body
 [SRFI-42]
