@@ -775,10 +775,12 @@ return #t if the template has variable length elements.
 
 @node Rational-less arithmetic, Database independent access layer, Packing Binary Data, Library modules - Utilities
 @section @code{compat.norational} - Rational-less arithmetic
+@c NODE @code{compat.norational} - 有理数のない算術演算
 
 @deftp {Module} compat.norational
 @mdindex compat.norational
 
+@c EN
 Until release 0.8.7, Gauche didn't have exact rational numbers.
 It was able to read the rational number literals such as
 @code{2/3}, but they are immediately coerced to inexact real
@@ -786,27 +788,51 @@ numbers (except when it represents a whole integer).
 And if you divided an exact integer by another exact integer,
 the result could be coerced to an inexact real if the result
 wasn't a whole integer.
+@c JP
+リリース 0.8.7 までは、Gauche は正確な有理数をサポートしていませんでし
+た。@code{2/3}のような有理数リテラルを読み込むことはできていましたが、
+約分して整数になる場合をのぞいては、その場で不正確な実数に変換されてい
+ました。正確な整数を正確な整数で割った場合も約分して整数になる場合をの
+ぞき、結果は不正確な実数になりました。
+@c COMMON
 
+@c EN
 As of 0.8.8, this is not the case anymore.  Exact division
 always yields exact result, except when the divisor is zero.
-
+@c JP
+リリース 0.8.8 ではもうこのようなことはありません。正確な数同士の割り
+算の結果は常に正確な数になります。ゼロで割ったときはもちろん例外です。
+@c COMMON
 @example
 (/ 2 3)  @result{} 2/3
 (/ 5)    @result{} 1/5
 (/ 4 2)  @result{} 2
 @end example
 
+@c EN
 This is more precise, but has one drawback: exact rational
 arithmetic is much slower than the integer and inexact real
 arithmetic.  If you inadvertently produce
 a rational number in the early stage of calculation, and
 continue to apply exact arithmetic, performance would be
 degraded miserably.
+@c JP
+計算は正確な値でできますが、ひとつ欠点もあります。正確有理数演算は整
+数演算や不正確実数同士の演算にくらべてはるかに遅いのです。意図せず、計
+算の初期段階で有理数を生成してしまうとその後の計算にはすべて正確な演算
+が適用されてしまい性能は悲惨なことになります。
+@c COMMON
 
+@c EN
 The proper way to solve this is to insert @code{exact->inexact}
 to appropriate places.  However, to ease the transition, you can
 just import this module and the division @code{/} behaves
 in the way it used to.
+@c JP
+この問題を解決する適切は方法は適切な場所に@code{exact->inexact}を挿入
+することです。しかし、この変換を簡単におこなうには、このモジュールをイ
+ンポートし、割り算に@code{/}を使うだけですみます。
+@c COMMON
 
 @example
 (use compat.norational)
@@ -816,15 +842,27 @@ in the way it used to.
 (/ 4 2)  @result{} 2
 @end example
 
+@c EN
 The effect is not global, but only to the modules you explicitly
 import @code{compat.norational}.
+@c JP
+効果はグローバルには起こらず、明示的に@code{compat.norational}をインポー
+トしたモジュールでのみ有効です。
+@c COMMON
 
+@c EN
 This module only redefines @code{/}.  So if your code has
 exact rational literals, they are treated as exact rationals
 rather than coerced to inexact reals.  You should prefix
 rational literals with @code{#i} to force Gauche to coerce
 them to inexact reals:
-
+@c JP
+このモジュールは@code{/}を再定義しているだけです。したがって、コードに
+正確な有理数のリテラルが含まれていても、それは不正確な実数に変換される
+ことはなく、正確な有理数としてあつかわれます。Gaucheに不正確な実数とし
+て有理数リテラルを扱わせるには、@code{#i}という接頭辞を追加しなければ
+なりません。
+@c COMMON
 @example
 gosh> 1/3
 1/3
