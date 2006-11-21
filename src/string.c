@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: string.c,v 1.79 2006-11-20 06:16:45 shirok Exp $
+ *  $Id: string.c,v 1.80 2006-11-21 02:48:22 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1369,7 +1369,7 @@ ScmObj Scm_MakeStringPointer(ScmString *src, int index, int start, int end)
         if (end == len) {
             eptr = SCM_STRING_BODY_START(srcb) + SCM_STRING_BODY_SIZE(srcb);
         } else {
-            forward_pos(sptr, end - start);
+            eptr = forward_pos(sptr, end - start);
         }
         effective_size = eptr - ptr;
     }
