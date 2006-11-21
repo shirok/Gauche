@@ -4561,15 +4561,25 @@ after @var{bodies}.
 @c ----------------------------------------------------------------------
 @node Vector library, Requiring extensions, Eager comprehensions, Library modules - SRFIs
 @section @code{srfi-43} - Vector library
-@c NODE Vector library, @code{srfi-43} - Vector library
+@c NODE Vector library, @code{srfi-43} - ベクタライブラリ
 
 @deftp {Module} srfi-43
 @mdindex srfi-43
+@c EN
 This module provides library functions for vectors.
 Some of srfi-43 procedures are built-in; see @ref{Vectors}.
+@c JP
+このモジュールはベクタ用のライブラリ関数を提供します。
+SRFI-43のいくつかの関数は組み込みになっています。@ref{Vectors}を見てく
+ださい。
+@c COMMON
 @end deftp
 
+@c EN
 @subheading Vector constructors
+@c JP
+@subheading ベクタ構成子
+@c COMMON
 
 @defun vector-unfold f length seed @dots{}
 [SRFI-43]
@@ -4591,7 +4601,11 @@ Some of srfi-43 procedures are built-in; see @ref{Vectors}.
 [SRFI-43]
 @end defun
 
+@c EN
 @subheading Vector predicates
+@c JP
+@subheading ベクタ上の述語
+@c COMMON
 
 @defun vector-empty? vec
 [SRFI-43]
@@ -4601,7 +4615,11 @@ Some of srfi-43 procedures are built-in; see @ref{Vectors}.
 [SRFI-43]
 @end defun
 
+@c EN
 @subheading Iteration over vectors
+@c JP
+@subheading ベクタ上の反復
+@c COMMON
 
 @defun vector-fold kons knil vec1 vec2 @dots{}
 [SRFI-43]
@@ -4627,7 +4645,11 @@ Some of srfi-43 procedures are built-in; see @ref{Vectors}.
 [SRFI-43]
 @end defun
 
+@c EN
 @subheading Vector searching
+@c JP
+@subheading ベクタ上の検索
+@c COMMON
 
 @defun vector-index pred vec1 vec2 @dots{}
 @defunx vector-index-right pred vec1 vec2 @dots{}
@@ -4651,7 +4673,11 @@ Some of srfi-43 procedures are built-in; see @ref{Vectors}.
 [SRFI-43]
 @end defun
 
+@c EN
 @subheading Vector mutators
+@c JP
+@subheading ベクタの変更子
+@c COMMON
 
 @defun vector-swap! vec i j
 [SRFI-43]
@@ -4669,7 +4695,11 @@ Some of srfi-43 procedures are built-in; see @ref{Vectors}.
 [SRFI-43]
 @end defun
 
+@c EN
 @subheading Vector conversion
+@c JP
+@subheading ベクタの変換
+@c COMMON
 
 @defun reverse-vector->list vec &optional start end
 [SRFI-43]
@@ -4682,38 +4712,72 @@ Some of srfi-43 procedures are built-in; see @ref{Vectors}.
 @c ----------------------------------------------------------------------
 @node Requiring extensions,  , Vector library, Library modules - SRFIs
 @section @code{srfi-55} - Requiring extensions
-@c NODE Requiring extensions, @code{srfi-55} - Requiring extensions
+@c NODE Requiring extensions, @code{srfi-55} - require の拡張
 
 @deftp {Module} srfi-55
 @mdindex srfi-55
+@c EN
 This module defines @code{require-extension} macro, a yet another way
 to write portable scripts.  See @ref{Feature conditional} and
 @ref{Feature-based program configuration language} for other means of
 ensuring specific features.
+@c JP
+このモジュールでは @code{require-extension} マクロが定義されています。
+これは、ポータブルなスクリプトを書くためのもうひとつ別の方法です。
+指定した特性を確認する他の方法については、@ref{Feature conditional}
+および@ref{Feature-based program configuration language}を見てください。
+@c COMMON
 
+@c EN
 This module is autoloaded when you use @code{require-extension}, so
 you don't need explicitly say @code{(use srfi-55)}; for portable scripts,
 you shouldn't.
+@c JP
+このモジュールは、@code{require-extension}を使った際に自動的にロードさ
+れます。それゆえ明示的に@code{(use srfi-55)}する必要はありませんし、ポー
+タビリティのためにはするべきではありません。
+@c COMMON
 @end deftp
 
 @defmac require-extension clause @dots{}
+@c EN
 Make extension(s) specified by @var{clause}s available in the rest
 of the program.
+@c JP
+@var{clause}で指定した拡張を以降のプログラムで利用可能にします。
+@c COMMON
 
+@c EN
 A @var{clause} takes the following form:
+@c JP
+@var{clause}は以下の形式になります。
+@c COMMON
 @example
 (@var{extension-id} @var{extension-arg} @dots{})
 @end example
 
+@c EN
 Currently, only @code{srfi} is supported as @var{extension-id}, and
 its arguments are SRFI numbers.
+@c JP
+現時点では、@code{srfi}のみ@var{extension-id}として使えます。その引数
+はSRFIの番号です。
+@c COMMON
 
+@c EN
 For example, the following form:
+@c JP
+たとえば、以下の
+@c COMMON
 @example
 (require-extension (srfi 1 13 14))
 @end example
 
+@c EN
 Roughly correspons to Gauche's @code{use} forms:
+@c JP
+は以下の Gauche の @code{use} 形式にほぼ対応します。
+@c COMMON
 @example
 (use srfi-1)
 (use srfi-13)
