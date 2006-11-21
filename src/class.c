@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.140 2006-11-16 02:23:55 shirok Exp $
+ *  $Id: class.c,v 1.141 2006-11-21 10:20:43 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -3043,6 +3043,7 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_NUMBER,           "<number>");
     CINIT(SCM_CLASS_COMPLEX,          "<complex>");
     CINIT(SCM_CLASS_REAL,             "<real>");
+    CINIT(SCM_CLASS_RATIONAL,         "<rational>");
     CINIT(SCM_CLASS_INTEGER,          "<integer>");
 
     /* port.c */
