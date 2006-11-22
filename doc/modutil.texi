@@ -13171,11 +13171,17 @@ obj @result{} #<my-record 0x819d9b0>
 @c ----------------------------------------------------------------------
 @node Relation framework, Stream library, SLIB-compatible record type, Library modules - Utilities
 @section @code{util.relation} - Relation framework
+@c NODE @code{util.relation} - リレーションフレームワーク
 
 @deftp {Module} util.relation
 @mdindex util.relation
+@c EN
 Provides a set of common operations for relations.
+@c JP
+リレーションに対する共通の操作を提供します。
+@c COMMON
 
+@c EN
 Given set of values S1, S2, ..., Sn, a relation R is a set of tuples
 such that the first element of a tuple is from S1, the second from
 S2, ..., and the n-th from Sn.  In another word, R is a subset of
@@ -13184,14 +13190,32 @@ Cartesian product of S1, ..., Sn.
 from the Codd's 1970 paper, 
 "A Relational Model of Data for Large Shared Data Banks", in
 CACM 13(6) pp.377--387.)
+@c JP
+値の集合を S1, S2, ..., Sn とするとリレーション R はタプルの集合で、
+タプルの最初の要素は S1 からの値で、2番目は S2 から、で n 番目は
+Sn からとなっている。いいかえれば、R は S1, ..., Sn の直積です。
+(この定義と@emph{リレーション}という用語は 1970年のCoddのペーパー
+"A Relational Model of Data for Large Shared Data Banks", in
+CACM 13(6) pp.377--387.によるものです。)
+@c COMMON
 
+@c EN
 This definition can be applied to various datasets: A set of Gauche
 object system instances is a relation, if you view each instance as
 a tuple and each slot value as the actual values.  A list of lists can be a
 relation.  A stream that reads from CSV table produces a relation.
 Thus it would be useful to provide a module that implements generic
 operations on relations, no matter how the actual representation is.
+@c JP
+この定義はいろいろなデータベースセットにあてはまります。各インスタンス
+をタプルとみなし、各スロット値を実際の値と見ると、Gaucheのオブジェクト
+システムの集合はリレーションです。リストのリストもリレーションです。
+CSVテーブルからの読み出しストリームはリレーションを生成します。このよ
+うことから、表現に依存しないリレーション上のジェネリックな操作を実装す
+るモジュールを用意することは有意義です。
+@c COMMON
 
+@c EN
 From the operational point of view, we can treat any datastructure
 that provides the following four methods; @code{relation-rows},
 which retrieves a collection of tuples (rows);
@@ -13200,7 +13224,16 @@ which retrieves a collection of tuples (rows);
 meta-information.
 All the rest of relational operations are built on top of
 those primitive methods.
+@c JP
+操作という観点からいえば、以下の4つのメソッドがあれば、どのようなデー
+タ構造もあつかえます。タプルのコレクション(行)を取り出す
+@code{relation-rows}、それから、@code{relation-column-names}、
+@code{relation-accessor}、@code{relation-modifier}、これらはメタ情報に
+アクセスする方法を提供しています。これ以外のすべてのリレーション操作は
+上のプリミティブメソッドを使って組まれています。
+@c COMMON
 
+@c EN
 A concrete implementation of relation can use duck typing,
 i.e. it doesn't need to inherit a particular base class to
 use the relation methods.  However, for the convenience,
@@ -13210,114 +13243,235 @@ to inherit @code{<relation>} and @code{<collection>} or
 @code{<sequence>}.  Check out the sample implementations
 in the @file{lib/util/relation.scm} in the source tree, if
 you're curious.
+@c JP
+リレーションの具体的な実装にはダックタイピングが適用できます。
+すなわち、リレーションメソッドを使うのに特定のベースクラスを継承する必
+要はありません。しかし、利便のためにこのモジュールには、ベースクラス
+@code{<relation>}が用意されています。これは、ミックスインクラスのよう
+な働きをします。具象クラスは典型的には@code{<relation>}および
+@code{<collection>}または@code{<sequence>}を継承することになるでしょう。
+興味があれば、ソースツリーにある@file{lib/util/relation.scm}に含まれる
+サンプル実装をチェックするとよいでしょう。
+@c COMMON
 
+@c EN
 This module is still under development.
 The plan is to build useful relational operations on top of the
 common methods.
+@c JP
+このモジュールは現時点では開発途上にあります。計画では共通メソッド上に
+有用なリレーション操作関数群を構築することになっています。
+@c COMMON
 @end deftp
 
+@c EN
 @subheading Basic class and methods
+@c JP
+@subheading 基本となるクラスとメソッド
+@c COMMON
 
 @deftp {Class} <relation>
+@c EN
 An abstract base class of relations.
+@c JP
+リレーションの抽象ベースクラス
+@c COMMON
 @end deftp
 
 @deffn {Method} relation-column-names (r <relation>)
+@c EN
 A subclass must implement this method.
 It should return a sequence of names of the columns.
 The type of column names is up to the relation; we don't
 place any restriction on it, as far as they are different
 each other in terms of @code{equal?}.
 @end deffn
+@c JP
+サブクラスではこのメソッドを必ず実装しなければなりません。
+カラムの名前のシーケンスを返す必要があります。カラム名の型はリレーショ
+ンによります。@code{equal?}の意味で相互に異っているかぎり、カラム名に
+ついて特に制限はありません。
+@end deffn
+@c COMMON
 
 @deffn {Method} relation-accessor (r <relation>)
+@c EN
 A subclass must implement this method.
 It should return a procedure that takes two arguments, a row from
 the relation @var{r} and a column name, and returns the value
 of the specified column.
+@c JP
+サブクラスではこのメソッドは必ず実装しなければなりまん。2つの引数をと
+り、リレーション@var{r}の行とカラム名をとり、指定したカラムの値を返す
+手続を返さなければなりません。
+@c COMMON
 @end deffn
 
 @deffn {Method} relation-modifier (r <relation>)
-A subclass must implement this method.
-It should returns a procedure that takes three arguments, a row
-from the relation @var{r}, a column name, and a value to set.
+@c EN
+A subclass must implement this method. It should returns a procedure
+that takes three arguments, a row from the relation @var{r}, a column
+name, and a value to set. 
+@c JP
+サブクラスではこのメソッドは必ず実装しなければなりまん。
+3つの引数、リレーション@var{r}の行、カラム名、値をとり、その値をセット
+する手続を返さなければなりません。
+@c COMMON
 
+@c EN
 If the relation is read-only, this method returns @code{#f}.
+@c JP
+リレーションが読み込み専用の場合はこのメソッドは@code{#f}を返します。
+@c COMMON
 @end deffn
 
 @deffn {Method} relation-rows (r <relation>)
+@c EN
 A subclass must implement this method.
 It should return the underlying instance of @code{<collection>} or
 its subclass (e.g.  @code{<sequence>}) 
+@c JP
+サブクラスではこのメソッドは必ず実装しなければなりまん。
+基盤となっている@code{<collection>}クラスまたはそのサブクラス(たとえば
+@code{<sequence>})のインスタンスを返さなければなりません。
+@c COMMON
 @end deffn
 
+@c EN
 The rest of method are built on top of the above four methods.
 A subclass of @code{<relation>} may overload some of the
 methods below for better performance, though.
+@c JP
+のこりのメソッドは上の4つのメソッドを使って組まれています。とはいえ、
+@code{<relation>} のサブクラスでは以下のメソッドを性能を得るためにオー
+バーロードすることもできます。
+@c COMMON
 
 @deffn {Method} relation-column-name? (r <relation>) column
+@c EN
 Returns true iff @var{column} is a valid column name for the relation
 @var{r}.
+@c JP
+@var{column}がリレーション@var{r}において有効なカラム名である場合にの
+み真を返します。
+@c COMMON
 @end deffn
 
 @deffn {Method} relation-column-getter (r <relation>) column
 @deffnx {Method} relation-column-setter (r <relation>) column
+@c EN
 Returns a procedure to access the specified column of a row
 from the relation @var{r}.  @code{Relation-column-getter}
 should return a procedure that takes one argument, a row.
 @code{Relation-column-setter} should return a procedure that
 takes two arguments, a row and a new value to set.
+@c JP
+リレーション@var{r}の行の指定したカラムにアクセスする手続を返します。
+@code{Relation-column-getter}は、1つの引数、行をとる手続きを返さなけれ
+ばなりません。@code{Relation-column-setter}は2つの引数、行と新しくセッ
+トする値を取る手続きを返さなければなりません。
+@c COMMON
 
+@c EN
 If the relation is read-only, @code{relation-column-setter}
 returns @code{#f}.
+@c JP
+リレーションが読み込み専用の場合は@code{relation-column-setter}
+は@code{#f}を返します。
+@c COMMON
 @end deffn
 
 @deffn {Method} relation-ref (r <relation>) row column &optional default
+@c EN
 @var{Row} is a row from the relation @var{r}.  Returns value of
 the @var{column} in @var{row}.  If @var{column} is not a valid
 column name, @var{default} is returned if it is given, otherwise
 an error is signalled.
+@c JP
+@var{row}はリレーション@var{r}の行です。@var{row}の@var{column}の値を
+返します。@var{column}が不正なカラム名である場合、@var{default}が与え
+られていればそれを返し、そうでなければ、エラーを示すシグナルがあがりま
+す。
+@c COMMON
 @end deffn
 
 @deffn {Method} relation-set! (r <relation>) row column value
+@c EN
 @var{Row} is a row from the relation @var{r}.  Sets @var{value}
 as the value of @var{column} in @var{row}.  This may signal
 an error if the relation is read-only.
+@c JP
+@var{row}はリレーション@var{r}の行です。@var{value}を@var{row}の
+@var{column}に設定します。リレーションが読み込み専用の場合には
+エラーを示すシグナルがあがります。
+@c COMMON
 @end deffn
 
 @deffn {Method} relation-column-getters (r <relation>)
 @deffnx {Method} relation-column-setters (r <relation>)
+@c EN
 Returns full list of getters and setters.  Usually the default
 method is sufficient, but the implementation may want to cache
 the list of getters, for example.
+@c JP
+ゲッタとセッタの完全なリストを返します。通常はデフォルトのメソッドで十
+分ですが、たとえばゲッタのリストをキャッシュしたいときもあるでしょう。
+@c COMMON
 @end deffn
 
 @deffn {Method} relation-coercer (r <relation>)
+@c EN
 Returns a procedure that coerces a row into a sequence.
 If the relation already uses a sequence to represent a row,
 it can return row as is.
+@c JP
+行をシーケンスに変換する手続きを返します。行がすでにシーケンスで表現さ
+れているリレーションであれば、行をそのまま返す手続きです。
+@c COMMON
 @end deffn
 
 @deffn {Method} relation-insertable? (r <relation>)
+@c EN
 Returns true iff new rows can be inserted to the relation @var{r}.
+@c JP
+リレーション@var{r}に新しい行を挿入可能な場合にのみ真を返します。
+@c COMMON
 @end deffn
 
 @deffn {Method} relation-insert! (r <relation>) row
+@c EN
 Insert a row @var{row} to the relation @var{r}.
+@c JP
+リレーション@var{r}に行@var{row}を挿入します。
+@c COMMON
 @end deffn
 
 @deffn {Method} relation-deletable? (r <relation>)
+@c EN
 Returns true iff rows can be deleted from the relation @var{r}.
+@c JP
+リレーション@var{r}から行を削除可能である場合にのみ真を返します。
+@c COMMON
 @end deffn
 
 @deffn {Method} relation-delete! (r <relation>) row
+@c EN
 Deletes a row @var{row} from the relation @var{r}.
+@c JP
+リレーション@var{r}から行@var{row}を削除します。
+@c COMMON
 @end deffn
 
 @deffn {Method} relation-fold (r <relation>) proc seed column @dots{}
+@c EN
 Applies @var{proc} to the values of @var{column} @dots{} of each row,
 passing @var{seed} as the state value.  That is, for each row in 
 @var{r}, @var{proc} is called as follows:
+@c JP
+@var{proc}を各行のカラム@var{column} @dots{} の値に適用します。
+@var{seed}は状態の値として渡されます。すなわち、リレーション@var{r}の
+各行ごとに以下のように@var{proc}を呼びます。
+@c COMMON
 @example
 
 (@var{proc} @var{v_0} @var{v_1} @dots{} @var{v_i} @var{seed})
@@ -13326,18 +13480,33 @@ passing @var{seed} as the state value.  That is, for each row in
 
 @end example
 
+@c EN
 The result of the call becomes a new seed value, and the final result
 is returned from @var{relation-fold}.
+@c JP
+呼び出しの結果があたらしいシードの値となり、最終の結果が
+@var{relation-fold}から返ります。
+@c COMMON
 
+@c EN
 For example, if a relation has a column named @code{amount},
 and you want to sum up all of them in a relation @var{r},
 you can write like this:
+@c JP
+たとえば、リレーションが @code{amount} という名前のカラムをもつものと
+し、リレーション @var{r} 内にあるそのカラムをすべて足しあわせたいとす
+ると以下のように書けます。
+@c COMMON
 @example
 (relation-fold r + 0 'amount)
 @end example
 @end deffn
 
+@c EN
 @subheading Concrete classes
+@c JP
+@subheading 具象クラス
+@c COMMON
 
 @deftp {Class} <simple-relation>
 @end deftp
