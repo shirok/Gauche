@@ -11486,6 +11486,7 @@ A symbol represents the type of the file.
 @c JP
 ファイルのタイプを示すシンボルです。
 @c COMMON
+@c EN
 @multitable {aaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @item @code{regular} @tab a regular file
 @item @code{directory} @tab a directory
@@ -11495,6 +11496,17 @@ A symbol represents the type of the file.
 @item @code{symlink} @tab a symbolic link
 @item @code{socket} @tab a socket
 @end multitable
+@c JP
+@multitable {aaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
+@item @code{regular} @tab 通常のファイル
+@item @code{directory} @tab ディレクトリ
+@item @code{character} @tab キャラクタデバイス
+@item @code{block} @tab ブロックデバイス
+@item @code{fifo} @tab FIFO
+@item @code{symlink} @tab シンボリックリンク
+@item @code{socket} @tab ソケット
+@end multitable
+@c COMMON
 @c EN
 If the file type is none of the above, @code{#f} is returned.
 @c JP
