@@ -10315,10 +10315,16 @@ if the given content is valid for the element.
 とって妥当であるかのチェックはしません。
 @c COMMON
 
+@c EN
 @emph{Note:}
 You might have noticed that these procedures insert a newline
 before @code{>} of the closing tag.  That is, the rendered
 HTML would look like this:
+@c JP
+@emph{注意:}
+これらの手続は改行を終了タグの@code{>}の前に挿入することに注意してくだ
+さい。つまり、HTMLをレンダリングすると以下のようになります。
+@c COMMON
 
 @example
 <table><tr><td>foo</td
@@ -10328,12 +10334,20 @@ HTML would look like this:
 >
 @end example
 
+@c EN
 We intentionally avoid inserting newlines after the closing
 tag, since @emph{it depends on the surrounding context whether
 the newline is significant or not}.  We may be able to insert newlines
 after the elements directly below a @code{<head>} element,
 for example, but we cannot in a @code{<p>} element.
+@c JP
+終了ダグの後に改行をいれないのは意図的なものです。@emph{改行が意味をも
+つかどうかは外側の文脈に依存するからです}。たとえば、@code{<head>}要素
+の直下にある要素の後に改行をいれることはできますが、@code{<p>}要素のな
+かにあればできません。
+@c COMMON
 
+@c EN
 There are three possible solutions: (1) not to insert newlines
 at all, (2) to insert newlines within tags, and (3) to insert
 newlines only at the safe position.  The first one creates one
@@ -10342,6 +10356,13 @@ inconvenient to handle it with line-oriented tools.
 The third one requires the
 rendering routine to be aware of DTD.  So we took the second
 approach.
+@c JP
+3つ可能性があって、(1) 改行は全く入れない、(2) タグの中だけで改行を入
+れる。(3) 安全な場所にのみ改行をいれる。最初の場合はHTMLは一行になり、
+正当なHTMLではあるものの、行指向のツールで処理するには不便です。3番目
+の場合はレンダリングするのにDTDをちゃんと見るツールが必要になります。
+というわけで、ここでは2番目のアプローチを取っています。
+@c COMMON
 @end deftp
 
 @c ----------------------------------------------------------------------
