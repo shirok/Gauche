@@ -10583,21 +10583,38 @@ as many characters available.
 @c ----------------------------------------------------------------------
 @node SQL parsing and construction, Transliterate characters, Parsing input stream, Library modules - Utilities
 @section @code{text.sql} - SQL parsing and construction
+@c NODE @code{text.sql} - SQLのパーズと構築
 
 @deftp {Module} text.sql
 @mdindex text.sql
+@c EN
 This module provides a utility to parse and construct SQL statement.
+@c JP
+このモジュールはSQL文のパーズと構築のためのユーティリティを提供します。
+@c COMMON
 
+@c EN
 It is currently under development, and we only have a tokenization routine.
 The plan is to define S-expression syntax of SQL and provides a routine
 to translate one form to the other.
+@c JP
+このモジュールは現在まだ開発途上にあります。まだトークン列を生成するルー
+チンしかありません。SQLのS式構文を定義して、SQLとその構文との間の変換
+ルーチンを提供する計画です。
+@c COMMON
 @end deftp
 
 @defun sql-tokenize sql-string
+@c EN
 Tokenize a SQL statement @var{sql-string}.  The return value is
 a list of tokens, where each token is 
 represented by one of the following forms.
+@c JP
+SQL文@var{sql-string}をトークン列に分解します。返り値はトークンのリス
+トで、各トークンは以下の形式のひとつで表現されます。
+@c COMMON
 
+@c EN
 @example
 <symbol>              Special delimiter.  One of the followings:
                       + - * / < = > <> <= >= ||
@@ -10612,16 +10629,44 @@ represented by one of the following forms.
 (bitstring <string>)  Binary string.  <string> is like "01101"
 (hexstring <string>)  Binary string.  <string> is like "3AD20"
 @end example
+@c JP
+@example
+<symbol>              特殊区切り子、以下のどれか
+                      + - * / < = > <> <= >= ||
+<character>           特殊区切り子、以下のどれか
+                      #\, #\. #\( #\) #\;
+<string>              通常の識別子
+(delimited <string>)  区切られた識別子
+(parameter <num>)     位置パラメータ (?)
+(parameter <string>)  名前つきパラメータ (:foo)
+(string    <string>)  文字列リテラル
+(number    <string>)  数値リテラル
+(bitstring <string>)  バイナリ文字列  <string> は "01101" な感じ
+(hexstring <string>)  Binary string.  <string> は "3AD20" な感じ
+@end example
+@c COMMON
 
+@c EN
 If it encounters an untokenizable string, it raises an
 @code{<sql-parse-error>} condition.
+@c JP
+トークンに分解できない文字列がくると@code{<sql-parse-error>}コンディショ
+ンがあがります。
+@c COMMON
 @end defun
 
 @deffn {Condition} <sql-parse-error>
+@c EN
 A condition to indicate an SQL parse error.  Inherits @code{<error>}.
-
+@c JP
+SQLパーズエラーを示すコンディション。@code{<error>}を継承。
+@c COMMON
 @defivar <sql-parse-error> sql-string
+@c EN
 Holds the source SQL string.
+@c JP
+元のSQL文字列を保持。
+@c COMMON
 @end defivar
 @end deffn
 
