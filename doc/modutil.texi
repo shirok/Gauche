@@ -1013,124 +1013,262 @@ APIを説明をします。すなわち特定の@code{dbd}ドライバを@code{dbi}フレー
 
 @node DBI user API, Writing drivers for DBI, Database independent access layer, Database independent access layer
 @subsection DBI user API
+@c NODE DBIのユーザAPI
 
+@c EN
 @subsubheading DBI Conditions
+@c JP
+@subsubheading DBIのコンディション
+@c COMMON
 
+@c EN
 There are several predefined conditions @code{dbi} API may throw.
 See @ref{Exceptions} for the details of conditions.
+@c JP
+@code{dbi} API が投げる可能性のあるコンディションがいくつか定義されて
+います。コンディションの詳細については@ref{Exceptions}を見てください。
+@c COMMON
 
 @deftp {Condition} <dbi-error>
+@c EN
 The base class of @code{dbi}-related conditions.  Inherits @code{<error>}.
+@c JP
+@code{dbi}-関連のコンディションのベースクラス。@code{<error>}を継承し
+ています。
+@c COMMON
 @end deftp
 
 @deftp {Condition} <dbi-nonexistent-driver-error>
+@c EN
 This condition is thrown by @code{dbi-connect} when it cannot
 find the specified driver.  Inherits @code{<dbi-error>}.
+@c JP
+@code{dbi-connect}は指定されたドライバが見つからない場合にこのコンディ
+ションを投げます。@code{<dbi-error>}を継承しています。
+@c COMMON
 
 @defivar <dbi-nonexistent-driver-error> driver-name
+@c EN
 Holds the requested driver name as a string.
+@c JP
+要求されたドライバの名前を文字列として保持している。
+@c COMMON
 @end defivar
 @end deftp
 
 @deftp {Condition} <dbi-unsupported-error>
+@c EN
 This condition is thrown when the called method isn't supported 
 by the underlying driver.  Inherits @code{<dbi-error>}.
+@c JP
+呼び出されたメソッドが基盤となるドライバでサポートされていない場合、こ
+のコンディションが投げられます。@code{<dbi-error>}を継承しています。
+@c COMMON
 @end deftp
 
 @deftp {Condition} <dbi-parameter-error>
+@c EN
 This condition is thrown when the number of parameters given to
 the prepared query doesn't match the ones in the prepared statement.
+@c JP
+プリペアドクエリへ渡されたパラメータの数がプリペアドステートメントの中
+のものと一致しないとき、このコンディションが投げられます。
+@c COMMON
 @end deftp
 
+@c EN
 Besides these errors, if a driver relies on @code{dbi} to
 parse the prepared SQL statement, @code{<sql-parse-error>} may 
 be thrown if an invalid SQL statement is passed to @code{dbi-prepare}.
 (@xref{SQL parsing and construction}).
+@c JP
+上の3つのエラー以外に、@code{dbi}がプリペアドSQL文を構文解析するのにド
+ライバを利用す場合、不正なSQL文が@code{dbi-prepare}に渡されると、
+@code{<sql-parse-error>}が投げられます
+(@ref{SQL parsing and construction}参照)。
+@c COMMON
 
-
+@c EN
 @subsubheading Connecting to the database
+@c JP
+@subsubheading データベースへの接続
+@c COMMON
 
 @defun dbi-connect dsn &keyword username password
+@c EN
 Connect to a database using a data source specified by @var{dsn}
 (data source name).  @var{Dsn} is a string with the following syntax:
+@c JP
+@var{dsn}(データソース名)で指定されたデータソースを使ってデータベース
+に接続します。@var{dsn}は以下の構文をもつ文字列です。
+@c COMMON
 @example
 dbi:@var{driver}:@var{options}
 @end example
 
+@c EN
 @var{Driver} part names a specific driver.  You need to have the
 corresponding driver module, @code{dbd.@var{driver}}, installed in
 your system.  For example, if @var{dsn} begins with @code{"dbi:mysql:"},
 @code{dbi-connect} tries to load @code{dbd.mysql}.
+@c JP
+@var{driver}は特定のドライバ名です。対応するドライバモジュールがなけれ
+ばなりません。すなわち、@code{dbd.@var{driver}}がシステムにインストー
+ルされていなければなりません。たとえば、@var{dsn}が@code{"dbi:mysql:"}
+ではじまるとすると、@code{dbi-connect}は@code{dbd.mysql}をロードしよう
+とします。 
+@c COMMON
 
+@c EN
 Interpretation of the @var{options} part is up to the driver.
 Usually it is in the form of @code{key1=value1;key2=value2;...},
 but some driver may interpret it differently.  For example,
 @code{mysql} driver allows you to specify a database name
 at the beginning of @var{options}.   You have to check out
-the document of each driver for the exact specification of @var{options}.
+the document of each driver for the exact specification of
+@var{options}.
+@c JP
+@var{options}部分の解釈はドライバに依存します。通常この部分のフォーマッ
+トは@code{key1=value1;key2=value2;...}のようになっていますが、ドライバ
+によっては別の解釈になります。たとえば、@code{mysql}ドライバでは、
+@var{options}の最初の部分でデータベース名を指定することができます。
+@var{options}の正確な仕様については各ドライバのドキュメントをチェック
+してください。
+@c COMMON
 
+@c EN
 The keyword arguments gives extra information required for
 connection.  The @var{username} and @var{password} are commonly
 supported arguments.  The driver may recognize more keyword arguments.
+@c JP
+接続のために必要な追加情報はキーワード引数であたえます。
+@var{username}および@var{password}は共通でサポートされている引数です。
+ドライバは他にもキーワード引数を認識します。
+@c COMMON
 
+@c EN
 If a connection to the database is successfully established,
 a connection object (an instance of a subclass of @code{<dbi-connection>})
 is returned.  Otherwise, an error is signalled.
+@c JP
+データベースへの接続が成功したら、コネクションオブジェクト
+(@code{<dbi-connection>}のサブクラスのインスタンス)が返ります。さもな
+ければ、エラーがあがります。
+@c COMMON
 @end defun
 
 @deftp {Class} <dbi-connection>
+@c EN
 The base class of a connection to a database system.
 Each driver defines a subclass of this to keep information about
 database-specific connections.
+@c JP
+データベースシステムへの接続のベースクラス。各ドライバはこのクラスのサ
+ブクラスを定義し、これにデータベース特有のコネクションに関する情報を持
+たせます。
+@c COMMON
 @end deftp
 
 @deffn {Method} dbi-open? (c <dbi-connection>)
+@c EN
 Queries whether a connection to the database is still open (active).
+@c JP
+データベースへの接続がオープン状態(アクティブ状態)にあるかどうかを確か
+めます。
+@c COMMON
 @end deffn
 
 @deffn {Method} dbi-close (c <dbi-connection>)
+@c EN
 Closes a connection to the database.  This causes releasing resources
 related to this connection.   Once closed, @var{c} cannot
 be used for any dbi operations (except passing to @code{dbi-open?}).
 Calling @code{dbi-close} on an already closed connection has no effect.
+@c JP
+データベースへの接続を閉じます。これによりこの接続に関連付けられたリソー
+スが解放されます。いったん閉じた@var{c}に対してはどのようなdbi操作もで
+きません。(@code{dbi-open?}だけは例外)。すでに閉じられたコネクションに
+対して@code{dbi-close}を呼んでもなにも起りません。
+@c COMMON
 
+@c EN
 Although a driver usually closes a connection when @code{<dbi-connection>}
 object is garbage-collected, it is not a good idea to rely on that,
 since the timing of GC is unpredictable.  The user program must make
 sure that it calls @code{dbi-close} at a proper moment.
+@c JP
+ドライバは通常@code{<dbi-connection>}がガベージコレクションされたとき
+にコネクションを閉じますが、このことを期待したコードを書くのはいただけ
+ません。GCのタイミングというのは予測不可能だからです。ユーザプログラム
+は適切なタイミングで@code{dbi-close}を呼ぶようにすべきです。
+@c COMMON
 @end deffn
 
 @defun dbi-list-drivers
+@c EN
 Returns a list of module names of known drivers.
+@c JP
+解っているドライバのモジュール名のリストを返します。
+@c COMMON
 @end defun
 
 @deftp {Class} <dbi-driver>
+@c EN
 The base class of a driver.  You usually don't need to see this
 as far as you're using the high-level @code{dbi} API.
+@c JP
+ドライバのベースクラス。高レベルの@code{dbi} APIを使うかぎり、これが必
+要になることはありません。
+@c COMMON
 @end deftp
 
 @defun dbi-make-driver driver-name
+@c EN
 This is a low-level function called from @code{dbi-connect} method,
 and usually a user doesn't need to call it.
+@c JP
+@code{dbi-connect}から呼ばれる低レベル関数、通常この関数を呼ぶ必要はあ
+りません。
+@c COMMON
 
+@c EN
 Loads a driver module specified by @var{driver-name}, and
 instantiate the driver class and returns it.
+@c JP
+@var{driver-name}で指定されたドライバモジュールをロードし、当該のドラ
+イバクラスのインスタンスを生成してそれを返します。
+@c COMMON
 @end defun
 
+@c EN
 @subsubheading Preparing and issuing queries
+@c JP
+@subsubheading クエリの準備と発行
+@c COMMON
 
 @deffn {Method} dbi-prepare conn sql &keyword pass-through @dots{}
+@c EN
 From a string representation of SQL statement @var{sql},
 creates and returns a query object (an instance of @code{<dbi-query>}
 or its subclass) for the database connection @code{conn}
+@c JP
+SQL文の文字列表現@var{sql}からデータベースコネクション@code{conn}用の
+クエリオブジェクト(@code{<dbi-query>}のインスタンスもしくはそのサブク
+ラスのインスタンス)を生成してそれを返します。
+@c COMMON
 
+@c EN
 @var{Sql} may contain parameter slots, denoted by @code{?}.
+@c JP
+@var{sql}は@code{?}であらわされているパラメータスロットを持ちます。
+@c COMMON
 @example
 (dbi-prepare conn "insert into tab (col1, col2) values (?, ?)")
 
 (dbi-prepare conn "select * from tab where col1 = ?")
 @end example
 
+@c EN
 They will be filled when you actually issue the query by
 @code{dbi-execute}.
 There are some advantages of using parameter
@@ -1141,81 +1279,169 @@ improper quoting, for example.
 statement to the server at the preparation stage, and send
 only the parameter values at the execution stage.  It would be
 more efficient if you issue similar queries lots of time.
+@c JP
+これらのスロットは@code{dbi-execute}を使って実際にクエリを発行したとき
+に埋められます。パラメータスロットを使うのは以下の利点があるからです。
+(1) クォートが自動的にほどこされます。不適切なクォートによるセキュリティ
+ホールを気にする必要はありません。
+(2) いくつかのドライバでは準備の段階でサーバへテンプレートSQL文を送る
+機能がサポートされていて、実行段階ではパラメータを送るだけで済みます。
+これは似たようなクエリを大量に一度に発行するときには効率のよいやりかた
+です。
+@c COMMON
 
+@c EN
 If the backend does't support prepared statements (SQL templates
 having @code{?} parameters), the driver may use @code{text.sql}
 module to parse @var{sql}.  It may raise @code{<sql-parse-error>}
 condition if the given SQL is not well formed.
+@c JP
+バックエンドでプリペアド文がサポートされていない場合(でSQLテンプレー
+トが@code{?}パラメータを持つ場合)、ドライバは@var{sql}を解析するのに
+@code{text.sql}モジュールを使います。与えられたSQL文が正しい構文でなけ
+れば、@code{<sql-parse-error>}コンディションが発生します。
+@c COMMON
 
+@c EN
 You may pass a true value to the keyword argument @var{pass-through}
 to suppress interpretation of SQL and pass @var{sql} as-is to the
 back end database system.  It is useful if the back-end supports
 extension of SQL which @code{text.sql} doesn't understand.
+@c JP
+キーワード引数@var{pass-through}に真の値を渡して、SQLの解釈を抑制し、
+@var{sql}をそのままバックエンドのデータベースシステムに渡すことができ
+ます。@code{text.sql}で理解できないようなSQLの拡張をバックエンドがサポー
+トしている場合に役立ちます。
+@c COMMON
 
+@c EN
 If the driver lets prepared statement handled in back-end,
 without using @code{text.sql}, the @code{pass-through} argument
 may be ignored.
 The driver may also take other keyword arguments.  Check out
 the documentation of individual drivers.
+@c JP
+ドライバがプリペアド文を@code{text.sql}抜きでバックエンドに処理させた
+場合、@code{pass-through}引数は無視されます。ドライバは他のキーワード
+引数を取ることもあります。詳細はそれぞれのドライバのドキュメントを参照
+してください。
+@c COMMON
 
+@c EN
 @emph{Note:} Case folding of SQL statement
 is implementation dependent.  Some DBMS may treat table
 names and column names in case insensitive way, while
 others do in case sensitive way.  To write a portable
 SQL statement, make them quoted identifiers, that is,
 always surround names by double quotes.
+@c JP
+@emph{注意}：SQL文のケース畳み込みは実装依存です。DBMSのなかにはテーブ
+ル名やカラム名は大文字小文字の区別をしないものもあり、一方で区別するも
+のもあります。ポータブルなSQL文を書きたいのなら、識別子をクォートしま
+しょう。すなわち常に名前をダブルクォートで囲むようにします。
+@c COMMON
 @end deffn
 
 @deftp {Class} <dbi-query>
+@c EN
 Holds information about prepared query, created by @code{dbi-prepare}.
 The following slots are defined.
+@c JP
+@code{dbi-prepare}によって作成されたプリペアドクエリに関する情報を保持
+します。以下のスロットが定義されています。
+@c COMMON
 
 @defivar <dbi-query> connection
+@c EN
 Contains the @code{<dbi-connection>} object.
+@c JP
+@code{<dbi-connection>}オブジェクトを含みます。
+@c COMMON
 @end defivar
 
 @defivar <dbi-query> prepared
+@c EN
 If the driver prepares query by itself, this slot may contain
 a prepared statement.  It is up to each driver how to use
 this slot, so the client shouldn't rely on its value.
+@c JP
+ドライバがクエリを準備する場合、このスロットがプリペアド文を保持します。
+このスロットをどのように使うかはおのおののドライバによります。したがっ
+て、クライアントはこの値に依存してはいけません。
+@c COMMON
 @end defivar
 
 @end deftp
 
 @deffn {Method} dbi-open? (q <dbi-query>)
+@c EN
 Returns @code{#t} iff the query can still be passed to
 @code{dbi-execute}.
+@c JP
+クエリが@code{dbi-execute}に渡せる状態になっているときにのみ、
+@code{#t}を返します。
+@c COMMON
 @end deffn
 
 @deffn {Method} dbi-close (q <dbi-query>)
+@c EN
 Destroy the query and free resources associated to the query.
 After this operation, @code{dbi-open?} returns @code{#f} for @var{q},
 and the query can't be used in any other way.  Although the resource
 may be freed when @var{q} is garbage-collected, it is strongly recommended
 that the application closes queries explicitly.
+@c JP
+クエリを破棄し、当該クエリに関連づけられたリソースを解放します。この操
+作を実行後は、@code{dbi-open?}は@var{q}に対して@code{#f}を返します。
+そして、当該クエリは他の用途にはつかえません。@var{q}がガベージコレク
+ションにより回収された場合、リソースは解放されますが、アプリケーション
+が明示的にクエリを閉じるようにすることを強く勧めます。
+@c COMMON
 @end deffn
 
-
 @deffn {Method} dbi-execute (q <dbi-query>) parameter @dots{}
+@c EN
 Executes a query created by @code{dbi-prepare}.  You should pass
 the same number of @var{parameter}s as the query expects.
+@c JP
+@code{dbi-prepare}によって作成さればクエリを実行します。当該クエリが期
+待するのと同じ数のパラメータを渡す必要があります。
+@c COMMON
 
+@c EN
 If the issued query is @code{select} statement, @code{dbi-execute}
 returns an object represents a @emph{relation}.
 A relation encapsulates the values in
 rows and columns, as well as meta information like column names.
 See "Retrieving query results" below for how to access the result.
+@c JP
+発行されたクエリが@code{select}文の場合@code{dbi-execute}は
+@emph{リレーション}を表わすオブジェクトを返します。リレーションは
+行とカラムの値をカプセル化したもので、カラム名のようなメタ情報も同様で
+す。結果へアクセスの方法については後述の「クエリの結果を見る」を見てく
+ださい。
+@c COMMON
 
+@c EN
 If the query is other types, such as @code{create}, @code{insert} 
 or @code{delete}, the return value of the query closure is unspecified.
+@c JP
+クエリがSELECT以外の@code{create}、@code{insert}、@code{delete}などの
+場合、クエリクロージャー返り値は不定です。
+@c COMMON
 @end deffn
 
 @deffn {Method} dbi-do conn sql &optional options parameter-value @dots{}
+@c EN
 This is a convenience procedure when you create a query
 and immediately execute it.   It is equivalent to the following
 expression, although the driver may overload this method to avoid
 creating intermediate query object to avoid the overhead.
-
+@c JP
+この手続はクエリを作成し、すぐに実行したいときに便利です。これは次の式
+と同じですが、この場合はドライバはオーバーヘッドを避けるため、中間のク
+エリを作らないようにこのメソッドをオーバーロードします。
+@c COMMON
 @example
 (dbi-execute (apply dbi-prepare conn sql options)
              parameter-value @dots{})
@@ -1223,23 +1449,48 @@ creating intermediate query object to avoid the overhead.
 @end deffn
 
 @deffn {Method}  dbi-escape-sql conn str
+@c EN
 Returns a string where special characters in @var{str} are escaped.
+@c JP
+@var{str}中の特殊文字をエスケープした文字列を返します。
+@c COMMON
 
+@c EN
 The official SQL standard only specify a single quote (@code{'}) as
 such character.  However, it doesn't specify non-printable characters,
 and the database system may use other escaping characters.  So 
 it is necessary to use this method rather than doing escaping
 by your own.
+@c JP
+SQLの公式標準ではこのような文字としてはシングルクォート(@code{'})につ
+いてだけ規定しています。しかし、印字可能文字ではない文字については規定
+がありません。また、データベースシステムによっては他のエスケープ文字を
+使うものもあります。それゆえ、自分でエスケープしようとせずに、このメソッ
+ドを使う必要があります。
+@c COMMON
 
+@c EN
 @example
 ;; assumes c is a valid DBI connection
 (dbi-escape-sql c "don't know")
   @result{} "don''t know"
 @end example
+@c JP
+@example
+;; c を利用可能なDBIコネクションとする
+(dbi-escape-sql c "don't know")
+  @result{} "don''t know"
+@end example
+@c COMMON
 @end deffn
 
+@c EN
 @subsubheading Retrieving query results
+@c JP
+@subsubheading クエリの結果を見る
+@c COMMON
 
+@c EN
 If the query is a @code{select} statement, it returns an object
 of both @code{<collection>} and @code{<relation>}.   
 It is a collection of rows (that is, it implements @code{<collection>} API),
@@ -1247,41 +1498,93 @@ so you can use @code{map}, @code{for-each} or other generic functions
 to access rows.  You can also use the relation API to retrieve column
 names and accessors from it.  See @ref{Relation framework}, for the relation
 API, and @ref{Collection framework}, for the collection API.
+@c JP
+クエリが@code{select}文である場合、@code{<collection>}と
+@code{<relation>}の両方のオブジェクトが返ります。行のコレクション
+(すなわち、@code{<collection>} APIの実装)ですから、行にアクセスするに
+は@code{map}、@code{for-each}、その他のジェネリック関数が使えます。
+また、カラム名やアクセサを取り出すにはリレーションAPIが使えます。
+リレーションAPIについては@ref{Relation framework}をコレクションAPIにつ
+いては@ref{Collection framework}を見てください。
+@c COMMON
 
+@c EN
 The actual class of the object returned from a query depends on
 the driver, but you may use the following method on it.
+@c JP
+クエリから戻ったオブジェクトの実際のクラスはドライバによりますが、
+以下のメソッドを使うことができます。
+@c COMMON
 
 @deffn {Method} dbi-open? result
+@c EN
 Check whether the result of a query is still active.
 The result may become inactive when it is explicitly closed
 by @code{dbi-close} and/or the connection to the database is
 closed.
+@c JP
+クエリの結果がまだアクティブであるかどうかをチェックします。
+結果は@code{dbi-close}によって明示的に閉じられるかデータベースへのコネ
+クションが閉じられると非アクティブになります。
+@c COMMON
 @end deffn
 
 @deffn {Method} dbi-close result
+@c EN
 Close the result of the query.  This may cause releasing resources
 related to the result.   You can no longer use @var{result} once it is
 closed, except passing it to @code{dbi-open?}.
+@c JP
+クエリの結果を閉じます。結果に関連付けられていたリソースが解放されます。
+@var{result}は、いったん閉じると使えなくなります。ただし、
+@code{dbi-open?}にだけは渡せます。
+@c COMMON
 
+@c EN
 Although a driver usually releases resources when the result is
 garbage-collected, the application shouldn't rely on that and
 is recommended call @code{dbi-close} explicitly when it is done
 with the result.
+@c JP
+ドライバは通常、結果がガベージコレクタによって回収される時にリソースを
+解放しますが、アプリケーションはこれに依存してはいけません。結果を使い
+おわったら明示的に@code{dbi-close}を呼ぶことをおすすめします。
+@c COMMON
 @end deffn
-
 
 @node Writing drivers for DBI,  , DBI user API, Database independent access layer
 @subsection Writing drivers for DBI
+@c NODE DBI用のドライバを書く
 
+@c EN
 Writing a driver for a specific database system means implementing
 a module @code{dbd.@var{foo}}, where @var{foo} is the name of the driver.
+@c JP
+特定のデータベースシステムのドライバを書くということは、
+@code{dbd.@var{foo}}モジュールを実装することです。ここで@var{foo}はド
+ライバの名前になります。
+@c COMMON
 
+@c EN
 The module have to implement several classes and methods, as explained below.
+@c JP
+このモジュールは以下に説明するいくつかのクラスとメソッドを実装しなけれ
+ばなりません。
+@c COMMON
 
+@c EN
 @subsubheading DBI classes to implement
+@c JP
+@subsubheading 実装するDBIクラス
+@c COMMON
 
+@c EN
 You have to define the following classes.
+@c JP
+以下のクラスを定義しなければなりません。
+@c COMMON
 
+@c EN
 @itemize @bullet
 @item
 Subclass @code{<dbi-driver>}.  
@@ -1304,28 +1607,84 @@ inherit @code{<sequence>}, rather than @code{<collection>}).
 Optionally, subclass @code{<dbi-query>} to keep driver-specific
 information of prepared queries.
 @end itemize
+@c JP
+@itemize @bullet
+@item
+@code{<dbi-driver>}のサブクラス。このクラスの名前は@emph{必ず}
+@code{<@var{foo}-driver>}でなければなりません。ここで、@var{foo}は
+ドライバの名前です。通常このクラスはシングルトンインスタンスを生成し、
+後述の@code{dbi-make-connection}メソッドをディスパッチするためにのみ利
+用されます。
+@item
+@code{<dbi-connection>}のサブクラス。このクラスのインスタンスは
+@code{dbi-make-connection}によって生成されます。そのためには、実際のコ
+ネクションに関する情報を保持する必要があります。
+@item
+ドライバにあったクエリ結果を表現するための@code{<relation>}および
+@code{<collection>}のサブクラス。(ほとんどの場合、SELECT文の結果は順序
+が重要です。それは、ORDER BY 節によってソートされる可能性があるからで
+す。したがって、@code{<sequence>}を継承するほうが、@code{<collection>}
+を継承するよりも適切です。)
+@item
+オプションとして、プリペアドクエリのドライバ特有の情報を保持するため
+@code{<dbi-query>}のサブクラスを実装します。
+@end itemize
+@c COMMON
 
+@c EN
 @subsubheading DBI methods to implement
+@c JP
+@subsubheading 実装するDBIメソッド
+@c COMMON
 
+@c EN
 The driver need to implement the following methods.
+@c JP
+ドライバは以下のメソッドを実装しなければなりません。
+@c COMMON
 
 @deffn {Method} dbi-make-connection (d <foo-driver>) (options <string>) (option-alist <list>) &keyword username password @dots{} 
+@c EN
 This method is called from @code{dbi-connect}, and responsible to
 connect to the database and to create a connection object.
 It must return a connection object, or raise an @code{<dbi-error>} if
 it cannot establish a connection.
+@c JP
+このメソッドは@code{dbi-connect}から呼ばれ、データベースへの接続を担い、
+コネクションオブジェクトを作成します。コネクションオブジェクトを返さな
+ければなりません。コネクションが確立できない場合には、
+@code{<dbi-error>}をあげなければなりません。
+@c COMMON
 
+@c EN
 @var{Options} is the option part of the data source name (DSN) given to
 @code{dbi-connect}.  @var{Option-alist} is an assoc list of
 the result of parsing @var{options}.  Both are provided so that
 the driver may interpret @var{options} string in nontrivial way.
+@c JP
+@var{options}は@code{dbi-connect}に与えられるデータソースネーム(DSN)の
+オプションパートです。@var{option-alist}は@var{options}を解析した結果
+の連想リストです。両方ともに用意して、ドライバが自明ではない方法で
+@var{options}文字列を解釈できるようにします。
+@c COMMON
 
+@c EN
 For example, given @code{"dbi:foo:myaddressbook;host=dbhost;port=8998"}
 as DSN, foo's @code{dbi-make-connection} will receive
 @code{"myaddressbook;host=dbhost;port=8998"} as @var{options},
 and @code{(("myaddressbook" . #t) ("host" . "dbhost") ("port" . "8998"))}
 as @var{optons-alist}.
+@c JP
+たとえば、DSNとして
+@code{"dbi:foo:myaddressbook;host=dbhost;port=8998"}が与えられたとする
+と、fooの@code{dbi-make-connection}は@var{options}として
+@code{"myaddressbook;host=dbhost;port=8998"}を受け取り、
+@var{optons-alist}として
+@code{(("myaddressbook" . #t) ("host" . "dbhost") ("port" . "8998"))}
+を受け取ります。
+@c COMMON
 
+@c EN
 After @var{options-alist}, whatever keyword arguments given to
 @code{dbi-connect} are passed.  DBI protocol currently 
 specifies only @var{username} and @var{password}.
@@ -1333,7 +1692,17 @@ The driver may define other keyword arguments.
 It is recommended to name the driver-specific keyword arguments
 prefixed by the driver name, e.g. for @code{dbd.foo}, it may take
 a @code{:foo-whatever} keyword argument.
+@c JP
+@var{options-alist}の後ろならどのようなキーワード引数でも
+@code{dbi-connect}に渡せます。DBIプロトコルは現在のところは
+@var{username}および@var{password}のみを指定します。
+ドライバはその他のキーワード引数を定義できます。
+ドライバ特有のキーワード引数にはドライバ名を接頭辞として付けることをお
+勧めします。たとえば、@code{dbd.foo}なら、@code{:foo-whatever}のように
+です。
+@c COMMON
 
+@c EN
 It is up to the driver writer to define what options are available and
 the syntax of the options.  The basic idea is that the DSN
 identifies the source of the data; it's role is like URL in WWW.
@@ -1341,17 +1710,39 @@ So, it may include the hostname and port number of the database,
 and/or the name of the database, etc.  However, it shouldn't include
 information related to authentication, such as username and password.
 That's why those are passed via keyword arguments.
+@c JP
+どのようなオプションを使えるようにするか、あるいはオプションの構文をど
+うするかはドライバを書く人しだいです。基本的な考え方は、DSN はデータの
+ソースを識別するためのものであり、その役割りはWWWにおけるURLのようなも
+のだということです。それゆえ、データベースのホスト名、ポート番号、それ
+にデータベース名などが含まれることになるでしょう。しかし、ユーザ名やパ
+スワードのような認証に関する情報を含めてはいけません。というわけで、そ
+の手の情報はキーワード引数で渡すのです。
+@c COMMON
 @end deffn
 
 @deffn {Method} dbi-prepare (c <foo-connection>) (sql <string>) &keyword pass-through @dots{}
+@c EN
 This method should create and return a prepared query object,
 which is an instance of @code{<dbi-query>} or its subclass.
 The query specified by @var{sql} is issued to the database system
 when the prepared query object is passed to @code{dbi-execute}.
+@c JP
+このメソッドは@code{<dbi-query>}あるいはそのサブクラスのインスタンスで
+あるプリペアドクエリオブジェクトを生成し、それを返すものでなくてはなり
+ません。@var{sql}によるクエリがデータベースに発行されるのは、プリペア
+ドクエリオブジェクトが@code{dbi-execute}に渡されたときです。
+@c COMMON
 
+@c EN
 The method must set @var{c} to the @code{connection} slot of 
 the returned query object.
+@c JP
+このメソッドは返されるクエリオブジェクトの@code{connection}スロットに
+@var{c}を設定しなけばなりません。
+@c COMMON
 
+@c EN
 @var{Sql} is an SQL statement.  It may contain placeholders represented
 by @code{'?'}.  The query closure should take the same number of arguments
 as of the placeholders.   It is up to the driver whether it parses
@@ -1359,34 +1750,75 @@ as of the placeholders.   It is up to the driver whether it parses
 the query closure is called, or it passes @var{sql} to the back-end
 server to prepare the statement and let the query closure just send
 parameters.
+@c JP
+@var{sql}はSQL文です。これには@code{'?'}で表現されたプレイスホルダが含
+まれることがあります。クエリクロージャはこのプレイスホルダと同じ数の引
+数をとらなければなりません。内部的に@var{sql}をどのようにパーズするか、
+クエリクロージャが呼ばれたとき完全なSQL文を構築するか、@var{sql}をバッ
+クエンドのサーバに送って文を準備し、クエリクロージャはパラメータだけを
+送るようにするかなどはドライバに依存します。
+@c COMMON
 
+@c EN
 If the driver parses SQL statement internally, it should recognize
 a keyword argument @code{pass-through}.  If a true value is given,
 the driver must treat @code{sql} opaque and pass it as is when
 the query closure is called.
+@c JP
+ドライバがSQL文を内部的にわたす場合、キーワード引数@code{pass-through}
+を認識しなければいけません。もし、真の値が与えられたら、ドライバは
+@code{sql}を不透明なものとして扱い、これをそのままクエリクロージャが呼
+ばれた際に渡さなければなりません。
+@c COMMON
 
+@c EN
 The driver may define other keyword arguments.
 It is recommended to name the driver-specific keyword arguments
 prefixed by the driver name, e.g. for @code{dbd.foo}, it may take
 a @code{:foo-whatever} keyword argument.
+@c JP
+ドライバがその他のキーワード引数を定義することもできます。
+その場合、ドライバ特有のキーワード引数にはドライバ名を接頭辞として付け
+ることをお勧めします。たとえば、@code{dbd.foo}なら、
+@code{:foo-whatever}のようにです。
+@c COMMON
 @end deffn
 
 @deffn {Method} dbi-execute-using-connection (c <foo-connection>) (q <dbi-query>) (params <list>)
+@c EN
 This method is called from @code{dbi-execute}.
 It must issue the query kept in @var{q}.  If the query is parameterized,
 the actual parameters given to @var{dbi-execute} are passed to
 @var{params} argument.
+@c JP
+このメソッドは@code{dbi-execute}から呼ばれます。@var{q}が保持するクエ
+リを発行しなければなりません。クエリがパラメータ化されている場合、
+@var{dbi-execute}に与えられた実際のパラメータは@var{params}引数に渡さ
+れます。
+@c COMMON
 
+@c EN
 If @var{q} is a @code{select}-type query, this method must return
 an appropriate relation object.
+@c JP
+@var{q}が@code{select}-型のクエリの場合は、このメソッドは適切なリレー
+ションオブジェクトを返さなければなりません。
+@c COMMON
 @end deffn
 
 @deffn {Method} dbi-escape-sql (c <foo-connection>) str
+@c EN
 If the default escape method isn't enough, the driver may
 overload this method to implement a specific escaping.
 For example, MySQL treats backslash characters specially
 as well as single quotes, so it has its @code{dbi-escape-sql} 
 method.
+@c JP
+デフォルトのエスケープメソッドでは十分でないとき、ドライバは特別のエス
+ケープを行うためにこのメソッドをオーバーロードすることができます。たと
+えば、MySQLではバックスラッシュ文字はシングルクォートと同様に特別あつ
+かいしますので、@code{dbi-escape-sql}メソッドを持っています。
+@c COMMON
 @end deffn
 
 @deffn {Method} dbi-open? (c <foo-connection>)
@@ -1395,53 +1827,110 @@ method.
 @deffnx {Method} dbi-close (c <foo-connection>)
 @deffnx {Method} dbi-close (q <foo-query>)
 @deffnx {Method} dbi-close (r <foo-result>)
+@c EN
 Queries open/close status of a connection and a result, and
 closes a connection and a result.  The close methods should cause
 releasing resources used by connection/result.  The driver
 has to allow @code{dbi-close} to be called on a connection or a
 result which has already been closed.
+@c JP
+これらのメソッドでコネクションおよび結果の状態を調べ、コネクションおよ
+び結果を閉じます。closeメソッドはコネクションや結果が利用しているリソー
+スを解放しなければなりません。ドライバは@code{dbi-close}がすでに閉じら
+れたコネクションや結果に対しても適用できるようにしておかなければなりま
+せん。
+@c COMMON
 @end deffn
 
 @deffn {Method} dbi-do (c <foo-connection>) (sql <string>) &optional options parameter-value @dots{}
+@c EN
 The default method uses @code{dbi-prepare} and @code{dbi-execute}
 to implement the function.  It just works,
 but the driver may overload this method in order to skip
 creating intermediate query object for efficiency.
+@c JP
+この機能を実装するのにデフォルトメソッドは@code{dbi-prepare}および
+@code{dbi-execute}を使っています。これだけでも動きますが、
+ドライバは効率のために中間のクエリオブジェクトの生成をスキップするため
+にこのメソッドをオーバーロードできます。
+@c COMMON
 @end deffn
 
+@c EN
 @subsubheading DBI utility functions
+@c JP
+@subsubheading DBIのユーティリティ関数
+@c COMMON
 
+@c EN
 The following functions are low-level utilities which you may
 use to implement the above methods.
+@c JP
+以下の関数は上述のメソッドを実装するための低レベルのユーティリティです。
+@c COMMON
 
 @defun dbi-parse-dsn data-source-name
+@c EN
 Parse the data source name (DSN) string given to @code{dbi-connect},
 and returns tree values: (1) The driver name in a string. (2)
 'options' part of DSN as a string.  (3) parsed options in an assoc
 list.  This may raise @code{<dbi-error>} if the given string doesn't
 conform DSN syntax.
+@c JP
+@code{dbi-connect}に与えられたデータソースネーム(DSN)文字列を解析し、
+以下の3つの値を返す。(1) ドライバ名(文字列) (2) DSNのオプション部分(文
+字列) (3) 解析済オプション(連想リスト)。与えられた文字列がDSN構文に準
+拠していない場合には@code{<dbi-error>}があがります。
+@c COMMON
 
+@c EN
 You don't need to use this to write a typical driver, for the
 parsing is done before @code{dbi-make-connection} is called.
 This method may be useful if you're writing a kind of meta-driver,
 such as a proxy.
+@c JP
+典型的なドライバを書く場合には必要ありません。構文解析は
+@code{dbi-make-connection}を呼ぶ前にすんでいるからです。このメソッドは
+プロキシのようなメタドライバという類のものを書くときに便利です。
+@c COMMON
 @end defun
 
 @defun dbi-prepare-sql connection sql
+@c EN
 Parses an SQL statement @var{sql} which may contain placeholders,
 and returns a closure, which generates a complete SQL statement when
 called with actual values for the parameters.  If the back-end
 doesn't support prepared statements, you may use this function
 to prepare queries in the driver.
+@c JP
+プレイスホルダを含むSQL文 @var{sql} をパーズし、実際の値をパラメータと
+して渡されたときに完全なSQLを生成するクロージャを作成します。
+バックエンドがプリペアド文をサポートしていない場合は、ドライバ中でクエ
+リを準備するのにこの関数を使うことになります。
+@c COMMON
 
+@c EN
 @var{Connection} is a DBI connection to the database.  It is required
 to escape values within SQL properly (see @code{dbi-escape-sql} above).
+@c JP
+@var{connection}はデータベースへのDBIコネクションです。SQL中の値は適切
+にエスケープされている必要があります(上述の@code{dbi-escape-sql}をみて
+ください)。
+@c COMMON
 
+@c EN
 @example
 ;; assume c contains a valid dbi connection
 ((dbi-prepare-sql c "select * from table where id=?") "foo'bar")
  => "select * from table where id='foo''bar'"
 @end example
+@c JP
+@example
+;; c は正しいdbiコネクションを持っているとする
+((dbi-prepare-sql c "select * from table where id=?") "foo'bar")
+ => "select * from table where id='foo''bar'"
+@end example
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
