@@ -40,7 +40,7 @@ In this example, I added AC_PROG_CXX macro in configure.in to find
 out system's C++ compiler.
 
     NOTE: the C++ compiler has to be 'compatible' with the C
-    compiler used to build Gauche, e.g. it and must accept the
+    compiler used to build Gauche, e.g. it must accept the
     same set of command-line options to generate a shared
     library.  Gcc and g++ are such compatible ones.
 
@@ -140,9 +140,9 @@ Case 2: The foreign object is allocated by the foreign library, and
         There's no universal solution for it, but Gauche provides a
         convenience mehchanism that works in typical cases.  If you
         give a flag SCM_FOREIGN_POINTER_KEEP_IDENTITY to the
-        Scm_MakeForeginPointerClass, the Gauche garantees that 
+        Scm_MakeForeginPointerClass, then Gauche garantees that 
         Scm_MakeForeignPointer returns exactly same Scheme object
-        for the same pointer (internally, it uses weak hash table to
+        for the same pointer (internally, it uses a weak hash table to
         map the void* pointer value to the created Scheme object).
         If your code never assigns the wrapped foreign pointer to
         other Scheme objects, then you can be sure that whenever the
@@ -207,7 +207,7 @@ error messages), C function or macro to check the type, an unboxer,
 and a boxer.
 
     NOTE: I'm planning to have better way to define foreign types.
-    Consider this define-type as temporary structure.
+    Consider this define-type as temporary solution.
 
 The define-cproc directive defines the foreign function interface:
 
@@ -231,7 +231,7 @@ important ones are the followings:
 
   (expr [return-type] C-expression)
 
-  (body [return-type] C-code-fragment)
+  (body [return-type] C-code-fragment ...)
 
 You have to have either one of these.
 
@@ -240,9 +240,10 @@ C-function-name, with the arguments specified in ARGSPEC.
 If the Scheme calling convention matches the C function, this
 is the easiest way.  If return-type is given, the returned value
 is boxed accordingly.  If return-type is omitted, the C function
-must return ScmObj.  You can also put <void> as a return-type,
-in which case the return value of the C function is discarded
-and the Scheme function returns #<undef>.
+must return ScmObj, which is returned from the Scheme function as is.
+You can also put <void> as a return-type, in which case the
+return value of the C function is discarded and the Scheme
+function returns #<undef>.
 
 'EXPR' clause allows you to specify a C expression instead.  
 The result of expression is boxed accordingly if return-type
@@ -330,7 +331,7 @@ catch clause (std::exception and ...) to be generated.
 
 Be always careful about the ownership of the resources.  If you're
 within Gauche's world, most things are taken care of by its garbage
-collector.  But once you step outside of the foreign land, it's up
+collector.  But once you step to the foreign land, it's up
 to you again to make sure all resources are managed.
 
 Especially, make sure the memory owned by Gauche is always visible
