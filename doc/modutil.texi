@@ -9436,53 +9436,118 @@ Argument @var{port-or-filename} works like described in @code{srl:sxml->xml}.
 These functions provide full access to all configuration parameters of
 the XML serializer.
 @c JP
-以下の手続きはXMLシリアライザの全ての変更可能なパラメータへのアクセスを
-提供します。
+以下の手続きはXMLシリアライザの全ての設定パラメータへのアクセスを提供
+します。
 @c COMMON
 
 @defun srl:parameterizable sxml-obj &optional port-or-filename params*
+@c EN
 Generalized serialization procedure, parameterizable with all the
 serialization parameters supported by this implementation.
+@c JP
+汎用シリアライズ手続、この実装でサポートするすべてのシリアライズパラメー
+タのパラメータ化。
+@c COMMON
 
+@c EN
 @var{sxml-obj} - an SXML object to serialize
+@c JP
+@var{sxml-obj} - シリアライズするSXMLオブジェクト。
+@c COMMON
 
+@c EN
 @var{port-or-filename} - either @code{#f}, a port or a string; works
 like in srl:sxml->xml (@ref{Simple SXML serializing}).
+@c JP
+@var{port-or-filename} - @code{#f}あるいはポートあるいは文字列のどれか。
+srl:sxml->xmlのものと同じ働きをします(@ref{Simple SXML serializing})。
+@c COMMON
 
+@c EN
 @var{params} - each parameter is a cons of param-name (a symbol) and
 param-value.  The available parameter names and their values are
 described below:
+@c JP
+@var{params} - 各パラメータはパラメータ名(シンボル)とパラメータ値との
+コンス対。利用可能なパラメータ名とその値については後述。
+@c COMMON
 
+@c EN
 @code{method} - Either the symbol @code{xml} or @code{html}.  For a
 detailed explanation of the difference between XML and HTML methods,
 see XSLT 2.0 and XQuery 1.0 Serialization (@uref{http://www.w3.org/TR/2005/CR-xslt-xquery-serialization-20051103/}).
+@c JP
+@code{method} - シンボル@code{xml}か@code{html}のどちらか。XMLメソッド
+とHTMLメソッドの相違についての詳しい説明は、XSLT 2.0 と XQuery
+Serialization 
+(@uref{http://www.w3.org/TR/2005/CR-xslt-xquery-serialization-20051103/})
+を参照してください。
+@c COMMON
 
+@c EN
 @code{indent} - Whether the output XML should include whitespace for
 human readability (@code{#t} or @code{#f}).  You can also supply a
 string, which will be used as the indentation unit.
+@c JP
+@code{indent} - 出力の XML が読みやすさのために空白を含むかどうか
+(@code{#t}あるいは@code{#f})。文字列を設定することもでき、その場合
+インデント単位に使われます。
+@c COMMON
 
+@c EN
 @code{omit-xml-declaration?} - Whether the XML declaration should be
 omitted.  Default: @code{#t}.
+@c JP
+@code{omit-xml-declaration?} - XML宣言を省略するかどうか。デフォルトは
+@code{#t}。
+@c COMMON
 
+@c EN
 @code{standalone} - Whether to define the XML document as standalone in
 the XML declaration.  Should be one of the symbols @code{yes},
 @code{no} or @code{omit}, the later causing standalone declaration to
 be supressed.  Default: @code{omit}.
+@c JP
+@code{standalone} - XML ドキュメントを XML 宣言でスタンドアローンとし
+て定義するかどうか。@code{yes}、@code{no}、@code{omit}のうちいづれかの
+シンボルでなければならない。デフォルトは @code{omit}
+@c COMMON
 
+@c EN
 @code{version} - The XML version used in the declaration.  A string or
 a number.  Default: @code{"1.0"}.
+@c JP
+@code{version} - XML宣言中のXMLバージョン。文字列または数。デフォルト
+は@code{"1.0"}。
+@c COMMON
 
+@c EN
 @code{cdata-section-elements} - A list of SXML element names (as
 symbols).  The contents of those elements will be escaped as CDATA
 sections.
+@c JP
+@code{cdata-section-elements} - SXML要素の名前(シンボル)のリスト。これ
+らの要素の中身はCDATAセクションと同様にエスケープされる。
+@c COMMON
 
+@c EN
 @code{ns-prefix-assig} - A list of @code{(cons prefix namespace-uri)},
 where each @code{prefix} is a symbol and each @code{namespace-uri} a
 string.  Will serialize the given namespaces with the corresponding
 prefixes.
+@c JP
+@code{ns-prefix-assig} - @code{(cons prefix namespace-uri)}のリスト。
+各@code{prefix}はシンボルで、@code{namespace-uri}は文字列。
+対応する接頭辞をつけて与えられた名前空間をシリアライズする。
+@c COMMENT
 
+@c EN
 ATTENTION: If a parameter name is unexpected or a parameter value is
 ill-formed, the parameter is silently ignored!
+@c JP
+注意： パラメータ名が期待された名前ではない場合、あるいはパラメータ値
+が不正な形式である場合にはそのようなパラメータは警告なしで無視されます。
+@c COMMON
 
 @c EN
 Example usage:
@@ -9542,15 +9607,22 @@ value ::= string | number
 @end defun
 
 @defun srl:sxml->string sxml-obj cdata-section-elements indent method ns-prefix-assig omit-xml-declaration? standalone version
+@c EN
 Same as @code{srl:parameterizable} returning a string and without the
 overhead of parsing parameters.  This function interface may change in
 future versions of the library.
+@c JP
+@code{srl:parameterizable}と同様文字列を返し、パラメータ解析のオーバヘッ
+ドはありません。この関数のインタフェースはこのライブラリの将来のバージョ
+ンでは変更されるかもしれません。
+@c COMMON
 @end defun
 
 @defun srl:display-sxml sxml->obj port-or-filename cdata-section-elements indent method ns-prefix-assig omit-xml-declaration? standalone version
-Same as @code{srl:parameterizable} writing to @var{port-or-filename}
-and without the overhead of parsing parameters.  This function
-interface may change in future versions of the library.
+
+@code{srl:parameterizable}と同様@var{port-or-filename}に書きこみ、パラ
+メータ解析のオーバーヘッドはありません。この関数のインタフェースはこの
+ライブラリの将来のバージョンでは変更されるかもしれません。
 @end defun
 
 @c ----------------------------------------------------------------------
