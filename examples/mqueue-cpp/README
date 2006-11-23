@@ -140,7 +140,7 @@ Case 2: The foreign object is allocated by the foreign library, and
         There's no universal solution for it, but Gauche provides a
         convenience mehchanism that works in typical cases.  If you
         give a flag SCM_FOREIGN_POINTER_KEEP_IDENTITY to the
-        Scm_MakeForeginPointerClass, then Gauche garantees that 
+        Scm_MakeForeginPointerClass, then Gauche guarantees that 
         Scm_MakeForeignPointer returns exactly same Scheme object
         for the same pointer (internally, it uses a weak hash table to
         map the void* pointer value to the created Scheme object).
