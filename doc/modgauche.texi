@@ -3227,6 +3227,9 @@ It can be @code{#f} if no such procedure is needed.
 The default value is @code{#f}.
 @c JP
 @code{input-port}からEOFが読み込まれたときに呼び出されるサンクです。
+@var{finalizer}実行中は、現在の入力、出力、エラー出力ポートは、
+@code{listener-read-handler}が呼ばれたときのものに戻っています。
+
 このような手続きが必要ない場合は@code{#f}にしておいて構いません。
 デフォルトの値は@code{#f}です。
 @c COMMON
