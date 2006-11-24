@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.h,v 1.1 2006-03-10 07:28:16 shirok Exp $
+ *  $Id: regexp.h,v 1.2 2006-11-24 11:07:00 shirok Exp $
  */
 
 #ifndef GAUCHE_REGEXP_H
@@ -59,9 +59,13 @@ struct ScmRegMatchRec {
     struct ScmRegMatchSub {
         int start;
         int length;
+        int after;
         const char *startp;
         const char *endp;
     } **matches;
 };
+
+#define SCM_REG_MATCH_SINGLE_BYTE_P(rm) \
+    ((rm)->inputSize == (rm)->inputLen)
 
 #endif /* GAUCHE_REGEXP_H */

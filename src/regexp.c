@@ -31,7 +31,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.60 2006-11-04 09:56:59 shirok Exp $
+ *  $Id: regexp.c,v 1.61 2006-11-24 11:07:00 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -2560,6 +2560,7 @@ static ScmObj rex(ScmRegexp *rx, ScmString *orig,
         ctx.matches[i] = SCM_NEW(struct ScmRegMatchSub);
         ctx.matches[i]->start = -1;
         ctx.matches[i]->length = -1;
+        ctx.matches[i]->after = -1;
         ctx.matches[i]->startp = NULL;
         ctx.matches[i]->endp = NULL;
     }
@@ -2617,19 +2618,95 @@ ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
  * Retrieving matches
  */
 
-/* TODO: MT Warning: these retrival functions change match object's
- * internal state.
+/* We calculate string length and position (in characters) lazily.
+ * The match routine only sets ScmRegMatchSub's startp and endp
+ * fields, and leaves start, length, and after fields -1.
+ * When the submatch is retrieved we calculate values of those fields.
+ *
+ * Note that, even such retrieval functions mutate the state of
+ * submatch objects, we don't need mutex to avoid race condition
+ * in MT environment.  The state transition is one way (-1 to a
+ * fixed value) and idempotent, so there's no problem if more than
+ * one thread try to change the fields.
+ *
+ * The three parameters, start, length, and after, indicates the
+ * # of characters.  Character counding is expensive, so we try
+ * to avoid calling Scm_MBLen as much as possible.   If other two
+ * values are known, we just subtract them from the inputLen.
+ * 
+ * |<-------original string------------>|
+ * |      |<---matched substr -->|      |
+ * |      |                      |      | 
+ * |<---->|<-------------------->|<---->|
+ * |start          length          after|
+ * |<---------------------------------->|
+ *               inputLen
  */
-static ScmObj regmatch_substr(struct ScmRegMatchSub *sub)
+
+/* We want to avoid unnecessary character counting as much as
+   possible. */
+
+#define MSUB_BEFORE_SIZE(rm, sub) ((sub)->startp - (rm)->input)
+#define MSUB_SIZE(rm, sub)        ((sub)->endp - (sub)->startp)
+#define MSUB_AFTER_SIZE(rm, sub)  ((rm)->input + (rm)->inputSize - (sub)->endp)
+
+#define MSUB_BEFORE_LENGTH(rm, sub) \
+    Scm_MBLen((rm)->input, (sub)->startp)
+#define MSUB_LENGTH(rm, sub) \
+    Scm_MBLen((sub)->startp, (sub)->endp)
+#define MSUB_AFTER_LENGTH(rm, sub) \
+    Scm_MBLen((sub)->endp, (rm)->input + (rm)->inputSize)
+
+#define UNCOUNTED(rm, sub)                                      \
+    (((sub)->start    >= 0 ? 0 : MSUB_BEFORE_SIZE(rm, sub))     \
+     + ((sub)->length >= 0 ? 0 : MSUB_SIZE(rm, sub))            \
+     + ((sub)->after  >= 0 ? 0 : MSUB_AFTER_SIZE(rm, sub)))
+
+static void regmatch_count_start(ScmRegMatch *rm, 
+                                 struct ScmRegMatchSub *sub)
 {
-    if (sub == NULL) return SCM_FALSE;
-    if (sub->length >= 0) {
-        return Scm_MakeString(sub->startp, sub->endp - sub->startp,
-                              sub->length, 0);
+    if (SCM_REG_MATCH_SINGLE_BYTE_P(rm)) {
+        sub->start = MSUB_BEFORE_SIZE(rm, sub);
+    } else if (sub->length >= 0 && sub->after >= 0) {
+        sub->start = rm->inputLen - sub->length - sub->after;
+    } else if (UNCOUNTED(rm, sub) / 2 > MSUB_BEFORE_SIZE(rm, sub)) {
+        sub->start = MSUB_BEFORE_LENGTH(rm, sub);
     } else {
-        ScmObj s = Scm_MakeString(sub->startp, sub->endp - sub->startp, -1, 0);
-        sub->length = SCM_STRING_BODY_LENGTH(SCM_STRING_BODY(s));
-        return s;
+        if (sub->length < 0) sub->length = MSUB_LENGTH(rm, sub);
+        if (sub->after < 0)  sub->after  = MSUB_AFTER_LENGTH(rm, sub);
+        sub->start = rm->inputLen - sub->start - sub->length;
+    }
+}
+
+static void regmatch_count_length(ScmRegMatch *rm, 
+                                  struct ScmRegMatchSub *sub)
+{
+    if (SCM_REG_MATCH_SINGLE_BYTE_P(rm)) {
+        sub->length = MSUB_SIZE(rm, sub);
+    } else if (sub->start >= 0 && sub->after >= 0) {
+        sub->length = rm->inputLen - sub->start - sub->after;
+    } else if (UNCOUNTED(rm, sub) / 2 > MSUB_SIZE(rm, sub)) {
+        sub->length = MSUB_LENGTH(rm, sub);
+    } else {
+        if (sub->start < 0) sub->start = MSUB_BEFORE_LENGTH(rm, sub);
+        if (sub->after < 0) sub->after = MSUB_AFTER_LENGTH(rm, sub);
+        sub->length = rm->inputLen - sub->start - sub->after;
+    }
+}
+
+static void regmatch_count_after(ScmRegMatch *rm, 
+                                 struct ScmRegMatchSub *sub)
+{
+    if (SCM_REG_MATCH_SINGLE_BYTE_P(rm)) {
+        sub->after = MSUB_AFTER_SIZE(rm, sub);
+    } else if (sub->start >= 0 && sub->length >= 0) {
+        sub->after = rm->inputLen - sub->start - sub->length;
+    } else if (UNCOUNTED(rm, sub) / 2 > MSUB_AFTER_SIZE(rm, sub)) {
+        sub->after = MSUB_AFTER_LENGTH(rm, sub);
+    } else {
+        if (sub->start < 0)  sub->start  = MSUB_BEFORE_LENGTH(rm, sub);
+        if (sub->length < 0) sub->length = MSUB_LENGTH(rm, sub);
+        sub->after = rm->inputLen - sub->start - sub->length;
     }
 }
 
@@ -2659,17 +2736,11 @@ static struct ScmRegMatchSub *regmatch_ref(ScmRegMatch *rm, ScmObj obj)
     return NULL;       /* dummy */
 }
 
-ScmObj Scm_RegMatchSubstr(ScmRegMatch *rm, ScmObj obj)
-{
-    return regmatch_substr(regmatch_ref(rm, obj));
-}
-
 ScmObj Scm_RegMatchStart(ScmRegMatch *rm, ScmObj obj)
 {
     struct ScmRegMatchSub *sub = regmatch_ref(rm, obj);
     if (sub == NULL) return SCM_FALSE;
-    if (sub->start < 0)
-        sub->start = Scm_MBLen(rm->input, sub->startp);;
+    if (sub->start < 0) regmatch_count_start(rm, sub);
     return Scm_MakeInteger(sub->start);
 }
 
@@ -2677,26 +2748,35 @@ ScmObj Scm_RegMatchEnd(ScmRegMatch *rm, ScmObj obj)
 {
     struct ScmRegMatchSub *sub = regmatch_ref(rm, obj);
     if (sub == NULL) return SCM_FALSE;
-    if (sub->start < 0)
-        sub->start = Scm_MBLen(rm->input, sub->startp);
-    if (sub->length < 0)
-        sub->length = Scm_MBLen(sub->startp, sub->endp);
-    return Scm_MakeInteger(sub->start + sub->length);
+    if (sub->after < 0) regmatch_count_after(rm, sub);
+    return Scm_MakeInteger(rm->inputLen - sub->after);
 }
 
 ScmObj Scm_RegMatchBefore(ScmRegMatch *rm, ScmObj obj)
 {
     struct ScmRegMatchSub *sub = regmatch_ref(rm, obj);
     if (sub == NULL) return SCM_FALSE;
-    return Scm_MakeString(rm->input, sub->startp - rm->input, -1, 0);
+    if (sub->start < 0) regmatch_count_start(rm, sub);
+    return Scm_MakeString(rm->input, MSUB_BEFORE_SIZE(rm, sub),
+                          sub->start, 0);
+}
+
+ScmObj Scm_RegMatchSubstr(ScmRegMatch *rm, ScmObj obj)
+{
+    struct ScmRegMatchSub *sub = regmatch_ref(rm, obj);
+    if (sub == NULL) return SCM_FALSE;
+    if (sub->length < 0) regmatch_count_length(rm, sub);
+    return Scm_MakeString(sub->startp, MSUB_SIZE(rm, sub),
+                          sub->length, 0);
 }
 
 ScmObj Scm_RegMatchAfter(ScmRegMatch *rm, ScmObj obj)
 {
     struct ScmRegMatchSub *sub = regmatch_ref(rm, obj);
     if (sub == NULL) return SCM_FALSE;
-    return Scm_MakeString(sub->endp,
-                          rm->input + rm->inputSize - sub->endp, -1, 0);
+    if (sub->after < 0) regmatch_count_after(rm, sub);
+    return Scm_MakeString(sub->endp, MSUB_AFTER_SIZE(rm, sub),
+                          sub->after, 0);
 }
 
 /* for debug */

@@ -1,3 +1,8 @@
+2006-11-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/regexp.c (Scm_RegMatchStart etc.): Optimized counting length
+	  of submatch strings.  Patch from Rui Ueyama.
+
 2006-11-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c (Scm__InitClass): Added missing initialization of
