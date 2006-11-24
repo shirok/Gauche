@@ -31,7 +31,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.62 2006-11-24 11:25:48 shirok Exp $
+ *  $Id: regexp.c,v 1.63 2006-11-24 11:26:36 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -2674,7 +2674,7 @@ static void regmatch_count_start(ScmRegMatch *rm,
     } else {
         if (sub->length < 0) sub->length = MSUB_LENGTH(rm, sub);
         if (sub->after < 0)  sub->after  = MSUB_AFTER_LENGTH(rm, sub);
-        sub->start = rm->inputLen - sub->start - sub->length;
+        sub->start = rm->inputLen - sub->after - sub->length;
     }
 }
 
