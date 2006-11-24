@@ -31,7 +31,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.61 2006-11-24 11:07:00 shirok Exp $
+ *  $Id: regexp.c,v 1.62 2006-11-24 11:25:48 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -2630,7 +2630,7 @@ ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *str)
  * one thread try to change the fields.
  *
  * The three parameters, start, length, and after, indicates the
- * # of characters.  Character counding is expensive, so we try
+ * # of characters.  Character counting is expensive, so we try
  * to avoid calling Scm_MBLen as much as possible.   If other two
  * values are known, we just subtract them from the inputLen.
  * 
