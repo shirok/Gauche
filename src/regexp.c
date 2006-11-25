@@ -31,7 +31,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.63 2006-11-24 11:26:36 shirok Exp $
+ *  $Id: regexp.c,v 1.64 2006-11-25 02:59:16 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -2667,8 +2667,6 @@ static void regmatch_count_start(ScmRegMatch *rm,
 {
     if (SCM_REG_MATCH_SINGLE_BYTE_P(rm)) {
         sub->start = MSUB_BEFORE_SIZE(rm, sub);
-    } else if (sub->length >= 0 && sub->after >= 0) {
-        sub->start = rm->inputLen - sub->length - sub->after;
     } else if (UNCOUNTED(rm, sub) / 2 > MSUB_BEFORE_SIZE(rm, sub)) {
         sub->start = MSUB_BEFORE_LENGTH(rm, sub);
     } else {
@@ -2683,8 +2681,6 @@ static void regmatch_count_length(ScmRegMatch *rm,
 {
     if (SCM_REG_MATCH_SINGLE_BYTE_P(rm)) {
         sub->length = MSUB_SIZE(rm, sub);
-    } else if (sub->start >= 0 && sub->after >= 0) {
-        sub->length = rm->inputLen - sub->start - sub->after;
     } else if (UNCOUNTED(rm, sub) / 2 > MSUB_SIZE(rm, sub)) {
         sub->length = MSUB_LENGTH(rm, sub);
     } else {
@@ -2699,8 +2695,6 @@ static void regmatch_count_after(ScmRegMatch *rm,
 {
     if (SCM_REG_MATCH_SINGLE_BYTE_P(rm)) {
         sub->after = MSUB_AFTER_SIZE(rm, sub);
-    } else if (sub->start >= 0 && sub->length >= 0) {
-        sub->after = rm->inputLen - sub->start - sub->length;
     } else if (UNCOUNTED(rm, sub) / 2 > MSUB_AFTER_SIZE(rm, sub)) {
         sub->after = MSUB_AFTER_LENGTH(rm, sub);
     } else {
