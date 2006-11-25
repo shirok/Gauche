@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with utf-8.
 
-;; $Id: utf-8.scm,v 1.8 2006-11-08 13:41:49 shirok Exp $
+;; $Id: utf-8.scm,v 1.9 2006-11-25 02:47:16 shirok Exp $
 
 (use gauche.test)
 
@@ -594,5 +594,45 @@
        (cond ((rxmatch #/(?<=.あ.)う/ "あaaう")
               => rxmatch-substring)
              (else #f)))
+
+;; The following tests are tailored to cover all paths
+;; introduced at regexp.c,v 1.63 to minimize counting
+;; string length.
+
+(test* "regexp (full coverage - start)" '("あa" "あaいiうu")
+       (list
+        ;; count start directly
+        (rxmatch-before (rxmatch #/いiう/ "あaいiうuえeおo"))
+        ;; count the rest
+        (rxmatch-before (rxmatch #/えeお/ "あaいiうuえeおo"))))
+
+(test* "regexp (full coverage - length)" '("いiう" "aいiうuえeお")
+       (list
+        ;; count length directly
+        (rxmatch-substring (rxmatch #/いiう/ "あaいiうuえeおo"))
+        ;; count the rest
+        (rxmatch-substring (rxmatch #/aいiうuえeお/ "あaいiうuえeおo"))))
+
+(test* "regexp (full coverage - after)" '("おo" "iうuえeおo")
+       (list
+        ;; count after directly
+        (rxmatch-after (rxmatch #/iうuえe/ "あaいiうuえeおo"))
+        ;; count the rest
+        (rxmatch-after (rxmatch #/あaい/ "あaいiうuえeおo"))))
+
+(test* "regexp (full coverage - memoized length/after)" '("えeお" "o")
+       (let1 m (rxmatch #/えeお/ "あaいiうuえeおo")
+         (rxmatch-start m) ;; memoizes length and after
+         (list (rxmatch-substring m) (rxmatch-after m))))
+
+(test* "regexp (full coverage - memoized start/after)" '("あ" "おo")
+       (let1 m (rxmatch #/aいiうuえe/ "あaいiうuえeおo")
+         (rxmatch-substring m) ;; memoizes start and after
+         (list (rxmatch-before m) (rxmatch-after m))))
+
+(test* "regexp (full coverage - memoized start/length)" '("あa" "いi")
+       (let1 m (rxmatch #/いi/ "あaいiうuえeおo")
+         (rxmatch-after m) ;; memoizes start and length
+         (list (rxmatch-before m) (rxmatch-substring m))))
 
 (test-end)
