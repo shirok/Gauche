@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.46 2006-11-13 02:30:00 shirok Exp $
+;;;  $Id: compile.scm,v 1.47 2006-11-26 19:58:21 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1378,7 +1378,7 @@
   ;; Handle a global call.  PROGRAM's car is resolved to an identifier, ID.
   ;; We know PROGRAM is a call to global procedure, macro, or syntax.
   (define (pass1/global-call id)
-    (receive (gval type) (global-call-type id)
+    (receive (gval type) (global-call-type id cenv)
       (if gval
         (case type
           ((macro)

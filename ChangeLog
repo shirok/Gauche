@@ -1,3 +1,9 @@
+2006-11-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/intlib.stub (global-call-type): Experimentally added a feature
+	  to record modules used during expansion, to be used by test-module
+	  later.
+
 2006-11-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/regexp.c (Scm_RegMatchStart etc.): Optimized counting length

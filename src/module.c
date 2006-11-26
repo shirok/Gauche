@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.64 2006-11-04 09:56:59 shirok Exp $
+ *  $Id: module.c,v 1.65 2006-11-26 19:58:21 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -111,7 +111,7 @@ static ScmObj defaultMpl =     SCM_NIL; /* will be initialized */
 static void init_module(ScmModule *m, ScmSymbol *name)
 {
     m->name = name;
-    m->imported = m->exported = SCM_NIL;
+    m->imported = m->exported = m->depended = SCM_NIL;
     m->exportAll = FALSE;
     m->parents = defaultParents;
     m->mpl = Scm_Cons(SCM_OBJ(m), defaultMpl);
