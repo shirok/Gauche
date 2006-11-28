@@ -3363,13 +3363,13 @@ Reinterpret the content of an incomplete string @var{str}
 and returns a newly created complete string from it.
 @c JP
 不完全文字列@var{str}の内容を再解釈して、あらたに完全文字列を返す。
-@c COMMENT
+@c COMMON
 @c EN
 The @var{handling} argument specifies how to handle the illegal
 byte sequences in @var{str}.
 @c JP
 @var{handling}引数で@var{str}中の不正なバイト列の扱いかたを指定します。
-@c COMMENT
+@c COMMON
 @table @asis
 @item @code{#f}
 @c EN
@@ -3378,13 +3378,13 @@ conversion and returns @code{#f}.  This is the default behavior.
 @c JP
 @var{str}が不正なバイト列を含んでいる場合、変換を諦めて@code{#f}を返し
 ます。これがデフォルトのふるまいです。
-@c COMMENT
+@c COMMON
 @item @code{:omit}
 @c EN
 Omit any illegal byte sequences.  Always returns a complete string.
 @c JP
 不正なバイト列を捨てます。常に完全文字列を返します。
-@c COMMENT
+@c COMMON
 @c EN
 @item a character
 Replace each byte in illegal byte sequences by the given character.
@@ -3393,7 +3393,7 @@ Always returns a complete string.
 @item 1文字
 不正なバイト列中の各バイトを与えた文字で置き換えます。常に完全文字列を
 返します。
-@c COMMENT
+@c COMMON
 @end table
 @c EN
 If @var{str} is already a complete string, its copy is returned.
