@@ -4097,12 +4097,21 @@ in @var{regexp} doesn't only mean the beginning of input string.
 
 @defun regexp-replace* string rx1 sub1 rx2 sub2 @dots{}
 @defunx regexp-replace-all* string rx1 sub1 rx2 sub2 @dots{}
+@c EN
 First applies @code{regexp-replace} or @code{regexp-replace-all} to
 @var{string} with a regular expression @var{rx1} substituting for
 @var{sub1}, then applies the function on the result string
 with a regular expression @var{rx2} substituting for @var{sub2}, and
 so on.  These functions are handy when you want to apply
 multiple substitutions sequentially on a string.
+@c JP
+まず，@code{regexp-replace} あるいは @code{regexp-replace-all} を
+正規表現 @var{rx1}、置換 @var{sub1} で @var{string} に適用し、
+その結果にさらに @code{regexp-replace} あるいは
+@code{regexp-replace-all} を正規表現 @var{rx2}、置換 @var{sub2} で
+適用し、以下同様です。これらの関数はひとつの文字列上で複数回置換を行う
+ときに便利です。
+@c COMMON
 @end defun
 
 @defun regexp-quote string
