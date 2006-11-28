@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.134 2006-11-11 03:52:28 shirok Exp $
+ *  $Id: number.c,v 1.135 2006-11-28 09:36:20 shirok Exp $
  */
 
 #include <math.h>
@@ -54,7 +54,7 @@
 #ifdef HAVE_ISNAN
 #define SCM_IS_NAN(x)  isnan(x)
 #else
-#define SCM_IS_NAN(x)  FALSE    /* we don't have a clue */
+#define SCM_IS_NAN(x)  (!((x)==(x)))
 #endif
 
 #ifdef HAVE_ISINF
@@ -1074,6 +1074,9 @@ ScmObj Scm_InexactToExact(ScmObj obj)
     if (SCM_FLONUMP(obj)) {
         double d = SCM_FLONUM_VALUE(obj);
         double f, i;
+        if (SCM_IS_NAN(d) || SCM_IS_INF(d)) {
+            Scm_Error("Exact infinity/nan is not supported: %S", obj);
+        }
         if ((f = modf(d, &i)) == 0.0) {
             /* integer */
             if (d < SCM_SMALL_INT_MIN || d > SCM_SMALL_INT_MAX) {
