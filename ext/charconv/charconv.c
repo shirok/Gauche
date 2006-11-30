@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: charconv.c,v 1.54 2006-07-19 05:25:10 shirok Exp $
+ *  $Id: charconv.c,v 1.55 2006-11-30 23:54:59 shirok Exp $
  */
 
 #include <string.h>
@@ -214,7 +214,7 @@ static int conv_input_filler(ScmPort *port, int mincnt)
         /* it's likely that the input contains invalid sequence. */
         int cnt = inroom >= 6 ? 6 : inroom;
         ScmObj s = Scm_MakeString(info->buf+insize-inroom, cnt, cnt,
-                                  SCM_MAKSTR_COPYING|SCM_MAKSTR_INCOMPLETE);
+                                  SCM_STRING_COPYING|SCM_STRING_INCOMPLETE);
         Scm_Error("invalid character sequence in the input stream: %S ...", s);
     }
 

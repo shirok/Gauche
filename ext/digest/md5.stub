@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: md5.stub,v 1.10 2005-10-13 08:14:13 shirok Exp $
+;;;  $Id: md5.stub,v 1.11 2006-11-30 23:55:00 shirok Exp $
 ;;;
 
 "
@@ -94,7 +94,7 @@
 (define-cproc %md5-final (md5::<md5>)
   "  unsigned char digest[16];
   MD5Final(digest, &md5->ctx);
-  SCM_RETURN(Scm_MakeString((char *)digest, 16, 16, SCM_MAKSTR_INCOMPLETE|SCM_MAKSTR_COPYING));")
+  SCM_RETURN(Scm_MakeString((char *)digest, 16, 16, SCM_STRING_INCOMPLETE|SCM_STRING_COPYING));")
 
 ;; Local variables:
 ;; mode: scheme

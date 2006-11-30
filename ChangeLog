@@ -1,3 +1,14 @@
+2006-11-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/string.c (get_string_from_body), src/gauche.h: Avoid accessing
+	  out-of-bound element of the string content to check whether the
+	  string is NUL-terminated.  Instead, we introduced a new flag
+	  SCM_STRING_TERMINATED to track whether the string content is
+	  NUL-terminated.
+	  Also we deprecate SCM_MAKSTR_* flags, and consolidated them to
+	  SCM_STRING_* flags.
+	* various files: Replaced SCM_MAKSTR_* flags for SCM_STRING_* flags.
+
 2006-11-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (Scm_InexactToExact): Rule out NaN and Inf before

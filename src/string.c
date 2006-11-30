@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: string.c,v 1.80 2006-11-21 02:48:22 shirok Exp $
+ *  $Id: string.c,v 1.81 2006-11-30 23:55:01 shirok Exp $
  */
 
 #include <stdio.h>
@@ -170,13 +170,21 @@ int Scm_MBLen(const char *str, const char *stop)
 ScmObj Scm_MakeString(const char *str, int size, int len, int flags)
 {
     ScmString *s;
+
+    flags &= ~SCM_STRING_TERMINATED;
+
+    if (size < 0) {
+        count_size_and_length(str, &size, &len);
+        flags |= SCM_STRING_TERMINATED;
+    } else {
+        if (len < 0) len = count_length(str, size);
+    }
     
-    if (size < 0) count_size_and_length(str, &size, &len);
-    else if (len < 0) len = count_length(str, size);
     if (flags & SCM_MAKSTR_COPYING) {
         char *nstr = SCM_NEW_ATOMIC2(char *, size + 1);
         memcpy(nstr, str, size);
         nstr[size] = '\0';          /* be kind to C */
+        flags |= SCM_STRING_TERMINATED;
         s = make_str(len, size, nstr, flags);
     } else {
         s = make_str(len, size, str, flags);
@@ -195,7 +203,7 @@ ScmObj Scm_MakeFillString(int len, ScmChar fill)
         SCM_CHAR_PUT(p, fill);
     }
     ptr[size*len] = '\0';
-    return SCM_OBJ(make_str(len, size*len, ptr, 0));
+    return SCM_OBJ(make_str(len, size*len, ptr, SCM_STRING_TERMINATED));
 }
 
 ScmObj Scm_ListToString(ScmObj chars)
@@ -241,7 +249,7 @@ char *Scm_GetString(ScmString *str)
 static const char *get_string_from_body(const ScmStringBody *b)
 {
     int size = SCM_STRING_BODY_SIZE(b);
-    if (SCM_STRING_BODY_START(b)[size] == '\0') {
+    if (SCM_STRING_BODY_HAS_FLAG(b, SCM_STRING_TERMINATED)) {
         /* we can use string data as C-string */
         return SCM_STRING_BODY_START(b);
     } else {
@@ -249,8 +257,11 @@ static const char *get_string_from_body(const ScmStringBody *b)
         memcpy(p, SCM_STRING_BODY_START(b), size);
         p[size] = '\0';
         /* kludge! This breaks 'const' qualification, but we know
-           this is an idempotent operation from the outside */
+           this is an idempotent operation from the outside.  Note that
+           this is safe even multiple threads execute this part
+           simultaneously. */
         ((ScmStringBody*)b)->start = p; /* discard const qualifier */
+        ((ScmStringBody*)b)->flags |= SCM_STRING_TERMINATED;
         return p;
     }
 }
@@ -597,6 +608,7 @@ ScmObj Scm_StringAppend2(ScmString *x, ScmString *y)
     memcpy(p, xb->start, sizex);
     memcpy(p+sizex, yb->start, sizey);
     p[sizex + sizey] = '\0';
+    flags |= SCM_STRING_TERMINATED;
 
     if (SCM_STRING_BODY_INCOMPLETE_P(xb) || SCM_STRING_BODY_INCOMPLETE_P(yb)) {
         flags |= SCM_STRING_INCOMPLETE; /* yields incomplete string */
@@ -618,6 +630,7 @@ ScmObj Scm_StringAppendC(ScmString *x, const char *str, int sizey, int leny)
     memcpy(p, xb->start, sizex);
     memcpy(p+sizex, str, sizey);
     p[sizex+sizey] = '\0';
+    flags |= SCM_STRING_TERMINATED;
 
     if (SCM_STRING_BODY_INCOMPLETE_P(xb) || leny < 0) {
         flags |= SCM_STRING_INCOMPLETE;
@@ -668,6 +681,7 @@ ScmObj Scm_StringAppend(ScmObj strs)
     }
     *bufp = '\0';
     bodies = NULL;              /* to help GC */
+    flags |= SCM_STRING_TERMINATED;
     return SCM_OBJ(make_str(len, size, buf, flags));
 #undef BODY_ARRAY_SIZE
 }
@@ -747,6 +761,7 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer)
     }
     *bufp = '\0';
     bodies = NULL;              /* to help GC */
+    flags |= SCM_STRING_TERMINATED;
     return SCM_OBJ(make_str(len, size, buf, flags));
 #undef BODY_ARRAY_SIZE
 }
@@ -797,6 +812,7 @@ static ScmObj string_substitute(ScmString *x,
     /* Modify x atomically */
     newlen = SCM_STRING_BODY_INCOMPLETE_P(xb)? sizez : lenx;
     newflags = SCM_STRING_BODY_FLAGS(xb) & ~SCM_STRING_IMMUTABLE;
+    newflags |= SCM_STRING_TERMINATED;
     if (incompletep) newflags |= SCM_STRING_INCOMPLETE;
     x->body = make_str_body(newlen,  /* len */
                             sizez,   /* size */
@@ -846,7 +862,8 @@ ScmObj Scm_StringByteSet(ScmString *x, int k, ScmByte b)
     p[k] = (char)b;
 
     /* Modify x atomically */
-    x->body = make_str_body(size, size, p, SCM_STRING_INCOMPLETE);
+    x->body = make_str_body(size, size, p,
+                            SCM_STRING_INCOMPLETE|SCM_STRING_TERMINATED);
     return SCM_OBJ(x);
 }
 
@@ -857,13 +874,15 @@ ScmObj Scm_StringByteSet(ScmString *x, int k, ScmByte b)
 static ScmObj substring(const ScmStringBody *xb, int start, int end)
 {
     int len = SCM_STRING_BODY_LENGTH(xb);
+    int flags = SCM_STRING_BODY_FLAGS(xb) & ~SCM_STRING_IMMUTABLE;
     SCM_CHECK_START_END(start, end, len);
 
     if (SCM_STRING_BODY_SINGLE_BYTE_P(xb)) {
+        if (end != len) flags &= ~SCM_STRING_TERMINATED;
         return SCM_OBJ(make_str(end-start,
                                 end-start,
                                 SCM_STRING_BODY_START(xb) + start,
-                                SCM_STRING_BODY_FLAGS(xb)&~SCM_STRING_IMMUTABLE));
+                                flags));
     } else {
         const char *s, *e;
         if (start) s = forward_pos(SCM_STRING_BODY_START(xb), start);
@@ -872,8 +891,9 @@ static ScmObj substring(const ScmStringBody *xb, int start, int end)
             e = SCM_STRING_BODY_START(xb) + SCM_STRING_BODY_SIZE(xb);
         } else {
             e = forward_pos(s, end - start);
+            flags &= ~SCM_STRING_TERMINATED;
         }
-        return SCM_OBJ(make_str(end - start, e - s, s, 0));
+        return SCM_OBJ(make_str(end - start, e - s, s, flags));
     }
 }
 
@@ -1192,7 +1212,7 @@ ScmObj Scm_StringFill(ScmString *str, ScmChar ch,
     str->body = make_str_body(SCM_STRING_BODY_LENGTH(strb),
                               prelen + (end-start)*chlen + postlen,
                               newstr,
-                              0);
+                              SCM_STRING_TERMINATED);
     return SCM_OBJ(str);
 }
 
@@ -1453,6 +1473,7 @@ ScmObj Scm_StringPointerSet(ScmStringPointer *sp, int index)
 
 ScmObj Scm_StringPointerSubstring(ScmStringPointer *sp, int afterp)
 {
+    /* TODO: set SCM_STRING_TERMINATED if applicable. */
     if (sp->length < 0) {
         if (afterp)
             return SCM_OBJ(make_str(-1, sp->size - sp->index, sp->current, 0));
@@ -1625,7 +1646,7 @@ ScmObj Scm_DStringGet(ScmDString *dstr, int flags)
 {
     int len, size;
     const char *str = dstring_getz(dstr, &len, &size);
-    return SCM_OBJ(make_str(len, size, str, flags));
+    return SCM_OBJ(make_str(len, size, str, flags|SCM_STRING_TERMINATED));
 }
 
 /* For conveninence.   Note that dstr may already contain NUL byte in it,

@@ -35,7 +35,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; \$Id: uvlib.stub.tmpl,v 1.9 2006-11-04 09:56:59 shirok Exp $
+;;; \$Id: uvlib.stub.tmpl,v 1.10 2006-11-30 23:55:00 shirok Exp $
 ;;;
 
 "
@@ -295,7 +295,7 @@
    int len = SCM_UVECTOR_SIZE(v);
    SCM_CHECK_START_END(start, end, len);
    return Scm_MakeString((char *)(SCM_UVECTOR_ELEMENTS(v)+start),
-                         end-start, -1, SCM_MAKSTR_COPYING);
+                         end-start, -1, SCM_STRING_COPYING);
  }"
 
 

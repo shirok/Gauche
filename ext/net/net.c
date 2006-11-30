@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.44 2006-07-05 03:35:54 shirok Exp $
+ *  $Id: net.c,v 1.45 2006-11-30 23:55:00 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -371,7 +371,7 @@ ScmObj Scm_SocketRecv(ScmSocket *sock, int bytes, int flags)
     if (r < 0) {
         Scm_SysError("recv(2) failed");
     }
-    return Scm_MakeString(buf, r, r, SCM_MAKSTR_INCOMPLETE);
+    return Scm_MakeString(buf, r, r, SCM_STRING_INCOMPLETE);
 }
 
 ScmObj Scm_SocketRecvFrom(ScmSocket *sock, int bytes, int flags)
@@ -389,7 +389,7 @@ ScmObj Scm_SocketRecvFrom(ScmSocket *sock, int bytes, int flags)
     if (r < 0) {
         Scm_SysError("recvfrom(2) failed");
     }
-    return Scm_Values2(Scm_MakeString(buf, r, r, SCM_MAKSTR_INCOMPLETE),
+    return Scm_Values2(Scm_MakeString(buf, r, r, SCM_STRING_INCOMPLETE),
                        Scm_MakeSockAddr(NULL, (struct sockaddr*)&from, fromlen));
 }
 
@@ -431,7 +431,7 @@ ScmObj Scm_SocketGetOpt(ScmSocket *s, int level, int option, int rsize)
         char *buf = SCM_NEW_ATOMIC2(char *, rrsize);
         SCM_SYSCALL(r, getsockopt(s->fd, level, option, buf, &rrsize));
         if (r < 0) Scm_SysError("getsockopt failed");
-        return Scm_MakeString(buf, rrsize, rrsize, SCM_MAKSTR_INCOMPLETE);
+        return Scm_MakeString(buf, rrsize, rrsize, SCM_STRING_INCOMPLETE);
     } else {
         int val;
         rrsize = sizeof(int);

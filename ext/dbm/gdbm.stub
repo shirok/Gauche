@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gdbm.stub,v 1.22 2006-11-09 03:16:53 shirok Exp $
+;;;  $Id: gdbm.stub,v 1.23 2006-11-30 23:54:59 shirok Exp $
 ;;;
 
 "
@@ -66,7 +66,7 @@
  #define FROM_DATUM(scm_, datum_)           \\
    do {                                     \\
      if (datum_.dptr) {                     \\
-       scm_ = Scm_MakeString(datum_.dptr, datum_.dsize, -1, SCM_MAKSTR_COPYING); \\
+       scm_ = Scm_MakeString(datum_.dptr, datum_.dsize, -1, SCM_STRING_COPYING); \\
        free(datum_.dptr);                   \\
      } else {                               \\
        scm_ = SCM_FALSE;                    \\

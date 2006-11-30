@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: netdb.c,v 1.14 2006-11-04 09:56:59 shirok Exp $
+ *  $Id: netdb.c,v 1.15 2006-11-30 23:55:00 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -71,7 +71,7 @@ static ScmSysHostent *make_hostent(struct hostent *he)
     SCM_SET_CLASS(entry, SCM_CLASS_SYS_HOSTENT);
     entry->name = SCM_MAKE_STR_COPYING(he->h_name);
     entry->aliases = Scm_CStringArrayToList((const char**)he->h_aliases, -1,
-                                            SCM_MAKSTR_COPYING);
+                                            SCM_STRING_COPYING);
     if (he->h_addrtype == AF_INET) {
         for (p = he->h_addr_list; *p; p++) {
             char buf[50];
@@ -227,7 +227,7 @@ static ScmSysProtoent *make_protoent(struct protoent *pe)
     SCM_SET_CLASS(entry, SCM_CLASS_SYS_PROTOENT);
     entry->name = SCM_MAKE_STR_COPYING(pe->p_name);
     entry->aliases = Scm_CStringArrayToList((const char **)pe->p_aliases, -1,
-                                            SCM_MAKSTR_COPYING);
+                                            SCM_STRING_COPYING);
     entry->proto = Scm_MakeInteger(pe->p_proto);
     return entry;
 }
@@ -347,7 +347,7 @@ static ScmSysServent *make_servent(struct servent *se)
     SCM_SET_CLASS(entry, SCM_CLASS_SYS_SERVENT);
     entry->name = SCM_MAKE_STR_COPYING(se->s_name);
     entry->aliases = Scm_CStringArrayToList((const char **)se->s_aliases, -1,
-                                            SCM_MAKSTR_COPYING);
+                                            SCM_STRING_COPYING);
     entry->port = Scm_MakeInteger(ntohs(se->s_port));
     entry->proto = SCM_MAKE_STR_COPYING(se->s_proto);
     return entry;

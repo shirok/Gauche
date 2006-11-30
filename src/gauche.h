@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.469 2006-11-13 22:38:11 shirok Exp $
+ *  $Id: gauche.h,v 1.470 2006-11-30 23:55:01 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1025,11 +1025,17 @@ struct ScmStringRec {
     ScmStringBody initialBody;  /* initial body */
 };
 
-/* The flag value.  Runtime strings can have flag bits reserved by
-   SCM_STRING_FLAG_MASK.  (The rest of the bits are used in Scm_MakeString */
-enum {
-    SCM_STRING_IMMUTABLE  = (1L<<0),
-    SCM_STRING_INCOMPLETE = (1L<<1)
+/* The flag value.  Some of them can be specified at construction time
+   (marked 'C').  Some of them are kept in "flags" field of the string body
+   (marked 'R). */
+enum ScmStringFlags {
+    SCM_STRING_IMMUTABLE  = (1L<<0),     /* [C,R] The string is immutable. */
+    SCM_STRING_INCOMPLETE = (1L<<1),     /* [C,R] The string is incomplete. */
+    SCM_STRING_TERMINATED = (1L<<2),     /* [R] The string content is
+                                            NUL-terminated.  This flag is used
+                                            internally. */
+    SCM_STRING_COPYING = (1L<<16),       /* [C]   Need to copy the content
+                                            given to the constructor. */
 };
 #define SCM_STRING_FLAG_MASK  (0xffff)
 
@@ -1072,17 +1078,17 @@ enum {
     (SCM_STRING_SIZE(obj)==SCM_STRING_LENGTH(obj))
 
 
-/* Constructor flags */
+/* OBSOLETED.  Kept for backward compatibility */
 #define SCM_MAKSTR_INCOMPLETE  SCM_STRING_INCOMPLETE
 #define SCM_MAKSTR_IMMUTABLE   SCM_STRING_IMMUTABLE
-#define SCM_MAKSTR_COPYING     (1L<<16) /* FIXME */
+#define SCM_MAKSTR_COPYING     SCM_STRING_COPYING
 
 #define SCM_MAKE_STR(cstr) \
     Scm_MakeString(cstr, -1, -1, 0)
 #define SCM_MAKE_STR_COPYING(cstr) \
-    Scm_MakeString(cstr, -1, -1, SCM_MAKSTR_COPYING)
+    Scm_MakeString(cstr, -1, -1, SCM_STRING_COPYING)
 #define SCM_MAKE_STR_IMMUTABLE(cstr) \
-    Scm_MakeString(cstr, -1, -1, SCM_MAKSTR_IMMUTABLE)
+    Scm_MakeString(cstr, -1, -1, SCM_STRING_IMMUTABLE)
 
 #define SCM_STRING_CONST_CSTRING(obj) Scm_GetStringConst(SCM_STRING(obj))
 

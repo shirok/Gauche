@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.71 2006-11-13 22:38:11 shirok Exp $
+ *  $Id: core.c,v 1.72 2006-11-30 23:55:01 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -359,7 +359,7 @@ ScmObj Scm_LibraryDirectory(void)
         char buf[PATH_MAX];
         Scm_GetLibraryDirectory(buf, PATH_MAX, Scm_Error);
         dir = Scm_MakeString(buf, -1, -1,
-                             SCM_MAKSTR_COPYING|SCM_MAKSTR_IMMUTABLE);
+                             SCM_STRING_COPYING|SCM_STRING_IMMUTABLE);
     }
     return dir;
 }
@@ -371,7 +371,7 @@ ScmObj Scm_ArchitectureDirectory(void)
         char buf[PATH_MAX];
         Scm_GetArchitectureDirectory(buf, PATH_MAX, Scm_Error);
         dir = Scm_MakeString(buf, -1, -1,
-                             SCM_MAKSTR_COPYING|SCM_MAKSTR_IMMUTABLE);
+                             SCM_STRING_COPYING|SCM_STRING_IMMUTABLE);
     }
     return dir;
 }
@@ -383,7 +383,7 @@ ScmObj Scm_SiteLibraryDirectory(void)
         char buf[PATH_MAX];
         Scm_GetSiteLibraryDirectory(buf, PATH_MAX, Scm_Error);
         dir = Scm_MakeString(buf, -1, -1,
-                             SCM_MAKSTR_COPYING|SCM_MAKSTR_IMMUTABLE);
+                             SCM_STRING_COPYING|SCM_STRING_IMMUTABLE);
     }
     return dir;
 }
@@ -395,7 +395,7 @@ ScmObj Scm_SiteArchitectureDirectory(void)
         char buf[PATH_MAX];
         Scm_GetSiteArchitectureDirectory(buf, PATH_MAX, Scm_Error);
         dir = Scm_MakeString(buf, -1, -1,
-                             SCM_MAKSTR_COPYING|SCM_MAKSTR_IMMUTABLE);
+                             SCM_STRING_COPYING|SCM_STRING_IMMUTABLE);
     }
     return dir;
 }

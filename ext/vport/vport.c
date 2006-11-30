@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vport.c,v 1.15 2006-11-04 09:56:59 shirok Exp $
+ *  $Id: vport.c,v 1.16 2006-11-30 23:55:01 shirok Exp $
  */
 
 #include "gauche/vport.h"
@@ -266,7 +266,7 @@ static void vport_putz(const char *buf, int size, ScmPort *p)
     if (!SCM_FALSEP(data->puts_proc)) {
         Scm_ApplyRec(data->puts_proc,
                      SCM_LIST1(Scm_MakeString(buf, size, -1,
-                                              SCM_MAKSTR_COPYING)));
+                                              SCM_STRING_COPYING)));
     } else if (!SCM_FALSEP(data->putb_proc)) {
         int i;
         for (i=0; i<size; i++) {

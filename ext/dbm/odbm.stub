@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: odbm.stub,v 1.15 2005-10-13 08:14:13 shirok Exp $
+;;;  $Id: odbm.stub,v 1.16 2006-11-30 23:54:59 shirok Exp $
 ;;;
 
 "
@@ -63,7 +63,7 @@
  #define FROM_DATUM(scm_, datum_)           \\
    do {                                     \\
      if (datum_.dptr) {                     \\
-       scm_ = Scm_MakeString(datum_.dptr, datum_.dsize, -1, SCM_MAKSTR_COPYING); \\
+       scm_ = Scm_MakeString(datum_.dptr, datum_.dsize, -1, SCM_STRING_COPYING); \\
      } else {                               \\
        scm_ = SCM_FALSE;                    \\
      }                                      \\

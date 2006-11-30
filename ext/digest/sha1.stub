@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: sha1.stub,v 1.11 2005-10-13 08:14:13 shirok Exp $
+;;;  $Id: sha1.stub,v 1.12 2006-11-30 23:55:00 shirok Exp $
 ;;;
 
 "
@@ -94,7 +94,7 @@
 (define-cproc %sha1-final (sha1::<sha1>)
   "  unsigned char digest[20];
   SHAFinal(digest, &sha1->ctx);
-  SCM_RETURN(Scm_MakeString((const char*)digest, 20, 20, SCM_MAKSTR_INCOMPLETE|SCM_MAKSTR_COPYING));")
+  SCM_RETURN(Scm_MakeString((const char*)digest, 20, 20, SCM_STRING_INCOMPLETE|SCM_STRING_COPYING));")
 
 ;; Local variables:
 ;; mode: scheme

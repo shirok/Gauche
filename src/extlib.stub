@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.267 2006-11-08 13:41:48 shirok Exp $
+;;; $Id: extlib.stub,v 1.268 2006-11-30 23:55:01 shirok Exp $
 ;;;
 
 "
@@ -481,11 +481,11 @@
   (expr <fixnum> "SCM_STRING_BODY_SIZE(SCM_STRING_BODY(str))"))
 
 (define-cproc make-byte-string (size::<fixnum> &optional (byte::<fixnum> 0))
-  "char *s;
-  if (size < 0) Scm_Error(\"size out of bound: %d\", size);
-  s = SCM_NEW_ATOMIC2(char *, size);
-  memset(s, byte, size);
-  SCM_RETURN(Scm_MakeString(s, size, size, SCM_MAKSTR_INCOMPLETE));")
+  (body "char *s;"
+        "if (size < 0) Scm_Error(\"size out of bound: %d\", size);"
+        "s = SCM_NEW_ATOMIC2(char *, size);"
+        "memset(s, byte, size);"
+        "SCM_RESULT = Scm_MakeString(s, size, size, SCM_STRING_INCOMPLETE);"))
 
 (define-cproc string-byte-ref (str::<string> k::<fixnum> &optional fallback)
   (body "int r = Scm_StringByteRef(str, k, SCM_UNBOUNDP(fallback));"
@@ -817,7 +817,7 @@
     if (SCM_PORT_DIR(p) == SCM_PORT_OUTPUT) {
        ScmObj scmflusher = SCM_OBJ(p->src.buf.data);
        int siz = (int)(p->src.buf.current - p->src.buf.buffer);
-       if (siz > 0) Scm_ApplyRec(scmflusher, SCM_LIST1(Scm_MakeString(p->src.buf.buffer, siz, siz, SCM_MAKSTR_INCOMPLETE|SCM_MAKSTR_COPYING)));
+       if (siz > 0) Scm_ApplyRec(scmflusher, SCM_LIST1(Scm_MakeString(p->src.buf.buffer, siz, siz, SCM_STRING_INCOMPLETE|SCM_STRING_COPYING)));
        Scm_ApplyRec(scmflusher, SCM_LIST1(SCM_FALSE));
     }
  }"
@@ -860,7 +860,7 @@
  {
      ScmObj scmflusher, s;
      scmflusher = SCM_OBJ(p->src.buf.data);
-     s = Scm_MakeString(p->src.buf.buffer, cnt, cnt, SCM_MAKSTR_INCOMPLETE|SCM_MAKSTR_COPYING);
+     s = Scm_MakeString(p->src.buf.buffer, cnt, cnt, SCM_STRING_INCOMPLETE|SCM_STRING_COPYING);
      Scm_ApplyRec(scmflusher, SCM_LIST1(s));
      return cnt;
  }"
@@ -1028,7 +1028,7 @@
   } else {
     SCM_ASSERT(nread <= bytes);
     buf[nread] = '\\0';
-    SCM_RETURN(Scm_MakeString(buf, nread, nread, SCM_MAKSTR_INCOMPLETE));
+    SCM_RETURN(Scm_MakeString(buf, nread, nread, SCM_STRING_INCOMPLETE));
   }")
 
 (define-cproc read-list (closer::<char>
