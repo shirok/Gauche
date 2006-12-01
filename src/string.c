@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: string.c,v 1.81 2006-11-30 23:55:01 shirok Exp $
+ *  $Id: string.c,v 1.82 2006-12-01 04:44:37 shirok Exp $
  */
 
 #include <stdio.h>
@@ -180,7 +180,7 @@ ScmObj Scm_MakeString(const char *str, int size, int len, int flags)
         if (len < 0) len = count_length(str, size);
     }
     
-    if (flags & SCM_MAKSTR_COPYING) {
+    if (flags & SCM_STRING_COPYING) {
         char *nstr = SCM_NEW_ATOMIC2(char *, size + 1);
         memcpy(nstr, str, size);
         nstr[size] = '\0';          /* be kind to C */
@@ -1084,7 +1084,7 @@ static ScmObj string_scan(ScmString *s1, const char *ss2,
     }
     incomplete =
         (SCM_STRING_BODY_INCOMPLETE_P(sb) || incomplete2)?
-        SCM_MAKSTR_INCOMPLETE : 0;
+        SCM_STRING_INCOMPLETE : 0;
     switch (retmode) {
     case SCM_STRING_SCAN_INDEX:
         return Scm_MakeInteger(i);
