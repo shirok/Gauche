@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.47 2006-11-26 19:58:21 shirok Exp $
+;;;  $Id: compile.scm,v 1.48 2006-12-01 11:04:00 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -453,9 +453,9 @@
 ;;    <iform>
 ;;    #($it)                 ;; refer to the value in the last test clause.
 ;;
-;;  NB: <src> is the original form, used to generate debug info.
-;;      if the intermediate form doesn't have corresponding original
-;;      form, it is #f.
+;;  NB: <src> slot keeps the information of the original source, and
+;;      will be used to generate debug info.  Normally it holds the 
+;;      relevant source code, or #f if there's no relevant code.
 ;;
 ;;  NB: the actual value of the first element is an integer instead of
 ;;      a symbol, which allows pass3/rec to use vector dispatch instead
@@ -2507,7 +2507,7 @@
 
 ;; Each handler is called with three arguments: the IForm, Env, and Tail?
 ;;
-;; Env is a list of $LAMBDA nodes that we're compiling.   It is used to
+;; Penv is a list of $LAMBDA nodes that we're compiling.   It is used to
 ;; detect self-recursive local calls.  Tail? is a flag to indicate whether
 ;; the expression is tail position or not.
 
