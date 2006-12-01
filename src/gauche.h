@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.470 2006-11-30 23:55:01 shirok Exp $
+ *  $Id: gauche.h,v 1.471 2006-12-01 09:36:17 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1183,7 +1183,7 @@ SCM_EXTERN char **Scm_ListToCStringArray(ScmObj lis, int errp,
 
 #define SCM_STRING_CONST_INITIALIZER(str, len, siz)             \
     { { SCM_CLASS2TAG(SCM_CLASS_STRING) }, NULL, \
-      { SCM_STRING_IMMUTABLE, (len), (siz), (str) } }
+      { SCM_STRING_IMMUTABLE|SCM_STRING_TERMINATED, (len), (siz), (str) } }
 
 #define SCM_DEFINE_STRING_CONST(name, str, len, siz)            \
     ScmString name = SCM_STRING_CONST_INITIALIZER(str, len, siz)
