@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.471 2006-12-01 09:36:17 shirok Exp $
+ *  $Id: gauche.h,v 1.472 2006-12-02 08:43:11 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1172,7 +1172,7 @@ SCM_EXTERN ScmObj Scm_CStringArrayToList(const char **array,
                                          int size, int flags);
 SCM_EXTERN const char **Scm_ListToConstCStringArray(ScmObj lis, int errp);
 SCM_EXTERN char **Scm_ListToCStringArray(ScmObj lis, int errp,
-                                         void *alloc(size_t));
+                                         void *(*alloc)(size_t));
 
 /* You can allocate a constant string statically, if you calculate
    the length by yourself.  These macros are mainly used in machine-
