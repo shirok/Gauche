@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.257 2006-11-20 06:06:18 shirok Exp $
+ *  $Id: vm.c,v 1.258 2006-12-02 08:52:38 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -709,6 +709,7 @@ pthread_key_t Scm_VMKey(void)
 #define SWITCH(val) goto *dispatch_table[val];
 #define CASE(insn)  SCM_CPP_CAT(LABEL_, insn) :
 #define DEFAULT     LABEL_DEFAULT :
+#define DISPATCH    /*empty*/
 #define NEXT                                            \
     do {                                                \
         if (vm->queueNotEmpty) goto process_queue;      \
@@ -718,6 +719,7 @@ pthread_key_t Scm_VMKey(void)
 #else /* !__GNUC__ */
 #define SWITCH(val) switch (val)
 #define CASE(insn)  case insn :
+#define DISPATCH    dispatch:
 #define NEXT        goto dispatch
 #endif
 
@@ -768,6 +770,7 @@ static void run_loop()
 #endif
 
     for (;;) {
+        DISPATCH;
         /*VM_DUMP("");*/
         if (vm->queueNotEmpty) goto process_queue;
         FETCH_INSN(code);
