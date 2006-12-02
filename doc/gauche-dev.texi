@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.16 2006-11-18 01:04:20 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.17 2006-12-02 09:24:56 shirok Exp $
 
 @iftex
 @finalout
@@ -941,9 +941,17 @@ Corresponds to Scheme @code{logbit}.
 @subsubheading General operations
 
 @deftypefun ScmObj Scm_Abs (ScmObj @var{num})
+Returns the distance between 0 and @var{num}, which can 
+be any number (including complex numbers).  Exactness
+of @var{num} is preserved.   An error is signalled if
+@var{num} is not a Scheme number.
 @end deftypefun
 
 @deftypefun int Scm_Sign (ScmObj @var{num})
+@var{Num} must be a real number.  Returns -1, 0, or 1
+when @var{num} is less than, equal to, or greater than zero,
+respectively.  If @var{num} is not a Scheme real number,
+an error is signalled.
 @end deftypefun
 
 @deftypefun ScmObj Scm_Negate (ScmObj @var{num})
@@ -1273,6 +1281,9 @@ Returns a (possibly denormalized) compnum, whose real part is
 @node Keywords, Characters, Symbols, C API reference
 @section Keywords
 
+@deftp {Scheme Object} ScmKeyword
+@end deftp
+
 @deftypefun ScmObj Scm_MakeKeyword (ScmString *@var{name})
 Returns a keyword whose name is @var{name}.  Note that preceding 
 @code{:} is not a part of the keyword name.
@@ -1462,14 +1473,14 @@ while the number of characters in a string as @emph{length}.
 
 One important fact: Internally, Gauche treats string as immutable objects,
 @code{ScmStringBody}.  Scheme standard requires string to be mutable,
-so we have a Scheme string (@code{ScmString}) keep a pointer to the
+so we have a Scheme string (@code{ScmString}) keep a pointer to a
 string body, and when the Scheme string is modified, we allocate
 a new string body and switch the pointer in the Scheme string
 to the new body.  You can now see it is disastrously inefficient to
 call @code{string-set!} repeatedly on a string in Gauche.
 
 Note that, with preemptive multithreads, a Scheme string (@code{ScmString})
-can be mutated while a thread is accessing it.  It is a problem for
+can be mutated while another thread is accessing it.  It is a problem for
 us, since string mutation can change the size (in bytes) of the string
 because of multibyte characters.  If you obtain the size, then accesses
 the string content using the size, you don't want the size of the
@@ -1519,14 +1530,39 @@ void f(ScmString *s)
 @subheading Datatype
 
 @deftp {Scheme Object} ScmString
+Scheme string.  It is merely a header that contains a pointer
+to @code{ScmStringBody}.
 @end deftp
 
-@deftp {Data type} ScmStringBody
+@deftp {Type} ScmStringBody
+The body of the string.  It is immutable---that is, once it
+is constucted, it should never be changed.
 @end deftp
 
 @deftypevr {Constant} int SCM_STRING_IMMUTABLE
 @deftypevrx {Constant} int SCM_STRING_INCOMPLETE
 @deftypevrx {Constant} int SCM_STRING_COPYING
+Flags to specify the nature of the string and/or the behavior of
+the string constructor.
+
+@table @code
+@item SCM_STRING_IMMUTABLE
+When passed to the constructor, it creates an immutable Scheme string.
+This flag is stored in the Scheme string and causes an error
+if you try to attempt to modify it.
+
+@item SCM_STRING_INCOMPLETE
+When passed to the constructor, it creates an incomplete Scheme 
+string (even the string doesn't contain illegal byte sequences).
+The Scheme string is also marked incomplete when the constructor
+found illegal byte sequences.
+
+@item SCM_STRING_COPYING
+This is only used by the string constructor and not stored in
+the string object.  This flag indicates the constructor to copy
+the content of the passed byte array.  See @code{Scm_MakeString}
+below for the detailed explanation.
+@end table
 @end deftypevr
 
 @deftypefn {Macro} int SCM_STRINGP (ScmObj @var{obj})
@@ -1545,14 +1581,13 @@ Note that the returned body is immutable.
 @deftypefn {Macro} int SCM_STRING_BODY_LENGTH (ScmStringBody *@var{body})
 @deftypefnx {Macro} int SCM_STRING_BODY_SIZE (ScmStringBody *@var{body})
 @deftypefnx {Macro} int SCM_STRING_BODY_FLAGS (ScmStringBody *@var{body})
+Query the parameters of the string body.
 @end deftypefn
 
 @deftypefn {Macro} int SCM_STRING_BODY_HAS_FLAG (ScmStringBody *@var{body}, int @var{flag})
+Query if the string body has a flag, which is a bitwise OR
+of zero or more of the @code{SCM_STRING_*} flags.
 @end deftypefn
-
-
-
-
 
 @subheading Constructors
 
@@ -1576,20 +1611,20 @@ multibyte encoding.  If you pass @code{-1} to @var{len},
 and @var{str} contains an illegal byte sequence as the
 native multibyte encoding, the created string becomes 
 incomplete.  You can also create an incomplete string
-explicitly by passing @code{SCM_MAKSTR_INCOMPLETE} flag
+explicitly by passing @code{SCM_STRING_INCOMPLETE} flag
 to @var{flags}.
 
 @var{Flags} is a bitwise OR of the following bitmasks.
 
 @table @code
-@item SCM_MAKSTR_INCOMPLETE
+@item SCM_STRING_INCOMPLETE
 Creates an incomplete string, even if @var{str} contains
 only valid characters.
-@item SCM_MAKSTR_IMMUTABLE
+@item SCM_STRING_IMMUTABLE
 Creates an immutable string.  Immutable string would
 raise an error if used by mutating procedures such as
 @code{Scm_StringSet}.
-@item SCM_MAKSTR_COPYING
+@item SCM_STRING_COPYING
 The content pointed by @var{str} is copied, so that the caller
 can free @var{str} after this call.
 Without this flag, the created string directly points the
@@ -1613,7 +1648,7 @@ That is, the size and length are counted automatically, and
 @deftypefn {Macro} ScmObj SCM_MAKE_STR_COPYING (const char *@var{cstr})
 A convenience macro, expanded as follows:
 @example
-Scm_MakeString(@var{cstr}, -1, -1, SCM_MAKSTR_COPYING)
+Scm_MakeString(@var{cstr}, -1, -1, SCM_STRING_COPYING)
 @end example
 That is, the size and length are counted automatically, and 
 @var{cstr} is copied.
@@ -1622,7 +1657,7 @@ That is, the size and length are counted automatically, and
 @deftypefn {Macro} ScmObj SCM_MAKE_STR_IMMUTABLE (const char *@var{cstr})
 A convenience macro, expanded as follows:
 @example
-Scm_MakeString(@var{cstr}, -1, -1, SCM_MAKSTR_IMMUTABLE)
+Scm_MakeString(@var{cstr}, -1, -1, SCM_STRING_IMMUTABLE)
 @end example
 @end deftypefn
 
@@ -1640,11 +1675,17 @@ newflag = (@var{flags} & @var{mask}) | (oldflag & ~@var{mask})
 @end example
 
 Typically you want to drop immutable flag.
+Gauche internal uses bits in the flags other than listed here,
+so you shouldn't change those bits.
 
 Note: to copy a part of a string, you can use @code{Scm_Substring()}.
 @end deftypefun
 
 @deftypefun ScmObj Scm_CopyString (ScmString *@var{str})
+An convenience function, equivalent to the following:
+@example
+Scm_CopyStringWithFlags(str, 0, SCM_STRING_IMMUTABLE)
+@end example
 @end deftypefun
 
 @deftypefn {Macro} {} SCM_STRING_CONST_INITIALIZER (const char *@var{str}, int @var{len}, int @var{siz})
@@ -1664,6 +1705,29 @@ ScmString @var{name} =
 @end deftypefn
 
 @subheading String operations
+
+@deftypefun {const char *} Scm_GetStringConst (ScmString *@var{str})
+Retrieves string content as a C string (@code{NUL}-terminated).
+This is the efficient way to convert a Scheme string to a C string.
+@end deftypefun
+
+@deftypefun char *Scm_GetString (ScmString *@var{str})
+Use this when you need a mutable C string.  This function
+copies the content every time and returns a freshly allocated
+string.
+@end deftypefun
+
+@deftypefun {const char *} Scm_GetStringContent (ScmString *@var{str}, unsigned int *@var{psize}, unsignd int *@var{plen}, unsigned int *@var{pflags})
+Use this function if you want to retrieve other attributes of
+the strings at once.  The return value points to the beginning 
+of the string content, but it may not be @code{NUL}-terminated.
+
+@var{Psize}, @var{plen}, and @var{pflags}
+
+@end deftypefun
+
+
+
 
 @subheading Dynamic strings
 
