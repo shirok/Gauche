@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.472 2006-12-02 08:43:11 shirok Exp $
+ *  $Id: gauche.h,v 1.473 2006-12-05 08:14:23 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -63,6 +63,9 @@
 #define SCM_DECL_END
 #endif /*! __cplusplus */
 #endif /*!defined(SCM_DECL_BEGIN)*/
+
+//#define GAUCHE_CC_VM
+//#define GAUCHE_SUBR_VM
 
 SCM_DECL_BEGIN
 
@@ -378,6 +381,16 @@ typedef struct ScmRegMatchRec  ScmRegMatch;
 typedef struct ScmWriteContextRec ScmWriteContext;
 typedef struct ScmAutoloadRec  ScmAutoload;
 
+#ifdef GAUCHE_SUBR_VM
+typedef ScmObj ScmSubrProc(ScmVM *, ScmObj *, int, void*);
+#define GAUCHE_SUBR_VM_ARG  ScmVM *vm,
+#define GAUCHE_SUBR_VM_DECL
+#else
+typedef ScmObj ScmSubrProc(ScmObj *, int, void*);
+#define GAUCHE_SUBR_VM_ARG  
+#define GAUCHE_SUBR_VM_DECL  ScmVM *vm = Scm_VM()
+#endif
+
 /*---------------------------------------------------------
  * VM STUFF
  */
@@ -445,9 +458,9 @@ SCM_EXTERN ScmObj Scm_VMCall(ScmObj *args, int argcnt, void *data);
 
 SCM_EXTERN ScmObj Scm_VMCallCC(ScmObj proc);
 SCM_EXTERN ScmObj Scm_VMDynamicWind(ScmObj pre, ScmObj body, ScmObj post);
-SCM_EXTERN ScmObj Scm_VMDynamicWindC(ScmObj (*before)(ScmObj *, int, void *),
-				     ScmObj (*body)(ScmObj *, int, void *),
-				     ScmObj (*after)(ScmObj *, int, void *),
+SCM_EXTERN ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
+                                     ScmSubrProc *body,
+                                     ScmSubrProc *after,
 				     void *data);
 
 SCM_EXTERN ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk);
@@ -1770,7 +1783,7 @@ SCM_EXTERN ScmObj Scm_MakeClosure(ScmObj code, ScmEnvFrame *env);
 /* Subr - C defined procedure */
 struct ScmSubrRec {
     ScmProcedure common;
-    ScmObj (*func)(ScmObj *, int, void*);
+    ScmSubrProc *func;
     void *data;
 };
 
@@ -1787,7 +1800,7 @@ struct ScmSubrRec {
         (func), (data)                                                      \
     }
 
-SCM_EXTERN ScmObj Scm_MakeSubr(ScmObj (*func)(ScmObj*, int, void*),
+SCM_EXTERN ScmObj Scm_MakeSubr(ScmSubrProc *func,
 			       void *data,
 			       int required, int optional,
 			       ScmObj info);

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.131 2006-11-04 09:56:59 shirok Exp $
+ *  $Id: port.c,v 1.132 2006-12-05 08:14:23 shirok Exp $
  */
 
 #include <unistd.h>
@@ -179,15 +179,18 @@ void Scm_PortLock(ScmPort *port)
 /*
  * External routine to access port exclusively
  */
-static ScmObj with_port_locking_pre_thunk(ScmObj *args, int nargs, void *data)
+static ScmObj with_port_locking_pre_thunk(GAUCHE_SUBR_VM_ARG ScmObj *args,
+                                          int nargs, void *data)
 {
     ScmPort *p = (ScmPort*)data;
-    ScmVM *vm = Scm_VM();
+    GAUCHE_SUBR_VM_DECL;
+    
     PORT_LOCK(p, vm);
     return SCM_UNDEFINED;
 }
 
-static ScmObj with_port_locking_post_thunk(ScmObj *args, int nargs, void *data)
+static ScmObj with_port_locking_post_thunk(GAUCHE_SUBR_VM_ARG ScmObj *args,
+                                           int nargs, void *data)
 {
     ScmPort *p = (ScmPort*)data;
     PORT_UNLOCK(p);
@@ -1473,23 +1476,30 @@ struct with_port_packet {
     int closep;
 };
 
-static ScmObj port_restorer(ScmObj *args, int nargs, void *data)
+static ScmObj port_restorer(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
 {
     struct with_port_packet *p = (struct with_port_packet*)data;
     int pcnt = 0;
     ScmPort *curport;
+//    GAUCHE_SUBR_VM_DECL;
 
     if (p->mask & SCM_PORT_CURIN) {
+//        curport = SCM_VM_CURRENT_INPUT_PORT(vm);
+//        SCM_VM_CURRENT_INPUT_PORT(vm) = p->origport[pcnt++];
         curport = SCM_CURIN;
         SCM_CURIN = p->origport[pcnt++];
         if (p->closep) Scm_ClosePort(curport);
     }
     if (p->mask & SCM_PORT_CUROUT) {
+//        curport = SCM_VM_CURRENT_OUTPUT_PORT(vm);
+//        SCM_VM_CURRENT_OUTPUT_PORT(vm) = p->origport[pcnt++];
         curport = SCM_CUROUT;
         SCM_CUROUT = p->origport[pcnt++];
         if (p->closep) Scm_ClosePort(curport);
     }
     if (p->mask & SCM_PORT_CURERR) {
+//        curport = SCM_VM_CURRENT_ERROR_PORT(vm);
+//        SCM_VM_CURRENT_ERROR_PORT(vm) = p->origport[pcnt++];
         curport = SCM_CURERR;
         SCM_CURERR = p->origport[pcnt++];
         if (p->closep) Scm_ClosePort(curport);

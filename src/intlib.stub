@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.20 2006-11-26 19:58:21 shirok Exp $
+;;; $Id: intlib.stub,v 1.21 2006-12-05 08:14:23 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -521,7 +521,7 @@
    else SCM_RETURN(y);")
 
 ;; (%map1c proc lis c) = (map (cut proc <> c) lis)
-"static ScmObj map1c_cc(ScmObj result, void *data[])
+"static ScmObj map1c_cc(GAUCHE_CC_VM_ARG ScmObj result, void *data[])
  {
    ScmObj proc = SCM_OBJ(data[0]);
    ScmObj r = SCM_OBJ(data[1]);
@@ -548,7 +548,7 @@
   SCM_RETURN(Scm_VMApply2(proc, SCM_CAR(lis), c));")
 
 ;; (%map1cc proc lis c1 c2) = (map (cut proc <> c1 c2) lis)
-"static ScmObj map1cc_cc(ScmObj result, void *data[])
+"static ScmObj map1cc_cc(GAUCHE_CC_VM_ARG ScmObj result, void *data[])
  {
    ScmObj proc = SCM_OBJ(data[0]);
    ScmObj r = SCM_OBJ(data[1]);

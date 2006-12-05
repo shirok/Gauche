@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.107 2006-11-09 10:32:20 shirok Exp $
+ *  $Id: vm.h,v 1.108 2006-12-05 08:14:23 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -573,9 +573,19 @@ enum {
 
 #define SCM_CCONT_DATA_SIZE 6
 
+#ifdef GAUCHE_CC_VM
+typedef ScmObj ScmCContinuationProc(ScmVM*, ScmObj, void**);
+#define GAUCHE_CC_VM_ARG  ScmVM *vm,
+#define GAUCHE_CC_VM_DECL
+#else
+typedef ScmObj ScmCContinuationProc(ScmObj, void**);
+#define GAUCHE_CC_VM_ARG  
+#define GAUCHE_CC_VM_DECL  ScmVM *vm = Scm_VM()
+#endif
+
 typedef struct ScmCContinuation {
     SCM_HEADER;
-    ScmObj (*func)(ScmObj value, void **data);
+    ScmCContinuationProc *func;
     void *data[SCM_CCONT_DATA_SIZE];
 } ScmCContinuation;
 
@@ -585,7 +595,7 @@ typedef struct ScmCContinuation {
 SCM_CLASS_DECL(Scm_CContClass);
 #define SCM_CLASS_CCONT           (&Scm_CContClass)
 
-SCM_EXTERN void Scm_VMPushCC(ScmObj (*func)(ScmObj value, void **data),
+SCM_EXTERN void Scm_VMPushCC(ScmCContinuationProc *func,
 			     void **data,
 			     int datasize);
 

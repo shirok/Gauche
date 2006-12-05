@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.141 2006-11-21 10:20:43 shirok Exp $
+ *  $Id: class.c,v 1.142 2006-12-05 08:14:22 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -486,7 +486,7 @@ ScmClass *Scm_BaseClassOf(ScmClass *klass)
  * (class-of obj class)
  *   - if obj's class is redefined, first updates obj.
  */
-ScmObj class_of_cc(ScmObj result, void **data)
+ScmObj class_of_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     return Scm_VMClassOf(result);
 }
@@ -505,7 +505,7 @@ ScmObj Scm_VMClassOf(ScmObj obj)
  * (is-a? obj class)
  *   - if obj's class is redefined, first updates obj.
  */
-ScmObj is_a_cc(ScmObj result, void **data)
+ScmObj is_a_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     return Scm_VMIsA(SCM_OBJ(data[0]), SCM_CLASS(data[1]));
 }
@@ -1195,7 +1195,7 @@ void Scm_InstanceSlotSet(ScmObj obj, int number, ScmObj val)
 /* Initialize a slot according to its accessor spec
    TODO: class redefintion check
 */
-static ScmObj slot_initialize_cc(ScmObj result, void **data)
+static ScmObj slot_initialize_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     ScmObj obj = data[0];
     ScmSlotAccessor *sa = SCM_SLOT_ACCESSOR(data[1]);
@@ -1267,7 +1267,7 @@ inline ScmSlotAccessor *Scm_GetSlotAccessor(ScmClass *klass, ScmObj slot)
  * - assumes accessor belongs to the proper class.
  * - no class redefinition check is done
  */
-static ScmObj slot_ref_using_accessor_cc(ScmObj result, void **data)
+static ScmObj slot_ref_using_accessor_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     ScmObj obj = data[0];
     ScmObj slot = data[1];
@@ -1286,7 +1286,9 @@ static ScmObj slot_ref_using_accessor_cc(ScmObj result, void **data)
     }
 }
 
-static ScmObj slot_boundp_using_accessor_cc(ScmObj result, void **data)
+static ScmObj slot_boundp_using_accessor_cc(GAUCHE_CC_VM_ARG
+                                            ScmObj result,
+                                            void **data)
 {
     return SCM_FALSEP(result)? SCM_FALSE:SCM_TRUE;
 }
@@ -1338,7 +1340,7 @@ static ScmObj slot_ref_using_accessor(ScmObj obj,
  *         (%internal-slot-ref-using-accessor obj sa bound-check?)
  *         (slot-missing (class-of obj) obj slot))))
  */
-static ScmObj slot_ref_cc(ScmObj result, void **data)
+static ScmObj slot_ref_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     return Scm_VMSlotRef(SCM_OBJ(data[0]), SCM_OBJ(data[1]), (int)data[2]);
 }
@@ -1371,7 +1373,7 @@ ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot, int boundp)
  *   for the new class, sa must come from the old class.
  */
 #if 0
-static ScmObj slot_ref_using_accessor_cc1(ScmObj result, void **data)
+static ScmObj slot_ref_using_accessor_cc1(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     return Scm_VMSlotRefUsingAccessor(SCM_OBJ(data[0]),
                                       SCM_SLOT_ACCESSOR(data[1]),
@@ -1470,7 +1472,7 @@ ScmObj slot_set_using_accessor(ScmObj obj,
  *         (%internal-slot-set-using-accessor obj sa val)
  *         (slot-missing (class-of obj) obj slot val))))
  */
-static ScmObj slot_set_cc(ScmObj result, void **data)
+static ScmObj slot_set_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     return Scm_VMSlotSet(SCM_OBJ(data[0]), SCM_OBJ(data[1]), SCM_OBJ(data[2]));
 }
@@ -1502,7 +1504,7 @@ ScmObj Scm_VMSlotSet(ScmObj obj, ScmObj slot, ScmObj val)
  *   for the new class, sa must come from the old class.
  */
 #if 0
-static ScmObj slot_set_using_accessor_cc(ScmObj result, void **data)
+static ScmObj slot_set_using_accessor_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     return Scm_VMSlotSetUsingAccessor(SCM_OBJ(data[0]),
                                       SCM_SLOT_ACCESSOR(data[1]),
@@ -1578,7 +1580,7 @@ static SCM_DEFINE_METHOD(slot_set_using_class_rec,
  *   (%check-class-redefined (class-of obj))
  *   (slot-bound-using-class (class-of obj) obj slot))
  */
-static ScmObj slot_boundp_cc(ScmObj result, void **data)
+static ScmObj slot_boundp_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     ScmObj obj = SCM_OBJ(data[0]);
     ScmObj slot = SCM_OBJ(data[1]);
@@ -1831,7 +1833,7 @@ ScmObj Scm_ObjectAllocate(ScmClass *klass, ScmObj initargs)
 }
 
 /* (initialize <object> initargs) */
-static ScmObj object_initialize_cc(ScmObj result, void **data);
+static ScmObj object_initialize_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data);
 
 static ScmObj object_initialize1(ScmObj obj, ScmObj accs, ScmObj initargs)
 {
@@ -1848,7 +1850,7 @@ static ScmObj object_initialize1(ScmObj obj, ScmObj accs, ScmObj initargs)
                                              initargs);
 }
 
-static ScmObj object_initialize_cc(ScmObj result, void **data)
+static ScmObj object_initialize_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     ScmObj obj = SCM_OBJ(data[0]);
     ScmObj accs = SCM_OBJ(data[1]);

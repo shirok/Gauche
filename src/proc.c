@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: proc.c,v 1.41 2005-05-24 23:28:38 shirok Exp $
+ *  $Id: proc.c,v 1.42 2006-12-05 08:14:23 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -88,7 +88,7 @@ ScmObj Scm_MakeClosure(ScmObj code, ScmEnvFrame *env)
  * Subr
  */
 
-ScmObj Scm_MakeSubr(ScmObj (*func)(ScmObj*, int, void*),
+ScmObj Scm_MakeSubr(ScmSubrProc *func,
                     void *data,
                     int required, int optional,
                     ScmObj info)
@@ -107,7 +107,7 @@ ScmObj Scm_MakeSubr(ScmObj (*func)(ScmObj*, int, void*),
  */
 static ScmObj theNullProc = SCM_NIL;
 
-static ScmObj null_proc(ScmObj *args, int nargs, void *data)
+static ScmObj null_proc(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
 {
     return SCM_UNDEFINED;
 }
@@ -128,7 +128,7 @@ ScmObj Scm_NullProc(void)
 /*
  * One argument version of for-each, map and fold.
  */
-static ScmObj foreach1_cc(ScmObj result, void **data)
+static ScmObj foreach1_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     ScmObj args = SCM_OBJ(data[1]);
     if (SCM_PAIRP(args)) {
@@ -156,7 +156,7 @@ ScmObj Scm_ForEach1(ScmObj proc, ScmObj args)
     }
 }
 
-static ScmObj map1_cc(ScmObj result, void **data)
+static ScmObj map1_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     ScmObj args = SCM_OBJ(data[1]);
     ScmObj head = SCM_OBJ(data[2]);
@@ -221,7 +221,7 @@ static int mapper_collect_args(ScmObj argslist,
 }
 
 
-static ScmObj foreachN_cc(ScmObj result, void **data)
+static ScmObj foreachN_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     ScmObj proc;
     ScmObj args_list = SCM_OBJ(data[1]);
@@ -247,11 +247,15 @@ ScmObj Scm_ForEach(ScmObj proc, ScmObj arg1, ScmObj args)
         void *data[2];
         data[0] = proc;
         data[1] = Scm_Cons(arg1, args);
+#ifdef GAUCHE_CC_VM
+        SCM_RETURN(foreachN_cc(Scm_VM(), SCM_UNDEFINED, data));
+#else
         SCM_RETURN(foreachN_cc(SCM_UNDEFINED, data));
+#endif
     }
 }
 
-static ScmObj mapN_cc(ScmObj result, void **data)
+static ScmObj mapN_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     ScmObj proc;
     ScmObj args_list = SCM_OBJ(data[1]);
@@ -312,7 +316,7 @@ ScmObj Scm_SetterSet(ScmProcedure *proc, ScmProcedure *setter, int lock)
     return SCM_OBJ(proc);
 }
 
-static ScmObj object_setter(ScmObj *args, int nargs, void *data)
+static ScmObj object_setter(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
 {
     SCM_ASSERT(nargs == 1);
     return Scm_VMApply(SCM_OBJ(&Scm_GenericObjectSetter),

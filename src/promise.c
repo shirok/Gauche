@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: promise.c,v 1.15 2006-11-04 09:56:59 shirok Exp $
+ *  $Id: promise.c,v 1.16 2006-12-05 08:14:23 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -109,7 +109,7 @@ ScmObj Scm_MakePromise(int forced, ScmObj code)
  * force
  */
 
-static ScmObj force_cc(ScmObj result, void **data)
+static ScmObj force_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     ScmPromise *p = (ScmPromise*)data[0];
     

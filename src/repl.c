@@ -1,7 +1,7 @@
 /*
  * repl.c - repl
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: repl.c,v 1.36 2006-11-09 20:27:02 shirok Exp $
+ *  $Id: repl.c,v 1.37 2006-12-05 08:14:23 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -67,19 +67,24 @@
 
 ScmObj Scm_VMRepl(ScmObj reader, ScmObj evaluator,
                   ScmObj printer, ScmObj prompter);
-static ScmObj repl_main(ScmObj *args, int nargs, void *data);
+static ScmSubrProc repl_main;
 
 /* trampolines */
-static ScmObj repl_print_cc(ScmObj result, void **data)
+static ScmObj repl_print_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
+#ifdef GAUCHE_SUBR_VM
+    return repl_main(Scm_VM(), NULL, 0, data);
+#else
     return repl_main(NULL, 0, data);
+#endif
 }
 
-static ScmObj repl_eval_cc(ScmObj result, void **data)
+static ScmObj repl_eval_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     ScmObj *closure = (ScmObj *)data;
     ScmObj printer = closure[2];
-    ScmVM *vm = Scm_VM();
+    GAUCHE_CC_VM_DECL;
+    
     if (SCM_PROCEDUREP(printer)) {
         Scm_VMPushCC(repl_print_cc, data, 4);
         if (vm->numVals == 1) {
@@ -98,11 +103,15 @@ static ScmObj repl_eval_cc(ScmObj result, void **data)
             Scm_Putc('\n', SCM_CUROUT);
         }
         Scm_Flush(SCM_CUROUT);
+#ifdef GAUCHE_SUBR_VM
+        return repl_main(Scm_VM(), NULL, 0, (void*)data);
+#else
         return repl_main(NULL, 0, (void*)data);
+#endif
     }
 }
 
-static ScmObj repl_read_cc(ScmObj result, void **data)
+static ScmObj repl_read_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     ScmObj *closure = (ScmObj*)data;
     ScmObj evaluator = closure[1];
@@ -117,23 +126,30 @@ static ScmObj repl_read_cc(ScmObj result, void **data)
     }
 }
 
-static ScmObj repl_prompt_cc(ScmObj result, void **data)
+static ScmObj repl_prompt_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     ScmObj *closure = (ScmObj*)data;
     ScmObj reader = closure[0];
+
     if (SCM_PROCEDUREP(reader)) {
         Scm_VMPushCC(repl_read_cc, data, 4);
         return Scm_VMApply0(reader);
     } else {
         ScmObj exp = Scm_Read(SCM_OBJ(SCM_CURIN));
+#ifdef GAUCHE_CC_VM
+        return repl_read_cc(Scm_VM(), exp, data);
+#else
         return repl_read_cc(exp, data);
+#endif
     }
 }
 
-static ScmObj repl_main(ScmObj *args, int nargs, void *data)
+static ScmObj repl_main(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
 {
     ScmObj *closure = (ScmObj*)data;
     ScmObj prompter = closure[3];
+    GAUCHE_SUBR_VM_DECL;
+    
     if (SCM_PROCEDUREP(prompter)) {
         Scm_VMPushCC(repl_prompt_cc, data, 4);
         return Scm_VMApply0(prompter);
@@ -141,18 +157,22 @@ static ScmObj repl_main(ScmObj *args, int nargs, void *data)
         Scm_Write(SCM_MAKE_STR("gosh> "),
                   SCM_OBJ(SCM_CUROUT), SCM_WRITE_DISPLAY);
         Scm_Flush(SCM_CUROUT);
+#ifdef GAUCHE_CC_VM
+        return repl_prompt_cc(vm, SCM_UNDEFINED, (void**)data);
+#else
         return repl_prompt_cc(SCM_UNDEFINED, (void**)data);
+#endif
     }
 }
 
-static ScmObj repl_error_handle(ScmObj *args, int nargs, void *data)
+static ScmObj repl_error_handle(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
 {
     SCM_ASSERT(nargs == 1);
     Scm_ReportError(args[0]);
     return SCM_TRUE;
 }
 
-static ScmObj repl_loop_cc(ScmObj result, void **data)
+static ScmObj repl_loop_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     if (SCM_TRUEP(result)) {
         ScmObj *closure = (ScmObj*)data;
@@ -177,7 +197,7 @@ ScmObj Scm_VMRepl(ScmObj reader, ScmObj evaluator,
     return Scm_VMWithErrorHandler(ehandler, reploop);
 }
 
-static ScmObj repl_proc(ScmObj *args, int nargs, void *data)
+static ScmObj repl_proc(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
 {
     int argc = Scm_Length(args[0]);
     ScmObj reader =    (argc >= 1? SCM_CAR(args[0]) : SCM_FALSE);

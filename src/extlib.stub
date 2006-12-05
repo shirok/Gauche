@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.268 2006-11-30 23:55:01 shirok Exp $
+;;; $Id: extlib.stub,v 1.269 2006-12-05 08:14:23 shirok Exp $
 ;;;
 
 "
@@ -1166,7 +1166,7 @@
 (define-cproc hash-table-exists? (hash::<hash-table> key)
   (expr <boolean> "Scm_HashTableGet(hash, key) != NULL"))
 
-"static ScmObj hash_table_update_cc(ScmObj result, void **data)
+"static ScmObj hash_table_update_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
  {
    ScmHashEntry *e = (ScmHashEntry*)data[0];
    e->value = result;
@@ -1209,7 +1209,7 @@
   }
   SCM_RETURN(r);")
 
-"static ScmObj hash_table_iter(ScmObj *args, int nargs, void *data)
+"static ScmObj hash_table_iter(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
  {
    ScmHashIter *iter = (ScmHashIter*)data;
    ScmHashEntry *e = Scm_HashIterNext(iter);

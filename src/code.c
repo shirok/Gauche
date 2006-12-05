@@ -1,7 +1,7 @@
 /*
  * code.c - compiled code builder/handler
  *
- *   Copyright (c) 2005 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2005-2006 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: code.c,v 1.11 2006-11-03 11:11:27 shirok Exp $
+ *  $Id: code.c,v 1.12 2006-12-05 08:14:22 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -93,7 +93,7 @@ static ScmCompiledCode *make_compiled_code(void)
 /*----------------------------------------------------------------------
  * An API to execute statically compiled toplevel code.  *PROVISIONAL*
  */
-static ScmObj execute_toplevels(ScmObj*, int, void*);
+static ScmSubrProc execute_toplevels;
 
 void Scm_VMExecuteToplevels(ScmCompiledCode *cs[])
 {
@@ -101,21 +101,21 @@ void Scm_VMExecuteToplevels(ScmCompiledCode *cs[])
     Scm_ApplyRec(proc, SCM_NIL);
 }
 
-static ScmObj execute_toplevels_cc(ScmObj result, void **data)
+static ScmObj execute_toplevels_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     ScmCompiledCode **cs = (ScmCompiledCode **)data[0];
-    ScmVM *vm;
-
     if (cs[0] == NULL) return SCM_UNDEFINED;
     data[0] = cs+1;
-    Scm_VMPushCC(execute_toplevels_cc, data, 1);
-    vm = Scm_VM();
-    vm->base = cs[0];
-    vm->pc = vm->base->code;
+    {
+        GAUCHE_CC_VM_DECL;
+        Scm_VMPushCC(execute_toplevels_cc, data, 1);
+        vm->base = cs[0];
+        vm->pc = vm->base->code;
+    }
     return SCM_UNDEFINED;
 }
 
-static ScmObj execute_toplevels(ScmObj *args, int nargs, void *cv)
+static ScmObj execute_toplevels(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *cv)
 {
     Scm_VMPushCC(execute_toplevels_cc, &cv, 1);
     return SCM_UNDEFINED;

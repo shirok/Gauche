@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.62 2006-11-03 11:11:27 shirok Exp $
+ *  $Id: macro.c,v 1.63 2006-12-05 08:14:23 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -924,7 +924,7 @@ ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj literals, ScmObj rules,
  * macro-expand
  */
 
-ScmObj macro_expand_cc(ScmObj result, void **data)
+ScmObj macro_expand_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     ScmObj env = SCM_OBJ(data[0]);
     return Scm_VMMacroExpand(result, env, FALSE);

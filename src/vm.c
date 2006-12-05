@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.258 2006-12-02 08:52:38 shirok Exp $
+ *  $Id: vm.c,v 1.259 2006-12-05 08:14:23 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -62,6 +62,16 @@ static int vm_stack_mark_proc;
 #ifndef EX_SOFTWARE
 /* SRFI-22 requires this. */
 #define EX_SOFTWARE 70
+#endif
+
+#ifndef GAUCHE_CC_VM
+#undef GAUCHE_CC_VM_DECL
+#define GAUCHE_CC_VM_DECL ScmVM *vm = theVM
+#endif
+
+#ifndef GAUCHE_SUBR_VM
+#undef GAUCHE_SUBR_VM_DECL
+#define GAUCHE_SUBR_VM_DECL ScmVM *vm = theVM
 #endif
 
 /* An object to mark the boundary frame. */
@@ -509,19 +519,25 @@ pthread_key_t Scm_VMKey(void)
         ARGP = SP;                                      \
     } while (0)
 
+#ifdef GAUCHE_CC_VM
+#define CALL_CCONT(p, v, d) p(vm, v, d)
+#else
+#define CALL_CCONT(p, v, d) p(v, d)
+#endif
+
 /* pop a continuation frame, i.e. return from a procedure. */
 #define POP_CONT()                                                      \
     do {                                                                \
         if (CONT->argp == NULL) {                                       \
             void *data__[SCM_CCONT_DATA_SIZE];                          \
-            ScmObj (*after__)(ScmObj, void**);                          \
+            ScmCContinuationProc *after__;                              \
             void **d__ = data__;                                        \
             void **s__ = (void**)((ScmObj*)CONT + CONT_FRAME_SIZE);     \
             int i__ = CONT->size;                                       \
             while (i__-- > 0) {                                         \
                 *d__++ = *s__++;                                        \
             }                                                           \
-            after__ = (ScmObj (*)(ScmObj, void**))CONT->pc;             \
+            after__ = (ScmCContinuationProc*)CONT->pc;                  \
             if (IN_STACK_P((ScmObj*)CONT)) SP = (ScmObj*)CONT;          \
             ENV = CONT->env;                                            \
             ARGP = SP;                                                  \
@@ -529,7 +545,7 @@ pthread_key_t Scm_VMKey(void)
             CONT = CONT->prev;                                          \
             BASE = CONT->base;                                          \
             SAVE_REGS();                                                \
-            VAL0 = after__(VAL0, data__);                               \
+            VAL0 = CALL_CCONT(after__, VAL0, data__);                   \
             RESTORE_REGS();                                             \
         } else if (IN_STACK_P((ScmObj*)CONT)) {                         \
             SP   = CONT->argp + CONT->size;                             \
@@ -880,8 +896,13 @@ static void run_loop()
 
                     SAVE_REGS();
                     SCM_PROF_COUNT_CALL(vm, VAL0);
+#ifdef GAUCHE_SUBR_VM
+                    VAL0 = SCM_SUBR(VAL0)->func(vm, ARGP, argc,
+                                                SCM_SUBR(VAL0)->data);
+#else
                     VAL0 = SCM_SUBR(VAL0)->func(ARGP, argc,
                                                 SCM_SUBR(VAL0)->data);
+#endif
                     RESTORE_REGS();
                     /* the subr may substituted pc, so we need to check
                        if we can pop the continuation immediately. */
@@ -2865,9 +2886,10 @@ ScmObj Scm_VMApply4(ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3, ScmObj a
     return proc;
 }
 
-static ScmObj eval_restore_env(ScmObj *args, int argc, void *data)
+static ScmObj eval_restore_env(GAUCHE_SUBR_VM_ARG ScmObj *args, int argc, void *data)
 {
-    Scm_VM()->module = SCM_MODULE(data);
+    GAUCHE_SUBR_VM_DECL;
+    vm->module = SCM_MODULE(data);
     return SCM_UNDEFINED;
 }
 
@@ -2906,8 +2928,7 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
 /* Arrange C function AFTER to be called after the procedure returns.
  * Usually followed by Scm_VMApply* function.
  */
-void Scm_VMPushCC(ScmObj (*after)(ScmObj result, void **data),
-                  void **data, int datasize)
+void Scm_VMPushCC(ScmCContinuationProc *after, void **data, int datasize)
 {
     DECL_REGS;
     int i;
@@ -3101,14 +3122,15 @@ struct eval_packet_rec {
     ScmObj exception;
 };
 
-static ScmObj safe_eval_handler(ScmObj *args, int nargs, void *data)
+static ScmObj safe_eval_handler(GAUCHE_SUBR_VM_ARG ScmObj *args,
+                                int nargs, void *data)
 {
     SCM_ASSERT(nargs == 1);
     ((struct eval_packet_rec *)data)->exception = args[0];
     return SCM_UNDEFINED;
 }
 
-static ScmObj safe_eval_thunk(ScmObj *args, int nargs, void *data)
+static ScmObj safe_eval_thunk(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
 {
     struct eval_packet_rec *epak = (struct eval_packet_rec*)data;
 
@@ -3125,7 +3147,7 @@ static ScmObj safe_eval_thunk(ScmObj *args, int nargs, void *data)
     }
 }
 
-static ScmObj safe_eval_int(ScmObj *args, int nargs, void *data)
+static ScmObj safe_eval_int(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
 {
     ScmObj thunk, handler;
     
@@ -3195,22 +3217,16 @@ int Scm_Apply(ScmObj proc, ScmObj args, ScmEvalPacket *packet)
  * Dynamic handlers
  */
 
-static ScmObj dynwind_before_cc(ScmObj result, void **data);
-static ScmObj dynwind_body_cc(ScmObj result, void **data);
-static ScmObj dynwind_after_cc(ScmObj result, void **data);
+static ScmCContinuationProc dynwind_before_cc;
+static ScmCContinuationProc dynwind_body_cc;
+static ScmCContinuationProc dynwind_after_cc;
 
 ScmObj Scm_VMDynamicWind(ScmObj before, ScmObj body, ScmObj after)
 {
     void *data[3];
 
-#if 0 /* allow object-apply hook for all thunks */
-    if (!SCM_PROCEDUREP(before) || SCM_PROCEDURE_REQUIRED(before) != 0)
-        Scm_Error("thunk required for BEFORE argument, but got %S", before);
-    if (!SCM_PROCEDUREP(body) || SCM_PROCEDURE_REQUIRED(body) != 0)
-        Scm_Error("thunk required for BODY argument, but got %S", body);
-    if (!SCM_PROCEDUREP(after) || SCM_PROCEDURE_REQUIRED(after) != 0)
-        Scm_Error("thunk required for AFTER argument, but got %S", after);
-#endif
+    /* NB: we don't check types of arguments, since we allo object-apply
+       hooks can be used for them. */
 
     data[0] = (void*)before;
     data[1] = (void*)body;
@@ -3220,27 +3236,29 @@ ScmObj Scm_VMDynamicWind(ScmObj before, ScmObj body, ScmObj after)
     return Scm_VMApply0(before);
 }
 
-static ScmObj dynwind_before_cc(ScmObj result, void **data)
+static ScmObj dynwind_before_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     ScmObj before  = SCM_OBJ(data[0]);
     ScmObj body = SCM_OBJ(data[1]);
     ScmObj after = SCM_OBJ(data[2]);
-    ScmObj prev = theVM->handlers;
+    ScmObj prev;
+    GAUCHE_CC_VM_DECL;
+    prev = vm->handlers;
 
     void *d[2];
     d[0] = (void*)after;
     d[1] = (void*)prev;
-    theVM->handlers = Scm_Cons(Scm_Cons(before, after), prev);
+    vm->handlers = Scm_Cons(Scm_Cons(before, after), prev);
     Scm_VMPushCC(dynwind_body_cc, d, 2);
     return Scm_VMApply0(body);
 }
 
-static ScmObj dynwind_body_cc(ScmObj result, void **data)
+static ScmObj dynwind_body_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
-    ScmVM *vm = theVM;
     ScmObj after = SCM_OBJ(data[0]);
     ScmObj prev  = SCM_OBJ(data[1]);
     void *d[3];
+    GAUCHE_CC_VM_DECL;
 
     vm->handlers = prev;
     d[0] = (void*)result;
@@ -3254,11 +3272,11 @@ static ScmObj dynwind_body_cc(ScmObj result, void **data)
     return Scm_VMApply0(after);
 }
 
-static ScmObj dynwind_after_cc(ScmObj result, void **data)
+static ScmObj dynwind_after_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     ScmObj val0 = SCM_OBJ(data[0]);
-    ScmVM *vm = theVM;
     int nvals = (int)data[1];
+    GAUCHE_CC_VM_DECL;
     vm->numVals = nvals;
     if (nvals > 1) {
         SCM_ASSERT(nvals <= SCM_VM_MAX_VALUES);
@@ -3268,9 +3286,9 @@ static ScmObj dynwind_after_cc(ScmObj result, void **data)
 }
 
 /* C-friendly wrapper */
-ScmObj Scm_VMDynamicWindC(ScmObj (*before)(ScmObj *args, int nargs, void *data),
-                          ScmObj (*body)(ScmObj *args, int nargs, void *data),
-                          ScmObj (*after)(ScmObj *args, int nargs, void *data),
+ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
+                          ScmSubrProc *body,
+                          ScmSubrProc *after,
                           void *data)
 {
     ScmObj beforeproc, bodyproc, afterproc;
@@ -3470,7 +3488,8 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
     }
 }
 
-static ScmObj default_exception_handler_body(ScmObj *argv, int argc, void *data)
+static ScmObj default_exception_handler_body(GAUCHE_SUBR_VM_ARG ScmObj *argv,
+                                             int argc, void *data)
 {
     SCM_ASSERT(argc == 1);
     Scm_VMDefaultExceptionHandler(argv[0]);
@@ -3529,20 +3548,20 @@ ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception)
 /*
  * with-error-handler
  */
-static ScmObj install_ehandler(ScmObj *args, int nargs, void *data)
+static ScmObj install_ehandler(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
 {
     ScmEscapePoint *ep = (ScmEscapePoint*)data;
-    ScmVM *vm = theVM;
+    GAUCHE_SUBR_VM_DECL;
     vm->exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
     vm->escapePoint = ep;
     SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_REPORTED);
     return SCM_UNDEFINED;
 }
 
-static ScmObj discard_ehandler(ScmObj *args, int nargs, void *data)
+static ScmObj discard_ehandler(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
 {
     ScmEscapePoint *ep = (ScmEscapePoint *)data;
-    ScmVM *vm = theVM;
+    GAUCHE_SUBR_VM_DECL;
     vm->escapePoint = ep->prev;
     vm->exceptionHandler = ep->xhandler;
     if (ep->errorReporting) {
@@ -3599,9 +3618,10 @@ ScmObj Scm_VMWithGuardHandler(ScmObj handler, ScmObj thunk)
  *   dealing with exceptions.
  */
 
-static ScmObj install_xhandler(ScmObj *args, int nargs, void *data)
+static ScmObj install_xhandler(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
 {
-    theVM->exceptionHandler = SCM_OBJ(data);
+    GAUCHE_SUBR_VM_DECL;
+    vm->exceptionHandler = SCM_OBJ(data);
     return SCM_UNDEFINED;
 }
 
@@ -3645,7 +3665,7 @@ static ScmObj throw_cont_calculate_handlers(ScmEscapePoint *ep, /*target*/
     return h;
 }
 
-static ScmObj throw_cont_cc(ScmObj, void **);
+static ScmObj throw_cont_cc(GAUCHE_CC_VM_ARG ScmObj, void **);
 
 static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
                                                      to be called */
@@ -3698,7 +3718,7 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
     return SCM_CAR(args);
 }
 
-static ScmObj throw_cont_cc(ScmObj result, void **data)
+static ScmObj throw_cont_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     ScmObj handlers = SCM_OBJ(data[0]);
     ScmEscapePoint *ep = (ScmEscapePoint *)data[1];
@@ -3707,11 +3727,12 @@ static ScmObj throw_cont_cc(ScmObj result, void **data)
 }
 
 /* Body of the continuation SUBR */
-static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
+static ScmObj throw_continuation(GAUCHE_SUBR_VM_ARG ScmObj *argframe,
+                                 int nargs, void *data)
 {
     ScmEscapePoint *ep = (ScmEscapePoint*)data;
-    ScmVM *vm = theVM;
     ScmObj args = argframe[0];
+    GAUCHE_SUBR_VM_DECL;
 
     if (vm->cstack != ep->cstack) {
         ScmCStack *cstk;
@@ -3868,12 +3889,13 @@ ScmObj Scm_Values5(ScmObj val0, ScmObj val1, ScmObj val2, ScmObj val3, ScmObj va
  * the current continuation.
  */
 
-static ScmObj process_queued_requests_cc(ScmObj result, void **data)
+static ScmObj process_queued_requests_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     /* restore the saved continuation of normal execution flow of VM */
     int i;
     ScmObj cp;
-    ScmVM *vm = theVM;
+    GAUCHE_CC_VM_DECL;
+    
     vm->numVals = (int)data[0];
     vm->val0 = data[1];
     if (vm->numVals > 1) {

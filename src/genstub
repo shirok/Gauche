@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.125 2006-05-06 00:12:36 shirok Exp $
+;;;  $Id: genstub,v 1.126 2006-12-05 08:14:23 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -1071,8 +1071,13 @@
 
 (define-method emit-definition ((cproc <cproc>))
   (for-each ensure-keyword-arg (keyword-args-of cproc))
+  (f "#ifdef GAUCHE_SUBR_VM")
+  (f "static ScmObj ~a(ScmVM *SCM_VMPTR, ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)"
+     (c-name-of cproc))
+  (f "#else")
   (f "static ScmObj ~a(ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)"
      (c-name-of cproc))
+  (f "#endif")
   (cgen-body "{")
   ;; argument decl
   (for-each emit-arg-decl (args-of cproc))
