@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.473 2006-12-05 08:14:23 shirok Exp $
+ *  $Id: gauche.h,v 1.474 2006-12-05 10:31:27 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -63,9 +63,6 @@
 #define SCM_DECL_END
 #endif /*! __cplusplus */
 #endif /*!defined(SCM_DECL_BEGIN)*/
-
-//#define GAUCHE_CC_VM
-//#define GAUCHE_SUBR_VM
 
 SCM_DECL_BEGIN
 
@@ -117,6 +114,12 @@ SCM_DECL_BEGIN
 #else  /* !GAUCHE_USE_PTHREADS */
 # include <gauche/uthread.h>
 #endif /* !GAUCHE_USE_PTHREADS */
+
+/* Experimental stuff.  Defining these changes prototype of Subr
+   and C Continuation */
+   
+/* #define GAUCHE_SUBR_VM */
+/* #define GAUCHE_CC_VM */
 
 /*-------------------------------------------------------------
  * BASIC TYPES
@@ -381,7 +384,7 @@ typedef struct ScmRegMatchRec  ScmRegMatch;
 typedef struct ScmWriteContextRec ScmWriteContext;
 typedef struct ScmAutoloadRec  ScmAutoload;
 
-#ifdef GAUCHE_SUBR_VM
+#ifdef GAUCHE_SUBR_VM           /* experimental */
 typedef ScmObj ScmSubrProc(ScmVM *, ScmObj *, int, void*);
 #define GAUCHE_SUBR_VM_ARG  ScmVM *vm,
 #define GAUCHE_SUBR_VM_DECL

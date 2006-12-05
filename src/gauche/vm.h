@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.108 2006-12-05 08:14:23 shirok Exp $
+ *  $Id: vm.h,v 1.109 2006-12-05 10:31:28 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -573,7 +573,7 @@ enum {
 
 #define SCM_CCONT_DATA_SIZE 6
 
-#ifdef GAUCHE_CC_VM
+#ifdef GAUCHE_CC_VM             /* experimental */
 typedef ScmObj ScmCContinuationProc(ScmVM*, ScmObj, void**);
 #define GAUCHE_CC_VM_ARG  ScmVM *vm,
 #define GAUCHE_CC_VM_DECL
