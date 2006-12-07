@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.132 2006-12-05 08:14:23 shirok Exp $
+ *  $Id: port.c,v 1.133 2006-12-07 01:27:15 shirok Exp $
  */
 
 #include <unistd.h>
@@ -197,13 +197,17 @@ static ScmObj with_port_locking_post_thunk(GAUCHE_SUBR_VM_ARG ScmObj *args,
     return SCM_UNDEFINED;
 }
 
-ScmObj Scm_VMWithPortLocking(ScmPort *port, ScmObj closure)
+ScmObj Scm_VMWithPortLocking(GAUCHE_VMAPI_VM_ARG ScmPort *port, ScmObj closure)
 {
     ScmObj before = Scm_MakeSubr(with_port_locking_pre_thunk, (void*)port,
                                  0, 0, SCM_FALSE);
     ScmObj after = Scm_MakeSubr(with_port_locking_post_thunk, (void*)port,
                                 0, 0, SCM_FALSE);
+#ifdef GAUCHE_VMAPI_VM
+    return Scm_VMDynamicWind(vm, before, closure, after);
+#else
     return Scm_VMDynamicWind(before, closure, after);
+#endif
 }
 
 /*===============================================================
@@ -1481,27 +1485,21 @@ static ScmObj port_restorer(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *da
     struct with_port_packet *p = (struct with_port_packet*)data;
     int pcnt = 0;
     ScmPort *curport;
-//    GAUCHE_SUBR_VM_DECL;
+    GAUCHE_SUBR_VM_DECL;
 
     if (p->mask & SCM_PORT_CURIN) {
-//        curport = SCM_VM_CURRENT_INPUT_PORT(vm);
-//        SCM_VM_CURRENT_INPUT_PORT(vm) = p->origport[pcnt++];
-        curport = SCM_CURIN;
-        SCM_CURIN = p->origport[pcnt++];
+        curport = SCM_VM_CURRENT_INPUT_PORT(vm);
+        SCM_VM_CURRENT_INPUT_PORT(vm) = p->origport[pcnt++];
         if (p->closep) Scm_ClosePort(curport);
     }
     if (p->mask & SCM_PORT_CUROUT) {
-//        curport = SCM_VM_CURRENT_OUTPUT_PORT(vm);
-//        SCM_VM_CURRENT_OUTPUT_PORT(vm) = p->origport[pcnt++];
-        curport = SCM_CUROUT;
-        SCM_CUROUT = p->origport[pcnt++];
+        curport = SCM_VM_CURRENT_OUTPUT_PORT(vm);
+        SCM_VM_CURRENT_OUTPUT_PORT(vm) = p->origport[pcnt++];
         if (p->closep) Scm_ClosePort(curport);
     }
     if (p->mask & SCM_PORT_CURERR) {
-//        curport = SCM_VM_CURRENT_ERROR_PORT(vm);
-//        SCM_VM_CURRENT_ERROR_PORT(vm) = p->origport[pcnt++];
-        curport = SCM_CURERR;
-        SCM_CURERR = p->origport[pcnt++];
+        curport = SCM_VM_CURRENT_ERROR_PORT(vm);
+        SCM_VM_CURRENT_ERROR_PORT(vm) = p->origport[pcnt++];
         if (p->closep) Scm_ClosePort(curport);
     }
     return SCM_UNDEFINED;
@@ -1512,25 +1510,30 @@ ScmObj Scm_WithPort(ScmPort *port[], ScmObj thunk, int mask, int closep)
     ScmObj finalizer;
     struct with_port_packet *packet;
     int pcnt = 0;
+    ScmVM *vm = Scm_VM();
 
     packet = SCM_NEW(struct with_port_packet);
     if (mask & SCM_PORT_CURIN) {
-        packet->origport[pcnt] = SCM_CURIN;
-        SCM_CURIN = port[pcnt++];
+        packet->origport[pcnt] = SCM_VM_CURRENT_INPUT_PORT(vm);
+        SCM_VM_CURRENT_INPUT_PORT(vm) = port[pcnt++];
     }
     if (mask & SCM_PORT_CUROUT) {
-        packet->origport[pcnt] = SCM_CUROUT;
-        SCM_CUROUT = port[pcnt++];
+        packet->origport[pcnt] = SCM_VM_CURRENT_OUTPUT_PORT(vm);
+        SCM_VM_CURRENT_OUTPUT_PORT(vm) = port[pcnt++];
     }
     if (mask & SCM_PORT_CURERR) {
-        packet->origport[pcnt] = SCM_CURERR;
-        SCM_CURERR = port[pcnt++];
+        packet->origport[pcnt] = SCM_VM_CURRENT_ERROR_PORT(vm);
+        SCM_VM_CURRENT_ERROR_PORT(vm) = port[pcnt++];
     }
     packet->mask = mask;
     packet->closep = closep;
     finalizer = Scm_MakeSubr(port_restorer, (void*)packet,
                              0, 0, SCM_FALSE);
+#ifdef GAUCHE_VMAPI_VM
+    return Scm_VMDynamicWind(vm, Scm_NullProc(), SCM_OBJ(thunk), finalizer);
+#else
     return Scm_VMDynamicWind(Scm_NullProc(), SCM_OBJ(thunk), finalizer);
+#endif
 }
 
 /*===============================================================

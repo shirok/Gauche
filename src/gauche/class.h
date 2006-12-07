@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.h,v 1.44 2005-09-12 09:22:25 shirok Exp $
+ *  $Id: class.h,v 1.45 2006-12-07 01:27:17 shirok Exp $
  */
 
 #ifndef GAUCHE_CLASS_H
@@ -119,18 +119,21 @@ SCM_EXTERN ScmObj Scm_MakeNextMethod(ScmGeneric *gf, ScmObj methods,
 SCM_EXTERN ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method);
 SCM_EXTERN ScmObj Scm_DeleteMethod(ScmGeneric *gf, ScmMethod *method);
 
-SCM_EXTERN ScmObj Scm_VMSlotInitializeUsingAccessor(ScmObj obj,
+SCM_EXTERN ScmObj Scm_VMSlotInitializeUsingAccessor(GAUCHE_VMAPI_VM_ARG
+                                                    ScmObj obj,
                                                     ScmSlotAccessor *ca,
                                                     ScmObj initargs);
-SCM_EXTERN ScmObj Scm_VMSlotRefUsingAccessor(ScmObj obj,
+SCM_EXTERN ScmObj Scm_VMSlotRefUsingAccessor(GAUCHE_VMAPI_VM_ARG
+                                             ScmObj obj,
 					     ScmSlotAccessor *acc,
 					     int boundp);
-SCM_EXTERN ScmObj Scm_VMSlotSetUsingAccessor(ScmObj obj,
+SCM_EXTERN ScmObj Scm_VMSlotSetUsingAccessor(GAUCHE_VMAPI_VM_ARG
+                                             ScmObj obj,
 					     ScmSlotAccessor *acc,
 					     ScmObj val);
 
-SCM_EXTERN ScmObj Scm_VMClassOf(ScmObj obj);
-SCM_EXTERN ScmObj Scm_VMIsA(ScmObj obj, ScmClass *klass);
+SCM_EXTERN ScmObj Scm_VMClassOf(GAUCHE_VMAPI_VM_ARG ScmObj obj);
+SCM_EXTERN ScmObj Scm_VMIsA(GAUCHE_VMAPI_VM_ARG ScmObj obj, ScmClass *klass);
 
 SCM_EXTERN ScmObj Scm_InstanceSlotRef(ScmObj obj, int number);
 SCM_EXTERN void   Scm_InstanceSlotSet(ScmObj obj, int number, ScmObj val);

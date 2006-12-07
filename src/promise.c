@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: promise.c,v 1.16 2006-12-05 08:14:23 shirok Exp $
+ *  $Id: promise.c,v 1.17 2006-12-07 01:27:16 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -143,8 +143,16 @@ ScmObj Scm_Force(ScmObj obj)
         else {
             void *data[1];
             data[0] = p;
+#ifdef GAUCHE_VMAPI_VM
+            {
+                ScmVM *vm = Scm_VM();
+                Scm_VMPushCC(vm, force_cc, data, 1);
+                SCM_RETURN(Scm_VMApply0(vm, p->content->code));
+            }
+#else
             Scm_VMPushCC(force_cc, data, 1);
             SCM_RETURN(Scm_VMApply0(p->content->code));
+#endif
         }
     }
 }

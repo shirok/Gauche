@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.93 2006-11-18 01:20:03 shirok Exp $
+ *  $Id: main.c,v 1.94 2006-12-07 01:27:15 shirok Exp $
  */
 
 #include <unistd.h>
@@ -244,7 +244,7 @@ static void sig_setup(void)
 void cleanup_main(void *data)
 {
     ScmVM *vm = Scm_VM();
-    
+
     if (profiling_mode) {
         Scm_ProfilerStop();
         Scm_EvalCString("(profiler-show)",

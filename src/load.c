@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.108 2006-12-05 08:14:23 shirok Exp $
+ *  $Id: load.c,v 1.109 2006-12-07 01:27:15 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -149,8 +149,14 @@ static ScmObj load_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
     ScmObj expr = Scm_ReadWithContext(SCM_OBJ(p->port), &(p->ctx));
 
     if (!SCM_EOFP(expr)) {
+#ifdef GAUCHE_VMAPI_VM
+        GAUCHE_CC_VM_DECL;
+        Scm_VMPushCC(vm, load_cc, data, 1);
+        return Scm_VMEval(vm, expr, SCM_FALSE);
+#else
         Scm_VMPushCC(load_cc, data, 1);
         return Scm_VMEval(expr, SCM_FALSE);
+#endif
     } else {
         return SCM_TRUE;
     }
@@ -211,7 +217,11 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
     vm->load_history = Scm_Cons(port_info, vm->load_history);
 
     PORT_LOCK(port, vm);
+#ifdef GAUCHE_VMAPI_VM
+    return Scm_VMDynamicWindC(vm, NULL, load_body, load_after, p);
+#else
     return Scm_VMDynamicWindC(NULL, load_body, load_after, p);
+#endif
 }
 
 /* Scheme subr (load-from-port subr &keyword paths environment) */

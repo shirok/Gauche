@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.259 2006-12-05 08:14:23 shirok Exp $
+ *  $Id: vm.c,v 1.260 2006-12-07 01:27:16 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -72,6 +72,11 @@ static int vm_stack_mark_proc;
 #ifndef GAUCHE_SUBR_VM
 #undef GAUCHE_SUBR_VM_DECL
 #define GAUCHE_SUBR_VM_DECL ScmVM *vm = theVM
+#endif
+
+#ifndef GAUCHE_VMAPI_VM
+#undef GAUCHE_VMAPI_VM_DECL
+#define GAUCHE_VMAPI_VM_DECL ScmVM *vm = theVM
 #endif
 
 /* An object to mark the boundary frame. */
@@ -343,8 +348,6 @@ pthread_key_t Scm_VMKey(void)
 
 /* pop the top object of the stack and store it to VAR */
 #define POP_ARG(var)       ((var) = *--SP)
-
-#define SMALL_REGS 0
 
 /* registers */
 #if SMALL_REGS == 4
@@ -1916,7 +1919,11 @@ static void run_loop()
                     PUSH_CONT(PC);
                     PC = PC_TO_RETURN;
                     SAVE_REGS();
+#ifdef GAUCHE_VMAPI_VM
+                    VAL0 = Scm_VMIsA(vm, obj, c);
+#else
                     VAL0 = Scm_VMIsA(obj, c);
+#endif
                     RESTORE_REGS();
                 } else {
                     SAVE_REGS();
@@ -1996,7 +2003,11 @@ static void run_loop()
                 PC = PC_TO_RETURN;
 
                 SAVE_REGS();
+#ifdef GAUCHE_VMAPI_VM
+                VAL0 = Scm_VMApply(vm, VAL0, cp);
+#else
                 VAL0 = Scm_VMApply(VAL0, cp);
+#endif
                 RESTORE_REGS();
                 NEXT1;
             }
@@ -2504,7 +2515,11 @@ static void run_loop()
                 POP_ARG(obj);
                 TAIL_CALL_INSTRUCTION();
                 SAVE_REGS();
+#ifdef GAUCHE_VMAPI_VM
+                VAL0 = Scm_VMSlotRef(vm, obj, VAL0, FALSE);
+#else
                 VAL0 = Scm_VMSlotRef(obj, VAL0, FALSE);
+#endif
                 RESTORE_REGS();
                 NEXT1;
             }
@@ -2514,7 +2529,11 @@ static void run_loop()
                 POP_ARG(obj);
                 TAIL_CALL_INSTRUCTION();
                 SAVE_REGS();
+#ifdef GAUCHE_VMAPI_VM
+                VAL0 = Scm_VMSlotSet(vm, obj, slot, VAL0);
+#else
                 VAL0 = Scm_VMSlotSet(obj, slot, VAL0);
+#endif
                 RESTORE_REGS();
                 NEXT1;
             }
@@ -2524,7 +2543,11 @@ static void run_loop()
                 INCR_PC;
                 TAIL_CALL_INSTRUCTION();
                 SAVE_REGS();
+#ifdef GAUCHE_VMAPI_VM
+                VAL0 = Scm_VMSlotRef(vm, VAL0, slot, FALSE);
+#else
                 VAL0 = Scm_VMSlotRef(VAL0, slot, FALSE);
+#endif
                 RESTORE_REGS();
                 NEXT1;
             }
@@ -2535,7 +2558,11 @@ static void run_loop()
                 INCR_PC;
                 TAIL_CALL_INSTRUCTION();
                 SAVE_REGS();
+#ifdef GAUCHE_VMAPI_VM
+                VAL0 = Scm_VMSlotSet(vm, obj, slot, VAL0);
+#else
                 VAL0 = Scm_VMSlotSet(obj, slot, VAL0);
+#endif
                 RESTORE_REGS();
                 NEXT1;
             }
@@ -2803,12 +2830,12 @@ static ScmWord apply_calls[][2] = {
       SCM_VM_INSN(SCM_VM_RET) },
 };
 
-ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
+ScmObj Scm_VMApply(GAUCHE_VMAPI_VM_ARG ScmObj proc, ScmObj args)
 {
-    DECL_REGS;
     int numargs = Scm_Length(args);
     int reqstack;
     ScmObj cp;
+    GAUCHE_VMAPI_VM_DECL;
 
     if (numargs < 0) Scm_Error("improper list not allowed: %S", args);
     reqstack = ENV_SIZE(numargs) + 1;
@@ -2833,16 +2860,16 @@ ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
 }
 
 /* shortcuts for common cases */
-ScmObj Scm_VMApply0(ScmObj proc)
+ScmObj Scm_VMApply0(GAUCHE_VMAPI_VM_ARG ScmObj proc)
 {
-    ScmVM *vm = theVM;
+    GAUCHE_VMAPI_VM_DECL;
     vm->pc = apply_calls[0];
     return proc;
 }
 
-ScmObj Scm_VMApply1(ScmObj proc, ScmObj arg)
+ScmObj Scm_VMApply1(GAUCHE_VMAPI_VM_ARG ScmObj proc, ScmObj arg)
 {
-    DECL_REGS;
+    GAUCHE_VMAPI_VM_DECL;
     CHECK_STACK(1);
     PUSH_ARG(arg);
     PC = apply_calls[1];
@@ -2850,9 +2877,9 @@ ScmObj Scm_VMApply1(ScmObj proc, ScmObj arg)
     return proc;
 }
 
-ScmObj Scm_VMApply2(ScmObj proc, ScmObj arg1, ScmObj arg2)
+ScmObj Scm_VMApply2(GAUCHE_VMAPI_VM_ARG ScmObj proc, ScmObj arg1, ScmObj arg2)
 {
-    DECL_REGS;
+    GAUCHE_VMAPI_VM_DECL;
     CHECK_STACK(2);
     PUSH_ARG(arg1);
     PUSH_ARG(arg2);
@@ -2861,9 +2888,9 @@ ScmObj Scm_VMApply2(ScmObj proc, ScmObj arg1, ScmObj arg2)
     return proc;
 }
 
-ScmObj Scm_VMApply3(ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3)
+ScmObj Scm_VMApply3(GAUCHE_VMAPI_VM_ARG ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3)
 {
-    DECL_REGS;
+    GAUCHE_VMAPI_VM_DECL;
     CHECK_STACK(3);
     PUSH_ARG(arg1);
     PUSH_ARG(arg2);
@@ -2873,9 +2900,9 @@ ScmObj Scm_VMApply3(ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3)
     return proc;
 }
 
-ScmObj Scm_VMApply4(ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3, ScmObj arg4)
+ScmObj Scm_VMApply4(GAUCHE_VMAPI_VM_ARG ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3, ScmObj arg4)
 {
-    DECL_REGS;
+    GAUCHE_VMAPI_VM_DECL;
     CHECK_STACK(4);
     PUSH_ARG(arg1);
     PUSH_ARG(arg2);
@@ -2894,11 +2921,11 @@ static ScmObj eval_restore_env(GAUCHE_SUBR_VM_ARG ScmObj *args, int argc, void *
 }
 
 /* For now, we only supports a module as the evaluation environment */
-ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
+ScmObj Scm_VMEval(GAUCHE_VMAPI_VM_ARG ScmObj expr, ScmObj e)
 {
     ScmObj v = SCM_NIL;
-    ScmVM *vm = Scm_VM();
     int restore_module = SCM_MODULEP(e);
+    GAUCHE_VMAPI_VM_DECL;
 
     v = Scm_Compile(expr, e);
     if (SCM_VM_COMPILER_FLAG_IS_SET(theVM, SCM_COMPILE_SHOWRESULT)) {
@@ -2914,7 +2941,11 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
                                      0, 0, SCM_SYM_EVAL_BEFORE);
         ScmObj after = Scm_MakeSubr(eval_restore_env, (void*)vm->module,
                                     0, 0, SCM_SYM_EVAL_AFTER);
+#ifdef GAUCHE_VMAPI_VM
+        return Scm_VMDynamicWind(vm, before, body, after);
+#else
         return Scm_VMDynamicWind(before, body, after);
+#endif
     } else {
         /* shortcut */
         SCM_ASSERT(SCM_COMPILED_CODE_P(v));
@@ -2928,12 +2959,13 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
 /* Arrange C function AFTER to be called after the procedure returns.
  * Usually followed by Scm_VMApply* function.
  */
-void Scm_VMPushCC(ScmCContinuationProc *after, void **data, int datasize)
+void Scm_VMPushCC(GAUCHE_VMAPI_VM_ARG ScmCContinuationProc *after,
+                  void **data, int datasize)
 {
-    DECL_REGS;
     int i;
     ScmContFrame *cc;
     ScmObj *s;
+    GAUCHE_VMAPI_VM_DECL;
 
     CHECK_STACK(CONT_FRAME_SIZE+datasize);
     s = SP;
@@ -3086,7 +3118,7 @@ ScmObj Scm_ApplyRec(ScmObj proc, ScmObj args)
 {
     ScmObj program;
     int nargs = Scm_Length(args);
-    ScmVM *vm = Scm_VM();
+    ScmVM *vm = theVM;
     ScmWord *code = SCM_NEW_ARRAY(ScmWord, 3);
 
     if (nargs < 0) {
@@ -3136,11 +3168,23 @@ static ScmObj safe_eval_thunk(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *
 
     switch (epak->kind) {
     case SAFE_EVAL_CSTRING:
+#ifdef GAUCHE_VMAPI_VM
+        return Scm_VMEval(theVM, Scm_ReadFromCString(epak->cstr), epak->env);
+#else
         return Scm_VMEval(Scm_ReadFromCString(epak->cstr), epak->env);
+#endif
     case SAFE_EVAL:
+#ifdef GAUCHE_VMAPI_VM
+        return Scm_VMEval(theVM, epak->arg0, epak->env);
+#else
         return Scm_VMEval(epak->arg0, epak->env);
+#endif
     case SAFE_APPLY:
+#ifdef GAUCHE_VMAPI_VM
+        return Scm_VMApply(theVM, epak->arg0, epak->args);
+#else
         return Scm_VMApply(epak->arg0, epak->args);
+#endif
     default:
         Scm_Panic("safe_eval_subr: bad kind");
         return SCM_UNBOUND;     /* dummy */
@@ -3153,7 +3197,14 @@ static ScmObj safe_eval_int(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *da
     
     thunk   = Scm_MakeSubr(safe_eval_thunk, data, 0, 0, SCM_FALSE);
     handler = Scm_MakeSubr(safe_eval_handler, data, 1, 0, SCM_FALSE);
+#ifdef GAUCHE_VMAPI_VM
+    {
+        GAUCHE_SUBR_VM_DECL;
+        return Scm_VMWithErrorHandler(vm, handler, thunk);
+    }
+#else
     return Scm_VMWithErrorHandler(handler, thunk);
+#endif
 }
 
 static int safe_eval_wrap(int kind, ScmObj arg0, ScmObj args,
@@ -3221,19 +3272,24 @@ static ScmCContinuationProc dynwind_before_cc;
 static ScmCContinuationProc dynwind_body_cc;
 static ScmCContinuationProc dynwind_after_cc;
 
-ScmObj Scm_VMDynamicWind(ScmObj before, ScmObj body, ScmObj after)
+ScmObj Scm_VMDynamicWind(GAUCHE_VMAPI_VM_ARG
+                         ScmObj before, ScmObj body, ScmObj after)
 {
     void *data[3];
 
     /* NB: we don't check types of arguments, since we allo object-apply
        hooks can be used for them. */
-
     data[0] = (void*)before;
     data[1] = (void*)body;
     data[2] = (void*)after;
 
+#ifdef GAUCHE_VMAPI_VM
+    Scm_VMPushCC(vm, dynwind_before_cc, data, 3);
+    return Scm_VMApply0(vm, before);
+#else
     Scm_VMPushCC(dynwind_before_cc, data, 3);
     return Scm_VMApply0(before);
+#endif
 }
 
 static ScmObj dynwind_before_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
@@ -3249,8 +3305,13 @@ static ScmObj dynwind_before_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
     d[0] = (void*)after;
     d[1] = (void*)prev;
     vm->handlers = Scm_Cons(Scm_Cons(before, after), prev);
+#ifdef GAUCHE_VMAPI_VM
+    Scm_VMPushCC(vm, dynwind_body_cc, d, 2);
+    return Scm_VMApply0(vm, body);
+#else
     Scm_VMPushCC(dynwind_body_cc, d, 2);
     return Scm_VMApply0(body);
+#endif
 }
 
 static ScmObj dynwind_body_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
@@ -3268,8 +3329,13 @@ static ScmObj dynwind_body_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
         memcpy(array, vm->vals, sizeof(ScmObj)*(vm->numVals-1));
         d[2] = (void*)array;
     }
+#ifdef GAUCHE_VMAPI_VM
+    Scm_VMPushCC(vm, dynwind_after_cc, d, 3);
+    return Scm_VMApply0(vm, after);
+#else
     Scm_VMPushCC(dynwind_after_cc, d, 3);
     return Scm_VMApply0(after);
+#endif
 }
 
 static ScmObj dynwind_after_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
@@ -3286,7 +3352,8 @@ static ScmObj dynwind_after_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 }
 
 /* C-friendly wrapper */
-ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
+ScmObj Scm_VMDynamicWindC(GAUCHE_VMAPI_VM_ARG
+                          ScmSubrProc *before,
                           ScmSubrProc *body,
                           ScmSubrProc *after,
                           void *data)
@@ -3299,7 +3366,11 @@ ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
     bodyproc =
         body ? Scm_MakeSubr(body, data, 0, 0, SCM_FALSE) : Scm_NullProc();
     
+#ifdef GAUCHE_VMAPI_VM
+    return Scm_VMDynamicWind(vm, beforeproc, bodyproc, afterproc);
+#else
     return Scm_VMDynamicWind(beforeproc, bodyproc, afterproc);
+#endif
 }
 
 
@@ -3570,9 +3641,9 @@ static ScmObj discard_ehandler(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void 
     return SCM_UNDEFINED;
 }
 
-static ScmObj with_error_handler(ScmObj handler, ScmObj thunk, int rewindBefore)
+static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
+                                 ScmObj thunk, int rewindBefore)
 {
-    ScmVM *vm = theVM;
     ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
     ScmObj before, after;
 
@@ -3597,17 +3668,23 @@ static ScmObj with_error_handler(ScmObj handler, ScmObj thunk, int rewindBefore)
                              to redirect ep->cont */
     before = Scm_MakeSubr(install_ehandler, ep, 0, 0, SCM_FALSE);
     after  = Scm_MakeSubr(discard_ehandler, ep, 0, 0, SCM_FALSE);
+#ifdef GAUCHE_VMAPI_VM
+    return Scm_VMDynamicWind(vm, before, thunk, after);
+#else
     return Scm_VMDynamicWind(before, thunk, after);
+#endif
 }
 
-ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk)
+ScmObj Scm_VMWithErrorHandler(GAUCHE_VMAPI_VM_ARG ScmObj handler, ScmObj thunk)
 {
-    return with_error_handler(handler, thunk, FALSE);
+    GAUCHE_VMAPI_VM_DECL;
+    return with_error_handler(vm, handler, thunk, FALSE);
 }
 
-ScmObj Scm_VMWithGuardHandler(ScmObj handler, ScmObj thunk)
+ScmObj Scm_VMWithGuardHandler(GAUCHE_VMAPI_VM_ARG ScmObj handler, ScmObj thunk)
 {
-    return with_error_handler(handler, thunk, TRUE);
+    GAUCHE_VMAPI_VM_DECL;
+    return with_error_handler(vm, handler, thunk, TRUE);
 }
 
 
@@ -3625,12 +3702,18 @@ static ScmObj install_xhandler(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void 
     return SCM_UNDEFINED;
 }
 
-ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk)
+ScmObj Scm_VMWithExceptionHandler(GAUCHE_VMAPI_VM_ARG
+                                  ScmObj handler, ScmObj thunk)
 {
-    ScmObj current = theVM->exceptionHandler;
+    GAUCHE_VMAPI_VM_DECL;
+    ScmObj current = vm->exceptionHandler;
     ScmObj before = Scm_MakeSubr(install_xhandler, handler, 0, 0, SCM_FALSE);
     ScmObj after  = Scm_MakeSubr(install_xhandler, current, 0, 0, SCM_FALSE);
+#ifdef GAUCHE_VMAPI_VM
+    return Scm_VMDynamicWind(vm, before, thunk, after);
+#else
     return Scm_VMDynamicWind(before, thunk, after);
+#endif
 }
 
 /*==============================================================
@@ -3690,9 +3773,15 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
         data[0] = (void*)SCM_CDR(handlers);
         data[1] = (void*)ep;
         data[2] = (void*)args;
+#ifdef GAUCHE_VMAPI_VM
+        Scm_VMPushCC(vm, throw_cont_cc, data, 3);
+        vm->handlers = chain;
+        return Scm_VMApply0(vm, handler);
+#else
         Scm_VMPushCC(throw_cont_cc, data, 3);
         vm->handlers = chain;
         return Scm_VMApply0(handler);
+#endif
     }
 
     /*
@@ -3756,11 +3845,11 @@ static ScmObj throw_continuation(GAUCHE_SUBR_VM_ARG ScmObj *argframe,
     return SCM_UNDEFINED; /*dummy*/
 }
 
-ScmObj Scm_VMCallCC(ScmObj proc)
+ScmObj Scm_VMCallCC(GAUCHE_VMAPI_VM_ARG ScmObj proc)
 {
     ScmObj contproc;
     ScmEscapePoint *ep;
-    ScmVM *vm = theVM;
+    GAUCHE_VMAPI_VM_DECL;
 
     if (!SCM_PROCEDUREP(proc)
         || (!SCM_PROCEDURE_OPTIONAL(proc) && SCM_PROCEDURE_REQUIRED(proc) != 1)
@@ -3778,7 +3867,11 @@ ScmObj Scm_VMCallCC(ScmObj proc)
 
     contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                             SCM_MAKE_STR("continuation"));
+#ifdef GAUCHE_VMAPI_VM
+    return Scm_VMApply1(vm, proc, contproc);
+#else
     return Scm_VMApply1(proc, contproc);
+#endif
 }
 
 /*==============================================================
@@ -3813,9 +3906,8 @@ void Scm_VMRewindProtect(ScmVM *vm)
  * Values
  */
 
-ScmObj Scm_Values(ScmObj args)
+ScmObj Scm_VMValues(ScmVM *vm, ScmObj args)
 {
-    ScmVM *vm = theVM;
     ScmObj cp;
     int nvals;
     
@@ -3834,26 +3926,41 @@ ScmObj Scm_Values(ScmObj args)
     return SCM_CAR(args);
 }
 
-ScmObj Scm_Values2(ScmObj val0, ScmObj val1)
+ScmObj Scm_Values(ScmObj args)
 {
-    ScmVM *vm = theVM;
+    return Scm_VMValues(theVM, args);
+}
+
+ScmObj Scm_VMValues2(ScmVM *vm, ScmObj val0, ScmObj val1)
+{
     vm->numVals = 2;
     vm->vals[0] = val1;
     return val0;
 }
 
-ScmObj Scm_Values3(ScmObj val0, ScmObj val1, ScmObj val2)
+
+ScmObj Scm_Values2(ScmObj val0, ScmObj val1)
 {
-    ScmVM *vm = theVM;
+    return Scm_VMValues2(theVM, val0, val1);
+}
+
+ScmObj Scm_VMValues3(ScmVM *vm, ScmObj val0, ScmObj val1, ScmObj val2)
+{
     vm->numVals = 3;
     vm->vals[0] = val1;
     vm->vals[1] = val2;
     return val0;
 }
 
-ScmObj Scm_Values4(ScmObj val0, ScmObj val1, ScmObj val2, ScmObj val3)
+ScmObj Scm_Values3(ScmObj val0, ScmObj val1, ScmObj val2)
 {
-    ScmVM *vm = theVM;
+    return Scm_VMValues3(theVM, val0, val1, val2);
+}
+
+
+ScmObj Scm_VMValues4(ScmVM *vm, ScmObj val0, ScmObj val1,
+                     ScmObj val2, ScmObj val3)
+{
     vm->numVals = 4;
     vm->vals[0] = val1;
     vm->vals[1] = val2;
@@ -3861,9 +3968,14 @@ ScmObj Scm_Values4(ScmObj val0, ScmObj val1, ScmObj val2, ScmObj val3)
     return val0;
 }
 
-ScmObj Scm_Values5(ScmObj val0, ScmObj val1, ScmObj val2, ScmObj val3, ScmObj val4)
+ScmObj Scm_Values4(ScmObj val0, ScmObj val1, ScmObj val2, ScmObj val3)
 {
-    ScmVM *vm = theVM;
+    return Scm_VMValues4(theVM, val0, val1, val2, val3);
+}
+
+ScmObj Scm_VMValues5(ScmVM *vm, ScmObj val0, ScmObj val1,
+                     ScmObj val2, ScmObj val3, ScmObj val4)
+{
     vm->numVals = 5;
     vm->vals[0] = val1;
     vm->vals[1] = val2;
@@ -3871,6 +3983,13 @@ ScmObj Scm_Values5(ScmObj val0, ScmObj val1, ScmObj val2, ScmObj val3, ScmObj va
     vm->vals[3] = val4;
     return val0;
 }
+
+ScmObj Scm_Values5(ScmObj val0, ScmObj val1,
+                   ScmObj val2, ScmObj val3, ScmObj val4)
+{
+    return Scm_VMValues5(theVM, val0, val1, val2, val3, val4);
+}
+
 
 /*==================================================================
  * Queued handler processing.
@@ -3926,7 +4045,11 @@ static void process_queued_requests(ScmVM *vm)
     } else {
         data[2] = NULL;
     }
+#ifdef GAUCHE_VMAPI_VM
+    Scm_VMPushCC(vm, process_queued_requests_cc, data, 3);
+#else
     Scm_VMPushCC(process_queued_requests_cc, data, 3);
+#endif
 
     /* Process queued stuff.  Currently they call VM recursively,
        but we'd better to arrange them to be processed in the same

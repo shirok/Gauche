@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: exclib.stub,v 1.18 2006-11-09 20:27:02 shirok Exp $
+;;; $Id: exclib.stub,v 1.19 2006-12-07 01:27:15 shirok Exp $
 ;;;
 
 "
@@ -53,26 +53,30 @@
    "if (!SCM_PROCEDURE_THUNK_P(thunk)) {"
    "  Scm_Error(\"thunk required, but got %S\", thunk);"
    "}"
+   "#ifdef GAUCHE_VMAPI_VM"
+   "if (rewind_before) {"
+   "  SCM_RESULT = Scm_VMWithGuardHandler(SCM_VMPTR, handler, thunk);"
+   "} else {"
+   "  SCM_RESULT = Scm_VMWithErrorHandler(SCM_VMPTR, handler, thunk);"
+   "}"
+   "#else"
    "if (rewind_before) {"
    "  SCM_RESULT = Scm_VMWithGuardHandler(handler, thunk);"
    "} else {"
    "  SCM_RESULT = Scm_VMWithErrorHandler(handler, thunk);"
-   "}"))
+   "}"
+   "#endif"))
 
 ;; srfi-18 primitive exception mechanism
 (define-cproc current-exception-handler ()
   (expr "Scm_VM()->exceptionHandler"))
 
 (define-cproc with-exception-handler (handler thunk)
-  (code
-   "if (!SCM_PROCEDURE_TAKE_NARG_P(handler, 1)) {"
-   "   Scm_Error(\"exception handler must take at least 1 argument, but got %S\","
-   "     handler);"
-   "}"
-   "if (!SCM_PROCEDURE_THUNK_P(thunk)) {"
-   "  Scm_Error(\"thunk required, but got %S\", thunk);"
-   "}")
-   (call "Scm_VMWithExceptionHandler"))
+  (body "#ifdef GAUCHE_VMAPI_VM"
+        "SCM_RESULT = Scm_VMWithExceptionHandler(SCM_VMPTR, handler, thunk);"
+        "#else"
+        "SCM_RESULT = Scm_VMWithExceptionHandler(handler, thunk);"
+        "#endif"))
 
 (define-cproc raise (exception) (call "Scm_Raise"))
 

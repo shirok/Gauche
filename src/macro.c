@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.63 2006-12-05 08:14:23 shirok Exp $
+ *  $Id: macro.c,v 1.64 2006-12-07 01:27:15 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -209,7 +209,11 @@ static ScmObj macro_transform_old(ScmObj self, ScmObj form,
 {
     ScmObj proc = SCM_OBJ(data);
     SCM_ASSERT(SCM_PAIRP(form));
+#ifdef GAUCHE_VMAPI_VM
+    return Scm_VMApply(Scm_VM(), proc, SCM_CDR(form));
+#else
     return Scm_VMApply(proc, SCM_CDR(form));
+#endif
 }
 
 ScmObj Scm_MakeMacroTransformerOld(ScmSymbol *name, ScmProcedure *proc)
@@ -965,7 +969,11 @@ ScmObj Scm_VMMacroExpand(ScmObj expr, ScmObj env, int oncep)
         if (!oncep) {
             void *data[1];
             data[0] = env;
+#ifdef GAUCHE_VMAPI_VM
+            Scm_VMPushCC(Scm_VM(), macro_expand_cc, data, 1);
+#else
             Scm_VMPushCC(macro_expand_cc, data, 1);
+#endif
         }
         expr = Scm_CallMacroExpander(mac, expr, env);
     }

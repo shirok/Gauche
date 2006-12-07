@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.h,v 1.17 2006-11-05 11:11:47 shirok Exp $
+ *  $Id: port.h,v 1.18 2006-12-07 01:27:17 shirok Exp $
  */
 
 #ifndef GAUCHE_PORT_H
@@ -280,7 +280,8 @@ SCM_EXTERN int    Scm_CharReadyUnsafe(ScmPort *port);
 
 SCM_EXTERN void   Scm_ClosePort(ScmPort *port);
 
-SCM_EXTERN ScmObj Scm_VMWithPortLocking(ScmPort *port,
+SCM_EXTERN ScmObj Scm_VMWithPortLocking(GAUCHE_VMAPI_VM_ARG
+                                        ScmPort *port,
                                         ScmObj closure);
 
 SCM_EXTERN void   Scm_Putb(ScmByte b, ScmPort *port);

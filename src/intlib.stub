@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: intlib.stub,v 1.21 2006-12-05 08:14:23 shirok Exp $
+;;; $Id: intlib.stub,v 1.22 2006-12-07 01:27:15 shirok Exp $
 ;;;
 
 ;; This file defines subrs that are used by Gauche internal routines
@@ -186,7 +186,11 @@
    "  } else if (SCM_PROCEDUREP(gval)"
    "             && SCM_PROCEDURE_INLINER(gval)"
    "             && !SCM_FALSEP(SCM_PROCEDURE_INLINER(gval))"
+   "#ifdef GAUCHE_VMAPI_VM"
+   "             && !SCM_VM_COMPILER_FLAG_IS_SET(SCM_VMPTR, "
+   "#else"
    "             && !SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), "
+   "#endif"
    "                                             SCM_COMPILE_NOINLINE_GLOBALS)) {"
    "    SCM_RESULT0 = gval; SCM_RESULT1 = SCM_SYM_INLINE;"
    "  } else {"
@@ -227,21 +231,25 @@
   (call "Scm_MakeSyntax"))
 
 (define-cproc call-syntax-handler (syn program cenv)
-  "SCM_ASSERT(SCM_SYNTAXP(syn));
-   SCM_RETURN(Scm_VMApply2(SCM_SYNTAX(syn)->handler, program, cenv));")
+  (body "SCM_ASSERT(SCM_SYNTAXP(syn));"
+        "#ifdef GAUCHE_VMAPI_VM"
+        "SCM_RESULT = Scm_VMApply2(SCM_VMPTR, SCM_SYNTAX(syn)->handler, program, cenv);"
+        "#else"
+        "SCM_RESULT = Scm_VMApply2(SCM_SYNTAX(syn)->handler, program, cenv);"
+        "#endif"))
 
 (define-cproc syntax-handler (syn)
-  "SCM_ASSERT(SCM_SYNTAXP(syn));
-   SCM_RETURN(SCM_SYNTAX(syn)->handler);")
+  (body "SCM_ASSERT(SCM_SYNTAXP(syn));"
+        "SCM_RESULT = SCM_SYNTAX(syn)->handler;"))
 
 (define-cproc %internal-macro-expand (form env once::<boolean>)
   (call "Scm_VMMacroExpand"))
 
 (define-cproc %procedure-inliner (proc::<procedure>)
   (setter (proc::<procedure> inliner)
-    "  proc->inliner = inliner; SCM_RETURN(SCM_UNDEFINED);")
-  "if (proc->inliner) SCM_RETURN(proc->inliner);
-   else SCM_RETURN(SCM_FALSE);")
+          (body <void> "proc->inliner = inliner;"))
+  (body "if (proc->inliner) SCM_RESULT = proc->inliner;"
+        "else               SCM_RESULT = SCM_FALSE;"))
 
 ;;
 ;; Compiled code builder interface
@@ -332,15 +340,21 @@
 
 ;; Eval situation flag (for eval-when constrcut)
 (define-cproc vm-eval-situation (&optional val)
-  "int prev;
-   if (SCM_UNBOUNDP(val)) {
-     SCM_RETURN(SCM_MAKE_INT(Scm_VM()->evalSituation));
-   } else {
-     if (!SCM_INTP(val)) Scm_Error(\"integer required, but got %S\", val);
-     prev = Scm_VM()->evalSituation;
-     Scm_VM()->evalSituation = SCM_INT_VALUE(val);
-     SCM_RETURN(SCM_MAKE_INT(prev));
-   }")
+  (body <int>
+        "int prev;"
+        "#ifdef GAUCHE_VMAPI_VM"
+        "ScmVM *vm = SCM_VMPTR;"
+        "#else"
+        "ScmVM *vm = Scm_VM();"
+        "#endif"
+        "if (SCM_UNBOUNDP(val)) {"
+        "  SCM_RESULT = vm->evalSituation;"
+        "} else {"
+        "  if (!SCM_INTP(val)) Scm_Error(\"integer required, but got %S\", val);"
+        "  prev = vm->evalSituation;"
+        "  vm->evalSituation = SCM_INT_VALUE(val);"
+        "  SCM_RESULT = prev;"
+        "}"))
 
 (define-enum SCM_VM_EXECUTING)
 (define-enum SCM_VM_LOADING)
@@ -348,15 +362,34 @@
 
 ;; Compiler flags
 (define-cproc vm-compiler-flag-is-set? (flag::<uint>)
-  (expr <boolean> "SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), flag)"))
+  (body <boolean>
+        "#ifdef GAUCHE_VMAPI_VM"
+        "SCM_RESULT = SCM_VM_COMPILER_FLAG_IS_SET(SCM_VMPTR, flag);"
+        "#else"
+        "SCM_RESULT = SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), flag);"
+        "#endif"))
 (define-cproc vm-compiler-flag-set! (flag::<uint>)
-  (body <void> "SCM_VM_COMPILER_FLAG_SET(Scm_VM(), flag);"))
+  (body <void>
+        "#ifdef GAUCHE_VMAPI_VM"
+        "SCM_VM_COMPILER_FLAG_SET(SCM_VMPTR, flag);"
+        "#else"
+        "SCM_VM_COMPILER_FLAG_SET(Scm_VM(), flag);"
+        "#endif"))
 (define-cproc vm-compiler-flag-clear! (flag::<uint>)
-  (body <void> "SCM_VM_COMPILER_FLAG_CLEAR(Scm_VM(), flag);"))
+  (body <void>
+        "#ifdef GAUCHE_VMAPI_VM"
+        "SCM_VM_COMPILER_FLAG_CLEAR(SCM_VMPTR, flag);"
+        "#else"
+        "SCM_VM_COMPILER_FLAG_CLEAR(Scm_VM(), flag);"
+        "#endif"))
 
 (define-cproc vm-compiler-flag-noinline-locals? ()
-  (expr <boolean>
-        "SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), SCM_COMPILE_NOINLINE_LOCALS)"))
+  (body <boolean>
+        "#ifdef GAUCHE_VMAPI_VM"
+        "SCM_VM_COMPILER_FLAG_IS_SET(SCM_VMPTR, SCM_COMPILE_NOINLINE_LOCALS);"
+        "#else"
+        "SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), SCM_COMPILE_NOINLINE_LOCALS);"
+        "#endif"))
 
 (define-enum SCM_COMPILE_NOINLINE_GLOBALS)
 (define-enum SCM_COMPILE_NOINLINE_LOCALS)
@@ -367,9 +400,18 @@
 
 ;; Set/get VM's current module info. (temporary)
 (define-cproc vm-current-module ()
-  (expr "SCM_OBJ(Scm_VM()->module)"))
+  (body "#ifdef GAUCHE_VMAPI_VM"
+        "SCM_RESULT = SCM_OBJ(SCM_VMPTR->module);"
+        "#else"
+        "SCM_RESULT = SCM_OBJ(Scm_VM()->module);"
+        "#endif"))
 (define-cproc vm-set-current-module (mod::<module>)
-  (body <void> "Scm_VM()->module = mod;"))
+  (body <void>
+        "#ifdef GAUCHE_VMAPI_VM"
+        "SCM_VMPTR->module = mod;"
+        "#else"
+        "Scm_VM()->module = mod;"
+        "#endif"))
 
 (define-cproc gc-print-static-roots ()
   (call <void> "GC_print_static_roots"))
@@ -460,8 +502,13 @@
         int count = 1;
         SCM_FOR_EACH(lp, SCM_CAR(fp)) {
             if (SCM_EQ(SCM_CAR(lp), lvar)) {
+#ifdef GAUCHE_VMAPI_VM
+                return Scm_VMValues2(SCM_VMPTR, SCM_MAKE_INT(depth),
+                                     SCM_MAKE_INT(Scm_Length(SCM_CAR(fp))-count));
+#else
                 return Scm_Values2(SCM_MAKE_INT(depth),
                                    SCM_MAKE_INT(Scm_Length(SCM_CAR(fp))-count));
+#endif
             }
             count++;
         }
@@ -532,20 +579,36 @@
    } else {
      data[1] = Scm_Cons(result, r);
      data[2] = SCM_CDR(lis);
+#ifdef GAUCHE_VMAPI_VM
+     {
+       GAUCHE_CC_VM_DECL;
+       Scm_VMPushCC(vm, map1c_cc, data, 4);
+       SCM_RETURN(Scm_VMApply2(vm, proc, SCM_CAR(lis), c));
+     }
+#else
      Scm_VMPushCC(map1c_cc, data, 4);
      SCM_RETURN(Scm_VMApply2(proc, SCM_CAR(lis), c));
+#endif
    }
  }"
 
 (define-cproc %map1c (proc lis c)
-  "void *data[4];
-  if (SCM_NULLP(lis)) SCM_RETURN(SCM_NIL);
-  data[0] = proc;
-  data[1] = SCM_NIL;
-  data[2] = SCM_CDR(lis);
-  data[3] = c;
-  Scm_VMPushCC(map1c_cc, data, 4);
-  SCM_RETURN(Scm_VMApply2(proc, SCM_CAR(lis), c));")
+  (body
+   "void *data[4];"
+   "if (SCM_NULLP(lis)) { SCM_RESULT = SCM_NIL; }"
+   "else { "
+   "  data[0] = proc;"
+   "  data[1] = SCM_NIL;"
+   "  data[2] = SCM_CDR(lis);"
+   "  data[3] = c;"
+   "#ifdef GAUCHE_VMAPI_VM"
+   "  Scm_VMPushCC(SCM_VMPTR, map1c_cc, data, 4);"
+   "  SCM_RETURN(Scm_VMApply2(SCM_VMPTR, proc, SCM_CAR(lis), c));"
+   "#else"
+   "  Scm_VMPushCC(map1c_cc, data, 4);"
+   "  SCM_RETURN(Scm_VMApply2(proc, SCM_CAR(lis), c));"
+   "#endif"
+   "}"))
 
 ;; (%map1cc proc lis c1 c2) = (map (cut proc <> c1 c2) lis)
 "static ScmObj map1cc_cc(GAUCHE_CC_VM_ARG ScmObj result, void *data[])
@@ -560,8 +623,16 @@
    } else {
      data[1] = Scm_Cons(result, r);
      data[2] = SCM_CDR(lis);
+#ifdef GAUCHE_VMAPI_VM
+     {
+       GAUCHE_CC_VM_DECL;
+       Scm_VMPushCC(vm, map1cc_cc, data, 5);
+       SCM_RETURN(Scm_VMApply3(vm, proc, SCM_CAR(lis), c1, c2));
+     }
+#else
      Scm_VMPushCC(map1cc_cc, data, 5);
      SCM_RETURN(Scm_VMApply3(proc, SCM_CAR(lis), c1, c2));
+#endif
    }
  }"
 
@@ -573,8 +644,13 @@
   data[2] = SCM_CDR(lis);
   data[3] = c1;
   data[4] = c2;
+#ifdef GAUCHE_VMAPI_VM
+  Scm_VMPushCC(SCM_VMPTR, map1cc_cc, data, 5);
+  SCM_RETURN(Scm_VMApply3(SCM_VMPTR, proc, SCM_CAR(lis), c1, c2));
+#else
   Scm_VMPushCC(map1cc_cc, data, 5);
-  SCM_RETURN(Scm_VMApply3(proc, SCM_CAR(lis), c1, c2));")
+  SCM_RETURN(Scm_VMApply3(proc, SCM_CAR(lis), c1, c2));
+#endif")
 
 ;; (%map-cons lis1 lis2) = (map cons lis1 lis2)
 (define-cproc %map-cons (lis1 lis2)

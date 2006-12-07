@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.142 2006-12-05 08:14:22 shirok Exp $
+ *  $Id: class.c,v 1.143 2006-12-07 01:27:15 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -58,7 +58,8 @@ static ScmObj slot_accessor_allocate(ScmClass *klass, ScmObj initargs);
 static void   initialize_builtin_cpl(ScmClass *klass, ScmObj supers);
 
 static ScmObj instance_class_redefinition(ScmObj obj, ScmClass *old);
-static ScmObj slot_set_using_accessor(ScmObj obj, ScmSlotAccessor *sa,
+static ScmObj slot_set_using_accessor(GAUCHE_VMAPI_VM_ARG
+                                      ScmObj obj, ScmSlotAccessor *sa,
                                       ScmObj val);
 
 static int object_compare(ScmObj x, ScmObj y, int equalp);
@@ -488,14 +489,23 @@ ScmClass *Scm_BaseClassOf(ScmClass *klass)
  */
 ScmObj class_of_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
+#ifdef GAUCHE_VMAPI_VM
+    GAUCHE_CC_VM_DECL;
+    return Scm_VMClassOf(vm, result);
+#else
     return Scm_VMClassOf(result);
+#endif
 }
 
-ScmObj Scm_VMClassOf(ScmObj obj)
+ScmObj Scm_VMClassOf(GAUCHE_VMAPI_VM_ARG ScmObj obj)
 {
     ScmClass *k = Scm_ClassOf(obj);
     if (!SCM_FALSEP(k->redefined)) {
+#ifdef GAUCHE_VMAPI_VM
+        Scm_VMPushCC(vm, class_of_cc, NULL, 0);
+#else
         Scm_VMPushCC(class_of_cc, NULL, 0);
+#endif
         return instance_class_redefinition(obj, k);
     }
     return SCM_OBJ(k);
@@ -507,17 +517,26 @@ ScmObj Scm_VMClassOf(ScmObj obj)
  */
 ScmObj is_a_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
+#ifdef GAUCHE_VMAPI_VM
+    GAUCHE_CC_VM_DECL;
+    return Scm_VMIsA(vm, SCM_OBJ(data[0]), SCM_CLASS(data[1]));
+#else
     return Scm_VMIsA(SCM_OBJ(data[0]), SCM_CLASS(data[1]));
+#endif
 }
 
-ScmObj Scm_VMIsA(ScmObj obj, ScmClass *klass)
+ScmObj Scm_VMIsA(GAUCHE_VMAPI_VM_ARG ScmObj obj, ScmClass *klass)
 {
     ScmClass *k = Scm_ClassOf(obj);
     if (!SCM_FALSEP(k->redefined)) {
         void *data[2];
         data[0] = obj;
         data[1] = klass;
+#ifdef GAUCHE_VMAPI_VM
+        Scm_VMPushCC(vm, is_a_cc, data, 2);
+#else
         Scm_VMPushCC(is_a_cc, data, 2);
+#endif
         return instance_class_redefinition(obj, k);
     }
     return SCM_MAKE_BOOL(Scm_TypeP(obj, klass));
@@ -1155,7 +1174,11 @@ static ScmObj instance_class_redefinition(ScmObj obj, ScmClass *old)
     newc = old->redefined;
     (void)SCM_INTERNAL_MUTEX_UNLOCK(old->mutex);
     if (SCM_CLASSP(newc)) {
+#ifdef GAUCHE_VMAPI_VM
+        return Scm_VMApply2(Scm_VM(), SCM_OBJ(&Scm_GenericChangeClass), obj, newc);
+#else
         return Scm_VMApply2(SCM_OBJ(&Scm_GenericChangeClass), obj, newc);
+#endif
     } else {
         return SCM_OBJ(old);
     }
@@ -1199,10 +1222,16 @@ static ScmObj slot_initialize_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     ScmObj obj = data[0];
     ScmSlotAccessor *sa = SCM_SLOT_ACCESSOR(data[1]);
+#ifdef GAUCHE_VMAPI_VM
+    GAUCHE_CC_VM_DECL;
+    return slot_set_using_accessor(vm, obj, sa, result);
+#else
     return slot_set_using_accessor(obj, sa, result);
+#endif
 }
 
-ScmObj Scm_VMSlotInitializeUsingAccessor(ScmObj obj,
+ScmObj Scm_VMSlotInitializeUsingAccessor(GAUCHE_VMAPI_VM_ARG
+                                         ScmObj obj,
                                          ScmSlotAccessor *sa,
                                          ScmObj initargs)
 {
@@ -1210,20 +1239,34 @@ ScmObj Scm_VMSlotInitializeUsingAccessor(ScmObj obj,
     if (SCM_KEYWORDP(sa->initKeyword)) {
         ScmObj v = Scm_GetKeyword(sa->initKeyword, initargs, SCM_UNDEFINED);
         if (!SCM_UNDEFINEDP(v)) {
+#ifdef GAUCHE_VMAPI_VM
+            return slot_set_using_accessor(vm, obj, sa, v);
+#else
             return slot_set_using_accessor(obj, sa, v);
+#endif
         }
     }
     /* (2) use init-value or init-thunk, if this slot is initializable. */
     if (sa->initializable) {
         if (!SCM_UNBOUNDP(sa->initValue)) {
+#ifdef GAUCHE_VMAPI_VM
+            return slot_set_using_accessor(vm, obj, sa, sa->initValue);
+#else
             return slot_set_using_accessor(obj, sa, sa->initValue);
+#endif
         }
         if (SCM_PROCEDUREP(sa->initThunk)) {
             void *data[2];
+            GAUCHE_VMAPI_VM_DECL;
             data[0] = (void*)obj;
             data[1] = (void*)sa;
+#ifdef GAUCHE_VMAPI_VM            
+            Scm_VMPushCC(vm, slot_initialize_cc, data, 2);
+            return Scm_VMApply(vm, sa->initThunk, SCM_NIL);
+#else
             Scm_VMPushCC(slot_initialize_cc, data, 2);
             return Scm_VMApply(sa->initThunk, SCM_NIL);
+#endif
         }
     }
     return SCM_UNDEFINED;
@@ -1234,6 +1277,19 @@ ScmObj Scm_VMSlotInitializeUsingAccessor(ScmObj obj,
  */
 
 /* helper macros */
+#ifdef GAUCHE_VMAPI_VM
+#define SLOT_UNBOUND(klass, obj, slot)                  \
+    Scm_VMApply(vm, SCM_OBJ(&Scm_GenericSlotUnbound),    \
+                SCM_LIST3(SCM_OBJ(klass), obj, slot))
+
+#define SLOT_MISSING3(klass, obj, slot)                 \
+    Scm_VMApply(vm, SCM_OBJ(&Scm_GenericSlotMissing),    \
+                SCM_LIST3(SCM_OBJ(klass), obj, slot))
+
+#define SLOT_MISSING4(klass, obj, slot, val)            \
+    Scm_VMApply(vm, SCM_OBJ(&Scm_GenericSlotMissing),            \
+                SCM_LIST4(SCM_OBJ(klass), obj, slot, val))
+#else
 #define SLOT_UNBOUND(klass, obj, slot)                  \
     Scm_VMApply(SCM_OBJ(&Scm_GenericSlotUnbound),       \
                 SCM_LIST3(SCM_OBJ(klass), obj, slot))
@@ -1245,6 +1301,7 @@ ScmObj Scm_VMSlotInitializeUsingAccessor(ScmObj obj,
 #define SLOT_MISSING4(klass, obj, slot, val)            \
     Scm_VMApply(SCM_OBJ(&Scm_GenericSlotMissing),       \
                 SCM_LIST4(SCM_OBJ(klass), obj, slot, val))
+#endif
 
 /* GET-SLOT-ACCESSOR
  *
@@ -1274,15 +1331,17 @@ static ScmObj slot_ref_using_accessor_cc(GAUCHE_CC_VM_ARG ScmObj result, void **
     int boundp = (data[2] != NULL);
 
     if (SCM_UNBOUNDP(result) || SCM_UNDEFINEDP(result)) {
-        if (boundp)
+        if (boundp) {
             return SCM_FALSE;
-        else 
+        } else {
+#ifdef GAUCHE_VMAPI_VM
+            GAUCHE_CC_VM_DECL;
+#endif
             return SLOT_UNBOUND(Scm_ClassOf(obj), obj, slot);
+        }
     } else {
-        if (boundp)
-            return SCM_TRUE;
-        else 
-            return result;
+        if (boundp) return SCM_TRUE;
+        else        return result;
     }
 }
 
@@ -1293,7 +1352,8 @@ static ScmObj slot_boundp_using_accessor_cc(GAUCHE_CC_VM_ARG
     return SCM_FALSEP(result)? SCM_FALSE:SCM_TRUE;
 }
 
-static ScmObj slot_ref_using_accessor(ScmObj obj,
+static ScmObj slot_ref_using_accessor(GAUCHE_VMAPI_VM_ARG
+                                      ScmObj obj,
                                       ScmSlotAccessor *sa,
                                       int boundp)
 {
@@ -1307,15 +1367,25 @@ static ScmObj slot_ref_using_accessor(ScmObj obj,
         data[0] = obj;
         data[1] = sa->name;
         data[2] = (void*)(long)boundp;
+#ifdef GAUCHE_VMAPI_VM
+        Scm_VMPushCC(vm, slot_boundp_using_accessor_cc, data, 3);
+        return Scm_VMApply(vm, sa->schemeBoundp, SCM_LIST1(obj));
+#else
         Scm_VMPushCC(slot_boundp_using_accessor_cc, data, 3);
         return Scm_VMApply(sa->schemeBoundp, SCM_LIST1(obj));
+#endif
     } else if (SCM_PROCEDUREP(sa->schemeGetter)) {
         void *data[3];
         data[0] = obj;
         data[1] = sa->name;
         data[2] = (void*)(long)boundp;
+#ifdef GAUCHE_VMAPI_VM
+        Scm_VMPushCC(vm, slot_ref_using_accessor_cc, data, 3);
+        return Scm_VMApply(vm, sa->schemeGetter, SCM_LIST1(obj));
+#else
         Scm_VMPushCC(slot_ref_using_accessor_cc, data, 3);
         return Scm_VMApply(sa->schemeGetter, SCM_LIST1(obj));
+#endif
     } else {
         Scm_Error("don't know how to retrieve value of slot %S of object %S (MOP error?)",
                   sa->name, obj);
@@ -1342,10 +1412,15 @@ static ScmObj slot_ref_using_accessor(ScmObj obj,
  */
 static ScmObj slot_ref_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
+#ifdef GAUCHE_VMAPI_VM
+    GAUCHE_CC_VM_DECL;
+    return Scm_VMSlotRef(vm, SCM_OBJ(data[0]), SCM_OBJ(data[1]), (int)data[2]);
+#else
     return Scm_VMSlotRef(SCM_OBJ(data[0]), SCM_OBJ(data[1]), (int)data[2]);
+#endif
 }
 
-ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot, int boundp)
+ScmObj Scm_VMSlotRef(GAUCHE_VMAPI_VM_ARG ScmObj obj, ScmObj slot, int boundp)
 {
     ScmClass *klass = Scm_ClassOf(obj);
     ScmSlotAccessor *sa;
@@ -1355,12 +1430,24 @@ ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot, int boundp)
         data[0] = obj;
         data[1] = slot;
         data[2] = (void*)boundp;
+#ifdef GAUCHE_VMAPI_VM
+        Scm_VMPushCC(vm, slot_ref_cc, data, 3);
+#else
         Scm_VMPushCC(slot_ref_cc, data, 3);
+#endif
         return instance_class_redefinition(obj, klass);
     }
     sa = Scm_GetSlotAccessor(klass, slot);
+#ifdef GAUCHE_VMAPI_VM
+    {
+        GAUCHE_VMAPI_VM_DECL;
+        if (sa == NULL) return SLOT_MISSING3(klass, obj, slot);
+        else            return slot_ref_using_accessor(vm, obj, sa, boundp);
+    }
+#else
     if (sa == NULL) return SLOT_MISSING3(klass, obj, slot);
     else            return slot_ref_using_accessor(obj, sa, boundp);
+#endif
 }
 
 /* SLOT-REF-USING-ACCESSOR
@@ -1372,33 +1459,19 @@ ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot, int boundp)
  * - no class redefinition check is performed.  if obj isn't updated
  *   for the new class, sa must come from the old class.
  */
-#if 0
-static ScmObj slot_ref_using_accessor_cc1(GAUCHE_CC_VM_ARG ScmObj result, void **data)
-{
-    return Scm_VMSlotRefUsingAccessor(SCM_OBJ(data[0]),
-                                      SCM_SLOT_ACCESSOR(data[1]),
-                                      (int)data[2]);
-}
-#endif
-
-ScmObj Scm_VMSlotRefUsingAccessor(ScmObj obj, ScmSlotAccessor *sa, int boundp)
+ScmObj Scm_VMSlotRefUsingAccessor(GAUCHE_VMAPI_VM_ARG
+                                  ScmObj obj, ScmSlotAccessor *sa, int boundp)
 {
     ScmClass *klass = Scm_ClassOf(obj);
     if (klass != sa->klass) {
         Scm_Error("attempt to use a slot accessor %S on the object of different class: %S",
                   SCM_OBJ(sa), obj);
     }
-#if 0
-    if (!SCM_FALSEP(klass->redefined)) {
-        void *data[3];
-        data[0] = obj;
-        data[1] = sa;
-        data[2] = (void*)boundp;
-        Scm_VMPushCC(slot_ref_using_accessor_cc1, data, 3);
-        return instance_class_redefinition(obj, klass);
-    }
-#endif
+#ifdef GAUCHE_VMAPI_VM
+    return slot_ref_using_accessor(vm, obj, sa, boundp);
+#else
     return slot_ref_using_accessor(obj, sa, boundp);
+#endif
 }
 
 /* SLOT-REF-USING-CLASS
@@ -1427,8 +1500,16 @@ static ScmObj slot_ref_using_class(ScmNextMethod *nm, ScmObj *args,
         Scm_Error("slot-ref-using-class: class %S is not the class of object %S", klass, obj);
     }
     sa = Scm_GetSlotAccessor(klass, slot);
+#ifdef GAUCHE_VMAPI_VM
+    {
+        ScmVM *vm = Scm_VM();
+        if (sa == NULL) return SLOT_MISSING3(klass, obj, slot);
+        else            return slot_ref_using_accessor(vm, obj, sa, FALSE);
+    }
+#else
     if (sa == NULL) return SLOT_MISSING3(klass, obj, slot);
     else            return slot_ref_using_accessor(obj, sa, FALSE);
+#endif
 }
 
 static ScmClass *slot_ref_using_class_SPEC[] = {
@@ -1446,7 +1527,8 @@ static SCM_DEFINE_METHOD(slot_ref_using_class_rec,
  * - assumes accessor belongs to the proper class.
  * - no class redefinition check is done
  */
-ScmObj slot_set_using_accessor(ScmObj obj,
+ScmObj slot_set_using_accessor(GAUCHE_VMAPI_VM_ARG
+                               ScmObj obj,
                                ScmSlotAccessor *sa,
                                ScmObj val)
 {
@@ -1455,7 +1537,11 @@ ScmObj slot_set_using_accessor(ScmObj obj,
     } else if (sa->slotNumber >= 0) {
         scheme_slot_set(obj, sa->slotNumber, val);
     } else if (SCM_PROCEDUREP(sa->schemeSetter)) {
+#ifdef GAUCHE_VMAPI_VM
+        return Scm_VMApply(vm, sa->schemeSetter, SCM_LIST2(obj, val));
+#else
         return Scm_VMApply(sa->schemeSetter, SCM_LIST2(obj, val));
+#endif
     } else {
         Scm_Error("slot %S of class %S is read-only", sa->name,
                   SCM_OBJ(Scm_ClassOf(obj)));
@@ -1474,10 +1560,15 @@ ScmObj slot_set_using_accessor(ScmObj obj,
  */
 static ScmObj slot_set_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
+#ifdef GAUCHE_VMAPI_VM
+    GAUCHE_CC_VM_DECL;
+    return Scm_VMSlotSet(vm, SCM_OBJ(data[0]), SCM_OBJ(data[1]), SCM_OBJ(data[2]));
+#else
     return Scm_VMSlotSet(SCM_OBJ(data[0]), SCM_OBJ(data[1]), SCM_OBJ(data[2]));
+#endif
 }
 
-ScmObj Scm_VMSlotSet(ScmObj obj, ScmObj slot, ScmObj val)
+ScmObj Scm_VMSlotSet(GAUCHE_VMAPI_VM_ARG ScmObj obj, ScmObj slot, ScmObj val)
 {
     ScmClass *klass = Scm_ClassOf(obj);
     ScmSlotAccessor *sa;
@@ -1486,12 +1577,21 @@ ScmObj Scm_VMSlotSet(ScmObj obj, ScmObj slot, ScmObj val)
         data[0] = obj;
         data[1] = slot;
         data[2] = val;
+#ifdef GAUCHE_VMAPI_VM
+        Scm_VMPushCC(vm, slot_set_cc, data, 3);
+#else
         Scm_VMPushCC(slot_set_cc, data, 3);
+#endif
         return instance_class_redefinition(obj, klass);
     }
     sa = Scm_GetSlotAccessor(klass, slot);
+#ifdef GAUCHE_VMAPI_VM
+    if (sa == NULL) return SLOT_MISSING4(klass, obj, slot, val);
+    else            return slot_set_using_accessor(vm, obj, sa, val);
+#else
     if (sa == NULL) return SLOT_MISSING4(klass, obj, slot, val);
     else            return slot_set_using_accessor(obj, sa, val);
+#endif
 }
 
 /* SLOT-SET-USING-ACCESSOR
@@ -1503,33 +1603,19 @@ ScmObj Scm_VMSlotSet(ScmObj obj, ScmObj slot, ScmObj val)
  * - no class redefinition check is performed.  if obj isn't updated
  *   for the new class, sa must come from the old class.
  */
-#if 0
-static ScmObj slot_set_using_accessor_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
-{
-    return Scm_VMSlotSetUsingAccessor(SCM_OBJ(data[0]),
-                                      SCM_SLOT_ACCESSOR(data[1]),
-                                      SCM_OBJ(data[2]));
-}
-#endif
-
-ScmObj Scm_VMSlotSetUsingAccessor(ScmObj obj, ScmSlotAccessor *sa, ScmObj val)
+ScmObj Scm_VMSlotSetUsingAccessor(GAUCHE_VMAPI_VM_ARG
+                                  ScmObj obj, ScmSlotAccessor *sa, ScmObj val)
 {
     ScmClass *klass = Scm_ClassOf(obj);
     if (klass != sa->klass) {
         Scm_Error("attempt to use a slot accessor %S on the object of different class: %S",
                   SCM_OBJ(sa), obj);
     }
-#if 0
-    if (!SCM_FALSEP(klass->redefined)) {
-        void *data[3];
-        data[0] = obj;
-        data[1] = sa;
-        data[2] = val;
-        Scm_VMPushCC(slot_set_using_accessor_cc, data, 3);
-        return instance_class_redefinition(obj, klass);
-    }
-#endif
+#ifdef GAUCHE_VMAPI_VM
+    return slot_set_using_accessor(vm, obj, sa, val);
+#else
     return slot_set_using_accessor(obj, sa, val);
+#endif
 }
 
 /* SLOT-SET-USING-CLASS
@@ -1554,13 +1640,21 @@ static ScmObj slot_set_using_class(ScmNextMethod *nm, ScmObj *args,
     ScmObj slot = args[2];
     ScmObj val = args[3];
     ScmSlotAccessor *sa;
+#ifdef GAUCHE_VMAPI_VM
+    ScmVM *vm = Scm_VM();
+#endif
     
     if (!SCM_EQ(SCM_OBJ(klass), SCM_OBJ(Scm_ClassOf(obj)))) {
         Scm_Error("slot-ref-using-class: class %S is not the class of object %S", klass, obj);
     }
     sa = Scm_GetSlotAccessor(klass, slot);
+#ifdef GAUCHE_VMAPI_VM
+    if (sa == NULL) return SLOT_MISSING4(klass, obj, slot, val);
+    else            return slot_set_using_accessor(vm, obj, sa, val);
+#else
     if (sa == NULL) return SLOT_MISSING4(klass, obj, slot, val);
     else            return slot_set_using_accessor(obj, sa, val);
+#endif
 }
 
 static ScmClass *slot_set_using_class_SPEC[] = {
@@ -1584,10 +1678,15 @@ static ScmObj slot_boundp_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 {
     ScmObj obj = SCM_OBJ(data[0]);
     ScmObj slot = SCM_OBJ(data[1]);
+#ifdef GAUCHE_VMAPI_VM
+    GAUCHE_CC_VM_DECL;
+    return Scm_VMSlotBoundP(vm, obj, slot);
+#else
     return Scm_VMSlotBoundP(obj, slot);
+#endif
 }
 
-ScmObj Scm_VMSlotBoundP(ScmObj obj, ScmObj slot)
+ScmObj Scm_VMSlotBoundP(GAUCHE_VMAPI_VM_ARG ScmObj obj, ScmObj slot)
 {
     ScmClass *klass = Scm_ClassOf(obj);
     void *data[2];
@@ -1595,11 +1694,20 @@ ScmObj Scm_VMSlotBoundP(ScmObj obj, ScmObj slot)
     if (!SCM_FALSEP(klass->redefined)) {
         data[0] = obj;
         data[1] = slot;
+#ifdef GAUCHE_VMAPI_VM
+        Scm_VMPushCC(vm, slot_boundp_cc, data, 2);
+#else
         Scm_VMPushCC(slot_boundp_cc, data, 2);
+#endif
         return instance_class_redefinition(obj, Scm_ClassOf(obj));
     }
+#ifdef GAUCHE_VMAPI_VM
+    return Scm_VMApply(vm, SCM_OBJ(&Scm_GenericSlotBoundUsingClassP),
+                       SCM_LIST3(SCM_OBJ(klass), obj, slot));
+#else
     return Scm_VMApply(SCM_OBJ(&Scm_GenericSlotBoundUsingClassP),
                        SCM_LIST3(SCM_OBJ(klass), obj, slot));
+#endif
 }
 
 /* SLOT-BOUND-USING-CLASS?
@@ -1627,8 +1735,16 @@ static ScmObj slot_bound_using_class_p(ScmNextMethod *nm, ScmObj *args,
         Scm_Error("slot-bound-using-class?: class %S is not the class of object %S", klass, obj);
     }
     sa = Scm_GetSlotAccessor(klass, slot);
+#ifdef GAUCHE_VMAPI_VM
+    {
+        ScmVM *vm = Scm_VM();
+        if (sa == NULL) return SLOT_MISSING3(klass, obj, slot);
+        else            return slot_ref_using_accessor(vm, obj, sa, TRUE);
+    }
+#else
     if (sa == NULL) return SLOT_MISSING3(klass, obj, slot);
     else            return slot_ref_using_accessor(obj, sa, TRUE);
+#endif
 }
 
 static ScmClass *slot_bound_using_class_p_SPEC[] = {
@@ -1844,10 +1960,20 @@ static ScmObj object_initialize1(ScmObj obj, ScmObj accs, ScmObj initargs)
     next[0] = obj;
     next[1] = SCM_CDR(accs);
     next[2] = initargs;
+#ifdef GAUCHE_VMAPI_VM
+    {
+        ScmVM *vm = Scm_VM();
+        Scm_VMPushCC(vm, object_initialize_cc, next, 3);
+        return Scm_VMSlotInitializeUsingAccessor(vm, obj,
+                                                 SCM_SLOT_ACCESSOR(SCM_CDAR(accs)),
+                                                 initargs);
+    }
+#else
     Scm_VMPushCC(object_initialize_cc, next, 3);
     return Scm_VMSlotInitializeUsingAccessor(obj,
                                              SCM_SLOT_ACCESSOR(SCM_CDAR(accs)),
                                              initargs);
+#endif
 }
 
 static ScmObj object_initialize_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
@@ -2497,10 +2623,18 @@ static ScmObj accessor_get_proc(ScmNextMethod *nm, ScmObj *args, int nargs,
        example. */
     if (!SCM_EQ(Scm_ClassOf(obj), ca->klass)) {
         /* fallback to a normal protocol */
+#ifdef GAUCHE_VMAPI_VM
+        return Scm_VMSlotRef(Scm_VM(), obj, ca->name, FALSE);
+#else
         return Scm_VMSlotRef(obj, ca->name, FALSE);
+#endif
     }
     /* Standard path.  We can skip searching the slot, so it is faster. */
+#ifdef GAUCHE_VMAPI_VM
+    return slot_ref_using_accessor(Scm_VM(), obj, ca, FALSE);
+#else
     return slot_ref_using_accessor(obj, ca, FALSE);
+#endif
 }
 
 static ScmObj accessor_set_proc(ScmNextMethod *nm, ScmObj *args, int nargs,
@@ -2511,9 +2645,17 @@ static ScmObj accessor_set_proc(ScmNextMethod *nm, ScmObj *args, int nargs,
     ScmSlotAccessor *ca = (ScmSlotAccessor*)data;
     /* See the comment in accessor_get_proc above about this check. */
     if (!SCM_EQ(Scm_ClassOf(obj), ca->klass)) {
+#ifdef GAUCHE_VMAPI_VM
+        return Scm_VMSlotSet(Scm_VM(), obj, ca->name, val);
+#else
         return Scm_VMSlotSet(obj, ca->name, val);
+#endif
     }
+#ifdef GAUCHE_VMAPI_VM
+    return slot_set_using_accessor(Scm_VM(), obj, ca, val);
+#else
     return slot_set_using_accessor(obj, ca, val);
+#endif
 }
 
 /* Accessor method can be just created by usual allocate/initialize

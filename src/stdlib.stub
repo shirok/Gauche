@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.121 2006-06-05 05:11:25 shirok Exp $
+;;; $Id: stdlib.stub,v 1.122 2006-12-07 01:27:16 shirok Exp $
 ;;;
 
 
@@ -248,12 +248,21 @@
   (call "Scm_MakeComplexPolar"))
 
 (define-cproc %complex->real/imag (z)
-  "  if (SCM_EXACTP(z)) { SCM_RETURN(Scm_Values2(z, SCM_MAKE_INT(0))); }
+  "#ifdef SCM_VMAPI_VM
+  if (SCM_EXACTP(z)) { SCM_RETURN(Scm_VMValues2(SCM_VMPTR, z, SCM_MAKE_INT(0))); }
+  else if (SCM_FLONUMP(z)) { SCM_RETURN(Scm_VMValues2(SCM_VMPTR, z, Scm_MakeFlonum(0.0))); }
+  else if (!SCM_COMPNUMP(z)) {
+    Scm_Error(\"number required, but got %S\", z);
+    SCM_RETURN(SCM_UNDEFINED);
+  } else { SCM_RETURN(Scm_VMValues2(SCM_VMPTR, Scm_MakeFlonum(SCM_COMPNUM_REAL(z)), Scm_MakeFlonum(SCM_COMPNUM_IMAG(z))));}
+#else
+  if (SCM_EXACTP(z)) { SCM_RETURN(Scm_Values2(z, SCM_MAKE_INT(0))); }
   else if (SCM_FLONUMP(z)) { SCM_RETURN(Scm_Values2(z, Scm_MakeFlonum(0.0))); }
   else if (!SCM_COMPNUMP(z)) {
     Scm_Error(\"number required, but got %S\", z);
     SCM_RETURN(SCM_UNDEFINED);
-  } else { SCM_RETURN(Scm_Values2(Scm_MakeFlonum(SCM_COMPNUM_REAL(z)), Scm_MakeFlonum(SCM_COMPNUM_IMAG(z))));}")
+  } else { SCM_RETURN(Scm_Values2(Scm_MakeFlonum(SCM_COMPNUM_REAL(z)), Scm_MakeFlonum(SCM_COMPNUM_IMAG(z))));}
+#endif")
 
 ;; we don't use Scm_RealPart and Scm_ImagPart, for preserving exactness
 ;; and avoiding extra allocation.
@@ -574,8 +583,13 @@
 (define-cproc apply (proc arg1 &rest args)
   (inliner APPLY)
   "  ScmObj head, tail, cp;
-  if (SCM_NULLP(args)) return Scm_VMApply(proc, arg1);
-  else {
+  if (SCM_NULLP(args)) {
+#ifdef GAUCHE_VMAPI_VM
+    return Scm_VMApply(SCM_VMPTR, proc, arg1);
+#else
+    return Scm_VMApply(proc, arg1);
+#endif
+  } else {
     head = tail = Scm_Cons(arg1, SCM_NIL);
     SCM_FOR_EACH(cp, args) {
       if (SCM_NULLP(SCM_CDR(cp))) {
@@ -588,7 +602,12 @@
       SCM_APPEND1(head, tail, SCM_CAR(cp));
     }
   }
-  return Scm_VMApply(proc, head);")
+#ifdef GAUCHE_VMAPI_VM
+  return Scm_VMApply(SCM_VMPTR, proc, head);
+#else
+  return Scm_VMApply(proc, head);
+#endif
+  ")
 
 (define-cproc map (proc args::<list> &rest moreargs)
   (call "Scm_Map"))
@@ -600,19 +619,23 @@
   (call "Scm_Force"))
 
 (define-cproc call-with-current-continuation (proc)
-  (call "Scm_VMCallCC"))
+  (call/vm "Scm_VMCallCC"))
 
 (define-cproc values (&rest args)
   (inliner VALUES)
-  (call "Scm_Values"))
+  (body "#ifdef GAUCHE_VMAPI_VM"
+        "SCM_RESULT = Scm_VMValues(SCM_VMPTR, args);"
+        "#else"
+        "SCM_RESULT = Scm_Values(args);"
+        "#endif"))
 
 ;; call-with-values - defined in gauche-init.scm
 
 (define-cproc dynamic-wind (pre body post)
-  (call "Scm_VMDynamicWind"))
+  (call/vm "Scm_VMDynamicWind"))
 
 (define-cproc eval (expr env)
-  (call "Scm_VMEval"))
+  (call/vm "Scm_VMEval"))
 
 ;; for now, just return a module.
 (define-cproc null-environment (version::<fixnum>)
