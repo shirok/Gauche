@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: code.c,v 1.13 2006-12-07 01:27:15 shirok Exp $
+ *  $Id: code.c,v 1.14 2006-12-07 04:58:47 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -101,32 +101,22 @@ void Scm_VMExecuteToplevels(ScmCompiledCode *cs[])
     Scm_ApplyRec(proc, SCM_NIL);
 }
 
-static ScmObj execute_toplevels_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
+static ScmObj execute_toplevels_cc(ScmObj result, void **data)
 {
     ScmCompiledCode **cs = (ScmCompiledCode **)data[0];
+    ScmVM *vm;
     if (cs[0] == NULL) return SCM_UNDEFINED;
     data[0] = cs+1;
-    {
-        GAUCHE_CC_VM_DECL;
-#ifdef GAUCHE_VMAPI_VM
-        Scm_VMPushCC(vm, execute_toplevels_cc, data, 1);
-#else
-        Scm_VMPushCC(execute_toplevels_cc, data, 1);
-#endif
-        vm->base = cs[0];
-        vm->pc = vm->base->code;
-    }
+    vm = Scm_VM();
+    Scm_VMPushCC(execute_toplevels_cc, data, 1);
+    vm->base = cs[0];
+    vm->pc = vm->base->code;
     return SCM_UNDEFINED;
 }
 
-static ScmObj execute_toplevels(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *cv)
+static ScmObj execute_toplevels(ScmObj *args, int nargs, void *cv)
 {
-#ifdef GAUCHE_VMAPI_VM
-    GAUCHE_SUBR_VM_DECL;
-    Scm_VMPushCC(vm, execute_toplevels_cc, &cv, 1);
-#else
     Scm_VMPushCC(execute_toplevels_cc, &cv, 1);
-#endif
     return SCM_UNDEFINED;
 }
 

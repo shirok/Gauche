@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.133 2006-12-07 01:27:15 shirok Exp $
+ *  $Id: port.c,v 1.134 2006-12-07 04:58:47 shirok Exp $
  */
 
 #include <unistd.h>
@@ -179,35 +179,28 @@ void Scm_PortLock(ScmPort *port)
 /*
  * External routine to access port exclusively
  */
-static ScmObj with_port_locking_pre_thunk(GAUCHE_SUBR_VM_ARG ScmObj *args,
-                                          int nargs, void *data)
+static ScmObj with_port_locking_pre_thunk(ScmObj *args, int nargs, void *data)
 {
     ScmPort *p = (ScmPort*)data;
-    GAUCHE_SUBR_VM_DECL;
-    
+    ScmVM *vm = Scm_VM();
     PORT_LOCK(p, vm);
     return SCM_UNDEFINED;
 }
 
-static ScmObj with_port_locking_post_thunk(GAUCHE_SUBR_VM_ARG ScmObj *args,
-                                           int nargs, void *data)
+static ScmObj with_port_locking_post_thunk(ScmObj *args, int nargs, void *data)
 {
     ScmPort *p = (ScmPort*)data;
     PORT_UNLOCK(p);
     return SCM_UNDEFINED;
 }
 
-ScmObj Scm_VMWithPortLocking(GAUCHE_VMAPI_VM_ARG ScmPort *port, ScmObj closure)
+ScmObj Scm_VMWithPortLocking(ScmPort *port, ScmObj closure)
 {
     ScmObj before = Scm_MakeSubr(with_port_locking_pre_thunk, (void*)port,
                                  0, 0, SCM_FALSE);
     ScmObj after = Scm_MakeSubr(with_port_locking_post_thunk, (void*)port,
                                 0, 0, SCM_FALSE);
-#ifdef GAUCHE_VMAPI_VM
-    return Scm_VMDynamicWind(vm, before, closure, after);
-#else
     return Scm_VMDynamicWind(before, closure, after);
-#endif
 }
 
 /*===============================================================
@@ -1480,12 +1473,12 @@ struct with_port_packet {
     int closep;
 };
 
-static ScmObj port_restorer(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
+static ScmObj port_restorer(ScmObj *args, int nargs, void *data)
 {
     struct with_port_packet *p = (struct with_port_packet*)data;
     int pcnt = 0;
     ScmPort *curport;
-    GAUCHE_SUBR_VM_DECL;
+    ScmVM *vm = Scm_VM();
 
     if (p->mask & SCM_PORT_CURIN) {
         curport = SCM_VM_CURRENT_INPUT_PORT(vm);
@@ -1529,11 +1522,7 @@ ScmObj Scm_WithPort(ScmPort *port[], ScmObj thunk, int mask, int closep)
     packet->closep = closep;
     finalizer = Scm_MakeSubr(port_restorer, (void*)packet,
                              0, 0, SCM_FALSE);
-#ifdef GAUCHE_VMAPI_VM
-    return Scm_VMDynamicWind(vm, Scm_NullProc(), SCM_OBJ(thunk), finalizer);
-#else
     return Scm_VMDynamicWind(Scm_NullProc(), SCM_OBJ(thunk), finalizer);
-#endif
 }
 
 /*===============================================================

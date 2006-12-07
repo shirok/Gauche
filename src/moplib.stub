@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: moplib.stub,v 1.30 2006-12-07 01:27:15 shirok Exp $
+;;; $Id: moplib.stub,v 1.31 2006-12-07 04:58:47 shirok Exp $
 ;;;
 
 "
@@ -49,11 +49,7 @@
  {
   ScmObj proc = SCM_OBJ(gf->data);
   ScmObj arglist = Scm_ArrayToList(args, nargs);
-#ifdef GAUCHE_VMAPI_VM
-  SCM_RETURN(Scm_VMApply(Scm_VM(), proc, arglist));
-#else
   SCM_RETURN(Scm_VMApply(proc, arglist));
-#endif
  }
 "
 
@@ -126,7 +122,7 @@
 ;;
 
 (define-cproc class-of (obj)
-  (call/vm "Scm_VMClassOf"))
+  (call "Scm_VMClassOf"))
 
 ;; current-class-of doesn't updates OBJ, and returns possibly the old class
 ;; which has been redefined.  Should onlyl used in class redefinition routines.
@@ -135,44 +131,32 @@
 
 (define-cproc is-a? (obj klass::<class>)
   (inliner IS-A)
-  (call/vm "Scm_VMIsA"))
+  (call "Scm_VMIsA"))
 
 (define-cproc slot-ref (obj slot)
   (inliner SLOT-REF)
   (setter slot-set!)
-  (body "#ifdef GAUCHE_VMAPI_VM"
-        "SCM_RESULT = Scm_VMSlotRef(SCM_VMPTR, obj, slot, FALSE);"
-        "#else"
-        "SCM_RESULT = Scm_VMSlotRef(obj, slot, FALSE);"
-        "#endif"))
+  (expr "Scm_VMSlotRef(obj, slot, FALSE)"))
 
 (define-cproc slot-set! (obj slot value)
   (inliner SLOT-SET)
-  (call/vm "Scm_VMSlotSet"))
+  (call "Scm_VMSlotSet"))
 
 (define-cproc slot-bound? (obj slot)
-  (call/vm "Scm_VMSlotBoundP"))
+  (call "Scm_VMSlotBoundP"))
 
 (define-cproc slot-ref-using-accessor (obj accessor::<slot-accessor>)
-  (body "#ifdef GAUCHE_VMAPI_VM"
-        "SCM_RESULT = Scm_VMSlotRefUsingAccessor(SCM_VMPTR, obj, accessor, FALSE);"
-        "#else"
-        "SCM_RESULT = Scm_VMSlotRefUsingAccessor(obj, accessor, FALSE);"
-        "#endif"))
+  (expr "Scm_VMSlotRefUsingAccessor(obj, accessor, FALSE)"))
 
 (define-cproc slot-bound-using-accessor? (obj accessor::<slot-accessor>)
-  (body "#ifdef GAUCHE_VMAPI_VM"
-        "SCM_RESULT = Scm_VMSlotRefUsingAccessor(SCM_VMPTR, obj, accessor, TRUE);"
-        "#else"
-        "SCM_RESULT = Scm_VMSlotRefUsingAccessor(obj, accessor, TRUE);"
-        "#endif"))
+  (expr "Scm_VMSlotRefUsingAccessor(obj, accessor, TRUE)"))
 
 (define-cproc slot-set-using-accessor! (obj accessor::<slot-accessor> value)
-  (call/vm "Scm_VMSlotSetUsingAccessor"))
+  (call "Scm_VMSlotSetUsingAccessor"))
 
 (define-cproc slot-initialize-using-accessor! (obj accessor::<slot-accessor>
                                                   initargs)
-  (call/vm "Scm_VMSlotInitializeUsingAccessor"))
+  (call "Scm_VMSlotInitializeUsingAccessor"))
 
 (define-cproc instance-slot-ref (obj num::<fixnum>)
   (call "Scm_InstanceSlotRef"))

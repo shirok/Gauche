@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.260 2006-12-07 01:27:16 shirok Exp $
+ *  $Id: vm.c,v 1.261 2006-12-07 04:58:48 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -62,21 +62,6 @@ static int vm_stack_mark_proc;
 #ifndef EX_SOFTWARE
 /* SRFI-22 requires this. */
 #define EX_SOFTWARE 70
-#endif
-
-#ifndef GAUCHE_CC_VM
-#undef GAUCHE_CC_VM_DECL
-#define GAUCHE_CC_VM_DECL ScmVM *vm = theVM
-#endif
-
-#ifndef GAUCHE_SUBR_VM
-#undef GAUCHE_SUBR_VM_DECL
-#define GAUCHE_SUBR_VM_DECL ScmVM *vm = theVM
-#endif
-
-#ifndef GAUCHE_VMAPI_VM
-#undef GAUCHE_VMAPI_VM_DECL
-#define GAUCHE_VMAPI_VM_DECL ScmVM *vm = theVM
 #endif
 
 /* An object to mark the boundary frame. */
@@ -349,160 +334,28 @@ pthread_key_t Scm_VMKey(void)
 /* pop the top object of the stack and store it to VAR */
 #define POP_ARG(var)       ((var) = *--SP)
 
-/* registers */
-#if SMALL_REGS == 4
-#define PC    pc
-#define SP    sp
-#define VAL0  val0
-#define ENV   env
-#define CONT  vm->cont
-#define ARGP  vm->argp
-#define BASE  vm->base
-#elif SMALL_REGS == 3
-#define PC    pc
-#define SP    sp
-#define VAL0  val0
-#define ENV   vm->env
-#define CONT  vm->cont
-#define ARGP  vm->argp
-#define BASE  vm->base
-#elif SMALL_REGS == 2
-#define PC    pc
-#define SP    sp
-#define VAL0  vm->val0
-#define ENV   vm->env
-#define CONT  vm->cont
-#define ARGP  vm->argp
-#define BASE  vm->base
-#elif SMALL_REGS == 0
-#define PC    vm->pc
-#define SP    vm->sp
-#define VAL0  vm->val0
-#define ENV   vm->env
-#define CONT  vm->cont
-#define ARGP  vm->argp
-#define BASE  vm->base
-#else  /* !SMALL_REGS */
-#define PC    pc
-#define SP    sp
-#define ENV   env
-#define VAL0  val0
-#define CONT  cont
-#define ARGP  argp
-#define BASE  vm->base
-#endif /* !SMALL_REGS */
-
-
-/* declare local variables for registers, and copy the current VM regs
-   to them. */
-#define DECL_REGS             DECL_REGS_INT(/**/)
-#define DECL_REGS_VOLATILE    DECL_REGS_INT(volatile)
-
-#if SMALL_REGS == 4
-#define DECL_REGS_INT(VOLATILE)                 \
-    ScmVM *VOLATILE vm = theVM;                 \
-    SCM_PCTYPE VOLATILE pc = vm->pc;            \
-    ScmEnvFrame *VOLATILE env = vm->env;        \
-    ScmObj *VOLATILE sp = vm->sp;               \
-    VOLATILE ScmObj val0 = vm->val0
-#elif SMALL_REGS == 3
-#define DECL_REGS_INT(VOLATILE)                 \
-    ScmVM *VOLATILE vm = theVM;                 \
-    SCM_PCTYPE VOLATILE pc = vm->pc;            \
-    ScmObj *VOLATILE sp = vm->sp;               \
-    VOLATILE ScmObj val0 = vm->val0
-#elif SMALL_REGS == 2
-#define DECL_REGS_INT(VOLATILE)                 \
-    ScmVM *VOLATILE vm = theVM;                 \
-    SCM_PCTYPE VOLATILE pc = vm->pc;            \
-    ScmObj *VOLATILE sp = vm->sp
-#elif SMALL_REGS == 0
-#define DECL_REGS_INT(VOLATILE)                 \
-    ScmVM *VOLATILE vm = theVM
-#else  /* !SMALL_REGS */
-#define DECL_REGS_INT(VOLATILE)                 \
-    ScmVM *VOLATILE vm = theVM;                 \
-    SCM_PCTYPE VOLATILE pc = vm->pc;            \
-    ScmContFrame *VOLATILE cont = vm->cont;     \
-    ScmEnvFrame *VOLATILE env = vm->env;        \
-    ScmObj *VOLATILE argp = vm->argp;           \
-    ScmObj *VOLATILE sp = vm->sp;               \
-    VOLATILE ScmObj val0 = vm->val0
-#endif /* !SMALL_REGS */
-
-/* save VM regs into VM structure. */
-#if SMALL_REGS == 4
-#define SAVE_REGS()                             \
-    do {                                        \
-        vm->pc = pc;                            \
-        vm->env = env;                          \
-        vm->sp = sp;                            \
-        vm->val0 = val0;                        \
-    } while (0)
-#elif SMALL_REGS == 3
-#define SAVE_REGS()                             \
-    do {                                        \
-        vm->pc = pc;                            \
-        vm->sp = sp;                            \
-        vm->val0 = val0;                        \
-    } while (0)
-#elif SMALL_REGS == 2
-#define SAVE_REGS()                             \
-    do {                                        \
-        vm->pc = pc;                            \
-        vm->sp = sp;                            \
-    } while (0)
-#elif SMALL_REGS == 0
-#define SAVE_REGS()
-#else  /*!SMALL_REGS*/
-#define SAVE_REGS()                             \
-    do {                                        \
-        vm->pc = pc;                            \
-        vm->env = env;                          \
-        vm->argp = argp;                        \
-        vm->cont = cont;                        \
-        vm->sp = sp;                            \
-        vm->val0 = val0;                        \
-    } while (0)
-#endif /*!SMALL_REGS*/
+/* VM registers.  We've benchmarked if keeping some of those registers
+   local variables makes VM loop run faster; however, it turned out
+   that more local variables tended to make them spill from machine
+   registers and didn't improve performance.  Having only vm, a pointer
+   to the current VM, on register is enough. */
+#define PC    (vm->pc)
+#define SP    (vm->sp)
+#define VAL0  (vm->val0)
+#define ENV   (vm->env)
+#define CONT  (vm->cont)
+#define ARGP  (vm->argp)
+#define BASE  (vm->base)
 
 /* return true if ptr points into the stack area */
 #define IN_STACK_P(ptr)                         \
       ((unsigned long)((ptr) - vm->stackBase) < SCM_VM_STACK_SIZE)
 
-#if SMALL_REGS == 4
-#define RESTORE_REGS()                          \
-    do {                                        \
-        pc = vm->pc;                            \
-        env = vm->env;                          \
-        sp = vm->sp;                            \
-    } while (0)
-#elif SMALL_REGS == 3 || SMALL_REGS == 2
-#define RESTORE_REGS()                          \
-    do {                                        \
-        pc = vm->pc;                            \
-        sp = vm->sp;                            \
-    } while (0)
-#elif SMALL_REGS == 0
-#define RESTORE_REGS()
-#else  /*!SMALL_REGS*/
-#define RESTORE_REGS()                          \
-    do {                                        \
-        pc = vm->pc;                            \
-        env = vm->env;                          \
-        argp = vm->argp;                        \
-        cont = vm->cont;                        \
-        sp = vm->sp;                            \
-    } while (0)
-#endif /*!SMALL_REGS*/
-
 /* Check if stack has room at least size bytes. */
 #define CHECK_STACK(size)                                       \
     do {                                                        \
         if (MOSTLY_FALSE(SP >= vm->stackEnd - (size))) {        \
-            SAVE_REGS();                                        \
             save_stack(vm);                                     \
-            RESTORE_REGS();                                     \
         }                                                       \
     } while (0)
 
@@ -522,11 +375,7 @@ pthread_key_t Scm_VMKey(void)
         ARGP = SP;                                      \
     } while (0)
 
-#ifdef GAUCHE_CC_VM
-#define CALL_CCONT(p, v, d) p(vm, v, d)
-#else
 #define CALL_CCONT(p, v, d) p(v, d)
-#endif
 
 /* pop a continuation frame, i.e. return from a procedure. */
 #define POP_CONT()                                                      \
@@ -547,9 +396,7 @@ pthread_key_t Scm_VMKey(void)
             PC = PC_TO_RETURN;                                          \
             CONT = CONT->prev;                                          \
             BASE = CONT->base;                                          \
-            SAVE_REGS();                                                \
             VAL0 = CALL_CCONT(after__, VAL0, data__);                   \
-            RESTORE_REGS();                                             \
         } else if (IN_STACK_P((ScmObj*)CONT)) {                         \
             SP   = CONT->argp + CONT->size;                             \
             ENV  = CONT->env;                                           \
@@ -578,7 +425,6 @@ pthread_key_t Scm_VMKey(void)
 #define RETURN_OP()                                     \
     do {                                                \
         if (CONT == NULL || BOUNDARY_FRAME_P(CONT)) {   \
-            SAVE_REGS();                                \
             return; /* no more continuations */         \
         }                                               \
         POP_CONT();                                     \
@@ -644,23 +490,19 @@ pthread_key_t Scm_VMKey(void)
         if (v == SCM_UNBOUND) {                                         \
             VM_ERR(("unbound variable: %S", SCM_OBJ(gloc->name)));      \
         } else if (SCM_AUTOLOADP(v)) {                                  \
-            SAVE_REGS();                                                \
             v = Scm_LoadAutoload(SCM_AUTOLOAD(v));                      \
-            RESTORE_REGS();                                             \
         }                                                               \
         INCR_PC;                                                        \
     } while (0)
 
 /* for debug */
 #define VM_DUMP(delimiter)                      \
-    SAVE_REGS();                                \
     fprintf(stderr, delimiter);                 \
     Scm_VMDump(vm)
 
 #define VM_ASSERT(expr)                                                 \
     do {                                                                \
         if (!(expr)) {                                                  \
-            SAVE_REGS();                                                \
             fprintf(stderr, "\"%s\", line %d: Assertion failed: %s\n",  \
                     __FILE__, __LINE__, #expr);                         \
             Scm_VMDump(theVM);                                          \
@@ -670,7 +512,6 @@ pthread_key_t Scm_VMKey(void)
 
 #define VM_ERR(errargs)                         \
    do {                                         \
-      SAVE_REGS();                              \
       Scm_Error errargs;                        \
    } while (0)
 
@@ -709,9 +550,7 @@ pthread_key_t Scm_VMKey(void)
         } else if (SCM_FLONUMP(y_) && SCM_FLONUMP(x_)) {        \
             r = (SCM_FLONUM_VALUE(x_) op SCM_FLONUM_VALUE(y_)); \
         } else {                                                \
-            SAVE_REGS();                                        \
             r = (Scm_NumCmp(x_, y_) op 0);                      \
-            RESTORE_REGS();                                     \
         }                                                       \
     } while (0)
 
@@ -759,7 +598,7 @@ pthread_key_t Scm_VMKey(void)
  */
 static void run_loop()
 {
-    DECL_REGS;
+    ScmVM *vm = theVM;
     ScmWord code = 0;
     
 #ifdef __GNUC__
@@ -897,16 +736,9 @@ static void run_loop()
                     SP = ARGP;
                     PC = PC_TO_RETURN;
 
-                    SAVE_REGS();
                     SCM_PROF_COUNT_CALL(vm, VAL0);
-#ifdef GAUCHE_SUBR_VM
-                    VAL0 = SCM_SUBR(VAL0)->func(vm, ARGP, argc,
-                                                SCM_SUBR(VAL0)->data);
-#else
                     VAL0 = SCM_SUBR(VAL0)->func(ARGP, argc,
                                                 SCM_SUBR(VAL0)->data);
-#endif
-                    RESTORE_REGS();
                     /* the subr may substituted pc, so we need to check
                        if we can pop the continuation immediately. */
                     if (TAIL_POS()) RETURN_OP();
@@ -988,12 +820,10 @@ static void run_loop()
                     /* we have no applicable methods.  call fallback fn. */
                     FINISH_ENV(SCM_PROCEDURE_INFO(VAL0), NULL);
                     PC = PC_TO_RETURN;
-                    SAVE_REGS();
                     SCM_PROF_COUNT_CALL(vm, VAL0);
                     VAL0 = SCM_GENERIC(VAL0)->fallback(fp,
                                                        argc,
                                                        SCM_GENERIC(VAL0));
-                    RESTORE_REGS();
                     /* the fallback may substituted pc, so we need to check
                        if we can pop the continuation immediately. */
                     if (TAIL_POS()) RETURN_OP();
@@ -1010,13 +840,11 @@ static void run_loop()
                     /* C-defined method */
                     FINISH_ENV(SCM_PROCEDURE_INFO(VAL0), NULL);
                     PC = PC_TO_RETURN;
-                    SAVE_REGS();
                     SCM_PROF_COUNT_CALL(vm, VAL0);
                     VAL0 = SCM_METHOD(VAL0)->func(SCM_NEXT_METHOD(nm),
                                                   fp,
                                                   argc,
                                                   SCM_METHOD(VAL0)->data);
-                    RESTORE_REGS();
                     /* the func may substituted pc, so we need to check
                        if we can pop the continuation immediately. */
                     if (TAIL_POS()) RETURN_OP();
@@ -1308,7 +1136,6 @@ static void run_loop()
                 CHECK_STACK_PARANOIA(ENV_SIZE(nlocals));
                 SP += nlocals;
                 FINISH_ENV(SCM_FALSE, ENV);
-                SAVE_REGS();
                 e = get_env(vm);
                 z = (ScmObj*)e - nlocals;
                 SCM_FOR_EACH(cp, cp) {
@@ -1318,7 +1145,6 @@ static void run_loop()
                         *z++ = SCM_CAR(cp);
                     }
                 }
-                RESTORE_REGS();
                 VAL0 = clo;
                 NEXT1;
             }
@@ -1478,7 +1304,6 @@ static void run_loop()
             CASE(SCM_VM_BNUMNE) {
                 ScmObj x, y = VAL0;
                 POP_ARG(x);
-                SAVE_REGS();
                 if (!Scm_NumEq(x, y)) {
                     VAL0 = SCM_FALSE;
                     FETCH_LOCATION(PC);
@@ -1542,9 +1367,7 @@ static void run_loop()
                 INCR_PC;
 
                 /* preserve environment */
-                SAVE_REGS();
                 VAL0 = Scm_MakeClosure(body, get_env(vm));
-                RESTORE_REGS();
                 NEXT1;
             }
             CASE(SCM_VM_TAIL_RECEIVE) {
@@ -1667,14 +1490,12 @@ static void run_loop()
             CASE(SCM_VM_CONS) {
                 ScmObj ca;
                 POP_ARG(ca);
-                SAVE_REGS();
                 VAL0 = Scm_Cons(ca, VAL0);
                 NEXT1;
             }
             CASE(SCM_VM_CONS_PUSH) {
                 ScmObj ca;
                 POP_ARG(ca);
-                SAVE_REGS();
                 VAL0 = Scm_Cons(ca, VAL0);
                 PUSH_ARG(VAL0);
                 NEXT;
@@ -1816,11 +1637,9 @@ static void run_loop()
                 ScmObj cp = SCM_NIL;
                 if (nargs > 0) {
                     ScmObj arg;
-                    SAVE_REGS();
                     cp = Scm_Cons(VAL0, cp);
                     while (--nargs > 0) {
                         POP_ARG(arg);
-                        SAVE_REGS();
                         cp = Scm_Cons(arg, cp);
                     }
                 }
@@ -1835,7 +1654,6 @@ static void run_loop()
                     cp = VAL0;
                     while (--nargs > 0) {
                         POP_ARG(arg);
-                        SAVE_REGS();
                         cp = Scm_Cons(arg, cp);
                     }
                 }
@@ -1843,10 +1661,8 @@ static void run_loop()
                 NEXT1;
             }
             CASE(SCM_VM_LIST2VEC) {
-                SAVE_REGS();
                 VAL0 = Scm_ListToVector(VAL0, 0, -1);
                 vm->numVals = 1;
-                RESTORE_REGS();
                 NEXT1;
             }
             CASE(SCM_VM_LENGTH) {
@@ -1874,35 +1690,30 @@ static void run_loop()
             CASE(SCM_VM_EQV) {
                 ScmObj item;
                 POP_ARG(item);
-                SAVE_REGS();
                 VAL0 = SCM_MAKE_BOOL(Scm_EqvP(item, VAL0));
                 NEXT1;
             }
             CASE(SCM_VM_MEMQ) {
                 ScmObj item;
                 POP_ARG(item);
-                SAVE_REGS();
                 VAL0 = Scm_Memq(item, VAL0);
                 NEXT1;
             }
             CASE(SCM_VM_MEMV) {
                 ScmObj item;
                 POP_ARG(item);
-                SAVE_REGS();
                 VAL0 = Scm_Memv(item, VAL0);
                 NEXT1;
             }
             CASE(SCM_VM_ASSQ) {
                 ScmObj item;
                 POP_ARG(item);
-                SAVE_REGS();
                 VAL0 = Scm_Assq(item, VAL0);
                 NEXT1;
             }
             CASE(SCM_VM_ASSV) {
                 ScmObj item;
                 POP_ARG(item);
-                SAVE_REGS();
                 VAL0 = Scm_Assv(item, VAL0);
                 NEXT1;
             }
@@ -1918,17 +1729,9 @@ static void run_loop()
                     CHECK_STACK(CONT_FRAME_SIZE);
                     PUSH_CONT(PC);
                     PC = PC_TO_RETURN;
-                    SAVE_REGS();
-#ifdef GAUCHE_VMAPI_VM
-                    VAL0 = Scm_VMIsA(vm, obj, c);
-#else
                     VAL0 = Scm_VMIsA(obj, c);
-#endif
-                    RESTORE_REGS();
                 } else {
-                    SAVE_REGS();
                     VAL0 = SCM_MAKE_BOOL(SCM_ISA(obj, c));
-                    RESTORE_REGS();
                 }
                 NEXT1;
             }
@@ -1967,7 +1770,6 @@ static void run_loop()
                     cp = VAL0;
                     while (--nargs > 0) {
                         POP_ARG(arg);
-                        SAVE_REGS();
                         if (Scm_Length(arg) < 0)
                             VM_ERR(("list required, but got %S\n", arg));
                         cp = Scm_Append2(arg, cp);
@@ -1977,9 +1779,7 @@ static void run_loop()
                 NEXT1;
             }
             CASE(SCM_VM_REVERSE) {
-                SAVE_REGS();
                 VAL0 = Scm_Reverse(VAL0);
-                RESTORE_REGS();
                 NEXT1;
             }
             CASE(SCM_VM_TAIL_APPLY) {
@@ -1990,7 +1790,6 @@ static void run_loop()
                 ScmObj cp;
                 while (--nargs > 1) {
                     POP_ARG(cp);
-                    SAVE_REGS();
                     VAL0 = Scm_Cons(cp, VAL0);
                 }
                 cp = VAL0;     /* now cp has arg list */
@@ -2002,13 +1801,7 @@ static void run_loop()
                 }
                 PC = PC_TO_RETURN;
 
-                SAVE_REGS();
-#ifdef GAUCHE_VMAPI_VM
-                VAL0 = Scm_VMApply(vm, VAL0, cp);
-#else
                 VAL0 = Scm_VMApply(VAL0, cp);
-#endif
-                RESTORE_REGS();
                 NEXT1;
             }
             CASE(SCM_VM_CONST_APPLY) {
@@ -2025,12 +1818,10 @@ static void run_loop()
                 goto tail_call_entry;
             }
             CASE(SCM_VM_PROMISE) {
-                SAVE_REGS();
                 VAL0 = Scm_MakePromise(FALSE, VAL0);
                 NEXT1;
             }
             CASE(SCM_VM_SETTER) {
-                SAVE_REGS();
                 VAL0 = Scm_Setter(VAL0);
                 NEXT1;
             }
@@ -2065,7 +1856,6 @@ static void run_loop()
             CASE(SCM_VM_VEC) {
                 int nargs = SCM_VM_INSN_ARG(code), i;
                 ScmObj vec;
-                SAVE_REGS();
                 vec = Scm_MakeVector(nargs, SCM_UNDEFINED);
                 if (nargs > 0) {
                     ScmObj arg = VAL0;
@@ -2085,13 +1875,11 @@ static void run_loop()
                     cp = VAL0;
                     while (--nargs > 0) {
                         POP_ARG(arg);
-                        SAVE_REGS();
                         if (Scm_Length(arg) < 0)
                             VM_ERR(("list required, but got %S\n", arg));
                         cp = Scm_Append2(arg, cp);
                     }
                 }
-                SAVE_REGS();
                 VAL0 = Scm_ListToVector(cp, 0, -1);
                 NEXT1;
             }
@@ -2164,9 +1952,7 @@ static void run_loop()
                     VAL0 = SCM_MAKE_BOOL(SCM_FLONUM_VALUE(VAL0) ==
                                          SCM_FLONUM_VALUE(arg));
                 } else {
-                    SAVE_REGS();
                     VAL0 = SCM_MAKE_BOOL(Scm_NumEq(arg, VAL0));
-                    RESTORE_REGS();
                 }
                 NEXT1;
             }
@@ -2229,9 +2015,7 @@ static void run_loop()
                         VAL0 = Scm_MakeInteger(r);
                     }
                 } else {
-                    SAVE_REGS();
                     VAL0 = Scm_Add(arg, VAL0);
-                    RESTORE_REGS();
                 }
                 NEXT1;
             }
@@ -2247,9 +2031,7 @@ static void run_loop()
                         VAL0 = Scm_MakeInteger(r);
                     }
                 } else {
-                    SAVE_REGS();
                     VAL0 = Scm_Add(arg, VAL0);
-                    RESTORE_REGS();
                 }
                 NEXT1;
             }
@@ -2264,9 +2046,7 @@ static void run_loop()
                         VAL0 = Scm_MakeInteger(r);
                     }
                 } else {
-                    SAVE_REGS();
                     VAL0 = Scm_Sub(arg, VAL0);
-                    RESTORE_REGS();
                 }
                 NEXT1;
             }
@@ -2280,9 +2060,7 @@ static void run_loop()
                     ||(SCM_FLONUMP(VAL0) && SCM_REALP(arg))) {
                     VAL0 = Scm_MakeFlonum(Scm_GetDouble(arg)*Scm_GetDouble(VAL0));
                 } else {
-                    SAVE_REGS();
                     VAL0 = Scm_Mul(arg, VAL0);
-                    RESTORE_REGS();
                 }
                 NEXT1;
             }
@@ -2295,9 +2073,7 @@ static void run_loop()
                     ||(SCM_FLONUMP(VAL0) && SCM_REALP(arg))) {
                     VAL0 = Scm_MakeFlonum(Scm_GetDouble(arg)/Scm_GetDouble(VAL0));
                 } else {
-                    SAVE_REGS();
                     VAL0 = Scm_Div(arg, VAL0);
-                    RESTORE_REGS();
                 }
                 NEXT1;
             }
@@ -2313,9 +2089,7 @@ static void run_loop()
                 } else if (SCM_FLONUMP(v)) {
                     VAL0 = Scm_MakeFlonum(-Scm_GetDouble(v));
                 } else {
-                    SAVE_REGS();
                     VAL0 = Scm_Negate(v);
-                    RESTORE_REGS();
                 }
                 NEXT1;
             }
@@ -2326,13 +2100,10 @@ static void run_loop()
                     if (SCM_SMALL_INT_FITS(imm)) {
                         VAL0 = SCM_MAKE_INT(imm);
                     } else {
-                        SAVE_REGS();
                         VAL0 = Scm_MakeInteger(imm);
                     }
                 } else {
-                    SAVE_REGS();
                     VAL0 = Scm_Add(SCM_MAKE_INT(imm), VAL0);
-                    RESTORE_REGS();
                 }
                 NEXT1;
             }
@@ -2345,13 +2116,10 @@ static void run_loop()
                     if (SCM_SMALL_INT_FITS(imm)) {
                         VAL0 = SCM_MAKE_INT(imm);
                     } else {
-                        SAVE_REGS();
                         VAL0 = Scm_MakeInteger(imm);
                     }
                 } else {
-                    SAVE_REGS();
                     VAL0 = Scm_Add(SCM_MAKE_INT(imm), val, SCM_NIL);
-                    RESTORE_REGS();
                 }
                 NEXT1;
             }
@@ -2363,13 +2131,10 @@ static void run_loop()
                     if (SCM_SMALL_INT_FITS(imm)) {
                         VAL0 = SCM_MAKE_INT(imm);
                     } else {
-                        SAVE_REGS();
                         VAL0 = Scm_MakeInteger(imm);
                     }
                 } else {
-                    SAVE_REGS();
                     VAL0 = Scm_Add(SCM_MAKE_INT(imm), val, SCM_NIL);
-                    RESTORE_REGS();
                 }
                 NEXT1;
             }
@@ -2381,13 +2146,10 @@ static void run_loop()
                     if (SCM_SMALL_INT_FITS(imm)) {
                         VAL0 = SCM_MAKE_INT(imm);
                     } else {
-                        SAVE_REGS();
                         VAL0 = Scm_MakeInteger(imm);
                     }
                 } else {
-                    SAVE_REGS();
                     VAL0 = Scm_Add(SCM_MAKE_INT(imm), val, SCM_NIL);
-                    RESTORE_REGS();
                 }
                 NEXT1;
             }
@@ -2399,13 +2161,10 @@ static void run_loop()
                     if (SCM_SMALL_INT_FITS(imm)) {
                         VAL0 = SCM_MAKE_INT(imm);
                     } else {
-                        SAVE_REGS();
                         VAL0 = Scm_MakeInteger(imm);
                     }
                 } else {
-                    SAVE_REGS();
                     VAL0 = Scm_Add(SCM_MAKE_INT(imm), val, SCM_NIL);
-                    RESTORE_REGS();
                 }
                 NEXT1;
             }
@@ -2417,13 +2176,10 @@ static void run_loop()
                     if (SCM_SMALL_INT_FITS(imm)) {
                         VAL0 = SCM_MAKE_INT(imm);
                     } else {
-                        SAVE_REGS();
                         VAL0 = Scm_MakeInteger(imm);
                     }
                 } else {
-                    SAVE_REGS();
                     VAL0 = Scm_Add(SCM_MAKE_INT(imm), val, SCM_NIL);
-                    RESTORE_REGS();
                 }
                 NEXT1;
             }
@@ -2435,13 +2191,10 @@ static void run_loop()
                     if (SCM_SMALL_INT_FITS(imm)) {
                         VAL0 = SCM_MAKE_INT(imm);
                     } else {
-                        SAVE_REGS();
                         VAL0 = Scm_MakeInteger(imm);
                     }
                 } else {
-                    SAVE_REGS();
                     VAL0 = Scm_Sub(SCM_MAKE_INT(imm), VAL0);
-                    RESTORE_REGS();
                 }
                 NEXT1;
             }
@@ -2455,9 +2208,7 @@ static void run_loop()
                 } else {
                     port = SCM_CURIN;
                 }
-                SAVE_REGS();
                 ch = Scm_Getc(port);
-                RESTORE_REGS();
                 VAL0 = (ch < 0)? SCM_EOF : SCM_MAKE_CHAR(ch);
                 NEXT1;
             }
@@ -2471,9 +2222,7 @@ static void run_loop()
                 } else {
                     port = SCM_CURIN;
                 }
-                SAVE_REGS();
                 ch = Scm_Peekc(port);
-                RESTORE_REGS();
                 VAL0 = (ch < 0)? SCM_EOF : SCM_MAKE_CHAR(ch);
                 NEXT1;
             }
@@ -2492,9 +2241,7 @@ static void run_loop()
                 }
                 if (!SCM_CHARP(ch))
                     VM_ERR(("write-char: character required: %S", ch));
-                SAVE_REGS();
                 SCM_PUTC(SCM_CHAR_VALUE(ch), port);
-                RESTORE_REGS();
                 VAL0 = SCM_UNDEFINED;
                 NEXT1;
             }
@@ -2514,13 +2261,7 @@ static void run_loop()
                 ScmObj obj;
                 POP_ARG(obj);
                 TAIL_CALL_INSTRUCTION();
-                SAVE_REGS();
-#ifdef GAUCHE_VMAPI_VM
-                VAL0 = Scm_VMSlotRef(vm, obj, VAL0, FALSE);
-#else
                 VAL0 = Scm_VMSlotRef(obj, VAL0, FALSE);
-#endif
-                RESTORE_REGS();
                 NEXT1;
             }
             CASE(SCM_VM_SLOT_SET) {
@@ -2528,13 +2269,7 @@ static void run_loop()
                 POP_ARG(slot);
                 POP_ARG(obj);
                 TAIL_CALL_INSTRUCTION();
-                SAVE_REGS();
-#ifdef GAUCHE_VMAPI_VM
-                VAL0 = Scm_VMSlotSet(vm, obj, slot, VAL0);
-#else
                 VAL0 = Scm_VMSlotSet(obj, slot, VAL0);
-#endif
-                RESTORE_REGS();
                 NEXT1;
             }
             CASE(SCM_VM_SLOT_REFC) {
@@ -2542,13 +2277,7 @@ static void run_loop()
                 FETCH_OPERAND(slot);
                 INCR_PC;
                 TAIL_CALL_INSTRUCTION();
-                SAVE_REGS();
-#ifdef GAUCHE_VMAPI_VM
-                VAL0 = Scm_VMSlotRef(vm, VAL0, slot, FALSE);
-#else
                 VAL0 = Scm_VMSlotRef(VAL0, slot, FALSE);
-#endif
-                RESTORE_REGS();
                 NEXT1;
             }
             CASE(SCM_VM_SLOT_SETC) {
@@ -2557,13 +2286,7 @@ static void run_loop()
                 FETCH_OPERAND(slot);
                 INCR_PC;
                 TAIL_CALL_INSTRUCTION();
-                SAVE_REGS();
-#ifdef GAUCHE_VMAPI_VM
-                VAL0 = Scm_VMSlotSet(vm, obj, slot, VAL0);
-#else
                 VAL0 = Scm_VMSlotSet(obj, slot, VAL0);
-#endif
-                RESTORE_REGS();
                 NEXT1;
             }
             CASE(SCM_VM_PUSH_HANDLERS) {
@@ -2571,9 +2294,7 @@ static void run_loop()
                 VM_ASSERT(SP - vm->stackBase >= 1);
                 before = VAL0;
                 POP_ARG(before);
-                SAVE_REGS();
                 vm->handlers = Scm_Acons(before, after, vm->handlers);
-                RESTORE_REGS();
                 NEXT;
             }
             CASE(SCM_VM_POP_HANDLERS) {
@@ -2590,9 +2311,7 @@ static void run_loop()
       process_queue:
         CHECK_STACK(CONT_FRAME_SIZE);
         PUSH_CONT(PC);
-        SAVE_REGS();
         process_queued_requests(vm);
-        RESTORE_REGS();
         POP_CONT();
         NEXT;
     }
@@ -2830,12 +2549,12 @@ static ScmWord apply_calls[][2] = {
       SCM_VM_INSN(SCM_VM_RET) },
 };
 
-ScmObj Scm_VMApply(GAUCHE_VMAPI_VM_ARG ScmObj proc, ScmObj args)
+ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
 {
     int numargs = Scm_Length(args);
     int reqstack;
     ScmObj cp;
-    GAUCHE_VMAPI_VM_DECL;
+    ScmVM *vm = theVM;
 
     if (numargs < 0) Scm_Error("improper list not allowed: %S", args);
     reqstack = ENV_SIZE(numargs) + 1;
@@ -2855,77 +2574,70 @@ ScmObj Scm_VMApply(GAUCHE_VMAPI_VM_ARG ScmObj proc, ScmObj args)
         PC[0] = SCM_VM_INSN1(SCM_VM_TAIL_CALL, numargs);
         PC[1] = SCM_VM_INSN(SCM_VM_RET);
     }
-    SAVE_REGS();
     return proc;
 }
 
 /* shortcuts for common cases */
-ScmObj Scm_VMApply0(GAUCHE_VMAPI_VM_ARG ScmObj proc)
+ScmObj Scm_VMApply0(ScmObj proc)
 {
-    GAUCHE_VMAPI_VM_DECL;
-    vm->pc = apply_calls[0];
+    theVM->pc = apply_calls[0];
     return proc;
 }
 
-ScmObj Scm_VMApply1(GAUCHE_VMAPI_VM_ARG ScmObj proc, ScmObj arg)
+ScmObj Scm_VMApply1(ScmObj proc, ScmObj arg)
 {
-    GAUCHE_VMAPI_VM_DECL;
+    ScmVM *vm = theVM;
     CHECK_STACK(1);
     PUSH_ARG(arg);
     PC = apply_calls[1];
-    SAVE_REGS();
     return proc;
 }
 
-ScmObj Scm_VMApply2(GAUCHE_VMAPI_VM_ARG ScmObj proc, ScmObj arg1, ScmObj arg2)
+ScmObj Scm_VMApply2(ScmObj proc, ScmObj arg1, ScmObj arg2)
 {
-    GAUCHE_VMAPI_VM_DECL;
+    ScmVM *vm = theVM;
     CHECK_STACK(2);
     PUSH_ARG(arg1);
     PUSH_ARG(arg2);
     PC = apply_calls[2];
-    SAVE_REGS();
     return proc;
 }
 
-ScmObj Scm_VMApply3(GAUCHE_VMAPI_VM_ARG ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3)
+ScmObj Scm_VMApply3(ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3)
 {
-    GAUCHE_VMAPI_VM_DECL;
+    ScmVM *vm = theVM;
     CHECK_STACK(3);
     PUSH_ARG(arg1);
     PUSH_ARG(arg2);
     PUSH_ARG(arg3);
     PC = apply_calls[3];
-    SAVE_REGS();
     return proc;
 }
 
-ScmObj Scm_VMApply4(GAUCHE_VMAPI_VM_ARG ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3, ScmObj arg4)
+ScmObj Scm_VMApply4(ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3, ScmObj arg4)
 {
-    GAUCHE_VMAPI_VM_DECL;
+    ScmVM *vm = theVM;
     CHECK_STACK(4);
     PUSH_ARG(arg1);
     PUSH_ARG(arg2);
     PUSH_ARG(arg3);
     PUSH_ARG(arg4);
     PC = apply_calls[4];
-    SAVE_REGS();
     return proc;
 }
 
-static ScmObj eval_restore_env(GAUCHE_SUBR_VM_ARG ScmObj *args, int argc, void *data)
+static ScmObj eval_restore_env(ScmObj *args, int argc, void *data)
 {
-    GAUCHE_SUBR_VM_DECL;
-    vm->module = SCM_MODULE(data);
+    theVM->module = SCM_MODULE(data);
     return SCM_UNDEFINED;
 }
 
 /* For now, we only supports a module as the evaluation environment */
-ScmObj Scm_VMEval(GAUCHE_VMAPI_VM_ARG ScmObj expr, ScmObj e)
+ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
 {
     ScmObj v = SCM_NIL;
     int restore_module = SCM_MODULEP(e);
-    GAUCHE_VMAPI_VM_DECL;
+    ScmVM *vm = theVM;
 
     v = Scm_Compile(expr, e);
     if (SCM_VM_COMPILER_FLAG_IS_SET(theVM, SCM_COMPILE_SHOWRESULT)) {
@@ -2941,11 +2653,7 @@ ScmObj Scm_VMEval(GAUCHE_VMAPI_VM_ARG ScmObj expr, ScmObj e)
                                      0, 0, SCM_SYM_EVAL_BEFORE);
         ScmObj after = Scm_MakeSubr(eval_restore_env, (void*)vm->module,
                                     0, 0, SCM_SYM_EVAL_AFTER);
-#ifdef GAUCHE_VMAPI_VM
-        return Scm_VMDynamicWind(vm, before, body, after);
-#else
         return Scm_VMDynamicWind(before, body, after);
-#endif
     } else {
         /* shortcut */
         SCM_ASSERT(SCM_COMPILED_CODE_P(v));
@@ -2959,13 +2667,13 @@ ScmObj Scm_VMEval(GAUCHE_VMAPI_VM_ARG ScmObj expr, ScmObj e)
 /* Arrange C function AFTER to be called after the procedure returns.
  * Usually followed by Scm_VMApply* function.
  */
-void Scm_VMPushCC(GAUCHE_VMAPI_VM_ARG ScmCContinuationProc *after,
+void Scm_VMPushCC(ScmCContinuationProc *after,
                   void **data, int datasize)
 {
     int i;
     ScmContFrame *cc;
     ScmObj *s;
-    GAUCHE_VMAPI_VM_DECL;
+    ScmVM *vm = theVM;
 
     CHECK_STACK(CONT_FRAME_SIZE+datasize);
     s = SP;
@@ -2982,7 +2690,6 @@ void Scm_VMPushCC(GAUCHE_VMAPI_VM_ARG ScmCContinuationProc *after,
     }
     CONT = cc;
     ARGP = SP = s;
-    SAVE_REGS();
 }
 
 /*-------------------------------------------------------------
@@ -3007,8 +2714,8 @@ void Scm_VMPushCC(GAUCHE_VMAPI_VM_ARG ScmCContinuationProc *after,
 
 static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
 {
-    DECL_REGS_VOLATILE;
     ScmCStack cstack;
+    ScmVM * volatile vm = theVM;
     /* Save prev_pc, for the boundary continuation uses pc slot
        to mark the boundary. */
     ScmWord * volatile prev_pc = PC;
@@ -3029,7 +2736,6 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
         CHECK_STACK(vm->base->maxstack);
     }
     SCM_PROF_COUNT_CALL(vm, program);
-    SAVE_REGS();
 
     cstack.prev = vm->cstack;
     cstack.cont = vm->cont;
@@ -3041,10 +2747,8 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
         run_loop();
         VAL0 = vm->val0;
         if (vm->cont == cstack.cont) {
-            RESTORE_REGS();
             POP_CONT();
             PC = prev_pc;
-            SAVE_REGS();
         }
     } else {
         /* An escape situation happened. */
@@ -3060,9 +2764,7 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
                 SCM_ASSERT(vm->cstack && vm->cstack->prev);
                 vm->cont = cstack.cont;
                 VAL0 = vm->val0;
-                RESTORE_REGS();
                 POP_CONT();
-                SAVE_REGS();
                 vm->cstack = vm->cstack->prev;
                 siglongjmp(vm->cstack->jbuf, 1);
             }
@@ -3084,9 +2786,7 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
                    is consistent. */
                 vm->cont = cstack.cont;
                 VAL0 = vm->val0;
-                RESTORE_REGS();
                 POP_CONT();
-                SAVE_REGS();
                 vm->cstack = vm->cstack->prev;
                 siglongjmp(vm->cstack->jbuf, 1);
             }
@@ -3154,7 +2854,7 @@ struct eval_packet_rec {
     ScmObj exception;
 };
 
-static ScmObj safe_eval_handler(GAUCHE_SUBR_VM_ARG ScmObj *args,
+static ScmObj safe_eval_handler(ScmObj *args,
                                 int nargs, void *data)
 {
     SCM_ASSERT(nargs == 1);
@@ -3162,49 +2862,30 @@ static ScmObj safe_eval_handler(GAUCHE_SUBR_VM_ARG ScmObj *args,
     return SCM_UNDEFINED;
 }
 
-static ScmObj safe_eval_thunk(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
+static ScmObj safe_eval_thunk(ScmObj *args, int nargs, void *data)
 {
     struct eval_packet_rec *epak = (struct eval_packet_rec*)data;
 
     switch (epak->kind) {
     case SAFE_EVAL_CSTRING:
-#ifdef GAUCHE_VMAPI_VM
-        return Scm_VMEval(theVM, Scm_ReadFromCString(epak->cstr), epak->env);
-#else
         return Scm_VMEval(Scm_ReadFromCString(epak->cstr), epak->env);
-#endif
     case SAFE_EVAL:
-#ifdef GAUCHE_VMAPI_VM
-        return Scm_VMEval(theVM, epak->arg0, epak->env);
-#else
         return Scm_VMEval(epak->arg0, epak->env);
-#endif
     case SAFE_APPLY:
-#ifdef GAUCHE_VMAPI_VM
-        return Scm_VMApply(theVM, epak->arg0, epak->args);
-#else
         return Scm_VMApply(epak->arg0, epak->args);
-#endif
     default:
         Scm_Panic("safe_eval_subr: bad kind");
         return SCM_UNBOUND;     /* dummy */
     }
 }
 
-static ScmObj safe_eval_int(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
+static ScmObj safe_eval_int(ScmObj *args, int nargs, void *data)
 {
     ScmObj thunk, handler;
     
     thunk   = Scm_MakeSubr(safe_eval_thunk, data, 0, 0, SCM_FALSE);
     handler = Scm_MakeSubr(safe_eval_handler, data, 1, 0, SCM_FALSE);
-#ifdef GAUCHE_VMAPI_VM
-    {
-        GAUCHE_SUBR_VM_DECL;
-        return Scm_VMWithErrorHandler(vm, handler, thunk);
-    }
-#else
     return Scm_VMWithErrorHandler(handler, thunk);
-#endif
 }
 
 static int safe_eval_wrap(int kind, ScmObj arg0, ScmObj args,
@@ -3272,8 +2953,7 @@ static ScmCContinuationProc dynwind_before_cc;
 static ScmCContinuationProc dynwind_body_cc;
 static ScmCContinuationProc dynwind_after_cc;
 
-ScmObj Scm_VMDynamicWind(GAUCHE_VMAPI_VM_ARG
-                         ScmObj before, ScmObj body, ScmObj after)
+ScmObj Scm_VMDynamicWind(ScmObj before, ScmObj body, ScmObj after)
 {
     void *data[3];
 
@@ -3283,43 +2963,33 @@ ScmObj Scm_VMDynamicWind(GAUCHE_VMAPI_VM_ARG
     data[1] = (void*)body;
     data[2] = (void*)after;
 
-#ifdef GAUCHE_VMAPI_VM
-    Scm_VMPushCC(vm, dynwind_before_cc, data, 3);
-    return Scm_VMApply0(vm, before);
-#else
     Scm_VMPushCC(dynwind_before_cc, data, 3);
     return Scm_VMApply0(before);
-#endif
 }
 
-static ScmObj dynwind_before_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
+static ScmObj dynwind_before_cc(ScmObj result, void **data)
 {
     ScmObj before  = SCM_OBJ(data[0]);
     ScmObj body = SCM_OBJ(data[1]);
     ScmObj after = SCM_OBJ(data[2]);
     ScmObj prev;
-    GAUCHE_CC_VM_DECL;
+    ScmVM *vm = theVM;
     prev = vm->handlers;
 
     void *d[2];
     d[0] = (void*)after;
     d[1] = (void*)prev;
     vm->handlers = Scm_Cons(Scm_Cons(before, after), prev);
-#ifdef GAUCHE_VMAPI_VM
-    Scm_VMPushCC(vm, dynwind_body_cc, d, 2);
-    return Scm_VMApply0(vm, body);
-#else
     Scm_VMPushCC(dynwind_body_cc, d, 2);
     return Scm_VMApply0(body);
-#endif
 }
 
-static ScmObj dynwind_body_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
+static ScmObj dynwind_body_cc(ScmObj result, void **data)
 {
     ScmObj after = SCM_OBJ(data[0]);
     ScmObj prev  = SCM_OBJ(data[1]);
     void *d[3];
-    GAUCHE_CC_VM_DECL;
+    ScmVM *vm = theVM;
 
     vm->handlers = prev;
     d[0] = (void*)result;
@@ -3329,20 +2999,16 @@ static ScmObj dynwind_body_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
         memcpy(array, vm->vals, sizeof(ScmObj)*(vm->numVals-1));
         d[2] = (void*)array;
     }
-#ifdef GAUCHE_VMAPI_VM
-    Scm_VMPushCC(vm, dynwind_after_cc, d, 3);
-    return Scm_VMApply0(vm, after);
-#else
     Scm_VMPushCC(dynwind_after_cc, d, 3);
     return Scm_VMApply0(after);
-#endif
 }
 
-static ScmObj dynwind_after_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
+static ScmObj dynwind_after_cc(ScmObj result, void **data)
 {
     ScmObj val0 = SCM_OBJ(data[0]);
     int nvals = (int)data[1];
-    GAUCHE_CC_VM_DECL;
+    ScmVM *vm = theVM;
+    
     vm->numVals = nvals;
     if (nvals > 1) {
         SCM_ASSERT(nvals <= SCM_VM_MAX_VALUES);
@@ -3352,8 +3018,7 @@ static ScmObj dynwind_after_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 }
 
 /* C-friendly wrapper */
-ScmObj Scm_VMDynamicWindC(GAUCHE_VMAPI_VM_ARG
-                          ScmSubrProc *before,
+ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
                           ScmSubrProc *body,
                           ScmSubrProc *after,
                           void *data)
@@ -3366,11 +3031,7 @@ ScmObj Scm_VMDynamicWindC(GAUCHE_VMAPI_VM_ARG
     bodyproc =
         body ? Scm_MakeSubr(body, data, 0, 0, SCM_FALSE) : Scm_NullProc();
     
-#ifdef GAUCHE_VMAPI_VM
-    return Scm_VMDynamicWind(vm, beforeproc, bodyproc, afterproc);
-#else
     return Scm_VMDynamicWind(beforeproc, bodyproc, afterproc);
-#endif
 }
 
 
@@ -3559,7 +3220,7 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
     }
 }
 
-static ScmObj default_exception_handler_body(GAUCHE_SUBR_VM_ARG ScmObj *argv,
+static ScmObj default_exception_handler_body(ScmObj *argv,
                                              int argc, void *data)
 {
     SCM_ASSERT(argc == 1);
@@ -3619,20 +3280,20 @@ ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception)
 /*
  * with-error-handler
  */
-static ScmObj install_ehandler(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
+static ScmObj install_ehandler(ScmObj *args, int nargs, void *data)
 {
     ScmEscapePoint *ep = (ScmEscapePoint*)data;
-    GAUCHE_SUBR_VM_DECL;
+    ScmVM *vm = theVM;
     vm->exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
     vm->escapePoint = ep;
     SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_REPORTED);
     return SCM_UNDEFINED;
 }
 
-static ScmObj discard_ehandler(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
+static ScmObj discard_ehandler(ScmObj *args, int nargs, void *data)
 {
     ScmEscapePoint *ep = (ScmEscapePoint *)data;
-    GAUCHE_SUBR_VM_DECL;
+    ScmVM *vm = theVM;
     vm->escapePoint = ep->prev;
     vm->exceptionHandler = ep->xhandler;
     if (ep->errorReporting) {
@@ -3668,23 +3329,17 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
                              to redirect ep->cont */
     before = Scm_MakeSubr(install_ehandler, ep, 0, 0, SCM_FALSE);
     after  = Scm_MakeSubr(discard_ehandler, ep, 0, 0, SCM_FALSE);
-#ifdef GAUCHE_VMAPI_VM
-    return Scm_VMDynamicWind(vm, before, thunk, after);
-#else
     return Scm_VMDynamicWind(before, thunk, after);
-#endif
 }
 
-ScmObj Scm_VMWithErrorHandler(GAUCHE_VMAPI_VM_ARG ScmObj handler, ScmObj thunk)
+ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk)
 {
-    GAUCHE_VMAPI_VM_DECL;
-    return with_error_handler(vm, handler, thunk, FALSE);
+    return with_error_handler(theVM, handler, thunk, FALSE);
 }
 
-ScmObj Scm_VMWithGuardHandler(GAUCHE_VMAPI_VM_ARG ScmObj handler, ScmObj thunk)
+ScmObj Scm_VMWithGuardHandler(ScmObj handler, ScmObj thunk)
 {
-    GAUCHE_VMAPI_VM_DECL;
-    return with_error_handler(vm, handler, thunk, TRUE);
+    return with_error_handler(theVM, handler, thunk, TRUE);
 }
 
 
@@ -3695,25 +3350,18 @@ ScmObj Scm_VMWithGuardHandler(GAUCHE_VMAPI_VM_ARG ScmObj handler, ScmObj thunk)
  *   dealing with exceptions.
  */
 
-static ScmObj install_xhandler(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
+static ScmObj install_xhandler(ScmObj *args, int nargs, void *data)
 {
-    GAUCHE_SUBR_VM_DECL;
-    vm->exceptionHandler = SCM_OBJ(data);
+    theVM->exceptionHandler = SCM_OBJ(data);
     return SCM_UNDEFINED;
 }
 
-ScmObj Scm_VMWithExceptionHandler(GAUCHE_VMAPI_VM_ARG
-                                  ScmObj handler, ScmObj thunk)
+ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk)
 {
-    GAUCHE_VMAPI_VM_DECL;
-    ScmObj current = vm->exceptionHandler;
+    ScmObj current = theVM->exceptionHandler;
     ScmObj before = Scm_MakeSubr(install_xhandler, handler, 0, 0, SCM_FALSE);
     ScmObj after  = Scm_MakeSubr(install_xhandler, current, 0, 0, SCM_FALSE);
-#ifdef GAUCHE_VMAPI_VM
-    return Scm_VMDynamicWind(vm, before, thunk, after);
-#else
     return Scm_VMDynamicWind(before, thunk, after);
-#endif
 }
 
 /*==============================================================
@@ -3748,7 +3396,7 @@ static ScmObj throw_cont_calculate_handlers(ScmEscapePoint *ep, /*target*/
     return h;
 }
 
-static ScmObj throw_cont_cc(GAUCHE_CC_VM_ARG ScmObj, void **);
+static ScmObj throw_cont_cc(ScmObj, void **);
 
 static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
                                                      to be called */
@@ -3773,15 +3421,9 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
         data[0] = (void*)SCM_CDR(handlers);
         data[1] = (void*)ep;
         data[2] = (void*)args;
-#ifdef GAUCHE_VMAPI_VM
-        Scm_VMPushCC(vm, throw_cont_cc, data, 3);
-        vm->handlers = chain;
-        return Scm_VMApply0(vm, handler);
-#else
         Scm_VMPushCC(throw_cont_cc, data, 3);
         vm->handlers = chain;
         return Scm_VMApply0(handler);
-#endif
     }
 
     /*
@@ -3807,7 +3449,7 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
     return SCM_CAR(args);
 }
 
-static ScmObj throw_cont_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
+static ScmObj throw_cont_cc(ScmObj result, void **data)
 {
     ScmObj handlers = SCM_OBJ(data[0]);
     ScmEscapePoint *ep = (ScmEscapePoint *)data[1];
@@ -3816,12 +3458,11 @@ static ScmObj throw_cont_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
 }
 
 /* Body of the continuation SUBR */
-static ScmObj throw_continuation(GAUCHE_SUBR_VM_ARG ScmObj *argframe,
-                                 int nargs, void *data)
+static ScmObj throw_continuation(ScmObj *argframe, int nargs, void *data)
 {
     ScmEscapePoint *ep = (ScmEscapePoint*)data;
     ScmObj args = argframe[0];
-    GAUCHE_SUBR_VM_DECL;
+    ScmVM *vm = theVM;
 
     if (vm->cstack != ep->cstack) {
         ScmCStack *cstk;
@@ -3845,17 +3486,11 @@ static ScmObj throw_continuation(GAUCHE_SUBR_VM_ARG ScmObj *argframe,
     return SCM_UNDEFINED; /*dummy*/
 }
 
-ScmObj Scm_VMCallCC(GAUCHE_VMAPI_VM_ARG ScmObj proc)
+ScmObj Scm_VMCallCC(ScmObj proc)
 {
     ScmObj contproc;
     ScmEscapePoint *ep;
-    GAUCHE_VMAPI_VM_DECL;
-
-    if (!SCM_PROCEDUREP(proc)
-        || (!SCM_PROCEDURE_OPTIONAL(proc) && SCM_PROCEDURE_REQUIRED(proc) != 1)
-        || (SCM_PROCEDURE_OPTIONAL(proc) && SCM_PROCEDURE_REQUIRED(proc) > 1))
-        Scm_Error("Procedure taking one argument is required, but got: %S",
-                  proc);
+    ScmVM *vm = theVM;
 
     save_cont(vm);
     ep = SCM_NEW(ScmEscapePoint);
@@ -3867,11 +3502,7 @@ ScmObj Scm_VMCallCC(GAUCHE_VMAPI_VM_ARG ScmObj proc)
 
     contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                             SCM_MAKE_STR("continuation"));
-#ifdef GAUCHE_VMAPI_VM
-    return Scm_VMApply1(vm, proc, contproc);
-#else
     return Scm_VMApply1(proc, contproc);
-#endif
 }
 
 /*==============================================================
@@ -4008,12 +3639,12 @@ ScmObj Scm_Values5(ScmObj val0, ScmObj val1,
  * the current continuation.
  */
 
-static ScmObj process_queued_requests_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
+static ScmObj process_queued_requests_cc(ScmObj result, void **data)
 {
     /* restore the saved continuation of normal execution flow of VM */
     int i;
     ScmObj cp;
-    GAUCHE_CC_VM_DECL;
+    ScmVM *vm = theVM;
     
     vm->numVals = (int)data[0];
     vm->val0 = data[1];
@@ -4045,11 +3676,7 @@ static void process_queued_requests(ScmVM *vm)
     } else {
         data[2] = NULL;
     }
-#ifdef GAUCHE_VMAPI_VM
-    Scm_VMPushCC(vm, process_queued_requests_cc, data, 3);
-#else
     Scm_VMPushCC(process_queued_requests_cc, data, 3);
-#endif
 
     /* Process queued stuff.  Currently they call VM recursively,
        but we'd better to arrange them to be processed in the same

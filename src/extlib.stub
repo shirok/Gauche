@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.270 2006-12-07 01:27:15 shirok Exp $
+;;; $Id: extlib.stub,v 1.271 2006-12-07 04:58:47 shirok Exp $
 ;;;
 
 "
@@ -171,23 +171,12 @@
 )
 
 (define-cproc min&max (arg0 &rest args)
-  "ScmObj min, max;
-   Scm_MinMax(arg0, args, &min, &max);
-#ifdef GAUCHE_VMAPI_VM
-   SCM_RETURN(Scm_VMValues2(SCM_VMPTR, min, max));
-#else
-   SCM_RETURN(Scm_Values2(min, max));
-#endif")
-
+  (body (<top> <top>)
+        "Scm_MinMax(arg0, args, &SCM_RESULT0, &SCM_RESULT1);"))
 
 (define-cproc quotient&remainder (n1 n2)
-  "ScmObj q, r;
-   q = Scm_Quotient(n1, n2, &r);
-#ifdef GAUCHE_VMAPI_VM
-   SCM_RETURN(Scm_VMValues2(SCM_VMPTR, q, r));
-#else
-   SCM_RETURN(Scm_Values2(q, r));
-#endif")
+  (body (<top> <top>)
+        "SCM_RESULT0 = Scm_Quotient(n1, n2, &SCM_RESULT1);"))
 
 ;;
 ;; 6.3.1  Booleans
@@ -990,7 +979,7 @@
 
 ;; Unsafe port operations
 (define-cproc with-port-locking (port::<port> proc)
-  (call/vm "Scm_VMWithPortLocking"))
+  (call "Scm_VMWithPortLocking"))
 
 (define-cproc port->byte-string (port::<input-port>)
   ;; TODO: use chunked I/O if appropriate
@@ -1175,7 +1164,7 @@
 (define-cproc hash-table-exists? (hash::<hash-table> key)
   (expr <boolean> "Scm_HashTableGet(hash, key) != NULL"))
 
-"static ScmObj hash_table_update_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
+"static ScmObj hash_table_update_cc(ScmObj result, void **data)
  {
    ScmHashEntry *e = (ScmHashEntry*)data[0];
    e->value = result;
@@ -1192,13 +1181,9 @@
         "  e = Scm_HashTableAdd(hash, key, defval);"
         "}"
         "data[0] = (void*)e;"
-        "#ifdef GAUCHE_VMAPI_VM"
-        "Scm_VMPushCC(SCM_VMPTR, hash_table_update_cc, data, 1);"
-        "SCM_RESULT = Scm_VMApply1(SCM_VMPTR, proc, e->value);"
-        "#else"
         "Scm_VMPushCC(hash_table_update_cc, data, 1);"
-        "SCM_RESULT = Scm_VMApply1(proc, e->value);"
-        "#endif"))
+        "SCM_RESULT = Scm_VMApply1(proc, e->value);"))
+
 
 (define-cproc hash-table-push! (hash::<hash-table> key value)
   "ScmHashEntry *e = Scm_HashTableAdd(hash, key, SCM_UNBOUND);
@@ -1223,19 +1208,13 @@
   }
   SCM_RETURN(r);")
 
-"static ScmObj hash_table_iter(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
+"static ScmObj hash_table_iter(ScmObj *args, int nargs, void *data)
  {
    ScmHashIter *iter = (ScmHashIter*)data;
    ScmHashEntry *e = Scm_HashIterNext(iter);
    ScmObj eofval = args[0];
-#ifdef GAUCHE_VMAPI_VM
-   GAUCHE_SUBR_VM_DECL;
-   if (e == NULL) SCM_RETURN(Scm_VMValues2(vm, eofval, eofval));
-   else SCM_RETURN(Scm_VMValues2(vm, e->key, e->value));
-#else
    if (e == NULL) SCM_RETURN(Scm_Values2(eofval, eofval));
    else SCM_RETURN(Scm_Values2(e->key, e->value));
-#endif
  }"
 
 (define-cproc %hash-table-iter (hash::<hash-table>)
@@ -1416,26 +1395,12 @@
 
 ;; parameter
 (define-cproc %vm-make-parameter-slot ()
-  "int newid, num;
-#ifdef GAUCHE_VMAPI_VM
-   num = Scm_MakeParameterSlot(SCM_VMPTR, &newid);
-   SCM_RETURN(Scm_VMValues2(SCM_VMPTR, SCM_MAKE_INT(num), SCM_MAKE_INT(newid)));
-#else
-   num = Scm_MakeParameterSlot(Scm_VM(), &newid);
-   SCM_RETURN(Scm_Values2(SCM_MAKE_INT(num), SCM_MAKE_INT(newid)));
-#endif")
+  (body (<int> <int>)
+        "SCM_RESULT0 = Scm_MakeParameterSlot(Scm_VM(), &SCM_RESULT1);"))
 (define-cproc %vm-parameter-ref (index::<int> id::<int>)
-  (body "#ifdef GAUCHE_VMAPI_VM"
-        "SCM_RESULT = Scm_ParameterRef(SCM_VMPTR, index, id);"
-        "#else"
-        "SCM_RESULT = Scm_ParameterRef(Scm_VM(), index, id);"
-        "#endif"))
+  (expr "Scm_ParameterRef(Scm_VM(), index, id)"))
 (define-cproc %vm-parameter-set! (index::<int> id::<int> value)
-  (body "#ifdef GAUCHE_VMAPI_VM"
-        "SCM_RESULT = Scm_ParameterSet(SCM_VMPTR, index, id, value);"
-        "#else"
-        "SCM_RESULT = Scm_ParameterSet(Scm_VM(), index, id, value);"
-        "#endif"))
+  (expr "Scm_ParameterSet(Scm_VM(), index, id, value)"))
 
 ;;
 ;; Inspecting feature

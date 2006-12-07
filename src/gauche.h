@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.475 2006-12-07 01:27:15 shirok Exp $
+ *  $Id: gauche.h,v 1.476 2006-12-07 04:58:47 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -114,13 +114,6 @@ SCM_DECL_BEGIN
 #else  /* !GAUCHE_USE_PTHREADS */
 # include <gauche/uthread.h>
 #endif /* !GAUCHE_USE_PTHREADS */
-
-/* Experimental stuff.  Defining these changes prototype of Subr
-   and C Continuation */
-   
-/*#define GAUCHE_SUBR_VM*/
-/*#define GAUCHE_CC_VM*/
-/*#define GAUCHE_VMAPI_VM*/
 
 /*-------------------------------------------------------------
  * BASIC TYPES
@@ -385,15 +378,7 @@ typedef struct ScmRegMatchRec  ScmRegMatch;
 typedef struct ScmWriteContextRec ScmWriteContext;
 typedef struct ScmAutoloadRec  ScmAutoload;
 
-#ifdef GAUCHE_SUBR_VM           /* experimental */
-typedef ScmObj ScmSubrProc(ScmVM *, ScmObj *, int, void*);
-#define GAUCHE_SUBR_VM_ARG  ScmVM *vm,
-#define GAUCHE_SUBR_VM_DECL
-#else
 typedef ScmObj ScmSubrProc(ScmObj *, int, void*);
-#define GAUCHE_SUBR_VM_ARG  
-#define GAUCHE_SUBR_VM_DECL  ScmVM *vm = Scm_VM()
-#endif
 
 /*---------------------------------------------------------
  * VM STUFF
@@ -448,37 +433,28 @@ SCM_EXTERN ScmObj Scm_Values4(ScmObj val0, ScmObj val1, ScmObj val2,
 SCM_EXTERN ScmObj Scm_Values5(ScmObj val0, ScmObj val1, ScmObj val2,
 			      ScmObj val3, ScmObj val4);
 
-#ifdef GAUCHE_VMAPI_VM
-SCM_EXTERN ScmObj Scm_VMValues(ScmVM *, ScmObj);
-SCM_EXTERN ScmObj Scm_VMValues2(ScmVM *, ScmObj, ScmObj);
-SCM_EXTERN ScmObj Scm_VMValues3(ScmVM *, ScmObj, ScmObj, ScmObj);
-SCM_EXTERN ScmObj Scm_VMValues4(ScmVM *, ScmObj, ScmObj, ScmObj, ScmObj);
-SCM_EXTERN ScmObj Scm_VMValues5(ScmVM *, ScmObj, ScmObj, ScmObj, ScmObj, ScmObj);
-#endif /* GAUCHE_VMAPI_VM */
-
 /* CPS API for evaluating Scheme fragments on VM. */
-SCM_EXTERN ScmObj Scm_VMApply(GAUCHE_VMAPI_VM_ARG ScmObj proc, ScmObj args);
-SCM_EXTERN ScmObj Scm_VMApply0(GAUCHE_VMAPI_VM_ARG ScmObj proc);
-SCM_EXTERN ScmObj Scm_VMApply1(GAUCHE_VMAPI_VM_ARG ScmObj proc, ScmObj arg);
-SCM_EXTERN ScmObj Scm_VMApply2(GAUCHE_VMAPI_VM_ARG ScmObj proc, ScmObj arg1, ScmObj arg2);
-SCM_EXTERN ScmObj Scm_VMApply3(GAUCHE_VMAPI_VM_ARG ScmObj proc, ScmObj arg1, ScmObj arg2,
+SCM_EXTERN ScmObj Scm_VMApply(ScmObj proc, ScmObj args);
+SCM_EXTERN ScmObj Scm_VMApply0(ScmObj proc);
+SCM_EXTERN ScmObj Scm_VMApply1(ScmObj proc, ScmObj arg);
+SCM_EXTERN ScmObj Scm_VMApply2(ScmObj proc, ScmObj arg1, ScmObj arg2);
+SCM_EXTERN ScmObj Scm_VMApply3(ScmObj proc, ScmObj arg1, ScmObj arg2,
                                ScmObj arg3);
-SCM_EXTERN ScmObj Scm_VMApply4(GAUCHE_VMAPI_VM_ARG ScmObj proc, ScmObj arg1, ScmObj arg2,
+SCM_EXTERN ScmObj Scm_VMApply4(ScmObj proc, ScmObj arg1, ScmObj arg2,
                                ScmObj arg3, ScmObj arg4);
-SCM_EXTERN ScmObj Scm_VMEval(GAUCHE_VMAPI_VM_ARG ScmObj expr, ScmObj env);
-SCM_EXTERN ScmObj Scm_VMCall(GAUCHE_VMAPI_VM_ARG ScmObj *args, int argcnt, void *data);
+SCM_EXTERN ScmObj Scm_VMEval(ScmObj expr, ScmObj env);
+SCM_EXTERN ScmObj Scm_VMCall(ScmObj *args, int argcnt, void *data);
 
-SCM_EXTERN ScmObj Scm_VMCallCC(GAUCHE_VMAPI_VM_ARG ScmObj proc);
-SCM_EXTERN ScmObj Scm_VMDynamicWind(GAUCHE_VMAPI_VM_ARG ScmObj pre, ScmObj body, ScmObj post);
-SCM_EXTERN ScmObj Scm_VMDynamicWindC(GAUCHE_VMAPI_VM_ARG
-                                     ScmSubrProc *before,
+SCM_EXTERN ScmObj Scm_VMCallCC(ScmObj proc);
+SCM_EXTERN ScmObj Scm_VMDynamicWind(ScmObj pre, ScmObj body, ScmObj post);
+SCM_EXTERN ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
                                      ScmSubrProc *body,
                                      ScmSubrProc *after,
 				     void *data);
 
-SCM_EXTERN ScmObj Scm_VMWithErrorHandler(GAUCHE_VMAPI_VM_ARG ScmObj handler, ScmObj thunk);
-SCM_EXTERN ScmObj Scm_VMWithGuardHandler(GAUCHE_VMAPI_VM_ARG ScmObj handler, ScmObj thunk);
-SCM_EXTERN ScmObj Scm_VMWithExceptionHandler(GAUCHE_VMAPI_VM_ARG ScmObj handler, ScmObj thunk);
+SCM_EXTERN ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk);
+SCM_EXTERN ScmObj Scm_VMWithGuardHandler(ScmObj handler, ScmObj thunk);
+SCM_EXTERN ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk);
 
 /* Miscellaneous stuff */
 SCM_EXTERN ScmObj Scm_MakeMacroTransformer(ScmSymbol *name,
@@ -626,9 +602,9 @@ SCM_EXTERN int Scm_SubtypeP(ScmClass *sub, ScmClass *type);
 SCM_EXTERN int Scm_TypeP(ScmObj obj, ScmClass *type);
 SCM_EXTERN ScmClass *Scm_BaseClassOf(ScmClass *klass);
 
-SCM_EXTERN ScmObj Scm_VMSlotRef(GAUCHE_VMAPI_VM_ARG ScmObj obj, ScmObj slot, int boundp);
-SCM_EXTERN ScmObj Scm_VMSlotSet(GAUCHE_VMAPI_VM_ARG ScmObj obj, ScmObj slot, ScmObj value);
-SCM_EXTERN ScmObj Scm_VMSlotBoundP(GAUCHE_VMAPI_VM_ARG ScmObj obj, ScmObj slot);
+SCM_EXTERN ScmObj Scm_VMSlotRef(ScmObj obj, ScmObj slot, int boundp);
+SCM_EXTERN ScmObj Scm_VMSlotSet(ScmObj obj, ScmObj slot, ScmObj value);
+SCM_EXTERN ScmObj Scm_VMSlotBoundP(ScmObj obj, ScmObj slot);
 
 /* built-in classes */
 SCM_CLASS_DECL(Scm_TopClass);

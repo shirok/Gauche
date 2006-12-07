@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.42 2006-12-05 08:14:23 shirok Exp $
+ *  $Id: signal.c,v 1.43 2006-12-07 04:58:48 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -245,8 +245,7 @@ ScmObj Scm_SignalName(int signum)
  * default handler
  */
 /* For most signals, default handler raises an error. */
-static ScmObj default_sighandler(GAUCHE_SUBR_VM_ARG ScmObj *args,
-                                 int nargs, void *data)
+static ScmObj default_sighandler(ScmObj *args, int nargs, void *data)
 {
     int signum;
     struct sigdesc *desc;
@@ -285,7 +284,7 @@ static SCM_DEFINE_SUBR(default_sighandler_stub, 1, 0,
 #define DEFAULT_SIGHANDLER    SCM_OBJ(&default_sighandler_stub)
 
 /* For some signals, exits. */
-static ScmObj exit_sighandler(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
+static ScmObj exit_sighandler(ScmObj *args, int nargs, void *data)
 {
     Scm_Exit(0);
     return SCM_UNDEFINED;       /* dummy */

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.109 2006-12-07 01:27:15 shirok Exp $
+ *  $Id: load.c,v 1.110 2006-12-07 04:58:47 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -117,10 +117,10 @@ struct load_packet {
 };
 
 /* Clean up */
-static ScmObj load_after(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
+static ScmObj load_after(ScmObj *args, int nargs, void *data)
 {
     struct load_packet *p = (struct load_packet *)data;
-    GAUCHE_SUBR_VM_DECL;
+    ScmVM *vm = Scm_VM();
 
 #ifdef HAVE_GETTIMEOFDAY
     if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_COLLECT_LOAD_STATS)) {
@@ -143,32 +143,22 @@ static ScmObj load_after(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
 }
 
 /* C-continuation of the loading */
-static ScmObj load_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
+static ScmObj load_cc(ScmObj result, void **data)
 {
     struct load_packet *p = (struct load_packet*)(data[0]);
     ScmObj expr = Scm_ReadWithContext(SCM_OBJ(p->port), &(p->ctx));
 
     if (!SCM_EOFP(expr)) {
-#ifdef GAUCHE_VMAPI_VM
-        GAUCHE_CC_VM_DECL;
-        Scm_VMPushCC(vm, load_cc, data, 1);
-        return Scm_VMEval(vm, expr, SCM_FALSE);
-#else
         Scm_VMPushCC(load_cc, data, 1);
         return Scm_VMEval(expr, SCM_FALSE);
-#endif
     } else {
         return SCM_TRUE;
     }
 }
 
-static ScmObj load_body(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
+static ScmObj load_body(ScmObj *args, int nargs, void *data)
 {
-#ifdef GAUCHE_CC_VM
-    return load_cc(Scm_VM(), SCM_NIL, &data);
-#else
     return load_cc(SCM_NIL, &data);
-#endif
 }
 
 ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
@@ -217,15 +207,11 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
     vm->load_history = Scm_Cons(port_info, vm->load_history);
 
     PORT_LOCK(port, vm);
-#ifdef GAUCHE_VMAPI_VM
-    return Scm_VMDynamicWindC(vm, NULL, load_body, load_after, p);
-#else
     return Scm_VMDynamicWindC(NULL, load_body, load_after, p);
-#endif
 }
 
 /* Scheme subr (load-from-port subr &keyword paths environment) */
-static ScmObj load_from_port(GAUCHE_SUBR_VM_ARG ScmObj *args, int argc, void *data)
+static ScmObj load_from_port(ScmObj *args, int argc, void *data)
 {
     ScmPort *port;
     ScmObj paths, env;
@@ -402,7 +388,7 @@ ScmObj Scm_VMLoad(ScmString *filename, ScmObj load_paths,
 
 /* Scheme subr (%load filename &keyword paths error-if-not-found
                                         environment aware-coding) */
-static ScmObj load(GAUCHE_SUBR_VM_ARG ScmObj *args, int argc, void *data)
+static ScmObj load(ScmObj *args, int argc, void *data)
 {
     ScmString *file;
     ScmObj paths, env;

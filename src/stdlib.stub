@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.122 2006-12-07 01:27:16 shirok Exp $
+;;; $Id: stdlib.stub,v 1.123 2006-12-07 04:58:48 shirok Exp $
 ;;;
 
 
@@ -602,11 +602,7 @@
       SCM_APPEND1(head, tail, SCM_CAR(cp));
     }
   }
-#ifdef GAUCHE_VMAPI_VM
-  return Scm_VMApply(SCM_VMPTR, proc, head);
-#else
   return Scm_VMApply(proc, head);
-#endif
   ")
 
 (define-cproc map (proc args::<list> &rest moreargs)
@@ -619,23 +615,19 @@
   (call "Scm_Force"))
 
 (define-cproc call-with-current-continuation (proc)
-  (call/vm "Scm_VMCallCC"))
+  (call "Scm_VMCallCC"))
 
 (define-cproc values (&rest args)
   (inliner VALUES)
-  (body "#ifdef GAUCHE_VMAPI_VM"
-        "SCM_RESULT = Scm_VMValues(SCM_VMPTR, args);"
-        "#else"
-        "SCM_RESULT = Scm_Values(args);"
-        "#endif"))
+  (call "Scm_Values"))
 
 ;; call-with-values - defined in gauche-init.scm
 
 (define-cproc dynamic-wind (pre body post)
-  (call/vm "Scm_VMDynamicWind"))
+  (call "Scm_VMDynamicWind"))
 
 (define-cproc eval (expr env)
-  (call/vm "Scm_VMEval"))
+  (call "Scm_VMEval"))
 
 ;; for now, just return a module.
 (define-cproc null-environment (version::<fixnum>)

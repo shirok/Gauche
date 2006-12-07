@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: threads.c,v 1.15 2006-12-05 08:25:46 shirok Exp $
+ *  $Id: threads.c,v 1.16 2006-12-07 04:58:46 shirok Exp $
  */
 
 #include <gauche.h>
@@ -48,7 +48,7 @@
  * Thread interface
  */
 
-static ScmObj thread_error_handler(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
+static ScmObj thread_error_handler(ScmObj *args, int nargs, void *data)
 {
     /* For now, uncaptured error causes thread termination with
        setting <uncaught-exception> to the resultException field.

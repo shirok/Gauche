@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.86 2006-12-05 08:14:23 shirok Exp $
+ *  $Id: read.c,v 1.87 2006-12-07 04:58:48 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1087,7 +1087,7 @@ static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args,
     return r;
 }
 
-static ScmObj reader_ctor(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
+static ScmObj reader_ctor(ScmObj *args, int nargs, void *data)
 {
     ScmObj optarg = (nargs > 2? args[2] : SCM_FALSE);
     return Scm_DefineReaderCtor(args[0], args[1], optarg);

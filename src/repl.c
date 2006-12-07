@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: repl.c,v 1.38 2006-12-07 01:27:16 shirok Exp $
+ *  $Id: repl.c,v 1.39 2006-12-07 04:58:48 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -65,166 +65,103 @@
  *    -> repl_eval_cc -> printer -> repl_print_cc -> repl_main
  */
 
-ScmObj Scm_VMRepl(GAUCHE_VMAPI_VM_ARG
-                  ScmObj reader, ScmObj evaluator,
+ScmObj Scm_VMRepl(ScmObj reader, ScmObj evaluator,
                   ScmObj printer, ScmObj prompter);
 static ScmSubrProc repl_main;
 
 /* trampolines */
-static ScmObj repl_print_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
+static ScmObj repl_print_cc(ScmObj result, void **data)
 {
-#ifdef GAUCHE_SUBR_VM
-    return repl_main(Scm_VM(), NULL, 0, data);
-#else
     return repl_main(NULL, 0, data);
-#endif
 }
 
-static ScmObj repl_eval_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
+static ScmObj repl_eval_cc(ScmObj result, void **data)
 {
     ScmObj *closure = (ScmObj *)data;
     ScmObj printer = closure[2];
-    GAUCHE_CC_VM_DECL;
-    
+    ScmVM *vm = Scm_VM();
+
     if (SCM_PROCEDUREP(printer)) {
-#ifdef GAUCHE_VMAPI_VM
-        Scm_VMPushCC(vm, repl_print_cc, data, 4);
-#else
         Scm_VMPushCC(repl_print_cc, data, 4);
-#endif
         if (vm->numVals == 1) {
-#ifdef GAUCHE_VMAPI_VM
-            return Scm_VMApply1(vm, printer, result);
-#else
             return Scm_VMApply1(printer, result);
-#endif
         } else {
-#ifdef GAUCHE_VMAPI_VM
-            return Scm_VMApply(vm, printer, Scm_VMGetResult(vm));
-#else
             return Scm_VMApply(printer, Scm_VMGetResult(vm));
-#endif
         }
     } else {
         ScmObj result = Scm_VMGetResult(vm), cp;
         SCM_FOR_EACH(cp, result) {
-#if 0
-            Scm_Write(SCM_CAR(cp), SCM_OBJ(SCM_CUROUT), SCM_WRITE_WRITE);
-#else
             Scm_Write(SCM_CAR(cp), SCM_OBJ(SCM_CUROUT), SCM_WRITE_SHARED);
-#endif
             Scm_Putc('\n', SCM_CUROUT);
         }
         Scm_Flush(SCM_CUROUT);
-#ifdef GAUCHE_SUBR_VM
-        return repl_main(vm, NULL, 0, (void*)data);
-#else
         return repl_main(NULL, 0, (void*)data);
-#endif
     }
 }
 
-static ScmObj repl_read_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
+static ScmObj repl_read_cc(ScmObj result, void **data)
 {
     ScmObj *closure = (ScmObj*)data;
     ScmObj evaluator = closure[1];
     if (SCM_EOFP(result)) {
         return SCM_FALSE;
     } else if (SCM_PROCEDUREP(evaluator)) {
-#ifdef GAUCHE_VMAPI_VM
-        GAUCHE_CC_VM_DECL;
-        Scm_VMPushCC(vm, repl_eval_cc, data, 4);
-        return Scm_VMApply2(vm, evaluator, result, SCM_OBJ(SCM_CURRENT_MODULE()));
-#else
         Scm_VMPushCC(repl_eval_cc, data, 4);
         return Scm_VMApply2(evaluator, result, SCM_OBJ(SCM_CURRENT_MODULE()));
-#endif
     } else {
-#ifdef GAUCHE_VMAPI_VM
-        GAUCHE_CC_VM_DECL;
-        Scm_VMPushCC(vm, repl_eval_cc, data, 4);
-        return Scm_VMEval(vm, result, SCM_FALSE);
-#else
         Scm_VMPushCC(repl_eval_cc, data, 4);
         return Scm_VMEval(result, SCM_FALSE);
-#endif
     }
 }
 
-static ScmObj repl_prompt_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
+static ScmObj repl_prompt_cc(ScmObj result, void **data)
 {
     ScmObj *closure = (ScmObj*)data;
     ScmObj reader = closure[0];
 
     if (SCM_PROCEDUREP(reader)) {
-#ifdef GAUCHE_VMAPI_VM
-        GAUCHE_CC_VM_DECL;
-        Scm_VMPushCC(vm, repl_read_cc, data, 4);
-        return Scm_VMApply0(vm, reader);
-#else
         Scm_VMPushCC(repl_read_cc, data, 4);
         return Scm_VMApply0(reader);
-#endif
     } else {
         ScmObj exp = Scm_Read(SCM_OBJ(SCM_CURIN));
-#ifdef GAUCHE_CC_VM
-        return repl_read_cc(Scm_VM(), exp, data);
-#else
         return repl_read_cc(exp, data);
-#endif
     }
 }
 
-static ScmObj repl_main(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
+static ScmObj repl_main(ScmObj *args, int nargs, void *data)
 {
     ScmObj *closure = (ScmObj*)data;
     ScmObj prompter = closure[3];
-    GAUCHE_SUBR_VM_DECL;
     
     if (SCM_PROCEDUREP(prompter)) {
-#ifdef GAUCHE_VMAPI_VM
-        Scm_VMPushCC(vm, repl_prompt_cc, data, 4);
-        return Scm_VMApply0(vm, prompter);
-#else
         Scm_VMPushCC(repl_prompt_cc, data, 4);
         return Scm_VMApply0(prompter);
-#endif
     } else {
         Scm_Write(SCM_MAKE_STR("gosh> "),
                   SCM_OBJ(SCM_CUROUT), SCM_WRITE_DISPLAY);
         Scm_Flush(SCM_CUROUT);
-#ifdef GAUCHE_CC_VM
-        return repl_prompt_cc(vm, SCM_UNDEFINED, (void**)data);
-#else
         return repl_prompt_cc(SCM_UNDEFINED, (void**)data);
-#endif
     }
 }
 
-static ScmObj repl_error_handle(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
+static ScmObj repl_error_handle(ScmObj *args, int nargs, void *data)
 {
     SCM_ASSERT(nargs == 1);
     Scm_ReportError(args[0]);
     return SCM_TRUE;
 }
 
-static ScmObj repl_loop_cc(GAUCHE_CC_VM_ARG ScmObj result, void **data)
+static ScmObj repl_loop_cc(ScmObj result, void **data)
 {
     if (SCM_TRUEP(result)) {
         ScmObj *closure = (ScmObj*)data;
-#ifdef GAUCHE_VMAPI_VM
-        GAUCHE_CC_VM_DECL;
-        return Scm_VMRepl(vm, closure[0], closure[1], closure[2], closure[3]);
-#else
         return Scm_VMRepl(closure[0], closure[1], closure[2], closure[3]);
-#endif
     } else {
         return SCM_FALSE;
     }
 }
 
-ScmObj Scm_VMRepl(GAUCHE_VMAPI_VM_ARG
-                  ScmObj reader, ScmObj evaluator,
+ScmObj Scm_VMRepl(ScmObj reader, ScmObj evaluator,
                   ScmObj printer, ScmObj prompter)
 {
     ScmObj ehandler, reploop;
@@ -235,28 +172,18 @@ ScmObj Scm_VMRepl(GAUCHE_VMAPI_VM_ARG
     packet[3] = prompter;
     ehandler = Scm_MakeSubr(repl_error_handle, packet, 1, 0, SCM_FALSE);
     reploop = Scm_MakeSubr(repl_main, packet, 0, 0, SCM_FALSE);
-#ifdef GAUCHE_VMAPI_VM
-    Scm_VMPushCC(vm, repl_loop_cc, (void**)packet, 4);
-    return Scm_VMWithErrorHandler(vm, ehandler, reploop);
-#else
     Scm_VMPushCC(repl_loop_cc, (void**)packet, 4);
     return Scm_VMWithErrorHandler(ehandler, reploop);
-#endif
 }
 
-static ScmObj repl_proc(GAUCHE_SUBR_VM_ARG ScmObj *args, int nargs, void *data)
+static ScmObj repl_proc(ScmObj *args, int nargs, void *data)
 {
     int argc = Scm_Length(args[0]);
     ScmObj reader =    (argc >= 1? SCM_CAR(args[0]) : SCM_FALSE);
     ScmObj evaluator = (argc >= 2? SCM_CADR(args[0]) : SCM_FALSE);
     ScmObj printer =   (argc >= 3? SCM_CAR(SCM_CDDR(args[0])) : SCM_FALSE);
     ScmObj prompter =  (argc >= 4? SCM_CADR(SCM_CDDR(args[0])) : SCM_FALSE);
-#ifdef GAUCHE_VMAPI_VM
-    GAUCHE_SUBR_VM_DECL;
-    return Scm_VMRepl(vm, reader, evaluator, printer, prompter);
-#else
     return Scm_VMRepl(reader, evaluator, printer, prompter);
-#endif
 }
 
 static SCM_DEFINE_STRING_CONST(repl_NAME, "read-eval-print-loop", 20, 20);
