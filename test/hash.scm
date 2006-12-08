@@ -2,7 +2,7 @@
 ;; Test hash table
 ;;
 
-;; $Id: hash.scm,v 1.9 2005-08-13 06:51:53 shirok Exp $
+;; $Id: hash.scm,v 1.10 2006-12-08 23:06:09 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -116,6 +116,7 @@
          (hash-table-put! h-eqv 2.0 #\c)
          (hash-table-get  h-eqv 2.0)))
 
+
 (test* "87592876592374659237845692374523694756 => 0" 0
        (begin
          (hash-table-put! h-eqv 87592876592374659237845692374523694756 0)
@@ -126,14 +127,24 @@
          (hash-table-put! h-eqv 87592876592374659237845692374523694756 -1)
          (hash-table-get  h-eqv 87592876592374659237845692374523694756)))
 
-(test* "eqv? test" 6
+(test* "377/120 => pi" 'pi
+       (begin
+         (hash-table-put! h-eqv 377/120 'pi)
+         (hash-table-get  h-eqv 377/120)))
+
+(test* "377/120 => PI" 'PI
+       (begin
+         (hash-table-put! h-eqv 377/120 'PI)
+         (hash-table-get  h-eqv 377/120)))
+
+(test* "eqv? test" 7
        (begin
          (hash-table-put! h-eqv (string #\d) 4)
          (hash-table-put! h-eqv (string #\d) 5)
          (length (hash-table-keys h-eqv))))
 
 (test* "hash-table-values(2)" #t
-       (lset= equal? (hash-table-values h-eqv) '(8 "b" #\c -1 4 5)))
+       (lset= equal? (hash-table-values h-eqv) '(8 "b" #\c -1 4 5 PI)))
 
 (test* "delete!" #f
        (begin

@@ -1,3 +1,7 @@
+2006-12-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c (Scm_EqvHash): didn't considered RATNUMs.
+
 2006-12-06  Shiro Kawai  <shiro@acm.org>
 
 	* vm.c: removed obsoleted experimental code (SMALL_REGS switch and 

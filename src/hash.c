@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.45 2006-11-04 09:56:59 shirok Exp $
+ *  $Id: hash.c,v 1.46 2006-12-08 23:06:09 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -138,6 +138,12 @@ unsigned long Scm_EqvHash(ScmObj obj)
         } else if (SCM_FLONUMP(obj)) {
             /* TODO: I'm not sure this is a good hash. */
             hashval = (unsigned long)(SCM_FLONUM_VALUE(obj)*2654435761UL);
+        } else if (SCM_RATNUMP(obj)) {
+            /* Ratnum must be normalized, so we can simply combine
+               hashvals of numerator and denominator. */
+            unsigned long h1 = Scm_EqvHash(SCM_RATNUM_NUMER(obj));
+            unsigned long h2 = Scm_EqvHash(SCM_RATNUM_DENOM(obj));
+            hashval = COMBINE(h1, h2);
         } else {
             /* TODO: I'm not sure this is a good hash. */
             hashval = (unsigned long)((SCM_COMPNUM_REAL(obj)+SCM_COMPNUM_IMAG(obj))*2654435761UL);
