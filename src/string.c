@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: string.c,v 1.82 2006-12-01 04:44:37 shirok Exp $
+ *  $Id: string.c,v 1.83 2006-12-09 10:04:19 shirok Exp $
  */
 
 #include <stdio.h>
@@ -652,7 +652,7 @@ ScmObj Scm_StringAppend(ScmObj strs)
        and save it.  */
     numstrs = Scm_Length(strs);
     if (numstrs < 0) Scm_Error("improper list not allowed: %S", strs);
-    if (numstrs >= BODY_ARRAY_SIZE) {
+    if (numstrs > BODY_ARRAY_SIZE) {
         bodies = SCM_NEW_ARRAY(const ScmStringBody*, numstrs);
     } else {
         bodies = bodies_s;
@@ -705,7 +705,7 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer)
         return SCM_MAKE_STR("");
     }
 
-    if (nstrs >= BODY_ARRAY_SIZE) {
+    if (nstrs > BODY_ARRAY_SIZE) {
         bodies = SCM_NEW_ARRAY(const ScmStringBody *, nstrs);
     } else {
         bodies = bodies_s;
