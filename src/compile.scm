@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.48 2006-12-01 11:04:00 shirok Exp $
+;;;  $Id: compile.scm,v 1.49 2006-12-09 23:58:59 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -2547,6 +2547,9 @@
                iform)
               ((and (has-tag? initval $LREF)
                     (zero? (lvar-set-count ($lref-lvar initval))))
+               (when (eq? iform initval)
+                 (error "circular reference appeared in letrec: "
+                        (lvar-name lvar)))
                (lvar-ref--! lvar)
                (lvar-ref++! ($lref-lvar initval))
                ($lref-lvar-set! iform ($lref-lvar initval))
