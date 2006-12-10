@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.261 2006-12-07 04:58:48 shirok Exp $
+ *  $Id: vm.c,v 1.262 2006-12-10 00:46:46 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1795,12 +1795,7 @@ static void run_loop()
                 cp = VAL0;     /* now cp has arg list */
                 POP_ARG(VAL0); /* get proc */
 
-                if (SCM_VM_INSN_CODE(code) == SCM_VM_APPLY) {
-                    CHECK_STACK(CONT_FRAME_SIZE);
-                    PUSH_CONT(PC);
-                }
-                PC = PC_TO_RETURN;
-
+                TAIL_CALL_INSTRUCTION();
                 VAL0 = Scm_VMApply(VAL0, cp);
                 NEXT1;
             }
