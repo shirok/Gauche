@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.36 2006-11-18 01:09:48 shirok Exp $
+;;;  $Id: dbi.scm,v 1.37 2006-12-22 05:36:09 shirok Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -336,6 +336,6 @@
 (define-method dbi-make-query ((c <dbi-connection>) . _)
   (make <dbi-query> :connection c))
 (define-method dbi-execute-query ((q <dbi-query>) (s <string>))
-  (dbi-do (ref q 'connection) s '() :pass-through #t))
+  (dbi-do (ref q 'connection) s '(:pass-through #t)))
 
 (provide "dbi")

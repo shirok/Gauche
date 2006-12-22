@@ -1,3 +1,9 @@
+2006-12-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/dbi.scm (dbi-execute-query): fixed a wrong way of passing
+	  :pass-through arg to dbi-do.  This bug only surfaced if the
+	  app was using compatibility APIs.
+
 2006-12-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (run_loop): fix tail-recursive APPLY.
