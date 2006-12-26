@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: process.scm,v 1.20 2006-03-25 15:16:52 shirok Exp $
+;;;  $Id: process.scm,v 1.21 2006-12-26 22:02:16 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -169,17 +169,14 @@
   (if fork
     (let1 pid (sys-fork-and-exec (car argv) argv
                                  :iomap iomap :sigmask (%ensure-mask sigmask))
-      (slot-set! proc 'processes
-                 (cons proc (slot-ref proc 'processes)))
-      (slot-set! proc 'pid pid)
-      (map (lambda (p)
-             (if (input-port? p)
-               (close-input-port p)
-               (close-output-port p)))
-           toclose)
+      (push! (ref proc 'processes) proc)
+      (set!  (ref proc 'pid) pid)
+      (dolist (p toclose)
+        (if (input-port? p) (close-input-port p) (close-output-port p)))
       (when wait
-        (slot-set! proc 'status
-                   (receive (p code) (sys-waitpid pid) code)))
+        ;; the following expr waits until the child exits
+        (set! (ref proc 'status) (values-ref (sys-waitpid pid) 1))
+        (update! (ref proc 'processes) (cut delete proc <>)))
       proc)
     (sys-exec (car argv) argv :iomap iomap :sigmask (%ensure-mask sigmask))))
 

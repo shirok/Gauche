@@ -1,3 +1,9 @@
+2006-12-26  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/process.scm (%run-process): Fixed a leak bug that didn't
+	  delete a process from the active process list if :wait #t is
+	  given.  Thanks for Tomas Stanek to point this out.
+
 2006-12-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/dbi.scm (dbi-execute-query): fixed a wrong way of passing
