@@ -1038,8 +1038,8 @@ If @var{count} is negative, @code{ash} shifts @var{n} right with
 Returns bitwise and, bitwise inclusive or and bitwise exclusive or
 of two or more integers @var{n1}, @var{n2} @dots{}.
 @c JP
-2つ以上の整数@var{n1}, @var{n2} @dots{}の、それぞれ論理和、論理積、
-排他的論理積を返します。
+2つ以上の整数@var{n1}, @var{n2} @dots{}の、それぞれビット論理積、
+ビット論理和、ビット排他的論理積を返します。
 @c COMMON
 @end defun
 
