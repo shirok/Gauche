@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.135 2006-11-28 09:36:20 shirok Exp $
+ *  $Id: number.c,v 1.136 2007-01-03 13:13:47 shirok Exp $
  */
 
 #include <math.h>
@@ -1435,7 +1435,7 @@ ScmObj Scm_Mul(ScmObj arg0, ScmObj arg1)
             return Scm_RatnumMul(arg0, arg1);
         }
         if (SCM_FLONUMP(arg1)) {
-            if (SCM_FLONUM_VALUE(arg1) == 0.0) return arg1;
+            if (SCM_FLONUM_VALUE(arg1) == 1.0) return arg1;
             return Scm_MakeFlonum(Scm_GetDouble(arg0)
                                   * SCM_FLONUM_VALUE(arg1));
         }
@@ -1460,7 +1460,7 @@ ScmObj Scm_Mul(ScmObj arg0, ScmObj arg1)
                                   * Scm_GetDouble(arg1));
         }
         if (SCM_FLONUMP(arg1)) {
-            if (SCM_FLONUM_VALUE(arg1) == 0.0) return arg0;
+            if (SCM_FLONUM_VALUE(arg1) == 1.0) return arg0;
             return Scm_MakeFlonum(SCM_FLONUM_VALUE(arg0)
                                   * SCM_FLONUM_VALUE(arg1));
         }
@@ -1487,7 +1487,7 @@ ScmObj Scm_Mul(ScmObj arg0, ScmObj arg1)
                                    * Scm_GetDouble(arg1));
         }
         if (SCM_FLONUMP(arg1)) {
-            if (SCM_FLONUM_VALUE(arg1) == 0.0) return arg0;
+            if (SCM_FLONUM_VALUE(arg1) == 1.0) return arg0;
             return Scm_MakeComplex(SCM_COMPNUM_REAL(arg0)
                                    * SCM_FLONUM_VALUE(arg1),
                                    SCM_COMPNUM_IMAG(arg0)

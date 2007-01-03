@@ -1,3 +1,8 @@
+2007-01-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_Mul): fixed a silly bug in the short cut paths,
+	  which resulted (* +i 0.0) => +i etc.
+
 2006-12-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/process.scm (%run-process): Fixed a leak bug that didn't
