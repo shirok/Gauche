@@ -55,15 +55,13 @@ C routine) have limited extent (@xref{Continuation}, for details).
 @c COMMON
 @item
 @c EN
-Numeric tower of integer, real, and complex numbers are supported,
-but rational numbers are not.  The reader can read rational numbers
-but converts them to inexact real numbers.
+Full numeric tower (integer, rational, real and complex numbers) are supported,
+but ratinals are only exact, and complex numbers are always inexact.
 The reader can recognize '@code{#}' as insignificant digits.
 @c JP
-Numeric towerは整数、実数、複素数をサポートしていますが、
-有理数はサポートしていません。リーダは有理数の構文を認識しますが、
-読む込むと不正確な実数になります。数字のフォーマットのうち、
-リーダは、精度に影響を与えない桁を'@code{#}'で表す表記を認識します。
+完全なNumeric tower(整数、有理数、実数、複素数)がサポートされますが、
+有理数は正確な表現のみで、また複素数は不正確な表現のみを持ちます。
+リーダは、精度に影響を与えない桁を'@code{#}'で表す数字表記を認識します。
 @c COMMON
 @item
 @c EN
