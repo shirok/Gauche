@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.88 2006-11-11 20:45:17 shirok Exp $
+dnl $Id: configure.ac,v 1.89 2007-01-07 01:54:41 shirok Exp $
 AC_PREREQ(2.54)
-AC_INIT(Gauche, 0.8.8, shiro@acm.org)
-AC_REVISION($Revision: 1.88 $)
+AC_INIT(Gauche, 0.8.9_pre1, shiro@acm.org)
+AC_REVISION($Revision: 1.89 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -29,20 +29,8 @@ or 'none' (No multibyte support)]),
      *) echo "unrecognized encoding option: '$enable_multibyte'; type ./configure --help for available options"
         exit 1;;
    esac
-  ], 
+  ],
   [
-    cat <<EOM
-*********************************************************************
-WARNING: You didn't give --enable-multibyte option to the ./configure
-script.  As of version 0.8.6, Gauche switched the default character
-encoding from euc-jp to utf-8.  If you've compiled previous versions
-of Gauche without specifying --enable-multibyte option and want to keep
-the same character encoding, quit ./configure now and run it again with
---enable-multibyte=euc-jp option.   If this is the first time you
-compile Gauche and you want utf-8, just hit return.
-*********************************************************************
-EOM
-    read < /dev/tty
     GAUCHE_CHAR_ENCODING=utf8
     ac_configure_args="$ac_configure_args '--enable-multibyte=utf-8'"
   ])
