@@ -11835,6 +11835,22 @@ or @code{#f} if the port is not connected to a terminal.
 @c COMMON
 @end defun
 
+@defun sys-truncate path length
+@defunx sys-ftruncate port-or-fd length
+[POSIX]
+@c EN
+Truncates a regular file named by @var{path} or referenced by @var{port-or-fd}
+to a size of @var{length} bytes.
+If the file is larger than @var{length} bytes, the extra data is discarded.
+If the file is smaller than that, zero is padded.
+@c JP
+@var{path}あるいは@var{port-or-fd}によって指定される通常ファイルの長さを
+@var{length}にします。
+ファイルが@var{length}より長かった場合、余分なデータは捨てられます。
+ファイルが@var{length}より短かった場合、残りの部分にはゼロが詰められます。
+@c COMMON
+@end defun
+
 @node Unix groups and users, Locale, Filesystems, System interface
 @subsection Unix groups and users
 @c NODE Unixのグループとユーザ
@@ -13618,19 +13634,30 @@ wait.
 @c COMMON
 
 @c EN
-@var{pid} is an exact integer specifying which child(ren) it's waiting.
+@var{pid} is an exact integer specifying which child(ren) to be waited.
 If it is a positive integer,
 it waits fot that specific child.  If it is zero, it waits for any
 member of this process group.  If it is -1, it waits for any child process.
 If it is less than -1, it waits for any child process whose process group
 id is equal to the absolute value of @var{pid}.
 @c JP
-@var{pid}は、待っている子プロセスを指定する正確整数です。正の整数ならば、
-特定の子プロセスを待っています。0ならば、このプロセスグループのいずれかの
-メンバを待っています。-1ならば、いずれかの子プロセスを待っています。
+@var{pid}は、待つべき子プロセスを指定する正確な整数です。正の整数ならば、
+特定の子プロセスを待ちます。0ならば、このプロセスグループのいずれかの
+メンバを待ちます。-1ならば、いずれかの子プロセスを待ちます。
 -1よりも小さければ、プロセスグループIDが@var{pid}の絶対値と等しいいずれかの
-子プロセスを待っています。
+子プロセスを待ちます。
 @c COMMON
+
+@c EN
+If there's no child process to wait, or a specific @var{pid} is
+given but it's not a child process of the current process,
+an error (@code{<system-error>}, @code{ECHILD}) is signalled.
+@c JP
+待つべき子プロセスが存在しない場合や、@var{pid}に具体的なプロセスIDが
+与えられたがそれが現在のプロセスの子プロセスで内場合は
+エラー(@code{<system-error>}, @code{ECHILD})となります。
+@c COMMON
+
 
 @c EN
 The calling process suspends until one of those child process is terminated,
