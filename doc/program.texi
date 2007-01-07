@@ -923,18 +923,29 @@ every call to I/O primitives of Gauche locks the port.
 This overhead may be visible if the application does a lot of I/O
 with smaller units (e.g. every bytes).   The primitives that deals
 with larger unit, such as @code{read} and @code{read-block}, are less
-problematic, since they just lock the port once per call and do
+problematic, since usually they just lock the port once per call and do
 all the low-level I/O without the lock overhead.
+(Note: this doesn't mean those primitives @emph{guarantee}
+to lock the port throughout the execution of the function;
+furthermore, the port locking feature is optimized for the case
+that port access rarely collides.  If you know it is possible that
+more than one threads read from or write to the same port, it is
+your responsibility to use mutex explicitly to avoid the collision.)
 @c JP
 @strong{Ports}: SRFI-18 (スレッド) の仕様を満たすために
 Gauche のすべての入出力基本関数はポートをロックします。
 このオーバーヘッドは小単位(例えばバイト毎)の入出力を行なう
 アプリケーションでは無視できないでしょう。
-入出力基本関数は呼びだし毎にポートをロックし、そこからの
+入出力基本関数は通常呼びだし毎にポートをロックし、そこからの
 下位レベルの入出力はロックのオーバーヘッドの影響を受けずに
 行なわれます。ですから @code{read} や@code{raed-block} 
 などのより大きな単位で入出力を行なう基本関数では問題と
 なることが少なくなります。
+(注意：これらの基本関数が常にポートをロックしつづけることを
+保証するものではないことに注意してください。また、ポートのロックは
+競合がほとんど発生しない場合に最適化されています。
+ポートへのアクセスが複数のスレッドで競合する可能性がある場合は、
+アプリケーション側でmutexを明示的に用いて競合を避けてください。)
 @c COMMON
 
 @c EN

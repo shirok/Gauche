@@ -8078,20 +8078,25 @@ GaucheがスレッドサポートをONにしてコンパイルされている場合、
 @c COMMON
 
 @c EN
-This means usually you don't need to worry about accessing the
-ports under multithreaded environment, but also it costs some
-overhead for each port access.  The overhead may be a problem
-if your program is I/O intensive and does a lot of fine-grained
-port access (character-wise or byte-wise).
-If that is the case, you can explicitly lock the port during
-the processing by the following procedure:
+This means you don't need to be too paranoia to worry about
+ports under multithreaded environment.  However, keep it in
+mind that this locking mechanism is meant to be a safety net
+from breaking the port's internal state, and not to be
+a general mutex mechanism.  It assumes port accesses rarely
+conflict, and uses spin lock to reduce the overhead of majority
+cases.  If you know there will be more than one thread accessing
+the same port, you should use explicit mutex to avoid conflicts.
 @c JP
-このことはつまり、マルチスレッド環境でポートへのアクセス競合にそれほど
-気を使わなくても良いということですが、同時にポートアクセスの度に
-いくぶんかのオーバヘッドがあることを意味します。I/Oを多く行うプログラムで、
-しかもその粒度が細かい場合(文字ごととかバイトごととか)、このオーバヘッドが
-問題になるかもしれません。
-その場合、次の手続きを使って処理中にポートを明示的にロックすることができます。
+従って、マルチスレッド環境でポートへのアクセス競合により
+ポートの内部状態を壊してしまうんじゃないか、などとあまり神経質に
+なる必要はありません。但し、このロック機構はあくまで予想外の
+アクセス競合によってポートがおかしな状態になってしまうことを
+防ぐための安全ネットであって、一般的な排他制御機構として使われる
+ことは想定していないのに注意して下さい。このロックの実装は、
+ポートへのアクセス競合は例外的な場合のみであると仮定し、
+通常のアクセスにおけるオーバヘッドを避けるために、スピンロックを
+使用します。もし、意図的にポートアクセスが競合するようなコードを書く場合は、
+明示的に排他制御をしてください。
 @c COMMON
 
 @defun with-port-locking port thunk
@@ -8110,6 +8115,11 @@ captured within @var{thunk} is invoked afterwards, the lock is re-acquired.
 
 @code{With-port-locking} may be nested.  The lock is valid during
 the outermost call of @code{with-port-locking}.
+
+Note that this procedure uses the port's built-in lock mechanism
+which uses busy wait when port access conflicts.  It should be
+used only for avoiding fine-grain lock overhead; use explicit
+mutex if you know there will be conflicts.
 @c JP
 @var{port}をロックし、@var{thunk}を実行します。
 ロックは@var{thunk}のダイナミックエクステントの期間有効です。
@@ -8124,6 +8134,11 @@ the outermost call of @code{with-port-locking}.
 
 @code{with-port-locking}はネスト可能です。ロックは最も外側の
 @code{with-port-locking}の期間中有効となります。
+
+この手続きはポート組込みのロック機構を利用します。つまり、ポートアクセスが
+競合した場合はbusy waitになるということです。この手続きはあくまで
+頻繁なロックによるオーバヘッドを回避するためのものです。
+もし本当に競合が予測される場合は明示的に排他制御を行ってください。
 @c COMMON
 @end defun
 
