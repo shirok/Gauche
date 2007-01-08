@@ -1,5 +1,5 @@
 #
-# $Id: template.Makefile.in,v 1.5 2005-11-11 23:45:21 shirok Exp $
+# $Id: template.Makefile.in,v 1.6 2007-01-08 10:19:33 shirok Exp $
 #
 
 # General info
@@ -9,6 +9,7 @@ exec_prefix = @exec_prefix@
 bindir      = @bindir@
 libdir      = @libdir@
 datadir     = @datadir@
+datarootdir = @datarootdir@
 srcdir      = @srcdir@
 VPATH       = $(srcdir)
 

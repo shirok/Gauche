@@ -1,5 +1,5 @@
 # Top Makefle for Gauche
-# $Id: Makefile.in,v 1.55 2005-10-28 11:03:14 shirok Exp $
+# $Id: Makefile.in,v 1.56 2007-01-08 10:19:33 shirok Exp $
 #  Run 'configure' script to generate Makefile
 
 .PHONY: all test check pre-package install uninstall \
@@ -13,6 +13,7 @@ bindir      = @bindir@
 libdir      = @libdir@
 srcdir      = @srcdir@
 datadir     = @datadir@
+datarootdir = @datarootdir@
 
 SUBDIRS = gc src lib ext doc
 SRIDBUS = doc ext lib src gc

@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/lib
-#  $Id: Makefile.in,v 1.141 2006-10-21 23:26:22 shirok Exp $
+#  $Id: Makefile.in,v 1.142 2007-01-08 10:19:34 shirok Exp $
 
 .PHONY: all check install uninstall slibcat slibcat-in-place \
 	clean distclean maintainer-clean
@@ -15,8 +15,10 @@ srcdir      = @srcdir@
 VPATH       = $(srcdir)
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
+datadir     = @datadir@
+datarootdir = @datarootdir@
 
-GAUCHE_DATA_DIR = @datadir@/gauche
+GAUCHE_DATA_DIR = $(datadir)/gauche
 SCM_INSTALL_DIR = $(GAUCHE_DATA_DIR)/@GAUCHE_VERSION@/lib
 INSTALL         = @INSTALL@
 MKINSTDIR       = $(top_srcdir)/mkinstalldirs

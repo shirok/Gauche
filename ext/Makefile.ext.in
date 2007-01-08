@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions  -*-mode: Makefile-*-
-## $Id: Makefile.ext.in,v 1.25 2005-10-30 14:04:01 shirok Exp $
+## $Id: Makefile.ext.in,v 1.26 2007-01-08 10:19:33 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -8,6 +8,7 @@ exec_prefix = @exec_prefix@
 bindir      = @bindir@
 libdir      = @libdir@
 datadir     = @datadir@
+datarootdir = @datarootdir@
 VPATH       = $(srcdir)
 GAUCHE_VERSION = @GAUCHE_VERSION@
 HOST        = @host@

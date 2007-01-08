@@ -10,6 +10,7 @@ exec_prefix = @exec_prefix@
 bindir      = @bindir@
 libdir      = @libdir@
 datadir     = @datadir@
+datarootdir = @datarootdir@
 srcdir      = @srcdir@
 VPATH       = $(srcdir)
 top_builddir = @top_builddir@

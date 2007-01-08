@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.159 2006-11-13 02:31:22 shirok Exp $
+#  $Id: Makefile.in,v 1.160 2007-01-08 10:19:34 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -32,6 +32,8 @@ exec_prefix = @exec_prefix@
 bindir      = @bindir@
 libdir      = @libdir@
 srcdir      = @srcdir@
+datadir     = @datadir@
+datarootdir = @datarootdir@
 VPATH       = $(srcdir)
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
@@ -80,9 +82,9 @@ HOSTGOSH  = gosh -l./preload -I$(top_srcdir)/src -I$(top_srcdir)/lib
 
 LIB_INSTALL_DIR  = @libdir@
 BIN_INSTALL_DIR  = @bindir@
-DATA_INSTALL_DIR = @datadir@
+DATA_INSTALL_DIR = $(datadir)
 
-GAUCHE_DATA_DIR = @datadir@/gauche
+GAUCHE_DATA_DIR = $(datadir)/gauche
 GAUCHE_ARCH_DIR = @libdir@/gauche
 
 HEADER_INSTALL_DIR    = $(GAUCHE_ARCH_DIR)/@GAUCHE_VERSION@/include

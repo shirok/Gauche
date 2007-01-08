@@ -1,3 +1,11 @@
+2007-01-08  Shiro Kawai  <shiro@acm.org>
+
+	* Makefile.in, src/Makefile.in, ...: added datarootdir = @datarootdir@
+	  definition for autoconf 2.60 and after.  It works for both pre-2.60
+	  and 2.60; pre-2.60 leaves @datarootdir@ as is, but no other place
+	  refers $(datarootdir) so it is ok; for 2.60, @datadir@ is replaced
+	  for reference of $(datarootdir), so it also works.
+
 2007-01-07  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/listener.scm (listener-read-handler): fixed a bug
