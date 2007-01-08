@@ -12025,6 +12025,25 @@ expression:
 @example
 (lambda (expr) (match expr @var{clause} @dots{}))
 @end example
+
+@c EN
+Example:
+@c JP
+例:
+@c COMMON
+
+@example
+(map (match-lambda
+       ((item price-per-lb (quantity 'lbs))
+        (cons item (* price-per-lb quantity)))
+       ((item price-per-lb (quantity 'kg))
+        (cons item (* price-per-lb quantity 2.204))))
+     '((apple      1.23 (1.1 lbs))
+       (orange     0.68 (1.4 lbs))
+       (cantaloupe 0.53 (2.1 kg))))
+ @result{} ((apple . 1.353) (orange . 0.952)
+            (cantaloupe . 2.4530520000000005))
+@end example
 @end defmac
 
 @defmac match-lambda* clause @dots{}
@@ -12092,6 +12111,13 @@ Syntactically, @code{match-let1} is very close to the Common Lisp's
 構文としては @code{match-let1} は Common Lisp の @code{destructuring-bind}
 に非常によく似ています。
 @c COMMON
+
+@example
+(match-let1 ('let ((var val) ...) body ...)
+            '(let ((a b) (c d)) foo bar baz)
+  (list var val body))
+ @result{} ((a c) (b d) (foo bar baz))
+@end example
 @end defmac
 
 @defmac match-define pat expr
@@ -12100,6 +12126,14 @@ Like toplevel @code{define}, but allows a pattern instead of variables.
 @c JP
 トップレベルの @code{define} と同様ですが、変数の代りにパターンが許されます。
 @c COMMON
+
+@example
+(match-define (x . xs) (list 1 2 3))
+
+x  @result{} 1
+xs @result{} (2 3)
+@end example
+
 @end defmac
 
 @c EN
