@@ -630,25 +630,45 @@
                     sig)))))))
 
 (let ()
-  (define (test-double-signal mask)
+  (define (test-double-signal signals mask fire-sig)
     (let ((flag #f)
           (count 0))
       (let/cc break
         (set-signal-handler!
-         SIGHUP
+         signals
          (lambda (n)
            (unless flag
              (inc! count)
              (when (> count 1) (break 'boo)) ;; avoid infinite reentrance
-             (sys-kill (sys-getpid) SIGHUP)
+             (sys-kill (sys-getpid) fire-sig)
              (set! flag #t)))
          mask)
         (sys-kill (sys-getpid) SIGHUP)
         flag)))
 
-  (test* "sigmask during interrupt handler" '(#t boo)
-         (list (test-double-signal (sys-sigset SIGHUP))
-               (test-double-signal #f))))
+  (test* "sigmask during interrupt handler (default)" #t
+         (test-double-signal SIGHUP #f SIGHUP))
+
+  (test* "sigmask during interrupt handler (explicit)" #t
+         (test-double-signal SIGHUP (sys-sigset SIGHUP) SIGHUP))
+
+  (test* "sigmask during interrupt handler (multi/default)" #t
+         (test-double-signal (sys-sigset SIGHUP SIGINT)
+                             #f SIGINT))
+
+  (test* "sigmask during interrupt handler (multi/explicit)" #t
+         (test-double-signal (sys-sigset SIGHUP SIGINT)
+                             (sys-sigset SIGINT) SIGINT))
+
+  (test* "sigmask during interrupt handler (reentrance)" 'boo
+         (test-double-signal SIGHUP (sys-sigset) SIGHUP))
+
+  (test* "sigmask during interrupt handler (multi/reentrance)" 'boo
+         (test-double-signal (sys-sigset SIGHUP SIGINT)
+                             (sys-sigset) SIGHUP))
+
+  (set-signal-handler! SIGINT #f)
+  )
 
 ) ;; unless *win32*
 

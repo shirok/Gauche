@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.44 2007-01-08 09:42:48 shirok Exp $
+ *  $Id: signal.c,v 1.45 2007-01-08 10:53:42 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -530,6 +530,12 @@ ScmObj Scm_SetSignalHandler(ScmObj sigs, ScmObj handler, ScmSysSigset *mask)
         sigset = SCM_SYS_SIGSET(sigs)->set;
     } else {
         Scm_Error("bad signal number: must be an integer signal number or a <sys-sigset> object, but got %S", sigs);
+    }
+
+    if (mask == NULL) {
+        /* If no mask is specified, block singals in SIGS. */
+        mask = make_sigset();
+        mask->set = sigset;
     }
     
     (void)SCM_INTERNAL_MUTEX_LOCK(sigHandlers.mutex);

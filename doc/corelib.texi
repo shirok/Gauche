@@ -12497,10 +12497,13 @@ If @var{handler} is a procedure, it will be called when the process
 receives one of specified signal(s), with the received signal
 number as an argument.
 
-If a @code{<sys-sigset>} object is given to @var{sigmask}, the signals
-in it are blocked (in addition to the signal mask in effect) during
-execution of @var{handler}.  It is useful, for example, to prevent
-@var{handler} from being reentered by a signal.  Note that the signal mask
+By default, the signals in @var{signals} are blocked
+(in addition to the signal mask in effect at that time) during
+@var{handler} is executed, so that @var{handler} won't be
+reentered by the same signal(s).  You can provide 
+a @code{<sys-sigset>} object to the @var{sigmask} arg
+to specify the signals to be blocked explicitly.
+Note that the signal mask
 is per-thread; if more than one thread unblocks a signal, the handler
 may still be invoked during execution of the handler (in other thread)
 even if you specify @var{sigmask}.  You have to set the threads'
@@ -12517,10 +12520,11 @@ once you return from @var{handler}).
 @var{handler}が手続きの場合、プロセスが指定されたシグナル(のうちのいずれか)を
 受けた時に、そのシグナル番号を引数として@var{handler}が呼ばれます。
 
-@code{<sys-sigset>}オブジェクトが@var{sigmask}に与えられた場合、
-その中のシグナルが(その時点で有効なシグナルマスクに加えて)ブロックされた
-状態で@var{handler}が実行されます。これは、例えば@var{handler}実行中に
-シグナルによって@var{handler}に再入するのを防ぐような場合に便利です。
+デフォルトでは、@var{handler}は、@var{signals}に含まれる
+シグナルが(その時点で有効なシグナルマスクに加えて)ブロックされた状態で
+実行されます。オプショナルな@var{sigmask}引数に
+@code{<sys-sigset>}オブジェクトを渡すことで、
+ブロックすべきシグナルを明示することもできます。
 ただ、シグナルマスクはスレッド毎であることに注意して下さい。
 もし複数のスレッドがあるシグナルをブロックしていない場合、例え@var{sigmask}
 を指定していたとしても、ひとつのスレッドで@var{handler}を実行中に

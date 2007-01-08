@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: scmlib.scm,v 1.8 2007-01-08 09:42:48 shirok Exp $
+;;;  $Id: scmlib.scm,v 1.9 2007-01-08 10:53:42 shirok Exp $
 ;;;
 
 ;; This file contains builtin library functions that are easier to be
@@ -226,7 +226,9 @@
 ;;; signal utility
 ;;;
 (define (sys-sigset . signals)
-  (apply sys-sigset-add! (make <sys-sigset>) signals))
+  (if (null? signals)
+    (make <sys-sigset>)
+    (apply sys-sigset-add! (make <sys-sigset>) signals)))
 
 ;;;=======================================================
 ;;; srfi-17
