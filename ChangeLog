@@ -1,5 +1,11 @@
 2007-01-07  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/listener.scm (listener-read-handler): fixed a bug
+	  that exits the listener when an error is signaleld during
+	  evaluation.  This fix is temporary; more complete fix is required.
+
+	* src/mingw-exify : Adapted to Scm_Apply API change.
+
 	* src/signal.c (Scm_SetSignalHandler, Scm_SigCheck): Added "mask"
 	  argument to Scm_SetSignalHandler so that one can ensure a signal
 	  handler is executed while certain signals are blocked.
