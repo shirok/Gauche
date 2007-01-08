@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.h,v 1.19 2006-12-07 04:58:49 shirok Exp $
+ *  $Id: port.h,v 1.20 2007-01-08 11:45:47 shirok Exp $
  */
 
 #ifndef GAUCHE_PORT_H
@@ -376,7 +376,7 @@ SCM_EXTERN ScmObj Scm_MakeCodingAwarePort(ScmPort *iport);
  *  The following macros are designed carefully so that it minimizes
  *  the call to the system-level lock primitives, under the assumption
  *  that port access never conflicts in the performance critical code.
- *  (It doesn't make much sense for multiple threads to writeto the
+ *  (It doesn't make much sense for multiple threads to write to the
  *  same port, since the outputs are mixed in unpredictable way---except
  *  a casual debug print to stderr, but I don't believe performance     
  *  critical part does that.)
@@ -433,7 +433,7 @@ SCM_EXTERN ScmObj Scm_MakeCodingAwarePort(ScmPort *iport);
 /* Should be used while P is locked by calling thread.
    Evaluate C statement CALL, making sure the port is unlocked in case
    CALL raises an error.
-   TODO: we may be ablet to utilize SCM_PORT_PRIVATE flag to avoid
+   TODO: we may be able to utilize SCM_PORT_PRIVATE flag to avoid
    SCM_UNWIND_PROTECT overhead. */
 #define PORT_SAFE_CALL(p, call)                 \
     do {                                        \
