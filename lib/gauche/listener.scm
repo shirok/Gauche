@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: listener.scm,v 1.7 2006-01-26 05:07:22 shirok Exp $
+;;;  $Id: listener.scm,v 1.8 2007-01-08 09:42:48 shirok Exp $
 ;;;
 
 ;; provides functions useful to implement a repl listener
@@ -139,7 +139,8 @@
                      (set! (ref self 'rbuf) "")
                      (guard (e1 (else (abort e1)))
                        ((ref self 'error-handler) e)
-                       (listener-show-prompt self))))
+                       (listener-show-prompt self)
+                       #f)))
             (let loop ()
               (update! (ref self 'rbuf) (cut string-trim <> #[\s]))
               (and (not (string-null? (ref self 'rbuf)))

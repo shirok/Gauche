@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.43 2006-12-07 04:58:48 shirok Exp $
+ *  $Id: signal.c,v 1.44 2007-01-08 09:42:48 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -79,6 +79,8 @@
 /* Master signal handler vector. */
 static struct sigHandlersRec {
     ScmObj handlers[NSIG];      /* Scheme signal handlers */
+    ScmSysSigset *masks[NSIG];  /* signal masks during executing Scheme
+                                   handlers */
     sigset_t masterSigset;      /* The signals Gauche is _allowed_ to handle.
                                    set by Scm_SetMasterSigset.
                                    For some signals in this set Gauche sets
@@ -463,10 +465,13 @@ void Scm_SigCheck(ScmVM *vm)
     tail = q->pending;
     if (!SCM_NULLP(tail)) tail = Scm_LastPair(tail);
     for (i=0; i<sigQsize; i++) {
-        if (SCM_PROCEDUREP(sigHandlers.handlers[sigQcopy[i]])) {
-            cell = Scm_Acons(sigHandlers.handlers[sigQcopy[i]],
-                             SCM_MAKE_INT(sigQcopy[i]),
-                             SCM_NIL);
+        int signum = sigQcopy[i];
+        SCM_ASSERT(signum >= 0 && signum < NSIG);
+        if (SCM_PROCEDUREP(sigHandlers.handlers[signum])) {
+            cell = Scm_Cons(SCM_LIST3(sigHandlers.handlers[signum],
+                                      SCM_MAKE_INT(signum),
+                                      SCM_OBJ_SAFE(sigHandlers.masks[signum])),
+                            SCM_NIL);
             if (SCM_NULLP(tail)) {
                 q->pending = tail = cell;
             } else {
@@ -481,16 +486,33 @@ void Scm_SigCheck(ScmVM *vm)
     /* TODO: if VM is active, it'd be better to make the active VM to handle
        those handler procs, instead of calling Scm_Eval. */
     SCM_FOR_EACH(sp, q->pending) {
-        ScmObj h = SCM_CAR(sp);
+        ScmObj e = SCM_CAR(sp), handler, num, mask;
         q->pending = SCM_CDR(sp);
-        Scm_ApplyRec(SCM_CAR(h), SCM_LIST1(SCM_CDR(h)));
+        handler = SCM_CAR(e);
+        num = SCM_CADR(e);
+        mask = SCM_CAR(SCM_CDDR(e));
+        if (SCM_SYS_SIGSET_P(mask)) {
+            sigset_t omask;
+            SCM_UNWIND_PROTECT {
+                SIGPROCMASK(SIG_BLOCK, &SCM_SYS_SIGSET(mask)->set, &omask);
+                Scm_ApplyRec(handler, SCM_LIST1(num));
+            }
+            SCM_WHEN_ERROR {
+                SIGPROCMASK(SIG_SETMASK, &omask, NULL);
+                SCM_NEXT_HANDLER;
+            }
+            SCM_END_PROTECT;
+            SIGPROCMASK(SIG_SETMASK, &omask, NULL);
+        } else {
+            Scm_ApplyRec(handler, SCM_LIST1(num));
+        }
     }
 }
 
 /*
  * set-signal-handler!
  */
-ScmObj Scm_SetSignalHandler(ScmObj sigs, ScmObj handler)
+ScmObj Scm_SetSignalHandler(ScmObj sigs, ScmObj handler, ScmSysSigset *mask)
 {
     struct sigaction act;
     struct sigdesc *desc;
@@ -531,6 +553,7 @@ ScmObj Scm_SetSignalHandler(ScmObj sigs, ScmObj handler)
                 sigactionfailed = desc->num;
             } else {
                 sigHandlers.handlers[desc->num] = handler;
+                sigHandlers.masks[desc->num] = mask;
             }
         }
     }
@@ -542,14 +565,22 @@ ScmObj Scm_SetSignalHandler(ScmObj sigs, ScmObj handler)
 
 ScmObj Scm_GetSignalHandler(int signum)
 {
+    if (signum < 0 || signum >= NSIG) {
+        Scm_Error("bad signal number: %d", signum);
+    }
+    /* No lock; atomic pointer access */
+    return sigHandlers.handlers[signum];
+}
+
+ScmObj Scm_GetSignalHandlerMask(int signum)
+{
     ScmObj r;
     if (signum < 0 || signum >= NSIG) {
         Scm_Error("bad signal number: %d", signum);
     }
-    (void)SCM_INTERNAL_MUTEX_LOCK(sigHandlers.mutex);
+    /* No lock; atomic pointer access */
     r = sigHandlers.handlers[signum];
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(sigHandlers.mutex);
-    return r;
+    return r? SCM_OBJ(r) : SCM_FALSE;
 }
 
 ScmObj Scm_GetSignalHandlers(void)

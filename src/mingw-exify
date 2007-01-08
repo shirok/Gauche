@@ -3,7 +3,7 @@
 # Since Windows doesn't understand shebang magic, we make the gauche
 # scripts (e.g. gauche-install) to exe files.
 #
-# $Id: mingw-exify,v 1.1 2005-06-30 09:57:41 shirok Exp $
+# $Id: mingw-exify,v 1.2 2007-01-08 09:42:48 shirok Exp $
 
 target=$1
 
@@ -38,7 +38,7 @@ int main(int argc, char **argv)
     Scm_LoadFromPort(SCM_PORT(progport), 0);
     mainproc = Scm_SymbolValue(usermod, SCM_SYMBOL(SCM_INTERN("main")));
     if (SCM_PROCEDUREP(mainproc)) {
-        ScmObj r = Scm_Apply(mainproc, SCM_LIST1(h));
+        ScmObj r = Scm_ApplyRec(mainproc, SCM_LIST1(h));
         if (SCM_INTP(r)) Scm_Exit(SCM_INT_VALUE(r));
         else Scm_Exit(70);
     }

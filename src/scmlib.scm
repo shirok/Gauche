@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: scmlib.scm,v 1.7 2006-03-25 14:15:21 shirok Exp $
+;;;  $Id: scmlib.scm,v 1.8 2007-01-08 09:42:48 shirok Exp $
 ;;;
 
 ;; This file contains builtin library functions that are easier to be
@@ -221,6 +221,12 @@
 ;;;
 (define-in-module scheme (call-with-values producer consumer)
   (receive vals (producer) (apply consumer vals)))
+
+;;;=======================================================
+;;; signal utility
+;;;
+(define (sys-sigset . signals)
+  (apply sys-sigset-add! (make <sys-sigset>) signals))
 
 ;;;=======================================================
 ;;; srfi-17

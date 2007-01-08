@@ -604,7 +604,7 @@
 (test* "sigmask" 'hup
        (let ((sig #f)
              (chld #f)
-             (mask1 (sys-sigset-add! (make <sys-sigset>) SIGINT)))
+             (mask1 (sys-sigset SIGINT)))
          (call/cc
           (lambda (k)
             (set-signal-handler! SIGINT  k)
@@ -628,6 +628,27 @@
                     ;;(let loop ()
                     ;;  (unless chld (loop)))
                     sig)))))))
+
+(let ()
+  (define (test-double-signal mask)
+    (let ((flag #f)
+          (count 0))
+      (let/cc break
+        (set-signal-handler!
+         SIGHUP
+         (lambda (n)
+           (unless flag
+             (inc! count)
+             (when (> count 1) (break 'boo)) ;; avoid infinite reentrance
+             (sys-kill (sys-getpid) SIGHUP)
+             (set! flag #t)))
+         mask)
+        (sys-kill (sys-getpid) SIGHUP)
+        flag)))
+
+  (test* "sigmask during interrupt handler" '(#t boo)
+         (list (test-double-signal (sys-sigset SIGHUP))
+               (test-double-signal #f))))
 
 ) ;; unless *win32*
 
