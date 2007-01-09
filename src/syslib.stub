@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.118 2007-01-08 09:42:48 shirok Exp $
+;;; $Id: syslib.stub,v 1.119 2007-01-09 10:34:16 rui314159 Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -337,6 +337,17 @@
 
 (define-cproc sys-sigsuspend (mask::<sys-sigset>)
   (call "Scm_SigSuspend"))
+
+(if "defined HAVE_SIGWAIT"
+(define-cproc sys-sigwait (mask::<sys-sigset>)
+  (body <int>
+        "int v;"
+        "SCM_SYSCALL(v, sigwait(&mask->set, &SCM_RESULT));"
+        "if (v != 0) {"
+        "  errno = v;"
+        "  Scm_SysError(\"sigwait failed\");"
+        "}"))
+)
 
 ;(define-cproc %with-signal-handlers (handlers thunk)
 ;  (assert (procedure? thunk))

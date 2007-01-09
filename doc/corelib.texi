@@ -12748,6 +12748,21 @@ handler is called, then @code{sys-sigsuspend} returns.
 @c COMMON
 @end defun
 
+@defun sys-sigwait mask
+@c EN
+@c JP
+アトミックに、保留されたシグナルから@var{mask}にあるシグナルの1つを
+クリアし、クリアしたシグナルの番号を返します。@var{mask}にある
+シグナルが1つも保留されていなければ、@code{sys-sigwait}はシグナルが
+届くまでブロックします。@var{mask}は@code{<sys-sigset>}オブジェクト
+でなければなりません。
+
+@code{sys-sigwait}を呼ぶ前に、@code{mask}にある全てのシグナルを、
+全スレッドからブロックしておく必要があります。シグナルをブロックして
+いないスレッドがある場合、@code{sys-sigwait}の動作は未定義です。
+@c COMMON
+@end defun
+
 @node Signals and threads,  , Masking and waiting signals, Signal
 @subsubsection Signals and threads
 @c NODE シグナルとスレッド
@@ -12867,10 +12882,19 @@ and within that thread you unblock all the signals.
 Such a thread can just loop on @code{sys-pause}.
 @c JP
 もう1つの戦略は、シグナル処理のみを行うスレッドを作る方法です。
-そうするためには、メインスレッドでシグナルをブロックして、
-シグナル処理専用スレッドを作り、そのスレッドで全てのシグナルを
-受け付けることにします。そのようなスレッドは@code{sys-pause}
-で単にループしていれば良いでしょう。
+
+もしシステムが@code{sys-sigwait}をサポートしていれば、ハンドル
+したい全てのシグナルを全てのスレッドでブロックしておき、シグナル
+処理専用のスレッドで@code{sys-sigwait}を呼び出してシグナルの
+受信を待つことができます。@code{sys-sigwait}の返り値がシグナル番号
+なので、その値でディスパッチしてください。この方法ではシグナル
+ハンドラが呼び出されることはありません。
+
+@code{sys-sigwait}を使わないのであれば、メインスレッドでシグナルを
+ブロックして、シグナル処理専用スレッドを作り、そのスレッドで全ての
+シグナルを受け付けることができます。そのようなスレッドは@code{sys-pause}
+で単にループしていれば良いでしょう。@code{sys-pause}がシグナルで中断
+されると、シグナルハンドラがシグナル処理専用スレッドで呼び出されます。
 @c COMMON
 
 @example

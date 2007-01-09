@@ -1,3 +1,8 @@
+2007-01-09  Rui Ueyama  <rui314@gmail.com>
+
+	* configure.ac, src/syslib.stub, test/system.scm,
+	  src/gauche/config.h.in : added sys-sigwait
+	
 2007-01-08  Shiro Kawai  <shiro@acm.org>
 
 	* Makefile.in, src/Makefile.in, ...: added datarootdir = @datarootdir@

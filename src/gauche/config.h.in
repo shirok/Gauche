@@ -179,6 +179,9 @@
 /* Define to 1 if you have the `setlogmask' function. */
 #undef HAVE_SETLOGMASK
 
+/* Define to 1 if you have the `sigwait' function. */
+#undef HAVE_SIGWAIT
+
 /* Define to 1 if you have the `setpgrp' function. */
 #undef HAVE_SETPGRP
 
