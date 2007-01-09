@@ -346,7 +346,7 @@ And @code{array-length} returns the difference between two.
 @c JP
 @code{array-start}は配列@var{array}の@var{dim}番目の次元の
 インデックスの下限を返します。
-@code{array-end}は上限+1を、そして@code{array-start}は両者の差を返します。
+@code{array-end}は上限+1を、そして@code{array-length}は両者の差を返します。
 @code{array-start}と@code{array-end}はSRFI-25で定義されています。
 @c COMMON
 
