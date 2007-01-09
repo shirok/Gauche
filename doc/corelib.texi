@@ -12749,15 +12749,27 @@ handler is called, then @code{sys-sigsuspend} returns.
 @end defun
 
 @defun sys-sigwait mask
+[POSIX]
 @c EN
+@var{Mask} must be a @code{<sys-sigset>} object.
+If any of signals in @var{mask} is/are pending in the OS,
+atomically clears one of them and returns the signal number
+of the cleared one.   If there's no signal in @var{mask}
+pending, @code{sys-sigwait} blocks until any of the signals
+in @var{mask} arrives.
+
+You have to block all signals in @var{mask} in all threads
+before calling @code{sys-sigwait}.  If there's a thread
+that doesn't block the signals, the behavior of 
+@code{sys-sigwait} is undefined.
 @c JP
+@var{mask}は@code{<sys-sigset>}オブジェクトでなければなりません。
 アトミックに、保留されたシグナルから@var{mask}にあるシグナルの1つを
 クリアし、クリアしたシグナルの番号を返します。@var{mask}にある
 シグナルが1つも保留されていなければ、@code{sys-sigwait}はシグナルが
-届くまでブロックします。@var{mask}は@code{<sys-sigset>}オブジェクト
-でなければなりません。
+届くまでブロックします。
 
-@code{sys-sigwait}を呼ぶ前に、@code{mask}にある全てのシグナルを、
+@code{sys-sigwait}を呼ぶ前に、@var{mask}にある全てのシグナルを、
 全スレッドからブロックしておく必要があります。シグナルをブロックして
 いないスレッドがある場合、@code{sys-sigwait}の動作は未定義です。
 @c COMMON
