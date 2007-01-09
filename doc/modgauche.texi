@@ -6433,7 +6433,7 @@ Sends SIGKILL, SIGSTOP and SIGCONT to @var{process}, respectively.
 @node Process ports,  , Process object, High Level Process Interface
 @subsection Process ports
 
-@defun open-input-process-port command &keyword output error encoding conversion-buffer-size
+@defun open-input-process-port command &keyword input error encoding conversion-buffer-size
 @c EN
 Runs @var{command} asynchronously in a subprocess.  Returns
 two values, an input port which is connected to the stdout of the
@@ -6470,14 +6470,14 @@ Use this form if you want to avoid the shell from interfering.
 @c COMMON
 
 @c EN
-The subprocess's stdout is redirected to @code{/dev/null} by default,
-and its stderr shares the calling process's stderr.
-You can change these by giving file pathnames to @var{output} and
+The subprocess's stdin is redirected from @code{/dev/null}, 
+and its stderr shares the calling process's stderr by default.
+You can change these by giving file pathnames to @var{input} and
 @var{error} keyword arguments, respectively.
 @c JP
-デフォルトでは、子プロセスの標準出力は@code{/dev/null}にリダイレクトされ、
+デフォルトでは、子プロセスの標準入力は@code{/dev/null}にリダイレクトされ、
 標準エラー出力は呼び出したプロセスと共有されます。
-@var{output}と@var{error}キーワード引数にパス名を与えることで、
+@var{input}と@var{error}キーワード引数にパス名を与えることで、
 これらの出力をリダイレクトすることができます。
 @c COMMON
 
@@ -6530,7 +6530,7 @@ you can use one of the following functions.
 @c COMMON
 @end defun
 
-@defun call-with-input-process command proc &keyword output error encoding conversion-buffer-size
+@defun call-with-input-process command proc &keyword input error encoding conversion-buffer-size
 @c EN
 Runs @var{command} in a subprocess and pipes its stdout
 to an input port, then call @var{proc} with the port as an argument.
@@ -6556,7 +6556,7 @@ as @code{open-input-process-port} above.
 @end example
 @end defun
 
-@defun with-input-from-process command thunk &keyword output error encoding conversion-buffer-size
+@defun with-input-from-process command thunk &keyword input error encoding conversion-buffer-size
 @c EN
 Runs @var{command} in a subprocess, and calls @var{thunk}
 with its current input port connected to the command's stdout.
@@ -6579,20 +6579,20 @@ as @code{open-input-process-port} above.
 @end example
 @end defun
 
-@defun open-output-process-port command &keyword input error encoding conversion-buffer-size
+@defun open-output-process-port command &keyword output error encoding conversion-buffer-size
 @c EN
 Runs @code{command} in a subprocess asynchronously.  Returns two values,
 an output port which is connected to the stdin of the subprocess.
 and the process object.
 
-The subprocess's stdin is redirected from @code{/dev/null}, 
-and its stderr shares the calling process's stderr by default.
-You can change these by giving file pathnames to @var{input} and
-@var{error} keyword arguments, respectively.
-
 The semantics of @var{command} is the same as
 @code{open-input-process-port}.  The semantics of
 @var{encoding} and @var{conversion-buffer-size} are also the same.
+
+The subprocess's stdout is redirected to @code{/dev/null} by default,
+and its stderr shares the calling process's stderr.
+You can change these by giving file pathnames to @var{output} and
+@var{error} keyword arguments, respectively.
 
 The exit status of the subprocess is not automatically collected.
 The caller should call @code{process-wait} on the subprocess
@@ -6602,13 +6602,13 @@ at appropriate time.
 子プロセスの標準入力に接続された出力ポートと、
 プロセスオブジェクトの二つの値を返します。
 
-デフォルトでは、子プロセスの標準入力は@code{/dev/null}にリダイレクトされ、
-標準エラー出力は呼び出したプロセスと共有されます。
-@var{input}と@var{error}キーワード引数にパス名を与えることで、
-これらの出力をリダイレクトすることができます。
-
 @var{command}引数、および@var{encoding}と@var{conversion-buffer-size}の
 意味は、@code{open-input-process-port}と同じです。
+
+デフォルトでは、子プロセスの標準出力は@code{/dev/null}にリダイレクトされ、
+標準エラー出力は呼び出したプロセスと共有されます。
+@var{output}と@var{error}キーワード引数にパス名を与えることで、
+これらの出力をリダイレクトすることができます。
 
 サブプロセスの終了ステータスは自動的には回収されません。
 適切なタイミングで、サブプロセスに対して @code{process-wait} を呼ぶ
@@ -6616,7 +6616,7 @@ at appropriate time.
 @c COMMON
 @end defun
 
-@defun call-with-output-process command proc &keyword input error encoding conversion-buffer-size
+@defun call-with-output-process command proc &keyword output error encoding conversion-buffer-size
 @c EN
 Runs @code{command} in a subprocess, and calls @var{proc} 
 with an output port which is connected to the stdin of the command.
@@ -6639,7 +6639,7 @@ The semantics of keyword arguments are the same as
 @end example
 @end defun
 
-@defun with-output-to-process command thunk &keyword input error encoding conversion-buffer-size
+@defun with-output-to-process command thunk &keyword output error encoding conversion-buffer-size
 @c EN
 Same as @code{call-with-output-process}, except that the
 output port which is connected to the stdin of the command
