@@ -2376,7 +2376,7 @@ first argument.
 Returns @code{#t} if a database of class @var{class}
 specified by @var{name} exists.
 @c JP
-@var{name}で指定された@var{class}暮らすのデータベースが
+@var{name}で指定された@var{class}クラスのデータベースが
 存在する場合は@code{#t}を返します。
 @c COMMON
 
