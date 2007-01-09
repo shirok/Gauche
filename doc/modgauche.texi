@@ -7023,7 +7023,7 @@ echoサーバのシンプルな例を示します。
       (let* ((client (socket-accept server))
              (output (socket-output-port client)))
         (selector-add! selector
-                       (socket-input-port client :buffered? #f)
+                       (socket-input-port client :buffering #f)
                        (lambda (input flag)
                          (echo client input output))
                        '(r))))
