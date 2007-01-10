@@ -587,11 +587,24 @@
 (test* "-bignum - -bignum" #x-fffffffd00000000fffffffd00000000
       (- xx yy))
 
+;; This test a possible shortcut in Scm_Add etc.  We use apply
+;; to avoid operators from being inlined.
+(test* "0 + bignum" (list x x)
+       (list (apply + (list 0 x)) (apply + (list x 0))))
+(test* "0 - bignum" (list (- x) x)
+       (list (apply - (list 0 x)) (apply - (list x 0))))
+(test* "0 * bignum" (list 0 0)
+       (list (apply * (list 0 x)) (apply * (list x 0))))
+(test* "1 * bignum" (list x x)
+       (list (apply * (list 1 x)) (apply * (list x 1))))
+(test* "bignum / 1" x
+       (apply / (list x 1)))
+
 ;;------------------------------------------------------------------
 (test-section "small immediate integer constants")
 
 ;; pushing small literal integer on the stack may be done
-;; by combined instruction PUSHI.  These tests if it works.
+;; by combined instruction PUSHI.  These test if it works.
 
 (define (foo a b c d e) (list a b c d e))
 
@@ -709,11 +722,29 @@
 
 (test* "ratnum +" 482/247 (+ 11/13 21/19))
 (test* "ratnum -" -64/247 (- 11/13 21/19))
+
+;; tests possible shortcut in Scm_Add etc.
+(test* "ratnum + 0" (list 11/13 11/13)
+       (list (apply + '(0 11/13)) (apply + '(11/13 0))))
+(test* "ratnum - 0" (list -11/13 11/13)
+       (list (apply - '(0 11/13)) (apply - '(11/13 0))))
+(test* "ratnum * 0" (list 0 0)
+       (list (apply * '(0 11/13)) (apply * '(11/13 0))))
+(test* "ratnum * 1" (list 11/13 11/13)
+       (list (apply * '(1 11/13)) (apply * '(11/13 1))))
+(test* "ratnum / 1" 11/13
+       (apply / '(11/13 1)))
  
 ;;------------------------------------------------------------------
 (test-section "promotions in addition")
 
-(define (+-tester x) (list x (exact? x)))
+(define-syntax +-tester
+  (syntax-rules ()
+    ((_ (+ . args))
+     (let ((inline (+ . args))
+           (other  (apply + 'args)))
+       (and (= inline other)
+            (list inline (exact? inline)))))))
 
 (test* "+" '(0 #t) (+-tester (+)))
 (test* "+" '(1 #t) (+-tester (+ 1)))
@@ -739,9 +770,11 @@
 ;;------------------------------------------------------------------
 (test-section "integer multiplication")
 
-(define (m-result x) (list x (- x) (- x) x))
+(define (m-result x) (list x (- x) (- x) x x (- x) (- x) x))
 (define (m-tester x y)
-  (list (* x y) (* (- x) y) (* x (- y)) (* (- x) (- y))))
+  (list (* x y) (* (- x) y) (* x (- y)) (* (- x) (- y))
+        (apply * (list x y)) (apply * (list (- x) y))
+        (apply * (list x (- y))) (apply * (list (- x) (- y)))))
 
 (test* "fix*fix->big[1]" (m-result 727836879)
       (m-tester 41943 17353))

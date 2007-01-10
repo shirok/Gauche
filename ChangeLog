@@ -1,3 +1,16 @@
+2007-01-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/signal.c, src/gauche/vm.h: changed signal handling; we no longer
+	  queue the signals; instead the C-level signal handler just counts
+	  what signals it received.  The order of signal arrival isn't
+	  preserved, but it's ok for most Unixes doesn't guarantee that
+	  anyway.  The upper limit of the # of occurrences of the same
+	  signal before	VM handles them can be configured by
+	  set-signal-pending-limit; if the signals excceds this limit,
+	  Scm_Abort() is called.
+	* src/syslib.stub (set-signal-pending-limit, get-signal-pending-limit):
+	  added.
+
 2007-01-09  Rui Ueyama  <rui314@gmail.com>
 
 	* configure.ac, src/syslib.stub, test/system.scm,

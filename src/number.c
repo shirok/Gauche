@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.136 2007-01-03 13:13:47 shirok Exp $
+ *  $Id: number.c,v 1.137 2007-01-10 10:50:35 shirok Exp $
  */
 
 #include <math.h>
@@ -1435,7 +1435,7 @@ ScmObj Scm_Mul(ScmObj arg0, ScmObj arg1)
             return Scm_RatnumMul(arg0, arg1);
         }
         if (SCM_FLONUMP(arg1)) {
-            if (SCM_FLONUM_VALUE(arg1) == 1.0) return arg1;
+            if (SCM_FLONUM_VALUE(arg1) == 0.0) return arg1;
             return Scm_MakeFlonum(Scm_GetDouble(arg0)
                                   * SCM_FLONUM_VALUE(arg1));
         }
