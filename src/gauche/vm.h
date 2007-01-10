@@ -1,7 +1,7 @@
 /*
  * vm.h - Virtual machine
  *
- *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.111 2006-12-07 04:58:49 shirok Exp $
+ *  $Id: vm.h,v 1.112 2007-01-10 09:07:10 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -41,9 +41,6 @@
 
 /* Maximum # of values allowed for multiple value return */
 #define SCM_VM_MAX_VALUES      20
-
-/* Signal queue size */
-#define SCM_VM_SIGQ_SIZE       32
 
 /* Finalizer queue size */
 #define SCM_VM_FINQ_SIZE       32
@@ -281,22 +278,28 @@ SCM_EXTERN ScmObj Scm_ParameterSet(ScmVM *vm, int index, int id, ScmObj value);
 /*
  * Signal queue
  *
- *  Gauche installs singnal handlers that simply queues the signal.
- *  See signal.c for the implementaiton.
- *  Signal queue is a fixed size, since we can't really extend it
- *  within the system's signal handler.  For the time being, overflowed
- *  signals are simply discarded.
+ *  Following the Unix tradition, gauche doesn't really queue the signals;
+ *  the C-level signal handler only records the fact that a specific
+ *  signal has been delivered.  VM loop examines the record and invoke
+ *  appropriate Scheme-level signal handlers.  Even if the same signal
+ *  arrives more than one time before VM loop checks the record, the handler
+ *  is invoked only once.
+ *
+ *  The C-level signal handler does count each signal until it is cleared
+ *  by VM loop.  If one kind of signal arraives more than a certain limit
+ *  (set/get by Scm_{Set|Get}SignalPendingLimit), Gauche thinks something
+ *  went wrong and bail out.   It is useful, for example, to interrupt
+ *  unresponsive program from the terminal.
  */
 
 typedef struct ScmSignalQueueRec {
-    int queue[SCM_VM_SIGQ_SIZE];/* Ring buffer for pending signals */
-    unsigned int head;     /* points to the queue head */
-    unsigned int tail;     /* points to the queue tail */
-    unsigned int overflow; /* flag to indicate queue overflow */
+    unsigned char sigcounts[NSIG];
     ScmObj pending;        /* pending signal handlers */
 } ScmSignalQueue;
 
 SCM_EXTERN void Scm_SignalQueueInit(ScmSignalQueue* q);
+SCM_EXTERN int  Scm_GetSignalPendingLimit(void);
+SCM_EXTERN void Scm_SetSignalPendingLimit(int val);
 
 /* NB: Obsoleted macro, but kept for backward compatibility.
    Better API should be provided in future. */

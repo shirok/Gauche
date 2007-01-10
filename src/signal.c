@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.45 2007-01-08 10:53:42 shirok Exp $
+ *  $Id: signal.c,v 1.46 2007-01-10 09:07:10 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -90,6 +90,17 @@ static struct sigHandlersRec {
                                    overridden by Scm_SetSignalHandler. */
     ScmInternalMutex mutex;
 } sigHandlers = {{NULL}};
+
+/* Maximum # of the same signals before it is processed by the VM loop.
+   If any one of signals exceeds this count, Gauche exits with Scm_Abort.
+   It is useful to terminate unresponsive program that are executing
+   long-running C-routine and do not returns to VM.
+   The actual limit can be changed at runtime by Scm_SetSignalPendingLimit()*/
+#define SIGNAL_PENDING_LIMIT_DEFALT 3
+#define SIGNAL_PENDING_LIMIT_MAX 255
+
+static unsigned int signalPendingLimit = SIGNAL_PENDING_LIMIT_DEFALT;
+
 
 /* Table of signals and its initial behavior. */
 #define SIGDEF_NOHANDLE 0       /* Gauche doesn't install a signal handler,
@@ -402,26 +413,20 @@ static void sig_handle(int signum)
     /* It is possible that vm == NULL at this point, if the thread is
        terminating and in the cleanup phase. */
     if (vm == NULL) return;
-    
-    if (vm->sigq.overflow) {
-        /* TODO: we should have better fallback strategy. */
-        struct sigdesc *desc = sigDesc;
-        const char *signame = "unknown signal";
-        for (; desc->name; desc++) {
-            if (desc->num == signum) {
-                signame = desc->name;
-                break;
-            }
-        }
-        Scm_Warn("Signal queue overflow by %s(%d)\n", signame, signum);
-        return;
+
+    if (++vm->sigq.sigcounts[signum] >= signalPendingLimit) {
+        Scm_Abort("Received too many signals before processing it.  Exitting for the emergency...\n");
     }
-    vm->sigq.queue[vm->sigq.tail++] = signum;
-    if (vm->sigq.tail >= SCM_VM_SIGQ_SIZE) {
-        vm->sigq.tail = 0;
-    }
-    if (vm->sigq.tail == vm->sigq.head) vm->sigq.overflow++;
     vm->queueNotEmpty |= SCM_VM_SIGQ_MASK;
+}
+
+/*
+ * Clear the signal queue
+ */
+void Scm_SignalQueueClear(ScmSignalQueue* q)
+{
+    int i;
+    for (i=0; i<NSIG; i++) q->sigcounts[i] = 0;
 }
 
 /*
@@ -429,11 +434,24 @@ static void sig_handle(int signum)
  */
 void Scm_SignalQueueInit(ScmSignalQueue* q)
 {
-    int i;
-    for (i=0; i<SCM_VM_SIGQ_SIZE; i++) q->queue[i] = -1;
-    q->head = q->tail = 0;
-    q->overflow = 0;
+    Scm_SignalQueueClear(q);
     q->pending = SCM_NIL;
+}
+
+/*
+ * Get/Set signal pending limit
+ */
+int Scm_GetSignalPendingLimit(void)
+{
+    return signalPendingLimit;
+}
+
+void Scm_SetSignalPendingLimit(int num)
+{
+    if (num < 0 || num >= SIGNAL_PENDING_LIMIT_MAX) {
+        Scm_Error("signal-pending-limit argument out of range: %d", num);
+    }
+    signalPendingLimit = num;
 }
 
 /*
@@ -445,17 +463,14 @@ void Scm_SigCheck(ScmVM *vm)
     ScmObj tail, cell, sp;
     ScmSignalQueue *q = &vm->sigq;
     sigset_t omask;
-    int sigQsize, i;
-    int sigQcopy[SCM_VM_SIGQ_SIZE]; /* copy of signal queue */
+    int i;
+    unsigned char sigcounts[NSIG]; /* copy of signal counter */
 
-    /* Copy VM's signal queue to local storage, for we can't call
+    /* Copy VM's signal counter to local storage, for we can't call
        storage allocation during blocking signals. */
     SIGPROCMASK(SIG_BLOCK, &sigHandlers.masterSigset, &omask);
-    for (sigQsize = 0; q->head != q->tail; sigQsize++) {
-        sigQcopy[sigQsize] = q->queue[q->head++];
-        if (q->head >= SCM_VM_SIGQ_SIZE) q->head = 0;
-    }
-    q->overflow = 0; /*TODO: we should do something*/
+    memcpy(sigcounts, vm->sigq.sigcounts, NSIG * sizeof(unsigned char));
+    Scm_SignalQueueClear(&vm->sigq);
     vm->queueNotEmpty &= ~SCM_VM_SIGQ_MASK;
     SIGPROCMASK(SIG_SETMASK, &omask, NULL);
 
@@ -464,13 +479,12 @@ void Scm_SigCheck(ScmVM *vm)
        lost---it doesn't look like so, but I may overlook something. */
     tail = q->pending;
     if (!SCM_NULLP(tail)) tail = Scm_LastPair(tail);
-    for (i=0; i<sigQsize; i++) {
-        int signum = sigQcopy[i];
-        SCM_ASSERT(signum >= 0 && signum < NSIG);
-        if (SCM_PROCEDUREP(sigHandlers.handlers[signum])) {
-            cell = Scm_Cons(SCM_LIST3(sigHandlers.handlers[signum],
-                                      SCM_MAKE_INT(signum),
-                                      SCM_OBJ_SAFE(sigHandlers.masks[signum])),
+    for (i=0; i<NSIG; i++) {
+        if (sigcounts[i] == 0) continue;
+        if (SCM_PROCEDUREP(sigHandlers.handlers[i])) {
+            cell = Scm_Cons(SCM_LIST3(sigHandlers.handlers[i],
+                                      SCM_MAKE_INT(i),
+                                      SCM_OBJ_SAFE(sigHandlers.masks[i])),
                             SCM_NIL);
             if (SCM_NULLP(tail)) {
                 q->pending = tail = cell;
@@ -580,12 +594,12 @@ ScmObj Scm_GetSignalHandler(int signum)
 
 ScmObj Scm_GetSignalHandlerMask(int signum)
 {
-    ScmObj r;
+    ScmSysSigset *r;
     if (signum < 0 || signum >= NSIG) {
         Scm_Error("bad signal number: %d", signum);
     }
     /* No lock; atomic pointer access */
-    r = sigHandlers.handlers[signum];
+    r = sigHandlers.masks[signum];
     return r? SCM_OBJ(r) : SCM_FALSE;
 }
 
@@ -732,7 +746,7 @@ static void scm_sigsuspend(sigset_t *mask)
     ScmVM *vm = Scm_VM();
     for (;;) {
         SIGPROCMASK(SIG_BLOCK, &sigHandlers.masterSigset, &omask);
-        if (vm->sigq.tail != vm->sigq.head) {
+        if (vm->queueNotEmpty & SCM_VM_SIGQ_MASK) {
             SIGPROCMASK(SIG_SETMASK, &omask, NULL);
             Scm_SigCheck(vm);
             continue;
