@@ -1,7 +1,7 @@
 /*
  * signal.c - signal handling
  *
- *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.46 2007-01-10 09:07:10 shirok Exp $
+ *  $Id: signal.c,v 1.47 2007-01-11 07:12:34 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -95,7 +95,8 @@ static struct sigHandlersRec {
    If any one of signals exceeds this count, Gauche exits with Scm_Abort.
    It is useful to terminate unresponsive program that are executing
    long-running C-routine and do not returns to VM.
-   The actual limit can be changed at runtime by Scm_SetSignalPendingLimit()*/
+   The actual limit can be changed at runtime by Scm_SetSignalPendingLimit().
+   If signalPendingLimit is 0, the number of pending signals is unlimited. */
 #define SIGNAL_PENDING_LIMIT_DEFALT 3
 #define SIGNAL_PENDING_LIMIT_MAX 255
 
@@ -414,7 +415,9 @@ static void sig_handle(int signum)
        terminating and in the cleanup phase. */
     if (vm == NULL) return;
 
-    if (++vm->sigq.sigcounts[signum] >= signalPendingLimit) {
+    vm->sigq.sigcounts[signum]++;
+    if (signalPendingLimit > 0
+        && vm->sigq.sigcounts[signum] >= signalPendingLimit) {
         Scm_Abort("Received too many signals before processing it.  Exitting for the emergency...\n");
     }
     vm->queueNotEmpty |= SCM_VM_SIGQ_MASK;
@@ -564,7 +567,8 @@ ScmObj Scm_SetSignalHandler(ScmObj sigs, ScmObj handler, ScmSysSigset *mask)
         badproc = TRUE;
     }
     if (!badproc) {
-        sigemptyset(&act.sa_mask);
+        /* we should block all the signals */
+        sigfillset(&act.sa_mask);
         act.sa_flags = 0;
         for (desc=sigDesc; desc->name; desc++) {
             if (!sigismember(&sigset, desc->num)) continue;

@@ -12400,18 +12400,60 @@ Schemeでシグナルを処理する手続きを登録できます。
 @c COMMON
 
 @c EN
-When a signal is delivered to the Scheme process, it is queued in VM,
-and processed in a 'safe point' where the state of VM is consistent.
+When a signal is delivered to the Scheme process, the VM just records it
+and processes it later at a 'safe point' where the state of VM is consistent.
+We call the signal is @emph{pending} when it is registered by the VM
+but not processed yet.
+@c JP
+シグナルがSchemeプロセスに送られると、VMはそれを記録し、
+VMの状態が一貫している「安全なポイント」に達した時に処理します。
+シグナルがVMに記録され、しかしまだ処理されていない状態を、
+シグナルが保留されていると呼ぶことにします。
+@c COMMON
+
+@c EN
 (Note that this makes handling of some signals such as @code{SIGILL}
 useless, for the process can't continue sensible execution after
-queuing the signal).
+recording the signal).
 @c JP
-シグナルがSchemeプロセスに送られると、それはVM中のキューに入れられます。
-VMは「安全なポイント」に達した時にキューを検査し、シグナルが届いていれば
-それを順に処理します。
 (このメカニズムのため、@code{SIGILL}のようなシグナルはSchemeレベルでは
-処理できません。そのシグナルをキューに入れた後でプロセスが意味のある処理を続行できない
+処理できません。そのシグナルを記録した後でプロセスが意味のある処理を続行できない
 からです)。
+@c COMMON
+
+@c EN
+If the same signal is delivered more than once before VM processes
+the first one, the second one and later have no effect.  (This is consistent
+to the traditioncal Unix signal model.)  In other words,
+for each VM loop a signal handler can be invoked at most once per
+each signal.
+@c JP
+VMがシグナルを処理する前に同じシグナルが到着した場合、後に到着した方の
+シグナルは無効になります。(これは伝統的なUnixのシグナル処理と同様です)。
+言い替えれば、各VM loop毎に、シグナルハンドラは各シグナルについて
+たかだか1回しか呼ばれません。
+@c COMMON
+
+@c EN
+When too many signals of the same kind are pending, 
+Gauche assumes something has
+gone wrong (e.g. infinite loop inside C-routine) and aborts the
+process.  The default of this limit is set rather low (3), to allow
+unresponsive interactive script to be terminated by typing Ctrl-C
+three times.  Note that the counter is individual for each signal;
+Gauche won't abort if one @code{SIGHUP} and two @code{SIGINT}s are
+pending, for example.  You can change this limit by 
+@code{set-signal-pending-limit} described below.
+@c JP
+同じシグナルがたくさん保留された状態になった場合、
+Gaucheは異常事態が起きたとみなし (例えばCルーチンで無限ループに
+入った等)、プロセスをabortします。デフォルトではこの限界は
+かなり低い値(3)に設定されています。これは、インタラクティブスクリプトが
+反応しなくなった場合にCtrl-Cを3回打てば強制終了できる、という場合を
+想定しているためです。この限界を調べるカウンタはシグナル毎にあるので、
+例えば@code{SIGHUP}がひとつ、@code{SIGINT}がふたつ保留になった、
+といった場合はabortしません。この限界は下で述べる@code{set-signal-pending-limit}
+で変更することができます。
 @c COMMON
 
 @c EN
@@ -12585,6 +12627,21 @@ cdrにはそれらのシグナルに対応するハンドラ(手続きもしくはブール値)がセットされて
 います。
 @c COMMON
 @end defun
+
+@defun get-signal-pending-limit
+@defunx set-signal-pending-limit limit
+@c EN
+Gets/sets the maximum number of pending signals per each signal type.
+If the number of pending signals exceeds this limit, Gauche aborts
+the process.  See the explanation at the beginning of this section
+for the details.  @var{Limit} must be a nonnegative exact integer.
+In the current implementaiton the maximum number of @var{limit} is 255.
+Setting limit to zero makes the number of pending signals unlimited.
+@c JP
+
+@c COMMON
+@end defun
+
 
 @defmac with-signal-handlers (handler-clause @dots{}) thunk
 @c EN

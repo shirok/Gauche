@@ -1,3 +1,11 @@
+2007-01-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/signal.c:
+	  (Scm_SetSignalHandler): set up C-level signal handler so that all
+	  signals are blocked during its execution, in order to avoid race
+	  condition.
+	  (sig_handle): interpret signalPendingLimit==0 as no limit.
+
 2007-01-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/signal.c, src/gauche/vm.h: changed signal handling; we no longer
