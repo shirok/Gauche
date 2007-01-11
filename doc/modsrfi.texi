@@ -1172,7 +1172,7 @@ is copied.
 (define a (list (cons 'a 'b) (cons 'c 'd)))
 a @result{} ((a . b) (c . d))
 
-(definea b (alist-copy a))
+(define b (alist-copy a))
 b @result{} ((a . b) (c . d))
 
 (set-cdr! (car a) 'z)
