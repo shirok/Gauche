@@ -7715,7 +7715,7 @@ The unit of duration depends on the system; see man tcsendbreak(3) of
 your system for details.
 @c JP
 ゼロストリームを指定した時間、@var{port-or-fd}と結びついている端末に
-送出します。。時間の単位はシステム依存です。詳しくは、おつかいの
+送出します。時間の単位はシステム依存です。詳しくは、お使いの
 システムのマニュアルページ tcsendbreak(3)を参照してください。
 @c COMMON
 @end defun
