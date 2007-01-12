@@ -1000,10 +1000,11 @@ modifies @var{list} to produce the result.
 @c EN
 [SRFI-1] Applies @var{pred} for each element of @var{clist}, from 
 left to right, and returns the first element that @var{pred} returns
-true on.
+true on.  If no element satisfies @var{pred}, @code{#f} is returned.
 @c JP
 [SRFI-1] @var{clist} の各要素に対して左から右に @var{pred} を適用し、
-@var{pred} が真を返す最初の要素を返します。
+@var{pred} が真を返す最初の要素を返します。@var{pred}を満たす要素が
+無い場合は@code{#f}を返します。
 @c COMMON
 @end defun
 
@@ -1012,11 +1013,12 @@ true on.
 [SRFI-1]
 Applies @var{pred} for each element of @var{clist}, from left to right,
 and when @var{pred} returns a true value, returns the pair whose car
-is the element.
+is the element.  If no element satisfies @var{pred}, @code{#f} is returned.
 @c JP
 [SRFI-1]
 @var{clist} の各要素に対して左から右に @var{pred} を適用し、@var{pred} が
 真を返す場合、その car がその要素であるペアを返します。
+@var{pred}を満たす要素が無い場合は@code{#f}を返します。
 @c COMMON
 @end defun
 
@@ -1096,9 +1098,11 @@ If all application of @var{pred} return a non-false value,
 @c EN
 [SRFI-1]
 Returns the index of the leftmost element that satisfies @var{pred}.
+If no element satisfies @var{pred}, @code{#f} is returned.
 @c JP
 [SRFI-1]
 @var{pred} を満足する最も左の要素のインデックスを返します。
+@var{pred}を満たす要素が無い場合は@code{#f}を返します。
 @c COMMON
 @end defun
 

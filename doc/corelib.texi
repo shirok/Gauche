@@ -4008,7 +4008,7 @@ generic mechanism used to implement this.
   (match 'before)   @result{} "pi="
   (match 'before 2) @result{} "pi=3."
 
-(define match (#/(?<integer>\d+)\.(?<fraction>(\d+)/ "pi=3.14..."))
+(define match (#/(?<integer>\d+)\.(?<fraction>\d+)/ "pi=3.14..."))
 
   (match 1)         @result{} "3"
   (match 2)         @result{} "14"
