@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.137 2007-01-10 10:50:35 shirok Exp $
+ *  $Id: number.c,v 1.138 2007-01-12 01:05:45 shirok Exp $
  */
 
 #include <math.h>
@@ -1474,7 +1474,8 @@ ScmObj Scm_Mul(ScmObj arg0, ScmObj arg1)
     }
     if (SCM_COMPNUMP(arg0)) {
         if (SCM_INTP(arg1)) {
-            if (SCM_EXACT_ZERO_P(arg1)) return arg0;
+            if (SCM_EXACT_ZERO_P(arg1)) return arg1;
+            if (SCM_EXACT_ONE_P(arg1)) return arg0;
             return Scm_MakeComplex(SCM_COMPNUM_REAL(arg0)
                                    * (double)SCM_INT_VALUE(arg1),
                                    SCM_COMPNUM_IMAG(arg0)

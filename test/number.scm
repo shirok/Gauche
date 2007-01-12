@@ -824,6 +824,53 @@
            ))
 
 ;;------------------------------------------------------------------
+(test-section "multiplication short cuts")
+
+;; these test shortcut in Scm_Mul
+;; note the difference of 0 and 0.0
+(let1 big 100000000000000000000
+  (test* "bignum * 0"  0 (apply * `(,big 0)) eqv?)
+  (test* "0 * bignum"  0 (apply * `(0 ,big)) eqv?)
+  (test* "bignum * 1"  big (apply * `(,big 1)) eqv?)
+  (test* "1 * bignum"  big (apply * `(1 ,big)) eqv?)
+
+  (test* "bignum * 0.0"  0.0 (apply * `(,big 0.0)) eqv?)
+  (test* "0.0 * bignum"  0.0 (apply * `(0.0 ,big)) eqv?)
+  (test* "bignum * 1.0"  1.0e20 (apply * `(,big 1.0)) eqv?)
+  (test* "1.0 * bignum"  1.0e20 (apply * `(1.0 ,big)) eqv?)
+  )
+
+(test* "ratnum * 0"  0 (apply * '(1/2 0)) eqv?)
+(test* "0 * ratnum"  0 (apply * '(0 1/2)) eqv?)
+(test* "ratnum * 1"  1/2 (apply * '(1/2 1)) eqv?)
+(test* "1 * ratnum"  1/2 (apply * '(1 1/2)) eqv?)
+
+(test* "ratnum * 0.0"  0.0 (apply * '(1/2 0.0)) eqv?)
+(test* "0.0 * ratnum"  0.0 (apply * '(0.0 1/2)) eqv?)
+(test* "ratnum * 1.0"  0.5 (apply * '(1/2 1.0)) eqv?)
+(test* "1.0 * ratnum"  0.5 (apply * '(1.0 1/2)) eqv?)
+
+(test* "flonum * 0"  0 (apply * '(3.0 0)) eqv?)
+(test* "0 * flonum"  0 (apply * '(0 3.0)) eqv?)
+(test* "flonum * 1"  3.0 (apply * '(3.0 1)) eqv?)
+(test* "1 * flonum"  3.0 (apply * '(1 3.0)) eqv?)
+
+(test* "flonum * 0.0"  0.0 (apply * '(3.0 0.0)) eqv?)
+(test* "0.0 * flonum"  0.0 (apply * '(0.0 3.0)) eqv?)
+(test* "flonum * 1.0"  3.0 (apply * '(3.0 1.0)) eqv?)
+(test* "1.0 * flonum"  3.0 (apply * '(1.0 3.0)) eqv?)
+
+(test* "compnum * 0" 0 (* 0 +i) eqv?)
+(test* "0 * compnum" 0 (* +i 0) eqv?)
+(test* "compnum * 1" +i (* 1 +i) eqv?)
+(test* "1 * compnum" +i (* +i 1) eqv?)
+
+(test* "compnum * 0.0" 0.0 (* 0.0 +i) eqv?)
+(test* "0.0 * compnum" 0.0 (* +i 0.0) eqv?)
+(test* "compnum * 1.0" +i (* 1.0 +i) eqv?)
+(test* "1.0 * compnum" +i (* +i 1.0) eqv?)
+
+;;------------------------------------------------------------------
 (test-section "division")
 
 (test* "exact division" 3/20 (/ 3 4 5))
