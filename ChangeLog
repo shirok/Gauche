@@ -1,3 +1,8 @@
+2007-01-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/slib.scm.in: adapted to slib3a4 changes.  Based on a patch
+	  by YOKOTA Hiroshi.
+
 2007-01-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/signal.c:
