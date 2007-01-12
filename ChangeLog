@@ -3,7 +3,8 @@
 	* src/syslib.stub (sys-fchmod): added.  Patch from UEYAMA Rui.
 
 	* lib/slib.scm.in: adapted to slib3a4 changes.  Based on a patch
-	  by YOKOTA Hiroshi.
+	  by YOKOTA Hiroshi.  There're some hacks to make it work with
+	  both old and new slibs.
 
 2007-01-10  Shiro Kawai  <shiro@acm.org>
 

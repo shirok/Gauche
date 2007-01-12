@@ -16,9 +16,24 @@
 
 ;;@ (software-type) should be set to the generic operating system type.
 ;;; unix, vms, macos, amiga and ms-dos are supported.
+;;; NB [SK]: before slib 3a4 this returned captial symbols (e.g. UNIX),
+;;; and there were code in require.scm that depended on them.  To keep
+;;; backward compatibility,
+
 (define software-type
-  (let ((t (if (#/-mingw32$/ (gauche-architecture)) 'ms-dos 'unix)))
-    (lambda () t)))
+  (let ((t (if (#/-mingw32$/ (gauche-architecture))
+             '(ms-dos . MS-DOS)
+             '(unix . UNIX))))
+    (lambda ()
+      (if (and (global-variable-bound? (current-module) '*SLIB-VERSION*)
+               (string<? *SLIB-VERSION* "3a4"))
+        (cdr t)
+        (car t)))))
+
+;After transition period, the above should be replaced by this:
+;(define software-type
+;  (let ((t (if (#/-mingw32$/ (gauche-architecture)) 'ms-dos 'unix)))
+;    (lambda () t)))
 
 ;;@ (scheme-implementation-type) should return the name of the scheme
 ;;; implementation loading this file.
@@ -50,9 +65,9 @@
           ;; Use this path if your scheme does not support GETENV
           ;; or if SCHEME_LIBRARY_PATH is not set.
           (case (software-type)
-           ((unix) "@SLIB_DIR@/")
-           ((vms) "lib$scheme:")
-           ((ms-dos) "C:\\SLIB\\")
+            ((unix) "@SLIB_DIR@/")
+            ((vms) "lib$scheme:")
+            ((ms-dos) "C:\\SLIB\\")
             (else "")))))
     (lambda () library-path)))
 
@@ -62,12 +77,12 @@
 (define (home-vicinity)
   (let ((home (sys-getenv "HOME")))
     (and home
-        (case (software-type)
-          ((unix coherent ms-dos)      ;V7 unix has a / on HOME
-           (if (eqv? #\/ (string-ref home (+ -1 (string-length home))))
-               home
-               (string-append home "/")))
-          (else home)))))
+         (case (software-type)
+           ((unix coherent ms-dos)      ;V7 unix has a / on HOME
+            (if (eqv? #\/ (string-ref home (+ -1 (string-length home))))
+              home
+              (string-append home "/")))
+           (else home)))))
 
 ;@
 (define in-vicinity string-append)
@@ -111,15 +126,15 @@
              (let ((l (string-length vic)))
                (if (or (zero? (string-length vic))
                        (not (char=? #\] (string-ref vic (- l 1)))))
-                   (string-append vic "[" name "]")
-                   (string-append (substring vic 0 (- l 1))
-                                  "." name "]")))))
+                 (string-append vic "[" name "]")
+                 (string-append (substring vic 0 (- l 1))
+                                "." name "]")))))
     (else (let ((*vicinity-suffix*
                  (case (software-type)
-                  ((nosve) ".")
-                  ((macos thinkc) ":")
-                  ((ms-dos windows atarist os/2) "\\")
-                  ((unix coherent plan9 amiga) "/"))))
+                   ((nosve) ".")
+                   ((macos thinkc) ":")
+                   ((ms-dos windows atarist os/2) "\\")
+                   ((unix coherent plan9 amiga) "/"))))
             (lambda (vic name)
               (string-append vic name *vicinity-suffix*))))))
 ;@
