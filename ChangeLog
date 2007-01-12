@@ -1,5 +1,7 @@
 2007-01-11  Shiro Kawai  <shiro@acm.org>
 
+	* src/syslib.stub (sys-fchmod): added.  Patch from UEYAMA Rui.
+
 	* lib/slib.scm.in: adapted to slib3a4 changes.  Based on a patch
 	  by YOKOTA Hiroshi.
 

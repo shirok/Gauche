@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.120 2007-01-10 09:07:10 shirok Exp $
+;;; $Id: syslib.stub,v 1.121 2007-01-12 02:21:34 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -606,6 +606,12 @@
 (define-cproc sys-chmod (pathname::<const-cstring> mode::<int>)
   (body "int r; SCM_SYSCALL(r, chmod(pathname, mode));"
         "if (r < 0) Scm_SysError(\"chmod failed\");"
+        "SCM_RESULT = SCM_TRUE;"))
+
+(define-cproc sys-fchmod (port-or-fd mode::<int>)
+  (body "int fd = Scm_GetPortFd(port_or_fd, TRUE), r;"
+        "SCM_SYSCALL(r, fchmod(fd, mode));"
+        "if (r < 0) Scm_SysError(\"fchmod failed\");"
         "SCM_RESULT = SCM_TRUE;"))
 
 ;; NB: we force GC just befor fork().  It appeares necessary on some

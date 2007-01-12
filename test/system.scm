@@ -202,6 +202,12 @@
          (sys-chmod "test.dir" #o755)
          (get-lsmode "test.dir")))
 
+(test* "fchmod" "drwxr-x---"
+       (begin
+         (call-with-input-file "test.dir"
+           (cut sys-fchmod <> #o750))
+         (get-lsmode "test.dir")))
+
 (define *fs-test-str* "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 (with-output-to-file "test.dir/xyzzy"

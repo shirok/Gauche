@@ -11722,12 +11722,15 @@ accessing the file.
 @end defun
 
 @defun sys-chmod path mode
+@defunx sys-fchmod port-or-fd mode
 @c EN
-Change the mode of the file named @var{path} to @var{mode}.
+Change the mode of the file named @var{path} or an opened
+file specified by @var{port-or-fd} to @var{mode}.
 @var{mode} must be a small positive integer whose lower 9 bits
 specifies POSIX style permission.
 @c JP
-ファイル@var{path}のパーミッションビットを@var{mode}に変更します。
+名前@var{path}を持つ、もしくは@var{port-or-fd}で指定される
+ファイルのパーミッションビットを@var{mode}に変更します。
 @var{mode}は小さな正の正確な整数で、POSIXスタイルのパーミッションビットマスク
 でなければなりません。
 @c COMMON
