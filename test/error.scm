@@ -2,7 +2,7 @@
 ;; test error handlers
 ;;
 
-;;  $Id: error.scm,v 1.12 2005-07-12 11:42:02 shirok Exp $
+;;  $Id: error.scm,v 1.13 2007-01-13 00:39:38 shirok Exp $
 
 (use gauche.test)
 (test-start "error and exception handlers")
@@ -578,7 +578,7 @@
                  (lambda (e)
                    (and (is-a? e <error>) (slot-ref e 'message)))
                (lambda ()
-                 (error <error> :message "msg~s")))))
+                 (errorf <error> :message "msg~s")))))
 
 ;;----------------------------------------------------------------
 (test-section "stack overflow inside handlers")
