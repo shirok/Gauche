@@ -1,5 +1,11 @@
 2007-01-13  Shiro Kawai  <shiro@acm.org>
 
+	* src/system.c (Scm_GlobDirectory): dropped SCM_SYSCALL around
+	  glob(), since it doesn't necessarily return a negative value
+	  on error, and it doesn't necessarily set errno.  Well, eventually
+	  this function should go away, but for the time being this fix
+	  may be effective.
+
 	* gc/darwin_stop_world.c (GC_stop_world): applied a patch posted
 	  to gc-list by Allan Hsu that prevents SEGV on OSX.
 

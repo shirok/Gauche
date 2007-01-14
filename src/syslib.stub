@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.121 2007-01-12 02:21:34 shirok Exp $
+;;; $Id: syslib.stub,v 1.122 2007-01-14 09:49:15 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -348,7 +348,8 @@
 (define-cproc sys-sigwait (mask::<sys-sigset>)
   (body <int>
         "int v;"
-        "SCM_SYSCALL(v, sigwait(&mask->set, &SCM_RESULT));"
+        ;; sigwait never returns EINTR, so we don't need SCM_SYSCALL.
+        "v = sigwait(&mask->set, &SCM_RESULT);"
         "if (v != 0) {"
         "  errno = v;"
         "  Scm_SysError(\"sigwait failed\");"

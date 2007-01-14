@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.84 2006-11-11 07:48:52 shirok Exp $
+ *  $Id: system.c,v 1.85 2007-01-14 09:49:15 shirok Exp $
  */
 
 #include <stdio.h>
@@ -196,7 +196,7 @@ ScmObj Scm_GlobDirectory(ScmString *pattern)
     glob_t globbed;
     ScmObj head = SCM_NIL, tail = SCM_NIL;
     int i, r;
-    SCM_SYSCALL(r, glob(Scm_GetStringConst(pattern), 0, NULL, &globbed));
+    r = glob(Scm_GetStringConst(pattern), 0, NULL, &globbed);
     if (r) {
         globfree(&globbed);
 #if defined(GLOB_NOMATCH)
