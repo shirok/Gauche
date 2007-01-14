@@ -2,7 +2,7 @@
 ;; Test object system
 ;;
 
-;; $Id: object.scm,v 1.38 2006-03-05 07:48:38 shirok Exp $
+;; $Id: object.scm,v 1.39 2007-01-14 09:22:59 shirok Exp $
 
 (use gauche.test)
 
@@ -1282,7 +1282,7 @@
       (apply-methods gf (sort-applicable-methods gf applicable-methods args) args)
       (let loop1 ((methods (slot-ref gf 'methods)))
         (if (null? methods)
-          (error "no applicable method for ~S with arguments ~S" gf args)
+          (errorf "no applicable method for ~S with arguments ~S" gf args)
           (let ((method (car methods)))
             (let loop2 ((specs (slot-ref method 'specializers))
                         (a args)

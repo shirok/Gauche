@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: srfi-14.scm,v 1.12 2003-11-20 16:12:12 shirok Exp $
+;;;  $Id: srfi-14.scm,v 1.13 2007-01-14 09:22:58 shirok Exp $
 ;;;
 
 ;; Basic operators are built in the Gauche kernel.  This module
@@ -232,35 +232,35 @@
 (define (ucs-range->char-set low upper . args)
   (let ((error? (and (pair? args) (car args)))
         (base (if (and (pair? args) (pair? (cdr args)))
-                  (char-set-copy (cadr args))
-                  (char-set))))
+                (char-set-copy (cadr args))
+                (char-set))))
     (ucs-range->char-set! low upper error? base)))
 
 (define ucs-range->char-set!
   (if (eq? (gauche-character-encoding) 'utf-8)
-      integer-range->char-set!
-      (lambda (low upper error? base)
-        (when (< low 0)
-          (if error?
-              (error "argument out of range:" low)
-              (set! low 0)))
-        (if (< upper 128)
-            (%char-set-add-range! base low (- upper 1))
-            (begin
-              (when (< low 128)
-                (%char-set-add-range! base low 128)
-                (set! low 128))
-              (do ((i low (+ i 1)))
-                  ((>= i upper) base)
-                (let ((c (ucs->char i)))
-                  (if c
-                      (%char-set-add-range! base c c)
-                      (if error?
-                          (error "unicode character #\\u~8,'0x is not supported in the native character set (~a)"
-                                 i (gauche-character-encoding)))))
-                )))
-        )
-      ))
+    integer-range->char-set!
+    (lambda (low upper error? base)
+      (when (< low 0)
+        (if error?
+          (error "argument out of range:" low)
+          (set! low 0)))
+      (if (< upper 128)
+        (%char-set-add-range! base low (- upper 1))
+        (begin
+          (when (< low 128)
+            (%char-set-add-range! base low 128)
+            (set! low 128))
+          (do ((i low (+ i 1)))
+              ((>= i upper) base)
+            (let ((c (ucs->char i)))
+              (if c
+                (%char-set-add-range! base c c)
+                (if error?
+                  (errorf "unicode character #\\u~8,'0x is not supported in the native character set (~a)"
+                          i (gauche-character-encoding)))))
+            )))
+      )
+    ))
                   
 (define (->char-set obj)
   (cond ((list? obj)   (list->char-set obj))

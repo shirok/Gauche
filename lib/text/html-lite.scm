@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: html-lite.scm,v 1.14 2004-05-21 11:10:11 shirok Exp $
+;;;  $Id: html-lite.scm,v 1.15 2007-01-14 09:22:58 shirok Exp $
 ;;;
 
 (define-module text.html-lite
@@ -119,14 +119,14 @@
             (else (values (reverse attrs) args))))
 
     (if empty?
-        (lambda args
-          (receive (attr args) (get-attr args '())
-            (unless (null? args)
-              (error "element ~s can't have content: ~s" args))
-            (list "<" name attr " />")))
-        (lambda args
-          (receive (attr args) (get-attr args '())
-            (list "<" name attr ">" args "</" name "\n>"))))))
+      (lambda args
+        (receive (attr args) (get-attr args '())
+          (unless (null? args)
+            (errorf "element ~s can't have content: ~s" args))
+          (list "<" name attr " />")))
+      (lambda args
+        (receive (attr args) (get-attr args '())
+          (list "<" name attr ">" args "</" name "\n>"))))))
 
 (define-macro (define-html-elements . elements)
   (define (make-scheme-name name)

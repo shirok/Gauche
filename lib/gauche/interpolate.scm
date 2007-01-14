@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: interpolate.scm,v 1.6 2005-04-21 04:54:28 shirok Exp $
+;;;  $Id: interpolate.scm,v 1.7 2007-01-14 09:22:58 shirok Exp $
 ;;;
 
 ;;; #`"The value is ,|foo|." => (string-append "The value is " foo ".")
@@ -66,7 +66,7 @@
     (let* ((item
             (with-error-handler
              (lambda (e)
-               (error "unmatched parenthesis in interpolating string: ~s" str))
+               (errorf "unmatched parenthesis in interpolating string: ~s" str))
              (lambda () (read))))
            (rest
             (accum (read-char) (open-output-string))))

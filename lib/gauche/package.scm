@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: package.scm,v 1.6 2004-05-16 20:40:26 shirok Exp $
+;;;  $Id: package.scm,v 1.7 2007-01-14 09:22:58 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -99,22 +99,19 @@
    ))
 
 (define (path->gauche-package-description path)
-  (with-error-handler
-      (lambda (e)
-        (error "couldn't read the package description ~s: ~a" path
-               (ref e 'message)))
-    (lambda ()
-      (call-with-input-file path
-        (lambda (in)
-          (let ((f (read in)))
-            (if (and (list? f)
-                     (>= (length f) 2)
-                     (eq? (car f) 'define-gauche-package)
-                     (string? (cadr f)))
-              (apply make <gauche-package-description>
-                     :name (cadr f) (cddr f))
-              (error "malformed define-gauche-package"))))))
-    ))
+  (guard (e ((or (<io-error> e) (<read-error> e))
+             (errorf "couldn't read the package description ~s: ~a"
+                     path (ref e 'message))))
+    (call-with-input-file path
+      (lambda (in)
+        (let ((f (read in)))
+          (if (and (list? f)
+                   (>= (length f) 2)
+                   (eq? (car f) 'define-gauche-package)
+                   (string? (cadr f)))
+            (apply make <gauche-package-description>
+                   :name (cadr f) (cddr f))
+            (error "malformed define-gauche-package")))))))
 
 (define-method write-gauche-package-description
     ((desc <gauche-package-description>) . maybe-port)

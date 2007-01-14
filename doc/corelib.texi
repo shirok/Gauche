@@ -4296,8 +4296,8 @@ an undefined value is returned.
       (map string->number (list yyyy mm dd)))
     ((rxmatch #/^\d+\/\d+\/\d+$/ str)
         (#f)
-     (error "ambiguous: ~s" str))
-    (else (error "bogus: ~s" str))))
+     (errorf "ambiguous: ~s" str))
+    (else (errorf "bogus: ~s" str))))
 
 (parse-date "2001/2/3") @result{} (2001 2 3)
 (parse-date "12/25/1999") @result{} (1999 12 25)
@@ -4419,8 +4419,8 @@ The @code{parse-date} example above becomes simpler if you use
     (#/^(\d\d\d\d)\/(\d\d?)\/(\d\d?)$/ (#f yyyy mm dd)
      (map string->number (list yyyy mm dd)))
     (#/^\d+\/\d+\/\d+$/                (#f)
-     (error "ambiguous: ~s" str))
-    (else (error "bogus: ~s" str))))
+     (errorf "ambiguous: ~s" str))
+    (else (errorf "bogus: ~s" str))))
 @end example
 @end defmac
 
