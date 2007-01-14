@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.144 2006-12-07 04:58:47 shirok Exp $
+ *  $Id: class.c,v 1.145 2007-01-14 08:00:38 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -543,13 +543,77 @@ static ScmObj class_cpl(ScmClass *klass)
     return klass->cpl;
 }
 
+/* Subroutine for class_cpl_set.  Scans KLASS's CPL and find out the
+   suitable allocator function, C-struct core size, and some flags.
+   If KLASS inherits more than one C-defined classes (BASEs), they must 
+   form a single inheritance chain. */
+static void find_core_allocator(ScmClass *klass) 
+{
+    ScmClass **p;
+    ScmClass *b = NULL; /* the base class klass gets the allocate func */
+    int object_inherited = FALSE;
+
+    klass->allocate = NULL;
+    for (p = klass->cpa; *p; p++) {
+        if (SCM_CLASS_CATEGORY(*p) == SCM_CLASS_BUILTIN) {
+            Scm_Error("class '%S' attempted to inherit from a builtin class "
+                      "%S; you cannot subclass a builtin class.",
+                      klass->name, *p);
+        }
+
+        if ((*p)->allocate == Scm_ObjectAllocate) {
+            /* Check if we certainly inherited <object> */
+            object_inherited = TRUE;
+            continue;
+        }
+
+        if ((*p)->flags & SCM_CLASS_APPLICABLE) {
+            klass->flags |= SCM_CLASS_APPLICABLE;
+        }
+
+        if (b
+            && SCM_CLASS_CATEGORY(*p) == SCM_CLASS_BASE
+            && b->allocate != (*p)->allocate) {
+            /* found different C-defined class.  check to see if (*p) is
+               superclass of b.  If not, the single-inheritance rule is
+               violated. */
+            ScmClass **bp = b->cpa;
+            for (; *bp; bp++) {
+                if (*bp == *p) break;
+            }
+            if (!*bp) {
+                Scm_Error("class '%S' attempted to inherit multiple C-defined "
+                          "base class (%S and %S) which are not in a "
+                          "superclass-subclass relathionship.",
+                          klass->name, b, *p);
+            }
+            continue;
+        }
+        if (!b) {
+            /* Here we found the closest C-base class.  Get the allocator
+               from it. */
+            b = *p;
+            klass->allocate = b->allocate;
+            klass->coreSize = b->coreSize;
+        }
+    }
+
+    if (!object_inherited) {
+        Scm_Error("class %S's precedence list doesn't have a base class: %S",
+                  klass->name, klass->cpl);
+    }
+    if (!klass->allocate) {
+        klass->allocate = Scm_ObjectAllocate;
+        klass->coreSize = sizeof(ScmInstance);
+    }
+}
+
 static void class_cpl_set(ScmClass *klass, ScmObj val)
 {
     /* have to make sure things are consistent */
     int len, object_inherited = FALSE, applicable = FALSE;
     ScmObj cp;
     ScmClass **p;
-
     if (!SCM_PAIRP(val)) goto err;
     /* check if the CPL begins with the class itself. */
     if (SCM_CAR(val) != SCM_OBJ(klass)) goto err;
@@ -561,33 +625,7 @@ static void class_cpl_set(ScmClass *klass, ScmObj val)
     if (klass->cpa[len-1] != SCM_CLASS_TOP) goto err;
     klass->cpl = Scm_CopyList(val);
     /* find correct allocation method */
-    klass->allocate = NULL;
-    for (p = klass->cpa; *p; p++) {
-        if ((*p)->allocate) {
-            if ((*p)->allocate != Scm_ObjectAllocate) {
-                if (klass->allocate && klass->allocate != (*p)->allocate) {
-                    Scm_Error("class precedence list has more than one C-defined base class (except <object>): %S", val);
-                }
-                klass->allocate = (*p)->allocate;
-                klass->coreSize = (*p)->coreSize;
-            } else {
-                object_inherited = TRUE;
-            }
-        }
-        if ((*p)->flags & SCM_CLASS_APPLICABLE) {
-            applicable = TRUE;
-        }
-    }
-    if (!object_inherited) {
-        Scm_Error("class precedence list doesn't have a base class: %S", val);
-    }
-    if (!klass->allocate) {
-        klass->allocate = Scm_ObjectAllocate; /* default */
-        klass->coreSize = sizeof(ScmInstance);
-    }
-    if (applicable) {
-        klass->flags |= SCM_CLASS_APPLICABLE;
-    }
+    find_core_allocator(klass);
     return;
   err:
     Scm_Error("class precedence list must be a proper list of class "

@@ -1,3 +1,11 @@
+2007-01-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (find_core_allocator): added more precise check for
+	  inheritance; the previous code incorrectly rejected a valid
+	  inheritance in which more than one BASE class are included but
+	  they form a single inheritance.  The previous code also incorrectly
+	  accepted a class that inherits from BUILTIN class.
+
 2007-01-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/syslib.stub (sys-fchmod): added.  Patch from UEYAMA Rui.
