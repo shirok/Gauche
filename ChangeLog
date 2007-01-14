@@ -1,5 +1,8 @@
 2007-01-13  Shiro Kawai  <shiro@acm.org>
 
+	* gc/darwin_stop_world.c (GC_stop_world): applied a patch posted
+	  to gc-list by Allan Hsu that prevents SEGV on OSX.
+
 	* src/class.c (find_core_allocator): added more precise check for
 	  inheritance; the previous code incorrectly rejected a valid
 	  inheritance in which more than one BASE class are included but

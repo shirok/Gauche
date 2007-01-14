@@ -414,23 +414,30 @@ void GC_stop_world()
       prev_list = NULL;
       prevcount = 0;
       do {
-	int result;
-	kern_result = task_threads(my_task, &act_list, &listcount);
-	result = GC_suspend_thread_list(act_list, listcount,
-					prev_list, prevcount);
-	changes = result;
-	prev_list = act_list;
-	prevcount = listcount;
-	
-	if(kern_result == KERN_SUCCESS) {
-		int i;
-		
-		for(i = 0; i < listcount; i++)
-			mach_port_deallocate(my_task, act_list[i]);
-		
-        vm_deallocate(my_task, (vm_address_t)act_list, sizeof(thread_t) * listcount);
-	}
+		  int result;		  
+		  kern_result = task_threads(my_task, &act_list, &listcount);
+		  
+		  if(kern_result == KERN_SUCCESS) {	
+			  result = GC_suspend_thread_list(act_list, listcount,
+											  prev_list, prevcount);
+			  changes = result;
+			  
+			  if(prev_list != NULL) {
+				  for(i = 0; i < prevcount; i++)
+					  mach_port_deallocate(my_task, prev_list[i]);
+				  
+				  vm_deallocate(my_task, (vm_address_t)prev_list, sizeof(thread_t) * prevcount);
+			  }
+			  
+			  prev_list = act_list;
+			  prevcount = listcount;
+		  }		
       } while (changes);
+	  
+	  for(i = 0; i < listcount; i++)
+		  mach_port_deallocate(my_task, act_list[i]);
+	  
+	  vm_deallocate(my_task, (vm_address_t)act_list, sizeof(thread_t) * listcount);
       
  
 #   ifdef MPROTECT_VDB
