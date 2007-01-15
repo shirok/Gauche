@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: html-lite.scm,v 1.15 2007-01-14 09:22:58 shirok Exp $
+;;;  $Id: html-lite.scm,v 1.16 2007-01-15 00:09:40 shirok Exp $
 ;;;
 
 (define-module text.html-lite
@@ -122,7 +122,7 @@
       (lambda args
         (receive (attr args) (get-attr args '())
           (unless (null? args)
-            (errorf "element ~s can't have content: ~s" args))
+            (errorf "element ~s can't have content: ~s" name args))
           (list "<" name attr " />")))
       (lambda args
         (receive (attr args) (get-attr args '())

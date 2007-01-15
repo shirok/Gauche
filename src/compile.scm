@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.51 2007-01-14 09:22:59 shirok Exp $
+;;;  $Id: compile.scm,v 1.52 2007-01-15 00:08:57 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -3654,8 +3654,7 @@
           (renv-diff (list-remove-prefix ($call-renv embed-node)
                                          (reverse renv))))
       (unless renv-diff
-        (errorf "[internal error] $call[jump] appeared out of context "
-                "of related $call[embed] (~s vs ~s)"
+        (errorf "[internal error] $call[jump] appeared out of context of related $call[embed] (~s vs ~s)"
                 ($call-renv embed-node) renv))
       (if (tail-context? ctx)
         (let1 dinit (pass3/prepare-args args ccb renv ctx)
