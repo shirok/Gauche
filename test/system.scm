@@ -678,26 +678,36 @@
 
 ;; sys-sigwait
 (when (global-variable-bound? (current-module) 'sys-sigwait)
-  (set-signal-handler! SIGCHLD #t)
-  (test* "sys-sigwait" SIGHUP
-         (receive (in out) (sys-pipe)
-           (let1 pid (sys-fork)
-             (cond ((= pid 0)
-                    (close-output-port out)
-                    ;; synchronize with parent process
-                    (read-char in)
-                    (sys-kill (sys-getppid) SIGHUP)
-                    (sys-exit 0))
-                   (else
-                    (close-input-port in)
-                    (let* ((sigset (sys-sigset SIGHUP SIGINT))
-                           (oldmask (sys-sigmask SIG_BLOCK sigset)))
-                      ;; close the pipe to synchronize with child process
+  (let ()
+    (define z (lambda (n) (raise 'foo)))
+  
+    (set-signal-handler! SIGCHLD #t)
+    (set-signal-handler! SIGINT z)
+  
+    (test* "sys-sigwait" SIGHUP
+           (receive (in out) (sys-pipe)
+             (let1 pid (sys-fork)
+               (cond ((= pid 0)
                       (close-output-port out)
-                      (let1 signo (sys-sigwait sigset)
-                        (sys-waitpid pid)
-                        (sys-sigmask SIG_SETMASK oldmask)
-                        signo))))))))
+                      ;; synchronize with parent process
+                      (read-char in)
+                      (sys-kill (sys-getppid) SIGHUP)
+                      (sys-exit 0))
+                     (else
+                      (close-input-port in)
+                      (let* ((sigset (sys-sigset SIGHUP SIGINT))
+                             (oldmask (sys-sigmask SIG_BLOCK sigset)))
+                        ;; close the pipe to synchronize with child process
+                        (close-output-port out)
+                        (let1 signo (sys-sigwait sigset)
+                          (sys-waitpid pid)
+                          (sys-sigmask SIG_SETMASK oldmask)
+                          signo)))))))
+
+    (test* "sys-sigwait / signal handler restoration" 'foo
+           (guard (e (else e))
+             (sys-kill (sys-getpid) SIGINT))))
+  ) ;; has sys-sigwait
 
 ) ;; unless *win32*
 

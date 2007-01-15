@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.47 2007-01-11 07:12:34 shirok Exp $
+ *  $Id: signal.c,v 1.48 2007-01-15 02:01:05 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -78,9 +78,12 @@
 
 /* Master signal handler vector. */
 static struct sigHandlersRec {
-    ScmObj handlers[NSIG];      /* Scheme signal handlers */
-    ScmSysSigset *masks[NSIG];  /* signal masks during executing Scheme
-                                   handlers */
+    ScmObj handlers[NSIG];      /* Scheme signal handlers.  This is #f on
+                                   signals to which Gauche does not install
+                                   C-level signal handler (sig_handle). */
+    ScmSysSigset *masks[NSIG];  /* Signal masks during executing Scheme
+                                   handlers.  Can be NULL, which means
+                                   the handling signal(s) are blocked. */
     sigset_t masterSigset;      /* The signals Gauche is _allowed_ to handle.
                                    set by Scm_SetMasterSigset.
                                    For some signals in this set Gauche sets
@@ -207,6 +210,10 @@ static struct sigdesc {
     { NULL, -1 }
 };
 
+/*===============================================================
+ * Signal set operations
+ */
+
 /*
  * utilities for sigset
  */
@@ -254,81 +261,6 @@ ScmObj Scm_SignalName(int signum)
     }
     return SCM_FALSE;
 }
-
-/*
- * default handler
- */
-/* For most signals, default handler raises an error. */
-static ScmObj default_sighandler(ScmObj *args, int nargs, void *data)
-{
-    int signum;
-    struct sigdesc *desc;
-    const char *name = NULL;
-    
-    SCM_ASSERT(nargs == 1 && SCM_INTP(args[0]));
-    signum = SCM_INT_VALUE(args[0]);
-
-    for (desc = sigDesc; desc->name; desc++) {
-        if (desc->num == signum) {
-            name = desc->name;
-            break;
-        }
-    }
-    if (name) {
-        Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_UNHANDLED_SIGNAL_ERROR),
-                           "signal", SCM_MAKE_INT(signum),
-                           SCM_RAISE_CONDITION_MESSAGE,
-                           "unhandled signal %d (%s)", signum, name);
-    } else {
-        Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_UNHANDLED_SIGNAL_ERROR),
-                           "signal", SCM_MAKE_INT(signum),
-                           SCM_RAISE_CONDITION_MESSAGE,
-                           "unhandled signal %d (unknown signal)", signum);
-    }
-    return SCM_UNDEFINED;       /* dummy */
-}
-
-static SCM_DEFINE_STRING_CONST(default_sighandler_name,
-                               "%default-signal-handler", 23, 23);
-static SCM_DEFINE_SUBR(default_sighandler_stub, 1, 0,
-                       SCM_OBJ(&default_sighandler_name),
-                       default_sighandler,
-                       NULL, NULL);
-
-#define DEFAULT_SIGHANDLER    SCM_OBJ(&default_sighandler_stub)
-
-/* For some signals, exits. */
-static ScmObj exit_sighandler(ScmObj *args, int nargs, void *data)
-{
-    Scm_Exit(0);
-    return SCM_UNDEFINED;       /* dummy */
-}
-
-static SCM_DEFINE_STRING_CONST(exit_sighandler_name,
-                               "%exit-signal-handler", 20, 20);
-static SCM_DEFINE_SUBR(exit_sighandler_stub, 1, 0,
-                       SCM_OBJ(&exit_sighandler_name),
-                       exit_sighandler,
-                       NULL, NULL);
-
-#define EXIT_SIGHANDLER    SCM_OBJ(&exit_sighandler_stub)
-
-#if 0                           /* not used for now */
-/* For some signals, gauche does nothing */
-static ScmObj through_sighandler(ScmObj *args, int nargs, void *data)
-{
-    return SCM_UNDEFINED;
-}
-
-static SCM_DEFINE_STRING_CONST(through_sighandler_name,
-                               "%through-signal-handler", 20, 20);
-static SCM_DEFINE_SUBR(through_sighandler_stub, 1, 0,
-                       SCM_OBJ(&through_sighandler_name),
-                       through_sighandler,
-                       NULL, NULL);
-
-#define THROUGH_SIGHANDLER    SCM_OBJ(&through_sighandler_stub)
-#endif
 
 /*
  * sigset class
@@ -400,12 +332,13 @@ ScmObj Scm_SysSigsetFill(ScmSysSigset *set, int emptyp)
     return SCM_OBJ(set);
 }
 
-/*
- * Signal handling
+/*=============================================================
+ * C-level signal handling
  */
 
-/*
- * System's signal handler - just enqueue the signal
+
+/*-------------------------------------------------------------------
+ * C-level signal handler - just records the signal delivery.
  */
 
 static void sig_handle(int signum)
@@ -422,6 +355,10 @@ static void sig_handle(int signum)
     }
     vm->queueNotEmpty |= SCM_VM_SIGQ_MASK;
 }
+
+/*-------------------------------------------------------------------
+ * Signal queue operations
+ */
 
 /*
  * Clear the signal queue
@@ -526,6 +463,103 @@ void Scm_SigCheck(ScmVM *vm)
     }
 }
 
+/*=============================================================
+ * Scheme-level signal handling
+ */
+
+/*-------------------------------------------------------------
+ * Default Scheme-level handlers
+ */
+/* For most signals, default handler raises an error. */
+static ScmObj default_sighandler(ScmObj *args, int nargs, void *data)
+{
+    int signum;
+    struct sigdesc *desc;
+    const char *name = NULL;
+    
+    SCM_ASSERT(nargs == 1 && SCM_INTP(args[0]));
+    signum = SCM_INT_VALUE(args[0]);
+
+    for (desc = sigDesc; desc->name; desc++) {
+        if (desc->num == signum) {
+            name = desc->name;
+            break;
+        }
+    }
+    if (name) {
+        Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_UNHANDLED_SIGNAL_ERROR),
+                           "signal", SCM_MAKE_INT(signum),
+                           SCM_RAISE_CONDITION_MESSAGE,
+                           "unhandled signal %d (%s)", signum, name);
+    } else {
+        Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_UNHANDLED_SIGNAL_ERROR),
+                           "signal", SCM_MAKE_INT(signum),
+                           SCM_RAISE_CONDITION_MESSAGE,
+                           "unhandled signal %d (unknown signal)", signum);
+    }
+    return SCM_UNDEFINED;       /* dummy */
+}
+
+static SCM_DEFINE_STRING_CONST(default_sighandler_name,
+                               "%default-signal-handler", 23, 23);
+static SCM_DEFINE_SUBR(default_sighandler_stub, 1, 0,
+                       SCM_OBJ(&default_sighandler_name),
+                       default_sighandler,
+                       NULL, NULL);
+
+#define DEFAULT_SIGHANDLER    SCM_OBJ(&default_sighandler_stub)
+
+/* For some signals, exits. */
+static ScmObj exit_sighandler(ScmObj *args, int nargs, void *data)
+{
+    Scm_Exit(0);
+    return SCM_UNDEFINED;       /* dummy */
+}
+
+static SCM_DEFINE_STRING_CONST(exit_sighandler_name,
+                               "%exit-signal-handler", 20, 20);
+static SCM_DEFINE_SUBR(exit_sighandler_stub, 1, 0,
+                       SCM_OBJ(&exit_sighandler_name),
+                       exit_sighandler,
+                       NULL, NULL);
+
+#define EXIT_SIGHANDLER    SCM_OBJ(&exit_sighandler_stub)
+
+#if 0                           /* not used for now */
+/* For some signals, gauche does nothing */
+static ScmObj through_sighandler(ScmObj *args, int nargs, void *data)
+{
+    return SCM_UNDEFINED;
+}
+
+static SCM_DEFINE_STRING_CONST(through_sighandler_name,
+                               "%through-signal-handler", 20, 20);
+static SCM_DEFINE_SUBR(through_sighandler_stub, 1, 0,
+                       SCM_OBJ(&through_sighandler_name),
+                       through_sighandler,
+                       NULL, NULL);
+
+#define THROUGH_SIGHANDLER    SCM_OBJ(&through_sighandler_stub)
+#endif
+
+/*
+ * An emulation stub for Windows/MinGW
+ */
+#ifdef __MINGW32__
+int sigaction(int signum, const struct sigaction *act,
+	      struct sigaction *oact)
+{
+    if (oact != NULL) {
+	Scm_Panic("sigaction() with oldact != NULL isn't supported on MinGW port");
+    }
+    if (signal(signum, act->sa_handler) == SIG_ERR) {
+	return -1;
+    } else {
+	return 0;
+    }
+}
+#endif /* __MINGW32__ */
+
 /*
  * set-signal-handler!
  */
@@ -567,8 +601,7 @@ ScmObj Scm_SetSignalHandler(ScmObj sigs, ScmObj handler, ScmSysSigset *mask)
         badproc = TRUE;
     }
     if (!badproc) {
-        /* we should block all the signals */
-        sigfillset(&act.sa_mask);
+        sigfillset(&act.sa_mask); /* we should block all the signals */
         act.sa_flags = 0;
         for (desc=sigDesc; desc->name; desc++) {
             if (!sigismember(&sigset, desc->num)) continue;
@@ -697,6 +730,10 @@ void Scm_SetMasterSigmask(sigset_t *set)
     Scm_VM()->sigMask = sigHandlers.masterSigset;
 }
 
+/*============================================================
+ * Other signal-related operations
+ */
+
 /*
  * set signal mask
  */
@@ -787,27 +824,100 @@ ScmObj Scm_Pause(void)
 }
 
 /*
- * Emulation stubs for Windows/MinGW
+ * Sigwait wrapper
+ *
+ * The behavior of sigwait is undefined if a signal handler is set to
+ * the waiting signal.  On Cygwin, for example, using both signal handler
+ * and sigwait makes havoc.  Since Gauche installs sig_handle()
+ * implicitly to some signals, a casual user may be confused by the
+ * unpredictable behavior when he doesn't reset signal handlers explicitly.
+ * So we take care of them here. 
+ *
+ * We remove the signal handlers for the signals to be waited before calling
+ * sigwait(), and restore them after its return.  We assume those signals
+ * are blocked at this moment (if not, the behavior of sigwait() is
+ * undefined), so we don't need to care about race condition.  If another
+ * thread replaces signal handlers during this thread's waiting for a
+ * signal, it would be reverted upon returning from this function, but 
+ * such operation is inherently unsafe anyway, so we don't care.
  */
-#ifdef __MINGW32__
-
-int sigaction(int signum, const struct sigaction *act,
-	      struct sigaction *oact)
+int Scm_SigWait(ScmSysSigset *mask)
 {
-    if (oact != NULL) {
-	Scm_Panic("sigaction() with oldact != NULL isn't supported on MinGW port");
+#if defined(HAVE_SIGWAIT)
+    int i, r = 0, sig = 0;
+    int failed_sig = -1;
+    int sigwait_called = FALSE;
+    int errno_save = 0;
+    struct sigaction act, oact;
+    sigset_t to_wait;        /* real set of signals to wait */
+    sigset_t saved;
+    void (*c_handlers[NSIG])(int);
+    sigset_t c_masks[NSIG];
+
+    (void)SCM_INTERNAL_MUTEX_LOCK(sigHandlers.mutex);
+    /* we can't wait for the signals Gauche doesn't handle. */
+    to_wait = mask->set;
+    for (i=0; i<NSIG; i++) {
+        if (!sigismember(&sigHandlers.masterSigset, i)) {
+            sigdelset(&to_wait, i);
+        }
     }
-    if (signal(signum, act->sa_handler) == SIG_ERR) {
-	return -1;
-    } else {
-	return 0;
+
+    /* Remove C-level handlers */
+    sigemptyset(&saved);
+    act.sa_handler = SIG_DFL;
+    for (i=1; i<NSIG; i++) {
+        c_handlers[i] = SIG_DFL;
+        if (!sigismember(&to_wait, i)) continue;
+        if (sigaction(i, NULL, &oact) < 0) {
+            failed_sig = i;
+            errno_save = errno;
+            continue;
+        }
+        sigaddset(&saved, i);
+        c_handlers[i] = oact.sa_handler;
+        c_masks[i]    = oact.sa_mask;
     }
+    
+    if (failed_sig < 0) {
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(sigHandlers.mutex);
+        sigwait_called = TRUE;
+        r = sigwait(&to_wait, &sig);
+        (void)SCM_INTERNAL_MUTEX_LOCK(sigHandlers.mutex);
+    }
+
+    /* Restore C-level handlers */
+    for (i=1; i<NSIG; i++) {
+        if (!sigismember(&saved, i)) continue;
+        act.sa_handler = c_handlers[i];
+        act.sa_mask    = c_masks[i];
+        if (sigaction(i, &act, NULL) < 0) {
+            failed_sig = i;
+            errno_save = errno;
+        }
+    }
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(sigHandlers.mutex);
+
+    /* error handling */
+    if (failed_sig >= 0) {
+        Scm_SysError("sigaction(2) call failed on signal %d"
+                     " %s sigwait call",
+                     failed_sig,
+                     sigwait_called? "after" : "before");
+    }
+    if (r < 0) {
+        Scm_SysError("sigwait failed");
+    }
+    return sig;
+#else  /* !HAVE_SIGWAIT */
+    Scm_Error("sigwait not supported on this platform");
+    return 0;
+#endif
 }
-#endif /* __MINGW32__ */
 
 
-/*
- * initialize
+/*================================================================
+ * Initialize
  */
 
 void Scm__InitSignal(void)

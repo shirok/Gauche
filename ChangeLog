@@ -1,3 +1,12 @@
+2007-01-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/signal.c (Scm_SigWait): Added a wrapper of sigwait to ensure
+	  removing signal handlers for the signals to wait.  The behavior
+	  of sigwait with signal handlers is underined in the spec, and
+	  it causes unpleasant effect on some systems.  We also need to ensure
+	  removing signals from the passed masks that are not under control
+	  of Gauche.
+
 2007-01-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm_GlobDirectory): dropped SCM_SYSCALL around
