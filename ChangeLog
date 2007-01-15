@@ -6,6 +6,8 @@
 	  it causes unpleasant effect on some systems.  We also need to ensure
 	  removing signals from the passed masks that are not under control
 	  of Gauche.
+	  (sig_handle): treat signalPendingLimit == 0 case separately to avoid
+	  potential overflow of sigcounts.
 
 2007-01-13  Shiro Kawai  <shiro@acm.org>
 

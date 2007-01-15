@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.48 2007-01-15 02:01:05 shirok Exp $
+ *  $Id: signal.c,v 1.49 2007-01-15 18:14:14 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -348,9 +348,9 @@ static void sig_handle(int signum)
        terminating and in the cleanup phase. */
     if (vm == NULL) return;
 
-    vm->sigq.sigcounts[signum]++;
-    if (signalPendingLimit > 0
-        && vm->sigq.sigcounts[signum] >= signalPendingLimit) {
+    if (signalPendingLimit == 0) {
+        vm->sigq.sigcounts[signum] = 1;
+    } else if (++vm->sigq.sigcounts[signum] >= signalPendingLimit) {
         Scm_Abort("Received too many signals before processing it.  Exitting for the emergency...\n");
     }
     vm->queueNotEmpty |= SCM_VM_SIGQ_MASK;
@@ -848,11 +848,9 @@ int Scm_SigWait(ScmSysSigset *mask)
     int failed_sig = -1;
     int sigwait_called = FALSE;
     int errno_save = 0;
-    struct sigaction act, oact;
     sigset_t to_wait;        /* real set of signals to wait */
     sigset_t saved;
-    void (*c_handlers[NSIG])(int);
-    sigset_t c_masks[NSIG];
+    struct sigaction act, oacts[NSIG];
 
     (void)SCM_INTERNAL_MUTEX_LOCK(sigHandlers.mutex);
     /* we can't wait for the signals Gauche doesn't handle. */
@@ -866,17 +864,15 @@ int Scm_SigWait(ScmSysSigset *mask)
     /* Remove C-level handlers */
     sigemptyset(&saved);
     act.sa_handler = SIG_DFL;
+    act.sa_flags = 0;
     for (i=1; i<NSIG; i++) {
-        c_handlers[i] = SIG_DFL;
         if (!sigismember(&to_wait, i)) continue;
-        if (sigaction(i, NULL, &oact) < 0) {
+        if (sigaction(i, &act, &oacts[i]) < 0) {
             failed_sig = i;
             errno_save = errno;
-            continue;
+            break;
         }
         sigaddset(&saved, i);
-        c_handlers[i] = oact.sa_handler;
-        c_masks[i]    = oact.sa_mask;
     }
     
     if (failed_sig < 0) {
@@ -889,9 +885,7 @@ int Scm_SigWait(ScmSysSigset *mask)
     /* Restore C-level handlers */
     for (i=1; i<NSIG; i++) {
         if (!sigismember(&saved, i)) continue;
-        act.sa_handler = c_handlers[i];
-        act.sa_mask    = c_masks[i];
-        if (sigaction(i, &act, NULL) < 0) {
+        if (sigaction(i, &oacts[i], NULL) < 0) {
             failed_sig = i;
             errno_save = errno;
         }
@@ -900,12 +894,14 @@ int Scm_SigWait(ScmSysSigset *mask)
 
     /* error handling */
     if (failed_sig >= 0) {
+        errno = errno_save;
         Scm_SysError("sigaction(2) call failed on signal %d"
                      " %s sigwait call",
                      failed_sig,
                      sigwait_called? "after" : "before");
     }
-    if (r < 0) {
+    if (r != 0) {
+        errno = r;
         Scm_SysError("sigwait failed");
     }
     return sig;

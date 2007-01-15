@@ -12822,6 +12822,15 @@ You have to block all signals in @var{mask} in all threads
 before calling @code{sys-sigwait}.  If there's a thread
 that doesn't block the signals, the behavior of 
 @code{sys-sigwait} is undefined.
+
+Note: @code{Sys-sigwait} uses system's @code{sigwait} function,
+whose behavior is not defined if there's a signal
+handler on the signals it waits.  To avoid complication,
+@code{sys-sigwait} resets the handlers set to the signals
+included in @var{mask} before calling @code{sigwait} to @code{SIG_DFL},
+and restores them after @code{sigwait} returns.  If another thread
+changes signal handlers while @code{sys-sigwait} is waiting,
+the behavior is undefined; you shouldn't do that.
 @c JP
 @var{mask}は@code{<sys-sigset>}オブジェクトでなければなりません。
 アトミックに、保留されたシグナルから@var{mask}にあるシグナルの1つを
@@ -12832,6 +12841,15 @@ that doesn't block the signals, the behavior of
 @code{sys-sigwait}を呼ぶ前に、@var{mask}にある全てのシグナルを、
 全スレッドからブロックしておく必要があります。シグナルをブロックして
 いないスレッドがある場合、@code{sys-sigwait}の動作は未定義です。
+
+註：@code{sys-sigwait}はシステムの@code{sigwait}関数を呼び出しますが、
+この関数は待つべきシグナルにシグナルハンドラが設定されていた場合の
+振る舞いが未定義となっています。困ったことになるのを避けるために、
+@code{sys-sigwait}はまず@var{mask}に含まれるシグナルに
+ハンドラが設定されていたらそれを@code{SIG_DFL}にリセットしてから
+@code{sigwait}を呼び出し、それが戻った後でハンドラを元に戻します。
+@code{sys-sigwait}が待っている間に他のスレッドでシグナルハンドラを
+変更してはいけません。そうした場合の動作は不定です。
 @c COMMON
 @end defun
 
