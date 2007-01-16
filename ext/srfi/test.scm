@@ -995,7 +995,8 @@
   (test "julian day number, via date"
         jd
         (lambda ()
-          (date->julian-day (julian-day->date jd)))))
+          (date->julian-day (julian-day->date jd)))
+        =))
 (let1 t0 (make-time time-utc 0 1022191954)
   (test "modified julian day number"
         t0

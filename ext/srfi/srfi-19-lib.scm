@@ -24,7 +24,7 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19-lib.scm,v 1.8 2006-11-08 21:14:50 shirok Exp $
+;;; $Id: srfi-19-lib.scm,v 1.9 2007-01-16 10:59:16 shirok Exp $
 
 (define-module srfi-19
   (use srfi-1)
@@ -83,10 +83,10 @@
 ;;-- only the tm:tai-epoch-in-jd might need changing if
 ;;   a different epoch is used.
 
-(define-constant tm:nano 1000000000)
+(define-constant tm:nano #i1000000000)
 (define-constant tm:sid  86400)    ; seconds in a day
 (define-constant tm:sihd 43200)    ; seconds in a half day
-(define-constant tm:tai-epoch-in-jd 4881175/2) ; julian day number for 'the epoch'
+(define-constant tm:tai-epoch-in-jd #i4881175/2) ; julian day number for 'the epoch'
 
 ;; each entry is ( tai seconds since epoch . # seconds to subtract for utc )
 ;; note they go higher to lower, and end in 1972.
@@ -416,7 +416,7 @@
 
 ;; Gives the seconds/date/month/year
 (define (tm:decode-julian-day-number jdn)
-  (let* ((days (truncate jdn))
+  (let* ((days (inexact->exact (truncate jdn)))
 	 (a (+ days 32044))
 	 (b (quotient (+ (* 4 a) 3) 146097))
 	 (c (- a (quotient (* 146097 b) 4)))
@@ -425,7 +425,7 @@
 	 (m (quotient (+ (* 5 e) 2) 153))
 	 (y (+ (* 100 b) d -4800 (quotient m 10))))
     (values ; seconds date month year
-     (* (- jdn days) tm:sid)
+     (inexact->exact (round (* (- jdn days) tm:sid)))
      (+ e (- (quotient (+ (* 153 m) 2) 5)) 1)
      (+ m 3 (* -12 (quotient m 10)))
      (if (>= 0 y) (- y 1) y))
