@@ -2,7 +2,6 @@
 
 	* ext/srfi/srfi-19-lib.scm: make julian-day calculation in inexact
 	  numbers to avoid the huge overhead of rational arithmetic.
-
 	* config.guess, config.sub: updated to the newer version.
 
 2007-01-15  Shiro Kawai  <shiro@acm.org>

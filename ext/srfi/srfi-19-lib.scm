@@ -24,7 +24,7 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19-lib.scm,v 1.9 2007-01-16 10:59:16 shirok Exp $
+;;; $Id: srfi-19-lib.scm,v 1.10 2007-01-16 22:17:13 shirok Exp $
 
 (define-module srfi-19
   (use srfi-1)
@@ -83,7 +83,8 @@
 ;;-- only the tm:tai-epoch-in-jd might need changing if
 ;;   a different epoch is used.
 
-(define-constant tm:nano #i1000000000)
+(define-constant tm:nano 1000000000)
+(define-constant tm:nano/i #i1000000000)
 (define-constant tm:sid  86400)    ; seconds in a day
 (define-constant tm:sihd 43200)    ; seconds in a half day
 (define-constant tm:tai-epoch-in-jd #i4881175/2) ; julian day number for 'the epoch'
@@ -175,7 +176,7 @@
          (cpu   (+ (car times) (cadr times)))
          (tick  (list-ref times 4))
          (sec   (quotient cpu tick))
-         (nsec  (* (/ tm:nano tick) (remainder cpu tick))))
+         (nsec  (* (/ tm:nano/i tick) (remainder cpu tick))))
     (make-time type nsec sec)))
 
 (define (tm:current-time-tai type)
@@ -227,7 +228,7 @@
   (if (or (not (and (time? time1) (time? time2)))
 	  (not (eq? (time-type time1) (time-type time2))))
       (errorf "time-difference: incompatible time types: ~s, ~s" time1 time2)
-      (let ( (sec-diff (- (time-second time1) (time-second time2)))
+      (let ( (sec-diff  (- (time-second time1) (time-second time2)))
 	     (nsec-diff (- (time-nanosecond time1) (time-nanosecond time2))) )
 	(set-time-type! time3 time-duration)
 	(if (negative? nsec-diff)
@@ -649,7 +650,7 @@
        (/ (+ (* hour 60 60)
              (* minute 60)
              second
-             (/ nanosecond tm:nano)
+             (/ nanosecond tm:nano/i)
              (- offset))
           tm:sid))))
 
@@ -660,7 +661,7 @@
 
 (define (time-utc->julian-day time)
   (tm:check-time-type time 'time-utc 'time-utc->julian-day)
-  (+ (/ (+ (time-second time) (/ (time-nanosecond time) tm:nano))
+  (+ (/ (+ (time-second time) (/ (time-nanosecond time) tm:nano/i))
 	tm:sid)
      tm:tai-epoch-in-jd))
 
@@ -672,7 +673,7 @@
   (tm:check-time-type time 'time-tai 'time-tai->julian-day)
   (+ (/ (+ (- (time-second time) 
 	      (tm:leap-second-delta (time-second time)))
-	   (/ (time-nanosecond time) tm:nano))
+	   (/ (time-nanosecond time) tm:nano/i))
 	tm:sid)
      tm:tai-epoch-in-jd))
 
@@ -685,7 +686,7 @@
   (tm:check-time-type time 'time-monotonic 'time-monotonic->julian-day)
   (+ (/ (+ (- (time-second time) 
 	      (tm:leap-second-delta (time-second time)))
-	   (/ (time-nanosecond time) tm:nano))
+	   (/ (time-nanosecond time) tm:nano/i))
 	tm:sid)
      tm:tai-epoch-in-jd))
 
@@ -696,10 +697,10 @@
 
 
 (define (julian-day->time-utc jdn)
-  (let ((nanosecs (* tm:nano tm:sid (- jdn tm:tai-epoch-in-jd))))
+  (let ((nanosecs (* tm:nano/i tm:sid (- jdn tm:tai-epoch-in-jd))))
     (make-time time-utc
                (remainder nanosecs tm:nano)
-               (floor (/ nanosecs tm:nano)))))
+               (floor (/ nanosecs tm:nano/i)))))
 
 (define (julian-day->time-tai jdn)
   (time-utc->time-tai! (julian-day->time-utc jdn)))
@@ -838,7 +839,7 @@
     (#\f . ,(lambda (date pad-with)
               (display (tm:padding (date-second date) pad-with 2))
               (display tm:locale-number-separator)
-              (let1 nanostr (number->string (/ (date-nanosecond date) tm:nano))
+              (let1 nanostr (number->string (/ (date-nanosecond date) tm:nano/i))
                 (cond ((string-index nanostr #\.)
                        => (lambda (i) (display (string-drop nanostr (+ i 1)))))
                       ))))
