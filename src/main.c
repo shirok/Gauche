@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.94 2006-12-07 01:27:15 shirok Exp $
+ *  $Id: main.c,v 1.95 2007-01-16 08:16:46 shirok Exp $
  */
 
 #include <unistd.h>
@@ -40,6 +40,7 @@
 #include <signal.h>
 #include <ctype.h>
 
+#define GAUCHE_API_0_8_8        /* temporary compatibility stuff */
 #include "gauche.h"
 
 #ifdef HAVE_GETOPT_H

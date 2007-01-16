@@ -1,7 +1,7 @@
 /*
  * gauche.h - Gauche scheme system header
  *
- *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007 Shiro Kawai (shiro@acm.org)
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.478 2007-01-15 02:01:05 shirok Exp $
+ *  $Id: gauche.h,v 1.479 2007-01-16 08:16:46 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -94,7 +94,6 @@ SCM_DECL_BEGIN
 #endif /*__MINGW32__*/
 
 /* Some useful macros */
-
 #ifndef FALSE
 #define FALSE 0
 #endif
@@ -409,11 +408,17 @@ typedef struct ScmEvalPacketRec {
     ScmModule *module;          /* 'Current module' after evaluation */
 } ScmEvalPacket;
 
+#if defined(GAUCHE_API_0_8_8) || defined(LIBGAUCHE_BODY)
 SCM_EXTERN int Scm_Eval(ScmObj form, ScmObj env, ScmEvalPacket *packet);
 SCM_EXTERN int Scm_EvalCString(const char *form, ScmObj env,
                                ScmEvalPacket *packet);
 SCM_EXTERN int Scm_Apply(ScmObj proc, ScmObj args,
                          ScmEvalPacket *packet);
+#else  /*!GAUCHE_API_0_8_8*/
+#define Scm_Eval(f, e)        Scm_EvalRec(f, e)
+#define Scm_EvalCString(f, e) Scm_EvalCString(f, e)
+#define Scm_Apply(p, a)       Scm_ApplyRec(p, a)
+#endif /*!GAUCHE_API_0_8_8*/
 
 /* Calls VM recursively to evaluate the Scheme code.  These
    ones does not capture exceptions. */

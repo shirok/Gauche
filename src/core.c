@@ -1,7 +1,7 @@
 /*
  * core.c - core kernel interface
  *
- *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007 Shiro Kawai (shiro@acm.org)
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.72 2006-11-30 23:55:01 shirok Exp $
+ *  $Id: core.c,v 1.73 2007-01-16 08:16:46 shirok Exp $
  */
 
 #include <stdlib.h>

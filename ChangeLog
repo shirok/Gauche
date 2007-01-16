@@ -1,3 +1,11 @@
+2007-01-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h: reintroduced the compatibility macros for Scm_Eval,
+	  Scm_EvalCString and Scm_Apply, since there are extension packages
+	  that need more time to migrate.  By default, these are defined
+	  to Scm_EvalRec etc.  If GAUCHE_API_0_8_8 is defined, these becomes
+	  the new APIs.
+
 2007-01-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/signal.c (Scm_SigWait): Added a wrapper of sigwait to ensure
