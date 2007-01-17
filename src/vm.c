@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.263 2007-01-10 09:07:10 shirok Exp $
+ *  $Id: vm.c,v 1.264 2007-01-17 18:19:45 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2968,10 +2968,10 @@ static ScmObj dynwind_before_cc(ScmObj result, void **data)
     ScmObj body = SCM_OBJ(data[1]);
     ScmObj after = SCM_OBJ(data[2]);
     ScmObj prev;
-    ScmVM *vm = theVM;
-    prev = vm->handlers;
-
     void *d[2];
+    ScmVM *vm = theVM;
+
+    prev = vm->handlers;
     d[0] = (void*)after;
     d[1] = (void*)prev;
     vm->handlers = Scm_Cons(Scm_Cons(before, after), prev);
