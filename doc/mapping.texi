@@ -1394,6 +1394,12 @@ Gauche's @code{sys-sigsuspend}.  @xref{Masking and waiting signals}.
 @c JP
 Gauche の @code{sys-sigsuspend}。@ref{Masking and waiting signals}参照。
 @c COMMON
+@item sigwait
+@c EN
+Gauche's @code{sys-sigwait}.  @xref{Masking and waiting signals}.
+@c JP
+Gauche の @code{sys-sigwait}。@ref{Masking and waiting signals}参照。
+@c COMMON
 @item sin
 @itemx sinh
 @c EN
