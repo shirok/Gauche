@@ -31,7 +31,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.64 2006-11-25 02:59:16 shirok Exp $
+ *  $Id: regexp.c,v 1.65 2007-01-17 02:33:34 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -70,7 +70,7 @@
 
 /*
  * The idea here is to match string without converting mb <-> char as
- * much as possible.  Actually, the converion is done only when we see
+ * much as possible.  Actually, the conversion is done only when we see
  * large character sets.
  *
  * The engine is a sort of NFA, by keeping state information for backtrack
@@ -90,9 +90,9 @@ enum {
     RE_MATCH1_RL,
     RE_MATCH,                   /* followed by length, and bytes to match */
     RE_MATCH_RL,
-    RE_MATCH1_CI,               /* case insenstive match */
+    RE_MATCH1_CI,               /* case insensitive match */
     RE_MATCH1_CI_RL,
-    RE_MATCH_CI,                /* case insenstive match */
+    RE_MATCH_CI,                /* case insensitive match */
     RE_MATCH_CI_RL,
     RE_ANY,                     /* match any char */
     RE_ANY_RL,
@@ -900,7 +900,7 @@ static ScmObj rc1_parse(regcomp_ctx *ctx, int bolp, int topp, int level)
              SCM_EQ(SCM_CAR(token), SCM_SYM_REP_MIN))) {
             /* "x{n}"    => (rep n n x)
                "x{n,}"   => (rep n #f x)
-               "x{n,m}"  => (rep n m )
+               "x{n,m}"  => (rep n m x)
                "x{n,}?"  => (rep-min n #t x)
                "x{n,m}?" => (rep-min n m x) */
             if (SCM_NULLP(stack)) goto synerr;
