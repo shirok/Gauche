@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.123 2007-01-15 02:01:05 shirok Exp $
+;;; $Id: syslib.stub,v 1.124 2007-01-17 07:15:14 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -602,11 +602,13 @@
         "if (r < 0) Scm_SysError(\"chmod failed\");"
         "SCM_RESULT = SCM_TRUE;"))
 
-(define-cproc sys-fchmod (port-or-fd mode::<int>)
-  (body "int fd = Scm_GetPortFd(port_or_fd, TRUE), r;"
-        "SCM_SYSCALL(r, fchmod(fd, mode));"
-        "if (r < 0) Scm_SysError(\"fchmod failed\");"
-        "SCM_RESULT = SCM_TRUE;"))
+(if "!defined(__MINGW32__)"
+  (define-cproc sys-fchmod (port-or-fd mode::<int>)
+    (body "int fd = Scm_GetPortFd(port_or_fd, TRUE), r;"
+          "SCM_SYSCALL(r, fchmod(fd, mode));"
+          "if (r < 0) Scm_SysError(\"fchmod failed\");"
+          "SCM_RESULT = SCM_TRUE;"))
+) ;; !defined(__MINGW32__)
 
 ;; NB: we force GC just befor fork().  It appeares necessary on some
 ;; platform to synchronize page dirty bit information, so that incremental

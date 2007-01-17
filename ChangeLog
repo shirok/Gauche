@@ -1,5 +1,8 @@
 2007-01-16  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/net.ac: on mingw, we need to inlcude <windows.h> to check
+	  struct sockaddr_storage.
+
 	* ext/srfi/srfi-19-lib.scm: make julian-day calculation in inexact
 	  numbers to avoid the huge overhead of rational arithmetic.
 	* config.guess, config.sub: updated to the newer version.

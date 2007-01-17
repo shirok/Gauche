@@ -2,7 +2,7 @@ dnl
 dnl Configure ext/net
 dnl This file is included by the toplevel configure.in
 dnl
-dnl $Id: net.ac,v 1.6 2006-07-05 09:33:34 shirok Exp $
+dnl $Id: net.ac,v 1.7 2007-01-17 07:15:13 shirok Exp $
 
 # ext/net -------------------------------------------------
 
@@ -39,7 +39,12 @@ fi
 dnl
 dnl Check to see if the system provides sockaddr_storage
 dnl
-AC_CHECK_TYPES([struct sockaddr_storage],,,[#include <sys/socket.h>])
+case "$target" in
+ *mingw*) 
+   AC_CHECK_TYPES([struct sockaddr_storage],,,[#include <windows.h>]);;
+ *)
+   AC_CHECK_TYPES([struct sockaddr_storage],,,[#include <sys/socket.h>]);;
+esac
 
 dnl
 dnl Checks if sockaddr_in and sockaddr_in6 has *_len field

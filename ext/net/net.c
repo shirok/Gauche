@@ -1,7 +1,7 @@
 /*
  * net.c - network interface
  *
- *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007 Shiro Kawai (shiro@acm.org)
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.45 2006-11-30 23:55:00 shirok Exp $
+ *  $Id: net.c,v 1.46 2007-01-17 07:15:13 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -412,7 +412,7 @@ ScmObj Scm_SocketSetOpt(ScmSocket *s, int level, int option, ScmObj value)
         SCM_SYSCALL(r, setsockopt(s->fd, level, option, cvalue, size));
     } else if (SCM_INTP(value) || SCM_BIGNUMP(value)) {
         int v = Scm_GetInteger(value);
-        SCM_SYSCALL(r, setsockopt(s->fd, level, option, &v, sizeof(int)));
+        SCM_SYSCALL(r, setsockopt(s->fd, level, option, (void*)&v, sizeof(int)));
     } else {
         Scm_Error("socket option must be a string or an integer: %S", value);
     }
@@ -435,7 +435,7 @@ ScmObj Scm_SocketGetOpt(ScmSocket *s, int level, int option, int rsize)
     } else {
         int val;
         rrsize = sizeof(int);
-        SCM_SYSCALL(r, getsockopt(s->fd, level, option, &val, &rrsize));
+        SCM_SYSCALL(r, getsockopt(s->fd, level, option, (void*)&val, &rrsize));
         if (r < 0) Scm_SysError("getsockopt failed");
         return Scm_MakeInteger(val);
     }
