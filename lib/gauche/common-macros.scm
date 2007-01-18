@@ -1,7 +1,7 @@
 ;;;
 ;;; common-macros.scm - common macros
 ;;;  
-;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai  (shiro@acm.org)
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: common-macros.scm,v 1.24 2007-01-18 10:01:49 shirok Exp $
+;;;  $Id: common-macros.scm,v 1.25 2007-01-18 10:41:39 shirok Exp $
 ;;;
 
 ;;; Defines number of useful macros.  This file is to be autoloaded.
@@ -401,8 +401,9 @@
   (syntax-rules ()
     ((unwind-protect body handler)
      (letrec ((h (lambda () handler)))
-       (guard (e (else (h) (raise e))) body)
-       (h)))
+       (receive r (guard (e (else (h) (raise e))) body)
+         (h)
+         (apply values r))))
     ((unwind-protect . other)
      (syntax-error "malformed unwind-protect" (unwind-protect . other)))))
 
