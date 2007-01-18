@@ -1,6 +1,6 @@
 ;; test exception handling system 
 ;; this must come after primsyn, error, macro and object tests.
-;; $Id: exception.scm,v 1.11 2006-11-18 01:09:48 shirok Exp $
+;; $Id: exception.scm,v 1.12 2007-01-18 10:01:48 shirok Exp $
 
 (use gauche.test)
 (test-start "exceptions")
@@ -244,6 +244,52 @@
          (let1 x (guard (e (else aaa)) (foo))
            (list x aaa))))
 
+
+;;--------------------------------------------------------------------
+(test-section "unwind-protect")
+
+(let ()
+  (define aaa '())
+  (define (foo thunk)
+    (dynamic-wind
+        (lambda () (push! aaa 'a))
+        (lambda () (push! aaa 'b) (thunk) (push! aaa 'c))
+        (lambda () (push! aaa 'd))))
+  (test* "unwind-protect (success)" '(e d c z b a)
+         (guard (e (else (push! aaa e) e))
+           (set! aaa '())
+           (unwind-protect
+            (foo (lambda () (push! aaa 'z)))
+            (push! aaa 'e))
+           aaa))
+  (test* "unwind-protect (raise)" '(boo e d b a)
+         (guard (e (else (push! aaa e) aaa))
+           (set! aaa '())
+           (unwind-protect
+            (foo (lambda () (raise 'boo)))
+            (push! aaa 'e))
+           aaa))
+  (test* "unwind-protect (error)" '(boo e d b a)
+         (guard (e (else (push! aaa 'boo) aaa))
+           (set! aaa '())
+           (unwind-protect
+            (foo (lambda () (error "boo")))
+            (push! aaa 'e))
+           aaa))
+
+  (test* "unwind-protect (restart)" '(e d c a d z b a)
+         (begin
+           (set! aaa '())
+           (let ((k #f))
+             (let/cc k1
+               (unwind-protect
+                (foo (lambda ()
+                       (let/cc k2
+                         (set! k k2) (push! aaa 'z) (k1 0))))
+                (push! aaa 'e)))
+             (when k (let ((k0 k)) (set! k #f) (k0 0))))
+           aaa))
+  )
 
 ;;--------------------------------------------------------------------
 (test-section "subtype")

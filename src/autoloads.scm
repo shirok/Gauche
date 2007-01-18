@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.36 2006-06-05 05:11:25 shirok Exp $
+;;; $Id: autoloads.scm,v 1.37 2007-01-18 10:01:48 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.36 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.37 $.  DO NOT EDIT */"
    :pre-decl '("#define LIBGAUCHE_BODY")
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
@@ -111,7 +111,7 @@
           (:macro let1) (:macro let/cc) (:macro begin0) (:macro fluid-let)
           (:macro values-ref)
           (:macro dotimes) (:macro dolist) (:macro while) (:macro until)
-          (:macro guard))
+          (:macro guard) (:macro unwind-protect))
 
 (autoload gauche.regexp
           (:macro rxmatch-let) (:macro rxmatch-if)

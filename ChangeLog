@@ -1,5 +1,9 @@
 2007-01-17  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/common-macros.scm (unwind-protect): added unwind-protect,
+	  finally.
+	* src/autoload.scm: changed accordingly.
+
 	* release 0.8.9
 
 2007-01-16  Shiro Kawai  <shiro@acm.org>

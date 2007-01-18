@@ -6894,7 +6894,90 @@ returns the value(s) of the last @var{expr} in the handling clause.
 例外が @code{clause} のどれかで処理された時には、@code{guard} は
 それを処理した節の最後の @var{expr} の値を返します。
 @c COMMON
+
+@c EN
+The @var{clause}s are evaluated in the same dynamic environment as
+the @code{guard} form, i.e. any @code{dynamic-wind}s inside @code{body}
+are unwound before evaluation of the @var{clause}s.  It is different
+from the lower level forms
+@code{with-error-handler} and @code{with-exception-handler}, whose
+handler is evaluated before the dynamic environment are unwound.
+@c JP
+@var{clause}は@code{guard}と同じ動的環境で評価されます。すなわち、
+@code{body}中の@code{dynamic-wind}は@var{clause}の評価の前に
+巻戻されます。これは低レベル関数の@code{with-error-handler}や
+@code{with-exception-handler}とは異なることに注意してください。
+これら低レベル関数では例外ハンドラが呼ばれてから動的環境が巻戻されます。
+@c COMMON
+
+@example
+(let ((z '()))
+  (guard (e (else (push! z 'caught)))
+    (dynamic-wind (lambda () (push! z 'pre))
+                  (lambda () (error "foo"))
+                  (lambda () (push! z 'post))))
+  (reverse z))
+ @result{} (pre post caught)
+
+(guard (e (else (print 'OUTER) #f))
+  (with-output-to-string ()
+    (print 'INNER)
+    (error "foo")))
+@c EN
+ @result{} prints OUTER to the current output port of guard,
+      not to the string port.
+@c JP
+ @result{} OUTERを文字列ポートではなくguard実行時の
+      current-output-portに出力。
+@c COMMON
+@end example
 @end defmac
+
+@defmac unwind-protect body cleanup
+Executes @var{body}, then executes @var{cleanup}, and
+returns the result(s) of @var{body}.  If an exception is raised
+within @var{body}, @var{cleanup} is executed before the
+exception escapes from the @code{unwind-protect} form.
+For example, the following code calls @code{start-motor},
+@code{drill-a-hole}, and @code{stop-motor} in order if
+everything goes ok, and if anything goes wrong in @code{start-motor}
+or @code{drill-a-hole}, @code{stop-motor} is still called
+before the exception escapes @code{unwind-protect}.
+
+@example
+(unwind-protect
+  (begin (start-motor)
+         (drill-a-hole))
+  (stop-motor))
+@end example
+
+
+The @var{cleanup} form is evaluated in the same dynamic environment
+as @code{unwind-protect}.
+If an exception is thrown within @var{cleanup}, it will be
+handled outside of the @code{unwind-protect} form.
+
+Although this form looks similar to @code{dynamic-wind}, they
+work at different layers and should not be confused.  
+@code{dynamic-wind} is the bottom-level
+building block and used to manage current exception handlers,
+current i/o ports, parameters, etc.
+@code{dynamic-wind}'s @var{before} and @var{after} thunks are
+called whenever any of those control flow transition occurs.
+On the other hand, @code{unwind-protect} only cares about
+the Gauche's exception system.  @code{unwind-protect}'s @var{cleanup}
+is called only when @var{body} throws Gauche's exception.
+In the above example, if control escapes from @code{drill-a-hole} 
+by calling a continuation captured outside of @code{unwind-protect},
+@var{cleanup} is not called; because the control may return to
+@code{drill-a-hole} again.  It can happen if user-level thread
+system is implemented by @code{call/cc}, for example.
+
+The name of this form is taken from Common Lisp.  Some Scheme
+systems have similar macros in different names, such as
+@code{try-finally}.
+@end defmac
+
 
 @defun with-error-handler handler thunk
 @c EN
