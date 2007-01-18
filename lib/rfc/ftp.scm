@@ -30,7 +30,7 @@
 ;;;  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-;;; $Id: ftp.scm,v 1.1 2007-01-18 19:08:57 shirok Exp $
+;;; $Id: ftp.scm,v 1.2 2007-01-18 19:19:05 shirok Exp $
 
 ;; RFC  959 FILE TRANSFER PROTOCOL (FTP)
 ;; RFC 2428 FTP Extensions for IPv6 and NATs
@@ -350,7 +350,10 @@
                  (display cmd)
                  (for-each (lambda (arg) (display " ") (display arg)) args)))))
     (display msg out) (display "\r\n" out) (flush out)
-    (when log (log-format log ">>> ~a" msg))
+    (when log
+      (if (equal? cmd "PASS")
+        (log-format log ">>> PASS *****") ;; do not log password
+        (log-format log ">>> ~a" msg)))
     (get-response conn)))
 
 ;; send rfc-959 6(2) type command
