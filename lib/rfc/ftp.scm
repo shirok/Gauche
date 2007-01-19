@@ -30,7 +30,7 @@
 ;;;  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-;;; $Id: ftp.scm,v 1.2 2007-01-18 19:19:05 shirok Exp $
+;;; $Id: ftp.scm,v 1.3 2007-01-19 01:07:12 shirok Exp $
 
 ;; RFC  959 FILE TRANSFER PROTOCOL (FTP)
 ;; RFC 2428 FTP Extensions for IPv6 and NATs
@@ -85,24 +85,24 @@
 ;; PASS <SP> <password> <CRLF>
 ;; ACCT <SP> <account-information> <CRLF>
 (define (ftp-login host . keys)
-  (let-keywords* keys ((acct "")
+  (let-keywords* keys ((account "")
 		       (passive #f)
                        (port *default-ftp-port*)
-                       (user *anon-user*)
-		       (passwd
-                        (if (string=? user *anon-user*) *anon-pass* ""))
+                       (username *anon-user*)
+		       (password
+                        (if (string=? username *anon-user*) *anon-pass* ""))
                        (log-drain #f))
     (define (do-login conn)
       (let retry ()
 	(if (string-prefix? "120" (get-response conn))
           (begin (sys-sleep 1) (retry))
-          (let1 r1 (send-command conn "USER" user)
+          (let1 r1 (send-command conn "USER" username)
             (if (not (string-prefix? "3" r1))
               r1
-              (let1 r2 (send-command conn "PASS" passwd)
+              (let1 r2 (send-command conn "PASS" password)
                 (if (not (string-prefix? "3" r2))
                   r2
-                  (send-command conn "ACCT" acct))))))))
+                  (send-command conn "ACCT" account))))))))
     (let* ((conn (make <ftp-connection>
                    :passive passive
                    :socket (make-client-socket 'inet host port)
