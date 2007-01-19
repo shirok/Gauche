@@ -1,7 +1,7 @@
 ;;;
 ;;; library utilities - to be autoloaded.
 ;;;  
-;;;   Copyright (c) 2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2003-2007 Shiro Kawai  (shiro@acm.org)
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: libutil.scm,v 1.2 2003-09-14 10:20:45 shirok Exp $
+;;;  $Id: libutil.scm,v 1.3 2007-01-19 05:42:18 shirok Exp $
 ;;;
 
 (define-module gauche.libutil
@@ -143,9 +143,8 @@
 ;;  NB: this will be more involved when we allow more than one modules
 ;;  in a file.  Or should we?
 (define (library-has-module? file name)
-  (let1 exp (with-error-handler (lambda (e) #f)
-              (lambda ()
-                (with-input-from-file file read :if-does-not-exist #f)))
+  (let1 exp (guard (e (else #f))
+              (with-input-from-file file read :if-does-not-exist #f))
     (and (pair? exp)
          (eq? (car exp) 'define-module)
          (pair? (cdr exp))
@@ -169,23 +168,21 @@
 
 ;; NB: this is also used by gauche.reload
 (define (module-glob-pattern->regexp pat)
-  (with-error-handler
-      (lambda (e) (error "bad glob pattern" pat))
-    (lambda ()
-      (string->regexp
-       (with-string-io pat
-         (lambda ()
-           (display "^")
-           (let loop ((c (read-char)))
-             (unless (eof-object? c)
-               (case c
-                 ((#\?) (display "[^.]") (loop (read-char)))
-                 ((#\*) (display "[^.]*") (loop (read-char)))
-                 ((#\\) (let1 c2 (read-char)
-                          (unless (eof-object? c2)
-                            (write-char c2) (loop (read-char)))))
-                 ((#\.) (display "\\.") (loop (read-char)))
-                 (else (write-char c) (loop (read-char))))))
-           (display "$")))))))
+  (guard (e (else (error "bad glob pattern" pat)))
+    (string->regexp
+     (with-string-io pat
+       (lambda ()
+         (display "^")
+         (let loop ((c (read-char)))
+           (unless (eof-object? c)
+             (case c
+               ((#\?) (display "[^.]") (loop (read-char)))
+               ((#\*) (display "[^.]*") (loop (read-char)))
+               ((#\\) (let1 c2 (read-char)
+                        (unless (eof-object? c2)
+                          (write-char c2) (loop (read-char)))))
+               ((#\.) (display "\\.") (loop (read-char)))
+               (else (write-char c) (loop (read-char))))))
+         (display "$"))))))
 
 (provide "gauche/libutil")

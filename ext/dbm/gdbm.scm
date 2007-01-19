@@ -1,7 +1,7 @@
 ;;;
 ;;; gdbm - gdbm interface
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai (shiro@acm.org)
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gdbm.scm,v 1.9 2005-05-11 02:48:03 shirok Exp $
+;;;  $Id: gdbm.scm,v 1.10 2007-01-19 05:42:15 shirok Exp $
 ;;;
 
 (define-module dbm.gdbm
@@ -154,9 +154,7 @@
 
 (define (%with-gdbm-locking path thunk)
   (let1 db (gdbm-open path 0 |GDBM_READER| #o664) ;; put read-lock
-    (with-error-handler
-        (lambda (e) (gdbm-close db) (raise e))
-      (lambda () (thunk) (gdbm-close db)))))
+    (unwind-protect (thunk) (gdbm-close db))))
         
 (define-method dbm-db-exists? ((class <gdbm-meta>) name)
   (file-exists? name))

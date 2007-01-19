@@ -1,7 +1,7 @@
 ;;;
 ;;; dbm - abstract base class for dbm interface
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai  (shiro@acm.org)
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: dbm.scm,v 1.6 2006-01-20 10:43:13 shirok Exp $
+;;;  $Id: dbm.scm,v 1.7 2007-01-19 05:42:15 shirok Exp $
 ;;;
 
 (define-module dbm
@@ -87,9 +87,8 @@
         (sys-link to1 to2))
       (begin
         (copy-file from1 to1 :safe #t :if-exists if-exists)
-        (with-error-handler
-            (lambda (e) (sys-unlink to1) (sys-unlink to2) (raise e))
-          (lambda () (copy-file from2 to2 :safe #t :if-exists if-exists)))))))
+        (guard (e (else (sys-unlink to1) (sys-unlink to2) (raise e)))
+          (copy-file from2 to2 :safe #t :if-exists if-exists))))))
 
 (define (%dbm-rename2 from1 to1 from2 to2 . keys)
   (let-keywords* keys ((if-exists :error))

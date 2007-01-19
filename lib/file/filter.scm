@@ -1,7 +1,7 @@
 ;;;
 ;;; file/filter.scm - utility to build filter programs
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2006 Shiro Kawai  (shiro@acm.org)
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: filter.scm,v 1.4 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: filter.scm,v 1.5 2007-01-19 05:42:16 shirok Exp $
 ;;;
 
 ;;; This module provides utilities for a common pattern in
@@ -80,15 +80,14 @@
                                              "/"
                                              temporary-file))))
                     ((tport tfile) (sys-mkstemp tempfile)))
-        (with-error-handler
-         (lambda (e)
-           (unless keep-output? (sys-unlink tfile))
-           (raise e))
-         (lambda ()
-           (receive r (process-with-output tport)
-             (close-output-port tport)
-             (sys-rename tfile ofile)
-             (apply values r))))))
+        (guard (e
+                (else 
+                 (unless keep-output? (sys-unlink tfile))
+                 (raise e)))
+          (receive r (process-with-output tport)
+            (close-output-port tport)
+            (sys-rename tfile ofile)
+            (apply values r)))))
 
     (cond
      ((output-port? output) (process-with-output output))

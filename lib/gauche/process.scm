@@ -1,7 +1,7 @@
 ;;;
 ;;; process.scm - process interface
 ;;;  
-;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai (shiro@acm.org)
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: process.scm,v 1.21 2006-12-26 22:02:16 shirok Exp $
+;;;  $Id: process.scm,v 1.22 2007-01-19 05:42:18 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -238,15 +238,11 @@
                        (err :error #f))
     (let* ((p (apply-run-process command input :pipe err))
            (i (wrap-input-process-port p opts)))
-      (with-error-handler
-          (lambda (e)
-            (close-input-port i)
-            (process-wait p)
-            (raise e))
-        (lambda ()
-          (begin0 (proc i)
-                  (close-input-port i)
-                  (process-wait p)))))))
+      (unwind-protect
+          (proc i)
+        (begin
+          (close-input-port i)
+          (process-wait p))))))
 
 (define (with-input-from-process command thunk . opts)
   (apply call-with-input-process command
@@ -264,15 +260,11 @@
                        (err :error #f))
     (let* ((p (apply-run-process command :pipe output err))
            (o (wrap-output-process-port p opts)))
-      (with-error-handler
-          (lambda (e)
-            (close-output-port o)
-            (process-wait p)
-            (raise e))
-        (lambda ()
-          (begin0 (proc o)
-                  (close-output-port o)
-                  (process-wait p)))))))
+      (unwind-protect
+          (proc o)
+        (begin
+          (close-output-port o)
+          (process-wait p))))))
 
 (define (with-output-to-process command thunk . opts)
   (apply call-with-output-process command
@@ -284,17 +276,11 @@
     (let* ((p (apply-run-process command :pipe :pipe err))
            (i (wrap-input-process-port p opts))
            (o (wrap-output-process-port p opts)))
-      (with-error-handler
-          (lambda (e)
-            (close-output-port o)
-            (close-input-port i)
-            (process-wait p)
-            (raise e))
-        (lambda ()
-          (begin0 (proc i o)
-                  (close-output-port o)
-                  (close-input-port i)
-                  (process-wait p)))))))
+      (unwind-protect (proc i o)
+        (begin
+          (close-output-port o)
+          (close-input-port i)
+          (process-wait p))))))
 
 ;; Convenient thingies that can be used like `command` in shell scripts
 

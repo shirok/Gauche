@@ -1,6 +1,21 @@
 2007-01-18  Shiro Kawai  <shiro@acm.org>
 
-	* lib/rfc/ftp.scm: Added.  Contribution from OOHASHI Daichi.
+	* ext/charconv/convaux.scm, ext/dbm/gdbm.scm, ext/net/netaux.scm,
+	  ext/uvector/uvgen.scm, lib/dbm.scm, lib/file/filter.scm,
+	  lib/gauche/cgen.scm, lib/gauche/interpolate.scm, 
+	  lib/gauche/libutil.scm, lib/gauche/parseopt.scm,
+	  lib/gauche/process.scm, lib/gauche/redefutil.scm,
+	  lib/gauche/test.scm, lib/gauche/interactive/info.scm,
+	  lib/gauche/package/fetch.scm, lib/rfc/mime.scm,
+	  lib/text/gettext.scm, lib/www/cgi.scm, libsrc/file/util.scm,
+	  src/compile.scm: Replaced 'with-error-handler' for 'guard' or
+	  'unwind-protect'.   There are some left in src/scmlib.scm, which
+	  should be replaced after the next release, since 0.8.9 doesn't
+	  know about unwind-protect yet so it wouln't build the CVS HEAD
+	  if we replace them now.
+
+	* lib/rfc/ftp.scm: Added.  Based on the contribution from
+	  OOHASHI Daichi.
 
 2007-01-17  Shiro Kawai  <shiro@acm.org>
 

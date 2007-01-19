@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.package.fetch - fetch a package
 ;;;  
-;;;   Copyright (c) 2004 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2004-2007 Shiro Kawai (shiro@acm.org)
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fetch.scm,v 1.4 2004-07-26 19:57:04 shirok Exp $
+;;;  $Id: fetch.scm,v 1.5 2007-01-19 05:42:19 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -67,13 +67,9 @@
          (run #`",wget -P \",build-dir\" \",uri\"")
          dest)
         (#/^ftp:/ (#f)
-         (with-error-handler
-             (lambda (e)
-               (sys-unlink dest)
-               (raise e))
-           (lambda ()
-             (run #`",ncftpget -c \",uri\" > \",dest\"")))
-           dest)
+         (guard (e (else (sys-unlink dest) (raise e)))
+           (run #`",ncftpget -c \",uri\" > \",dest\""))
+         dest)
         (else
          (unless (file-is-readable? uri)
            (error "can't read the package: " uri))

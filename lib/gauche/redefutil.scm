@@ -1,7 +1,7 @@
 ;;;
 ;;; redefutil.scm - class redefinition protocol (autoloaded)
 ;;;  
-;;;   Copyright (c) 2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2003-2007 Shiro Kawai (shiro@acm.org)
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: redefutil.scm,v 1.4 2005-05-01 06:36:03 shirok Exp $
+;;;  $Id: redefutil.scm,v 1.5 2007-01-19 05:42:19 shirok Exp $
 ;;;
 
 ;; This file is autoloaded
@@ -52,14 +52,11 @@
 
 (define (redefine-class! old new)
   (%start-class-redefinition! old) ;; MT safety
-  (with-error-handler
-      (lambda (e)
-        (%commit-class-redefinition! old #f)
-        (warn "Class redefinition of ~S is aborted.  The state of the class may be inconsistent" old)
-        (raise e))
-    (lambda ()
-      (class-redefinition old new)
-      (%commit-class-redefinition! old new))))
+  (guard (e (else
+             (%commit-class-redefinition! old #f)
+             (warn "Class redefinition of ~S is aborted.  The state of the class may be inconsistent" old)))
+    (class-redefinition old new)
+    (%commit-class-redefinition! old new)))
 
 (define-generic class-redefinition)
 (define-method class-redefinition ((old <class>) (new <class>))

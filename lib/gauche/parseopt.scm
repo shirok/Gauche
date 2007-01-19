@@ -1,7 +1,7 @@
 ;;;
 ;;; parseopt.scm - yet another command-line argument parser
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai (shiro@acm.org)
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: parseopt.scm,v 1.9 2005-08-28 12:59:17 shirok Exp $
+;;;  $Id: parseopt.scm,v 1.10 2007-01-19 05:42:18 shirok Exp $
 ;;;
 
 (define-module gauche.parseopt
@@ -111,11 +111,10 @@
         (errorf "an integer is required for option ~a, but got ~a"
                 (ref optspec 'name) arg)))
   (define (get-sexp arg)
-    (with-error-handler
-        (lambda (e)
-          (errorf "the argument for option ~a is not valid sexp: ~s"
-                  (ref optspec 'name) arg))
-      (lambda () (read-from-string arg))))
+    (guard (e ((<read-error> e)
+               (errorf "the argument for option ~a is not valid sexp: ~s"
+                       (ref optspec 'name) arg)))
+      (read-from-string arg)))
   (define (process-args)
     (let loop ((spec (ref optspec 'args))
                (args args)

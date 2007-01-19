@@ -1,7 +1,7 @@
 ;;
 ;; Generates uvect.c from uvect.c.tmpl
 ;;
-;; $Id: uvgen.scm,v 1.6 2006-11-04 09:56:59 shirok Exp $
+;; $Id: uvgen.scm,v 1.7 2007-01-19 05:42:15 shirok Exp $
 ;;
 
 (use srfi-1)
@@ -62,15 +62,14 @@
              (loop (read-line))))))
 
   (receive (out name) (sys-mkstemp tmpl-file)
-    (with-error-handler
-        (lambda (e) (sys-unlink name) (raise e))
-      (lambda ()
-        (with-output-to-port out
-          (cut with-input-from-file tmpl-file
-               (cut translate)))
-        (close-output-port out)
-        (call-with-input-file name load-from-port)
-        (sys-unlink name)))))
+    (unwind-protect
+     (begin
+       (with-output-to-port out
+         (cut with-input-from-file tmpl-file
+              (cut translate)))
+       (close-output-port out)
+       (call-with-input-file name load-from-port))
+     (sys-unlink name))))
 
 ;; substitute ${param arg ...} in LINE.  output goes to curout.
 ;; word-alist :: ((<string> . <string-or-proc>) ...)

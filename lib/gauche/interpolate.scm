@@ -1,7 +1,7 @@
 ;;;
 ;;; interpolate.scm - string interpolation; to be autoloaded
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai  (shiro@acm.org)
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: interpolate.scm,v 1.7 2007-01-14 09:22:58 shirok Exp $
+;;;  $Id: interpolate.scm,v 1.8 2007-01-19 05:42:18 shirok Exp $
 ;;;
 
 ;;; #`"The value is ,|foo|." => (string-append "The value is " foo ".")
@@ -64,10 +64,9 @@
            (write-char c acc) (accum (read-char) acc))))
   (define (insert)
     (let* ((item
-            (with-error-handler
-             (lambda (e)
-               (errorf "unmatched parenthesis in interpolating string: ~s" str))
-             (lambda () (read))))
+            (guard (e ((<read-error> e)
+                       (errorf "unmatched parenthesis in interpolating string: ~s" str)))
+              (read)))
            (rest
             (accum (read-char) (open-output-string))))
       (cons `(x->string ,item) rest)))

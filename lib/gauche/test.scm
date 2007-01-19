@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: test.scm,v 1.19 2006-11-08 21:14:51 shirok Exp $
+;;;  $Id: test.scm,v 1.20 2007-01-19 05:42:19 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -120,15 +120,14 @@
 (define (test msg expect thunk . compare)
   (apply prim-test msg expect
          (lambda ()
-           (with-error-handler
-               (lambda (e)
-                 (when *test-report-error*
-                   (report-error e))
-                 (make <test-error>
-                   :message (if (is-a? e <message-condition>)
-                              (ref e 'message)
-                              e)))
-             thunk))
+           (guard (e (else
+                      (when *test-report-error*
+                        (report-error e))
+                      (make <test-error>
+                        :message (if (is-a? e <message-condition>)
+                                   (ref e 'message)
+                                   e))))
+             (thunk)))
          compare))
 
 ;; A convenient macro version

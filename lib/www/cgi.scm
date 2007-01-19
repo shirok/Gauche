@@ -1,7 +1,7 @@
 ;;;
 ;;; cgi.scm - CGI utility
 ;;;  
-;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai  (shiro@acm.org)
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.29 2006-03-04 09:13:27 shirok Exp $
+;;;  $Id: cgi.scm,v 1.30 2007-01-19 05:42:19 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -394,21 +394,13 @@
                        (output-proc cgi-default-output)
                        (merge-cookies #f)
                        (part-handlers '()))
-    ;; we need to keep the output port, for the error handler may be
-    ;; called while the current output port is altered.
-    (let1 default-output (current-output-port)
-      (with-error-handler
-          (lambda (e)
-            (with-output-to-port default-output
-              (cut output-proc (on-error e))))
-        (lambda ()
-          (let1 params
-              (cgi-parse-parameters :merge-cookies merge-cookies
-                                    :part-handlers part-handlers)
-            (output-proc (proc params))))))
+    (guard (e (else (cut output-proc (on-error e))))
+      (let1 params (cgi-parse-parameters :merge-cookies merge-cookies
+                                         :part-handlers part-handlers)
+        (output-proc (proc params))))
     ;; remove any temporary files
     (for-each sys-unlink (cgi-temporary-files))
-    ))
+    0))
 
 ;; aux fns
 (define (cgi-default-error-proc e)

@@ -1,7 +1,7 @@
 ;;;
 ;;; file/util.scm - filesystem utility functions
 ;;;  
-;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai (shiro@acm.org)
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.3 2006-08-28 05:03:31 shirok Exp $
+;;;  $Id: util.scm,v 1.4 2007-01-19 05:42:19 shirok Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -498,18 +498,16 @@
             (set! outport (open-output-file dst :if-exists :supersede)) #t))
           ))
     (define (do-copy)
-      (with-error-handler
-       (lambda (e) (rollback) (raise e))
-       (lambda ()
-         (set! inport (open-input-file src))
-         (when keeptime
-           (set! times (let1 stat (sys-fstat inport)
-                         (map (cut slot-ref stat <>) '(atime mtime)))))
-         (begin0
-          (and (open-destination)
-               (copy-port inport outport :unit 65536)
-               #t)
-          (commit)))))
+      (guard (e (else (rollback) (raise e)))
+        (set! inport (open-input-file src))
+        (when keeptime
+          (set! times (let1 stat (sys-fstat inport)
+                        (map (cut slot-ref stat <>) '(atime mtime)))))
+        (begin0
+         (and (open-destination)
+              (copy-port inport outport :unit 65536)
+              #t)
+         (commit))))
 
     ;; body of copy-file
     (unless (memq if-exists '(#f :error :supersede :backup))

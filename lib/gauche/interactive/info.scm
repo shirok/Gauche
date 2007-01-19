@@ -1,7 +1,7 @@
 ;;;
 ;;; interactive/info.scm - online helper
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai  (shiro@acm.org)
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: info.scm,v 1.7 2005-08-31 13:55:55 shirok Exp $
+;;;  $Id: info.scm,v 1.8 2007-01-19 05:42:19 shirok Exp $
 ;;;
 
 (define-module gauche.interactive.info
@@ -63,17 +63,12 @@
           ;; NB: ignore SIGPIPE, for the pager may be terminated prematurely.
           ;; This is not MT safe.
           (let1 h #f
-            (dynamic-wind
-             (lambda ()
-               (set! h (get-signal-handler SIGPIPE))
-               (set-signal-handler! SIGPIPE #f))
-             (lambda ()
-               (with-error-handler values
-                 (lambda () (display s (process-input p))))
-               (close-output-port (process-input p))
-               (process-wait p))
-             (lambda ()
-               (set-signal-handler! SIGPIPE h))))))
+            (with-signal-handlers
+                ((SIGPIPE => #f))
+              (guard (e (else #f))
+                (display s (process-input p)))
+              (close-output-port (process-input p))
+              (process-wait p)))))
       ))
 
 (define (get-info-paths)

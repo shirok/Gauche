@@ -1,7 +1,7 @@
 ;;;
 ;;; compile.scm - The compiler
 ;;;  
-;;;   Copyright (c) 2004-2006 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2004-2007 Shiro Kawai  (shiro@acm.org)
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.52 2007-01-15 00:08:57 shirok Exp $
+;;;  $Id: compile.scm,v 1.53 2007-01-19 05:42:19 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1291,22 +1291,22 @@
   (let1 cenv (if (module? module)
                (make-bottom-cenv module)
                (make-bottom-cenv))
-    (with-error-handler
-        ;; TODO: check if e is an expected error (such as syntax error) or
-        ;; an unexpected error (compiler bug).
-        (lambda (e)
+    (guard
+        (e
+         (else
+          ;; TODO: check if e is an expected error (such as syntax error) or
+          ;; an unexpected error (compiler bug).
           (let1 srcinfo (and (pair? program)
                              (pair-attribute-get program 'source-info #f))
             (if srcinfo
               (errorf "Compile Error: ~a\n~s:~d:~,,,,40:s\n"
                       (slot-ref e 'message) (car srcinfo)
                       (cadr srcinfo) program)
-              (errorf "Compile Error: ~a\n" (slot-ref e 'message)))))
-      (lambda ()
-        (let1 p1 (pass1 program cenv)
-          (pass3 (pass2 p1)
-                 (make-compiled-code-builder 0 0 '%toplevel #f #f)
-                 '() 'tail)))
+              (errorf "Compile Error: ~a\n" (slot-ref e 'message))))))
+      (let1 p1 (pass1 program cenv)
+        (pass3 (pass2 p1)
+               (make-compiled-code-builder 0 0 '%toplevel #f #f)
+               '() 'tail))
       )))
 
 ;; stub for future extension

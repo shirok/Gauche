@@ -1,7 +1,7 @@
 ;;;
 ;;; convaux - auxiliary charconv routines
 ;;;  
-;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai  (shiro@acm.org)
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: convaux.scm,v 1.2 2006-10-08 03:31:47 shirok Exp $
+;;;  $Id: convaux.scm,v 1.3 2007-01-19 05:42:15 shirok Exp $
 ;;;
 
 (select-module gauche.charconv)
@@ -151,11 +151,9 @@
       (proc port)
       (let1 cvp (open-input-conversion-port port from-code
                                             :owner? #f :buffer-size bufsiz)
-        (with-error-handler
-            (lambda (e) (close-input-port cvp) (raise e))
-          (lambda ()
-            (begin0 (proc cvp) (close-input-port cvp)))))
-      )))
+        (unwind-protect
+         (proc cvp)
+         (close-input-port cvp))))))
 
 (define (call-with-output-conversion port proc . opts)
   (let-keywords* opts ((to-code :encoding (gauche-character-encoding))
@@ -164,11 +162,9 @@
       (proc port)
       (let1 cvp (open-output-conversion-port port to-code
                                              :owner? #f :buffer-size bufsiz)
-        (with-error-handler
-            (lambda (e) (close-output-port cvp) (raise e))
-          (lambda ()
-            (begin0 (proc cvp) (close-output-port cvp)))))
-      )))
+        (unwind-protect
+         (proc cvp)
+         (close-output-port cvp))))))
 
 (define (with-input-conversion port thunk . opts)
   (apply call-with-input-conversion port
