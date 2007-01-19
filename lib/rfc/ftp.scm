@@ -30,7 +30,7 @@
 ;;;  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-;;; $Id: ftp.scm,v 1.3 2007-01-19 01:07:12 shirok Exp $
+;;; $Id: ftp.scm,v 1.4 2007-01-19 05:35:19 shirok Exp $
 
 ;; RFC  959 FILE TRANSFER PROTOCOL (FTP)
 ;; RFC 2428 FTP Extensions for IPv6 and NATs
@@ -117,9 +117,10 @@
 
 ;; QUIT <CRLF>
 (define (ftp-quit conn)
-  (begin0
+  (unwind-protect
    (simple-command conn "QUIT")
-   (socket-close (ref conn 'socket))))
+   (cond ((ref conn 'socket)
+          => (lambda (s) (socket-shutdown s) (set! (ref conn 'socket) #f))))))
 
 
 ;; *ABOR <CRLF>
