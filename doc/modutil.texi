@@ -4585,6 +4585,9 @@ logs are put to it.
 
 @deftp {Condition} <ftp-error>
 @clindex ftp-error
+This type of exception is thrown when the ftp server returns an error code.
+Inherits @code{<error>}.  The message field contains the server reply,
+including the status code.
 @end deftp
 
 @defun call-with-ftp-connection host proc &keyword passive port username password account log-drain
