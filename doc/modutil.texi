@@ -21,6 +21,7 @@
 * RFC822 message parsing::      
 * Base64 encoding/decoding::    
 * HTTP cookie handling::        
+* FTP::                         
 * HMAC keyed-hashing::          
 * HTTP::                        
 * MD5 message digest::          
@@ -4390,7 +4391,7 @@ Base64 でエンコードされた文字として適当でない文字は沈黙のまま無視されます。
 @end defun
 
 @c ----------------------------------------------------------------------
-@node HTTP cookie handling, HMAC keyed-hashing, Base64 encoding/decoding, Library modules - Utilities
+@node HTTP cookie handling, FTP, Base64 encoding/decoding, Library modules - Utilities
 @section @code{rfc.cookie} - HTTP cookie handling
 @c NODE HTTPクッキー, @code{rfc.cookie} - HTTPクッキー
 
@@ -4551,7 +4552,231 @@ Some examples:
 @end defun
 
 @c ----------------------------------------------------------------------
-@node HMAC keyed-hashing, HTTP, HTTP cookie handling, Library modules - Utilities
+@node FTP, HMAC keyed-hashing, HTTP cookie handling, Library modules - Utilities
+@section @code{rfc.ftp} - FTP client
+@c NODE FTPクライアント, @code{rfc.ftp} - FTPクライアント
+
+@deftp {Module} rfc.ftp
+@mdindex rfc.ftp
+This module provides a set of convenient functions to access ftp
+servers.
+@end deftp
+
+@deftp {Class} <ftp-connection>
+@clindex ftp-connection
+An object to keep FTP connection to a server.  It has the following
+public slots.
+
+@defivar {<ftp-connection>} transfer-type
+FTP transfer type.  Must be one of the following symbols:
+@code{ascii}, @code{binary} (default), and @code{image}.
+@end defivar
+
+@defivar {<ftp-connection>} passive
+True if the client uses passive connection.c
+@end defivar
+
+@defivar {<ftp-connection>} log-drain
+This slot must hold a @code{<log-drain>} instance (@xref{User-level logging})
+or @code{#f}.  If it has a @code{<log-drain>} instance, ftp communication
+logs are put to it.
+@end defivar
+@end deftp
+
+@deftp {Condition} <ftp-error>
+@clindex ftp-error
+@end deftp
+
+@defun call-with-ftp-connection host proc &keyword passive port username password account log-drain
+A high-level convenience routine to open an ftp connection to
+an ftp server and calls the given procedure.
+
+The server is specified by @var{host}.  Optionally, you can add user
+name and/or port number by the form 
+@code{@var{user}@@@var{servername}:@var{port}}.
+If present, user and port portion in @var{host} supersedes the
+keyword arguments.
+
+If ftp connection to @var{host} is established successfully, 
+@var{proc} is called with one argument, which is an instance
+of @code{<ftp-connection>}.  When @var{proc} returns, 
+the connection is closed and the return value(s) of @var{proc}
+is/are returned from @code{call-with-ftp-connection}.
+When an exception is thrown, the ftp connection is closed
+before the exception escapes from @code{call-with-ftp-connection}.
+
+When a true value is given to the keyword argument @var{passive},
+created ftp connection will use passive mode to send/receive
+data.  The default is the active mode.
+
+The keyword argument @var{port}, @var{username}, and @var{password}
+specify the port number, username, and password, respectively.
+When omitted, the port number defaults to 21, @var{username} to
+@code{"anonymous"}, and @var{password} to @code{"anonymous@@"}.
+Note that the port number and/or username are ignored when
+those information is given in the @var{host} argument.
+
+If the keyword arugment @var{account} is given, its value
+is passed to ftp @code{ACCT} command when requested by
+the server at login time.  The defalut value is a null string @code{""}.
+
+The keyword argument @var{log-draion} is set to the created
+ftp connection's @code{log-drain} slot.
+@end defun
+
+@defun ftp-transfer-type conn
+Returns the transfer type of the ftp connection @code{conn}.
+Can be used with setter, e.g. @code{(set! (ftp-transfer-type conn) 'ascii)}.
+@end defun
+
+@defun ftp-passive? conn
+Returns true iff ftp connection uses passive data retrieval.
+@end defun
+
+@defun ftp-login host &keyword passive port username password account log-drain
+Connects to the ftp server specified by @var{host}, authenticate the user,
+and returns a newly created @code{<ftp-connection>} instance.
+This procedure is called implicitly when you use
+@code{call-with-ftp-connection}.  The semantics of
+the @var{host} argument and the keyword arguments are
+the same as @code{call-with-ftp-connection}.
+@end defun
+
+@defun ftp-quit conn
+Sends ftp @code{QUIT} command to the connection @var{conn} and
+shutdown the connection.
+This procedure is called implicitly when you use
+@code{call-with-ftp-connection}.
+
+Once a connection is shut down, you cannot communicate through
+this connection.
+@end defun
+
+@defun ftp-chdir conn dirname
+Changes the remote directory to @var{dirname}.
+@end defun
+
+@defun ftp-remove conn path
+Removes the remote file named by @var{path}.
+@end defun
+
+@defun ftp-help conn &optional option @dots{}
+Sends ftp @code{HELP} commands.  @var{Option}s must be strings,
+and will be passed to the @code{HELP} command arguments.
+@end defun
+
+@defun ftp-mkdir conn dirname
+Creates a directory @var{dirname}.  Returns the created directory name.
+@end defun
+
+@defun ftp-current-directory conn
+Returns the current remote directory.
+@end defun
+
+@defun ftp-site conn arg
+Sends ftp @code{SITE} command with the argument @var{arg}.
+The @code{SITE} command's semantics depends on the server.
+Returns the server reply.
+@end defun
+
+@defun ftp-rmdir conn dirname
+Removes remote directory specified by @var{dirname}.
+Returns the server reply.
+@end defun
+
+@defun ftp-stat conn &optional pathname
+Sends ftp @code{STAT} command to the server.
+RFC959 defines several different semantics of this command.
+See RFC959 for the details.
+Returns the server reply.
+@end defun
+
+@defun ftp-system conn
+Queries the server's operating system by ftp @code{SYST} command.
+Returns the server reply without status code.
+
+@example
+(call-with-ftp-connection "localhost" ftp-system)
+  @result{} "UNIX Type: L8"
+@end example
+@end defun
+
+@defun ftp-size conn path
+Queries the size of the remote file specified by @var{path}.
+Returns the integer value.
+@end defun
+
+@defun ftp-mdtm conn path
+Queries the modification time of the remote file specified by @var{path}.
+This function returns the server's reply as is, including the status
+code.  Use @code{ftp-mtime} below to obtain a parsed result.
+@end defun
+
+@defun ftp-mtime conn path &optional local-time?
+Queries the modification time of the remote file specified by @var{path},
+and returns the result in a @code{<date>} object 
+(@xref{Time data types and procedures}).
+If a true value is given to @code{local-time?}, the returned date is
+in local time.  Otherwise, the returned date is in UTC.
+@end defun
+
+@defun ftp-noop conn
+Sends ftp @code{NOOP} command and returns the server's reply.
+@end defun
+
+@defun ftp-list conn &optional path
+Returns the information about the files within the remote file 
+or directory specified by @var{path}, or the current remote directory,
+much like @code{ls(1)} format.  Returns a list of strings, where
+each string is for each line of the server's reply.  The exact
+format depends on the server.
+@end defun
+
+@defun ftp-name-list conn &optional path
+@defunx ftp-ls conn &optional path
+Return the list of names in the specfied @var{path}, or the current
+remote directory, without any other information.  @code{ftp-ls}
+is just an alias of @code{ftp-name-list} for the convenience.
+
+Note that the server may return an error if there's no files
+in the remote directory.
+@end defun
+
+@defun ftp-get conn path &keyword sink flusher
+Retrieves a remote file @var{path}.  The retrieved data is
+sent to an output port given to @var{sink}.  Once all the data
+is retrieved, a procedure given to @var{flusher} is called
+with the port @var{sink} as an argument, and its return value(s)
+is/are returned from @code{ftp-get}.  
+
+The default values of @var{sink} and @var{flusher} are
+a newly created string port and @code{get-output-string}, respectively.
+That is, @code{ftp-get} returns the retrieved data as a string
+by default.
+You don't want this behavior if the retrieved file is huge.
+@end defun
+
+@defun ftp-put conn from-file &optional to-file
+Sends the local file specified by @var{from-file} to the remote
+server as the name specified by @var{to-file}.  If @var{to-file}
+is omitted, the basename of @var{from-file} is used.
+Returns the server response.
+@end defun
+
+@defun ftp-put-unique conn from-file
+Sends the local file specified by @var{from-file} to the 
+remote server.  The remote side filename is guaranteed to 
+be unique.  Returns the server response, which includes
+the remote file name.
+@end defun
+
+@defun ftp-rename conn from-name to-name
+Renames the remote file specified by @var{from-name} to the
+name @var{to-name}.  Returns the final response of the server.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node HMAC keyed-hashing, HTTP, FTP, Library modules - Utilities
 @section @code{rfc.hmac} - HMAC keyed-hashing
 @c NODE HMAC鍵付きハッシング, @code{rfc.hmac} - HMAC鍵付きハッシング
 
