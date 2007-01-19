@@ -240,6 +240,11 @@ Content-Length: 4349
         0))
 
 ;;--------------------------------------------------------------------
+(test-section "rfc.ftp")
+(use rfc.ftp)
+(test-module 'rfc.ftp)
+
+;;--------------------------------------------------------------------
 (test-section "rfc.mime")
 (use rfc.mime)
 (test-module 'rfc.mime)
