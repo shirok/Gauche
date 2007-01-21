@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.6 2007-01-21 20:23:20 shirok Exp $
+;;;  $Id: compile.scm,v 1.7 2007-01-21 20:27:18 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -78,10 +78,11 @@
                      (file-mtime>? ofile file))
           (if (equal? (path-extension file) "stub")
             (let1 cfile (path-swap-extension file "c")
-              (guard (e (else (sys-unlink cfile) (raise e)))
-                (do-genstub file)
-                (do-compile (or cc CC) cfile ofile
-                            (or cppflags "") (or cflags ""))
+              (unwind-protect
+                  (begin
+                    (do-genstub file)
+                    (do-compile (or cc CC) cfile ofile
+                                (or cppflags "") (or cflags "")))
                 (sys-unlink cfile)))
             (do-compile (or cc CC) file ofile
                         (or cppflags "") (or cflags ""))))))))
