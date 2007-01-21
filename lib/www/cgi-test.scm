@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi-test.scm,v 1.1 2003-12-18 23:01:56 shirok Exp $
+;;;  $Id: cgi-test.scm,v 1.2 2007-01-21 19:52:21 shirok Exp $
 ;;;
 
 (define-module www.cgi-test
@@ -96,7 +96,8 @@
               (display query outp)
               (newline outp)
               (close-output-port outp))
-            (proc inp)))
+            (proc inp))
+          :on-abnormal-exit :ignore)
         ))
     ))
 

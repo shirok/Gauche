@@ -5632,7 +5632,17 @@ not given to the @var{restarg}.
 @c COMMON
 
 @c EN
-[[[TO BE FILLED]]]
+If you use the first form, @code{let-keyword} regards it an error
+when @code{restarg} contains a keyword argument that is not listed
+in @var{var-spec}s.  For the backward compatibility it only issues
+warning now, but in future releases it will raise an error.
+When you want to allow keyword arguments other than listed in
+@var{var-spec}s, use the second form.
+
+In the second form, @var{restvar} must be either a symbol or @code{#f}.
+If it is a symbol, it is bound to a list of keyword arguments
+that are not processed by @var{var-spec}s.  If it is @code{#f},
+such keyword arguments are just ignored.
 @c JP
 1番目のフォームでは、@var{var-spec}にないキーワード引数が@var{restarg}に
 現れるのはエラーです。以前のバージョンとの互換性のために、現在は警告を
@@ -5664,8 +5674,8 @@ not given to the @var{restarg}.
 @defmacx let-keywords* restarg (var-spec @dots{} . restvar) body @dots{}
 @c EN
 Like @code{let-keywords}, but the binding is done in the order of
-@var{var-spec}.  So the @var{expr} can refer to the variables bound by
-preceding @var{var-spec}.
+@var{var-spec}s.  So each @var{expr} can refer to the variables bound by
+preceding @var{var-spec}s.
 @c JP
 このマクロは@code{let-keywords}とほぼ同じですが、束縛が@var{var-spec}での
 順番に行われるところが異なります。@var{expr}は以前の@var{var-spec}により
