@@ -6170,8 +6170,20 @@ the low-level process calls such as @code{sys-wait} or
 直接子プロセスの終了ステータスを取ると、@code{<process>}クラスの
 内部状態に矛盾が生じます。
 @c COMMON
-
 @end deftp
+
+@deftp {Class} <process-abnormal-exit>
+@clindex process-abnormal-exit
+A condition type mainly used by the process port utility procedures.
+Inherits @code{<error>}.  This type of condition is thrown when
+the high-level process port utilities detect the child proces exitted
+with non-zero status code.
+
+@defivar {<process-abnormal-exit>} process
+The process object.
+@end defivar
+@end deftp
+
 
 @defun run-process command arg @dots{}
 @c EN
@@ -6345,15 +6357,19 @@ to inactive, it is removed from the list @code{process-list} returns.
 @c COMMON
 @end defun
 
-@defun process-wait process &optional nohang
+@defun process-wait process &optional nohang error-on-nonzero-status
 @c EN
 Obtains the exit status of the subprocess @var{process}, and stores it
 to @var{process}'s status slot.  The status can be obtained by
 @code{process-exit-status}.
 
 This suspends execution until @var{process} exits by default.
-However, if a true value is given to an optional argument @var{nohang},
+However, if a true value is given to the optional argument @var{nohang},
 it returns immediately if @var{process} hasn't exit.
+
+If a true value is given to the optional argument
+@var{error-on-nonzero-status}, and the obtained status code is not zero,
+this procedure raises @code{<process-abnormal-exit>} error.
 
 Returns @code{#t} if this call actually obtains the exit status,
 or @code{#f} otherwise.
@@ -6365,6 +6381,10 @@ or @code{#f} otherwise.
 デフォルトでは、この手続きは@var{process} が終了するまで実行を一時停止します。
 しかし、@var{nohang}に真の値が与えられた場合は、@var{process}が終了して
 いない場合にも直ちに返ります。
+
+オプショナル引数@var{error-on-nonzero-status}に真の値が与えられた場合、
+この手続きは得られた終了ステータスが0で無い場合に
+@code{<process-abnormal-exit>}エラーを投げます。
 
 この呼び出しによって@var{process}の終了ステータスが実際に取得された場合は
 @code{#t}を、そうでなければ@code{#f}を返します。
@@ -6530,7 +6550,7 @@ you can use one of the following functions.
 @c COMMON
 @end defun
 
-@defun call-with-input-process command proc &keyword input error encoding conversion-buffer-size
+@defun call-with-input-process command proc &keyword input error encoding conversion-buffer-size on-abnormal-exit
 @c EN
 Runs @var{command} in a subprocess and pipes its stdout
 to an input port, then call @var{proc} with the port as an argument.
@@ -6538,7 +6558,18 @@ When @var{proc} returns, it collects its exit status,
 then returns the result @var{proc} returned.
 The cleanup is done even if @var{proc} raises an error.
 
-The semantics of @var{command} and keyword arguments are the same
+The keyword argument @var{on-abnormal-exit} specifies what happens
+when the child process exits with non-zero status code.
+It can be either @code{:error} (default), @code{:ignore}, or
+a procedure that takes one argument.  If it is @code{:error},
+a @code{<process-abnormal-exit>} error condition is thrown by
+non-zero exit status; the @code{process} slot of the condition
+holds the process object.  If it is @code{:ignore}, nothing is done
+for non-zero exit status.  If it is a procedure, it is called with
+a process object; when the procedure returns, @code{call-with-input-process}
+returns normally.
+
+The semantics of @var{command} and other keyword arguments are the same
 as @code{open-input-process-port} above.
 @c JP
 子プロセスで@var{command} を実行し、その標準出力と入力ポートを
@@ -6547,7 +6578,18 @@ as @code{open-input-process-port} above.
 結果を返します。@var{proc} がエラーを通知しても、クリーンアップは
 行われます。
 
-@var{command}およびキーワード引数の意味は@code{open-input-process-port}と
+キーワード引数@var{on-abnormal-exit}は子プロセスが0以外の終了ステータス
+を返した場合の振舞いを指定します。その値は@code{:error}(デフォルト)、
+@code{:ignore}、もしくは一引数の手続きでなければなりません。
+値が@code{:error}の場合、0以外の終了ステータスは
+@code{<process-abnormal-exit>}エラーコンディションを発生させます。
+コンディションオブジェクトの@code{process}スロットには子プロセスオブジェクトが
+保持されます。値が@code{:ignore}の場合、0以外の終了ステータスに対して
+特別なアクションは取られません。値が手続きの場合、0以外の終了ステータスに対して
+子プロセスオブジェクトを引数にしてその手続きが呼ばれます。その手続きが
+戻れば、@code{call-with-input-process}は正常動作と同じように戻ります。
+
+@var{command}および他のキーワード引数の意味は@code{open-input-process-port}と
 同じです。
 @c COMMON
 @example
@@ -6556,7 +6598,7 @@ as @code{open-input-process-port} above.
 @end example
 @end defun
 
-@defun with-input-from-process command thunk &keyword input error encoding conversion-buffer-size
+@defun with-input-from-process command thunk &keyword input error encoding conversion-buffer-size on-abnormal-exit
 @c EN
 Runs @var{command} in a subprocess, and calls @var{thunk}
 with its current input port connected to the command's stdout.
@@ -6564,14 +6606,14 @@ The command is terminated and its exit status is collected,
 after @var{thunk} returns or raises an error.
 
 The semantics of @var{command} and keyword arguments are the same
-as @code{open-input-process-port} above.
+as @code{call-with-input-process} above.
 @c JP
 子プロセスで @var{command} を実行し、コマンドの標準出力に
 接続された現在の入力ポートとともに @var{thunk} を呼び出します。
 @var{thunk}が終了するかエラーを投げた後に、コマンドの終了ステータスが
 回収されます。
 
-@var{command}およびキーワード引数の意味は@code{open-input-process-port}と
+@var{command}およびキーワード引数の意味は@code{call-with-input-process}と
 同じです。
 @c COMMON
 @example
@@ -6616,7 +6658,7 @@ at appropriate time.
 @c COMMON
 @end defun
 
-@defun call-with-output-process command proc &keyword output error encoding conversion-buffer-size
+@defun call-with-output-process command proc &keyword output error encoding conversion-buffer-size on-abnormal-exit
 @c EN
 Runs @code{command} in a subprocess, and calls @var{proc} 
 with an output port which is connected to the stdin of the command.
@@ -6624,14 +6666,17 @@ The exit status of the command is collected after either @var{proc}
 returns or raises an error.
 
 The semantics of keyword arguments are the same as
-@code{open-input-process-port}.
+@code{open-output-process-port}, except @var{on-abnormal-exit},
+which is the same as described in @code{call-with-input-process}.
 @c JP
 @code{command} を子プロセスで実行し、コマンドの標準入力に
 接続された出力ポートとともに @var{proc} を呼び出します。
 コマンドの終了ステータスは、@var{proc} が返るかエラーを通知した
 後に回収されます。
 
-キーワード引数の意味は@var{open-input-process-port}と同じです。
+キーワード引数の意味は@var{open-output-process-port}と同じです。
+ただし@var{on-abnormal-exit}については@code{call-with-input-process}
+で説明したのと同じ意味です。
 @c COMMON
 @example
 (call-with-output-process "/usr/sbin/sendmail"
@@ -6639,7 +6684,7 @@ The semantics of keyword arguments are the same as
 @end example
 @end defun
 
-@defun with-output-to-process command thunk &keyword output error encoding conversion-buffer-size
+@defun with-output-to-process command thunk &keyword output error encoding conversion-buffer-size on-abnormal-exit
 @c EN
 Same as @code{call-with-output-process}, except that the
 output port which is connected to the stdin of the command
@@ -6651,7 +6696,7 @@ is set to the current output port while executing @var{thunk}.
 @c COMMON
 @end defun
 
-@defun call-with-process-io command proc &keyword error encoding conversion-buffer-size
+@defun call-with-process-io command proc &keyword error encoding conversion-buffer-size on-abnormal-exit
 @c EN
 Runs @var{command} in a subprocess, and calls @var{proc}
 with two arguments; the first argument is an input port which
@@ -6674,8 +6719,8 @@ returns or raises an error.
 @c COMMON
 @end defun
 
-@defun process-output->string command
-@defunx process-output->string-list command
+@defun process-output->string command &keyword error encoding conversion-buffer-size on-abnormal-exit
+@defunx process-output->string-list command &keyword error encoding conversion-buffer-size on-abnormal-exit
 @c EN
 Runs @var{command} and collects its output (to stdout) and returns them.
 @code{process-output->string} concatenates all the output from @var{command}
@@ -6686,7 +6731,8 @@ in shell scripts.
 @var{command} line-by-line and returns the list of them.  Newline
 characters are stripped.
 
-Internally, @var{command} is run by @code{call-with-input-process}.
+Internally, @var{command} is run by @code{call-with-input-process},
+to which keyword arguments are passed.
 @c JP
 @var{command} を実行し、その(標準出力への)出力を回収して返します。
 @code{process-output->string} は @var{command} からの全ての出力を連結し
@@ -6697,7 +6743,8 @@ Internally, @var{command} is run by @code{call-with-input-process}.
 回収し、それらをリストにしたものを返します。改行文字は削除されます。
 
 内部的には、@var{command} は @code{call-with-input-process} により
-実行されます。
+実行されます。キーワード引数は@code{call-with-input-process}に
+そのまま渡されます。
 @c COMMON
 @example
 (process-output->string "uname -smp")

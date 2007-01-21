@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: process.scm,v 1.22 2007-01-19 05:42:18 shirok Exp $
+;;;  $Id: process.scm,v 1.23 2007-01-21 11:46:30 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -40,7 +40,8 @@
   (use srfi-1)
   (use srfi-2)
   (use srfi-13)
-  (export <process> run-process process? process-alive? process-pid
+  (export <process> <process-abnormal-exit>
+          run-process process? process-alive? process-pid
           process-command process-input process-output process-error
           process-wait process-wait-any process-exit-status
           process-send-signal process-kill process-stop process-continue
@@ -67,6 +68,9 @@
    (error     :initform #f :getter process-error)
    (processes :allocation :class :initform '())
   ))
+
+;; When the process exits abnormally, this error is thrown.
+(define-condition-type <process-abnormal-exit> <error> #f (process))
 
 (define-method write-object ((p <process>) port)
   (format port "#<process ~a ~s ~a>"
@@ -168,7 +172,7 @@
 (define (%run-process proc argv iomap sigmask toclose wait fork)
   (if fork
     (let1 pid (sys-fork-and-exec (car argv) argv
-                                 :iomap iomap :sigmask (%ensure-mask sigmask))
+                                  :iomap iomap :sigmask (%ensure-mask sigmask))
       (push! (ref proc 'processes) proc)
       (set!  (ref proc 'pid) pid)
       (dolist (p toclose)
@@ -180,6 +184,23 @@
       proc)
     (sys-exec (car argv) argv :iomap iomap :sigmask (%ensure-mask sigmask))))
 
+(define (%check-normal-exit process)
+  (let1 status (ref process 'status)
+    (unless (and (sys-wait-exited? status)
+                 (zero? (sys-wait-exit-status status)))
+      (cond ((sys-wait-exited? status)
+             (errorf <process-abnormal-exit> :process process
+                     "~s exitted abnormally with exit code ~a"
+                     process (sys-wait-exit-status status)))
+            ((sys-wait-signaled? status)
+             (errorf <process-abnormal-exit> :process process
+                     "~s exitted by signal ~s"
+                     process (sys-signal-name (sys-wait-termsig status))))
+            (else ;; we shouldn't be here, but just in case...
+             (errorf <process-abnormal-exit> :process process
+                     "~s exitted abnormally with status ~s"
+                     process status))))))
+
 ;; other basic interfaces
 (define (process? obj) (is-a? obj <process>))
 (define (process-alive? process)
@@ -187,21 +208,26 @@
        (>= (process-pid process) 0)))
 (define (process-list) (class-slot-ref <process> 'processes))
 
+;;-----------------------------------------------------------------
 ;; wait
+;;
 (define (process-wait process . args)
   (if (process-alive? process)
-    (let-optionals* args ((nohang? #f))
+    (let-optionals* args ((nohang? #f)
+                          (raise-error? #f))
       (receive (p code) (sys-waitpid (process-pid process) :nohang nohang?)
         (and (not (zero? p))
              (begin
                (slot-set! process 'status code)
                (slot-set! process 'processes
                           (delete process (slot-ref process 'processes)))
+               (when raise-error? (%check-normal-exit process))
                #t))))
     #f))
 
 (define (process-wait-any . args)
-  (let-optionals* args ((nohang? #f))
+  (let-optionals* args ((nohang? #f)
+                        (raise-error? #f))
     (and (not (null? (process-list)))
          (receive (pid status) (sys-waitpid -1 :nohang nohang?)
            (and pid
@@ -209,6 +235,7 @@
                                     (process-list))))
                   (slot-set! p 'status status)
                   (update! (ref p 'processes) (cut delete p <>))
+                  (when raise-error? (%check-normal-exit p))
                   p))))))
 
 ;; signal
@@ -219,13 +246,16 @@
 (define (process-stop process) (process-send-signal process |SIGSTOP|))
 (define (process-continue process) (process-send-signal process |SIGCONT|))
 
+;;===================================================================
 ;; Process ports
+;;
 
 ;; Common keyword args:
 ;;   :error    - specifies error destination.  filename (redirect to file),
 ;;               or #t (stderr).
 ;;   :encoding - if given, CES conversion port is inserted.
 ;;   :conversion-buffer-size - used when CES conversion is necessary.
+;;   :on-abmormal-exit - :error, :ignore, or a handler (called w/ process)
 
 (define (open-input-process-port command . opts)
    (let-keywords* opts ((input "/dev/null")
@@ -235,14 +265,15 @@
 
 (define (call-with-input-process command proc . opts)
   (let-keywords* opts ((input "/dev/null")
-                       (err :error #f))
+                       (err :error #f)
+                       (on-abnormal-exit :error))
     (let* ((p (apply-run-process command input :pipe err))
            (i (wrap-input-process-port p opts)))
-      (unwind-protect
-          (proc i)
+      (unwind-protect (proc i)
         (begin
           (close-input-port i)
-          (process-wait p))))))
+          (process-wait p)
+          (handle-abnormal-exit on-abnormal-exit p))))))
 
 (define (with-input-from-process command thunk . opts)
   (apply call-with-input-process command
@@ -257,14 +288,15 @@
 
 (define (call-with-output-process command proc . opts)
   (let-keywords* opts ((output "/dev/null")
-                       (err :error #f))
+                       (err :error #f)
+                       (on-abnormal-exit :error))
     (let* ((p (apply-run-process command :pipe output err))
            (o (wrap-output-process-port p opts)))
-      (unwind-protect
-          (proc o)
+      (unwind-protect (proc o)
         (begin
           (close-output-port o)
-          (process-wait p))))))
+          (process-wait p)
+          (handle-abnormal-exit on-abnormal-exit p))))))
 
 (define (with-output-to-process command thunk . opts)
   (apply call-with-output-process command
@@ -272,7 +304,8 @@
          opts))
 
 (define (call-with-process-io command proc . opts)
-  (let-keywords* opts ((err :error #f))
+  (let-keywords* opts ((err :error #f)
+                       (on-abnormal-exit :error))
     (let* ((p (apply-run-process command :pipe :pipe err))
            (i (wrap-input-process-port p opts))
            (o (wrap-output-process-port p opts)))
@@ -280,21 +313,27 @@
         (begin
           (close-output-port o)
           (close-input-port i)
-          (process-wait p))))))
+          (process-wait p)
+          (handle-abnormal-exit on-abnormal-exit p))))))
 
+;;---------------------------------------------------------------------
 ;; Convenient thingies that can be used like `command` in shell scripts
+;;
 
-(define (process-output->string command)
-  (call-with-input-process command
-    (lambda (p)
-      (with-port-locking p
-        (lambda ()
-          (string-join (string-tokenize (port->string p)) " "))))))
+(define (process-output->string command . opts)
+  (apply call-with-input-process command
+         (lambda (p)
+           (with-port-locking p
+             (lambda ()
+               (string-join (string-tokenize (port->string p)) " "))))
+         opts))
 
-(define (process-output->string-list command)
-  (call-with-input-process command port->string-list))
+(define (process-output->string-list command . opts)
+  (apply call-with-input-process command port->string-list opts))
 
-;; A common utility for process ports.
+;;----------------------------------------------------------------------
+;; Internal utilities for process ports
+;;
 
 ;; If the given command is a string, return an argv to use /bin/sh.
 (define (apply-run-process command stdin stdout stderr)
@@ -323,5 +362,11 @@
       (wrap-with-output-conversion (process-input process) encoding
                                   :buffer-size conversion-buffer-size)
       (process-input process))))
+
+(define (handle-abnormal-exit on-abnormal-exit process)
+  (case on-abnormal-exit
+    ((:error) (%check-normal-exit process))
+    ((:ignore))
+    (else (on-abnormal-exit process))))
 
 (provide "gauche/process")

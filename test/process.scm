@@ -88,6 +88,16 @@
               )
          (list r0 r1 r2)))
 
+(test* "wait with signalling error" (list #t SIGKILL)
+       (guard (e ((<process-abnormal-exit> e)
+                  (let ((s (process-exit-status (ref e 'process))))
+                    (list (sys-wait-signaled? s)
+                          (sys-wait-termsig s)))))
+         (let1 p (run-process "cat" :input :pipe :output :pipe
+                              :error "/dev/null")
+           (process-kill p)
+           (process-wait p #f #t))))
+
 (test* "process-list" '()
        (process-list))
 
@@ -114,7 +124,7 @@
            (process-wait process)
            (equal? r s))))
 
-(test* "open-input-process-port (redirect)" #t
+(test* "open-input-process-port (redirect/error)" #t
        (receive (p process) (open-input-process-port '(cat "NoSuchFile")
                                                      :error "test1.o")
          (process-wait process)
@@ -140,13 +150,32 @@
              (s (call-with-input-file "test.o" port->string)))
          (equal? r s)))
 
-(test* "call-with-input-process (redirect)" #t
+(test* "call-with-input-process (redirect/error - ignore)" #t
        (begin (call-with-input-process "cat NoSuchFile"
-                port->string :error "test1.o")
+                port->string
+                :error "test1.o" :on-abnormal-exit :ignore)
               (sys-system "cat NoSuchFile 2> test2.o")
               (let ((r (call-with-input-file "test1.o" port->string))
                     (s (call-with-input-file "test2.o" port->string)))
                 (equal? r s))))
+
+(test* "call-with-input-process (redirect/error - error)" #t
+       (guard (e ((<process-abnormal-exit> e)
+                  (sys-system "cat NoSuchFile 2> test2.o")
+                  (let ((r (call-with-input-file "test1.o" port->string))
+                        (s (call-with-input-file "test2.o" port->string)))
+                    (equal? r s))))
+         (call-with-input-process "cat NoSuchFile"
+           port->string :error "test1.o")))
+
+(test* "call-with-input-process (redirect/error - handle)" 1
+       (let/cc k
+         (call-with-input-process '(cat NoSuchFile)
+           port->string
+           :error "test1.o"
+           :on-abnormal-exit (lambda (p)
+                               (k (sys-wait-exit-status
+                                   (process-exit-status p)))))))
 
 (sys-system "rm -f test1.o test2.o")
 
@@ -190,7 +219,7 @@
            (let1 r (call-with-input-file "test.o" port->string)
              (equal? r s)))))
 
-(test* "open-output-process-port (redirect)" #t
+(test* "open-output-process-port (redirect/error)" #t
        (let1 s (call-with-input-file "test.o" port->string)
          (receive (p process)
              (open-output-process-port "cat NoSuchFile" :error "test1.o")
@@ -221,14 +250,33 @@
            (let1 r (call-with-input-file "test.o" port->string)
              (list (equal? r s) x y)))))
        
-(test* "call-with-output-process (redirect)" #t
-       (let1 s (call-with-input-file "test.o" port->string)
+(test* "call-with-output-process (redirect/error - ignore)" #t
+       (begin
          (call-with-output-process "cat NoSuchFile"
-           (lambda (out) #f) :error "test1.o")
+           (lambda (out) #f)
+           :error "test1.o" :on-abnormal-exit :ignore)
          (sys-system "cat NoSuchFile 2> test2.o")
          (let ((r (call-with-input-file "test1.o" port->string))
                (s (call-with-input-file "test2.o" port->string)))
            (equal? r s))))
+
+(test* "call-with-output-process (redirect/error - raise)" #t
+       (guard (e ((<process-abnormal-exit> e)
+                  (sys-system "cat NoSuchFile 2> test2.o")
+                  (let ((r (call-with-input-file "test1.o" port->string))
+                        (s (call-with-input-file "test2.o" port->string)))
+                    (equal? r s))))
+         (call-with-output-process "cat NoSuchFile"
+           (lambda (out) #f) :error "test1.o")))
+
+(test* "call-with-input-process (redirect/error - handle)" 1
+       (let/cc k
+         (call-with-output-process '(cat NoSuchFile)
+           port->string
+           :error "test1.o"
+           :on-abnormal-exit (lambda (p)
+                               (k (sys-wait-exit-status
+                                   (process-exit-status p)))))))
 
 (sys-system "rm -f test1.o test2.o")
 
@@ -259,10 +307,11 @@
                      (port->string i)))))
          r))
 
-(test* "call-with-process-io (redirect)" #t
+(test* "call-with-process-io (redirect/error)" #t
        (begin
          (call-with-process-io "cat NoSuchFile"
-           (lambda (i o) #f) :error "test1.o")
+           (lambda (i o) #f)
+           :error "test1.o" :on-abnormal-exit :ignore)
          (sys-system "cat NoSuchFile 2> test2.o")
          (let ((r (call-with-input-file "test1.o" port->string))
                (s (call-with-input-file "test2.o" port->string)))
@@ -276,6 +325,16 @@
        (let ((r (process-output->string '(ls -a)))
              (s (call-with-input-file "test.o" port->string)))
          (equal? r (string-join (string-tokenize s) " "))))
+
+(test* "process-output->string (error - ignore)" ""
+       (process-output->string '(cat "NoSuchFile")
+                               :error "/dev/null"
+                               :on-abnormal-exit :ignore))
+
+(test* "process-output->string (error - raise)" '<process-abnormal-exit>
+       (guard (e (else (class-name (class-of e))))
+         (process-output->string '(cat "NoSuchFile")
+                                 :error "/dev/null")))
 
 (test* "process-output->string-list" #t
        (let ((r (process-output->string-list '(ls -a)))
