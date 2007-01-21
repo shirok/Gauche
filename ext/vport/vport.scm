@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: vport.scm,v 1.6 2004-11-25 06:05:55 shirok Exp $
+;;;  $Id: vport.scm,v 1.7 2007-01-21 14:21:50 rui314159 Exp $
 ;;;
 
 (define-module gauche.vport
@@ -119,9 +119,9 @@
 ;;
 
 (define (open-input-limited-length-port source limit . opts)
-  (let-keywords* opts ((limit-reached #f)
-                       (eof-reached #f)
-                       (closed #f))
+  (let-keywords opts ((limit-reached #f)
+                      (eof-reached #f)
+                      (closed #f))
     (let ((nrest limit)
           (eof #f))
       (define (filler buf)

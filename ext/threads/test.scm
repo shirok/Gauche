@@ -347,7 +347,7 @@
            (port-test-testers 160 8 20 #t)
          (call-with-output-file "test.out"
            (lambda (outp) (port-test-kick-threads generators outp))
-           :bufferling 'line)
+           :buffering :line)
          (call-with-input-file "test.out" confirmer)))
 
 

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: uvseq.scm,v 1.1 2005-08-25 06:21:58 shirok Exp $
+;;;  $Id: uvseq.scm,v 1.2 2007-01-21 14:21:49 rui314159 Exp $
 ;;;
 
 (select-module gauche.uvector)
@@ -51,16 +51,17 @@
          (list->    (string->symbol #`"list->,|tagvector|"))
          (->vec     (string->symbol #`",|tagvector|->vector"))
          (vec->     (string->symbol #`"vector->,|tagvector|"))
+         (make      (string->symbol #`"make-,|tagvector|"))
          )
     `(begin
        (define-method call-with-iterator ((v ,class) proc . opts)
-         (let* ((start (get-keyword :start opts #f))
-                (len   (,len v))
-                (i     (or start 0)))
-           (proc (lambda () (>= i len))
-                 (lambda () (let ((r (,ref v i))) (inc! i) r)))))
+         (let-keywords opts ((start #f))
+           (let* ((len   (,len v))
+                  (i     (or start 0)))
+             (proc (lambda () (>= i len))
+                   (lambda () (let ((r (,ref v i))) (inc! i) r))))))
        (define-method call-with-builder ((c ,meta) proc . opts)
-         (let ((size  (get-keyword :start opts #f)))
+         (let-keywords opts ((size #f))
            (if size
                (let ((v (,make size))
                      (i 0))

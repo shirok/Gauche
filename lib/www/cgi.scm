@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.30 2007-01-19 05:42:19 shirok Exp $
+;;;  $Id: cgi.scm,v 1.31 2007-01-21 14:22:00 rui314159 Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -53,6 +53,7 @@
   (use text.tree)
   (use text.html-lite)
   (use file.util)
+  (use util.list)
   (export cgi-metavariables
           cgi-get-metavariable
           cgi-output-character-encoding
@@ -177,12 +178,12 @@
 ;;                                    part-handlers content-type
 ;;                                    mime-input
 (define (cgi-parse-parameters . args)
-  (let-keywords* args ((query-string #f)
-                       (merge-cookies #f)
-                       (part-handlers '())
-                       (content-type #f)
-                       (content-length #f)
-                       (mime-input #f))
+  (let-keywords args ((query-string #f)
+                      (merge-cookies #f)
+                      (part-handlers '())
+                      (content-type #f)
+                      (content-length #f)
+                      (mime-input #f))
     (let* ((input (cond (query-string)
                         ((or mime-input content-type) 'mime)
                         (else
@@ -362,10 +363,11 @@
 ;; API: cgi-header &keyword content-type cookies location &allow-other-keys
 ;;
 (define (cgi-header . args)
-  (let-keywords* args ((content-type #f)
-                       (location     #f)
-                       (status       #f)
-                       (cookies      '()))
+  (let-keywords args ((content-type #f)
+                      (location     #f)
+                      (status       #f)
+                      (cookies      '())
+                      . rest)
     (let ((ct (or content-type
                   (and (not location) "text/html")))
           (r '()))
@@ -375,14 +377,10 @@
       (for-each (lambda (cookie)
                   (push! r #`"Set-cookie: ,cookie\r\n"))
                 cookies)
-      (let loop ((args args))
-        (cond ((null? args))
-              ((null? (cdr args)))
-              ((memv (car args) '(:content-type :location :status :cookies))
-               (loop (cddr args)))
-              (else
-               (push! r #`",(car args): ,(cadr args)\r\n")
-               (loop (cddr args)))))
+      (for-each (lambda (p)
+                  (when (pair? (cdr p))
+                    (push! r #`",(car p): ,(cadr p)\r\n")))
+                (slices rest 2))
       (push! r "\r\n")
       (reverse r))))
       

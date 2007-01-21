@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: 822.scm,v 1.18 2006-08-04 07:15:53 shirok Exp $
+;;;  $Id: 822.scm,v 1.19 2007-01-21 14:21:55 rui314159 Exp $
 ;;;
 
 ;; Parser and constructor of the message defined in
@@ -62,8 +62,8 @@
 ;; Generic header parser, recognizes folded line and field names
 ;;
 (define (rfc822-header->list iport . args)
-  (let-keywords* args ((strict? #f)
-                       (reader (cut read-line <> #t)))
+  (let-keywords args ((strict? #f)
+                      (reader (cut read-line <> #t)))
 
     (define (accum name bodies r)
       (cons (list name (string-concatenate-reverse bodies)) r))

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fetch.scm,v 1.5 2007-01-19 05:42:19 shirok Exp $
+;;;  $Id: fetch.scm,v 1.6 2007-01-21 14:21:54 rui314159 Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -56,7 +56,7 @@
 (define *ncftpget-program* (find-file-in-paths "ncftpget"))
 
 (define (gauche-package-ensure uri . opts)
-  (let-keywords* opts ((config '()))
+  (let-keywords opts ((config '()))
     (let* ((build-dir (assq-ref config 'build-dir "."))
            (wget      (assq-ref config 'wget *wget-program*))
            (ncftpget  (assq-ref config 'ncftpget *ncftpget-program*))

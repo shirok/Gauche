@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: libutil.scm,v 1.3 2007-01-19 05:42:18 shirok Exp $
+;;;  $Id: libutil.scm,v 1.4 2007-01-21 14:21:51 rui314159 Exp $
 ;;;
 
 (define-module gauche.libutil
@@ -47,9 +47,9 @@
 ;;  is introduced; for now, we simply apply the default mapping rule.
 
 (define (library-fold pattern proc seed . opts)
-  (let-keywords* opts ((paths *load-path*)
-                       (allow-duplicates? #f)
-                       (strict? #t))
+  (let-keywords opts ((paths *load-path*)
+                      (allow-duplicates? #f)
+                      (strict? #t))
 
     (define search-module?
       (cond ((string? pattern) #f)
@@ -112,9 +112,9 @@
 
 ;; Just check existence of library.
 (define (library-exists? mod/path . opts)
-  (let-keywords* opts ((force-search? #f)
-                        (strict? #t)
-                        (paths *load-path*))
+  (let-keywords opts ((force-search? #f)
+                      (strict? #t)
+                      (paths *load-path*))
     
     (or (and (not force-search?)
              ;; see if specified mod/path is already loaded

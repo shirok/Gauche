@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: tr.scm,v 1.10 2003-12-04 08:32:58 shirok Exp $
+;;;  $Id: tr.scm,v 1.11 2007-01-21 14:21:59 rui314159 Exp $
 ;;;
 
 ;;; tr(1) equivalent.
@@ -55,7 +55,7 @@
 (define string-transliterate string-tr) ;alias
 
 (define (build-transliterator from to . options)
-  (let-keywords* options
+  (let-keywords options
       ((d? :delete #f)
        (s? :squeeze #f)
        (c? :complement #f)

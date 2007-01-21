@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.4 2006-05-28 02:10:11 shirok Exp $
+;;;  $Id: compile.scm,v 1.5 2007-01-21 14:21:54 rui314159 Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -62,12 +62,12 @@
 (define LDFLAGS  (gauche-config "--so-ldflags"))
 
 (define (gauche-package-compile file . args)
-  (let-keywords* args ((output #f)
-                       (cppflags #f)
-                       (cflags   #f)
-                       (cc #f)
-                       (dry? :dry-run #f)
-                       (verb? :verbose #f))
+  (let-keywords args ((output #f)
+                      (cppflags #f)
+                      (cflags   #f)
+                      (cc #f)
+                      (dry? :dry-run #f)
+                      (verb? :verbose #f))
     (parameterize ((dry-run dry?)
                    (verbose-run verb?))
       (let1 ofile (or output (path-swap-extension file OBJEXT))
@@ -90,11 +90,11 @@
   (run #`",cc -c ,cppflags ,INCDIR ,cflags ,CFLAGS -o ',ofile' ',cfile'"))
 
 (define (gauche-package-link sofile ofiles . args)
-  (let-keywords* args ((ldflags #f)
-                       (libs #f)
-                       (ld #f)
-                       (dry? :dry-run #f)
-                       (verb? :verbose #f))
+  (let-keywords args ((ldflags #f)
+                      (libs #f)
+                      (ld #f)
+                      (dry? :dry-run #f)
+                      (verb? :verbose #f))
     (parameterize ((dry-run dry?)
                    (verbose-run verb?))
       (unless (and (file-exists? sofile)
@@ -123,7 +123,7 @@
           sofile)))))
 
 (define (gauche-package-clean module-name files . args)
-  (let-keywords* args ((output #f))
+  (let-keywords args ((output #f))
     (when module-name
       (sys-unlink #`",|module-name|_head.c")
       (sys-unlink #`",|module-name|_tail.c")

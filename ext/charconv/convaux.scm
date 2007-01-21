@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: convaux.scm,v 1.3 2007-01-19 05:42:15 shirok Exp $
+;;;  $Id: convaux.scm,v 1.4 2007-01-21 14:21:48 rui314159 Exp $
 ;;;
 
 (select-module gauche.charconv)
@@ -132,21 +132,21 @@
 ;; Unlike open-*-conversion-port, these return port itself if the conversion
 ;; is not required.
 (define (wrap-with-input-conversion port from-code . opts)
-  (let-keywords* opts ((to-code (gauche-character-encoding)))
+  (let1 to-code (get-keyword :to-code opts (gauche-character-encoding))
     (if (ces-upper-compatible? to-code from-code)
-        port
-        (apply open-input-conversion-port port from-code :owner? #t opts))))
+      port
+      (apply open-input-conversion-port port from-code :owner? #t opts))))
 
 (define (wrap-with-output-conversion port to-code . opts)
-  (let-keywords* opts ((from-code (gauche-character-encoding)))
+  (let1 from-code (get-keyword :from-code opts (gauche-character-encoding))
     (if (ces-upper-compatible? from-code to-code)
-        port
-        (apply open-output-conversion-port port to-code :owner? #t opts))))
+      port
+      (apply open-output-conversion-port port to-code :owner? #t opts))))
 
 ;; Call with conversion port
 (define (call-with-input-conversion port proc . opts)
-  (let-keywords* opts ((from-code :encoding (gauche-character-encoding))
-                       (bufsiz    :conversion-buffer-size 0))
+  (let-keywords opts ((from-code :encoding (gauche-character-encoding))
+                      (bufsiz    :conversion-buffer-size 0))
     (if (ces-upper-compatible? (gauche-character-encoding) from-code)
       (proc port)
       (let1 cvp (open-input-conversion-port port from-code
@@ -156,8 +156,8 @@
          (close-input-port cvp))))))
 
 (define (call-with-output-conversion port proc . opts)
-  (let-keywords* opts ((to-code :encoding (gauche-character-encoding))
-                       (bufsiz  :conversion-buffer-size 0))
+  (let-keywords opts ((to-code :encoding (gauche-character-encoding))
+                      (bufsiz  :conversion-buffer-size 0))
     (if (ces-upper-compatible? (gauche-character-encoding) to-code)
       (proc port)
       (let1 cvp (open-output-conversion-port port to-code
@@ -179,19 +179,21 @@
 ;; Inserts conversion port.  These are called from system's
 ;; open-{input|output}-port when :encoding argument is given.
 (define (%open-input-file/conv name . args)
-  (and-let* ((port (apply %open-input-file name args)))
-    (wrap-with-input-conversion
-     port
-     (get-keyword :encoding args #f)
-     :buffer-size (get-keyword :conversion-buffer-size args 0)
-     :owner? #t)))
+  (let-keywords args ((encoding #f)
+                      (bufsiz :conversion-buffer-size 0)
+                      . rest)
+    (and-let* ((port (apply %open-input-file name rest)))
+      (wrap-with-input-conversion port encoding
+       :buffer-size bufsiz
+       :owner? #t))))
 
 (define (%open-output-file/conv name . args)
-  (and-let* ((port (apply %open-output-file name args)))
-    (wrap-with-output-conversion
-     port
-     (get-keyword :encoding args #f)
-     :buffer-size (get-keyword :conversion-buffer-size args 0)
-     :owner? #t)))
+  (let-keywords args ((encoding #f)
+                      (bufsiz :conversion-buffer-size 0)
+                      . rest)
+    (and-let* ((port (apply %open-output-file name rest)))
+      (wrap-with-output-conversion port encoding
+       :buffer-size bufsiz
+       :owner? #t))))
 
 

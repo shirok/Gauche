@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: collection.scm,v 1.4 2006-10-21 09:39:07 shirok Exp $
+;;;  $Id: collection.scm,v 1.5 2007-01-21 14:22:02 rui314159 Exp $
 ;;;
 
 ;; Defines generic operations over collection.   A collection is
@@ -480,8 +480,8 @@
 ;;  cf. group-sequence in gauche.sequence
 
 (define-method group-collection ((col <collection>) . args)
-  (let-keywords* args ((key-proc  :key identity)
-                       (test-proc :test  eqv?))
+  (let-keywords args ((key-proc  :key identity)
+                      (test-proc :test  eqv?))
     (fold (lambda (b r) (cons (reverse! (cdr b)) r))
           '()
           (fold (lambda (elt buckets)

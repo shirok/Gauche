@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: process.scm,v 1.23 2007-01-21 11:46:30 shirok Exp $
+;;;  $Id: process.scm,v 1.24 2007-01-21 14:21:51 rui314159 Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -258,17 +258,19 @@
 ;;   :on-abmormal-exit - :error, :ignore, or a handler (called w/ process)
 
 (define (open-input-process-port command . opts)
-   (let-keywords* opts ((input "/dev/null")
-                       (err :error #f))
-    (let1 p (apply-run-process command input :pipe err)
-      (values (wrap-input-process-port p opts) p))))
+   (let-keywords opts ((input "/dev/null")
+                       (err :error #f)
+                       . rest)
+     (let1 p (apply-run-process command input :pipe err)
+       (values (wrap-input-process-port p rest) p))))
 
 (define (call-with-input-process command proc . opts)
-  (let-keywords* opts ((input "/dev/null")
-                       (err :error #f)
-                       (on-abnormal-exit :error))
+  (let-keywords opts ((input "/dev/null")
+                      (err :error #f)
+                      (on-abnormal-exit :error)
+                      . rest)
     (let* ((p (apply-run-process command input :pipe err))
-           (i (wrap-input-process-port p opts)))
+           (i (wrap-input-process-port p rest)))
       (unwind-protect (proc i)
         (begin
           (close-input-port i)
@@ -281,17 +283,19 @@
          opts))
 
 (define (open-output-process-port command . opts)
-  (let-keywords* opts ((output "/dev/null")
-                       (err :error #f))
+  (let-keywords opts ((output "/dev/null")
+                      (err :error #f)
+                      . rest)
     (let1 p (apply-run-process command :pipe output err)
-      (values (wrap-output-process-port p opts) p))))
+      (values (wrap-output-process-port p rest) p))))
 
 (define (call-with-output-process command proc . opts)
-  (let-keywords* opts ((output "/dev/null")
-                       (err :error #f)
-                       (on-abnormal-exit :error))
+  (let-keywords opts ((output "/dev/null")
+                      (err :error #f)
+                      (on-abnormal-exit :error)
+                      . rest)
     (let* ((p (apply-run-process command :pipe output err))
-           (o (wrap-output-process-port p opts)))
+           (o (wrap-output-process-port p rest)))
       (unwind-protect (proc o)
         (begin
           (close-output-port o)
@@ -304,11 +308,12 @@
          opts))
 
 (define (call-with-process-io command proc . opts)
-  (let-keywords* opts ((err :error #f)
-                       (on-abnormal-exit :error))
+  (let-keywords opts ((err :error #f)
+                      (on-abnormal-exit :error)
+                      . rest)
     (let* ((p (apply-run-process command :pipe :pipe err))
-           (i (wrap-input-process-port p opts))
-           (o (wrap-output-process-port p opts)))
+           (i (wrap-input-process-port p rest))
+           (o (wrap-output-process-port p rest)))
       (unwind-protect (proc i o)
         (begin
           (close-output-port o)
@@ -348,16 +353,16 @@
 
 ;; Possibly wrap the process port by a conversion port
 (define (wrap-input-process-port process opts)
-  (let-keywords* opts ((encoding #f)
-                       (conversion-buffer-size 0))
+  (let-keywords opts ((encoding #f)
+                      (conversion-buffer-size 0))
     (if encoding
       (wrap-with-input-conversion (process-output process) encoding
                                   :buffer-size conversion-buffer-size)
       (process-output process))))
 
 (define (wrap-output-process-port process opts)
-  (let-keywords* opts ((encoding #f)
-                       (conversion-buffer-size 0))
+  (let-keywords opts ((encoding #f)
+                      (conversion-buffer-size 0))
     (if encoding
       (wrap-with-output-conversion (process-input process) encoding
                                   :buffer-size conversion-buffer-size)

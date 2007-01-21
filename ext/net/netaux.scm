@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netaux.scm,v 1.4 2007-01-19 05:42:15 shirok Exp $
+;;;  $Id: netaux.scm,v 1.5 2007-01-21 14:21:49 rui314159 Exp $
 ;;;
 
 (select-module gauche.net)
@@ -43,10 +43,10 @@
 
 (define (make-sys-addrinfo . args)
   (if ipv6-capable
-    (let-keywords* args ((flags    0)
-                         (family   |AF_UNSPEC|)
-                         (socktype 0)
-                         (protocol 0))
+    (let-keywords args ((flags    0)
+                        (family   |AF_UNSPEC|)
+                        (socktype 0)
+                        (protocol 0))
       (make <sys-addrinfo>
         :flags (if (list? flags) (apply logior flags) flags)
         :family family :socktype socktype :protocol protocol))
@@ -129,9 +129,9 @@
          (error "unsupported protocol:" proto))))
 
 (define (make-server-socket-from-addr addr . args)
-  (let-keywords* args ((reuse-addr? #f)
-		       (sock-init #f)
-                       (backlog DEFAULT_BACKLOG))
+  (let-keywords args ((reuse-addr? #f)
+                      (sock-init #f)
+                      (backlog DEFAULT_BACKLOG))
     (let1 socket (make-socket (address->protocol-family addr) |SOCK_STREAM|)
       (when (procedure? sock-init)
 	(sock-init socket addr))
@@ -141,11 +141,11 @@
       (socket-listen socket backlog))))
 
 (define (make-server-socket-unix path . args)
-  (let ((backlog (get-keyword :backlog args DEFAULT_BACKLOG))
-        (address (make <sockaddr-un> :path path))
-        (socket (make-socket |PF_UNIX| |SOCK_STREAM|)))
-    (socket-bind socket address)
-    (socket-listen socket backlog)))
+  (let-keywords args ((backlog DEFAULT_BACKLOG))
+    (let ((address (make <sockaddr-un> :path path))
+          (socket (make-socket |PF_UNIX| |SOCK_STREAM|)))
+      (socket-bind socket address)
+      (socket-listen socket backlog))))
 
 (define (make-server-socket-inet port . args)
   (let1 addr (car (make-sockaddrs #f port))

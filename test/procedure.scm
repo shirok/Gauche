@@ -142,6 +142,7 @@
 (test* "let-keywords*" '(0 a 1 c) (oef 0 :bb 1))
 (test* "let-keywords*" '(0 a b 1) (oef 0 :c 1))
 (test* "let-keywords*" '(0 1 2 3) (oef 0 :c 3 :bb 2 :a 1))
+;;(test* "let-keywords*" *test-error* (oef 0 :c 3 :bb 2 :a 1 :unknown 1))
 
 (define (oef+ x . args)
   (let ((i 0))
@@ -156,6 +157,35 @@
 (test* "let-keywords*" 1 (oef+ 0 :bb 1))
 (test* "let-keywords*" 1 (oef+ 0 :c 1))
 (test* "let-keywords*" 1 (oef+ 0 :c 3 :bb 2 :a 1))
+;;(test* "let-keywords*" *test-error* (oef+ 0 :c 3 :bb 2 :a 1 :unknown 1))
+
+(define (orf x . args)
+  (let-keywords args ((a 'a)
+                      (b :bb 'b)
+                      (c 'c))
+    (list x a b c)))
+
+(test* "let-keywords" '(0 a b c)   (orf 0))
+(test* "let-keywords" '(0 1 b c)   (orf 0 :a 1))
+(test* "let-keywords" '(0 a 1 c)   (orf 0 :bb 1))
+(test* "let-keywords" '(0 a b 1)   (orf 0 :c 1))
+(test* "let-keywords" '(0 1 2 3)   (orf 0 :c 3 :bb 2 :a 1))
+(test* "let-keywords" *test-error* (orf 0 :c 3 :bb 2 :a 1 :unknown 1))
+
+(define (orf+ x . args)
+  (let ((i 0))
+    (let-keywords (begin (inc! i) args)
+        ((a 'a)
+         (b :bb 'b)
+         (c 'c))
+      i)))
+
+(test* "let-keywords" 1 (orf+ 0))
+(test* "let-keywords" 1 (orf+ 0 :a 1))
+(test* "let-keywords" 1 (orf+ 0 :bb 1))
+(test* "let-keywords" 1 (orf+ 0 :c 1))
+(test* "let-keywords" 1 (orf+ 0 :c 3 :bb 2 :a 1))
+(test* "let-keywords" *test-error* (orf 0 :c 3 :bb 2 :a 1 :unknown 1))
 
 ;; let-keywords* combined with syntax rules
 (define-syntax lambda++

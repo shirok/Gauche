@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: build.scm,v 1.9 2005-08-31 12:43:29 shirok Exp $
+;;;  $Id: build.scm,v 1.10 2007-01-21 14:21:52 rui314159 Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -130,16 +130,16 @@
 ;;;
 
 (define (gauche-package-build uri . opts)
-  (let-keywords* opts ((config  '())
-                       (configure-options #f)
-                       (install-only? :install-only #f)
-                       (dry?         :dry-run #f)
-                       (reconfigure? :reconfigure #f)
-                       (check?       :check #t)
-                       (install?     :install #f)
-                       (clean?       :clean #f)
-                       (sudo-user    :sudo-install #f)
-                       (sudo-pass    :sudo-password #f))
+  (let-keywords opts ((config  '())
+                      (configure-options #f)
+                      (install-only? :install-only #f)
+                      (dry?          :dry-run #f)
+                      (reconfigure?  :reconfigure #f)
+                      (check?        :check #t)
+                      (install?      :install #f)
+                      (clean?        :clean #f)
+                      (sudo-user     :sudo-install #f)
+                      (sudo-pass     :sudo-password #f))
     (parameterize ((dry-run dry?))
       (let* ((tarball   (gauche-package-ensure uri :config config))
              (build-dir (assq-ref config 'build-dir "."))

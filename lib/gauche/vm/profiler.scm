@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: profiler.scm,v 1.5 2006-07-19 03:14:20 shirok Exp $
+;;;  $Id: profiler.scm,v 1.6 2007-01-21 14:21:55 rui314159 Exp $
 ;;;
 
 (define-module gauche.vm.profiler
@@ -70,9 +70,9 @@
 ;;    :max-rows - # of rows to be shown.  #f to show everything.
 ;;
 (define (profiler-show . opts)
-  (let-keywords* opts ((results #f)
-                       (sort-by 'time)
-                       (max-rows 50))
+  (let-keywords opts ((results #f)
+                      (sort-by 'time)
+                      (max-rows 50))
     (if (not results)
       ;; use the current result
       (cond

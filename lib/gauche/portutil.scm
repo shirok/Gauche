@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: portutil.scm,v 1.8 2006-11-13 00:02:51 shirok Exp $
+;;;  $Id: portutil.scm,v 1.9 2007-01-21 14:21:51 rui314159 Exp $
 ;;;
 
 (define-module gauche.portutil
@@ -121,8 +121,8 @@
 (define (copy-port src dst . args)
   (check-arg input-port? src)
   (check-arg output-port? dst)
-  (let-keywords* args ((unit 4096)
-                       (size 0))
+  (let-keywords args ((unit 4096)
+                      (size 0))
     (cond ((eq? unit 'byte)
            (if (and (integer? size) (positive? size))
                (%do-copy/limit1 (read-byte src)

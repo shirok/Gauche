@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: html-lite.scm,v 1.16 2007-01-15 00:09:40 shirok Exp $
+;;;  $Id: html-lite.scm,v 1.17 2007-01-21 14:21:59 rui314159 Exp $
 ;;;
 
 (define-module text.html-lite
@@ -91,7 +91,7 @@
     ))
 
 (define (html-doctype . args)
-  (let-keywords* args ((type :html-4.01-strict))
+  (let-keywords args ((type :html-4.01-strict))
     (cond ((find (lambda (e) (memq type (car e))) *doctype-alist*)
            => caddr )
           (else (error "Unknown doctype type spec" type)))))

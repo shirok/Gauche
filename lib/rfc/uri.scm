@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: uri.scm,v 1.17 2004-07-10 04:59:44 shirok Exp $
+;;;  $Id: uri.scm,v 1.18 2007-01-21 14:21:56 rui314159 Exp $
 ;;;
 
 ;; Main reference:
@@ -113,16 +113,16 @@
 ;;
 
 (define (uri-compose . args)
-  (let-keywords* args ((scheme     #f)
-                       (userinfo   #f)
-                       (host       #f)
-                       (port       #f)
-                       (authority  #f)
-                       (path       #f)
-                       (path*      #f)
-                       (query      #f)
-                       (fragment   #f)
-                       (specific   #f))
+  (let-keywords args ((scheme     #f)
+                      (userinfo   #f)
+                      (host       #f)
+                      (port       #f)
+                      (authority  #f)
+                      (path       #f)
+                      (path*      #f)
+                      (query      #f)
+                      (fragment   #f)
+                      (specific   #f))
     (with-output-to-string
       (lambda ()
         (when scheme (display scheme) (display ":"))
@@ -164,34 +164,34 @@
 ;;  These procedures provides basic building components.
 
 (define (uri-decode . args)
-  (define cgi-decode (get-keyword :cgi-decode args #f))
-  (let loop ((c (read-char)))
-    (cond ((eof-object? c))
-          ((char=? c #\%)
-           (let ((c1 (read-char)))
-             (cond ((eof-object? c1)
-                    (write-char c)) ;; just be permissive
-                   ((digit->integer c1 16)
-                    => (lambda (i1)
-                         (let ((c2 (read-char)))
-                           (cond ((eof-object? c2)
-                                  ;; just be permissive
-                                  (write-char c) (write-char c1)) 
-                                 ((digit->integer c2 16)
-                                  => (lambda (i2)
-                                       (write-byte (+ (* i1 16) i2))
-                                       (loop (read-char))))
-                                 (else (write-char c)
-                                       (write-char c1)
-                                       (loop c2))))))
-                   (else (write-char c)
-                         (loop c1)))))
-          ((char=? c #\+)
-           (if cgi-decode (write-char #\space) (write-char #\+))
-           (loop (read-char)))
-          (else (write-char c)
-                (loop (read-char)))
-          )))
+  (let-keywords args ((cgi-decode #f))
+    (let loop ((c (read-char)))
+      (cond ((eof-object? c))
+            ((char=? c #\%)
+             (let ((c1 (read-char)))
+               (cond ((eof-object? c1)
+                      (write-char c)) ;; just be permissive
+                     ((digit->integer c1 16)
+                      => (lambda (i1)
+                           (let ((c2 (read-char)))
+                             (cond ((eof-object? c2)
+                                    ;; just be permissive
+                                    (write-char c) (write-char c1)) 
+                                   ((digit->integer c2 16)
+                                    => (lambda (i2)
+                                         (write-byte (+ (* i1 16) i2))
+                                         (loop (read-char))))
+                                   (else (write-char c)
+                                         (write-char c1)
+                                         (loop c2))))))
+                     (else (write-char c)
+                           (loop c1)))))
+            ((char=? c #\+)
+             (if cgi-decode (write-char #\space) (write-char #\+))
+             (loop (read-char)))
+            (else (write-char c)
+                  (loop (read-char)))
+            ))))
 
 (define (uri-decode-string string . args)
   (with-string-io string (lambda () (apply uri-decode args))))
@@ -205,7 +205,7 @@
 ;; 'noescape' char-set is only valid in ASCII range.  All bytes
 ;; larger than #x80 are encoded unconditionally.
 (define (uri-encode . args)
-  (let ((echars (get-keyword :noescape args *uri-unreserved-char-set*)))
+  (let-keywords args ((echars :noescape *uri-unreserved-char-set*))
     (let loop ((b (read-byte)))
       (unless (eof-object? b)
         (if (and (< b #x80)

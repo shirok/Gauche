@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.128 2006-12-07 04:58:47 shirok Exp $
+;;;  $Id: genstub,v 1.129 2007-01-21 14:22:03 rui314159 Exp $
 ;;;
 
 (use srfi-1)
@@ -803,27 +803,30 @@
 ;;
 
 (define-class <cproc> (<procstub>)
-  ((num-optargs     :initform 0   :accessor num-optargs-of
-                    :init-keyword :num-optargs)
-   (keyword-args    :initform '() :accessor keyword-args-of)
-   (inliner         :initform #f  :accessor inliner-of)
-   (inline-insn     :initform #f  :accessor inline-insn-of)
+  ((num-optargs       :initform 0   :accessor num-optargs-of
+                      :init-keyword :num-optargs)
+   (keyword-args      :initform '() :accessor keyword-args-of
+                      :init-keyword :keyword-args)
+   (allow-other-keys? :initform '() :accessor allow-other-keys?
+                      :init-keyword :allow-other-keys?)
+   (inliner           :initform #f  :accessor inliner-of)
+   (inline-insn       :initform #f  :accessor inline-insn-of)
    ))
 
 (define-form-parser define-cproc (scheme-name argspec . body)
   (check-arg symbol? scheme-name)
   (check-arg list? argspec)
-  (receive (args nreqs nopts rest?)
+  (receive (args keyargs nreqs nopts rest? other-keys?)
       (process-cproc-args argspec)
     (let ((cproc (make <cproc>
                    :scheme-name scheme-name
                    :c-name (get-c-name *file-prefix* scheme-name)
                    :args args
+                   :keyword-args keyargs
                    :num-reqargs nreqs
                    :num-optargs nopts
-                   :have-rest-arg? rest?)))
-      (set! (keyword-args-of cproc)
-            (filter (lambda (x) (eq? (class-of x) <keyword-arg>)) args))
+                   :have-rest-arg? rest?
+                   :allow-other-keys? other-keys?)))
       (process-body cproc body)
       (with-cpp-condition cproc
         (emit-definition cproc)
@@ -845,77 +848,83 @@
   (receive (arg type) (grok-argname argname)
     (apply make class :name arg :type type :count count rest)))
 
-;; returns a list of args, # of reqargs,  # of optargs, and have-rest-arg?
+;; returns a list of args list of keyword args, # of reqargs, # of
+;; optargs, have-rest-arg?, and allow-other-keys?
 (define (process-cproc-args argspecs)
   (define (badarg arg) (error "bad argument in argspec:" arg))
 
   (define (required specs args nreqs)
-    (cond ((null? specs) (values (reverse args) nreqs 0 #f))
-          ((eq? (car specs) '&optional) (optional (cdr specs) args nreqs 0))
-          ((eq? (car specs) '&rest)     (rest (cdr specs) args nreqs 0))
-          ((eq? (car specs) '&keyword)  (keyword (cdr specs) args nreqs 0))
-          ((symbol? (car specs))
-           (required (cdr specs)
-                     (cons (make-arg <required-arg> (car specs) nreqs) args)
-                     (+ nreqs 1)))
-          (else (badarg (car specs)))))
+    (match specs
+      (()                   (values (reverse args) '() nreqs 0 #f #f))
+      (('&optional . specs) (optional specs args nreqs 0))
+      (('&rest . specs)     (rest specs args '() nreqs 0 #f))
+      (('&keyword . specs)  (keyword specs args '() nreqs 0))
+      (('&allow-other-keys . specs)
+       (error "misplaced &allow-other-key parameter"))
+      (((? symbol? sym) . specs)
+       (required specs
+                 (cons (make-arg <required-arg> sym nreqs) args)
+                 (+ nreqs 1)))
+      (_ (badarg (car specs)))))
 
   (define (optional specs args nreqs nopts)
-    (cond ((null? specs) (values (reverse args) nreqs nopts #f))
-          ((eq? (car specs) '&optional) (error "extra &optional parameter"))
-          ((eq? (car specs) '&keyword)
-           (error "&keyword and &optional can't be used together"))
-          ((eq? (car specs) '&rest)  (rest (cdr specs) args nreqs nopts))
-          ((symbol? (car specs))
-           (optional (cdr specs)
-                     (cons (make-arg <optional-arg>
-                                     (car specs) (+ nreqs nopts))
-                           args)
-                     nreqs
-                     (+ nopts 1)))
-          ((and (list? (car specs)) (= (length (car specs)) 2))
-           (optional (cdr specs)
-                     (cons (make-arg <optional-arg>
-                                     (caar specs) (+ nreqs nopts)
-                                     :default (cadar specs))
-                           args)
-                     nreqs
-                     (+ nopts 1)))
-          (else (badarg (car specs)))))
+    (match specs
+      (() (values (reverse args) '() nreqs nopts #f #f))
+      (('&optional . specs) (error "extra &optional parameter"))
+      (('&keyword . specs)  (error "&keyword and &optional can't be used together"))
+      (('&rest . specs)     (rest specs args '() nreqs nopts #f))
+      (('&allow-other-keys . specs)
+       (error "misplaced &allow-other-key parameter"))
+      (((? symbol? sym) . specs)
+       (optional specs
+                 (cons (make-arg <optional-arg> sym (+ nreqs nopts))
+                       args)
+                 nreqs
+                 (+ nopts 1)))
+      ((((? symbol? sym) default) . specs)
+       (optional specs
+                 (cons (make-arg <optional-arg> sym (+ nreqs nopts)
+                                 :default default)
+                       args)
+                 nreqs
+                 (+ nopts 1)))
+      (_ (badarg (car specs)))))
 
-  (define (keyword specs args nreqs nopts)
-    (cond ((null? specs) (values (reverse args) nreqs nopts #f))
-          ((eq? (car specs) '&keyword) (error "extra &keyword parameter"))
-          ((eq? (car specs) '&optional)
-           (error "&keyword and &optional can't be used together"))
-          ((eq? (car specs) '&rest) (rest (cdr specs) args nreqs nopts))
-          ((symbol? (car specs))
-           (keyword (cdr specs)
-                    (cons (make-arg <keyword-arg>
-                                    (car specs) (+ nreqs nopts))
-                          args)
-                    nreqs
-                    (+ nopts 1)))
-          ((and (list? (car specs)) (= (length (car specs)) 2))
-           (keyword (cdr specs)
-                    (cons (make-arg <keyword-arg>
-                                    (caar specs) (+ nreqs nopts)
-                                    :default (cadar specs))
-                          args)
-                    nreqs
-                    (+ nopts 1)))
-          (else (badarg (car specs)))))
+  (define (keyword specs args keyargs nreqs nopts)
+    (match specs
+      (() (values (reverse args) (reverse keyargs) nreqs nopts #f #f))
+      (('&allow-other-keys)
+       (values (reverse args) (reverse keyargs) nreqs nopts #f #t))
+      (('&allow-other-keys &rest . specs)
+       (rest specs args keyargs nreqs nopts #t))
+      (('&allow-other-keys . specs)
+       (error "misplaced &allow-other-key parameter"))
+      (('&keyword . specs)  (error "extra &keyword parameter"))
+      (('&optional . specs) (error "&keyword and &optional can't be used together"))
+      (('&rest . specs)     (rest specs args keyargs nreqs nopts #f))
+      (((? symbol? sym) . specs)
+       (keyword specs args
+                (cons (make-arg <keyword-arg> sym (+ nreqs nopts))
+                      keyargs)
+                nreqs (+ nopts 1)))
+      ((((? symbol? sym) default) . specs)
+       (keyword specs args
+                (cons (make-arg <keyword-arg> sym (+ nreqs nopts)
+                                :default default)
+                      keyargs)
+                nreqs (+ nopts 1)))
+      (_ (badarg (car specs)))))
 
-  (define (rest specs args nreqs nopts)
-    (cond ((null? specs) (values (reverse args) nreqs nopts #f))
-          ((and (null? (cdr specs)) (symbol? (car specs)))
-           (values (reverse
-                    (cons (make-arg <rest-arg> (car specs) (+ nreqs nopts))
-                          args))
-                   nreqs
-                   (+ nopts 1)
-                   #t))
-          (else (badarg (car specs)))))
+  (define (rest specs args keyargs nreqs nopts other-keys?)
+    (match specs
+      (() (values (reverse args) (reverse keyargs) nreqs nopts #t other-keys?))
+      (((? symbol? sym))
+       (values (reverse
+                (cons (make-arg <rest-arg> sym (+ nreqs nopts))
+                      args))
+               (reverse keyargs)
+               nreqs (+ nopts 1) #t other-keys?))
+      (_ (badarg (car specs)))))
 
   (required argspecs '() 0)
   )
@@ -941,18 +950,18 @@
    ((< (length decl) 2)
     (error "bad form of anonymous setter:" `(setter ,decl)))
    (else
-    (receive (args nreqs nopts rest?)
+    (receive (args keyargs nreqs nopts rest? other-keys?)
         (process-cproc-args (car decl))
       (let ((setter (make <cproc>
                       :scheme-name `(setter ,(scheme-name-of cproc))
                       :c-name #`",(c-name-of cproc)_SETTER"
                       :args args
+                      :keyword-args keyargs
                       :num-reqargs nreqs
                       :num-optargs nopts
-                      :have-rest-arg? rest?)))
+                      :have-rest-arg? rest?
+                      :allow-other-keys? other-keys?)))
         (set! (setter-of cproc) #`",(c-name-of setter)__STUB")
-        (set! (keyword-args-of setter)
-              (filter (lambda (x) (eq? (class-of x) <keyword-arg>)) args))
         (process-body setter (cdr decl))
         (with-cpp-condition cproc
           (emit-definition setter)
@@ -964,7 +973,9 @@
 (define-method process-call-spec ((cproc <procstub>) form)
   (define (err) (error "malformed 'call' spec:" form))
   (define (args)
-    (string-join (map c-name-of (args-of cproc)) ", "))
+    (string-join (map c-name-of
+                      (append (args-of cproc) (keyword-args-of cproc)))
+                 ", "))
   (define (typed-result rettype c-func-name)
     (push-stmt! cproc "{")
     (push-stmt! cproc #`",(c-type-of rettype) SCM_RESULT;")
@@ -1094,7 +1105,9 @@
   (cgen-body "{")
   ;; argument decl
   (for-each emit-arg-decl (args-of cproc))
-  (when (> (num-optargs-of cproc) 0)
+  (for-each emit-arg-decl (keyword-args-of cproc))
+  (when (or (> (num-optargs-of cproc) 0)
+            (not (null? (keyword-args-of cproc))))
     (cgen-body "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
   (f "  SCM_ENTER_SUBR(\"~a\");" (scheme-name-of cproc))
   ;; argument count check (for optargs)
@@ -1105,6 +1118,8 @@
     (cgen-body #`"    Scm_Error(\"too many arguments: up to ,(+ (num-reqargs-of cproc) (num-optargs-of cproc)) is expected, %d given.\",, Scm_Length(SCM_OPTARGS)+,(num-reqargs-of cproc));"))
   ;; argument assertions & unbox op.
   (for-each emit-arg-unbox (args-of cproc))
+  (unless (null? (keyword-args-of cproc))
+    (emit-keyword-args-unbox cproc))
   ;; body
   (unless (null? (ref cproc 'c++-handlers))
     (cgen-body "try {"))
@@ -1146,42 +1161,72 @@
                  x (scheme-name-of cproc))))
     (_ #f)))
 
-(define (emit-arg-decl arg)
+(define-method emit-arg-decl ((arg <arg>))
   (f "  ScmObj ~a;" (scm-name-of arg))
   (f "  ~a ~a;" (c-type-of (type-of arg)) (c-name-of arg)))
 
-(define (emit-arg-unbox arg)
-  (let* ((class (class-of arg))
-         (type  (type-of arg))
+(define-method emit-arg-decl ((arg <keyword-arg>))
+  (f "  ScmObj ~a = ~a;"
+     (scm-name-of arg)
+     (scheme-constant->c-constant (default-of arg)))
+  (f "  ~a ~a;"
+     (c-type-of (type-of arg))
+     (c-name-of arg)))
+
+(define (emit-arg-unbox-rec arg)
+  (let* ((type  (type-of arg))
          (cname (c-name-of arg))
          (sname (scm-name-of arg))
-         (count (count-of arg))
          (tdesc (description-of type))
          (pred  (c-predicate-of type))
          (unbox (unboxer-of type)))
-    (cond
-     ((eq? class <required-arg>)
-      (f "  ~a = SCM_ARGREF(~a);" sname count))
-     ((eq? class <optional-arg>)
-      (f "  if (SCM_NULLP(SCM_OPTARGS)) ~a = ~a;"
-         sname
-         (scheme-constant->c-constant (default-of arg)))
-      (f "  else {")
-      (f "    ~a = SCM_CAR(SCM_OPTARGS);" sname)
-      (f "    SCM_OPTARGS = SCM_CDR(SCM_OPTARGS);")
-      (f "  }"))
-     ((eq? class <keyword-arg>)
-      (f "  ~a = Scm_GetKeyword(~a, SCM_OPTARGS, ~a);"
-         sname (value-getter-of (keyword-of (c-keyword-of arg)))
-         (scheme-constant->c-constant (default-of arg))))
-     ((eq? class <rest-arg>)
-      (f "  ~a = SCM_OPTARGS;" sname)))
     (when (and pred (not (string-null? pred)))
       (f "  if (!~a) Scm_Error(\"~a required, but got %S\", ~a);"
          (pred-expr type sname) tdesc sname))
     (if unbox
       (f "  ~a = ~a;" cname (unbox-expr type sname))
       (f "  ~a = ~a;" cname sname))))
+
+(define-method emit-arg-unbox ((arg <required-arg>))
+  (f "  ~a = SCM_ARGREF(~a);" (scm-name-of arg) (count-of arg))
+  (emit-arg-unbox-rec arg))
+
+(define-method emit-arg-unbox ((arg <optional-arg>))
+  (f "  if (SCM_NULLP(SCM_OPTARGS)) ~a = ~a;"
+     (scm-name-of arg)
+     (scheme-constant->c-constant (default-of arg)))
+  (f "  else {")
+  (f "    ~a = SCM_CAR(SCM_OPTARGS);" (scm-name-of arg))
+  (f "    SCM_OPTARGS = SCM_CDR(SCM_OPTARGS);")
+  (f "  }")
+  (emit-arg-unbox-rec arg))
+ 
+(define-method emit-arg-unbox ((arg <rest-arg>))
+  (f "  ~a = SCM_OPTARGS;" (scm-name-of arg))
+  (emit-arg-unbox-rec arg))
+
+ 
+(define (emit-keyword-args-unbox cproc)
+  (let ((args (keyword-args-of cproc))
+        (other-keys? (allow-other-keys? cproc)))
+    (f "  if (Scm_Length(SCM_OPTARGS) % 2)")
+    (f "    Scm_Error(\"keyword list not even: %S\", SCM_OPTARGS);")
+    (f "  while (!SCM_NULLP(SCM_OPTARGS)) {")
+    (pair-for-each (lambda (args)
+                     (let ((arg (car args))
+                           (tail? (null? (cdr args))))
+                       (f "    if (SCM_EQ(SCM_CAR(SCM_OPTARGS), ~a)) {"
+                          (value-getter-of (keyword-of (c-keyword-of arg))))
+                       (f "      ~a = SCM_CADR(SCM_OPTARGS);" (scm-name-of arg))
+                       (if tail?
+                         (f "    }")
+                         (f "    } else "))))
+                   args)
+    (unless other-keys?
+      (f "    else Scm_Warn(\"unknown keyword %S\", SCM_CAR(SCM_OPTARGS));"))
+    (f "    SCM_OPTARGS = SCM_CDDR(SCM_OPTARGS);")
+    (f "  }")
+    (for-each emit-arg-unbox-rec args)))
 
 (define (ensure-keyword-arg arg)
   (set! (c-keyword-of arg)
@@ -1197,13 +1242,8 @@
   )
 
 (define (emit-inliner-header cproc inliner-name)
-  (let ((name (scheme-name-of cproc))
-        (req  (num-reqargs-of cproc))
-        (opt  (num-optargs-of cproc))
-        )
-    (f "static ScmObj ~a(ScmObj subr, ScmObj form, ScmObj env, void *data)"
-       inliner-name)
-    ))
+  (f "static ScmObj ~a(ScmObj subr, ScmObj form, ScmObj env, void *data)"
+     inliner-name))
 
 (define (emit-record cproc)
   (let ((inliner-name "NULL"))

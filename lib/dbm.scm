@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: dbm.scm,v 1.7 2007-01-19 05:42:15 shirok Exp $
+;;;  $Id: dbm.scm,v 1.8 2007-01-21 14:21:50 rui314159 Exp $
 ;;;
 
 (define-module dbm
@@ -80,7 +80,7 @@
 (autoload file.util file-eq? copy-file move-file)
 
 (define (%dbm-copy2 from1 to1 from2 to2 . keys)
-  (let-keywords* keys ((if-exists :error))
+  (let-keywords keys ((if-exists :error))
     (if (file-eq? from1 from2)
       (begin ;; dir and pag files are identical
         (copy-file from1 to1 :safe #t :if-exists if-exists)
@@ -91,7 +91,7 @@
           (copy-file from2 to2 :safe #t :if-exists if-exists))))))
 
 (define (%dbm-rename2 from1 to1 from2 to2 . keys)
-  (let-keywords* keys ((if-exists :error))
+  (let-keywords keys ((if-exists :error))
     (if (file-eq? from1 from2)
       (begin
         (move-file from1 to1 :if-exists if-exists)

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: filter.scm,v 1.5 2007-01-19 05:42:16 shirok Exp $
+;;;  $Id: filter.scm,v 1.6 2007-01-21 14:21:51 rui314159 Exp $
 ;;;
 
 ;;; This module provides utilities for a common pattern in
@@ -53,7 +53,7 @@
 (select-module file.filter)
 
 (define (file-filter proc . options)
-  (let-keywords* options
+  (let-keywords options
       ((input  (current-input-port))
        (output (current-output-port))
        (temporary-file #f)

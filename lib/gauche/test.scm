@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: test.scm,v 1.20 2007-01-19 05:42:19 shirok Exp $
+;;;  $Id: test.scm,v 1.21 2007-01-21 14:21:52 rui314159 Exp $
 
 ;; Writing your own test
 ;;
@@ -142,7 +142,7 @@
 ;; is excluded from undefined variable check.
 
 (define (test-module module . opts)
-  (let-keywords* opts ((allow-undefined '()))
+  (let-keywords opts ((allow-undefined '()))
     (let1 mod (cond ((module? module) module)
                     ((symbol? module)
                      (or (find-module module)

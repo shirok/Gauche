@@ -31,7 +31,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: dbi.scm,v 1.37 2006-12-22 05:36:09 shirok Exp $
+;;;  $Id: dbi.scm,v 1.38 2007-01-21 14:21:50 rui314159 Exp $
 ;;;
 
 ;;; *EXPERIMENTAL*
@@ -130,7 +130,7 @@
 ;; legacy dbd API.  This will go away once the drivers switched to the
 ;; new dbd API.
 (define-method dbi-prepare ((c <dbi-connection>) (sql <string>) . options)
-  (let-keywords* options ((pass-through #f))
+  (let-keywords options ((pass-through #f))
     (let1 prepared (if pass-through
                      (lambda args
                        (unless (null? args)
@@ -185,8 +185,8 @@
   ;; The default method here is just a temporary one to use
   ;; older dbd drivers.  Will go away once the drivers catch up
   ;; the new interface.
-  (let-keywords* args ((username "")
-                       (password ""))
+  (let-keywords args ((username "")
+                      (password ""))
     ;; call deprecated dbi-make-connection API.
     (dbi-make-connection d username password (or options ""))))
 

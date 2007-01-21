@@ -1,3 +1,39 @@
+2007-01-21  Rui Ueyama  <rui314@gmail.com>
+
+	* lib/gauche/common-macros.scm (let-keywords): added let-keywords.
+	* src/autoloads.scm, test/procedure.scm: changed accordingly.
+
+	* lib/gauche/common-macros.scm (let-keywords*): issue a warning if
+	  given argument list contains unknown keyword.  It will be
+	  changed to raise an error soon.
+
+	* src/genstub (define-cproc etc.): added check for unknown keyword
+	  parameter.  A new keyword argument, &allow-other-keys is
+	  introduced to disables the checking.
+
+	* ext/charconv/convaux.scm, ext/net/netaux.scm,
+	  ext/vport/vport.scm, lib/dbi.scm, lib/dbm.scm,
+	  lib/file/filter.scm, lib/gauche/libutil.scm,
+	  lib/gauche/package.scm, lib/gauche/portutil.scm,
+	  lib/gauche/process.scm, lib/gauche/test.scm,
+	  lib/gauche/package/build.scm, lib/gauche/package/compile.scm,
+	  lib/gauche/package/fetch.scm, lib/gauche/package/util.scm,
+	  lib/gauche/vm/profiler.scm, lib/net/client.scm, lib/rfc/822.scm,
+	  lib/rfc/hmac.scm, lib/rfc/telnet.scm, lib/rfc/uri.scm,
+	  lib/text/diff.scm, lib/text/html-lite.scm, , lib/text/tr.scm,
+	  lib/www/cgi-test.scm, lib/www/cgi.scm, libsrc/file/util.scm,
+	  libsrc/gauche/collection.scm, libsrc/gauche/sequence.scm:
+	  changed to use let-keywords instead of let-keywords* or
+	  get-keyword.
+
+	* ext/threads/test.scm: typo fix.
+
+	* ext/uvector/uvseq.scm: call-with-iterator for uniform vector
+	  classes didn't recognize `:size' keyword.
+
+	* lib/binary/pack.scm: removed unused variable `keys'.  added
+	  keyword check.
+
 2007-01-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/process.scm: added a mechanism to handle child process'

@@ -14,7 +14,7 @@
 ;;   an @ following a variable length template, without which all the
 ;;   "vlp" references would be gone.
 
-;; $Id: pack.scm,v 1.8 2005-10-28 11:35:11 shirok Exp $
+;; $Id: pack.scm,v 1.9 2007-01-21 14:21:51 rui314159 Exp $
 
 (define-module binary.pack
   (use srfi-1)
@@ -546,7 +546,7 @@
 ;; A lot of redundancy here, this requires refactoring.  could also
 ;; easily make the char's dispatch on a runtime configurable hash table,
 ;; but that doesn't seem too useful.
-(define (read-one-packer keys fixed-len var-len? vlp slash-count)
+(define (read-one-packer fixed-len var-len? vlp slash-count)
 
   (let loop ((c (read-char)))
     (cond
@@ -576,14 +576,14 @@
 
            ;; ( just groups until the closing )
            ((#\()
-            (let* ((res (read-packers-until-token keys (char-complement c)
+            (let* ((res (read-packers-until-token (char-complement c)
                                                   fixed-len var-len? vlp))
                    )
               res))
 
            ;; < produces a single list until >
            ((#\<)
-            (let* ((res (read-packers-until-token keys (char-complement c)
+            (let* ((res (read-packers-until-token (char-complement c)
                                                   fixed-len var-len? vlp))
                    (orig-pack (res 'packer))
                    (orig-unpack (res 'unpacker)))
@@ -933,8 +933,8 @@
 ;; high level parser
 
 ;; read-packer that handles / formats
-(define (read-packer keys fixed-len var-len? vlp)
-  (let ((p (read-one-packer keys fixed-len var-len? vlp #f)))
+(define (read-packer fixed-len var-len? vlp)
+  (let ((p (read-one-packer fixed-len var-len? vlp #f)))
     (skip-pack-comments)
     (let ((c (peek-char)))
       ;; handle the / mechanism a little more generally than Perl
@@ -943,17 +943,17 @@
              (skip-pack-comments) ;; scout ahead
              (if (memq (peek-char) '(#\a #\A #\Z #\b #\B #\h #\H))
                ;; make a string-type packer with dynamic length
-               (read-one-packer keys fixed-len var-len? vlp p)
+               (read-one-packer fixed-len var-len? vlp p)
                ;; make an object-type dynamic repeat packer
                (make-slash-repeat-pack-dispatch
-                (read-one-packer keys fixed-len var-len? vlp #f) p vlp)))
+                (read-one-packer fixed-len var-len? vlp #f) p vlp)))
             (else
              ;; not a /, return the initial packer
              p)))))
 
-(define (read-until-token tok keys fixed-len var-len? var-len-param)
+(define (read-until-token tok fixed-len var-len? var-len-param)
   (let loop ((ls '()) (flen fixed-len) (vlen? var-len?) (vlp var-len-param))
-    (let ((next (read-packer keys flen vlen? vlp)))
+    (let ((next (read-packer flen vlen? vlp)))
       (cond ((equal? next tok)
              (reverse ls))
             ((eof-object? next)
@@ -971,12 +971,12 @@
     a
     (merge-pack-dispatch b a)))
 
-(define (read-packers-until-token keys token . args)
+(define (read-packers-until-token token . args)
   (let-optionals* args ((fixed-len 0)
                         (var-len? #f)
                         (vlp #f))
     (let ((packers (read-until-token (make-pack-token token)
-                                     keys fixed-len var-len? vlp)))
+                                     fixed-len var-len? vlp)))
       ;; update var-len fields if we have an @
       ;; with make-count-update-pack-dispatch
       (let loop ((ls packers)
@@ -1006,10 +1006,10 @@
                             ))))
                   (loop rest (cons a res)))))))))))
 
-(define (read-all-packers template keys)
+(define (read-all-packers template)
   (with-input-from-string template
     (lambda ()
-      (read-packers-until-token keys the-eof-object))))
+      (read-packers-until-token the-eof-object))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; exported interface
@@ -1018,47 +1018,53 @@
 ;; threads with a mutex.
 (define make-packer
   (let ((cache (make-parameter (make-hash-table 'equal?))))
-    (lambda (template . keys)
-      (if (get-keyword keys :cached? #t)
+    (lambda (template cached?)
+      (if cached?
         (let ((res (hash-table-get (cache) template #f)))
           (unless res
-            (set! res (read-all-packers template keys))
+            (set! res (read-all-packers template))
             (hash-table-put! (cache) template res))
           res)
-        (read-all-packers template keys)))))
+        (read-all-packers template)))))
 
 (define (pack template values . keys)
-  (let ((packer (apply make-packer template keys))
-        (out (or (get-keyword :output keys #f)
-                 (and (get-keyword :to-string? keys #f)
-                      (open-output-string))
-                 (current-output-port))))
-    (with-output-to-port out
-      (lambda ()
-        (let ((res (packer 'pack values)))
-          (if (pair? res)
-            (error "pack: extra values remaining: ~S" res)
-            (if (get-keyword :to-string? keys #f)
-              (get-output-string out)
-              #t)))))))
+  (let-keywords keys ((output #f)
+                      (to-string? #f)
+                      (cached? #t))
+    (let ((packer (make-packer template cached?))
+          (out (or output
+                   (and to-string? (open-output-string))
+                   (current-output-port))))
+      (with-output-to-port out
+        (lambda ()
+          (let ((res (packer 'pack values)))
+            (if (pair? res)
+              (error "pack: extra values remaining: ~S" res)
+              (if to-string?
+                (get-output-string out)
+                #t))))))))
 
 (define (get-input-port keys)
-  (or (get-keyword :input keys #f)
-      (cond ((get-keyword :from-string keys #f) => open-input-string)
-            (else (current-input-port)))))
+  (let-keywords keys ((input #f)
+                      (from-string #f))
+    (or input
+        (and from-string (open-input-string from-string))
+        (current-input-port))))
 
 (define (unpack template . keys)
-  (let ((packer (apply make-packer template keys))
-        (in (get-input-port keys)))
-    (with-input-from-port in
-      (cut packer 'unpack))))
+  (let-keywords keys ((cached? #t) . rest)
+    (let ((packer (make-packer template cached?))
+          (in (get-input-port rest)))
+      (with-input-from-port in
+        (cut packer 'unpack)))))
 
 ;; just "skip" is too vague
 (define (unpack-skip template . keys)
-  (let ((packer (apply make-packer template keys))
-        (in (get-input-port keys)))
-    (with-input-from-port in
-      (cut packer 'skip))))
+  (let-keywords keys ((cached? #t) . rest)
+    (let ((packer (make-packer template cached?))
+          (in (get-input-port rest)))
+      (with-input-from-port in
+        (cut packer 'skip)))))
 
 (provide "binary/pack")
 

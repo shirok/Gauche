@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.3 2005-08-31 12:43:29 shirok Exp $
+;;;  $Id: util.scm,v 1.4 2007-01-21 14:21:54 rui314159 Exp $
 ;;;
 
 ;;; NB: this module is not intended for external use.
@@ -46,7 +46,7 @@
 (define verbose-run (make-parameter #f))
 
 (define (run cmdline . opts)
-  (let-keywords* opts ((stdin-string #f))
+  (let-keywords opts ((stdin-string #f))
     (when (or (dry-run) (verbose-run))
       (print cmdline))
     (unless (dry-run)

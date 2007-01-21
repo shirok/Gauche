@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: sequence.scm,v 1.4 2006-10-21 23:26:23 shirok Exp $
+;;;  $Id: sequence.scm,v 1.5 2007-01-21 14:22:03 rui314159 Exp $
 ;;;
 
 ;; This module defines an unified way to treat sequence-like objects
@@ -271,8 +271,8 @@
 ;; group-sequence ----------------------------------------------
 
 (define-method group-sequence ((seq <sequence>) . args)
-  (let-keywords* args ((key-proc  :key identity)
-                       (test-proc :test  eqv?))
+  (let-keywords args ((key-proc  :key identity)
+                      (test-proc :test  eqv?))
     (receive (bucket results)
         (fold2 (lambda (elt bucket results)
                  (let1 key (key-proc elt)

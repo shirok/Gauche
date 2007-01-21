@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: util.scm,v 1.4 2007-01-19 05:42:19 shirok Exp $
+;;;  $Id: util.scm,v 1.5 2007-01-21 14:22:01 rui314159 Exp $
 ;;;
 
 ;;; This module provides convenient utility functions to handle
@@ -65,8 +65,9 @@
 (select-module file.util)
 
 ;; common util
-(define (%stat opts)
-  (if (get-keyword :follow-link? opts #t) sys-stat sys-lstat))
+(define (%stat path follow-link?)
+  (let1 stat (if follow-link? sys-stat sys-lstat)
+    (stat path)))
 
 ;;;=============================================================
 ;;; Directory entries
@@ -98,17 +99,20 @@
       (filter pred (sys-readdir dir))))
 
 (define (%directory-filter-compose opts)
-  (apply every-pred
-         (cond-list ((get-keyword :children? opts #f)
-                     (lambda (e) (not (member (sys-basename e) '("." "..")))))
-                    ((get-keyword :filter opts #f)))))
+  (let-keywords opts ((children? #f)
+                      (filter #f))
+    (apply every-pred
+           (cond-list (children?
+                       (lambda (e) (not (member (sys-basename e) '("." "..")))))
+                      (filter)))))
 
 ;; directory-list DIR &keyword ADD-PATH? FILTER-ADD-PATH? CHILDREN? FILTER
 (define (directory-list dir . opts)
-  (let-keywords* opts ((add-path? #f)
-                       (filter-add-path? #f))
+  (let-keywords opts ((add-path? #f)
+                      (filter-add-path? #f)
+                      . rest)
     (let1 entries
-        (sort (%directory-filter dir (%directory-filter-compose opts)
+        (sort (%directory-filter dir (%directory-filter-compose rest)
                                  filter-add-path?))
       (if add-path?
           (map (cut build-path dir <>) entries)
@@ -116,13 +120,15 @@
 
 ;; directory-list2 DIR &optional ADD-DIR? FILTER-ADD-PATH? CHILDREN? FILTER FOLLOW-LINK?
 (define (directory-list2 dir . opts)
-  (let-keywords* opts ((add-path? #f)
-                       (filter-add-path? #f))
-    (let* ((filters (%directory-filter-compose opts))
-           (selector (let1 stat (%stat opts)
-                       (lambda (e)
-                         (and (file-exists? e)
-                              (eq? (slot-ref (stat e) 'type) 'directory)))))
+  (let-keywords opts ((add-path? #f)
+                      (filter-add-path? #f)
+                      (follow-link? #t)
+                      . rest)
+    (let* ((filters (%directory-filter-compose rest))
+           (selector (lambda (e)
+                       (and (file-exists? e)
+                            (eq? (slot-ref (%stat e follow-link?) 'type)
+                                 'directory))))
            (entries (sort (%directory-filter dir filters filter-add-path?))))
       (if add-path?
           (partition selector
@@ -132,19 +138,18 @@
 
 ;; directory-fold DIR PROC KNIL &keyword LISTER FOLDER FOLLOW-LINK?
 (define (directory-fold dir proc knil . opts)
-  ;; NB: follow-link? keyword is considered within %stat call.
-  (let* ((lister (get-keyword :lister opts
-                              (lambda (path knil)
+  (let-keywords opts ((lister (lambda (path knil)
                                 (values
                                  (directory-list path
                                                  :add-path? #t
                                                  :children? #t)
-                                 knil))))
-         (folder (get-keyword :folder opts fold))
-         (selector (let1 stat (%stat opts)
-                     (lambda (e)
-                       (and (file-exists? e)
-                            (eq? (slot-ref (stat e) 'type) 'directory))))))
+                                 knil)))
+                      (folder fold)
+                      (follow-link? #t))
+    (define (selector e)
+      (and (file-exists? e)
+           (eq? (slot-ref (%stat e follow-link?) 'type)
+                'directory)))
     (define (rec path knil)
       (if (selector path)
         ;; [TODO]: For the backward compatibiliy, we allow LISTER to return
@@ -288,23 +293,23 @@
     (path-sans-extension path)))
 
 (define (find-file-in-paths name . opts)
-  (let* ((paths (get-keyword :paths opts
-                             (cond ((sys-getenv "PATH")
-                                    => (cut string-split <> 
-					    (cond-expand
-					     (gauche-windows #\;)
-					     (else #\:))))
-                                   (else '()))))
-         (pred  (get-keyword :pred opts file-is-executable?)))
+  (let-keywords opts
+      ((paths (cond ((sys-getenv "PATH")
+                     => (cut string-split <> 
+                             (cond-expand
+                              (gauche-windows #\;)
+                              (else #\:))))
+                    (else '())))
+       (pred file-is-executable?))
     (if (absolute-path? name)
-        (and (pred name) name)
-        (let loop ((paths paths))
-          (and (not (null? paths))
-               (let1 p (build-path (car paths) name)
-                 (if (pred p)
-                     p
-                     (loop (cdr paths))))))
-        )))
+      (and (pred name) name)
+      (let loop ((paths paths))
+        (and (not (null? paths))
+             (let1 p (build-path (car paths) name)
+               (if (pred p)
+                 p
+                 (loop (cdr paths))))))
+      )))
 
 ;;;=============================================================
 ;;; File attributes
@@ -316,8 +321,9 @@
   (syntax-rules ()
     ((_ name slot)
      (define (name path . opts)
-       (and (sys-access path |F_OK|)
-            (slot-ref ((%stat opts) path) slot))))))
+       (let-keywords opts ((follow-link? #t))
+         (and (sys-access path |F_OK|)
+              (slot-ref (%stat path follow-link?) slot)))))))
 
 (define-stat-accessor file-type 'type)
 (define-stat-accessor file-perm 'perm)
@@ -458,28 +464,28 @@
 ;;  safe
 ;;  keep-timestamp
 (define (copy-file src dst . opts)
-  (let* ((if-exists (get-keyword :if-exists opts :error))
-         (backsfx   (get-keyword :backup-suffix opts ".orig"))
-         (safe      (get-keyword :safe opts #f))
-         (keeptime  (get-keyword :keep-timestamp opts #f))
-         (backfile  (string-append dst backsfx))
-         (times     '())
-         (tmpfile   #f)
-         (inport    #f)
-         (outport   #f))
-    (define (rollback)
-      (cond (inport  => close-input-port))
-      (cond (outport => close-output-port))
-      (cond (tmpfile => sys-unlink)))
-    (define (commit)
-      (cond (inport  => close-input-port))
-      (cond (outport => close-output-port))
-      (when tmpfile
-        (when (eq? if-exists :backup) (sys-rename dst backfile))
-        (sys-rename tmpfile dst))
-      (unless (null? times) (apply sys-utime dst times)))
-    (define (open-destination)
-      (if safe
+  (let-keywords opts ((if-exists :error)
+                      (backsfx :backup-suffix ".orig")
+                      (safe #f)
+                      (keeptime :keep-timestamp #f))
+    (let* ((backfile  (string-append dst backsfx))
+           (times     '())
+           (tmpfile   #f)
+           (inport    #f)
+           (outport   #f))
+      (define (rollback)
+        (cond (inport  => close-input-port))
+        (cond (outport => close-output-port))
+        (cond (tmpfile => sys-unlink)))
+      (define (commit)
+        (cond (inport  => close-input-port))
+        (cond (outport => close-output-port))
+        (when tmpfile
+          (when (eq? if-exists :backup) (sys-rename dst backfile))
+          (sys-rename tmpfile dst))
+        (unless (null? times) (apply sys-utime dst times)))
+      (define (open-destination)
+        (if safe
           (cond
            ((and (eq? if-exists :error) (file-exists? dst))
             (error "destination file exists" dst))
@@ -497,31 +503,31 @@
            (else
             (set! outport (open-output-file dst :if-exists :supersede)) #t))
           ))
-    (define (do-copy)
-      (guard (e (else (rollback) (raise e)))
-        (set! inport (open-input-file src))
-        (when keeptime
-          (set! times (let1 stat (sys-fstat inport)
-                        (map (cut slot-ref stat <>) '(atime mtime)))))
-        (begin0
-         (and (open-destination)
-              (copy-port inport outport :unit 65536)
-              #t)
-         (commit))))
+      (define (do-copy)
+        (guard (e (else (rollback) (raise e)))
+          (set! inport (open-input-file src))
+          (when keeptime
+            (set! times (let1 stat (sys-fstat inport)
+                          (map (cut slot-ref stat <>) '(atime mtime)))))
+          (begin0
+           (and (open-destination)
+                (copy-port inport outport :unit 65536)
+                #t)
+           (commit))))
 
-    ;; body of copy-file
-    (unless (memq if-exists '(#f :error :supersede :backup))
-      (error "argument for :if-exists must be either :error, :supersede, :backup or #f, but got" if-exists))
-    (when (and (file-exists? src) (file-exists? dst) (file-eqv? src dst))
-      (errorf "source ~s and destination ~s are the same file" src dst))
-    (do-copy)
-    ))
-
+      ;; body of copy-file
+      (unless (memq if-exists '(#f :error :supersede :backup))
+        (error "argument for :if-exists must be either :error, :supersede, :backup or #f, but got" if-exists))
+      (when (and (file-exists? src) (file-exists? dst) (file-eqv? src dst))
+        (errorf "source ~s and destination ~s are the same file" src dst))
+      (do-copy)
+      )))
+  
 ;; move-file
 ;;  if-exists  - :error :supersede :backup #f
 ;;  backup-suffix
 (define (move-file src dst . opts)
-  (let-keywords* opts
+  (let-keywords opts
       ((if-exists :error)
        (backsfx   :backup-suffix ".orig"))
 

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: telnet.scm,v 1.3 2003-07-05 03:29:12 shirok Exp $
+;;;  $Id: telnet.scm,v 1.4 2007-01-21 14:21:56 rui314159 Exp $
 ;;;
 
 ;;;  RFC 854  Telnet Protocol Specification
@@ -120,8 +120,8 @@
 (define (setup-socket self initargs)
   (let ((sock (socket-of self)))
     (cond ((not sock)
-           (let-keywords* initargs ((host #f)
-                                    (port *telnet-port*))
+           (let-keywords initargs ((host #f)
+                                   (port *telnet-port*))
              (unless host
                (error "either connected socket or remote host name must be given to initialize a telnet session.   Given initargs is" initargs))
              (let ((sock (make-client-socket 'inet host port)))

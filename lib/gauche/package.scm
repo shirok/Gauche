@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: package.scm,v 1.7 2007-01-14 09:22:58 shirok Exp $
+;;;  $Id: package.scm,v 1.8 2007-01-21 14:21:51 rui314159 Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -141,7 +141,7 @@
 
 ;; Returns a singleton of <gauche-package-descriptions>.
 (define (gauche-package-description-paths . args)
-  (let-keywords* args ((all-versions #f))
+  (let-keywords args ((all-versions #f))
     (if all-versions
       (make <gauche-package-description-paths> :paths (get-all-version-paths))
       (make <gauche-package-description-paths>))))
@@ -198,7 +198,7 @@
 
 ;; utility
 (define (find-gauche-package-description name . args)
-  (let-keywords* args ((all-versions #f))
+  (let-keywords args ((all-versions #f))
     (and-let* ((path (find (string->regexp #`"/,|name|\\.gpd$")
                            (gauche-package-description-paths
                             :all-versions all-versions))))

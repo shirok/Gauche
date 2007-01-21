@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: hmac.scm,v 1.5 2003-10-10 21:52:19 fuyuki Exp $
+;;;  $Id: hmac.scm,v 1.6 2007-01-21 14:21:55 rui314159 Exp $
 ;;;
 
 ;;; RFC 2104 HMAC: Keyed-Hashing for Message Authentication
@@ -48,9 +48,9 @@
 
 (define-method initialize ((self <hmac>) initargs)
   (next-method)
-  (let-keywords* initargs ((key #f)
-			   (hasher #f)
-			   (block-size 64))
+  (let-keywords initargs ((key #f)
+                          (hasher #f)
+                          (block-size 64))
     (unless (and key hasher)
       (error "key and hasher must be given"))
     (when (> (string-size key) block-size)

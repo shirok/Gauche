@@ -54,17 +54,15 @@
 ;; convert a header to =?<charset>?b?<encoded>?= style 7-bit encoded
 ;; format (see scmail for the inverse operation)
 (define (mime-header-encode str . keys)
-  (cond ((get-keyword :8bit keys #f)
-         str)
-        ((rxmatch #/[^\x01-\x7e]/ str)
-         (let* ((default (symbol->string (gauche-character-encoding)))
-                (from (get-keyword :from-charset keys default))
-                (to (get-keyword :charset keys from))
-                (buf (if (equal? from to) str (ces-convert str from to))))
-           ;; convert to base64 if not 7bit safe
-           (format #f "=?~A?b?~A?=" to (base64-encode-string buf)) ))
-        (else
-         str)))
+  (let-keywords keys ((8bit #f)
+                      (from :from-charset (gauche-character-encoding))
+                      (to :charset (gauche-character-encoding)))
+    (cond (8bit str)
+          ((rxmatch #/[^\x01-\x7e]/ str)
+           (let1 buf (if (equal? from to) str (ces-convert str from to))
+             ;; convert to base64 if not 7bit safe
+             (format #f "=?~A?b?~A?=" to (base64-encode-string buf)) ))
+          (else str))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; common net command format utilities
@@ -113,10 +111,10 @@
 
 ;; open a network connection
 (define (open-net-client host . keys)
-  (let ((port (get-keyword :port keys #f))
-        (timeout (get-keyword :timeout keys #f))
-        (greeting? (get-keyword :greeting? keys #f)) ;; wait for a greeting?
-        (status (get-keyword :status keys #f)))      ;; ... with what status?
+  (let-keywords keys ((port #f)
+                      (timeout #f)
+                      (greeting? #f)   ; wait for a greeting?
+                      (status #f))     ; ... with what status?
     (with-timeout timeout
       (lambda ()
         (and-let* ((sock (make-client-socket 'inet host port))

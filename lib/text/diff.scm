@@ -19,8 +19,8 @@
 
 ;; lcs on text.  Returns edit-list (as defined in lcs-edit-list).
 (define (diff a b . options)
-  (let-keywords* options ((reader read-line)
-                          (equal equal?))
+  (let-keywords options ((reader read-line)
+                         (equal equal?))
     (lcs-edit-list (source->list a reader)
                    (source->list b reader))))
 
@@ -34,9 +34,9 @@
      (format #t "  ~A\n" line))))
 
 (define (diff-report a b . options)
-  (let-keywords* options ((writer write-line-diff)
-                          (reader read-line)
-                          (equal equal?))
+  (let-keywords options ((writer write-line-diff)
+                         (reader read-line)
+                         (equal equal?))
     (lcs-fold (lambda (line _) (writer line '-))
               (lambda (line _) (writer line '+))
               (lambda (line _) (writer line #f))

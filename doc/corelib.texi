@@ -1786,7 +1786,7 @@ It is extensively used in pass-by-name arguments (keyword arguments),
 and keyword-value list.
 Unlike CommonLisp, keywords and symbols are distinct types.
 
-See also @code{let-keywords*} macro (@ref{Optional argument parsing})
+See also @code{let-keywords} macro (@ref{Optional argument parsing})
 for keyword argument processing.
 @c JP
 キーワードは特別なシンボルの一種で、自動的にクォートされます。
@@ -1794,7 +1794,7 @@ for keyword argument processing.
 います。
 CommonLisp とは異なり、キーワードとシンボルは明確に区別される型です。
 
-キーワード引数の処理については、@code{let-keywords*} マクロ
+キーワード引数の処理については、@code{let-keywords} マクロ
 (@ref{Optional argument parsing}) を参照して下さい。
 @c COMMON
 @end  deftp
@@ -5590,7 +5590,8 @@ evaluated unless @var{restargs} is an empty list.
 @end example
 @end defmac
 
-@defmac let-keywords* restarg (var-spec @dots{}) body @dots{}
+@defmac let-keywords restarg (var-spec @dots{}) body @dots{}
+@defmacx let-keywords restarg (var-spec @dots{} . restvar) body @dots{}
 @c EN
 This macro is for keyword arguments.  @var{Var-spec} can be
 one of the following forms:
@@ -5624,37 +5625,53 @@ appear in @var{restarg}, binds @var{symbol} to the result of @var{expr}.
 
 @c EN
 The default value @var{expr} is only evaluated when the keyword is
-not given to the @var{restarg}.  The binding is done in the order
-of @var{var-spec}, so the @var{expr} can refer to the variables bound
-by preceding @var{var-spec}.
+not given to the @var{restarg}.
 @c JP
 デフォルト値@var{expr}は、@var{restarg}にキーワードが与えられてなかった
-場合にのみ評価されます。束縛は@var{var-spec}での順番に行われるので、
-@var{expr}は以前の@var{var-spec}により束縛された変数を参照できます。
+場合にのみ評価されます。
 @c COMMON
 
 @c EN
-If a keyword that doesn't listed in @var{var-spec} appears in @var{restarg},
-it is simply ignored.
+[[[TO BE FILLED]]]
 @c JP
-@var{var-spec}にリストされていないキーワードが@var{restarg}に現れた場合、
-それは単に無視されます。
+1番目のフォームでは、@var{var-spec}にないキーワード引数が@var{restarg}に
+現れるのはエラーです。以前のバージョンとの互換性のために、現在は警告を
+表示するだけですが、将来はエラーを通知するよう動作が変わるでしょう。
+警告を表示したくない場合は次の2番目のフォームを使ってください。
+
+2番目のフォームでは、@var{restvar}はシンボルか@code{#f}でなければなりません。
+シンボルのときは、@var{var-spec}に束縛されなかった@var{restargs}のキーワード
+リストが@var{restvar}に束縛されます。@code{#f}のときは、それらの@var{restargs}
+のキーワードは単に無視されます。
 @c COMMON
 
 @example
 (define (proc x . options)
-  (let-keywords* options ((a 'a)
-                          (b :beta 'b)
-                          (c 'c))
-    (list x a b c)))
+  (let-keywords options ((a 'a)
+                         (b :beta 'b)
+                         (c 'c)
+                         . rest)
+    (list x a b c rest)))
 
-(proc 0)         @result{} (0 a b c)
-(proc 0 :a 1)    @result{} (0 1 b c)
-(proc 0 :beta 1) @result{} (0 a 1 c)
-(proc 0 :beta 1 :c 3) @result{} (0 a 1 3)
+(proc 0)         @result{} (0 a b c ())
+(proc 0 :a 1)    @result{} (0 1 b c ())
+(proc 0 :beta 1) @result{} (0 a 1 c ())
+(proc 0 :beta 1 :c 3 :unknown 4) @result{} (0 a 1 3 (:unknown 4))
 @end example
 @end defmac
 
+@defmac let-keywords* restarg (var-spec @dots{}) body @dots{}
+@defmacx let-keywords* restarg (var-spec @dots{} . restvar) body @dots{}
+@c EN
+Like @code{let-keywords}, but the binding is done in the order of
+@var{var-spec}.  So the @var{expr} can refer to the variables bound by
+preceding @var{var-spec}.
+@c JP
+このマクロは@code{let-keywords}とほぼ同じですが、束縛が@var{var-spec}での
+順番に行われるところが異なります。@var{expr}は以前の@var{var-spec}により
+束縛された変数を参照できます。
+@c COMMON
+@end defmac
 
 @node Procedure arity,  , Optional argument parsing, Procedures
 @subsubsection Procedure arity
