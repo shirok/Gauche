@@ -1,5 +1,10 @@
 2007-01-21  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/package/compile.scm
+	  (gauche-package-link, gauche-package-compile): let them recognize
+	  extra keyword args, for such keywords can be passed via
+	  gauche-package-compile-and-link.	  
+
 	* lib/www/cgi-test.scm (call-with-cgi-script): added :on-abnormal-exit
 	  :ignore to call-with-process-io.  (Note: the proper fix may be to
 	  mask SIGPIPE when running the child process instead of ignoring

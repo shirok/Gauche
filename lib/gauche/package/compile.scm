@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.5 2007-01-21 14:21:54 rui314159 Exp $
+;;;  $Id: compile.scm,v 1.6 2007-01-21 20:23:20 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*
@@ -66,6 +66,9 @@
                       (cppflags #f)
                       (cflags   #f)
                       (cc #f)
+                      (ld #f)           ;; dummy
+                      (ldflags #f)      ;; dummy
+                      (libs #f)         ;; dummy
                       (dry? :dry-run #f)
                       (verb? :verbose #f))
     (parameterize ((dry-run dry?)
@@ -93,6 +96,10 @@
   (let-keywords args ((ldflags #f)
                       (libs #f)
                       (ld #f)
+                      (output #f)       ;; dummy
+                      (cppflags #f)     ;; dummy
+                      (cflags #f)       ;; dummy
+                      (cc #f)           ;; dummy
                       (dry? :dry-run #f)
                       (verb? :verbose #f))
     (parameterize ((dry-run dry?)
@@ -111,7 +118,8 @@
                    (verbose-run (get-keyword :verbose args #f)))
       (guard (e (else (sys-unlink head.c)
                       (sys-unlink tail.c)
-                      (sys-unlink sofile)))
+                      (sys-unlink sofile)
+                      (raise e)))
         (run #`"',CONFIG' --fixup-extension ',module-name'")
         (let1 objs (map (lambda (src)
                           (cond
