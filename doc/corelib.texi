@@ -1134,6 +1134,7 @@ representation of @var{n}.
 (logcount #b-0100) @result{} 2  ;; 2's complement:  ....111100
 @end example
 @c JP
+@example
 (logcount 0)      @result{} 0
 (logcount #b0010) @result{} 1
 (logcount #b0110) @result{} 2
@@ -1143,6 +1144,7 @@ representation of @var{n}.
 (logcount #b-0010) @result{} 1  ;; 2の補数:  ....111110
 (logcount #b-0011) @result{} 1  ;; 2の補数:  ....111101
 (logcount #b-0100) @result{} 2  ;; 2の補数:  ....111100
+@end example
 @c COMMON
 @end defun
 
