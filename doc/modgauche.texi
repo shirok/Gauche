@@ -3281,7 +3281,7 @@ a true value, @var{finalizer} will not be called.
 @var{fatal-handler}が@code{#f}を返す場合、@var{finalizer}は後で呼ばれ
 ます。これを利用して@var{finalizer}で共通のクリーンアップを実行するよ
 うな実装ができます。@var{fatal-handler}が真の値を返した場合には、
-@var{finalizer}ha呼ばれません。
+@var{finalizer}は呼ばれません。
 @c COMMON
 
 @end defivar
