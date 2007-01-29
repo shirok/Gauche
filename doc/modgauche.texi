@@ -8661,7 +8661,7 @@ Returns the value of @var{name} slot of @var{thread}.
 Gets/sets the value of the @var{thread}'s specific slot.
 @c JP
 [SRFI-18]、[SRFI-21]
-@var{thread}のし呈したスレッドの値を取得/設定します。
+@var{thread}の指定したスレッドの値を取得/設定します。
 @c COMMON
 @end defun
 
