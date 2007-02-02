@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.480 2007-02-02 10:43:25 shirok Exp $
+ *  $Id: gauche.h,v 1.481 2007-02-02 19:17:29 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1572,7 +1572,6 @@ SCM_EXTERN ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
 SCM_EXTERN ScmObj Scm_GlobalVariableRef(ScmModule *module,
                                         ScmSymbol *symbol,
                                         int flags);
-#define Scm_SymbolValue(m, s) Scm_GlobalVariableRef(m, s, FALSE)
 
 SCM_EXTERN ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol,
 			     ScmObj value);
@@ -1617,6 +1616,9 @@ SCM_EXTERN ScmModule *Scm_CurrentModule(void);
                SCM_SYMBOL(SCM_INTERN(cstr)),    \
                SCM_OBJ(val))
 
+/* OBSOLETED */
+#define Scm_SymbolValue(m, s) Scm_GlobalVariableRef(m, s, FALSE)
+/* OBSOLETED */
 #define SCM_SYMBOL_VALUE(module_name, symbol_name)                      \
     Scm_SymbolValue(SCM_FIND_MODULE(module_name, 0),                    \
                     SCM_SYMBOL(SCM_INTERN(symbol_name)))
@@ -1625,75 +1627,19 @@ SCM_EXTERN ScmModule *Scm_CurrentModule(void);
  * SYMBOL
  */
 
-struct ScmSymbolRec {
-    SCM_HEADER;
-    ScmString *name;
-};
+#include <gauche/symbol.h>
 
-#define SCM_SYMBOL(obj)        ((ScmSymbol*)(obj))
-#define SCM_SYMBOLP(obj)       SCM_XTYPEP(obj, SCM_CLASS_SYMBOL)
-#define SCM_SYMBOL_NAME(obj)   (SCM_SYMBOL(obj)->name)
+/*--------------------------------------------------------
+ * GLOC
+ */
 
-SCM_EXTERN ScmObj Scm_Intern(ScmString *name);
-#define SCM_INTERN(cstr)  Scm_Intern(SCM_STRING(SCM_MAKE_STR_IMMUTABLE(cstr)))
-SCM_EXTERN ScmObj Scm_Gensym(ScmString *prefix);
-
-SCM_CLASS_DECL(Scm_SymbolClass);
-#define SCM_CLASS_SYMBOL       (&Scm_SymbolClass)
-
-/* Gloc (global location) */
-struct ScmGlocRec {
-    SCM_HEADER;
-    ScmSymbol *name;
-    ScmModule *module;
-    ScmObj value;
-    int exported;
-    ScmObj (*getter)(ScmGloc *);
-    ScmObj (*setter)(ScmGloc *, ScmObj);
-};
-
-#define SCM_GLOC(obj)            ((ScmGloc*)(obj))
-#define SCM_GLOCP(obj)           SCM_XTYPEP(obj, SCM_CLASS_GLOC)
-SCM_CLASS_DECL(Scm_GlocClass);
-#define SCM_CLASS_GLOC          (&Scm_GlocClass)
-
-#define SCM_GLOC_GET(gloc) \
-    ((gloc)->getter? (gloc)->getter(gloc) : (gloc)->value)
-#define SCM_GLOC_SET(gloc, val) \
-    ((gloc)->setter? (gloc)->setter((gloc), (val)) : ((gloc)->value = (val)))
-
-SCM_EXTERN ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module);
-SCM_EXTERN ScmObj Scm_MakeConstGloc(ScmSymbol *sym, ScmModule *module);
-SCM_EXTERN ScmObj Scm_GlocConstSetter(ScmGloc *g, ScmObj val);
-
-#define SCM_GLOC_CONST_P(gloc) \
-    ((gloc)->setter == Scm_GlocConstSetter)
+#include <gauche/gloc.h>
 
 /*--------------------------------------------------------
  * KEYWORD
  */
 
-struct ScmKeywordRec {
-    SCM_HEADER;
-    ScmString *name;
-};
-
-SCM_CLASS_DECL(Scm_KeywordClass);
-#define SCM_CLASS_KEYWORD       (&Scm_KeywordClass)
-
-#define SCM_KEYWORD(obj)        ((ScmKeyword*)(obj))
-#define SCM_KEYWORDP(obj)       SCM_XTYPEP(obj, SCM_CLASS_KEYWORD)
-#define SCM_KEYWORD_NAME(obj)   (SCM_KEYWORD(obj)->name)
-
-SCM_EXTERN ScmObj Scm_MakeKeyword(ScmString *name);
-SCM_EXTERN ScmObj Scm_GetKeyword(ScmObj key, ScmObj list, ScmObj fallback);
-SCM_EXTERN ScmObj Scm_DeleteKeyword(ScmObj key, ScmObj list);
-SCM_EXTERN ScmObj Scm_DeleteKeywordX(ScmObj key, ScmObj list);
-
-#define SCM_MAKE_KEYWORD(cstr) \
-    Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR_IMMUTABLE(cstr)))
-#define SCM_GET_KEYWORD(cstr, list, fallback) \
-    Scm_GetKeyword(SCM_MAKE_KEYWORD(cstr), list, fallback)
+#include <gauche/keyword.h>
 
 /*--------------------------------------------------------
  * NUMBER

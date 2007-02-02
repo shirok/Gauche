@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.160 2007-01-08 10:19:34 shirok Exp $
+#  $Id: Makefile.in,v 1.161 2007-02-02 19:17:29 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -107,11 +107,12 @@ INSTALL_SUBHEADERS = gauche/config.h                                  \
 	 	     gauche/vm.h gauche/code.h gauche/vminsn.h        \
                      gauche/char_euc_jp.h gauche/char_utf_8.h         \
                      gauche/char_sjis.h gauche/char_none.h            \
-                     gauche/extend.h gauche/int64.h gauche/scmconst.h \
+	             gauche/symbol.h gauche/keyword.h gauche/gloc.h   \
                      gauche/number.h gauche/bignum.h gauche/vector.h  \
 	             gauche/port.h gauche/system.h                    \
                      gauche/class.h gauche/exception.h                \
                      gauche/builtin-syms.h                            \
+                     gauche/extend.h gauche/int64.h gauche/scmconst.h \
                      gauche/pthread.h gauche/uthread.h gauche/arch.h  \
 	             gauche/mingw-compat.h
 INSTALL_LIBS = libgauche.$(SOEXT)
@@ -145,7 +146,7 @@ libgauche_OBJECTS = \
 	boolean.$(OBJEXT) char.$(OBJEXT) string.$(OBJEXT) list.$(OBJEXT) \
 	port.$(OBJEXT) hash.$(OBJEXT) write.$(OBJEXT) read.$(OBJEXT) \
 	vector.$(OBJEXT) weak.$(OBJEXT) symbol.$(OBJEXT) keyword.$(OBJEXT) \
-	compare.$(OBJEXT) regexp.$(OBJEXT) signal.$(OBJEXT) \
+	gloc.$(OBJEXT) compare.$(OBJEXT) regexp.$(OBJEXT) signal.$(OBJEXT) \
 	parameter.$(OBJEXT) module.$(OBJEXT) proc.$(OBJEXT) \
 	number.$(OBJEXT) bignum.$(OBJEXT) load.$(OBJEXT) paths.$(OBJEXT) \
 	promise.$(OBJEXT) repl.$(OBJEXT) autoloads.$(OBJEXT) \

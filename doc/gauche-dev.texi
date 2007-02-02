@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.17 2006-12-02 09:24:56 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.18 2007-02-02 19:17:28 shirok Exp $
 
 @iftex
 @finalout
@@ -395,10 +395,14 @@ a new Scheme datatype requires dedicated chapter,
 
 @menu
 * Representation of Scheme objects::  
+* Initialization and cleanup::  
+* Memory allocation and GC::    
 * Booleans::                    
 * Numbers::                     
 * Pairs and Lists::             
 * Symbols::                     
+* Glocs::                       
+* Modules::                     
 * Keywords::                    
 * Characters::                  
 * Character sets::              
@@ -414,7 +418,7 @@ a new Scheme datatype requires dedicated chapter,
 * System interface::            
 @end menu
 
-@node Representation of Scheme objects, Booleans, C API reference, C API reference
+@node Representation of Scheme objects, Initialization and cleanup, C API reference, C API reference
 @section Representation of Scheme objects
 
 @deftp {Type} ScmObj 
@@ -476,8 +480,8 @@ The Scheme's @code{#<eof>} object.
 
 @deftypevr {Macro} ScmObj SCM_UNDEFINED
 The Gauche's @code{#<undef>} object.  In Gauche, it is used as a
-placeholder where the value itself doesn't matter.  As of writing
-this document, there's a discussion in the next Scheme standard
+placeholder where the value itself doesn't matter.  At the time of 
+writing this document, there's a discussion in the next Scheme standard
 to define @emph{the `unspecified' value} for this purpose, and it is
 likely that this value will become such a value.
 @end deftypevr
@@ -498,8 +502,98 @@ Predicates to check whether the given @var{obj} is @code{SCM_EOF},
 @code{SCM_UNDEFINED}, or @code{SCM_UNBOUND}, respectively.
 @end deftypefn
 
+@node Initialization and cleanup, Memory allocation and GC, Representation of Scheme objects, C API reference
+@section Initialization and cleanup
 
-@node Booleans, Numbers, Representation of Scheme objects, C API reference
+This section explains how to initialize Gauche scheme runtime,
+and how to clean it up.
+
+@subsubheading Initialization
+
+@deftypefun void Scm_Init (const char *@var{signature})
+Initializes the runtime.  Must be called before any other
+Gauche API call.
+
+To @var{signature}, you should always
+pass a macro @code{GAUCHE_SIGNATURE}.  It is used to check a
+proper version of Gauche shared library is linked.  If you
+have several version of Gauche libraries (e.g. different
+encoding or thread configuration), accidentally linking 
+unintended version would cause mysterious runtime crash.
+If the signature doesn't match the library's, this function
+exits the process with a message explaining it.
+@end deftypefun
+
+@subsubheading Cleanup and termination
+
+@deftypefun void Scm_Exit (int @var{code})
+Exits the process with @var{code} as the exit code.
+Calling @code{Scm_Exit} is the easiest way to terminate Gauche
+application safely.   It runs pending dynamic handlers,
+registered cleanup handlers (see below), flushes output ports,
+then call @code{exit(2)} to exit.
+
+Directly calling @code{exit(2)} would skip all those cleanup
+process.
+@end deftypefun
+
+@deftypefun void Scm_Cleanup (void)
+Cleans up the Scheme runtime just like @code{Scm_Exit()},
+but does not call @code{exit(2)} at the end.  This is useful
+for applications that want to shut down Gauche runtime but
+need to continue running.  
+
+Once you call @code{Scm_Cleanup()}, you shoudn't use any
+other Gauche functions.
+
+It is harmless to call @code{Scm_Cleanup()} more than once;
+it becomes no-op from the second time and after.
+@end deftypefun
+
+@deftypefun void Scm_Panic (const char *@var{msg}, @dots{})
+The @var{msg} and other arguments are treated like @code{printf(3)}.
+Formats and displays the formatted messate, then exits the process
+by calling @code{_exit(2)} with exit code 1.  No cleanup is done.
+
+This is called when a serious defect is detected in the Gauche
+runtime and cannot continue normal operation in any way.
+@end deftypefun
+
+@deftypefun void Scm_Abort (const char *@var{msg})
+Writes @var{msg} to file desctipor 2, and exits the process
+by calling @code{_exit(2)} with exit code 1.  No cleanup is done.
+
+This is the last resort of emergency exit, where you cannot
+even call @code{malloc} reliably.
+@end deftypefun
+
+@subsubheading Cleanup handlers
+
+You can register functions to be called when Gauche runtime
+is shut down.  The registered functions are called by
+@code{Scm_Exit()} or @code{Scm_Cleanup()} in the reverse
+order of their registration.
+
+@deftypefun void *Scm_AddCleanupHandler (void (*@var{h})(void *), void *@var{d})
+Adds a function @var{h} to the clanup handler chain, with an opaque
+data pointer @var{d}.  At the cleanup time, @var{h} is called
+with @var{d} as the single argument.
+
+Returns an opaque handle, which can be passed to DeleteCleanupHandler.
+@end deftypefun
+
+@deftypefun void Scm_DeleteCleanupHandler (void *@var{handle})
+Delete cleanup handler.  The @var{handle} argument should be an opaque pointer
+returned from @code{Scm_AddCleanupHandler}.  (But it won't complain if
+other pointer is given; it just do nothing.)
+@end deftypefun
+
+@node Memory allocation and GC, Booleans, Initialization and cleanup, C API reference
+@section Memory allocation and GC
+
+
+
+@node Booleans, Numbers, Memory allocation and GC, C API reference
 @section Booleans
 
 @deftypevr {Macro} ScmObj SCM_TRUE
@@ -595,8 +689,6 @@ you need to check the actual type of the number and cast it
 from @code{ScmObj} to the actual structure.
 
 Currently Gauche has the following C-level representations.
-Note that this list may be extended in future (a rational number
-is likely to be added).
 
 @table @emph
 @item Fixnum
@@ -758,7 +850,7 @@ that is, either a fixnum, bignum, ratnum, flonum, or compnum.
 @end deftypefn
 
 @deftypefun int Scm_IntegerP (ScmObj @var{num})
-Returns @var{TRUE} iff @var{num} is (exact or inexact) integer.
+Returns @code{TRUE} iff @var{num} is (exact or inexact) integer.
 
 Note: If @var{num} is a flonum with exponent larger than certain value,
 @code{Scm_IntegerP} always returns @code{TRUE}, because of its limited
@@ -1275,14 +1367,128 @@ Returns a (possibly denormalized) compnum, whose real part is
 @node Pairs and Lists, Symbols, Numbers, C API reference
 @section Pairs and Lists
 
-@node Symbols, Keywords, Pairs and Lists, C API reference
+@node Symbols, Glocs, Pairs and Lists, C API reference
 @section Symbols
 
-@node Keywords, Characters, Symbols, C API reference
+@deftp {Scheme Object} ScmSymbol
+Represents the Scheme symbols.   Unlike Common Lisp,
+Gauche's symbol is merely an interned string.  It keeps
+no other information than its name.  Global binding
+is realized by modules that associate a symbol to
+a @emph{gloc}, which keeps the global value, defined
+modules, etc.
+@end deftp
+
+@defvar {Scheme Class Constant} SCM_CLASS_SYMBOL
+A constant pointer pointing Gauche's @code{<symbol>} class.
+@end defvar
+
+@deftypefn {Macro} ScmSymbol *SCM_SYMBOL (ScmObj @var{obj})
+Converts @code{ScmObj} to the pointer to a symbol.
+@end deftypefn
+
+@deftypefn {Macro} int SCM_SYMBOLP (ScmObj @var{obj})
+@code{TRUE} iff @var{obj} is a symbol.
+@end deftypefn
+
+@deftypefn {Macro} ScmString *SCM_SYMBOL_NAME (ScmObj @var{symbol})
+Returns the name of the symbol.
+@end deftypefn
+
+@deftypefun ScmObj Scm_Intern (ScmString *@var{name})
+Creates and returns a symbol whose name is @var{name} and registers it in the
+internal hash table.  If there's already a symbol with @var{name},
+new symbol isn't created, and the existing symbol is returned.
+@end deftypefun
+
+@deftypefun ScmObj Scm_Gensym (ScmString *@var{prefix})
+Creates and returns an uninterned symbol, whose name is generated
+from @var{prefix} followed by some numbers.  @var{Prefix} can be
+@code{NULL}, in which case the default prefix is used.
+@end deftypefun
+
+@deftypefn {Macro} ScmObj SCM_INTERN (const char *@var{name})
+A convenience macro to create a symbol with the name @var{name}.
+Implemented as follows:
+@example
+Scm_Intern(SCM_STRING(SCM_MAKE_STR_IMMUTABLE(cstr)))
+@end example
+@end deftypefn
+
+@node Glocs, Modules, Symbols, C API reference
+@section Glocs
+
+A gloc, or global location, is a structure to keep the global
+value.  A module maps a symbol to a gloc.   Glocs are not directly
+used in the Scheme world (except in some introspection features),
+and even in the C world you don't usually need to deal with them.
+To get/set the value of a global variable, you can use
+@code{Scm_GlobalVariableRef} and @code{Scm_Define}, respectively
+(@xref{Modules}).
+
+@deftp {Scheme Object} ScmGloc
+Represents a gloc object.
+@end deftp
+
+@defvar {Scheme Class Constant} SCM_CLASS_GLOC
+A constant pointer pointing Gauche's @code{<gloc>} class.
+@end defvar
+
+@deftypefn {Macro} ScmGloc *SCM_GLOC (ScmObj @var{obj})
+Converts @code{ScmObj} to the pointer to a gloc.
+@end deftypefn
+
+@deftypefn {Macro} int SCM_GLOCP (ScmObj @var{obj})
+@code{TRUE} iff @var{obj} is a gloc.
+@end deftypefn
+
+@deftypefn {Macro} ScmObj SCM_GLOC_GET (ScmGloc *@var{gloc})
+Returns the global value of @var{gloc}.  This may return
+@code{SCM_UNBOUND}; in such a case, the C routine must
+make sure it won't leak out to the Scheme world (usually
+the expected behavior is to raise an "undefined variable"
+error.
+@end deftypefn
+
+@deftypefn {Macro} void SCM_GLOC_SET (ScmGloc *@var{gloc}, ScmObj @var{val})
+Sets the global value of @var{gloc} to @var{val}.
+This may raise an error if @var{gloc} is marked as a constant.
+@end deftypefn
+
+@deftypefn {Macro} void SCM_GLOC_CONST_P (ScmGloc *@var{gloc})
+@code{TRUE} iff @var{gloc} is marked as a constant.
+@end deftypefn
+
+
+@node Modules, Keywords, Glocs, C API reference
+@section Modules
+
+
+
+
+
+@node Keywords, Characters, Modules, C API reference
 @section Keywords
 
 @deftp {Scheme Object} ScmKeyword
+Represents the Scheme keyword objects.
 @end deftp
+
+@defvar {Scheme Class Constant} SCM_CLASS_KEYWORD
+A constant pointer pointing Gauche's @code{<keyword>} class.
+@end defvar
+
+@deftypefn {Macro} ScmKeyword *SCM_KEYWORD (ScmObj @var{obj})
+Converts @code{ScmObj} to the pointer to a keyword.
+@end deftypefn
+
+@deftypefn {Macro} int SCM_KEYWORDP (ScmObj @var{obj})
+@code{TRUE} iff @var{obj} is a keyword.
+@end deftypefn
+
+@deftypefn {Macro} ScmString *SCM_KEYWORD_NAME (ScmObj @var{keyword})
+Returns the name of the keyword.
+@end deftypefn
 
 @deftypefun ScmObj Scm_MakeKeyword (ScmString *@var{name})
 Returns a keyword whose name is @var{name}.  Note that preceding 
@@ -1300,6 +1506,23 @@ Scheme's @code{delete-keyword}.
 @deftypefun ScmObj Scm_DeleteKeywordX (ScmObj @var{key}, ScmObj @var{list})
 Scheme's @code{delete-keyword!}.
 @end deftypefun
+
+@deftypefn {Macro} ScmObj SCM_MAKE_KEYWORD (const char *@var{name})
+A convenience macro to create a keyword from C string @var{name}.
+Implemented as follows:
+@example
+Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR_IMMUTABLE(name)))
+@end example
+@end deftypefn
+
+@deftypefn {Macro} ScmObj SCM_GET_KEYWORD (const char *@var{name}, ScmObj @var{list}, ScmObj @var{fallback})
+A convenience macro to search a value maked by a keyword whose name
+is specified by C string @var{name}.
+Implemented as follows:
+@example
+Scm_GetKeyword(SCM_MAKE_KEYWORD(name), list, fallback)
+@end example
+@end deftypefn
 
 
 @node Characters, Character sets, Keywords, C API reference
@@ -2295,3 +2518,6 @@ file
 @contents
 @bye
 
+;; Local variables:
+;; outline-regexp: "@chap\\|@\\(sub\\)*section"
+;; end:

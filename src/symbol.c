@@ -1,7 +1,7 @@
 /*
  * symbol.c - symbol implementation
  *
- *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: symbol.c,v 1.37 2005-10-13 08:14:13 shirok Exp $
+ *  $Id: symbol.c,v 1.38 2007-02-02 19:17:29 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -175,47 +175,6 @@ static void symbol_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             SCM_PUTS(snam, port);
         }
     }
-}
-
-/*---------------------------------------------------------------
- * GLOCs
- */
-
-static void gloc_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
-{
-    ScmGloc *g = SCM_GLOC(obj);
-    Scm_Printf(port, "#<gloc %S%s%S>", g->module->name,
-               (g->exported?"#":"##"),
-               g->name);
-}
-
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_GlocClass, gloc_print);
-
-ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
-{
-    ScmGloc *g = SCM_NEW(ScmGloc);
-    SCM_SET_CLASS(g, &Scm_GlocClass);
-    g->name = sym;
-    g->module = module;
-    g->value = SCM_UNBOUND;
-    g->exported = FALSE;
-    g->getter = NULL;
-    g->setter = NULL;
-    return SCM_OBJ(g);
-}
-
-ScmObj Scm_MakeConstGloc(ScmSymbol *sym, ScmModule *module)
-{
-    ScmGloc *g = SCM_GLOC(Scm_MakeGloc(sym, module));
-    g->setter = Scm_GlocConstSetter;
-    return SCM_OBJ(g);
-}
-
-ScmObj Scm_GlocConstSetter(ScmGloc *gloc, ScmObj val)
-{
-    Scm_Error("cannot change constant value of %S#%S",
-              gloc->module->name, gloc->name);
-    return SCM_UNDEFINED;       /* dummy */
 }
 
 /*
