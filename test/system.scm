@@ -192,21 +192,24 @@
        (begin
          (sys-unlink "test.dir") (sys-access "test.dir" |F_OK|)))
 
-(test* "mkdir" "drwxr-x---"
+(test* "mkdir" #/drw[sx]r-[sx]---/
        (begin
          (sys-mkdir "test.dir" #o750)
-         (get-lsmode "test.dir")))
+         (get-lsmode "test.dir"))
+       rxmatch)
 
-(test* "chmod" "drwxr-xr-x"
+(test* "chmod" #/drw[sx]r-[sx]r-x/
        (begin
          (sys-chmod "test.dir" #o755)
-         (get-lsmode "test.dir")))
+         (get-lsmode "test.dir"))
+       rxmatch)
 
-(test* "fchmod" "drwxr-x---"
+(test* "fchmod" #/drw[sx]r-[sx]---/
        (begin
          (call-with-input-file "test.dir"
            (cut sys-fchmod <> #o750))
-         (get-lsmode "test.dir")))
+         (get-lsmode "test.dir"))
+       rxmatch)
 
 (define *fs-test-str* "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
