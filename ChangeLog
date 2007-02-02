@@ -1,5 +1,12 @@
 2007-02-01  Shiro Kawai  <shiro@acm.org>
 
+	* ext/dbm/dbm.ac, ext/dbm/dbmconf.h.in, ext/dbm/ndbm.stub,
+	  ext/dbm/odbm.stub: Some platform has gdbm-ndbm.h etc., and/or
+	  requires -lgdbm_compat, for dbm/ndbm compatibility.  Added
+	  autoconf stuff to detect that.  It became unnecessarily complicated
+	  because of the defect of autoconf design (its name translation
+	  scheme can't distinguish gdbm/ndbm.h and gdbm-ndbm.h!)
+
 	* test/system.scm: Changed tests for mkdir/chmod/fchmod to tolerate
 	  the case that the directory is sgid-ed.
 

@@ -2,7 +2,7 @@ dnl
 dnl Configure ext/dbm
 dnl This file is included by the toplevel configure.in
 dnl
-dnl $Id: dbm.ac,v 1.2 2003-07-20 10:07:10 shirok Exp $
+dnl $Id: dbm.ac,v 1.3 2007-02-02 08:59:44 shirok Exp $
 
 # ext/dbm -------------------------------------------------
 
@@ -12,34 +12,87 @@ dnl Check for various dbm libraries availability
 dnl On some systems, legacy DBM and NDBM is emulated by more powerful
 dnl packages like BSD DB or GDBM.  We need to be careful to pick the
 dnl consistent header/library pair.
+dnl
+dnl Autoconf's cache mechanism (at least up to 2.59) can't distinguish
+dnl gdbm-ndbm.h and gdbm/ndbm.h, hence the ugly nested AC_CHECK_HEADERS.
 AC_CHECK_HEADERS(gdbm.h, [
   DBM_ARCHFILES=gdbm.$SHLIB_SO_SUFFIX
   DBM_SCMFILES=gdbm.scm
-])
-AC_CHECK_HEADERS(ndbm.h gdbm/ndbm.h, [
-  NDBM_HEADER=$ac_header
-  DBM_ARCHFILES="ndbm.$SHLIB_SO_SUFFIX $DBM_ARCHFILES"
-  DBM_SCMFILES="ndbm.scm $DBM_SCMFILES"
-])
-AC_CHECK_HEADERS(dbm.h gdbm/dbm.h, [
-  ODBM_HEADER=$ac_header
-  DBM_ARCHFILES="odbm.$SHLIB_SO_SUFFIX $DBM_ARCHFILES"
-  DBM_SCMFILES="odbm.scm $DBM_SCMFILES"
+  AC_CHECK_LIB(gdbm, gdbm_open, [ GDBMLIB="-lgdbm" ])
 ])
 
-AC_CHECK_LIB(gdbm, gdbm_open, [ GDBMLIB="-lgdbm" ])
-LIBSAVE="$LIBS"
-if test "$NDBM_HEADER" = "gdbm/ndbm.h"; then
-  NDBMLIB="-lgdbm"  # use emulation by gdbm
-else
-  AC_SEARCH_LIBS(dbm_open, ndbm gdbm gdbm_compat,
-    [ NDBMLIB="$LIBS"; LIBS="$LIBSAVE" ])
+NDBM_HEADER=""
+AC_CHECK_HEADER(ndbm.h, [
+  NDBM_HEADER="ndbm.h"
+  AC_DEFINE(HAVE_NDBM_H, 1)
+  AC_CHECK_LIB(ndbm, dbm_open, [ NDBMLIB="-lndbm" ], [
+    AC_CHECK_LIB(gdbm, dbm_open, [ NDBMLIB="-lgdbm" ], [
+      AC_CHECK_LIB(gdbm_compat, dbm_open, [ NDBMLIB="-lgdbm -lgdbm_compat" ], [
+        AC_MSG_NOTICE([ndbm header is found but its library isn't.  disabling ndbm.])
+        NDBM_HEADER=""], [-lgdbm])
+    ])
+  ])
+], [
+unset ac_cv_header_gdbm_ndbm_h;  dnl Ugly hack
+AC_CHECK_HEADER(gdbm/ndbm.h, [
+  NDBM_HEADER="gdbm/ndbm.h"
+  AC_DEFINE(HAVE_GDBM_SLASH_NDBM_H, 1)
+  AC_CHECK_LIB(gdbm, dbm_open, [ NDBMLIB="-lgdbm" ], [
+    AC_CHECK_LIB(gdbm_compat, dbm_open, [ NDBMLIB="-lgdbm -lgdbm_compat" ], [
+      AC_MSG_NOTICE([ndbm header is found but its library isn't.  disabling ndbm.])
+      NDBM_HEADER=""], [-lgdbm])
+  ])
+], [
+unset ac_cv_header_gdbm_ndbm_h;  dnl Ugly hack
+AC_CHECK_HEADER(gdbm-ndbm.h, [
+  NDBM_HEADER="gdbm-ndbm.h"
+  AC_DEFINE(HAVE_GDBM_MINUS_NDBM_H, 1)
+  AC_CHECK_LIB(gdbm, dbm_open, [ NDBMLIB="-lgdbm" ], [
+    AC_CHECK_LIB(gdbm_compat, dbm_open, [ NDBMLIB="-lgdbm -lgdbm_compat" ], [
+      AC_MSG_NOTICE([ndbm header is found but its library isn't.  disabling ndbm.])
+      NDBM_HEADER=""], [-lgdbm])
+  ])
+])])])
+if test "$NDBM_HEADER" != ""; then
+  DBM_ARCHFILES="ndbm.$SHLIB_SO_SUFFIX $DBM_ARCHFILES"
+  DBM_SCMFILES="ndbm.scm $DBM_SCMFILES"
 fi
-if test "$ODBM_HEADER" = "gdbm/dbm.h"; then
-  ODBMLIB="-lgdbm"  # use emulation by gdbm
-else
-  AC_SEARCH_LIBS(dbminit,  dbm gdbm gdbm_compat,
-    [ ODBMLIB="$LIBS"; LIBS="$LIBSAVE" ])
+
+ODBM_HEADER=""
+AC_CHECK_HEADER(dbm.h, [
+  ODBM_HEADER="dbm.h"
+  AC_DEFINE(HAVE_DBM_H, 1)
+  AC_CHECK_LIB(dbm, dbminit, [ ODBMLIB="-ldbm" ], [
+    AC_CHECK_LIB(gdbm, dbminit, [ ODBMLIB="-lgdbm" ], [
+      AC_CHECK_LIB(gdbm_compat, dbminit, [ ODBMLIB="-lgdbm -lgdbm_compat" ], [
+        AC_MSG_NOTICE([odbm header is found but its library isn't.  disabling odbm.])
+        ODBM_HEADER=""], [-lgdbm])
+    ])
+  ])
+], [  
+unset ac_cv_header_gdbm_dbm_h;  dnl Ugly hack
+AC_CHECK_HEADER(gdbm/dbm.h, [
+  ODBM_HEADER="gdbm/dbm.h"
+  AC_DEFINE(HAVE_GDBM_SLASH_DBM_H, 1)
+  AC_CHECK_LIB(gdbm, dbminit, [ ODBMLIB="-lgdbm" ], [
+    AC_CHECK_LIB(gdbm_compat, dbminit, [ ODBMLIB="-lgdbm -lgdbm_compat" ], [
+      AC_MSG_NOTICE([odbm header is found but its library isn't.  disabling odbm.])
+      ODBM_HEADER=""], [-lgdbm])
+  ])
+], [
+unset ac_cv_header_gdbm_dbm_h;  dnl Ugly hack
+AC_CHECK_HEADER(gdbm-dbm.h, [
+  ODBM_HEADER="gdbm-dbm.h"
+  AC_DEFINE(HAVE_GDBM_MINUS_DBM_H, 1)
+  AC_CHECK_LIB(gdbm, dbminit, [ ODBMLIB="-lgdbm" ], [
+    AC_CHECK_LIB(gdbm_compat, dbminit, [ ODBMLIB="-lgdbm -lgdbm_compat" ], [
+      AC_MSG_NOTICE([odbm header is found but its library isn't.  disabling odbm.])
+      ODBM_HEADER=""], [-lgdbm])
+  ])
+])])])
+if test "$ODBM_HEADER" != ""; then
+  DBM_ARCHFILES="odbm.$SHLIB_SO_SUFFIX $DBM_ARCHFILES"
+  DBM_SCMFILES="odbm.scm $DBM_SCMFILES"
 fi
 
 AC_SUBST(DBM_ARCHFILES)

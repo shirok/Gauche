@@ -10,8 +10,14 @@
 #undef HAVE_GDBM_H
 
 /* Define if you have the <gdbm/dbm.h> header file. */
-#undef HAVE_GDBM_DBM_H
+#undef HAVE_GDBM_SLASH_DBM_H
+
+/* Define if you have the <gdbm-dbm.h> header file. */
+#undef HAVE_GDBM_MINUS_DBM_H
 
 /* Define if you have the <gdbm/ndbm.h> header file. */
-#undef HAVE_GDBM_NDBM_H
+#undef HAVE_GDBM_SLASH_NDBM_H
+
+/* Define if you have the <gdbm-ndbm.h> header file. */
+#undef HAVE_GDBM_MINUS_NDBM_H
 
