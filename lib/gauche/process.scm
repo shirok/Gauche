@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: process.scm,v 1.24 2007-01-21 14:21:51 rui314159 Exp $
+;;;  $Id: process.scm,v 1.25 2007-02-02 01:27:58 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -82,49 +82,59 @@
 
 ;; create process and run.
 (define (run-process command . args)
-  (define (check-key args)
-    (when (null? (cdr args))
-      (errorf "~s key requires an argument following" (car args))))
+  (if (not (list? command))
+    (%run-process-old command args) ;; backward compatibility
+    (let-keywords* args ((input  #f)
+                         (output #f)
+                         (error  #f)
+                         (wait   #f)
+                         (fork   #t)
+                         (sigmask #f))
+      (define (check-iokey key arg)
+        (unless (or (string? arg) (not arg) (eqv? arg :pipe))
+          (errorf "~s key requires a string or :pipe following, but got ~s"
+                  key arg)))
+      (check-iokey :input input)
+      (check-iokey :output output)
+      (check-iokey :error error)
+      (let* ((argv (map x->string command))
+             (proc (make <process> :command (car argv))))
+        (receive (iomap toclose)
+            (if (or input output error)
+              (%setup-iomap proc input output error)
+              (values #f '()))
+          (if fork
+            (let1 pid (sys-fork-and-exec (car argv) argv
+                                         :iomap iomap
+                                         :sigmask (%ensure-mask sigmask))
+              (push! (ref proc 'processes) proc)
+              (set!  (ref proc 'pid) pid)
+              (dolist (p toclose)
+                (if (input-port? p)
+                  (close-input-port p)
+                  (close-output-port p)))
+              (when wait
+                ;; the following expr waits until the child exits
+                (set! (ref proc 'status) (values-ref (sys-waitpid pid) 1))
+                (update! (ref proc 'processes) (cut delete proc <>)))
+              proc)
+            (sys-exec (car argv) argv
+                      :iomap iomap
+                      :sigmask (%ensure-mask sigmask))))))))
 
-  (define (check-iokey args)
-    (check-key args)
-    (unless (or (string? (cadr args)) (eqv? (cadr args) :pipe))
-      (errorf "~s key requires a string or :pipe following, but got ~s"
-              (car args) (cadr args))))
-    
-  (let loop ((args args) (argv '())
-             (input #f) (output #f) (error #f) (wait #f) (fork #t) (mask #f))
+;; The archane API, where one can mix keyword args and command arguments.
+;; This API is taken from STk.  Now we don't need STk compatibility much,
+;; so we support this only for backward compatibility.
+(define (%run-process-old command args)
+  (let loop ((args args) (argv (list command)) (keys '()))
     (cond ((null? args)
-           (let ((proc  (make <process> :command (x->string command))))
-             (receive (iomap toclose)
-               (if (or input output error)
-                   (%setup-iomap proc input output error)
-                   (values #f '()))
-               (%run-process proc (cons (x->string command) (reverse argv))
-                             iomap mask toclose wait fork))))
-          ((eqv? (car args) :input)
-           (check-iokey args)
-           (loop (cddr args) argv (cadr args) output error wait fork mask))
-          ((eqv? (car args) :output)
-           (check-iokey args)
-           (loop (cddr args) argv input (cadr args) error wait fork mask))
-          ((eqv? (car args) :error)
-           (check-iokey args)
-           (loop (cddr args) argv input output (cadr args) wait fork mask))
-          ((eqv? (car args) :fork)
-           (check-key args)
-           (loop (cddr args) argv input output error wait (cadr args) mask))
-          ((eqv? (car args) :wait)
-           (check-key args)
-           (loop (cddr args) argv input output error (cadr args) fork mask))
-          ((eqv? (car args) :sigmask)
-           (check-key args)
-           (loop (cddr args) argv input output error wait fork (cadr args)))
+           (apply run-process (reverse argv) (reverse keys)))
+          ((keyword? (car args))
+           (when (null? (cdr args))
+             (errorf "~s key requires an argument following" (car args)))
+           (loop (cddr args) argv (cons* (cadr args) (car args) keys)))
           (else
-           (loop (cdr args) (cons (x->string (car args)) argv)
-                 input output error wait fork mask))
-          ))
-  )
+           (loop (cdr args) (cons (x->string (car args)) argv) keys)))))
 
 (define (%setup-iomap proc input output error)
 
@@ -168,21 +178,6 @@
     (fold (lambda (sig m) (sys-sigset-add! m sig) m) (make <sys-sigset>) mask))
    ((not mask) #f)
    (else (error "run-process: sigmask argument must be either #f, <sys-sigset>, or a list of integers, but got:" mask))))
-
-(define (%run-process proc argv iomap sigmask toclose wait fork)
-  (if fork
-    (let1 pid (sys-fork-and-exec (car argv) argv
-                                  :iomap iomap :sigmask (%ensure-mask sigmask))
-      (push! (ref proc 'processes) proc)
-      (set!  (ref proc 'pid) pid)
-      (dolist (p toclose)
-        (if (input-port? p) (close-input-port p) (close-output-port p)))
-      (when wait
-        ;; the following expr waits until the child exits
-        (set! (ref proc 'status) (values-ref (sys-waitpid pid) 1))
-        (update! (ref proc 'processes) (cut delete proc <>)))
-      proc)
-    (sys-exec (car argv) argv :iomap iomap :sigmask (%ensure-mask sigmask))))
 
 (define (%check-normal-exit process)
   (let1 status (ref process 'status)
@@ -343,13 +338,12 @@
 ;; If the given command is a string, return an argv to use /bin/sh.
 (define (apply-run-process command stdin stdout stderr)
   (apply run-process
-         (append
-          (cond ((string? command) `("/bin/sh" "-c" ,command))
-                ((list? command) (map x->string command))
-                (else (error "Bad command spec" command)))
-          `(:input ,stdin :output ,stdout)
-          (cond ((string? stderr) `(:error ,stderr))
-                (else '())))))
+         (cond ((string? command) `("/bin/sh" "-c" ,command))
+               ((list? command) command)
+               (else (error "Bad command spec" command)))
+         :input stdin :output stdout
+         (cond ((string? stderr) `(:error ,stderr))
+               (else '()))))
 
 ;; Possibly wrap the process port by a conversion port
 (define (wrap-input-process-port process opts)

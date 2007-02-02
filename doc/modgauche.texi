@@ -6119,13 +6119,11 @@ the procedure is used as if it is the body of @code{else} option clause.
 @c EN
 This module provides a higher-level API of Unix process control,
 implemented on top of low-level system calls such as @code{sys-fork}
-and @code{sys-exec}.  The interface is mostly compatible with
-STk's process library.  This module also provides ``process ports'', 
+and @code{sys-exec}.   This module also provides ``process ports'', 
 a convenient way to send/receive information to/from subprocesses.
 @c JP
 このモジュールは、@code{sys-fork} や @code{sys-exec} などの低レベルな
 システムコールの上に実装された、Unix プロセス制御の高レベル API を提供します。
-インターフェースは、STk のプロセスライブラリとほとんどの点で互換性があります。
 また、このモジュールは、サブプロセスに情報を送ったり、サブプロセスから
 情報を受け取ったりするのに便利な「プロセスポート」を提供します。
 @c COMMON
@@ -6152,7 +6150,7 @@ The process ports explained in the next section also use process objects.
 @c COMMON
 
 @c EN
-Note that the @code{<process>} class keeps track of
+The @code{<process>} class keeps track of
 the child processes spawned by high-level APIs such
 as @code{run-process} or @code{open-input-process}.
 The exit status of such children must be collected by
@@ -6182,31 +6180,46 @@ with non-zero status code.
 @defivar {<process-abnormal-exit>} process
 The process object.
 @end defivar
+
+Note: In Unix terms, exitting a process by calling @code{exit(2)} or 
+returning from @code{main()} is a normal exit, regardless of the
+exit status.  Some commands do use non-zero exit status
+to tell the normal result of execution (such as @code{grep(1)}).  However,
+large number of commands uses non-zero exit status to
+indicate that they couldn't carry out the required operation,
+so we treat them as exceptional situations.
 @end deftp
 
 
-@defun run-process command arg @dots{}
+@defun run-process cmd/args &keyword input output error fork wait sigmask
 @c EN
-Run @var{command} with @var{arg} in a subprocess, and returns a
-@code{<process>} object.   @var{command} is searched from the
-command search path.  
+Runs a command with arguments given to @var{cmd/args} in a subprocess
+and returns a @code{<process>} object.
+The @var{cmd/args} argument must be a list, whose car specifies
+the command name and whose cdr is the command-line arguments.
 
-Command line arguments @var{arg}s can include the following keyword
-arguments which specify special handling of the child process, as
-listed below.
+If the command name contains a slash, it is taken as the
+pathname of the executable.  Otherwise the named command
+is searched from the directories in the @code{PATH} environment variable.
 
-Other than such keyword arguments, @var{command} and @var{arg}s
-are converted to strings by @code{x->string}.
+Each element in @var{cmd/args} are converted to a string
+by @code{x->string}, for the convenience.
+
+The following keyword arguments are recognized:
 @c JP
-サブプロセスで、@var{arg} を引数として @var{command} を実行し、
-@code{<process>} オブジェクトを返します。@var{command} は、
-コマンドサーチパスから探されます。
+サブプロセスで、@var{cmd/args}に与えられたコマンドと引数を実行し、
+@code{<process>}オブジェクトを返します。
+@var{cmd/args}引数はリストで、その@code{car}がコマンド名を、
+@code{cdr}がコマンドラインに渡す引数を指定します。
 
-コマンドライン引数 @var{arg} は、下に示す、
-子プロセスを特別に扱うためのキーワード引数を含むことができます。
+コマンド名がスラッシュを含んでいた場合、それは実行可能ファイルへの
+パス名と解釈されます。そうでなければ、コマンド名が@code{PATH}環境変数
+にあるディレクトリから探されます。
 
-それらのキーワード引数を除いては、@var{command}と@var{arg}は
-@code{x->string}を用いて文字列に変換されます。
+@var{cmd/args}の各要素は、便利なように@code{x->string}で文字列に
+変換されます。
+
+以下のキーワード引数が認識されます。
 @c COMMON
 @table @code
 @item :input @var{file}
@@ -6277,6 +6290,26 @@ for the details.
 @code{sys-exec}の説明を参照して下さい (@ref{Unix process management})。
 @c COMMON
 @end table
+
+@c EN
+The following example runs @code{ls -al} synchronously.
+@c JP
+次の例は@code{ls -al}を同期的に実行します。
+@c COMMON
+@example
+(run-process '(ls -al) :wait #t)
+@end example
+
+@c EN
+Note: Old version of this procedure took arguments differently,
+like @code{(run-process "ls" "-al" :wait #t)}, which was compatible
+to STk.  This is still supported but deprecated.
+@c JP
+注：以前のバージョンのこの手続きは引数の取りかたが若干異なっており、
+例えば@code{(run-process "ls" "-al" :wait #t)}のように呼び出しました。
+これはSTkとの互換性によるものです。現在でもこの呼び出しはサポートされていますが、
+非推奨です。
+@c COMMON
 @end defun
 
 @defun process? obj
@@ -6322,7 +6355,7 @@ the function returns @code{#f}.
 @c COMMON
 
 @example
-(let* ((process (run-process "date" :output :pipe))
+(let* ((process (run-process '("date") :output :pipe))
        (line (read-line (process-output process))))
   (process-wait process)
   line)
@@ -6747,13 +6780,13 @@ to which keyword arguments are passed.
 そのまま渡されます。
 @c COMMON
 @example
-(process-output->string "uname -smp")
+(process-output->string '(uname -smp))
   @result{} "Linux i686 unknown"
 
-(process-output->string "ls")
+(process-output->string '(ls))
   @result{} "a.out foo.c foo.c~ foo.o"
 
-(process-output->string-list "ls")
+(process-output->string-list '(ls))
   @result{} ("a.out" "foo.c" "foo.c~" "foo.o")
 @end example
 

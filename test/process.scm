@@ -27,19 +27,29 @@
 (sys-system "rm -rf test.o test1.o")
 (sys-system "touch test.o")
 
-(test* "run-process" 0
+(test* "run-process (old)" 0
        (let1 p (run-process 'ls :output "test.o")
          (and (process-wait p) (process-exit-status p))))
 (test* "run-process" 0
+       (let1 p (run-process '(ls) :output "test.o")
+         (and (process-wait p) (process-exit-status p))))
+(test* "run-process (old)" 0
        (let1 p (run-process 'grep "test.o" :input "test.o" :output "/dev/null")
          (and (process-wait p) (process-exit-status p))))
-(test* "run-process" 256
+(test* "run-process" 0
+       (let1 p (run-process '(grep "test.o") :input "test.o" :output "/dev/null")
+         (and (process-wait p) (process-exit-status p))))
+(test* "run-process (old)" 256
        (let1 p (run-process 'grep "NoSuchFile"
+                            :input "test.o" :output "/dev/null")
+         (and (process-wait p) (process-exit-status p))))
+(test* "run-process" 256
+       (let1 p (run-process '(grep "NoSuchFile")
                             :input "test.o" :output "/dev/null")
          (and (process-wait p) (process-exit-status p))))
 
 (test* "run-process (output pipe)" '(0 #t)
-       (let* ((p  (run-process "cat" "test.o" :output :pipe))
+       (let* ((p  (run-process '("cat" "test.o") :output :pipe))
               (in (process-output p))
               (s  (port->string in))
               (c  (call-with-input-file "test.o" port->string))
@@ -47,7 +57,7 @@
          (list x (equal? c s))))
 
 (test* "run-process (input pipe)" '(0 #t)
-       (let* ((p  (run-process "cat" :input :pipe :output :pipe))
+       (let* ((p  (run-process '("cat") :input :pipe :output :pipe))
               (out (process-input p))
               (in  (process-output p))
               (s   "test\ntest"))
@@ -58,11 +68,11 @@
            (list x (equal? s ss)))))
 
 (test* "run-process (error pipe)" #t
-       (let* ((p  (run-process "cat" "NoSuchFile" :error :pipe))
+       (let* ((p  (run-process '("cat" "NoSuchFile") :error :pipe))
               (in (process-error p))
               (s  (port->string in))
               (x  (process-wait p))
-              (p1 (run-process "cat" "NoSuchFile" :error "test.o"))
+              (p1 (run-process '("cat" "NoSuchFile") :error "test.o"))
               (s1 (and (process-wait p1)
                        (call-with-input-file "test.o" port->string)))
               )
@@ -71,7 +81,8 @@
 ;; NB: how to test :wait and :fork?
 
 (test* "process-kill" SIGKILL
-       (let ((p (run-process "cat" :input :pipe :output :pipe
+       (let ((p (run-process '("cat")
+                             :input :pipe :output :pipe
                              :error "/dev/null")))
          (process-kill p)
          (process-wait p)
@@ -80,7 +91,8 @@
                 (sys-wait-termsig x)))))
 
 (test* "non-blocking wait" '(#f #t #f)
-       (let* ((p  (run-process "cat" :input :pipe :output :pipe
+       (let* ((p  (run-process '("cat")
+                               :input :pipe :output :pipe
                                :error "/dev/null"))
               (r0 (process-wait p #t))
               (r1 (begin (process-kill p) (process-wait p)))
@@ -93,7 +105,8 @@
                   (let ((s (process-exit-status (ref e 'process))))
                     (list (sys-wait-signaled? s)
                           (sys-wait-termsig s)))))
-         (let1 p (run-process "cat" :input :pipe :output :pipe
+         (let1 p (run-process '("cat")
+                              :input :pipe :output :pipe
                               :error "/dev/null")
            (process-kill p)
            (process-wait p #f #t))))
