@@ -17,6 +17,12 @@
 	  now, and (2) it's easier to write code that calls run-process
 	  if it takes keyword arguments canonically.
 
+2007-01-30  Rui Ueyama  <rui314@gmail.com>
+
+	* src/read.c (read_internal, process_sharp_comma), src/gauche.h:
+	  avoid evaluating SRFI-10 sharp-comma expression within SRFI-62
+	  S-expression comment.
+
 2007-01-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/package/compile.scm

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.479 2007-01-16 08:16:46 shirok Exp $
+ *  $Id: gauche.h,v 1.480 2007-02-02 10:43:25 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1349,7 +1349,8 @@ enum {
     SCM_READ_SOURCE_INFO = (1L<<0),  /* preserving souce file information */
     SCM_READ_CASE_FOLD   = (1L<<1),  /* case-fold read */
     SCM_READ_LITERAL_IMMUTABLE = (1L<<2), /* literal should be read as immutable */
-    SCM_READ_RECURSIVELY = (1L<<3)   /* used internally. */
+    SCM_READ_DISABLE_CTOR = (1L<<3), /* disable #,() */
+    SCM_READ_RECURSIVELY = (1L<<4)   /* used internally. */
 };
 
 #define SCM_READ_CONTEXT_INIT(ctx) \

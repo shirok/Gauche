@@ -580,6 +580,15 @@
 (test* "#;#;(123 456) 789 1" 1
        (read-from-string "#;#;(123 456) 789 1"))
 
+(define *counter* 0)
+
+(define-reader-ctor 'countup
+  (lambda () (inc! *counter*) #t))
+
+(test* "S-expression comment and read-time constructor" 2
+       (begin (list #,(countup) #;#,(countup) #,(countup))
+              *counter*))
+
 ;;-------------------------------------------------------------------
 (test-section "coding-aware-port basic")
 

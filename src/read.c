@@ -1,7 +1,7 @@
 /*
  * read.c - reader
  *
- *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.87 2006-12-07 04:58:48 shirok Exp $
+ *  $Id: read.c,v 1.88 2007-02-02 10:43:26 shirok Exp $
  */
 
 #include <stdio.h>
@@ -484,8 +484,13 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 }
             case ';':
                 /* #;expr - comment out sexpr */
-                read_item(port, ctx); /* read and discard */
-                return SCM_UNDEFINED; /* indicate this is a comment */
+                {
+                    int orig = ctx->flags;
+                    ctx->flags |= SCM_READ_DISABLE_CTOR;
+                    read_item(port, ctx); /* read and discard */
+                    ctx->flags = orig;
+                    return SCM_UNDEFINED; /* indicate this is a comment */
+                }
             default:
                 Scm_ReadError(port, "unsupported #-syntax: #%C", c1);
             }
@@ -1075,6 +1080,8 @@ static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args,
 {
     ScmHashEntry *e;
     ScmObj r;
+
+    if (ctx->flags & SCM_READ_DISABLE_CTOR) return SCM_FALSE;
 
     (void)SCM_INTERNAL_MUTEX_LOCK(readCtorData.mutex);
     e = Scm_HashTableGet(readCtorData.table, key);
