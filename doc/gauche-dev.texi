@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.18 2007-02-02 19:17:28 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.19 2007-02-02 23:11:58 shirok Exp $
 
 @iftex
 @finalout
@@ -574,7 +574,7 @@ is shut down.  The registered functions are called by
 @code{Scm_Exit()} or @code{Scm_Cleanup()} in the reverse
 order of their registration.
 
-@deftypefun void *Scm_AddCleanupHandler (void (*@var{h})(void *), void *@var{d})
+@deftypefun {void *} Scm_AddCleanupHandler (void (*@var{h})(void *), void *@var{d})
 Adds a function @var{h} to the clanup handler chain, with an opaque
 data pointer @var{d}.  At the cleanup time, @var{h} is called
 with @var{d} as the single argument.
@@ -591,6 +591,75 @@ other pointer is given; it just do nothing.)
 @node Memory allocation and GC, Booleans, Initialization and cleanup, C API reference
 @section Memory allocation and GC
 
+Memories allocated by using the following macros are owned
+by Gauche runtime and managed by the garbage collector.
+
+@subsubheading Allocator macros
+
+There's two kind of allocators; ordinary ones and 
+@emph{atomic} ones.  Here the term @emph{atomic} means
+the allocated memory would never contain pointers
+the collector needs to trace.  For example, when you
+allocate memory for a character string, you can use
+atomic allocator since the memory won't contain any
+pointers.
+
+It is important to use atomic versions whenever possible.
+Gauche's GC is conservative, which means if there's a
+word that looks like a pointer in a live object, the collector assumes
+it is a pointer and retains the memory chunk pointed by it.
+If it is not really a pointer, the collector may retain
+unnecessary memory chunks.  It is called false pointers.
+Telling the collector that a chunk of memory never contains
+traceable pointer you can reduce the chance of false pointers.
+
+It is OK for the atomic memory chunk to contain a pointer,
+as far as the pointed chunk is reachable by other means,
+or you can allow the pointed chunk to be collected (like
+weak pointers).
+
+Note: The term @emph{atomic} here probably came from the
+fact that such a memory chunk is a terminal node, or an atom,
+in the graph the collector traverses.  It has nothing to 
+do with the atomic operations.
+
+@deftypefn {Macro} {@var{TYPE} *} SCM_NEW (@var{TYPE})
+@deftypefnx {Macro} {@var{TYPE} *} SCM_NEW_ATOMIC (@var{TYPE})
+Allocates memory for datatype @var{TYPE} and returns its pointer.
+@code{ATOMIC} version allocates the memory as an atomic chunk.
+@end deftypefn
+
+@deftypefn {Macro} {@var{TYPE} *} SCM_NEW_ARRAY (@var{TYPE}, size_t @var{nelts})
+@deftypefnx {Macro} {@var{TYPE} *} SCM_NEW_ATOMIC_ARRAY (@var{TYPE}, size_t @var{nelts})
+Allocates memory for an array of size @var{nelts} of datatype @var{TYPE},
+and returns its pointer.
+@end deftypefn
+
+@deftypefn {Macro} {@var{TYPE} *} SCM_NEW2 (@var{TYPE}, size_t @var{size})
+@deftypefnx {Macro} {@var{TYPE} *} SCM_NEW_ATOMIC2 (@var{TYPE}, size_t @var{size})
+Allocates memory of @var{size} bytes, and returns it as a pointer to
+the datatype @var{TYPE}.
+@end deftypefn
+
+Note: to allocate a Scheme object for the class that is inheritable
+from Scheme, you should use @code{SCM_ALLOCATE} macro to do some
+extra initialization.  It is described in @ref{Creating new Scheme datatypes}.
+You don't need to worry about it as far as you uses provided set
+of Scheme datatypes, for each of them have a special "make" function
+such as @code{Scm_MakeString}, @code{Scm_MakeVector}, etc.
+
+@subsubheading Garbage collection
+
+The garbage collector runs implicitly whenever it is necessary.
+However, you can run it explicitly by this function:
+
+@deftypefun void Scm_GC (void)
+Triggers full GC.
+@end deftypefun
+
+
+
+@subsubheading Finalizers
 
 
 @node Booleans, Numbers, Memory allocation and GC, C API reference
@@ -1221,7 +1290,7 @@ Returns a (possible denormalizeD) bignum that represents
 the integral part of @var{val}.
 @end deftypefun
 
-@deftypefun ScmBignum *Scm_MakeBignumWithSize (int @var{size}, u_long @var{init})
+@deftypefun {ScmBignum *} Scm_MakeBignumWithSize (int @var{size}, u_long @var{init})
 @end deftypefun
 
 @deftypefun ScmObj Scm_BignumCopy (ScmBignum *@var{bignum})
@@ -1379,11 +1448,11 @@ a @emph{gloc}, which keeps the global value, defined
 modules, etc.
 @end deftp
 
-@defvar {Scheme Class Constant} SCM_CLASS_SYMBOL
+@deftypevr {Scheme Class Constant} {ScmClass *} SCM_CLASS_SYMBOL
 A constant pointer pointing Gauche's @code{<symbol>} class.
-@end defvar
+@end deftypevr
 
-@deftypefn {Macro} ScmSymbol *SCM_SYMBOL (ScmObj @var{obj})
+@deftypefn {Macro} {ScmSymbol *} SCM_SYMBOL (ScmObj @var{obj})
 Converts @code{ScmObj} to the pointer to a symbol.
 @end deftypefn
 
@@ -1391,7 +1460,7 @@ Converts @code{ScmObj} to the pointer to a symbol.
 @code{TRUE} iff @var{obj} is a symbol.
 @end deftypefn
 
-@deftypefn {Macro} ScmString *SCM_SYMBOL_NAME (ScmObj @var{symbol})
+@deftypefn {Macro} {ScmString *} SCM_SYMBOL_NAME (ScmObj @var{symbol})
 Returns the name of the symbol.
 @end deftypefn
 
@@ -1430,11 +1499,11 @@ To get/set the value of a global variable, you can use
 Represents a gloc object.
 @end deftp
 
-@defvar {Scheme Class Constant} SCM_CLASS_GLOC
+@deftypevr {Scheme Class Constant} {ScmClass *} SCM_CLASS_GLOC
 A constant pointer pointing Gauche's @code{<gloc>} class.
-@end defvar
+@end deftypevr
 
-@deftypefn {Macro} ScmGloc *SCM_GLOC (ScmObj @var{obj})
+@deftypefn {Macro} {ScmGloc *} SCM_GLOC (ScmObj @var{obj})
 Converts @code{ScmObj} to the pointer to a gloc.
 @end deftypefn
 
@@ -1474,11 +1543,11 @@ This may raise an error if @var{gloc} is marked as a constant.
 Represents the Scheme keyword objects.
 @end deftp
 
-@defvar {Scheme Class Constant} SCM_CLASS_KEYWORD
+@deftypevr {Scheme Class Constant} {ScmClass *} SCM_CLASS_KEYWORD
 A constant pointer pointing Gauche's @code{<keyword>} class.
-@end defvar
+@end deftypevr
 
-@deftypefn {Macro} ScmKeyword *SCM_KEYWORD (ScmObj @var{obj})
+@deftypefn {Macro} {ScmKeyword *} SCM_KEYWORD (ScmObj @var{obj})
 Converts @code{ScmObj} to the pointer to a keyword.
 @end deftypefn
 
@@ -1486,7 +1555,7 @@ Converts @code{ScmObj} to the pointer to a keyword.
 @code{TRUE} iff @var{obj} is a keyword.
 @end deftypefn
 
-@deftypefn {Macro} ScmString *SCM_KEYWORD_NAME (ScmObj @var{keyword})
+@deftypefn {Macro} {ScmString *} SCM_KEYWORD_NAME (ScmObj @var{keyword})
 Returns the name of the keyword.
 @end deftypefn
 
@@ -1792,11 +1861,11 @@ below for the detailed explanation.
 Type predicate.
 @end deftypefn
 
-@deftypefn {Macro} ScmString *SCM_STRING (ScmObj @var{obj})
+@deftypefn {Macro} {ScmString *} SCM_STRING (ScmObj @var{obj})
 Typecast.
 @end deftypefn
 
-@deftypefn {Macro} {const ScmStringBody} *SCM_STRING_BODY (ScmObj @var{str})
+@deftypefn {Macro} {const ScmStringBody *} SCM_STRING_BODY (ScmObj @var{str})
 Returns a pointer to the body of the Scheme string @var{str}.
 Note that the returned body is immutable.
 @end deftypefn
@@ -1934,7 +2003,7 @@ Retrieves string content as a C string (@code{NUL}-terminated).
 This is the efficient way to convert a Scheme string to a C string.
 @end deftypefun
 
-@deftypefun char *Scm_GetString (ScmString *@var{str})
+@deftypefun {char *} Scm_GetString (ScmString *@var{str})
 Use this when you need a mutable C string.  This function
 copies the content every time and returns a freshly allocated
 string.
@@ -1966,7 +2035,7 @@ of the string content, but it may not be @code{NUL}-terminated.
 Type predicate.
 @end deftypefn
 
-@deftypefn {Macro} ScmVector *SCM_VECTOR (ScmObj @var{obj})
+@deftypefn {Macro} {ScmVector *} SCM_VECTOR (ScmObj @var{obj})
 Typecast.
 @end deftypefn
 
@@ -1974,7 +2043,7 @@ Typecast.
 Returns the number of elements of the vector @var{vec}.
 @end deftypefn
 
-@deftypefn {Macro} ScmObj *SCM_VECTOR_ELEMENTS (ScmObj @var{vec})
+@deftypefn {Macro} {ScmObj *} SCM_VECTOR_ELEMENTS (ScmObj @var{vec})
 Returns the pointer to the array of the vector contents.
 @end deftypefn
 

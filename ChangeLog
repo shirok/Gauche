@@ -1,5 +1,9 @@
 2007-02-02  Shiro Kawai  <shiro@acm.org>
 
+	* src/core.c (Scm_GC): added an API to trigger GC.
+
+	* src/gauche.h (SCM_NEW_ATOMIC_ARRAY): added for consistency.
+
 	* src/gauche/symbol.h, src/gauche/gloc.h, src/gauche/keyword.h,
 	  src/gloc.c, src/Makefile.in:  Reorganized the sources.
 

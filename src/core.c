@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.73 2007-01-16 08:16:46 shirok Exp $
+ *  $Id: core.c,v 1.74 2007-02-02 23:11:59 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -166,6 +166,12 @@ void Scm_Init(const char *signature)
 /*=============================================================
  * GC utilities
  */
+
+
+void Scm_GC()
+{
+    GC_gcollect();
+}
 
 /*
  * External API to register root set in dynamically loaded library.

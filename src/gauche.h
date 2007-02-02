@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.481 2007-02-02 19:17:29 shirok Exp $
+ *  $Id: gauche.h,v 1.482 2007-02-02 23:11:59 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -336,6 +336,7 @@ typedef struct ScmInstanceRec {
 #define SCM_NEW_ARRAY(type, nelts) ((type*)(SCM_MALLOC(sizeof(type)*(nelts))))
 #define SCM_NEW2(type, size)  ((type)(SCM_MALLOC(size)))
 #define SCM_NEW_ATOMIC(type)  ((type*)(SCM_MALLOC_ATOMIC(sizeof(type))))
+#define SCM_NEW_ATOMIC_ARRAY(type, nelts)  ((type*)(SCM_MALLOC_ATOMIC(sizeof(type)*(nelts))))
 #define SCM_NEW_ATOMIC2(type, size) ((type)(SCM_MALLOC_ATOMIC(size)))
 
 typedef void (*ScmFinalizerProc)(ScmObj z, void *data);
@@ -2110,9 +2111,11 @@ SCM_EXTERN void Scm_Exit(int code);
 SCM_EXTERN void Scm_Abort(const char *msg);
 SCM_EXTERN void Scm_Panic(const char *msg, ...);
 
+SCM_EXTERN void Scm_GC(void);
 SCM_EXTERN void Scm_RegisterDL(void *data_start, void *data_end,
                                void *bss_start, void *bss_end);
 SCM_EXTERN void Scm_GCSentinel(void *obj, const char *name);
+
 
 SCM_EXTERN void *Scm_AddCleanupHandler(void (*proc)(void *data), void *data);
 SCM_EXTERN void  Scm_DeleteCleanupHandler(void *handle);
