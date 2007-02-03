@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.19 2007-02-02 23:11:58 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.20 2007-02-03 06:27:11 shirok Exp $
 
 @iftex
 @finalout
@@ -1639,6 +1639,28 @@ situations to indicate there's no appropriate character.
 Maximum possible value of @code{ScmChar}.
 @end deftypevr
 
+@deftp {Enum} Scm_IllegalCharHandling
+In some functions that have to deal with characters coming
+from outside world, you need to specify how they should behave
+when they meet a data chunk that does not consist a valid
+character in Gauche's native encoding.  This enum specifies
+the behavior.
+
+@table @code
+@item SCM_ILLEGAL_CHAR_REJECT
+Refuse to handle illegal chars.
+For ports this means raising an error.  
+For string conversion procedure, this makes it to return
+some non-string value, such as @code{SCM_FALSE}.
+@item SCM_ILLEGAL_CHAR_OMIT
+Silently discard the illegal chars.
+@item SCM_ILLEGAL_CHAR_REPLACE
+Replace an illegal char to a substitute
+char, specified elsewhere.
+@end table
+@end deftp
+
+
 @deftypefn {Macro} int SCM_CHAR_ASCII_P (ScmChar @var{val})
 @deftypefnx {Macro} int SCM_CHAR_UPPER_P (ScmChar @var{val})
 @deftypefnx {Macro} int SCM_CHAR_LOWER_P (ScmChar @var{val})
@@ -1996,7 +2018,7 @@ ScmString @var{name} =
 @end example
 @end deftypefn
 
-@subheading String operations
+@subheading C-string extraction
 
 @deftypefun {const char *} Scm_GetStringConst (ScmString *@var{str})
 Retrieves string content as a C string (@code{NUL}-terminated).
@@ -2014,15 +2036,184 @@ Use this function if you want to retrieve other attributes of
 the strings at once.  The return value points to the beginning 
 of the string content, but it may not be @code{NUL}-terminated.
 
-@var{Psize}, @var{plen}, and @var{pflags}
+@var{Psize}, @var{plen}, and @var{pflags} are pointers to the
+location where the size, the length, and the flags of the
+string is returned.  Any of them
+can be @code{NULL} if the caller doesn't need the information.
+The retrieval of those information and string content is atomic,
+so this is a thread safe way to get informations out of @code{ScmString}.
+@end deftypefun
 
+@subheading Conversions
+
+@deftypefun ScmObj Scm_CStringArrayToList (const char **@var{array}, int @var{size}, int @var{flags})
+Converts an array of C string to a list of Scheme strings.
+If @var{size} is nonnegative, it specifies the size of @var{array}.
+If @var{size} is negative, @var{array} is assumed to be @code{NULL}-terminated.
+The @var{flags} argument is passed to @code{Scm_MakeString} as is.
+@end deftypefun
+
+@deftypefun {const char **} Scm_ListToConstCStringArray (ScmObj @var{lis}, int @var{errp})
+Converts a list of Scheme strings @var{lis} into C const string array,
+@code{NULL} terminated.  If @var{errp} is true, an error is
+signaled if @var{lis} contains other than Scheme strings.
+If @var{errp} is false, @code{NULL} is returned in such cases.
+@end deftypefun
+
+@deftypefun {char **} Scm_ListToCStringArray (ScmObj @var{lis}, int @var{errp}, void *@var{alloc}(size_t))
+Converts a list of Scheme strings @var{lis} into C string array,
+@code{NULL} terminated.  Unlike @code{Scm_ListToConstCStringArray},
+each C string is freshly allocated and mutable.  Furthermore,
+if @code{alloc} is provided, it is used to allocate C strings
+and the pointer array.
+@end deftypefun
+
+@deftypefun ScmObj Scm_StringToList (ScmString *@var{str})
+Scheme's @code{string->list}.  Returns a list of characters.
+Signals an error if @var{str} is an incomplete string.
+@end deftypefun
+
+@deftypefun ScmObj Scm_ListToString (ScmObj @var{chars})
+Scheme's @code{list->string}.  Converts a list of characters
+to a Scheme string.  Signals an error if @var{chars} is
+not a list, or it contains other than Scheme character.
+@end deftypefun
+
+@deftypefun ScmObj Scm_StringCompleteToIncomplete (ScmString *@var{str})
+Returns a newly created incomplete Scheme string whose content is
+the same as given Scheme string @var{str}.
+@end deftypefun
+
+@deftypefun ScmObj Scm_StringIncompleteToComplete (ScmString *@var{str}, int @var{handling}, ScmChar @var{substitute})
+Returns a newly created complete Scheme string whose content is
+the same as given (possible incomplete) string @var{str}.
+
+The @var{handling} argument must be one of the values of enum
+@code{Scm_IllegalCharacterHandling}, and determines the behavior
+when @var{str} contains an illegal byte sequences.
+If it is @code{SCM_ILLEGAL_CHAR_REJECT}, @code{SCM_FALSE} is returned.
+If it is @code{SCM_ILLEGAL_CHAR_OMIT}, illegal bytes are omitted
+from the result string.
+If it is @code{SCM_ILLEGAL_CHAR_REPLACE}, each illegal byte is
+replaced for @var{substitute}.  The @var{substitute} argument
+isn't used in other cases.
+@end deftypefun
+
+@subheading Comparisons
+
+@deftypefun int Scm_StringEqual (ScmString *@var{x}, ScmString *@var{y})
+Returns @code{TRUE} if two strings are equal (as by @code{string=?}),
+@code{FALSE} otherwise.
+A string is equal to another if both their completeness and contents
+match.
+@end deftypefun
+
+@deftypefun int Scm_StringCmp (ScmString *@var{x}, ScmString *@var{y})
+Returns a positive integer if string @var{x} is greater than
+string @var{y}, a negative integer if string @var{x} is less than
+string @var{y}, and zero if string @var{x} and string @var{y} are
+the same.  Comparison is done in the codepoint order.
+Unlike @code{Scm_StringEqual}, this function signals an error
+if completeness of both string differ.
+@end deftypefun
+
+@deftypefun int Scm_StringCiCmp (ScmString *@var{x}, ScmString *@var{y})
+Like @code{Scm_StringCmp}, but compares in case-insensitive way.
+
+Currently Gauche only folds cases within ASCII range.  Soon it'll
+follow Unicode case folding rules.
+@end deftypefun
+
+@subheading Accessors and modifies
+
+@deftypefun ScmChar Scm_StringRef (ScmString *@var{str}, int @var{k}, int @var{range_error})
+Scheme's @code{string-ref}.  Returns a character at the @var{k}-th position 
+of the string @var{str}.  When @var{k} is out of range,
+returns @code{SCM_CHAR_INVALID} if @code{range_error} is @code{FALSE},
+or raises an error if @code{range_error} is true.
+
+For the time being, an error is raised if @var{str} is an incomplete
+string.
+@end deftypefun
+
+@deftypefun ScmObj Scm_StringSet (ScmString *@var{str}, int @var{k}, ScmChar @var{sc})
+Scheme's @code{string-set!}.  Replaces @var{k}-th character
+in the string @code{str} for a character @var{sc}.
+Signals an error if @var{k} is out of range, @var{str} is immutable,
+or @var{str} is incomplete.  This is included in Gauche just for
+completeness; it is very costly operation and shouldn't be used
+unless there's no other options.
+@end deftypefun
+
+@deftypefun int Scm_StringByteRef (ScmString *@var{str}, int @var{k}, int @var{range_error})
+Returns @var{k}-th byte in the Scheme string @var{str} as a nonnegative 
+integer.  If @var{range_error} is true, an error is signalled
+if @var{k} is out of range.  If @var{range_error} is false,
+-1 is returned if @var{k} is out of range.
+@var{Str} can be an incomplete string.
+@end deftypefun
+
+@deftypefun ScmObj Scm_StringByteSet (ScmString *@var{str}, int @var{k}, ScmByte @var{b})
+Replaces @var{k}-th byte in the Scheme string @var{str} for
+@var{b}.  The result string always becomes incomplete.
+Signals an error if @var{k} is out of range or @var{str} is immutable.
+This is included in Gauche just for
+completeness; it is very costly operation and shouldn't be used
+unless there's no other options.
+@end deftypefun
+
+@deftypefun ScmObj Scm_Substring (ScmString *@var{str}, int @var{start}, int @var{end})
+@end deftypefun
+
+@deftypefun ScmObj Scm_MaybeSubstring (ScmString *@var{str}, int @var{start}, int @var{end})
+@end deftypefun
+
+@deftypefun ScmObj Scm_StringTake (ScmString *@var{str}, int @var{nchars}, int @var{takefirst}, int @var{fromright})
+@end deftypefun
+
+@deftypefun ScmObj Scm_StringSubstitute (ScmString *@var{target}, int @var{start}, ScmString *@var{str})
+@end deftypefun
+
+@deftypefun ScmObj Scm_StringFill (ScmString *@var{str}, ScmChar @var{c}, ScmObj @var{maybeStart}, ScmObj @var{maybeEnd})
 @end deftypefun
 
 
+@subsubheading Concatenation
 
+@deftypefun ScmObj Scm_StringAppend2 (ScmString *@var{x}, ScmString *@var{y})
+@end deftypefun
+
+@deftypefun ScmObj Scm_StringAppendC (ScmString *@var{x}, const char *@var{s}, int @var{size}, int @var{len})
+@end deftypefun
+
+@deftypefun ScmObj Scm_StringAppend (ScmObj @var{strs})
+@end deftypefun
+
+@deftypefun ScmObj Scm_StringJoin (ScmObj @var{strs}, ScmString *@var{delim}, int @var{grammer})
+@end deftypefun
+
+@subheading Searching
+
+@deftypefun ScmObj Scm_StringSplitByChar (ScmString *@var{str}, ScmChar @var{ch})
+@end deftypefun
+
+@deftypefun ScmObj Scm_StringScan (ScmString *@var{s1}, ScmString *@var{s2}, int @var{retmode})
+@deftypefunx ScmObj Scm_StringScanChar (ScmString *@var{s1}, ScmChar *@var{ch}, int @var{retmode})
+@end deftypefun
 
 @subheading Dynamic strings
 
+@deftp {Struct} ScmDStringRec
+@end deftp
+
+@deftypefun void Scm_DStringInit (ScmDString *@var{dstr})
+@end deftypefun
+
+@deftypefun int Scm_DStringSize (ScmDString *@var{dstr})
+@end deftypefun
+
+@deftypefun ScmObj Scm_DStringGet (ScmDString *@var{dstr}, int @var{flags})
+@end deftypefun
 
 
 @node Regular expressions, Vectors, Strings, C API reference
