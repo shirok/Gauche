@@ -1,7 +1,7 @@
 ;;;
 ;;; scmlib.scm - more Scheme libraries
 ;;;
-;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: scmlib.scm,v 1.9 2007-01-08 10:53:42 shirok Exp $
+;;;  $Id: scmlib.scm,v 1.10 2007-02-04 12:39:59 shirok Exp $
 ;;;
 
 ;; This file contains builtin library functions that are easier to be
@@ -155,6 +155,63 @@
     (cond ((= i 0) (values (reverse! r) rest))
           ((null? rest) (error "given list is too short:" lis))
           (else (loop (- i 1) (cdr rest) (cons (car rest) r))))))
+
+;;;=======================================================
+;;; string mutators
+;;;
+
+;; They are just for backward compatibility, and they are expensive
+;; anyway, so we provide them here instead of natively.
+
+(define-in-module scheme (string-set! str k ch)
+  (check-arg string? str)
+  (check-arg integer? k)
+  (check-arg exact? k)
+  (check-arg char? ch)
+  (let ((len (string-length str)))
+    (when (or (< k 0) (<= len k))
+      (error "string index out of range:" k))
+    (%string-replace-body! str
+                           (string-append (substring str 0 k)
+                                          (string ch)
+                                          (substring str (+ k 1) len)))))
+
+(set! (setter string-ref) string-set!)
+
+(define (string-byte-set! str k b)
+  (check-arg string? str)
+  (check-arg integer? k)
+  (check-arg exact? k)
+  (check-arg integer? b)
+  (let ((siz (string-size str))
+        (out (open-output-string :private? #t)))
+    (when (or (< k 0) (<= siz k))
+      (error "string index out of range:" k))
+    (display (byte-substring str 0 k) out)
+    (write-byte b out)
+    (display (byte-substring str (+ k 1) siz) out)
+    (%string-replace-body! str (get-output-byte-string out))))
+
+(set! (setter string-byte-ref) string-byte-set!)
+
+(define (string-fill! str c . opts)
+  (check-arg string? str)
+  (check-arg char? c)
+  (let1 len (string-length str)
+    (let-optionals* opts ((start 0)
+                          (end   len))
+      (when (or (< start 0) (< len start))
+        (error "start index out of range:" start))
+      (when (or (< end 0) (< len end))
+        (error "end index out of range:" end))
+      (when (< end start)
+        (errorf "end index ~s is smaller than start index ~s" end start))
+      (if (and (= start 0) (= end len))
+        (%string-replace-body! str (make-string len c))
+        (%string-replace-body! str
+                               (string-append (substring str 0 start)
+                                              (make-string (- end start) c)
+                                              (substring str end len)))))))
 
 ;;;=======================================================
 ;;; call/cc alias

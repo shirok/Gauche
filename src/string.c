@@ -1,7 +1,7 @@
 /*
  * string.c - string implementation
  *
- *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: string.c,v 1.83 2006-12-09 10:04:19 shirok Exp $
+ *  $Id: string.c,v 1.84 2007-02-04 12:39:59 shirok Exp $
  */
 
 #include <stdio.h>
@@ -45,12 +45,6 @@ void Scm_DStringDump(FILE *out, ScmDString *dstr);
 static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 SCM_DEFINE_BUILTIN_CLASS(Scm_StringClass, string_print, NULL, NULL, NULL,
                          SCM_CLASS_SEQUENCE_CPL);
-
-#define CHECK_MUTABLE(str)                                              \
-    do {                                                                \
-        if (SCM_STRING_IMMUTABLE_P(str))                                \
-            Scm_Error("attempted to modify immutable string: %S", str); \
-    } while (0)
 
 /* Internal primitive constructor.   LEN can be negative if the string
    is incomplete. */
@@ -314,41 +308,11 @@ ScmObj Scm_CopyStringWithFlags(ScmString *x, int flags, int mask)
     return SCM_OBJ(make_str(len, size, start, newflags));
 }
 
-ScmObj Scm_StringCompleteToIncompleteX(ScmString *x)
-{
-    const ScmStringBody *b;
-    CHECK_MUTABLE(x);
-    b = SCM_STRING_BODY(x);
-    x->body = make_str_body(SCM_STRING_BODY_SIZE(b),
-                            SCM_STRING_BODY_SIZE(b),
-                            SCM_STRING_BODY_START(b),
-                            SCM_STRING_BODY_FLAGS(b) | SCM_STRING_INCOMPLETE);
-    return SCM_OBJ(x);
-}
-
 ScmObj Scm_StringCompleteToIncomplete(ScmString *x)
 {
     return Scm_CopyStringWithFlags(x, SCM_STRING_INCOMPLETE,
                                    SCM_STRING_INCOMPLETE);
 }
-
-#if 0
-/* OBSOLETED.  MT-UNSAFE */
-ScmObj Scm_StringIncompleteToCompleteX(ScmString *x)
-{
-    ScmStringBody *b;
-    CHECK_MUTABLE(x);
-    b = (ScmStringBody*)SCM_STRING_BODY(x);
-    if (SCM_STRING_BODY_INCOMPLETE_P(b)) {
-        int len = count_length(SCM_STRING_BODY_START(b),
-                               SCM_STRING_BODY_SIZE(b));
-        if (len < 0) return SCM_FALSE;
-        b->flags &= ~SCM_STRING_INCOMPLETE;
-        b->length = len;
-    }
-    return SCM_OBJ(x);
-}
-#endif
 
 ScmObj Scm_StringIncompleteToComplete(ScmString *x,
                                       int handling,
@@ -767,118 +731,46 @@ ScmObj Scm_StringJoin(ScmObj strs, ScmString *delim, int grammer)
 }
 
 /*----------------------------------------------------------------
- * Substitution
+ * Mutation
  */
 
-static ScmObj string_substitute(ScmString *x,
-                                const ScmStringBody *xb, int start,
-                                const char *str, int sizey, int leny,
-                                int incompletep)
-{
-    int sizex = SCM_STRING_BODY_SIZE(xb), lenx = SCM_STRING_BODY_LENGTH(xb);
-    int end = start + leny, sizez, newlen;
-    unsigned int newflags;
-    char *p;
+/*
+ * String mutation is extremely heavy operation in Gauche,
+ * and only provided for compatibility to RnRS.  At C API level
+ * there's no point in using string mutation at all.  A single
+ * API, which replaces the string body, is provided at C level.
+ */
 
-    if (start < 0) Scm_Error("start index out of range: %d", start);
-    if (end > lenx) {
-        Scm_Error("substitution string too long: %S",
-                  make_str(leny, sizey, str, 0));
+ScmObj Scm_StringReplaceBody(ScmString *str, const ScmStringBody *newbody)
+{
+    if (SCM_STRING_IMMUTABLE_P(str)) {
+        Scm_Error("attempted to modify an immutable string: %S", str);
     }
 
-    if (SCM_STRING_BODY_SINGLE_BYTE_P(xb)) {
-        /* x is sbstring */
-        sizez = sizex - leny + sizey;
-        p = SCM_NEW_ATOMIC2(char *, sizez+1);
-        if (start > 0) memcpy(p, SCM_STRING_BODY_START(xb), start);
-        memcpy(p+start, str, sizey);
-        memcpy(p+start+sizey, SCM_STRING_BODY_START(xb)+end, sizex-end);
-        p[sizez] = '\0';
-    } else {
-        /* x is mbstring */
-        const char *s, *e;
-        s = forward_pos(SCM_STRING_BODY_START(xb), start);
-        e = forward_pos(s, end - start);
-        sizez = sizex + sizey - (e - s);
-        p = SCM_NEW_ATOMIC2(char *, sizez+1);
-        if (start > 0) {
-            memcpy(p, SCM_STRING_BODY_START(xb), s - SCM_STRING_BODY_START(xb));
-        }
-        memcpy(p + (s - SCM_STRING_BODY_START(xb)), str, sizey);
-        memcpy(p + (s - SCM_STRING_BODY_START(xb)) + sizey, e,
-               SCM_STRING_BODY_START(xb) + sizex - e);
-        p[sizez] = '\0';
-    }
-    /* Modify x atomically */
-    newlen = SCM_STRING_BODY_INCOMPLETE_P(xb)? sizez : lenx;
-    newflags = SCM_STRING_BODY_FLAGS(xb) & ~SCM_STRING_IMMUTABLE;
-    newflags |= SCM_STRING_TERMINATED;
-    if (incompletep) newflags |= SCM_STRING_INCOMPLETE;
-    x->body = make_str_body(newlen,  /* len */
-                            sizez,   /* size */
-                            p,       /* start */
-                            newflags);/* flags */
-    return SCM_OBJ(x);
-}
+    /* Atomically replaces the str's body (no MT hazard) */
+    str->body = newbody;
 
-ScmObj Scm_StringSubstitute(ScmString *x, int start, ScmString *y)
-{
-    const ScmStringBody *yb = SCM_STRING_BODY(y);
-    CHECK_MUTABLE(x);
-    return string_substitute(x, SCM_STRING_BODY(x),
-                             start,
-                             SCM_STRING_BODY_START(yb),
-                             SCM_STRING_BODY_SIZE(yb),
-                             SCM_STRING_BODY_LENGTH(yb),
-                             SCM_STRING_BODY_INCOMPLETE_P(yb));
-}
-
-ScmObj Scm_StringSet(ScmString *x, int k, ScmChar ch)
-{
-    const ScmStringBody *xb = SCM_STRING_BODY(x);
-    CHECK_MUTABLE(x);
-    if (SCM_STRING_BODY_INCOMPLETE_P(xb)) {
-        char byte = (char)ch;
-        return string_substitute(x, xb, k, &byte, 1, 1, TRUE);
-    } else {
-        char buf[SCM_CHAR_MAX_BYTES+1];
-        int size = SCM_CHAR_NBYTES(ch);
-        SCM_CHAR_PUT(buf, ch);
-        return string_substitute(x, xb, k, buf, size, 1, FALSE);
-    }
-}
-
-ScmObj Scm_StringByteSet(ScmString *x, int k, ScmByte b)
-{
-    const ScmStringBody *xb = SCM_STRING_BODY(x);
-    int size = SCM_STRING_BODY_SIZE(xb);
-    char *p;
-    
-    CHECK_MUTABLE(x);
-    if (k < 0 || k >= size) Scm_Error("argument out of range: %d", k);
-    p = SCM_NEW_ATOMIC2(char *, size+1);
-    memcpy(p, xb->start, size);
-    p[size] = '\0';
-    p[k] = (char)b;
-
-    /* Modify x atomically */
-    x->body = make_str_body(size, size, p,
-                            SCM_STRING_INCOMPLETE|SCM_STRING_TERMINATED);
-    return SCM_OBJ(x);
+    /* TODO: If the initialBody of str isn't shared,
+       nullify str->initialBody.start so that the original string is
+       GCed.  It should be done after implementing 'shared' flag
+       into the string body. */
+    return SCM_OBJ(str);
 }
 
 /*----------------------------------------------------------------
  * Substring
  */
 
-static ScmObj substring(const ScmStringBody *xb, int start, int end)
+static ScmObj substring(const ScmStringBody *xb, int start, int end,
+                        int byterange)
 {
     int len = SCM_STRING_BODY_LENGTH(xb);
     int flags = SCM_STRING_BODY_FLAGS(xb) & ~SCM_STRING_IMMUTABLE;
     SCM_CHECK_START_END(start, end, len);
 
-    if (SCM_STRING_BODY_SINGLE_BYTE_P(xb)) {
+    if (SCM_STRING_BODY_SINGLE_BYTE_P(xb) || byterange) {
         if (end != len) flags &= ~SCM_STRING_TERMINATED;
+        if (byterange)  flags |= SCM_STRING_INCOMPLETE;
         return SCM_OBJ(make_str(end-start,
                                 end-start,
                                 SCM_STRING_BODY_START(xb) + start,
@@ -897,9 +789,9 @@ static ScmObj substring(const ScmStringBody *xb, int start, int end)
     }
 }
 
-ScmObj Scm_Substring(ScmString *x, int start, int end)
+ScmObj Scm_Substring(ScmString *x, int start, int end, int byterange)
 {
-    return substring(SCM_STRING_BODY(x), start, end);
+    return substring(SCM_STRING_BODY(x), start, end, byterange);
 }
 
 /* Auxiliary procedure to support optional start/end parameter specified
@@ -925,7 +817,7 @@ ScmObj Scm_MaybeSubstring(ScmString *x, ScmObj start, ScmObj end)
             Scm_Error("exact integer required for start, but got %S", end);
         iend = SCM_INT_VALUE(end);
     }
-    return substring(xb, istart, iend);
+    return substring(xb, istart, iend, FALSE);
 }
 
 /*----------------------------------------------------------------
@@ -1152,68 +1044,6 @@ ScmObj Scm_StringToList(ScmString *str)
         SCM_APPEND1(start, end, SCM_MAKE_CHAR(ch));
     }
     return start;
-}
-
-ScmObj Scm_StringFill(ScmString *str, ScmChar ch,
-                      ScmObj maybe_start, ScmObj maybe_end)
-{
-    int len, i, start, end, prelen, midlen, postlen;
-    int chlen = SCM_CHAR_NBYTES(ch);
-    char *newstr, *p;
-    const unsigned char *s, *r;
-    const ScmStringBody *strb = SCM_STRING_BODY(str);
-
-    CHECK_MUTABLE(str);
-    if (SCM_STRING_BODY_INCOMPLETE_P(strb)) {
-        Scm_Error("incomplete string not allowed: %S", str);
-    }
-    len = SCM_STRING_BODY_LENGTH(strb);
-
-    if (SCM_UNBOUNDP(maybe_start) || SCM_UNDEFINEDP(maybe_start)) {
-        start = 0;
-    } else {
-        if (!SCM_INTP(maybe_start))
-            Scm_Error("exact integer required for start, but got %S",
-                      maybe_start);
-        start = SCM_INT_VALUE(maybe_start);
-    }
-    if (SCM_UNBOUNDP(maybe_end) || SCM_UNDEFINEDP(maybe_end)) {
-        end = len;
-    } else {
-        if (!SCM_INTP(maybe_end))
-            Scm_Error("exact integer required for end, but got %S",
-                      maybe_end);
-        end = SCM_INT_VALUE(maybe_end);
-    }
-    if (start < 0 || start > end || end > len) {
-        Scm_Error("start/end pair is out of range: (%d %d)", start, end);
-    }
-    if (start == end) return SCM_OBJ(str);
-    
-    s = (unsigned char*)SCM_STRING_BODY_START(strb);
-    for (i = 0; i < start; i++) s += SCM_CHAR_NFOLLOWS(*s)+1;
-    prelen = s - (unsigned char*)SCM_STRING_BODY_START(strb);
-    r = s;
-    for (; i < end; i++)        s += SCM_CHAR_NFOLLOWS(*s)+1;
-    midlen = s - r;
-    postlen = SCM_STRING_BODY_SIZE(strb) - midlen - prelen;
-
-    p = newstr = SCM_NEW_ATOMIC2(char *,
-                                 prelen + (end-start)*chlen + postlen + 1);
-    memcpy(p, SCM_STRING_BODY_START(strb), prelen);
-    p += prelen;
-    for (i=0; i < end-start; i++) {
-        SCM_CHAR_PUT(p, ch);
-        p += chlen;
-    }
-    memcpy(p, SCM_STRING_BODY_START(strb) + prelen + midlen, postlen);
-    p[postlen] = '\0';          /* be friendly to C */
-    /* modify str atomically */
-    str->body = make_str_body(SCM_STRING_BODY_LENGTH(strb),
-                              prelen + (end-start)*chlen + postlen,
-                              newstr,
-                              SCM_STRING_TERMINATED);
-    return SCM_OBJ(str);
 }
 
 /* Convert cstring array to a list of Scheme strings.  Cstring array

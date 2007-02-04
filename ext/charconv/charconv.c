@@ -1,7 +1,7 @@
 /*
  * charconv.c - character code conversion library
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,11 +30,12 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: charconv.c,v 1.55 2006-11-30 23:54:59 shirok Exp $
+ *  $Id: charconv.c,v 1.56 2007-02-04 12:39:57 shirok Exp $
  */
 
 #include <string.h>
 #include <errno.h>
+#define GAUCHE_API_0_9
 #include <gauche.h>
 #include <gauche/extend.h>
 #include "charconv.h"
@@ -137,7 +138,7 @@ static ScmObj conv_name(int dir, ScmPort *remote, const char *from, const char *
     Scm_Printf(SCM_PORT(out), "[conv(%s->%s) %s %S]",
                from, to, (dir == SCM_PORT_INPUT? "from" : "to"),
                Scm_PortName(remote));
-    return Scm_GetOutputStringUnsafe(SCM_PORT(out));
+    return Scm_GetOutputStringUnsafe(SCM_PORT(out), 0);
 }
 
 /*------------------------------------------------------------

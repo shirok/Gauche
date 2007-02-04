@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with utf-8.
 
-;; $Id: utf-8.scm,v 1.9 2006-11-25 02:47:16 shirok Exp $
+;; $Id: utf-8.scm,v 1.10 2007-02-04 12:40:00 shirok Exp $
 
 (use gauche.test)
 
@@ -73,17 +73,6 @@
         (receive r (string-scan "あえいうえおあおあいうえお" "おあい" 'both) r)))
 (test "string-scan" #f
       (lambda () (string-scan "あえいうえおあおあいうえお" "おい")))
-
-(test "string-substitute!" "うえおdefghi"
-      (lambda ()
-        (let ((s (string-copy "abcdefghi")))
-          (string-substitute! s 0 "うえお")
-          s)))
-(test "string-substitute!" "abcうえおghi"
-      (lambda ()
-        (let ((s (string-copy "abcdefghi")))
-          (string-substitute! s 3 "うえお")
-          s)))
 
 ;;-------------------------------------------------------------------
 (test-section "string-pointer")
@@ -174,10 +163,7 @@
 (test "string-append" 15
       (lambda () (string-length (string-append "あいう" "えお" #*""))))
 
-(test "string-substitute!" #*"\xe3bc\xe3\x81\x84"
-      (lambda () (string-substitute! (string-copy #*"あい") 1 #*"bc")))
-
-(test "string-incompltet->incomplete" "あ"
+(test "string-incomplete->complete" "あ"
       (lambda () (string-incomplete->complete
                   (string-append #*"\xe3" #*"\x81" #*"\x82"))))
 

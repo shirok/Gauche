@@ -6,7 +6,7 @@
 ;;;
 ;;; uvlib.stub - uniform vector library
 ;;;  
-;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -35,7 +35,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; \$Id: uvlib.stub.tmpl,v 1.10 2006-11-30 23:55:00 shirok Exp $
+;;; \$Id: uvlib.stub.tmpl,v 1.11 2007-02-04 12:39:58 shirok Exp $
 ;;;
 
 "
@@ -351,7 +351,7 @@
     ScmChar ch = (ScmChar)eltp[start];
     Scm_PutcUnsafe(ch, SCM_PORT(s));
   }
-  SCM_RETURN(Scm_GetOutputStringUnsafe(SCM_PORT(s)));
+  SCM_RETURN(Scm_GetOutputStringUnsafe(SCM_PORT(s), 0));
  }"
 
 (define-cproc s32vector->string (v::<s32vector>

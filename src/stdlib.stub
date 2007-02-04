@@ -1,7 +1,7 @@
 ;;;
 ;;; stdlib.stub - r5rs scheme procedures
 ;;;  
-;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.123 2006-12-07 04:58:48 shirok Exp $
+;;; $Id: stdlib.stub,v 1.124 2007-02-04 12:39:59 shirok Exp $
 ;;;
 
 
@@ -484,16 +484,13 @@
 (define-cproc string-length (str::<string>)
   (expr <fixnum> "SCM_STRING_BODY_LENGTH(SCM_STRING_BODY(str))"))
 
+;; NB: string-set! is moved to scmlib.scm, so we can't declare setter here.
+;; It is set in scmlib.scm.
 (define-cproc string-ref (str::<string> k::<fixnum> &optional fallback)
-  (setter string-set!)
+;  (setter string-set!)
   (body "ScmChar r = Scm_StringRef(str, k, SCM_UNBOUNDP(fallback));"
         "SCM_RESULT = (r == SCM_CHAR_INVALID)? fallback : SCM_MAKE_CHAR(r);"))
         
-(define-cproc string-set! (str::<string> k::<fixnum> c::<char>)
-  (body <void>
-        "ScmObj r = Scm_StringSet(str, k, c);"
-        "if (r == SCM_FALSE) Scm_Error(\"argument out of range: %d\", k);"))
-
 (define-cproc string=? (s1::<string> s2::<string>)
   (call <boolean> "Scm_StringEqual"))
 (define-cproc string<? (s1::<string> s2::<string>)
@@ -517,7 +514,7 @@
   (expr <boolean> "Scm_StringCiCmp(s1, s2) >= 0"))
 
 (define-cproc substring (str::<string> start::<fixnum> end::<fixnum>)
-  (call "Scm_Substring"))
+  (expr "Scm_Substring(str, start, end, FALSE)"))
 
 (define-cproc string-append (&rest args)
   (call "Scm_StringAppend"))
@@ -532,9 +529,6 @@
 (define-cproc string-copy (str::<string> &optional start end)
   "  ScmObj xstr = Scm_MaybeSubstring(str, start, end);
   SCM_RETURN(Scm_CopyString(SCM_STRING(xstr)));")
-
-(define-cproc string-fill! (str::<string> c::<char> &optional start end)
-  (call "Scm_StringFill"))
 
 ;;
 ;; 6.3.6  Vectors

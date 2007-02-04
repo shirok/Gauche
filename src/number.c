@@ -1,7 +1,7 @@
 /*
  * number.c - numeric functions
  *
- *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.138 2007-01-12 01:05:45 shirok Exp $
+ *  $Id: number.c,v 1.139 2007-02-04 12:39:59 shirok Exp $
  */
 
 #include <math.h>
@@ -2758,7 +2758,7 @@ ScmObj Scm_NumberToString(ScmObj obj, int radix, int use_upper)
         double_print(buf, FLT_BUF, SCM_COMPNUM_IMAG(obj), TRUE);
         SCM_PUTZ(buf, -1, SCM_PORT(p));
         SCM_PUTC('i', SCM_PORT(p));
-        r = Scm_GetOutputString(SCM_PORT(p));
+        r = Scm_GetOutputString(SCM_PORT(p), 0);
     } else {
         Scm_Error("number required: %S", obj);
     }

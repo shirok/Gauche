@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions  -*-mode: Makefile-*-
-## $Id: Makefile.ext.in,v 1.26 2007-01-08 10:19:33 shirok Exp $
+## $Id: Makefile.ext.in,v 1.27 2007-02-04 12:39:57 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -72,7 +72,7 @@ CLEANFILES = core *~ test.log test.out $(XCLEANFILES)
 	$(COMPILE) -c $<
 
 .stub.c :
-	$(GOSH) genstub $<
+	$(GOSH) genstub -D GAUCHE_API_0_9 $<
 
 default : all link
 

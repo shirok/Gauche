@@ -1,7 +1,7 @@
 /*
  * gauche/port.h - Port API
  *
- *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.h,v 1.20 2007-01-08 11:45:47 shirok Exp $
+ *  $Id: port.h,v 1.21 2007-02-04 12:40:00 shirok Exp $
  */
 
 #ifndef GAUCHE_PORT_H
@@ -342,9 +342,22 @@ SCM_EXTERN ScmObj Scm_Stderr(void);
 
 SCM_EXTERN ScmObj Scm_MakeInputStringPort(ScmString *str, int privatep);
 SCM_EXTERN ScmObj Scm_MakeOutputStringPort(int privatep);
-SCM_EXTERN ScmObj Scm_GetOutputString(ScmPort *port);
-SCM_EXTERN ScmObj Scm_GetOutputStringUnsafe(ScmPort *port);
-SCM_EXTERN ScmObj Scm_GetRemainingInputString(ScmPort *port);
+
+#if defined(GAUCHE_API_0_9) || defined(LIBGAUCHE_BODY)
+SCM_EXTERN ScmObj Scm_GetOutputString(ScmPort *port, int flags);
+SCM_EXTERN ScmObj Scm_GetOutputStringUnsafe(ScmPort *port, int flags);
+SCM_EXTERN ScmObj Scm_GetRemainingInputString(ScmPort *port, int flags);
+
+/* For backward compatibility */
+SCM_EXTERN ScmObj Scm__GetOutputStringCompat(ScmPort *port);
+SCM_EXTERN ScmObj Scm__GetOutputStringUnsafeCompat(ScmPort *port);
+SCM_EXTERN ScmObj Scm__GetRemainingInputStringCompat(ScmPort *port);
+
+#else  /* !defined(GAUCHE_API_0_9) && !defined(LIBGAUCHE_BODY) */
+#define Scm_GetOutputString(p) Scm__GetOutputStringCompat(p)
+#define Scm_GetOutputStringUnsafe(p) Scm__GetOutputStringUnsafeCompat(p)
+#define Scm_GetRemainingInputString(p) Scm__GetRemainingInputStringCompat(p)
+#endif /* !defined(GAUCHE_API_0_9) && !defined(LIBGAUCHE_BODY) */
 
 /*================================================================
  * Other type of ports

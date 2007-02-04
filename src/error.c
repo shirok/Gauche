@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.72 2006-11-10 01:22:28 shirok Exp $
+ *  $Id: error.c,v 1.73 2007-02-04 12:39:58 shirok Exp $
  */
 
 #include <errno.h>
@@ -532,7 +532,7 @@ void Scm_Error(const char *msg, ...)
         va_start(args, msg);
         Scm_Vprintf(SCM_PORT(ostr), msg, args, TRUE);
         va_end(args);
-        e = Scm_MakeError(Scm_GetOutputString(SCM_PORT(ostr)));
+        e = Scm_MakeError(Scm_GetOutputString(SCM_PORT(ostr), 0));
     }
     SCM_WHEN_ERROR {
         /* TODO: should check continuation? */
@@ -591,7 +591,7 @@ void Scm_SysError(const char *msg, ...)
         va_end(args);
         SCM_PUTZ(": ", -1, ostr);
         SCM_PUTS(syserr, ostr);
-        e = Scm_MakeSystemError(Scm_GetOutputString(SCM_PORT(ostr)), en);
+        e = Scm_MakeSystemError(Scm_GetOutputString(SCM_PORT(ostr), 0), en);
     }
     SCM_WHEN_ERROR {
         /* TODO: should check continuation */
@@ -640,7 +640,7 @@ void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
             SCM_PUTZ(": ", -1, ostr);
             SCM_PUTS(syserr, ostr);
         }
-        smsg = Scm_GetOutputString(SCM_PORT(ostr));
+        smsg = Scm_GetOutputString(SCM_PORT(ostr), 0);
 
         switch (reason) {
         case SCM_PORT_ERROR_INPUT:
@@ -686,7 +686,8 @@ void Scm_Warn(const char *msg, ...)
     va_start(args, msg);
     Scm_Vprintf(SCM_PORT(ostr), msg, args, TRUE);
     va_end(args);
-    Scm_Printf(SCM_CURERR, "WARNING: %A\n", Scm_GetOutputString(SCM_PORT(ostr)));
+    Scm_Printf(SCM_CURERR, "WARNING: %A\n",
+               Scm_GetOutputString(SCM_PORT(ostr), 0));
     Scm_Flush(SCM_CURERR);
 }
 
@@ -695,7 +696,8 @@ void Scm_FWarn(ScmString *fmt, ScmObj args)
 {
     ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
     Scm_Format(SCM_PORT(ostr), fmt, args, TRUE);
-    Scm_Printf(SCM_CURERR, "WARNING: %A\n", Scm_GetOutputString(SCM_PORT(ostr)));
+    Scm_Printf(SCM_CURERR, "WARNING: %A\n",
+               Scm_GetOutputString(SCM_PORT(ostr), 0));
     Scm_Flush(SCM_CURERR);
 }
 
@@ -751,7 +753,7 @@ ScmObj Scm_RaiseCondition(ScmObj condition_type, ...)
             ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
             Scm_Vprintf(SCM_PORT(ostr), msg, ap, TRUE);
             SCM_APPEND1(argh, argt, SCM_MAKE_KEYWORD("message"));
-            SCM_APPEND1(argh, argt, Scm_GetOutputString(SCM_PORT(ostr)));
+            SCM_APPEND1(argh, argt, Scm_GetOutputString(SCM_PORT(ostr), 0));
             break;
         } else {
             ScmObj arg = va_arg(ap, ScmObj);

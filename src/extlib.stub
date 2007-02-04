@@ -1,7 +1,7 @@
 ;;;
 ;;; extlib.stub - extra built-ins
 ;;;  
-;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.271 2006-12-07 04:58:47 shirok Exp $
+;;; $Id: extlib.stub,v 1.272 2007-02-04 12:39:59 shirok Exp $
 ;;;
 
 "
@@ -489,13 +489,11 @@
   (body "int r = Scm_StringByteRef(str, k, SCM_UNBOUNDP(fallback));"
         "SCM_RESULT = (r<0)? fallback : SCM_MAKE_INT(r);"))
 
-(define-cproc string-byte-set! (str::<string> k::<fixnum> b::<fixnum>)
-  (call "Scm_StringByteSet"))
+(define-cproc byte-substring (str::<string> start::<fixnum> end::<fixnum>)
+  (expr "Scm_Substring(str, start, end, TRUE)"))
 
-(define-cproc string-substitute! (target::<string> start::<fixnum> str::<string>)
-  "  ScmObj r = Scm_StringSubstitute(target, start, str);
-  if (!SCM_STRINGP(r)) Scm_Error(\"argument out of range: (%d %S)\", start, str);
-  SCM_RETURN(r);")
+(define-cproc %string-replace-body! (target::<string> source::<string>)
+  (expr "Scm_StringReplaceBody(target, SCM_STRING_BODY(source))"))
 
 (define-cproc %maybe-substring (str::<string> &optional start end)
   (call "Scm_MaybeSubstring"))
@@ -800,10 +798,13 @@
   (call "Scm_MakeOutputStringPort"))
 
 (define-cproc get-output-string (oport::<output-port>) ;SRFI-6
-  (call "Scm_GetOutputString"))
+  (expr "Scm_GetOutputString(oport, 0)"))
+
+(define-cproc get-output-byte-string (oport::<output-port>)
+  (expr "Scm_GetOutputString(oport, SCM_STRING_INCOMPLETE)"))
 
 (define-cproc get-remaining-input-string (iport::<input-port>)
-  (call "Scm_GetRemainingInputString"))
+  (expr "Scm_GetRemainingInputString(iport, 0)"))
 
 (define-cproc open-coding-aware-port (iport::<input-port>)
   (call "Scm_MakeCodingAwarePort"))
@@ -982,14 +983,15 @@
   (call "Scm_VMWithPortLocking"))
 
 (define-cproc port->byte-string (port::<input-port>)
-  ;; TODO: use chunked I/O if appropriate
-  " int b; ScmPort *out = SCM_PORT(Scm_MakeOutputStringPort(TRUE));
-  for (;;) {
-    SCM_GETB(b, port);
-    if (b == EOF) break;
-    Scm_PutbUnsafe(b, out);
-  }
-  SCM_RETURN(Scm_GetOutputString(out));")
+  (body "ScmDString ds;"
+        "char buf[1024]; int nbytes;"
+        "Scm_DStringInit(&ds);"
+        "for (;;) {"
+        "  nbytes= Scm_Getz(buf, 1024, port);"
+        "  if (nbytes <= 0) break;"
+        "  Scm_DStringPutz(&ds, buf, nbytes);"
+        "}"
+        "SCM_RESULT = Scm_DStringGet(&ds, SCM_STRING_INCOMPLETE);"))
 
 ;;
 ;; 6.6.2  Input

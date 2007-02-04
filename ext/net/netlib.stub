@@ -1,7 +1,7 @@
 ;;;
 ;;; netlib.stub - network interface
 ;;;  
-;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netlib.stub,v 1.37 2006-10-22 07:58:33 shirok Exp $
+;;;  $Id: netlib.stub,v 1.38 2007-02-04 12:39:57 shirok Exp $
 ;;;
 
 "#include \"gauche/net.h\"
@@ -79,7 +79,7 @@
                ((inaddr>>8)&0xff),
                ((inaddr>>0)&0xff),
                ntohs(a->addr.sin_port));
-    SCM_RETURN(Scm_GetOutputStringUnsafe(out));")
+    SCM_RETURN(Scm_GetOutputStringUnsafe(out, 0));")
 
 (define-cmethod sockaddr-family ((addr "Scm_SockAddrInClass"))
   (expr "sym_inet"))
@@ -103,7 +103,7 @@
   const char *r = inet_ntop(AF_INET6, &a->addr.sin6_addr, buf, sizeof(buf));
   if (r == NULL) Scm_SysError(\"inet_ntop\");
   Scm_Printf(out, \"[%s]:%d\", buf, ntohs(a->addr.sin6_port));
-  SCM_RETURN(Scm_GetOutputStringUnsafe(out));")
+  SCM_RETURN(Scm_GetOutputStringUnsafe(out, 0));")
 
       (define-cmethod sockaddr-family ((addr "Scm_SockAddrIn6Class"))
         (expr "sym_inet6"))

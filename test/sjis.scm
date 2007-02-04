@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with shift-jis.
 
-;; $Id: sjis.scm,v 1.8 2003-03-25 06:18:39 shirok Exp $
+;; $Id: sjis.scm,v 1.9 2007-02-04 12:40:00 shirok Exp $
 
 (use gauche.test)
 
@@ -70,15 +70,6 @@
        (receive r (string-scan "‚ ‚¦‚¢‚¤‚¦‚¨‚ ‚¨‚ ‚¢‚¤‚¦‚¨" "‚¨‚ ‚¢" 'both) r))
 (test* "string-scan" #f
        (string-scan "‚ ‚¦‚¢‚¤‚¦‚¨‚ ‚¨‚ ‚¢‚¤‚¦‚¨" "‚¨‚¢"))
-
-(test* "string-substitute!" "‚¤‚¦‚¨defghi"
-       (let ((s (string-copy "abcdefghi")))
-         (string-substitute! s 0 "‚¤‚¦‚¨")
-         s))
-(test* "string-substitute!" "abc‚¤‚¦‚¨ghi"
-       (let ((s (string-copy "abcdefghi")))
-         (string-substitute! s 3 "‚¤‚¦‚¨")
-         s))
 
 ;;-------------------------------------------------------------------
 (test-section "string-pointer")
@@ -162,10 +153,7 @@
 (test* "string-append" 10
        (string-length (string-append "‚ ‚¢‚¤" "‚¦‚¨" #*"")))
 
-(test* "string-substitute!" #*"\x82bc\xa2"
-       (string-substitute! (string-copy #*"‚ ‚¢") 1 #*"bc"))
-
-(test* "string-incompltet->incomplete" "‚ "
+(test* "string-incomplete->complete" "‚ "
        (string-incomplete->complete (string-append #*"\x82" #*"\xa0")))
 
 ;;-------------------------------------------------------------------

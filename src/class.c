@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.145 2007-01-14 08:00:38 shirok Exp $
+ *  $Id: class.c,v 1.146 2007-02-04 12:39:58 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -234,7 +234,7 @@ ScmObj Scm__InternalClassName(ScmClass *klass)
             && SCM_STRING_BODY_START(b)[0] == '<'
             && SCM_STRING_BODY_START(b)[size-1] == '>') {
             return Scm_Substring(SCM_SYMBOL_NAME(name), 1,
-                                 SCM_STRING_BODY_LENGTH(b)-1);
+                                 SCM_STRING_BODY_LENGTH(b)-1, FALSE);
         } else {
             return SCM_OBJ(SCM_SYMBOL_NAME(name));
         }

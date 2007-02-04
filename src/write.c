@@ -1,7 +1,7 @@
 /*
  * write.c - writer
  *
- *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.64 2006-11-04 09:57:00 shirok Exp $
+ *  $Id: write.c,v 1.65 2007-02-04 12:39:59 shirok Exp $
  */
 
 #include <stdio.h>
@@ -203,12 +203,12 @@ int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width)
     format_write(obj, SCM_PORT(out), &ctx, sharedp);
     nc = outlen(SCM_PORT(out));
     if (nc > width) {
-        ScmObj sub = Scm_Substring(SCM_STRING(Scm_GetOutputString(SCM_PORT(out))),
-                                   0, width);
+        ScmObj sub = Scm_Substring(SCM_STRING(Scm_GetOutputString(SCM_PORT(out), 0)),
+                                   0, width, FALSE);
         SCM_PUTS(sub, port);    /* this locks port */
         return -1;
     } else {
-        SCM_PUTS(Scm_GetOutputString(SCM_PORT(out)), port); /* this locks port */
+        SCM_PUTS(Scm_GetOutputString(SCM_PORT(out), 0), port); /* this locks port */
         return nc;
     }
 }
@@ -257,12 +257,12 @@ int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width)
     format_write(obj, SCM_PORT(out), &ctx, TRUE);
     nc = outlen(SCM_PORT(out));
     if (nc > width) {
-        ScmObj sub = Scm_Substring(SCM_STRING(Scm_GetOutputString(SCM_PORT(out))),
-                                   0, width);
+        ScmObj sub = Scm_Substring(SCM_STRING(Scm_GetOutputString(SCM_PORT(out),0)),
+                                   0, width, FALSE);
         SCM_PUTS(sub, port); /* this locks port */
         return -1;
     } else {
-        SCM_PUTS(Scm_GetOutputString(SCM_PORT(out)), port); /* this locks port */
+        SCM_PUTS(Scm_GetOutputString(SCM_PORT(out),0), port); /* this locks port */
         return nc;
     }
 }
@@ -667,7 +667,7 @@ static void format_sexp(ScmPort *out, ScmObj arg,
     if (minpad > 0 && !rightalign) {
         for (i=0; i<minpad; i++) Scm_PutcUnsafe(padchar, SCM_PORT(tmpout));
     }
-    tmpstr = SCM_STRING(Scm_GetOutputString(SCM_PORT(tmpout)));
+    tmpstr = SCM_STRING(Scm_GetOutputString(SCM_PORT(tmpout), 0));
 
     if (maxcol > 0 && nwritten < 0) {
         const char *s = Scm_GetStringContent(tmpstr, NULL, NULL, NULL), *e;

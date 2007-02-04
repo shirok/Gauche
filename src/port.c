@@ -1,7 +1,7 @@
 /*
  * port.c - port implementation
  *
- *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.134 2006-12-07 04:58:47 shirok Exp $
+ *  $Id: port.c,v 1.135 2007-02-04 12:39:59 shirok Exp $
  */
 
 #include <unistd.h>
@@ -947,7 +947,7 @@ ScmObj Scm_MakeOutputStringPort(int privatep)
     return SCM_OBJ(p);
 }
 
-ScmObj Scm_GetOutputString(ScmPort *port)
+ScmObj Scm_GetOutputString(ScmPort *port, int flags)
 {
     ScmObj r;
     ScmVM *vm;
@@ -955,22 +955,36 @@ ScmObj Scm_GetOutputString(ScmPort *port)
         Scm_Error("output string port required, but got %S", port);
     vm = Scm_VM();
     PORT_LOCK(port, vm);
-    r = Scm_DStringGet(&SCM_PORT(port)->src.ostr, 0);
+    r = Scm_DStringGet(&SCM_PORT(port)->src.ostr, flags);
     PORT_UNLOCK(port);
     return r;
 }
 
-ScmObj Scm_GetOutputStringUnsafe(ScmPort *port)
+ScmObj Scm_GetOutputStringUnsafe(ScmPort *port, int flags)
 {
     if (SCM_PORT_TYPE(port) != SCM_PORT_OSTR)
         Scm_Error("output string port required, but got %S", port);
-    return Scm_DStringGet(&SCM_PORT(port)->src.ostr, 0);
+    return Scm_DStringGet(&SCM_PORT(port)->src.ostr, flags);
 }
 
-static ScmObj get_remaining_input_string_aux(const char *s, int ssiz,
-                                             const char *p, int psiz);
+/* For backward compatibility */
+ScmObj Scm__GetOutputStringCompat(ScmPort *port)
+{
+    return Scm_GetOutputString(port, 0);
+}
 
-ScmObj Scm_GetRemainingInputString(ScmPort *port)
+/* For backward compatibility */
+ScmObj Scm__GetOutputStringCompatUnsafe(ScmPort *port)
+{
+    return Scm_GetOutputStringUnsafe(port, 0);
+}
+
+
+static ScmObj get_remaining_input_string_aux(const char *s, int ssiz,
+                                             const char *p, int psiz,
+                                             int flags);
+
+ScmObj Scm_GetRemainingInputString(ScmPort *port, int flags)
 {
     const char *cp, *ep, *sp;
     
@@ -992,35 +1006,43 @@ ScmObj Scm_GetRemainingInputString(ScmPort *port)
         if (cp - sp >= nbytes
             && memcmp(cp - nbytes, cbuf, nbytes) == 0) {
             cp -= nbytes;       /* we can reuse buffer */
-            return Scm_MakeString(cp, ep-cp, -1, 0);
+            return Scm_MakeString(cp, ep-cp, -1, flags);
         } else {
             /* we need to copy */
-            return get_remaining_input_string_aux(cp, ep-cp, cbuf, nbytes);
+            return get_remaining_input_string_aux(cp, ep-cp, cbuf,
+                                                  nbytes, flags);
         }
     } else if (port->scrcnt > 0) {
         sp = port->src.istr.start;
         if (cp - sp >= port->scrcnt
             && memcmp(cp - port->scrcnt, port->scratch, port->scrcnt) == 0) {
             cp -= port->scrcnt; /* we can reuse buffer */
-            return Scm_MakeString(cp, ep-cp, -1, 0);
+            return Scm_MakeString(cp, ep-cp, -1, flags);
         } else {
             /* we need to copy */
             return get_remaining_input_string_aux(cp, ep-cp, port->scratch,
-                                                  port->scrcnt);
+                                                  port->scrcnt, flags);
         }
     } else {
-        return Scm_MakeString(cp, ep-cp, -1, 0);
+        return Scm_MakeString(cp, ep-cp, -1, flags);
     }
 }
 
 static ScmObj get_remaining_input_string_aux(const char *s, int ssiz,
-                                             const char *p, int psiz)
+                                             const char *p, int psiz,
+                                             int flags)
 {
     char *b = SCM_NEW_ATOMIC2(char *, psiz+ssiz+1);
     memcpy(b, p, psiz);
     memcpy(b+psiz, s, ssiz);
     b[psiz+ssiz] = '\0';
-    return Scm_MakeString(b, psiz+ssiz, -1, 0);
+    return Scm_MakeString(b, psiz+ssiz, -1, flags);
+}
+
+/* For backward compatibility */
+ScmObj Scm__GetRemainingInputStringCompat(ScmPort *port)
+{
+    return Scm_GetRemainingInputString(port, 0);
 }
 
 /*===============================================================

@@ -1,6 +1,6 @@
 ;; this test only works when the core system is compiled with euc-jp.
 
-;; $Id: euc-jp.scm,v 1.21 2003-03-25 06:18:39 shirok Exp $
+;; $Id: euc-jp.scm,v 1.22 2007-02-04 12:40:00 shirok Exp $
 
 (use gauche.test)
 
@@ -71,15 +71,6 @@
 (test* "string-scan" #f
        (string-scan "あえいうえおあおあいうえお" "おい"))
 
-(test* "string-substitute!" "うえおdefghi"
-       (let ((s (string-copy "abcdefghi")))
-         (string-substitute! s 0 "うえお")
-         s))
-(test* "string-substitute!" "abcうえおghi"
-       (let ((s (string-copy "abcdefghi")))
-         (string-substitute! s 3 "うえお")
-         s))
-
 ;;-------------------------------------------------------------------
 (test-section "string-pointer")
 (define sp #f)
@@ -146,9 +137,6 @@
        (string-append #*"あいう" #*"えお"))
 (test* "string-append" 10
        (string-length (string-append "あいう" "えお" #*"")))
-
-(test* "string-substitute!" #*"\xa4bc\xa4"
-       (string-substitute! (string-copy #*"あい") 1 #*"bc"))
 
 (test* "string-incompltet->incomplete" "あ"
        (string-incomplete->complete

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: code.c,v 1.14 2006-12-07 04:58:47 shirok Exp $
+ *  $Id: code.c,v 1.15 2007-02-04 12:39:58 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -200,7 +200,7 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
             }
 
             /* Show info */
-            s = Scm_GetOutputStringUnsafe(out);
+            s = Scm_GetOutputStringUnsafe(out, 0);
             if (!SCM_PAIRP(info)) {
                 Scm_Puts(SCM_STRING(s), SCM_CUROUT);
                 Scm_Putc('\n', SCM_CUROUT);

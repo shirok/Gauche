@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: srfi-13.scm,v 1.4 2006-04-06 04:09:31 shirok Exp $
+;;;  $Id: srfi-13.scm,v 1.5 2007-02-04 12:39:58 shirok Exp $
 ;;;
 
 ;; Natively implemented functions:
@@ -145,7 +145,14 @@
          (tlen (string-length target)))
     (when (> (+ tstart slen) tlen)
       (error "copy operation runs off the target string:" target))
-    (string-substitute! target tstart str)))
+    (if (= slen tlen)
+      (%string-replace-body! target str)
+      (%string-replace-body! target
+                             (string-append (substring target 0 tstart)
+                                            str
+                                            (substring target
+                                                       (+ tstart slen)
+                                                       tlen))))))
 
 (define (string-pad s len . args)
   (let-optionals* args ((char #\space) start end)
@@ -588,17 +595,16 @@
              (loop #t (read-char src))))
       )))
 
-(define (string-upcase! s . args)
-  (let-optionals* args ((start 0) end)
-    (string-substitute! s start (string-upcase s start end))))
+(define (%string-*case! converter)
+  (lambda (s . args)
+    (let-optionals* args ((start 0) end)
+      (if (and (= start 0) (= end (string-length s)))
+        (%string-replace-body! s (converter s))
+        (string-copy! s start (converter s start end))))))
 
-(define (string-downcase! s . args)
-  (let-optionals* args ((start 0) end)
-    (string-substitute! s start (string-downcase s start end))))
-
-(define (string-titlecase! s . args)
-  (let-optionals* args ((start 0) end)
-    (string-substitute! s start (string-titlecase s start end))))
+(define string-upcase!    (%string-*case! string-upcase))
+(define string-downcase!  (%string-*case! string-downcase))
+(define string-titlecase! (%string-*case! string-titlecase))
 
 ;;;
 ;;; Reverse & append
@@ -617,7 +623,7 @@
 (define (string-reverse! s . args)
   (let-optionals* args ((start 0) end)
     (let ((rev (apply string-reverse s args)))
-      (string-substitute! s start rev))))
+      (string-copy! s start rev))))
 
 (define (string-concatenate lis)
   (cond
@@ -678,7 +684,7 @@
   (check-arg string? s)
   (let-optionals* args ((start 0) end)
      (let ((mapped (apply string-map proc s args)))
-       (string-substitute! s start mapped))))
+       (string-copy! s start mapped))))
 
 (define (string-fold kons knil s . args)
   (check-arg procedure? kons)
@@ -795,7 +801,7 @@
   (check-arg string? target)
   (check-arg (lambda (x) (and (integer? x) (exact? x))) tstart)
   (let ((result (apply xsubstring s sfrom args)))
-    (string-substitute! target tstart result)))
+    (string-copy! target tstart result)))
 
 ;;;
 ;;; Miscellaneous

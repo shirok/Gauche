@@ -1,3 +1,26 @@
+2007-02-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c, src/gauche.h (Scm_GetOutputString,
+	  Scm_GetOutputStringUnsafe, Scm_GetRemainingInputString): API CHANGE:
+	  New API takes string constructor flags.  Compatibility macros
+	  are provided by default; defining GAUCHE_API_0_9 makes the new
+	  API visible.
+
+	* src/gauche/string.h: Splitted String API.
+	* src/string.c, src/extlib.stub: Removed string mutating APIs:
+	  Scm_StringSet(), Scm_StringByteSet(), Scm_StringSubstitute(),
+	  and Scm_StringFill().  Since string bodies are immutable,
+	  there's little advantage for providing these operations in C.
+	  Instead, String_ReplaceBody() and Scheme-level
+	  %string-replace-body! are added.  Scheme-level string mutators
+	  are built on top of this.
+	* src/scmlib.scm: Defines string-set!, string-byte-set! and
+	  string-fill! here.  Note: There's no more string-substitute!.
+	* libsrc/srfi-13.scm: Changed string-copy!, string-upcase!,
+	  string-downcase!, string-titlecase!, string-reverse!,
+	  string-map! and string-xcopy! to use %string-replace-body!
+	  instead of string-substitute!.
+
 2007-02-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/core.c (Scm_GC): added an API to trigger GC.

@@ -210,13 +210,6 @@
        (receive r (string-scan #*"abcdefghi" #\e 'both) r))
 
 
-(test* "string-substitute!" #*"abCDe"
-       (string-substitute! (string-copy "abcde") 2 #*"CD"))
-(test* "string-substitute!" #*"abCDe"
-       (string-substitute! (string-copy #*"abcde") 2 "CD"))
-(test* "string-substitute!" #*"abCDe"
-       (string-substitute! (string-copy #*"abcde") 2 #*"CD"))
-
 ;; NB: should we allow this?
 (test* "string-set!" #*"abQde"
        (let ((s (string-copy #*"abcde")))
