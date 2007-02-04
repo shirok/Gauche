@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.21 2007-02-04 12:39:57 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.22 2007-02-04 22:26:43 shirok Exp $
 
 @iftex
 @finalout
@@ -2153,7 +2153,7 @@ if @var{k} is out of range.  If @var{range_error} is false,
 @var{Str} can be an incomplete string.
 @end deftypefun
 
-@deftypefun ScmObj Scm_Substring (ScmString *@var{str}, int @var{start}, int @var{end}, int @code{byterange})
+@deftypefun ScmObj Scm_Substring (ScmString *@var{str}, int @var{start}, int @var{end}, int @var{byterange})
 Returns a substring of @var{str}, starting from @var{start}
 (inclusive) and ending at @var{end} (exclusive). 
 If @var{byterange} is @code{FALSE} and @var{str} is complete,
@@ -2172,41 +2172,105 @@ mutable, even if the @var{start} and @var{end} specifies the entire
 string.
 @end deftypefun
 
+@subheading Mutator
+
 @deftypefun ScmObj Scm_StringReplaceBody (ScmString *@var{target}, ScmStringBody *@var{newbody})
 Replaces @var{target}'s body by @var{newbody}.  An error is signalled
 if @var{target} is immutable.
 
-This is the only C API that allows mutation of Scheme string.
+This is the only C API that allows mutation of Scheme strings.
 Scheme-level string mutators, such as @code{string-set!} and
 @code{string-fill!}, are implemented in Scheme on top of 
 this API.  Since string body is immutable, such mutators
-needs to allocate and fill a new string body anyway, so
-those mutators are defined in Scheme level on top of this API.
+needs to allocate and fill a new string body anyway, there's
+little merit in providing those mutators in C.
 @end deftypefun
 
 
 @subsubheading Concatenation
 
 @deftypefun ScmObj Scm_StringAppend2 (ScmString *@var{x}, ScmString *@var{y})
+Returns a new Scheme string whose content is concatenation of 
+strings @var{x} and @var{y}.
 @end deftypefun
 
 @deftypefun ScmObj Scm_StringAppendC (ScmString *@var{x}, const char *@var{s}, int @var{size}, int @var{len})
+Returns a new Scheme string whose content is concatenation of 
+a Scheme string @var{x} and C-level string @var{s}.
+Like @code{Scm_MakeString}, you can give -1 to @var{size} and/or @var{len}
+to make the function calculates those values.  If you give -1 to @var{size},
+@var{s} must be @code{NUL}-terminated; othewise @var{s} doesn't need to be.
 @end deftypefun
 
 @deftypefun ScmObj Scm_StringAppend (ScmObj @var{strs})
+The @var{strs} argument must be a list of Scheme strings.
+Returns a new Scheme string whose content is concatenation
+of all the strings.  An error is signalled if not all elements
+in @var{strs} are strings.
+
+If any element in @var{strs} is incomplete, the result string
+becomes incomplete.
 @end deftypefun
 
 @deftypefun ScmObj Scm_StringJoin (ScmObj @var{strs}, ScmString *@var{delim}, int @var{grammer})
+Scheme's @var{string-join}.  Concatenates a list of strings @var{strs}
+with inserting a delimiter @var{delim} between them.  The @var{grammer}
+argument must be one of the following enums:
+
+@example
+enum {
+    SCM_STRING_JOIN_INFIX,
+    SCM_STRING_JOIN_STRICT_INFIX,
+    SCM_STRING_JOIN_SUFFIX,
+    SCM_STRING_JOIN_PREFIX
+};
+@end example
+
+They correspond to @code{infix}, @code{strict-infix}, @code{suffix},
+and @code{prefix} as defined in @code{srfi-13}'s @code{string-join}.
 @end deftypefun
 
 @subheading Searching
 
-@deftypefun ScmObj Scm_StringSplitByChar (ScmString *@var{str}, ScmChar @var{ch})
+@deftypefun ScmObj Scm_StringScan (ScmString *@var{s1}, ScmString *@var{s2}, int @var{retmode})
+@deftypefunx ScmObj Scm_StringScanChar (ScmString *@var{s1}, ScmChar @var{ch}, int @var{retmode})
+Scheme's @code{string-scan}.
+Search a string @var{s2} or a character @var{ch} within a string @var{s1},
+respectively.  Return value depens on the @var{retmode} argument, as follows:
+@table @code
+@item SCM_STRING_SCAN_INDEX
+Returns an index of the first found instance of @var{s1}/@var{ch},
+or @code{SCM_FALSE} if no instance is found.
+@item SCM_STRING_SCAN_BEFORE
+Returns a substring of @var{s1} between its beginning and just
+before the first found instance of @var{s1}/@var{ch},
+or @code{SCM_FALSE} if no instance is found.
+@item SCM_STRING_SCAN_AFTER
+Returns a substring of @var{s1} between just after the first found instance
+of @var{s1}/@var{ch} and the end of @var{s1},
+or @code{SCM_FALSE} if no instance is found.
+@item SCM_STRING_SCAN_BEFORE2
+Returns two values via @code{Scm_Values()},
+the substring of @var{s1} before the found instance
+and the rest, or two @code{SCM_FALSE}s if no instance found.
+@item SCM_STRING_SCAN_AFTER2
+Returns two values via @code{Scm_Values()},
+the substring of @var{s1} before the end of the
+found instance and the rest, or two @code{SCM_FALSE}s if no instance found.
+@item SCM_STRING_SCAN_BOTH
+Returns two values via @code{Scm_Values()},
+the substring of @var{s1} before the found instance and
+after the found instance, or two @code{SCM_FALSE}s if no instance found.
+@end table
+
+The last three return multiple values on the running Gauche VM.
+See @ref{Calling back to Scheme}, for how to retrieve those values.
 @end deftypefun
 
-@deftypefun ScmObj Scm_StringScan (ScmString *@var{s1}, ScmString *@var{s2}, int @var{retmode})
-@deftypefunx ScmObj Scm_StringScanChar (ScmString *@var{s1}, ScmChar *@var{ch}, int @var{retmode})
+@deftypefun ScmObj Scm_StringSplitByChar (ScmString *@var{str}, ScmChar @var{ch})
+
 @end deftypefun
+
 
 @subheading Miscellaneous utilities
 
@@ -2228,31 +2292,72 @@ If the string is incomplete, -1 is returned.
 
 @subheading Dynamic strings
 
-@deftp {Struct} ScmDStringRec
+Dynamic strings provide a convenient way to construct a string
+of an unknown length.  It is a base of output string port, but
+from C programs using dynamic strings is lightweight than output
+string port (see @ref{Built-in ports}, for string ports).
+It is OK to call dynamic string operations while locking a
+mutex.
+
+@deftp {Datatype} ScmDString
+A structure to keep a string under construction.   It is not a
+Scheme datatype (means: you can't cast it to @code{ScmObj}). 
+You can allocate it on the C stack for efficient opertaion.
 @end deftp
 
+The typical usage of dynamic strings looks like this:
+
+@example
+ScmDString ds;
+ScmObj str;
+
+Scm_DStringInit(&ds);            /* Initialization */
+Scm_DstringPutc(&ds, 'a');       /* Adding content */
+Scm_DstringPutz(&ds, "abc", -1); /* Adding content */
+ ...
+
+str = Scm_DStringGet(&ds, 0);   /* Obtains the result string */
+@end example
+
 @deftypefun void Scm_DStringInit (ScmDString *@var{dstr})
+Initializes a dynamic string object.  A dynamic string object
+must be initialized before used.
 @end deftypefun
 
 @deftypefun int Scm_DStringSize (ScmDString *@var{dstr})
+Returns the size (number of bytes) accumulated in the dynamic string.
 @end deftypefun
 
 @deftypefun ScmObj Scm_DStringGet (ScmDString *@var{dstr}, int @var{flags})
+Extracts the accumulated string as a Scheme string.  The accumulated
+data remains in @var{dstr}.  By default, returned string is mutable,
+and its completeness is determined by its content.  You may pass
+@code{SCM_STRING_IMUUTABLE} and/or @code{SCM_STRING_INCOMPLETE} to
+the @var{flags} argument to force the attributes of the result string.
 @end deftypefun
 
 @deftypefun {const char *} Scm_DStringGetz (ScmDString *@var{dstr})
+Extracts the accumulated string as a @code{NUL}-terminated C string.
+The accumulated data remains in @var{dstr}.
 @end deftypefun
 
 @deftypefun void Scm_DStringPutz (ScmDString *@var{dstr}, const char *@var{str}, int @var{siz})
+Adds C string @var{str} to the dynamic string.  If @var{siz} is negative,
+@var{str} is assumed to be @code{NUL}-terminated.  If @var{siz} is nonnegative,
+it specifies the size of the string (in which case @var{str} may contain
+@code{NUL} character in it.)
 @end deftypefun
 
 @deftypefun void Scm_DStringAdd (ScmDString *@var{dstr}, ScmString *@var{str})
+Adds Scheme string @var{str} to the dynamic string.
 @end deftypefun
 
 @deftypefun void Scm_DStringPutb (ScmDString *@var{dstr}, char @var{byte})
+Adds a single byte @var{byte} to the dynamic string.
 @end deftypefun
 
 @deftypefun void Scm_DStringPutc (ScmDString *@var{dstr}, ScmChar @var{ch})
+Adds a single character @var{ch} to the dynamic string.
 @end deftypefun
 
 
