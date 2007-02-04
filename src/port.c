@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.135 2007-02-04 12:39:59 shirok Exp $
+ *  $Id: port.c,v 1.136 2007-02-04 16:24:32 shirok Exp $
  */
 
 #include <unistd.h>
@@ -974,7 +974,7 @@ ScmObj Scm__GetOutputStringCompat(ScmPort *port)
 }
 
 /* For backward compatibility */
-ScmObj Scm__GetOutputStringCompatUnsafe(ScmPort *port)
+ScmObj Scm__GetOutputStringUnsafeCompat(ScmPort *port)
 {
     return Scm_GetOutputStringUnsafe(port, 0);
 }
