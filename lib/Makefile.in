@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/lib
-#  $Id: Makefile.in,v 1.144 2007-02-05 01:35:03 shirok Exp $
+#  $Id: Makefile.in,v 1.145 2007-02-05 03:41:23 shirok Exp $
 
 .PHONY: all check install uninstall slibcat slibcat-in-place \
 	clean distclean maintainer-clean
@@ -30,7 +30,7 @@ CONFIG_GENERATED = Makefile slib.scm
 SUBDIRS  = gauche gauche/vm gauche/serializer gauche/interactive gauche/mop \
            gauche/package \
 	   srfi-14 srfi-29 \
-           binary dbd dbm math util compat file rfc text www
+           binary dbd dbm math util compat file rfc text www www/cgi
 
 SCMFILES = srfi-0.scm \
        srfi-4.scm srfi-5.scm srfi-7.scm srfi-9.scm srfi-11.scm \
