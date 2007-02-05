@@ -199,9 +199,9 @@ VGhpcyBpcyBhIHRlc3Qgc2VudGVuY2Uu
                    (string #\u3042)))))))))
 
 ;;------------------------------------------------
-(test-section "www.cgi-test")
-(use www.cgi-test)
-(test-module 'www.cgi-test)
+(test-section "www.cgi.test")
+(use www.cgi.test)
+(test-module 'www.cgi.test)
 
 (test* "cgi-test-environment-ref" "remote"
        (cgi-test-environment-ref "REMOTE_HOST"))
