@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: signal.c,v 1.49 2007-01-15 18:14:14 shirok Exp $
+ *  $Id: signal.c,v 1.50 2007-02-10 07:16:41 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -351,7 +351,7 @@ static void sig_handle(int signum)
     if (signalPendingLimit == 0) {
         vm->sigq.sigcounts[signum] = 1;
     } else if (++vm->sigq.sigcounts[signum] >= signalPendingLimit) {
-        Scm_Abort("Received too many signals before processing it.  Exitting for the emergency...\n");
+        Scm_Abort("Received too many signals before processing them.  Exitting for the emergency...\n");
     }
     vm->queueNotEmpty |= SCM_VM_SIGQ_MASK;
 }
