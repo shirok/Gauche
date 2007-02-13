@@ -389,7 +389,7 @@ Supported by the module @code{util.stream}.
 Supported by the module @code{srfi-42}.
 @xref{Eager comprehensions}.
 @c JP
-@item SRFI-42, 几帳面な内包表記
+@item SRFI-42, 先行評価的内包表記
 モジュール@code{srfi-42}でサポートされます。
 @ref{Eager comprehensions}参照。
 @c COMMON
@@ -419,7 +419,7 @@ Built-in.
 Supported as an autoloaded macro.
 @xref{Requiring extensions}.
 @c JP
-@item SRFI-55, require-extension
+@item SRFI-55, requireの拡張
 オートロードマクロとしてサポートされます。
 @ref{Requiring extensions}参照。
 @c COMMON
