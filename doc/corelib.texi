@@ -1097,7 +1097,7 @@ integer @var{from}.
 @c JP
 正確な整数を返します。この整数の各ビットは@var{start}番目のビット(この
 ビットを含む)から@var{end}番目のビット(このビットは含まない)の部分以外
-は@var{n}と同じで、この区間のビットは，正確な数@var{from}の下位
+は@var{n}と同じで、この区間のビットは、正確な数@var{from}の下位
 @code{(@var{end}-@var{start})}ビットのコピーです。
 @c COMMON
 
@@ -4107,7 +4107,7 @@ with a regular expression @var{rx2} substituting for @var{sub2}, and
 so on.  These functions are handy when you want to apply
 multiple substitutions sequentially on a string.
 @c JP
-まず，@code{regexp-replace} あるいは @code{regexp-replace-all} を
+まず、@code{regexp-replace} あるいは @code{regexp-replace-all} を
 正規表現 @var{rx1}、置換 @var{sub1} で @var{string} に適用し、
 その結果にさらに @code{regexp-replace} あるいは
 @code{regexp-replace-all} を正規表現 @var{rx2}、置換 @var{sub2} で
@@ -6963,6 +6963,7 @@ handler is evaluated before the dynamic environment are unwound.
 @end defmac
 
 @defmac unwind-protect body cleanup
+@c EN
 Executes @var{body}, then executes @var{cleanup}, and
 returns the result(s) of @var{body}.  If an exception is raised
 within @var{body}, @var{cleanup} is executed before the
@@ -6972,6 +6973,15 @@ For example, the following code calls @code{start-motor},
 everything goes ok, and if anything goes wrong in @code{start-motor}
 or @code{drill-a-hole}, @code{stop-motor} is still called
 before the exception escapes @code{unwind-protect}.
+@c JP
+@var{body}を実行してから@var{cleanup}を実行し、@var{body}の結果を返す。
+@var{body}内で例外が挙がった場合、その例外が@code{unwind-protect}フォー
+ムを抜ける前に、@var{cleanup}が実行されます。たとえば、以下のコードで
+はなにも問題が起きなければ、@code{start-motor}、@code{drill-a-hole}、
+@code{stop-motor}が、この順で呼ばれます。何か不具合が
+@code{start-motor}あるいは@code{drill-a-hole}で起った場合でも、例外が
+@code{unwind-protect}を抜ける前に@code{stop-motor}が呼ばれます。
+@c COMMON
 
 @example
 (unwind-protect
@@ -6980,12 +6990,18 @@ before the exception escapes @code{unwind-protect}.
   (stop-motor))
 @end example
 
-
+@c EN
 The @var{cleanup} form is evaluated in the same dynamic environment
 as @code{unwind-protect}.
 If an exception is thrown within @var{cleanup}, it will be
 handled outside of the @code{unwind-protect} form.
+@c JP
+@var{cleanup}フォームは@code{unwind-protect}と同じ動的環境で評価されま
+す。例外が@var{cleanup}内で投げられた場合その例外は、
+@code{unwind-protect}フォームの外側で処理されることになります。
+@c COMMON
 
+@c EN
 Although this form looks similar to @code{dynamic-wind}, they
 work at different layers and should not be confused.  
 @code{dynamic-wind} is the bottom-level
@@ -7001,10 +7017,32 @@ by calling a continuation captured outside of @code{unwind-protect},
 @var{cleanup} is not called; because the control may return to
 @code{drill-a-hole} again.  It can happen if user-level thread
 system is implemented by @code{call/cc}, for example.
+@c JP
+このフォームは@code{dynamic-wind}と似ていますが、この2つは動作するレイ
+ヤが違いますので混同しないようにしてください。
+@code{dynamic-wind}は最下位レイヤのもので、現在の例外ハンドラ、現在の入出力
+ポート、パラメータなどを管理するのに用います。
+@code{dynamic-wind}の@var{before}および@var{after}のサンクは
+対応する制御フローの遷移が起きたときに必ず呼ばれます。
+一方、@code{unwind-protect}はGaucheの例外システムの面倒しか見ません。
+@code{unwind-protect}の@var{cleanup}は@var{body}がGaucheの例外を投げた
+ときにのみ呼びだされます。上述の例で、@code{unwind-protect}の外側で
+補足された継続が呼ばれ、制御が@code{drill-a-hole}を抜けると、
+@var{cleanup}は呼ばれません。制御が再び@code{drill-a-hole}に戻る可能性
+があるからです。たとえば、ユーザレベルのスレッドシステムが
+@code{call/cc}で実装されているような場合にこのようなことが起こる可能性
+があります。
+@c COMMON
 
+@c EN
 The name of this form is taken from Common Lisp.  Some Scheme
 systems have similar macros in different names, such as
 @code{try-finally}.
+@c JP
+このフォームの名前はCommon Lispから取りました。同様のマクロに
+@code{try-finally}というような別の名前を使っているSchemeの処理系もあり
+ます。
+@c COMMON
 @end defmac
 
 
@@ -9293,10 +9331,10 @@ notation (@code{#n=}, @code{#n#}).   Gauche's builtin @code{read} recognizes
 the srfi-38 notation, so these are just synonyms to @code{read}; these
 are only provided for srfi-38 compatibility.
 @c JP
-これらの手続きは，SRFI-38 で定義されていて，共有構造を表す記法
-(@code{#n=}, @code{#n#})を認識できます．Gauche の組み込み @code{read} は
-この SRFI-38 の記法を認識します．それゆえ，これらの手続きは，@code{read}
-と同じで，SRFI-38 との互換性のために用意されています．
+これらの手続きは、SRFI-38 で定義されていて、共有構造を表す記法
+(@code{#n=}, @code{#n#})を認識できます。Gauche の組み込み @code{read} は
+この SRFI-38 の記法を認識します。それゆえ、これらの手続きは、@code{read}
+と同じで、SRFI-38 との互換性のために用意されています。
 @c COMMON
 @end defun
 
@@ -9897,8 +9935,8 @@ then writes a newline.
 @c EN
 You can customize how the object is printed out by this method.
 @c JP
-このメソッドをつかって，オブジェクトをどのように印字するかをカスタマイズ
-できます．
+このメソッドをつかって、オブジェクトをどのように印字するかをカスタマイズ
+できます。
 @c COMMON
 @end deffn
 
