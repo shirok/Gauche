@@ -22,6 +22,14 @@
 	  to use builtin tree-map.  This is kept for the backward
 	  compatibility.
 
+2007-02-10  Rui Ueyama  <rui314@gmail.com>
+
+	* src/char.c (charset_print): write a character at once instead of
+	  byte-by-byte.
+
+	* src/write.c: fixed a bug of handling multibyte character,
+	  causing Scm_WriteLimited to raise an error.
+
 2007-02-09  Rui Ueyama  <rui314@gmail.com>
 
 	* test/rfc.scm: Added tests for rfc.html module.

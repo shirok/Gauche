@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.44 2006-04-29 10:14:08 shirok Exp $
+ *  $Id: char.c,v 1.45 2007-02-13 12:08:26 shirok Exp $
  */
 
 #include <ctype.h>
@@ -198,12 +198,7 @@ static void charset_print_ch(ScmPort *out, ScmChar ch)
     if (ch < 0x20 || ch == 0x7f) {
         Scm_Printf(out, "\\x%02x", ch);
     } else {
-        char chbuf[SCM_CHAR_MAX_BYTES];
-        int i;
-        SCM_CHAR_PUT(chbuf, ch);
-        for (i=0; i<SCM_CHAR_NBYTES(ch); i++) {
-            Scm_Printf(out, "%c", chbuf[i]);
-        }
+        Scm_Putc(ch, out);
     }
 }
 

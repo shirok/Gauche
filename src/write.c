@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.65 2007-02-04 12:39:59 shirok Exp $
+ *  $Id: write.c,v 1.66 2007-02-13 12:08:26 shirok Exp $
  */
 
 #include <stdio.h>
@@ -115,16 +115,6 @@ SCM_DEFINE_GENERIC(Scm_GenericWriteObject, write_object_fallback, NULL);
    (SCM_VM_RUNTIME_FLAG_IS_SET(Scm_VM(), SCM_CASE_FOLD)? \
     SCM_WRITE_CASE_FOLD:SCM_WRITE_CASE_NOFOLD)
 
-static inline int outlen(ScmPort *out)
-{
-    SCM_ASSERT(SCM_PORT_TYPE(out) == SCM_PORT_OSTR);
-    if (out->src.ostr.length < 0) {
-        return Scm_DStringSize(&out->src.ostr);
-    } else {
-        return out->src.ostr.length;
-    }
-}
-
 /*
  * Scm_Write - Standard Write.
  */
@@ -180,6 +170,7 @@ void Scm_Write(ScmObj obj, ScmObj p, int mode)
 int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width)
 {
     ScmWriteContext ctx;
+    ScmString *str;
     ScmObj out;
     int nc, sharedp = FALSE;
     
@@ -201,14 +192,14 @@ int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width)
     /* we don't need to lock out, for it is private. */
     sharedp = SCM_WRITE_MODE(&ctx) == SCM_WRITE_SHARED;
     format_write(obj, SCM_PORT(out), &ctx, sharedp);
-    nc = outlen(SCM_PORT(out));
+    str = SCM_STRING(Scm_GetOutputString(SCM_PORT(out), 0));
+    nc = SCM_STRING_BODY_LENGTH(SCM_STRING_BODY(str));
     if (nc > width) {
-        ScmObj sub = Scm_Substring(SCM_STRING(Scm_GetOutputString(SCM_PORT(out), 0)),
-                                   0, width, FALSE);
+        ScmObj sub = Scm_Substring(str, 0, width, FALSE);
         SCM_PUTS(sub, port);    /* this locks port */
         return -1;
     } else {
-        SCM_PUTS(Scm_GetOutputString(SCM_PORT(out), 0), port); /* this locks port */
+        SCM_PUTS(str, port);    /* this locks port */
         return nc;
     }
 }
@@ -220,6 +211,7 @@ int Scm_WriteLimited(ScmObj obj, ScmObj port, int mode, int width)
 int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width)
 {
     ScmObj out;
+    ScmString *str;
     ScmWriteContext ctx;
     int nc;
 
@@ -255,14 +247,14 @@ int Scm_WriteCircular(ScmObj obj, ScmObj port, int mode, int width)
     SCM_PORT(out)->data = SCM_PORT(port)->data;
     /* no need to lock out, for it is private */
     format_write(obj, SCM_PORT(out), &ctx, TRUE);
-    nc = outlen(SCM_PORT(out));
+    str = SCM_STRING(Scm_GetOutputString(SCM_PORT(out),0));
+    nc = SCM_STRING_BODY_LENGTH(SCM_STRING_BODY(str));
     if (nc > width) {
-        ScmObj sub = Scm_Substring(SCM_STRING(Scm_GetOutputString(SCM_PORT(out),0)),
-                                   0, width, FALSE);
-        SCM_PUTS(sub, port); /* this locks port */
+        ScmObj sub = Scm_Substring(str, 0, width, FALSE);
+        SCM_PUTS(sub, port);    /* this locks port */
         return -1;
     } else {
-        SCM_PUTS(Scm_GetOutputString(SCM_PORT(out),0), port); /* this locks port */
+        SCM_PUTS(str, port);    /* this locks port */
         return nc;
     }
 }
@@ -421,7 +413,7 @@ static void write_ss_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     ScmHashTable *ht = NULL;
 
     if (ctx->flags & WRITE_LIMITED) {
-        if (outlen(port) >= ctx->limit) return;
+        if (port->src.ostr.length >= ctx->limit) return;
     }
 
     if (SCM_PAIRP(port->data) && SCM_HASH_TABLE_P(SCM_CDR(port->data))) {
