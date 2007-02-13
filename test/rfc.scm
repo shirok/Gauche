@@ -244,6 +244,7 @@ Content-Length: 4349
 (use rfc.ftp)
 (test-module 'rfc.ftp)
 
+
 ;;--------------------------------------------------------------------
 (test-section "rfc.mime")
 (use rfc.mime)
@@ -410,5 +411,148 @@ Content-Length: 4349
 (test* "uri-parse" '("mailto" #f #f #f "shiro@example.com" #f #f)
        (receive r (uri-parse "mailto:shiro@example.com") r))
 
-(test-end)
+;;--------------------------------------------------------------------
+(test-section "rfc.http")
+(use rfc.http)
+(test-module 'rfc.http)
 
+(use gauche.parameter)
+
+(test* "http-user-agent" "gauche.http/0.1"
+       (and (is-a? http-user-agent <parameter>)
+            (http-user-agent)))
+
+(use gauche.net)
+(use util.list)
+(define *http-port* 6726)
+
+(define (alist-equal? alis1 alis2)
+  (define (%sort alis)
+    (sort alis (lambda (a b) (string<? (car a) (car b)))))
+  (equal? (%sort alis1) (%sort alis2)))
+
+(define %predefined-contents
+  (let1 ht (make-hash-table 'string=?)
+    (hash-table-put! ht "/redirect01"
+                     `("HTTP/1.x 302 Moved Temporarily\n"
+                       ,#`"Location: http://localhost:,|*http-port*|/redirect02\n\n"))
+    (hash-table-put! ht "/redirect11"
+                     '("HTTP/1.x 302 Moved Temporarily\n"
+                       "Location: /redirect12\n\n"))
+    (hash-table-put! ht "/loop1"
+                     '("HTTP/1.x 302 Moved Temporarily\n"
+                       "Location: /loop2\n\n"))
+    (hash-table-put! ht "/loop2"
+                     '("HTTP/1.x 302 Moved Temporarily\n"
+                       "Location: /loop1\n\n"))
+    (hash-table-put! ht "/chunked"
+                     '("HTTP/1.x 200 OK\nTransfer-Encoding: chunked\n\n"
+                       "2\r\nOK\n0\r\n\r\n"))
+    ht))
+
+(define (run-http-server socket)
+  (let loop ()
+    (let* ((client (socket-accept socket))
+           (in  (socket-input-port client))
+           (out (socket-output-port client))
+           (request-line (read-line in)))
+      (rxmatch-if (#/^(\S+) (\S+) HTTP\/1\.1$/ request-line)
+          (#f method request-uri)
+        (let* ((headers (rfc822-header->list in))
+               (bodylen
+                (cond ((assoc-ref headers "content-length")
+                       => (lambda (e) (string->number (car e))))
+                      (else 0)))
+               (body (read-block bodylen in)))
+          (cond
+           ((equal? request-uri "/exit")
+            (sys-exit 0))
+           ((hash-table-get %predefined-contents request-uri #f)
+            => (lambda (contents)
+                 (for-each (cut display <> out) contents)))
+           (else
+            (display "HTTP/1.x 200 OK\nContent-Type: text/plain\n\n" out)
+            (write `(("method" ,method)
+                     ("request-uri" ,request-uri)
+                     ("request-body" ,(string-incomplete->complete body))
+                     ,@headers)
+                   out)))
+          (socket-close client)
+          (loop))
+        (error "malformed request line:" request-line)))))
+
+(receive (pipe-in pipe-out) (sys-pipe)
+  (cond ((zero? (sys-fork))
+         ;; start a HTTP server on localhost:*http-port*
+         (let1 socket (make-server-socket 'inet *http-port* :reuse-addr? #t)
+           (close-input-port pipe-in)
+           (display "ready\n" pipe-out)
+           (close-output-port pipe-out)
+           (run-http-server socket)))
+        (else
+         ;; wait for the server to be ready
+         (close-output-port pipe-out)
+         (read-line pipe-in)
+         (close-input-port pipe-in))))
+
+(test* "http-get" '(("method" "GET")
+                    ("request-uri" "/get")
+                    ("host" "localhost")
+                    ("my-header" "foo")
+                    ("request-body" ""))
+       (receive (code headers body)
+           (http-get #`"localhost:,*http-port*" "/get"
+             :my-header "foo")
+         (and (equal? code "200")
+              (equal? headers '(("content-type" "text/plain")))
+              (read-from-string body)))
+       alist-equal?)
+
+(test* "http-get (redirect)" "/redirect02"
+       (receive (code headers body)
+           (http-get #`"localhost:,*http-port*" "/redirect01")
+         (cond ((assoc-ref (read-from-string body) "request-uri")
+                => car))))
+
+(test* "http-get (redirect)" "/redirect12"
+       (receive (code headers body)
+           (http-get #`"localhost:,*http-port*" "/redirect11")
+         (cond ((assoc-ref (read-from-string body) "request-uri")
+                => car))))
+
+(test* "http-get (loop)" 'ok
+       (guard (e ((<http-error> e) 'ok))
+         (http-get #`"localhost:,*http-port*" "/loop1")
+         'error))
+
+(test* "http-get (chunked body)" "OK"
+       (receive (code headers body)
+           (http-get #`"localhost:,*http-port*" "/chunked")
+         body))
+
+(test* "http-head" #t
+       (receive (code headers body)
+           (http-head #`"localhost:,*http-port*" "/")
+         (and (equal? code "200")
+              (equal? headers '(("content-type" "text/plain")))
+              (not body))))
+
+(test* "http-post" '(("method" "POST")
+                     ("request-uri" "/post")
+                     ("content-length" "4")
+                     ("host" "localhost")
+                     ("request-body" "data"))
+       (receive (code headers body)
+           (http-post #`"localhost:,*http-port*" "/post" "data")
+         (and (equal? code "200")
+              (equal? headers '(("content-type" "text/plain")))
+              (read-from-string body)))
+       alist-equal?)
+
+(test* "<http-error>" #t
+       (guard (e (else (is-a? e <http-error>)))
+         (http-get #`"localhost:,*http-port*" "/exit")))
+
+(sys-waitpid -1)
+
+(test-end)

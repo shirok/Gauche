@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: http.scm,v 1.9 2006-05-28 02:17:31 shirok Exp $
+;;;  $Id: http.scm,v 1.10 2007-02-13 11:44:18 shirok Exp $
 ;;;
 
 ;; HTTP handling routines.
@@ -50,11 +50,18 @@
   (use rfc.uri)
   (use gauche.net)
   (use gauche.parameter)
-  (export http-user-agent
+  (export <http-error>
+          http-user-agent
           http-get http-head http-post
           )
   )
 (select-module rfc.http)
+
+;;==============================================================
+;; Conditions
+;;
+
+(define-condition-type <http-error> <error> #f)
 
 ;;==============================================================
 ;; Global parameters
@@ -104,101 +111,91 @@
 
 (define (with-server server proc)
   (let1 s (server->socket server)
-    (dynamic-wind
-     (lambda () #f)
-     (lambda ()
-       (proc (socket-input-port s) (socket-output-port s)))
-     (lambda () (socket-close s)))))
+    (unwind-protect
+      (proc (socket-input-port s) (socket-output-port s))
+      (socket-close s))))
 
 (define (request-response request server request-uri options)
-  (let* ((sink    (get-keyword* :sink options (open-output-string)))
-         (flusher (get-keyword* :flusher options
-                                (lambda (sink h) (get-output-string sink))))
-         (host    (get-keyword* :host options (server->host server)))
-         (follow  (not (get-keyword  :no-redirect options #f)))
-         (has-content? (not (memq request '(HEAD)))))
-    (if follow
-        (let loop ((history (list (canonical-uri request-uri host)))
-                   (uri request-uri))
-          (receive (code headers body redirect)
-              (with-server server
-                (lambda (in out)
-                  (send-request out request host uri options)
-                  (receive (code headers) (receive-header in)
-                    (cond
-                     ((and (string-prefix? "3" code)
-                           (assoc "location" headers))
-                      => (lambda (loc)
-                           (let1 uri (canonical-uri (cadr loc) host)
-                             (when (or (member uri history)
-                                       (> (length history) 20))
-                               (errorf "redirection is looping via ~a" uri))
-                             (values code headers #f uri))))
-                     (else
-                      (values code headers
-                              (and has-content?
-                                   (receive-body in headers sink flusher))
-                              #f))))))
-            (if redirect
-                (loop (cons redirect history) redirect)
-                (values code headers body))))
-        (with-server server
-          (lambda (in out)
-            (send-request out request host request-uri options)
-            (receive (code headers) (receive-header in)
-              (values code headers
-                      (and has-content?
-                           (receive-body in headers sink flusher))))))
-        )
-    ))
+  (define (%send-request request server host request-uri has-content? options)
+    (with-server
+     server
+     (lambda (in out)
+       (send-request out request host request-uri options)
+       (receive (code headers) (receive-header in)
+         (values code
+                 headers
+                 (and has-content?
+                      (let ((sink    (open-output-string))
+                            (flusher (lambda (sink _) (get-output-string sink))))
+                        (receive-body in headers sink flusher))))))))
+
+  (let-keywords options
+      ((sink    (open-output-string))
+       (flusher (lambda (sink h) (get-output-string sink)))
+       (host    (server->host server))
+       (no-redirect #f)
+       . restopts)
+    (let1 has-content? (not (eq? request 'HEAD))
+      (if no-redirect
+        (%send-request request server host request-uri has-content? options)
+        (let loop ((history (list (values-ref (canonical-uri request-uri host) 0)))
+                   (server server)
+                   (host host)
+                   (request-uri request-uri))
+          (receive (code headers body)
+              (%send-request request server host request-uri has-content? options)
+            (cond ((and (string-prefix? "3" code)
+                        (assoc "location" headers))
+                   => (lambda (loc)
+                        (receive (uri server path*)
+                            (canonical-uri (cadr loc) server)
+                          (when (or (member uri history)
+                                    (> (length history) 20))
+                            (errorf <http-error> "redirection is looping via ~a" uri))
+                          (loop (cons uri history)
+                                server
+                                (server->host server)
+                                path*))))
+                  (else
+                   (values code headers body)))))))))
 
 ;; canonicalize uri
 (define (canonical-uri uri host)
   (let*-values (((scheme specific) (uri-scheme&specific uri))
                 ((h p q f) (uri-decompose-hierarchical specific)))
-    (uri-compose :scheme (or scheme "http")
-                 :authority (or h host)
-                 :path p
-                 :query q
-                 :fragment f)))
-        
+    (let ((scheme (or scheme "http"))
+          (host (or h host)))
+      (values (uri-compose :scheme scheme :host host
+                           :path p :query q :fragment f)
+              (or h host)
+              ;; drop "//"
+              (string-drop (uri-compose :path p :query q :fragment f) 2)))))
+
 ;; send
 (define (send-request out request host uri options)
   (display #`",request ,uri HTTP/1.1\r\n" out)
   (display #`"Host: ,|host|\r\n" out)
   (if (memq request '(POST PUT))
-      ;; for now, we don't support chunked encoding in POST method.
-      (let ((body (get-keyword :request-body options ""))
-            (content-length (get-keyword :content-length options #f)))
-        (send-request-headers (if content-length
-                                  options
-                                  (list* :content-length (string-size body)
-                                         options))
-                              out)
-        (display "\r\n" out)
-        (display body out)
-        (flush out))
-      ;; requests w/o body
-      (begin
-        (send-request-headers options out)
-        (display "\r\n" out))))
+    ;; for now, we don't support chunked encoding in POST method.
+    (let-keywords options ((body :request-body "") . restopts)
+      (send-request-headers (if (get-keyword :content-length restopts #f)
+                              restopts
+                              (list* :content-length (string-size body)
+                                     restopts))
+                            out)
+      (display "\r\n" out)
+      (display body out))
+    ;; requests w/o body
+    (begin
+      (send-request-headers options out)
+      (display "\r\n" out)))
+  (flush out))
 
 (define (send-request-headers options out)
-  ;; options with those keywords are internal-use.  Other options
-  ;; will be sent in part of the header.  NB: host header is sent
-  ;; by send-request, so we exclude it here.
-  (define internal-keywords
-    '(:sink :flusher :no-redirect :host :request-body))
-
   (let loop ((options options))
-    (cond ((null? options))
-          ((null? (cdr options)))
-          ((memv (car options) internal-keywords)
-           (loop (cddr options)))
-          (else
-           (format out "~a: ~a\r\n" (car options) (cadr options))
-           (loop (cddr options)))))
-  )
+    (unless (or (null? options) (null? (cdr options)))
+      (format out "~a: ~a\r\n" (car options) (cadr options))
+      (loop (cddr options)))))
 
 ;; receive
 (define (receive-header remote)
@@ -206,12 +203,12 @@
     (values code (rfc822-header->list remote))))
 
 (define (parse-status-line line)
-  (cond ((eof-object? line) 
-         (error "http reply contains no data"))
+  (cond ((eof-object? line)
+         (error <http-error> "http reply contains no data"))
         ((#/\w+\s+(\d\d\d)\s+(.*)/ line)
          => (lambda (m) (values (m 1) (m 2))))
         (else
-         (error "bad reply from server" line))))
+         (error <http-error> "bad reply from server" line))))
 
 (define (receive-body remote headers sink flusher)
   (cond ((assoc "content-length" headers)
@@ -221,7 +218,7 @@
          => (lambda (p)
               (if (equal? (cadr p) "chunked")
                   (receive-body-chunked remote sink)
-                  (error "unsupported transfer-encoding" (cadr p)))))
+                  (error <http-error> "unsupported transfer-encoding" (cadr p)))))
         (else (copy-port remote sink)))
   (flusher sink headers))
 
@@ -232,7 +229,7 @@
 (define (receive-body-chunked remote sink)
   (let loop ((line (read-line remote)))
     (when (eof-object? line)
-      (error "chunked body ended prematurely"))
+      (error <http-error> "chunked body ended prematurely"))
     (rxmatch-if (#/^([[:xdigit:]]+)/ line) (#f digits)
       (let1 chunk-size (string->number digits 16)
         (if (zero? chunk-size)
@@ -245,12 +242,8 @@
               (read-line remote) ;skip the following CRLF
               (loop (read-line remote)))))
       ;; something wrong
-      (error "bad line in chunked data:" line))
+      (error <http-error> "bad line in chunked data:" line))
     )
   )
 
 (provide "rfc/http")
-
-
-
-

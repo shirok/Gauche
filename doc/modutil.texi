@@ -4915,6 +4915,18 @@ HTTP/1.0のサーバーとはうまく通信できません。
 @c COMMON
 @end deftp
 
+@deftp {Condition} <http-error>
+@clindex http-error
+@c EN
+This type of condition is raised when the server terminates
+connection prematurely or server's response has invalid
+header fields.  Inherits @code{<error>}.
+@c JP
+サーバから接続が切られた場合や、サーバの返したHTTPレスポンスのフォーマットが
+正しくない場合に投げられるコンディションです。@code{<error>}を継承します。
+@c COMMON
+@end deftp
+
 @defun http-get server request-uri &keyword sink flusher no-redirect @dots{}
 @defunx http-head server request-uri &keyword no-redirect @dots{}
 @defunx http-post server request-uri body &keyword sink flusher no-redirect @dots{}
