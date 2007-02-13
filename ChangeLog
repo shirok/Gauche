@@ -30,8 +30,6 @@
 	  of HTTP request is redirected, causing malformed request-line is
 	  sent to a server.
 
-	* src/gauche.h, src/signal.c (Scm_MakeSysSigset): New API.
-
 2007-02-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/www/cgi/test.scm: Renamed www.cgi-test module to www.cgi.test
