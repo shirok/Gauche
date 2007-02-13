@@ -6172,15 +6172,23 @@ the low-level process calls such as @code{sys-wait} or
 
 @deftp {Class} <process-abnormal-exit>
 @clindex process-abnormal-exit
+@c EN
 A condition type mainly used by the process port utility procedures.
 Inherits @code{<error>}.  This type of condition is thrown when
 the high-level process port utilities detect the child proces exitted
 with non-zero status code.
+@c JP
+主にプロセスポートユーティリティ関数で使われるコンディション型。
+@code{<error>}を継承。このコンディション型は高レベルプロセスポートユーティ
+リティが子プロセスが非ゼロのexitステータスでexitしたことを検知したとき
+に投げられます。
+@c COMMON
 
 @defivar {<process-abnormal-exit>} process
-The process object.
+プロセスオブジェクト。
 @end defivar
 
+@c EN
 Note: In Unix terms, exitting a process by calling @code{exit(2)} or 
 returning from @code{main()} is a normal exit, regardless of the
 exit status.  Some commands do use non-zero exit status
@@ -6188,6 +6196,14 @@ to tell the normal result of execution (such as @code{grep(1)}).  However,
 large number of commands uses non-zero exit status to
 indicate that they couldn't carry out the required operation,
 so we treat them as exceptional situations.
+@c JP
+注: Unix用語では，exitステータスにかかわらず，プロセスがcalling
+@code{exit(2)}を呼ぶか，@code{main()}から帰える場合を通常のexitと言い
+ます。コマンドによっては非ゼロのexitステータスで実行結果が通常のであっ
+たことを示すものがあります(@code{grep(1)}など)。しかし，ほとんどのコマ
+ンドでは，非ゼロの exit ステータスは要求された操作が実行できなかったこ
+とを表わします。それゆえ上のような場合を例外的な場合として扱います。
+@c COMMON
 @end deftp
 
 
