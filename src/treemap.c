@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: treemap.c,v 1.1 2007-02-13 06:40:37 shirok Exp $
+ *  $Id: treemap.c,v 1.2 2007-02-13 09:48:14 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -117,7 +117,7 @@ ScmDictEntry *Scm_TreeCoreSearch(ScmTreeCore *tc,
                                  intptr_t key,
                                  ScmDictOp op)
 {
-    (ScmDictEntry*)core_ref(tc, key, (enum TreeOp)op, NULL, NULL);
+    return (ScmDictEntry*)core_ref(tc, key, (enum TreeOp)op, NULL, NULL);
 }
 
 ScmDictEntry *Scm_TreeCoreClosestEntries(ScmTreeCore *tc,

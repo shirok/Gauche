@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.53 2007-01-19 05:42:19 shirok Exp $
+;;;  $Id: compile.scm,v 1.54 2007-02-13 09:48:14 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1172,7 +1172,7 @@
 (define (iform-copy-lvar lvar lv-alist)
   ;; NB: using extra lambda after => is a kludge for the current optimizer
   ;; to work better.  Should be gone later.
-  (cond ((assoc lvar lv-alist) => (lambda (p) (cdr p)))
+  (cond ((assq lvar lv-alist) => (lambda (p) (cdr p)))
         (else lvar)))
 
 ;; An aux proc called during pass 2 to determine free variables of
