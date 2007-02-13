@@ -1,7 +1,7 @@
 ;;;
 ;;; sequence.scm - sequence operations
 ;;;  
-;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: sequence.scm,v 1.5 2007-01-21 14:22:03 rui314159 Exp $
+;;;  $Id: sequence.scm,v 1.6 2007-02-13 06:40:36 shirok Exp $
 ;;;
 
 ;; This module defines an unified way to treat sequence-like objects
@@ -52,11 +52,25 @@
 (define-method referencer ((obj <weak-vector>)) weak-vector-ref)
 (define-method referencer ((obj <string>)) string-ref)
 
-(define-method modifier   ((obj <list>))
+(define-method referencer ((obj <tree-map>))
+  (define (ref o k from-right)
+    (let loop ((i k) (iter (%tree-map-iter o)))
+      (cond ((zero? i) (receive (k v) (iter #f from-right) (cons k v)))
+            (else (iter #f from-right) (loop (- i 1) iter)))))
+  (lambda (o i . opt)
+    (check-arg integer? i)
+    (check-arg exact? i)
+    (let1 siz (tree-map-num-entries o)
+      (cond ((or (< i 0) (<= siz i))
+             (get-optional opt (error "index out of range:" i)))
+            ((< (* i 2) siz) (ref o i #f))
+            (else (ref o (- siz i 1) #t))))))
+
+(define-method modifier ((obj <list>))
   (lambda (o i v) (set-car! (list-tail o i) v)))
-(define-method modifier   ((obj <vector>)) vector-set!)
-(define-method modifier   ((obj <weak-vector>)) weak-vector-set!)
-(define-method modifier   ((obj <string>)) string-set!)
+(define-method modifier ((obj <vector>)) vector-set!)
+(define-method modifier ((obj <weak-vector>)) weak-vector-set!)
+(define-method modifier ((obj <string>)) string-set!)
 
 (define-method modifier   ((obj <sequence>))
   ;; fallback

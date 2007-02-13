@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.483 2007-02-04 12:39:59 shirok Exp $
+ *  $Id: gauche.h,v 1.484 2007-02-13 06:40:37 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -360,6 +360,7 @@ typedef struct ScmFlonumRec    ScmFlonum;
 typedef struct ScmCompnumRec   ScmCompnum;
 typedef struct ScmPortRec      ScmPort;
 typedef struct ScmHashTableRec ScmHashTable;
+typedef struct ScmTreeMapRec   ScmTreeMap;
 typedef struct ScmModuleRec    ScmModule;
 typedef struct ScmSymbolRec    ScmSymbol;
 typedef struct ScmGlocRec      ScmGloc;
@@ -620,8 +621,6 @@ SCM_CLASS_DECL(Scm_ClassClass);
 SCM_CLASS_DECL(Scm_EOFObjectClass);
 SCM_CLASS_DECL(Scm_UndefinedObjectClass);
 SCM_CLASS_DECL(Scm_UnknownClass);
-SCM_CLASS_DECL(Scm_CollectionClass);
-SCM_CLASS_DECL(Scm_SequenceClass);
 SCM_CLASS_DECL(Scm_ObjectClass); /* base of Scheme-defined objects */
 SCM_CLASS_DECL(Scm_ForeignPointerClass);
 
@@ -633,19 +632,13 @@ SCM_CLASS_DECL(Scm_ForeignPointerClass);
 #define SCM_CLASS_EOF_OBJECT       (&Scm_EOFObjectClass)
 #define SCM_CLASS_UNDEFINED_OBJECT (&Scm_UndefinedObjectClass)
 #define SCM_CLASS_UNKNOWN          (&Scm_UnknownClass)
-#define SCM_CLASS_COLLECTION       (&Scm_CollectionClass)
-#define SCM_CLASS_SEQUENCE         (&Scm_SequenceClass)
 #define SCM_CLASS_OBJECT           (&Scm_ObjectClass)
 #define SCM_CLASS_FOREIGN_POINTER  (&Scm_ForeignPointerClass)
 
 SCM_EXTERN ScmClass *Scm_DefaultCPL[];
-SCM_EXTERN ScmClass *Scm_CollectionCPL[];
-SCM_EXTERN ScmClass *Scm_SequenceCPL[];
 SCM_EXTERN ScmClass *Scm_ObjectCPL[];
 
 #define SCM_CLASS_DEFAULT_CPL     (Scm_DefaultCPL)
-#define SCM_CLASS_COLLECTION_CPL  (Scm_CollectionCPL)
-#define SCM_CLASS_SEQUENCE_CPL    (Scm_SequenceCPL)
 #define SCM_CLASS_OBJECT_CPL      (Scm_ObjectCPL)
 
 /* Static definition of classes
@@ -759,6 +752,12 @@ SCM_EXTERN ScmObj Scm_ForeignPointerAttrGet(ScmForeignPointer *fp,
                                             ScmObj key, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_ForeignPointerAttrSet(ScmForeignPointer *fp,
                                             ScmObj key, ScmObj value);
+
+/*--------------------------------------------------------
+ * COLLECTION INTERFACE
+ */
+
+#include <gauche/collection.h>
 
 /*--------------------------------------------------------
  * PAIR AND LIST
@@ -1247,6 +1246,13 @@ SCM_EXTERN unsigned long Scm_HashString(ScmString *str, unsigned long bound);
 SCM_EXTERN ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
 				    ScmHashCmpProc cmpfn,
 				    unsigned int initSize);
+
+
+/*--------------------------------------------------------
+ * TREEMAP
+ */
+
+#include <gauche/treemap.h>
 
 /*--------------------------------------------------------
  * MODULE

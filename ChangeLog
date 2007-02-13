@@ -1,3 +1,22 @@
+2007-02-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/treemap.c, src/gauche/treemap.h, lib/gauche/treeutil.scm:
+	  Added native support of red-black tree, for it is useful to
+	  implement efficient char-set, character attribute map, and
+	  readtable.
+	* src/collection.c, src/gauche/collection.h: Besides <collection>
+	  and <sequence>, added two more abstract classes, <dictionary>
+	  and <ordered-dictionary>.  These files implement some of
+	  common stuff for these classes.
+	* src/hash.c: Now inherits <dictionary> as well.
+	* src/genstub: added <tree-map> as a builtin type.
+	* src/extlib.stub: added some tree-map native cprocs.
+	* src/autoloads.scm: added autoloads for gauche.treeutil.
+
+	* lib/util/rbtree.scm: removed the previous content and changed
+	  to use builtin tree-map.  This is kept for the backward
+	  compatibility.
+
 2007-02-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/www/cgi/test.scm: Renamed www.cgi-test module to www.cgi.test

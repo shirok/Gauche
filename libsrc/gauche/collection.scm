@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: collection.scm,v 1.5 2007-01-21 14:22:02 rui314159 Exp $
+;;;  $Id: collection.scm,v 1.6 2007-02-13 06:40:36 shirok Exp $
 ;;;
 
 ;; Defines generic operations over collection.   A collection is
@@ -92,6 +92,15 @@
             (lambda ()
               (begin0 (cons k v)
                       (set!-values (k v) (iter eof-marker))))))))
+
+(define-method call-with-iterator ((coll <tree-map>) proc . args)
+  (let ((eof-marker (cons #f #f))
+        (iter (%tree-map-iter coll)))
+    (receive (k v) (iter eof-marker #f)
+      (proc (cut eq? k eof-marker)
+            (lambda ()
+              (begin0 (cons k v)
+                      (set!-values (k v) (iter eof-marker #f))))))))
 
 ;; n-ary case aux. proc
 (define (call-with-iterators colls proc)
@@ -166,6 +175,16 @@
               (error "pair required to build a hashtable, but got" item))
             (hash-table-put! h (car item) (cdr item)))
           (lambda () h))))
+
+(define-method call-with-builder ((class <tree-map-meta>) proc . args)
+  (let-keywords* args ((key=? =)
+                       (key<? <))
+    (let1 tree (make-tree-map key=? key<?)
+      (proc (lambda (item)
+              (unless (pair? item)
+                (error "pair required to build a tree-map, but got" item))
+              (tree-map-put! tree (car item) (cdr item)))
+            (lambda () tree)))))
 
 ;; utility.  return minimum size of collections if it's easily known, or #f.
 (define (maybe-minimum-size col more)

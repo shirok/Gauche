@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.272 2007-02-04 12:39:59 shirok Exp $
+;;; $Id: extlib.stub,v 1.273 2007-02-13 06:40:36 shirok Exp $
 ;;;
 
 "
@@ -1232,6 +1232,121 @@
 
 (define-cproc hash-table-stat (hash::<hash-table>)
   (call "Scm_HashTableStat"))
+
+;;
+;; TreeMap
+;;
+
+"static int tree_map_cmp(ScmTreeCore *core, intptr_t x, intptr_t y) 
+ {
+    ScmObj cmp_proc = SCM_OBJ(core->data);
+    ScmObj r = Scm_ApplyRec(cmp_proc, SCM_LIST2(SCM_OBJ(x), SCM_OBJ(y)));
+    SCM_RETURN(SCM_INT_VALUE(r));
+ }"
+
+(define-cproc %make-tree-map (cmp-proc)
+  (expr "Scm_MakeTreeMap(tree_map_cmp, cmp_proc)"))
+
+(define-cproc tree-map-copy (tm::<tree-map>)
+  (call "Scm_CopyTreeMap"))
+
+(define-cproc tree-map? (obj)
+  (call <boolean> "SCM_TREE_MAP_P"))
+
+(define-cproc tree-map-get (tm::<tree-map> key &optional fallback)
+  (body "ScmDictEntry *e = Scm_TreeMapSearch(tm, key, SCM_DICT_GET);"
+        "SCM_RESULT = Scm_DictEntryRef(e, \"tree map\", key, fallback);"))
+
+(define-cproc tree-map-put! (tm::<tree-map> key val)
+  (body <void>
+        "ScmDictEntry *e = Scm_TreeMapSearch(tm, key, SCM_DICT_CREATE);"
+        "SCM_DICT_SET_VALUE(e, val);"))
+
+(define-cproc tree-map-delete! (tm::<tree-map> key)
+  (expr <boolean>
+        "(Scm_TreeMapSearch(tm, key, SCM_DICT_DELETE) != NULL)"))
+
+"static ScmObj tree_map_update_cc(ScmObj result, void **data)
+ {
+   ScmDictEntry *e = (ScmDictEntry*)data[0];
+   SCM_DICT_SET_VALUE(e, result);
+   SCM_RETURN(result);
+ }"
+
+(define-cproc tree-map-update! (tm::<tree-map> key proc &optional fallback)
+  (body "ScmDictEntry *e;"
+        "void *data[1];"
+        "if (SCM_UNBOUNDP(fallback)) {"
+        "  e = Scm_TreeMapSearch(tm, key, SCM_DICT_GET);"
+        "  if (!e) Scm_Error(\"tree map doesn't have an entry for key %S\", key);"
+        "} else {"
+        "  e = Scm_TreeMapSearch(tm, key, SCM_DICT_CREATE);"
+        "  SCM_DICT_DEFAULT_VALUE(e, fallback);"
+        "}"
+        "data[0] = (void*)e;"
+        "Scm_VMPushCC(tree_map_update_cc, data, 1);"
+        "SCM_RESULT = Scm_VMApply1(proc, SCM_DICT_VALUE(e));"))
+
+(define-cproc tree-map-push! (tm::<tree-map> key value)
+  (body <void>
+        "ScmDictEntry *e = Scm_TreeMapSearch(tm, key, SCM_DICT_CREATE);"
+        "ScmObj v = SCM_DICT_DEFAULT_VALUE(e, SCM_NIL);"
+        "SCM_DICT_SET_VALUE(e, Scm_Cons(value, v));"))
+
+(define-cproc tree-map-pop! (tm::<tree-map> key &optional fallback)
+  (body "ScmDictEntry *e = Scm_TreeMapSearch(tm, key, SCM_DICT_GET);"
+        "if (!e) {"
+        "  if (SCM_UNBOUNDP(fallback)) {"
+        "    Scm_Error(\"tree map doesn't have an entry for key %S\", key);"
+        "  }"
+        "  SCM_RESULT = fallback;"
+        "} else if (!SCM_PAIRP(SCM_DICT_VALUE(e))) {"
+        "  if (SCM_UNBOUNDP(fallback)) {"
+        "    Scm_Error(\"tree map value for key %S is not a pair: %S\", key,"
+        "              SCM_DICT_VALUE(e));"
+        "  }"
+        "  SCM_RESULT = fallback;"
+        "} else {"
+        "  SCM_RESULT = SCM_CAR(SCM_DICT_VALUE(e));"
+        "  SCM_DICT_SET_VALUE(e, SCM_CDR(SCM_DICT_VALUE(e)));"
+        "}"))
+
+(define-cproc tree-map-exists? (tm::<tree-map> key)
+  (expr <boolean>
+        "(Scm_TreeMapSearch(tm, key, SCM_DICT_GET) != NULL)"))
+
+(define-cproc tree-map-num-entries (tm::<tree-map>)
+  (expr <int> "Scm_TreeCoreNumEntries(SCM_TREE_MAP_CORE(tm))"))
+
+(define-cproc %tree-map-bound (tm::<tree-map> min::<boolean> pop::<boolean>)
+  (body "ScmTreeCoreBoundOp op = min? SCM_TREE_CORE_MIN:SCM_TREE_CORE_MAX;"
+        "ScmDictEntry *e;"
+        "if (pop) e = Scm_TreeCorePopBound(SCM_TREE_MAP_CORE(tm), op);"
+        "else     e = Scm_TreeCoreGetBound(SCM_TREE_MAP_CORE(tm), op);"
+        "if (e) SCM_RESULT = Scm_Cons(SCM_DICT_KEY(e), SCM_DICT_VALUE(e));"
+        "else   SCM_RESULT = SCM_FALSE;"))
+
+"static ScmObj tree_map_iter(ScmObj *args, int nargs, void *data)
+ {
+   ScmTreeCoreIter *iter = (ScmTreeCoreIter*)data;
+   ScmDictEntry *e;
+   if (SCM_FALSEP(args[1])) e = Scm_TreeCoreIterNext(iter);
+   else                     e = Scm_TreeCoreIterPrev(iter);
+   if (!e) SCM_RETURN(Scm_Values2(args[0], args[0]));
+   else    SCM_RETURN(Scm_Values2(SCM_DICT_KEY(e), SCM_DICT_VALUE(e)));
+ }"
+
+(define-cproc %tree-map-iter (tm::<tree-map>)
+  (body "ScmTreeCoreIter *iter = SCM_NEW(ScmTreeCoreIter);"
+        "Scm_TreeCoreIterInit(iter, SCM_TREE_MAP_CORE(tm), NULL);"
+        "SCM_RESULT = Scm_MakeSubr(tree_map_iter, iter, 2, 0, SCM_MAKE_STR(\"tree-map-iterator\"));"))
+
+(define-cproc %tree-map-check-consistency (tm::<tree-map>)
+  (body "Scm_TreeCoreCheckConsistency(SCM_TREE_MAP_CORE(tm));"
+        "SCM_RESULT = SCM_TRUE;"))
+
+(define-cproc %tree-map-dump (tm::<tree-map>)
+  (body <void> "Scm_TreeMapDump(tm, SCM_CUROUT);"))
 
 ;;
 ;; Modules

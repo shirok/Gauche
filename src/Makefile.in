@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.162 2007-02-04 12:39:58 shirok Exp $
+#  $Id: Makefile.in,v 1.163 2007-02-13 06:40:36 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -105,11 +105,13 @@ INSTALL_HEADERS = gauche.h \
 	../gc/include/gc_pthread_redirects.h
 INSTALL_SUBHEADERS = gauche/config.h                                  \
 	 	     gauche/vm.h gauche/code.h gauche/vminsn.h        \
+		     gauche/collection.h                              \
 	             gauche/string.h                                  \
                      gauche/char_euc_jp.h gauche/char_utf_8.h         \
                      gauche/char_sjis.h gauche/char_none.h            \
 	             gauche/symbol.h gauche/keyword.h gauche/gloc.h   \
                      gauche/number.h gauche/bignum.h gauche/vector.h  \
+	             gauche/treemap.h                                 \
 	             gauche/port.h gauche/system.h                    \
                      gauche/class.h gauche/exception.h                \
                      gauche/builtin-syms.h                            \
@@ -144,8 +146,10 @@ libgauche_LIBRARY = libgauche.$(SOEXT)
 libgauche_OBJECTS = \
         core.$(OBJEXT) vm.$(OBJEXT) compaux.$(OBJEXT) macro.$(OBJEXT) \
 	code.$(OBJEXT) error.$(OBJEXT) class.$(OBJEXT) prof.$(OBJEXT) \
+	collection.$(OBJEXT) \
 	boolean.$(OBJEXT) char.$(OBJEXT) string.$(OBJEXT) list.$(OBJEXT) \
-	port.$(OBJEXT) hash.$(OBJEXT) write.$(OBJEXT) read.$(OBJEXT) \
+	hash.$(OBJEXT) treemap.$(OBJEXT) \
+	port.$(OBJEXT) write.$(OBJEXT) read.$(OBJEXT) \
 	vector.$(OBJEXT) weak.$(OBJEXT) symbol.$(OBJEXT) keyword.$(OBJEXT) \
 	gloc.$(OBJEXT) compare.$(OBJEXT) regexp.$(OBJEXT) signal.$(OBJEXT) \
 	parameter.$(OBJEXT) module.$(OBJEXT) proc.$(OBJEXT) \

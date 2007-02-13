@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.38 2007-01-21 14:22:03 rui314159 Exp $
+;;; $Id: autoloads.scm,v 1.39 2007-02-13 06:40:36 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.38 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.39 $.  DO NOT EDIT */"
    :pre-decl '("#define LIBGAUCHE_BODY")
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
@@ -170,6 +170,13 @@
 
 (autoload gauche.hashutil hash-table hash-table-fold
                           hash-table-for-each hash-table-map)
+
+(autoload gauche.treeutil make-tree-map tree-map-empty?
+                          tree-map-min tree-map-max
+                          tree-map-pop-min! tree-map-pop-max!
+                          tree-map-fold tree-map-fold-right
+                          tree-map-keys tree-map-values
+                          tree-map->alist alist->tree-map)
 
 (autoload gauche.libutil  library-fold library-map library-for-each
                           library-exists? library-has-module?)

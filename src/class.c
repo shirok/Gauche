@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.146 2007-02-04 12:39:58 shirok Exp $
+ *  $Id: class.c,v 1.147 2007-02-13 06:40:36 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -70,19 +70,6 @@ ScmClass *Scm_DefaultCPL[] = {
     NULL
 };
 
-ScmClass *Scm_CollectionCPL[] = {
-    SCM_CLASS_STATIC_PTR(Scm_CollectionClass),
-    SCM_CLASS_STATIC_PTR(Scm_TopClass),
-    NULL
-};
-
-ScmClass *Scm_SequenceCPL[] = {
-    SCM_CLASS_STATIC_PTR(Scm_SequenceClass),
-    SCM_CLASS_STATIC_PTR(Scm_CollectionClass),
-    SCM_CLASS_STATIC_PTR(Scm_TopClass),
-    NULL
-};
-
 ScmClass *Scm_ObjectCPL[] = {
     SCM_CLASS_STATIC_PTR(Scm_ObjectClass),
     SCM_CLASS_STATIC_PTR(Scm_TopClass),
@@ -97,8 +84,6 @@ static ScmClass *Scm_MethodCPL[] = {
 };
 
 SCM_DEFINE_ABSTRACT_CLASS(Scm_TopClass, NULL);
-SCM_DEFINE_ABSTRACT_CLASS(Scm_CollectionClass, SCM_CLASS_DEFAULT_CPL);
-SCM_DEFINE_ABSTRACT_CLASS(Scm_SequenceClass, SCM_CLASS_COLLECTION_CPL);
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_BoolClass, NULL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_CharClass, NULL);
@@ -3003,8 +2988,6 @@ void Scm__InitClass(void)
     BINIT(SCM_CLASS_ACCESSOR_METHOD, "<accessor-method>", accessor_method_slots);
     Scm_AccessorMethodClass.flags |= SCM_CLASS_APPLICABLE;
     BINIT(SCM_CLASS_SLOT_ACCESSOR,"<slot-accessor>", slot_accessor_slots);
-    BINIT(SCM_CLASS_COLLECTION, "<collection>", NULL);
-    BINIT(SCM_CLASS_SEQUENCE,   "<sequence>", NULL);
     BINIT(SCM_CLASS_FOREIGN_POINTER, "<foreign-pointer>", NULL);
 
     /* char.c */
@@ -3072,6 +3055,9 @@ void Scm__InitClass(void)
 
     /* system.c */
     /* initialized in Scm__InitSystem */
+
+    /* treemap.c */
+    CINIT(SCM_CLASS_TREE_MAP,         "<tree-map>");
     
     /* vector.c */
     CINIT(SCM_CLASS_VECTOR,           "<vector>");

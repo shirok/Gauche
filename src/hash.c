@@ -1,7 +1,7 @@
 /*
  * hash.c - hash table implementation
  *
- *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.46 2006-12-08 23:06:09 shirok Exp $
+ *  $Id: hash.c,v 1.47 2007-02-13 06:40:37 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -512,7 +512,7 @@ static ScmHashEntry *general_access(ScmHashTable *table, void *key,
 static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_HashTableClass, hash_print, NULL, NULL, NULL,
-                         SCM_CLASS_COLLECTION_CPL);
+                         SCM_CLASS_DICTIONARY_CPL);
 
 static ScmObj make_hash_table(ScmClass *klass,
                               int type,

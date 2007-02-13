@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/lib
-#  $Id: Makefile.in,v 1.145 2007-02-05 03:41:23 shirok Exp $
+#  $Id: Makefile.in,v 1.146 2007-02-13 06:40:35 shirok Exp $
 
 .PHONY: all check install uninstall slibcat slibcat-in-place \
 	clean distclean maintainer-clean
@@ -39,18 +39,19 @@ SCMFILES = srfi-0.scm \
        srfi-29.scm srfi-29/bundle.scm srfi-29/format.scm \
        srfi-31.scm srfi-37.scm srfi-42.scm srfi-55.scm \
        slib.scm	 \
-       gauche/redefutil.scm gauche/test.scm \
+       gauche/redefutil.scm gauche/test.scm gauche/time.scm \
        gauche/macroutil.scm gauche/stringutil.scm \
-       gauche/condutil.scm \
+       gauche/condutil.scm gauche/portutil.scm \
+       gauche/hashutil.scm gauche/treeutil.scm \
+       gauche/modutil.scm gauche/libutil.scm gauche/sortutil.scm \
+       gauche/fileutil.scm \
        gauche/regexp.scm gauche/process.scm gauche/signal.scm \
        gauche/numerical.scm gauche/let-opt.scm gauche/logical.scm \
        gauche/vm/debugger.scm gauche/vm/insn.scm gauche/vm/profiler.scm \
        gauche/procedure.scm \
        gauche/serializer.scm gauche/serializer/aserializer.scm \
        gauche/parseopt.scm gauche/interactive.scm gauche/interactive/info.scm \
-       gauche/selector.scm gauche/logger.scm gauche/portutil.scm \
-       gauche/time.scm gauche/hashutil.scm gauche/modutil.scm \
-       gauche/libutil.scm gauche/sortutil.scm gauche/fileutil.scm \
+       gauche/selector.scm gauche/logger.scm \
        gauche/common-macros.scm gauche/singleton.scm gauche/validator.scm \
        gauche/version.scm \
        gauche/interpolate.scm gauche/defvalues.scm \

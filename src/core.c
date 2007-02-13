@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.74 2007-02-02 23:11:59 shirok Exp $
+ *  $Id: core.c,v 1.75 2007-02-13 06:40:36 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -125,6 +125,7 @@ void Scm_Init(const char *signature)
     Scm__InitNumber();
     Scm__InitChar();
     Scm__InitClass();
+    Scm__InitCollection();
     Scm__InitExceptions();
     Scm__InitProc();
     Scm__InitPort();
