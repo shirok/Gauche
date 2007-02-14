@@ -56,7 +56,7 @@
   (test* "tree-map-empty?" #f
          (tree-map-empty? tree1))
   (test* "tree-map-empty?" #t
-         (tree-map-empty? (make-tree-map < =)))
+         (tree-map-empty? (make-tree-map = <)))
   (test* "tree-map-empty?" *test-error*
          (tree-map-empty? 'wrong-arg))
   (test* "tree-map-exists?" '(#t #f)
@@ -95,7 +95,7 @@
   (test* "tree-map-min" '(0 . "0") (tree-map-min tree2))
   (test* "tree-map-max" '(2 . "2") (tree-map-max tree2))
   (test* "tree-map-min" *test-error* (tree-map-min 'wrong-arg))
-  (test* "tree-map-min" *test-error* (tree-map-min 'wrong-arg))
+  (test* "tree-map-max" *test-error* (tree-map-max 'wrong-arg))
 
   (test* "tree-map-keys" '(0 1 2)
          (tree-map-keys tree2))

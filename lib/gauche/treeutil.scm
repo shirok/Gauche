@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: treeutil.scm,v 1.1 2007-02-13 06:40:35 shirok Exp $
+;;;  $Id: treeutil.scm,v 1.2 2007-02-14 05:18:51 shirok Exp $
 ;;;
 
 (define-module gauche.treeutil
@@ -88,4 +88,4 @@
 
 
 
-(provide "gauche/hashutil")
+(provide "gauche/treeutil")
