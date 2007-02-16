@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.163 2007-02-13 06:40:36 shirok Exp $
+#  $Id: Makefile.in,v 1.164 2007-02-16 11:14:51 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -253,17 +253,22 @@ newinsn :
 # tests -----------------------------------------------
 TESTFILES = `cat ../test/TESTS`
 
+TESTRECORD = $(top_builddir)/test.record
+
 check : test
 
 test : gosh$(EXEEXT) test-vmstack$(EXEEXT) test-arith$(EXEEXT)
-	@rm -f test.log
+	@rm -f test.log $(TESTRECORD)
 	./test-vmstack >> test.log
 	./test-arith >> test.log
 	@for testfile in $(TESTFILES); do \
+	  GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
 	  ./gosh -ftest -I../test $$testfile >> test.log; \
 	done
-	@./gosh -ftest -e "(define *case-fold* #f)" ../test/symcase.scm >> test.log
-	@./gosh -ftest -fcase-fold -e "(define *case-fold* #t)" ../test/symcase.scm >> test.log
+	@GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
+	 ./gosh -ftest -e "(define *case-fold* #f)" ../test/symcase.scm >> test.log
+	@GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
+	 ./gosh -ftest -fcase-fold -e "(define *case-fold* #t)" ../test/symcase.scm >> test.log
 	@echo "See test.log for details."
 
 test-vmstack$(EXEEXT) : test-vmstack.$(OBJEXT) libgauche.$(SOEXT)

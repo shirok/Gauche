@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.test - test framework
 ;;;  
-;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: test.scm,v 1.21 2007-01-21 14:21:52 rui314159 Exp $
+;;;  $Id: test.scm,v 1.22 2007-02-16 11:14:51 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -64,6 +64,15 @@
 ;; If stdout is redirected to other than tty, all the verbose logs will go
 ;; there, and only a small amount of messages go to stderr.
 ;;
+;; Some environment variables affect the behavior of the tests.
+;;
+;;  GAUCHE_TEST_REPORT_ERROR  If defined, reports stack trace to stderr
+;;         when the test thunk raises an error (even when it is expected).
+;;         Useful for diagnosis of unexpected errors.
+;;
+;;  GAUCHE_TEST_RECORD_FILE   If defined, names a file the test processes
+;;         keep the total statistics.  Test-end accumulates the stats
+;;         into the named file instead of reporting it out immediately.
 
 (define-module gauche.test
   (export test test* test-start test-end test-section
@@ -93,10 +102,45 @@
 (define *test-report-error*
   (sys-getenv "GAUCHE_TEST_REPORT_ERROR"))
 
+(define *test-record-file*
+  (sys-getenv "GAUCHE_TEST_RECORD_FILE"))
+
 (define (test-error? obj) (is-a? obj <test-error>))
 
 ;; List of discrepancies
 (define *discrepancy-list* '())
+
+(define *test-counts* (vector 0 0 0)) ; total/pass/fail
+
+(define (test-count++) 
+  (vector-set! *test-counts* 0 (+ (vector-ref *test-counts* 0) 1)))
+(define (test-pass++)
+  (vector-set! *test-counts* 1 (+ (vector-ref *test-counts* 1) 1)))
+(define (test-fail++)
+  (vector-set! *test-counts* 2 (+ (vector-ref *test-counts* 2) 1)))
+(define (format-summary)
+  (format "Total: ~5d tests, ~5d passed, ~5d failed.\n"
+          (vector-ref *test-counts* 0)
+          (vector-ref *test-counts* 1)
+          (vector-ref *test-counts* 2)))
+(define (read-summary)
+  (when (and (string? *test-record-file*)
+             (file-exists? *test-record-file*))
+    (with-input-from-file *test-record-file*
+      (lambda ()
+        (let ((m (rxmatch #/Total:\s+(\d+)\s+tests,\s+(\d+)\s+passed,\s+(\d+)\s+failed/ (read-line))))
+          (when m
+            (for-each (lambda (i)
+                        (vector-set! *test-counts* i
+                                     (string->number
+                                      (rxmatch-substring m (+ i 1)))))
+                      '(0 1 2))))))))
+(define (write-summary)
+  (when (string? *test-record-file*)
+    (receive (p nam) (sys-mkstemp *test-record-file*)
+      (display (format-summary) p)
+      (close-output-port p)
+      (sys-rename nam *test-record-file*))))
 
 ;; Tests ------------------------------------------------------------
 
@@ -106,13 +150,16 @@
   (let ((cmp (if (pair? compare) (car compare) equal?)))
     (format/ss #t "test ~a, expects ~s ==> " msg expect)
     (flush)
+    (test-count++)
     (let ((r (thunk)))
-      (if (cmp expect r)
-          (format #t "ok\n")
-          (begin
-            (format/ss #t "ERROR: GOT ~S\n" r)
-            (set! *discrepancy-list*
-                  (cons (list msg expect r) *discrepancy-list*))))
+      (cond ((cmp expect r)
+             (format #t "ok\n")
+             (test-pass++))
+            (else
+             (format/ss #t "ERROR: GOT ~S\n" r)
+             (set! *discrepancy-list*
+                   (cons (list msg expect r) *discrepancy-list*))
+             (test-fail++)))
       (flush)
       )))
 
@@ -251,6 +298,7 @@
     (display s (current-error-port))
     (display pad (current-error-port))
     (flush (current-error-port))
+    (read-summary)
     (when (and (sys-isatty (current-error-port))
                (sys-isatty (current-output-port)))
       (newline (current-error-port))))
@@ -267,17 +315,20 @@
         (o (current-output-port)))
     (define (fmt . args)
       (if (and (sys-isatty e) (sys-isatty o))
-          (apply format/ss o args)
-          (begin (apply format/ss e args)
-                 (apply format/ss o args))))
+        (apply format/ss o args)
+        (begin (apply format/ss e args)
+               (apply format/ss o args))))
     
     (if (null? *discrepancy-list*)
-        (fmt "passed.\n")
-        (begin
-          (fmt "failed.\ndiscrepancies found.  Errors are:\n")
-          (for-each (lambda (r)
-                      (apply fmt "test ~a: expects ~s => got ~s\n" r))
-                    (reverse *discrepancy-list*))))
+      (fmt "passed.\n")
+      (begin
+        (fmt "failed.\ndiscrepancies found.  Errors are:\n")
+        (for-each (lambda (r)
+                    (apply fmt "test ~a: expects ~s => got ~s\n" r))
+                  (reverse *discrepancy-list*))))
+
+    (when *test-record-file*
+      (write-summary))
     ))
 
 (provide "gauche/test")

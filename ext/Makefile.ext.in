@@ -1,5 +1,5 @@
 ## Common stuff used in Makefiles of extensions  -*-mode: Makefile-*-
-## $Id: Makefile.ext.in,v 1.27 2007-02-04 12:39:57 shirok Exp $
+## $Id: Makefile.ext.in,v 1.28 2007-02-16 11:14:51 shirok Exp $
 ## 
 
 SHELL       = @SHELL@
@@ -53,6 +53,8 @@ DATA_INSTALL_DIR = @datadir@
 
 CLEANFILES = core *~ test.log test.out $(XCLEANFILES)
 
+TESTRECORD = $(top_builddir)/test.record
+
 .SUFFIXES:
 .SUFFIXES: .S .c .o .obj .s .stub
 
@@ -78,7 +80,7 @@ default : all link
 
 check : all
 	@rm -f test.log
-	$(GOSH) -I. test.scm > test.log
+	GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) $(GOSH) -I. test.scm > test.log
 
 install-check :
 	${bindir}/gosh ./test.scm
