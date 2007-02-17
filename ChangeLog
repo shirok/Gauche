@@ -6,6 +6,8 @@
 	* configure.ac, src/gauche/config.h.in: added checks for uint16_t
 	  and long double.
 	* src/test-arith.c: added tests for 16-bit float support.
+	* ext/binary/binarylib.stub, ext/binary/binary.c, ext/binary/io.scm:
+	  added {read|write}-binary-half-float.
 
 2007-02-16  Shiro Kawai  <shiro@acm.org>
 

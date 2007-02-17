@@ -1,7 +1,7 @@
 /*
  * binaryio.c - Binary I/O routines
  *
- *   Copyright (c) 2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2004-2007 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: binary.c,v 1.5 2006-11-04 09:56:58 shirok Exp $
+ *  $Id: binary.c,v 1.6 2007-02-17 13:03:39 shirok Exp $
  */
 
 #include <gauche.h>
@@ -231,6 +231,14 @@ ScmObj Scm_ReadBinarySint64(ScmObj sport, Endian endian)
     return Scm_MakeInteger64(v.val);
 }
 
+ScmObj Scm_ReadBinaryHalfFloat(ScmObj sport, Endian endian)
+{
+    union { char buf[2]; ScmHalfFloat val; } v;
+    if (getbytes(v.buf, 2, sport) == EOF) return SCM_EOF;
+    SWAP2();
+    return Scm_MakeFlonum(ScmHalfToDouble(v.val));
+}
+
 ScmObj Scm_ReadBinaryFloat(ScmObj sport, Endian endian)
 {
     union { char buf[4]; float val; } v;
@@ -321,6 +329,16 @@ void Scm_WriteBinarySint64(ScmObj sval, ScmObj sport, Endian endian)
     v.val = Scm_GetInteger64Clamp(sval, FALSE, FALSE);
     SWAP8();
     Scm_Putz(v.buf, 8, oport);
+}
+
+void Scm_WriteBinaryHalfFloat(ScmObj sval, ScmObj sport, Endian endian)
+{
+    union { char buf[2]; ScmHalfFloat val; } v;
+    ScmPort *oport;
+    OPORT(oport, sport);
+    v.val = Scm_DoubleToHalf(Scm_GetDouble(sval));
+    SWAP2();
+    Scm_Putz(v.buf, 2, oport);
 }
 
 void Scm_WriteBinaryFloat(ScmObj sval, ScmObj sport, Endian endian)

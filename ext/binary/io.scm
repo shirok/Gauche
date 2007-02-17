@@ -14,7 +14,7 @@
 
 ;; NB: the API will likely to be renamed according to the
 ;; oncoming binary i/o srfi.  Use the current API at your own risk.
-;; $Id: io.scm,v 1.2 2006-01-26 20:15:44 shirok Exp $
+;; $Id: io.scm,v 1.3 2007-02-17 13:03:40 shirok Exp $
 
 (define-module binary.io
   (use gauche.uvector)
@@ -29,7 +29,7 @@
           read-binary-sint32 read-binary-sint64
           read-binary-short  read-binary-ushort
           read-binary-long   read-binary-ulong
-          read-binary-float  read-binary-double
+          read-binary-half-float read-binary-float read-binary-double
           read-ber-integer
           write-binary-uint
           write-binary-uint8 write-binary-uint16
@@ -39,7 +39,7 @@
           write-binary-sint32 write-binary-sint64
           write-binary-short  write-binary-ushort
           write-binary-long   write-binary-ulong
-          write-binary-float  write-binary-double
+          write-binary-half-float write-binary-float  write-binary-double
           write-ber-integer)
   )
 (select-module binary.io)

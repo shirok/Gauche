@@ -1,7 +1,7 @@
 /*
  * binaryio.h - Binary I/O routines
  *
- *   Copyright (c) 2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2004-2007 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: binary.h,v 1.2 2004-11-11 12:14:43 shirok Exp $
+ *  $Id: binary.h,v 1.3 2007-02-17 13:03:39 shirok Exp $
  */
 
 #include <gauche.h>
@@ -57,6 +57,7 @@ extern ScmObj Scm_ReadBinarySint16(ScmObj port, Endian endian);
 extern ScmObj Scm_ReadBinarySint32(ScmObj port, Endian endian);
 extern ScmObj Scm_ReadBinarySint64(ScmObj port, Endian endian);
 
+extern ScmObj Scm_ReadBinaryHalfFloat(ScmObj port, Endian endian);
 extern ScmObj Scm_ReadBinaryFloat(ScmObj port, Endian endian);
 extern ScmObj Scm_ReadBinaryDouble(ScmObj port, Endian endian);
 
@@ -69,6 +70,7 @@ extern void Scm_WriteBinarySint16(ScmObj val, ScmObj port, Endian endian);
 extern void Scm_WriteBinarySint32(ScmObj val, ScmObj port, Endian endian);
 extern void Scm_WriteBinarySint64(ScmObj val, ScmObj port, Endian endian);
 
+extern void Scm_WriteBinaryHalfFloat(ScmObj val, ScmObj port, Endian endian);
 extern void Scm_WriteBinaryFloat(ScmObj val, ScmObj port, Endian endian);
 extern void Scm_WriteBinaryDouble(ScmObj val, ScmObj port, Endian endian);
 

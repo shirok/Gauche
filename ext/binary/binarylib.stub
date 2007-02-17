@@ -1,7 +1,7 @@
 ;;;
 ;;; binaryio.stub - primitive binary i/o interface
 ;;;  
-;;;   Copyright (c) 2004-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2004-2007 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: binarylib.stub,v 1.3 2005-08-01 12:23:33 shirok Exp $
+;;; $Id: binarylib.stub,v 1.4 2007-02-17 13:03:39 shirok Exp $
 ;;;
 
 "#include \"binary.h\"
@@ -135,6 +135,10 @@
                                    (endian::<endian> (c "DEFAULT_ENDIAN")))
   (call <void> "Scm_WriteBinarySint64"))
 
+(define-cproc read-binary-half-float (&optional
+                                      (port #f)
+                                      (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (call "Scm_ReadBinaryHalfFloat"))
 (define-cproc read-binary-float (&optional
                                  (port #f)
                                  (endian::<endian> (c "DEFAULT_ENDIAN")))
@@ -144,6 +148,11 @@
                                   (endian::<endian> (c "DEFAULT_ENDIAN")))
   (call "Scm_ReadBinaryDouble"))
 
+(define-cproc write-binary-half-float (val::<number>
+                                       &optional
+                                       (port #f)
+                                       (endian::<endian> (c "DEFAULT_ENDIAN")))
+  (call <void> "Scm_WriteBinaryHalfFloat"))
 (define-cproc write-binary-float (val::<number>
                                   &optional
                                   (port #f)
