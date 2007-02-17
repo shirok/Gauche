@@ -1,6 +1,6 @@
 /*
  * Test the lowest-level numeric routines.
- * $Id: test-arith.c,v 1.7 2006-06-05 05:11:25 shirok Exp $
+ * $Id: test-arith.c,v 1.8 2007-02-17 12:19:57 shirok Exp $
  */
 
 #include <stdio.h>
@@ -650,6 +650,113 @@ int test_32_64(void)
     test_true("ScmUInt64 oor -2^32+1", oor);
 }
 
+/*=============================================================
+ * Testing 16bit floats
+ */
+
+int test_half(const char *msg, int expect, int val)
+{
+    Scm_Printf(SCM_CUROUT, "testing %s, expects %04x =>", msg, expect);
+    if (expect == val) {
+        Scm_Printf(SCM_CUROUT, "ok\n");
+    } else {
+        Scm_Printf(SCM_CUROUT, "ERROR: got %04x\n", val);
+        errcount++;
+    }
+}
+
+int test_double(const char *msg, double expect, double val)
+{
+    Scm_Printf(SCM_CUROUT, "testing %s, expects %lg =>", msg, expect);
+    if (expect == val) {
+        Scm_Printf(SCM_CUROUT, "ok\n");
+    } else {
+        Scm_Printf(SCM_CUROUT, "ERROR: got %lg\n", val);
+        errcount++;
+    }
+}
+
+void test_f16(void)
+{
+    ScmHalfFloat x;
+    double z;
+
+    TEST_SECTION("half floats");
+    test_double("half->double 0",    0.0,    Scm_HalfToDouble(0));
+    test_double("half->double 1",    1.0,    Scm_HalfToDouble(0x3c00));
+    test_double("half->double -1",   -1.0,   Scm_HalfToDouble(0xbc00));
+    test_double("half->double 1.5",  1.5,    Scm_HalfToDouble(0x3e00));
+    test_double("half->double -1.5", -1.5,   Scm_HalfToDouble(0xbe00));
+    test_double("half->double 0.75", 0.75,   Scm_HalfToDouble(0x3a00));
+    test_double("half->double 0.875",0.875,  Scm_HalfToDouble(0x3b00));
+
+    test_double("half->double all 1", 1.9990234375, Scm_HalfToDouble(0x3fff));
+    test_double("half->double maximum", 65504.0, Scm_HalfToDouble(0x7bff));
+    test_double("half->double normalized min", 6.103515625e-5,
+                Scm_HalfToDouble(0x0400));
+    test_double("half->double denormalized max", 6.097555160522461e-5,
+                Scm_HalfToDouble(0x03ff));
+    test_double("half->double denormalized max-1", 6.091594696044922e-5,
+                Scm_HalfToDouble(0x03fe));
+    test_double("half->double denormalized min", 5.960464477539063e-8,
+                Scm_HalfToDouble(0x0001));
+
+    test_double("half->double inf", 1.0/0.0, Scm_HalfToDouble(0x7c00));
+    test_double("half->double -inf", -1.0/0.0, Scm_HalfToDouble(0xfc00));
+    z = Scm_HalfToDouble(0xffff);
+    test_true("half->double nan", !(z==z));
+    
+
+    test_half("double->half 0",    0,      Scm_DoubleToHalf(0.0));
+    test_half("double->half 1",    0x3c00, Scm_DoubleToHalf(1.0));
+    test_half("double->half -1",   0xbc00, Scm_DoubleToHalf(-1.0));
+    test_half("double->half 1.5",  0x3e00, Scm_DoubleToHalf(1.5));
+    test_half("double->half -1.5", 0xbe00, Scm_DoubleToHalf(-1.5));
+    test_half("double->half 0.75", 0x3a00, Scm_DoubleToHalf(0.75));
+    test_half("double->half 0.875",0x3b00, Scm_DoubleToHalf(0.875));
+    
+    test_half("double->half all 1", 0x3fff, Scm_DoubleToHalf(1.9990234375));
+    test_half("double->half max", 0x7bff, Scm_DoubleToHalf(65504.0));
+    test_half("double->half normalized min", 0x0400,
+              Scm_DoubleToHalf(6.103515625e-5));
+    test_half("double->half denormalized max", 0x03ff,
+              Scm_DoubleToHalf(6.097555160522461e-5));
+    test_half("double->half denormalized max-1", 0x03fe,
+              Scm_DoubleToHalf(6.091594696044922e-5));
+    test_half("double->half denormalized min", 0x0001,
+              Scm_DoubleToHalf(5.960464477539063e-8));
+
+    test_half("double->half inf",  0x7c00, Scm_DoubleToHalf(1.0/0.0));
+    test_half("double->half -inf", 0xfc00, Scm_DoubleToHalf(-1.0/0.0));
+    test_half("double->half nan",  0x7fff, Scm_DoubleToHalf(0.0/0.0));
+
+    test_half("double->half, rounding", 0x4000,
+              Scm_DoubleToHalf(1.999755859375)); /* m=#b1111111111.11 */
+    test_half("double->half, rounding", 0x4000,
+              Scm_DoubleToHalf(1.99951171875));  /* m=#b1111111111.10 */
+    test_half("double->half, rounding", 0x3fff,
+              Scm_DoubleToHalf(1.999267578125)); /* m=#b1111111111.01 */
+    test_half("double->half, rounding", 0x3fff,
+              Scm_DoubleToHalf(1.998779296875)); /* m=#b1111111110.11 */
+    test_half("double->half, rounding", 0x3ffe,
+              Scm_DoubleToHalf(1.99853515625));  /* m=#b1111111110.10 */
+    test_half("double->half, rounding", 0x3ffe,
+              Scm_DoubleToHalf(1.998291015625)); /* m=#b1111111110.01 */
+    test_half("double->half, rounding to overflow", 0x7c00,
+              Scm_DoubleToHalf(65520.0));
+    test_half("double->half, just below overflow", 0x7bff,
+              Scm_DoubleToHalf(65519.99999999999));
+    test_half("double->half, rounding to overflow", 0xfc00,
+              Scm_DoubleToHalf(-65520.0));
+    test_half("double->half, just below overflow", 0xfbff,
+              Scm_DoubleToHalf(-65519.99999999999));
+    test_half("double->half, rounding to normalized", 0x0400,
+              Scm_DoubleToHalf(6.1005353927612305e-5));
+    test_half("double->half, rounding to denormalized min", 0x0001,
+              Scm_DoubleToHalf(2.980232238770209e-8));
+    test_half("double->half, just below above", 0x0000,
+              Scm_DoubleToHalf(2.9802322387695312e-8));
+}
 
 /*=============================================================
  * main
@@ -674,6 +781,8 @@ int main(int argc, char **argv)
     test_smulov();
 
     test_32_64();
+
+    test_f16();
 
     if (errcount) {
         fprintf(stderr, "failed.\n");

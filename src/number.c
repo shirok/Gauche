@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.139 2007-02-04 12:39:59 shirok Exp $
+ *  $Id: number.c,v 1.140 2007-02-17 12:19:55 shirok Exp $
  */
 
 #include <math.h>
@@ -42,6 +42,10 @@
 #include "gauche.h"
 #include "gauche/bignum.h"
 #include "gauche/scmconst.h"
+
+/*================================================================
+ * Some macros
+ */
 
 #ifdef HAVE_SUNMATH_H
 #include "sunmath.h"            /* for isinf() on Solaris */
@@ -92,7 +96,7 @@ extern double rint(double);
 static double roundeven(double);
 #endif
 
-/*
+/*================================================================
  * Classes of Numeric Tower
  */
 
@@ -272,6 +276,103 @@ ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign)
     }
 #endif /*SIZEOF_LONG < 8*/
     return f;
+}
+
+/* Half float support */
+
+double Scm_HalfToDouble(ScmHalfFloat v)
+{
+    int e = SCM_HALF_FLOAT_EXPONENT(v);
+    int m = SCM_HALF_FLOAT_MANTISSA(v);
+    int s = SCM_HALF_FLOAT_SIGN_BIT(v);
+    if (e == 31) {              /* special */
+        if (m == 0) {
+            if (s) return -1.0/0.0;
+            else   return  1.0/0.0;
+        } else {
+            return 0.0/0.0;
+        }
+    }
+    if (e > 0) {                /* normalized */
+        double d = ldexp(1.0 + m/1024.0, e - 15);
+        return s? -d : d;
+    }
+    else {                      /* denormalized */
+        double d = ldexp(m/1024.0, -14);
+        return s? -d : d;
+    }
+}
+
+ScmHalfFloat Scm_DoubleToHalf(double v)
+{
+    union ieee_double dd;
+    int e, mbits;
+    unsigned long m, r;
+    
+    dd.d = v;
+    if (dd.components.exp == 0x7ff) {  /* special */
+        if (
+#if SIZEOF_LONG >= 8
+            dd.components.mant == 0
+#else  /*SIZEOF_LONG < 8*/
+            dd.components.mant0 == 0 && dd.components.mant1 == 0
+#endif /*SIZEOF_LONG < 8*/
+            ) {
+            return dd.components.sign? 0xfc00 : 0x7c00;
+        } else {
+            return 0x7fff;
+        }
+    }
+    e = dd.components.exp - 1023 + 15;
+    if (e >= 31) {              /* overflow */
+        return dd.components.sign? 0xfc00 : 0x7c00;
+    }
+    /* Calculate required mantissa bits.  We need upper 10 bits, unless
+       e < 0, in which case we get denormalized number. */
+    mbits = 10 + ((e <= 0)? e-1 : 0);
+    if (mbits < -1) {           /* underflow (-1 for rounding, see below) */
+        return dd.components.sign? 0x8000 : 0x0000;
+    }
+    if (e < 0) e = 0;
+    /* Take the mantissa bits.  We take one extra bit to perform
+       roudning.  R is used to determine whether lower bits are
+       all 0 or not. */
+#if SIZEOF_LONG >= 8
+    m = dd.components.mant >> (52-mbits-1);
+    r = dd.components.mant & ((1 << (52-mbits-1)) - 1);
+#else  /*SIZEOF_LONG < 8*/
+    m = dd.components.mant0 >> (20-mbits-1);
+    r = (dd.components.mant0 & ((1 << (20-mbits-1)) - 1))|dd.components.mant1;
+#endif /*SIZEOF_LONG < 8*/
+    m += 1<<(mbits+1);          /* recover hidden bit */
+    
+    if (m%2 == 1) {
+        if (r == 0) {
+            /* half point.  we round to even */
+            if (m&2) m += 2;
+        } else {
+            m += 2;
+        }
+    }
+
+    /* drop rounding bits */
+    m >>= 1;
+    if (m >= 0x800) {
+        e += 1;
+        m >>= 1;
+    }
+    if (e == 0 && m >= 0x400) {
+        e += 1;
+        m &= ~0x400;
+    }
+    if (e >= 31) {              /* overflow by rounding */
+        return dd.components.sign? 0xfc00 : 0x7c00;
+    }
+    /* at this point, normalized numbers should get
+       0x400 <= m <= 0x7ff, e > 0,  and denormalized numbers should get
+       0 <= m <= 0x3ff, e == 0.  So we don't need to treat denormalized
+       specially. */
+    return (dd.components.sign? 0x8000 : 0x0000)|(e << 10)|(m & 0x3ff);
 }
 
 /*=====================================================================

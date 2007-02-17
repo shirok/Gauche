@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.91 2007-01-17 19:16:49 shirok Exp $
+dnl $Id: configure.ac,v 1.92 2007-02-17 12:19:52 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.9, shiro@acm.org)
-AC_REVISION($Revision: 1.91 $)
+AC_REVISION($Revision: 1.92 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -253,7 +253,7 @@ AC_STRUCT_TM
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(off_t)
-AC_CHECK_TYPES([int32_t, uint32_t, int64_t, uint64_t])
+AC_CHECK_TYPES([uint16_t, int32_t, uint32_t, int64_t, uint64_t, long double])
 AC_CHECK_TYPES([struct timespec])
 
 if test "$GAUCHE_THREAD_TYPE" = pthreads; then

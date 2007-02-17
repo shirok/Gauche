@@ -1,7 +1,7 @@
 /*
  * number.h - Public API for Scheme numbers
  *
- *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.h,v 1.4 2006-10-07 07:35:46 shirok Exp $
+ *  $Id: number.h,v 1.5 2007-02-17 12:19:59 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -197,6 +197,8 @@ SCM_EXTERN ScmObj Scm_MakeFlonum(double d);
 SCM_EXTERN double Scm_GetDouble(ScmObj obj);
 SCM_EXTERN ScmObj Scm_DecodeFlonum(double d, int *exp, int *sign);
 SCM_EXTERN ScmObj Scm_MakeFlonumToNumber(double d, int exactp);
+SCM_EXTERN double       Scm_HalfToDouble(ScmHalfFloat v);
+SCM_EXTERN ScmHalfFloat Scm_DoubleToHalf(double v);
 
 SCM_EXTERN ScmObj Scm_MakeCompnum(double real, double imag);
 SCM_EXTERN ScmObj Scm_MakeComplex(double real, double imag);

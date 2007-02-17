@@ -260,8 +260,10 @@
 /* Define to 1 if the system has these types. */
 #undef HAVE_INT32_T
 #undef HAVE_INT64_T
+#undef HAVE_UINT16_T
 #undef HAVE_UINT32_T
 #undef HAVE_UINT64_T
+#undef HAVE_LONG_DOUBLE
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H

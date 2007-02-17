@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.164 2007-02-16 11:14:51 shirok Exp $
+#  $Id: Makefile.in,v 1.165 2007-02-17 12:19:55 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -115,7 +115,8 @@ INSTALL_SUBHEADERS = gauche/config.h                                  \
 	             gauche/port.h gauche/system.h                    \
                      gauche/class.h gauche/exception.h                \
                      gauche/builtin-syms.h                            \
-                     gauche/extend.h gauche/int64.h gauche/scmconst.h \
+                     gauche/extend.h gauche/int64.h gauche/float.h    \
+	             gauche/scmconst.h                                \
                      gauche/pthread.h gauche/uthread.h gauche/arch.h  \
 	             gauche/mingw-compat.h
 INSTALL_LIBS = libgauche.$(SOEXT)

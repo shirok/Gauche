@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.484 2007-02-13 06:40:37 shirok Exp $
+ *  $Id: gauche.h,v 1.485 2007-02-17 12:19:55 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -47,6 +47,7 @@
 #include <errno.h>
 #include <gauche/config.h>  /* read config.h _before_ gc.h */
 #include <gauche/int64.h>
+#include <gauche/float.h>
 
 #if defined(LIBGAUCHE_BODY)
 #define GC_DLL    /* for gc.h to handle Win32 crazyness */
