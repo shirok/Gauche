@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: binary.c,v 1.6 2007-02-17 13:03:39 shirok Exp $
+ *  $Id: binary.c,v 1.7 2007-02-17 18:03:39 shirok Exp $
  */
 
 #include <gauche.h>
@@ -236,7 +236,7 @@ ScmObj Scm_ReadBinaryHalfFloat(ScmObj sport, Endian endian)
     union { char buf[2]; ScmHalfFloat val; } v;
     if (getbytes(v.buf, 2, sport) == EOF) return SCM_EOF;
     SWAP2();
-    return Scm_MakeFlonum(ScmHalfToDouble(v.val));
+    return Scm_MakeFlonum(Scm_HalfToDouble(v.val));
 }
 
 ScmObj Scm_ReadBinaryFloat(ScmObj sport, Endian endian)
