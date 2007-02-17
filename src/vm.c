@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.264 2007-01-17 18:19:45 shirok Exp $
+ *  $Id: vm.c,v 1.265 2007-02-17 23:59:24 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -166,7 +166,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->curout = proto? proto->curout : SCM_PORT(Scm_Stdout());
     v->curerr = proto? proto->curerr : SCM_PORT(Scm_Stderr());
 
-    Scm_ParameterTableInit(&(v->parameters), proto);
+    Scm__VMParameterTableInit(&(v->parameters), proto);
 
     v->compilerFlags = proto? proto->compilerFlags : 0;
     v->runtimeFlags = proto? proto->runtimeFlags : 0;

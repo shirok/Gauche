@@ -1,5 +1,11 @@
 2007-02-17  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche/parameter.h, src/parameter.c: Cleaned up Parameter-related
+	  API.  Introduced ScmParameterLoc and Scm_DefinePrimitiveParameter
+	  to make it easier to create and access (builtin) parameters from C.
+	* src/vm.c, src/vm.h, src/gauche.h, src/extlib.stub: Changed
+	  accordingly.
+
 	* src/number.c (Scm_HalfToDouble, Scm_DoubleToHalf): Added conversion
 	  functions for 16-bit float (half).
 	* src/gauche/float.h: added.

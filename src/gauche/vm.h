@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.h,v 1.112 2007-01-10 09:07:10 shirok Exp $
+ *  $Id: vm.h,v 1.113 2007-02-17 23:59:23 shirok Exp $
  */
 
 #ifndef GAUCHE_VM_H
@@ -252,28 +252,6 @@ typedef struct ScmEscapePointRec {
 #define SCM_VM_ESCAPE_ERROR  1
 #define SCM_VM_ESCAPE_CONT   2
 #define SCM_VM_ESCAPE_EXIT   3
-
-/*
- * Parameters
- *
- *  Parameters keep thread-local state.   It is called 'fluids' in some
- *  Scheme implementations.  A thread inherits the parameters from its
- *  creator.   
- */
-
-typedef struct ScmVMParameterTableRec {
-    int numParameters;
-    int numAllocated;
-    ScmObj *vector;
-    int *ids;
-} ScmVMParameterTable;
-
-SCM_EXTERN void Scm_ParameterTableInit(ScmVMParameterTable *table,
-                                       ScmVM *base);
-
-SCM_EXTERN int Scm_MakeParameterSlot(ScmVM *vm, int *newid);
-SCM_EXTERN ScmObj Scm_ParameterRef(ScmVM *vm, int index, int id);
-SCM_EXTERN ScmObj Scm_ParameterSet(ScmVM *vm, int index, int id, ScmObj value);
 
 /*
  * Signal queue

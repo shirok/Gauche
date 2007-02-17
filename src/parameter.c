@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: parameter.c,v 1.6 2004-07-15 23:16:13 shirok Exp $
+ *  $Id: parameter.c,v 1.7 2007-02-17 23:59:24 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -71,8 +71,8 @@ ScmInternalMutex parameter_mutex;
  * thread, base is the current thread (this must be called from the
  * creator thread).
  */
-void Scm_ParameterTableInit(ScmVMParameterTable *table,
-                            ScmVM *base)
+void Scm__VMParameterTableInit(ScmVMParameterTable *table,
+                               ScmVM *base)
 {
     int i;
 
@@ -96,7 +96,7 @@ void Scm_ParameterTableInit(ScmVMParameterTable *table,
 /*
  * Allocate new parameter slot
  */
-int Scm_MakeParameterSlot(ScmVM *vm, int *newid)
+void Scm_MakeParameterSlot(ScmVM *vm, ScmParameterLoc *location)
 {
     ScmVMParameterTable *p = &(vm->parameters);
     if (p->numParameters == p->numAllocated) {
@@ -115,38 +115,77 @@ int Scm_MakeParameterSlot(ScmVM *vm, int *newid)
     }
     p->vector[p->numParameters] = SCM_UNDEFINED;
     SCM_INTERNAL_MUTEX_LOCK(parameter_mutex);
-    p->ids[p->numParameters] = *newid = next_parameter_id++;
+    p->ids[p->numParameters] = location->id = next_parameter_id++;
     SCM_INTERNAL_MUTEX_UNLOCK(parameter_mutex);
-    return p->numParameters++;
+    location->index = p->numParameters++;
 }
 
 /*
  * Accessor & modifier
  */
 
-ScmObj Scm_ParameterRef(ScmVM *vm, int index, int id)
+ScmObj Scm_ParameterRef(ScmVM *vm, const ScmParameterLoc *loc)
 {
     ScmVMParameterTable *p = &(vm->parameters);
-    SCM_ASSERT(index >= 0);
-    if (index >= p->numParameters || p->ids[index] != id) {
+    SCM_ASSERT(loc->index >= 0);
+    if (loc->index >= p->numParameters || p->ids[loc->index] != loc->id) {
         Scm_Error("the thread %S doesn't have parameter (%d:%d)",
-                  vm, index, id);
+                  vm, loc->index, loc->id);
     }
-    SCM_ASSERT(p->vector[index] != NULL);
-    return p->vector[index];
+    SCM_ASSERT(p->vector[loc->index] != NULL);
+    return p->vector[loc->index];
 }
 
-ScmObj Scm_ParameterSet(ScmVM *vm, int index, int id, ScmObj value)
+ScmObj Scm_ParameterSet(ScmVM *vm, const ScmParameterLoc *loc, ScmObj value)
 {
     ScmVMParameterTable *p = &(vm->parameters);
-    SCM_ASSERT(index >= 0);
-    if (index >= p->numParameters || p->ids[index] != id) {
+    SCM_ASSERT(loc->index >= 0);
+    if (loc->index >= p->numParameters || p->ids[loc->index] != loc->id) {
         Scm_Error("the thread %S doesn't have parameter (%d:%d)",
-                  vm, index, id);
+                  vm, loc->index, loc->id);
     }
-    p->vector[index] = value;
+    p->vector[loc->index] = value;
     return value;
 }
+
+struct prim_data {
+    const char *name;
+    ScmParameterLoc loc;
+};
+
+static ScmObj parameter_handler(ScmObj *args, int argc, void *data)
+{
+    struct prim_data *pd = (struct prim_data*)data;
+    ScmVM *vm = Scm_VM();
+    switch (argc) {
+    case 0:
+        return Scm_ParameterRef(vm, &pd->loc);
+    case1:
+        return Scm_ParameterSet(vm, &pd->loc, args[0]);
+    default:
+        Scm_Error("Bad number of arguments for parameter %s", pd->name);
+        return SCM_UNDEFINED;   /* dummy */
+    }
+}
+
+void Scm_DefinePrimitiveParameter(ScmModule *mod,
+                                  const char *name,
+                                  ScmObj initval,
+                                  ScmParameterLoc *location)
+{
+    struct prim_data *pd = SCM_NEW(struct prim_data);
+    ScmVM *vm = Scm_VM();
+    ScmObj sname = SCM_MAKE_STR_IMMUTABLE(name);
+    ScmObj subr;
+    
+    pd->name = name;
+    Scm_MakeParameterSlot(vm, &pd->loc);
+    Scm_ParameterSet(vm, &pd->loc, initval);
+    subr = Scm_MakeSubr(parameter_handler, pd, 0, 1, sname);
+    Scm_Define(mod, SCM_SYMBOL(Scm_Intern(SCM_STRING(sname))), subr);
+    *location = pd->loc;
+}
+
 
 /*
  * Initialization

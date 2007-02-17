@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.485 2007-02-17 12:19:55 shirok Exp $
+ *  $Id: gauche.h,v 1.486 2007-02-17 23:59:24 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -388,6 +388,7 @@ typedef ScmObj ScmSubrProc(ScmObj *, int, void*);
 
 /* Detailed definitions are in vm.h.  Here I expose external interface */
 
+#include <gauche/parameter.h>
 #include <gauche/vm.h>
 
 #define SCM_VM(obj)          ((ScmVM *)(obj))
