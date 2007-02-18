@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: parameter.c,v 1.7 2007-02-17 23:59:24 shirok Exp $
+ *  $Id: parameter.c,v 1.8 2007-02-18 11:52:15 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -157,12 +157,15 @@ static ScmObj parameter_handler(ScmObj *args, int argc, void *data)
 {
     struct prim_data *pd = (struct prim_data*)data;
     ScmVM *vm = Scm_VM();
-    switch (argc) {
-    case 0:
+    SCM_ASSERT(argc == 1);
+    if (SCM_NULLP(args[0])) {
         return Scm_ParameterRef(vm, &pd->loc);
-    case1:
-        return Scm_ParameterSet(vm, &pd->loc, args[0]);
-    default:
+    }
+    SCM_ASSERT(SCM_PAIRP(args[0]));
+    if (SCM_NULLP(SCM_CDR(args[0]))) {
+        return Scm_ParameterSet(vm, &pd->loc, SCM_CAR(args[0]));
+    }
+    else {
         Scm_Error("Bad number of arguments for parameter %s", pd->name);
         return SCM_UNDEFINED;   /* dummy */
     }
