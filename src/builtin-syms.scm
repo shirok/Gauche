@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates builtin symbols
 ;;;
-;;; $Id: builtin-syms.scm,v 1.10 2006-03-10 07:28:16 shirok Exp $
+;;; $Id: builtin-syms.scm,v 1.11 2007-02-18 20:47:07 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (define *unit*
   (make <cgen-unit>
     :name "builtin-syms"
-    :preamble "/* Generated from builtin-syms.scm $Revision: 1.10 $.  DO NOT EDIT */"
+    :preamble "/* Generated from builtin-syms.scm $Revision: 1.11 $.  DO NOT EDIT */"
     :pre-decl "#define LIBGAUCHE_BODY"
     :c-file "builtin-syms.c"
     :h-file "gauche/builtin-syms.h"
@@ -134,6 +134,7 @@
     (string-interpolate        SCM_SYM_STRING_INTERPOLATE)
     (big-endian                SCM_SYM_BIG_ENDIAN)    ;; for binary.io, uvector
     (little-endian             SCM_SYM_LITTLE_ENDIAN) ;; ditto
+    (arm-little-endian         SCM_SYM_ARM_LITTLE_ENDIAN) ;; ditto
     (%internal-eval            SCM_SYM_INTERNAL_EVAL)
     (%internal-apply           SCM_SYM_INTERNAL_APPLY)
     (%eval-before              SCM_SYM_EVAL_BEFORE)

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.141 2007-02-18 11:53:46 shirok Exp $
+ *  $Id: number.c,v 1.142 2007-02-18 20:47:07 shirok Exp $
  */
 
 #include <math.h>
@@ -747,10 +747,18 @@ name(ScmObj obj, int clamp, int *oor)                           \
         n = (long)SCM_FLONUM_VALUE(obj);                        \
     } else if (SCM_RATNUMP(obj)) {                              \
         n = (long)Scm_GetDouble(obj);                           \
+    } else if (SCM_BIGNUMP(obj)) {                              \
+        if (Scm_Sign(obj) > 0) {                                \
+            if (clamp & SCM_CLAMP_HI) return upper;             \
+            else goto err;                                      \
+        } else {                                                \
+            if (clamp & SCM_CLAMP_LO) return lower;             \
+            else goto err;                                      \
+        }                                                       \
     } else {                                                    \
         goto err;                                               \
     }                                                           \
-    if (n >= upper) {                                           \
+    if (n > upper) {                                            \
         if (clamp & SCM_CLAMP_HI) return upper;                 \
         else goto err;                                          \
     }                                                           \
@@ -764,10 +772,10 @@ name(ScmObj obj, int clamp, int *oor)                           \
     return 0;                                                   \
 }
 
-SMALL_INT_XTRACT(int   Scm_GetInteger8Clamp, 128, -128)
-SMALL_INT_XTRACT(u_int Scm_GetIntegerU8Clamp, 256, 0)
-SMALL_INT_XTRACT(int   Scm_GetInteger16Clamp, 32768, -32768)
-SMALL_INT_XTRACT(u_int Scm_GetIntegerU16Clamp, 65536, 0)
+SMALL_INT_XTRACT(int   Scm_GetInteger8Clamp, 127, -128)
+SMALL_INT_XTRACT(u_int Scm_GetIntegerU8Clamp, 255, 0)
+SMALL_INT_XTRACT(int   Scm_GetInteger16Clamp, 32767, -32768)
+SMALL_INT_XTRACT(u_int Scm_GetIntegerU16Clamp, 65535, 0)
 
 
 /* 32bit integer specific */
