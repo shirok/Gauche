@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.140 2007-02-17 12:19:55 shirok Exp $
+ *  $Id: number.c,v 1.141 2007-02-18 11:53:46 shirok Exp $
  */
 
 #include <math.h>
@@ -650,6 +650,15 @@ ScmObj Scm_MakeIntegerU(u_long i)
     else return Scm_MakeBignumFromUI(i);
 }
 
+static void range_error(ScmObj obj, int clamp, int *oor)
+{
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) {
+        *oor = TRUE;
+    } else {
+        Scm_Error("argument out of range: %S", obj);
+    }
+}
+
 /* Convert scheme integer to C integer */
 long Scm_GetIntegerClamp(ScmObj obj, int clamp, int *oor)
 {
@@ -681,11 +690,7 @@ long Scm_GetIntegerClamp(ScmObj obj, int clamp, int *oor)
     }
     return (long)v;
   err:
-    if (clamp == SCM_CLAMP_NONE && oor != NULL) {
-        *oor = TRUE;
-    } else {
-        Scm_Error("argument out of range: %S", obj);
-    }
+    range_error(obj, clamp, oor);
     return 0;
 }
 
@@ -726,13 +731,44 @@ u_long Scm_GetIntegerUClamp(ScmObj obj, int clamp, int *oor)
     }
     return (u_long)v;
   err:
-    if (clamp == SCM_CLAMP_NONE && oor != NULL) {
-        *oor = TRUE;
-    } else {
-        Scm_Error("argument out of range: %S", obj);
-    }
+    range_error(obj, clamp, oor);
     return 0;
 }
+
+/* 8- and 16-bit integer extraction with range check */
+#define SMALL_INT_XTRACT(name, upper, lower)                    \
+name(ScmObj obj, int clamp, int *oor)                           \
+{                                                               \
+    long n = 0;                                                 \
+    if (clamp == SCM_CLAMP_NONE && oor != NULL) *oor = FALSE;   \
+    if (SCM_INTP(obj)) {                                        \
+        n = SCM_INT_VALUE(obj);                                 \
+    } else if (SCM_FLONUMP(obj)) {                              \
+        n = (long)SCM_FLONUM_VALUE(obj);                        \
+    } else if (SCM_RATNUMP(obj)) {                              \
+        n = (long)Scm_GetDouble(obj);                           \
+    } else {                                                    \
+        goto err;                                               \
+    }                                                           \
+    if (n >= upper) {                                           \
+        if (clamp & SCM_CLAMP_HI) return upper;                 \
+        else goto err;                                          \
+    }                                                           \
+    if (n < lower) {                                            \
+        if (clamp & SCM_CLAMP_LO) return lower;                 \
+        else goto err;                                          \
+    }                                                           \
+    return n;                                                   \
+  err:                                                          \
+    range_error(obj, clamp, oor);                               \
+    return 0;                                                   \
+}
+
+SMALL_INT_XTRACT(int   Scm_GetInteger8Clamp, 128, -128)
+SMALL_INT_XTRACT(u_int Scm_GetIntegerU8Clamp, 256, 0)
+SMALL_INT_XTRACT(int   Scm_GetInteger16Clamp, 32768, -32768)
+SMALL_INT_XTRACT(u_int Scm_GetIntegerU16Clamp, 65536, 0)
+
 
 /* 32bit integer specific */
 ScmInt32 Scm_GetInteger32Clamp(ScmObj obj, int clamp, int *oor)
@@ -768,11 +804,7 @@ ScmInt32 Scm_GetInteger32Clamp(ScmObj obj, int clamp, int *oor)
     }
     /*TODO: flonum and ratnum! */
   err:
-    if (clamp == SCM_CLAMP_NONE && oor != NULL) {
-        *oor = TRUE;
-    } else {
-        Scm_Error("argument out of range: %S", obj);
-    }
+    range_error(obj, clamp, oor);
     return 0;
 #endif /* SIZEOF_LONG >= 8 */
 }
@@ -804,11 +836,7 @@ ScmUInt32 Scm_GetIntegerU32Clamp(ScmObj obj, int clamp, int *oor)
         }
     }
   err:
-    if (clamp == SCM_CLAMP_NONE && oor != NULL) {
-        *oor = TRUE;
-    } else {
-        Scm_Error("argument out of range: %S", obj);
-    }
+    range_error(obj, clamp, oor);
     return 0;
 #endif /* SIZEOF_LONG >= 8 */
 }
@@ -904,11 +932,7 @@ ScmInt64 Scm_GetInteger64Clamp(ScmObj obj, int clamp, int *oor)
     }
 #endif /*!SCM_EMULATE_INT64*/
   err:
-    if (clamp == SCM_CLAMP_NONE && oor != NULL) {
-        *oor = TRUE;
-    } else {
-        Scm_Error("argument out of range: %S", obj);
-    }
+    range_error(obj, clamp, oor);
     return r;
 }
                                
@@ -975,11 +999,7 @@ ScmUInt64 Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor)
     }
 #endif
   err:
-    if (clamp == SCM_CLAMP_NONE && oor != NULL) {
-        *oor = TRUE;
-    } else {
-        Scm_Error("argument out of range: %S", obj);
-    }
+    range_error(obj, clamp, oor);
     return r;
 }
                                

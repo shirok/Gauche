@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.h,v 1.5 2007-02-17 12:19:59 shirok Exp $
+ *  $Id: number.h,v 1.6 2007-02-18 11:53:46 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -167,6 +167,10 @@ SCM_EXTERN u_long Scm_GetIntegerUClamp(ScmObj obj, int clamp, int *oor);
 #define Scm_GetInteger(x)  Scm_GetIntegerClamp(x, SCM_CLAMP_BOTH, NULL)
 #define Scm_GetIntegerU(x) Scm_GetIntegerUClamp(x, SCM_CLAMP_BOTH, NULL)
 
+SCM_EXTERN int    Scm_GetInteger8Clamp(ScmObj obj, int clamp, int *oor);
+SCM_EXTERN u_int  Scm_GetIntegerU8Clamp(ScmObj obj, int clamp, int *oor);
+SCM_EXTERN int    Scm_GetInteger16Clamp(ScmObj obj, int clamp, int *oor);
+SCM_EXTERN u_int  Scm_GetIntegerU16Clamp(ScmObj obj, int clamp, int *oor);
 SCM_EXTERN ScmInt32  Scm_GetInteger32Clamp(ScmObj obj, int clamp, int *oor);
 SCM_EXTERN ScmUInt32 Scm_GetIntegerU32Clamp(ScmObj obj, int clamp, int *oor);
 
