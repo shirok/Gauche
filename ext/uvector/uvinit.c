@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvinit.c,v 1.11 2006-11-04 09:56:59 shirok Exp $
+ *  $Id: uvinit.c,v 1.12 2007-02-19 03:04:31 shirok Exp $
  */
 
 #include <gauche.h>
@@ -58,6 +58,7 @@ static ScmObj read_uvector(ScmPort *port, const char *tag,
     else if (strcmp(tag, "u32") == 0) uv = Scm_ListToU32Vector(list, 0);
     else if (strcmp(tag, "s64") == 0) uv = Scm_ListToS64Vector(list, 0);
     else if (strcmp(tag, "u64") == 0) uv = Scm_ListToU64Vector(list, 0);
+    else if (strcmp(tag, "f16") == 0) uv = Scm_ListToF16Vector(list, 0);
     else if (strcmp(tag, "f32") == 0) uv = Scm_ListToF32Vector(list, 0);
     else if (strcmp(tag, "f64") == 0) uv = Scm_ListToF64Vector(list, 0);
     else Scm_Error("invalid unform vector tag: %s", tag);
@@ -91,6 +92,7 @@ void Scm_Init_libgauche_uvector(void)
     Scm_InitStaticClassWithMeta(&Scm_U32VectorClass, "<u32vector>", m, NULL, SCM_NIL, NULL, 0);
     Scm_InitStaticClassWithMeta(&Scm_S64VectorClass, "<s64vector>", m, NULL, SCM_NIL, NULL, 0);
     Scm_InitStaticClassWithMeta(&Scm_U64VectorClass, "<u64vector>", m, NULL, SCM_NIL, NULL, 0);
+    Scm_InitStaticClassWithMeta(&Scm_F16VectorClass, "<f16vector>", m, NULL, SCM_NIL, NULL, 0);
     Scm_InitStaticClassWithMeta(&Scm_F32VectorClass, "<f32vector>", m, NULL, SCM_NIL, NULL, 0);
     Scm_InitStaticClassWithMeta(&Scm_F64VectorClass, "<f64vector>", m, NULL, SCM_NIL, NULL, 0);
 

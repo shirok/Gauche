@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.89 2007-02-04 12:39:59 shirok Exp $
+ *  $Id: read.c,v 1.90 2007-02-19 03:04:31 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1115,13 +1115,14 @@ static ScmObj maybe_uvector(ScmPort *port, char ch, ScmReadContext *ctx)
 
     c1 = Scm_GetcUnsafe(port);
     if (ch == 'f') {
-        if (c1 != '3' && c1 != '6') {
+        if (c1 != '1' && c1 != '3' && c1 != '6') {
             Scm_UngetcUnsafe(c1, port);
             return SCM_FALSE;
         }
         c2 = Scm_GetcUnsafe(port);
         if (c1 == '3' && c2 == '2') tag = "f32";
         else if (c1 == '6' && c2 == '4') tag = "f64";
+        else if (c1 == '1' && c2 == '6') tag = "f16";
     } else {
         if (c1 == '8') tag = (ch == 's')? "s8" : "u8";
         else if (c1 == '1') {

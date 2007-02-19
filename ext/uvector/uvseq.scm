@@ -1,7 +1,7 @@
 ;;;
 ;;; uvseq - sequence framework implementation 
 ;;;  
-;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: uvseq.scm,v 1.2 2007-01-21 14:21:49 rui314159 Exp $
+;;;  $Id: uvseq.scm,v 1.3 2007-02-19 03:04:31 shirok Exp $
 ;;;
 
 (select-module gauche.uvector)
@@ -96,6 +96,7 @@
 (%define-srfi-4-collection-interface u32)
 (%define-srfi-4-collection-interface s64)
 (%define-srfi-4-collection-interface u64)
+(%define-srfi-4-collection-interface f16)
 (%define-srfi-4-collection-interface f32)
 (%define-srfi-4-collection-interface f64)
 

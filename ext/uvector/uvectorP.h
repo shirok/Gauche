@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvectorP.h,v 1.23 2006-11-04 09:56:59 shirok Exp $
+ *  $Id: uvectorP.h,v 1.24 2007-02-19 03:04:31 shirok Exp $
  */
 
 #ifndef GAUCHE_UVECTOR_P_H
@@ -200,43 +200,5 @@ static inline ScmUInt64 range_u64lo(ScmUInt64 val, int clamp)
     SCM_SET_INT64_ZERO(val);
     return val;
 }
-
-/*
- * boxing, unboxing
- */
-static inline signed char s8unbox(ScmObj obj, int clamp)
-{
-    long val;
-    if (!SCM_INTP(obj)) val = Scm_GetInteger(obj); /* clamped to long */
-    else                val = SCM_INT_VALUE(obj);
-    return clamp_s8(val, clamp);
-}
-
-static inline unsigned char u8unbox(ScmObj obj, int clamp)
-{
-    long val;
-    if (!SCM_INTP(obj)) val = Scm_GetInteger(obj); /* clamped to long */
-    else                val = SCM_INT_VALUE(obj);
-    return clamp_u8(val, clamp);
-}
-
-static inline short s16unbox(ScmObj obj, int clamp)
-{
-    long val;
-    if (!SCM_INTP(obj)) val = Scm_GetInteger(obj); /* clamped to long */
-    else                val = SCM_INT_VALUE(obj);
-    return clamp_s16(val, clamp);
-    return val;
-}
-
-static inline unsigned short u16unbox(ScmObj obj, int clamp)
-{
-    long val;
-    if (!SCM_INTP(obj)) val = Scm_GetInteger(obj); /* clamped to long */
-    else                val = SCM_INT_VALUE(obj);
-    return clamp_u16(val, clamp);
-}
-
-
 
 #endif /* GAUCHE_UVECTOR_P_H */

@@ -1,5 +1,8 @@
 2007-02-18  Shiro Kawai  <shiro@acm.org>
 
+	* ext/uvector/*, src/read.c: added f16vector support.  changed
+	  {s,u}{8,16} unbox routine to use the new conversion API below.
+
 	* src/gauche/number.h, src/number.c: Introduced ScmObj -> C integer
 	  conversion routines for u8, s8, u16, and s16.
 

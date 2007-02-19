@@ -6,7 +6,7 @@
 /*
  * uvector.c.tmpl - uniform vector support code template
  *
- *   Copyright (c) 1999-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 1999-2007 Shiro Kawai, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -35,7 +35,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvector.c.tmpl,v 1.9 2006-11-04 10:04:56 shirok Exp $
+ *  $Id: uvector.c.tmpl,v 1.10 2007-02-19 03:04:31 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -72,8 +72,9 @@ static int uvector_index(ScmClass *klass)
     if (SCM_EQ(klass, SCM_CLASS_U32VECTOR)) return 5;
     if (SCM_EQ(klass, SCM_CLASS_S64VECTOR)) return 6;
     if (SCM_EQ(klass, SCM_CLASS_U64VECTOR)) return 7;
-    if (SCM_EQ(klass, SCM_CLASS_F32VECTOR)) return 8;
-    if (SCM_EQ(klass, SCM_CLASS_F64VECTOR)) return 9;
+    if (SCM_EQ(klass, SCM_CLASS_F16VECTOR)) return 8;
+    if (SCM_EQ(klass, SCM_CLASS_F32VECTOR)) return 9;
+    if (SCM_EQ(klass, SCM_CLASS_F64VECTOR)) return 10;
     else return -1;
 }
 
@@ -81,7 +82,7 @@ static int uvector_index(ScmClass *klass)
 int Scm_UVectorElementSize(ScmClass *klass)
 {
     static int sizes[] = { 1, 1, 2, 2, 4, 4, 8, 8,
-                           sizeof(float), sizeof(double) };
+                           2, sizeof(float), sizeof(double) };
     int ind = uvector_index(klass);
     if (ind >= 0) return sizes[ind];
     return -1;
@@ -737,6 +738,16 @@ static inline ScmUInt64 u64g_mul(ScmUInt64 x, ScmUInt64 y, int clamp)
 #endif
 }
 
+#define f16f16_add(x, y, clamp)   (x+y)
+#define f16f16_sub(x, y, clamp)   (x-y)
+#define f16f16_mul(x, y, clamp)   (x*y)
+#define f16f16_div(x, y, clamp)   (x/y)
+
+#define f16g_add(x, y, clamp)     (x+y)
+#define f16g_sub(x, y, clamp)     (x-y)
+#define f16g_mul(x, y, clamp)     (x*y)
+#define f16g_div(x, y, clamp)     (x/y)
+
 #define f32f32_add(x, y, clamp)   (x+y)
 #define f32f32_sub(x, y, clamp)   (x-y)
 #define f32f32_mul(x, y, clamp)   (x*y)
@@ -786,8 +797,9 @@ static inline ScmUInt64 u64num(ScmObj x, int *oor)
     return Scm_GetIntegerU64Clamp(x, SCM_CLAMP_NONE, oor);
 }
 
-#define f32num(x, oor)           ((*oor = FALSE),((float)Scm_GetDouble(x)))
-#define f64num(x, oor)           ((*oor = FALSE), Scm_GetDouble(x))
+#define f16num(x, oor) ((*oor = FALSE), Scm_GetDouble(x))
+#define f32num(x, oor) ((*oor = FALSE),((float)Scm_GetDouble(x)))
+#define f64num(x, oor) ((*oor = FALSE), Scm_GetDouble(x))
 ///))
 
 ///(define *tmpl-numop* '(
@@ -801,15 +813,15 @@ static void ${t}vector_${opname}(const char *name,
     switch (arg2_check(name, s0, s1, TRUE)) {
     case ARGTYPE_UVECTOR:
         for (i=0; i<size; i++) {
-            v0 = SCM_${T}VECTOR_ELEMENTS(s0)[i];
-            v1 = SCM_${T}VECTOR_ELEMENTS(s1)[i];
+            v0 = ${REF_NTYPE s0 i};
+            v1 = ${REF_NTYPE s1 i};
             r = ${t}${t}_${opname}(v0, v1, clamp);
-            SCM_${T}VECTOR_ELEMENTS(d)[i] = (${etype})r;
+            SCM_${T}VECTOR_ELEMENTS(d)[i] = ${CAST_N2E r};
         }
         break;
     case ARGTYPE_VECTOR:
         for (i=0; i<size; i++) {
-            v0 = SCM_${T}VECTOR_ELEMENTS(s0)[i];
+            v0 = ${REF_NTYPE s0 i};
             vv1 = SCM_VECTOR_ELEMENTS(s1)[i];
             v1 = ${t}num(vv1, &oor);
             if (!oor) {
@@ -819,12 +831,12 @@ static void ${t}vector_${opname}(const char *name,
                 rr = Scm_${Sopname}(rr, vv1);
                 ${UNBOX r rr clamp};
             }
-            SCM_${T}VECTOR_ELEMENTS(d)[i] = (${etype})r;
+            SCM_${T}VECTOR_ELEMENTS(d)[i] = ${CAST_N2E r};
         }
         break;
     case ARGTYPE_LIST:
         for (i=0; i<size; i++) {
-            v0 = SCM_${T}VECTOR_ELEMENTS(s0)[i];
+            v0 = ${REF_NTYPE s0 i};
             vv1 = SCM_CAR(s1); s1 = SCM_CDR(s1);
             v1 = ${t}num(vv1, &oor);
             if (!oor) {
@@ -834,13 +846,13 @@ static void ${t}vector_${opname}(const char *name,
                 rr = Scm_${Sopname}(rr, vv1);
                 ${UNBOX r rr clamp};
             }
-            SCM_${T}VECTOR_ELEMENTS(d)[i] = (${etype})r;
+            SCM_${T}VECTOR_ELEMENTS(d)[i] = ${CAST_N2E r};
         }
         break;
     case ARGTYPE_CONST:
         v1 = ${t}num(s1, &oor);
         for (i=0; i<size; i++) {
-            v0 = SCM_${T}VECTOR_ELEMENTS(s0)[i];
+            v0 = ${REF_NTYPE s0 i};
             if (!oor) {
                 r = ${t}g_${opname}(v0, v1, clamp);
             } else {
@@ -848,7 +860,7 @@ static void ${t}vector_${opname}(const char *name,
                 rr = Scm_${Sopname}(rr, s1);
                 ${UNBOX r rr clamp};
             }
-            SCM_${T}VECTOR_ELEMENTS(d)[i] = (${etype})r;
+            SCM_${T}VECTOR_ELEMENTS(d)[i] = ${CAST_N2E r};
         }
     }
 }
@@ -934,36 +946,36 @@ static void ${t}vector_${opname}(const char *name,
     switch(arg2_check(name, s0, s1, TRUE)) {
     case ARGTYPE_UVECTOR:
         for (i=0; i<size; i++) {
-            v0 = SCM_${T}VECTOR_ELEMENTS(s0)[i];
-            v1 = SCM_${T}VECTOR_ELEMENTS(s1)[i];
+            v0 = ${REF_NTYPE s0 i};
+            v1 = ${REF_NTYPE s1 i};
             ${BITOP r v0 v1};
-            SCM_${T}VECTOR_ELEMENTS(d)[i] = (${etype})r;
+            SCM_${T}VECTOR_ELEMENTS(d)[i] = ${CAST_N2E r};
         }
         break;
     case ARGTYPE_VECTOR:
         for (i=0; i<size; i++) {
-            v0 = SCM_${T}VECTOR_ELEMENTS(s0)[i];
+            v0 = ${REF_NTYPE s0 i};
             vv1 = SCM_VECTOR_ELEMENTS(s1)[i];
             ${BITEXT v1 vv1};
             ${BITOP r v0 v1};
-            SCM_${T}VECTOR_ELEMENTS(d)[i] = (${etype})r;
+            SCM_${T}VECTOR_ELEMENTS(d)[i] = ${CAST_N2E r};
         }
         break;
     case ARGTYPE_LIST:
         for (i=0; i<size; i++) {
-            v0 = SCM_${T}VECTOR_ELEMENTS(s0)[i];
+            v0 = ${REF_NTYPE s0 i};
             vv1 = SCM_VECTOR_ELEMENTS(s1)[i];
             ${BITEXT v1 vv1};
             ${BITOP r v0 v1};
-            SCM_${T}VECTOR_ELEMENTS(d)[i] = (${etype})r;
+            SCM_${T}VECTOR_ELEMENTS(d)[i] = ${CAST_N2E r};
         }
         break;
     case ARGTYPE_CONST:
         ${BITEXT v1 s1};
         for (i=0; i<size; i++) {
-            v0 = SCM_${T}VECTOR_ELEMENTS(s0)[i];
+            v0 = ${REF_NTYPE s0 i};
             ${BITOP r v0 v1};
-            SCM_${T}VECTOR_ELEMENTS(d)[i] = (${etype})r;
+            SCM_${T}VECTOR_ELEMENTS(d)[i] = ${CAST_N2E r};
         }
     }
 }
@@ -1081,6 +1093,7 @@ static inline ScmUInt64 u64muladd(ScmUInt64 x, ScmUInt64 y, ScmUInt64 acc, ScmOb
 #define u64muladd(x, y, acc, sacc) u32muladd(x, y, acc, sacc)
 #endif
 
+#define f16muladd(x, y, acc, sacc)  (acc + x*y)
 #define f32muladd(x, y, acc, sacc)  (acc + x*y)
 #define f64muladd(x, y, acc, sacc)  (acc + x*y)
 ///))
@@ -1096,14 +1109,14 @@ ScmObj Scm_${T}VectorDotProd(Scm${T}Vector *x, ScmObj y)
     switch (arg2_check("${t}vector-dot", SCM_OBJ(x), y, FALSE)) {
     case ARGTYPE_UVECTOR:
         for (i=0; i<size; i++) {
-            vx = SCM_${T}VECTOR_ELEMENTS(x)[i];
-            vy = SCM_${T}VECTOR_ELEMENTS(y)[i];
+            vx = ${REF_NTYPE x i};
+            vy = ${REF_NTYPE y i};
             r = ${t}muladd(vx, vy, r, &rr);
         }
         break;
     case ARGTYPE_VECTOR:
         for (i=0; i<size; i++) {
-            vx = SCM_${T}VECTOR_ELEMENTS(x)[i];
+            vx = ${REF_NTYPE x i};
             vvy = SCM_VECTOR_ELEMENTS(y)[i];
             vy = ${t}num(vvy, &oor);
             if (!oor) {
@@ -1116,7 +1129,7 @@ ScmObj Scm_${T}VectorDotProd(Scm${T}Vector *x, ScmObj y)
         break;
     case ARGTYPE_LIST:
         for (i=0; i<size; i++) {
-            vx = SCM_${T}VECTOR_ELEMENTS(x)[i];
+            vx = ${REF_NTYPE x i};
             vvy = SCM_CAR(y); y = SCM_CDR(y);
             vy = ${t}num(vvy, &oor);
             if (!oor) {
@@ -1184,10 +1197,10 @@ ScmObj Scm_${T}Vector${Opname}(Scm${T}Vector *x, ScmObj min, ScmObj max)
     }
 
     for (i=0; i<size; i++) {
-        val = SCM_${T}VECTOR_ELEMENTS(x)[i];
+        val = ${REF_NTYPE x i};
         switch (mintype) {
         case ARGTYPE_UVECTOR:
-            minval = SCM_${T}VECTOR_ELEMENTS(min)[i]; break;
+            minval = ${REF_NTYPE min i}; break;
         case ARGTYPE_VECTOR:
             vv = SCM_VECTOR_ELEMENTS(min)[i];
             ${GETLIM minval mindc vv};
@@ -1202,7 +1215,7 @@ ScmObj Scm_${T}Vector${Opname}(Scm${T}Vector *x, ScmObj min, ScmObj max)
         }
         switch (maxtype) {
         case ARGTYPE_UVECTOR:
-            maxval = SCM_${T}VECTOR_ELEMENTS(max)[i]; break;
+            maxval = ${REF_NTYPE max i}; break;
         case ARGTYPE_VECTOR:
             vv = SCM_VECTOR_ELEMENTS(max)[i];
             ${GETLIM maxval maxdc vv};

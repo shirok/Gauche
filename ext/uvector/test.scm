@@ -28,6 +28,8 @@
 (test* "#s64()" #f (s64vector? '#(0 1 2 3 4)))
 (test* "#u64()" #t (u64vector? '#u64(0 1 2 3 4)))
 (test* "#u64()" #f (u64vector? '#(0 1 2 3 4)))
+(test* "#f16()" #t (f32vector? '#f32(0.0 1.0 2.0 3.0 4.0)))
+(test* "#f16()" #f (f32vector? '#(0.0 1.0 2.0 3.0 4.0)))
 (test* "#f32()" #t (f32vector? '#f32(0.0 1.0 2.0 3.0 4.0)))
 (test* "#f32()" #f (f32vector? '#(0.0 1.0 2.0 3.0 4.0)))
 (test* "#f64()" #t (f64vector? '#f64(0.0 1.0 2.0 3.0 4.0)))
@@ -60,6 +62,9 @@
 (test* "#u64()" "#u64(0 1 2 3 4)"
        (with-output-to-string
          (lambda () (write (apply u64vector (iota 5))))))
+(test* "#f16()" "#f16()"
+       (with-output-to-string
+         (lambda () (write (f16vector)))))
 (test* "#f32()" "#f32()"
        (with-output-to-string
          (lambda () (write (f32vector)))))
@@ -109,6 +114,10 @@
        (uvrefset-tester make-u64vector u64vector-ref u64vector-set!
                         '(0 1 2 #xffffffffffffffff)
                         '#u64(0 1 2 #xffffffffffffffff)))
+(test* "f16vector-ref|set!" #t
+       (uvrefset-tester make-f16vector f16vector-ref f16vector-set!
+                        '(0.0 -1.0 1.0)
+                        '#f16(0.0 -1.0 1.0)))
 (test* "f32vector-ref|set!" #t
        (uvrefset-tester make-f32vector f32vector-ref f32vector-set!
                         '(0.0 -1.0 1.0)
@@ -222,6 +231,11 @@
                       u64vector->vector vector->u64vector
                       '#u64(0 1 #xffffffffffffffff)
                       '(0 1 #xffffffffffffffff)))
+(test* "f16vector conversion" #t
+       (uvconv-tester f16vector->list list->f16vector
+                      f16vector->vector vector->f16vector
+                      '#f16(0.0 -1.0 1.0)
+                      '(0.0 -1.0 1.0)))
 (test* "f32vector conversion" #t
        (uvconv-tester f32vector->list list->f32vector
                       f32vector->vector vector->f32vector
@@ -280,6 +294,10 @@
                       u64vector->list list->u64vector
                       '#u64(0 1 #xffffffffffffffff) #x8000000000000000))
 
+(test* "f16vector copy|fill!" #t
+       (uvcopy-tester f16vector-copy f16vector-copy! f16vector-fill!
+                      f16vector->list list->f16vector
+                      '#f16(0 -1.0 1.0) 1.0))
 (test* "f32vector copy|fill!" #t
        (uvcopy-tester f32vector-copy f32vector-copy! f32vector-fill!
                       f32vector->list list->f32vector
@@ -332,6 +350,7 @@
 (uvcopy!-newapi-test "u32vector-copy! newapi" u32vector u32vector-copy!)
 (uvcopy!-newapi-test "s64vector-copy! newapi" s64vector s64vector-copy!)
 (uvcopy!-newapi-test "u64vector-copy! newapi" u64vector u64vector-copy!)
+(uvcopy!-newapi-test "f16vector-copy! newapi" f16vector f16vector-copy!)
 (uvcopy!-newapi-test "f32vector-copy! newapi" f32vector f32vector-copy!)
 (uvcopy!-newapi-test "f64vector-copy! newapi" f64vector f64vector-copy!)
 
@@ -413,6 +432,8 @@
        (collection-tester <s64vector> (s64vector 1 2 3 4)))
 (test* "u64vector collection interface" #t
        (collection-tester <u64vector> (u64vector 1 2 3 4)))
+(test* "f16vector collection interface" #t
+       (collection-tester <f16vector> (f16vector 1 2 3 4)))
 (test* "f32vector collection interface" #t
        (collection-tester <f32vector> (f32vector 1 2 3 4)))
 (test* "f64vector collection interface" #t
@@ -638,6 +659,7 @@
          (div (make 0.0 1.0 2.0 3.0) 2.0))
   )
 
+(flonum-arith-test-generate f16)
 (flonum-arith-test-generate f32)
 (flonum-arith-test-generate f64)
 
@@ -835,6 +857,23 @@
                        #u64(18446744073709551615 1 2 3 4))
 (dotprod-test-generate u64 #u64(1 2 3 4 18446744073709551615)
                        #u64(1 2 3 4 18446744073709551615))
+
+(dotprod-test-generate f16 #f16(0 1 2 3) #f16(4 5 6 7))
+(dotprod-test-generate f16 #f16(0 -1 2 -3) #f16(-4 5 -6 7))
+(dotprod-test-generate f16 #f16(16384 16384 16384 16384 16384)
+                       #f16(16384 16384 16384 16384 16384))
+(dotprod-test-generate f16 #f16(16384 -16384 16384 -16384 16384)
+                       #f16(16384 -16384 16384 -16384 16384))
+(dotprod-test-generate f16 #f16(32767 32767 32767 32767 32767)
+                       #f16(32767 32767 32767 32767 32767))
+(dotprod-test-generate f16 #f16(214748367 214748367 214748367 214748367 214748367)
+                       #f16(214748367 214748367 214748367 214748367 214748367))
+(dotprod-test-generate f16 #f16(9223372036854775807 1 2 3 4)
+                       #f16(9223372036854775807 1 2 3 4))
+(dotprod-test-generate f16 #f16(1 2 3 4 9223372036854775807 1)
+                       #f16(1 2 3 4 9223372036854775807 1))
+(dotprod-test-generate f16 #f16(32767 -32767 32767 -32767 32767)
+                       #f16(32767 -32767 32767 -32767 32767))
 
 (dotprod-test-generate f32 #f32(0 1 2 3) #f32(4 5 6 7))
 (dotprod-test-generate f32 #f32(0 -1 2 -3) #f32(-4 5 -6 7))
