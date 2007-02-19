@@ -1,7 +1,7 @@
 ;;;
 ;;; Array operations.  This is superset of SRFI-25.
 ;;;
-;;;  Copyright(C) 2002-2004 by Shiro Kawai (shiro@acm.org)
+;;;  Copyright(C) 2002-2007 by Shiro Kawai (shiro@acm.org)
 ;;;  Copyright(C) 2004      by Alex Shinn  (foof@synthcode.com)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
@@ -13,7 +13,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: array.scm,v 1.15 2004-11-28 13:26:03 shirok Exp $
+;;;  $Id: array.scm,v 1.16 2007-02-19 03:12:50 shirok Exp $
 ;;;
 
 ;; Conceptually, an array is a backing storage and a procedure to
@@ -27,7 +27,7 @@
   (use gauche.sequence)
   (export <array-meta> <array>
           <u8array> <s8array> <u16array> <s16array> <u32array> <s32array>
-          <u64array> <s64array> <f32array> <f64array>
+          <u64array> <s64array> <f16array> <f32array> <f64array>
           array? make-array shape array array-rank
           array-start array-end array-ref array-set!
           share-array subarray array-equal?
@@ -40,7 +40,7 @@
           array-map array-map! array->vector array->list
           make-u8array make-s8array make-u16array make-s16array
           make-u32array make-s32array make-u64array make-s64array
-          make-f32array make-f64array
+          make-f16array make-f32array make-f64array
           array-concatenate array-transpose array-rotate-90 array-flip array-flip!
           identity-array array-inverse determinant determinant! array-mul array-expt
           array-div-left array-div-right array-add-elements array-add-elements!
@@ -166,6 +166,13 @@
   :backing-storage-setter s64vector-set!
   :backing-storage-length s64vector-length)
 
+(define-class <f16array> (<array-base>)
+  ()
+  :backing-storage-creator make-f16vector
+  :backing-storage-getter f16vector-ref
+  :backing-storage-setter f16vector-set!
+  :backing-storage-length f16vector-length)
+
 (define-class <f32array> (<array-base>)
   ()
   :backing-storage-creator make-f32vector
@@ -206,6 +213,8 @@
   (u64vector-copy self))
 (define-method copy-object ((self <s64vector>))
   (s64vector-copy self))
+(define-method copy-object ((self <f16vector>))
+  (f16vector-copy self))
 (define-method copy-object ((self <f32vector>))
   (f32vector-copy self))
 (define-method copy-object ((self <f64vector>))
@@ -362,6 +371,8 @@
   (apply make-array-internal <u64array> shape opt))
 (define (make-s64array shape . opt)
   (apply make-array-internal <s64array> shape opt))
+(define (make-f16array shape . opt)
+  (apply make-array-internal <f16array> shape opt))
 (define (make-f32array shape . opt)
   (apply make-array-internal <f32array> shape opt))
 (define (make-f64array shape . opt)
