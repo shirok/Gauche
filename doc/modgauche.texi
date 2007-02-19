@@ -144,6 +144,7 @@ you should use one of the following concrete array classes.
 @deftpx {Class} <s32array>
 @deftpx {Class} <u64array>
 @deftpx {Class} <s64array>
+@deftpx {Class} <f16array>
 @deftpx {Class} <f32array>
 @deftpx {Class} <f64array>
 @clindex array
@@ -155,6 +156,7 @@ you should use one of the following concrete array classes.
 @clindex s32array
 @clindex u64array
 @clindex s64array
+@clindex f16array
 @clindex f32array
 @clindex f64array
 @c EN
@@ -9676,6 +9678,10 @@ Implements the collection framework (@xref{Collection framework})
 and the sequence framework (@xref{Sequence framework}).  So the
 methods like @code{map}, @code{for-each}, @code{ref} or @code{subseq}
 can be used on the SRFI-4 vector types.
+@item
+Support of @code{f16vector}, a vector of 16-bit floating point number
+as used in high-dynamic range image format (1 sign bit, 5 exponent bits,
+and 10 mantissa bits).
 @end itemize
 @c JP
 SRFI-4(@ref{srfi-4,,SRFI-4})に定義されている、
@@ -9697,6 +9703,10 @@ Gaucheの実装は、SRFI-4の仕様を次のように拡張しています。
 シーケンスフレームワーク (@ref{Sequence framework}参照)の実装。
 例えば @code{map}, @code{for-each}, @code{ref}, @code{subseq}等の
 メソッドがSRFI-4ベクタに対して使えます。
+@item
+16ビット浮動小数点数のベクタ@code{f16vector}のサポート。
+フォーマットはハイダイナミックレンジイメージ等に使われている、
+1符号ビット、5指数ビット、10仮数ビットです。
 @end itemize
 @c COMMON
 
@@ -9738,6 +9748,9 @@ Elements are exact integers in the range between 0 and 2^32-1
 Elements are exact integers in the range between -2^63 and 2^63-1
 @item u64vector
 Elements are exact integers in the range between 0 and 2^64-1
+@item f16vector
+Elements are inexact real numbers representable in 16bits float
+(a.k.a half float)
 @item f32vector
 Elements are inexact real numbers representable in the @code{float} of
 C compiler that compiles Gauche.  Usually it is a single precision
@@ -9766,6 +9779,9 @@ IEEE floating point number.
 要素が -2^63 から 2^63-1 の間の正確な整数であるベクタ
 @item u64vector
 要素が 0 から 2^64-1 の間の正確な整数であるベクタ
+@item f16vector
+要素が、16ビット浮動小数点数(half floatとしても知られている)で表現
+し得るような不正確な実数であるベクタ
 @item f32vector
 要素が、GaucheをコンパイルしたCコンパイラの@code{float}で表現し得るような
 不正確な実数(通常IEEE単精度浮動少数点数)であるベクタ
@@ -9828,11 +9844,13 @@ Clamps both sides; does both @code{high} and @code{low}.
 @c EN
 In the following description, @code{@var{TAG}} can be replaced
 for any of @code{s8}, @code{u8}, @code{s16}, @code{u16}, 
-@code{s32}, @code{u32}, @code{s64}, @code{u64}, @code{f32}, @code{f64}.
+@code{s32}, @code{u32}, @code{s64}, @code{u64}, 
+@code{f16}, @code{f32}, @code{f64}.
 @c JP
 以下の記述では、@code{@var{TAG}}は
 @code{s8}, @code{u8}, @code{s16}, @code{u16}, 
-@code{s32}, @code{u32}, @code{s64}, @code{u64}, @code{f32}, @code{f64}
+@code{s32}, @code{u32}, @code{s64}, @code{u64}, 
+@code{f16}, @code{f32}, @code{f64}
 のいずれにも置き換えて読むことができるものとします。
 @c COMMON
 
@@ -9856,6 +9874,7 @@ for any of @code{s8}, @code{u8}, @code{s16}, @code{u16},
 @clindex u32vector
 @clindex s64vector
 @clindex u64vector
+@clindex f16vector
 @clindex f32vector
 @clindex f64vector
 @c EN
@@ -9887,6 +9906,7 @@ Denotes a literal homogeneous vector.
 @findex u32vector?
 @findex s64vector?
 @findex u64vector?
+@findex f16vector?
 @findex f32vector?
 @findex f64vector?
 [SRFI-4]
@@ -9906,6 +9926,7 @@ Returns @code{#t} if @var{obj} is a @var{TAG}vector, @code{#f} otherwise.
 @findex u32vector
 @findex s64vector
 @findex u64vector
+@findex f16vector
 @findex f32vector
 @findex f64vector
 [SRFI-4]
@@ -9932,6 +9953,7 @@ and in the valid range of the vector.
 @findex make-u32vector
 @findex make-s64vector
 @findex make-u64vector
+@findex make-f16vector
 @findex make-f32vector
 @findex make-f64vector
 [SRFI-4]
@@ -9960,6 +9982,7 @@ If @var{fill} is omitted, the content of the vector is undefined.
 @findex u32vector-length
 @findex s64vector-length
 @findex u64vector-length
+@findex f16vector-length
 @findex f32vector-length
 @findex f64vector-length
 [SRFI-4]
@@ -9994,6 +10017,7 @@ if you import @code{gauche.collection}
 @findex u32vector-ref
 @findex s64vector-ref
 @findex u64vector-ref
+@findex f16vector-ref
 @findex f32vector-ref
 @findex f64vector-ref
 [SRFI-4+]
@@ -10033,6 +10057,7 @@ if you import @code{gauche.collection}.
 @findex u32vector-set!
 @findex s64vector-set!
 @findex u64vector-set!
+@findex f16vector-set!
 @findex f32vector-set!
 @findex f64vector-set!
 [SRFI-4+]
@@ -10074,6 +10099,7 @@ if you import @code{gauche.collection}.
 @findex u32vector-fill!
 @findex s64vector-fill!
 @findex u64vector-fill!
+@findex f16vector-fill!
 @findex f32vector-fill!
 @findex f64vector-fill!
 @c EN
@@ -10095,6 +10121,7 @@ if they are given.
 @findex u32vector-copy
 @findex s64vector-copy
 @findex u64vector-copy
+@findex f16vector-copy
 @findex f32vector-copy
 @findex f64vector-copy
 @c EN
@@ -10123,6 +10150,7 @@ If @var{start} and/or @var{end} are given, they limit the range of
 @findex u32vector-copy!
 @findex s64vector-copy!
 @findex u64vector-copy!
+@findex f16vector-copy!
 @findex f32vector-copy!
 @findex f64vector-copy!
 @c EN
@@ -10212,6 +10240,7 @@ various operations on the homogeneous vectors.
 @findex u32vector->list
 @findex s64vector->list
 @findex u64vector->list
+@findex f16vector->list
 @findex f32vector->list
 @findex f64vector->list
 [SRFI-4+]
@@ -10247,6 +10276,7 @@ if you import @code{gauche.collection}.
 @findex u32vector->vector
 @findex s64vector->vector
 @findex u64vector->vector
+@findex f16vector->vector
 @findex f32vector->vector
 @findex f64vector->vector
 @c EN
@@ -10282,6 +10312,7 @@ if you import @code{gauche.collection}.
 @findex list->u32vector
 @findex list->s64vector
 @findex list->u64vector
+@findex list->f16vector
 @findex list->f32vector
 @findex list->f64vector
 [SRFI-4+]
@@ -10317,6 +10348,7 @@ if you import @code{gauche.collection}.
 @findex vector->u32vector
 @findex vector->s64vector
 @findex vector->u64vector
+@findex vector->f16vector
 @findex vector->f32vector
 @findex vector->f64vector
 @c EN
@@ -10588,6 +10620,12 @@ alignment constraint.
 @findex u64vector-sub!
 @findex u64vector-mul
 @findex u64vector-mul!
+@findex f16vector-add
+@findex f16vector-add!
+@findex f16vector-sub
+@findex f16vector-sub!
+@findex f16vector-mul
+@findex f16vector-mul!
 @findex f32vector-add
 @findex f32vector-add!
 @findex f32vector-sub
@@ -10654,6 +10692,8 @@ multiplied by each element of @var{vec}, respectively.
 
 @deftp {Function} @var{TAG}vector-div @r{@var{vec} @var{val}}
 @deftpx {Function} @var{TAG}vector-div! @r{@var{vec} @var{val}}
+@findex f16vector-div
+@findex f16vector-div!
 @findex f32vector-div
 @findex f32vector-div!
 @findex f64vector-div
@@ -10761,6 +10801,7 @@ The destructive version reuses @var{vec} to store the result.
 @findex u16vector-dot
 @findex u32vector-dot
 @findex u64vector-dot
+@findex f16vector-dot
 @findex f32vector-dot
 @findex f64vector-dot
 @c EN
@@ -10781,6 +10822,7 @@ The length of @var{vec0} and @var{vec1} must be the same.
 @findex u16vector-range-check
 @findex u32vector-range-check
 @findex u64vector-range-check
+@findex f16vector-range-check
 @findex f32vector-range-check
 @findex f64vector-range-check
 @c EN
@@ -10855,6 +10897,7 @@ that is out of range is returned.
 @findex u16vector-clamp!
 @findex u32vector-clamp!
 @findex u64vector-clamp!
+@findex f16vector-clamp!
 @findex f32vector-clamp!
 @findex f64vector-clamp!
 @c EN
