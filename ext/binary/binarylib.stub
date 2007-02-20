@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: binarylib.stub,v 1.5 2007-02-20 01:32:09 shirok Exp $
+;;; $Id: binarylib.stub,v 1.6 2007-02-20 08:43:19 shirok Exp $
 ;;;
 
 "#include \"binary.h\"
@@ -175,6 +175,7 @@
 (define-cproc get-f64 (v::<uvector> off::<uint>
                                     &optional (endian::<symbol>? #f))
   (call "Scm_GetBinaryF64"))
+
 (define-cproc put-u8! (val::<integer> v::<uvector> off::<uint> 
                                       &optional (endian::<symbol>? #f))
   (call <void> "Scm_PutBinaryU8"))
@@ -208,6 +209,80 @@
 (define-cproc put-f64! (val v::<uvector> off::<uint>
                             &optional (endian::<symbol>? #f))
   (call <void> "Scm_PutBinaryF64"))
+
+(define-cproc get-u16be (v::<uvector> off::<uint>)
+  (expr "Scm_GetBinaryU16(v, off, SCM_SYMBOL(SCM_SYM_BIG_ENDIAN))"))
+(define-cproc get-u16le (v::<uvector> off::<uint>)
+  (expr "Scm_GetBinaryU16(v, off, SCM_SYMBOL(SCM_SYM_LITTLE_ENDIAN))"))
+(define-cproc get-s16be (v::<uvector> off::<uint>)
+  (expr "Scm_GetBinaryS16(v, off, SCM_SYMBOL(SCM_SYM_BIG_ENDIAN))"))
+(define-cproc get-s16le (v::<uvector> off::<uint>)
+  (expr "Scm_GetBinaryS16(v, off, SCM_SYMBOL(SCM_SYM_LITTLE_ENDIAN))"))
+(define-cproc get-u32be (v::<uvector> off::<uint>)
+  (expr "Scm_GetBinaryU32(v, off, SCM_SYMBOL(SCM_SYM_BIG_ENDIAN))"))
+(define-cproc get-u32le (v::<uvector> off::<uint>)
+  (expr "Scm_GetBinaryU32(v, off, SCM_SYMBOL(SCM_SYM_LITTLE_ENDIAN))"))
+(define-cproc get-s32be (v::<uvector> off::<uint>)
+  (expr "Scm_GetBinaryS32(v, off, SCM_SYMBOL(SCM_SYM_BIG_ENDIAN))"))
+(define-cproc get-s32le (v::<uvector> off::<uint>)
+  (expr "Scm_GetBinaryS32(v, off, SCM_SYMBOL(SCM_SYM_LITTLE_ENDIAN))"))
+(define-cproc get-u64be (v::<uvector> off::<uint>)
+  (expr "Scm_GetBinaryU64(v, off, SCM_SYMBOL(SCM_SYM_BIG_ENDIAN))"))
+(define-cproc get-u64le (v::<uvector> off::<uint>)
+  (expr "Scm_GetBinaryU64(v, off, SCM_SYMBOL(SCM_SYM_LITTLE_ENDIAN))"))
+(define-cproc get-s64be (v::<uvector> off::<uint>)
+  (expr "Scm_GetBinaryS64(v, off, SCM_SYMBOL(SCM_SYM_BIG_ENDIAN))"))
+(define-cproc get-s64le (v::<uvector> off::<uint>)
+  (expr "Scm_GetBinaryS64(v, off, SCM_SYMBOL(SCM_SYM_LITTLE_ENDIAN))"))
+(define-cproc get-f16be (v::<uvector> off::<uint>)
+  (expr "Scm_GetBinaryF16(v, off, SCM_SYMBOL(SCM_SYM_BIG_ENDIAN))"))
+(define-cproc get-f16le (v::<uvector> off::<uint>)
+  (expr "Scm_GetBinaryF16(v, off, SCM_SYMBOL(SCM_SYM_LITTLE_ENDIAN))"))
+(define-cproc get-f32be (v::<uvector> off::<uint>)
+  (expr "Scm_GetBinaryF32(v, off, SCM_SYMBOL(SCM_SYM_BIG_ENDIAN))"))
+(define-cproc get-f32le (v::<uvector> off::<uint>)
+  (expr "Scm_GetBinaryF32(v, off, SCM_SYMBOL(SCM_SYM_LITTLE_ENDIAN))"))
+(define-cproc get-f64be (v::<uvector> off::<uint>)
+  (expr "Scm_GetBinaryF64(v, off, SCM_SYMBOL(SCM_SYM_BIG_ENDIAN))"))
+(define-cproc get-f64le (v::<uvector> off::<uint>)
+  (expr "Scm_GetBinaryF64(v, off, SCM_SYMBOL(SCM_SYM_LITTLE_ENDIAN))"))
+
+(define-cproc put-u16be! (val::<integer> v::<uvector> off::<uint>)
+  (body <void> "Scm_PutBinaryU16(val, v, off, SCM_SYMBOL(SCM_SYM_BIG_ENDIAN));"))
+(define-cproc put-u16le! (val::<integer> v::<uvector> off::<uint>)
+  (body <void> "Scm_PutBinaryU16(val, v, off, SCM_SYMBOL(SCM_SYM_LITTLE_ENDIAN));"))
+(define-cproc put-s16be! (val::<integer> v::<uvector> off::<uint>)
+  (body <void> "Scm_PutBinaryS16(val, v, off, SCM_SYMBOL(SCM_SYM_BIG_ENDIAN));"))
+(define-cproc put-s16le! (val::<integer> v::<uvector> off::<uint>)
+  (body <void> "Scm_PutBinaryS16(val, v, off, SCM_SYMBOL(SCM_SYM_LITTLE_ENDIAN));"))
+(define-cproc put-u32be! (val::<integer> v::<uvector> off::<uint>)
+  (body <void> "Scm_PutBinaryU32(val, v, off, SCM_SYMBOL(SCM_SYM_BIG_ENDIAN));"))
+(define-cproc put-u32le! (val::<integer> v::<uvector> off::<uint>)
+  (body <void> "Scm_PutBinaryU32(val, v, off, SCM_SYMBOL(SCM_SYM_LITTLE_ENDIAN));"))
+(define-cproc put-s32be! (val::<integer> v::<uvector> off::<uint> )
+  (body <void> "Scm_PutBinaryS32(val, v, off, SCM_SYMBOL(SCM_SYM_BIG_ENDIAN));"))
+(define-cproc put-s32le! (val::<integer> v::<uvector> off::<uint> )
+  (body <void> "Scm_PutBinaryS32(val, v, off, SCM_SYMBOL(SCM_SYM_LITTLE_ENDIAN));"))
+(define-cproc put-u64be! (val::<integer> v::<uvector> off::<uint> )
+  (body <void> "Scm_PutBinaryU64(val, v, off, SCM_SYMBOL(SCM_SYM_BIG_ENDIAN));"))
+(define-cproc put-u64le! (val::<integer> v::<uvector> off::<uint> )
+  (body <void> "Scm_PutBinaryU64(val, v, off, SCM_SYMBOL(SCM_SYM_LITTLE_ENDIAN));"))
+(define-cproc put-s64be! (val::<integer> v::<uvector> off::<uint> )
+  (body <void> "Scm_PutBinaryS64(val, v, off, SCM_SYMBOL(SCM_SYM_BIG_ENDIAN));"))
+(define-cproc put-s64le! (val::<integer> v::<uvector> off::<uint> )
+  (body <void> "Scm_PutBinaryS64(val, v, off, SCM_SYMBOL(SCM_SYM_LITTLE_ENDIAN));"))
+(define-cproc put-f16be! (val v::<uvector> off::<uint>)
+  (body <void> "Scm_PutBinaryF16(val, v, off, SCM_SYMBOL(SCM_SYM_BIG_ENDIAN));"))
+(define-cproc put-f16le! (val v::<uvector> off::<uint>)
+  (body <void> "Scm_PutBinaryF16(val, v, off, SCM_SYMBOL(SCM_SYM_LITTLE_ENDIAN));"))
+(define-cproc put-f32be! (val v::<uvector> off::<uint>)
+  (body <void> "Scm_PutBinaryF32(val, v, off, SCM_SYMBOL(SCM_SYM_BIG_ENDIAN));"))
+(define-cproc put-f32le! (val v::<uvector> off::<uint>)
+  (body <void> "Scm_PutBinaryF32(val, v, off, SCM_SYMBOL(SCM_SYM_LITTLE_ENDIAN));"))
+(define-cproc put-f64be! (val v::<uvector> off::<uint>)
+  (body <void> "Scm_PutBinaryF64(val, v, off, SCM_SYMBOL(SCM_SYM_BIG_ENDIAN));"))
+(define-cproc put-f64le! (val v::<uvector> off::<uint>)
+  (body <void> "Scm_PutBinaryF64(val, v, off, SCM_SYMBOL(SCM_SYM_LITTLE_ENDIAN));"))
 
 ;; Local variables:
 ;; mode: scheme

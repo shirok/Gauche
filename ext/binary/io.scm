@@ -15,7 +15,7 @@
 ;; [SK]: 
 ;;
 
-;; $Id: io.scm,v 1.4 2007-02-20 01:32:09 shirok Exp $
+;; $Id: io.scm,v 1.5 2007-02-20 08:43:19 shirok Exp $
 
 (define-module binary.io
   (use gauche.uvector)
@@ -28,12 +28,16 @@
           write-uint write-u8 write-u16 write-u32 write-u64
           write-sint write-s8 write-s16 write-s32 write-s64
           write-ber-integer write-f16 write-f32 write-f64
-          get-u8 get-u16 get-u32 get-u64
-          get-s8 get-s16 get-s32 get-s64
+          get-u8 get-u16 get-u32 get-u64 get-s8 get-s16 get-s32 get-s64
           get-f16 get-f32 get-f64
-          put-u8! put-u16! put-u32! put-u64!
-          put-s8! put-s16! put-s32! put-s64!
+          get-u16be get-u16le get-u32be get-u32le get-u64be get-u64le
+          get-s16be get-s16le get-s32be get-s32le get-s64be get-s64le
+          get-f16be get-f16le get-f32be get-f32le get-f64be get-f64le
+          put-u8! put-u16! put-u32! put-u64! put-s8! put-s16! put-s32! put-s64!
           put-f16! put-f32! put-f64!
+          put-u16be! put-u16le! put-u32be! put-u32le! put-u64be! put-u64le!
+          put-s16be! put-s16le! put-s32be! put-s32le! put-s64be! put-s64le!
+          put-f16be! put-f16le! put-f32be! put-f32le! put-f64be! put-f64le!
           
           ;; old names
           read-binary-uint
