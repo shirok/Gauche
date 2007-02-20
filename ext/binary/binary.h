@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: binary.h,v 1.4 2007-02-20 01:32:09 shirok Exp $
+ *  $Id: binary.h,v 1.5 2007-02-20 20:04:04 shirok Exp $
  */
 
 #include <gauche.h>
@@ -75,14 +75,14 @@ extern ScmObj Scm_GetBinaryF16(ScmUVector *uv, int off, ScmSymbol *e);
 extern ScmObj Scm_GetBinaryF32(ScmUVector *uv, int off, ScmSymbol *e);
 extern ScmObj Scm_GetBinaryF64(ScmUVector *uv, int off, ScmSymbol *e);
 
-extern void Scm_PutBinaryU8(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
-extern void Scm_PutBinaryU16(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
-extern void Scm_PutBinaryU32(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
-extern void Scm_PutBinaryU64(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
-extern void Scm_PutBinaryS8(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
-extern void Scm_PutBinaryS16(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
-extern void Scm_PutBinaryS32(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
-extern void Scm_PutBinaryS64(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
-extern void Scm_PutBinaryF16(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
-extern void Scm_PutBinaryF32(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
-extern void Scm_PutBinaryF64(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
+extern void Scm_PutBinaryU8(ScmUVector *uv, int off, ScmObj v, ScmSymbol *e);
+extern void Scm_PutBinaryU16(ScmUVector *uv, int off, ScmObj v, ScmSymbol *e);
+extern void Scm_PutBinaryU32(ScmUVector *uv, int off, ScmObj v, ScmSymbol *e);
+extern void Scm_PutBinaryU64(ScmUVector *uv, int off, ScmObj v, ScmSymbol *e);
+extern void Scm_PutBinaryS8(ScmUVector *uv, int off, ScmObj v, ScmSymbol *e);
+extern void Scm_PutBinaryS16(ScmUVector *uv, int off, ScmObj v, ScmSymbol *e);
+extern void Scm_PutBinaryS32(ScmUVector *uv, int off, ScmObj v, ScmSymbol *e);
+extern void Scm_PutBinaryS64(ScmUVector *uv, int off, ScmObj v, ScmSymbol *e);
+extern void Scm_PutBinaryF16(ScmUVector *uv, int off, ScmObj v, ScmSymbol *e);
+extern void Scm_PutBinaryF32(ScmUVector *uv, int off, ScmObj v, ScmSymbol *e);
+extern void Scm_PutBinaryF64(ScmUVector *uv, int off, ScmObj v, ScmSymbol *e);

@@ -396,17 +396,17 @@ you might want to use these to avoid the overhead of optional-argument
 handling.
 @end defun
 
-@defun put-u8! val uv pos &optional endian
-@defunx put-u16! val uv pos &optional endian
-@defunx put-u32! val uv pos &optional endian
-@defunx put-u64! val uv pos &optional endian
-@defunx put-s8! val uv pos &optional endian
-@defunx put-s16! val uv pos &optional endian
-@defunx put-s32! val uv pos &optional endian
-@defunx put-s64! val uv pos &optional endian
-@defunx put-f16! val uv pos &optional endian
-@defunx put-f32! val uv pos &optional endian
-@defunx put-f64! val uv pos &optional endian
+@defun put-u8! uv pos val &optional endian
+@defunx put-u16! uv pos val &optional endian
+@defunx put-u32! uv pos val &optional endian
+@defunx put-u64! uv pos val &optional endian
+@defunx put-s8! uv pos val &optional endian
+@defunx put-s16! uv pos val &optional endian
+@defunx put-s32! uv pos val &optional endian
+@defunx put-s64! uv pos val &optional endian
+@defunx put-f16! uv pos val &optional endian
+@defunx put-f32! uv pos val &optional endian
+@defunx put-f64! uv pos val &optional endian
 Writes a number @var{val} into a uniform vector @var{uv} in
 a specific format, starting at a byte position @var{pos}.
 An error is signalled
@@ -414,24 +414,24 @@ if the specified position makes reference outside of the uniform
 vector's content.
 @end defun
 
-@defun put-u16be! val uv pos
-@defunx put-u16le! val uv pos
-@defunx put-u32be! val uv pos
-@defunx put-u32le! val uv pos
-@defunx put-u64be! val uv pos
-@defunx put-u64le! val uv pos
-@defunx put-s16be! val uv pos
-@defunx put-s16le! val uv pos
-@defunx put-s32be! val uv pos
-@defunx put-s32le! val uv pos
-@defunx put-s64be! val uv pos
-@defunx put-s64le! val uv pos
-@defunx put-f16be! val uv pos
-@defunx put-f16le! val uv pos
-@defunx put-f32be! val uv pos
-@defunx put-f32le! val uv pos
-@defunx put-f64be! val uv pos
-@defunx put-f64le! val uv pos
+@defun put-u16be! uv pos val
+@defunx put-u16le! uv pos val
+@defunx put-u32be! uv pos val
+@defunx put-u32le! uv pos val
+@defunx put-u64be! uv pos val
+@defunx put-u64le! uv pos val
+@defunx put-s16be! uv pos val
+@defunx put-s16le! uv pos val
+@defunx put-s32be! uv pos val
+@defunx put-s32le! uv pos val
+@defunx put-s64be! uv pos val
+@defunx put-s64le! uv pos val
+@defunx put-f16be! uv pos val
+@defunx put-f16le! uv pos val
+@defunx put-f32be! uv pos val
+@defunx put-f32le! uv pos val
+@defunx put-f64be! uv pos val
+@defunx put-f64le! uv pos val
 These are big-endian (@code{be}) or little-endian (@code{le}) specific
 versions of @code{put-*} procedures.  In speed-sensitive code,
 you might want to use these to avoid the overhead of optional-argument

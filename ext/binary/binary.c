@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: binary.c,v 1.8 2007-02-20 01:32:09 shirok Exp $
+ *  $Id: binary.c,v 1.9 2007-02-20 20:04:04 shirok Exp $
  */
 
 #include <gauche.h>
@@ -560,19 +560,19 @@ static void inject(ScmUVector *uv, unsigned char *buf, int off, int eltsize)
     }
 }
 
-void Scm_PutBinaryU8(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e)
+void Scm_PutBinaryU8(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     u_char v = (u_char)Scm_GetIntegerU8Clamp(val, SCM_CLAMP_NONE, NULL);
     inject(uv, &v, off, 1);
 }
 
-void Scm_PutBinaryS8(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e)
+void Scm_PutBinaryS8(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     u_char v = (u_char)Scm_GetInteger8Clamp(val, SCM_CLAMP_NONE, NULL);
     inject(uv, &v, off, 1);
 }
 
-void Scm_PutBinaryU16(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e)
+void Scm_PutBinaryU16(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     Endian endian = symbol2endian(e);
     union { char buf[2]; u_short val; } v;
@@ -581,7 +581,7 @@ void Scm_PutBinaryU16(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e)
     inject(uv, v.buf, off, 2);
 }
 
-void Scm_PutBinaryS16(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e)
+void Scm_PutBinaryS16(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     Endian endian = symbol2endian(e);
     union { char buf[2]; short val; } v;
@@ -590,7 +590,7 @@ void Scm_PutBinaryS16(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e)
     inject(uv, v.buf, off, 2);
 }
 
-void Scm_PutBinaryU32(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e)
+void Scm_PutBinaryU32(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     Endian endian = symbol2endian(e);
     union { char buf[4]; ScmUInt32 val; } v;
@@ -599,7 +599,7 @@ void Scm_PutBinaryU32(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e)
     inject(uv, v.buf, off, 4);
 }    
 
-void Scm_PutBinaryS32(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e)
+void Scm_PutBinaryS32(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     Endian endian = symbol2endian(e);
     union { char buf[4]; ScmInt32 val; } v;
@@ -608,7 +608,7 @@ void Scm_PutBinaryS32(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e)
     inject(uv, v.buf, off, 4);
 }
 
-void Scm_PutBinaryU64(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e)
+void Scm_PutBinaryU64(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     Endian endian = symbol2endian(e);
     union { char buf[8]; ScmUInt64 val; } v;
@@ -617,7 +617,7 @@ void Scm_PutBinaryU64(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e)
     inject(uv, v.buf, off, 8);
 }
 
-void Scm_PutBinaryS64(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e)
+void Scm_PutBinaryS64(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     Endian endian = symbol2endian(e);
     union { char buf[8]; ScmInt64 val; } v;
@@ -626,7 +626,7 @@ void Scm_PutBinaryS64(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e)
     inject(uv, v.buf, off, 8);
 }
 
-void Scm_PutBinaryF16(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e)
+void Scm_PutBinaryF16(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     Endian endian = symbol2endian(e);
     union { char buf[2]; ScmHalfFloat val; } v;
@@ -635,7 +635,7 @@ void Scm_PutBinaryF16(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e)
     inject(uv, v.buf, off, 2);
 }
 
-void Scm_PutBinaryF32(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e)
+void Scm_PutBinaryF32(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     Endian endian = symbol2endian(e);
     union { char buf[4]; float val; } v;
@@ -644,7 +644,7 @@ void Scm_PutBinaryF32(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e)
     inject(uv, v.buf, off, 4);
 }
 
-void Scm_PutBinaryF64(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e)
+void Scm_PutBinaryF64(ScmUVector *uv, int off, ScmObj val, ScmSymbol *e)
 {
     Endian endian = symbol2endian(e);
     union { char buf[8]; double val; } v;
