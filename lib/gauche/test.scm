@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: test.scm,v 1.22 2007-02-16 11:14:51 shirok Exp $
+;;;  $Id: test.scm,v 1.23 2007-02-20 05:38:11 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -189,6 +189,7 @@
 ;; is excluded from undefined variable check.
 
 (define (test-module module . opts)
+  (test-count++)
   (let-keywords opts ((allow-undefined '()))
     (let1 mod (cond ((module? module) module)
                     ((symbol? module)
@@ -238,14 +239,16 @@
                                              (format "~a(~a)" (car z) (cdr z)))
                                            bad-gref)
                                       ", "))))
-        (if (null? report)
-          (format #t "ok\n")
+        (cond
+         ((null? report) (test-pass++) (format #t "ok\n"))
+         (else
+          (test-fail++)
           (let ((s (apply string-append report)))
             (format #t "ERROR: ~a\n" s)
             (set! *discrepancy-list*
                   (cons (list (format #f "bindings in module ~a" (module-name mod))
                               '() s)
-                        *discrepancy-list*))))
+                        *discrepancy-list*)))))
         )
       )))
 
