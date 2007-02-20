@@ -14,11 +14,10 @@
 ;;   an @ following a variable length template, without which all the
 ;;   "vlp" references would be gone.
 
-;; $Id: pack.scm,v 1.9 2007-01-21 14:21:51 rui314159 Exp $
+;; $Id: pack.scm,v 1.10 2007-02-20 07:02:13 shirok Exp $
 
 (define-module binary.pack
   (use srfi-1)
-  (use srfi-2)    ;; and-let*
   (use srfi-11)   ;; let-values
   (use srfi-13)   ;; string library
   (use srfi-14)   ;; char-set library
