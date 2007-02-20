@@ -68,7 +68,9 @@
 @mdindex binary.io
 @c EN
 This module provides basic procedures to perform binary I/O
-of numeric data from/to ports.  For structured binary data I/O,
+of numeric data.  Each datum can be read from or written to a port,
+and got from or put to a uniform vector (see @ref{Uniform vectors}).
+For structured binary data I/O,
 more convenient @code{pack} utility is implemented
 on top of this module (see @ref{Packing Binary Data}).
 You might want to use this module directly if you need
@@ -76,8 +78,11 @@ speed or want a flexible control of endianness.
 
 See also @ref{Uniform vectors}, which provides binary block I/O.
 @c JP
-このモジュールは数値データを読み書きするバイナリ入出力用の基本手続を提
-供します。構造をもつバイナリデータの入出力については、便利な
+このモジュールは数値データを読み書きするバイナリ入出力用の基本手続きを提
+供します。各データはポートあるいはユニフォームベクタ
+(@ref{Uniform vectors}参照)から読み込み、あるいはそれらへ書き出すことが
+できます。
+構造をもつバイナリデータの入出力については、便利な
 @code{pack}ユーティリティがこのモジュールを使って実装されています
 (@ref{Packing Binary Data}を参照してください)。
 スピードあるいはエンディアンの柔軟な制御などをやりたいときにこのモジュー
@@ -90,57 +95,93 @@ See also @ref{Uniform vectors}, which provides binary block I/O.
 
 @c EN
 @subheading Endianness
-
 Most procedures of this module take an optional @var{endian} argument,
 specifying the byte order of the binary input.
-It must be either a symbol @code{big-endian} or @code{little-endian}.
-If the endian argument is omitted, the machine's native endian is assumed.
-(For 8-bit I/O procedures like @code{read-binary-uint8} the endian
+It must be either one of symbols @code{big-endian}, @code{little-endian},
+or @code{arm-little-endian}.
+If the endian argument is omitted, the current value of the builtin
+parameter @code{default-endian} is used.  The default value of
+the @code{default-endian} parameter is the machine's native endian.
+(For 8-bit I/O procedures like @code{read-u8} the endian
 argument has no effect, but is accepted for consistency).
 @c JP
 @subheading エンディアン
 
 このモジュールのほとんどの手続はオプション引数として@var{endian}引数を
-とります。これは@code{big-endian}もしくは@code{little-endian}のどちら
-かのシンボルでなければなりません。エンディアン引数が省略された場合には、
-その計算機でのエンディアンが仮定されます。(@code{read-binary-uint8}の
-ような 8ビット入出力手続ではエンディアン引数は意味がありませんが、一貫
-性のため受け入れるようにしてあります。)
+とります。これは@code{big-endian}、@code{little-endian}、
+@code{arm-little-endian}のいずれかのシンボルでなければなりません。
+エンディアン引数が省略された場合には、組込みパラメータ@code{default-endian}
+の現在値が使われます。@code{default-endian}の初期値は
+その計算機でのエンディアンです。(@code{read-u8}の ような
+8ビット入出力手続ではエンディアン引数は意味がありませんが、
+一貫性のため受け入れるようにしてあります。)
 @c COMMON
 
-@defun default-endian
-Returns a symbol @code{big-endian} or @code{little-endian}.
-@end defun
+@deffn {Builtin Parameter} default-endian &optional value
+@c EN
+When called without @var{value}, returns the current default
+endian.  When called with @var{value}, sets the current endian
+to the @var{value}, which must be one of the following symbols:
+@c JP
+@var{value}無しで呼ばれると、現在のデフォルトエンディアンの値を返します。
+@var{value}を伴って呼ばれると、その値をデフォルトエンディアンとします。
+エンディアンの値は以下のいずれかのシンボルでなければなりません。
+@c COMMON
+@table @code
+@item big-endian
+@c EN
+Big endian.  An integer @code{#x12345678} is written out as an octet
+sequence @code{#x12 #x34 #x56 #x78}.
+@c JP
+ビッグエンディアン。整数値@code{#x12345678}は@code{#x12 #x34 #x56 #x78}
+のようなバイトシーケンスとして出力されます。
+@c COMMON
+@item little-endian
+@c EN
+Little endian.  An integer @code{#x12345678} is written out as an octet
+sequence @code{#x78 #x56 #x34 #x12}.
+@c JP
+リトルエンディアン。整数値@code{#x12345678}は@code{#x78 #x56 #x34 #x12}
+のようなバイトシーケンスとして出力されます。
+@c COMMON
+@item arm-little-endian
+@c EN
+This is a variation of @code{little-endian}, and used in ARM
+processors in some specific modes.  It works just like @code{little-endian},
+except reading/writing double-precision floating point number (@code{f64}),
+which is written as two little-endian 32bit words ordered by big-endian
+(e.g. If machine register's representation is @code{#x0102030405060708},
+it is written as @code{#x04 #x03 #x02 #x01 #x08 #x07 #x06 #x05}.
+@c JP
+これは@code{little-endian}のバリエーションで、ARMプロセッサの
+特定のモードで使われるものです。倍精度浮動小数点数以外は@code{little-endian}
+と同様に動作します。倍精度浮動小数点数については、ふたつのリトルエンディアンワードが
+ビッグエンディアンの順で書き出されます (例えばマシンレジスタ上でのビットパターンが
+@code{#x0102030405060708}の場合、出力は
+@code{#x04 #x03 #x02 #x01 #x08 #x07 #x06 #x05}となります)。
+@c COMMON
+@end table
 
 @c EN
-(Technically there can be more variations of endianness than big and
-little.  Among the platforms that run Gauche, some OSes on ARM 
-are known to use a peculiar endian for double-precision
-floating point number.
-Currently we don't have means to specify that endian explicitly,
-although on ARM the @code{read-binary-double} etc. uses its native
-format when @var{endian} is unspecified.  This limitation will be
-removed in the future version.)
+The default endian value is thread-local.  You can use @code{parameterize}
+(@xref{Parameters}) to switch default endianness within certain dynamic scope.
 @c JP
-(技術的には、エンディアンにはビッグエンディアンとリトルエンディアン以
-外にもバリエーションがあります。Gaucheが走るプラットフォームにも、
-ARM上のいくつかのOSでは倍精度浮動小数点数用の独特のエンディアンが使わ
-れていることが知られています。
-現時点ではARM上で、@code{read-binary-double}などは@var{endian}を指定し
-ない場合、その計算機の内部フォーマットを使いますが、エンディアンを明示
-的に指定する方法はありません。
+デフォルトエンディアン値はスレッドローカルです。@code{parameterize}
+(@ref{Parameters}参照)を用いることで、この値を特定のダイナミックスコープの
+間だけ変更することができます。
 @c COMMON
+@end deffn
 
 @c EN
-@subheading Integer I/O
+@subheading I/O using port
 @c JP
-@subheading 整数の入出力
+@subheading ポートを用いたI/O
 @c COMMON
 
-@defun read-binary-uint8 &optional port endian
-@defunx read-binary-uint16 &optional port endian
-@defunx read-binary-uint32 &optional port endian
-@defunx read-binary-uint64 &optional port endian
+@defun read-u8 &optional port endian
+@defunx read-u16 &optional port endian
+@defunx read-u32 &optional port endian
+@defunx read-u64 &optional port endian
 @c EN
 Reads 8, 16, 32 or 64 bit unsigned integer from @var{port}
 with specified endian, respectively.  If @var{port} is omitted, 
@@ -154,10 +195,10 @@ a complete integer is read, EOF is returned.
 @c COMMON
 @end defun
 
-@defun read-binary-sint8 &optional port endian
-@defunx read-binary-sint16 &optional port endian
-@defunx read-binary-sint32 &optional port endian
-@defunx read-binary-sint64 &optional port endian
+@defun read-s8 &optional port endian
+@defunx read-s16 &optional port endian
+@defunx read-s32 &optional port endian
+@defunx read-s64 &optional port endian
 @c EN
 Reads 8, 16, 32 or 64 bit 2's complement signed integer from @var{port}
 with specified endian, respectively.  If @var{port} is omitted, 
@@ -171,8 +212,8 @@ a complete integer is read, EOF is returned.
 @c COMMON
 @end defun
 
-@defun read-binary-uint size &optional port endian
-@defunx read-binary-sint size &optional port endian
+@defun read-uint size &optional port endian
+@defunx read-sint size &optional port endian
 @c EN
 More flexible version.  Reads @var{size}-octet unsigned
 or signed integer from @var{port} with specified endian.
@@ -186,7 +227,7 @@ EOF is returned.
 @c COMMON
 @end defun
 
-@defun reads-ber-integer &optional port
+@defun read-ber-integer &optional port
 @c EN
 Reads BER compressed integer a la X.209.
 A BER compressed integer is an unsigned integer in base 128,
@@ -199,10 +240,10 @@ X.209のBER圧縮形式整数を読み込みます。BER圧縮形式整数は128進符号無し整
 @c COMMON
 @end defun
 
-@defun write-binary-uint8 val &optional port endian
-@defunx write-binary-uint16 val &optional port endian
-@defunx write-binary-uint32 val &optional port endian
-@defunx write-binary-uint64 val &optional port endian
+@defun write-u8 val &optional port endian
+@defunx write-u16 val &optional port endian
+@defunx write-u32 val &optional port endian
+@defunx write-u64 val &optional port endian
 @c EN
 Writes a nonnegative integer @var{val} as 8, 16, 32 or 64 bit
 unsigned integer
@@ -217,10 +258,10 @@ When @var{port} is omitted, current output port is used.
 @c COMMON
 @end defun
 
-@defun write-binary-sint8 val &optional port endian
-@defunx write-binary-sint16 val &optional port endian
-@defunx write-binary-sint32 val &optional port endian
-@defunx write-binary-sint64 val &optional port endian
+@defun write-s8 val &optional port endian
+@defunx write-s16 val &optional port endian
+@defunx write-s32 val &optional port endian
+@defunx write-s64 val &optional port endian
 @c EN
 Writes an integer @var{val} as 8, 16, 32 or 64 bit
 as 2's complement signed integer to @var{port} with specified endian,
@@ -235,8 +276,8 @@ When @var{port} is omitted, current output port is used.
 @c COMMON
 @end defun
 
-@defun write-binary-uint size val &optional port endian
-@defunx write-binary-sint size val &optional port endian
+@defun write-uint size val &optional port endian
+@defunx write-sint size val &optional port endian
 @c EN
 More flexible version.  Writes an integer @var{val} as unsigned
 or signed integer of @var{size} bytes to @var{port} with
@@ -259,41 +300,108 @@ BER圧縮形式については前述の@code{read-ber-integer}を見てください。
 @c COMMON
 @end defun
 
+@defun read-f16 &optional port endian
+@defunx read-f32 &optional port endian
+@defunx read-f64 &optional port endian
 @c EN
-@subheading Floating point number I/O
-@c JP
-@subheading 浮動小数点数の入出力
-@c COMMON
+Reads 16, 32, or 64-bit floating point numbers, respectively.
+32bit is IEEE754 single-precision, and 64bit is
+IEEE754 double-precision numbers.  16-bit floating
+point number consists of 1-bit sign, 5-bit exponent and
+10-bit mantissa, as used in some HDR image format.
 
-@defun read-binary-float &optional port endian
-@defunx read-binary-double &optional port endian
-@c EN
-Reads IEEE754 single-precision or double-precision floating point
-number from @var{port} with specified endian.
 If @var{port} is omitted, 
 current input port is used.  If @var{port} reaches EOF before
 a complete number is read, EOF is returned.
 @c JP
-IEEE754の単精度あるいは倍精度浮動小数点数を指定のエンディアンで
-@var{port} から読み込みます。@var{port}が省略された場合には、
+それぞれ、16、32、64ビットの浮動小数点数を読み込みます。
+32ビットはIEEE754単精度、64ビットは倍精度の浮動小数点数です。
+16ビット浮動小数点数は、1ビットの符号、5ビットの指数、10ビットの仮数からなる、
+HDRイメージフォーマット等に使われている形式です。
+
+@var{port}が省略された場合には、
 現在の入力ポートが使われます。@var{port}が数値の読み込みが完了する前に
 EOFに到達してしまった場合にはEOFが返ります。 
 @c COMMON
 @end defun
 
-@defun write-binary-float val &optional port endian
-@defunx write-binary-double val &optional port endian
+@defun write-f16 val &optional port endian
+@defunx write-f32 val &optional port endian
+@defunx write-f64 val &optional port endian
 @c EN
-Writes a real number @var{val} to @var{port} in IEEE754 
-single-precision or double-precision floating point number
-with specified endian.  If @var{port} is omitted, 
-current output port is used. 
+Writes a real number @var{val} to @var{port} in 16, 
+32, or 64-bit floating point number, respectively.
+If @var{port} is omitted, current output port is used. 
 @c JP
-IEEE754の単精度あるいは倍精度浮動小数点数@var{val}を
-指定のエンディアンで@var{port}へ書き出します。
+実数値@var{val}を、それぞれ16、32、64ビットの浮動小数点数として
+書き出します。
 @var{port}が省略された場合には、現在の出力ポートが使われます。
 @c COMMON
 @end defun
+
+
+@c EN
+@subheading I/O using uniform vectors
+@c JP
+@subheading ユニフォームベクタを用いたI/O
+@c COMMON
+
+In the following routines, the argument @var{uv} can be any
+type of uniform vector; if it is not a @code{u8vector}, it is
+treated as if @code{(uvector-alias <u8vector> @var{uv})} is
+called---that is, it reads directly from the memory image
+that holds the uvector's content.  The @var{pos} argument
+specifies the byte position from the beginning of the memory
+area (it is always byte position, regardless of the uniform
+vector's element size).
+
+@defun get-u8 uv pos &optional endian
+@defunx get-u16 uv pos &optional endian
+@defunx get-u32 uv pos &optional endian
+@defunx get-u64 uv pos &optional endian
+@defunx get-s8 uv pos &optional endian
+@defunx get-s16 uv pos &optional endian
+@defunx get-s32 uv pos &optional endian
+@defunx get-s64 uv pos &optional endian
+@defunx get-f16 uv pos &optional endian
+@defunx get-f32 uv pos &optional endian
+@defunx get-f64 uv pos &optional endian
+Reads a number of a specific format from a uniform vector @var{uv},
+starting at a byte position @var{pos}.  An error is signalled
+if the specified position makes reference outside of the uniform
+vector's content.  Returns the read number.
+@end defun
+
+@defun put-u8! val uv pos &optional endian
+@defunx put-u16! val uv pos &optional endian
+@defunx put-u32! val uv pos &optional endian
+@defunx put-u64! val uv pos &optional endian
+@defunx put-s8! val uv pos &optional endian
+@defunx put-s16! val uv pos &optional endian
+@defunx put-s32! val uv pos &optional endian
+@defunx put-s64! val uv pos &optional endian
+@defunx put-f16! val uv pos &optional endian
+@defunx put-f32! val uv pos &optional endian
+@defunx put-f64! val uv pos &optional endian
+Writes a number @var{val} into a uniform vector @var{uv} in
+a specific format, starting at a byte position @var{pos}.
+An error is signalled
+if the specified position makes reference outside of the uniform
+vector's content.
+@end defun
+
+@c EN
+@subheading Compatibility notes
+@c JP
+@subheading 互換性への注
+@c COMMON
+
+@code{read-u8} etc. were called @code{read-binary-uint8} etc., and 
+@code{read-f32} and @code{read-f64} were called @code{read-binary-float}
+and @code{read-binary-double}, respectively.
+These old names are still supported for the backward compatibility
+but their use is deprecated.  The reason of the changes is
+for brevity and for consistency with the uniform vectors.
 
 @c ----------------------------------------------------------------------
 @node Packing Binary Data, Rational-less arithmetic, Binary I/O, Library modules - Utilities

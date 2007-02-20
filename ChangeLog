@@ -1,3 +1,14 @@
+2007-02-19  Shiro Kawai  <shiro@acm.org>
+
+	* ext/binary/*: Made default-endian a parameter; it eliminates
+	  need to provide endian argument in almost all cases.
+	  The peculiar endianness of double floats in ARM processors are
+	  supported as arm-little-endian.
+	  Renamed read-binary-uint8 etc. to read-u8 etc. for
+	  brevity and consistency with uniform vectors (old names are
+	  supported for the compatibility, but deprecated).
+	  Added support of read from and write to uniform vectors.
+
 2007-02-18  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/*, src/read.c: added f16vector support.  changed

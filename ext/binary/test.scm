@@ -1,10 +1,12 @@
 ;;
 ;; testing binary.io
-;; $Id: test.scm,v 1.2 2004-11-14 08:25:53 shirok Exp $
+;; $Id: test.scm,v 1.3 2007-02-20 01:32:09 shirok Exp $
 
 (use gauche.test)
 (use gauche.uvector)
 (use gauche.collection)
+(use gauche.parameter)
+(use srfi-1)
 
 (test-start "binary")
 
@@ -48,36 +50,42 @@
          (call-with-input-file "test.o"
            (cut port->list (cut apply proc <> endian) <>))))
 
-(test-read-binary "read-binary-uint8" *u8* read-binary-uint8)
-(test-read-binary "read-binary-sint8" *s8* read-binary-sint8)
+(test-read-binary "read-u8" *u8* read-u8)
+(test-read-binary "read-s8" *s8* read-s8)
 
-(test-read-binary "read-binary-uint16 be"
-                  *u16be* read-binary-uint16 'big-endian)
-(test-read-binary "read-binary-uint16 le"
-                  *u16le* read-binary-uint16 'little-endian)
-(test-read-binary "read-binary-sint16 be"
-                  *s16be* read-binary-sint16 'big-endian)
-(test-read-binary "read-binary-sint16 le"
-                  *s16le* read-binary-sint16 'little-endian)
+(test-read-binary "read-u16 be"
+                  *u16be* read-u16 'big-endian)
+(test-read-binary "read-u16 le"
+                  *u16le* read-u16 'little-endian)
+(test-read-binary "read-s16 be"
+                  *s16be* read-s16 'big-endian)
+(test-read-binary "read-s16 le"
+                  *s16le* read-s16 'little-endian)
 
-(test-read-binary "read-binary-uint32 be"
-                  *u32be* read-binary-uint32 'big-endian)
-(test-read-binary "read-binary-uint32 le"
-                  *u32le* read-binary-uint32 'little-endian)
-(test-read-binary "read-binary-sint32 be"
-                  *s32be* read-binary-sint32 'big-endian)
-(test-read-binary "read-binary-sint32 le"
-                  *s32le* read-binary-sint32 'little-endian)
+(test-read-binary "read-u32 be"
+                  *u32be* read-u32 'big-endian)
+(test-read-binary "read-u32 le"
+                  *u32le* read-u32 'little-endian)
+(test-read-binary "read-s32 be"
+                  *s32be* read-s32 'big-endian)
+(test-read-binary "read-s32 le"
+                  *s32le* read-s32 'little-endian)
 
-(test-read-binary "read-binary-uint64 be"
-                  *u64be* read-binary-uint64 'big-endian)
-(test-read-binary "read-binary-uint64 le"
-                  *u64le* read-binary-uint64 'little-endian)
-(test-read-binary "read-binary-sint64 be"
-                  *s64be* read-binary-sint64 'big-endian)
-(test-read-binary "read-binary-sint64 le"
-                  *s64le* read-binary-sint64 'little-endian)
+(test-read-binary "read-u64 be"
+                  *u64be* read-u64 'big-endian)
+(test-read-binary "read-u64 le"
+                  *u64le* read-u64 'little-endian)
+(test-read-binary "read-s64 be"
+                  *s64be* read-s64 'big-endian)
+(test-read-binary "read-s64 le"
+                  *s64le* read-s64 'little-endian)
 
+(parameterize ((default-endian 'big-endian))
+  (test-read-binary "read-u64 (default - be)"
+                    *u64be* read-u64))
+(parameterize ((default-endian 'little-endian))
+  (test-read-binary "read-u64 (default - le)"
+                    *u64le* read-u64))
 
 (define (test-write-binary label data proc . endian)
   (test* label *bytes-str*
@@ -86,35 +94,35 @@
             (lambda (p)
               (for-each (cut apply proc <> p endian) data))))))
 
-(test-write-binary "write-binary-uint8" *u8* write-binary-uint8)
-(test-write-binary "write-binary-sint8" *s8* write-binary-sint8)
+(test-write-binary "write-u8" *u8* write-u8)
+(test-write-binary "write-s8" *s8* write-s8)
 
-(test-write-binary "write-binary-uint16 be"
-                   *u16be* write-binary-uint16 'big-endian)
-(test-write-binary "write-binary-uint16 le"
-                   *u16le* write-binary-uint16 'little-endian)
-(test-write-binary "write-binary-sint16 be"
-                   *s16be* write-binary-sint16 'big-endian)
-(test-write-binary "write-binary-sint16 le"
-                   *s16le* write-binary-sint16 'little-endian)
+(test-write-binary "write-u16 be"
+                   *u16be* write-u16 'big-endian)
+(test-write-binary "write-u16 le"
+                   *u16le* write-u16 'little-endian)
+(test-write-binary "write-s16 be"
+                   *s16be* write-s16 'big-endian)
+(test-write-binary "write-s16 le"
+                   *s16le* write-s16 'little-endian)
 
-(test-write-binary "write-binary-uint32 be"
-                   *u32be* write-binary-uint32 'big-endian)
-(test-write-binary "write-binary-uint32 le"
-                   *u32le* write-binary-uint32 'little-endian)
-(test-write-binary "write-binary-sint32 be"
-                   *s32be* write-binary-sint32 'big-endian)
-(test-write-binary "write-binary-sint32 le"
-                   *s32le* write-binary-sint32 'little-endian)
+(test-write-binary "write-u32 be"
+                   *u32be* write-u32 'big-endian)
+(test-write-binary "write-u32 le"
+                   *u32le* write-u32 'little-endian)
+(test-write-binary "write-s32 be"
+                   *s32be* write-s32 'big-endian)
+(test-write-binary "write-s32 le"
+                   *s32le* write-s32 'little-endian)
 
-(test-write-binary "write-binary-uint64 be"
-                   *u64be* write-binary-uint64 'big-endian)
-(test-write-binary "write-binary-uint64 le"
-                   *u64le* write-binary-uint64 'little-endian)
-(test-write-binary "write-binary-sint64 be"
-                   *s64be* write-binary-sint64 'big-endian)
-(test-write-binary "write-binary-sint64 le"
-                   *s64le* write-binary-sint64 'little-endian)
+(test-write-binary "write-u64 be"
+                   *u64be* write-u64 'big-endian)
+(test-write-binary "write-u64 le"
+                   *u64le* write-u64 'little-endian)
+(test-write-binary "write-s64 be"
+                   *s64be* write-s64 'big-endian)
+(test-write-binary "write-s64 le"
+                   *s64le* write-s64 'little-endian)
 
 (define (test-write-binary-range label proc min min-1 max max+1)
   (test* label '(#t #f #t #f)
@@ -126,21 +134,21 @@
                          #t))))
               (list min min-1 max max+1))))
 
-(test-write-binary-range "write-binary-uint8" write-binary-uint8
+(test-write-binary-range "write-u8" write-u8
                          0 -1 255 256)
-(test-write-binary-range "write-binary-sint8" write-binary-sint8
+(test-write-binary-range "write-s8" write-s8
                          -128 -129 127 128)
-(test-write-binary-range "write-binary-uint16" write-binary-uint16
+(test-write-binary-range "write-u16" write-u16
                          0 -1 #xffff #x10000)
-(test-write-binary-range "write-binary-sint16" write-binary-sint16
+(test-write-binary-range "write-s16" write-s16
                          #x-8000 #x-8001 #x7fff #x8000)
-(test-write-binary-range "write-binary-uint32" write-binary-uint32
+(test-write-binary-range "write-u32" write-u32
                          0 -1 #xffffffff #x100000000)
-(test-write-binary-range "write-binary-sint32" write-binary-sint32
+(test-write-binary-range "write-s32" write-s32
                          #x-80000000 #x-80000001 #x7fffffff #x80000000)
-(test-write-binary-range "write-binary-uint64" write-binary-uint64
+(test-write-binary-range "write-u64" write-u64
                          0 -1 #xffffffffffffffff #x10000000000000000)
-(test-write-binary-range "write-binary-sint64" write-binary-sint64
+(test-write-binary-range "write-s64" write-s64
                          #x-8000000000000000 #x-8000000000000001
                          #x7fffffffffffffff  #x8000000000000000)
 
@@ -151,16 +159,22 @@
                 (string-complete->incomplete
                  (with-output-to-string (cut writer val)))))))
 
+(define (test-flonum-rw-f16 bvec endian)
+  (test-flonum-rw (format "read/write-f16 (~a)" endian)
+                  (cut read-f16 #f endian)
+                  (cut write-f16 <> #f endian)
+                  (u8vector->string bvec)))
+
 (define (test-flonum-rw-f32 bvec endian)
-  (test-flonum-rw (format "read/write-binary-float (~a)" endian)
-                  (cut read-binary-float #f endian)
-                  (cut write-binary-float <> #f endian)
+  (test-flonum-rw (format "read/write-f32 (~a)" endian)
+                  (cut read-f32 #f endian)
+                  (cut write-f32 <> #f endian)
                   (u8vector->string bvec)))
 
 (define (test-flonum-rw-f64 bvec endian)
-  (test-flonum-rw (format "read/write-binary-double (~a)" endian)
-                  (cut read-binary-double #f endian)
-                  (cut write-binary-double <> #f endian)
+  (test-flonum-rw (format "read/write-f64 (~a)" endian)
+                  (cut read-f64 #f endian)
+                  (cut write-f64 <> #f endian)
                   (u8vector->string bvec)))
 
 (define (test-flonum-rw-driver tester bytes-list)
@@ -170,6 +184,32 @@
                 (tester be-vec 'big-endian)
                 (tester le-vec 'little-endian)))
             bytes-list))
+
+;; f16 - half float
+(test-flonum-rw-driver
+ test-flonum-rw-f16
+ (append
+  '((#x00 #x00)                         ; 0.0
+    (#x04 #x00)                         ; normalized
+    (#x04 #x01)
+    (#x04 #x02)
+    (#x3c #x00)                         ; 1.0
+    (#x7b #xff)
+    (#x7c #x00)                         ; +inf
+
+    (#x80 #x00)                         ; -0.0
+    (#x84 #x00)                         ; normalized
+    (#xbc #x00)                         ; -1.0
+    (#xfb #xff)
+    (#xfc #x00)                         ; -inf
+
+    (#x00 #x01)                         ; +denormalized
+    (#x00 #x02)                         ;
+    (#x00 #x03)                         ;
+    (#x80 #x01)                         ; -denormalized
+    (#x80 #x02)                         ;
+    (#x80 #x03)                         ;
+    )))
 
 ;; f32 - ieee single float
 ;; NB: Alpha chip doesn't support denormalized floats, so we exclude
@@ -186,7 +226,7 @@
     (#x7f #x80 #x00 #x00)   ;; +inf
 
     (#x80 #x00 #x00 #x00)   ;;-0.0
-    (#x80 #x00 #x00 #x00)   ;; normalized
+    (#x80 #x80 #x00 #x00)   ;; normalized
     (#xbf #x80 #x00 #x00)   ;; -1.0
     (#xff #x7f #xff #xff)
     (#xff #x80 #x00 #x00)   ;; -inf
@@ -222,12 +262,277 @@
    (#xff #xf0 #x00 #x00 #x00 #x00 #x00 #x00)   ;; -inf
    ))
 
-(test* "read-binary-float" 1.0
+(test* "read-f16 (be)" 1.0
+       (with-input-from-string #*"\x3c\x00"
+         (cut read-f16 #f 'big-endian)))
+(test* "read-f32 (be)" 1.0
        (with-input-from-string #*"\x3f\x80\x00\x00"
-                               (cut read-binary-float #f 'big-endian)))
-(test* "read-binary-double" 1.0
+         (cut read-f32 #f 'big-endian)))
+(test* "read-f64 (be)" 1.0
        (with-input-from-string #*"\x3f\xf0\x00\x00\x00\x00\x00\x00"
-                               (cut read-binary-double #f 'big-endian)))
+         (cut read-f64 #f 'big-endian)))
+(test* "read-f16 (le)" 1.0
+       (with-input-from-string #*"\x00\x3c"
+         (cut read-f16 #f 'little-endian)))
+(test* "read-f32 (le)" 1.0
+       (with-input-from-string #*"\x00\x00\x80\x3f"
+         (cut read-f32 #f 'little-endian)))
+(test* "read-f64 (le)" 1.0
+       (with-input-from-string #*"\x00\x00\x00\x00\x00\x00\xf0\x3f"
+         (cut read-f64 #f 'little-endian)))
+(test* "read-f16 (arm)" 1.0
+       (with-input-from-string #*"\x00\x3c"
+         (cut read-f16 #f 'arm-little-endian)))
+(test* "read-f32 (arm)" 1.0
+       (with-input-from-string #*"\x00\x00\x80\x3f"
+         (cut read-f32 #f 'arm-little-endian)))
+(test* "read-f64 (arm)" 1.0
+       (with-input-from-string #*"\x00\x00\xf0\x3f\x00\x00\x00\x00"
+         (cut read-f64 #f 'arm-little-endian)))
+
+
+;; uvector reader
+
+(test* "get-u8" '(1 2 254 255)
+       (map (cut get-u8 '#u8(1 2 254 255) <>) (iota 4)))
+(test* "get-u8" *test-error* (get-u8 '#u8(1) -1))
+(test* "get-u8" *test-error* (get-u8 '#u8(1) 1))
+(test* "get-s8" '(1 2 -2 -1)
+       (map (cut get-s8 '#u8(1 2 254 255) <>) (iota 4)))
+(test* "get-u16 be" '(#x0102 #x02fe #xfeff)
+       (map (cut get-u16 '#u8(1 2 254 255) <> 'big-endian)
+            '(0 1 2)))
+(test* "get-u16 le" '(#x0201 #xfe02 #xfffe)
+       (map (cut get-u16 '#u8(1 2 254 255) <> 'little-endian)
+            '(0 1 2)))
+(test* "get-u16 bound" *test-error*
+       (get-u16 '#u8(1 2) -1))
+(test* "get-u16 bound" *test-error*
+       (get-u16 '#u8(1 2) 1))
+(test* "get-s16 be" `(#x0102 #x02fe ,(- #xfeff #x10000))
+       (map (cut get-s16 '#u8(1 2 254 255) <> 'big-endian)
+            '(0 1 2)))
+(test* "get-s16 le" `(#x0201 ,(- #xfe02 #x10000) ,(- #xfffe #x10000))
+       (map (cut get-s16 '#u8(1 2 254 255) <> 'little-endian)
+            '(0 1 2)))
+
+(test* "get-u32 be"
+       '(#x0102feff #x02feff03 #xfeff0304 #xff0304fc #x0304fcfd)
+       (map (cut get-u32
+                 '#u8(#x01 #x02 #xfe #xff #x03 #x04 #xfc #xfd)
+                 <> 'big-endian)
+            (iota 5)))
+(test* "get-u32 le"
+       '(#xfffe0201 #x03fffe02 #x0403fffe #xfc0403ff #xfdfc0403)
+       (map (cut get-u32
+                 '#u8(#x01 #x02 #xfe #xff #x03 #x04 #xfc #xfd)
+                 <> 'little-endian)
+            (iota 5)))
+(test* "get-s32 be"
+       `(#x0102feff #x02feff03 ,(- #xfeff0304 (expt 2 32))
+                    ,(- #xff0304fc (expt 2 32)) #x0304fcfd)
+       (map (cut get-s32
+                 '#u8(#x01 #x02 #xfe #xff #x03 #x04 #xfc #xfd)
+                 <> 'big-endian)
+            (iota 5)))
+(test* "get-s32 le"
+       `(,(- #xfffe0201 (expt 2 32)) #x03fffe02 #x0403fffe
+         ,(- #xfc0403ff (expt 2 32)) ,(- #xfdfc0403 (expt 2 32)))
+       (map (cut get-s32
+                 '#u8(#x01 #x02 #xfe #xff #x03 #x04 #xfc #xfd)
+                 <> 'little-endian)
+            (iota 5)))
+
+(test* "get-u64 be"
+       '(#x01ff02fe03fd04fc #xff02fe03fd04fc05)
+       (map (cut get-u64
+                 '#u8(#x01 #xff #x02 #xfe #x03 #xfd #x04 #xfc #x05)
+                 <> 'big-endian)
+            '(0 1)))
+(test* "get-u64 le"
+       '(#xfc04fd03fe02ff01 #x05fc04fd03fe02ff)
+       (map (cut get-u64
+                 '#u8(#x01 #xff #x02 #xfe #x03 #xfd #x04 #xfc #x05)
+                 <> 'little-endian)
+            '(0 1)))
+(test* "get-s64 be"
+       `(#x01ff02fe03fd04fc ,(- #xff02fe03fd04fc05 (expt 2 64)))
+       (map (cut get-s64
+                 '#u8(#x01 #xff #x02 #xfe #x03 #xfd #x04 #xfc #x05)
+                 <> 'big-endian)
+            '(0 1)))
+(test* "get-s64 le"
+       `(,(- #xfc04fd03fe02ff01 (expt 2 64)) #x05fc04fd03fe02ff)
+       (map (cut get-s64
+                 '#u8(#x01 #xff #x02 #xfe #x03 #xfd #x04 #xfc #x05)
+                 <> 'little-endian)
+            '(0 1)))
+
+(test* "get-f16 be" '(1.0 -1.0)
+       (map (cut get-f16
+                 '#u8(#x3c #x00 #xbc #x00)
+                 <> 'big-endian)
+            '(0 2)))
+(test* "get-f16 le" '(1.0 -1.0)
+       (map (cut get-f16
+                 '#u8(#x00 #x3c #x00 #xbc)
+                 <> 'little-endian)
+            '(0 2)))
+(test* "get-f32 be" '(1.0 -1.0)
+       (map (cut get-f32
+                 '#u8(#x3f #x80 #x00 #x00 #xbf #x80 #x00 #x00)
+                 <> 'big-endian)
+            '(0 4)))
+(test* "get-f32 le" '(1.0 -1.0)
+       (map (cut get-f32
+                 '#u8(#x00 #x00 #x80 #x3f #x00 #x00 #x80 #xbf)
+                 <> 'little-endian)
+            '(0 4)))
+(test* "get-f64 be" '(1.0 -1.0)
+       (map (cut get-f64
+                 '#u8(#x3f #xf0 #x00 #x00 #x00 #x00 #x00 #x00
+                      #xbf #xf0 #x00 #x00 #x00 #x00 #x00 #x00)
+                 <> 'big-endian)
+            '(0 8)))
+(test* "get-f64 le" '(1.0 -1.0)
+       (map (cut get-f64
+                 '#u8(#x00 #x00 #x00 #x00 #x00 #x00 #xf0 #x3f
+                      #x00 #x00 #x00 #x00 #x00 #x00 #xf0 #xbf)
+                 <> 'little-endian)
+            '(0 8)))
+(test* "get-f64 arm" '(1.0 -1.0)
+       (map (cut get-f64
+                 '#u8(#x00 #x00 #xf0 #x3f #x00 #x00 #x00 #x00 
+                      #x00 #x00 #xf0 #xbf #x00 #x00 #x00 #x00)
+                 <> 'arm-little-endian)
+            '(0 8)))
+
+(test* "put-u8!" '#u8(0 1 254 255)
+       (let1 v (make-u8vector 4)
+         (put-u8! 255 v 3)
+         (put-u8! 254 v 2)
+         (put-u8! 1 v 1)
+         (put-u8! 0 v 0)
+         v))
+(test* "put-s8!" '#u8(0 1 254 255)
+       (let1 v (make-u8vector 4)
+         (put-s8! -1 v 3)
+         (put-s8! -2 v 2)
+         (put-s8! 1 v 1)
+         (put-s8! 0 v 0)
+         v))
+(test* "put-u16! be" '#u8(1 2 0 254 255)
+       (let1 v (make-u8vector 5 0)
+         (put-u16! #xfeff v 3 'big-endian)
+         (put-u16! #x0102 v 0 'big-endian)
+         v))
+(test* "put-u16! le" '#u8(2 1 0 255 254)
+       (let1 v (make-u8vector 5 0)
+         (put-u16! #xfeff v 3 'little-endian)
+         (put-u16! #x0102 v 0 'little-endian)
+         v))
+(test* "put-s16! be" '#u8(1 2 0 254 255)
+       (let1 v (make-u8vector 5 0)
+         (put-s16! (- #xfeff #x10000) v 3 'big-endian)
+         (put-s16! #x0102 v 0 'big-endian)
+         v))
+(test* "put-s16! le" '#u8(2 1 0 255 254)
+       (let1 v (make-u8vector 5 0)
+         (put-s16! (- #xfeff #x10000) v 3 'little-endian)
+         (put-s16! #x0102 v 0 'little-endian)
+         v))
+
+(test* "put-u32! be" '#u8(1 2 3 4 0 252 253 254 255)
+       (let1 v (make-u8vector 9 0)
+         (put-u32! #xfcfdfeff v 5 'big-endian)
+         (put-u32! #x01020304 v 0 'big-endian)
+         v))
+(test* "put-u32! le" '#u8(4 3 2 1 0 255 254 253 252)
+       (let1 v (make-u8vector 9 0)
+         (put-u32! #xfcfdfeff v 5 'little-endian)
+         (put-u32! #x01020304 v 0 'little-endian)
+         v))
+(test* "put-s32! be" '#u8(1 2 3 4 0 252 253 254 255)
+       (let1 v (make-u8vector 9 0)
+         (put-s32! (- #xfcfdfeff (expt 2 32)) v 5 'big-endian)
+         (put-s32! #x01020304 v 0 'big-endian)
+         v))
+(test* "put-s32! le" '#u8(4 3 2 1 0 255 254 253 252)
+       (let1 v (make-u8vector 9 0)
+         (put-s32! (- #xfcfdfeff (expt 2 32)) v 5 'little-endian)
+         (put-s32! #x01020304 v 0 'little-endian)
+         v))
+
+(test* "put-u64! be"
+       '#u8(1 2 3 4 5 6 7 8 0 248 249 250 251 252 253 254 255)
+       (let1 v (make-u8vector 17 0)
+         (put-u64! #xf8f9fafbfcfdfeff v 9 'big-endian)
+         (put-u64! #x0102030405060708 v 0 'big-endian)
+         v))
+(test* "put-u64! le"
+       '#u8(8 7 6 5 4 3 2 1 0 255 254 253 252 251 250 249 248)
+       (let1 v (make-u8vector 17 0)
+         (put-u64! #xf8f9fafbfcfdfeff v 9 'little-endian)
+         (put-u64! #x0102030405060708 v 0 'little-endian)
+         v))
+(test* "put-s64! be"
+       '#u8(1 2 3 4 5 6 7 8 0 248 249 250 251 252 253 254 255)
+       (let1 v (make-u8vector 17 0)
+         (put-s64! (- #xf8f9fafbfcfdfeff (expt 2 64)) v 9 'big-endian)
+         (put-s64! #x0102030405060708 v 0 'big-endian)
+         v))
+(test* "put-s64! le"
+       '#u8(8 7 6 5 4 3 2 1 0 255 254 253 252 251 250 249 248)
+       (let1 v (make-u8vector 17 0)
+         (put-s64! (- #xf8f9fafbfcfdfeff (expt 2 64)) v 9 'little-endian)
+         (put-s64! #x0102030405060708 v 0 'little-endian)
+         v))
+
+(test* "put-f16! be" '#u8(#x3c #x00 0 #xbc #x00)
+       (let1 v (make-u8vector 5 0)
+         (put-f16! 1.0 v 0 'big-endian)
+         (put-f16! -1.0 v 3 'big-endian)
+         v))
+(test* "put-f16! le" '#u8(#x00 #x3c 0 #x00 #xbc)
+       (let1 v (make-u8vector 5 0)
+         (put-f16! 1.0 v 0 'little-endian)
+         (put-f16! -1.0 v 3 'little-endian)
+         v))
+
+(test* "put-f32! be"
+       '#u8(#x3f #x80 #x00 #x00 0 #xbf #x80 #x00 #x00)
+       (let1 v (make-u8vector 9 0)
+         (put-f32! 1.0 v 0 'big-endian)
+         (put-f32! -1.0 v 5 'big-endian)
+         v))
+(test* "put-f32! le"
+       '#u8(#x00 #x00 #x80 #x3f 0 #x00 #x00 #x80 #xbf)
+       (let1 v (make-u8vector 9 0)
+         (put-f32! 1.0 v 0 'little-endian)
+         (put-f32! -1.0 v 5 'little-endian)
+         v))
+
+(test* "put-f64! be"
+       '#u8(#x3f #xf0 #x00 #x00 #x00 #x00 #x00 #x00 0
+            #xbf #xf0 #x00 #x00 #x00 #x00 #x00 #x00)
+       (let1 v (make-u8vector 17 0)
+         (put-f64! 1.0 v 0 'big-endian)
+         (put-f64! -1.0 v 9 'big-endian)
+         v))
+(test* "put-f64! le"
+       '#u8(#x00 #x00 #x00 #x00 #x00 #x00 #xf0 #x3f 0
+            #x00 #x00 #x00 #x00 #x00 #x00 #xf0 #xbf)
+       (let1 v (make-u8vector 17 0)
+         (put-f64! 1.0 v 0 'little-endian)
+         (put-f64! -1.0 v 9 'little-endian)
+         v))
+(test* "put-f64! arm"
+       '#u8(#x00 #x00 #xf0 #x3f #x00 #x00 #x00 #x00 0
+            #x00 #x00 #xf0 #xbf #x00 #x00 #x00 #x00)
+       (let1 v (make-u8vector 17 0)
+         (put-f64! 1.0 v 0 'arm-little-endian)
+         (put-f64! -1.0 v 9 'arm-little-endian)
+         v))
 
 ;;----------------------------------------------------------
 (test-section "binary.pack")

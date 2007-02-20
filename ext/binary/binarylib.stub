@@ -30,139 +30,184 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: binarylib.stub,v 1.4 2007-02-17 13:03:39 shirok Exp $
+;;; $Id: binarylib.stub,v 1.5 2007-02-20 01:32:09 shirok Exp $
 ;;;
 
 "#include \"binary.h\"
 "
 
-"#ifdef WORDS_BIGENDIAN
-#define DEFAULT_ENDIAN SCM_SYM_BIG_ENDIAN
-#else
-#define DEFAULT_ENDIAN SCM_SYM_LITTLE_ENDIAN
-#endif
-"
+(define-type <uvector> "ScmUVector*")
 
-"static Endian check_endian(ScmObj sym)
- {
-  if (SCM_EQ(sym, SCM_SYM_BIG_ENDIAN)) return SCM_BE;
-  if (SCM_EQ(sym, SCM_SYM_LITTLE_ENDIAN)) return SCM_LE;
-  Scm_Error(\"endian must be big-endian or little-endian, but got %S\", sym);
-  return SCM_BE; /* dummy */
- }
-"
+(define-cproc read-u8 (&optional
+                       (port::<input-port>? #f)
+                       (endian::<symbol>? #f))
+  (call "Scm_ReadBinaryU8"))
+(define-cproc read-u16 (&optional
+                        (port::<input-port>? #f)
+                        (endian::<symbol>? #f))
+  (call "Scm_ReadBinaryU16"))
+(define-cproc read-u32 (&optional
+                        (port::<input-port>? #f)
+                        (endian::<symbol>? #f))
+  (call "Scm_ReadBinaryU32"))
+(define-cproc read-u64 (&optional
+                        (port::<input-port>? #f)
+                        (endian::<symbol>? #f))
+  (call "Scm_ReadBinaryU64"))
 
-;; HACK: treat endian as a dummy type.
-;; It's not guaranteed that this works with the future genstub
-(define-type <endian> "Endian" "endian"
-  "" "check_endian" "")
+(define-cproc read-s8 (&optional
+                       (port::<input-port>? #f)
+                       (endian::<symbol>? #f))
+  (call "Scm_ReadBinaryS8"))
+(define-cproc read-s16 (&optional
+                        (port::<input-port>? #f)
+                        (endian::<symbol>? #f))
+  (call "Scm_ReadBinaryS16"))
+(define-cproc read-s32 (&optional
+                        (port::<input-port>? #f)
+                        (endian::<symbol>? #f))
+  (call "Scm_ReadBinaryS32"))
+(define-cproc read-s64 (&optional
+                        (port::<input-port>? #f)
+                        (endian::<symbol>? #f))
+  (call "Scm_ReadBinaryS64"))
 
-(define-cproc default-endian ()
-  (expr "DEFAULT_ENDIAN"))
+(define-cproc write-u8 (intval::<integer>
+                        &optional
+                        (port::<output-port>? #f)
+                        (endian::<symbol>? #f))
+  (call <void> "Scm_WriteBinaryU8"))
+(define-cproc write-u16 (intval::<integer>
+                         &optional
+                         (port::<output-port>? #f)
+                         (endian::<symbol>? #f))
+  (call <void> "Scm_WriteBinaryU16"))
+(define-cproc write-u32 (intval::<integer>
+                         &optional
+                         (port::<output-port>? #f)
+                         (endian::<symbol>? #f))
+  (call <void> "Scm_WriteBinaryU32"))
+(define-cproc write-u64 (intval::<integer>
+                         &optional
+                         (port::<output-port>? #f)
+                         (endian::<symbol>? #f))
+  (call <void> "Scm_WriteBinaryU64"))
+(define-cproc write-s8 (intval::<integer>
+                        &optional
+                        (port::<output-port>? #f)
+                        (endian::<symbol>? #f))
+  (call <void> "Scm_WriteBinaryS8"))
+(define-cproc write-s16 (intval::<integer>
+                         &optional
+                         (port::<output-port>? #f)
+                         (endian::<symbol>? #f))
+  (call <void> "Scm_WriteBinaryS16"))
+(define-cproc write-s32 (intval::<integer>
+                         &optional
+                         (port::<output-port>? #f)
+                         (endian::<symbol>? #f))
+  (call <void> "Scm_WriteBinaryS32"))
+(define-cproc write-s64 (intval::<integer>
+                         &optional
+                         (port::<output-port>? #f)
+                         (endian::<symbol>? #f))
+  (call <void> "Scm_WriteBinaryS64"))
 
-(define-cproc read-binary-uint8 (&optional
-                                 (port #f)
-                                 (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call "Scm_ReadBinaryUint8"))
-(define-cproc read-binary-uint16 (&optional
-                                  (port #f)
-                                  (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call "Scm_ReadBinaryUint16"))
-(define-cproc read-binary-uint32 (&optional
-                                  (port #f)
-                                  (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call "Scm_ReadBinaryUint32"))
-(define-cproc read-binary-uint64 (&optional
-                                  (port #f)
-                                  (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call "Scm_ReadBinaryUint64"))
+(define-cproc read-f16 (&optional
+                        (port::<input-port>? #f)
+                        (endian::<symbol>? #f))
+  (call "Scm_ReadBinaryF16"))
+(define-cproc read-f32 (&optional
+                        (port::<input-port>? #f)
+                        (endian::<symbol>? #f))
+  (call "Scm_ReadBinaryF32"))
+(define-cproc read-f64 (&optional
+                        (port::<input-port>? #f)
+                        (endian::<symbol>? #f))
+  (call "Scm_ReadBinaryF64"))
 
-(define-cproc read-binary-sint8 (&optional
-                                 (port #f)
-                                 (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call "Scm_ReadBinarySint8"))
-(define-cproc read-binary-sint16 (&optional
-                                  (port #f)
-                                  (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call "Scm_ReadBinarySint16"))
-(define-cproc read-binary-sint32 (&optional
-                                  (port #f)
-                                  (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call "Scm_ReadBinarySint32"))
-(define-cproc read-binary-sint64 (&optional
-                                  (port #f)
-                                  (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call "Scm_ReadBinarySint64"))
-  
-(define-cproc write-binary-uint8 (intval::<integer>
-                                  &optional
-                                  (port #f)
-                                  (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call <void> "Scm_WriteBinaryUint8"))
-(define-cproc write-binary-uint16 (intval::<integer>
-                                   &optional
-                                   (port #f)
-                                   (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call <void> "Scm_WriteBinaryUint16"))
-(define-cproc write-binary-uint32 (intval::<integer>
-                                   &optional
-                                   (port #f)
-                                   (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call <void> "Scm_WriteBinaryUint32"))
-(define-cproc write-binary-uint64 (intval::<integer>
-                                   &optional
-                                   (port #f)
-                                   (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call <void> "Scm_WriteBinaryUint64"))
-(define-cproc write-binary-sint8 (intval::<integer>
-                                  &optional
-                                  (port #f)
-                                  (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call <void> "Scm_WriteBinarySint8"))
-(define-cproc write-binary-sint16 (intval::<integer>
-                                   &optional
-                                   (port #f)
-                                   (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call <void> "Scm_WriteBinarySint16"))
-(define-cproc write-binary-sint32 (intval::<integer>
-                                   &optional
-                                   (port #f)
-                                   (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call <void> "Scm_WriteBinarySint32"))
-(define-cproc write-binary-sint64 (intval::<integer>
-                                   &optional
-                                   (port #f)
-                                   (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call <void> "Scm_WriteBinarySint64"))
+(define-cproc write-f16 (val::<number>
+                         &optional
+                         (port::<output-port>? #f)
+                         (endian::<symbol>? #f))
+  (call <void> "Scm_WriteBinaryF16"))
+(define-cproc write-f32 (val::<number>
+                         &optional
+                         (port::<output-port>? #f)
+                         (endian::<symbol>? #f))
+  (call <void> "Scm_WriteBinaryF32"))
+(define-cproc write-f64 (val::<number>
+                         &optional
+                         (port::<output-port>? #f)
+                         (endian::<symbol>? #f))
+  (call <void> "Scm_WriteBinaryF64"))
 
-(define-cproc read-binary-half-float (&optional
-                                      (port #f)
-                                      (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call "Scm_ReadBinaryHalfFloat"))
-(define-cproc read-binary-float (&optional
-                                 (port #f)
-                                 (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call "Scm_ReadBinaryFloat"))
-(define-cproc read-binary-double (&optional
-                                  (port #f)
-                                  (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call "Scm_ReadBinaryDouble"))
-
-(define-cproc write-binary-half-float (val::<number>
-                                       &optional
-                                       (port #f)
-                                       (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call <void> "Scm_WriteBinaryHalfFloat"))
-(define-cproc write-binary-float (val::<number>
-                                  &optional
-                                  (port #f)
-                                  (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call <void> "Scm_WriteBinaryFloat"))
-(define-cproc write-binary-double (val::<number>
-                                   &optional
-                                   (port #f)
-                                   (endian::<endian> (c "DEFAULT_ENDIAN")))
-  (call <void> "Scm_WriteBinaryDouble"))
+(define-cproc get-u8 (v::<uvector> off::<uint>
+                                   &optional (endian::<symbol>? #f))
+  (call "Scm_GetBinaryU8"))
+(define-cproc get-s8 (v::<uvector> off::<uint>
+                                   &optional (endian::<symbol>? #f))
+  (call "Scm_GetBinaryS8"))
+(define-cproc get-u16 (v::<uvector> off::<uint>
+                                    &optional (endian::<symbol>? #f))
+  (call "Scm_GetBinaryU16"))
+(define-cproc get-s16 (v::<uvector> off::<uint>
+                                    &optional (endian::<symbol>? #f))
+  (call "Scm_GetBinaryS16"))
+(define-cproc get-u32 (v::<uvector> off::<uint>
+                                    &optional (endian::<symbol>? #f))
+  (call "Scm_GetBinaryU32"))
+(define-cproc get-s32 (v::<uvector> off::<uint>
+                                    &optional (endian::<symbol>? #f))
+  (call "Scm_GetBinaryS32"))
+(define-cproc get-u64 (v::<uvector> off::<uint>
+                                    &optional (endian::<symbol>? #f))
+  (call "Scm_GetBinaryU64"))
+(define-cproc get-s64 (v::<uvector> off::<uint>
+                                    &optional (endian::<symbol>? #f))
+  (call "Scm_GetBinaryS64"))
+(define-cproc get-f16 (v::<uvector> off::<uint>
+                                    &optional (endian::<symbol>? #f))
+  (call "Scm_GetBinaryF16"))
+(define-cproc get-f32 (v::<uvector> off::<uint>
+                                    &optional (endian::<symbol>? #f))
+  (call "Scm_GetBinaryF32"))
+(define-cproc get-f64 (v::<uvector> off::<uint>
+                                    &optional (endian::<symbol>? #f))
+  (call "Scm_GetBinaryF64"))
+(define-cproc put-u8! (val::<integer> v::<uvector> off::<uint> 
+                                      &optional (endian::<symbol>? #f))
+  (call <void> "Scm_PutBinaryU8"))
+(define-cproc put-s8! (val::<integer> v::<uvector> off::<uint>
+                                      &optional (endian::<symbol>? #f))
+  (call <void> "Scm_PutBinaryS8"))
+(define-cproc put-u16! (val::<integer> v::<uvector> off::<uint>
+                                       &optional (endian::<symbol>? #f))
+  (call <void> "Scm_PutBinaryU16"))
+(define-cproc put-s16! (val::<integer> v::<uvector> off::<uint>
+                                       &optional (endian::<symbol>? #f))
+  (call <void> "Scm_PutBinaryS16"))
+(define-cproc put-u32! (val::<integer> v::<uvector> off::<uint>
+                                       &optional (endian::<symbol>? #f))
+  (call <void> "Scm_PutBinaryU32"))
+(define-cproc put-s32! (val::<integer> v::<uvector> off::<uint> 
+                                       &optional (endian::<symbol>? #f))
+  (call <void> "Scm_PutBinaryS32"))
+(define-cproc put-u64! (val::<integer> v::<uvector> off::<uint> 
+                                       &optional (endian::<symbol>? #f))
+  (call <void> "Scm_PutBinaryU64"))
+(define-cproc put-s64! (val::<integer> v::<uvector> off::<uint> 
+                                       &optional (endian::<symbol>? #f))
+  (call <void> "Scm_PutBinaryS64"))
+(define-cproc put-f16! (val v::<uvector> off::<uint>
+                            &optional (endian::<symbol>? #f))
+  (call <void> "Scm_PutBinaryF16"))
+(define-cproc put-f32! (val v::<uvector> off::<uint>
+                            &optional (endian::<symbol>? #f))
+  (call <void> "Scm_PutBinaryF32"))
+(define-cproc put-f64! (val v::<uvector> off::<uint>
+                            &optional (endian::<symbol>? #f))
+  (call <void> "Scm_PutBinaryF64"))
 
 ;; Local variables:
 ;; mode: scheme

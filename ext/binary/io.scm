@@ -12,15 +12,30 @@
 ;; employments.
 ;;          -- from "Gulliver's Travels" by Jonathan Swift
 
-;; NB: the API will likely to be renamed according to the
-;; oncoming binary i/o srfi.  Use the current API at your own risk.
-;; $Id: io.scm,v 1.3 2007-02-17 13:03:40 shirok Exp $
+;; [SK]: 
+;;
+
+;; $Id: io.scm,v 1.4 2007-02-20 01:32:09 shirok Exp $
 
 (define-module binary.io
   (use gauche.uvector)
   (use srfi-1)  ;; list library
   (use srfi-13) ;; string library
   (export default-endian
+          read-uint read-u8 read-u16 read-u32 read-u64
+          read-sint read-s8 read-s16 read-s32 read-s64
+          read-ber-integer read-f16 read-f32 read-f64
+          write-uint write-u8 write-u16 write-u32 write-u64
+          write-sint write-s8 write-s16 write-s32 write-s64
+          write-ber-integer write-f16 write-f32 write-f64
+          get-u8 get-u16 get-u32 get-u64
+          get-s8 get-s16 get-s32 get-s64
+          get-f16 get-f32 get-f64
+          put-u8! put-u16! put-u32! put-u64!
+          put-s8! put-s16! put-s32! put-s64!
+          put-f16! put-f32! put-f64!
+          
+          ;; old names
           read-binary-uint
           read-binary-uint8 read-binary-uint16
           read-binary-uint32 read-binary-uint64
@@ -29,8 +44,7 @@
           read-binary-sint32 read-binary-sint64
           read-binary-short  read-binary-ushort
           read-binary-long   read-binary-ulong
-          read-binary-half-float read-binary-float read-binary-double
-          read-ber-integer
+          read-binary-float read-binary-double
           write-binary-uint
           write-binary-uint8 write-binary-uint16
           write-binary-uint32 write-binary-uint64
@@ -39,17 +53,11 @@
           write-binary-sint32 write-binary-sint64
           write-binary-short  write-binary-ushort
           write-binary-long   write-binary-ulong
-          write-binary-half-float write-binary-float  write-binary-double
-          write-ber-integer)
-  )
+          write-binary-float  write-binary-double
+          ))
 (select-module binary.io)
 
 (dynamic-load "binary")
-
-;; native routine defines the following:
-;; default-endian
-;; {read,write}-binary-[su]int{8,16,32,64}
-;; {read,write}-binary-{float,double}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; config
@@ -65,14 +73,14 @@
 
 ;; mind-numblingly slow, consider a uvector approach but it doesn't
 ;; handle endianess
-(define (read-binary-uint size . args)
+(define (read-uint size . args)
   (let-optionals* args ((port (current-input-port))
                         (endian (default-endian)))
     (case size
-      ((1) (read-binary-uint8 port endian))
-      ((2) (read-binary-uint16 port endian))
-      ((4) (read-binary-uint32 port endian))
-      ((8) (read-binary-uint64 port endian))
+      ((1) (read-u8 port endian))
+      ((2) (read-u16 port endian))
+      ((4) (read-u32 port endian))
+      ((8) (read-u64 port endian))
       (else
        (let loop ((ls '())
                   (cnt 0))
@@ -100,28 +108,28 @@
     (+ 1 (lognot-small (abs int) bytes))
     int))
 
-(define (read-binary-sint size . args)
+(define (read-sint size . args)
   (let-optionals* args ((port (current-input-port))
                         (endian (default-endian)))
     (case size
-      ((1) (read-binary-sint8 port endian))
-      ((2) (read-binary-sint16 port endian))
-      ((4) (read-binary-sint32 port endian))
-      ((8) (read-binary-sint64 port endian))
+      ((1) (read-s8 port endian))
+      ((2) (read-s16 port endian))
+      ((4) (read-s32 port endian))
+      ((8) (read-s64 port endian))
       (else
-       (uint->sint (read-binary-uint size port endian) size)))))
+       (uint->sint (read-uint size port endian) size)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; basic writing
 
-(define (write-binary-uint size int . args)
+(define (write-uint size int . args)
   (let-optionals* args ((port (current-output-port))
                         (endian (default-endian)))
     (case size
-      ((1) (write-binary-uint8 int port endian))
-      ((2) (write-binary-uint16 int port endian))
-      ((4) (write-binary-uint32 int port endian))
-      ((8) (write-binary-uint64 int port endian))
+      ((1) (write-u8 int port endian))
+      ((2) (write-u16 int port endian))
+      ((4) (write-u32 int port endian))
+      ((8) (write-u64 int port endian))
       (else
        (let ((ls '()))
          ;; build a list of bytes
@@ -134,16 +142,16 @@
          ;; write the list
          (for-each (cut write-byte <> port) ls))))))
 
-(define (write-binary-sint size int . args)
+(define (write-sint size int . args)
   (let-optionals* args ((port (current-output-port))
                         (endian (default-endian)))
     (case size
-      ((1) (write-binary-sint8 int port endian))
-      ((2) (write-binary-sint16 int port endian))
-      ((4) (write-binary-sint32 int port endian))
-      ((8) (write-binary-sint64 int port endian))
+      ((1) (write-s8 int port endian))
+      ((2) (write-s16 int port endian))
+      ((4) (write-s32 int port endian))
+      ((8) (write-s64 int port endian))
       (else
-       (write-binary-uint size (sint->uint int size) port endian)))))
+       (write-uint size (sint->uint int size) port endian)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; compatibility
@@ -151,15 +159,44 @@
 
 ;; These are used in binary.pack for the (unofficial) features to
 ;; read/write integers in "native" width of C system on the platform.
-(define read-binary-short  read-binary-sint16)
-(define read-binary-ushort read-binary-uint16)
-(define read-binary-long   read-binary-sint32)
-(define read-binary-ulong  read-binary-uint32)
+;; Should be removed soon (after binary.pack rewrite).  Do not use them.
+(define read-binary-short  read-s16)
+(define read-binary-ushort read-u16)
+(define read-binary-long   read-s32)
+(define read-binary-ulong  read-u32)
 
-(define write-binary-short  write-binary-sint16)
-(define write-binary-ushort write-binary-uint16)
-(define write-binary-long   write-binary-sint32)
-(define write-binary-ulong  write-binary-uint32)
+(define write-binary-short  write-s16)
+(define write-binary-ushort write-u16)
+(define write-binary-long   write-s32)
+(define write-binary-ulong  write-u32)
+
+;; Other compatibility names.  They have been official befor 0.8.10,
+;; and used widely.  So we keep them for a while.
+(define read-binary-uint  read-uint)
+(define read-binary-sint  read-sint)
+(define read-binary-uint8 read-u8)
+(define read-binary-sint8 read-s8)
+(define read-binary-uint16 read-u16)
+(define read-binary-sint16 read-s16)
+(define read-binary-uint32 read-u32)
+(define read-binary-sint32 read-s32)
+(define read-binary-uint64 read-u64)
+(define read-binary-sint64 read-s64)
+(define read-binary-float  read-f32)
+(define read-binary-double read-f64)
+
+(define write-binary-uint  write-uint)
+(define write-binary-sint  write-sint)
+(define write-binary-uint8 write-u8)
+(define write-binary-sint8 write-s8)
+(define write-binary-uint16 write-u16)
+(define write-binary-sint16 write-s16)
+(define write-binary-uint32 write-u32)
+(define write-binary-sint32 write-s32)
+(define write-binary-uint64 write-u64)
+(define write-binary-sint64 write-s64)
+(define write-binary-float  write-f32)
+(define write-binary-double write-f64)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; bignum encodings -- Basic Encoding Rules (BER) from X.209
@@ -178,11 +215,11 @@
         (if (< first 128)
           first
           (let loop ((res (ash (logand first #b01111111) 7))
-                     (byte (read-binary-uint8 port)))
+                     (byte (read-u8 port)))
             (if (< byte 128)
               (+ res byte) ;; final byte
               (loop (ash (+ res (logand byte #b01111111)) 7)
-                    (read-binary-uint8 port)))))))))
+                    (read-u8 port)))))))))
 
 (define (write-ber-integer number . opt-port)
   (let ((port (get-optional opt-port (current-output-port))))
@@ -191,11 +228,11 @@
       (unless (zero? start)
         (let loop ((n start))
           (cond ((< n 128)
-                 (write-binary-uint8 (logior n #b10000000)))
+                 (write-u8 (logior n #b10000000)))
                 (else
                  (loop (ash n -7)) ;; write high bytes first
-                 (write-binary-uint8 (logior (logand n #b01111111) #b10000000))))))
-      (write-binary-uint8 final))))
+                 (write-u8 (logior (logand n #b01111111) #b10000000))))))
+      (write-u8 final))))
 
 (provide "binary/io")
 

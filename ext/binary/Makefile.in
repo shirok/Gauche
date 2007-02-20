@@ -12,6 +12,8 @@ SCMFILES = io.scm
 GENERATED = Makefile
 XCLEANFILES = binarylib.c binary_head.c binary_tail.c
 
+EXTRA_INCLUDES = -I$(srcdir)/../uvector
+
 OBJECTS = binary_head.$(OBJEXT) \
           binary.$(OBJEXT) \
           binarylib.$(OBJEXT) \
@@ -20,7 +22,7 @@ OBJECTS = binary_head.$(OBJEXT) \
 all : $(LIBFILES)
 
 binary.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) binary.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+	$(MODLINK) binary.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
 
 binary_head.c binary_tail.c :
 	$(GAUCHE_CONFIG) --fixup-extension binary

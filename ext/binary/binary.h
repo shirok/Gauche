@@ -30,48 +30,59 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: binary.h,v 1.3 2007-02-17 13:03:39 shirok Exp $
+ *  $Id: binary.h,v 1.4 2007-02-20 01:32:09 shirok Exp $
  */
 
 #include <gauche.h>
 #include <gauche/builtin-syms.h>
+#include <gauche/uvector.h>
 
-/* endian check */
-typedef enum {
-    SCM_BE,
-    SCM_LE
-} Endian;
+extern ScmObj Scm_DefaultEndian(void);
 
-#if WORDS_BIGENDIAN
-#define SWAP_REQUIRED(endian)  ((endian)!=SCM_BE)
-#else  /*!WORDS_BIGENDIAN*/
-#define SWAP_REQUIRED(endian)  ((endian)!=SCM_LE)
-#endif
- 
-extern ScmObj Scm_ReadBinaryUint8(ScmObj port, Endian endian);
-extern ScmObj Scm_ReadBinaryUint16(ScmObj port, Endian endian);
-extern ScmObj Scm_ReadBinaryUint32(ScmObj port, Endian endian);
-extern ScmObj Scm_ReadBinaryUint64(ScmObj port, Endian endian);
-extern ScmObj Scm_ReadBinarySint8(ScmObj port, Endian endian);
-extern ScmObj Scm_ReadBinarySint16(ScmObj port, Endian endian);
-extern ScmObj Scm_ReadBinarySint32(ScmObj port, Endian endian);
-extern ScmObj Scm_ReadBinarySint64(ScmObj port, Endian endian);
+extern ScmObj Scm_ReadBinaryU8(ScmPort *iport, ScmSymbol *e);
+extern ScmObj Scm_ReadBinaryU16(ScmPort *iport, ScmSymbol *e);
+extern ScmObj Scm_ReadBinaryU32(ScmPort *iport, ScmSymbol *e);
+extern ScmObj Scm_ReadBinaryU64(ScmPort *iport, ScmSymbol *e);
+extern ScmObj Scm_ReadBinaryS8(ScmPort *iport, ScmSymbol *e);
+extern ScmObj Scm_ReadBinaryS16(ScmPort *iport, ScmSymbol *e);
+extern ScmObj Scm_ReadBinaryS32(ScmPort *iport, ScmSymbol *e);
+extern ScmObj Scm_ReadBinaryS64(ScmPort *iport, ScmSymbol *e);
+extern ScmObj Scm_ReadBinaryF16(ScmPort *iport, ScmSymbol *e);
+extern ScmObj Scm_ReadBinaryF32(ScmPort *iport, ScmSymbol *e);
+extern ScmObj Scm_ReadBinaryF64(ScmPort *iport, ScmSymbol *e);
 
-extern ScmObj Scm_ReadBinaryHalfFloat(ScmObj port, Endian endian);
-extern ScmObj Scm_ReadBinaryFloat(ScmObj port, Endian endian);
-extern ScmObj Scm_ReadBinaryDouble(ScmObj port, Endian endian);
+extern void Scm_WriteBinaryU8(ScmObj val, ScmPort *oport, ScmSymbol *e);
+extern void Scm_WriteBinaryU16(ScmObj val, ScmPort *oport, ScmSymbol *e);
+extern void Scm_WriteBinaryU32(ScmObj val, ScmPort *oport, ScmSymbol *e);
+extern void Scm_WriteBinaryU64(ScmObj val, ScmPort *oport, ScmSymbol *e);
+extern void Scm_WriteBinaryS8(ScmObj val, ScmPort *oport, ScmSymbol *e);
+extern void Scm_WriteBinaryS16(ScmObj val, ScmPort *oport, ScmSymbol *e);
+extern void Scm_WriteBinaryS32(ScmObj val, ScmPort *oport, ScmSymbol *e);
+extern void Scm_WriteBinaryS64(ScmObj val, ScmPort *oport, ScmSymbol *e);
+extern void Scm_WriteBinaryF16(ScmObj val, ScmPort *oport, ScmSymbol *e);
+extern void Scm_WriteBinaryF32(ScmObj val, ScmPort *oport, ScmSymbol *e);
+extern void Scm_WriteBinaryF64(ScmObj val, ScmPort *oport, ScmSymbol *e);
 
-extern void Scm_WriteBinaryUint8(ScmObj val, ScmObj port, Endian endian);
-extern void Scm_WriteBinaryUint16(ScmObj val, ScmObj port, Endian endian);
-extern void Scm_WriteBinaryUint32(ScmObj val, ScmObj port, Endian endian);
-extern void Scm_WriteBinaryUint64(ScmObj val, ScmObj port, Endian endian);
-extern void Scm_WriteBinarySint8(ScmObj val, ScmObj port, Endian endian);
-extern void Scm_WriteBinarySint16(ScmObj val, ScmObj port, Endian endian);
-extern void Scm_WriteBinarySint32(ScmObj val, ScmObj port, Endian endian);
-extern void Scm_WriteBinarySint64(ScmObj val, ScmObj port, Endian endian);
+extern ScmObj Scm_GetBinaryU8(ScmUVector *uv, int off, ScmSymbol *e);
+extern ScmObj Scm_GetBinaryU16(ScmUVector *uv, int off, ScmSymbol *e);
+extern ScmObj Scm_GetBinaryU32(ScmUVector *uv, int off, ScmSymbol *e);
+extern ScmObj Scm_GetBinaryU64(ScmUVector *uv, int off, ScmSymbol *e);
+extern ScmObj Scm_GetBinaryS8(ScmUVector *uv, int off, ScmSymbol *e);
+extern ScmObj Scm_GetBinaryS16(ScmUVector *uv, int off, ScmSymbol *e);
+extern ScmObj Scm_GetBinaryS32(ScmUVector *uv, int off, ScmSymbol *e);
+extern ScmObj Scm_GetBinaryS64(ScmUVector *uv, int off, ScmSymbol *e);
+extern ScmObj Scm_GetBinaryF16(ScmUVector *uv, int off, ScmSymbol *e);
+extern ScmObj Scm_GetBinaryF32(ScmUVector *uv, int off, ScmSymbol *e);
+extern ScmObj Scm_GetBinaryF64(ScmUVector *uv, int off, ScmSymbol *e);
 
-extern void Scm_WriteBinaryHalfFloat(ScmObj val, ScmObj port, Endian endian);
-extern void Scm_WriteBinaryFloat(ScmObj val, ScmObj port, Endian endian);
-extern void Scm_WriteBinaryDouble(ScmObj val, ScmObj port, Endian endian);
-
-
+extern void Scm_PutBinaryU8(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
+extern void Scm_PutBinaryU16(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
+extern void Scm_PutBinaryU32(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
+extern void Scm_PutBinaryU64(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
+extern void Scm_PutBinaryS8(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
+extern void Scm_PutBinaryS16(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
+extern void Scm_PutBinaryS32(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
+extern void Scm_PutBinaryS64(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
+extern void Scm_PutBinaryF16(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
+extern void Scm_PutBinaryF32(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
+extern void Scm_PutBinaryF64(ScmObj val, ScmUVector *uv, int off, ScmSymbol *e);
