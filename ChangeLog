@@ -1,5 +1,11 @@
 2007-02-19  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac: added check for sys/types.h; gauche.h includes it
+	  unconditionally, but some configure check (on some specific OS)
+	  needs it to be included, so it is convenient to force all checks
+	  include sys/types.h.  (Specifically, sys/socket.h requires
+	  sys/types.h on older MacOSX).
+
 	* ext/binary/*: Made default-endian a parameter; it eliminates
 	  need to provide endian argument in almost all cases.
 	  The peculiar endianness of double floats in ARM processors are

@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.92 2007-02-17 12:19:52 shirok Exp $
+dnl $Id: configure.ac,v 1.93 2007-02-20 05:42:02 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.9, shiro@acm.org)
-AC_REVISION($Revision: 1.92 $)
+AC_REVISION($Revision: 1.93 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -223,9 +223,11 @@ AC_SUBST(DEFAULT_CFLAGS)
 
 dnl ===========================================================
 dnl Checks for header files.
+dnl   We check sys/types.h merely to include it in the following tests,
+dnl   for some tests needs it.
 AC_HEADER_STDC
 AC_HEADER_TIME
-AC_CHECK_HEADERS(sys/time.h glob.h dlfcn.h getopt.h sched.h unistd.h)
+AC_CHECK_HEADERS(sys/time.h sys/types.h glob.h dlfcn.h getopt.h sched.h unistd.h)
 AC_CHECK_HEADERS(stdint.h inttypes.h rpc/types.h)
 AC_CHECK_HEADERS(syslog.h crypt.h)
 AC_CHECK_HEADERS(pty.h util.h libutil.h sys/loadavg.h)
