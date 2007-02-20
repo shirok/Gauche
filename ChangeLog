@@ -1,5 +1,7 @@
 2007-02-20  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/icmp.scm: added experimentally.
+
 	* ext/binary/*: reconsidered and changed the argument order of put-*!
 	  to be consistent with u*vector-set!; after some coding I found that
 	  the original one was too confusing.
