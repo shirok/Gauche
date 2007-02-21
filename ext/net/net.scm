@@ -1,7 +1,7 @@
 ;;;
 ;;; net - network interface
 ;;;  
-;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,11 +30,12 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: net.scm,v 1.33 2006-07-04 10:56:03 shirok Exp $
+;;;  $Id: net.scm,v 1.34 2007-02-21 04:50:50 shirok Exp $
 ;;;
 
 (define-module gauche.net
   (use srfi-1)
+  (use gauche.uvector)
   (export <socket> make-socket
           |PF_UNSPEC| |PF_UNIX| |PF_INET| |AF_UNSPEC| |AF_UNIX| |AF_INET|
           |SOCK_STREAM| |SOCK_DGRAM| |SOCK_RAW|
@@ -42,7 +43,8 @@
           socket-shutdown socket-close socket-bind socket-connect socket-fd
           socket-listen socket-accept socket-setsockopt socket-getsockopt
           socket-getsockname socket-getpeername
-          socket-send socket-sendto socket-recv socket-recvfrom
+          socket-send socket-sendto
+          socket-recv socket-recv! socket-recvfrom socket-recvfrom!
           <sockaddr> <sockaddr-in> <sockaddr-un> make-sockaddrs
           sockaddr-name sockaddr-family sockaddr-addr sockaddr-port
           make-client-socket make-server-socket make-server-sockets

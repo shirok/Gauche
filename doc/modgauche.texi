@@ -4851,14 +4851,20 @@ Returns a @code{<sockaddr>} instance that is the peer address of
 @defunx socket-sendto socket msg to-address &optional flags.
 @c EN
 Interfaces to @code{send(2)} and @code{sendto(2)}, respectively.
-Transmits the content of @var{msg} (string) through @var{socket}.
+Transmits the content of @var{msg} through @var{socket}.
+@var{msg} can be either a string or a uniform vector; if you send
+binary packets, uniform vectors are recommended.
+
 When @code{socket-send} is used, @var{socket} must already be connected.
 On the other hand, @code{socket-setdto} can be used for non-connected
 socket, and the destination address is specified by 
 a @code{<sockaddr>} instance @var{to-address}.
 @c JP
 それぞれ、@code{send(2)} および @code{sendto(2)} へのインタフェース。
-@var{msg} の内容(文字列)を @var{socket} を通じて送出します。
+@var{msg} の内容を @var{socket} を通じて送出します。
+@var{msg}は文字列もしくはユニフォームベクタでなければなりません。
+バイナリパケットを送る場合はユニフォームベクタの使用を推奨します。
+
 @code{socket-send} を使うときには、@var{socket} は既に接続されて
 いなければなりません。他方、@code{socket-setdto} は未接続の
 ソケットに対して使用でき、送出先アドレスは @code{<sockaddr>} のインスタンス
@@ -4876,38 +4882,148 @@ and @code{sendto(2)} for the details.
 @c COMMON
 @end defun
 
-@defun socket-recv socket bytes &optional flags
-@defunx socket-recvfrom socket bytes &optional flags
+@defun socket-recv! socket buf &optional flags
 @c EN
-Interfaces to @code{recv(2)} and @code{recvfrom(2)}, respectively.
-Receives a message up to the @var{bytes} bytes from a socket
-@var{socket}.  @code{socket-recv} should be used with a connected socket,
-whereas @code{socket-recvfrom} can be used with non-connected socket.
+Interface to @code{recv(2)}.  Receives a message from @var{socket},
+and stores it into @var{buf}, which must be a mutable uniform vector.
+Returns the number of bytes actually written.   @var{socket} must
+be already connected.  If the size of @var{buf} isn't enough to
+store the entire message, the rest may be discarded depending on
+the type of @var{socket}.
 @c JP
-それぞれ、@code{recv(2)} および @code{recvfrom(2)} へのインタフェース。
-ソケット @var{socket} から @var{bytes} バイトまでのメッセージを受信します。
-@code{socket-recv} は接続済みのソケットを使わなければなりませんが、
-他方、@code{socket-recvfrom} は未接続のソケットを使えます。
-@c COMMON
-
-@c EN
-@code{socket-recv} returns a received message as a (possibly incomplete)
-string.   @code{socket-recvfrom} returns two values, a received message
-and the sender's socket address.
-@c JP
-@code{socket-recv} は(不完全なものである可能性もある)文字列として受信した
-メッセージを返します。@code{socket-recvfrom} は値を2つ返し、一つは受信した
-メッセージ、もうひとつは送信者のソケットアドレスです。
+@code{recv(2)}へのインタフェースです。@var{socket}からメッセージを
+受信し、それを変更可能なユニフォームベクタ@var{buf}へと書き込みます。
+そして実際に書き込まれたバイト数を返します。
+@var{socket}は既にコネクトされていなければなりません。
+@var{buf}の大きさが受信したメッセージより小さい場合、@var{socket}の
+タイプによっては残りのメッセージは捨てられる可能性があります。
 @c COMMON
 
 @c EN
 The optional @var{flags} can be a bitwise OR of the integer
 constants @code{MSG_*}.  See the system's manpage of @code{recv(2)}
-and @code{recvfrom(2)} for the details.
+for the details.
 @c JP
 オプション引数 @var{flags} は整数定数 @code{MSG_*} のビット毎のORで
-指定できます。詳しくはシステムの man ページ @code{recv(2)} および
-@code{recvfrom(2)} を見て下さい。
+指定できます。詳しくはシステムの man ページ @code{recv(2)}を見て下さい。
+@c COMMON
+@end defun
+
+@defun socket-recvfrom! socket buf addrs &optional flags
+@c EN
+Interface to @code{recvfrom(2)}.  Receives a message from
+@var{socket}, which may be unconnected, and stores it to
+a mutable uniform vector @var{buf}.  Like @var{socket-recv},
+if the size of @var{buf} isn't enough to store the entire message, 
+the rest may be discarded depending on the type of @var{socket}.
+
+Returns two values; the number of bytes actually written into
+@var{buf}, and an instance of a subclass of @code{<sys-sockaddr>}
+which shows the sender's address.
+
+The @var{addrs} argument must be a list of instances of socket
+addresses, optionally its last cdr being @code{#t} (as a special
+case, if there's zero addresses to pass, just @code{#t} may be given).
+The content of each address doesn't matter; if the protocol family
+of one of them matches the sender's address, the sender's address
+is written into the passed sockaddr object.  By listing sockaddrs
+of possible families, you can count on @code{socket-recvfrom!}
+to allocate no memory on successful operation.  It is useful if
+you call @code{socket-recvfrom!} in a speed-sensitive inner loop.
+
+If the sender's address family doesn't match any of the addresses
+given to @var{addrs}, the behavior depends on whether the list is
+terminated by @code{()} or @code{#t}.  If it is terminated by @code{()},
+(i.e. @var{addrs} is a proper list), the sender's address is simply
+discarded and @code{socket-recvfrom!} returns @code{#f} as the
+second value.  If the list is terminated by @code{#t}, 
+@code{socket-recvfrom!} allocates a fresh sockaddr object and
+returns it as the second value.  
+
+Two simple cases: If you pass @code{()} to @var{addrs}, the sender's
+address is always discarded, which is useful if @var{socket} is
+connected (that is, you already know your sender's address).
+If you pass @code{#t} to @var{addrs}, a new socket address
+object is always allocated for the sender's address,
+which is convenient if you don't mind memory allocation.
+@c JP
+@code{recvfrom(2)}へのインタフェースです。@var{socket}からメッセージを
+受け取り、変更可能なユニフォームベクタへ書き込みます。@var{socket}は
+コネクトされていなくても構いません。@code{socket-recv}と同様に、
+@var{buf}の大きさがメッセージ全てを保持するのに十分でない場合、
+@var{socket}のタイプによっては残りのメッセージは捨てられます。
+
+ふたつの値を返します。実際に@var{buf}に書かれたバイト数と、
+送信者のアドレスを示す@code{<sys-sockaddr>}のサブクラスのインスタンスです。
+
+@var{addrs}引数はソケットアドレスインスタンスのリストでなければなりません。
+ただし、リストの終端 (最後の@code{cdr}) は@code{#t}であっても許されます。
+(この特殊な場合として、@var{addrs}引数にただ@code{#t}を渡すことも許されます)。
+@var{addrs}引数に渡されたソケットアドレスの中身は何でも構いません。
+送信者のアドレスファミリーに一致するソケットアドレスインスタンスが@var{addrs}
+中にあった場合、@code{socket-recvfrom!}はそのインスタンスに直接
+送信者のアドレスを書き込みます。受信し得る全てのアドレスファミリのソケットアドレスを
+リストで渡しておけば、@code{socket-recvfrom!}が(成功時には)
+メモリアロケーションを行わないことが保証されます。これは
+速度が重要となるタイトなループ内で@code{socket-recvfrom!}を呼ぶ場合に
+重要です。
+
+送信者のアドレスファミリに一致するソケットアドレスがあたえられなかった場合、
+@code{socket-recvfrom!}の振舞いは@var{addrs}のリスト終端の値によります。
+@var{addrs}が@code{()}で終端されていた場合 (@var{addrs}が真性リストで
+あった場合)、送信者のアドレスは捨てられ、@code{socket-recvfrom!}は
+二番めの値として@code{#f}を返します。@var{addrs}が@code{#t}で終端
+されていた場合、@code{socket-recvfrom!}は新たなソケットアドレス
+インスタンスを作成して返します。
+
+簡単な場合として次の二つがあります：@var{addrs}に@code{()}が渡された場合、
+送信者のアドレスは常に捨てられます。@var{socket}がコネクトされていれば
+送信者のアドレスは既にわかっているので、そういう場合に便利でしょう。
+一方@var{addrs}に@code{#t}を渡せば、常に新しいソケットアドレスが
+アロケートされて返されます。メモリアロケーションについて気にしなくても
+良い場合は便利でしょう。
+@c COMMON
+
+@c EN
+The optional @var{flags} can be a bitwise OR of the integer
+constants @code{MSG_*}.  See the system's manpage of @code{recvfrom(2)}
+for the details.
+@c JP
+オプション引数 @var{flags} は整数定数 @code{MSG_*} のビット毎のORで
+指定できます。詳しくはシステムの man ページ @code{recvfrom(2)}を見て下さい。
+@c COMMON
+@end defun
+
+
+@defun socket-recv socket bytes &optional flags
+@defunx socket-recvfrom socket bytes &optional flags
+@c EN
+Like @code{socket-recv!} and @code{socket-recvfrom!}, but
+these returns the received message as a (possibly incomplete)
+string, up to @var{bytes} size.  Additionally,
+@code{socket-recvfrom} always allocates a socket address
+object for the sender's address.
+@c JP
+@code{socket-recv!}や@code{socket-recvfrom!}と似ていますが、
+受け取ったメッセージを(不完全かもしれない)文字列として返します。
+@var{bytes}は受信する上限のバイト数を指定します。
+@code{socket-recvfrom}はそれに加えて、送信者のアドレスのために
+常に新たなソケットアドレスオブジェクトを生成します。
+@c COMMON
+
+@c EN
+The use of these procedures are discouraged, since they
+often returns incomplete strings for binary messages.
+Using strings for binary data creates many pitfalls.
+Uniform vectors (especially @code{u8vector}s) are for binary data.
+(The reason these procedures return strings is merely historical.)
+@c JP
+これらの手続きの使用はお薦めしません。というのは、バイナリメッセージを
+不完全な文字列の形で扱うことになりがちだからです。文字列で
+バイナリメッセージを取り扱うことは多くの落とし穴を作ります。
+バイナリデータを扱う場合はユニフォームベクタ (特に@code{u8vector}) 
+を使うべきでしょう。
+(これらの手続きが文字列を返すのは単に歴史的な理由によります)。
 @c COMMON
 @end defun
 

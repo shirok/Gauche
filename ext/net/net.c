@@ -30,13 +30,14 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.46 2007-01-17 07:15:13 shirok Exp $
+ *  $Id: net.c,v 1.47 2007-02-21 04:50:50 shirok Exp $
  */
 
 #include "gauche/net.h"
 #include <unistd.h>
 #include <fcntl.h>
 #include <gauche/extend.h>
+#include <gauche/uvector.h>
 
 /*==================================================================
  * Socket
@@ -212,14 +213,18 @@ ScmObj Scm_SocketOutputPort(ScmSocket *sock, int buffering)
  * Low-level library
  */
 
+#define CLOSE_CHECK(fd, op, s)                                          \
+    do {                                                                \
+        if (SOCKET_CLOSED(fd)) {                                        \
+            Scm_Error("attempt to %s a closed socket: %S", op, s);      \
+        }                                                               \
+    } while (0)
+        
 ScmObj Scm_SocketBind(ScmSocket *sock, ScmSockAddr *addr)
 {
     ScmSockAddr *naddr;
     int r;
-    
-    if (SOCKET_CLOSED(sock->fd)) {
-        Scm_Error("attempt to bind a closed socket: %S", sock);
-    }
+    CLOSE_CHECK(sock->fd, "bind", sock);
     SCM_SYSCALL(r, bind(sock->fd, &addr->addr, addr->addrlen));
     if (r < 0) {
         Scm_SysError("bind failed to %S", addr);
@@ -241,9 +246,7 @@ ScmObj Scm_SocketBind(ScmSocket *sock, ScmSockAddr *addr)
 ScmObj Scm_SocketListen(ScmSocket *sock, int backlog)
 {
     int r;
-    if (SOCKET_CLOSED(sock->fd)) {
-        Scm_Error("attempt to listen a closed socket: %S", sock);
-    }
+    CLOSE_CHECK(sock->fd, "listen to", sock);
     SCM_SYSCALL(r, listen(sock->fd, backlog));
     if (r < 0) {
         Scm_SysError("listen(2) failed");
@@ -259,10 +262,8 @@ ScmObj Scm_SocketAccept(ScmSocket *sock)
     socklen_t addrlen = sizeof(addrbuf);
     ScmSocket *newsock;
     ScmClass *addrClass = Scm_ClassOf(SCM_OBJ(sock->address));
-    
-    if (SOCKET_CLOSED(sock->fd)) {
-        Scm_Error("attempt to accept a closed socket: %S", sock);
-    }
+
+    CLOSE_CHECK(sock->fd, "accept from", sock);
     SCM_SYSCALL(newfd, accept(sock->fd, (struct sockaddr*)&addrbuf, &addrlen));
     if (SOCKET_INVALID(newfd)) {
         if (errno == EAGAIN) {
@@ -283,9 +284,7 @@ ScmObj Scm_SocketAccept(ScmSocket *sock)
 ScmObj Scm_SocketConnect(ScmSocket *sock, ScmSockAddr *addr)
 {
     int r;
-    if (SOCKET_CLOSED(sock->fd)) {
-        Scm_Error("attempt to connect a closed socket: %S", sock);
-    }
+    CLOSE_CHECK(sock->fd, "connect to", sock);
     SCM_SYSCALL(r, connect(sock->fd, &addr->addr, addr->addrlen));
     if (r < 0) {
         Scm_SysError("connect failed to %S", addr);
@@ -301,9 +300,7 @@ ScmObj Scm_SocketGetSockName(ScmSocket *sock)
     struct sockaddr_storage addrbuf;
     socklen_t addrlen = sizeof(addrbuf);
 
-    if (SOCKET_CLOSED(sock->fd)) {
-        Scm_Error("attempt to get the name of a closed socket: %S", sock);
-    }
+    CLOSE_CHECK(sock->fd, "get the name of", sock);
     SCM_SYSCALL(r, getsockname(sock->fd, (struct sockaddr*)&addrbuf, &addrlen));
     if (r < 0) {
         Scm_SysError("getsockname(2) failed");
@@ -317,9 +314,7 @@ ScmObj Scm_SocketGetPeerName(ScmSocket *sock)
     struct sockaddr_storage addrbuf;
     socklen_t addrlen = sizeof(addrbuf);
 
-    if (SOCKET_CLOSED(sock->fd)) {
-        Scm_Error("attempt to get the name of a closed socket: %S", sock);
-    }
+    CLOSE_CHECK(sock->fd, "get the name of", sock);
     SCM_SYSCALL(r, getpeername(sock->fd, (struct sockaddr*)&addrbuf, &addrlen));
     if (r < 0) {
         Scm_SysError("getpeername(2) failed");
@@ -327,14 +322,26 @@ ScmObj Scm_SocketGetPeerName(ScmSocket *sock)
     return SCM_OBJ(Scm_MakeSockAddr(NULL, (struct sockaddr*)&addrbuf, addrlen));
 }
 
-ScmObj Scm_SocketSend(ScmSocket *sock, ScmString *msg, int flags)
+static const char *get_message_body(ScmObj msg, u_int *size)
+{
+    if (SCM_UVECTORP(msg)) {
+        *size = SCM_UVECTOR_SIZE(msg)*Scm_UVectorElementSize(Scm_ClassOf(msg));
+        return (const char*)SCM_UVECTOR_ELEMENTS(msg);
+    } else if (SCM_STRINGP(msg)) {
+        return Scm_GetStringContent(SCM_STRING(msg), size, NULL, NULL);
+    } else {
+        Scm_TypeError("socket message", "uniform vector or string", msg);
+        *size = 0;              /* dummy */
+        return NULL;
+    }
+}
+
+ScmObj Scm_SocketSend(ScmSocket *sock, ScmObj msg, int flags)
 {
     int r; u_int size;
     const char *cmsg;
-    if (SOCKET_CLOSED(sock->fd)) {
-        Scm_Error("attempt to send to a closed socket: %S", sock);
-    }
-    cmsg = Scm_GetStringContent(msg, &size, NULL, NULL);
+    CLOSE_CHECK(sock->fd, "send to", sock);
+    cmsg = get_message_body(msg, &size);
     SCM_SYSCALL(r, send(sock->fd, cmsg, size, flags));
     if (r < 0) {
         Scm_SysError("send(2) failed");
@@ -342,15 +349,13 @@ ScmObj Scm_SocketSend(ScmSocket *sock, ScmString *msg, int flags)
     return SCM_MAKE_INT(r);
 }
 
-ScmObj Scm_SocketSendTo(ScmSocket *sock, ScmString *msg, ScmSockAddr *to,
+ScmObj Scm_SocketSendTo(ScmSocket *sock, ScmObj msg, ScmSockAddr *to,
                         int flags)
 {
     int r; u_int size;
     const char *cmsg;
-    if (SOCKET_CLOSED(sock->fd)) {
-        Scm_Error("attempt to send to a closed socket: %S", sock);
-    }
-    cmsg = Scm_GetStringContent(msg, &size, NULL, NULL);
+    CLOSE_CHECK(sock->fd, "send to", sock);
+    cmsg = get_message_body(msg, &size);
     SCM_SYSCALL(r, sendto(sock->fd, cmsg, size, flags,
                           &SCM_SOCKADDR(to)->addr, SCM_SOCKADDR(to)->addrlen));
     if (r < 0) {
@@ -363,9 +368,7 @@ ScmObj Scm_SocketRecv(ScmSocket *sock, int bytes, int flags)
 {
     int r;
     char *buf;
-    if (SOCKET_CLOSED(sock->fd)) {
-        Scm_Error("attempt to recv from a closed socket: %S", sock);
-    }
+    CLOSE_CHECK(sock->fd, "recv from", sock);
     buf = SCM_NEW_ATOMIC2(char*, bytes);
     SCM_SYSCALL(r, recv(sock->fd, buf, bytes, flags));
     if (r < 0) {
@@ -374,15 +377,36 @@ ScmObj Scm_SocketRecv(ScmSocket *sock, int bytes, int flags)
     return Scm_MakeString(buf, r, r, SCM_STRING_INCOMPLETE);
 }
 
+static char *get_message_buffer(ScmUVector *v, u_int *size)
+{
+    if (SCM_UVECTOR_IMMUTABLE_P(v)) {
+        Scm_Error("attempted to use an immutable uniform vector as a buffer");
+    }
+    *size = SCM_UVECTOR_SIZE(v)*Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
+    return (char *)SCM_UVECTOR_ELEMENTS(v);
+}
+
+ScmObj Scm_SocketRecvX(ScmSocket *sock, ScmUVector *buf, int flags)
+{
+    int r;
+    u_int size;
+    char *z;
+    CLOSE_CHECK(sock->fd, "recv from", sock);
+    z = get_message_buffer(buf, &size);
+    SCM_SYSCALL(r, recv(sock->fd, z, size, flags));
+    if (r < 0) {
+        Scm_SysError("recv(2) failed");
+    }
+    return Scm_MakeInteger(r);
+}
+
 ScmObj Scm_SocketRecvFrom(ScmSocket *sock, int bytes, int flags)
 {
     int r;
     char *buf;
     struct sockaddr_storage from;
     socklen_t fromlen = sizeof(from);
-    if (SOCKET_CLOSED(sock->fd)) {
-        Scm_Error("attempt to recv from a closed socket: %S", sock);
-    }
+    CLOSE_CHECK(sock->fd, "recv from", sock);
     buf = SCM_NEW_ATOMIC2(char*, bytes);
     SCM_SYSCALL(r, recvfrom(sock->fd, buf, bytes, flags,
                             (struct sockaddr*)&from, &fromlen));
@@ -391,6 +415,46 @@ ScmObj Scm_SocketRecvFrom(ScmSocket *sock, int bytes, int flags)
     }
     return Scm_Values2(Scm_MakeString(buf, r, r, SCM_STRING_INCOMPLETE),
                        Scm_MakeSockAddr(NULL, (struct sockaddr*)&from, fromlen));
+}
+
+/* ADDRS is a list of socket addresses; if 'from' address type matches
+   one of them, it is used to store the information so that we can avoid
+   allocation.  If no addresses match the incoming type, and ADDRS is
+   a complete list, the information of 'from' is discarded.  If no addresses
+   match the incoming type, and the last cdr of ADDRS is #t (this case
+   includes ADDRS == #t), a new sockaddr is allocated and returned. */
+ScmObj Scm_SocketRecvFromX(ScmSocket *sock, ScmUVector *buf,
+                           ScmObj addrs, int flags)
+{
+    int r;
+    u_int size;
+    char *z;
+    struct sockaddr_storage from;
+    socklen_t fromlen = sizeof(from);
+    ScmObj cp, addr = SCM_FALSE;
+    
+    CLOSE_CHECK(sock->fd, "recv from", sock);
+    z = get_message_buffer(buf, &size);
+    SCM_SYSCALL(r, recvfrom(sock->fd, z, size, flags,
+                            (struct sockaddr*)&from, &fromlen));
+    if (r < 0) {
+        Scm_SysError("recvfrom(2) failed");
+    }
+    SCM_FOR_EACH(cp, addrs) {
+        ScmObj a = SCM_CAR(cp);
+        if (Scm_SockAddrP(a)) {
+            if (SCM_SOCKADDR_FAMILY(a) == from.ss_family) {
+                memcpy(&SCM_SOCKADDR(a)->addr, &from, SCM_SOCKADDR(a)->addrlen);
+                addr = a;
+                break;
+            }
+        }
+    }
+    if (SCM_FALSEP(addr) && SCM_EQ(cp, SCM_TRUE)) {
+        /* Allocate sockaddr */
+        addr = Scm_MakeSockAddr(NULL, (struct sockaddr*)&from, fromlen);
+    }
+    return Scm_Values2(Scm_MakeInteger(r), addr);
 }
 
 /* Low-level setsockopt() and getsockopt() interface. */
@@ -402,9 +466,7 @@ ScmObj Scm_SocketRecvFrom(ScmSocket *sock, int bytes, int flags)
 ScmObj Scm_SocketSetOpt(ScmSocket *s, int level, int option, ScmObj value)
 {
     int r = 0;
-    if (SOCKET_CLOSED(s->fd)) {
-        Scm_Error("attempt to set a socket option of a closed socket: %S", s);
-    }
+    CLOSE_CHECK(s->fd, "set a socket option of", s);
     if (SCM_STRINGP(value)) {
         u_int size;
         const char *cvalue = Scm_GetStringContent(SCM_STRING(value), &size,
@@ -424,9 +486,7 @@ ScmObj Scm_SocketGetOpt(ScmSocket *s, int level, int option, int rsize)
 {
     int r = 0;
     socklen_t rrsize = rsize;
-    if (SOCKET_CLOSED(s->fd)) {
-        Scm_Error("attempt to get a socket option of a closed socket: %S", s);
-    }
+    CLOSE_CHECK(s->fd, "get a socket option of", s);
     if (rsize > 0) {
         char *buf = SCM_NEW_ATOMIC2(char *, rrsize);
         SCM_SYSCALL(r, getsockopt(s->fd, level, option, buf, &rrsize));

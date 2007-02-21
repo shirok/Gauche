@@ -1,5 +1,10 @@
 2007-02-20  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/*: Added socket-recv! and socket-recvfrom!.  Changed
+	  socket-send and socket-sendto to accept uniform vectors as well
+	  as strings.  These are a part of shift towards using uniform
+	  vectors uniformly for binary data, instead of strings.
+
 	* lib/rfc/icmp.scm: added experimentally.
 
 	* ext/binary/*: reconsidered and changed the argument order of put-*!

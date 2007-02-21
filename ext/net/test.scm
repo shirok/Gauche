@@ -3,6 +3,7 @@
 ;;
 
 (use gauche.test)
+(use gauche.uvector)
 (use srfi-1)
 (use srfi-13)
 (test-start "net")
@@ -287,5 +288,25 @@
          (socket-send sock "abc")
          (begin0 (string-incomplete->complete (socket-recv sock 1024))
                  (socket-close sock))))
+
+(test* "udp uvector API" '(#t #t)
+       (let ((s-sock (make-socket |PF_INET| |SOCK_DGRAM|))
+             (r-sock (make-socket |PF_INET| |SOCK_DGRAM|))
+             (s-addr (make <sockaddr-in> :host :loopback :port *inet-port*))
+             (r-addr (make <sockaddr-in> :host :any :port *inet-port*))
+             (from   (make <sockaddr-in>))
+             (data   (make-u8vector 1024 #x3c))
+             (buf    (make-u8vector 1024 #xa5)))
+         (socket-setsockopt r-sock |SOL_SOCKET| |SO_REUSEADDR| 1)
+         (socket-bind r-sock r-addr)
+         (socket-sendto s-sock data s-addr)
+         (unwind-protect
+             (receive (size f-addr) (socket-recvfrom! r-sock buf (list from))
+               (list (eq? f-addr from)
+                     (equal? buf data)))
+           (begin
+             (socket-close r-sock)
+             (socket-close s-sock)))
+         ))
 
 (test-end)

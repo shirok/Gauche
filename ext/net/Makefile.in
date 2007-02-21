@@ -21,10 +21,12 @@ OBJECTS = net_head.$(OBJEXT) \
 GENERATED = Makefile 
 XCLEANFILES = netlib.c netaux.c net_head.c net_tail.c
 
+EXTRA_INCLUDES = -I$(srcdir)/../uvector
+
 all : $(LIBFILES)
 
 libnet.$(SOEXT) : $(OBJECTS) 
-	$(MODLINK) libnet.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+	$(MODLINK) libnet.$(SOEXT) $(OBJECTS) @EXT_UVECTOR@ $(EXT_LIBGAUCHE) $(LIBS)
 
 netlib.c : netlib.stub
 

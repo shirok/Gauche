@@ -1,7 +1,7 @@
 /*
  * net.h - network interface
  *
- *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007 Shiro Kawai <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.h,v 1.3 2006-07-05 03:35:54 shirok Exp $
+ *  $Id: net.h,v 1.4 2007-02-21 04:50:50 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -38,6 +38,7 @@
 
 #include <sys/types.h>
 #include <gauche.h>
+#include <gauche/uvector.h>
 #include <errno.h>
 
 #ifndef __MINGW32__
@@ -206,10 +207,13 @@ extern ScmObj Scm_SocketAccept(ScmSocket *s);
 extern ScmObj Scm_SocketGetSockName(ScmSocket *s);
 extern ScmObj Scm_SocketGetPeerName(ScmSocket *s);
 
-extern ScmObj Scm_SocketSend(ScmSocket *s, ScmString *msg, int flags);
-extern ScmObj Scm_SocketSendTo(ScmSocket *s, ScmString *msg, ScmSockAddr *to, int flags);
+extern ScmObj Scm_SocketSend(ScmSocket *s, ScmObj msg, int flags);
+extern ScmObj Scm_SocketSendTo(ScmSocket *s, ScmObj msg, ScmSockAddr *to, int flags);
 extern ScmObj Scm_SocketRecv(ScmSocket *s, int bytes, int flags);
+extern ScmObj Scm_SocketRecvX(ScmSocket *s, ScmUVector *buf, int flags);
 extern ScmObj Scm_SocketRecvFrom(ScmSocket *s, int bytes, int flags);
+extern ScmObj Scm_SocketRecvFromX(ScmSocket *s, ScmUVector *buf, 
+                                  ScmObj addrs, int flags);
 
 extern ScmObj Scm_SocketSetOpt(ScmSocket *s, int level,
                                int option, ScmObj value);
