@@ -5225,6 +5225,28 @@ Can be only used with @code{socket-getsockopt}.
 @c COMMON
 @end defvar
 
+
+@defun inet-checksum packet size
+@c EN
+Calculates one's complement of Internet Checksum (RFC1071) of the
+@var{packet}, which must be given as a uniform vector.  First
+@var{size} bytes of @var{packet} are used for calculation.
+Returned value is in network byte order (big-endian).
+It is an error if @var{size} is greater than the size of @var{packet}.
+
+Note: The used algorithm assumes @var{packet} is not too big (< 64K).
+@c JP
+ユニフォームベクタで与えられる@var{packet}のインターネットチェックサム(RFC1071)
+の1の補数を計算して返します。@var{packet}の最初の@var{size}バイトのみが
+計算の対象となります。返される値はネットワークバイトオーダ (ビッグエンディアン)
+です。@var{packet}より大きな値を@var{size}に指定するとエラーとなります。
+
+註: 使われているアルゴリズムは、@var{packet}がそれほど大きくないこと (< 64K) を
+仮定しています。
+@c COMMON
+@end defun
+
+
 @node Netdb interface,  , Low-level socket interface, Networking
 @subsection  Netdb interface
 @c NODE Netdbインタフェース

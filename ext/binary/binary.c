@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: binary.c,v 1.10 2007-02-21 04:56:41 shirok Exp $
+ *  $Id: binary.c,v 1.11 2007-02-21 22:27:37 shirok Exp $
  */
 
 #include <gauche.h>
@@ -428,8 +428,7 @@ void Scm_WriteBinaryF64(ScmObj sval, ScmPort *oport, ScmSymbol *sendian)
 
 static void extract(ScmUVector *uv, unsigned char *buf, int off, int eltsize)
 {
-    int size =
-        SCM_UVECTOR_SIZE(uv)*Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(uv)));
+    int size = Scm_UVectorSizeInBytes(uv);
     unsigned char *b = (unsigned char*)SCM_UVECTOR_ELEMENTS(uv) + off;
     int i;
     
@@ -545,8 +544,7 @@ ScmObj Scm_GetBinaryF64(ScmUVector *uv, int off, ScmSymbol *sendian)
 
 static void inject(ScmUVector *uv, unsigned char *buf, int off, int eltsize)
 {
-    int size =
-        SCM_UVECTOR_SIZE(uv)*Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(uv)));
+    int size = Scm_UVectorSizeInBytes(uv);
     unsigned char *b = (unsigned char*)SCM_UVECTOR_ELEMENTS(uv) + off;
     int i;
 

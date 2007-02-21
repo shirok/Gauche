@@ -117,6 +117,15 @@
             '("tcp"    "tcp")))
 
 ;;-----------------------------------------------------------------
+(test-section "Packet utility")
+
+;; checksum example taken from RFC1071
+(test* "inet-checksum" (logand (lognot #xddf2) #xffff)
+       (inet-checksum '#u8(#x00 #x01 #xf2 #x03 #xf4 #xf5 #xf6 #xf7) 8))
+(test* "inet-checksum" (logand (lognot #xf201) #xffff)
+       (inet-checksum '#u8(#x00 #x01 #xf2) 3))
+
+;;-----------------------------------------------------------------
 (test-section "socket")
 
 (define (simple-server socket)
@@ -287,7 +296,8 @@
          (socket-connect sock addr)
          (socket-send sock "abc")
          (begin0 (string-incomplete->complete (socket-recv sock 1024))
-                 (socket-close sock))))
+                 (socket-close sock)
+                 (sys-wait))))
 
 (test* "udp uvector API" '(#t #t)
        (let ((s-sock (make-socket |PF_INET| |SOCK_DGRAM|))

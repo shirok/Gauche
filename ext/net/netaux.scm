@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netaux.scm,v 1.5 2007-01-21 14:21:49 rui314159 Exp $
+;;;  $Id: netaux.scm,v 1.6 2007-02-21 22:27:37 shirok Exp $
 ;;;
 
 (select-module gauche.net)
@@ -187,3 +187,7 @@
     (begin0
      (proc (socket-input-port socket) (socket-output-port socket))
      (socket-close socket))))
+
+
+
+  

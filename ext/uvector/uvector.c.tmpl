@@ -35,7 +35,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvector.c.tmpl,v 1.10 2007-02-19 03:04:31 shirok Exp $
+ *  $Id: uvector.c.tmpl,v 1.11 2007-02-21 22:27:37 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -86,6 +86,12 @@ int Scm_UVectorElementSize(ScmClass *klass)
     int ind = uvector_index(klass);
     if (ind >= 0) return sizes[ind];
     return -1;
+}
+
+/* Returns the size of the vector body in bytes */
+int Scm_UVectorSizeInBytes(ScmUVector *uv)
+{
+    return SCM_UVECTOR_SIZE(uv) * Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(uv)));
 }
 
 /* Generic constructor */

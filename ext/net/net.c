@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.47 2007-02-21 04:50:50 shirok Exp $
+ *  $Id: net.c,v 1.48 2007-02-21 22:27:37 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -325,7 +325,7 @@ ScmObj Scm_SocketGetPeerName(ScmSocket *sock)
 static const char *get_message_body(ScmObj msg, u_int *size)
 {
     if (SCM_UVECTORP(msg)) {
-        *size = SCM_UVECTOR_SIZE(msg)*Scm_UVectorElementSize(Scm_ClassOf(msg));
+        *size = Scm_UVectorSizeInBytes(SCM_UVECTOR(msg));
         return (const char*)SCM_UVECTOR_ELEMENTS(msg);
     } else if (SCM_STRINGP(msg)) {
         return Scm_GetStringContent(SCM_STRING(msg), size, NULL, NULL);
@@ -382,7 +382,7 @@ static char *get_message_buffer(ScmUVector *v, u_int *size)
     if (SCM_UVECTOR_IMMUTABLE_P(v)) {
         Scm_Error("attempted to use an immutable uniform vector as a buffer");
     }
-    *size = SCM_UVECTOR_SIZE(v)*Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
+    *size = Scm_UVectorSizeInBytes(v);
     return (char *)SCM_UVECTOR_ELEMENTS(v);
 }
 

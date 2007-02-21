@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: net.scm,v 1.34 2007-02-21 04:50:50 shirok Exp $
+;;;  $Id: net.scm,v 1.35 2007-02-21 22:27:37 shirok Exp $
 ;;;
 
 (define-module gauche.net
@@ -53,6 +53,7 @@
           <sys-protoent> sys-getprotobyname sys-getprotobynumber
           <sys-servent> sys-getservbyname sys-getservbyport
           sys-htonl sys-htons sys-ntohl sys-ntohs
+          inet-checksum
           )
   )
   

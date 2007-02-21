@@ -1,7 +1,7 @@
 /*
  * uvectorP.h - internal macros for the uniform vector module
  *
- *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007 Shiro Kawai <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvectorP.h,v 1.24 2007-02-19 03:04:31 shirok Exp $
+ *  $Id: uvectorP.h,v 1.25 2007-02-21 22:27:38 shirok Exp $
  */
 
 #ifndef GAUCHE_UVECTOR_P_H
