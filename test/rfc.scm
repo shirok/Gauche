@@ -339,6 +339,8 @@ Content-Length: 4349
 
 (test* "encode" "abc%3c%20%3e%20%22%20%23%25%7b%7c%7d%5c%5e"
        (uri-encode-string "abc< > \" #%{|}\\^"))
+(test* "encode (noescape)" ".a%21%2ap"
+       (uri-encode-string ".a!*p" :noescape *rfc3986-unreserved-char-set*))
 (test* "decode" "abc< > \" #%?{|}\\^"
        (uri-decode-string "abc%3c%20%3e%20%22%20%23%25%3f%7b%7c%7d%5c%5e"))
 (test* "decode" "abc<+>+\"+#%?{|}\\^"

@@ -1,7 +1,7 @@
 ;;;
 ;;; uri.scm - parse and construct URIs
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: uri.scm,v 1.18 2007-01-21 14:21:56 rui314159 Exp $
+;;;  $Id: uri.scm,v 1.19 2007-02-21 08:37:35 shirok Exp $
 ;;;
 
 ;; Main reference:
@@ -48,11 +48,14 @@
 (define-module rfc.uri
   (use srfi-13)
   (use gauche.regexp)
+  (use gauche.charconv)
   (export uri-scheme&specific uri-decompose-hierarchical
           uri-decompose-authority uri-parse
           uri-compose
           uri-decode uri-decode-string
           uri-encode uri-encode-string
+          *rfc2396-unreserved-char-set*
+          *rfc3986-unreserved-char-set*
           )
   )
 (select-module rfc.uri)
@@ -194,18 +197,30 @@
             ))))
 
 (define (uri-decode-string string . args)
-  (with-string-io string (lambda () (apply uri-decode args))))
+  (let-keywords args ((encoding (gauche-character-encoding)) . args)
+    (call-with-string-io string
+      (lambda (in out)
+        (with-ports
+            in
+            (wrap-with-output-conversion out (gauche-character-encoding)
+                                         :from-code encoding)
+            (current-error-port)
+          (lambda ()
+            (apply uri-decode args)
+            (close-output-port (current-output-port))))))))
 
 ;; Default set of characters that can be passed without escaping.
-;; See 2.3 "Unreserved Characters" of RFC 2396.
-(define *uri-unreserved-char-set* #[-_.!~*'()0-9A-Za-z])
+;; See 2.3 "Unreserved Characters" of RFC 2396.  It is slightly
+;; revised in RFC3986.
+(define-constant *rfc2396-unreserved-char-set* #[-_.!~*'()0-9A-Za-z])
+(define-constant *rfc3986-unreserved-char-set* #[-_.~0-9A-Za-z])
 
 ;; NB: Converts byte by byte, instead of chars, to avoid complexity
 ;; from different character encodings (suggested by Fumitoshi UKAI).
 ;; 'noescape' char-set is only valid in ASCII range.  All bytes
 ;; larger than #x80 are encoded unconditionally.
 (define (uri-encode . args)
-  (let-keywords args ((echars :noescape *uri-unreserved-char-set*))
+  (let-keywords args ((echars :noescape *rfc3986-unreserved-char-set*))
     (let loop ((b (read-byte)))
       (unless (eof-object? b)
         (if (and (< b #x80)
@@ -215,6 +230,14 @@
         (loop (read-byte))))))
 
 (define (uri-encode-string string . args)
-  (with-string-io string (lambda () (apply uri-encode args))))
+  (let-keywords args ((encoding (gauche-character-encoding)) . args)
+    (call-with-string-io string
+      (lambda (in out)
+        (with-ports
+            (wrap-with-input-conversion in (gauche-character-encoding)
+                                        :to-code encoding)
+            out
+            (current-error-port)
+          (cut apply uri-encode args))))))
 
 (provide "rfc/uri")

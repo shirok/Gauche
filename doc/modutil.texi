@@ -6134,7 +6134,7 @@ Some examples:
 @end defun
 
 @defun uri-decode &keyword :cgi-decode
-@defunx uri-decode-string string &keyword :cgi-decode
+@defunx uri-decode-string string &keyword :cgi-decode :encoding
 @c EN
 Decodes ``URI encoding'', i.e. @code{%}-escapes.
 @code{uri-decode} takes input from the current input port,
@@ -6143,6 +6143,11 @@ and writes decoded result to the current output port.
 returns decoded string.
 
 If @var{cgi-decode} is true, also replaces @code{+} to a space character.
+
+To @code{uri-decode-string} you can provide the external character
+encoding by the @var{encoding} keyword argument.  When it is given,
+the decoded octet sequence is assumed to be in the specified encoding
+and converted to the Gauche's internal character encoding.
 @c JP
 URI エンコーディング、すなわち、@code{%}でエスケープされた URI 文字列を
 デコードします。@code{uri-decode} は現在の入力ポートから入力を受け取り、
@@ -6151,11 +6156,16 @@ URI エンコーディング、すなわち、@code{%}でエスケープされた URI 文字列を
 文字列を返します。
 
 @var{cgi-decode} が真の場合は、@code{+} がスペース文字に置換されます。
+
+@code{uri-decode-string}には、外部の文字エンコーディングを指定する
+@var{encoding}キーワード引数を与えることができます。この引数が与えれた
+場合、デコードされたオクテットの列を指定された文字エンコーディングであると
+してGaucheの内部文字エンコーディングへと変換したものが返されます。
 @c COMMON
 @end defun
 
 @defun uri-encode &keyword :noescape
-@defunx uri-encode-string string &keyword :noescape
+@defunx uri-encode-string string &keyword :noescape :encoding
 @c EN
 Encodes unsafe characters by @code{%}-escape.  @code{uri-encode}
 takes input from the current input port and writes the result to
@@ -6163,11 +6173,16 @@ the current output port.  @code{uri-encode-string} takes input
 from @var{string} and returns the encoded string.
 
 By default, characters that are not specified ``unreserved'' in
-RFC2396 are escaped.  You can pass different character set
-to @var{noescape} argument to keep from being encoded.
+RFC3986 are escaped.  You can pass different character
+set to @var{noescape} argument to keep from being encoded.
+For example, the older RFC2396 has several more ``unreserved''
+characters, and passing @code{*rfc2396-unreserved-char-set*} (see below)
+prevents those characters from being escaped.
 
 The multibyte characters are encoded as the octet stream of Gauche's
-native multibyte representation.
+native multibyte representation by default.  However, you can pass
+the @code{encoding} keyword argument to @code{uri-encode-string},
+to convert @var{string} to the specified character encoding.
 @c JP
 安全でない文字を、@code{%}によるエスケープでエンコードします。
 @code{uri-encode} は現在の入力ポートから入力を受け取り、
@@ -6175,14 +6190,35 @@ native multibyte representation.
 @code{uri-encode-string} は @var{string} を入力とし、エンコードした
 文字列を返します。
 
-デフォルトでは、RFC2396 で"非予約文字"として規定されていない文字は
+デフォルトでは、RFC3986 で"非予約文字"として規定されていない文字は
 エスケープされます。@var{noescape} 引数に異なる文字セットを渡すことで、
 それらがエンコードされるのを抑止することができます。
+例えば古いRFC2396では"非予約文字"がいくつか多かったのですが、
+@code{*rfc2396-unreserved-char-set*} (下記参照) を渡すことで
+それらの文字がエスケープされるのを防ぐことができます。
 
-マルチバイト文字は、Gauche のネイティブなマルチバイト表現の
-オクテット・ストリームとしてエンコードされます。
+マルチバイト文字は、デフォルトではGauche のネイティブなマルチバイト表現の
+オクテット・ストリームとしてエンコードされます。ただし
+@code{uri-encode-string}には@var{encoding}キーワード引数を渡すことができて、
+その場合はまず@var{string}が指定された文字エンコーディングへと変換されます。
 @c COMMON
 @end defun
+
+@defvr {Constant} *rfc2396-unreserved-char-set*
+@defvrx {Constant} *rfc3986-unreserved-char-set*
+@c EN
+These constants are bound to character sets that represents
+``unreserved'' characters defined in RFC2396 and RFC3986, respectively.
+(See @ref{Character set}, and @ref{Character-set library}, for
+operations on character sets).
+@c JP
+これらの定数はそれぞれ、RFC2396とRFC3986で定義されている
+「非予約文字」の文字集合に束縛されています。
+(文字集合の操作については、@ref{Character set}および@ref{Character-set library}
+を参照して下さい。)
+@c COMMON
+@end defvr
+
 
 @c ----------------------------------------------------------------------
 @node SLIB, Functional XML parser, URI parsing and construction, Library modules - Utilities

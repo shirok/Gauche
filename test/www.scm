@@ -250,7 +250,7 @@ VGhpcyBpcyBhIHRlc3Qgc2VudGVuY2Uu
          "REMOTE_HOST = foo.com"
          "REQUEST_METHOD = GET"
          "CONTENT_TYPE = "
-         "QUERY_STRING = a=b&%26%26%24%26=!%40!%40")
+         "QUERY_STRING = a=b&%26%26%24%26=%21%40%21%40")
        (receive (_ body)
            (run-cgi-script->string-list "test.o/cgitest.cgi"
                                         :parameters '((a . b) (&&$& . !@!@)))
@@ -261,7 +261,7 @@ VGhpcyBpcyBhIHRlc3Qgc2VudGVuY2Uu
          "REMOTE_HOST = foo.com"
          "REQUEST_METHOD = HEAD"
          "CONTENT_TYPE = "
-         "QUERY_STRING = a=b&%26%26%24%26=!%40!%40")
+         "QUERY_STRING = a=b&%26%26%24%26=%21%40%21%40")
        (receive (_ body)
            (run-cgi-script->string-list "test.o/cgitest.cgi"
                                         :environment '((REQUEST_METHOD . HEAD))
@@ -282,9 +282,9 @@ VGhpcyBpcyBhIHRlc3Qgc2VudGVuY2Uu
 (test* "run-cgi-script->string-list (using parameters)"
        '("REQUEST_METHOD = POST"
          "CONTENT_TYPE = application/x-www-form-urlencoded"
-         "CONTENT_LENGTH = 25"
+         "CONTENT_LENGTH = 29"
          "QUERY_STRING = "
-         "a=b&%26%26%24%26=!%40!%40")
+         "a=b&%26%26%24%26=%21%40%21%40")
        (receive (_ body)
            (run-cgi-script->string-list "test.o/cgitest.cgi"
                                         :environment '((REQUEST_METHOD . POST))
