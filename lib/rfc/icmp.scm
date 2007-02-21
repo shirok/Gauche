@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: icmp.scm,v 1.1 2007-02-20 22:17:34 shirok Exp $
+;;;  $Id: icmp.scm,v 1.2 2007-02-21 09:41:10 shirok Exp $
 ;;;
 
 
@@ -207,21 +207,21 @@
 (define (icmp-checksum buf size)
   (define (finish x)
     (let* ((y (+ (ash x -16) (logand x #xffff)))
-           (z (+ (ash x -16) x)))
-      (logand (lognot x) #xffff)))
+           (z (+ (ash y -16) y)))
+      (logand (lognot z) #xffff)))
   (let loop ((i 0)
              (size size)
-             (sum  sum))
+             (sum  0))
     (cond
      ((= size 0) (finish sum))
-     ((= size 1) (finish sum (get-u8 buf i)))
+     ((= size 1) (finish (+ sum (get-u8 buf i))))
      (else (loop (+ i 2) (- size 2) (+ (get-u16be buf i) sum))))))
 
 (define (icmp-fill-checksum! buf size)
-  (put-u16be! buf size (icmp-checksum buf size)))
+  (put-u16be! buf 2 (icmp-checksum buf size)))
 
 (define (icmp-fill-echo! buf ident seq data)
-  (icmp-fill-header buf ICMP_ECHO 0)
+  (icmp-fill-header! buf ICMP_ECHO 0)
   (put-u16be! buf 4 ident)
   (put-u16be! buf 6 seq)
   (u8vector-copy! buf 8 data)
