@@ -1,5 +1,5 @@
 /*
- * binaryio.c - Binary I/O routines
+ * binary.c - Binary I/O routines
  *
  *   Copyright (c) 2004-2007 Shiro Kawai, All rights reserved.
  * 
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: binary.c,v 1.9 2007-02-20 20:04:04 shirok Exp $
+ *  $Id: binary.c,v 1.10 2007-02-21 04:56:41 shirok Exp $
  */
 
 #include <gauche.h>

@@ -13,7 +13,7 @@
 ;;;  warranty.  In no circumstances the author(s) shall be liable
 ;;;  for any damages arising out of the use of this software.
 ;;;
-;;;  $Id: array.scm,v 1.16 2007-02-19 03:12:50 shirok Exp $
+;;;  $Id: array.scm,v 1.17 2007-02-21 04:56:41 shirok Exp $
 ;;;
 
 ;; Conceptually, an array is a backing storage and a procedure to
@@ -317,7 +317,7 @@
         (unless (and (exact? (cadr l)) (integer? (cadr l)))
           (error "exact integer required for shape, but got" (cadr l)))
         (unless (<= (car l) (cadr l))
-          (error "beginning index ~s is larger than ending index ~s in shape argument: ~s" (car l) (cadr l) args)))
+          (errorf "beginning index ~s is larger than ending index ~s in shape argument: ~s" (car l) (cadr l) args)))
       ;; make array.
       (make <array>
         :start-vector (s32vector 0 0)
