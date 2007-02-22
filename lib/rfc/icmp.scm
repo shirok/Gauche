@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: icmp.scm,v 1.2 2007-02-21 09:41:10 shirok Exp $
+;;;  $Id: icmp.scm,v 1.3 2007-02-22 01:36:19 shirok Exp $
 ;;;
 
 
@@ -49,6 +49,7 @@
 
 (define-module rfc.icmp
   (use gauche.uvector)
+  (use gauche.net)
   (use binary.io)
   (export icmp-message-type->string
           ICMP_ECHOREPLY ICMP_DEST_UNREACH ICMP_SOURCE_QUENCH
@@ -104,8 +105,9 @@
      (begin
        (define-constant sym val) ...
        (define (->string c)
-         (case ((val) expl) ...
-               (else (format "Unknown code ~s for ~a" c name))))))))
+         (case c
+           ((val) expl) ...
+           (else (format "Unknown code ~s for ~a" c name))))))))
 
 ;; ICMP message types.
 (define-named-code "ICMP message types"
@@ -204,21 +206,8 @@
   (put-u8! buf 1 code)
   (put-u16be! buf 2 0))
 
-(define (icmp-checksum buf size)
-  (define (finish x)
-    (let* ((y (+ (ash x -16) (logand x #xffff)))
-           (z (+ (ash y -16) y)))
-      (logand (lognot z) #xffff)))
-  (let loop ((i 0)
-             (size size)
-             (sum  0))
-    (cond
-     ((= size 0) (finish sum))
-     ((= size 1) (finish (+ sum (get-u8 buf i))))
-     (else (loop (+ i 2) (- size 2) (+ (get-u16be buf i) sum))))))
-
 (define (icmp-fill-checksum! buf size)
-  (put-u16be! buf 2 (icmp-checksum buf size)))
+  (put-u16be! buf 2 (inet-checksum buf size)))
 
 (define (icmp-fill-echo! buf ident seq data)
   (icmp-fill-header! buf ICMP_ECHO 0)
@@ -231,30 +220,27 @@
 ;; Packet decomposition
 ;;
 
-(define (icmp-packet-type buf)
-  (get-u8 buf 0))
+(define (icmp-packet-type buf offset)
+  (get-u8 buf (+ 0 offset)))
 
-(define (icmp-packet-code buf)
-  (get-u8 buf 1))
+(define (icmp-packet-code buf offset)
+  (get-u8 buf (+ 1 offset)))
 
-(define (icmp-echo-ident buf)
-  (get-u16be 4))
+(define (icmp-echo-ident buf offset)
+  (get-u16be buf (+ 4 offset)))
 
-(define (icmp-echo-sequence buf)
-  (get-u16be 6))
+(define (icmp-echo-sequence buf offset)
+  (get-u16be buf (+ 6 offset)))
 
-(define (icmp-describe-packet buf size)
-  ;; just in case.  usually kernel won't pass such packets.
-  (when (< size 8)
-    (error "icmp packet too short"))
-  (let ((type (icmp-packet-type buf))
-        (code (icmp-packet-code buf)))
-    (format #t "ICMP packet size=~a type=~a(~a)\n"
-            size type (icmp-message-type->string type))
+(define (icmp-describe-packet buf offset)
+  (let ((type (icmp-packet-type buf offset))
+        (code (icmp-packet-code buf offset)))
+    (format #t "ICMP packet type=~a(~a)\n"
+            type (icmp-message-type->string type))
     (cond
      ((= type ICMP_ECHOREPLY)
       (format #t "  ident=~2,'0x seq=~2,'0x\n"
-              (icmp-echo-ident buf) (icmp-echo-sequence buf)))
+              (icmp-echo-ident buf offset) (icmp-echo-sequence buf offset)))
      ((assv type `((,ICMP_DEST_UNREACH . ,icmp-unreach-code->string)
                    (,ICMP_REDIRECT     . ,icmp-redirect-code->string)
                    (,ICMP_ROUTER_ADVERT . ,icmp-router-code->string)
