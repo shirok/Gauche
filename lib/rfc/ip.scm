@@ -1,7 +1,7 @@
 ;;;
 ;;; rfc.ip - Internet Protocol
 ;;;  
-;;;   Copyright (c) 2007 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2007 Shiro Kawai <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: ip.scm,v 1.2 2007-02-22 01:36:19 shirok Exp $
+;;;  $Id: ip.scm,v 1.3 2007-02-24 23:12:57 shirok Exp $
 ;;;
 
 
@@ -39,13 +39,108 @@
 (define-module rfc.ip
   (use gauche.uvector)
   (use binary.io)
+  (use util.match)
+  (use srfi-1)
+  (use srfi-13)
   (export ip-version ip-header-length ip-protocol
-          ip-source-address ip-destination-address))
+          ip-source-address ip-destination-address
+          ip-parse-address ip-parse-address!))
 (select-module rfc.ip)
 
 ;;============================================================
 ;; Constants
 ;;
+
+;;============================================================
+;; IP sddress utilities
+;;
+
+;; IP address parser.  Can deal with both v4 and v6 addresses.
+;; Two variations: ip-parse-address returns an integer address
+;; and version; ip-parse-address! fills the given uvector with
+;; parsed address and returns a version.
+;; We could use <sockaddr-in> and <sockaddr-in6>, giving STRING
+;; to :host argument in the constructor and extract the address
+;; value, but the host argument also accepts hostnames, which we
+;; want to avoid.  So we parse the address by ourselves.
+
+(define (ip-parse-address string)
+  (receive (ns vers) (%ip-parse-address string)
+    (case vers
+      ((4) (values (%fold-addr-to-integer ns 8) 4))
+      ((6) (values (%fold-addr-to-integer ns 16) 6))
+      (else (values #f #f)))))
+
+(define (ip-parse-address! string uv)
+  (receive (ns vers) (%ip-parse-address string)
+    (case vers
+      ((4) (%fill-addr-to-buf! ns uv put-u8! 1) 4)
+      ((6) (%fill-addr-to-buf! ns uv put-u16be! 2) 6)
+      (else #f))))
+
+(define (%ip-parse-address string)
+  (define (try-ipv6 s)
+    (let loop ((ss (map (lambda (s) (or (string-null? s) s))
+                        (string-split s #\:)))
+               (r '())
+               (abbrev? #f))
+      (match ss
+        ((#t #t)                        ; ends with '::'
+         (and (not abbrev?)
+              (finish-ipv6 (reverse (cons '* r)) #t)))
+        ((#t #t . rest)                 ; begins with '::'
+         (and (null? r)
+              (loop rest '(*) #t)))
+        ((#t . rest)                    ; '::' in the middle
+         (and (not (null? r))
+              (not abbrev?)
+              (loop rest (cons '* r) #t)))
+        ((part)                         ; end
+         (cond
+          ((try-ipv4 part) =>           ;   ipv6-mapped-ipv4
+           (lambda (ns)
+             (finish-ipv6 (reverse (cons* (+ (* (caddr ns) 256) (cadddr ns))
+                                          (+ (* (car ns) 256) (cadr ns))
+                                          r))
+                          abbrev?)))
+          ((string->number part 16) =>
+           (lambda (x) (finish-ipv6 (reverse (cons x r)) abbrev?)))
+          (else #f)))
+        ((part . rest)
+         (and-let* ((x (string->number part 16))
+                    ( (<= 0 x 65535) ))
+           (loop rest (cons x r) abbrev?)))
+        (_ #f))))
+  (define (finish-ipv6 parts abbrev?)
+    (if abbrev?
+      (and-let* ((zeropart-length (- 8 (length parts) -1))
+                 ( (< 0 zeropart-length 8) )
+                 (zeropart (make-list zeropart-length 0)))
+        (receive (pre post) (break (cut eq? <> '*) parts)
+          (append pre zeropart (cdr post))))
+      (and (= (length parts) 8) parts)))
+  (define (try-ipv4 s)
+    (let1 ss (string-split s #\.)
+      (and (= (length ss) 4)
+           (let1 ns (map string->number ss)
+             (and (every (lambda (n) (and n (<= 0 n 255))) ns)
+                  ns)))))
+
+  (cond
+   ((try-ipv6 string) => (cut values <> 6))
+   ((try-ipv4 string) => (cut values <> 4))
+   (else (values #f #f))))
+
+(define (%fold-addr-to-integer ns digbits)
+  (let loop ((shift (* (- (length ns) 1) digbits))
+             (ns ns)
+             (v  0))
+    (if (null? ns)
+      v
+      (loop (- shift digbits) (cdr ns) (logior (ash (car ns) shift) v)))))
+
+(define (%fill-addr-to-buf! ns buf filler incr)
+  (fold (lambda (n pos) (filler buf pos n) (+ pos incr)) 0 ns))
 
 ;;============================================================
 ;; Packet accessors

@@ -1,3 +1,7 @@
+2007-02-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/ip.scm: added ip-parse-address and ip-parse-address!
+
 2007-02-21  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/*: added Scm_UVectorSizeInBytes and uvector-size to
