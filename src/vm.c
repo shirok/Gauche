@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.265 2007-02-17 23:59:24 shirok Exp $
+ *  $Id: vm.c,v 1.266 2007-02-27 08:58:40 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -111,6 +111,8 @@ static ScmSubr default_exception_handler_rec;
 static ScmObj throw_cont_calculate_handlers(ScmEscapePoint *, ScmVM *);
 static ScmObj throw_cont_body(ScmObj, ScmEscapePoint*, ScmObj);
 static void   process_queued_requests(ScmVM *vm);
+
+static int exit_code(ScmObj exception);
 
 static ScmEnvFrame *get_env(ScmVM *vm);
 
@@ -2774,7 +2776,7 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
                    capture the error.  Usually this means we're running
                    scripts.  We can safely exit here, for the dynamic
                    stack is already rewound. */
-                exit(EX_SOFTWARE);
+                exit(exit_code(vm->escapeData[1]));
             } else {
                 /* Jump again until C stack is recovered.  We sould pop
                    the extra continuation frame so that the VM stack
@@ -3196,7 +3198,15 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
             SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
         }
     } else {
-        Scm_ReportError(e);
+        /* We don't have an active error handler, so this is the fallback
+           behavior.  Reports the error and rewind dynamic handlers and
+           C stacks. */
+        if (!SCM_APPLICATION_EXIT_P(e)) {
+            Scm_ReportError(e);
+        } else {
+            Scm_Printf(SCM_CURERR, "%A\n",
+                       SCM_MESSAGE_CONDITION(e)->message);
+        }
         /* unwind the dynamic handlers */
         SCM_FOR_EACH(hp, vm->handlers) {
             ScmObj proc = SCM_CDAR(hp);
@@ -3211,7 +3221,16 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
         vm->escapeData[1] = e;
         siglongjmp(vm->cstack->jbuf, 1);
     } else {
-        exit(EX_SOFTWARE);
+        exit(exit_code(e));
+    }
+}
+
+static int exit_code(ScmObj exception)
+{
+    if (SCM_APPLICATION_EXIT_P(exception)) {
+        return SCM_APPLICATION_EXIT_CODE(exception);
+    } else {
+        return EX_SOFTWARE;
     }
 }
 

@@ -1,7 +1,7 @@
 /*
  * exception.h - more exception classes
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007 Shiro Kawai <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: exception.h,v 1.12 2006-01-23 07:06:32 shirok Exp $
+ *  $Id: exception.h,v 1.13 2007-02-27 08:58:40 shirok Exp $
  */
 
 #ifndef GAUCHE_EXCEPTION_H
@@ -227,10 +227,12 @@ typedef struct ScmApplicationExitRec {
 } ScmApplicationExit;
 
 SCM_CLASS_DECL(Scm_ApplicationExitClass);
-#define SCM_CLASS_APPLICATION_EXIT   (&Scm_ApplicationExitClass)
-#define SCM_APPLICATION_EXIT_P(obj)  SCM_ISA(obj, SCM_CLASS_APPLICATION_EXIT)
+#define SCM_CLASS_APPLICATION_EXIT  (&Scm_ApplicationExitClass)
+#define SCM_APPLICATION_EXIT_P(obj) SCM_ISA(obj, SCM_CLASS_APPLICATION_EXIT)
+#define SCM_APPLICATION_EXIT(obj)   ((ScmApplicationExit*)(obj))
+#define SCM_APPLICATION_EXIT_CODE(obj) SCM_APPLICATION_EXIT(obj)->code
 
-SCM_EXTERN ScmObj Scm_MakeApplicationExit(int);
+SCM_EXTERN ScmObj Scm_MakeApplicationExit(ScmObj message, int code);
 
 /*---------------------------------------------------
  * Thread exceptions

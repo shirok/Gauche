@@ -1,7 +1,7 @@
 /*
  * error.c - error handling
  *
- *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007 Shiro Kawai <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.73 2007-02-04 12:39:58 shirok Exp $
+ *  $Id: error.c,v 1.74 2007-02-27 08:58:40 shirok Exp $
  */
 
 #include <errno.h>
@@ -48,6 +48,7 @@ static ScmObj message_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj sigerror_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj readerror_allocate(ScmClass *klass, ScmObj initargs);
+static ScmObj appexit_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj porterror_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj compound_allocate(ScmClass *klass, ScmObj initargs);
 
@@ -145,6 +146,9 @@ SCM_DEFINE_BASE_CLASS(Scm_UnhandledSignalErrorClass, ScmUnhandledSignalError,
 SCM_DEFINE_BASE_CLASS(Scm_ReadErrorClass, ScmReadError,
                       message_print, NULL, NULL,
                       readerror_allocate, error_cpl);
+SCM_DEFINE_BASE_CLASS(Scm_ApplicationExitClass, ScmApplicationExit,
+                      message_print, NULL, NULL,
+                      appexit_allocate, error_cpl+1);
 SCM_DEFINE_BASE_CLASS(Scm_IOErrorClass, ScmIOError,
                       message_print, NULL, NULL, 
                       message_allocate, error_cpl);
@@ -189,6 +193,14 @@ static ScmObj readerror_allocate(ScmClass *klass, ScmObj initargs)
     e->common.message = SCM_FALSE; /* set by initialize */
     e->port = NULL;                /* set by initialize */
     e->line = -1;                  /* set by initialize */
+    return SCM_OBJ(e);
+}
+
+static ScmObj appexit_allocate(ScmClass *klass, ScmObj initargs)
+{
+    ScmApplicationExit *e = SCM_ALLOCATE(ScmApplicationExit, klass);
+    SCM_SET_CLASS(e, klass);
+    e->code = 0;                   /* set by initialize */
     return SCM_OBJ(e);
 }
 
@@ -269,6 +281,18 @@ static void readerror_dummy_set(ScmReadError *obj, ScmObj val)
     /* nothing */
 }
 
+static ScmObj appexit_code_get(ScmApplicationExit *obj)
+{
+    return SCM_MAKE_INT(obj->code);
+}
+
+static void appexit_code_set(ScmApplicationExit *obj, ScmObj val)
+{
+    if (!SCM_INTP(val)){
+        Scm_Error("small integer required, but got %S", val);
+    }
+    obj->code = SCM_INT_VALUE(val);
+}
 
 static ScmObj porterror_port_get(ScmPortError *obj)
 {
@@ -299,6 +323,11 @@ static ScmClassStaticSlotSpec readerror_slots[] = {
     SCM_CLASS_SLOT_SPEC("column", readerror_dummy_get, readerror_dummy_set),
     SCM_CLASS_SLOT_SPEC("position", readerror_dummy_get, readerror_dummy_set),
     SCM_CLASS_SLOT_SPEC("span", readerror_dummy_get, readerror_dummy_set),
+    { NULL }
+};
+
+static ScmClassStaticSlotSpec appexit_slots[] = {
+    SCM_CLASS_SLOT_SPEC("code", appexit_code_get, appexit_code_set),
     { NULL }
 };
 
@@ -963,6 +992,10 @@ void Scm__InitExceptions(void)
                                 "<read-error>",
                                 mod, cond_meta, SCM_FALSE,
                                 readerror_slots, 0);
+    Scm_InitStaticClassWithMeta(SCM_CLASS_APPLICATION_EXIT,
+                                "<application-exit>",
+                                mod, cond_meta, SCM_FALSE,
+                                appexit_slots, 0);
     Scm_InitStaticClassWithMeta(SCM_CLASS_IO_ERROR,
                                 "<io-error>",
                                 mod, cond_meta, SCM_FALSE,
