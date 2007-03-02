@@ -13,6 +13,14 @@
 	* src/syslib.stub: conditionally add features: gauche.sys.sigwait,
 	  gauche.sys.nanosleep, gauche.sys.crypt, gauche.sys.symlink,
 	  gauche.sys.readlink, gauche.sys.select.
+	* ext/auxsys/*: conditionally add features: gauche.sys.realpath,
+	  gauche.sys.getloadavg, gauche.sys.putenv, gauche.sys.setenv,
+	  gauche.sys.unsetenv, gauche.sys.lchown.
+	* ext/fcntl/fcntl.c: conditionally add a feature: gauche.sys.fcntl.
+	* ext/termios/termiolib.stub: conditionally add features:
+	  gauche.sys.openpty, gauche.sys.forkpty.
+	* ext/syslog/syslog.stub: conditionally add features: 
+	  gauche.sys.syslog, gauche.sys.setlogmask
 
 2007-02-26  Shiro Kawai  <shiro@acm.org>
 

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: syslog.stub,v 1.7 2005-09-11 23:23:45 shirok Exp $
+;;;  $Id: syslog.stub,v 1.8 2007-03-02 02:41:49 shirok Exp $
 ;;;
 
 "
@@ -51,23 +51,22 @@ void Scm_Init_syslog(void)
 #define Scm_Init_syslog internal_init
 "
 
-(if "defined(HAVE_SYSLOG)"
-    (begin
-      (define-cproc sys-openlog (ident::<const-cstring> option::<fixnum>
-                                 facility::<fixnum>)
-        (call <void> "openlog"))
-      (define-cproc sys-syslog (prio::<fixnum> message::<const-cstring>)
-        (body <void> "syslog(prio, \"%s\", message);"))
-      (define-cproc sys-closelog ()
-        (call <void> "closelog"))
-      ))
+(when "defined(HAVE_SYSLOG)"
+  (define-cproc sys-openlog (ident::<const-cstring> option::<fixnum>
+                                                    facility::<fixnum>)
+    (call <void> "openlog"))
+  (define-cproc sys-syslog (prio::<fixnum> message::<const-cstring>)
+    (body <void> "syslog(prio, \"%s\", message);"))
+  (define-cproc sys-closelog ()
+    (call <void> "closelog"))
+  (initcode "Scm_AddFeature(\"gauche.sys.syslog\", NULL);"))
 
-(if "defined(HAVE_SETLOGMASK)"
-    (begin
-      (define-cproc sys-logmask (prio::<fixnum>)
-        (call <fixnum> "LOG_MASK"))
-      (define-cproc sys-setlogmask (mask::<fixnum>)
-        (call <fixnum> "setlogmask"))))
+(when "defined(HAVE_SETLOGMASK)"
+  (define-cproc sys-logmask (prio::<fixnum>)
+    (call <fixnum> "LOG_MASK"))
+  (define-cproc sys-setlogmask (mask::<fixnum>)
+    (call <fixnum> "setlogmask"))
+  (initcode "Scm_AddFeature(\"gauche.sys.setlogmask\", NULL);"))
 
 ;; openlog options
 (define-enum-conditionally LOG_CONS)

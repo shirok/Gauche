@@ -1,7 +1,7 @@
 ;;;
 ;;; auxsyslib.stub - auxiliary system interface
 ;;;  
-;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: auxsyslib.stub,v 1.29 2006-11-04 09:56:58 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.30 2007-03-02 02:41:48 shirok Exp $
 ;;;
 
 "
@@ -72,7 +72,7 @@
 ;; stdlib.h
 (define-cproc sys-abort ()  (call <void> "abort"))
 
-(if "defined HAVE_REALPATH"
+(when "defined HAVE_REALPATH"
   (define-cproc %sys-realpath (path::<const-cstring>)
     (body <const-cstring>
           "#define REALPATH_PATH_MAX 1024  /* TODO: needs to be configured */"
@@ -81,6 +81,7 @@
           "  Scm_SysError(\"realpath failed\");"
           "}"
           "SCM_RESULT = buf;"))
+  (initcode "Scm_AddFeature(\"gauche.sys.realpath\", NULL);")
   )
 
 ;; math.h
@@ -100,7 +101,7 @@
   (call <real> "log10"))
 
 ;; sys/loadavg.h
-(if "defined HAVE_GETLOADAVG"
+(when "defined HAVE_GETLOADAVG"
   (define-cproc %sys-getloadavg (&optional (nsamples::<int> 3))
     "#define MAX_LOAD_SAMPLES  3
      double samples[MAX_LOAD_SAMPLES];
@@ -115,7 +116,9 @@
        ScmObj n = Scm_MakeFlonum(samples[i]);
        SCM_APPEND1(h, t, n);
      }
-     SCM_RETURN(h);"))
+     SCM_RETURN(h);")
+  (initcode "Scm_AddFeature(\"gauche.sys.getloadavg\", NULL);")
+  )
 
 ;; sys/stat.h
 (if "!defined(__MINGW32__)"
@@ -279,7 +282,7 @@
 ;;  We need to call system malloc to prevent the passed string from
 ;;  being GCed.  That memory might be leaked when putenv is called
 ;;  again for the same variable, but it's the same case as in C programs.
-(if "defined HAVE_PUTENV"
+(when "defined HAVE_PUTENV"
   (define-cproc %sys-putenv (name::<string> value::<string>)
     (body <void>
           "char *buf;"
@@ -293,19 +296,22 @@
           "memcpy(buf+namelen+1, cvalue, valuelen);"
           "buf[len-1] = '\\0';"
           "putenv(buf);"))
-)
+  (initcode "Scm_AddFeature(\"gauche.sys.putenv\", NULL);")
+  )
 
-(if "defined HAVE_SETENV"
+(when "defined HAVE_SETENV"
   (define-cproc %sys-setenv (name::<const-cstring>
                              value::<const-cstring>
                              overwrite::<boolean>)
     (call <void> "setenv"))
-)
+  (initcode "Scm_AddFeature(\"gauche.sys.setenv\", NULL);")
+  )
 
-(if "defined HAVE_UNSETENV"
+(when "defined HAVE_UNSETENV"
   (define-cproc %sys-unsetenv (name::<const-cstring>)
     (call <void> "unsetenv"))
-)
+  (initcode "Scm_AddFeature(\"gauche.sys.unsetenv\", NULL);")
+  )
 
 ;; ctermid
 (if "!defined(__MINGW32__)"
@@ -323,12 +329,13 @@
 ) ;; !defined(__MINGW32__)
 
 ;; lchown
-(if "defined HAVE_LCHOWN"
-(define-cproc %sys-lchown (path::<const-cstring> owner::<int> group::<int>)
-  (body <int>
-        "SCM_SYSCALL(SCM_RESULT, lchown(path, owner, group));"
-        "if (SCM_RESULT < 0) Scm_SysError(\"lchown failed on %S\", path);"))
-)
+(when "defined HAVE_LCHOWN"
+  (define-cproc %sys-lchown (path::<const-cstring> owner::<int> group::<int>)
+    (body <int>
+          "SCM_SYSCALL(SCM_RESULT, lchown(path, owner, group));"
+          "if (SCM_RESULT < 0) Scm_SysError(\"lchown failed on %S\", path);"))
+  (initcode "Scm_AddFeature(\"gauche.sys.lchown\", NULL);")
+  )
 
 ;; localeconv
 

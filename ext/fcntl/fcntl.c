@@ -1,7 +1,7 @@
 /*
  * fcntl.c - fcntl interface
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007 Shiro Kawai <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: fcntl.c,v 1.17 2005-07-22 09:26:54 shirok Exp $
+ *  $Id: fcntl.c,v 1.18 2007-03-02 02:41:48 shirok Exp $
  */
 
 #define _GNU_SOURCE  /* for Linux, this enables additional features */
@@ -214,5 +214,9 @@ void Scm_Init_fcntl(void)
     Scm_InitStaticClass(&Scm_SysFlockClass, "<sys-flock>",
                         mod, flock_slots, 0);
     Scm_Init_fcntlib(mod);
+
+#ifndef __MINGW32__
+    Scm_AddFeature("gauche.sys.fcntl", NULL);
+#endif
 }
 

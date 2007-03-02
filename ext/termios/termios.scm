@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: termios.scm,v 1.6 2004-09-12 02:00:26 shirok Exp $
+;;;  $Id: termios.scm,v 1.7 2007-03-02 02:41:49 shirok Exp $
 ;;;
 
 (define-module gauche.termios
@@ -40,7 +40,7 @@
 
 (select-module gauche.termios)
 
-(dynamic-load "termios" :export-symbols #t)
+(dynamic-load "termios")
 
 
 (provide "gauche/termios")

@@ -1,7 +1,7 @@
 ;;;
 ;;; auxsys - Auxiliary system interface
 ;;;  
-;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: auxsys.scm,v 1.13 2006-03-12 11:05:46 shirok Exp $
+;;;  $Id: auxsys.scm,v 1.14 2007-03-02 02:41:48 shirok Exp $
 ;;;
 
 (define-module gauche.auxsys
@@ -51,35 +51,37 @@
 ;; define alternatives if the platform doesn't support...
 
 (define sys-realpath
-  (if (global-variable-bound? 'gauche.auxsys '%sys-realpath)
-      %sys-realpath
-      (lambda (path) (error "sys-realpath not supported on this platform"))))
+  (cond-expand
+   (gauche.sys.reaplath %sys-realpath)
+   (else #f)))
 
 (define sys-gethostname
   (if (global-variable-bound? 'gauche.auxsys '%sys-gethostname)
     %sys-gethostname
-    (lambda () (cadr (sys-uname)))))  ;utsname.nodename
+    (lambda ()
+      (cond-expand
+       ((not gauche.os.windows) (cadr (sys-uname))) ; nodename
+       (else "localhost")))))   ; need better fallback
 
 (define sys-getdomainname
   (if (global-variable-bound? 'gauche.auxsys '%sys-getdomainname)
     %sys-getdomainname
-    (lambda () "localdomain")))
+    (lambda () "localdomain"))) ; need better fallback
 
 (define sys-putenv
-  (if (global-variable-bound? 'gauche.auxsys '%sys-putenv)
-    %sys-putenv
-    (lambda (var val) (error "sys-putenv not supported on this platform"))))
+  (cond-expand
+   (gauche.sys.putenv %sys-putenv)
+   (else #f)))
 
 (define sys-setenv
-  (if (global-variable-bound? 'gauche.auxsys '%sys-setenv)
-    %sys-setenv
-    (lambda (var val overwrite)
-      (error "sys-setenv not supported on this platform"))))
+  (cond-expand
+   (gauche.sys.setenv %sys-setenv)
+   (else #f)))
 
 (define sys-unsetenv
-  (if (global-variable-bound? 'gauche.auxsys '%sys-unsetenv)
-    %sys-unsetenv
-    (lambda (var) (error "sys-unsetenv not supported on this platform"))))
+  (cond-expand
+   (gauche.sys.unsetenv %sys-unsetenv)
+   (else #f)))
 
 (define sys-setpgrp
   (if (global-variable-bound? 'gauche.auxsys '%sys-setpgrp)
@@ -95,14 +97,13 @@
         (error "sys-getpgid for arbitrary process id is not supported on this platform")))))
 
 (define sys-lchown
-  (if (global-variable-bound? 'gauche.auxsys '%sys-lchown)
-      %sys-lchown
-      (lambda (path owner group)
-        (error "sys-lchown not supported on this platform"))))
+  (cond-expand
+   (gauche.sys.lchown %sys-lchown)
+   (else #f)))
 
 (define sys-getloadavg
-  (if (global-variable-bound? 'gauche.auxsys '%sys-getloadavg)
-    %sys-getloadavg
-    (lambda args #f)))
+  (cond-expand
+   (gauche.sys.getloadavg %sys-getloadavg)
+   (else #f)))
 
 (provide "gauche/auxsys")

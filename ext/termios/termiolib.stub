@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: termiolib.stub,v 1.15 2006-03-25 15:40:22 shirok Exp $
+;;; $Id: termiolib.stub,v 1.16 2007-03-02 02:41:49 shirok Exp $
 ;;;
 
 "#include \"gauche/termios.h\""
@@ -135,18 +135,20 @@
         "if (cfsetospeed(&term->term, speed) < 0) Scm_SysError(\"cfsetispeed\");"))
 
 ;; pty interface
-(if "defined(HAVE_OPENPTY)"
+(when "defined(HAVE_OPENPTY)"
 (define-cproc sys-openpty (&optional term)
   (call "Scm_Openpty"))
+(initcode "Scm_AddFeature(\"gauche.sys.openpty\", NULL);")
 )
-(if "defined(HAVE_FORKPTY)" (begin
+(when "defined(HAVE_FORKPTY)"
 (define-cproc sys-forkpty (&optional term)
   (call "Scm_Forkpty"))
 (define-cproc sys-forkpty-and-exec (program::<string> args::<list>
                                     &keyword (iomap ()) term
                                              (sigmask::<sys-sigset>? #f))
   (call "Scm_ForkptyAndExec"))
-))
+(initcode "Scm_AddFeature(\"gauche.sys.forkpty\", NULL);")
+)
 
 )) ;; !defined(__MINGW32__)
 

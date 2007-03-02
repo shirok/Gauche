@@ -54,33 +54,33 @@
 
 ;; putenv
 
-(test "sys-putenv" "foo"
-      (lambda ()
-        (with-error-handler
-         (lambda (e) "foo") ;need to catch if system doesn't have putenv().
-         (lambda ()
-           (sys-putenv "ZZGGGBBB" "foo")
-           (sys-getenv "ZZGGGBBB")))))
+(cond-expand
+ (gauche.sys.putenv
+  (test "sys-putenv" "foo"
+        (lambda ()
+          (sys-putenv "ZZGGGBBB" "foo")
+          (sys-getenv "ZZGGGBBB"))))
+ (else #f))
 
 ;; setenv
 
-(test "sys-setenv" "foo"
-      (lambda ()
-        (with-error-handler
-            (lambda (e) "foo") ;need to catch if system doesn't have setenv().
-          (lambda ()
-            (sys-setenv "ZZGGGBBB" "foo" #t)
-            (sys-getenv "ZZGGGBBB")))))
+(cond-expand
+ (gauche.sys.setenv
+  (test "sys-setenv" "foo"
+        (lambda ()
+          (sys-setenv "ZZGGGBBB" "foo" #t)
+          (sys-getenv "ZZGGGBBB"))))
+ (else #f))
 
 ;; unsetenv
 
-(test "sys-unsetenv" #f
-      (lambda ()
-        (with-error-handler
-            (lambda (e) #f) ;need to catch if system doesn't have unsetenv().
-          (lambda ()
-            (sys-setenv "ZZGGGBBB" "foo" #t)
-            (sys-unsetenv "ZZGGGBBB")
-            (sys-getenv "ZZGGGBBB")))))
+(cond-expand
+ (gauche.sys.unsetenv
+  (test "sys-unsetenv" #f
+        (lambda ()
+          (sys-setenv "ZZGGGBBB" "foo" #t)
+          (sys-unsetenv "ZZGGGBBB")
+          (sys-getenv "ZZGGGBBB"))))
+ (else #f))
 
 (test-end)
