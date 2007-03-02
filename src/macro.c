@@ -1,7 +1,7 @@
 /*
  * macro.c - macro implementation
  *
- *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: macro.c,v 1.65 2006-12-07 04:58:47 shirok Exp $
+ *  $Id: macro.c,v 1.66 2007-03-02 07:39:13 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY

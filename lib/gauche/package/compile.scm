@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.package.compile - compile extensions
 ;;;  
-;;;   Copyright (c) 2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2005-2007  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.7 2007-01-21 20:27:18 shirok Exp $
+;;;  $Id: compile.scm,v 1.8 2007-03-02 07:39:09 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*

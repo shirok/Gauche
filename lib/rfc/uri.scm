@@ -1,7 +1,7 @@
 ;;;
 ;;; uri.scm - parse and construct URIs
 ;;;  
-;;;   Copyright (c) 2000-2007 Shiro Kawai <shiro@acm.org>
+;;;   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: uri.scm,v 1.19 2007-02-21 08:37:35 shirok Exp $
+;;;  $Id: uri.scm,v 1.20 2007-03-02 07:39:10 shirok Exp $
 ;;;
 
 ;; Main reference:

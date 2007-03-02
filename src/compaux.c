@@ -1,7 +1,7 @@
 /*
  * compaux.c - C API bridge for the compiler
  *
- *   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compaux.c,v 1.13 2006-11-03 11:11:27 shirok Exp $
+ *  $Id: compaux.c,v 1.14 2007-03-02 07:39:13 shirok Exp $
  */
 
 /* This file serves as a bridge to the compiler, which is implemented

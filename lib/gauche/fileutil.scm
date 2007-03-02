@@ -1,7 +1,7 @@
 ;;;
 ;;; file related utility functions.  to be autoloaded.
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fileutil.scm,v 1.1 2003-12-09 19:45:47 shirok Exp $
+;;;  $Id: fileutil.scm,v 1.2 2007-03-02 07:39:08 shirok Exp $
 ;;;
 
 (define-module gauche.fileutil

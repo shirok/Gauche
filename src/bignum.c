@@ -1,7 +1,7 @@
 /*
  * bignum.c - multiple precision exact integer arithmetic
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bignum.c,v 1.62 2006-11-04 09:56:59 shirok Exp $
+ *  $Id: bignum.c,v 1.63 2007-03-02 07:39:12 shirok Exp $
  */
 
 /* Bignum library.  Not optimized well yet---I think bignum performance

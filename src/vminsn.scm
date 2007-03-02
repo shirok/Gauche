@@ -1,7 +1,7 @@
 ;;;
 ;;; vminsn.scm - Virtual machine instruction definition
 ;;;
-;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
 ;;; 
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: vminsn.scm,v 1.8 2006-08-27 07:32:12 shirok Exp $
+;;;  $Id: vminsn.scm,v 1.9 2007-03-02 07:39:14 shirok Exp $
 ;;;
 
 ;;; This file is processed by geninsn to produce a couple of C files:

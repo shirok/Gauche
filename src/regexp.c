@@ -1,7 +1,7 @@
 /*
  * regexp.c - regular expression
  *
- *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
  *   Copyright (c) 2006 Rui Ueyama, All rights reserved.
  * 
  *   Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.65 2007-01-17 02:33:34 shirok Exp $
+ *  $Id: regexp.c,v 1.66 2007-03-02 07:39:14 shirok Exp $
  */
 
 #include <setjmp.h>

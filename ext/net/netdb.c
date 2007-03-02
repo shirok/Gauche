@@ -1,7 +1,7 @@
 /*
  * netdb.c - obtain information about network
  *
- *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: netdb.c,v 1.15 2006-11-30 23:55:00 shirok Exp $
+ *  $Id: netdb.c,v 1.16 2007-03-02 07:39:06 shirok Exp $
  */
 
 #include "gauche/net.h"

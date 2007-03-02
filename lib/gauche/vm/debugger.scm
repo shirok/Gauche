@@ -1,7 +1,7 @@
 ;;;
 ;;; Debugging aids
 ;;;  
-;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: debugger.scm,v 1.19 2006-01-28 09:17:42 shirok Exp $
+;;;  $Id: debugger.scm,v 1.20 2007-03-02 07:39:10 shirok Exp $
 ;;;
 
 (define-module gauche.vm.debugger

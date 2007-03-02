@@ -1,7 +1,7 @@
 /*
  * system.c - system interface
  *
- *   Copyright (c) 2000-2007 Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.86 2007-03-02 01:49:11 shirok Exp $
+ *  $Id: system.c,v 1.87 2007-03-02 07:39:14 shirok Exp $
  */
 
 #include <stdio.h>

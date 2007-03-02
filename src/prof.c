@@ -1,7 +1,7 @@
 /*
  * prof.c - profiler
  *
- *   Copyright (c) 2005 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2005-2007  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: prof.c,v 1.8 2005-10-03 01:02:39 shirok Exp $
+ *  $Id: prof.c,v 1.9 2007-03-02 07:39:14 shirok Exp $
  */
 
 #include <stdlib.h>

@@ -1,7 +1,7 @@
 ;;;
 ;;; fsdbm - dbm on filesystem
 ;;;  
-;;;   Copyright (c) 2003-2004 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2003-2007  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: fsdbm.scm,v 1.7 2004-09-12 11:05:09 shirok Exp $
+;;;  $Id: fsdbm.scm,v 1.8 2007-03-02 07:39:08 shirok Exp $
 ;;;
 
 (define-module dbm.fsdbm

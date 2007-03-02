@@ -1,7 +1,7 @@
 /*
  * number.c - numeric functions
  *
- *   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.142 2007-02-18 20:47:07 shirok Exp $
+ *  $Id: number.c,v 1.143 2007-03-02 07:39:13 shirok Exp $
  */
 
 #include <math.h>

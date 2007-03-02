@@ -1,7 +1,7 @@
 ;;;
 ;;; cookie.scm - parse and construct http state information
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cookie.scm,v 1.10 2006-10-01 11:27:02 shirok Exp $
+;;;  $Id: cookie.scm,v 1.11 2007-03-02 07:39:10 shirok Exp $
 ;;;
 
 ;; Parser and constructor of http "Cookies" defined in

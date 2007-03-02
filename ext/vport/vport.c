@@ -1,7 +1,7 @@
 /*
  * vport.c - 'virtual port'
  *
- *   Copyright (c) 2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2004-2007  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vport.c,v 1.16 2006-11-30 23:55:01 shirok Exp $
+ *  $Id: vport.c,v 1.17 2007-03-02 07:39:07 shirok Exp $
  */
 
 #include "gauche/vport.h"

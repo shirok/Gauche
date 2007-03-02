@@ -1,7 +1,7 @@
 ;;;
 ;;; file/filter.scm - utility to build filter programs
 ;;;  
-;;;   Copyright (c) 2000-2006 Shiro Kawai  (shiro@acm.org)
+;;;   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: filter.scm,v 1.6 2007-01-21 14:21:51 rui314159 Exp $
+;;;  $Id: filter.scm,v 1.7 2007-03-02 07:39:08 shirok Exp $
 ;;;
 
 ;;; This module provides utilities for a common pattern in

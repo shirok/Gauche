@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.package.build - build a package
 ;;;  
-;;;   Copyright (c) 2004-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2004-2007  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: build.scm,v 1.10 2007-01-21 14:21:52 rui314159 Exp $
+;;;  $Id: build.scm,v 1.11 2007-03-02 07:39:09 shirok Exp $
 ;;;
 
 ;; *EXPERIMENTAL*

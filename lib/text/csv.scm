@@ -1,7 +1,7 @@
 ;;;
 ;;; csv.scm - read and write CSV (actually, xSV) format.
 ;;;  
-;;;   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: csv.scm,v 1.8 2004-11-11 02:31:28 shirok Exp $
+;;;  $Id: csv.scm,v 1.9 2007-03-02 07:39:11 shirok Exp $
 ;;;
 
 (define-module text.csv

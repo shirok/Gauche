@@ -1,7 +1,7 @@
 /*
  * port.c - port implementation
  *
- *   Copyright (c) 2000-2007 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.136 2007-02-04 16:24:32 shirok Exp $
+ *  $Id: port.c,v 1.137 2007-03-02 07:39:14 shirok Exp $
  */
 
 #include <unistd.h>

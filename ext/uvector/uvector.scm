@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.uvector - uniform vectors
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: uvector.scm,v 1.8 2005-08-25 06:21:58 shirok Exp $
+;;;  $Id: uvector.scm,v 1.9 2007-03-02 07:39:07 shirok Exp $
 ;;;
 
 ;; This module defines the superset of SRFI-4, homogeneous numeric vector

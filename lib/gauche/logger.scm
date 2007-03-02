@@ -1,7 +1,7 @@
 ;;;
 ;;; logger.scm - simple use-level logging
 ;;;  
-;;;   Copyright (c) 2000-2005 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: logger.scm,v 1.9 2006-11-10 12:06:56 shirok Exp $
+;;;  $Id: logger.scm,v 1.10 2007-03-02 07:39:08 shirok Exp $
 ;;;
 
 (define-module gauche.logger

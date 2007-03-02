@@ -1,7 +1,7 @@
 ;;;
 ;;; base64.scm - base64 encoding/decoding routine
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: base64.scm,v 1.8 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: base64.scm,v 1.9 2007-03-02 07:39:10 shirok Exp $
 ;;;
 
 ;; Implements Base64 encoding/decoding routine

@@ -1,7 +1,7 @@
 ;;;
 ;;; compile.scm - The compiler
 ;;;  
-;;;   Copyright (c) 2004-2007 Shiro Kawai  (shiro@acm.org)
+;;;   Copyright (c) 2004-2007  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.54 2007-02-13 09:48:14 shirok Exp $
+;;;  $Id: compile.scm,v 1.55 2007-03-02 07:39:13 shirok Exp $
 ;;;
 
 (define-module gauche.internal

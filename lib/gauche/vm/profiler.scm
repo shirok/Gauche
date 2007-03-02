@@ -1,7 +1,7 @@
 ;;;
 ;;; Profiler - profiler interface
 ;;;  
-;;;   Copyright (c) 2005-2006 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2005-2007  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: profiler.scm,v 1.6 2007-01-21 14:21:55 rui314159 Exp $
+;;;  $Id: profiler.scm,v 1.7 2007-03-02 07:39:10 shirok Exp $
 ;;;
 
 (define-module gauche.vm.profiler

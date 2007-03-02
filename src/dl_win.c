@@ -1,7 +1,7 @@
 /*
  * dl_win.c - windows LoadLibrary interface
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: dl_win.c,v 1.4 2004-07-15 07:10:06 shirok Exp $
+ *  $Id: dl_win.c,v 1.5 2007-03-02 07:39:13 shirok Exp $
  */
 
 /* This file is included in load.c */

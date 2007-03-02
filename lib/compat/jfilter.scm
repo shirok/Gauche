@@ -1,7 +1,7 @@
 ;;;
 ;;; compat.jfilter - jfilter compatibility interface
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: jfilter.scm,v 1.2 2003-07-05 03:29:11 shirok Exp $
+;;;  $Id: jfilter.scm,v 1.3 2007-03-02 07:39:07 shirok Exp $
 ;;;
 
 ;; This file defines a set of character-code conversion routine with
