@@ -1,5 +1,9 @@
 2007-03-01  Shiro Kawai  <shiro@acm.org>
 
+	* ext/net/net.c: cleaned up winsock-specific code using
+	  Scm_AddCleanupHandler.  Also add the feature gauche.net.ipv6
+	  conditionally.
+
 	* src/core.c (Scm_AddFeature): Moved cond-features management code
 	  here from load.c, and cleaned up API.
 	* src/intlib.stub (cond-features): ditto.

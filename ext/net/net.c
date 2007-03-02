@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.48 2007-02-21 22:27:37 shirok Exp $
+ *  $Id: net.c,v 1.49 2007-03-02 06:25:26 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -523,6 +523,28 @@ int inet_aton(const char *cp, struct in_addr *inp)
 /* winsock requires some obscure initialization */
 static WSADATA wsaData;
 
+static void init_winwock(void)
+{
+    int opt;
+    int r = WSAStartup(MAKEWORD(2,2), &wsaData);
+    if (r != 0) {
+        SetLastError(r);
+        Scm_SysError("WSAStartup failed");
+    }
+    /* windows voodoo to make _open_osfhandle magic work */
+    opt = SO_SYNCHRONOUS_NONALERT;
+    r = setsockopt(INVALID_SOCKET, SOL_SOCKET,
+                   SO_OPENTYPE, (char*)&opt, sizeof(opt));
+    if (r == SOCKET_ERROR) {
+        Scm_SysError("winsock initialization failed");
+    }
+}
+
+static void fini_winsock(void *data)
+{
+    (void)WSACleanup();
+}
+
 #endif /*__MINGW32__*/
                           
 /*==================================================================
@@ -534,6 +556,9 @@ extern void Scm_Init_NetDB(ScmModule *mod);
 extern void Scm_Init_netlib(ScmModule *mod);
 extern void Scm_Init_netaux(void);
 
+
+
+
 void Scm_Init_libnet(void)
 {
     ScmModule *mod;
@@ -541,29 +566,12 @@ void Scm_Init_libnet(void)
     SCM_INIT_EXTENSION(net);
     mod = SCM_FIND_MODULE("gauche.net", SCM_FIND_MODULE_CREATE);
 #ifdef __MINGW32__
-    /* NB: I'm supposed to call WSACleanup when application shuts down,
-       or resource leak would happen, according to the Windows document.
-       It's just ridiculous---why can't OS itself clean up the dead process?
-       Anyway, to behave politically correctly, I need a generic callback
-       mechanism for Gauche core to call cleanup routines in Scm_Exit.
-       For now, let us behave like a wild kid.
-    */
-    {
-	int opt;
-	int r = WSAStartup(MAKEWORD(2,2), &wsaData);
-	if (r != 0) {
-	    SetLastError(r);
-	    Scm_SysError("WSAStartup failed");
-	}
-	/* windows voodoo to make _open_osfhandle magic work */
-	opt = SO_SYNCHRONOUS_NONALERT;
-	r = setsockopt(INVALID_SOCKET, SOL_SOCKET,
-		       SO_OPENTYPE, (char*)&opt, sizeof(opt));
-	if (r == SOCKET_ERROR) {
-	    Scm_SysError("winsock initialization failed");
-	}
-    }
+    init_winsock();
+    Scm_AddCleanupHandler(fini_winsock, NULL);
 #endif /*__MINGW32__*/
+#ifdef HAVE_IPV6
+    Scm_AddFeature("gauche.net.ipv6", NULL);
+#endif
     Scm_InitStaticClass(&Scm_SocketClass, "<socket>", mod, NULL, 0);
     Scm_Init_NetAddr(mod);
     Scm_Init_NetDB(mod);
