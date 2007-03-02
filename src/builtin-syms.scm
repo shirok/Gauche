@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates builtin symbols
 ;;;
-;;; $Id: builtin-syms.scm,v 1.11 2007-02-18 20:47:07 shirok Exp $
+;;; $Id: builtin-syms.scm,v 1.12 2007-03-02 01:49:10 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (define *unit*
   (make <cgen-unit>
     :name "builtin-syms"
-    :preamble "/* Generated from builtin-syms.scm $Revision: 1.11 $.  DO NOT EDIT */"
+    :preamble "/* Generated from builtin-syms.scm $Revision: 1.12 $.  DO NOT EDIT */"
     :pre-decl "#define LIBGAUCHE_BODY"
     :c-file "builtin-syms.c"
     :h-file "gauche/builtin-syms.h"
@@ -102,6 +102,9 @@
     (abstract                  SCM_SYM_ABSTRACT)
     (base                      SCM_SYM_BASE)
 
+    ;; core
+    (*cond-features*           SCM_SYM_COND_FEATURES)
+
     ;; modules
     (null                      SCM_SYM_NULL)
     (scheme                    SCM_SYM_SCHEME)
@@ -118,12 +121,6 @@
     (*load-port*               SCM_SYM_LOAD_PORT)
     (*load-suffixes*           SCM_SYM_LOAD_SUFFIXES)
     (*dynamic-load-path*       SCM_SYM_DYNAMIC_LOAD_PATH)
-    (*cond-features*           SCM_SYM_COND_FEATURES)
-    (gauche-windows            SCM_SYM_GAUCHE_WINDOWS)  ;; for feature id
-    (gauche-eucjp              SCM_SYM_GAUCHE_EUCJP)    ;; for feature id
-    (gauche-sjis               SCM_SYM_GAUCHE_SJIS)     ;; for feature id
-    (gauche-utf8               SCM_SYM_GAUCHE_UTF8)     ;; for feature id
-    (gauche-none               SCM_SYM_GAUCHE_NONE)     ;; for feature id
 
     ;; reader, compiler, vm
     (source-info               SCM_SYM_SOURCE_INFO)

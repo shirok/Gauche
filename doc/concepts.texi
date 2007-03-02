@@ -444,7 +444,7 @@ Supported by the native reader.  @xref{Lexical structure}.
 @item SRFI-87, @code{=>} in case clauses
 Supported natively.  @xref{Conditionals}.
 @c JP
-@item SRFI-61, case節での@code{=>}
+@item SRFI-87, case節での@code{=>}
 組込みです。@ref{Conditionals}参照。
 @c COMMON
 

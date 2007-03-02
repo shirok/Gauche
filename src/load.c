@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.110 2006-12-07 04:58:47 shirok Exp $
+ *  $Id: load.c,v 1.111 2007-03-02 01:49:11 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -58,7 +58,6 @@ static struct {
     ScmGloc *load_path_rec;     /* *load-path*         */
     ScmGloc *dynload_path_rec;  /* *dynamic-load-path* */
     ScmGloc *load_suffixes_rec; /* *load-suffixes*     */
-    ScmGloc *cond_features_rec; /* *cond-features*     */
     ScmInternalMutex path_mutex;
 
     /* Provided features */
@@ -524,59 +523,6 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
     
     return r;
 }
-
-#if 0 /* not sure we need this yet */
-/*------------------------------------------------------------------
- * Append FEATURE to *cond-features*.  Once added, the symbol FEATURE
- * will be recognized by cond-expand.
- *
- *  (cond-expand (FEATURE body ...)) 
- *   
- * If loading a module is required in order to make FEATURE available,
- * such module can be specified in MODULE argument.  It can be SCM_FALSE
- * if the feature is built-in.
- *
- * Although cond-expand can be used like #ifdefs of cpp, it is a bit
- * different since you can test a feature _before_ loading the module
- * (or, you can say testing the feature itself implies loading the
- * module if available).  Thus it is not recommended to add a feature
- * as a result of loading a specific module.  One possible usage is
- * to add a feature conditionally if a module may or may not provide
- * such a feature depending on platforms or compile-time options.
- * (An example of this is gauche.net, which may provide gauche-ipv6
- * if IPv6 support is compiled in.)
- *
- * Because of this obscurity, I do not encourage user-land programs
- * to use this API.  We may try some use within Gauche bundled extensions,
- * and see how well it works, before we make it open to public.
- * (Esp. we need to come up a reasonable naming scheme of features
- * if we allow arbitrary extensions to add them).
- */
-
-ScmObj
-Scm_AddCondFeature(ScmObj feature, ScmObj module)
-{
-    ScmObj cell, z;
-   
-    if (!SCM_SYMBOLP(feature)) {
-        Scm_Error("feature name must be a symbol, but got %S", feature);
-    }
-    if (!SCM_SYMBOLP(module) && !SCM_FALSEP(module)) {
-        Scm_Error("module must be a symbol or #f, but got %S", module);
-    }
-    if (SCM_FALSEP(module)) {
-        cell = SCM_LIST1(feature);
-    } else {
-        cell = SCM_LIST2(feature, module);
-    }
-    
-    (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.path_mutex);
-    z = ldinfo.cond_features_rec->value =
-        Scm_Cons(cell, ldinfo.cond_features_rec->value);
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
-    return z;
-}
-#endif
 
 /*------------------------------------------------------------------
  * Dynamic link
@@ -1134,8 +1080,7 @@ ScmObj Scm_LoadAutoload(ScmAutoload *adata)
 void Scm__InitLoad(void)
 {
     ScmModule *m = Scm_SchemeModule();
-    ScmObj init_load_path, init_dynload_path, init_load_suffixes,
-        init_cond_features, t;
+    ScmObj init_load_path, init_dynload_path, init_load_suffixes, t;
 
     init_load_path = t = SCM_NIL;
     SCM_APPEND(init_load_path, t, break_env_paths("GAUCHE_LOAD_PATH"));
@@ -1149,21 +1094,6 @@ void Scm__InitLoad(void)
 
     init_load_suffixes = t = SCM_NIL;
     SCM_APPEND1(init_load_suffixes, t, SCM_MAKE_STR(LOAD_SUFFIX));
-
-    init_cond_features = t = SCM_NIL;
-    SCM_APPEND1(init_cond_features, t, SCM_LIST1(SCM_SYM_GAUCHE));
-#ifdef __MINGW32__
-    SCM_APPEND1(init_cond_features, t, SCM_LIST1(SCM_SYM_GAUCHE_WINDOWS));
-#endif /*__MINGW32__*/
-#if defined(GAUCHE_CHAR_ENCODING_EUC_JP)
-    SCM_APPEND1(init_cond_features, t, SCM_LIST1(SCM_SYM_GAUCHE_EUCJP));
-#elif defined(GAUCHE_CHAR_ENCODING_SJIS)
-    SCM_APPEND1(init_cond_features, t, SCM_LIST1(SCM_SYM_GAUCHE_SJIS));
-#elif defined(GAUCHE_CHAR_ENCODING_UTF8)
-    SCM_APPEND1(init_cond_features, t, SCM_LIST1(SCM_SYM_GAUCHE_UTF8));
-#else
-    SCM_APPEND1(init_cond_features, t, SCM_LIST1(SCM_SYM_GAUCHE_NONE));
-#endif
 
     (void)SCM_INTERNAL_MUTEX_INIT(ldinfo.path_mutex);
     (void)SCM_INTERNAL_MUTEX_INIT(ldinfo.prov_mutex);
@@ -1185,7 +1115,6 @@ void Scm__InitLoad(void)
     DEF(ldinfo.load_path_rec,    SCM_SYM_LOAD_PATH, init_load_path);
     DEF(ldinfo.dynload_path_rec, SCM_SYM_DYNAMIC_LOAD_PATH, init_dynload_path);
     DEF(ldinfo.load_suffixes_rec, SCM_SYM_LOAD_SUFFIXES, init_load_suffixes);
-    DEF(ldinfo.cond_features_rec, SCM_SYM_COND_FEATURES, init_cond_features);
 
     ldinfo.provided =
         SCM_LIST5(SCM_MAKE_STR("srfi-2"), /* and-let* */

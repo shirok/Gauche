@@ -1,7 +1,7 @@
 ;;;
 ;;; syslib.stub - system interface functions
 ;;;  
-;;;   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007 Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.124 2007-01-17 07:15:14 shirok Exp $
+;;; $Id: syslib.stub,v 1.125 2007-03-02 01:49:11 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -344,9 +344,10 @@
 (define-cproc sys-sigsuspend (mask::<sys-sigset>)
   (call "Scm_SigSuspend"))
 
-(if "defined HAVE_SIGWAIT"
+(when "defined HAVE_SIGWAIT"
 (define-cproc sys-sigwait (mask::<sys-sigset>)
   (call <int> "Scm_SigWait"))
+(initcode "Scm_AddFeature(\"gauche.sys.sigwait\", NULL);")
 )
 
 ;(define-cproc %with-signal-handlers (handlers thunk)
@@ -481,7 +482,7 @@
 ;;---------------------------------------------------------------------
 ;; sys/wait.h
 
-(if "!defined(__MINGW32__)" (begin
+(when "!defined(__MINGW32__)"
 
 ;; returns pid and status 
 (define-cproc sys-wait ()
@@ -519,7 +520,7 @@
 (define-cproc sys-wait-stopsig (status::<int>)
   (call <int> "WSTOPSIG"))
 
-)) ;; !defined(__MINGW32__)
+) ;; !defined(__MINGW32__)
 
 ;;---------------------------------------------------------------------
 ;; time.h
@@ -743,9 +744,9 @@
         "  SCM_RESULT = sleep(seconds);"
         "#endif"))
 
-(if "defined(HAVE_NANOSLEEP)"
-    (define-cproc sys-nanosleep (nanoseconds)
-      "struct timespec spec, rem;
+(when "defined(HAVE_NANOSLEEP)"
+  (define-cproc sys-nanosleep (nanoseconds)
+    "struct timespec spec, rem;
        if (SCM_TIMEP(nanoseconds)) {
            spec.tv_sec = SCM_TIME(nanoseconds)->sec;
            spec.tv_nsec = SCM_TIME(nanoseconds)->nsec;
@@ -764,7 +765,9 @@
        rem.tv_sec = rem.tv_nsec = 0;
        nanosleep(&spec, &rem);
        if (rem.tv_sec == 0 && rem.tv_nsec == 0) SCM_RETURN(SCM_FALSE);
-       else SCM_RETURN(Scm_MakeTime(SCM_FALSE, rem.tv_sec, rem.tv_nsec));"))
+       else SCM_RETURN(Scm_MakeTime(SCM_FALSE, rem.tv_sec, rem.tv_nsec));")
+  (initcode "Scm_AddFeature(\"gauche.sys.nanosleep\", NULL);")
+  ) ; defined(HAVE_NANOSLEEP)
 
 (define-cproc sys-unlink (pathname::<const-cstring>)
   (body "int r; SCM_SYSCALL(r, unlink(pathname));"
@@ -799,9 +802,10 @@
 ;; NB. Linux needs _XOPEN_SOURCE defined before unistd.h to get crypt()
 ;; prototype.  However, it screws up something else.  Just for now I
 ;; cast the return value of crypt() to avoid it...such a kludge...
-(if "defined(HAVE_CRYPT)"
+(when "defined(HAVE_CRYPT)"
 (define-cproc sys-crypt (key::<const-cstring> salt::<const-cstring>)
   (expr <const-cstring> "(const char *)crypt(key, salt)"))
+(initcode "Scm_AddFeature(\"gauche.sys.crypt\", NULL);")
 )
 
 ;; not supported yet:
@@ -810,7 +814,7 @@
 ;;---------------------------------------------------------------------
 ;; symbolic link
 
-(if "defined(HAVE_SYMLINK)"
+(when "defined(HAVE_SYMLINK)"
 (define-cproc sys-symlink (existing::<const-cstring> newpath::<const-cstring>)
   "
 #ifdef HAVE_SYMLINK
@@ -823,9 +827,10 @@
   SCM_RETURN(SCM_FALSE);
 #endif
 ")
+(initcode "Scm_AddFeature(\"gauche.sys.symlink\", NULL);")
 )
 
-(if "defined(HAVE_READLINK)"
+(when "defined(HAVE_READLINK)"
 (define-cproc sys-readlink (path::<const-cstring>)
   "#define READLINK_PATH_MAX 1024  /* TODO: needs to be configured */
   char buf[READLINK_PATH_MAX];
@@ -834,6 +839,7 @@
   if (n < 0) Scm_SysError(\"readlink failed\");
   if (n == READLINK_PATH_MAX) Scm_Error(\"readlink result too long\");
   return Scm_MakeString(buf, n, -1, SCM_STRING_COPYING);")
+(initcode "Scm_AddFeature(\"gauche.sys.readlink\", NULL);")
 )
 
 ;;---------------------------------------------------------------------
@@ -841,7 +847,7 @@
 
 (define-type <sys-fdset> "ScmSysFdset*")
 
-(if "defined(HAVE_SELECT)" (begin
+(when "defined(HAVE_SELECT)"
 (define-cproc sys-fdset-ref (fdset::<sys-fdset> pf)
   (body <boolean>
         "int fd = Scm_GetPortFd(pf, FALSE);"
@@ -877,7 +883,8 @@
 (define-cproc sys-select! (rfds wfds efds &optional (timeout #f))
   (call "Scm_SysSelectX"))
 
-)) ;; if defined(HAVE_SELECT)
+(initcode "Scm_AddFeature(\"gauche.sys.select\", NULL);")
+) ;; when defined(HAVE_SELECT)
 
 ;; Local variables:
 ;; mode: scheme

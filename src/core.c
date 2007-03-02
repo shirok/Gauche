@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.76 2007-02-27 09:33:38 shirok Exp $
+ *  $Id: core.c,v 1.77 2007-03-02 01:49:10 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -39,6 +39,7 @@
 #include "gauche.h"
 #include "gauche/arch.h"
 #include "gauche/paths.h"
+#include "gauche/builtin-syms.h"
 
 /*
  * out-of-memory handler.  this will be called by GC.
@@ -49,6 +50,14 @@ static GC_PTR oom_handler(size_t bytes)
     Scm_Panic("out of memory (%d).  aborting...", bytes);
     return NULL;                /* dummy */
 }
+
+/*
+ * Features list used by cond-expand macro
+ */
+static struct {
+    ScmObj alist;
+    ScmInternalMutex mutex;
+} cond_features = { SCM_NIL };
 
 /*=============================================================
  * Program initialization
@@ -88,7 +97,7 @@ extern void Scm_Init_compile(void);
 extern void Scm_Init_objlib(void);
 
 static void finalizable(void);
-
+static void init_cond_features(void);
 
 #ifdef GAUCHE_USE_PTHREADS
 /* a trick to make sure the gc thread object is linked */
@@ -117,6 +126,8 @@ void Scm_Init(const char *signature)
     GC_finalize_on_demand = TRUE;
     GC_finalizer_notifier = finalizable;
 
+    (void)SCM_INTERNAL_MUTEX_INIT(cond_features.mutex);
+
     /* Initialize components.  The order is important, for some components
        rely on the other components to be initialized. */
     Scm__InitSymbol();
@@ -140,7 +151,7 @@ void Scm_Init(const char *signature)
     Scm__InitSignal();
     Scm__InitSystem();
     Scm__InitRepl();
-    
+
     Scm_Init_stdlib(Scm_SchemeModule());
     Scm_Init_extlib(Scm_GaucheModule());
     Scm_Init_syslib(Scm_GaucheModule());
@@ -158,6 +169,9 @@ void Scm_Init(const char *signature)
 
     Scm_SelectModule(Scm_UserModule());
 
+    /* Final setup of cond-features alist. */
+    init_cond_features();
+
 #ifdef GAUCHE_USE_PTHREADS
     /* a trick to make sure the gc thread object is linked */
     ptr_pthread_create = (int (*)(void))GC_pthread_create;
@@ -167,7 +181,6 @@ void Scm_Init(const char *signature)
 /*=============================================================
  * GC utilities
  */
-
 
 void Scm_GC()
 {
@@ -347,8 +360,105 @@ void Scm_Abort(const char *msg)
 
 /*=============================================================
  * Inspect the configuration
- *
  */
+
+/* Returns the cond-features alist. */
+ScmObj
+Scm_GetFeatures()
+{
+    return cond_features.alist;
+}
+
+/*
+ * Append FEATURE to the cond-features alist.  Once added, the symbol FEATURE
+ * will be recognized by cond-expand.
+ *
+ *  (cond-expand (FEATURE body ...)) 
+ *   
+ * If loading a module is required in order to make FEATURE available,
+ * such module name can be specified in MODULE argument.  It can be NULL
+ * if the feature is built-in.
+ *
+ * This API is meant to expose configuration information to a Scheme
+ * level.
+ */
+void
+Scm_AddFeature(const char *feature, const char *module)
+{
+    ScmObj cell;
+
+    if (module) {
+        cell = SCM_LIST2(SCM_INTERN(feature), SCM_INTERN(module));
+    } else {
+        cell = SCM_LIST1(SCM_INTERN(feature));
+    }
+    
+    (void)SCM_INTERNAL_MUTEX_LOCK(cond_features.mutex);
+    cond_features.alist = Scm_Cons(cell, cond_features.alist);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(cond_features.mutex);
+}
+
+static void
+init_cond_features()
+{
+    int i;
+    /* The initial cond-features list. */
+    static struct {
+        const char *feature;
+        const char *module;
+    } init_features[] = {
+        { "gauche", NULL },
+#ifdef __MINGW32__
+        { "gauche.os.windows", NULL },
+        { "gauche-windows", NULL }, /* for backward compatibility */
+#endif
+        { "srfi-0", NULL },         /* autoloaded */
+        { "srfi-1", "srfi-1" },
+        { "srfi-2", NULL },         /* builtin */
+        { "srfi-4", "gauche.uvector" },
+        { "srfi-5", "srfi-5" },
+        { "srfi-6", NULL },         /* builtin */
+        { "srfi-7", NULL },         /* autoloaded */
+        { "srfi-8", NULL },         /* builtin */
+        { "srfi-9", "srfi-9" },
+        { "srfi-10", NULL },
+        { "srfi-11", "srfi-11" },
+        { "srfi-13", "srfi-13" },
+        { "srfi-14", "srfi-14" },
+        { "srfi-16", NULL },
+        { "srfi-17", NULL },
+        { "srfi-18", "gauche.threads" },
+        { "srfi-19", "srfi-19" },
+        { "srfi-22", NULL },
+        { "srfi-23", NULL },
+        { "srfi-25", "gauche.array" },
+        { "srfi-26", NULL },
+        { "srfi-27", "srfi-27" },
+        { "srfi-28", NULL },
+        { "srfi-29", "srfi-29" },
+        { "srfi-30", NULL },
+        { "srfi-31", NULL },
+        { "srfi-34", NULL },
+        { "srfi-35", NULL },
+        { "srfi-36", NULL },
+        { "srfi-37", "srfi-37" },
+        { "srfi-38", NULL },
+        { "srfi-39", "gauche.parameter" },
+        { "srfi-40", "util.stream" },
+        { "srfi-42", "srfi-42" },
+        { "srfi-43", "srfi-43" },
+        { "srfi-45", NULL },
+        { "srfi-55", NULL },
+        { "srfi-61", NULL },
+        { "srfi-62", NULL },
+        { "srfi-87", NULL },
+        { NULL, NULL }
+    };
+
+    for (i=0; init_features[i].feature; i++) {
+        Scm_AddFeature(init_features[i].feature, init_features[i].module);
+    }
+}
 
 const char *Scm_HostArchitecture(void)
 {

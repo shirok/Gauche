@@ -1,81 +1,19 @@
 ;;;
 ;;; SRFI-0   feature based conditional expansion construct
 ;;;
-;;; $Id: srfi-0.scm,v 1.26 2006-04-06 21:42:53 shirok Exp $
+;;; $Id: srfi-0.scm,v 1.27 2007-03-02 01:49:10 shirok Exp $
 ;;;
 
 (define-module srfi-0
   (export cond-expand))
 (select-module srfi-0)
 
+(define cond-features (with-module gauche.internal cond-features))
+
 ;;; Rewritten with a legacy macro, instead of r5rs syntax-rules,
 ;;; to enable adding features at runtime.  Such capability is
 ;;; for system management, and not supposed to be used freely
 ;;; by user programs.
-;;; Since it is not hygienic, there may be some binding problems---
-;;; need to be rewritten by low-level hygienic macro in future.
-
-;;; The following features are supported in all Gauche versions.
-;;;
-;;;   srfi-0, srfi-1, srfi-2, srfi-4, srfi-5, 
-;;;   srfi-6, srfi-7, srfi-8, srfi-9, srfi-10,
-;;;   srfi-11, srfi-13, srfi-14, 
-;;;   srfi-16, srfi-17, srfi-18, srfi-19,
-;;;   srfi-22, srfi-23, srfi-25, 
-;;;   srfi-26, srfi-27, srfi-28, srfi-29, srfi-30,
-;;;   srfi-31, srfi-34, srfi-35,
-;;;   srfi-36, srfi-37, srfi-38, srfi-39, srfi-40,
-;;;   srfi-42, srfi-43, srfi-45, 
-;;;   srfi-55,
-;;;   srfi-62,
-;;;   gauche
-;;;
-;;; The following features are conditionally defined depending on
-;;; how Gauche has been compiled
-;;;   gauche-windows, gauche-eucjp, gauche-sjis, gauche-utf8, gauche-none
-
-;; NB: User programs shouldn't casually modify this list!
-(set! *cond-features*
-      (append *cond-features*
-              '((srfi-0)
-                (srfi-1 srfi-1)
-                (srfi-2 srfi-2)
-                (srfi-4 gauche.uvector)
-                (srfi-5 srfi-5)
-                (srfi-6)
-                (srfi-7)
-                (srfi-8)
-                (srfi-9 srfi-9)
-                (srfi-10)
-                (srfi-11 srfi-11)
-                (srfi-13 srfi-13)
-                (srfi-14 srfi-14)
-                (srfi-16)
-                (srfi-17)
-                (srfi-18 gauche.threads)
-                (srfi-19 srfi-19)
-                (srfi-22)
-                (srfi-23)
-                (srfi-25 gauche.array)
-                (srfi-26)
-                (srfi-27 srfi-27)
-                (srfi-28)
-                (srfi-29 srfi-29)
-                (srfi-30)
-                (srfi-31)
-                (srfi-34)
-                (srfi-35)
-                (srfi-36)
-                (srfi-37 srfi-37)
-                (srfi-38)
-                (srfi-39 gauche.parameter)
-                (srfi-40 util.stream)
-                (srfi-42 srfi-42)
-                (srfi-43 srfi-43)
-                (srfi-45)
-                (srfi-55)
-                (srfi-62)
-                )))
 
 (define-macro (cond-expand . clauses)
 
@@ -87,7 +25,7 @@
     (cond
      ((identifier? req) (fulfill? (identifier->symbol req) seed))
      ((symbol? req)
-      (let ((p (assq req *cond-features*)))
+      (let ((p (assq req (cond-features))))
         (and p (if (null? (cdr p)) seed (cons (cadr p) seed)))))
      ((not (pair? req)) (error "Invalid cond-expand feature-id:" req))
      (else
@@ -113,7 +51,7 @@
     (if (fulfill? req '()) #f seed))
 
   (define (rec cls)
-    (cond
+   (cond
      ((null? cls) (error "Unfulfilled cond-expand:" cls))
      ((not (pair? (car cls)))
       (error "Bad clause in cond-expand:" (car cls)))

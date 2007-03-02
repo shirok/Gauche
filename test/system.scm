@@ -461,7 +461,8 @@
 ;;-------------------------------------------------------------------
 (test-section "select")
 
-(when (global-variable-bound? 'gauche 'sys-select)
+(cond-expand
+ (gauche.sys.select
   (test* "fdset" '(3 #t #f #t #t #f)
          (let ((fdset (make <sys-fdset>)))
            (set! (sys-fdset-ref fdset (current-input-port)) #t)
@@ -514,7 +515,7 @@
                     (sys-waitpid pid)))))
              ))
          )
-  );; globla-variable-bound? sys-select
+  )) ; cond-expand gauche.sys.select
 
 ;;-------------------------------------------------------------------
 (test-section "signal handling")
@@ -680,7 +681,8 @@
   )
 
 ;; sys-sigwait
-(when (global-variable-bound? (current-module) 'sys-sigwait)
+(cond-expand
+ (gauche.sys.sigwait
   (let ()
     (define z (lambda (n) (raise 'foo)))
   
@@ -710,7 +712,7 @@
     (test* "sys-sigwait / signal handler restoration" 'foo
            (guard (e (else e))
              (sys-kill (sys-getpid) SIGINT))))
-  ) ;; has sys-sigwait
+  )) ;; gauche.sys.sigwait
 
 ) ;; unless *win32*
 

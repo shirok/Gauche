@@ -1,3 +1,19 @@
+2007-03-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/core.c (Scm_AddFeature): Moved cond-features management code
+	  here from load.c, and cleaned up API.
+	* src/intlib.stub (cond-features): ditto.
+	* lib/srfi-0.scm (cond-expand): ditto.
+
+	* src/genstub: added 'when' directive.
+
+	* src/char.c: added a feature, either one of gauche.ces.utf8,
+	  gauche.ces.sjis, gauche.ces.eucjp, or gauche.ces.none, according
+	  to the compile-time option.
+	* src/syslib.stub: conditionally add features: gauche.sys.sigwait,
+	  gauche.sys.nanosleep, gauche.sys.crypt, gauche.sys.symlink,
+	  gauche.sys.readlink, gauche.sys.select.
+
 2007-02-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/error.c, src/vm.c, src/gauche/exception.h: Support

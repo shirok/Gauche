@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.486 2007-02-17 23:59:24 shirok Exp $
+ *  $Id: gauche.h,v 1.487 2007-03-02 01:49:10 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1774,6 +1774,9 @@ SCM_EXTERN ScmObj Scm_DynLoad(ScmString *path, ScmObj initfn, int export_);
 SCM_EXTERN ScmObj Scm_Require(ScmObj feature);
 SCM_EXTERN ScmObj Scm_Provide(ScmObj feature);
 SCM_EXTERN int    Scm_ProvidedP(ScmObj feature);
+
+SCM_EXTERN ScmObj Scm_GetFeatures(void);
+SCM_EXTERN void   Scm_AddFeature(const char *feature, const char *mod);
 
 struct ScmAutoloadRec {
     SCM_HEADER;

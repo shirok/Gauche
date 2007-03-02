@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.45 2007-02-13 12:08:26 shirok Exp $
+ *  $Id: char.c,v 1.46 2007-03-02 01:49:10 shirok Exp $
  */
 
 #include <ctype.h>
@@ -884,4 +884,15 @@ ScmObj Scm_GetStandardCharSet(int id)
 void Scm__InitChar(void)
 {
     SCM_INTERNAL_MUTEX_INIT(predef_charsets_mutex);
+
+    /* Expose internal charset */
+#if defined(GAUCHE_CHAR_ENCODING_EUC_JP)
+    Scm_AddFeature("gauche.ces.eucjp", NULL);
+#elif defined(GAUCHE_CHAR_ENCODING_SJIS)
+    Scm_AddFeature("gauche.ces.sjis", NULL);
+#elif defined(GAUCHE_CHAR_ENCODING_UTF_8)
+    Scm_AddFeature("gauche.ces.utf8", NULL);
+#else
+    Scm_AddFeature("gauche.ces.none", NULL);
+#endif
 }
