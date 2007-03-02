@@ -1,6 +1,6 @@
-;;
+;; -*- coding: shift_jis -*-
 ;; Auxiliary test for string <-> uvector conversion  (SJIS)
-;; $Id: test-sjis.scm,v 1.1 2002-09-27 10:01:19 shirok Exp $
+;; $Id: test-sjis.scm,v 1.2 2007-03-02 07:20:41 shirok Exp $
 
 (test "mb string->u8vector" '#u8(#x82 #xa0 #x82 #xa2 #x82 #xa4)
       (lambda ()

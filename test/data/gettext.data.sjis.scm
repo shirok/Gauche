@@ -1,6 +1,6 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; -*- coding: shift-jis -*-
 ;; encoding-dependent test data for gettext
-;; $Id: gettext.data.sjis.scm,v 1.1 2004-01-27 04:37:57 shirok Exp $
+;; $Id: gettext.data.sjis.scm,v 1.2 2007-03-02 07:20:42 shirok Exp $
 
 (define *tests*
   '(("en"

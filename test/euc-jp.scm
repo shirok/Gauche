@@ -1,6 +1,6 @@
-;; this test only works when the core system is compiled with euc-jp.
+;; -*- coding: euc-jp -*-
 
-;; $Id: euc-jp.scm,v 1.22 2007-02-04 12:40:00 shirok Exp $
+;; $Id: euc-jp.scm,v 1.23 2007-03-02 07:20:42 shirok Exp $
 
 (use gauche.test)
 

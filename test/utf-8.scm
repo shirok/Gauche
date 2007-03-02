@@ -1,6 +1,6 @@
-;; this test only works when the core system is compiled with utf-8.
+;; -*- coding: utf-8 -*-
 
-;; $Id: utf-8.scm,v 1.10 2007-02-04 12:40:00 shirok Exp $
+;; $Id: utf-8.scm,v 1.11 2007-03-02 07:20:42 shirok Exp $
 
 (use gauche.test)
 

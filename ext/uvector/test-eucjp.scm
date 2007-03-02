@@ -1,6 +1,6 @@
-;;
+;; -*- coding: euc-jp -*-
 ;; Auxiliary test for string <-> uvector conversion  (EUC-JP)
-;; $Id: test-eucjp.scm,v 1.1 2002-09-27 10:01:19 shirok Exp $
+;; $Id: test-eucjp.scm,v 1.2 2007-03-02 07:20:41 shirok Exp $
 
 (test "mb string->u8vector" '#u8(#xa4 #xa2 #xa4 #xa4 #xa4 #xa6)
       (lambda ()

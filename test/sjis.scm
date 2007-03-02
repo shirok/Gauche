@@ -1,6 +1,6 @@
-;; this test only works when the core system is compiled with shift-jis.
+;; -*- coding: shift-jis -*-
 
-;; $Id: sjis.scm,v 1.9 2007-02-04 12:40:00 shirok Exp $
+;; $Id: sjis.scm,v 1.10 2007-03-02 07:20:42 shirok Exp $
 
 (use gauche.test)
 
