@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: time.scm,v 1.6 2007-03-02 07:39:08 shirok Exp $
+;;;  $Id: time.scm,v 1.7 2007-03-04 08:34:16 shirok Exp $
 ;;;
 
 (define-module gauche.time
@@ -48,7 +48,7 @@
 
 (define (format-delta-time delta)
   (let*-values (((frac sec) (modf delta))
-                ((ignore ifrac) (modf (+ (* frac 1000) 0.5))))
+                ((ignore ifrac) (modf (+ (*. frac 1000) 0.5))))
     (format #f "~3d.~3,'0d" (inexact->exact sec) (inexact->exact ifrac))))
 
 (define-syntax time
@@ -63,14 +63,14 @@
                ";~,,,,75:s\n; real ~a\n; user ~a\n; sys  ~a\n"
                '(time expr . exprs)
                (format-delta-time
-                (- (+ ereal-sec (/ ereal-msec 1000000))
-                   (+ sreal-sec (/ sreal-msec 1000000))))
+                (- (+ ereal-sec (/. ereal-msec 1000000))
+                   (+ sreal-sec (/. sreal-msec 1000000))))
                (format-delta-time
-                (/ (- (list-ref etimes 0) (list-ref stimes 0))
-                   (list-ref stimes 4)))
+                (/. (- (list-ref etimes 0) (list-ref stimes 0))
+                    (list-ref stimes 4)))
                (format-delta-time
-                (/ (- (list-ref etimes 1) (list-ref stimes 1))
-                   (list-ref stimes 4))))
+                (/. (- (list-ref etimes 1) (list-ref stimes 1))
+                    (list-ref stimes 4))))
        (apply values r)))
     ((_)
      (syntax-error "usage: (time expr expr2 ...); or you meant sys-time?"))
@@ -147,8 +147,8 @@
 (define-method time-counter-get-delta ((self <real-time-counter>))
   (receive (sec usec) (sys-gettimeofday)
     (+ (- sec (car (slot-ref self 'start)))
-       (/ (- usec (cadr (slot-ref self 'start)))
-          1000000))))
+       (/. (- usec (cadr (slot-ref self 'start)))
+           1000000))))
 
 ;; 'user' time counter
 (define-class <user-time-counter> (<time-counter>)
@@ -156,7 +156,7 @@
 
 (define-method time-counter-get-current-time ((self <user-time-counter>))
   (let1 times (sys-times)
-    (/ (list-ref times 0) (list-ref times 4))))
+    (/. (list-ref times 0) (list-ref times 4))))
 
 ;; 'system' time counter
 (define-class <system-time-counter> (<time-counter>)
@@ -164,7 +164,7 @@
 
 (define-method time-counter-get-current-time ((self <system-time-counter>))
   (let1 times (sys-times)
-    (/ (list-ref times 1) (list-ref times 4))))
+    (/. (list-ref times 1) (list-ref times 4))))
 
 ;; 'process' time counter - 'user' + 'sys'
 (define-class <process-time-counter> (<time-counter>)
@@ -172,7 +172,7 @@
 
 (define-method time-counter-get-current-time ((self <process-time-counter>))
   (let1 times (sys-times)
-    (/ (+ (list-ref times 0) (list-ref times 1))
-       (list-ref times 4))))
+    (/. (+ (list-ref times 0) (list-ref times 1))
+        (list-ref times 4))))
 
 (provide "gauche/time")

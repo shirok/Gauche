@@ -1,5 +1,8 @@
 2007-03-03  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/time.scm: use inexact arithmetics to avoid the timer
+	  results being ratnums.
+
 	* src/number.c (div_internal): fix: (/ 0 <inexact-number>) must be
 	  the inexact zero, not the exact zero.
 	* src/extlib.stub: added inexact arithmetics: +. -. *. /.
