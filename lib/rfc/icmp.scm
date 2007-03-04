@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: icmp.scm,v 1.4 2007-03-02 07:39:10 shirok Exp $
+;;;  $Id: icmp.scm,v 1.5 2007-03-04 08:55:53 shirok Exp $
 ;;;
 
 
@@ -244,7 +244,7 @@
      ((assv type `((,ICMP_DEST_UNREACH . ,icmp-unreach-code->string)
                    (,ICMP_REDIRECT     . ,icmp-redirect-code->string)
                    (,ICMP_ROUTER_ADVERT . ,icmp-router-code->string)
-                   (,ICMP_TYPE_EXCEEDED . ,icmp-exceeded-code->string)
+                   (,ICMP_TIME_EXCEEDED . ,icmp-exceeded-code->string)
                    (,ICMP_PARAMETERPROB . ,icmp-parameter-code->string)
                    (,ICMP_SECURITYFAILURE . ,icmp-security-code->string)))
       => (lambda (p)
