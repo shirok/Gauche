@@ -57,6 +57,94 @@
                 (= (sockaddr-port addr) 23)
                 #t))))
 
+(let ()
+  (define (addr-test desc input exp-val exp-vers)
+    (let ((uvresult (make-u8vector 16 0)))
+      (and exp-vers
+           (let loop ((val exp-val)
+                      (dig (if (= exp-vers AF_INET) 3 15)))
+             (when (>= dig 0)
+               (u8vector-set! uvresult dig (logand val #xff))
+               (loop (ash val -8) (- dig 1)))))
+      (test* #`"inet-string->address  (,desc)" `(,exp-val ,exp-vers)
+             (receive r (inet-string->address input) r))
+      (test* #`"inet-string->address! (,desc)" `(,uvresult ,exp-vers)
+             (let* ((buf (make-u8vector 16 0))
+                    (ver (inet-string->address! input buf)))
+               (list buf ver)))))
+
+  (addr-test "v4-1" "127.0.0.1" #x7f000001 AF_INET)
+  (addr-test "v4-2" "192.168.1.2" #xc0a80102 AF_INET)
+  (addr-test "v4-3" "255.255.252.0" #xfffffc00 AF_INET)
+  (addr-test "v4-err1" "192.168.1" #f #f)
+  (addr-test "v4-err2" "192.168.1.2.3" #f #f)
+  (addr-test "v4-err3" "172.256.4.2" #f #f)
+  (addr-test "v6-1" "1:2:3:4:fffc:fffd:fffe:ffff"
+             #x0001000200030004fffcfffdfffeffff AF_INET6)
+  (addr-test "v6-2" "::1"
+             #x00000000000000000000000000000001 AF_INET6)
+  (addr-test "v6-3" "::1:2"
+             #x00000000000000000000000000010002 AF_INET6)
+  (addr-test "v6-4" "::1:2:3:4:5:6:7"
+             #x00000001000200030004000500060007 AF_INET6)
+  (addr-test "v6-err1" "::1:2:3:4:5:6:7:8" #f #f)
+  (addr-test "v6-err2" ":1:2:3:4:5:6:7:8" #f #f)
+  (addr-test "v6-5" "ffe0::"
+             #xffe00000000000000000000000000000 AF_INET6)
+  (addr-test "v6-6" "ffe0:1::"
+             #xffe00001000000000000000000000000 AF_INET6)
+  (addr-test "v6-7" "ffe0::234:567"
+             #xffe00000000000000000000002340567 AF_INET6)
+  (addr-test "v6-err3" "ffe0::234::567" #f #f)
+  (addr-test "v6-err4" "ffe0::234:567:" #f #f)
+  (addr-test "v6-8" "::192.168.1.2"
+             #x000000000000000000000000c0a80102 AF_INET6)
+  (addr-test "v6-9" "1::2:0:0:192.168.1.2"
+             #x000100000000000200000000c0a80102 AF_INET6)
+  )
+
+(let ()
+  (define (addr-test desc input vers expected)
+    (let* ((size (cond ((= vers AF_INET) 4) ((= vers AF_INET6) 16)))
+           (uv (make-u8vector size 0)))
+      (do ((k (- size 1) (- k 1))
+           (val input (ash val -8)))
+          ((< k 0))
+        (u8vector-set! uv k (logand val #xff)))
+      (test* #`"inet-address->string (,desc,, int)" expected
+             (inet-address->string input vers))
+      (test* #`"inet-address->string (,desc,, uv)" expected
+             (inet-address->string uv vers))))
+
+  (addr-test "v4-1" #x7f000001 AF_INET "127.0.0.1")
+  (addr-test "v4-2" #xc0a80102 AF_INET "192.168.1.2")
+  (addr-test "v4-3" #xfffffc00 AF_INET "255.255.252.0")
+
+  (addr-test "v6-1" #x0001000200030004fffcfffdfffeffff AF_INET6
+             "1:2:3:4:fffc:fffd:fffe:ffff")
+  (addr-test "v6-2" #x00000000000000000000000000000001 AF_INET6
+             "::1")
+  (addr-test "v6-3" #x00000000000000000000000000010002 AF_INET6
+             "::1:2")
+  (addr-test "v6-4" #x00000001000200030004000500060007 AF_INET6
+             "0:1:2:3:4:5:6:7")
+  (addr-test "v6-5" #xffe00000000000000000000000000000 AF_INET6
+             "ffe0::")
+  (addr-test "v6-6" #xffe00001000000000000000000000000 AF_INET6
+             "ffe0:1::")
+  (addr-test "v6-7" #xffe00000000000000000000002340567 AF_INET6
+             "ffe0::234:567")
+  (addr-test "v6-8" #xffe00000000002230001000200030004 AF_INET6
+             "ffe0::223:1:2:3:4")
+  (addr-test "v6-9" #xffe00000000002230000000000030004 AF_INET6
+             "ffe0::223:0:0:3:4")
+  (addr-test "v6-10" #xffe00000000002230000000000000004 AF_INET6
+             "ffe0:0:0:223::4")
+  (addr-test "v6-11" #xffe00000000000000001000000000004 AF_INET6
+             "ffe0::1:0:0:4")
+  )
+
+
 ;;-----------------------------------------------------------------
 (test-section "netdb")
 

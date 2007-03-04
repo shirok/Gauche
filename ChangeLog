@@ -1,3 +1,9 @@
+2007-03-03  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/netaux.scm: added inet-addres->string, inet->string->address
+	  and inet-string->address! (these have replaced the provisional
+	  address parsers in rfc.ip).
+
 2007-03-01  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/net.c: cleaned up winsock-specific code using

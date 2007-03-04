@@ -273,53 +273,6 @@ Content-Length: 4349
                          43 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
                          17 0 0 0 0 0 0 0)))
 
-(let ()
-  (define (addr-test desc input exp-val exp-vers)
-    (let ((uvresult (make-u8vector 16 0)))
-      (and exp-vers
-           (let loop ((val exp-val)
-                      (dig (if (= exp-vers 4) 3 15)))
-             (when (>= dig 0)
-               (u8vector-set! uvresult dig (logand val #xff))
-               (loop (ash val -8) (- dig 1)))))
-      (test* #`"ip-parse-address  (,desc)" `(,exp-val ,exp-vers)
-             (receive r (ip-parse-address input) r))
-      (test* #`"ip-parse-address! (,desc)" `(,uvresult ,exp-vers)
-             (let* ((buf (make-u8vector 16 0))
-                    (ver (ip-parse-address! input buf)))
-               (list buf ver)))))
-
-  (addr-test "v4-1" "127.0.0.1" #x7f000001 4)
-  (addr-test "v4-2" "192.168.1.2" #xc0a80102 4)
-  (addr-test "v4-3" "255.255.252.0" #xfffffc00 4)
-  (addr-test "v4-err1" "192.168.1" #f #f)
-  (addr-test "v4-err2" "192.168.1.2.3" #f #f)
-  (addr-test "v4-err3" "172.256.4.2" #f #f)
-  (addr-test "v6-1" "1:2:3:4:fffc:fffd:fffe:ffff"
-             #x0001000200030004fffcfffdfffeffff 6)
-  (addr-test "v6-2" "::1"
-             #x00000000000000000000000000000001 6)
-  (addr-test "v6-3" "::1:2"
-             #x00000000000000000000000000010002 6)
-  (addr-test "v6-4" "::1:2:3:4:5:6:7"
-             #x00000001000200030004000500060007 6)
-  (addr-test "v6-err1" "::1:2:3:4:5:6:7:8" #f #f)
-  (addr-test "v6-err2" ":1:2:3:4:5:6:7:8" #f #f)
-  (addr-test "v6-5" "ffe0::"
-             #xffe00000000000000000000000000000 6)
-  (addr-test "v6-6" "ffe0:1::"
-             #xffe00001000000000000000000000000 6)
-  (addr-test "v6-7" "ffe0::234:567"
-             #xffe00000000000000000000002340567 6)
-  (addr-test "v6-err3" "ffe0::234::567" #f #f)
-  (addr-test "v6-err4" "ffe0::234:567:" #f #f)
-  (addr-test "v6-8" "::192.168.1.2"
-             #x000000000000000000000000c0a80102 6)
-  (addr-test "v6-9" "1::2:0:0:192.168.1.2"
-             #x000100000000000200000000c0a80102 6)
-  )
-
-
 ;;--------------------------------------------------------------------
 (test-section "rfc.mime")
 (use rfc.mime)

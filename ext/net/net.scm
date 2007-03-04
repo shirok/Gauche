@@ -30,12 +30,13 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: net.scm,v 1.36 2007-03-02 07:39:06 shirok Exp $
+;;;  $Id: net.scm,v 1.37 2007-03-04 02:22:37 shirok Exp $
 ;;;
 
 (define-module gauche.net
   (use srfi-1)
   (use gauche.uvector)
+  (use gauche.sequence)
   (export <socket> make-socket
           |PF_UNSPEC| |PF_UNIX| |PF_INET| |AF_UNSPEC| |AF_UNIX| |AF_INET|
           |SOCK_STREAM| |SOCK_DGRAM| |SOCK_RAW|
@@ -53,7 +54,8 @@
           <sys-protoent> sys-getprotobyname sys-getprotobynumber
           <sys-servent> sys-getservbyname sys-getservbyport
           sys-htonl sys-htons sys-ntohl sys-ntohs
-          inet-checksum
+          inet-checksum inet-string->address inet-string->address!
+          inet-address->string
           )
   )
   
