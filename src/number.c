@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.143 2007-03-02 07:39:13 shirok Exp $
+ *  $Id: number.c,v 1.144 2007-03-04 08:26:56 shirok Exp $
  */
 
 #include <math.h>
@@ -1687,7 +1687,6 @@ static ScmObj div_internal(ScmObj arg0, ScmObj arg1, int autocoerce)
         }
         if (SCM_FLONUMP(arg1)) {
             if (SCM_FLONUM_VALUE(arg1) == 0.0) goto ANORMAL;
-            if (SCM_EXACT_ZERO_P(arg0)) return arg0;
             return Scm_MakeFlonum(SCM_INT_VALUE(arg0)/SCM_FLONUM_VALUE(arg1));
         }
         if (SCM_COMPNUMP(arg1)) {

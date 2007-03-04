@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.274 2007-02-17 23:59:24 shirok Exp $
+;;; $Id: extlib.stub,v 1.275 2007-03-04 08:26:54 shirok Exp $
 ;;;
 
 "
@@ -115,6 +115,36 @@
         "if (SCM_NULLP(args)) return Scm_ReciprocalInexact(arg1);"
         "SCM_FOR_EACH(p, args) {"
         "  arg1 = Scm_DivInexact(arg1, SCM_CAR(p));"
+        "}"
+        "SCM_RESULT = arg1;"))
+
+;; Inexact arithmetics.  Useful for speed-sensitive code to avoid
+;; accidental use of bignum or ratnum.   We might want to optimize
+;; these more, even adding special VM insns for them.
+(define-cproc +. (&rest args)
+  (body "ScmObj p, a = Scm_MakeFlonum(0.0);"
+        "SCM_FOR_EACH(p, args) {"
+        "  a = Scm_Add(a, Scm_ExactToInexact(SCM_CAR(p)));"
+        "}"
+        "SCM_RESULT = a;"))
+(define-cproc *. (&rest args)
+  (body "ScmObj p, a = Scm_MakeFlonum(1.0);"
+        "SCM_FOR_EACH(p, args) {"
+        "  a = Scm_Mul(a, Scm_ExactToInexact(SCM_CAR(p)));"
+        "}"
+        "SCM_RESULT = a;"))
+(define-cproc -. (arg1 &rest args)
+  (body "ScmObj p;"
+        "if (SCM_NULLP(args)) return Scm_Negate(Scm_ExactToInexact(arg1));"
+        "SCM_FOR_EACH(p, args) {"
+        "  arg1 = Scm_Sub(arg1, Scm_ExactToInexact(SCM_CAR(p)));"
+        "}"
+        "SCM_RESULT = arg1;"))
+(define-cproc /. (arg1 &rest args)
+  (body "ScmObj p;"
+        "if (SCM_NULLP(args)) return Scm_Reciprocal(Scm_ExactToInexact(arg1));"
+        "SCM_FOR_EACH(p, args) {"
+        "  arg1 = Scm_Div(arg1, Scm_ExactToInexact(SCM_CAR(p)));"
         "}"
         "SCM_RESULT = arg1;"))
 
