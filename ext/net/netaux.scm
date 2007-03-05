@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netaux.scm,v 1.8 2007-03-04 02:22:37 shirok Exp $
+;;;  $Id: netaux.scm,v 1.9 2007-03-05 03:19:30 shirok Exp $
 ;;;
 
 (select-module gauche.net)
@@ -203,25 +203,25 @@
 
 ;; IP address parser.  Can deal with both v4 and v6 addresses.
 ;; Two variations: ip-parse-address returns an integer address
-;; and version; ip-parse-address! fills the given uvector with
-;; parsed address and returns a version.
+;; and protocol; ip-parse-address! fills the given uvector with
+;; parsed address and returns a protocol.
 ;; We could use <sockaddr-in> and <sockaddr-in6>, giving STRING
 ;; to :host argument in the constructor and extract the address
 ;; value, but the host argument also accepts hostnames, which we
 ;; want to avoid.  So we parse the address by ourselves.
 
 (define (inet-string->address string)
-  (receive (ns vers) (%ip-parse-address string)
+  (receive (ns proto) (%ip-parse-address string)
     (cond
-     ((eqv? vers AF_INET) (values (%fold-addr-to-integer ns 8) vers))
-     ((eqv? vers AF_INET6) (values (%fold-addr-to-integer ns 16) vers))
+     ((eqv? proto AF_INET) (values (%fold-addr-to-integer ns 8) proto))
+     ((eqv? proto AF_INET6) (values (%fold-addr-to-integer ns 16) proto))
      (else (values #f #f)))))
 
 (define (inet-string->address! string uv)
-  (receive (ns vers) (%ip-parse-address string)
+  (receive (ns proto) (%ip-parse-address string)
     (cond
-     ((eqv? vers AF_INET) (%fill-addr-to-buf! ns uv u8vector-set! 1) vers)
-     ((eqv? vers AF_INET6) (%fill-addr-to-buf! ns uv %u8vector-set2be! 2) vers)
+     ((eqv? proto AF_INET) (%fill-addr-to-buf! ns uv u8vector-set! 1) proto)
+     ((eqv? proto AF_INET6) (%fill-addr-to-buf! ns uv %u8vector-set2be! 2) proto)
      (else #f))))
 
 (define (%ip-parse-address string)
@@ -295,11 +295,11 @@
   (u8vector-set! buf (+ pos 1) (logand n #xff)))
 
 ;; IP address unparser.  ADDRESS can be an integer or u8vector.
-(define (inet-address->string address version)
+(define (inet-address->string address proto)
   (cond
-   ((eqv? version AF_INET) (%addr->string-v4 address))
-   ((eqv? version AF_INET6) (%addr->string-v6 address))
-   (else (error "unsupported IP version:" version))))
+   ((eqv? proto AF_INET) (%addr->string-v4 address))
+   ((eqv? proto AF_INET6) (%addr->string-v6 address))
+   (else (error "unsupported protocol:" proto))))
      
 (define (%addr->string-v4 address)
   (apply format "~a.~a.~a.~a"
