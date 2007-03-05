@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netaux.scm,v 1.9 2007-03-05 03:19:30 shirok Exp $
+;;;  $Id: netaux.scm,v 1.10 2007-03-05 07:24:04 shirok Exp $
 ;;;
 
 (select-module gauche.net)
@@ -201,6 +201,15 @@
 ;; to check availability of those and switch the implementation.  So we
 ;; provide them in Scheme.
 
+;; accessor methods
+
+(define-method sockaddr-name ((addr <sockaddr-in>))
+  #`",(inet-address->string (sockaddr-addr addr) AF_INET):,(sockaddr-port addr)")
+
+(define-method sockaddr-name ((addr <sockaddr-in6>))
+  #`"[,(inet-address->string (sockaddr-addr addr) AF_INET6)]:,(sockaddr-port addr)")
+
+
 ;; IP address parser.  Can deal with both v4 and v6 addresses.
 ;; Two variations: ip-parse-address returns an integer address
 ;; and protocol; ip-parse-address! fills the given uvector with
@@ -333,8 +342,6 @@
          "::"
          (string-join (map fmt (drop parts (+ start run))) ":"))
         (string-join (map fmt parts) ":")))))
-
-                                    
                
 ;; finds two or more consecutive zeros in LIS, and returns a pair of
 ;; <length-of-zero-sequence> and <start-of-zero-sequence>, or #f if

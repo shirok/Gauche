@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netlib.stub,v 1.40 2007-02-21 22:27:37 shirok Exp $
+;;;  $Id: netlib.stub,v 1.41 2007-03-05 07:24:04 shirok Exp $
 ;;;
 
 "#include \"gauche/net.h\"
@@ -70,20 +70,6 @@
 (define-cmethod sockaddr-family ((addr "Scm_SockAddrUnClass"))
   (expr "sym_unix"))
 
-(define-cmethod sockaddr-name ((addr "Scm_SockAddrInClass"))
-  "  ScmSockAddrIn *a = (ScmSockAddrIn*)addr;
-    ScmPort *out = SCM_PORT(Scm_MakeOutputStringPort(TRUE));
-    unsigned long inaddr = htonl(a->addr.sin_addr.s_addr);
-
-    /* NB: avoid using inet_ntoa(), which uses static buffer */
-    Scm_Printf(out, \"%d.%d.%d.%d:%d\",
-               ((inaddr>>24)&0xff),
-               ((inaddr>>16)&0xff),
-               ((inaddr>>8)&0xff),
-               ((inaddr>>0)&0xff),
-               ntohs(a->addr.sin_port));
-    SCM_RETURN(Scm_GetOutputStringUnsafe(out, 0));")
-
 (define-cmethod sockaddr-family ((addr "Scm_SockAddrInClass"))
   (expr "sym_inet"))
 
@@ -95,24 +81,14 @@
   "  ScmSockAddrIn *a = (ScmSockAddrIn*)addr;
   SCM_RETURN(Scm_MakeInteger(ntohs(a->addr.sin_port)));")
 
-(if "defined HAVE_IPV6"
-    (begin
-      (define-symbol inet6 "sym_inet6")
+(when "defined HAVE_IPV6"
+  (define-symbol inet6 "sym_inet6")
 
-      (define-cmethod sockaddr-name ((addr "Scm_SockAddrIn6Class"))
-        "  ScmSockAddrIn6 *a = (ScmSockAddrIn6*)addr;
-  ScmPort *out = SCM_PORT(Scm_MakeOutputStringPort(TRUE));
-  char buf[INET6_ADDRSTRLEN];
-  const char *r = inet_ntop(AF_INET6, &a->addr.sin6_addr, buf, sizeof(buf));
-  if (r == NULL) Scm_SysError(\"inet_ntop\");
-  Scm_Printf(out, \"[%s]:%d\", buf, ntohs(a->addr.sin6_port));
-  SCM_RETURN(Scm_GetOutputStringUnsafe(out, 0));")
+  (define-cmethod sockaddr-family ((addr "Scm_SockAddrIn6Class"))
+    (expr "sym_inet6"))
 
-      (define-cmethod sockaddr-family ((addr "Scm_SockAddrIn6Class"))
-        (expr "sym_inet6"))
-
-      (define-cmethod sockaddr-addr ((addr "Scm_SockAddrIn6Class"))
-        "#define BN_SIZE (16 / SIZEOF_LONG)
+  (define-cmethod sockaddr-addr ((addr "Scm_SockAddrIn6Class"))
+    "#define BN_SIZE (16 / SIZEOF_LONG)
   ScmSockAddrIn6 *a = (ScmSockAddrIn6*)addr;
   u_long values[BN_SIZE];
   u_long *p = (u_long*)a->addr.sin6_addr.s6_addr;
@@ -123,10 +99,10 @@
   bn = Scm_MakeBignumFromUIArray(1, values, BN_SIZE);
   SCM_RETURN(Scm_NormalizeBignum(SCM_BIGNUM(bn)));")
 
-      (define-cmethod sockaddr-port ((addr "Scm_SockAddrIn6Class"))
-        "  ScmSockAddrIn6 *a = (ScmSockAddrIn6*)addr;
+  (define-cmethod sockaddr-port ((addr "Scm_SockAddrIn6Class"))
+    "  ScmSockAddrIn6 *a = (ScmSockAddrIn6*)addr;
   SCM_RETURN(Scm_MakeInteger(ntohs(a->addr.sin6_port)));")
-      ))
+  )
 
 ;;----------------------------------------------------------
 ;; low-level socket routines

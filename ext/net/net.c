@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.50 2007-03-02 07:39:06 shirok Exp $
+ *  $Id: net.c,v 1.51 2007-03-05 07:24:04 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -472,11 +472,17 @@ ScmObj Scm_SocketSetOpt(ScmSocket *s, int level, int option, ScmObj value)
         const char *cvalue = Scm_GetStringContent(SCM_STRING(value), &size,
                                                   NULL, NULL);
         SCM_SYSCALL(r, setsockopt(s->fd, level, option, cvalue, size));
+    } else if (SCM_UVECTORP(value)) {
+        u_int size = Scm_UVectorSizeInBytes(SCM_UVECTOR(value));
+        const char *cvalue = (const char*)SCM_UVECTOR_ELEMENTS(value);
+        SCM_SYSCALL(r, setsockopt(s->fd, level, option, cvalue, size));
     } else if (SCM_INTP(value) || SCM_BIGNUMP(value)) {
         int v = Scm_GetInteger(value);
         SCM_SYSCALL(r, setsockopt(s->fd, level, option, (void*)&v, sizeof(int)));
     } else {
-        Scm_Error("socket option must be a string or an integer: %S", value);
+        Scm_TypeError("socket option value",
+                      "an integer, a uvector or a string",
+                      value);
     }
     if (r < 0) Scm_SysError("setsockopt failed");
     return SCM_TRUE;

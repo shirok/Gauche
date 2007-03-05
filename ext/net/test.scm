@@ -37,6 +37,18 @@
               #t)))
 
 (test* "sockaddr_in" #t
+       (let ((addr (make <sockaddr-in> :host #x7f000001 :port 23)))
+         (and (eq? (sockaddr-family addr) 'inet)
+              (equal? (sockaddr-name addr) "127.0.0.1:23")
+              #t)))
+
+(test* "sockaddr_in" #t
+       (let ((addr (make <sockaddr-in> :host '#u8(127 0 0 1) :port 23)))
+         (and (eq? (sockaddr-family addr) 'inet)
+              (equal? (sockaddr-name addr) "127.0.0.1:23")
+              #t)))
+
+(test* "sockaddr_in" #t
        (let ((addr (make <sockaddr-in> :host :any :port 7777)))
          (and (eq? (sockaddr-family addr) 'inet)
               (equal? (sockaddr-name addr) "0.0.0.0:7777")
@@ -48,14 +60,21 @@
               (equal? (sockaddr-name addr) "255.255.255.255:0")
               #t)))
 
-(when (global-variable-bound? 'gauche.net '<sockaddr-in6>)
+(cond-expand
+ (gauche.net.ipv6
   (test* "sockaddr_in6" #t
          (let ((addr (make <sockaddr-in6> :host "2001:200::8002:203:47ff:fea5:3085" :port 23)))
            (and (eq? (sockaddr-family addr) 'inet6)
                 (#/\[2001:200:0?:8002:203:47ff:fea5:3085\]:23/ (sockaddr-name addr))
                 (= (sockaddr-addr addr) #x2001020000008002020347fffea53085)
                 (= (sockaddr-port addr) 23)
-                #t))))
+                #t)))
+  (test* "sockaddr_in6" "[::1]:0"
+         (sockaddr-name (make <sockaddr-in6> :host 1)))
+  (test* "sockaddr_in6" "[1:2:3:4:5:6:7:8]:0"
+         (sockaddr-name (make <sockaddr-in6> :host '#u8(0 1 0 2 0 3 0 4 0 5 0 6 0 7 0 8))))
+  )
+ (else #f))
 
 (let ()
   (define (addr-test desc input exp-val exp-vers)

@@ -1,3 +1,15 @@
+2007-03-04  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/addr.c: Allow <sockaddr-in> and <sockaddr-in6> constructors
+	  to take integer and u8vector IP address as :host initializer
+	  keywords.
+	* ext/net/netlib.stub, ext/net/netaux.scm: Implements sockaddr-name
+	  of <sockaddr-in> and <sockaddr-in6> in Scheme, since now we have
+	  inet-address->string so they're more concise in Scheme.
+	* ext/net/net.c (socket-setsockopt): Accepts uniform vector as
+	  a value.  We'll phase out the use of string as a binary data
+	  and replace them for uvectors.
+
 2007-03-03  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/time.scm: use inexact arithmetics to avoid the timer
@@ -7,7 +19,7 @@
 	  the inexact zero, not the exact zero.
 	* src/extlib.stub: added inexact arithmetics: +. -. *. /.
 
-	* ext/net/netaux.scm: added inet-addres->string, inet->string->address
+	* ext/net/netaux.scm: added inet-address->string, inet->string->address
 	  and inet-string->address! (these have replaced the provisional
 	  address parsers in rfc.ip).
 

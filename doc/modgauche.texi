@@ -4134,7 +4134,8 @@ AF_INETファミリのソケットアドレスです。このクラスのインスタンスを
 (make <sockaddr-in> :host @var{host} :port @var{port})
 @end example
 @c EN
-@var{host} can be a string, or one of the keywords
+@var{host} can be a string, an integer IP address, a
+@code{u8vector} IP address, or one of the keywords
 @code{:any}, @code{:broadcast}, @code{:none} or @code{:loopback}.
 If it is a string, it is either a host name or a dotted IP notation.
 Gauche uses @code{gethostbyname(3)} to obtain the actual IP address from
@@ -4144,8 +4145,8 @@ uses @code{INADDR_ANY}, or @code{INADDR_BROADCAST}
 respectively.  The keyword @code{:loopback} is a synonym to the
 IPv4 loopback address "127.0.0.1".
 @c JP
-@var{host}は文字列か、
-@code{:any}、@code{:broadcast}、@code{:none}、@code{:loopback}の
+@var{host}は文字列、整数のIPアドレス、@code{u8vector}のIPアドレス、
+もしくは@code{:any}、@code{:broadcast}、@code{:none}、@code{:loopback}の
 いずれかのキーワードでなければなりません。
 文字列の場合、それはホスト名かIPアドレスのドット表記です。
 Gaucheは@code{gethostbyname(3)}を使って実際のIPアドレスを得ます。

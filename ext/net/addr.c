@@ -30,10 +30,11 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: addr.c,v 1.25 2006-11-03 11:11:26 shirok Exp $
+ *  $Id: addr.c,v 1.26 2007-03-05 07:24:04 shirok Exp $
  */
 
 #include "gauche/net.h"
+#include "gauche/uvector.h"
 #include <string.h>
 
 static ScmObj key_path = SCM_FALSE;
@@ -112,7 +113,7 @@ ScmObj Scm_MakeSockAddr(ScmClass *klass, struct sockaddr *saddr, int len)
             break;
 #endif
         default:
-            Scm_Error("unknown address type (%d)", saddr->sa_family);
+            Scm_Error("unknown address family (%d)", saddr->sa_family);
             break;
         }
     }
@@ -212,6 +213,20 @@ static ScmObj sockaddr_in_allocate(ScmClass *klass, ScmObj initargs)
         addr->addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
     } else if (host == key_loopback) {
         addr->addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    } else if (SCM_INTEGERP(host)) {
+        int ov;
+        unsigned long a = Scm_GetIntegerUClamp(host, SCM_CLAMP_NONE, &ov);
+        if (ov) Scm_Error("host address is out of range: %S", host);
+        addr->addr.sin_addr.s_addr = htonl(a);
+    } else if (SCM_U8VECTORP(host)) {
+        const unsigned char *p;
+        unsigned long a;
+        if (SCM_U8VECTOR_SIZE(host) < 4) {
+            Scm_Error("host address is too short: %S", host);
+        }
+        p = SCM_U8VECTOR_ELEMENTS(host);
+        a = (p[0]<<24)+(p[1]<<16)+(p[2]<<8)+p[3];
+        addr->addr.sin_addr.s_addr = htonl(a);
     } else {
         Scm_Error("bad :host parameter: %S", host);
     }
@@ -262,6 +277,24 @@ static ScmObj sockaddr_in6_allocate(ScmClass *klass, ScmObj initargs)
         addr->addr.sin6_addr = in6addr_any;
     } else if (host == key_loopback) {
         addr->addr.sin6_addr = in6addr_loopback;
+    } else if (SCM_INTEGERP(host)) {
+        /* NB: Can we have more efficient way? */
+        int i;
+        for (i=15; i>=0; i--) {
+            ScmObj u8 = Scm_LogAnd(host, SCM_MAKE_INT(0xff));
+            addr->addr.sin6_addr.s6_addr[i] = SCM_INT_VALUE(u8);
+            host = Scm_Ash(host, -8);
+        }
+    } else if (SCM_U8VECTORP(host)) {
+        const unsigned char *p;
+        int i;
+        if (SCM_U8VECTOR_SIZE(host) < 16) {
+            Scm_Error("host address is too short: %S", host);
+        }
+        p = SCM_U8VECTOR_ELEMENTS(host);
+        for (i=0; i<16; i++) {
+            addr->addr.sin6_addr.s6_addr[i] = p[i];
+        }
     } else {
         Scm_Error("bad :host parameter: %S", host);
     }
