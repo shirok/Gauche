@@ -346,6 +346,7 @@ If @var{port} is omitted, current output port is used.
 @subheading ユニフォームベクタを用いたI/O
 @c COMMON
 
+@c EN
 In the following routines, the argument @var{uv} can be any
 type of uniform vector; if it is not a @code{u8vector}, it is
 treated as if @code{(uvector-alias <u8vector> @var{uv})} is
@@ -354,6 +355,14 @@ that holds the uvector's content.  The @var{pos} argument
 specifies the byte position from the beginning of the memory
 area (it is always byte position, regardless of the uniform
 vector's element size).
+@c JP
+以下のルーチンでは、引数 @var{uv} は任意の型のユニフォームベクタをとり
+えます。@code{u8vector} ではない場合には @code{(uvector-alias
+<u8vector> @var{uv})} が呼ばれたのと同様の扱いになります。すなわち、
+uvectorの内容を保持するメモリイメージから直接読み込まれます。@var{pos}
+引数は当該のメモリ領域の最初からのバイト位置を指定するのに使います(こ
+れはユニフォームベクタの要素のサイズにかかわらず、つねにバイト位置です)。
+@c COMMON
 
 @defun get-u8 uv pos &optional endian
 @defunx get-u16 uv pos &optional endian
@@ -366,10 +375,17 @@ vector's element size).
 @defunx get-f16 uv pos &optional endian
 @defunx get-f32 uv pos &optional endian
 @defunx get-f64 uv pos &optional endian
+@c EN
 Reads a number of a specific format from a uniform vector @var{uv},
 starting at a byte position @var{pos}.  An error is signalled
 if the specified position makes reference outside of the uniform
 vector's content.  Returns the read number.
+@c JP
+ユニフォームベクタ @var{uv} のバイト位置 @var{pos} から指定したフォー
+マットで数値を読み込み、その数値を返します。指定した位置が当該ユニフォー
+ムベクタの内容のある範囲外を参照するものであった場合、エラーを示すシグ
+ナルがあがります。
+@c COMMON
 @end defun
 
 @defun get-u16be uv pos
@@ -390,10 +406,17 @@ vector's content.  Returns the read number.
 @defunx get-f32le uv pos
 @defunx get-f64be uv pos
 @defunx get-f64le uv pos
+@c EN
 These are big-endian (@code{be}) or little-endian (@code{le}) specific
 versions of @code{get-*} procedures.  In speed-sensitive code,
 you might want to use these to avoid the overhead of optional-argument
 handling.
+@c JP
+これらは、@code{get-*} 手続のエンディアン(ビッグエンディアン @code{be}
+あるいはリトルエンディアン @code{le})を指定した版です。スピードを要求
+されるコードではオプション引数処理のオーバーヘッドを避けるためこちらを
+使うのがいいでしょう。
+@c COMMON
 @end defun
 
 @defun put-u8! uv pos val &optional endian
@@ -407,11 +430,18 @@ handling.
 @defunx put-f16! uv pos val &optional endian
 @defunx put-f32! uv pos val &optional endian
 @defunx put-f64! uv pos val &optional endian
+@c EN
 Writes a number @var{val} into a uniform vector @var{uv} in
 a specific format, starting at a byte position @var{pos}.
 An error is signalled
 if the specified position makes reference outside of the uniform
 vector's content.
+@c JP
+数値 @var{val} をユニフォームベクタ @var{uv} のバイト位置 @var{pos} か
+ら指定されたフォーマットで書き出します。指定した位置が当該ユニフォーム
+ベクタの内容のある範囲外を参照するものであった場合、エラーを示すシグナ
+ルがあがります。
+@c COMMON
 @end defun
 
 @defun put-u16be! uv pos val
@@ -432,10 +462,17 @@ vector's content.
 @defunx put-f32le! uv pos val
 @defunx put-f64be! uv pos val
 @defunx put-f64le! uv pos val
+@c EN
 These are big-endian (@code{be}) or little-endian (@code{le}) specific
 versions of @code{put-*} procedures.  In speed-sensitive code,
 you might want to use these to avoid the overhead of optional-argument
 handling.
+@c JP
+これらは、@code{put-*} 手続のエンディアン(ビッグエンディアン @code{be}
+あるいはリトルエンディアン @code{le})を指定した版です。スピードを要求
+されるコードではオプション引数処理のオーバーヘッドを避けるためこちらを
+使うのがいいでしょう。
+@c COMMON
 @end defun
 
 @c EN
@@ -444,12 +481,21 @@ handling.
 @subheading 互換性への注
 @c COMMON
 
+@c EN
 @code{read-u8} etc. were called @code{read-binary-uint8} etc., and 
 @code{read-f32} and @code{read-f64} were called @code{read-binary-float}
 and @code{read-binary-double}, respectively.
 These old names are still supported for the backward compatibility
 but their use is deprecated.  The reason of the changes is
 for brevity and for consistency with the uniform vectors.
+@c JP
+@code{read-u8} などは @code{read-binary-uint8} と呼ばれていたもので、
+@code{read-f32} や @code{read-f64} はそれぞれ @code{read-binary-float}、
+@code{read-binary-double} と呼ばれていたものです。
+これらの古い名前は後方互換のためいまのところサポートされていますが、使
+用については非推奨とします。この変更は名前の短縮とユニフォームベクタと
+の一貫性維持のために行われました。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Packing Binary Data, Rational-less arithmetic, Binary I/O, Library modules - Utilities
