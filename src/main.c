@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.96 2007-03-02 07:39:13 shirok Exp $
+ *  $Id: main.c,v 1.97 2007-03-05 09:43:09 shirok Exp $
  */
 
 #include <unistd.h>
@@ -444,8 +444,11 @@ int main(int argc, char **argv)
                 ScmObj res = epak.results[0];
                 if (SCM_INTP(res)) exit_code = SCM_INT_VALUE(res);
                 else exit_code = 70;  /* EX_SOFTWARE, see SRFI-22. */
+            } else if (SCM_APPLICATION_EXIT_P(epak.exception)) {
+                Scm_Printf(SCM_CURERR, "%A\n",
+                           SCM_MESSAGE_CONDITION(epak.exception)->message);
+                exit_code = SCM_APPLICATION_EXIT_CODE(epak.exception);
             } else {
-                /* NB: better error reporting for uncaptured errors? */
                 Scm_ReportError(epak.exception);
                 exit_code = 70;  /* EX_SOFTWARE, see SRFI-22. */
             }

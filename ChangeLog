@@ -1,5 +1,8 @@
 2007-03-04  Shiro Kawai  <shiro@acm.org>
 
+	* src/main.c: Handle <application-exit> during execution of 'main'
+	  procedure.
+
 	* lib/gauche/process.scm: Added support of remove execution by
 	  :host keyword argument.
 
