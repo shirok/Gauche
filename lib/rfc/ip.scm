@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: ip.scm,v 1.5 2007-03-04 02:22:37 shirok Exp $
+;;;  $Id: ip.scm,v 1.6 2007-03-05 22:16:05 shirok Exp $
 ;;;
 
 
@@ -54,7 +54,7 @@
 (define (ip-version packet)
   (ash (get-u8 packet 0) -4))
 
-;; returns the final protocl and offset
+;; returns the final protocol and offset
 (define (%ipv6-skip-header-extensions packet)
   (let loop ((nexthdr (get-u8 packet 6))
              (off 40))
