@@ -6418,7 +6418,7 @@ so we treat them as exceptional situations.
 @end deftp
 
 
-@defun run-process cmd/args &keyword input output error fork wait sigmask
+@defun run-process cmd/args &keyword input output error fork wait host sigmask
 @c EN
 Runs a command with arguments given to @var{cmd/args} in a subprocess
 and returns a @code{<process>} object.
@@ -6496,6 +6496,29 @@ it never returns.
 @code{run-process} は直接 @code{sys-exec} を呼ぶので、それは返りません。
 @c COMMON
 
+@item :host @var{hostspec}
+@c EN
+This argument is used to execute @var{command} on the remote host.
+The full syntax of @var{hostspec} is @code{protocol:user@@hostname:port},
+where @var{protocol:}, @var{user@@}, or @var{:port} part can be
+omitted.  The @var{protocol} part specifies the protocol to commnucate
+with the remote host; currently only @code{ssh} is supported, and
+it is also the default when @var{protocol} is omitted.
+The @var{user} part specifies the login name of the remote host.
+The @var{hostname} specifies the remote host name, and the
+@var{port} part specifies the alternative port number which
+@var{protocol} connects to.
+@c JP
+この引数は、@var{command}をリモートホストで実行させるのに使います。
+@var{hostspec}の完全な構文は@code{protocol:user@@hostname:port}で、
+@var{protocol:}、@code{user@@}、@code{:port}の部分は省略可能です。
+@var{protocol}はリモートに接続するプロトコルを指定します。現在のところ
+@code{ssh}だけがサポートされており、また省略された場合も@code{ssh}が
+使われます。@var{user}はリモートでのユーザ名を、@var{hostname}は
+リモートホスト名を指定します。@var{port}は@var{protocol}のデフォルト
+以外のポートを使いたい場合に指定します。
+@c COMMON
+
 @item :sigmask @var{mask}
 @c EN
 @var{Mask} must be either an instance of @code{<sys-sigset>},
@@ -6507,6 +6530,9 @@ to set an appropriate mask if you call @code{run-process} from
 multithreaded application.
 See the description of @code{sys-exec} (@ref{Unix process management})
 for the details.
+
+If the @var{host} keyword argument is specified, this argument
+merely sets the signal mask of the local process (@code{ssh}).
 @c JP
 @var{mask}は@code{<sys-sigset>}のインスタンス、整数のリスト、
 あるいは@code{#f}でなければなりません。
@@ -6515,6 +6541,9 @@ for the details.
 マスクすべきシグナル番号とみなされます。マルチスレッドアプリケーションで
 @code{run-process}を使う場合はシグナルマスクを適切に設定することが重要です。
 @code{sys-exec}の説明を参照して下さい (@ref{Unix process management})。
+
+@var{host}キーワード引数が与えられている場合は、この引数は
+ローカル側のプロセス(@code{ssh})のみのシグナルマスクをセットします。
 @c COMMON
 @end table
 

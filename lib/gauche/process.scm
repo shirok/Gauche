@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: process.scm,v 1.26 2007-03-02 07:39:08 shirok Exp $
+;;;  $Id: process.scm,v 1.27 2007-03-05 09:21:35 shirok Exp $
 ;;;
 
 ;; process interface, mostly compatible with STk's, but implemented
@@ -89,6 +89,7 @@
                          (error  #f)
                          (wait   #f)
                          (fork   #t)
+                         (host   #f)    ;remote execution
                          (sigmask #f))
       (define (check-iokey key arg)
         (unless (or (string? arg) (not arg) (eqv? arg :pipe))
@@ -98,7 +99,8 @@
       (check-iokey :output output)
       (check-iokey :error error)
       (let* ((argv (map x->string command))
-             (proc (make <process> :command (car argv))))
+             (proc (make <process> :command (car argv)))
+             (argv (if host (%prepare-remote host argv) argv)))
         (receive (iomap toclose)
             (if (or input output error)
               (%setup-iomap proc input output error)
@@ -135,6 +137,19 @@
            (loop (cddr args) argv (cons* (cadr args) (car args) keys)))
           (else
            (loop (cdr args) (cons (x->string (car args)) argv) keys)))))
+
+;; Prepare remote execution via ssh
+(define (%prepare-remote host argv)
+  (rxmatch-let (#/^(?:([\w-]+):)?(?:([\w-]+)@)?([\w._]+)(?::(\d+))?$/ host)
+      (#f proto user server port)
+    (unless (or (not proto) (equal? proto "ssh"))
+      (error "Remote execution protocol other than 'ssh' is not supported:"
+             proto))
+    `("ssh"
+      ,@(if user `("-l" ,user) '())
+      ,@(if port `("-p" ,port) '())
+      ,server
+      ,@argv)))
 
 (define (%setup-iomap proc input output error)
 
@@ -255,16 +270,18 @@
 (define (open-input-process-port command . opts)
    (let-keywords opts ((input "/dev/null")
                        (err :error #f)
+                       (host #f)
                        . rest)
-     (let1 p (apply-run-process command input :pipe err)
+     (let1 p (%apply-run-process command input :pipe err host)
        (values (wrap-input-process-port p rest) p))))
 
 (define (call-with-input-process command proc . opts)
   (let-keywords opts ((input "/dev/null")
                       (err :error #f)
+                      (host #f)
                       (on-abnormal-exit :error)
                       . rest)
-    (let* ((p (apply-run-process command input :pipe err))
+    (let* ((p (%apply-run-process command input :pipe err host))
            (i (wrap-input-process-port p rest)))
       (unwind-protect (proc i)
         (begin
@@ -280,16 +297,18 @@
 (define (open-output-process-port command . opts)
   (let-keywords opts ((output "/dev/null")
                       (err :error #f)
+                      (host #f)
                       . rest)
-    (let1 p (apply-run-process command :pipe output err)
+    (let1 p (%apply-run-process command :pipe output err host)
       (values (wrap-output-process-port p rest) p))))
 
 (define (call-with-output-process command proc . opts)
   (let-keywords opts ((output "/dev/null")
                       (err :error #f)
+                      (host #f)
                       (on-abnormal-exit :error)
                       . rest)
-    (let* ((p (apply-run-process command :pipe output err))
+    (let* ((p (%apply-run-process command :pipe output err host))
            (o (wrap-output-process-port p rest)))
       (unwind-protect (proc o)
         (begin
@@ -304,9 +323,10 @@
 
 (define (call-with-process-io command proc . opts)
   (let-keywords opts ((err :error #f)
+                      (host #f)
                       (on-abnormal-exit :error)
                       . rest)
-    (let* ((p (apply-run-process command :pipe :pipe err))
+    (let* ((p (%apply-run-process command :pipe :pipe err host))
            (i (wrap-input-process-port p rest))
            (o (wrap-output-process-port p rest)))
       (unwind-protect (proc i o)
@@ -336,12 +356,12 @@
 ;;
 
 ;; If the given command is a string, return an argv to use /bin/sh.
-(define (apply-run-process command stdin stdout stderr)
+(define (%apply-run-process command stdin stdout stderr host)
   (apply run-process
          (cond ((string? command) `("/bin/sh" "-c" ,command))
                ((list? command) command)
                (else (error "Bad command spec" command)))
-         :input stdin :output stdout
+         :input stdin :output stdout :host host
          (cond ((string? stderr) `(:error ,stderr))
                (else '()))))
 

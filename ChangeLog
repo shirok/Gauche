@@ -1,5 +1,8 @@
 2007-03-04  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/process.scm: Added support of remove execution by
+	  :host keyword argument.
+
 	* ext/net/addr.c: Allow <sockaddr-in> and <sockaddr-in6> constructors
 	  to take integer and u8vector IP address as :host initializer
 	  keywords.
