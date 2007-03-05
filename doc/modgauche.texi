@@ -4303,7 +4303,7 @@ IP アドレスをもつ場合、ソケットアドレスはそれぞれのIPアドレス毎に生成
 Converts string representatin of the internet address @var{address}
 to an integer address.  If @var{address} is parsed successfully,
 returns two values: the integer address value and the recognized
-protocol version (the constant value @code{2} (= @code{AF_INET})
+protocol (the constant value @code{2} (= @code{AF_INET})
 for IPv4 addresses, and @code{10} (= @code{AF_INET6}) 
 for IPv6 addresses).  If @var{address} can't be
 parsed, @code{#f} and @code{#f} are returned.
