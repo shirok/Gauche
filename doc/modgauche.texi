@@ -10938,7 +10938,7 @@ multiplied by each element of @var{vec}, respectively.
 @findex f64vector-div!
 @c EN
 Element-wise division of flonum vectors.   These are only defined
-for f32vector and f64vector.  @var{val} must be a @var{TAG}vector,
+for f16, f32 and f64vector.  @var{val} must be a @var{TAG}vector,
 a vector or a list of the same length as @var{vec}, or a real number.
 @c JP
 要素毎の除算です。これらはf32vectorとf64vectorのみに対して定義されます。
