@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.97 2007-03-05 09:43:09 shirok Exp $
+ *  $Id: main.c,v 1.98 2007-03-06 20:02:57 shirok Exp $
  */
 
 #include <unistd.h>
@@ -63,7 +63,7 @@ ScmObj pre_cmds = SCM_NIL;      /* assoc list of commands that needs to be
 void usage(void)
 {
     fprintf(stderr,
-            "Usage: gosh [-biqV][-I<path>][-A<path>][-u<module>][-l<file>][-e<expr>][--] [file]\n"
+            "Usage: gosh [-biqV][-I<path>][-A<path>][-u<module>][-l<file>][-L<file>][-e<expr>][-E<expr>][-p<type>][-F<feature>][-f<flag>][--] [file]\n"
             "options:\n"
             "  -V       Prints version and exits.\n"
             "  -b       Batch mode.  Doesn't print prompts.  Supersedes -i.\n"
@@ -74,12 +74,14 @@ void usage(void)
             "  -u<module> (use) load and import <module>\n"
             "  -l<file> Loads <file> before executing the script file or\n"
             "           entering repl.\n"
+            "  -L<file> Like -l, but doesn't complain if <file> doesn't exist.\n"
             "  -e<expr> Evaluate Scheme expression <expr> before executing\n"
             "           the script file or entering repl.\n"
             "  -E<expr> Similar to -e, but reads <expr> as if it is surrounded\n"
             "           by parenthesis.\n"
-            "  -p<type> Turn on the profiler.  Currently <type> can only be\n"
+            "  -p<type> Turns on the profiler.  Currently <type> can only be\n"
             "           'time'.\n"
+            "  -F<feature> Makes <feature> available in cond-expand forms\n"
             "  -f<flag> Sets various flags\n"
             "      case-fold       uses case-insensitive reader (as in R5RS)\n"
             "      load-verbose    report while loading files\n"
@@ -177,10 +179,15 @@ void profiler_options(const char *optarg)
     }
 }
 
+void feature_options(const char *optarg)
+{
+    Scm_AddFeature(optarg, NULL);
+}
+
 int parse_options(int argc, char *argv[])
 {
     int c;
-    while ((c = getopt(argc, argv, "+be:E:ip:ql:u:Vf:I:A:-")) >= 0) {
+    while ((c = getopt(argc, argv, "+be:E:ip:ql:L:u:VF:f:I:A:-")) >= 0) {
         switch (c) {
         case 'b': batch_mode = TRUE; break;
         case 'i': interactive_mode = TRUE; break;
@@ -188,8 +195,10 @@ int parse_options(int argc, char *argv[])
         case 'V': version(); break;
         case 'f': further_options(optarg); break;
         case 'p': profiler_options(optarg); break;
+        case 'F': feature_options(optarg); break;
         case 'u': /*FALLTHROUGH*/;
         case 'l': /*FALLTHROUGH*/;
+        case 'L': /*FALLTHROUGH*/;
         case 'I': /*FALLTHROUGH*/;
         case 'A': /*FALLTHROUGH*/;
         case 'e': /*FALLTHROUGH*/;
@@ -386,6 +395,9 @@ int main(int argc, char **argv)
             break;
         case 'l':
             Scm_Load(Scm_GetStringConst(SCM_STRING(v)), 0);
+            break;
+        case 'L':
+            Scm_Load(Scm_GetStringConst(SCM_STRING(v)), SCM_LOAD_QUIET_NOFILE);
             break;
         case 'u':
             Scm_Require(Scm_StringJoin(Scm_StringSplitByChar(SCM_STRING(v),

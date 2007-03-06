@@ -1,3 +1,7 @@
+2007-03-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c: Added -F<feature> option and -L<file> option.
+
 2007-03-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c: Handle <application-exit> during execution of 'main'
