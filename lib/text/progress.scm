@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: progress.scm,v 1.1 2007-03-07 04:39:20 shirok Exp $
+;;;  $Id: progress.scm,v 1.2 2007-03-07 13:10:41 shirok Exp $
 ;;;
 
 (define-module text.progress
@@ -53,7 +53,7 @@
   (let-keywords args ((header  "progress")
                       (header-width 14)
                       (bar-char #\#)
-                      (bar-width 30)
+                      (bar-width 40)
                       (num-width 9)
                       (num-format (lambda (cur max)
                                     (format "~d/~d" cur max)))
@@ -74,7 +74,8 @@
                 (if (> num-width 0) (num-format current-value max-value) "")
                 time-width time-width
                 (if (> time-width 0) (make-time) "")
-                (if finish-time "\n" (if (> time-width 0) " ETA\r" "\r"))))
+                (if finish-time "    \n" (if (> time-width 0) " ETA\r" "\r")))
+        (flush port))
       (define (make-bar)
         (make-string (floor->exact (* (/. current-value max-value) bar-width))
                      bar-char))

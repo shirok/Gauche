@@ -1,7 +1,7 @@
 ;;
 ;; Generates uvect.c from uvect.c.tmpl
 ;;
-;; $Id: uvgen.scm,v 1.8 2007-02-19 03:04:31 shirok Exp $
+;; $Id: uvgen.scm,v 1.9 2007-03-07 13:10:40 shirok Exp $
 ;;
 
 (use srfi-1)
@@ -404,7 +404,7 @@
                       "return Scm_MakeInteger(i)"
                       "SCM_FALSE")
                      ("clamp" "Clamp"
-                      "ScmObj d = Scm_MakeUVector(Scm_ClassOf(SCM_OBJ(x)), SCM_UVECTOR_SIZE(x), SCM_UVECTOR_ELEMENTS(x))"
+                      "ScmObj d = Scm_UVectorCopy(SCM_UVECTOR(x), 0, -1)"
                       ,#`"SCM_,|TAG|VECTOR_ELEMENTS(d)[i] = val"
                       "d")
                      ("clamp!" "ClampX"
