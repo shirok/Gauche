@@ -313,6 +313,13 @@ fuga
        (test-parseutil read-string "" 7))
 
 ;;-------------------------------------------------------------------
+(test-section "progress")
+(use text.progress)
+(test-module 'text.progress)
+
+;; WRITEME
+
+;;-------------------------------------------------------------------
 (test-section "sql")
 (use text.sql)
 (test-module 'text.sql)

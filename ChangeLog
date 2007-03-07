@@ -1,5 +1,7 @@
 2007-03-06  Shiro Kawai  <shiro@acm.org>
 
+	* lib/text/progress.scm: added.
+
 	* src/gauche-init.scm, src/scmlib.scm: moved string-interpolate
 	  read-ctor and <exception> definition from gauche-init.scm to
 	  scmlib.scm.  We can't move three define-macro stuff yet, since
@@ -7,7 +9,6 @@
 	  want to eliminate gauche-init.scm totally.
 	* lib/gauche/numerical.scm, src/autoloads.scm: added
 	  round->exact, floor->exact, ceiling->exact and truncate->exact.
-	
 
 2007-03-05  Shiro Kawai  <shiro@acm.org>
 
