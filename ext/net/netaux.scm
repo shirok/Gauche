@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netaux.scm,v 1.10 2007-03-05 07:24:04 shirok Exp $
+;;;  $Id: netaux.scm,v 1.11 2007-03-07 04:37:41 shirok Exp $
 ;;;
 
 (select-module gauche.net)
@@ -206,8 +206,12 @@
 (define-method sockaddr-name ((addr <sockaddr-in>))
   #`",(inet-address->string (sockaddr-addr addr) AF_INET):,(sockaddr-port addr)")
 
-(define-method sockaddr-name ((addr <sockaddr-in6>))
-  #`"[,(inet-address->string (sockaddr-addr addr) AF_INET6)]:,(sockaddr-port addr)")
+;; NB: this should be conditionally defined by cond-expand at compile-time,
+;; instead of load-time dispatch.  We need to clean up cond feature management
+;; more to do so.
+(if ipv6-capable
+  (define-method sockaddr-name ((addr <sockaddr-in6>))
+    #`"[,(inet-address->string (sockaddr-addr addr) AF_INET6)]:,(sockaddr-port addr)"))
 
 
 ;; IP address parser.  Can deal with both v4 and v6 addresses.
