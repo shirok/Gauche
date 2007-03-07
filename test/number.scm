@@ -1206,7 +1206,14 @@
 (round-tester 35567/2 #t 17784 17783 17783 17784)
 (round-tester -35567/2 #t -17783 -17784 -17783 -17784)
 
-                  
+(test* "round->exact" 3 (round->exact 3.4) =)
+(test* "round->exact" 4 (round->exact 3.5) =)
+(test* "floor->exact" 3 (floor->exact 3.4) =)
+(test* "floor->exact" -4 (floor->exact -3.5) =)
+(test* "ceiling->exact" 4 (ceiling->exact 3.4) =)
+(test* "ceiling->exact" -3 (ceiling->exact -3.5) =)
+(test* "truncate->exact" 3 (truncate->exact 3.4) =)
+(test* "truncate->exact" -3 (truncate->exact -3.5) =)
 
 ;;------------------------------------------------------------------
 (test-section "logical operations")

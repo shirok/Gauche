@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: scmlib.scm,v 1.11 2007-03-02 07:39:14 shirok Exp $
+;;;  $Id: scmlib.scm,v 1.12 2007-03-07 04:29:14 shirok Exp $
 ;;;
 
 ;; This file contains builtin library functions that are easier to be
@@ -157,9 +157,10 @@
           (else (loop (- i 1) (cdr rest) (cons (car rest) r))))))
 
 ;;;=======================================================
-;;; string mutators
+;;; string stuff
 ;;;
 
+;; String mutators.
 ;; They are just for backward compatibility, and they are expensive
 ;; anyway, so we provide them here instead of natively.
 
@@ -212,6 +213,9 @@
                                (string-append (substring str 0 start)
                                               (make-string (- end start) c)
                                               (substring str end len)))))))
+
+(define-reader-ctor 'string-interpolate
+  (lambda (s) (string-interpolate s))) ;;lambda is required to delay loading
 
 ;;;=======================================================
 ;;; call/cc alias
@@ -266,6 +270,8 @@
         (else (make <error> :message (apply format #f fmt args))))))
 
     (values error errorf)))
+
+(define <exception> <condition>) ;; backward compatibility
 
 ;;;=======================================================
 ;;; symbol-bound? (deprecated)

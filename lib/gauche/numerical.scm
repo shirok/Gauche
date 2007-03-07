@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: numerical.scm,v 1.19 2007-03-02 07:39:08 shirok Exp $
+;;;  $Id: numerical.scm,v 1.20 2007-03-07 04:29:14 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -223,6 +223,15 @@
 
 (define (atanh z)
   (/ (- (log (+ 1 z)) (log (- 1 z))) 2))
+
+;;
+;; Convenience rounding
+;;
+
+(define (round->exact r) (inexact->exact (round r)))
+(define (floor->exact r) (inexact->exact (floor r)))
+(define (ceiling->exact r) (inexact->exact (ceiling r)))
+(define (truncate->exact r) (inexact->exact (truncate r)))
 
 ;;
 ;; Nearly equal comparison

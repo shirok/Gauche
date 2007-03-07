@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gauche-init.scm,v 1.123 2007-03-02 07:39:13 shirok Exp $
+;;;  $Id: gauche-init.scm,v 1.124 2007-03-07 04:29:14 shirok Exp $
 ;;;
 
 (select-module gauche)
@@ -68,13 +68,4 @@
 
 ;; for backward compatibility
 (define-module gauche.vm.debugger )
-
-;;
-;; Auxiliary definitions
-;;
-
-(define <exception> <condition>) ;; backward compatibility
-
-(define-reader-ctor 'string-interpolate
-  (lambda (s) (string-interpolate s))) ;;lambda is required to delay loading
 

@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.39 2007-02-13 06:40:36 shirok Exp $
+;;; $Id: autoloads.scm,v 1.40 2007-03-07 04:29:14 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.39 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.40 $.  DO NOT EDIT */"
    :pre-decl '("#define LIBGAUCHE_BODY")
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
@@ -74,7 +74,9 @@
 ;;==========================================================
 (autoload-scheme "gauche/numerical"
                  exp log sqrt expt cos sin tan asin acos atan
-                 gcd lcm nearly=?)
+                 gcd lcm
+                 round->exact floor->exact ceiling->exact truncate->exact
+                 nearly=?)
 
 (autoload "gauche/redefutil"
           redefine-class! class-redefinition

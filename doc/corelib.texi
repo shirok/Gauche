@@ -691,6 +691,19 @@ returns the closest even integer.
 @c COMMON
 @end defun
 
+@defun floor->exact x
+@defunx ceiling->exact x
+@defunx truncate->exacte x
+@defunx round->exact x
+@c EN
+These are convenience procedures of the popular 
+phrase @code{(inexact->exact (floor x))} etc.
+@c JP
+これらは、頻出する@code{(inexact->exact (floor x))} 等を簡潔に書くための
+手続きです。
+@c COMMON
+@end defun
+
 @defun clamp x &optional min max
 @c EN
 Returns
