@@ -30,12 +30,12 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: auxsys.scm,v 1.15 2007-03-02 07:39:04 shirok Exp $
+;;;  $Id: auxsys.scm,v 1.16 2007-03-09 11:46:26 shirok Exp $
 ;;;
 
 (define-module gauche.auxsys
   (export fmod frexp modf ldexp
-          sys-abort sys-realpath sys-mkfifo
+          sys-abort sys-realpath sys-mkfifo sys-fdset
           sys-setgid sys-setpgid sys-getpgid sys-getpgrp
           sys-setsid sys-setuid sys-times sys-uname sys-ctermid
           sys-gethostname sys-getdomainname
@@ -67,6 +67,25 @@
   (if (global-variable-bound? 'gauche.auxsys '%sys-getdomainname)
     %sys-getdomainname
     (lambda () "localdomain"))) ; need better fallback
+
+;; This is better to be in src/scmlib.scm, but right now we don't have
+;; a nice way to make cond-expand work (when compiling src/scmlib.scm
+;; cond-expand uses the host gosh's feature set, not the target gosh's.)
+(define sys-fdset
+  (cond-expand
+   (gauche.sys.select
+    (lambda pfs
+      (let1 fdset (make <sys-fdset>)
+        (dolist (pf pfs)
+          (cond ((or (integer? pf) (port? pf))
+                 (sys-fdset-set! fdset pf #t))
+                ((is-a? pf <sys-fdset>)
+                 (dotimes (i (sys-fdset-max-fd pf))
+                   (when (sys-fdset-ref pf i)
+                     (sys-fdset-set! fdset i #t))))
+                (else (error "sys-fdset requires a port, an integer, or a <sys-fdset> object, but got:" pf))))
+        fdset)))
+   (else #f)))
 
 (define sys-putenv
   (cond-expand

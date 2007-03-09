@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.40 2007-03-07 04:29:14 shirok Exp $
+;;; $Id: autoloads.scm,v 1.41 2007-03-09 11:46:26 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.40 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.41 $.  DO NOT EDIT */"
    :pre-decl '("#define LIBGAUCHE_BODY")
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
@@ -149,7 +149,7 @@
 
 (autoload gauche.auxsys
           fmod frexp modf ldexp
-          sys-abort sys-realpath sys-mkfifo
+          sys-abort sys-realpath sys-mkfifo sys-fdset
           sys-setgid sys-setpgid sys-getpgid sys-getpgrp
           sys-setsid sys-setuid sys-times sys-uname sys-ctermid
           sys-gethostname sys-getdomainname

@@ -1,3 +1,8 @@
+2007-03-09  Shiro Kawai  <shiro@acm.org>
+
+	* ext/auxsys/auxsys.scm (sys-fdset): added a convenience constructor
+	  of <sys-fdset>.
+
 2007-03-06  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/progress.scm: added.
