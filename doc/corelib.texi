@@ -13901,7 +13901,7 @@ process remain open.
 (sys-exec "ls" '("ls" "-l")) @result{} ;; ls is executed.
 
 (let ((out (open-output-file "ls.out")))
-  (sys-exec "ls" '("ls" "-l") `((2 . 1) (1 . ,out)))
+  (sys-exec "ls" '("ls" "-l") :iomap `((2 . 1) (1 . ,out)))
    @result{}
   ;; ls is executed, with its stderr redirected
   ;; to the current process's stdout, and its
