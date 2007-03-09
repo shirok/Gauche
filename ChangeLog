@@ -1,5 +1,8 @@
 2007-03-09  Shiro Kawai  <shiro@acm.org>
 
+	* src/Makefile.in (HOSTGOSH): reset GAUCHE_LOAD_PATH and 
+	  GAUCHE_DYNLOAD_PATH to avoid unexpected interference.
+
 	* ext/auxsys/auxsys.scm (sys-fdset): added a convenience constructor
 	  of <sys-fdset>.
 

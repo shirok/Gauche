@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.166 2007-02-17 23:59:24 shirok Exp $
+#  $Id: Makefile.in,v 1.167 2007-03-09 20:27:19 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -76,9 +76,11 @@ POSTINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) libg
 # We need to 'preload' some libraries from the host's environment, for
 # they are compiled DSO as of 0.8.6 and the ones in the build tree can
 # be incompatible with the host gosh.
-# (NB: HOSTGOSH is used at creating tarball, so the builder from tarball
-#  doesn't need to call it).
-HOSTGOSH  = gosh -l./preload -I$(top_srcdir)/src -I$(top_srcdir)/lib
+# (NB: HOSTGOSH is only invoked building from CVS; it won't be called
+# when building from tarball.)
+# We clear GAUCHE_LOAD_PATH to make sure we won't read nonstandard stuff.
+HOSTGOSH  = GAUCHE_LOAD_PATH="" GAUCHE_DYNLOAD_PATH="" \
+	    gosh -l./preload -I$(top_srcdir)/src -I$(top_srcdir)/lib
 
 LIB_INSTALL_DIR  = @libdir@
 BIN_INSTALL_DIR  = @bindir@
