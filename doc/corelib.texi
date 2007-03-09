@@ -14162,6 +14162,23 @@ You can use generic setter of @code{sys-fdset-ref} as this:
 @end example
 @end defun
 
+@defun sys-fdset elt @dots{}
+@c EN
+Creates a new @code{<sys-fdset>} instance with file descriptors
+specified by @var{elt} @dots{}.  Each @var{elt} can be an
+integer file descriptor, a port, or a @code{<sys-fdset>} instance.
+In the last case, the descriptors in the given fdset is copied
+to the new fdset.
+@c JP
+@var{elt} @dots{}で指定されたファイルディスクリプタを持つ
+新たな@code{<sys-fdset>}のインスタンスを作成して返します。
+各@var{elt}は、ファイルディスクリプタを指定する整数、ポート、
+もしくは@code{<sys-fdset>}のインスタンスでなければなりません。
+最後の場合は、与えられたfdsetに含まれるディスクリプタが
+新たなfdsetにコピーされます。
+@c COMMON
+@end defun
+
 @defun sys-fdset-max-fd fdset
 @c EN
 Returns the maximum file descriptor number in @var{fdset}.
