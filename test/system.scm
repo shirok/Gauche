@@ -492,6 +492,20 @@
            (push-result)
            (reverse result)))
 
+  (test* "sys-fdset" `(,(port-file-number (current-input-port)) 9 10)
+         (sys-fdset->list (sys-fdset 9 (current-input-port) 10)))
+  (test* "list->sys-fdset" '(1 3 5 7 9)
+         (sys-fdset->list (list->sys-fdset (list (sys-fdset 3 9)
+                                                 7
+                                                 (sys-fdset 1 3 5)))))
+  (test* "sys-fdset-copy!" '(2 4 5)
+         (let1 dst (make <sys-fdset>)
+           (sys-fdset-copy! dst (sys-fdset 5 4 2))
+           (sys-fdset->list dst)))
+
+  (test* "sys-fdset-clear!" '()
+         (sys-fdset->list (sys-fdset-clear! (sys-fdset 1 2 3))))
+
   (test* "select" '(0 #f #f #f #f 1 #t #f #f #t #\x)
          (let*-values (((in out) (sys-pipe))
                        ((pid) (sys-fork)))

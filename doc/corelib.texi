@@ -14136,6 +14136,23 @@ makeメソッドによって、空のファイルディスクリプタの集合を作れます。
 @end example
 @end deftp
 
+@defun sys-fdset elt @dots{}
+@c EN
+Creates a new @code{<sys-fdset>} instance with file descriptors
+specified by @var{elt} @dots{}.  Each @var{elt} can be an
+integer file descriptor, a port, or a @code{<sys-fdset>} instance.
+In the last case, the descriptors in the given fdset is copied
+to the new fdset.
+@c JP
+@var{elt} @dots{}で指定されたファイルディスクリプタを持つ
+新たな@code{<sys-fdset>}のインスタンスを作成して返します。
+各@var{elt}は、ファイルディスクリプタを指定する整数、ポート、
+もしくは@code{<sys-fdset>}のインスタンスでなければなりません。
+最後の場合は、与えられたfdsetに含まれるディスクリプタが
+新たなfdsetにコピーされます。
+@c COMMON
+@end defun
+
 @defun sys-fdset-ref fdset port-or-fd
 @defunx sys-fdset-set! fdset port-or-fd flag
 @c EN
@@ -14162,20 +14179,36 @@ You can use generic setter of @code{sys-fdset-ref} as this:
 @end example
 @end defun
 
-@defun sys-fdset elt @dots{}
+@defun sys-fdset-copy! dest-fdset src-fdset
 @c EN
-Creates a new @code{<sys-fdset>} instance with file descriptors
-specified by @var{elt} @dots{}.  Each @var{elt} can be an
-integer file descriptor, a port, or a @code{<sys-fdset>} instance.
-In the last case, the descriptors in the given fdset is copied
-to the new fdset.
+Copies the content of @var{src-fdset} into @var{dest-fdset}.
+Returns @var{dest-fdset}.
 @c JP
-@var{elt} @dots{}で指定されたファイルディスクリプタを持つ
-新たな@code{<sys-fdset>}のインスタンスを作成して返します。
-各@var{elt}は、ファイルディスクリプタを指定する整数、ポート、
-もしくは@code{<sys-fdset>}のインスタンスでなければなりません。
-最後の場合は、与えられたfdsetに含まれるディスクリプタが
-新たなfdsetにコピーされます。
+@var{src-fdset}の内容を@var{dest-fdset}にコピーします。
+@var{dest-fdset}を返します。
+@c COMMON
+@end defun
+
+@defun sys-fdset-clear! fdset
+@c EN
+Empties and returns @var{fdset}.
+@c JP
+@var{fdset}の内容をクリアし、それ自身を返します。
+@c COMMON
+@end defun
+
+@defun sys-fdset->list fdset
+@defunx list->sys-fdset fds
+@c EN
+Converts an fdset to a list of integer file descriptors and vice versa.
+In fact, @code{list->sys-fdset} works just like
+@code{(lambda (fds) (apply sys-fdset fds))}, so it accepts ports
+and other fdsets as well as integer file descriptors.
+@c JP
+fdsetを整数のファイルディスクリプタのリストに変換し、またその逆を行います。
+実際は、@code{list->sys-fdset}は
+@code{(lambda (fds) (apply sys-fdset fds))} のように動作するため、
+整数のファイルディスクリプタ以外にポートや他のfdsetを与えることもできます。
 @c COMMON
 @end defun
 

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.125 2007-03-02 01:49:11 shirok Exp $
+;;; $Id: syslib.stub,v 1.126 2007-03-10 08:27:55 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -876,6 +876,16 @@
 
 (define-cproc sys-fdset-max-fd (fdset::<sys-fdset>)
   (expr <int> "fdset->maxfd"))
+
+(define-cproc sys-fdset-clear! (fdset::<sys-fdset>)
+  (body "FD_ZERO(&fdset->fdset);"
+        "fdset->maxfd = -1;"
+        "SCM_RESULT = SCM_OBJ(fdset);"))
+
+(define-cproc sys-fdset-copy! (dst::<sys-fdset> src::<sys-fdset>)
+  (body "dst->fdset = src->fdset;"
+        "dst->maxfd = src->maxfd;"
+        "SCM_RESULT = SCM_OBJ(dst);"))
 
 (define-cproc sys-select (rfds wfds efds &optional (timeout #f))
   (call "Scm_SysSelect"))
