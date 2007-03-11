@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.275 2007-03-04 08:26:54 shirok Exp $
+;;; $Id: extlib.stub,v 1.276 2007-03-11 21:01:30 shirok Exp $
 ;;;
 
 "
@@ -172,6 +172,15 @@
   }
   if (!maybe_exact && SCM_EXACTP(r)) SCM_RETURN(Scm_ExactToInexact(r));
   else SCM_RETURN(r);")
+
+(define-cproc floor->exact (num)
+  (expr "Scm_RoundToExact(num, SCM_ROUND_FLOOR)"))
+(define-cproc ceiling->exact (num)
+  (expr "Scm_RoundToExact(num, SCM_ROUND_CEIL)"))
+(define-cproc truncate->exact (num)
+  (expr "Scm_RoundToExact(num, SCM_ROUND_TRUNC)"))
+(define-cproc round->exact (num)
+  (expr "Scm_RoundToExact(num, SCM_ROUND_ROUND)"))
 
 (define-cproc decode-float (num)        ;from ChezScheme
   "if (SCM_FLONUMP(num)) {

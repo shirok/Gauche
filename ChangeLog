@@ -1,3 +1,12 @@
+2007-03-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_RoundToExact), src/extlib.stub (round->exact etc):
+	  implemented round->exact etc in C, for it can avoid some overhead
+	  and makes them much faster.  Since the operation is so common I
+	  think it's worth of it.
+	* lib/gauche/numerical.scm, src/autoloads.scm: removed round->exact
+	  etc, for they're in extlib.stub now.
+
 2007-03-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/genconfig.in : Lets genconfig generate lib/gauche/config.scm,

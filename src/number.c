@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.144 2007-03-04 08:26:56 shirok Exp $
+ *  $Id: number.c,v 1.145 2007-03-11 21:01:30 shirok Exp $
  */
 
 #include <math.h>
@@ -2482,6 +2482,38 @@ ScmObj Scm_Round(ScmObj num, int mode)
         }
         return Scm_MakeFlonum(r);
     }
+    Scm_Error("real number required, but got %S", num);
+    return SCM_UNDEFINED;       /* dummy */
+}
+
+ScmObj Scm_RoundToExact(ScmObj num, int mode)
+{
+    if (SCM_FLONUMP(num)) {
+        double r = 0.0, v;
+        v = SCM_FLONUM_VALUE(num);
+        if (SCM_IS_NAN(v) || SCM_IS_INF(v)) {
+            Scm_Error("Exact infinity/nan is not supported: %S", num);
+        }
+        switch (mode) {
+        case SCM_ROUND_FLOOR: r = floor(v); break;
+        case SCM_ROUND_CEIL:  r = ceil(v); break;
+        /* trunc is neither in ANSI nor in POSIX. */
+#ifdef HAVE_TRUNC
+        case SCM_ROUND_TRUNC: r = trunc(v); break;
+#else
+        case SCM_ROUND_TRUNC: r = (v < 0.0)? ceil(v) : floor(v); break;
+#endif
+        case SCM_ROUND_ROUND: r = roundeven(v); break;
+        default: Scm_Panic("something screwed up");
+        }
+        if (r < SCM_SMALL_INT_MIN || r > SCM_SMALL_INT_MAX) {
+            return Scm_MakeBignumFromDouble(r);
+        } else {
+            return SCM_MAKE_INT((long)r);
+        }
+    }
+    if (SCM_INTEGERP(num)) return num;
+    if (SCM_RATNUMP(num))  return Scm_Round(num, mode);
     Scm_Error("real number required, but got %S", num);
     return SCM_UNDEFINED;       /* dummy */
 }

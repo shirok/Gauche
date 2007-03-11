@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.h,v 1.6 2007-02-18 11:53:46 shirok Exp $
+ *  $Id: number.h,v 1.7 2007-03-11 21:01:30 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -249,6 +249,7 @@ enum ScmRoundMode {
     SCM_ROUND_ROUND
 };
 SCM_EXTERN ScmObj Scm_Round(ScmObj num, int mode);
+SCM_EXTERN ScmObj Scm_RoundToExact(ScmObj num, int mode);
 
 SCM_EXTERN ScmObj Scm_Numerator(ScmObj n);
 SCM_EXTERN ScmObj Scm_Denominator(ScmObj n);
