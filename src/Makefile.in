@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.167 2007-03-09 20:27:19 shirok Exp $
+#  $Id: Makefile.in,v 1.168 2007-03-11 09:56:22 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -221,7 +221,7 @@ libgauche.$(SOEXT) : $(libgauche_OBJECTS) $(GCLIB)
 gauche-config$(EXEEXT) : gauche-config.$(OBJEXT)
 	$(LINK) -o gauche-config$(EXEEXT) gauche-config.$(OBJEXT) $(LIBS)
 
-gauche-config.c gauche/arch.h : genconfig
+gauche-config.c gauche/arch.h ../lib/gauche/config.scm : genconfig
 	$(SHELL) ./genconfig
 
 gauche-install : gauche-install.in
