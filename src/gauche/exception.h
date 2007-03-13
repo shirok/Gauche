@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: exception.h,v 1.13 2007-02-27 08:58:40 shirok Exp $
+ *  $Id: exception.h,v 1.14 2007-03-13 10:41:29 shirok Exp $
  */
 
 #ifndef GAUCHE_EXCEPTION_H
@@ -43,7 +43,6 @@
     +- <serious-condition> ; srfi-35
     |    +- <serious-compound-condition> ; also inherits <compound-condition>
     +- <message-condition> ; srfi-35
-    |    +- <application-exit>           ; also inherits <serious-condition>
     |    +- <error>             ; srfi-35, also inherits <serious-condition>
     |         +- <system-error>
     |         +- <unhandled-signal-error>
@@ -215,24 +214,6 @@ SCM_CLASS_DECL(Scm_SeriousCompoundConditionClass);
 #define SCM_SERIOUS_COMPOUND_CONDITION_P(obj) SCM_ISA(obj, SCM_CLASS_SERIOUS_COMPOUND_CONDITION)
 
 SCM_EXTERN ScmObj Scm_MakeCompoundCondition(ScmObj conditions);
-
-/*---------------------------------------------------
- * Application exit
- */
-
-/* <application-exit> */
-typedef struct ScmApplicationExitRec {
-    ScmMessageCondition common;
-    int  code;                  /* exit code */
-} ScmApplicationExit;
-
-SCM_CLASS_DECL(Scm_ApplicationExitClass);
-#define SCM_CLASS_APPLICATION_EXIT  (&Scm_ApplicationExitClass)
-#define SCM_APPLICATION_EXIT_P(obj) SCM_ISA(obj, SCM_CLASS_APPLICATION_EXIT)
-#define SCM_APPLICATION_EXIT(obj)   ((ScmApplicationExit*)(obj))
-#define SCM_APPLICATION_EXIT_CODE(obj) SCM_APPLICATION_EXIT(obj)->code
-
-SCM_EXTERN ScmObj Scm_MakeApplicationExit(ScmObj message, int code);
 
 /*---------------------------------------------------
  * Thread exceptions

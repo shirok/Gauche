@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.267 2007-03-02 07:39:14 shirok Exp $
+ *  $Id: vm.c,v 1.268 2007-03-13 10:41:26 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -111,8 +111,6 @@ static ScmSubr default_exception_handler_rec;
 static ScmObj throw_cont_calculate_handlers(ScmEscapePoint *, ScmVM *);
 static ScmObj throw_cont_body(ScmObj, ScmEscapePoint*, ScmObj);
 static void   process_queued_requests(ScmVM *vm);
-
-static int exit_code(ScmObj exception);
 
 static ScmEnvFrame *get_env(ScmVM *vm);
 
@@ -2776,7 +2774,7 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
                    capture the error.  Usually this means we're running
                    scripts.  We can safely exit here, for the dynamic
                    stack is already rewound. */
-                exit(exit_code(vm->escapeData[1]));
+                exit(EX_SOFTWARE);
             } else {
                 /* Jump again until C stack is recovered.  We sould pop
                    the extra continuation frame so that the VM stack
@@ -3201,12 +3199,7 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
         /* We don't have an active error handler, so this is the fallback
            behavior.  Reports the error and rewind dynamic handlers and
            C stacks. */
-        if (!SCM_APPLICATION_EXIT_P(e)) {
-            Scm_ReportError(e);
-        } else {
-            Scm_Printf(SCM_CURERR, "%A\n",
-                       SCM_MESSAGE_CONDITION(e)->message);
-        }
+        Scm_ReportError(e);
         /* unwind the dynamic handlers */
         SCM_FOR_EACH(hp, vm->handlers) {
             ScmObj proc = SCM_CDAR(hp);
@@ -3221,16 +3214,7 @@ void Scm_VMDefaultExceptionHandler(ScmObj e)
         vm->escapeData[1] = e;
         siglongjmp(vm->cstack->jbuf, 1);
     } else {
-        exit(exit_code(e));
-    }
-}
-
-static int exit_code(ScmObj exception)
-{
-    if (SCM_APPLICATION_EXIT_P(exception)) {
-        return SCM_APPLICATION_EXIT_CODE(exception);
-    } else {
-        return EX_SOFTWARE;
+        exit(EX_SOFTWARE);
     }
 }
 

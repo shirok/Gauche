@@ -1,3 +1,14 @@
+2007-03-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/error.c, src/gauche/exception.h: Dropped <application-exit>
+	  exception; it doesn't work well.  The most annoying part is
+	  that the exception may be shadowed by other exceptions if the
+	  latter is thrown within the error handler; it does happen, for
+	  example, in the cleanup clause of unwind-protect.  We still want
+	  the applictation to exit without reporting stack trace even something
+	  fails in cleanup handlers.  It seems that application-exit needs
+	  different mechanism to trap (e.g. exit-handler) after all.
+
 2007-03-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (Scm_RoundToExact), src/extlib.stub (round->exact etc):
