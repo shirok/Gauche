@@ -1,3 +1,8 @@
+2007-03-14  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/addr.c (sockaddr_in6_allocate): fixed memory leak (missing
+	  freeaddrinfo).
+
 2007-03-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/error.c, src/gauche/exception.h: Dropped <application-exit>

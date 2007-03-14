@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: addr.c,v 1.26 2007-03-05 07:24:04 shirok Exp $
+ *  $Id: addr.c,v 1.27 2007-03-14 23:02:29 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -273,6 +273,7 @@ static ScmObj sockaddr_in6_allocate(ScmClass *klass, ScmObj initargs)
         r = getaddrinfo(hname, NULL, &hints, &res);
         if (r) Scm_Error("getaddrinfo: %s", gai_strerror(r));
         addr->addr.sin6_addr = ((struct sockaddr_in6*)res->ai_addr)->sin6_addr;
+        freeaddrinfo(res);
     } else if (host == key_any) {
         addr->addr.sin6_addr = in6addr_any;
     } else if (host == key_loopback) {
