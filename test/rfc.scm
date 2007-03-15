@@ -245,6 +245,14 @@ Content-Length: 4349
 (test-module 'rfc.ftp)
 
 ;;--------------------------------------------------------------------
+(test-section "rfc.icmp")
+(use rfc.icmp)
+(use gauche.uvector)
+(test-module 'rfc.icmp)
+
+;; WRITEME
+
+;;--------------------------------------------------------------------
 (test-section "rfc.ip")
 (use rfc.ip)
 (use gauche.uvector)
