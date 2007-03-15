@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: icmp.scm,v 1.5 2007-03-04 08:55:53 shirok Exp $
+;;;  $Id: icmp.scm,v 1.6 2007-03-15 22:49:27 shirok Exp $
 ;;;
 
 
@@ -51,44 +51,61 @@
   (use gauche.uvector)
   (use gauche.net)
   (use binary.io)
-  (export icmp-message-type->string
-          ICMP_ECHOREPLY ICMP_DEST_UNREACH ICMP_SOURCE_QUENCH
-          ICMP_REDIRECT ICMP_ECHO ICMP_ROUTER_ADVERT ICMP_ROUTER_SOLICIT
-          ICMP_TIME_EXCEEDED ICMP_PARAMETERPROB ICMP_TIMESTAMP
-          ICMP_TIMESTAMPREPLY ICMP_INFO_REQUEST ICMP_INFO_REPLY ICMP_ADDRESS
-          ICMP_ADDRESSREPLY ICMP_TRACEROUTE ICMP_DGRAMCONVERROR
-          ICMP_DOMAIN_REQUEST ICMP_DOMAIN_REPLY ICMP_SECURITYFAILURE
+  (export icmp4-message-type->string
+          ICMP4_ECHOREPLY ICMP4_DEST_UNREACH ICMP4_SOURCE_QUENCH
+          ICMP4_REDIRECT ICMP4_ECHO ICMP4_ROUTER_ADVERT ICMP4_ROUTER_SOLICIT
+          ICMP4_TIME_EXCEEDED ICMP4_PARAMETERPROB ICMP4_TIMESTAMP
+          ICMP4_TIMESTAMPREPLY ICMP4_INFO_REQUEST ICMP4_INFO_REPLY
+          ICMP4_ADDRESS ICMP4_ADDRESSREPLY ICMP4_TRACEROUTE
+          ICMP4_DGRAMCONVERROR ICMP4_DOMAIN_REQUEST ICMP4_DOMAIN_REPLY
+          ICMP4_SECURITYFAILURE
 
-          icmp-unreach-code->string
-          ICMP_NET_UNREACH ICMP_HOST_UNREACH ICMP_PROT_UNREACH
-          ICMP_PORT_UNREACH ICMP_FRAG_NEEDED ICMP_SR_FAILED ICMP_NET_UNKNOWN
-          ICMP_HOST_UNKNOWN ICMP_HOST_ISOLATED ICMP_NET_ANO ICMP_HOST_ANO
-          ICMP_NET_UNR_TOS ICMP_HOST_UNR_TOS ICMP_PKT_FILTERED
-          ICMP_PREC_VIOLATION ICMP_PREC_CUTOFF
+          icmp4-unreach-code->string
+          ICMP4_NET_UNREACH ICMP4_HOST_UNREACH ICMP4_PROT_UNREACH
+          ICMP4_PORT_UNREACH ICMP4_FRAG_NEEDED ICMP4_SR_FAILED
+          ICMP4_NET_UNKNOWN ICMP4_HOST_UNKNOWN ICMP4_HOST_ISOLATED
+          ICMP4_NET_ANO ICMP4_HOST_ANO ICMP4_NET_UNR_TOS ICMP4_HOST_UNR_TOS
+          ICMP4_PKT_FILTERED ICMP4_PREC_VIOLATION ICMP4_PREC_CUTOFF
 
-          icmp-redirect-code->string
-          ICMP_REDIR_NET ICMP_REDIR_HOST ICMP_REDIR_NETTOS ICMP_REDIR_HOSTTOS
+          icmp4-redirect-code->string
+          ICMP4_REDIR_NET ICMP4_REDIR_HOST ICMP4_REDIR_NETTOS
+          ICMP4_REDIR_HOSTTOS
 
-          icmp-router-code->string
-          ICMP_ROUTER_NORMAL ICMP_ROUTER_NOCOMMON
+          icmp4-router-code->string
+          ICMP4_ROUTER_NORMAL ICMP4_ROUTER_NOCOMMON
 
-          icmp-exceeded-code->string
-          ICMP_EXC_TTL ICMP_EXC_FRAGTIME
+          icmp4-exceeded-code->string
+          ICMP4_EXC_TTL ICMP4_EXC_FRAGTIME
 
-          icmp-parameter-code->string
-          ICMP_PARAM_PTR ICMP_PARAM_MISSING ICMP_PARAM_BADLENGTH
+          icmp4-parameter-code->string
+          ICMP4_PARAM_PTR ICMP4_PARAM_MISSING ICMP4_PARAM_BADLENGTH
 
-          icmp-security-code->string
-          ICMP_SEC_BADSPI ICMP_SEC_AUTHFAILED ICMP_SEC_DECOMPFAILED
-          ICMP_SEC_DECRYPTFAILED ICMP_SEC_NEEDAUTHENTICATION
-          ICMP_SEC_NEEDAUTHORIZATION
+          icmp4-security-code->string
+          ICMP4_SEC_BADSPI ICMP4_SEC_AUTHFAILED ICMP4_SEC_DECOMPFAILED
+          ICMP4_SEC_DECRYPTFAILED ICMP4_SEC_NEEDAUTHENTICATION
+          ICMP4_SEC_NEEDAUTHORIZATION
 
-          icmp-fill-header! icmp-checksum icmp-fill-checksum!
-          icmp-fill-echo!
+          icmp6-message-type->string
+          ICMP6_DEST_UNREACH ICMP6_PACKET_TOO_BIG ICMP6_TIME_EXCEEDED
+          ICMP6_PARAMETERPROB ICMP6_ECHO ICMP6_ECHOREPLY
+
+          icmp6-unreach-code->string
+          ICMP6_UNREACH_NOROUTE ICMP6_UNREACH_ADMIN ICMP6_UNREACH_BEYONDSCOPE
+          ICMP6_UNREACH_ADDR ICMP6_UNREACH_NOPORT
+
+          icmp6-exceeded-code->string
+          ICMP6_EXC_TRANSIT ICMP6_EXC_REASSEMBLY
+
+          icmp6-parameter-code->string
+          ICMP6_PARAM_HEADER ICMP6_PARAM_NEXTHEADER ICMP6_PARAM_OPTION
+
+          icmp-fill-header!
+          icmp4-fill-checksum! icmp4-fill-echo!
+          icmp6-fill-echo!
 
           icmp-packet-type icmp-packet-code
           icmp-echo-ident icmp-echo-sequence
-          icmp-describe-packet
+          icmp4-describe-packet icmp6-describe-packet
           ))
 (select-module rfc.icmp)
 
@@ -109,87 +126,127 @@
            ((val) expl) ...
            (else (format "Unknown code ~s for ~a" c name))))))))
 
+;;-------------------------------------------------------------
+;; ICMPv4
+;;
+
 ;; ICMP message types.
 (define-named-code "ICMP message types"
-  icmp-message-type->string
-  (ICMP_ECHOREPLY          0   "Echo Reply")
-  (ICMP_DEST_UNREACH       3   "Destination Unreachable")
-  (ICMP_SOURCE_QUENCH      4   "Source Quench      ")
-  (ICMP_REDIRECT           5   "Redirect (change route)")
-  (ICMP_ECHO               8   "Echo Request")
-  (ICMP_ROUTER_ADVERT      9   "Router Advertisement")
-  (ICMP_ROUTER_SOLICIT     10  "Router solicitation")
-  (ICMP_TIME_EXCEEDED      11  "Time Exceeded")
-  (ICMP_PARAMETERPROB      12  "Parameter Problem")
-  (ICMP_TIMESTAMP          13  "Timestamp Request")
-  (ICMP_TIMESTAMPREPLY     14  "Timestamp Reply")
-  (ICMP_INFO_REQUEST       15  "Information Request")
-  (ICMP_INFO_REPLY         16  "Information Reply")
-  (ICMP_ADDRESS            17  "Address Mask Request")
-  (ICMP_ADDRESSREPLY       18  "Address Mask Reply")
-  (ICMP_TRACEROUTE         30  "Traceroute")
-  (ICMP_DGRAMCONVERROR     31  "Datagram Conversion Error")
-  (ICMP_DOMAIN_REQUEST     37  "Domain Name Request")
-  (ICMP_DOMAIN_REPLY       38  "Domain Name Reply")
-  (ICMP_SECURITYFAILURE    40  "Security Failures")
+  icmp4-message-type->string
+  (ICMP4_ECHOREPLY          0   "Echo Reply")
+  (ICMP4_DEST_UNREACH       3   "Destination Unreachable")
+  (ICMP4_SOURCE_QUENCH      4   "Source Quench      ")
+  (ICMP4_REDIRECT           5   "Redirect (change route)")
+  (ICMP4_ECHO               8   "Echo Request")
+  (ICMP4_ROUTER_ADVERT      9   "Router Advertisement")
+  (ICMP4_ROUTER_SOLICIT     10  "Router solicitation")
+  (ICMP4_TIME_EXCEEDED      11  "Time Exceeded")
+  (ICMP4_PARAMETERPROB      12  "Parameter Problem")
+  (ICMP4_TIMESTAMP          13  "Timestamp Request")
+  (ICMP4_TIMESTAMPREPLY     14  "Timestamp Reply")
+  (ICMP4_INFO_REQUEST       15  "Information Request")
+  (ICMP4_INFO_REPLY         16  "Information Reply")
+  (ICMP4_ADDRESS            17  "Address Mask Request")
+  (ICMP4_ADDRESSREPLY       18  "Address Mask Reply")
+  (ICMP4_TRACEROUTE         30  "Traceroute")
+  (ICMP4_DGRAMCONVERROR     31  "Datagram Conversion Error")
+  (ICMP4_DOMAIN_REQUEST     37  "Domain Name Request")
+  (ICMP4_DOMAIN_REPLY       38  "Domain Name Reply")
+  (ICMP4_SECURITYFAILURE    40  "Security Failures")
   )
 
 ;; Codes
 (define-named-code "ICMP UNREACH codes"
-  icmp-unreach-code->string
-  (ICMP_NET_UNREACH        0   "Network Unreachable")
-  (ICMP_HOST_UNREACH       1   "Host Unreachable")
-  (ICMP_PROT_UNREACH       2   "Protocol Unreachable")
-  (ICMP_PORT_UNREACH       3   "Port Unreachable")
-  (ICMP_FRAG_NEEDED        4   "Fragmentation Needed/DF set")
-  (ICMP_SR_FAILED          5   "Source Route failed")
-  (ICMP_NET_UNKNOWN        6   "Unknown Net")
-  (ICMP_HOST_UNKNOWN       7   "Unknown Host")
-  (ICMP_HOST_ISOLATED      8   "Source Host Isolated")
-  (ICMP_NET_ANO            9   "Dest Network Prohibited")
-  (ICMP_HOST_ANO           10  "Dest Host Prohibited")
-  (ICMP_NET_UNR_TOS        11  "Dest Netowork Unreachable for TOS")
-  (ICMP_HOST_UNR_TOS       12  "Dest Host Unreachable for TOS")
-  (ICMP_PKT_FILTERED       13  "Packet Filtered")
-  (ICMP_PREC_VIOLATION     14  "Precedence Violation")
-  (ICMP_PREC_CUTOFF        15  "Precedence Cut Off")
+  icmp4-unreach-code->string
+  (ICMP4_NET_UNREACH        0   "Network Unreachable")
+  (ICMP4_HOST_UNREACH       1   "Host Unreachable")
+  (ICMP4_PROT_UNREACH       2   "Protocol Unreachable")
+  (ICMP4_PORT_UNREACH       3   "Port Unreachable")
+  (ICMP4_FRAG_NEEDED        4   "Fragmentation Needed/DF set")
+  (ICMP4_SR_FAILED          5   "Source Route failed")
+  (ICMP4_NET_UNKNOWN        6   "Unknown Net")
+  (ICMP4_HOST_UNKNOWN       7   "Unknown Host")
+  (ICMP4_HOST_ISOLATED      8   "Source Host Isolated")
+  (ICMP4_NET_ANO            9   "Dest Network Prohibited")
+  (ICMP4_HOST_ANO           10  "Dest Host Prohibited")
+  (ICMP4_NET_UNR_TOS        11  "Dest Netowork Unreachable for TOS")
+  (ICMP4_HOST_UNR_TOS       12  "Dest Host Unreachable for TOS")
+  (ICMP4_PKT_FILTERED       13  "Packet Filtered")
+  (ICMP4_PREC_VIOLATION     14  "Precedence Violation")
+  (ICMP4_PREC_CUTOFF        15  "Precedence Cut Off")
   )
 
 (define-named-code "ICMP REDIRECT codes"
-  icmp-redirect-code->string
-  (ICMP_REDIR_NET          0   "Redirect Net")
-  (ICMP_REDIR_HOST         1   "Redirect Host")
-  (ICMP_REDIR_NETTOS       2   "Redirect Net for TOS")
-  (ICMP_REDIR_HOSTTOS      3   "Redirect Host for TOS")
+  icmp4-redirect-code->string
+  (ICMP4_REDIR_NET          0   "Redirect Net")
+  (ICMP4_REDIR_HOST         1   "Redirect Host")
+  (ICMP4_REDIR_NETTOS       2   "Redirect Net for TOS")
+  (ICMP4_REDIR_HOSTTOS      3   "Redirect Host for TOS")
   )
 
 (define-named-code "ICMP ROUTER ADVERTISE codes"
-  icmp-router-code->string
-  (ICMP_ROUTER_NORMAL      0   "Normal Router Advertisement")
-  (ICMP_ROUTER_NOCOMMON    16  "Does not route common traffic")
+  icmp4-router-code->string
+  (ICMP4_ROUTER_NORMAL      0   "Normal Router Advertisement")
+  (ICMP4_ROUTER_NOCOMMON    16  "Does not route common traffic")
   )
 
 (define-named-code "ICMP TIME EXCEEDED codes"
-  icmp-exceeded-code->string
-  (ICMP_EXC_TTL            0   "TTL count exceeded")
-  (ICMP_EXC_FRAGTIME       1   "Fragment Reass time exceeded")
+  icmp4-exceeded-code->string
+  (ICMP4_EXC_TTL            0   "TTL count exceeded")
+  (ICMP4_EXC_FRAGTIME       1   "Fragment Reass time exceeded")
   )
 
 (define-named-code "ICMP PARAMETER PROBLEM codes"
-  icmp-parameter-code->string
-  (ICMP_PARAM_PTR          0   "Pointer indicates the error")
-  (ICMP_PARAM_MISSING      1   "Missing Required Option")
-  (ICMP_PARAM_BADLENGTH    2   "Bad Length")
+  icmp4-parameter-code->string
+  (ICMP4_PARAM_PTR          0   "Pointer indicates the error")
+  (ICMP4_PARAM_MISSING      1   "Missing Required Option")
+  (ICMP4_PARAM_BADLENGTH    2   "Bad Length")
   )
 
 (define-named-code "ICMP SECURITY FAILURE codes"
-  icmp-security-code->string
-  (ICMP_SEC_BADSPI         0   "Bad SPI")
-  (ICMP_SEC_AUTHFAILED     1   "Authentication Failed")
-  (ICMP_SEC_DECOMPFAILED   2   "Decompression Failed")
-  (ICMP_SEC_DECRYPTFAILED  3   "Decryption Failed")
-  (ICMP_SEC_NEEDAUTHENTICATION 4 "Need Authentication")
-  (ICMP_SEC_NEEDAUTHORIZATION  5 "Need Authorization")
+  icmp4-security-code->string
+  (ICMP4_SEC_BADSPI         0   "Bad SPI")
+  (ICMP4_SEC_AUTHFAILED     1   "Authentication Failed")
+  (ICMP4_SEC_DECOMPFAILED   2   "Decompression Failed")
+  (ICMP4_SEC_DECRYPTFAILED  3   "Decryption Failed")
+  (ICMP4_SEC_NEEDAUTHENTICATION 4 "Need Authentication")
+  (ICMP4_SEC_NEEDAUTHORIZATION  5 "Need Authorization")
+  )
+
+;;-------------------------------------------------------------
+;; ICMPv6
+;;
+(define-named-code "ICMP6 message types"
+  icmp6-message-type->string
+  (ICMP6_DEST_UNREACH      1   "Destination unreachable")
+  (ICMP6_PACKET_TOO_BIG    2   "Packet Too Big")
+  (ICMP6_TIME_EXCEEDED     3   "Time Exceeded")
+  (ICMP6_PARAMETERPROB     4   "Parameter problem")
+
+  (ICMP6_ECHO            128   "Echo request")
+  (ICMP6_ECHOREPLY       129   "Echo reply")
+  )
+
+(define-named-code "ICMP6 UNREACH codes"
+  icmp6-unreach-code->string
+  (ICMP6_UNREACH_NOROUTE      0 "No route to destination")
+  (ICMP6_UNREACH_ADMIN        1 "Communication administratively prohibited")
+  (ICMP6_UNREACH_BEYONDSCOPE  2 "Beyond scope of source address")
+  (ICMP6_UNREACH_ADDR         3 "Address unreachable")
+  (ICMP6_UNREACH_NOPORT       4 "Bad port")
+  )
+
+(define-named-code "ICMP6 TIME EXCEEDED codes"
+  icmp6-exceeded-code->string
+  (ICMP6_EXC_TRANSIT          0 "Hop limit == 0 in transit")
+  (ICMP6_EXC_REASSEMBLY       1 "Reassembly time out")
+  )
+
+(define-named-code "ICMP6 PARAMETER PROBLEM codes"
+  icmp6-parameter-code->string
+  (ICMP6_PARAM_HEADER         0 "Erroneous header field")
+  (ICMP6_PARAM_NEXTHEADER     1 "Unrecognized next header")
+  (ICMP6_PARAM_OPTION         2 "Unrecognized IPv6 option")
   )
 
 ;;============================================================
@@ -200,57 +257,82 @@
 ;; as buffer.  They don't allocate, so that they can be used
 ;; in inner loops.
 
-;; Fill ICMP packet header (except checksum)
+;; Fill ICMP/ICMP6 packet header (except checksum)
 (define-inline (icmp-fill-header! buf type code)
   (put-u8! buf 0 type)
   (put-u8! buf 1 code)
   (put-u16be! buf 2 0))
 
-(define (icmp-fill-checksum! buf size)
+(define (icmp4-fill-checksum! buf size)
   (put-u16be! buf 2 (inet-checksum buf size)))
 
-(define (icmp-fill-echo! buf ident seq data)
-  (icmp-fill-header! buf ICMP_ECHO 0)
+(define (icmp4-fill-echo! buf ident seq data)
+  (icmp-fill-header! buf ICMP4_ECHO 0)
   (put-u16be! buf 4 ident)
   (put-u16be! buf 6 seq)
   (u8vector-copy! buf 8 data)
-  (icmp-fill-checksum! buf (+ (u8vector-length data) 8)))
+  (icmp4-fill-checksum! buf (+ (u8vector-length data) 8)))
+
+;; We don't need to fill out checksum fields, for the kernel calculates it.
+(define (icmp6-fill-echo! buf ident seq data)
+  (icmp-fill-header! buf ICMP6_ECHO 0)
+  (put-u16be! buf 4 ident)
+  (put-u16be! buf 6 seq)
+  (u8vector-copy! buf 8 data))
 
 ;;============================================================
 ;; Packet decomposition
 ;;
 
+;; common to v4/v6
 (define (icmp-packet-type buf offset)
   (get-u8 buf (+ 0 offset)))
 
+;; common to v4/v6
 (define (icmp-packet-code buf offset)
   (get-u8 buf (+ 1 offset)))
 
+;; common to v4/v6
 (define (icmp-echo-ident buf offset)
   (get-u16be buf (+ 4 offset)))
 
+;; common to v4/v6
 (define (icmp-echo-sequence buf offset)
   (get-u16be buf (+ 6 offset)))
 
-(define (icmp-describe-packet buf offset)
+(define (icmp4-describe-packet buf offset)
   (let ((type (icmp-packet-type buf offset))
         (code (icmp-packet-code buf offset)))
     (format #t "ICMP packet type=~a(~a)\n"
-            type (icmp-message-type->string type))
+            type (icmp4-message-type->string type))
     (cond
-     ((= type ICMP_ECHOREPLY)
+     ((= type ICMP4_ECHOREPLY)
       (format #t "  ident=~2,'0x seq=~2,'0x\n"
               (icmp-echo-ident buf offset) (icmp-echo-sequence buf offset)))
-     ((assv type `((,ICMP_DEST_UNREACH . ,icmp-unreach-code->string)
-                   (,ICMP_REDIRECT     . ,icmp-redirect-code->string)
-                   (,ICMP_ROUTER_ADVERT . ,icmp-router-code->string)
-                   (,ICMP_TIME_EXCEEDED . ,icmp-exceeded-code->string)
-                   (,ICMP_PARAMETERPROB . ,icmp-parameter-code->string)
-                   (,ICMP_SECURITYFAILURE . ,icmp-security-code->string)))
+     ((assv type `((,ICMP4_DEST_UNREACH . ,icmp4-unreach-code->string)
+                   (,ICMP4_REDIRECT     . ,icmp4-redirect-code->string)
+                   (,ICMP4_ROUTER_ADVERT . ,icmp4-router-code->string)
+                   (,ICMP4_TIME_EXCEEDED . ,icmp4-exceeded-code->string)
+                   (,ICMP4_PARAMETERPROB . ,icmp4-parameter-code->string)
+                   (,ICMP4_SECURITYFAILURE . ,icmp4-security-code->string)))
       => (lambda (p)
            (format #t "  code=~a(~a)\n" code ((cdr p) code))))
      )))
 
-;; TODO: ICMPv6 support
+(define (icmp6-describe-packet buf offset)
+  (let ((type (icmp-packet-type buf offset))
+        (code (icmp-packet-code buf offset)))
+    (format #t "ICMPv6 packet type=~a(~a)\n"
+            type (icmp6-message-type->string type))
+    (cond
+     ((= type ICMP6_ECHOREPLY)
+      (format #t "  ident=~2,'0x seq=~2,'0x\n"
+              (icmp-echo-ident buf offset) (icmp-echo-sequence buf offset)))
+     ((assv type `((,ICMP6_DEST_UNREACH . ,icmp6-unreach-code->string)
+                   (,ICMP6_TIME_EXCEEDED . ,icmp6-exceeded-code->string)
+                   (,ICMP6_PARAMETERPROB . ,icmp6-parameter-code->string)))
+      => (lambda (p)
+           (format #t "  code=~a(~a)\n" code ((cdr p) code))))
+     )))
 
 (provide "rfc/icmp")
