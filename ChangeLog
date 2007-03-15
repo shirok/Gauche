@@ -1,3 +1,10 @@
+2007-03-15  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/net.c, ext/net/netlib.stub (inet-checksum+): added 
+	  inet-checksum+, which can be used to combine checksums; handy
+	  for IPv6 packet checksum calculation, for it requires including
+	  pseudo-IPv6 header.  See RFC2460 sectin 8.1.
+
 2007-03-14  Shiro Kawai  <shiro@acm.org>
 
 	* ext/net/addr.c (sockaddr_in6_allocate): fixed memory leak (missing
