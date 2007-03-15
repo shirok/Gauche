@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.52 2007-03-15 10:23:08 shirok Exp $
+ *  $Id: net.c,v 1.53 2007-03-15 22:43:14 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -508,45 +508,6 @@ ScmObj Scm_SocketGetOpt(ScmSocket *s, int level, int option, int rsize)
 }
 
 /*==================================================================
- * Internet checksum
- */
-
-/* Returns one's complement of one's complement sum of SIZE bytes
-   data in BUF.  If you want to include other checksum (like pseudo
-   IPv6 header checksum) you can pass it to prev_checksum.
-
-   NB: This checksum routine, a bit of modification from RFC1071,
-   seems widely used.  In ordinary C programs you don't need to worry
-   about endianness, since even if the machine is little-endian,
-   the swapping happens twice (once when you fetch each 16-bit word,
-   and once when you store the result) so the result becomes
-   the same as big-endian calculation.  In our case we take over
-   the result into Scheme world, so we adjust the result to the
-   network byte order (big-endian). 
-*/
-unsigned short Scm_InetChecksum(ScmUVector *buf, int size,
-                                unsigned short prev_checksum)
-{
-    uint16_t *wp = (uint16_t*)SCM_UVECTOR_ELEMENTS(buf);
-    u_long sum = prev_checksum;
-    uint16_t result;
-    if (size > Scm_UVectorSizeInBytes(buf)) {
-        Scm_Error("uniform vector buffer too short: %S", buf);
-    }
-    for (; size > 0; size -= 2) {
-        if (size == 1) { sum += *(u_char*)wp; break; }
-        sum += *wp++;
-    }
-    sum = (sum >> 16) + (sum & 0xffff);
-    sum += sum >> 16;
-    result = ~sum; /* truncate to 16bit */
-#if !WORDS_BIGENDIAN
-    result = (result>>8)|(result<<8);
-#endif
-    return result;
-}
-
-/*==================================================================
  * Windows/MinGW compatibility layer
  */
 #ifdef __MINGW32__
@@ -600,6 +561,9 @@ extern void Scm_Init_NetAddr(ScmModule *mod);
 extern void Scm_Init_NetDB(ScmModule *mod);
 extern void Scm_Init_netlib(ScmModule *mod);
 extern void Scm_Init_netaux(void);
+
+
+
 
 void Scm_Init_libnet(void)
 {

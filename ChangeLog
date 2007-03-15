@@ -4,6 +4,8 @@
 	  inet-checksum+, which can be used to combine checksums; handy
 	  for IPv6 packet checksum calculation, for it requires including
 	  pseudo-IPv6 header.  See RFC2460 sectin 8.1.
+	  Nope! reverted.  Kernel takes care of IPv6 checksum, so we
+	  don't need it.
 
 2007-03-14  Shiro Kawai  <shiro@acm.org>
 

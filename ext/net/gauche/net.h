@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.h,v 1.5 2007-03-15 10:23:08 shirok Exp $
+ *  $Id: net.h,v 1.6 2007-03-15 22:41:54 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -313,13 +313,6 @@ extern ScmObj Scm_GetNameinfo(ScmSockAddr *addr, int flags);
 #define NI_MAXSERV    32
 
 #endif /* HAVE_IPV6 */
-
-/*
- * Internet Checksum (RFC1071)
- */
-
-extern unsigned short Scm_InetChecksum(ScmUVector *buf, int size,
-                                       unsigned short prev_checksum);
 
 SCM_DECL_END
 
