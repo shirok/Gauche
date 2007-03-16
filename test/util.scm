@@ -788,7 +788,7 @@
   (test* "fold-right" (rbtree->alist tree2)
          (fold-right cons '() tree2))
 
-  (test* "ref" '((0 . "0") (1 . "1") (2 . "2"))
+  (test* "ref" '("0" "1" "2")
          (map (cut ref tree2 <>) '(0 1 2)))
 
   (test* "rbtree-extract-min!" '((0 . "0") (1 . "1"))
