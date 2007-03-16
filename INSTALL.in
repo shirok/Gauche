@@ -4,7 +4,7 @@
                       Compiling and Installing Gauche
 @c COMMON
 
-$Id: INSTALL.in,v 1.2 2006-11-11 20:45:17 shirok Exp $
+$Id: INSTALL.in,v 1.3 2007-03-16 09:21:28 shirok Exp $
 @c JP
 注: Gaucheは開発中のシステムで、頻繁に更新しています。次のURLで最新の
 情報が得られます:
@@ -453,8 +453,9 @@ Machine-dependent information
 
 
 @c JP
-* MacOS X - dlcompatライブラリ(libdl)がインストールされていることが必要です。
-      http://fink.sourceforge.netからダウンロードできます。システム標準の
+* MacOS X - 10.2.x以前のバージョンでは、dlcompatライブラリ(libdl)が
+      インストールされていることが必要です。http://fink.sourceforge.netから
+      ダウンロードできます。10.3以降では必要ありません。システム標準の
       場所以外にdlcompatライブラリをインストールした場合は、configureの
       --with-localオプションで場所を指定して下さい。
       また、GCがpthreadsを要求するようになったので、--enable-threads=pthreads
@@ -465,9 +466,10 @@ Machine-dependent information
 
        とする)
 @c EN
-* MacOS X - You need to install the dlcompat library (libdl) from
-       Fink project (http://fink.sourceforge.net) before configuring
-       Gauche.   If the dlcompat library is installed in non-standard
+* MacOS X - For 10.2.x and earlier, you need to install the dlcompat
+       library (libdl) from Fink project (http://fink.sourceforge.net)
+       before configuring Gauche.   You don't need it if you have OSX
+       10.3 or later.   If the dlcompat library is installed in non-standard
        location, you have to tell configure the place by --with-local.
        Besides, GC now requires pthreads on MacOS X, so you need
        --enable-threads=pthreads.
