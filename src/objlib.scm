@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: objlib.scm,v 1.6 2007-03-02 07:39:14 shirok Exp $
+;;;  $Id: objlib.scm,v 1.7 2007-03-16 12:14:32 shirok Exp $
 ;;;
 
 ;; This module is not meant to be `use'd.   It is just to hide
@@ -551,6 +551,13 @@
   (hash-table-get obj key fallback))
 (define-method (setter ref) ((obj <hash-table>) key value)
   (hash-table-put! obj key value))
+
+(define-method ref ((obj <tree-map>) key)
+  (tree-map-get obj key))
+(define-method ref ((obj <tree-map>) key fallback)
+  (tree-map-get obj key fallback))
+(define-method (setter ref) ((obj <tree-map>) key value)
+  (tree-map-put! obj key value))
 
 ;; gauche.sequence has the generic version for <sequence>, but these
 ;; shortcuts would be faster.
