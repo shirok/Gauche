@@ -19,7 +19,7 @@ ScmObj test_@@extname@@(void)
  */
 extern void Scm_Init_@@extname@@lib(ScmModule*);
 
-ScmObj Scm_Init_@@extname@@(void)
+void Scm_Init_@@extname@@(void)
 {
     ScmModule *mod;
 
