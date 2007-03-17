@@ -4,7 +4,7 @@
 ;; Such links are only of developers' interest; they must be cleaned out
 ;; to create a distribution tarball.
 ;;
-;; $Id: xlink,v 1.9 2005-08-27 04:11:00 shirok Exp $
+;; $Id: xlink,v 1.10 2007-03-17 00:38:02 shirok Exp $
 ;;
 
 ;; NB: this script is called before all the necessary 'wiring' is
@@ -61,7 +61,7 @@
        (equal? file (sys-readlink target))))
 
 (define (parse-args args)
-  (cond ((null? args) (usage))
+  (cond ((null? args) '())
         ((string=? (car args) "-l")
          (set! *link* #t) (parse-args (cdr args)))
         ((string=? (car args) "-u")

@@ -1,5 +1,10 @@
 2007-03-16  Shiro Kawai  <shiro@acm.org>
 
+	* ext/dbm/dbm.ac: checks for ndbm funcs in more libraries.
+	* ext/xlink: allow no file arguments; depending on configuration,
+	  both $(LIBFILES) and $(SCMFILES) can be empty in ext/Makefile.ext.
+	* src/genconfig.in: be frienly to autoconf 2.60.
+
 	* lib/gauche/dictionary.scm: dictionary generic functions.
 	  experimental.
 	* src/objlib.scm: added 'ref' and 'set!' methods for tree-map.
