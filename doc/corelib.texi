@@ -686,7 +686,7 @@ returns the closest even integer.
 引数@var{x}は実数でなければなりません。@code{floor}と@code{ceiling}はそれぞれ
 @var{x}を越えない最大の整数と、@var{x}を下回らない最小の整数を返します。
 @var{truncate}は@var{x}の小数部をゼロの方向に向かって切捨てた整数を返します。
-@var{round}は@var{x}に最も近い(四捨五入した)整数を返します。@var{x}の
+@var{round}は@var{x}に最も近い整数を返します。@var{x}の
 小数部が0.5ぴったりだった場合は@var{round}は最も近い偶数を返します。
 @c COMMON
 @end defun
