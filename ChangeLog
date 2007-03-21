@@ -1,3 +1,8 @@
+2007-03-21  Shiro Kawai  <shiro@acm.org>
+
+	* ext/srfi/srfi-19-lib.scm (tm:directives): fix date formats to make
+	  them iso-8601 compliant.
+
 2007-03-16  Shiro Kawai  <shiro@acm.org>
 
 	* ext/dbm/dbm.ac: checks for ndbm funcs in more libraries.

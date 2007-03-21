@@ -921,15 +921,18 @@ See the following example:
 @c EN
 If you intend to obtain an exact integer by rounding an inexact
 real number, you have to use one of @code{floor}, @code{ceiling},
-@code{truncate} or @code{round} explicitly.
+@code{truncate} or @code{round} explicitly.  You may also use
+@code{floor->exact}, @code{round->exact} etc.
 @c JP
 不正確な実数を丸めた正確な整数が欲しい場合は、@code{floor}、@code{ceiling}、
 @code{truncate}もしくは@code{round}を明示的に使って下さい。
+@code{floor->exact}、@code{round->exact}等を使うという手もあります。
 @c COMMON
 
 @example
-(inexact->exact (round 3.1415926535879))
-  @result{} 3
+(inexact->exact (round 3.1415926535879)) @result{} 3
+
+(round->exact 3.1415926535879)           @result{} 3
 @end example
 
 @c EN

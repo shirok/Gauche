@@ -24,7 +24,7 @@
 ;; MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. 
 
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
-;;; $Id: srfi-19-lib.scm,v 1.10 2007-01-16 22:17:13 shirok Exp $
+;;; $Id: srfi-19-lib.scm,v 1.11 2007-03-21 21:28:55 shirok Exp $
 
 (define-module srfi-19
   (use srfi-1)
@@ -909,13 +909,13 @@
     (#\1 . ,(lambda (date pad-with)
               (display (date->string date "~Y-~m-~d"))))
     (#\2 . ,(lambda (date pad-with)
-              (display (date->string date "~k:~M:~S~z"))))
+              (display (date->string date "~H:~M:~S~z"))))
     (#\3 . ,(lambda (date pad-with)
-              (display (date->string date "~k:~M:~S"))))
+              (display (date->string date "~H:~M:~S"))))
     (#\4 . ,(lambda (date pad-with)
-              (display (date->string date "~Y-~m-~dT~k:~M:~S~z"))))
+              (display (date->string date "~Y-~m-~dT~H:~M:~S~z"))))
     (#\5 . ,(lambda (date pad-with)
-              (display (date->string date "~Y-~m-~dT~k:~M:~S"))))
+              (display (date->string date "~Y-~m-~dT~H:~M:~S"))))
     ))
 
 (define (date->string date . maybe-fmtstr)
