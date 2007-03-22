@@ -1,5 +1,10 @@
 2007-03-22  Shiro Kawai  <shiro@acm.org>
 
+	* ext/mt-random/mt-random.c (mt_allocate): Seed initialization was
+	  broken when seed is given to the initialization argument.
+	  Consolidated mt-random-set-seed! and seed initialization into
+	  Scm_MTSetSeed.
+
 	* ext/net/netaux.scm, ext/net/netlib.stub, ext/net/net.c:
 	  Implemented inet-address->string and inet-string->address in C,
 	  using inet_pton and inet_ntop.

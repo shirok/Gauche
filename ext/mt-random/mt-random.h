@@ -2,7 +2,7 @@
  * mt-random.h - implements MT19937 random number generation algorithm
  * This code is based on Makoto Matsumoto & Takuji Nishimura's mt18837ar.c
  * See mt-random.c for details.
- * $Id: mt-random.h,v 1.6 2004-11-05 10:35:47 shirok Exp $
+ * $Id: mt-random.h,v 1.7 2007-03-22 21:30:54 shirok Exp $
  * The original copyright notice follows.
  */
 /*
@@ -68,6 +68,7 @@ extern void Scm_MTInitByUI(ScmMersenneTwister *mt, unsigned long s);
 extern void Scm_MTInitByArray(ScmMersenneTwister *mt,
                               ScmInt32 init_key[],
                               unsigned long key_length);
+extern void Scm_MTSetSeed(ScmMersenneTwister *mt, ScmObj seed);
 
 extern unsigned long Scm_MTGenrandU32(ScmMersenneTwister *);
 extern float         Scm_MTGenrandF32(ScmMersenneTwister *, int);

@@ -11,20 +11,7 @@
 (define-type <f64vector> "ScmF64Vector*")
 
 (define-cproc mt-random-set-seed! (mt::<mersenne-twister> init)
-  "if (SCM_INTP(init)) {
-    Scm_MTInitByUI(mt, Scm_GetUInteger(init));
-  } else if (SCM_BIGNUMP(init)) {
-    int i; unsigned long s = 0;
-    for (i=0; i<SCM_BIGNUM_SIZE(init); i++) {
-      s ^= SCM_BIGNUM(init)->values[i];
-    }
-    Scm_MTInitByUI(mt, s);
-  } else if (SCM_U32VECTORP(init)) {
-    Scm_MTInitByArray(mt, (ScmInt32*)SCM_U32VECTOR_ELEMENTS(init), SCM_U32VECTOR_SIZE(init));
-  } else {
-    Scm_Error(\"bad random seed: must be an exact integer or u32vector, but got %S\", init);
-  }
-  SCM_RETURN(SCM_UNDEFINED);")
+  (call <void> "Scm_MTSetSeed"))
 
 (define-cproc mt-random-get-state (mt::<mersenne-twister>)
   "

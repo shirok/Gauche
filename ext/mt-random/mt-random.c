@@ -10,7 +10,7 @@
  *     the allocated memory for random number generator object.
  *   - changed the names of the functions
  *   - added stuff to make it as a Gauche extension module.
- * $Id: mt-random.c,v 1.16 2005-09-10 09:39:12 shirok Exp $
+ * $Id: mt-random.c,v 1.17 2007-03-22 21:30:54 shirok Exp $
  *
  * The original copyright notice follows.
  */
@@ -83,6 +83,25 @@ void Scm_MTInitByUI(ScmMersenneTwister *mt, unsigned long s)
     }
     mt->mti = mti;
 }
+
+void Scm_MTSetSeed(ScmMersenneTwister *mt, ScmObj seed)
+{
+    if (SCM_INTP(seed)) {
+        Scm_MTInitByUI(mt, Scm_GetUInteger(seed));
+    } else if (SCM_BIGNUMP(seed)) {
+        int i; unsigned long s = 0;
+        for (i=0; i<SCM_BIGNUM_SIZE(seed); i++) {
+            s ^= SCM_BIGNUM(seed)->values[i];
+        }
+        Scm_MTInitByUI(mt, s);
+    } else if (SCM_U32VECTORP(seed)) {
+        Scm_MTInitByArray(mt, (ScmInt32*)SCM_U32VECTOR_ELEMENTS(seed),
+                          SCM_U32VECTOR_SIZE(seed));
+    } else {
+        Scm_TypeError("random seed", "an exact integer or u32vector", seed);
+    }
+}
+
 
 /* initialize by an array with array-length */
 /* init_key is the array for initializing keys */
@@ -277,19 +296,10 @@ static ScmObj mt_allocate(ScmClass *klass, ScmObj initargs)
     ScmObj seed = Scm_GetKeyword(key_seed, initargs, SCM_FALSE);
     ScmMersenneTwister *mt;
     
-    if (!SCM_FALSEP(seed) && !SCM_EXACTP(seed) && !SCM_U32VECTORP(seed)) {
-        Scm_Error("seed needs to be an exact integer or a u32vector, but got: %S", seed);
-    }
-    
     mt = SCM_NEW(ScmMersenneTwister);
     SCM_SET_CLASS(mt, &Scm_MersenneTwisterClass);
     mt->mti = N+1;
-    if (SCM_EXACTP(seed)) {
-        Scm_MTInitByUI(mt, Scm_GetUInteger(seed));
-    } else if (SCM_U32VECTORP(seed)) {
-        Scm_MTInitByArray(mt, (ScmInt32*)SCM_U32VECTOR_ELEMENTS(seed),
-                          SCM_U32VECTOR_SIZE(seed));
-    }
+    if (!SCM_FALSEP(seed)) Scm_MTSetSeed(mt, seed);
     return SCM_OBJ(mt);
 }
 
