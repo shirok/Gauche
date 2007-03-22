@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netlib.stub,v 1.44 2007-03-16 02:20:45 shirok Exp $
+;;;  $Id: netlib.stub,v 1.45 2007-03-22 11:16:42 shirok Exp $
 ;;;
 
 "#include \"gauche/net.h\"
@@ -399,6 +399,26 @@
         "result = (result>>8)|(result<<8);"
         "#endif"
         "SCM_RESULT = result;"))
+
+;; socket addresses
+(define-cproc inet-string->address (s::<const-cstring>)
+  (body (<top> <top>)
+        "int proto;"
+        "ScmObj r = Scm_InetStringToAddress(s, &proto, NULL);"
+        "if (SCM_FALSEP(r)) {"
+        "  SCM_RESULT0 = SCM_RESULT1 = SCM_FALSE;"
+        "} else {"
+        "  SCM_RESULT0 = r; SCM_RESULT1 = SCM_MAKE_INT(proto);"
+        "}"))
+
+(define-cproc inet-string->address! (s::<const-cstring> buf::<uvector>)
+  (body "int proto;"
+        "ScmObj r = Scm_InetStringToAddress(s, &proto, buf);"
+        "if (SCM_FALSEP(r)) SCM_RESULT = SCM_FALSE;"
+        "else SCM_RESULT = SCM_MAKE_INT(proto);"))
+
+(define-cproc inet-address->string (addr proto::<int>)
+  (call "Scm_InetAddressToString"))
 
 ;; Local variables:
 ;; mode: scheme

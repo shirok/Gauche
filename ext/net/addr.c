@@ -1,7 +1,7 @@
 /*
  * addr.c - socket address
  *
- *  Copyright(C) 2001-2006 by Shiro Kawai (shiro@acm.org)
+ *  Copyright(C) 2001-2007  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: addr.c,v 1.27 2007-03-14 23:02:29 shirok Exp $
+ *  $Id: addr.c,v 1.28 2007-03-22 11:16:38 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -306,7 +306,117 @@ static ScmObj sockaddr_in6_allocate(ScmClass *klass, ScmObj initargs)
 #endif /* HAVE_IPV6 */
 
 /*==================================================================
- * Initialization stuff
+ * Parse internet addresses
+ */
+
+ScmObj Scm_InetStringToAddress(const char *s,
+                               int *proto,     /*out*/
+                               ScmUVector *buf /*out*/)
+{
+    struct in_addr in4;
+#ifdef HAVE_IPV6
+    struct in6_addr in6;
+#endif
+    if (inet_pton(AF_INET, s, &in4) > 0) {
+        *proto = AF_INET;
+        if (buf) {
+            if (Scm_UVectorSizeInBytes(buf) < 4) {
+                Scm_Error("uniform vector buffer isn't big enough to hold IPv4 address: %S", buf);
+            }
+            SCM_U32VECTOR_ELEMENTS(buf)[0] = in4.s_addr;
+            return SCM_TRUE;
+        } else {
+            return Scm_MakeIntegerU(ntohl(in4.s_addr));
+        }
+    }
+
+#ifdef HAVE_IPV6
+    if (inet_pton(AF_INET6, s, &in6) > 0) {
+        *proto = AF_INET6;
+        if (buf) {
+            if (Scm_UVectorSizeInBytes(buf) < 16) {
+                Scm_Error("uniform vector buffer isn't big enough to hold IPv6 address: %S", buf);
+            }
+            SCM_U32VECTOR_ELEMENTS(buf)[0] = in6.s6_addr32[0];
+            SCM_U32VECTOR_ELEMENTS(buf)[1] = in6.s6_addr32[1];
+            SCM_U32VECTOR_ELEMENTS(buf)[2] = in6.s6_addr32[2];
+            SCM_U32VECTOR_ELEMENTS(buf)[3] = in6.s6_addr32[3];
+            return SCM_TRUE;
+        } else {
+            ScmObj s = SCM_MAKE_INT(0);
+            int i;
+            for (i=0; i<4; i++) {
+                s = Scm_Add(Scm_Ash(s, 32),
+                            Scm_MakeIntegerU(ntohl(in6.s6_addr32[i])));
+            }
+            return s;
+        }
+    }
+#endif
+    return SCM_FALSE;
+}
+
+ScmObj Scm_InetAddressToString(ScmObj addr,  /* integer or uvector */
+                               int proto)
+{
+    if (proto == AF_INET) {
+        char buf[INET_ADDRSTRLEN];
+        struct in_addr in4;
+        if (SCM_INTEGERP(addr)) {
+            u_long a = Scm_GetIntegerU(addr);
+            in4.s_addr = htonl(a);
+        } else if (SCM_UVECTORP(addr)) {
+            if (Scm_UVectorSizeInBytes(SCM_UVECTOR(addr)) < 4) {
+                Scm_Error("uvector too short for IPv4 address: %S", addr);
+            }
+            in4.s_addr = SCM_U32VECTOR_ELEMENTS(addr)[0];
+        } else {
+            Scm_TypeError("address", "integer or uvector", addr);
+        }
+        if (inet_ntop(AF_INET, &in4, buf, INET_ADDRSTRLEN) != NULL) {
+            return Scm_MakeString(buf, -1, -1, SCM_STRING_COPYING);
+        } else {
+            Scm_SysError("inet_ntop failed for address %S", addr);
+        }
+    }
+#ifdef HAVE_IPV6
+    if (proto == AF_INET6) {
+        char buf[INET6_ADDRSTRLEN];
+        struct in6_addr in6;
+        if (SCM_INTEGERP(addr)) {
+            u_long a;
+            int i;
+            ScmObj mask = Scm_MakeIntegerU(0xffffffffUL);
+            for (i=0; i<4; i++) {
+                a = Scm_GetIntegerU(Scm_LogAnd(addr, mask));
+                in6.s6_addr32[3-i] = htonl(a);
+                addr = Scm_Ash(addr, -32);
+            }
+        } else if (SCM_UVECTORP(addr)) {
+            if (Scm_UVectorSizeInBytes(SCM_UVECTOR(addr)) < 16) {
+                Scm_Error("uvector too short for IPv6 address: %S", addr);
+            }
+            in6.s6_addr32[0] = SCM_U32VECTOR_ELEMENTS(addr)[0];
+            in6.s6_addr32[1] = SCM_U32VECTOR_ELEMENTS(addr)[1];
+            in6.s6_addr32[2] = SCM_U32VECTOR_ELEMENTS(addr)[2];
+            in6.s6_addr32[3] = SCM_U32VECTOR_ELEMENTS(addr)[3];
+        } else {
+            Scm_TypeError("address", "integer or uvector", addr);
+        }
+        if (inet_ntop(AF_INET6, &in6, buf, INET6_ADDRSTRLEN) != NULL) {
+            return Scm_MakeString(buf, -1, -1, SCM_STRING_COPYING);
+        } else {
+            Scm_SysError("inet_ntop failed for address %S", addr);
+        }
+    }
+#endif
+    Scm_Error("unsupported protocol for inet-address->string: %d", proto);
+    return SCM_UNDEFINED;       /* dummy */
+#undef BUFLEN
+}
+
+/*==================================================================
+ * initialization stuff
  */
 
 void Scm_Init_NetAddr(ScmModule *mod)

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.h,v 1.6 2007-03-15 22:41:54 shirok Exp $
+ *  $Id: net.h,v 1.7 2007-03-22 11:16:43 shirok Exp $
  */
 
 #ifndef GAUCHE_NET_H
@@ -159,6 +159,11 @@ SCM_CLASS_DECL(Scm_SockAddrIn6Class);
 #endif /* HAVE_IPV6 */
 
 #define SCM_SOCKADDR_MAXLEN    128
+
+extern ScmObj Scm_InetStringToAddress(const char *s, int *proto,
+                                      ScmUVector *buf);
+extern ScmObj Scm_InetAddressToString(ScmObj addr, int proto);
+
 
 /*------------------------------------------------------------------
  * Socket

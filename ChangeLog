@@ -1,3 +1,9 @@
+2007-03-22  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/netaux.scm, ext/net/netlib.stub, ext/net/net.c:
+	  Implemented inet-address->string and inet-string->address in C,
+	  using inet_pton and inet_ntop.
+
 2007-03-21  Shiro Kawai  <shiro@acm.org>
 
 	* ext/srfi/srfi-19-lib.scm (tm:directives): fix date formats to make
