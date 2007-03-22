@@ -5,15 +5,18 @@
 ;;;   Oleg Kiselyov's SSAX XML parser, SSAX.scm, v4.9.
 ;;;   Public domain.
 ;;;
-;;; $Id: sxml-ssax.scm.in,v 1.1 2005-08-25 04:32:54 shirok Exp $
+;;; $Id: sxml-ssax.scm.in,v 1.2 2007-03-22 21:39:57 shirok Exp $
 ;;;
+
+;; NB: we need to extend several modules since sxml:make-parser inserts
+;; calls to procedures defined in them.  Eventually we need to update
+;; ssax source for R5RS macro version and 'extend' should go away.
 
 (define-module sxml.ssax
   (use srfi-1)
   (use srfi-13)
-  (use text.parse)
   (use gauche.parameter)
-  (extend srfi-11 sxml.adaptor)
+  (extend srfi-11 sxml.adaptor text.parse)
   (export-all)
   )
 (select-module sxml.ssax)

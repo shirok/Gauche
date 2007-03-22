@@ -1,5 +1,8 @@
 2007-03-22  Shiro Kawai  <shiro@acm.org>
 
+	* ext/sxml/sxml-ssax.scm.in: extend text.parse as well, for
+	  ssax:make-parser inserts assert-curr-char.
+
 	* ext/mt-random/mt-random.c (mt_allocate): Seed initialization was
 	  broken when seed is given to the initialization argument.
 	  Consolidated mt-random-set-seed! and seed initialization into
