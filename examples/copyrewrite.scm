@@ -16,7 +16,7 @@
     ((dir author email)
      (directory-fold dir
                      (lambda (path seed)
-                       (when (#/\.(c|scm)$/ path)
+                       (when (#/\.(c|h|scm|stub)$/ path)
                          (check-file path author email)))
                      #f))
     (_ (usage)))

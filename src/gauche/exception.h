@@ -1,7 +1,7 @@
 /*
  * exception.h - more exception classes
  *
- *   Copyright (c) 2000-2007 Shiro Kawai <shiro@acm.org>
+ *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: exception.h,v 1.14 2007-03-13 10:41:29 shirok Exp $
+ *  $Id: exception.h,v 1.15 2007-03-22 11:20:31 shirok Exp $
  */
 
 #ifndef GAUCHE_EXCEPTION_H

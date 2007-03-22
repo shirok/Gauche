@@ -1,7 +1,7 @@
 /*
  * gauche/memory.h - internal macros for memory-related stuff
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: memory.h,v 1.7 2004-12-18 04:11:13 shirok Exp $
+ *  $Id: memory.h,v 1.8 2007-03-22 11:20:31 shirok Exp $
  */
 
 #ifndef GAUCHE_MEM_H

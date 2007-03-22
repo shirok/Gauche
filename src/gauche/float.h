@@ -1,7 +1,7 @@
 /*
  * float.h - auxilirary floating-point number support
  *
- *   Copyright (c) 2007 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2007  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: float.h,v 1.1 2007-02-17 12:19:57 shirok Exp $
+ *  $Id: float.h,v 1.2 2007-03-22 11:20:31 shirok Exp $
  */
 
 /*

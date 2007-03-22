@@ -1,7 +1,7 @@
 /*
  * termios.h - termios interface
  *
- *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: termios.h,v 1.8 2006-03-25 15:40:27 shirok Exp $
+ *  $Id: termios.h,v 1.9 2007-03-22 11:20:24 shirok Exp $
  */
 
 #ifndef GAUCHE_TERMIOS_H

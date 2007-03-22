@@ -1,7 +1,7 @@
 /*
  * char_utf8.h - UTF8 encoding interface
  *
- *   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char_utf_8.h,v 1.11 2006-11-08 13:41:49 shirok Exp $
+ *  $Id: char_utf_8.h,v 1.12 2007-03-22 11:20:30 shirok Exp $
  */
 
 #ifndef SCM_CHAR_ENCODING_BODY

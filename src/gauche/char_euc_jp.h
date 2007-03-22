@@ -1,7 +1,7 @@
 /*
  * char-euc-jp.h
  *
- *   Copyright (c) 2000-2004 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char_euc_jp.h,v 1.15 2004-08-01 05:27:11 shirok Exp $
+ *  $Id: char_euc_jp.h,v 1.16 2007-03-22 11:20:30 shirok Exp $
  */
 
 #ifndef SCM_CHAR_ENCODING_BODY

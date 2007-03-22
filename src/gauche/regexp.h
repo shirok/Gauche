@@ -1,7 +1,7 @@
 /*
  * regexp.h - Regexp module internal definitions
  *
- *   Copyright (c) 2006 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2006-2007  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.h,v 1.2 2006-11-24 11:07:00 shirok Exp $
+ *  $Id: regexp.h,v 1.3 2007-03-22 11:20:36 shirok Exp $
  */
 
 #ifndef GAUCHE_REGEXP_H

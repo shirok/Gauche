@@ -1,7 +1,7 @@
 ;;;
 ;;; convlib.stub - character conversion library
 ;;;  
-;;;   Copyright (c) 2000-2003 Shiro Kawai, All rights reserved.
+;;;   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
 ;;;   
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: convlib.stub,v 1.12 2005-10-13 08:14:13 shirok Exp $
+;;; $Id: convlib.stub,v 1.13 2007-03-22 11:20:15 shirok Exp $
 ;;;
 
 "#include \"charconv.h\""

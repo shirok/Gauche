@@ -1,7 +1,7 @@
 /*
  * gauche/bignum.h - Internal API for bignums
  *
- *   Copyright (c) 2000-2006 Shiro Kawai, All rights reserved.
+ *   Copyright (c) 2000-2007  Shiro Kawai  <shiro@acm.org>
  * 
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bignum.h,v 1.3 2006-11-04 09:57:00 shirok Exp $
+ *  $Id: bignum.h,v 1.4 2007-03-22 11:20:30 shirok Exp $
  */
 
 /* APIs concerning bignums.  They are not for general public use,

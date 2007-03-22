@@ -1,7 +1,7 @@
 /*
  * addr.c - socket address
  *
- *  Copyright(C) 2001-2007  Shiro Kawai  <shiro@acm.org>
+ *  Copyright (c) 2001-2007  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: addr.c,v 1.28 2007-03-22 11:16:38 shirok Exp $
+ *  $Id: addr.c,v 1.29 2007-03-22 11:20:21 shirok Exp $
  */
 
 #include "gauche/net.h"
