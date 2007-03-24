@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: addr.c,v 1.29 2007-03-22 11:20:21 shirok Exp $
+ *  $Id: addr.c,v 1.30 2007-03-24 09:02:55 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -309,6 +309,8 @@ static ScmObj sockaddr_in6_allocate(ScmClass *klass, ScmObj initargs)
  * Parse internet addresses
  */
 
+#define S6_ADDR32(in6, offset) (*(uint32_t*)&(((in6).s6_addr)[(offset)*4]))
+
 ScmObj Scm_InetStringToAddress(const char *s,
                                int *proto,     /*out*/
                                ScmUVector *buf /*out*/)
@@ -337,17 +339,17 @@ ScmObj Scm_InetStringToAddress(const char *s,
             if (Scm_UVectorSizeInBytes(buf) < 16) {
                 Scm_Error("uniform vector buffer isn't big enough to hold IPv6 address: %S", buf);
             }
-            SCM_U32VECTOR_ELEMENTS(buf)[0] = in6.s6_addr32[0];
-            SCM_U32VECTOR_ELEMENTS(buf)[1] = in6.s6_addr32[1];
-            SCM_U32VECTOR_ELEMENTS(buf)[2] = in6.s6_addr32[2];
-            SCM_U32VECTOR_ELEMENTS(buf)[3] = in6.s6_addr32[3];
+            SCM_U32VECTOR_ELEMENTS(buf)[0] = S6_ADDR32(in6, 0);
+            SCM_U32VECTOR_ELEMENTS(buf)[1] = S6_ADDR32(in6, 1);
+            SCM_U32VECTOR_ELEMENTS(buf)[2] = S6_ADDR32(in6, 2);
+            SCM_U32VECTOR_ELEMENTS(buf)[3] = S6_ADDR32(in6, 3);
             return SCM_TRUE;
         } else {
             ScmObj s = SCM_MAKE_INT(0);
             int i;
             for (i=0; i<4; i++) {
                 s = Scm_Add(Scm_Ash(s, 32),
-                            Scm_MakeIntegerU(ntohl(in6.s6_addr32[i])));
+                            Scm_MakeIntegerU(ntohl(S6_ADDR32(in6, i))));
             }
             return s;
         }
@@ -389,17 +391,17 @@ ScmObj Scm_InetAddressToString(ScmObj addr,  /* integer or uvector */
             ScmObj mask = Scm_MakeIntegerU(0xffffffffUL);
             for (i=0; i<4; i++) {
                 a = Scm_GetIntegerU(Scm_LogAnd(addr, mask));
-                in6.s6_addr32[3-i] = htonl(a);
+                S6_ADDR32(in6, 3-i) = htonl(a);
                 addr = Scm_Ash(addr, -32);
             }
         } else if (SCM_UVECTORP(addr)) {
             if (Scm_UVectorSizeInBytes(SCM_UVECTOR(addr)) < 16) {
                 Scm_Error("uvector too short for IPv6 address: %S", addr);
             }
-            in6.s6_addr32[0] = SCM_U32VECTOR_ELEMENTS(addr)[0];
-            in6.s6_addr32[1] = SCM_U32VECTOR_ELEMENTS(addr)[1];
-            in6.s6_addr32[2] = SCM_U32VECTOR_ELEMENTS(addr)[2];
-            in6.s6_addr32[3] = SCM_U32VECTOR_ELEMENTS(addr)[3];
+            S6_ADDR32(in6, 0) = SCM_U32VECTOR_ELEMENTS(addr)[0];
+            S6_ADDR32(in6, 1) = SCM_U32VECTOR_ELEMENTS(addr)[1];
+            S6_ADDR32(in6, 2) = SCM_U32VECTOR_ELEMENTS(addr)[2];
+            S6_ADDR32(in6, 3) = SCM_U32VECTOR_ELEMENTS(addr)[3];
         } else {
             Scm_TypeError("address", "integer or uvector", addr);
         }

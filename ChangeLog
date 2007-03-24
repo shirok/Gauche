@@ -1,3 +1,10 @@
+2007-03-23  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/addr.c, ext/net/test.scm: struct in6_addr.s6_addr32 isn't
+	  portable, so we roll our own.  also make sure we won't run ipv6
+	  inet_pton/ntop if Gauche isn't configured with ipv6.  Patch from
+	  Tatsuya BIZENN.
+
 2007-03-22  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sxml/sxml-ssax.scm.in: extend text.parse as well, for
