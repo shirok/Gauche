@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.93 2007-02-20 05:42:02 shirok Exp $
+dnl $Id: configure.ac,v 1.94 2007-03-24 09:18:15 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.9, shiro@acm.org)
-AC_REVISION($Revision: 1.93 $)
+AC_REVISION($Revision: 1.94 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -151,7 +151,7 @@ if test $GAUCHE_THREAD_TYPE = pthreads; then
       AC_DEFINE(_POSIX_C_SOURCE,199506L,[Define POSIX C version])
       THREADLIBS="-lpthread -lrt"
       ;;
-    *-*-freebsd*)
+    *-*-freebsd*|*-*-dragonfly*)
       AC_MSG_WARN("FreeBSD does not yet fully support threads with Boehm GC.")
       AC_DEFINE(GC_FREEBSD_THREADS,1,[Define to use FreeBSD threads])
       INCLUDES="$INCLUDES -pthread"
@@ -159,7 +159,7 @@ if test $GAUCHE_THREAD_TYPE = pthreads; then
       ;;
     *-*-netbsd*)
       AC_MSG_WARN("Only on NetBSD 2.0 or later.")
-      AC_DEFINE(GC_NETBSD_THREADS,1,[Define to use FreeBSD threads])
+      AC_DEFINE(GC_NETBSD_THREADS,1,[Define to use NetBSD threads])
       AC_DEFINE(_REENTRANT)
       AC_DEFINE(_PTHREADS)
       THREADDLLIBS="-lpthread -lrt"
@@ -406,7 +406,7 @@ case $target in
     SHLIB_MAIN_LDFLAGS=""
     SHLIB_OK=ok
     ;;
-  *-linux-gnu|*freebsd*)
+  *-linux-gnu|*freebsd*|*dragonfly*)
     SHLIB_SO_CFLAGS="-fPIC"
     SHLIB_SO_LDFLAGS="$rpath -shared -o"
     SHLIB_SO_SUFFIX="so"

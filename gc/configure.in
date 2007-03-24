@@ -22,7 +22,7 @@ AC_INIT(gc,6.8,Hans.Boehm@hp.com)
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CANONICAL_TARGET 
 AC_PREREQ(2.53)
-AC_REVISION($Revision: 1.17 $)
+AC_REVISION($Revision: 1.18 $)
 GC_SET_VERSION
 AM_INIT_AUTOMAKE
 
@@ -110,7 +110,7 @@ dnl	AC_DEFINE(THREAD_LOCAL_ALLOC)
      *-*-hpux10*)
 	AC_MSG_WARN("Only HP-UX 11 POSIX threads are supported.")
 	;;
-     *-*-freebsd*)
+     *-*-freebsd*|*-*-dragonfly*)
 	AC_MSG_WARN("FreeBSD does not yet fully support threads with Boehm GC.")
 	AC_DEFINE(GC_FREEBSD_THREADS)
 	INCLUDES="$INCLUDES -pthread"

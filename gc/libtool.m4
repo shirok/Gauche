@@ -1612,7 +1612,7 @@ else
     ;;
 
   # FreeBSD 3 and greater uses gcc -shared to do shared libraries.
-  freebsd*)
+  freebsd*|dragonfly*)
     archive_cmds='$CC -shared -o $lib $libobjs $deplibs $compiler_flags'
     hardcode_libdir_flag_spec='-R$libdir'
     hardcode_direct=yes
@@ -2064,7 +2064,7 @@ freebsd1*)
   dynamic_linker=no
   ;;
 
-freebsd*)
+freebsd*|dragonfly*)
   objformat=`test -x /usr/bin/objformat && /usr/bin/objformat || echo aout`
   version_type=freebsd-$objformat
   case $version_type in
@@ -3322,7 +3322,7 @@ darwin* | rhapsody*)
   esac
   ;;
 
-freebsd*)
+freebsd*|dragonfly*)
   if echo __ELF__ | $CC -E - | grep __ELF__ > /dev/null; then
     case $host_cpu in
     i*86 )
