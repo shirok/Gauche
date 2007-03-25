@@ -2,7 +2,7 @@ dnl
 dnl Configure ext/net
 dnl This file is included by the toplevel configure.in
 dnl
-dnl $Id: net.ac,v 1.7 2007-01-17 07:15:13 shirok Exp $
+dnl $Id: net.ac,v 1.8 2007-03-25 03:36:47 shirok Exp $
 
 # ext/net -------------------------------------------------
 
@@ -89,7 +89,13 @@ if test $ac_cv_func_gethostbyname_r != no; then
   AC_DEFINE_UNQUOTED(GETHOSTBYNAME_R_NUMARGS, $ac_cv_func_gethostbyname_r_nargs, [Define number of args gethostbyname_r takes])
 fi
 
-AC_CHECK_FUNC(gethostbyaddr_r)
+dnl Kludge: DragonFly BSD's gethostbyaddr_r is broken
+case "$target" in
+  *-*-dragonfly*)
+    ac_cv_func_gethostbyaddr_r='no';;
+  *)
+    AC_CHECK_FUNC(gethostbyaddr_r);;
+esac
 if test $ac_cv_func_gethostbyaddr_r = 'yes'; then
   AC_CACHE_CHECK(number of arguments for gethostbyaddr_r,
                  ac_cv_func_gethostbyaddr_r_nargs, [

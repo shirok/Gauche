@@ -1,3 +1,8 @@
+2007-03-24  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net/net.ac: added a hack to avoid dragonfly's broken 
+	  gethostbyaddr_r.
+
 2007-03-23  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac, gc/configure.in, gc/libtool.m4: Patched to support
