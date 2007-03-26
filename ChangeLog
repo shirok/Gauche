@@ -1,5 +1,8 @@
 2007-03-26  Shiro Kawai  <shiro@acm.org>
 
+	* src/number.c (Scm_GetDouble): handles the corner case when ratnum
+	  has very large denominator and/or numerator.
+
 	* src/treemap.c, src/gauche/treemap.h: Renamed and cleaned up some
 	  treemap API for the consistency.
 

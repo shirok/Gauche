@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.145 2007-03-11 21:01:30 shirok Exp $
+ *  $Id: number.c,v 1.146 2007-03-26 23:59:54 shirok Exp $
  */
 
 #include <math.h>
@@ -1019,7 +1019,29 @@ double Scm_GetDouble(ScmObj obj)
     else if (SCM_INTP(obj)) return (double)SCM_INT_VALUE(obj);
     else if (SCM_BIGNUMP(obj)) return Scm_BignumToDouble(SCM_BIGNUM(obj));
     else if (SCM_RATNUMP(obj)) {
-        return Scm_GetDouble(SCM_RATNUM_NUMER(obj))/Scm_GetDouble(SCM_RATNUM_DENOM(obj));
+        /* This is more complicated than I thought first.  The numerator
+         * and/or the denominator can be too big to be converted to double,
+         * yet the ratnum itself can be representable in double.
+         */
+        double numer = Scm_GetDouble(SCM_RATNUM_NUMER(obj));
+        double denom = Scm_GetDouble(SCM_RATNUM_DENOM(obj));
+
+        if (SCM_IS_INF(numer) || SCM_IS_INF(denom)) {
+            /* This path should be rare, so we don't bother performance. */
+            ScmBignum *bnumer = SCM_BIGNUM(SCM_RATNUM_NUMER(obj));
+            ScmBignum *bdenom = SCM_BIGNUM(SCM_RATNUM_DENOM(obj));
+            int snumer = SCM_BIGNUM_SIZE(bnumer);
+            int sdenom = SCM_BIGNUM_SIZE(bdenom);
+            int shift;
+            /* we rip off the first 3 words, which guarantees we preserve
+               more than 53 bits. */
+            if (snumer > sdenom) shift = (sdenom - 3) * sizeof(long) * 8;
+            else                 shift = (snumer - 3) * sizeof(long) * 8;
+            
+            numer = Scm_GetDouble(Scm_Ash(SCM_RATNUM_NUMER(obj), -shift));
+            denom = Scm_GetDouble(Scm_Ash(SCM_RATNUM_DENOM(obj), -shift));
+        }
+        return numer/denom;
     }
     else return 0.0;
 }

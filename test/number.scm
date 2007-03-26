@@ -1168,6 +1168,16 @@
        (expt 2 1/2)
        (lambda (x y) (nearly=? 10e7 x y))) ;; NB: pa$ will be tested later
 
+(test* "expt (ratnum with large denom and numer) with inexact conversion"
+       (expt 8/9 342.0)
+       (exact->inexact (expt 8/9 342))
+       (lambda (x y) (nearly=? 10e12 x y)))
+
+(test* "expt (ratnum with large denom and numer) with inexact conversion"
+       (expt -8/9 343.0)
+       (exact->inexact (expt -8/9 343))
+       (lambda (x y) (nearly=? 10e12 x y)))
+
 ;;------------------------------------------------------------------
 (test-section "rounding")
 
