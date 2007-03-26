@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: icmp.scm,v 1.6 2007-03-15 22:49:27 shirok Exp $
+;;;  $Id: icmp.scm,v 1.7 2007-03-26 12:17:46 shirok Exp $
 ;;;
 
 
@@ -306,7 +306,7 @@
     (format #t "ICMP packet type=~a(~a)\n"
             type (icmp4-message-type->string type))
     (cond
-     ((= type ICMP4_ECHOREPLY)
+     ((memv type `(,ICMP4_ECHOREPLY ,ICMP4_ECHO))
       (format #t "  ident=~2,'0x seq=~2,'0x\n"
               (icmp-echo-ident buf offset) (icmp-echo-sequence buf offset)))
      ((assv type `((,ICMP4_DEST_UNREACH . ,icmp4-unreach-code->string)
