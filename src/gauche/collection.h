@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: collection.h,v 1.2 2007-03-22 11:20:31 shirok Exp $
+ *  $Id: collection.h,v 1.3 2007-03-26 23:11:47 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -116,19 +116,11 @@ typedef struct ScmDictEntryRec {
 typedef enum {
     SCM_DICT_GET,               /* returns ScmDictEntry* if found,
                                    NULL otherwise. */
-    SCM_DICT_CREATE,            /* if not found, create a newy entry.
+    SCM_DICT_CREATE,            /* if not found, create a new entry.
                                    always return ScmDictEntry*. */
     SCM_DICT_DELETE             /* deletes found entry.  */
 } ScmDictOp;
 
-/*
- * Common error reporting function for fallback value
- */
-
-SCM_EXTERN ScmObj Scm_DictEntryRef(ScmDictEntry *e,
-                                   const char *name,
-                                   ScmObj key,
-                                   ScmObj fallback);
 
 #endif /* GAUCHE_COLLECTION_H */
 

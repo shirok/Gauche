@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.22 2007-02-04 22:26:43 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.23 2007-03-26 23:11:45 shirok Exp $
 
 @iftex
 @finalout
@@ -409,7 +409,7 @@ a new Scheme datatype requires dedicated chapter,
 * Strings::                     
 * Regular expressions::         
 * Vectors::                     
-* Hashtables::                  
+* Dictionaries::                
 * Weak pointers::               
 * Exceptions::                  
 * Calling back to Scheme::      
@@ -2364,7 +2364,7 @@ Adds a single character @var{ch} to the dynamic string.
 @node Regular expressions, Vectors, Strings, C API reference
 @section Regular expressions
 
-@node Vectors, Hashtables, Regular expressions, C API reference
+@node Vectors, Dictionaries, Regular expressions, C API reference
 @section Vectors
 
 @deftypefn {Macro} int SCM_VECTORP (ScmObj @var{obj})
@@ -2436,10 +2436,298 @@ is given by @var{fill}.
 @end deftypefun
 
 
-@node Hashtables, Weak pointers, Vectors, C API reference
-@section Hashtables
+@node Dictionaries, Weak pointers, Vectors, C API reference
+@section Dictionaries
 
-@node Weak pointers, Exceptions, Hashtables, C API reference
+Dictionaries are data structures that maps a key object to
+a value object.  Gauche provides two kinds of dictionaries:
+hash tables and tree maps.
+
+Each kind of dictionary has two layers of API; the 'core'
+API (@code{ScmHashCore}, @code{ScmTreeCore}) works on a
+C structure, and deals with raw C pointers.  On top of core
+API Scheme-level objects (@code{ScmHasTable}, @code{ScmTreeMap})
+are defined.
+
+@menu
+* Common dictionary interface::  
+* Hash tables::                 
+* Tree maps::                   
+@end menu
+
+@node Common dictionary interface, Hash tables, Dictionaries, Dictionaries
+@subsection Common dictionary interface
+
+Dictionary search APIs (hash tables and tree maps) returns
+a @code{ScmDictEntry} structure to indicate key-value pair:
+
+@deftp {Struct} ScmDictEntry
+@example
+typedef struct ScmDictEntryRec @{
+    intptr_t  key;
+    intptr_t  value;
+@} ScmDictEntry;
+@end example
+@end deftp
+
+The returned structure belongs to the dictionary.  Especially
+you shouldn't change the @code{key} member.  A couple of macros
+are provided to abstract access to the entry:
+
+@deftypefn {Macro} intptr_t SCM_DICT_KEY (ScmDictEntry* entry)
+@deftypefnx {Macro} intptr_t SCM_DICT_VALUE (ScmDictEntry* entry)
+Accesses the key and the value fields of @code{ScmDictEntry}, respectively.
+@end deftypefn
+
+The following two macros are useful when you use the dictionary
+to hold @code{ScmObj}.
+
+@deftypefn {Macro} ScmObj SCM_DICT_SET_VALUE (ScmdictEntry* entry, ScmObj value)
+Sets @var{value} to the value field of @var{entry} and returns
+@var{value} itself.
+@end deftypefn
+
+@deftypefn {Macro} ScmObj SCM_DICT_DEFAULT_VALUE (ScmdictEntry* entry, ScmObj value)
+If @var{entry}'s value slot is @code{SCM_UNBOUND}, 
+@var{value} is set to @var{entry}, and returns @var{value}.
+Otherwise, just returns the @var{entry}'s value slot.
+Note that @var{entry} is evaluated twice.
+@end deftypefn
+
+Each dictionary API provides a search function that takes 
+operation (@code{op}) argument, which must be one of the following
+values:
+
+@deftp {Enum} ScmDictOp
+@table @code
+@item SCM_DICT_GET
+The search function returns @code{ScmDictEntry*} if found,
+@code{NULL} otherwise.
+@item SCM_DICT_CREATE
+The search function creates a new entry if the given entry
+is not found.  Always returns @code{ScmDictEntry*}.
+@item SCM_DICT_DELETE
+The search function deletes a found entry from the dictionary.  
+Returns @code{NULL} if no entry is found. 
+Otherwise returns @code{ScmDictEntry*}
+which is just deleted from the dictionary.
+@end table
+@end deftp
+
+@node Hash tables, Tree maps, Common dictionary interface, Dictionaries
+@subsection Hash tables
+
+
+
+@node Tree maps,  , Hash tables, Dictionaries
+@subsection Tree maps
+
+A tree map uses balanced binary tree to store the key-value pair.  
+Entry retrieval and modification is O(log(n)).
+
+@subsubheading Low-level API
+
+@deftp {Struct} ScmTreeCore
+A C struct to hold a treep map.  This structure is not an @code{ScmObj},
+and supposed to be used embedded in other structures.
+@end deftp
+
+@deftp {Function Prototype} ScmTreeCompareProc
+@example
+typedef int ScmTreeCoreCompareProc(ScmTreeCore* tc, intptr_t k1, intptr_t k2);
+@end example
+Called when the tree map routine need to compare keys, @var{k1}
+and @var{k2}.  The function must return @code{-1} if @var{k1}
+is before @var{k2}, @code{0} if @var{k1} and @var{k2} is the same,
+and @var{1} if @var{k1} is after @var{k2}.
+@end deftp
+
+@deftypefun void Scm_TreeCoreInit (ScmTreeCore *tc, ScmTreeCoreCompareProc *cmp, void *data)
+Initializes @code{ScmTreeCore} structure @var{tc}, using @var{cmp}
+as the compare procedure.  Whatever information @var{tc} has been
+carrying will be lost.
+@end deftypefun
+
+@deftypefun void Scm_CopyTreeCore (ScmTreeCore *dst, const ScmTreeCore *src)
+Copies the content of @var{src} into @var{dst}.  Whatever information
+in @var{dst} will be lost.
+@end deftypefun
+
+@deftypefun {ScmDictEntry *} Scm_TreeCoreSearch (ScmTreeCore *tc, intptr_t key, ScmDictOp op)
+Searches an entry with the given @var{key}, and perform the operation
+specified by @var{op}, which must be either @code{SCM_DICT_GET},
+@code{SCM_DICT_CREATE}, or @code{SCM_DICT_DELETE}.
+
+Returns a pointer to the found, created or deleted entry.  For
+get and delete operation it may return @code{NULL} if there's no
+entry found for @var{key}.
+@end deftypefun
+
+@deftypefun {ScmDictEntry *} Scm_TreeCoreClosestEntries (ScmTreeCore *tc, intptr_t key, ScmDictEntry **lo, ScmDictEntry **hi)
+Searches an entry with the given @var{key} and returns an exact match,
+or @code{NULL} if there's no exact match.  Besides that, it stores
+the pointers of entries closest to the given key, from below the key
+and above the key, in the location pointed by @var{lo} and @var{hi}, 
+respectively.  If the tree core has exact match, @var{*lo} and @var{*hi}
+will have a pointer exactly the same as the one returned from the
+procedure.  If the tree core doesn't have exact match, the given key is
+between the keys of two entries pointed by @var{*lo} and @var{*hi}.
+
+As a boundary case, if the given key is smaller than the smallest 
+key in @var{tc}, @var{*lo} is @code{NULL}; if the given key is greater
+than the greatest, @var{*hi} is @code{NULL}; and if @var{tc} is empty,
+both @var{*lo} and @var{*hi} is @code{NULL}.
+@end deftypefun
+
+@deftp {Enum} ScmTreeCoreBoundOp
+Specify which side you're operating of the call to
+@code{ScmTreeCoreGetBound} and @code{ScmTreeCorePopBound}.
+
+@table @code
+@item SCM_TREE_CORE_MIN
+Operate on the entry of the minimum (smallest) key.
+@item SCM_TREE_CORE_MAX
+Operate on the entry of the maximum (greatest) key.
+@end table
+@end deftp
+
+@deftypefun {ScmDictEntry *} Scm_TreeCoreGetBound (ScmTreeCore *tc, ScmTreeCoreBoundOp op)
+Returns the entry in @var{tc} with the minimum or maximum key, as
+specified by @var{op} argument.  May return @code{NULL} if @var{tc}
+is empty.
+@end deftypefun
+
+@deftypefun {ScmDictEntry *} Scm_TreeCorePopBound (ScmTreeCore *tc, ScmTreeCoreBoundOp op)
+Finds the entry in @var{tc} with the minimum or maximum key, as
+specified by @var{op} argument, and removes the entry from @var{tc},
+then returns the entry.  If @var{tc} is empty, no operation is 
+performed and @code{NULL} is returned.
+@end deftypefun
+
+@deftypefun int Scm_TreeCoreNumEntries (ScmTreeCore *tc)
+Returns the number of entries in @var{tc}.
+@end deftypefun
+
+@subsubheading Scheme TreeMap object
+
+@deftp {ScmObj} ScmTreeMap
+This is the Scheme's @code{<tree-map>} object.  It contains
+@code{ScmTreeCore}, whose pointer can be obtained
+by the macro @code{SCM_TREE_MAP_CORE}.
+@end deftp
+
+@deftypefn {Macro} {ScmTreeMap *} SCM_TREE_MAP (ScmObj obj)
+Cast macro.
+@end deftypefn
+
+@deftypefn {Macro} int SCM_TREE_MAP_P (ScmObj obj)
+Type predicate.
+@end deftypefn
+
+@deftypefn {Macro} {ScmTreeCore *} SCM_TREE_MAP_CORE (ScmTreeMap *obj)
+Returns the pointer to the @code{ScmTreeCore} part in a tree map.
+@end deftypefn
+
+@deftypefn {Macro} {void *} SCM_TREE_MAP_DATA (ScmTreeMap *obj)
+Returns the opaque data in a tree map.
+@end deftypefn
+
+@deftypefun ScmObj Scm_MakeTreeMap (ScmTreeCoreCompareProc *cmp, void *data)
+Creates an instance of @code{<tree-map>} object, using the given
+comparison function and the opaque data.  Although it is built on
+top of @code{ScmTreeCore}, it is supposed that @code{ScmTreeMap}'s
+entry always have @code{ScmObj} in both key and value.  If C code
+violates that, the outcome will be undefined.
+
+(If you need to have a tree map with raw C pointers exposed to Scheme
+world, create your own type using @code{ScmTreeCore}.)
+@end deftypefun
+
+@deftypefun ScmObj Scm_CopyTreeMap (const ScmTreeMap *src)
+Returns a newly created tree map, whose content is a copy
+of the given tree map.
+@end deftypefun
+
+@deftypefun {ScmDictEntry *} Scm_TreeMapSearch (ScmTreeMap *tm, ScmObj key, ScmDictOp op)
+Searches an entry with the given @var{key}, and perform the operation
+specified by @var{op}, which must be either @code{SCM_DICT_GET},
+@code{SCM_DICT_CREATE}, or @code{SCM_DICT_DELETE}.
+
+Returns a pointer to the found, created or deleted entry.  For
+get and delete operation it may return @code{NULL} if there's no
+entry found for @var{key}.
+
+It's basically a wrapper of @code{Scm_TreeCoreSearch}, except that
+the key must be @code{ScmObj}.
+@end deftypefun
+
+@deftypefun void Scm_TreeMapDump (ScmTreeMap *tm, ScmPort *out)
+This is for debugging.  Dumps the content of tree map with
+its internal structure to the given port @var{out}.
+@end deftypefun
+
+
+@subsubheading Iterators
+
+@deftp {Struct} ScmTreeIter
+An iterator over a tree map.  This is not an @code{ScmObj}.
+Must be treated as opaque structure.
+
+An iterator can point to one of the entries in a tree core, 
+or @code{NULL}.  The @code{NULL} indicates the iterator is
+outside of the tree---it's both below the minimum key and above
+the maximum key simulaneously.  That is, when an iterator points
+to @code{NULL}, when you call @code{Scm_TreeIterNext} you'll get
+the minimum key entry, while you call @code{Scm_TreeIterPrev} and
+you'll get the maximum key entry.
+@end deftp
+
+@deftypefun void Scm_TreeIterInit (ScmTreeIter *iter, ScmTreeCore *tc, ScmDictEntry *start)
+Initializes an iterator @var{iter} over a tree core @var{tc}.
+If @var{start} is NULL, the iterator is set just before the smallest
+entry in @var{tc} (i.e. the next call to @var{Scm_TreeCoreNext} will
+return the smallest entry); otherwise, the iterator points the given entry
+(i.e. the next call to @var{Scm_TreeCoreNext} will return the next
+entry of @var{start}).
+In the latter case, @var{start} must points to an entry in @var{tc},
+otherwise an error is signalled.
+@end deftypefun
+
+@deftypefun {ScmDictEntry *} Scm_TreeIterCurrent (ScmTreeIter *iter)
+Returns the entry the iterator currently pointing.  Can be @code{NULL}.
+@end deftypefun
+
+@deftypefun int Scm_TreeIterAtEnd (ScmTreeIter *iter)
+Returns @code{TRUE} iff the iterator has been pointing inside the tree
+and now pointing @code{NULL} after calling either @code{ScmTreeIterNext}
+or @code{ScmTreeIterPrev}.
+
+If you call @code{ScmTreeIterNext} on an iterator that is "at end",
+it starts from the minimum key entry; likewise, @code{ScmTreeIterPrev}
+makes it starts from the maximum key entry.  In either case, "at end"
+flag is cleared.
+@end deftypefun
+
+@deftypefun {ScmDictEntry *} Scm_TreeIterNext (ScmTreeIter *iter)
+@deftypefunx {ScmDictEntry *} Scm_TreeIterPrev (ScmTreeIter *iter)
+Moves the iterator to the next or prevoius entry and returns it,
+respectively.
+If the iterator was pointing the maximum (minimum) key entry
+before calling @code{Scm_TreeIterNext} (@code{Scm_TreeIterPrev}),
+@code{NULL} is returned and the iterator becomes "at end" state
+(i.e. @code{Scm_TreeIterAtEnd} returns @code{TRUE}).
+@end deftypefun
+
+
+
+
+
+
+
+
+
+
+@node Weak pointers, Exceptions, Dictionaries, C API reference
 @section Weak pointers
 
 @node Exceptions, Calling back to Scheme, Weak pointers, C API reference

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: treemap.h,v 1.2 2007-03-22 11:20:36 shirok Exp $
+ *  $Id: treemap.h,v 1.3 2007-03-26 23:11:47 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -60,11 +60,13 @@ struct ScmTreeCoreRec {
     void  *data;
 };
 
-typedef struct ScmTreeCoreIterRec {
+#define SCM_TREE_CORE_DATA(core)  ((core)->data)
+
+typedef struct ScmTreeIterRec {
     ScmTreeCore  *t;
     ScmDictEntry *e;
     int at_end;
-} ScmTreeCoreIter;
+} ScmTreeIter;
 
 /*
  * Initializers
@@ -102,11 +104,13 @@ SCM_EXTERN int           Scm_TreeCoreNumEntries(ScmTreeCore *tc);
 /*
  * Iterators
  */
-SCM_EXTERN void          Scm_TreeCoreIterInit(ScmTreeCoreIter *iter,
-                                              ScmTreeCore *tc,
-                                              ScmDictEntry *start);
-SCM_EXTERN ScmDictEntry *Scm_TreeCoreIterNext(ScmTreeCoreIter *iter);
-SCM_EXTERN ScmDictEntry *Scm_TreeCoreIterPrev(ScmTreeCoreIter *iter);
+SCM_EXTERN void          Scm_TreeIterInit(ScmTreeIter *iter,
+                                          ScmTreeCore *tc,
+                                          ScmDictEntry *start);
+SCM_EXTERN ScmDictEntry *Scm_TreeIterNext(ScmTreeIter *iter);
+SCM_EXTERN ScmDictEntry *Scm_TreeIterPrev(ScmTreeIter *iter);
+SCM_EXTERN ScmDictEntry *Scm_TreeIterCurrent(ScmTreeIter *iter);
+SCM_EXTERN int           Scm_TreeIterAtEnd(ScmTreeIter *iter);
 
 /* for debug */
 SCM_EXTERN void          Scm_TreeCoreCheckConsistency(ScmTreeCore *tc);

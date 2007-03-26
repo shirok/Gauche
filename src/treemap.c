@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: treemap.c,v 1.3 2007-03-02 07:39:14 shirok Exp $
+ *  $Id: treemap.c,v 1.4 2007-03-26 23:11:46 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -160,22 +160,22 @@ int Scm_TreeCoreNumEntries(ScmTreeCore *tc)
     return tc->num_entries;
 }
 
-/* START can be NULL; in which case, if next call is TreeCoreIterNext,
-   it iterates from the minimum node; if next call is TreeCoreIterPrev,
+/* START can be NULL; in which case, if next call is TreeIterNext,
+   it iterates from the minimum node; if next call is TreeIterPrev,
    it iterates from the maximum node. */
-void Scm_TreeCoreIterInit(ScmTreeCoreIter *iter,
-                          ScmTreeCore *tc,
-                          ScmDictEntry *start)
+void Scm_TreeIterInit(ScmTreeIter *iter,
+                      ScmTreeCore *tc,
+                      ScmDictEntry *start)
 {
     if (start && Scm_TreeCoreSearch(tc, start->key, SCM_DICT_GET) != start) {
-        Scm_Error("Scm_TreeCoreIterInit: iteration start point is not a part of the tree.");
+        Scm_Error("Scm_TreeIterInit: iteration start point is not a part of the tree.");
     }
     iter->t = tc;
     iter->e = start;
     iter->at_end = FALSE;
 }
 
-ScmDictEntry *Scm_TreeCoreIterNext(ScmTreeCoreIter *iter)
+ScmDictEntry *Scm_TreeIterNext(ScmTreeIter *iter)
 {
     if (iter->at_end) return NULL;
     if (iter->e) {
@@ -187,7 +187,7 @@ ScmDictEntry *Scm_TreeCoreIterNext(ScmTreeCoreIter *iter)
     return iter->e;
 }
 
-ScmDictEntry *Scm_TreeCoreIterPrev(ScmTreeCoreIter *iter)
+ScmDictEntry *Scm_TreeIterPrev(ScmTreeIter *iter)
 {
     if (iter->at_end) return NULL;
     if (iter->e) {
@@ -197,6 +197,16 @@ ScmDictEntry *Scm_TreeCoreIterPrev(ScmTreeCoreIter *iter)
     }
     if (iter->e == NULL) iter->at_end = TRUE;
     return iter->e;
+}
+
+ScmDictEntry *Scm_TreeIterCurrent(ScmTreeIter *iter)
+{
+    return iter->e;
+}
+
+int Scm_TreeIterAtEnd(ScmTreeIter *iter)
+{
+    return iter->at_end;
 }
 
 /* consistency check */

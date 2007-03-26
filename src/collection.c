@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: collection.c,v 1.2 2007-03-02 07:39:13 shirok Exp $
+ *  $Id: collection.c,v 1.3 2007-03-26 23:11:46 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -61,23 +61,6 @@ ScmClass *Scm__SequenceCPL[] = {
     SCM_CLASS_STATIC_PTR(Scm_TopClass),
     NULL
 };
-
-/*
- * Utilities
- */
-
-ScmObj Scm_DictEntryRef(ScmDictEntry *e, const char *name, 
-                        ScmObj key, ScmObj fallback)
-{
-    if (!e) {
-        if (SCM_UNBOUNDP(fallback)) {
-            Scm_Error("%s doesn't have an entry for key: %S", name, key);
-        }
-        return fallback;
-    } else {
-        return SCM_DICT_VALUE(e);
-    }
-}
 
 /*
  * Initialization
