@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.268 2007-03-13 10:41:26 shirok Exp $
+ *  $Id: vm.c,v 1.269 2007-03-27 09:18:30 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -1871,7 +1871,7 @@ static void run_loop()
                     while (--nargs > 0) {
                         POP_ARG(arg);
                         if (Scm_Length(arg) < 0)
-                            VM_ERR(("list required, but got %S\n", arg));
+                            VM_ERR(("list required, but got %S", arg));
                         cp = Scm_Append2(arg, cp);
                     }
                 }
@@ -1881,32 +1881,30 @@ static void run_loop()
             CASE(SCM_VM_VEC_LEN) {
                 int siz;
                 if (!SCM_VECTORP(VAL0))
-                    VM_ERR(("vector expected, but got %S\n", VAL0));
+                    VM_ERR(("vector expected, but got %S", VAL0));
                 siz = SCM_VECTOR_SIZE(VAL0);
                 VAL0 = SCM_MAKE_INT(siz);
                 NEXT1;
             }
             CASE(SCM_VM_VEC_REF) {
                 ScmObj vec;
-                int k;
                 POP_ARG(vec);
                 if (!SCM_VECTORP(vec))
-                    VM_ERR(("vector expected, but got %S\n", vec));
-                if (!SCM_INTP(VAL0))
-                    VM_ERR(("integer expected, but got %S\n", VAL0));
-                k = SCM_INT_VALUE(VAL0);
-                if (k < 0 || k >= SCM_VECTOR_SIZE(vec))
-                    VM_ERR(("index out of range: %d\n", k));
-                VAL0 = SCM_VECTOR_ELEMENT(vec, k);
+                    VM_ERR(("vector expected, but got %S", vec));
+                if (!SCM_EXACTP(VAL0))
+                    VM_ERR(("exact integer expected, but got %S", VAL0));
+                if (SCM_BIGNUMP(VAL0) || SCM_INT_VALUE(VAL0) < 0 || SCM_INT_VALUE(VAL0) >= SCM_VECTOR_SIZE(vec))
+                    VM_ERR(("vector-ref index out of range: %S", VAL0));
+                VAL0 = SCM_VECTOR_ELEMENT(vec, SCM_INT_VALUE(VAL0));
                 NEXT1;
             }
             CASE(SCM_VM_VEC_REFI) {
                 ScmObj vec = VAL0;
                 int k = SCM_VM_INSN_ARG(code);
                 if (!SCM_VECTORP(vec))
-                    VM_ERR(("vector expected, but got %S\n", vec));
+                    VM_ERR(("vector expected, but got %S", vec));
                 if (k < 0 || k >= SCM_VECTOR_SIZE(vec))
-                    VM_ERR(("index out of range: %d\n", k));
+                    VM_ERR(("vector-ref index out of range: %d", k));
                 VAL0 = SCM_VECTOR_ELEMENT(vec, k);
                 NEXT1;
             }
@@ -1916,12 +1914,12 @@ static void run_loop()
                 POP_ARG(ind);
                 POP_ARG(vec);
                 if (!SCM_VECTORP(vec))
-                    VM_ERR(("vector expected, but got %S\n", vec));
+                    VM_ERR(("vector expected, but got %S", vec));
                 if (!SCM_INTP(ind))
-                    VM_ERR(("integer expected, but got %S\n", ind));
+                    VM_ERR(("fixnum expected, but got %S", ind));
                 k = SCM_INT_VALUE(ind);
                 if (k < 0 || k >= SCM_VECTOR_SIZE(vec))
-                    VM_ERR(("index out of range: %d\n", k));
+                    VM_ERR(("vector-set! index out of range: %d", k));
                 SCM_VECTOR_ELEMENT(vec, k) = VAL0;
                 VAL0 = SCM_UNDEFINED;
                 NEXT1;
@@ -1931,9 +1929,9 @@ static void run_loop()
                 int k = SCM_VM_INSN_ARG(code);
                 POP_ARG(vec);
                 if (!SCM_VECTORP(vec))
-                    VM_ERR(("vector expected, but got %S\n", vec));
+                    VM_ERR(("vector expected, but got %S", vec));
                 if (k < 0 || k >= SCM_VECTOR_SIZE(vec))
-                    VM_ERR(("index out of range: %d\n", k));
+                    VM_ERR(("vector-set! index out of range: %d", k));
                 SCM_VECTOR_ELEMENT(vec, k) = VAL0;
                 VAL0 = SCM_UNDEFINED;
                 NEXT1;

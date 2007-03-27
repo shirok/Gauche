@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vector.c,v 1.26 2007-03-02 07:39:14 shirok Exp $
+ *  $Id: vector.c,v 1.27 2007-03-27 09:18:30 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -113,23 +113,20 @@ ScmObj Scm_VectorToList(ScmVector *v, int start, int end)
  * Accessors
  */
 
+/* NB: we're permissive about the out-of-range index here; the strict
+   check (for Scheme routines) should be done in the stub file, since
+   Scheme version may receive bignum, which can't be passed to C API. */
+
 ScmObj Scm_VectorRef(ScmVector *vec, int i, ScmObj fallback)
 {
-    if (i < 0 || i >= vec->size) {
-        if (SCM_UNBOUNDP(fallback)) {
-            Scm_Error("argument out of range: %d", i);
-        } else {
-            return fallback;
-        }
-    }
+    if (i < 0 || i >= vec->size) return fallback;
     return vec->elements[i];
 }
 
 ScmObj Scm_VectorSet(ScmVector *vec, int i, ScmObj obj)
 {
-    if (i < 0 || i >= vec->size)
-        Scm_Error("argument out of range: %d", i);
-    return (vec->elements[i] = obj);
+    if (i >= 0 && i < vec->size) vec->elements[i] = obj;
+    return obj;
 }
 
 ScmObj Scm_VectorFill(ScmVector *vec, ScmObj fill, int start, int end)

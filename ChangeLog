@@ -1,5 +1,16 @@
 2007-03-26  Shiro Kawai  <shiro@acm.org>
 
+	* src/stdlib.stub (vector-ref, vector-set!),
+	  src/vector.c (Scm_VectorRef, Scm_VectorSet): we can't use ::<fixnum>
+	  type for the index of vector-ref, since bignum is allowed if
+	  fallback is also given.  Because of this, we moved range check
+	  to stub, and made Scm_VectorRef not raise an error.  Similar change
+	  on vector-set! for consistency.
+
+	* src/vm.c (SCM_VEC_REF etc): fix error message.  if bignum is given
+	  as an index, the message should be "out of bound" instead of
+	  wrong type argument.
+
 	* src/number.c (Scm_GetDouble): handles the corner case when ratnum
 	  has very large denominator and/or numerator.
 

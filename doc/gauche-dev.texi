@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.23 2007-03-26 23:11:45 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.24 2007-03-27 09:18:30 shirok Exp $
 
 @iftex
 @finalout
@@ -2406,15 +2406,18 @@ Creates a list from @var{start}-th element (inculsive) to
 @end deftypefun
 
 @deftypefun ScmObj Scm_VectorRef (ScmVector *@var{vec}, int @var{k}, ScmObj @var{fallback})
-Scheme's @code{vector-ref}.
-@var{Fallback} is used when @var{k} is out of bound:
-If it is @code{SCM_UNBOUND}, an error is signalled.
-Otherwise, its value is returned.
+Returns @var{k}-th element of the vector.  If @var{k} is
+out of range, the value passed to @var{fallback} is returned.
+Note that this routine will never raise an error; argument check
+of Scheme's @code{vector-ref} is done in the bridge stub.
 @end deftypefun
 
 @deftypefun ScmObj Scm_VectorSet (ScmVector *@var{vec}, int @var{k}, ScmObj @var{obj})
 Sets @var{k}-th element of a vector @var{vec} by @var{obj}.
-An error is signalled if @var{k} is out of bound.
+Always return @var{obj}.
+If @var{k} is out of range, no operation is performed (no error
+is signalled).  The boundary check for Scheme's @code{vector-set!}
+is done in the bridge stub.
 @end deftypefun
 
 
