@@ -61,7 +61,7 @@
         (lambda ()
           (sys-putenv "ZZGGGBBB" "foo")  ;;old API
           (sys-getenv "ZZGGGBBB"))))
- (else #f))
+ (else))
 
 ;; setenv
 
@@ -70,8 +70,12 @@
   (test "sys-setenv" "foo"
         (lambda ()
           (sys-setenv "ZZGGGBBB" "foo" #t)
+          (sys-getenv "ZZGGGBBB")))
+  (test "sys-setenv" "foo"
+        (lambda ()
+          (sys-setenv "ZZGGGBBB" "bar" #f)
           (sys-getenv "ZZGGGBBB"))))
- (else #f))
+ (else))
 
 ;; unsetenv
 
@@ -82,6 +86,6 @@
           (sys-setenv "ZZGGGBBB" "foo" #t)
           (sys-unsetenv "ZZGGGBBB")
           (sys-getenv "ZZGGGBBB"))))
- (else #f))
+ (else))
 
 (test-end)

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: auxsys.scm,v 1.18 2007-03-28 09:32:33 shirok Exp $
+;;;  $Id: auxsys.scm,v 1.19 2007-03-28 22:29:56 shirok Exp $
 ;;;
 
 (define-module gauche.auxsys
@@ -54,7 +54,7 @@
 (cond-expand
  ((not gauche.sys.reaplath)
   (define sys-realpath #f))             ; make autoload happy
- (else #f))
+ (else))
 
 (define sys-gethostname
   (if (global-variable-bound? 'gauche.auxsys '%sys-gethostname)
@@ -72,37 +72,34 @@
 ;; These are better to be in src/scmlib.scm, but right now we don't have
 ;; a nice way to make cond-expand work (when compiling src/scmlib.scm
 ;; cond-expand uses the host gosh's feature set, not the target gosh's.)
-(define sys-fdset
-  (cond-expand
-   (gauche.sys.select (lambda pfs (list->sys-fdset pfs)))
-   (else #f)))
-
-(define sys-fdset->list
-  (cond-expand
-   (gauche.sys.select
-    (lambda (fdset)
-      (check-arg (cut is-a? <> <sys-fdset>) fdset)
-      (do ((i (sys-fdset-max-fd fdset) (- i 1))
-           (fds '() (if (sys-fdset-ref fdset i) (cons i fds) fds)))
-          ((< i 0) fds)
-        #f)))
-   (else #f)))
-
-(define list->sys-fdset
-  (cond-expand
-   (gauche.sys.select
-    (lambda (pfs)
-      (let1 fdset (make <sys-fdset>)
-        (dolist (pf pfs)
-          (cond ((or (integer? pf) (port? pf))
-                 (sys-fdset-set! fdset pf #t))
-                ((is-a? pf <sys-fdset>)
-                 (dotimes (i (+ (sys-fdset-max-fd pf) 1))
-                   (when (sys-fdset-ref pf i)
-                     (sys-fdset-set! fdset i #t))))
-                (else (error "sys-fdset requires a port, an integer, or a <sys-fdset> object, but got:" pf))))
-        fdset)))
-   (else #f)))
+(cond-expand
+ (gauche.sys.select
+  (define (sys-fdset . pfs)
+    (list->sys-fdset pfs))
+  (define (sys-fdset->list fdset)
+    (check-arg (cut is-a? <> <sys-fdset>) fdset)
+    (do ((i (sys-fdset-max-fd fdset) (- i 1))
+         (fds '() (if (sys-fdset-ref fdset i) (cons i fds) fds)))
+        ((< i 0) fds)
+      #f))
+  (define (list->sys-fdset pfs)
+    (let1 fdset (make <sys-fdset>)
+      (dolist (pf pfs)
+        (cond ((or (integer? pf) (port? pf))
+               (sys-fdset-set! fdset pf #t))
+              ((is-a? pf <sys-fdset>)
+               (dotimes (i (+ (sys-fdset-max-fd pf) 1))
+                 (when (sys-fdset-ref pf i)
+                   (sys-fdset-set! fdset i #t))))
+              (else (error "sys-fdset requires a port, an integer, or a <sys-fdset> object, but got:" pf))))
+      fdset))    
+  )
+ (else
+  ;; make autoload happy
+  (define sys-fdset #f)
+  (define sys-fdset->list #f)
+  (define list->sys-fdset #f)
+  ))
 
 ;; We support sys-setenv natively if the system has either
 ;; setenv(3) or putenv(3).  The feature symbol is gauche.sys.setenv.
@@ -130,7 +127,7 @@
 (cond-expand
  ((not gauche.sys.unsetenv) 
   (define sys-unsetenv #f))             ; make autoload happy
- (else #f))
+ (else))
 
 (define sys-setpgrp
   (if (global-variable-bound? 'gauche.auxsys '%sys-setpgrp)
@@ -140,16 +137,16 @@
 (cond-expand
  ((not gauche.sys.getpgid)
   (define sys-getpgid #f))              ;make autoload happy
- (else #f))
+ (else))
 
 (cond-expand
  ((not gauche.sys.lchown)
   (define sys-lchown #f))                ;make autoload happy
- (else #f))
+ (else))
 
 (cond-expand
  ((not gauche.sys.getloadavg)
   (define sys-getloadavg #f))           ;make autoload happy
- (else #f))
+ (else))
 
 (provide "gauche/auxsys")
