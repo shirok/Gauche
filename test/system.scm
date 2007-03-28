@@ -366,6 +366,11 @@
 ;;-------------------------------------------------------------------
 (test-section "fork&exec")
 
+(define (nap)
+  (cond-expand
+   (gauche.sys.nanosleep (sys-nanosleep 200000000))  ;0.2s
+   (else (sys-sleep 1))))
+
 (unless *win32*  ;; win32 doesn't support fork at all.
 
 (test* "fork & wait" #t
@@ -400,7 +405,7 @@
 (test* "fork, wait, kill & sleep" #t
        (let1 pid (sys-fork)
          (if (= pid 0)
-             (begin (sys-sleep 1) (sys-exit 0))
+             (begin (nap) (sys-exit 0))
              (begin 
                (sys-kill pid |SIGSTOP|) 
                (receive (rpid code) (sys-waitpid pid :untraced #t)
@@ -601,7 +606,7 @@
              (sigchld #f))
          (if (= pid 0)
              (let ((parent (sys-getppid)))
-               (sys-sleep 1)
+               (nap)
                (sys-kill parent SIGINT)
                (sys-exit 0))
              (with-signal-handlers
@@ -639,12 +644,12 @@
               (if (= pid 0)
                   (begin
                     (sys-kill (sys-getppid) SIGINT)
-                    (sys-sleep 1) ;; solaris seems to lose SIGHUP without this
+                    (nap) ;; solaris seems to lose SIGHUP without this
                     (sys-kill (sys-getppid) SIGHUP)
                     (sys-exit 0))
                   (begin
                     (let loop ()
-                      (sys-sleep 1)
+                      (nap)
                       (unless sig (loop)))
                     (set-signal-handler! SIGINT #f)
                     (sys-sigmask SIG_UNBLOCK mask1)

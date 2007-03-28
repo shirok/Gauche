@@ -1,5 +1,8 @@
 2007-03-27  Shiro Kawai  <shiro@acm.org>
 
+	* test/system.scm: use sys-nanosleep instead of sys-sleep if
+	  possible, to reduce the time of test.
+
 	* ext/auxsys/auxsys.c (Scm_SetEnv): added a wrapper routine for
 	  sys-putenv and sys-setenv, so that we can use whichever available
 	  on the system.  Importantly, this will fix the leak problem of
