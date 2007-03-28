@@ -10,13 +10,10 @@
              ;; A bunch of variables are defined conditionally depending
              ;; on the platform support.  So we exclude them from 
              ;; undefined variable reference check.
-             :allow-undefined '(%sys-realpath %sys-getloadavg sys-mkfifo
-                                sys-setgid sys-setpgid %sys-getpgid
+             :allow-undefined '(sys-mkfifo sys-setgid sys-setpgid
                                 sys-getpgrp sys-setsid sys-setuid
                                 sys-getgroups sys-uname %sys-gethostname
-                                %sys-getdomainname %sys-putenv %sys-setenv
-                                %sys-unsetenv sys-ctermid sys-chown
-                                %sys-lchown))
+                                %sys-getdomainname sys-ctermid sys-chown))
 
 
 ;; It is difficult to test some functions in gauche.auxsys
@@ -55,10 +52,14 @@
 ;; putenv
 
 (cond-expand
- (gauche.sys.putenv
+ (gauche.sys.setenv
   (test "sys-putenv" "foo"
         (lambda ()
-          (sys-putenv "ZZGGGBBB" "foo")
+          (sys-putenv "ZZGGGBBB=foo")
+          (sys-getenv "ZZGGGBBB")))
+  (test "sys-putenv" "foo"
+        (lambda ()
+          (sys-putenv "ZZGGGBBB" "foo")  ;;old API
           (sys-getenv "ZZGGGBBB"))))
  (else #f))
 

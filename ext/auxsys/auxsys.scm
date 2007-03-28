@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: auxsys.scm,v 1.17 2007-03-10 08:27:55 shirok Exp $
+;;;  $Id: auxsys.scm,v 1.18 2007-03-28 09:32:33 shirok Exp $
 ;;;
 
 (define-module gauche.auxsys
@@ -51,10 +51,10 @@
 
 ;; define alternatives if the platform doesn't support...
 
-(define sys-realpath
-  (cond-expand
-   (gauche.sys.reaplath %sys-realpath)
-   (else #f)))
+(cond-expand
+ ((not gauche.sys.reaplath)
+  (define sys-realpath #f))             ; make autoload happy
+ (else #f))
 
 (define sys-gethostname
   (if (global-variable-bound? 'gauche.auxsys '%sys-gethostname)
@@ -104,42 +104,52 @@
         fdset)))
    (else #f)))
 
-(define sys-putenv
-  (cond-expand
-   (gauche.sys.putenv %sys-putenv)
-   (else #f)))
+;; We support sys-setenv natively if the system has either
+;; setenv(3) or putenv(3).  The feature symbol is gauche.sys.setenv.
 
-(define sys-setenv
-  (cond-expand
-   (gauche.sys.setenv %sys-setenv)
-   (else #f)))
+(cond-expand
+ (gauche.sys.setenv
+  ;; We emulate putenv.  Somehow the old API was (sys-putenv name value),
+  ;; which we support for backward compatibility.
+  (define (sys-putenv name=value . other)
+    (cond
+     ((null? other)
+      (check-arg string? name=value)
+      (receive (name value) (string-scan name=value #\= 'both)
+        (unless name
+          (error "sys-putenv: argument doesn't contain '=':" name=value))
+        (sys-setenv name value #t)))
+     (else
+      (sys-setenv name=value (car other) #t))))
+  )
+ (else
+  ;; make autoload happy
+  (define sys-putenv #t)
+  (define sys-setenv #t)))
 
-(define sys-unsetenv
-  (cond-expand
-   (gauche.sys.unsetenv %sys-unsetenv)
-   (else #f)))
+(cond-expand
+ ((not gauche.sys.unsetenv) 
+  (define sys-unsetenv #f))             ; make autoload happy
+ (else #f))
 
 (define sys-setpgrp
   (if (global-variable-bound? 'gauche.auxsys '%sys-setpgrp)
     %sys-setpgrp
     (lambda () (sys-setpgid 0 0))))
 
-(define sys-getpgid
-  (if (global-variable-bound? 'gauche.auxsys '%sys-getpgid)
-    %sys-getpgid
-    (lambda (pid)
-      (if (zero? pid)
-        (sys-getpgrp)
-        (error "sys-getpgid for arbitrary process id is not supported on this platform")))))
+(cond-expand
+ ((not gauche.sys.getpgid)
+  (define sys-getpgid #f))              ;make autoload happy
+ (else #f))
 
-(define sys-lchown
-  (cond-expand
-   (gauche.sys.lchown %sys-lchown)
-   (else #f)))
+(cond-expand
+ ((not gauche.sys.lchown)
+  (define sys-lchown #f))                ;make autoload happy
+ (else #f))
 
-(define sys-getloadavg
-  (cond-expand
-   (gauche.sys.getloadavg %sys-getloadavg)
-   (else #f)))
+(cond-expand
+ ((not gauche.sys.getloadavg)
+  (define sys-getloadavg #f))           ;make autoload happy
+ (else #f))
 
 (provide "gauche/auxsys")

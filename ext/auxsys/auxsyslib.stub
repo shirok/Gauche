@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: auxsyslib.stub,v 1.31 2007-03-22 11:20:13 shirok Exp $
+;;; $Id: auxsyslib.stub,v 1.32 2007-03-28 09:32:34 shirok Exp $
 ;;;
 
 "
@@ -67,13 +67,15 @@
 #else  /*__MINGW32__ */
 #undef _SC_CLK_TCK  /* avoid undefined reference to sysconf */
 #endif /*__MINGW32__ */
+
+extern void Scm_SetEnv(const char *name, const char *value, int overwrite);
 "
 
 ;; stdlib.h
 (define-cproc sys-abort ()  (call <void> "abort"))
 
 (when "defined HAVE_REALPATH"
-  (define-cproc %sys-realpath (path::<const-cstring>)
+  (define-cproc sys-realpath (path::<const-cstring>)
     (body <const-cstring>
           "#define REALPATH_PATH_MAX 1024  /* TODO: needs to be configured */"
           "char buf[REALPATH_PATH_MAX];"
@@ -102,7 +104,7 @@
 
 ;; sys/loadavg.h
 (when "defined HAVE_GETLOADAVG"
-  (define-cproc %sys-getloadavg (&optional (nsamples::<int> 3))
+  (define-cproc sys-getloadavg (&optional (nsamples::<int> 3))
     "#define MAX_LOAD_SAMPLES  3
      double samples[MAX_LOAD_SAMPLES];
      int count, i;
@@ -165,12 +167,13 @@
 ;      if (r < 0) Scm_SysError(\"setpgrp failed\");
 ;      SCM_RETURN(Scm_MakeInteger(r));"))
 
-(if "defined HAVE_GETPGID"
-(define-cproc %sys-getpgid (pid::<int>)
-  (body <int>
-        "SCM_SYSCALL(SCM_RESULT, (int)getpgid(pid));"
-        "if (SCM_RESULT < 0) Scm_SysError(\"getpgid failed\");"))
-)
+(when "defined HAVE_GETPGID"
+  (define-cproc sys-getpgid (pid::<int>)
+    (body <int>
+          "SCM_SYSCALL(SCM_RESULT, (int)getpgid(pid));"
+          "if (SCM_RESULT < 0) Scm_SysError(\"getpgid failed\");"))
+  (initcode "Scm_AddFeature(\"gauche.sys.getpgid\", NULL);")
+  )
 
 (define-cproc sys-getpgrp ()
   (body <int>
@@ -277,38 +280,16 @@
           "SCM_RESULT = buf;"))
 )
 
-;; putenv
-;;  Assume name and value doesn't contain NUL character.
-;;  We need to call system malloc to prevent the passed string from
-;;  being GCed.  That memory might be leaked when putenv is called
-;;  again for the same variable, but it's the same case as in C programs.
-(when "defined HAVE_PUTENV"
-  (define-cproc %sys-putenv (name::<string> value::<string>)
-    (body <void>
-          "char *buf;"
-          "u_int namelen, valuelen, len;"
-          "const char *cname = Scm_GetStringContent(name, &namelen, NULL, NULL);"
-          "const char *cvalue = Scm_GetStringContent(value, &valuelen, NULL, NULL);"
-          "len = namelen + valuelen + 2;"
-          "buf = (char*)malloc(len);"
-          "memcpy(buf, cname, namelen);"
-          "buf[namelen] = '=';"
-          "memcpy(buf+namelen+1, cvalue, valuelen);"
-          "buf[len-1] = '\\0';"
-          "putenv(buf);"))
-  (initcode "Scm_AddFeature(\"gauche.sys.putenv\", NULL);")
-  )
-
-(when "defined HAVE_SETENV"
-  (define-cproc %sys-setenv (name::<const-cstring>
-                             value::<const-cstring>
-                             overwrite::<boolean>)
-    (call <void> "setenv"))
+(when "defined(HAVE_PUTENV) || defined(HAVE_SETENV)"
+  (define-cproc sys-setenv (name::<const-cstring>
+                            value::<const-cstring>
+                            &optional overwrite::<boolean>)
+    (call <void> "Scm_SetEnv"))
   (initcode "Scm_AddFeature(\"gauche.sys.setenv\", NULL);")
   )
 
 (when "defined HAVE_UNSETENV"
-  (define-cproc %sys-unsetenv (name::<const-cstring>)
+  (define-cproc sys-unsetenv (name::<const-cstring>)
     (call <void> "unsetenv"))
   (initcode "Scm_AddFeature(\"gauche.sys.unsetenv\", NULL);")
   )
@@ -330,7 +311,7 @@
 
 ;; lchown
 (when "defined HAVE_LCHOWN"
-  (define-cproc %sys-lchown (path::<const-cstring> owner::<int> group::<int>)
+  (define-cproc sys-lchown (path::<const-cstring> owner::<int> group::<int>)
     (body <int>
           "SCM_SYSCALL(SCM_RESULT, lchown(path, owner, group));"
           "if (SCM_RESULT < 0) Scm_SysError(\"lchown failed on %S\", path);"))

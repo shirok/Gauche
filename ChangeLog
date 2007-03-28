@@ -1,3 +1,11 @@
+2007-03-27  Shiro Kawai  <shiro@acm.org>
+
+	* ext/auxsys/auxsys.c (Scm_SetEnv): added a wrapper routine for
+	  sys-putenv and sys-setenv, so that we can use whichever available
+	  on the system.  Importantly, this will fix the leak problem of
+	  sys-putenv on the common platform that supports setenv(3).
+	* ext/auxsys/auxsys.scm: cleanup some cond-expands.
+
 2007-03-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/stdlib.stub (vector-ref, vector-set!),

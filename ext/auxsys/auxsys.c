@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: auxsys.c,v 1.7 2007-03-02 07:39:04 shirok Exp $
+ *  $Id: auxsys.c,v 1.8 2007-03-28 09:32:33 shirok Exp $
  */
 
 #include <gauche.h>
@@ -41,8 +41,62 @@
 #  include <sys/times.h>
 #endif
 
-/*
- * Some emulation stuff for Windows/MinGW
+/*===============================================================
+ * Environment
+ */
+
+/* POSIX has putenv but not setenv.  However, the XPG spec of
+   putenv is broken w.r.t freeing the passed string; there's no
+   way to know when the pointer can be freed.
+   Some Unix appears to violate the spec and copies the passed pointer,
+   which solves the leak, but the code will break if we bring it to
+   the platform with "proper" putenv(3).
+
+   So we do not trust putenv(3).
+
+   Our strategy: If the system has setenv(3) we use it, since we know
+   it copies the passed string.  If the system doesn't have setenv(3),
+   we fall back to putenv(3) and let it leak.
+*/
+
+void Scm_SetEnv(const char *name, const char *value, int overwrite)
+{
+#if defined(HAVE_SETENV)
+    int r;
+    
+    SCM_SYSCALL(r, setenv(name, value, overwrite));
+    if (r < 0) Scm_SysError("setenv failed on '%s=%s'", name, value);
+#elif defined(HAVE_PUTENV)
+    char *nameval;
+    int nlen, vlen, r;
+    
+    if (!overwrite) {
+        /* check the existence of NAME first. */
+        if (getenv(name) != NULL) return;
+    }
+    nlen = strlen(name);
+    vlen = strlen(value);
+    /* we need malloc, since the pointer will be owned by the system */
+    nameval = (char*)malloc(nlen+vlen+2);
+    if (nameval == NULL) {
+        Scm_Error("sys-setenv: out of memory");
+    }
+    strcpy(nameval, name);
+    strcpy(nameval+nlen, "=");
+    strcpy(nameval+nlen+1, value);
+    SCM_SYSCALL(r, putenv(nameval));
+    if (r < 0) Scm_SysError("putenv failed on '%s'", nameval);
+#else /* !HAVE_SETENV && !HAVE_PUTENV */
+    /* We can't do much.  we may replace environ by ourselves, but
+       it is unlikely that the system have extern environ and not putenv.
+    */
+    return;
+#endif
+}
+
+
+/*==============================================================
+ * Emulation stuff for Windows/MinGW
  */
 #ifdef __MINGW32__
 
