@@ -6876,10 +6876,8 @@ Gaucheの組み込み手続きやライブラリ手続きは常に、@code{<condition>}クラス
 [SRFI-34]
 @c EN
 This is @emph{the} high-level form to handle errors in Gauche.
-It is built on top of @code{with-error-handler} function below.
 @c JP
 これはGaucheでのエラー処理の高水準フォームです。
-これは後述の@code{with-error-handler}関数の上に作り上げられています。
 @c COMMON
 
 @c EN
@@ -7116,39 +7114,33 @@ has returned, and before @code{with-error-handler} returns.
 @c COMMON
 
 @c EN
-The behavior of @code{with-error-handler} can be
-described in the form of Scheme code shown below,
-using the low-level mechanism.
-Note that the actual function is built in VM, using lighter
-mechanisms (similar to "one-shot continuation", @ref{onecont, [1CC], 1CC}).
+Note: Using this procedure directly is @emph{no longer recommended}, since
+@code{guard} is more safe and portable.  We'll keep this for
+a while for the backward compatibility, but we recommend to rewrite
+code to use @code{guard} instead of this.
+The common idiom of "cleanup on error"
+code:
 @c JP
-@code{with-error-handler}の振舞いは、低レベルなメカニズムを使って
-以下のようなSchemeコードで
-表すことができます。実際の関数は、より軽量なメカニズム
-(``one-shot continuation'', @ref{onecont, [1CC], 1CC}に似ています)
-を使って仮想マシンに組み込まれていることに注意して下さい。
+註: この手続きを直接使うことはもはや@emph{推奨されません}。@code{guard}の方が
+より安全でポータブルだからです。互換性を保つためまだしばらくは
+この手続きを残しますが、この手続きを使っているコードを@code{guard}によって
+書き直すことを推奨します。「エラー時に後始末をする」というよくある次のような処理は：
 @c COMMON
-
 @example
+(with-error-handler (lambda (e) (cleanup) (raise e))
+  (lambda () body @dots{}))
+@end example
 @c EN
-;; @r{conceptual implementation of with-error-handler}
+should be written like this:
 @c JP
-;; @r{with-error-handlerの概念的な実装}
+次のように書き直すことができます。
 @c COMMON
-(define (with-error-handler handler thunk)
-  (call/cc
-    (lambda (cont)
-      (let* ((prev-handler (current-exception-handler))
-        (with-exception-handler
-          (lambda (exn)
-            (if (error? exn)
-                (with-exception-handler
-                  (lambda (err) (prev-handler err))
-                  (lambda () (call-with-values (handler exn) cont)))
-                (prev-handler exn)))
-          thunk))))))
+@example
+(guard (e (else (cleanup) (raise e)))
+  body @dots{})
 @end example
 @end defun
+
 
 @c EN
 @subsubheading Behavior of unhandled exception
