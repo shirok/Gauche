@@ -7,6 +7,7 @@
 * Interactive development::     
 * Writing Scheme scripts::      
 * Debugging::                   
+* Platform-dependent features::  
 * Profiling and tuning::        
 * Writing Gauche modules::      
 * Using extension packages::    
@@ -616,7 +617,7 @@ parse command-line options.
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Debugging, Profiling and tuning, Writing Scheme scripts, Programming in Gauche
+@node Debugging, Platform-dependent features, Writing Scheme scripts, Programming in Gauche
 @section Debugging
 @c NODE デバッグ
 
@@ -684,7 +685,111 @@ You can also use trace/untrace macros in Gauche, written by Shigenobu Kimura:
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Profiling and tuning, Writing Gauche modules, Debugging, Programming in Gauche
+@node Platform-dependent features, Profiling and tuning, Debugging, Programming in Gauche
+@section Using platform-dependent features
+@c NODE プラットフォーム依存の機能
+
+Gauche tries to provide low-level APIs close to what the underlying
+system provides, but sometimes they vary among systems.  For example,
+POSIX does not require @code{symlink}, so some systems may lack
+@code{sys-symlink} (@xref{Directory manipulation}).  Quite a few
+unix-specific system functions are not available on Windows platform.
+
+To allow writing a portable program across those platforms, Gauche
+uses @code{cond-expand} (@xref{Feature conditional}) extensively.
+A set of extended @emph{feature-identifier}s is provided to check
+availability of specific features.  For example, on systems that
+has @code{symlink}, a feature identifier @code{gauche.sys.symlink}
+is defined.   So you can write a code that can switch based on
+the availability of @code{sys-symlink} as follows:
+
+@example
+(cond-expand
+ (gauche.sys.symlink
+   ... code that uses sys-symlink ...)
+ (else
+   ... alternative code ...)
+ )
+@end example
+
+If you're familiar with system programming in C, you can think
+it equivalent to the following C idiom:
+
+@example
+#if defined(HAVE_SYMLINK)
+... code that uses symlink ...
+#else
+... alternative code ...
+#endif
+@end example
+
+There are quite a few such feature identifiers; each identifier is
+explained in the maunal entry of the procedures that depend on the feature.
+Here we list a few important ones:
+
+@table @code
+@item gauche
+This feature identifier is always defined.  It is useful when you
+write Scheme code portable across multiple implementations.
+@item gauche.os.windows
+Defined on Windows native platform (currently using MinGW, but we'll
+have VC++ version in future).  Note that cygwin is considered unix.
+@item gauche.sys.pthreads
+Defined if Gauche is compiled with pthread support.
+@item gauche.net.ipv6
+Defined if Gauche is compiled with IPv6 support.
+@end table
+
+Because @code{cond-expand} is a macro, the body of clauses
+are expanded into toplevel if @code{cond-expand} itself is in
+toplevel.  That means you can switch toplevel definitions:
+
+@example
+(cond-expand
+ (gauche.os.windows
+  (define (get-current-user)
+    ... get current username ...))
+ (else
+  (define (get-current-user)
+    (sys-uid->user-name (sys-getuid)))))
+@end example
+
+Or even conditinally "use" the modules:
+
+@example
+(cond-expand
+ (gauche.os.windows
+   (use "my-windows-compatibility-module"))
+ (else))
+@end example
+
+The traditional technique of testing a toplevel binding at runtime
+(using @code{global-variable-bound?}, @xref{Module introspection})
+does not work well, since the test is done in runtime, while
+the @code{use} form takes effect at compile time.  It is strongly
+recommended to use @code{cond-expand} whenever possible.
+
+Currently the set of feature identifiers are fixed at the build
+time of Gauche, so it's less flexible than C preprocessor conditionals.
+We have a plan to extend this feature to enable adding new feature
+identifiers; but such feature can complicate semantics when compilation
+and exection is interleaved, so we're carefully assessing the effects now.
+
+A couple of notes:
+
+Feature identifiers are not variables.  They can only be used
+within the @var{feature-requirement} part of @code{cond-expand}
+(see @ref{Feature conditional} for the complete definition of
+feature requirements).
+
+By definition of @code{srfi-0}, @code{cond-expand} raises an error
+if no feature requirements are satisfied and there's no @code{else}
+clause.  A rule of thumb is to provide @code{else} clause always,
+even it does nothing (like the above example that has empty @code{else}
+clause).
+
+@c ----------------------------------------------------------------------
+@node Profiling and tuning, Writing Gauche modules, Platform-dependent features, Programming in Gauche
 @section Profiling and tuning
 @c NODE プロファイリングとチューニング
 
@@ -703,7 +808,7 @@ a couple of basic tools to help it.  A built-in sampling profiler,
 explained in the following subsection, can show how much time
 is spent in each procedure, and how many times it is called.
 The @code{gauche.time} module (@ref{Measure timings}) provides
-APIs to measure execution time of specific part of the code.
+APIs to measure execution time of specific parts of the code.
 @c JP
 どんなときでも、実行時間を食いつぶしているコード部分を見つけるというの
 を先ず最初にやるのがよいでしょう。Gauche にはこの作業を補助する基本的
@@ -822,12 +927,12 @@ approximately reflects the distribution of time spent in each function.
 @c EN
 Keep in mind that the number is only approximation; the number
 of sample counts for a function may easily vary if the program deals
-with different data.   It should also be noted that, for now, GC 
+with different data sets.   It should also be noted that, for now, GC 
 time is included in the function in which GC is triggered.
 This sometimes causes a less important function to "float up" to
 near-top of the list.  
 To know the general pattern, it is a good custom to run the program
-with several different data.
+with several different data sets.
 @c JP
 数字はあくまで近似にすぎないこと
 を心にとめておいてください。ひとつの関数あたりの標本数はプログラムが扱
@@ -928,7 +1033,7 @@ all the low-level I/O without the lock overhead.
 (Note: this doesn't mean those primitives @emph{guarantee}
 to lock the port throughout the execution of the function;
 furthermore, the port locking feature is optimized for the case
-that port access rarely collides.  If you know it is possible that
+that port accesses rarely collide.  If you know it is possible that
 more than one threads read from or write to the same port, it is
 your responsibility to use mutex explicitly to avoid the collision.)
 @c JP
