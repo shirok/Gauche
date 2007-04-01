@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.47 2007-03-02 07:39:12 shirok Exp $
+ *  $Id: char.c,v 1.48 2007-04-01 05:51:56 shirok Exp $
  */
 
 #include <ctype.h>
@@ -170,25 +170,10 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_CharSetClass,
                          charset_print, charset_compare, NULL, NULL,
                          SCM_CLASS_DEFAULT_CPL);
 
-/* masks */
-#if SIZEOF_LONG == 4
-#define MASK_BIT_SHIFT  5
-#define MASK_BIT_MASK   0x1f
-#elif SIZEOF_LONG == 8
-#define MASK_BIT_SHIFT  6
-#define MASK_BIT_MASK   0x3f
-#elif SIZEOF_LONG == 16    /* maybe, in some future ... */
-#define MASK_BIT_SHIFT  7
-#define MASK_BIT_MASK   0x7f
-#else
-#error need to set SIZEOF_LONG
-#endif
+#define MASK_ISSET(cs, ch)  SCM_BITS_TEST(cs->small, ch)
+#define MASK_SET(cs, ch)    SCM_BITS_SET(cs->small, ch)
+#define MASK_RESET(cs, ch)  SCM_BITS_RESET(cs->small, ch)
 
-#define MASK_INDEX(ch)       ((ch) >> MASK_BIT_SHIFT)
-#define MASK_BIT(ch)         (1L << ((ch) & MASK_BIT_MASK))
-#define MASK_ISSET(cs, ch)   (!!(cs->mask[MASK_INDEX(ch)] & MASK_BIT(ch)))
-#define MASK_SET(cs, ch)     (cs->mask[MASK_INDEX(ch)] |= MASK_BIT(ch))
-#define MASK_RESET(cs, ch)   (cs->mask[MASK_INDEX(ch)] &= ~MASK_BIT(ch))
 
 /*----------------------------------------------------------------------
  * Printer
@@ -209,7 +194,7 @@ static void charset_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
     struct ScmCharSetRange *r;
 
     Scm_Printf(out, "#[");
-    for (prev = -1, code = 0; code < SCM_CHARSET_MASK_CHARS; code++) {
+    for (prev = -1, code = 0; code < SCM_CHARSET_SMALL_CHARS; code++) {
         if (MASK_ISSET(cs, code) && prev < 0) {
             charset_print_ch(out, code);
             prev = code;
@@ -245,7 +230,7 @@ static ScmCharSet *make_charset(void)
     ScmCharSet *cs = SCM_NEW(ScmCharSet);
     int i;
     SCM_SET_CLASS(cs, SCM_CLASS_CHARSET);
-    for (i=0; i<SCM_CHARSET_MASK_SIZE; i++) cs->mask[i] = 0;
+    Scm_BitsFill(cs->small, 0, SCM_CHARSET_SMALL_CHARS, 0);
     cs->ranges = NULL;
     return cs;
 }
@@ -260,8 +245,8 @@ ScmObj Scm_CopyCharSet(ScmCharSet *src)
     ScmCharSet *dst = make_charset();
     struct ScmCharSetRange *rs, *rd = dst->ranges;
     int i;
-    
-    for (i=0; i<SCM_CHARSET_MASK_SIZE; i++) dst->mask[i] = src->mask[i];
+
+    Scm_BitsCopyX(dst->small, 0, src->small, 0, SCM_CHARSET_SMALL_CHARS);
     for (rs = src->ranges; rs; rs = rs->next) {
         if (rd == NULL) {
             rd = dst->ranges = SCM_NEW(struct ScmCharSetRange);
@@ -355,8 +340,8 @@ int Scm_CharSetEq(ScmCharSet *x, ScmCharSet *y)
 {
     int i;
     struct ScmCharSetRange *rx, *ry;
-    for (i=0; i<SCM_CHARSET_MASK_SIZE; i++)
-        if (x->mask[i] != y->mask[i]) return FALSE;
+    if (!Scm_BitsEqual(x->small, y->small, 0, SCM_CHARSET_SMALL_CHARS))
+        return FALSE;
     for (rx=x->ranges, ry=y->ranges; rx && ry; rx=rx->next, ry=ry->next) {
         if (rx->lo != ry->lo || rx->hi != ry->hi) return FALSE;
     }
@@ -369,8 +354,8 @@ int Scm_CharSetLE(ScmCharSet *x, ScmCharSet *y)
 {
     int i;
     struct ScmCharSetRange *rx, *ry;
-    for (i=0; i<SCM_CHARSET_MASK_SIZE; i++)
-        if ((x->mask[i] | y->mask[i]) != y->mask[i]) return FALSE;
+    if (!Scm_BitsIncludes(y->small, x->small, 0, SCM_CHARSET_SMALL_CHARS))
+        return FALSE;
     rx = x->ranges;
     ry = y->ranges;
     while (rx && ry) {
@@ -403,13 +388,13 @@ ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to)
     struct ScmCharSetRange *lo, *lop, *hi;
     
     if (to < from) return SCM_OBJ(cs);
-    if (from < SCM_CHARSET_MASK_CHARS) {
-        if (to < SCM_CHARSET_MASK_CHARS) {
-            for (i=from; i<=to; i++) MASK_SET(cs, i);
+    if (from < SCM_CHARSET_SMALL_CHARS) {
+        if (to < SCM_CHARSET_SMALL_CHARS) {
+            Scm_BitsFill(cs->small, (int)from, (int)to+1, TRUE);
             return SCM_OBJ(cs);
         }
-        for (i=from; i<SCM_CHARSET_MASK_CHARS; i++)  MASK_SET(cs, i);
-        from = SCM_CHARSET_MASK_CHARS;
+        Scm_BitsFill(cs->small, (int)from, SCM_CHARSET_SMALL_CHARS, TRUE);
+        from = SCM_CHARSET_SMALL_CHARS;
     }
     if (cs->ranges == NULL) {
         cs->ranges = newrange(from, to, NULL);
@@ -471,8 +456,8 @@ ScmObj Scm_CharSetAdd(ScmCharSet *dst, ScmCharSet *src)
 {
     int i;
     struct ScmCharSetRange *r;
-    for (i=0; i<SCM_CHARSET_MASK_SIZE; i++)
-        dst->mask[i] |= src->mask[i];
+    Scm_BitsOperate(dst->small, SCM_BIT_IOR, dst->small, src->small,
+                    0, SCM_CHARSET_SMALL_CHARS);
     for (r = src->ranges; r; r = r->next) {
         Scm_CharSetAddRange(dst, r->lo, r->hi);
     }
@@ -483,12 +468,12 @@ ScmObj Scm_CharSetComplement(ScmCharSet *cs)
 {
     int i, last;
     struct ScmCharSetRange *r, *p;
-    for (i=0; i<SCM_CHARSET_MASK_SIZE; i++)
-        cs->mask[i] = ~cs->mask[i];
-    last = SCM_CHARSET_MASK_CHARS;
+    Scm_BitsOperate(cs->small, SCM_BIT_NOT1, cs->small, NULL,
+                    0, SCM_CHARSET_SMALL_CHARS);
+    last = SCM_CHARSET_SMALL_CHARS;
     for (p = NULL, r = cs->ranges; r; p = r, r = r->next) {
         int hi = r->hi+1;
-        if (r->lo != SCM_CHARSET_MASK_CHARS) {
+        if (r->lo != SCM_CHARSET_SMALL_CHARS) {
             r->hi = r->lo - 1;
             r->lo = last;
         } else {
@@ -524,7 +509,7 @@ ScmObj Scm_CharSetCaseFold(ScmCharSet *cs)
 int Scm_CharSetContains(ScmCharSet *cs, ScmChar c)
 {
     if (c < 0) return FALSE;
-    if (c < SCM_CHARSET_MASK_CHARS) return MASK_ISSET(cs, c);
+    if (c < SCM_CHARSET_SMALL_CHARS) return MASK_ISSET(cs, c);
     else {
         struct ScmCharSetRange *r;
         for (r = cs->ranges; r; r = r->next) {
@@ -545,7 +530,7 @@ ScmObj Scm_CharSetRanges(ScmCharSet *cs)
     int ind, begin = 0, prev = FALSE;
     struct ScmCharSetRange *r;
     
-    for (ind = 0; ind < SCM_CHARSET_MASK_CHARS; ind++) {
+    for (ind = 0; ind < SCM_CHARSET_SMALL_CHARS; ind++) {
         int bit = MASK_ISSET(cs, ind);
         if (!prev && bit) begin = ind;
         if (prev && !bit) {
@@ -555,9 +540,9 @@ ScmObj Scm_CharSetRanges(ScmCharSet *cs)
         prev = bit;
     }
     if (prev) {
-        if (!cs->ranges || cs->ranges->lo != SCM_CHARSET_MASK_CHARS) {
+        if (!cs->ranges || cs->ranges->lo != SCM_CHARSET_SMALL_CHARS) {
             cell = Scm_Cons(SCM_MAKE_INT(begin),
-                            SCM_MAKE_INT(SCM_CHARSET_MASK_CHARS-1));
+                            SCM_MAKE_INT(SCM_CHARSET_SMALL_CHARS-1));
             SCM_APPEND1(h, t, cell);
             r = cs->ranges;
         } else {
@@ -581,8 +566,8 @@ void Scm_CharSetDump(ScmCharSet *cs, ScmPort *port)
     int i;
     struct ScmCharSetRange *r;
     Scm_Printf(port, "CharSet %p\nmask:", cs);
-    for (i=0; i<SCM_CHARSET_MASK_SIZE; i++)
-        Scm_Printf(port, "[%08x]", cs->mask[i]);
+    for (i=0; i<SCM_BITS_NUM_WORDS(SCM_CHARSET_SMALL_CHARS); i++)
+        Scm_Printf(port, "[%08x]", cs->small[i]);
     Scm_Printf(port, "\nranges:");
     for (r=cs->ranges; r; r=r->next)
         Scm_Printf(port, "(%d-%d)", r->lo, r->hi);
@@ -847,7 +832,7 @@ static void install_charsets(void)
     for (i = 0; i < SCM_CHARSET_NUM_PREDEFINED_SETS; i++) {
         CS(i) = SCM_CHARSET(Scm_MakeEmptyCharSet());
     }
-    for (code = 0; code < SCM_CHARSET_MASK_CHARS; code++) {
+    for (code = 0; code < SCM_CHARSET_SMALL_CHARS; code++) {
         if (isalnum(code)) MASK_SET(CS(SCM_CHARSET_ALNUM), code);
         if (isalpha(code)) MASK_SET(CS(SCM_CHARSET_ALPHA), code);
         if (iscntrl(code)) MASK_SET(CS(SCM_CHARSET_CNTRL), code);

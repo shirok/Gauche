@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.168 2007-03-11 09:56:22 shirok Exp $
+#  $Id: Makefile.in,v 1.169 2007-04-01 05:51:56 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -151,7 +151,7 @@ libgauche_OBJECTS = \
 	code.$(OBJEXT) error.$(OBJEXT) class.$(OBJEXT) prof.$(OBJEXT) \
 	collection.$(OBJEXT) \
 	boolean.$(OBJEXT) char.$(OBJEXT) string.$(OBJEXT) list.$(OBJEXT) \
-	hash.$(OBJEXT) treemap.$(OBJEXT) \
+	hash.$(OBJEXT) treemap.$(OBJEXT) bits.$(OBJEXT) \
 	port.$(OBJEXT) write.$(OBJEXT) read.$(OBJEXT) \
 	vector.$(OBJEXT) weak.$(OBJEXT) symbol.$(OBJEXT) keyword.$(OBJEXT) \
 	gloc.$(OBJEXT) compare.$(OBJEXT) regexp.$(OBJEXT) signal.$(OBJEXT) \

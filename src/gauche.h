@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.488 2007-03-22 11:20:27 shirok Exp $
+ *  $Id: gauche.h,v 1.489 2007-04-01 05:51:56 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -114,6 +114,8 @@ SCM_DECL_BEGIN
 #else  /* !GAUCHE_USE_PTHREADS */
 # include <gauche/uthread.h>
 #endif /* !GAUCHE_USE_PTHREADS */
+
+#define SCM_WORD_BITS   (SIZEOF_LONG*8)
 
 /*-------------------------------------------------------------
  * BASIC TYPES
@@ -381,6 +383,8 @@ typedef struct ScmWriteContextRec ScmWriteContext;
 typedef struct ScmAutoloadRec  ScmAutoload;
 
 typedef ScmObj ScmSubrProc(ScmObj *, int, void*);
+
+#include <gauche/bits.h>
 
 /*---------------------------------------------------------
  * VM STUFF
@@ -918,12 +922,11 @@ SCM_EXTERN ScmChar Scm_ReadXdigitsFromString(const char *, int, const char **);
 SCM_EXTERN ScmChar Scm_ReadXdigitsFromPort(ScmPort *port, int ndigits,
                                            char *buf, int *nread);
 
-#define SCM_CHARSET_MASK_CHARS 128
-#define SCM_CHARSET_MASK_SIZE  (SCM_CHARSET_MASK_CHARS/(SIZEOF_LONG*8))
+#define SCM_CHARSET_SMALL_CHARS 128
 
 struct ScmCharSetRec {
     SCM_HEADER;
-    unsigned long mask[SCM_CHARSET_MASK_SIZE];
+    ScmBits small[SCM_BITS_NUM_WORDS(SCM_CHARSET_SMALL_CHARS)];
     struct ScmCharSetRange {
         struct ScmCharSetRange *next;
         ScmChar lo;             /* lower boundary of range (inclusive) */

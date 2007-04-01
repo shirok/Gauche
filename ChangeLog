@@ -1,3 +1,22 @@
+2007-03-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/bits.h, src/bits.c: added ScmBits, generic bitarray
+	  operation support.  A plan is to use this to cleanup charset
+	  implementation and also for CL-ish bitvector.  Some other
+	  datastuructures may take advantage of this.
+	* src/char.c: using ScmBits for the small character maps.
+
+	* src/core.c (init_cond_features): adds the feature gauche.sys.pthreads
+	  if Gauche is compiled w/ pthread support.
+
+	* src/syslib.stub (sys-symlink): defines sys-symlink conditionally,
+	  with the feature identifier gauche.sys.symlink.
+
+2007-03-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/core.c: defines the feature identifier gauche.sys.pthreads
+	  if Gauche is compiled with pthreads enabled.
+
 2007-03-27  Shiro Kawai  <shiro@acm.org>
 
 	* test/system.scm: use sys-nanosleep instead of sys-sleep if
