@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: syslib.stub,v 1.127 2007-03-22 11:20:28 shirok Exp $
+;;; $Id: syslib.stub,v 1.128 2007-04-01 04:15:43 shirok Exp $
 ;;;
 
 ;; System interface functions.   Mostly I followed POSIX.1, but included
@@ -815,20 +815,13 @@
 ;; symbolic link
 
 (when "defined(HAVE_SYMLINK)"
-(define-cproc sys-symlink (existing::<const-cstring> newpath::<const-cstring>)
-  "
-#ifdef HAVE_SYMLINK
-  int r;
-  SCM_SYSCALL(r, symlink(existing, newpath));
-  if (r < 0) Scm_SysError(\"link failed\");
-  SCM_RETURN(SCM_TRUE);
-#else
-  Scm_Error(\"the system doesn't support symbolic links\");
-  SCM_RETURN(SCM_FALSE);
-#endif
-")
-(initcode "Scm_AddFeature(\"gauche.sys.symlink\", NULL);")
-)
+  (define-cproc sys-symlink (existing::<const-cstring> newpath::<const-cstring>)
+    (body "int r;"
+          "SCM_SYSCALL(r, symlink(existing, newpath));"
+          "if (r < 0) Scm_SysError(\"link failed\");"
+          "SCM_RETURN(SCM_TRUE);"))
+  (initcode "Scm_AddFeature(\"gauche.sys.symlink\", NULL);")
+  )
 
 (when "defined(HAVE_READLINK)"
 (define-cproc sys-readlink (path::<const-cstring>)
