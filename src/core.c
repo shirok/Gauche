@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: core.c,v 1.78 2007-03-02 07:39:13 shirok Exp $
+ *  $Id: core.c,v 1.79 2007-04-01 04:21:38 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -411,6 +411,9 @@ init_cond_features()
 #ifdef __MINGW32__
         { "gauche.os.windows", NULL },
         { "gauche-windows", NULL }, /* for backward compatibility */
+#endif
+#ifdef GAUCHE_USE_PTHREADS
+        { "gauche.sys.pthreads", "gauche.threads" },
 #endif
         { "srfi-0", NULL },         /* autoloaded */
         { "srfi-1", "srfi-1" },
