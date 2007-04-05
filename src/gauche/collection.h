@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: collection.h,v 1.4 2007-04-05 07:33:28 shirok Exp $
+ *  $Id: collection.h,v 1.5 2007-04-05 08:17:50 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -105,9 +105,6 @@ typedef struct ScmDictEntryRec {
 #define SCM_DICT_VALUE(entry) SCM_OBJ((entry)->value)
 #define SCM_DICT_SET_VALUE(entry, val) \
     SCM_OBJ((entry)->value = (intptr_t)(val))
-#define SCM_DICT_DEFAULT_VALUE(entry, val) \
-    (SCM_UNBOUNDP(SCM_OBJ((entry)->value))?                             \
-     (SCM_OBJ((entry)->value = (intptr_t)(val))) : SCM_OBJ((entry)->value))
      
 
 /*

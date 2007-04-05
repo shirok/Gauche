@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.281 2007-04-05 07:33:28 shirok Exp $
+;;; $Id: extlib.stub,v 1.282 2007-04-05 08:17:49 shirok Exp $
 ;;;
 
 "
@@ -1317,7 +1317,7 @@
         "  if (!e) Scm_Error(\"%S doesn't have an entry for key %S\", tm, key);"
         "} else {"
         "  e = Scm_TreeCoreSearch(SCM_TREE_MAP_CORE(tm), (intptr_t)key, SCM_DICT_CREATE);"
-        "  SCM_DICT_DEFAULT_VALUE(e, fallback);"
+        "  if (!e->value) SCM_DICT_SET_VALUE(e, fallback);"
         "}"
         "data[0] = (void*)e;"
         "Scm_VMPushCC(tree_map_update_cc, data, 1);"
@@ -1326,8 +1326,8 @@
 (define-cproc tree-map-push! (tm::<tree-map> key value)
   (body <void>
         "ScmDictEntry *e = Scm_TreeCoreSearch(SCM_TREE_MAP_CORE(tm), (intptr_t)key, SCM_DICT_CREATE);"
-        "ScmObj v = SCM_DICT_DEFAULT_VALUE(e, SCM_NIL);"
-        "SCM_DICT_SET_VALUE(e, Scm_Cons(value, v));"))
+        "if (e->value) SCM_DICT_SET_VALUE(e, Scm_Cons(value, SCM_DICT_VALUE(e)));"
+        "else          SCM_DICT_SET_VALUE(e, Scm_Cons(value, SCM_NIL));"))
 
 (define-cproc tree-map-pop! (tm::<tree-map> key &optional fallback)
   (body "ScmDictEntry *e = Scm_TreeCoreSearch(SCM_TREE_MAP_CORE(tm), (intptr_t)key, SCM_DICT_GET);"
@@ -1348,7 +1348,7 @@
         "}"))
 
 (define-cproc tree-map-exists? (tm::<tree-map> key)
-  (expr <boolean> "!SCM_UNBOUNDP(Scm_TreeMapRef(tm, key, SCM_UNBOUND))"))
+  (expr <boolean> "Scm_TreeCoreSearch(SCM_TREE_MAP_CORE(tm), (intptr_t)key, SCM_DICT_GET) != NULL"))
 
 (define-cproc tree-map-num-entries (tm::<tree-map>)
   (expr <int> "Scm_TreeCoreNumEntries(SCM_TREE_MAP_CORE(tm))"))
