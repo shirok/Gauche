@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: collection.h,v 1.3 2007-03-26 23:11:47 shirok Exp $
+ *  $Id: collection.h,v 1.4 2007-04-05 07:33:28 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -94,7 +94,7 @@ SCM_EXTERN ScmClass *Scm__SequenceCPL[];
  * Common part of the entry.  This is for the lower layer.
  */
 typedef struct ScmDictEntryRec {
-    intptr_t  key;
+    const intptr_t key;
     intptr_t  value;
 } ScmDictEntry;
 
@@ -111,7 +111,7 @@ typedef struct ScmDictEntryRec {
      
 
 /*
- * Common operation argument for *Search function
+ * Common operation argument for *Search functions
  */
 typedef enum {
     SCM_DICT_GET,               /* returns ScmDictEntry* if found,
@@ -121,6 +121,12 @@ typedef enum {
     SCM_DICT_DELETE             /* deletes found entry.  */
 } ScmDictOp;
 
+/*
+ * Common flags for *Set functions
+ */
+typedef enum {
+    SCM_DICT_NO_OVERWRITE = (1L<<0) /* do not overwrite the existing entry */
+} ScmDictSetFlags;
 
 #endif /* GAUCHE_COLLECTION_H */
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: treemap.c,v 1.5 2007-04-05 05:56:57 shirok Exp $
+ *  $Id: treemap.c,v 1.6 2007-04-05 07:33:28 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -330,14 +330,42 @@ ScmObj Scm_TreeMapCopy(const ScmTreeMap *src)
     return SCM_OBJ(tm);
 }
 
-ScmDictEntry *Scm_TreeMapSearch(ScmTreeMap *tm, ScmObj key, ScmDictOp op)
+/*
+ * Query
+ */
+ScmObj Scm_TreeMapRef(ScmTreeMap *tm, ScmObj key, ScmObj fallback)
 {
     ScmDictEntry *e = Scm_TreeCoreSearch(SCM_TREE_MAP_CORE(tm),
-                                         (intptr_t)key, op);
-    if (op == SCM_DICT_CREATE && e->value == 0) {
-        e->value = (intptr_t)SCM_UNBOUND;
+                                         (intptr_t)key, SCM_DICT_GET);
+    if (!e) {
+        if (SCM_UNBOUNDP(fallback)) {
+            Scm_Error("%S doesn't have an entry with the key %S:",
+                      SCM_OBJ(tm), key);
+        }
+        return fallback;
+    } else {
+        return SCM_DICT_VALUE(e);
     }
-    return e;
+}
+
+ScmObj Scm_TreeMapSet(ScmTreeMap *tm, ScmObj key, ScmObj value, int flags)
+{
+    ScmDictEntry *e = Scm_TreeCoreSearch(SCM_TREE_MAP_CORE(tm),
+                                         (intptr_t)key, SCM_DICT_CREATE);
+    if (e->value) {
+        if (flags&SCM_DICT_NO_OVERWRITE) return SCM_DICT_VALUE(e);
+        else return SCM_DICT_SET_VALUE(e, value);
+    } else {
+        return SCM_DICT_SET_VALUE(e, value);
+    }
+}
+
+ScmObj Scm_TreeMapDelete(ScmTreeMap *tm, ScmObj key)
+{
+    ScmDictEntry *e = Scm_TreeCoreSearch(SCM_TREE_MAP_CORE(tm),
+                                         (intptr_t)key, SCM_DICT_DELETE);
+    if (e) return SCM_DICT_VALUE(e);
+    else   return SCM_UNBOUND;
 }
 
 /* for debug */

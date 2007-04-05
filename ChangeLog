@@ -6,6 +6,8 @@
 	* src/treemap.c: adjust some APIs based on the experience of
 	  reimplementing ScmCharSet.
 
+	* src/gauche/collection.h (ScmDictEntry): make 'key' member const.
+
 2007-03-31  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/bits.h, src/bits.c: added ScmBits, generic bitarray

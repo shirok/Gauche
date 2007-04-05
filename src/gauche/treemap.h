@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: treemap.h,v 1.4 2007-04-05 05:56:57 shirok Exp $
+ *  $Id: treemap.h,v 1.5 2007-04-05 07:33:28 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -144,10 +144,13 @@ SCM_EXTERN ScmObj    Scm_MakeTreeMap(ScmTreeCoreCompareProc *cmp,
                                      void *data);
 SCM_EXTERN ScmObj    Scm_TreeMapCopy(const ScmTreeMap *src);
 
-SCM_EXTERN ScmDictEntry *Scm_TreeMapSearch(ScmTreeMap *tm,
-                                           ScmObj key,
-                                           ScmDictOp op);
+SCM_EXTERN ScmObj    Scm_TreeMapRef(ScmTreeMap *tm, ScmObj key,
+                                    ScmObj fallback);
+SCM_EXTERN ScmObj    Scm_TreeMapSet(ScmTreeMap *tm, ScmObj key, ScmObj value,
+                                    int flags);
+SCM_EXTERN ScmObj    Scm_TreeMapDelete(ScmTreeMap *tm, ScmObj key);
 
+/* For debug */
 SCM_EXTERN void      Scm_TreeMapDump(ScmTreeMap *tm, ScmPort *out);
 
 #endif /* GAUCHE_TREEMAP_H */
