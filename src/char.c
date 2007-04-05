@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.48 2007-04-01 05:51:56 shirok Exp $
+ *  $Id: char.c,v 1.49 2007-04-05 05:56:54 shirok Exp $
  */
 
 #include <ctype.h>
@@ -191,7 +191,8 @@ static void charset_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 {
     int prev, code;
     ScmCharSet *cs = SCM_CHARSET(obj);
-    struct ScmCharSetRange *r;
+    ScmTreeIter iter;
+    ScmDictEntry *e;
 
     Scm_Printf(out, "#[");
     for (prev = -1, code = 0; code < SCM_CHARSET_SMALL_CHARS; code++) {
@@ -213,11 +214,13 @@ static void charset_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
             charset_print_ch(out, code-1);
         }
     }
-    for (r = cs->ranges; r; r = r->next) {
-        charset_print_ch(out, r->lo);
-        if (r->hi == r->lo) continue;
-        if (r->hi - r->lo > 2) Scm_Printf(out, "-");
-        charset_print_ch(out, r->hi);
+    Scm_TreeIterInit(&iter, &cs->large, NULL);
+    while ((e = Scm_TreeIterNext(&iter)) != NULL) {
+        charset_print_ch(out, (int)e->key);
+        if (e->value != e->key) {
+            if (e->value - e->key > 2) Scm_Printf(out, "-");
+            charset_print_ch(out, (int)e->value);
+        }
     }
     Scm_Printf(out, "]", obj);
 }
@@ -225,13 +228,20 @@ static void charset_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 /*-----------------------------------------------------------------
  * Constructors
  */
+static int cmp(ScmTreeCore *tc, intptr_t a, intptr_t b)
+{
+    if (a > b) return 1;
+    if (a < b) return -1;
+    return 0;
+}
+
 static ScmCharSet *make_charset(void)
 {
     ScmCharSet *cs = SCM_NEW(ScmCharSet);
     int i;
     SCM_SET_CLASS(cs, SCM_CLASS_CHARSET);
     Scm_BitsFill(cs->small, 0, SCM_CHARSET_SMALL_CHARS, 0);
-    cs->ranges = NULL;
+    Scm_TreeCoreInit(&cs->large, cmp, NULL);
     return cs;
 }
 
@@ -243,21 +253,8 @@ ScmObj Scm_MakeEmptyCharSet(void)
 ScmObj Scm_CopyCharSet(ScmCharSet *src)
 {
     ScmCharSet *dst = make_charset();
-    struct ScmCharSetRange *rs, *rd = dst->ranges;
-    int i;
-
     Scm_BitsCopyX(dst->small, 0, src->small, 0, SCM_CHARSET_SMALL_CHARS);
-    for (rs = src->ranges; rs; rs = rs->next) {
-        if (rd == NULL) {
-            rd = dst->ranges = SCM_NEW(struct ScmCharSetRange);
-        } else {
-            rd->next = SCM_NEW(struct ScmCharSetRange);
-            rd = rd->next;
-        }
-        rd->lo = rs->lo;
-        rd->hi = rs->hi;
-    }
-    if (rd) rd->next = NULL;
+    Scm_TreeCoreCopy(&dst->large, &src->large);
     return SCM_OBJ(dst);
 }
 
@@ -338,33 +335,26 @@ static int charset_compare(ScmObj x, ScmObj y, int equalp)
 
 int Scm_CharSetEq(ScmCharSet *x, ScmCharSet *y)
 {
-    int i;
-    struct ScmCharSetRange *rx, *ry;
     if (!Scm_BitsEqual(x->small, y->small, 0, SCM_CHARSET_SMALL_CHARS))
         return FALSE;
-    for (rx=x->ranges, ry=y->ranges; rx && ry; rx=rx->next, ry=ry->next) {
-        if (rx->lo != ry->lo || rx->hi != ry->hi) return FALSE;
-    }
-    if (rx || ry) return FALSE;
+    if (!Scm_TreeCoreEq(&x->large, &y->large))
+        return FALSE;
     return TRUE;
 }
 
 /* whether x <= y */
 int Scm_CharSetLE(ScmCharSet *x, ScmCharSet *y)
 {
-    int i;
-    struct ScmCharSetRange *rx, *ry;
+    ScmTreeIter xi, yi;
+    ScmDictEntry *xe, *xl, *xh, *ye;
     if (!Scm_BitsIncludes(y->small, x->small, 0, SCM_CHARSET_SMALL_CHARS))
         return FALSE;
-    rx = x->ranges;
-    ry = y->ranges;
-    while (rx && ry) {
-        if (rx->lo < ry->lo) return FALSE;
-        if (rx->lo > ry->hi) { ry = ry->next; continue; }
-        if (rx->hi > ry->hi) return FALSE;
-        rx = rx->next;
+    Scm_TreeIterInit(&yi, &y->large, NULL);
+    for (ye = Scm_TreeIterNext(&yi); ye; ye = Scm_TreeIterNext(&yi)) {
+        xe = Scm_TreeCoreClosestEntries(&x->large, ye->key, &xl, &xh);
+        if (xe && xe->value < ye->value) return FALSE;
+        if (xl && xl->value < ye->value) return FALSE;
     }
-    if (rx) return FALSE;
     return TRUE;
 }
 
@@ -372,20 +362,10 @@ int Scm_CharSetLE(ScmCharSet *x, ScmCharSet *y)
  * Modification
  */
 
-static struct ScmCharSetRange *newrange(int lo, int hi,
-                                        struct ScmCharSetRange *next)
-{
-    struct ScmCharSetRange *n = SCM_NEW(struct ScmCharSetRange);
-    n->next = next;
-    n->lo = lo;
-    n->hi = hi;
-    return n;
-}
-
 ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to)
 {
-    int i;
-    struct ScmCharSetRange *lo, *lop, *hi;
+    ScmDictEntry *e, *lo, *hi;
+    int lbound;
     
     if (to < from) return SCM_OBJ(cs);
     if (from < SCM_CHARSET_SMALL_CHARS) {
@@ -396,70 +376,49 @@ ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to)
         Scm_BitsFill(cs->small, (int)from, SCM_CHARSET_SMALL_CHARS, TRUE);
         from = SCM_CHARSET_SMALL_CHARS;
     }
-    if (cs->ranges == NULL) {
-        cs->ranges = newrange(from, to, NULL);
-        return SCM_OBJ(cs);
-    }
-    /* Add range.  Ranges are chained from lower character code to higher,
-       without any overlap. */
-    /* First, we scan the ranges so that we'll get...
-        - if FROM is in a range, lo points to it.
-        - if FROM is out of any ranges, lo points to the closest range that
-          is higher than FROM.
-        - if TO is in a range, hi points to the range.
-        - if TO is out of any ranges, hi points to the closest range that
-          is higher than TO. */
-    for (lop = NULL, lo = cs->ranges; lo; lop = lo, lo = lo->next) {
-        if (from <= lo->hi+1) break;
-    }
-    if (!lo) {
-        lop->next = newrange(from, to, NULL);
-        return SCM_OBJ(cs);
-    }
-    for (hi = lo; hi; hi = hi->next) {
-        if (to <= hi->hi) break;
-    }
-    /* Then we insert, extend and/or merge the ranges accordingly. */
-    if (from < lo->lo) { /* FROM extends the LO */
-        if (lo == hi) {
-            if (to < hi->lo-1) {
-                if (lop == NULL) cs->ranges = newrange(from, to, lo);
-                else             lop->next = newrange(from, to, lo);
-            } else {
-                lo->lo = from;
-            }
-        } else if (hi == NULL || to < hi->lo-1) {
-            lo->lo = from;
-            lo->hi = to;
-            lo->next = hi;
+
+    /* Let e have the lower bound. */
+    e = Scm_TreeCoreClosestEntries(&cs->large, from, &lo, &hi);
+    if (!e) {
+        if (!lo || lo->value < from-1) {
+            e = Scm_TreeCoreSearch(&cs->large, from, SCM_DICT_CREATE);
         } else {
-            lo->lo = from;
-            lo->hi = hi->hi;
-            lo->next = hi->next;
-        }
-    } else { /* FROM included in LO */
-        if (lo != hi) {
-            if (hi == NULL || to < hi->lo-1) {
-                lo->hi = to;
-                lo->next = hi;
-            } else {
-                lo->hi = hi->hi;
-                lo->next = hi->next;
-            }
+            e = lo;
         }
     }
-    /* WRITE ME */
+    /* Set up the upper bound.
+       NB: if e is a new entry, e->value is 0. */
+    if (e->value >= to) return SCM_OBJ(cs);
+
+    hi = e;
+    while ((hi = Scm_TreeCoreNextEntry(&cs->large, hi->key)) != NULL) {
+        if (hi->key > to+1) {
+            e->value = to;
+            return SCM_OBJ(cs);
+        }
+        Scm_TreeCoreSearch(&cs->large, hi->key, SCM_DICT_DELETE);
+        if (hi->value > to) {
+            e->value = hi->value;
+            return SCM_OBJ(cs);
+        }
+    }
+    e->value = to;
     return SCM_OBJ(cs);
 }
 
 ScmObj Scm_CharSetAdd(ScmCharSet *dst, ScmCharSet *src)
 {
     int i;
-    struct ScmCharSetRange *r;
+    ScmTreeIter iter;
+    ScmDictEntry *e;
+
+    if (dst == src) return SCM_OBJ(dst);  /* precaution */
+    
     Scm_BitsOperate(dst->small, SCM_BIT_IOR, dst->small, src->small,
                     0, SCM_CHARSET_SMALL_CHARS);
-    for (r = src->ranges; r; r = r->next) {
-        Scm_CharSetAddRange(dst, r->lo, r->hi);
+    Scm_TreeIterInit(&iter, &src->large, NULL);
+    while ((e = Scm_TreeIterNext(&iter)) != NULL) {
+        Scm_CharSetAddRange(dst, e->key, e->value);
     }
     return SCM_OBJ(dst);
 }
@@ -467,23 +426,23 @@ ScmObj Scm_CharSetAdd(ScmCharSet *dst, ScmCharSet *src)
 ScmObj Scm_CharSetComplement(ScmCharSet *cs)
 {
     int i, last;
-    struct ScmCharSetRange *r, *p;
+    ScmDictEntry *e, *n;
+
     Scm_BitsOperate(cs->small, SCM_BIT_NOT1, cs->small, NULL,
                     0, SCM_CHARSET_SMALL_CHARS);
     last = SCM_CHARSET_SMALL_CHARS;
-    for (p = NULL, r = cs->ranges; r; p = r, r = r->next) {
-        int hi = r->hi+1;
-        if (r->lo != SCM_CHARSET_SMALL_CHARS) {
-            r->hi = r->lo - 1;
-            r->lo = last;
-        } else {
-            cs->ranges = r->next;
+    /* we can't use treeiter, since we modify the tree while traversing it. */
+    while ((e = Scm_TreeCoreNextEntry(&cs->large, last)) != NULL) {
+        Scm_TreeCoreSearch(&cs->large, e->key, SCM_DICT_DELETE);
+        if (last < e->key-1) {
+            n = Scm_TreeCoreSearch(&cs->large, last, SCM_DICT_CREATE);
+            n->value = e->key-1;
         }
-        last = hi;
+        last = e->value+1;
     }
     if (last < SCM_CHAR_MAX) {
-        if (!p) cs->ranges = newrange(last, SCM_CHAR_MAX, NULL);
-        else    p->next = newrange(last, SCM_CHAR_MAX, NULL);
+        n = Scm_TreeCoreSearch(&cs->large, last, SCM_DICT_CREATE);
+        n->value = SCM_CHAR_MAX;
     }
     return SCM_OBJ(cs);
 }
@@ -511,11 +470,10 @@ int Scm_CharSetContains(ScmCharSet *cs, ScmChar c)
     if (c < 0) return FALSE;
     if (c < SCM_CHARSET_SMALL_CHARS) return MASK_ISSET(cs, c);
     else {
-        struct ScmCharSetRange *r;
-        for (r = cs->ranges; r; r = r->next) {
-            if (r->lo <= c && c <= r->hi) return TRUE;
-        }
-        return FALSE;
+        ScmDictEntry *e, *l, *h;
+        e = Scm_TreeCoreClosestEntries(&cs->large, (int)c, &l, &h);
+        if (e || (l && l->value >= c)) return TRUE;
+        else return FALSE;
     }
 }
 
@@ -528,8 +486,9 @@ ScmObj Scm_CharSetRanges(ScmCharSet *cs)
 {
     ScmObj h = SCM_NIL, t = SCM_NIL, cell;
     int ind, begin = 0, prev = FALSE;
-    struct ScmCharSetRange *r;
-    
+    ScmTreeIter iter;
+    ScmDictEntry *e;
+
     for (ind = 0; ind < SCM_CHARSET_SMALL_CHARS; ind++) {
         int bit = MASK_ISSET(cs, ind);
         if (!prev && bit) begin = ind;
@@ -540,21 +499,12 @@ ScmObj Scm_CharSetRanges(ScmCharSet *cs)
         prev = bit;
     }
     if (prev) {
-        if (!cs->ranges || cs->ranges->lo != SCM_CHARSET_SMALL_CHARS) {
-            cell = Scm_Cons(SCM_MAKE_INT(begin),
-                            SCM_MAKE_INT(SCM_CHARSET_SMALL_CHARS-1));
-            SCM_APPEND1(h, t, cell);
-            r = cs->ranges;
-        } else {
-            cell = Scm_Cons(SCM_MAKE_INT(begin), SCM_MAKE_INT(cs->ranges->hi));
-            SCM_APPEND1(h, t, cell);
-            r = cs->ranges->next;
-        }
-    } else {
-        r = cs->ranges;
+        cell = Scm_Cons(SCM_MAKE_INT(begin), SCM_MAKE_INT(ind-1));
+        SCM_APPEND1(h, t, cell);
     }
-    for (; r; r = r->next) {
-        cell = Scm_Cons(SCM_MAKE_INT(r->lo), SCM_MAKE_INT(r->hi));
+    Scm_TreeIterInit(&iter, &cs->large, NULL);
+    while ((e = Scm_TreeIterNext(&iter)) != NULL) {
+        cell = Scm_Cons(SCM_MAKE_INT(e->key), SCM_MAKE_INT(e->value));
         SCM_APPEND1(h, t, cell);
     }
     return h;
@@ -569,8 +519,7 @@ void Scm_CharSetDump(ScmCharSet *cs, ScmPort *port)
     for (i=0; i<SCM_BITS_NUM_WORDS(SCM_CHARSET_SMALL_CHARS); i++)
         Scm_Printf(port, "[%08x]", cs->small[i]);
     Scm_Printf(port, "\nranges:");
-    for (r=cs->ranges; r; r=r->next)
-        Scm_Printf(port, "(%d-%d)", r->lo, r->hi);
+    Scm_TreeCoreDump(&cs->large, port);
     Scm_Printf(port, "\n");
 }
 #endif /* SCM_DEBUG_HELPER */

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.489 2007-04-01 05:51:56 shirok Exp $
+ *  $Id: gauche.h,v 1.490 2007-04-05 05:56:54 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -915,69 +915,12 @@ SCM_EXTERN ScmObj Scm_PairAttrGet(ScmPair *pair, ScmObj key, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_PairAttrSet(ScmPair *pair, ScmObj key, ScmObj value);
 
 /*--------------------------------------------------------
- * CHAR and CHAR-SET
+ * CHARACTERS
  */
 
 SCM_EXTERN ScmChar Scm_ReadXdigitsFromString(const char *, int, const char **);
 SCM_EXTERN ScmChar Scm_ReadXdigitsFromPort(ScmPort *port, int ndigits,
                                            char *buf, int *nread);
-
-#define SCM_CHARSET_SMALL_CHARS 128
-
-struct ScmCharSetRec {
-    SCM_HEADER;
-    ScmBits small[SCM_BITS_NUM_WORDS(SCM_CHARSET_SMALL_CHARS)];
-    struct ScmCharSetRange {
-        struct ScmCharSetRange *next;
-        ScmChar lo;             /* lower boundary of range (inclusive) */
-        ScmChar hi;             /* higher boundary of range (inclusive) */
-    } *ranges;
-};
-
-SCM_CLASS_DECL(Scm_CharSetClass);
-#define SCM_CLASS_CHARSET  (&Scm_CharSetClass)
-#define SCM_CHARSET(obj)   ((ScmCharSet*)obj)
-#define SCM_CHARSETP(obj)  SCM_XTYPEP(obj, SCM_CLASS_CHARSET)
-
-#define SCM_CHARSET_SMALLP(obj)  (SCM_CHARSET(obj)->ranges == NULL)
-
-SCM_EXTERN ScmObj Scm_MakeEmptyCharSet(void);
-SCM_EXTERN ScmObj Scm_CopyCharSet(ScmCharSet *src);
-SCM_EXTERN int    Scm_CharSetEq(ScmCharSet *x, ScmCharSet *y);
-SCM_EXTERN int    Scm_CharSetLE(ScmCharSet *x, ScmCharSet *y);
-SCM_EXTERN ScmObj Scm_CharSetAddRange(ScmCharSet *cs,
-				      ScmChar from, ScmChar to);
-SCM_EXTERN ScmObj Scm_CharSetAdd(ScmCharSet *dest, ScmCharSet *src);
-SCM_EXTERN ScmObj Scm_CharSetComplement(ScmCharSet *cs);
-SCM_EXTERN ScmObj Scm_CharSetCaseFold(ScmCharSet *cs);
-SCM_EXTERN ScmObj Scm_CharSetRanges(ScmCharSet *cs);
-SCM_EXTERN ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
-				  int error_p, int bracket_syntax);
-
-SCM_EXTERN int    Scm_CharSetContains(ScmCharSet *cs, ScmChar c);
-
-#if SCM_DEBUG_HELPER
-SCM_EXTERN void   Scm_CharSetDump(ScmCharSet *cs, ScmPort *port);
-#endif
-
-/* predefined character set API */
-enum {
-    SCM_CHARSET_ALNUM,
-    SCM_CHARSET_ALPHA,
-    SCM_CHARSET_BLANK,
-    SCM_CHARSET_CNTRL,
-    SCM_CHARSET_DIGIT,
-    SCM_CHARSET_GRAPH,
-    SCM_CHARSET_LOWER,
-    SCM_CHARSET_PRINT,
-    SCM_CHARSET_PUNCT,
-    SCM_CHARSET_SPACE,
-    SCM_CHARSET_UPPER,
-    SCM_CHARSET_XDIGIT,
-    SCM_CHARSET_WORD,           /* internal use: word constituent char. */
-    SCM_CHARSET_NUM_PREDEFINED_SETS
-};
-SCM_EXTERN ScmObj Scm_GetStandardCharSet(int id);
 
 /* Illegal character handling mode.  Used in some APIs that handles
    character conversion, such as input ports and string-incomplete->complete.
@@ -1258,6 +1201,12 @@ SCM_EXTERN ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
  */
 
 #include <gauche/treemap.h>
+
+/*--------------------------------------------------------
+ * CHAR-SET
+ */
+
+#include <gauche/charset.h>
 
 /*--------------------------------------------------------
  * MODULE

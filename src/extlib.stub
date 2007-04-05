@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.278 2007-03-26 23:11:46 shirok Exp $
+;;; $Id: extlib.stub,v 1.279 2007-04-05 05:56:54 shirok Exp $
 ;;;
 
 "
@@ -1287,7 +1287,7 @@
   (expr "Scm_MakeTreeMap(tree_map_cmp, cmp_proc)"))
 
 (define-cproc tree-map-copy (tm::<tree-map>)
-  (call "Scm_CopyTreeMap"))
+  (call "Scm_TreeMapCopy"))
 
 (define-cproc tree-map? (obj)
   (call <boolean> "SCM_TREE_MAP_P"))

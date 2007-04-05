@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: treemap.c,v 1.4 2007-03-26 23:11:46 shirok Exp $
+ *  $Id: treemap.c,v 1.5 2007-04-05 05:56:57 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -104,14 +104,23 @@ void Scm_TreeCoreInit(ScmTreeCore *tc,
     tc->data = data;
 }
 
-void Scm_CopyTreeCore(ScmTreeCore *dst, const ScmTreeCore *src)
+void Scm_TreeCoreCopy(ScmTreeCore *dst, const ScmTreeCore *src)
 {
-    SET_ROOT(dst, copy_tree(NULL, ROOT(src)));
+    if (ROOT(src)) {
+        SET_ROOT(dst, copy_tree(NULL, ROOT(src)));
+    } else {
+        SET_ROOT(dst, NULL);
+    }
     dst->cmp = src->cmp;
     dst->num_entries = src->num_entries;
     dst->data = src->data;
 }
 
+void Scm_TreeCoreClear(ScmTreeCore *tc)
+{
+    tc->root = NULL;
+    tc->num_entries = 0;
+}
 
 ScmDictEntry *Scm_TreeCoreSearch(ScmTreeCore *tc,
                                  intptr_t key,
@@ -130,6 +139,20 @@ ScmDictEntry *Scm_TreeCoreClosestEntries(ScmTreeCore *tc,
     *lo = (ScmDictEntry*)l;
     *hi = (ScmDictEntry*)h;
     return (ScmDictEntry*)r;
+}
+
+ScmDictEntry *Scm_TreeCoreNextEntry(ScmTreeCore *tc, intptr_t key)
+{
+    Node *l, *h;
+    core_ref(tc, key, TREE_NEAR, &l, &h);
+    return (ScmDictEntry*)h;
+}
+
+ScmDictEntry *Scm_TreeCorePrevEntry(ScmTreeCore *tc, intptr_t key)
+{
+    Node *l, *h;
+    core_ref(tc, key, TREE_NEAR, &l, &h);
+    return (ScmDictEntry*)l;
 }
 
 static Node *core_bound(ScmTreeCore *tc, ScmTreeCoreBoundOp op, int pop)
@@ -154,10 +177,28 @@ ScmDictEntry *Scm_TreeCorePopBound(ScmTreeCore *tc, ScmTreeCoreBoundOp op)
     return (ScmDictEntry*)core_bound(tc, op, TRUE);
 }
 
-
 int Scm_TreeCoreNumEntries(ScmTreeCore *tc)
 {
     return tc->num_entries;
+}
+
+int Scm_TreeCoreEq(ScmTreeCore *a, ScmTreeCore *b)
+{
+    ScmTreeIter ai, bi;
+    ScmDictEntry *ae, *be;
+    if (a->num_entries != b->num_entries) return FALSE;
+    Scm_TreeIterInit(&ai, a, NULL);
+    Scm_TreeIterInit(&bi, b, NULL);
+    for (;;) {
+        ae = Scm_TreeIterNext(&ai);
+        be = Scm_TreeIterNext(&bi);
+        if (ae == NULL) {
+            if (be == NULL) return TRUE;
+            else return FALSE;
+        }
+        if (be == NULL) return FALSE;
+        if (ae->key != be->key || ae->value != be->value) return FALSE;
+    }
 }
 
 /* START can be NULL; in which case, if next call is TreeIterNext,
@@ -281,11 +322,11 @@ ScmObj Scm_MakeTreeMap(ScmTreeCoreCompareProc *cmp, void *data)
     return SCM_OBJ(tm);
 }
 
-ScmObj Scm_CopyTreeMap(const ScmTreeMap *src)
+ScmObj Scm_TreeMapCopy(const ScmTreeMap *src)
 {
     ScmTreeMap *tm = SCM_NEW(ScmTreeMap);
     SCM_SET_CLASS(tm, SCM_CLASS_TREE_MAP);
-    Scm_CopyTreeCore(SCM_TREE_MAP_CORE(tm), SCM_TREE_MAP_CORE(src));
+    Scm_TreeCoreCopy(SCM_TREE_MAP_CORE(tm), SCM_TREE_MAP_CORE(src));
     return SCM_OBJ(tm);
 }
 
@@ -300,23 +341,37 @@ ScmDictEntry *Scm_TreeMapSearch(ScmTreeMap *tm, ScmObj key, ScmDictOp op)
 }
 
 /* for debug */
-static void dump_traverse(Node *node, int depth, ScmPort *out)
+static void dump_traverse(Node *node, int depth, ScmPort *out, int scmobj)
 {
     int i;
-    if (node->left) dump_traverse(node->left, depth+1, out);
+    if (node->left) dump_traverse(node->left, depth+1, out, scmobj);
     for (i=0; i<depth; i++) Scm_Printf(out, "  ");
-    Scm_Printf(out, "%c:%S => %S\n", BLACKP(node)?'B':'R',
-               SCM_OBJ(node->key), SCM_OBJ(node->value));
-    if (node->right) dump_traverse(node->right, depth+1, out);
+    if (scmobj) {
+        Scm_Printf(out, "%c:%S => %S\n", BLACKP(node)?'B':'R',
+                   SCM_OBJ(node->key), SCM_OBJ(node->value));
+    } else {
+        Scm_Printf(out, "%c:%08x => %08x\n", BLACKP(node)?'B':'R',
+                   node->key, node->value);
+    }
+    if (node->right) dump_traverse(node->right, depth+1, out, scmobj);
 }
 
 void Scm_TreeMapDump(ScmTreeMap *tm, ScmPort *out)
 {
-    Node *r = ROOT(SCM_TREE_MAP_CORE(tm));
-    Scm_Printf(out, "TreeMap entries=%d\n",
-               SCM_TREE_MAP_CORE(tm)->num_entries);
+    ScmTreeCore *tc = SCM_TREE_MAP_CORE(tm);
+    Node *r = ROOT(tc);
+    Scm_Printf(out, "Entries=%d\n", tc->num_entries);
     if (r) {
-        dump_traverse(r, 0, out);
+        dump_traverse(r, 0, out, TRUE);
+    }
+}
+
+void Scm_TreeCoreDump(ScmTreeCore *tc, ScmPort *out)
+{
+    Node *r = ROOT(tc);
+    Scm_Printf(out, "Entries=%d\n", tc->num_entries);
+    if (r) {
+        dump_traverse(r, 0, out, FALSE);
     }
 }
 
@@ -559,19 +614,43 @@ static void delete_node1(ScmTreeCore *tc, Node *todie, Node *child)
     }
 }
 
+static void swap_node(ScmTreeCore *tc, Node *x, Node *y)
+{
+#define SWAP(x, y, tmp) do { tmp = x; x = y; y = tmp; } while (0)
+    Node *t;
+    int c;
+    if (x->parent) {
+        if (LEFTP(x)) x->parent->left = y;
+        else          x->parent->right = y;
+    }
+    if (y->parent) {
+        if (LEFTP(y)) y->parent->left = x;
+        else          y->parent->right = x;
+    }
+    SWAP(x->parent, y->parent, t);
+
+    if (x->left) x->left->parent = y;
+    if (y->left) y->left->parent = x;
+    SWAP(x->left, y->left, t);
+
+    if (x->right) x->right->parent = y;
+    if (y->right) y->right->parent = x;
+    SWAP(x->right, y->right, t);
+
+    SWAP(x->color, y->color, c);
+    if (x == ROOT(tc)) SET_ROOT(tc, y);
+    else if (y == ROOT(tc)) SET_ROOT(tc, x);
+#undef SWAP
+}
+
 static Node *delete_node(ScmTreeCore *tc, Node *n)
 {
-    /* we need to return the deleted entry, so remember key/val */
-    intptr_t key = n->key;
-    intptr_t value = n->value;
-    
     while (n->left && n->right) {
-        /* both have child */
-        Node *prev = prev_node(n);
-        SCM_ASSERT(prev != NULL);
-        n->key = prev->key;
-        n->value = prev->value;
-        n = prev;
+        /* N has both children.  We swap N and its previous node.
+           It would be easier just to swap key and value, but it could
+           lead to a hard-to-track bug if a pointer to N is retained
+           in somewhere (e.g. iterator).  So we actually swap the node. */
+        swap_node(tc, n, prev_node(n));
     }
 
     /* we have at most one child */
@@ -581,8 +660,6 @@ static Node *delete_node(ScmTreeCore *tc, Node *n)
         delete_node1(tc, n, n->right);  /* this covers no child case */
     }
     clear_node(n);
-    n->key = key;
-    n->value = value;
     return n;
 }
 
@@ -618,7 +695,8 @@ Node *core_ref(ScmTreeCore *tc, intptr_t key, enum TreeOp op,
                 return n;
             }
             if (op == TREE_NEAR) {
-                *lo = *hi = e;
+                *lo = prev_node(e);
+                *hi = next_node(e);
             }
             return e;
         }

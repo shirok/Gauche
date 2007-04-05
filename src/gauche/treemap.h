@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: treemap.h,v 1.3 2007-03-26 23:11:47 shirok Exp $
+ *  $Id: treemap.h,v 1.4 2007-04-05 05:56:57 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -74,8 +74,9 @@ typedef struct ScmTreeIterRec {
 SCM_EXTERN void Scm_TreeCoreInit(ScmTreeCore *tc,
                                  ScmTreeCoreCompareProc *cmp,
                                  void *data);
-SCM_EXTERN void Scm_CopyTreeCore(ScmTreeCore *dst,
+SCM_EXTERN void Scm_TreeCoreCopy(ScmTreeCore *dst,
                                  const ScmTreeCore *src);
+SCM_EXTERN void Scm_TreeCoreClear(ScmTreeCore *tc);
 
 /*
  * Accessors
@@ -89,6 +90,9 @@ SCM_EXTERN ScmDictEntry *Scm_TreeCoreClosestEntries(ScmTreeCore *tc,
                                                     ScmDictEntry **lo,
                                                     ScmDictEntry **hi);
 
+SCM_EXTERN ScmDictEntry *Scm_TreeCoreNextEntry(ScmTreeCore *tc, intptr_t key);
+SCM_EXTERN ScmDictEntry *Scm_TreeCorePrevEntry(ScmTreeCore *tc, intptr_t key);
+
 typedef enum ScmTreeCoreBoundOp {
     SCM_TREE_CORE_MIN,
     SCM_TREE_CORE_MAX
@@ -100,6 +104,8 @@ SCM_EXTERN ScmDictEntry *Scm_TreeCorePopBound(ScmTreeCore *tc,
                                               ScmTreeCoreBoundOp op);
 
 SCM_EXTERN int           Scm_TreeCoreNumEntries(ScmTreeCore *tc);
+
+SCM_EXTERN int           Scm_TreeCoreEq(ScmTreeCore *a, ScmTreeCore *b);
 
 /*
  * Iterators
@@ -114,6 +120,7 @@ SCM_EXTERN int           Scm_TreeIterAtEnd(ScmTreeIter *iter);
 
 /* for debug */
 SCM_EXTERN void          Scm_TreeCoreCheckConsistency(ScmTreeCore *tc);
+SCM_EXTERN void          Scm_TreeCoreDump(ScmTreeCore *tc, ScmPort *out);
 
 /*================================================================
  * ScmTreeMap
@@ -135,7 +142,7 @@ SCM_CLASS_DECL(Scm_TreeMapClass);
 
 SCM_EXTERN ScmObj    Scm_MakeTreeMap(ScmTreeCoreCompareProc *cmp,
                                      void *data);
-SCM_EXTERN ScmObj    Scm_CopyTreeMap(const ScmTreeMap *src);
+SCM_EXTERN ScmObj    Scm_TreeMapCopy(const ScmTreeMap *src);
 
 SCM_EXTERN ScmDictEntry *Scm_TreeMapSearch(ScmTreeMap *tm,
                                            ScmObj key,

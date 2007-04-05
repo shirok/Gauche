@@ -1,3 +1,10 @@
+2007-04-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/charset.h: splitted char-set related API decls.
+	* src/char.c: rewrote ScmCharSet using ScmBits and ScmTreeCore.
+	* src/treemap.c: adjust some APIs based on the experience of
+	  reimplementing ScmCharSet.
+
 2007-03-31  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/bits.h, src/bits.c: added ScmBits, generic bitarray

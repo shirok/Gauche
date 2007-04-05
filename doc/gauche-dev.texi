@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.24 2007-03-27 09:18:30 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.25 2007-04-05 05:56:54 shirok Exp $
 
 @iftex
 @finalout
@@ -2572,8 +2572,8 @@ or @code{NULL} if there's no exact match.  Besides that, it stores
 the pointers of entries closest to the given key, from below the key
 and above the key, in the location pointed by @var{lo} and @var{hi}, 
 respectively.  If the tree core has exact match, @var{*lo} and @var{*hi}
-will have a pointer exactly the same as the one returned from the
-procedure.  If the tree core doesn't have exact match, the given key is
+will have pointers to the immediately previous and next entries.
+If the tree core doesn't have exact match, the given key is
 between the keys of two entries pointed by @var{*lo} and @var{*hi}.
 
 As a boundary case, if the given key is smaller than the smallest 
