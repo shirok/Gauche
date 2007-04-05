@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.279 2007-04-05 05:56:54 shirok Exp $
+;;; $Id: extlib.stub,v 1.280 2007-04-05 06:50:16 shirok Exp $
 ;;;
 
 "
@@ -436,7 +436,7 @@
   SCM_RETURN(SCM_OBJ(cs));")
 
 (define-cproc char-set-copy (cs::<char-set>)
-  (call "Scm_CopyCharSet"))
+  (call "Scm_CharSetCopy"))
 
 (define-cproc %char-set-add-chars! (cs::<char-set> chars::<list>)
   "  char_set_add(cs, chars); SCM_RETURN(SCM_OBJ(cs));")

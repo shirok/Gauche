@@ -2,6 +2,7 @@
 
 	* src/gauche/charset.h: splitted char-set related API decls.
 	* src/char.c: rewrote ScmCharSet using ScmBits and ScmTreeCore.
+	  API rename for consistency: Scm_CopyCharSet -> ScmCharSetCopy.
 	* src/treemap.c: adjust some APIs based on the experience of
 	  reimplementing ScmCharSet.
 

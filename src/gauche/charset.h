@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: charset.h,v 1.1 2007-04-05 05:56:57 shirok Exp $
+ *  $Id: charset.h,v 1.2 2007-04-05 06:50:16 shirok Exp $
  */
 
 #ifndef GAUCHE_CHARSET_H
@@ -67,7 +67,7 @@ SCM_CLASS_DECL(Scm_CharSetClass);
     (Scm_TreeCoreNumEntries(&SCM_CHARSET(obj)->large) == 0)
 
 SCM_EXTERN ScmObj Scm_MakeEmptyCharSet(void);
-SCM_EXTERN ScmObj Scm_CopyCharSet(ScmCharSet *src);
+SCM_EXTERN ScmObj Scm_CharSetCopy(ScmCharSet *src);
 SCM_EXTERN int    Scm_CharSetEq(ScmCharSet *x, ScmCharSet *y);
 SCM_EXTERN int    Scm_CharSetLE(ScmCharSet *x, ScmCharSet *y);
 SCM_EXTERN ScmObj Scm_CharSetAddRange(ScmCharSet *cs,

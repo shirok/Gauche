@@ -31,7 +31,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.66 2007-03-02 07:39:14 shirok Exp $
+ *  $Id: regexp.c,v 1.67 2007-04-05 06:50:16 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -1125,7 +1125,7 @@ static int is_distinct(ScmObj x, ScmObj y)
             return !Scm_CharSetContains(SCM_CHARSET(x), SCM_CHAR_VALUE(y));
         }
         if (SCM_CHARSETP(y)) {
-            ScmObj ccs = Scm_CopyCharSet(SCM_CHARSET(y));
+            ScmObj ccs = Scm_CharSetCopy(SCM_CHARSET(y));
             ccs = Scm_CharSetComplement(SCM_CHARSET(ccs));
             return Scm_CharSetLE(SCM_CHARSET(x), SCM_CHARSET(ccs));
         }

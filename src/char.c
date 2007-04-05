@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.49 2007-04-05 05:56:54 shirok Exp $
+ *  $Id: char.c,v 1.50 2007-04-05 06:50:16 shirok Exp $
  */
 
 #include <ctype.h>
@@ -250,7 +250,7 @@ ScmObj Scm_MakeEmptyCharSet(void)
     return SCM_OBJ(make_charset());
 }
 
-ScmObj Scm_CopyCharSet(ScmCharSet *src)
+ScmObj Scm_CharSetCopy(ScmCharSet *src)
 {
     ScmCharSet *dst = make_charset();
     Scm_BitsCopyX(dst->small, 0, src->small, 0, SCM_CHARSET_SMALL_CHARS);
@@ -668,7 +668,7 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
                 goto ordchar;
             }
             if (moreset_complement) {
-                moreset = Scm_CharSetComplement(SCM_CHARSET(Scm_CopyCharSet(SCM_CHARSET(moreset))));
+                moreset = Scm_CharSetComplement(SCM_CHARSET(Scm_CharSetCopy(SCM_CHARSET(moreset))));
             }
             Scm_CharSetAdd(set, SCM_CHARSET(moreset));
             continue;
