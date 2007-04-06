@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: progress.scm,v 1.2 2007-03-07 13:10:41 shirok Exp $
+;;;  $Id: progress.scm,v 1.3 2007-04-06 18:36:59 shirok Exp $
 ;;;
 
 (define-module text.progress
@@ -65,7 +65,7 @@
           (start-time (current-time))
           (finish-time  #f))
       (define (show)
-        (format port "~v,,,va~a~v,,,va~a~v,,,v@a~v,,,v@a~a"
+        (format port "~v,,,,va~a~v,,,,va~a~v,,,,v@a~v,,,,v@a~a"
                 header-width header-width header
                 (or separator-char "")
                 bar-width bar-width (make-bar)

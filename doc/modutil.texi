@@ -39,6 +39,7 @@
 * Localized messages::          
 * Simple HTML document construction::  
 * Parsing input stream::        
+* Showing progress on text terminals::  
 * SQL parsing and construction::  
 * Transliterate characters::    
 * Lazy text construction::      
@@ -10844,7 +10845,7 @@ approach.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Parsing input stream, SQL parsing and construction, Simple HTML document construction, Library modules - Utilities
+@node Parsing input stream, Showing progress on text terminals, Simple HTML document construction, Library modules - Utilities
 @section @code{text.parse} - Parsing input stream
 @c NODE 入力ストリームのパージング, @code{text.parse} - 入力ストリームのパージング
 
@@ -11059,7 +11060,147 @@ as many characters available.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node SQL parsing and construction, Transliterate characters, Parsing input stream, Library modules - Utilities
+@node Showing progress on text terminals, SQL parsing and construction, Parsing input stream, Library modules - Utilities
+@section @code{text.progress} - Showing progress on text terminals
+
+@deftp {Module} text.progress
+@mdindex text.progress
+This module provides a utility to report a progress of processing
+on a text terminal, using characters to display bar chart.
+
+The generic format of a progress bar consists of a single line
+of text, which is splitted into several parts; a header, which
+displays the title; followed by a bar, a numeric part, and a time part,
+as shown in the followig example (only the line beginning with ``foo''
+is actually displayed).
+
+@example
+<-header-> <-------bar---------> <-num-><-time->
+foo       |#############        |123/211   01:21 ETA
+          ^
+          separator
+@end example
+
+Various things like the character used in the bar chart or
+the format of the numeric progress can be configured.
+
+Internally a progress bar maintains two numbers, the maximum (goal)
+value and the current value.  The bar shows the proportion of
+the current value relative to the maximum value.  The numeric progress
+shows the current value over the maximum value by default, but you
+can configure it to show only the current value or percentage, for example.
+
+A progress bar also has two states, ``in progress'' and ``finished''.
+When it is in progress, every time the text is displayed it is
+followed by @code{#\return}, so that the next display overwrites
+the bar, and the time part shows ETA (estimated time of arrival).
+Once it becomes finished, the last line of text is displayed
+with @code{#\newline}, and the time part shows the actual time
+it took to finish.
+@end deftp
+
+This module provides only one procedure, @code{make-text-progress-bar},
+which packages the progress bar feature in a closure and returns it.
+
+@defun make-text-progress-bar &keyword header header-width bar-char bar-width num-width num-format time-width separator-char max-value port
+
+Returns a procedure that packages operations on the progress bar.
+The procedure can be called with a symbol indicating an operation,
+and an optinal numeric argument.
+
+@table @code
+@item @var{proc} 'show
+Redisplays the progress bar.  All other operations implies redisplay,
+so you don't need to use this unless you have a specific reason to 
+redisplay the current state.
+
+@item @var{proc} 'set @var{value}
+Sets the current value to @var{value}, then redisplays the progress bar.
+If @var{value} exceeds the max value, it is clipped by the max value.
+
+@item @var{proc} 'inc @var{value}
+Increments the current value by @var{value}, then redisplays the progress bar.
+If the current value exceeds the max value, it is clipped by the max value.
+
+@item @var{proc} 'finish
+Puts the progress bar to the ``finished'' state, then redisplays it.
+The time part shows the total elapsed time, and the line is terminated
+by @code{#\newline} so that it won't be clobbered.   Once a progress
+bar becomes ``finished'', there's no way to put it back ``in progress''.
+@end table
+
+The keyword arguments are used to customize the display:
+@table @var
+@item header
+The text to be displayed in the header part.
+
+@item header-width
+The width of the header part, in number of characters.
+The header text is displayed left-aligned in the part.
+If the header text is longer than the width, the excess characters
+are omitted.  The default is 14.
+
+@item bar-char
+A character used to draw a bar chart.  The default is @code{#\#}.
+
+@item bar-width
+The width of the bar chart part, in number of characters.
+The default is 40.
+
+@item num-width
+The width of the numeric part, in number of characters.
+The default is 9.  Setting this to 0 hides the numeric part.
+
+@item num-format
+A procedure to format the numeric part.  Two arguments are
+passed; the current value and the maximum value.  It must return
+a string.  The default is the following procedure.
+@example
+(lambda (cur max)
+  (format "~d/~d" cur max))
+@end example
+
+@item time-width
+The width of the time part, in number of characters.
+The default is 7.  Settings this to 0 hides the time part.
+
+@item separator-char
+A character put around the bar part.  Default is @code{#\|}.
+You can pass @code{#f} not to display the separators.
+
+@item max-value
+The maximum value of the progress bar.  Default is 100.
+
+@item port
+An output port to which the progress bar is displayed.  The default value
+is the current output port when @code{make-text-progress-bar} is called.
+@end table
+@end defun
+
+Here's a simple example, using customized numeric part:
+
+@example
+(use text.progress)
+
+(define (main args)
+  (define (num-format cur max)
+    (format "~d/~d(~3d%)" cur max
+            (round->exact (/. (* cur 100) max))))
+  
+  (let ((p (make-text-progress-bar :header "Example"
+                                   :header-width 10
+                                   :bar-char #\o
+                                   :num-format num-format
+                                   :num-width 13
+                                   :max-value 256)))
+    (do ((i 0 (+ i 1)))
+        ((= i 256) (p 'finish))
+      (p 'inc 1)
+      (sys-select #f #f #f 50000))))
+@end example
+
+@c ----------------------------------------------------------------------
+@node SQL parsing and construction, Transliterate characters, Showing progress on text terminals, Library modules - Utilities
 @section @code{text.sql} - SQL parsing and construction
 @c NODE @code{text.sql} - SQLのパーズと構築
 

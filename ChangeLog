@@ -1,3 +1,8 @@
+2007-04-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/progress.scm: fix.
+	* examples/text-progress.scm: added.
+
 2007-04-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/charset.h: splitted char-set related API decls.
