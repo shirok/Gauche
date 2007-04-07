@@ -7924,7 +7924,7 @@ first character after the root element.
 @c JP
 これは、上のSSAXパーザのインスタンスで、@var{port}から読み込まれる
 XMLドキュメントのSXML表現を返します。
-@var{namespace-pregix-assig}は、@code{(@var{USER-PREFIX} . @var{URI-STRING})}
+@var{namespace-prefix-assig}は、@code{(@var{USER-PREFIX} . @var{URI-STRING})}
 のリストで、特定の@var{URI-STRING}で識別されるある名前空間を
 @var{USER-PREFIX}に割り当てます。これは空リストでも構いません。
 この手続きは、SXMLツリーを返します。
