@@ -1,3 +1,18 @@
+2007-04-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c, src/gauche/hash.h, src/gauche.h: Changed hashtable API
+	  for consistency of dictionary API.  This introduces incompatibility
+	  in Scm_HashIterInit and Scm_HashIterNext, which we provide the
+	  backward compatibility routines by default; defining GAUCHE_API_0_9
+	  make the new API visible.  Also we deprecate Scm_HashTableGet,
+	  Scm_HashTablePut, and Scm_HashTableAdd, in favor of the new
+	  APIs Scm_HashTableRef and Scm_HashTableSet.  (Scm_HashTableDelete
+	  is also changed, but it only changes its return type which isn't
+	  used much.)   All the "raw" hashtable support is dropped, in favor
+	  of ScmHashTableCore.
+	* src/class.c, src/extilb.stub, src/module.c: Changed to adapt the
+	  new hashtable API.
+
 2007-04-06  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/progress.scm: fix.
