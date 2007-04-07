@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.148 2007-03-02 07:39:12 shirok Exp $
+ *  $Id: class.c,v 1.149 2007-04-07 22:04:09 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2560,7 +2560,7 @@ static void accessor_method_slot_accessor_set(ScmAccessorMethod *m, ScmObj v)
 struct foreign_data_rec {
     int flags;
     ScmForeignCleanupProc cleanup;
-    ScmHashTable *identity_map;
+    ScmHashCore *identity_map;
 };
 
 ScmClass *Scm_MakeForeignPointerClass(ScmModule *mod,
@@ -2585,8 +2585,8 @@ ScmClass *Scm_MakeForeignPointerClass(ScmModule *mod,
     data->flags = flags;
     data->cleanup = cleanup_proc;
     if (flags & SCM_FOREIGN_POINTER_KEEP_IDENTITY) {
-        data->identity_map =
-            SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_WORD, 256));
+        data->identity_map = SCM_NEW(ScmHashCore);
+        Scm_HashCoreInitSimple(data->identity_map, SCM_HASH_WORD, 256, NULL);
     } else {
         data->identity_map = NULL;
     }
@@ -2631,7 +2631,8 @@ ScmObj Scm_MakeForeignPointer(ScmClass *klass, void *ptr)
     }
 
     if (data->identity_map) {
-        ScmHashEntry *e = Scm_HashTableAddRaw(data->identity_map, ptr, NULL);
+        ScmDictEntry *e = Scm_HashCoreSearch(data->identity_map,
+                                             (intptr_t)ptr, SCM_DICT_CREATE);
         if (e->value) {
             if (Scm_WeakBoxEmptyP((ScmWeakBox*)e->value)) {
                 obj = make_foreign_int(klass, ptr, data);
@@ -2641,7 +2642,7 @@ ScmObj Scm_MakeForeignPointer(ScmClass *klass, void *ptr)
             }
         } else {
             obj = make_foreign_int(klass, ptr, data);
-            e->value = Scm_MakeWeakBox(obj);
+            e->value = (intptr_t)Scm_MakeWeakBox(obj);
         }
     } else {
         obj = make_foreign_int(klass, ptr, data);

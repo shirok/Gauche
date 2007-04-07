@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.66 2007-03-02 07:39:13 shirok Exp $
+ *  $Id: module.c,v 1.67 2007-04-07 22:04:10 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -418,7 +418,7 @@ ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list)
 ScmObj Scm_ExportAll(ScmModule *module)
 {
     ScmHashIter iter;
-    ScmHashEntry *e;
+    ScmDictEntry *e;
     
     (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
     if (!module->exportAll) {
@@ -427,9 +427,9 @@ ScmObj Scm_ExportAll(ScmModule *module)
         module->exportAll = TRUE;
         
         /* Scan the module and mark all existing bindings as exported. */
-        Scm_HashIterInit(module->table, &iter);
+        Scm_HashIterInit(&iter, SCM_HASH_TABLE_CORE(module->table));
         while ((e = Scm_HashIterNext(&iter)) != NULL) {
-            ScmGloc *g = SCM_GLOC(e->value);
+            ScmGloc *g = SCM_GLOC(SCM_DICT_VALUE(e));
             if (!g->exported) {
                 g->exported = TRUE;
                 module->exported =
@@ -501,12 +501,12 @@ ScmObj Scm_AllModules(void)
 {
     ScmObj h = SCM_NIL, t = SCM_NIL;
     ScmHashIter iter;
-    ScmHashEntry *e;
+    ScmDictEntry *e;
 
     (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
-    Scm_HashIterInit(modules.table, &iter);
+    Scm_HashIterInit(&iter, SCM_HASH_TABLE_CORE(modules.table));
     while ((e = Scm_HashIterNext(&iter)) != NULL) {
-        SCM_APPEND1(h, t, e->value);
+        SCM_APPEND1(h, t, SCM_DICT_VALUE(e));
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
     return h;

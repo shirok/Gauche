@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.282 2007-04-05 08:17:49 shirok Exp $
+;;; $Id: extlib.stub,v 1.283 2007-04-07 22:04:09 shirok Exp $
 ;;;
 
 "
@@ -1184,7 +1184,7 @@
   }")
 
 (define-cproc hash-table-num-entries (hash::<hash-table>)
-  (expr <int> "hash->numEntries"))
+  (expr <int> "Scm_HashCoreNumEntries(SCM_HASH_TABLE_CORE(hash))"))
 
 (define-cproc hash-table-get (hash::<hash-table> key &optional defval)
   "  ScmHashEntry *e = Scm_HashTableGet(hash, key);
@@ -1252,15 +1252,15 @@
 "static ScmObj hash_table_iter(ScmObj *args, int nargs, void *data)
  {
    ScmHashIter *iter = (ScmHashIter*)data;
-   ScmHashEntry *e = Scm_HashIterNext(iter);
+   ScmDictEntry *e = Scm_HashIterNext(iter);
    ScmObj eofval = args[0];
    if (e == NULL) SCM_RETURN(Scm_Values2(eofval, eofval));
-   else SCM_RETURN(Scm_Values2(e->key, e->value));
+   else SCM_RETURN(Scm_Values2(SCM_DICT_KEY(e), SCM_DICT_VALUE(e)));
  }"
 
 (define-cproc %hash-table-iter (hash::<hash-table>)
   "ScmHashIter *iter = SCM_NEW(ScmHashIter);
-  Scm_HashIterInit(hash, iter);
+  Scm_HashIterInit(iter, SCM_HASH_TABLE_CORE(hash));
   SCM_RETURN(Scm_MakeSubr(hash_table_iter, iter, 1, 0, SCM_MAKE_STR(\"hash-table-iterator\")));")
 
 (define-cproc hash-table-keys (hash::<hash-table>)

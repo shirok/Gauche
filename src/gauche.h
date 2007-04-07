@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.490 2007-04-05 05:56:54 shirok Exp $
+ *  $Id: gauche.h,v 1.491 2007-04-07 22:04:09 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -1076,6 +1076,7 @@ SCM_EXTERN void       *Scm_WeakBoxRef(ScmWeakBox *wbox);
  * HASHTABLE
  */
 
+#if 0
 typedef struct ScmHashEntryRec ScmHashEntry;
 
 typedef ScmHashEntry *(*ScmHashAccessProc)(ScmHashTable *ht,
@@ -1195,6 +1196,9 @@ SCM_EXTERN ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
 				    ScmHashCmpProc cmpfn,
 				    unsigned int initSize);
 
+#else
+#include <gauche/hash.h>
+#endif
 
 /*--------------------------------------------------------
  * TREEMAP

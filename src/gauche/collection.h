@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: collection.h,v 1.5 2007-04-05 08:17:50 shirok Exp $
+ *  $Id: collection.h,v 1.6 2007-04-07 22:04:12 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -122,7 +122,8 @@ typedef enum {
  * Common flags for *Set functions
  */
 typedef enum {
-    SCM_DICT_NO_OVERWRITE = (1L<<0) /* do not overwrite the existing entry */
+    SCM_DICT_NO_OVERWRITE = (1L<<0),/* do not overwrite the existing entry */
+    SCM_DICT_NO_CREATE    = (1L<<1) /* do not create new one if no match */
 } ScmDictSetFlags;
 
 #endif /* GAUCHE_COLLECTION_H */

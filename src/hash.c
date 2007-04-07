@@ -30,19 +30,52 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.48 2007-03-02 07:39:13 shirok Exp $
+ *  $Id: hash.c,v 1.49 2007-04-07 22:04:10 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/class.h"
 
-/*-------------------------------------------------------------
- * Some macros & utilities
+/*============================================================
+ * Internal structures
  */
 
-/* Usually, "shift+add" scheme for string hasing works well.  But
- * I found that it works well if you take the lower bits.
+/* The beginning of this structure must match ScmDictEntry. */
+typedef struct EntryRec {
+    intptr_t key;
+    intptr_t value;
+    struct EntryRec *next;
+} Entry;
+
+#define BUCKET(hc)   ((Entry**)hc->buckets)
+
+#define DEFAULT_NUM_BUCKETS    4
+#define MAX_AVG_CHAIN_LIMITS   3
+#define EXTEND_BITS            2
+
+/* We limit hash value to 32bits, for it must be portable across platforms.
+   (Especially EQUAL-hash value */
+#define HASHMASK  0xffffffffUL
+
+typedef Entry *SearchProc(ScmHashCore *core, intptr_t key, ScmDictOp op);
+
+static unsigned int round2up(unsigned int val);
+static void check_scm_hashtable(ScmHashTable *table);
+
+/*============================================================
+ * Hash functions
+ */
+
+/* Hash function calculates 32bit hash value from the given object.
+   HASH2INDEX macro maps the hash value to the bucket number.
+   (On 64 bit architecture, it's OK to calculate 64bit, but the
+   upper bits are discarded by HASH2INDEX to maintain compatibility. */
+
+/* For String
+ *
+ * Usually, "shift+add" scheme for string hasing works well.  But
+ * I found that it works well only if you take the lower bits.
  * Unfortunately, we need to take higher bits for multiplicative
  * hashing of integers and addresses.  So, in HASH2INDEX function,
  * I take both lower bits and higher bits.
@@ -57,69 +90,32 @@
         }                                                               \
     } while (0)
 
+/* Integer and address. */
 /* Integer and address hash is a variation of "multiplicative hashing"
    scheme described in Knuth, TAOCP, section 6.4.  The final shifting
    is done by HASH2INDEX macro  */
 
 #define SMALL_INT_HASH(result, val) \
-    ((result) = (val)*2654435761UL)
+    (result) = ((val)*2654435761UL)
 
 #define ADDRESS_HASH(result, val) \
-    ((result) = (SCM_WORD(val) >> 3) * 2654435761UL)
+    (result) = ((SCM_WORD(val) >> 3)*2654435761UL)
 
-#define DEFAULT_NUM_BUCKETS    4
-#define MAX_AVG_CHAIN_LIMITS   3
-#define EXTEND_BITS            2
-
-/* NB: we fix the word length to 32bits, since the multiplication
+/* HASH2INDEX
+   Map a hash value to bucket number.
+   We fix the word length to 32bits, since the multiplication
    constant above is fixed. */
 #define HASH2INDEX(tabsiz, bits, hashval) \
     (((hashval)+((hashval)>>(32-(bits)))) & ((tabsiz) - 1))
 
-/* Combining two hash values.  We need better one. */
+/* Combining two hash values. */
 #define COMBINE(hv1, hv2)   ((hv1)*5+(hv2))
-
-static unsigned int round2up(unsigned int val)
-{
-    unsigned int n = 1;
-    while (n < val) {
-        n <<= 1;
-        SCM_ASSERT(n > 1);      /* check overflow */
-    }
-    return n;
-}
-
-/* In C-level, hash table can be used to contain arbitrary C data.
-   There are some pre-wired hashtables that can restrict the data
-   it holds to ScmObj.  We call such type "ScmObj hashtables", while
-   the other ones "raw hashtables".
-
-   Naturally, raw hashtables are only accessible from C-world; even
-   if it leak out to the Scheme world, you can't access it.
-
-   For the convenience, hash-table accessor API comes in pairs; those
-   who has 'Raw' in the name can access any hashtables, while another
-   one checks whether the given hashtable is an ScmObj hashtable,
-   and rejects if not. */
-
-/* internal utility to reject non-ScmObj hashtables. */
-static void check_scm_hashtable(ScmHashTable *table)
-{
-    if (SCM_HASH_TABLE_RAW_P(table)) {
-        Scm_Error("you can't access the raw hash table %S from Scheme",
-                  table);        
-    }
-}
-
-/*------------------------------------------------------------
- * Hash functions
- */
 
 unsigned long Scm_EqHash(ScmObj obj)
 {
     unsigned long hashval;
     ADDRESS_HASH(hashval, obj);
-    return hashval;
+    return hashval&HASHMASK;
 }
 
 unsigned long Scm_EqvHash(ScmObj obj)
@@ -151,7 +147,7 @@ unsigned long Scm_EqvHash(ScmObj obj)
     } else {
         ADDRESS_HASH(hashval, obj);
     }
-    return hashval;
+    return hashval&HASHMASK;
 }
 
 /* General hash function */
@@ -241,21 +237,9 @@ unsigned long Scm_HashString(ScmString *str, unsigned long modulo)
  *
  * The accessor function takes four arguments.
  *
- *     ScmHashTable *table : hash table
- *     void *key           : key
- *     void *value         : value, if the request involves modification.
- *     int mode            : mode of operation; one of those three:
- *                              HASH_FIND - just try to find the entry
- *                                          with key.  If no entry is found,
- *                                          returns NULL.
- *                              HASH_ADD  - if the entry is found, return
- *                                          it without modification.
- *                                          otherwise, add an entry with
- *                                          the given value.
- *                              HASH_UPDATE - if the entry is found, update
- *                                          the entry.  Otherwise, add a
- *                                          new entry with the given value.
- *                              HASH_DELETE - delete the found entry.
+ *     ScmHashCore *core   : hash table core
+ *     intptr_t key        : key
+ *     ScmDictOp op        : operation
  */
 
 /* NOTE: eq?, eqv?, and string=? hash tables are guaranteed not to
@@ -266,40 +250,33 @@ unsigned long Scm_HashString(ScmString *str, unsigned long modulo)
  * throw Scheme error.  Be aware of that.
  */
 
-enum {
-    HASH_FIND,           /* returns NULL if not found */
-    HASH_ADD,            /* add entry iff the key is not in the table */
-    HASH_UPDATE,         /* modify entry if key exists; add otherwise */
-    HASH_DELETE          /* remove matched entry */
-};
-
 /*
  * Common function called when the accessor function needs to add an entry.
  */
-static ScmHashEntry *insert_entry(ScmHashTable *table,
-                                  ScmObj key,
-                                  ScmObj value,
-                                  int index)
+static Entry *insert_entry(ScmHashCore *table,
+                           intptr_t key,
+                           int index)
 {
-    ScmHashEntry *e = SCM_NEW(ScmHashEntry);
+    Entry *e = SCM_NEW(Entry);
+    Entry **buckets = (Entry**)table->buckets;
     e->key = key;
-    e->value = value;
-    e->next = table->buckets[index];
-    table->buckets[index] = e;
+    e->value = 0;
+    e->next = buckets[index];
+    buckets[index] = e;
     table->numEntries++;
 
     if (table->numEntries > table->numBuckets*MAX_AVG_CHAIN_LIMITS) {
         /* Extend the table */
-        ScmHashEntry **newb, *f;
+        Entry **newb, *f;
         ScmHashIter iter;
         int i, newsize = (table->numBuckets << EXTEND_BITS);
         int newbits = table->numBucketsLog2 + EXTEND_BITS;
 
-        newb = SCM_NEW_ARRAY(ScmHashEntry*, newsize);
+        newb = SCM_NEW_ARRAY(Entry*, newsize);
         for (i=0; i<newsize; i++) newb[i] = NULL;
         
-        Scm_HashIterInitRaw(table, &iter);
-        while ((f = Scm_HashIterNext(&iter)) != NULL) {
+        Scm_HashIterInit(&iter, table);
+        while ((f = (Entry*)Scm_HashIterNext(&iter)) != NULL) {
             unsigned long hashval = table->hashfn(table, f->key);
             index = HASH2INDEX(newsize, newbits, hashval);
             f->next = newb[index];
@@ -307,50 +284,60 @@ static ScmHashEntry *insert_entry(ScmHashTable *table,
         }
         table->numBuckets = newsize;
         table->numBucketsLog2 = newbits;
-        table->buckets = newb;
+        table->buckets = (void**)newb;
     }
     return e;
 }
 
-static ScmHashEntry *delete_entry(ScmHashTable *table,
-                                  ScmHashEntry *entry, ScmHashEntry *prev,
-                                  int index)
+static Entry *delete_entry(ScmHashCore *table,
+                           Entry *entry, Entry *prev,
+                           int index)
 {
     if (prev) prev->next = entry->next;
-    else table->buckets[index] = entry->next;
+    else table->buckets[index] = (void*)entry->next;
     table->numEntries--;
     SCM_ASSERT(table->numEntries >= 0);
+    entry->next = NULL;         /* GC friendliness */
     return entry;
 }
+
+#define FOUND(table, op, e, p, index)                   \
+    do {                                                \
+        switch (op) {                                   \
+        case SCM_DICT_GET:;                             \
+        case SCM_DICT_CREATE:;                          \
+            return e;                                   \
+        case SCM_DICT_DELETE:;                          \
+            return delete_entry(table, e, p, index);    \
+        }                                               \
+    } while (0)
+
+#define NOTFOUND(table, op, key, index)                                 \
+    do {                                                                \
+        if (op == SCM_DICT_CREATE) insert_entry(table, key, index);     \
+        else return NULL;                                               \
+    } while (0)
 
 /*
  * Accessor function for address.   Used for EQ-type hash.
  */
-static ScmHashEntry *address_access(ScmHashTable *table,
-                                    void *key, int mode, void *value)
+static Entry *address_access(ScmHashCore *table,
+                             intptr_t key,
+                             ScmDictOp op)
 {
     unsigned long hashval, index;
-    ScmHashEntry *e, *p;
+    Entry *e, *p, **buckets = (Entry**)table->buckets;
 
     ADDRESS_HASH(hashval, key);
     index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
     
-    for (e = table->buckets[index], p = NULL; e; p = e, e = e->next) {
-        if (e->key == key) {
-            if (mode == HASH_FIND || mode == HASH_ADD) return e;
-            if (mode == HASH_DELETE) return delete_entry(table, e, p, index);
-            else {
-                e->value = value;
-                return e;
-            }
-        }
+    for (e = buckets[index], p = NULL; e; p = e, e = e->next) {
+        if (e->key == key) FOUND(table, op, e, p, index);
     }
-
-    if (mode == HASH_FIND || mode == HASH_DELETE) return NULL;
-    else return insert_entry(table, key, value, index);
+    NOTFOUND(table, op, key, index);
 }
 
-static unsigned long address_hash(ScmHashTable *ht, void *obj)
+static unsigned long address_hash(ScmHashCore *ht, intptr_t obj)
 {
     unsigned long hashval;
     ADDRESS_HASH(hashval, obj);
@@ -358,40 +345,40 @@ static unsigned long address_hash(ScmHashTable *ht, void *obj)
 }
 
 /*
- * Accessor function for equal and eqv-hash
+ * Accessor function for equal and eqv-hash.
+ * We assume KEY is ScmObj.
  */
-static unsigned long eqv_hash(ScmHashTable *table, void *key)
+static unsigned long eqv_hash(ScmHashCore *table, intptr_t key)
 {
     return Scm_EqvHash(SCM_OBJ(key));
 }
 
-static int eqv_cmp(ScmHashTable *table, void *key, ScmHashEntry *e)
+static int eqv_cmp(ScmHashCore *table, intptr_t key, intptr_t k2)
 {
-    return Scm_EqvP(SCM_OBJ(key), e->key);
+    return Scm_EqvP(SCM_OBJ(key), SCM_OBJ(k2));
 }
 
-static unsigned long equal_hash(ScmHashTable *table, void *key)
+static unsigned long equal_hash(ScmHashCore *table, intptr_t key)
 {
     return Scm_Hash(SCM_OBJ(key));
 }
 
-static int equal_cmp(ScmHashTable *table, void *key, ScmHashEntry *e)
+static int equal_cmp(ScmHashCore *table, intptr_t key, intptr_t k2)
 {
-    return Scm_EqualP(SCM_OBJ(key), SCM_OBJ(e->key));
+    return Scm_EqualP(SCM_OBJ(key), SCM_OBJ(k2));
 }
 
 
 /*
  * Accessor function for string type.
  */
-static ScmHashEntry *string_access(ScmHashTable *table, void *k,
-                                   int mode, void *v)
+static Entry *string_access(ScmHashCore *table, intptr_t k, ScmDictOp op)
 {
     unsigned long hashval, index;
     int size;
     const char *s;
-    ScmObj key = SCM_OBJ(k), value = SCM_OBJ(v);
-    ScmHashEntry *e, *p;
+    ScmObj key = SCM_OBJ(k);
+    Entry *e, *p, **buckets;
     const ScmStringBody *keyb;
     
     if (!SCM_STRINGP(key)) {
@@ -403,28 +390,22 @@ static ScmHashEntry *string_access(ScmHashTable *table, void *k,
     size = SCM_STRING_BODY_SIZE(keyb);
     STRING_HASH(hashval, s, size);
     index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
+    buckets = (Entry**)table->buckets;
 
-    for (e = table->buckets[index], p = NULL; e; p = e, e = e->next) {
+    for (e = buckets[index], p = NULL; e; p = e, e = e->next) {
         ScmObj ee = SCM_OBJ(e->key);
         const ScmStringBody *eeb = SCM_STRING_BODY(ee);
         int eesize = SCM_STRING_BODY_SIZE(eeb);
         if (size == eesize
             && memcmp(SCM_STRING_BODY_START(keyb),
                       SCM_STRING_BODY_START(eeb), eesize) == 0){
-            if (mode == HASH_FIND || mode == HASH_ADD) return e;
-            if (mode == HASH_DELETE) return delete_entry(table, e, p, index);
-            else {
-                e->value = value;
-                return e;
-            }
+            FOUND(table, op, e, p, index);
         }
     }
-
-    if (mode == HASH_FIND || mode == HASH_DELETE) return NULL;
-    else return insert_entry(table, key, value, index);
+    NOTFOUND(table, op, k, index);
 }
 
-static unsigned long string_hash(ScmHashTable *table, void *key)
+static unsigned long string_hash(ScmHashCore *table, intptr_t key)
 {
     unsigned long hashval;
     const char *p;
@@ -438,7 +419,7 @@ static unsigned long string_hash(ScmHashTable *table, void *key)
  * Accessor function for multiword raw hashtable.
  * Key points to an array of N words.
  */
-static unsigned long multiword_hash(ScmHashTable *table, void *key)
+static unsigned long multiword_hash(ScmHashCore *table, intptr_t key)
 {
     ScmWord keysize = (ScmWord)table->data;
     ScmWord *keyarray = (ScmWord*)key;
@@ -451,29 +432,21 @@ static unsigned long multiword_hash(ScmHashTable *table, void *key)
     return h;
 }
 
-static ScmHashEntry *multiword_access(ScmHashTable *table, void *k,
-                                      int mode, void *v)
+static Entry *multiword_access(ScmHashCore *table, intptr_t k, ScmDictOp op)
 {
     unsigned long hashval, index;
     ScmWord keysize = (ScmWord)table->data;
-    ScmHashEntry *e, *p;
+    Entry *e, *p, **buckets;
     
     hashval = multiword_hash(table, k);
     index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
+    buckets = (Entry**)table->buckets;
 
-    for (e = table->buckets[index], p = NULL; e; p = e, e = e->next) {
-        if (memcmp(k, e->key, keysize*sizeof(ScmWord)) == 0) {
-            if (mode == HASH_FIND || mode == HASH_ADD) return e;
-            if (mode == HASH_DELETE) return delete_entry(table, e, p, index);
-            else {
-                e->value = v;
-                return e;
-            }
-        }
+    for (e = buckets[index], p = NULL; e; p = e, e = e->next) {
+        if (memcmp((void*)k, (void*)e->key, keysize*sizeof(ScmWord)) == 0)
+            FOUND(table, op, e, p, index);
     }
-
-    if (mode == HASH_FIND || mode == HASH_DELETE) return NULL;
-    else return insert_entry(table, k, v, index);
+    NOTFOUND(table, op, k, index);
 }
 
 
@@ -481,32 +454,181 @@ static ScmHashEntry *multiword_access(ScmHashTable *table, void *k,
  * Accessor function for general case
  *    (hashfn and cmpfn are given by user)
  */
-static ScmHashEntry *general_access(ScmHashTable *table, void *key,
-                                    int mode, void *value)
+static Entry *general_access(ScmHashCore *table, intptr_t key, ScmDictOp op)
 {
     unsigned long hashval, index;
-    ScmHashEntry *e, *p;
+    Entry *e, *p, **buckets;
 
     hashval = table->hashfn(table, key);
     index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
+    buckets = (Entry**)table->buckets;
     
-    for (e = table->buckets[index], p = NULL; e; p = e, e = e->next) {
-        if (table->cmpfn(table, key, e)) {
-            if (mode == HASH_FIND || mode == HASH_ADD) return e;
-            if (mode == HASH_DELETE) return delete_entry(table, e, p, index);
-            else {
-                e->value = value;
-                return e;
-            }
+    for (e = buckets[index], p = NULL; e; p = e, e = e->next) {
+        if (table->cmpfn(table, key, e->key)) FOUND(table, op, e, p, index);
+    }
+    NOTFOUND(table, op, key, index);
+}
+
+/*============================================================
+ * Hash Core functions
+ */
+
+static void hash_core_init(ScmHashCore *table,
+                           SearchProc accessfn,
+                           ScmHashProc hashfn,
+                           ScmHashCompareProc cmpfn,
+                           unsigned int initSize,
+                           void *data)
+{
+    Entry **b;
+    int i;
+    
+    if (initSize != 0) initSize = round2up(initSize);
+    else initSize = DEFAULT_NUM_BUCKETS;
+
+    b = SCM_NEW_ARRAY(Entry*, initSize);
+    table->buckets = (void**)b;
+    table->numBuckets = initSize;
+    table->numEntries = 0;
+    table->accessfn = (void*)accessfn;
+    table->hashfn = hashfn;
+    table->cmpfn = cmpfn;
+    table->data = data;
+    for (i=initSize, table->numBucketsLog2=0; i > 1; i /= 2) {
+        table->numBucketsLog2++;
+    }
+    for (i=0; i<initSize; i++) table->buckets[i] = NULL;
+}
+
+void Scm_HashCoreInitSimple(ScmHashCore *core,
+                            ScmHashType type,
+                            unsigned int initSize,
+                            void *data)
+{
+    switch (type) {
+    case SCM_HASH_EQ:
+        hash_core_init(core, address_access, address_hash, NULL,
+                       initSize, data);
+        break;
+    case SCM_HASH_EQV:
+        hash_core_init(core, general_access, eqv_hash, eqv_cmp,
+                       initSize, data);
+        break;
+    case SCM_HASH_EQUAL:
+        hash_core_init(core, general_access, equal_hash, equal_cmp,
+                       initSize, data);
+        break;
+    case SCM_HASH_STRING:
+        hash_core_init(core, string_access, string_hash, NULL,
+                       initSize, data);
+        break;
+    case SCM_HASH_WORD:
+        hash_core_init(core, address_access, address_hash, NULL,
+                       initSize, data);
+        break;
+    default:    
+        Scm_Error("[internal error]: wrong TYPE argument passed to Scm_HashCoreInitSimple: %d", type);
+    }
+}
+
+void Scm_HashCoreCopy(ScmHashCore *dst, const ScmHashCore *src)
+{
+    Entry **b = SCM_NEW_ARRAY(Entry*, src->numBuckets);
+    int i;
+    Entry *e, *p, *s;
+
+    for (i=0; i<src->numBuckets; i++) {
+        p = NULL;
+        s = (Entry*)src->buckets[i];
+        b[i] = NULL;
+        while (s) {
+            e = SCM_NEW(Entry);
+            e->key = s->key;
+            e->value = s->value;
+            e->next = NULL;
+            if (p) p->next = e;
+            else   b[i] = e;
+            p = e;
+            s = s->next;
         }
     }
 
-    if (mode == HASH_FIND || mode == HASH_DELETE) return NULL;
-    else return insert_entry(table, key, value, index);
+    /* A little trick to avoid hazard in careless race condition */
+    dst->numBuckets = dst->numEntries = 0;
+    
+    dst->buckets = (void**)b;
+    dst->hashfn   = src->hashfn;
+    dst->cmpfn    = src->cmpfn;
+    dst->accessfn = src->accessfn;
+    dst->data     = src->data;
+    dst->numEntries = src->numEntries;
+    dst->numBucketsLog2 = src->numBucketsLog2;
+    dst->numBuckets = src->numBuckets;
 }
 
-/*---------------------------------------------------------
- * Constructor
+void Scm_HashCoreClear(ScmHashCore *table)
+{
+    int i;
+    Entry *e;
+    for (i=0; i<table->numBuckets; i++) {
+        table->buckets[i] = NULL;
+    }
+    table->numEntries = 0;
+}
+
+ScmDictEntry *Scm_HashCoreSearch(ScmHashCore *table, intptr_t key,
+                                 ScmDictOp op)
+{
+    SearchProc *p = (SearchProc*)table->accessfn;
+    return (ScmDictEntry*)p(table, key, op);
+}
+
+int Scm_HashCoreNumEntries(ScmHashCore *table)
+{
+    return table->numEntries;
+}
+
+void Scm_HashIterInit(ScmHashIter *iter, ScmHashCore *table)
+{
+    int i;
+    iter->core = table;
+    for (i=0; i<table->numBuckets; i++) {
+        if (table->buckets[i]) {
+            iter->bucket = i;
+            iter->entry = table->buckets[i];
+            return;
+        }
+    }
+    iter->entry = NULL;
+}
+
+ScmDictEntry *Scm_HashIterNext(ScmHashIter *iter)
+{
+    Entry *e = (Entry*)iter->entry;
+    if (e != NULL) {
+        if (e->next) iter->entry = e->next;
+        else {
+            int i = iter->bucket + 1;
+            for (; i < iter->core->numBuckets; i++) {
+                if (iter->core->buckets[i]) {
+                    iter->bucket = i;
+                    iter->entry = iter->core->buckets[i];
+                    return (ScmDictEntry*)e;
+                }
+            }
+            iter->entry = NULL;
+        }
+    }
+    return (ScmDictEntry*)e;
+}
+
+ScmDictEntry *Scm_HashIterCurrent(ScmHashIter *iter)
+{
+    return iter->entry;
+}
+
+/*============================================================
+ * Scheme <hash-table> object
  */
 
 static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
@@ -514,219 +636,69 @@ static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 SCM_DEFINE_BUILTIN_CLASS(Scm_HashTableClass, hash_print, NULL, NULL, NULL,
                          SCM_CLASS_DICTIONARY_CPL);
 
-static ScmObj make_hash_table(ScmClass *klass,
-                              int type,
-                              ScmHashAccessProc accessfn,
-                              ScmHashProc hashfn,
-                              ScmHashCmpProc cmpfn,
-                              unsigned int initSize,
-                              void *data)
+ScmObj Scm_MakeHashTableSimple(ScmHashType type, int initSize)
 {
     ScmHashTable *z;
-    ScmHashEntry **b;
-    int i;
-
-    if (initSize != 0) initSize = round2up(initSize);
-    else initSize = DEFAULT_NUM_BUCKETS;
-
-    b = SCM_NEW_ARRAY(ScmHashEntry*, initSize);
-    z = SCM_NEW(ScmHashTable);
-    SCM_SET_CLASS(z, klass);
-    z->buckets = b;
-    z->numBuckets = initSize;
-    z->numEntries = 0;
-    z->type = type;
-    z->accessfn = accessfn;
-    z->hashfn = hashfn;
-    z->cmpfn = cmpfn;
-    z->data = data;
-    for (i=initSize, z->numBucketsLog2=0; i > 1; i /= 2) {
-        z->numBucketsLog2++;
+    /* We only allow ScmObj in <hash-table> */
+    if (type > SCM_HASH_GENERAL) {
+        Scm_Error("Scm_MakeHashTableSimple: wrong type arg: %d", type);
     }
-    for (i=0; i<initSize; i++) z->buckets[i] = NULL;
+    z = SCM_NEW(ScmHashTable);
+    SCM_SET_CLASS(z, SCM_CLASS_HASH_TABLE);
+    Scm_HashCoreInitSimple(&z->core, type, initSize, NULL);
+    z->type = type;
     return SCM_OBJ(z);
 }
 
-ScmObj Scm_MakeHashTableSimple(int type, int initSize)
+ScmObj Scm_HashTableCopy(ScmHashTable *src)
 {
-    switch (type) {
-    case SCM_HASH_EQ:
-        return make_hash_table(SCM_CLASS_HASH_TABLE, SCM_HASH_EQ,
-                               address_access, address_hash,
-                               NULL, initSize, NULL);
-    case SCM_HASH_EQV:
-        return make_hash_table(SCM_CLASS_HASH_TABLE, SCM_HASH_EQV,
-                               general_access, eqv_hash,
-                               eqv_cmp, initSize, NULL);
-    case SCM_HASH_EQUAL:
-        return make_hash_table(SCM_CLASS_HASH_TABLE, SCM_HASH_EQUAL,
-                               general_access, equal_hash,
-                               equal_cmp, initSize, NULL);
-    case SCM_HASH_STRING:
-        return make_hash_table(SCM_CLASS_HASH_TABLE, SCM_HASH_STRING,
-                               string_access, string_hash,
-                               NULL, initSize, NULL);
-    case SCM_HASH_WORD:
-        return make_hash_table(SCM_CLASS_HASH_TABLE, SCM_HASH_WORD,
-                               address_access, address_hash,
-                               NULL, initSize, NULL);
-    default:    
-        Scm_Error("[internal error]: wrong TYPE argument passed to Scm_MakeHashTableSimple: %d", type);
-        return SCM_UNDEFINED;   /* dummy */
-    }
+    ScmHashTable *dst = SCM_NEW(ScmHashTable);
+    SCM_SET_CLASS(dst, SCM_CLASS_HASH_TABLE);
+    Scm_HashCoreCopy(SCM_HASH_TABLE_CORE(dst), SCM_HASH_TABLE_CORE(src));
+    dst->type = src->type;
+    return SCM_OBJ(dst);
 }
 
-ScmObj Scm_MakeHashTableMultiWord(int keysize, int initsize)
+ScmObj Scm_HashTableRef(ScmHashTable *ht, ScmObj key, ScmObj fallback)
 {
-    return make_hash_table(SCM_CLASS_HASH_TABLE, SCM_HASH_MULTIWORD,
-                           multiword_access, multiword_hash,
-                           NULL, initsize, (void*)SCM_WORD(keysize));
+    ScmDictEntry *e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(ht),
+                                         (intptr_t)key, SCM_DICT_GET);
+    if (!e) return fallback;
+    else    return SCM_DICT_VALUE(e);
 }
 
-ScmObj Scm_MakeHashTableFull(ScmClass *klass, int type, ScmHashProc hashfn,
-                             ScmHashCmpProc cmpfn, int initSize, void *data)
+ScmObj Scm_HashTableSet(ScmHashTable *ht, ScmObj key, ScmObj value, int flags)
 {
-    if (!SCM_EQ(klass, SCM_CLASS_HASH_TABLE)) {
-        if (!Scm_SubtypeP(klass, SCM_CLASS_HASH_TABLE)) {
-            Scm_Error("[internal error]: non-hash-table class is given to Scm_MakeHashTableFull: %S", klass);
-        }
-    }
+    ScmDictEntry *e;
 
-    switch (type) {
-    case SCM_HASH_GENERAL:;
-    case SCM_HASH_RAW:
-        return make_hash_table(klass, type, general_access, hashfn,
-                               cmpfn, initSize, data);
-    default:    
-        Scm_Error("[internal error]: wrong TYPE argument passed to Scm_MakeHashTableFull: %d", type);
-        return SCM_UNDEFINED;   /* dummy */
-    }
-}
-
-/* Legacy constructor.  DEPRECATED.  Will go away soon. */
-ScmObj Scm_MakeHashTable(ScmHashProc hashfn,
-                         ScmHashCmpProc cmpfn,
-                         unsigned int initSize)
-{
-    if (hashfn == (ScmHashProc)SCM_HASH_EQ) {
-        return Scm_MakeHashTableSimple(SCM_HASH_EQ, initSize);
-    } else if (hashfn == (ScmHashProc)SCM_HASH_EQV) {
-        return Scm_MakeHashTableSimple(SCM_HASH_EQV, initSize);
-    } else if (hashfn == (ScmHashProc)SCM_HASH_EQUAL) {
-        return Scm_MakeHashTableSimple(SCM_HASH_EQUAL, initSize);
-    } else if (hashfn == (ScmHashProc)SCM_HASH_STRING) {
-        return Scm_MakeHashTableSimple(SCM_HASH_STRING, initSize);
+    e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(ht),
+                           (intptr_t)key,
+                           (flags&SCM_DICT_NO_CREATE)?SCM_DICT_GET: SCM_DICT_CREATE);
+    if (!e) return SCM_UNBOUND;
+    if (e->value) {
+        if (flags&SCM_DICT_NO_OVERWRITE) return SCM_DICT_VALUE(e);
+        else return SCM_DICT_SET_VALUE(e, value);
     } else {
-        return Scm_MakeHashTableFull(SCM_CLASS_HASH_TABLE, SCM_HASH_GENERAL,
-                                     hashfn, cmpfn, initSize, NULL);
+        return SCM_DICT_SET_VALUE(e, value);
     }
 }
 
-/*
- * iteration
- */
-
-void Scm_HashIterInitRaw(ScmHashTable *table, ScmHashIter *iter)
+ScmObj Scm_HashTableDelete(ScmHashTable *ht, ScmObj key)
 {
-    int i;
-    iter->table = table;
-    for (i=0; i<table->numBuckets; i++) {
-        if (table->buckets[i]) {
-            iter->currentBucket = i;
-            iter->currentEntry = table->buckets[i];
-            return;
-        }
-    }
-    iter->currentEntry = NULL;
+    ScmDictEntry *e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(ht),
+                                         (intptr_t)key, SCM_DICT_DELETE);
+    if (e->value) return SCM_DICT_VALUE(e);
+    else          return SCM_UNBOUND;
 }
-
-void Scm_HashIterInit(ScmHashTable *table, ScmHashIter *iter)
-{
-    check_scm_hashtable(table);
-    Scm_HashIterInitRaw(table, iter);
-}
-
-ScmHashEntry *Scm_HashIterNext(ScmHashIter *iter)
-{
-    ScmHashEntry *e = iter->currentEntry;
-    if (e != NULL) {
-        if (e->next) iter->currentEntry = e->next;
-        else {
-            int i = iter->currentBucket + 1;
-            for (; i < iter->table->numBuckets; i++) {
-                if (iter->table->buckets[i]) {
-                    iter->currentBucket = i;
-                    iter->currentEntry = iter->table->buckets[i];
-                    return e;
-                }
-            }
-            iter->currentEntry = NULL;
-        }
-    }
-    return e;
-}
-
-/*
- * Search
- */
-
-ScmHashEntry *Scm_HashTableGetRaw(ScmHashTable *table, void *key)
-{
-    return table->accessfn(table, key, HASH_FIND, SCM_FALSE);
-}
-
-ScmHashEntry *Scm_HashTableAddRaw(ScmHashTable *table, void *key, void *value)
-{
-    return table->accessfn(table, key, HASH_ADD, value);
-}
-
-ScmHashEntry *Scm_HashTablePutRaw(ScmHashTable *table, void *key, void *value)
-{
-    return table->accessfn(table, key, HASH_UPDATE, value);
-}
-
-ScmHashEntry *Scm_HashTableDeleteRaw(ScmHashTable *table, void *key)
-{
-    return table->accessfn(table, key, HASH_DELETE, SCM_FALSE);
-}
-
-ScmHashEntry *Scm_HashTableGet(ScmHashTable *table, ScmObj key)
-{
-    check_scm_hashtable(table);
-    return table->accessfn(table, key, HASH_FIND, SCM_FALSE);
-}
-
-ScmHashEntry *Scm_HashTableAdd(ScmHashTable *table, ScmObj key, ScmObj value)
-{
-    check_scm_hashtable(table);
-    return table->accessfn(table, key, HASH_ADD, value);
-}
-
-ScmHashEntry *Scm_HashTablePut(ScmHashTable *table, ScmObj key, ScmObj value)
-{
-    check_scm_hashtable(table);
-    return table->accessfn(table, key, HASH_UPDATE, value);
-}
-
-ScmHashEntry *Scm_HashTableDelete(ScmHashTable *table, ScmObj key)
-{
-    check_scm_hashtable(table);
-    return table->accessfn(table, key, HASH_DELETE, SCM_FALSE);
-}
-
-/*
- * Utilities
- */
 
 ScmObj Scm_HashTableKeys(ScmHashTable *table)
 {
     ScmHashIter iter;
-    ScmHashEntry *e;
+    ScmDictEntry *e;
     ScmObj h = SCM_NIL, t = SCM_NIL;
-    check_scm_hashtable(table);
-    Scm_HashIterInit(table, &iter);
+    Scm_HashIterInit(&iter, SCM_HASH_TABLE_CORE(table));
     while ((e = Scm_HashIterNext(&iter)) != NULL) {
-        SCM_APPEND1(h, t, e->key);
+        SCM_APPEND1(h, t, SCM_DICT_KEY(e));
     }
     return h;
 }
@@ -734,12 +706,11 @@ ScmObj Scm_HashTableKeys(ScmHashTable *table)
 ScmObj Scm_HashTableValues(ScmHashTable *table)
 {
     ScmHashIter iter;
-    ScmHashEntry *e;
+    ScmDictEntry *e;
     ScmObj h = SCM_NIL, t = SCM_NIL;
-    check_scm_hashtable(table);
-    Scm_HashIterInit(table, &iter);
+    Scm_HashIterInit(&iter, SCM_HASH_TABLE_CORE(table));
     while ((e = Scm_HashIterNext(&iter)) != NULL) {
-        SCM_APPEND1(h, t, e->value);
+        SCM_APPEND1(h, t, SCM_DICT_VALUE(e));
     }
     return h;
 }
@@ -747,26 +718,33 @@ ScmObj Scm_HashTableValues(ScmHashTable *table)
 ScmObj Scm_HashTableStat(ScmHashTable *table)
 {
     ScmObj h = SCM_NIL, t = SCM_NIL;
-    ScmVector *v = SCM_VECTOR(Scm_MakeVector(table->numBuckets, SCM_NIL));
+    ScmHashCore *c = SCM_HASH_TABLE_CORE(table);
+    ScmVector *v = SCM_VECTOR(Scm_MakeVector(c->numBuckets, SCM_NIL));
     ScmObj *vp;
+    Entry** b = BUCKET(c);
     int i;
     
     SCM_APPEND1(h, t, SCM_MAKE_KEYWORD("num-entries"));
-    SCM_APPEND1(h, t, Scm_MakeInteger(table->numEntries));
+    SCM_APPEND1(h, t, Scm_MakeInteger(c->numEntries));
     SCM_APPEND1(h, t, SCM_MAKE_KEYWORD("num-buckets"));
-    SCM_APPEND1(h, t, Scm_MakeInteger(table->numBuckets));
+    SCM_APPEND1(h, t, Scm_MakeInteger(c->numBuckets));
     SCM_APPEND1(h, t, SCM_MAKE_KEYWORD("num-buckets-log2"));
-    SCM_APPEND1(h, t, Scm_MakeInteger(table->numBucketsLog2));
-    for (vp = SCM_VECTOR_ELEMENTS(v), i = 0; i<table->numBuckets; i++, vp++) {
-        ScmHashEntry *e = table->buckets[i];
+    SCM_APPEND1(h, t, Scm_MakeInteger(c->numBucketsLog2));
+    for (vp = SCM_VECTOR_ELEMENTS(v), i = 0; i<c->numBuckets; i++, vp++) {
+        Entry *e = b[i];
         for (; e; e = e->next) {
-            *vp = Scm_Acons(e->key, e->value, *vp);
+            *vp = Scm_Acons(SCM_DICT_KEY(e), SCM_DICT_VALUE(e), *vp);
         }
     }
     SCM_APPEND1(h, t, SCM_MAKE_KEYWORD("contents"));
     SCM_APPEND1(h, t, SCM_OBJ(v));
     return h;
 }
+
+
+/*
+ * Utilities
+ */
 
 /*
  * Printer
@@ -783,11 +761,6 @@ static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     case SCM_HASH_EQUAL:   str = "equal?"; break;
     case SCM_HASH_STRING:  str = "string=?"; break;
     case SCM_HASH_GENERAL: str = "general"; break;
-
-    case SCM_HASH_WORD:      str = "raw word"; break;
-    case SCM_HASH_MULTIWORD: str = "raw multi-word"; break;
-    case SCM_HASH_RAW:       str = "raw general"; break;
-
     default: Scm_Panic("something wrong with a hash table");
     }
 
@@ -796,7 +769,7 @@ static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
        --- is it necessary?  I'm not sure yet. */
     Scm_Printf(port, "#,(<hash-table> %s", str);
     if (ht->numEntries > 0) {
-        Scm_HashIterInit(ht, &iter);
+        Scm_HashIterInit(&iter, ht);
         while ((e = Scm_HashIterNext(&iter)) != NULL) {
             Scm_Printf(port, " %S %S", e->key, e->value);
         }
@@ -804,6 +777,120 @@ static void hash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     SCM_PUTZ(")", -1, port);
 #else
     Scm_Printf(port, "#<hash-table %s %p>", str, ht);
+#endif
+}
+
+static unsigned int round2up(unsigned int val)
+{
+    unsigned int n = 1;
+    while (n < val) {
+        n <<= 1;
+        SCM_ASSERT(n > 1);      /* check overflow */
+    }
+    return n;
+}
+
+/*====================================================================
+ * For backward compatibility
+ */
+
+/* Backward compatibility.
+   NB: Casting ScmDictEntry* to ScmHashEntry* would be invalid if
+   sizeof(intptr_t) and sizeof(void*) differ.  I know only one
+   such platform (PlayStation2).  If it is a problem, moving to 
+   the new API is recommended. */
+ScmHashEntry *Scm_HashTableGet(ScmHashTable *ht, ScmObj key)
+{
+    if (sizeof(intptr_t) != sizeof(void*)) {
+        Scm_Error("[internal] Scm_HashTableGet is obsoleted on this platform.  You should use the new hashtable API.");
+    }
+    return (ScmHashEntry*)Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(ht),
+                                             (intptr_t)key,
+                                             SCM_DICT_GET);
+}
+
+ScmHashEntry *Scm_HashTableAdd(ScmHashTable *ht, ScmObj key, ScmObj value)
+{
+    ScmDictEntry *e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(ht),
+                                         (intptr_t)key, SCM_DICT_CREATE);
+    if (sizeof(intptr_t) != sizeof(void*)) {
+        Scm_Error("[internal] Scm_HashTableGet is obsoleted on this platform.  You should use the new hashtable API.");
+    }
+    if (!e->value) SCM_DICT_SET_VALUE(e, value);
+    return (ScmHashEntry*)e;
+}
+
+ScmHashEntry *Scm_HashTablePut(ScmHashTable *ht, ScmObj key, ScmObj value)
+{
+    ScmDictEntry *e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(ht),
+                                         (intptr_t)key, SCM_DICT_CREATE);
+    if (sizeof(intptr_t) != sizeof(void*)) {
+        Scm_Error("[internal] Scm_HashTableGet is obsoleted on this platform.  You should use the new hashtable API.");
+    }
+    SCM_DICT_SET_VALUE(e, value);
+    return (ScmHashEntry*)e;
+}
+
+void Scm__HashIterInitCompat(ScmHashTable *table, ScmHashIter *iter)
+{
+    Scm_HashIterInit(iter, SCM_HASH_TABLE_CORE(table));
+}
+
+ScmHashEntry *Scm__HashIterNextCompat(ScmHashIter *iter)
+{
+    ScmDictEntry *e = Scm_HashIterNext(iter);
+    return (ScmHashEntry*)e;
+}
+
+#if 0
+ScmObj Scm_MakeHashTableMultiWord(int keysize, int initsize)
+{
+    return make_hash_table(SCM_CLASS_HASH_TABLE, SCM_HASH_MULTIWORD,
+                           multiword_access, multiword_hash,
+                           NULL, initsize, (void*)SCM_WORD(keysize));
+}
+#endif
+
+#if 0
+ScmObj Scm_MakeHashTableFull(ScmClass *klass, int type, ScmHashProc hashfn,
+                             ScmHashCmpProc cmpfn, int initSize, void *data)
+{
+    if (!SCM_EQ(klass, SCM_CLASS_HASH_TABLE)) {
+        if (!Scm_SubtypeP(klass, SCM_CLASS_HASH_TABLE)) {
+            Scm_Error("[internal error]: non-hash-table class is given to Scm_MakeHashTableFull: %S", klass);
+        }
+    }
+
+    switch (type) {
+    case SCM_HASH_GENERAL:;
+        return make_hash_table(klass, type, general_access, hashfn,
+                               cmpfn, initSize, data);
+    default:    
+        Scm_Error("[internal error]: wrong TYPE argument passed to Scm_MakeHashTableFull: %d", type);
+        return SCM_UNDEFINED;   /* dummy */
+    }
+}
+#endif
+
+/* Legacy constructor.  DEPRECATED.  Will go away soon. */
+ScmObj Scm_MakeHashTable(ScmHashProc *hashfn,
+                         ScmHashCompareProc *cmpfn,
+                         unsigned int initSize)
+{
+    if (hashfn == (ScmHashProc*)SCM_HASH_EQ) {
+        return Scm_MakeHashTableSimple(SCM_HASH_EQ, initSize);
+    } else if (hashfn == (ScmHashProc*)SCM_HASH_EQV) {
+        return Scm_MakeHashTableSimple(SCM_HASH_EQV, initSize);
+    } else if (hashfn == (ScmHashProc*)SCM_HASH_EQUAL) {
+        return Scm_MakeHashTableSimple(SCM_HASH_EQUAL, initSize);
+    } else if (hashfn == (ScmHashProc*)SCM_HASH_STRING) {
+        return Scm_MakeHashTableSimple(SCM_HASH_STRING, initSize);
+    }
+#if 0
+    else {
+        return Scm_MakeHashTableFull(SCM_CLASS_HASH_TABLE, SCM_HASH_GENERAL,
+                                     hashfn, cmpfn, initSize, NULL);
+    }
 #endif
 }
 
