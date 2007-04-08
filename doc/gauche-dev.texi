@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.25 2007-04-05 05:56:54 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.26 2007-04-08 01:29:20 shirok Exp $
 
 @iftex
 @finalout
@@ -2449,7 +2449,7 @@ hash tables and tree maps.
 Each kind of dictionary has two layers of API; the 'core'
 API (@code{ScmHashCore}, @code{ScmTreeCore}) works on a
 C structure, and deals with raw C pointers.  On top of core
-API Scheme-level objects (@code{ScmHasTable}, @code{ScmTreeMap})
+API Scheme-level objects (@code{ScmHashTable}, @code{ScmTreeMap})
 are defined.
 
 @menu
@@ -2461,24 +2461,38 @@ are defined.
 @node Common dictionary interface, Hash tables, Dictionaries, Dictionaries
 @subsection Common dictionary interface
 
-Dictionary search APIs (hash tables and tree maps) returns
+The higher-level API is really a thin layer of the core APIs.
+The specific 
+
+
+provides lookup functions (@code{Scm_*Ref}),
+modifiers (@code{Scm_*Set} and @code{Scm_*Delete}).
+
+
+
+
+
+Each core API has a search function (@code{Scm_HashCoreSearch} and
+@code{Scm_TreeCoreSearch}, respectively) that returns 
 a @code{ScmDictEntry} structure to indicate key-value pair:
 
 @deftp {Struct} ScmDictEntry
 @example
 typedef struct ScmDictEntryRec @{
-    intptr_t  key;
+    const intptr_t  key;
     intptr_t  value;
 @} ScmDictEntry;
 @end example
 @end deftp
 
-The returned structure belongs to the dictionary.  Especially
-you shouldn't change the @code{key} member.  A couple of macros
-are provided to abstract access to the entry:
+The returned structure belongs to the dictionary.
 
-@deftypefn {Macro} intptr_t SCM_DICT_KEY (ScmDictEntry* entry)
-@deftypefnx {Macro} intptr_t SCM_DICT_VALUE (ScmDictEntry* entry)
+
+
+A couple of macros are provided to abstract access to the entry:
+
+@deftypefn {Macro} ScmObj SCM_DICT_KEY (ScmDictEntry* entry)
+@deftypefnx {Macro} ScmObj SCM_DICT_VALUE (ScmDictEntry* entry)
 Accesses the key and the value fields of @code{ScmDictEntry}, respectively.
 @end deftypefn
 
@@ -2488,13 +2502,6 @@ to hold @code{ScmObj}.
 @deftypefn {Macro} ScmObj SCM_DICT_SET_VALUE (ScmdictEntry* entry, ScmObj value)
 Sets @var{value} to the value field of @var{entry} and returns
 @var{value} itself.
-@end deftypefn
-
-@deftypefn {Macro} ScmObj SCM_DICT_DEFAULT_VALUE (ScmdictEntry* entry, ScmObj value)
-If @var{entry}'s value slot is @code{SCM_UNBOUND}, 
-@var{value} is set to @var{entry}, and returns @var{value}.
-Otherwise, just returns the @var{entry}'s value slot.
-Note that @var{entry} is evaluated twice.
 @end deftypefn
 
 Each dictionary API provides a search function that takes 

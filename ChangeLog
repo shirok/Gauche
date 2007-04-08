@@ -1,5 +1,8 @@
 2007-04-07  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/test.scm: record "abort count", the # of test processes
+	  aborted, as well.
+
 	* src/hash.c, src/gauche/hash.h, src/gauche.h: Changed hashtable API
 	  for consistency of dictionary API.  This introduces incompatibility
 	  in Scm_HashIterInit and Scm_HashIterNext, which we provide the

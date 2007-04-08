@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.284 2007-04-08 00:37:48 shirok Exp $
+;;; $Id: extlib.stub,v 1.285 2007-04-08 01:29:21 shirok Exp $
 ;;;
 
 "
@@ -1205,47 +1205,48 @@
 
 "static ScmObj hash_table_update_cc(ScmObj result, void **data)
  {
-   ScmHashEntry *e = (ScmHashEntry*)data[0];
-   e->value = result;
+   ScmDictEntry *e = (ScmDictEntry*)data[0];
+   SCM_DICT_SET_VALUE(e, result);
    SCM_RETURN(result);
  }"
 
 (define-cproc hash-table-update! (hash::<hash-table> key proc &optional defval)
-  (body "ScmHashEntry *e;"
+  (body "ScmDictEntry *e;"
         "void *data[1];"
         "if (SCM_UNBOUNDP(defval)) {"
-        "  e = Scm_HashTableGet(hash, key);"
-        "  if (!e) Scm_Error(\"hash table doesn't have an entry for key %S\", key);"
+        "  e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(hash), (intptr_t)key, SCM_DICT_GET);"
+        "  if (!e) Scm_Error(\"%S doesn't have an entry for key %S\", hash, key);"
         "} else {"
-        "  e = Scm_HashTableAdd(hash, key, defval);"
+        "  e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(hash), (intptr_t)key, SCM_DICT_CREATE);"
+        "  if (!e->value) SCM_DICT_SET_VALUE(e, defval);"
         "}"
         "data[0] = (void*)e;"
         "Scm_VMPushCC(hash_table_update_cc, data, 1);"
-        "SCM_RESULT = Scm_VMApply1(proc, e->value);"))
+        "SCM_RESULT = Scm_VMApply1(proc, SCM_DICT_VALUE(e));"))
 
 
 (define-cproc hash-table-push! (hash::<hash-table> key value)
-  "ScmHashEntry *e = Scm_HashTableAdd(hash, key, SCM_UNBOUND);
-  if (SCM_UNBOUNDP(e->value)) e->value = SCM_LIST1(value);
-  else                        e->value = Scm_Cons(value, e->value);
-  SCM_RETURN(SCM_UNDEFINED);")
+  (body <void>
+        "ScmDictEntry *e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(hash), (intptr_t)key, SCM_DICT_CREATE);"
+        "ScmObj prev = (e->value)? SCM_DICT_VALUE(e) : SCM_NIL;"
+        "SCM_DICT_SET_VALUE(e, Scm_Cons(value, prev));"))
 
 (define-cproc hash-table-pop! (hash::<hash-table> key &optional fallback)
-  "ScmHashEntry *e = Scm_HashTableGet(hash, key); ScmObj r;
-  if (e == NULL) {
-    if (SCM_UNBOUNDP(fallback)) {
-      Scm_Error(\"hash table doesn't have an entry for key %S\", key);
-    }
-    r = fallback;
-  } else if (!SCM_PAIRP(e->value)) {
-    if (SCM_UNBOUNDP(fallback)) {
-      Scm_Error(\"hash table value for key %S is not a pair: %S\", key, e->value);
-    }
-    r = fallback;
-  } else {
-    r = SCM_CAR(e->value); e->value = SCM_CDR(e->value);
-  }
-  SCM_RETURN(r);")
+  (body "ScmDictEntry *e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(hash), (intptr_t)key, SCM_DICT_GET);"
+        "if (e == NULL) {"
+        "  if (SCM_UNBOUNDP(fallback)) {"
+        "    Scm_Error(\"%S doesn't have an entry for key %S\", hash, key);"
+        "  }"
+        "  SCM_RESULT = fallback;"
+        "} else if (!SCM_PAIRP(SCM_DICT_VALUE(e))) {"
+        "  if (SCM_UNBOUNDP(fallback)) {"
+        "    Scm_Error(\"hash table value for key %S is not a pair: %S\", key, SCM_DICT_VALUE(e));"
+        "  }"
+        "  SCM_RESULT = fallback;"
+        "} else {"
+        "  SCM_RESULT = SCM_CAR(SCM_DICT_VALUE(e));"
+        "  SCM_DICT_SET_VALUE(e, SCM_CDR(SCM_DICT_VALUE(e)));"
+        "}"))
 
 "static ScmObj hash_table_iter(ScmObj *args, int nargs, void *data)
  {
@@ -1256,10 +1257,12 @@
    else SCM_RETURN(Scm_Values2(SCM_DICT_KEY(e), SCM_DICT_VALUE(e)));
  }"
 
+(define-symbol hash-table-iterator "sym_hash_table_iterator")
+
 (define-cproc %hash-table-iter (hash::<hash-table>)
-  "ScmHashIter *iter = SCM_NEW(ScmHashIter);
-  Scm_HashIterInit(iter, SCM_HASH_TABLE_CORE(hash));
-  SCM_RETURN(Scm_MakeSubr(hash_table_iter, iter, 1, 0, SCM_MAKE_STR(\"hash-table-iterator\")));")
+  (body "ScmHashIter *iter = SCM_NEW(ScmHashIter);"
+        "Scm_HashIterInit(iter, SCM_HASH_TABLE_CORE(hash));"
+        "SCM_RESULT = Scm_MakeSubr(hash_table_iter, iter, 1, 0, SCM_OBJ(SCM_SYMBOL_NAME(sym_hash_table_iterator)));"))
 
 (define-cproc hash-table-keys (hash::<hash-table>)
   (call "Scm_HashTableKeys"))

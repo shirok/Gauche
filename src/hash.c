@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.49 2007-04-07 22:04:10 shirok Exp $
+ *  $Id: hash.c,v 1.50 2007-04-08 01:29:21 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -687,8 +687,8 @@ ScmObj Scm_HashTableDelete(ScmHashTable *ht, ScmObj key)
 {
     ScmDictEntry *e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(ht),
                                          (intptr_t)key, SCM_DICT_DELETE);
-    if (e->value) return SCM_DICT_VALUE(e);
-    else          return SCM_UNBOUND;
+    if (e && e->value) return SCM_DICT_VALUE(e);
+    else              return SCM_UNBOUND;
 }
 
 ScmObj Scm_HashTableKeys(ScmHashTable *table)

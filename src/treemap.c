@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: treemap.c,v 1.7 2007-04-08 00:37:48 shirok Exp $
+ *  $Id: treemap.c,v 1.8 2007-04-08 01:29:21 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -362,8 +362,8 @@ ScmObj Scm_TreeMapDelete(ScmTreeMap *tm, ScmObj key)
 {
     ScmDictEntry *e = Scm_TreeCoreSearch(SCM_TREE_MAP_CORE(tm),
                                          (intptr_t)key, SCM_DICT_DELETE);
-    if (e) return SCM_DICT_VALUE(e);
-    else   return SCM_UNBOUND;
+    if (e && e->value) return SCM_DICT_VALUE(e);
+    else               return SCM_UNBOUND;
 }
 
 /* for debug */
