@@ -1,5 +1,7 @@
 2007-04-07  Shiro Kawai  <shiro@acm.org>
 
+	* src/char.c (Scm_CharSetLE): fixed a bug.
+
 	* lib/gauche/test.scm: record "abort count", the # of test processes
 	  aborted, as well.
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.50 2007-04-05 06:50:16 shirok Exp $
+ *  $Id: char.c,v 1.51 2007-04-08 05:40:05 shirok Exp $
  */
 
 #include <ctype.h>
@@ -345,15 +345,29 @@ int Scm_CharSetEq(ScmCharSet *x, ScmCharSet *y)
 /* whether x <= y */
 int Scm_CharSetLE(ScmCharSet *x, ScmCharSet *y)
 {
-    ScmTreeIter xi, yi;
-    ScmDictEntry *xe, *xl, *xh, *ye;
+    ScmTreeIter xi;
+    ScmDictEntry *xe, *ye, *yl, *yh;
     if (!Scm_BitsIncludes(y->small, x->small, 0, SCM_CHARSET_SMALL_CHARS))
         return FALSE;
-    Scm_TreeIterInit(&yi, &y->large, NULL);
-    for (ye = Scm_TreeIterNext(&yi); ye; ye = Scm_TreeIterNext(&yi)) {
-        xe = Scm_TreeCoreClosestEntries(&x->large, ye->key, &xl, &xh);
-        if (xe && xe->value < ye->value) return FALSE;
-        if (xl && xl->value < ye->value) return FALSE;
+    /* For each range of X, check if it is fully contained by a range of Y.
+     *
+     * Case 1:
+     *    xk<---------->xv
+     *    yk<----------------->yv
+     * Case 2:
+     *         xk<---------->xv
+     *    yk<------------------>yv
+     */
+    Scm_TreeIterInit(&xi, &x->large, NULL);
+    for (xe = Scm_TreeIterNext(&xi); xe; xe = Scm_TreeIterNext(&xi)) {
+        ye = Scm_TreeCoreClosestEntries(&y->large, xe->key, &yl, &yh);
+        if (ye) {               /* case 1 */
+            if (ye->value < xe->value) return FALSE;
+        } else if (yl) {        /* case 2 */
+            if (yl->value < xe->value) return FALSE;
+        } else {
+            return FALSE;
+        }
     }
     return TRUE;
 }
