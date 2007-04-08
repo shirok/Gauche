@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: test.scm,v 1.24 2007-03-02 07:39:08 shirok Exp $
+;;;  $Id: test.scm,v 1.25 2007-04-08 01:03:45 shirok Exp $
 
 ;; Writing your own test
 ;;
@@ -110,7 +110,7 @@
 ;; List of discrepancies
 (define *discrepancy-list* '())
 
-(define *test-counts* (vector 0 0 0)) ; total/pass/fail
+(define *test-counts* (vector 0 0 0 0)) ; total/pass/fail/abort
 
 (define (test-count++) 
   (vector-set! *test-counts* 0 (+ (vector-ref *test-counts* 0) 1)))
@@ -119,22 +119,30 @@
 (define (test-fail++)
   (vector-set! *test-counts* 2 (+ (vector-ref *test-counts* 2) 1)))
 (define (format-summary)
-  (format "Total: ~5d tests, ~5d passed, ~5d failed.\n"
+  (format "Total: ~5d tests, ~5d passed, ~5d failed, ~5d aborted.\n"
           (vector-ref *test-counts* 0)
           (vector-ref *test-counts* 1)
-          (vector-ref *test-counts* 2)))
+          (vector-ref *test-counts* 2)
+          (vector-ref *test-counts* 3)))
 (define (read-summary)
   (when (and (string? *test-record-file*)
              (file-exists? *test-record-file*))
     (with-input-from-file *test-record-file*
       (lambda ()
-        (let ((m (rxmatch #/Total:\s+(\d+)\s+tests,\s+(\d+)\s+passed,\s+(\d+)\s+failed/ (read-line))))
+        (let ((m (rxmatch #/Total:\s+(\d+)\s+tests,\s+(\d+)\s+passed,\s+(\d+)\s+failed,\s+(\d+)\s+aborted/ (read-line))))
           (when m
             (for-each (lambda (i)
                         (vector-set! *test-counts* i
                                      (string->number
                                       (rxmatch-substring m (+ i 1)))))
-                      '(0 1 2))))))))
+                      '(0 1 2 3)))))))
+  ;; We write out aborted+1, in case if the test process fails before test-end
+  ;; For normal case, it will be overwritten by test-end.
+  (let ((orig-abort (vector-ref *test-counts* 3)))
+    (vector-set! *test-counts* 3 (+ orig-abort 1))
+    (write-summary)
+    (vector-set! *test-counts* 3 orig-abort)))
+  
 (define (write-summary)
   (when (string? *test-record-file*)
     (receive (p nam) (sys-mkstemp *test-record-file*)
