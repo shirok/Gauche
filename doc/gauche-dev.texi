@@ -9,7 +9,7 @@
 @end direntry
 @c JP
 @setfilename gauche-devj.info
-@settitle Gauche -A³«È¯¼Ô¥ê¥Õ¥¡¥ì¥ó¥¹$)B
+@settitle Gauche -A-A³«È¯¼Ô¥ê¥Õ¥¡¥ì¥ó¥¹$)B$)B
 @dircategory The Algorithmic Language Scheme
 @direntry
 * Gauche Developers' Reference (ja): (gauche-devj.info).	Internals of Gauche
@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.28 2007-04-09 11:36:21 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.29 2007-04-09 11:54:05 shirok Exp $
 
 @iftex
 @finalout
@@ -28,7 +28,7 @@
 @c EN
 @title Gauche Developers' Reference
 @c JP
-@title Gauche -A³«È¯¼Ô¥ê¥Õ¥¡¥ì¥ó¥¹$)B
+@title Gauche -A-A³«È¯¼Ô¥ê¥Õ¥¡¥ì¥ó¥¹$)B$)B
 @c COMMON
 @subtitle version @VERSION@
 @author Shiro Kawai (shiro@@acm.org)
@@ -48,10 +48,10 @@ for developers who want to extend Gauche functionality in C,
 or to embed Gauche to other applications.
 This manual is for version @VERSION@.
 @c JP
--AËÜ½ñ¤Ï¡¢Gauche¤Îµ¡Ç½¤òC¤Ç³ÈÄ¥¤·¤¿¤ê¡¢Gauche¤òÂ¾¤Î¥¢¥×¥ê¥±¡¼¥·¥ç¥ó¤Ë$)B
--AËä¤á¹þ¤à¤È¤¤¤Ã¤¿¤³¤È¤ò¹Ô¤¦³«È¯¼Ô¤Î¤¿¤á¤Ë¡¢$)B
-Gauche-A¤ÎÆâÉô¹½Â¤¤òÀâÌÀ¤¹¤ë¤â¤Î¤Ç¤¹¡£$)B
-Gauche-A¤Î¥Ð¡¼¥¸¥ç¥ó@VERSION@¤ËÂÐ±þ¤·¤Þ¤¹¡£$)B
+-A-AËÜ½ñ¤Ï¡¢Gauche¤Îµ¡Ç½¤òC¤Ç³ÈÄ¥¤·¤¿¤ê¡¢Gauche¤òÂ¾¤Î¥¢¥×¥ê¥±¡¼¥·¥ç¥ó¤Ë$)B$)B
+-A-AËä¤á¹þ¤à¤È¤¤¤Ã¤¿¤³¤È¤ò¹Ô¤¦³«È¯¼Ô¤Î¤¿¤á¤Ë¡¢$)B$)B
+Gauche-A-A¤ÎÆâÉô¹½Â¤¤òÀâÌÀ¤¹¤ë¤â¤Î¤Ç¤¹¡£$)B$)B
+Gauche-A-A¤Î¥Ð¡¼¥¸¥ç¥ó@VERSION@¤ËÂÐ±þ¤·¤Þ¤¹¡£$)B$)B
 @c COMMON
 @end ifnottex
 
@@ -2624,13 +2624,13 @@ the behavior of existing iterators become undefined.
 Initializes an iterator @var{iter} to iterate through a hash core @var{core}.
 @end deftypefun
 
-@deftypefun ScmDictEntry *Scm_HashIterCurrent (ScmHashIter *@var{iter})
+@deftypefun {ScmDictEntry *} Scm_HashIterCurrent (ScmHashIter *@var{iter})
 Returns the current entry the iterator is pointing, or @code{NULL}
 if iterator has visited all entries.  The iterator stays the same
 entry.
 @end deftypefun
 
-@deftypefun ScmDictEntry *Scm_HashIterNext (ScmHashIter *@var{iter})
+@deftypefun {ScmDictEntry *} Scm_HashIterNext (ScmHashIter *@var{iter})
 Returns the current entry the iterator is pointing, or @code{NULL}
 if iterator has visited all entries.  The iterator is also updated,
 so that the next call of @code{Scm_HashIterCurrent} or
@@ -2720,7 +2720,7 @@ as the compare procedure.  Whatever information @var{tc} has been
 carrying will be lost.
 @end deftypefun
 
-@deftypefun void Scm_CopyTreeCore (ScmTreeCore *@var{dst}, const ScmTreeCore *@var{src})
+@deftypefun void Scm_TreeCoreCopy (ScmTreeCore *@var{dst}, const ScmTreeCore *@var{src})
 Copies the content of @var{src} into @var{dst}.  Whatever information
 in @var{dst} will be lost.
 @end deftypefun
@@ -3392,7 +3392,7 @@ file
 @c ======================================================================
 @node Indices,  , Helper program reference, Top
 @appendix Indices
-@c NODE -Aº÷°ú$)B
+@c NODE -A-Aº÷°ú$)B$)B
 
 @menu
 * Function and Macro Index::    
