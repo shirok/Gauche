@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.27 2007-04-09 02:09:45 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.28 2007-04-09 11:36:21 shirok Exp $
 
 @iftex
 @finalout
@@ -2571,17 +2571,121 @@ planned in future.
 @end table
 @end deftp
 
+@deftp {Struct} ScmHashCore
+A C struct to hold a hash table.  This structure is not an @code{ScmObj},
+and supposed to be used embedded in other structures.
+@end deftp
+
 @deftypefun void Scm_HashCoreInitSimple (ScmHashCore *@var{core}, ScmHashType @var{type}, unsigned int @var{initSize}, void *@var{data})
+Initialize a hash core structure pointed by @var{core}, with predefined
+hash and compare functions determined by the @var{type} argument.
+You can pass one of the @code{ScmHashType} enums except 
+@code{SCM_HASH_GENERAL} to @var{type}.
+
+If you know rough number of hashtable entries, you can tell it by
+@var{initSize} argument so that the hashtable may be optimized for
+that size.  Passing 0 makes the function to choose a reasonable value.
+
+The @var{data} argument is an opaque pointer for the application.
 @end deftypefun
 
+@deftypefun void Scm_HashCoreCopy (ScmHashCore *@var{dst}, const ScmHashCore *@var{src})
+Copies the content of @var{src} to @var{dst}, including the hash type,
+hash function and compare function.  The original content of @var{dst}
+is destroyed.  It is OK to pass uninitialized @code{ScmHashCore} as @var{dst}.
+@end deftypefun
 
+@deftypefun {ScmDictEntry *} Scm_HashCoreSearch (ScmHashCore *@var{core}, intptr_t @var{key}, ScmDictOp @var{op})
+Searches an entry with the given @var{key}, and and perform the operation
+specified by @var{op}, which must be either @code{SCM_DICT_GET},
+@code{SCM_DICT_CREATE}, or @code{SCM_DICT_DELETE}.
+
+Returns a pointer to the found, created or deleted entry.  For
+get and delete operations it may return @code{NULL} if there's no
+entry found for @var{key}.
+@end deftypefun
+
+@deftypefun int Scm_HashCoreNumEntries (ScmHashCore *@var{core})
+Returns the current number of entries in the hash core.
+@end deftypefun
 
 @subsubheading Iterators
 
+@deftp {Struct} ScmHashIter
+An opaque structure to iterate over a hash table.
+This is not an @code{ScmObj}.
+
+You can modify the value of the entries while iterating over
+a hash table; however, once an entry is added or deleted, 
+the behavior of existing iterators become undefined.
+@end deftp
+
+@deftypefun void Scm_HashIterInit (ScmHashIter *@var{iter}, ScmHashCore *@var{core})
+Initializes an iterator @var{iter} to iterate through a hash core @var{core}.
+@end deftypefun
+
+@deftypefun ScmDictEntry *Scm_HashIterCurrent (ScmHashIter *@var{iter})
+Returns the current entry the iterator is pointing, or @code{NULL}
+if iterator has visited all entries.  The iterator stays the same
+entry.
+@end deftypefun
+
+@deftypefun ScmDictEntry *Scm_HashIterNext (ScmHashIter *@var{iter})
+Returns the current entry the iterator is pointing, or @code{NULL}
+if iterator has visited all entries.  The iterator is also updated,
+so that the next call of @code{Scm_HashIterCurrent} or
+@code{Scm_HashIterNext} returns the next entry.
+@end deftypefun
 
 @subsubheading Hash functions
 
+A hash function calculates 32bit hash value from the given object.
+(It is fixed to 32bits even on 64bit architectures, to guarantee
+the same hash value across platforms).  Some of the functions 
+used in built-in hash table types are provided as API.
+
+@deftypefun {unsigned long} Scm_EqHash (ScmObj @var{obj})
+Calculates hash value of the object suitable for @code{eq?}-type
+hash table.
+@end deftypefun
+
+@deftypefun {unsigned long} Scm_EqvHash (ScmObj @var{obj})
+Calculates hash value of the object suitable for @code{eqv?}-type
+hash table.
+@end deftypefun
+
+@deftypefun {unsigned long} Scm_Hash (ScmObj @var{obj})
+Calculates hash value of the object suitable for @code{equal?}-type
+hash table.
+@end deftypefun
+
+@c @deftypefun {unsigned long} Scm_HashString (ScmString *@var{str}, unsigned long @var{bound})
+@c @end deftypefun
+
+
 @subsubheading Scheme HashTable object
+
+@deftp {ScmObj} ScmHashTable
+@end deftp
+
+@deftypefn {Macro} int SCM_HASH_TABLE_P (ScmObj @var{obj})
+Type predicate.
+@end deftypefn
+
+@deftypefn {Macro} {ScmHashTable *} SCM_HASH_TABLE (ScmObj @var{obj})
+Typecast macro.
+@end deftypefn
+
+@deftypefn {Macro} {ScmHashCore *} SCM_HASH_TABLE_CORE (ScmHashTable *@var{ht})
+Returns a pointer to the @code{ScmHashCore} in the hash table @var{ht}.
+@end deftypefn
+
+@deftypefn {Macro} {ScmHashCore *} SCM_HASH_TABLE_CORE (ScmHashTable *@var{ht})
+Returns a pointer to the @code{ScmHashCore} in the hash table @var{ht}.
+@end deftypefn
+
+@deftypefun ScmObj Scm_MakeHashTableSimple (ScmHashType @var{type}, int @var{initSize})
+@end deftypefun
 
 
 
@@ -2594,7 +2698,7 @@ Entry retrieval and modification is O(log(n)).
 @subsubheading Low-level API
 
 @deftp {Struct} ScmTreeCore
-A C struct to hold a treep map.  This structure is not an @code{ScmObj},
+A C struct to hold a tree map.  This structure is not an @code{ScmObj},
 and supposed to be used embedded in other structures.
 @end deftp
 
@@ -2627,7 +2731,7 @@ specified by @var{op}, which must be either @code{SCM_DICT_GET},
 @code{SCM_DICT_CREATE}, or @code{SCM_DICT_DELETE}.
 
 Returns a pointer to the found, created or deleted entry.  For
-get and delete operation it may return @code{NULL} if there's no
+get and delete operations it may return @code{NULL} if there's no
 entry found for @var{key}.
 @end deftypefun
 
@@ -2689,6 +2793,10 @@ the maximum key simulaneously.  That is, when an iterator points
 to @code{NULL}, when you call @code{Scm_TreeIterNext} you'll get
 the minimum key entry, while you call @code{Scm_TreeIterPrev} and
 you'll get the maximum key entry.
+
+You can modify the value of the entries while iterating over
+a tree map; however, once an entry is added or deleted, 
+the behavior of existing iterators become undefined.
 @end deftp
 
 @deftypefun void Scm_TreeIterInit (ScmTreeIter *@var{iter}, ScmTreeCore *@var{tc}, ScmDictEntry *@var{start})

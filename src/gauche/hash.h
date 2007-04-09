@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.h,v 1.1 2007-04-07 22:04:12 shirok Exp $
+ *  $Id: hash.h,v 1.2 2007-04-09 11:36:25 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -119,7 +119,6 @@ SCM_CLASS_DECL(Scm_HashTableClass);
 #define SCM_HASH_TABLE_P(obj)  SCM_ISA(obj, SCM_CLASS_HASH_TABLE)
 
 #define SCM_HASH_TABLE_CORE(obj) (&SCM_HASH_TABLE(obj)->core)
-#define SCM_HASH_TABLE_NUM_ENTRIES(obj) (SCM_HASH_TABLE_CORE(obj)->numEntries)
 
 SCM_EXTERN ScmObj Scm_MakeHashTableSimple(ScmHashType type, int initSize);
 
@@ -131,9 +130,6 @@ SCM_EXTERN ScmObj Scm_HashTableSet(ScmHashTable *ht,
                                    ScmObj key, ScmObj value, int flags);
 SCM_EXTERN ScmObj Scm_HashTableDelete(ScmHashTable *ht, ScmObj key);
 
-
-
-//SCM_EXTERN ScmDictEntry *Scm_HashTableDelete(ScmHashTable *hash, ScmObj key);
 
 SCM_EXTERN ScmObj Scm_HashTableKeys(ScmHashTable *table);
 SCM_EXTERN ScmObj Scm_HashTableValues(ScmHashTable *table);
