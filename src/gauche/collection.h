@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: collection.h,v 1.6 2007-04-07 22:04:12 shirok Exp $
+ *  $Id: collection.h,v 1.7 2007-04-09 02:09:45 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -104,8 +104,9 @@ typedef struct ScmDictEntryRec {
 #define SCM_DICT_KEY(entry)   SCM_OBJ((entry)->key)
 #define SCM_DICT_VALUE(entry) SCM_OBJ((entry)->value)
 #define SCM_DICT_SET_VALUE(entry, val) \
-    SCM_OBJ((entry)->value = (intptr_t)(val))
-     
+    SCM_OBJ((entry)->value = Scm__CheckDictValue(val, __FILE__, __LINE__))
+
+SCM_EXTERN intptr_t Scm__CheckDictValue(ScmObj val, const char *file, int line);
 
 /*
  * Common operation argument for *Search functions

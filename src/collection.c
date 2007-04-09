@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: collection.c,v 1.3 2007-03-26 23:11:46 shirok Exp $
+ *  $Id: collection.c,v 1.4 2007-04-09 02:09:45 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -61,6 +61,18 @@ ScmClass *Scm__SequenceCPL[] = {
     SCM_CLASS_STATIC_PTR(Scm_TopClass),
     NULL
 };
+
+/*
+ * Some internal utilities
+ */
+
+intptr_t Scm__CheckDictValue(ScmObj val, const char *file, int line)
+{
+    if (val == NULL || SCM_UNBOUNDP(val)) {
+        Scm_Panic("[internal] attempted to set an invalid ScmObj value (%p) as a value of a dictionary, at %s:%d", val, file, line);
+    }
+    return (intptr_t)val;
+}
 
 /*
  * Initialization

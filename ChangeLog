@@ -1,3 +1,10 @@
+2007-04-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/collection.c, src/gauche/colleciton.h: Make SCM_DICT_SET_VALUE
+	  to check iff given value isn't an obviously illegal value (e.g. 
+	  NULL or SCM_UNBOUND), for the safety.
+	* src/module.c: Replaced old hashtable APIs for the new ones.
+
 2007-04-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/char.c (Scm_CharSetLE): fixed a bug.

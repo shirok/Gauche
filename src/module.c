@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: module.c,v 1.67 2007-04-07 22:04:10 shirok Exp $
+ *  $Id: module.c,v 1.68 2007-04-09 02:09:45 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -131,22 +131,24 @@ static ScmObj make_module(ScmSymbol *name)
 /* Internal.  Lookup module with name N from the table. */
 static ScmModule *lookup_module(ScmSymbol *name)
 {
-    ScmHashEntry *e;
+    ScmObj v;
     (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
-    e = Scm_HashTableGet(modules.table, SCM_OBJ(name));
+    v = Scm_HashTableRef(modules.table, SCM_OBJ(name), SCM_UNBOUND);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
-    if (e) return SCM_MODULE(e->value);
-    else return NULL;
+    if (SCM_UNBOUNDP(v)) return NULL;
+    else return SCM_MODULE(v);
 }
 
 /* Internal.  Lookup module, and if there's none, create one. */
 static ScmModule *lookup_module_create(ScmSymbol *name, int *created)
 {
-    ScmHashEntry *e;
+    ScmDictEntry *e;
     (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
-    e = Scm_HashTableAdd(modules.table, SCM_OBJ(name), SCM_FALSE);
-    if (e->value == SCM_FALSE) {
-        e->value = make_module(name);
+    e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(modules.table),
+                           (intptr_t)name,
+                           SCM_DICT_CREATE);
+    if (e->value == 0) {
+        SCM_DICT_SET_VALUE(e, make_module(name));
         *created = TRUE;
     } else {
         *created = FALSE;
@@ -185,9 +187,8 @@ ScmObj Scm_MakeModule(ScmSymbol *name, int error_if_exists)
 ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
                          int flags)
 {
-    ScmHashEntry *e;
     ScmModule *m = module;
-    ScmObj p, mp;
+    ScmObj v, p, mp;
     ScmGloc *gloc = NULL;
     int stay_in_module = flags&SCM_BINDING_STAY_IN_MODULE;
 
@@ -203,9 +204,9 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
        NB: we directly check gloc->value instead of calling
        SCM_GLOC_GET, since this check is merely to eliminate
        the GLOC inserted by export. */
-    e = Scm_HashTableGet(m->table, SCM_OBJ(symbol));
-    if (e) {
-        gloc = SCM_GLOC(e->value);
+    v = Scm_HashTableRef(m->table, SCM_OBJ(symbol), SCM_FALSE);
+    if (SCM_GLOCP(v)) {
+        gloc = SCM_GLOC(v);
         if (!SCM_UNBOUNDP(gloc->value)) goto found;
     }
     
@@ -228,9 +229,9 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
                 }
                 
                 m = SCM_MODULE(SCM_CAR(mp));
-                e = Scm_HashTableGet(m->table, SCM_OBJ(symbol));
+                v = Scm_HashTableRef(m->table, SCM_OBJ(symbol), SCM_FALSE);
                 /* see above comment about the check of gloc->value */
-                if (e && (g = SCM_GLOC(e->value))->exported
+                if (SCM_GLOCP(v) && (g = SCM_GLOC(v))->exported
                     && !SCM_UNBOUNDP(g->value)) {
                     gloc = g;
                     goto found;
@@ -249,8 +250,8 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
         SCM_FOR_EACH(mp, SCM_CDR(module->mpl)) {
             SCM_ASSERT(SCM_MODULEP(SCM_CAR(mp)));
             m = SCM_MODULE(SCM_CAR(mp));
-            e = Scm_HashTableGet(m->table, SCM_OBJ(symbol));
-            if (e) { gloc = SCM_GLOC(e->value); goto found; }
+            v = Scm_HashTableRef(m->table, SCM_OBJ(symbol), SCM_FALSE);
+            if (SCM_GLOCP(v)) { gloc = SCM_GLOC(v); goto found; }
         }
     }
   found:
@@ -281,13 +282,13 @@ ScmObj Scm_GlobalVariableRef(ScmModule *module,
 ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
 {
     ScmGloc *g;
-    ScmHashEntry *e;
+    ScmObj v;
     int redefining = FALSE;
     
     (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
-    e = Scm_HashTableGet(module->table, SCM_OBJ(symbol));
-    if (e) {
-        g = SCM_GLOC(e->value);
+    v = Scm_HashTableRef(module->table, SCM_OBJ(symbol), SCM_FALSE);
+    if (SCM_GLOCP(v)) {
+        g = SCM_GLOC(v);
         if (SCM_GLOC_CONST_P(g)) {
             redefining = TRUE;
             g->setter = NULL;
@@ -296,7 +297,7 @@ ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
     } else {
         g = SCM_GLOC(Scm_MakeGloc(symbol, module));
         SCM_GLOC_SET(g, value);
-        Scm_HashTablePut(module->table, SCM_OBJ(symbol), SCM_OBJ(g));
+        Scm_HashTableSet(module->table, SCM_OBJ(symbol), SCM_OBJ(g), 0);
         /* If module is marked 'export-all', export this binding by default */
         if (module->exportAll) {
             g->exported = TRUE;
@@ -314,15 +315,15 @@ ScmObj Scm_Define(ScmModule *module, ScmSymbol *symbol, ScmObj value)
 ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
 {
     ScmGloc *g;
-    ScmHashEntry *e;
+    ScmObj v;
     ScmObj oldval = SCM_UNDEFINED;
     int redefining = FALSE;
 
     (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
-    e = Scm_HashTableGet(module->table, SCM_OBJ(symbol));
+    v = Scm_HashTableRef(module->table, SCM_OBJ(symbol), SCM_FALSE);
     /* NB: this function bypasses check of gloc setter */
-    if (e) {
-        g = SCM_GLOC(e->value);
+    if (SCM_GLOCP(v)) {
+        g = SCM_GLOC(v);
         if (SCM_GLOC_CONST_P(g)) {
             redefining = TRUE;
             oldval = g->value;
@@ -332,7 +333,7 @@ ScmObj Scm_DefineConst(ScmModule *module, ScmSymbol *symbol, ScmObj value)
     } else {
         g = SCM_GLOC(Scm_MakeConstGloc(symbol, module));
         g->value = value;
-        Scm_HashTablePut(module->table, SCM_OBJ(symbol), SCM_OBJ(g));
+        Scm_HashTableSet(module->table, SCM_OBJ(symbol), SCM_OBJ(g), 0);
         /* If module is marked 'export-all', export this binding by default */
         if (module->exportAll) {
             g->exported = TRUE;
@@ -375,7 +376,7 @@ ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list)
     ScmObj lp, syms, badsym = SCM_FALSE;
     int error = FALSE;
     ScmSymbol *s;
-    ScmHashEntry *e;
+    ScmDictEntry *e;
     ScmGloc *g;
 
     /* We used to do something like
@@ -395,8 +396,9 @@ ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list)
             break;
         }
         s = SCM_SYMBOL(SCM_CAR(lp));
-        e = Scm_HashTableAdd(module->table, SCM_OBJ(s), SCM_UNBOUND);
-        if (SCM_GLOCP(e->value)) {
+        e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(module->table),
+                               (intptr_t)s, SCM_DICT_CREATE);
+        if (e->value) {         /* e->value must be GLOC. */
             g = SCM_GLOC(e->value);
             if (!g->exported) {
                 syms = Scm_Cons(SCM_OBJ(s), syms);
@@ -405,7 +407,7 @@ ScmObj Scm_ExportSymbols(ScmModule *module, ScmObj list)
         } else {
             g = SCM_GLOC(Scm_MakeGloc(s, module));
             g->exported = TRUE;
-            e->value = SCM_OBJ(g);
+            SCM_DICT_SET_VALUE(e, SCM_OBJ(g));
             syms = Scm_Cons(SCM_OBJ(s), syms);
         }
     }
@@ -599,11 +601,11 @@ ScmModule *Scm_CurrentModule(void)
 /* NB: we don't need to lock the global module table in initialization */
 #define INIT_MOD(mod, mname, mpl)                                           \
     do {                                                                    \
-        SCM_SET_CLASS(&mod, SCM_CLASS_MODULE);                              \
-        init_module(&mod, SCM_SYMBOL(mname));                               \
-        Scm_HashTablePut(modules.table, SCM_OBJ((mod).name), SCM_OBJ(&mod));\
-        mod.parents = (SCM_NULLP(mpl)? SCM_NIL : SCM_LIST1(SCM_CAR(mpl)));  \
-        mpl = mod.mpl = Scm_Cons(SCM_OBJ(&mod), mpl);                       \
+      SCM_SET_CLASS(&mod, SCM_CLASS_MODULE);                                \
+      init_module(&mod, SCM_SYMBOL(mname));                                 \
+      Scm_HashTableSet(modules.table, SCM_OBJ((mod).name), SCM_OBJ(&mod), 0);\
+      mod.parents = (SCM_NULLP(mpl)? SCM_NIL : SCM_LIST1(SCM_CAR(mpl)));    \
+      mpl = mod.mpl = Scm_Cons(SCM_OBJ(&mod), mpl);                         \
     } while (0)
 
 void Scm__InitModule(void)
