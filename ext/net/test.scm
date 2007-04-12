@@ -346,14 +346,13 @@
        (and-let* ((sock (any (lambda (name)
                                (guard (e (else #f))
                                  (make-client-socket
-                                  (make (if (global-variable-bound?
-                                             'gauche.net
-                                             '<sockaddr-in6>)
-                                          <sockaddr-in6>
-                                          <sockaddr-in>)
+                                  (make (cond-expand
+                                         (gauche.net.ipv6 <sockaddr-in6>)
+                                         (else <sockaddr-in>))
                                     :host name :port *inet-port*))
                                  ))
-                             '("localhost" "ip6-localhost" "ipv6-localhost"))))
+                             '("localhost" "ip6-localhost" "ipv6-localhost"
+                               "::1" "127.0.0.1"))))
          (call-with-client-socket sock
            (lambda (in out)
              (display (make-string *chunk-size* #\a) out)
