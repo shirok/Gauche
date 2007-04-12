@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: gauche.h,v 1.491 2007-04-07 22:04:09 shirok Exp $
+ *  $Id: gauche.h,v 1.492 2007-04-12 03:26:55 shirok Exp $
  */
 
 #ifndef GAUCHE_H
@@ -416,7 +416,7 @@ typedef struct ScmEvalPacketRec {
     ScmModule *module;          /* 'Current module' after evaluation */
 } ScmEvalPacket;
 
-#if defined(GAUCHE_API_0_8_8) || defined(LIBGAUCHE_BODY)
+#if defined(GAUCHE_API_0_8_8) || defined(GAUCHE_API_0_9) || defined(LIBGAUCHE_BODY)
 SCM_EXTERN int Scm_Eval(ScmObj form, ScmObj env, ScmEvalPacket *packet);
 SCM_EXTERN int Scm_EvalCString(const char *form, ScmObj env,
                                ScmEvalPacket *packet);
@@ -925,7 +925,7 @@ SCM_EXTERN ScmChar Scm_ReadXdigitsFromPort(ScmPort *port, int ndigits,
 /* Illegal character handling mode.  Used in some APIs that handles
    character conversion, such as input ports and string-incomplete->complete.
 */
-enum Scm_IllegalCharHandling {
+typedef enum {
     SCM_ILLEGAL_CHAR_REJECT,    /* Refuse to handle illegal chars.  For ports
                                    this means raising an error.  For string
                                    conversion procedure, this makes it to
@@ -933,7 +933,7 @@ enum Scm_IllegalCharHandling {
     SCM_ILLEGAL_CHAR_OMIT,      /* Silently discard the illegal chars. */
     SCM_ILLEGAL_CHAR_REPLACE    /* Replace an illegal char to a substitute
                                    char, specified elsewhere. */
-};
+} ScmIllegalCharHandling;
 
     
 /*--------------------------------------------------------
@@ -994,6 +994,9 @@ SCM_EXTERN void Scm_Printf(ScmPort *port, const char *fmt, ...);
 SCM_EXTERN void Scm_PrintfShared(ScmPort *port, const char *fmt, ...);
 SCM_EXTERN void Scm_Vprintf(ScmPort *port, const char *fmt, va_list args,
                             int sharedp);
+SCM_EXTERN ScmObj Scm_Sprintf(const char *fmt, ...);
+SCM_EXTERN ScmObj Scm_SprintfShared(const char *fmt, ...);
+SCM_EXTERN ScmObj Scm_Vsprintf(const char *fmt, va_list args, int sharedp);
 
 /*---------------------------------------------------------
  * READ
@@ -1707,68 +1710,7 @@ SCM_EXTERN void   Scm_ResetSignalHandlers(sigset_t *mask);
  * LOAD AND DYNAMIC LINK
  */
 
-/* Flags for Scm_VMLoad and Scm_Load. (not for Scm_VMLoadPort) */
-enum ScmLoadFlags {
-    SCM_LOAD_QUIET_NOFILE = (1L<<0),  /* do not signal an error if the file
-                                         does not exist; just return #f. */
-    SCM_LOAD_IGNORE_CODING = (1L<<1)  /* do not use coding-aware port to honor
-                                         'coding' magic comment */
-};
-
-SCM_EXTERN ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
-                                     ScmObj env, int flags);
-SCM_EXTERN ScmObj Scm_VMLoad(ScmString *file, ScmObj paths, ScmObj env,
-			     int flags);
-SCM_EXTERN void Scm_LoadFromPort(ScmPort *port, int flags);
-SCM_EXTERN int  Scm_Load(const char *file, int flags);
-
-SCM_EXTERN ScmObj Scm_GetLoadPath(void);
-SCM_EXTERN ScmObj Scm_AddLoadPath(const char *cpath, int afterp);
-
-SCM_EXTERN ScmObj Scm_DynLoad(ScmString *path, ScmObj initfn, int export_);
-
-SCM_EXTERN ScmObj Scm_Require(ScmObj feature);
-SCM_EXTERN ScmObj Scm_Provide(ScmObj feature);
-SCM_EXTERN int    Scm_ProvidedP(ScmObj feature);
-
-SCM_EXTERN ScmObj Scm_GetFeatures(void);
-SCM_EXTERN void   Scm_AddFeature(const char *feature, const char *mod);
-
-struct ScmAutoloadRec {
-    SCM_HEADER;
-    ScmSymbol *name;            /* variable to be autoloaded */
-    ScmModule *module;          /* where the binding should be inserted.
-                                   this is where autoload is defined. */
-    ScmString *path;            /* file to load */
-    ScmSymbol *import_from;     /* module to be imported after loading */
-    ScmModule *import_to;       /* module to where import_from should be
-                                   imported */
-                                /* The fields above will be set up when
-                                   the autoload object is created, and never
-                                   be modified. */
-
-    int loaded;                 /* The flag that indicates this autoload
-                                   is resolved, and value field contains
-                                   the resolved value.  Once the autoload
-                                   goes into "loaded" status, no field
-                                   should be changed. */
-    ScmObj value;               /* The resolved value */
-    ScmInternalMutex mutex;     /* mutex to resolve this autoload */
-    ScmInternalCond cv;         /* ... and condition variable. */
-    ScmVM *locker;              /* The thread that is resolving the autoload.*/
-};
-
-SCM_CLASS_DECL(Scm_AutoloadClass);
-#define SCM_CLASS_AUTOLOAD      (&Scm_AutoloadClass)
-#define SCM_AUTOLOADP(obj)      SCM_XTYPEP(obj, SCM_CLASS_AUTOLOAD)
-#define SCM_AUTOLOAD(obj)       ((ScmAutoload*)(obj))
-
-SCM_EXTERN ScmObj Scm_MakeAutoload(ScmModule *where,
-                                   ScmSymbol *name, ScmString *path,
-				   ScmSymbol *import_from);
-SCM_EXTERN void   Scm_DefineAutoload(ScmModule *where, ScmObj file_or_module,
-                                     ScmObj list);
-SCM_EXTERN ScmObj Scm_LoadAutoload(ScmAutoload *autoload);
+#include <gauche/load.h>
 
 /*---------------------------------------------------
  * PROFILER INTERFACE
@@ -1795,6 +1737,8 @@ SCM_EXTERN void Scm_RegisterDL(void *data_start, void *data_end,
                                void *bss_start, void *bss_end);
 SCM_EXTERN void Scm_GCSentinel(void *obj, const char *name);
 
+SCM_EXTERN ScmObj Scm_GetFeatures(void);
+SCM_EXTERN void   Scm_AddFeature(const char *feature, const char *mod);
 
 SCM_EXTERN void *Scm_AddCleanupHandler(void (*proc)(void *data), void *data);
 SCM_EXTERN void  Scm_DeleteCleanupHandler(void *handle);

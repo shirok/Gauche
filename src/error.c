@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.76 2007-03-13 10:41:25 shirok Exp $
+ *  $Id: error.c,v 1.77 2007-04-12 03:26:55 shirok Exp $
  */
 
 #include <errno.h>
@@ -527,11 +527,9 @@ void Scm_Error(const char *msg, ...)
     SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_HANDLED);
     
     SCM_UNWIND_PROTECT {
-        ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
         va_start(args, msg);
-        Scm_Vprintf(SCM_PORT(ostr), msg, args, TRUE);
+        e = Scm_MakeError(Scm_Vsprintf(msg, args, TRUE));
         va_end(args);
-        e = Scm_MakeError(Scm_GetOutputString(SCM_PORT(ostr), 0));
     }
     SCM_WHEN_ERROR {
         /* TODO: should check continuation? */
@@ -681,13 +679,10 @@ void Scm_PortError(ScmPort *port, int reason, const char *msg, ...)
 void Scm_Warn(const char *msg, ...)
 {
     va_list args;
-    ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
     va_start(args, msg);
-    Scm_Vprintf(SCM_PORT(ostr), msg, args, TRUE);
-    va_end(args);
-    Scm_Printf(SCM_CURERR, "WARNING: %A\n",
-               Scm_GetOutputString(SCM_PORT(ostr), 0));
+    Scm_Printf(SCM_CURERR, "WARNING: %A\n", Scm_Vsprintf(msg, args, TRUE));
     Scm_Flush(SCM_CURERR);
+    va_end(args);
 }
 
 /* format & warn */

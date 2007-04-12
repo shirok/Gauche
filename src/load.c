@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.c,v 1.112 2007-03-02 07:39:13 shirok Exp $
+ *  $Id: load.c,v 1.113 2007-04-12 03:26:55 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -82,6 +82,15 @@ static ScmObj key_error_if_not_found = SCM_UNBOUND;
 static ScmObj key_environment        = SCM_UNBOUND;
 static ScmObj key_macro              = SCM_UNBOUND;
 static ScmObj key_ignore_coding      = SCM_UNBOUND;
+
+/* small utility */
+static void load_packet_init(ScmLoadPacket *packet)
+{
+    if (packet) {
+        packet->exception = SCM_FALSE;
+        packet->loaded = FALSE;
+    }
+}
 
 /*--------------------------------------------------------------------
  * Scm_LoadFromPort
@@ -171,6 +180,8 @@ ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
     /* Sanity check */
     if (!SCM_IPORTP(port))
         Scm_Error("input port required, but got: %S", port);
+
+
     if (SCM_PORT_CLOSED_P(port))
         Scm_Error("port already closed: %S", port);
     if (SCM_MODULEP(env)) {
@@ -230,9 +241,25 @@ static SCM_DEFINE_SUBR(load_from_port_STUB, 1, 1,
                        SCM_OBJ(&load_from_port_NAME), load_from_port,
                        NULL, NULL);
 
-void Scm_LoadFromPort(ScmPort *port, int flags)
+int Scm_LoadFromPort(ScmPort *port, int flags, ScmLoadPacket *packet)
 {
-    Scm_ApplyRec(SCM_OBJ(&load_from_port_STUB), SCM_LIST1(SCM_OBJ(port)));
+    ScmEvalPacket eresult;
+    int r;
+
+    load_packet_init(packet);
+    if (flags&SCM_LOAD_PROPAGATE_ERROR) {
+        Scm_ApplyRec(SCM_OBJ(&load_from_port_STUB), SCM_LIST1(SCM_OBJ(port)));
+        if (packet) packet->loaded = TRUE;
+        return 0;
+    } else {
+        r = Scm_Apply(SCM_OBJ(&load_from_port_STUB), SCM_LIST1(SCM_OBJ(port)),
+                      &eresult);
+        if (packet) {
+            packet->exception = eresult.exception;
+            packet->loaded = (r >= 0);
+        }
+        return (r < 0)? -1 : 0;
+    }
 }
 
 /*---------------------------------------------------------------------
@@ -410,10 +437,11 @@ static SCM_DEFINE_STRING_CONST(load_NAME, "load", 4, 4);
 static SCM_DEFINE_SUBR(load_STUB, 1, 1, SCM_OBJ(&load_NAME), load, NULL, NULL);
 
 
-int Scm_Load(const char *cpath, int flags)
+int Scm_Load(const char *cpath, int flags, ScmLoadPacket *packet)
 {
-    ScmObj r, f = SCM_MAKE_STR_COPYING(cpath);
+    ScmObj f = SCM_MAKE_STR_COPYING(cpath);
     ScmObj options = SCM_NIL;
+    ScmEvalPacket eresult;
     
     if (flags&SCM_LOAD_QUIET_NOFILE) {
         options = Scm_Cons(key_error_if_not_found,
@@ -423,9 +451,22 @@ int Scm_Load(const char *cpath, int flags)
         options = Scm_Cons(key_ignore_coding,
                            Scm_Cons(SCM_TRUE, options));
     }
-    
-    r = Scm_ApplyRec(SCM_OBJ(&load_STUB), Scm_Cons(f, options));
-    return !SCM_FALSEP(r);
+
+    load_packet_init(packet);
+    if (flags&SCM_LOAD_PROPAGATE_ERROR) {
+        ScmObj r = Scm_ApplyRec(SCM_OBJ(&load_STUB), Scm_Cons(f, options));
+        if (packet) {
+            packet->loaded = !SCM_FALSEP(r);
+        }
+        return 0;
+    } else {
+        int r = Scm_Apply(SCM_OBJ(&load_STUB), Scm_Cons(f, options), &eresult);
+        if (packet) {
+            packet->exception = eresult.exception;
+            packet->loaded = (r > 0 && !SCM_FALSEP(eresult.results[0]));
+        }
+        return (r >= 0)? 0 : -1;
+    }
 }
 
 /*
@@ -819,15 +860,22 @@ ScmObj Scm_DynLoad(ScmString *filename, ScmObj initfn, int export_)
  *   the calling thread.
  */
 
-ScmObj Scm_Require(ScmObj feature)
+int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
 {
     ScmObj filename;
     ScmVM *vm = Scm_VM();
     ScmObj provided, providing, p, q;
-    int loop = FALSE;
+    int loop = FALSE, r;
+    ScmLoadPacket xresult;
 
+    load_packet_init(packet);
     if (!SCM_STRINGP(feature)) {
-        Scm_Error("require: string expected, but got %S\n", feature);
+        ScmObj e = Scm_MakeError(Scm_Sprintf("require: string expected, but got %S\n", feature));
+        if (flags&SCM_LOAD_PROPAGATE_ERROR) Scm_Raise(e);
+        else {
+            if (packet) packet->exception = e;
+            return -1;
+        }
     }
 
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.prov_mutex);
@@ -867,23 +915,35 @@ ScmObj Scm_Require(ScmObj feature)
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.prov_mutex);
 
-    if (loop) Scm_Error("a loop is detected in the require dependency involving feature %S", feature);
-    if (!SCM_FALSEP(provided)) return SCM_TRUE;
-    SCM_UNWIND_PROTECT {
-        filename = Scm_StringAppendC(SCM_STRING(feature), ".scm", 4, 4);
-        Scm_Load(Scm_GetStringConst(SCM_STRING(filename)), 0);
-    } SCM_WHEN_ERROR {
+    if (loop) {
+        ScmObj e = Scm_MakeError(Scm_Sprintf("a loop is detected in the require dependency involving feature %S", feature));
+        if (flags&SCM_LOAD_PROPAGATE_ERROR) Scm_Raise(e);
+        else {
+            if (packet) packet->exception = e;
+            return -1;
+        }
+    }
+        
+    if (!SCM_FALSEP(provided)) return 0;
+    filename = Scm_StringAppendC(SCM_STRING(feature), ".scm", 4, 4);
+    r = Scm_Load(Scm_GetStringConst(SCM_STRING(filename)), 0, &xresult);
+    if (packet) packet->exception = xresult.exception;
+
+    if (r < 0) {
         (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.prov_mutex);
         ldinfo.providing = Scm_AssocDeleteX(feature, ldinfo.providing, SCM_CMP_EQUAL);
         (void)SCM_INTERNAL_COND_SIGNAL(ldinfo.prov_cv);
         (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.prov_mutex);
-        SCM_NEXT_HANDLER;
-    } SCM_END_PROTECT;
+        if (flags&SCM_LOAD_PROPAGATE_ERROR) Scm_Raise(xresult.exception);
+        else return -1;
+    }
+
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.prov_mutex);
     ldinfo.providing = Scm_AssocDeleteX(feature, ldinfo.providing, SCM_CMP_EQUAL);
     (void)SCM_INTERNAL_COND_SIGNAL(ldinfo.prov_cv);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.prov_mutex);
-    return SCM_TRUE;
+    if (packet) packet->loaded = TRUE;
+    return 0;
 }
 
 ScmObj Scm_Provide(ScmObj feature)
@@ -1026,7 +1086,7 @@ ScmObj Scm_LoadAutoload(ScmAutoload *adata)
     prev_module = vm->module;
     SCM_UNWIND_PROTECT {
         vm->module = adata->module;
-        Scm_Require(SCM_OBJ(adata->path));
+        Scm_Require(SCM_OBJ(adata->path), SCM_LOAD_PROPAGATE_ERROR, NULL);
         vm->module = prev_module;
     
         if (adata->import_from) {
@@ -1072,6 +1132,27 @@ ScmObj Scm_LoadAutoload(ScmAutoload *adata)
     SCM_INTERNAL_COND_SIGNAL(adata->cv);
     return adata->value;
 }
+
+/*------------------------------------------------------------------
+ * Compatibility stuff
+ */
+
+void Scm__LoadFromPortCompat(ScmPort *port, int flags)
+{
+    Scm_LoadFromPort(port, flags|SCM_LOAD_PROPAGATE_ERROR, NULL);
+}
+
+int  Scm__LoadCompat(const char *file, int flags)
+{
+    return (0 == Scm_Load(file, flags|SCM_LOAD_PROPAGATE_ERROR, NULL));
+}
+
+ScmObj Scm__RequireCompat(ScmObj feature)
+{
+    Scm_Require(feature, SCM_LOAD_PROPAGATE_ERROR, NULL);
+    return SCM_TRUE;
+}
+
 
 /*------------------------------------------------------------------
  * Initialization

@@ -1,3 +1,14 @@
+2007-04-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c (Scm_Sprintf, Scm_SprintfShared, Scm_Vsprintf): added
+	  convenience functions.
+	* src/error.c : changed to use above new APIs.
+
+	* src/load.c, src/gauche/load.h (Scm_Load, Scm_LoadFromPort,
+	  Scm_Require): New APIs for better error handling.
+	* src/read.c, src/main.c, src/extlib.stub, src/char.c:
+	  changed accordingly.
+
 2007-04-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/collection.c, src/gauche/colleciton.h: Make SCM_DICT_SET_VALUE

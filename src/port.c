@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.c,v 1.137 2007-03-02 07:39:14 shirok Exp $
+ *  $Id: port.c,v 1.138 2007-04-12 03:26:55 shirok Exp $
  */
 
 #include <unistd.h>
@@ -1262,7 +1262,8 @@ static void coding_port_recognize_encoding(ScmPort *port,
         /* Require gauche.charconv.
            NB: we don't need mutex here, for loading the module is
            serialized in Scm_Require. */
-        Scm_Require(SCM_MAKE_STR("gauche/charconv"));
+        Scm_Require(SCM_MAKE_STR("gauche/charconv"),
+                    SCM_LOAD_PROPAGATE_ERROR, NULL);
         if (Scm_CodingAwarePortHook == NULL) {
             Scm_PortError(port, SCM_PORT_ERROR_OTHER,
                           "couldn't load gauche.charconv module");

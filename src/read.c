@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: read.c,v 1.91 2007-03-02 07:39:14 shirok Exp $
+ *  $Id: read.c,v 1.92 2007-04-12 03:26:55 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1154,7 +1154,8 @@ static ScmObj maybe_uvector(ScmPort *port, char ch, ScmReadContext *ctx)
         /* Require srfi-4 (gauche/uvector)
            NB: we don't need mutex here, for the loading of srfi-4 is
            serialized in Scm_Require. */
-        Scm_Require(SCM_MAKE_STR("gauche/uvector"));
+        Scm_Require(SCM_MAKE_STR("gauche/uvector"),
+                    SCM_LOAD_PROPAGATE_ERROR, NULL);
         if (Scm_ReadUvectorHook == NULL)
             Scm_ReadError(port, "couldn't load srfi-4 module");
     }

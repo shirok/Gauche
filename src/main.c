@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.99 2007-03-13 10:41:25 shirok Exp $
+ *  $Id: main.c,v 1.100 2007-04-12 03:26:55 shirok Exp $
  */
 
 #include <unistd.h>
@@ -40,7 +40,7 @@
 #include <signal.h>
 #include <ctype.h>
 
-#define GAUCHE_API_0_8_8        /* temporary compatibility stuff */
+#define GAUCHE_API_0_9        /* temporary compatibility stuff */
 #include "gauche.h"
 
 #ifdef HAVE_GETOPT_H
@@ -250,6 +250,17 @@ static void sig_setup(void)
     Scm_SetMasterSigmask(&set);
 }
 
+/* Load gauche-init.scm */
+void load_gauche_init(void)
+{
+    ScmLoadPacket lpak;
+    if (Scm_Load("gauche-init.scm", 0, &lpak) < 0) {
+        Scm_Printf(SCM_CURERR, "gosh: WARNING: Error while loading initialization file: %A(%A).\n",
+                   Scm_ConditionMessage(lpak.exception),
+                   Scm_ConditionTypeName(lpak.exception));
+    }
+}
+
 /* Cleanup */
 void cleanup_main(void *data)
 {
@@ -287,6 +298,18 @@ void cleanup_main(void *data)
     }
 }
 
+/* Error handling */
+void error_exit(ScmObj c)
+{
+    ScmObj m = Scm_ConditionMessage(c);
+    if (SCM_FALSEP(m)) {
+        Scm_Printf(SCM_CURERR, "gosh: Thrown unknown condition: %S\n", c);
+    } else {
+        Scm_Printf(SCM_CURERR, "gosh: %S: %A\n", Scm_ConditionTypeName(c), m);
+    }
+    Scm_Exit(1);
+}
+
 /*-----------------------------------------------------------------
  * MAIN
  */
@@ -298,6 +321,7 @@ int main(int argc, char **argv)
     ScmObj av = SCM_NIL;
     int exit_code = 0;
     ScmEvalPacket epak;
+    ScmLoadPacket lpak;
 
     GC_INIT();
     Scm_Init(GAUCHE_SIGNATURE);
@@ -330,15 +354,7 @@ int main(int argc, char **argv)
     }
 
     /* load init file */
-    if (load_initfile) {
-        SCM_UNWIND_PROTECT {
-            Scm_Load("gauche-init.scm", 0);
-        }
-        SCM_WHEN_ERROR {
-            fprintf(stderr, "Error in initialization file.\n");
-        }
-        SCM_END_PROTECT;
-    }
+    if (load_initfile) load_gauche_init();
 
     /* prepare *program-name* and *argv* */
     if (optind < argc) {
@@ -384,7 +400,6 @@ int main(int argc, char **argv)
     SCM_FOR_EACH(cp, Scm_Reverse(pre_cmds)) {
         ScmObj p = SCM_CAR(cp);
         ScmObj v = SCM_CDR(p);
-        int r;
         
         switch (SCM_CHAR_VALUE(SCM_CAR(p))) {
         case 'I':
@@ -394,25 +409,29 @@ int main(int argc, char **argv)
             Scm_AddLoadPath(Scm_GetStringConst(SCM_STRING(v)), TRUE);
             break;
         case 'l':
-            Scm_Load(Scm_GetStringConst(SCM_STRING(v)), 0);
+            if (Scm_Load(Scm_GetStringConst(SCM_STRING(v)), 0, &lpak) < 0)
+                error_exit(lpak.exception);
             break;
         case 'L':
-            Scm_Load(Scm_GetStringConst(SCM_STRING(v)), SCM_LOAD_QUIET_NOFILE);
+            if (Scm_Load(Scm_GetStringConst(SCM_STRING(v)), SCM_LOAD_QUIET_NOFILE, &lpak) < 0)
+                error_exit(lpak.exception);
             break;
         case 'u':
-            Scm_Require(Scm_StringJoin(Scm_StringSplitByChar(SCM_STRING(v),
-                                                             '.'),
-                                       SCM_STRING(SCM_MAKE_STR("/")),
-                                       SCM_STRING_JOIN_INFIX));
+            if (Scm_Require(Scm_StringJoin(Scm_StringSplitByChar(SCM_STRING(v),
+                                                                 '.'),
+                                           SCM_STRING(SCM_MAKE_STR("/")),
+                                           SCM_STRING_JOIN_INFIX),
+                            0, &lpak) < 0) {
+                error_exit(lpak.exception);
+            }
             Scm_ImportModules(SCM_CURRENT_MODULE(),
                               SCM_LIST1(Scm_Intern(SCM_STRING(v))));
             break;
         case 'e':
-            r = Scm_EvalCString(Scm_GetStringConst(SCM_STRING(v)),
+            if (Scm_EvalCString(Scm_GetStringConst(SCM_STRING(v)),
                                 SCM_OBJ(Scm_UserModule()),
-                                &epak);
-            if (r < 0) {
-                Scm_Printf(SCM_CURERR, "Error during evaluating command-line expression %S:\n%S\n", v, epak.exception);
+                                &epak) < 0) {
+                error_exit(epak.exception);
             }
             break;
         case 'E':
@@ -420,19 +439,20 @@ int main(int argc, char **argv)
                                            v,
                                            SCM_MAKE_STR(")")));
 
-            r = Scm_EvalCString(Scm_GetStringConst(SCM_STRING(v)),
+            if (Scm_EvalCString(Scm_GetStringConst(SCM_STRING(v)),
                                 SCM_OBJ(Scm_UserModule()),
-                                &epak);
-            if (r < 0) {
-                Scm_Printf(SCM_CURERR, "Error during evaluating command-line expression %S:\n%S\n", v, epak.exception);
-            }
+                                &epak) < 0) {
+                error_exit(epak.exception);
+            }   
             break;
         }
     }
 
     /* Set up instruments. */
     if (profiling_mode) {
-        Scm_Require(SCM_MAKE_STR("gauche/vm/profiler"));
+        if (Scm_Require(SCM_MAKE_STR("gauche/vm/profiler"), 0, &lpak) < 0) {
+            error_exit(lpak.exception);
+        }
         Scm_ProfilerStart();
     }
     Scm_AddCleanupHandler(cleanup_main, NULL);
@@ -444,7 +464,9 @@ int main(int argc, char **argv)
         ScmObj mainproc;
         ScmEvalPacket epak;
 
-        Scm_Load(scriptfile, 0);
+        if (Scm_Load(scriptfile, 0, &lpak) < 0) {
+            error_exit(lpak.exception);
+        }
 
         /* if symbol 'main is bound to a procedure in the user module,
            call it.  (SRFI-22) */
@@ -464,19 +486,17 @@ int main(int argc, char **argv)
     } else {
         /* We're in interactive mode. (use gauche.interactive) */
         if (load_initfile) {
-            SCM_UNWIND_PROTECT {
-                Scm_Require(SCM_MAKE_STR("gauche/interactive"));
+            if (Scm_Require(SCM_MAKE_STR("gauche/interactive"), 0, &lpak) < 0) {
+                Scm_Warn("couldn't load gauche.interactive\n");
+            } else {
                 Scm_ImportModules(SCM_CURRENT_MODULE(),
                                   SCM_LIST1(SCM_INTERN("gauche.interactive")));
             }
-            SCM_WHEN_ERROR {
-                Scm_Warn("couldn't load gauche.interactive\n");
-            }
-            SCM_END_PROTECT;
         }
 
         if (batch_mode || (!isatty(0) && !interactive_mode)) {
-            Scm_LoadFromPort(SCM_PORT(Scm_Stdin()), 0);
+            Scm_LoadFromPort(SCM_PORT(Scm_Stdin()), SCM_LOAD_PROPAGATE_ERROR,
+                             NULL);
         } else {
             Scm_Repl(SCM_FALSE, SCM_FALSE, SCM_FALSE, SCM_FALSE);
         }

@@ -1,6 +1,6 @@
 #
 # Makefile.in for Gauche/src
-#  $Id: Makefile.in,v 1.170 2007-04-07 15:11:16 shirok Exp $
+#  $Id: Makefile.in,v 1.171 2007-04-12 03:26:55 shirok Exp $
 #
 
 # prelude ---------------------------------------------
@@ -114,7 +114,7 @@ INSTALL_SUBHEADERS = gauche/config.h                                  \
 	             gauche/symbol.h gauche/keyword.h gauche/gloc.h   \
                      gauche/number.h gauche/bignum.h gauche/vector.h  \
 	             gauche/hash.h gauche/treemap.h gauche/parameter.h \
-	             gauche/port.h gauche/system.h                    \
+		     gauche/load.h gauche/port.h gauche/system.h      \
                      gauche/class.h gauche/exception.h                \
                      gauche/builtin-syms.h                            \
                      gauche/extend.h gauche/int64.h gauche/float.h    \

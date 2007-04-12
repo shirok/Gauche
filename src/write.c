@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: write.c,v 1.67 2007-03-02 07:39:14 shirok Exp $
+ *  $Id: write.c,v 1.68 2007-04-12 03:26:55 shirok Exp $
  */
 
 #include <stdio.h>
@@ -1270,6 +1270,33 @@ void Scm_PrintfShared(ScmPort *out, const char *fmt, ...)
     va_start(ap, fmt);
     Scm_Vprintf(out, fmt, ap, TRUE);
     va_end(ap);
+}
+
+ScmObj Scm_Sprintf(const char *fmt, ...)
+{
+    ScmObj r;
+    va_list args;
+    va_start(args, fmt);
+    r = Scm_Vsprintf(fmt, args, FALSE);
+    va_end(args);
+    return r;
+}
+
+ScmObj Scm_SprintfShared(const char *fmt, ...)
+{
+    ScmObj r;
+    va_list args;
+    va_start(args, fmt);
+    r = Scm_Vsprintf(fmt, args, TRUE);
+    va_end(args);
+    return r;
+}
+
+ScmObj Scm_Vsprintf(const char *fmt, va_list ap, int sharedp)
+{
+    ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
+    Scm_Vprintf(SCM_PORT(ostr), fmt, ap, sharedp);
+    return Scm_GetOutputString(SCM_PORT(ostr), 0);
 }
 
 /*

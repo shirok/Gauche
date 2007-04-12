@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.51 2007-04-08 05:40:05 shirok Exp $
+ *  $Id: char.c,v 1.52 2007-04-12 03:26:55 shirok Exp $
  */
 
 #include <ctype.h>
@@ -124,7 +124,8 @@ ScmChar Scm_UcsToChar(int n)
     if (Scm_UcsToCharHook == NULL) {
         /* NB: we don't need mutex here, for the loading of gauche.charconv
            is serialized in Scm_Require. */
-        Scm_Require(SCM_MAKE_STR("gauche/charconv"));
+        Scm_Require(SCM_MAKE_STR("gauche/charconv"),
+                    SCM_LOAD_PROPAGATE_ERROR, NULL);
         if (Scm_UcsToCharHook == NULL) {
             Scm_Error("couldn't autoload gauche.charconv");
         }
@@ -146,7 +147,8 @@ int Scm_CharToUcs(ScmChar ch)
     if (Scm_CharToUcsHook == NULL) {
         /* NB: we don't need mutex here, for the loading of gauche.charconv
            is serialized in Scm_Require. */
-        Scm_Require(SCM_MAKE_STR("gauche/charconv"));
+        Scm_Require(SCM_MAKE_STR("gauche/charconv"),
+                    SCM_LOAD_PROPAGATE_ERROR, NULL);
         if (Scm_CharToUcsHook == NULL) {
             Scm_Error("couldn't autoload gauche.charconv");
         }
