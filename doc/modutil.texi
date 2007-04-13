@@ -9792,7 +9792,7 @@ SXML->HTML変換に対して特化され最適化されたバージョンのノードディスパッチ
 @c ----------------------------------------------------------------------
 @node Serializing XML and HTML from SXML, CSV tables, Manipulating SXML structure, Library modules - Utilities
 @section @code{sxml.serializer} -  Serializing XML and HTML from SXML
-@c NODE SXMLからXMLとXHTMLのシリアライゼーション
+@c NODE SXMLからXMLとXHTMLのシリアライゼーション, @code{sxml.serializer} - SXMLからXMLとXHTMLのシリアライゼーション
 
 @deftp {Module} sxml.serializer
 @mdindex sxml.serializer
