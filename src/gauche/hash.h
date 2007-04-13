@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.h,v 1.2 2007-04-09 11:36:25 shirok Exp $
+ *  $Id: hash.h,v 1.3 2007-04-13 11:15:37 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -92,7 +92,6 @@ struct ScmHashIterRec {
 #if defined(GAUCHE_API_0_9) || defined(LIBGAUCHE_BODY)
 SCM_EXTERN void Scm_HashIterInit(ScmHashIter *iter, ScmHashCore *core);
 SCM_EXTERN ScmDictEntry *Scm_HashIterNext(ScmHashIter *iter);
-SCM_EXTERN ScmDictEntry *Scm_HashIterCurrent(ScmHashIter *iter);
 #endif /* See the compatibility section below for old APIs */
 
 /*

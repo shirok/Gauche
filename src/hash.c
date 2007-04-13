@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.50 2007-04-08 01:29:21 shirok Exp $
+ *  $Id: hash.c,v 1.51 2007-04-13 11:15:37 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -267,7 +267,7 @@ static Entry *insert_entry(ScmHashCore *table,
 
     if (table->numEntries > table->numBuckets*MAX_AVG_CHAIN_LIMITS) {
         /* Extend the table */
-        Entry **newb, *f;
+        Entry **newb, *next, *prev;
         ScmHashIter iter;
         int i, newsize = (table->numBuckets << EXTEND_BITS);
         int newbits = table->numBucketsLog2 + EXTEND_BITS;
@@ -276,11 +276,17 @@ static Entry *insert_entry(ScmHashCore *table,
         for (i=0; i<newsize; i++) newb[i] = NULL;
         
         Scm_HashIterInit(&iter, table);
-        while ((f = (Entry*)Scm_HashIterNext(&iter)) != NULL) {
-            unsigned long hashval = table->hashfn(table, f->key);
-            index = HASH2INDEX(newsize, newbits, hashval);
-            f->next = newb[index];
-            newb[index] = f;
+        prev = (Entry*)Scm_HashIterNext(&iter);
+        if (prev) {
+            do {
+                unsigned long hashval = table->hashfn(table, prev->key);
+                index = HASH2INDEX(newsize, newbits, hashval);
+                /* we need to take NEXT before changing prev->next */
+                next=(Entry*)Scm_HashIterNext(&iter);
+                prev->next = newb[index];
+                newb[index] = prev;
+                prev = next;
+            } while (next != NULL);
         }
         table->numBuckets = newsize;
         table->numBucketsLog2 = newbits;
@@ -590,40 +596,29 @@ int Scm_HashCoreNumEntries(ScmHashCore *table)
 
 void Scm_HashIterInit(ScmHashIter *iter, ScmHashCore *table)
 {
-    int i;
     iter->core = table;
-    for (i=0; i<table->numBuckets; i++) {
-        if (table->buckets[i]) {
-            iter->bucket = i;
-            iter->entry = table->buckets[i];
-            return;
-        }
-    }
+    iter->bucket = -1;
     iter->entry = NULL;
 }
 
 ScmDictEntry *Scm_HashIterNext(ScmHashIter *iter)
 {
     Entry *e = (Entry*)iter->entry;
-    if (e != NULL) {
-        if (e->next) iter->entry = e->next;
-        else {
-            int i = iter->bucket + 1;
-            for (; i < iter->core->numBuckets; i++) {
-                if (iter->core->buckets[i]) {
-                    iter->bucket = i;
-                    iter->entry = iter->core->buckets[i];
-                    return (ScmDictEntry*)e;
-                }
+    if (e && e->next) {
+        iter->entry = e->next;
+        if (iter->entry && ((Entry*)iter->entry)->next == e) Scm_Panic("Zongar!\n");
+    } else {
+        int i = iter->bucket + 1;
+        for (; i < iter->core->numBuckets; i++) {
+            if (iter->core->buckets[i]) {
+                iter->bucket = i;
+                iter->entry = iter->core->buckets[i];
+                return iter->entry;
             }
-            iter->entry = NULL;
         }
+        iter->bucket = iter->core->numBuckets;
+        iter->entry = NULL;
     }
-    return (ScmDictEntry*)e;
-}
-
-ScmDictEntry *Scm_HashIterCurrent(ScmHashIter *iter)
-{
     return iter->entry;
 }
 

@@ -1,3 +1,10 @@
+2007-04-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c (Scm_HashIterInit, Scm_HashIterNext): changed so that
+	  the initial iterator points "one before the first entry" and
+	  the 'next' operation returns an entry after proceeding the pointer.
+	  It is consistent with Scm_TreeMapInit/Next.
+
 2007-04-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/write.c (Scm_Sprintf, Scm_SprintfShared, Scm_Vsprintf): added

@@ -9,7 +9,7 @@
 @end direntry
 @c JP
 @setfilename gauche-devj.info
-@settitle Gauche -A-A³«È¯¼Ô¥ê¥Õ¥¡¥ì¥ó¥¹$)B$)B
+@settitle Gauche -A-A-A³«È¯¼Ô¥ê¥Õ¥¡¥ì¥ó¥¹$)B$)B$)B
 @dircategory The Algorithmic Language Scheme
 @direntry
 * Gauche Developers' Reference (ja): (gauche-devj.info).	Internals of Gauche
@@ -17,7 +17,7 @@
 @c COMMON
 @comment %**end of header
 
-@c $Id: gauche-dev.texi,v 1.29 2007-04-09 11:54:05 shirok Exp $
+@c $Id: gauche-dev.texi,v 1.30 2007-04-13 11:15:36 shirok Exp $
 
 @iftex
 @finalout
@@ -28,7 +28,7 @@
 @c EN
 @title Gauche Developers' Reference
 @c JP
-@title Gauche -A-A³«È¯¼Ô¥ê¥Õ¥¡¥ì¥ó¥¹$)B$)B
+@title Gauche -A-A-A³«È¯¼Ô¥ê¥Õ¥¡¥ì¥ó¥¹$)B$)B$)B
 @c COMMON
 @subtitle version @VERSION@
 @author Shiro Kawai (shiro@@acm.org)
@@ -48,10 +48,10 @@ for developers who want to extend Gauche functionality in C,
 or to embed Gauche to other applications.
 This manual is for version @VERSION@.
 @c JP
--A-AËÜ½ñ¤Ï¡¢Gauche¤Îµ¡Ç½¤òC¤Ç³ÈÄ¥¤·¤¿¤ê¡¢Gauche¤òÂ¾¤Î¥¢¥×¥ê¥±¡¼¥·¥ç¥ó¤Ë$)B$)B
--A-AËä¤á¹þ¤à¤È¤¤¤Ã¤¿¤³¤È¤ò¹Ô¤¦³«È¯¼Ô¤Î¤¿¤á¤Ë¡¢$)B$)B
-Gauche-A-A¤ÎÆâÉô¹½Â¤¤òÀâÌÀ¤¹¤ë¤â¤Î¤Ç¤¹¡£$)B$)B
-Gauche-A-A¤Î¥Ð¡¼¥¸¥ç¥ó@VERSION@¤ËÂÐ±þ¤·¤Þ¤¹¡£$)B$)B
+-A-A-AËÜ½ñ¤Ï¡¢Gauche¤Îµ¡Ç½¤òC¤Ç³ÈÄ¥¤·¤¿¤ê¡¢Gauche¤òÂ¾¤Î¥¢¥×¥ê¥±¡¼¥·¥ç¥ó¤Ë$)B$)B$)B
+-A-A-AËä¤á¹þ¤à¤È¤¤¤Ã¤¿¤³¤È¤ò¹Ô¤¦³«È¯¼Ô¤Î¤¿¤á¤Ë¡¢$)B$)B$)B
+Gauche-A-A-A¤ÎÆâÉô¹½Â¤¤òÀâÌÀ¤¹¤ë¤â¤Î¤Ç¤¹¡£$)B$)B$)B
+Gauche-A-A-A¤Î¥Ð¡¼¥¸¥ç¥ó@VERSION@¤ËÂÐ±þ¤·¤Þ¤¹¡£$)B$)B$)B
 @c COMMON
 @end ifnottex
 
@@ -2622,19 +2622,15 @@ the behavior of existing iterators become undefined.
 
 @deftypefun void Scm_HashIterInit (ScmHashIter *@var{iter}, ScmHashCore *@var{core})
 Initializes an iterator @var{iter} to iterate through a hash core @var{core}.
-@end deftypefun
-
-@deftypefun {ScmDictEntry *} Scm_HashIterCurrent (ScmHashIter *@var{iter})
-Returns the current entry the iterator is pointing, or @code{NULL}
-if iterator has visited all entries.  The iterator stays the same
-entry.
+At the beginning, the iterator points to an imaginary entry just before
+the first entry, so that the first call of @code{Scm_HashIterNext} returns
+the first entry.
 @end deftypefun
 
 @deftypefun {ScmDictEntry *} Scm_HashIterNext (ScmHashIter *@var{iter})
-Returns the current entry the iterator is pointing, or @code{NULL}
-if iterator has visited all entries.  The iterator is also updated,
-so that the next call of @code{Scm_HashIterCurrent} or
-@code{Scm_HashIterNext} returns the next entry.
+Updates the iterator @var{iter} to point to the next entry, then
+returns it.  If the iterator has visited all entries, @code{NULL}
+is returned.
 @end deftypefun
 
 @subsubheading Hash functions
@@ -3392,7 +3388,7 @@ file
 @c ======================================================================
 @node Indices,  , Helper program reference, Top
 @appendix Indices
-@c NODE -A-Aº÷°ú$)B$)B
+@c NODE -A-A-Aº÷°ú$)B$)B$)B
 
 @menu
 * Function and Macro Index::    
