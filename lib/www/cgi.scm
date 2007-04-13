@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.32 2007-03-02 07:39:11 shirok Exp $
+;;;  $Id: cgi.scm,v 1.33 2007-04-13 11:39:09 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -164,7 +164,7 @@
              (or (and-let* ((lenp (or content-length
                                       (get-meta "CONTENT_LENGTH")))
                             (len  (x->integer lenp))
-                            ((positive? len)))
+                            ((<= 0 len)))
                    (string-incomplete->complete (read-block len)))
                  (port->string (current-input-port)))))
           (else
@@ -337,7 +337,7 @@
                (result (handler name filename part-info inp)))
           (list name result))))))
 
-  (let* ((inp (if (and clength (positive? (x->integer clength)))
+  (let* ((inp (if (and clength (<= 0 (x->integer clength)))
                 (open-input-limited-length-port inp (x->integer clength))
                 inp))
          (result (mime-parse-message inp `(("content-type" ,ctype))

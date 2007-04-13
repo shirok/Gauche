@@ -1,5 +1,8 @@
 2007-04-13  Shiro Kawai  <shiro@acm.org>
 
+	* lib/www/cgi.scm: Fixed a bug that hangs when Content-Length is zero
+	  (Patch from Tatsuya BIZENN).
+
 	* src/hash.c (Scm_HashIterInit, Scm_HashIterNext): changed so that
 	  the initial iterator points "one before the first entry" and
 	  the 'next' operation returns an entry after proceeding the pointer.
