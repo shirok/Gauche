@@ -11,6 +11,10 @@
 	  the new version of the iterator loses the iteration.  We can prevent
 	  that by letting the iterator prefetch the next entry---but the code
 	  to do prefetch is exactly the same the previous version was doing!
+	  (The change would be visible if we have HashIterCurrent, but it
+	  seems little use so we dropped it.  If we ever re-adopt
+	  HashIterCurrent do not forget to keep the current entry pointer
+	  as well as the 'next' prefetch pointer).
 
 2007-04-11  Shiro Kawai  <shiro@acm.org>
 
