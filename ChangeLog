@@ -6,7 +6,11 @@
 	* src/hash.c (Scm_HashIterInit, Scm_HashIterNext): changed so that
 	  the initial iterator points "one before the first entry" and
 	  the 'next' operation returns an entry after proceeding the pointer.
-	  It is consistent with Scm_TreeMapInit/Next.
+	  It is consistent with Scm_TreeMapInit/Next. - Nope.  Reverted.
+	  If the caller happens to delete the curent entry from the table,
+	  the new version of the iterator loses the iteration.  We can prevent
+	  that by letting the iterator prefetch the next entry---but the code
+	  to do prefetch is exactly the same the previous version was doing!
 
 2007-04-11  Shiro Kawai  <shiro@acm.org>
 
