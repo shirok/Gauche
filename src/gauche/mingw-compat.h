@@ -6,7 +6,7 @@
  *  I tried to put mingw-specific stuff here as much as possible,
  *  instead of scattering #ifdefs around the sources.
  *
- *  $Id: mingw-compat.h,v 1.4 2006-03-12 11:06:10 shirok Exp $
+ *  $Id: mingw-compat.h,v 1.5 2007-04-15 10:36:03 shirok Exp $
  */
 
 #ifndef GAUCHE_MINGW_COMPAT_H
@@ -14,6 +14,9 @@
 
 #include <windows.h>
 #include <shlwapi.h>
+
+/* windows.h defines 'small' as 'char'; what's the hell? */
+#undef small
 
 /* MinGW's sys/types.h doesn't define these.
    It appearse that _BSDTYPES_DEFINED is the symbol commonly used

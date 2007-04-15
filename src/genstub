@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.132 2007-03-16 09:46:45 shirok Exp $
+;;;  $Id: genstub,v 1.133 2007-04-15 10:36:02 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -780,13 +780,19 @@
    ))
 
 (define-class <procstub> (<setter-mixin> <stub>)
-  ((args            :initform '() :accessor args-of :init-keyword :args)
-   (num-reqargs     :initform 0   :accessor num-reqargs-of :init-keyword :num-reqargs)
-   (have-rest-arg?  :initform #f  :accessor have-rest-arg? :init-keyword :have-rest-arg?)
-   (decls           :initform '() :accessor decls-of)
-   (stmts           :initform '() :accessor stmts-of)
+  ((args              :initform '() :accessor args-of :init-keyword :args)
+   (keyword-args      :initform '() :accessor keyword-args-of
+                      :init-keyword :keyword-args)
+   (num-reqargs       :initform 0   :accessor num-reqargs-of :init-keyword :num-reqargs)
+   (num-optargs       :initform 0   :accessor num-optargs-of
+                      :init-keyword :num-optargs)
+   (have-rest-arg?    :initform #f  :accessor have-rest-arg? :init-keyword :have-rest-arg?)
+   (allow-other-keys? :initform '() :accessor allow-other-keys?
+                      :init-keyword :allow-other-keys?)
+   (decls             :initform '() :accessor decls-of)
+   (stmts             :initform '() :accessor stmts-of)
       ;; reverse list of C stmt lines.
-   (c++-handlers    :initform '() :accessor c++-handlers-of)
+   (c++-handlers      :initform '() :accessor c++-handlers-of)
       ;; ((<c++-exception-decl> <handler-stmt> ...) ...)
       ;; If not null, the entire procedure body is wrapped by 'try' and
       ;; an appropriate handlers are emitted.  Necessary to write a stub
@@ -806,13 +812,7 @@
 ;;
 
 (define-class <cproc> (<procstub>)
-  ((num-optargs       :initform 0   :accessor num-optargs-of
-                      :init-keyword :num-optargs)
-   (keyword-args      :initform '() :accessor keyword-args-of
-                      :init-keyword :keyword-args)
-   (allow-other-keys? :initform '() :accessor allow-other-keys?
-                      :init-keyword :allow-other-keys?)
-   (inliner           :initform #f  :accessor inliner-of)
+  ((inliner           :initform #f  :accessor inliner-of)
    (inline-insn       :initform #f  :accessor inline-insn-of)
    ))
 
@@ -1098,13 +1098,8 @@
 
 (define-method emit-definition ((cproc <cproc>))
   (for-each ensure-keyword-arg (keyword-args-of cproc))
-  (f "#ifdef GAUCHE_SUBR_VM")
-  (f "static ScmObj ~a(ScmVM *SCM_VMPTR, ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)"
-     (c-name-of cproc))
-  (f "#else")
   (f "static ScmObj ~a(ScmObj *SCM_FP, int SCM_ARGCNT, void *data_)"
      (c-name-of cproc))
-  (f "#endif")
   (cgen-body "{")
   ;; argument decl
   (for-each emit-arg-decl (args-of cproc))
@@ -1357,8 +1352,8 @@
           (('c-generic-name gen-name)
            (unless (string? (cadr stmt))
              (error "c-generic-name requires a string:"
-                    gen-name)
-             (set! (c-generic-of method) gen-name)))
+                    gen-name))
+           (set! (c-generic-of method) gen-name))
           (('body . spec) (process-body-spec method stmt))
           (('call . spec) (process-call-spec method stmt))
           (('expr . spec) (process-expr-spec method stmt))
@@ -1408,7 +1403,7 @@
              (args    '())
              (specs   '()))
     (cond ((null? arglist)
-           (values args specs (length args) #f))
+           (values (reverse args) specs (length args) #f))
           ((symbol? arglist)
            (values (cons (make-arg <rest-arg> arglist (length args))
                          args)

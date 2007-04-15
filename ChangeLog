@@ -1,3 +1,14 @@
+2007-04-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/genstub (emit-definition): removed remanings of GAUCHE_SUBR_VM
+	  support.
+	  (<procstub>): moved several slots from <cproc> to fix define-cmethod.
+	  (define-cmethod): fixed incorrectly placed close paren.
+	  (parse-specialized-args): reversing parsed arglist.
+
+	* src/gauche/mingw-compat.h: added #undef small, for <windows.h>
+	  defines 'small' to 'char'.
+	
 2007-04-13  Shiro Kawai  <shiro@acm.org>
 
 	* lib/www/cgi.scm: Fixed a bug that hangs when Content-Length is zero
