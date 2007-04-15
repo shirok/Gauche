@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.133 2007-04-15 10:36:02 shirok Exp $
+;;;  $Id: genstub,v 1.134 2007-04-15 20:34:48 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -972,7 +972,6 @@
           (emit-record setter))))
     )))
 
-;; NB: argument vmapi? is temporary
 (define-method process-call-spec ((cproc <procstub>) form)
   (define (err) (error "malformed 'call' spec:" form))
   (define (args)
@@ -1021,17 +1020,6 @@
                              (box-expr rettype #`"SCM_RESULT,i"))
                            rettypes)
            ",")
-        (push-stmt! cproc "#ifdef GAUCHE_VMAPI_VM")
-        (push-stmt! cproc
-                    (case nrets
-                      ((0) (return-stmt "Scm_VMValues(SCM_VMPTR, SCM_NIL)"))
-                      ((1) (return-stmt results))
-                      ((2) (return-stmt #`"Scm_VMValues2(SCM_VMPTR, ,results)"))
-                      ((3) (return-stmt #`"Scm_VMValues3(SCM_VMPTR, ,results)"))
-                      ((4) (return-stmt #`"Scm_VMValues4(SCM_VMPTR, ,results)"))
-                      ((5) (return-stmt #`"Scm_VMValues5(SCM_VMPTR, ,results)"))
-                      (else (return-stmt #`"Scm_VMValues(SCM_VMPTR, Scm_List(,results,, NULL))"))))
-        (push-stmt! cproc "#else")
         (push-stmt! cproc
                     (case nrets
                       ((0) (return-stmt "Scm_Values(SCM_NIL)"))
@@ -1041,7 +1029,6 @@
                       ((4) (return-stmt #`"Scm_Values4(,results)"))
                       ((5) (return-stmt #`"Scm_Values5(,results)"))
                       (else (return-stmt #`"Scm_Values(Scm_List(,results,, NULL))"))))
-        (push-stmt! cproc "#endif")
         )))
   (define (err) (error "malformed 'body' spec:" form))
   (match form
