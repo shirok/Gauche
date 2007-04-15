@@ -751,7 +751,7 @@ Transcendental functions.  Work for complex numbers as well.
 @c COMMON
 @end defun
 
-@defun atan x y
+@defun atan y x
 [R5RS]
 @c EN
 For real numbers @var{x} and @var{y}, returns @code{atan(@var{y}/@var{x})}.
