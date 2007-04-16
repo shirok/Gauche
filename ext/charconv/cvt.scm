@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cvt.scm,v 1.6 2007-03-02 07:39:04 shirok Exp $
+;;;  $Id: cvt.scm,v 1.7 2007-04-16 12:52:32 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -229,8 +229,12 @@
                                 (- (car utf8) #x80))))
           ))
 
+  ;; Look up EUC 
+  ;; NB: the original table has entries for 0x80-0x9f as <control>, but
+  ;; they are not really assigned, so we exclude them.
   (define (euc-entry data)
     (cond ((not data) 0)
+          ((<= data #x9f) 0)
           ((> data #xffff) (- (logand data #xffff) #x8000))
           (else data)))
 

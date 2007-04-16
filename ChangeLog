@@ -1,3 +1,9 @@
+2007-04-16  Shiro Kawai  <shiro@acm.org>
+
+	* ext/charconv/cvt.scm (generate-utf8->eucj): fix for not generating
+	  mappings from U+0080-U+009f range; they produced wrong EUC sequence,
+	  causing troubles.  Now they are replaced to alternative characters.
+
 2007-04-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c, src/scmlib.scm, src/stdlib.stub, src/extlib.stub,
