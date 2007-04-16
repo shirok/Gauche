@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.286 2007-04-12 03:26:55 shirok Exp $
+;;; $Id: extlib.stub,v 1.287 2007-04-16 03:47:13 shirok Exp $
 ;;;
 
 "
@@ -927,9 +927,15 @@
 (define-cproc port-closed? (obj::<port>)
   (call <boolean> "SCM_PORT_CLOSED_P"))
 
-(define-cproc current-error-port ()     ;gauche extention
-  (inliner CURERR)
-  (expr "SCM_OBJ(SCM_CURERR)"))
+(define-cproc current-error-port (&optional newport)
+  (body "if (SCM_OPORTP(newport)) {"
+        "  SCM_RESULT = Scm_SetCurrentErrorPort(SCM_PORT(newport));"
+        "} else if (!SCM_UNBOUNDP(newport)) {"
+        "  Scm_TypeError(\"current-error-port\", \"output port\", newport);"
+        "  SCM_RESULT = SCM_UNDEFINED;"
+        "} else {"
+        "  SCM_RESULT = SCM_OBJ(SCM_CURERR);"
+        "}"))
 
 (define-cproc standard-input-port ()
   (call "Scm_Stdin"))
@@ -939,25 +945,6 @@
 
 (define-cproc standard-error-port ()
   (call "Scm_Stderr"))
-
-(define-cproc with-input-from-port (port::<input-port> thunk)
-  (expr "Scm_WithPort(&port, thunk, SCM_PORT_CURIN, FALSE)"))
-
-(define-cproc with-output-to-port (port::<output-port> thunk)
-  (expr "Scm_WithPort(&port, thunk, SCM_PORT_CUROUT, FALSE)"))
-
-(define-cproc with-error-to-port (port::<output-port> thunk)
-  (expr "Scm_WithPort(&port, thunk, SCM_PORT_CURERR, FALSE)"))
-
-(define-cproc with-ports (iport::<input-port>?
-                          oport::<output-port>?
-                          eport::<output-port>?
-                          thunk)
-  (body "ScmPort *p[3]; int flags = 0, cnt = 0;"
-        "if (iport) { p[cnt++] = iport; flags |= SCM_PORT_CURIN; }"
-        "if (oport) { p[cnt++] = oport; flags |= SCM_PORT_CUROUT; }"
-        "if (eport) { p[cnt++] = eport; flags |= SCM_PORT_CURERR; }"
-        "SCM_RESULT = Scm_WithPort(p, thunk, flags, FALSE);"))
 
 (define-cproc port-name (port::<port>)
   (call "Scm_PortName"))

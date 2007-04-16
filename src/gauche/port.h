@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.h,v 1.22 2007-03-22 11:20:36 shirok Exp $
+ *  $Id: port.h,v 1.23 2007-04-16 03:47:13 shirok Exp $
  */
 
 #ifndef GAUCHE_PORT_H
@@ -314,12 +314,14 @@ SCM_EXTERN int    Scm_PeekbUnsafe(ScmPort *port);
 SCM_EXTERN ScmObj Scm_ReadLine(ScmPort *port);
 SCM_EXTERN ScmObj Scm_ReadLineUnsafe(ScmPort *port);
 
+#if 0
 #define SCM_PORT_CURIN  (1<<0)
 #define SCM_PORT_CUROUT (1<<1)
 #define SCM_PORT_CURERR (1<<2)
 
 SCM_EXTERN ScmObj Scm_WithPort(ScmPort *port[], ScmObj thunk,
 			       int mask, int closep);
+#endif
 
 /*================================================================
  * File ports
@@ -335,6 +337,10 @@ SCM_EXTERN ScmObj Scm_Stderr(void);
 #define SCM_CURIN    SCM_VM_CURRENT_INPUT_PORT(Scm_VM())
 #define SCM_CUROUT   SCM_VM_CURRENT_OUTPUT_PORT(Scm_VM())
 #define SCM_CURERR   SCM_VM_CURRENT_ERROR_PORT(Scm_VM())
+
+SCM_EXTERN ScmObj Scm_SetCurrentInputPort(ScmPort *port);
+SCM_EXTERN ScmObj Scm_SetCurrentOutputPort(ScmPort *port);
+SCM_EXTERN ScmObj Scm_SetCurrentErrorPort(ScmPort *port);
 
 /*================================================================
  * String ports

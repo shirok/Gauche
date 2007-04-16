@@ -1,10 +1,20 @@
 2007-04-15  Shiro Kawai  <shiro@acm.org>
 
+	* src/port.c, src/scmlib.scm, src/stdlib.stub, src/extlib.stub,
+	  src/gauche/port.h:  Made current-{input|output|error}-port
+	  like parameters, allowing replacing them.  Moved implementation
+	  of with-input-from-port etc. to Scheme (scmlib.scm), hence dropping
+	  them from extlib.stub.  Scm_WithPort is also dropped.
+	  New API Scm_SetCurrentInputPort etc.
+	  The old Scm_WithPort had a bug that didn't set a proper "before"
+	  thunk for dynamic-wind.  The bug doesn't exist in the new version.
+
 	* src/genstub (emit-definition): removed remanings of GAUCHE_SUBR_VM
 	  support.
 	  (<procstub>): moved several slots from <cproc> to fix define-cmethod.
 	  (define-cmethod): fixed incorrectly placed close paren.
 	  (parse-specialized-args): reversing parsed arglist.
+	  (process-body-spec): removed remainings of GAUCHE_VMAPI_VM support
 
 	* src/gauche/mingw-compat.h: added #undef small, for <windows.h>
 	  defines 'small' to 'char'.

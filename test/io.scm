@@ -240,6 +240,92 @@
          (lambda () (port-map (lambda (x) x) read))))
 
 ;;-------------------------------------------------------------------
+(test-section "with-ports")
+
+(test* "with-input-from-port" '(#\b #\d #\c #\a)
+       (let ((x (open-input-string "ab"))
+             (y (open-input-string "cd"))
+             (r '())
+             (restart #f))
+         (if (call/cc 
+              (lambda (escape)
+                (with-input-from-port x
+                  (lambda ()
+                    (push! r (read-char))
+                    (with-input-from-port y
+                      (lambda ()
+                        (push! r (read-char))
+                        (call/cc (lambda (k) (set! restart k) (escape #t)))
+                        (push! r (read-char))))
+                    (push! r (read-char))))
+                #f))
+           (restart #f)
+           r)))
+
+(for-each
+ (lambda (with cur name)
+   (test* "with-,|name|-to-port" '("ad" "bc")
+          (let ((x (open-output-string))
+                (y (open-output-string))
+                (restart #f))
+            (if (call/cc 
+                 (lambda (escape)
+                   (with x
+                     (lambda ()
+                       (write-char #\a (cur))
+                       (with y
+                         (lambda ()
+                           (write-char #\b (cur))
+                           (call/cc (lambda (k) (set! restart k) (escape #t)))
+                           (write-char #\c (cur))))
+                       (write-char #\d (cur))))
+                   #f))
+              (restart #f)
+              (list (get-output-string x) (get-output-string y))))))
+ `(,with-output-to-port ,with-error-to-port)
+ `(,current-output-port ,current-error-port)
+ '("output" "error"))
+
+(test* "with-ports 1" '("a" "b")
+       (let ((o0 (open-output-string))
+             (o1 (open-output-string)))
+         (with-ports (open-input-string "abcd") o0 o1
+           (lambda ()
+             (write-char (read-char))
+             (write-char (read-char) (current-error-port))))
+         (list (get-output-string o0) (get-output-string o1))))
+(test* "with-ports 2" '("B" "A")
+       (let ((o0 (open-output-string))
+             (o1 (open-output-string)))
+         (with-ports (open-input-string "abcd") o0 o0
+           (lambda ()
+             (with-ports (open-input-string "ABCD") o1 #f
+               (lambda ()
+                 (write-char (read-char))
+                 (write-char (read-char) (current-error-port))))))
+         (list (get-output-string o0) (get-output-string o1))))
+(test* "with-ports 3" '("A" "B")
+       (let ((o0 (open-output-string))
+             (o1 (open-output-string)))
+         (with-ports (open-input-string "abcd") o0 o0
+           (lambda ()
+             (with-ports (open-input-string "ABCD") #f o1
+               (lambda ()
+                 (write-char (read-char))
+                 (write-char (read-char) (current-error-port))))))
+         (list (get-output-string o0) (get-output-string o1))))
+(test* "with-ports 4" '("" "ab")
+       (let ((o0 (open-output-string))
+             (o1 (open-output-string)))
+         (with-ports (open-input-string "abcd") o0 o0
+           (lambda ()
+             (with-ports #f o1 o1
+               (lambda ()
+                 (write-char (read-char))
+                 (write-char (read-char) (current-error-port))))))
+         (list (get-output-string o0) (get-output-string o1))))
+
+;;-------------------------------------------------------------------
 (test-section "seeking")
 
 (define (seek-tester1 p)

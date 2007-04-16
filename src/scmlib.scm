@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: scmlib.scm,v 1.12 2007-03-07 04:29:14 shirok Exp $
+;;;  $Id: scmlib.scm,v 1.13 2007-04-16 03:47:13 shirok Exp $
 ;;;
 
 ;; This file contains builtin library functions that are easier to be
@@ -443,3 +443,33 @@
       (if (null? args) string (apply %maybe-substring string args))
     read))
 
+;; with-port
+
+(define-syntax %with-ports
+  (syntax-rules ()
+    ((_ "tmp" (tmp ...) () (port ...) (param ...) thunk)
+     (let ((tmp #f) ...)
+       (dynamic-wind
+           (lambda () (when port (set! tmp (param port))) ...)
+           thunk
+           (lambda () (when tmp (param tmp)) ...))))
+    ((_ "tmp" tmps (port . more) ports params thunk)
+     (%with-ports "tmp" (tmp . tmps) more ports params thunk))
+    ((_ ((param port) ...) thunk)
+     (%with-ports "tmp" () (port ...) (port ...) (param ...) thunk))
+    ))
+
+(define (with-input-from-port port thunk)
+  (%with-ports ((current-input-port port)) thunk))
+
+(define (with-output-to-port port thunk)
+  (%with-ports ((current-output-port port)) thunk))
+
+(define (with-error-to-port port thunk)
+  (%with-ports ((current-error-port port)) thunk))
+
+(define (with-ports iport oport eport thunk)
+  (%with-ports ((current-input-port iport)
+                (current-output-port oport)
+                (current-error-port eport))
+               thunk))

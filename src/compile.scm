@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.55 2007-03-02 07:39:13 shirok Exp $
+;;;  $Id: compile.scm,v 1.56 2007-04-16 03:47:12 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -4238,6 +4238,24 @@
                                                   ,(pass1 b cenv)))
                              ,(pass1 c cenv))))
       (else (error "wrong number of arguments for acons:" form)))))
+
+(define-builtin-inliner current-input-port
+  (lambda (form cenv)
+    (match form
+      ((_) ($asm form `(,CURIN) '()))
+      (else (undefined)))))
+
+(define-builtin-inliner current-output-port
+  (lambda (form cenv)
+    (match form
+      ((_) ($asm form `(,CUROUT) '()))
+      (else (undefined)))))
+
+(define-builtin-inliner current-error-port
+  (lambda (form cenv)
+    (match form
+      ((_) ($asm form `(,CURERR) '()))
+      (else (undefined)))))
 
 ;;============================================================
 ;; Utilities

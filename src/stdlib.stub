@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.126 2007-03-27 09:18:30 shirok Exp $
+;;; $Id: stdlib.stub,v 1.127 2007-04-16 03:47:13 shirok Exp $
 ;;;
 
 
@@ -658,13 +658,25 @@
 (define-cproc output-port? (obj) (call <boolean> "SCM_OPORTP"))
 (define-cproc port? (obj)        (call <boolean> "SCM_PORTP"))
 
-(define-cproc current-input-port ()
-  (inliner CURIN)
-  (expr "SCM_OBJ(SCM_CURIN)"))
+(define-cproc current-input-port (&optional newport)
+  (body "if (SCM_IPORTP(newport)) {"
+        "  SCM_RESULT = Scm_SetCurrentInputPort(SCM_PORT(newport));"
+        "} else if (!SCM_UNBOUNDP(newport)) {"
+        "  Scm_TypeError(\"current-input-port\", \"input port\", newport);"
+        "  SCM_RESULT = SCM_UNDEFINED;"
+        "} else {"
+        "  SCM_RESULT = SCM_OBJ(SCM_CURIN);"
+        "}"))
 
-(define-cproc current-output-port ()
-  (inliner CUROUT)
-  (expr "SCM_OBJ(SCM_CUROUT)"))
+(define-cproc current-output-port (&optional newport)
+  (body "if (SCM_OPORTP(newport)) {"
+        "  SCM_RESULT = Scm_SetCurrentOutputPort(SCM_PORT(newport));"
+        "} else if (!SCM_UNBOUNDP(newport)) {"
+        "  Scm_TypeError(\"current-output-port\", \"output port\", newport);"
+        "  SCM_RESULT = SCM_UNDEFINED;"
+        "} else {"
+        "  SCM_RESULT = SCM_OBJ(SCM_CUROUT);"
+        "}"))
 
 (define-cproc close-input-port (port::<port>)
   (call <void> "Scm_ClosePort"))
