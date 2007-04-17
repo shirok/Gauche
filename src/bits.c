@@ -1,5 +1,5 @@
 /*
- * gauche/bits.h - Bit manipulation utilities
+ * bits.c - Bit manipulation utilities
  *
  *   Copyright (c) 2007  Shiro Kawai  <shiro@acm.org>
  * 
@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bits.c,v 1.1 2007-04-01 05:51:56 shirok Exp $
+ *  $Id: bits.c,v 1.2 2007-04-17 14:45:15 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
