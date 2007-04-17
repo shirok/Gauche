@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.52 2007-04-14 09:18:54 shirok Exp $
+ *  $Id: hash.c,v 1.53 2007-04-17 14:43:05 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -314,7 +314,7 @@ static Entry *delete_entry(ScmHashCore *table,
 
 #define NOTFOUND(table, op, key, index)                                 \
     do {                                                                \
-        if (op == SCM_DICT_CREATE) insert_entry(table, key, index);     \
+        if (op == SCM_DICT_CREATE) return insert_entry(table, key, index);\
         else return NULL;                                               \
     } while (0)
 
