@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bits.h,v 1.1 2007-04-01 05:51:56 shirok Exp $
+ *  $Id: bits.h,v 1.2 2007-04-17 14:41:02 shirok Exp $
  */
 
 #ifndef GAUCHE_BITS_H
@@ -51,7 +51,7 @@ SCM_EXTERN ScmBits *Scm_MakeBits(int numbits);
     (((size)+SCM_WORD_BITS-1)/SCM_WORD_BITS)
 
 #define SCM_BITS_TEST(bits, index)                \
-    ((bits)[(index)/SCM_WORD_BITS] & (1UL<<((index)%SCM_WORD_BITS)))
+    (0!=((bits)[(index)/SCM_WORD_BITS] & (1UL<<((index)%SCM_WORD_BITS))))
 
 #define SCM_BITS_SET(bits, index)                 \
     ((bits)[(index)/SCM_WORD_BITS] |= (1UL<<((index)%SCM_WORD_BITS)))
