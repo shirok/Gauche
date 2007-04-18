@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: load.h,v 1.1 2007-04-12 03:26:56 shirok Exp $
+ *  $Id: load.h,v 1.2 2007-04-18 02:18:27 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -57,7 +57,7 @@ typedef enum {
 typedef struct ScmLoadPacketRec {
     ScmObj exception; /* OUT: exception object in case of LOAD_EVAL_ERROR */
     int    loaded;    /* OUT: TRUE iff file is successfully loaded.  */
-    ScmObj paths;     /* IN:  0 */
+    ScmObj paths;     /* reserved */
 } ScmLoadPacket;
 
 SCM_EXTERN ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
