@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.56 2007-04-16 03:47:12 shirok Exp $
+;;;  $Id: compile.scm,v 1.57 2007-04-18 02:26:44 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -4055,6 +4055,8 @@
 ;;  constant folding.   Except the literal numbers we need to call
 ;;  pass1 first on the argument to see if we can get a constant.
 
+;; NB: This part needs serious refactoring after 0.8.10.  
+
 ;; Utility.  Returns two values.  The first value is a number, if
 ;; the given form yields a constant number.  The second value is
 ;; an intermediate form, if the given form is not a literal.
@@ -4066,136 +4068,134 @@
         (values ($const-value f) f)
         (values #f f)))))
 
-(define-builtin-inliner +
-  (lambda (form cenv)
-    (let inline ((args (cdr form)))
-      (match args
-        (()  ($const 0))
-        ((x)
-         (receive (num tree) (check-numeric-constant x cenv)
-           (if num
-             (or tree ($const num))
-             ($call form ($gref (ensure-identifier '+ cenv)) (list tree)))))
-        ((x y . more)
-         (receive (xval xtree) (check-numeric-constant x cenv)
-           (receive (yval ytree) (check-numeric-constant y cenv)
-             (if xval
-               (if yval
-                 (inline (cons (+ xval yval) more))
-                 (fold-inline-+ form ytree (cons xval more) cenv))
-               (if yval
-                 (fold-inline-+ form xtree (cons yval more) cenv)
-                 (fold-inline-+ form ($asm form `(,NUMADD2) (list xtree ytree))
-                                more cenv))))))
-        ))))
+(define (ensure-inexact-const numconstval)
+  ($const (exact->inexact numconstval)))
 
-(define (fold-inline-+ form asm rest cenv)
-  (if (null? rest)
-    asm
-    (receive (val tree) (check-numeric-constant (car rest) cenv)
-      (fold-inline-+ form
-                     ($asm form `(,NUMADD2)
-                           (list asm (or tree ($const val))))
-                     (cdr rest) cenv))))
+(define-macro (define-builtin-inliner-+ op insn const)
+  `(define-builtin-inliner ,op
+     (lambda (form cenv)
+       (define (fold-+ asm rest)
+         (fold (lambda (arg asm)
+                 (receive (val tree) (check-numeric-constant arg cenv)
+                   ($asm form (list ,insn) (list asm (or tree (,const val))))))
+               asm rest))
+       (let inline ((args (cdr form)))
+         (match args
+           (()  (,const 0))
+           ((x)
+            (receive (num tree) (check-numeric-constant x cenv)
+              (if num
+                (or tree (,const num))
+                ($call form ($gref (ensure-identifier ',op cenv)) `(,tree)))))
+           ((x y . more)
+            (receive (xval xtree) (check-numeric-constant x cenv)
+              (receive (yval ytree) (check-numeric-constant y cenv)
+                (if xval
+                  (if yval
+                    (inline (cons (,op xval yval) more))
+                    (fold-+ ytree (cons xval more)))
+                  (if yval
+                    (fold-+ xtree (cons yval more))
+                    (fold-+ ($asm form (list ,insn) `(,xtree ,ytree)) more))))))
+           )))))
 
-(define-builtin-inliner -
-  (lambda (form cenv)
-    (let inline ((args (cdr form)))
-      (match args
-        (()
-         (error "procedure - requires at least one argument:" form))
-        ((x)
-         (receive (num tree) (check-numeric-constant x cenv)
-           (if num
-             ($const (- num))
-             ($asm form `(,NEGATE) (list tree)))))
-        ((x y . more)
-         (receive (xval xtree) (check-numeric-constant x cenv)
-           (receive (yval ytree) (check-numeric-constant y cenv)
-             (if xval
-               (if yval
-                 (if (null? more)
-                   ($const (- xval yval))
-                   (inline (cons (- xval yval) more)))
-                 (fold-inline-- form
-                                ($asm form `(,NUMSUB2)
-                                      (list (or xtree ($const xval)) ytree))
-                                more cenv))
-               (fold-inline-- form
-                              ($asm form `(,NUMSUB2)
-                                    (list xtree (or ytree ($const yval))))
-                              more cenv)))))
-        ))))
+(define-builtin-inliner-+ +  NUMADD2 $const)
+(define-builtin-inliner-+ +. NUMIADD2 ensure-inexact-const)
 
-(define (fold-inline-- form asm rest cenv)
-  (if (null? rest)
-    asm
-    (receive (val tree) (check-numeric-constant (car rest) cenv)
-      (fold-inline-- form
-                     ($asm form `(,NUMSUB2)
-                           (list asm (or tree ($const val))))
-                     (cdr rest) cenv))))
+(define-macro (define-builtin-inliner-- op insn const)
+  `(define-builtin-inliner ,op
+     (lambda (form cenv)
+       (define (fold-- asm rest)
+         (fold (lambda (arg asm)
+                 (receive (val tree) (check-numeric-constant arg cenv)
+                   ($asm form (list ,insn) (list asm (or tree (,const val))))))
+               asm rest))
+       (let inline ((args (cdr form)))
+         (match args
+           (()
+            (error "procedure requires at least one argument:" form))
+           ((x)
+            (receive (num tree) (check-numeric-constant x cenv)
+              (if num
+                (,const (- num))
+                ,(if (eq? op '-)
+                   '($asm form `(,NEGATE) (list tree))
+                   '($call form ($gref (ensure-identifier '-. cenv)) `(,tree))))))
+           ((x y . more)
+            (receive (xval xtree) (check-numeric-constant x cenv)
+              (receive (yval ytree) (check-numeric-constant y cenv)
+                (if xval
+                  (if yval
+                    (if (null? more)
+                      ($const (,op xval yval))
+                      (inline (cons (,op xval yval) more)))
+                    (fold-- ($asm form (list ,insn)
+                                  (list (or xtree ($const xval)) ytree))
+                            more))
+                  (fold-- ($asm form (list ,insn)
+                                (list xtree (or ytree ($const yval))))
+                          more)))))
+           )))))
 
-(define-builtin-inliner *
-  (lambda (form cenv)
-    (let inline ((args (cdr form)))
-      (match args
-        (()  ($const 1))
-        ((x)
-         (receive (num tree) (check-numeric-constant x cenv)
-           (if (number? num)
-             (or tree ($const num))
-             ($call form ($gref (ensure-identifier '* cenv)) (list tree)))))
-        ((x y . more)
-         (receive (xval xtree) (check-numeric-constant x cenv)
-           (receive (yval ytree) (check-numeric-constant y cenv)
-             (if (and xval yval)
-               (inline (cons (* xval yval) more))
-               (fold-inline-* form
-                              ($asm form `(,NUMMUL2)
-                                    (list (or xtree ($const xval))
-                                          (or ytree ($const yval))))
-                              more cenv))))))
-      )))
+(define-builtin-inliner-- -  NUMSUB2  $const)
+(define-builtin-inliner-- -. NUMISUB2 ensure-inexact-const)
 
-(define (fold-inline-* form asm rest cenv)
-  (if (null? rest)
-    asm
-    (fold-inline-* form
-                   ($asm form `(,NUMMUL2) (list asm (pass1 (car rest) cenv)))
-                   (cdr rest) cenv)))
+(define-macro (define-builtin-inliner-* op insn const)
+  `(define-builtin-inliner ,op
+     (lambda (form cenv)
+       (let inline ((args (cdr form)))
+         (match args
+           (()  (,const 1))
+           ((x)
+            (receive (num tree) (check-numeric-constant x cenv)
+              (if (number? num)
+                (or tree (,const num))
+                ($call form ($gref (ensure-identifier ',op cenv)) `(,tree)))))
+           ((x y . more)
+            (receive (xval xtree) (check-numeric-constant x cenv)
+              (receive (yval ytree) (check-numeric-constant y cenv)
+                (if (and xval yval)
+                  (inline (cons (,op xval yval) more))
+                  (fold (lambda (arg asm)
+                          ($asm form (list ,insn) (list asm (pass1 arg cenv))))
+                        ($asm form (list ,insn)
+                              (list (or xtree (,const xval))
+                                    (or ytree (,const yval))))
+                        more)))))
+           )))))
 
-(define-builtin-inliner /
-  (lambda (form cenv)
-    (let inline ((args (cdr form)))
-      (match args
-        (()
-         (error "procedure / requires at least one argument:" form))
-        ((x)
-         (receive (num tree) (check-numeric-constant x cenv)
-           (if (number? num)
-             ($const (/ num))
-             ($call form ($gref (ensure-identifier '/ cenv)) (list tree)))))
-        ((x y . more)
-         (receive (xval xtree) (check-numeric-constant x cenv)
-           (receive (yval ytree) (check-numeric-constant y cenv)
-             (if (and xval yval)
-               (if (null? more)
-                 ($const (/ xval yval))
-                 (inline (cons (/ xval yval) more)))
-               (fold-inline-/ form
-                              ($asm form `(,NUMDIV2)
-                                    (list (or xtree ($const xval))
-                                          (or ytree ($const yval))))
-                              more cenv))))))
-      )))
+(define-builtin-inliner-* *  NUMMUL2  $const)
+(define-builtin-inliner-* *. NUMIMUL2 ensure-inexact-const)
 
-(define (fold-inline-/ form asm rest cenv)
-  (if (null? rest)
-    asm
-    (fold-inline-/ form
-                   ($asm form `(,NUMDIV2) (list asm (pass1 (car rest) cenv)))
-                   (cdr rest) cenv)))
+(define-macro (define-builtin-inliner-/ op insn const)
+  `(define-builtin-inliner ,op
+     (lambda (form cenv)
+       (let inline ((args (cdr form)))
+         (match args
+           (()
+            (error "procedure requires at least one argument:" form))
+           ((x)
+            (receive (num tree) (check-numeric-constant x cenv)
+              (if (number? num)
+                ($const (,op num))
+                ($call form ($gref (ensure-identifier ',op cenv)) `(,tree)))))
+           ((x y . more)
+            (receive (xval xtree) (check-numeric-constant x cenv)
+              (receive (yval ytree) (check-numeric-constant y cenv)
+                (if (and xval yval)
+                  (if (null? more)
+                    ($const (,op xval yval))
+                    (inline (cons (,op xval yval) more)))
+                  (fold (lambda (arg asm)
+                          ($asm form (list ,insn) (list asm (pass1 arg cenv))))
+                        ($asm form (list ,insn)
+                              (list (or xtree (,const xval))
+                                    (or ytree (,const yval))))
+                        more)))))
+           )))))
+
+(define-builtin-inliner-/ /  NUMDIV2  $const)
+(define-builtin-inliner-/ /. NUMIDIV2 ensure-inexact-const)
 
 (define-builtin-inliner =   (gen-inliner-arg2 NUMEQ2))
 (define-builtin-inliner <   (gen-inliner-arg2 NUMLT2))

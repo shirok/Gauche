@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.269 2007-03-27 09:18:30 shirok Exp $
+ *  $Id: vm.c,v 1.270 2007-04-18 02:26:44 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2028,6 +2028,17 @@ static void run_loop()
                 }
                 NEXT1;
             }
+            CASE(SCM_VM_NUMIADD2) {
+                ScmObj arg;
+                POP_ARG(arg);
+                if (SCM_REALP(arg) && SCM_REALP(VAL0)) {
+                    VAL0 = Scm_MakeFlonum(Scm_GetDouble(arg) + Scm_GetDouble(VAL0));
+                } else {
+                    VAL0 = Scm_Add(Scm_ExactToInexact(arg),
+                                   Scm_ExactToInexact(VAL0));
+                }
+                NEXT1;
+            }
             CASE(SCM_VM_NUMSUB2) {
                 ScmObj arg;
                 POP_ARG(arg);
@@ -2040,6 +2051,17 @@ static void run_loop()
                     }
                 } else {
                     VAL0 = Scm_Sub(arg, VAL0);
+                }
+                NEXT1;
+            }
+            CASE(SCM_VM_NUMISUB2) {
+                ScmObj arg;
+                POP_ARG(arg);
+                if (SCM_REALP(arg) && SCM_REALP(VAL0)) {
+                    VAL0 = Scm_MakeFlonum(Scm_GetDouble(arg) - Scm_GetDouble(VAL0));
+                } else {
+                    VAL0 = Scm_Sub(Scm_ExactToInexact(arg),
+                                   Scm_ExactToInexact(VAL0));
                 }
                 NEXT1;
             }
@@ -2057,6 +2079,17 @@ static void run_loop()
                 }
                 NEXT1;
             }
+            CASE(SCM_VM_NUMIMUL2) {
+                ScmObj arg;
+                POP_ARG(arg);
+                if (SCM_REALP(arg) && SCM_REALP(VAL0)) {
+                    VAL0 = Scm_MakeFlonum(Scm_GetDouble(arg) * Scm_GetDouble(VAL0));
+                } else {
+                    VAL0 = Scm_Mul(Scm_ExactToInexact(arg),
+                                   Scm_ExactToInexact(VAL0));
+                }
+                NEXT1;
+            }
             CASE(SCM_VM_NUMDIV2) {
                 ScmObj arg;
                 POP_ARG(arg);
@@ -2067,6 +2100,17 @@ static void run_loop()
                     VAL0 = Scm_MakeFlonum(Scm_GetDouble(arg)/Scm_GetDouble(VAL0));
                 } else {
                     VAL0 = Scm_Div(arg, VAL0);
+                }
+                NEXT1;
+            }
+            CASE(SCM_VM_NUMIDIV2) {
+                ScmObj arg;
+                POP_ARG(arg);
+                if (SCM_REALP(arg) && SCM_REALP(VAL0)) {
+                    VAL0 = Scm_MakeFlonum(Scm_GetDouble(arg) / Scm_GetDouble(VAL0));
+                } else {
+                    VAL0 = Scm_Div(Scm_ExactToInexact(arg),
+                                   Scm_ExactToInexact(VAL0));
                 }
                 NEXT1;
             }

@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.95 2007-04-13 11:44:32 shirok Exp $
+dnl $Id: configure.ac,v 1.96 2007-04-18 02:26:44 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.10_pre1, shiro@acm.org)
-AC_REVISION($Revision: 1.95 $)
+AC_REVISION($Revision: 1.96 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -117,7 +117,7 @@ AC_ARG_WITH(rpath,
 dnl ----------------------------------------------------------
 dnl   enable-thread=TYPE
 dnl  
-GAUCHE_THREAD_TYPE=none
+GAUCHE_THREAD_TYPE=default
 AC_ARG_ENABLE(threads,
   AC_HELP_STRING([--enable-threads=TYPE],
                  [Choose thread type.  Currently only 'none' or 'pthreads' is supported. ]),

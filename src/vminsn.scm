@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-;;;  $Id: vminsn.scm,v 1.9 2007-03-02 07:39:14 shirok Exp $
+;;;  $Id: vminsn.scm,v 1.10 2007-04-18 02:26:45 shirok Exp $
 ;;;
 
 ;;; This file is processed by geninsn to produce a couple of C files:
@@ -422,6 +422,11 @@
 (define-insn NUMMUL2     0 none)        ; *
 (define-insn NUMDIV2     0 none)        ; /
 (define-insn NEGATE      0 none)        ; -  (unary)
+
+(define-insn NUMIADD2    0 none)        ; +.
+(define-insn NUMISUB2    0 none)        ; -. (binary)
+(define-insn NUMIMUL2    0 none)        ; *.
+(define-insn NUMIDIV2    0 none)        ; /. (binary)
 
 (define-insn NUMADDI     1 none)        ; +, if one of op is small int
 (define-insn NUMSUBI     1 none)        ; -, if one of op is small int

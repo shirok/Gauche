@@ -1,3 +1,14 @@
+2007-04-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/vminsn.scm, src/compile.scm: Inline inexact arithmetic
+	  operators (+., -., *. and /., as NUMIADD2, NUMISUB2, NUMIMUL2, and
+	  NUMIDIV2).  These operators are meant for performance tuning, so
+	  it's better to make them as fast as normal operators.
+
+	* ext/net/netlib.stub (inet-checksum): fix for big-endian machines.
+	* src/hash.c (NOTFOUND): added missing 'return'.
+	* src/gauche/bits.h (SCM_BITS_TEST): fix for 64bit platform
+
 2007-04-16  Shiro Kawai  <shiro@acm.org>
 
 	* ext/charconv/cvt.scm (generate-utf8->eucj): fix for not generating
