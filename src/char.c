@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.52 2007-04-12 03:26:55 shirok Exp $
+ *  $Id: char.c,v 1.53 2007-04-18 02:24:09 shirok Exp $
  */
 
 #include <ctype.h>
@@ -532,8 +532,13 @@ void Scm_CharSetDump(ScmCharSet *cs, ScmPort *port)
     int i;
     struct ScmCharSetRange *r;
     Scm_Printf(port, "CharSet %p\nmask:", cs);
-    for (i=0; i<SCM_BITS_NUM_WORDS(SCM_CHARSET_SMALL_CHARS); i++)
-        Scm_Printf(port, "[%08x]", cs->small[i]);
+    for (i=0; i<SCM_BITS_NUM_WORDS(SCM_CHARSET_SMALL_CHARS); i++) {
+#if SIZEOF_LONG == 4
+        Scm_Printf(port, "[%08lx]", cs->small[i]);
+#else
+        Scm_Printf(port, "[%016lx]", cs->small[i]);
+#endif
+    }
     Scm_Printf(port, "\nranges:");
     Scm_TreeCoreDump(&cs->large, port);
     Scm_Printf(port, "\n");
