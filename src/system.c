@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.87 2007-03-02 07:39:14 shirok Exp $
+ *  $Id: system.c,v 1.88 2007-04-19 05:52:05 shirok Exp $
  */
 
 #include <stdio.h>
@@ -392,11 +392,11 @@ static void copy_win32_path(ScmDString *dst,
     while (srcp < end) {
         ScmChar ch;
         if (*srcp == '/' || *srcp == '\\') {
-            Scm_DStringPutc(dst, SEPARATOR);
+            ch = SEPARATOR;
         } else {
             SCM_CHAR_GET(srcp, ch);
-            Scm_DStringPutc(dst, ch);
         }
+        Scm_DStringPutc(dst, ch);
         srcp += SCM_CHAR_NBYTES(ch);
     }
 }
