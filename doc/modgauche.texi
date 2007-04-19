@@ -8,6 +8,7 @@
 * Character code conversion::   
 * Collection framework::        
 * Configuration parameters::    
+* Dictionary framework::        
 * Low-level file operations::   
 * Hooks::                       
 * Interactive session::         
@@ -2373,40 +2374,29 @@ performance.
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Configuration parameters, Low-level file operations, Collection framework, Library modules - Gauche extensions
+@node Configuration parameters, Dictionary framework, Collection framework, Library modules - Gauche extensions
 @section @code{gauche.config} - Configuration parameters
 @c NODE コンフィグレーション情報, @code{gauche.config} - コンフィグレーション情報
 
 @deftp {Module} gauche.config
 @mdindex gauche.config
 @c EN
-This module provides a simple wrapper to obtain configuration
-parameters via @code{gauche-config} program.
-
-The @code{gauche-config} program is a simple shell script
-that records various parameters given at the configuration time
-of Gauche.
+This module allows the Scheme program to access the configuration information
+the same as you can get from the @code{gauche-config} program.
 @c JP
-このモジュールは、@code{gauche-config} プログラム経由で設定パラメータを
-取得するシンプルなラッパーを提供します。
-
-@code{gauche-config} プログラムは、Gauche の設定時に与えられた
-様々なパラメータを記録するためのシンプルなシェルスクリプトです。
+このモジュールは、@code{gauche-config} プログラム経由で得られるのと
+同等の情報をSchemeプログラムから取得すること可能にします。
 @c COMMON
 @end deftp
 
 @defun gauche-config option
 @c EN
-Calls @code{gauche-config} with the option @var{option}, and
-returns the string of the parameter value.  It is an error
-to give the option gauche-config doesn't understand.
+Returns the configured value of the @var{option}.
 
 See the manpage of @code{gauche-config}, or run @code{gauche-config}
 without any argument from the shell, to find out the valid options.
 @c JP
-@code{gauche-config} をオプション @var{option} とともに呼び出すと、
-パラメータの値の文字列が返ります。gauche-config が理解できないオプションを
-渡すとエラーになります。
+@var{option}に対応するコンフィグレーション値を返します。
 
 有効なオプションについては、@code{gauche-config} のマニュアルページを
 見るか、シェルで @code{gauche-config} を引数なしで実行して下さい。
@@ -2422,7 +2412,67 @@ without any argument from the shell, to find out the valid options.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Low-level file operations, Hooks, Configuration parameters, Library modules - Gauche extensions
+@node Dictionary framework, Low-level file operations, Configuration parameters, Library modules - Gauche extensions
+@section @code{gauche.dictionary} - Dictionary framework
+
+
+@deftp {Module} gauche.dictionary
+@mdindex gauche.dictionary
+A dictionary is an abstract class for objects that can
+map a key to a value.  This module provides some useful generic
+functions for dictionaries.
+@end deftp
+
+@deffn {Generic function} dict-fold (dict @code{<dictionary>}) proc seed
+Calls a procedure @var{proc} over each entry in a dictionary @var{dict},
+passing a seed value.  Three arguments are given to @var{proc}; 
+an entry's key, an entry's value, and a seed value.  Initial
+seed value is @var{seed}.  The value returned from @var{proc} is used
+for the seed value of the next call of @var{proc}.  The result of the
+last call of @var{proc} is returned from @var{dict-fold}.
+
+If @var{dict} is @code{<ordered-dictionary>}, @var{proc} is called
+in the way to keep the following associative order, where
+the key is ordered from @var{K0} (minimum) to @var{Kn} (maximum), and
+the corresponding values is from @var{V0} to @var{Vn}:
+@example
+(proc Kn Vn (proc Kn-1 Vn-1 ... (proc K0 V0 seed)))
+@end example
+@end deffn
+
+@deffn {Generic function} dict-fold-right (dict @code{<ordered-dictionary>}) proc seed
+Like @code{dict-fold}, but the associative order of applying @var{proc}
+is reversed as follows:
+@example
+(proc K0 V0 (proc K1 V1 ... (proc Kn Vn seed)))
+@end example
+
+This generic function is only defined on @code{<ordered-dictionary>}.
+@end deffn
+
+@deffn {Generic function} dict-for-each (dict @code{<dictionary>}) proc
+Calls @var{proc} with a key and a value of every entry in
+the dictionary @var{dict}.  For ordered dictionaries, @var{proc}
+is guaranteed to be called in the increasing order of keys.
+@end deffn
+
+@deffn {Generic function} dict-map (dict @code{<dictionary>}) proc
+Calls @var{proc} with a key and a value of every entry in
+the dictionary @var{dict}, and gathers the result into a list 
+and returns it.  For ordered dictionaries, the result is in
+the increasing order of keys (it doesn't necessarily mean @var{proc}
+is called in that order).
+@end deffn
+
+@deffn {Generic function} dict-keys (dict @code{<dictionary>})
+@deffnx {Generic function} dict-values (dict @code{<dictionary>})
+Returns a list of all keys or values of a dictionary @var{dict}, 
+respectively.  For ordered dictionaries, the returned list is
+in the increasing order of keys.
+@end deffn
+
+@c ----------------------------------------------------------------------
+@node Low-level file operations, Hooks, Dictionary framework, Library modules - Gauche extensions
 @section @code{gauche.fcntl} - Low-level file operations
 @c NODE 低レベルファイル操作, @code{gauche.fcntl} - 低レベルファイル操作
 
@@ -7422,7 +7472,6 @@ Gauche組み込みクラスのうち、リスト、ベクター、そして文字列は
 @end deftp
 
 @menu
-
 * Fundamental sequence accessors::  
 * Slicing sequence::            
 * Mapping over sequences::      

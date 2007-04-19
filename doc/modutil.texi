@@ -13401,6 +13401,18 @@ Scheme48 compatible way or consistent to SRFI-1 argument order.
 @section @code{util.rbtree} - Red black tree
 @c NODE 赤黒木, @code{util.rbtree} - 赤黒木
 
+@c EN
+As of version 0.8.10, a balanced-tree object is built-in as @code{<tree-map>}
+(@xref{Treemaps}), which uses red-black tree internally.  It is recommended
+for applications to use @code{<tree-map>} instead of @code{<rbtree>}.
+This module is only kept for backward compatibility.
+@c JP
+バージョン0.8.10から、バランス木オブジェクトは@code{<tree-map>}として
+組込みになっています (@ref{Treemaps}参照)。内部的には赤黒木が使われています。
+アプリケーションは@code{<rbtree>}ではなく@code{<tree-map>}を使うことが
+推奨されます。このモジュールは互換性のために残されています。
+@c COMMON
+
 @deftp {Module} util.rbtree
 @mdindex util.rbtree
 @c EN

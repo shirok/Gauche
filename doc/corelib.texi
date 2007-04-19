@@ -17,6 +17,7 @@
 * Regular expression::          
 * Vectors::                     
 * Hashtables::                  
+* Treemaps::                    
 * Weak pointers::               
 * Control features::            
 * Exceptions::                  
@@ -4663,16 +4664,17 @@ the result vector.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Hashtables, Weak pointers, Vectors, Core library
+@node Hashtables, Treemaps, Vectors, Core library
 @section Hashtables
 @c NODE ハッシュテーブル
 
 @deftp {Builtin Class} <hash-table>
 @clindex hash-table
 @c EN
-Hash table class.
+Hash table class.  Inherits @code{<collection>} and @code{<dictionary>}.
 @c JP
-ハッシュテーブルのクラスです。
+ハッシュテーブルのクラスです。@code{<collection>}と@code{<dictionary>}を
+継承します。
 @c COMMON
 @end deftp
 
@@ -5072,7 +5074,266 @@ and @code{alist->hash-table} are defined.
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Weak pointers, Control features, Hashtables, Core library
+@node Treemaps, Weak pointers, Hashtables, Core library
+@section Treemaps
+
+@deftp {Builtin Class} <tree-map>
+@clindex tree-map
+Tree map class.   Tree maps are a data structure that maps key objects
+to value objects.  It's like hash tables except tree maps uses
+balanced tree internally.  Insertion and lookup is O(n).
+
+Unlike hashtables, a tree map keeps the order of the keys, so
+it is easy to traverse entries in the order of keys, to find 
+minimum/maximum keys, or to find a key closest to the given value.
+
+The @code{<tree-map>} class inherits @code{<sequence>} and
+@code{<ordered-dictionary>}.
+@end deftp
+
+@defun make-tree-map key=? key<?
+@c EN
+Creates and returns an instance of @code{<tree-map>}.
+The arguments @var{key=?} and @var{key<?} are both
+procedures that take two arguments, which are the keys.
+The @code{key=?} procedure should return @code{#t} if
+two arguments are equivalent, or @code{#f} otherwise.
+The @code{key<?} procedure should return @code{#t} if
+the first argument is strictly less than the second argument,
+or @code{#f} otherwise.
+@c JP
+@code{<tree-map>}オブジェクトを作成して返します。
+@var{key=?}、@var{key<?}はそれぞれ引
+数を2つ受け取り真偽値を返す手続きであり、要素のキーが渡されます。
+@var{key=?}は、2つの引数a, b が同値の場合に真を、それ以外の場合に@code{#f}を
+返す手続きです。@var{key<?}は、@code{a < b}が成り立つ場合に真を、それ以外の
+場合に@code{#f}を返す手続きです。
+@c COMMON
+@end defun
+
+@defun tree-map-copy tree-map
+@c EN
+Copies and returns  @var{tree-map}.  Modification
+on the returned tree doesn't affect the original tree.
+@c JP
+@var{tree-map}のコピーを作り、それを返します。返された木に対す
+る破壊的操作は、元の木に影響を与えません。
+@c COMMON
+@end defun
+
+@defun tree-map-empty? tree-map
+@c EN
+Returns @code{#t} if @var{tree-map} doesn't have any elements,
+or @code{#f} otherwise.
+@c JP
+@var{tree-map}が要素を持たないなら@code{#t}を、そうでなければ@code{#f}を
+返します。
+@c COMMON
+@end defun
+
+@defun tree-map-num-entries tree-map
+@c EN
+Returns the number of elements in @var{tree-map}.
+@c JP
+@var{tree-map}内の要素の個数を返します。
+@c COMMON
+@end defun
+
+@defun tree-map-exists? tree-map key
+@c EN
+Returns @code{#t} if @var{tree-map} has an entry with @var{key},
+or @code{#f} otherwise.
+@c JP
+@var{tree-map}にキー@var{key}を持つエントリがあれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
+@end defun
+
+@defun tree-map-get tree-map key &optional fallback
+@c EN
+Looks for @var{key} in @var{tree-map}.  If the entry is found,
+returns a value corresponding to the key.  Otherwise, returns
+@var{fallback} if it is provided, or signals an error.
+@c JP
+キー@var{key}を@var{tree-map}から探します。見つかれば@var{key}に対応する値を返
+します。キーが見つからなかった場合、@var{fallback}が与えられていればそれ
+を返し、そうでなければエラーを報告します。
+@c COMMON
+@end defun
+
+@defun tree-map-put! tree-map key value
+@c EN
+Inserts an entry with a @var{key} and corresponding @var{value}
+into @var{tree-map}.  If there already exists an entry with a
+key which is equivalent (under @var{key=?}), the entry is modified
+to have @var{value}.
+@c JP
+キー@var{key}と対応する値@var{value}を@var{tree-map}に挿入します。もし、@var{key}と、
+@var{key=?}における意味で同じキーがすでに存在する場合、キーに対応する値
+は新たな値に置き換えられます。
+@c COMMON
+@end defun
+
+@defun tree-map-delete! tree-map key
+@c EN
+Delets an entry with @var{key} from @var{tree-map} if such an entry
+exists, and returns @code{#t}.
+If @var{tree-map} doesn't have such an entry, @code{#f} is returned.
+@c JP
+@var{tree-map}からキー@var{key}を持つエントリを削除します。@var{key}を持つエン
+トリが実際に存在して削除された場合は@code{#t}を、エントリが存在しなかっ
+た場合は@code{#f}を返します。
+@c COMMON
+@end defun
+
+@defun tree-map-update! tree-map key proc &optional fallback
+@c EN
+A generalized version of @code{tree-map-push!} etc.
+It works like the following code, except that searching
+for the key is done only once.
+@c JP
+@code{tree-map-push!}等のより一般的なバージョンです。木の探索が一度
+しか行われないことを除いては、基本的に次のように動作します。
+@c COMMON
+@example
+(let ((tmp (proc (tree-map-get @var{tree-map} @var{key} @var{fallback}))))
+  (tree-map-put! @var{tree-map} @var{key} tmp)
+  tmp)
+@end example
+@end defun
+
+@defun tree-map-push! tree-map key value
+@c EN
+Looks for an entry with @var{key} in @var{tree-map}.  If it exists,
+the procedure conses @var{value} to the original value and makes
+it as a new value.
+Otherwise, the procedure creates a new entry for the @var{key}
+and makes @code{(list @var{value})} its value.
+@c JP
+@var{tree-map}中の、キー@var{key}に対応する値に@var{value}をコンスし、
+それを@var{key}
+に対する新たな値とします。もし@var{key}に対応する値がまだ無ければ、新た
+なエントリが作成され、@code{(list @var{value})}がその値となります。
+@c COMMON
+@end defun
+
+@defun tree-map-pop! tree-map key &optional fallback
+@c EN
+Looks for an entry with @var{key} in @var{tree-map}.  If it exists
+and its value is a pair, then the procedure updates
+its value with @code{cdr} of the original value, and returns
+@code{car} of the original entry.   If such an entry does not
+exist, or has a non-pair value, the procedure doesn't
+modify @var{tree-map} and returns @var{fallback} if it is given,
+otherwise reports an error.
+@c JP
+@var{tree-map}中のキー@var{key}に対応する値が存在し、かつペアであった場合
+に、そのエントリの値を元の値のcdrで置き換え、元の値のcarを返します。
+@var{key}に対応する値が存在しないかペアではなかった場合、@var{tree-map}は
+変更されず、@var{fallback}が与えられていればそれが返され、与えられていな
+ければエラーが報告されます。
+@c COMMON
+@end defun
+
+@defun tree-map-min tree-map
+@defunx tree-map-max tree-map
+@c EN
+Returns a pair of a key and its value with the minimum
+or maximum key, respectively.   If @var{tree-map} is empty,
+@code{#f} is returned.
+@c JP
+それぞれ、@var{tree-map}に含まれる最小および最大のキーを探索し、その
+キーと値のペアを返します。@var{tree-map}が空だった場合は@code{#f}が返されます。
+@c COMMON
+@end defun
+
+@defun tree-map-pop-min! tree-map
+@defunx tree-map-pop-max! tree-map
+@c EN
+Looks for an entry with minimum or maximum key, respectively,
+then deletes the entry from @var{tree-map} and returns 
+a pair of the key and its value of the original entry.
+If @var{tree-map} is empty, @code{#f} is returned.
+@c JP
+それぞれ、@var{tree-map}に含まれる最小および最大のキーを探索し、そ
+のエントリを@var{tree-map}から削除したうえで、そのキーと値のペアを
+返します。@var{tree-map}が空だった場合は@code{#f}が返されます。
+@c COMMON
+@end defun
+
+@defun tree-map-fold tree-map proc seed
+@defunx tree-map-fold-right tree-map proc seed
+@c EN
+Iterate over elements in @var{tree-map}, applying 
+@var{proc} which has a type @code{(key, value, seed) -> seed}.
+The difference of @code{tree-map-fold} and @code{tree-map-fold-right}
+is the associative order of applying @code{proc},
+just like the difference between @code{fold} and @code{fold-right}.
+@c JP
+@var{tree-map}の各要素に対し、@code{(key, value, seed) -> seed} の型を持つ
+@var{proc}を適用してゆきます。
+@code{tree-map-fold}と@code{tree-map-fold-right}の違いは
+@code{fold}の@code{fold-right}違いと同じ、すなわち
+結合の方向にあります。
+@c COMMON
+@example
+tree-map-fold:
+  (proc Kn Vn (proc Kn-1 Vn-1 ... (proc K0 V0 seed)))
+
+tree-map-fold-right
+  (proc K0 V0 (proc K1 V1 ... (proc Kn Vn seed)))
+@end example
+
+@c EN
+Some examples:
+@c JP
+例:
+@c COMMON
+@example
+(define tree (alist->tree-map '((3 . a) (7 . b) (5 . c)) = <))
+
+(tree-map-fold tree list* '()) 
+   @result{} (7 b 5 c 3 a)
+(tree-map-fold-right tree list* '()) 
+   @result{} (3 a 5 c 7 b)
+@end example
+@end defun
+
+@defun tree-map-keys tree-map
+@defunx tree-map-values tree-map
+@c EN
+Returns a list of all keys and all values, respectively.
+The keys and values are in ascending order of the keys.
+@c JP
+それぞれ、@var{tree-map}内の全てのキーまたは値をリストにして返しま
+す。返されるリストの要素はキーの昇順に並んでいます。
+@c COMMON
+@end defun
+
+@defun tree-map->alist tree-map
+@c EN
+Returns a list of pairs of keys and values for all entries.
+The pairs are in ascending order of the keys.
+@c JP
+@var{tree-map}含まれる要素を連想リストにして返します。返される連
+想リストのキーは昇順に並んでいます。
+@c COMMON
+@end defun
+
+@defun alist->tree-map alist key=? key<?
+@c EN
+Creates a new tree map with @var{key=?} and @var{key<?},
+then populates it with @var{alist}, each pair in which are
+interpreted as a cons of a key and its value.  Returns the
+created tree map.
+@c JP
+@var{key=?}, @var{key<?} によって新たなtreemapを作成し、
+連想リスト@var{alist}に含まれる要素を追加した上で返します。
+@c COMMON
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Weak pointers, Control features, Treemaps, Core library
 @section Weak pointers
 @c NODE Weak ポインタ
 
