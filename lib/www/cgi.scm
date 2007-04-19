@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cgi.scm,v 1.33 2007-04-13 11:39:09 shirok Exp $
+;;;  $Id: cgi.scm,v 1.34 2007-04-19 05:54:43 shirok Exp $
 ;;;
 
 ;; Surprisingly, there's no ``formal'' definition of CGI.
@@ -392,7 +392,7 @@
                        (output-proc cgi-default-output)
                        (merge-cookies #f)
                        (part-handlers '()))
-    (guard (e (else (cut output-proc (on-error e))))
+    (guard (e (else (output-proc (on-error e))))
       (let1 params (cgi-parse-parameters :merge-cookies merge-cookies
                                          :part-handlers part-handlers)
         (output-proc (proc params))))
