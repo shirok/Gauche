@@ -1,5 +1,7 @@
 2007-04-18  Shiro Kawai  <shiro@acm.org>
 
+	* release 0.8.10
+
 	* lib/www/cgi.scm (cgi-main): fix to make error handler called 
 	  correctly.
 	* src/system.c (copy_win32_path): bug fix on mingw.
