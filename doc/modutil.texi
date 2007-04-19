@@ -24,6 +24,8 @@
 * FTP::                         
 * HMAC keyed-hashing::          
 * HTTP::                        
+* IP packets::                  
+* ICMP packets::                
 * MD5 message digest::          
 * MIME message handling::       
 * Quoted-printable encoding/decoding::  
@@ -5088,7 +5090,7 @@ then returns the hashed result in an incomplete string.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node HTTP, MD5 message digest, HMAC keyed-hashing, Library modules - Utilities
+@node HTTP, IP packets, HMAC keyed-hashing, Library modules - Utilities
 @section @code{rfc.http} - HTTP
 
 @deftp {Module} rfc.http
@@ -5331,7 +5333,107 @@ without allocating (potentially very big) string buffer.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node MD5 message digest, MIME message handling, HTTP, Library modules - Utilities
+@node IP packets, ICMP packets, HTTP, Library modules - Utilities
+@section @code{rfc.ip} - IP packets
+
+@deftp {Module} rfc.ip
+@mdindex rfc.ip
+This module provides some basic utilities to parse raw IP packets.
+@end deftp
+
+The @var{packet} argument in the following functions must be
+any type of uniform vector (@xref{Uniform vectors}), containing
+a raw IP packet including its IP header.
+Those functions work for both IPv4 and IPv6 packets; however,
+reading from a raw IPv6 socket returns a packet without IPv6 header,
+so you usually don't need to use these functions.
+
+@defun ip-version packet
+Returns the IP version number (either 4 or 6) of the given IP packet.
+@end defun
+
+@defun ip-header-length packet
+Returns the size of IP header of the given packet in octets,
+including any IP header options.
+@end defun
+
+@defun ip-protocol packet
+Returns the IP protocol number of the given packet.
+@end defun
+
+@defun ip-source-address packet
+@defunx ip-destination-address packet
+Returns the source and destination address in the given packet
+in an integer, respectively.
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node ICMP packets, MD5 message digest, IP packets, Library modules - Utilities
+@section @code{rfc.icmp} - ICMP packets
+
+@deftp {Module} rfc.icmp
+@mdindex rfc.icmp
+This module provides some basic utilities to construct and parse ICMP packets.
+@end deftp
+
+For the functions below, @var{buffer} should be a writable 
+u8vector of the enough size.
+
+Parsing functions takes @var{offset} as well as @var{buffer},
+which specifies the beginning of the ICMP packet.  Using the offset
+you can carry the whole IP packet in @var{buffer}, without
+creating a new buffer to extract ICMP portion.
+
+@defun icmp4-fill-echo! buffer ident sequence data
+Fills @var{buffer} with the ICMPv4 Echo Request packet.
+@var{Data} must be a u8vector.  The checksum field is
+left to be zero, which can be filled by @code{icmp4-fill-checksum!}.
+@end defun
+
+@defun icmp4-fill-checksum! buffer size
+Calculates the ICMPv4 checksum of the packet in the @var{buffer},
+of @var{size} length (the size of the packet, not the buffer),
+and fills the checksum field of the packet.
+@end defun
+
+@defun icmp6-fill-echo! buffer ident sequence data
+Fills @var{buffer} with the ICMPv6 Echo Request packet.
+@var{Data} must be a u8vector.  The checksum field is
+left to be zero, which is to be filled by the kernel
+(so you don't need to fill by yourself).
+@end defun
+
+@defun icmp-packet-type buffer offset
+@defunx icmp-packet-code buffer offset
+@defunx icmp-packet-ident buffer offset
+@defunx icmp-packet-sequence buffer offsetj
+Extracts type, code, ident and sequence fields of ICMP packet.
+These functions are common to both ICMPv4/v6.
+@end defun
+
+@defun icmp4-describe-packet buffer offset
+@defunx icmp6-describe-packet buffer offset
+Prints out a simple text description of the given ICMPv4 and v6 packet,
+respectively.
+@end defun
+
+@defun icmp4-message-type->string type
+@defunx icmp4-unreach-code->string code
+@defunx icmp4-redirect-code->string code
+@defunx icmp4-router-code->string code
+@defunx icmp4-exceeded-code->string code
+@defunx icmp4-parameter-code->string code
+@defunx icmp4-security-code->string code
+@defunx icmp6-message-type->string type
+@defunx icmp6-unreach-code->string code
+@defunx icmp6-exceeded-code->string code
+@defunx icmp6-parameter-code->string code
+Returns a text description of ICMPv4 and ICMPv6 types and codes.
+@end defun
+
+@c ----------------------------------------------------------------------
+@node MD5 message digest, MIME message handling, ICMP packets, Library modules - Utilities
 @section @code{rfc.md5} - MD5 message digest
 @c NODE MD5メッセージダイジェスト, @code{rfc.md5} - MD5メッセージダイジェスト
 
