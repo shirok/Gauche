@@ -1,3 +1,9 @@
+2007-04-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/www/cgi.scm (cgi-main): fix to make error handler called 
+	  correctly.
+	* src/system.c (copy_win32_path): bug fix on mingw.
+
 2007-04-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c, src/vminsn.scm, src/compile.scm: Inline inexact arithmetic
