@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: net.c,v 1.53 2007-03-15 22:43:14 shirok Exp $
+ *  $Id: net.c,v 1.54 2007-04-20 17:38:24 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -529,7 +529,7 @@ int inet_aton(const char *cp, struct in_addr *inp)
 /* winsock requires some obscure initialization */
 static WSADATA wsaData;
 
-static void init_winwock(void)
+static void init_winsock(void)
 {
     int opt;
     int r = WSAStartup(MAKEWORD(2,2), &wsaData);
