@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: bits.c,v 1.2 2007-04-17 14:45:15 shirok Exp $
+ *  $Id: bits.c,v 1.3 2007-04-20 20:12:21 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -290,7 +290,7 @@ static inline int highest_bit_number(u_long word)
 
 /* Returns the lowest bit number between start and end, or -1 if all
    the bits there is zero. */
-int Scm_BitLowest1(const ScmBits *bits, int start, int end)
+int Scm_BitsLowest1(const ScmBits *bits, int start, int end)
 {
     int sw = start/SCM_WORD_BITS;
     int sb = start%SCM_WORD_BITS;
@@ -313,7 +313,7 @@ int Scm_BitLowest1(const ScmBits *bits, int start, int end)
     }
 }
 
-int Scm_BitLowest0(const ScmBits *bits, int start, int end)
+int Scm_BitsLowest0(const ScmBits *bits, int start, int end)
 {
     int sw = start/SCM_WORD_BITS;
     int sb = start%SCM_WORD_BITS;
@@ -338,7 +338,7 @@ int Scm_BitLowest0(const ScmBits *bits, int start, int end)
 
 /* Returns the highest bit number between start and end, or -1 if all
    the bits there is zero. */
-int Scm_BitHighest1(const ScmBits *bits, int start, int end)
+int Scm_BitsHighest1(const ScmBits *bits, int start, int end)
 {
     int sw = start/SCM_WORD_BITS;
     int sb = start%SCM_WORD_BITS;
@@ -361,7 +361,7 @@ int Scm_BitHighest1(const ScmBits *bits, int start, int end)
     }
 }
 
-int Scm_BitHighest0(const ScmBits *bits, int start, int end)
+int Scm_BitsHighest0(const ScmBits *bits, int start, int end)
 {
     int sw = start/SCM_WORD_BITS;
     int sb = start%SCM_WORD_BITS;
