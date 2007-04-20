@@ -1,5 +1,7 @@
 2007-04-20  Shiro Kawai  <shiro@acm.org>
 
+	* src/extlib.stub (hash-table-clear!): added.
+
 	* ext/net/net.c (init_winsock): typo fix for mingw.
 
 2007-04-18  Shiro Kawai  <shiro@acm.org>

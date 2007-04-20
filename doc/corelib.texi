@@ -4952,6 +4952,14 @@ to SRFI-1, SRFI-13 and other parts of the libraries.
 @c COMMON
 @end defun
 
+@defun hash-table-clear! ht
+@c EN
+Removes all entries in the hash table @var{ht}.
+@c JP
+ハッシュテーブル@var{ht}の全てのエントリを削除します。
+@c COMMON
+@end defun
+
 @defun hash-table-push! ht key value
 @c EN
 Conses @var{value} to the existing value for the key @var{key} in the

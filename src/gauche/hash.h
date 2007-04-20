@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.h,v 1.4 2007-04-14 09:18:54 shirok Exp $
+ *  $Id: hash.h,v 1.5 2007-04-20 20:49:09 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -82,6 +82,8 @@ SCM_EXTERN ScmDictEntry *Scm_HashCoreSearch(ScmHashCore *core,
                                             ScmDictOp op);
 
 SCM_EXTERN int  Scm_HashCoreNumEntries(ScmHashCore *core);
+
+SCM_EXTERN void Scm_HashCoreClear(ScmHashCore *core);
 
 struct ScmHashIterRec {
     ScmHashCore *core;

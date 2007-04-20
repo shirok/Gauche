@@ -2,7 +2,7 @@
 ;; Test hash table
 ;;
 
-;; $Id: hash.scm,v 1.11 2007-04-08 01:29:21 shirok Exp $
+;; $Id: hash.scm,v 1.12 2007-04-20 20:49:09 shirok Exp $
 
 (use gauche.test)
 (use srfi-1)
@@ -78,6 +78,10 @@
        (let* ((a (hash-table-delete! h-eq 'c))
               (b (hash-table-delete! h-eq 'c)))
          (list a b (hash-table-get h-eq 'c #f))))
+
+(test* "clear!" '()
+       (begin (hash-table-clear! h-eq)
+              (hash-table-keys h-eq)))
 
 ;;------------------------------------------------------------------
 (test-section "eqv?-hash")
