@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: weak.c,v 1.13 2007-03-02 07:39:14 shirok Exp $
+ *  $Id: weak.c,v 1.14 2007-04-22 09:19:19 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -142,7 +142,7 @@ ScmObj Scm_WeakVectorSet(ScmWeakVector *v, int index, ScmObj value)
  */
 
 /* Weak box is not an ScmObj.  It provides a packaged 'weak pointer'
-   feature to C.  Weak hash table (hash.c) uses this. */
+   feature to C. */
 
 /* ptr points to the target object weakly.
    Registered flag becomes TRUE whenever ptr points to a GC_malloced object,
@@ -197,4 +197,175 @@ void *Scm_WeakBoxRef(ScmWeakBox *wbox)
                                    Scm_WeakBoxEmptyP to check that. */
 }
 
+/*=============================================================
+ * Weak Hash Table
+ */
+
+static void weakhash_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
+{
+    ScmWeakHashTable *ht = SCM_WEAK_HASH_TABLE(obj);
+    char *type = "";
+
+    switch (ht->type) {
+    case SCM_HASH_EQ:      type = "eq?"; break;
+    case SCM_HASH_EQV:     type = "eqv?"; break;
+    case SCM_HASH_EQUAL:   type = "equal?"; break;
+    case SCM_HASH_STRING:  type = "string=?"; break;
+    case SCM_HASH_GENERAL: type = "general"; break;
+    default: Scm_Panic("something wrong with a hash table");
+    }
+
+    /* NB: should we also print weakness info? */
+    Scm_Printf(port, "#<weak-hash-table %s %p>", type, ht);
+}
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_WeakHashTableClass, weakhash_print,
+                         NULL, NULL, NULL,
+                         SCM_CLASS_DICTIONARY_CPL);
+
+static int weak_key_compare(const ScmHashCore *hc, intptr_t key,
+                            intptr_t entrykey)
+{
+    ScmWeakHashTable *wh = SCM_WEAK_HASH_TABLE(hc->data);
+    ScmWeakBox *box = (ScmWeakBox *)entrykey;
+    intptr_t realkey = (intptr_t)Scm_WeakBoxRef(box);
+    if (Scm_WeakBoxEmptyP(box)) {
+        return FALSE;
+    } else {
+        return wh->realcmpfn(hc, key, realkey);
+    }
+}
+
+ScmObj Scm_MakeWeakHashTableSimple(ScmHashType type,
+                                   ScmWeakness weakness,
+                                   int initSize,
+                                   ScmObj defaultValue)
+{
+    ScmWeakHashTable *wh = SCM_NEW(ScmWeakHashTable);
+    SCM_SET_CLASS(wh, SCM_CLASS_WEAK_HASH_TABLE);
+    wh->weakness = weakness;
+    wh->type = type;
+    wh->defaultValue = defaultValue;
+    Scm_HashCoreInitSimple(&wh->core, type, initSize, wh);
+    /* NB: UGLY.  Nees cleaner way to put custom cmp fn. */
+    if (weakness & SCM_WEAK_KEY) {
+        wh->realcmpfn = wh->core.cmpfn;
+        wh->core.cmpfn = weak_key_compare;
+    }
+    return SCM_OBJ(wh);
+}
+
+ScmObj Scm_WeakHashTableCopy(ScmWeakHashTable *src)
+{
+    ScmWeakHashTable *wh = SCM_NEW(ScmWeakHashTable);
+    SCM_SET_CLASS(wh, SCM_CLASS_WEAK_HASH_TABLE);
+
+    wh->weakness = src->weakness;
+    wh->type = src->type;
+    wh->defaultValue = src->defaultValue;
+    wh->realcmpfn = src->realcmpfn;
+    Scm_HashCoreCopy(&wh->core, &src->core);
+    return SCM_OBJ(wh);
+}
+
+ScmObj Scm_WeakHashTableRef(ScmWeakHashTable *ht, ScmObj key, ScmObj fallback)
+{
+    ScmDictEntry *e = Scm_HashCoreSearch(SCM_WEAK_HASH_TABLE_CORE(ht),
+                                         (intptr_t)key, SCM_DICT_GET);
+    if (!e) return fallback;
+    if (ht->weakness & SCM_WEAK_VALUE) {
+        void *val = Scm_WeakBoxRef((ScmWeakBox*)e->value);
+        if (Scm_WeakBoxEmptyP((ScmWeakBox*)e->value)) return fallback;
+        SCM_ASSERT(val != NULL);
+        return SCM_OBJ(val);
+    } else {
+        return SCM_DICT_VALUE(e);
+    }
+}
+
+ScmObj Scm_WeakHashTableSet(ScmWeakHashTable *ht, ScmObj key, ScmObj value,
+                            int flags)
+{
+    ScmDictEntry *e =
+        Scm_HashCoreSearch(SCM_WEAK_HASH_TABLE_CORE(ht),
+                           (intptr_t)key,
+                           (flags&SCM_DICT_NO_CREATE)?SCM_DICT_GET:SCM_DICT_CREATE);
+    if (!e) return SCM_UNBOUND;
+    if (ht->weakness&SCM_WEAK_VALUE) {
+        if (flags&SCM_DICT_NO_OVERWRITE) {
+            if (e->value) {
+                void *val = Scm_WeakBoxRef((ScmWeakBox*)e->value);
+                if (!Scm_WeakBoxEmptyP((ScmWeakBox*)e->value))
+                    return SCM_OBJ(val);
+            }
+        }
+        e->value = (intptr_t)Scm_MakeWeakBox(value);
+        return value;
+    } else {
+        if (flags&SCM_DICT_NO_OVERWRITE && e->value) {
+            return SCM_DICT_VALUE(e);
+        }
+        SCM_DICT_SET_VALUE(e, value);
+        return value;
+    }
+}
+
+ScmObj Scm_WeakHashTableDelete(ScmWeakHashTable *ht, ScmObj key)
+{
+    ScmDictEntry *e = Scm_HashCoreSearch(SCM_WEAK_HASH_TABLE_CORE(ht),
+                                         (intptr_t)key, SCM_DICT_DELETE);
+    if (e && e->value) {
+        if (ht->weakness&SCM_WEAK_VALUE) {
+            void *val = Scm_WeakBoxRef((ScmWeakBox*)e->value);
+            if (!Scm_WeakBoxEmptyP((ScmWeakBox*)e->value))
+                return SCM_OBJ(val);
+            else
+                return SCM_UNBOUND;
+        } else {
+            return SCM_DICT_VALUE(e);
+        }
+    } else {
+        return SCM_UNBOUND;
+    }
+}
+
+ScmObj Scm_WeakHashTableKeys(ScmWeakHashTable *table)
+{
+    ScmHashIter iter;
+    ScmDictEntry *e;
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    Scm_HashIterInit(&iter, SCM_WEAK_HASH_TABLE_CORE(table));
+    while ((e = Scm_HashIterNext(&iter)) != NULL) {
+        if (table->weakness & SCM_WEAK_KEY) {
+            ScmWeakBox *box = (ScmWeakBox*)e->key;
+            ScmObj realkey = SCM_OBJ(Scm_WeakBoxRef(box));
+            if (Scm_WeakBoxEmptyP(box)) continue;
+            SCM_ASSERT(realkey != NULL);
+            SCM_APPEND1(h, t, realkey);
+        } else {
+            SCM_APPEND1(h, t, SCM_DICT_KEY(e));
+        }
+    }
+    return h;
+}
+
+ScmObj Scm_WeakHashTableValues(ScmWeakHashTable *table)
+{
+    ScmHashIter iter;
+    ScmDictEntry *e;
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    Scm_HashIterInit(&iter, SCM_WEAK_HASH_TABLE_CORE(table));
+    while ((e = Scm_HashIterNext(&iter)) != NULL) {
+        if (table->weakness & SCM_WEAK_VALUE) {
+            ScmWeakBox *box = (ScmWeakBox*)e->value;
+            ScmObj realval = SCM_OBJ(Scm_WeakBoxRef(box));
+            if (Scm_WeakBoxEmptyP(box)) continue;
+            SCM_ASSERT(realval != NULL);
+            SCM_APPEND1(h, t, realval);
+        } else {
+            SCM_APPEND1(h, t, SCM_DICT_VALUE(e));
+        }
+    }
+    return h;
+}
 

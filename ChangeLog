@@ -1,3 +1,9 @@
+2007-04-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/weak.h, src/weak.c: Start adding weak hash table
+	  (not finished yet).
+	* src/hash.c: added Scm_HashCoreInitGeneral.
+
 2007-04-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/extlib.stub (hash-table-clear!): added.

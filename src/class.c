@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.149 2007-04-07 22:04:09 shirok Exp $
+ *  $Id: class.c,v 1.150 2007-04-22 09:19:19 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -3065,6 +3065,7 @@ void Scm__InitClass(void)
     
     /* weak.c */
     CINIT(SCM_CLASS_WEAK_VECTOR,      "<weak-vector>");
+    CINIT(SCM_CLASS_WEAK_HASH_TABLE,  "<weak-hash-table>");
 
 #define GINIT(gf, nam) \
     Scm_InitBuiltinGeneric(gf, nam, mod);

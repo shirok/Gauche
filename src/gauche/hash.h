@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.h,v 1.5 2007-04-20 20:49:09 shirok Exp $
+ *  $Id: hash.h,v 1.6 2007-04-22 09:19:19 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -56,17 +56,23 @@ typedef enum {
 typedef struct ScmHashCoreRec ScmHashCore;
 typedef struct ScmHashIterRec ScmHashIter;
 
-typedef unsigned long ScmHashProc(ScmHashCore *hc, intptr_t key);
-typedef int ScmHashCompareProc(ScmHashCore *hc, intptr_t x, intptr_t y);
+/* Called when the hashtable needs to calculate a hash value from
+   the key given to Scm_HashCoreSearch.   Returns a hash value. */
+typedef u_long ScmHashProc(const ScmHashCore *hc, intptr_t key);
+
+/* Called when the hashtable needs to compare the given key KEY
+   with an entry's key ENTRYKEY. */
+typedef int    ScmHashCompareProc(const ScmHashCore *hc, intptr_t key,
+                                  intptr_t entrykey);
 
 struct ScmHashCoreRec {
     void **buckets;
     int numBuckets;
     int numEntries;
     int numBucketsLog2;
-    void               *accessfn; /* actual type hidden */
-    ScmHashProc        *hashfn;
-    ScmHashCompareProc *cmpfn;
+    void                 *accessfn; /* actual type hidden */
+    ScmHashProc          *hashfn;
+    ScmHashCompareProc   *cmpfn;
     void *data;
 };
 
@@ -74,6 +80,12 @@ SCM_EXTERN void Scm_HashCoreInitSimple(ScmHashCore *core,
                                        ScmHashType type,
                                        unsigned int initSize,
                                        void *data);
+
+SCM_EXTERN void Scm_HashCoreInitGeneral(ScmHashCore *core,
+                                        ScmHashProc *hashfn,
+                                        ScmHashCompareProc *cmpfn,
+                                        unsigned int initSize,
+                                        void *data);
 
 SCM_EXTERN void Scm_HashCoreCopy(ScmHashCore *dst, const ScmHashCore *src);
 
@@ -99,10 +111,10 @@ SCM_EXTERN ScmDictEntry *Scm_HashIterNext(ScmHashIter *iter);
 /*
  * Hash functions
  */
-SCM_EXTERN unsigned long Scm_EqHash(ScmObj obj);
-SCM_EXTERN unsigned long Scm_EqvHash(ScmObj obj);
-SCM_EXTERN unsigned long Scm_Hash(ScmObj obj);
-SCM_EXTERN unsigned long Scm_HashString(ScmString *str, unsigned long bound);
+SCM_EXTERN u_long Scm_EqHash(ScmObj obj);
+SCM_EXTERN u_long Scm_EqvHash(ScmObj obj);
+SCM_EXTERN u_long Scm_Hash(ScmObj obj);
+SCM_EXTERN u_long Scm_HashString(ScmString *str, u_long bound);
 
 /*================================================================
  * ScmHashTable

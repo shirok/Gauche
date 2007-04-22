@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.134 2007-04-15 20:34:48 shirok Exp $
+;;;  $Id: genstub,v 1.135 2007-04-22 09:19:19 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -453,6 +453,8 @@
      "condition variable" "SCM_CONDITION_VARIABLE_P" "SCM_CONDITION_VARIABLE")
    (define-type <weak-vector> "ScmWeakVector*" "weak vector"
      "SCM_WEAK_VECTOR_P" "SCM_WEAK_VECTOR")
+   (define-type <weak-hash-table> "ScmWeakHashTable*" "weak hash table"
+     "SCM_WEAK_HASH_TABLE_P" "SCM_WEAK_HASH_TABLE")
    (define-type <compiled-code> "ScmCompiledCode*" "compiled code"
      "SCM_COMPILED_CODE_P" "SCM_COMPILED_CODE")
    (define-type <foreign-pointer> "ScmForeignPointer*" "foreign pointer"
