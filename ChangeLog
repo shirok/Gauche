@@ -1,3 +1,7 @@
+2007-04-22  Shiro Kawai  <shiro@acm.org>
+
+	* ext/auxsys/auxsys.scm (sys-realpath): typo fix.
+
 2007-04-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/weak.h, src/weak.c: Start adding weak hash table

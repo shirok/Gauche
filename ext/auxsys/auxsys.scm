@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: auxsys.scm,v 1.19 2007-03-28 22:29:56 shirok Exp $
+;;;  $Id: auxsys.scm,v 1.20 2007-04-23 08:32:53 shirok Exp $
 ;;;
 
 (define-module gauche.auxsys
@@ -52,7 +52,7 @@
 ;; define alternatives if the platform doesn't support...
 
 (cond-expand
- ((not gauche.sys.reaplath)
+ ((not gauche.sys.realpath)
   (define sys-realpath #f))             ; make autoload happy
  (else))
 
