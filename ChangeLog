@@ -1,3 +1,9 @@
+2007-04-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen.scm, lib/gauche/cgen/unit.scm,
+	  lib/gauche/cgen/literal.scm: Splitted gauche.cgen module for
+	  modularity and readability.
+
 2007-04-22  Shiro Kawai  <shiro@acm.org>
 
 	* ext/auxsys/auxsys.scm (sys-realpath): typo fix.
