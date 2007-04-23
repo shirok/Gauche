@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: literal.scm,v 1.1 2007-04-23 11:18:31 shirok Exp $
+;;;  $Id: literal.scm,v 1.2 2007-04-23 23:17:49 shirok Exp $
 ;;;
 
 (define-module gauche.cgen.literal
@@ -39,12 +39,15 @@
   (use gauche.parameter)
   (use gauche.sequence)
   (use gauche.cgen.unit)
-;   (export <cgen-literal> cgen-c-name cgen-cexpr cgen-make-literal
-;           cgen-literal-static?
+  (export <cgen-literal> cgen-c-name cgen-cexpr cgen-make-literal
+          cgen-literal-static?
 
-;           define-cgen-literal cgen-literal
-;           )
-  (export-all)
+          define-cgen-literal cgen-literal
+          cgen-literal-emit-extern cgen-literal-emit-decl
+          cgen-literal-emit-body cgen-literal-emit-init
+
+          cgen-allocate-static-datum
+          )
   )
 (select-module gauche.cgen.literal)
 
@@ -100,30 +103,33 @@
     ((runtime)  "scm__rc")
     (else (error "[cgen internal] invalid category:" category))))
 
-(define (cgen-allocate-static-datum category c-type init-thunk)
-  (and-let* ((unit (cgen-current-unit)))
-    (let ((dl (or (find (lambda (dl) (and (eq? (ref dl 'c-type) c-type)
-                                          (eq? (ref dl 'category) category)))
-                        (ref unit 'static-data-list))
-                  (let1 new (make <cgen-static-data-list>
-                              :category category :c-type c-type)
-                    (push! (ref unit 'static-data-list) new)
-                    new)))
-          (value-type? (not init-thunk))
-          (ithunk (or init-thunk
-                      (if (eq? c-type 'ScmObj) "SCM_UNBOUND" "NULL"))))
-      (let1 count (ref dl 'count)
-        (slot-push! dl 'init-thunks ithunk)
-        (inc! (ref dl 'count))
-        (if value-type?
-          (format "~a.~a[~a]" ; no cast, for this'll be also used as lvalue.
-                  (static-data-c-struct-name category)
-                  (ref dl 'c-member-name)
-                  count)
-          (format "SCM_OBJ(&~a.~a[~a])"
-                  (static-data-c-struct-name category)
-                  (ref dl 'c-member-name)
-                  count))))))
+(define (cgen-allocate-static-datum . opts)
+  (let-optionals* opts ((category 'runtime)
+                        (c-type   'ScmObj)
+                        (init-thunk #f))
+    (and-let* ((unit (cgen-current-unit)))
+      (let ((dl (or (find (lambda (dl) (and (eq? (ref dl 'c-type) c-type)
+                                            (eq? (ref dl 'category) category)))
+                          (ref unit 'static-data-list))
+                    (let1 new (make <cgen-static-data-list>
+                                :category category :c-type c-type)
+                      (push! (ref unit 'static-data-list) new)
+                      new)))
+            (value-type? (not init-thunk))
+            (ithunk (or init-thunk
+                        (if (eq? c-type 'ScmObj) "SCM_UNBOUND" "NULL"))))
+        (let1 count (ref dl 'count)
+          (slot-push! dl 'init-thunks ithunk)
+          (inc! (ref dl 'count))
+          (if value-type?
+            (format "~a.~a[~a]" ; no cast, for this'll be also used as lvalue.
+                    (static-data-c-struct-name category)
+                    (ref dl 'c-member-name)
+                    count)
+            (format "SCM_OBJ(&~a.~a[~a])"
+                    (static-data-c-struct-name category)
+                    (ref dl 'c-member-name)
+                    count)))))))
 
 (define (cgen-allocate-static-array category c-type init-thunks)
   (fold (lambda (init-thunk seed)
@@ -163,20 +169,6 @@
     (emit-one-category 'constant dls)
     (emit-one-category 'runtime dls)
     ))
-
-; ;; TEMPORARY BRIDGE - WILL GO AWAY
-; ;; allocate one static obj, and returns cexpr of it.
-(define (static-obj-cname . args)
-  (if (pair? args)
-    (cgen-allocate-static-datum 'runtime 'ScmObj (car args))
-    (cgen-allocate-static-datum 'runtime 'ScmObj #f)))
-
-; ;; TEMPORARY BRIDGE - WILL GO AWAY
-(define (static-string-cname str)
-  (cgen-allocate-static-datum 'constant 'ScmString
-                              (format "  SCM_STRING_CONST_INITIALIZER(~s, ~a, ~a)"
-                                      str (string-size str)
-                                      (string-length str))))
 
 ;;=============================================================
 ;; Scheme static values
@@ -478,7 +470,11 @@
   ()
   (make (value)
     (make <cgen-scheme-string>
-      :c-name (static-string-cname value) :value value))
+      :c-name (cgen-allocate-static-datum
+               'constant 'ScmString
+               (format "  SCM_STRING_CONST_INITIALIZER(~s, ~a, ~a)"
+                       value (string-size value) (string-length value)))
+      :value value))
   )
 
 ;; symbol ------------------------------------------------------
@@ -487,7 +483,7 @@
   ((symbol-name :init-keyword :symbol-name)) ;; <cgen-scheme-string>
   (make (value)
     (make <cgen-scheme-symbol> :value value
-          :c-name (static-obj-cname)
+          :c-name (cgen-allocate-static-datum)
           :symbol-name (cgen-literal (symbol->string value))))
   (init (self)
     (print "  " (cgen-c-name self)
@@ -503,7 +499,7 @@
   ((keyword-name :init-keyword :keyword-name)) ;; <cgen-scheme-string>
   (make (value)
     (make <cgen-scheme-keyword> :value value
-          :c-name (static-obj-cname)
+          :c-name (cgen-allocate-static-datum)
           :keyword-name (cgen-literal (keyword->string value))))
   (init (self)
     (print "  " (cgen-c-name self)
@@ -525,9 +521,11 @@
      ((fixnum? value)
       (make <cgen-scheme-integer> :value value :c-name #f))
      ((< (- (expt 2 31)) value (- (expt 2 32)))
-      (make <cgen-scheme-integer> :value value :c-name (static-obj-cname)))
+      (make <cgen-scheme-integer> :value value
+            :c-name (cgen-allocate-static-datum)))
      (else
-      (make <cgen-scheme-integer> :value value :c-name (static-obj-cname)
+      (make <cgen-scheme-integer> :value value
+            :c-name (cgen-allocate-static-datum)
             :string-rep (cgen-literal (number->string value 16))))))
   (cexpr (self)
     (or (cgen-c-name self)
@@ -556,7 +554,8 @@
   ((numer :init-keyword :numer :init-value #f)
    (denom :init-keyword :denom :init-value #f))
   (make (value)
-    (make <cgen-scheme-real> :value value :c-name (static-obj-cname)
+    (make <cgen-scheme-real> :value value
+          :c-name (cgen-allocate-static-datum)
           :numer (and (exact? value) (cgen-make-literal (numerator value)))
           :denom (and (exact? value) (cgen-make-literal (denominator value)))))
   (cexpr (self) (cgen-c-name self))
@@ -570,7 +569,8 @@
 (define-cgen-literal <cgen-scheme-complex> <complex>
   ()
   (make (value)
-    (make <cgen-scheme-complex> :value value :c-name (static-obj-cname)))
+    (make <cgen-scheme-complex> :value value
+          :c-name (cgen-allocate-static-datum)))
   (cexpr (self) (cgen-c-name self))
   (init (self)
     (let ((real (real-part (ref self 'value)))
@@ -641,7 +641,7 @@
   ()
   (make (value)
     (make <cgen-scheme-char-set> :value value
-          :c-name (static-obj-cname)))
+          :c-name (cgen-allocate-static-datum)))
   (init (self)
     (print "  {")
     (print "     ScmCharSet *cs = SCM_CHARSET(Scm_MakeEmptyCharSet());")
@@ -659,7 +659,7 @@
    (case-fold?    :init-keyword :case-fold?))
   (make (value)
     (make <cgen-scheme-regexp> :value value
-          :c-name (static-obj-cname)
+          :c-name (cgen-allocate-static-datum)
           :source-string (cgen-literal (regexp->string value))
           :case-fold? (regexp-case-fold? value)))
   (init (self)

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: gencomp,v 1.27 2005-11-10 09:47:03 shirok Exp $
+;;;  $Id: gencomp,v 1.28 2007-04-23 23:17:50 shirok Exp $
 ;;;
 
 ;;;
@@ -455,7 +455,8 @@
           (env  (ref value 'env)))
       (unless (null? env)
         (error "identifier with compiler environment can't be compiled" value))
-      (make <cgen-scheme-identifier> :value value :c-name (static-obj-cname)
+      (make <cgen-scheme-identifier> :value value
+            :c-name (cgen-allocate-static-datum)
             :id-name (cgen-literal name)
             :mod-name (and-let* ((modnam (module-name-fix mod)))
                         (cgen-literal modnam)))))
@@ -497,7 +498,7 @@
   (make (value)
     (make <cgen-scheme-generic>
       :value value
-      :c-name  (cgen-allocate-static-datum 'runtime 'ScmObj #f)
+      :c-name  (cgen-allocate-static-datum)
       :gf-name (cgen-literal (ref value 'name))))
   (init (self)
     (format #t "  ~a = Scm_SymbolValue(mod, SCM_SYMBOL(~a));\n"
