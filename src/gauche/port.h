@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: port.h,v 1.23 2007-04-16 03:47:13 shirok Exp $
+ *  $Id: port.h,v 1.24 2007-04-27 03:37:08 shirok Exp $
  */
 
 #ifndef GAUCHE_PORT_H
@@ -349,21 +349,21 @@ SCM_EXTERN ScmObj Scm_SetCurrentErrorPort(ScmPort *port);
 SCM_EXTERN ScmObj Scm_MakeInputStringPort(ScmString *str, int privatep);
 SCM_EXTERN ScmObj Scm_MakeOutputStringPort(int privatep);
 
-#if defined(GAUCHE_API_0_9) || defined(LIBGAUCHE_BODY)
+#if defined(GAUCHE_API_0_8_10) || defined(GAUCHE_API_0_9) || defined(LIBGAUCHE_BODY)
 SCM_EXTERN ScmObj Scm_GetOutputString(ScmPort *port, int flags);
 SCM_EXTERN ScmObj Scm_GetOutputStringUnsafe(ScmPort *port, int flags);
 SCM_EXTERN ScmObj Scm_GetRemainingInputString(ScmPort *port, int flags);
+
+#else  /* !defined(GAUCHE_API_0_8_10) && !defined(GAUCHE_API_0_9) && !defined(LIBGAUCHE_BODY) */
+#define Scm_GetOutputString(p) Scm__GetOutputStringCompat(p)
+#define Scm_GetOutputStringUnsafe(p) Scm__GetOutputStringUnsafeCompat(p)
+#define Scm_GetRemainingInputString(p) Scm__GetRemainingInputStringCompat(p)
 
 /* For backward compatibility */
 SCM_EXTERN ScmObj Scm__GetOutputStringCompat(ScmPort *port);
 SCM_EXTERN ScmObj Scm__GetOutputStringUnsafeCompat(ScmPort *port);
 SCM_EXTERN ScmObj Scm__GetRemainingInputStringCompat(ScmPort *port);
-
-#else  /* !defined(GAUCHE_API_0_9) && !defined(LIBGAUCHE_BODY) */
-#define Scm_GetOutputString(p) Scm__GetOutputStringCompat(p)
-#define Scm_GetOutputStringUnsafe(p) Scm__GetOutputStringUnsafeCompat(p)
-#define Scm_GetRemainingInputString(p) Scm__GetRemainingInputStringCompat(p)
-#endif /* !defined(GAUCHE_API_0_9) && !defined(LIBGAUCHE_BODY) */
+#endif /* !defined(GAUCHE_API_0_8_10) && !defined(GAUCHE_API_0_9) && !defined(LIBGAUCHE_BODY) */
 
 /*================================================================
  * Other type of ports

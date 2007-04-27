@@ -1,3 +1,8 @@
+2007-04-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/port.h: Fixed a problem that compatibility functions
+	  are not declared when necessary (#ifdef area got wrong).
+
 2007-04-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen.scm, lib/gauche/cgen/unit.scm,
