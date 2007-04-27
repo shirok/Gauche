@@ -1,5 +1,9 @@
 2007-04-26  Shiro Kawai  <shiro@acm.org>
 
+	* src/genstub: Refactored to utilize more features of gauche.cgen;
+	  the original genstub predated gauche.cgen and had many kludges
+	  that gauche.cgen solved better.
+
 	* src/gauche/port.h: Fixed a problem that compatibility functions
 	  are not declared when necessary (#ifdef area got wrong).
 
