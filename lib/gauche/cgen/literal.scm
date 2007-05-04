@@ -30,12 +30,13 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: literal.scm,v 1.2 2007-04-23 23:17:49 shirok Exp $
+;;;  $Id: literal.scm,v 1.3 2007-05-04 11:29:00 shirok Exp $
 ;;;
 
 (define-module gauche.cgen.literal
   (use srfi-1)
   (use srfi-13)
+  (use srfi-42)
   (use gauche.parameter)
   (use gauche.sequence)
   (use gauche.cgen.unit)
@@ -68,7 +69,7 @@
 ;; one is emitted first, so there's a constraint that the runtime one
 ;; can refer to the address of the member of the constant one, but not
 ;; vice versa.  (They're splitted so that each can be placed in
-;; different section of the compiled object).
+;; different sections of the compiled object).
 ;;
 ;; Each static data has to be 'allocated' before the code generation stage.
 ;; cgen-allocate-static-datum does the job.  It returns a string for C
@@ -90,11 +91,12 @@
 ;; It is chained in <cgen-unit>'s static-data-list.
 (define-class <cgen-static-data-list> ()
   ((category :init-keyword :category) ; 'constant or 'runtime
-   (c-type :init-keyword :c-type) ; symbol for C type, e.g. 'ScmObj
+   (c-type :init-keyword :c-type)  ; symbol for C type, e.g. 'ScmObj
    (c-member-name :init-form (gensym "d")) ; member name in the C structure
-   (count  :init-value 0)         ; # of allocated objs.
-   (init-thunks :init-value '())  ; thunks to generate initializers
-                                  ;  constructed in rev order.
+   (count  :init-value 0)          ; # of allocated objs.
+   (cpp-condition :init-form (cgen-cpp-condition)) ; cpp condition
+   (init-thunks :init-value '())   ; thunks to generate initializers
+                                   ;  constructed in rev order.
    ))
 
 (define (static-data-c-struct-name category)
@@ -104,32 +106,40 @@
     (else (error "[cgen internal] invalid category:" category))))
 
 (define (cgen-allocate-static-datum . opts)
+
+  (define (ensure-static-data-list category c-type)
+    (and-let* ((unit (cgen-current-unit)))
+      (let* ((cppc (cgen-cpp-condition))
+             (dl   (find (lambda (dl)
+                           (and (eq? (ref dl'c-type) c-type)
+                                (eq? (ref dl'category) category)
+                                (equal? (ref dl'cpp-condition) cppc)))
+                         (ref unit'static-data-list))))
+        (or dl
+            (let1 new (make <cgen-static-data-list>
+                        :category category :c-type c-type)
+              (push! (ref unit'static-data-list) new)
+              new)))))
+  
   (let-optionals* opts ((category 'runtime)
                         (c-type   'ScmObj)
                         (init-thunk #f))
-    (and-let* ((unit (cgen-current-unit)))
-      (let ((dl (or (find (lambda (dl) (and (eq? (ref dl 'c-type) c-type)
-                                            (eq? (ref dl 'category) category)))
-                          (ref unit 'static-data-list))
-                    (let1 new (make <cgen-static-data-list>
-                                :category category :c-type c-type)
-                      (push! (ref unit 'static-data-list) new)
-                      new)))
-            (value-type? (not init-thunk))
-            (ithunk (or init-thunk
-                        (if (eq? c-type 'ScmObj) "SCM_UNBOUND" "NULL"))))
-        (let1 count (ref dl 'count)
-          (slot-push! dl 'init-thunks ithunk)
-          (inc! (ref dl 'count))
-          (if value-type?
-            (format "~a.~a[~a]" ; no cast, for this'll be also used as lvalue.
-                    (static-data-c-struct-name category)
-                    (ref dl 'c-member-name)
-                    count)
-            (format "SCM_OBJ(&~a.~a[~a])"
-                    (static-data-c-struct-name category)
-                    (ref dl 'c-member-name)
-                    count)))))))
+    (let ((dl (ensure-static-data-list category c-type))
+          (value-type? (not init-thunk))
+          (ithunk (or init-thunk
+                      (if (eq? c-type 'ScmObj) "SCM_UNBOUND" "NULL"))))
+      (let1 count (ref dl 'count)
+        (slot-push! dl 'init-thunks ithunk)
+        (inc! (ref dl 'count))
+        (if value-type?
+          (format "~a.~a[~a]" ; no cast, for this'll be also used as lvalue.
+                  (static-data-c-struct-name category)
+                  (ref dl 'c-member-name)
+                  count)
+          (format "SCM_OBJ(&~a.~a[~a])"
+                  (static-data-c-struct-name category)
+                  (ref dl 'c-member-name)
+                  count))))))
 
 (define (cgen-allocate-static-array category c-type init-thunks)
   (fold (lambda (init-thunk seed)
@@ -153,18 +163,22 @@
               (if (eq? category 'constant) "SCM_CGEN_CONST " "")
               name)
       (dolist (dl dls)
+        (cond ((ref dl'cpp-condition) => (cut print "#if "<>)))
         (format #t "  ~a ~a[~a];\n" (ref dl 'c-type) (ref dl 'c-member-name)
-                (ref dl 'count)))
+                (ref dl 'count))
+        (cond ((ref dl'cpp-condition) => (cut print "#endif /*"<>"*/"))))
       (format #t "} ~a = " name)))
 
   (define (emit-initializers dl)
+    (cond ((ref dl'cpp-condition) => (cut print "#if "<>)))
     (format #t "  {   /* ~a ~a */\n" (ref dl 'c-type) (ref dl 'c-member-name))
     (dolist (thunk (reverse (ref dl 'init-thunks)))
       (if (string? thunk)
         (format #t "    ~a,\n" thunk)
         (begin (format #t "    ") (thunk) (print ","))))
-    (print "  },"))
-  
+    (print "  },")
+    (cond ((ref dl'cpp-condition) => (cut print "#endif /*"<>"*/"))))
+
   (and-let* ((dls (ref unit 'static-data-list)))
     (emit-one-category 'constant dls)
     (emit-one-category 'runtime dls)
@@ -249,30 +263,9 @@
 
 (define-method cgen-literal-static? (self) #t)
 
-(define-method cgen-emit ((node <cgen-literal>) part walker)
-  (dolist (sdef (class-slots (class-of node)))
-    (and-let* ((slot (slot-definition-name sdef))
-               ( (slot-bound? node slot) )
-               (val  (ref node slot))
-               ( (is-a? val <cgen-literal>) ))
-      (walker val)))
-  (case part
-    ((extern)
-     (cgen-literal-emit-extern node))
-    ((decl)
-     (cgen-literal-emit-decl node))
-    ((body)
-     (cgen-literal-emit-body node))
-    ((init)
-     (cgen-literal-emit-init node))
-    ))
-
-(define-method cgen-literal-emit-extern ((self <cgen-literal>))
+(define-method cgen-emit-xtrn ((self <cgen-literal>))
   (when (and (ref self 'extern?) (cgen-c-name node))
     (print "extern ScmObj " (cgen-c-name node) ";")))
-(define-method cgen-literal-emit-decl ((self <cgen-literal>)) #f)
-(define-method cgen-literal-emit-body ((self <cgen-literal>)) #f)
-(define-method cgen-literal-emit-init ((self <cgen-literal>)) #f)
 
 ;; define-cgen-literal macro
 
@@ -294,22 +287,22 @@
     ((define-cgen-literal "methods" class scheme-class
        (extern (self) . ?body) . rest)
      (begin
-       (define-method cgen-literal-emit-extern ((self class)) . ?body)
+       (define-method cgen-emit-xtrn ((self class)) . ?body)
        (define-cgen-literal "methods" class scheme-class . rest)))
     ((define-cgen-literal "methods" class scheme-class
        (decl (self) . ?body) . rest)
      (begin
-       (define-method cgen-literal-emit-decl ((self class)) . ?body)
+       (define-method cgen-emit-decl ((self class)) . ?body)
        (define-cgen-literal "methods" class scheme-class . rest)))
     ((define-cgen-literal "methods" class scheme-class
        (body (self) . ?body) . rest)
      (begin
-       (define-method cgen-literal-emit-body ((self class)) . ?body)
+       (define-method cgen-emit-body ((self class)) . ?body)
        (define-cgen-literal "methods" class scheme-class . rest)))
     ((define-cgen-literal "methods" class scheme-class
        (init (self) . ?body) . rest)
      (begin
-       (define-method cgen-literal-emit-init ((self class)) . ?body)
+       (define-method cgen-emit-init ((self class)) . ?body)
        (define-cgen-literal "methods" class scheme-class . rest)))
     ((define-cgen-literal "methods" class scheme-class
        (static (self) . ?body) . rest)
@@ -356,6 +349,11 @@
 ;; a bit complicated, and we can't use a hashtable for it (unless we have
 ;; a hashtable with completely customizable hash fn and cmp fn, which Gauche
 ;; doesn't have yet).  So we roll our own table, at least for the time being.
+;;
+;; NOTE: We don't share literals when they have different cpp-conditions,
+;; even if they are the same otherwise.  Theoretically we can share if one
+;; has cpp-condition and the other doesn't, but tracking those dependencies
+;; is just a headache.  We just assume such sharing rarely occurs.
 
 (define-constant .literal-hash-size. 32769)
 
@@ -380,11 +378,9 @@
      ((vector? x)
       (and (vector? y)
            (let1 len (vector-length x)
-             (let loop ((i 0))
-               (cond ((= i len) #t)
-                     ((rec (vector-ref x i) (vector-ref y i))
-                      (loop (+ i 1)))
-                     (else #f))))))
+             (and (= len (vector-length y))
+                  (every?-ec (: i len)
+                             (rec (vector-ref x i) (vector-ref y i)))))))
      ((string? x) (and (string? y) (string=? x y)))
      ((identifier? x)
       (and (identifier? y)
@@ -399,25 +395,25 @@
         (set! (ref unit 'literals) hash)
         hash)))
 
-(define (literal-hash-get lh obj)
-  (and-let* ((entry (find (lambda (e) (literal-value=? obj (car e)))
-                          (vector-ref lh (literal-value-hash obj)))))
-    (cdr entry)))
-
-(define (literal-hash-put! lh obj val)
-  (let1 h (literal-value-hash obj)
-    (or (and-let* ((entry (find (lambda (e) (literal-value=? obj (car e)))
-                                (vector-ref lh h))))
-          (set-cdr! entry val))
-        (push! (vector-ref lh h) (cons obj val)))))
-
 (define (register-literal-value unit literal-obj)
-  (literal-hash-put! (ensure-literal-hash unit)
-                     (ref literal-obj 'value)
-                     literal-obj))
+  (let ((lh   (ensure-literal-hash unit))
+        (cppc (ref literal-obj'cpp-condition))
+        (h    (literal-value-hash (ref literal-obj'value))))
+    (or (and-let* ((entry (find (lambda (e)
+                                  (and (equal? (caar e) cppc)
+                                       (literal-value=? (ref literal-obj'value)  (cdar e))))
+                                (vector-ref lh h))))
+          (set-cdr! entry literal-obj))
+        (push! (vector-ref lh h) (acons cppc (ref literal-obj'value) literal-obj)))))
 
 (define (lookup-literal-value unit val)
-  (literal-hash-get (ensure-literal-hash unit) val))
+  (let ((lh (ensure-literal-hash unit))
+        (cppc (cgen-cpp-condition)))
+    (and-let* ((entry (find (lambda (e)
+                              (and (equal? (caar e) cppc)
+                                   (literal-value=? val (cdar e))))
+                            (vector-ref lh (literal-value-hash val)))))
+      (cdr entry))))
 
 ;; primitive values -------------------------------------------
 

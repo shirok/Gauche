@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.136 2007-04-27 04:39:13 shirok Exp $
+;;;  $Id: genstub,v 1.137 2007-05-04 11:29:01 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -49,7 +49,7 @@
 (define *insert-sharp-line* #t)         ;if #t, output #line directive
 (define *unbound* (cons #f #f))         ;placeholder for unbound value
 
-(define cpp-condition (make-parameter #f))
+;(define cpp-condition (make-parameter #f))
 
 (define c++-exception-used? (make-parameter #f))
 
@@ -467,55 +467,15 @@
 ;;===================================================================
 ;; Stub : base class of declarations
 ;;
-;;   - Each declaration makes a stub.
-;;   - Stub is used to generate two things: immediate definition,
-;;     and initialization code called in Scm_Init_<module>.
-;;     Those should be implemented by the following methods:
-;;        emit-definition
-;;        emit-initializer
 
 (define-class <stub> (<cgen-node>)
   ((scheme-name     :init-keyword :scheme-name :accessor scheme-name-of
                     :init-form #f)
    (c-name          :init-keyword :c-name      :accessor c-name-of)
-   (cpp-condition   :init-keyword :cpp-condition :init-form #f
-                    :accessor cpp-condition-of)
    ))
-
-(define-method initialize ((self <stub>) initargs)
-  (next-method)
-  (set! (cpp-condition-of self) (cpp-condition)))
 
 (define (get-stubs class)
   (filter (cut is-a? <> class) (cgen-unit-toplevel-nodes (cgen-current-unit))))
-
-(define-syntax with-cpp-condition
-  (syntax-rules ()
-    ((_ stub . body)
-     (let ((cpp (cpp-condition-of stub)))
-       (when cpp (f "#if ~a" cpp))
-       (begin . body)
-       (when cpp (f "#endif /*~a*/" cpp))
-       ))))
-
-;; NB: these will be in gauche.cgen.unit eventually, but for experimental
-;; we put them here.
-
-(define-method cgen-emit-xtrn ((node <stub>)) #f)
-(define-method cgen-emit-decl ((node <stub>)) #f)
-(define-method cgen-emit-body ((node <stub>)) #f)
-(define-method cgen-emit-init ((node <stub>)) #f)
-
-(define-method cgen-emit ((node <stub>) part walker)
-  (case part
-    ((extern)
-     (with-cpp-condition node (cgen-emit-xtrn node)))
-    ((decl)
-     (with-cpp-condition node (cgen-emit-decl node)))
-    ((body)
-     (with-cpp-condition node (cgen-emit-body node)))
-    ((init)
-     (with-cpp-condition node (cgen-emit-init node)))))
 
 ;;===================================================================
 ;; Literals
@@ -591,9 +551,6 @@
 (define-form-parser define-symbol (name c-name . maybe-init)
   (check-arg symbol? name)
   (check-arg string? c-name)
-  (unless (null? maybe-init)
-    (warn "using initializer value in define-symbol is deprecated.  use define-variable instead.")
-    (parse-form `(define-variable ,name ,@maybe-init)))
   (let* ((literal (make-literal name :c-name c-name))
          (symbol  (make <csymbol> :symbol literal :scheme-name name :alias c-name)))
     (cgen-add! symbol)
@@ -648,7 +605,7 @@
 
 (define-form-parser define-enum-conditionally (name)
   (check-arg symbol? name)
-  (parameterize ((cpp-condition #`"defined(,name)"))
+  (parameterize ((cgen-cpp-condition #`"defined(,name)"))
     (variable-parser-common #t name (list 'c #`"Scm_MakeInteger(,name)") '())))
 
 ;;-------------------------------------------------------------------
@@ -715,8 +672,8 @@
 ;;
 
 (define-class <cproc> (<procstub>)
-  ((inliner           :initform #f  :accessor inliner-of)
-   (inline-insn       :initform #f  :accessor inline-insn-of)
+  ((inline-insn  :initform #f)
+   (proc-name    :init-keyword :proc-name)  ; string literal
    ))
 
 (define-form-parser define-cproc (scheme-name argspec . body)
@@ -727,6 +684,7 @@
     (let ((cproc (make <cproc>
                    :scheme-name scheme-name
                    :c-name (get-c-name *file-prefix* scheme-name)
+                   :proc-name (make-literal (x->string scheme-name))
                    :args args
                    :keyword-args keyargs
                    :num-reqargs nreqs
@@ -836,7 +794,7 @@
   (dolist (form body)
     (match form
       ((? string?) (push-stmt! cproc form))
-      (('inliner opcode) (set! (inline-insn-of cproc) opcode))
+      (('inliner opcode) (set! (ref cproc 'inline-insn) opcode))
       (('setter . spec) (process-setter cproc spec))
       (('return . spec) (process-call-spec cproc form))
       (('call . spec) (process-call-spec cproc form))
@@ -858,6 +816,7 @@
       (let ((setter (make <cproc>
                       :scheme-name `(setter ,(scheme-name-of cproc))
                       :c-name #`",(c-name-of cproc)_SETTER"
+                      :proc-name (make-literal (x->string `(setter ,(scheme-name-of cproc))))
                       :args args
                       :keyword-args keyargs
                       :num-reqargs nreqs
@@ -1017,8 +976,19 @@
   ;; closing the function
   (p "}")
   (p)
-  (emit-inliner cproc)
-  (emit-record cproc))
+  ;; emit stub record
+  (f "static SCM_DEFINE_SUBR(~a, ~a, ~a, ~a, ~a, ~a, NULL);"
+     (c-stub-name-of cproc)
+     (num-reqargs-of cproc)
+     (if (or (have-rest-arg? cproc) (> (num-optargs-of cproc) 0)) 1 0)
+     (cgen-c-name (ref cproc 'proc-name))
+     (ref cproc 'c-name)
+     (cond ((ref cproc'inline-insn)
+            => (lambda (insn)
+                 (format "SCM_MAKE_INT(SCM_VM_~a)"
+                         (string-tr (x->string insn) "-" "_"))))
+           (else "NULL")))
+  (p))
 
 (define-method cgen-emit-init ((cproc <cproc>))
   (when (symbol? (scheme-name-of cproc))
@@ -1093,47 +1063,22 @@
     (f "  if (Scm_Length(SCM_OPTARGS) % 2)")
     (f "    Scm_Error(\"keyword list not even: %S\", SCM_OPTARGS);")
     (f "  while (!SCM_NULLP(SCM_OPTARGS)) {")
-    (pair-for-each (lambda (args)
-                     (let ((arg (car args))
-                           (tail? (null? (cdr args))))
-                       (f "    if (SCM_EQ(SCM_CAR(SCM_OPTARGS), ~a)) {"
-                          (cgen-c-name (ref arg 'keyword)))
-                       (f "      ~a = SCM_CADR(SCM_OPTARGS);" (scm-name-of arg))
-                       (if tail?
-                         (f "    }")
-                         (f "    } else "))))
+    (pair-for-each
+     (lambda (args)
+       (let ((arg (car args))
+             (tail? (null? (cdr args))))
+         (f "    if (SCM_EQ(SCM_CAR(SCM_OPTARGS), ~a)) {"
+            (cgen-c-name (ref arg 'keyword)))
+         (f "      ~a = SCM_CADR(SCM_OPTARGS);" (scm-name-of arg))
+         (if tail?
+           (f "    }")
+           (f "    } else "))))
                    args)
     (unless other-keys?
       (f "    else Scm_Warn(\"unknown keyword %S\", SCM_CAR(SCM_OPTARGS));"))
     (f "    SCM_OPTARGS = SCM_CDDR(SCM_OPTARGS);")
     (f "  }")
     (for-each emit-arg-unbox-rec args)))
-
-;; TODO: arg type assertion
-(define (emit-inliner cproc)
-  (when (inline-insn-of cproc)
-    (set! (inliner-of cproc)
-          (format "SCM_MAKE_INT(SCM_VM_~a)"
-                  (string-tr (x->string (inline-insn-of cproc)) "-" "_"))))
-  )
-
-(define (emit-inliner-header cproc inliner-name)
-  (f "static ScmObj ~a(ScmObj subr, ScmObj form, ScmObj env, void *data)"
-     inliner-name))
-
-(define (emit-record cproc)
-  (let ((inliner-name "NULL"))
-    (emit-static-string (c-name-of cproc) (scheme-name-of cproc))
-    (when (inliner-of cproc)
-      (set! inliner-name (inliner-of cproc)))
-    (f "static SCM_DEFINE_SUBR(~a, ~a, ~a, SCM_OBJ(&~a__NAME), ~:*~a, ~a, NULL);"
-       (c-stub-name-of cproc)
-       (num-reqargs-of cproc)
-       (if (or (have-rest-arg? cproc) (> (num-optargs-of cproc) 0)) 1 0)
-       (c-name-of cproc)
-       inliner-name
-       )
-    (p)))
 
 ;;-----------------------------------------------------------------
 ;; Generic function
@@ -1557,15 +1502,8 @@
 ;; Extra initializers
 ;;
 
-(define-class <initcode> (<stub>)
-  ((code  :initform '() :init-keyword :code :accessor code-of)
-   ))
-
-(define-method cgen-emit-init ((self <initcode>))
-  (for-each p (ref self 'code)))
-
 (define-form-parser initcode codes
-  (cgen-add! (make <initcode> :code codes)))
+  (apply cgen-init codes))
 
 ;;===================================================================
 ;; Miscellaneous utilities
@@ -1633,12 +1571,6 @@
     )
   )
 
-;; Emit static ScmString
-(define (emit-static-string c-name scm-name)
-  (let1 len (string-length (x->string scm-name))
-    (f "static SCM_DEFINE_STRING_CONST(~a__NAME, \"~a\", ~a, ~:*~a);"
-       c-name scm-name len)))
-
 ;; Check if item is in the form (c <string>)
 (define (c-literal? item)
   (and (pair? item) (= (length item) 2) (eq? (car item) 'c) (string? (cadr item))))
@@ -1648,14 +1580,14 @@
 ;;
 
 (define-form-parser if (test then)
-  (parameterize ((cpp-condition test))
+  (parameterize ((cgen-cpp-condition test))
     (parse-form then)))
 
 (define-form-parser begin forms
   (for-each parse-form forms))
 
 (define-form-parser when (test . forms)
-  (parameterize ((cpp-condition test))
+  (parameterize ((cgen-cpp-condition test))
     (for-each parse-form forms)))
 
 (define-form-parser include (file)
@@ -1666,55 +1598,48 @@
     (lambda () (port-for-each parse-form read)))
   )
 
-(define-method emit-initializer ()
-  (for-each (lambda (stub)
-              (let1 cpp (cpp-condition-of stub)
-                (when cpp (cgen-init (format "#if ~a" cpp)))
-                (emit-initializer stub)
-                (when cpp (cgen-init (format "#endif /* ~a */" cpp)))))
-            (instance-pool->list <stub>))
-  )
-
 ;;===================================================================
 ;; main entry point
 ;;
 
 (define (main args)
-  (let* ((predef-syms '())
-         (args (parse-options (cdr args)
-                (("D=s"  (sym) (push! predef-syms sym))
-                 (else _ (usage))))))
-    (unless (and (= (length args) 1)
-                 (> (string-length (car args)) 5))
-      (usage))
-
-    (let* ((file (car args))
-           ;; NB: the following part should be replaced using
-           ;; path-sans-extension etc. for simplicity, but it will be after
-           ;; 0.8.6 release since 0.8.5 has a bug in it.
-           (base (sys-basename file))
-           (filelen (string-length file))
-           (baselen (string-length base))
-           (prefix  (get-c-name "" (substring base 0 (- baselen 5))))
-           (outfile (string-append (substring file 0 (- filelen 5)) ".c")))
-      (unless (file-exists? file)
-        (f "Couldn't open ~a" file)
-        (exit 1))
-      (set! *file-prefix* (string-append prefix "_"))
-      (parameterize ((cgen-current-unit
-                      (make <cgen-unit>
-                        :name (path-sans-extension file)
-                        :preamble '("/* Generated by genstub.  Do not edit. */")
-                        :pre-decl (map (cut format "#define ~a" <>)
-                                       predef-syms)
-                        :init-prologue (format "void Scm_Init_~a(ScmModule *module)\n{\n" prefix)
-                        )))
-        (with-input-from-file file
-          (lambda () (port-for-each parse-form read)))
-        ;(emit-initializer)
-        (cgen-emit-c (cgen-current-unit))
-        )))
+  (let1 predef-syms '()
+    (let-args (cdr args)
+        ((#f "D=s" => (lambda (sym) (push! predef-syms sym)))
+         (else _ (usage))
+         . args)
+      (match args
+        ((file) (do-it file predef-syms))
+        (_ (usage)))))
   0)
+
+(define (do-it file predef-syms)
+  (let1 prefix (get-c-name "" (path-sans-extension (sys-basename file)))
+    (unless (file-exists? file)
+      (format #t "Couldn't open ~a\n" file)
+      (exit 1))
+    (set! *file-prefix* (string-append prefix "_"))
+    (parameterize ((cgen-current-unit
+                    (make <cgen-unit>
+                      :name (path-sans-extension file)
+                      :preamble
+                      '("/* Generated by genstub.  Do not edit. */")
+                      :pre-decl
+                      (map (cut format "#define ~a" <>) predef-syms)
+                      :init-prologue
+                      (format "void Scm_Init_~a(ScmModule *module)\n{\n" prefix)
+                      )))
+      (with-input-from-file file
+        (cut port-fold
+             ;; We treat the initial raw strings specially---they will be
+             ;; in decl part.  The flag decl-strings? tracks that.
+             (lambda (form decl-strings?)
+               (cond ((and decl-strings? (string? form))
+                      (cgen-decl form) #t)
+                     (else
+                      (parse-form form) #f)))
+             #t read))
+      (cgen-emit-c (cgen-current-unit)))))
 
 (define (usage)
   (print "Usage: genstub [-D symbol] FILE.stub")
