@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: interpolate.scm,v 1.9 2007-03-02 07:39:08 shirok Exp $
+;;;  $Id: interpolate.scm,v 1.10 2007-05-05 04:45:19 shirok Exp $
 ;;;
 
 ;;; #`"The value is ,|foo|." => (string-append "The value is " foo ".")
@@ -56,7 +56,7 @@
              (cond ((eof-object? c2) (write-char c acc) (accum c2 acc))
                    ((char=? c2 #\,)
                     (write-char (read-char) acc) (accum (read-char) acc))
-                   ((char-set-contains? #[\x00-\x20\),\;\[\\\]\{\}\x7f] c2)
+                   ((char-set-contains? #[\x00-\x20\),\;\\\]\}\x7f] c2)
                     (write-char c acc) (accum (read-char) acc))
                    (else
                     (cons (get-output-string acc) (insert))))))

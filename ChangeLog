@@ -1,11 +1,15 @@
 2007-05-04  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/interpolate.scm (%string-interpolate): recognize '[' and
+	  '{' as the beginning of unquoted expression as well.
+
 	* src/genstub, lib/gauche/cgen/unit.scm, lib/gauche/cgen/literal.scm:
 	  Further integrated genstub's code into gauche.cgen.*.  Changes
 	  include: Cpp conditions are now supported by <cgen-node>.
 	  The subclass of <cgen-node> should override cgen-emit-* methods,
 	  not the cgen-emit method.  Some of literal handling code
 	  are moved to gauche.cgen.*.
+	  Also experimentally testing shorthand notation of ref.
 
 2007-04-26  Shiro Kawai  <shiro@acm.org>
 
