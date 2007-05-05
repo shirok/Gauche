@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.138 2007-05-05 04:45:19 shirok Exp $
+;;;  $Id: genstub,v 1.139 2007-05-05 10:53:16 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -179,15 +179,14 @@
                (if (null? form) '() (badform)))
               ((pair? llist)
                (if (null? form)
-                   (badform)
-                   (cons (car form) (loop (cdr llist) (cdr form)))))
+                 (badform)
+                 (cons (car form) (loop (cdr llist) (cdr form)))))
               (else form)))
     (apply [@ self'handler] args)))
 
 (define (parse-form form)
   (cond ((string? form) (cgen-body form))
-        ((not (pair? form))
-         (error "bad form:" form))
+        ((not (pair? form)) (error "bad form:" form))
         ((find (lambda (p) (eq? (car form) [@ p'name]))
                (instance-pool->list <form-parser>))
          => (cut invoke <> form))
@@ -456,7 +455,6 @@
    (define-type <class> "ScmClass*" "class"
      "SCM_CLASSP" "SCM_CLASS")
    (define-type <method> "ScmMethod*" "method"
-
      "SCM_METHODP" "SCM_METHOD")
    (define-type <module> "ScmModule*" "module"
      "SCM_MODULEP" "SCM_MODULE")
@@ -549,10 +547,10 @@
 
 (define-method initialize ((self <arg>) initargs)
   (next-method)
-  (set! [@ self'c-name] (get-c-name "" [@ self'name]))
+  (set! [@ self'c-name]   (get-c-name "" [@ self'name]))
   (set! [@ self'scm-name] (string-append [@ self'c-name] "_scm")))
 
-(define-method initialize ((self <keyword-arg>) initargs);; temporary
+(define-method initialize ((self <keyword-arg>) initargs)
   (next-method)
   (set! [@ self'keyword] (cgen-literal (make-keyword [@ self'name]))))
 
@@ -651,7 +649,7 @@
 (define (push-stmt! cproc stmt)
   (push! [@ cproc'stmts] stmt))
 
-(define-generic c-stub-name-of )
+(define-generic c-stub-name )
 
 ;;-----------------------------------------------------------------
 ;; (define-cproc scheme-name (argspec) body)
@@ -680,7 +678,7 @@
       (process-body cproc body)
       (cgen-add! cproc))))
 
-(define-method c-stub-name-of ((cproc <cproc>))
+(define-method c-stub-name ((cproc <cproc>))
   #`",(@ cproc'c-name)__STUB")
 
 ;; create arg object.  used in cproc and cmethod
@@ -935,7 +933,7 @@
   (when (or (> [@ cproc'num-optargs] 0)
             (not (null? [@ cproc'keyword-args])))
     (p "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
-  (f "  SCM_ENTER_SUBR(\"~a\");" [@ cproc'scheme-name])
+  (p "  SCM_ENTER_SUBR(\""[@ cproc'scheme-name]"\");")
   ;; argument count check (for optargs)
   (when (and (> [@ cproc'num-optargs] 0)
              (null? [@ cproc'keyword-args])
@@ -963,7 +961,7 @@
   (p)
   ;; emit stub record
   (f "static SCM_DEFINE_SUBR(~a, ~a, ~a, ~a, ~a, ~a, NULL);"
-     (c-stub-name-of cproc)
+     (c-stub-name cproc)
      [@ cproc'num-reqargs]
      (if (or (have-rest-arg? cproc) (> [@ cproc'num-optargs] 0)) 1 0)
      (cgen-c-name [@ cproc'proc-name])
@@ -979,20 +977,20 @@
   (when (symbol? [@ cproc'scheme-name])
     (f "  SCM_DEFINE(module, ~s, SCM_OBJ(&~a));"
        (symbol->string [@ cproc'scheme-name])
-       (c-stub-name-of cproc)))
+       (c-stub-name cproc)))
   (next-method)
   )
 
 (define-method cgen-emit-init ((cproc <setter-mixin>))
   (define (emit setter-name)
     (f "  Scm_SetterSet(SCM_PROCEDURE(&~a), SCM_PROCEDURE(&~a), TRUE);"
-       (c-stub-name-of cproc) setter-name))
+       (c-stub-name cproc) setter-name))
   (match [@ cproc'setter]
     ((? string? x) (emit x))
     ((? symbol? x)
      (or (and-let* ((setter (find (lambda (z) (eq? [@ z'scheme-name] x))
                                   (get-stubs <stub>))))
-           (emit (c-stub-name-of setter)))
+           (emit (c-stub-name setter)))
          (errorf "unknown setter name '~a' is used in the definition of '~a'"
                  x [@ cproc'scheme-name])))
     (_ #f)))
@@ -1021,10 +1019,10 @@
 
 (define-method emit-arg-unbox ((arg <optional-arg>))
   (p "  if (SCM_NULLP(SCM_OPTARGS)) "[@ arg'scm-name]" = "(get-arg-default arg)";")
-  (f "  else {")
-  (f "    ~a = SCM_CAR(SCM_OPTARGS);" [@ arg'scm-name])
-  (f "    SCM_OPTARGS = SCM_CDR(SCM_OPTARGS);")
-  (f "  }")
+  (p "  else {")
+  (p "    "[@ arg'scm-name]" = SCM_CAR(SCM_OPTARGS);")
+  (p "    SCM_OPTARGS = SCM_CDR(SCM_OPTARGS);")
+  (p "  }")
   (emit-arg-unbox-rec arg))
  
 (define-method emit-arg-unbox ((arg <rest-arg>))
@@ -1072,7 +1070,7 @@
    (fallback :initform "NULL" :init-keyword :fallback)
    ))
 
-(define-method c-stub-name-of ((self <cgeneric>))
+(define-method c-stub-name ((self <cgeneric>))
   [@ self'c-name])
 
 (define-method cgen-emit-body ((self <cgeneric>))
@@ -1089,28 +1087,19 @@
   (check-arg symbol? scheme-name)
   (check-arg string? c-name)
   (let ((gf (make <cgeneric> :scheme-name scheme-name :c-name c-name)))
-    (for-each (lambda (form)
-                (cond ((not (pair? form))
-                       (error "bad gf form:" form))
-                      ((eq? (car form) 'extern)  (set! (extern? gf) #t))
-                      ((eq? (car form) 'fallback)
-                       (if (and (pair? (cdr form)) (string? (cadr form)))
-                           (set! [@ gf'fallback] (cadr form))
-                           (error "bad fallback form:" form)))
-                      ((eq? (car form) 'setter)
-                       (unless (pair? (cdr form))
-                         (error "bad setter form in" form))
-                       (process-setter gf (cdr form)))
-                      (else (error "bad gf form:" form))))
+    (for-each (match-lambda
+                (('extern) (set! [@ gf'extern?] #t))
+                (('fallback (? string? fallback))
+                 (set! [@ gf'fallback] (cadr form)))
+                (('setter . spec) (process-setter gf spec))
+                (form (error "bad gf form:" form)))
               body)
     (cgen-add! gf)))
 
 (define-method process-setter ((gf <cgeneric>) decl)
-  (cond
-   ((symbol? (car decl))
-    (set! [@ gf'setter] (car decl)))
-   (else
-    (error "bad form of anonymous setter:" `(setter ,@decl)))))
+  (if (symbol? (car decl))
+    (set! [@ gf'setter] (car decl))
+    (error "bad form of anonymous setter:" `(setter ,@decl))))
 
 (define (get-c-generic-name name)
   (cond ((find (lambda (x) (eq? [@ x'scheme-name] name))
@@ -1299,8 +1288,8 @@
   (check-arg symbol? scm-name)
   (receive (qual c-type c-name cpa slot-spec . more)
       (if (keyword? x)
-          (apply values x args)
-          (apply values :built-in x args))
+        (apply values x args)
+        (apply values :built-in x args))
     (check-arg string? c-name)
     (check-arg list? cpa)
     (check-arg list? slot-spec)
@@ -1317,37 +1306,34 @@
       (set! [@ cclass'slot-spec] (process-cclass-slots cclass slot-spec))
       (cgen-add! cclass))))
 
-(define-method c-printer-name-of ((self <cclass>))
+(define-method c-printer-name ((self <cclass>))
   (let1 printer [@ self'printer]
     (cond ((string? printer) #`",(@ self'c-name)_PRINT")
           ((c-literal? printer) (cadr printer))
           ((not printer) "NULL")
           (else (errorf "bad printer specification ~s in class ~s" printer self)))))
 
-(define-method c-allocator-name-of ((self <cclass>))
+(define-method c-allocator-name ((self <cclass>))
   (let1 allocator [@ self'allocator]
     (cond ((string? allocator) #`",(@ self'c-name)_ALLOCATE")
           ((c-literal? allocator) (cadr allocator))
           ((not allocator) "NULL")
           (else (errorf "bad allocator specification ~s in class ~s" allocator self)))))
 
-(define-method c-slot-spec-name-of ((self <cclass>))
+(define-method c-slot-spec-name ((self <cclass>))
   (if (null? [@ self'slot-spec])
     "NULL"
     #`",(@ self'c-name)__SLOTS"))
 
-(define-method c-type-size-of ((self <cclass>))
-  (if [@ self'c-type] #`"sizeof(,(@ self'c-type))" 0))
-      
 (define-method cgen-emit-body ((self <cclass>))
   (when (string? [@ self'allocator])
-    (p "static ScmObj "(c-allocator-name-of self)"(ScmClass *klass, ScmObj initargs)")
+    (p "static ScmObj "(c-allocator-name self)"(ScmClass *klass, ScmObj initargs)")
     (p "{")
     (p [@ self'allocator])
     (p "}")
     (p ""))
   (when (string? [@ self'printer])
-    (p "static void "(c-printer-name-of self)"(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)")
+    (p "static void "(c-printer-name self)"(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)")
     (p "{")
     (p [@ self'printer])
     (p "}")
@@ -1358,12 +1344,12 @@
       (unless (string-suffix? "*" c-type)
         (errorf "can't use C-type ~s as a base class; C-type must be a pointer type" c-type))
       (let1 c-instance-type (string-drop-right c-type 1)
-        (p "SCM_DEFINE_BASE_CLASS("[@ self'c-name]", "c-instance-type", "(c-printer-name-of self)", NULL, NULL, "(c-allocator-name-of self)", "(cpa-name-of self)");")))
-    (p "SCM_DEFINE_BUILTIN_CLASS("[@ self'c-name]", "(c-printer-name-of self)", NULL, NULL, "(c-allocator-name-of self)", "(cpa-name-of self)");"))
+        (p "SCM_DEFINE_BASE_CLASS("[@ self'c-name]", "c-instance-type", "(c-printer-name self)", NULL, NULL, "(c-allocator-name self)", "(cpa-name self)");")))
+    (p "SCM_DEFINE_BUILTIN_CLASS("[@ self'c-name]", "(c-printer-name self)", NULL, NULL, "(c-allocator-name self)", "(cpa-name self)");"))
   (p "")
   (when (pair? [@ self'slot-spec])
     (for-each emit-getter-n-setter [@ self'slot-spec])
-    (p "static ScmClassStaticSlotSpec "(c-slot-spec-name-of self)"[] = {")
+    (p "static ScmClassStaticSlotSpec "(c-slot-spec-name self)"[] = {")
     (for-each emit-spec-definition [@ self'slot-spec])
     (p "  { NULL }")
     (p "};")
@@ -1371,7 +1357,7 @@
   )
 
 (define-method cgen-emit-init ((self <cclass>))
-  (p "  Scm_InitBuiltinClass(&"[@ self'c-name]", \""[@ self'scheme-name]"\", "(c-slot-spec-name-of self)", TRUE, module);")
+  (p "  Scm_InitBuiltinClass(&"[@ self'c-name]", \""[@ self'scheme-name]"\", "(c-slot-spec-name self)", TRUE, module);")
   ;; adjust direct-supers if necessary
   (let1 ds [@ self'direct-supers]
     (when (not (null? ds))
@@ -1383,7 +1369,7 @@
 ;; cpa ----------
 ;;  For now, cpa should be a list of C class names, or c literal
 
-(define-method cpa-name-of ((self <cclass>))
+(define-method cpa-name ((self <cclass>))
   (cond ((null? [@ self'cpa]) "SCM_CLASS_DEFAULT_CPL")
         ((c-literal? [@ self'cpa]) (cadr [@ self'cpa]))
         (else #`",(@ self'c-name)_CPL")))
@@ -1470,13 +1456,6 @@
   (p "  SCM_CLASS_SLOT_SPEC(\""[@ slot'scheme-name]"\", "(slot-getter-name slot)", "(slot-setter-name slot)"),"))
 
 ;;===================================================================
-;; Extra initializers
-;;
-
-(define-form-parser initcode codes
-  (apply cgen-init codes))
-
-;;===================================================================
 ;; Miscellaneous utilities
 ;;
 
@@ -1543,6 +1522,9 @@
   (with-input-from-file file
     (lambda () (port-for-each parse-form read)))
   )
+
+(define-form-parser initcode codes
+  (apply cgen-init codes))
 
 ;;===================================================================
 ;; main entry point
