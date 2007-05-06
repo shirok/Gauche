@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.288 2007-04-20 20:49:08 shirok Exp $
+;;; $Id: extlib.stub,v 1.289 2007-05-06 06:10:12 shirok Exp $
 ;;;
 
 "
@@ -774,9 +774,9 @@
 
 (define-cproc %open-input-file (path::<string>
                                 &keyword
-                                (if-does-not-exist (c "key_error"))
+                                (if-does-not-exist :error)
                                 (buffering #f)
-                                (element-type (c "key_character"))
+                                (element-type :character)
                                 )
   "  ScmObj o; int ignerr = FALSE, bufmode;
   if (SCM_FALSEP(if_does_not_exist)) ignerr = TRUE;
@@ -792,11 +792,11 @@
 
 (define-cproc %open-output-file (path::<string>
                                  &keyword
-                                 (if-exists (c "key_supersede"))
-                                 (if-does-not-exist (c "key_create"))
+                                 (if-exists :supersede)
+                                 (if-does-not-exist :create)
                                  (mode::<fixnum> #o666)
                                  (buffering #f)
-                                 (element-type (c "key_character"))
+                                 (element-type :character)
                                  )
   "  ScmObj o;
   int ignerr = FALSE, bufmode, flags = O_WRONLY;
@@ -1409,10 +1409,7 @@
 (define-cproc all-modules ()
   (call "Scm_AllModules"))
 
-(define-keyword error "key_error") ; this is also in stdlib.stub.  should I
-                                   ; consolidate these?
-(define-cproc make-module (name
-                           &keyword (if-exists (c "key_error")))
+(define-cproc make-module (name &keyword (if-exists :error))
   "int error_if_exists = TRUE;
   if (SCM_EQ(if_exists, key_error)) {
     error_if_exists = TRUE;

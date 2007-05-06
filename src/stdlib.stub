@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.127 2007-04-16 03:47:13 shirok Exp $
+;;; $Id: stdlib.stub,v 1.128 2007-05-06 06:10:13 shirok Exp $
 ;;;
 
 
@@ -248,21 +248,12 @@
   (call "Scm_MakeComplexPolar"))
 
 (define-cproc %complex->real/imag (z)
-  "#ifdef SCM_VMAPI_VM
-  if (SCM_EXACTP(z)) { SCM_RETURN(Scm_VMValues2(SCM_VMPTR, z, SCM_MAKE_INT(0))); }
-  else if (SCM_FLONUMP(z)) { SCM_RETURN(Scm_VMValues2(SCM_VMPTR, z, Scm_MakeFlonum(0.0))); }
-  else if (!SCM_COMPNUMP(z)) {
-    Scm_Error(\"number required, but got %S\", z);
-    SCM_RETURN(SCM_UNDEFINED);
-  } else { SCM_RETURN(Scm_VMValues2(SCM_VMPTR, Scm_MakeFlonum(SCM_COMPNUM_REAL(z)), Scm_MakeFlonum(SCM_COMPNUM_IMAG(z))));}
-#else
-  if (SCM_EXACTP(z)) { SCM_RETURN(Scm_Values2(z, SCM_MAKE_INT(0))); }
+  "if (SCM_EXACTP(z)) { SCM_RETURN(Scm_Values2(z, SCM_MAKE_INT(0))); }
   else if (SCM_FLONUMP(z)) { SCM_RETURN(Scm_Values2(z, Scm_MakeFlonum(0.0))); }
   else if (!SCM_COMPNUMP(z)) {
     Scm_Error(\"number required, but got %S\", z);
     SCM_RETURN(SCM_UNDEFINED);
-  } else { SCM_RETURN(Scm_Values2(Scm_MakeFlonum(SCM_COMPNUM_REAL(z)), Scm_MakeFlonum(SCM_COMPNUM_IMAG(z))));}
-#endif")
+  } else { SCM_RETURN(Scm_Values2(Scm_MakeFlonum(SCM_COMPNUM_REAL(z)), Scm_MakeFlonum(SCM_COMPNUM_IMAG(z))));}")
 
 ;; we don't use Scm_RealPart and Scm_ImagPart, for preserving exactness
 ;; and avoiding extra allocation.
@@ -590,11 +581,7 @@
   (inliner APPLY)
   "  ScmObj head, tail, cp;
   if (SCM_NULLP(args)) {
-#ifdef GAUCHE_VMAPI_VM
-    return Scm_VMApply(SCM_VMPTR, proc, arg1);
-#else
     return Scm_VMApply(proc, arg1);
-#endif
   } else {
     head = tail = Scm_Cons(arg1, SCM_NIL);
     SCM_FOR_EACH(cp, args) {
