@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.139 2007-05-05 10:53:16 shirok Exp $
+;;;  $Id: genstub,v 1.140 2007-05-16 03:27:09 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -1351,7 +1351,7 @@
     (for-each emit-getter-n-setter [@ self'slot-spec])
     (p "static ScmClassStaticSlotSpec "(c-slot-spec-name self)"[] = {")
     (for-each emit-spec-definition [@ self'slot-spec])
-    (p "  { NULL }")
+    (p "  SCM_CLASS_SLOT_SPEC_END()")
     (p "};")
     (p))
   )

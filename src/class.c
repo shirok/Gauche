@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: class.c,v 1.150 2007-04-22 09:19:19 shirok Exp $
+ *  $Id: class.c,v 1.151 2007-05-16 03:27:08 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -2697,13 +2697,13 @@ static ScmClassStaticSlotSpec class_slots[] = {
     SCM_CLASS_SLOT_SPEC("defined-modules", class_defined_modules, class_defined_modules_set),
     SCM_CLASS_SLOT_SPEC("redefined", class_redefined, NULL),
     SCM_CLASS_SLOT_SPEC("category", class_category, NULL),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 static ScmClassStaticSlotSpec generic_slots[] = {
     SCM_CLASS_SLOT_SPEC("name", generic_name, generic_name_set),
     SCM_CLASS_SLOT_SPEC("methods", generic_methods, generic_methods_set),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 static ScmClassStaticSlotSpec method_slots[] = {
@@ -2711,7 +2711,7 @@ static ScmClassStaticSlotSpec method_slots[] = {
     SCM_CLASS_SLOT_SPEC("optional", method_optional, NULL),
     SCM_CLASS_SLOT_SPEC("generic", method_generic, method_generic_set),
     SCM_CLASS_SLOT_SPEC("specializers", method_specializers, method_specializers_set),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 static ScmClassStaticSlotSpec accessor_method_slots[] = {
@@ -2720,7 +2720,7 @@ static ScmClassStaticSlotSpec accessor_method_slots[] = {
     SCM_CLASS_SLOT_SPEC("generic", method_generic, method_generic_set),
     SCM_CLASS_SLOT_SPEC("specializers", method_specializers, method_specializers_set),
     SCM_CLASS_SLOT_SPEC("slot-accessor", accessor_method_slot_accessor, accessor_method_slot_accessor_set),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 static ScmClassStaticSlotSpec slot_accessor_slots[] = {
@@ -2744,7 +2744,7 @@ static ScmClassStaticSlotSpec slot_accessor_slots[] = {
                         slot_accessor_scheme_setter_set),
     SCM_CLASS_SLOT_SPEC("bound?", slot_accessor_scheme_boundp,
                         slot_accessor_scheme_boundp_set),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 /*

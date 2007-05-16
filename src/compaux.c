@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: compaux.c,v 1.14 2007-03-02 07:39:13 shirok Exp $
+ *  $Id: compaux.c,v 1.15 2007-05-16 03:27:09 shirok Exp $
  */
 
 /* This file serves as a bridge to the compiler, which is implemented
@@ -236,7 +236,7 @@ static ScmClassStaticSlotSpec identifier_slots[] = {
     SCM_CLASS_SLOT_SPEC("name", identifier_name_get, identifier_name_set),
     SCM_CLASS_SLOT_SPEC("module", identifier_module_get, identifier_module_set),
     SCM_CLASS_SLOT_SPEC("env", identifier_env_get, identifier_env_set),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 /*------------------------------------------------------------------

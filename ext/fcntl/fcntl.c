@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: fcntl.c,v 1.19 2007-03-02 07:39:05 shirok Exp $
+ *  $Id: fcntl.c,v 1.20 2007-05-16 03:27:07 shirok Exp $
  */
 
 #define _GNU_SOURCE  /* for Linux, this enables additional features */
@@ -83,7 +83,7 @@ static ScmClassStaticSlotSpec flock_slots[] = {
     SCM_CLASS_SLOT_SPEC("start",  flock_l_start_get, flock_l_start_set),
     SCM_CLASS_SLOT_SPEC("len",    flock_l_len_get, flock_l_len_set),
     SCM_CLASS_SLOT_SPEC("pid",    flock_l_pid_get, flock_l_pid_set),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 ScmObj Scm_MakeSysFlock(void)

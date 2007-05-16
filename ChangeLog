@@ -1,3 +1,11 @@
+2007-05-15  Shiro Kawai  <shiro@acm.org>
+
+	* ext/fcntl/fcntl.c, ext/net/netdb.c, ext/termios/termios.c,
+	  ext/threads/mutex.c, src/class.c, src/codec, src/compaux.c,
+	  src/error.c, src/genstub, src/proc.c, src/system.c:
+	  Use SCM_CLASS_SLOT_SPEC_END() macro instead of literal constant.
+	  Patch from MUTOU Masayuki.
+
 2007-05-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interpolate.scm (%string-interpolate): recognize '[' and

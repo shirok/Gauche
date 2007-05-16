@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: proc.c,v 1.45 2007-03-02 07:39:14 shirok Exp $
+ *  $Id: proc.c,v 1.46 2007-05-16 03:27:09 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -378,7 +378,7 @@ static ScmClassStaticSlotSpec proc_slots[] = {
     SCM_CLASS_SLOT_SPEC("locked", proc_locked, NULL),
     SCM_CLASS_SLOT_SPEC("info", proc_info, NULL),
     SCM_CLASS_SLOT_SPEC("setter", proc_setter, NULL),
-    {NULL},
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 

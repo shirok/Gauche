@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: code.c,v 1.16 2007-03-02 07:39:13 shirok Exp $
+ *  $Id: code.c,v 1.17 2007-05-16 03:27:09 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -964,7 +964,7 @@ static ScmClassStaticSlotSpec code_slots[] = {
     SCM_CLASS_SLOT_SPEC("size", code_size_get, NULL),
     SCM_CLASS_SLOT_SPEC("max-stack", code_maxstack_get, NULL),
     SCM_CLASS_SLOT_SPEC("intermediate-form", code_iform_get, NULL),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 /*===========================================================

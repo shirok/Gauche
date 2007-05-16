@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: netdb.c,v 1.16 2007-03-02 07:39:06 shirok Exp $
+ *  $Id: netdb.c,v 1.17 2007-05-16 03:27:07 shirok Exp $
  */
 
 #include "gauche/net.h"
@@ -211,7 +211,7 @@ static ScmClassStaticSlotSpec hostent_slots[] = {
     SCM_CLASS_SLOT_SPEC("name", hostent_name, NULL),
     SCM_CLASS_SLOT_SPEC("aliases", hostent_aliases, NULL),
     SCM_CLASS_SLOT_SPEC("addresses", hostent_addresses, NULL),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 /*-------------------------------------------------------------
@@ -331,7 +331,7 @@ static ScmClassStaticSlotSpec protoent_slots[] = {
     SCM_CLASS_SLOT_SPEC("name", protoent_name, NULL),
     SCM_CLASS_SLOT_SPEC("aliases", protoent_aliases, NULL),
     SCM_CLASS_SLOT_SPEC("proto", protoent_proto, NULL),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 /*-------------------------------------------------------------
@@ -460,7 +460,7 @@ static ScmClassStaticSlotSpec servent_slots[] = {
     SCM_CLASS_SLOT_SPEC("aliases", servent_aliases, NULL),
     SCM_CLASS_SLOT_SPEC("port", servent_port, NULL),
     SCM_CLASS_SLOT_SPEC("proto", servent_proto, NULL),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 /*-------------------------------------------------------------

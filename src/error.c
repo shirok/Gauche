@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: error.c,v 1.77 2007-04-12 03:26:55 shirok Exp $
+ *  $Id: error.c,v 1.78 2007-05-16 03:27:09 shirok Exp $
  */
 
 #include <errno.h>
@@ -113,7 +113,7 @@ static void message_set(ScmMessageCondition *obj, ScmObj val)
 
 static ScmClassStaticSlotSpec message_slots[] = {
     SCM_CLASS_SLOT_SPEC("message", message_get, message_set),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 /*------------------------------------------------------------
@@ -284,12 +284,12 @@ static void porterror_port_set(ScmPortError *obj, ScmObj val)
 
 static ScmClassStaticSlotSpec syserror_slots[] = {
     SCM_CLASS_SLOT_SPEC("errno", syserror_number_get, syserror_number_set),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 static ScmClassStaticSlotSpec sigerror_slots[] = {
     SCM_CLASS_SLOT_SPEC("signal", sigerror_signal_get, sigerror_signal_set),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 static ScmClassStaticSlotSpec readerror_slots[] = {
@@ -298,12 +298,12 @@ static ScmClassStaticSlotSpec readerror_slots[] = {
     SCM_CLASS_SLOT_SPEC("column", readerror_dummy_get, readerror_dummy_set),
     SCM_CLASS_SLOT_SPEC("position", readerror_dummy_get, readerror_dummy_set),
     SCM_CLASS_SLOT_SPEC("span", readerror_dummy_get, readerror_dummy_set),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 static ScmClassStaticSlotSpec porterror_slots[] = {
     SCM_CLASS_SLOT_SPEC("port", porterror_port_get, porterror_port_set),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 /*------------------------------------------------------------
@@ -398,7 +398,7 @@ static void   conditions_set(ScmCompoundCondition *obj, ScmObj conds)
 
 static ScmClassStaticSlotSpec compound_slots[] = {
     SCM_CLASS_SLOT_SPEC("%conditions", conditions_get, conditions_set),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 

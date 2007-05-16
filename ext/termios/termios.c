@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: termios.c,v 1.19 2007-03-02 07:39:06 shirok Exp $
+ *  $Id: termios.c,v 1.20 2007-05-16 03:27:08 shirok Exp $
  */
 
 #include <string.h>
@@ -96,7 +96,7 @@ static ScmClassStaticSlotSpec termios_slots[] = {
     SCM_CLASS_SLOT_SPEC("cflag", termios_c_cflag_get, termios_c_cflag_set),
     SCM_CLASS_SLOT_SPEC("lflag", termios_c_lflag_get, termios_c_lflag_set),
     SCM_CLASS_SLOT_SPEC("cc", termios_c_cc_get, termios_c_cc_set),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 ScmObj Scm_MakeSysTermios(void)

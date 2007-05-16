@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: system.c,v 1.88 2007-04-19 05:52:05 shirok Exp $
+ *  $Id: system.c,v 1.89 2007-05-16 03:27:09 shirok Exp $
  */
 
 #include <stdio.h>
@@ -729,7 +729,7 @@ static ScmClassStaticSlotSpec stat_slots[] = {
     SCM_CLASS_SLOT_SPEC("atime", stat_atime_get, NULL),
     SCM_CLASS_SLOT_SPEC("mtime", stat_mtime_get, NULL),
     SCM_CLASS_SLOT_SPEC("ctime", stat_ctime_get, NULL),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 /*===============================================================
@@ -889,7 +889,7 @@ static ScmClassStaticSlotSpec time_slots[] = {
     SCM_CLASS_SLOT_SPEC("type",       time_type_get, time_type_set),
     SCM_CLASS_SLOT_SPEC("second",     time_sec_get, time_sec_set),
     SCM_CLASS_SLOT_SPEC("nanosecond", time_nsec_get, time_nsec_set),
-    {NULL}
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 /* time_t and conversion routines */
@@ -1032,7 +1032,7 @@ static ScmClassStaticSlotSpec tm_slots[] = {
     SCM_CLASS_SLOT_SPEC("wday", tm_wday_get, tm_wday_set),
     SCM_CLASS_SLOT_SPEC("yday", tm_yday_get, tm_yday_set),
     SCM_CLASS_SLOT_SPEC("isdst", tm_isdst_get, tm_isdst_set),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 /*===============================================================
@@ -1131,7 +1131,7 @@ static ScmClassStaticSlotSpec grp_slots[] = {
     SCM_CLASS_SLOT_SPEC("gid",    grp_gid_get, NULL),
     SCM_CLASS_SLOT_SPEC("passwd", grp_passwd_get, NULL),
     SCM_CLASS_SLOT_SPEC("mem",    grp_mem_get, NULL),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 /*===============================================================
@@ -1221,7 +1221,7 @@ static ScmClassStaticSlotSpec pwd_slots[] = {
     SCM_CLASS_SLOT_SPEC("dir",    pwd_dir_get, NULL),
     SCM_CLASS_SLOT_SPEC("shell",  pwd_shell_get, NULL),
     SCM_CLASS_SLOT_SPEC("class",  pwd_pwclass_get, NULL),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 /*

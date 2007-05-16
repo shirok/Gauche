@@ -12,7 +12,7 @@
  *  warranty.  In no circumstances the author(s) shall be liable
  *  for any damages arising out of the use of this software.
  *
- *  $Id: bdbm.c,v 1.3 2005-07-22 09:26:54 shirok Exp $
+ *  $Id: bdbm.c,v 1.4 2007-05-16 03:27:04 shirok Exp $
  */
 
 #include "bsddb.h"
@@ -134,7 +134,7 @@ static ScmClassStaticSlotSpec db_slots[] = {
     SCM_CLASS_SLOT_SPEC("nelem", db_nelem_get, db_nelem_set),
     SCM_CLASS_SLOT_SPEC("reclen", db_reclen_get, db_reclen_set),
     SCM_CLASS_SLOT_SPEC("bval", db_bval_get, db_bval_set),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 void Scm_Init_bdbm(void)

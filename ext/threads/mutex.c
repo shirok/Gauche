@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: mutex.c,v 1.9 2007-03-02 07:39:06 shirok Exp $
+ *  $Id: mutex.c,v 1.10 2007-05-16 03:27:08 shirok Exp $
  */
 
 #include <math.h>
@@ -162,7 +162,7 @@ static ScmClassStaticSlotSpec mutex_slots[] = {
     SCM_CLASS_SLOT_SPEC("name", mutex_name_get, mutex_name_set),
     SCM_CLASS_SLOT_SPEC("state", mutex_state_get, NULL),
     SCM_CLASS_SLOT_SPEC("specific", mutex_specific_get, mutex_specific_set),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 /*
@@ -328,7 +328,7 @@ static void cv_specific_set(ScmConditionVariable *cv, ScmObj val)
 static ScmClassStaticSlotSpec cv_slots[] = {
     SCM_CLASS_SLOT_SPEC("name", cv_name_get, cv_name_set),
     SCM_CLASS_SLOT_SPEC("specific", cv_specific_get, cv_specific_set),
-    { NULL }
+    SCM_CLASS_SLOT_SPEC_END()
 };
 
 /*
