@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: genstub,v 1.140 2007-05-16 03:27:09 shirok Exp $
+;;;  $Id: genstub,v 1.141 2007-05-20 04:55:15 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -41,8 +41,10 @@
 (use gauche.mop.instance-pool)
 (use gauche.sequence)
 (use gauche.cgen)
+(use gauche.cgen.cise)
 (use file.util)
 (use util.match)
+(use text.tree)
 (use text.tr)
 
 (define *file-prefix* "")
@@ -151,6 +153,16 @@
 ;;   initcode <c-code>
 ;;      Insert <c-code> literally in the initialization function
 ;;
+;;   begin <form> ...
+;;      Treat each <form> as if they are toplevel stub forms.
+;;
+;;   <string>
+;;      The string is inserted into the generated C body.
+;;
+;;   eval* <scheme-expr> ...
+;;      Evaluates Scheme expressions inside a temporary anonymous
+;;      module.  If the last expression returns a string or a list,
+;;      it is processed again as a toplevel stub form.
 
 ;;===================================================================
 ;; Form parsers
@@ -839,10 +851,14 @@
     (else (err))))
 
 (define-method process-body-spec ((cproc <procstub>) form)
+  (define (expand-stmt stmt)
+    (push-stmt! cproc (if (string? stmt)
+                        stmt
+                        (call-with-output-string (cut cise-render stmt <>)))))
   (define (typed-result rettype stmts)
     (push-stmt! cproc "{")
     (push-stmt! cproc #`",(@ rettype'c-type) SCM_RESULT;")
-    (for-each (cut push-stmt! cproc <>) stmts)
+    (for-each expand-stmt stmts)
     (push-stmt! cproc (return-stmt (box-expr rettype "SCM_RESULT")))
     (push-stmt! cproc "}"))
   (define (typed-results rettypes stmts)
@@ -852,7 +868,7 @@
          (push-stmt! cproc #`",(@ rettype'c-type) SCM_RESULT,i;"))
        rettypes)
       (push-stmt! cproc "{")
-      (for-each (cut push-stmt! cproc <>) stmts)
+      (for-each expand-stmt stmts)
       (push-stmt! cproc "}")
       (let1 results
           (string-join
@@ -873,7 +889,7 @@
   (define (err) (error "malformed 'body' spec:" form))
   (match form
     ((_ '<void> . stmts)
-     (for-each (cut push-stmt! cproc <>) stmts)
+     (for-each expand-stmt stmts)
      (push-stmt! cproc "SCM_RETURN(SCM_UNDEFINED);"))
     ((_ (? symbol? rettype) . stmts)
      (typed-result (name->type rettype) stmts))
@@ -886,11 +902,14 @@
 
 (define-method process-expr-spec ((cproc <procstub>) form)
   (define (typed-result rettype expr)
-    (push-stmt! cproc "{")
-    (push-stmt! cproc #`",(@ rettype'c-type) SCM_RESULT;")
-    (push-stmt! cproc #`" SCM_RESULT = (,expr);")
-    (push-stmt! cproc (return-stmt (box-expr rettype "SCM_RESULT")))
-    (push-stmt! cproc "}"))
+    (let1 expr
+        (if (string? expr) expr
+            (call-with-output-string (cut cise-render expr <> #t)))
+      (push-stmt! cproc "{")
+      (push-stmt! cproc #`",(@ rettype'c-type) SCM_RESULT;")
+      (push-stmt! cproc #`" SCM_RESULT = (,expr);")
+      (push-stmt! cproc (return-stmt (box-expr rettype "SCM_RESULT")))
+      (push-stmt! cproc "}")))
   (match form
     ((_ '<void> . stmts)
      (error "<void> type isn't allowed in 'expr' directive:" form))
@@ -1460,39 +1479,9 @@
 ;;
 
 ;; Translate Scheme name to C name
-;; We can't use cgen-safe-name, since we have a few "human friendly"
-;; special translations.
+;; (for backward compatibility)
 (define (get-c-name prefix scheme-name)
-  (with-output-to-string
-    (lambda ()
-      (display (x->string prefix)) 
-      (with-input-from-string (x->string scheme-name)
-        (lambda ()
-          (let loop ((c (read-char)))
-            (unless (eof-object? c)
-              (case c
-                ((#\-) (let ((d (read-char)))
-                         (cond ((eof-object? d)
-                                (display #\_))
-                               ((eqv? d #\>)
-                                (display "_TO") (loop (read-char)))
-                               (else
-                                (display #\_) (loop d)))))
-                ((#\?) (display #\P) (loop (read-char)))
-                ((#\!) (display #\X) (loop (read-char)))
-                ((#\<) (display "_LT") (loop (read-char)))
-                ((#\>) (display "_GT") (loop (read-char)))
-                ((#\* #\> #\@ #\$ #\% #\^ #\& #\* #\+ #\=
-                  #\: #\. #\/ #\~)
-                 (display #\_)
-                 (display (number->string (char->integer c) 16))
-                 (loop (read-char)))
-                (else (display c) (loop (read-char)))
-                ))))
-        )
-      )
-    )
-  )
+  (cgen-safe-name-friendly (string-append prefix (x->string scheme-name))))
 
 ;; Check if item is in the form (c <string>)
 (define (c-literal? item)
@@ -1526,6 +1515,16 @@
 (define-form-parser initcode codes
   (apply cgen-init codes))
 
+(define-form-parser begin forms
+  (for-each parse-form forms))
+
+(define temporary-module (make-parameter #f))
+
+(define-form-parser eval* exprs
+  (let1 r (fold (lambda (f r) (eval f (temporary-module))) #f exprs)
+    (when (or (pair? r) (string? r))
+      (parse-form r))))
+
 ;;===================================================================
 ;; main entry point
 ;;
@@ -1547,7 +1546,7 @@
       (format #t "Couldn't open ~a\n" file)
       (exit 1))
     (set! *file-prefix* (string-append prefix "_"))
-    (parameterize ((cgen-current-unit
+    (parameterize ([cgen-current-unit
                     (make <cgen-unit>
                       :name (path-sans-extension file)
                       :preamble
@@ -1556,7 +1555,8 @@
                       (map (cut format "#define ~a" <>) predef-syms)
                       :init-prologue
                       (format "void Scm_Init_~a(ScmModule *module)\n{\n" prefix)
-                      )))
+                      )]
+                   [temporary-module (make-module #f)])
       (with-input-from-file file
         (cut port-fold
              ;; We treat the initial raw strings specially---they will be

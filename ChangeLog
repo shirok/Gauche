@@ -1,3 +1,12 @@
+2007-05-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/cise.scm: added.  A utility to generate C code
+	  from S-expression.  The spec is still experimental and may be
+	  tweaked.
+	* src/genstub, src/stdlib.stub, src/extlib.stub: changed to use
+	  gauche.cgen.cise module.
+	* lib/Makefile.in, lib/gauche/cgen/unit.scm: changed accordingly.
+
 2007-05-15  Shiro Kawai  <shiro@acm.org>
 
 	* ext/fcntl/fcntl.c, ext/net/netdb.c, ext/termios/termios.c,

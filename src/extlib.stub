@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.289 2007-05-06 06:10:12 shirok Exp $
+;;; $Id: extlib.stub,v 1.290 2007-05-20 04:55:15 shirok Exp $
 ;;;
 
 "
@@ -47,9 +47,9 @@
 ;;
 
 (define-cproc macroexpand (form)
-  (expr "Scm_VMMacroExpand(form, SCM_NIL, FALSE)"))
+  (expr <top> (Scm_VMMacroExpand form SCM_NIL FALSE)))
 (define-cproc macroexpand-1 (form)
-  (expr "Scm_VMMacroExpand(form, SCM_NIL, TRUE)"))
+  (expr <top> (Scm_VMMacroExpand form SCM_NIL TRUE)))
 
 ;;
 ;; 6.1  Equivalence predicates
@@ -78,24 +78,20 @@
 (define-cproc ash (num cnt::<fixnum>) (call "Scm_Ash"))
 
 (define-cproc lognot (x) (call "Scm_LogNot"))
-(define-cproc logand (x y &rest args)
-  "  ScmObj cp, r = Scm_LogAnd(x, y);
-  SCM_FOR_EACH(cp, args) {
-    r = Scm_LogAnd(r, SCM_CAR(cp));
-  }
-  SCM_RETURN(r);")
-(define-cproc logior (x y &rest args)
-  "  ScmObj cp, r = Scm_LogIor(x, y);
-  SCM_FOR_EACH(cp, args) {
-    r = Scm_LogIor(r, SCM_CAR(cp));
-  }
-  SCM_RETURN(r);")
-(define-cproc logxor (x y &rest args)
-  "  ScmObj cp, r = Scm_LogXor(x, y);
-  SCM_FOR_EACH(cp, args) {
-    r = Scm_LogXor(r, SCM_CAR(cp));
-  }
-  SCM_RETURN(r);")
+
+(eval*
+ (use gauche.cgen.cise)
+ (use util.match)
+ (define-cise-macro (logop form env)
+   (match form
+     [(_ fn)
+      `(let* ((r :: ScmObj (,fn x y)))
+         (for-each (lambda (v) (set! r (,fn r v))) args)
+         (result r))]))
+ )
+(define-cproc logand (x y &rest args) (body <top> (logop Scm_LogAnd)))
+(define-cproc logior (x y &rest args) (body <top> (logop Scm_LogIor)))
+(define-cproc logxor (x y &rest args) (body <top> (logop Scm_LogXor)))
 
 (define-cproc fixnum? (x) (call <boolean> "SCM_INTP"))
 (define-cproc bignum? (x) (call <boolean> "SCM_BIGNUMP"))
@@ -737,7 +733,7 @@
   (inliner SETTER)
   (call "Scm_Setter")
   (setter (proc::<procedure> setter::<procedure>)
-          (body <void> "Scm_SetterSet(proc, setter, FALSE);")))
+          (body <void> (Scm_SetterSet proc setter FALSE))))
 
 (define-cproc has-setter? (proc)
   (call <boolean> "Scm_HasSetter"))
@@ -746,15 +742,15 @@
   (expr "val"))
 
 (define-cproc promise? (obj)
-  (expr <boolean> "SCM_XTYPEP(obj, SCM_CLASS_PROMISE)"))
+  (expr <boolean> (SCM_XTYPEP obj SCM_CLASS_PROMISE)))
 
 (define-cproc eager (obj)               ;srfi-45
-  (expr "Scm_MakePromise(TRUE, obj)"))
+  (expr <top> (Scm_MakePromise TRUE obj)))
 
 (define-cproc promise-kind (p::<promise>)
-  (expr "p->kind")
+  (expr <top> (-> p kind))
   (setter (p::<promise> obj)
-          (body <void> "p->kind = obj;")))
+          (body <void> (set! (-> p kind) obj))))
 
 ;;
 ;; 6.6.1  Ports
@@ -778,17 +774,20 @@
                                 (buffering #f)
                                 (element-type :character)
                                 )
-  "  ScmObj o; int ignerr = FALSE, bufmode;
-  if (SCM_FALSEP(if_does_not_exist)) ignerr = TRUE;
-  else if (!SCM_EQ(if_does_not_exist, key_error)) {
-    Scm_Error(\"argument for :if-does-not-exist must be either :error or #f, but got %S\", if_does_not_exist);
-  }
-  bufmode = Scm_BufferingMode(buffering, SCM_PORT_INPUT, SCM_PORT_BUFFER_FULL);
-  o = Scm_OpenFilePort(Scm_GetStringConst(path), O_RDONLY, bufmode, 0);
-  if (o == SCM_FALSE && !ignerr) {
-     Scm_Error(\"couldn't open input file: %S\", path_scm);
-  }
-  SCM_RETURN(o);")
+  (body <top>
+        (let* ((ignerr :: int FALSE))
+          (cond ((SCM_FALSEP if-does-not-exist) (set! ignerr TRUE))
+                ((not (SCM_EQ if-does-not-exist key_error))
+                 (Scm_Error "argument for :if-does-not-exist must be either :error or #f, but got %S" if-does-not-exist)))
+          (let* ((bufmode :: int
+                          (Scm_BufferingMode buffering SCM_PORT_INPUT
+                                             SCM_PORT_BUFFER_FULL))
+                 (o       :: ScmObj
+                          (Scm_OpenFilePort (Scm_GetStringConst path)
+                                            O_RDONLY bufmode 0)))
+            (when (and (SCM_FALSEP o) (not ignerr))
+              (Scm_Error "couldn't open input file: %S" path))
+            (result o)))))
 
 (define-cproc %open-output-file (path::<string>
                                  &keyword
@@ -798,35 +797,70 @@
                                  (buffering #f)
                                  (element-type :character)
                                  )
-  "  ScmObj o;
-  int ignerr = FALSE, bufmode, flags = O_WRONLY;
+  (body
+   <top>
+   (let* ((ignerr :: int FALSE)
+          (flags  :: int O_WRONLY))
+     ;; check if-exists flag
+     (cond
+      ((SCM_EQ if-exists key_append) (logior= flags O_APPEND))
+      ((SCM_EQ if-exists key_error)
+       (logior= flags O_EXCL)
+       (when (SCM_EQ if-does-not-exist key_error)
+         (Scm_Error "bad flag combination: :if-exists and :if-does-not-exist can't be :error the same time.")))
+      ((SCM_EQ if-exists key_supersede) (logior= flags O_TRUNC))
+      ((SCM_EQ if-exists key_overwrite)) ; no need to add flags
+      ((SCM_FALSEP if-exists)
+       (logior= flags O_EXCL) (set! ignerr TRUE))
+      (else
+       (Scm_Error "argument for :if-exists must be either :supersede, :overwrite, :append, :error or #f, but got %S" if-exists)))
+     ;; check if-does-not-exist flag
+     (cond
+      ((SCM_EQ if-does-not-exist key_create) (logior= flags O_CREAT))
+      ((SCM_FALSEP if-does-not-exist) (set! ignerr TRUE))
+      ((SCM_EQ if-does-not-exist key_error)) ; no need to add flags
+      (else
+       (Scm_Error "argument for :if-does-not-exist must be either :error, :create or #f, but got %S" if-does-not-exist)))
+     (let* ((bufmode :: int
+                     (Scm_BufferingMode buffering SCM_PORT_OUTPUT
+                                        SCM_PORT_BUFFER_FULL))
+            (o       :: ScmObj
+                     (Scm_OpenFilePort (Scm_GetStringConst path)
+                                       flags bufmode mode)))
+       (when (and (not ignerr) (== o SCM_FALSE))
+         (Scm_Error "couldn't open output file: %S" path))
+       (result o)))))
+   
+         
+;   "  ScmObj o;
+;   int ignerr = FALSE, bufmode, flags = O_WRONLY;
 
-  if (SCM_EQ(if_exists, key_append)) flags |= O_APPEND;
-  else if (SCM_EQ(if_exists, key_error)) {
-    flags |= O_EXCL;
-    if (SCM_EQ(if_does_not_exist, key_error)) {
-      Scm_Error(\"bad flag combination: :if-exists and :if-does-not-exist can't be :error the same time.\");
-    }
-  }
-  else if (SCM_EQ(if_exists, key_supersede)) flags |= O_TRUNC;
-  else if (SCM_EQ(if_exists, key_overwrite)) /*no need to add flags*/;
-  else if (SCM_FALSEP(if_exists)) { flags |= O_EXCL; ignerr = TRUE; }
-  else {
-    Scm_Error(\"argument for :if-exists must be either :supersede, :overwrite, :append, :error or #f, but got %S\", if_exists);
-  }
+;   if (SCM_EQ(if_exists, key_append)) flags |= O_APPEND;
+;   else if (SCM_EQ(if_exists, key_error)) {
+;     flags |= O_EXCL;
+;     if (SCM_EQ(if_does_not_exist, key_error)) {
+;       Scm_Error(\"bad flag combination: :if-exists and :if-does-not-exist can't be :error the same time.\");
+;     }
+;   }
+;   else if (SCM_EQ(if_exists, key_supersede)) flags |= O_TRUNC;
+;   else if (SCM_EQ(if_exists, key_overwrite)) /*no need to add flags*/;
+;   else if (SCM_FALSEP(if_exists)) { flags |= O_EXCL; ignerr = TRUE; }
+;   else {
+;     Scm_Error(\"argument for :if-exists must be either :supersede, :overwrite, :append, :error or #f, but got %S\", if_exists);
+;   }
 
-  if (SCM_EQ(if_does_not_exist, key_create)) flags |= O_CREAT;
-  else if (SCM_FALSEP(if_does_not_exist)) ignerr = TRUE;
-  else if (!SCM_EQ(if_does_not_exist, key_error)) {
-    Scm_Error(\"argument for :if-does-not-exist must be either :error, :create or #f, but got %S\", if_does_not_exist);
-  }
+;   if (SCM_EQ(if_does_not_exist, key_create)) flags |= O_CREAT;
+;   else if (SCM_FALSEP(if_does_not_exist)) ignerr = TRUE;
+;   else if (!SCM_EQ(if_does_not_exist, key_error)) {
+;     Scm_Error(\"argument for :if-does-not-exist must be either :error, :create or #f, but got %S\", if_does_not_exist);
+;   }
 
-  bufmode = Scm_BufferingMode(buffering, SCM_PORT_OUTPUT, SCM_PORT_BUFFER_FULL);
-  o = Scm_OpenFilePort(Scm_GetStringConst(path), flags, bufmode, mode);
-  if (!ignerr && o == SCM_FALSE) {
-     Scm_Error(\"couldn't open output file: %S\", path_scm);
-  }
-  SCM_RETURN(o);")
+;   bufmode = Scm_BufferingMode(buffering, SCM_PORT_OUTPUT, SCM_PORT_BUFFER_FULL);
+;   o = Scm_OpenFilePort(Scm_GetStringConst(path), flags, bufmode, mode);
+;   if (!ignerr && o == SCM_FALSE) {
+;      Scm_Error(\"couldn't open output file: %S\", path_scm);
+;   }
+;   SCM_RETURN(o);")
 
 ;; String port (srfi-6)
 (define-cproc open-input-string (string::<string>
@@ -968,14 +1002,14 @@
 (define-symbol string "sym_string")
 (define-symbol proc "sym_proc")
 (define-cproc port-type (port::<port>)
-  "ScmObj type = SCM_FALSE;
-   switch (SCM_PORT_TYPE(port)) {
-     case SCM_PORT_FILE: type = sym_file; break;
-     case SCM_PORT_PROC: type = sym_proc; break;
-     case SCM_PORT_OSTR:;
-     case SCM_PORT_ISTR: type = sym_string; break;
-   }
-   SCM_RETURN(type);")
+  (body <top>
+        (let* ((type :: ScmObj SCM_FALSE))
+          (case (SCM_PORT_TYPE port)
+            ((SCM_PORT_FILE) (set! type sym_file) (break))
+            ((SCM_PORT_PROC) (set! type sym_proc) (break))
+            ((SCM_PORT_OSTR SCM_PORT_ISTR)
+             (set! type sym_string) (break)))
+          (result type))))
 
 (define-cproc port-buffering (port::<port>)
   (call "Scm_GetBufferingMode")
@@ -1027,8 +1061,12 @@
   (call <boolean> "Scm_ByteReady"))
 
 (define-cproc read-byte (&optional (port::<input-port> (current-input-port)))
-  "  int b; SCM_GETB(b, port);
-  SCM_RETURN((b < 0)? SCM_EOF : SCM_MAKE_INT(b));")
+  (body <top>
+        (let* ((b :: int))
+          (SCM_GETB b port)
+          (result (?: (< b 0) SCM_EOF (SCM_MAKE_INT b))))))
+;   "  int b; SCM_GETB(b, port);
+;   SCM_RETURN((b < 0)? SCM_EOF : SCM_MAKE_INT(b));")
 
 (define-cproc peek-byte (&optional (port::<input-port> (current-input-port)))
   "  int b = Scm_Peekb(port);
