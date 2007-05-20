@@ -1,5 +1,8 @@
 2007-05-19  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/miscutil.scm: added.
+	* src/autoload.scm: added autoload for gauche.misutil.
+
 	* lib/gauche/cgen/cise.scm: added.  A utility to generate C code
 	  from S-expression.  The spec is still experimental and may be
 	  tweaked.

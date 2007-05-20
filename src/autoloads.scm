@@ -1,7 +1,7 @@
 ;;;
 ;;; Generates default autoloads
 ;;;
-;;; $Id: autoloads.scm,v 1.43 2007-03-11 21:01:30 shirok Exp $
+;;; $Id: autoloads.scm,v 1.44 2007-05-20 08:41:20 shirok Exp $
 ;;;
 
 (use srfi-1)
@@ -13,7 +13,7 @@
 (cgen-current-unit
  (make <cgen-unit>
    :name "autoloads"
-   :preamble "/* Generated from autoloads.scm $Revision: 1.43 $.  DO NOT EDIT */"
+   :preamble "/* Generated from autoloads.scm $Revision: 1.44 $.  DO NOT EDIT */"
    :pre-decl '("#define LIBGAUCHE_BODY")
    :init-prologue "void Scm__InitAutoloads(void)\n{"
    ))
@@ -93,6 +93,9 @@
           port->string port->list port->string-list port->sexp-list
           copy-port port-fold port-fold-right port-for-each port-map 
           port-position-prefix port-tell)
+
+(autoload gauche.miscutil
+          object-source-info)
 
 (autoload "gauche/numerical"
           sinh cosh tanh asinh acosh atanh)
