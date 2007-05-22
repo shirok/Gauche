@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: netlib.stub,v 1.47 2007-04-18 02:08:29 shirok Exp $
+;;;  $Id: netlib.stub,v 1.48 2007-05-22 13:17:55 shirok Exp $
 ;;;
 
 "#include \"gauche/net.h\"
@@ -59,49 +59,52 @@
 (define-symbol unknown "sym_unknown")
 
 (define-cmethod sockaddr-name ((addr "Scm_SockAddrClass"))
-  (expr "SCM_MAKE_STR(\"unknown\")"))
+  (expr <top> '"unknown"))
 
 (define-cmethod sockaddr-family ((addr "Scm_SockAddrClass"))
-  (expr "sym_unknown"))
+  (expr <top> 'unknown))
 
 (define-cmethod sockaddr-name ((addr "Scm_SockAddrUnClass"))
-  (expr "SCM_MAKE_STR(((ScmSockAddrUn*)addr)->addr.sun_path)"))
+  (expr <top>
+        (SCM_MAKE_STR (ref (-> (cast ScmSockAddrUn* addr) addr) sun_path))))
 
 (define-cmethod sockaddr-family ((addr "Scm_SockAddrUnClass"))
-  (expr "sym_unix"))
+  (expr <top> 'unix))
 
 (define-cmethod sockaddr-family ((addr "Scm_SockAddrInClass"))
-  (expr "sym_inet"))
+  (expr <top> 'inet))
 
 (define-cmethod sockaddr-addr ((addr "Scm_SockAddrInClass"))
-  "  ScmSockAddrIn *a = (ScmSockAddrIn*)addr;
-  SCM_RETURN(Scm_MakeIntegerFromUI(ntohl(a->addr.sin_addr.s_addr)));")
+  (body <ulong>
+        (let* ((a :: ScmSockAddrIn* (cast ScmSockAddrIn* addr)))
+          (result (ntohl (ref (-> a addr) sin_addr s_addr))))))
 
 (define-cmethod sockaddr-port ((addr "Scm_SockAddrInClass"))
-  "  ScmSockAddrIn *a = (ScmSockAddrIn*)addr;
-  SCM_RETURN(Scm_MakeInteger(ntohs(a->addr.sin_port)));")
+  (body <ushort>
+        (let* ((a :: ScmSockAddrIn* (cast ScmSockAddrIn* addr)))
+          (result (ntohs (ref (-> a addr) sin_port))))))
 
 (when "defined HAVE_IPV6"
-  (define-symbol inet6 "sym_inet6")
-
   (define-cmethod sockaddr-family ((addr "Scm_SockAddrIn6Class"))
-    (expr "sym_inet6"))
+    (expr <top> 'inet6))
 
   (define-cmethod sockaddr-addr ((addr "Scm_SockAddrIn6Class"))
-    "#define BN_SIZE (16 / SIZEOF_LONG)
-  ScmSockAddrIn6 *a = (ScmSockAddrIn6*)addr;
-  u_long values[BN_SIZE];
-  u_long *p = (u_long*)a->addr.sin6_addr.s6_addr;
-  int i;
-  ScmObj bn;
-
-  for (i = 0; i < BN_SIZE; i++) values[BN_SIZE-i-1] = ntohl(*p++);
-  bn = Scm_MakeBignumFromUIArray(1, values, BN_SIZE);
-  SCM_RETURN(Scm_NormalizeBignum(SCM_BIGNUM(bn)));")
+    (body <top>
+          (let* ((a :: ScmSockAddrIn6* (cast ScmSockAddrIn6* addr))
+                 (|values[4]| :: ScmUInt32)
+                 (p :: ScmUInt32*
+                    (cast ScmUInt32* (ref (-> a addr) sin6_addr s6_addr)))
+                 (i :: int)
+                 (n :: ScmObj (C: "Scm_MakeIntegerFromUI(ntohl(*p++))")))
+            (for ((set! i 0) (< i 3) (pre++ i))
+                 (set! n (Scm_LogIor (Scm_Ash n 32)
+                                     (Scm_MakeIntegerFromUI (C:"ntohl(*p++)")))))
+            (result n))))
 
   (define-cmethod sockaddr-port ((addr "Scm_SockAddrIn6Class"))
-    "  ScmSockAddrIn6 *a = (ScmSockAddrIn6*)addr;
-  SCM_RETURN(Scm_MakeInteger(ntohs(a->addr.sin6_port)));")
+    (body <ushort>
+          (let* ((a :: ScmSockAddrIn6* (cast ScmSockAddrIn6* addr)))
+            (result (ntohs (ref (-> a addr) sin6_port))))))
   )
 
 ;;----------------------------------------------------------
@@ -140,8 +143,10 @@
 (define-enum-conditionally SOMAXCONN)
 
 (define-cproc socket-address (sock::<socket>)
-  "  if (sock->address) { SCM_RETURN(SCM_OBJ(sock->address)); }
-  else { SCM_RETURN(SCM_FALSE); }")
+  (body <top>
+        (if (-> sock address)
+          (result (SCM_OBJ (-> sock address)))
+          (result '#f))))
 
 (define-symbol none      "sym_none")
 (define-symbol bound     "sym_bound")
@@ -151,42 +156,46 @@
 (define-symbol closed    "sym_closed")
 
 (define-cproc socket-status (sock::<socket>)
-  "  switch (sock->status) {
-  case SCM_SOCKET_STATUS_NONE:      SCM_RETURN(sym_none);
-  case SCM_SOCKET_STATUS_BOUND:     SCM_RETURN(sym_bound);
-  case SCM_SOCKET_STATUS_LISTENING: SCM_RETURN(sym_listening);
-  case SCM_SOCKET_STATUS_CONNECTED: SCM_RETURN(sym_connected);
-  case SCM_SOCKET_STATUS_SHUTDOWN:  SCM_RETURN(sym_shutdown);
-  case SCM_SOCKET_STATUS_CLOSED:    SCM_RETURN(sym_closed);
-  default: Scm_Error(\"invalid state of socket %S: implementation bugs?\",
-                     sock);
-           SCM_RETURN(SCM_UNDEFINED); /* dummy */
-  }")
+  (body <top>
+        (case (-> sock status)
+          ((SCM_SOCKET_STATUS_NONE)      (result 'none))
+          ((SCM_SOCKET_STATUS_BOUND)     (result 'bound))
+          ((SCM_SOCKET_STATUS_LISTENING) (result 'listening))
+          ((SCM_SOCKET_STATUS_CONNECTED) (result 'connected))
+          ((SCM_SOCKET_STATUS_SHUTDOWN)  (result 'shutdonw))
+          ((SCM_SOCKET_STATUS_CLOSED)    (result 'closed))
+          (else (Scm_Error "invalid state of socket %S: implementation bugs?"
+                           sock)
+                (result SCM_UNDEFINED)))))
 
 (define-cproc socket-fd (sock::<socket>)
-  (expr <int> "sock->fd"))
+  (expr <int> (-> sock fd)))
 
 ;; NB: buffered? keyword args in the following two procedures are
 ;; deprecated; use buffering arg.
 (define-cproc socket-input-port (sock::<socket>
                                  &keyword (buffering #f) (buffered? #f))
-  " int bufmode;
-  if (!SCM_FALSEP(bufferedP)) { /*for backward compatibility */
-    bufmode = SCM_PORT_BUFFER_FULL;
-  } else {
-    bufmode = Scm_BufferingMode(buffering, SCM_PORT_INPUT, SCM_PORT_BUFFER_LINE);
-  }
-  SCM_RETURN(Scm_SocketInputPort(sock, bufmode));")
+  (body <top>
+        (let* ((bufmode :: int))
+          (cond ((SCM_FALSEP buffered?) ;for backward compatibility
+                 (set! bufmode SCM_PORT_BUFFER_FULL))
+                (else
+                 (set! bufmode (Scm_BufferingMode buffering
+                                                  SCM_PORT_INPUT
+                                                  SCM_PORT_BUFFER_LINE))))
+          (result (Scm_SocketInputPort sock bufmode)))))
 
 (define-cproc socket-output-port (sock::<socket>
                                   &keyword (buffering #f) (buffered? #f))
-  " int bufmode;
-  if (!SCM_FALSEP(bufferedP)) { /* for backward compatibility */
-    bufmode = SCM_PORT_BUFFER_FULL;
-  } else {
-    bufmode = Scm_BufferingMode(buffering, SCM_PORT_OUTPUT, SCM_PORT_BUFFER_LINE);
-  }
-  SCM_RETURN(Scm_SocketOutputPort(sock, bufmode));")
+  (body <top>
+        (let* ((bufmode :: int))
+          (cond ((SCM_FALSEP buffered?) ;for backward compatibility
+                 (set! bufmode SCM_PORT_BUFFER_FULL))
+                (else
+                 (set! bufmode (Scm_BufferingMode buffering
+                                                  SCM_PORT_OUTPUT
+                                                  SCM_PORT_BUFFER_LINE))))
+          (result (Scm_SocketOutputPort sock bufmode)))))
 
 (define-cproc socket-shutdown (sock::<socket> &optional (how::<fixnum> 2))
   (call "Scm_SocketShutdown"))
