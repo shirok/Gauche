@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: stdlib.stub,v 1.129 2007-05-20 04:55:15 shirok Exp $
+;;; $Id: stdlib.stub,v 1.130 2007-05-22 10:24:54 shirok Exp $
 ;;;
 
 "
@@ -76,8 +76,8 @@
 (define-cproc = (arg0 arg1 &rest args)
   (body <boolean>
         (loop (cond 
-               ((not (Scm_NumEq arg0 arg1)) (result #f) (break))
-               ((SCM_NULLP args) (result #t) (break))
+               ((not (Scm_NumEq arg0 arg1)) (result FALSE) (break))
+               ((SCM_NULLP args) (result TRUE) (break))
                (else (set! arg1 (SCM_CAR args)
                            args (SCM_CDR args)))))))
 
@@ -88,8 +88,8 @@
    (match form
      ((_ op)
       `(loop (cond
-              ((not (,op (Scm_NumCmp arg0 arg1) 0)) (result #f) (break))
-              ((SCM_NULLP args) (result #t) (break))
+              ((not (,op (Scm_NumCmp arg0 arg1) 0)) (result FALSE) (break))
+              ((SCM_NULLP args) (result TRUE) (break))
               (else (set! arg0 arg1
                           arg1 (SCM_CAR args)
                           args (SCM_CDR args))))))))

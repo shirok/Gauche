@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cise.scm,v 1.1 2007-05-20 04:55:15 shirok Exp $
+;;;  $Id: cise.scm,v 1.2 2007-05-22 10:24:53 shirok Exp $
 ;;;
 
 (define-module gauche.cgen.cise
@@ -38,6 +38,7 @@
   (use gauche.sequence)
   (use gauche.parameter)
   (use gauche.cgen.unit)
+  (use gauche.cgen.literal)
   (use util.match)
   (use util.list)
   (export cise-render
@@ -195,8 +196,6 @@
     [#\return    (wrap-expr "'\\r'"  env)]
     [#\tab       (wrap-expr "'\\t'"  env)]
     [(? char?)   (wrap-expr `("'" ,(string form) "'") env)]
-    [#t          (wrap-expr "TRUE" env)]
-    [#f          (wrap-expr "FALSE" env)]
     [_           (error "Invalid CISE form: " form)]))
 
 ;;=============================================================
@@ -215,15 +214,20 @@
 (define-cise-macro (let* form env)
   (ensure-stmt-ctx form env)
   (match form
-    [(_ ((var ':: type . init) ...) . body)
+    [(_ ((var . spec) ...) . body)
      (let1 eenv (expr-env env)
-       `(begin ,@(map (lambda (var type init)
-                        `(,(cise-render-type type)" "
-                          ,(cise-render-identifier var)
-                          ,@(cond-list ((pair? init)
-                                        `("=",(render-rec (car init) eenv))))
-                          ";"))
-                      var type init)
+       `(begin ,@(map (lambda (var spec)
+                        (receive (type has-init? init)
+                            (match spec
+                              [(init)     (values 'ScmObj #t init)]
+                              [(':: type) (values type #f #f)]
+                              [(':: type init) (values type #t init)])
+                          `(,(cise-render-type type)" "
+                            ,(cise-render-identifier var)
+                            ,@(cond-list (has-init?
+                                          `("=",(render-rec init eenv))))
+                            ";")))
+                      var spec)
                ,@(map (cut render-rec <> env) body)))]
     ))
 
@@ -284,11 +288,11 @@
   (let ((eenv (expr-env env)))
     (match form
       [(_ ('lambda (var) . body) list-expr)
+       (env-decl-add! env `(,var ScmObj))
        `("SCM_FOR_EACH(" ,(cise-render-identifier var) ","
          ,(render-rec list-expr eenv) ")"
          ,(render-rec `(begin ,@body) env)
          )])))
-
 
 (define-cise-macro (return form env)
   (ensure-stmt-ctx form env)
@@ -423,6 +427,23 @@
 (define-referencer ->  "->")
 (define-referencer ref ".")
 
+(define-cise-macro (aref form env)
+  (let1 eenv (expr-env env)
+    (wrap-expr
+     (match form
+       [(_ a b ...)
+        (list "("(render-rec a eenv)")"
+              (append-map (lambda (ind) `("[",(render-rec ind eenv)"]")) b))])
+     env)))
+
+(define-cise-macro (cast form env)
+  (let1 eenv (expr-env env)
+    (wrap-expr
+     (match form
+       [(_ type expr)
+        `(,@(source-info form env)"((",type")(",(render-rec expr eenv)"))")])
+     env)))
+
 (define-cise-macro (?: form env)
   (let1 eenv (expr-env env)
     (wrap-expr
@@ -443,9 +464,41 @@
                `((,(render-rec var eenv)"=",(render-rec val eenv)) ,@r))]
         [_   (error "uneven args for set!:" form)]))))
 
+;;------------------------------------------------------------
+;; Convenience expression macros
+;;
+
+;; Embed raw c code.  NB: I'm not sure yet about the name.  It is
+;; desirable to be consistent with genstub (currently it uses (c <expr>))
+;; I'll think it a bit more.
+(define-cise-macro (C: form env)
+  (match form
+    [(_ stuff) (list (x->string stuff))]))
+
 (define-cise-macro (result form env)
   (match form
     [(_ expr) `(set! SCM_RESULT ,expr)]))
+
+(define-cise-macro (list form env)
+  (match form
+    [(_)           '("SCM_NIL")]
+    [(_ a)         `(SCM_LIST1 ,a)]
+    [(_ a b)       `(SCM_LIST2 ,a ,b)]
+    [(_ a b c)     `(SCM_LIST3 ,a ,b ,c)]
+    [(_ a b c d)   `(SCM_LIST4 ,a ,b ,c ,d)]
+    [(_ a b c d e) `(SCM_LIST5 ,a ,b ,c ,d ,e)]
+    [(_ x ...)     (fold (lambda (elt r) `(Scm_Cons ,elt ,r)) '() x)]))
+
+;; Using quote is a convenient way to embed Scheme constant in C code.
+(define-cise-macro (quote form env)
+  (wrap-expr
+   (match form
+     [(_ cst)
+      (unless (cgen-current-unit)
+        (error "cise: quote can't be used unless cgen-current-unit is set:"
+               form))
+      (list (source-info form env) (cgen-cexpr (cgen-literal cst)))])
+   env))
 
 ;;=============================================================
 ;; Other utilities

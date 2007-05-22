@@ -1,3 +1,15 @@
+2007-05-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/charset.h (SCM_CHAR_SET etc): Changed CHARSET in
+	  macro names to CHAR_SET for the consistency.  Old names are
+	  defined for compatibility but will fade out.
+	* src/char.c, src/regexp.c, src/class.c: changed accordingly.
+
+	* lib/gauche/cgen/cise.scm: Allow embedding Scheme constants
+	  by quote form.  Allow omitting type declaration if it's ScmObj.
+	  Some more conveniece macros.
+	* src/extlib.stub: changed to use gauche.cgen.cise more.
+
 2007-05-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/miscutil.scm: added.

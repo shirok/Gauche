@@ -1226,6 +1226,46 @@
 (test* "truncate->exact" -3 (truncate->exact -3.5) =)
 
 ;;------------------------------------------------------------------
+(test-section "clamping")
+
+(test* "clamp (1)"   1   (clamp 1) eqv?)
+(test* "clamp (1 #f)" 1  (clamp 1 #f) eqv?)
+(test* "clamp (1 #f #f)" 1  (clamp 1 #f #f) eqv?)
+(test* "clamp (1.0)"   1.0   (clamp 1.0) eqv?)
+(test* "clamp (1.0 #f)" 1.0  (clamp 1.0 #f) eqv?)
+(test* "clamp (1.0 #f #f)" 1.0  (clamp 1.0 #f #f) eqv?)
+
+(test* "clamp (1 0)" 1   (clamp 1 0) eqv?)
+(test* "clamp (1 0 #f)" 1 (clamp 1 0 #f) eqv?)
+(test* "clamp (1 0 2)" 1 (clamp 1 0 2) eqv?)
+(test* "clamp (1 5/4)" 5/4 (clamp 1 5/4) eqv?)
+(test* "clamp (1 5/4 #f)" 5/4 (clamp 1 5/4 #f) eqv?)
+(test* "clamp (1 #f 5/4)" 1 (clamp 1 #f 5/4) eqv?)
+(test* "clamp (1 0 3/4)" 3/4 (clamp 1 0 3/4) eqv?)
+(test* "clamp (1 #f 3/4)" 3/4 (clamp 1 #f 3/4) eqv?)
+
+(test* "clamp (1.0 0)" 1.0   (clamp 1.0 0) eqv?)
+(test* "clamp (1.0 0 #f)" 1.0 (clamp 1.0 0 #f) eqv?)
+(test* "clamp (1.0 0 2)" 1.0 (clamp 1.0 0 2) eqv?)
+(test* "clamp (1.0 5/4)" 1.25 (clamp 1.0 5/4) eqv?)
+(test* "clamp (1.0 5/4 #f)" 1.25 (clamp 1.0 5/4 #f) eqv?)
+(test* "clamp (1.0 #f 5/4)" 1.0 (clamp 1.0 #f 5/4) eqv?)
+(test* "clamp (1.0 0 3/4)" 0.75 (clamp 1.0 0 3/4) eqv?)
+(test* "clamp (1.0 #f 3/4)" 0.75 (clamp 1.0 #f 3/4) eqv?)
+
+(test* "clamp (1 0.0)" 1.0   (clamp 1 0.0) eqv?)
+(test* "clamp (1 0.0 #f)" 1.0 (clamp 1 0.0 #f) eqv?)
+(test* "clamp (1 0.0 2)" 1.0 (clamp 1 0.0 2) eqv?)
+(test* "clamp (1 0 2.0)" 1.0 (clamp 1 0 2.0) eqv?)
+(test* "clamp (1 1.25)" 1.25 (clamp 1 1.25) eqv?)
+(test* "clamp (1 #f 1.25)" 1.0 (clamp 1 #f 1.25) eqv?)
+(test* "clamp (1 1.25 #f)" 1.25 (clamp 1 1.25 #f) eqv?)
+(test* "clamp (1 0.0 3/4)" 0.75 (clamp 1 0.0 3/4) eqv?)
+(test* "clamp (1 0 0.75)" 0.75 (clamp 1 0 0.75) eqv?)
+
+(test* "clamp (1 #i-1/0 #i1/0)" 1.0 (clamp 1 #i-1/0 #i1/0) eqv?)
+
+;;------------------------------------------------------------------
 (test-section "logical operations")
 
 (test* "ash (fixnum)" #x408000           ;fixnum

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.290 2007-05-20 04:55:15 shirok Exp $
+;;; $Id: extlib.stub,v 1.291 2007-05-22 10:24:53 shirok Exp $
 ;;;
 
 "
@@ -85,7 +85,7 @@
  (define-cise-macro (logop form env)
    (match form
      [(_ fn)
-      `(let* ((r :: ScmObj (,fn x y)))
+      `(let* ((r (,fn x y)))
          (for-each (lambda (v) (set! r (,fn r v))) args)
          (result r))]))
  )
@@ -107,111 +107,111 @@
 ;; inexact-/.  If the program uses compat.no-rational, '/' is overridden
 ;; by inexact-/ and the old code behaves the same.
 (define-cproc inexact-/ (arg1 &rest args)
-  (body "ScmObj p;"
-        "if (SCM_NULLP(args)) return Scm_ReciprocalInexact(arg1);"
-        "SCM_FOR_EACH(p, args) {"
-        "  arg1 = Scm_DivInexact(arg1, SCM_CAR(p));"
-        "}"
-        "SCM_RESULT = arg1;"))
+  (body <top>
+        (cond ((SCM_NULLP args)
+               (result (Scm_ReciprocalInexact arg1)))
+              (else
+               (for-each (lambda (x) (set! arg1 (Scm_DivInexact arg1 x))) args)
+               (result arg1)))))
 
 ;; Inexact arithmetics.  Useful for speed-sensitive code to avoid
 ;; accidental use of bignum or ratnum.   We might want to optimize
 ;; these more, even adding special VM insns for them.
 (define-cproc +. (&rest args)
-  (body "ScmObj p, a = Scm_MakeFlonum(0.0);"
-        "SCM_FOR_EACH(p, args) {"
-        "  a = Scm_Add(a, Scm_ExactToInexact(SCM_CAR(p)));"
-        "}"
-        "SCM_RESULT = a;"))
+  (body <top>
+        (let* ((a '0.0))
+          (for-each (lambda (x) (set! a (Scm_Add a (Scm_ExactToInexact x))))
+                    args)
+          (result a))))
 (define-cproc *. (&rest args)
-  (body "ScmObj p, a = Scm_MakeFlonum(1.0);"
-        "SCM_FOR_EACH(p, args) {"
-        "  a = Scm_Mul(a, Scm_ExactToInexact(SCM_CAR(p)));"
-        "}"
-        "SCM_RESULT = a;"))
+  (body <top>
+        (let* ((a '1.0))
+          (for-each (lambda (x) (set! a (Scm_Mul a (Scm_ExactToInexact x))))
+                    args)
+          (result a))))
 (define-cproc -. (arg1 &rest args)
-  (body "ScmObj p;"
-        "if (SCM_NULLP(args)) return Scm_Negate(Scm_ExactToInexact(arg1));"
-        "SCM_FOR_EACH(p, args) {"
-        "  arg1 = Scm_Sub(arg1, Scm_ExactToInexact(SCM_CAR(p)));"
-        "}"
-        "SCM_RESULT = arg1;"))
+  (body <top>
+        (cond
+         ((SCM_NULLP args) (result (Scm_Negate (Scm_ExactToInexact arg1))))
+         (else (for-each (lambda (x)
+                           (set! arg1 (Scm_Sub arg1 (Scm_ExactToInexact x))))
+                         args)
+               (result arg1)))))
 (define-cproc /. (arg1 &rest args)
-  (body "ScmObj p;"
-        "if (SCM_NULLP(args)) return Scm_Reciprocal(Scm_ExactToInexact(arg1));"
-        "SCM_FOR_EACH(p, args) {"
-        "  arg1 = Scm_Div(arg1, Scm_ExactToInexact(SCM_CAR(p)));"
-        "}"
-        "SCM_RESULT = arg1;"))
+  (body <top>
+        (cond
+         ((SCM_NULLP args) (result (Scm_Reciprocal (Scm_ExactToInexact arg1))))
+         (else (for-each (lambda (x)
+                           (set! arg1 (Scm_Div arg1 (Scm_ExactToInexact x))))
+                         args)
+               (result arg1)))))
 
 (define-cproc clamp (x &optional (min #f) (max #f))
-  " ScmObj r = x;  int maybe_exact = FALSE;
-  if (SCM_EXACTP(x)) maybe_exact = TRUE;
-  else if (!SCM_FLONUMP(x)) {
-    Scm_Error(\"real number required for x, but got %S\", x);
-  }
-  if (SCM_EXACTP(min)) {
-    if (Scm_NumCmp(x, min) < 0) r = min;
-  } else if (SCM_FLONUMP(min)) {
-    maybe_exact = FALSE;
-    if (Scm_NumCmp(x, min) < 0) r = min;
-  } else if (!SCM_FALSEP(min)) {
-    Scm_Error(\"real number or #f required for min, but got %S\", min);
-  }
-  if (SCM_EXACTP(max)) {
-    if (Scm_NumCmp(x, max) > 0) r = max;
-  } else if (SCM_FLONUMP(max)) {
-     maybe_exact = FALSE;
-    if (Scm_NumCmp(x, max) > 0) r = max;
-  } else if (!SCM_FALSEP(max)) {
-    Scm_Error(\"real number or #f required for max, but got %S\", max);
-  }
-  if (!maybe_exact && SCM_EXACTP(r)) SCM_RETURN(Scm_ExactToInexact(r));
-  else SCM_RETURN(r);")
+  (body <top>
+        (let* ((r x) (maybe_exact :: int (SCM_EXACTP x)))
+          (unless (SCM_REALP x) (SCM_TYPE_ERROR x "real number"))
+          (cond ((SCM_EXACTP min)
+                 (when (< (Scm_NumCmp x min) 0) (set! r min)))
+                ((SCM_FLONUMP min)
+                 (set! maybe_exact FALSE)
+                 (when (< (Scm_NumCmp x min) 0) (set! r min)))
+                ((not (SCM_FALSEP min))
+                 (SCM_TYPE_ERROR min "real number or #f")))
+          (cond ((SCM_EXACTP max)
+                 (when (> (Scm_NumCmp x max) 0) (set! r max)))
+                ((SCM_FLONUMP max)
+                 (set! maybe_exact FALSE)
+                 (when (> (Scm_NumCmp x max) 0) (set! r max)))
+                ((not (SCM_FALSEP max))
+                 (SCM_TYPE_ERROR max "real number or #f")))
+          (if (and (not maybe_exact) (SCM_EXACTP r))
+            (return (Scm_ExactToInexact r))
+            (return r)))))
 
 (define-cproc floor->exact (num)
-  (expr "Scm_RoundToExact(num, SCM_ROUND_FLOOR)"))
+  (expr <top> (Scm_RoundToExact num SCM_ROUND_FLOOR)))
 (define-cproc ceiling->exact (num)
-  (expr "Scm_RoundToExact(num, SCM_ROUND_CEIL)"))
+  (expr <top> (Scm_RoundToExact num SCM_ROUND_CEIL)))
 (define-cproc truncate->exact (num)
-  (expr "Scm_RoundToExact(num, SCM_ROUND_TRUNC)"))
+  (expr <top> (Scm_RoundToExact num SCM_ROUND_TRUNC)))
 (define-cproc round->exact (num)
-  (expr "Scm_RoundToExact(num, SCM_ROUND_ROUND)"))
+  (expr <top> (Scm_RoundToExact num SCM_ROUND_ROUND)))
 
 (define-cproc decode-float (num)        ;from ChezScheme
-  "if (SCM_FLONUMP(num)) {
-     int exp, sign;
-     ScmObj f = Scm_DecodeFlonum(SCM_FLONUM_VALUE(num), &exp, &sign);
-     ScmObj v = Scm_MakeVector(3, SCM_FALSE);
-     SCM_VECTOR_ELEMENT(v, 0) = f;
-     SCM_VECTOR_ELEMENT(v, 1) = Scm_MakeInteger(exp);
-     SCM_VECTOR_ELEMENT(v, 2) = Scm_MakeInteger(sign);
-     SCM_RETURN(v);
-  } else if (SCM_INTP(num)) {
-     ScmObj v = Scm_MakeVector(3, SCM_FALSE);
-     SCM_VECTOR_ELEMENT(v, 0) = Scm_Abs(num);
-     SCM_VECTOR_ELEMENT(v, 1) = Scm_MakeInteger(0);
-     SCM_VECTOR_ELEMENT(v, 2) = Scm_MakeInteger(Scm_Sign(num));
-     SCM_RETURN(v);
-  } else {
-     Scm_Error(\"real number required, but got %S\", num);
-     SCM_RETURN(SCM_UNDEFINED);
-  }")
+  (body <top>
+        (cond ((SCM_FLONUMP num)
+               (let* ((exp :: int) (sign :: int)
+                      (f (Scm_DecodeFlonum (SCM_FLONUM_VALUE num)
+                                           (& exp) (& sign)))
+                      (v (Scm_MakeVector 3 '#f)))
+                 (set! (SCM_VECTOR_ELEMENT v 0) f
+                       (SCM_VECTOR_ELEMENT v 1) (Scm_MakeInteger exp)
+                       (SCM_VECTOR_ELEMENT v 2) (Scm_MakeInteger sign))
+                 (result v)))
+              ((SCM_INTP num)
+               (let* ((v (Scm_MakeVector 3 '#f)))
+                 (set! (SCM_VECTOR_ELEMENT v 0) (Scm_Abs num)
+                       (SCM_VECTOR_ELEMENT v 1) (Scm_MakeInteger 0)
+                       (SCM_VECTOR_ELEMENT v 2) (Scm_MakeInteger (Scm_Sign num)))
+                 (result v)))
+              (else
+               (SCM_TYPE_ERROR num "real number")
+               (result SCM_UNDEFINED)))))
 
 ;; just for debug...
-(if "SCM_DEBUG_HELPER"
-(define-cproc %bignum-dump (obj)
-  "  if (SCM_BIGNUMP(obj)) Scm_DumpBignum(SCM_BIGNUM(obj), SCM_CUROUT);
-  SCM_RETURN(SCM_UNDEFINED);")
-)
+(when "SCM_DEBUG_HELPER"
+  (define-cproc %bignum-dump (obj)
+    (body <void>
+          (when (SCM_BIGNUMP obj)
+            (Scm_DumpBignum (SCM_BIGNUM obj) SCM_CUROUT)))))
 
 (define-cproc min&max (arg0 &rest args)
   (body (<top> <top>)
-        "Scm_MinMax(arg0, args, &SCM_RESULT0, &SCM_RESULT1);"))
+        (Scm_MinMax arg0 args (& SCM_RESULT0) (& SCM_RESULT1))))
 
 (define-cproc quotient&remainder (n1 n2)
   (body (<top> <top>)
-        "SCM_RESULT0 = Scm_Quotient(n1, n2, &SCM_RESULT1);"))
+        (set! SCM_RESULT0 (Scm_Quotient n1 n2 (& SCM_RESULT1)))))
 
 ;;
 ;; 6.3.1  Booleans
@@ -248,48 +248,51 @@
 
 (define-cproc list* (&rest args)
   (inliner LIST-STAR)
-  "  ScmObj head = SCM_NIL, tail = SCM_NIL, cp;
-  if (SCM_PAIRP(args)) {
-    SCM_FOR_EACH(cp, args) {
-      if (!SCM_PAIRP(SCM_CDR(cp))) {
-        if (SCM_NULLP(head)) head = SCM_CAR(cp);
-        else SCM_SET_CDR(tail, SCM_CAR(cp));
-        break;
-      }
-      SCM_APPEND1(head, tail, SCM_CAR(cp));
-    }
-  }
-  SCM_RETURN(head);")
+  (body <top>
+        (let* ((head '()) (tail '()))
+          (when (SCM_PAIRP args)
+            (pair-for-each (lambda (cp)
+                             (unless (SCM_PAIRP (SCM_CDR cp))
+                               (if (SCM_NULLP head)
+                                 (set! head (SCM_CAR cp))
+                                 (SCM_SET_CDR tail (SCM_CAR cp)))
+                               (break))
+                             (SCM_APPEND1 head tail (SCM_CAR cp)))
+                           args)
+            (result head)))))
 
 (define-cproc %delete (obj list::<list> &optional cmpmode)
-  (expr "Scm_Delete(obj, list, getcmpmode(cmpmode))"))
+  (expr <top> (Scm_Delete obj list (getcmpmode cmpmode))))
 
 (define-cproc %delete! (obj list::<list> &optional cmpmode)
-  (expr "Scm_DeleteX(obj, list, getcmpmode(cmpmode))"))
+  (expr <top> (Scm_DeleteX obj list (getcmpmode cmpmode))))
 
 (define-cproc %delete-duplicates (list::<list> &optional cmpmode)
-  (expr "Scm_DeleteDuplicates(list, getcmpmode(cmpmode))"))
+  (expr <top> (Scm_DeleteDuplicates list (getcmpmode cmpmode))))
 
 (define-cproc %delete-duplicates! (list::<list> &optional cmpmode)
-  (expr "Scm_DeleteDuplicatesX(list, getcmpmode(cmpmode))"))
+  (expr <top> (Scm_DeleteDuplicatesX list (getcmpmode cmpmode))))
 
 (define-cproc %alist-delete (elt list::<list> &optional cmpmode)
-  (expr "Scm_AssocDelete(elt, list, getcmpmode(cmpmode))"))
+  (expr <top> (Scm_AssocDelete elt list (getcmpmode cmpmode))))
 
 (define-cproc %alist-delete! (elt list::<list> &optional cmpmode)
-  (expr "Scm_AssocDeleteX(elt, list, getcmpmode(cmpmode))"))
+  (expr <top> (Scm_AssocDeleteX elt list (getcmpmode cmpmode))))
 
 (define-cproc append! (&rest list)
-  "  ScmObj cp, h = SCM_NIL, t = SCM_NIL;
-  SCM_FOR_EACH(cp, list) {
-    /* allow non-list argument at the last position */
-    if (!SCM_PAIRP(SCM_CAR(cp)) && SCM_NULLP(SCM_CDR(cp))) {
-      if (SCM_NULLP(h)) return SCM_CAR(cp);
-      else { SCM_SET_CDR(t, SCM_CAR(cp)); return h; }
-    }
-    SCM_APPEND(h, t, SCM_CAR(cp));
-  }
-  SCM_RETURN(h);")
+  (body <top>
+        (let* ((h '()) (t '()))
+          (pair-for-each (lambda (cp)
+                           ;; allow non-list argument at the last position
+                           (when (and (not (SCM_PAIRP (SCM_CAR cp)))
+                                      (SCM_NULLP (SCM_CDR cp)))
+                             (if (SCM_NULLP h)
+                               (set! h (SCM_CAR cp))
+                               (SCM_SET_CDR t (SCM_CAR cp)))
+                             (break))
+                           (SCM_APPEND h t (SCM_CAR cp)))
+                         list)
+          (result h))))
 
 (define-cproc reverse! (list)
   (call "Scm_ReverseX"))
@@ -297,27 +300,29 @@
 ;; Scheme version of 'sort' handles the case when comparison function
 ;; is given.
 (define-cproc %sort (seq)
-  "if (SCM_VECTORP(seq)) {
-    ScmObj r = Scm_VectorCopy(SCM_VECTOR(seq), 0, -1, SCM_UNDEFINED);
-    Scm_SortArray(SCM_VECTOR_ELEMENTS(r), SCM_VECTOR_SIZE(r), SCM_FALSE);
-    SCM_RETURN(r);
-  } else if (Scm_Length(seq) >= 0) {
-    SCM_RETURN(Scm_SortList(seq, SCM_FALSE));
-  } else {
-    Scm_Error(\"proper list or vector required, but got %S\", seq);
-    SCM_RETURN(SCM_UNDEFINED);
-  }")
+  (body <top>
+        (cond
+         ((SCM_VECTORP seq)
+          (let* ((r (Scm_VectorCopy (SCM_VECTOR seq) 0 -1 SCM_UNDEFINED)))
+            (Scm_SortArray (SCM_VECTOR_ELEMENTS r) (SCM_VECTOR_SIZE r) '#f)
+            (result r)))
+         ((>= (Scm_Length seq) 0)
+          (result (Scm_SortList seq '#f)))
+         (else
+          (SCM_TYPE_ERROR seq "proper list or vector")
+          (result SCM_UNDEFINED)))))
 
 (define-cproc %sort! (seq)
-  "if (SCM_VECTORP(seq)) {
-    Scm_SortArray(SCM_VECTOR_ELEMENTS(seq), SCM_VECTOR_SIZE(seq), SCM_FALSE);
-    SCM_RETURN(seq);
-  } else if (Scm_Length(seq) >= 0) {
-    SCM_RETURN(Scm_SortListX(seq, SCM_FALSE));
-  } else {
-    Scm_Error(\"proper list or vector required, but got %S\", seq);
-    SCM_RETURN(SCM_UNDEFINED);
-  }")
+  (body <top>
+        (cond
+         ((SCM_VECTORP seq)
+          (Scm_SortArray (SCM_VECTOR_ELEMENTS seq) (SCM_VECTOR_SIZE seq) '#f)
+          (result seq))
+         ((>= (Scm_Length seq) 0)
+          (result (Scm_SortListX seq '#f)))
+         (else
+          (SCM_TYPE_ERROR seq "proper list or vector")
+          (result SCM_UNDEFINED)))))
 
 (define-cproc monotonic-merge (start sequences::<list>)
   (call "Scm_MonotonicMerge"))
@@ -326,24 +331,19 @@
 ;; 6.3.3  Symbols
 ;;
 
-(define-cproc gensym (&optional prefix)
-  "  ScmString *p = NULL;
-  if (prefix != SCM_UNBOUND) {
-    if (!SCM_STRINGP(prefix))
-      Scm_Error(\"string expected, but got %S\", prefix);
-    p = SCM_STRING(prefix);
-  }
-  SCM_RETURN(Scm_Gensym(p));")
+(define-cproc gensym (&optional (prefix::<string>? #f))
+  (call "Scm_Gensym"))
 
 ;; keywords
 (define-cproc keyword? (obj) (call <boolean> "SCM_KEYWORDP"))
 
 (define-cproc make-keyword (name)
-  "   ScmString *sname = NULL;
-  if (SCM_STRINGP(name)) sname = SCM_STRING(name);
-  else if (SCM_SYMBOLP(name)) sname = SCM_SYMBOL_NAME(name);
-  else Scm_Error(\"string or symbol required, but got %S\", name);
-  SCM_RETURN(Scm_MakeKeyword(sname));")
+  (body <top>
+        (let* ((sname :: ScmString* NULL))
+          (cond ((SCM_STRINGP name) (set! sname (SCM_STRING name)))
+                ((SCM_SYMBOLP name) (set! sname (SCM_SYMBOL_NAME name)))
+                (else (SCM_TYPE_ERROR name "string or symbol")))
+          (result (Scm_MakeKeyword sname)))))
 
 (define-cproc get-keyword (key list &optional fallback)
   (call "Scm_GetKeyword"))
@@ -370,34 +370,36 @@
 ;;
 
 (define-cproc digit->integer (ch::<char> &optional (radix::<fixnum> 10))
-  (body "int r;"
-        "if (radix < 2 && radix > 36)"
-        "  Scm_Error(\"radix must be between 2 and 36, but got %d\", radix);"
-        "r = Scm_DigitToInt(ch, radix);"
-        "SCM_RESULT = (r >= 0 ? SCM_MAKE_INT(r) : SCM_FALSE);"))
+  (body <top>
+        (let* ((r :: int))
+          (when (or (< radix 2) (> radix 36))
+            (Scm_Error "radix must be between 2 and 36, but got %d" radix))
+          (set! r (Scm_DigitToInt ch radix))
+          (result (?: (>= r 0) (SCM_MAKE_INT r) '#f)))))
 
 (define-cproc integer->digit (n::<fixnum> &optional (radix::<fixnum> 10))
-  (body "ScmChar r;"
-        "if (radix < 2 || radix > 36)"
-        "  Scm_Error(\"radix must be between 2 and 36, but got %d\", radix);"
-        "r = Scm_IntToDigit(n, radix);"
-        "return (r == SCM_CHAR_INVALID? SCM_FALSE : SCM_MAKE_CHAR(r));"))
+  (body <top>
+        (let* ((r :: ScmChar))
+          (when (or (< radix 2) (> radix 36))
+            (Scm_Error "radix must be between 2 and 36, but got %d" radix))
+          (set! r (Scm_IntToDigit n radix))
+          (result (?: (== r SCM_CHAR_INVALID) '#f (SCM_MAKE_CHAR r))))))
 
 (define-cproc ucs->char (n::<int>)
-  "ScmChar ch = Scm_UcsToChar(n);
-  if (ch == SCM_CHAR_INVALID) SCM_RETURN(SCM_FALSE);
-  else SCM_RETURN(SCM_MAKE_CHAR(ch));")
+  (body <top>
+        (let* ((ch :: ScmChar (Scm_UcsToChar n)))
+          (result (?: (== ch SCM_CHAR_INVALID) '#f (SCM_MAKE_CHAR ch))))))
 
 (define-cproc char->ucs (c::<char>)
-  "int ucs = Scm_CharToUcs(c);
-  if (ucs < 0) SCM_RETURN(SCM_FALSE);
-  else SCM_RETURN(Scm_MakeInteger(ucs));")
+  (body <top>
+        (let* ((ucs :: int (Scm_CharToUcs c)))
+          (result (?: (< ucs 0) '#f (Scm_MakeInteger ucs))))))
 
 (define-cproc gauche-character-encoding ()
   (call "Scm_CharEncodingName"))
 
 (define-cproc supported-character-encodings ()
-  (expr "Scm_CStringArrayToList(Scm_SupportedCharacterEncodings(), -1, 0)"))
+  (expr <top> (Scm_CStringArrayToList (Scm_SupportedCharacterEncodings) -1 0)))
 
 (define-cproc supported-character-encoding? (encoding::<const-cstring>)
   (call <boolean> "Scm_SupportedCharacterEncodingP"))
@@ -427,27 +429,47 @@
   (call <boolean> "Scm_CharSetLE"))
 
 (define-cproc char-set (&rest chars)
-  "  ScmCharSet *cs = SCM_CHARSET(Scm_MakeEmptyCharSet());
-  char_set_add(cs, chars);
-  SCM_RETURN(SCM_OBJ(cs));")
+  (body <char-set>
+        (let* ((cs :: ScmCharSet* (SCM_CHARSET (Scm_MakeEmptyCharSet))))
+          (char_set_add cs chars)
+          (result cs))))
 
 (define-cproc char-set-copy (cs::<char-set>)
   (call "Scm_CharSetCopy"))
 
 (define-cproc %char-set-add-chars! (cs::<char-set> chars::<list>)
-  "  char_set_add(cs, chars); SCM_RETURN(SCM_OBJ(cs));")
+  (body <char-set>
+        (char_set_add cs chars)
+        (result cs)))
 
 (define-cproc %char-set-add-range! (cs::<char-set> from to)
-  "  long fromc = -1, toc = -1;
-  if (SCM_EXACTP(from)) fromc = Scm_GetInteger(from);
-  else if (SCM_CHARP(from)) fromc = SCM_CHAR_VALUE(from);
-  if (fromc < 0) Scm_Error(\"character or positive integer required, but got %S\", from);
-  if (fromc > SCM_CHAR_MAX) Scm_Error(\"argument out of range: %S\", from);
-  if (SCM_EXACTP(to)) toc = Scm_GetInteger(to);
-  else if (SCM_CHARP(to)) toc = SCM_CHAR_VALUE(to);
-  if (toc < 0) Scm_Error(\"character or positive integer required, but got %S\", to);
-  if (toc > SCM_CHAR_MAX) Scm_Error(\"argument out of range: %S\", to);
-  SCM_RETURN(Scm_CharSetAddRange(cs, (ScmChar)fromc, (ScmChar)toc));")
+  (body <top>
+        (let* ((f :: long -1) (t :: long -1))
+          (cond ((SCM_INTP from) (set! f (SCM_INT_VALUE from)))
+                ((SCM_CHARP from) (set! f (SCM_CHAR_VALUE from))))
+          (when (< f 0)
+            (SCM_TYPE_ERROR from "character or positive exact integer"))
+          (when (> f SCM_CHAR_MAX)
+            (Scm_Error "'from' argument out of range: %S" from))
+          (cond ((SCM_INTP to) (set! t (SCM_INT_VALUE to)))
+                ((SCM_CHARP to) (set! t (SCM_CHAR_VALUE to))))
+          (when (< t 0)
+            (SCM_TYPE_ERROR to "character or positive exact integer"))
+          (when (> t SCM_CHAR_MAX)
+            (Scm_Error "'to' argument out of range: %S" to))
+          (result (Scm_CharSetAddRange cs (cast ScmChar f) (cast ScmChar t)))))
+  )
+          
+;   "  long fromc = -1, toc = -1;
+;   if (SCM_EXACTP(from)) fromc = Scm_GetInteger(from);
+;   else if (SCM_CHARP(from)) fromc = SCM_CHAR_VALUE(from);
+;   if (fromc < 0) Scm_Error(\"character or positive integer required, but got %S\", from);
+;   if (fromc > SCM_CHAR_MAX) Scm_Error(\"argument out of range: %S\", from);
+;   if (SCM_EXACTP(to)) toc = Scm_GetInteger(to);
+;   else if (SCM_CHARP(to)) toc = SCM_CHAR_VALUE(to);
+;   if (toc < 0) Scm_Error(\"character or positive integer required, but got %S\", to);
+;   if (toc > SCM_CHAR_MAX) Scm_Error(\"argument out of range: %S\", to);
+;   SCM_RETURN(Scm_CharSetAddRange(cs, (ScmChar)fromc, (ScmChar)toc));")
 
 (define-cproc %char-set-add! (dst::<char-set> src::<char-set>)
   (call "Scm_CharSetAdd"))
@@ -465,10 +487,10 @@
   (call "Scm_GetStandardCharSet"))
 
 ;; for debug
-(if "SCM_DEBUG_HELPER"
-(define-cproc %char-set-dump (cs::<char-set>)
-  (body <void> "Scm_CharSetDump(cs, SCM_CUROUT);"))
-)
+(when "SCM_DEBUG_HELPER"
+  (define-cproc %char-set-dump (cs::<char-set>)
+    (body <void> (Scm_CharSetDump cs SCM_CUROUT)))
+  )
 
 ;;
 ;; 6.3.5 Strings
@@ -479,86 +501,84 @@
 (define-cproc string-immutable? (obj)   ;gauche specific
   (expr <boolean> "SCM_STRINGP(obj)&&SCM_STRING_IMMUTABLE_P(obj)"))
 
-;; obsoleted
-;(define-cproc string-complete->incomplete! (str::<string>)
-;  (call "Scm_StringCompleteToIncompleteX"))
-
 ;; DEPRECATED, only kept for backward compatibility.
 ;; We allocate a new string and swap the body, in order to avoid MT-hazard.
 ;; (So it is _not_ allocation-free, and we no longer have reason to keep
 ;; this procedure.)
 (define-cproc string-incomplete->complete! (str::<string>)
-  (body "ScmObj s = Scm_StringIncompleteToComplete(str, SCM_ILLEGAL_CHAR_REJECT, SCM_CHAR(0));"
-        "if (!SCM_FALSEP(s)) str->body = SCM_STRING_BODY(s);"
-        "SCM_RESULT = s;"))
+  (body <top>
+        (let* ((s (Scm_StringIncompleteToComplete str SCM_ILLEGAL_CHAR_REJECT
+                                                  (SCM_CHAR 0))))
+          (unless (SCM_FALSEP s) (set! (-> str body) (SCM_STRING_BODY s)))
+          (result s))))
+;         "ScmObj s = Scm_StringIncompleteToComplete(str, SCM_ILLEGAL_CHAR_REJECT, SCM_CHAR(0));"
+;         "if (!SCM_FALSEP(s)) str->body = SCM_STRING_BODY(s);"
+;         "SCM_RESULT = s;"))
 
 (define-cproc string-complete->incomplete (str::<string>)
   (call "Scm_StringCompleteToIncomplete"))
 
-(define-keyword omit "key_omit")
-
 (define-cproc string-incomplete->complete (str::<string>
                                            &optional (handling #f))
-  (body "int h = 0; ScmChar sub = SCM_CHAR(0);"
-        "if (SCM_EQ(handling, key_omit)) {"
-        "  h = SCM_ILLEGAL_CHAR_OMIT;"
-        "} else if (SCM_FALSEP(handling)) {"
-        "  h = SCM_ILLEGAL_CHAR_REJECT;"
-        "} else if (SCM_CHARP(handling)) {"
-        "  h = SCM_ILLEGAL_CHAR_REPLACE;"
-        "  sub = SCM_CHAR_VALUE(handling);"
-        "}"
-        "SCM_RESULT = Scm_StringIncompleteToComplete(str, h, sub);"))
+  (body <top>
+        (let* ((h :: int 0)
+               (sub :: ScmChar (SCM_CHAR 0)))
+          (cond ((SCM_EQ handling ':omit) (set! h SCM_ILLEGAL_CHAR_OMIT))
+                ((SCM_FALSEP handling)    (set! h SCM_ILLEGAL_CHAR_REJECT))
+                ((SCM_CHARP handling)     (set! h SCM_ILLEGAL_CHAR_REPLACE)
+                                          (set! sub (SCM_CHAR_VALUE handling)))
+                (else
+                 (SCM_TYPE_ERROR handling ":omit, #f, or a character")))
+          (result (Scm_StringIncompleteToComplete str h sub)))))
 
 (define-cproc string-size (str::<string>)
-  (expr <fixnum> "SCM_STRING_BODY_SIZE(SCM_STRING_BODY(str))"))
+  (expr <fixnum> (SCM_STRING_BODY_SIZE (SCM_STRING_BODY str))))
 
 (define-cproc make-byte-string (size::<fixnum> &optional (byte::<fixnum> 0))
-  (body "char *s;"
-        "if (size < 0) Scm_Error(\"size out of bound: %d\", size);"
-        "s = SCM_NEW_ATOMIC2(char *, size);"
-        "memset(s, byte, size);"
-        "SCM_RESULT = Scm_MakeString(s, size, size, SCM_STRING_INCOMPLETE);"))
+  (body <top>
+        (let* ((s :: char*))
+          (when (< size 0) (Scm_Error "size out of bound: %d" size))
+          (set! s (SCM_NEW_ATOMIC2 (C: char*) size))
+          (memset s byte size)
+          (result (Scm_MakeString s size size SCM_STRING_INCOMPLETE)))))
 
 (define-cproc string-byte-ref (str::<string> k::<fixnum> &optional fallback)
-  (body "int r = Scm_StringByteRef(str, k, SCM_UNBOUNDP(fallback));"
-        "SCM_RESULT = (r<0)? fallback : SCM_MAKE_INT(r);"))
+  (body <top>
+        (let* ((r :: int (Scm_StringByteRef str k (SCM_UNBOUNDP fallback))))
+          (result (?: (< r 0) fallback (SCM_MAKE_INT r))))))
 
 (define-cproc byte-substring (str::<string> start::<fixnum> end::<fixnum>)
-  (expr "Scm_Substring(str, start, end, TRUE)"))
+  (expr <top> (Scm_Substring str start end TRUE)))
 
 (define-cproc %string-replace-body! (target::<string> source::<string>)
-  (expr "Scm_StringReplaceBody(target, SCM_STRING_BODY(source))"))
+  (expr <top> (Scm_StringReplaceBody target (SCM_STRING_BODY source))))
 
 (define-cproc %maybe-substring (str::<string> &optional start end)
   (call "Scm_MaybeSubstring"))
 
-(define-symbol infix "sym_infix")
-(define-symbol strict-infix "sym_strict_infix")
-(define-symbol suffix "sym_suffix")
-(define-symbol prefix "sym_prefix")
-
 (define-cproc string-join (strs::<list>
-                           &optional (delim::<string> " ") grammer)
-  "  int gm = 0;
-  if (SCM_UNBOUNDP(grammer) || SCM_UNDEFINEDP(grammer) || grammer == sym_infix)
-    gm = SCM_STRING_JOIN_INFIX;
-  else if (grammer == sym_strict_infix)
-    gm = SCM_STRING_JOIN_STRICT_INFIX;
-  else if (grammer == sym_suffix)
-    gm = SCM_STRING_JOIN_SUFFIX;
-  else if (grammer == sym_prefix)
-    gm = SCM_STRING_JOIN_PREFIX;
-  else Scm_Error(\"invalid grammer specification: %S\", grammer);
-  SCM_RETURN(Scm_StringJoin(strs, delim, gm));")
+                           &optional (delim::<string> " ") (grammer infix))
+  (body
+   <top>
+   (let* ((gm :: int 0))
+     (cond
+      ((SCM_EQ grammer 'infix) (set! gm SCM_STRING_JOIN_INFIX))
+      ((SCM_EQ grammer 'strict-infix) (set! gm SCM_STRING_JOIN_STRICT_INFIX))
+      ((SCM_EQ grammer 'suffix) (set! gm SCM_STRING_JOIN_SUFFIX))
+      ((SCM_EQ grammer 'prefix) (set! gm SCM_STRING_JOIN_PREFIX))
+      (else (SCM_TYPE_ERROR grammer "one of the symbols infix, strict-infix, suffix, or prefix")))
+     (result (Scm_StringJoin strs delim gm)))))
 
 (define-cproc %hash-string (str::<string> bound) ; for SRFI-13
-  "  unsigned long modulo = 0;
-  if (SCM_UNDEFINEDP(bound)) modulo = SCM_SMALL_INT_MAX;
-  else if (SCM_INTP(bound)) modulo = SCM_INT_VALUE(bound);
-  else if (SCM_BIGNUMP(bound)) modulo = Scm_BignumToUI(SCM_BIGNUM(bound), SCM_CLAMP_BOTH, NULL);
-  if (modulo == 0) Scm_Error(\"argument out of domain: %S\", bound);
-  SCM_RETURN(Scm_MakeInteger(Scm_HashString(str, modulo)));")
+  (body <ulong>
+        (let* ((modulo :: u_long 0))
+          (cond ((SCM_UNDEFINEDP bound) (set! modulo SCM_SMALL_INT_MAX))
+                ((SCM_INTP bound) (set! modulo (SCM_INT_VALUE bound)))
+                ((SCM_BIGNUMP bound)
+                 (set! modulo (Scm_BignumToUI (SCM_BIGNUM bound) SCM_CLAMP_BOTH
+                                              NULL))))
+          (when (== modulo 0) (Scm_Error "argument out of domain: %S" bound))
+          (result (Scm_HashString str modulo)))))
 
 ;; see lib/gauche/string for generic string-split
 (define-cproc %string-split-by-char (s::<string> ch::<char>)
@@ -572,25 +592,44 @@
 (define-symbol after*  "sym_after2")
 (define-symbol both    "sym_both")
 
-(define-cproc string-scan (s1::<string> s2 &optional (mode (c "sym_index")))
-  "  int retmode = 0;
-  if (mode == sym_index)         retmode = SCM_STRING_SCAN_INDEX;
-  else if (mode == sym_before)   retmode = SCM_STRING_SCAN_BEFORE;
-  else if (mode == sym_after)    retmode = SCM_STRING_SCAN_AFTER;
-  else if (mode == sym_before2)  retmode = SCM_STRING_SCAN_BEFORE2;
-  else if (mode == sym_after2)   retmode = SCM_STRING_SCAN_AFTER2;
-  else if (mode == sym_both)     retmode = SCM_STRING_SCAN_BOTH;
-  else {
-    Scm_Error(\"bad value in mode argumet: %S, must be one of 'index, 'before, 'after, 'before*, 'after* or 'both.\", mode);
-  }
-  if (SCM_STRINGP(s2)) {
-     SCM_RETURN(Scm_StringScan(s1, SCM_STRING(s2), retmode));
-  } else if (SCM_CHARP(s2)) {
-     SCM_RETURN(Scm_StringScanChar(s1, SCM_CHAR_VALUE(s2), retmode));
-  } else {
-     Scm_Error(\"bad type of argument for s2: %S, must be either string or character\", s2);
-     SCM_RETURN(SCM_UNDEFINED); /* dummy */
-  }")
+(define-cproc string-scan (s1::<string> s2 &optional (mode index))
+  (body <top>
+        (let* ((rmode :: int 0))
+          (cond
+           ((SCM_EQ mode 'index)   (set! rmode SCM_STRING_SCAN_INDEX))
+           ((SCM_EQ mode 'before)  (set! rmode SCM_STRING_SCAN_BEFORE))
+           ((SCM_EQ mode 'after)   (set! rmode SCM_STRING_SCAN_AFTER))
+           ((SCM_EQ mode 'before*) (set! rmode SCM_STRING_SCAN_BEFORE2))
+           ((SCM_EQ mode 'after*)  (set! rmode SCM_STRING_SCAN_AFTER2))
+           ((SCM_EQ mode 'both)    (set! rmode SCM_STRING_SCAN_BOTH))
+           (else (Scm_Error "bad value in mode argumet: %S, must be one of 'index, 'before, 'after, 'before*, 'after* or 'both." mode)))
+          (cond
+           ((SCM_STRINGP s2)
+            (result (Scm_StringScan s1 (SCM_STRING s2) rmode)))
+           ((SCM_CHARP s2)
+            (result (Scm_StringScanChar s1 (SCM_CHAR_VALUE s2) rmode)))
+           (else
+            (Scm_Error "bad type of argument for s2: %S, must be either string or character" s2)
+            (result SCM_UNDEFINED))))))
+                                       
+;   "  int retmode = 0;
+;   if (mode == sym_index)         retmode = SCM_STRING_SCAN_INDEX;
+;   else if (mode == sym_before)   retmode = SCM_STRING_SCAN_BEFORE;
+;   else if (mode == sym_after)    retmode = SCM_STRING_SCAN_AFTER;
+;   else if (mode == sym_before2)  retmode = SCM_STRING_SCAN_BEFORE2;
+;   else if (mode == sym_after2)   retmode = SCM_STRING_SCAN_AFTER2;
+;   else if (mode == sym_both)     retmode = SCM_STRING_SCAN_BOTH;
+;   else {
+;     Scm_Error(\"bad value in mode argumet: %S, must be one of 'index, 'before, 'after, 'before*, 'after* or 'both.\", mode);
+;   }
+;   if (SCM_STRINGP(s2)) {
+;      SCM_RETURN(Scm_StringScan(s1, SCM_STRING(s2), retmode));
+;   } else if (SCM_CHARP(s2)) {
+;      SCM_RETURN(Scm_StringScanChar(s1, SCM_CHAR_VALUE(s2), retmode));
+;   } else {
+;      Scm_Error(\"bad type of argument for s2: %S, must be either string or character\", s2);
+;      SCM_RETURN(SCM_UNDEFINED); /* dummy */
+;   }")
   
 
 ;; string pointer
@@ -615,13 +654,13 @@
   (call "Scm_StringPointerSet"))
 (define-cproc string-pointer-substring (sp::<string-pointer>
                                         &keyword (after #f))
-  (expr "Scm_StringPointerSubstring(sp, !SCM_FALSEP(after))"))
+  (expr <top> (Scm_StringPointerSubstring sp (not (SCM_FALSEP after)))))
 (define-cproc string-pointer-index (sp::<string-pointer>)
-  (expr <int> "sp->index"))
+  (expr <int> (-> sp index)))
 (define-cproc string-pointer-copy (sp::<string-pointer>)
   (call "Scm_StringPointerCopy"))
 (define-cproc string-pointer-byte-index (sp::<string-pointer>)
-  (expr <int> "sp->current - sp->start"))
+  (expr <int> (- (-> sp current) (-> sp start))))
 
 (if "SCM_DEBUG_HELPER"
     (define-cproc %string-pointer-dump (sp::<string-pointer>)
@@ -633,74 +672,67 @@
 (define-cproc regmatch? (obj)  (call <boolean> "SCM_REGMATCHP"))
 
 (define-cproc string->regexp (str::<string> &keyword (case-fold #f))
-  (body "int flags = SCM_BOOL_VALUE(case_fold)? SCM_REGEXP_CASE_FOLD : 0;"
-        "SCM_RESULT = Scm_RegComp(str, flags);"))
+  (body <top>
+        (let* ((flags :: int
+                      (?: (SCM_BOOL_VALUE case-fold) SCM_REGEXP_CASE_FOLD 0)))
+          (result (Scm_RegComp str flags)))))
 (define-cproc regexp->string (regexp::<regexp>)
-  (expr "regexp->pattern?SCM_OBJ(regexp->pattern):SCM_FALSE"))
+  (expr <top> (?: (-> regexp pattern) (SCM_OBJ (-> regexp pattern)) '#f)))
 (define-cproc regexp-case-fold? (regexp::<regexp>)
-  (expr <boolean> "regexp->flags&SCM_REGEXP_CASE_FOLD"))
+  (expr <boolean> (logand (-> regexp flags) SCM_REGEXP_CASE_FOLD)))
 
 (define-cproc regexp-parse (str::<string> &keyword (case-fold #f))
-  (body "int flags = SCM_BOOL_VALUE(case_fold)? SCM_REGEXP_CASE_FOLD : 0;"
-        "SCM_RESULT = Scm_RegComp(str, flags|SCM_REGEXP_PARSE_ONLY);"))
+  (body <top>
+        (let* ((flags :: int
+                      (?: (SCM_BOOL_VALUE case-fold) SCM_REGEXP_CASE_FOLD 0)))
+          (result (Scm_RegComp str (logior flags SCM_REGEXP_PARSE_ONLY))))))
 (define-cproc regexp-compile (ast)
   (call "Scm_RegCompFromAST"))
 (define-cproc regexp-optimize (ast)
   (call "Scm_RegOptimizeAST"))
 
 (define-cproc rxmatch (regexp str::<string>)
-  "  ScmRegexp *rx = NULL;
-  if (SCM_STRINGP(regexp)) rx = SCM_REGEXP(Scm_RegComp(SCM_STRING(regexp), 0));
-  else if (SCM_REGEXPP(regexp)) rx = SCM_REGEXP(regexp);
-  else Scm_Error(\"regexp required, but got %S\", regexp);
-  SCM_RETURN(Scm_RegExec(rx, str));")
+  (body <top>
+        (let* ((rx :: ScmRegexp* NULL))
+          (cond ((SCM_STRINGP regexp)
+                 (set! rx (SCM_REGEXP (Scm_RegComp (SCM_STRING regexp) 0))))
+                ((SCM_REGEXPP regexp)
+                 (set! rx (SCM_REGEXP regexp)))
+                (else (SCM_TYPE_ERROR regexp "regexp")))
+          (result (Scm_RegExec rx str)))))
 
-(define-cproc rxmatch-substring (match &optional (obj 0))
-  "  if (SCM_FALSEP(match)) SCM_RETURN(SCM_FALSE);
-  if (!SCM_REGMATCHP(match))
-    Scm_Error(\"regexp match object required, but got %S\", match);
-  SCM_RETURN(Scm_RegMatchSubstr(SCM_REGMATCH(match), obj));")
+(eval*
+ (define-cise-macro (rxmatchop form env)
+   (define (template result)
+     `(cond ((SCM_FALSEP match) (result '#f))
+            ((SCM_REGMATCHP match) (result ,result))
+            (else (SCM_TYPE_ERROR match "regmatch object or #f")
+                  (result SCM_UNDEFINED))))
+   (match form
+     [(_ (exp ...)) (template exp)]
+     [(_ fn)        (template `(,fn (SCM_REGMATCH match) obj))]))
+ )
 
+(define-cproc rxmatch-substring (match &optional (obj 0)) 
+  (body <top> (rxmatchop Scm_RegMatchSubstr)))
 (define-cproc rxmatch-start (match &optional (obj 0))
-  "  if (SCM_FALSEP(match)) SCM_RETURN(SCM_FALSE);
-  if (!SCM_REGMATCHP(match))
-    Scm_Error(\"regexp match object required, but got %S\", match);
-  SCM_RETURN(Scm_RegMatchStart(SCM_REGMATCH(match), obj));")
-
+  (body <top> (rxmatchop Scm_RegMatchStart)))
 (define-cproc rxmatch-end (match &optional (obj 0))
-  "  if (SCM_FALSEP(match)) SCM_RETURN(SCM_FALSE);
-  if (!SCM_REGMATCHP(match))
-    Scm_Error(\"regexp match object required, but got %S\", match);
-  SCM_RETURN(Scm_RegMatchEnd(SCM_REGMATCH(match), obj));")
-
+  (body <top> (rxmatchop Scm_RegMatchEnd)))
 (define-cproc rxmatch-before (match &optional (obj 0))
-  "  if (SCM_FALSEP(match)) SCM_RETURN(SCM_FALSE);
-  if (!SCM_REGMATCHP(match))
-    Scm_Error(\"regexp match object required, but got %S\", match);
-  SCM_RETURN(Scm_RegMatchBefore(SCM_REGMATCH(match), obj));")
-
+  (body <top> (rxmatchop Scm_RegMatchBefore)))
 (define-cproc rxmatch-after (match &optional (obj 0))
-  "  if (SCM_FALSEP(match)) SCM_RETURN(SCM_FALSE);
-  if (!SCM_REGMATCHP(match))
-    Scm_Error(\"regexp match object required, but got %S\", match);
-  SCM_RETURN(Scm_RegMatchAfter(SCM_REGMATCH(match), obj));")
-
+  (body <top> (rxmatchop Scm_RegMatchAfter)))
 (define-cproc rxmatch-num-matches (match)
-  "  if (SCM_FALSEP(match)) SCM_RETURN(SCM_MAKE_INT(0));
-  if (!SCM_REGMATCHP(match))
-    Scm_Error(\"regexp match object required, but got %S\", match);
-  SCM_RETURN(SCM_MAKE_INT(SCM_REGMATCH(match)->numMatches));")
+  (body <top> (rxmatchop (SCM_MAKE_INT (-> (SCM_REGMATCH match) numMatches)))))
 
 ;; for debug
-(if "SCM_DEBUG_HELPER"
-(define-cproc %regexp-dump (rx::<regexp>)
-  (call <void> "Scm_RegDump"))
-)
-
-(if "SCM_DEBUG_HELPER"
-(define-cproc %regmatch-dump (rm::<regmatch>)
-  (call <void> "Scm_RegMatchDump"))
-)
+(when "SCM_DEBUG_HELPER"
+  (define-cproc %regexp-dump (rx::<regexp>)
+    (call <void> "Scm_RegDump"))
+  (define-cproc %regmatch-dump (rm::<regmatch>)
+    (call <void> "Scm_RegMatchDump"))
+  )
 
 ;;
 ;; 6.3.6  Vectors
@@ -759,15 +791,6 @@
 ;; open-input-file and open-output-file are defined in Scheme.
 ;; these are core procedures
 
-;; valid keywords for open-*-file options
-(define-keyword error "key_error")
-(define-keyword create "key_create")
-(define-keyword append "key_append")
-(define-keyword supersede "key_supersede")
-(define-keyword overwrite "key_overwrite")
-(define-keyword character "key_character")
-(define-keyword binary "key_binary")
-
 (define-cproc %open-input-file (path::<string>
                                 &keyword
                                 (if-does-not-exist :error)
@@ -777,13 +800,13 @@
   (body <top>
         (let* ((ignerr :: int FALSE))
           (cond ((SCM_FALSEP if-does-not-exist) (set! ignerr TRUE))
-                ((not (SCM_EQ if-does-not-exist key_error))
-                 (Scm_Error "argument for :if-does-not-exist must be either :error or #f, but got %S" if-does-not-exist)))
+                ((not (SCM_EQ if-does-not-exist ':error))
+                 (Scm_TypeError ":if-does-not-exist" ":error or #f"
+                                if-does-not-exist)))
           (let* ((bufmode :: int
                           (Scm_BufferingMode buffering SCM_PORT_INPUT
                                              SCM_PORT_BUFFER_FULL))
-                 (o       :: ScmObj
-                          (Scm_OpenFilePort (Scm_GetStringConst path)
+                 (o       (Scm_OpenFilePort (Scm_GetStringConst path)
                                             O_RDONLY bufmode 0)))
             (when (and (SCM_FALSEP o) (not ignerr))
               (Scm_Error "couldn't open input file: %S" path))
@@ -803,64 +826,33 @@
           (flags  :: int O_WRONLY))
      ;; check if-exists flag
      (cond
-      ((SCM_EQ if-exists key_append) (logior= flags O_APPEND))
-      ((SCM_EQ if-exists key_error)
+      ((SCM_EQ if-exists ':append) (logior= flags O_APPEND))
+      ((SCM_EQ if-exists ':error)
        (logior= flags O_EXCL)
-       (when (SCM_EQ if-does-not-exist key_error)
+       (when (SCM_EQ if-does-not-exist ':error)
          (Scm_Error "bad flag combination: :if-exists and :if-does-not-exist can't be :error the same time.")))
-      ((SCM_EQ if-exists key_supersede) (logior= flags O_TRUNC))
-      ((SCM_EQ if-exists key_overwrite)) ; no need to add flags
+      ((SCM_EQ if-exists ':supersede) (logior= flags O_TRUNC))
+      ((SCM_EQ if-exists ':overwrite)) ; no need to add flags
       ((SCM_FALSEP if-exists)
        (logior= flags O_EXCL) (set! ignerr TRUE))
       (else
-       (Scm_Error "argument for :if-exists must be either :supersede, :overwrite, :append, :error or #f, but got %S" if-exists)))
+       (Scm_TypeError ":if-exists" ":supersede, :overwrite, :append, :error or #f" if-exists)))
      ;; check if-does-not-exist flag
      (cond
-      ((SCM_EQ if-does-not-exist key_create) (logior= flags O_CREAT))
+      ((SCM_EQ if-does-not-exist ':create) (logior= flags O_CREAT))
       ((SCM_FALSEP if-does-not-exist) (set! ignerr TRUE))
-      ((SCM_EQ if-does-not-exist key_error)) ; no need to add flags
+      ((SCM_EQ if-does-not-exist ':error)) ; no need to add flags
       (else
-       (Scm_Error "argument for :if-does-not-exist must be either :error, :create or #f, but got %S" if-does-not-exist)))
+       (Scm_TypeError ":if-does-not-exist" ":error, :create or #f"
+                      if-does-not-exist)))
      (let* ((bufmode :: int
                      (Scm_BufferingMode buffering SCM_PORT_OUTPUT
                                         SCM_PORT_BUFFER_FULL))
-            (o       :: ScmObj
-                     (Scm_OpenFilePort (Scm_GetStringConst path)
+            (o       (Scm_OpenFilePort (Scm_GetStringConst path)
                                        flags bufmode mode)))
        (when (and (not ignerr) (== o SCM_FALSE))
          (Scm_Error "couldn't open output file: %S" path))
        (result o)))))
-   
-         
-;   "  ScmObj o;
-;   int ignerr = FALSE, bufmode, flags = O_WRONLY;
-
-;   if (SCM_EQ(if_exists, key_append)) flags |= O_APPEND;
-;   else if (SCM_EQ(if_exists, key_error)) {
-;     flags |= O_EXCL;
-;     if (SCM_EQ(if_does_not_exist, key_error)) {
-;       Scm_Error(\"bad flag combination: :if-exists and :if-does-not-exist can't be :error the same time.\");
-;     }
-;   }
-;   else if (SCM_EQ(if_exists, key_supersede)) flags |= O_TRUNC;
-;   else if (SCM_EQ(if_exists, key_overwrite)) /*no need to add flags*/;
-;   else if (SCM_FALSEP(if_exists)) { flags |= O_EXCL; ignerr = TRUE; }
-;   else {
-;     Scm_Error(\"argument for :if-exists must be either :supersede, :overwrite, :append, :error or #f, but got %S\", if_exists);
-;   }
-
-;   if (SCM_EQ(if_does_not_exist, key_create)) flags |= O_CREAT;
-;   else if (SCM_FALSEP(if_does_not_exist)) ignerr = TRUE;
-;   else if (!SCM_EQ(if_does_not_exist, key_error)) {
-;     Scm_Error(\"argument for :if-does-not-exist must be either :error, :create or #f, but got %S\", if_does_not_exist);
-;   }
-
-;   bufmode = Scm_BufferingMode(buffering, SCM_PORT_OUTPUT, SCM_PORT_BUFFER_FULL);
-;   o = Scm_OpenFilePort(Scm_GetStringConst(path), flags, bufmode, mode);
-;   if (!ignerr && o == SCM_FALSE) {
-;      Scm_Error(\"couldn't open output file: %S\", path_scm);
-;   }
-;   SCM_RETURN(o);")
 
 ;; String port (srfi-6)
 (define-cproc open-input-string (string::<string>
@@ -1003,7 +995,7 @@
 (define-symbol proc "sym_proc")
 (define-cproc port-type (port::<port>)
   (body <top>
-        (let* ((type :: ScmObj SCM_FALSE))
+        (let* ((type '#f))
           (case (SCM_PORT_TYPE port)
             ((SCM_PORT_FILE) (set! type sym_file) (break))
             ((SCM_PORT_PROC) (set! type sym_proc) (break))
@@ -1065,8 +1057,6 @@
         (let* ((b :: int))
           (SCM_GETB b port)
           (result (?: (< b 0) SCM_EOF (SCM_MAKE_INT b))))))
-;   "  int b; SCM_GETB(b, port);
-;   SCM_RETURN((b < 0)? SCM_EOF : SCM_MAKE_INT(b));")
 
 (define-cproc peek-byte (&optional (port::<input-port> (current-input-port)))
   "  int b = Scm_Peekb(port);
@@ -1152,11 +1142,6 @@
   (expr <boolean> "!Scm_Require(feature, SCM_LOAD_PROPAGATE_ERROR, NULL)"))
 (define-cproc provide (feature)   (call "Scm_Provide"))
 (define-cproc provided? (feature) (call <boolean> "Scm_ProvidedP"))
-
-;(define-cproc %make-autoload (sym::<symbol> path::<string>
-;                              &optional import-from)
-;  "ScmSymbol *from = SCM_SYMBOLP(import_from)? SCM_SYMBOL(import_from) : NULL;
-;   SCM_RETURN(Scm_MakeAutoload(sym, path, from));")
 
 (define-cproc %autoload (mod::<module> file-or-module entries)
   (call <void> "Scm_DefineAutoload"))
@@ -1286,12 +1271,12 @@
    else SCM_RETURN(Scm_Values2(SCM_DICT_KEY(e), SCM_DICT_VALUE(e)));
  }"
 
-(define-symbol hash-table-iterator "sym_hash_table_iterator")
-
 (define-cproc %hash-table-iter (hash::<hash-table>)
-  (body "ScmHashIter *iter = SCM_NEW(ScmHashIter);"
-        "Scm_HashIterInit(iter, SCM_HASH_TABLE_CORE(hash));"
-        "SCM_RESULT = Scm_MakeSubr(hash_table_iter, iter, 1, 0, SCM_OBJ(SCM_SYMBOL_NAME(sym_hash_table_iterator)));"))
+  (body <top>
+        (let* ((iter :: ScmHashIter* (SCM_NEW ScmHashIter)))
+          (Scm_HashIterInit iter (SCM_HASH_TABLE_CORE hash))
+          (result (Scm_MakeSubr hash_table_iter iter 1 0
+                                '"hash-table-iterator")))))
 
 (define-cproc hash-table-keys (hash::<hash-table>)
   (call "Scm_HashTableKeys"))
@@ -1314,7 +1299,7 @@
  }"
 
 (define-cproc %make-tree-map (cmp-proc)
-  (expr "Scm_MakeTreeMap(tree_map_cmp, cmp_proc)"))
+  (expr <top> (Scm_MakeTreeMap tree_map_cmp cmp_proc)))
 
 (define-cproc tree-map-copy (tm::<tree-map>)
   (call "Scm_TreeMapCopy"))
@@ -1323,18 +1308,17 @@
   (call <boolean> "SCM_TREE_MAP_P"))
 
 (define-cproc tree-map-get (tm::<tree-map> key &optional fallback)
-  (body "ScmObj v = Scm_TreeMapRef(tm, key, fallback);"
-        "if (SCM_UNBOUNDP(v)) {"
-        "  Scm_Error(\"%S doesn't have an entry for key %S\", tm, key);"
-        "}"
-        "SCM_RESULT = v;"))
+  (body <top>
+        (let* ((v (Scm_TreeMapRef tm key fallback)))
+          (when (SCM_UNBOUNDP v)
+            (Scm_Error "%S doesn't have an entry for key %S" tm key))
+          (result v))))
 
 (define-cproc tree-map-put! (tm::<tree-map> key val)
-  (body <void> "Scm_TreeMapSet(tm, key, val, 0);"))
+  (body <void> (Scm_TreeMapSet tm key val 0)))
 
 (define-cproc tree-map-delete! (tm::<tree-map> key)
-  (expr <boolean>
-        "!SCM_UNBOUNDP(Scm_TreeMapDelete(tm, key))"))
+  (expr <boolean> (not (SCM_UNBOUNDP (Scm_TreeMapDelete tm key)))))
 
 "static ScmObj tree_map_update_cc(ScmObj result, void **data)
  {
@@ -1344,56 +1328,73 @@
  }"
 
 (define-cproc tree-map-update! (tm::<tree-map> key proc &optional fallback)
-  (body "ScmDictEntry *e;"
-        "void *data[1];"
-        "if (SCM_UNBOUNDP(fallback)) {"
-        "  e = Scm_TreeCoreSearch(SCM_TREE_MAP_CORE(tm), (intptr_t)key, SCM_DICT_GET);"
-        "  if (!e) Scm_Error(\"%S doesn't have an entry for key %S\", tm, key);"
-        "} else {"
-        "  e = Scm_TreeCoreSearch(SCM_TREE_MAP_CORE(tm), (intptr_t)key, SCM_DICT_CREATE);"
-        "  if (!e->value) SCM_DICT_SET_VALUE(e, fallback);"
-        "}"
-        "data[0] = (void*)e;"
-        "Scm_VMPushCC(tree_map_update_cc, data, 1);"
-        "SCM_RESULT = Scm_VMApply1(proc, SCM_DICT_VALUE(e));"))
+  (body <top>
+        (let* ((e :: ScmDictEntry*)
+               (|data[1]| :: void*))
+          (cond ((SCM_UNBOUNDP fallback)
+                 (set! e (Scm_TreeCoreSearch (SCM_TREE_MAP_CORE tm)
+                                             (cast intptr_t key)
+                                             SCM_DICT_GET))
+                 (unless e
+                   (Scm_Error "%S doesn't have an entry for key %S" tm key)))
+                (else
+                 (set! e (Scm_TreeCoreSearch (SCM_TREE_MAP_CORE tm)
+                                             (cast intptr_t key)
+                                             SCM_DICT_CREATE))
+                 (unless (-> e value)
+                   (SCM_DICT_SET_VALUE e fallback))))
+          (set! (aref data 0) (cast void* e))
+          (Scm_VMPushCC tree_map_update_cc data 1)
+          (result (Scm_VMApply1 proc (SCM_DICT_VALUE e))))))
 
 (define-cproc tree-map-push! (tm::<tree-map> key value)
   (body <void>
-        "ScmDictEntry *e = Scm_TreeCoreSearch(SCM_TREE_MAP_CORE(tm), (intptr_t)key, SCM_DICT_CREATE);"
-        "if (e->value) SCM_DICT_SET_VALUE(e, Scm_Cons(value, SCM_DICT_VALUE(e)));"
-        "else          SCM_DICT_SET_VALUE(e, Scm_Cons(value, SCM_NIL));"))
+        (let* ((e :: ScmDictEntry*
+                  (Scm_TreeCoreSearch (SCM_TREE_MAP_CORE tm)
+                                      (cast intptr_t key) SCM_DICT_CREATE)))
+          (if (-> e value)
+            (SCM_DICT_SET_VALUE e (Scm_Cons value (SCM_DICT_VALUE e)))
+            (SCM_DICT_SET_VALUE e (Scm_Cons value '()))))))
 
 (define-cproc tree-map-pop! (tm::<tree-map> key &optional fallback)
-  (body "ScmDictEntry *e = Scm_TreeCoreSearch(SCM_TREE_MAP_CORE(tm), (intptr_t)key, SCM_DICT_GET);"
-        "if (!e) {"
-        "  if (SCM_UNBOUNDP(fallback)) {"
-        "    Scm_Error(\"%S doesn't have an entry for key %S\", tm, key);"
-        "  }"
-        "  SCM_RESULT = fallback;"
-        "} else if (!SCM_PAIRP(SCM_DICT_VALUE(e))) {"
-        "  if (SCM_UNBOUNDP(fallback)) {"
-        "    Scm_Error(\"%S's value for key %S is not a pair: %S\", tm, key,"
-        "              SCM_DICT_VALUE(e));"
-        "  }"
-        "  SCM_RESULT = fallback;"
-        "} else {"
-        "  SCM_RESULT = SCM_CAR(SCM_DICT_VALUE(e));"
-        "  SCM_DICT_SET_VALUE(e, SCM_CDR(SCM_DICT_VALUE(e)));"
-        "}"))
-
+  (body <top>
+        (let* ((e :: ScmDictEntry*
+                  (Scm_TreeCoreSearch (SCM_TREE_MAP_CORE tm)
+                                      (cast intptr_t key) SCM_DICT_GET)))
+          (cond
+           ((not e)
+            (when (SCM_UNBOUNDP fallback)
+              (Scm_Error "%S doesn't have an entry for key %S" tm key))
+            (result fallback))
+           ((not (SCM_PAIRP (SCM_DICT_VALUE e)))
+            (when (SCM_UNBOUNDP fallback)
+              (Scm_Error "%S's value for key %S is not a pair: %S"
+                         tm key (SCM_DICT_VALUE e)))
+            (result fallback))
+           (else
+            (result (SCM_CAR (SCM_DICT_VALUE e)))
+            (SCM_DICT_SET_VALUE e (SCM_CDR (SCM_DICT_VALUE e))))))))
+            
 (define-cproc tree-map-exists? (tm::<tree-map> key)
-  (expr <boolean> "Scm_TreeCoreSearch(SCM_TREE_MAP_CORE(tm), (intptr_t)key, SCM_DICT_GET) != NULL"))
+  (expr <boolean>
+        (!= (Scm_TreeCoreSearch (SCM_TREE_MAP_CORE tm)
+                                (cast intptr_t key) SCM_DICT_GET)
+            NULL)))
 
 (define-cproc tree-map-num-entries (tm::<tree-map>)
-  (expr <int> "Scm_TreeCoreNumEntries(SCM_TREE_MAP_CORE(tm))"))
+  (expr <int> (Scm_TreeCoreNumEntries (SCM_TREE_MAP_CORE tm))))
 
 (define-cproc %tree-map-bound (tm::<tree-map> min::<boolean> pop::<boolean>)
-  (body "ScmTreeCoreBoundOp op = min? SCM_TREE_CORE_MIN:SCM_TREE_CORE_MAX;"
-        "ScmDictEntry *e;"
-        "if (pop) e = Scm_TreeCorePopBound(SCM_TREE_MAP_CORE(tm), op);"
-        "else     e = Scm_TreeCoreGetBound(SCM_TREE_MAP_CORE(tm), op);"
-        "if (e) SCM_RESULT = Scm_Cons(SCM_DICT_KEY(e), SCM_DICT_VALUE(e));"
-        "else   SCM_RESULT = SCM_FALSE;"))
+  (body <top>
+        (let* ((op :: ScmTreeCoreBoundOp
+                   (?: min SCM_TREE_CORE_MIN SCM_TREE_CORE_MAX))
+               (e  :: ScmDictEntry*
+                   (?: pop
+                       (Scm_TreeCorePopBound (SCM_TREE_MAP_CORE tm) op)
+                       (Scm_TreeCoreGetBound (SCM_TREE_MAP_CORE tm) op))))
+          (if e
+            (result (Scm_Cons (SCM_DICT_KEY e) (SCM_DICT_VALUE e)))
+            (result '#f)))))
 
 "static ScmObj tree_map_iter(ScmObj *args, int nargs, void *data)
  {
@@ -1406,16 +1407,18 @@
  }"
 
 (define-cproc %tree-map-iter (tm::<tree-map>)
-  (body "ScmTreeIter *iter = SCM_NEW(ScmTreeIter);"
-        "Scm_TreeIterInit(iter, SCM_TREE_MAP_CORE(tm), NULL);"
-        "SCM_RESULT = Scm_MakeSubr(tree_map_iter, iter, 2, 0, SCM_MAKE_STR(\"tree-map-iterator\"));"))
+  (body <top>
+        (let* ((iter :: ScmTreeIter* (SCM_NEW ScmTreeIter)))
+          (Scm_TreeIterInit iter (SCM_TREE_MAP_CORE tm) NULL)
+          (result (Scm_MakeSubr tree_map_iter iter 2 0 '"tree-map-iterator")))))
 
 (define-cproc %tree-map-check-consistency (tm::<tree-map>)
-  (body "Scm_TreeCoreCheckConsistency(SCM_TREE_MAP_CORE(tm));"
-        "SCM_RESULT = SCM_TRUE;"))
+  (body <top>
+        (Scm_TreeCoreCheckConsistency (SCM_TREE_MAP_CORE tm))
+        (result '#t)))
 
 (define-cproc %tree-map-dump (tm::<tree-map>)
-  (body <void> "Scm_TreeMapDump(tm, SCM_CUROUT);"))
+  (body <void> (Scm_TreeMapDump tm SCM_CUROUT)))
 
 ;;
 ;; Modules
@@ -1442,32 +1445,27 @@
   (expr "SCM_OBJ(mod->table)"))
 
 (define-cproc find-module (name::<symbol>)
-  (expr <module>? "Scm_FindModule(name, SCM_FIND_MODULE_QUIET)"))
+  (expr <module>? (Scm_FindModule name SCM_FIND_MODULE_QUIET)))
 
 (define-cproc all-modules ()
   (call "Scm_AllModules"))
 
-(define-cproc make-module (name &keyword (if-exists :error))
-  "int error_if_exists = TRUE;
-  if (SCM_EQ(if_exists, key_error)) {
-    error_if_exists = TRUE;
-  } else if (SCM_FALSEP(if_exists)) {
-    error_if_exists = FALSE;
-  } else {
-    Scm_Error(\"argument for :if-exists must be either :error or #f, but got %S\", if_exists);
-  }
-  if (!SCM_FALSEP(name) && !SCM_SYMBOLP(name)) {
-    Scm_Error(\"module name must be a symbol or #f, but got %S\", name);
-  }
-  SCM_RETURN(Scm_MakeModule((SCM_FALSEP(name)?NULL:SCM_SYMBOL(name)),
-                            error_if_exists));")
+(define-cproc make-module (name::<symbol>? &keyword (if-exists :error))
+  (body <top>
+        (let* ((error_if_exists :: int TRUE))
+          (cond ((SCM_EQ if-exists ':error) (set! error_if_exists TRUE))
+                ((SCM_FALSEP if-exists)     (set! error_if_exists FALSE))
+                (else (Scm_TypeError ":if-exists" ":error or #f" if_exists)))
+          (result (Scm_MakeModule name error_if_exists)))))
 
 (define-cproc module-name->path (name)
-  (body "ScmSymbol *s = NULL;"
-        "if (SCM_SYMBOLP(name)) s = SCM_SYMBOL(name);"
-        "else if (SCM_IDENTIFIERP(name)) s = SCM_IDENTIFIER(name)->name;"
-        "else Scm_Error(\"symbol or identifier required, but got %S\", name);"
-        "SCM_RESULT = Scm_ModuleNameToPath(s);"))
+  (body <top>
+        (let* ((s :: ScmSymbol* NULL))
+          (cond
+           ((SCM_SYMBOLP name) (set! s (SCM_SYMBOL name)))
+           ((SCM_IDENTIFIERP name) (set! s (-> (SCM_IDENTIFIER name) name)))
+           (else (SCM_TYPE_ERROR name "symbol or identifier")))
+          (result (Scm_ModuleNameToPath s)))))
 
 (define-cproc path->module-name (path::<string>)
   (call "Scm_PathToModuleName"))
@@ -1493,22 +1491,24 @@
 "
 
 (define-cproc global-variable-bound? (mod-or-name name::<symbol>)
-  (body <boolean>
-        "ScmModule *module = get_module_from_mod_or_name(mod_or_name);"
-        "SCM_RESULT = (Scm_SymbolValue(module, name) != SCM_UNBOUND);"))
+  (expr <boolean>
+        (not (SCM_UNBOUNDP
+              (Scm_GlobalVariableRef (get_module_from_mod_or_name mod_or_name)
+                                     name FALSE)))))
 
 (define-cproc global-variable-ref (mod_or_name name::<symbol>
                                                &optional
                                                fallback
                                                (stay-in-module::<boolean> #f))
-  (body "ScmModule *module = get_module_from_mod_or_name(mod_or_name);"
-        "int flags = (stay_in_module? SCM_BINDING_STAY_IN_MODULE : 0);"
-        "ScmObj r = Scm_GlobalVariableRef(module, name, flags);"
-        "SCM_RESULT = fallback;"
-        "if (r != SCM_UNBOUND) SCM_RESULT = r;"
-        "else if (fallback == SCM_UNBOUND) {"
-        "  Scm_Error(\"global variable %S is not bound in module %S\", name, module);"
-        "}"))
+  (body <top>
+        (let* ((module :: ScmModule* (get_module_from_mod_or_name mod_or_name))
+               (flags  :: int (?: stay_in_module SCM_BINDING_STAY_IN_MODULE 0))
+               (r      (Scm_GlobalVariableRef module name flags))
+               (r2     (?: (SCM_UNBOUNDP r) fallback r)))
+          (when (SCM_UNBOUNDP r2)
+            (Scm_Error "global variable %S is not bound in module %S"
+                       name module))
+          (result r2))))
 
 ;;
 ;; Gauche extentions
@@ -1545,51 +1545,52 @@
     Scm_Printf(port, \"#<thread %S %s %p>\", vm->name, state, vm);")
   )
 
-(define-cproc vm-dump (&optional vm)
-  " if (vm == SCM_UNBOUND) vm = SCM_OBJ(Scm_VM());
-  else if (!SCM_VMP(vm)) Scm_Error(\"VM object required, got %S\", vm);
-  Scm_VMDump(SCM_VM(vm));
-  SCM_RETURN(SCM_UNDEFINED); ")
+(define-cproc vm-dump
+  (&optional (vm::<thread> (c "SCM_OBJ(Scm_VM())")))
+  (body <void> (Scm_VMDump vm)))
 
-(define-cproc vm-get-stack-trace (&optional vm)
-  " if (vm == SCM_UNBOUND) vm = SCM_OBJ(Scm_VM());
-  else if (!SCM_VMP(vm)) Scm_Error(\"VM object required, got %S\", vm);
-  SCM_RETURN(Scm_VMGetStack(SCM_VM(vm)));")
+(define-cproc vm-get-stack-trace
+  (&optional (vm::<thread> (c "SCM_OBJ(Scm_VM())")))
+  (expr <top> (Scm_VMGetStack vm)))
 
-(define-cproc vm-get-stack-trace-lite (&optional vm)
-  " if (vm == SCM_UNBOUND) vm = SCM_OBJ(Scm_VM());
-  else if (!SCM_VMP(vm)) Scm_Error(\"VM object required, got %S\", vm);
-  SCM_RETURN(Scm_VMGetStackLite(SCM_VM(vm)));")
+(define-cproc vm-get-stack-trace-lite
+  (&optional (vm::<thread> (c "SCM_OBJ(Scm_VM())")))
+  (expr <top> (Scm_VMGetStackLite vm)))
 
-(define-cproc vm-set-default-exception-handler (vm handler)
-  "  if (!SCM_VMP(vm)) Scm_Error(\"VM object required, got %S\", vm);
-  if (!SCM_FALSEP(handler) && !SCM_PROCEDUREP(handler)) {
-    Scm_Error(\"a procedure or #f required, but got %S\", handler);
-  }
-  SCM_VM(vm)->defaultEscapeHandler = handler;
-  SCM_RETURN(SCM_UNDEFINED);")
+(define-cproc vm-set-default-exception-handler (vm::<thread> handler)
+  (body <void>
+        (unless (or (SCM_FALSEP handler) (SCM_PROCEDUREP handler))
+          (SCM_TYPE_ERROR handler "a procedure or #f"))
+        (set! (-> vm defaultEscapeHandler) handler)))
 
 (define-cproc current-load-history ()
-  (expr "Scm_VM()->load_history"))
+  (expr <top> (-> (Scm_VM) load_history)))
 (define-cproc current-load-next ()
-  (expr "Scm_VM()->load_next"))
+  (expr <top> (-> (Scm_VM) load_next)))
 (define-cproc current-load-port ()
-  (expr "Scm_VM()->load_port"))
+  (expr <top> (-> (Scm_VM) load_port)))
 
 ;; parameter
 (define-cproc %vm-make-parameter-slot ()
   (body (<int> <int>)
-        "ScmParameterLoc loc;"
-        "Scm_MakeParameterSlot(Scm_VM(), &loc);"
-        "SCM_RESULT0 = loc.index; SCM_RESULT1 = loc.id;"))
+        (let* ((loc :: ScmParameterLoc))
+          (Scm_MakeParameterSlot (Scm_VM) (& loc))
+          (set! SCM_RESULT0 (ref loc index)
+                SCM_RESULT1 (ref loc id)))))
+
 (define-cproc %vm-parameter-ref (index::<int> id::<int>)
-  (body "ScmParameterLoc loc;"
-        "loc.index = index; loc.id = id;"
-        "SCM_RESULT = Scm_ParameterRef(Scm_VM(), &loc);"))
+  (body <top>
+        (let* ((loc :: ScmParameterLoc))
+          (set! (ref loc index) index
+                (ref loc id) id)
+          (result (Scm_ParameterRef (Scm_VM) (& loc))))))
+
 (define-cproc %vm-parameter-set! (index::<int> id::<int> value)
-  (body "ScmParameterLoc loc;"
-        "loc.index = index; loc.id = id;"
-        "SCM_RESULT = Scm_ParameterSet(Scm_VM(), &loc, value);"))
+  (body <top>
+        (let* ((loc :: ScmParameterLoc))
+          (set! (ref loc index) index
+                (ref loc id) id)
+          (result (Scm_ParameterSet (Scm_VM) (& loc) value)))))
 
 ;;
 ;; Inspecting feature
@@ -1637,22 +1638,17 @@
 ;; GC stuff
 (define-cproc gc () (call <void> "GC_gcollect"))
 
-(define-keyword total-heap-size "key_total_heap_size")
-(define-keyword free-bytes      "key_free_bytes")
-(define-keyword bytes-since-gc  "key_bytes_since_gc")
-(define-keyword total-bytes     "key_total_bytes")
-
 (define-cproc gc-stat ()
-  "  ScmObj h = SCM_NIL, t = SCM_NIL;
-  SCM_APPEND(h, t, SCM_LIST2(key_total_heap_size,
-                             Scm_MakeIntegerFromUI(GC_get_heap_size())));
-  SCM_APPEND(h, t, SCM_LIST2(key_free_bytes,
-                             Scm_MakeIntegerFromUI(GC_get_free_bytes())));
-  SCM_APPEND(h, t, SCM_LIST2(key_bytes_since_gc,
-                             Scm_MakeIntegerFromUI(GC_get_bytes_since_gc())));
-  SCM_APPEND(h, t, SCM_LIST2(key_total_bytes,
-                             Scm_MakeIntegerFromUI(GC_get_total_bytes())));
-  SCM_RETURN(h);")
+  (body <top>
+        (result
+         (list (list ':total-heap-size
+                     (Scm_MakeIntegerFromUI (GC_get_heap_size)))
+               (list ':free-bytes
+                     (Scm_MakeIntegerFromUI (GC_get_free_bytes)))
+               (list ':bytes-since-gc
+                     (Scm_MakeIntegerFromUI (GC_get_bytes_since_gc)))
+               (list ':total-bytes
+                     (Scm_MakeIntegerFromUI (GC_get_total_bytes)))))))
 
 ;; Profiler public API
 (define-cproc profiler-start () (call <void> "Scm_ProfilerStart"))
@@ -1665,13 +1661,14 @@
 (define-cproc closure? (obj)
   (call <boolean> "SCM_CLOSUREP"))
 (define-cproc toplevel-closure? (obj)
-  (expr <boolean> "SCM_CLOSUREP(obj) && SCM_CLOSURE(obj)->env == NULL"))
+  (expr <boolean>
+        (and (SCM_CLOSUREP obj) (== (-> (SCM_CLOSURE obj) env) NULL))))
 
 (define-cproc closure-code (clo::<closure>)
-  (expr "clo->code"))
+  (expr <top> (-> clo code)))
 
 (define-cproc procedure-info (proc::<procedure>)
-  (expr "SCM_PROCEDURE_INFO(proc)"))
+  (expr <top> (SCM_PROCEDURE_INFO proc)))
 
 
 ;; Local variables:
