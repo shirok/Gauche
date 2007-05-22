@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.146 2007-03-26 23:59:54 shirok Exp $
+ *  $Id: number.c,v 1.147 2007-05-22 11:47:30 shirok Exp $
  */
 
 #include <math.h>
@@ -2318,10 +2318,11 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
             if (r > 0) return 1;
             return 0;
         }
-        if (SCM_BIGNUMP(arg1))
-            return Scm_BignumCmp(SCM_BIGNUM(Scm_MakeBignumFromDouble(SCM_FLONUM_VALUE(arg0))),
-                                 SCM_BIGNUM(arg1));
-        if (SCM_RATNUMP(arg1)) {
+        if (SCM_BIGNUMP(arg1) || SCM_RATNUMP(arg1)) {
+            /* we fall back to inexact comparison, because (a) arg0 can be
+               infinity which cannot be converted to an exact number,
+               and (b) Scm_Sub uses inexact calculation in these cases,
+               and we want to keep the result consistent. */
             double r = SCM_FLONUM_VALUE(arg0) - Scm_GetDouble(arg1);
             if (r < 0) return -1;
             if (r > 0) return 1;
@@ -2334,8 +2335,7 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
             return Scm_BignumCmp(SCM_BIGNUM(arg0),
                                  SCM_BIGNUM(Scm_MakeBignumFromSI(SCM_INT_VALUE(arg1))));
         if (SCM_FLONUMP(arg1))
-            return Scm_BignumCmp(SCM_BIGNUM(arg0),
-                                 SCM_BIGNUM(Scm_MakeBignumFromDouble(SCM_FLONUM_VALUE(arg1))));
+            return -Scm_NumCmp(arg1, arg0);
         if (SCM_BIGNUMP(arg1))
             return Scm_BignumCmp(SCM_BIGNUM(arg0), SCM_BIGNUM(arg1));
         if (SCM_RATNUMP(arg1)) {

@@ -1,5 +1,8 @@
 2007-05-22  Shiro Kawai  <shiro@acm.org>
 
+	* src/number.c (Scm_NumCmp): Fixed a bug that raises an error when
+	  attempted to compare bignum and infinity.
+
 	* lib/slib.scm.in (force-output): oversight.  made it an alias of
 	  flush.
 
