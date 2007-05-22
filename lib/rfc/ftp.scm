@@ -30,7 +30,7 @@
 ;;;  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-;;; $Id: ftp.scm,v 1.5 2007-03-02 07:39:10 shirok Exp $
+;;; $Id: ftp.scm,v 1.6 2007-05-22 11:51:46 shirok Exp $
 
 ;; RFC  959 FILE TRANSFER PROTOCOL (FTP)
 ;; RFC 2428 FTP Extensions for IPv6 and NATs
@@ -73,7 +73,7 @@
   (receive (user host port) (uri-decompose-authority uri)
     (let1 conn (apply ftp-login host
                       (cond-list
-                       (user @ (list :user user))
+                       (user @ (list :username user))
                        (port @ (list :port port))
                        (#t   @ keys)))
       (unwind-protect (proc conn)
