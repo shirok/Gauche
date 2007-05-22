@@ -1,5 +1,8 @@
 2007-05-22  Shiro Kawai  <shiro@acm.org>
 
+	* lib/slib.scm.in (force-output): oversight.  made it an alias of
+	  flush.
+
 	* src/main.c (main): temporarily avoided using new Scm_Apply API
 	  due to the bug that lost stack traces.
 

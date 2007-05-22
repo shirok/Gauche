@@ -264,7 +264,7 @@
 
 ;;@ FORCE-OUTPUT flushes any pending output on optional arg output port
 ;;; use this definition if your system doesn't have such a procedure.
-(define (force-output . arg) #t)
+(define force-output flush)
 
 ;;@ CURRENT-TIME
 (define current-time sys-time)
