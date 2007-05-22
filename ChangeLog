@@ -1,3 +1,8 @@
+2007-05-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c (main): temporarily avoided using new Scm_Apply API
+	  due to the bug that lost stack traces.
+
 2007-05-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/charset.h (SCM_CHAR_SET etc): Changed CHARSET in

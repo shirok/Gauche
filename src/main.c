@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: main.c,v 1.100 2007-04-12 03:26:55 shirok Exp $
+ *  $Id: main.c,v 1.101 2007-05-22 11:20:58 shirok Exp $
  */
 
 #include <unistd.h>
@@ -230,9 +230,6 @@ static void sig_setup(void)
     sigdelset(&set, SIGSTOP);
 #endif
     sigdelset(&set, SIGSEGV);
-//#ifdef SIGPROF
-//    sigdelset(&set, SIGPROF);
-//#endif /*SIGPROF*/
 #ifdef SIGBUS
     sigdelset(&set, SIGBUS);
 #endif /*SIGBUS*/
@@ -473,6 +470,7 @@ int main(int argc, char **argv)
         mainproc = Scm_SymbolValue(Scm_UserModule(),
                                    SCM_SYMBOL(SCM_INTERN("main")));
         if (SCM_PROCEDUREP(mainproc)) {
+#if 0 /* Temporarily turned off due to the bug that loses stack traces. */
             int r = Scm_Apply(mainproc, SCM_LIST1(av), &epak);
             if (r > 0) {
                 ScmObj res = epak.results[0];
@@ -482,6 +480,14 @@ int main(int argc, char **argv)
                 Scm_ReportError(epak.exception);
                 exit_code = 70;  /* EX_SOFTWARE, see SRFI-22. */
             }
+#else
+            ScmObj r = Scm_ApplyRec(mainproc, SCM_LIST1(av));
+            if (SCM_INTP(r)) {
+                exit_code = SCM_INT_VALUE(r);
+            } else {
+                exit_code = 70;
+            }
+#endif
         }
     } else {
         /* We're in interactive mode. (use gauche.interactive) */
