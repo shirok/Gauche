@@ -31,7 +31,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: regexp.c,v 1.67 2007-04-05 06:50:16 shirok Exp $
+ *  $Id: regexp.c,v 1.68 2007-05-22 10:23:47 shirok Exp $
  */
 
 #include <setjmp.h>
@@ -413,28 +413,28 @@ static ScmObj rc1_lex(regcomp_ctx *ctx)
             ch = rc1_lex_xdigits(ctx->ipat, 8, 'U');
             return SCM_MAKE_CHAR(Scm_UcsToChar(ch));
         case 'd':
-            cs = Scm_GetStandardCharSet(SCM_CHARSET_DIGIT);
-            rc_register_charset(ctx, SCM_CHARSET(cs));
+            cs = Scm_GetStandardCharSet(SCM_CHAR_SET_DIGIT);
+            rc_register_charset(ctx, SCM_CHAR_SET(cs));
             return cs;
         case 'D':
-            cs = Scm_GetStandardCharSet(SCM_CHARSET_DIGIT);
-            rc_register_charset(ctx, SCM_CHARSET(cs));
+            cs = Scm_GetStandardCharSet(SCM_CHAR_SET_DIGIT);
+            rc_register_charset(ctx, SCM_CHAR_SET(cs));
             return Scm_Cons(SCM_SYM_COMP, cs);
         case 'w':
-            cs = Scm_GetStandardCharSet(SCM_CHARSET_WORD);
-            rc_register_charset(ctx, SCM_CHARSET(cs));
+            cs = Scm_GetStandardCharSet(SCM_CHAR_SET_WORD);
+            rc_register_charset(ctx, SCM_CHAR_SET(cs));
             return cs;
         case 'W':
-            cs = Scm_GetStandardCharSet(SCM_CHARSET_WORD);
-            rc_register_charset(ctx, SCM_CHARSET(cs));
+            cs = Scm_GetStandardCharSet(SCM_CHAR_SET_WORD);
+            rc_register_charset(ctx, SCM_CHAR_SET(cs));
             return Scm_Cons(SCM_SYM_COMP, cs);
         case 's':
-            cs = Scm_GetStandardCharSet(SCM_CHARSET_SPACE);
-            rc_register_charset(ctx, SCM_CHARSET(cs));
+            cs = Scm_GetStandardCharSet(SCM_CHAR_SET_SPACE);
+            rc_register_charset(ctx, SCM_CHAR_SET(cs));
             return cs;
         case 'S':
-            cs = Scm_GetStandardCharSet(SCM_CHARSET_SPACE);
-            rc_register_charset(ctx, SCM_CHARSET(cs));
+            cs = Scm_GetStandardCharSet(SCM_CHAR_SET_SPACE);
+            rc_register_charset(ctx, SCM_CHAR_SET(cs));
             return Scm_Cons(SCM_SYM_COMP, cs);
         case '0': case '1': case '2': case '3': case '4':
         case '5': case '6': case '7': case '8': case '9':
@@ -967,14 +967,14 @@ static ScmObj rc_charset(regcomp_ctx *ctx)
 {
     int complement;
     ScmObj set = Scm_CharSetRead(ctx->ipat, &complement, FALSE, TRUE);
-    if (!SCM_CHARSETP(set)) {
+    if (!SCM_CHAR_SET_P(set)) {
         Scm_Error("bad charset spec in pattern: %S", ctx->pattern);
     }
     if (ctx->casefoldp) {
-        Scm_CharSetCaseFold(SCM_CHARSET(set));
+        Scm_CharSetCaseFold(SCM_CHAR_SET(set));
     }
 
-    rc_register_charset(ctx, SCM_CHARSET(set));
+    rc_register_charset(ctx, SCM_CHAR_SET(set));
     if (complement) {
         return Scm_Cons(SCM_SYM_COMP, SCM_OBJ(set));
     } else {
@@ -999,7 +999,7 @@ static void rc_setup_charsets(ScmRegexp *rx, regcomp_ctx *ctx)
     rx->numSets = Scm_Length(ctx->sets);
     rx->sets = SCM_NEW_ARRAY(ScmCharSet*, rx->numSets);
     for (i=0, cp = Scm_Reverse(ctx->sets); !SCM_NULLP(cp); cp = SCM_CDR(cp)) {
-        rx->sets[i++] = SCM_CHARSET(SCM_CAR(cp));
+        rx->sets[i++] = SCM_CHAR_SET(SCM_CAR(cp));
     }
 }
 
@@ -1097,8 +1097,8 @@ static int is_distinct(ScmObj x, ScmObj y)
     if (SCM_PAIRP(x)) {
         carx = SCM_CAR(x);
         if (SCM_EQ(carx, SCM_SYM_COMP)) {
-            SCM_ASSERT(SCM_CHARSETP(SCM_CDR(x)));
-            if (SCM_CHARP(y) || SCM_CHARSETP(y)) {
+            SCM_ASSERT(SCM_CHAR_SET_P(SCM_CDR(x)));
+            if (SCM_CHARP(y) || SCM_CHAR_SET_P(y)) {
                 return !is_distinct(SCM_CDR(x), y);
             }
             return FALSE;
@@ -1120,14 +1120,14 @@ static int is_distinct(ScmObj x, ScmObj y)
         if (SCM_CHARP(y)) return !SCM_EQ(x, y);
         return is_distinct(y, x);
     }
-    if (SCM_CHARSETP(x)) {
+    if (SCM_CHAR_SET_P(x)) {
         if (SCM_CHARP(y)) {
-            return !Scm_CharSetContains(SCM_CHARSET(x), SCM_CHAR_VALUE(y));
+            return !Scm_CharSetContains(SCM_CHAR_SET(x), SCM_CHAR_VALUE(y));
         }
-        if (SCM_CHARSETP(y)) {
-            ScmObj ccs = Scm_CharSetCopy(SCM_CHARSET(y));
-            ccs = Scm_CharSetComplement(SCM_CHARSET(ccs));
-            return Scm_CharSetLE(SCM_CHARSET(x), SCM_CHARSET(ccs));
+        if (SCM_CHAR_SET_P(y)) {
+            ScmObj ccs = Scm_CharSetCopy(SCM_CHAR_SET(y));
+            ccs = Scm_CharSetComplement(SCM_CHAR_SET(ccs));
+            return Scm_CharSetLE(SCM_CHAR_SET(x), SCM_CHAR_SET(ccs));
         }
         return is_distinct(y, x);
     }
@@ -1377,8 +1377,8 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp)
             return;
         }
         /* charset */
-        if (SCM_CHARSETP(ast)) {
-            EMIT4(!SCM_CHARSET_SMALLP(ast), RE_SET, RE_SET_RL, RE_SET1, RE_SET1_RL);
+        if (SCM_CHAR_SET_P(ast)) {
+            EMIT4(!SCM_CHAR_SET_SMALLP(ast), RE_SET, RE_SET_RL, RE_SET1, RE_SET1_RL);
             rc3_emit(ctx, rc3_charset_index(rx, ast));
             return;
         }
@@ -1418,8 +1418,8 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp)
     type = SCM_CAR(ast);
     if (SCM_EQ(type, SCM_SYM_COMP)) {
         ScmObj cs = SCM_CDR(ast);
-        SCM_ASSERT(SCM_CHARSETP(cs));
-        EMIT4(!SCM_CHARSET_SMALLP(cs), RE_NSET, RE_NSET_RL, RE_NSET1, RE_NSET1_RL);
+        SCM_ASSERT(SCM_CHAR_SET_P(cs));
+        EMIT4(!SCM_CHAR_SET_SMALLP(cs), RE_NSET, RE_NSET_RL, RE_NSET1, RE_NSET1_RL);
         rc3_emit(ctx, rc3_charset_index(rx, cs));
         return;
     }
@@ -1449,17 +1449,17 @@ static void rc3_rec(regcomp_ctx *ctx, ScmObj ast, int lastp)
         ScmObj m = SCM_CADR(ast), n = SCM_CAR(SCM_CDDR(ast));
         ScmObj elem = SCM_CDR(SCM_CDDR(ast));
         if (SCM_FALSEP(n) && SCM_PAIRP(elem) && SCM_NULLP(SCM_CDR(elem))) {
-            if (SCM_CHARSETP(SCM_CAR(elem))) {
+            if (SCM_CHAR_SET_P(SCM_CAR(elem))) {
                 rc3_seq_rep(ctx, elem, SCM_INT_VALUE(m), FALSE);
                 elem = SCM_CAR(elem);
-                EMIT4(!SCM_CHARSET_SMALLP(elem), RE_SETR, RE_SETR_RL, RE_SET1R, RE_SET1R_RL);
+                EMIT4(!SCM_CHAR_SET_SMALLP(elem), RE_SETR, RE_SETR_RL, RE_SET1R, RE_SET1R_RL);
                 rc3_emit(ctx, rc3_charset_index(rx, elem));
                 return;
             }
             if (SCM_PAIRP(elem)&&SCM_EQ(SCM_CAR(elem), SCM_SYM_COMP)) {
                 rc3_seq_rep(ctx, elem, SCM_INT_VALUE(m), FALSE);
                 elem = SCM_CDR(elem);
-                SCM_ASSERT(SCM_CHARSETP(elem));
+                SCM_ASSERT(SCM_CHAR_SET_P(elem));
                 EMIT4(!ctx->lookbehindp, RE_NSETR, RE_NSETR_RL, RE_NSET1R, RE_NSET1R_RL);
                 rc3_emit(ctx, rc3_charset_index(rx, elem));
                 return;
@@ -1908,8 +1908,8 @@ static ScmObj rc_setup_context(regcomp_ctx *ctx, ScmObj ast)
     ScmObj type, rest;
     if (!SCM_PAIRP(ast)) {
         if (SCM_CHARP(ast)) return ast;
-        if (SCM_CHARSETP(ast)) {
-            rc_register_charset(ctx, SCM_CHARSET(ast));
+        if (SCM_CHAR_SET_P(ast)) {
+            rc_register_charset(ctx, SCM_CHAR_SET(ast));
             return ast;
         }
         if (SCM_EQ(ast, SCM_SYM_BOL) || SCM_EQ(ast, SCM_SYM_EOL)
@@ -1931,8 +1931,8 @@ static ScmObj rc_setup_context(regcomp_ctx *ctx, ScmObj ast)
         }
     }
     if (SCM_EQ(type, SCM_SYM_COMP)) {
-        if (!SCM_CHARSETP(SCM_CDR(ast))) goto badast;
-        rc_register_charset(ctx, SCM_CHARSET(SCM_CDR(ast)));
+        if (!SCM_CHAR_SET_P(SCM_CDR(ast))) goto badast;
+        rc_register_charset(ctx, SCM_CHAR_SET(SCM_CDR(ast)));
         return ast;
     }
     if (SCM_EQ(type, SCM_SYM_BACKREF)) {

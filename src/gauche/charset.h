@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: charset.h,v 1.2 2007-04-05 06:50:16 shirok Exp $
+ *  $Id: charset.h,v 1.3 2007-05-22 10:23:46 shirok Exp $
  */
 
 #ifndef GAUCHE_CHARSET_H
@@ -50,21 +50,26 @@
  * Lookup is trivial using Scm_TreeCoreClosestEntries.
  */
 
-#define SCM_CHARSET_SMALL_CHARS 128
+#define SCM_CHAR_SET_SMALL_CHARS 128
 
 struct ScmCharSetRec {
     SCM_HEADER;
-    ScmBits small[SCM_BITS_NUM_WORDS(SCM_CHARSET_SMALL_CHARS)];
+    ScmBits small[SCM_BITS_NUM_WORDS(SCM_CHAR_SET_SMALL_CHARS)];
     ScmTreeCore large;
 };
 
 SCM_CLASS_DECL(Scm_CharSetClass);
-#define SCM_CLASS_CHARSET  (&Scm_CharSetClass)
-#define SCM_CHARSET(obj)   ((ScmCharSet*)obj)
-#define SCM_CHARSETP(obj)  SCM_XTYPEP(obj, SCM_CLASS_CHARSET)
+#define SCM_CLASS_CHAR_SET  (&Scm_CharSetClass)
+#define SCM_CHAR_SET(obj)   ((ScmCharSet*)obj)
+#define SCM_CHAR_SET_P(obj) SCM_XTYPEP(obj, SCM_CLASS_CHAR_SET)
 
-#define SCM_CHARSET_SMALLP(obj) \
+#define SCM_CHAR_SET_SMALLP(obj) \
     (Scm_TreeCoreNumEntries(&SCM_CHARSET(obj)->large) == 0)
+
+/* for backward compatibility.  deprecated. */
+#define SCM_CLASS_CHARSET   SCM_CLASS_CHAR_SET
+#define SCM_CHARSET(obj)    SCM_CHAR_SET(obj)
+#define SCM_CHARSETP(obj)   SCM_CHAR_SET_P(obj)
 
 SCM_EXTERN ScmObj Scm_MakeEmptyCharSet(void);
 SCM_EXTERN ScmObj Scm_CharSetCopy(ScmCharSet *src);
@@ -87,20 +92,20 @@ SCM_EXTERN void   Scm_CharSetDump(ScmCharSet *cs, ScmPort *port);
 
 /* predefined character set API */
 enum {
-    SCM_CHARSET_ALNUM,
-    SCM_CHARSET_ALPHA,
-    SCM_CHARSET_BLANK,
-    SCM_CHARSET_CNTRL,
-    SCM_CHARSET_DIGIT,
-    SCM_CHARSET_GRAPH,
-    SCM_CHARSET_LOWER,
-    SCM_CHARSET_PRINT,
-    SCM_CHARSET_PUNCT,
-    SCM_CHARSET_SPACE,
-    SCM_CHARSET_UPPER,
-    SCM_CHARSET_XDIGIT,
-    SCM_CHARSET_WORD,           /* internal use: word constituent char. */
-    SCM_CHARSET_NUM_PREDEFINED_SETS
+    SCM_CHAR_SET_ALNUM,
+    SCM_CHAR_SET_ALPHA,
+    SCM_CHAR_SET_BLANK,
+    SCM_CHAR_SET_CNTRL,
+    SCM_CHAR_SET_DIGIT,
+    SCM_CHAR_SET_GRAPH,
+    SCM_CHAR_SET_LOWER,
+    SCM_CHAR_SET_PRINT,
+    SCM_CHAR_SET_PUNCT,
+    SCM_CHAR_SET_SPACE,
+    SCM_CHAR_SET_UPPER,
+    SCM_CHAR_SET_XDIGIT,
+    SCM_CHAR_SET_WORD,           /* internal use: word constituent char. */
+    SCM_CHAR_SET_NUM_PREDEFINED_SETS
 };
 SCM_EXTERN ScmObj Scm_GetStandardCharSet(int id);
 

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: char.c,v 1.53 2007-04-18 02:24:09 shirok Exp $
+ *  $Id: char.c,v 1.54 2007-05-22 10:23:47 shirok Exp $
  */
 
 #include <ctype.h>
@@ -192,12 +192,12 @@ static void charset_print_ch(ScmPort *out, ScmChar ch)
 static void charset_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
 {
     int prev, code;
-    ScmCharSet *cs = SCM_CHARSET(obj);
+    ScmCharSet *cs = SCM_CHAR_SET(obj);
     ScmTreeIter iter;
     ScmDictEntry *e;
 
     Scm_Printf(out, "#[");
-    for (prev = -1, code = 0; code < SCM_CHARSET_SMALL_CHARS; code++) {
+    for (prev = -1, code = 0; code < SCM_CHAR_SET_SMALL_CHARS; code++) {
         if (MASK_ISSET(cs, code) && prev < 0) {
             charset_print_ch(out, code);
             prev = code;
@@ -242,7 +242,7 @@ static ScmCharSet *make_charset(void)
     ScmCharSet *cs = SCM_NEW(ScmCharSet);
     int i;
     SCM_SET_CLASS(cs, SCM_CLASS_CHARSET);
-    Scm_BitsFill(cs->small, 0, SCM_CHARSET_SMALL_CHARS, 0);
+    Scm_BitsFill(cs->small, 0, SCM_CHAR_SET_SMALL_CHARS, 0);
     Scm_TreeCoreInit(&cs->large, cmp, NULL);
     return cs;
 }
@@ -255,7 +255,7 @@ ScmObj Scm_MakeEmptyCharSet(void)
 ScmObj Scm_CharSetCopy(ScmCharSet *src)
 {
     ScmCharSet *dst = make_charset();
-    Scm_BitsCopyX(dst->small, 0, src->small, 0, SCM_CHARSET_SMALL_CHARS);
+    Scm_BitsCopyX(dst->small, 0, src->small, 0, SCM_CHAR_SET_SMALL_CHARS);
     Scm_TreeCoreCopy(&dst->large, &src->large);
     return SCM_OBJ(dst);
 }
@@ -321,8 +321,8 @@ ScmChar Scm_ReadXdigitsFromPort(ScmPort *port, int ndigits,
  */
 static int charset_compare(ScmObj x, ScmObj y, int equalp)
 {
-    ScmCharSet *xx = SCM_CHARSET(x);
-    ScmCharSet *yy = SCM_CHARSET(y);
+    ScmCharSet *xx = SCM_CHAR_SET(x);
+    ScmCharSet *yy = SCM_CHAR_SET(y);
     
     if (equalp) {
         return (Scm_CharSetEq(xx, yy)? 0 : 1);
@@ -337,7 +337,7 @@ static int charset_compare(ScmObj x, ScmObj y, int equalp)
 
 int Scm_CharSetEq(ScmCharSet *x, ScmCharSet *y)
 {
-    if (!Scm_BitsEqual(x->small, y->small, 0, SCM_CHARSET_SMALL_CHARS))
+    if (!Scm_BitsEqual(x->small, y->small, 0, SCM_CHAR_SET_SMALL_CHARS))
         return FALSE;
     if (!Scm_TreeCoreEq(&x->large, &y->large))
         return FALSE;
@@ -349,7 +349,7 @@ int Scm_CharSetLE(ScmCharSet *x, ScmCharSet *y)
 {
     ScmTreeIter xi;
     ScmDictEntry *xe, *ye, *yl, *yh;
-    if (!Scm_BitsIncludes(y->small, x->small, 0, SCM_CHARSET_SMALL_CHARS))
+    if (!Scm_BitsIncludes(y->small, x->small, 0, SCM_CHAR_SET_SMALL_CHARS))
         return FALSE;
     /* For each range of X, check if it is fully contained by a range of Y.
      *
@@ -384,13 +384,13 @@ ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to)
     int lbound;
     
     if (to < from) return SCM_OBJ(cs);
-    if (from < SCM_CHARSET_SMALL_CHARS) {
-        if (to < SCM_CHARSET_SMALL_CHARS) {
+    if (from < SCM_CHAR_SET_SMALL_CHARS) {
+        if (to < SCM_CHAR_SET_SMALL_CHARS) {
             Scm_BitsFill(cs->small, (int)from, (int)to+1, TRUE);
             return SCM_OBJ(cs);
         }
-        Scm_BitsFill(cs->small, (int)from, SCM_CHARSET_SMALL_CHARS, TRUE);
-        from = SCM_CHARSET_SMALL_CHARS;
+        Scm_BitsFill(cs->small, (int)from, SCM_CHAR_SET_SMALL_CHARS, TRUE);
+        from = SCM_CHAR_SET_SMALL_CHARS;
     }
 
     /* Let e have the lower bound. */
@@ -431,7 +431,7 @@ ScmObj Scm_CharSetAdd(ScmCharSet *dst, ScmCharSet *src)
     if (dst == src) return SCM_OBJ(dst);  /* precaution */
     
     Scm_BitsOperate(dst->small, SCM_BIT_IOR, dst->small, src->small,
-                    0, SCM_CHARSET_SMALL_CHARS);
+                    0, SCM_CHAR_SET_SMALL_CHARS);
     Scm_TreeIterInit(&iter, &src->large, NULL);
     while ((e = Scm_TreeIterNext(&iter)) != NULL) {
         Scm_CharSetAddRange(dst, e->key, e->value);
@@ -445,8 +445,8 @@ ScmObj Scm_CharSetComplement(ScmCharSet *cs)
     ScmDictEntry *e, *n;
 
     Scm_BitsOperate(cs->small, SCM_BIT_NOT1, cs->small, NULL,
-                    0, SCM_CHARSET_SMALL_CHARS);
-    last = SCM_CHARSET_SMALL_CHARS;
+                    0, SCM_CHAR_SET_SMALL_CHARS);
+    last = SCM_CHAR_SET_SMALL_CHARS;
     /* we can't use treeiter, since we modify the tree while traversing it. */
     while ((e = Scm_TreeCoreNextEntry(&cs->large, last)) != NULL) {
         Scm_TreeCoreSearch(&cs->large, e->key, SCM_DICT_DELETE);
@@ -484,7 +484,7 @@ ScmObj Scm_CharSetCaseFold(ScmCharSet *cs)
 int Scm_CharSetContains(ScmCharSet *cs, ScmChar c)
 {
     if (c < 0) return FALSE;
-    if (c < SCM_CHARSET_SMALL_CHARS) return MASK_ISSET(cs, c);
+    if (c < SCM_CHAR_SET_SMALL_CHARS) return MASK_ISSET(cs, c);
     else {
         ScmDictEntry *e, *l, *h;
         e = Scm_TreeCoreClosestEntries(&cs->large, (int)c, &l, &h);
@@ -505,7 +505,7 @@ ScmObj Scm_CharSetRanges(ScmCharSet *cs)
     ScmTreeIter iter;
     ScmDictEntry *e;
 
-    for (ind = 0; ind < SCM_CHARSET_SMALL_CHARS; ind++) {
+    for (ind = 0; ind < SCM_CHAR_SET_SMALL_CHARS; ind++) {
         int bit = MASK_ISSET(cs, ind);
         if (!prev && bit) begin = ind;
         if (prev && !bit) {
@@ -532,7 +532,7 @@ void Scm_CharSetDump(ScmCharSet *cs, ScmPort *port)
     int i;
     struct ScmCharSetRange *r;
     Scm_Printf(port, "CharSet %p\nmask:", cs);
-    for (i=0; i<SCM_BITS_NUM_WORDS(SCM_CHARSET_SMALL_CHARS); i++) {
+    for (i=0; i<SCM_BITS_NUM_WORDS(SCM_CHAR_SET_SMALL_CHARS); i++) {
 #if SIZEOF_LONG == 4
         Scm_Printf(port, "[%08lx]", cs->small[i]);
 #else
@@ -603,7 +603,7 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
 #define CARET_BEGIN 2
     int begin = REAL_BEGIN, complement = FALSE;
     int lastchar = -1, inrange = FALSE, moreset_complement = FALSE;
-    ScmCharSet *set = SCM_CHARSET(Scm_MakeEmptyCharSet());
+    ScmCharSet *set = SCM_CHAR_SET(Scm_MakeEmptyCharSet());
     ScmObj moreset;
     ScmObj chars = SCM_NIL;
     ScmChar ch = 0;
@@ -663,40 +663,40 @@ ScmObj Scm_CharSetRead(ScmPort *input, int *complement_p,
                 goto ordchar;
             case 'd':
                 moreset_complement = FALSE;
-                moreset = Scm_GetStandardCharSet(SCM_CHARSET_DIGIT);
+                moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_DIGIT);
                 break;
             case 'D':
                 moreset_complement = TRUE;
-                moreset = Scm_GetStandardCharSet(SCM_CHARSET_DIGIT);
+                moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_DIGIT);
                 break;
             case 's':
                 moreset_complement = FALSE;
-                moreset = Scm_GetStandardCharSet(SCM_CHARSET_SPACE);
+                moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_SPACE);
                 break;
             case 'S':
                 moreset_complement = TRUE;
-                moreset = Scm_GetStandardCharSet(SCM_CHARSET_SPACE);
+                moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_SPACE);
                 break;
             case 'w':
                 moreset_complement = FALSE;
-                moreset = Scm_GetStandardCharSet(SCM_CHARSET_WORD);
+                moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_WORD);
                 break;
             case 'W':
                 moreset_complement = TRUE;
-                moreset = Scm_GetStandardCharSet(SCM_CHARSET_WORD);
+                moreset = Scm_GetStandardCharSet(SCM_CHAR_SET_WORD);
                 break;
             default:
                 goto ordchar;
             }
             if (moreset_complement) {
-                moreset = Scm_CharSetComplement(SCM_CHARSET(Scm_CharSetCopy(SCM_CHARSET(moreset))));
+                moreset = Scm_CharSetComplement(SCM_CHAR_SET(Scm_CharSetCopy(SCM_CHAR_SET(moreset))));
             }
-            Scm_CharSetAdd(set, SCM_CHARSET(moreset));
+            Scm_CharSetAdd(set, SCM_CHAR_SET(moreset));
             continue;
         case '[':
             moreset = read_predef_charset(input, &chars);
-            if (!SCM_CHARSETP(moreset)) goto err;
-            Scm_CharSetAdd(set, SCM_CHARSET(moreset));
+            if (!SCM_CHAR_SET_P(moreset)) goto err;
+            Scm_CharSetAdd(set, SCM_CHAR_SET(moreset));
             continue;
         ordchar:
         default:
@@ -750,29 +750,29 @@ ScmObj read_predef_charset(ScmPort *input, ScmObj *chars)
             continue;
         }
         if (strncmp(name, ":alnum:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHARSET_ALNUM);
+            return Scm_GetStandardCharSet(SCM_CHAR_SET_ALNUM);
         } else if (strncmp(name, ":alpha:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHARSET_ALPHA);
+            return Scm_GetStandardCharSet(SCM_CHAR_SET_ALPHA);
         } else if (strncmp(name, ":blank:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHARSET_BLANK);
+            return Scm_GetStandardCharSet(SCM_CHAR_SET_BLANK);
         } else if (strncmp(name, ":cntrl:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHARSET_CNTRL);
+            return Scm_GetStandardCharSet(SCM_CHAR_SET_CNTRL);
         } else if (strncmp(name, ":digit:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHARSET_DIGIT);
+            return Scm_GetStandardCharSet(SCM_CHAR_SET_DIGIT);
         } else if (strncmp(name, ":graph:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHARSET_GRAPH);
+            return Scm_GetStandardCharSet(SCM_CHAR_SET_GRAPH);
         } else if (strncmp(name, ":lower:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHARSET_LOWER);
+            return Scm_GetStandardCharSet(SCM_CHAR_SET_LOWER);
         } else if (strncmp(name, ":print:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHARSET_PRINT);
+            return Scm_GetStandardCharSet(SCM_CHAR_SET_PRINT);
         } else if (strncmp(name, ":punct:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHARSET_PUNCT);
+            return Scm_GetStandardCharSet(SCM_CHAR_SET_PUNCT);
         } else if (strncmp(name, ":space:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHARSET_SPACE);
+            return Scm_GetStandardCharSet(SCM_CHAR_SET_SPACE);
         } else if (strncmp(name, ":upper:", 7) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHARSET_UPPER);
+            return Scm_GetStandardCharSet(SCM_CHAR_SET_UPPER);
         } else if (strncmp(name, ":xdigit:", 8) == 0) {
-            return Scm_GetStandardCharSet(SCM_CHARSET_XDIGIT);
+            return Scm_GetStandardCharSet(SCM_CHAR_SET_XDIGIT);
         } else break;
     }
     /* here we got invalid charset name */
@@ -789,7 +789,7 @@ ScmObj read_predef_charset(ScmPort *input, ScmObj *chars)
  * ASCII range, that all character sets agree on.
  */
 
-static ScmCharSet *predef_charsets[SCM_CHARSET_NUM_PREDEFINED_SETS] = {NULL};
+static ScmCharSet *predef_charsets[SCM_CHAR_SET_NUM_PREDEFINED_SETS] = {NULL};
 static ScmInternalMutex predef_charsets_mutex;
 
 static void install_charsets(void)
@@ -799,28 +799,28 @@ static void install_charsets(void)
     SCM_INTERNAL_MUTEX_LOCK(predef_charsets_mutex);
 
 #define CS(n)  predef_charsets[n]
-    for (i = 0; i < SCM_CHARSET_NUM_PREDEFINED_SETS; i++) {
-        CS(i) = SCM_CHARSET(Scm_MakeEmptyCharSet());
+    for (i = 0; i < SCM_CHAR_SET_NUM_PREDEFINED_SETS; i++) {
+        CS(i) = SCM_CHAR_SET(Scm_MakeEmptyCharSet());
     }
-    for (code = 0; code < SCM_CHARSET_SMALL_CHARS; code++) {
-        if (isalnum(code)) MASK_SET(CS(SCM_CHARSET_ALNUM), code);
-        if (isalpha(code)) MASK_SET(CS(SCM_CHARSET_ALPHA), code);
-        if (iscntrl(code)) MASK_SET(CS(SCM_CHARSET_CNTRL), code);
-        if (isdigit(code)) MASK_SET(CS(SCM_CHARSET_DIGIT), code);
-        if (isgraph(code)) MASK_SET(CS(SCM_CHARSET_GRAPH), code);
-        if (islower(code)) MASK_SET(CS(SCM_CHARSET_LOWER), code);
-        if (isprint(code)) MASK_SET(CS(SCM_CHARSET_PRINT), code);
-        if (ispunct(code)) MASK_SET(CS(SCM_CHARSET_PUNCT), code);
-        if (isspace(code)) MASK_SET(CS(SCM_CHARSET_SPACE), code);
-        if (isupper(code)) MASK_SET(CS(SCM_CHARSET_UPPER), code);
-        if (isxdigit(code)) MASK_SET(CS(SCM_CHARSET_XDIGIT), code);
+    for (code = 0; code < SCM_CHAR_SET_SMALL_CHARS; code++) {
+        if (isalnum(code)) MASK_SET(CS(SCM_CHAR_SET_ALNUM), code);
+        if (isalpha(code)) MASK_SET(CS(SCM_CHAR_SET_ALPHA), code);
+        if (iscntrl(code)) MASK_SET(CS(SCM_CHAR_SET_CNTRL), code);
+        if (isdigit(code)) MASK_SET(CS(SCM_CHAR_SET_DIGIT), code);
+        if (isgraph(code)) MASK_SET(CS(SCM_CHAR_SET_GRAPH), code);
+        if (islower(code)) MASK_SET(CS(SCM_CHAR_SET_LOWER), code);
+        if (isprint(code)) MASK_SET(CS(SCM_CHAR_SET_PRINT), code);
+        if (ispunct(code)) MASK_SET(CS(SCM_CHAR_SET_PUNCT), code);
+        if (isspace(code)) MASK_SET(CS(SCM_CHAR_SET_SPACE), code);
+        if (isupper(code)) MASK_SET(CS(SCM_CHAR_SET_UPPER), code);
+        if (isxdigit(code)) MASK_SET(CS(SCM_CHAR_SET_XDIGIT), code);
         /* Default word constituent chars #[\w].  NB: in future versions,
            a parameter might be introduced to customize this set. */
         if (isalnum(code)||code=='_')
-            MASK_SET(CS(SCM_CHARSET_WORD), code);
+            MASK_SET(CS(SCM_CHAR_SET_WORD), code);
         /* isblank() is not in posix.  for now, I hardcode it. */
         if (code == ' ' || code == '\t')
-            MASK_SET(CS(SCM_CHARSET_BLANK), code);
+            MASK_SET(CS(SCM_CHAR_SET_BLANK), code);
     }
 #undef CS
     SCM_INTERNAL_MUTEX_UNLOCK(predef_charsets_mutex);
@@ -828,7 +828,7 @@ static void install_charsets(void)
 
 ScmObj Scm_GetStandardCharSet(int id)
 {
-    if (id < 0 || id >= SCM_CHARSET_NUM_PREDEFINED_SETS)
+    if (id < 0 || id >= SCM_CHAR_SET_NUM_PREDEFINED_SETS)
         Scm_Error("bad id for predefined charset index: %d", id);
     if (predef_charsets[id] == NULL) {
         install_charsets();
