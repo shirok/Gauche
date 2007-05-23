@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.291 2007-05-22 10:24:53 shirok Exp $
+;;; $Id: extlib.stub,v 1.292 2007-05-23 09:28:58 shirok Exp $
 ;;;
 
 "
@@ -59,8 +59,6 @@
 (define-symbol eq?    "sym_eq")
 (define-symbol eqv?   "sym_eqv")
 (define-symbol equal? "sym_equal")
-
-(define-symbol string=? "sym_string_eq") ; used for make-hash-table
 
 "static int getcmpmode(ScmObj opt)
  { if (SCM_UNBOUNDP(opt) || opt == sym_equal) return SCM_CMP_EQUAL;
@@ -990,18 +988,13 @@
                          &optional (whence::<fixnum> (c "SCM_MAKE_INT(SEEK_SET)")))
   (call "Scm_PortSeek"))
 
-(define-symbol file "sym_file")
-(define-symbol string "sym_string")
-(define-symbol proc "sym_proc")
 (define-cproc port-type (port::<port>)
   (body <top>
-        (let* ((type '#f))
-          (case (SCM_PORT_TYPE port)
-            ((SCM_PORT_FILE) (set! type sym_file) (break))
-            ((SCM_PORT_PROC) (set! type sym_proc) (break))
-            ((SCM_PORT_OSTR SCM_PORT_ISTR)
-             (set! type sym_string) (break)))
-          (result type))))
+        (case (SCM_PORT_TYPE port)
+          ((SCM_PORT_FILE) (result 'file) (break))
+          ((SCM_PORT_PROC) (result 'proc) (break))
+          ((SCM_PORT_OSTR SCM_PORT_ISTR) (result 'string) (break))
+          (else (result '#f)))))
 
 (define-cproc port-buffering (port::<port>)
   (call "Scm_GetBufferingMode")
@@ -1168,54 +1161,52 @@
 (define-cproc hash (obj)
   (call <ulong> "Scm_Hash"))
 
-"static int get_hash_proc(ScmSymbol *type) {
-  if (SCM_EQ(SCM_OBJ(type), sym_eq))             return SCM_HASH_EQ;
-  else if (SCM_EQ(SCM_OBJ(type), sym_eqv))       return SCM_HASH_EQV;
-  else if (SCM_EQ(SCM_OBJ(type), sym_equal))     return SCM_HASH_EQUAL;
-  else if (SCM_EQ(SCM_OBJ(type), sym_string_eq)) return SCM_HASH_STRING;
-  else {
-    Scm_Error(\"unsupported hash type: %S\", type);
-    return 0; /* dummy */
-  }
- }"
-
-(define-cproc make-hash-table (&optional (type::<symbol> (c "sym_eq")))
-  "SCM_RETURN(Scm_MakeHashTableSimple(get_hash_proc(type), 0));")
+(define-cproc make-hash-table (&optional (type eq?))
+  (body <top>
+        (let* ((ctype :: int 0))
+          (cond ((SCM_EQ type 'eq?)      (set! ctype SCM_HASH_EQ))
+                ((SCM_EQ type 'eqv?)     (set! ctype SCM_HASH_EQV))
+                ((SCM_EQ type 'equal?)   (set! ctype SCM_HASH_EQUAL))
+                ((SCM_EQ type 'string=?) (set! ctype SCM_HASH_STRING))
+                (else (Scm_Error "unsupported hash type: %S" type)))
+          (result (Scm_MakeHashTableSimple ctype 0)))))
 
 (define-cproc hash-table? (obj)
   (call <boolean> "SCM_HASH_TABLE_P"))
 
 (define-cproc hash-table-type (hash::<hash-table>)
-  "switch (hash->type) {
-   case SCM_HASH_EQ:      SCM_RETURN(sym_eq);
-   case SCM_HASH_EQV:     SCM_RETURN(sym_eqv);
-   case SCM_HASH_EQUAL:   SCM_RETURN(sym_equal);
-   case SCM_HASH_STRING:  SCM_RETURN(sym_string_eq);
-   default: SCM_RETURN(SCM_FALSE);  /* TODO: need to think over */
-  }")
+  (body <top>
+        (case (-> hash type)
+          ((SCM_HASH_EQ)      (result 'eq?) (break))
+          ((SCM_HASH_EQV)     (result 'eqv?) (break))
+          ((SCM_HASH_EQUAL)   (result 'equal?) (break))
+          ((SCM_HASH_STRING)  (result 'string=?) (break))
+          (else (result '#f))           ; TODO: need to think over
+          )))
 
 (define-cproc hash-table-num-entries (hash::<hash-table>)
-  (expr <int> "Scm_HashCoreNumEntries(SCM_HASH_TABLE_CORE(hash))"))
+  (expr <int> (Scm_HashCoreNumEntries (SCM_HASH_TABLE_CORE hash))))
 
 (define-cproc hash-table-clear! (hash::<hash-table>)
-  (body <void> "Scm_HashCoreClear(SCM_HASH_TABLE_CORE(hash));"))
+  (body <void> (Scm_HashCoreClear (SCM_HASH_TABLE_CORE hash))))
 
 (define-cproc hash-table-get (hash::<hash-table> key &optional fallback)
-  (body "ScmObj v = Scm_HashTableRef(hash, key, fallback);"
-        "if (SCM_UNBOUNDP(v))"
-        "  Scm_Error(\"%S doesn't have an entry for key %S\", hash, key);"
-        "SCM_RESULT = v;"))
+  (body <top>
+        (let* ((v (Scm_HashTableRef hash key fallback)))
+          (when (SCM_UNBOUNDP v)
+            (Scm_Error "%S doesn't have an entry for key %S" hash key))
+          (result v))))
 
 (define-cproc hash-table-put! (hash::<hash-table> key value)
-  (body <void> "Scm_HashTableSet(hash, key, value, 0);"))
+  (body <void> (Scm_HashTableSet hash key value 0)))
 
 ;; this is hash-table-remove! in STk.  I use `delete' for
 ;; it's consistent with SRFI-1 and dbm-delete!.
 (define-cproc hash-table-delete! (hash::<hash-table> key)
-  (expr <boolean> "!SCM_UNBOUNDP(Scm_HashTableDelete(hash, key))"))
+  (expr <boolean> (not (SCM_UNBOUNDP (Scm_HashTableDelete hash key)))))
 
 (define-cproc hash-table-exists? (hash::<hash-table> key)
-  (expr <boolean> "!SCM_UNBOUNDP(Scm_HashTableRef(hash, key, SCM_UNBOUND))"))
+  (expr <boolean> (not (SCM_UNBOUNDP (Scm_HashTableRef hash key SCM_UNBOUND)))))
 
 "static ScmObj hash_table_update_cc(ScmObj result, void **data)
  {
@@ -1224,43 +1215,53 @@
    SCM_RETURN(result);
  }"
 
-(define-cproc hash-table-update! (hash::<hash-table> key proc &optional defval)
-  (body "ScmDictEntry *e;"
-        "void *data[1];"
-        "if (SCM_UNBOUNDP(defval)) {"
-        "  e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(hash), (intptr_t)key, SCM_DICT_GET);"
-        "  if (!e) Scm_Error(\"%S doesn't have an entry for key %S\", hash, key);"
-        "} else {"
-        "  e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(hash), (intptr_t)key, SCM_DICT_CREATE);"
-        "  if (!e->value) SCM_DICT_SET_VALUE(e, defval);"
-        "}"
-        "data[0] = (void*)e;"
-        "Scm_VMPushCC(hash_table_update_cc, data, 1);"
-        "SCM_RESULT = Scm_VMApply1(proc, SCM_DICT_VALUE(e));"))
-
+(define-cproc hash-table-update! (hash::<hash-table> key proc
+                                                     &optional fallback)
+  (body <top>
+        (let* ((e :: ScmDictEntry*) (|data[1]| :: void*))
+          (cond ((SCM_UNBOUNDP fallback)
+                 (set! e (Scm_HashCoreSearch (SCM_HASH_TABLE_CORE hash)
+                                             (cast intptr_t key)
+                                             SCM_DICT_GET))
+                 (unless e
+                   (Scm_Error "%S doesn't have an entry for key %S" hash key)))
+                (else
+                 (set! e (Scm_HashCoreSearch (SCM_HASH_TABLE_CORE hash)
+                                             (cast intptr_t key)
+                                             SCM_DICT_CREATE))
+                 (unless (-> e value)
+                   (SCM_DICT_SET_VALUE e fallback))))
+          (set! (aref data 0) (cast void* e))
+          (Scm_VMPushCC hash_table_update_cc data 1)
+          (result (Scm_VMApply1 proc (SCM_DICT_VALUE e))))))
 
 (define-cproc hash-table-push! (hash::<hash-table> key value)
   (body <void>
-        "ScmDictEntry *e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(hash), (intptr_t)key, SCM_DICT_CREATE);"
-        "ScmObj prev = (e->value)? SCM_DICT_VALUE(e) : SCM_NIL;"
-        "SCM_DICT_SET_VALUE(e, Scm_Cons(value, prev));"))
+        (let* ((e :: ScmDictEntry*
+                  (Scm_HashCoreSearch (SCM_HASH_TABLE_CORE hash)
+                                      (cast intptr_t key)
+                                      SCM_DICT_CREATE))
+               (prev (?: (-> e value) (SCM_DICT_VALUE e) '())))
+          (SCM_DICT_SET_VALUE e (Scm_Cons value prev)))))
 
 (define-cproc hash-table-pop! (hash::<hash-table> key &optional fallback)
-  (body "ScmDictEntry *e = Scm_HashCoreSearch(SCM_HASH_TABLE_CORE(hash), (intptr_t)key, SCM_DICT_GET);"
-        "if (e == NULL) {"
-        "  if (SCM_UNBOUNDP(fallback)) {"
-        "    Scm_Error(\"%S doesn't have an entry for key %S\", hash, key);"
-        "  }"
-        "  SCM_RESULT = fallback;"
-        "} else if (!SCM_PAIRP(SCM_DICT_VALUE(e))) {"
-        "  if (SCM_UNBOUNDP(fallback)) {"
-        "    Scm_Error(\"hash table value for key %S is not a pair: %S\", key, SCM_DICT_VALUE(e));"
-        "  }"
-        "  SCM_RESULT = fallback;"
-        "} else {"
-        "  SCM_RESULT = SCM_CAR(SCM_DICT_VALUE(e));"
-        "  SCM_DICT_SET_VALUE(e, SCM_CDR(SCM_DICT_VALUE(e)));"
-        "}"))
+  (body <top>
+        (let* ((e :: ScmDictEntry*
+                  (Scm_HashCoreSearch (SCM_HASH_TABLE_CORE hash)
+                                      (cast intptr_t key)
+                                      SCM_DICT_GET)))
+          (cond ((== e NULL)
+                 (when (SCM_UNBOUNDP fallback)
+                   (Scm_Error "%S doesn't have an entry for key %S" hash key))
+                 (result fallback))
+                ((SCM_PAIRP (SCM_DICT_VALUE e))
+                 (result (SCM_CAR (SCM_DICT_VALUE e)))
+                 (SCM_DICT_SET_VALUE e (SCM_CDR (SCM_DICT_VALUE e))))
+                (else
+                 (when (SCM_UNBOUNDP fallback)
+                   (Scm_Error "hash table value for key %S is not a pair: %S"
+                              key (SCM_DICT_VALUE e)))
+                 (result fallback))))))
 
 "static ScmObj hash_table_iter(ScmObj *args, int nargs, void *data)
  {
