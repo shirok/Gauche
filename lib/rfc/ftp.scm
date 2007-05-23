@@ -30,9 +30,10 @@
 ;;;  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-;;; $Id: ftp.scm,v 1.6 2007-05-22 11:51:46 shirok Exp $
+;;; $Id: ftp.scm,v 1.7 2007-05-23 02:39:01 shirok Exp $
 
 ;; RFC  959 FILE TRANSFER PROTOCOL (FTP)
+;; RFC 1123 Requirements for Internet Hosts -- Application and Support
 ;; RFC 2428 FTP Extensions for IPv6 and NATs
 
 (define-module rfc.ftp
@@ -244,17 +245,17 @@
 		(flusher sink)))))
 
 ;; STOR <SP> <pathname> <CRLF>
-(define (ftp-put conn from-file . opt)
-  (let1 to-file (get-optional opt (sys-basename from-file))
-    (call-with-input-file from-file
-      (cute req&send conn (cut send-command conn "STOR" to-file) <>))))
-
+(define (ftp-put conn from-file . opts)
+  (let-optionals* opts ((to-file (sys-basename from-file)))
+    (values-ref
+     (call-with-input-file from-file
+       (cute req&send conn (cut send-command conn "STOR" to-file) <>))
+     0)))
 
 ;; STOU <CRLF>
 (define (ftp-put-unique conn from-file)
   (call-with-input-file from-file
     (cute req&send conn (cut send-command conn "STOU") <>)))
-
 
 ;;; rfc 959 6(3) type commands
 
@@ -412,22 +413,30 @@
 
 ;; request server to receive data and send data
 (define (req&send conn cmdproc port)
+
+  (define (copy-data get-data-socket)
+    (copy-port port (socket-output-port (get-data-socket))))
+  (define (send-data)
+    (call-with-data-connection conn
+      (lambda (get-data-socket)
+        (let1 res (cmdproc)
+          (rxmatch-case res
+            (#/^1\d\d FILE: (.+)$/ (#f dst-path)
+             ;; RFC 1123 - 4.1.2.9  STOU Command: RFC-959 Section 4.1.3
+             (copy-data get-data-socket) dst-path)
+            (#/^1/ ()
+             ;; in case if the server doesn't conform RFC1123
+             (copy-data get-data-socket) #f)
+            (else (ftp-error res)))))))
+  (define (retrieve-response res dst-path)
+    (rxmatch-case res
+      (#/^2/ () (values res dst-path))
+      ;; vsftpd duplicates the 1XX reply for STOU.
+      (#/^1/ () (retrieve-response (get-response conn) dst-path))
+      (else (ftp-error res))))
+
   (ftp-set-type conn)
-  (call-with-data-connection conn
-    (lambda (get-data-socket)
-      (let1 res (cmdproc)
-        (if (not (string-prefix? "1" res))
-          (ftp-error res)
-          (copy-port port (socket-output-port (get-data-socket))
-                     :element-type (case (ftp-transfer-type conn)
-                                     ((ascii) :character)
-                                     ((binary image) :binary)
-                                     (else
-                                      (error "Invalid transfer type:"
-                                             (ftp-transfer-type conn)))))))))
-  (let1 res (get-response conn)
-    (if (not (string-prefix? "2" res))
-      (ftp-error res)
-      res)))
+  (let1 dst-path (send-data)
+    (retrieve-response (get-response conn) dst-path)))
 
 (provide "rfc/ftp")

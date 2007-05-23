@@ -1,5 +1,11 @@
 2007-05-22  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/ftp.scm (req&send, ftp-put-unique): made ftp-put-unique
+	  to return two values, a final server's response and the remote
+	  file path given by 1xx response.  AN INCOMPATIBLE API CHANGE.
+	  But I assume nobody has been used ftp-put-unique seriously,
+	  for it is almost useless without obtaining the generated remote path.
+
 	* configure.ac: shows some of the configuration parameters
 	  at the end, upon a request.
 

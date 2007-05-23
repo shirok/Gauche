@@ -4974,8 +4974,9 @@ Returns the server response.
 @defun ftp-put-unique conn from-file
 Sends the local file specified by @var{from-file} to the 
 remote server.  The remote side filename is guaranteed to 
-be unique.  Returns the server response, which includes
-the remote file name.
+be unique.  Returns two values---the final server response,
+and the remote file name.  The second value can be @code{#f}
+if the remote host doesn't support RFC1123 (which must be rare).
 @end defun
 
 @defun ftp-rename conn from-name to-name
