@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.292 2007-05-23 09:28:58 shirok Exp $
+;;; $Id: extlib.stub,v 1.293 2007-05-23 11:24:56 shirok Exp $
 ;;;
 
 "
@@ -583,13 +583,6 @@
   (call "Scm_StringSplitByChar"))
 
 ;; primitive scanner
-(define-symbol index   "sym_index")
-(define-symbol before  "sym_before")
-(define-symbol after   "sym_after")
-(define-symbol before* "sym_before2")
-(define-symbol after*  "sym_after2")
-(define-symbol both    "sym_both")
-
 (define-cproc string-scan (s1::<string> s2 &optional (mode index))
   (body <top>
         (let* ((rmode :: int 0))
@@ -610,26 +603,6 @@
             (Scm_Error "bad type of argument for s2: %S, must be either string or character" s2)
             (result SCM_UNDEFINED))))))
                                        
-;   "  int retmode = 0;
-;   if (mode == sym_index)         retmode = SCM_STRING_SCAN_INDEX;
-;   else if (mode == sym_before)   retmode = SCM_STRING_SCAN_BEFORE;
-;   else if (mode == sym_after)    retmode = SCM_STRING_SCAN_AFTER;
-;   else if (mode == sym_before2)  retmode = SCM_STRING_SCAN_BEFORE2;
-;   else if (mode == sym_after2)   retmode = SCM_STRING_SCAN_AFTER2;
-;   else if (mode == sym_both)     retmode = SCM_STRING_SCAN_BOTH;
-;   else {
-;     Scm_Error(\"bad value in mode argumet: %S, must be one of 'index, 'before, 'after, 'before*, 'after* or 'both.\", mode);
-;   }
-;   if (SCM_STRINGP(s2)) {
-;      SCM_RETURN(Scm_StringScan(s1, SCM_STRING(s2), retmode));
-;   } else if (SCM_CHARP(s2)) {
-;      SCM_RETURN(Scm_StringScanChar(s1, SCM_CHAR_VALUE(s2), retmode));
-;   } else {
-;      Scm_Error(\"bad type of argument for s2: %S, must be either string or character\", s2);
-;      SCM_RETURN(SCM_UNDEFINED); /* dummy */
-;   }")
-  
-
 ;; string pointer
 (define-type <string-pointer> "ScmStringPointer*" "string pointer"
   "SCM_STRING_POINTERP" "SCM_STRING_POINTER")
@@ -1149,17 +1122,83 @@
   (call <void> "Scm_FWarn"))
 
 ;;
+;; Dictionary common macros
+;;
+
+(eval*
+ (define-cise-macro (dict-check-entry form env)
+   (match form
+     [(_ dict key expr)
+      `(when ,expr
+         (Scm_Error "%S doesn't have an entry for key %S" ,dict ,key))]))
+
+ (define-cise-macro (dict-get form env)
+   (match form
+     [(_ dict referencer)
+      `(let* ((v (,referencer ,dict key fallback)))
+         (dict-check-entry ,dict key (SCM_UNBOUNDP v))
+         (result v))]))
+
+ (define-cise-macro (dict-exists? form env)
+   (match form
+     [(_ dict referencer)
+      `(not (SCM_UNBOUNDP (,referencer ,dict key SCM_UNBOUND)))]))
+
+ (define-cise-macro (dict-update! form env)
+   (match form
+     [(_ dict searcher xtractor cc) ;; assumes key, proc, and fallback
+      `(let* ((e :: ScmDictEntry*)
+              (|data[1]| :: void*))
+         (cond ((SCM_UNBOUNDP fallback)
+                (set! e (,searcher (,xtractor ,dict) (cast intptr_t key)
+                                   SCM_DICT_GET))
+                (dict-check-entry ,dict key (== e NULL)))
+               (else
+                (set! e (,searcher (,xtractor ,dict) (cast intptr_t key)
+                                   SCM_DICT_CREATE))
+                (unless (-> e value)
+                  (SCM_DICT_SET_VALUE e fallback))))
+         (set! (aref data 0) (cast void* e))
+         (Scm_VMPushCC ,cc data 1)
+         (result (Scm_VMApply1 proc (SCM_DICT_VALUE e))))]))
+
+ (define-cise-macro (dict-push! form env)
+   (match form
+     [(_ dict searcher xtractor)
+      `(let* ((e :: ScmDictEntry* (,searcher (,xtractor ,dict )
+                                             (cast intptr_t key)
+                                             SCM_DICT_CREATE))
+              (prev (?: (-> e value) (SCM_DICT_VALUE e) '())))
+         (SCM_DICT_SET_VALUE e (Scm_Cons value prev)))]))
+
+ (define-cise-macro (dict-pop! form env)
+   (match form
+     [(_ dict searcher xtractor)
+      `(let* ((e :: ScmDictEntry* (,searcher (,xtractor ,dict)
+                                             (cast intptr_t key)
+                                             SCM_DICT_GET)))
+         (cond
+          ((not e)
+           (dict-check-entry ,dict key (SCM_UNBOUNDP fallback))
+           (result fallback))
+          ((not (SCM_PAIRP (SCM_DICT_VALUE e)))
+           (when (SCM_UNBOUNDP fallback)
+             (Scm_Error "%S's value for key %S is not a pair: %S"
+                        ,dict key (SCM_DICT_VALUE e)))
+           (result fallback))
+          (else
+           (result (SCM_CAR (SCM_DICT_VALUE e)))
+           (SCM_DICT_SET_VALUE e (SCM_CDR (SCM_DICT_VALUE e))))))]))
+ )
+
+;;
 ;; Hashtable
 ;;
 
-(define-cproc eq-hash (obj)
-  (call <ulong> "Scm_EqHash"))
-
-(define-cproc eqv-hash (obj)
-  (call <ulong> "Scm_EqvHash"))
-
-(define-cproc hash (obj)
-  (call <ulong> "Scm_Hash"))
+(define-cproc eq-hash (obj)  (call <ulong> "Scm_EqHash"))
+(define-cproc eqv-hash (obj) (call <ulong> "Scm_EqvHash"))
+(define-cproc hash (obj)     (call <ulong> "Scm_Hash"))
+(define-cproc hash-table? (obj) (call <boolean> "SCM_HASH_TABLE_P"))
 
 (define-cproc make-hash-table (&optional (type eq?))
   (body <top>
@@ -1170,9 +1209,6 @@
                 ((SCM_EQ type 'string=?) (set! ctype SCM_HASH_STRING))
                 (else (Scm_Error "unsupported hash type: %S" type)))
           (result (Scm_MakeHashTableSimple ctype 0)))))
-
-(define-cproc hash-table? (obj)
-  (call <boolean> "SCM_HASH_TABLE_P"))
 
 (define-cproc hash-table-type (hash::<hash-table>)
   (body <top>
@@ -1191,11 +1227,7 @@
   (body <void> (Scm_HashCoreClear (SCM_HASH_TABLE_CORE hash))))
 
 (define-cproc hash-table-get (hash::<hash-table> key &optional fallback)
-  (body <top>
-        (let* ((v (Scm_HashTableRef hash key fallback)))
-          (when (SCM_UNBOUNDP v)
-            (Scm_Error "%S doesn't have an entry for key %S" hash key))
-          (result v))))
+  (body <top>  (dict-get hash Scm_HashTableRef)))
 
 (define-cproc hash-table-put! (hash::<hash-table> key value)
   (body <void> (Scm_HashTableSet hash key value 0)))
@@ -1206,7 +1238,7 @@
   (expr <boolean> (not (SCM_UNBOUNDP (Scm_HashTableDelete hash key)))))
 
 (define-cproc hash-table-exists? (hash::<hash-table> key)
-  (expr <boolean> (not (SCM_UNBOUNDP (Scm_HashTableRef hash key SCM_UNBOUND)))))
+  (expr <boolean> (dict-exists? hash Scm_HashTableRef)))
 
 "static ScmObj hash_table_update_cc(ScmObj result, void **data)
  {
@@ -1217,51 +1249,14 @@
 
 (define-cproc hash-table-update! (hash::<hash-table> key proc
                                                      &optional fallback)
-  (body <top>
-        (let* ((e :: ScmDictEntry*) (|data[1]| :: void*))
-          (cond ((SCM_UNBOUNDP fallback)
-                 (set! e (Scm_HashCoreSearch (SCM_HASH_TABLE_CORE hash)
-                                             (cast intptr_t key)
-                                             SCM_DICT_GET))
-                 (unless e
-                   (Scm_Error "%S doesn't have an entry for key %S" hash key)))
-                (else
-                 (set! e (Scm_HashCoreSearch (SCM_HASH_TABLE_CORE hash)
-                                             (cast intptr_t key)
-                                             SCM_DICT_CREATE))
-                 (unless (-> e value)
-                   (SCM_DICT_SET_VALUE e fallback))))
-          (set! (aref data 0) (cast void* e))
-          (Scm_VMPushCC hash_table_update_cc data 1)
-          (result (Scm_VMApply1 proc (SCM_DICT_VALUE e))))))
+  (body <top>  (dict-update! hash Scm_HashCoreSearch SCM_HASH_TABLE_CORE
+                             hash_table_update_cc)))
 
 (define-cproc hash-table-push! (hash::<hash-table> key value)
-  (body <void>
-        (let* ((e :: ScmDictEntry*
-                  (Scm_HashCoreSearch (SCM_HASH_TABLE_CORE hash)
-                                      (cast intptr_t key)
-                                      SCM_DICT_CREATE))
-               (prev (?: (-> e value) (SCM_DICT_VALUE e) '())))
-          (SCM_DICT_SET_VALUE e (Scm_Cons value prev)))))
+  (body <void> (dict-push! hash Scm_HashCoreSearch SCM_HASH_TABLE_CORE)))
 
 (define-cproc hash-table-pop! (hash::<hash-table> key &optional fallback)
-  (body <top>
-        (let* ((e :: ScmDictEntry*
-                  (Scm_HashCoreSearch (SCM_HASH_TABLE_CORE hash)
-                                      (cast intptr_t key)
-                                      SCM_DICT_GET)))
-          (cond ((== e NULL)
-                 (when (SCM_UNBOUNDP fallback)
-                   (Scm_Error "%S doesn't have an entry for key %S" hash key))
-                 (result fallback))
-                ((SCM_PAIRP (SCM_DICT_VALUE e))
-                 (result (SCM_CAR (SCM_DICT_VALUE e)))
-                 (SCM_DICT_SET_VALUE e (SCM_CDR (SCM_DICT_VALUE e))))
-                (else
-                 (when (SCM_UNBOUNDP fallback)
-                   (Scm_Error "hash table value for key %S is not a pair: %S"
-                              key (SCM_DICT_VALUE e)))
-                 (result fallback))))))
+  (body <top>  (dict-pop! hash Scm_HashCoreSearch SCM_HASH_TABLE_CORE)))
 
 "static ScmObj hash_table_iter(ScmObj *args, int nargs, void *data)
  {
@@ -1309,11 +1304,7 @@
   (call <boolean> "SCM_TREE_MAP_P"))
 
 (define-cproc tree-map-get (tm::<tree-map> key &optional fallback)
-  (body <top>
-        (let* ((v (Scm_TreeMapRef tm key fallback)))
-          (when (SCM_UNBOUNDP v)
-            (Scm_Error "%S doesn't have an entry for key %S" tm key))
-          (result v))))
+  (body <top>  (dict-get tm Scm_TreeMapRef)))
 
 (define-cproc tree-map-put! (tm::<tree-map> key val)
   (body <void> (Scm_TreeMapSet tm key val 0)))
@@ -1329,58 +1320,17 @@
  }"
 
 (define-cproc tree-map-update! (tm::<tree-map> key proc &optional fallback)
-  (body <top>
-        (let* ((e :: ScmDictEntry*)
-               (|data[1]| :: void*))
-          (cond ((SCM_UNBOUNDP fallback)
-                 (set! e (Scm_TreeCoreSearch (SCM_TREE_MAP_CORE tm)
-                                             (cast intptr_t key)
-                                             SCM_DICT_GET))
-                 (unless e
-                   (Scm_Error "%S doesn't have an entry for key %S" tm key)))
-                (else
-                 (set! e (Scm_TreeCoreSearch (SCM_TREE_MAP_CORE tm)
-                                             (cast intptr_t key)
-                                             SCM_DICT_CREATE))
-                 (unless (-> e value)
-                   (SCM_DICT_SET_VALUE e fallback))))
-          (set! (aref data 0) (cast void* e))
-          (Scm_VMPushCC tree_map_update_cc data 1)
-          (result (Scm_VMApply1 proc (SCM_DICT_VALUE e))))))
+  (body <top>  (dict-update! tm Scm_TreeCoreSearch SCM_TREE_MAP_CORE
+                             tree_map_update_cc)))
 
 (define-cproc tree-map-push! (tm::<tree-map> key value)
-  (body <void>
-        (let* ((e :: ScmDictEntry*
-                  (Scm_TreeCoreSearch (SCM_TREE_MAP_CORE tm)
-                                      (cast intptr_t key) SCM_DICT_CREATE)))
-          (if (-> e value)
-            (SCM_DICT_SET_VALUE e (Scm_Cons value (SCM_DICT_VALUE e)))
-            (SCM_DICT_SET_VALUE e (Scm_Cons value '()))))))
+  (body <void> (dict-push! tm Scm_TreeCoreSearch SCM_TREE_MAP_CORE)))
 
 (define-cproc tree-map-pop! (tm::<tree-map> key &optional fallback)
-  (body <top>
-        (let* ((e :: ScmDictEntry*
-                  (Scm_TreeCoreSearch (SCM_TREE_MAP_CORE tm)
-                                      (cast intptr_t key) SCM_DICT_GET)))
-          (cond
-           ((not e)
-            (when (SCM_UNBOUNDP fallback)
-              (Scm_Error "%S doesn't have an entry for key %S" tm key))
-            (result fallback))
-           ((not (SCM_PAIRP (SCM_DICT_VALUE e)))
-            (when (SCM_UNBOUNDP fallback)
-              (Scm_Error "%S's value for key %S is not a pair: %S"
-                         tm key (SCM_DICT_VALUE e)))
-            (result fallback))
-           (else
-            (result (SCM_CAR (SCM_DICT_VALUE e)))
-            (SCM_DICT_SET_VALUE e (SCM_CDR (SCM_DICT_VALUE e))))))))
+  (body <top>  (dict-pop! tm Scm_TreeCoreSearch SCM_TREE_MAP_CORE)))
             
 (define-cproc tree-map-exists? (tm::<tree-map> key)
-  (expr <boolean>
-        (!= (Scm_TreeCoreSearch (SCM_TREE_MAP_CORE tm)
-                                (cast intptr_t key) SCM_DICT_GET)
-            NULL)))
+  (expr <boolean> (dict-exists? tm Scm_TreeMapRef)))
 
 (define-cproc tree-map-num-entries (tm::<tree-map>)
   (expr <int> (Scm_TreeCoreNumEntries (SCM_TREE_MAP_CORE tm))))
