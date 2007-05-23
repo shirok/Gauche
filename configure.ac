@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-dnl $Id: configure.ac,v 1.98 2007-04-19 14:07:33 shirok Exp $
+dnl $Id: configure.ac,v 1.99 2007-05-23 01:26:42 shirok Exp $
 AC_PREREQ(2.54)
 AC_INIT(Gauche, 0.8.10, shiro@acm.org)
-AC_REVISION($Revision: 1.98 $)
+AC_REVISION($Revision: 1.99 $)
 AC_CANONICAL_SYSTEM
 AC_CONFIG_HEADER(src/gauche/config.h ext/auxsys/auxsysconf.h)
 
@@ -668,3 +668,16 @@ AC_OUTPUT(Makefile
           ext/uvector/Makefile
           ext/vport/Makefile
          )
+
+dnl ===========================================================
+dnl Show some of the configuration results, for developer's
+dnl convenience.
+
+AC_MSG_RESULT(
+[
+This Gauche has been configured with the following parameters:
+         version: $GAUCHE_VERSION
+       multibyte: $GAUCHE_CHAR_ENCODING
+            slib: $SLIB_DIR
+          thread: $GAUCHE_THREAD_TYPE
+])

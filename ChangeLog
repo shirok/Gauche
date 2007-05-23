@@ -1,5 +1,8 @@
 2007-05-22  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac: shows some of the configuration parameters
+	  at the end, upon a request.
+
 	* ext/net/netlib.stub (sockaddr-addr): fixed inet6 address bug
 	  in LP64 architectures, and also adaped to gauche.cgen.cise.
 
