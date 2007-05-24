@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.293 2007-05-23 11:24:56 shirok Exp $
+;;; $Id: extlib.stub,v 1.294 2007-05-24 09:00:01 shirok Exp $
 ;;;
 
 "
@@ -964,9 +964,9 @@
 (define-cproc port-type (port::<port>)
   (body <top>
         (case (SCM_PORT_TYPE port)
-          ((SCM_PORT_FILE) (result 'file) (break))
-          ((SCM_PORT_PROC) (result 'proc) (break))
-          ((SCM_PORT_OSTR SCM_PORT_ISTR) (result 'string) (break))
+          ((SCM_PORT_FILE) (result 'file))
+          ((SCM_PORT_PROC) (result 'proc))
+          ((SCM_PORT_OSTR SCM_PORT_ISTR) (result 'string))
           (else (result '#f)))))
 
 (define-cproc port-buffering (port::<port>)
@@ -992,24 +992,24 @@
                                    &keyword (buffering #f)
                                             (owner?::<boolean> #f)
                                             (name #f))
-  "int bufmode = Scm_BufferingMode(buffering, SCM_PORT_OUTPUT, SCM_PORT_BUFFER_FULL);
-   if (fd < 0) Scm_Error(\"bad file descriptor: %d\", fd);
-   return Scm_MakePortWithFd(name, SCM_PORT_OUTPUT, fd, bufmode, ownerP);")
-
+  (body <top>
+        (let* ((bufmode :: int (Scm_BufferingMode buffering SCM_PORT_OUTPUT
+                                                  SCM_PORT_BUFFER_FULL)))
+          (when (< fd 0) (Scm_Error "bad file descriptor: %d" fd))
+          (result (Scm_MakePortWithFd name SCM_PORT_OUTPUT fd bufmode owner?)))))
+          
 ;; Unsafe port operations
 (define-cproc with-port-locking (port::<port> proc)
   (call "Scm_VMWithPortLocking"))
 
 (define-cproc port->byte-string (port::<input-port>)
-  (body "ScmDString ds;"
-        "char buf[1024]; int nbytes;"
-        "Scm_DStringInit(&ds);"
-        "for (;;) {"
-        "  nbytes= Scm_Getz(buf, 1024, port);"
-        "  if (nbytes <= 0) break;"
-        "  Scm_DStringPutz(&ds, buf, nbytes);"
-        "}"
-        "SCM_RESULT = Scm_DStringGet(&ds, SCM_STRING_INCOMPLETE);"))
+  (body <top>
+        (let* ((ds :: ScmDString) (|buf[1024]| :: char))
+          (Scm_DStringInit (& ds))
+          (loop (let* ((nbytes :: int (Scm_Getz buf 1024 port)))
+                  (when (<= nbytes 0) (break))
+                  (Scm_DStringPutz (& ds) buf nbytes)))
+          (result (Scm_DStringGet (& ds) SCM_STRING_INCOMPLETE)))))
 
 ;;
 ;; 6.6.2  Input
@@ -1025,16 +1025,19 @@
           (result (?: (< b 0) SCM_EOF (SCM_MAKE_INT b))))))
 
 (define-cproc peek-byte (&optional (port::<input-port> (current-input-port)))
-  "  int b = Scm_Peekb(port);
-  SCM_RETURN((b < 0)? SCM_EOF : SCM_MAKE_INT(b));")
+  (body <top>
+        (let* ((b :: int (Scm_Peekb port)))
+          (result (?: (< b 0) SCM_EOF (SCM_MAKE_INT b))))))
 
 (define-cproc read-line (&optional (port::<input-port> (current-input-port))
                                    (allowbytestr #f))
-  "ScmObj r = Scm_ReadLine(port);
-  if (SCM_FALSEP(allowbytestr)&&SCM_STRINGP(r)&&SCM_STRING_INCOMPLETE_P(r)) {
-    Scm_ReadError(port, \"read-line: encountered illegal byte sequence: %S\", r);
-  }
-  SCM_RETURN(r);")
+  (body <top>
+        (let* ((r (Scm_ReadLine port)))
+          (when (and (SCM_FALSEP allowbytestr)
+                     (SCM_STRINGP r)
+                     (SCM_STRING_INCOMPLETE_P r))
+            (Scm_ReadError port "read-line: encountered illegal byte sequence: %S" r))
+          (result r))))
 
 (define-cproc read-block (bytes::<fixnum>
                           &optional (port::<input-port> (current-input-port)))
@@ -1195,6 +1198,27 @@
 ;; Hashtable
 ;;
 
+(eval*
+ (define-cise-macro (set-hash-type! form env)
+   (match form
+     [(_ cvar scmvar)
+      `(cond ((SCM_EQ ,scmvar 'eq?)      (set! ,cvar SCM_HASH_EQ))
+             ((SCM_EQ ,scmvar 'eqv?)     (set! ,cvar SCM_HASH_EQV))
+             ((SCM_EQ ,scmvar 'equal?)   (set! ,cvar SCM_HASH_EQUAL))
+             ((SCM_EQ ,scmvar 'string=?) (set! ,cvar SCM_HASH_STRING))
+             (else (Scm_Error "unsupported hash type: %S" ,scmvar)))]))
+ (define-cise-macro (get-hash-type form env)
+   (match form
+     [(_ expr)
+      `(case ,expr
+         ((SCM_HASH_EQ)      (result 'eq?))
+         ((SCM_HASH_EQV)     (result 'eqv?))
+         ((SCM_HASH_EQUAL)   (result 'equal?))
+         ((SCM_HASH_STRING)  (result 'string=?))
+         (else (result '#f))           ; TODO: need to think over
+         )]))
+ )
+
 (define-cproc eq-hash (obj)  (call <ulong> "Scm_EqHash"))
 (define-cproc eqv-hash (obj) (call <ulong> "Scm_EqvHash"))
 (define-cproc hash (obj)     (call <ulong> "Scm_Hash"))
@@ -1203,22 +1227,11 @@
 (define-cproc make-hash-table (&optional (type eq?))
   (body <top>
         (let* ((ctype :: int 0))
-          (cond ((SCM_EQ type 'eq?)      (set! ctype SCM_HASH_EQ))
-                ((SCM_EQ type 'eqv?)     (set! ctype SCM_HASH_EQV))
-                ((SCM_EQ type 'equal?)   (set! ctype SCM_HASH_EQUAL))
-                ((SCM_EQ type 'string=?) (set! ctype SCM_HASH_STRING))
-                (else (Scm_Error "unsupported hash type: %S" type)))
+          (set-hash-type! ctype type)
           (result (Scm_MakeHashTableSimple ctype 0)))))
 
 (define-cproc hash-table-type (hash::<hash-table>)
-  (body <top>
-        (case (-> hash type)
-          ((SCM_HASH_EQ)      (result 'eq?) (break))
-          ((SCM_HASH_EQV)     (result 'eqv?) (break))
-          ((SCM_HASH_EQUAL)   (result 'equal?) (break))
-          ((SCM_HASH_STRING)  (result 'string=?) (break))
-          (else (result '#f))           ; TODO: need to think over
-          )))
+  (body <top> (get-hash-type (-> hash type))))
 
 (define-cproc hash-table-num-entries (hash::<hash-table>)
   (expr <int> (Scm_HashCoreNumEntries (SCM_HASH_TABLE_CORE hash))))
@@ -1282,6 +1295,62 @@
 
 (define-cproc hash-table-stat (hash::<hash-table>)
   (call "Scm_HashTableStat"))
+
+;;
+;; WeakHashTable
+;;
+
+(define-cproc make-weak-hash-table (&optional (type eq?)
+                                              (weakness key)
+                                              (default-value #f))
+  (body <top>
+        (let* ((t :: int 0) (w :: int 0))
+          (set-hash-type! t type)
+          (cond ((SCM_EQ weakness 'key)   (set! w SCM_WEAK_KEY))
+                ((SCM_EQ weakness 'value) (set! w SCM_WEAK_VALUE))
+                ((SCM_EQ weakness 'both)  (set! w SCM_WEAK_BOTH))
+                (else (Scm_Error "unsupported weakness: %S" weakness)))
+          (result (Scm_MakeWeakHashTableSimple t w 0 default-value)))))
+
+(define-cproc weak-hash-table-type (wh::<weak-hash-table>)
+  (body <top> (get-hash-type (-> wh type))))
+(define-cproc weak-hash-table-weakness (wh::<weak-hash-table>)
+  (body <top>
+        (case (-> wh weakness)
+          ((SCM_WEAK_KEY)   (result 'key))
+          ((SCM_WEAK_VALUE) (result 'value))
+          ((SCM_WEAK_BOTH)  (result 'both))
+          (else (Scm_Error "[internal] weak hash %S has unknown weakness: %d"
+                           (-> wh weakness))
+                (result '#f)))))
+
+(define-cproc weak-hash-table-num-entries (wh::<weak-hash-table>)
+  (expr <int> (Scm_HashCoreNumEntries (SCM_WEAK_HASH_TABLE_CORE wh))))
+
+(define-cproc weak-hash-table-clear! (wh::<weak-hash-table>)
+  (body <void> (Scm_HashCoreClear (SCM_WEAK_HASH_TABLE_CORE wh))))
+
+(define-cproc weak-hash-table-get (wh::<weak-hash-table> key
+                                                         &optional fallback)
+  (body <top>  (dict-get wh Scm_WeakHashTableRef)))
+
+(define-cproc weak-hash-table-put! (wh::<weak-hash-table> key value)
+  (body <void> (Scm_WeakHashTableSet wh key value 0)))
+
+(define-cproc weak-hash-table-delete! (wh::<weak-hash-table> key)
+  (expr <boolean> (not (SCM_UNBOUNDP (Scm_WeakHashTableDelete wh key)))))
+  
+(define-cproc weak-hash-table-exists? (wh::<weak-hash-table> key)
+  (expr <boolean> (dict-exists? wh Scm_WeakHashTableRef)))
+
+(define-cproc weak-hash-table-keys (wh::<weak-hash-table>)
+  (call "Scm_WeakHashTableKeys"))
+
+(define-cproc weak-hash-table-values (wh::<weak-hash-table>)
+  (call "Scm_WeakHashTableValues"))
+
+
+
 
 ;;
 ;; TreeMap
