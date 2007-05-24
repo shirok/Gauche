@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: weak.h,v 1.1 2007-04-22 09:19:19 shirok Exp $
+ *  $Id: weak.h,v 1.2 2007-05-24 10:14:23 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -74,7 +74,8 @@ SCM_EXTERN ScmObj Scm_WeakVectorSet(ScmWeakVector *v, int index, ScmObj val);
 
 typedef enum {
     SCM_WEAK_KEY   = (1L<<0),
-    SCM_WEAK_VALUE = (1L<<1)
+    SCM_WEAK_VALUE = (1L<<1),
+    SCM_WEAK_BOTH  = (SCM_WEAK_KEY|SCM_WEAK_VALUE)
 } ScmWeakness;
 
 
