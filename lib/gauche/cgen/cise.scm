@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: cise.scm,v 1.2 2007-05-22 10:24:53 shirok Exp $
+;;;  $Id: cise.scm,v 1.3 2007-05-24 10:26:05 shirok Exp $
 ;;;
 
 (define-module gauche.cgen.cise
@@ -325,21 +325,32 @@
                    '() test rest)]
       )))
 
-(define-cise-macro (case form env)
-  (ensure-stmt-ctx form env)
+(define (case-generator form env fallthrough?)
   (let1 eenv (expr-env env)
     (match form
-      [(_ expr (literals . clause) ...)
-       `("switch (",(render-rec expr eenv)") {"
+      [(_ expr (literalss . clauses) ...)
+       `(,@(source-info form env)
+         "switch (",(render-rec expr eenv)") {"
          ,@(map (lambda (literals clause)
-                  `(,@(if (eq? literals 'else)
+                  `(,@(source-info literals env)
+                    ,@(if (eq? literals 'else)
                         '("default: ")
                         (map (lambda (literal) `("case ",literal" : "))
                              literals))
-                    ,@(render-rec `(begin ,@clause) env)))
-                literals clause)
+                    ,@(render-rec `(begin ,@clause
+                                          ,@(if fallthrough? '() '((break))))
+                                  env)))
+                literalss clauses)
          "}")]
-      )))
+      )))    
+
+(define-cise-macro (case form env)
+  (ensure-stmt-ctx form env)
+  (case-generator form env #f))
+
+(define-cise-macro (case/fallthrough form env)
+  (ensure-stmt-ctx form env)
+  (case-generator form env #t))
 
 ;;------------------------------------------------------------
 ;; Operators
