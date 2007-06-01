@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: weak.h,v 1.2 2007-05-24 10:14:23 shirok Exp $
+ *  $Id: weak.h,v 1.3 2007-06-01 00:53:23 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -85,8 +85,16 @@ typedef struct ScmWeakHashTableRec {
     ScmHashType type;
     ScmHashCore core;
     ScmObj      defaultValue;
-    ScmHashCompareProc *realcmpfn;
+    ScmHashProc        *hashfn;
+    ScmHashCompareProc *cmpfn;
+    u_int       goneEntries;
 } ScmWeakHashTable;
+
+typedef struct ScmWeakHashIterRec {
+    ScmWeakHashTable *table;
+    ScmHashIter iter;
+} ScmWeakHashIter;
+
 
 SCM_CLASS_DECL(Scm_WeakHashTableClass);
 #define SCM_CLASS_WEAK_HASH_TABLE     (&Scm_WeakHashTableClass)
@@ -108,7 +116,10 @@ SCM_EXTERN ScmObj Scm_WeakHashTableDelete(ScmWeakHashTable *ht, ScmObj key);
 SCM_EXTERN ScmObj Scm_WeakHashTableKeys(ScmWeakHashTable *ht);
 SCM_EXTERN ScmObj Scm_WeakHashTableValues(ScmWeakHashTable *ht);
 
-
+SCM_EXTERN void   Scm_WeakHashIterInit(ScmWeakHashIter *iter,
+                                       ScmWeakHashTable *ht);
+SCM_EXTERN int    Scm_WeakHashIterNext(ScmWeakHashIter *iter,
+                                       ScmObj *key, ScmObj *value);
 
 #endif /* GAUCHE_WEAK_H */
 

@@ -1,3 +1,12 @@
+2007-05-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c, src/weak.c, src/gauche/hash.h, src/gauche/weak.h,
+	  src/extlib.stub: some additions for weak hash tables.  unfortunately
+	  I found the current hash core implementation doesn't go well with
+	  key-weak hash table, and am planning to replace hash core
+	  implementation; for the time being, I freeze development of 
+	  weak hash tables.
+
 2007-05-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/ftp.scm (req&send, ftp-put-unique): made ftp-put-unique

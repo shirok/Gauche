@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.54 2007-04-22 09:19:19 shirok Exp $
+ *  $Id: hash.c,v 1.55 2007-06-01 00:53:23 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -41,6 +41,7 @@
  * Internal structures
  */
 
+
 /* The beginning of this structure must match ScmDictEntry. */
 typedef struct EntryRec {
     intptr_t key;
@@ -49,7 +50,7 @@ typedef struct EntryRec {
     u_long   hashval;
 } Entry;
 
-#define BUCKET(hc)   ((Entry**)hc->buckets)
+#define BUCKETS(hc)   ((Entry**)hc->buckets)
 
 #define DEFAULT_NUM_BUCKETS    4
 #define MAX_AVG_CHAIN_LIMITS   3
@@ -231,12 +232,11 @@ u_long Scm_HashString(ScmString *str, u_long modulo)
  *
  * For the pre-defined simple hash tables, the calls to the hash and
  * compare functions are inlined in a single "access" function.
- * (In this case hashfn is only used for rehashing, and cmpfn is
- * never used).
+ * (In this case hashfn and cmpfn are never used.)
  * For the generic hash tables, the general_access function uses
  * the info in hashfn and cmpfn fields.
  *
- * The accessor function takes four arguments.
+ * The accessor function takes three arguments.
  *
  *     ScmHashCore *core   : hash table core
  *     intptr_t key        : key
@@ -260,7 +260,7 @@ static Entry *insert_entry(ScmHashCore *table,
                            int index)
 {
     Entry *e = SCM_NEW(Entry);
-    Entry **buckets = (Entry**)table->buckets;
+    Entry **buckets = BUCKETS(table);
     e->key = key;
     e->value = 0;
     e->next = buckets[index];
@@ -291,6 +291,11 @@ static Entry *insert_entry(ScmHashCore *table,
     return e;
 }
 
+/* NB: Deleting entry E doesn't modify E's key and value, but cut
+   the "next" link for the sake of weak-gc robustness.  The hash core
+   iterator prefetches a pointer to the next entry, so deleting the
+   "current" entry of iteration is safe as far as other iterators
+   are running on the same hash table. */
 static Entry *delete_entry(ScmHashCore *table,
                            Entry *entry, Entry *prev,
                            int index)
@@ -347,6 +352,11 @@ static u_long address_hash(const ScmHashCore *ht, intptr_t obj)
     u_long hashval;
     ADDRESS_HASH(hashval, obj);
     return hashval;
+}
+
+static int address_cmp(const ScmHashCore *ht, intptr_t key, intptr_t k2)
+{
+    return (key == k2);
 }
 
 /*
@@ -418,6 +428,16 @@ static u_long string_hash(const ScmHashCore *table, intptr_t key)
     p = SCM_STRING_BODY_START(b);
     STRING_HASH(hashval, p, SCM_STRING_BODY_SIZE(b));
     return hashval;
+}
+
+static int string_cmp(const ScmHashCore *table, intptr_t k1, intptr_t k2)
+{
+    const ScmStringBody *b1 = SCM_STRING_BODY(k1);
+    const ScmStringBody *b2 = SCM_STRING_BODY(k2);
+    return ((SCM_STRING_BODY_SIZE(b1) == SCM_STRING_BODY_SIZE(b2))
+            && (memcmp(SCM_STRING_BODY_START(b1),
+                       SCM_STRING_BODY_START(b2),
+                       SCM_STRING_BODY_SIZE(b1)) == 0));
 }
 
 /*
@@ -505,35 +525,52 @@ static void hash_core_init(ScmHashCore *table,
     for (i=0; i<initSize; i++) table->buckets[i] = NULL;
 }
 
+/* choose appropriate procedures for predefined hash types. */
+int  hash_core_predef_procs(ScmHashType type,
+                            SearchProc  **accessfn,
+                            ScmHashProc **hashfn,
+                            ScmHashCompareProc **cmpfn)
+{
+    switch (type) {
+    case SCM_HASH_EQ:
+    case SCM_HASH_WORD:
+        *accessfn = address_access;
+        *hashfn = address_hash;
+        *cmpfn  = address_cmp;
+        return TRUE;
+    case SCM_HASH_EQV:
+        *accessfn = general_access;
+        *hashfn = eqv_hash;
+        *cmpfn  = eqv_cmp;
+        return TRUE;
+    case SCM_HASH_EQUAL:
+        *accessfn = general_access;
+        *hashfn = equal_hash;
+        *cmpfn  = equal_cmp;
+        return TRUE;
+    case SCM_HASH_STRING:
+        *accessfn = string_access;
+        *hashfn = string_hash;
+        *cmpfn  = string_cmp;
+        return TRUE;
+    default:
+        return FALSE;
+    }
+}
+
 void Scm_HashCoreInitSimple(ScmHashCore *core,
                             ScmHashType type,
                             unsigned int initSize,
                             void *data)
 {
-    switch (type) {
-    case SCM_HASH_EQ:
-        hash_core_init(core, address_access, address_hash,
-                       NULL, initSize, data);
-        break;
-    case SCM_HASH_EQV:
-        hash_core_init(core, general_access, eqv_hash,
-                       eqv_cmp, initSize, data);
-        break;
-    case SCM_HASH_EQUAL:
-        hash_core_init(core, general_access, equal_hash,
-                       equal_cmp, initSize, data);
-        break;
-    case SCM_HASH_STRING:
-        hash_core_init(core, string_access, string_hash,
-                       NULL, initSize, data);
-        break;
-    case SCM_HASH_WORD:
-        hash_core_init(core, address_access, address_hash,
-                       NULL, initSize, data);
-        break;
-    default:    
+    SearchProc  *accessfn;
+    ScmHashProc *hashfn;
+    ScmHashCompareProc *cmpfn;
+
+    if (hash_core_predef_procs(type, &accessfn, &hashfn, &cmpfn) == FALSE) {
         Scm_Error("[internal error]: wrong TYPE argument passed to Scm_HashCoreInitSimple: %d", type);
     }
+    hash_core_init(core, accessfn, hashfn, cmpfn, initSize, data);
 }
 
 void Scm_HashCoreInitGeneral(ScmHashCore *core,
@@ -544,6 +581,14 @@ void Scm_HashCoreInitGeneral(ScmHashCore *core,
 {
     hash_core_init(core, general_access, hashfn,
                    cmpfn, initSize, data);
+}
+
+int Scm_HashCoreTypeToProcs(ScmHashType type,
+                            ScmHashProc **hashfn,
+                            ScmHashCompareProc **cmpfn)
+{
+    SearchProc *accessfn;       /* dummy */
+    return hash_core_predef_procs(type, &accessfn, hashfn, cmpfn);
 }
 
 void Scm_HashCoreCopy(ScmHashCore *dst, const ScmHashCore *src)
@@ -603,6 +648,11 @@ int Scm_HashCoreNumEntries(ScmHashCore *table)
     return table->numEntries;
 }
 
+/*
+ * NB: It is important to keep the pointer to the "next" entry,
+ * not the "current", since the current entry may be deleted,
+ * erasing its next pointer.
+ */
 void Scm_HashIterInit(ScmHashIter *iter, ScmHashCore *table)
 {
     int i;
@@ -731,7 +781,7 @@ ScmObj Scm_HashTableStat(ScmHashTable *table)
     ScmHashCore *c = SCM_HASH_TABLE_CORE(table);
     ScmVector *v = SCM_VECTOR(Scm_MakeVector(c->numBuckets, SCM_NIL));
     ScmObj *vp;
-    Entry** b = BUCKET(c);
+    Entry** b = BUCKETS(c);
     int i;
     
     SCM_APPEND1(h, t, SCM_MAKE_KEYWORD("num-entries"));

@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;; $Id: extlib.stub,v 1.294 2007-05-24 09:00:01 shirok Exp $
+;;; $Id: extlib.stub,v 1.295 2007-06-01 00:53:23 shirok Exp $
 ;;;
 
 "
@@ -1300,57 +1300,74 @@
 ;; WeakHashTable
 ;;
 
-(define-cproc make-weak-hash-table (&optional (type eq?)
-                                              (weakness key)
-                                              (default-value #f))
-  (body <top>
-        (let* ((t :: int 0) (w :: int 0))
-          (set-hash-type! t type)
-          (cond ((SCM_EQ weakness 'key)   (set! w SCM_WEAK_KEY))
-                ((SCM_EQ weakness 'value) (set! w SCM_WEAK_VALUE))
-                ((SCM_EQ weakness 'both)  (set! w SCM_WEAK_BOTH))
-                (else (Scm_Error "unsupported weakness: %S" weakness)))
-          (result (Scm_MakeWeakHashTableSimple t w 0 default-value)))))
+;; NB: it turned out the current hash core implementation isn't
+;; very good to support key-weak hash table efficiently, so I'm
+;; going to reimplement hash core.  I suspend weak hash table
+;; development until then.
 
-(define-cproc weak-hash-table-type (wh::<weak-hash-table>)
-  (body <top> (get-hash-type (-> wh type))))
-(define-cproc weak-hash-table-weakness (wh::<weak-hash-table>)
-  (body <top>
-        (case (-> wh weakness)
-          ((SCM_WEAK_KEY)   (result 'key))
-          ((SCM_WEAK_VALUE) (result 'value))
-          ((SCM_WEAK_BOTH)  (result 'both))
-          (else (Scm_Error "[internal] weak hash %S has unknown weakness: %d"
-                           (-> wh weakness))
-                (result '#f)))))
+; (define-cproc make-weak-hash-table (&optional (type eq?)
+;                                               (weakness key)
+;                                               (default-value #f))
+;   (body <top>
+;         (let* ((t :: int 0) (w :: int 0))
+;           (set-hash-type! t type)
+;           (cond ((SCM_EQ weakness 'key)   (set! w SCM_WEAK_KEY))
+;                 ((SCM_EQ weakness 'value) (set! w SCM_WEAK_VALUE))
+;                 ((SCM_EQ weakness 'both)  (set! w SCM_WEAK_BOTH))
+;                 (else (Scm_Error "unsupported weakness: %S" weakness)))
+;           (result (Scm_MakeWeakHashTableSimple t w 0 default-value)))))
 
-(define-cproc weak-hash-table-num-entries (wh::<weak-hash-table>)
-  (expr <int> (Scm_HashCoreNumEntries (SCM_WEAK_HASH_TABLE_CORE wh))))
+; (define-cproc weak-hash-table-type (wh::<weak-hash-table>)
+;   (body <top> (get-hash-type (-> wh type))))
+; (define-cproc weak-hash-table-weakness (wh::<weak-hash-table>)
+;   (body <top>
+;         (case (-> wh weakness)
+;           ((SCM_WEAK_KEY)   (result 'key))
+;           ((SCM_WEAK_VALUE) (result 'value))
+;           ((SCM_WEAK_BOTH)  (result 'both))
+;           (else (Scm_Error "[internal] weak hash %S has unknown weakness: %d"
+;                            (-> wh weakness))
+;                 (result '#f)))))
 
-(define-cproc weak-hash-table-clear! (wh::<weak-hash-table>)
-  (body <void> (Scm_HashCoreClear (SCM_WEAK_HASH_TABLE_CORE wh))))
+; (define-cproc weak-hash-table-num-entries (wh::<weak-hash-table>)
+;   (expr <int> (Scm_HashCoreNumEntries (SCM_WEAK_HASH_TABLE_CORE wh))))
 
-(define-cproc weak-hash-table-get (wh::<weak-hash-table> key
-                                                         &optional fallback)
-  (body <top>  (dict-get wh Scm_WeakHashTableRef)))
+; (define-cproc weak-hash-table-clear! (wh::<weak-hash-table>)
+;   (body <void> (Scm_HashCoreClear (SCM_WEAK_HASH_TABLE_CORE wh))))
 
-(define-cproc weak-hash-table-put! (wh::<weak-hash-table> key value)
-  (body <void> (Scm_WeakHashTableSet wh key value 0)))
+; (define-cproc weak-hash-table-get (wh::<weak-hash-table> key
+;                                                          &optional fallback)
+;   (body <top>  (dict-get wh Scm_WeakHashTableRef)))
 
-(define-cproc weak-hash-table-delete! (wh::<weak-hash-table> key)
-  (expr <boolean> (not (SCM_UNBOUNDP (Scm_WeakHashTableDelete wh key)))))
+; (define-cproc weak-hash-table-put! (wh::<weak-hash-table> key value)
+;   (body <void> (Scm_WeakHashTableSet wh key value 0)))
+
+; (define-cproc weak-hash-table-delete! (wh::<weak-hash-table> key)
+;   (expr <boolean> (not (SCM_UNBOUNDP (Scm_WeakHashTableDelete wh key)))))
   
-(define-cproc weak-hash-table-exists? (wh::<weak-hash-table> key)
-  (expr <boolean> (dict-exists? wh Scm_WeakHashTableRef)))
+; (define-cproc weak-hash-table-exists? (wh::<weak-hash-table> key)
+;   (expr <boolean> (dict-exists? wh Scm_WeakHashTableRef)))
 
-(define-cproc weak-hash-table-keys (wh::<weak-hash-table>)
-  (call "Scm_WeakHashTableKeys"))
+; (define-cproc weak-hash-table-keys (wh::<weak-hash-table>)
+;   (call "Scm_WeakHashTableKeys"))
 
-(define-cproc weak-hash-table-values (wh::<weak-hash-table>)
-  (call "Scm_WeakHashTableValues"))
+; (define-cproc weak-hash-table-values (wh::<weak-hash-table>)
+;   (call "Scm_WeakHashTableValues"))
 
+; "static ScmObj weak_hash_table_iter(ScmObj *args, int nargs, void *data)
+;  {
+;    ScmWeakHashIter *iter = (ScmWeakHashIter*)data;
+;    ScmObj key = args[0], val = args[0]; /* arg0 is eofval */
+;    Scm_WeakHashIterNext(iter, &key, &val);
+;    SCM_RETURN(Scm_Values2(key, val));
+;  }"
 
-
+; (define-cproc %weak-hash-table-iter (wh::<weak-hash-table>)
+;   (body <top>
+;         (let* ((iter :: ScmWeakHashIter* (SCM_NEW ScmWeakHashIter)))
+;           (Scm_WeakHashIterInit iter wh)
+;           (result (Scm_MakeSubr weak_hash_table_iter iter 1 0
+;                                 '"weak-hash-table-iterator")))))
 
 ;;
 ;; TreeMap

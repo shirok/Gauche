@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.h,v 1.6 2007-04-22 09:19:19 shirok Exp $
+ *  $Id: hash.h,v 1.7 2007-06-01 00:53:23 shirok Exp $
  */
 
 /* This file is included from gauche.h */
@@ -86,6 +86,10 @@ SCM_EXTERN void Scm_HashCoreInitGeneral(ScmHashCore *core,
                                         ScmHashCompareProc *cmpfn,
                                         unsigned int initSize,
                                         void *data);
+
+SCM_EXTERN int  Scm_HashCoreTypeToProcs(ScmHashType type,
+                                        ScmHashProc **hashfn,
+                                        ScmHashCompareProc **cmpfn);
 
 SCM_EXTERN void Scm_HashCoreCopy(ScmHashCore *dst, const ScmHashCore *src);
 
