@@ -1,3 +1,7 @@
+2007-06-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (get_debug_info): fixed a bug in the range check.
+
 2007-05-31  Shiro Kawai  <shiro@acm.org>
 
 	* src/hash.c, src/weak.c, src/gauche/hash.h, src/gauche/weak.h,

@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: vm.c,v 1.270 2007-04-18 02:26:44 shirok Exp $
+ *  $Id: vm.c,v 1.271 2007-06-23 06:47:14 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -3830,7 +3830,7 @@ static ScmObj get_debug_info(ScmCompiledCode *base, SCM_PCTYPE pc)
     int off;
     ScmObj ip;
     if (base == NULL
-        || (pc < base->code && pc >= base->code + base->codeSize)) {
+        || (pc < base->code || pc >= base->code + base->codeSize)) {
         return SCM_FALSE;
     }
     off = pc - base->code - 1;  /* pc is already incremented, so -1. */
