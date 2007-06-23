@@ -1,5 +1,7 @@
 2007-06-22  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (cond, case): exclude dotted list from clauses
+	  and properly reports syntax error instead of SEGV.
 	* lib/rfc/http.scm (request-response): fixed a bug that ignores
 	  :sink and :flusher keyword arguments.
 	* lib/gauche/interactive/info.scm (viewer): fixed malformed

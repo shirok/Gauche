@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: compile.scm,v 1.57 2007-04-18 02:26:44 shirok Exp $
+;;;  $Id: compile.scm,v 1.58 2007-06-23 07:28:17 shirok Exp $
 ;;;
 
 (define-module gauche.internal
@@ -1886,7 +1886,7 @@
     (match cls
       (() ($const-undef))
       ;; (else . exprs)
-      ((((? (cut global-eq? <> 'else cenv)) . exprs) . rest)
+      ((((? (cut global-eq? <> 'else cenv)) exprs ...) . rest)
        (unless (null? rest)
          (error "syntax-error: 'else' clause followed by more clauses:" form))
        ($seq (imap (cut pass1 <> cenv) exprs)))
@@ -1923,7 +1923,7 @@
        ($if (car cls) (pass1 test (cenv-sans-name cenv))
             ($it)
             (process-clauses rest)))
-      (((test . exprs) . rest)          ; (test . exprs)
+      (((test exprs ...) . rest)          ; (test . exprs)
        ($if (car cls) (pass1 test (cenv-sans-name cenv))
             ($seq (imap (cut pass1 <> cenv) exprs))
             (process-clauses rest)))
@@ -1940,7 +1940,7 @@
   (define (process-clauses tmpvar cls)
     (match cls
       (() ($const-undef))
-      ((((? (cut global-eq? <> 'else cenv)) . exprs) . rest)
+      ((((? (cut global-eq? <> 'else cenv)) exprs ...) . rest)
        (unless (null? rest)
          (error "syntax-error: 'else' clause followed by more clauses:" form))
        (match exprs
@@ -1951,7 +1951,7 @@
                  (list ($lref tmpvar))))
          ;; (else . exprs)
          (_ ($seq (imap (cut pass1 <> cenv) exprs)))))
-      (((elts . exprs) . rest)
+      (((elts exprs ...) . rest)
        (let ((nelts (length elts))
              (elts  (map unwrap-syntax elts)))
          (unless (> nelts 0)
