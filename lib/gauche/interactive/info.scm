@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: info.scm,v 1.9 2007-03-02 07:39:09 shirok Exp $
+;;;  $Id: info.scm,v 1.10 2007-06-23 07:13:22 shirok Exp $
 ;;;
 
 (define-module gauche.interactive.info
@@ -65,10 +65,11 @@
           (let1 h #f
             (with-signal-handlers
                 ((SIGPIPE => #f))
-              (guard (e (else #f))
-                (display s (process-input p)))
-              (close-output-port (process-input p))
-              (process-wait p)))))
+              (lambda ()
+                (guard (e (else #f))
+                  (display s (process-input p)))
+                (close-output-port (process-input p))
+                (process-wait p))))))
       ))
 
 (define (get-info-paths)

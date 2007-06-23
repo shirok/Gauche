@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: http.scm,v 1.11 2007-03-02 07:39:10 shirok Exp $
+;;;  $Id: http.scm,v 1.12 2007-06-23 07:13:23 shirok Exp $
 ;;;
 
 ;; HTTP handling routines.
@@ -125,25 +125,25 @@
          (values code
                  headers
                  (and has-content?
-                      (let ((sink    (open-output-string))
-                            (flusher (lambda (sink _) (get-output-string sink))))
+                      (let-keywords options
+                          ((sink    (open-output-string))
+                           (flusher (lambda (sink _) (get-output-string sink)))
+                           . #f)
                         (receive-body in headers sink flusher))))))))
 
   (let-keywords options
-      ((sink    (open-output-string))
-       (flusher (lambda (sink h) (get-output-string sink)))
-       (host    (server->host server))
+      ((host    (server->host server))
        (no-redirect #f)
        . restopts)
     (let1 has-content? (not (eq? request 'HEAD))
       (if no-redirect
-        (%send-request request server host request-uri has-content? options)
+        (%send-request request server host request-uri has-content? restopts)
         (let loop ((history (list (values-ref (canonical-uri request-uri host) 0)))
                    (server server)
                    (host host)
                    (request-uri request-uri))
           (receive (code headers body)
-              (%send-request request server host request-uri has-content? options)
+              (%send-request request server host request-uri has-content? restopts)
             (cond ((and (string-prefix? "3" code)
                         (assoc "location" headers))
                    => (lambda (loc)
