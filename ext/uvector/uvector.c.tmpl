@@ -35,7 +35,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: uvector.c.tmpl,v 1.11 2007-02-21 22:27:37 shirok Exp $
+ *  $Id: uvector.c.tmpl,v 1.12 2007-06-23 07:01:58 shirok Exp $
  */
 
 #include <stdlib.h>
@@ -1354,8 +1354,9 @@ ScmObj Scm_UVectorCopy(ScmUVector *v, int start, int end)
     case 5: return Scm_U32VectorCopy(SCM_U32VECTOR(v), start, end);
     case 6: return Scm_S64VectorCopy(SCM_S64VECTOR(v), start, end);
     case 7: return Scm_U64VectorCopy(SCM_U64VECTOR(v), start, end);
-    case 8: return Scm_F32VectorCopy(SCM_F32VECTOR(v), start, end);
-    case 9: return Scm_F64VectorCopy(SCM_F64VECTOR(v), start, end);
+    case 8: return Scm_F16VectorCopy(SCM_F16VECTOR(v), start, end);
+    case 9: return Scm_F32VectorCopy(SCM_F32VECTOR(v), start, end);
+    case 10:return Scm_F64VectorCopy(SCM_F64VECTOR(v), start, end);
     default: Scm_Error("uniform vector required, but got %S", v);
         return SCM_UNDEFINED;
     }
@@ -1375,8 +1376,9 @@ ScmObj Scm_UVectorSwapBytes(ScmUVector *v)
     case 5: return Scm_U32VectorSwapBytes(SCM_U32VECTOR(v));
     case 6: return Scm_S64VectorSwapBytes(SCM_S64VECTOR(v));
     case 7: return Scm_U64VectorSwapBytes(SCM_U64VECTOR(v));
-    case 8: return Scm_F32VectorSwapBytes(SCM_F32VECTOR(v));
-    case 9: return Scm_F64VectorSwapBytes(SCM_F64VECTOR(v));
+    case 8: return Scm_F16VectorSwapBytes(SCM_F16VECTOR(v));
+    case 9: return Scm_F32VectorSwapBytes(SCM_F32VECTOR(v));
+    case 10:return Scm_F64VectorSwapBytes(SCM_F64VECTOR(v));
     default: Scm_Error("uniform vector required, but got %S", v);
         return SCM_UNDEFINED;
     }
@@ -1393,8 +1395,9 @@ ScmObj Scm_UVectorSwapBytesX(ScmUVector *v)
     case 5: return Scm_U32VectorSwapBytesX(SCM_U32VECTOR(v));
     case 6: return Scm_S64VectorSwapBytesX(SCM_S64VECTOR(v));
     case 7: return Scm_U64VectorSwapBytesX(SCM_U64VECTOR(v));
-    case 8: return Scm_F32VectorSwapBytesX(SCM_F32VECTOR(v));
-    case 9: return Scm_F64VectorSwapBytesX(SCM_F64VECTOR(v));
+    case 8: return Scm_F16VectorSwapBytesX(SCM_F16VECTOR(v));
+    case 9: return Scm_F32VectorSwapBytesX(SCM_F32VECTOR(v));
+    case 10:return Scm_F64VectorSwapBytesX(SCM_F64VECTOR(v));
     default: Scm_Error("uniform vector required, but got %S", v);
         return SCM_UNDEFINED;
     }
@@ -1470,6 +1473,7 @@ ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
                 swapb16(&d.n);
                 Scm_Putz((const char*)d.c, 2, port);
             }
+            break;
         }
         case 4: {
             union {
@@ -1481,6 +1485,7 @@ ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
                 swapb32(&d.n);
                 Scm_Putz((const char*)d.c, 4, port);
             }
+            break;
         }
         case 8:{
             union {
@@ -1492,6 +1497,7 @@ ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
                 swapb64(&d.n);
                 Scm_Putz((const char*)d.c, 8, port);
             }
+            break;
         }
         }
     }

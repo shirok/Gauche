@@ -1,5 +1,9 @@
 2007-06-22  Shiro Kawai  <shiro@acm.org>
 
+	* ext/uvector/uvector.c.tmpl (Scm_WriteBlock): added a missing breaks.
+	  (Scm_UVectorCopy, Scm_UVectorSwapBytes, Scm_UVectorSwapBytesX):
+	  f16vector support was missing.
+
 	* src/vm.c (get_debug_info): fixed a bug in the range check.
 
 2007-05-31  Shiro Kawai  <shiro@acm.org>
