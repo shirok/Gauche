@@ -1,3 +1,9 @@
+2007-06-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/scmlib.scm (error): error message formatting routines didn't
+	  consider circular structure, causing SEGV when such a structure
+	  is given to error/errorf.
+
 2007-06-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (cond, case): exclude dotted list from clauses

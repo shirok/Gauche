@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: scmlib.scm,v 1.13 2007-04-16 03:47:13 shirok Exp $
+;;;  $Id: scmlib.scm,v 1.14 2007-07-01 08:03:09 shirok Exp $
 ;;;
 
 ;; This file contains builtin library functions that are easier to be
@@ -234,7 +234,7 @@
           (if (null? args)
             (get-output-string p)
             (begin (display " " p)
-                   (write (car args) p)
+                   (write/ss (car args) p)
                    (loop (cdr args)))))))
     (define (scan-keys args)
       (let loop ((args args)
@@ -265,9 +265,9 @@
            (if (null? msgs)
              (apply make fmt keys)
              (apply make fmt
-                    :message (apply format #f msgs)
+                    :message (apply format/ss #f msgs)
                     keys))))
-        (else (make <error> :message (apply format #f fmt args))))))
+        (else (make <error> :message (apply format/ss #f fmt args))))))
 
     (values error errorf)))
 
