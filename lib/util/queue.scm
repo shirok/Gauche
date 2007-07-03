@@ -5,16 +5,16 @@
 ;;;  Public Domain..  I guess lots of Scheme programmers have already
 ;;;  written similar code.
 ;;;
-;;;  $Id: queue.scm,v 1.10 2006-03-18 04:52:59 shirok Exp $
+;;;  $Id: queue.scm,v 1.11 2007-07-03 05:35:54 shirok Exp $
 ;;;
 
 ;; This queue implementation is tuned for speed.  A queue is simply
-;; a pair that holds the head and tail of queue, rather defining a
-;; special structure.   It bypasses consistency checks as well.
+;; a pair that holds the head and tail of queue, instead of using
+;; a dedicated structure.  It bypasses consistency checks.
 ;; So it is unsafe, but faster.
 ;; The API is upper compatible with SLIB's queue module.
 
-;; NB: this module intentionally avoid using other modules
+;; NB: this module intentionally avoids using other modules
 ;; for performance reasons.
 
 (define-module util.queue
@@ -29,7 +29,7 @@
 
 (define (make-queue) (cons '() '()))
 
-;; this one we does (expensive) check.
+;; this one does (expensive) check.
 (define (queue? obj)
   (and (pair? obj)
        (or (and (null? (car obj)) (null? (cdr obj)))
@@ -114,9 +114,9 @@
 ;; When we dequeue an item, we clear the cdr of the cell that becomes
 ;; unused.  It is necessary to prevent the conservative GC from
 ;; retaining unbound memory, in case a false pointer happens to point
-;; one of this unused cell, which in turn retains all the cells used
-;; for the queue. See Boehm: "Bounding Space Usage of Conservative 
-;; Garbage Collectors", 
+;; one of this unused cell, which in turn would retain all the cells
+;; used for the queue if we don't clear it.
+;; See Boehm: "Bounding Space Usage of Conservative Garbage Collectors", 
 ;; http://www.hpl.hp.com/techreports/2001/HPL-2001-251.pdf
 ;; for the details.
 
@@ -180,8 +180,8 @@
       (set-cdr! q (if (null? head) head (last-pair head))))
     removed?))
 
-;; NB: Scheme48 has delete-from-queue!, which has reversed order
-;; of arguments of delete in SRFI-1.   I leave it undefined here.
+;; NB: Scheme48 has delete-from-queue!, whose argument order is
+;; reversed from 'delete' in SRFI-1.   I leave it undefined here.
 ;;
 ;; (define (delete-from-queue! q item)  ;;Scheme48
 ;;   (remove-from-queue! (lambda (elt) (eq? item elt)) q))
