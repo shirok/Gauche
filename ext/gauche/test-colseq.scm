@@ -196,12 +196,42 @@
        (find even? '#(3 1 7 5 4 8 7)))
 (test* "find (string)" #\a
        (find char-lower-case? "YAEUB4309aBrnar"))
-(test* "for-each (hash-table)" '(b . "b")
+(test* "find (hash-table)" '(b . "b")
        (find (lambda (x) (string=? "b" (cdr x)))
              (hash-table 'eq? '(a . "a") '(b . "b") '(c . "c"))))
 (test* "find (custom)" "zoo"
        (find (lambda (s) (= (size-of s) 3))
              (sseq 'najr 'ej 'zoo 'bunr)))
+
+(define (test-find-minmax msg ex-min ex-max coll . args)
+  (test* #`"find-min (,|msg|)" ex-min (apply find-min coll args))
+  (test* #`"find-max (,|msg|)" ex-max (apply find-max coll args))
+  (test* #`"find-min&max (,|msg|)" (list ex-min ex-max)
+         (receive r (apply find-min&max coll args) r)))
+
+
+(test-find-minmax "list 0" -1 9
+                  '(3 9 -1 6))
+(test-find-minmax "list 1" '(c . -1) '(b . 9)
+                  '((a . 3) (b . 9) (c . -1) (d . 6)) :key cdr)
+(test-find-minmax "list 2" '(c . -1) '(b . 9)
+                  '((c . -1) (a . 3) (b . 9) (d . 6)) :key cdr)
+(test-find-minmax "list 3" '(c . -1) '(c . -1)
+                  '((c . -1)) :key cdr)
+(test-find-minmax "list 4" #f #f
+                  '() :key cdr)
+(test-find-minmax "list 5" 'foo 'foo
+                  '() :key cdr :default 'foo)
+(test-find-minmax "list 6" '("a" . 3) '("d" . 6)
+                  '(("c" . -1) ("b" . 9) ("a" . 3) ("d" . 6))
+                  :key car :compare string<?)
+(test-find-minmax "vector" '(c . -1) '(b . 9)
+                  '#((a . 3) (b . 9) (c . -1) (d . 6)) :key cdr)
+(test-find-minmax "string" '#\a '#\Z
+                  "IBaenRuZgaeKG" :compare char-ci<?)
+(test-find-minmax "hash-table" '(c . -1) '(b . 9)
+                  (hash-table 'eq? '(a . 3) '(b . 9) '(c . -1) '(d . 6))
+                  :key cdr)
 
 (test* "filter (list)" '(2 4 6)
        (filter even? '(1 2 3 4 5 6 7)))

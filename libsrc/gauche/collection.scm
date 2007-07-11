@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: collection.scm,v 1.7 2007-03-02 07:39:12 shirok Exp $
+;;;  $Id: collection.scm,v 1.8 2007-07-11 06:57:22 shirok Exp $
 ;;;
 
 ;; Defines generic operations over collection.   A collection is
@@ -43,7 +43,8 @@
           call-with-builder  with-builder
           fold fold2 fold3 map map-to map-accum for-each
           fold$ fold2$ fold3$ map$ for-each$
-          find filter filter-to remove remove-to partition partition-to
+          find find-min find-max find-min&max
+          filter filter-to remove remove-to partition partition-to
           size-of lazy-size-of coerce-to
           group-collection)
   )
@@ -397,6 +398,57 @@
 ;; shortcut
 (define-method find (pred (coll <list>))
   ((with-module srfi-1 find) pred coll))
+
+;; find-min, find-max, find-min&max ---------------------
+
+(define-method find-min ((coll <collection>) . keys)
+  (let-keywords* keys ((key identity)
+                       (compare <)
+                       (default #f))
+    (%find-minmax-1 coll key compare default)))
+
+(define-method find-max ((coll <collection>) . keys)
+  (let-keywords* keys ((key identity)
+                       (compare <)
+                       (default #f))
+    (%find-minmax-1 coll key (complement compare) default)))
+
+(define (%find-minmax-1 coll key compare default)
+  (with-iterator (coll end? next)
+    (if (end?)
+      default
+      (let1 elt (next)
+        (let loop ((val (key elt))
+                   (elt elt))
+          (if (end?)
+            elt
+            (let* ((e (next))
+                   (v (key e)))
+              (if (compare v val)
+                (loop v e)
+                (loop val elt)))))))))
+
+(define-method find-min&max ((coll <collection>) . keys)
+  (let-keywords* keys ((key identity)
+                       (compare <)
+                       (default #f)
+                       (default-min default)
+                       (default-max default))
+    (with-iterator (coll end? next)
+      (if (end?)
+        (values default-min default-max)
+        (let1 elt (next)
+          (let loop ((minval (key elt))
+                     (minelt elt)
+                     (maxval (key elt))
+                     (maxelt elt))
+            (if (end?)
+              (values minelt maxelt)
+              (let* ((e (next))
+                     (v (key e)))
+                (cond ((compare v minval) (loop v e maxval maxelt))
+                      ((compare maxval v) (loop minval minelt v e))
+                      (else (loop minval minelt maxval maxelt)))))))))))
 
 ;; filter -----------------------------------------------
 
