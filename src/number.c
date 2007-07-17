@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: number.c,v 1.147 2007-05-22 11:47:30 shirok Exp $
+ *  $Id: number.c,v 1.148 2007-07-17 03:24:49 shirok Exp $
  */
 
 #include <math.h>
@@ -1023,25 +1023,32 @@ double Scm_GetDouble(ScmObj obj)
          * and/or the denominator can be too big to be converted to double,
          * yet the ratnum itself can be representable in double.
          */
-        double numer = Scm_GetDouble(SCM_RATNUM_NUMER(obj));
-        double denom = Scm_GetDouble(SCM_RATNUM_DENOM(obj));
+        double dnumer = Scm_GetDouble(SCM_RATNUM_NUMER(obj));
+        double ddenom = Scm_GetDouble(SCM_RATNUM_DENOM(obj));
 
-        if (SCM_IS_INF(numer) || SCM_IS_INF(denom)) {
+        if (SCM_IS_INF(dnumer) || SCM_IS_INF(ddenom)) {
             /* This path should be rare, so we don't bother performance. */
-            ScmBignum *bnumer = SCM_BIGNUM(SCM_RATNUM_NUMER(obj));
-            ScmBignum *bdenom = SCM_BIGNUM(SCM_RATNUM_DENOM(obj));
-            int snumer = SCM_BIGNUM_SIZE(bnumer);
-            int sdenom = SCM_BIGNUM_SIZE(bdenom);
-            int shift;
-            /* we rip off the first 3 words, which guarantees we preserve
-               more than 53 bits. */
-            if (snumer > sdenom) shift = (sdenom - 3) * sizeof(long) * 8;
-            else                 shift = (snumer - 3) * sizeof(long) * 8;
+            ScmObj numer = SCM_RATNUM_NUMER(obj);
+            ScmObj denom = SCM_RATNUM_DENOM(obj);
+
+            if (SCM_INTP(numer)) return 0.0;
+            if (SCM_INTP(denom)) return dnumer;
+            else {
+                ScmBignum *bnumer = SCM_BIGNUM(numer);
+                ScmBignum *bdenom = SCM_BIGNUM(denom);
+                int snumer = SCM_BIGNUM_SIZE(bnumer);
+                int sdenom = SCM_BIGNUM_SIZE(bdenom);
+                int shift;
+                /* we rip off the first 3 words, which guarantees we preserve
+                   more than 53 bits. */
+                if (snumer > sdenom) shift = (sdenom - 3) * sizeof(long) * 8;
+                else                 shift = (snumer - 3) * sizeof(long) * 8;
             
-            numer = Scm_GetDouble(Scm_Ash(SCM_RATNUM_NUMER(obj), -shift));
-            denom = Scm_GetDouble(Scm_Ash(SCM_RATNUM_DENOM(obj), -shift));
+                dnumer = Scm_GetDouble(Scm_Ash(SCM_RATNUM_NUMER(obj), -shift));
+                ddenom = Scm_GetDouble(Scm_Ash(SCM_RATNUM_DENOM(obj), -shift));
+            }
         }
-        return numer/denom;
+        return dnumer/ddenom;
     }
     else return 0.0;
 }
@@ -2297,11 +2304,23 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
             return Scm_BignumCmp(SCM_BIGNUM(Scm_MakeBignumFromSI(SCM_INT_VALUE(arg0))),
                                  SCM_BIGNUM(arg1));
         if (SCM_RATNUMP(arg1)) {
-            /* numerical error doesn't matter for the range of fixnum */
-            double r = SCM_INT_VALUE(arg0) - Scm_GetDouble(arg1);
-            if (r < 0) return -1;
-            if (r > 0) return 1;
-            return 0;
+            if (SCM_EQ(SCM_INT_VALUE(0), arg0)) {
+                return -Scm_Sign(arg1);
+            } else {
+                /* Roughly estimates the result by coercing the RATNUM to
+                   double.  We have 53bits of precision (denomalized
+                   numbers only matter when ARG0 is zero, which is excluded
+                   already). */
+                double y = Scm_GetDouble(arg1);
+                double r = SCM_INT_VALUE(arg0) - y;
+                double err = y * 2.0e-52;
+
+                if (r < -err) return -1;
+                if (r > err) return 1;
+                /* We need more precise comparison. */
+                return Scm_NumCmp(Scm_Mul(arg0, SCM_RATNUM_DENOM(arg1)),
+                                  SCM_RATNUM_NUMER(arg1));
+            }
         }
         badnum = arg1;
     }

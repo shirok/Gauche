@@ -1,3 +1,10 @@
+2007-07-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_GetDouble): fixed a bug on big ratnum coercion
+	  that caused SEGV in some cases.
+	  (Scm_NumCmp): fixed a bug on comparing small ratnum with big
+	  denominator with fixnum.
+
 2007-07-10  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/collection.scm: Added find-min, find-max, and 
