@@ -30,7 +30,7 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  $Id: hash.c,v 1.55 2007-06-01 00:53:23 shirok Exp $
+ *  $Id: hash.c,v 1.56 2007-07-26 07:17:33 shirok Exp $
  */
 
 #define LIBGAUCHE_BODY
@@ -397,8 +397,7 @@ static Entry *string_access(ScmHashCore *table, intptr_t k, ScmDictOp op)
     const ScmStringBody *keyb;
     
     if (!SCM_STRINGP(key)) {
-        Scm_Error("Got non-string key %S to the string hashtable %S",
-                  key, table);
+        Scm_Error("Got non-string key %S to the string hashtable.", key);
     }
     keyb = SCM_STRING_BODY(key);
     s = SCM_STRING_BODY_START(keyb);
