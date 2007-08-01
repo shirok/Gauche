@@ -617,6 +617,14 @@
        (string-downcase "SPEAK SOFTLY"))
 (test* "string-downcase" "peak"
        (string-downcase "SPEAK SOFTLY" 1 5))
+(test* "string-downcase!" "speak softly"
+       (let ((s (string-copy "SPEAK SOFTLY")))
+         (string-downcase! s)
+         s))
+(test* "string-downcase!" "Speak softly"
+       (let ((s (string-copy "SPEAK SOFTLY")))
+         (string-downcase! s 1)
+         s))
 (test* "string-downcase!" "Speak SOFTLY"
        (let ((s (string-copy "SPEAK SOFTLY")))
          (string-downcase! s 1 5)

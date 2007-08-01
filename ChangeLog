@@ -1,3 +1,9 @@
+2007-07-31  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/srfi-13.scm (%string-*case!): fixed a bug that caused an
+	  error when the last optional args are omitted for string-downcase!
+	  etc.
+
 2007-07-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/hash.c (string_access): fixed invalid argument passed to

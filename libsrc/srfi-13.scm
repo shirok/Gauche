@@ -30,7 +30,7 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;  
-;;;  $Id: srfi-13.scm,v 1.6 2007-03-02 07:39:12 shirok Exp $
+;;;  $Id: srfi-13.scm,v 1.7 2007-08-01 08:03:31 shirok Exp $
 ;;;
 
 ;; Natively implemented functions:
@@ -587,8 +587,8 @@
       (cond ((eof-object? ch) (get-output-string dst))
             ((char-set-contains? *%cased-char-set* ch)
              (if title?
-                 (write-char (char-upcase ch) dst) ;; This should be char-titlecase
-                 (write-char (char-downcase ch) dst))
+               (write-char (char-upcase ch) dst) ;; This should be char-titlecase
+               (write-char (char-downcase ch) dst))
              (loop #f (read-char src)))
             (else
              (write-char ch dst)
@@ -597,7 +597,7 @@
 
 (define (%string-*case! converter)
   (lambda (s . args)
-    (let-optionals* args ((start 0) end)
+    (let-optionals* args ((start 0) (end (string-length s)))
       (if (and (= start 0) (= end (string-length s)))
         (%string-replace-body! s (converter s))
         (string-copy! s start (converter s start end))))))
@@ -615,9 +615,9 @@
         (dst (open-output-string)))
     (let loop ((ch (string-pointer-prev! sp)))
       (if (eof-object? ch)
-          (get-output-string dst)
-          (begin (write-char ch dst)
-                 (loop (string-pointer-prev! sp)))))
+        (get-output-string dst)
+        (begin (write-char ch dst)
+               (loop (string-pointer-prev! sp)))))
     ))
 
 (define (string-reverse! s . args)
@@ -674,9 +674,9 @@
         (dest (open-output-string)))
     (let loop ((ch (string-pointer-next! src)))
       (if (eof-object? ch)
-          (get-output-string dest)
-          (begin (write-char (proc ch) dest)
-                 (loop (string-pointer-next! src)))))
+        (get-output-string dest)
+        (begin (write-char (proc ch) dest)
+               (loop (string-pointer-next! src)))))
     ))
 
 (define (string-map! proc s . args)
@@ -693,8 +693,8 @@
     (let loop ((ch (string-pointer-next! src))
                (r  knil))
       (if (eof-object? ch)
-          r
-          (loop (string-pointer-next! src) (kons ch r))))
+        r
+        (loop (string-pointer-next! src) (kons ch r))))
     ))
 
 (define (string-fold-right kons knil s . args)
@@ -704,8 +704,8 @@
     (let loop ((ch (string-pointer-prev! src))
                (r  knil))
       (if (eof-object? ch)
-          r
-          (loop (string-pointer-prev! src) (kons ch r))))
+        r
+        (loop (string-pointer-prev! src) (kons ch r))))
     ))
 
 (define (string-unfold p f g seed . args)
@@ -717,10 +717,10 @@
       (display base dest)
       (let loop ((seed seed))
         (if (p seed)
-            (begin (display (make-final seed) dest)
-                   (get-output-string dest))
-            (begin (write-char (f seed) dest)
-                   (loop (g seed))))))
+          (begin (display (make-final seed) dest)
+                 (get-output-string dest))
+          (begin (write-char (f seed) dest)
+                 (loop (g seed))))))
     ))
 
 (define (string-unfold-right p f g seed . args)
@@ -731,11 +731,11 @@
     (let ((dest (open-output-string)))
       (let loop ((seed seed))
         (if (p seed)
-            (string-append (make-final seed)
-                           (string-reverse (get-output-string dest))
-                           base)
-            (begin (write-char (f seed) dest)
-                   (loop (g seed))))))
+          (string-append (make-final seed)
+                         (string-reverse (get-output-string dest))
+                         base)
+          (begin (write-char (f seed) dest)
+                 (loop (g seed))))))
     ))
 
 (define (string-for-each proc s . args)
@@ -872,17 +872,17 @@
   (let ((slen (string-length s)))
     (let-optionals* args (start end)
       (if (undefined? start)
-          (values '() 0 slen)
-          (if (not (and (integer? start) (exact? start) (<= 0 start slen)))
-              (errorf "~s: argument out of range: ~s" proc start)
-              (if (undefined? end)
-                  (values '() start slen)
-                  (if (not (and (integer? end) (exact? end) (<= start end slen)))
-                      (errorf "~s: argument out of range: ~s" proc end)
-                      (values (cddr args) start end))
-                  )
-              )
+        (values '() 0 slen)
+        (if (not (and (integer? start) (exact? start) (<= 0 start slen)))
+          (errorf "~s: argument out of range: ~s" proc start)
+          (if (undefined? end)
+            (values '() start slen)
+            (if (not (and (integer? end) (exact? end) (<= start end slen)))
+              (errorf "~s: argument out of range: ~s" proc end)
+              (values (cddr args) start end))
+            )
           )
+        )
       )))
 
 (define (string-parse-final-start+end proc s args)
@@ -890,19 +890,19 @@
   (let ((slen (string-length s)))
     (let-optionals* args (start end)
       (if (undefined? start)
-          (values '() 0 slen)
-          (if (not (and (integer? start) (exact? start) (<= 0 start slen)))
-              (errorf "~s: argument out of range: ~s" proc start)
-              (if (undefined? end)
-                  (values '() start slen)
-                  (if (not (and (integer? end) (exact? end) (<= start end slen)))
-                      (errorf "~s: argument out of range: ~s" proc end)
-                      (if (not (null? (cddr args)))
-                          (errorf "~s: too many arguments" proc)
-                          (values (cddr args) start end)))
-                  )
-              )
+        (values '() 0 slen)
+        (if (not (and (integer? start) (exact? start) (<= 0 start slen)))
+          (errorf "~s: argument out of range: ~s" proc start)
+          (if (undefined? end)
+            (values '() start slen)
+            (if (not (and (integer? end) (exact? end) (<= start end slen)))
+              (errorf "~s: argument out of range: ~s" proc end)
+              (if (not (null? (cddr args)))
+                (errorf "~s: too many arguments" proc)
+                (values (cddr args) start end)))
+            )
           )
+        )
       )))
 
 (define-syntax let-string-start+end
@@ -950,17 +950,17 @@
         (let loop ((k (+ (vector-ref rv i) 1)))
           (if (and (> k 0)
                    (not (c= (string-ref pat i) (string-ref pat (- k 1)))))
-              (loop (+ (vector-ref rv (- k 1)) 1))
-              (vector-set! rv (+ i 1) k)))
+            (loop (+ (vector-ref rv (- k 1)) 1))
+            (vector-set! rv (+ i 1) k)))
         )
       )))
 
 (define (kmp-step pat rv c i c= p-start)
   (let loop ((i i))
     (if (c= c (string-ref pat (+ i p-start)))
-        (+ i 1)
-        (let ((i (vector-ref rv i)))
-          (if (= i -1) 0 (loop i))))))
+      (+ i 1)
+      (let ((i (vector-ref rv i)))
+        (if (= i -1) 0 (loop i))))))
 
 ;; This is inefficient if input string s contains multibyte characters.
 (define (string-kmp-partial-search pat rv s i . args)
